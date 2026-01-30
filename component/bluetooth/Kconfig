@@ -165,6 +165,11 @@ if BT_EXAMPLE_DEMO_MENU
             bool "BT A2DP HFP and LE Audio PBP"
             default n
 
+        config BT_A2DP_HFP_PBP_PERIPHERAL_MENU
+            depends on !AMEBA_RLS    #internal
+            bool "BT A2DP HFP and LE Audio PBP and BLE Peripheral"
+            default n
+
         config BT_A2DP_TMAP_MENU
             depends on !AMEBA_RLS    #internal
             bool "BT A2DP and LE Audio TMAP"
@@ -361,6 +366,21 @@ if BT
         select BT_PROFILE_PBAP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
 
+    config BT_A2DP_HFP_PBP_PERIPHERAL_MENU
+        bool
+        select BT_A2DP_HFP_PBP_PERIPHERAL
+        select BT_LE_AUDIO_SUPPORT
+        select BT_APP_AUDIO_DATA_SUPPORT
+        select BT_AUDIO_CODEC_SUPPORT
+        select BT_AUDIO_CODEC_LC3_SUPPORT
+        select BT_AUDIO_CODEC_SBC_SUPPORT
+        select BT_AUDIO_CODEC_CVSD_SUPPORT
+        select BT_PROFILE_A2DP_SUPPORT
+        select BT_PROFILE_AVRCP_SUPPORT
+        select BT_PROFILE_HFP_SUPPORT
+        select BT_PROFILE_PBAP_SUPPORT
+        select BT_PROFILE_SDP_SUPPORT
+
     config BT_A2DP_TMAP_MENU
         bool
         select BT_A2DP_TMAP
@@ -418,6 +438,8 @@ config BT_FUZZ_TEST
 config BT_A2DP_PBP
     bool
 config BT_A2DP_HFP_PBP
+    bool
+config BT_A2DP_HFP_PBP_PERIPHERAL
     bool
 config BT_A2DP_TMAP
     bool

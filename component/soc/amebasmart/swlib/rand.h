@@ -7,8 +7,16 @@
 #ifndef _RAND_H_
 #define _RAND_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 _LONG_CALL_ extern u32 _rand(void);
 _LONG_CALL_ int _rand_integer(void);
 _LONG_CALL_ extern int RandBytes_Get(void *buf, u32 len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_RAND_H_

@@ -7,6 +7,10 @@
 #ifndef _AMEBA_GDMA_H_
 #define _AMEBA_GDMA_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup GDMA
   * @verbatim
   *******************************************************************************************
@@ -698,5 +702,9 @@ _LONG_CALL_ u8   GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum);
 #define GDMA_BIT_ExtendedDEST_PER1    ((u32)0x00000001 << GDMA_SHIFT_ExtendedDEST_PER1)
 #define GDMA_SHIFT_ExtendedDEST_PER2  18
 #define GDMA_BIT_ExtendedDEST_PER2    ((u32)0x00000001 << GDMA_SHIFT_ExtendedDEST_PER2)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_AMEBA_GDMA_H_

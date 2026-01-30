@@ -7,6 +7,10 @@
 #ifndef _AMEBA_PMU_H_
 #define _AMEBA_PMU_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	PMU_OS					= 0,
 	PMU_WLAN_DEVICE		= 1,
@@ -92,5 +96,9 @@ extern uint32_t sysactive_timeout_flag;
 extern uint32_t system_can_yield;
 extern void Systick_Cmd(uint32_t enable);
 extern uint32_t SYSTIMER_GetPassTick(uint32_t start);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

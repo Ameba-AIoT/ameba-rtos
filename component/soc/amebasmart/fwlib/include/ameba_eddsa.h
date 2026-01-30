@@ -226,6 +226,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -284,6 +288,10 @@ _LONG_CALL_ int EDDSA_Verify_AutoMode(EDDSA_TypeDef *Ed25519, u8 *pk, u8 *sign, 
 /**
   * @}
   */
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif

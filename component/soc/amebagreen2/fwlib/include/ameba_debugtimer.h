@@ -105,6 +105,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -285,6 +289,10 @@ __STATIC_INLINE void DTimer_ScratchSet(u32 NewVaule)
 	DTimer->DBGT_SCRATCH = NewVaule;
 }
 /* end of the function group */
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

@@ -23,6 +23,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup PSRAM_Exported_Types PSRAM Exported Types
@@ -262,6 +266,10 @@ extern u8 APM_WR_INIT_LATENCY_SPEC[6];
 #define Psram_phy_Jmin			2
 
 extern PSRAMINFO_TypeDef PsramInfo;
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

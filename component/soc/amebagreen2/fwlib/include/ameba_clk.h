@@ -7,6 +7,10 @@
 #ifndef _AMEBA_CLK_H_
 #define _AMEBA_CLK_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup AmebaD_Platform
   * @{
   */
@@ -347,5 +351,9 @@ void OSC131_R_Set(u32 setbit, u32 clearbit);
 u32 OSC_CalResult_Get(u8 cal_clk);
 void XTAL_INIT(void);
 void XTAL_AACK(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_AMEBA_CLK_H_

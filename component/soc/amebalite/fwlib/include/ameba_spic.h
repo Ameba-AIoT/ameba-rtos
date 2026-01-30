@@ -735,6 +735,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup FLASH_Exported_Types FLASH Exported Types
@@ -1043,6 +1047,10 @@ extern u32 SPIC_CALIB_PATTERN[2];
 #define QUAD_DUM_CYCLE_NUM		2
 
 #define SPIC_VALID_CMD_MASK		(0xffff)
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

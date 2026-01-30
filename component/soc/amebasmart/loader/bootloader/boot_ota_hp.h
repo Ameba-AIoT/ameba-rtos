@@ -9,6 +9,10 @@
 
 #include "ameba_soc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define NONEVALIDIMG		0
 #define ONEVALIDIMG		1
 #define TWOVALIDIMG		2
@@ -27,4 +31,8 @@ _LONG_CALL_ u8 BOOT_OTA_IMG2(void);
 _LONG_CALL_ u8 BOOT_OTA_RDP(SubImgInfo_TypeDef *SubImgInfo, u8 Index, u8 ImgIndex);
 _LONG_CALL_ u8 BOOT_OTA_AP(SubImgInfo_TypeDef *SubImgInfo, u8 Index, u8 ImgIndex);
 _LONG_CALL_ u8 BOOT_OTA_AP_Linux(u8 CertImgIndex);
+
+#ifdef __cplusplus
+}
+#endif
 #endif

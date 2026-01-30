@@ -42,7 +42,24 @@ config SUPPORT_USBH_UAC
 config SUPPORT_USBH_ECM
     def_bool y
 
+config SUPPORT_USBH_ECM_BRIDGE
+    def_bool y
+
 config SUPPORT_HEAP_TRACE
+    def_bool y
+
+#
+# Audio features
+#
+
+# audio cmds
+config SUPPORT_AUDIO_CMD_ARECORD
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_APLAY
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_PLAYER
     def_bool y
 
 #---------- FEATURE LIST END-------------#
@@ -113,7 +130,7 @@ menu "CONFIG Link Option"
 
     config PSRAM_ALL_FOR_AP_HEAP
         depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM
-        depends on !WIFI_HOST_CONTROL # FULLMAC_DEV does not support PSRAM for now
+        depends on !WIFI_HOST_CONTROL # WHC_DEV_MENU does not support PSRAM for now
         bool "ALL PSRAM USED FOR APPLICATION HEAP"
         default y
 
@@ -182,13 +199,13 @@ menu "CONFIG WHC INTF"
                 select WHC_INTF_IPC
             config WIFI_SINGLE_CORE_MENU
                 bool "SINGLE CORE"
-            config FULLMAC_DEV
-                bool "FULLMAC_DEV"
+            config WHC_DEV_MENU
+                bool "WHC_DEV"
                 select WIFI_HOST_CONTROL
                 select WHC_DEV_FOR_KM4TZ
-            config WHC_FULLMAC_HOST
-                bool "FULLMAC_HOST"
-                select WHC_FULLMAC_HOST_IMPL
+            config WHC_HOST_MENU
+                bool "WHC_HOST"
+                select WHC_HOST_IMPL
                 select WHC_HOST_FOR_KM4TZ
 
     endchoice
@@ -199,6 +216,7 @@ menu "CONFIG WHC INTF"
            config WHC_INTF_SDIO
                 bool "WHC_INTF_SDIO"
             config WHC_INTF_USB
+                depends on !WHC_HOST_MENU
                 bool "WHC_INTF_USB"
                 select USB_HAL_LIB
                 select USB_DEVICE_EN
@@ -210,25 +228,25 @@ menu "CONFIG WHC INTF"
         endchoice
     endif
 
-    if FULLMAC_DEV
-        menu "FULLMAC config"
+    if WHC_DEV_MENU
+        menu "WHC config"
         config WHC_CMD_PATH
-            default y if FULLMAC_DEV
+            default y if WHC_DEV_MENU
             bool "Support WHC CMD PATH"
         config WHC_WIFI_API_PATH
-            default y if FULLMAC_DEV
+            default y if WHC_DEV_MENU
             bool "Support WHC WIFI API PATH"
         config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
             bool "Support WHC SUPPLICANT OFFLOAD"
         config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4TZ
             bool "Support WHC DEV TCPIP KEEPALIVE"
-        config FULLMAC_IN_SINGLE_DIE
+        config WHC_IN_SINGLE_DIE
             bool "Support Download to SRAM Only"
         endmenu
     endif
 
-    if WHC_FULLMAC_HOST && !WHC_INTF_IPC_MENU
-        menu "FULLMAC HOST config"
+    if WHC_HOST_MENU && !WHC_INTF_IPC_MENU
+        menu "WHC HOST config"
         config WHC_CMD_PATH
             default y
             bool "Support WHC CMD PATH"
@@ -238,7 +256,7 @@ menu "CONFIG WHC INTF"
         endmenu
     endif
 
-    if FULLMAC_DEV && WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
+    if WHC_DEV_MENU && WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
 
         menu "WPA Mode"
 
@@ -302,29 +320,18 @@ menu "CONFIG WIFI"
         bool "Enable Wifi"
         default y
     if WLAN_MENU
-
-        choice
-            depends on !AMEBA_RLS
-            prompt "SDK MODE"
-            default NORMAL_SDK
-            config NORMAL_SDK
-                bool "NORMAL_INIC"
-            config ZEPHYR_SDK
-                bool "ZEPHYR_INIC"
-        endchoice
-
         rsource "../component/wifi/Kconfig.wifi"
 
         config WHC_INTF_IPC_MENU
             bool
             select WHC_WIFI_API_PATH
             select WLAN
-            select LWIP_LAYER if WHC_HOST && !MP_SHRINK && !ZEPHYR_SDK
+            select LWIP_LAYER if WHC_HOST && !MP_SHRINK && !PLATFORM_ZEPHYR
             select FW_DRIVER_COEXIST if WHC_DEV
             select ENABLE_WPS if WHC_HOST && WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
-        config FULLMAC_DEV
+        config WHC_DEV_MENU
             bool
             depends on WHC_DEV
             select WLAN
@@ -332,7 +339,7 @@ menu "CONFIG WIFI"
             select WIFI_FW_EN if !MP_SHRINK
             select LWIP_LAYER if WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4TZ
 
-        config WHC_FULLMAC_HOST_IMPL
+        config WHC_HOST_IMPL
             bool
             depends on WHC_HOST
             select WLAN
@@ -349,7 +356,7 @@ menu "CONFIG WIFI"
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
         config WIFI_FW_EN_FOR_KM4NS
-            depends on !FULLMAC_DEV
+            depends on !WHC_DEV_MENU
             bool
             default !MP_SHRINK
     endif
@@ -374,19 +381,24 @@ menu "CONFIG WIFI"
         bool
     config ENABLE_WPS_DISCOVERY
         bool
-    config FULLMAC_HOST
-        bool
     config WIFI_HOST_CONTROL
         bool
-    config WHC_FULLMAC_HOST_IMPL
+    config WHC_HOST_IMPL
         bool
 endmenu
+
+config VFS_ENABLED
+    depends on !(MP_SHRINK) && (WHC_HOST || WHC_NONE || WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ)
+    def_bool y
 
 menu "CONFIG BT"
     config  BT_MENU
         bool "Enable BT"
 
     if BT_MENU
+        # IC BT capability
+        config BT_HAS_MESH
+            def_bool y
 
         rsource "../component/bluetooth/Kconfig.inic"
 
@@ -395,7 +407,7 @@ menu "CONFIG BT"
         endif
 
         config BT
-            def_bool WHC_HOST || WHC_NONE || (FULLMAC_DEV && WHC_DEV)
+            def_bool WHC_HOST || WHC_NONE || (WHC_DEV_MENU && WHC_DEV)
             select FTL_ENABLED
 
         config FTL_ENABLED
@@ -410,6 +422,7 @@ menu "CONFIG ETHERNET"
         bool "Enable ETHERNET"
 		default n
         select ETHERNET_RMII
+        select LWIP_ETHERNET
 
     config ETHERNET_RMII
         bool

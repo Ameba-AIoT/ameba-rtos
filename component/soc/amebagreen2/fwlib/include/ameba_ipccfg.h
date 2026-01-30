@@ -7,6 +7,10 @@
 #ifndef _AMEBA_IPCCFG_H_
 #define _AMEBA_IPCCFG_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -81,6 +85,10 @@
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

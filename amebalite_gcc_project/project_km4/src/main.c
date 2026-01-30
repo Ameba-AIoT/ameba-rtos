@@ -15,21 +15,6 @@
 
 static const char *const TAG = "MAIN";
 
-#if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
-#include "ftl_int.h"
-
-void app_ftl_init(void)
-{
-	u32 ftl_start_addr, ftl_end_addr;
-
-	flash_get_layout_info(FTL, &ftl_start_addr, &ftl_end_addr);
-	ftl_phy_page_start_addr = ftl_start_addr - SPI_FLASH_BASE;
-	ftl_phy_page_num = (ftl_end_addr - ftl_start_addr + 1) / PAGE_SIZE_4K;
-	ftl_init(ftl_phy_page_start_addr, ftl_phy_page_num);
-}
-#endif
-
-
 void app_init_debug(void)
 {
 	u32 debug[4];
@@ -92,13 +77,22 @@ void app_pmu_init(void)
 	}
 }
 
-extern int rt_kv_init(void);
-
+#ifdef CONFIG_VFS_ENABLED
+extern uint32_t vfs_ftl_init(void);
+extern int vfs_kv_init(void);
 void app_filesystem_init(void)
 {
-#if !(defined(CONFIG_MP_SHRINK)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE || defined CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	int ret = 0;
 	vfs_init();
+
+	vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
+	ret = vfs_kv_init();
+	if (ret == 0) {
+		RTK_LOGI(TAG, "File System Init Success \n");
+	} else {
+		RTK_LOGE(TAG, "File System Init Fail \n");
+	}
+
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG
 	ret = vfs_user_register(VFS_R3_PREFIX, VFS_FATFS, VFS_INF_FLASH, VFS_REGION_3, VFS_RO);
 	if (ret == 0) {
@@ -108,17 +102,11 @@ void app_filesystem_init(void)
 	}
 #endif
 
-	vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
-	ret = rt_kv_init();
-	if (ret == 0) {
-		RTK_LOGI(TAG, "File System Init Success \n");
-		return;
-	}
-
-
-	RTK_LOGE(TAG, "File System Init Fail \n");
+#if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
+	vfs_ftl_init();
 #endif
 }
+#endif
 
 /*
  * This function will be replaced when Sdk example is compiled using CMD "make EXAMPLE=xxx" or "make xip xxx"
@@ -155,11 +143,10 @@ int main(void)
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 	IPC_SEMDelayStub((void *)rtos_time_delay_ms);
 
+#ifdef CONFIG_VFS_ENABLED
 	app_filesystem_init();
-
-#if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
-	app_ftl_init();
 #endif
+
 	/* pre-processor of application example */
 	app_pre_example();
 
@@ -177,12 +164,14 @@ int main(void)
 	wifi_init();
 #endif
 
+#ifdef CONFIG_SHELL
 	/* init console */
 	shell_init_rom(0, 0);
 	shell_init_ram();
 	InterruptRegister((IRQ_FUN) shell_uart_irq_rom, UART_LOG_IRQ, (u32)NULL, INT_PRI4);
 	InterruptEn(UART_LOG_IRQ, INT_PRI4);
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
+#endif
 
 	app_init_debug();
 

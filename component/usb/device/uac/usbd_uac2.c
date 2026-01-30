@@ -306,7 +306,7 @@ static int usbd_uac_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 static int usbd_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
-static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
+static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_uac_handle_sof(usb_dev_t *dev);
 static void usbd_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
@@ -2201,13 +2201,14 @@ static int usbd_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
   * @param  ep_addr: endpoint address
   * @retval Status
   */
-static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
+static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_out);
 	usbd_uac_buf_t *p_buf = NULL;
 	usbd_ep_t *ep_isoc_out = &cdev->ep_isoc_out;
 	u8 wr_next;
+	int ret = HAL_OK;
 
 	// RTK_LOGS(TAG, RTK_LOG_WARN, "Read data out %d\n",pdata_ctrl->next_xfer);
 
@@ -2219,7 +2220,7 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 				p_buf = &(pdata_ctrl->buf_array[pdata_ctrl->isoc_write_idx]);
 				ep_isoc_out->xfer_buf = p_buf->buf_raw;
 				ep_isoc_out->xfer_len = pdata_ctrl->isoc_mps;
-				usbd_ep_receive(dev, ep_isoc_out);
+				ret = usbd_ep_receive(dev, ep_isoc_out);
 			} else {
 				wr_next = (pdata_ctrl->isoc_write_idx + 1) % (pdata_ctrl->buf_array_cnt);
 
@@ -2240,7 +2241,7 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 				p_buf = &(pdata_ctrl->buf_array[pdata_ctrl->isoc_write_idx]);
 				ep_isoc_out->xfer_buf = p_buf->buf_raw;
 				ep_isoc_out->xfer_len = pdata_ctrl->isoc_mps;
-				usbd_ep_receive(dev, ep_isoc_out);
+				ret = usbd_ep_receive(dev, ep_isoc_out);
 
 				if (pdata_ctrl->read_wait_sema) {
 					rtos_sema_give(pdata_ctrl->uac_isoc_sema);
@@ -2258,7 +2259,7 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 		}
 	}
 
-	return HAL_OK;
+	return ret;
 }
 
 /**
@@ -2554,7 +2555,7 @@ int usbd_uac_deinit(void)
   * @param  len: Data length
   * @retval Status
   */
-int usbd_uac_transmit_data(u8 *buf, u16 len)
+int usbd_uac_transmit_data(u8 *buf, u32 len)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usb_dev_t *dev = cdev->dev;
@@ -2599,7 +2600,7 @@ int usbd_uac_receive_data(void)
 		// RTK_LOGS(TAG, RTK_LOG_ERROR, "First trigger sema %d cnt %d-%d \n", pdata_ctrl->read_wait_sema,usbd_uac_get_read_frame_cnt(),pbuf_ctrl->isoc_mps);
 		ep_isoc_out->xfer_buf = p_buf->buf_raw;
 		ep_isoc_out->xfer_len = pbuf_ctrl->isoc_mps;
-		usbd_ep_receive(dev, ep_isoc_out);
+		return usbd_ep_receive(dev, ep_isoc_out);
 	}
 
 	return HAL_OK;

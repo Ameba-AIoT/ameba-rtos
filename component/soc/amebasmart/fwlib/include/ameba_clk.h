@@ -7,6 +7,10 @@
 #ifndef _AMEBA_CLK_H_
 #define _AMEBA_CLK_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup AmebaD_Platform
   * @{
   */
@@ -325,4 +329,9 @@ void CLK_SWITCH_XTAL(u32 State);
 
 #define ISNPPLL				0
 #define ISAPPLL				0x80000000
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_AMEBA_CLK_H_

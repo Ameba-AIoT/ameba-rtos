@@ -393,12 +393,20 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* SYS PLL input clock pre_divide */
 #define PLL_REG_PREDIV_1               (0x0)
 #define PLL_REG_PREDIV_2               (0x1)
 #define PLL_REG_PREDIV_4               (0x2)
 #define PLL_REG_PREDIV_8               (0x3)
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

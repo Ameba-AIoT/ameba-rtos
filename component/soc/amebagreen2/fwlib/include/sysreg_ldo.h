@@ -383,6 +383,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define LDO_DBG_OSC_OK	BIT(10)
 
@@ -429,6 +433,10 @@ bool LDO_MemSetInSleep(u8 sleep_mode);
 /**
   * @}
   */
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 /** @} */

@@ -203,7 +203,7 @@ uint16_t rtk_bt_bap_param_config(rtk_bt_le_audio_bap_param_config_t *p_param)
 	}
 
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_BAP, RTK_BT_LE_AUDIO_ACT_BAP_PARAM_CONFIG,
-						   &p_param, sizeof(rtk_bt_le_audio_bap_param_config_t));
+						   p_param, sizeof(rtk_bt_le_audio_bap_param_config_t));
 }
 
 #endif

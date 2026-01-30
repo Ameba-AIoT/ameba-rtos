@@ -5,6 +5,11 @@
  */
 
 #ifndef _AMEBA_OTA_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _AMEBA_OTA_H_
 
 #include "ameba_secure_boot.h"
@@ -235,5 +240,10 @@ do {\
 
 /**
   * @}
+
+#ifdef __cplusplus
+}
+#endif
+
   */
 #endif //_AMEBA_OTA_H_

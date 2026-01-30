@@ -105,7 +105,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wps_retry_count = 4;
 	wifi_user_config.wps_retry_interval = 5000;
 
-#if defined(CONFIG_FULLMAC_DEV) &&  !defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+#if (defined(CONFIG_WHC_DEV) && !defined(CONFIG_WHC_INTF_IPC)) &&  !defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	/* Linux wifi supports cfg80211 ops. */
 	wifi_user_config.cfg80211 = 1;
 #else

@@ -651,9 +651,17 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 #define REG_AON_WIFI_IPC		(SYSTEM_CTRL_BASE + REG_AON_RSVD_FOR_SW1)
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif

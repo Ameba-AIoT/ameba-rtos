@@ -7,6 +7,10 @@
 #ifndef _AMEBA_CHIPINFO_H_
 #define _AMEBA_CHIPINFO_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @defgroup CHIPINFO_MEMINFO_Structure_Type Structure Type
   * @{
   */
@@ -296,7 +300,11 @@ _LONG_CALL_ bool ChipInfo_PsramExists(void);
 _LONG_CALL_ u32 ChipInfo_PsramBoundary(void);
 _LONG_CALL_ u32 ChipInfo_MCM_Info(void);//planned to delete
 _LONG_CALL_ MCM_MemTypeDef ChipInfo_MCMInfo(void);
-_LONG_CALL_ void ChipInfo_GetSocName_ToBuf(char *buf, size_t buflen);
+_LONG_CALL_ u32 ChipInfo_GetSocName_ToBuf(void);
+
+#ifdef __cplusplus
+}
+#endif
 /**
   * @}
   */

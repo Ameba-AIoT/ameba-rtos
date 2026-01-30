@@ -312,6 +312,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your definition here
 
@@ -866,6 +870,10 @@ _LONG_CALL_ int crypto_gcm_auth_decrypt(u8 key_id, u32 key_len_bits, u32 len, u8
 
 /** @} */
 /** @} */
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 #endif

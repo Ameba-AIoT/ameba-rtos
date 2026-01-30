@@ -7,6 +7,10 @@
 #ifndef __AMEBA_PLIC_H__
 #define __AMEBA_PLIC_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PLIC_INT_PRI_BITS               3               // Interrupt priority bits, max interrupt priority = 2^PLIC_INT_PRI_BITS-1. 2 ~ 4
 #define PLIC_INT_PRIS                   ((1 << PLIC_INT_PRI_BITS) - 1)
 
@@ -226,5 +230,9 @@ extern void plic_init(void);
   \return  The active IRQ Id.
  */
 extern uint32_t plic_get_active_irq_id(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* end of #define __PLIC_H */

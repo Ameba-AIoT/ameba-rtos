@@ -5,6 +5,11 @@
  */
 
 #ifndef _AMEBA_VECTOR_TABLE_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _AMEBA_VECTOR_TABLE_H_
 
 /* Exported constants --------------------------------------------------------*/
@@ -329,5 +334,10 @@ enum IRQnPriority {
   * @}
   */
 
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_AMEBA_VECTOR_TABLE_H_

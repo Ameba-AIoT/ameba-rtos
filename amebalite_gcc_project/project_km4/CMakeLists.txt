@@ -12,9 +12,6 @@ else()
     set(AP_IMAGEDIR ${KR4_PROJECT_DIR}/vsdk/image)
 endif()
 ###############################################################################
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../utils/jlink_script/gdb.py content)
-string(REGEX REPLACE "CMAKE_GDB = [^\r\n\t]*" "CMAKE_GDB = \'${CMAKE_GDB}\'" content ${content})
-file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/../utils/jlink_script/gdb.py ${content})
 
 set(DAILY_BUILD 0 CACHE STRING "code analysis argument")
 message ("DAILY_BUILD = " ${DAILY_BUILD})

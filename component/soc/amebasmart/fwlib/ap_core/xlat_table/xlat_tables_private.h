@@ -12,6 +12,11 @@
 #include "platform_def.h"
 
 #include "xlat_tables_defs.h"
+#include "section_config.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if PLAT_XLAT_TABLES_DYNAMIC
 /*
@@ -103,5 +108,9 @@ bool is_mmu_enabled_ctx(const xlat_ctx_t *ctx);
  * Returns minimum virtual address space size supported by the architecture
  */
 uintptr_t xlat_get_min_virt_addr_space_size(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* XLAT_TABLES_PRIVATE_H */

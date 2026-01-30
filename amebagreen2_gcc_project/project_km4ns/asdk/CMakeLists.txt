@@ -33,7 +33,7 @@ endif()
 #NOTE: These compile options are not required for rom's component
 add_compile_options(-fdata-sections -ffunction-sections)
 
-if (NOT CONFIG_FULLMAC_DEV)
+if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_INTF_IPC AND CONFIG_WHC_DEV))
     ameba_add_subdirectory(make/image2)
     add_custom_target(
         ${c_MCU_PROJECT_NAME}

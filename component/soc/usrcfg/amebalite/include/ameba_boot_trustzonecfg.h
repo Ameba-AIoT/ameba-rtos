@@ -7,10 +7,18 @@
 #ifndef _AMEBA_TRUSTZONECFG_H_
 #define _AMEBA_TRUSTZONECFG_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* this table is configured by usrcfg */
 extern const TZ_CFG_TypeDef sau_config[];
 extern const TZ_CFG_TypeDef mpc1_config[];
 extern const TZ_CFG_TypeDef mpc2_config[];
 extern const TZ_CFG_TypeDef mpc3_config[];
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

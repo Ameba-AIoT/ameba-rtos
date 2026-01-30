@@ -89,6 +89,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup KEY_MANAGEMENT_HMAC_Exported_Constants KEY_MANAGEMENT_HMAC Exported Constants
@@ -138,6 +142,10 @@ typedef struct {
 
 #define KM_HMAC_IS_SW_KEY_NUM(ID)      (((ID) == KM_HMAC_KEY_S_SW) || \
                                         ((ID) == KM_HMAC_KEY_NS_SW))
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif

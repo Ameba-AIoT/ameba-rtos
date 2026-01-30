@@ -4,11 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "platform_autoconf.h"
+#ifndef CONFIG_AMEBAD
+
 #include "atcmd_service.h"
 
 static const char *TAG = "ATCMD_OTP";
 
-void at_otp(void *arg)
+void at_otp(u16 argc, char **argv)
 {
 	u32 index;
 	u32 Len;
@@ -16,8 +19,11 @@ void at_otp(void *arg)
 	u32 Addr = 0;
 	u8 *EfuseBuf = NULL;
 	char *DString;
-	char *argv[MAX_ARGC] = {0};
-	int argc = parse_param(arg, argv);
+
+	if (argc < 2) {
+		RTK_LOGE(TAG, "Invalid number of arguments\n");
+		return;
+	}
 
 	if ((EfuseBuf = rtos_mem_zmalloc(MAX(OTP_REAL_CONTENT_LEN, OTP_LMAP_LEN))) == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "efuse mem malloc fail \n");
@@ -168,12 +174,8 @@ exit:
 	rtos_mem_free(EfuseBuf);
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_otp_items[] = {
 	{"+OTP", at_otp},
 };
-
-void at_otp_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_otp_items, sizeof(at_otp_items) / sizeof(at_otp_items[0]));
-}
+#endif // CONFIG_AMEBAD

@@ -39,12 +39,29 @@
 
 #define USBH_UVC_USE_SOF                              0  /* if set to 0, sof interrupt can be disabled */
 
+#define UBSH_UVC_REQUEST_BUF_LEN                      64
+
+#if (USBH_UVC_USE_HW == 1)
+#define USBH_HW_UVC_DUMP_ERR    0
+#else
+#define USBH_HW_UVC_DUMP_ERR    0
+#endif
+
+#if (USBH_UVC_USE_HW != 1) && (USBH_HW_UVC_DUMP_ERR == 1)
+#error "USBH_HW_UVC_DUMP_ERR cannot be enabled when USBH_UVC_USE_HW is disabled"
+#endif
+
 /* Exported types ------------------------------------------------------------*/
 
-enum streaming_state {
+typedef enum {
 	STREAMING_OFF = 0,
-	STREAMING_ON = 1,
-};
+	STREAMING_ON
+} usbh_uvc_streaming_state_t;
+
+typedef enum {
+	STREAM_STATE_IDLE = 1,
+	STREAM_DATA_IN,
+} usbh_uvc_stream_data_state_t;
 
 typedef enum  {
 	UVC_FRAME_INIT = 0,
@@ -59,16 +76,20 @@ typedef struct  {
 	int height;      //video frame height
 	int frame_rate;  //video frame rate
 	u32 frame_buf_size;  //video frame size
-#if USBH_UVC_USE_HW
-	u8 isr_priority; //hw uvc isr priorigy
-#endif
-} uvc_config_t;
+} usbh_uvc_s_ctx_t;
 
+typedef struct  {
+#if USBH_UVC_USE_HW
+	u8 hw_isr_pri; //uvc hw isr priorigy
+#endif
+} usbh_uvc_ctx_t;
 typedef struct {
 	int(* init)(void);
 	int(* deinit)(void);
 	int(* attach)(void);
 	int(* detach)(void);
+	int(* setup)(void);
+	int(* setparam)(void);
 } usbh_uvc_cb_t;
 
 typedef struct {
@@ -86,12 +107,12 @@ typedef struct {
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
-int usbh_uvc_init(usbh_uvc_cb_t *cb);
+int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb);
 void usbh_uvc_deinit(void);
-int usbh_uvc_stream_on(uvc_config_t *para, u32 itf_num);
+int usbh_uvc_stream_on(usbh_uvc_s_ctx_t *para, u32 itf_num);
 int usbh_uvc_stream_off(u32 itf_num);
 int usbh_uvc_stream_state(u32 itf_num);
-int usbh_uvc_set_param(uvc_config_t *para, u32 itf_num);
+int usbh_uvc_set_param(usbh_uvc_s_ctx_t *para, u32 itf_num);
 usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num);
 void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num);
 

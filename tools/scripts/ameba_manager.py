@@ -42,6 +42,10 @@ class AmebaManager:
                 'action': self.op_monitor,
                 'help': 'Serial monitor.'
             },
+            'jlink': {
+                'action': self.op_jlink,
+                'help': 'J-Link tool.'
+            },
             'new-project': {
                 'action': self.create_new_project,
                 'help': 'Create a new empty project in the given path. e.g. ameba.py new-project path/to/your/project [-a app_name]'
@@ -397,6 +401,25 @@ class AmebaManager:
 
         print(f"Start to flash {GREEN}{soc_info['name']}{RESET} ...")
         return run_script(self.script_dir, "flash.py", flash_args)
+
+    def op_jlink(self, args: List) -> bool:
+        if not self._check_ready(): return False
+
+        if args and not args[0].startswith('-'):
+            if not self.op_set_project(args[0]):
+                return False
+            args = args[1:]
+
+        soc_info = self._get_current_soc()
+        if not soc_info: return False
+
+        jlink_args = args
+        if '--script-dir' not in jlink_args and '-sd' not in jlink_args:
+            # default in: build_RTLxxx/jlink_script
+            jlink_args += ['--script-dir', os.path.join(self.soc_workdir, 'jlink_script')]
+
+        jlink_args += ['--chip', soc_info['project']]
+        return run_script(os.path.join(self.script_dir, 'jlink_script'), "jlink.py", jlink_args)
 
     def op_clean_soc(self, soc_name=None) -> bool:
         if not self._check_ready(): return False

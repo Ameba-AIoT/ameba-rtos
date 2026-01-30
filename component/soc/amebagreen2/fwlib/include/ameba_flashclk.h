@@ -7,6 +7,10 @@
 #ifndef _AMEBA_FLASH_CLK_H
 #define _AMEBA_FLASH_CLK_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Other definations --------------------------------------------------------*/
 typedef enum {
 	FlashClass1 = 0,
@@ -29,5 +33,9 @@ typedef struct {
 
 void flash_highspeed_setup(void);
 void Combo_SPIC_Init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  //_AMEBA_FLASH_CLK_H

@@ -766,6 +766,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup FLASH_Exported_Types FLASH Exported Types
@@ -1073,6 +1077,10 @@ extern u32 SPIC_CALIB_PATTERN[2];
 #define SPIC_DR_DEPTH		(32)//32*8Bit
 #define U32BLOCKSIZE		(sizeof(u32))
 #define UNALIGNED32(X)		((u32)(X) & (U32BLOCKSIZE - 1))
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

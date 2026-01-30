@@ -260,24 +260,21 @@ static void at_fs_help(void)
 
 //AT+FS=<operation>,<filename>,<offset>,<length>
 // operation: 0=list, 1=delete, 2=get size, 3=read, 4=write
-void at_fs(void *arg)
+void at_fs(u16 argc, char **argv)
 {
-	int argc = 0;
-	char *argv[MAX_ARGC] = {0};
 	u8 *buffer = NULL;
 	u8 operation = 0;
 	char *filename = NULL;
 	int offset = 0, length = 0;
 	u8 error_no = 0;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGW(TAG, "The parameters can not be ignored\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
-	if ((argc < 2) || (argc > 5)) {
+	if (argc < 2 || argc > 5) {
 		RTK_LOGW(TAG, "The parameters format ERROR\r\n");
 		error_no = 1;
 		goto end;
@@ -538,23 +535,21 @@ static void at_cert_help(void)
 	RTK_LOGI(TAG, "\t<index>:\tcert index, start from 1\r\n");
 }
 
-void at_cert(void *arg)
+void at_cert(u16 argc, char **argv)
 {
-	int argc = 0, res;
-	char *argv[MAX_ARGC] = {0};
 	char *path = NULL;
 	char *prefix;
 	FILE *finfo;
 	char *buffer = NULL;
 	u8 error_no = 0, role, index;
+	int res = -1;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGW(TAG, "The parameters can not be ignored\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
 	if (argc != 3) {
 		RTK_LOGW(TAG, "Number of parameters is wrong\r\n");
 		error_no = 1;
@@ -564,8 +559,19 @@ void at_cert(void *arg)
 	role = atoi(argv[1]);
 	index = atoi(argv[2]);
 
+	if (role > 1 || index > 10) {
+		RTK_LOGW(TAG, "Parameters are invalid\r\n");
+		error_no = 1;
+		goto end;
+	}
+
 	path = (char *)rtos_mem_zmalloc(VFS_PATH_MAX);
 	buffer = (char *)rtos_mem_zmalloc(MAX_CERT_LEN + 1);
+	if (path == NULL || buffer == NULL) {
+		RTK_LOGW(TAG, "Memory allocation failed\r\n");
+		error_no = 2;
+		goto end;
+	}
 	memset(buffer, 0, sizeof(buffer));
 	prefix = find_vfs_tag(g_cert_fs);
 	if (prefix == NULL) {
@@ -588,6 +594,8 @@ void at_cert(void *arg)
 	}
 	at_printf("\r\n");
 
+	memset(buffer, 0, sizeof(buffer));
+
 	DiagSnPrintf(path, VFS_PATH_MAX, "%s:CERT/%s_key_%d.key", prefix, role == 0 ? "client" : "server", index);
 	at_printf("%s\r\n", path);
 	finfo = fopen(path, "r");
@@ -601,6 +609,8 @@ void at_cert(void *arg)
 		fclose(finfo);
 	}
 	at_printf("\r\n");
+
+	memset(buffer, 0, sizeof(buffer));
 
 	DiagSnPrintf(path, VFS_PATH_MAX, "%s:CERT/%s_cert_%d.crt", prefix, role == 0 ? "client" : "server", index);
 	at_printf("%s\r\n", path);
@@ -642,19 +652,16 @@ static void at_fs_region_help(void)
 	RTK_LOGI(TAG, "\t<fs region>:\t1=region1, 2=region2\r\n");
 }
 
-void at_fs_region(void *arg)
+void at_fs_region(u16 argc, char **argv)
 {
-	int argc = 0;
-	char *argv[MAX_ARGC] = {0};
 	u8 error_no = 0, region;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGW(TAG, "The parameters can not be ignored\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
 	if (argc != 2) {
 		RTK_LOGW(TAG, "Number of parameters is wrong\r\n");
 		error_no = 1;
@@ -686,14 +693,9 @@ end:
 
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_fs_items[] = {
 	{"+FS", at_fs},
 	{"+CERT", at_cert},
 	{"+FSRGN", at_fs_region},
 };
-
-void at_fs_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_fs_items, sizeof(at_fs_items) / sizeof(at_fs_items[0]));
-}

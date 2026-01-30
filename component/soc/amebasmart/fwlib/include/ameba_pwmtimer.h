@@ -194,6 +194,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -615,6 +619,10 @@ extern u32 APBPeriph_TIMx_CLOCK[TimerNum];
 
 #define TIMER_TICK_US					31
 #define TIMER_TICK_US_X4				(4*1000000/32000) //32k clock, 31.25us every timer_tick
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

@@ -24,7 +24,7 @@
 #endif
 
 typedef void (*log_init_t)(void);
-typedef void (*log_act_t)(void *);
+typedef void (*log_act_t)(u16 argc, char **argv);
 typedef struct _at_command_item_ {
 	const char *log_cmd;
 	log_act_t at_act;

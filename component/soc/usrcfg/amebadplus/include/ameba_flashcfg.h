@@ -7,6 +7,10 @@
 #ifndef _AMEBA_FLASHCFG_H_
 #define _AMEBA_FLASHCFG_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const u16 Flash_Speed;
 extern const u16 Data_Flash_Speed;
 
@@ -21,4 +25,9 @@ extern void flash_init_userdef(void);
 extern u32 flash_get_readmode(u32 ReadMode);
 extern FlashInfo_TypeDef *flash_get_chip_info(u32 flash_id);
 void flash_get_layout_info(u32 type, u32 *start, u32 *end);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

@@ -439,6 +439,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 #define SEC_BOOT_ALG              (SEC_CFG2 + 3)
@@ -450,6 +454,10 @@
 #define SEC_ROM_PATCH_EMPTY 3
 
 #define SEC_BIT_SWTRIG_UART_DOWNLOAD_DISABLE            ((u32)0x00000001 << 11)
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

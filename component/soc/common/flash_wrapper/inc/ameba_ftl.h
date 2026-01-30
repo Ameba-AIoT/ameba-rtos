@@ -12,6 +12,10 @@
 #include "ameba_soc.h"
 #include "ameba_ftl_errno.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 #define NAND_ONFI_MFG_LEN				12U
@@ -52,6 +56,10 @@ struct __PACKED ameba_flash_info {
 /* Exported functions --------------------------------------------------------*/
 
 void ftl_enable_4byte_address_mode(bool status);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _AMEBA_FTL_H_
 

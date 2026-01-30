@@ -34,8 +34,13 @@
 #define USBD_UAC_PID                                USB_PID /**< Product ID. */
 
 /* Uac Endpoint parameters */
+#if defined (CONFIG_AMEBAGREEN2)
+#define USBD_UAC_ISOC_IN_EP                         0x84U   /**< EP for ISOC IN. */
+#define USBD_UAC_ISOC_OUT_EP                        0x02U   /**< EP for ISOC OUT. */
+#else
 #define USBD_UAC_ISOC_IN_EP                         0x81U   /**< EP for ISOC IN. */
 #define USBD_UAC_ISOC_OUT_EP                        0x02U   /**< EP for ISOC OUT. */
+#endif
 
 /* Audio channel count */
 #define USBD_UAC_CH_CNT_2                           2U /**< Audio 2 channel count. */

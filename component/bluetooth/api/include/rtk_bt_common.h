@@ -265,6 +265,7 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_DISCONN_WITH_REASON,
 	RTK_BT_LE_GAP_ACT_UPDATE_CONN_PARAM,
 	RTK_BT_LE_GAP_ACT_READ_RSSI,
+	RTK_BT_LE_GAP_ACT_READ_REMOTE_VERSION,
 	RTK_BT_LE_GAP_ACT_MODIFY_WHITELIST,
 	RTK_BT_LE_GAP_ACT_GET_CONN_INFO,
 	RTK_BT_LE_GAP_ACT_GET_DEV_STATE,
@@ -359,16 +360,17 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_LE_GAP_EVT_ADV_START_IND = 1,            /*!< Indicate LE adv started, with msg @ref rtk_bt_le_adv_start_ind_t */
-	RTK_BT_LE_GAP_EVT_ADV_STOP_IND,                 /*!< Indicate LE adv stopped, with msg @ref rtk_bt_le_adv_stop_ind_t*/
-	RTK_BT_LE_GAP_EVT_CONNECT_IND,                  /*!< Indicate LE connection complete, with msg @ref rtk_bt_le_conn_ind_t*/
-	RTK_BT_LE_GAP_EVT_DISCONN_IND,                  /*!< Indicate LE disconnection complete, with msg @ref rtk_bt_le_disconn_ind_t*/
+	RTK_BT_LE_GAP_EVT_ADV_STOP_IND,                 /*!< Indicate LE adv stopped, with msg @ref rtk_bt_le_adv_stop_ind_t */
+	RTK_BT_LE_GAP_EVT_CONNECT_IND,                  /*!< Indicate LE connection complete, with msg @ref rtk_bt_le_conn_ind_t */
+	RTK_BT_LE_GAP_EVT_DISCONN_IND,                  /*!< Indicate LE disconnection complete, with msg @ref rtk_bt_le_disconn_ind_t */
 	RTK_BT_LE_GAP_EVT_SCAN_START_IND,               /*!< Indicate LE scan started, with msg @ref rtk_bt_le_scan_start_ind_t */
-	RTK_BT_LE_GAP_EVT_SCAN_RES_IND,                 /*!< Indicate LE scan data report, with msg @ref rtk_bt_le_scan_res_ind_t*/
-	RTK_BT_LE_GAP_EVT_SCAN_STOP_IND,                /*!< Indicate LE scan stopped, with msg @ref rtk_bt_le_scan_stop_ind_t*/
-	RTK_BT_LE_GAP_EVT_CONN_UPDATE_IND,              /*!< Indicate LE connection parameter updated, with msg @ref rtk_bt_le_conn_update_ind_t*/
+	RTK_BT_LE_GAP_EVT_SCAN_RES_IND,                 /*!< Indicate LE scan data report, with msg @ref rtk_bt_le_scan_res_ind_t */
+	RTK_BT_LE_GAP_EVT_SCAN_STOP_IND,                /*!< Indicate LE scan stopped, with msg @ref rtk_bt_le_scan_stop_ind_t */
+	RTK_BT_LE_GAP_EVT_CONN_UPDATE_IND,              /*!< Indicate LE connection parameter updated, with msg @ref rtk_bt_le_conn_update_ind_t */
 	RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND,   /*!< Indicate LE remote device connection parameter change request, with msg @ref rtk_bt_le_remote_conn_update_req_ind_t. Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND,          /*!< Indicate LE data length changed, with msg @ref rtk_bt_le_data_len_change_ind_t */
 	RTK_BT_LE_GAP_EVT_PHY_UPDATE_IND,               /*!< Indicate LE PHY updated, with msg @ref rtk_bt_le_phy_update_ind_t */
+	RTK_BT_LE_GAP_EVT_READ_REMOTE_VERSION_IND,      /*!< Indicate LE read remote version information complete, with msg @ref rtk_bt_le_read_remote_version_ind_t */
 	RTK_BT_LE_GAP_EVT_AUTH_PAIRING_CONFIRM_IND,     /*!< Indicate LE just work pairing need to confirm, with msg @ref rtk_bt_le_auth_pair_cfm_ind_t */
 	RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_DISPLAY_IND,     /*!< Indicate LE pairing passkey need to display, with msg @ref rtk_bt_le_auth_key_display_ind_t */
 	RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_INPUT_IND,       /*!< Indicate LE pairing need to input passkey, with msg @ref rtk_bt_le_auth_key_input_ind_t */
@@ -376,11 +378,11 @@ typedef enum {
 	RTK_BT_LE_GAP_EVT_AUTH_OOB_KEY_INPUT_IND,       /*!< Indicate LE pairing need to input oob key, with msg @ref rtk_bt_le_auth_oob_input_ind_t */
 	RTK_BT_LE_GAP_EVT_AUTH_COMPLETE_IND,            /*!< Indicate LE auth complete, with msg @ref rtk_bt_le_auth_complete_ind_t */
 	RTK_BT_LE_GAP_EVT_BOND_MODIFY_IND,              /*!< Indicate LE bond info modified, with msg @ref rtk_bt_le_bond_modify_ind_t */
-	RTK_BT_LE_GAP_EVT_EXT_ADV_IND,                  /*!< Indicate LE ext adv state, with msg @ref rtk_bt_le_ext_adv_ind_t*/
-	RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND,             /*!< Indicate LE ext scan data report, with msg @ref rtk_bt_le_ext_scan_res_ind_t*/
-	RTK_BT_LE_GAP_EVT_PA_IND,                       /*!< Indicate LE periodic adv state, with msg @ref rtk_bt_le_pa_ind_t*/
-	RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND,            /*!< Indicate LE periodic adv synchronization state, with msg @ref rtk_bt_le_pa_sync_ind_t*/
-	RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND,            /*!< Indicate LE periodic adv synchronization adv report, with msg @ref rtk_bt_le_pa_adv_report_ind_t*/
+	RTK_BT_LE_GAP_EVT_EXT_ADV_IND,                  /*!< Indicate LE ext adv state, with msg @ref rtk_bt_le_ext_adv_ind_t */
+	RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND,             /*!< Indicate LE ext scan data report, with msg @ref rtk_bt_le_ext_scan_res_ind_t */
+	RTK_BT_LE_GAP_EVT_PA_IND,                       /*!< Indicate LE periodic adv state, with msg @ref rtk_bt_le_pa_ind_t */
+	RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND,            /*!< Indicate LE periodic adv synchronization state, with msg @ref rtk_bt_le_pa_sync_ind_t */
+	RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND,            /*!< Indicate LE periodic adv synchronization adv report, with msg @ref rtk_bt_le_pa_adv_report_ind_t */
 	RTK_BT_LE_GAP_EVT_RESOLV_LIST_MODIFY_IND,       /*!< Indicate LE resolving list modified, with msg @ref rtk_bt_le_modify_resolv_list_ind_t */
 	RTK_BT_LE_GAP_EVT_RESOLV_LIST_PENDING_IND,      /*!< Indicate LE resolving list modification is pending, with msg @ref rtk_bt_le_resolv_list_pending_ind_t */
 	RTK_BT_LE_GAP_EVT_TXPOWER_REPORT_IND,           /*!< Indicate LE Tx power report, with msg @ref rtk_bt_le_txpower_ind_t */

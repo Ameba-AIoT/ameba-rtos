@@ -11,6 +11,7 @@
 
 #include "usbh.h"
 #include "usbh_composite_config.h"
+#include "usb_cdc_acm.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -25,26 +26,10 @@
  * @{
  */
 
-#define CDC_LINE_CODING_DATA_LEN                    0x07U /**< Length of the line coding data length. */
-
 /** @} End of Host_Composite_Constants group*/
 /** @} End of USB_Host_Constants group*/
 
 /* Exported types ------------------------------------------------------------*/
-
-/* */
-/**
- * @brief USB CDC ACM line coding structure .
- */
-typedef union {
-	u8 d8[CDC_LINE_CODING_DATA_LEN];
-	struct {
-		u32 dwDteRate;    /**< Data terminal rate, in bits per second */
-		u8  bCharFormat;  /**< Stop bits */
-		u8  bParityType;  /**< Parity */
-		u8  bDataBits;    /**< Data bits (5, 6, 7, 8 or 16) */
-	} b;
-} usbh_composite_cdc_acm_line_coding_t;
 
 /* CDC ACM user callback interface */
 typedef struct {
@@ -119,7 +104,7 @@ typedef struct {
 	* @param[in] buf: Pointer to the line coding structure.
 	* @return 0 on success, non-zero on failure.
 	*/
-	int(* line_coding_changed)(usbh_composite_cdc_acm_line_coding_t *line_coding);
+	int(* line_coding_changed)(usb_cdc_line_coding_t *line_coding);
 
 	usbh_composite_cdc_acm_param_t *priv;
 } usbh_composite_cdc_acm_usr_cb_t;
@@ -130,8 +115,8 @@ typedef struct {
 	usbh_pipe_t bulk_out;   /**< Bulk OUT Endpoint Info. */
 	usbh_pipe_t intr_in;    /**< INTR In Endpoint Info. */
 
-	usbh_composite_cdc_acm_line_coding_t    *line_coding;      /**< Pointer to line coding  */
-	usbh_composite_cdc_acm_line_coding_t    *user_line_coding; /**< Pointer to user line coding */
+	usb_cdc_line_coding_t    *line_coding;      /**< Pointer to line coding  */
+	usb_cdc_line_coding_t    *user_line_coding; /**< Pointer to user line coding */
 	usbh_composite_cdc_acm_param_t          *priv_param;       /**< Pointer to private params */
 	usbh_composite_cdc_acm_param_t          *param_item;       /**< Pointer to choose param */
 	usbh_composite_cdc_acm_usr_cb_t         *cb;               /**< User callback structure */

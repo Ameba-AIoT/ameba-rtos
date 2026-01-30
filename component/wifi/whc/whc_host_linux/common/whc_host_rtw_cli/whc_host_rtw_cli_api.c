@@ -39,8 +39,8 @@ int whc_host_do_mp_cmd(struct sk_buff *skb, struct genl_info *info)
 		return -ENOMEM;
 	}
 
-	whc_fullmac_host_mp_cmd((dma_addr_t)string_data, string_len,
-							(dma_addr_t)buf);
+	whc_host_mp_cmd((dma_addr_t)string_data, string_len,
+					(dma_addr_t)buf);
 
 	whc_bridge_host_send_to_user(buf, NLMSG_DEFAULT_SIZE, 0);
 
@@ -66,8 +66,8 @@ int whc_host_do_dbg_cmd(struct sk_buff *skb, struct genl_info *info)
 		return -ENOMEM;
 	}
 
-	whc_fullmac_host_iwpriv_cmd((dma_addr_t)string_data, string_len,
-								string_data, buf);
+	whc_host_iwpriv_cmd((dma_addr_t)string_data, string_len,
+						string_data, buf);
 
 	whc_bridge_host_send_to_user(buf, NLMSG_DEFAULT_SIZE, 0);
 

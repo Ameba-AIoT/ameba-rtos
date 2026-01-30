@@ -11,6 +11,10 @@
 
 #include "basic_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 #define USB_LEN_DEV_QUALIFIER_DESC                     0x0AU
@@ -150,6 +154,10 @@ typedef struct {
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __USBD_DEF_H */
 

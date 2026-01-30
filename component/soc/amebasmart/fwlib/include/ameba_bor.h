@@ -7,6 +7,10 @@
 #ifndef _AMEBA_BOR_H_
 #define _AMEBA_BOR_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup BOR
   * @verbatim
   *****************************************************************************************
@@ -107,5 +111,9 @@ void BOR_Enable(u32 newstatus);
 void BOR_DbncSet(u32 Dbnc_Value);
 void BOR_ClearINT(void);
 void BOR_ModeSet(u32 Option);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_AMEBA_BOR_H_

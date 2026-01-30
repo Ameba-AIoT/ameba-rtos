@@ -5,6 +5,11 @@
  */
 
 #ifndef _AMEBA_SOCPS_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _AMEBA_SOCPS_H_
 
 
@@ -60,4 +65,9 @@ extern void SOCPS_DeepSleep_RAM(void);
 extern void SOCPS_Peripheral_Clk_Sleep(u8 state);
 extern void SOCPS_UartRxPinWakeSet(u32 status);
 extern void SOCPS_SetReguOCP(u8 state);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  //_AMEBA_SOCPS_H_

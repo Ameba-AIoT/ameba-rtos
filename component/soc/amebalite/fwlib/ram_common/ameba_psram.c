@@ -699,7 +699,7 @@ void PSRAM_MEM_Write(u8 cmd, u32 addr, u32 write_len, u8 *write_data)
   * @retval None
   * @note cache will be disable during calibration
   */
-bool PSRAM_calibration(u32 log_en)
+bool PSRAM_calibration(void)
 {
 	PSPHY_TypeDef *psram_phy = PSRAMPHY_DEV;
 
@@ -724,9 +724,7 @@ bool PSRAM_calibration(u32 log_en)
 		windowt_size = 0;
 		windowt_start = -1;
 		windowt_end = -1;
-		if (log_en) {
-			RTK_LOGI(TAG, "===phase %lx =====\n", phase);
-		}
+		RTK_LOGD(TAG, "===phase %lx =====\n", phase);
 
 		for (caltempN = 0; caltempN < 32; caltempN++) {
 			psram_phy->PSPHY_CAL_PAR = tempPHYPara | caltempN | PSPHY_PRE_CAL_PHASE(phase);
@@ -741,9 +739,8 @@ bool PSRAM_calibration(u32 log_en)
 			}
 
 			if (_memcmp(tempdatard, PSRAM_CALIB_PATTERN, 24) == 0) {
-				if (log_en) {
-					RTK_LOGI(TAG, "ok %lx %lx %lx %lx %lx %lx %lx\n", caltempN, tempdatard[0], tempdatard[1], tempdatard[2], tempdatard[3], tempdatard[4], tempdatard[5]);
-				}
+				RTK_LOGD(TAG, "ok %lx %lx %lx %lx %lx %lx %lx\n", caltempN, tempdatard[0], tempdatard[1], tempdatard[2], tempdatard[3], tempdatard[4], tempdatard[5]);
+
 				if (windowt_start < 0) {
 					windowt_start = caltempN;
 				}
@@ -759,9 +756,8 @@ bool PSRAM_calibration(u32 log_en)
 					}
 				}
 			} else {
-				if (log_en) {
-					RTK_LOGI(TAG, "fail %lx %lx %lx %lx %lx %lx %lx\n", caltempN, tempdatard[0], tempdatard[1], tempdatard[2], tempdatard[3], tempdatard[4], tempdatard[5]);
-				}
+				RTK_LOGD(TAG, "fail %lx %lx %lx %lx %lx %lx %lx\n", caltempN, tempdatard[0], tempdatard[1], tempdatard[2], tempdatard[3], tempdatard[4], tempdatard[5]);
+
 				if (windowt_start >= 0) {
 					if (windowt_size > window_size) {
 						window_start = windowt_start;
@@ -779,7 +775,7 @@ bool PSRAM_calibration(u32 log_en)
 	}
 
 
-	RTK_LOGI(TAG, "CalNmin = %x CalNmax = %x WindowSize = %x phase: %x \n", window_start, window_end, window_size, phase_cnt);
+	RTK_LOGI(TAG, "Cal win size %ld\n", window_size);
 
 	if ((window_size) < 9) {
 		return FALSE;
@@ -929,7 +925,7 @@ void set_psram_wakeup_mode(u32 type)
 	if (PSRAM_CHECK_INT(psram_phy->PSPHY_CAL_CTRL)) {
 		temp = psram_phy->PSPHY_CAL_CTRL;
 		psram_phy->PSPHY_CAL_CTRL = temp;
-		PSRAM_calibration(DISABLE);
+		PSRAM_calibration();
 		HAL_WRITE32((u32)__km4_bd_psram_start__, 0x0, rram->psram_backup[0]);
 		HAL_WRITE32((u32)__km4_bd_psram_start__, 0x50000, rram->psram_backup[1]);
 		HAL_WRITE32((u32)__km4_bd_psram_start__, 0x100000, rram->psram_backup[2]);

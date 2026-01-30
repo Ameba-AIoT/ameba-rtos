@@ -20,6 +20,10 @@
 
 #include "basetype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Maximum number of cores supported in multi-core configuration */
 #define MAX_ASIC_CORES                  4
 
@@ -236,6 +240,10 @@ typedef enum {
 } DecErrorHandling;
 
 int hx170dec_init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 /*! @} - end group common*/
 

@@ -402,9 +402,17 @@
 /* AUTO_GEN_WAKE_SRC_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 #define WAKE_MASK1_CHECK		(u32)(3  << 30) /*set BIT31|BIT30 for wakemask1 to distingush from mask0*/
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif

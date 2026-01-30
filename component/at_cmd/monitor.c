@@ -16,30 +16,71 @@
 #endif
 
 static const char *const TAG = "MONITOR";
+extern u8 __atcmd_table_start__[];
+extern u8 __atcmd_table_end__[];
+
+void cmd_dump_help(void)
+{
+	RTK_LOGI(TAG, "DW <HexAddr> [Length] [b]\n"
+			 "\t\t Dump memory/hardware register (Address in hex):\n"
+			 "\t\t DW <hex_addr>         : Dump one word (4 bytes)\n"
+			 "\t\t DW <hex_addr> <len>   : Dump <len> words\n"
+			 "\t\t DW <hex_addr> <len> b : Dump <len> bytes\n"
+			);
+}
+
+void cmd_write_help(void)
+{
+	RTK_LOGI(TAG, "EW <HexAddr> <HexValue>\n"
+			 "\t\t Write one dword to memory or hardware register\n"
+			 "\t\t Example: EW 60001000 AABB1122\n"
+			);
+}
+
+void cmd_reboot_help(void)
+{
+	RTK_LOGI(TAG, "REBOOT \n"
+			 "\t\t <item, string> : \n"
+			 "\t\t item: uartburn or N/A \n"
+			 "\t\t \n"
+			);
+}
+
+void cmd_efuse_help(void)
+{
+	RTK_LOGI(TAG, "EFUSE \n"
+			 "\t\t wmap addr(hex) len(hex) data(hex)\n"
+			 "\t\t rmap \n"
+			 "\t\t <wmap 0x00 0x2 8195> efuse[0]=0x81, efuse [1]=0x95\n"
+			 "\t\t <wmap 0xF0 0x4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
+			);
+}
+
+void cmd_tickps_help(void)
+{
+	RTK_LOGI(TAG, "TICKPS \n"
+			 "\t\t r: release os wakelock \n"
+			 "\t\t a: acquire os wakelock \n"
+			);
+}
 
 u32
 CmdRamHelp(
 	u16 argc,
-	u8  *argv[]
+	u8 *argv[]
 )
 {
 	/* To avoid gcc warnings */
 	(void) argc;
 	(void) argv;
 
-	COMMAND_TABLE *cmd_table = (COMMAND_TABLE *)__cmd_table_start__;
-	u32 cmd_mum = ((__cmd_table_end__ - __cmd_table_start__) / sizeof(COMMAND_TABLE));
-	u32	index ;
+	cmd_dump_help();
+	cmd_write_help();
+	cmd_reboot_help();
+	cmd_efuse_help();
+	cmd_tickps_help();
 
-	RTK_LOGS(TAG, RTK_LOG_ALWAYS, "----------------- TEST COMMAND MODE HELP %x------------------\n", cmd_mum);
-	for (index = 0  ; index < cmd_mum; index++) {
-		if (cmd_table[index].msg) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s\n", cmd_table[index].msg);
-		}
-	}
-	RTK_LOGS(TAG, RTK_LOG_ALWAYS, "----------------- TEST COMMAND MODE END  %x------------------\n", SYS_CPUID());
-
-	return TRUE ;
+	return TRUE;
 }
 
 u32
@@ -66,8 +107,12 @@ CmdTickPS(
 	u8  *argv[]
 )
 {
-	/* To avoid gcc warnings */
-	UNUSED(argc);
+	int ret = TRUE;
+
+	if (argc == 0) {
+		ret = FALSE;
+		goto end;
+	}
 
 	if (_strcmp((const char *)argv[0], "r") == 0) { // release
 		pmu_release_wakelock(PMU_OS);
@@ -92,7 +137,11 @@ CmdTickPS(
 		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "dslp_lockbit:%lx\n", pmu_get_deepwakelock_status());
 	}
 
-	return TRUE;
+end:
+	if (ret != TRUE) {
+		cmd_tickps_help();
+	}
+	return ret;
 }
 
 u32 cmd_dump_word(u16 argc, u8  *argv[])
@@ -101,12 +150,15 @@ u32 cmd_dump_word(u16 argc, u8  *argv[])
 	u32 Len = 1; //default value
 	u32 Is_Byte = FALSE;
 	u32 OTF_Enable = SYSCFG_OTP_RSIPEn();
+	int ret = TRUE;
 
 	/* get parameters */
 	if (argc < 1 || argc > 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong argument number!\r\n");
-		return FALSE;
+		ret = FALSE;
+		goto end;
 	}
+
 	if (argc >= 3) {
 		Is_Byte = *((const char *)argv[2]) == 'B' || *((const char *)argv[2]) == 'b';
 	}
@@ -136,31 +188,44 @@ u32 cmd_dump_word(u16 argc, u8  *argv[])
 		rtk_log_memory_dump_word((u32 *)Src, Len);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong cmd!\r\n");
-		return FALSE;
+		ret = FALSE;
+		goto end;
 	}
 
-	return TRUE;
+end:
+	if (ret != TRUE) {
+		cmd_dump_help();
+	}
+	return ret;
 }
 
 u32 cmd_write_word(u16 argc, u8  *argv[])
 {
-	UNUSED(argc);
-
 	u32 Src;
 	u32 Value;
+	int ret = TRUE;
 
-	Src = _strtoul((const char *)(argv[0]), (char **)NULL, 16);
+	if (argc != 2) {
+		ret = FALSE;
+		goto end;
+	} else {
+		Src = _strtoul((const char *)(argv[0]), (char **)NULL, 16);
 
-	Src &= ~(0x03);
+		Src &= ~(0x03);
 
-	Value = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
-	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%08x] %08x \n", Src, Value);
+		Value = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%08x] %08x \n", Src, Value);
 
-	*(volatile u32 *)(Src) = Value;
+		*(volatile u32 *)(Src) = Value;
 
-	DCache_Clean(Src, sizeof(u32));
+		DCache_Clean(Src, sizeof(u32));
+	}
 
-	return 0;
+end:
+	if (ret != TRUE) {
+		cmd_write_help();
+	}
+	return ret;
 }
 
 u32 cmd_efuse_protect(u16 argc, u8  *argv[])
@@ -171,10 +236,17 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 	u32 Addr = 0;
 	u8 *EfuseBuf = NULL;
 	char *DString;
+	int ret = TRUE;
+
+	if (argc == 0) {
+		ret = FALSE;
+		goto exit;
+	}
 
 	if ((EfuseBuf = rtos_mem_zmalloc(MAX(OTP_REAL_CONTENT_LEN, OTP_LMAP_LEN))) == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "efuse mem malloc fail \n");
-		return 0;
+		ret = FALSE;
+		goto exit;
 	}
 
 	/* efuse rmap */
@@ -190,6 +262,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 
 		if (OTP_LogicalMap_Read(EfuseBuf, Addr, Len) == RTK_FAIL) {
 			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
+			ret = FALSE;
 			goto exit;
 		}
 
@@ -207,6 +280,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 	if (_strcmp((const char *)argv[0], "wmap") == 0) {
 		if (argc < 4) {
 			RTK_LOGE(TAG, "Invalid argc. \n");
+			ret = FALSE;
 			goto exit;
 		}
 
@@ -217,6 +291,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 
 		if (Cnt % 2) {
 			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
+			ret = FALSE;
 			goto exit;
 		} else {
 			Cnt = Cnt / 2;
@@ -234,6 +309,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 
 		if (OTP_LogicalMap_Write(Addr, Len, (u8 *)EfuseBuf) == RTK_FAIL) {
 			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
+			ret = FALSE;
 			goto exit;
 		}
 	}
@@ -251,6 +327,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		for (index = Addr; index < Addr + Len; index++) {
 			if (OTP_Read8(index, EfuseBuf + index) == RTK_FAIL) {
 				RTK_LOGE(TAG, "OTP_Read8 fail \n");
+				ret = FALSE;
 				goto exit;
 			}
 		}
@@ -270,6 +347,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 	if (_strcmp((const char *)argv[0], "wraw") == 0) {
 		if (argc < 4) {
 			RTK_LOGE(TAG, "Invalid argc. \n");
+			ret = FALSE;
 			goto exit;
 		}
 
@@ -280,6 +358,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 
 		if (Cnt % 2) {
 			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
+			ret = FALSE;
 			goto exit;
 		} else {
 			Cnt = Cnt / 2;
@@ -299,6 +378,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 			RTK_LOGI(NOTAG, "wraw: %lx %x \n", Addr + index, EfuseBuf[index]);
 			if (OTP_Write8((Addr + index), EfuseBuf[index]) == RTK_FAIL) {
 				RTK_LOGE(TAG, "OTP_Write8 fail \n");
+				ret = FALSE;
 				goto exit;
 			}
 		}
@@ -318,57 +398,34 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 	}
 
 exit:
-	rtos_mem_free(EfuseBuf);
+	if (ret != TRUE) {
+		cmd_efuse_help();
+	}
+
+	if (EfuseBuf != NULL) {
+		rtos_mem_free(EfuseBuf);
+	}
+
 	return 0;
 }
 
 CMD_TABLE_DATA_SECTION
-static COMMAND_TABLE   shell_cmd_table[] = {
-	{
-		(const u8 *)"?",		0, CmdRamHelp,	(const u8 *)"\tHELP (~?) \n"
-		"\t\t Print this help messag\n"
-	},
-	{
-		(const u8 *)"DW",		4, cmd_dump_word,	(const u8 *)"\tDW <Address, Length>\n"
-		"\t\t Dump memory word or Read Hw word register; \n"
-		"\t\t DW <addr> 		 Dump only one word at the same time, unit: 4Bytes\n"
-		"\t\t DW <addr> <len>	 Dump the specified length of the word, unit: 4Bytes\n"
-		"\t\t DW <addr> <len> b  Dump the specified length of the byte, unit: 1Byte\n"
-	},
-	{
-		(const u8 *)"EW",		2, cmd_write_word,	(const u8 *)"\tEW <Address, Hex>\n"
-		"\t\t Write memory dword or Write Hw dword register \n"
-		"\t\t Can write only one dword at the same time \n"
-		"\t\t Ex: EW Address Value \n"
-	},
-
-	{
-		(const u8 *)"REBOOT",	4, cmd_reboot,	(const u8 *)"\tREBOOT \n"
-		"\t\t <item, string> : \n"
-		"\t\t item: uartburn or N/A \n"
-		"\t\t \n"
-	},
+const COMMAND_TABLE shell_cmd_table[] = {
+	{"?", CmdRamHelp},
+	{"DW", cmd_dump_word},
+	{"EW", cmd_write_word},
+	{"REBOOT", cmd_reboot},
 #ifndef CONFIG_MP_SHRINK
 #if (defined(CONFIG_AMEBASMART) && (defined(CONFIG_ARM_CORE_CA32) || defined(CONFIG_ARM_CORE_CM4))) || \
-	(defined(CONFIG_AMEBAD) && defined(CONFIG_ARM_CORE_CM4)) || \
-	(defined(CONFIG_AMEBALITE) && defined(CONFIG_ARM_CORE_CM4)) || \
-	(defined(CONFIG_AMEBADPLUS) && defined(CONFIG_ARM_CORE_CM4)) || \
-	(defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) || \
-	(defined(CONFIG_AMEBAL2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) || \
-	(defined(CONFIG_RTL8720F) && defined(CONFIG_ARM_CORE_CM4_KM4TZ))
-	{
-		(const u8 *)"EFUSE",	8, cmd_efuse_protect,	(const u8 *)"\tEFUSE \n"
-		"\t\t wmap addr(hex) len(hex) data(hex)\n"
-		"\t\t rmap \n"
-		"\t\t <wmap 0x00 0x2 8195> efuse[0]=0x81, efuse [1]=0x95\n"
-		"\t\t <wmap 0xF0 0x4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
-	},
+    (defined(CONFIG_AMEBAD) && defined(CONFIG_ARM_CORE_CM4)) || \
+    (defined(CONFIG_AMEBALITE) && defined(CONFIG_ARM_CORE_CM4)) || \
+    (defined(CONFIG_AMEBADPLUS) && defined(CONFIG_ARM_CORE_CM4)) || \
+    (defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) || \
+    (defined(CONFIG_AMEBAL2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) || \
+    (defined(CONFIG_RTL8720F) && defined(CONFIG_ARM_CORE_CM4_KM4TZ))
+	{"EFUSE", cmd_efuse_protect},
 #endif
-	{
-		(const u8 *)"TICKPS",	4, CmdTickPS,	(const u8 *)"\tTICKPS \n"
-		"\t\t r: release os wakelock \n"
-		"\t\t a: acquire os wakelock \n"
-	},
+	{"TICKPS", CmdTickPS},
 #endif
 };
 

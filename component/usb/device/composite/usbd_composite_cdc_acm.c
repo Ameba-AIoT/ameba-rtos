@@ -22,7 +22,7 @@ static int composite_cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 composite_cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 static int composite_cdc_acm_handle_ep0_data_out(usb_dev_t *dev);
 static int composite_cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
-static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
+static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -82,7 +82,7 @@ static const u8 usbd_composite_cdc_acm_hs_itf_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
 	USBD_COMP_CDC_INTR_IN_EP,						/* bEndpointAddress */
 	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
-	USB_LOW_BYTE(COMP_CDC_ACM_INTR_IN_PACKET_SIZE), USB_HIGH_BYTE(COMP_CDC_ACM_INTR_IN_PACKET_SIZE),	/* wMaxPacketSize */
+	USB_LOW_BYTE(USB_CDC_ACM_INTR_IN_PACKET_SIZE), USB_HIGH_BYTE(USB_CDC_ACM_INTR_IN_PACKET_SIZE),	/* wMaxPacketSize */
 	COMP_CDC_ACM_HS_INTR_IN_INTERVAL,				/* bInterval */
 
 	/* CDC Data Interface Descriptor */
@@ -101,7 +101,7 @@ static const u8 usbd_composite_cdc_acm_hs_itf_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
 	USBD_COMP_CDC_BULK_OUT_EP,						/* bEndpointAddress */
 	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
-	USB_LOW_BYTE(COMP_CDC_ACM_HS_BULK_MAX_PACKET_SIZE), USB_HIGH_BYTE(COMP_CDC_ACM_HS_BULK_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
+	USB_LOW_BYTE(USB_BULK_HS_MAX_MPS), USB_HIGH_BYTE(USB_BULK_HS_MAX_MPS),  /* wMaxPacketSize: */
 	0x00,											/* bInterval */
 
 	/* BULK IN Endpoint Descriptor */
@@ -109,7 +109,7 @@ static const u8 usbd_composite_cdc_acm_hs_itf_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
 	USBD_COMP_CDC_BULK_IN_EP,						/* bEndpointAddress */
 	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
-	USB_LOW_BYTE(COMP_CDC_ACM_HS_BULK_MAX_PACKET_SIZE), USB_HIGH_BYTE(COMP_CDC_ACM_HS_BULK_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
+	USB_LOW_BYTE(USB_BULK_HS_MAX_MPS), USB_HIGH_BYTE(USB_BULK_HS_MAX_MPS),  /* wMaxPacketSize: */
 	0x00											/* bInterval */
 };  /* usbd_composite_cdc_acm_hs_itf_desc */
 
@@ -167,7 +167,7 @@ static const u8 usbd_composite_cdc_acm_fs_itf_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
 	USBD_COMP_CDC_INTR_IN_EP,						/* bEndpointAddress */
 	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
-	USB_LOW_BYTE(COMP_CDC_ACM_INTR_IN_PACKET_SIZE), USB_HIGH_BYTE(COMP_CDC_ACM_INTR_IN_PACKET_SIZE),	/* wMaxPacketSize */
+	USB_LOW_BYTE(USB_CDC_ACM_INTR_IN_PACKET_SIZE), USB_HIGH_BYTE(USB_CDC_ACM_INTR_IN_PACKET_SIZE),	/* wMaxPacketSize */
 	COMP_CDC_ACM_FS_INTR_IN_INTERVAL,				/* bInterval: */
 
 	/* CDC Data Interface Descriptor */
@@ -186,7 +186,7 @@ static const u8 usbd_composite_cdc_acm_fs_itf_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
 	USBD_COMP_CDC_BULK_OUT_EP,						/* bEndpointAddress */
 	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
-	USB_LOW_BYTE(COMP_CDC_ACM_FS_BULK_MAX_PACKET_SIZE), USB_HIGH_BYTE(COMP_CDC_ACM_FS_BULK_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
+	USB_LOW_BYTE(USB_BULK_FS_MAX_MPS), USB_HIGH_BYTE(USB_BULK_FS_MAX_MPS),  /* wMaxPacketSize: */
 	0x00,											/* bInterval */
 
 	/* BULK IN Endpoint Descriptor */
@@ -194,7 +194,7 @@ static const u8 usbd_composite_cdc_acm_fs_itf_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
 	USBD_COMP_CDC_BULK_IN_EP,						/* bEndpointAddress */
 	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
-	USB_LOW_BYTE(COMP_CDC_ACM_FS_BULK_MAX_PACKET_SIZE), USB_HIGH_BYTE(COMP_CDC_ACM_FS_BULK_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
+	USB_LOW_BYTE(USB_BULK_FS_MAX_MPS), USB_HIGH_BYTE(USB_BULK_FS_MAX_MPS),  /* wMaxPacketSize: */
 	0x00											/* bInterval */
 };  /* usbd_composite_cdc_acm_fs_itf_desc */
 
@@ -224,7 +224,6 @@ const usbd_class_driver_t usbd_composite_cdc_acm_driver = {
   */
 static int composite_cdc_acm_set_config(usb_dev_t *dev, u8 config)
 {
-	int ret = HAL_OK;
 	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;
 	usbd_ep_t *ep_bulk_in = &cdc->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdc->ep_bulk_out;
@@ -236,24 +235,22 @@ static int composite_cdc_acm_set_config(usb_dev_t *dev, u8 config)
 
 	/* Init BULK IN EP */
 	ep_bulk_in->xfer_state = 0U;
-	ep_bulk_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? COMP_CDC_ACM_HS_BULK_IN_PACKET_SIZE : COMP_CDC_ACM_FS_BULK_IN_PACKET_SIZE;
+	ep_bulk_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USB_BULK_HS_MAX_MPS : USB_BULK_FS_MAX_MPS;
 	usbd_ep_init(dev, ep_bulk_in);
 
 	/* Init BULK OUT EP */
-	ep_bulk_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? COMP_CDC_ACM_HS_BULK_OUT_PACKET_SIZE : COMP_CDC_ACM_FS_BULK_OUT_PACKET_SIZE;
+	ep_bulk_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USB_BULK_HS_MAX_MPS : USB_BULK_FS_MAX_MPS;
 	usbd_ep_init(dev, ep_bulk_out);
 
 #if CONFIG_COMP_CDC_ACM_NOTIFY
 	/* Init INTR IN EP */
 	ep_intr_in->xfer_state = 0U;
-	ep_intr_in->mps = COMP_CDC_ACM_INTR_IN_PACKET_SIZE;
+	ep_intr_in->mps = USB_CDC_ACM_INTR_IN_PACKET_SIZE;
 	usbd_ep_init(dev, ep_intr_in);
 #endif
 
 	/* Prepare to receive next BULK OUT packet */
-	usbd_ep_receive(dev, ep_bulk_out);
-
-	return ret;
+	return usbd_ep_receive(dev, ep_bulk_out);
 }
 
 /**
@@ -385,7 +382,7 @@ static int composite_cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 st
   * @param  ep_addr: endpoint address
   * @retval Status
   */
-static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
+static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;
 	usbd_ep_t *ep_bulk_out = &cdc->ep_bulk_out;
@@ -396,9 +393,7 @@ static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 
 		}
 	}
 
-	usbd_ep_receive(dev, ep_bulk_out);
-
-	return HAL_OK;
+	return usbd_ep_receive(dev, ep_bulk_out);
 }
 
 /**
@@ -492,8 +487,8 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 		return ret;
 	}
 
-	if (len > COMP_CDC_ACM_INTR_IN_DATA_SIZE) {
-		len = COMP_CDC_ACM_INTR_IN_DATA_SIZE;
+	if (len > USB_CDC_ACM_INTR_IN_DATA_SIZE) {
+		len = USB_CDC_ACM_INTR_IN_DATA_SIZE;
 	}
 
 	if (ep_intr_in->xfer_state == 0U) {
@@ -510,9 +505,8 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 			usb_os_memcpy((void *)ntf->buf, (void *)data, len);
 
 			if (dev->is_ready) {
-				ep_intr_in->xfer_len = COMP_CDC_ACM_INTR_IN_REQUEST_SIZE + len;
-				usbd_ep_transmit(dev, ep_intr_in);
-				ret = HAL_OK;
+				ep_intr_in->xfer_len = USB_CDC_ACM_INTR_IN_REQUEST_SIZE + len;
+				ret = usbd_ep_transmit(dev, ep_intr_in);
 			} else {
 				ep_intr_in->xfer_state = 0U;
 			}
@@ -664,7 +658,7 @@ int usbd_composite_cdc_acm_deinit(void)
   * @param  len: data length
   * @retval Status
   */
-int usbd_composite_cdc_acm_transmit(u8 *buf, u16 len)
+int usbd_composite_cdc_acm_transmit(u8 *buf, u32 len)
 {
 	int ret = HAL_ERR_HW;
 	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;
@@ -689,8 +683,7 @@ int usbd_composite_cdc_acm_transmit(u8 *buf, u16 len)
 
 			if (dev->is_ready) {
 				ep_bulk_in->xfer_len = len;
-				usbd_ep_transmit(dev, ep_bulk_in);
-				ret = HAL_OK;
+				ret = usbd_ep_transmit(dev, ep_bulk_in);
 			} else {
 				ep_bulk_in->xfer_state = 0U;
 			}
@@ -710,7 +703,7 @@ int usbd_composite_cdc_acm_transmit(u8 *buf, u16 len)
 #if CONFIG_COMP_CDC_ACM_NOTIFY
 int usbd_composite_cdc_acm_notify_serial_state(u16 serial_state)
 {
-	return composite_acm_cdc_notify(COMP_CDC_NOTIFY_SERIAL_STATE, 0, &serial_state, sizeof(serial_state));
+	return composite_acm_cdc_notify(USB_CDC_ACM_NOTIFY_SERIAL_STATE, 0, &serial_state, sizeof(serial_state));
 }
 #endif
 

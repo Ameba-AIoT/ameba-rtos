@@ -7,6 +7,8 @@ from functools import wraps
 from typing import Callable, Union
 import traceback
 import hashlib
+import click
+import copy
 
 from ameba_enums import *
 
@@ -301,3 +303,33 @@ def get_file_md5sum(file_path):
 
 def get_file_dir(file_path):
     return os.path.dirname(os.path.abspath(file_path))
+
+def manifest_preprocess(origin_data):
+    new_data = copy.deepcopy(origin_data)
+    # Add key from outside(global config) of image part if key not in image part
+    for img in ['image1', 'image2', 'image3', 'cert', 'vbmeta']:
+        if img not in new_data:
+            default_logger.info(f"manifest file does not contains {img}")
+            continue
+        #优先级: image内部直接定义>inherit_from>外部的全局定义
+        if "inherit_from" in new_data[img]:
+            for key, value in new_data[new_data[img]["inherit_from"]].items():
+                if key not in new_data[img]:
+                    new_data[img][key] = value
+        for key, value in origin_data.items():
+            if isinstance(value, dict): continue
+
+            if key not in new_data[img]:
+                new_data[img][key] = value
+    return new_data
+
+class BasedIntParamType(click.ParamType):
+    name = 'integer'
+
+    def convert(self, value, param, ctx):
+        try:
+            return int(value, 0)
+        except ValueError:
+            self.fail('%s is not a valid integer. Please use code literals '
+                      'prefixed with 0b/0B, 0o/0O, or 0x/0X as necessary.'
+                      % value, param, ctx)

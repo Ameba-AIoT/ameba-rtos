@@ -8,6 +8,10 @@
 #define _AMEBA_UPS_H_
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -99,6 +103,10 @@ _LONG_CALL_ void UPS_DstConfig(u8 DstType);
 _LONG_CALL_ void UPS_TimOfInCmd(u32 NewState);
 _LONG_CALL_ void UPS_ReverseCmd(u32 NewState);
 _LONG_CALL_ void UPS_SetDbcCnt(u16 Dbc_Cnt);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 #endif

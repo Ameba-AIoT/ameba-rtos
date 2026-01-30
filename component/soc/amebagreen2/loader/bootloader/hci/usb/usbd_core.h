@@ -11,6 +11,10 @@
 
 #include "usbd_hal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -43,6 +47,10 @@ u32 USBD_GetRxDataSize(USBD_HandleTypeDef *pdev, u8  ep_addr);
 void USBD_CtlError(USBD_HandleTypeDef  *pdev, USBD_SetupReqTypedef *req);
 void USBD_GetString(u8 *desc, u8 *unicode, u16 *len);
 void USBD_IRQHandler(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _USBD_CORE_H_ */
 

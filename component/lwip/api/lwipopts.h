@@ -94,7 +94,11 @@ extern unsigned int sys_now(void);
 #define LWIP_SO_RCVTIMEO                1
 #define SO_REUSE                        1
 /* Statistics options */
+#ifdef CONFIG_LWIP_STATS
+#define LWIP_STATS                      1
+#else
 #define LWIP_STATS                      0
+#endif
 /* Other lwip options */
 #define DHCP_COARSE_TIMER_SECS          60
 #define LWIP_COMPAT_MUTEX               0

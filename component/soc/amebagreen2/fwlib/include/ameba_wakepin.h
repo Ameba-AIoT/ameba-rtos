@@ -15,6 +15,11 @@
 
 #define WAKEPIN_EVENT	(AON_BIT_GPIO_PIN0_WAKDET_EVT | AON_BIT_GPIO_PIN1_WAKDET_EVT | AON_BIT_GPIO_PIN2_WAKDET_EVT | AON_BIT_GPIO_PIN3_WAKDET_EVT)
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum wakepin_config {
 	LOW_LEVEL_WAKEUP	= 0, /* when GPIO level is high, will wakeup*/
 	HIGH_LEVEL_WAKEUP	= 1, /* when GPIO level is low, will wakeup*/
@@ -31,4 +36,8 @@ extern void Wakepin_Setting(u32 PinIdx, u32 Polarity);
 extern void Wakepin_Debounce_Setting(u32 Dbnc_cycle, u32 Status);
 extern void WakePin_ClearINT(u32 wakepin);
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif  //_AMEBA_WAKEPIN_H_

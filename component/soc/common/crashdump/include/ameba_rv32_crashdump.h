@@ -7,6 +7,10 @@
 #ifndef RV32_CRASHDUMP_H
 #define RV32_CRASHDUMP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Maximum number of instructions check while backtrace
 #define MAX_INSTR_CHECK (1024)
 
@@ -30,5 +34,9 @@ void crash_dump(uint32_t *pc,
 				uint32_t *reg);
 
 extern uint32_t vTaskCrashCallback(uint32_t *reg, uint32_t src);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

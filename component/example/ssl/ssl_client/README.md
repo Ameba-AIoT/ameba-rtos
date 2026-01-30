@@ -12,10 +12,10 @@ None
 
 2. Modify `SSL_MAX_CONTENT_LEN` in SSL config for large size file.  
 If the transmitted fils size is larger than 16kbytes, `SSL_MAX_CONTENT_LEN` should be set to 16384.
-   - Type command `./menuconfig.py` and choose `CONFIG SSL`-> `Maximum len of incoming fragments` -> 16384.
+   - Use menuconfig and choose `CONFIG SSL`-> `Maximum len of incoming fragments` -> 16384.
 
 3. (Optional) Test for TLS1.3.
-   - Type command `./menuconfig.py` and choose `CONFIG SSL`-> `Enable TLS 1.3`
+   - Use menuconfig and choose `CONFIG SSL`-> `Enable TLS 1.3`
 
 4. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

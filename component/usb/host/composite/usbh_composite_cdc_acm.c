@@ -17,31 +17,6 @@
 #define USBH_CDC_ACM_NOTIFY_BUF_SIZE           256
 #define USBH_CDC_ACM_LOOPBACK_BUF_SIZE         1024
 
-/* CDC Class Codes */
-#define CDC_CLASS_CODE                              0x02U
-#define CDC_COMM_INTERFACE_CLASS_CODE               0x02U
-#define CDC_DATA_INTERFACE_CLASS_CODE               0x0AU
-
-/* CDC Communication sub class codes */
-#define CDC_RESERVED                                0x00U
-#define CDC_ABSTRACT_CONTROL_MODEL                  0x02U
-
-/* CDC Class-Specific Request Codes */
-#define CDC_SEND_ENCAPSULATED_COMMAND               0x00U
-#define CDC_GET_ENCAPSULATED_RESPONSE               0x01U
-#define CDC_SET_COMM_FEATURE                        0x02U
-#define CDC_GET_COMM_FEATURE                        0x03U
-#define CDC_CLEAR_COMM_FEATURE                      0x04U
-#define CDC_SET_LINE_CODING                         0x20U
-#define CDC_GET_LINE_CODING                         0x21U
-#define CDC_SET_CONTROL_LINE_STATE                  0x22U
-#define CDC_SEND_BREAK                              0x23U
-
-/* Communication Interface Class Control Protocol Codes */
-#define CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC         0x00U
-#define CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND         0x01U
-#define CDC_CTRL_PROTOCOL_VENDOR_SPECIFIC           0xFFU
-
 /* CDC ACM state */
 typedef enum {
 	CDC_ACM_STATE_IDLE = 0U,
@@ -56,22 +31,6 @@ typedef enum {
 	CDC_ACM_STATE_CTRL_SETTING_MAX,
 } usbh_composite_cdc_acm_ctrl_state_t;
 
-/* Line coding parity type */
-typedef enum {
-	CDC_ACM_LINE_CODING_PARITY_NO = 0U,
-	CDC_ACM_LINE_CODING_PARITY_ODD,
-	CDC_ACM_LINE_CODING_PARITY_EVEN,
-	CDC_ACM_LINE_CODING_PARITY_MARK,
-	CDC_ACM_LINE_CODING_PARITY_SPACE
-} usbh_composite_cdc_acm_line_coding_parity_t;
-
-/* Line coding char format */
-typedef enum {
-	CDC_ACM_LINE_CODING_CHAR_FORMAT_1_STOP_BITS = 0U,
-	CDC_ACM_LINE_CODING_CHAR_FORMAT_1_5_STOP_BITS,
-	CDC_ACM_LINE_CODING_CHAR_FORMAT_2_STOP_BITS
-} usbh_composite_cdc_acm_line_coding_char_format_t;
-
 /* Private types -------------------------------------------------------------*/
 static u8 usbh_composite_cdc_acm_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 static u8 usbh_composite_cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
@@ -84,8 +43,8 @@ static int usbh_composite_cdc_acm_detach(usb_host_t *host);
 static int usbh_composite_cdc_acm_process(usb_host_t *host, u32 msg);
 static int usbh_composite_cdc_acm_sof(usb_host_t *host);
 static int usbh_composite_cdc_acm_setup(usb_host_t *host);
-static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usbh_composite_cdc_acm_line_coding_t *linecoding);
-static int usbh_composite_cdc_acm_set_line_coding(usb_host_t *host, usbh_composite_cdc_acm_line_coding_t *linecoding);
+static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
+static int usbh_composite_cdc_acm_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
 static int usbh_composite_cdc_acm_process_tx(usb_host_t *host);
 static int usbh_composite_cdc_acm_process_rx(usb_host_t *host);
 static int usbh_composite_cdc_acm_process_intr_rx(usb_host_t *host);
@@ -142,7 +101,7 @@ static int usbh_composite_cdc_acm_receive(u8 *buf, u32 len)
 	usbh_pipe_t *pipe = &cdc->bulk_in;
 
 	if ((cdc->state == CDC_ACM_STATE_IDLE) || (cdc->state == CDC_ACM_STATE_TRANSFER)) {
-		if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
+		if (pipe->xfer_state == USBH_EP_XFER_IDLE || pipe->xfer_state == USBH_EP_XFER_ERROR) {
 			pipe->xfer_buf = buf;
 			pipe->xfer_len = len;
 
@@ -457,7 +416,7 @@ static int usbh_composite_cdc_acm_sof(usb_host_t *host)
   * @param  linecoding: Line coding data pointer
   * @retval Status
   */
-static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usbh_composite_cdc_acm_line_coding_t *linecoding)
+static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding)
 {
 	usbh_setup_req_t setup;
 	u16 windex = 0;
@@ -469,10 +428,10 @@ static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usbh_composi
 #endif
 
 	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = CDC_GET_LINE_CODING;
+	setup.req.bRequest = USB_CDC_ACM_GET_LINE_CODING;
 	setup.req.wValue = 0U;
 	setup.req.wIndex = windex;
-	setup.req.wLength = CDC_LINE_CODING_DATA_LEN;
+	setup.req.wLength = USB_CDC_ACM_LINE_CODING_SIZE;
 
 	return usbh_ctrl_request(host, &setup, linecoding->d8);
 }
@@ -483,7 +442,7 @@ static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usbh_composi
   * @param  linecoding: Line coding data pointer
   * @retval Status
   */
-static int usbh_composite_cdc_acm_set_line_coding(usb_host_t *host, usbh_composite_cdc_acm_line_coding_t *linecoding)
+static int usbh_composite_cdc_acm_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding)
 {
 	usbh_setup_req_t setup;
 	u16 windex = 0;
@@ -495,10 +454,10 @@ static int usbh_composite_cdc_acm_set_line_coding(usb_host_t *host, usbh_composi
 #endif
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = CDC_SET_LINE_CODING;
+	setup.req.bRequest = USB_CDC_ACM_SET_LINE_CODING;
 	setup.req.wValue = 0U;
 	setup.req.wIndex = windex;
-	setup.req.wLength = CDC_LINE_CODING_DATA_LEN;
+	setup.req.wLength = USB_CDC_ACM_LINE_CODING_SIZE;
 
 	return usbh_ctrl_request(host, &setup, linecoding->d8);
 }
@@ -620,12 +579,12 @@ int usbh_composite_cdc_acm_init(usbh_composite_host_t *driver, usbh_composite_cd
 		}
 	}
 
-	cdc->line_coding = (usbh_composite_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usbh_composite_cdc_acm_line_coding_t));
+	cdc->line_coding = (usb_cdc_line_coding_t *)usb_os_malloc(sizeof(usb_cdc_line_coding_t));
 	if (cdc->line_coding == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc line code fail\n");
 		return HAL_ERR_MEM;
 	}
-	cdc->user_line_coding = (usbh_composite_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usbh_composite_cdc_acm_line_coding_t));
+	cdc->user_line_coding = (usb_cdc_line_coding_t *)usb_os_malloc(sizeof(usb_cdc_line_coding_t));
 	if (cdc->user_line_coding == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc user line code fail\n");
 		usb_os_mfree(cdc->line_coding);
@@ -635,8 +594,8 @@ int usbh_composite_cdc_acm_init(usbh_composite_host_t *driver, usbh_composite_cd
 
 	/* set acm line coding */
 	cdc->user_line_coding->b.dwDteRate = 115200;
-	cdc->user_line_coding->b.bCharFormat = CDC_ACM_LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
-	cdc->user_line_coding->b.bParityType = CDC_ACM_LINE_CODING_PARITY_NO;
+	cdc->user_line_coding->b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
+	cdc->user_line_coding->b.bParityType = LINE_CODING_PARITY_NO;
 	cdc->user_line_coding->b.bDataBits = 8;
 
 	return ret;

@@ -79,7 +79,7 @@ if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
             ${c_SDK_IMAGE_TARGET_DIR}/fullmac_img1_all.bin
     )
 
-    if (CONFIG_FULLMAC_IN_SINGLE_DIE)
+    if (CONFIG_WHC_IN_SINGLE_DIE)
         ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/sram_2.bin ${c_SDK_IMAGE_TARGET_DIR}/fullmac_sram_2.bin)
         ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/fullmac_sram_2.bin ${FULLMAC_IMG2_LENGTH})
         ameba_axf2bin_prepend_head(

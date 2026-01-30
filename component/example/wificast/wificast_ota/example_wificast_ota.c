@@ -29,7 +29,7 @@ static void dump_buf(char *info, u8 *buf, int len)
 
 static void image_download_end(void)
 {
-	sys_clear_ota_signature();
+	sys_clear_ota_signature(OTA_IMGID_APP);
 	RTK_LOGI(TAG, "ready to reset...\n");
 	rtos_time_delay_ms(500);
 	sys_reset();
@@ -615,8 +615,6 @@ CmdWifiCastTest(
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE   wifi_cast_test_cmd_table[] = {
-	{
-		(const u8 *)"wificast", 3, CmdWifiCastTest, (const u8 *)"\tWIFI \n"
-	},
+	{"wificast", CmdWifiCastTest},
 };
 

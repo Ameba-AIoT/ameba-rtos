@@ -47,23 +47,17 @@ void at_wscfg_help(void)
 			 DEFAULT_STABLE_BUF_NUM);
 }
 
-void at_wscfg(void *arg)
+void at_wscfg(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id = -1, ping_interval = 0, ping_timeout = 0, tx_buffer_size = 0, rx_buffer_size = 0, max_queue_size = 0, stable_buf_num = 0;
 	char *protocol = NULL, *version = NULL;
 
-	UNUSED(argc);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wscfg_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 
 	link_id = atoi(argv[1]);
 
@@ -192,22 +186,16 @@ void at_wsglcfg_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<keepalive_count>:\tvalue for TCP_KEEPCNT option\r\n");
 }
 
-void at_wsglcfg(void *arg)
+void at_wsglcfg(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	uint32_t keepalive_idle = 0, keepalive_interval = 0, keepalive_count = 0;
 
-	UNUSED(argc);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wsglcfg_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 
 	if (argv[1] != NULL && (strlen(argv[1]) > 0)) {
 		wsclient_connecttimeout = atoi(argv[1]);
@@ -274,24 +262,18 @@ void at_wshead_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<header>:\trequest header content\r\n");
 }
 
-void at_wshead(void *arg)
+void at_wshead(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id, i;
 	u32 header_len;
 	char *header;
 
-	UNUSED(argc);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wshead_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 
 	link_id = atoi(argv[1]);
 
@@ -357,24 +339,18 @@ void at_wsheadraw_help(void)
 			 "\t<header_len>:\t0 means clearing all websocket request headers previously set, other value means setting a new request header\r\n");
 }
 
-void at_wsheadraw(void *arg)
+void at_wsheadraw(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id;
 	u32 header_len;
 	int i, res, tt_get_len;
 
-	UNUSED(argc);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wsheadraw_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 
 	link_id = atoi(argv[1]);
 
@@ -558,11 +534,9 @@ static void wsclient_conn_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-void at_wsconn(void *arg)
+void at_wsconn(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0, ret = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id = -1, port = 0, conn_type = 0, cert_index = 0, size = 0;
 	char *host = NULL, *path = NULL, *header = NULL;
 	char url[DNS_MAX_NAME_LENGTH] = {0};
@@ -572,15 +546,11 @@ void at_wsconn(void *arg)
 	char *client_key = NULL;
 	char *ca_cert = NULL;
 
-	UNUSED(argc);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wsconn_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {
@@ -833,23 +803,17 @@ void at_wssend_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<data>:\tdata want to send to the server\r\n");
 }
 
-void at_wssend(void *arg)
+void at_wssend(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id, length, opcode, use_mask;
 	char *send_buf;
 
-	UNUSED(argc);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wssend_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {
@@ -915,26 +879,20 @@ void at_wssendraw_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<opcode>:\topcode in the websocket frame, must be 0~0xF, default is 1(text)\r\n");
 }
 
-void at_wssendraw(void *arg)
+void at_wssendraw(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id, length, opcode, use_mask;
 	char *send_buf = NULL;
 	int frag_len, res, tt_get_len;
 	uint8_t is_first_frag = 0;
 	int ret = 0;
 
-	UNUSED(argc);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wssendraw_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= MAX_WEBSOCKET_LINK_NUM) {  //todo: check link status
@@ -1113,17 +1071,11 @@ void at_wsdisconn_help(void)
 }
 
 
-void at_wsdisconn(void *arg)
+void at_wsdisconn(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id;
-
-	UNUSED(argc);
-
-	argc = parse_param(arg, argv);
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wsdisconn_help();
 		error_no = 1;
 		goto end;
@@ -1189,18 +1141,11 @@ void print_link_info(int link_id)
 	}
 }
 
-void at_wsquery(void *arg)
+void at_wsquery(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id;
-
-	UNUSED(argc);
-
-	argc = parse_param(arg, argv);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		int i;
 		print_global_info();
 		for (i = 0; i < MAX_WEBSOCKET_LINK_NUM; i++) {
@@ -1233,17 +1178,11 @@ void at_wsqueuecheck_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\tconnect id, must be 0~%d\r\n", MAX_WEBSOCKET_LINK_NUM - 1);
 }
 
-void at_wsqueuecheck(void *arg)
+void at_wsqueuecheck(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id;
-
-	UNUSED(argc);
-
-	argc = parse_param(arg, argv);
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wsqueuecheck_help();
 		error_no = 1;
 		goto end;
@@ -1300,22 +1239,15 @@ void at_wssrvcfg_help(void)
 			 DEFAULT_SERVER_RX_SIZE);
 }
 
-void at_wssrvcfg(void *arg)
+void at_wssrvcfg(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int max_conn, ping_interval, idle_timeout, tx_size, rx_size;
-
-	UNUSED(argc);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wssrvcfg_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param(arg, argv);
 
 	if (argv[1] != NULL && (strlen(argv[1]) > 0)) {
 		max_conn = atoi(argv[1]);
@@ -1382,7 +1314,7 @@ end:
 	}
 }
 
-void at_wssrvquery(void *arg)
+void at_wssrvquery(u16 argc, char **argv)
 {
 	int i;
 	struct wssrv_conn *cli_conn;
@@ -1391,7 +1323,8 @@ void at_wssrvquery(void *arg)
 	socklen_t len;
 	char ipr[50];
 
-	UNUSED(arg);
+	UNUSED(argc);
+	UNUSED(argv);
 
 	at_printf("port: %d\r\n", wssrvcfg_port);
 	at_printf("max_conn: %d\r\n", wssrvcfg_max_conn);
@@ -1509,27 +1442,20 @@ void at_wssrvstart_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<cert_index>:\tspecify which set of certificate suite to use in the file system, must be bigger than 0\r\n");
 }
 
-void at_wssrvstart(void *arg)
+void at_wssrvstart(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int port, conn_type, cert_index, size;
 	int ret;
 	char *server_cert = NULL;
 	char *server_key = NULL;
 	char *server_ca = NULL;
 
-	UNUSED(argc);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wssrvstart_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param(arg, argv);
-
 	if (argv[1] != NULL && (strlen(argv[1]) > 0)) {
 		port = atoi(argv[1]);
 
@@ -1687,12 +1613,13 @@ end:
 	}
 }
 
-void at_wssrvstop(void *arg)
+void at_wssrvstop(u16 argc, char **argv)
 {
 	int i;
 	struct wssrv_conn *cli_conn;
 
-	UNUSED(arg);
+	UNUSED(argc);
+	UNUSED(argv);
 
 	for (i = 0; i < wssrvcfg_max_conn; i++) {
 		cli_conn = ws_server_get_conn_info(i);
@@ -1713,23 +1640,17 @@ void at_wssrvdisconn_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<link_id>:\tconnect id, must be 0~%d\r\n", wssrvcfg_max_conn - 1);
 }
 
-void at_wssrvdisconn(void *arg)
+void at_wssrvdisconn(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id;
 	struct wssrv_conn *cli_conn;
 
-	UNUSED(argc);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wssrvdisconn_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param(arg, argv);
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= wssrvcfg_max_conn) {
@@ -1765,25 +1686,18 @@ void at_wssrvsend_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<data>:\tdata want to send to a client\r\n");
 }
 
-void at_wssrvsend(void *arg)
+void at_wssrvsend(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id, opcode;
 	size_t length;
 	uint8_t *send_buf;
 	struct wssrv_conn *cli_conn;
-
-	UNUSED(argc);
-
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wssrvsend_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= wssrvcfg_max_conn) {
@@ -1853,11 +1767,9 @@ void at_wssrvsendraw_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<length>:\tlength of sending data\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<opcode>:\topcode in the websocket frame, must be 0~0xF, default is 1(text)\r\n");
 }
-void at_wssrvsendraw(void *arg)
+void at_wssrvsendraw(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	int link_id, opcode;
 	size_t length;
 	uint8_t *send_buf = NULL;
@@ -1865,15 +1777,12 @@ void at_wssrvsendraw(void *arg)
 	int frag_len, res, tt_get_len;
 	uint8_t is_first_frag = 0;
 
-	UNUSED(argc);
 
-	if (arg == NULL) {
+	if (argc < 2) {
 		at_wssrvsendraw_help();
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 
 	link_id = atoi(argv[1]);
 	if (link_id < 0 || link_id >= wssrvcfg_max_conn) {
@@ -2006,7 +1915,7 @@ end:
 	}
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_websocket_items[ ] = {
 	{"+WSCFG", at_wscfg},
 	{"+WSGLCFG", at_wsglcfg},
@@ -2065,7 +1974,6 @@ void init_websocket_struct(void)
 void at_websocket_init(void)
 {
 	init_websocket_struct();
-	atcmd_service_add_table((log_item_t *)at_websocket_items, sizeof(at_websocket_items) / sizeof(at_websocket_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_WEBSOCKET */

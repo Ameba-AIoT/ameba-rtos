@@ -11,6 +11,10 @@
 #include "basetype.h"
 #include "jpegdeccontainer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void PrintJPEGReg(u32 *regBase);
 void ppRegDump(const u32 *regBase);
 void DumpJPEGCtrlReg(u32 *regBase, FILE *fd);
@@ -20,5 +24,8 @@ void HexDumpJPEGOutput(JpegDecContainer *pJpegDecCont, FILE *fd);
 void HexDumpRegs(u32 *regBase, FILE *fd);
 void ResetAsicBuffers(JpegDecContainer *pJpegDecCont, FILE *fd);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __JPEGDEC_TRACE__ */

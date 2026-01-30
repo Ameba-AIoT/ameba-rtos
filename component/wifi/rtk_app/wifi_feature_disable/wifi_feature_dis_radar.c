@@ -50,6 +50,11 @@ void wifi_hal_radar_rpt_hdl(u8 *buf, void *a)
 	UNUSED(a);
 }
 
+void wifi_hal_radar_query(void)
+{
+
+}
+
 #ifdef CONFIG_MP_INCLUDED
 void wifi_hal_radar_start(void)
 {

@@ -7,6 +7,10 @@
 #ifndef	ARM_TRUSTED_FIRMWARE_EXPORT_LIB_UTILS_DEF_EXP_H
 #define	ARM_TRUSTED_FIRMWARE_EXPORT_LIB_UTILS_DEF_EXP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* EXPORT HEADER -- See include/export/README for details! -- EXPORT HEADER */
 
 /*
@@ -32,6 +36,10 @@
 # define   L(_x)	(_x##L)
 # define  LL(_x)	(_x##LL)
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* ARM_TRUSTED_FIRMWARE_EXPORT_LIB_UTILS_DEF_EXP_H */

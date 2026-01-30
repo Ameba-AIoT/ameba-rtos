@@ -1,4 +1,6 @@
 #include "platform_autoconf.h"
+#ifdef CONFIG_ETHERNET
+
 #include "kv.h"
 #include "atcmd_service.h"
 #include "wifi_api_types.h"
@@ -17,23 +19,20 @@ static void at_ethip_help(void)
 	RTK_LOGI(NOTAG, "\tThe <gateway> and <netmask> should be absent or present together\r\n");
 }
 
-void at_ethip(void *arg)
+void at_ethip(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
-	int argc = 0;
 	int error_no = 0;
 	int store_flag = 0;
 	unsigned int ip = 0;
 	unsigned int netmask = 0xFFFFFF00;
 	unsigned int gw = 0;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGW(NOTAG, "[+ETHIP] The parameters can not be ignored\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
 	if (argc < 2 || argc > 5) {
 		RTK_LOGW(NOTAG, "[+ETHIP] The parameters format ERROR\r\n");
 		error_no = 1;
@@ -92,7 +91,7 @@ end:
 	}
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_ethernet_items[ ] = {
 	{"+ETHIP", at_ethip},
 };
@@ -108,7 +107,4 @@ void print_ethernet_at(void)
 	}
 }
 
-void at_ethernet_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_ethernet_items, sizeof(at_ethernet_items) / sizeof(at_ethernet_items[0]));
-}
+#endif /* CONFIG_ETHERNET */

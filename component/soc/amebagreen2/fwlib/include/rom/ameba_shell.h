@@ -7,6 +7,10 @@
 #ifndef _AMEBA_SHELL_H_
 #define _AMEBA_SHELL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if (defined (CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE))
 #define SHELL_TASK_FUNC_STACK_SIZE (4000 + 128)
 #else
@@ -35,10 +39,8 @@ typedef struct {
 } UART_LOG_BUF, *PUART_LOG_BUF;
 
 typedef struct _COMMAND_TABLE_ {
-	const   u8 *cmd;
-	u16     ArgvCnt;
+	const char *cmd;
 	u32(*func)(u16 argc, u8 *argv[]);
-	const   u8 *msg;
 } COMMAND_TABLE, *PCOMMAND_TABLE;
 
 
@@ -94,4 +96,9 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum);
 //#define RtlConsolTaskRom		shell_task_rom
 
 //extern u32 shell_interrupt_on;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_RTK_CONSOL_H_

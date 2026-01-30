@@ -112,7 +112,7 @@ struct hci_ops_t {
 
 struct whc_device {
 	/* device register to upper layer. */
-	struct device				*fullmac_dev;
+	struct device				*pwhc_dev;
 	struct wiphy				*pwiphy_global;
 	struct net_device			*pndev[WHC_MAX_NET_PORT_NUM];
 	struct wireless_dev		*pwdev_global[WHC_MAX_NET_PORT_NUM];
@@ -129,7 +129,7 @@ struct whc_device {
 	struct recv_priv_t			recv_priv;
 	struct xmit_priv_t			xmit_priv;
 
-	/* fullmac status management. */
+	/* whc status management. */
 	struct mlme_priv_t			mlme_priv;
 	struct net_device_stats	stats[WHC_MAX_NET_PORT_NUM];
 	u8						ip_addr[RTW_IP_ADDR_LEN];

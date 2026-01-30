@@ -3,6 +3,7 @@ import os
 from op_base import OperationBase
 from context import Context
 from ameba_enums import *
+from utility import BasedIntParamType
 
 class Cut(OperationBase):
     cmd_help_msg = 'Cut a file to remove the given length'
@@ -14,9 +15,9 @@ class Cut(OperationBase):
     def register_args(parser) -> None:
         parser.add_argument('-i', '--input-file', help='Input file to be processed', required=True)
         parser.add_argument('-o', '--output-file', help='Output file', required=True)
-        parser.add_argument('-l', '--length', type=int, help='Length in bytes to remove', required=True)
+        parser.add_argument('-l', '--length', type=BasedIntParamType(), help='Length in bytes to remove', required=True)
         parser.add_argument('-B', '--backward', action='store_true', help='Cut from the end of the file', default=False)
-        parser.add_argument('-O', '--offset', type=int, help='Offset bytes from the cutting direction, default=0', default=0)
+        parser.add_argument('-O', '--offset', type=BasedIntParamType(), help='Offset bytes from the cutting direction, default=0', default=0)
 
     @staticmethod
     def require_manifest_file(context:Context) -> bool:

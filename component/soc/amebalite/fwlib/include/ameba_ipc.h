@@ -166,6 +166,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -442,6 +446,10 @@ void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32));
 /* Other definitions --------------------------------------------------------*/
 
 extern const IPC_INIT_TABLE  ipc_init_config[];
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

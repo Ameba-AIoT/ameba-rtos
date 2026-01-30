@@ -7,6 +7,9 @@
 #ifndef _AMEBA_DATA_FLASH_H_
 #define _AMEBA_DATA_FLASH_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup FLASH_Exported_Functions FLASH Exported Functions
@@ -89,5 +92,9 @@ void DATA_FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum);
 /* Other definitions --------------------------------------------------------*/
 extern FLASH_InitTypeDef data_flash_init_para;
 extern u32 SPIC_CALIB_PATTERN[2];
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

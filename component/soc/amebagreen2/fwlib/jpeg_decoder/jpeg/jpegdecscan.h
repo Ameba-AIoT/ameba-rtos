@@ -25,6 +25,10 @@
 #include "basetype.h"
 #include "jpegdeccontainer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*------------------------------------------------------------------------------
     2. Module defines
 ------------------------------------------------------------------------------*/
@@ -38,5 +42,9 @@
 ------------------------------------------------------------------------------*/
 
 JpegDecRet JpegDecDecodeScan(JpegDecContainer *pDecData);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #ifdef MODULE_H */

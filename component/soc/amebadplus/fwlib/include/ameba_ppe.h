@@ -23,6 +23,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup PPE_Exported_Types PPE Exported Types
@@ -829,6 +833,10 @@ void PPE_Init(PPE_InitTypeDef *PPE_init_struct);
 void PPE_InitInputLayer(uint8_t id, PPE_InputLayer_InitTypeDef *layer_init_struct);
 void PPE_InitResultLayer(PPE_ResultLayer_InitTypeDef *layer_init_struct);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

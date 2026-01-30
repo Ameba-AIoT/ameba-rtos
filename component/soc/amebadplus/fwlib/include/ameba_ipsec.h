@@ -383,6 +383,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -754,6 +758,10 @@ int rtl_cryptoEngine_init(void)
 		CRYPTO_MemDump((const u8*)(start), size, (char*)(str_header)); \
 	}
 
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

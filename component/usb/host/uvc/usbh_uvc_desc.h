@@ -111,13 +111,6 @@ typedef struct {
 	u8 *ptr;
 } __PACKED usbh_uvc_vs_payload_header_t;
 
-
-typedef enum {
-	STREAM_STATE_IDLE = 1,
-	STREAM_DATA_IN,
-} usbh_uvc_stream_state_t;
-
-
 typedef struct {
 	u8 bLength;
 	u8 bDescriptorType;

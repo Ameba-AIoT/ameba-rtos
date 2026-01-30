@@ -147,6 +147,53 @@ static void mark_ip_in_table(uint8_t d)
 
 }
 
+static void save_client_addr(uint8_t candidate_ip, uint8_t *hwaddr)
+{
+	unsigned int k;
+	uint8_t i, j;
+	struct rtw_client_list client_info = {0};
+	uint8_t sta_num = wifi_user_config.ap_sta_num;
+
+	rtos_mutex_take(dhcps_ip_table_semaphore, RTOS_MAX_DELAY);
+
+	for (i = 0; i < sta_num; i++) {
+		if ((ip_table.ip_addr4[i] == 0) || (ip_table.ip_addr4[i] == candidate_ip)) {
+			ip_table.ip_addr4[i] = candidate_ip;
+			memcpy(ip_table.client_mac[i], hwaddr, 6);
+#if (DEBUG_DHCPS)
+			printf("init ip %d\r\n", candidate_ip);
+#endif
+			break;
+		}
+	}
+	if (i == sta_num) {
+		wifi_ap_get_connected_clients(&client_info);
+		unsigned int client_num = client_info.count;
+		for (j = 0; j < sta_num; j++) {
+			for (k = 0; k < client_num; k++) {
+				if (memcmp(ip_table.client_mac[j], client_info.mac_list[k].octet, 6) == 0) {
+					break;
+				}
+			}
+			/* find an invalid mac&ip,update it with a new record */
+			if (k == client_num) {
+				uint8_t invalid_ipaddr4 = ip_table.ip_addr4[j];
+				uint8_t invalid_index = invalid_ipaddr4 - 1;
+				ip_table.ip_range_offer[invalid_index >> 5] &= ~(1U << (invalid_index & 0x1F));
+				ip_table.ip_range[invalid_index >> 5] &= ~(1U << (invalid_index & 0x1F));
+				ip_table.ip_addr4[j] = candidate_ip;
+				memcpy(ip_table.client_mac[j], hwaddr, 6);
+#if (DEBUG_DHCPS)
+				printf("replace ip %d with %d\r\n", invalid_ipaddr4, candidate_ip);
+#endif
+				break;
+			}
+		}
+	}
+	rtos_mutex_give(dhcps_ip_table_semaphore);
+
+}
+
 static uint8_t check_client_direct_request_ip(struct ip_addr *client_req_ip, uint8_t *hwaddr)
 {
 	uint8_t ip_addr4 = 0;
@@ -216,9 +263,7 @@ void dump_client_table(void)
 #if (!IS_USE_FIXED_IP)
 static uint8_t search_next_ip(uint8_t *hwaddr)
 {
-	struct rtw_client_list client_info = {0};
-	unsigned int k;
-	uint8_t i, j;
+	uint8_t i;
 	uint8_t start, end;
 	uint8_t sta_num = wifi_user_config.ap_sta_num;
 
@@ -249,44 +294,12 @@ static uint8_t search_next_ip(uint8_t *hwaddr)
 		for (uint8_t offset_count = 0; offset_count < 32; offset_count++) {
 			uint8_t candidate_ip = range_count * 32 + offset_count + 1;
 			if ((((ip_table.ip_range_offer[range_count] >> offset_count) & 0x01) == 0)
+				&& (((ip_table.ip_range[range_count] >> offset_count) & 0x01) == 0)
 				&& (candidate_ip >= start)
 				&& (candidate_ip <= end)) {
 				ip_table.ip_range_offer[range_count] = ip_table.ip_range_offer[range_count] | BIT(offset_count);
-				for (i = 0; i < sta_num; i++) {
-					if ((ip_table.ip_addr4[i] == 0) || (ip_table.ip_addr4[i] == candidate_ip)) {
-						ip_table.ip_addr4[i] = candidate_ip;
-						memcpy(ip_table.client_mac[i], hwaddr, 6);
-#if (DEBUG_DHCPS)
-						printf("init ip %d\r\n", ((range_count * 32) + (offset_count + 1)));
-#endif
-						break;
-					}
-				}
-				if (i == sta_num) {
-					wifi_ap_get_connected_clients(&client_info);
-					unsigned int client_num = client_info.count;
-					for (j = 0; j < sta_num; j++) {
-						for (k = 0; k < client_num; k++) {
-							if (memcmp(ip_table.client_mac[j], client_info.mac_list[k].octet, 6) == 0) {
-								break;
-							}
-						}
-						/* find an invalid mac&ip,update it with a new record */
-						if (k == client_num) {
-							uint8_t invalid_ipaddr4 = ip_table.ip_addr4[j];
-							uint8_t invalid_index = invalid_ipaddr4 - 1;
-							ip_table.ip_range_offer[invalid_index >> 5] &= ~(1U << (invalid_index & 0x1F));
-							ip_table.ip_range[invalid_index >> 5] &= ~(1U << (invalid_index & 0x1F));
-							ip_table.ip_addr4[j] = candidate_ip;
-							memcpy(ip_table.client_mac[j], hwaddr, 6);
-#if (DEBUG_DHCPS)
-							printf("replace ip %d with %d\r\n", invalid_ipaddr4, ((range_count * 32) + (offset_count + 1)));
-#endif
-							break;
-						}
-					}
-				}
 				rtos_mutex_give(dhcps_ip_table_semaphore);
+				save_client_addr(candidate_ip, hwaddr);
 				return candidate_ip;
 			}
 		}
@@ -854,6 +867,7 @@ static void dhcps_receive_udp_packet_handler(void *arg, struct udp_pcb *udp_pcb,
 			}
 #if (!IS_USE_FIXED_IP)
 			mark_ip_in_table((uint8_t)ip4_addr4(ip_2_ip4(&dhcps_allocated_client_address)));
+			save_client_addr((uint8_t)ip4_addr4(ip_2_ip4(&dhcps_allocated_client_address)), client_addr);
 			memset(&client_request_ip, 0, sizeof(client_request_ip));
 			memset(&client_addr, 0, sizeof(client_addr));
 			memset(&dhcps_allocated_client_address, 0, sizeof(dhcps_allocated_client_address));

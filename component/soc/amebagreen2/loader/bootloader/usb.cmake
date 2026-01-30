@@ -67,7 +67,7 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz" AND loader_condition)
         hci/usb/usbd_hal.c
         hci/usb/usbd_pcd.c
         hci/usb/usbd_otp.c
-        hci/usb/usbd_fullmac_class.c
+        hci/usb/usbd_whc_class.c
         hci/usb/usbd_intf.c
     )
 endif()

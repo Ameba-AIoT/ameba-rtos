@@ -11,6 +11,10 @@
 #include "basic_types.h"
 #include <stdarg.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*out_fct_type)(char character, char *buffer, size_t idx, size_t maxlen);
 
 int DiagPrintf(const char *fmt, ...);
@@ -43,5 +47,9 @@ typedef enum {
    if ((LEVEL < LEVEL_NUMs) && (MODULE < MODULE_NUMs) )\
         DiagPrintf("["#MODULE"-"#LEVEL"]:"pFormat, ##__VA_ARGS__);\
 }while(0)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_DIAG_H_

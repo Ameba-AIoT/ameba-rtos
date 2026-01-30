@@ -24,8 +24,8 @@
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbd_composite_init(u16 cdc_bulk_out_xfer_size, u16 cdc_bulk_in_xfer_size, usbd_composite_cdc_acm_usr_cb_t *cdc_cb,
-						u16 hid_intr_in_xfer_size, usbd_composite_hid_usr_cb_t *hid_cb, usbd_composite_cb_t *cb);
+int usbd_composite_init(u32 cdc_bulk_out_xfer_size, u32 cdc_bulk_in_xfer_size, usbd_composite_cdc_acm_usr_cb_t *cdc_cb,
+						u32 hid_intr_in_xfer_size, usbd_composite_hid_usr_cb_t *hid_cb, usbd_composite_cb_t *cb);
 
 void usbd_composite_deinit(void);
 

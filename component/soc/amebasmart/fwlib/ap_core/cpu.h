@@ -9,6 +9,10 @@
 
 #include "sys_io.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* ICC_xxx */
 #define __stringify_1(x...)		#x
 #define __stringify(x...)		__stringify_1(x)
@@ -55,5 +59,9 @@
 
 #define GET_MPIDR()				read_sysreg(SYS_MPIDR)
 #define MPIDR_TO_CORE(mpidr)	MPIDR_AFFLVL(mpidr, 1)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

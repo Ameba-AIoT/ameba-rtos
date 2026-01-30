@@ -13,6 +13,10 @@
 
 #include "basetype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*------------------------------------------------------------------------------
     Module defines
 ------------------------------------------------------------------------------*/
@@ -963,5 +967,9 @@ u32 GetDecRegister(const u32 *regBase, u32 id);
 
 void SetPpRegister(u32 *ppRegBase, u32 id, u32 value);
 u32 GetPpRegister(const u32 *ppRegBase, u32 id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #ifndef REGDRV_H */

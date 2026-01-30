@@ -130,6 +130,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported Constants --------------------------------------------------------*/
 /** @defgroup LEDC_PRO_Exported_Constants LEDC_PRO Exported Constants
@@ -165,6 +169,10 @@ _LONG_CALL_ void pseudo_i2c_reset(void);
 _LONG_CALL_ void pseudo_i2c_protect(u32 sequence);
 _LONG_CALL_ void pseudo_i2c_set_clkdiv(u32 div);
 _LONG_CALL_ void pseudo_i2c_set_len(u32 len);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

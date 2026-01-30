@@ -7,6 +7,10 @@
 #ifndef _AMEBA_V8M_CRASHDUMP_H_
 #define _AMEBA_V8M_CRASHDUMP_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _get_MMFSR(value)  ((unsigned char)(((value >> 0 ) & 0xFF)))
 
 #define _get_BFSR(value)   ((unsigned char)(((value >> 8 ) & 0xFF)))
@@ -210,5 +214,9 @@ void crash_Main(uint32_t *mstack, uint32_t lr_value, uint32_t fault_id);
 *
 ***/
 void crash_Diagnosis(struct cmb_hard_fault_regs *sys_regs);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -38,6 +38,10 @@
   * @endverbatim
   */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @defgroup DELAY_Exported_Functions DELAY Exported Functions
   * @{
   */
@@ -56,5 +60,9 @@ _LONG_CALL_ void DelayNop(u32 count);
 #define HalDelayUs DelayUs
 
 extern u32 RBSS_UDELAY_CLK;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif//_AMEBA_DELAY_H_

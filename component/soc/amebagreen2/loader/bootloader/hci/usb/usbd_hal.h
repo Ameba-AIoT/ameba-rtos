@@ -15,6 +15,10 @@
 #include "usbd_otp.h"
 #include "usb_hal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* USB Core SW Configurations */
@@ -316,6 +320,10 @@ u32 USB_ReadDevOutEPInterrupt(USB_PCD_HandleTypeDef *hpcd, u8 epnum);
 u32 USB_ReadDevAllInEpInterrupt(USB_PCD_HandleTypeDef *hpcd);
 u32 USB_ReadDevInEPInterrupt(USB_PCD_HandleTypeDef *hpcd, u8 epnum);
 void USB_ClearInterrupts(USB_PCD_HandleTypeDef *hpcd, u32 interrupt);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _USBD_HAL_H_ */
 
