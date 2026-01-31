@@ -25,6 +25,9 @@ menu "CONFIG LWIP"
         depends on USBH_ECM_ETHERNET_BRIDGE_MENU
         bool "Enable LWIP USB ETHERNET BRIDGE"
 
+    config LWIP_ETHERNET
+        depends on ETHERNET
+        bool "Enable LWIP ETHERNET"
 
     config FAST_DHCP
         bool
@@ -35,6 +38,10 @@ menu "CONFIG LWIP"
 
     config LWIP_DEBUG
         bool "Enable LWIP Debug"
+        default n
+
+    config LWIP_STATS
+        bool "Enable LWIP Stats"
         default n
 
     if LWIP_DEBUG

@@ -114,7 +114,7 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 #endif
 		}
 		/* acquire host wake bt */
-		set_reg_value(0x4080A2B8, BIT13, 1); /* enable HOST_WAKE_BT */
+		set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_BT_CTRL0, BIT13, 1); /* enable HOST_WAKE_BT */
 	}
 
 	UART_INTConfig(HCI_UART_DEV, RUART_BIT_ETBEI, ENABLE);
@@ -128,7 +128,7 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 
 	if (!HCI_BT_KEEP_AWAKE) {
 		/* release host wake bt */
-		set_reg_value(0x4080A2B8, BIT13, 0); /* disable HOST_WAKE_BT */
+		set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_BT_CTRL0, BIT13, 0); /* disable HOST_WAKE_BT */
 		if (!hci_is_mp_mode()) {
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 			/* wifi restore */

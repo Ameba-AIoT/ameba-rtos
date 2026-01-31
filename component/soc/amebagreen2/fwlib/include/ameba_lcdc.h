@@ -572,6 +572,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your definition here
 /* Exported Types --------------------------------------------------------*/
@@ -1159,6 +1163,10 @@ extern u32 LCDC_SYS_CLK;// = 400000000;
 
 // #define LCDC_VO_SHPERI_USE_USB_PLL		1
 // // #define LCDC_ACLK_USE_SYS_PLL			1
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

@@ -219,7 +219,13 @@ void uart_rx_timeout_demo(void)
 	uart_obj.TxCount = 0;
 
 	UART_StructInit(&uart_obj.UART_InitStruct);
+	uart_obj.UART_InitStruct.WordLen = RUART_WLS_8BITS;
+	uart_obj.UART_InitStruct.StopBit = RUART_STOP_BIT_1;
 	uart_obj.UART_InitStruct.Parity = RUART_PARITY_DISABLE;
+	uart_obj.UART_InitStruct.ParityType = RUART_ODD_PARITY;
+	uart_obj.UART_InitStruct.StickParity = RUART_STICK_PARITY_DISABLE;
+	uart_obj.UART_InitStruct.RxFifoTrigLevel = UART_RX_FIFOTRIG_LEVEL_1BYTES;
+	uart_obj.UART_InitStruct.RxTimeOutCnt = 64;
 	UART_Init(UART_DEV, &uart_obj.UART_InitStruct);
 	UART_SetBaud(UART_DEV, UART_BAUD);
 	UART_RxCmd(UART_DEV, ENABLE);

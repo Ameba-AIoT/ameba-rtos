@@ -79,7 +79,7 @@
 #include <net/cfg80211.h>
 #include <linux/of_gpio.h>
 
-/* fullmac headers. */
+/* whc headers. */
 #include "autoconf.h"
 #include "whc_host_wiphy.h"
 #include "wifi_api_types.h"
@@ -88,14 +88,14 @@
 #include "whc_host_trx.h"
 #include "ameba_wificfg_common.h"
 
-#ifdef CONFIG_FULLMAC_HCI_IPC
+#ifdef CONFIG_WHC_HCI_IPC
 /* ipc driver. */
 #include <linux/ameba/ameba_ipc.h>
 #include "whc_ipc.h"
-#include "whc_fullmac_ipc_host_msg.h"
-#include "whc_fullmac_ipc_host_ops.h"
-#include "whc_fullmac_ipc_host_mem.h"
-#elif defined(CONFIG_FULLMAC_HCI_SDIO)
+#include "whc_ipc_host_msg.h"
+#include "whc_ipc_host_ops.h"
+#include "whc_ipc_host_mem.h"
+#elif defined(CONFIG_WHC_HCI_SDIO)
 #include <linux/mmc/sdio_func.h>
 #include <linux/mmc/sdio_ids.h>
 #include "whc_dev.h"
@@ -103,14 +103,14 @@
 #ifdef CONFIG_BT_INIC
 #include "rtb_sdio.h"
 #endif
-#elif defined(CONFIG_FULLMAC_HCI_SPI)
+#elif defined(CONFIG_WHC_HCI_SPI)
 #include <linux/spi/spi.h>
 #include "whc_dev.h"
 #include "whc_spi_host.h"
 #ifdef CONFIG_BT_INIC
 #include "rtb_spi.h"
 #endif
-#elif defined(CONFIG_FULLMAC_HCI_USB)
+#elif defined(CONFIG_WHC_HCI_USB)
 #include <linux/usb.h>
 #include "whc_dev.h"
 #include "whc_usb_host.h"
@@ -120,19 +120,19 @@
 #include "WFPAL.h"
 #endif
 
-#if !defined(CONFIG_FULLMAC_HCI_IPC)
-#include "whc_fullmac_host_ioctl.h"
-#include "whc_fullmac_host_cust_evt.h"
+#if !defined(CONFIG_WHC_HCI_IPC)
+#include "whc_host_ioctl.h"
+#include "whc_host_cust_evt.h"
 #endif
 
-#include "whc_fullmac_host_regd.h"
+#include "whc_host_regd.h"
 #ifdef CONFIG_IEEE80211R
-#include "whc_fullmac_host_ft.h"
+#include "whc_host_ft.h"
 #endif
-#include "whc_fullmac_host_cfgvendor.h"
-#include "whc_fullmac_host_proc.h"
-#include "whc_fullmac_host_acs.h"
-#include "whc_fullmac_host_promisc.h"
+#include "whc_host_cfgvendor.h"
+#include "whc_host_proc.h"
+#include "whc_host_acs.h"
+#include "whc_host_promisc.h"
 
 #include "whc_host_event.h"
 #include "whc_host_drv_probe.h"
@@ -153,7 +153,7 @@
 
 #define WHC_HOST_PORT_NAME "wlan%d"
 
-#ifdef CONFIG_FULLMAC_HCI_SDIO
+#ifdef CONFIG_WHC_HCI_SDIO
 #define CONFIG_WOWLAN
 #endif
 

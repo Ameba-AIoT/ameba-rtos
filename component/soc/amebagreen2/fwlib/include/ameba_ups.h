@@ -114,6 +114,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your definition here
 
@@ -214,6 +218,10 @@ _LONG_CALL_ void UPS_SetDbcCnt(u16 Dbc_Cnt, u8 idx);
 /** @} */
 
 /** @} */
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 #endif

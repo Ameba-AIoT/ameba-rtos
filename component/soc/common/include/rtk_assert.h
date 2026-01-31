@@ -7,6 +7,10 @@
 #ifndef __RTK_ASSERT_
 #define __RTK_ASSERT_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void vAssertCalled(const char *pcFile, uint32_t ulLine);
 
 #if defined(CONFIG_ASSERTION_DISABLE)
@@ -15,6 +19,10 @@ void vAssertCalled(const char *pcFile, uint32_t ulLine);
 #define rtk_assert(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : vAssertCalled(NULL, 0))
 #else
 #define rtk_assert(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : vAssertCalled(__FILE__, __LINE__))
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

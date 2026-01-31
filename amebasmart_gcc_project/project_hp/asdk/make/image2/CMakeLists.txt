@@ -61,6 +61,12 @@ add_custom_command(
 )
 
 #----------------- LINKING -------------------#
+
+# Add CMSE import library for TrustZone support
+ameba_set_if(CONFIG_TRUSTZONE c_CMSE_IMPLIB
+    ${c_SDK_IMAGE_TARGET_DIR}/cmse_implib.lib
+)
+
 target_link_libraries(${c_CURRENT_IMAGE}
     PRIVATE
     -T${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
@@ -75,6 +81,7 @@ target_link_libraries(${c_CURRENT_IMAGE}
 
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_no_whole_archive_libs>
     ${c_LINK_ROM_LIB}
+    ${c_CMSE_IMPLIB}
 
     ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/thumb/v8-m.main+fp/fpu/crtbegin.o
     ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/thumb/v8-m.main+fp/fpu/crtend.o

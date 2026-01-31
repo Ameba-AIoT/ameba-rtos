@@ -17,7 +17,7 @@ Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on 
    Adjust `USBH_UAC_ISOC_BUF_SIZE` to sync with the settings of USB vendor-specific UAC device.
 
 2. Menuconfig
-	Type command `./menuconfig.py` under the project directory:
+	Use menuconfig and:
 	- Choose `CONFIG USB --->`:
 	```
 	[*] Enable USB
@@ -44,3 +44,4 @@ For other chips, refer to the AN for setup guide.
 # Supported IC
 
 RTL8730E
+RTL8721F

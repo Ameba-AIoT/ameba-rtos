@@ -523,10 +523,18 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 #define NORMAL_AON_VOL		0x5
 #define OTP_AON_VOL			(NORMAL_AON_VOL + 1)
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif

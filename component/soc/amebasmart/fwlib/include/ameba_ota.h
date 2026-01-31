@@ -7,6 +7,10 @@
 #ifndef _AMEBA_OTA_H_
 #define _AMEBA_OTA_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "ameba_secure_boot.h"
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/ssl.h"
@@ -239,4 +243,8 @@ do {\
 /**
   * @}
   */
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_AMEBA_OTA_H_

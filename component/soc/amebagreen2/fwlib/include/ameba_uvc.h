@@ -388,6 +388,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 
 /* Exported constants --------------------------------------------------------*/
@@ -487,6 +491,10 @@ void UVC_SetEPNum(u32 uvc_chn, u32 ep_num);
 
 
 
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

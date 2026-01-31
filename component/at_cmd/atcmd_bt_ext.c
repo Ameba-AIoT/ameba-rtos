@@ -4,523 +4,463 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "platform_autoconf.h"
+#if defined(CONFIG_BT) && CONFIG_BT
+
 #include "atcmd_service.h"
 #include "atcmd_bt_impl.h"
 #include "bt_utils.h"
 #include "bt_api_config.h"
 
-
-static bool bt_parse_param(void *arg, int *argc, char **argv)
+static void fBTDEMO(u16 argc, char **argv)
 {
-	if (!arg) {
-		BT_LOGE("[AT] Error: No input args number!\r\n");
-		return false;
-	}
-
-	*argc = parse_param(arg, argv);
-	if (*argc < 2) {
+	if (argc < 2) {
 		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
-		return false;
+		return;
 	}
-
-	return true;
-}
-
-static void fBTDEMO(void *arg)
-{
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_example(argc - 1, &argv[1]);
-	}
+	atcmd_bt_example(argc - 1, &argv[1]);
 }
 
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
-static inline void fBLEGAP(void *arg)
+static inline void fBLEGAP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_le_gap(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_le_gap(argc - 1, &argv[1]);
 }
 #endif /* RTK_BLE_SUPPORT */
 
 #if defined(RTK_BLE_GATTS_SUPPORT) && RTK_BLE_GATTS_SUPPORT
-static inline void fBLEGATTS(void *arg)
+static inline void fBLEGATTS(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_gatts(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_gatts(argc - 1, &argv[1]);
 }
 #endif /* RTK_BLE_GATTS_SUPPORT */
 
 #if defined(RTK_BLE_GATTC_SUPPORT) && RTK_BLE_GATTC_SUPPORT
-static inline void fBLEGATTC(void *arg)
+static inline void fBLEGATTC(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_gattc(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_gattc(argc - 1, &argv[1]);
 }
 #endif /* RTK_BLE_GATTC_SUPPORT */
 
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
-static inline void fBRGAP(void *arg)
+static inline void fBRGAP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_br_gap(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_br_gap(argc - 1, &argv[1]);
 }
 
 #if defined(RTK_BT_PROFILE_A2DP_SUPPORT) && RTK_BT_PROFILE_A2DP_SUPPORT
-static inline void fBTA2DP(void *arg)
+static inline void fBTA2DP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_a2dp_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_a2dp_cmd(argc - 1, &argv[1]);
 }
 #endif /* RTK_BT_PROFILE_A2DP_SUPPORT */
 
 #if defined(RTK_BT_PROFILE_AVRCP_SUPPORT) && RTK_BT_PROFILE_AVRCP_SUPPORT
-static inline void fBTAVRCP(void *arg)
+static inline void fBTAVRCP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_avrcp_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_avrcp_cmd(argc - 1, &argv[1]);
 }
 #endif /* RTK_BT_PROFILE_AVRCP_SUPPORT */
 
 #if defined(RTK_BT_PROFILE_HFP_SUPPORT) && RTK_BT_PROFILE_HFP_SUPPORT
-static inline void fBTHFP(void *arg)
+static inline void fBTHFP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_hfp_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_hfp_cmd(argc - 1, &argv[1]);
 }
 #endif /* RTK_BT_PROFILE_HFP_SUPPORT */
 
 #if defined(RTK_BT_PROFILE_PBAP_SUPPORT) && RTK_BT_PROFILE_PBAP_SUPPORT
-static inline void fBTPBAP(void *arg)
+static inline void fBTPBAP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_pbap_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_pbap_cmd(argc - 1, &argv[1]);
 }
 #endif /* RTK_BT_PROFILE_PBAP_SUPPORT */
 
 #if defined(RTK_BT_PROFILE_SPP_SUPPORT) && RTK_BT_PROFILE_SPP_SUPPORT
-static inline void fBTSPP(void *arg)
+static inline void fBTSPP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_spp_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_spp_cmd(argc - 1, &argv[1]);
 }
 #endif /* RTK_BT_PROFILE_SPP_SUPPORT */
 
 #if defined(RTK_BT_PROFILE_RFC_SUPPORT) && RTK_BT_PROFILE_RFC_SUPPORT
-static inline void fBTRFC(void *arg)
+static inline void fBTRFC(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_rfc_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_rfc_cmd(argc - 1, &argv[1]);
 }
 #endif /* RTK_BT_PROFILE_RFC_SUPPORT */
 
 #if defined(RTK_BT_PROFILE_HID_SUPPORT) && RTK_BT_PROFILE_HID_SUPPORT
-static inline void fBTHID(void *arg)
+static inline void fBTHID(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_hid_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_hid_cmd(argc - 1, &argv[1]);
 }
 #endif /* RTK_BT_PROFILE_HID_SUPPORT */
 
 #if defined(RTK_BT_PROFILE_SDP_SUPPORT) && RTK_BT_PROFILE_SDP_SUPPORT
-static inline void fBTSDP(void *arg)
+static inline void fBTSDP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_sdp_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_sdp_cmd(argc - 1, &argv[1]);
 }
 #endif /* RTK_BT_PROFILE_SDP_SUPPORT */
 #endif /* RTK_BREDR_SUPPORT */
 
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
-static inline void fBLEISO(void *arg)
+static inline void fBLEISO(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_iso_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_iso_cmd(argc - 1, &argv[1]);
 }
 #endif /* RTK_BLE_ISO_SUPPORT */
 
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
-static inline void fBLEBAP(void *arg)
+static inline void fBLEBAP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_bap_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_bap_cmd(argc - 1, &argv[1]);
 }
 
-static inline void fBLECAP(void *arg)
+static inline void fBLECAP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_cap_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_cap_cmd(argc - 1, &argv[1]);
 }
 
 #if defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT
-static inline void fBLETMAP(void *arg)
+static inline void fBLETMAP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_tmap_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_tmap_cmd(argc - 1, &argv[1]);
 }
 #endif /* RTK_BLE_AUDIO_TMAP_SUPPORT */
 
 #if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
-static inline void fBLEGMAP(void *arg)
+static inline void fBLEGMAP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_gmap_cmd(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_gmap_cmd(argc - 1, &argv[1]);
 }
 #endif /* RTK_BLE_AUDIO_GMAP_SUPPORT */
 #endif /* RTK_BLE_AUDIO_SUPPORT */
 
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
-static inline void fBLEMESHSTACK(void *arg)
+static inline void fBLEMESHSTACK(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_stack(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_stack(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHDATA(void *arg)
+static inline void fBLEMESHDATA(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_datatrans_model(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_datatrans_model(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHCONFIG(void *arg)
+static inline void fBLEMESHCONFIG(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_config(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_config(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHGOO(void *arg)
+static inline void fBLEMESHGOO(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_generic_onoff(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_generic_onoff(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHRMT(void *arg)
+static inline void fBLEMESHRMT(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_remote_prov_client_model(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_remote_prov_client_model(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHLL(void *arg)
+static inline void fBLEMESHLL(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_light_lightness(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_light_lightness(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHLCTL(void *arg)
+static inline void fBLEMESHLCTL(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_light_ctl(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_light_ctl(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHLHSL(void *arg)
+static inline void fBLEMESHLHSL(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_light_hsl(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_light_hsl(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHLXYL(void *arg)
+static inline void fBLEMESHLXYL(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_light_xyl(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_light_xyl(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHLLC(void *arg)
+static inline void fBLEMESHLLC(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_light_lc(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_light_lc(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHTIME(void *arg)
+static inline void fBLEMESHTIME(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_time(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_time(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHSCHEDULER(void *arg)
+static inline void fBLEMESHSCHEDULER(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_scheduler(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_scheduler(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHSCENE(void *arg)
+static inline void fBLEMESHSCENE(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_scene(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_scene(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHGDTT(void *arg)
+static inline void fBLEMESHGDTT(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_generic_default_transition_time(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_generic_default_transition_time(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHGLE(void *arg)
+static inline void fBLEMESHGLE(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_generic_level(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_generic_level(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHGPOO(void *arg)
+static inline void fBLEMESHGPOO(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_generic_power_on_off(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_generic_power_on_off(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHGPL(void *arg)
+static inline void fBLEMESHGPL(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_generic_power_level(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_generic_power_level(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHGB(void *arg)
+static inline void fBLEMESHGB(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_generic_battery(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_generic_battery(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHGLO(void *arg)
+static inline void fBLEMESHGLO(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_generic_location(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_generic_location(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHGP(void *arg)
+static inline void fBLEMESHGP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_generic_property(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_generic_property(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHSENSOR(void *arg)
+static inline void fBLEMESHSENSOR(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_sensor(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_sensor(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHHEALTH(void *arg)
+static inline void fBLEMESHHEALTH(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_health(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_health(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHDF(void *arg)
+static inline void fBLEMESHDF(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_df(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_df(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHSBR(void *arg)
+static inline void fBLEMESHSBR(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_sbr(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_sbr(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHPRB(void *arg)
+static inline void fBLEMESHPRB(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_prb(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_prb(argc - 1, &argv[1]);
 }
 
-static inline void fBLEMESHDFU(void *arg)
+static inline void fBLEMESHDFU(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_mesh_device_firmware_update(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_mesh_device_firmware_update(argc - 1, &argv[1]);
 }
 #endif /* RTK_BLE_MESH_SUPPORT */
 
-static inline void fBTGAP(void *arg)
+static inline void fBTGAP(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_gap(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_gap(argc - 1, &argv[1]);
 }
 
-static void fBTVENDOR(void *arg)
+static void fBTVENDOR(u16 argc, char **argv)
 {
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-
-	if (bt_parse_param(arg, &argc, argv)) {
-		atcmd_bt_vendor(argc - 1, &argv[1]);
+	if (argc < 2) {
+		BT_LOGE("[AT] Error: Wrong input args number!\r\n");
+		return;
 	}
+	atcmd_bt_vendor(argc - 1, &argv[1]);
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_bt_cmds[] = {
 	{"+BTDEMO",              fBTDEMO},
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
@@ -631,18 +571,4 @@ void print_bt_ext_at(void)
 #endif
 }
 
-void at_bt_init(void)
-{
-#if (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK) || \
-    (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND) || \
-    (defined(CONFIG_BT_INIC) && CONFIG_BT_INIC)
-	(void)at_bt_cmds;
-#else
-	// int i = 0, size = sizeof(at_bt_cmds) / sizeof(at_bt_cmds[0]);
-
-	// while (i < size) {
-	// 	atcmd_service_add_table(&(at_bt_cmds[i].item), 1);
-	// 	i++;
-	// }
-#endif
-}
+#endif /* CONFIG_BT */

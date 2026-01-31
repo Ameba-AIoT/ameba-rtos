@@ -29,7 +29,7 @@ if(CONFIG_WHC_NONE OR CONFIG_WHC_HOST)
     endif()
 endif()
 
-if(CONFIG_ZEPHYR_SDK)
+if(CONFIG_PLATFORM_ZEPHYR)
     set(need_external_lib ON)
 endif()
 
@@ -69,12 +69,12 @@ if(NOT CONFIG_MP_SHRINK)
     if(CONFIG_WHC_NONE OR CONFIG_WHC_HOST)
         ameba_list_append(private_sources wifi_acs/wifi_acs.c)
     endif()
-    if(NOT CONFIG_ZEPHYR_SDK)
+    if(NOT CONFIG_PLATFORM_ZEPHYR)
         ameba_list_append_if(CONFIG_WHC_HOST private_sources wifi_cast/wifi_intf_drv_to_app_cast.c)
     endif()
 endif()
 
-if(CONFIG_ZEPHYR_SDK)
+if(CONFIG_PLATFORM_ZEPHYR)
     ameba_list_append(private_sources wifi_init/wifi_init.c)
     ameba_list_append(private_sources wifi_zephyr/wifi_zephyr_to_driver.c)
     if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
@@ -122,7 +122,7 @@ ameba_add_internal_library(${TARGET_LIB_OPEN}
 )
 ##########################################################################################
 
-if(CONFIG_WHC_HOST AND NOT CONFIG_ZEPHYR_SDK AND NOT CONFIG_MP_SHRINK)
+if(CONFIG_WHC_HOST AND NOT CONFIG_PLATFORM_ZEPHYR AND NOT CONFIG_MP_SHRINK)
     ameba_add_subdirectory(wifi_tunnel_app)
 endif()
 ameba_add_subdirectory(wifi_feature_disable)

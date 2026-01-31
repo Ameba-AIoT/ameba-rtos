@@ -15,6 +15,22 @@ config SUPPORT_HEAP_TRACE
 #---------- FEATURE LIST START-----------#
 #All features are invisible in menuconfig
 
+#
+# Audio features
+#
+
+# audio cmds
+config SUPPORT_AUDIO_CMD_ARECORD
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_APLAY
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_PLAYER
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_PCRECORD
+    def_bool y
 
 #---------- FEATURE LIST END-------------#
 
@@ -141,8 +157,6 @@ menu "CONFIG APPLICATION"
 
     orsource "${RTK_APP_DIR}/Kconfig"
 
-    orsource "../component/application/matter/project/cmake/Kconfig"
-
     rsource "../component/soc/common/diagnose/Kconfig"
 
 endmenu
@@ -159,11 +173,11 @@ menu "CONFIG WHC INTF"
 
             config WIFI_SINGLE_CORE_MENU
                 bool "SINGLE CORE"
-            config FULLMAC_DEV
-                bool "FULLMAC_DEV"
-            config WHC_FULLMAC_HOST
-                bool "FULLMAC_HOST"
-                select WHC_FULLMAC_HOST_IMPL
+            config WHC_DEV_MENU
+                bool "WHC_DEV"
+            config WHC_HOST_MENU
+                bool "WHC_HOST"
+                select WHC_HOST_IMPL
                 select WHC_HOST_FOR_KM4
 	endchoice
 
@@ -175,7 +189,7 @@ menu "CONFIG WHC INTF"
         endchoice
     endif
 
-    if FULLMAC_DEV
+    if WHC_DEV_MENU
         choice
             prompt "WIFI Driver Location"
             default KR4_AS_NP
@@ -187,12 +201,12 @@ menu "CONFIG WHC INTF"
             #    bool "KM4"
             #    select WHC_DEV_FOR_KM4
         endchoice
-        menu "FULLMAC config"
+        menu "WHC config"
         config WHC_CMD_PATH
-            default y if FULLMAC_DEV && !WHC_INTF_USB
+            default y if WHC_DEV_MENU && !WHC_INTF_USB
             bool "Support WHC CMD PATH"
         config WHC_WIFI_API_PATH
-            default y if FULLMAC_DEV
+            default y if WHC_DEV_MENU
             bool "Support WHC WIFI API PATH"
 
         config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KR4
@@ -212,8 +226,8 @@ menu "CONFIG WHC INTF"
         endmenu
     endif
 
-    if WHC_FULLMAC_HOST && !WHC_INTF_IPC_MENU
-        menu "FULLMAC HOST config"
+    if WHC_HOST_MENU && !WHC_INTF_IPC_MENU
+        menu "WHC HOST config"
         config WHC_CMD_PATH
             default y
             bool "Support WHC CMD PATH"
@@ -294,7 +308,7 @@ menu "CONFIG WIFI"
             select ENABLE_WPS if WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
-        config FULLMAC_DEV
+        config WHC_DEV_MENU
             bool
             depends on WHC_DEV # only work in NP
             select WLAN
@@ -303,7 +317,7 @@ menu "CONFIG WIFI"
             select WIFI_HOST_CONTROL
             select LWIP_LAYER if WHC_DEV_TCPIP_KEEPALIVE_FOR_KR4 || WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4
 
-        config WHC_FULLMAC_HOST_IMPL
+        config WHC_HOST_IMPL
             bool
             depends on WHC_HOST
             select WLAN
@@ -342,14 +356,16 @@ menu "CONFIG WIFI"
         bool
     config ENABLE_WPS_DISCOVERY
         bool
-    config FULLMAC_HOST
-        bool
     config WIFI_HOST_CONTROL
         bool
-    config WHC_FULLMAC_HOST_IMPL
+    config WHC_HOST_IMPL
         bool
 
 endmenu
+
+config VFS_ENABLED
+    depends on !(MP_SHRINK) && (WHC_HOST || WHC_NONE || WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KR4)
+    def_bool y
 
 menu "CONFIG BT"
     config BT_MENU

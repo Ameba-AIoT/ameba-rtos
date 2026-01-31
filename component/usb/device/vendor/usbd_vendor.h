@@ -111,12 +111,12 @@ typedef struct {
 
 int usbd_vendor_init(usbd_vendor_cb_t *cb);
 int usbd_vendor_deinit(void);
-int usbd_vendor_transmit_ctrl_data(u8 *buf, u16 len);
-int usbd_vendor_transmit_bulk_data(u8 *buf, u16 len);
+int usbd_vendor_transmit_ctrl_data(u8 *buf, u32 len);
+int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len);
 int usbd_vendor_receive_bulk_data(void);
-int usbd_vendor_transmit_intr_data(u8 *buf, u16 len);
+int usbd_vendor_transmit_intr_data(u8 *buf, u32 len);
 int usbd_vendor_receive_intr_data(void);
-int usbd_vendor_transmit_isoc_data(u8 *buf, u16 len);
+int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len);
 int usbd_vendor_receive_isoc_data(void);
 
 #endif  /* USBD_VENDOR_H */

@@ -11,6 +11,10 @@
 
 #include "ameba_soc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -42,6 +46,10 @@ void FLASH_WriteEn_InUserMode(void);
 void FLASH_WaitBusy_InUserMode(u32 WaitType);
 void FLASH_UserMode_Exit(void);
 void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif // _FLOADER_ROM_API_H_

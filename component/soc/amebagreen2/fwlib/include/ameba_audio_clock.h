@@ -21,6 +21,10 @@
 * @{
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported constants ------------------------------------------------------------*/
 /** @defgroup AUDIO_CLOCK_Exported_Constants AUDIO_CLOCK Exported Constants
   * @{
@@ -82,6 +86,11 @@ typedef struct {
 
 bool is_sport_ni_mi_supported(u32 clock, u32 sr, u32 chn_len, u32 chn_cnt);
 void Audio_Clock_Choose(u32 clock_sel, AUDIO_InitParams *initparams, AUDIO_ClockParams *params);
+
+#ifdef __cplusplus
+}
+#endif
+
 /**
 * @}
 */

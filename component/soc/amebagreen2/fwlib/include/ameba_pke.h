@@ -151,6 +151,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your definition here
 
@@ -442,6 +446,10 @@ _LONG_CALL_ int pke_eddsa_read_signature(pke_ecp_group *grp, uint8_t *pub_key_p,
 _LONG_CALL_ int pke_eddsa_ed25519_genkey(uint8_t *priv_key_le, uint8_t *pub_key_le);
 _LONG_CALL_ int pke_eddsa_ed25519_write_signature(uint8_t *message, size_t msg_len, uint8_t *priv_key_le, uint8_t *sign_r, uint8_t *sign_s);
 _LONG_CALL_ int pke_eddsa_ed25519_read_signature(uint8_t *message, size_t msg_len, uint8_t *pub_key_le, uint8_t *sign_r, uint8_t *sign_s);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 /** @} */

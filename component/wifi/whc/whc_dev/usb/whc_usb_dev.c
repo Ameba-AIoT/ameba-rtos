@@ -21,7 +21,7 @@ static usbd_config_t whc_usb_wifi_cfg = {
 };
 
 /* host->device */
-static int whc_usb_dev_rx_done_cb(usbd_inic_ep_t *out_ep, u16 len)
+static int whc_usb_dev_rx_done_cb(usbd_inic_ep_t *out_ep, u32 len)
 {
 	if (out_ep->ep.addr == WIFI_WHC_USB_BULKOUT_1 || out_ep->ep.addr == WIFI_WHC_USB_BULKOUT_2
 		|| out_ep->ep.addr == WIFI_WHC_USB_BULKOUT_3) {

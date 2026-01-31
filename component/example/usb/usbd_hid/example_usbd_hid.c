@@ -128,7 +128,7 @@ usbd_hid_keyboard_data_t mdata[] = {
 */
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
-	{(const u8 *)"mouse",		8, hid_cmd_mouse_data,		NULL},
+	{"mouse", hid_cmd_mouse_data},
 };
 #endif
 #endif  //CONFIG_USBD_HID_MOUSE_CMD

@@ -7,6 +7,10 @@
 #ifndef _AMEBA_DBG_PORT_H_
 #define _AMEBA_DBG_PORT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Platform
   * @{
   */
@@ -207,5 +211,9 @@
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

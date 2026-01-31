@@ -8,10 +8,13 @@
 #define _AMEBA_USB_H
 
 /* Includes ------------------------------------------------------------------*/
-
 #include "ameba_vector.h"
 #include "basic_types.h"
 #include "hal_platform.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -94,4 +97,8 @@
 
 /** @} */
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif

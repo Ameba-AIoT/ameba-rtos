@@ -30,6 +30,10 @@
 
 #include "ameba_soc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Mbed_API
  * @{
  */
@@ -141,5 +145,9 @@ void SPDIO_Board_Init(void);
  * 		so it must be initialized before by calling HalSdioInit();
  */
 extern struct spdio_t *g_spdio_priv;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // #ifndef __SPDIO_API_H__

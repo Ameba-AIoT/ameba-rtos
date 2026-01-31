@@ -11,6 +11,10 @@
 
 #include "ameba_ftl.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -26,6 +30,10 @@ void nor_ftl_erase(u32 addr, u32 size);
 void nor_ftl_write_page(u32 addr, const u8 *buf);
 u16 nor_ftl_get_status(u8 cmd, u8 size);
 void nor_ftl_set_status(u8 cmd, u8 size, u8 *status);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _AMEBA_NOR_FTL_H_
 

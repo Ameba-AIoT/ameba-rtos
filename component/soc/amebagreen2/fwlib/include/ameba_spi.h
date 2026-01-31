@@ -426,6 +426,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -686,6 +690,10 @@ _LONG_CALL_ void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLeve, u32 RxLevel);
 /* Other Definitions --------------------------------------------------------*/
 
 extern const SPI_DevTable SPI_DEV_TABLE[2];
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

@@ -5,6 +5,11 @@
  */
 
 #ifndef _AMEBA_PINMUX_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _AMEBA_PINMUX_H_
 
 /** @addtogroup Ameba_Periph_Driver
@@ -381,5 +386,10 @@ void APAD_InputCtrl(u8 PinName, u32 NewState)
 /** @} */
 
 /** @} */
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif   //_AMEBA_PINMUX_H_

@@ -23,19 +23,17 @@ static char *g_http_req_header[HTTP_GLOBAL_REQ_HEADER_NUM] = {0};	//Set by AT+HT
 
 
 //AT+HTTPCONF=<timeout>[,<port>]
-void at_httpconf(void *arg)
+void at_httpconf(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int http_to = 0, http_srv_port = 0;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpconf] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
 	if ((argc < 2) || (argc > MAX_ARGC)) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpconf] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -75,19 +73,17 @@ end:
 
 
 //AT+HTTPHEADER=<req_header_len>
-void at_httpheader(void *arg)
+void at_httpheader(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int req_header_len = 0;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpheader] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
 	if (argc != 2) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpheader] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -166,11 +162,14 @@ void print_global_http_config(void)
 
 
 //AT+HTTPQUERY
-void at_httpquery(void *arg)
+void at_httpquery(u16 argc, char **argv)
 {
 	int error_no = 0;
 
-	if (arg != NULL) {
+	UNUSED(argc);
+	UNUSED(argv);
+
+	if (argc > 1) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpquery] No need input parameter\r\n");
 		error_no = 1;
 		goto end;
@@ -448,10 +447,9 @@ void at_http_free_resource(int conn_type, char **http_client_ca_pem, char **http
 
 
 //AT+HTTPGET=<host>,<path>,<conn_type>[,<certificate_index>][,<req_header_cnt>,<req_header>...<req_header>]
-void at_httpget(void *arg)
+void at_httpget(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int conn_type = 0, cert_index = 0, header_cnt = 0, i = 0;
 	char *find_result = NULL;
 	struct httpc_conn *conn_ptr = NULL;
@@ -461,14 +459,11 @@ void at_httpget(void *arg)
 	uint8_t *response_data = NULL;
 	uint32_t total_resp_body_size = 0;
 
-
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpget] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 	if ((argc < 4) || (argc > MAX_ARGC)) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpget] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -650,10 +645,9 @@ end:
 
 
 //AT+HTTPPOST=<host>,<path>,<conn_type>[,<certificate_index>],<body_size>[,<req_header_cnt>,<req_header>...<req_header>]
-void at_httppost(void *arg)
+void at_httppost(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int conn_type = 0, cert_index = 0, header_cnt = 0, i = 0;
 	char *find_result = NULL;
 	struct httpc_conn *conn_ptr = NULL;
@@ -664,14 +658,11 @@ void at_httppost(void *arg)
 	uint8_t *response_data = NULL;
 	uint32_t total_resp_body_size = 0;
 
-
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 	if ((argc < 6) || (argc > MAX_ARGC)) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httppost] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -811,10 +802,9 @@ end:
 
 
 //AT+HTTPPUT=<host>,<path>,<conn_type>[,<certificate_index>],<body_size>[,<req_header_cnt>,<req_header>...<req_header>]
-void at_httpput(void *arg)
+void at_httpput(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int conn_type = 0, cert_index = 0, header_cnt = 0, i = 0;
 	char *find_result = NULL;
 	struct httpc_conn *conn_ptr = NULL;
@@ -825,14 +815,11 @@ void at_httpput(void *arg)
 	uint8_t *response_data = NULL;
 	uint32_t total_resp_body_size = 0;
 
-
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 	if ((argc < 6) || (argc > MAX_ARGC)) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpput] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -972,10 +959,9 @@ end:
 
 
 //AT+HTTPDEL=<host>,<path>,<conn_type>[,<certificate_index>][,<req_header_cnt>,<req_header>...<req_header>]
-void at_httpdel(void *arg)
+void at_httpdel(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int conn_type = 0, cert_index = 0, header_cnt = 0, i = 0;
 	char *find_result = NULL;
 	struct httpc_conn *conn_ptr = NULL;
@@ -985,14 +971,11 @@ void at_httpdel(void *arg)
 	uint8_t *response_data = NULL;
 	uint32_t total_resp_body_size = 0;
 
-
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
-
-	argc = parse_param_advance(arg, argv);
 	if ((argc < 4) || (argc > MAX_ARGC)) {
 		RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -1111,8 +1094,7 @@ end:
 	return;
 }
 
-
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_http_items[] = {
 	{"+HTTPHEADER", at_httpheader},
 	{"+HTTPCONF", at_httpconf},
@@ -1131,11 +1113,6 @@ void print_http_at(void)
 	for (i = 0; i < itemNum; i++)  {
 		at_printf("AT%s\r\n", at_http_items[i].log_cmd);
 	}
-}
-
-void at_http_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_http_items, sizeof(at_http_items) / sizeof(at_http_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_FTTP */

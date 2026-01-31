@@ -62,6 +62,19 @@ config SUPPORT_SMP
 config SUPPORT_AUDIO_DEVICE
     def_bool y
 
+# audio cmds
+config SUPPORT_AUDIO_CMD_ARECORD
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_APLAY
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_PLAYER
+    def_bool y
+
+config SUPPORT_AUDIO_CMD_PCRECORD
+    def_bool y
+
 #---------- FEATURE LIST END-------------#
 
 menu "CONFIG Link Option"
@@ -152,9 +165,7 @@ menu "CONFIG APPLICATION"
 
     orsource "../component/application/Kconfig"
 
-    orsource "${APP_DIR}/Kconfig.prj"
-
-    orsource "../component/application/matter/project/cmake/Kconfig"
+    orsource "${RTK_APP_DIR}/Kconfig"
 
     rsource "../component/soc/common/diagnose/Kconfig"
 
@@ -171,27 +182,27 @@ menu "CONFIG WHC INTF"
             select WHC_INTF_IPC
             select WHC_DEV_FOR_KM4
             select WHC_HOST_FOR_CA32
-        # config FULLMAC_DEV
-        #     bool "FULLMAC"
+        # config WHC_DEV_MENU
+        #     bool "WHC_DEV"
         config WIFI_SINGLE_CORE_MENU
             bool "SINGLE CORE"
             select WHC_NONE_FOR_KM4
         # config SDIO_BRIDGE
         #     bool "SDIO_BRIDGE"
-        # config SPI_FULLMAC_HOST
-        #     bool "SPI_FULLMAC_HOST"
+        # config SPI_WHC_HOST
+        #     bool "SPI_WHC_HOST"
 
     endchoice
 
-    if FULLMAC_DEV
+    if WHC_DEV_MENU
         choice
-            prompt "FULLMAC INTERFACE"
-            config SPI_FULLMAC
-                bool "SPI_FULLMAC"
-            config USB_FULLMAC
-                bool "USB_FULLMAC"
-            config SDIO_FULLMAC
-                bool "SDIO_FULLMAC"
+            prompt "WHC INTERFACE"
+            config SPI_WHC
+                bool "SPI_WHC"
+            config USB_WHC
+                bool "USB_WHC"
+            config SDIO_WHC
+                bool "SDIO_WHC"
         endchoice
     endif
 
@@ -225,12 +236,12 @@ menu "CONFIG WIFI"
             select ENABLE_WPS if WHC_HOST && WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
-        config FULLMAC_DEV
+        config WHC_DEV_MENU
             bool
             depends on WHC_DEV
-            select WHC_INTF_SDIO if SDIO_FULLMAC
-            select WHC_INTF_SPI if SPI_FULLMAC
-            select WHC_INTF_USB if USB_FULLMAC
+            select WHC_INTF_SDIO if SDIO_WHC
+            select WHC_INTF_SPI if SPI_WHC
+            select WHC_INTF_USB if USB_WHC
             select WLAN
             select WIFI_FW_EN
 
@@ -241,7 +252,7 @@ menu "CONFIG WIFI"
             select WHC_INTF_SDIO
             select LWIP_LAYER
 
-        config SPI_FULLMAC_HOST
+        config SPI_WHC_HOST
             bool
             depends on WHC_HOST
             select WLAN_FOR_CA32
@@ -292,6 +303,10 @@ menu "CONFIG WIFI"
         bool
 
 endmenu
+
+config VFS_ENABLED
+    depends on !(MP_SHRINK) && (WHC_HOST || WHC_NONE)
+    def_bool y
 
 menu "CONFIG BT"
     config BT_MENU

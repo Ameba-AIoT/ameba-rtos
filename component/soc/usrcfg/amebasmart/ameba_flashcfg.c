@@ -94,15 +94,14 @@ const FlashInfo_TypeDef NAND_AVL[] = {
 *  In each entry, the first item is flash regoin type, the second item is start address, the second item is end address */
 FlashLayoutInfo_TypeDef Flash_Layout[] = {
 	/* Region_Type, [StartAddr, EndAddr] */
-	{IMG_BOOT,      0x08000000, 0x0801FFFF}, //Boot Manifest(4K) + KM4 Bootloader(124K)
+	{IMG_BOOT,      0x08000000, 0x0803FFFF}, //Boot Manifest(4K) + KM4 Bootloader(252K)
 	//Users should modify below according to their own memory
-	{IMG_APP_OTA1,  0x08020000, 0x082FFFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA1 + RDP IMG OTA1
+	{IMG_APP_OTA1,  0x08040000, 0x082FFFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA1 + RDP IMG OTA1
 	// + AP IMG OTA1
 	{IMG_BOOT_OTA2, 0x08300000, 0x0833FFFF}, //Boot Manifest(4K) + KM4 Bootloader(252K) OTA
-	{IMG_APP_OTA2,  0x08340000, 0x0861FFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA2 + RDP IMG OTA2
+	{IMG_APP_OTA2,  0x08340000, 0x085FFFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA2 + RDP IMG OTA2
 	// + AP IMG OTA2
-	{FTL,           0x08620000, 0x08622FFF}, //FTL for BT(>=12K), The start offset of flash pages which is allocated to FTL physical map.
-	{VFS1,          0x08623000, 0x08642FFF}, //VFS region 1 (128K)
+	{VFS1,          0x08640000, 0x086BFFFF}, //VFS region 1 (512K)
 	{VFS2,          0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
 	{USER,          0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
 	/* End */
@@ -123,7 +122,6 @@ FlashLayoutInfo_TypeDef Flash_Layout_Nor_Linux[] = {
 	{IMG_APP_OTA2, 		0x08300000, 0x0841FFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA2 + RDP IMG OTA2
 	{IMG_APIMG_OTA2,	0x08420000, 0x0859FFFF}, //Manifest(4K)+ AP IMG OTA2
 
-	{FTL,				0x08620000, 0x08622FFF}, //FTL for BT(>=12K), The start offset of flash pages which is allocated to FTL physical map.
 	{VFS1, 				0x08623000, 0x08642FFF}, //VFS region 1 (128K)
 	{VFS2, 				0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
 	{USER, 				0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
@@ -145,7 +143,6 @@ FlashLayoutInfo_TypeDef Flash_Layout_Nand_Linux[] = {
 	{IMG_APP_OTA2, 		0x08300000, 0x0841FFFF}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA2 + RDP IMG OTA2
 	{IMG_APIMG_OTA2, 	0x08420000, 0x0859FFFF}, //Manifest(4K)+ AP IMG OTA2
 
-	{FTL,				0x0C400000, 0x0C45FFFF}, //FTL for BT(>=384K), The start offset of flash pages which is allocated to FTL physical map.
 	{VFS1, 				0x0C460000, 0x0C55FFFF}, //VFS region 1(1024K)
 	{VFS2, 				0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
 	{USER, 				0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user

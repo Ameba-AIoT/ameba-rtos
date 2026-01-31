@@ -1,10 +1,15 @@
 /*
- * Copyright (c) 2024 Realtek Semiconductor Corp.
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef _AMEBA_PHY_H_
 #define _AMEBA_PHY_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @file eth_phy.h
  * @brief Standard IEEE 802.3 Clause 22 PHY Register Definitions
@@ -135,5 +140,9 @@
 /* --- Private definitions for new phy --- */
 
 extern const struct eth_phy_ops phy_rtl8201fr_ops;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _AMEBA_PHY_H_ */

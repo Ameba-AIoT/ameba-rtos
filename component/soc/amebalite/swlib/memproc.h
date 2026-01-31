@@ -9,6 +9,10 @@
 
 #include <basic_types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* change name from hal_misc.h */
 extern _LONG_CALL_ void *_memset(void *s, int c, size_t n);
 extern _LONG_CALL_ void *_memcpy(void *s1, const void *s2, size_t n);
@@ -24,5 +28,9 @@ extern  void *__wrap_memmove(void *dst_void, const void *src_void, size_t length
 
 void memcpy_gdma_init(void);
 int memcpy_gdma(void *dest, void *src, u32 size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  //_MEM_PROC_H_

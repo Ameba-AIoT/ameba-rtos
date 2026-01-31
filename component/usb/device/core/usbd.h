@@ -282,7 +282,7 @@ typedef struct _usbd_class_driver_t {
 	 * @param[in] status: Status of the completed transfer.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(*ep_data_out)(usb_dev_t *dev, u8 ep_addr, u16 len);
+	int(*ep_data_out)(usb_dev_t *dev, u8 ep_addr, u32 len);
 
 	/**
 	 * @brief Callback invoked when USB status change. See @ref usbd_attach_status_t.

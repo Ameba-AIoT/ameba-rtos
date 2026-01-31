@@ -243,6 +243,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -557,6 +561,10 @@ _LONG_CALL_ u32 RTC_DayLightSavingConfig(u32 RTC_DayLightSaving, u32 RTC_StoreOp
 _LONG_CALL_ u32 RTC_GetStoreOperation(void);
 _LONG_CALL_ u32 RTC_OutputConfig(u32 RTC_Output);
 _LONG_CALL_ u32 RTC_SmoothCalibConfig(u32 CalibSign, u32 Value, u32 CalibPeriod, u32 Calib_Enable);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

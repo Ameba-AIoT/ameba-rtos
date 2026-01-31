@@ -24,7 +24,7 @@
 #ifdef CONFIG_AMEBAPRO3
 #undef CONFIG_WIFI_TUNNEL
 #endif
-#ifndef CONFIG_FULLMAC_DEV
+#if !defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_INTF_IPC)
 #define CONFIG_WTN_SOCKET_APP
 #endif
 

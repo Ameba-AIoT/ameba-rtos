@@ -7,6 +7,10 @@
 #ifndef _AMEBA_SWRCALIB_H_
 #define _AMEBA_SWRCALIB_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -117,4 +121,8 @@ _LONG_CALL_ void SWR_Calib_AUD(void);
 /**
   * @}
   */
+#ifdef __cplusplus
+}
+#endif
+
 #endif

@@ -240,6 +240,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported Types --------------------------------------------------------*/
 /** @addtogroup SHA_Exported_Types SHA Exported Types
@@ -694,6 +698,10 @@ _LONG_CALL_ int crypto_hmac_sha2_final(SHA_context *ctx, u8 *output);
 
 /** @} */
 /** @} */
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 

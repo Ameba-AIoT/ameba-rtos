@@ -526,6 +526,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -844,6 +848,10 @@ _LONG_CALL_ s32 ADC_GetVoltage(u32 chan_data);
 _LONG_CALL_ s32 ADC_GetVBATVoltage(u32 vbat_data);
 _LONG_CALL_ u32 ADC_GetInterR(void);
 _LONG_CALL_ u32 ADC_GetSampleValue(s32 VolMV, u8 IsVBatChan);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

@@ -235,6 +235,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -276,6 +280,10 @@ _LONG_CALL_ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct);
 #define PSPHY_RFIFO_READY_DELAY		0x7 // latency * 4 + rfifo_rdy_dly = rd_dummy_length + in_physical_cyc
 
 #define PSPHY_CMD_END_DELAY				0x7 //tCQLZ 1~6ns,  recommand by dd
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif

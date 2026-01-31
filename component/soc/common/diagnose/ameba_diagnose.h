@@ -10,6 +10,10 @@
 #include "ameba_soc.h"
 #include "ameba_diagnose_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*****************************************************************************************************
  *                                   Event User's Definitions
  ****************************************************************************************************/
@@ -78,4 +82,9 @@ int rtk_diag_req_add_event_demo1(u8 evt_level, const char *data);
 int rtk_diag_req_dbg_log_enable(u8 state);
 int rtk_diag_dbg_send(const u8 *data, u16 len);
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_AMEBA_DIAGNOSE_H_

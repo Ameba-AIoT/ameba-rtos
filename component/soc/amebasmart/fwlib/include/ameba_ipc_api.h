@@ -7,6 +7,10 @@
 #ifndef _AMEBA_IPC_API_H
 #define _AMEBA_IPC_API_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup IPC
   * @{
   */
@@ -60,5 +64,9 @@ void IPC_TXHandler(void *Data, u32 IrqStatus, u32 ChanNum);
 /** @} */
 
 extern IPC_IRQ_FUN IPC_IrqHandler[IPC_CHANNEL_NUM];
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

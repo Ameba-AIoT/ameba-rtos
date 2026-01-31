@@ -10,7 +10,7 @@
 #include "main.h"
 
 /* Scheduler includes. */
-
+#include "sheipa.h"
 #include "ameba_soc.h"
 #if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #include "vfs.h"
@@ -23,26 +23,6 @@
 #include "ameba_diagnose.h"
 
 static const char *const TAG = "MAIN";
-
-#if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
-#include "ftl_int.h"
-
-void app_ftl_init(void)
-{
-	u32 ftl_start_addr, ftl_end_addr;
-
-	flash_get_layout_info(FTL, &ftl_start_addr, &ftl_end_addr);
-	ftl_phy_page_start_addr = ftl_start_addr - SPI_FLASH_BASE;
-	if (SYSCFG_BootFromNor()) {
-		ftl_phy_page_num = (ftl_end_addr - ftl_start_addr) / PAGE_SIZE_4K;
-	} else {
-		ftl_phy_page_num = (ftl_end_addr - ftl_start_addr) / PAGE_SIZE_2K;
-	}
-
-	ftl_init(ftl_phy_page_start_addr, ftl_phy_page_num);
-}
-#endif
-
 
 void app_mbedtls_rom_init(void)
 {
@@ -76,13 +56,22 @@ _WEAK void app_example(void)
 extern void wifi_init(void);
 #endif
 
-extern int rt_kv_init(void);
-
+#ifdef CONFIG_VFS_ENABLED
+extern uint32_t vfs_ftl_init(void);
+extern int vfs_kv_init(void);
 void app_filesystem_init(void)
 {
-#if !(defined(CONFIG_MP_SHRINK)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	int ret = 0;
 	vfs_init();
+
+	vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
+	ret = vfs_kv_init();
+	if (ret == 0) {
+		RTK_LOGI(TAG, "File System Init Success \n");
+	} else {
+		RTK_LOGE(TAG, "File System Init Fail \n");
+	}
+
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG
 	ret = vfs_user_register("fat", VFS_FATFS, VFS_INF_FLASH, VFS_REGION_3, VFS_RO);
 	if (ret == 0) {
@@ -92,16 +81,11 @@ void app_filesystem_init(void)
 	}
 #endif
 
-	vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
-	ret = rt_kv_init();
-	if (ret == 0) {
-		RTK_LOGI(TAG, "File System Init Success \n");
-		return;
-	}
-
-	RTK_LOGE(TAG, "File System Init Fail \n");
+#if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
+	vfs_ftl_init();
 #endif
 }
+#endif
 
 u32 app_uart_rx_pin_wake_int_handler(void *data)
 {
@@ -167,10 +151,8 @@ int main(void)
 
 	app_pmu_init();
 
+#ifdef CONFIG_VFS_ENABLED
 	app_filesystem_init();
-
-#if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
-	app_ftl_init();
 #endif
 
 	/* pre-processor of application example */
@@ -189,15 +171,19 @@ int main(void)
 	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
 #endif /* CONFIG_CP_TEST_CA32 */
 
+#ifdef CONFIG_SHELL
 	/* init console */
 	shell_init_rom(0, 0);
 	shell_init_ram();
+#endif
 
 	/* Execute application example */
 	app_example();
 
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 	IPC_SEMDelayStub(&rtos_time_delay_ms);
+
+	vPortEnableOtherCore();
 
 	/* Start the tasks and timer running. */
 	RTK_LOGI(TAG, "Cortex-A Start Scheduler\n");

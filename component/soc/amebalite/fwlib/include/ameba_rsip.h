@@ -276,6 +276,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -354,6 +358,10 @@ _LONG_CALL_ void RSIP_MMU_Config(u32 MMUIdx, u32 AddrStart, u32 AddrEnd, u32 Add
 _LONG_CALL_ void RSIP_MMU_Cmd(u32 MMUIdx, u32 NewStatus);
 _LONG_CALL_ void RSIP_MMU_Cache_Clean(void);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

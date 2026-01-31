@@ -97,6 +97,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define RTC_MISC_REG_BASE 0x4080AA80
 #define RTC_MISC_OSC131K_POW 0x0
@@ -104,6 +108,10 @@ typedef struct {
 #define RTC_MISC_OSC131K_STATE 0x8
 #define SDM32K 0x0
 #define OSC131K_DIV4 0x1
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

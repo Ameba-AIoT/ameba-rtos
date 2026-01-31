@@ -435,6 +435,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -623,6 +627,10 @@ void CapTouch_DbgChannel(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 NewState);
 void CapTouch_DbgDumpReg(CAPTOUCH_TypeDef *CapTouch);
 void CapTouch_DbgDumpETC(CAPTOUCH_TypeDef *CapTouch, u32 ch);
 u32 CapTouch_DbgRawData(CAPTOUCH_TypeDef *CapTouch);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

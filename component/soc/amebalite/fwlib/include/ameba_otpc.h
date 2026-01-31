@@ -285,6 +285,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported constants --------------------------------------------------------*/
 
@@ -384,6 +388,10 @@ extern int OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data);
 extern u32 otp_logical_remain(void);
 extern u32 OTPGetCRC(void);
 extern int OTPSetCRC(void);
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif

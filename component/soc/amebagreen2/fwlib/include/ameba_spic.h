@@ -1024,6 +1024,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup FLASH_Exported_Types FLASH Exported Types
@@ -1321,6 +1325,10 @@ extern u32 valid_img1_addr;
 #define WR_VL_EN(x)					((u32)(((x) & 0x00000001) << 17))
 #define RD_VL_EN(x)					((u32)(((x) & 0x00000001) << 16))
 #define GET_PDEX(x)    				((u32)(((x >> 3) & 0x00000001)))
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

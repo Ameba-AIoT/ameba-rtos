@@ -12,6 +12,10 @@
 #include "platform_autoconf.h"
 #include "basic_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern _LONG_CALL_ size_t _strlen(const char *s);
 extern _LONG_CALL_ int _strcmp(const char *cs, const char *ct);
 extern _LONG_CALL_ size_t _strlen(const char *s);
@@ -46,5 +50,9 @@ static inline int isodigit(const char c)
 {
 	return c >= '0' && c <= '7';
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

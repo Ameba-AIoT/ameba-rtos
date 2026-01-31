@@ -21,7 +21,7 @@ static int usbd_vendor_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
-static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
+static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_vendor_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -286,7 +286,10 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	ep_intr_out->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
 	ep_intr_out->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_OUT_INTERVAL : USBD_VENDOR_FS_INTR_OUT_INTERVAL;
 	usbd_ep_init(dev, ep_intr_out);
-	usbd_ep_receive(dev, ep_intr_out);
+	ret = usbd_ep_receive(dev, ep_intr_out);
+	if (ret != HAL_OK) {
+		return ret;
+	}
 
 	/* Init BULK IN EP */
 	ep_bulk_in->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
@@ -296,7 +299,10 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	/* Init BULK OUT EP */
 	ep_bulk_out->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
 	usbd_ep_init(dev, ep_bulk_out);
-	usbd_ep_receive(dev, ep_bulk_out);
+	ret = usbd_ep_receive(dev, ep_bulk_out);
+	if (ret != HAL_OK) {
+		return ret;
+	}
 
 	/* Init ISO IN EP */
 	ep_isoc_in->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
@@ -307,7 +313,10 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	ep_isoc_out->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
 	ep_isoc_out->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_OUT_INTERVAL : USBD_VENDOR_FS_ISOC_OUT_INTERVAL;
 	usbd_ep_init(dev, ep_isoc_out);
-	usbd_ep_receive(dev, ep_isoc_out);
+	ret = usbd_ep_receive(dev, ep_isoc_out);
+	if (ret != HAL_OK) {
+		return ret;
+	}
 
 	if (cdev->cb->set_config != NULL) {
 		cdev->cb->set_config();
@@ -494,36 +503,46 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
   * @param  ep_addr: endpoint address
   * @retval Status
   */
-static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
+static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	usbd_ep_t *ep_isoc_out = &cdev->ep_isoc_out;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
 	usbd_ep_t *ep_intr_out = &cdev->ep_intr_out;
 	UNUSED(dev);
+	int ret = HAL_OK;
 
 	if (ep_addr == USBD_VENDOR_INTR_OUT_EP) {
 		if (len > 0) {
 			cdev->cb->intr_received(ep_intr_out->xfer_buf, len);
 		}
-		usbd_ep_receive(cdev->dev, ep_intr_out);
+		ret = usbd_ep_receive(cdev->dev, ep_intr_out);
+		if (ret != HAL_OK) {
+			return ret;
+		}
 	}
 
 	if (ep_addr == USBD_VENDOR_BULK_OUT_EP) {
 		if (len > 0) {
 			cdev->cb->bulk_received(ep_bulk_out->xfer_buf, len);
 		}
-		usbd_ep_receive(cdev->dev, ep_bulk_out);
+		ret = usbd_ep_receive(cdev->dev, ep_bulk_out);
+		if (ret != HAL_OK) {
+			return ret;
+		}
 	}
 
 	if (ep_addr == USBD_VENDOR_ISOC_OUT_EP) {
 		if (len > 0) {
 			cdev->cb->isoc_received(ep_isoc_out->xfer_buf, len);
 		}
-		usbd_ep_receive(cdev->dev, ep_isoc_out);
+		ret = usbd_ep_receive(cdev->dev, ep_isoc_out);
+		if (ret != HAL_OK) {
+			return ret;
+		}
 	}
 
-	return HAL_OK;
+	return ret;
 }
 
 /**
@@ -811,7 +830,7 @@ int usbd_vendor_deinit(void)
 	return HAL_OK;
 }
 
-int usbd_vendor_transmit_bulk_data(u8 *buf, u16 len)
+int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len)
 {
 	int ret = HAL_OK;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
@@ -827,11 +846,11 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u16 len)
 	}
 
 	if (ep_bulk_in->xfer_state == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX len %d data %d \n", len, buf[0]);
 		ep_bulk_in->xfer_state = 1U;
 		usb_os_memcpy((void *)ep_bulk_in->xfer_buf, (void *)buf, len);
 		ep_bulk_in->xfer_len = len;
-		usbd_ep_transmit(dev, ep_bulk_in);
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX len %d data %d \n", len, buf[0]);
+		ret = usbd_ep_transmit(dev, ep_bulk_in);
 	} else {
 		ret = HAL_BUSY;
 	}
@@ -839,7 +858,7 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u16 len)
 	return ret;
 }
 
-int usbd_vendor_transmit_intr_data(u8 *buf, u16 len)
+int usbd_vendor_transmit_intr_data(u8 *buf, u32 len)
 {
 	int ret = HAL_OK;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
@@ -855,11 +874,11 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u16 len)
 	}
 
 	if (ep_intr_in->xfer_state == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR TX len %d data %d \n", len, buf[0]);
 		ep_intr_in->xfer_state = 1U;
 		usb_os_memcpy((void *)ep_intr_in->xfer_buf, (void *)buf, len);
 		ep_intr_in->xfer_len = len;
-		usbd_ep_transmit(dev, ep_intr_in);
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR TX len %d data %d \n", len, buf[0]);
+		ret = usbd_ep_transmit(dev, ep_intr_in);
 	} else {
 		ret = HAL_BUSY;
 	}
@@ -867,7 +886,7 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u16 len)
 	return ret;
 }
 
-int usbd_vendor_transmit_isoc_data(u8 *buf, u16 len)
+int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	usb_dev_t *dev = cdev->dev;
@@ -880,10 +899,9 @@ int usbd_vendor_transmit_isoc_data(u8 *buf, u16 len)
 	if (len > ep_isoc_in->mps) {
 		len = ep_isoc_in->mps;
 	}
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC TX len %d data %d \n", len, buf[0]);
 
 	usb_os_memcpy(ep_isoc_in->xfer_buf, buf, len);
 	ep_isoc_in->xfer_len = len;
-	usbd_ep_transmit(cdev->dev, ep_isoc_in);
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC TX len %d data %d \n", len, buf[0]);
-	return HAL_OK;
+	return usbd_ep_transmit(cdev->dev, ep_isoc_in);
 }

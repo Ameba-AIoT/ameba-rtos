@@ -499,6 +499,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your definition here
 
@@ -818,6 +822,10 @@ void CapTouch_RXDMAConfig(CAPTOUCH_TypeDef *CapTouch, u32 RxDmaBurstSize);
 void CapTouch_RXDMACmd(CAPTOUCH_TypeDef *CapTouch, u32 NewState);
 u8 CapTouch_RXGDMA_Init(CAPTOUCH_TypeDef *CapTouch, GDMA_InitTypeDef *GDMA_InitStruct,
 						void *CallbackData, IRQ_FUN CallbackFunc, u8 *pRxBuf, u32 RxCount);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

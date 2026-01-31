@@ -398,10 +398,18 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 #define LPSXTAL_DIGI_EN			0x4
 #define LPSXTAL_DIGI_DIS		0x0
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

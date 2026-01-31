@@ -11,6 +11,10 @@
 #include "utils_def.h"
 #include "xlat_tables_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !defined(PAGE_SIZE)
 #error "PAGE_SIZE is not defined."
 #endif
@@ -68,5 +72,9 @@
 #define GET_XLAT_TABLE_LEVEL_BASE(_virt_addr_space_sz)			\
 	(((_virt_addr_space_sz) > (ULL(1) << L1_XLAT_ADDRESS_SHIFT)) ?	\
 	 U(1) : U(2))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* XLAT_TABLES_AARCH32_H */

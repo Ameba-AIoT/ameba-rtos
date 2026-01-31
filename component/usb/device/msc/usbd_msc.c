@@ -15,6 +15,7 @@
 #ifdef CONFIG_USBD_MSC_SD_MODE
 #include "ameba_sd.h"
 #endif
+
 /* Private defines -----------------------------------------------------------*/
 
 /* Private types -------------------------------------------------------------*/
@@ -28,7 +29,7 @@ static int usbd_msc_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
-static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
+static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_msc_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -247,6 +248,7 @@ static int RAM_WriteBlocks(u32 sector, const u8 *data, u32 count)
 
 static int usbd_msc_sd_init(void)
 {
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Disk init\n");
 
 #ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
 	return FLASH_second_disk_Driver.disk_initialize();
@@ -259,6 +261,7 @@ static int usbd_msc_sd_init(void)
 
 static int usbd_msc_sd_deinit(void)
 {
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Disk deinit\n");
 
 #ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
 	return FLASH_second_disk_Driver.disk_deinitialize();
@@ -302,7 +305,7 @@ static int usbd_msc_sd_writeblocks(u32 sector, const u8 *data, u32 count)
 #endif
 }
 
-#endif // USBD_MSC_RAM_DISK
+#endif // CONFIG_USBD_MSC_RAM_DISK
 
 /**
 * @brief  Abort the current transfer
@@ -576,7 +579,7 @@ static void usbd_msc_tx_process(void)
   * @param  ep_addr: endpoint address
   * @retval Status
   */
-static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
+static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
@@ -965,7 +968,7 @@ void usbd_msc_deinit(void)
 * @param  len: data length
 * @retval status
 */
-int usbd_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u16 len)
+int usbd_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u32 len)
 {
 	int ret = HAL_ERR_HW;
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
@@ -987,7 +990,7 @@ int usbd_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u16 len)
 * @param  len: data length
 * @retval status
 */
-int usbd_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u16 len)
+int usbd_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u32 len)
 {
 	int ret = HAL_ERR_HW;
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;

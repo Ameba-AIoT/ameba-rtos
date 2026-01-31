@@ -7,6 +7,10 @@
 #ifndef _AMEBA_BOOTLOADER_H_
 #define _AMEBA_BOOTLOADER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void BOOT_SOC_ClkChk(const SocClk_Info_TypeDef *pSocClk_Info);
 void BOOT_SOC_ClkSet(void);
 
@@ -20,4 +24,9 @@ void Boot_Fullmac_LoadIMGAll(void);
 void BOOT_FullSpeedCheck(u32 cpu_clk);
 void BOOT_ReasonSet(void);
 int BOOT_PSRAM_Init(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
