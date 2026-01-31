@@ -1510,9 +1510,17 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 #define SYSTEM_MEM_CTRL_BASE     0x42009200
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

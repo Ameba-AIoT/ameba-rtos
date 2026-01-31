@@ -907,7 +907,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_config_client_model_app_callback(uint8_t evt
 	case RTK_BT_MESH_CONFIG_MODEL_LPN_POLL_TO_STAT: {
 		rtk_bt_mesh_cfg_lpn_poll_timeout_stat_t *lpn_poll_to_stat;
 		lpn_poll_to_stat = (rtk_bt_mesh_cfg_lpn_poll_timeout_stat_t *)param;
-		BT_LOGA("[APP] fn = 0x%04x lpn = 0x%04x \r\n", lpn_poll_to_stat->lpn_addr,
+		BT_LOGA("[APP] lpn = 0x%04x poll_timeout = %d00ms \r\n", lpn_poll_to_stat->lpn_addr,
 				lpn_poll_to_stat->poll_to[0] + (lpn_poll_to_stat->poll_to[1] << 8) + (lpn_poll_to_stat->poll_to[2] << 16));
 		BT_AT_PRINT("+BLEMESHCONFIG:lptg,0x%04x,0x%04x\r\n",
 					lpn_poll_to_stat->lpn_addr,

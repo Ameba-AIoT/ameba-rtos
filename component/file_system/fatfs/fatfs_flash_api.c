@@ -19,6 +19,15 @@ int fatfs_flash_close(int interface)
 		if (f_unmount(fatfs_param->drv) != FR_OK) {
 			VFS_DBG(VFS_ERROR, "FATFS unmount flash logical drive fail.");
 		}
+
+		if (interface == VFS_INF_FLASH) {
+			FLASH_disk_Driver.disk_deinitialize();
+		}
+#if defined(CONFIG_FATFS_SECOND_FLASH) && CONFIG_FATFS_SECOND_FLASH
+		if (interface == VFS_INF_SECOND_FLASH) {
+			FLASH_second_disk_Driver.disk_deinitialize();
+		}
+#endif
 	}
 
 	if (FATFS_UnRegisterDiskDriver(fatfs_param->drv_num)) {
@@ -31,7 +40,7 @@ int fatfs_flash_close(int interface)
 int fatfs_flash_init(int interface)
 {
 	int ret = 0;
-	FRESULT res1, res2;
+	FRESULT res;
 	fatfs_params_t *fatfs_param;
 
 	if (interface == VFS_INF_FLASH) {
@@ -67,23 +76,9 @@ int fatfs_flash_init(int interface)
 			VFS_DBG(VFS_INFO, "Flash drive path: %s ", fatfs_param->drv);
 		}
 
-		res1 = f_mount(&fatfs_param->fs, fatfs_param->drv, 1);
+		res = f_mount(&fatfs_param->fs, fatfs_param->drv, 1);
 
-#if !FF_FS_READONLY
-		// test flash
-		char path[64];
-		char flash_test_fn[64] = "flash.txt";
-		FIL fatfs_flash_file;
-		VFS_DBG(VFS_INFO, "Test flash drive (file: %s)", flash_test_fn);
-		memset(path, 0, sizeof(path));
-		strcpy(path, fatfs_param->drv);
-		sprintf(&path[strlen(path)], "%s", flash_test_fn);
-		res2 = f_open(&fatfs_flash_file, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
-#else
-		res2 = 0;
-#endif
-
-		if (res1 || res2) {
+		if (res) {
 #if FF_FS_READONLY
 			goto fatfs_init_err;
 #else

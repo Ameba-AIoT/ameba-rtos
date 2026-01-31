@@ -17,6 +17,7 @@
 #define DEFAULT_REPORT_INTERVAL 0xffffffff
 #define DEFAULT_UDP_TOS_VALUE   1 // AC_BE
 #define SUBSTREAM_FLAG 0x0100
+#define FATALREADERR(errno) ((errno != EAGAIN) && (errno != EWOULDBLOCK))
 
 //Max number of streaming
 #define MULTI_STREAM_NUM 10
@@ -816,6 +817,9 @@ void recv_udp_packets(struct iperf_data_t *iperf_data, int first_packet_size, ui
 	int frame_num = 0;
 	uint64_t total_size = first_packet_size, report_size = first_packet_size;
 	uint32_t start_time, report_start_time, end_time;
+#if (WIFI_LOGO_CERTIFICATION == 0)
+	int max_recv_to_cnt = 30, recv_to_cnt = 0;
+#endif
 
 	start_time = rtos_time_get_current_system_time_ms();
 	report_start_time = start_time;
@@ -826,30 +830,43 @@ void recv_udp_packets(struct iperf_data_t *iperf_data, int first_packet_size, ui
 			((boundary_type == 2) && (end_time - start_time <= 1000 * client_amount)))) { // time_boundary
 
 		recv_size = recvfrom(iperf_data->server_fd, udp_server_buffer, iperf_data->buf_size, 0, (struct sockaddr *)&client_addr, (u32_t *)&addrlen);
-
 		if (recv_size < 0) {
 			if (boundary_type) {
 				tptest_res_log("\n\r[ERROR] %s: Receive data failed\n\r", __func__);
 			} else {
-				tptest_res_log("%s: Receive data timeout\n\r", __func__);
+				tptest_res_log("[ERROR] %s: Receive data timeout\n\r", __func__);
 			}
-			goto exit1;
-		} else if ((recv_size > 0) && (iperf_data->bidirection) && (!boundary_type)) {
-			sendto(iperf_data->server_fd, udp_server_buffer, recv_size, 0, (struct sockaddr *) &client_addr, (u32_t)addrlen);
-		}
-		// ack data to client
-		// Not send ack to prevent send fail due to limited skb, but it will have warning at iperf client
-		//sendto(server_fd,udp_server_buffer,ret,0,(struct sockaddr*)&client_addr,sizeof(client_addr));
-		datagram_id = ntohl(((struct iperf_udp_datagram *)udp_server_buffer)->id);
-		if (datagram_id < 0) {
-			sendto(iperf_data->server_fd, udp_server_buffer, 0, 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
-			g_stream_id[iperf_data->stream_id].terminate = 1;
+
+#if (WIFI_LOGO_CERTIFICATION == 0)
+			if (FATALREADERR(errno) || (recv_to_cnt ++ > max_recv_to_cnt))
+#endif
+			{
+				goto exit1;
+			}
+
+		} else if (recv_size > 0) {
+			if ((iperf_data->bidirection) && (!boundary_type)) {
+				sendto(iperf_data->server_fd, udp_server_buffer, recv_size, 0, (struct sockaddr *) &client_addr, (u32_t)addrlen);
+			}
+
+			// ack data to client
+			// Not send ack to prevent send fail due to limited skb, but it will have warning at iperf client
+			//sendto(server_fd,udp_server_buffer,ret,0,(struct sockaddr*)&client_addr,sizeof(client_addr));
+			datagram_id = ntohl(((struct iperf_udp_datagram *)udp_server_buffer)->id);
+			if (datagram_id < 0) {
+				sendto(iperf_data->server_fd, udp_server_buffer, 0, 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
+				g_stream_id[iperf_data->stream_id].terminate = 1;
+			}
+
+			total_size += recv_size;
+			report_size += recv_size;
+			frame_num++;
+#if (WIFI_LOGO_CERTIFICATION == 0)
+			recv_to_cnt = 0;
+#endif
 		}
 
 		end_time = rtos_time_get_current_system_time_ms();
-		total_size += recv_size;
-		report_size += recv_size;
-		frame_num++;
 
 		if ((iperf_data->report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (1000 * iperf_data->report_interval))) {
 			tptest_res_log("udp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec\n\r",

@@ -11,6 +11,10 @@
 #include "utils_def.h"
 #include "xlat_mmu_helpers.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Miscellaneous MMU related constants */
 #define NUM_2MB_IN_GB		(U(1) << 9)
 #define NUM_4K_IN_2MB		(U(1) << 9)
@@ -178,5 +182,9 @@
 #define PXN_SHIFT			53
 #define XN_SHIFT			54
 #define UXN_SHIFT			XN_SHIFT
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* XLAT_TABLES_DEFS_H */

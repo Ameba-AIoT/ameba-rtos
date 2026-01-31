@@ -5,6 +5,11 @@
  */
 
 #ifndef _SYSREG_AON_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _SYSREG_AON_H_
 
 /* AUTO_GEN_START */
@@ -493,6 +498,11 @@
 //Please add your defination here
 #define REG_AON_WIFI_IPC				(SYSTEM_CTRL_BASE + REG_AON_WIFI_CFG)
 #define AON_BIT_WIFI_INIC_NP_READY		BIT0
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

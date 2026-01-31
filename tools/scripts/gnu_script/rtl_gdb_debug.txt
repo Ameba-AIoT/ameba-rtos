@@ -1,0 +1,66 @@
+# GDB script for loading ram.bin process
+# Common script for all Ameba SOC platforms
+# Platform-specific variables should be set via -ex before sourcing this script
+
+#===============================================================================
+# GDB connection
+set remotetimeout 100000
+# Enter user IP here for remote connect
+set $HOST_IP = ""
+# Port $GDB_PORT will be set via -ex parameter before sourcing this script
+# target remote :2335
+eval "target remote %s:%d", $HOST_IP, $GDB_PORT
+
+#===============================================================================
+#Message display setting
+#disable all messages
+
+set verbose off
+set complaints 0
+set confirm off
+set exec-done-display off
+show exec-done-display
+set trace-commands off
+#set debug aix-thread off
+#set debug dwarf2-die 0
+set debug displaced off
+set debug expression 0
+set debug frame 0
+set debug infrun 0
+set debug observer 0
+set debug overload 0
+#set debugvarobj 0  #Ameba_todo
+set pagination off
+set print address off
+set print symbol-filename off
+set print symbol off
+set print pretty off
+set print object off
+#set debug notification off
+set debug parser off
+set debug remote 0
+
+#===============================================================================
+#monitor reset 1
+#monitor sleep 20
+#monitor clrbp #Ameba_todo
+#===============================================================================
+#Load flash download file
+file ./image/target_img2.axf
+set $FLASHDATBUFSIZE = 0x800
+
+#===============================================================================
+# Platform-specific configurations set via -ex parameters:
+# - target remote :PORT
+# - $PERI_ON_BASE or $SYSTEM_CTRL_BASE
+# - $$REG_BOOT_CFG or $$REG_LSYS_BOOT_CFG
+
+#b main
+#continue
+#clear main
+#Load the file
+#lo
+
+
+
+

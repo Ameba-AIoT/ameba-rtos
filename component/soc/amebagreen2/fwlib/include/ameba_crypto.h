@@ -8,6 +8,10 @@
 #define _AMEBAGREEN2_KEY_MANAGEMENT_H_
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //Please add your definition here
 
 /** @addtogroup Ameba_Periph_Driver
@@ -104,6 +108,10 @@ _LONG_CALL_ void CRYPTO_Addr_Not_Alined_Warning(int is_valid);
 /** @} */
 
 /** @} */
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif

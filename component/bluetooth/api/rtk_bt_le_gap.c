@@ -809,10 +809,9 @@ uint16_t rtk_bt_le_gap_connect_cancel(rtk_bt_le_addr_t *cancel_addr)
 uint16_t rtk_bt_le_gap_disconnect(uint16_t conn_handle)
 {
 	uint16_t ret = 0;
-	uint16_t conn_hdl = conn_handle;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_DISCONN,
-						  &conn_hdl, sizeof(uint16_t));
+						  &conn_handle, sizeof(uint16_t));
 
 	return ret;
 }
@@ -910,6 +909,16 @@ uint16_t rtk_bt_le_gap_read_rssi(uint16_t conn_handle, int8_t *p_rssi)
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_READ_RSSI,
 						  &read_rssi, sizeof(rtk_bt_le_read_rssi_param_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_le_gap_read_remote_version(uint16_t conn_handle)
+{
+	uint16_t ret = 0;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_READ_REMOTE_VERSION,
+						  &conn_handle, sizeof(uint16_t));
 
 	return ret;
 }

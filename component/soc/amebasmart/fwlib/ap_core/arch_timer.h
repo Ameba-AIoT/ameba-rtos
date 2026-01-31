@@ -101,6 +101,14 @@ static inline char arm_arch_timer_check_enable(void) /*check CNTV_CTL: virtual t
 }
 #endif /* !_ASMLANGUAGE */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 uint64_t vGetGenericTimerFreq(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

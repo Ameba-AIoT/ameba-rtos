@@ -57,7 +57,14 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_definitions CONFIG_BUILD_NONSECURE=1)
+# Detect if building for secure image (image3) or non-secure image (image2)
+if(c_CURRENT_IMAGE MATCHES "img3")
+    # Secure image (image3) build settings
+    ameba_list_append(private_definitions CONFIG_BUILD_SECURE=1)
+else()
+    # Non-secure image (image2) build settings
+    ameba_list_append(private_definitions CONFIG_BUILD_NONSECURE=1)
+endif()
 
 ameba_list_append_if(CONFIG_WLAN private_sources library/net_sockets.c)
 

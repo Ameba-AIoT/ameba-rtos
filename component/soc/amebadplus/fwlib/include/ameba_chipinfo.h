@@ -306,7 +306,7 @@ _LONG_CALL_ MCM_MemTypeDef ChipInfo_MCMInfo(void);
 _LONG_CALL_ u8 ChipInfo_MCMFlashVoltage(void);
 _LONG_CALL_ bool ChipInfo_PsramExists(void);
 _LONG_CALL_ u32 ChipInfo_PsramBoundary(void);
-_LONG_CALL_ void ChipInfo_GetSocName_ToBuf(char *buf, size_t buflen);
+_LONG_CALL_ u32 ChipInfo_GetSocName_ToBuf(void);
 _LONG_CALL_ u8 EFUSE_GetBDNum(void);
 _LONG_CALL_ u8 EFUSE_GetChipVersion(void);
 _LONG_CALL_ u8 EFUSE_GetESFlag(void);

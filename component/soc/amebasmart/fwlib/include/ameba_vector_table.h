@@ -7,6 +7,10 @@
 #ifndef _AMEBA_VECTOR_TABLE_H_
 #define _AMEBA_VECTOR_TABLE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup IRQ_Exported_Constants IRQ Exported Constants
   * @{
@@ -365,5 +369,9 @@ enum NS_IRQnPriority {
   * @}
   */
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_AMEBA_VECTOR_TABLE_H_

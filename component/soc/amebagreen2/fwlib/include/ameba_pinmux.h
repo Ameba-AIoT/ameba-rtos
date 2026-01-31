@@ -341,6 +341,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 /* Exported Types --------------------------------------------------------*/
@@ -459,6 +463,10 @@ _LONG_CALL_ void PAD_InputCtrl(u8 PinName, u32 NewState);
 #define TESTID_FLASH_PROBE_G0_ICFG			8
 #define TESTID_FLASH_PROBE_G1_ICFG			9
 #define TESTID_FLASH_PROBE_G0G1_ICFG		10
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif   //_AMEBA_PINMUX_H_

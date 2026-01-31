@@ -29,6 +29,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*Don't modify this enum table*/
 enum spdio_rx_data_t {
 	SPDIO_RX_DATA_NULL = 0x00,
@@ -118,4 +122,8 @@ u8 SPDIO_DeviceTx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, struct spdio_buf
 void SPDIO_TxBd_DataReady_DeviceRx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, spdio_device_rx_done_cb_ptr spdio_device_rx_done_cb);
 void SPDIO_Device_Init(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev);
 void SPDIO_Device_DeInit(SDIO_TypeDef *SDIO);
+
+#ifdef __cplusplus
+}
+#endif
 #endif

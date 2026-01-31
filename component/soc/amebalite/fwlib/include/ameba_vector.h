@@ -5,6 +5,11 @@
  */
 
 #ifndef _AMEBA_VECTOR_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _AMEBA_VECTOR_H_
 
 /** @addtogroup AmebaD_Platform
@@ -114,5 +119,10 @@ extern HAL_VECTOR_FUN  NewVectorTable[];
 #define BIT_EXCRETURN_ES		BIT(0)	/* The security domain the exception was taken to. 0: Non-secure, 1: Secure */
 
 #define BIT_CONTROL_SPSEL		BIT(1)	/* Stack-pointer select. Defines the stack pointer to be used. 0: use MSP, 1: in thread mode, use PSP */
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_AMEBA_VECTOR_H_

@@ -7,6 +7,10 @@
 #ifndef _AMEBA_BOOT_H_
 #define _AMEBA_BOOT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern u8 __image1_validate_code__[];
 extern u8 __image1_bss_start__[];
 extern u8 __image1_bss_end__[];
@@ -183,5 +187,10 @@ extern void BOOT_RccConfig(void);
 #define RANGE_IS_BOOTRAM(src, len)	(((src) >= BOOT_LOADER_START) && ((len) < BOOT_LOADER_LIMIT - BOOT_LOADER_START) && ((src + len) < BOOT_LOADER_LIMIT))
 #define RANGE_IS_FULLMAC(src, len)	((((src) | TZ_IDAU_SEC_OFFSET) >= (FULLMAC_ADDR_START | TZ_IDAU_SEC_OFFSET)) && ((len) < FULLMAC_ADDR_END - FULLMAC_ADDR_START) && \
 									(((src + len) | TZ_IDAU_SEC_OFFSET) < (FULLMAC_ADDR_END | TZ_IDAU_SEC_OFFSET)))
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif   //_AMEBA_BOOT_H_
 

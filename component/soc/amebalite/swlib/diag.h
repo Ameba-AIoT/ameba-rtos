@@ -11,6 +11,10 @@
 #include "basic_types.h"
 #include <stdarg.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 u32 DiagPrintf(const char *fmt, ...);
 u32 DiagPrintfD(const char *fmt, ...);
 int DiagVprintf(const char *fmt, va_list ap);
@@ -180,5 +184,8 @@ extern u32 ConfigDebug[];
 extern u32 ConfigDebugClose;
 extern u32 ConfigDebug[];
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_DIAG_H_

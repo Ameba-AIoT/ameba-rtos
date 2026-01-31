@@ -593,6 +593,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 /*==========SWR Calibration Register Address Definition==========*/
@@ -607,6 +611,10 @@
 #define		SEC_VOL_ANA_LDO_180		0x7E6
 /** @} */
 
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

@@ -24,6 +24,10 @@
 #include "jpegdeccontainer.h"
 #include "basetype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*------------------------------------------------------------------------------
     2. Module defines
 ------------------------------------------------------------------------------*/
@@ -51,5 +55,9 @@ u32 JpegDecGet2Bytes(StreamStorage *pStream);
 u32 JpegDecGetByte(StreamStorage *pStream);
 u32 JpegDecShowBits(StreamStorage *pStream);
 u32 JpegDecFlushBits(StreamStorage *pStream, u32 bits);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #ifdef MODULE_H */

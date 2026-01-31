@@ -7,6 +7,10 @@
 #ifndef _AMEBA_BOOTCFG_H_
 #define _AMEBA_BOOTCFG_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern MMU_ConfDef Flash_MMU_Config[];
 extern RCC_ConfDef RCC_Config[];
 extern CACHETCM_TypeDef CACHETCM_Def[];
@@ -23,5 +27,9 @@ extern u8 Boot_AP_Enbale;
 extern u8 Boot_MemSwr_Only;
 extern SocClk_Info_TypeDef SocClk_Info[];
 extern u8 Boot_Agg_En;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

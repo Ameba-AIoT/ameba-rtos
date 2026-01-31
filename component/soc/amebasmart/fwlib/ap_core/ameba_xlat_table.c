@@ -6,6 +6,7 @@
 
 #include "xlat_tables_v2.h"
 #include "basic_types.h"
+#include "section_config.h"
 
 extern unsigned char __ram_nocache_start__[];
 extern unsigned char __ram_nocache_end__[];
@@ -70,4 +71,16 @@ void setupMMUTable(int coreID)
 	}
 	/* core0 & 1: set BBT0 */
 	enable_mmu_svc_mon(0);
+}
+
+SRAMDRAM_ONLY_TEXT_SECTION
+void xlat_flash_region_device(void)
+{
+	xlat_update_mem_attributes(0x08000000, 0x10000000 - 0x08000000, MT_DEVICE | MT_RO | MT_NS);
+}
+
+SRAMDRAM_ONLY_TEXT_SECTION
+void xlat_flash_region_xip(void)
+{
+	xlat_update_mem_attributes(0x08000000, 0x10000000 - 0x08000000, MT_CODE | MT_NS);
 }

@@ -12,6 +12,10 @@
 
 #include "hci_core.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -23,6 +27,10 @@
 /* Exported functions ------------------------------------------------------- */
 
 extern HCI_InterfaceTypeDef USBD_Interface;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _USBD_INTF_H_ */
 

@@ -7,6 +7,10 @@
 #ifndef _AMEBA_IPC_API_H
 #define _AMEBA_IPC_API_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -63,5 +67,8 @@ PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum);
 void IPC_TXHandler(void *Data, u32 IrqStatus, u32 ChanNum);
 extern IPC_IRQ_FUN IPC_IrqHandler[IPC_CHANNEL_NUM];
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

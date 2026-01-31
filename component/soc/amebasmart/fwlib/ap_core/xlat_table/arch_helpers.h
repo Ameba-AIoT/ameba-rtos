@@ -17,6 +17,10 @@
 #include "stdint.h"
 #include "arch.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**********************************************************************
  * Macros which create inline functions to read or write CPU system
  * registers
@@ -452,5 +456,9 @@ static inline void disable_fiq(void)
 	__asm__ volatile ("cpsid	f");
 	isb();
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ARCH_HELPERS_H */

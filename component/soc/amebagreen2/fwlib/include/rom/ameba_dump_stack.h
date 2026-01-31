@@ -7,6 +7,10 @@
 #ifndef _AMEBA_DUMP_STACK_H_
 #define _AMEBA_DUMP_STACK_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define bsp_string_output DiagPrintf
 
 #define trace_printf(fmt, args...) bsp_string_output(fmt, ##args);
@@ -46,5 +50,9 @@ uint32_t crash_GetExStackDepth(void);
 *
 ***/
 void crash_SetExStackDepth(uint32_t depth);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

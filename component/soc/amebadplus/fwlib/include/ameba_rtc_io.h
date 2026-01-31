@@ -22,6 +22,10 @@
 
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 /* Exported constants --------------------------------------------------------*/
@@ -157,6 +161,10 @@ _LONG_CALL_ u32 RTCIO_IsEnabled(void);
 _LONG_CALL_ void RTCIO_SetRValue(u32 ResetRcal);
 _LONG_CALL_ void RTCIO_ModeRTCStart(void);
 _LONG_CALL_ void RTCIO_GetTimeInfo(RTCIO_TimeInfo *pDataOut);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

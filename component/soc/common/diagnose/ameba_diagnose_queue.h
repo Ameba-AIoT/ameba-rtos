@@ -9,6 +9,10 @@
 
 #include "ameba_diagnose_ring_array.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int rtk_diag_queue_init(u16 heap_capacity, u16 total_capacity);
 void rtk_diag_queue_deinit(void);
 int rtk_diag_queue_set_total_capacity(u16 total_capacity);
@@ -22,4 +26,9 @@ const RtkDiagRingArrayHandler_t *rtk_diag_queue_get_del_list(void);
 int rtk_diag_queue_clr_del_list(void);
 const RtkDiagEvent_t *rtk_diag_queue_find(u32 timestamp, u16 *global_offset, u16 *local_offset, int *result);
 const RtkDiagEvent_t *rtk_diag_queue_next_to_prev_find(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

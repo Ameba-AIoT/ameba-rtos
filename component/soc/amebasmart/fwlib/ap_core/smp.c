@@ -7,11 +7,15 @@
 #include "sheipa.h"
 #include "ameba_soc.h"
 #include "FreeRTOS.h"
+#include <spinlock.h>
 
 static const char *const TAG = "#";
 extern void _boot(void);
 extern void vPortRestoreTaskContext(void);
 
+#if ( configNUM_CORES > 1 )
+extern spinlock_t flash_lock;
+#endif
 /*-----------------------------------------------------------*/
 
 void rtk_core1_power_on(void)
@@ -74,6 +78,11 @@ void vPortGateOtherCore(void)
 		return;
 	}
 
+	/* The completion of a DSB that completes a TLB maintenance operation ensures that all accesses that used the old mapping have completed. */
+	MMU_InvalidateTLB();
+	L1C_InvalidateBTAC();
+	spin_lock(&flash_lock);
+
 	ulFlashPG_Flag = 1;
 	__DSB();
 
@@ -94,14 +103,12 @@ void vPortGateOtherCore(void)
 
 void vPortWakeOtherCore(void)
 {
-	if (ulFlashPG_Flag == 1) { // which means other core is already in WFE
-		ulFlashPG_Flag = 0;
-		return;
-	} else {
-		ulFlashPG_Flag = 0;
-		__DSB();
-		__SEV();
-	}
+#if ( configNUM_CORES > 1 )
+	ulFlashPG_Flag = 0;
+	__DSB();
+	__SEV();
+	spin_unlock(&flash_lock);
+#endif
 }
 
 void vPortSecondaryOff(void)

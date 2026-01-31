@@ -226,9 +226,8 @@ void BOOT_PSRAM_Init(void)
 
 	/* psram calibration */
 	if ((SYSCFG_CHIPType_Get() == CHIP_TYPE_ASIC_POSTSIM) || (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA)) {
-		if (PSRAM_calibration(DISABLE) == FALSE) {
-			PSRAM_InfoDump();
-			PSRAM_calibration(ENABLE);
+		if (PSRAM_calibration() == FALSE) {
+			// PSRAM_InfoDump();
 		}
 	}
 }

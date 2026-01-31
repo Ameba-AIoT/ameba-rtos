@@ -24,8 +24,8 @@ static int usbh_cdc_acm_attach(usb_host_t *host);
 static int usbh_cdc_acm_detach(usb_host_t *host);
 static int usbh_cdc_acm_process(usb_host_t *host, u32 msg);
 static int usbh_cdc_acm_setup(usb_host_t *host);
-static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usbh_cdc_acm_line_coding_t *linecoding);
-static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usbh_cdc_acm_line_coding_t *linecoding);
+static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
+static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
 static int usbh_cdc_acm_process_set_control_line_state(usb_host_t *host);
 static void usbh_cdc_acm_process_tx(usb_host_t *host);
 static void usbh_cdc_acm_process_rx(usb_host_t *host);
@@ -39,7 +39,7 @@ static const char *const TAG = "ACM";
 static const usbh_dev_id_t cdc_acm_devs[] = {
 	{
 		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS,
-		.bInterfaceClass = CDC_CLASS_CODE,
+		.bInterfaceClass = USB_CDC_CLASS_CODE,
 	},
 	{
 	},
@@ -77,9 +77,9 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	usbh_dev_id_t dev_id = {0,};
 
 	/* Get Communication Interface */
-	dev_id.bInterfaceClass = CDC_COMM_INTERFACE_CLASS_CODE;
-	dev_id.bInterfaceSubClass = CDC_ABSTRACT_CONTROL_MODEL;
-	dev_id.bInterfaceProtocol = CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND;
+	dev_id.bInterfaceClass = USB_CDC_COMM_INTERFACE_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_CDC_SUBCLASS_ACM;
+	dev_id.bInterfaceProtocol = USB_CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	if (itf_data == NULL) {
@@ -96,9 +96,9 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	}
 
 	/* Get Data Interface */
-	dev_id.bInterfaceClass = CDC_DATA_INTERFACE_CLASS_CODE;
-	dev_id.bInterfaceSubClass = CDC_RESERVED;
-	dev_id.bInterfaceProtocol = CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC;
+	dev_id.bInterfaceClass = USB_CDC_DATA_INTERFACE_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_CDC_SUBCLASS_RESERVED;
+	dev_id.bInterfaceProtocol = USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	if (itf_data == NULL) {
@@ -119,7 +119,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 		}
 	}
 	cdc->host = host;
-	cdc->state = CDC_ACM_STATE_IDLE;
+	cdc->state = USBH_CDC_ACM_STATE_IDLE;
 
 	if ((cdc->cb != NULL) && (cdc->cb->attach != NULL)) {
 		cdc->cb->attach();
@@ -195,34 +195,34 @@ static int usbh_cdc_acm_process(usb_host_t *host, u32 msg)
 
 	switch (cdc->state) {
 
-	case CDC_ACM_STATE_IDLE:
+	case USBH_CDC_ACM_STATE_IDLE:
 		status = HAL_OK;
 		break;
 
-	case CDC_ACM_STATE_SET_CONTROL_LINE_STATE:
+	case USBH_CDC_ACM_STATE_SET_CONTROL_LINE_STATE:
 		req_status = usbh_cdc_acm_process_set_control_line_state(host);
 		if (req_status == HAL_OK) {
-			cdc->state = CDC_ACM_STATE_IDLE;
+			cdc->state = USBH_CDC_ACM_STATE_IDLE;
 		} else if (req_status != HAL_BUSY) {
-			cdc->state = CDC_ACM_STATE_ERROR;
+			cdc->state = USBH_CDC_ACM_STATE_ERROR;
 		}
 		usbh_notify_class_state_change(host, 0);
 		break;
 
-	case CDC_ACM_STATE_SET_LINE_CODING:
+	case USBH_CDC_ACM_STATE_SET_LINE_CODING:
 		req_status = usbh_cdc_acm_process_set_line_coding(host, cdc->user_line_coding);
 		if (req_status == HAL_OK) {
-			cdc->state = CDC_ACM_STATE_GET_LINE_CODING;
+			cdc->state = USBH_CDC_ACM_STATE_GET_LINE_CODING;
 		} else if (req_status != HAL_BUSY) {
-			cdc->state = CDC_ACM_STATE_ERROR;
+			cdc->state = USBH_CDC_ACM_STATE_ERROR;
 		}
 		usbh_notify_class_state_change(host, 0);
 		break;
 
-	case CDC_ACM_STATE_GET_LINE_CODING:
+	case USBH_CDC_ACM_STATE_GET_LINE_CODING:
 		req_status = usbh_cdc_acm_process_get_line_coding(host, cdc->line_coding);
 		if (req_status == HAL_OK) {
-			cdc->state = CDC_ACM_STATE_IDLE;
+			cdc->state = USBH_CDC_ACM_STATE_IDLE;
 			if ((cdc->line_coding->b.bCharFormat == cdc->user_line_coding->b.bCharFormat) &&
 				(cdc->line_coding->b.bDataBits == cdc->user_line_coding->b.bDataBits) &&
 				(cdc->line_coding->b.bParityType == cdc->user_line_coding->b.bParityType) &&
@@ -232,12 +232,12 @@ static int usbh_cdc_acm_process(usb_host_t *host, u32 msg)
 				}
 			}
 		} else if (req_status != HAL_BUSY) {
-			cdc->state = CDC_ACM_STATE_ERROR;
+			cdc->state = USBH_CDC_ACM_STATE_ERROR;
 		}
 		usbh_notify_class_state_change(host, 0);
 		break;
 
-	case CDC_ACM_STATE_TRANSFER:
+	case USBH_CDC_ACM_STATE_TRANSFER:
 		if (event.msg.pipe_num == cdc->bulk_out.pipe_num) {
 			usbh_cdc_acm_process_tx(host);
 		} else if (event.msg.pipe_num == cdc->bulk_in.pipe_num) {
@@ -247,10 +247,10 @@ static int usbh_cdc_acm_process(usb_host_t *host, u32 msg)
 		}
 		break;
 
-	case CDC_ACM_STATE_ERROR:
+	case USBH_CDC_ACM_STATE_ERROR:
 		req_status = usbh_ctrl_clear_feature(host, 0x00U);
 		if (req_status == HAL_OK) {
-			cdc->state = CDC_ACM_STATE_IDLE;
+			cdc->state = USBH_CDC_ACM_STATE_IDLE;
 		}
 		break;
 
@@ -268,15 +268,15 @@ static int usbh_cdc_acm_process(usb_host_t *host, u32 msg)
   * @param  linecoding: Line coding data pointer
   * @retval Status
   */
-static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usbh_cdc_acm_line_coding_t *linecoding)
+static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding)
 {
 	usbh_setup_req_t setup;
 
 	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = CDC_GET_LINE_CODING;
+	setup.req.bRequest = USB_CDC_ACM_GET_LINE_CODING;
 	setup.req.wValue = 0U;
 	setup.req.wIndex = 0U;
-	setup.req.wLength = CDC_LINE_CODING_DATA_LEN;
+	setup.req.wLength = USB_CDC_ACM_LINE_CODING_SIZE;
 
 	return usbh_ctrl_request(host, &setup, linecoding->d8);
 }
@@ -287,15 +287,15 @@ static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usbh_cdc_acm_l
   * @param  linecoding: Line coding data pointer
   * @retval Status
   */
-static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usbh_cdc_acm_line_coding_t *linecoding)
+static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding)
 {
 	usbh_setup_req_t setup;
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = CDC_SET_LINE_CODING;
+	setup.req.bRequest = USB_CDC_ACM_SET_LINE_CODING;
 	setup.req.wValue = 0U;
 	setup.req.wIndex = 0U;
-	setup.req.wLength = CDC_LINE_CODING_DATA_LEN;
+	setup.req.wLength = USB_CDC_ACM_LINE_CODING_SIZE;
 
 	return usbh_ctrl_request(host, &setup, linecoding->d8);
 }
@@ -310,7 +310,7 @@ static int usbh_cdc_acm_process_set_control_line_state(usb_host_t *host)
 	usbh_setup_req_t setup;
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = CDC_SET_CONTROL_LINE_STATE;
+	setup.req.bRequest = USB_CDC_ACM_SET_CONTROL_LINE_STATE;
 	setup.req.wValue = 1U;
 	setup.req.wIndex = 0U;
 	setup.req.wLength = 0U;
@@ -427,12 +427,12 @@ int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb)
 		}
 	}
 
-	cdc->line_coding = (usbh_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usbh_cdc_acm_line_coding_t));
+	cdc->line_coding = (usb_cdc_line_coding_t *)usb_os_malloc(sizeof(usb_cdc_line_coding_t));
 	if (cdc->line_coding == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc line code fail\n");
 		return HAL_ERR_MEM;
 	}
-	cdc->user_line_coding = (usbh_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usbh_cdc_acm_line_coding_t));
+	cdc->user_line_coding = (usb_cdc_line_coding_t *)usb_os_malloc(sizeof(usb_cdc_line_coding_t));
 	if (cdc->user_line_coding == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc user line code fail\n");
 		usb_os_mfree(cdc->line_coding);
@@ -460,7 +460,7 @@ int usbh_cdc_acm_deinit(void)
 	}
 
 	if ((host != NULL) && (host->connect_state == USBH_STATE_SETUP)) {
-		cdc->state = CDC_ACM_STATE_IDLE;
+		cdc->state = USBH_CDC_ACM_STATE_IDLE;
 
 		usbh_close_pipe(host, &cdc->intr_in);
 		usbh_close_pipe(host, &cdc->bulk_in);
@@ -492,7 +492,7 @@ int usbh_cdc_acm_set_control_line_state(void)
 	int ret = HAL_ERR_UNKNOWN;
 
 	if (host->connect_state == USBH_STATE_SETUP) {
-		cdc->state = CDC_ACM_STATE_SET_CONTROL_LINE_STATE;
+		cdc->state = USBH_CDC_ACM_STATE_SET_CONTROL_LINE_STATE;
 		usbh_notify_class_state_change(host, 0);
 		ret = HAL_OK;
 	}
@@ -505,14 +505,14 @@ int usbh_cdc_acm_set_control_line_state(void)
 * @param  line_coding: Line coding data
 * @retval Status
 */
-int usbh_cdc_acm_set_line_coding(usbh_cdc_acm_line_coding_t *line_coding)
+int usbh_cdc_acm_set_line_coding(usb_cdc_line_coding_t *line_coding)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
 	int ret = HAL_ERR_UNKNOWN;
 
 	if (host->connect_state == USBH_STATE_SETUP) {
-		cdc->state = CDC_ACM_STATE_SET_LINE_CODING;
+		cdc->state = USBH_CDC_ACM_STATE_SET_LINE_CODING;
 		cdc->user_line_coding->b.dwDteRate = line_coding->b.dwDteRate;
 		cdc->user_line_coding->b.bCharFormat = line_coding->b.bCharFormat;
 		cdc->user_line_coding->b.bParityType = line_coding->b.bParityType;
@@ -529,7 +529,7 @@ int usbh_cdc_acm_set_line_coding(usbh_cdc_acm_line_coding_t *line_coding)
 * @param  line_coding: Line coding data
 * @retval Status
 */
-int usbh_cdc_acm_get_line_coding(usbh_cdc_acm_line_coding_t *line_coding)
+int usbh_cdc_acm_get_line_coding(usb_cdc_line_coding_t *line_coding)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
@@ -559,7 +559,7 @@ int usbh_cdc_acm_transmit(u8 *buf, u32 len)
 	usb_host_t *host = cdc->host;
 	usbh_pipe_t *pipe = &cdc->bulk_out;
 
-	if ((cdc->state == CDC_ACM_STATE_IDLE) || (cdc->state == CDC_ACM_STATE_TRANSFER)) {
+	if ((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER)) {
 		if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
 			pipe->xfer_buf = buf;
 			pipe->xfer_len = len;
@@ -570,7 +570,7 @@ int usbh_cdc_acm_transmit(u8 *buf, u32 len)
 				pipe->trx_zlp = 0;
 			}
 
-			cdc->state = CDC_ACM_STATE_TRANSFER;
+			cdc->state = USBH_CDC_ACM_STATE_TRANSFER;
 			pipe->xfer_state = USBH_EP_XFER_START;
 			usbh_notify_class_state_change(host, pipe->pipe_num);
 			ret = HAL_OK;
@@ -593,7 +593,7 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len)
 	usb_host_t *host = cdc->host;
 	usbh_pipe_t *pipe = &cdc->bulk_in;
 
-	if ((cdc->state == CDC_ACM_STATE_IDLE) || (cdc->state == CDC_ACM_STATE_TRANSFER)) {
+	if ((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER)) {
 		if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
 			pipe->xfer_buf = buf;
 			pipe->xfer_len = len;
@@ -604,7 +604,7 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len)
 				pipe->trx_zlp = 0;
 			}
 
-			cdc->state = CDC_ACM_STATE_TRANSFER;
+			cdc->state = USBH_CDC_ACM_STATE_TRANSFER;
 			pipe->xfer_state = USBH_EP_XFER_START;
 			usbh_notify_class_state_change(host, pipe->pipe_num);
 			ret = HAL_OK;
@@ -627,7 +627,7 @@ int usbh_cdc_acm_notify_receive(u8 *buf, u32 len)
 	usb_host_t *host = cdc->host;
 	usbh_pipe_t *pipe = &cdc->intr_in;
 
-	if ((cdc->state == CDC_ACM_STATE_IDLE) || (cdc->state == CDC_ACM_STATE_TRANSFER)) {
+	if ((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER)) {
 		pipe->xfer_buf = buf;
 		pipe->xfer_len = pipe->ep_mps;
 
@@ -637,7 +637,7 @@ int usbh_cdc_acm_notify_receive(u8 *buf, u32 len)
 			pipe->xfer_len = len;
 		}
 
-		cdc->state = CDC_ACM_STATE_TRANSFER;
+		cdc->state = USBH_CDC_ACM_STATE_TRANSFER;
 		pipe->xfer_state = USBH_EP_XFER_START;
 		usbh_notify_class_state_change(host, pipe->pipe_num);
 		ret = HAL_OK;

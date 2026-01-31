@@ -13,6 +13,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 /**************************************************************************//**
@@ -115,6 +119,10 @@ __STATIC_INLINE u32 SYS_CPUID(void)
 
 	return LSYS_GET_HW_CPU_ID(temp);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

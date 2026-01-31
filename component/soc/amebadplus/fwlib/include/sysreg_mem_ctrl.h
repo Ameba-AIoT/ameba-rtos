@@ -948,6 +948,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /** @defgroup MEM_CTRL_LPS_define
   * @{
@@ -980,6 +984,10 @@
 
 #define CTRL_MASK_GRP_x_PWR_LPS			((u32)0x00000007 << 11)          /*!<R/W 3'b010  Reserved for grp_x_pwr_lps for memory groups power controlled by SYSPMC. Setted before chip goes to SLEEP.Used to controll power mode of this memory group when chip is in SLEEP. For FTC_ULP mem, pwr_lps[2:0] map to {SLP,RET,NAP}; For SNPS mem, pwr_lps[2:0] map to {SD,DS,LS}. 000 - active 001 - light sleep 010 - deep sleep 100 - shut down */
 #define CTRL_GRP_x_PWR_LPS(x)			((u32)(((x) & 0x00000007) << 11))
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

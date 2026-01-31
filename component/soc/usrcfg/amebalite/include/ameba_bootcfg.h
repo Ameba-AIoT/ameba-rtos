@@ -7,6 +7,10 @@
 #ifndef _AMEBA_BOOTCFG_H_
 #define _AMEBA_BOOTCFG_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern MMU_ConfDef Flash_MMU_Config[];
 extern RCC_ConfDef RCC_Config[];
 extern u8 Force_OTA1_GPIO;
@@ -25,4 +29,8 @@ extern u8 Boot_Agg_En;
 *	TRUE: enable
 */
 extern const u8 Boot_Tzcfg_En;
+#ifdef __cplusplus
+}
+#endif
+
 #endif

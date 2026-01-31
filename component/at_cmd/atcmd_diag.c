@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "platform_autoconf.h"
+#ifdef CONFIG_DIAGNOSE_EN
+
 #include "atcmd_service.h"
 #include "ameba_diagnose.h"
 
@@ -31,7 +34,7 @@ static void at_diag_help(void)
 #endif
 }
 
-void at_diag(void *arg)
+void at_diag(u16 argc, char **argv)
 {
 	/* These code cannot be invoked in at_diag_init because it rely on diagnose init */
 	if (unlikely(g_private_frame_buffer == NULL)) {
@@ -44,14 +47,8 @@ void at_diag(void *arg)
 		rtk_diag_config_transform(NULL, (u8 *)g_private_frame_buffer, g_sender_buffer_size);
 	}
 
-	int argc = 0, ret = RTK_ERR_BADARG;
-	char *argv[MAX_ARGC] = {0};
+	int ret = RTK_ERR_BADARG;
 
-	if (arg == NULL) {
-		goto end;
-	}
-
-	argc = parse_param(arg, argv);
 	if ((argc <= 1) || (argv[1] == NULL)) {
 		goto end;
 	}
@@ -159,12 +156,9 @@ end:
 	}
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_diag_items[] = {
 	{"+DIAG", at_diag},
 };
 
-void at_diag_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_diag_items, sizeof(at_diag_items) / sizeof(at_diag_items[0]));
-}
+#endif /* CONFIG_DIAGNOSE_EN */

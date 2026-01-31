@@ -41,6 +41,11 @@
 #define UNUSED(X)      (void)X
 #endif
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef unsigned int	        uint;
 typedef	signed int		        sint;
 
@@ -312,4 +317,8 @@ typedef     u32 dma_addr_t;
 #define CLEAR_FLAGS(__Flag)					((__Flag) = 0)
 #define TEST_FLAGS(__Flag, __testFlags)		(((__Flag) & (__testFlags)) == (__testFlags))
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif// __BASIC_TYPES_H__

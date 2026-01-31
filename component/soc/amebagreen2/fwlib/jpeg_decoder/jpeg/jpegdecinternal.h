@@ -29,6 +29,10 @@
 #include <stdio.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*------------------------------------------------------------------------------
     2. Module defines
 ------------------------------------------------------------------------------*/
@@ -57,5 +61,9 @@ JpegDecRet JpegDecNextScanHdrs(JpegDecContainer *pJpegDecCont);
 void JpegRefreshRegs(JpegDecContainer *pJpegDecCont);
 void JpegFlushRegs(JpegDecContainer *pJpegDecCont);
 void JpegDecInitHWEmptyScan(JpegDecContainer *pJpegDecCont, u32 componentId);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #endif JPEGDECDATA_H */

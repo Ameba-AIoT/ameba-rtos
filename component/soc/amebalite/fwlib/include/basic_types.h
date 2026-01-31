@@ -14,6 +14,10 @@
 #include "rtk_compiler.h"
 #include "rtk_status.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PLATFORM_LITTLE_ENDIAN                  0
 #define PLATFORM_BIG_ENDIAN                     1
 
@@ -311,5 +315,10 @@ typedef     u32 dma_addr_t;
 #define CLEAR_FLAG(__Flag, __clearFlag)		((__Flag) &= ~(__clearFlag))
 #define CLEAR_FLAGS(__Flag)					((__Flag) = 0)
 #define TEST_FLAGS(__Flag, __testFlags)		(((__Flag) & (__testFlags)) == (__testFlags))
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif// __BASIC_TYPES_H__

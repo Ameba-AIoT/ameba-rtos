@@ -63,8 +63,8 @@ void sys_reset(void);
 void sys_adc_calibration(u8 write, u16 *a, u16 *b, u16 *c);
 void sys_log_uart_on(void);
 void sys_log_uart_off(void);
-void sys_clear_ota_signature(void);
-void sys_recover_ota_signature(void);
+void sys_clear_ota_signature(int ImgID);
+void sys_recover_ota_signature(int ImgID);
 
 
 /**

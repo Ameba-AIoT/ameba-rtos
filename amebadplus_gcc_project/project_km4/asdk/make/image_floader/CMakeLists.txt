@@ -76,8 +76,8 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
 
         -P ${CMAKE_CURRENT_SOURCE_DIR}/../image1/${c_POST_BUILD_SCRIPT}
 
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_loader.axf 	${c_SDK_GNU_SCRIPT_DIR}/acut_loader/target_FPGA.axf
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/ram_1.bin           ${c_SDK_GNU_SCRIPT_DIR}/acut_loader/flash_loader_ram_1.bin
+    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_loader.axf 	${c_SDK_GDB_FLOADER_DIR}/target_FPGA.axf
+    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/ram_1.bin           ${c_SDK_GDB_FLOADER_DIR}/flash_loader_ram_1.bin
 )
 
 

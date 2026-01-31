@@ -7,6 +7,14 @@
 #ifndef _AMEBA_ROM_PATCH_H_
 #define _AMEBA_ROM_PATCH_H_
 
+#ifdef CONFIG_ARM_CORE_CM4
+#include "ameba_secure_boot.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup ROM_PATCH_Exported_Constants ROM_PATCH Exported Constants
   * @{
@@ -50,7 +58,6 @@ _LONG_CALL_ void FLASH_RxBasic(u8 cmd, u32 Address, u32 read_len, u8 *read_data)
 _LONG_CALL_ void FLASH_TxBasic(u8 cmd, u32 Address, u32 DataLen, u8 *TransmitData);
 
 #ifdef CONFIG_ARM_CORE_CM4
-#include "ameba_secure_boot.h"
 
 int SBOOT_GetMdType_B(u8 HashId, SHA2_TYPE *MdType, u8 *IsHmac);
 int SBOOT_Validate_Algorithm_B(u8 *AuthAlg, u8 *HashAlg, u8 ManiAuth, u8 ManiHash);
@@ -88,5 +95,9 @@ long __real_strtol(const char *nptr, char **endptr, int base);
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _AMEBA_ROM_PATCH_H_ */

@@ -7,6 +7,8 @@
 #ifndef _AMEBA_DDRC_H_
 #define _AMEBA_DDRC_H_
 
+#include <stdint.h>
+
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -1297,11 +1299,12 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
-
-// for uint32_t
-#include <stdint.h>
 
 #define PCTL_MR0_BL_BFO            0
 #define PCTL_MR0_BL_BFW            3
@@ -1382,6 +1385,10 @@ _LONG_CALL_ void rxi316_DynSre_init(u32 IdleCnt, u32 state);
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 #endif

@@ -9,6 +9,10 @@
 
 #include "utils_def.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*******************************************************************************
  * MIDR bit definitions
  ******************************************************************************/
@@ -697,5 +701,9 @@
 #define AMEVTYPER1D	p15, 0, c13, c15, 5
 #define AMEVTYPER1E	p15, 0, c13, c15, 6
 #define AMEVTYPER1F	p15, 0, c13, c15, 7
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ARCH_H */

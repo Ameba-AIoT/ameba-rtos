@@ -63,6 +63,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 typedef struct {
 	__IO u32 IDAU_BARx;		/*!< ,	Address offset: 0x00 */
@@ -212,6 +216,10 @@ __STATIC_INLINE u32 TrustZone_IsSecure(void)
 #endif
 }
 
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

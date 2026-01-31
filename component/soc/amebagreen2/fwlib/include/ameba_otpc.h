@@ -289,6 +289,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported constants --------------------------------------------------------*/
 
@@ -356,6 +360,10 @@ _LONG_CALL_ int OTPSetCRC(void);
 _LONG_CALL_ int OTP_Read8(u32 Addr, u8 *Data);
 _LONG_CALL_ int OTP_Write8(u32 Addr, u8 Data);
 _LONG_CALL_ int OTP_Read32(u32 Addr, u32 *Data);
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif

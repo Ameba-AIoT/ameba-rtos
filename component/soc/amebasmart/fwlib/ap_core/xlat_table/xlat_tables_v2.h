@@ -13,8 +13,11 @@
 #ifndef __ASSEMBLER__
 //#include <stddef.h>
 #include "stdint.h"
-
 #include "xlat_mmu_helpers.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Default granularity size for an mmap_region_t.
@@ -365,6 +368,10 @@ int xlat_change_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 				   size_t size, uint32_t attr);
 int xlat_change_mem_attributes(uintptr_t base_va, size_t size, uint32_t attr);
 
+int xlat_update_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
+				   size_t size, uint32_t attr);
+int xlat_update_mem_attributes(uintptr_t base_va, size_t size, uint32_t attr);
+
 #if PLAT_RO_XLAT_TABLES
 /*
  * Change the memory attributes of the memory region encompassing the higher
@@ -393,6 +400,10 @@ int xlat_make_tables_readonly(void);
 int xlat_get_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 				uint32_t *attr);
 int xlat_get_mem_attributes(uintptr_t base_va, uint32_t *attr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*__ASSEMBLER__*/
 #endif /* XLAT_TABLES_V2_H */

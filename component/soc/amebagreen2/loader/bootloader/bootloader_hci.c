@@ -163,7 +163,7 @@ void Boot_Fullmac_LoadIMGAll(void)
 		Boot_Fullmac_LoadImage();
 	} else {
 		switch (mem_type) {
-#ifndef CONFIG_FULLMAC_IN_SINGLE_DIE
+#ifndef CONFIG_WHC_IN_SINGLE_DIE
 		case MCM_TYPE_NOR_FLASH:
 			/* rom code init flash only when BOOT_FROM_FLASH */
 			void BOOT_ROM_InitFlash(void);

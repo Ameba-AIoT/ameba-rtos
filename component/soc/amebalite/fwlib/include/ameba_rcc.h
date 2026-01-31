@@ -5,6 +5,11 @@
  */
 
 #ifndef _AMEBA_HP_RCC_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _AMEBA_HP_RCC_H_
 
 /** @addtogroup AmebaD_Platform
@@ -226,5 +231,10 @@ _LONG_CALL_ void RCC_PeriphClockSource_LOGUART(u32 Source);
 
 /* Registers Definitions --------------------------------------------------------*/
 /* Other definations --------------------------------------------------------*/
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* _AMEBA_HP_RCC_H_ */

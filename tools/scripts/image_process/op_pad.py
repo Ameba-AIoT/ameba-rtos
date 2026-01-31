@@ -6,17 +6,6 @@ from context import Context
 from ameba_enums import *
 from utility import *
 
-class BasedIntParamType(click.ParamType):
-    name = 'integer'
-
-    def convert(self, value, param, ctx):
-        try:
-            return int(value, 0)
-        except ValueError:
-            self.fail('%s is not a valid integer. Please use code literals '
-                      'prefixed with 0b/0B, 0o/0O, or 0x/0X as necessary.'
-                      % value, param, ctx)
-
 class Pad(OperationBase):
     cmd_help_msg = 'BIN File Padding Tool: Pad specified hex value to the head/tail of a BIN file, supporting two padding length rules (alignment/fixed length)'
 

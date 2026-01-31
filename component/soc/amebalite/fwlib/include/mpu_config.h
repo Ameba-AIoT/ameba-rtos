@@ -5,6 +5,11 @@
  */
 
 #ifndef _MPU_CONFIG_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _MPU_CONFIG_H_
 
 /**
@@ -165,5 +170,10 @@ void mpu_set_mem_attr(uint8_t attr_idx, uint8_t mem_attr);
 void mpu_region_cfg(uint8_t region_num, mpu_region_config *pmpu_cfg);
 void mpu_entry_free(u32 entry_index);
 char mpu_entry_alloc(void);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_MPU_CONFIG_H_

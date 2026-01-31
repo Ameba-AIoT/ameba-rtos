@@ -11,12 +11,20 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct spinlock {
 	volatile uint32_t lock;
 } spinlock_t;
 
 void spin_lock(spinlock_t *lock);
 void spin_unlock(spinlock_t *lock);
+
+#ifdef __cplusplus
+}
+#endif
 
 #else
 

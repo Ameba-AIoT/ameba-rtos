@@ -260,6 +260,10 @@
 #define GET_CPUID					MPIDR_TO_CORE(GET_MPIDR())
 #ifndef _ASMLANGUAGE
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * GIC Driver Interface Functions
  */
@@ -342,6 +346,11 @@ void arm_gic_clear_softirq(uint32_t irq);
 void arm_gic_set_pending_irq(uint32_t irq);
 int arm_gic_irq_is_pending(uint32_t irq);
 void arm_gic_clear_pending_irq(uint32_t irq);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif

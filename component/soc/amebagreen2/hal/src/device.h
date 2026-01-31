@@ -16,6 +16,12 @@
 #ifndef MBED_DEVICE_H
 #define MBED_DEVICE_H
 
+#include "objects.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DEVICE_PORTIN           1
 #define DEVICE_PORTOUT          1
 #define DEVICE_PORTINOUT        1
@@ -43,6 +49,8 @@
 
 #define DEVICE_SLEEP            1
 
-#include "objects.h"
+#ifdef __cplusplus
+}
+#endif
 
 #endif

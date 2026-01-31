@@ -442,6 +442,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 /** @defgroup XTAL_CLOCK_MODE_define
@@ -455,6 +459,10 @@ enum xtal_mode_sleep {
 	XTAL_HP = 4,
 };
 /** @} */
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif

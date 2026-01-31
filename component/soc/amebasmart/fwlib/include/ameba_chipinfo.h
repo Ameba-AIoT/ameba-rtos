@@ -7,6 +7,10 @@
 #ifndef _AMEBA_CHIPINFO_H_
 #define _AMEBA_CHIPINFO_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @defgroup CHIPINFO_MEMINFO_Structure_Type Structure Type
   * @{
   */
@@ -313,10 +317,14 @@ _LONG_CALL_ u32 ChipInfo_PsramBoundary(void);
 _LONG_CALL_ u8 ChipInfo_DDRType(void);
 _LONG_CALL_ u8 ChipInfo_ChipPackage(void);
 _LONG_CALL_ u8 EFUSE_Get_Info(u32 FuncID);
-_LONG_CALL_ void ChipInfo_GetSocName_ToBuf(char *buf, size_t buflen);
+_LONG_CALL_ u32 ChipInfo_GetSocName_ToBuf(void);
 
 /**
   * @}
   */
 /* MANUAL_GEN_END */
+#ifdef __cplusplus
+}
+#endif
+
 #endif

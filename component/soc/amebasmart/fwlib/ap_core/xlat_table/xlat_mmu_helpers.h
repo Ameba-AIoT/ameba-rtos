@@ -59,6 +59,10 @@
 #include "stdint.h"
 #include "arch_helpers.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Return the values that the MMU configuration registers must contain for the
  * specified translation context. `params` must be a pointer to array of size
@@ -89,6 +93,10 @@ void enable_mmu_direct_hyp(unsigned int flags);
 
 bool xlat_arch_is_granule_size_supported(size_t size);
 size_t xlat_arch_get_max_supported_granule_size(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ASSEMBLER__ */
 
