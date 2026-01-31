@@ -32,6 +32,9 @@ all: CORE_TARGETS COPY_RAM_OBJS
 	make -C lwip all
 	make -C mqtt all
 	make -C http2 all
+	make -C httpc all
+	make -C httpd all
+	make -C websocket all
 	#make -C eap all
 	#make -C libcoap all
 #*****************************************************************************#
