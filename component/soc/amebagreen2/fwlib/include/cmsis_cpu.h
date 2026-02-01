@@ -7,6 +7,11 @@
 #ifndef __CMSIS_CPU_H__
 #define __CMSIS_CPU_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "ameba_vector_table.h"
 
 #if defined (CONFIG_ARM_CORE_CM4)
@@ -38,4 +43,8 @@
 
 #endif
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif /* __CMSIS_CPU_H__ */

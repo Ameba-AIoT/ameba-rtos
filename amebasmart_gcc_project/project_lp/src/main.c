@@ -131,6 +131,7 @@ int main(void)
 	InterruptRegister((IRQ_FUN)IPC_INTHandler, IPC_IRQ, (u32)IPCLP_DEV, INT_PRI_MIDDLE);
 	InterruptEn(IPC_IRQ, INT_PRI_MIDDLE);
 
+#ifdef CONFIG_SHELL
 	/* Register Log Uart Callback function */
 #ifndef CONFIG_LINUX_FW_EN
 	InterruptRegister((IRQ_FUN) shell_uart_irq_rom, UART_LOG_IRQ, (u32)NULL, INT_PRI_LOWEST);
@@ -139,6 +140,7 @@ int main(void)
 #endif
 	shell_init_rom(0, NULL);
 	shell_init_ram();
+#endif
 
 	/*IPC table initialization*/
 	ipc_table_init(IPCLP_DEV);

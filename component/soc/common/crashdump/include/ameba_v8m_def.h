@@ -7,6 +7,10 @@
 #ifndef _AMEBA_V8M_DEF_H_
 #define _AMEBA_V8M_DEF_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* ============Configure as needed start ============*/
 /* Dump runs for number of being displayed */
 #define CONFIG_DEBUG_CRASH_DUMP_RUNS 1
@@ -241,5 +245,9 @@ if (!(EXPR))                                                                   \
     cmb_println("(%s) has assert failed at %s.", #EXPR, __FUNCTION__);         \
     while (1);                                                                 \
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _CMB_DEF_H_ */

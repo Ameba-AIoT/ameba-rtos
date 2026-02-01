@@ -603,6 +603,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported types ------------------------------------------------------------*/
 /** @addtogroup AUDIO_SPORT_Exported_Types AUDIO_SPORT Exported Types
@@ -1206,6 +1210,10 @@ typedef struct {
 
 extern const AUDIO_DevTable AUDIO_DEV_TABLE[4];
 #define AUDIO_BLOCK_SIZE 2048
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

@@ -11,10 +11,18 @@
 
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef DEBUG
 #define debug_printf(fmt, ...)	printf(fmt, ##__VA_ARGS__)
 #else
 #define debug_printf(fmt, ...)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* !_ASMLANGUAGE */

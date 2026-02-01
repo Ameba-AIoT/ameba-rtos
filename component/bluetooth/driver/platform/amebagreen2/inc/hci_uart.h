@@ -15,4 +15,5 @@ uint8_t hci_uart_open(void);
 uint8_t hci_uart_close(void);
 uint8_t hci_uart_free(void);
 void hci_uart_force_rts(bool op);
+
 #endif

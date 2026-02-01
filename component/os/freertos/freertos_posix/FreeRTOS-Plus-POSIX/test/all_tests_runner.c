@@ -21,8 +21,5 @@ int unity_test(u16 argc, u8 *argv[]){
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE posix_test_cmd_table[] = {
-	{
-		(const u8 *)"unity_test",  1, unity_test,
-		(const u8 *)"\t unity_test\n"
-	},
+	{"unity_test", unity_test},
 };

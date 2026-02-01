@@ -14,7 +14,7 @@ Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on 
 # SW configuration
 
 1. Menuconfig
-	Type command `./menuconfig.py` under the project directory and choose `CONFIG USB`:
+	Use menuconfig and choose `CONFIG USB`:
 	```
 	[*] Enable USB
 			USB Mode (Host)  --->
@@ -53,3 +53,4 @@ For other chips, refer to the AN for setup guide.
 # Supported IC
 
 RTL8730E
+RTL8721F

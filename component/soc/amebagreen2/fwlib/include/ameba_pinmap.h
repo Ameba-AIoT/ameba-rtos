@@ -7,6 +7,10 @@
 #ifndef _AMEBA_PINMAP_H_
 #define _AMEBA_PINMAP_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -63,4 +67,9 @@ void pinmap_init(void);
 
 /* Other definations --------------------------------------------------------*/
 #define GPIO_PuPd_KEEP	0xFF /* keep pupd unchanged */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_AMEBA_PINMAP_H_

@@ -2375,10 +2375,10 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 				param->conn_handle, param->ase_id, param->path_direction, param->cis_conn_handle);
 		BT_AT_PRINT("+BLEBAP:unicast,server,ascs,remove_data_path,%d,0x%x,0x%x,0x%x\r\n",
 					param->conn_handle, param->ase_id, param->path_direction, param->cis_conn_handle);
-		app_bt_le_audio_remove_data_path(param->cis_conn_handle, param->path_direction);
 		if (param->path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
 			app_bt_le_audio_gmap_encode_data_control(false);
 		}
+		app_bt_le_audio_remove_data_path(param->cis_conn_handle, param->path_direction);
 		/* Reset check first valid iso data mechanism */
 		app_bt_iso_first_pkt_check_deinit(param->cis_conn_handle);
 		break;
@@ -2451,13 +2451,13 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		//The application can set these parameters,otherwise default values in upstack lib will be used.
 		rtk_bt_le_audio_ascs_prefer_qos_data_t prefer_qos_data = {
 			.supported_framing = RTK_BLE_AUDIO_UNFRAMED,
-			.preferred_phy = 0,
-			.preferred_retrans_number = 0,
-			.max_transport_latency = 0,
+			.preferred_phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M,
+			.preferred_retrans_number = 1,
+			.max_transport_latency = 20,
 			.presentation_delay_min = 0,
-			.presentation_delay_max = 40000,
+			.presentation_delay_max = 60000,
 			.preferred_presentation_delay_min = 0,
-			.preferred_presentation_delay_max = 0,
+			.preferred_presentation_delay_max = 60000,
 		};
 		memcpy(param->p_prefer_qos_data, &prefer_qos_data, sizeof(rtk_bt_le_audio_ascs_prefer_qos_data_t));
 		break;
@@ -2671,10 +2671,10 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		BT_AT_PRINT("+BLEBAP:unicast,client,stop,%p,%p,%p,%d,%d,0x%x,0x%x\r\n",
 					param->group_handle, param->stream_session_handle, param->device_handle,
 					param->ase_id, param->path_direction, param->cis_conn_handle, param->cause);
-		app_bt_le_audio_remove_data_path(param->cis_conn_handle, param->path_direction);
 		if (param->path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
 			app_bt_le_audio_gmap_encode_data_control(false);
 		}
+		app_bt_le_audio_remove_data_path(param->cis_conn_handle, param->path_direction);
 		break;
 	}
 
@@ -3990,6 +3990,29 @@ int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_BAP, app_bt_bap_callback));
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_CAP, app_bt_cap_callback));
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GMAP, app_bt_gmap_callback));
+			/* GMAP Qos configuration*/
+			/* Vendor CIS Qos configuration, refer to GMAP v1.0 spec page 20~21*/
+			{
+				rtk_bt_le_audio_bap_param_config_t bap_param = {0};
+				rtk_bt_le_audio_unicast_ase_qos_t *p_ase_qos = NULL;
+				rtk_bt_le_audio_unicast_session_qos_t *p_session_qos = NULL;
+				p_ase_qos = &bap_param.cfg.unicast_config.bap_ase_qos;
+				p_session_qos = &bap_param.cfg.unicast_config.session_qos;
+				bap_param.cfg_type = RTK_BT_LE_AUDIO_BAP_UNICAST_QOS_CONFIG;
+				p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
+				p_ase_qos->retransmission_number = 1;
+				p_ase_qos->max_sdu = 200;
+				p_session_qos->sca = 0;
+				p_session_qos->packing = 0x00; /* 0x00: Sequential 0x01: Interleaved */
+				p_session_qos->framing = RTK_BLE_AUDIO_UNFRAMED;
+				p_session_qos->sdu_interval_m_s = 10000;
+				p_session_qos->sdu_interval_s_m = 0;
+				p_session_qos->latency_m_s = 20;
+				p_session_qos->latency_s_m = 20;
+				p_session_qos->sink_presentation_delay = 10000;
+				p_session_qos->source_presentation_delay = 10000;
+				BT_APP_PROCESS(rtk_bt_bap_param_config(&bap_param));
+			}
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 			/* when csip member disconnect, start ext scan timer in app_bt_le_audio_bap_unicast_client_common_cb*/
 			{

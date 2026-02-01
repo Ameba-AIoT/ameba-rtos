@@ -7,6 +7,10 @@
 #ifndef _AMEBA_WAKEPIN_H_
 #define _AMEBA_WAKEPIN_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define	WAKEPIN_0							((u32)0x00000000)/*!< see aon_wakepin */
 #define	WAKEPIN_1							((u32)0x00000001)/*!< see aon_wakepin */
 #define	WAKEPIN_2							((u32)0x00000002)/*!< see aon_wakepin */
@@ -31,5 +35,9 @@ extern int WakePin_Get_Idx(void);
 extern void Wakepin_Setting(u32 PinIdx, u32 Polarity);
 extern void Wakepin_Debounce_Setting(u32 Dbnc_cycle, u32 Status);
 extern void WakePin_ClearINT(u32 wakepin);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  //_AMEBA_WAKEPIN_H_

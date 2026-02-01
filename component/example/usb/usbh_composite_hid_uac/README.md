@@ -9,7 +9,7 @@ None
 # SW configuration
 
 1. Menuconfig
-	Type command `./menuconfig.py` under the project directory and :
+	Use menuconfig and :
 	- Choose `CONFIG USB --->`:
 	```
 	[*] Enable USB
@@ -51,3 +51,4 @@ None
 # Supported IC
 
 RTL8730E
+RTL8721F

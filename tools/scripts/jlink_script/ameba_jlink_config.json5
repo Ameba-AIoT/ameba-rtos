@@ -1,0 +1,119 @@
+{
+  amebadplus: {
+    GDB_PORTS: {
+      km4: 2335,
+      km0: 2331,
+      swd: 2335,
+    },
+    DEVICE: {
+      km4: 'Cortex-M33',
+      km0: 'Cortex-M23',
+    },
+    AP_ADD: {
+      '0': 'APB',
+      '1': 'AHB',
+      '2': 'AHB',
+      '3': 'APB',
+    },
+    AP_USE: {
+      km4: 2,
+      km0: 1,
+      swd: [2, 3, 2],   // Init*1, Reset*2
+    },
+  },
+  amebalite: {
+    GDB_PORTS: {
+      km4: 2335,
+      kr4: 2331,
+      swd: 2335,
+    },
+    DEVICE: {
+      km4: 'Cortex-M33',
+      kr4: 'RV32',
+    },
+    AP_ADD: {
+      '0': 'AHB',
+      '1': 'AHB',
+      '2': 'AHB',
+      '3': 'APB',
+    },
+    AP_USE: {
+      km4: 0,
+      kr4: 0,
+      swd: [0, 2, 0],   // Init*1, Reset*2
+    },
+  },
+  amebasmart: {
+    GDB_PORTS: {
+      km4: 2335,
+      km0: 2331,
+      ca32_0: 2337,
+      ca32_1: 2339,
+      swd: 2335,
+    },
+    DEVICE: {
+      ca32_0: 'Cortex-A32',
+      ca32_1: 'Cortex-A32',
+      km4: 'Cortex-M33',
+      km0: 'Cortex-M23',
+    },
+    AP_ADD: {
+      '0': 'AHB',
+      '1': 'AHB',
+      '2': 'AHB',
+      '3': 'APB',
+    },
+    AP_USE: {
+      km4: 1,
+      km0: 0,
+      ca32_0: 3,
+      ca32_1: 3,
+      swd: [1, 2, 1],   // Init*1, Reset*2
+    },
+  },
+  amebagreen2: {
+    GDB_PORTS: {
+      km4tz: 2335,
+      km4ns: 2331,
+      swd: 2335,
+    },
+    DEVICE: {
+      km4tz: 'Cortex-M33',
+      km4ns: 'Cortex-M33',
+    },
+    AP_ADD: {
+      '0': 'APB',
+      '1': 'AHB',
+      '2': 'AHB',
+      '3': 'APB',
+    },
+    AP_USE: {
+      km4tz: 2,
+      km4ns: 1,
+      swd: [2, 3, 2],   // Init*1, Reset*2
+    },
+  },
+  RTL8720F: {
+    GDB_PORTS: {
+      km4tz: 2335,
+      km4ns: 2331,
+      swd: 2335,
+    },
+    DEVICE: {
+      km4tz: 'Cortex-M33',
+      km4ns: 'Cortex-M33',
+    },
+    AP_ADD: {
+      '0': 'APB',
+      '1': 'AHB',
+      '2': 'AHB',
+      '3': 'APB',
+    },
+    AP_USE: {
+      km4tz: 2,
+      km4ns: 1,
+      swd: [2, 3, 2],   // Init*1, Reset*2
+    },
+  },
+
+}

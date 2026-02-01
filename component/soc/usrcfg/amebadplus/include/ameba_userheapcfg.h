@@ -7,6 +7,10 @@
 #ifndef _AMEBA_USERHEAPCFG_H_
 #define _AMEBA_USERHEAPCFG_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define configTOTAL_HEAP_SIZE					0 //Fixed to 0, delete later
 
 //HeapRegion Addresses need to be sorted from smallest to largest
@@ -34,6 +38,10 @@
 #endif
 
 #endif // #if (defined CONFIG_ARM_CORE_CM4)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

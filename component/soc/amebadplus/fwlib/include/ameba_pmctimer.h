@@ -115,6 +115,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -264,6 +268,10 @@ __STATIC_INLINE void PMCTimer_INTClear(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Id
 	PMC_TIMER->PMCTTIM_ISR |= BIT(Timer_Idx);
 }
 /** @} */
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

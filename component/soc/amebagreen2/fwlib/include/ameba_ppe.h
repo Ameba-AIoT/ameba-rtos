@@ -533,6 +533,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your definition here
 /* Exported types --------------------------------------------------------*/
@@ -835,6 +839,10 @@ void PPE_XOR_init(void);
 void PPE_XOR_process(u32 src1, u32 src2, u32 src3, u32 dst);
 void PPE_XOR_Int_handler(void (*pfunc)(void));
 /** @} */
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 /** @} */

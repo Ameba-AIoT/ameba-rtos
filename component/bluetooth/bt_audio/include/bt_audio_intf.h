@@ -64,7 +64,7 @@ typedef struct {
 typedef struct {
 	struct list_head        list;                                                              /*!< list head */
 	uint16_t (*pcm_data_cb)(void *p_pcm_buf, uint16_t p_len, void *pentity, void *track);      /*!< callback pcm data to APP */
-	void                       *audio_track_hdl;                                               /*!< RTAudioTrack pointer */
+	void                       *audio_track_hdl;                                               /*!< AudioTrack pointer */
 	uint32_t                   channels;                                                       /*!< indicate channels */
 	uint32_t                   channel_allocation;                                             /*!< indicate mono or dual mode
                                                                                                     (1 left channel, 2 right channel, 3 dual mode) */
@@ -106,7 +106,7 @@ typedef struct {
  */
 typedef struct {
 	struct list_head        list;                   /*!< list head */
-	void                    *audio_record_hdl;      /*!< RTAudioRecord pointer */
+	void                    *audio_record_hdl;      /*!< AudioRecord pointer */
 	uint32_t                channels;               /*!< indicate channels */
 	uint32_t                rate;                   /*!< sample rate */
 	uint32_t                buffer_bytes;           /*!< buffer bytes per one period of record */

@@ -443,6 +443,27 @@ int atcmd_bt_a2dp_hfp_pbp(int argc, char *argv[])
 	return 0;
 }
 
+int bt_a2dp_hfp_pbp_peripheral_main(uint8_t enable);
+int atcmd_bt_a2dp_hfp_pbp_peripheral(int argc, char *argv[])
+{
+	(void)argc;
+	uint8_t op = 0;
+	char *action[] = {"disable", "enable"};
+
+	if ((op = (uint8_t)(str_to_int(argv[0]))) > 2) {
+		BT_LOGE("Error: wrong value (%d) for a2dp hfp pbp peripheral example!\r\n", op);
+		return -1;
+	}
+
+	if (bt_a2dp_hfp_pbp_peripheral_main(op)) {
+		BT_LOGE("Error: a2dp hfp pbp peripheral example %s failed!\r\n", action[op]);
+		return -1;
+	}
+
+	BT_LOGA("a2dp hfp pbp peripheral example %s OK!\r\n", action[op]);
+	return 0;
+}
+
 int bt_a2dp_sink_tmap_main(uint8_t enable, uint8_t role);
 int atcmd_bt_a2dp_tmap(int argc, char *argv[])
 {
@@ -1133,6 +1154,9 @@ static const cmd_table_t example_table[] = {
 #endif
 #if defined(CONFIG_BT_A2DP_HFP_PBP) && CONFIG_BT_A2DP_HFP_PBP
 	{"a2dp_hfp_pbp",     atcmd_bt_a2dp_hfp_pbp,     2, 2},
+#endif
+#if defined(CONFIG_BT_A2DP_HFP_PBP_PERIPHERAL) && CONFIG_BT_A2DP_HFP_PBP_PERIPHERAL
+	{"a2dp_hfp_pbp_peripheral",     atcmd_bt_a2dp_hfp_pbp_peripheral,     2, 2},
 #endif
 #if defined(CONFIG_BT_A2DP_TMAP) && CONFIG_BT_A2DP_TMAP
 	{"a2dp_tmap",        atcmd_bt_a2dp_tmap,        3, 3},

@@ -23,7 +23,5 @@ void rpc_test(void)
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE rpc_test_cmd_table[] = {
-	{
-		(const u8 *)"rpc_test",  1, rpc_test, (const u8 *)"\t rpc_test \n"
-	},
+	{"rpc_test", rpc_test},
 };

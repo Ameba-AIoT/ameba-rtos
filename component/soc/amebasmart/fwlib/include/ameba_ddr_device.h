@@ -7,7 +7,6 @@
 #ifndef RXI316_DRAM_DEVICE_INFO_H
 #define RXI316_DRAM_DEVICE_INFO_H
 
-
 //#define DDR_400
 //#define DDR_800
 #define DDR_1066

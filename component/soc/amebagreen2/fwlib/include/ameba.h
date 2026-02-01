@@ -107,6 +107,10 @@
 #include "rom/log.h"
 #include "rom/sscanf_minimal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define IMAGE_HEADER_LEN		0x20
 typedef struct {
 	u32 signature[2];
@@ -149,5 +153,9 @@ __NO_RETURN void io_assert_failed(char *function, uint32_t line);
 #else
 #define assert_param(expr) ((void)0)
 #endif /* USE_FULL_ASSERT */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_HAL_AMEBA_H_

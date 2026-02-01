@@ -7,6 +7,10 @@
 #ifndef _STRPROC_PRIVATE_H_
 #define _STRPROC_PRIVATE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef isprint
 #define in_range(c, lo, up)  ((u8)c >= lo && (u8)c <= up)
 #define isprint(c)           in_range(c, 0x20, 0x7f)
@@ -36,5 +40,9 @@ __attribute__((always_inline)) static inline int isodigit(const char c)
 {
 	return c >= '0' && c <= '7';
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _STRPROC_PRIVATE_H_

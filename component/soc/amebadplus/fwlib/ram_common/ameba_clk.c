@@ -447,3 +447,65 @@ void OSC131K_Reset(void)
 	LDO_BASE->LDO_32_OSC_XTAL_POW &= ~LDO_BIT_POW_32KOSC;
 	LDO_BASE->LDO_32_OSC_XTAL_POW |= LDO_BIT_POW_32KOSC;
 }
+
+/**
+  * @brief  Set specific APB peripheral's clock divider
+  * @param  pdiv: Specifies the peripheral's cke offset address, divider, shift, and mask field.
+  * @note	In some IP, the real work divider equals (regval + 1).
+  * @retval None
+  */
+void RCC_PeriphClockDivSet(const struct Rcc_ClkDiv *pdiv)
+{
+	u32 Regtmp;
+
+	u32 GroupOffset = pdiv->CkdGroupOfs;
+	u32 DivMask = pdiv->BitMask;
+
+	assert_param((GroupOffset == REG_LSYS_CKD_GRP0) || (GroupOffset == REG_LSYS_CKD_GRP1));
+
+	Regtmp = HAL_READ32(SYSTEM_CTRL_BASE, GroupOffset);
+	Regtmp &= (~DivMask);
+	Regtmp |= (((pdiv->DivVal) << (pdiv->DivShift)) & DivMask);
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE, GroupOffset, Regtmp);
+
+}
+
+/**
+  * @brief  Check whether the APB peripheral's clock has been enabled or not
+  * @param  APBPeriph_Clock_in: specifies the APB peripheral to check.
+  *      This parameter can be one of @ref APBPeriph_UART0_CLOCK, APBPeriph_ATIM_CLOCK and etc.
+  * @retval TRUE: The APB peripheral's clock has been enabled
+  * 		FALSE: The APB peripheral's clock has not been enabled
+  */
+u8 RCC_PeriphClockEnableChk(u32 APBPeriph_Clock_in)
+{
+	u8 ret;
+	u32 CkeRegVal, CkeRegOffset, CkeBitMask;
+
+	u32 ClkRegIndx = (APBPeriph_Clock_in >> 30) & 0x03;
+	assert_param((ClkRegIndx == 0x0) || (ClkRegIndx == 0x1) || (ClkRegIndx == 0x3));
+
+	switch (ClkRegIndx) {
+	case 0x0:
+		CkeRegOffset = REG_LSYS_CKE_GRP0;
+		break;
+	case 0x1:
+		CkeRegOffset = REG_LSYS_CKE_GRP1;
+		break;
+	case 0x3:
+		CkeRegOffset = REG_AON_CLK;
+		break;
+	}
+
+	CkeRegVal = HAL_READ32(SYSTEM_CTRL_BASE, CkeRegOffset);
+	CkeBitMask = APBPeriph_Clock_in & (~(BIT(31) | BIT(30)));
+
+	if (CkeRegVal & CkeBitMask) {
+		ret = TRUE;
+	} else {
+		ret = FALSE;
+	}
+
+	return ret;
+}

@@ -77,3 +77,10 @@ if(CONFIG_MATTER_EN)
     include(${c_CMPT_MATTER_DIR}/project/cmake/flags/compile_options_matter.cmake)
 endif()
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
+# ++++++++++++++++++++++++ AWS MODIFICATIONS +++++++++++++++++++++++ #
+if(CONFIG_AMAZON_FREERTOS_EN)
+    message(STATUS "CONFIG_AMAZON_FREERTOS_EN is ON, modifying global common flags")
+    include(${c_CMPT_AWS_DIR}/project/cmake/flags/compile_options_aws.cmake)
+endif()
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #

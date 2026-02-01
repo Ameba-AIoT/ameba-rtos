@@ -11,85 +11,61 @@
 
 #include "usbd.h"
 #include "usbd_composite_config.h"
+#include "usb_cdc_acm.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
-#define CONFIG_COMP_CDC_ACM_NOTIFY             0
+/**
+ * @brief Configuration macro to enable or disable the CDC ACM notification endpoint.
+ * @details Set to 1 to enable the Interrupt IN endpoint for sending notifications
+ *          like SERIAL_STATE. Set to 0 to disable.
+ */
+#define CONFIG_COMP_CDC_ACM_NOTIFY                       1     /**< Enable/Disable notification feature. */
 
-/*  CDC definitions */
-#define COMP_CDC_SEND_ENCAPSULATED_COMMAND               0x00U
-#define COMP_CDC_GET_ENCAPSULATED_RESPONSE               0x01U
-#define COMP_CDC_SET_COMM_FEATURE                        0x02U
-#define COMP_CDC_GET_COMM_FEATURE                        0x03U
-#define COMP_CDC_CLEAR_COMM_FEATURE                      0x04U
-#define COMP_CDC_SET_LINE_CODING                         0x20U
-#define COMP_CDC_GET_LINE_CODING                         0x21U
-#define COMP_CDC_SET_CONTROL_LINE_STATE                  0x22U
-#define COMP_CDC_SEND_BREAK                              0x23U
-
-/* CDC ACM class-specific notification type */
-#define COMP_CDC_NOTIFY_SERIAL_STATE                     0x20
-
-#define COMP_CDC_ACM_CTRL_OVERRUN                        (1 << 6)
-#define COMP_CDC_ACM_CTRL_PARITY                         (1 << 5)
-#define COMP_CDC_ACM_CTRL_FRAMING                        (1 << 4)
-#define COMP_CDC_ACM_CTRL_RI                             (1 << 3)
-#define COMP_CDC_ACM_CTRL_BRK                            (1 << 2)
-#define COMP_CDC_ACM_CTRL_DSR                            (1 << 1)
-#define COMP_CDC_ACM_CTRL_DCD                            (1 << 0)
-
-#define COMP_CDC_ACM_HS_BULK_MAX_PACKET_SIZE             512U   /* High speed BULK IN & OUT packet size */
-#define COMP_CDC_ACM_FS_BULK_MAX_PACKET_SIZE             64U    /* Full speed BULK IN & OUT packet size */
-
-#define COMP_CDC_ACM_HS_BULK_IN_PACKET_SIZE              COMP_CDC_ACM_HS_BULK_MAX_PACKET_SIZE
-#define COMP_CDC_ACM_HS_BULK_OUT_PACKET_SIZE             COMP_CDC_ACM_HS_BULK_MAX_PACKET_SIZE
-
-#define COMP_CDC_ACM_FS_BULK_IN_PACKET_SIZE              COMP_CDC_ACM_FS_BULK_MAX_PACKET_SIZE
-#define COMP_CDC_ACM_FS_BULK_OUT_PACKET_SIZE             COMP_CDC_ACM_FS_BULK_MAX_PACKET_SIZE
-
-#define COMP_CDC_ACM_INTR_IN_PACKET_SIZE                 10U    /* INTR IN packet size */
-#define COMP_CDC_ACM_INTR_IN_REQUEST_SIZE                8U     /* INTR IN request size */
-#define COMP_CDC_ACM_INTR_IN_DATA_SIZE                   2U     /* INTR IN data size */
-#define COMP_CDC_ACM_HS_INTR_IN_INTERVAL                 8U     /* High speed INTR IN interval */
-#define COMP_CDC_ACM_FS_INTR_IN_INTERVAL                 8U     /* Full speed INTR IN interval */
-
-#define COMP_CDC_ACM_LINE_CODING_SIZE                    7U
+#define COMP_CDC_ACM_HS_INTR_IN_INTERVAL                 8U  /**< High-speed Interrupt IN endpoint polling interval. */
+#define COMP_CDC_ACM_FS_INTR_IN_INTERVAL                 8U  /**< Full-speed Interrupt IN endpoint polling interval. */
 
 /* Exported types ------------------------------------------------------------*/
 
+/**
+ * @brief User callback structure for CDC ACM events.
+ * @details This structure allows the application layer to handle key CDC ACM events.
+ */
 typedef struct {
-	u32 bitrate;
-	u8  format;
-	u8  parity_type;
-	u8  data_type;
-} usbd_composite_cdc_acm_line_coding_t;
+	int(* init)(void);                             /**< Called during class driver initialization for application resource setup. */
+	int(* deinit)(void);                           /**< Called during class driver deinitialization for resource cleanup. */
+	int(* setup)(usb_setup_req_t *req, u8 *buf);   /**< Called during control transfer SETUP/DATA phases to handle application-specific control requests. */
+	int(* received)(u8 *buf, u32 len);             /**< Called when new data is received on the Bulk OUT endpoint. */
+	void(* transmitted)(u8 status);                /**< Called after data transmission on the Bulk IN endpoint is complete. */
+} usbd_composite_cdc_acm_usr_cb_t;
 
 #if CONFIG_COMP_CDC_ACM_NOTIFY
+/**
+ * @brief CDC ACM Notification Structure.
+ * @details This structure defines the format for sending notifications (like SERIAL_STATE)
+ *          on the Interrupt IN endpoint. This is only available if CONFIG_COMP_CDC_ACM_NOTIFY is enabled.
+ */
 typedef struct {
-	u8 bmRequestType;
-	u8 bNotificationType;
-	u16 wValue;
-	u16 wIndex;
-	u16 wLength;
-	u8 buf[COMP_CDC_ACM_INTR_IN_DATA_SIZE];
+	u8 bmRequestType;     /**< D7: 0=Host-to-Device, 1=Device-to-Host. D6-5: 1=Class. D4-0: 0=Device, 1=Interface, 2=Endpoint. */
+	u8 bNotificationType; /**< Notification code, e.g., USB_CDC_NOTIFY_SERIAL_STATE. */
+	u16 wValue;           /**< Typically 0. */
+	u16 wIndex;           /**< The interface number. */
+	u16 wLength;          /**< Size of the notification data payload. */
+	u8 buf[USB_CDC_ACM_INTR_IN_DATA_SIZE]; /**< Notification data payload. */
 } __PACKED usbd_composite_cdc_acm_ntf_t;
 #endif
 
+/**
+ * @brief CDC ACM device context structure.
+ * @details This main structure holds the state and configuration for the CDC ACM function.
+ */
 typedef struct {
-	int(* init)(void);
-	int(* deinit)(void);
-	int(* setup)(usb_setup_req_t *req, u8 *buf);
-	int(* received)(u8 *buf, u32 len);
-	void(* transmitted)(u8 status);
-} usbd_composite_cdc_acm_usr_cb_t;
-
-typedef struct {
-	usbd_composite_dev_t *cdev;
-	usbd_composite_cdc_acm_usr_cb_t *cb;
-	usbd_ep_t ep_bulk_in;
-	usbd_ep_t ep_bulk_out;
+	usbd_composite_dev_t *cdev;           /**< Pointer to the parent composite device structure. */
+	usbd_composite_cdc_acm_usr_cb_t *cb;  /**< Pointer to the user-registered callback structure. */
+	usbd_ep_t ep_bulk_in;                 /**< Bulk IN endpoint handler. */
+	usbd_ep_t ep_bulk_out;                /**< Bulk OUT endpoint handler. */
 #if CONFIG_COMP_CDC_ACM_NOTIFY
-	usbd_ep_t ep_intr_in;
+	usbd_ep_t ep_intr_in;                 /**< Interrupt IN endpoint handler (for notifications). */
 #endif
 } usbd_composite_cdc_acm_dev_t;
 
@@ -101,11 +77,38 @@ extern const usbd_class_driver_t usbd_composite_cdc_acm_driver;
 
 /* Exported functions --------------------------------------------------------*/
 
+/**
+ * @brief Initializes the CDC ACM composite function.
+ * @param[in] cdev: Pointer to the composite device context.
+ * @param[in] bulk_out_xfer_size: The desired transfer size for the Bulk OUT buffer.
+ * @param[in] bulk_in_xfer_size: The desired transfer size for the Bulk IN buffer.
+ * @param[in] cb: Pointer to the user callback structure.
+ * @return 0 on success, a negative error code on failure.
+ */
 int usbd_composite_cdc_acm_init(usbd_composite_dev_t *cdev, u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, usbd_composite_cdc_acm_usr_cb_t *cb);
+
+/**
+ * @brief De-initializes the CDC ACM composite function.
+ * @return 0 on success, a negative error code on failure.
+ */
 int usbd_composite_cdc_acm_deinit(void);
-int usbd_composite_cdc_acm_transmit(u8 *buf, u16 len);
+
+/**
+ * @brief Transmits data over the CDC ACM Bulk IN endpoint.
+ * @param[in] buf: Pointer to the data buffer to be transmitted.
+ * @param[in] len: Length of the data in bytes.
+ * @return 0 on success, a negative error code on failure.
+ */
+int usbd_composite_cdc_acm_transmit(u8 *buf, u32 len);
+
 #if CONFIG_COMP_CDC_ACM_NOTIFY
+/**
+ * @brief Sends a SERIAL_STATE notification to the host over the CDC ACM Interrupt IN endpoint..
+ * @param[in] serial_state: A bitmap of the serial line states (see @ref COMP_CDC_ACM_CTRL_DCD, etc.).
+ * @return 0 on success, a negative error code on failure.
+ */
 int usbd_composite_cdc_acm_notify_serial_state(u16 serial_state);
 #endif
+
 #endif  /* USBD_COMPOSITE_CDC_ACM_H */
 

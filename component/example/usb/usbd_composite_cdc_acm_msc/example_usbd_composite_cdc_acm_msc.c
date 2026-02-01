@@ -10,15 +10,18 @@
 #include "usbd.h"
 #include "usbd_composite_cdc_acm_msc.h"
 #include "os_wrapper.h"
-
+#ifdef CONFIG_USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+#include "vfs_second_nor_flash.h"
+#endif
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "COMP";
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
+#if defined (CONFIG_USBD_COMPOSITE_MSC_RAM_DISK)
+/* Hotplug is not supported when RAM is used for USB MSC media */
+#define CONFIG_USBD_COMPOSITE_HOTPLUG							0
+#else
 #define CONFIG_USBD_COMPOSITE_HOTPLUG							1
-
-#if COMP_MSC_RAM_DISK && (CONFIG_USBD_COMPOSITE_HOTPLUG == 1)
-#error "Hotplug is not supported when RAM is used for USB MSC media"
 #endif
 
 // USB speed
@@ -73,7 +76,7 @@ static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 	.transmitted = composite_cdc_acm_cb_transmitted
 };
 
-static usbd_composite_cdc_acm_line_coding_t composite_cdc_acm_line_coding;
+static usb_cdc_line_coding_t composite_cdc_acm_line_coding;
 
 static u16 composite_cdc_acm_ctrl_line_state;
 
@@ -95,12 +98,12 @@ static rtos_sema_t composite_attach_status_changed_sema;
   */
 static int composite_cdc_acm_cb_init(void)
 {
-	usbd_composite_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
+	usb_cdc_line_coding_t *lc = &composite_cdc_acm_line_coding;
 
-	lc->bitrate = 150000;
-	lc->format = 0x00;
-	lc->parity_type = 0x00;
-	lc->data_type = 0x08;
+	lc->b.dwDteRate = 150000;
+	lc->b.bCharFormat = 0x00;
+	lc->b.bParityType = 0x00;
+	lc->b.bDataBits = 0x08;
 
 	return HAL_OK;
 }
@@ -149,57 +152,57 @@ static void composite_cdc_acm_cb_transmitted(u8 status)
 static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = HAL_OK;
-	usbd_composite_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
+	usb_cdc_line_coding_t *lc = &composite_cdc_acm_line_coding;
 
 	switch (req->bRequest) {
-	case COMP_CDC_SEND_ENCAPSULATED_COMMAND:
+	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_GET_ENCAPSULATED_RESPONSE:
+	case USB_CDC_ACM_GET_ENCAPSULATED_RESPONSE:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_SET_COMM_FEATURE:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "COMP_CDC_SET_COMM_FEATURE\n");
+	case USB_CDC_ACM_SET_COMM_FEATURE:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_SET_COMM_FEATURE\n");
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_GET_COMM_FEATURE:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "COMP_CDC_GET_COMM_FEATURE\n");
+	case USB_CDC_ACM_GET_COMM_FEATURE:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_GET_COMM_FEATURE\n");
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_CLEAR_COMM_FEATURE:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "COMP_CDC_CLEAR_COMM_FEATURE\n");
+	case USB_CDC_ACM_CLEAR_COMM_FEATURE:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_CLEAR_COMM_FEATURE\n");
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_SET_LINE_CODING:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "COMP_CDC_SET_LINE_CODING\n");
-		if (req->wLength == COMP_CDC_ACM_LINE_CODING_SIZE) {
-			lc->bitrate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
-			lc->format = buf[4];
-			lc->parity_type = buf[5];
-			lc->data_type = buf[6];
+	case USB_CDC_ACM_SET_LINE_CODING:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_SET_LINE_CODING\n");
+		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
+			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
+			lc->b.bCharFormat = buf[4];
+			lc->b.bParityType = buf[5];
+			lc->b.bDataBits = buf[6];
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "COMP_CDC_SET_LINE_CODING XXX\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "USB_CDC_ACM_SET_LINE_CODING XXX\n");
 		}
 		break;
 
-	case COMP_CDC_GET_LINE_CODING:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "COMP_CDC_GET_LINE_CODING\n");
-		buf[0] = (u8)(lc->bitrate & 0xFF);
-		buf[1] = (u8)((lc->bitrate >> 8) & 0xFF);
-		buf[2] = (u8)((lc->bitrate >> 16) & 0xFF);
-		buf[3] = (u8)((lc->bitrate >> 24) & 0xFF);
-		buf[4] = lc->format;
-		buf[5] = lc->parity_type;
-		buf[6] = lc->data_type;
+	case USB_CDC_ACM_GET_LINE_CODING:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_GET_LINE_CODING\n");
+		buf[0] = (u8)(lc->b.dwDteRate & 0xFF);
+		buf[1] = (u8)((lc->b.dwDteRate >> 8) & 0xFF);
+		buf[2] = (u8)((lc->b.dwDteRate >> 16) & 0xFF);
+		buf[3] = (u8)((lc->b.dwDteRate >> 24) & 0xFF);
+		buf[4] = lc->b.bCharFormat;
+		buf[5] = lc->b.bParityType;
+		buf[6] = lc->b.bDataBits;
 		break;
 
-	case COMP_CDC_SET_CONTROL_LINE_STATE:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "COMP_CDC_SET_CONTROL_LINE_STATE\n");
+	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_SET_CONTROL_LINE_STATE\n");
 		/*
 		wValue:	wValue, Control Signal Bitmap
 				D2-15:	Reserved, 0
@@ -212,8 +215,8 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		}
 		break;
 
-	case COMP_CDC_SEND_BREAK:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "COMP_CDC_SEND_BREAK\n");
+	case USB_CDC_ACM_SEND_BREAK:
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USB_CDC_ACM_SEND_BREAK\n");
 		/* Do nothing */
 		break;
 
@@ -289,6 +292,11 @@ static void example_usbd_composite_thread(void *param)
 
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	rtos_sema_create(&composite_attach_status_changed_sema, 0U, 1U);
+#endif
+
+#ifdef CONFIG_USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+	second_flash_spi_init();
+	second_flash_get_id();
 #endif
 
 	ret = usbd_composite_msc_disk_init();

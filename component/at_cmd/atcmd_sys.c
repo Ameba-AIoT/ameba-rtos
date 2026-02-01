@@ -58,27 +58,41 @@ static const char *const TAG = "AT-SYS";
 
 /****************************************************************
 AT command process:
-	AT+OTACLEAR
-	Clear OTA signature.
-	[+OTACLEAR]: OK
+    AT+OTACLEAR
+    Clear OTA signature.
+    [+OTACLEAR]: OK
 ****************************************************************/
-void at_otaclear(void *arg)
+void at_otaclear(u16 argc, char **argv)
 {
-	UNUSED(arg);
-	sys_clear_ota_signature();
+	int ImgID = OTA_IMGID_APP;
+	if (argc > 1) {
+		ImgID = atoi((const char *)argv[1]);
+	}
+	if (ImgID >= OTA_IMGID_MAX) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ImgID should < %d\r\n", OTA_IMGID_MAX);
+		return;
+	}
+	sys_clear_ota_signature(ImgID);
 	at_printf(ATCMD_OK_END_STR);
 }
 
 /****************************************************************
 AT command process:
-	AT+OTARECOVER
-	Recover OTA signature.
-	[+OTARECOVER]: OK
+    AT+OTARECOVER
+    Recover OTA signature.
+    [+OTARECOVER]: OK
 ****************************************************************/
-void at_otarecover(void *arg)
+void at_otarecover(u16 argc, char **argv)
 {
-	UNUSED(arg);
-	sys_recover_ota_signature();
+	int ImgID = OTA_IMGID_APP;
+	if (argc > 1) {
+		ImgID = atoi((const char *)argv[1]);
+	}
+	if (ImgID >= OTA_IMGID_MAX) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ImgID should < %d\r\n", OTA_IMGID_MAX);
+		return;
+	}
+	sys_recover_ota_signature(ImgID);
 	at_printf(ATCMD_OK_END_STR);
 }
 
@@ -94,18 +108,16 @@ static void at_test_help(void)
 
 /****************************************************************
 AT command process:
-	AT+TEST
-	[+TEST]: OK
+    AT+TEST
+    [+TEST]: OK
 ****************************************************************/
-void at_test(void *arg)
+void at_test(u16 argc, char **argv)
 {
 	u8 *buffer = NULL;
 	u8 error_no = 0;
 	u32 start_time, end_time, tt_len;
-	int argc = 0, mode = 0;
-	char *argv[MAX_ARGC] = {0};
+	int mode = 0;
 
-	argc = parse_param(arg, argv);
 	if (argc == 1) {
 		goto end;
 	}
@@ -197,17 +209,18 @@ end:
 
 /****************************************************************
 AT command process:
-	AT+LIST
-	Common AT Command:
-	Then pending all the AT common commands supported.
-	Wi-Fi AT Command:
-	Then pending all the Wi-Fi common commands supported.
-	......
-	[+LIST]:OK
+    AT+LIST
+    Common AT Command:
+    Then pending all the AT common commands supported.
+    Wi-Fi AT Command:
+    Then pending all the Wi-Fi common commands supported.
+    ......
+    [+LIST]:OK
 ****************************************************************/
-void at_list(void *arg)
+void at_list(u16 argc, char **argv)
 {
-	UNUSED(arg);
+	UNUSED(argc);
+	UNUSED(argv);
 
 	/* System commands. */
 	at_printf("Common AT Command:\r\n");
@@ -315,15 +328,16 @@ static u8 at_get_ota_version(void)
 
 /****************************************************************
 AT command process:
-	AT+GMR
-	+GMR:<at-version>,<sdk-version>(<compile_time>)
-	[+GMR]: OK
+    AT+GMR
+    +GMR:<at-version>,<sdk-version>(<compile_time>)
+    [+GMR]: OK
 ****************************************************************/
-void at_gmr(void *arg)
+void at_gmr(u16 argc, char **argv)
 {
-	UNUSED(arg);
-	u32 buflen = 1024;
-	char *buf = rtos_mem_malloc(buflen);
+	UNUSED(argc);
+	UNUSED(argv);
+	u32 chip_info = 0;
+
 	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
 	at_printf("ATCMD VERSION: %d.%d.%d\r\n", ATCMD_VERSION, ATCMD_SUBVERSION, ATCMD_REVISION);
 
@@ -333,9 +347,8 @@ void at_gmr(void *arg)
 	at_printf("IMAGE VERSION: %d.%d\r\n", ((version >> 16) & 0xFFFF), (version & 0xFFFF));
 #endif
 
-	ChipInfo_GetSocName_ToBuf(buf, buflen - 1);
-	at_printf("%s", buf);
-	rtos_mem_free(buf);
+	chip_info = ChipInfo_GetSocName_ToBuf();
+	at_printf("%x \r\n", chip_info);
 
 	at_printf("COMPILE TIME: %s\r\n", RTL_FW_COMPILE_TIME);
 	at_printf("COMPILE USER: %s@%s\r\n", RTL_FW_COMPILE_BY, RTL_FW_COMPILE_HOST);
@@ -351,13 +364,10 @@ AT command process:
 	+UART:<store in flash>,<baudrate>
 	[+UART]: OK
 ****************************************************************/
-void at_uart(void *arg)
+void at_uart(u16 argc, char **argv)
 {
 	u8 error_no = 0;
-	int argc = 0, mode = 0, baudrate = 0;
-	char *argv[MAX_ARGC] = {0};
-
-	argc = parse_param(arg, argv);
+	int mode = 0, baudrate = 0;
 
 	if (argc != 3) {
 		error_no = 1;
@@ -387,7 +397,7 @@ end:
 }
 #endif
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_sys_items[] = {
 #ifndef CONFIG_INIC_NO_FLASH
 	{"+OTACLEAR", at_otaclear},
@@ -410,9 +420,4 @@ void print_system_at(void)
 	for (index = 0; index < cmd_len; index++) {
 		at_printf("AT%s\r\n", at_sys_items[index].log_cmd);
 	}
-}
-
-void at_sys_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_sys_items, sizeof(at_sys_items) / sizeof(at_sys_items[0]));
 }

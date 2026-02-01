@@ -14,7 +14,7 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-if(CONFIG_ZEPHYR_SDK)
+if(CONFIG_PLATFORM_ZEPHYR)
 ameba_list_append(public_libraries
     ${c_SDK_LIB_APPLICATION_DIR}/lib_coex_api.a
 )
@@ -63,7 +63,7 @@ ameba_list_append(private_includes
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-if(CONFIG_ZEPHYR_SDK)
+if(CONFIG_PLATFORM_ZEPHYR)
 ameba_add_external_app_library(coex_api
     p_SOURCES
         ${private_sources}

@@ -277,6 +277,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -439,6 +443,10 @@ _LONG_CALL_ void GPIO_PortDirection(u32 GPIO_Port, u32 GPIO_Mask, u32 data_direc
 _LONG_CALL_ void GPIO_DebounceClock(u32 GPIO_Port, u32 DivideCount);
 _LONG_CALL_ void GPIO_LevelSync(u32 GPIO_Port, u32 NewState);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

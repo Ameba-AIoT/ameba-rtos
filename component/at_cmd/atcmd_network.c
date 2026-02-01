@@ -91,21 +91,18 @@ static void at_ping_help(void)
 	RTK_LOGI(NOTAG, "\t\tAT+PING=192.168.1.2,-n,100,-l,5000\r\n");
 }
 
-void at_ping(void *arg)
+void at_ping(u16 argc, char **argv)
 {
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 
 	RTK_LOGI(NOTAG, "[+PING]: _AT_WLAN_PING_TEST_\r\n");
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		error_no = 1;
 		goto end;
 	}
 
 	argv[0] = (char *)"ping";
-	argc = parse_param(arg, argv);
 	if (argc > 1) {
 		error_no = cmd_ping(argc, argv);
 	} else {
@@ -113,7 +110,6 @@ void at_ping(void *arg)
 		error_no = 2;
 		goto end;
 	}
-
 end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
@@ -153,48 +149,64 @@ static void at_iperf_help(void)
 	RTK_LOGI(NOTAG, "\t\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
 }
 
-void at_iperf(void *arg)
+void at_iperf(u16 argc, char **argv)
 {
 	int error_no = 0;
-	int argc;
-	char *argv[MAX_ARGC] = {0};
-	char *pos;
 	char *input = NULL;
-	char *char_arg = (char *)arg;
+	bool is_udp = false;
 
-	if (arg == NULL) {
+	if (argc < 2) {
+		RTK_LOGI(NOTAG, "[+IPERF] Should be some argc\r\n");
+		error_no = 3;
+		goto end;
+	}
+
+	// Check for "-u" parameter
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "-u") == 0) {
+			is_udp = true;
+			break;
+		}
+	}
+
+	// Create a new argument array, with the first element as "udp" or "tcp"
+	char *new_argv[MAX_ARGC] = {0};
+	new_argv[0] = is_udp ? (char *)"udp" : (char *)"tcp";
+
+	// Calculate required buffer size
+	size_t buffer_size = 1; // Reserve space for the trailing '\0'
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "-u") != 0) {
+			buffer_size += strlen(argv[i]) + 1; // +1 for comma or trailing '\0'
+		}
+	}
+
+	// Allocate memory
+	input = (char *)rtos_mem_zmalloc(buffer_size);
+	if (!input) {
 		error_no = 1;
 		goto end;
 	}
 
-	pos = strpbrk(char_arg, "u");
-
-	if (pos) {
-		if ((memcmp(pos - 1, "-", 1)) || (pos == char_arg)) {
-			RTK_LOGI(NOTAG, "- needs to be added before u\r\n");
-			error_no = 1;
-			goto end;
+	// Build input string, skipping "-u" parameter
+	char *p = input;
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "-u") != 0) {
+			int len = strlen(argv[i]);
+			memcpy(p, argv[i], len);
+			p += len;
+			if (i < argc - 1 && strcmp(argv[i + 1], "-u") != 0) {
+				*p++ = ',';
+			}
 		}
-
-		input = (char *)rtos_mem_zmalloc(strlen(char_arg) - 2); /* delete "-u,"or ",-u" and need '\0' at the end */
-		if (pos - char_arg == 1) {  // "-u" is at the beginning of arg
-			memcpy(input, char_arg + 3, strlen(char_arg) - 3);
-		} else {                      // "-u" is at the end or middle of arg
-			memcpy(input, char_arg, pos - char_arg - 2);                //copy str before "-u"
-			memcpy(input + strlen(input), pos + 1, strlen(pos) - 1);  //copy str after "-u"
-		}
-		argv[0] = (char *)"udp";
-	} else {
-		input = (char *)rtos_mem_zmalloc(strlen(char_arg) + 1); /* need '\0' at the end */
-		memcpy(input, char_arg, strlen(char_arg));
-		argv[0] = (char *)"tcp";
 	}
+	*p = '\0';
 
-	RTK_LOGI(NOTAG, "[+IPERF]: _AT_WLAN_IPERF1_TCP_TEST_\r\n");
+	RTK_LOGI(NOTAG, "[+IPERF]: _AT_WLAN_IPERF1_%s_TEST_\r\n", is_udp ? "UDP" : "TCP");
 
-	argc = parse_param(input, argv);
-	if (argc > 1) {
-		error_no = cmd_iperf(argc, argv);
+	int new_argc = parse_param(input, new_argv);
+	if (new_argc > 1) {
+		error_no = cmd_iperf(new_argc, new_argv);
 	} else {
 		RTK_LOGI(NOTAG, "[+IPERF] Should be some argc\r\n");
 		error_no = 3;
@@ -247,20 +259,17 @@ static void at_iperf3_help(void)
 	RTK_LOGI(NOTAG, "\t\tAT+IPERF3=-c,192.168.1.2,-t,100,-p,5002\r\n");
 }
 
-void at_iperf3(void *arg)
+void at_iperf3(u16 argc, char **argv)
 {
 	int error_no = 0;
-	int argc;
-	char *argv[MAX_ARGC] = {0};
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		error_no = 1;
 		goto end;
 	}
 
 	RTK_LOGI(NOTAG, "[+IPERF3]: _AT_WLAN_IPERF1_TCP_TEST_\r\n");
 	argv[0] = (char *)"iperf3";
-	argc = parse_param(arg, argv);
 	if (argc > 1) {
 		error_no = cmd_iperf3(argc, argv);
 	} else {
@@ -279,19 +288,18 @@ end:
 }
 
 #if defined(CONFIG_ATCMD_DNS) && (CONFIG_ATCMD_DNS == 1)
-void at_dns(void *arg)
+void at_dns(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	struct hostent *host_entry = NULL;
 	char **addr_list = NULL;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGE(NOTAG, "[at_dns] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
-	argc = parse_param(arg, argv);
+
 	if (argc != 2) {
 		RTK_LOGE(NOTAG, "[at_dns] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -317,12 +325,13 @@ end:
 	}
 }
 
-void at_querydnssrv(void *arg)
+void at_querydnssrv(u16 argc, char **argv)
 {
 	int error_no = 0;
 	const ip_addr_t *dns_server = NULL;
+	UNUSED(argv);
 
-	if (arg != NULL) {
+	if (argc != 1) {
 		RTK_LOGE(NOTAG, "[at_querydnssrv] Input parameter SHOULD be NULL\r\n");
 		error_no = 1;
 		goto end;
@@ -348,19 +357,18 @@ end:
 	}
 }
 
-void at_setdnssrv(void *arg)
+void at_setdnssrv(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
+	int error_no = 0;
 	ip_addr_t dns_server1 = {0}, dns_server2 = {0};
-	char *argv[MAX_ARGC] = {0};
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGE(NOTAG, "[at_setdnssrv] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
-	argc = parse_param(arg, argv);
-	if ((argc < 2) || (argc > 3)) {
+
+	if (argc < 2 || argc > 3) {
 		RTK_LOGE(NOTAG, "[at_setdnssrv] Invalid number of parameters\r\n");
 		error_no = 1;
 		goto end;
@@ -397,23 +405,24 @@ end:
 #endif
 
 #if defined(CONFIG_ATCMD_MDNS) && (CONFIG_ATCMD_MDNS == 1)
-void at_mdns(void *arg)
+void at_mdns(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int mode = 0, txt_record_cnt = 0, port = 0;
 	enum mdns_sd_proto protocol = 0;
 	char *hostname = NULL, *service_type = NULL, *service_name = NULL;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGE(NOTAG, "[at_mdns] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
-	argc = parse_param_advance(arg, argv);
+
 	mode = atoi(argv[1]);
 	if (mode < 0 || mode > 1) {
 		RTK_LOGE(NOTAG, "[at_mdns] mode must be 0 or 1\r\n");
+		error_no = 1;
+		goto end;
 	}
 
 	if (mode == 1) {
@@ -628,22 +637,20 @@ static int parse_timezone(const char *timezone_str, int *hours, int *minutes, in
 	return 0;
 }
 
-void at_sntpcfg(void *arg)
+void at_sntpcfg(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int enable = 0;
 	int hours = 8;
 	int minutes = 0;
 	int is_positive = 1;
 	int interval_sec = 0;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
 	if (argc < 2) {
 		RTK_LOGE(NOTAG, "[+SNTPCFG] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -753,11 +760,12 @@ end:
 	}
 }
 
-void at_sntpquery(void *arg)
+void at_sntpquery(u16 argc, char **argv)
 {
+	UNUSED(argv);
 	int error_no = 0;
 
-	if (arg != NULL) {
+	if (argc != 1) {
 		error_no = 1;
 		goto end;
 	}
@@ -817,9 +825,10 @@ end:
 	}
 }
 
-void at_sntptime(void *arg)
+void at_sntptime(u16 argc, char **argv)
 {
-	(void)arg;
+	UNUSED(argc);
+	UNUSED(argv);
 	int error_no = 0;
 
 	time_t now;
@@ -859,7 +868,7 @@ void at_sntptime(void *arg)
 }
 #endif /* CONFIG_ATCMD_SNTP */
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_network_items[ ] = {
 	{"+PING", at_ping},
 	{"+IPERF", at_iperf},
@@ -887,11 +896,6 @@ void print_network_at(void)
 	for (i = 0; cmdSize > i; i++) {
 		at_printf("AT%s\r\n", at_network_items[i].log_cmd);
 	}
-}
-
-void at_network_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_network_items, sizeof(at_network_items) / sizeof(at_network_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_NETWORK */

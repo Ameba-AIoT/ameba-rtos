@@ -108,9 +108,7 @@ CmdPICTest(
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE pic_test_cmd_table[] = {
-	{
-		(const u8 *)"pic", 3, CmdPICTest, (const u8 *)"\tWIFI \n"
-	},
+	{"pic", CmdPICTest},
 };
 
 

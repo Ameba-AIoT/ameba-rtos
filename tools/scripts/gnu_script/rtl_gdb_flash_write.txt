@@ -1,0 +1,166 @@
+# Unified GDB script for flashing Ameba SoCs
+# By gdb -ex set: GDB_PORT, image path, image size
+
+source ../../../tools/scripts/gnu_script/rtl_gdb_jtag_boot_com.txt
+
+#===============================================================================
+# BIN_PATH and BIN_SIZE are set by gdb.py -ex
+# set $BIN_IMG2_ALL = "./image/km0_km4_app.bin"
+# set $XIPBootSize = 0
+
+set $FLASHDATBUFSIZE = 0x800
+
+# Macros
+set $IMAGE_IMG1_BOOT = 0x001
+set $IMAGE_IMG2_ALL = 0x002
+set $IMAGE_KM4_IMG3 = 0x003
+set $IMAGE_DSP_ALL = 0x004
+
+set $FLOADER_BIN = "../../../tools/scripts/gnu_script/flash_loader_ram_1.bin"
+
+# load symbol table first
+file ../../../tools/scripts/gnu_script/target_FPGA.axf
+
+#===============================================================================
+# flash write function
+define flash_write
+    printf "flash_write FileName:0x%x \n", $arg0
+    printf "flash_write FileSize:%d \n", $arg1
+
+    set $FileName = $arg0
+    set $FileSize = $arg1
+    set $Loopnumber = ($FileSize / $FLASHDATBUFSIZE)
+    set $TailSize = ($FileSize % $FLASHDATBUFSIZE)
+    if ($TailSize > 0)
+        set $Loopnumber = $Loopnumber + 0x01
+    end
+    printf "Loopnumber = %d\n", $Loopnumber
+    printf "TailSize = %d\n", $TailSize
+
+    set $FILESTARTADDR = 0
+    set $FLASHDATSRC = FlashDatSrc
+    set FlashBlockWriteSize = $FLASHDATBUFSIZE
+    set $FILEWRITESIZE = $FLASHDATBUFSIZE
+
+    printf "global variables\n"
+    printf "FlashDatSrc:0x%x\n", $FLASHDATSRC
+    printf "FlashBlockWriteSize:0x%x\n", FlashBlockWriteSize
+
+    printf "Flash write start...\n"
+    set $Loop = 0
+    while ($Loop < $Loopnumber)
+        set $FILESTARTADDR = $FLASHDATBUFSIZE * $Loop
+        printf "[%d]: write file 0x%x to flash 0x%x\n", $Loop, $FILESTARTADDR, FlashAddrForWrite
+
+        if ($FileSize == $FILESTARTADDR + $TailSize)
+            set FlashBlockWriteSize = $TailSize
+            set $FILEWRITESIZE = $TailSize
+        end
+
+        if ($FileName == $IMAGE_IMG2_ALL)
+            eval "restore %s binary 0x%x 0x%x 0x%x", $BIN_IMG2_ALL, ($FLASHDATSRC-$FILESTARTADDR), $FILESTARTADDR, ($FILESTARTADDR + $FILEWRITESIZE)
+        end
+
+        if ($FileName == $IMAGE_IMG1_BOOT)
+            eval "restore %s binary 0x%x 0x%x 0x%x", $BIN_IMG1_BOOT, ($FLASHDATSRC-$FILESTARTADDR), $FILESTARTADDR, ($FILESTARTADDR + $FILEWRITESIZE)
+        end
+
+        if ($FileName == $IMAGE_KM4_IMG3)
+            eval "restore %s binary 0x%x 0x%x 0x%x", $BIN_KM4_IMG3, ($FLASHDATSRC-$FILESTARTADDR), $FILESTARTADDR, ($FILESTARTADDR + $FILEWRITESIZE)
+        end
+
+        if ($FileName == $IMAGE_DSP_ALL)
+            eval "restore %s binary 0x%x 0x%x 0x%x", $BIN_DSP_ALL, ($FLASHDATSRC-$FILESTARTADDR), $FILESTARTADDR, ($FILESTARTADDR + $FILEWRITESIZE)
+        end
+
+        c
+
+        if ($FlashWriteCheckEnabled != 0)
+            printf "FlashWriteResult:%x \n", FlashWriteResult
+            if (FlashWriteResult == 0)
+                set $Loop = $Loop & 0xFFFFFFC0
+                set FlashAddrForWrite = FlashAddrForWrite & 0xFFFE0000
+                set FlashAddrForWrite = FlashAddrForWrite + 0x20000
+            else
+                set $Loop = $Loop + 0x01
+            end
+        else
+            set $Loop = $Loop + 0x01
+        end
+    end
+end
+#===============================================================================
+
+#----------------------------- Flash Write Flow ------------------------------------
+# By gdb -ex set:
+#          WR_CHECK_EN, FLOADER_ADDR, PC, SP,
+#          SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG
+#          TZ_SETUP_EN, REG_LSYS_BOOT_ADDR_TZ
+#          IMG2_ADDR, IMG3_ADDR, DSP_ADDR
+
+set $FlashWriteCheckEnabled = $WR_CHECK_EN
+
+monitor reset 0
+monitor sleep 20
+monitor reset 0
+monitor sleep 20
+
+# 1. Preparation (Vector Table Offset / Debug register)
+set $Temp = {int}(0xE000EE08)
+set $Temp = ($Temp & ~(0x01 << 17))
+set $Temp = ($Temp | (0x01 << 16))
+set {int}(0xE000EE08) = $Temp
+
+printf "Load flash loader to 0x%x\n", $FLOADER_ADDR
+eval "restore %s binary 0x%x", $FLOADER_BIN, $FLOADER_ADDR
+
+# 2. TZ reg setup ( Green2/8720F )
+if ($TZ_SETUP_EN == 1)
+    set $TZ_REG_ADDR = $SYSTEM_CTRL_BASE + $REG_LSYS_BOOT_ADDR_TZ
+    set {int}($TZ_REG_ADDR) = $FLOADER_ADDR
+end
+
+# 3. Boot Config
+# clear bit 16-31, set bit 28
+set $CFG_REG_ADDR = $SYSTEM_CTRL_BASE + $REG_LSYS_BOOT_CFG
+set $Temp = {int}($CFG_REG_ADDR)
+set $Temp = ($Temp & ~(0xFFFF << 16))
+set $Temp = ($Temp | (0x01 << 28))
+set {int}($CFG_REG_ADDR) = $Temp
+
+# set breakpoints in rtl_flash_download.c or gdb_floader_download.c
+b Gdb_Floader_Program_Start
+b Gdb_Floader_Program_End
+
+printf "Set PC=0x%x, SP=0x%x\n", $PC, $SP
+set $pc = $PC
+set $sp = $SP
+c
+
+# 4. flash write
+# ---------------- Img 1 (Boot) ----------------
+set FlashAddrForWrite = 0x00000
+flash_write $IMAGE_IMG1_BOOT $XIPBootSize
+
+# ---------------- Img 2 (App) ----------------
+set FlashAddrForWrite = $IMG2_ADDR
+flash_write $IMAGE_IMG2_ALL $FlashFileSize
+
+# ---------------- DSP (Optional) ----------------
+if ($DSPFlashSize > 0)
+    set FlashAddrForWrite = $DSP_ADDR
+    flash_write $IMAGE_DSP_ALL $DSPFlashSize
+end
+
+# ---------------- Img 3 (Optional) ----------------
+if ($Img3FileSize > 0)
+    set FlashAddrForWrite = $IMG3_ADDR
+    flash_write $IMAGE_KM4_IMG3 $Img3FileSize
+end
+
+# 5. Finish
+set FlashWriteComplete = 0x1
+c
+
+quit
+#===============================================================================

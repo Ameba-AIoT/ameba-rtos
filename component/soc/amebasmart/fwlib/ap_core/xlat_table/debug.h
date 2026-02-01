@@ -10,7 +10,6 @@
 #include "utils_def.h"
 #include "log.h"
 
-
 int DiagPrintf(const char *fmt, ...);
 
 /*

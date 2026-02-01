@@ -50,7 +50,7 @@ extern void eap_disconnected_hdl(void);
 extern u8 wifi_cast_get_initialized(void);
 extern void wifi_cast_wifi_join_status_ev_hdl(u8 *evt_info);
 #endif
-#if defined(CONFIG_WHC_HOST) && !defined(CONFIG_ZEPHYR_SDK) && !defined(CONFIG_MP_SHRINK) && defined(CONFIG_RMESH_EN)
+#if defined(CONFIG_WHC_HOST) && !defined(CONFIG_PLATFORM_ZEPHYR) && !defined(CONFIG_MP_SHRINK) && defined(CONFIG_RMESH_EN)
 extern void wtn_zrpp_get_ap_info_evt_hdl(u8 *evt_info);
 #endif
 /**********************************************************************************************
@@ -147,7 +147,7 @@ void wifi_event_join_status_internal_hdl(u8 *evt_info)
 	rtw_reconn_join_status_hdl(evt_info);
 #endif
 
-#if defined(CONFIG_WHC_HOST) && !defined(CONFIG_ZEPHYR_SDK)
+#if defined(CONFIG_WHC_HOST) && !defined(CONFIG_PLATFORM_ZEPHYR)
 	if (wifi_cast_get_initialized()) {
 		wifi_cast_wifi_join_status_ev_hdl(evt_info);
 	}
@@ -271,7 +271,7 @@ const struct rtw_event_hdl_func_t event_internal_hdl[] = {
 	{RTW_EVENT_WPA_P2P_CHANNEL_RDY,	rtw_p2p_channel_switch_ready},
 #endif
 	{RTW_EVENT_DEAUTH_INFO_FLASH,	rtw_psk_deauth_info_flash_event_hdl},
-#if defined(CONFIG_WHC_HOST) && !defined(CONFIG_ZEPHYR_SDK) && !defined(CONFIG_MP_SHRINK) && defined(CONFIG_RMESH_EN)
+#if defined(CONFIG_WHC_HOST) && !defined(CONFIG_PLATFORM_ZEPHYR) && !defined(CONFIG_MP_SHRINK) && defined(CONFIG_RMESH_EN)
 	{RTW_EVENT_WTN_ZRPP_GET_AP_INFO, wtn_zrpp_get_ap_info_evt_hdl},
 #endif
 };

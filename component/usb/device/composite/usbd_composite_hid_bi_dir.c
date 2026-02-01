@@ -27,7 +27,7 @@ static int composite_hid_sof(usb_dev_t *dev);
 static int composite_hid_set_config(usb_dev_t *dev, u8 config);
 static int composite_hid_clear_config(usb_dev_t *dev, u8 config);
 static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
-static int composite_hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
+static int composite_hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static int composite_hid_handle_ep0_data_out(usb_dev_t *dev);
 static void composite_hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 /* Private variables ---------------------------------------------------------*/
@@ -198,7 +198,7 @@ const usbd_class_driver_t usbd_composite_hid_driver = {
 };
 
 /* Private functions ---------------------------------------------------------*/
-static int usbd_composite_hid_send_data_internal(u8 *data, u16 len)
+static int usbd_composite_hid_send_data_internal(u8 *data, u32 len)
 {
 	u16 valid_len;
 	u8 offset = 0;
@@ -229,8 +229,7 @@ static int usbd_composite_hid_send_data_internal(u8 *data, u16 len)
 
 			if (dev->is_ready) { // In case deinit when plug out
 				ep_hid_in->xfer_len = valid_len;
-				usbd_ep_transmit(hid->cdev->dev, ep_hid_in);
-				ret = HAL_OK;
+				ret = usbd_ep_transmit(hid->cdev->dev, ep_hid_in);
 			} else {
 				ep_hid_in->xfer_state = 0U;
 			}
@@ -246,7 +245,7 @@ static int usbd_composite_hid_send_data_internal(u8 *data, u16 len)
 	return ret;
 }
 
-static int usbd_composite_hid_priv_send_data_internal(u8 *data, u16 len, u8 reportid, u8 with_reportid)
+static int usbd_composite_hid_priv_send_data_internal(u8 *data, u32 len, u8 reportid, u8 with_reportid)
 {
 	u16 valid_len;
 	u8 offset = 0;
@@ -294,8 +293,7 @@ static int usbd_composite_hid_priv_send_data_internal(u8 *data, u16 len, u8 repo
 
 			if (dev->is_ready) { // In case deinit when plug out
 				ep_hid_priv_in->xfer_len = valid_len;
-				usbd_ep_transmit(hid->cdev->dev, ep_hid_priv_in);
-				ret = HAL_OK;
+				ret = usbd_ep_transmit(hid->cdev->dev, ep_hid_priv_in);
 			} else {
 				ep_hid_priv_in->xfer_state = 0U;
 			}
@@ -340,9 +338,7 @@ static int usbd_hid_receive(void)
 
 	ep_intr_out->xfer_buf = p_buf->buf_raw;
 	ep_intr_out->xfer_len = pbuf_ctrl->hid_mps;
-	usbd_ep_receive(cdev->dev, ep_intr_out);
-
-	return HAL_OK;
+	return usbd_ep_receive(cdev->dev, ep_intr_out);
 }
 
 static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
@@ -547,7 +543,7 @@ static int composite_hid_sof(usb_dev_t *dev)
 	return HAL_OK;
 }
 
-static int composite_hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
+static int composite_hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 	usbd_composite_hid_buf_ctrl_t *pbuf_ctrl;
@@ -839,7 +835,7 @@ int usbd_composite_hid_deinit(void)
 	return HAL_OK;
 }
 
-int usbd_composite_hid_send_data(u8 *data, u16 len)
+int usbd_composite_hid_send_data(u8 *data, u32 len)
 {
 	return usbd_composite_hid_priv_send_data_internal(data, len, USBD_COMP_HID_REPORT_ID, 0);
 }

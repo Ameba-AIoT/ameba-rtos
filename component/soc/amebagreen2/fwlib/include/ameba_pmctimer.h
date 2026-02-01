@@ -117,6 +117,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -189,6 +193,10 @@ void PMCTimer_INTClear(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx);
 void PMCTimer_CompCmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewState);
 void PMCTimer_Init(void);
 void PMCTimer_Reset(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

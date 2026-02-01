@@ -1029,6 +1029,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /** @defgroup MEM_CTRL_LPS_define
   * @{
@@ -1058,6 +1062,10 @@
 
 //Please add your defination here
 #define SYSTEM_MEM_CTRL_BASE     0x4100C600
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

@@ -212,21 +212,18 @@ static void at_cpuload_help(void)
 
 /****************************************************************
 AT command process:
-	AT+CPULOAD
-	[+CPULOAD]: OK
+    AT+CPULOAD
+    [+CPULOAD]: OK
 ****************************************************************/
-void at_cpuload(void *arg)
+void at_cpuload(u16 argc, char **argv)
 {
 	const int mode_idx = 1, time_idx = 2, count_idx = 3;
-	int argc = 0;
 	int error_no = 0;
-	char *argv[MAX_ARGC] = {0};
 	enum atcmd_cpuload_type_e top_mode = atcmd_cpuload_type_invalid;
 
 	para_in.time = 1;
 	para_in.count = -1;
 
-	argc = parse_param(arg, argv);
 	if (argc > 4 || argc < 2) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS,
 				 "[top]Usage: top=mode,time,count\n\r mode: 0, start count cpu usage every [time] second.\r\n mode: 1, stop mode 0.\r\n mode: 2: start count cpu usage.\r\n mode: 3: stop mode 2.\r\n "
@@ -316,23 +313,21 @@ end:
 
 /****************************************************************
 AT command process:
-	AT+RREG
-	[+RREG]: OK
-	Read register value.
+    AT+RREG
+    [+RREG]: OK
+    Read register value.
 ****************************************************************/
-void at_rreg(void *arg)
+void at_rreg(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGW(NOTAG, "[RREG] Error parameters\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
-	if ((argc < 2) || (argc > 4)) {
+	if (argc < 2 || argc > 4) {
 		RTK_LOGW(NOTAG, "[RREG] Error parameters\r\n");
 		error_no = 1;
 		goto end;
@@ -350,22 +345,14 @@ end:
 
 /****************************************************************
 AT command process:
-	AT+WREG
-	[+WREG]: OK
-	Write register value.
+    AT+WREG
+    [+WREG]: OK
+    Write register value.
 ****************************************************************/
-void at_wreg(void *arg)
+void at_wreg(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 
-	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[WREG] Error parameters\r\n");
-		error_no = 1;
-		goto end;
-	}
-
-	argc = parse_param(arg, argv);
 	if (argc != 3) {
 		RTK_LOGW(NOTAG, "[WREG] Error parameters\r\n");
 		error_no = 1;
@@ -384,13 +371,14 @@ end:
 
 /****************************************************************
 AT command process:
-	AT+RST
-	[+RST]: OK
-	Then the board should re-start right now.
+    AT+RST
+    [+RST]: OK
+    Then the board should re-start right now.
 ****************************************************************/
-void at_rst(void *arg)
+void at_rst(u16 argc, char **argv)
 {
-	UNUSED(arg);
+	UNUSED(argc);
+	UNUSED(argv);
 	at_printf(ATCMD_OK_END_STR);
 	sys_reset();
 }
@@ -406,24 +394,22 @@ static void at_log_help(void)
 
 /****************************************************************
 AT command process:
-	AT+LOG
-	[+LOG]: OK
-	Set or get the log level of specific module / all modules.
+    AT+LOG
+    [+LOG]: OK
+    Set or get the log level of specific module / all modules.
 ****************************************************************/
-void at_log(void *arg)
+void at_log(u16 argc, char **argv)
 {
-	int argc = 0, ret = 0, error_no = 0;
+	int ret = 0, error_no = 0;
 	enum atcmd_log_type_e mode = atcmd_log_type_invalid;
-	char *argv[MAX_ARGC] = {0};
 	rtk_log_level_t log_level;
 
-	if (arg == NULL) {
+	if (argc < 2) {
 		RTK_LOGA(NOTAG, "[LOG] ERROR arg: \r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
 	if ((argc > 1) && (argv[1] != NULL)) {
 		mode = (enum atcmd_log_type_e)atoi(argv[1]);
 	}
@@ -501,21 +487,13 @@ end:
 
 /****************************************************************
 AT command process:
-	AT+TICKPS
-	R: release os wakelock
-	A: acquire os wakelock
-	TYPE: GC OR PG
+    AT+TICKPS
+    R: release os wakelock
+    A: acquire os wakelock
+    TYPE: GC OR PG
 ****************************************************************/
-void at_tickps(void *arg)
+void at_tickps(u16 argc, char **argv)
 {
-	int argc = 0;
-	char *argv[MAX_ARGC] = {0};
-
-	if (arg == NULL) {
-		RTK_LOGW(NOTAG, "[TICKPS] Error parameters\r\n");
-		return;
-	}
-	argc = parse_param(arg, argv);
 	if (argc < 2) {
 		RTK_LOGW(NOTAG, "[TICKPS] Error parameters\r\n");
 		return;
@@ -587,14 +565,15 @@ void at_tickps(void *arg)
 
 /****************************************************************
 AT command process:
-	AT+STATE
-	[+STATE]: OK
-	Show the task list, and heap state.
+    AT+STATE
+    [+STATE]: OK
+    Show the task list, and heap state.
 ****************************************************************/
 extern u32 total_heap_size;
-void at_state(void *arg)
+void at_state(u16 argc, char **argv)
 {
-	UNUSED(arg);
+	UNUSED(argc);
+	UNUSED(argv);
 #if defined(configUSE_TRACE_FACILITY) && (configUSE_TRACE_FACILITY == 1) && (configUSE_STATS_FORMATTING_FUNCTIONS == 1) && (configGENERATE_RUN_TIME_STATS == 1)
 	{
 		char *pcWriteBuffer;
@@ -643,10 +622,4 @@ void print_system_common_at(void)
 	for (index = 0; index < cmd_len; index++) {
 		at_printf("AT%s\r\n", at_sys_common_items[index].log_cmd);
 	}
-}
-
-
-void at_sys_init_common(void)
-{
-	atcmd_service_add_table((log_item_t *)at_sys_common_items, sizeof(at_sys_common_items) / sizeof(at_sys_common_items[0]));
 }

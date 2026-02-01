@@ -27,12 +27,17 @@
 #include "deccfg.h"
 #include "decppif.h"
 
-/*------------------------------------------------------------------------------
-    2. Module defines
-------------------------------------------------------------------------------*/
 #ifdef _ASSERT_USED
 #include <assert.h>
 #endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*------------------------------------------------------------------------------
+    2. Module defines
+------------------------------------------------------------------------------*/
 
 /* macro for assertion, used only if compiler flag _ASSERT_USED is defined */
 #ifdef _ASSERT_USED
@@ -310,5 +315,9 @@ typedef struct {
 /*------------------------------------------------------------------------------
     4. Function prototypes
 ------------------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #endif JPEGDECDATA_H */

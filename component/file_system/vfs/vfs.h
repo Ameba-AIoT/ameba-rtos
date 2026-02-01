@@ -86,6 +86,12 @@ do {\
 #define VFS_DBG(level, fmt, arg...)
 #endif
 
+#if defined(CONFIG_AMEBASMART)
+#define SHOULD_USE_NAND() (!SYSCFG_BootFromNor())
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2) || defined(CONFIG_AMEBAPRO3)
+#define SHOULD_USE_NAND() (!SYSCFG_OTP_BootFromNor())
+#endif
+
 struct dirent {
 	/* Always zero */
 	long d_ino;
@@ -175,6 +181,9 @@ extern int lfs_mount_flag;
 extern int lfs2_mount_flag;
 extern int fatfs_mount_flag;
 extern int fatfs2_mount_flag;
+
+extern u32 vfs_nand_flash_pagesize;
+extern u32 vfs_nand_flash_pagenum;
 
 void vfs_init(void);
 void vfs_deinit(void);

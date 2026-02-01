@@ -8,6 +8,10 @@
 #define _AMEBA_OTA_KM4_H_
 #include "boot_security_km4.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define KEYID_NSPE				0
 #define KEYID_SPE				1
 #define KEYID_CNT				2
@@ -32,5 +36,9 @@ void BOOT_OTFCheck(u32 start_addr, u32 end_addr, u32 IV_index, u32 OTF_index);
 u8 BOOT_OTA_LoadIMGAll(u8 ImgIndex);
 void BOOT_OTA_Region_Init(void);
 u8 BOOT_OTA_IMG(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

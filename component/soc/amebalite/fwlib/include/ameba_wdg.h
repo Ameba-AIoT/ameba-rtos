@@ -123,6 +123,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -199,6 +203,10 @@ _LONG_CALL_ void WDG_Reset_Bypass(WDG_TypeDef *WDG, u32 NewState);
 _LONG_CALL_ void WDG_Reset_Timeout(u32 Timeout);
 _LONG_CALL_ void WDG_Reset_ClearINT(WDG_TypeDef *WDG);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

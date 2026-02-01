@@ -7,6 +7,10 @@
 #ifndef _AMEBA_FTL_ERRNO_H_
 #define _AMEBA_FTL_ERRNO_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum ftl_errno {
 	ERR_NONE = 0x00,		/* No error*/
 	ERR_FAIL = 0xE0,		/* General failure */
@@ -24,6 +28,10 @@ enum ftl_errno {
 	ERR_NAND_BITFLIP_ERROR,	/* NAND bitflips equals to ECC level, corrected */
 	ERR_NAND_BITFLIP_FATAL,	/* NAND bitflips higher than ECC level, cannot be corrected*/
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

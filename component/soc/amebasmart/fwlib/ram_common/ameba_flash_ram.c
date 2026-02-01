@@ -69,7 +69,7 @@ void FLASH_Write_Lock(void)
 #ifdef CONFIG_ARM_CORE_CA32
 	/*1. Close Core1 to avoid Core1 Access Flash */
 	vPortGateOtherCore();
-#ifdef CONFIG_IMG2_FLASH
+
 	/*2. Sent IPC to KM4 */
 	IPC_MSG_STRUCT ipc_msg_temp;
 	_memset(Flash_Sync_Flag, 0, sizeof(Flash_Sync_Flag));
@@ -79,7 +79,8 @@ void FLASH_Write_Lock(void)
 	ipc_msg_temp.msg = (u32)Flash_Sync_Flag;
 	ipc_msg_temp.msg_len = 1;
 	ipc_msg_temp.rsvd = 0; /* for coverity init issue */
-	ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ, &ipc_msg_temp);
+	while (ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ, &ipc_msg_temp)) {
+	};
 
 	while (1) {
 		DCache_Invalidate((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
@@ -87,7 +88,9 @@ void FLASH_Write_Lock(void)
 			break;
 		}
 	}
-#endif
+
+	/*3. Change MMU Table of flash region */
+	xlat_flash_region_device();
 #endif
 }
 
@@ -101,12 +104,14 @@ SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_Write_Unlock(void)
 {
 #ifdef CONFIG_ARM_CORE_CA32
-#ifdef CONFIG_IMG2_FLASH
 	/*1. Let KM4 Go */
 	Flash_Sync_Flag[0] = 0;
 	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
-#endif
-	/*2. Wakeup Core1 */
+
+	/*2. restore MMU */
+	xlat_flash_region_xip();
+
+	/*3. Wakeup Core1 */
 	vPortWakeOtherCore();
 #endif
 

@@ -115,7 +115,5 @@ uint32_t test_ipc_message(uint16_t argc, uint8_t *argv[])
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE ipc_message_test_cmd_table[] = {
-	{
-		(const u8 *)"test_ipc_message",  1, test_ipc_message, (const u8 *)"\t test_ipc_message \n"
-	},
+	{"test_ipc_message", test_ipc_message},
 };

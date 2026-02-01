@@ -12,6 +12,10 @@
 #define CERT_SIZE_4K_ALIGN		0x1000
 #define CERT_MAX_KEYINFO		5
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	u32 KeyID;
 	unsigned char Hash[32];
@@ -40,5 +44,10 @@ fih_ret BOOT_CertificateCheck(Certificate_TypeDef *Cert, u32 idx);
 fih_ret BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum);
 fih_ret BOOT_RAM_TZCfg(void);
 fih_ret BOOT_Wake_TZCfg(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 

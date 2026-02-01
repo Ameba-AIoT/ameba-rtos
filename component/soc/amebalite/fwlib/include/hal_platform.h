@@ -5,6 +5,11 @@
  */
 
 #ifndef _HAL_PLATFORM_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _HAL_PLATFORM_
 
 #define ROMVERSION			0x01 /* ACUT is 0x01, BCUT is 0x02 ... */
@@ -546,4 +551,9 @@
 #endif
 
 /** @} End of group AmebaD_Outline */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_HAL_PLATFORM_

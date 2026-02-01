@@ -1128,6 +1128,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //Please add your defination here
 #ifndef __ASSEMBLER__
 enum CHIP_TYPE {
@@ -1157,6 +1161,10 @@ enum CHIP_TYPE {
 #define LSYS_BIT_NP_RUNNING       ((u32)0x00000001 << 7)          /*!<R/W 0   */
 #define LSYS_NP_RUNNING(x)        ((u32)(((x) & 0x00000001) << 7))
 #define LSYS_GET_NP_RUNNING(x)    ((u32)(((x >> 7) & 0x00000001)))
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 #endif

@@ -31,7 +31,7 @@
 #define QUEUE_STOP_THRES	7
 #define QUEUE_WAKE_THRES	4
 
-#ifndef CONFIG_FULLMAC_HCI_IPC
+#ifndef CONFIG_WHC_HCI_IPC
 /* internal pkt tx: from user space to dev by cmd path */
 void whc_host_send_cmd_data(u8 *buf, u32 len);
 

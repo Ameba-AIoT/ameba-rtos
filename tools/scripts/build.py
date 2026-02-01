@@ -41,7 +41,6 @@ def main(argc, argv):
         print(f"\033[31mError: CMakeLists.txt not found in '{project_dir}'\033[0m")
         sys.exit(1)
 
-    gdb_script_dir = os.path.join(project_dir, 'utils/jlink_script/gdb.py')
     DEFAULT_BUILD_DIR = os.path.join(project_dir, 'build')
 
     if args.build_dir == None:
@@ -70,14 +69,6 @@ def main(argc, argv):
     else:
         os.makedirs(build_dir)
 
-    if args.gdb:
-        os.system(f'python {gdb_script_dir}')
-        return
-
-    if args.debug:
-        os.system(f'python {gdb_script_dir} debug')
-        return
-
     cmd = 'cd ' + build_dir + ' && ' + 'cmake "' + project_dir + '"'
 
     if args.daily_build != None:
@@ -88,6 +79,19 @@ def main(argc, argv):
             cmd += ' -D' + defs
 
     cmd += ' -G Ninja'
+
+    gdb_script_dir = os.path.join(script_dir, 'gdb.py')
+    if args.gdb:
+        if not os.path.exists(os.path.join(build_dir, 'CMakeCache.txt')):
+            os.system(cmd)
+        os.system(f'python {gdb_script_dir} {project_dir}')
+        return
+
+    if args.debug:
+        if not os.path.exists(os.path.join(build_dir, 'CMakeCache.txt')):
+            os.system(cmd)
+        os.system(f'python {gdb_script_dir} {project_dir} debug')
+        return
 
     if args.app != None:  # app maybe in submodule directory, get submodule info first
         cmd_pre = cmd + ' && ninja gen_submodule_info'

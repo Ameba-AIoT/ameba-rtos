@@ -7,6 +7,10 @@
 #ifndef _HAL_BOOT_
 #define _HAL_BOOT_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CERT_SIZE_4K_ALIGN		0x1000
 #define CERT_MAX_KEYINFO		5
 
@@ -88,5 +92,10 @@ void BOOT_Enable_Config(void);
 void BOOT_SRAM_Extend_Config(void);
 void BOOT_CFG_CORE_Vol(void);
 void BOOT_VerCheck(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 

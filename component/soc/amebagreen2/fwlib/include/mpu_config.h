@@ -10,6 +10,10 @@
 /**
   \brief  The data structure for a MPU region configuration
 */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct {
 	uint32_t region_base; /*!< MPU region base, 32 bytes aligned. */
 	uint32_t region_size; /*!< MPU region size, 32 bytes aligned. */
@@ -166,4 +170,8 @@ void mpu_region_cfg(uint8_t region_num, mpu_region_config *pmpu_cfg);
 void mpu_entry_free(u32 entry_index);
 char mpu_entry_alloc(void);
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif //_MPU_CONFIG_H_

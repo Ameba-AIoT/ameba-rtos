@@ -232,7 +232,7 @@ int whc_usb_host_send_event_check(u32 event_id)
 	endpoint will not be disabled, event can still be send*/
 	if (priv->usb_disconnecting && (!priv->usb_deregistering)) {
 		if (event_id == WHC_API_WIFI_DISCONNECT) {
-			whc_fullmac_host_disconnect_indicate(0, 1, global_idev.bssid);
+			whc_host_disconnect_indicate(0, 1, global_idev.bssid);
 			complete(&global_idev.mlme_priv.disconnect_done_sema);
 		}
 		return -1;
@@ -253,7 +253,7 @@ void whc_host_send_cmd_data(u8 *buf, u32 len)
 	}
 	txbuf = kzalloc(txsize, GFP_KERNEL);
 	if (!txbuf) {
-		dev_err(global_idev.fullmac_dev, "%s can't alloc usb buffer!\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s can't alloc usb buffer!\n", __func__);
 		return;
 	}
 	if (event != WHC_WIFI_EVT_XIMT_PKTS) {

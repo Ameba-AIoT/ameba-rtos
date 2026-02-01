@@ -1,4 +1,5 @@
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+import sys
 import ssl
 import socket
 
@@ -19,6 +20,11 @@ if hasattr(socket, 'TCP_KEEPCNT'):
     httpd.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 1)
 
 if is_https == 1:
-    httpd.socket = ssl.wrap_socket(httpd.socket, server_side=True, certfile="./cert.pem", keyfile="./key.pem", ssl_version=ssl.PROTOCOL_TLSv1_2)
-
+    print("Python version: {}.{}.{}".format(sys.version_info.major, sys.version_info.minor, sys.version_info.micro))
+    if sys.version_info >= (3, 12):
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain(certfile='cert.pem', keyfile='key.pem')
+        httpd.socket = ssl_context.wrap_socket(httpd.socket, server_side=True)
+    else:
+        httpd.socket = ssl.wrap_socket(httpd.socket, server_side=True, certfile="./cert.pem", keyfile="./key.pem", ssl_version=ssl.PROTOCOL_TLSv1_2)
 httpd.serve_forever()

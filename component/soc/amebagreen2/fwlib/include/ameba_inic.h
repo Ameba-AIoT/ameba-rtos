@@ -7,6 +7,10 @@
 #ifndef _AMEBA_INIC_H_
 #define _AMEBA_INIC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup AMEBA_Periph_Driver
   * @{
   */
@@ -144,5 +148,9 @@ typedef struct {
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

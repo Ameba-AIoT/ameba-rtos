@@ -7,6 +7,7 @@
 #include "platform_autoconf.h"
 
 #if defined(CONFIG_BT_COEXIST)
+#ifndef CONFIG_MP_SHRINK
 #include "rtw_coex_host_api.h"
 #include "platform_stdlib.h"
 #include "atcmd_service.h"
@@ -41,23 +42,21 @@ static const char *const AT_COEX_TAG = "AT_COEX";
 // AT+COEXBT=<type=gnt>,<value>
 // <value>: wifi: gnt to wifi, bt: gnt to bt, auto: gnt by auto
 //
-static void fCOMMONCOEX(void *arg)
+static void fCOMMONCOEX(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int pid = 0, vid = 0;
 	static int wl_slot = 0;
 	bool coex_is_en = false;
 	bool coex_ext_is_en = false;
 	int i = 0, j = 0;
 
-	if (!arg) {
+	if (argc == 1) {
 		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: No input args number!\r\n", CMD_NAME_COEX);
 		error_no = 1;
 		goto exit;
 	}
 
-	argc = parse_param(arg, argv);
 	if (argc < 2) {
 		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: Wrong input args number!\r\n", CMD_NAME_COEX);
 		error_no = 1;
@@ -165,9 +164,10 @@ exit:
 	return;
 }
 
-static void fBTCOEX(void *arg)
+static void fBTCOEX(u16 argc, char **argv)
 {
-	(void)arg;
+	UNUSED(argc);
+	UNUSED(argv);
 
 	at_printf("%s is not supported\n", CMD_NAME_BTC);
 
@@ -185,19 +185,11 @@ static void at_coexext_help(void)
 
 // @channel:
 // AT+COEXEXT=<type=chan>,<chan_num>
-static void fEXTCOEX(void *arg)
+static void fEXTCOEX(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int chan_num = 0;
 
-	if (!arg) {
-		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: No input args number!\r\n", CMD_NAME_EXTC);
-		error_no = 1;
-		goto exit;
-	}
-
-	argc = parse_param(arg, argv);
 	if (argc < 2) {
 		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: Wrong input args number!\r\n", CMD_NAME_EXTC);
 		error_no = 1;
@@ -240,15 +232,16 @@ exit:
 	return;
 }
 
-static void fWPCOEX(void *arg)
+static void fWPCOEX(u16 argc, char **argv)
 {
-	(void)arg;
+	UNUSED(argc);
+	UNUSED(argv);
 
 	at_printf("%s is not supported\n", CMD_NAME_WPC);
 
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 static const log_item_t at_coex_items[] = {
 	{CMD_NAME_COEX,          fCOMMONCOEX},
 	{CMD_NAME_BTC,          fBTCOEX},
@@ -272,14 +265,5 @@ void print_coex_at(void)
 	}
 #endif
 }
-
-void at_coex_init(void)
-{
-#if (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK)
-	(void)at_coex_items;
-#else
-	atcmd_service_add_table((log_item_t *)at_coex_items, sizeof(at_coex_items) / sizeof(at_coex_items[0]));
-#endif
-}
-
-#endif
+#endif /* CONFIG_MP_SHRINK */
+#endif /* CONFIG_BT_COEXIST */

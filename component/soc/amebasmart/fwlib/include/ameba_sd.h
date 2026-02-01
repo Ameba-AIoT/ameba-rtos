@@ -9,6 +9,10 @@
 
 #include "ameba_sdioh.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup SDHOST
   * @verbatim
   *****************************************************************************************
@@ -306,5 +310,9 @@ _LONG_CALL_ void SD_SetSema(int (*sema_take_fn)(u32), int (*sema_give_isr_fn)(u3
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

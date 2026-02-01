@@ -82,7 +82,7 @@ static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 	.received = composite_cdc_acm_cb_received
 };
 
-static usbd_composite_cdc_acm_line_coding_t composite_cdc_acm_line_coding;
+static usb_cdc_line_coding_t composite_cdc_acm_line_coding;
 
 static u16 composite_cdc_acm_ctrl_line_state;
 
@@ -156,7 +156,7 @@ static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[])
 */
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE  usbd_composite_mouse_data_cmd[] = {
-	{(const u8 *)"mouse",		8, composite_cmd_mouse_data,		NULL},
+	{"mouse", composite_cmd_mouse_data},
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -168,12 +168,12 @@ const COMMAND_TABLE  usbd_composite_mouse_data_cmd[] = {
   */
 static int composite_cdc_acm_cb_init(void)
 {
-	usbd_composite_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
+	usb_cdc_line_coding_t *lc = &composite_cdc_acm_line_coding;
 
-	lc->bitrate = 150000;
-	lc->format = 0x00;
-	lc->parity_type = 0x00;
-	lc->data_type = 0x08;
+	lc->b.dwDteRate = 150000;
+	lc->b.bCharFormat = 0x00;
+	lc->b.bParityType = 0x00;
+	lc->b.bDataBits = 0x08;
 
 	return HAL_OK;
 }
@@ -209,49 +209,49 @@ static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = HAL_OK;
-	usbd_composite_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
+	usb_cdc_line_coding_t *lc = &composite_cdc_acm_line_coding;
 
 	switch (req->bRequest) {
-	case COMP_CDC_SEND_ENCAPSULATED_COMMAND:
+	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_GET_ENCAPSULATED_RESPONSE:
+	case USB_CDC_ACM_GET_ENCAPSULATED_RESPONSE:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_SET_COMM_FEATURE:
+	case USB_CDC_ACM_SET_COMM_FEATURE:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_GET_COMM_FEATURE:
+	case USB_CDC_ACM_GET_COMM_FEATURE:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_CLEAR_COMM_FEATURE:
+	case USB_CDC_ACM_CLEAR_COMM_FEATURE:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_SET_LINE_CODING:
-		if (req->wLength == COMP_CDC_ACM_LINE_CODING_SIZE) {
-			lc->bitrate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
-			lc->format = buf[4];
-			lc->parity_type = buf[5];
-			lc->data_type = buf[6];
+	case USB_CDC_ACM_SET_LINE_CODING:
+		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
+			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
+			lc->b.bCharFormat = buf[4];
+			lc->b.bParityType = buf[5];
+			lc->b.bDataBits = buf[6];
 		}
 		break;
 
-	case COMP_CDC_GET_LINE_CODING:
-		buf[0] = (u8)(lc->bitrate & 0xFF);
-		buf[1] = (u8)((lc->bitrate >> 8) & 0xFF);
-		buf[2] = (u8)((lc->bitrate >> 16) & 0xFF);
-		buf[3] = (u8)((lc->bitrate >> 24) & 0xFF);
-		buf[4] = lc->format;
-		buf[5] = lc->parity_type;
-		buf[6] = lc->data_type;
+	case USB_CDC_ACM_GET_LINE_CODING:
+		buf[0] = (u8)(lc->b.dwDteRate & 0xFF);
+		buf[1] = (u8)((lc->b.dwDteRate >> 8) & 0xFF);
+		buf[2] = (u8)((lc->b.dwDteRate >> 16) & 0xFF);
+		buf[3] = (u8)((lc->b.dwDteRate >> 24) & 0xFF);
+		buf[4] = lc->b.bCharFormat;
+		buf[5] = lc->b.bParityType;
+		buf[6] = lc->b.bDataBits;
 		break;
 
-	case COMP_CDC_SET_CONTROL_LINE_STATE:
+	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
 		/*
 		wValue:	wValue, Control Signal Bitmap
 				D2-15:	Reserved, 0
@@ -264,7 +264,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		}
 		break;
 
-	case COMP_CDC_SEND_BREAK:
+	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
 		break;
 

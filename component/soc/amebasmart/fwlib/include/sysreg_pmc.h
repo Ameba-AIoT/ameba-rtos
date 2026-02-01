@@ -445,6 +445,10 @@
 /* AUTO_GEN_WAKE_SRC_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 #define WAKE_MASK1_CHECK	0xC0000000
@@ -464,6 +468,10 @@ enum PowerCut_Stable_Time {
 	PC_Stable_1024 = 0x02,
 	PC_Stable_2048 = 0x03,
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

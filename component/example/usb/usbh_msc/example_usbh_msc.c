@@ -17,7 +17,7 @@
 
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "MSC";
-#define USBH_MSC_THREAD_STACK_SIZE  (1024*8)
+#define USBH_MSC_THREAD_STACK_SIZE  (1024*10)
 #define USBH_MSC_TEST_BUF_SIZE      4096
 #define USBH_MSC_TEST_ROUNDS        20
 #define USBH_MSC_CHECK_DATA          0

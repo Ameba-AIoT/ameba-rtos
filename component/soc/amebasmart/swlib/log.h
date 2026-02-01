@@ -7,6 +7,10 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define RTK_LOG_DEFAULT_LEVEL        RTK_LOG_INFO
 //1. Compiling log level into image(or .axf/.elf)
 #ifndef COMPIL_LOG_LEVEL
@@ -77,5 +81,9 @@ void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char lette
 void rtk_log_memory_dump_word(uint32_t *src, uint32_t len);
 void rtk_log_memory_dump_byte(uint8_t *src, uint32_t len);
 void rtk_log_memory_dump2char(const char *src_buff, uint32_t buff_len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

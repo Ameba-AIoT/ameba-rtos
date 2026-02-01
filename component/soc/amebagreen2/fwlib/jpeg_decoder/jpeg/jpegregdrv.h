@@ -11,6 +11,10 @@
 #include "deccfg.h"
 #include "regdrv.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define JPEG_X170_MODE_JPEG       3
 
 #define JPEGDEC_X170_IRQ_DEC_RDY        DEC_8190_IRQ_RDY
@@ -20,5 +24,9 @@
 #define JPEGDEC_X170_IRQ_STREAM_ERROR   DEC_8190_IRQ_ERROR
 #define JPEGDEC_X170_IRQ_SLICE_READY    DEC_8190_IRQ_SLICE
 #define JPEGDEC_X170_IRQ_TIMEOUT        DEC_8170_IRQ_TIMEOUT
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #define _JPG_HWREGDRV_H_ */

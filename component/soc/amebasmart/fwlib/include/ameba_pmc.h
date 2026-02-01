@@ -7,6 +7,10 @@
 #ifndef _AMEBA_PMC_H_
 #define _AMEBA_PMC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup AmebaD_Platform
   * @{
   */
@@ -205,6 +209,9 @@ void SOCPS_SleepCG_LIB(void);
 #if defined (CONFIG_ARM_CORE_CM4)
 void SOCPS_WakeFromPG_HP(void);
 void SOCPS_DeepSleep(void);
+#endif
 
+#ifdef __cplusplus
+}
 #endif
 #endif //_AMEBA_PMC_H_

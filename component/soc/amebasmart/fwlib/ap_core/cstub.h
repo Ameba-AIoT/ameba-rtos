@@ -16,8 +16,16 @@
 
 #ifndef _ASMLANGUAGE
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* HEAP_START, HEAP_END are set in the linker command file */
 extern caddr_t HEAP_START, HEAP_END;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* !_ASMLANGUAGE */
 

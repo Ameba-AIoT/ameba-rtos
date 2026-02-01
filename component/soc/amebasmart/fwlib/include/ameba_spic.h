@@ -729,6 +729,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup FLASH_Exported_Types FLASH Exported Types
@@ -1060,6 +1064,10 @@ typedef struct {
 	u32 start_addr;
 	u32 end_addr;
 } FlashLayoutInfo_TypeDef;
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

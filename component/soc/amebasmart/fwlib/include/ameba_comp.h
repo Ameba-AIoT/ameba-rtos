@@ -305,6 +305,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -449,6 +453,10 @@ _LONG_CALL_ void CMP_AutoCSwCmd(u32 NewState);
 _LONG_CALL_ void CMP_SwTrigCmd(u32 NewState);
 _LONG_CALL_ void CMP_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

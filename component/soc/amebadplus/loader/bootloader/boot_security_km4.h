@@ -9,6 +9,10 @@
 
 #include "ameba_secure_boot.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CERT_SIZE_4K_ALIGN		0x1000
 #define CERT_MAX_KEYINFO		5
 
@@ -39,5 +43,9 @@ u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInf
 u8 BOOT_CertificateCheck(Certificate_TypeDef *Cert, u32 idx);
 u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum);
 void BOOT_Validate_Fail_Stuck(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

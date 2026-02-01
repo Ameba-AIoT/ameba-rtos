@@ -19,8 +19,8 @@
 static const char *const TAG = "Eth";
 
 /* lwip api */
-extern void rltk_mii_init(void);
-extern void rltk_mii_deinit(void);
+extern void rltk_usb_eth_init(void);
+extern void rltk_usb_eth_deinit(void);
 
 static int composite_ecm_cb_detach(void);
 static int composite_ecm_cb_rxdata(u8 *buf, u32 len);
@@ -309,7 +309,6 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 static u32 composite_acm_cmd_test(u16 argc, u8 *argv[])
 {
 	u8 *cmd;
-	u8 pbuf[PBUF_MAX_LEN];
 
 	if (argc == 0) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Invalid argument\n");
@@ -319,12 +318,18 @@ static u32 composite_acm_cmd_test(u16 argc, u8 *argv[])
 	cmd = (u8 *)argv[0];
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "At cmd(%s)\n", cmd);
-	if (USB_EF_DONGLE_VID == usbh_composite_acm_ecm_get_device_pid()) {
-		memset(pbuf, 0x00, PBUF_MAX_LEN);
-		memcpy(pbuf, cmd, composite_dev_strlen(cmd));
-		pbuf[composite_dev_strlen(cmd) + 0] = 0x0D;
-		pbuf[composite_dev_strlen(cmd) + 1] = 0x0A;
-		usbh_composite_cdc_acm_transmit(pbuf, composite_dev_strlen(pbuf));
+	if (USB_EF_DONGLE_VID == usbh_composite_acm_ecm_get_device_vid()) {
+		memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+		memcpy(acm_ctrl_buf, cmd, composite_dev_strlen(cmd));
+		acm_ctrl_buf[composite_dev_strlen(cmd) + 0] = 0x0D;
+		acm_ctrl_buf[composite_dev_strlen(cmd) + 1] = 0x0A;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Pre AtCmd\n");
+		while (1) {
+			if (HAL_OK != usbh_composite_cdc_acm_transmit(acm_ctrl_buf, composite_dev_strlen(acm_ctrl_buf))) {
+				break;
+			}
+			rtos_time_delay_ms(1000);
+		}
 	} else {
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "At cmd(%s) finish!\n", cmd);
@@ -674,7 +679,7 @@ static int composite_dev_dongle_diag_cmd(void)
 
 static int composite_ecm_cb_rxdata(u8 *buf, u32 len)
 {
-	ethernetif_mii_recv(buf, len);
+	ethernetif_usb_eth_recv(buf, len);
 	return HAL_OK;
 }
 
@@ -739,13 +744,13 @@ static void composite_eth_link_change_thread(void *param)
 			if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {  // unlink -> link
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				mac = (u8 *)usbh_composite_cdc_ecm_process_mac_str();
-				memcpy(pnetif_eth->hwaddr, mac, 6);
+				memcpy(pnetif_usb_eth->hwaddr, mac, 6);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-				netif_set_link_up(pnetif_eth);
+				netif_set_link_up(pnetif_usb_eth);
 
-				dhcp_status = LwIP_IP_Address_Request(NETIF_ETH_INDEX);
+				dhcp_status = LwIP_IP_Address_Request(NETIF_USB_ETH_INDEX);
 				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
-					netifapi_netif_set_default(pnetif_eth);	//Set default gw to ether netif
+					netifapi_netif_set_default(pnetif_usb_eth);	//Set default gw to ether netif
 					dhcp_done = 1;
 					ethernet_unplug = ETH_STATUS_INIT;
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
@@ -764,13 +769,13 @@ static void composite_eth_link_change_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				ethernet_unplug = ETH_STATUS_INIT;
 				mac = dongle_mac;
-				memcpy(pnetif_eth->hwaddr, mac, 6);
+				memcpy(pnetif_usb_eth->hwaddr, mac, 6);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-				netif_set_link_up(pnetif_eth);
+				netif_set_link_up(pnetif_usb_eth);
 
-				dhcp_status = LwIP_IP_Address_Request(NETIF_ETH_INDEX);
+				dhcp_status = LwIP_IP_Address_Request(NETIF_USB_ETH_INDEX);
 				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
-					netifapi_netif_set_default(pnetif_eth);	//Set default gw to ether netif
+					netifapi_netif_set_default(pnetif_usb_eth);	//Set default gw to ether netif
 					dhcp_done = 1;
 				}
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
@@ -1082,7 +1087,7 @@ void example_usbh_composite_cdc_acm_ecm(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH Composite ECM demo start\n");
 
-	rltk_mii_init();
+	rltk_usb_eth_init();
 	rtos_sema_create(&usb_detach_sema, 0U, 1U);
 
 #if CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
@@ -1116,10 +1121,7 @@ void example_usbh_composite_cdc_acm_ecm(void)
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usbh_composite_dongle_atcmd[] = {
-	{
-		(const u8 *)"ecmh", 3, composite_acm_cmd_test, (const u8 *)"\tUSB host ECM AT test cmd:\n"
-		"\t\t ecmh atcmd\n"
-	}
+	{"ecm_cmd", composite_acm_cmd_test},
 };
 
 #else

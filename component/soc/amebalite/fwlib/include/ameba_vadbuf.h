@@ -122,6 +122,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup VAD_BUF_Exported_Constants VAD_BUF Exported Constants
@@ -259,6 +263,10 @@ _LONG_CALL_ void AUDIO_CODEC_VADBuf_move_four(u32 codec_index_0, u32 codec_index
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

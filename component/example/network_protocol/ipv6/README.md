@@ -8,7 +8,9 @@ Two Ameba development boards are needed. Choose one board to works as the server
 
 # SW configuration
 
-1. `component/lwip/lwip_2.1.2/src/include/lwip/opt.h`
+1. Use menuconfig and choose `CONFIG LWIP` ---> Check `Enable LWIP IPV6`
+
+2. `component/lwip/lwip_2.1.2/src/include/lwip/opt.h`
 	```C
 	#define MEMP_NUM_MLD6_GROUP			6
 	```
@@ -17,7 +19,7 @@ Two Ameba development boards are needed. Choose one board to works as the server
 	[ERROR] Register to ipv6 multicast group failed
 	```
 
-2. `example_ipv6.h`
+3. `example_ipv6.h`
 	```C
 	#define UDP_SERVER_IP    "fe80:0000:0000:0000:cd3c:24de:386d:9ad1"
 	#define TCP_SERVER_IP    "fe80:0000:0000:0000:cd3c:24de:386d:9ad1"
@@ -72,7 +74,7 @@ Two Ameba development boards are needed. Choose one board to works as the server
 
 	`EXAMPLE_IPV6_UDP`, `EXAMPLE_IPV6_TCP` and `EXAMPLE_IPV6_MCAST` should be enabled one at a time.
 
-3. Build and Download:
+4. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 

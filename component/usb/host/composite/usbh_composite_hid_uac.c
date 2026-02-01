@@ -6,6 +6,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbh_composite_hid_uac.h"
+#include "usb_uac1.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -27,8 +28,8 @@ static const char *const TAG = "COMP";
 static const usbh_dev_id_t composite_devs[] = {
 	{
 		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO,
-		.bInterfaceClass = USB_CLASS_AUDIO,
-		.bInterfaceSubClass = USB_SUBCLASS_AUDIOSTREAMING,
+		.bInterfaceClass = USB_UAC1_CLASS_CODE,
+		.bInterfaceSubClass = USB_UAC1_SUBCLASS_AUDIOSTREAMING,
 		.bInterfaceProtocol = 0x00,
 	},
 	{

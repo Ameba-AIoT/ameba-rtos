@@ -10,7 +10,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbh.h"
 #include "usb_ch9.h"
-#include "usb_uac1.h"
 #include "usbh_composite_config.h"
 #include "os_wrapper.h"
 

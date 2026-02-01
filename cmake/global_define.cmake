@@ -37,6 +37,7 @@ ameba_set(c_EMPTY_C_OBJECT_FILE)    # File used like empty_file.c
 # Define static dirs under component/
 ameba_set(c_CMPT_AIVOICE_DIR      ${c_COMPONENT_DIR}/aivoice)
 ameba_set(c_CMPT_APP_DIR          ${c_COMPONENT_DIR}/application)
+ameba_set(c_CMPT_AWS_DIR          ${c_COMPONENT_DIR}/application/amazon-freertos)
 ameba_set(c_CMPT_MATTER_DIR       ${c_COMPONENT_DIR}/application/matter)
 ameba_set(c_CMPT_AT_CMD_DIR       ${c_COMPONENT_DIR}/at_cmd)
 ameba_set(c_CMPT_AUDIO_DIR        ${c_COMPONENT_DIR}/audio)

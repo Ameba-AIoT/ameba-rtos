@@ -22,6 +22,14 @@ ameba_add_subdirectory(make/image2)
 ameba_add_subdirectory(make/image_floader)
 ameba_add_subdirectory_ifnot(CONFIG_AMEBA_RLS make/image_imgtool_floader)
 
+if(CONFIG_TRUSTZONE)
+    # Set image3 linker script for TrustZone secure image
+    set(c_IMG3_LD ${c_SDK_LD_DIR}/ameba_img3_s.ld)
+    ameba_add_subdirectory(make/image3)
+    get_property(image3_name TARGET ${c_MCU_PROJ_CONFIG} PROPERTY image3)
+    add_dependencies(${image2_name} ${image3_name}_postbuild)
+endif()
+
 add_custom_target(
     ${c_MCU_PROJECT_NAME}
     COMMENT "build ${c_MCU_PROJECT_NAME} only"

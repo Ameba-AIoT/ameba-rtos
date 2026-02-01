@@ -5,6 +5,11 @@
  */
 
 #ifndef _AMEBA_WAKEPIN_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _AMEBA_WAKEPIN_H_
 
 #define	WAKEPIN_0							((u32)0x00000000)/* correspond to PA_0 */
@@ -29,5 +34,10 @@ extern int WakePin_Get_Idx(void);
 extern void Wakepin_Setting(u32 PinIdx, u32 Polarity);
 extern void Wakepin_Debounce_Setting(u32 Dbnc_cycle, u32 Status);
 extern void WakePin_ClearINT(u32 wakepin);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* _AMEBA_WAKEPIN_H_*/

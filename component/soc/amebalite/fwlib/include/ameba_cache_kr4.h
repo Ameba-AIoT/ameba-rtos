@@ -7,6 +7,10 @@
 #ifndef _AMEBA_CACHE_KR4_H_
 #define _AMEBA_CACHE_KR4_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup AmebaD2_Platform
   * @{
   */
@@ -240,4 +244,9 @@ void Cache_Flush(void)
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_AMEBA_CACHE_KR4_H_

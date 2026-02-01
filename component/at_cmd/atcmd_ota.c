@@ -105,26 +105,24 @@ AT command process:
 	AT+OTAHTTP=<sysrst>,<host>,<path>[,<port>],<conn_type>[,<cert_index>]
 	Update firmware from host.
 ****************************************************************/
-void at_otahttp(void *arg)
+void at_otahttp(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
 	ota_context *ctx = NULL;
 	char *host = NULL;
 	char *resource = NULL;
 	char *ca_cert = NULL;
 	char *client_cert = NULL;
 	char *client_key = NULL;
-	int argc = 0, ret = -1, port = 0, err_no = 0;
+	int ret = -1, port = 0, err_no = 0;
 	int sysrst = 0, conn_type = 0, cert_index = 0;
 	int ota_type = OTA_HTTP;
 
-	if (!arg) {
+	if (argc == 1) {
 		at_otahttp_help();
 		err_no = 1;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if (argc < 6) {
 		err_no = 1;
 		goto end;
@@ -270,22 +268,20 @@ AT command process:
 	AT+OTAUSER=<sysrst>,<length>
 	Update firmware from mcu host.
 ****************************************************************/
-void at_otauser(void *arg)
+void at_otauser(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
 	ota_context *ctx = NULL;
 	u8 *buffer = NULL;
-	int argc = 0, ret = -1, err_no = 0;
+	int ret = -1, err_no = 0;
 	int frag_len = 0, tt_get_len = 0;
 	int length = 0, sysrst = 0;
 
-	if (!arg) {
+	if (argc == 1) {
 		at_otauser_help();
 		err_no = 1;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if (argc < 3) {
 		err_no = 1;
 		goto end;
@@ -386,7 +382,7 @@ end:
 	}
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_ota_items[] = {
 	{"+OTAHTTP", at_otahttp},
 	{"+OTAUSER", at_otauser},
@@ -401,11 +397,6 @@ void print_ota_at(void)
 	for (index = 0; index < cmd_len; index++) {
 		at_printf("AT%s\r\n", at_ota_items[index].log_cmd);
 	}
-}
-
-void at_ota_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_ota_items, sizeof(at_ota_items) / sizeof(at_ota_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_OTA */

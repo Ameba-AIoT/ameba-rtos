@@ -10,6 +10,10 @@
 
 #include "utils_def_exp.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Compute the number of elements in the given array */
 #define ARRAY_SIZE(a)				\
 	(sizeof(a) / sizeof((a)[0]))
@@ -162,5 +166,9 @@
  * Ticks elapsed in one second with a signal of 1 MHz
  */
 #define MHZ_TICKS_PER_SEC	U(1000000)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* UTILS_DEF_H */

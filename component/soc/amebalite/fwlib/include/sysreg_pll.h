@@ -352,7 +352,15 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

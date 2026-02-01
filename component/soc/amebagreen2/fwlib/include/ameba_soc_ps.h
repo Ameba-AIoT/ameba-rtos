@@ -7,6 +7,11 @@
 #ifndef _AMEBA_SOCPS_H_
 #define _AMEBA_SOCPS_H_
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum wakeup_mask {
 	WAKEUP_NULL	= 0,
 	WAKEUP_NP	= 1,
@@ -100,4 +105,8 @@ void SOCPS_USBSuspendWakeControl(u8 status);
 void SOCPS_PowerStateSetInSleep(u8 pwr_sts);
 void SOCPS_PowerStateSetInNormal(u8 pwr_sts);
 void SOCPS_SetMemMode(u32 module, u32 mem_mode);
+
+#ifdef __cplusplus
+}
+#endif
 #endif  //_AMEBA_SOCPS_H_

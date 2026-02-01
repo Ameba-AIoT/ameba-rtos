@@ -8,6 +8,10 @@
 #define _AMEBA_DDRPHY_SCANPARA_H_
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum qfifo_wrrd {
 	DRAM_RD_CMD      = 0,
 	DRAM_WR_CMD      = 1
@@ -106,6 +110,10 @@ _LONG_CALL_ void DDR_PHY_Scan_param(void);
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 #endif

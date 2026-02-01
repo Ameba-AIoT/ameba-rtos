@@ -5,6 +5,11 @@
  */
 
 #ifndef __PLIC_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define __PLIC_H
 
 #define PLIC_BASE                       RV_INTC_BASE
@@ -196,5 +201,10 @@ extern void plic_init(void);
   \return  The active IRQ Id.
  */
 extern uint32_t plic_get_active_irq_id(void);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* end of #define __PLIC_H */

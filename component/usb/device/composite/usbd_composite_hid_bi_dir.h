@@ -90,7 +90,7 @@ extern const usbd_class_driver_t usbd_composite_hid_driver;
 
 int usbd_composite_hid_init(usbd_composite_dev_t *cdev, usbd_composite_hid_usr_cb_t *cb);
 int usbd_composite_hid_deinit(void);
-int usbd_composite_hid_send_data(u8 *data, u16 len);
+int usbd_composite_hid_send_data(u8 *data, u32 len);
 int usbd_composite_hid_volume_ctrl(u8 vol_up);
 int usbd_composite_hid_power_ctrl(void);
 

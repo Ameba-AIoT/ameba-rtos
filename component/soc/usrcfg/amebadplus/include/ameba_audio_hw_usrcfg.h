@@ -7,6 +7,10 @@
 #ifndef AMEBA_FWK_AUDIO_CONFIGS_HARDWARE_AUDIO_AUDIO_HW_CONFIG_H
 #define AMEBA_FWK_AUDIO_CONFIGS_HARDWARE_AUDIO_AUDIO_HW_CONFIG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  *Audio amplifier pin, if your board has no audio amplifier pin , please set it as -1.
  */
@@ -233,5 +237,9 @@
  *Set 0 to disable debug for buffer level.
  */
 #define AUDIO_OUT_DEBUG_BUFFER_LEVEL           0
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

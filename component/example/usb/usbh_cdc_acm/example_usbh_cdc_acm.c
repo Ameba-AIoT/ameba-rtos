@@ -15,14 +15,15 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST 1     /* Hot plug / memory leak test */
-#define CONFIG_USBH_CDC_ACM_STRESS_TEST   0     /* Stress / long run test */
+#define CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST 1      /* Hot plug / memory leak test */
+#define CONFIG_USBH_CDC_ACM_STRESS_TEST   0      /* Stress / long run test */
+#define CONFIG_USBH_CDC_ACM_CHECK_DATA    0      /* Check TRX data */
 
-#define CONFIG_USBH_CDC_ACM_SPEED_TEST    0     /* Tx Rx fast transfer test */
+#define CONFIG_USBH_CDC_ACM_SPEED_TEST    0      /* Tx Rx fast transfer test */
 
-#define USBH_CDC_ACM_NOTIFY_BUF_SIZE      256   /* Buffer size for notify test*/
-#define USBH_CDC_ACM_LOOPBACK_BUF_SIZE    1024  /* Buffer size for loopback test, which should match with device loopback buffer size */
-#define USBH_CDC_ACM_LOOPBACK_CNT         100   /* Loopback test round */
+#define USBH_CDC_ACM_NOTIFY_BUF_SIZE      256    /* Buffer size for notify test*/
+#define USBH_CDC_ACM_LOOPBACK_BUF_SIZE    1024   /* Buffer size for loopback test, which should match with device loopback buffer size */
+#define USBH_CDC_ACM_LOOPBACK_CNT         100    /* Loopback test round */
 
 
 /* Private types -------------------------------------------------------------*/
@@ -39,7 +40,7 @@ static int cdc_acm_cb_setup(void);
 static int cdc_acm_cb_transmit(u8 status);
 static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status);
 static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status);
-static int cdc_acm_cb_line_coding_changed(usbh_cdc_acm_line_coding_t *line_coding);
+static int cdc_acm_cb_line_coding_changed(usb_cdc_line_coding_t *line_coding);
 static int cdc_acm_cb_process(usb_host_t *host, u8 msg);
 static void cdc_acm_notify_test(void);
 static void cdc_acm_request_test(void);
@@ -146,7 +147,7 @@ static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status)
 	if (status == HAL_OK) {
 		rtos_sema_give(cdc_acm_notify_sema);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "cdc_acm_cb_notify fail: %d\n", status);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Notify fail: %d\n", status);
 	}
 	return HAL_OK;
 }
@@ -187,7 +188,7 @@ static int cdc_acm_cb_transmit(u8 status)
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_line_coding_changed(usbh_cdc_acm_line_coding_t *line_coding)
+static int cdc_acm_cb_line_coding_changed(usb_cdc_line_coding_t *line_coding)
 {
 	UNUSED(line_coding);
 	return HAL_OK;
@@ -212,7 +213,7 @@ static int cdc_acm_cb_process(usb_host_t *host, u8 msg)
 	return HAL_OK;
 }
 
-#if  CONFIG_USBH_CDC_ACM_SPEED_TEST
+#if CONFIG_USBH_CDC_ACM_SPEED_TEST
 static u32 cdc_acm_loopback_tx_idx = 0;
 static volatile u64 tx_loop_cnt = 0, tx_loop_sub_cnt = 0;
 static volatile u64 rx_loop_cnt = 0, rx_loop_sub_cnt = 0;
@@ -324,12 +325,13 @@ static void cdc_acm_speed_loopback_test(void)
 #else
 static void cdc_acm_loopback_test(void)
 {
-	int i, j, k;
+	int i;
 	int ret;
+#if CONFIG_USBH_CDC_ACM_STRESS_TEST
+	u8 j = 0;
+#endif
 
-	for (i = 0; i < USBH_CDC_ACM_LOOPBACK_BUF_SIZE; i++) {
-		cdc_acm_loopback_tx_buf[i] = i % 128;
-	}
+	memset(cdc_acm_loopback_tx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for device attach\n");
 
@@ -344,6 +346,7 @@ static void cdc_acm_loopback_test(void)
 
 #if CONFIG_USBH_CDC_ACM_STRESS_TEST
 	while (1) {
+		memset(cdc_acm_loopback_tx_buf, j, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 #endif
 		for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT; i++) {
 			memset(cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
@@ -362,16 +365,12 @@ static void cdc_acm_loopback_test(void)
 			}
 
 			if (rtos_sema_take(cdc_acm_receive_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-				/*check rx data*/
-				for (k = 0; k < USBH_CDC_ACM_LOOPBACK_BUF_SIZE; k++) {
-					if (cdc_acm_loopback_rx_buf[k] != k % 128) {
-						RTK_LOGS(TAG, RTK_LOG_INFO, "Loopback test FAIL: %d, %d, %d\n", k, k % 128, cdc_acm_loopback_rx_buf[k]);
-						for (j = k; j < k + 200; j++) {
-							RTK_LOGS(NOTAG, RTK_LOG_INFO, "%d ", cdc_acm_loopback_rx_buf[j % USBH_CDC_ACM_LOOPBACK_BUF_SIZE]);
-						}
-						return;
-					}
+#if CONFIG_USBH_CDC_ACM_CHECK_DATA
+				/* Check TRX data*/
+				if (!(memcmp(cdc_acm_loopback_rx_buf, cdc_acm_loopback_tx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE) == 0)) {
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Loopback test FAIL: %d, TX:%d-RX: %d\n", i, cdc_acm_loopback_tx_buf[0], cdc_acm_loopback_rx_buf[0]);
 				}
+#endif
 			}
 		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Bulk loopback test PASS\n");
@@ -401,7 +400,7 @@ static void cdc_acm_notify_test_thread(void *param)
 		usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
 
 		if (rtos_sema_take(cdc_acm_notify_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Intr rx success(0x%02x 0x%02x)\n", cdc_acm_notify_rx_buf[9], cdc_acm_notify_rx_buf[8]);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Intr rx success(0x%02x 0x%02x)\n", cdc_acm_notify_rx_buf[9], cdc_acm_notify_rx_buf[8]);
 		}
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Intr notify test PASS\n");
@@ -429,8 +428,8 @@ static void cdc_acm_notify_test(void)
 static void cdc_acm_request_test(void)
 {
 	int ret;
-	usbh_cdc_acm_line_coding_t line_coding;
-	usbh_cdc_acm_line_coding_t new_line_coding;
+	usb_cdc_line_coding_t line_coding;
+	usb_cdc_line_coding_t new_line_coding;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for device attach\n");
 
@@ -454,8 +453,8 @@ static void cdc_acm_request_test(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SET_LINE_CODING:\nDteRate: 38400\nCharFormat: 0\nParityType: 0\nDataBits: 8\n");
 	line_coding.b.dwDteRate = 38400;
-	line_coding.b.bCharFormat = CDC_ACM_LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
-	line_coding.b.bParityType = CDC_ACM_LINE_CODING_PARITY_NO;
+	line_coding.b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
+	line_coding.b.bParityType = LINE_CODING_PARITY_NO;
 	line_coding.b.bDataBits = 8;
 	ret = usbh_cdc_acm_set_line_coding(&line_coding);
 	if (ret != HAL_OK) {
