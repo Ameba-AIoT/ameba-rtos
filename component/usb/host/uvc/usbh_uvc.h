@@ -27,6 +27,25 @@
 #define USBH_UVC_VS_ALTS_MAX_NUM                30
 
 /* Exported types ------------------------------------------------------------*/
+typedef enum {
+	UVC_STATE_IDLE = 0,
+	UVC_STATE_CTRL,
+	UVC_STATE_TRANSFER,
+	UVC_STATE_ERROR
+} usbh_uvc_state_t;
+
+typedef enum {
+	STREAM_STATE_CTRL_IDLE = 0,
+	STREAM_STATE_SET_PARA,        // Set Param: Probe - Commit - Set alt
+	STREAM_STATE_PROBE_NEGOTIATE, // Set Video (Probe1)
+	STREAM_STATE_PROBE_UPDATE,    // Get Video (Probe2)
+	STREAM_STATE_PROBE_FINAL,     // Set Video (Probe3)
+	STREAM_STATE_COMMIT,          // Set Video (Commit)
+	STREAM_STATE_FIND_ALT,        // Find Interface/Altsetting for transfer
+	STREAM_STATE_SET_ALT,         // Set Interface/Altsetting for transfer
+	STREAM_STATE_SET_CTRL,        // Set Interface/0 for ctrl
+	STREAM_STATE_ERROR
+} usbh_stream_state_t;
 
 typedef struct {
 	u32 dwMinBitRate;
@@ -118,6 +137,19 @@ typedef struct {
 	usbh_uvc_packet_desc_t packet_info[];
 } usbh_uvc_urb_t;
 
+#if USBH_UVC_USE_HW
+typedef struct {
+	u8 err_ch0_buf0_ov;
+	u8 err_ch0_buf1_ov;
+	u8 err_ch0_buf0_h;
+	u8 err_ch0_buf1_h;
+	u8 err_ch1_buf0_ov;
+	u8 err_ch1_buf1_ov;
+	u8 err_ch1_buf0_h;
+	u8 err_ch1_buf1_h;
+} usbh_uvc_err_t;
+#endif
+
 typedef struct {
 	usbh_uvc_setting_t cur_setting;
 	usbh_uvc_frame_t frame_buffer[USBH_UVC_VIDEO_FRAME_NUMS];
@@ -133,9 +165,10 @@ typedef struct {
 	usb_os_queue_t urb_wait_queue;
 	usb_os_queue_t urb_giveback_queue;
 	usb_os_task_t decode_task;
-	volatile u32 cur_packet_state;
-	volatile u32 complete_flag;
-	volatile u32 complete_on;
+	__IO usbh_stream_state_t state;
+	__IO u32 cur_packet_state;
+	__IO u32 complete_flag;
+	__IO u32 complete_on;
 	u32 frame_buffer_size;
 	u32 frame_cnt;
 	u32 err_frame_cnt;
@@ -146,16 +179,19 @@ typedef struct {
 	usbh_uvc_frame_t *cur_frame_buf;
 	u8 *urb_buffer;
 	u8 *frame_buf;
+	usbh_uvc_streaming_state_t stream_state;
+	usbh_uvc_stream_data_state_t stream_data_state;
 
 #if USBH_UVC_USE_HW
-	usbh_hw_uvc_dec *uvc_dec;
-	u8 isr_priority;
+	usbh_hw_uvc_dec_t *uvc_dec;
 #endif
 
-	u8 stream_state;
-	u8 stream_data_state;
-	u8 stream_num;
+	__IO u8 set_alt;
+	u8 stream_idx;
 	u8 last_fid;
+	__IO u8 next_xfer;// flag for start/stop next xfer
+	__IO u8 is_resource_safe;// flag for uvc resource
+	__IO u8 decoder_busy;// flag for SW UVC decode thread
 } usbh_uvc_stream_t;
 
 typedef struct {
@@ -163,9 +199,26 @@ typedef struct {
 	usbh_uvc_cfg_t uvc_desc;
 	struct list_head entity_list;
 	struct list_head video_chain;
+	usbh_setup_req_t setup_req;
 	usb_host_t *host;
 	usbh_uvc_cb_t *cb;
+	__IO usbh_uvc_state_t state;
 	u32 sof_cnt;
+#if USBH_UVC_USE_HW
+	void (*hw_error)(usbh_hw_uvc_err_status_t err);
+	usbh_uvc_err_t hw_stats;
+	usbh_uvc_err_t hw_stats_shadow;
+#if USBH_HW_UVC_DUMP_ERR
+	void *dump_status_task;
+	rtos_sema_t dump_sema;
+	__IO u8 dump_task_alive;
+	__IO u8 dump_task_exit;
+#endif
+	u8 hw_isr_pri;
+	__IO u8 hw_irq_ref_cnt;
+#endif
+	__IO u8 stream_in_ctrl;// record stream idx for ctrl process
+	u8 *request_buf;
 } usbh_uvc_host_t;
 
 /* Exported variables --------------------------------------------------------*/
@@ -182,8 +235,6 @@ usbh_uvc_urb_t *usbh_uvc_urb_complete(usbh_uvc_stream_t *stream, usbh_uvc_urb_t 
 
 int usbh_uvc_set_video(usbh_uvc_stream_t *stream, int probe);
 int usbh_uvc_get_video(usbh_uvc_stream_t *stream, int probe, u16 request);
-int usbh_uvc_probe_video(usbh_uvc_stream_t *stream);
-int usbh_uvc_commit_video(usbh_uvc_stream_t *stream);
 
 int usbh_uvc_video_init(usbh_uvc_stream_t *stream);
 int usbh_uvc_stream_init(usbh_uvc_stream_t *stream);
@@ -193,5 +244,8 @@ void usbh_uvc_process_sof(usb_host_t *host);
 int usbh_uvc_parse_cfgdesc(usb_host_t *host);
 void usbh_uvc_desc_init(void);
 void usbh_uvc_desc_deinit(void);
+#if USBH_UVC_USE_HW && USBH_HW_UVC_DUMP_ERR
+void usbh_uvc_status_dump_thread(void *param);
+#endif
 
 #endif

@@ -125,10 +125,18 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define SDM_TIEMRCAL_INTERVAL_16MIN   0x20000000
 #define SDM_TIEMRCAL_INTERVAL_1MIN    0x001e0000
 #define SDM_TIEMRCAL_INTERVAL_10SEC   0x00050000
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

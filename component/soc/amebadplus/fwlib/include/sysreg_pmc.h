@@ -432,6 +432,10 @@
 /* AUTO_GEN_WAKE_SRC_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 #define STATE_LDOPC_SWRPFM_07	0x1
@@ -445,6 +449,10 @@
 #define LDO_MEM_MODE_SLEEP	0x1
 #define LDO_MEM_MODE_NORM0	0x2
 #define LDO_MEM_MODE_NORM1	0x3
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

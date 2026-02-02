@@ -13,6 +13,11 @@
 
 //#include <limits.h>
 #include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define INT8_MAX  CHAR_MAX
 #define INT8_MIN  CHAR_MIN
 #define UINT8_MAX UCHAR_MAX
@@ -166,5 +171,8 @@ typedef unsigned int size_t;
 #define __LONG_BIT 32
 #define __WORD_BIT 32
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* STDINT_H */

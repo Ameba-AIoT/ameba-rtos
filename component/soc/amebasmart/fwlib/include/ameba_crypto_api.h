@@ -8,6 +8,10 @@
 #define __AMEBA_CRYPTO_API_H__
 #include "ameba_ipsec.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup HW_CRYPTO_ENGINE
   * @verbatim
   *****************************************************************************************
@@ -220,5 +224,9 @@ _LONG_CALL_ int rtl_crypto_chacha_poly1305_decrypt(const u8 *message, 	const u32
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __AMEBA_CRYPTO_API_H__ */

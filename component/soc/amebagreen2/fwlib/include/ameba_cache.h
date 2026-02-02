@@ -8,6 +8,10 @@
 #define _AMEBA_CACHE_H_
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup AmebaD_Platform
   * @{
   */
@@ -242,4 +246,9 @@ void Cache_Flush(void)
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_RTL8710B_CACHE_H_

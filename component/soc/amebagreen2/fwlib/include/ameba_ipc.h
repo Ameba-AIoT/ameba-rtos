@@ -158,6 +158,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -319,6 +323,10 @@ IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
 /* Other definitions --------------------------------------------------------*/
 
 extern const IPC_INIT_TABLE  ipc_init_config[];
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

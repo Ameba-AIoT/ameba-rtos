@@ -1,6 +1,0 @@
-#ifndef EXAMPLE_ATCMD_USBH_HOST_H
-#define EXAMPLE_ATCMD_USBH_HOST_H
-
-void example_atcmd_usbd_host(void);
-
-#endif

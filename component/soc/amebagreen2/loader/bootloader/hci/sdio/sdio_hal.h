@@ -10,6 +10,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -22,6 +26,10 @@
 void SPDIO_HAL_Init(void *adapter);
 void SPDIO_HAL_DeInit(void);
 char SPDIO_HAL_Transmit(u8 *pdata, u16 size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SDIO_HAL_H_ */
 

@@ -9,6 +9,10 @@
 
 #include "basetype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* PP input types (picStruct) */
 /* Frame or top field */
 #define DECPP_PIC_FRAME_OR_TOP_FIELD                       0U
@@ -87,5 +91,9 @@ typedef struct DecPpQuery_ {
 	u32 multiBuffer;         /* multibuffer PP output enabled */
 	u32 ppConfigChanged;     /* PP config changed after previous output */
 } DecPpQuery;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

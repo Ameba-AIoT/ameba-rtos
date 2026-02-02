@@ -20,7 +20,7 @@ None
 	ota_update_init(ctx, (char *)host, PORT, (char *)resource, OTA_HTTPS);
 	```
 
-	If encounter the following errors in an SSL connection. Set `MBEDTLS_SSL_IN_CONTENT_LEN` by `./menuconfig.py` and choose `CONFIG SSL`-> `Maximum len of incoming fragments` -> set large size.
+	If encounter the following errors in an SSL connection. Set `MBEDTLS_SSL_IN_CONTENT_LEN` by using menuconfig and choose `CONFIG SSL`-> `Maximum len of incoming fragments` -> set large size.
 
 	```C
 	#define MBEDTLS_ERR_SSL_BAD_INPUT_DATA                    -0x7100

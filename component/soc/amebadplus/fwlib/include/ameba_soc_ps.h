@@ -7,6 +7,10 @@
 #ifndef _AMEBA_SOCPS_H_
 #define _AMEBA_SOCPS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum wakeup_mask {
 	WAKEUP_NULL	= 0,
 	WAKEUP_KM0	= 1,
@@ -41,5 +45,9 @@ extern void SOCPS_HWSleepFilter_KM0(u32 enable);
 
 extern void SOCPS_MDLO_Disable(void);
 extern void SOCPS_UartRxPinWakeSet(u32 status);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  //_AMEBA_SOCPS_H_

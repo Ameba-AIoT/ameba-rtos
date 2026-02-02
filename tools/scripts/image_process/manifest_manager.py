@@ -214,22 +214,7 @@ class ManifestManager(ABC):
         self.lib_security = importlib.import_module('security')
         self.sboot = self.lib_security.secure_boot()
 
-        self.new_json_data = copy.deepcopy(self.origin_json_data)
-        # Add key from outside(global config) of image part if key not in image part
-        for img in ['image1', 'image2', 'image3', 'cert', 'vbmeta']:
-            if img not in self.new_json_data:
-                context.logger.info(f"manifest file does not contains {img}")
-                continue
-            #优先级: image内部直接定义>inherit_from>外部的全局定义
-            if "inherit_from" in self.new_json_data[img]:
-                for key, value in self.new_json_data[self.new_json_data[img]["inherit_from"]].items():
-                    if key not in self.new_json_data[img]:
-                        self.new_json_data[img][key] = value
-            for key, value in self.origin_json_data.items():
-                if isinstance(value, dict): continue
-
-                if key not in self.new_json_data[img]:
-                    self.new_json_data[img][key] = value
+        self.new_json_data = manifest_preprocess(self.origin_json_data)
 
         if not self.validate_config(self.new_json_data):
             raise ValueError(f"Invalid JSON format")

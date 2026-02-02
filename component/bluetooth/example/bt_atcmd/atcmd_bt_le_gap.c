@@ -1522,6 +1522,22 @@ static int atcmd_ble_gap_get_conn_info(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_ble_gap_read_remote_version(int argc, char **argv)
+{
+	(void)argc;
+	uint16_t ret = 0;
+	uint16_t conn_handle;
+
+	conn_handle = str_to_int(argv[0]);
+	if ((ret = rtk_bt_le_gap_read_remote_version(conn_handle) != RTK_BT_OK)) {
+		BT_LOGE("Gap read remote version failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("Gap reading remote version ...\r\n");
+	return 0;
+}
+
 static int atcmd_ble_gap_get_mtu_size(int argc, char **argv)
 {
 	(void)argc;
@@ -2756,6 +2772,7 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"tx_pending_num", atcmd_ble_gap_tx_pending_num,   2, 2},
 	{"conn_rssi",    atcmd_ble_gap_get_conn_rssi,      2, 2},
 	{"conn_info",    atcmd_ble_gap_get_conn_info,      2, 2},
+	{"remote_version", atcmd_ble_gap_read_remote_version, 2, 2},
 	{"conn_update",  atcmd_ble_gap_update_conn,        6, 6},
 #if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	{"conn_phy",     atcmd_ble_gap_set_conn_phy,       6, 6},

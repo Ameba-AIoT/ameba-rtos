@@ -11,6 +11,10 @@
 
 #include "ameba_soc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 #define HCI_XFER_REQ_QUERY				0x01U
@@ -126,5 +130,9 @@ int HCI_Init(void);
 void HCI_DeInit(void);
 int HCI_RxProcess(HCI_AdapterTypeDef *adapter, u8 *buf, u32 size);
 int HCI_WaitForExit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _HCI_CORE_H_

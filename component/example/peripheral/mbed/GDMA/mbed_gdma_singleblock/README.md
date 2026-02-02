@@ -25,7 +25,6 @@ GDMA will display "DMA Copy Memory Compare OK!! " in serial port tool. Otherwise
 
 4. If RTL8726E/RTL8720E/RTL8713E/RTL8710E outputs `IO Driver Parameters error! file_name:BOOT_ChipInfo_PSRAMType`, which means that the board is not configured with PSRAM. There are two solutions:
    - Modify the menuconfig:
-     - enter `./menuconfig.py` under the **{SDK}\amebaxxx_gcc_project** folder
      - set the `CONFIG LINK option` to `CodeInXip_DataHeapInSram[No_Psram]`
      - save and exit
      - Users need to select the correct **.rdev** file when downloading image.

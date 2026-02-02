@@ -28,6 +28,10 @@
 #include "xlat_tables_arch.h"
 #include "xlat_tables_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CASSERT(cond, msg)	\
 	typedef char msg[(cond) ? 1 : -1] __attribute__((__unused__))
 
@@ -181,6 +185,10 @@ struct xlat_ctx {
 		.initialized = false,					\
 		.xlat_regime = (_xlat_regime)				\
 	}
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*__ASSEMBLER__*/
 

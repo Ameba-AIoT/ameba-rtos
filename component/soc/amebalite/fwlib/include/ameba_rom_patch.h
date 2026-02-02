@@ -5,6 +5,11 @@
  */
 
 #ifndef _AMEBA_ROM_PATCH_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _AMEBA_ROM_PATCH_H_
 
 /* Exported constants --------------------------------------------------------*/
@@ -70,5 +75,10 @@ long __real_strtol(const char *nptr, char **endptr, int base);
 /**
   * @}
   */
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _AMEBA_ROM_PATCH_H_ */

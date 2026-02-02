@@ -354,6 +354,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -725,6 +729,10 @@ UART_GetRxFlag(u32 UartIdx)
 {
 	return (UART_StateRx[UartIdx]);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

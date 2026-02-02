@@ -12,7 +12,7 @@ None
 
 # SW configuration
 
-1. Type command `./menuconfig.py` under project directory, e.g. `amebadplus_gcc_project/`, and choose `CONFIG VFS`:
+1. Use menuconfig and choose `CONFIG VFS`:
 	```C
 	[*] Enable VFS FATFS
 	[*]     FATFS within APP Image

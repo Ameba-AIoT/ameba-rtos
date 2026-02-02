@@ -9,6 +9,14 @@
 
 #include "ameba_diagnose_protocol.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int rtk_diag_uart_send(const u8 *data, u16 len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

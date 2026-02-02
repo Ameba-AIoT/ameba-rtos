@@ -7,6 +7,10 @@
 #ifndef _AMEBA_AUDIO_CLOCK_H_
 #define _AMEBA_AUDIO_CLOCK_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -98,6 +102,10 @@ void Audio_Clock_Choose(u32 clock_sel, AUDIO_InitParams *initparams, AUDIO_Clock
 
 /** @} */
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

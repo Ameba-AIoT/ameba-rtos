@@ -7,6 +7,10 @@
 #ifndef _AMEBA_BACKUP_REG_H_
 #define _AMEBA_BACKUP_REG_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup AmebaD_Platform
   * @{
   */
@@ -129,5 +133,9 @@ _LONG_CALL_ void BKUP_Clear(u32 DwordIdx, u32 BitMask);
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_RTL8710B_BACKUP_REG_H_

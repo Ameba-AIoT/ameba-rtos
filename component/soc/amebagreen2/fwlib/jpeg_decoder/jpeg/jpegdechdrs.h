@@ -24,6 +24,10 @@
 #include "basetype.h"
 #include "jpegdeccontainer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*------------------------------------------------------------------------------
     2. Module defines
 ------------------------------------------------------------------------------*/
@@ -42,5 +46,9 @@ JpegDecRet JpegDecDecodeHuffmanTables(JpegDecContainer *pDecData);
 void JpegDecDefaultHuffmanTables(JpegDecContainer *pDecData);
 JpegDecRet JpegDecMode(JpegDecContainer *pDecData);
 JpegDecRet JpegDecMode(JpegDecContainer *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #ifdef MODULE_H */

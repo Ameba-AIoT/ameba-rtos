@@ -7,6 +7,10 @@
 #ifndef _AMEBA_SPINAND_H_
 #define _AMEBA_SPINAND_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -181,4 +185,9 @@ _LONG_CALL_ u8 NAND_Init(u8 SpicBitMode);
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

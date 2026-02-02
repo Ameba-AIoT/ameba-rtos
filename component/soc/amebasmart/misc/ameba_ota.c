@@ -27,6 +27,12 @@ u32 ota_get_cur_index(u32 idx)
 
 	if (idx == OTA_IMGID_BOOT) {
 		AddrStart = RSIP->FLASH_MMU[MMU_BOOTLOADER_IDX].RSIP_REMAPxOR;
+		// Compatiable Nand and Nor Flash
+		u32 BootVer = 0;
+		u32 BootInfo = 0;
+		BootInfo = BKUP_Read(BKUP_REG0);
+		BootVer = (BootInfo & BOOT_VER_NUM) >> 30;
+		return BootVer;
 	} else {
 		AddrStart = RSIP->FLASH_MMU[MMU_LP_IDX].RSIP_REMAPxOR;
 	}

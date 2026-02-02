@@ -6,6 +6,11 @@
 
 #ifndef _AMEBA_BOOTCFG_H_
 #define _AMEBA_BOOTCFG_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
 * @brif	MMU Configuration.
 *	There are 8 MMU entries totally. Entry 0 & Entry 1 are already used by OTA, Entry 2~7 can be used by Users.
@@ -89,4 +94,9 @@ extern u8 Boot_Agg_En;
 *	TRUE: enable
 */
 extern const u8 Boot_Tzcfg_En;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

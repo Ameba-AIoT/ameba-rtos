@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include "platform_autoconf.h"
 
 #ifdef CONFIG_SUPPORT_ATCMD
@@ -20,7 +19,7 @@
 #if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #include "vfs.h"
 #include "kv.h"
-#ifndef CONFIG_ZEPHYR_SDK
+#ifndef CONFIG_PLATFORM_ZEPHYR
 #include "cJSON.h"
 #endif
 #endif
@@ -72,10 +71,7 @@
 rtos_mutex_t at_printf_mutex = NULL;
 
 static const char *const TAG = "AT";
-
 log_init_t log_init_table[] = {
-	at_sys_init_common,
-
 #if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 #ifndef CONFIG_MP_SHRINK
 #ifdef CONFIG_WLAN
@@ -83,54 +79,18 @@ log_init_t log_init_table[] = {
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_MQTT) && (CONFIG_ATCMD_MQTT == 1)
 	at_mqtt_init,
-#endif
+#endif  /* CONFIG_ATCMD_MQTT */
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
 	at_socket_init,
-#endif
-#if defined(CONFIG_ATCMD_HTTP) && (CONFIG_ATCMD_HTTP == 1)
-	at_http_init,
-#endif
+#endif  /* CONFIG_ATCMD_SOCKET */
 #if defined(CONFIG_ATCMD_WEBSOCKET) && (CONFIG_ATCMD_WEBSOCKET == 1)
 	at_websocket_init,
-#endif
-#if defined(CONFIG_ATCMD_NETWORK) && (CONFIG_ATCMD_NETWORK == 1)
-	at_network_init,
-#endif
-#if defined(CONFIG_ATCMD_OTA) && (CONFIG_ATCMD_OTA == 1)
-	at_ota_init,
-#endif
-#endif  //CONFIG_LWIP_LAYER
-#endif  //CONFIG_WLAN
-#ifdef CONFIG_ETHERNET
-	at_ethernet_init,
-#endif
-	at_fs_init,
-#endif  //CONFIG_MP_SHRINK
+#endif  /* CONFIG_ATCMD_WEBSOCKET */
+#endif  /* CONFIG_LWIP_LAYER */
+#endif  /* CONFIG_WLAN */
+#endif  /* CONFIG_MP_SHRINK */
 
-#ifndef CONFIG_MP_SHRINK
-#if defined(CONFIG_BT_COEXIST)
-	at_coex_init,
-#endif
-#endif
-	at_sys_init,
-#ifdef CONFIG_DIAGNOSE_EN
-	at_diag_init,
-#endif
-#ifndef CONFIG_AMEBAD
-	at_otp_init,
-#endif
-#endif
-
-#if defined(CONFIG_BT) && CONFIG_BT
-	at_bt_init,
-#if defined(CONFIG_MP_INCLUDED) && CONFIG_MP_INCLUDED
-	at_mp_init,
-#endif
-#endif
-
-#if defined(CONFIG_SDN) && CONFIG_SDN
-	at_sdn_init,
-#endif
+#endif  /* (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE) */
 };
 
 
@@ -757,9 +717,13 @@ void at_printf_unlock()
 void atcmd_service_init(void)
 {
 	unsigned int i;
+	unsigned int array_size = sizeof(log_init_table) / sizeof(log_init_t);
 
-	for (i = 0; i < sizeof(log_init_table) / sizeof(log_init_t); i++) {
-		log_init_table[i]();
+	/* Avoid compile warning when log_init_table is NULL */
+	if (array_size > 0) {
+		for (i = 0; i < array_size; i++) {
+			log_init_table[i]();
+		}
 	}
 
 	rtos_mutex_recursive_create(&at_printf_mutex);
@@ -768,22 +732,11 @@ void atcmd_service_init(void)
 	rtos_task_create(NULL, ((const char *)"atcmd_host_control_mode_init_thread"), atcmd_host_control_mode_init_thread, NULL, 4096, 5);
 #endif
 }
-extern u8 __atcmd_table_start__[];
-extern u8 __atcmd_table_end__[];
 
-//sizeof(log_items)/sizeof(log_items[0])
-void atcmd_service_add_table(log_item_t *tbl, int len)
+__attribute__((noinline)) void *atcmd_action(char *cmd)
 {
-	(void)tbl;
-	(void)len;
-
-	return;
-}
-
-void *atcmd_action(char *cmd)
-{
-	log_item_t *item = (log_item_t *)__atcmd_table_start__;
-	u32 cmd_mum = ((__atcmd_table_end__ - __atcmd_table_start__) / sizeof(log_item_t));
+	log_item_t *item = (log_item_t *)__cmd_table_start__;
+	u32 cmd_mum = ((__cmd_table_end__ - __cmd_table_start__) / sizeof(log_item_t));
 	u32	index ;
 	void *act = NULL;
 
@@ -808,6 +761,15 @@ void *atcmd_handler(char *cmd)
 	char tok[33] = {0};//'\0'
 	char *tokSearch = NULL;
 	int prefix_length = strlen(atcmd_prefix);
+	char *argv[MAX_ARGC] = {0};
+	u16 argc = 0;
+	int i = 0;
+
+	/* Validate input command */
+	if (cmd == NULL) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[ATCMD] Invalid cmd input \r\n");
+		return NULL;
+	}
 
 	if (strncmp(cmd, atcmd_prefix, prefix_length) != 0) {
 		return NULL;
@@ -826,10 +788,24 @@ void *atcmd_handler(char *cmd)
 	action = (log_act_t)atcmd_action(tokSearch);
 
 	if (action) {
-		action(param);
+		/* Initialize argv array to NULL */
+		for (i = 0; i < MAX_ARGC; i++) {
+			argv[i] = NULL;
+		}
+
+		/* Parse parameters at top level before calling handler */
+		/* Use parse_param_advance to support escaped characters like \, and \\ */
+		argc = parse_param_advance(param, argv);
+
+		/* Validate argc is within valid range */
+		if (argc < 1 || argc >= MAX_ARGC) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[ATCMD] Invalid argc: %d\r\n", argc);
+			return (void *)action;
+		}
+
+		action(argc, argv);
 	}
 	return (void *)action;
-
 }
 
 /****************************************************************

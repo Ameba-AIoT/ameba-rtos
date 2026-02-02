@@ -16,6 +16,10 @@
   * @{
   */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup BKUP_REG
   * @verbatim
   *****************************************************************************************
@@ -98,6 +102,11 @@ _LONG_CALL_ void BKUP_Write(u32 DwordIdx, u32 WriteVal);
 _LONG_CALL_ u32 BKUP_Read(u32 DwordIdx);
 _LONG_CALL_ void BKUP_Set(u32 DwordIdx, u32 BitMask);
 _LONG_CALL_ void BKUP_Clear(u32 DwordIdx, u32 BitMask);
+
+#ifdef __cplusplus
+}
+#endif
+
 /**
   * @}
   */

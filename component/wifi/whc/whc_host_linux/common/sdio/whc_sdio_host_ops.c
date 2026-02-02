@@ -11,7 +11,7 @@ static struct sk_buff *whc_sdio_host_read_rxfifo(struct whc_sdio *priv, u32 size
 
 	pskb = netdev_alloc_skb(NULL, allocsize);
 	if (pskb == NULL) {
-		dev_err(global_idev.fullmac_dev, "%s: Alloc skb rx buf Err, alloc_sz %d!!\n\r",
+		dev_err(global_idev.pwhc_dev, "%s: Alloc skb rx buf Err, alloc_sz %d!!\n\r",
 				__func__, allocsize);
 		return NULL;
 	}

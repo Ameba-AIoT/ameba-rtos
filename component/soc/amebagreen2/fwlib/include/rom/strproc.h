@@ -11,6 +11,10 @@
 #include <stdarg.h>
 #include "basic_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern _LONG_CALL_ size_t _strlen(const char *s);
 extern _LONG_CALL_ int _strcmp(const char *cs, const char *ct);
 extern _LONG_CALL_ size_t _strlen(const char *s);
@@ -29,5 +33,9 @@ extern  unsigned long __wrap_strtoul(const char *cp, char **endp, int base);
 extern _LONG_CALL_ u8 _char2num(u8 ch);
 extern _LONG_CALL_ u8 _2char2dec(u8 hch, u8 lch);
 extern _LONG_CALL_ u8 _2char2hex(u8 hch, u8 lch);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _STRPROC_H_

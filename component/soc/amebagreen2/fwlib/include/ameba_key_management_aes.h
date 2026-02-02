@@ -109,6 +109,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported Contants --------------------------------------------------------*/
 
 /** @defgroup KEY_MANAGEMENT_AES_Exported_Constants KEY_MANAGEMENT_AES Exported Contants
@@ -173,6 +177,10 @@ typedef struct {
                                        ((ID) == KM_AES_KEY_S_SW2) || \
                                        ((ID) == KM_AES_KEY_NS_SW1) || \
                                        ((ID) == KM_AES_KEY_NS_SW2))
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 #endif

@@ -54,79 +54,159 @@ void sys_jtag_off(void)
 }
 
 /**
+  * @brief  Write signature for NAND flash.
+  * @param  NandAddr : Page address.
+  * @param  sig_len : Signature length.
+  * @param  sig : Signature buffer.
+  * @retval none
+  */
+void sys_nand_flash_write_sig(u32 NandAddr, int sig_len, u8 *sig)
+{
+	u32 PageAddr, ByteAddr, BlockId;
+	int DataLen = NAND_PAGE_SIZE_MAIN * NAND_BLOCK_PAGE_CNT;
+	u8 *pData = (u8 *)rtos_mem_malloc(DataLen);
+	if (pData == NULL) {
+		RTK_LOGE(TAG, "Mlc failded\n");
+		return;
+	}
+	/* backup this block */
+	for (int idx = 0; idx < DataLen; idx += NAND_PAGE_SIZE_MAIN) {
+		PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr + idx);
+		ByteAddr = NAND_ADDR_TO_BYTE_ADDR(NandAddr + idx);
+		BlockId = NAND_PAGE_ADDR_TO_BLOCK_ID(PageAddr);
+
+		if (NAND_CheckBadBlock(BlockId)) {
+			RTK_LOGE(TAG, "Bad blk: Rd Failed\n");
+			goto end;
+		} else {
+			u8 status = NAND_Page_Read(PageAddr, ByteAddr, NAND_PAGE_SIZE_MAIN, pData + idx);
+			if (0 != (status & NAND_STATUS_ECC_MASK)) {
+				RTK_LOGE(TAG, "Rd Pg 0x%x Fail! st: 0x%x\n", PageAddr, status);
+				goto end;
+			}
+		}
+	}
+
+	/* erase this block */
+	PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
+	if (NAND_Erase(PageAddr)) {
+		RTK_LOGE(TAG, "Pg 0x%x Erase Fail!\n", PageAddr);
+		goto end;
+	}
+
+	/* copy signature to backup */
+	_memcpy((void *)pData, (const void *)sig, sig_len);
+
+	/* write this block with target data erased */
+	for (int idx = 0; idx < DataLen; idx += NAND_PAGE_SIZE_MAIN) {
+		PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr + idx);
+		ByteAddr = NAND_ADDR_TO_BYTE_ADDR(NandAddr + idx);
+		BlockId = NAND_PAGE_ADDR_TO_BLOCK_ID(PageAddr);
+		if (NAND_CheckBadBlock(BlockId)) {
+			RTK_LOGE(TAG, "Bad blk: Wr Failed!\n");
+		} else {
+			if (NAND_Page_Write(PageAddr, ByteAddr, NAND_PAGE_SIZE_MAIN, pData + idx)) {
+				RTK_LOGE(TAG, "Wr Pg 0x%x Fail!\n", PageAddr);
+			}
+		}
+	}
+end:
+	rtos_mem_free(pData);
+}
+
+/**
   * @brief  Clear the signature of current firmware.
   * @retval none
   */
-void sys_clear_ota_signature(void)
+void sys_clear_ota_signature(int ImgID)
 {
 	u8 otaDstIdx;
 	u8 otaCurIdx;
+	u32 check_sig[2];
 	u32 ota_sig[2];
 	u32 Address[2];
 	u8 empty_sig[8] = {0x0};
-	int ImgID = 0;
-	u32 app_ota1_start_addr;
-	u32 app_ota2_start_addr;
+	u32 ota1_start_addr;
+	u32 ota2_start_addr;
 
-	flash_get_layout_info(IMG_APP_OTA1, &app_ota1_start_addr, NULL);
-	flash_get_layout_info(IMG_APP_OTA2, &app_ota2_start_addr, NULL);
+	if (ImgID == OTA_IMGID_BOOT) {
+		check_sig[0] = 0x96969999;
+		check_sig[1] = 0xFC66CC3F;
+		flash_get_layout_info(IMG_BOOT, &ota1_start_addr, NULL);
+		flash_get_layout_info(IMG_BOOT_OTA2, &ota2_start_addr, NULL);
+	} else {
+		check_sig[0] = 0x35393138;
+		check_sig[1] = 0x31313738;
+		flash_get_layout_info(IMG_APP_OTA1, &ota1_start_addr, NULL);
+		flash_get_layout_info(IMG_APP_OTA2, &ota2_start_addr, NULL);
+	}
 
-	for (ImgID = 1; ImgID < MAX_IMG_NUM; ImgID++) {
-		otaCurIdx = ota_get_cur_index(ImgID);
-		otaDstIdx = otaCurIdx ^ 1;
+	otaCurIdx = ota_get_cur_index(ImgID);
+	otaDstIdx = otaCurIdx ^ 1;
 
-		Address[otaCurIdx] = (otaCurIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
-		Address[otaDstIdx] = (otaDstIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
+	Address[otaCurIdx] = (otaCurIdx == 0 ? ota1_start_addr : ota2_start_addr) - SPI_FLASH_BASE;
+	Address[otaDstIdx] = (otaDstIdx == 0 ? ota1_start_addr : ota2_start_addr) - SPI_FLASH_BASE;
 
-		RTK_LOGA(TAG, "[%s] IMGID: %d, current OTA%d Address: 0x%08lx, target OTA%d Address: 0x%08lx\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
-				 otaDstIdx + 1,
-				 Address[otaDstIdx]);
+	RTK_LOGA(TAG, "[%s] IMGID: %d, current OTA%d Address: 0x%08lx, target OTA%d Address: 0x%08lx\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
+			 otaDstIdx + 1,
+			 Address[otaDstIdx]);
 
-		ota_sig[0] = HAL_READ32(SPI_FLASH_BASE, Address[otaDstIdx]);
-		ota_sig[1] = HAL_READ32(SPI_FLASH_BASE, Address[otaDstIdx] + 4);
+	ota_sig[0] = HAL_READ32(SPI_FLASH_BASE, Address[otaDstIdx]);
+	ota_sig[1] = HAL_READ32(SPI_FLASH_BASE, Address[otaDstIdx] + 4);
 
-		if (ota_sig[0] == 0x35393138 && ota_sig[1] == 0x31313738) {
+	if (ota_sig[0] == check_sig[0] && ota_sig[1] == check_sig[1]) {
+		if (SYSCFG_BootFromNor()) {
 			FLASH_WriteStream(Address[otaCurIdx], 8, (u8 *)empty_sig);
 		} else {
-			RTK_LOGE(TAG, "[%s] IMGID: %d, current firmware is OTA%d, target firmware OTA%d is invalid\n", __func__, ImgID, (otaCurIdx + 1), (otaDstIdx + 1));
+			sys_nand_flash_write_sig(Address[otaCurIdx], 8, (u8 *)empty_sig);
 		}
+	} else {
+		RTK_LOGE(TAG, "[%s] IMGID: %d, current firmware is OTA%d, target firmware OTA%d is invalid\n", __func__, ImgID, (otaCurIdx + 1), (otaDstIdx + 1));
 	}
+
 }
 
 /**
   * @brief  Recover the signature of the other firmware.
   * @retval none
   */
-void sys_recover_ota_signature(void)
+void sys_recover_ota_signature(int ImgID)
 {
 	u8 otaDstIdx;
 	u8 otaCurIdx;
 	u8 *backup = NULL;
 	u32 Address[2];
-	u32 sig[2] = {0x35393138, 0x31313738};
-	int ImgID = 0;
-	u32 app_ota1_start_addr;
-	u32 app_ota2_start_addr;
+	u32 recover_sig[2];
+	u32 ota1_start_addr;
+	u32 ota2_start_addr;
 
-	backup = (u8 *)rtos_mem_malloc(0x1000);
-	if (backup == NULL) {
-		RTK_LOGE(TAG, "[%s] backup malloc failded\n", __func__);
-		return;
+	if (ImgID == OTA_IMGID_BOOT) {
+		recover_sig[0] = 0x96969999;
+		recover_sig[1] = 0xFC66CC3F;
+		flash_get_layout_info(IMG_BOOT, &ota1_start_addr, NULL);
+		flash_get_layout_info(IMG_BOOT_OTA2, &ota2_start_addr, NULL);
+	} else {
+		recover_sig[0] = 0x35393138;
+		recover_sig[1] = 0x31313738;
+		flash_get_layout_info(IMG_APP_OTA1, &ota1_start_addr, NULL);
+		flash_get_layout_info(IMG_APP_OTA2, &ota2_start_addr, NULL);
 	}
 
-	flash_get_layout_info(IMG_APP_OTA1, &app_ota1_start_addr, NULL);
-	flash_get_layout_info(IMG_APP_OTA2, &app_ota2_start_addr, NULL);
+	otaCurIdx = ota_get_cur_index(ImgID);
+	otaDstIdx = otaCurIdx ^ 1;
 
-	for (ImgID = 1; ImgID < MAX_IMG_NUM; ImgID++) {
-		otaCurIdx = ota_get_cur_index(ImgID);
-		otaDstIdx = otaCurIdx ^ 1;
+	Address[otaDstIdx] = (otaDstIdx == 0 ? ota1_start_addr : ota2_start_addr) - SPI_FLASH_BASE;
+	Address[otaCurIdx] = (otaCurIdx == 0 ? ota1_start_addr : ota2_start_addr) - SPI_FLASH_BASE;
 
-		Address[otaDstIdx] = (otaDstIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
-		Address[otaCurIdx] = (otaCurIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
-
-		RTK_LOGA(TAG, "[%s] IMGID: %d, current OTA%d Address: 0x%08lx, target OTA%d Address: 0x%08lx\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
-				 otaDstIdx + 1,
-				 Address[otaDstIdx]);
+	RTK_LOGA(TAG, "[%s] IMGID: %d, current OTA%d Address: 0x%08lx, target OTA%d Address: 0x%08lx\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
+			 otaDstIdx + 1,
+			 Address[otaDstIdx]);
+	if (SYSCFG_BootFromNor()) {
+		backup = (u8 *)rtos_mem_malloc(0x1000);
+		if (backup == NULL) {
+			RTK_LOGE(TAG, "[%s] backup malloc failded\n", __func__);
+			return;
+		}
 		/* backup this sector */
 		FLASH_ReadStream(Address[otaDstIdx], 0x1000, backup);
 
@@ -134,15 +214,16 @@ void sys_recover_ota_signature(void)
 		FLASH_EraseXIP(EraseSector, Address[otaDstIdx]);
 
 		/* copy signature to backup */
-		_memcpy((void *)backup, (const void *)sig, 8);
+		_memcpy((void *)backup, (const void *)recover_sig, 8);
 
 		/* write this sector with target data erased */
 		for (int idx = 0; idx < 0x1000; idx += 256) {
 			FLASH_WriteStream((Address[otaDstIdx] + idx), 256, (u8 *)backup + idx);
 		}
+		rtos_mem_free(backup);
+	} else {
+		sys_nand_flash_write_sig(Address[otaDstIdx], 8, (u8 *)recover_sig);
 	}
-
-	rtos_mem_free(backup);
 }
 
 /**

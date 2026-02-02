@@ -16,6 +16,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define RTK_SUCCESS	0
 #define RTK_FAIL	(-1)
 
@@ -72,5 +76,9 @@ enum rtk_error_code {
 /** @} End of WIFI_Exported_Types group*/
 
 /** @} End of WIFI_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -276,6 +276,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -411,6 +415,10 @@ _LONG_CALL_ int ECDSA_Basic_Func(ECDSA_TypeDef *ECDSA,  u32 X[8], u32 Y[8], u8 R
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

@@ -43,7 +43,10 @@ void prvSetupHardware(void)
 	GenericTimerFreq = vGetGenericTimerFreq();
 
 	arm_gic_init();
+}
 
+void vPortEnableOtherCore(void)
+{
 	/* Booting other cores */
 #if ( configNUM_CORES > 1 )
 	{
@@ -118,7 +121,8 @@ void vConfigureTickInterrupt(void)
 
 	vRegisterIRQHandler(ARM_ARCH_TIMER_IRQ, (ISRCallback_t)FreeRTOS_Tick_Handler, 0);
 
-	arm_arch_timer_set_compare(arm_arch_timer_count() + pdTICKS_TO_CNT);
+	/* round to make tick interrupts of all cores have the same phase */
+	arm_arch_timer_set_compare(((arm_arch_timer_count() + pdTICKS_TO_CNT) / pdTICKS_TO_CNT)* pdTICKS_TO_CNT);
 	arm_arch_timer_enable(pdTRUE);
 
 	arm_gic_irq_set_priority(ARM_ARCH_TIMER_IRQ, INT_PRI_LOWEST, IRQ_TYPE_LEVEL);

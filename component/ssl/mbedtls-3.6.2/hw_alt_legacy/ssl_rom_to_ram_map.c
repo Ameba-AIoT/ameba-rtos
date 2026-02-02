@@ -1,20 +1,20 @@
 /**
  * *****************************************************************************
  * @file    ssl_rom_to_ram_map.c
- * @author  
+ * @author
  * @version V1.0.0
  * @date    2023-09-06
  * @brief   rom mbedtls will use ssl_function_map structure function pointer to map calloc/free
  * *****************************************************************************
  * @attention
- * 
+ *
  * This module is a confidential and proprietary property of RealTek and
  * possession or use of this module requires written permission of RealTek.
- * 
+ *
  * Copyright(c) 2023, Realtek Semiconductor Corporation. All rights reserved.
  * *****************************************************************************
  */
-
+#include "basic_types.h"
 #include <section_config.h>
 #include "ssl_rom_to_ram_map.h"
 

@@ -12,18 +12,11 @@
   * @{
   */
 
-/** @defgroup ROM_PATCH_Structure_Type Structure Type
-  * @{
-  */
+// add your constants here
 
-struct Rcc_ClkDiv {
-	u32 CkdGroupOfs;
-	u32 BitMask;
-	u32 DivShift;
-	u32 DivVal; /* Note in some IP, the real work divider equals (regval + 1) */
-};
-/** @} */
-/** @} */
+/**
+  * @}
+  */
 
 /* Exported functions -------------------------------------------------------- */
 /** @defgroup ROM_PATCH_Exported_Functions ROM_PATCH Exported Functions
@@ -31,8 +24,6 @@ struct Rcc_ClkDiv {
   */
 
 // add your function statements here
-_LONG_CALL_ void RCC_PeriphClockDivSet(const struct Rcc_ClkDiv *pdiv);
-_LONG_CALL_ u8 RCC_PeriphClockEnableChk(u32 APBPeriph_Clock_in);
 _LONG_CALL_ void RCC_PeriphClockSource_UART(UART_TypeDef *UARTx, u32 Source);
 _LONG_CALL_ void RCC_PeriphClockSource_LOGUART(u32 Source);
 _LONG_CALL_ void UART_Init(UART_TypeDef *UARTx, UART_InitTypeDef *UART_InitStruct);

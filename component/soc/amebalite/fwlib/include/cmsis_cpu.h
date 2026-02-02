@@ -5,6 +5,11 @@
  */
 
 #ifndef __CMSIS_CPU_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define __CMSIS_CPU_H__
 
 #include "ameba_vector_table.h"
@@ -49,6 +54,11 @@
 #include "cache_riscv.h"
 #include "ameba_plic.h"
 
+#endif
+
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* __CMSIS_CPU_H__ */

@@ -5,6 +5,11 @@
  */
 
 #ifndef _AMEBA_SWRCALIB_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _AMEBA_SWRCALIB_H_
 
 /**
@@ -82,5 +87,10 @@ _LONG_CALL_ u8 SWR_CORE_Vol_Get(void);
 /**
   * @}
   */
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

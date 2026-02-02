@@ -14,6 +14,10 @@
   @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
   \brief  Structure type to access the RTK Implementation Defined Registers (RIDR).
  */
@@ -183,6 +187,10 @@ void ICache_Way_Set(uint32_t Icwrr_base, uint32_t Icwrr_top, uint32_t way_restri
 
 	RIDR->ICWRR_BASE = Icwrr_base;
 	RIDR->ICWRR_TOP = Icwrr_top;
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif
 #endif /* __CMSIS_RIDR_H__ */

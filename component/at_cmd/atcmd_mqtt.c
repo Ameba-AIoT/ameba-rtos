@@ -505,10 +505,9 @@ Function            at_mqttsub
 Brief                   MQTT subscribe. The command is used to subscribe mqtt issue.
 AT+MQTTSUB=<link_id>,<topic>,<qos>
 ****************************************************************/
-void at_mqttsub(void *arg)
+void at_mqttsub(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
-	int argc = 0, res = 0;
+	int res = 0;
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
@@ -517,13 +516,12 @@ void at_mqttsub(void *arg)
 	u8 added = 0;
 
 	/* Get the parameters of AT command. */
-	if (!arg) {
+	if (argc == 1) {
 		at_mqttsub_help();
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if (argc < 4) {
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -626,10 +624,9 @@ Function            at_mqttunsub
 Brief                   MQTT unsubscribe. The command is used to unsubscribe mqtt issue.
 AT+MQTTUNSUB=<link_id>,<topic>
 ****************************************************************/
-void at_mqttunsub(void *arg)
+void at_mqttunsub(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
-	int argc = 0, res = 0;
+	int res = 0;
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
@@ -637,13 +634,12 @@ void at_mqttunsub(void *arg)
 	u8 matched = 0;
 
 	/* Get the parameters of AT command. */
-	if (!arg) {
+	if (argc == 1) {
 		at_mqttunsub_help();
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if (argc < 3) {
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -726,23 +722,21 @@ Function            at_mqttpub
 Brief                   MQTT publish. The command is used to publish mqtt issue.
 AT+MQTTPUB=<link_id>,<msg_id>,<topic>,<msg>,<qos>,<retain>
 ****************************************************************/
-void at_mqttpub(void *arg)
+void at_mqttpub(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
-	int argc = 0, res = 0;
+	int res = 0;
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
 	int msg_id = 0, qos = 0, retain = 0;
 
 	/* Get the parameters of AT command. */
-	if (!arg) {
+	if (argc == 1) {
 		at_mqttpub_help();
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if (argc < 7) {
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -846,10 +840,9 @@ Function            at_mqttpubraw
 Brief                   MQTT publish with long message. The command is used to publish mqtt issue.
 AT+MQTTPUBRAW=<link_id>,<msg_id>,<topic>,<length>,<qos>,<retain>
 ****************************************************************/
-void at_mqttpubraw(void *arg)
+void at_mqttpubraw(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
-	int argc = 0, res = 0;
+	int res = 0;
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
@@ -858,13 +851,12 @@ void at_mqttpubraw(void *arg)
 	u8 *msg = NULL;
 
 	/* Get the parameters of AT command. */
-	if (!arg) {
+	if (argc == 1) {
 		at_mqttpubraw_help();
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if (argc < 7) {
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -1003,10 +995,9 @@ Function            at_mqttconn
 Brief                   MQTT connect. The command is used to connect a cloud for MQTT client.
 AT+MQTTCONN=<link_id>,<host>,<port>,<client_id>,<conn_type>[,<cert_index>,<username>,<password>]
 ****************************************************************/
-void at_mqttconn(void *arg)
+void at_mqttconn(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
-	int argc = 0, res = 0;
+	int res = 0;
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
@@ -1015,14 +1006,13 @@ void at_mqttconn(void *arg)
 	int conn_type = 0, cert_index = 0, port = 0;
 
 	/* Get the parameters of AT command. */
-	if (!arg) {
+	if (argc == 1) {
 		at_mqttconn_help();
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
 	/* parameters include link_id, host, port. */
-	argc = parse_param_advance(arg, argv);
 	if (argc < 6) {
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -1246,22 +1236,20 @@ Function    at_mqttdisconn
 Brief         MQTT disconnect. The command is used to disconnect a cloud for MQTT client and release the resources.
 AT+MQTTDISCONN=<link_id>
 ****************************************************************/
-void at_mqttdisconn(void *arg)
+void at_mqttdisconn(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
-	int argc = 0, res = 0;
+	int res = 0;
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
 
 	/* Get the parameters of AT command. */
-	if (!arg) {
+	if (argc == 1) {
 		at_mqttdisconn_help();
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if (argc != 2) {
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
@@ -1341,23 +1329,20 @@ Function            at_mqttcfg
 Brief                   MQTT connection parameters configure. The command is used to configure mqtt connection parameters.
 AT+MQTTCFG=<link_id>[,<keepalive>][,<cmd_timeout>][,<clean_session>][,<lwt_topic>,<lwt_msg>][,<lwt_qos>][,<lwt_retain>]
 ****************************************************************/
-void at_mqttcfg(void *arg)
+void at_mqttcfg(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
-	int argc = 0;
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
 	int keepalive = 60, timeout = 60, qos = 0, retain = 0, clean_session = 1;
 
 	/* Get the parameters of AT command. */
-	if (!arg) {
+	if (argc == 1) {
 		at_mqttcfg_help();
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if (argc < 2) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCFG] Input wrong parameter\r\n");
 		resultNo = MQTT_ARGS_ERROR;
@@ -1478,11 +1463,12 @@ Function            at_mqttreset
 Brief                   MQTT reset, If you forget the procedure, or how many connections you have created, you can reset all.
 AT+MQTTRESET
 ****************************************************************/
-void at_mqttreset(void *arg)
+void at_mqttreset(u16 argc, char **argv)
 {
 	int i = 0, res = 0;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
-	UNUSED(arg);
+	UNUSED(argc);
+	UNUSED(argv);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[+MQTTRESET] reset all mqtt connections\r\n");
 	/* No need any other parameters. */
@@ -1524,21 +1510,18 @@ void at_mqttreset(void *arg)
 	at_printf(ATCMD_OK_END_STR);
 }
 
-void at_mqttquery(void *arg)
+void at_mqttquery(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
-	int argc = 0;
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
 
 	/* Get the parameters of AT command. */
-	if (!arg) {
+	if (argc == 1) {
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if (argc < 2) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTQUERY] Input wrong parameter\r\n");
 		resultNo = MQTT_ARGS_ERROR;
@@ -1586,21 +1569,18 @@ end:
 	}
 }
 
-void at_mqttsubquery(void *arg)
+void at_mqttsubquery(u16 argc, char **argv)
 {
-	char *argv[MAX_ARGC] = {0};
-	int argc = 0;
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
 
 	/* Get the parameters of AT command. */
-	if (!arg) {
+	if (argc == 1) {
 		resultNo = MQTT_ARGS_ERROR;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if (argc < 2) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTSUBQUERY] Input wrong parameter\r\n");
 		resultNo = MQTT_ARGS_ERROR;
@@ -1647,7 +1627,7 @@ void mqtt_init_info(void)
 	}
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_mqtt_items[ ] = {
 	{"+MQTTCFG", at_mqttcfg},   /* MQTT connection configure. */
 	{"+MQTTCONN", at_mqttconn},  /* MQTT connect. */
@@ -1674,8 +1654,6 @@ void print_mqtt_at(void)
 void at_mqtt_init(void)
 {
 	mqtt_init_info();
-
-	atcmd_service_add_table((log_item_t *)at_mqtt_items, sizeof(at_mqtt_items) / sizeof(at_mqtt_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_MQTT */

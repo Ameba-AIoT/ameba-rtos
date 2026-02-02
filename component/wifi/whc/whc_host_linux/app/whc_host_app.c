@@ -40,7 +40,7 @@ static struct whc_host_command_entry cmd_table[] = {
 	{"setmac", whc_host_set_mac},
 	{"netifon", whc_host_set_netif_on},
 	{"init", whc_host_nl_init},
-	{"wifion", whc_host_wifi_on},
+	{"wifion", whc_host_set_wifi_on},
 	{"scan", whc_host_wifi_scan},
 	{"dhcp", whc_host_wifi_dhcp},
 	{"connect", whc_host_wifi_connect},
@@ -379,7 +379,7 @@ int whc_host_wifi_scan(void)
 	return ret;
 }
 
-int whc_host_wifi_on(void)
+int whc_host_set_wifi_on(void)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;

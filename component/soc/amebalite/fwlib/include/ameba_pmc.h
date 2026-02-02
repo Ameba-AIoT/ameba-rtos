@@ -5,6 +5,11 @@
  */
 
 #ifndef _AMEBA_PMC_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _AMEBA_PMC_H_
 
 /** @addtogroup AmebaD_Platform
@@ -229,4 +234,9 @@ void SOCPS_vPortRestorePmp(void);
 #if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
 extern void wifi_hal_system_resume_wlan(void);
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_AMEBA_PMC_H_

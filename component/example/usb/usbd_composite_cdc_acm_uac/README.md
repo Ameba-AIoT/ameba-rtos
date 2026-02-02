@@ -8,8 +8,12 @@ None
 
 # SW configuration
 
-1. Menuconfig
-	Type command `./menuconfig.py` under the project directory and :
+1. Enable Audio
+	To enable audio output via the speaker, set CONFIG_USBD_AUDIO_EN to 1 in the configuration file located at "component/example/usb/usbd_composite_cdc_acm_uac/example_usbd_composite_cdc_acm_uac.c".
+	Once configured, audio playback from the host will be transmitted to the speaker connected to the EVB.
+
+2. Menuconfig
+	Use menuconfig and :
 	- Choose `CONFIG USB --->`:
 	```
 	[*] Enable USB
@@ -27,9 +31,17 @@ None
 
 	Note: If the audio speaker is not very smooth, choose `Select Audio Interfaces (Mixer)`, check the audio composite note to get more details.
 	```
+
+	If the development board model is RTL8721F, please follow the steps below to select FREERTOS via menuconfig.
+	Use menuconfig and :
+	- Choose `CONFIG OS --->`:
+	```
+	[*] Enable Kernel
+			Kernel Selecte (FREERTOS)--->
+	```
 	Save and exit.
 
-2. Build and Download:
+3. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
@@ -82,3 +94,4 @@ Specially for Win7/XP host, please manually install the CDC ACM driver RtkUsbCdc
 
 RTL8730E
 RTL8721Dx
+RTL8721F

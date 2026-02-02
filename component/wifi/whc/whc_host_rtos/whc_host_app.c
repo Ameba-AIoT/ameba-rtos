@@ -109,7 +109,7 @@ void whc_host_set_rdy(uint8_t state)
 	whc_host_send_to_dev(buf, buf_len);
 }
 
-void whc_host_wifi_on(void)
+void whc_host_set_wifi_on(void)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
@@ -245,7 +245,7 @@ u32 cmd_whc_test(u16 argc, u8  *argv[])
 	}
 
 	if (_strcmp((const char *)argv[0], "wifion") == 0) {
-		whc_host_wifi_on();
+		whc_host_set_wifi_on();
 		goto exit;
 	}
 
@@ -277,8 +277,5 @@ exit:
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE   whc_test_cmd_table[] = {
-	{
-		(const u8 *)"whc", 8, cmd_whc_test, (const u8 *)"\twhc \n"
-		"\t\t whc test \n"
-	},
+	{"whc", cmd_whc_test},
 };

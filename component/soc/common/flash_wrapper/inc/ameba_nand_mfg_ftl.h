@@ -11,6 +11,10 @@
 
 #include "ameba_nand_ftl.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 #define NAND_MFG_DOSILICON  0xE5U
@@ -26,6 +30,10 @@
 /* Exported functions --------------------------------------------------------*/
 
 u8 nand_ftl_mfg_init(struct nand_ftl_device *nand);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _AMEBA_NAND_MFG_FTL_H_
 

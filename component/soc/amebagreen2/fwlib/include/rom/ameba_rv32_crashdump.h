@@ -7,6 +7,10 @@
 #ifndef RV32_CRASHDUMP_H
 #define RV32_CRASHDUMP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief    Dump crash informtion
  *
@@ -21,5 +25,9 @@
 void crash_dump(uint32_t *pc,
 				uint32_t *sp,
 				uint32_t *reg);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

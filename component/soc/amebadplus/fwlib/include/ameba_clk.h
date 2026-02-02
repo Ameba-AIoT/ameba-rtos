@@ -176,6 +176,17 @@
 #define PERI_CLK_LIMIT			(100 * MHZ_TICK_CNT)
 #define SRAM_CLK_LIMIT			(200 * MHZ_TICK_CNT)
 
+
+/** @defgroup HS_RCC_definitions
+  * @{
+  */
+struct Rcc_ClkDiv {
+	u32 CkdGroupOfs;
+	u32 BitMask;
+	u32 DivShift;
+	u32 DivVal; /* Note in some IP, the real work divider equals (regval + 1) */
+};
+
 /**
   * @}
   */
@@ -236,6 +247,11 @@ _LONG_CALL_ bool PLL_State(void);
 _LONG_CALL_ void PLL_ClkSet(u32 PllClk);
 _LONG_CALL_ void OSC131K_Reset(void);
 
+/**
+  * @}defgroup HS_RCC_Exported_Functions HS_RCC Exported Functions
+  */
+_LONG_CALL_ void RCC_PeriphClockDivSet(const struct Rcc_ClkDiv *pdiv);
+_LONG_CALL_ u8 RCC_PeriphClockEnableChk(u32 APBPeriph_Clock_in);
 
 /* Registers Definitions --------------------------------------------------------*/
 /**************************************************************************//**

@@ -287,6 +287,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -438,6 +442,10 @@ _LONG_CALL_ void KeyScan_SetStuckThreshold(KSCAN_TypeDef *KeyScan, u32 Threshold
 _LONG_CALL_ void KeyScan_StuckPeriodicalPull(KSCAN_TypeDef *KeyScan, u32 PullUpUs, u32 NoPullUs);
 _LONG_CALL_ u32 KeyScan_GetStuckRow(KSCAN_TypeDef *KeyScan);
 _LONG_CALL_ void KeyScan_SetStuckRow(KSCAN_TypeDef *KeyScan, u32 Status);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

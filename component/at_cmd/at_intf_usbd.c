@@ -61,7 +61,7 @@ static usbd_cdc_acm_cb_t atcmd_usbd_cb = {
 	.status_changed = atcmd_usbd_status_changed,
 };
 
-static usbd_cdc_acm_line_coding_t atcmd_usbd_line_coding;
+static usb_cdc_line_coding_t atcmd_usbd_line_coding;
 
 static u16 atcmd_usbd_ctrl_line_state;
 
@@ -106,12 +106,12 @@ extern UART_LOG_BUF shell_rxbuf;
   */
 static int atcmd_usbd_init(void)
 {
-	usbd_cdc_acm_line_coding_t *lc = &atcmd_usbd_line_coding;
+	usb_cdc_line_coding_t *lc = &atcmd_usbd_line_coding;
 
-	lc->bitrate = 150000;
-	lc->format = 0x00;
-	lc->parity_type = 0x00;
-	lc->data_type = 0x08;
+	lc->b.dwDteRate = 150000;
+	lc->b.bCharFormat = 0x00;
+	lc->b.bParityType = 0x00;
+	lc->b.bDataBits = 0x08;
 
 	return HAL_OK;
 }
@@ -219,49 +219,49 @@ void atcmd_usbd_transmitted(u8 status)
   */
 static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf)
 {
-	usbd_cdc_acm_line_coding_t *lc = &atcmd_usbd_line_coding;
+	usb_cdc_line_coding_t *lc = &atcmd_usbd_line_coding;
 
 	switch (req->bRequest) {
-	case CDC_SEND_ENCAPSULATED_COMMAND:
+	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
 		/* Do nothing */
 		break;
 
-	case CDC_GET_ENCAPSULATED_RESPONSE:
+	case USB_CDC_ACM_GET_ENCAPSULATED_RESPONSE:
 		/* Do nothing */
 		break;
 
-	case CDC_SET_COMM_FEATURE:
+	case USB_CDC_ACM_SET_COMM_FEATURE:
 		/* Do nothing */
 		break;
 
-	case CDC_GET_COMM_FEATURE:
+	case USB_CDC_ACM_GET_COMM_FEATURE:
 		/* Do nothing */
 		break;
 
-	case CDC_CLEAR_COMM_FEATURE:
+	case USB_CDC_ACM_CLEAR_COMM_FEATURE:
 		/* Do nothing */
 		break;
 
-	case CDC_SET_LINE_CODING:
-		if (req->wLength == CDC_ACM_LINE_CODING_SIZE) {
-			lc->bitrate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
-			lc->format = buf[4];
-			lc->parity_type = buf[5];
-			lc->data_type = buf[6];
+	case USB_CDC_ACM_SET_LINE_CODING:
+		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
+			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
+			lc->b.bCharFormat = buf[4];
+			lc->b.bParityType = buf[5];
+			lc->b.bDataBits = buf[6];
 		}
 		break;
 
-	case CDC_GET_LINE_CODING:
-		buf[0] = (u8)(lc->bitrate & 0xFF);
-		buf[1] = (u8)((lc->bitrate >> 8) & 0xFF);
-		buf[2] = (u8)((lc->bitrate >> 16) & 0xFF);
-		buf[3] = (u8)((lc->bitrate >> 24) & 0xFF);
-		buf[4] = lc->format;
-		buf[5] = lc->parity_type;
-		buf[6] = lc->data_type;
+	case USB_CDC_ACM_GET_LINE_CODING:
+		buf[0] = (u8)(lc->b.dwDteRate & 0xFF);
+		buf[1] = (u8)((lc->b.dwDteRate >> 8) & 0xFF);
+		buf[2] = (u8)((lc->b.dwDteRate >> 16) & 0xFF);
+		buf[3] = (u8)((lc->b.dwDteRate >> 24) & 0xFF);
+		buf[4] = lc->b.bCharFormat;
+		buf[5] = lc->b.bParityType;
+		buf[6] = lc->b.bDataBits;
 		break;
 
-	case CDC_SET_CONTROL_LINE_STATE:
+	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
 		/*
 		wValue:	wValue, Control Signal Bitmap
 				D2-15:	Reserved, 0
@@ -272,12 +272,12 @@ static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf)
 		if (atcmd_usbd_ctrl_line_state & 0x01) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
 #if CONFIG_CDC_ACM_NOTIFY
-			usbd_cdc_acm_notify_serial_state(CDC_ACM_CTRL_DSR | CDC_ACM_CTRL_DCD);
+			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 #endif
 		}
 		break;
 
-	case CDC_SEND_BREAK:
+	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
 		break;
 

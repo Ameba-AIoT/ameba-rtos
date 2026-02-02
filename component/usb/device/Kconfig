@@ -13,15 +13,31 @@ if USBD_COMPOSITE_MENU
             select USBD_COMPOSITE_CDC_ACM_HID if WHC_HOST || WHC_NONE
         config USBD_COMPOSITE_CDC_ACM_MSC_MENU
             bool "CDC ACM + MSC"
-            depends on SUPPORT_SDIOH
             select USBD_COMPOSITE_CDC_ACM_MSC if WHC_HOST || WHC_NONE
-            select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
-            select FATFS_DISK_SD if WHC_HOST || WHC_NONE
+            choice
+                prompt "Select storage media"
+                depends on USBD_COMPOSITE_CDC_ACM_MSC_MENU
+                default USBD_COMPOSITE_MSC_SD_MODE
+                config USBD_COMPOSITE_MSC_RAM_DISK
+                    bool "RAM"
+                config USBD_COMPOSITE_MSC_SD_MODE
+                    bool "SD Card (SD mode)"
+                    depends on SUPPORT_SDIOH
+                    select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                    select FATFS_SD_MODE if WHC_HOST || WHC_NONE
+                config USBD_COMPOSITE_MSC_SD_SPI_MODE
+                    bool "SD Card (SPI mode)"
+                    select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                    select FATFS_SD_SPI_MODE if WHC_HOST || WHC_NONE
+                config USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+                    bool "External FLASH"
+                    select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                    select FATFS_SECOND_FLASH if WHC_HOST || WHC_NONE
+            endchoice
         config USBD_COMPOSITE_CDC_ACM_UAC_MENU
             bool "CDC ACM + UAC"
             depends on SUPPORT_USBD_UAC
             select USBD_COMPOSITE_CDC_ACM_UAC if WHC_HOST || WHC_NONE
-            select AUDIO_FWK if WHC_HOST || WHC_NONE
             choice
                 prompt "Select UAC Version"
                 depends on USBD_COMPOSITE_CDC_ACM_UAC_MENU
@@ -36,7 +52,6 @@ if USBD_COMPOSITE_MENU
             bool "HID + UAC"
             depends on SUPPORT_USBD_UAC
             select USBD_COMPOSITE_HID_UAC if WHC_HOST || WHC_NONE
-            select AUDIO_FWK if WHC_HOST || WHC_NONE
             choice
                 prompt "Select UAC Version"
                 depends on USBD_COMPOSITE_HID_UAC_MENU
@@ -65,6 +80,7 @@ config USBD_MSC_MENU
     if USBD_MSC_MENU
         choice
             prompt "Select storage media"
+            default USBD_MSC_SD_MODE
             config USBD_MSC_RAM_DISK
                 bool "RAM"
             config USBD_MSC_SD_MODE
@@ -87,7 +103,6 @@ config USBD_UAC_MENU
     bool "UAC"
     depends on SUPPORT_USBD_UAC
     select USBD_UAC if WHC_HOST || WHC_NONE
-    select AUDIO_FWK if WHC_HOST || WHC_NONE
     choice
         prompt "Select UAC Version"
         depends on USBD_UAC_MENU

@@ -5,6 +5,11 @@
  */
 
 #ifndef _AMEBA_SYSCFG_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _AMEBA_SYSCFG_H_
 
 /** @addtogroup AmebaD_Platform
@@ -173,5 +178,10 @@ _LONG_CALL_ u32 SYSCFG_SWTrigDownload(void);
 #define RSIP_XTS_MODE                                             0
 #define RSIP_CTR_MODE                                             1
 #define RSIP_GCM_MODE                                            2
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif //_AMEBA_SYSCFG_H_

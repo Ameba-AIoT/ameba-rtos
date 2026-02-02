@@ -11,6 +11,10 @@
 
 #include "ameba_ftl.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 #define NF_BAD_BLOCK				0x00U
@@ -49,6 +53,10 @@ u8 nand_ftl_is_bad(u32 addr, u8 *value);
 u8 nand_ftl_mark_bad(u32 addr);
 u8 nand_ftl_get_status(u8 cmd, u8 addr, u8 *value);
 u8 nand_ftl_set_status(u8 cmd, u8 addr, u8 value);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _AMEBA_NAND_FTL_H_
 

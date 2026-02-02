@@ -35,6 +35,10 @@ static usbh_uvc_entity_t *usbh_uvc_entity_t_alloc(u32 extrabytes)
 	usbh_uvc_entity_t *entity;
 
 	entity = (usbh_uvc_entity_t *) usb_os_malloc(sizeof(usbh_uvc_entity_t) + extrabytes);
+	if (entity == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc entity fail\n");
+		return NULL;
+	}
 
 	return entity;
 }
@@ -209,31 +213,36 @@ static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
   */
 static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 {
+	usbh_uvc_vs_frame_t *frame = NULL;
+	usbh_uvc_vs_frame_t *tmp_frame = NULL;
 	u8 *desc = pbuf;
 	u32 nformat = 0;
 	u32 nframe_mjepg = 0, nframe_uncomp = 0, nframe_framebased = 0;
 	u32 index = -1;
 	u32 parsed_frame_num = 0;
-	u32 real_len = 0;
+	u16 real_len = 0;
 	u16 len = 0;
-	u16 totallen;
-	usbh_uvc_vs_frame_t *frame;
-	usbh_uvc_vs_frame_t *tmp_frame;
+	u16 totallen = 0;
 
 	if (desc[2] != USBH_UVC_VS_INPUT_HEADER) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Header is no vs input\n");
 		return HAL_ERR_PARA;
 	}
 
+	if (*length < 6) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc too short\n");
+		return HAL_ERR_PARA;
+	}
+
 	vs_intf->InputHeader = (usbh_uvc_vs_input_header_desc_t *) desc;
-	totallen = ((usbh_uvc_vs_input_header_desc_t *) desc)->wTotalLength;
+	totallen = (u16)desc[4] | (u16)((u16)desc[5] << 8);
 
 	/*first scan to get total number of format and frame*/
 	while (1) {
-		if (desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
+		if ((u32)desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
 			break;
 		}
-		switch (desc[2]) {
+		switch ((u32)desc[2]) {
 		case USBH_UVC_VS_INPUT_HEADER:
 		case USBH_UVC_VS_STILL_IMAGE_FRAME:
 		case USBH_UVC_VS_COLORFORMAT:
@@ -290,7 +299,7 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			break;
 		}
 		/*find next descripter*/
-		real_len += ((usbh_desc_header_t *) desc)->bLength;
+		real_len += (u16)desc[0];
 		desc = pbuf + real_len;
 	}
 
@@ -300,11 +309,15 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	vs_intf->nformat = nformat;
 	vs_intf->format = (usbh_uvc_vs_format_t *) usb_os_malloc(nformat * sizeof(usbh_uvc_vs_format_t) + \
 					  (nframe_mjepg + nframe_uncomp + nframe_framebased) * sizeof(usbh_uvc_vs_frame_t));
+	if (vs_intf->format == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc format buf fai\n");
+		return HAL_ERR_MEM;
+	}
 
 	tmp_frame = (usbh_uvc_vs_frame_t *)((u8 *)vs_intf->format + nformat * sizeof(usbh_uvc_vs_format_t));
 
 	while (len < real_len) {
-		switch (desc[2]) {
+		switch ((u32)desc[2]) {
 		case USBH_UVC_VS_INPUT_HEADER:
 			break;
 
@@ -351,6 +364,7 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			frame->dwBytesPerLine = *(u32 *)(desc + 22);
 			frame->dwFrameInterval = (u32 *)&desc[26];
 			parsed_frame_num ++;
+			break;
 
 		case USBH_UVC_VS_STILL_IMAGE_FRAME:
 			break;
@@ -365,7 +379,7 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 		}
 
 		/*find next descripter*/
-		len += ((usbh_desc_header_t *) desc)->bLength;
+		len += (u16)desc[0];
 		desc = pbuf + len;
 	}
 
@@ -487,6 +501,12 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 	dev_id.bInterfaceSubClass = USBH_UVC_SUBCLASS_VIDEOSTREAMING;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+
+	if (itf_data == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "No VS itf found\n");
+		return HAL_ERR_UNKNOWN;
+	}
+
 	while (itf_data) {
 		ret = usbh_uvc_parse_vs(itf_data);
 		if (ret != HAL_OK) {
@@ -496,7 +516,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 		}
 		itf_data = itf_data->next;
 	}
-	return ret;
+	return HAL_OK;
 }
 
 /**

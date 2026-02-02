@@ -138,7 +138,7 @@ uint64_t rtos_time_get_current_system_time_ns(void)
 	} else {
 		pass_value = pdTICKS_TO_CNT + (current_value - compare_value);
 	}
-	time_ns = time_ms * 1000000ULL + (pass_value * 1000) / 50;  // arm_arch_timer_count is 50 Mhz
+	time_ns = time_ms * 1000000ULL + (pass_value * 1000000000 / GenericTimerFreq) ;
 #else
 #error "Undefined core"
 #endif

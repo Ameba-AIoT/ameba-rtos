@@ -32,6 +32,9 @@ u8 BOOT_LoadRDPImg(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u
 
 	/* check if RDP image should decrypt. If not, copy to secure RAM directly */
 	if (BOOT_LoadSubImage(SubImgInfo, SrcAddr, 2, Km4Img3Label, FALSE) == TRUE) {
+		for (int i = 0; i < 5; i ++) {
+			RTK_LOGW(TAG, "IMG3 not encrypted, please enable RDP !!! \n");
+		}
 		return Cnt;
 	}
 

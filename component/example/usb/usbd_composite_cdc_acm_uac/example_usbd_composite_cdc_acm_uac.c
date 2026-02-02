@@ -15,11 +15,12 @@
 #include "basic_types.h"
 
 /* This used to check the USB issue */
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS)
-#define CONFIG_USBD_COMPOSITE_AUDIO_EN                          1
-#else
+/*
+	Note:
+	Currently supported on AMEBASMART/AMEBADPLUS/AMEBAGREEN2, configuration CONFIG_USBD_AUDIO_EN = 1
+	If EVB is AMEBAGREEN2 and CONFIG_USBD_AUDIO_EN=1, then OS needs to be configured as FREERTOS(default is FREERTOS_ROM)
+*/
 #define CONFIG_USBD_COMPOSITE_AUDIO_EN                          0
-#endif
 
 #if  CONFIG_USBD_COMPOSITE_AUDIO_EN
 #include "audio/audio_control.h"
@@ -91,6 +92,9 @@ static usbd_config_t composite_cfg = {
 #if defined (CONFIG_AMEBASMART)
 	.ext_intr_enable = USBD_EPMIS_INTR,
 	.nptx_max_epmis_cnt = 100U,
+#elif defined (CONFIG_AMEBAGREEN2)
+	.rx_fifo_depth = 420U,
+	.ptx_fifo_depth = {16U, 256U, 32U, 256U, },
 #endif
 };
 
@@ -106,7 +110,7 @@ static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 	.received = composite_cdc_acm_cb_received
 };
 
-static usbd_composite_cdc_acm_line_coding_t composite_cdc_acm_line_coding;
+static usb_cdc_line_coding_t composite_cdc_acm_line_coding;
 
 static u16 composite_cdc_acm_ctrl_line_state;
 
@@ -221,12 +225,12 @@ static void composite_hotplug_thread(void *param)
   */
 static int composite_cdc_acm_cb_init(void)
 {
-	usbd_composite_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
+	usb_cdc_line_coding_t *lc = &composite_cdc_acm_line_coding;
 
-	lc->bitrate = 150000;
-	lc->format = 0x00;
-	lc->parity_type = 0x00;
-	lc->data_type = 0x08;
+	lc->b.dwDteRate = 150000;
+	lc->b.bCharFormat = 0x00;
+	lc->b.bParityType = 0x00;
+	lc->b.bDataBits = 0x08;
 
 	return HAL_OK;
 }
@@ -262,49 +266,49 @@ static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = HAL_OK;
-	usbd_composite_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
+	usb_cdc_line_coding_t *lc = &composite_cdc_acm_line_coding;
 
 	switch (req->bRequest) {
-	case COMP_CDC_SEND_ENCAPSULATED_COMMAND:
+	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_GET_ENCAPSULATED_RESPONSE:
+	case USB_CDC_ACM_GET_ENCAPSULATED_RESPONSE:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_SET_COMM_FEATURE:
+	case USB_CDC_ACM_SET_COMM_FEATURE:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_GET_COMM_FEATURE:
+	case USB_CDC_ACM_GET_COMM_FEATURE:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_CLEAR_COMM_FEATURE:
+	case USB_CDC_ACM_CLEAR_COMM_FEATURE:
 		/* Do nothing */
 		break;
 
-	case COMP_CDC_SET_LINE_CODING:
-		if (req->wLength == COMP_CDC_ACM_LINE_CODING_SIZE) {
-			lc->bitrate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
-			lc->format = buf[4];
-			lc->parity_type = buf[5];
-			lc->data_type = buf[6];
+	case USB_CDC_ACM_SET_LINE_CODING:
+		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
+			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
+			lc->b.bCharFormat = buf[4];
+			lc->b.bParityType = buf[5];
+			lc->b.bDataBits = buf[6];
 		}
 		break;
 
-	case COMP_CDC_GET_LINE_CODING:
-		buf[0] = (u8)(lc->bitrate & 0xFF);
-		buf[1] = (u8)((lc->bitrate >> 8) & 0xFF);
-		buf[2] = (u8)((lc->bitrate >> 16) & 0xFF);
-		buf[3] = (u8)((lc->bitrate >> 24) & 0xFF);
-		buf[4] = lc->format;
-		buf[5] = lc->parity_type;
-		buf[6] = lc->data_type;
+	case USB_CDC_ACM_GET_LINE_CODING:
+		buf[0] = (u8)(lc->b.dwDteRate & 0xFF);
+		buf[1] = (u8)((lc->b.dwDteRate >> 8) & 0xFF);
+		buf[2] = (u8)((lc->b.dwDteRate >> 16) & 0xFF);
+		buf[3] = (u8)((lc->b.dwDteRate >> 24) & 0xFF);
+		buf[4] = lc->b.bCharFormat;
+		buf[5] = lc->b.bParityType;
+		buf[6] = lc->b.bDataBits;
 		break;
 
-	case COMP_CDC_SET_CONTROL_LINE_STATE:
+	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
 		/*
 		wValue:	wValue, Control Signal Bitmap
 				D2-15:	Reserved, 0
@@ -317,7 +321,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		}
 		break;
 
-	case COMP_CDC_SEND_BREAK:
+	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
 		break;
 
@@ -426,7 +430,7 @@ static void example_audio_track_play(void)
 
 #if  CONFIG_USBD_COMPOSITE_AUDIO_EN
 
-	struct RTAudioTrack *audio_track;
+	struct AudioTrack *audio_track;
 	uint32_t format;
 	int32_t track_buf_size;
 
@@ -447,53 +451,53 @@ static void example_audio_track_play(void)
 #endif
 
 	//user should set sdk/component/soc/**/usrcfg/include/ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_PIN to make sure amp is enabled.
-	RTAudioService_Init();
+	AudioService_Init();
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio ch:%d,rate:%d,bits=%d\n", g_track_channel, g_track_rate, g_track_format);
 
 	switch (g_track_format) {
 	case 16:
-		format = RTAUDIO_FORMAT_PCM_16_BIT;
+		format = AUDIO_FORMAT_PCM_16_BIT;
 		break;
 	case 24:
-		format = RTAUDIO_FORMAT_PCM_24_BIT;
+		format = AUDIO_FORMAT_PCM_24_BIT;
 		break;
 	case 32:
-		format = RTAUDIO_FORMAT_PCM_32_BIT;
+		format = AUDIO_FORMAT_PCM_32_BIT;
 		break;
 	default:
-		format = RTAUDIO_FORMAT_PCM_16_BIT;
+		format = AUDIO_FORMAT_PCM_16_BIT;
 		break;
 	}
 
-	audio_track = RTAudioTrack_Create();
+	audio_track = AudioTrack_Create();
 	if (!audio_track) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create AudioTrack fail\n");
 		return;
 	}
 
-	track_buf_size = RTAudioTrack_GetMinBufferBytes(audio_track, RTAUDIO_CATEGORY_MEDIA, g_track_rate, format, play_track_channel) * 4;
+	track_buf_size = AudioTrack_GetMinBufferBytes(audio_track, AUDIO_CATEGORY_MEDIA, g_track_rate, format, play_track_channel) * 4;
 	if (track_buf_size == 0) {
 		track_buf_size = g_track_rate * g_track_format / 8 * play_track_channel / 1000 * 100;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Track buf resize to %d\n", track_buf_size);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Track buf size:%d\n", track_buf_size);
 	}
-	RTAudioTrackConfig  track_config;
-	track_config.category_type = RTAUDIO_CATEGORY_MEDIA;
+	AudioTrackConfig  track_config;
+	track_config.category_type = AUDIO_CATEGORY_MEDIA;
 	track_config.sample_rate = g_track_rate;
 	track_config.format = format;
 	track_config.channel_count = play_track_channel;
 	track_config.buffer_bytes = track_buf_size;
-	RTAudioTrack_Init(audio_track, &track_config, RTAUDIO_OUTPUT_FLAG_NONE);
+	AudioTrack_Init(audio_track, &track_config, AUDIO_OUTPUT_FLAG_NONE);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Track buf size:%d\n", track_buf_size);
 
 	/*for mixer version, this mean sw volume, for passthrough version, sw volume is not supported*/
-	RTAudioTrack_SetVolume(audio_track, 1.0, 1.0);
-	RTAudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
+	AudioTrack_SetVolume(audio_track, 1.0, 1.0);
+	AudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
 
-	if (RTAudioTrack_Start(audio_track) != AUDIO_OK) {
+	if (AudioTrack_Start(audio_track) != AUDIO_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Audio track start fail\n");
 		return;
 	}
@@ -513,20 +517,20 @@ static void example_audio_track_play(void)
 				play_data_size += audio_dst_step;
 			}
 
-			RTAudioTrack_Write(audio_track, (u8 *)play_buf, play_data_size, true);
+			AudioTrack_Write(audio_track, (u8 *)play_buf, play_data_size, true);
 			//RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track start %d-%d\n",read_dat_len,play_data_size);
 #else
-			RTAudioTrack_Write(audio_track, (u8 *)recv_buf, read_dat_len, true);
+			AudioTrack_Write(audio_track, (u8 *)recv_buf, read_dat_len, true);
 #endif
 		}
 	}
 
 	usbd_composite_uac_stop_play();
 
-	RTAudioTrack_Pause(audio_track);
-	RTAudioTrack_Flush(audio_track);
-	RTAudioTrack_Stop(audio_track);
-	RTAudioTrack_Destroy(audio_track);
+	AudioTrack_Pause(audio_track);
+	AudioTrack_Flush(audio_track);
+	AudioTrack_Stop(audio_track);
+	AudioTrack_Destroy(audio_track);
 
 	audio_track = NULL;
 #else

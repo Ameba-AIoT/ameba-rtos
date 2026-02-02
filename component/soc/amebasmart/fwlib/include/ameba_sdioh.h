@@ -10,6 +10,10 @@
 #include "hal_platform.h"
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -572,6 +576,10 @@ _LONG_CALL_ u32 SDIOH_DebounceGet(void);
 /* Other definitions --------------------------------------------------------*/
 
 #undef SDIOH_SUPPORT_SD30
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

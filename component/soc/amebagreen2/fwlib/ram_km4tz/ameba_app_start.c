@@ -165,7 +165,7 @@ u32 rtc_irq_init(void *Data)
 // The Main App entry point
 void app_start(void)
 {
-#if !defined(CONFIG_FULLMAC_IN_SINGLE_DIE) // When fullmac support XIP, need enable Cache and cannot share cache to TCM
+#if !defined(CONFIG_WHC_IN_SINGLE_DIE) // When fullmac support XIP, need enable Cache and cannot share cache to TCM
 	/* enable non-secure cache */
 	Cache_Enable(ENABLE);
 #endif

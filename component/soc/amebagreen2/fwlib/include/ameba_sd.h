@@ -27,6 +27,11 @@
 /** @defgroup SD_Result
   * @{
   */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	SD_OK = 0,
 	SD_NODISK,
@@ -531,4 +536,8 @@ _LONG_CALL_ SD_RESULT SD_IO_WriteBlocks(u8 FuncNum, u32 Addr, u8 *pData, u16 Blo
   * @}
   */
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif

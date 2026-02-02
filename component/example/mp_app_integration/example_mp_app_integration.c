@@ -1,20 +1,17 @@
 #include "example_mp_app_integration.h"
 
-void at_markmp(void *arg)
+void at_markmp(u16 argc, char **argv)
 {
-	UNUSED(arg);
+	UNUSED(argc);
+	UNUSED(argv);
 	BKUP_Write(BKUP_REG1, BKUP_Read(BKUP_REG1) | BIT(0));
 	at_printf("\r\n%sOK\r\n", "+MARKMP");
 }
 
-log_item_t at_custom_items[ ] = {
-	{"+MARKMP", at_markmp, {NULL, NULL}},
+ATCMD_APONLY_TABLE_DATA_SECTION
+const log_item_t at_custom_items[ ] = {
+	{"+MARKMP", at_markmp},
 };
-
-void at_custom_init(void)
-{
-	atcmd_service_add_table(at_custom_items, sizeof(at_custom_items) / sizeof(at_custom_items[0]));
-}
 
 static void execute_user_app(void)
 {

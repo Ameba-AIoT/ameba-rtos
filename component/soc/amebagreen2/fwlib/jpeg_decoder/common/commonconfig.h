@@ -9,6 +9,14 @@
 
 #include "basetype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void SetCommonConfigRegs(u32 *pRegs);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CONFIG_H_DEFINED */

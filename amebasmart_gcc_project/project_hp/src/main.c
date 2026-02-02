@@ -16,27 +16,6 @@
 static const char *const TAG = "MAIN";
 u32 g_Boot_Status;
 
-#if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
-#include "ftl_int.h"
-
-void app_ftl_init(void)
-{
-	u32 ftl_start_addr, ftl_end_addr;
-
-	flash_get_layout_info(FTL, &ftl_start_addr, &ftl_end_addr);
-	ftl_phy_page_start_addr = ftl_start_addr - SPI_FLASH_BASE;
-	if (SYSCFG_BootFromNor()) {
-		ftl_phy_page_num = (ftl_end_addr - ftl_start_addr) / PAGE_SIZE_4K;
-	} else {
-		ftl_phy_page_num = (ftl_end_addr - ftl_start_addr) / PAGE_SIZE_2K;
-	}
-
-	ftl_init(ftl_phy_page_start_addr, ftl_phy_page_num);
-
-}
-#endif
-
-
 void app_init_debug(void)
 {
 	u32 debug[4];
@@ -131,15 +110,24 @@ _WEAK void app_example(void)
 
 }
 
-extern int rt_kv_init(void);
-
+#ifdef CONFIG_VFS_ENABLED
+extern uint32_t vfs_ftl_init(void);
+extern int vfs_kv_init(void);
 void app_filesystem_init(void)
 {
-#if !(defined(CONFIG_MP_SHRINK)) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
 	int ret = 0;
 	vfs_init();
+
+	vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
+	ret = vfs_kv_init();
+	if (ret == 0) {
+		RTK_LOGI(TAG, "File System Init Success \n");
+	} else {
+		RTK_LOGE(TAG, "File System Init Fail \n");
+	}
+
 #ifdef CONFIG_FATFS_WITHIN_APP_IMG
-	ret = vfs_user_register("fat", VFS_FATFS, VFS_INF_FLASH, VFS_REGION_3, VFS_RO);
+	ret = vfs_user_register(VFS_R3_PREFIX, VFS_FATFS, VFS_INF_FLASH, VFS_REGION_3, VFS_RO);
 	if (ret == 0) {
 		RTK_LOGI(TAG, "VFS-FAT Init Success \n");
 	} else {
@@ -147,16 +135,11 @@ void app_filesystem_init(void)
 	}
 #endif
 
-	vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
-	ret = rt_kv_init();
-	if (ret == 0) {
-		RTK_LOGI(TAG, "File System Init Success \n");
-		return;
-	}
-
-	RTK_LOGE(TAG, "File System Init Fail \n");
+#if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
+	vfs_ftl_init();
 #endif
 }
+#endif
 
 //default main
 int main(void)
@@ -174,11 +157,10 @@ int main(void)
 
 	ipc_table_init(IPCNP_DEV);
 
+#ifdef CONFIG_VFS_ENABLED
 	app_filesystem_init();
-
-#if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
-	app_ftl_init();
 #endif
+
 
 	/* pre-processor of application example */
 	app_pre_example();
@@ -192,9 +174,11 @@ int main(void)
 	wifi_init();
 #endif
 
+#ifdef CONFIG_SHELL
 	/* init console */
 	shell_init_rom(0, 0);
 	shell_init_ram();
+#endif
 
 	//app_shared_btmem(ENABLE);
 

@@ -83,7 +83,7 @@ void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 	txbuf = rtos_mem_zmalloc(txsize);
 
 	if (txbuf == NULL) {
-		printf("%s mem fail \r\n", __func__);
+		RTK_LOGE(TAG_WLAN_INIC, "%s mem fail \r\n", __func__);
 		if (txbuf) {
 			rtos_mem_free(txbuf);
 		}

@@ -40,7 +40,7 @@ static u8 *pTmpRxPktBuf = NULL;
 
 int dhcp_ethernet_mii = 1;
 int ethernet_if_default = 1;
-int link_is_up = 0;
+volatile int link_is_up = 0;
 
 
 link_up_down_callback p_link_change_callback = 0;
@@ -82,7 +82,7 @@ void mii_rx_thread(void *param)
 					if (ret == UPLOAD_TO_LWIP && p != NULL) {
 						ethernetif_rmii_netif_recv(p);
 					} else if (p != NULL) {
-						pbuf_free(p); // 释放未上传的 pbuf
+						pbuf_free(p);
 						p = NULL;
 					}
 				} else {
@@ -109,18 +109,14 @@ void mii_intr_thread(void *param)
 	u32 dhcp_status = 0;
 	uint8_t eth_iptab[4];
 
-	while (1) {
+	if (rtos_sema_take(ethernet_init_done, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Ethernet Init Timeout or Failed!\n");
+		goto exit;
+	}
 
-#ifdef CONFIG_AMEBAGREEN2
+	while (1) {
 		if (rtos_sema_take(mii_linkup_sema, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
 			RTK_LOGE(TAG, "%s, Take Semaphore Fail\n", __FUNCTION__);
-			break;
-		}
-#endif
-
-		if (rtos_sema_take(ethernet_init_done, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
-			RTK_LOGE(TAG, "%s, Take Semaphore Fail\n", __FUNCTION__);
-			break;
 		}
 
 		if (link_is_up) {
@@ -167,7 +163,7 @@ void mii_intr_thread(void *param)
 			p_link_change_callback(link_is_up);
 		}
 	}
-
+exit:
 	rtos_sema_delete(mii_linkup_sema);
 	rtos_sema_delete(ethernet_init_done);
 	rtos_task_delete(NULL);
@@ -222,7 +218,6 @@ void ethernet_demo(void *param)
 		.mdio_write = Ethernet_WritePhyReg,
 	};
 	struct eth_phy_dev eth_phy_dev_rtl8201fr = {
-		.priv = "RTL8201FR",
 		.bus = &eth_mdio_bus, /* To be assigned during initialization */
 		.addr = 0x01, 		  /* Default PHY address, can be changed */
 		.ops  = &phy_rtl8201fr_ops,
@@ -249,8 +244,8 @@ void ethernet_demo(void *param)
 		pTmpRxPktBuf = NULL;
 	}
 
-	pTmpTxPktBuf = (u8 *)rtos_mem_zmalloc(/*MII_TX_DESC_CNT*/MII_TX_DESC_NO * ETH_PKT_MAX_SIZE);
-	pTmpRxPktBuf = (u8 *)rtos_mem_zmalloc(/*MII_RX_DESC_CNT*/MII_RX_DESC_NO * ETH_PKT_MAX_SIZE);
+	pTmpTxPktBuf = (u8 *)rtos_mem_zmalloc(MII_TX_DESC_NO * ETH_MAX_BUF_SIZE);
+	pTmpRxPktBuf = (u8 *)rtos_mem_zmalloc(MII_RX_DESC_NO * ETH_MAX_BUF_SIZE);
 
 
 	if (pTmpTxPktBuf == NULL || pTmpRxPktBuf == NULL) {
@@ -314,9 +309,25 @@ void ethernet_demo(void *param)
 	rtos_task_delete(NULL);
 }
 
+/**
+ * @brief  Mac output 50M/25M clk to phy
+ * @param  pin: The pin to output clk
+ * @param  clk: 0xb: 50M, 0xc:25M
+ * @retval None
+ */
+void ethernet_set_phy_clock(u32 pin, u8 clk)
+{
+	Pinmux_Config(pin, PINMUX_FUNCTION_EXT_CLK_OUT);
+
+	u32 temp = HAL_READ32(PINMUX_REG_BASE, REG_PINMUX_SUB_CTRL);
+	temp |= PAD_BIT_DBG_CLK_FORCE;
+	temp &= ~PAD_MASK_DBG_CLK0_SEL;
+	temp |= PAD_DBG_CLK0_SEL(clk);
+
+	HAL_WRITE32(PINMUX_REG_BASE, REG_PINMUX_SUB_CTRL, temp);
+}
 void ethernet_pin_config(void)
 {
-#ifdef CONFIG_AMEBAGREEN2
 	/*disable phy reset pin*/
 	GPIO_InitTypeDef GPIO_InitStruct;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
@@ -331,21 +342,10 @@ void ethernet_pin_config(void)
 	Pinmux_Config(ETHERNET_PAD[ETHERNET_Pin_Grp][8], PINMUX_FUNCTION_RMII_MDC);
 	Pinmux_Config(ETHERNET_PAD[ETHERNET_Pin_Grp][9], PINMUX_FUNCTION_RMII_MDIO);
 
-#ifndef CONFIG_PHY_INT_XTAL
-	Pinmux_Config(ETHERNET_PAD[ETHERNET_Pin_Grp][10], PINMUX_FUNCTION_EXT_CLK_OUT);
-
-	/*phy uses external clk*/
-	u32 temp = HAL_READ32(PINMUX_REG_BASE, REG_PINMUX_SUB_CTRL);
-	temp |= PAD_BIT_DBG_CLK_FORCE;
-	temp &= ~PAD_MASK_DBG_CLK0_SEL;
 #ifdef CONFIG_MAC_OUTPUT_50M
-	temp |= PAD_DBG_CLK0_SEL(EXT_CLK_50M);
-#else
-	temp |= PAD_DBG_CLK0_SEL(EXT_CLK_25M);
-#endif
-
-	HAL_WRITE32(PINMUX_REG_BASE, REG_PINMUX_SUB_CTRL, temp);
-#endif
+	ethernet_set_phy_clock(ETHERNET_PAD[ETHERNET_Pin_Grp][10], EXT_CLK_50M);
+#elif CONFIG_MAC_OUTPUT_25M
+	ethernet_set_phy_clock(ETHERNET_PAD[ETHERNET_Pin_Grp][10], EXT_CLK_25M);
 #endif
 }
 

@@ -277,6 +277,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -476,6 +480,10 @@ extern GPIO_TypeDef *GPIO_PORTx_S[3];
 
 #define GPIO_DR_DDR_FUNC_DW			0x0
 #define GPIO_DR_DDR_FUNC_WRAP		0x1
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

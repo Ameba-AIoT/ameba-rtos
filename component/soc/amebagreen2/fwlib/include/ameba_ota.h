@@ -11,6 +11,10 @@
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/ssl.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Platform
   * @{
   */
@@ -235,4 +239,9 @@ do {\
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_AMEBA_OTA_H_

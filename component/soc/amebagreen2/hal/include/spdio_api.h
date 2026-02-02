@@ -30,6 +30,10 @@
 
 #include "ameba_soc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Mbed_API
  * @{
  */
@@ -108,5 +112,9 @@ void spdio_deinit(struct spdio_t *obj);
 u8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf);
 void spdio_trigger_rx_handle(void);
 void SPDIO_Board_Init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // #ifndef __SPDIO_API_H__

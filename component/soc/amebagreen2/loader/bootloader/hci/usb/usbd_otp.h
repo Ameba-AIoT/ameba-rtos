@@ -13,6 +13,10 @@
 #include "ameba_usb.h"
 #include "usbd_hal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -40,6 +44,10 @@ typedef struct {
 /* Exported functions --------------------------------------------------------*/
 
 u8 USB_OTP_Init(USB_OTP_TypeDef *otp);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* _USBD_OTP_H_ */
 

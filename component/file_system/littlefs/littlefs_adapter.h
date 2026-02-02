@@ -63,12 +63,6 @@ int lfs_second_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t
 int lfs_second_nor_erase(const struct lfs_config *c, lfs_block_t block);
 #endif
 
-#if defined(CONFIG_AMEBASMART)
-#define SHOULD_USE_NAND() (!SYSCFG_BootFromNor())
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2) || defined(CONFIG_AMEBAPRO3)
-#define SHOULD_USE_NAND() (!SYSCFG_OTP_BootFromNor())
-#endif
-
 int lfs_diskio_sync(const struct lfs_config *c);
 
 #ifdef LFS_THREADSAFE
