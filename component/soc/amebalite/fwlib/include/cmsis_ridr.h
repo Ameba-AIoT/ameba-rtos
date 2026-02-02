@@ -5,6 +5,11 @@
  */
 
 #ifndef __CMSIS_RIDR_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define __CMSIS_RIDR_H__
 
 /**
@@ -185,4 +190,9 @@ void ICache_Way_Set(uint32_t Icwrr_base, uint32_t Icwrr_top, uint32_t way_restri
 	RIDR->ICWRR_TOP = Icwrr_top;
 }
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* __CMSIS_RIDR_H__ */

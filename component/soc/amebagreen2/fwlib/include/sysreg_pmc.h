@@ -531,6 +531,10 @@
 /* AUTO_GEN_WAKE_SRC_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 /** @defgroup PowerCut_Stable_Time_define
@@ -560,6 +564,10 @@ enum PowerCut_Stable_Time {
 	PC_Stable_2048 = 0x07,
 };
 /** @} */
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

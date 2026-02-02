@@ -32,7 +32,7 @@ None
 	4. `eap_client_cert`/`eap_client_key` needed only for EAP-TLS method and that can be found from server certs.
 	5. eap_ca_cert needed to be provided from server certs if `ENABLE_EAP_SSL_VERIFY_SERVER` macro is assigned to 1 in `autoconf_eap.h`.
 
-4. Use cmd `./menuconfig.py` and select `CONFIG WIFI`->`Enable EAP`.
+4. Use menuconfig and select `CONFIG WIFI`->`Enable EAP`.
 
 5. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

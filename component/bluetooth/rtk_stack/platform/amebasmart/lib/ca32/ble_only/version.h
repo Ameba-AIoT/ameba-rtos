@@ -1,11 +1,11 @@
 #define VERSION_MAJOR            0
 #define VERSION_MINOR            0
 #define VERSION_REVISION         0
-#define VERSION_BUILDNUM         985
-#define VERSION_GCID             0x5be58c9e
-#define VERSION_GCIDH            0xd629b0d9
-#define VERSION_PGCID            0x5bf4d77e
-#define VERSION_PGCIDH           0x6bbcabd3
+#define VERSION_BUILDNUM         994
+#define VERSION_GCID             0x09ef75ed
+#define VERSION_GCIDH            0x7baf042a
+#define VERSION_PGCID            0xcaa8f2fd
+#define VERSION_PGCIDH           0xab02df17
 #define LIB_NAME                 "ambsmart_le"
 #define CUSTOMER_NAME            lib
 #define CN_1                     'l'
@@ -16,14 +16,14 @@
 #define CN_6                     '#'
 #define CN_7                     '#'
 #define CN_8                     '#'
-#define BUILDING_TIME            "Wed Dec 24 11:12:06 2025"
+#define BUILDING_TIME            "Mon Jan 26 18:19:27 2026"
 #define NAME2STR(a)              #a
 #define CUSTOMER_NAME_S          #NAME2STR(CUSTOMER_NAME)
 #define NUM4STR(a,b,c,d)         #a "." #b "." #c "." #d
 #define VERSIONBUILDSTR(a,b,c,d) NUM4STR(a,b,c,d)
 #define VERSION_BUILD_STR        VERSIONBUILDSTR(VERSION_MAJOR,VERSION_MINOR,VERSION_REVISION,VERSION_BUILD)
-#define COMMIT                   5be58c9ed629
-#define BUILDING_TIME_STR        Wed_2025_12_24_11_12_06
+#define COMMIT                   09ef75ed7baf
+#define BUILDING_TIME_STR        Mon_2026_01_26_18_19_27
 #define BUILDER                  server
 #define BUILDER_STR              server
 #define TO_STR(R) NAME2STR(R)

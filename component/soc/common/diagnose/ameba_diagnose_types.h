@@ -11,6 +11,10 @@
 #include "ameba_diagnose_format.h"
 #include "ameba_diagnose_customer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*****************************************************************************************************
  *                                   Internal
  ****************************************************************************************************/
@@ -85,6 +89,10 @@ typedef int (*rtk_diag_sender_t)(const u8 *data, u16 len);
 #define DIAG_DBG_ASSERT(v) assert_param(v)
 #else
 #define DIAG_DBG_ASSERT(v)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

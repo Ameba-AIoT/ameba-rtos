@@ -18,6 +18,10 @@
 
 #define SAMEVERSION		2
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // IMG Type
 typedef enum _IMG_TYPE_ {
 	IMG_CERT   =   0x0,
@@ -33,6 +37,10 @@ u8 BOOT_OTA_IMG(void);
 
 u32 Boot_Fullmac_XipEn(void);
 void Boot_Fullmac_LoadImage(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

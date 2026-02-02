@@ -37,14 +37,13 @@ static usbd_config_t msc_cmd_cfg = {
 static usbd_msc_cb_t msc_cmd_cb = {
 	.status_changed = msc_cb_status_changed
 };
-
+/*
+usbd_msc init
+usbd_msc deinit
+*/
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usbd_msc_cmd_table[] = {
-	{
-		(const u8 *)"usbd_msc", 8, usbd_msc_cmd_test, (const u8 *)"\tUSBD MSC cmd:\n"
-		"\t\t usbd_msc init\n"
-		"\t\t usbd_msc deinit\n"
-	}
+	{"usbd_msc", usbd_msc_cmd_test},
 };
 
 /* Private functions ---------------------------------------------------------*/

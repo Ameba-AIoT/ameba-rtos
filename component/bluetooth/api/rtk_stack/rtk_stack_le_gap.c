@@ -822,6 +822,22 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 	break;
 #endif
 
+#if defined(F_BT_LE_READ_REMOTE_VERSION_INFO_SUPPORT) && F_BT_LE_READ_REMOTE_VERSION_INFO_SUPPORT
+	case GAP_MSG_LE_READ_REMOTE_VERSION: {
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP,
+									RTK_BT_LE_GAP_EVT_READ_REMOTE_VERSION_IND,
+									sizeof(rtk_bt_le_read_remote_version_ind_t));
+		rtk_bt_le_read_remote_version_ind_t *rmt_ver = (rtk_bt_le_read_remote_version_ind_t *)p_evt->data;
+		rmt_ver->err = p_data->p_le_read_remote_version_rsp->cause;
+		rmt_ver->conn_handle = le_get_conn_handle(p_data->p_le_read_remote_version_rsp->conn_id);
+		rmt_ver->version = p_data->p_le_read_remote_version_rsp->version;
+		rmt_ver->company_id = p_data->p_le_read_remote_version_rsp->manufacturer_name;
+		rmt_ver->subversion = p_data->p_le_read_remote_version_rsp->subversion;
+		rtk_bt_evt_indicate(p_evt, NULL);
+		break;
+	}
+#endif
+
 	case GAP_MSG_LE_BOND_MODIFY_INFO: {
 		T_LE_BOND_MODIFY_TYPE operation = p_data->p_le_bond_modify_info->type;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP,
@@ -4436,6 +4452,26 @@ static uint16_t bt_stack_le_gap_read_rssi(void *param)
 	return 0;
 }
 
+#if defined(F_BT_LE_READ_REMOTE_VERSION_INFO_SUPPORT) && F_BT_LE_READ_REMOTE_VERSION_INFO_SUPPORT
+static uint16_t bt_stack_le_gap_read_remote_version(void *param)
+{
+	T_GAP_CAUSE cause;
+	uint8_t conn_id;
+	uint16_t conn_handle = *((uint16_t *)param);
+
+	if (!le_get_conn_id_by_handle(conn_handle, &conn_id)) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	cause = le_read_remote_version(conn_id);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+#endif
+
 static uint16_t bt_stack_le_gap_get_dev_state(void *param)
 {
 	T_GAP_CAUSE cause;
@@ -4497,7 +4533,6 @@ static uint16_t bt_stack_le_gap_get_conn_handle_by_addr(void *param)
 
 static uint16_t bt_stack_le_gap_get_conn_info(void *param)
 {
-	// uint16_t err = 0;
 	T_GAP_CAUSE cause;
 	T_GAP_CONN_INFO stack_conn_info;
 
@@ -6441,6 +6476,13 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_le_gap_read_rssi(p_cmd->param);
 		goto async_handle;
 		break;
+
+#if defined(F_BT_LE_READ_REMOTE_VERSION_INFO_SUPPORT) && F_BT_LE_READ_REMOTE_VERSION_INFO_SUPPORT
+	case RTK_BT_LE_GAP_ACT_READ_REMOTE_VERSION:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_READ_REMOTE_VERSION \r\n");
+		ret = bt_stack_le_gap_read_remote_version(p_cmd->param);
+		break;
+#endif
 
 	case RTK_BT_LE_GAP_ACT_MODIFY_WHITELIST:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_MODIFY_WHITELIST \r\n");

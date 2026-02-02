@@ -7,6 +7,10 @@
 #ifndef _AMEBA_DELAY_H_
 #define _AMEBA_DELAY_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -55,5 +59,9 @@ _LONG_CALL_ void DelayNop(u32 count);
 #define HalDelayUs DelayUs
 
 extern u32 RBSS_UDELAY_CLK;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif//_AMEBA_DELAY_H_

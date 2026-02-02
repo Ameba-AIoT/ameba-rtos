@@ -15,6 +15,11 @@
 #include "basetype.h"
 #include "regdrv.h"
 #include "dwl.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*------------------------------------------------------------------------------
     2. Internal Definitions
 ------------------------------------------------------------------------------*/
@@ -201,5 +206,9 @@ i32 PPSelectOutputSize(PPContainer *ppC);
 PPResult WaitForPp(PPContainer *ppC);
 u32 PPCheckSetupChanges(PPConfig *prevCfg, PPConfig *newCfg);
 void PPSetConfigIdData(PPContainer *ppC);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

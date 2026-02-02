@@ -429,6 +429,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 /** @defgroup SWR_MODE SWR mode
@@ -440,6 +444,10 @@ typedef struct {
 #define IS_SWR_MODE(MODE) (((MODE) == SWR_PFM) || \
 										((MODE) == SWR_PWM))
 
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

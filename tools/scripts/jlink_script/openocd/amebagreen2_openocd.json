@@ -1,0 +1,79 @@
+{
+    "KM4TZ": {
+        "preCommands": {
+            "set substitute-path": [],
+            "dir": [
+                "component/soc/amebagreen2/rom/rom_common",
+                "component/soc/amebagreen2/rom/string",
+                "component/soc/amebagreen2/rom/stdlib",
+                "component/soc/amebagreen2/rom/crashdump",
+                "component/soc/amebagreen2/rom/rom_km4tz",
+                "component/soc/amebagreen2/rom/fault_injection_hardening",
+                "component/soc/amebagreen2/rom/download/xmodem",
+                "component/soc/amebagreen2/rom/download/usb",
+                "component/ssl/mbedtls-3.6.2/library",
+                "component/ssl/mbedtls-3.6.2/hw_alt",
+                "component/os/freertos/freertos_rom/amebagreen2/freertos_v10.4.3/Source",
+                "component/os/freertos/freertos_rom/amebagreen2/freertos_v10.4.3/Source/portable/GCC/AmebaGreen2_KM4/non_secure",
+                "component/os/freertos/freertos_rom/amebagreen2/freertos_v10.4.3/Source/portable/MemMang",
+                "component/os/freertos/freertos_rom/amebagreen2/freertos_v10.4.3/os_cfg",
+                "component/wifi/common",
+                "component/wifi/common/secure",
+                "component/wifi/wpa_supplicant/wpa_lite/rom",
+                "component/wifi/driver/core_rom",
+                "component/wifi/driver/core_rom2024",
+                "component/wifi/driver/halcommon_rom",
+                "component/wifi/driver/rtl8721f_rom",
+                "component/soc/amebagreen2/fwlib/include",
+                "component/soc/common/include/cmsis",
+                "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
+            ],
+            "add-symbol-file": [
+                "amebagreen2_gcc_project/project_km4tz/asdk/image/target_loader.axf",
+                "amebagreen2_gcc_project/project_km4tz/asdk/lib/amebagreen2_rom_bcut/target_rom.axf",
+                "amebagreen2_gcc_project/project_km4tz/asdk/lib/amebagreen2_rom_bcut/target_rom_ns.axf",
+                "amebagreen2_gcc_project/project_km4tz/asdk/lib/amebagreen2_rom_bcut/target_rom_wifi.axf"
+            ]
+        },
+        "overrideCommands": [
+            "mem 0xa5a5a5a4 0xa5a5a5a6 none",
+            "mem 0xffffff00 0xffffffff none",
+            "set mem inaccessible-by-default off"
+        ]
+    },
+    "KM4NS": {
+        "preCommands": {
+            "set substitute-path": [],
+            "dir": [
+                "component/soc/amebagreen2/rom/rom_common",
+                "component/soc/amebagreen2/rom/string",
+                "component/soc/amebagreen2/rom/stdlib",
+                "component/soc/amebagreen2/rom/crashdump",
+                "component/soc/amebagreen2/rom/rom_km4ns",
+                "component/os/freertos/freertos_rom/amebagreen2/freertos_v10.4.3/Source",
+                "component/os/freertos/freertos_rom/amebagreen2/freertos_v10.4.3/Source/portable/GCC/AmebaGreen2_KM4/non_secure",
+                "component/os/freertos/freertos_rom/amebagreen2/freertos_v10.4.3/Source/portable/MemMang",
+                "component/os/freertos/freertos_rom/amebagreen2/freertos_v10.4.3/os_cfg",
+                "component/wifi/common",
+                "component/wifi/common/secure",
+                "component/wifi/wpa_supplicant/wpa_lite/rom",
+                "component/wifi/driver/core_rom",
+                "component/wifi/driver/core_rom2024",
+                "component/wifi/driver/halcommon_rom",
+                "component/wifi/driver/rtl8721f_rom",
+                "component/soc/amebagreen2/fwlib/include",
+                "component/soc/common/include/cmsis",
+                "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
+            ],
+            "add-symbol-file": [
+                "amebagreen2_gcc_project/project_km4ns/asdk/lib/amebagreen2_rom_bcut/target_rom.axf",
+                "amebagreen2_gcc_project/project_km4ns/asdk/lib/amebagreen2_rom_bcut/target_rom_wifi.axf"
+            ]
+        },
+        "overrideCommands": [
+            "mem 0xa5a5a5a4 0xa5a5a5a6 none",
+            "mem 0xffffff00 0xffffffff none",
+            "set mem inaccessible-by-default off"
+        ]
+    }
+}

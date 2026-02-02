@@ -14,6 +14,10 @@
 #endif
 
 //2. Log type
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	RTK_LOG_NONE,
 	RTK_LOG_ALWAYS, //Important and must be displayed info, but does not require warning and error
@@ -77,5 +81,9 @@ void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char lette
 void rtk_log_memory_dump_word(uint32_t *src, uint32_t len);
 void rtk_log_memory_dump_byte(uint8_t *src, uint32_t len);
 void rtk_log_memory_dump2char(const char *src_buff, uint32_t buff_len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -12,6 +12,8 @@ menu "CONFIG OS"
             config PLATFORM_FREERTOS_ROM  #amebagreen2
                 bool "FREERTOS_ROM"
                 depends on AMEBAGREEN2
+            config PLATFORM_ZEPHYR
+                bool "ZEPHYR OS"
         endchoice
     endif
 
@@ -35,7 +37,7 @@ menu "CONFIG OS"
             This defines the maximum depth of back trace. The value must be at least 4.
 
     # freertos v11 not support heap protect currently. Other versions all supprot.
-    if !CA32_FREERTOS_V11_1_0_FOR_CA32
+    if !CA32_FREERTOS_V11_1_0_FOR_CA32 && !PLATFORM_ZEPHYR
         config HEAP_PROTECTOR
             bool "Enable Heap Protector"
             default n

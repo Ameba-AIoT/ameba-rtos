@@ -35,7 +35,7 @@ include Formosa.mk
 
 ifeq ($(CONFIG_MATTER_SECURE_EN),y)
 BASEDIR           = ../../../..
-MATTER_DIR        = $(BASEDIR)/component/application/matter
+MATTER_DIR        = $(BASEDIR)/../ameba-rtos-matter
 MATTER_BUILDDIR   = $(MATTER_DIR)/project/cmake
 endif #CONFIG_MATTER_SECURE_EN
 

@@ -24,7 +24,7 @@ void whc_host_send_data_to_dev(u8 *pbuf, u32 len, u32 with_txdesc)
 			kfree(buf);
 #endif
 		} else {
-			dev_err(global_idev.fullmac_dev, "%s can't alloc buffer!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "%s can't alloc buffer!\n", __func__);
 		}
 	}
 

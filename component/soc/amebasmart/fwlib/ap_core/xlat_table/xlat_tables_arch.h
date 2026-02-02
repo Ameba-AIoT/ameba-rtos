@@ -13,6 +13,10 @@
 #include "xlat_tables_aarch32.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Evaluates to 1 if the given physical address space size is a power of 2,
  * or 0 if it's not.
@@ -27,5 +31,9 @@
 #define GET_NUM_BASE_LEVEL_ENTRIES(addr_space_size)			\
 	((addr_space_size) >>						\
 		XLAT_ADDR_SHIFT(GET_XLAT_TABLE_LEVEL_BASE(addr_space_size)))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* XLAT_TABLES_ARCH_H */

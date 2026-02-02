@@ -16,6 +16,11 @@
   * @{
   */
 #if defined (CONFIG_ARM_CORE_CM4_KM4TZ)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum APIRQn {
 	/******  Processor Exceptions Numbers ********/
 	NonMaskableInt_IRQn    			= -14,	/*!< 2 Non Maskable Interrupt */
@@ -239,4 +244,8 @@ enum IRQnPriority {
   * @}
   */
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif //_AMEBA_VECTOR_TABLE_H_

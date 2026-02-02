@@ -117,6 +117,11 @@
 /** @defgroup SYSCFG_Exported_Functions SYSCFG Exported Functions
   * @{
   */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 _LONG_CALL_ u32 SYSCFG_TRP_UARTImage(void);
 _LONG_CALL_ u32 SYSCFG_TRP_ICFG(void);
 _LONG_CALL_ u32 SYSCFG_TRP_TestMode(void);
@@ -189,4 +194,8 @@ _LONG_CALL_ u32 SYSCFG_OTP_RomPatchEn(void);
 #define RSIP_CTR_MODE                     1
 #define RSIP_GCM_MODE                     2
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif //_AMEBA_SYSCFG_H_

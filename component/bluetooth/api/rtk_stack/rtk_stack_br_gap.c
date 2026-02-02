@@ -258,6 +258,16 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 	}
 	break;
 
+	case BT_EVENT_ACL_CONN_READY: {
+		BT_LOGA("bt_stack_mgr_cback: BT_EVENT_ACL_CONN_READY \r\n");
+		if (bt_link_role_switch(param->acl_conn_ready.bd_addr, true)) {
+			BT_LOGA("bt_link_role_switch success \r\n");
+		} else {
+			BT_LOGA("bt_link_role_switch fail \r\n");
+		}
+	}
+	break;
+
 	case BT_EVENT_ACL_CONN_SUCCESS: {
 		T_APP_BR_LINK *p_link = NULL;
 		p_link = app_find_br_link(param->acl_conn_success.bd_addr);

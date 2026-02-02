@@ -19,8 +19,8 @@ Compile config
     RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT               to                1
 
 2. change kPrimaryAudioConfig in ameba_audio_mixer_usrcfg.cpp:
-    change from   kPrimaryAudioConfig = {1024, 4, RTAUDIO_OUT_MIN_FRAMES_STAGE1};
-        to        kPrimaryAudioConfig = {240, 4, RTAUDIO_OUT_MIN_FRAMES_STAGE2};
+    change from   kPrimaryAudioConfig = {1024, 4, AUDIO_OUT_MIN_FRAMES_STAGE1};
+        to        kPrimaryAudioConfig = {240, 4, AUDIO_OUT_MIN_FRAMES_STAGE2};
 
 GCC menuconfig 
 ~~~~~~~~~~~

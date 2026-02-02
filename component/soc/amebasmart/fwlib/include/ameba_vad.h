@@ -7,6 +7,10 @@
 #ifndef _AMEBA_VAD_H_
 #define _AMEBA_VAD_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -251,5 +255,9 @@ void BT_VAD_Buf_move_four(u32 codec_index_0, u32 codec_index_1, u32 codec_index_
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

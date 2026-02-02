@@ -11,7 +11,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 if(CONFIG_AMEBASMART OR CONFIG_AMEBALITE)
 	ameba_list_append(public_libraries ${CMAKE_CURRENT_SOURCE_DIR}/lib/${c_SOC_TYPE}/${c_MCU_TYPE}/btmesh.a)
-elseif(CONFIG_AMEBADPLUS)
+elseif(CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2)
 	ameba_list_append(public_libraries ${CMAKE_CURRENT_SOURCE_DIR}/lib/${c_SOC_TYPE}/btmesh.a)
 endif()
 
@@ -148,8 +148,6 @@ ameba_list_append(private_includes
 if(CONFIG_AMEBASMART OR CONFIG_AMEBALITE)
     ameba_list_append_if(CONFIG_BT_BLE_ONLY private_includes ${c_CMPT_BLUETOOTH_DIR}/rtk_stack/platform/${c_SOC_TYPE}/lib/${c_MCU_TYPE}/ble_only)
     ameba_list_append_if(CONFIG_BT_DUAL_MODE private_includes ${c_CMPT_BLUETOOTH_DIR}/rtk_stack/platform/${c_SOC_TYPE}/lib/${c_MCU_TYPE}/dual_mode)
-elseif(CONFIG_AMEBALITE2)
-	ameba_list_append(private_includes ${c_CMPT_BLUETOOTH_DIR}/rtk_stack/platform/amebaL2/lib/${c_MCU_TYPE})
 elseif(CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2)
 	ameba_list_append(private_includes ${c_CMPT_BLUETOOTH_DIR}/rtk_stack/platform/${c_SOC_TYPE}/lib)
 endif()

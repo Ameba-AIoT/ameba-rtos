@@ -1,46 +1,82 @@
-menu "CONFIG AT CMD"
-    config SUPPORT_ATCMD
-        bool "Enable ATCMD"
-        default n
-    if SUPPORT_ATCMD
-        choice
-            prompt "ATCMD Mode"
-            config ATCMD_MANUAL_TEST
-                bool "Manual Test Mode"
-            config ATCMD_HOST_CONTROL
-                bool "Host Control Mode"
-                select LONGER_CMD
-                select USB_OTG_EN_MENU if SUPPORT_USB
-                select USB_DEVICE_EN if !USB_HOST_EN_MENU
-                select USBD_CDC_ACM if !USB_HOST_EN_MENU
-                select USBH_CDC_ACM if USB_HOST_EN_MENU
-        endchoice
+menu "CONFIG SHELL"
+    config SHELL
+        bool "Enable SHELL"
+        default y
+    if SHELL
         config LONGER_CMD
             bool "Enable Longer CMD"
-        config ATCMD_NETWORK
-            bool "Enable Network"
+        config SUPPORT_ATCMD
+            depends on !PLATFORM_ZEPHYR
+            bool "Enable ATCMD"
             default n
-        if ATCMD_NETWORK
-            config ATCMD_DNS
-                bool "Enable DNS"
+        if SUPPORT_ATCMD
+            choice
+                prompt "ATCMD Mode"
+                config ATCMD_MANUAL_TEST
+                    bool "Manual Test Mode"
+                config ATCMD_HOST_CONTROL
+                    bool "Host Control Mode"
+                    select LONGER_CMD
+                    select USB_OTG_EN_MENU if SUPPORT_USB
+                    select USB_DEVICE_EN if !USB_HOST_EN_MENU
+                    select USBD_CDC_ACM if !USB_HOST_EN_MENU
+                    select USBH_CDC_ACM if USB_HOST_EN_MENU
+            endchoice
+            config ATCMD_NETWORK
+                bool "Enable Network"
                 default n
-            config ATCMD_SNTP
-                bool "Enable SNTP"
-                default n
-            config ATCMD_MDNS
-                bool "Enable MDNS"
+            if ATCMD_NETWORK
+                config ATCMD_DNS
+                    bool "Enable DNS"
+                    default n
+                config ATCMD_SNTP
+                    bool "Enable SNTP"
+                    default n
+                config ATCMD_MDNS
+                    bool "Enable MDNS"
+                    default n
+            endif
+            config ATCMD_SOCKET
+                bool "Enable Socket"
+            config ATCMD_HTTP
+                bool "Enable HTTP"
+            config ATCMD_MQTT
+                bool "Enable MQTT"
+            config ATCMD_WEBSOCKET
+                bool "Enable WEBSOCKET"
+            config ATCMD_OTA
+                bool "Enable OTA"
                 default n
         endif
-        config ATCMD_SOCKET
-            bool "Enable Socket"
-        config ATCMD_HTTP
-            bool "Enable HTTP"
-        config ATCMD_MQTT
-            bool "Enable MQTT"
-        config ATCMD_WEBSOCKET
-            bool "Enable WEBSOCKET"
-        config ATCMD_OTA
-            bool "Enable OTA"
-            default n
+        config SHELL_TASK_STACK_BASIC_SIZE
+            int
+            # AP: TOTAL = BASIC_SIZE + CONTEXT_SAVE_SIZE + Margin
+            # If Audio Enabled: extra cost about 904 (2296=1272+1024, it needs owner to update)
+            default 2296 if AMEBAGREEN2 && (WHC_HOST || WHC_NONE) && SUPPORT_AUDIO_CMD_PLAYER
+            # Default Required
+            default 1272 if AMEBAGREEN2 && (WHC_HOST || WHC_NONE)
+            # If Audio Enabled: extra cost about 832 (2440=1416+1024, it needs owner to update)
+            default 2440 if AMEBADPLUS && (WHC_HOST || WHC_NONE) && SUPPORT_AUDIO_CMD_PLAYER
+            # Default Required
+            default 1416 if AMEBADPLUS && (WHC_HOST || WHC_NONE)
+            # If Audio Enabled: extra cost about 604 (2672=1648+1024, it needs owner to update)
+            default 2672 if AMEBALITE && (WHC_HOST || WHC_NONE) && SUPPORT_AUDIO_CMD_PLAYER
+            # Default Required
+            default 1648 if AMEBALITE && (WHC_HOST || WHC_NONE)
+            # If Audio Enabled: extra cost about 800 (2440=1416+1024, it needs owner to update)
+            default 2440 if AMEBASMART && (WHC_HOST || WHC_NONE) && SUPPORT_AUDIO_CMD_PLAYER
+            # Default Required
+            default 1416 if AMEBASMART && (WHC_HOST || WHC_NONE)
+            default 1496 if AMEBAD && (WHC_HOST || WHC_NONE)
+            # NP: TOTAL = BASIC_SIZE + CONTEXT_SAVE_SIZE + Margin,
+            # Following IC share the same BASIC_SIZE, which is from the max size of all NP cores (Refers to the KR4 as NP)
+            default 848 if (AMEBAGREEN2 || AMEBADPLUS || AMEBALITE || AMEBASMART || AMEBAD) && !WHC_HOST && !WHC_NONE
+            # other ICs
+            default 2048
+            help
+                This option sets the stack size for the shell task.
+
+                Note: Priority order (top to bottom) means the first matching condition applies.
+                As configurations are non-exclusive, place the largest required size at the top.
     endif
 endmenu

@@ -7,6 +7,9 @@
 #ifndef _AMEBA_DATA_NAND_FLASH_H_
 #define _AMEBA_DATA_NAND_FLASH_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @defgroup DATA_FLASH_NAND_Functions FLASH NAND Functions
   * @{
@@ -37,6 +40,11 @@ void DATA_NAND_StructInit_GD(FLASH_InitTypeDef *FLASH_InitStruct);
 void DATA_NAND_StructInit(FLASH_InitTypeDef *FLASH_InitStruct);
 u8 DATA_NAND_Init(u8 SpicBitMode);
 void data_nand_get_vendor(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 /** @} */
 
 #endif

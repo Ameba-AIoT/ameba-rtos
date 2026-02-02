@@ -1114,19 +1114,28 @@ typedef struct {
 typedef enum {
 	RTK_BT_LE_AUDIO_BAP_BROADCAST_SOURCE_CONFIG = 0x01, /**< rtk_bt_le_audio_broadcast_source_config_t. */
 	RTK_BT_LE_AUDIO_BAP_BROADCAST_CODE_CONFIG = 0x02,   /**< broadcast_code.*/
-	RTK_BT_LE_AUDIO_BAP_ASE_QOS_CONFIG = 0x03,          /**< rtk_bt_le_audio_unicast_ase_qos_t. */
+	RTK_BT_LE_AUDIO_BAP_UNICAST_QOS_CONFIG = 0x03      /**< rtk_bt_le_audio_unicast_config_t. */
 } rtk_bt_le_audio_bap_param_config_type_t;
+
+/**
+ * @typedef    rtk_bt_le_audio_unicast_config_t
+ * @brief     Bluetooth LE audio unicast configuration parameter.
+ */
+typedef struct {
+	rtk_bt_le_audio_unicast_ase_qos_t bap_ase_qos;
+	rtk_bt_le_audio_unicast_session_qos_t session_qos;
+} rtk_bt_le_audio_unicast_config_t;
 
 /**
  * @typedef    rtk_bt_le_audio_bap_param_config_t
  * @brief     Bluetooth LE audio bap parameter config struct .
  */
-typedef union {
+typedef struct {
 	rtk_bt_le_audio_bap_param_config_type_t cfg_type;
 	union {
 		rtk_bt_le_audio_broadcast_source_config_t brs_config;
 		uint8_t broadcast_code[RTK_BT_LE_AUDIO_BROADCAST_CODE_LEN];
-		rtk_bt_le_audio_unicast_ase_qos_t bap_ase_qos;
+		rtk_bt_le_audio_unicast_config_t unicast_config;
 	} cfg;
 } rtk_bt_le_audio_bap_param_config_t;
 

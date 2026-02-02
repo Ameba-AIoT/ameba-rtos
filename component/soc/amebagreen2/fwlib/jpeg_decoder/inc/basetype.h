@@ -18,9 +18,17 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef u32 g1_addr_t;
 typedef g1_addr_t addr_t;
 
 typedef int32_t                 i32;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __BASETYPE_H__ */

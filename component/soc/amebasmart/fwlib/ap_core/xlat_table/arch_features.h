@@ -12,6 +12,10 @@
 #include "stdint.h"
 #include "arch_helpers.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static inline bool is_armv7_gentimer_present(void)
 {
 	return ((read_id_pfr1() >> ID_PFR1_GENTIMER_SHIFT) &
@@ -23,5 +27,9 @@ static inline bool is_armv8_2_ttcnp_present(void)
 	return ((read_id_mmfr4() >> ID_MMFR4_CNP_SHIFT) &
 		ID_MMFR4_CNP_MASK) != 0U;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ARCH_FEATURES_H */

@@ -1305,6 +1305,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @defgroup MIPI_Exported_Constants MIPI Exported Constants
  * @{
  **/
@@ -1398,6 +1402,10 @@ _LONG_CALL_ void MIPI_Init(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruc
 /**
   * @}
   */
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 /**

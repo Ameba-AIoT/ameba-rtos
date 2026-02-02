@@ -33,7 +33,7 @@ usbh_uvc_host_t uvc_host;
   * @param frame_index: pointer to frame index
   * @retval Status
   */
-static int usbh_uvc_find_format_frame(usbh_uvc_stream_t *stream, uvc_config_t *context,
+static int usbh_uvc_find_format_frame(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *context,
 									  u32 *format_index, u32 *frame_index)
 {
 	u32 type, h, w, nformat, nframe, tmp1, tmp2;
@@ -84,22 +84,26 @@ static int usbh_uvc_find_format_frame(usbh_uvc_stream_t *stream, uvc_config_t *c
 	*/
 
 	if (found == 0) {
-		*frame_index = 1;
+		int best_idx = 0;
 		tmp1 = 0;
+
 		for (i = 0; i < (int) nframe; i ++) {
 			tmp2 = (frame + i)->wWidth * (frame + i)->wHeight;
+
 			if ((tmp2 < h * w) && (tmp2 > tmp1)) {
-				tmp1 = (frame + i)->wWidth * (frame + i)->wHeight;
-				frame += i;
-				*frame_index = frame->bFrameIndex;
+				tmp1 = tmp2;
+				best_idx = i;
 			}
 		}
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Find passed_in frame @%d*%d fail\n", w, h);
 
+		frame += best_idx;
+
+		*frame_index = frame->bFrameIndex;
 		context->height = frame->wHeight;
 		context->width = frame->wWidth;
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Use closest frame @%d*%d\n", frame->wWidth, frame->wHeight);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Fallback: Use @%d*%d\n", frame->wWidth, frame->wHeight);
+
 	}
 
 	return HAL_OK;
@@ -113,7 +117,7 @@ static int usbh_uvc_find_format_frame(usbh_uvc_stream_t *stream, uvc_config_t *c
   * @param frame_index: pointer to frame index
   * @retval None
   */
-static void usbh_uvc_find_frame_rate(usbh_uvc_stream_t *stream, uvc_config_t *context,
+static void usbh_uvc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *context,
 									 u32 *intv, u32 *format_index, u32 *frame_index)
 {
 	u32 fps = 10000000 / context->frame_rate;   //unit: us
@@ -163,10 +167,47 @@ static void usbh_uvc_find_frame_rate(usbh_uvc_stream_t *stream, uvc_config_t *co
   * @param	cb: user callback function
   * @retval Status
   */
-int usbh_uvc_init(usbh_uvc_cb_t *cb)
+int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb)
 {
-	int ret = HAL_OK;
+	int i, ret = HAL_OK;
 	usbh_uvc_host_t *uvc = &uvc_host;
+	usbh_uvc_stream_t *stream = NULL;
+
+	usb_os_memset(uvc, 0x00, sizeof(usbh_uvc_host_t));
+	uvc->request_buf = (u8 *)usb_os_malloc(UBSH_UVC_REQUEST_BUF_LEN);
+	if (uvc->request_buf == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc req buf fail\n");
+		return HAL_ERR_MEM;
+	}
+
+	for (i = 0; i < USBH_UVC_VS_DESC_MAX_NUM; i++) {
+		stream = &uvc->stream[i];
+		stream->stream_idx = i;
+	}
+
+#if USBH_UVC_USE_HW
+	uvc->hw_isr_pri = cfg->hw_isr_pri;
+	uvc->hw_irq_ref_cnt = 0;
+#else
+	UNUSED(cfg);
+#endif
+
+	usbh_uvc_desc_init();
+
+	usbh_uvc_class_init();
+
+#if USBH_UVC_USE_HW && USBH_HW_UVC_DUMP_ERR
+	rtos_sema_create(&uvc_host.dump_sema, 0, 1);
+	uvc_host.dump_task_exit = 0;
+	if (rtos_task_create(&(uvc_host.dump_status_task),
+						 ((const char *)"uvc_monitor"),
+						 usbh_uvc_status_dump_thread,
+						 NULL,
+						 1024U,
+						 1) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create UVC monitor task fail\n");
+	}
+#endif
 
 	if (cb != NULL) {
 		uvc->cb = cb;
@@ -179,13 +220,6 @@ int usbh_uvc_init(usbh_uvc_cb_t *cb)
 		}
 	}
 
-	uvc->stream[0].stream_num = 0;
-	uvc->stream[1].stream_num = 1;
-
-	usbh_uvc_desc_init();
-
-	usbh_uvc_class_init();
-
 	return ret;
 }
 
@@ -196,10 +230,24 @@ int usbh_uvc_init(usbh_uvc_cb_t *cb)
   */
 void usbh_uvc_deinit(void)
 {
-	int ret;
 	int i;
 	usbh_uvc_host_t *uvc = &uvc_host;
-	usbh_uvc_cb_t *cb = uvc->cb;
+
+	/* */
+	for (i = 0; i < uvc->uvc_desc.vs_num; i++) {
+		usbh_uvc_stream_t *stream = &uvc->stream[i];
+		stream->next_xfer = 0;
+		if (stream->is_resource_safe) {
+			stream->is_resource_safe = 0;
+#if (USBH_UVC_USE_HW == 0)
+			do {
+				usb_os_delay_us(100U);
+			} while (stream->decoder_busy);
+#endif
+		}
+	}
+
+	usbh_uvc_class_deinit();
 
 	for (i = 0; i < uvc->uvc_desc.vs_num; i++) {
 		usbh_uvc_stream_t *stream = &uvc->stream[i];
@@ -210,19 +258,41 @@ void usbh_uvc_deinit(void)
 
 	usbh_uvc_desc_deinit();
 
-	usbh_uvc_class_deinit();
+	if (uvc->request_buf != NULL) {
+		usb_os_mfree(uvc->request_buf);
+		uvc->request_buf = NULL;
+	}
 
-	if (cb != NULL) {
-		uvc->cb = cb;
-		if (cb->deinit != NULL) {
-			ret = cb->deinit();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "User cb deinit err: %d", ret);
-			}
+#if USBH_UVC_USE_HW && USBH_HW_UVC_DUMP_ERR
+	if (uvc->dump_task_alive) {
+		uvc->dump_task_exit = 1;
+
+		if (uvc->dump_sema) {
+			rtos_sema_give(uvc->dump_sema);
+			//thread will detete it
+		}
+
+		int wait_cnt = 0;
+		do {
+			rtos_time_delay_ms(1);
+			wait_cnt++;
+		} while (uvc->dump_task_alive && wait_cnt < 100);
+
+		if (wait_cnt >= 100) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC Dump Task stop timeout!\n");
 		}
 	}
 
-	uvc->cb = NULL;
+	if (uvc->dump_sema) {
+		rtos_sema_delete(uvc->dump_sema);
+		uvc->dump_sema = NULL;
+	}
+#endif
+
+	if ((uvc->cb != NULL) && (uvc->cb->deinit != NULL)) {
+		uvc->cb->deinit();
+	}
+
 }
 
 /**
@@ -230,13 +300,10 @@ void usbh_uvc_deinit(void)
   * @param	None
   * @retval Status
   */
-int usbh_uvc_stream_on(uvc_config_t *para, u32 itf_num)
+int usbh_uvc_stream_on(usbh_uvc_s_ctx_t *para, u32 itf_num)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = &uvc->stream[itf_num];
-#if USBH_UVC_USE_HW
-	stream->isr_priority = para->isr_priority;
-#endif
 
 	if (stream->stream_state == STREAMING_ON) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream %d is already on\n", itf_num);
@@ -247,6 +314,7 @@ int usbh_uvc_stream_on(uvc_config_t *para, u32 itf_num)
 	usbh_uvc_stream_init(stream);
 
 	stream->stream_state = STREAMING_ON;
+	stream->next_xfer = 1;
 #if (USBH_UVC_USE_HW == 0)
 	stream->cur_setting.last_frame = usbh_get_current_frame_number(uvc->host);
 	stream->stream_data_state = STREAM_DATA_IN;
@@ -278,80 +346,23 @@ int usbh_uvc_stream_off(u32 itf_num)
 }
 
 /**
-  * @brief	Find out best alt setting
-  * @param	stream: uvc stream interface
-  * @retval None
-  */
-static void usbh_uvc_find_alt(usbh_uvc_stream_t *stream)
-{
-	usbh_uvc_host_t *uvc = &uvc_host;
-	usb_host_t *host = uvc->host;
-	usbh_uvc_setting_t *cur_set = &stream->cur_setting;
-	usbh_ep_desc_t *ep = NULL;
-	usbh_pipe_t *pipe;
-	int i;
-	u32 xfer_len;
-	u32 XferSize = stream->stream_ctrl.dwMaxPayloadTransferSize;
-	u32 max_ep_size = UINT_MAX;
-
-	for (i = 0; i < stream->vs_intf->alt_num; i++) {
-
-		xfer_len = stream->vs_intf->altsetting[i].endpoint->wMaxPacketSize;
-
-		if (host->dev_speed == USB_SPEED_HIGH) {
-			xfer_len = (xfer_len & USB_EP_MPS_SIZE_MASK) * (1 + ((xfer_len & USB_EP_MPS_TRANS_MASK) >> USB_EP_MPS_TRANS_POS));
-		} else {
-			xfer_len = xfer_len & USB_EP_MPS_SIZE_MASK;
-		}
-
-		if ((xfer_len >= XferSize) && (xfer_len <= max_ep_size)) {
-			cur_set->altsetting = &stream->vs_intf->altsetting[i];
-			cur_set->bAlternateSetting = ((usbh_itf_desc_t *)cur_set->altsetting->p)->bAlternateSetting;
-			cur_set->bInterfaceNumber = cur_set->cur_vs_intf->bInterfaceNumber;
-			cur_set->valid = 1;
-
-			ep = cur_set->altsetting->endpoint;
-			pipe = &cur_set->pipe;
-			usbh_open_pipe(uvc->host, pipe, ep);
-
-			max_ep_size = xfer_len;
-			pipe->xfer_len = xfer_len;
-		}
-	}
-
-#if USBH_UVC_DEBUG
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.altsetting:%x\n",  cur_set->altsetting);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.bInterfaceNumber:%d\n", cur_set->bInterfaceNumber);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.bAlternateSetting:%d\n", cur_set->bAlternateSetting);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.ep_addr:%d\n", pipe->ep_addr);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.xfer_len:%d\n", pipe->xfer_len);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.ep_mps:%d\n", pipe->ep_mps);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.ep_interval:%d\n", pipe->ep_interval);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.ep_type:%d\n", pipe->ep_type);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.pipe_num:%d\n", pipe->pipe_num);
-#endif
-}
-
-/**
   * @brief	Set video parameter
   * @param	para: user parameter, such as FPS, resolution
   * @retval Status
   * The CFG may have been rewritten to the closest configuration supported by the device.
   * Consumers, such as RTSP, need to proceed with subsequent operations based on the updated CFG
   */
-int usbh_uvc_set_param(uvc_config_t *para, u32 itf_num)
+int usbh_uvc_set_param(usbh_uvc_s_ctx_t *para, u32 itf_num)
 {
 	int ret;
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = &uvc->stream[itf_num];
 	usbh_uvc_stream_control_t *ctrl = &stream->stream_ctrl;
-	usbh_uvc_setting_t *cur_setting = &stream->cur_setting;
 	u32 format_index, frame_index;
 	u32 frame_intv = 0;
 
 	if ((para->fmt_type != USBH_UVC_FORMAT_MJPEG) && (para->fmt_type != USBH_UVC_FORMAT_YUV) \
 		&& (para->fmt_type != USBH_UVC_FORMAT_H264)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Format not support, only support MJEPG, UNCOMPRESSED and H264\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -371,20 +382,10 @@ int usbh_uvc_set_param(uvc_config_t *para, u32 itf_num)
 	ctrl->dwFrameInterval = frame_intv;
 	ctrl->dwMaxVideoFrameSize = stream->stream_ctrl.dwMaxVideoFrameSize;
 
-	usbh_uvc_probe_video(stream);
-
-	usbh_uvc_commit_video(stream);
-
-	/* find current alt setting */
-	usbh_uvc_find_alt(stream);
-
-	do {
-		/* set alt setting for current interface */
-		ret = usbh_ctrl_set_interface(uvc->host, cur_setting->bInterfaceNumber, \
-									  cur_setting->bAlternateSetting);
-		rtos_time_delay_ms(1);
-
-	} while (ret == HAL_BUSY);
+	uvc->state = UVC_STATE_CTRL;
+	stream->state = STREAM_STATE_SET_PARA;
+	uvc->stream_in_ctrl = stream->stream_idx;
+	usbh_notify_class_state_change(uvc->host, 0);
 
 	return HAL_OK;
 }
@@ -402,6 +403,11 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num)
 
 #if (USBH_UVC_USE_HW == 0)
 	if (usb_os_sema_take(stream->frame_sema, USBH_UVC_GET_FRAME_TIMEOUT) == HAL_OK) {
+		if (stream->stream_state != STREAMING_ON) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Abort get frame\n");
+			return NULL;
+		}
+
 		if (list_empty(&stream->frame_chain)) {
 			/*should not reach here*/
 			RTK_LOGS(TAG, RTK_LOG_INFO, "No frame in frame_chain\n");
@@ -421,6 +427,11 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num)
 	}
 #else
 	if (usb_os_sema_take(stream->uvc_dec->dec_sema, USBH_UVC_GET_FRAME_TIMEOUT) == HAL_OK) {
+		if (stream->stream_state != STREAMING_ON) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Abort get frame\n");
+			return NULL;
+		}
+
 		stream->frame_buffer[stream->uvc_dec->frame_done_num].byteused = stream->uvc_dec->frame_done_size;
 		frame = &stream->frame_buffer[stream->uvc_dec->frame_done_num];
 		return frame;
@@ -443,7 +454,7 @@ void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num)
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = &uvc->stream[itf_num];
 
-	if (frame != NULL) {
+	if ((stream->stream_state == STREAMING_ON) && (frame != NULL)) {
 		list_del_init(&frame->list);
 		frame->err = 0;
 		frame->byteused = 0;

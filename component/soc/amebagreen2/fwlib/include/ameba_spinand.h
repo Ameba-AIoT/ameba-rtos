@@ -155,6 +155,11 @@
 /** @defgroup FLASH_NAND_Functions FLASH NAND Functions
   * @{
   */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 _LONG_CALL_ void NAND_RxCmd(u8 cmd, u8 addr_len, u8 *paddr, u32 read_len, u8 *read_data);
 _LONG_CALL_ void NAND_RxData(u8 cmd, u32 StartAddr, u32 read_len, u8 *read_data);
 _LONG_CALL_ u8 NAND_WaitBusy(u32 WaitType);
@@ -194,4 +199,8 @@ _LONG_CALL_ int NAND_Reset(void);
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 #endif

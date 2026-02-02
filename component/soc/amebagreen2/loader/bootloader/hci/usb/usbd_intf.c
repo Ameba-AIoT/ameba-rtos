@@ -8,7 +8,7 @@
 
 #include "usbd_hal.h"
 #include "usbd_intf.h"
-#include "usbd_fullmac_class.h"
+#include "usbd_whc_class.h"
 #include "usbd_core.h"
 
 /* Private defines -----------------------------------------------------------*/
@@ -36,7 +36,7 @@ static int USBD_Intf_Transmit(HCI_AdapterTypeDef *adapter, u8 *buf, u32 size);
 
 static const char *const TAG = "USB";
 
-static USBD_FullmacClassCallbackTypeDef USBD_FullmacClassCallback = {
+static USBD_WHC_ClassCallbackTypeDef USBD_WHC_ClassCallback = {
 	USBD_Intf_Setup,
 	USBD_Intf_Receive
 };
@@ -111,9 +111,9 @@ static int USBD_Intf_Init(HCI_AdapterTypeDef *adapter)
 {
 	int ret;
 
-	USBD_FullmacClassHandle.Adapter = adapter;
+	USBD_WHC_ClassHandle.Adapter = adapter;
 
-	ret = USBD_Core_Init(&USBD_FullmacClassDriver, &USBD_FullmacClassCallback, USBD_SPEED, (void *)&USBD_FullmacClassHandle);
+	ret = USBD_Core_Init(&USBD_WHC_ClassDriver, &USBD_WHC_ClassCallback, USBD_SPEED, (void *)&USBD_WHC_ClassHandle);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail: %d\n", ret);
 	}
@@ -132,7 +132,7 @@ static void USBD_Intf_DeInit(HCI_AdapterTypeDef *adapter)
 
 	USBD_Core_DeInit();
 
-	USBD_FullmacClassHandle.Adapter = NULL;
+	USBD_WHC_ClassHandle.Adapter = NULL;
 }
 
 /**

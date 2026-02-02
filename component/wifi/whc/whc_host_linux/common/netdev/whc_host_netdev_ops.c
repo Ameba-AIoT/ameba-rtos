@@ -33,16 +33,16 @@ int rtw_ndev_set_mac_address(struct net_device *pnetdev, void *p)
 	struct sockaddr *addr = p;
 
 	if (rtw_netdev_idx(pnetdev) >= WHC_MAX_NET_PORT_NUM) {
-		dev_err(global_idev.fullmac_dev, "Netdevice index err.");
+		dev_err(global_idev.pwhc_dev, "Netdevice index err.");
 		return -1;
 	}
 
-	dev_dbg(global_idev.fullmac_dev,
+	dev_dbg(global_idev.pwhc_dev,
 			"[netdev] %s: set wlan-%d mac addr to [%02x:%02x:%02x:%02x:%02x:%02x]", __func__, rtw_netdev_idx(pnetdev),
 			*(u8 *)(addr->sa_data), *(u8 *)(addr->sa_data + 1), *(u8 *)(addr->sa_data + 2), *(u8 *)(addr->sa_data + 3), *(u8 *)(addr->sa_data + 4),
 			*(u8 *)(addr->sa_data + 5));
 
-	ret = whc_fullmac_host_set_mac_addr(rtw_netdev_idx(pnetdev), addr->sa_data);
+	ret = whc_host_set_mac_addr(rtw_netdev_idx(pnetdev), addr->sa_data);
 
 	if (ret == 0) {
 		/* Set mac address success, then change the dev_addr inside net_device. */
@@ -58,7 +58,7 @@ int rtw_ndev_set_mac_address(struct net_device *pnetdev, void *p)
 
 struct net_device_stats *rtw_ndev_get_stats(struct net_device *pnetdev)
 {
-	dev_dbg(global_idev.fullmac_dev, "[netdev]: %s", __func__);
+	dev_dbg(global_idev.pwhc_dev, "[netdev]: %s", __func__);
 	return &global_idev.stats[rtw_netdev_idx(pnetdev)];
 }
 
@@ -114,7 +114,7 @@ u8 qos_acm(u8 acm_mask, u8 priority)
 		}
 		break;
 	default:
-		dev_warn(global_idev.fullmac_dev, "qos_acm(): invalid pattrib->priority: %d!!!\n", priority);
+		dev_warn(global_idev.pwhc_dev, "qos_acm(): invalid pattrib->priority: %d!!!\n", priority);
 		break;
 	}
 
@@ -160,7 +160,7 @@ int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, void __user *data,
 #endif
 
 	if (copy_from_user(&cmd, rq->ifr_data, sizeof(struct rtw_priv_ioctl))) {
-		dev_err(global_idev.fullmac_dev, "[fullmac]: %s copy_from_user failed\n", __func__);
+		dev_err(global_idev.pwhc_dev, "[whc]: %s copy_from_user failed\n", __func__);
 		ret = -EFAULT;
 		goto out;
 	}
@@ -172,20 +172,20 @@ int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, void __user *data,
 
 	cmd_buf = rtw_malloc(cmd.len, &cmd_buf_phy);
 	if (!cmd_buf) {
-		dev_err(global_idev.fullmac_dev, "%s: allloc cmd buffer failed.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: allloc cmd buffer failed.\n", __func__);
 		ret = -ENOMEM;
 		goto out;
 	}
 
 	user_buf = rtw_malloc(WIFI_MP_MSG_BUF_SIZE, &user_buf_phy);
 	if (!user_buf) {
-		dev_err(global_idev.fullmac_dev, "%s: allloc user buffer failed.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: allloc user buffer failed.\n", __func__);
 		ret = -ENOMEM;
 		goto free_cmd_buf;
 	}
 
 	if (copy_from_user(cmd_buf, cmd.data, cmd.len)) {
-		dev_err(global_idev.fullmac_dev, "[fullmac]: %s copy_from_user failed\n", __func__);
+		dev_err(global_idev.pwhc_dev, "[whc]: %s copy_from_user failed\n", __func__);
 		ret = -EFAULT;
 		goto free_user_buf;
 	}
@@ -193,10 +193,10 @@ int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, void __user *data,
 	switch (cmd_id) {
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	case RTW_PRIV_DGB_CMD:
-		ret = whc_fullmac_host_iwpriv_cmd(cmd_buf_phy, cmd.len, cmd_buf, user_buf);
+		ret = whc_host_iwpriv_cmd(cmd_buf_phy, cmd.len, cmd_buf, user_buf);
 		break;
 	case RTW_PRIV_MP_CMD:
-		ret = whc_fullmac_host_mp_cmd(cmd_buf_phy, cmd.len, user_buf_phy);
+		ret = whc_host_mp_cmd(cmd_buf_phy, cmd.len, user_buf_phy);
 		break;
 #endif
 	default:
@@ -236,18 +236,18 @@ out:
 
 int rtw_ndev_init(struct net_device *pnetdev)
 {
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 	return 0;
 }
 
 void rtw_ndev_uninit(struct net_device *pnetdev)
 {
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 }
 
 int rtw_ndev_open(struct net_device *pnetdev)
 {
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 	rtw_netdev_priv_is_on(pnetdev) = true;
 #ifdef CONFIG_NAN
 	if (rtw_netdev_idx(pnetdev) == 2) {
@@ -268,13 +268,13 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 	u8 is_mp = 0;
 #endif
 
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 #if defined(CONFIG_WHC_WIFI_API_PATH)
-	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	whc_host_dev_driver_is_mp(&is_mp);
 	if (is_mp != 1) {
-		ret = whc_fullmac_host_scan_abort();
+		ret = whc_host_scan_abort();
 		if (ret) {
-			dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "[whc]: %s abort wifi scan failed!\n", __func__);
 			return -EPERM;
 		}
 	}
@@ -300,14 +300,14 @@ int rtw_ndev_open_ap(struct net_device *pnetdev)
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	u8 is_mp = 0;
 
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 
 	rtw_netdev_priv_is_on(pnetdev) = true;
 
-	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	whc_host_dev_driver_is_mp(&is_mp);
 	if (is_mp != 1) {
 		/* if2 init(SW + part of HW) */
-		whc_fullmac_host_init_ap();
+		whc_host_init_ap();
 	}
 
 	netif_tx_start_all_queues(pnetdev);
@@ -323,13 +323,13 @@ static int rtw_ndev_close_ap(struct net_device *pnetdev)
 	int ret = 0;
 	u8 is_mp = 0;
 
-	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 
-	whc_fullmac_host_dev_driver_is_mp(&is_mp);
+	whc_host_dev_driver_is_mp(&is_mp);
 	if (is_mp != 1) {
-		ret = whc_fullmac_host_scan_abort();
+		ret = whc_host_scan_abort();
 		if (ret) {
-			dev_err(global_idev.fullmac_dev, "[fullmac]: %s abort wifi scan failed!\n", __func__);
+			dev_err(global_idev.pwhc_dev, "[whc]: %s abort wifi scan failed!\n", __func__);
 			return -EPERM;
 		}
 	}
@@ -347,7 +347,7 @@ static int rtw_ndev_close_ap(struct net_device *pnetdev)
 
 	if (is_mp != 1) {
 		/* if2 deinit (SW) */
-		whc_fullmac_host_deinit_ap();
+		whc_host_deinit_ap();
 	}
 	rtw_netdev_priv_is_on(pnetdev) = false;
 #endif
@@ -377,11 +377,11 @@ static void rtw_set_rx_mode(struct net_device *dev)
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	if ((rtw_netdev_flags(dev) ^ dev->flags) & IFF_PROMISC) {
 		if (dev->flags & IFF_PROMISC) {
-			dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s enable promisc mode!\n", __func__);
-			whc_fullmac_host_set_promisc_enable(1, RTW_PROMISC_FILTER_ALL_PKT);
+			dev_dbg(global_idev.pwhc_dev, "[whc]: %s enable promisc mode!\n", __func__);
+			whc_host_set_promisc_enable(1, RTW_PROMISC_FILTER_ALL_PKT);
 		} else {
-			dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s disable promisc mode!\n", __func__);
-			whc_fullmac_host_set_promisc_enable(0, RTW_PROMISC_FILTER_ALL_PKT);
+			dev_dbg(global_idev.pwhc_dev, "[whc]: %s disable promisc mode!\n", __func__);
+			whc_host_set_promisc_enable(0, RTW_PROMISC_FILTER_ALL_PKT);
 		}
 	}
 
@@ -449,13 +449,13 @@ int rtw_nan_iface_alloc(struct wiphy *wiphy,
 	unsigned char nan_mac[ETH_ALEN];
 
 	if (global_idev.pwdev_global[2]) {
-		dev_info(global_idev.fullmac_dev, "%s: nan_wdev already exists", __func__);
+		dev_info(global_idev.pwhc_dev, "%s: nan_wdev already exists", __func__);
 		ret = -EBUSY;
 		goto exit;
 	}
 
 	if (global_idev.pndev[2]) {
-		dev_info(global_idev.fullmac_dev, "free old global_idev.pndev[2]=%x\n", global_idev.pndev[2]);
+		dev_info(global_idev.pwhc_dev, "free old global_idev.pndev[2]=%x\n", global_idev.pndev[2]);
 		free_netdev(global_idev.pndev[2]);
 		global_idev.pndev[2] = NULL;
 	}
@@ -470,14 +470,14 @@ int rtw_nan_iface_alloc(struct wiphy *wiphy,
 	rtw_netdev_label(ndev) = WIFI_FULLMAC_LABEL;
 	ndev->netdev_ops = &rtw_ndev_ops_nan;
 	ndev->watchdog_timeo = HZ * 3; /* 3 second timeout */
-#ifndef CONFIG_FULLMAC_HCI_IPC
+#ifndef CONFIG_WHC_HCI_IPC
 	ndev->needed_headroom = max(SIZE_RX_DESC, SIZE_TX_DESC) + sizeof(struct whc_msg_info) + 4;
 #endif
-	SET_NETDEV_DEV(ndev, global_idev.fullmac_dev);
+	SET_NETDEV_DEV(ndev, global_idev.pwhc_dev);
 
 	netdev_set_default_ethtool_ops(global_idev.pndev[2], &global_idev.rtw_ethtool_ops);
 	if (dev_alloc_name(global_idev.pndev[2], "nan0") < 0) {
-		dev_err(global_idev.fullmac_dev, "dev_alloc_name, fail!\n");
+		dev_err(global_idev.pwhc_dev, "dev_alloc_name, fail!\n");
 	}
 
 	netif_carrier_off(global_idev.pndev[2]);
@@ -498,14 +498,14 @@ int rtw_nan_iface_alloc(struct wiphy *wiphy,
 
 	ret = (register_netdevice(global_idev.pndev[2]) == 0) ? true : false;
 	if (ret != true) {
-		dev_err(global_idev.fullmac_dev, "netdevice register fail!\n");
+		dev_err(global_idev.pwhc_dev, "netdevice register fail!\n");
 		goto exit;
 	}
 
 	/* alloc and init wireless_dev */
 	wdev = (struct wireless_dev *)kzalloc(sizeof(struct wireless_dev), in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
 	if (!wdev) {
-		dev_err(global_idev.fullmac_dev, "%s: allocate wdev fail", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: allocate wdev fail", __func__);
 		ret = -ENOMEM;
 		goto exit;
 	}
@@ -517,7 +517,7 @@ int rtw_nan_iface_alloc(struct wiphy *wiphy,
 
 	*nan_wdev = wdev;
 
-	whc_fullmac_host_init_nan();
+	whc_host_init_nan();
 	return ret;
 
 exit:
@@ -546,7 +546,7 @@ void rtw_nan_iface_free(struct wiphy *wiphy)
 		if (rtnl_lock_need) {
 			rtnl_unlock();
 		}
-		dev_dbg(global_idev.fullmac_dev, "unregister wdev done for NAN, global_idev.pndev[2]->reg_state=%d.", global_idev.pndev[2]->reg_state);
+		dev_dbg(global_idev.pwhc_dev, "unregister wdev done for NAN, global_idev.pndev[2]->reg_state=%d.", global_idev.pndev[2]->reg_state);
 	}
 
 	if (global_idev.pndev[2] && (global_idev.pndev[2]->reg_state == NETREG_REGISTERED)) {
@@ -558,17 +558,17 @@ void rtw_nan_iface_free(struct wiphy *wiphy)
 		}
 	}
 
-	dev_info(global_idev.fullmac_dev, "unregister netdev done for NAN.");
+	dev_info(global_idev.pwhc_dev, "unregister netdev done for NAN.");
 
 	if (global_idev.pwdev_global[2]) {
 		kfree((u8 *)global_idev.pwdev_global[2]);
 		global_idev.pwdev_global[2] = NULL;
-		dev_info(global_idev.fullmac_dev, "remove wdev done for NAN.");
+		dev_info(global_idev.pwhc_dev, "remove wdev done for NAN.");
 		/* remove wireless_dev in ndev. */
 		global_idev.pndev[2]->ieee80211_ptr = NULL;
 	}
 
-	whc_fullmac_host_deinit_nan();
+	whc_host_deinit_nan();
 
 	return;
 }
@@ -599,17 +599,17 @@ int rtw_ndev_alloc(void)
 		ndev->netdev_ops = (i ? &rtw_ndev_ops_ap : &rtw_ndev_ops);
 #endif
 		ndev->watchdog_timeo = HZ * 3; /* 3 second timeout */
-#ifndef CONFIG_FULLMAC_HCI_IPC
+#ifndef CONFIG_WHC_HCI_IPC
 		ndev->needed_headroom = max(SIZE_RX_DESC, SIZE_TX_DESC) + sizeof(struct whc_msg_info) + 4;
 #if !defined(CONFIG_WHC_BRIDGE)
 #ifdef CONFIG_WIRELESS_EXT
 		if (i == 0) {
-			ndev->wireless_handlers = (struct iw_handler_def *)&whc_fullmac_host_handlers_def;
+			ndev->wireless_handlers = (struct iw_handler_def *)&whc_host_handlers_def;
 		}
 #endif
 #endif
 #endif
-		SET_NETDEV_DEV(ndev, global_idev.fullmac_dev);
+		SET_NETDEV_DEV(ndev, global_idev.pwhc_dev);
 
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 		/* alloc and init wireless_dev */
@@ -657,14 +657,14 @@ int rtw_ndev_register(void)
 		rtw_ethtool_ops_init();
 		netdev_set_default_ethtool_ops(global_idev.pndev[i], &global_idev.rtw_ethtool_ops);
 		if (dev_alloc_name(global_idev.pndev[i], wlan_name) < 0) {
-			dev_err(global_idev.fullmac_dev, "dev_alloc_name, fail!\n");
+			dev_err(global_idev.pwhc_dev, "dev_alloc_name, fail!\n");
 		}
 		if (i == WHC_STA_PORT) {
 			netif_dormant_on(global_idev.pndev[i]);
 		}
 		netif_carrier_off(global_idev.pndev[i]);
 		if (register_netdev(global_idev.pndev[i]) != 0) {
-			dev_err(global_idev.fullmac_dev, "netdevice register fail!\n");
+			dev_err(global_idev.pwhc_dev, "netdevice register fail!\n");
 			return -ENODEV;
 		}
 	}
@@ -681,7 +681,7 @@ void rtw_ndev_unregister(void)
 			/* hold rtnl_lock in unregister_netdev. */
 			unregister_netdev(global_idev.pndev[i]);
 		}
-		dev_dbg(global_idev.fullmac_dev, "remove netdev done for interface %d.", i);
+		dev_dbg(global_idev.pwhc_dev, "remove netdev done for interface %d.", i);
 
 		if (global_idev.pwdev_global[i]) { //wdev
 			kfree((u8 *)global_idev.pwdev_global[i]);
@@ -694,10 +694,10 @@ void rtw_ndev_unregister(void)
 			free_netdev(global_idev.pndev[i]);
 			global_idev.pndev[i] = NULL;
 		}
-		dev_dbg(global_idev.fullmac_dev, "free netdev %d ok.", i);
+		dev_dbg(global_idev.pwhc_dev, "free netdev %d ok.", i);
 	}
 #ifdef CONFIG_P2P
-	whc_fullmac_host_p2p_pdwdev_free();
+	whc_host_p2p_pdwdev_free();
 #endif
 }
 

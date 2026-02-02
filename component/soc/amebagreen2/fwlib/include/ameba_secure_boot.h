@@ -73,6 +73,10 @@
 
 #define MANIFEST_SIZE_4K_ALIGN		0x1000
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	u32 Pattern[2];
 	u8 Rsvd1[8];
@@ -103,5 +107,9 @@ fih_ret SBOOT_SignatureVerify(u8 *PubKeyHash, Manifest_TypeDef *Manifest, SubImg
 fih_ret BOOT_ROM_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum);
 void SBOOT_Verify_BootFromRAM(void);
 __NO_RETURN void SBOOT_Validate_Fail_Stuck(u32 wdg_fresh);
+
+#ifdef __cplusplus
+}
+#endif
 #endif
 

@@ -7,6 +7,10 @@
 #ifndef _AMEBA_SOCPS_H_
 #define _AMEBA_SOCPS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum wakeup_mask {
 	WAKEUP_NULL	= 0,
 	WAKEUP_LP	= 1,
@@ -69,4 +73,9 @@ extern void SOCPS_LPWHP_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum);
 extern void SOCPS_WakeEvent_Init(void);
 extern void SOCPS_SetPowerCut_Time(u32 time);
 extern void SOCPS_SetReguOCP(u8 state);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  //_AMEBA_SOCPS_H_

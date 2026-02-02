@@ -1271,6 +1271,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /**
   \brief  Defines SDIO Host ADMA table end.
@@ -1423,6 +1427,10 @@ typedef struct adma_descriptor_line_s {
 #define SDIO_ERR_SIG_EN_CONFIG 0x380 // disable CMD_ERR & DAT_ERR INT
 #define SDIO_OCR_VOLTAGE 0x100000
 #define SDIO_HOST_CTL2_CONFIG 0xA // 1.8V signaling + SDR50
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 /** @} */

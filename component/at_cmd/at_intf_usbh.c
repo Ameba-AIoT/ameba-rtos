@@ -45,7 +45,7 @@ static int cdc_acm_cb_detach(void);
 static int cdc_acm_cb_setup(void);
 static int cdc_acm_cb_transmit(usbh_urb_state_t state);
 static int cdc_acm_cb_receive(u8 *pbuf, u32 Len, u8 status);
-static int cdc_acm_cb_line_coding_changed(usbh_cdc_acm_line_coding_t *line_coding);
+static int cdc_acm_cb_line_coding_changed(usb_cdc_line_coding_t *line_coding);
 static int cdc_acm_cb_process(usb_host_t *host, u8 id);
 
 void atio_usbd_output(char *buf, int len);
@@ -189,7 +189,7 @@ static int cdc_acm_cb_transmit(u8 state)
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_line_coding_changed(usbh_cdc_acm_line_coding_t *line_coding)
+static int cdc_acm_cb_line_coding_changed(usb_cdc_line_coding_t *line_coding)
 {
 	UNUSED(line_coding);
 	return HAL_OK;

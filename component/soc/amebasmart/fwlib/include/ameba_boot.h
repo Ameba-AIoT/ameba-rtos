@@ -7,6 +7,10 @@
 #ifndef _AMEBA_BOOT_H_
 #define _AMEBA_BOOT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern u8 __image1_validate_code__[];
 extern u8 __image1_bss_start__[];
 extern u8 __image1_bss_end__[];
@@ -287,5 +291,9 @@ extern u32 HUK_Derive_En;
 #define IS_BOOT_ADDR(addr)			((addr >= HS_BOOT_ADDR_START) && (addr <= HS_BOOT_ADDR_END))
 #define IS_HS_SRAM_S_ADDR(addr)		((addr >= HS_SRAM_S_ADDR_START) && (addr <= HS_SRAM_S_ADDR_END))
 #define IS_LS_SRAM_ADDR(addr)		((addr >= LS_SRAM_ADDR_START) && (addr <= LS_SRAM_ADDR_END))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif   //_AMEBA_BOOT_H_

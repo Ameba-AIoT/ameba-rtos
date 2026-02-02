@@ -10,98 +10,105 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbh.h"
+#include "usb_cdc_acm.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
-/* CDC Class Codes */
-#define CDC_CLASS_CODE                              0x02U
-#define CDC_COMM_INTERFACE_CLASS_CODE               0x02U
-#define CDC_DATA_INTERFACE_CLASS_CODE               0x0AU
-
-/* CDC Communication sub class codes */
-#define CDC_RESERVED                                0x00U
-#define CDC_ABSTRACT_CONTROL_MODEL                  0x02U
-
-/* CDC Class-Specific Request Codes */
-#define CDC_SEND_ENCAPSULATED_COMMAND               0x00U
-#define CDC_GET_ENCAPSULATED_RESPONSE               0x01U
-#define CDC_SET_COMM_FEATURE                        0x02U
-#define CDC_GET_COMM_FEATURE                        0x03U
-#define CDC_CLEAR_COMM_FEATURE                      0x04U
-#define CDC_SET_LINE_CODING                         0x20U
-#define CDC_GET_LINE_CODING                         0x21U
-#define CDC_SET_CONTROL_LINE_STATE                  0x22U
-#define CDC_SEND_BREAK                              0x23U
-
-/* Communication Interface Class Control Protocol Codes */
-#define CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC         0x00U
-#define CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND         0x01U
-#define CDC_CTRL_PROTOCOL_VENDOR_SPECIFIC           0xFFU
-
-#define CDC_LINE_CODING_DATA_LEN                    0x07U
-
 /* Exported types ------------------------------------------------------------*/
 
-/* CDC ACM state */
+/**
+ * @brief CDC ACM state machine.
+ */
 typedef enum {
-	CDC_ACM_STATE_IDLE = 0U,
-	CDC_ACM_STATE_SET_LINE_CODING,
-	CDC_ACM_STATE_GET_LINE_CODING,
-	CDC_ACM_STATE_SET_CONTROL_LINE_STATE,
-	CDC_ACM_STATE_TRANSFER,
-	CDC_ACM_STATE_ERROR,
+	USBH_CDC_ACM_STATE_IDLE = 0U,                /**< State IDLE: Ready for operation. */
+	USBH_CDC_ACM_STATE_SET_LINE_CODING,          /**< State SET_LINE_CODING: Configuring line coding. */
+	USBH_CDC_ACM_STATE_GET_LINE_CODING,          /**< State GET_LINE_CODING: Retrieving line coding. */
+	USBH_CDC_ACM_STATE_SET_CONTROL_LINE_STATE,   /**< State SET_CONTROL_LINE_STATE: Setting control line state. */
+	USBH_CDC_ACM_STATE_TRANSFER,                 /**< State TRANSFER: Data transfer in progress. */
+	USBH_CDC_ACM_STATE_ERROR,                    /**< State ERROR: Error occurred. */
 } usbh_cdc_acm_state_t;
 
-/* Line coding structure */
-typedef union {
-	u8 d8[CDC_LINE_CODING_DATA_LEN];
-	struct {
-		u32 dwDteRate;    /* Data terminal rate, in bits per second */
-		u8 bCharFormat;   /* Stop bits */
-		u8 bParityType;   /* Parity */
-		u8 bDataBits;     /* Data bits (5, 6, 7, 8 or 16) */
-	} b;
-} usbh_cdc_acm_line_coding_t;
-
-/* Line coding char format */
-typedef enum {
-	CDC_ACM_LINE_CODING_CHAR_FORMAT_1_STOP_BITS = 0U,
-	CDC_ACM_LINE_CODING_CHAR_FORMAT_1_5_STOP_BITS,
-	CDC_ACM_LINE_CODING_CHAR_FORMAT_2_STOP_BITS
-} usbh_cdc_acm_line_coding_char_format_t;
-
-/* Line coding parity type */
-typedef enum {
-	CDC_ACM_LINE_CODING_PARITY_NO = 0U,
-	CDC_ACM_LINE_CODING_PARITY_ODD,
-	CDC_ACM_LINE_CODING_PARITY_EVEN,
-	CDC_ACM_LINE_CODING_PARITY_MARK,
-	CDC_ACM_LINE_CODING_PARITY_SPACE
-} usbh_cdc_acm_line_coding_parity_t;
-
-/* CDC ACM user callback interface */
+/**
+ * @brief Structure containing callback functions for the CDC ACM host class.
+ * @details The user application should provide an instance of this structure
+ *          to handle class-specific events.
+ */
 typedef struct {
+	/**
+	 * @brief Called when the CDC ACM host driver initialization.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* init)(void);
+
+	/**
+	 * @brief Called when the CDC ACM host driver de-initialization.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* deinit)(void);
+
+	/**
+	 * @brief Called when a CDC ACM device is attached.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* attach)(void);
+
+	/**
+	 * @brief Called when a CDC ACM device is detached.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* detach)(void);
+
+	/**
+	 * @brief Called to handle class-specific SETUP requests completion.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* setup)(void);
+
+	/**
+	 * @brief Called when interrupt data is received from the device (e.g. Serial State).
+	 * @param[in] buf: Pointer to the received data buffer.
+	 * @param[in] len: Length of the received data in bytes.
+	 * @param[in] status: The status of the transfer.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* notify)(u8 *buf, u32 len, u8 status);
+
+	/**
+	 * @brief Called when data is received from the device on the BULK IN pipe.
+	 * @param[in] buf: Pointer to the received data buffer.
+	 * @param[in] len: Length of the received data in bytes.
+	 * @param[in] status: The status of the transfer.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* receive)(u8 *buf, u32 len, u8 status);
+
+	/**
+	 * @brief Called when a data transmission to the device on the BULK OUT pipe is complete.
+	 * @param[in] status: The status of the transmission.
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int(* transmit)(u8 status);
-	int(* line_coding_changed)(usbh_cdc_acm_line_coding_t *line_coding);
+
+	/**
+	 * @brief Called when the line coding parameters have changed.
+	 * @param[in] line_coding: Pointer to the new line coding structure.
+	 * @return 0 on success, non-zero on failure.
+	 */
+	int(* line_coding_changed)(usb_cdc_line_coding_t *line_coding);
 } usbh_cdc_acm_cb_t;
 
-/* CDC ACM host */
+/**
+ * @brief Structure representing the CDC ACM host instance.
+ */
 typedef struct {
-	usbh_pipe_t bulk_in;
-	usbh_pipe_t bulk_out;
-	usbh_pipe_t intr_in;
-	usb_host_t *host;
-	usbh_cdc_acm_cb_t *cb;
-	usbh_cdc_acm_line_coding_t *line_coding;
-	usbh_cdc_acm_line_coding_t *user_line_coding;
-	usbh_cdc_acm_state_t state;
+	usbh_pipe_t bulk_in;                        /**< BULK IN pipe structure. */
+	usbh_pipe_t bulk_out;                       /**< BULK OUT pipe structure. */
+	usbh_pipe_t intr_in;                        /**< INTERRUPT IN pipe structure. */
+	usb_host_t *host;                           /**< Pointer to the USB host instance. */
+	usbh_cdc_acm_cb_t *cb;                      /**< Pointer to the user-defined callback structure. */
+	usb_cdc_line_coding_t *line_coding;    /**< Current line coding of the device. */
+	usb_cdc_line_coding_t *user_line_coding; /**< User requested line coding. */
+	usbh_cdc_acm_state_t state;                 /**< Current state of the CDC ACM host driver. */
 } usbh_cdc_acm_host_t;
 
 /* Exported macros -----------------------------------------------------------*/
@@ -110,18 +117,67 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
+/**
+ * @brief Initializes the CDC ACM host class driver.
+ * @param[in] cb: Pointer to the user-defined callback structure.
+ * @return 0 on success, non-zero on failure.
+ */
 int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb);
+
+/**
+ * @brief De-initializes the CDC ACM host class driver.
+ * @return 0 on success, non-zero on failure.
+ */
 int usbh_cdc_acm_deinit(void);
 
-int usbh_cdc_acm_set_line_coding(usbh_cdc_acm_line_coding_t *lc);
-int usbh_cdc_acm_get_line_coding(usbh_cdc_acm_line_coding_t *lc);
+/**
+ * @brief Sets the line coding parameters for the device.
+ * @param[in] lc: Pointer to the line coding structure.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbh_cdc_acm_set_line_coding(usb_cdc_line_coding_t *lc);
+
+/**
+ * @brief Gets the current line coding parameters from the device.
+ * @param[out] lc: Pointer to the structure where the line coding will be stored.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbh_cdc_acm_get_line_coding(usb_cdc_line_coding_t *lc);
+
+/**
+ * @brief Sets the control line state (DTR, RTS).
+ * @return 0 on success, non-zero on failure.
+ */
 int usbh_cdc_acm_set_control_line_state(void);
 
+/**
+ * @brief Transmits data to the device over the BULK OUT pipe.
+ * @param[in] buf: Pointer to the data buffer to be transmitted.
+ * @param[in] len: Length of the data in bytes.
+ * @return 0 on success, non-zero on failure.
+ */
 int usbh_cdc_acm_transmit(u8 *buf, u32 len);
+
+/**
+ * @brief Prepares to receive data from the device over the BULK IN pipe.
+ * @param[in] buf: Pointer to the buffer where received data will be stored.
+ * @param[in] len: Length of the buffer in bytes.
+ * @return 0 on success, non-zero on failure.
+ */
 int usbh_cdc_acm_receive(u8 *buf, u32 len);
+
+/**
+ * @brief Prepares to receive notification data (e.g. Serial State) over the INTERRUPT IN pipe.
+ * @param[in] buf: Pointer to the buffer where notification data will be stored.
+ * @param[in] len: Length of the buffer in bytes.
+ * @return 0 on success, non-zero on failure.
+ */
 int usbh_cdc_acm_notify_receive(u8 *buf, u32 len);
 
+/**
+ * @brief Gets the Maximum Packet Size (MPS) of the BULK endpoint.
+ * @return The MPS in bytes.
+ */
 u16 usbh_cdc_acm_get_bulk_ep_mps(void);
 
-#endif  /* USBD_CDC_ACM_H */
-
+#endif  /* USBH_CDC_ACM_H */

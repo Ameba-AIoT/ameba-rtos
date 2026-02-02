@@ -26,7 +26,7 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 static int usbd_composite_sof(usb_dev_t *dev);
 static int usbd_composite_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_composite_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
-static int usbd_composite_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
+static int usbd_composite_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -282,7 +282,7 @@ static int usbd_composite_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 statu
   * @param  ep_addr: endpoint address
   * @retval Status
   */
-static int usbd_composite_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
+static int usbd_composite_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	int ret = HAL_OK;
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
@@ -381,11 +381,11 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 		buf += USB_LEN_CFG_DESC;
 		total_len += USB_LEN_CFG_DESC;
 
-		desc_len = cdev->hid->get_descriptor(dev, req, buf);
+		desc_len = cdev->uac->get_descriptor(dev, req, buf);
 		buf += desc_len;
 		total_len += desc_len;
 
-		desc_len = cdev->uac->get_descriptor(dev, req, buf);
+		desc_len = cdev->hid->get_descriptor(dev, req, buf);
 		buf += desc_len;
 		total_len += desc_len;
 

@@ -7,6 +7,10 @@
 #ifndef _AMEBA_CLK_H_
 #define _AMEBA_CLK_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @addtogroup AmebaD_Platform
   * @{
   */
@@ -278,5 +282,9 @@ void XTAL_AACK(void);
 void XTAL_PDCK(void);
 void XTAL_INIT(void);
 void CPU_ClkSet_NonOS(u32 Source);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_AMEBA_CLK_H_

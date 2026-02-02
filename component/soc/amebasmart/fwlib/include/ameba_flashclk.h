@@ -7,6 +7,10 @@
 #ifndef _AMEBA_FLASH_CLK_H
 #define _AMEBA_FLASH_CLK_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Other definations --------------------------------------------------------*/
 typedef enum {
 	FlashClass1 = 0,
@@ -26,6 +30,10 @@ typedef struct {
 	u32 sta_mask;
 	void (*FlashInitHandler)(void);
 } FlashInfo_TypeDef;
+
+#ifdef __cplusplus
+}
+#endif
 
 typedef enum {
 	FLASH_CLK_DIV2 = 1,

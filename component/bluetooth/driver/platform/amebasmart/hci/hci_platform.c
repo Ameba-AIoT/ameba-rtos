@@ -428,6 +428,14 @@ void hci_platform_external_fw_log_pin(void)
 
 uint8_t hci_platform_open(void)
 {
+	if (!CHECK_CFG_SW(CFG_SW_BT_FW_LOG)) {
+		rtk_bt_fw_log_open();
+		BT_LOGA("FW LOG OPEN\r\n");
+#if 0
+		hci_platform_external_fw_log_pin();
+#endif
+	}
+
 	/* Read Efuse and Parse Configbuf */
 	if (HCI_FAIL == hci_platform_read_efuse()) {
 		return HCI_FAIL;
@@ -435,14 +443,6 @@ uint8_t hci_platform_open(void)
 
 	if (HCI_FAIL == hci_platform_parse_config()) {
 		return HCI_FAIL;
-	}
-
-	if (!CHECK_CFG_SW(CFG_SW_BT_FW_LOG)) {
-		rtk_bt_fw_log_open();
-		BT_LOGA("FW LOG OPEN\r\n");
-#if 0
-		hci_platform_external_fw_log_pin();
-#endif
 	}
 
 	/* BT Controller Reset */

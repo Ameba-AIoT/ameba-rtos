@@ -16,7 +16,7 @@
 int kv_init_done = 0;
 
 static char *prefix;
-int rt_kv_init(void)
+int vfs_kv_init(void)
 {
 	int ret = -1;
 	char *path = NULL;

@@ -185,6 +185,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -621,6 +625,10 @@ extern u32 TIM_IT_CCx[PWM_CHAN_MAX];
 #define TIMER_TICK_US_X4		(4*1000000/32000) //32k clock, 31.25us every timer_tick
 
 #define TIMER_POLLING_TIMES		4000		//Polling Timer Status Register Timeout
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

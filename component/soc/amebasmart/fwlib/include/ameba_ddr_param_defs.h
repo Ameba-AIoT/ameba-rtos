@@ -7,6 +7,10 @@
 #ifndef MS_RXI316_DRAM_PARA_H
 #define MS_RXI316_DRAM_PARA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if  defined DDR_400
 #define DRAM_CLK_PERIOD			(1000000 / 200)    // DDR-400:  5000ps
 #elif  defined DDR_800
@@ -735,4 +739,9 @@ struct rxi316_dram_device_info *rxi316_dram_info_m[] = {
 	&rxi316_dram_info_m_ddr3_dev,
 	&rxi316_dram_info_m_lpddr1_dev,
 };
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //MS_DRAM_PARA_H

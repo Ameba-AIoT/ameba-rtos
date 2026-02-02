@@ -4,11 +4,36 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "platform_autoconf.h"
+#ifndef CONFIG_AMEBAD
+
 #include "atcmd_service.h"
 
 static const char *TAG = "ATCMD_OTP";
 
-void at_otp(void *arg)
+static void at_otp_help(void)
+{
+	RTK_LOGI(NOTAG, "\n");
+	RTK_LOGI(TAG, "1.RMAP: Read Logical Area \n"
+			 "\tFormat:\tAT+OTP=RMAP[,addr(hex),len(hex)]\n"
+			 "\tExample:\tAT+OTP=RMAP or AT+OTP=RMAP,0x18,4\n\n");
+
+	RTK_LOGI(TAG, "2.WMAP: Write Logical Area \n"
+			 "\tFormat:\tAT+OTP=WMAP,addr(hex),len(hex),data(hex)\n"
+			 "\tExample:\tAT+OTP=WMAP,0x00,2,8195\n"
+			 "\tResult:\tefuse[0]=0x81, efuse[1]=0x95\n\n");
+
+	RTK_LOGI(TAG, "3.RRAW: Read Physical Area \n"
+			 "\tFormat:\tAT+OTP=RRAW[,addr(hex),len(hex)]\n"
+			 "\tExample:\tAT+OTP=RRAW or AT+OTP=RRAW,0x300,2\n\n");
+
+	RTK_LOGI(TAG, "4.WRAW: Write Physical Area \n"
+			 "\tFormat:\tAT+OTP=WRAW,addr(hex),len(hex),data(hex)\n"
+			 "\tExample:\tAT+OTP=WRAW,0x300,4,11223344\n"
+			 "\tResult:\t[0x300]=0x11, [0x301]=0x22, [0x302]=0x33, [0x303]=0x44\n");
+}
+
+void at_otp(u16 argc, char **argv)
 {
 	u32 index;
 	u32 Len;
@@ -16,8 +41,12 @@ void at_otp(void *arg)
 	u32 Addr = 0;
 	u8 *EfuseBuf = NULL;
 	char *DString;
-	char *argv[MAX_ARGC] = {0};
-	int argc = parse_param(arg, argv);
+	int error_no = RTK_SUCCESS;
+
+	if (argc < 2) {
+		RTK_LOGE(TAG, "Invalid number of arguments\n");
+		return;
+	}
 
 	if ((EfuseBuf = rtos_mem_zmalloc(MAX(OTP_REAL_CONTENT_LEN, OTP_LMAP_LEN))) == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "efuse mem malloc fail \n");
@@ -54,6 +83,7 @@ void at_otp(void *arg)
 	if (_strcmp((const char *)argv[1], "WMAP") == 0) {
 		if (argc < 5) {
 			RTK_LOGE(TAG, "Invalid argc. \n");
+			error_no = RTK_FAIL;
 			goto exit;
 		}
 
@@ -116,6 +146,7 @@ void at_otp(void *arg)
 	/* AT+OTP=WRAW,0xA0,0x4,aabbccdd */
 	if (_strcmp((const char *)argv[1], "WRAW") == 0) {
 		if (argc < 5) {
+			error_no = RTK_FAIL;
 			RTK_LOGE(TAG, "Invalid argc. \n");
 			goto exit;
 		}
@@ -165,15 +196,17 @@ void at_otp(void *arg)
 	}
 
 exit:
-	rtos_mem_free(EfuseBuf);
+	if (error_no != RTK_SUCCESS) {
+		at_otp_help();
+	}
+
+	if (EfuseBuf != NULL) {
+		rtos_mem_free(EfuseBuf);
+	}
 }
 
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_otp_items[] = {
 	{"+OTP", at_otp},
 };
-
-void at_otp_init(void)
-{
-	atcmd_service_add_table((log_item_t *)at_otp_items, sizeof(at_otp_items) / sizeof(at_otp_items[0]));
-}
+#endif // CONFIG_AMEBAD

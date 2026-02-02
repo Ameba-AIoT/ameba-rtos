@@ -47,7 +47,7 @@ struct whc_usb_irq_info {
 	u8 txdone;
 	/* host->device */
 	u8 rxdone_epnum[WIFI_WHC_USB_BULKOUT_EP_NUM];  // store the usb rx endpoint num in interrupt order
-	u16 len[WIFI_WHC_USB_BULKOUT_EP_NUM];
+	u32 len[WIFI_WHC_USB_BULKOUT_EP_NUM];
 	u8 intr_widx; // idx of the rxdone_epnum list to write for usb interrupt
 	u8 task_ridx; // idx of the rxdone_epnum list to read for device task
 	u8 wait_xmit_skb;  // set 1 means when free skb, sema up device task to deal blocked usb rx data

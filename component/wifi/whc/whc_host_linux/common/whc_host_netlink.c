@@ -27,7 +27,7 @@ static struct whc_host_netlink_command_entry netlink_cmd_table[] = {
 	{0xFF, NULL}
 };
 
-#ifdef CONFIG_FULLMAC_HCI_IPC
+#ifdef CONFIG_WHC_HCI_IPC
 static int _whc_host_ipc_cmd_work(u32 cmd, char *buf, u32 buf_len, struct genl_info *info)
 {
 	unsigned char *user_buf = NULL, *cmd_buf = NULL;
@@ -37,7 +37,7 @@ static int _whc_host_ipc_cmd_work(u32 cmd, char *buf, u32 buf_len, struct genl_i
 
 	cmd_buf = rtw_malloc(buf_len, &cmd_buf_phy);
 	if (!cmd_buf) {
-		dev_err(global_idev.fullmac_dev, "%s: mp allloc cmd buffer failed.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: mp allloc cmd buffer failed.\n", __func__);
 		ret = -ENOMEM;
 		goto func_exit;
 	}
@@ -46,7 +46,7 @@ static int _whc_host_ipc_cmd_work(u32 cmd, char *buf, u32 buf_len, struct genl_i
 
 	user_buf = rtw_malloc(WHC_WIFI_MP_MSG_BUF_SIZE + hdr_len, &user_buf_phy);
 	if (!user_buf) {
-		dev_err(global_idev.fullmac_dev, "%s: mp allloc user buffer failed.\n", __func__);
+		dev_err(global_idev.pwhc_dev, "%s: mp allloc user buffer failed.\n", __func__);
 		ret = -ENOMEM;
 		goto func_exit;
 	}
@@ -54,10 +54,10 @@ static int _whc_host_ipc_cmd_work(u32 cmd, char *buf, u32 buf_len, struct genl_i
 	user_buf_phy = user_buf_phy + hdr_len;
 	switch (cmd) {
 	case CMD_WIFI_DBG:
-		ret = whc_fullmac_host_iwpriv_cmd(cmd_buf_phy, buf_len, cmd_buf, user_buf + hdr_len);
+		ret = whc_host_iwpriv_cmd(cmd_buf_phy, buf_len, cmd_buf, user_buf + hdr_len);
 		break;
 	case CMD_WIFI_MP:
-		ret = whc_fullmac_host_mp_cmd(cmd_buf_phy, buf_len, user_buf_phy);
+		ret = whc_host_mp_cmd(cmd_buf_phy, buf_len, user_buf_phy);
 		*(uint32_t *)user_buf = WHC_WIFI_TEST;
 		*(user_buf + sizeof(uint32_t)) = WHC_WIFI_TEST_MP;
 		break;
@@ -202,7 +202,7 @@ static int whc_host_mp(struct genl_info *info)
 	buf_len = strlen(buf) + 1;
 	/* rsvd 8B for mp  result header */
 	user_buf = kzalloc(WHC_WIFI_MP_MSG_BUF_SIZE + hdr_len, GFP_KERNEL);
-	whc_fullmac_host_mp_cmd((dma_addr_t)buf, buf_len, (dma_addr_t)(user_buf + hdr_len));
+	whc_host_mp_cmd((dma_addr_t)buf, buf_len, (dma_addr_t)(user_buf + hdr_len));
 	*(uint32_t *)user_buf = WHC_WIFI_TEST;
 	*(user_buf + sizeof(uint32_t)) = WHC_WIFI_TEST_MP;
 	whc_host_buf_rx_to_user(user_buf, WHC_WIFI_MP_MSG_BUF_SIZE);
@@ -221,7 +221,7 @@ static int whc_host_dbg(struct genl_info *info)
 	buf = (char *)nla_data(info->attrs[WHC_ATTR_STRING]);
 	buf_len = strlen(buf) + 1;
 	user_buf = kzalloc(WHC_WIFI_MP_MSG_BUF_SIZE, GFP_KERNEL);
-	whc_fullmac_host_iwpriv_cmd((dma_addr_t)buf, buf_len, buf, user_buf);
+	whc_host_iwpriv_cmd((dma_addr_t)buf, buf_len, buf, user_buf);
 	whc_host_buf_rx_to_user(user_buf, WHC_WIFI_MP_MSG_BUF_SIZE);
 	kfree(user_buf);
 	return 0;
@@ -268,7 +268,7 @@ static const struct genl_multicast_group whc_mcgrps[] = {
 static struct genl_ops whc_nl_cmd_ops[] = {
 	{
 		.cmd = WHC_CMD_ECHO,
-#ifdef CONFIG_FULLMAC_HCI_IPC
+#ifdef CONFIG_WHC_HCI_IPC
 		.doit = whc_host_ipc_nl_cmd_process,
 #else
 		.doit = whc_host_nl_cmd_process,

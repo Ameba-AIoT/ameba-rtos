@@ -7,6 +7,10 @@
 #ifndef _AMEBA_FLASH_CLK_H
 #define _AMEBA_FLASH_CLK_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Other definations --------------------------------------------------------*/
 typedef enum {
 	FlashClass1 = 0,
@@ -55,4 +59,9 @@ typedef struct {
 #define FLASH_SHIFT_IDX_TO_PAHSE(shift_idx)		((shift_idx) % FLASH_PLLCLK_EQUAL_PAHSE)	/*phase_frac means how many phase shift in one PLL CLK*/
 
 void flash_highspeed_setup(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  //_AMEBA_FLASH_CLK_H

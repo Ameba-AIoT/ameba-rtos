@@ -103,18 +103,17 @@ void hang_seednode(struct _node *main_node, struct _node *seed_node)
 
 
 //AT+SKTCFG=[<so_sndtimeo>],[<so_rcvtimeo>],[<tcp_nodelay>],[<so_keepalive>],[<tcp_keepidle>],[<tcp_keepintvl>],[<tcp_keepcnt>]
-void at_sktcfg(void *arg)
+void at_sktcfg(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int so_sndtimeo = 0, so_rcvtimeo = 0, input_tcp_nodelay = 0, so_keepalive = 0, tcp_keepidle = 0, tcp_keepintvl = 0, tcp_keepcnt = 0;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
-	argc = parse_param(arg, argv);
+
 	if ((argc < 2) || (argc > 8)) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktcfg] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -208,11 +207,12 @@ void print_global_socket_config(void)
 
 
 //AT+SKTQUERY
-void at_sktquery(void *arg)
+void at_sktquery(u16 argc, char **argv)
 {
+	UNUSED(argv);
 	int error_no = 0;
 
-	if (arg != NULL) {
+	if (argc != 1) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktquery] No need input parameter\r\n");
 		error_no = 1;
 		goto end;
@@ -1073,19 +1073,18 @@ int create_socket_server(struct _node *current_node)
 
 
 //AT+SKTSERVER=<link_id>,<conn_type>[,<cert_index>],<src_port>,<auto_rcv>
-void at_sktserver(void *arg)
+void at_sktserver(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int link_id = 0, conn_type = 0, cert_index = 0, src_port = 0, auto_rcv = 0;
 	uint8_t *local_ip = NULL;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
-	argc = parse_param(arg, argv);
+
 	if (argc != 6) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktserver] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -1816,22 +1815,21 @@ int create_socket_client(struct _node *current_node)
 
 
 //AT+SKTCLIENT=<link_id>,<conn_type>[,<cert_index>],<dst_host>,<dst_port>[,<src_port>],<auto_rcv>
-void at_sktclient(void *arg)
+void at_sktclient(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int link_id = 0, conn_type = 0, cert_index = 0, dst_port = 0, src_port = 0, auto_rcv = 0;
 	struct in_addr dst_ipaddr;
 #if LWIP_DNS
 	struct hostent *server_host = NULL;
 #endif
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
-	argc = parse_param(arg, argv);
+
 	if (argc != 8) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktclient] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -2052,24 +2050,21 @@ end:
 
 
 //AT+SKTSENDRAW=<link_id>,<data_size>[,<dst_ip>,<dst_port>]
-void at_sktsendraw(void *arg)
+void at_sktsendraw(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0, ret = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0, ret = 0;
 	int link_id = INVALID_LINK_ID;
 	struct _node *curnode = NULL;
 	int data_sz = 0;
 	struct sockaddr_in dst_addr;
 	int dst_port = 0;
 
-
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if ((argc != 3) && (argc != 5)) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsendraw] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -2155,24 +2150,21 @@ end:
 
 
 //AT+SKTSEND=<link_id>,<data_size>[,<dst_ip>,<dst_port>],<data>
-void at_sktsend(void *arg)
+void at_sktsend(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0, ret = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0, ret = 0;
 	int link_id = INVALID_LINK_ID;
 	struct _node *curnode = NULL;
 	int data_sz = 0;
 	struct sockaddr_in dst_addr;
 	int dst_port = 0;
 
-
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param_advance(arg, argv);
 	if (argc != 6) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktsend] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -2348,10 +2340,9 @@ end:
 
 
 //AT+SKTREAD=<link_id>,<data_size>
-void at_sktread(void *arg)
+void at_sktread(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int link_id = INVALID_LINK_ID;
 	int wanted_recv_size = 0, actual_recv_size = 0;
 	struct _node *curnode = NULL;
@@ -2360,13 +2351,12 @@ void at_sktread(void *arg)
 	u16_t udp_dstport = 0;
 	u8 *rx_buffer = NULL;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
 
-	argc = parse_param(arg, argv);
 	if (argc != 3) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktread] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -2443,12 +2433,13 @@ end:
 
 
 //AT+SKTSTATE
-void at_sktstate(void *arg)
+void at_sktstate(u16 argc, char **argv)
 {
 	struct _node *n = NULL;
 	struct in_addr addr;
 
-	UNUSED(arg);
+	UNUSED(argc);
+	UNUSED(argv);
 
 	for (int i = 0; i < MEMP_NUM_NETCONN; i++) {
 		n = &node_pool[i];
@@ -2633,18 +2624,17 @@ void close_and_free_node(struct _node *freenode)
 
 
 //AT+SKTDEL=<link_id>
-void at_sktdel(void *arg)
+void at_sktdel(u16 argc, char **argv)
 {
-	int argc = 0, error_no = 0;
-	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
 	int link_id = INVALID_LINK_ID;
 
-	if (arg == NULL) {
+	if (argc == 1) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktdel] Input parameter is NULL\r\n");
 		error_no = 1;
 		goto end;
 	}
-	argc = parse_param(arg, argv);
+
 	if (argc != 2) {
 		RTK_LOGI(AT_SOCKET_TAG, "[at_sktdel] Invalid number of parameters\r\n");
 		error_no = 1;
@@ -2678,8 +2668,7 @@ end:
 	}
 }
 
-
-ATCMD_TABLE_DATA_SECTION
+ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_socket_items[ ] = {
 	{"+SKTCFG", at_sktcfg},
 	{"+SKTQUERY", at_sktquery},
@@ -2705,8 +2694,6 @@ void print_socket_at(void)
 void at_socket_init(void)
 {
 	init_node_pool();
-
-	atcmd_service_add_table((log_item_t *)at_socket_items, sizeof(at_socket_items) / sizeof(at_socket_items[0]));
 }
 
 #endif /* CONFIG_ATCMD_SOCKET */

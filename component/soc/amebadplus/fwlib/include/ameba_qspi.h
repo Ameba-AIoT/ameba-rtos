@@ -24,6 +24,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /** @defgroup QSPI_Exported_Definitions QSPI Exported Constants
   * @{
@@ -78,6 +82,10 @@ void QSPI_WriteEnd(void);
 int QSPI_GDMAInit(GDMA_InitTypeDef *GDMA_InitStruct, IRQ_FUN CallbackFunc, void *CallbackData, u8 *Pbuf, u32 Size);
 int QSPI_GDMADeinit(GDMA_InitTypeDef *GDMA_InitStruct);
 void QSPI_GDMAStart(GDMA_InitTypeDef *GDMA_InitStruct);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

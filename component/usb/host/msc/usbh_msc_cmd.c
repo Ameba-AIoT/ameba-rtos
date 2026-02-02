@@ -64,15 +64,14 @@ static usbh_user_cb_t usbh_usr_cb = {
 	.process = msc_cb_process
 };
 
-
+/*
+usbh_msc init
+usbh_msc deinit
+usbh_msc rw_test <looptime>
+*/
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usbh_msc_cmd_table[] = {
-	{
-		(const u8 *)"usbh_msc", 8, usbh_msc_cmd_test, (const u8 *)"\tUSBH MSC cmd:\n"
-		"\t\t usbh_msc init\n"
-		"\t\t usbh_msc deinit\n"
-		"\t\t usbh_msc rw_test <looptime>\n"
-	}
+	{"usbh_msc", usbh_msc_cmd_test},
 };
 
 /* Private functions ---------------------------------------------------------*/

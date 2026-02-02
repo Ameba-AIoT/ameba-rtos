@@ -165,9 +165,9 @@ int whc_sdio_host_suspend_common(struct whc_sdio *priv)
 {
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	/* staion mode */
-	if (whc_fullmac_host_wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
+	if (whc_host_wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
 		/* update ip address success */
-		if (whc_fullmac_host_update_ip_addr()) {
+		if (whc_host_update_ip_addr()) {
 			return -EPERM;
 		}
 	}
@@ -409,7 +409,7 @@ module_init(whc_sdio_host_init_module);
 module_exit(whc_sdio_host_cleanup_module);
 
 MODULE_AUTHOR("Realtek");
-MODULE_DESCRIPTION("RealTek iNIC Fullmac");
+MODULE_DESCRIPTION("RealTek iNIC WHC");
 MODULE_LICENSE("GPL");
 MODULE_VERSION("rtl8721da");
 

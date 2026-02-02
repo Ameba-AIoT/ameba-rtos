@@ -74,6 +74,13 @@ ameba_list_append(c_GLOBAL_MCU_INCLUDE_DIRECTORIES
 # ++++++++++++++++++++++ MATTER MODIFICATIONS ++++++++++++++++++++++ #
 if(CONFIG_MATTER_EN)
     message(STATUS "CONFIG_MATTER_EN is ON, modifying global common flags")
-    include(${c_CMPT_MATTER_DIR}/project/cmake/flags/compile_options_matter.cmake)
+    include(${EXAMPLEDIR}/project/cmake/flags/compile_options_matter.cmake)
+endif()
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
+# ++++++++++++++++++++++++ AWS MODIFICATIONS +++++++++++++++++++++++ #
+if(CONFIG_AMAZON_FREERTOS_EN)
+    message(STATUS "CONFIG_AMAZON_FREERTOS_EN is ON, modifying global common flags")
+    include(${EXAMPLEDIR}/project/cmake/flags/compile_options_aws.cmake)
 endif()
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #

@@ -258,7 +258,11 @@ void uart_dma_demo(void)
 	PAD_PullCtrl(UART_RX, GPIO_PuPd_UP); // pull up Tx/Rx pin
 
 	UART_StructInit(&UART_InitStruct);
+	UART_InitStruct.WordLen = RUART_WLS_8BITS;
+	UART_InitStruct.StopBit = RUART_STOP_BIT_1;
 	UART_InitStruct.Parity = RUART_PARITY_DISABLE;
+	UART_InitStruct.ParityType = RUART_ODD_PARITY;
+	UART_InitStruct.StickParity = RUART_STICK_PARITY_DISABLE;
 	UART_Init(UART_DEV, &UART_InitStruct);
 	UART_SetBaud(UART_DEV, UART_BAUD);
 	UART_RxCmd(UART_DEV, ENABLE);

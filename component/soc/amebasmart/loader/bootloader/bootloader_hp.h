@@ -7,6 +7,10 @@
 #ifndef _HAL_BOOT_
 #define _HAL_BOOT_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CERT_SIZE_4K_ALIGN		0x1000
 #define CERT_MAX_KEYINFO		5
 
@@ -45,5 +49,9 @@ u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInf
 u8 BOOT_CertificateCheck(Certificate_TypeDef *Cert, u32 addr);
 u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum);
 void BOOT_VerCheck(void);
+
+#ifdef __cplusplus
+}
+#endif
 #endif
 

@@ -227,6 +227,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported types --------------------------------------------------------*/
 /** @addtogroup IR_Exported_Types IR Exported Types
@@ -448,6 +452,10 @@ void IR_StartManualRxTrigger(IR_TypeDef *IRx);
 u32 IR_ReceiveData(IR_TypeDef *IRx);
 void IR_ClearTxFIFO(IR_TypeDef *IRx);
 void IR_ClearRxFIFO(IR_TypeDef *IRx);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

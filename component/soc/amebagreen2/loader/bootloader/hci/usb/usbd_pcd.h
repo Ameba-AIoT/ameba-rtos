@@ -11,6 +11,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_hal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -56,6 +60,10 @@ HAL_Status USB_PCD_SetRxFiFo(USB_PCD_HandleTypeDef *hpcd, u16 size);
 
 /* Peripheral State functions  ************************************************/
 USB_PCD_StateTypeDef USB_PCD_GetState(USB_PCD_HandleTypeDef *hpcd);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _USBD_PCD_H_ */
 

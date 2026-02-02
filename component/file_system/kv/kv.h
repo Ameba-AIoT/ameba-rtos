@@ -24,7 +24,7 @@ extern  "C" {
 /*============================================================================*
   *                                Functions
   *============================================================================*/
-int rt_kv_init(void);
+int vfs_kv_init(void);
 int32_t rt_kv_set(const char *key, const void *val, int32_t len);
 int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t offset);
 int32_t rt_kv_get(const char *key, void *buffer, int32_t len);

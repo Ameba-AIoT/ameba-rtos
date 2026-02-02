@@ -374,8 +374,7 @@ int usbd_composite_hid_send_data(u8 *data, u16 len)
 			usb_os_memcpy((void *)ep_intr_in->xfer_buf, (void *)data, len);
 			if (dev->is_ready) { // In case deinit when plug out
 				ep_intr_in->xfer_len = len;
-				usbd_ep_transmit(hid->cdev->dev, ep_intr_in);
-				ret = HAL_OK;
+				ret = usbd_ep_transmit(hid->cdev->dev, ep_intr_in);
 			} else {
 				ep_intr_in->xfer_state = 0U;
 			}

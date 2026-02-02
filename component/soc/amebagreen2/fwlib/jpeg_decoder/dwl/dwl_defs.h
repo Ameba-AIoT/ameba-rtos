@@ -7,6 +7,10 @@
 #ifndef SOFTWARE_LINUX_DWL_DWL_DEFS_H_
 #define SOFTWARE_LINUX_DWL_DWL_DEFS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DWL_MPEG2_E         31  /* 1 bit */
 #define DWL_VC1_E           29  /* 2 bits */
 #define DWL_JPEG_E          28  /* 1 bit */
@@ -188,5 +192,8 @@ typedef struct {
 	int cores;
 } hx170dec_t;
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SOFTWARE_LINUX_DWL_DWL_DEFS_H_ */

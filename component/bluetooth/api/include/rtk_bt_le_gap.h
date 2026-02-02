@@ -1767,6 +1767,18 @@ typedef struct {
 } rtk_bt_le_phy_update_ind_t;
 
 /**
+ * @struct    rtk_bt_le_read_remote_version_ind_t
+ * @brief     Bluetooth LE read remote version event msg.
+ */
+typedef struct {
+	uint16_t err;                           /*!< Error code */
+	uint16_t conn_handle;                   /*!< Connection handle */
+	uint8_t version;                        /*!< Version information of remote controller */
+	uint16_t company_id;                    /*!< Manufacturer of the remote controller */
+	uint16_t subversion;                    /*!< Subversion of remote controller, it's vendor-specific. */
+} rtk_bt_le_read_remote_version_ind_t;
+
+/**
  * @struct    rtk_bt_le_wl_modify_ind_t
  * @brief     Bluetooth LE whitelist modified event msg.
  */
@@ -3085,6 +3097,15 @@ uint16_t rtk_bt_le_gap_modify_whitelist(rtk_bt_le_modify_wl_param_t *p_wl_op_par
  *            - Others: Error code
  */
 uint16_t rtk_bt_le_gap_read_rssi(uint16_t conn_handle, int8_t *p_rssi);
+
+/**
+ * @brief     Read remote device's version information. will cause event @ref RTK_BT_LE_GAP_EVT_READ_REMOTE_VERSION_IND
+ * @param[in] conn_handle: Connection handle of remote device to read
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_read_remote_version(uint16_t conn_handle);
 
 /**
  * @brief     Get gap dev state.

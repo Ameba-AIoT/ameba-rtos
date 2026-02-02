@@ -1,11 +1,11 @@
 #define VERSION_MAJOR            0
 #define VERSION_MINOR            0
 #define VERSION_REVISION         0
-#define VERSION_BUILDNUM         988
-#define VERSION_GCID             0x5cf153c0
-#define VERSION_GCIDH            0xb46f75b8
-#define VERSION_PGCID            0xc4b1972e
-#define VERSION_PGCIDH           0x0b0ea334
+#define VERSION_BUILDNUM         994
+#define VERSION_GCID             0x09ef75ed
+#define VERSION_GCIDH            0x7baf042a
+#define VERSION_PGCID            0xcaa8f2fd
+#define VERSION_PGCIDH           0xab02df17
 #define LIB_NAME                 "amebalite"
 #define CUSTOMER_NAME            lib
 #define CN_1                     'l'
@@ -16,14 +16,14 @@
 #define CN_6                     '#'
 #define CN_7                     '#'
 #define CN_8                     '#'
-#define BUILDING_TIME            "Tue Dec 30 10:53:25 2025"
+#define BUILDING_TIME            "Mon Jan 26 17:25:04 2026"
 #define NAME2STR(a)              #a
 #define CUSTOMER_NAME_S          #NAME2STR(CUSTOMER_NAME)
 #define NUM4STR(a,b,c,d)         #a "." #b "." #c "." #d
 #define VERSIONBUILDSTR(a,b,c,d) NUM4STR(a,b,c,d)
 #define VERSION_BUILD_STR        VERSIONBUILDSTR(VERSION_MAJOR,VERSION_MINOR,VERSION_REVISION,VERSION_BUILD)
-#define COMMIT                   5cf153c0b46f
-#define BUILDING_TIME_STR        Tue_2025_12_30_10_53_28
+#define COMMIT                   09ef75ed7baf
+#define BUILDING_TIME_STR        Mon_2026_01_26_17_25_04
 #define BUILDER                  server
 #define BUILDER_STR              server
 #define TO_STR(R) NAME2STR(R)

@@ -131,8 +131,6 @@ CmdWifiCastTest(
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE   wifi_cast_test_cmd_table[] = {
-	{
-		(const u8 *)"wificast", 3, CmdWifiCastTest, (const u8 *)"\tWIFI \n"
-	},
+	{"wificast", CmdWifiCastTest},
 };
 

@@ -638,6 +638,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -890,6 +894,10 @@ extern u32 IC_FS_SCL_LCNT_TRIM;
 #define I2C_POLL_DELAY_US    2
 
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 /* MANUAL_GEN_END */

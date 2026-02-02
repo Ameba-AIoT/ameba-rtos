@@ -529,6 +529,10 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 #define REG_AON_WIFI_IPC				(SYSTEM_CTRL_BASE_LP + REG_AON_AON_BACKUP3)
@@ -552,6 +556,10 @@ typedef struct {
 } RRAM_TypeDef;
 
 Compile_Assert(sizeof(RRAM_TypeDef) == 512, "RRAM_TypeDef size shall be 512");
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

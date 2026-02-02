@@ -10,12 +10,20 @@
 #include <stdlib.h>
 #include "basetype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef STACK_STAT
 void StackStatInit();
 void StackConsumption(const char *);
 #else
 #define StackStatInit()
 #define StackConsumption(str)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* #ifdef SW_UTIL_H_ */

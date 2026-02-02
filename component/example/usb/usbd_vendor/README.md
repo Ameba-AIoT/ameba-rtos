@@ -11,7 +11,7 @@ None
 # SW configuration
 
 1. Menuconfig
-	Type command `./menuconfig.py` under the project directory and choose `CONFIG USB`:
+	Use menuconfig and choose `CONFIG USB`:
 	```
 	[*] Enable USB
 			USB Mode (Device)  --->

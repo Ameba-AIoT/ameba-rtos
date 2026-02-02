@@ -14,12 +14,29 @@
 #include "section_config_rom.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // special purpose
 #define CMD_TABLE_DATA_SECTION				SECTION(".cmd.table.data")
 #define GIT_VER_TABLE_SECTION				SECTION(".git.ver.data")
 #define IPC_TABLE_DATA_SECTION				SECTION(".ipc.table.data")
 #define UNITY_TABLE_DATA_SECTION				SECTION(".unity.table.data")
-#define ATCMD_TABLE_DATA_SECTION				SECTION(".atcmd.table.rodata")
+
+/* ATCMD section type 1: used by all cores */
+#ifdef CONFIG_SUPPORT_ATCMD
+#define ATCMD_TABLE_DATA_SECTION			CMD_TABLE_DATA_SECTION
+#else
+#define ATCMD_TABLE_DATA_SECTION
+#endif
+
+/* ATCMD section type 2: Used in AP && !MP_SHRINK mode */
+#if (defined(CONFIG_SUPPORT_ATCMD) && (defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE))) && !defined(CONFIG_MP_SHRINK)
+#define ATCMD_APONLY_TABLE_DATA_SECTION		CMD_TABLE_DATA_SECTION
+#else
+#define ATCMD_APONLY_TABLE_DATA_SECTION
+#endif
 
 // Image 1 Entry Data
 #define IMAGE1_ENTRY_SECTION				SECTION(".image1.entry.data")
@@ -60,4 +77,9 @@
 
 #define	HAL_ROM_DATA_SECTION
 #define HAL_ROM_BSS_SECTION
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_SECTION_CONFIG_H_
