@@ -42,6 +42,7 @@ typedef enum {
 typedef enum {
     USB_AUDIO_ERROR_NONE,
     USB_AUDIO_ERROR_PROBE_FAIL,
+    USB_AUDIO_ERROR_ATTACH_FAIL,
 } UsbAudioErrorType;
 
 typedef enum {
