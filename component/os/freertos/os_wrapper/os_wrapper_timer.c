@@ -185,3 +185,37 @@ uint32_t rtos_timer_get_id(rtos_timer_t p_handle)
 	return (uint32_t) pvTimerGetTimerID((TimerHandle_t) p_handle);
 }
 
+int rtos_timer_pend_function_call(void (*p_func)(void *, uint32_t),
+								  void *pv_parameter1,
+								  uint32_t ul_parameter2,
+								  uint32_t wait_ms)
+{
+	BaseType_t ret, task_woken;
+
+	if (p_func == NULL) {
+		return FAIL;
+	}
+
+	if (rtos_critical_is_in_interrupt()) {
+		task_woken = pdFALSE;
+		ret = xTimerPendFunctionCallFromISR((PendedFunction_t)p_func,
+											pv_parameter1,
+											ul_parameter2,
+											&task_woken);
+		if (ret != pdTRUE) {
+			return FAIL;
+		}
+		portEND_SWITCHING_ISR(task_woken);
+	} else {
+		ret = xTimerPendFunctionCall((PendedFunction_t)p_func,
+									 pv_parameter1,
+									 ul_parameter2,
+									 RTOS_CONVERT_MS_TO_TICKS(wait_ms));
+	}
+
+	if (ret == pdTRUE) {
+		return SUCCESS;
+	} else {
+		return FAIL;
+	}
+}
