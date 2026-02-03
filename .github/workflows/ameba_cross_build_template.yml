@@ -80,7 +80,7 @@ jobs:
           jq -r \
             --arg ic "${{ inputs.ic_name }}" \
             --arg stage "${{ inputs.build_stage_name }}" \
-            --arg prefix "${{ inputs.ic_name }}_gcc_project/" \
+            --arg prefix "tools/scripts/daily_build_tool/${{ inputs.ic_name }}/" \
             '
             .[$ic][$stage] as $v
             | if $v == null or ($v | type) != "string" then
