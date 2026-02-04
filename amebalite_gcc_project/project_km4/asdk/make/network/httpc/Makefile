@@ -8,7 +8,6 @@ include $(MAKE_INCLUDE_GEN)
 #*****************************************************************************#
 DIR = $(BASEDIR)/component/network/httpc
 MODULE_IFLAGS += -I$(BASEDIR)/component/network/httpc
-TARGET_LIB = lib_httpc
 vpath %.c $(DIR) $(shell find $(DIR) -type d)
 
 #*****************************************************************************#
@@ -19,6 +18,7 @@ vpath %.c $(DIR) $(shell find $(DIR) -type d)
 CSRC +=	$(DIR)/httpc_core.c \
 		$(DIR)/httpc_msg.c \
 		$(DIR)/httpc_util.c \
+		$(DIR)/httpc_tls.c \
 
 #*****************************************************************************#
 #                               Object FILE LIST                              #
@@ -36,7 +36,6 @@ OBJS = $(notdir $(CSRC:.c=.o))
 #*****************************************************************************#
 COPY_RAM_OBJS: CORE_TARGETS
 all: COPY_RAM_OBJS
-	$(call GEN_AND_MOVE_TO_LIB_FOLDER, $(TARGET_LIB), $(TARGET_LIBAPP_FOLDER))
 #*****************************************************************************#
 #              GENERATE OBJECT FILE 
 #*****************************************************************************#
