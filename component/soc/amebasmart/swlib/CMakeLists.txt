@@ -60,6 +60,14 @@ elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
         char2num.c
         strwrap.c
     )
+elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image3")
+    ameba_list_append(private_sources
+        log.c
+        memcpy.c
+        memset.c
+        memcmp.c
+        strlen.c
+    )
 endif()
 
 # Component private part, user config end

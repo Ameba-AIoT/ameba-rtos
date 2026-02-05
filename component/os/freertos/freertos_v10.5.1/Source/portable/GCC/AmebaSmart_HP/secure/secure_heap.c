@@ -379,8 +379,7 @@ void *pvPortMalloc(size_t xWantedSize)
 #if defined ( secureconfigUSE_MALLOC_FAILED_HOOK ) && (secureconfigUSE_MALLOC_FAILED_HOOK == 1)
 	{
 		if (pvReturn == NULL) {
-			extern void vApplicationMallocFailedHook(void);
-			vApplicationMallocFailedHook();
+			vApplicationMallocFailedHook(xWantedSize);
 		} else {
 			mtCOVERAGE_TEST_MARKER();
 		}
@@ -451,9 +450,10 @@ void vPortInitialiseBlocks(void)
 }
 /*-----------------------------------------------------------*/
 
-void vApplicationMallocFailedHook(void)
+void vApplicationMallocFailedHook(size_t xWantedSize)
 {
-	DiagPrintf("Malloc secure memory failed [free heap size: %d]\r\n", xPortGetFreeHeapSize());
+	DiagPrintf("Malloc secure memory failed [free heap size: %d], xWantedSize: %d\r\n", 
+				xPortGetFreeHeapSize(), xWantedSize);
 	for (;;);
 }
 

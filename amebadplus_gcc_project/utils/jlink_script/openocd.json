@@ -1,23 +1,18 @@
 {
     "KM4": {
         "preCommands": {
-            "set substitute-path": [
-                ["/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/make_rom/monitor/./component/soc/amebadplus/app/monitor/rom/shell_rom.c",
-                "component/soc/amebadplus/rom/rom_common/ameba_shell_rom.c"],
-                ["/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/make_rom/monitor/./component/soc/amebadplus/app/monitor/rom/monitor_rom.c",
-                "component/soc/amebadplus/rom/rom_common/ameba_monitor_rom.c"]
-            ],
+            "set substitute-path": [],
             "dir": [
-                "component/soc/amebadplus/rom/rom_common",
-                "component/soc/amebadplus/rom/rom_common_xo",
-                "component/soc/amebadplus/rom/rom_km4",
-                "component/soc/amebadplus/rom/stdlib",
-                "component/soc/amebadplus/rom/string",
-                "component/soc/amebadplus/rom/vector",
-                "component/soc/amebadplus/rom/download/xmodem",
-                "component/soc/amebadplus/rom/download/usb",
+                "component/soc/amebadplus/fwlib/rom_common",
+                "component/soc/amebadplus/fwlib/rom_common_xo",
+                "component/soc/amebadplus/fwlib/rom_km4",
+                "component/soc/amebadplus/swlib",
+                "component/soc/amebadplus/vector",
+                "component/soc/amebadplus/app/monitor/rom",
+                "component/soc/amebadplus/app/xmodem",
+                "component/soc/amebadplus/app/usb_download",
                 "component/soc/amebadplus/fwlib/include",
-                "component/soc/common/include/cmsis",
+                "component/soc/amebadplus/cmsis",
                 "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
             ],
             "add-symbol-file": [
@@ -36,21 +31,18 @@
     "KM0": {
         "preCommands": {
             "set substitute-path": [
-                ["/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km0/asdk/../../../../../component/soc/amebadplus/app/monitor/rom/monitor_rom.c",
-                "component/soc/amebadplus/rom/rom_common/ameba_monitor_rom.c"],
-                ["/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km0/asdk/../../../../../component/soc/amebadplus/app/monitor/rom/shell_rom.c",
-                "component/soc/amebadplus/rom/rom_common/ameba_shell_rom.c"],
-                ["/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km0/asdk/../../../../../component/soc/amebadplus/swlib/rand.c", "component/soc/amebadplus/rom/stdlib/rand.c"],
-                ["/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km0/asdk/../../../../../component/soc/amebadplus/fwlib/rom_common", "component/soc/amebadplus/rom/rom_common"],
-                ["/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km0/asdk/../../../../../component/soc/amebadplus/fwlib/rom_km0", "component/soc/amebadplus/rom/rom_km0"],
-                ["/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km0/asdk/../../../../../component/soc/amebadplus/vector", "component/soc/amebadplus/rom/vector"],
-                ["/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km0/asdk/../../../../../component/soc/amebadplus/swlib", "component/soc/amebadplus/rom/string"],
                 ["/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km0/asdk/../../../../../component/wifi/driver/src/hal/rtl8721f/src/rom", "component/wifi/driver/rtl8721da_rom"],
                 ["/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km0/asdk/../../../../../component/wifi/driver/src/core/rom", "component/wifi/driver/core_rom"]
             ],
             "dir": [
+                "component/soc/amebadplus/fwlib/rom_common",
+                "component/soc/amebadplus/fwlib/rom_common_xo",
+                "component/soc/amebadplus/fwlib/rom_km0",
                 "component/soc/amebadplus/fwlib/include",
-                "component/soc/common/include/cmsis",
+                "component/soc/amebadplus/swlib",
+                "component/soc/amebadplus/vector",
+                "component/soc/amebadplus/app/monitor/rom",
+                "component/soc/amebadplus/cmsis",
                 "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core",
                 "component/wifi/common/secure",
                 "component/wifi/driver/core_rom",
