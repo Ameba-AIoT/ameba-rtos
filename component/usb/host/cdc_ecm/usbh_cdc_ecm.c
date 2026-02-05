@@ -301,7 +301,8 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host)
 		if ((cdc->pid != 0x8152) || (cdc->vid != 0x0BDA) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
 			cdc->sub_state++;
 		} else {
-			usb_os_memcpy(cdc->dongle_ctrl_buf, &(cdc->mac[4]), CDC_ECM_MAC_CTRL_REG_LEN);
+			cdc->dongle_ctrl_buf[0] = cdc->mac[4];
+			cdc->dongle_ctrl_buf[1] = cdc->mac[5];
 			cdc->dongle_ctrl_buf[2] = cdc->dongle_ctrl_buf[3] = 0xFF;
 			req_status = usbh_cdc_ecm_process_mac_set_mac2(host);
 			if (req_status == HAL_OK) {

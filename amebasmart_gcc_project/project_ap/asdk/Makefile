@@ -66,10 +66,7 @@ LINK_APP_LIB =
 LINK_THIRD_APP_LIB =
 .PHONY: all build_target_folder menuconfig clean build_libraries make_wifi_lib
 
-APP_LIB = $(APP_LIB_DIR)/lib_httpc.a \
-	$(APP_LIB_DIR)/lib_httpd.a \
-	$(APP_LIB_DIR)/lib_websocket.a \
-	$(APP_LIB_DIR)/lib_ipnat.a \
+APP_LIB = $(APP_LIB_DIR)/lib_ipnat.a \
 	$(APP_LIB_DIR)/lib_ipdnrd.a \
 	#$(APP_LIB_DIR)/lib_coap.a \
 	#$(APP_LIB_DIR)/lib_eap.a \
@@ -239,9 +236,6 @@ make_subdirs_lib_img2:
 ifeq ($(CONFIG_WLAN),y)
 # build AP libs
 ifeq ($(CONFIG_AS_INIC_AP), y)
-	@make -C make/network/httpc all
-	@make -C make/network/httpd all
-	@make -C make/network/websocket all
 	@+$(MAKE) -C make/network/ipnat all
 	@+$(MAKE) -C make/network/ipdnrd all
 	#@+$(MAKE) -C make/network/eap all
