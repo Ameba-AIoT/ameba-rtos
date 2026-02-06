@@ -16,12 +16,14 @@ struct vad_config {
                                    If you need get the audio during left_margin,
                                    please implement a buffer to keep audio. */
 	unsigned int right_margin;  /* Unit:ms. affects both offset_ms and event time of status 0. */
+	unsigned int min_speech_duration;  /* Unit:ms. Minimum speech duration to trigger speech status. */
 };
 
 #define VAD_CONFIG_DEFAULT() {\
     .sensitivity = VAD_SENSITIVITY_MID,\
     .left_margin = 300,\
     .right_margin = 160,\
+    .min_speech_duration = 200,\
 };
 
 #endif
