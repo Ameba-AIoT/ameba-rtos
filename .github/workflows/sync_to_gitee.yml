@@ -26,7 +26,7 @@ jobs:
 
     - name: Push to Gitee only
       env:
-          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          GITEE_TOKEN: ${{ secrets.TOKEN_GITEE }}
       run: git clone https://JenkinsRsWlan5:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git gitee_repo
     - name: Patch cmake if needed
       run: |
