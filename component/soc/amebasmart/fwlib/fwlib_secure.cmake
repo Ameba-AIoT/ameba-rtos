@@ -34,10 +34,10 @@ set(private_compile_options)         #private compile_options
 
 #------------------------------------------------------------------#
 # Component private part, user config begin(DO NOT remove this line)
-if("${d_MCU_PROJECT_NAME}" STREQUAL "hp")
+if("${c_MCU_PROJECT_NAME}" STREQUAL "hp")
     ameba_list_append(private_sources
-        ${c_CMPT_SWLIB_DIR}/log.c
         ram_common/ameba_fault_handle.c
+        ram_common/ameba_ipc_api.c
 
         ram_hp/ameba_trustzone.c
         ram_hp/ameba_codec.c

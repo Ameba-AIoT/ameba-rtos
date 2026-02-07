@@ -8,7 +8,7 @@
 CURRENT_DIR=`pwd`
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 AIVOICE_BINS=${SCRIPT_DIR}/../../prebuilts/bin
-SDK_CONFIG=${SCRIPT_DIR}/../../../../amebalite_gcc_project/menuconfig/.config
+SDK_CONFIG=${SCRIPT_DIR}/../../../../build_RTL8726E/menuconfig/.config
 
 echo "use menuconfig to generate aivoice binary"
 python "${SCRIPT_DIR}/aivoice_bin_packer.py" \
