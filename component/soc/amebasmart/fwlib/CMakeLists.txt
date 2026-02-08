@@ -1,2 +1,5 @@
-include(fwlib.cmake)
-#REVIEW: how to add fwlib_secure.cmake(by check c_CURRENT_IMAGE is image3?)
+if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image3")
+    include(fwlib_secure.cmake)
+else()
+    include(fwlib.cmake)
+endif()

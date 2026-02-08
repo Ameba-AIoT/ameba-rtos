@@ -103,7 +103,10 @@ static size_t PrimaryGetStreamOutBufferSize(const struct AudioHwStream *stream)
 {
 	size_t ret = 0;
 	struct PrimaryAudioHwStreamOut *out = (struct PrimaryAudioHwStreamOut *)stream;
-	size_t size = (out->period_size * out->sample_rate) / out->sample_rate;
+	size_t size = (out->config.period_size * out->sample_rate) / out->sample_rate;
+	#if defined(CONFIG_AUDIO_PASSTHROUGH) && CONFIG_AUDIO_PASSTHROUGH
+	size = size * out->config.period_count;
+	#endif
 	size = ((size + 15) / 16) * 16;
 	ret = size * PrimaryAudioHwStreamOutFrameSize((const struct AudioHwStreamOut *)stream);
 	return ret;
