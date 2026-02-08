@@ -172,6 +172,7 @@ AiVoiceManager *AiVoiceManager_create(AIVoiceFlowType type, struct aivoice_confi
     Parcel_WriteInt32(parcel, config->vad->sensitivity);
     Parcel_WriteUint32(parcel, config->vad->left_margin);
     Parcel_WriteUint32(parcel, config->vad->right_margin);
+    Parcel_WriteUint32(parcel, config->vad->min_speech_duration);
 
     //kws config
     int keyword_nums = 2;
