@@ -29,11 +29,7 @@ vpath %.c $(NETWORK) $(shell find $(NETWORK) -type d)
 #                               Source FILE LIST                              #
 #*****************************************************************************#
 CSRC =  $(NETWORK)/sntp/sntp.c \
-		$(NETWORK)/websocket/wsserver_tls.c \
-		$(NETWORK)/websocket/wsclient_tls.c \
 		$(NETWORK)/dhcp/dhcps.c \
-		$(NETWORK)/httpc/httpc_tls.c \
-		$(NETWORK)/httpd/httpd_tls.c \
 		#$(NETWORK)/coap/sn_coap_ameba_port.c\
 		#$(NETWORK)/coap/sn_coap_builder.c\
 		#$(NETWORK)/coap/sn_coap_header_check.c\
