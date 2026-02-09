@@ -40,10 +40,7 @@ endif
 endif
 endif
 
-APP_LIB = $(APP_LIB_DIR)/lib_httpc.a \
-	$(APP_LIB_DIR)/lib_httpd.a \
-	$(APP_LIB_DIR)/lib_websocket.a \
-	$(APP_LIB_DIR)/lib_ipnat.a \
+APP_LIB = $(APP_LIB_DIR)/lib_ipnat.a \
 	$(APP_LIB_DIR)/lib_ipdnrd.a \
 	$(APP_LIB_DIR)/lib_tftp.a 
 	#$(APP_LIB_DIR)/lib_coap.a
@@ -160,9 +157,6 @@ ifeq ($(CONFIG_WLAN), y)
 
 # build AP libs
 ifeq ($(CONFIG_AS_INIC_AP), y)
-	@+$(MAKE) -C make/network/httpc all
-	@+$(MAKE) -C make/network/httpd all
-	@+$(MAKE) -C make/network/websocket all
 	@+$(MAKE) -C make/network/ipnat all
 	@+$(MAKE) -C make/network/ipdnrd all
 	@+$(MAKE) -C make/network/tftp all
@@ -173,10 +167,6 @@ else ifeq ($(CONFIG_AS_INIC_NP), y)
 	@+$(MAKE) -C make/rtk_coex all
 # build single core wifi libs
 else ifeq ($(CONFIG_SINGLE_CORE_WIFI), y)
-
-	@+$(MAKE) -C make/network/httpc all
-	@+$(MAKE) -C make/network/httpd all
-	@+$(MAKE) -C make/network/websocket all
 	@+$(MAKE) -C make/network/ipnat all
 	@+$(MAKE) -C make/network/ipdnrd all
 	#@+$(MAKE) -C make/network/eap all

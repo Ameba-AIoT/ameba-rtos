@@ -511,12 +511,31 @@
 		(addr[4] == 0xff) && (addr[5] == 0xff) )  ? _TRUE : _FALSE \
 )
 
+#define RTW_RSN_CAP_MFPC                BIT(7)
 #define RTW_RSN_SPP_AMSDU_CAPABLE		BIT(10)
 #define RTW_RSN_SPP_AMSDU_REQUIRED		BIT(11)
 #define RTW_RSN_CAPABILITY_RSVD		BIT(15)
 #define RTW_RSNX_CAPABILITY_RSVD		(BIT(6) | BIT(7))
 #define RTW_RSNX_CAPABILITY_PROTECTED_TWT	BIT(4)
 #define RTW_RSNX_FIELD_LEN_MASK		0xF
+
+#define RTW_RSN_HEADER_LEN   2   /* Element ID (1) + Length (1) */
+#define RTW_RSN_CAPS_LEN     2   /* RSN Capabilities length */
+#define RTW_PMKID_COUNT_LEN  2   /* PMKID Count length */
+#define RTW_PMKID_LEN        16  /* PMKID length */
+#define RTW_GMCS_LEN         4   /* Group Management Cipher Suite length */
+
+/*
+ * Standard RSN IE Fixed Payload length (before PMKID):
+ * Version(2) + GroupCipher(4) + P.CipherCnt(2) + P.Cipher(4) + AKM.Cnt(2) + AKM(4) + Caps(2)
+ * = 20 bytes
+ * Note: This assumes 1 Pairwise Cipher and 1 AKM suite.
+ */
+#define RTW_RSN_PAYLOAD_BASE_LEN 20
+
+/* Offset of RSN Capabilities field within the payload (starts at byte 18) */
+#define RTW_RSN_OFFSET_CAPS 18
+
 
 #define RTW_ERP_INFO_NON_ERP_PRESENT BIT(0)
 #define RTW_ERP_INFO_USE_PROTECTION BIT(1)
