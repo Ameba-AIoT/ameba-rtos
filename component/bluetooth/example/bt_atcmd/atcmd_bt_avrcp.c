@@ -415,7 +415,7 @@ static const cmd_table_t avrcp_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_avrcp_cmd(int argc, char *argv[])
+void fBTAVRCP(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, avrcp_cmd_table, "[AT+BTAVRCP]");
+	atcmd_bt_excute(argc - 1, &argv[1], avrcp_cmd_table, "[AT+BTAVRCP]");
 }

@@ -10,6 +10,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbd.h"
+#include "usb_ringbuf.h"
 #include "usbd_composite_config.h"
 
 /* Exported defines ----------------------------------------------------------*/
@@ -38,13 +39,15 @@
 #define USBD_UAC_CH_CNT_6                           6U /**< 6 Channels. */
 #define USBD_UAC_CH_CNT_8                           8U /**< 8 Channels. */
 //#define USBD_UAC_CH_CNT_16                        16U  /* to do: 16 ch support */
-#define USBD_UAC_DEFAULT_CH_CNT                     USBD_UAC_CH_CNT_8 /**< Default channel count. */
+#define USBD_UAC_IN_DEFAULT_CH_CNT                  USBD_UAC_CH_CNT_2 /**< Default channel count. */
+#define USBD_UAC_OUT_DEFAULT_CH_CNT                 USBD_UAC_CH_CNT_8 /**< Default channel count. */
 
 /* Byte/Bit Widths */
 #define USBD_UAC_BYTE_WIDTH_2                       2U /**< 2 bytes per audio sample. */
 #define USBD_UAC_BYTE_WIDTH_3                       3U /**< 3 bytes per audio sample. */
 #define USBD_UAC_BYTE_WIDTH_4                       4U /**< 4 bytes per audio sample. Amebasmart itself cannot play 32-bit audio data */
-#define USBD_UAC_DEFAULT_BYTE_WIDTH                 USBD_UAC_BYTE_WIDTH_2  /**< Default byte width. */
+#define USBD_UAC_IN_DEFAULT_BYTE_WIDTH              USBD_UAC_BYTE_WIDTH_2  /**< Default UAC IN byte width. */
+#define USBD_UAC_OUT_DEFAULT_BYTE_WIDTH             USBD_UAC_BYTE_WIDTH_2  /**< Default UAC OUT byte width. */
 #define USBD_UAC_BIT_WIDTH(byte_width)              (8U * (byte_width))    /**< Calculate bit width from byte width. */
 
 /* Sampling Frequencies */
@@ -53,6 +56,8 @@
 #define USBD_UAC_SAMPLING_FREQ_48K                  48000U  /**< 48 kHz sampling frequency. */
 #define USBD_UAC_SAMPLING_FREQ_96K                  96000U  /**< 96 kHz sampling frequency. */
 #define USBD_UAC_SAMPLING_FREQ_192K                 192000U /**< 192 kHz sampling frequency. */
+
+#define USBD_UAC_IN_DEFAULT_SAMPLING_FREQ           16000U
 
 /*
 * while the host does not send the audio data(for example: switch to next song), the usb should append zero packet to the buffer
@@ -150,63 +155,53 @@ typedef struct {
 /** @} End of Device_Composite_UAC_Types group*/
 /** @} End of USB_Device_Types group*/
 
-struct _usbd_composite_uac_buf_t;
-typedef struct _usbd_composite_uac_buf_t {
-	struct _usbd_composite_uac_buf_t *next; /**< Next buf node. */
-	u8 *buf_raw;                            /**< Pointer to the buffer. */
-	__IO u16 buf_valid_len;                 /**< Valid buffer length. */
-	__IO u8 is_zero_pkt;                    /**< The buf is zero packet */
-} usbd_composite_uac_buf_t;
-
-typedef struct {
-	usbd_composite_uac_buf_t *head;
-	usbd_composite_uac_buf_t *tail;
-	u16 count;
-} usbd_composite_uac_buf_list_t;
-
 typedef struct {
 	usbd_audio_cfg_t audio_config;  /* Audio config */
-	rtos_sema_t uac_isoc_sema;      /**< ISOC sema. */
-	usbd_composite_uac_buf_list_t empty_list;
-	usbd_composite_uac_buf_list_t data_list;
+	usb_ringbuf_manager_t buf_list;
+	usbd_ep_t ep;
+	rtos_sema_t isoc_sema;      /**< ISOC sema. */
 
-	usbd_composite_uac_buf_t *buf_list_node;
-	usbd_composite_uac_buf_t *p_cur_buf_node;
-	u8 *isoc_buf;                       /**< Pointer to audio total buffer. */
-
+	/*
+		used to append ZLP while xfer error/timeout,
+	*/
 	u64 sof_idx;
 	u64 data_idx;
 
-	__IO u16 isoc_mps;            /**< ISOC maximum packet size. */
-	__IO u8 uac_sema_valid : 1;   /**< ISOC sema created. */
-	__IO u8 read_wait_sema : 1;   /**< The sema is waiting. */
-	__IO u8 next_xfer : 1;        /**< Audio transfer continue flag. */
+	__IO u32 xfer_cnt;       /* Xfer valid count */
+	__IO u32 last_xfer_len;  /* Last xfer length, used to append ZLP */
+
+#if USBD_COMPOSITE_UAC_DEBUG
+	u32 last_xfer_tick;
+
+	u32 append_zlp_cnt;
+	u32 xfer_done_cnt;       /* Xfer done count  xfer_cnt = xfer_done_cnt + zlp_cnt*/
+	u32 xfer_total_len;
+
+	u32 isoc_timeout_max_step;
+	u32 isoc_timeout_max_value;
+
+	__IO u32 timeout_cnt;
+	__IO u32 overwrite_cnt;
+#endif
+
+	__IO u16 written;        /* Part write data length */
+
+	__IO u16 mps;
+	__IO u8 sema_valid;      /* Sema is valid */
+	__IO u8 wait_sema;       /* Wait sema */
+	__IO u8 xfer_continue;   /* Audio control xfer_continue flag */
 } usbd_composite_uac_buf_ctrl_t;
 
 typedef struct {
-	usbd_composite_uac_buf_ctrl_t uac_isoc_out;  /**< ISOC OUT control structure. */
-	usbd_composite_uac_buf_ctrl_t uac_isoc_in;   /**< ISOC IN control structure. */
-	usbd_ep_t ep_isoc_in;                        /**< ISOC IN endpoint structure. */
-	usbd_ep_t ep_isoc_out;                       /**< ISOC OUT endpoint structure. */
+	usbd_composite_uac_buf_ctrl_t isoc_out;  /**< ISOC OUT control structure. */
+	usbd_composite_uac_buf_ctrl_t isoc_in;   /**< ISOC IN control structure. */
+
 	usb_setup_req_t ctrl_req;                    /**< Stores the current control request. */
 	usbd_composite_dev_t *cdev;                  /**< Pointer to the USB composite device instance. */
 	usbd_composite_uac_usr_cb_t *cb;             /**< Pointer to the USB composite device user-defined callback structure. */
 
-	__IO u32 isoc_rx_valid_cnt;
-	__IO u32 isoc_rx_len;
-
 #if USBD_COMPOSITE_UAC_DEBUG
 	rtos_task_t uac_dump_task;
-	u32 isoc_rx_last_tick;
-	u32 isoc_timeout_max_step;
-	u32 isoc_timeout_max_value;
-
-	u32 isoc_zlp_cnt;
-	u32 isoc_rx_cnt;
-	u32 isoc_rx_zlp_cnt;
-	u32 copy_data_len;
-	__IO u32 isoc_timeout_cnt;
-	__IO u32 isoc_overwrite_cnt;
 	__IO u32 uac_dump_task_alive;
 #endif
 
@@ -287,9 +282,26 @@ u32  usbd_composite_uac_get_read_frame_cnt(void);
  */
 u32  usbd_composite_uac_get_read_frame_time_in_us(void);
 
-// for USB IN tx, TODO
-// u32  usbd_uac_write(void, void *buffer, u32 size, u8 blocking);
-// u32  usbd_uac_get_write_frame_cnt(void);
+/**
+ * @brief Starts the audio record, get audio data from ring buffer, and will send to USB bus.
+ * @return 0 on success, non-zero on failure.
+ */
+u32 usbd_composite_uac_start_record(void);
+
+/**
+ * @brief Stops the audio record.
+ */
+void usbd_composite_uac_stop_record(void);
+
+/**
+  * @brief  Write the data to the ring buffer for transfer
+  * @param  buffer: write buffer handle used to write the ringbuf
+  * @param  size: write buffer data size
+  * @param  timeout_ms if 0 means no wait,
+  *                     other value will set timeout_ms to write buffer,if write data for more than timeout_ms, it will return.
+  * @return return the write data length in bytes
+  */
+u32 usbd_composite_uac_write(u8 *buffer, u32 size, u32 timeout_ms);
 
 /** @} End of Device_Composite_UAC_Functions group */
 /** @} End of USB_Device_Functions group */

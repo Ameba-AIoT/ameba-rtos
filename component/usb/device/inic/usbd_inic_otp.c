@@ -119,7 +119,7 @@ int usbd_otp_init(usbd_otp_t *otp)
 	otp->remote_wakeup_en = ((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_REMOTE_WAKEUP) == 0) ? 0 : 1;
 	if (((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_DESC_EN) != 0U) ||
 		((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SQNUM_ROM) == 0U)) {
-		status = OTP_LogicalMap_Read(otp->otp_map, USB_OTP_START, USB_OTP_LEN);
+		status = OTP_LogicalRead(otp->otp_map, USB_OTP_START, USB_OTP_LEN);
 		if (status != RTK_SUCCESS) {
 			RTK_LOGE(TAG, "OTP read fail %d\n", status);
 			return HAL_ERR_HW;

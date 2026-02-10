@@ -99,7 +99,7 @@ static void usbh_vendor_get_endpoints(usb_host_t *host, usbh_itf_desc_t *intf)
 	u32 tmp = 0;
 	usbh_vendor_host_t *vendor = &usbh_vendor_host;
 	usbh_ep_desc_t *ep_desc;
-	usbh_vendor_xfer_t *xfer;
+	usbh_vendor_xfer_t *xfer = NULL;
 	u8 ep_type;
 	u8 ep_in;
 	char *xfer_type;
@@ -140,9 +140,11 @@ static void usbh_vendor_get_endpoints(usb_host_t *host, usbh_itf_desc_t *intf)
 		default:
 			break;
 		}
-		xfer_type = usbh_get_transfer_type_text(&xfer->pipe);
-		xfer->pipe.max_timeout_tick = VENDOR_XFER_MAX_TIMEOUT_TICK;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "%s EP%02x MPS %d intv %d\n", xfer_type, xfer->pipe.ep_addr, xfer->pipe.ep_mps, xfer->pipe.ep_interval);
+		if (xfer) {
+			xfer_type = usbh_get_transfer_type_text(&xfer->pipe);
+			xfer->pipe.max_timeout_tick = VENDOR_XFER_MAX_TIMEOUT_TICK;
+			RTK_LOGS(TAG, RTK_LOG_INFO, "%s EP%02x MPS %d intv %d\n", xfer_type, xfer->pipe.ep_addr, xfer->pipe.ep_mps, xfer->pipe.ep_interval);
+		}
 	}
 }
 

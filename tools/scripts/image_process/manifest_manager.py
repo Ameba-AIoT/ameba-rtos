@@ -139,23 +139,24 @@ class ManifestImageConfig:
             else:
                 self.rsip_enable:bool = config.get("rsip_enable", config.get("rsip_en", False))
 
-            if self.rsip_enable:
-                self.rsip_mode:int = config["rsip_mode"] #0 is CTR, 1 is XTS(CTR+ECB), 2 is GCM
+            # For IMAGE3 with RDP enabled, rsip_iv is needed for RDP encryption (combined with rdp_iv)
+            # So we read rsip_iv even when rsip_enable is False for IMAGE3
+            # For IMAGE2, we also read rsip_iv even when rsip_enable is False, because IMAGE3 RDP may need it
+            if self.rsip_enable or (image_type == ImageType.IMAGE3 and config.get("rdp_enable", False)) or image_type == ImageType.IMAGE2:
+                self.rsip_mode:int = config.get("rsip_mode", 1) #0 is CTR, 1 is XTS(CTR+ECB), 2 is GCM
                 self.rsip_gcm_tag_len:int = config.get("rsip_gcm_tag_len", 0xFF)
-                self.rsip_iv:str = config["rsip_iv"]
+                self.rsip_iv:str = config.get("rsip_iv", "")
                 self.rsip_key:List[str] = []
                 if "rsip_key_group" in config:
                     self.rsip_key = [config[v] for v in config[config["rsip_key_group"]]]
                 else:
-                    if self.rsip_mode == 0:
+                    if self.rsip_mode == 0 or self.rsip_mode == 2:
                         self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
                     elif self.rsip_mode == 1:
                         self.rsip_key = [
                             config["ecb_key"] if isinstance(config["ecb_key"], str) else config["ecb_key"][config["rsip_key_id"]],
                             config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]],
                         ]
-                    elif self.rsip_mode == 1:
-                        self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
 
             #RDP
             self.rdp_enable:bool = config.get("rdp_enable", config.get("rdp_en", False))
@@ -182,6 +183,8 @@ class ManifestImageConfig:
             self.sboot_public_key_hash:str = config["sboot_public_key_hash"] if "sboot_public_key_hash" in config else config.get("public_key_hash", "")
 
         #PQC Support (for image2 when version >= 2)
+        if "sboot_pqc_algorithm" in config:
+            self.sboot_pqc_algorithm = config["sboot_pqc_algorithm"]
         if "sboot_pqc_public_key_hash" in config:
             self.sboot_pqc_public_key_hash = config["sboot_pqc_public_key_hash"]
         if "sboot_pqc_public_key" in config:
@@ -223,6 +226,14 @@ class ManifestManager(ABC):
         self.image2 = ManifestImageConfig(self.new_json_data['image2'], ImageType.IMAGE2)
         if 'image3' in self.new_json_data:
             self.image3 = ManifestImageConfig(self.new_json_data['image3'], ImageType.IMAGE3)
+            # For early than Dplus ICs,  Image3 use RDP encryption, image3 needs image2's rsip_iv (even when image2.rsip_enable is False)
+            # The IV for RDP encryption is: image2.rsip_iv + image3.rdp_iv
+            if hasattr(self.image3, 'rdp_enable') and self.image3.rdp_enable:
+                if hasattr(self.image2, 'rsip_iv') and self.image2.rsip_iv:
+                    self.image3.rsip_iv = self.image2.rsip_iv
+            elif hasattr(self.image2, 'rsip_iv'):
+                # For G2 and later IC, Image3 use rsip protect. Image3 use image2 rsip iv.
+                self.image3.rsip_iv = self.image2.rsip_iv
         else:
             context.logger.info(f"manifest file does not contains image3, will use hybrid config for image3")
             # Create a hybrid config for image3
@@ -241,9 +252,7 @@ class ManifestManager(ABC):
             self.vbmeta = ManifestImageConfig(self.new_json_data['vbmeta'], ImageType.VBMETA)
 
     def validate_pqc_config(self, data: dict) -> bool:
-        """Validate PQC configuration based on manifest version"""
-        version = data.get("version", 1)
-
+        """Validate PQC configuration based on manifest version for each section"""
         # List of all PQC fields to check
         pqc_fields = [
             "sboot_pqc_algorithm",
@@ -252,55 +261,58 @@ class ManifestManager(ABC):
             "sboot_pqc_public_key_hash"
         ]
 
-        # Collect all PQC fields from global and image configs
-        found_pqc_fields = []
+        # Helper function to validate a single section
+        def validate_section(section_name: str, section_data: dict, parent_sboot_enable: bool) -> bool:
+            """Validate PQC config for a single section (image1, image2, cert, or global)"""
+            section_version = section_data.get("version", 1)
+            section_sboot_enable = section_data.get("sboot_enable", parent_sboot_enable)
 
-        # Check global config
-        for field in pqc_fields:
-            if field in data:
-                found_pqc_fields.append(field)
-
-        # Check image-specific configs, no image3
-        for img_key in ["image1", "image2", "cert"]:
-            if img_key in data and isinstance(data[img_key], dict):
-                for field in pqc_fields:
-                    if field in data[img_key]:
-                        found_pqc_fields.append(f"{img_key}.{field}")
-
-        # Version 1: PQC not supported
-        if version == 1 and found_pqc_fields:
-            self.context.logger.error(
-                f"Manifest version 1 does not support PQC. "
-                f"Found PQC fields: {', '.join(found_pqc_fields)}. "
-                f"Please comment out these fields or upgrade to version 2."
-            )
-            return False
-
-        # Version 2 with secure boot: All PQC fields required
-        elif version == 2 and data.get("sboot_enable", False):
-            # Check if all required PQC fields are present (either globally or in images)
-            missing_fields = []
+            # Check if PQC fields exist in this section
+            found_pqc_fields = []
             for field in pqc_fields:
-                # Check global config first
-                if field not in data:
-                    # Then check if field exists in any image config
-                    found_in_image = False
-                    for img_key in ["image1", "image2", "image3", "cert"]:
-                        if (img_key in data and
-                            isinstance(data[img_key], dict) and
-                            field in data[img_key]):
-                            found_in_image = True
-                            break
+                if field in section_data:
+                    found_pqc_fields.append(field)
 
-                    if not found_in_image:
+            # Version 2 with secure boot: All PQC fields required
+            if section_version >= 2 and section_sboot_enable:
+                missing_fields = []
+                for field in pqc_fields:
+                    if field not in section_data:
                         missing_fields.append(field)
 
-            if missing_fields:
-                self.context.logger.error(
-                    f"Manifest version 2 with secure boot requires all PQC fields. "
-                    f"Missing fields: {', '.join(missing_fields)}"
+                if missing_fields:
+                    self.context.logger.error(
+                        f"{section_name}: version {section_version} with sboot_enable requires all PQC fields. "
+                        f"Missing fields: {', '.join(missing_fields)}"
+                    )
+                    return False
+
+            # Version 1 with PQC fields: warning only (will be ignored)
+            if section_version == 1 and found_pqc_fields:
+                self.context.logger.warning(
+                    f"{section_name}: version 1 does not support PQC. "
+                    f"Found PQC fields: {', '.join(found_pqc_fields)}. "
+                    f"These fields will be ignored. Upgrade to version 2 to enable PQC."
                 )
-                return False
+
+            return True
+
+        # Get global sboot_enable as default
+        global_sboot_enable = data.get("sboot_enable", False)
+
+        # Validate global config (section-level PQC fields)
+        for field in pqc_fields:
+            if field in data:
+                # Global has PQC fields, validate as a section
+                if not validate_section("global", data, global_sboot_enable):
+                    return False
+                break
+
+        # Validate each image section independently
+        for img_key in ["image1", "image2", "image3", "cert"]:
+            if img_key in data and isinstance(data[img_key], dict):
+                if not validate_section(img_key, data[img_key], global_sboot_enable):
+                    return False
 
         return True
 
@@ -531,7 +543,11 @@ class ManifestManager(ABC):
 
             if use_extended_cert:
                 # Set PQC fields
-                pqc_algorithm = self.new_json_data.get('sboot_pqc_algorithm', 'ml_dsa_65')
+                # Get PQC algorithm from cert section (or global as fallback)
+                if hasattr(self.cert, 'sboot_pqc_algorithm'):
+                    pqc_algorithm = self.cert.sboot_pqc_algorithm
+                else:
+                    pqc_algorithm = self.new_json_data.get('sboot_pqc_algorithm', 'ml_dsa_65')
 
                 if pqc_algorithm in self.pqc_alg_mapping:
                     cert.PQC_AuthAlg = self.pqc_alg_mapping[pqc_algorithm]
@@ -540,12 +556,31 @@ class ManifestManager(ABC):
                 else:
                     return Error(ErrorType.UNKNOWN_ERROR, f"Unsupported PQC algorithm: {pqc_algorithm}")
 
-                # Get PQC keys from image1
-                pqc_pubkey_bytes = bytes.fromhex(self.image1.sboot_pqc_public_key)
-                cert.PQC_KeySize = len(pqc_pubkey_bytes)
-                pqc_private_key = self.image1.sboot_pqc_private_key
+                # Get PQC keys: priority is cert section > global config
+                # Note: Certificate should use its own PQC keys, not image1 or image2's keys
+                if hasattr(self.cert, 'sboot_pqc_private_key') and hasattr(self.cert, 'sboot_pqc_public_key'):
+                    pqc_private_key = self.cert.sboot_pqc_private_key
+                    pqc_public_key = self.cert.sboot_pqc_public_key
+                    key_source = "cert section"
+                else:
+                    # Fallback to global config if cert section doesn't have PQC keys
+                    pqc_private_key = self.new_json_data.get('sboot_pqc_private_key', None)
+                    pqc_public_key = self.new_json_data.get('sboot_pqc_public_key', None)
+                    key_source = "global config"
+
+                if not pqc_public_key or not pqc_private_key:
+                    return Error(ErrorType.UNKNOWN_ERROR, f"PQC keys not found in cert section or global config")
+
+                # Debug output: PQC keys being used
+                print(f"\n[Certificate PQC Signing]")
+                print(f"  Key source: {key_source}")
+                print(f"  Algorithm: {pqc_algorithm}")
+                print(f"  Public Key (first 32 bytes): {pqc_public_key[:64]}...")
+                print(f"  Private Key (first 32 bytes): {pqc_private_key[:64]}...")
 
                 # Copy PQC public key
+                pqc_pubkey_bytes = bytes.fromhex(pqc_public_key)
+                cert.PQC_KeySize = len(pqc_pubkey_bytes)
                 memmove(addressof(cert.PQCPubKey), pqc_pubkey_bytes, cert.PQC_KeySize)
 
                 # Generate PQC signature for the same message as ECC
@@ -559,6 +594,13 @@ class ManifestManager(ABC):
                 if ret != 0:
                     print(f"ERROR: PQC certificate signature generation failed, ret={ret}")
                     return Error(ErrorType.UNKNOWN_ERROR, f"PQC certificate signature generation failed: {ret}")
+
+                # Debug output: PQC signature result
+                sig_bytes = bytes(cert.PQCSignature)
+                print(f"  Signature generated successfully")
+                print(f"  Signature size: {len(sig_bytes)} bytes")
+                print(f"  Signature (first 64 bytes): {sig_bytes[:64].hex()}...")
+                print(f"[Certificate PQC Signing Complete]\n")
 
         # Write certificate to file
         with open(output_file, 'wb') as f:
@@ -649,9 +691,16 @@ class ManifestManager(ABC):
             memmove(addressof(basic_manifest_part.RsipIV), bytes.fromhex(image_config.rsip_iv), 8)
             basic_manifest_part.RsipCfg = basic_manifest_part.RsipCfg & (((image_config.rsip_gcm_tag_len // 4) >> 1) | ~0x03)
         if ImgID.IMGID_NSPE.value == basic_manifest_part.ImgID:
-            if image_config.rdp_enable:
+            # Check image3's rdp_enable configuration instead of current image's config
+            rdp_enable = False
+            if self.image3 is not None and hasattr(self.image3, 'rdp_enable'):
+                rdp_enable = self.image3.rdp_enable
+            print("image3.rdp_enable", rdp_enable)
+            if rdp_enable:
+                # Use rsip_iv from image_config (may be from image2), and rdp_iv from image3
                 memmove(addressof(basic_manifest_part.RsipIV), bytes.fromhex(image_config.rsip_iv), 8)
-                memmove(byref(basic_manifest_part.RsipIV, 8), bytes.fromhex(image_config.rdp_iv), 8)
+                rdp_iv = self.image3.rdp_iv if hasattr(self.image3, 'rdp_iv') else image_config.rdp_iv
+                memmove(byref(basic_manifest_part.RsipIV, 8), bytes.fromhex(rdp_iv), 8)
 
         basic_manifest_part.ImgSize = os.path.getsize(input_file)
 
@@ -684,8 +733,12 @@ class ManifestManager(ABC):
 
         # Handle PQC fields for extended manifest
         if use_extended_manifest:
-            # Check if PQC is configured globally
-            pqc_algorithm = self.new_json_data.get('sboot_pqc_algorithm', None)
+            # Get PQC algorithm: priority is image_config > global config
+            if hasattr(image_config, 'sboot_pqc_algorithm'):
+                pqc_algorithm = image_config.sboot_pqc_algorithm
+            else:
+                pqc_algorithm = self.new_json_data.get('sboot_pqc_algorithm', None)
+
             if pqc_algorithm:
                 print(f"PQC algorithm detected: {pqc_algorithm}")
 
@@ -694,9 +747,17 @@ class ManifestManager(ABC):
                     manifest.PQC_AuthAlg = self.pqc_alg_mapping[pqc_algorithm]
                     manifest.PQC_SigSize = self.pqc_sig_size_mapping[pqc_algorithm]
 
-                    # Get PQC keys
-                    pqc_private_key = image_config.sboot_pqc_private_key
-                    pqc_public_key = image_config.sboot_pqc_public_key
+                    # Get PQC keys: priority is image_config > global config
+                    # Note: Each image should use its own PQC keys, not cert or other images' keys
+                    if hasattr(image_config, 'sboot_pqc_private_key') and hasattr(image_config, 'sboot_pqc_public_key'):
+                        pqc_private_key = image_config.sboot_pqc_private_key
+                        pqc_public_key = image_config.sboot_pqc_public_key
+                        print(f"Using PQC keys from {image_type.name} section")
+                    else:
+                        # Fallback to global config if image_config doesn't have PQC keys
+                        pqc_private_key = self.new_json_data.get('sboot_pqc_private_key', None)
+                        pqc_public_key = self.new_json_data.get('sboot_pqc_public_key', None)
+                        print(f"Using PQC keys from global config")
 
                     if pqc_public_key:
                         # Convert hex string to bytes and copy to manifest
@@ -712,6 +773,14 @@ class ManifestManager(ABC):
 
                     # Generate PQC signature if private key is available
                     if pqc_private_key:
+                        # Debug output: PQC keys being used for manifest signing
+                        key_source_str = f"{image_type.name} section" if hasattr(image_config, 'sboot_pqc_private_key') else "global config"
+                        print(f"\n[Manifest PQC Signing - {image_type.name}]")
+                        print(f"  Key source: {key_source_str}")
+                        print(f"  Algorithm: {pqc_algorithm}")
+                        print(f"  Public Key (first 32 bytes): {pqc_public_key[:64]}...")
+                        print(f"  Private Key (first 32 bytes): {pqc_private_key[:64]}...")
+
                         # PQC signature should cover same content as ECC signature (base manifest only)
                         # Exclude PQCSignature and PQC metadata from signature
                         pqc_msg_length = sizeof(Manifest_TypeDef) - SIGN_MAX_LEN  # Same as ECC signature
@@ -726,8 +795,12 @@ class ManifestManager(ABC):
                             msg_bytes = bytes(msg_buffer)
                             ret = self.sboot.ml_dsa_65_sign(pqc_private_key, msg_bytes, pqc_msg_length, manifest.PQCSignature)
                             if ret == 0:
-                                # Get signature size from ML-DSA-65
-                                print(f"PQC signature generated successfully, size: {manifest.PQC_SigSize}")
+                                # Debug output: PQC signature result
+                                sig_bytes = bytes(manifest.PQCSignature)
+                                print(f"  Signature generated successfully")
+                                print(f"  Signature size: {manifest.PQC_SigSize} bytes")
+                                print(f"  Signature (first 64 bytes): {sig_bytes[:64].hex()}...")
+                                print(f"[Manifest PQC Signing Complete - {image_type.name}]\n")
                             else:
                                 return Error(ErrorType.UNKNOWN_ERROR, f"Failed to generate PQC signature: {ret}")
                         else:

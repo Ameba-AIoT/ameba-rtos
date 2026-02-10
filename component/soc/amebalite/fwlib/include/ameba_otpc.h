@@ -380,14 +380,14 @@ enum OTP_OPMode {
 #define OTP_CRC2_BASE								0x378
 #define OTP_CRC3_BASE								0x37C
 
-extern int OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len);
+extern int OTP_LogicalRead(u8 *pbuf, u32 addr, u32 len);
 extern int OTP_Read8(u32 Addr, u8 *Data);
 extern int OTP_Write8(u32 Addr, u8 Data);
 extern int OTP_Read32(u32 Addr, u32 *Data);
-extern int OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data);
-extern u32 otp_logical_remain(void);
+extern int OTP_LogicalWrite(u32 addr, u32 cnts, u8 *data);
+extern u32 OTP_LogicalGetRemain(void);
 extern u32 OTPGetCRC(void);
-extern int OTPSetCRC(void);
+extern int OTP_SetCRC(void);
 #ifdef __cplusplus
 }
 #endif

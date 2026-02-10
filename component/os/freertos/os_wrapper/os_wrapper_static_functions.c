@@ -22,7 +22,7 @@
  * Approximate amount consumed after STA connects and pings.
  * If SoftAP is enabled, generally 5 more timers are consumed and 11 more mutexes are consumed.
  * If you need more accurate statistics later, you can enable printf in the
- * __reserved_get_from_poll function to view the number of dynamic components.
+ * __reserved_get_from_pool function to view the number of dynamic components.
  */
 #ifdef CONFIG_WLAN
 #if defined (CONFIG_WHC_DEV) && CONFIG_WHC_DEV
@@ -79,7 +79,7 @@ static void __reserved_init_static_pool(int component_type, void *pool_arg, stru
 										uint32_t *poolbuf_used_num, uint32_t *max_poolbuf_used_num,
 										uint32_t *pool_dynamic_num, uint32_t *pool_init_flag);
 
-static void *__reserved_get_from_poll(int component_type, struct list_head *phead,
+static void *__reserved_get_from_pool(int component_type, struct list_head *phead,
 									  uint32_t *pool_init_flag, uint32_t *pool_dynamic_num,
 									  uint32_t *pool_used_num, uint32_t *max_pool_buf_used_num)
 {
@@ -159,7 +159,7 @@ exit:
 	return (void *)p_component;
 }
 
-static void __reserved_release_to_poll(int component_type, void *p_buf, struct list_head *phead, uint32_t *count, uint32_t *dynamic_count)
+static void __reserved_release_to_pool(int component_type, void *p_buf, struct list_head *phead, uint32_t *count, uint32_t *dynamic_count)
 {
 	struct list_head *plist;
 	int is_static = pdFALSE;
@@ -180,7 +180,7 @@ static void __reserved_release_to_poll(int component_type, void *p_buf, struct l
 		}
 	} else {
 		if (timer_pool_addr <= buf_addr && buf_addr < (timer_pool_addr + sizeof(timer_pool))) {
-			/* Remove the `while (rtos_timer_is_timer_active(p_buf) == pdTRUE) {}` wait from the `__reserved_release_to_poll` method.
+			/* Remove the `while (rtos_timer_is_timer_active(p_buf) == pdTRUE) {}` wait from the `__reserved_release_to_pool` method.
 			To prevent memory from being used for other purposes during subsequent operations on this timer,
 			check if the timer at this address is already inactive during creation; only use this memory space if it is confirmed to be inactive to revents crashes.*/
 			is_static = pdTRUE;
@@ -236,37 +236,37 @@ static void __reserved_init_static_pool(int component_type, void *pool_arg, stru
 	*pool_init_flag = TRUE;
 }
 
-StaticSemaphore_t *__reserved_get_mutex_from_poll(void)
+StaticSemaphore_t *__reserved_get_mutex_from_pool(void)
 {
-	return __reserved_get_from_poll(COMPONENT_MUTEX, &wrapper_mutex_buf_list, &mutex_pool_init_flag,
+	return __reserved_get_from_pool(COMPONENT_MUTEX, &wrapper_mutex_buf_list, &mutex_pool_init_flag,
 									&mutex_dynamic_num, &mutex_buf_used_num, &mutex_max_buf_used_num);
 }
 
-void __reserved_release_mutex_to_poll(void *buf)
+void __reserved_release_mutex_to_pool(void *buf)
 {
-	__reserved_release_to_poll(COMPONENT_MUTEX, buf, &wrapper_mutex_buf_list, &mutex_buf_used_num, &mutex_dynamic_num);
+	__reserved_release_to_pool(COMPONENT_MUTEX, buf, &wrapper_mutex_buf_list, &mutex_buf_used_num, &mutex_dynamic_num);
 }
 
-StaticSemaphore_t *__reserved_get_sema_from_poll(void)
+StaticSemaphore_t *__reserved_get_sema_from_pool(void)
 {
-	return __reserved_get_from_poll(COMPONENT_SEMA, &wrapper_sema_buf_list, &sema_pool_init_flag,
+	return __reserved_get_from_pool(COMPONENT_SEMA, &wrapper_sema_buf_list, &sema_pool_init_flag,
 									&sema_dynamic_num, &sema_buf_used_num, &sema_max_buf_used_num);
 }
 
-void __reserved_release_sema_to_poll(void *buf)
+void __reserved_release_sema_to_pool(void *buf)
 {
-	__reserved_release_to_poll(COMPONENT_SEMA, buf, &wrapper_sema_buf_list, &sema_buf_used_num, &sema_dynamic_num);
+	__reserved_release_to_pool(COMPONENT_SEMA, buf, &wrapper_sema_buf_list, &sema_buf_used_num, &sema_dynamic_num);
 }
 
-StaticTimer_t *__reserved_get_timer_from_poll(void)
+StaticTimer_t *__reserved_get_timer_from_pool(void)
 {
-	return __reserved_get_from_poll(COMPONENT_TIMER, &wrapper_timer_buf_list, &timer_pool_init_flag,
+	return __reserved_get_from_pool(COMPONENT_TIMER, &wrapper_timer_buf_list, &timer_pool_init_flag,
 									&timer_dynamic_num, &timer_buf_used_num, &timer_max_buf_used_num);
 }
 
-void __reserved_release_timer_to_poll(void *buf)
+void __reserved_release_timer_to_pool(void *buf)
 {
-	__reserved_release_to_poll(COMPONENT_TIMER, buf, &wrapper_timer_buf_list, &timer_buf_used_num, &timer_dynamic_num);
+	__reserved_release_to_pool(COMPONENT_TIMER, buf, &wrapper_timer_buf_list, &timer_buf_used_num, &timer_dynamic_num);
 }
 
 void rtos_static_get_component_status(struct component_status *comp_status)

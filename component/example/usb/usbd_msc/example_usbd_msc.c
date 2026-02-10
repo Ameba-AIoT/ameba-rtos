@@ -13,7 +13,7 @@
 #if defined(CONFIG_AMEBASMART)
 #include "ameba_sd.h"
 #endif
-#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+#ifdef CONFIG_USBD_MSC_SECOND_FLASH
 #include "vfs_second_nor_flash.h"
 #endif
 
@@ -70,6 +70,10 @@ static usbd_config_t msc_cfg = {
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 677U,
 	.ptx_fifo_depth = {256U, 16U, 16U, 16U},
+#elif defined (CONFIG_AMEBAPRO3)
+	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
+	.rx_fifo_depth = 1680U,
+	.ptx_fifo_depth = {256U, 16U, 16U, },
 #endif
 };
 
@@ -212,7 +216,7 @@ static void example_usbd_msc_thread(void *param)
 	rtos_sema_create(&msc_sd_status_changed_sema, 0U, 1U);
 #endif
 
-#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+#ifdef CONFIG_USBD_MSC_SECOND_FLASH
 	second_flash_spi_init();
 	second_flash_get_id();
 #endif

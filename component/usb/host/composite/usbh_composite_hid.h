@@ -10,6 +10,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbh.h"
 #include "usb_ch9.h"
+#include "usb_ringbuf.h"
 #include "usbh_composite_config.h"
 
 /* Exported defines ----------------------------------------------------------*/

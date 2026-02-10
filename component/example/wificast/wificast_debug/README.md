@@ -111,3 +111,7 @@ For debug monitored mode, set WIFI_CAST_MONITORED to 1:
 [17:50:10:353]EFUSE[030]: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
 [17:50:10:353]EFUSE[040]: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
 ```
+
+# Supported IC
+
+RTL8721F

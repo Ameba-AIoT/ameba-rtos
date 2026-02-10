@@ -8,22 +8,37 @@ import argparse
 import os
 import shutil
 import sys
+import subprocess
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 copy_script_dir = os.path.join(script_dir, 'build_copy.py')
 
 
+def run_command(cmd, shell=True):
+    """Helper function: run shell command and print log."""
+    print(f"\033[36mRunning: {cmd}\033[0m")
+    try:
+        # Use subprocess.check_call. It raises an exception on failure,
+        # which is safer than os.system and captures errors better.
+        subprocess.check_call(cmd, shell=shell)
+        return 0
+    except subprocess.CalledProcessError:
+        print(f'\033[31mError: Command failed: {cmd}\033[0m')
+        return 1
+
+
 def main(argc, argv):
-    parser = argparse.ArgumentParser(description=None)
+    parser = argparse.ArgumentParser(description='Realtek Build Script')
     parser.add_argument('-proj', '--project-dir', required=True, help='project directory')
     parser.add_argument('-a', '--app', help='application path')
     parser.add_argument('-c', '--clean', action='store_true', help='clean')
     parser.add_argument('-d', '--build-dir', help='build directory')
-    parser.add_argument('-p', '--pristine', action='store_true', help='pristine build')
+    parser.add_argument('-p', '--pristine', action='store_true', help='pristine build (remove build dir)')
     parser.add_argument('-g', '--target',
                          help='custom target',
                          choices=['imgtool_flashloader', 'gen_imgtool_floader', 'gen_submodule_info']
                         )
+    parser.add_argument('-G', '--generator', default='Ninja', help='CMake generator (e.g., Ninja, "Unix Makefiles")')
     parser.add_argument('--daily-build', help='daily build flag')
     parser.add_argument('-gdb', '--gdb', action='store_true', help='gdb')
     parser.add_argument('-debug', '--debug', action='store_true', help='debug')
@@ -42,96 +57,101 @@ def main(argc, argv):
         sys.exit(1)
 
     DEFAULT_BUILD_DIR = os.path.join(project_dir, 'build')
-
-    if args.build_dir == None:
-        build_dir = DEFAULT_BUILD_DIR
-    else:
-        build_dir = args.build_dir
-
+    build_dir = args.build_dir if args.build_dir else DEFAULT_BUILD_DIR
     menuconfig_dir = os.path.join(os.path.dirname(build_dir), 'menuconfig')
 
+    # --- 1. Clean ---
     if args.clean:
-        cmd = 'cd ' + build_dir + ' && ninja clean'
         if os.path.exists(build_dir):
-            os.system(cmd)
+            # Use 'cmake --build --target clean' for generic clean command
+            cmd = f'cmake --build "{build_dir}" --target clean'
+            sys.exit(run_command(cmd))
         return
 
-    if os.path.exists(menuconfig_dir):
-        if args.pristine:
-            shutil.rmtree(menuconfig_dir)
+    # --- 2. Pristine Build (Deep Clean) ---
+    if os.path.exists(menuconfig_dir) and args.pristine:
+        shutil.rmtree(menuconfig_dir)
+        print(f"Removed {menuconfig_dir}")
 
     if os.path.exists(build_dir):
         if args.pristine:
             shutil.rmtree(build_dir)
             os.makedirs(build_dir)
+            print(f"Re-created {build_dir}")
         else:
             pass
     else:
         os.makedirs(build_dir)
 
-    cmd = 'cd ' + build_dir + ' && ' + 'cmake "' + project_dir + '"'
+    # --- 3. Base Configuration Command (CMake Configure) ---
+    # Using -S (source dir) and -B (build dir) avoids directory switching (cd)
+    cmake_config_cmd = f'cmake -S "{project_dir}" -B "{build_dir}" -G "{args.generator}"'
 
-    if args.daily_build != None:
-        cmd += ' -DDAILY_BUILD=' + args.daily_build
+    if args.daily_build:
+        cmake_config_cmd += f' -DDAILY_BUILD={args.daily_build}'
 
-    if args.Defined !=None:
+    if args.Defined:
         for defs in args.Defined:
-            cmd += ' -D' + defs
+            cmake_config_cmd += f' -D{defs}'
 
-    cmd += ' -G Ninja'
-
+    # --- 4. GDB / Debug ---
     gdb_script_dir = os.path.join(script_dir, 'gdb.py')
-    if args.gdb:
+    if args.gdb or args.debug:
         if not os.path.exists(os.path.join(build_dir, 'CMakeCache.txt')):
-            os.system(cmd)
-        os.system(f'python {gdb_script_dir} {project_dir}')
+            if run_command(cmake_config_cmd) != 0:
+                sys.exit(1)
+
+        mode = 'debug' if args.debug else ''
+        os.system(f'python {gdb_script_dir} {project_dir} {mode}')
         return
 
-    if args.debug:
-        if not os.path.exists(os.path.join(build_dir, 'CMakeCache.txt')):
-            os.system(cmd)
-        os.system(f'python {gdb_script_dir} {project_dir} debug')
-        return
+    # --- 5. App Logic (Submodules & Re-configure) ---
+    if args.app:
+        # Step A: Run basic configure first
+        if run_command(cmake_config_cmd) != 0:
+            sys.exit(1)
 
-    if args.app != None:  # app maybe in submodule directory, get submodule info first
-        cmd_pre = cmd + ' && ninja gen_submodule_info'
-        os.system(cmd_pre)
-        if args.pristine:
+        # Step B: Execute gen_submodule_info target
+        # Use cmake --build to invoke it
+        pre_build_cmd = f'cmake --build "{build_dir}" --target gen_submodule_info'
+        if run_command(pre_build_cmd) != 0:
+            sys.exit(1)
+
+        if args.pristine and os.path.exists(menuconfig_dir):
             shutil.rmtree(menuconfig_dir)
-        cmd += ' -DEXAMPLE=' + args.app
+
+        # Step C: Re-configure with APP definition
+        cmake_config_cmd += f' -DEXAMPLE={args.app}'
+        if run_command(cmake_config_cmd) != 0:
+            sys.exit(1)
     else:
         print('Note: No application specified, choose default project')
+        # If no app specified, run standard configure once
+        if run_command(cmake_config_cmd) != 0:
+            sys.exit(1)
 
+    # --- 6. Handle --new command ---
     if args.new:
-        cmd_new = 'python ' + copy_script_dir + ' ' + ' '.join(args.new)
+        cmd_new = f'python {copy_script_dir} {" ".join(args.new)}'
         if args.app:
-            cmd_new += ' --app ' + args.app
-        os.system(cmd_new)
-        return
+            cmd_new += f' --app {args.app}'
+        sys.exit(run_command(cmd_new))
 
-    if args.pristine:
-        cmd += ' && ninja clean && ninja'
-    else:
-        cmd += ' && ninja'
+    # --- 7. Main Build Command ---
+    # Key: Use 'cmake --build' and '--parallel'
+    # This enables automatic parallel compilation regardless of the underlying generator (Ninja/Make)
+    build_cmd = f'cmake --build "{build_dir}" --parallel'
 
-    if args.target != None:
-        cmd += ' ' + args.target
+    if args.target:
+        build_cmd += f' --target {args.target}'
 
-
-    try:
-        rc = os.system(cmd)
-    except:
-        rc = 1
-
-    if rc != 0:
-        print('\033[31mError: Fail to build application')
-        print('Error CMD : ', cmd, '\033[0m')
+    # Execute Final Build
+    if run_command(build_cmd) != 0:
+        print('\033[31mError: Fail to build application\033[0m')
         # Return code will be truncated, e.g.: 256 => 0, so the raw return code will not be used
         sys.exit(1)
-    else:
-        pass
 
-    print('Build done')
+    print('\033[32mBuild done\033[0m')
 
 
 if __name__ == '__main__':

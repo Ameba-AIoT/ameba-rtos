@@ -2854,7 +2854,7 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_le_gap(int argc, char *argv[])
+void fBLEGAP(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, le_gap_cmd_table, "[AT+BLEGAP]");
+	atcmd_bt_excute(argc - 1, &argv[1], le_gap_cmd_table, "[AT+BLEGAP]");
 }

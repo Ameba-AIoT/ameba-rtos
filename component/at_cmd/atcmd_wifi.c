@@ -42,6 +42,7 @@ extern void ipnat_dump(void);
 #endif
 
 extern int wifi_set_ips_internal(u8 enable);
+extern void wifi_set_dbg_dp_log(char *buf);
 
 #if defined(CONFIG_LWIP_ETHERNET)
 extern struct netif *pnetif_eth;
@@ -1286,7 +1287,7 @@ void at_wldbg(u16 argc, char **argv)
 
 	// Construct command string
 	u32 pos = 0;
-	for (int i = 1; i <= argc && pos < sizeof(buf) - 1; i++) {
+	for (int i = 1; i < argc && pos < sizeof(buf) - 1; i++) {
 		int len = strlen(argv[i]);
 		if (pos > 0) {
 			buf[pos++] = ' ';  // Separate parameters with space
@@ -1298,6 +1299,9 @@ void at_wldbg(u16 argc, char **argv)
 
 	// Execute command
 #ifdef CONFIG_WHC_HOST
+	if (!memcmp(buf, "dp_log", strlen("dp_log"))) {
+		wifi_set_dbg_dp_log(buf);
+	}
 	ret = whc_host_api_iwpriv_command(buf, strlen(buf) + 1, 1);
 #else
 	ret = rtw_iwpriv_command(STA_WLAN_INDEX, buf, 1);

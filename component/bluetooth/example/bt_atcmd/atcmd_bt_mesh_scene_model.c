@@ -146,9 +146,9 @@ static const cmd_table_t mesh_scene_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_mesh_scene(int argc, char *argv[])
+void fBLEMESHSCENE(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, mesh_scene_cmd_table, "[AT+BLEMESHSCENE]");
+	atcmd_bt_excute(argc - 1, &argv[1], mesh_scene_cmd_table, "[AT+BLEMESHSCENE]");
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

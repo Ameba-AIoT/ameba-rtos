@@ -65,6 +65,15 @@ None
 	- If you connect a speaker to the board, sound will play.
    ```
 
+	UAC2.0 supports audio recording by default. The following guide demonstrates how to capture and verify the recording data path using Windows 11 and Audacity as the test environment.
+	```
+	- Configure Recording Software: Launch Audacity. Navigate to Audio Setup > Recording Device and select the target device: Microphone (Realtek Composite Device).
+	- Initialize Data Stream: Click the Record button on the Audacity toolbar to prepare the Host to receive audio frames.
+	- Execute Test Command: In the device's serial console (UART), execute "comp_record" command to trigger data transmission.
+	- Verify Output: Audacity will begin receiving a continuous, looping data stream. Once sufficient data has been captured, click the Stop button and play back the track to verify audio integrity; a clear, looping audio signal should be heard.
+	```
+
+
 5. Use HIDPyToy tool to test the HID message(download address https://github.com/todbot/hidpytoy)
    	```
 	- Connect the HID device

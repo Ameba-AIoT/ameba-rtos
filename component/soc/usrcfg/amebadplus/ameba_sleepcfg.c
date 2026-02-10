@@ -41,8 +41,8 @@ struct WakeEvent_TypeDef sleep_wevent_config[] = {
 	{WAKE_SRC_IPC_KM4,						WAKEUP_KM4},	/* IPC can only wakeup KM4, do not change it*/
 	{WAKE_SRC_BT_WAKE_HOST,					WAKEUP_NULL},
 	{WAKE_SRC_KM4_WAKE_IRQ,					WAKEUP_KM0},	/* internal usage, do not change it*/
-	{WAKE_SRC_WIFI_FTSR_MAILBOX,			WAKEUP_KM0},	/* For WiFi wakeup, do not change it*/
-	{WAKE_SRC_WIFI_FISR_FESR_IRQ,			WAKEUP_KM0},	/* For WiFi wakeup, do not change it*/
+	{WAKE_SRC_WIFI_FTSR_MAILBOX,			WAKEUP_NULL},	/* For WiFi wakeup, do not change it*/
+	{WAKE_SRC_WIFI_FISR_FESR_IRQ,			WAKEUP_NULL},	/* For WiFi wakeup, do not change it*/
 
 	{0xFFFFFFFF,							WAKEUP_NULL},	/* Table end */
 };

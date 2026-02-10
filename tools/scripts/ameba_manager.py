@@ -28,11 +28,11 @@ class AmebaManager:
         self.command_table: Dict[str, Dict[str, Any]] = {
             'build': {
                 'action': self.op_build,
-                'help': 'Build current project. e.g. ameba.py buid [soc_name] [args]'
+                'help': 'Build on the current or given SoC. e.g. ameba.py build [soc_name] [args]'
              },
             'menuconfig': {
                 'action': self.op_menuconfig,
-                'help': 'Run menuconfig tool for current SoC. e.g. ameba.py menuconfig [args]'
+                'help': 'Run menuconfig tool for the current or given SoC. e.g. ameba.py menuconfig [soc_name] [args]'
             },
             'flash': {
                 'action': self.op_flash,
@@ -115,7 +115,7 @@ class AmebaManager:
         for name, info in sorted(self.command_table.items()):
             print(f"  {name.ljust(max_len)}: {info['help']}")
         print()
-        print("Run 'ameba.py <COMMAND> -h' for more information of command build/menuconfig/flash/monitor.")
+        print("Run 'ameba.py <COMMAND> -h' for more information of command build/menuconfig/flash/monitor/jlink.")
 
     def show_current_soc(self) -> bool:
         if not self._check_ready(): return False
@@ -228,16 +228,20 @@ class AmebaManager:
 
         soc_name = self.utils.socs_lower.get(soc_name.lower())
 
-        previous_soc = self.current_soc_info
-        if previous_soc and previous_soc['name'] == soc_name:
-            print(f"Current SoC is: {GREEN}{soc_name}{RESET}")
-            return True
+        is_parallel = os.environ.get('PARALLEL_BUILD') == 'true'
+        if is_parallel:
+            os.environ['TARGET_SOC'] = soc_name
+        else:
+            previous_soc = self.current_soc_info
+            if previous_soc and previous_soc['name'] == soc_name:
+                print(f"Current SoC is: {GREEN}{soc_name}{RESET}")
+                return True
 
-        self.soc_info_set = {'name':soc_name}
-        if not self.utils.save_soc_info(self.soc_info_set):
-            return False
+            self.soc_info_set = {'name':soc_name}
+            if not self.utils.save_soc_info(self.soc_info_set):
+                return False
 
-        print(f"Current SoC is set to: {GREEN}{soc_name}{RESET}. Saved as {self.info_file}")
+            print(f"Current SoC is set to: {GREEN}{soc_name}{RESET}. Saved as {self.info_file}")
 
         self.current_soc_info = self.utils.parse_soc_info()
         if not self.current_soc_info:
@@ -297,8 +301,6 @@ class AmebaManager:
 
     def op_build(self, args: List) -> bool:
         if not self._check_ready(): return False
-        if self.env_type == 2:
-            return run_script(self.script_dir, "build.py", args + ['--project-dir', self.current_dir])
 
         if args and not args[0].startswith('-'):
             if not self.op_set_project(args[0]):
@@ -340,8 +342,6 @@ class AmebaManager:
 
     def op_menuconfig(self, args: List) -> bool:
         if not self._check_ready(): return False
-        if self.env_type == 2:
-            return run_script(self.script_dir, "menuconfig.py", args + ['--project-dir', self.current_dir])
 
         if args and not args[0].startswith('-'):
             if not self.op_set_project(args[0]):
@@ -390,10 +390,7 @@ class AmebaManager:
             if flag in args:
                 print(f"{YELLOW}The param '{flag}' will be ignored.{RESET}")
 
-        if self.env_type == 2:
-            img_dir = self.current_dir
-        else:
-            img_dir = self.soc_workdir
+        img_dir = self.soc_workdir
         if not img_dir or not os.path.exists(img_dir):
             print(f"{RED}ERROR: Please build before flash.{RESET}")
             return False
@@ -423,9 +420,6 @@ class AmebaManager:
 
     def op_clean_soc(self, soc_name=None) -> bool:
         if not self._check_ready(): return False
-        if self.env_type == 2:
-            self.op_menuconfig(["-c"])
-            return True
 
         if soc_name:
             if not self.op_set_project(soc_name[0]):
@@ -437,23 +431,19 @@ class AmebaManager:
         if not self.current_soc_info:
             return False
         if not os.path.exists(self.soc_workdir):
-            os.remove(self.info_file)
+            if os.path.exists(self.info_file): os.remove(self.info_file)
             return True
 
         soc = self.current_soc_info['name']
         print(f"Cleanup all products of {soc}...")
         self.op_menuconfig(["-c"])      # ninja clean, remove build and menuconfig
         shutil.rmtree(self.soc_workdir)
-        os.remove(self.info_file)       # remove soc_info
+        if os.path.exists(self.info_file): os.remove(self.info_file)       # remove soc_info
 
         return True
 
     def op_clean_build(self, soc_name=None) -> bool:
         if not self._check_ready(): return False
-        if self.env_type == 2:
-            self.op_build(["-c"])
-            shutil.rmtree(os.path.join(self.current_dir, "build"))
-            return True
 
         if soc_name:
             if not self.op_set_project(soc_name[0]):
@@ -517,9 +507,6 @@ class AmebaManager:
 
         parent_dir = os.path.dirname(current_dir)
 
-        if parent_dir == self.sdk_root and current_dir.endswith("_gcc_project"):
-            return EnvType.SDK_PROJECT     # sdk project dir
-
         while True:
             if parent_dir == current_dir:   # standalone dir
                 return EnvType.EXT_DIR
@@ -533,21 +520,11 @@ class AmebaManager:
     def check_command_permission(self, cmd: str) -> bool:
         env_type = self.check_env()
 
-        cmd_list = ["build", "menuconfig", "flash", "monitor", "soc", "show"]
+        cmd_list = ["build", "menuconfig", "flash", "monitor", "jlink", "soc", "show"]
         if not env_type and cmd in cmd_list:
             print(f"{RED}ERROR: Command '{cmd}' cannot run here.{RESET}", file=sys.stderr)
             print(f"Please run in SDK or project root directory.", file=sys.stderr)
             return False
-
-        if env_type == EnvType.SDK_PROJECT and cmd in ["soc", "show"]: # cannot select soc
-            print(f"{YELLOW}WARNING: Command '{cmd}' will be ignored here.{RESET}", file=sys.stderr)
-            return False
-
-        if env_type == EnvType.EXT_DIR and cmd in cmd_list:
-            if not os.path.exists(os.path.join(self.current_dir, "CMakeLists.txt")):
-                print(f"{RED}ERROR: Command '{cmd}' cannot run here.{RESET}", file=sys.stderr)
-                print(f"Please run in SDK or project root directory.", file=sys.stderr)
-                return False
 
         self.env_type = env_type
         return True

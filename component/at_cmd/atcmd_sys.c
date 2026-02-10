@@ -12,6 +12,7 @@
 #include "at_intf_sdio.h"
 #include "at_intf_usbd.h"
 #include "ameba_ota.h"
+#include "gpio_api.h"
 
 #include "atcmd_service.h"
 #ifndef CONFIG_MP_SHRINK
@@ -357,6 +358,79 @@ void at_gmr(u16 argc, char **argv)
 	at_printf(ATCMD_OK_END_STR);
 }
 
+#ifdef CONFIG_MP_INCLUDED
+void at_gpiotest(u16 argc, char **argv)
+{
+	u8 error_no = 0;
+	u8 output_pin, input_pin, val_w, val_r;
+	gpio_t gpio_output, gpio_input;
+
+	if (argc != 4) {
+		error_no = 1;
+		goto end;
+	}
+
+	if (strstr(argv[1], "PA")) {
+		output_pin = _PA_0 + atoi(&argv[1][2]);
+	} else if (strstr(argv[1], "PB")) {
+		output_pin = _PB_0 + atoi(&argv[1][2]);
+	}
+#ifdef _PC_0
+	else if (strstr(argv[1], "PC")) {
+		output_pin = _PC_0 + atoi(&argv[1][2]);
+	}
+#endif
+	else {
+		error_no = 2;
+		goto end;
+	}
+
+	val_w = atoi(argv[2]);
+	if (val_w > 1) {
+		error_no = 2;
+		goto end;
+	}
+
+	if (strstr(argv[3], "PA")) {
+		input_pin = _PA_0 + atoi(&argv[3][2]);
+	} else if (strstr(argv[3], "PB")) {
+		input_pin = _PB_0 + atoi(&argv[3][2]);
+	}
+#ifdef _PC_0
+	else if (strstr(argv[3], "PC")) {
+		input_pin = _PC_0 + atoi(&argv[3][2]);
+	}
+#endif
+	else {
+		error_no = 2;
+		goto end;
+	}
+
+	gpio_init(&gpio_output, output_pin);
+	gpio_dir(&gpio_output, PIN_OUTPUT);
+	gpio_mode(&gpio_output, PullNone);
+
+	gpio_init(&gpio_input, input_pin);
+	gpio_dir(&gpio_input, PIN_INPUT);
+	gpio_mode(&gpio_input, PullNone);
+
+	gpio_write(&gpio_output, val_w);
+	val_r = gpio_read(&gpio_input);
+	if (val_w != val_r) {
+		error_no = 3;
+		goto end;
+	}
+
+end:
+	if (error_no == 0) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, ATCMD_OK_END_STR);
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, ATCMD_ERROR_END_STR, error_no);
+	}
+}
+#endif
+
+
 #ifdef CONFIG_ATCMD_HOST_CONTROL
 /****************************************************************
 AT command process:
@@ -406,6 +480,9 @@ const log_item_t at_sys_items[] = {
 	{"+TEST", at_test},
 	{"+LIST", at_list},
 	{"+GMR", at_gmr},
+#ifdef CONFIG_MP_INCLUDED
+	{"+GPIOTEST", at_gpiotest},
+#endif
 #ifdef CONFIG_ATCMD_HOST_CONTROL
 	{"+UART", at_uart},
 #endif

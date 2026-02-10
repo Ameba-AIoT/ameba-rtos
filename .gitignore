@@ -6,6 +6,7 @@
 *.s
 
 # project build files
+/build_*/*
 /**/image/*
 /**/image_mp/*
 /**/build/*
@@ -27,6 +28,8 @@
 !/tools/**/*.bin
 
 # project library files
+/component/soc/**/project/**/lib/
+/component/soc/**/project/**/lib/
 
 # log files
 *.log

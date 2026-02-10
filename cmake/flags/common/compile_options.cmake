@@ -67,7 +67,7 @@ list(REMOVE_ITEM c_GLOBAL_COMMON_COMPILE_CPP_OPTIONS  -Wstrict-prototypes)
 # ++++++++++++++++ c_GLOBAL_MCU_INCLUDE_DIRECTORIES ++++++++++++++++ #
 ameba_list_append(c_GLOBAL_MCU_INCLUDE_DIRECTORIES
     ${c_MENUCONFIG_DIR}/project_${c_MCU_PROJECT_NAME}
-    ${c_MCU_PROJECT_DIR}/inc
+    ${c_MCU_INC_DIR}
 )
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
