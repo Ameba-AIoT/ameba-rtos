@@ -529,6 +529,7 @@ extern "C" {
 /** @defgroup RSIP_Exported_Functions RSIP Exported Functions
   * @{
   */
+_LONG_CALL_ void RSIP_WAIT_IDLE(void);
 _LONG_CALL_ void RSIP_OTF_init(u32 KeySize);
 _LONG_CALL_ void RSIP_IV_Set(u8 index, u8 *IV);
 _LONG_CALL_ void RSIP_OTF_Cmd(u32 NewStatus);

@@ -38,7 +38,7 @@
   */
 int efuse_get_remaining_length(void)
 {
-	return otp_logical_remain();
+	return OTP_LogicalGetRemain();
 }
 
 /**
@@ -54,7 +54,7 @@ void efuse_mtp_read(uint8_t *data)
 	/*0xff will be eFuse default value instead of 0x00. */
 	_memset(data, 0xFF, OTP_MTP_USER_LEN);
 
-	ret = OTP_LogicalMap_Read(data, OTP_MTP_USER_START, OTP_MTP_USER_LEN);
+	ret = OTP_LogicalRead(data, OTP_MTP_USER_START, OTP_MTP_USER_LEN);
 
 	if (ret == RTK_FAIL) {
 		printf("ERR: efuse_mtp_read fail \n");
@@ -80,7 +80,7 @@ int efuse_mtp_write(uint32_t offset, uint32_t len, uint8_t *data)
 		return bResult;
 	}
 
-	bResult = OTP_LogicalMap_Write((OTP_MTP_USER_START + offset), len, data);
+	bResult = OTP_LogicalWrite((OTP_MTP_USER_START + offset), len, data);
 
 	if (bResult != RTK_SUCCESS) {
 		printf("write fail \n");

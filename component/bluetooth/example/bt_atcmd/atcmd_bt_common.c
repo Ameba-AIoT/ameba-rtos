@@ -26,6 +26,11 @@ int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const 
 	char *cmd_str = argv[0];
 	int i = 0, j = 0;
 
+	if (!argc) {
+		BT_LOGE("[%s]Error: Atcmd has no param!!!\r\n", __func__);
+		return BT_AT_ERR_CMD_INVALID;
+	}
+
 	for (j = 0; j < argc; j++) {
 		if (NULL == argv[j]) {
 			BT_LOGE("[%s]Error: Atcmd has NULL param!!!\r\n", __func__);

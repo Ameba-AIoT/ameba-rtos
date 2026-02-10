@@ -43,7 +43,7 @@ if(NOT CONFIG_ETHERNET_RMII)
 endif()
 
 ameba_list_append(private_sources
-    ethernet_mii.c
+    ethernet.c
 )
 
 # Component private part, user config end(DO NOT remove this line)

@@ -37,9 +37,9 @@
 /* 308 from DP asm 2024/4/11 */
 #define WIFI_STACK_SIZE_INIC_TRX_HST	(512 + CONTEXT_SAVE_SIZE)
 
-#ifndef CONFIG_AMEBAL2
-#define WHC_RX_SKB_SHARE_TO_PBUF
-#endif
+// #ifndef CONFIG_AMEBAL2
+// #define WHC_RX_SKB_SHARE_TO_PBUF
+// #endif
 /* -------------------------------- Macros ---------------------------------- */
 /* ------------------------------- Data Types ------------------------------- */
 /* recv buffer to store the data from IPC to queue. */

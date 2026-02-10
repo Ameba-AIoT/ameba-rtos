@@ -76,7 +76,7 @@ static const u8 usbd_composite_config_desc[USB_LEN_CFG_DESC] = {
 	USB_DESC_TYPE_CONFIGURATION,                                     /* bDescriptorType */
 	0x00,
 	0x00,                                                            /* wTotalLength: calculated at runtime */
-	0x04,                                                            /* bNumInterfaces */
+	USBD_UAC_AC_IF_NUM + 2,                                          /* bNumInterfaces */
 	0x01,                                                            /* bConfigurationValue */
 	0x00,                                                            /* iConfiguration */
 #if USBD_COMP_SELF_POWERED

@@ -142,6 +142,10 @@ static usbd_config_t hid_cfg = {
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 677U,
 	.ptx_fifo_depth = {256U, 16U, 16U, 16U},
+#elif defined (CONFIG_AMEBAPRO3)
+	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
+	.rx_fifo_depth = 1680U,
+	.ptx_fifo_depth = {256U, 16U, 16U, },
 #endif
 };
 

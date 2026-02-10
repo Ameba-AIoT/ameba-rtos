@@ -319,7 +319,7 @@ static const cmd_table_t gatts_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_gatts(int argc, char *argv[])
+void fBLEGATTS(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, gatts_cmd_table, "[AT+BLEGATTS]");
+	atcmd_bt_excute(argc - 1, &argv[1], gatts_cmd_table, "[AT+BLEGATTS]");
 }

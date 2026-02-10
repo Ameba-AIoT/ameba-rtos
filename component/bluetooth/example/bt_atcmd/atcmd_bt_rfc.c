@@ -129,7 +129,7 @@ static const cmd_table_t rfc_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_rfc_cmd(int argc, char *argv[])
+void fBTRFC(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, rfc_cmd_table, "[AT+BTRFC]");
+	atcmd_bt_excute(argc - 1, &argv[1], rfc_cmd_table, "[AT+BTRFC]");
 }

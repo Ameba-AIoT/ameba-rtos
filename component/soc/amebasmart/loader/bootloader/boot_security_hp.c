@@ -30,13 +30,24 @@ u8 BOOT_LoadRDPImg(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u
 
 	Cnt = sizeof(Km4Img3Label) / sizeof(char *);
 
-	/* check if RDP image should decrypt. If not, copy to secure RAM directly */
+	/* Step 1: Try to load plaintext image first */
 	if (BOOT_LoadSubImage(SubImgInfo, SrcAddr, 2, Km4Img3Label, FALSE) == TRUE) {
-		for (int i = 0; i < 5; i ++) {
-			RTK_LOGW(TAG, "IMG3 not encrypted, please enable RDP !!! \n");
+		/* Plaintext load succeeded - print warning */
+		for (int i = 0; i < 5; i++) {
+			RTK_LOGW(TAG, "IMG3 not encrypted! Enable RDP for MP!\n");
 		}
 		return Cnt;
 	}
+
+	/* Step 2: Plaintext load failed, check if RDP is enabled in OTP */
+	if (SYSCFG_OTP_RDPEn() == FALSE) {
+		/* RDP not enabled but image is encrypted - this is an error */
+		RTK_LOGE(TAG, "Plaintext IMG3 load failed! Must enable OTP decryption!\n");
+		return FALSE;
+	}
+
+	/* Step 3: RDP enabled, proceed with decryption */
+	RTK_LOGI(TAG, "RDP EN\n");
 
 	/* Initialize AES engine */
 	CRYPTO_Init(NULL);

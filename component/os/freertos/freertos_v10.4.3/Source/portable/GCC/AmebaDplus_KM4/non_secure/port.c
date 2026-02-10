@@ -926,6 +926,13 @@ void vApplicationIdleHook(void)
 {
 	/* Use the idle task to place the CPU into a low power mode.  Greater power
 	saving could be achieved by not including any demo tasks that never block. */
+#if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+	extern int32_t driver_suspend_ret;
+#if defined (CONFIG_WLAN)
+	extern int32_t wlan_driver_check_and_suspend(void);
+	driver_suspend_ret = wlan_driver_check_and_suspend();
+#endif
+#endif
 #if defined(CONFIG_WIFI_FW_EN) && CONFIG_WIFI_FW_EN
 	extern void wififw_task_idle(void);
 	wififw_task_idle();
