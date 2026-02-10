@@ -500,7 +500,7 @@ static u32 OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
   *          - RTK_SUCCESS: read ok
   *          - RTK_FAIL: read fail
   */
-int OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
+int OTP_LogicalRead(u8 *pbuf, u32 addr, u32 len)
 {
 	u32 OTP_Addr = 0;
 	u32 offset;
@@ -519,7 +519,7 @@ int OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 		OTP_Read32(OTP_Addr, &OTPData);
 
 		if (OTPData == 0xFFFFFFFF) {/* not write */
-			//RTK_LOGD(TAG, "OTP_LogicalMap_Read: data end at address=%lx\n", OTP_Addr);
+			//RTK_LOGD(TAG, "OTP_LogicalRead: data end at address=%lx\n", OTP_Addr);
 			break;
 		}
 
@@ -586,7 +586,7 @@ int OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
   *          - RTK_SUCCESS: write ok
   *          - RTK_FAIL: write fail
   */
-int OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
+int OTP_LogicalWrite(u32 addr, u32 cnts, u8 *data)
 {
 	u32	base, offset;
 	u32 bytemap = 0, byte_change = 0, wordmap = 0, word_change = 0;
@@ -610,7 +610,7 @@ int OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
 	while (left_cnts > 0) {
 
 		write_pkt = left_cnts + offset > OTP_LPGPKT_SIZE ? OTP_LPGPKT_SIZE : left_cnts + offset;
-		ret = OTP_LogicalMap_Read(newdata, base, OTP_LPGPKT_SIZE);
+		ret = OTP_LogicalRead(newdata, base, OTP_LPGPKT_SIZE);
 
 		if (ret == RTK_FAIL) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "LogicalMap Read error when write @ %x \n", base);
@@ -684,7 +684,7 @@ next:
   * @param  none
   * @retval OTP logical address remain length
   */
-u32 otp_logical_remain(void)
+u32 OTP_LogicalGetRemain(void)
 {
 	u32 Idx = 0;
 	u32 OTPData;

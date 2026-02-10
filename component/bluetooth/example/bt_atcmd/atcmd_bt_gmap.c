@@ -18,12 +18,10 @@
 #include <rtk_bt_gmap.h>
 #include <atcmd_bt_impl.h>
 
-int atcmd_bt_gmap_cmd(int argc, char *argv[])
+void fBLEGMAP(u16 argc, char *argv[])
 {
 	(void)argc;
 	(void)argv;
 	BT_LOGE("There is no available supported bt gmap at cmd \r\n");
-
-	return 0;
 }
 #endif

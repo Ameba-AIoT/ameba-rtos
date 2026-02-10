@@ -212,8 +212,8 @@ void rtp_dump_header(rtp_hdr_t *rtphdr, int is_nbo)
 	printf("\n\rrtp marker bit m:%d", rtphdr->m);
 	printf("\n\rrtp pt:%d", rtphdr->pt);
 	printf("\n\rrtp seq:%d", is_nbo ? ntohs(rtphdr->seq) : rtphdr->seq);
-	printf("\n\rrtp timestamp ts:%d", is_nbo ? ntohl(rtphdr->ts) : rtphdr->ts);
-	printf("\n\rrtp synchronization source ssrc:%d", is_nbo ? ntohl(rtphdr->ssrc) : rtphdr->ssrc);
+	printf("\n\rrtp timestamp ts:%lu", is_nbo ? ntohl(rtphdr->ts) : rtphdr->ts);
+	printf("\n\rrtp synchronization source ssrc:%lu", is_nbo ? ntohl(rtphdr->ssrc) : rtphdr->ssrc);
 }
 
 void rtp_report(struct stream_context *stream_ctx)

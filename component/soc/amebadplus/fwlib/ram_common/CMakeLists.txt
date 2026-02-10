@@ -40,7 +40,6 @@ ameba_list_append(private_sources
     ameba_bor.c
     ameba_clk.c
     ameba_codec.c
-    ameba_gdma_memcpy.c
     ameba_ir.c
     ameba_ledc.c
     ameba_sport.c

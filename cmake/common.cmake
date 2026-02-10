@@ -248,6 +248,11 @@ macro(ameba_mcu_project_create name mcu_type)
     ameba_set(c_MCU_SDK_DIR ${c_MCU_PROJECT_DIR}/${c_SDK_NAME})
     ameba_set(c_MCU_SRC_DIR ${c_MCU_PROJECT_DIR}/src)
     ameba_set(c_MCU_INC_DIR ${c_MCU_PROJECT_DIR}/inc)
+    if(${NEWDIR_FLAG}) # temperary compatibility for different dir structure
+        ameba_set(c_MCU_SRC_DIR ${c_MCU_PROJECT_DIR}/../../main/${name}/src)
+        ameba_set(c_MCU_INC_DIR ${c_MCU_PROJECT_DIR}/../../main/${name}/inc)
+        ameba_set(c_MCU_SDK_DIR ${c_MCU_PROJECT_DIR})
+    endif()
 
     # sub dirs in *sdk/
     ameba_set(c_SDK_BUILD_DIR           ${c_MCU_SDK_DIR}/build)
@@ -288,7 +293,7 @@ macro(ameba_mcu_project_create name mcu_type)
     ameba_set_if(CONFIG_MP_INCLUDED c_SDK_IMAGE_FOLDER_NAME image_mp p_ELSE image)
 
     # dirs define on specific conditions
-    ameba_set(c_SDK_IMAGE_TARGET_DIR ${c_MCU_SDK_DIR}/${c_SDK_IMAGE_FOLDER_NAME})
+    ameba_set(c_SDK_IMAGE_TARGET_DIR ${CMAKE_CURRENT_BINARY_DIR}/${c_SDK_IMAGE_FOLDER_NAME})
 
     if(EXISTS ${c_SDK_IMAGE_TARGET_DIR})
         file(GLOB FILES_TO_REMOVE "${c_SDK_IMAGE_TARGET_DIR}/*")
@@ -344,10 +349,10 @@ macro(ameba_mcu_project_create name mcu_type)
         ${c_BUILD_INFO}
         ALL
         COMMENT "generate build_info.h"
-        COMMAND ${CMAKE_COMMAND} -DPROJECTDIR=${c_MCU_PROJECT_DIR} -DCMAKE_FILES_DIR=${c_CMAKE_FILES_DIR} -DCONFIG_TOOLCHAIN_ARM_GCC=${CONFIG_TOOLCHAIN_ARM_GCC} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -P ${c_CMAKE_FILES_DIR}/buildinfo.cmake
+        COMMAND ${CMAKE_COMMAND} -DPROJECTDIR=${c_MCU_INC_DIR} -DCMAKE_FILES_DIR=${c_CMAKE_FILES_DIR} -DCONFIG_TOOLCHAIN_ARM_GCC=${CONFIG_TOOLCHAIN_ARM_GCC} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -P ${c_CMAKE_FILES_DIR}/buildinfo.cmake
         BYPRODUCTS ${c_MCU_INC_DIR}/build_info.h
     )
-    set_property(TARGET ${c_BUILD_INFO} PROPERTY ADDITIONAL_CLEAN_FILES ${c_MCU_PROJECT_DIR}/inc/build_info.h)
+    set_property(TARGET ${c_BUILD_INFO} PROPERTY ADDITIONAL_CLEAN_FILES ${c_MCU_INC_DIR}/build_info.h)
     set(c_CURRENT_IMAGE_IS_ROM FALSE) #Flag to identify whether current image is rom, updated in ameba_add_image
     ameba_add_empty_object()
 endmacro()

@@ -26,10 +26,6 @@ if(CONFIG_AMEBASMART)
                 set(output_name freertos_smp)
             endif()
         endif()
-
-        ameba_list_append(public_libraries
-            ${c_SDK_LIB_SOC_DIR}/lib_${output_name}.a
-        )
     else()
         #OPTIMIZE: Change the dir name from AmebaSmart_HP/AmebaSmart_LP to AmebaSmart_KM4/AmebaSmart_KM0 will be same as other soc.\
         #OPTIMIZE: Amebasmart share same port dir
@@ -182,34 +178,18 @@ endif()
 
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
+###NOTE: For open-source component, always build from source
+ameba_add_internal_library(${output_name}
+    p_SOURCES
+        ${private_sources}
+    p_INCLUDES
+        ${private_includes}
+    p_DEFINITIONS
+        ${private_definitions}
+    p_COMPILE_OPTIONS
+        ${private_compile_options}
+    p_DEPENDENCIES
+        ${c_BUILD_INFO}
+)
 
-if("${c_MCU_TYPE}" STREQUAL "ca32")
-    ###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
-    ameba_add_external_soc_library(${output_name}
-        p_SOURCES
-            ${private_sources}
-        p_INCLUDES
-            ${private_includes}
-        p_DEFINITIONS
-            ${private_definitions}
-        p_COMPILE_OPTIONS
-            ${private_compile_options}
-        p_DEPENDENCIES
-            ${c_BUILD_INFO}
-    )
-else()
-    ###NOTE: For open-source component, always build from source
-    ameba_add_internal_library(${output_name}
-        p_SOURCES
-            ${private_sources}
-        p_INCLUDES
-            ${private_includes}
-        p_DEFINITIONS
-            ${private_definitions}
-        p_COMPILE_OPTIONS
-            ${private_compile_options}
-        p_DEPENDENCIES
-            ${c_BUILD_INFO}
-    )
-endif()
 ##########################################################################################

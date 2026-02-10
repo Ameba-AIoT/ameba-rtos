@@ -80,8 +80,8 @@ static const cmd_table_t mesh_datatrans_model_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_mesh_datatrans_model(int argc, char *argv[])
+void fBLEMESHDATA(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, mesh_datatrans_model_cmd_table, "[AT+BLEMESHDATA]");
+	atcmd_bt_excute(argc - 1, &argv[1], mesh_datatrans_model_cmd_table, "[AT+BLEMESHDATA]");
 }
 #endif // end of RTK_BLE_MESH_SUPPORT

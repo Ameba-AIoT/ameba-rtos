@@ -25,12 +25,9 @@ if USBD_COMPOSITE_MENU
                     depends on SUPPORT_SDIOH
                     select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
                     select FATFS_SD_MODE if WHC_HOST || WHC_NONE
-                config USBD_COMPOSITE_MSC_SD_SPI_MODE
-                    bool "SD Card (SPI mode)"
-                    select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
-                    select FATFS_SD_SPI_MODE if WHC_HOST || WHC_NONE
-                config USBD_COMPOSITE_MSC_EXTERNAL_FLASH
-                    bool "External FLASH"
+                config USBD_COMPOSITE_MSC_SECOND_FLASH
+                    bool "Second FLASH"
+                    depends on SUPPORT_USBD_MSC_SECOND_FLASH
                     select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
                     select FATFS_SECOND_FLASH if WHC_HOST || WHC_NONE
             endchoice
@@ -88,12 +85,9 @@ config USBD_MSC_MENU
                 depends on SUPPORT_SDIOH
                 select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
                 select FATFS_SD_MODE if WHC_HOST || WHC_NONE
-            config USBD_MSC_SD_SPI_MODE
-                bool "SD Card (SPI mode)"
-                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
-                select FATFS_SD_SPI_MODE if WHC_HOST || WHC_NONE
-            config USBD_MSC_EXTERNAL_FLASH
-                bool "External FLASH"
+            config USBD_MSC_SECOND_FLASH
+                bool "Second FLASH"
+                depends on SUPPORT_USBD_MSC_SECOND_FLASH
                 select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
                 select FATFS_SECOND_FLASH if WHC_HOST || WHC_NONE
         endchoice

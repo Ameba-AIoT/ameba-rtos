@@ -25,14 +25,23 @@ int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const 
 {
 	char *cmd_str = argv[0];
 	int i = 0, j = 0;
+	int ret = 0;
+
+	if (!argc) {
+		BT_LOGE("[%s]Error: Atcmd has no param!!!\r\n", __func__);
+		ret = BT_AT_ERR_CMD_INVALID;
+		goto exit;
+	}
 
 	for (j = 0; j < argc; j++) {
 		if (NULL == argv[j]) {
 			BT_LOGE("[%s]Error: Atcmd has NULL param!!!\r\n", __func__);
-			return BT_AT_ERR_PARAM_INVALID;
+			ret = BT_AT_ERR_PARAM_INVALID;
+			goto exit;
 		}
 		if (check_str_whitespace(argv[j])) {
-			return BT_AT_ERR_PARAM_INVALID;
+			ret = BT_AT_ERR_PARAM_INVALID;
+			goto exit;
 		}
 	}
 
@@ -41,14 +50,24 @@ int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const 
 			if (argc < cmd_table[i].argc_min || argc > cmd_table[i].argc_max) {
 				BT_LOGE("%s %s failed: wrong args number: %d, right range: [%d-%d]!\r\n",
 						tag, cmd_str, argc, cmd_table[i].argc_min, cmd_table[i].argc_max);
-				return BT_AT_ERR_PARAM_INVALID;
+				ret = BT_AT_ERR_PARAM_INVALID;
+				goto exit;
 			}
 
-			return cmd_table[i].cmd_func(argc - 1, &argv[1]);
+			ret = cmd_table[i].cmd_func(argc - 1, &argv[1]);
+			goto exit;
 		}
 		i++;
 	}
 
 	BT_LOGE("%s Error: Cant find this cmd %s\r\n", tag, cmd_str);
-	return BT_AT_ERR_CMD_INVALID;
+	ret = BT_AT_ERR_CMD_INVALID;
+
+exit:
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
+	return ret;
 }

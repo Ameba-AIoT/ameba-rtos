@@ -276,7 +276,7 @@ const struct rtw_event_hdl_func_t event_internal_hdl[] = {
 #endif
 };
 
-void wifi_event_handle_internal(u32 event_cmd, u8 *evt_info)
+__attribute__((noinline)) void wifi_event_handle_internal(u32 event_cmd, u8 *evt_info)
 {
 #ifndef CONFIG_MP_SHRINK
 #if !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
@@ -383,7 +383,11 @@ void wifi_indication(u32 event, u8 *evt_info, s32 evt_len)
 	whc_dev_wpas_wifi_event_indicate(event, evt_info, evt_len);
 #endif
 
+#if !defined (CONFIG_FULLMAC) && defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_INTF_IPC)
+	whc_host_wifi_indication_enqueue(event, evt_info, evt_len);
+#else
 	wifi_event_handle(event, evt_info);
+#endif
 }
 
 void wifi_indication_ext(u32 event, u8 *info_buf, s32 info_len, u8 *frame_buf, s32 frame_len)
@@ -414,4 +418,3 @@ void wifi_indication_ext(u32 event, u8 *info_buf, s32 info_len, u8 *frame_buf, s
 	wifi_indication(event, (u8 *)evt_buf, evt_buf_len);
 	rtos_mem_free(evt_buf);
 }
-

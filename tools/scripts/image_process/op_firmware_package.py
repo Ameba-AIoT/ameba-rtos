@@ -563,7 +563,7 @@ class FirmwarePackage(OperationBase):
                 #NOTE: manifest file should contains gcm info
                 if manifest_source_file: append_files(manifest_source_file, tmp_gcm_prepend_file_name)
         elif manifest_config.rdp_enable:
-            Rdp.execute(self.context, tmp_en_file_name, tmp_en_src_file_name, 'enc', ImageType.IMAGE1)
+            Rdp.execute(self.context, tmp_en_file_name, tmp_en_src_file_name, 'enc', image_type)
         else:
             self.logger.info(f"Both rsip and rdp are not enabled for {image_type.name.lower()}")
             shutil.copy(tmp_en_src_file_name, tmp_en_file_name)

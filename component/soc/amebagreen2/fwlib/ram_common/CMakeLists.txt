@@ -70,7 +70,6 @@ ameba_list_append(private_sources
     ameba_sd.c
     ameba_codec.c
     ameba_uvc.c
-    ameba_gdma_memcpy.c
     ameba_bor.c
     ameba_pseduo_i2c.c
     ameba_lcdc.c

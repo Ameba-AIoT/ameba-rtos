@@ -283,9 +283,9 @@ static const cmd_table_t mesh_sensor_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_mesh_sensor(int argc, char *argv[])
+void fBLEMESHSENSOR(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, mesh_sensor_cmd_table, "[AT+BLEMESHSENSOR]");
+	atcmd_bt_excute(argc - 1, &argv[1], mesh_sensor_cmd_table, "[AT+BLEMESHSENSOR]");
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

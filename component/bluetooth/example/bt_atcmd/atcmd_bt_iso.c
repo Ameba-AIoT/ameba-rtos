@@ -208,40 +208,44 @@ static const cmd_table_t iso_bis_receiver_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_iso_cmd(int argc, char *argv[])
+void fBLEISO(u16 argc, char *argv[])
 {
-	int ret = 0;
 	char tag[80] = "[AT+BLEISO]";
+
+	if (argc < 3) {
+		BT_LOGE("[%s]Error: Atcmd has too few params!!!\r\n", __func__);
+		return;
+	}
+
+	argc -= 1;
+	argv = &argv[1];
+
 	if (strcmp(argv[0], "bis") == 0) {
 		if (strcmp(argv[1], "broadcaster") == 0) {
 			BT_LOGA("Set iso bis broadcaster\r\n");
 			strcat(tag, "[bis][broadcaster]");
-			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_bis_broadcaster_cmd_table, tag);
+			atcmd_bt_excute(argc - 2, &argv[2], iso_bis_broadcaster_cmd_table, tag);
 		} else if (strcmp(argv[1], "receiver") == 0) {
 			BT_LOGA("Set iso bis receiver\r\n");
 			strcat(tag, "[bis][receiver]");
-			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_bis_receiver_cmd_table, tag);
+			atcmd_bt_excute(argc - 2, &argv[2], iso_bis_receiver_cmd_table, tag);
 		} else {
 			BT_LOGE("[%s]Error: iso bis has no role %s\r\n", __func__, argv[1]);
-			ret = -1;
 		}
 	} else if (strcmp(argv[0], "cis") == 0) {
 		if (strcmp(argv[1], "initiator") == 0) {
 			BT_LOGA("Set iso cis initiator\r\n");
 			strcat(tag, "[cis][initiator]");
-			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_cis_initiator_cmd_table, tag);
+			atcmd_bt_excute(argc - 2, &argv[2], iso_cis_initiator_cmd_table, tag);
 		} else if (strcmp(argv[1], "acceptor") == 0) {
 			BT_LOGA("Set iso cis acceptor\r\n");
 			strcat(tag, "[cis][acceptor]");
-			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_cis_acceptor_cmd_table, tag);
+			atcmd_bt_excute(argc - 2, &argv[2], iso_cis_acceptor_cmd_table, tag);
 		} else {
 			BT_LOGE("[%s]Error: iso cis has no role %s\r\n", __func__, argv[1]);
-			ret = -1;
 		}
 	} else {
 		BT_LOGE("[%s]Error: do not support %s\r\n", __func__, argv[0]);
-		ret = -1;
 	}
-	return ret;
 }
 #endif

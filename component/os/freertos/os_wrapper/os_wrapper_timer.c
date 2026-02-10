@@ -13,8 +13,8 @@
 
 /* FreeRTOS Static Implementation */
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
-extern StaticTimer_t *__reserved_get_timer_from_poll(void);
-extern void __reserved_release_timer_to_poll(void *buf);
+extern StaticTimer_t *__reserved_get_timer_from_pool(void);
+extern void __reserved_release_timer_to_pool(void *buf);
 #endif
 
 static const char *TAG = "TIMER";
@@ -26,7 +26,7 @@ int rtos_timer_create_static(rtos_timer_t *pp_handle, const char *p_timer_name, 
 	StaticTimer_t *timer;
 	TickType_t timer_ticks;
 
-	timer = __reserved_get_timer_from_poll();
+	timer = __reserved_get_timer_from_pool();
 
 	if (timer == NULL) {
 		return rtos_timer_create(pp_handle, p_timer_name, timer_id, interval_ms, reload, p_timer_callback);
@@ -52,8 +52,8 @@ int rtos_timer_delete_static(rtos_timer_t p_handle, uint32_t wait_ms)
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
 	rtos_timer_t handle_for_delete = p_handle;
 	while (rtos_timer_delete(handle_for_delete, wait_ms) != RTK_SUCCESS) {};
-	// wait timer until inactive in __reserved_release_timer_to_poll
-	__reserved_release_timer_to_poll(p_handle);
+	// wait timer until inactive in __reserved_release_timer_to_pool
+	__reserved_release_timer_to_pool(p_handle);
 	return RTK_SUCCESS;
 #else
 	return rtos_timer_delete(p_handle, wait_ms);
