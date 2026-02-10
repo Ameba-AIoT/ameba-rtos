@@ -82,25 +82,27 @@ class ManifestImageConfig:
 
         if image_type != ImageType.CERT:
             #RSIP
-            if image_type == ImageType.IMAGE1 or image_type == ImageType.IMAGE2:
+            if image_type == ImageType.IMAGE1 or image_type == ImageType.IMAGE2 or image_type == ImageType.IMAGE3:
                 self.rsip_enable:bool = config.get("rsip_enable", config.get("rsip_en", False))
-                if self.rsip_enable:
-                    self.rsip_mode:int = config["rsip_mode"] #0 is CTR, 1 is XTS(CTR+ECB), 2 is GCM
-                    self.rsip_gcm_tag_len:int = config.get("rsip_gcm_tag_len", 0xFF)
-                    self.rsip_iv:str = config["rsip_iv"]
-                    self.rsip_key:List[str] = []
-                    if "rsip_key_group" in config:
-                        self.rsip_key = [config[v] for v in config[config["rsip_key_group"]]]
-                    else:
-                        if self.rsip_mode == 0:
-                            self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
-                        elif self.rsip_mode == 1:
-                            self.rsip_key = [
-                                config["ecb_key"] if isinstance(config["ecb_key"], str) else config["ecb_key"][config["rsip_key_id"]],
-                                config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]],
-                            ]
-                        elif self.rsip_mode == 1:
-                            self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
+
+            # For IMAGE3 with RDP enabled, rsip_iv is needed for RDP encryption (combined with rdp_iv)
+            # So we read rsip_iv even when rsip_enable is False for IMAGE3
+            # For IMAGE2, we also read rsip_iv even when rsip_enable is False, because IMAGE3 RDP may need it
+            if self.rsip_enable or (image_type == ImageType.IMAGE3 and config.get("rdp_enable", False)) or image_type == ImageType.IMAGE2:
+                self.rsip_mode:int = config.get("rsip_mode", 1) #0 is CTR, 1 is XTS(CTR+ECB), 2 is GCM
+                self.rsip_gcm_tag_len:int = config.get("rsip_gcm_tag_len", 0xFF)
+                self.rsip_iv:str = config.get("rsip_iv", "")
+                self.rsip_key:List[str] = []
+                if "rsip_key_group" in config:
+                    self.rsip_key = [config[v] for v in config[config["rsip_key_group"]]]
+                else:
+                    if self.rsip_mode == 0 or self.rsip_mode == 2:
+                        self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
+                    elif self.rsip_mode == 1:
+                        self.rsip_key = [
+                            config["ecb_key"] if isinstance(config["ecb_key"], str) else config["ecb_key"][config["rsip_key_id"]],
+                            config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]],
+                        ]
 
             #RDP
             self.rdp_enable:bool = config.get("rdp_enable", config.get("rdp_en", False))
@@ -164,6 +166,14 @@ class ManifestManager(ABC):
         self.image2 = ManifestImageConfig(self.new_json_data['image2'], ImageType.IMAGE2)
         if 'image3' in self.new_json_data:
             self.image3 = ManifestImageConfig(self.new_json_data['image3'], ImageType.IMAGE3)
+            # For early than Dplus ICs,  Image3 use RDP encryption, image3 needs image2's rsip_iv (even when image2.rsip_enable is False)
+            # The IV for RDP encryption is: image2.rsip_iv + image3.rdp_iv
+            if hasattr(self.image3, 'rdp_enable') and self.image3.rdp_enable:
+                if hasattr(self.image2, 'rsip_iv') and self.image2.rsip_iv:
+                    self.image3.rsip_iv = self.image2.rsip_iv
+            elif hasattr(self.image2, 'rsip_iv'):
+                # For G2 and later IC, Image3 use rsip protect. Image3 use image2 rsip iv.
+                self.image3.rsip_iv = self.image2.rsip_iv
         else:
             context.logger.info(f"manifest file does not contains image3, will use image2 config for image3")
             self.image3 = self.image2
@@ -373,9 +383,16 @@ class ManifestManager(ABC):
             memmove(addressof(manifest.RsipIV), bytes.fromhex(image_config.rsip_iv), 8)
             manifest.RsipCfg = manifest.RsipCfg & (((image_config.rsip_gcm_tag_len // 4) >> 1) | ~0x03)
         if ImgID.IMGID_NSPE.value == manifest.ImgID:
-            if image_config.rdp_enable:
+            # Check image3's rdp_enable configuration instead of current image's config
+            rdp_enable = False
+            if self.image3 is not None and hasattr(self.image3, 'rdp_enable'):
+                rdp_enable = self.image3.rdp_enable
+            print("image3.rdp_enable", rdp_enable)
+            if rdp_enable:
+                # Use rsip_iv from image_config (may be from image2), and rdp_iv from image3
                 memmove(addressof(manifest.RsipIV), bytes.fromhex(image_config.rsip_iv), 8)
-                memmove(byref(manifest.RsipIV, 8), bytes.fromhex(image_config.rdp_iv), 8)
+                rdp_iv = self.image3.rdp_iv if hasattr(self.image3, 'rdp_iv') else image_config.rdp_iv
+                memmove(byref(manifest.RsipIV, 8), bytes.fromhex(rdp_iv), 8)
 
         manifest.ImgSize = os.path.getsize(input_file)
 
