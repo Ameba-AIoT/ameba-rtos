@@ -25,8 +25,7 @@ Attach SD card to the SDIOH slot on the board.
 
 	* RAM
 	* SD Card (SD Mode: using SDIO interface)
-	* SD Card (SPI Mode: using SPI interface)
-	* External Flash
+	* Second Flash
 
 2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

@@ -24,7 +24,10 @@ def parse_arguments():
 args = parse_arguments()
 
 PROJECT_DIR = os.path.abspath(args.project_dir)
-SOC_TYPE = os.path.basename(PROJECT_DIR)[:-len('_gcc_project')]
+if 'gcc_project' in PROJECT_DIR:
+    SOC_TYPE = os.path.basename(PROJECT_DIR)[:-len('_gcc_project')]
+else:
+    SOC_TYPE = os.path.basename(os.path.dirname(PROJECT_DIR))
 action = args.action
 
 # =============== Load SOC Configuration =====================#
@@ -71,9 +74,11 @@ if not CONFIG:
     print("GDB error: Unsupported SOC.")
     sys.exit(1)
 
-target_prj = CONFIG['ASDK_PROJECT']
-ASDK = os.path.join(PROJECT_DIR, f"project_{target_prj}/asdk")
-GDB_FLOADER = os.path.join(ASDK, 'gnu_utility/gdb_floader')
+target_prj = CONFIG['IMG_PROJECT']
+target_prj_dir = os.path.join(PROJECT_DIR, f"project_{target_prj}")
+GDB_FLOADER = os.path.join(target_prj_dir, 'gnu_utility/gdb_floader')
+if not os.path.exists(GDB_FLOADER):  # for temporary compatibility
+    GDB_FLOADER = os.path.join(target_prj_dir, 'asdk/gnu_utility/gdb_floader')
 
 CONFIG_FILE = 'menuconfig/.config'
 BIN_MAP = CONFIG['BIN_MAP']
@@ -106,7 +111,8 @@ def get_gdb_from_cache(cache_file_path):
         return cmake_gdb_path
     return None
 
-CMAKE_CACHE = os.path.abspath(os.path.join(os.path.dirname(CONFIG_FILE_PATH), '../build/CMakeCache.txt'))
+BUILD_DIR = os.path.abspath(os.path.join(os.path.dirname(CONFIG_FILE_PATH), '../build'))
+CMAKE_CACHE = os.path.join(BUILD_DIR, 'CMakeCache.txt')
 CMAKE_GDB = get_gdb_from_cache(CMAKE_CACHE)
 if not CMAKE_GDB:
     print("GDB error: Please build the project first to match path/to/your/toolchain/gdb.exe.")
@@ -115,7 +121,6 @@ if not CMAKE_GDB:
 print(".............")
 print('if MP_INCLUDED is set :', BUILD_TYPE)
 print('if FPGA is set :', FPGA)
-print('ASDK : ', ASDK)
 print(".............")
 
 # ===============define utility functions=====================#
@@ -142,17 +147,17 @@ def get_bin_paths(bin_map, build_type):
         need_mp_suffix = build_type and is_app
         fname = name + ('_mp' if need_mp_suffix else '') + '.bin'
         if name == 'dsp':
-            rel_path = '../../project_dsp/asdk/image/dsp.bin'
+            rel_path = '../project_dsp/image/dsp.bin'
         else:
             rel_path = f'{base_dir}/{fname}'
         paths[size_key] = rel_path
 
     return paths
 
-def get_bin_size(asdk_root, rel_path):
+def get_bin_size(parent_dir, rel_path):
     if not rel_path:
         return 0
-    abs_path = os.path.normpath(os.path.join(asdk_root, rel_path))
+    abs_path = os.path.normpath(os.path.join(parent_dir, rel_path))
     return os.path.getsize(abs_path) if os.path.isfile(abs_path) else 0
 
 #===================implement the specified action===================#
@@ -171,7 +176,8 @@ if action == 'debug':
     for var_name, var_value in reg_vars.items():
         ex_commands += f" -ex 'set ${var_name}={hex(var_value)}'"
 
-    cmd = 'cd ' + ASDK + ' && ' + CMAKE_GDB + ex_commands + ' -x ' + DEBUG_SCRIPT
+    IMAGE_PARENT = os.path.join(BUILD_DIR, f'project_{target_prj}')     # parent dir of /image
+    cmd = 'cd ' + IMAGE_PARENT + ' && ' + CMAKE_GDB + ex_commands + ' -x ' + DEBUG_SCRIPT
     print(' GDB CMD : ', cmd)
     rc = os.system(cmd)
     sys.exit(rc)
@@ -183,14 +189,17 @@ if FPGA == True:
         print("No rom config, skip load rom")
     for core, file_list in rom_section.items():
         print(f'\033[32m============== gdb load rom: {core}  ================\033[0m')
-        ASDK_CORE = os.path.join(PROJECT_DIR, f'project_{core}/asdk')
+        LIB_PARENT = os.path.join(PROJECT_DIR, f'project_{core}')       # parent dir of /lib
+        if not os.path.exists(f'{LIB_PARENT}/lib'): # for temporary compatibility
+            LIB_PARENT = os.path.join(LIB_PARENT, 'asdk')
 
+        ex_commands = f" -ex 'set $SCRIPT_DIR=\"{GNU_SCRIPT}\"'"
         gdb_port_core = CONFIG.get('GDB_PORTS', {}).get(core, 2335)
-        ex_commands = f" -ex 'set $GDB_PORT={gdb_port_core}'"
+        ex_commands += f" -ex 'set $GDB_PORT={gdb_port_core}'"
         ex_commands += f" -ex 'set $ROM_BIN = \"{file_list[0]}\"' "
         ex_commands += f" -ex 'set $ROM_ADDR = {file_list[1]}' "
 
-        cmd = 'cd ' + ASDK_CORE +  ' && ' + CMAKE_GDB + ex_commands + ' -x ' + ROM_SCRIPT
+        cmd = 'cd ' + LIB_PARENT +  ' && ' + CMAKE_GDB + ex_commands + ' -x ' + ROM_SCRIPT
         print(' GDB CMD : ', cmd)
         os.system(cmd)
 
@@ -198,14 +207,16 @@ print('\033[32m========== gdb load app image ============\033[0m')
 
 copy_files_with_glob(GDB_FLOADER, GNU_SCRIPT, '*')
 
+IMAGE_PARENT = os.path.join(BUILD_DIR, f'project_{target_prj}')        # parent dir of /image or /image_mp
 BIN_PATHS = get_bin_paths(BIN_MAP, BUILD_TYPE)
-BIN_SIZES = {k: get_bin_size(ASDK, v) for k, v in BIN_PATHS.items()}
+BIN_SIZES = {k: get_bin_size(IMAGE_PARENT, v) for k, v in BIN_PATHS.items()}
 for k, v in BIN_PATHS.items():
     print(f'image file: {v}, size: {BIN_SIZES[k]}')
 
 gdb_port = CONFIG.get('GDB_PORTS', {}).get(target_prj, 2335)
 
 ex_list = [
+    f"-ex 'set $SCRIPT_DIR=\"{GNU_SCRIPT}\"'",
     f"-ex 'set $GDB_PORT={gdb_port}'",
     f"-ex 'set $FlashFileSize={BIN_SIZES.get('FlashFileSize', 0)}'",
     f"-ex 'set $XIPBootSize={BIN_SIZES.get('XIPBootSize', 0)}'",
@@ -231,7 +242,7 @@ if BIN_PATHS.get('DSPFlashSize'):
     ex_list.append(f"-ex 'set $BIN_DSP_ALL=\"{BIN_PATHS['DSPFlashSize']}\"'")
 
 ex_cmds = ' '.join(ex_list)
-cmd = 'cd ' + ASDK +  ' && ' + CMAKE_GDB + ' ' + ex_cmds + ' -x ' + FLASH_SCRIPT
+cmd = 'cd ' + IMAGE_PARENT +  ' && ' + CMAKE_GDB + ' ' + ex_cmds + ' -x ' + FLASH_SCRIPT
 
 print(' GDB CMD : ', cmd)
 rc = os.system(cmd)

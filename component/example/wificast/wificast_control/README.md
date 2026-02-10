@@ -98,3 +98,7 @@ Connect a LED with this GPIO to show the status.
     [14:47:21:662][WIFI CAST-I] wifi_cast_del_node, 00:e0:4c:00:03:5d delete success
     [14:47:21:662][example_main-I] 00:e0:4c:00:03:5d, unbind success
     ```
+
+# Supported IC
+
+RTL8721F

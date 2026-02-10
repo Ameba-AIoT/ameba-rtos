@@ -90,3 +90,7 @@ Choose one board as the sender and connect the user-defined serial port with PC 
 [14:24:00:881][example_main-I] send count: 2, size: 194, data: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 [14:24:00:888]
 ```
+
+# Supported IC
+
+RTL8721F

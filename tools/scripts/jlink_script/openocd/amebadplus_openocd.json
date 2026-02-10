@@ -21,10 +21,10 @@
                 "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
             ],
             "add-symbol-file": [
-                "amebadplus_gcc_project/project_km4/asdk/image/target_loader.axf",
-                "amebadplus_gcc_project/project_km4/asdk/lib/amebadplus_rom_bcut/target_rom.axf",
-                "amebadplus_gcc_project/project_km4/asdk/lib/amebadplus_rom_bcut/target_rom_ns.axf",
-                "amebadplus_gcc_project/project_km4/asdk/lib/amebadplus_rom_bcut/target_stdlib.axf"
+                "build_${socSelection}/build/project_km4/image/target_loader.axf",
+                "component/soc/amebadplus/project/project_km4/lib/amebadplus_rom_bcut/target_rom.axf",
+                "component/soc/amebadplus/project/project_km4/lib/amebadplus_rom_bcut/target_rom_ns.axf",
+                "component/soc/amebadplus/project/project_km4/lib/amebadplus_rom_bcut/target_stdlib.axf"
             ]
         },
         "overrideCommands": [
@@ -57,8 +57,8 @@
                 "component/wifi/driver/rtl8721da_rom"
             ],
             "add-symbol-file": [
-                "amebadplus_gcc_project/project_km0/asdk/lib/amebadplus_rom_acut/target_rom.axf",
-                "amebadplus_gcc_project/project_km0/asdk/lib/amebadplus_rom_acut/target_stdlib.axf"
+                "component/soc/amebadplus/project/project_km0/lib/amebadplus_rom_acut/target_rom.axf",
+                "component/soc/amebadplus/project/project_km0/lib/amebadplus_rom_acut/target_stdlib.axf"
             ]
         },
         "overrideCommands": [

@@ -9,79 +9,167 @@
 static const char *const TAG = "ETH";
 
 /**
-  * @brief  clear all interrupt
-  * @param  Data: the data pointer to IPCx
-  * @retval 0
-  */
-u32 Ethernet_ClearALLINT(void)
+ * @brief  Clear all pending interrupt status bits.
+ *         Usually called during initialization or error recovery.
+ */
+void Ethernet_ClearAllINT(void)
 {
 	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-	RMII->ETH_ISR_AND_IMR = 0xFFFF;
-	return 0;
-}
 
-u32 Ethernet_GetINT(void)
-{
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-	return RMII->ETH_ISR_AND_IMR;
-}
+	/* Construct mask of all possible ISR status bits */
+	u32 all_isr_mask = BIT_ISR_ROK | BIT_ISR_RER_OVF | BIT_ISR_RER_RUNT |
+					   BIT_ISR_TOK_TI | BIT_ISR_TER | BIT_ISR_LINKCHG |
+					   BIT_ISR_CNT_WRAP | BIT_ISR_SWINT | BIT_ISR_TDU |
+					   BIT_ISR_RDU1 | BIT_ISR_RDU2 | BIT_ISR_RDU3 |
+					   BIT_ISR_RDU4 | BIT_ISR_RDU5 | BIT_ISR_RDU6;
 
-
-u32 Ethernet_ClearINT(u32 INTrBit)
-{
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-	RMII->ETH_ISR_AND_IMR |= INTrBit;
-	return 0;
-
+	/* Write 1 to clear status bits */
+	RMII->ETH_ISR_AND_IMR |= all_isr_mask;
 }
 
 /**
- * @addtogroup RMII_IRQHandler
- * @ingroup
- * @{
- * @brief
+ * @brief  Get currently pending and enabled interrupt events.
+ *         Converts hardware register bits to logical software events.
+ * @return Bitmask of pending events (enum eth_link_event).
  */
-
-__weak u32 RMII_IRQHandler(ETH_InitTypeDef *ETH_InitStruct)
+u32 Ethernet_GetPendingINT(void)
 {
 	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
-	u32 intr_status;
-	intr_status = Ethernet_GetINT();
+	/* Read the combined ISR (Status) and IMR (Mask) register */
+	volatile u32 raw_reg = RMII->ETH_ISR_AND_IMR;
+	u32 int_status = ETH_EVT_NO_EVENT;
+	u32 rdu_isr_mask = 0, rdu_imr_mask = 0;
 
-	if ((intr_status & BIT_ISR_ROK) && (intr_status & BIT_IMR_ROK)) {
-		if ((ETH_InitStruct->callback) != NULL) {
-			ETH_InitStruct->callback(EthRxDone, 0);
-		}
-		Ethernet_ClearINT(BIT_ISR_ROK);
+	/*
+	 * Logic: An interrupt is valid only if both the Status bit (ISR)
+	 * and the Mask bit (IMR) are set.
+	 */
+
+	/* 1. Check RX OK */
+	if ((raw_reg & BIT_ISR_ROK) && (raw_reg & BIT_IMR_ROK)) {
+		int_status |= ETH_EVT_RX_DONE;
 	}
 
-	if ((intr_status & BIT_ISR_RER_OVF) && (intr_status & BIT_IMR_RER_OVF)) {
-		Ethernet_ClearINT(BIT_ISR_RER_OVF);
+	/* 2. Check TX OK */
+	if ((raw_reg & BIT_ISR_TOK_TI) && (raw_reg & BIT_IMR_TOK_TI)) {
+		int_status |= ETH_EVT_TX_DONE;
 	}
 
-	if ((intr_status & BIT_ISR_TOK_TI) && (intr_status & BIT_IMR_TOK_TI)) {
-		if ((ETH_InitStruct->callback) != NULL) {
-			ETH_InitStruct->callback(EthTxDone, 0);
-		}
-		Ethernet_ClearINT(BIT_ISR_TOK_TI);
+	/* 3. Check Link Change */
+	if ((raw_reg & BIT_ISR_LINKCHG) && (raw_reg & BIT_IMR_LINKCHG)) {
+		int_status |= ETH_EVT_LINK_CHG;
 	}
 
-	if ((intr_status & BIT_ISR_LINKCHG) && (intr_status & BIT_IMR_LINKCHG)) {
-		if ((ETH_InitStruct->callback) != NULL) {
-			if (!(GET_LINKB(RMII->ETH_MSR))) {
-				ETH_InitStruct->callback(EthLinkUp, 0);
-			} else {
-				ETH_InitStruct->callback(EthLinkDown, 0);
-			}
-			Ethernet_ClearINT(BIT_ISR_LINKCHG);
-		}
-
+	/* 4. Check RX Errors (Overflow or Runt) */
+	if (((raw_reg & BIT_ISR_RER_OVF) && (raw_reg & BIT_IMR_RER_OVF)) ||
+		((raw_reg & BIT_ISR_RER_RUNT) && (raw_reg & BIT_IMR_RER_RUNT))) {
+		int_status |= ETH_EVT_RX_ERROR;
 	}
 
-	return 0;
+	/* 5. Check TX Errors */
+	if ((raw_reg & BIT_ISR_TER) && (raw_reg & BIT_IMR_TER)) {
+		int_status |= ETH_EVT_TX_ERROR;
+	}
+
+	/* 6. Check RX Descriptor Unavailable (Any Ring) */
+	/* Combine all RDU bits for simplicity */
+	rdu_isr_mask = BIT_ISR_RDU1 | BIT_ISR_RDU2 | BIT_ISR_RDU3 |
+				   BIT_ISR_RDU4 | BIT_ISR_RDU5 | BIT_ISR_RDU6;
+	rdu_imr_mask = BIT_IMR_RDU1 | BIT_IMR_RDU2 | BIT_IMR_RDU3 |
+				   BIT_IMR_RDU4 | BIT_IMR_RDU5 | BIT_IMR_RDU6;
+
+	/* IMR bits are shifted, need careful check or just check ISR if global int enabled */
+	/* Assuming simple check: if any ISR bit is set, report it */
+	if ((raw_reg & rdu_isr_mask) && ((raw_reg) & rdu_imr_mask)) {
+		int_status |= ETH_EVT_RDU_RING1;
+	}
+
+	return int_status;
 }
 
+/**
+ * @brief  Clear specified interrupt events.
+ *         Converts software events back to hardware register write-1-to-clear.
+ * @param  int_events: Bitmask of events to clear.
+ */
+void Ethernet_ClearINT(uint32_t int_events)
+{
+	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	u32 clear_mask = 0;
+
+	if (int_events & ETH_EVT_RX_DONE) {
+		clear_mask |= BIT_ISR_ROK;
+	}
+
+	if (int_events & ETH_EVT_TX_DONE) {
+		clear_mask |= BIT_ISR_TOK_TI;
+	}
+
+	if (int_events & ETH_EVT_LINK_CHG) {
+		clear_mask |= BIT_ISR_LINKCHG;
+	}
+
+	if (int_events & ETH_EVT_RX_ERROR) {
+		clear_mask |= (BIT_ISR_RER_OVF | BIT_ISR_RER_RUNT);
+	}
+
+	if (int_events & ETH_EVT_TX_ERROR) {
+		clear_mask |= BIT_ISR_TER;
+	}
+
+	if (int_events & ETH_EVT_RDU_RING1) {
+		clear_mask |= BIT_ISR_RDU1;
+	}
+
+	/* Write 1 to clear the interrupt status bits */
+	if (clear_mask != 0) {
+		RMII->ETH_ISR_AND_IMR |= clear_mask;
+	}
+}
+/**
+ * @brief  Configure (Enable or Disable) Interrupt Mask Bits.
+ *         Maps logical events to Hardware IMR bits.
+ */
+void Ethernet_ConfigINT(u32 int_config, u32 enable)
+{
+	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	u32 imr_mask = 0;
+
+	if (int_config & ETH_EVT_RX_DONE) {
+		imr_mask |= BIT_IMR_ROK;
+	}
+
+	if (int_config & ETH_EVT_TX_DONE) {
+		imr_mask |= BIT_IMR_TOK_TI;
+	}
+
+	if (int_config & ETH_EVT_LINK_CHG) {
+		imr_mask |= BIT_IMR_LINKCHG;
+	}
+
+	if (int_config & ETH_EVT_RX_ERROR) {
+		/* Enable both Overflow and Runt interrupts for RX Error */
+		imr_mask |= (BIT_IMR_RER_OVF | BIT_IMR_RER_RUNT);
+	}
+
+	if (int_config & ETH_EVT_TX_ERROR) {
+		imr_mask |= BIT_IMR_TER;
+	}
+
+	if (int_config & ETH_EVT_RDU_RING1) {
+		/* Enable IMR for all descriptor rings */
+		imr_mask |= BIT_IMR_RDU1;
+	}
+
+	if (enable) {
+		RMII->ETH_ISR_AND_IMR |= imr_mask;
+	} else {
+		/* Clear bits to DISABLE interrupts */
+		/* Note: imr_mask contains IMR bits (high 16 bits), so ~imr_mask works correctly */
+		RMII->ETH_ISR_AND_IMR &= ~imr_mask;
+	}
+}
 /**
  *  @brief To set the start address of Tx/Rx descriptor ring.
  *
@@ -97,16 +185,16 @@ void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct)
 	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
 	if ((ETH_InitStruct == NULL) || (ETH_InitStruct->ETH_TxDesc == NULL) || (ETH_InitStruct->ETH_RxDesc == NULL)) {
-		RTK_LOGE(TAG, "Invalid parameter !!\r\n");
-		return;
-	}
-	if ((((u32)ETH_InitStruct->ETH_TxDesc) & 0x1F) || (((u32)ETH_InitStruct->ETH_RxDesc) & 0x1F)) {
-		RTK_LOGE(TAG, "The descriptor address must be 32-Byte alignment !!\r\n");
+		RTK_LOGE(TAG, "Invalid para\n");
 		return;
 	}
 
-	RMII->ETH_TXFDP1 = (u32)(ETH_InitStruct->ETH_TxDesc);
-	RMII->ETH_RX_FDP1 = (u32)(ETH_InitStruct->ETH_RxDesc);
+	if ((IS_CACHE_LINE_ALIGNED((u32)ETH_InitStruct->ETH_TxDesc)) || (IS_CACHE_LINE_ALIGNED((u32)ETH_InitStruct->ETH_RxDesc))) {
+		RMII->ETH_TXFDP1 = (u32)(ETH_InitStruct->ETH_TxDesc);
+		RMII->ETH_RX_FDP1 = (u32)(ETH_InitStruct->ETH_RxDesc);
+	} else {
+		RTK_LOGE(TAG, "Descriptor misalignment\n");
+	}
 }
 
 /**
@@ -121,7 +209,7 @@ void Ethernet_SetMacAddr(u8 *ETH_MacAddr)
 	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
 	if (ETH_MacAddr == NULL) {
-		RTK_LOGE(TAG, "Invalid parameter !!\r\n");
+		RTK_LOGE(TAG, "Invalid para\n");
 		return;
 	}
 
@@ -181,7 +269,7 @@ u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct)
 	u8 *buf = NULL;
 
 	if (ETH_InitStruct == NULL) {
-		RTK_LOGE(TAG, "Invalid parameter !!\r\n");
+		RTK_LOGE(TAG, "Invalid para\n");
 		return NULL;
 	}
 
@@ -209,7 +297,7 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, u32 size)
 	u8 tx_idx = ETH_InitStruct->ETH_TxDescCurrentNum;
 
 	if (ETH_InitStruct == NULL) {
-		RTK_LOGE(TAG, "Invalid parameter !!\r\n");
+		RTK_LOGE(TAG, "Invalid para\n");
 		return;
 	}
 
@@ -280,7 +368,7 @@ void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct)
 	u8 read_idx = ETH_InitStruct->ETH_RxDescCurrentNum;
 
 	if ((ETH_InitStruct == NULL)) {
-		RTK_LOGE(TAG, "Invalid parameter !!\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid para!\n");
 		return;
 	}
 
@@ -303,49 +391,25 @@ u32 Ethernet_GetLinkStatus(void)
 {
 	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
-	if (GET_LINKB(RMII->ETH_MSR) == ETH_LINK_UP) {
-		return 1;
-	} else {
-		return 0;
-	}
+	return !GET_LINKB(RMII->ETH_MSR);
 }
 
-
-u8 Ethernet_WaitBusy(u32 WaitType)
+/**
+ * @brief Get speed and duplex of ethernet
+ *
+ */
+void Ethernet_GetSpeedDuplex(void)
 {
 	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-	u32 BusyCheck = 0;
-	u8 status = 0;
-	u32 i = 0;
+	/* Get and Log MAC Link Info (Only if link is up) */
+	u32 speed = GET_SPEED(RMII->ETH_MSR);
+	u32 duplex = GET_FULLDUPREG(RMII->ETH_MSR);
 
-	do {
-		if (WaitType == WAIT_SMI_WRITE_DONE) {
-			i++;
-			BusyCheck = (RMII->ETH_MIIAR & (BIT_FLAG | BIT_MDIO_BUSY));
-
-		} else if (WaitType == WAIT_SMI_READ_DONE) {
-			i++;
-			BusyCheck = (((RMII->ETH_MIIAR & BIT_MDIO_BUSY) != 0) || ((RMII->ETH_MIIAR & BIT_FLAG) == 0));
-
-		} else if (WaitType == WAIT_RMII_LINKUP) {
-			i++;
-			status = (GET_LINKB(RMII->ETH_MSR));
-			BusyCheck = (status == ETH_LINK_UP ? 0 : 1);
-		}
-
-		if (!BusyCheck) {
-			break;
-		}
-
-		if (i > 0x200000) {
-			status = 0xFF;
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "TIME OUT\n");
-			break;
-		}
-	} while (1);
-	return status;
+	RTK_LOGI(TAG, "MAC Link Info: %s, %s\n",
+			 (speed == ETH_SPEED_100M) ? "100 Mb/s" :
+			 (speed == ETH_SPEED_10M)  ? "10 Mb/s"  : "Unknown",
+			 (duplex == ETH_FULL_DUPLEX) ? "Full Duplex" : "Half Duplex");
 }
-
 /**
  * @brief Waits for the PHY MDIO bus to become idle.
  *        This function polls the MDIO busy flag until it is cleared or a timeout occurs.
@@ -616,20 +680,31 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 		break;
 
 	case ETH_FILTER_PROMISCUOUS:
-		/* Promiscuous Mode: Accept all valid packets.
-		 * Note: When AcceptAll is set, APM/AB/AM settings are typically
-		 * overridden by hardware, but keeping them 0 is cleaner. */
-		RMII->ETH_RCR = BIT_AAP;
+		/*
+		 * Promiscuous Mode:
+		 * BIT_AAP: Accept all packets with destination MAC addr.
+		 * BIT_AB:  Explicitly enable Broadcast (Hardware might not imply AB when AAP is set).
+		 * BIT_AM:  Explicitly enable Multicast.
+		 * Use case: Network sniffing (Wireshark) or software bridging.
+		 */
+		RMII->ETH_RCR = BIT_AAP | BIT_AB | BIT_AM;
 		break;
 
 	case ETH_FILTER_DIAGNOSTIC_ALL:
-		/* Diagnostic: Accept All + Runt (< 64 bytes) + Error frames (CRC/Alignment errors)*/
-		RMII->ETH_RCR = BIT_AAP | BIT_AR | BIT_AER;
+		/*
+		 * Diagnostic Mode:
+		 * Accept absolutely everything including Runt (< 64 bytes) and Error frames.
+		 * Combine AAP/AB/AM to ensure no valid frames are filtered out,
+		 * while AR/AER captures the corrupted ones.
+		 */
+		RMII->ETH_RCR = BIT_AAP | BIT_AB | BIT_AM | BIT_AR | BIT_AER;
 		break;
 
 	default:
-		/* Fallback to safe default (Unicast + Broadcast) */
-		RMII->ETH_RCR = BIT_APM | BIT_AB;
+		/* Default Standard Mode (Unicast + Broadcast + Multicast).
+		 * Excluding Multicast (BIT_AM) here might break IPv6 or Service Discovery.
+		 */
+		RMII->ETH_RCR = BIT_APM | BIT_AB | BIT_AM;
 		break;
 	}
 
@@ -679,28 +754,20 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	/* enable auto-polling */
 	Ethernet_AutoPolling(ENABLE);
 
-	if (ETH_InitStruct->MacConfig.Bits.AutoNego) {
-		while ((((RMII->ETH_MSR) & BIT_NWCOMPLETE) >> 21) == ETH_NWAY_INCOMPLETED);
-	}
-
-	/* Wait MAC's link is up (Hardware polling result) */
-	if (Ethernet_WaitBusy(WAIT_RMII_LINKUP) == ETH_LINK_UP) {
-		link_is_up = 1;
-
-		/* Get and Log MAC Link Info (Only if link is up) */
-		u32 speed = GET_SPEED(RMII->ETH_MSR);
-		u32 duplex = GET_FULLDUPREG(RMII->ETH_MSR);
-
-		RTK_LOGI(TAG, "MAC Link Info: %s, %s\r\n",
-				 (speed == ETH_SPEED_100M) ? "100 Mb/s" :
-				 (speed == ETH_SPEED_10M)  ? "10 Mb/s"  : "Unknown",
-				 (duplex == ETH_FULL_DUPLEX) ? "Full Duplex" : "Half Duplex");
-	} else {
-		RTK_LOGW(TAG, "Warn: Link Down during initialization\r\n");
-	}
 	/* Enable Rx ring1 */
 	ETH_EnableRx();
 
+	if (ETH_InitStruct->MacConfig.Bits.AutoNego) {
+		timeout = 50000;
+		while (timeout--) {
+			if (GET_NWCOMPLETE((RMII->ETH_MSR) & BIT_NWCOMPLETE)) {
+				break;
+			}
+		}
+		if (timeout == 0) {
+			ret = -RTK_ERR_TIMEOUT;
+		}
+	}
 exit:
 	return ret;
 }

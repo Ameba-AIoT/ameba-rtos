@@ -297,16 +297,11 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	HAL_WRITE32(OTPC_REG_BASE, SEC_OTP_SYSCFG0, HAL_READ32(OTPC_REG_BASE, SEC_OTP_SYSCFG0) | SEC_BIT_LOGIC_RDP_EN);
 #endif
 
-	/* check if RDP enable */
-	if (SYSCFG_OTP_RDPEn() == TRUE) {
-		if (BOOT_DecRDPImg(PhyAddr, Manifest[ImgIndex].RsipIV, &SubImgInfo[Index], &Cnt) == FALSE) {
-			FIH_RET(fih_rc);
-		}
-		Index += Cnt;
-	} else {
-		RTK_LOGE(TAG, "RDP Shall En when TZ Configed.\n");
-		assert_param(FALSE);
+	/* Load IMG3 when TrustZone enabled */
+	if (BOOT_DecRDPImg(PhyAddr, Manifest[ImgIndex].RsipIV, &SubImgInfo[Index], &Cnt) == FALSE) {
+		FIH_RET(fih_rc);
 	}
+	Index += Cnt;
 #endif
 
 	assert_param(Index <= sizeof(SubImgInfo) / sizeof(SubImgInfo_TypeDef));

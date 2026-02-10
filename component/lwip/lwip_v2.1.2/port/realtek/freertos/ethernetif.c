@@ -86,7 +86,7 @@ static const char *const TAG = "ETHERNET";
 
 #if defined(CONFIG_LWIP_ETHERNET)
 extern struct netif *pnetif_eth;
-extern int rltk_mii_send(struct pbuf * p);
+extern int eth_send(struct pbuf * p);
 #endif
 
 #if defined(CONFIG_LWIP_USB_ETHERNET)
@@ -229,7 +229,7 @@ static err_t low_level_output_eth(struct netif *netif, struct pbuf *p)
 	RTK_LOG_ETHERNET("%s %d \n", __func__, __LINE__);
 
 	if (p->tot_len) {
-		if (rltk_mii_send(p) != 0) {
+		if (eth_send(p) != 0) {
 			return ERR_BUF;
 		}
 	}
@@ -325,14 +325,14 @@ struct pbuf * ethernetif_rmii_buf_copy(u32 frame_len, u8 *src_buf)
 	int sg_len = 0;
 
 	if (frame_len > MAX_BUFFER_SIZE) {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "recv data len error, len=%d\n", frame_len);
+		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "recv data len error, len=%d\n", frame_len);
 		return NULL;
 	}
 
 	// Allocate buffer to store received packet
 	p = pbuf_alloc(PBUF_RAW, frame_len, PBUF_POOL);
 	if (p == NULL) {
-		RTK_LOGW(TAG, "\n\r[%s]Cannot allocate pbuf to receive packet(%d)\n", __func__, frame_len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "\n\r[%s]Cannot allocate pbuf to receive packet(%d)\n", __func__, frame_len);
 		return NULL;
 	}
 
@@ -422,12 +422,12 @@ void ethernetif_usb_eth_recv(u8 *buf, u32 frame_len)
 	u8 *macstr = (u8 *)(netif->hwaddr);
 
 	if (frame_len > MAX_BUFFER_SIZE) {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "recv data len is %d\n", frame_len);
+		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "recv data len is %d\n", frame_len);
 		return;
 	}
 
 	if(0 == frame_len) {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "recv data len is 0\n");
+		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "recv data len is 0\n");
 		return;
 	}
 	total_len = frame_len;

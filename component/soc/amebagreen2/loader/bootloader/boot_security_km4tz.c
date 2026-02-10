@@ -27,18 +27,38 @@ int BOOT_DecRDPImg(u32 SrcAddr, u8 *RdpIV, SubImgInfo_TypeDef *SubImgInfo, u8 *C
 
 	*Cnt = SubImgCnt;
 
-	/* config MMU and OTF */
+	/* config MMU */
 	RSIP_MMU_Config(MMU_ID3, LogAddr, (u32)__km4tz_img3_text_end__, PhyAddr);
 	RSIP_MMU_Cmd(MMU_ID3, ENABLE);
 	RSIP_MMU_Cache_Clean();
 
-	/* check RSIP enable bit and set RSIP */
-	if (FIH_NOT_EQ(FALSE, SYSCFG_OTP_RSIPEn())) {
-		RSIP_IV_Set(RSIP_IV3, RdpIV);
-		FIH_CALL(BOOT_ROM_OTFCheck, fih_rc, LogAddr, (u32)__km4tz_img3_text_end__, RSIP_IV3, RSIP_REGION3, RSIP_KEY_NUM0);
+	/* Step 1: Try to load plaintext image first (without RSIP OTF) */
+	if (BOOT_LoadSubImage(SubImgInfo, ImgAddr, SubImgCnt, Img3Label, TRUE) == TRUE) {
+		/* Plaintext load succeeded - print warning */
+		for (u32 i = 0; i < 5; i++) {
+			RTK_LOGW(TAG, "IMG3 not encrypted! Enable RDP for MP!\n");
+		}
+		return TRUE;
+	}
+	/* must clean CPU cache and rsip cache */
+	DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
+
+	/* Step 2: Plaintext load failed, check if RSIP is enabled in OTP */
+	if (FIH_EQ(FALSE, SYSCFG_OTP_RSIPEn())) {
+		/* RSIP not enabled but image is encrypted - this is an error */
+		RTK_LOGE(TAG, "Plaintext IMG3 load failed! Must enable OTP decryption!\n");
+		return FALSE;
 	}
 
-	/* Load or XIP image */
+	/* Step 3: RSIP enabled, configure OTF and decrypt */
+	RSIP_WAIT_IDLE();
+	RSIP_IV_Set(RSIP_IV3, RdpIV);
+	FIH_CALL(BOOT_ROM_OTFCheck, fih_rc, LogAddr, (u32)__km4tz_img3_text_end__, RSIP_IV3, RSIP_REGION3, RSIP_KEY_NUM0);
+	RSIP_MMU_Cache_Clean();
+
+	RTK_LOGI(TAG, "IMG3 OTF EN\n");
+
+	/* Load or XIP image with OTF decryption enabled */
 	if (BOOT_LoadSubImage(SubImgInfo, ImgAddr, SubImgCnt, Img3Label, TRUE) == TRUE) {
 		return TRUE;
 	} else {

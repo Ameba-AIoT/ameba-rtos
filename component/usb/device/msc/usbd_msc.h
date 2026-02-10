@@ -13,6 +13,15 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/** @addtogroup USB_Device_API USB Device API
+ *  @{
+ */
+/** @addtogroup USB_Device_Constants USB Device Constants
+ * @{
+ */
+/** @addtogroup Device_MSC_Constants Device MSC Constants
+ * @{
+ */
 #define USBD_MSC_TX_THREAD_PRIORITY                 5U                 /**< TX thread priority */
 #define USBD_MSC_RX_THREAD_PRIORITY                 5U                 /**< RX thread priority */
 
@@ -84,6 +93,9 @@
 #define USBD_MSC_STATUS_ERROR                       2U          /**< Error status */
 
 #define USBD_MSC_SENSE_LIST_DEPTH                   4U          /**< Depth of the SCSI sense data list. */
+
+/** @} End of Device_MSC_Constants group*/
+/** @} End of USB_Device_Constants group*/
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -159,6 +171,12 @@ typedef struct {
 	int (*disk_write)(u32 sector, const u8 *buffer, u32 count);
 } usbd_msc_disk_ops_t;
 
+/** @addtogroup USB_Device_Types USB Device Types
+ * @{
+ */
+/** @addtogroup Device_MSC_Types Device MSC Types
+ * @{
+ */
 /**
  * @brief MSC user callback structure.
  * @details This structure holds pointers to user-defined callback functions
@@ -172,6 +190,8 @@ typedef struct {
 	 */
 	void (*status_changed)(u8 old_status, u8 status);
 } usbd_msc_cb_t;
+/** @} End of Device_MSC_Types group*/
+/** @} End of USB_Device_Types group*/
 
 /**
  * @brief Main structure for the MSC device class.
@@ -212,6 +232,12 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
+/** @addtogroup USB_Device_Functions USB Device Functions
+ * @{
+ */
+/** @addtogroup Device_MSC_Functions Device MSC Functions
+ * @{
+ */
 /**
  * @brief Initializes the MSC device class driver with application callback handler.
  * @param[in] cb: Pointer to the user callback structure.
@@ -235,4 +261,8 @@ int usbd_msc_disk_init(void);
  * @return 0 on success, non-zero on failure.
  */
 int usbd_msc_disk_deinit(void);
+/** @} End of Device_MSC_Functions group */
+/** @} End of USB_Device_Functions group */
+/** @} End of USB_Device_API group */
+
 #endif // USBD_MSC_H

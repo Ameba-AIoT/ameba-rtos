@@ -199,7 +199,6 @@ uint16_t lc3_codec_deinit(void *p_entity)
 	return RTK_BT_AUDIO_OK;
 }
 
-TIMESENSITIVE_TEXT_SECTION
 uint16_t lc3_decoder_process_data(void *p_entity, uint8_t *data, uint32_t size, struct dec_codec_buffer *decode_buffer, uint32_t *ppcm_size,
 								  struct audio_param *paudio_param)
 {
@@ -257,7 +256,7 @@ uint16_t lc3_decoder_process_data(void *p_entity, uint8_t *data, uint32_t size, 
 	return RTK_BT_AUDIO_OK;
 }
 
-TIMESENSITIVE_TEXT_SECTION
+
 uint16_t lc3_encoder_process_data(void *p_entity, int16_t *data, uint32_t size, struct enc_codec_buffer *pencoder_buffer, uint8_t *p_frame_num,
 								  uint32_t *p_actual_len)
 {

@@ -39,7 +39,7 @@ static const cmd_table_t sdp_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_sdp_cmd(int argc, char *argv[])
+void fBTSDP(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, sdp_cmd_table, "[AT+BTSDP]");
+	atcmd_bt_excute(argc - 1, &argv[1], sdp_cmd_table, "[AT+BTSDP]");
 }

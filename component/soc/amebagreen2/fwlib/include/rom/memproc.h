@@ -26,8 +26,6 @@ extern  int __wrap_memcmp(const void *av, const void *bv, size_t len);
 extern  void *__wrap_memchr(const void *src_void, int c, size_t length);
 extern  void *__wrap_memmove(void *dst_void, const void *src_void, size_t length);
 
-void memcpy_gdma_init(void);
-int memcpy_gdma(void *dest, void *src, u32 size);
 
 #ifdef __cplusplus
 }

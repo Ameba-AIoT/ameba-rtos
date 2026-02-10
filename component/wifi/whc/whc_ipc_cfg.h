@@ -122,7 +122,7 @@
 #endif
 
 #elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAPRO3) || defined(CONFIG_AMEBAL2) || defined(CONFIG_RTL8720F)
-#if defined(CONFIG_ARM_CORE_CM4)
+#if defined(CONFIG_ARM_CORE_CM4) || defined(CONFIG_ARM_CORE_CA32)
 #if defined(CONFIG_WHC_HOST)
 /* configuration for AP */
 #define IPC_DIR_MSG_RX IPC_NP_TO_AP

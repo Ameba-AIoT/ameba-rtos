@@ -282,18 +282,12 @@ u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)
 	SubImgInfo[Index].Addr = SYSCFG_BootFromNor() ? LogAddr : PhyAddr;
 	Index += Cnt;
 
-	/* check if RDP enable */
-	if (SYSCFG_OTP_RDPEn() == TRUE) {
-		/* Load from OTA and ECC check for IMG3 */
-		RTK_LOGI(TAG, "RDP EN\n");
-		Cnt = BOOT_OTA_RDP(SubImgInfo, Index, ImgIndex);
-		Index += Cnt;
-	} else {
+	/* check if TrustZone enabled - try to load IMG3 */
 #if defined (CONFIG_TRUSTZONE_EN) && (CONFIG_TRUSTZONE_EN == 1U)
-		RTK_LOGW(TAG, "RDP Shall En when TZ Configed.\n");
-		assert_param(FALSE);
+	/* Load from OTA and ECC check for IMG3 */
+	Cnt = BOOT_OTA_RDP(SubImgInfo, Index, ImgIndex);
+	Index += Cnt;
 #endif
-	}
 
 #ifndef CONFIG_LINUX_FW_EN
 	if (Boot_AP_Enbale) {
