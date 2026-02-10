@@ -48,9 +48,6 @@
 // Define Non-Cacheable region
 #define SRAM_NOCACHE_DATA_SECTION			SECTION(".nocache.data")
 
-#define TIMESENSITIVE_TEXT_SECTION			SECTION(".timesensitive.text")
-#define TIMESENSITIVE_DATA_SECTION			SECTION(".timesensitive.data")
-
 /* non.dram can put in Flash(No DeepPowerDown) or SRAM after psram disabled, such as pmc code */
 #define NON_DRAM_TEXT_SECTION				SECTION(".non.dram.text")
 

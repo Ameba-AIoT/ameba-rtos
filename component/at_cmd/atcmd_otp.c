@@ -64,7 +64,7 @@ void at_otp(u16 argc, char **argv)
 			Len = _strtoul((const char *)(argv[3]), (char **)NULL, 16);
 		}
 
-		if (OTP_LogicalMap_Read(EfuseBuf, Addr, Len) == RTK_FAIL) {
+		if (OTP_LogicalRead(EfuseBuf, Addr, Len) == RTK_FAIL) {
 			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
 			goto exit;
 		}
@@ -109,7 +109,7 @@ void at_otp(u16 argc, char **argv)
 			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
 		}
 
-		if (OTP_LogicalMap_Write(Addr, Len, (u8 *)EfuseBuf) == RTK_FAIL) {
+		if (OTP_LogicalWrite(Addr, Len, (u8 *)EfuseBuf) == RTK_FAIL) {
 			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
 			goto exit;
 		}
@@ -189,7 +189,7 @@ void at_otp(u16 argc, char **argv)
 		}
 
 		if (index == 0x8730) {
-			OTPSetCRC();
+			OTP_SetCRC();
 		} else {
 			RTK_LOGE(TAG, "Careful, Only 4 CRC entry. CMD is efuse SETCRC 0x8730\n");
 		}

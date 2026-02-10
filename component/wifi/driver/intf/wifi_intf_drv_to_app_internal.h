@@ -551,10 +551,9 @@ int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags);
 void wifi_event_init(void);
 void wifi_indication(u32 event, u8 *evt_info, s32 evt_len);
 void wifi_indication_ext(u32 event, u8 *info_buf, s32 info_len, u8 *frame_buf, s32 frame_len);
-
+int wifi_event_handle(u32 event_cmd, u8 *evt_info);
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-

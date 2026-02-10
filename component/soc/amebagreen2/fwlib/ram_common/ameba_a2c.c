@@ -35,15 +35,16 @@ const struct A2C_DevTable A2C_DEV_TABLE[2] = {
 void A2C_StructInit(A2C_InitTypeDef *A2C_InitStruct)
 {
 	A2C_InitStruct->A2C_AutoReTxEn = DISABLE;
-	A2C_InitStruct->A2C_BitPrescaler = 2; //256;
+	A2C_InitStruct->A2C_Timing.Prescaler = 2; //256;
 	A2C_InitStruct->A2C_ErrCntThreshold = 64;
-	A2C_InitStruct->A2C_RxFifoEn = DISABLE;
-	A2C_InitStruct->A2C_SJW = 1; //8;
+	A2C_InitStruct->A2C_RxFifoEn = ENABLE;
+	A2C_InitStruct->A2C_Timing.SJW = 1; //8;
 	A2C_InitStruct->A2C_TimStampDiv = 128;
 	A2C_InitStruct->A2C_TimStampEn = ENABLE;
 	A2C_InitStruct->A2C_TriSampleEn = DISABLE;
-	A2C_InitStruct->A2C_TSEG1 = 15; //16;
-	A2C_InitStruct->A2C_TSEG2 = 4; //16;
+	A2C_InitStruct->A2C_Timing.PropSeg = 2;
+	A2C_InitStruct->A2C_Timing.PhaseSeg1 = 13; //16;
+	A2C_InitStruct->A2C_Timing.PhaseSeg2 = 4; //16;
 	A2C_InitStruct->A2C_WorkMode = A2C_NORMAL_MODE;
 }
 
@@ -72,10 +73,10 @@ void A2C_Init(A2C_TypeDef *A2Cx, A2C_InitTypeDef *A2C_InitStruct)
 	a2c_test = A2Cx->A2C_TEST;
 	/* 1.A2C 2.0 A/B bit prescaler*/
 	a2c_bit_timing &= ~(A2C_MASK_BRP | A2C_MASK_SJW | A2C_MASK_TSEG2 | A2C_MASK_TSEG1);
-	a2c_bit_timing |= A2C_BRP(A2C_InitStruct->A2C_BitPrescaler - 1) |
-					  A2C_SJW(A2C_InitStruct->A2C_SJW) |
-					  A2C_TSEG2(A2C_InitStruct->A2C_TSEG2 - 1) |
-					  A2C_TSEG1(A2C_InitStruct->A2C_TSEG1 - 1);
+	a2c_bit_timing |= A2C_BRP(A2C_InitStruct->A2C_Timing.Prescaler - 1) |
+					  A2C_SJW(A2C_InitStruct->A2C_Timing.SJW) |
+					  A2C_TSEG2(A2C_InitStruct->A2C_Timing.PhaseSeg2 - 1) |
+					  A2C_TSEG1(A2C_InitStruct->A2C_Timing.PropSeg + A2C_InitStruct->A2C_Timing.PhaseSeg1 - 1);
 
 	/*tripple sample*/
 	if (A2C_InitStruct->A2C_TriSampleEn) {
@@ -127,12 +128,12 @@ void A2C_Init(A2C_TypeDef *A2Cx, A2C_InitTypeDef *A2C_InitStruct)
 }
 
 /**
-  * @brief  wake filter configuration and enable
+  * @brief  Low power filter configuration
   * @param  A2Cx: where A2Cx can be A2C.
   * @param  FltNum: filter threshold.
   * @retval None
   */
-void A2C_WakeFilterConfig(A2C_TypeDef *A2Cx, u32 FltNum)
+void A2C_LpFilterConfig(A2C_TypeDef *A2Cx, u32 FltNum)
 {
 	assert_param(IS_A2C_ALL_PERIPH(A2Cx));
 	A2Cx->A2C_SLEEP_MODE &= ~A2C_MASK_WAKEPIN_FLT_LENGTH;
@@ -343,7 +344,7 @@ void A2C_WriteMsg(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 	/* Enable Msg buf[x] access*/
 	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
 					A2C_BIT_RAM_ACC_DATA_MASK | A2C_BIT_RAM_DIR);
-	a2c_ram_cmd |= TxMsg->MsgBufferIdx;
+	a2c_ram_cmd |= A2C_RAM_ACC_NUM(TxMsg->MsgBufferIdx);
 	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 
 	/*configure frame ARB register*/
@@ -399,7 +400,7 @@ void A2C_SetRxMsgBuf(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 	/*configure cmd register, enable access*/
 	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
 					A2C_BIT_RAM_ACC_DATA_MASK | A2C_BIT_RAM_DIR);
-	a2c_ram_cmd |= RxMsg->MsgBufferIdx;
+	a2c_ram_cmd |= A2C_RAM_ACC_NUM(RxMsg->MsgBufferIdx);
 
 	/*configure frame ARB register*/
 	a2c_ram_arb |= RxMsg->RTR;
@@ -415,13 +416,18 @@ void A2C_SetRxMsgBuf(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 
 	/*configure MASK ID register*/
 	if (RxMsg->IDE == A2C_STANDARD_FRAME) {
-		A2Cx->A2C_RAM_MASK = A2C_RAM_ID_MASK(RxMsg->ID_MASK << 18);
+		a2c_ram_mask = A2C_RAM_ID_MASK(RxMsg->ID_MASK << 18);
 	} else {
-		A2Cx->A2C_RAM_MASK = A2C_RAM_ID_MASK(RxMsg->ID_MASK);
+		a2c_ram_mask = A2C_RAM_ID_MASK(RxMsg->ID_MASK);
 	}
 
-	a2c_ram_mask |= RxMsg->IDE_Mask;
-	a2c_ram_mask |= RxMsg->RTR_Mask;
+	if (RxMsg->IDE_Mask) {
+		a2c_ram_mask |= A2C_BIT_RAM_IDE_MASK;
+	}
+	if (RxMsg->RTR_Mask) {
+		a2c_ram_mask |= A2C_BIT_RAM_RTR_MASK;
+	}
+
 	A2Cx->A2C_RAM_MASK = a2c_ram_mask;
 
 	/* Write RX setting info in register into the ram message buffer */
@@ -449,7 +455,7 @@ void A2C_ReadMsg(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 
 	/* Enable Msg buf[x] access */
 	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | A2C_BIT_RAM_ACC_DATA_MASK);
-	a2c_ram_cmd |= RxMsg->MsgBufferIdx;
+	a2c_ram_cmd |= A2C_RAM_ACC_NUM(RxMsg->MsgBufferIdx);
 	a2c_ram_cmd |= A2C_BIT_RAM_START;
 	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 	/* Read frame into register from ram message buffer */
@@ -520,7 +526,7 @@ void A2C_TxAutoReply(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 	/* Enable Msg buf[x] access */
 	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
 					A2C_BIT_RAM_ACC_DATA_MASK | A2C_BIT_RAM_DIR);
-	a2c_ram_cmd |= TxMsg->MsgBufferIdx;
+	a2c_ram_cmd |= A2C_RAM_ACC_NUM(TxMsg->MsgBufferIdx);
 	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 
 	/*configure frame ARB register*/
@@ -549,7 +555,7 @@ void A2C_TxAutoReply(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 	/*configure DATA register: can2.0 8 bytes, can fd 64 bytes*/
 	if (TxMsg->RTR == A2C_DATA_FRAME) {
 		for (i = 0; i < 16; i++) {
-			A2Cx->A2C_RAM_FDDATA_x[i] = TxMsg->Data[(16 - i - 1) * 4];
+			A2Cx->A2C_RAM_FDDATA_x[i] = TxMsg->Data_32[(16 - i - 1)];
 		}
 	}
 
@@ -580,7 +586,7 @@ void A2C_RxAutoReply(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 	/*configure cmd register, enable access*/
 	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
 					A2C_BIT_RAM_ACC_DATA_MASK | A2C_BIT_RAM_DIR);
-	a2c_ram_cmd |= RxMsg->MsgBufferIdx;
+	a2c_ram_cmd |= A2C_RAM_ACC_NUM(RxMsg->MsgBufferIdx);
 
 	/*configure frame ARB register*/
 	a2c_ram_arb = A2Cx->A2C_RAM_ARB;
@@ -606,9 +612,18 @@ void A2C_RxAutoReply(A2C_TypeDef *A2Cx, A2C_RxMsgTypeDef *RxMsg)
 	/*configure MASK ID register*/
 	a2c_ram_mask = A2Cx->A2C_RAM_MASK;
 	a2c_ram_mask &= (~A2C_MASK_RAM_ID_MASK | A2C_BIT_RAM_IDE_MASK | A2C_BIT_RAM_RTR_MASK);
-	a2c_ram_mask |= RxMsg->ID_MASK;
-	a2c_ram_mask |= RxMsg->IDE_Mask;
-	a2c_ram_mask |= RxMsg->RTR_Mask;
+	if (RxMsg->IDE == A2C_STANDARD_FRAME) {
+		a2c_ram_mask = A2C_RAM_ID_MASK(RxMsg->ID_MASK << 18);
+	} else {
+		a2c_ram_mask = A2C_RAM_ID_MASK(RxMsg->ID_MASK);
+	}
+
+	if (RxMsg->IDE_Mask) {
+		a2c_ram_mask |= A2C_BIT_RAM_IDE_MASK;
+	}
+	if (RxMsg->RTR_Mask) {
+		a2c_ram_mask |= A2C_BIT_RAM_RTR_MASK;
+	}
 	A2Cx->A2C_RAM_MASK = a2c_ram_mask;
 
 	/* Write RX setting into the ram message buffer*/
@@ -995,27 +1010,6 @@ void A2C_TxMsgTriggerConfig(A2C_TypeDef *A2Cx, u32 CloseOffset, u32 Begin)
 }
 
 /**
-  * @brief    A2C DMA destination base address configure.
-  * @param  A2Cx: where A2Cx can be A2C.
-  * @param  Addr: base address.
-  * @retval None
-  */
-void A2C_RxDmaDestBaseAddrConfig(A2C_TypeDef *A2Cx, u32 Addr)
-{
-	A2Cx->A2C_RXDMA_CFG = Addr;
-}
-
-/**
-  * @brief    A2C get RX DMA data.
-  * @param  A2Cx: where A2Cx can be A2C.
-  * @retval DMA data
-  */
-u32 A2C_GetRxDmaData(A2C_TypeDef *A2Cx)
-{
-	return A2Cx->A2C_RX_DMA_DATA;
-}
-
-/**
   * @brief    A2C control register configure.
   * @param  A2Cx: where A2Cx can be A2C.
   * @param  MsgIdx: message buffer index.
@@ -1155,7 +1149,7 @@ void A2C_FillTXDmaBuffer(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 	/*configure cmd register, enable access*/
 	a2c_ram_cmd |= (A2C_BIT_RAM_BUFFER_EN | A2C_BIT_RAM_ACC_ARB | A2C_BIT_RAM_ACC_CS | A2C_BIT_RAM_ACC_MASK | \
 					A2C_BIT_RAM_ACC_DATA_MASK  |  A2C_BIT_RAM_DIR);
-	a2c_ram_cmd |= TxMsg->MsgBufferIdx;
+	a2c_ram_cmd |= A2C_RAM_ACC_NUM(TxMsg->MsgBufferIdx);
 	A2Cx->A2C_RAM_CMD = a2c_ram_cmd;
 
 	/*configure frame ARB register*/
@@ -1194,26 +1188,320 @@ void A2C_FillTXDmaBuffer(A2C_TypeDef *A2Cx, A2C_TxMsgTypeDef *TxMsg)
 	while (A2Cx->A2C_RAM_CMD & A2C_BIT_RAM_START);
 }
 
-
 /**
-  * @brief    configure ram buffer mapping.
+  * @brief    A2C DMA destination base address configure.
   * @param  A2Cx: where A2Cx can be A2C.
-  * @param  pPara: mapping parameters.
-  * @retval DMA data
+  * @param  Addr: base address.
+  * @retval None
   */
-void A2C_RamBufferMapConfig(A2C_TypeDef *A2Cx, u32 *pPara)
+void A2C_RxDmaDestBaseAddrConfig(A2C_TypeDef *A2Cx, u32 Addr)
 {
-	u32 i;
-
-	/*message buffer address*/
-	for (i = 0; i < A2C_MESSAGE_BUFFER_SIZE; i++) {
-		A2C_MsgBaseAddrConfig(A2Cx, i, *(pPara + i));
-	}
-
-	/*end address*/
-	A2C_MsgBaseAddrEndReg(A2Cx, *(pPara + A2C_MESSAGE_BUFFER_SIZE));
+	A2Cx->A2C_RXDMA_CFG = Addr;
 }
 
+/**
+  * @brief    A2C get RX DMA data.
+  * @param  A2Cx: where A2Cx can be A2C.
+  * @retval DMA data
+  */
+u32 A2C_GetRxDmaData(A2C_TypeDef *A2Cx)
+{
+	return A2Cx->A2C_RX_DMA_DATA;
+}
+
+/**
+  * @brief  Configure the RAM mapping addresses for message buffers.
+  *
+  * @note   This function assigns physical memory addresses to the A2C message
+  *         buffers. The array must contain one extra address for the end register.
+  *
+  * @param  A2Cx: Pointer to A2C peripheral instance (e.g., A2C0).
+  * @param  AddrList: Pointer to an array containing buffer addresses.
+  *                   Size must be at least (A2C_MESSAGE_BUFFER_SIZE + 1).
+  * @retval None
+  */
+void A2C_RamBufferMapConfig(A2C_TypeDef *A2Cx, uint32_t *AddrList)
+{
+	uint32_t i;
+
+	/* Configure base address for each individual message buffer */
+	for (i = 0; i < A2C_MESSAGE_BUFFER_SIZE; i++) {
+		A2C_MsgBaseAddrConfig(A2Cx, i, AddrList[i]);
+	}
+
+	/* Configure the end address register (using the element after the last buffer) */
+	A2C_MsgBaseAddrEndReg(A2Cx, AddrList[A2C_MESSAGE_BUFFER_SIZE]);
+}
+
+/**
+  * @brief  Initialize the A2C core clock settings.
+  * @note   Sets the source to XTAL and disables PLL dividers for direct clocking.
+  * @retval None
+  */
+void A2C_CoreClockSet(void)
+{
+	RCC_PeriphClockSourceSet(A2C, XTAL);
+	RCC_PeriphClockDividerFENSet(USB_PLL_A2C, DISABLE);
+	RCC_PeriphClockDividerFENSet(SYS_PLL_A2C, DISABLE);
+}
+
+/**
+  * @brief  Get the current A2C core clock frequency.
+  *
+  * @param  Rate: [Out] Pointer to a variable where the frequency (in Hz) will be stored.
+  * @retval RTK_SUCCESS: Clock rate retrieved successfully.
+  * @retval RTK_FAIL: Invalid parameter (NULL pointer).
+  */
+int A2C_CoreClockGet(uint32_t *Rate)
+{
+	if (Rate == NULL) {
+		return RTK_FAIL;
+	}
+	/* Currently fixed to 40MHz XTAL. Logic can be expanded to read registers. */
+	*Rate = XTAL_40M;
+	return RTK_SUCCESS;
+}
+
+/**
+ * @brief  [Internal] Calculate time segment distribution based on Total TQ.
+ *
+ * @details
+ *  Bit Timing Model:
+ *  +-----------+----------+-----------+-----------+
+ *  | Sync_Seg  | Prop_Seg | Phase_Seg1| Phase_Seg2|
+ *  +-----------+----------+-----------+-----------+
+ *  | 1 TQ      |       Tseg1          |   Tseg2   |
+ *  +-----------+----------------------+-----------+
+ *                                     ^ Sample Point
+ *
+ * @param  TotalTq     Total number of time quanta per bit.
+ * @param  SamplePoint Target sample point in permille (e.g., 875 for 87.5%).
+ * @param  Result      [Out] Struct to store the calculated segments.
+ * @param  Min         Pointer to hardware minimum limits.
+ * @param  Max         Pointer to hardware maximum limits.
+ *
+ * @return Positive value: Absolute error between calculated and target sample point.
+ * @return Negative value: Error code (e.g., -RTK_ERR_BADARG) if limits cannot be met.
+ */
+static int A2C_CalcTimeSegments(uint32_t TotalTq, uint32_t SamplePoint, A2C_BitTimingTypeDef *Result,
+								const A2C_BitTimingTypeDef *Min, const A2C_BitTimingTypeDef *Max)
+{
+	/* Calculate allowed range for Tseg1 (PropSeg + PhaseSeg1) */
+	uint16_t tseg1_max = Max->PhaseSeg1 + Max->PropSeg;
+	uint16_t tseg1_min = Min->PhaseSeg1 + Min->PropSeg;
+	uint32_t sample_pnt_res;
+	uint16_t tseg1;
+	uint16_t tseg2;
+
+	/* ----------------------------------------------------------- */
+	/* 1. Calculate Tseg2 (PhaseSeg2)                              */
+	/* Formula: tseg2 = TotalTq * (1 - SamplePoint)                */
+	/* ----------------------------------------------------------- */
+	tseg2 = TotalTq - (TotalTq * SamplePoint) / 1000;
+
+	/* Clamp Tseg2 to hardware limits */
+	tseg2 = A2C_CLAMP(tseg2, Min->PhaseSeg2, Max->PhaseSeg2);
+
+	/* ----------------------------------------------------------- */
+	/* 2. Calculate Tseg1 (PropSeg + PhaseSeg1)                    */
+	/* Formula: TotalTq = SyncSeg(1) + Tseg1 + Tseg2               */
+	/* ----------------------------------------------------------- */
+	tseg1 = TotalTq - A2C_SYNC_SEG - tseg2;
+
+	/* ----------------------------------------------------------- */
+	/* 3. Validate and Adjust Tseg1                                */
+	/* If Tseg1 is out of bounds, trade off Tseg2 (Sample Point)   */
+	/* to satisfy Tseg1 constraints.                               */
+	/* ----------------------------------------------------------- */
+	if (tseg1 > tseg1_max) {
+		/* Tseg1 is too large; clamp to max and increase Tseg2 */
+		tseg1 = tseg1_max;
+		tseg2 = TotalTq - A2C_SYNC_SEG - tseg1;
+
+		/* Check if Tseg2 now exceeds its own max limit */
+		if (tseg2 > Max->PhaseSeg2) {
+			return -RTK_ERR_BADARG;
+		}
+
+	} else if (tseg1 < tseg1_min) {
+		/* Tseg1 is too small; clamp to min and decrease Tseg2 */
+		tseg1 = tseg1_min;
+		tseg2 = TotalTq - A2C_SYNC_SEG - tseg1;
+
+		/* Check if Tseg2 now falls below its own min limit */
+		if (tseg2 < Min->PhaseSeg2) {
+			return -RTK_ERR_BADARG;
+		}
+	}
+
+	/* Save calculated PhaseSeg2 */
+	Result->PhaseSeg2 = tseg2;
+
+	/* ----------------------------------------------------------- */
+	/* 4. Distribute Tseg1 into PropSeg and PhaseSeg1              */
+	/* Strategy: Split evenly for balanced propagation delay handling */
+	/* ----------------------------------------------------------- */
+	Result->PropSeg = A2C_CLAMP(tseg1 / 2, Min->PropSeg, Max->PropSeg);
+	Result->PhaseSeg1 = tseg1 - Result->PropSeg;
+
+	/* Re-balance if PhaseSeg1 is out of hardware limits */
+	if (Result->PhaseSeg1 > Max->PhaseSeg1) {
+		Result->PhaseSeg1 = Max->PhaseSeg1;
+		Result->PropSeg = tseg1 - Result->PhaseSeg1;
+	} else if (Result->PhaseSeg1 < Min->PhaseSeg1) {
+		Result->PhaseSeg1 = Min->PhaseSeg1;
+		Result->PropSeg = tseg1 - Result->PhaseSeg1;
+	}
+
+	/* ----------------------------------------------------------- */
+	/* 5. Calculate Actual Sample Point                            */
+	/* ----------------------------------------------------------- */
+	sample_pnt_res = (A2C_SYNC_SEG + tseg1) * 1000 / TotalTq;
+
+	/* Return the absolute error */
+	return (sample_pnt_res > SamplePoint) ?
+		   (sample_pnt_res - SamplePoint) : (SamplePoint - sample_pnt_res);
+}
+
+/**
+ * @brief  [Internal] Get default sample point recommendation for a bitrate.
+ *         Based on CiA (CAN in Automation) recommendations.
+ *
+ * @param  BitRate: Target bitrate in bits per second.
+ * @return Sample point in permille (e.g., 875 = 87.5%).
+ */
+static uint16_t A2C_GetDefaultSamplePoint(uint32_t BitRate)
+{
+	uint16_t sample_pnt;
+
+	if (BitRate > 800000) {
+		/* > 800Kbps, 75.0% */
+		sample_pnt = 750;
+	} else if (BitRate > 500000) {
+		/* > 500Kbps, 80.0% */
+		sample_pnt = 800;
+	} else {
+		/* others, 87.5% */
+		sample_pnt = 875;
+	}
+
+	return sample_pnt;
+}
+
+/**
+ * @brief  Calculate optimal A2C Bit Timing parameters.
+ *
+ * @details
+ *  This function iterates through possible prescaler values to find a configuration
+ *  that minimizes the deviation from the desired sample point.
+ *  The results (Prescaler, Segments, SJW) are written to the Result structure.
+ *
+ * @param  BitRate: Target bitrate (e.g., 500000 for 500kbps).
+ * @param  Result:  [Out] Pointer to structure where timing params will be saved.
+ *
+ * @retval RTK_SUCCESS:      Valid timing configuration found.
+ * @retval -RTK_ERR_BADARG:  Calculated parameters are invalid or out of range.
+ * @retval RTK_FAIL:         System clock could not be retrieved.
+ */
+int A2C_CalcBitTiming(uint32_t BitRate, A2C_BitTimingTypeDef *Result)
+{
+	/* Hardware limits defined in header */
+	const A2C_BitTimingTypeDef MinLimits = A2C_TIMING_MIN;
+	const A2C_BitTimingTypeDef MaxLimits = A2C_TIMING_MAX;
+
+	/* Max possible Total TQ to determine minimum prescaler */
+	uint32_t TotalTq = A2C_SYNC_SEG + MaxLimits.PropSeg + MaxLimits.PhaseSeg1 + MaxLimits.PhaseSeg2;
+	A2C_BitTimingTypeDef TempRes = {0};
+
+	/* Initialize SamplePoint to 0 to trigger default selection */
+	uint16_t SamplePoint = 0;
+
+	int ErrMin = INT_MAX;
+	uint32_t CoreClock;
+	int Err;
+	int Prescaler;
+
+	/* Basic validation */
+	if (BitRate == 0 || Result == NULL) {
+		return -RTK_ERR_BADARG;
+	}
+
+	if (A2C_CoreClockGet(&CoreClock) != RTK_SUCCESS) {
+		return RTK_FAIL;
+	}
+
+	/* Select default sample point if not provided */
+	if (SamplePoint == 0U) {
+		SamplePoint = A2C_GetDefaultSamplePoint(BitRate);
+	}
+
+	/* ----------------------------------------------------------- */
+	/* Iterate over Prescaler values to find best fit              */
+	/* ----------------------------------------------------------- */
+
+	/* Optimization: Start from the smallest valid prescaler to reduce loop count */
+	/* Prescaler = Clock / (TotalTq * BitRate) */
+	int StartPrescaler = MAX((int)(CoreClock / (TotalTq * BitRate)), (int)MinLimits.Prescaler);
+
+	for (Prescaler = StartPrescaler; Prescaler <= MaxLimits.Prescaler; Prescaler++) {
+
+		/* Check for integer division (TotalTq must be an integer) */
+		if (CoreClock % (Prescaler * BitRate) != 0) {
+			continue;
+		}
+
+		/* Calculate Total Time Quanta for this prescaler */
+		TotalTq = CoreClock / (Prescaler * BitRate);
+
+		/* Attempt to calculate segments for this TQ configuration */
+		Err = A2C_CalcTimeSegments(TotalTq, SamplePoint, &TempRes, &MinLimits, &MaxLimits);
+
+		/* If calculation failed (e.g., TQ out of bounds), skip this prescaler */
+		if (Err < 0) {
+			continue;
+		}
+
+		/* Check if this configuration is better (lower error) */
+		if (Err < ErrMin) {
+			ErrMin = Err;
+
+			/* Store best results */
+			Result->PropSeg   = TempRes.PropSeg;
+			Result->PhaseSeg1 = TempRes.PhaseSeg1;
+			Result->PhaseSeg2 = TempRes.PhaseSeg2;
+			Result->Prescaler = (uint16_t)Prescaler;
+
+			/* If error is 0, we found a perfect match. Stop searching. */
+			if (Err == 0) {
+				break;
+			}
+		}
+	}
+
+	if (ErrMin != 0) {
+		RTK_LOGW(TAG, "A2C BitRate warning: Sample Point Error %d/1000", ErrMin);
+	}
+
+	/* ----------------------------------------------------------- */
+	/* Post-processing: Calculate SJW (Sync Jump Width)            */
+	/* Standard Rule: SJW = min(PhaseSeg1, PhaseSeg2 / 2, 4)       */
+	/* ----------------------------------------------------------- */
+	Result->SJW = MIN(Result->PhaseSeg1, Result->PhaseSeg2 / 2);
+	Result->SJW = A2C_CLAMP(Result->SJW, MinLimits.SJW, MaxLimits.SJW);
+
+	/* Check if a valid solution was found */
+	if (ErrMin == INT_MAX) {
+		return -RTK_ERR_BADARG;
+	}
+	/* Optional: Log info if the result is within acceptable margin */
+	else if (ErrMin <= A2C_SAMPLE_POINT_MARGIN) {
+		RTK_LOGI(TAG, "A2C Config: Pre=%u, SJW=%u, Prop=%u, Ph1=%u, Ph2=%u (Err=%d)\n",
+				 Result->Prescaler, Result->SJW, Result->PropSeg,
+				 Result->PhaseSeg1, Result->PhaseSeg2, ErrMin);
+	}
+
+	return RTK_SUCCESS;
+}
 /**
   * @}
   */

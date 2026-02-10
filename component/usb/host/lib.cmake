@@ -50,6 +50,7 @@ ameba_list_append(private_sources
     ${c_CMPT_SOC_DIR}/fwlib/ram_common/ameba_usb.c
     ../common/usb_hal.c
     ../common/usb_os.c
+    ../common/usb_ringbuf.c
     core/usbh.c
     core/usbh_core.c
     core/usbh_hal.c

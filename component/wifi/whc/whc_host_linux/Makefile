@@ -3,8 +3,8 @@ export CONFIG_NAN = n
 export CONFIG_P2P = n
 export CONFIG_MCC = n
 export CONFIG_BT_INIC = n
-export CONFIG_WHC_HCI_IPC = n
-export CONFIG_WHC_HCI_SDIO = y
+export CONFIG_WHC_HCI_IPC = y
+export CONFIG_WHC_HCI_SDIO = n
 export CONFIG_WHC_HCI_SPI = n
 export CONFIG_WHC_HCI_USB = n
 export CONFIG_IEEE80211R = n
@@ -88,4 +88,3 @@ modules modules_install clean help kernelrelease:
 	$(MAKE) -C $(KDIR) M=$(M)/$(SUB) $@
 
 endif
-

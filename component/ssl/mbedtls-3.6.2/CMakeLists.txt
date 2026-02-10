@@ -14,11 +14,13 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F)
 	ameba_list_append(public_includes
-		hw_alt
+        hw_alt
+		thread_alt
 )
 else()
 	ameba_list_append(public_includes
 		hw_alt_legacy
+        thread_alt
 )
 endif()
 
@@ -197,6 +199,7 @@ if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F)
         hw_alt/sha512_alt.c
         hw_alt/ecc_alt.c
         hw_alt/ssl_rom_to_ram_map.c
+        thread_alt/threading_alt.c
     )
 
 # ========== Legacy platforms with hardware acceleration (hw_alt_legacy) ==========
@@ -207,6 +210,7 @@ elseif(CONFIG_AMEBASMART OR CONFIG_AMEBALITE OR CONFIG_AMEBADPLUS)
         hw_alt_legacy/sha256_alt.c
         hw_alt_legacy/sha512_alt.c
         hw_alt_legacy/ssl_rom_to_ram_map.c
+        thread_alt/threading_alt.c
     )
 
     ameba_list_append_if(CONFIG_AMEBASMART, private_sources, hw_alt_legacy/ecc_alt.c)

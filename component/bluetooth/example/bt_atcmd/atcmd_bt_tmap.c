@@ -18,12 +18,10 @@
 #include <rtk_bt_tmap.h>
 #include <atcmd_bt_impl.h>
 
-int atcmd_bt_tmap_cmd(int argc, char *argv[])
+void fBLETMAP(u16 argc, char *argv[])
 {
 	(void)argc;
 	(void)argv;
 	BT_LOGE("There is no available supported bt tmap at cmd \r\n");
-
-	return 0;
 }
 #endif

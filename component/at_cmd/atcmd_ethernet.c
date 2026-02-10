@@ -4,7 +4,7 @@
 #include "kv.h"
 #include "atcmd_service.h"
 #include "wifi_api_types.h"
-#include "ethernet_mii.h"
+#include "ethernet.h"
 #ifdef CONFIG_LWIP_LAYER
 #include "dhcp/dhcps.h"
 #endif

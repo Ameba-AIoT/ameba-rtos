@@ -83,9 +83,9 @@ static const cmd_table_t mesh_generic_onoff_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_mesh_generic_onoff(int argc, char *argv[])
+void fBLEMESHGOO(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, mesh_generic_onoff_cmd_table, "[AT+BLEMESHGOO]");
+	atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_onoff_cmd_table, "[AT+BLEMESHGOO]");
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

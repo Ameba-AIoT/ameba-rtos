@@ -35,6 +35,12 @@
 #else
 #include "mbedtls/mbedtls_config.h"
 #endif
+
+#if defined(CONFIG_MBEDTLS_THREADING)
+#define MBEDTLS_THREADING_C
+#define MBEDTLS_THREADING_ALT
+#endif
+
 /*
  * enable the support for TLS 1.3.
  */

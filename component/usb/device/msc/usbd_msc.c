@@ -250,7 +250,7 @@ static int usbd_msc_sd_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Disk init\n");
 
-#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+#ifdef CONFIG_USBD_MSC_SECOND_FLASH
 	return FLASH_second_disk_Driver.disk_initialize();
 #elif defined CONFIG_USBD_MSC_SD_MODE
 	return SD_disk_Driver.disk_initialize();
@@ -263,7 +263,7 @@ static int usbd_msc_sd_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Disk deinit\n");
 
-#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+#ifdef CONFIG_USBD_MSC_SECOND_FLASH
 	return FLASH_second_disk_Driver.disk_deinitialize();
 #elif defined CONFIG_USBD_MSC_SD_MODE
 	return SD_disk_Driver.disk_deinitialize();
@@ -274,7 +274,7 @@ static int usbd_msc_sd_deinit(void)
 
 static int usbd_msc_sd_getcapacity(u32 *sector_count)
 {
-#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+#ifdef CONFIG_USBD_MSC_SECOND_FLASH
 	return FLASH_second_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
 #elif defined CONFIG_USBD_MSC_SD_MODE
 	return SD_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
@@ -285,7 +285,7 @@ static int usbd_msc_sd_getcapacity(u32 *sector_count)
 
 static int usbd_msc_sd_readblocks(u32 sector, u8 *data, u32 count)
 {
-#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+#ifdef CONFIG_USBD_MSC_SECOND_FLASH
 	return FLASH_second_disk_Driver.disk_read(data, sector, count);
 #elif defined CONFIG_USBD_MSC_SD_MODE
 	return SD_disk_Driver.disk_read(data, sector, count);
@@ -296,7 +296,7 @@ static int usbd_msc_sd_readblocks(u32 sector, u8 *data, u32 count)
 
 static int usbd_msc_sd_writeblocks(u32 sector, const u8 *data, u32 count)
 {
-#ifdef CONFIG_USBD_MSC_EXTERNAL_FLASH
+#ifdef CONFIG_USBD_MSC_SECOND_FLASH
 	return FLASH_second_disk_Driver.disk_write(data, sector, count);
 #elif defined CONFIG_USBD_MSC_SD_MODE
 	return SD_disk_Driver.disk_write(data, sector, count);

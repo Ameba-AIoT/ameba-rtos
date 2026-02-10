@@ -80,3 +80,7 @@ if LINUX_FW_EN
         bool "Enable P2P"
         default n
 endif
+
+config WLAN_CRITICAL_CODE_IN_RAM
+    bool "Enable Critical code in RAM"
+    default y

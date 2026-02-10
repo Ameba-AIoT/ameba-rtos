@@ -72,6 +72,10 @@ static usbd_config_t composite_cfg = {
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 645U,
 	.ptx_fifo_depth = {256U, 32U, 32U, 16U, },
+#elif defined (CONFIG_AMEBAPRO3)
+	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
+	.rx_fifo_depth = 1424U,
+	.ptx_fifo_depth = {256U, 256U, 32U},
 #endif
 };
 

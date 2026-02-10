@@ -166,15 +166,32 @@ def parse_project_info(path:str) -> dict:
     #      3. /path/to/amebaxxx_gcc_project/project_abc         => soc_project: amebaxxx, mcu_project: abc
     #      4. /path/to/amebaxxx_gcc_project/project_abc/build   => soc_project: amebaxxx, mcu_project: abc
     #      5. case 1~4 but "/path/to" contains utils/release_tool (release build)
+    #      6. /path/to/component/soc/amebaxxx/project                     => soc_project: amebaxxx, mcu_project: empty
+    #      7. /path/to/component/soc/amebaxxx/project/project_abc         => soc_project: amebaxxx, mcu_project: abc
+    #      8. /path/to/build_xxx/build/project_abc                    => soc_name: xxx, mcu_project: abc
+    need_parsesoc = 0
     if "utils/release_tool" in path:
         pattern = r'(.*?/utils/release_tool/.*?/(\w+)_gcc_project)(?:/build)?(?:/project_(\w+))?(?:/|$)'
     else:
-        pattern = r'(.*?/(\w+)_gcc_project)(?:/build)?(?:/project_(\w+))?(?:/|$)'
+        if '_gcc_project' in path:
+            pattern = r'(.*?/(\w+)_gcc_project)(?:/build)?(?:/project_(\w+))?(?:/|$)'
+        elif 'build_' in path:
+            pattern = r'(.*?/build_(\w+))(?:/build/project_(\w+))?(?:/|$)'
+            need_parsesoc = 1
+        else:
+            pattern = r'(.*?/component/soc/(\w+)/project)(?:/project_(\w+))?(?:/|$)'
     match = re.search(pattern, path)
 
     if match:
-        soc_dir = match.group(1)
-        soc_project = match.group(2)
+        if need_parsesoc:
+            from ameba_soc_utils import SocManager
+            manager = SocManager()
+            soc_name = match.group(2)
+            soc_dir = manager._parse_project_path(soc_name) # component/soc/xxx/project
+            soc_project = os.path.basename(os.path.dirname(soc_dir)) if soc_dir else ''
+        else:
+            soc_dir = match.group(1)
+            soc_project = match.group(2)
         mcu_project = match.group(3) if match.group(3) else ''
     else:
         soc_dir = ''

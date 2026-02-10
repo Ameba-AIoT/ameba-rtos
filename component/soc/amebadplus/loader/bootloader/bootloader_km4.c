@@ -494,7 +494,6 @@ static bool BOOT_RRAM_InfoValid(void)
 void BOOT_Image1(void)
 {
 	PRAM_START_FUNCTION Image2EntryFun = BOOT_SectionInit();
-	//STDLIB_ENTRY_TABLE *prom_stdlib_export_func = (STDLIB_ENTRY_TABLE *)__rom_stdlib_text_start__;
 	u32 *vector_table = NULL;
 	RRAM_TypeDef *rram = RRAM_DEV;
 
@@ -531,9 +530,6 @@ void BOOT_Image1(void)
 
 	cmse_address_info_t cmse_address_info = cmse_TT((void *)BOOT_Image1);
 	RTK_LOGI(TAG, "IMG1 SECURE STATE: %d\n", cmse_address_info.flags.secure);
-	/*Do not use rom stdlib anymore,so mask the init here*/
-	/* init stdlib bss and load stdlib data */
-	//prom_stdlib_export_func->stdlib_init();
 
 	BOOT_RccConfig();
 

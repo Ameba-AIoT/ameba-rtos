@@ -984,9 +984,9 @@ static const cmd_table_t mesh_config_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_mesh_config(int argc, char *argv[])
+void fBLEMESHCONFIG(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, mesh_config_cmd_table, "[AT+BLEMESHCONFIG]");
+	atcmd_bt_excute(argc - 1, &argv[1], mesh_config_cmd_table, "[AT+BLEMESHCONFIG]");
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

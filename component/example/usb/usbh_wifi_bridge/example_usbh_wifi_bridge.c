@@ -75,6 +75,11 @@ static usbh_config_t usbh_ecm_cfg = {
 	.rx_fifo_depth = 501,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBAPRO3)
+	/*FIFO total depth is 2232 DWORD, resv 8 DWORD for DMA addr */
+	.rx_fifo_depth = 1712,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
 #endif
 };
 

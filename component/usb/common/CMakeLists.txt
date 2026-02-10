@@ -49,6 +49,7 @@ ameba_list_append(private_sources
     ${c_CMPT_SOC_DIR}/fwlib/ram_common/ameba_usb.c
     usb_hal.c
     usb_os.c
+    usb_ringbuf.c
 )
 
 ameba_list_append_ifnot(CONFIG_SUPPORT_USB_NO_PHY private_sources

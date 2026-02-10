@@ -494,6 +494,45 @@ extern "C" {
   * @{
   */
 /**
+ * @brief  A2C Timing Initialization structure definition
+ *
+ * This struct is used to pass bus timing values to the configuration and
+ * bitrate calculation functions.
+ *
+ * The propagation segment represents the time of the signal propagation. Phase
+ * segment 1 and phase segment 2 define the sampling point. The ``prop_seg`` and
+ * ``phase_seg1`` values affect the sampling point in the same way and some
+ * controllers only have a register for the sum of those two. The sync segment
+ * always has a length of 1 time quantum (see below).
+ *
+ * @code{.text}
+ *
+ * +---------+----------+------------+------------+
+ * |sync_seg | prop_seg | phase_seg1 | phase_seg2 |
+ * +---------+----------+------------+------------+
+ *                                   ^
+ *                             Sampling-Point
+ *
+ * @endcode
+ *
+ * 1 time quantum (tq) has the length of 1/(core_clock / prescaler). The bitrate
+ * is defined by the core clock divided by the prescaler and the sum of the
+ * segments:
+ *
+ *   br = (core_clock / prescaler) / (1 + prop_seg + phase_seg1 + phase_seg2)
+ *
+ * The Synchronization Jump Width (SJW) defines the amount of time quanta the
+ * sample point can be moved. The sample point is moved when resynchronization
+ * is needed.
+ */
+typedef struct {
+	uint8_t  SJW;           /*!< Spec: 1 to 4. Synchronisation jump width. */
+	uint8_t  PropSeg;       /*!< Spec: 1 to 8. Propagation segment. */
+	uint8_t  PhaseSeg1;     /*!< Spec: 1 to 8. Phase segment 1. */
+	uint8_t  PhaseSeg2;     /*!< Spec: 2 to 8. Phase segment 2. */
+	uint16_t Prescaler;     /*!< Spec: 1 to 1024. Prescaler value. */
+} A2C_BitTimingTypeDef;
+/**
   * @brief  A2C Mode Initialization structure definition
   */
 typedef struct {
@@ -520,18 +559,9 @@ typedef struct {
 
 	u32	A2C_RxFifoEn;      			/*!< Specifies the A2C FIFO mode configure register.
                                       				This parameter can be ENABLE or DISABLE. */
+	A2C_BitTimingTypeDef A2C_Timing; /*!< Specifies the A2C BIT_TIMING register.
+  	                                    This parameter can be of @ref A2C_BitTimingTypeDef. */
 
-	u32	A2C_BitPrescaler;			/*!< Specifies the bit timing prescaler.
-                                      				This parameter can be a number between 0x1 and 0x100*/
-
-	u32	A2C_SJW;				/*!< Specifies the A2C bit timing SJW.
-                                      				This parameter can be a number between 0x1 and 0x8. */
-
-	u32	A2C_TSEG1;				/*!< Specifies the A2C TSEG1.
-                                      				This parameter can be a number between 0x1 and 0x10. */
-
-	u32	A2C_TSEG2;				/*!< Specifies the A2C TSEG2.
-                                      				This parameter can be a number between 0x1 and 0x10. */
 } A2C_InitTypeDef;
 
 /**
@@ -825,6 +855,35 @@ typedef struct {
 /**
   * @}
   */
+/** @defgroup A2C_BIT_Timing
+  * @{
+  */
+#define A2C_TIMING_MIN                                                                 \
+	{                                                                                    \
+		.SJW = 1,                                                                          \
+		.PropSeg= 2,                                                                     \
+		.PhaseSeg1 = 2,                                                                   \
+		.PhaseSeg2 = 2,                                                                   \
+		.Prescaler = 1,                                                                    \
+	}
+
+#define A2C_TIMING_MAX                                                                 \
+	{                                                                                    \
+		.SJW = 4,                                                                          \
+		.PropSeg = 6,                                                                     \
+		.PhaseSeg1 = 8,                                                                   \
+		.PhaseSeg2 = 8,                                                                   \
+		.Prescaler = 32,                                                                   \
+	}
+
+#define A2C_SYNC_SEG  1
+
+#define A2C_CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high))
+
+#define A2C_SAMPLE_POINT_MARGIN  50
+/**
+  * @}
+  */
 /**
   * @}
   */
@@ -922,19 +981,11 @@ void A2C_MsgCtrlRegConfig(A2C_TypeDef *A2Cx, u32 MsgIdx, u32 RxDmaEn, u32 DmaOff
 void A2C_MsgBaseAddrConfig(A2C_TypeDef *A2Cx, u32 MsgIdx, u32 BaseAddr);
 void A2C_MsgBaseAddrEndReg(A2C_TypeDef *A2Cx, u32 EndAddr);
 
-void A2C_RamBufferMapConfig(A2C_TypeDef *A2Cx, u32 *pPara);
-/**
-  * @}
-  */
-
-/** @defgroup A2C_dma_functions
-  * @{
-  */
+void A2C_RamBufferMapConfig(A2C_TypeDef *A2Cx, uint32_t *AddrList);
 bool A2C_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pRxBuf, int RxCount);
-/**
-  * @}
-  */
-
+void A2C_CoreClockSet(void);
+int A2C_CoreClockGet(uint32_t *Rate);
+int A2C_CalcBitTiming(uint32_t BitRate, A2C_BitTimingTypeDef *Result);
 /**
   * @}
   */

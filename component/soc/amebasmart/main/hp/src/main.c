@@ -1,0 +1,208 @@
+
+#include "ameba_soc.h"
+#include "main.h"
+#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
+#include "vfs.h"
+#endif
+#include "os_wrapper.h"
+#include "ameba_rtos_version.h"
+#include "ssl_rom_to_ram_map.h"
+#ifdef CONFIG_MBEDTLS_ENABLED
+#include "threading_alt.h"
+#endif
+//#include "wifi_fast_connect.h"
+#if defined(CONFIG_BT_COEXIST)
+#include "rtw_coex_ipc.h"
+#endif
+#include "ameba_diagnose.h"
+
+static const char *const TAG = "MAIN";
+u32 g_Boot_Status;
+
+void app_init_debug(void)
+{
+	u32 debug[4];
+
+	debug[LEVEL_ERROR] = 0xFFFFFFFF;
+	debug[LEVEL_WARN]  = 0x0;
+	debug[LEVEL_TRACE] = 0x0;
+
+	if (SYSCFG_OTP_DisBootLog()) {
+		debug[LEVEL_INFO] = 0;
+	} else {
+		debug[LEVEL_INFO] = BIT(MODULE_BOOT);
+	}
+
+	LOG_MASK(LEVEL_ERROR, debug[LEVEL_ERROR]);
+	LOG_MASK(LEVEL_WARN, debug[LEVEL_WARN]);
+	LOG_MASK(LEVEL_INFO, debug[LEVEL_INFO]);
+	LOG_MASK(LEVEL_TRACE, debug[LEVEL_TRACE]);
+}
+
+void app_mbedtls_rom_init(void)
+{
+	CRYPTO_Init(NULL);
+	CRYPTO_SHA_Init(NULL);
+	RCC_PeriphClockCmd(APBPeriph_RSA, APBPeriph_CLOCK_NULL, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_ECDSA, APBPeriph_ECDSA_CLOCK, ENABLE);
+	ssl_function_map.ssl_calloc = (void *(*)(unsigned int, unsigned int))rtos_mem_calloc;
+	ssl_function_map.ssl_free = (void (*)(void *))rtos_mem_free;
+	ssl_function_map.ssl_printf = (long unsigned int (*)(const char *, ...))DiagPrintf;
+	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
+#if defined(CONFIG_MBEDTLS_THREADING)
+	mbedtls_threading_init();
+#endif
+}
+
+
+void app_pmu_init(void)
+{
+
+	pmu_set_sleep_type(SLEEP_PG);
+	pmu_acquire_deepwakelock(PMU_OS);
+
+	/* if wake from deepsleep, that means we have released wakelock last time */
+	//if (SOCPS_DsleepWakeStatusGet() == TRUE) {
+	//	pmu_set_sysactive_time(2);
+	//	pmu_release_wakelock(PMU_OS);
+	//	pmu_tickless_debug(ENABLE);
+	//}
+}
+
+/* enable or disable BT shared memory */
+/* if enable, KM4 can access it as SRAM */
+/* if disable, just BT can access it */
+/* 0x100E_0000	0x100E_FFFF	64K */
+void app_shared_btmem(u32 NewStatus)
+{
+	u32 temp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HPLAT_CTRL);
+
+	if (NewStatus == ENABLE) {
+		temp |= HSYS_BIT_SHARE_BT_MEM;
+	} else {
+		temp &= ~HSYS_BIT_SHARE_BT_MEM;
+	}
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HPLAT_CTRL, temp);
+}
+
+_WEAK void app_functional_chk_status_set(u32 Boot_Status)
+{
+	g_Boot_Status = Boot_Status;
+}
+
+_WEAK void app_functional_chk_done_callback(void)
+{
+	/* g_Boot_Status is 0 by default, app_functional_chk_status_set shall be called to set g_Boot_Status  */
+	if (g_Boot_Status == 0) {
+		BKUP_Write(BKUP_REG0, BKUP_Read(BKUP_REG0) & (~BOOT_CNT_MASK));
+	} else {
+		//if function not work correctly, trigger reboot
+		System_Reset();
+	}
+}
+
+/*
+ * This function will be replaced when Sdk example is compiled using CMD "make all EXAMPLE=xxx" or "make xip EXAMPLE=xxx"
+ * To aviod compile error when example is not compiled
+ */
+_WEAK void app_pre_example(void)
+{
+
+}
+
+_WEAK void app_example(void)
+{
+
+}
+
+#ifdef CONFIG_VFS_ENABLED
+extern uint32_t vfs_ftl_init(void);
+extern int vfs_kv_init(void);
+void app_filesystem_init(void)
+{
+	int ret = 0;
+	vfs_init();
+
+	vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
+	ret = vfs_kv_init();
+	if (ret == 0) {
+		RTK_LOGI(TAG, "File System Init Success \n");
+	} else {
+		RTK_LOGE(TAG, "File System Init Fail \n");
+	}
+
+#ifdef CONFIG_FATFS_WITHIN_APP_IMG
+	ret = vfs_user_register(VFS_R3_PREFIX, VFS_FATFS, VFS_INF_FLASH, VFS_REGION_3, VFS_RO);
+	if (ret == 0) {
+		RTK_LOGI(TAG, "VFS-FAT Init Success \n");
+	} else {
+		RTK_LOGI(TAG, "VFS-FAT Init Fail \n");
+	}
+#endif
+
+#if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
+	vfs_ftl_init();
+#endif
+}
+#endif
+
+//default main
+int main(void)
+{
+	RTK_LOGI(TAG, "KM4 MAIN \n");
+	ameba_rtos_get_version();
+
+	InterruptRegister(IPC_INTHandler, IPC_NP_IRQ, (u32)IPCNP_DEV, 5);
+	InterruptEn(IPC_NP_IRQ, 5);
+
+#ifdef CONFIG_MBEDTLS_ENABLED
+	app_mbedtls_rom_init();
+#endif
+	//app_init_debug();
+
+	ipc_table_init(IPCNP_DEV);
+
+#ifdef CONFIG_VFS_ENABLED
+	app_filesystem_init();
+#endif
+
+
+	/* pre-processor of application example */
+	app_pre_example();
+
+#if defined(CONFIG_BT_COEXIST)
+	/* init coex ipc */
+	coex_ipc_entry();
+#endif
+
+#ifdef CONFIG_WLAN
+	wifi_init();
+#endif
+
+#ifdef CONFIG_SHELL
+	/* init console */
+	shell_init_rom(0, 0);
+	shell_init_ram();
+#endif
+
+	//app_shared_btmem(ENABLE);
+
+	app_pmu_init();
+
+	app_functional_chk_done_callback();
+	app_init_debug();
+
+	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
+
+	/* Execute application example */
+	app_example();
+	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
+	IPC_SEMDelayStub(&rtos_time_delay_ms);
+
+	RTK_LOGI(TAG, "KM4 START SCHEDULER \n");
+
+	/* Enable Schedule, Start Kernel */
+	rtos_sched_start();
+}
+

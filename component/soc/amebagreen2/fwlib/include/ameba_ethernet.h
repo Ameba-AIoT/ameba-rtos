@@ -2346,11 +2346,24 @@ typedef struct {
 
 /* --- Interrupt & Events --- */
 enum eth_link_event {
-	EthTxDone       = 0,
-	EthRxDone       = 1,
-	EthLinkUp       = 2,
-	EthLinkDown     = 3,
-	EthRx_RDU       = 4,
+	ETH_EVT_NO_EVENT     = 0,
+	/* Standard Events */
+	ETH_EVT_RX_DONE      = (1 << 0),  /* Packet received successfully */
+	ETH_EVT_TX_DONE      = (1 << 1),  /* Packet transmitted successfully */
+	ETH_EVT_LINK_CHG     = (1 << 2),  /* Link status changed */
+	ETH_EVT_RX_ERROR     = (1 << 3),  /* RX Overflow or Runt error */
+	ETH_EVT_TX_ERROR     = (1 << 4),  /* TX Error */
+
+	/* RX Descriptor Unavailable (RDU) Events for specific Rings */
+	ETH_EVT_RDU_RING1    = (1 << 5),
+	ETH_EVT_RDU_RING2    = (1 << 6),
+	ETH_EVT_RDU_RING3    = (1 << 7),
+	ETH_EVT_RDU_RING4    = (1 << 8),
+	ETH_EVT_RDU_RING5    = (1 << 9),
+	ETH_EVT_RDU_RING6    = (1 << 10),
+
+	/* Alias for backward compatibility (Ring 1 default) */
+	ETH_EVT_RX_NO_DESC   = ETH_EVT_RDU_RING1
 };
 
 /* --- Link & Speed --- */
@@ -2362,16 +2375,6 @@ enum eth_speed {
 enum eth_duplex {
 	ETH_HALF_DUPLEX     = 0,
 	ETH_FULL_DUPLEX     = 1,
-};
-
-enum eth_link_status {
-	ETH_LINK_UP         = 0,
-	ETH_LINK_DOWN       = 1,
-};
-
-enum eth_nway_status {
-	ETH_NWAY_INCOMPLETED    = 0,
-	ETH_NWAY_COMPLETED      = 1,
 };
 
 
@@ -2868,9 +2871,6 @@ typedef struct {
 	u32     ETH_RxSegmentCount;
 	u16     ETH_TxBufSize;
 	u16     ETH_RxBufSize;
-
-	/* --- Callbacks & Drivers --- */
-	eth_callback_t      callback;
 } ETH_InitTypeDef, *PETH_InitTypeDef;
 
 struct ETH_LoopBackTest {
@@ -2897,9 +2897,10 @@ void Ethernet_UseExtClk(u32 pin);
 void Ethernet_AutoPolling(u32 opt);
 
 /* Interrupts */
-u32 Ethernet_GetINT(void);
-u32 Ethernet_ClearINT(u32 INTrBit);
-u32 RMII_IRQHandler(ETH_InitTypeDef *ETH_InitStruct);
+void Ethernet_ConfigINT(u32 int_config, u32 enable);
+u32 Ethernet_GetPendingINT(void);
+void Ethernet_ClearINT(u32 int_status);
+void Ethernet_ClearAllINT(void);
 
 /* DMA & Packet Handling */
 void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct);
@@ -2912,10 +2913,8 @@ void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct);
 int Ethernet_ReadPhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t *data);
 int Ethernet_WritePhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t data);
 u32 Ethernet_GetLinkStatus(void);
+void Ethernet_GetSpeedDuplex(void);
 
-/* External references */
-extern void ethernet_mii_init(void);
-extern volatile int link_is_up;
 #ifdef __cplusplus
 }
 #endif

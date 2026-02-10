@@ -62,7 +62,6 @@ ameba_list_append(private_sources
     ameba_flash_ram.c
     ameba_captouch.c
     ameba_ups.c
-    ameba_gdma_memcpy.c
     ameba_bor.c
     ameba_vad_handler.c
     ameba_wakepin.c

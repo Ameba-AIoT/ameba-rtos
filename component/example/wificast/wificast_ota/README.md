@@ -124,3 +124,7 @@ The built-in python HTTP server locates in [tools\DownloadServer(HTTP)](tools/Do
     ```
     [13:57:24:575][SYS-A] [sys_clear_ota_signature] IMGID: 1, current OTA1 Address: 0x00014000, target OTA2 Address: 0x00214000
     ```
+
+# Supported IC
+
+RTL8721F
