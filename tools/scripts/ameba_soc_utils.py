@@ -49,26 +49,31 @@ class SocManager:
         return sorted(self.soc_map.keys())
 
     def parse_soc_info(self) -> Dict:
-        if not self.info_file or not os.path.exists(self.info_file):
-            return None
+        soc_name = None
         soc_info = None
-        try:
-            with open(self.info_file, 'r') as jsonfile:
-                config = json.load(jsonfile)
-                soc_name = config.get('soc', {}).get('name')
-                soc_dir = self._parse_project_path(soc_name)
-                if soc_dir:
-                    soc_info = {
-                        "name": soc_name,
-                        "project": self.soc_map.get(str(soc_name)),
-                        "dir": soc_dir
-                    }
-                else:
-                    print(f"{YELLOW}WARNING: Invalid SOC name: '{soc_name}', read from '{self.info_file}'.{RESET}")
-            return soc_info
-        except IOError as e:
-            print(f"{RED}ERROR: Failed to read file '{self.info_file}': {e}{RESET}", file=sys.stderr)
-            return None
+        env_soc = os.environ.get('TARGET_SOC')
+        if env_soc:
+            soc_name = env_soc
+        elif self.info_file and os.path.exists(self.info_file):
+            try:
+                with open(self.info_file, 'r') as jsonfile:
+                    config = json.load(jsonfile)
+                    soc_name = config.get('soc', {}).get('name')
+            except IOError as e:
+                print(f"{RED}ERROR: Failed to read file '{self.info_file}': {e}{RESET}", file=sys.stderr)
+                return None
+
+        soc_dir = self._parse_project_path(soc_name)
+        if soc_dir:
+            soc_info = {
+                "name": soc_name,
+                "project": self.soc_map.get(str(soc_name)),
+                "dir": soc_dir
+            }
+        elif soc_name:
+            print(f"{YELLOW}WARNING: Invalid SOC name: '{soc_name}', read from '{self.info_file}'.{RESET}")
+
+        return soc_info
 
     def save_soc_info(self, soc_info_set: dict) -> bool:
         config = {
@@ -90,7 +95,10 @@ class SocManager:
 
         project_alias = self.raw_soc_map.get(soc_name)
         if project_alias:
-            path = os.path.join(self.sdk_root, f"{project_alias}_gcc_project")
+            path = os.path.join(self.sdk_root, f"component/soc/{project_alias}/project")
+            # temperary compatibility for different dir structure
+            if not os.path.isdir(path):
+                path = os.path.join(self.sdk_root, f"{project_alias}_gcc_project")
             if os.path.isdir(path):
                 return path
         return None

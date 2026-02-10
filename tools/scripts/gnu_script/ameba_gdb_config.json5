@@ -1,6 +1,6 @@
 {
   amebadplus: {
-    ASDK_PROJECT: 'km4',
+    IMG_PROJECT: 'km4',
     GDB_PORTS: {
       km4: 2335,
       km0: 2331,
@@ -25,7 +25,7 @@
     },
   },
   amebalite: {
-    ASDK_PROJECT: 'km4',
+    IMG_PROJECT: 'km4',
     GDB_PORTS: {
       km4: 2335,
       kr4: 2331,
@@ -52,7 +52,7 @@
     },
   },
   amebasmart: {
-    ASDK_PROJECT: 'hp',
+    IMG_PROJECT: 'hp',
     GDB_PORTS: {
       hp: 2335,
       lp: 2331,
@@ -77,7 +77,7 @@
     },
   },
   amebagreen2: {
-    ASDK_PROJECT: 'km4tz',
+    IMG_PROJECT: 'km4tz',
     GDB_PORTS: {
       km4tz: 2335,
       km4ns: 2331,
@@ -103,7 +103,7 @@
     },
   },
   RTL8720F: {
-    ASDK_PROJECT: 'km4tz',
+    IMG_PROJECT: 'km4tz',
     GDB_PORTS: {
       km4tz: 2335,
       km4ns: 2331,

@@ -153,7 +153,7 @@ static const cmd_table_t hid_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_hid_cmd(int argc, char *argv[])
+void fBTHID(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, hid_cmd_table, "[AT+BTHID]");
+	atcmd_bt_excute(argc - 1, &argv[1], hid_cmd_table, "[AT+BTHID]");
 }

@@ -564,7 +564,12 @@ include common/backtrace/backtrace.mk
 include ${MAKE_HELPERS_DIRECTORY}plat_helpers.mk
 
 # BUILD_BASE		:=	${PROJECT_DIR}/asdk/build
-BUILD_PLAT		:=	$(BUILD_BASE)/project_ap/asdk/make/atf
+BUILD_BASE_ASDK		:=	$(BUILD_BASE)/project_ap/asdk
+ifneq ($(wildcard $(BUILD_BASE_ASDK)),)
+	BUILD_PLAT		:=	$(BUILD_BASE)/project_ap/asdk/make/atf
+else
+	BUILD_PLAT		:=	$(BUILD_BASE)/project_ap/make/atf
+endif
 #${BUILD_BASE}/${PLAT}/${BUILD_TYPE}
 
 ifneq ($(ARCH),mips)
@@ -1421,11 +1426,11 @@ cscope:
 
 image: fiptool fip
 ifeq ($(CONFIG_MP_INCLUDED),y)
-	$(call SHELL_COPY,${BUILD_PLAT}/${FIP_NAME},${PROJECT_DIR}/asdk/image_mp)
-	$(call SHELL_COPY,${BUILD_PLAT}/bl1*.bin,${PROJECT_DIR}/asdk/image_mp)
+	$(call SHELL_COPY,${BUILD_PLAT}/${FIP_NAME},${BUILD_BASE}/project_ap/image_mp)
+	$(call SHELL_COPY,${BUILD_PLAT}/bl1*.bin,${BUILD_BASE}/project_ap/image_mp)
 else
-	$(call SHELL_COPY,${BUILD_PLAT}/${FIP_NAME},${PROJECT_DIR}/asdk/image)
-	$(call SHELL_COPY,${BUILD_PLAT}/bl1*.bin,${PROJECT_DIR}/asdk/image)
+	$(call SHELL_COPY,${BUILD_PLAT}/${FIP_NAME},${BUILD_BASE}/project_ap/image)
+	$(call SHELL_COPY,${BUILD_PLAT}/bl1*.bin,${BUILD_BASE}/project_ap/image)
 endif
 #	@#$(call boot/atf/image)
 

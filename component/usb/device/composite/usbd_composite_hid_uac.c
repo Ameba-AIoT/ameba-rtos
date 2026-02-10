@@ -37,9 +37,15 @@ static const u8 usbd_composite_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_LEN_DEV_DESC,                                                /* bLength */
 	USB_DESC_TYPE_DEVICE,                                            /* bDescriptorType */
 	0x00, 0x02,                                                      /* bcdUSB */
-	0x00,                                                            /* bDeviceClass: Miscellaneous */
-	0x00,                                                            /* bDeviceSubClass: Common Class */
-	0x00,                                                            /* bDeviceProtocol: Interface Association Descriptor */
+#if defined(CONFIG_USBD_COMPOSITE_HID_UAC2)
+	0xEF,                                                            /* bDeviceClass: Miscellaneous */
+	0x02,                                                            /* bDeviceSubClass: Common Class */
+	0x01,                                                            /* bDeviceProtocol: Interface Association Descriptor */
+#else
+	0x00,                                                            /* bDeviceClass:  */
+	0x00,                                                            /* bDeviceSubClass:  */
+	0x00,                                                            /* bDeviceProtocol:*/
+#endif
 	USB_MAX_EP0_SIZE,                                                /* bMaxPacketSize */
 	USB_LOW_BYTE(USBD_COMP_VID), USB_HIGH_BYTE(USBD_COMP_VID),       /* idVendor */
 	USB_LOW_BYTE(USBD_COMP_UAC_PID), USB_HIGH_BYTE(USBD_COMP_UAC_PID),       /* idProduct */
@@ -79,7 +85,7 @@ static const u8 usbd_composite_config_desc[USB_LEN_CFG_DESC] = {
 	USB_DESC_TYPE_CONFIGURATION,                                     /* bDescriptorType */
 	0x00,
 	0x00,                                                            /* wTotalLength: calculated at runtime */
-	0x04,                                                            /* bNumInterfaces */
+	USBD_UAC_AC_IF_NUM + USBD_HID_IF_NUM,                            /* bNumInterfaces */
 	0x01,                                                            /* bConfigurationValue */
 	0x00,                                                            /* iConfiguration */
 	0xC0,                                                            /* bmAttributes: self powered */
@@ -191,7 +197,8 @@ static int usbd_composite_is_uac_class_request(int entityId, usb_setup_req_t *re
 #else/* CONFIG_USBD_COMPOSITE_CDC_ACM_UAC2 */
 	UNUSED(req);
 	ret = (entityId == USBD_COMP_UAC_AC_HEADSET) ||
-		  (entityId == USBD_COMP_UAC_AS_HEADSET_HEADPHONES);
+		  (entityId == USBD_COMP_UAC_AS_HEADSET_HEADPHONES) ||
+		  (entityId == USBD_COMP_UAC_AS_HEADSET_MICROPHONE);
 #endif
 	return ret;
 }
@@ -228,7 +235,7 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if ((entityId == USBD_COMP_HID_ITF) || (entityId == USBD_COMP_HID_VEND_ITF)) {
 				ret = cdev->hid->setup(dev, req);
 			} else {
-				if ((entityId == USBD_COMP_UAC_AC_HEADSET) || (entityId == USBD_COMP_UAC_AS_HEADSET_HEADPHONES)) {
+				if ((entityId == USBD_COMP_UAC_AC_HEADSET) || (entityId == USBD_COMP_UAC_AS_HEADSET_HEADPHONES) || (entityId == USBD_COMP_UAC_AS_HEADSET_MICROPHONE)) { //TODO
 					if ((cdev->uac != NULL) && (cdev->uac->setup != NULL)) {
 						ret = cdev->uac->setup(dev, req);
 					}
@@ -268,8 +275,12 @@ static int usbd_composite_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 statu
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 
 	if ((ep_addr == USBD_COMP_HID_INTR_IN_EP) || (ep_addr == USBD_COMP_HID_CONSUMER_INTR_IN_EP)) {
-		if (cdev->hid->ep_data_in != NULL) {
+		if ((cdev->hid != NULL) && (cdev->hid->ep_data_in != NULL)) {
 			ret = cdev->hid->ep_data_in(dev, ep_addr, status);
+		}
+	} else if (ep_addr == USBD_COMP_UAC_ISOC_IN_EP) {
+		if ((cdev->uac != NULL) && (cdev->uac->ep_data_in != NULL)) {
+			ret = cdev->uac->ep_data_in(dev, ep_addr, status);
 		}
 	}
 
@@ -381,20 +392,26 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 		buf += USB_LEN_CFG_DESC;
 		total_len += USB_LEN_CFG_DESC;
 
-		desc_len = cdev->uac->get_descriptor(dev, req, buf);
-		buf += desc_len;
-		total_len += desc_len;
+		if (cdev->uac) {
+			desc_len = cdev->uac->get_descriptor(dev, req, buf);
+			buf += desc_len;
+			total_len += desc_len;
+		}
 
-		desc_len = cdev->hid->get_descriptor(dev, req, buf);
-		buf += desc_len;
-		total_len += desc_len;
+		if (cdev->hid) {
+			desc_len = cdev->hid->get_descriptor(dev, req, buf);
+			buf += desc_len;
+			total_len += desc_len;
+		}
 
+		/* other speed issue for UAC2.0*/
 		buf = dev->ep0_in.xfer_buf;
 #if !defined(CONFIG_USBD_COMPOSITE_HID_UAC1)
 		if (USB_HIGH_BYTE(req->wValue) == USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION) {
 			buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		}
 #endif
+		/* Update total length */
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(total_len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(total_len);
 		len = total_len;

@@ -17,7 +17,9 @@ static Manifest_TypeDef Manifest[2]; //Manifest of SlotA & SlotB
 u8 Signature[2][SIGN_MAX_LEN];
 s64 Ver[2] = {0};  //32-bit full version
 
-//static SubImgInfo_TypeDef SubImgInfo[12]; //store sub image addr and length
+/* Secure boot enable flags (defined in boot_security_km4.c) */
+extern u8 SecureBootEn;
+extern u8 SecureBootEn_PQC;
 
 static const u32 ImagePattern[2] = {
 	0x35393138, 0x31313738,
@@ -33,6 +35,21 @@ static u8 ValidIMGNum = 0;
 *  In each entry, the first address is OTA1 address(SlotA address), the second address is OTA2 address (SlotB address)
 */
 u32 OTA_Region[IMG_TYPE_CNT][2] = {0};
+
+/**
+  * @brief  Get manifest size based on version field
+  * @param  Manifest: Pointer to manifest structure
+  * @retval Size of manifest (MANIFEST_SIZE_4K_ALIGN or MANIFEST_SIZE_8K_ALIGN)
+  */
+u32 BOOT_OTA_GetManifestSize(Manifest_TypeDef *Manifest)
+{
+	if (Manifest->Ver == MANIFEST_VERSION_8KB) {
+		return MANIFEST_SIZE_8K_ALIGN;
+	} else {
+		/* Default to 4KB for backward compatibility */
+		return MANIFEST_SIZE_4K_ALIGN;
+	}
+}
 
 /**
   * @brief  Get Version Number from OTP
@@ -78,6 +95,11 @@ u8 BOOT_OTA_SlotSelect(void)
 		_memcpy((void *)&Cert[i], (void *)OTA_Region[IMG_CERT][i], sizeof(Certificate_TypeDef));
 
 		if (_memcmp(Cert[i].Pattern, ImagePattern, sizeof(ImagePattern)) == 0) {
+			/* Update 8K certificate size if cert version is 2 */
+			if (Cert[i].Ver >= CERT_VERSION_8KB) {
+				OTA_Region[IMG_IMG2][i] = OTA_Region[IMG_CERT][i] + CERT_SIZE_8K_ALIGN;
+			}
+
 			/*do signature copy only when cert valid*/
 			_memcpy((void *)&Signature[i], (void *)(OTA_Region[IMG_CERT][i] + Cert[i].TableSize), SIGN_MAX_LEN);
 			_memcpy((void *)&Manifest[i], (void *)OTA_Region[IMG_IMG2][i], sizeof(Manifest_TypeDef)); // load img2 manifest together
@@ -216,7 +238,7 @@ u8 BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	BOOT_RSIPIvSet(&Manifest[ImgIndex], RSIP_IV1);
 
 	/* remap KM0 XIP image */
-	PhyAddr += MANIFEST_SIZE_4K_ALIGN;
+	PhyAddr += BOOT_OTA_GetManifestSize(&Manifest[ImgIndex]);
 	LogAddr = (u32)__km0_flash_text_start__ - IMAGE_HEADER_LEN;
 
 	RSIP_MMU_Config(MMU_ID1, LogAddr, LogAddr + 0x01000000 - 0x20, PhyAddr);
@@ -266,28 +288,58 @@ u8 BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	}
 	Index += Cnt;
 
-	/* check if RDP enable */
-	if (SYSCFG_OTP_RDPEn() == TRUE) {
-		if (BOOT_DecRDPImg(PhyAddr, Manifest[ImgIndex].RsipIV, &SubImgInfo[Index], &Cnt) == FALSE) {
-			return FALSE;
-		}
-		Index += Cnt;
-	} else {
+	/* check if TrustZone enabled - try to load IMG3 */
 #if defined (CONFIG_TRUSTZONE_EN) && (CONFIG_TRUSTZONE_EN == 1U)
-		RTK_LOGI(TAG, "RDP Shall En when TZ Configed.\n");
-		assert_param(FALSE);
-#endif
+	if (BOOT_DecRDPImg(PhyAddr, Manifest[ImgIndex].RsipIV, &SubImgInfo[Index], &Cnt) == FALSE) {
+		return FALSE;
 	}
+	Index += Cnt;
+#endif
 
 	assert_param(Index <= sizeof(SubImgInfo) / sizeof(SubImgInfo_TypeDef));
 
 	/* IMG2(KM0 and KM4) ECC verify if need */
 	ret = BOOT_SignatureCheck(&Manifest[ImgIndex], SubImgInfo, Index, &Cert[ImgIndex], KEYID_NSPE);
+	if (ret != 0) {
+		return FALSE;
+	}
+
+#ifdef CONFIG_IMG1_PQC_SBOOT
+	/* IMG2(KM0 and KM4) PQC verify if manifest version >= 2 (dual verification) */
+	if (ret == 0) {
+		ret = BOOT_SignatureCheck_PQC(&Manifest[ImgIndex], &Cert[ImgIndex], ImgIndex, KEYID_NSPE_PQC);
+	}
+#endif
 
 	if (ret != 0) {
 		return FALSE;
 	}
-	return TRUE;
+
+	/* Calculate and validate image hash AFTER both signature verifications pass */
+	if ((SecureBootEn == DISABLE) && (SecureBootEn_PQC == DISABLE)) {
+		/* No secure boot enabled, skip hash validation */
+		return TRUE;
+	} else {
+		/* At least one secure boot method enabled, validate hash */
+		ret = SBOOT_Validate_ImgHash(Manifest[ImgIndex].HashAlg, Manifest[ImgIndex].ImgHash, SubImgInfo, Index);
+		if (ret != 0) {
+			goto SBOOT_FAIL;
+		}
+
+		RTK_LOGI(TAG, "IMG2 VERIFY PASS\n");
+		return TRUE;
+	}
+
+SBOOT_FAIL:
+	RTK_LOGE(TAG, "IMG2 VERIFY FAIL, ret = %d\n", ret);
+	/* clear copied image */
+	for (i = 0; i < Index; i++) {
+		if (!IS_FLASH_ADDR(SubImgInfo[i].Addr)) {
+			_memset((void *)SubImgInfo[i].Addr, 0, SubImgInfo[i].Len);
+			DCache_CleanInvalidate(SubImgInfo[i].Addr, SubImgInfo[i].Len);
+		}
+	}
+	return FALSE;
 }
 
 void BOOT_OTA_Region_Init(void)
@@ -377,7 +429,7 @@ void BOOT_OTA_Extract(void)
 
 	if (Ver[ExtractIdx] >= Ver[OverrideIdx]) {
 		/* 1. secure Boot Check */
-		SubImgInfo[0].Addr = ExtractAddr + MANIFEST_SIZE_4K_ALIGN;
+		SubImgInfo[0].Addr = ExtractAddr + BOOT_OTA_GetManifestSize(pManifest);
 		SubImgInfo[0].Len = pManifest->ImgSize;
 
 		ret = BOOT_Extract_SignatureCheck(pManifest, SubImgInfo, 1);
@@ -433,6 +485,12 @@ u8 BOOT_OTA_IMG(void)
 		/* step3.1: check cert if sboot enabled */
 		ret = BOOT_CertificateCheck(&Cert[ImgIndex], ImgIndex);
 
+#ifdef CONFIG_IMG1_PQC_SBOOT
+		/* step3.1.5: check PQC cert if manifest version >= 2 (dual verification) */
+		if (ret == 0) {
+			ret = BOOT_CertificateCheck_PQC(&Manifest[ImgIndex], &Cert[ImgIndex], ImgIndex);
+		}
+#endif
 		/* step3.2: try another cert if bigger ver failed and smaller ver is valid */
 		if (ret != 0) {
 			ImgIndex = (ImgIndex + 1) % 2;
@@ -475,4 +533,3 @@ Fail:
 
 	return 0;
 }
-

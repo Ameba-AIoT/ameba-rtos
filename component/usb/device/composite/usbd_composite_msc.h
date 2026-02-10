@@ -14,6 +14,15 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/** @addtogroup USB_Device_API USB Device API
+ *  @{
+ */
+/** @addtogroup USB_Device_Constants USB Device Constants
+ * @{
+ */
+/** @addtogroup Device_Composite_MSC_Constants Device Composite MSC Constants
+ * @{
+ */
 #define COMP_MSC_TX_THREAD_PRIORITY             5U     /**< TX thread priority */
 #define COMP_MSC_RX_THREAD_PRIORITY             5U     /**< RX thread priority */
 
@@ -65,6 +74,8 @@
 
 /* Sense */
 #define COMP_MSC_SENSE_LIST_DEPTH               4U             /**< Depth of the SCSI sense data list. */
+/** @} End of Device_Composite_MSC_Constants group*/
+/** @} End of USB_Device_Constants group*/
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -176,6 +187,12 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev);
  */
 void usbd_composite_msc_deinit(void);
 
+/** @addtogroup USB_Device_Functions USB Device Functions
+ * @{
+ */
+/** @addtogroup Device_Composite_MSC_Functions Device Composite MSC Functions
+ * @{
+ */
 /**
  * @brief Initializes the underlying storage disk.
  * @return 0 on success, non-zero on failure.
@@ -187,5 +204,8 @@ int usbd_composite_msc_disk_init(void);
  * @return 0 on success, non-zero on failure.
  */
 int usbd_composite_msc_disk_deinit(void);
+/** @} End of Device_Composite_MSC_Functions group */
+/** @} End of USB_Device_Functions group */
+/** @} End of USB_Device_API group */
 
 #endif // USBD_COMPOSITE_MSC_H

@@ -224,9 +224,9 @@ static const cmd_table_t mesh_remote_prov_client_model_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_mesh_remote_prov_client_model(int argc, char *argv[])
+void fBLEMESHRMT(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, mesh_remote_prov_client_model_cmd_table, "[AT+BLEMESHRMT]");
+	atcmd_bt_excute(argc - 1, &argv[1], mesh_remote_prov_client_model_cmd_table, "[AT+BLEMESHRMT]");
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

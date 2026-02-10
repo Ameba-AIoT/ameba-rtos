@@ -18,6 +18,7 @@ whc_usb-$(CONFIG_WHC_HCI_USB) := \
 		../netdev/whc_host_drv_probe.o \
 		../netdev/whc_host_ethtool_ops.o \
 		../netdev/whc_host_netdev_ops.o \
+		../whc_host_trx.o \
 		../whc_host_pkt_tx.o \
 		../whc_host_pkt_rx.o \
 		../whc_host_memory.o \

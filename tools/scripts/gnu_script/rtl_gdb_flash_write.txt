@@ -1,7 +1,8 @@
 # Unified GDB script for flashing Ameba SoCs
 # By gdb -ex set: GDB_PORT, image path, image size
 
-source ../../../tools/scripts/gnu_script/rtl_gdb_jtag_boot_com.txt
+# source ../../../tools/scripts/gnu_script/rtl_gdb_jtag_boot_com.txt
+eval "source %s/rtl_gdb_jtag_boot_com.txt", $SCRIPT_DIR
 
 #===============================================================================
 # BIN_PATH and BIN_SIZE are set by gdb.py -ex
@@ -16,10 +17,12 @@ set $IMAGE_IMG2_ALL = 0x002
 set $IMAGE_KM4_IMG3 = 0x003
 set $IMAGE_DSP_ALL = 0x004
 
-set $FLOADER_BIN = "../../../tools/scripts/gnu_script/flash_loader_ram_1.bin"
+# set $FLOADER_BIN = "../../../tools/scripts/gnu_script/flash_loader_ram_1.bin"
+eval "set $FLOADER_BIN = \"%s/flash_loader_ram_1.bin\"", $SCRIPT_DIR
 
 # load symbol table first
-file ../../../tools/scripts/gnu_script/target_FPGA.axf
+# file ../../../tools/scripts/gnu_script/target_FPGA.axf
+eval "file %s/target_FPGA.axf", $SCRIPT_DIR
 
 #===============================================================================
 # flash write function

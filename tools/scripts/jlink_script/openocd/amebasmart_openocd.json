@@ -4,9 +4,9 @@
             "set substitute-path": [],
             "dir": [],
             "add-symbol-file": [
-                "amebasmart_gcc_project/project_ap/asdk/image/bl1.elf",
-                "amebasmart_gcc_project/project_ap/asdk/image/bl2.elf",
-                "amebasmart_gcc_project/project_ap/asdk/image/bl32.elf"
+                "build_${socSelection}/build/project_ap/image/bl1.elf",
+                "build_${socSelection}/build/project_ap/image/bl2.elf",
+                "build_${socSelection}/build/project_ap/image/bl32.elf"
             ]
         },
         "overrideCommands": [
@@ -36,10 +36,10 @@
                 "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
             ],
             "add-symbol-file": [
-                "amebasmart_gcc_project/project_hp/asdk/image/target_loader.axf",
-                "amebasmart_gcc_project/project_hp/asdk/lib/amebasmart_rom_ccut/target_rom.axf",
-                "amebasmart_gcc_project/project_hp/asdk/lib/amebasmart_rom_ccut/target_rom_ns.axf",
-                "amebasmart_gcc_project/project_hp/asdk/lib/amebasmart_rom_ccut/target_stdlib.axf"
+                "build_${socSelection}/build/project_hp/image/target_loader.axf",
+                "component/soc/amebasmart/project/project_hp/lib/amebasmart_rom_ccut/target_rom.axf",
+                "component/soc/amebasmart/project/project_hp/lib/amebasmart_rom_ccut/target_rom_ns.axf",
+                "component/soc/amebasmart/project/project_hp/lib/amebasmart_rom_ccut/target_stdlib.axf"
             ]
         },
         "overrideCommands": [
@@ -72,7 +72,7 @@
                 "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
             ],
             "add-symbol-file": [
-                "amebasmart_gcc_project/project_lp/asdk/lib/amebasmart_rom_acut/target_rom.axf"
+                "component/soc/amebasmart/project/project_lp/lib/amebasmart_rom_acut/target_rom.axf"
             ]
         },
         "overrideCommands": [

@@ -73,6 +73,10 @@ static usbd_config_t vendor_cfg = {
 	/*DFIFO total 1024 DWORD, resv 11 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 405U,
 	.ptx_fifo_depth = {256U, 256U, 32U, 32U},
+#elif defined (CONFIG_AMEBAPRO3)
+	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
+	.rx_fifo_depth = 1424U,
+	.ptx_fifo_depth = {256U, 256U, 32U},
 #endif
 	.intr_use_ptx_fifo = 0U,
 };

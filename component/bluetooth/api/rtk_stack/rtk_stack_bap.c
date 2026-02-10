@@ -4128,12 +4128,16 @@ void bt_stack_le_audio_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 									RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND,
 									sizeof(rtk_bt_le_audio_direct_iso_data_ind_t) + p_data->p_bt_direct_iso->offset + p_data->p_bt_direct_iso->iso_sdu_len);
 		if (!p_evt) {
+			/* APP need to release every iso sdu, otherwise the BT upperstack buffer number(max value 16)
+			  will be exhausted and there won't be any more iso data callback */
+			gap_iso_data_cfm(p_data->p_bt_direct_iso->p_buf);
 			BT_LOGE("%s rtk_bt_event_create fail\r\n", __func__);
 			break;
 		} else {
 			rtk_bt_le_audio_iso_channel_info_t *p_iso_chann = NULL;
 			p_iso_chann = bt_stack_le_audio_find_iso_chann(p_data->p_bt_direct_iso->conn_handle, RTK_BLE_AUDIO_ISO_DATA_PATH_RX);
 			if (!p_iso_chann) {
+				gap_iso_data_cfm(p_data->p_bt_direct_iso->p_buf);
 				BT_LOGE("[BAP] %s BT_DIRECT_MSG_ISO_DATA_IND cannot find matched iso channel \r\n", __func__);
 				break;
 			} else {
