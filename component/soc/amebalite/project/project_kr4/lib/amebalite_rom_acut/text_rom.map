@@ -1,0 +1,1495 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+KM4_IROM         0x0000000000000000 0x000000000001e000 xr
+KM4_IROM_NS      0x000000000001e000 0x0000000000016000 xr
+KM4_IROM_STDLIB_NS 0x0000000000034000 0x000000000000d000 xr
+KM4_DROM_NS      0x0000000000041000 0x0000000000004000 xr
+KM4_DROM         0x0000000000045000 0x0000000000003000 xr
+KM4_ROMBSS_RAM_S 0x0000000030007000 0x0000000000001000 rw
+KM4_MSP_RAM_S    0x0000000030008000 0x0000000000002000 rw
+KM4_BOOTLOADER_RAM_S 0x000000003000a020 0x0000000000005fe0 xrw
+KM4_FLOADER_RAM_S 0x000000003000a020 0x0000000000015fe0 xrw
+KM4_BD_RAM_NSC   0x000000006015b020 0x0000000000000fe0 xrw
+KM4_BD_RAM_ENTRY 0x000000006015c000 0x0000000000004000 xrw
+KM4_BD_RAM_S     0x0000000070160020 0x000000000001ffe0 xrw
+KM4_MSP_RAM_NS   0x0000000020003000 0x0000000000001000 rw
+KM4_ROMBSS_RAM_COM 0x0000000020004000 0x0000000000001000 rw
+KM4_ROMBSS_RAM_NS 0x0000000020005000 0x0000000000001000 rw
+KM4_STDLIB_HEAP_RAM_NS 0x0000000020006000 0x0000000000001000 rw
+KM4_BD_RAM       0x0000000020010020 0x000000000001ffe0 xrw
+DSP_BD_RAM       0x0000000020030020 0x000000000000ffe0 xrw
+KR4_BD_RAM       0x0000000020040020 0x000000000001fce0 xrw
+KR4_IPC_RAM      0x000000002005fd00 0x0000000000000300 xrw
+KM4_AUDIO_BUFFER 0x0000000020060000 0x0000000000020000 rw
+DSP_TCM          0x0000000020080020 0x000000000003ffe0 xrw
+KM4_BD_PSRAM_NS_TZ 0x0000000060000020 0x000000000015afe0 xrw
+KM4_BD_PSRAM_NS_NTZ 0x0000000060000020 0x000000000017ffe0 xrw
+KR4_BD_PSRAM     0x0000000060180020 0x000000000017ffe0 xrw
+DSP_BD_PSRAM     0x0000000060300020 0x00000000004fffe0 xrw
+EXTENTION_SRAM   0x0000000022000000 0x0000000000000000 xrw
+RETENTION_RAM    0x0000000021020000 0x0000000000000200 xrw
+KR4_IROM         0x0000000000000000 0x000000000001c000 xr
+KR4_IROM_STDLIB  0x000000000001c000 0x0000000000011000 xr
+KR4_DROM         0x000000000002d000 0x0000000000003000 xr
+KR4_ROMBSS_RAM   0x0000000020000000 0x0000000000001000 rw
+KR4_MSP_RAM      0x0000000020001000 0x0000000000001000 rw
+KR4_STDLIB_HEAP_RAM 0x0000000020002000 0x0000000000001000 rw
+PHY_IMG1         0x0000000008001020 0x0000000000005fe0 xr
+KM4_BOOT         0x000000000f800020 0x00000000007fffe0 xr
+PHY_IMG2         0x0000000008014000 0x00000000001cc000 xr
+KM4_IMG3         0x00000000081e0000 0x0000000000020000 xr
+KR4_IMG2         0x000000000c000020 0x0000000001ffffe0 xr
+KM4_IMG2         0x000000000e000020 0x00000000017fffe0 xr
+BTRACE           0x0000000010000020 0x0000000000ffffe0 xr
+DSP_IROM         0x0000000000000000 0x0000000000000400 xr
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+START GROUP
+LOAD D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/../toolchain/mingw/vsdk-10.2.0/mingw32/newlib/riscv32-none-elf/lib/rv32imafc/ilp32f\libc.a
+LOAD D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/../toolchain/mingw/vsdk-10.2.0/mingw32/newlib/lib/gcc/riscv32-none-elf/10.2.0/rv32imafc/ilp32f\libgcc.a
+END GROUP
+LOAD D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOAD D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/../toolchain/mingw/vsdk-10.2.0/mingw32/newlib/lib/gcc/riscv32-none-elf/10.2.0/rv32imafc/ilp32f\libgcc.a
+START GROUP
+LOAD D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/../toolchain/mingw/vsdk-10.2.0/mingw32/newlib/riscv32-none-elf/lib/rv32imafc/ilp32f\libc.a
+END GROUP
+LOAD D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/../toolchain/mingw/vsdk-10.2.0/mingw32/newlib/lib/gcc/riscv32-none-elf/10.2.0/rv32imafc/ilp32f\libgcc.a
+START GROUP
+LOAD D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/../toolchain/mingw/vsdk-10.2.0/mingw32/newlib/lib/gcc/riscv32-none-elf/10.2.0/rv32imafc/ilp32f\libgcc.a
+LOAD D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/../toolchain/mingw/vsdk-10.2.0/mingw32/newlib/riscv32-none-elf/lib/rv32imafc/ilp32f\libc.a
+LOAD D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/../toolchain/mingw/vsdk-10.2.0/mingw32/newlib/riscv32-none-elf/lib/rv32imafc/ilp32f\libnosys.a
+END GROUP
+                0x000000000001c000                __rom_stdlib_text_start__ = ORIGIN (KM4_IROM_STDLIB_NS)
+                0x0000000020040020                __kr4_image2_entry_func__ = ORIGIN (KR4_BD_RAM)
+                0x000000002005fd00                __kr4_ipc_memory_start__ = ORIGIN (KR4_IPC_RAM)
+                0x000000000c000020                __kr4_flash_text_start__ = ORIGIN (KR4_IMG2)
+                0x000000000e000020                __km4_flash_text_start__ = ORIGIN (KM4_IMG2)
+                0x0000000060180020                __kr4_psram_text_start__ = ORIGIN (KR4_BD_PSRAM)
+                0x000000000f800020                __km4_boot_text_start__ = ORIGIN (KM4_BOOT)
+                0x00000000081e0000                __km4_image3_flash_start__ = ORIGIN (KM4_IMG3)
+                0x0000000008014000                __nspe_phy_addr__ = ORIGIN (PHY_IMG2)
+
+.rom.text       0x0000000000000000    0x16938
+ .rom.text      0x0000000000000000    0x16938 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+                0x0000000000000000                Reset_Handler
+                0x000000000000000a                rtl_crypto_aes_cbc_init
+                0x0000000000000070                rtl_crypto_aes_cbc_encrypt
+                0x00000000000000b8                rtl_crypto_aes_cbc_decrypt
+                0x0000000000000100                rtl_crypto_aes_ecb_init
+                0x0000000000000164                rtl_crypto_aes_ecb_encrypt
+                0x0000000000000198                rtl_crypto_aes_ecb_decrypt
+                0x00000000000001cc                rtl_crypto_aes_ctr_init
+                0x0000000000000230                rtl_crypto_aes_ctr_encrypt
+                0x000000000000026e                rtl_crypto_aes_ctr_decrypt
+                0x00000000000002ac                rtl_crypto_aes_cfb_init
+                0x0000000000000310                rtl_crypto_aes_cfb_encrypt
+                0x000000000000034e                rtl_crypto_aes_cfb_decrypt
+                0x000000000000038c                rtl_crypto_aes_ofb_init
+                0x00000000000003f0                rtl_crypto_aes_ofb_encrypt
+                0x000000000000042e                rtl_crypto_aes_ofb_decrypt
+                0x000000000000046c                rtl_crypto_aes_gcm_init
+                0x00000000000004d0                rtl_crypto_aes_gcm_encrypt
+                0x0000000000000568                rtl_crypto_aes_gcm_decrypt
+                0x0000000000000600                __NVIC_EnableIRQ
+                0x0000000000000620                __NVIC_GetEnableIRQ
+                0x000000000000064a                __NVIC_DisableIRQ
+                0x000000000000066a                __NVIC_GetPendingIRQ
+                0x0000000000000694                __NVIC_SetPendingIRQ
+                0x00000000000006ba                __NVIC_ClearPendingIRQ
+                0x00000000000006e0                __NVIC_GetActive
+                0x000000000000073e                __NVIC_SetPriority
+                0x0000000000000756                __NVIC_GetPriority
+                0x0000000000000766                __NVIC_SetVector
+                0x000000000000077e                __NVIC_GetVector
+                0x000000000000079a                __NVIC_SetVectorArg
+                0x00000000000007b2                __NVIC_GetVectorArg
+                0x00000000000007ce                sys_irq_dispatch
+                0x0000000000000816                io_assert_failed
+                0x000000000000083e                BKUP_Write
+                0x0000000000000874                BKUP_Read
+                0x00000000000008a6                BKUP_Set
+                0x00000000000008e4                BKUP_Clear
+                0x0000000000000924                BOOT_ROM_InitDebugFlg
+                0x0000000000000940                BOOT_ROM_ResetVsr
+                0x0000000000000a5a                XTAL_ClkGet
+                0x0000000000000a76                CPU_ClkSrc_Set
+                0x0000000000000a8c                CPU_ClkSrc_Get
+                0x0000000000000a9a                PLL_ClkGet
+                0x0000000000000b16                CPU_ClkGet
+                0x0000000000000bbc                CRYPTO_MemDump
+                0x0000000000000d2c                CRYPTO_SetSrcDesc
+                0x0000000000000da8                CRYPTO_SetDstDesc
+                0x0000000000000e26                CRYPTO_CleanCmdOk
+                0x0000000000000e4a                CRYPTO_ClearAllINT
+                0x0000000000000e5c                CRYPTO_SetCmdBuf
+                0x00000000000010c8                CRYPTO_SrcDescKeyIv
+                0x000000000000151a                CRYPTO_Reset
+                0x0000000000001540                CRYPTO_SHA_Reset
+                0x0000000000001566                CRYPTO_SetSecurityModeAD
+                0x0000000000001796                CRYPTO_Init
+                0x00000000000017bc                CRYPTO_SHA_Init
+                0x00000000000017e2                CRYPTO_OTPKey_Init
+                0x0000000000001838                CRYPTO_OTPKey_SHA_Init
+                0x00000000000018a2                CRYPTO_Cache_Sync
+                0x0000000000001a80                CRYPTO_ProcessAD
+                0x000000000000214c                CRYPTO_SendSeqBuf
+                0x0000000000002252                CRYPTO_CipherInit
+                0x0000000000002260                CRYPTO_CipherEncryptAD
+                0x0000000000002284                CRYPTO_CipherDecryptAD
+                0x00000000000022ae                DelayNop
+                0x00000000000022ba                DelayUs
+                0x000000000000231a                DelayMs
+                0x0000000000002326                ECDSA_BufSub
+                0x000000000000238a                ECDSA_BufCmp
+                0x00000000000023ee                ECDSA_HashBuf_Setting
+                0x000000000000253a                ECDSA_CurveSel
+                0x00000000000027aa                ECDSA_EngRst
+                0x00000000000027ba                ECDSA_Cmd
+                0x00000000000027da                ECDSA_KeyGen
+                0x00000000000028b2                ECDSA_Sign
+                0x00000000000029ea                ECDSA_Verify
+                0x0000000000002ad0                ECDSA_ECDH_Compute_Shared
+                0x0000000000002bd0                ECDSA_Basic_Func
+                0x0000000000002cc4                FLASH_SetSpiMode
+                0x0000000000002dc0                FLASH_RxCmd
+                0x0000000000002e5c                FLASH_WaitBusy
+                0x0000000000002f16                FLASH_RxData
+                0x0000000000003002                FLASH_TxCmd
+                0x000000000000308c                FLASH_WriteEn
+                0x00000000000030aa                FLASH_TxData
+                0x00000000000031c2                FLASH_SetStatus
+                0x00000000000031e4                FLASH_Erase
+                0x000000000000329e                FLASH_DeepPowerDown
+                0x00000000000032ea                FLASH_WaitBusy_Timeout
+                0x0000000000003376                FLASH_WriteEn_Timeout
+                0x0000000000003394                FLASH_SetStatusBits
+                0x0000000000003446                FLASH_StructInit_Micron
+                0x00000000000034d4                FLASH_StructInit_MXIC
+                0x0000000000003562                FLASH_StructInit_GD
+                0x00000000000035f0                FLASH_StructInit
+                0x000000000000367c                FLASH_Init
+                0x000000000000372a                FLASH_Wait_Boot_Finish
+                0x0000000000003738                FLASH_CalibrationPLLSel
+                0x0000000000003742                FLASH_CalibrationPLL_GetSrc
+                0x000000000000374c                FLASH_Calibration_PSPLL_Open
+                0x00000000000037aa                FLASH_Calibration_PSPLL_Close
+                0x00000000000037e0                FLASH_CalibrationPLLPSCmd
+                0x000000000000382a                FLASH_CalibrationPLLPS_Shift
+                0x0000000000003854                FLASH_PLLInit_ClockDiv
+                0x00000000000038e0                FLASH_CalibrationPhase
+                0x0000000000003972                FLASH_CalibrationPhaseIdx
+                0x000000000000397a                FLASH_CalibrationNewCmd
+                0x00000000000039b0                FLASH_CalibrationNew
+                0x0000000000003b7e                FLASH_Read_HandShake_Cmd
+                0x0000000000003bb8                FLASH_Read_HandShake
+                0x0000000000003ca6                FLASH_Calibration
+                0x0000000000003e1a                GPIO_INTMode
+                0x0000000000003ea8                GPIO_INTConfig
+                0x0000000000003ed6                GPIO_INTHandler
+                0x0000000000003fca                GPIO_Direction
+                0x0000000000003ff6                GPIO_Init
+                0x0000000000004080                GPIO_DeInit
+                0x0000000000004106                GPIO_ReadDataBit
+                0x000000000000412a                GPIO_WriteBit
+                0x0000000000004158                GPIO_PortDirection
+                0x00000000000041ac                GPIO_PortRead
+                0x00000000000041ea                GPIO_PortWrite
+                0x0000000000004236                GPIO_DebounceClock
+                0x0000000000004292                GPIO_LevelSync
+                0x00000000000042da                GPIO_UserRegIrq
+                0x0000000000004302                LOGUART_StructInit
+                0x000000000000434e                LOGUART_SetBaud
+                0x00000000000043f8                LOGUART_RxCmd
+                0x0000000000004408                LOGUART_AGGCmd
+                0x0000000000004420                LOGUART_AGGPathCmd
+                0x00000000000044c0                LOGUART_AGGSetTimeOut
+                0x00000000000044d8                LOGUART_AGGSetThreshold
+                0x000000000000451c                LOGUART_AGGSetSyncPattern
+                0x000000000000452c                LOGUART_AGGPathAllCmd
+                0x0000000000004544                LOGUART_PutChar
+                0x00000000000045b2                LOGUART_GetChar
+                0x00000000000045ce                LOGUART_Readable
+                0x00000000000045d8                LOGUART_GetRxCount
+                0x00000000000045e2                LOGUART_GetIMR
+                0x00000000000045ea                LOGUART_SetIMR
+                0x00000000000045f2                LOGUART_INTConfig
+                0x000000000000460a                LOGUART_INTClear
+                0x0000000000004612                LOGUART_GetStatus
+                0x0000000000004616                LOGUART_ClearRxFifo
+                0x0000000000004632                _LOGUART_Init
+                0x00000000000047b8                LOGUART_Init
+                0x000000000000480e                LOGUART_WaitBusy
+                0x0000000000004852                LOGUART_WaitTxComplete
+                0x0000000000004890                LOGUART_BT_SendData
+                0x00000000000048c2                LOGUART_Relay_StructInit
+                0x00000000000048da                LOGUART_Relay_SetFormat
+                0x0000000000004918                LOGUART_Relay_SetBaud
+                0x000000000000496c                LOGUART_Relay_ClearRxFifo
+                0x000000000000498c                LOGUART_Relay_RxCmd
+                0x000000000000499c                LOGUART_MonitorParaConfig
+                0x00000000000049fe                LOGUART_LPBaudSet
+                0x0000000000004ac2                LOGUART_Relay_LPSetBaud
+                0x0000000000004b36                LOGUART_RxMonitorCmd
+                0x0000000000004b46                LOGUART_RxMonBaudCtrlRegGet
+                0x0000000000004b4a                LOGUART_RxMonitorSatusGet
+                0x0000000000004b4e                LOGUART_DiagInit
+                0x0000000000004bca                md_hash_save
+                0x0000000000004c4a                md_hash_restore
+                0x0000000000004cca                rtl_crypto_md5_init
+                0x0000000000004d58                rtl_crypto_md5_process
+                0x0000000000004db6                rtl_crypto_md5_update_rom
+                0x0000000000004e44                rtl_crypto_md5_update
+                0x0000000000004e92                rtl_crypto_md5_final
+                0x0000000000004f18                rtl_crypto_md5
+                0x0000000000004f40                rtl_crypto_hmac_md5_init
+                0x0000000000004ff6                rtl_crypto_hmac_md5_process
+                0x000000000000503c                rtl_crypto_hmac_md5_update_rom
+                0x00000000000050d4                rtl_crypto_hmac_md5_update
+                0x0000000000005122                rtl_crypto_hmac_md5_final
+                0x00000000000051ae                rtl_crypto_hmac_md5
+                0x00000000000051e6                RSIP_OTF_init
+                0x00000000000051f8                RSIP_IV_Set
+                0x0000000000005246                RSIP_OTF_Cmd
+                0x0000000000005266                RSIP_OTF_Enable
+                0x00000000000052fa                RSIP_MMU_Config
+                0x000000000000532a                RSIP_MMU_Cmd
+                0x000000000000534e                RSIP_MMU_Cache_Clean
+                0x0000000000005360                PAD_DrvStrength
+                0x0000000000005386                PAD_PullCtrl
+                0x0000000000005440                PAD_SleepPullCtrl
+                0x00000000000054fa                PAD_ResistorCtrl
+                0x0000000000005516                PAD_CMD
+                0x000000000000553a                Pinmux_Config
+                0x0000000000005556                Pinmux_ConfigGet
+                0x000000000000556c                Pinmux_UartLogCtrl
+                0x00000000000055a8                PAD_SpicCtrl
+                0x00000000000055fc                Pinmux_SpicCtrl
+                0x00000000000056a2                Pinmux_Swdoff
+                0x00000000000056b2                plic_disable_irq
+                0x00000000000056e8                plic_get_irq_enable
+                0x000000000000570a                plic_set_enable
+                0x0000000000005722                plic_get_enable
+                0x000000000000573c                plic_set_irq_priority
+                0x000000000000575e                plic_enable_irq
+                0x00000000000057a6                plic_get_irq_priority
+                0x00000000000057b6                plic_get_irq_pending
+                0x00000000000057d6                plic_claim_irq
+                0x00000000000057e8                plic_complete_irq
+                0x00000000000057fa                plic_set_threshold
+                0x0000000000005812                plic_get_threshold
+                0x0000000000005824                plic_interrupt_handler
+                0x00000000000058a6                plic_set_sip
+                0x00000000000058c0                plic_clear_sip
+                0x00000000000058da                plic_init
+                0x00000000000058fa                plic_get_active_irq_id
+                0x0000000000005904                RCC_PeriphClockCmd
+                0x00000000000059c0                RCC_PeriphClockSource_UART
+                0x0000000000005a3e                RCC_PeriphClockSource_SPIC
+                0x0000000000005a58                RCC_PeriphClockSource_PSRAM
+                0x0000000000005a72                RCC_PeriphClockSource_SDM
+                0x0000000000005a8c                RCC_PeriphClockSource_VADMEM
+                0x0000000000005aa8                RCC_PeriphClockSource_AUDIOCODEC
+                0x0000000000005ac6                RCC_PeriphClockSource_CTC
+                0x0000000000005ae0                RCC_PeriphClockSource_ADC
+                0x0000000000005afa                RCC_PeriphClockSource_GPIO
+                0x0000000000005b14                RCC_PeriphClockSource_SPORT
+                0x0000000000005b4a                RCC_PeriphClockSource_32K
+                0x0000000000005b60                RCC_PeriphClockSource_LOGUART
+                0x0000000000005b9e                hash_save
+                0x0000000000005c1e                hash_restore
+                0x0000000000005c9e                rtl_crypto_sha1_init
+                0x0000000000005d36                rtl_crypto_sha1_process
+                0x0000000000005d6a                rtl_crypto_sha1_update_rom
+                0x0000000000005df4                rtl_crypto_sha1_update
+                0x0000000000005e42                rtl_crypto_sha1_final
+                0x0000000000005ec4                rtl_crypto_sha1
+                0x0000000000005eec                rtl_crypto_sha2_init
+                0x0000000000006176                rtl_crypto_sha2_process
+                0x00000000000061b0                rtl_crypto_sha2_update_rom
+                0x000000000000623c                rtl_crypto_sha2_update
+                0x000000000000628a                rtl_crypto_sha2_final
+                0x000000000000630e                rtl_crypto_sha2
+                0x000000000000633c                rtl_crypto_hmac_sha1_init
+                0x00000000000063fe                rtl_crypto_hmac_sha1_process
+                0x000000000000643e                rtl_crypto_hmac_sha1_update_rom
+                0x00000000000064d2                rtl_crypto_hmac_sha1_update
+                0x0000000000006520                rtl_crypto_hmac_sha1_final
+                0x00000000000065aa                rtl_crypto_hmac_sha1
+                0x00000000000065e2                rtl_crypto_hmac_sha2_init
+                0x0000000000006896                rtl_crypto_hmac_sha2_process
+                0x00000000000068dc                rtl_crypto_hmac_sha2_update_rom
+                0x0000000000006972                rtl_crypto_hmac_sha2_update
+                0x00000000000069c0                rtl_crypto_hmac_sha2_final
+                0x0000000000006a4c                rtl_crypto_hmac_sha2
+                0x0000000000006a84                SYSCFG_RLVersion
+                0x0000000000006aa4                SYSCFG_GetRLNum
+                0x0000000000006ac4                SYSCFG_TRP_UARTImage
+                0x0000000000006ad2                SYSCFG_TRP_ICFG
+                0x0000000000006ade                SYSCFG_TRP_TestMode
+                0x0000000000006aec                SYSCFG_TRP_OTPBYP
+                0x0000000000006afa                SYSCFG_ROMINFO_Get
+                0x0000000000006b08                SYSCFG_ROMINFO_Set
+                0x0000000000006b1e                SYSCFG_CHIPType_Get
+                0x0000000000006b2c                SYSCFG_OTP_RDPEn
+                0x0000000000006b4e                SYSCFG_OTP_RSIPEn
+                0x0000000000006b70                SYSCFG_OTP_SBootEn
+                0x0000000000006b92                SYSCFG_OTP_LowBaudLog
+                0x0000000000006ba0                SYSCFG_OTP_DisBootLog
+                0x0000000000006bae                SYSCFG_OTP_BootFlashBaud
+                0x0000000000006bbc                SYSCFG_OTP_SPICBootSpeedUpDis
+                0x0000000000006bca                SYSCFG_OTP_SPICAddr4ByteEn
+                0x0000000000006bd8                SYSCFG_OTP_FlashDSleepEn
+                0x0000000000006be6                SYSCFG_OTP_UartDownloadDis
+                0x0000000000006bf6                SYSCFG_OTP_AntiRollback
+                0x0000000000006c08                SYSCFG_OTP_FaultLogDis
+                0x0000000000006c1a                SYSCFG_OTP_RSIPMode
+                0x0000000000006c2e                SYSCFG_OTP_HUKDerivEn
+                0x0000000000006c40                SYSCFG_OTP_RomPatchEn
+                0x0000000000006c58                SYSCFG_OTP_RandDelayEn
+                0x0000000000006c66                SYSCFG_OTP_RMAMode
+                0x0000000000006c88                SYSCFG_HWTrigDownload
+                0x0000000000006c9e                SYSCFG_SWTrigDownload
+                0x0000000000006cc6                SYSTIMER_Init
+                0x0000000000006cfe                SYSTIMER_TickGet
+                0x0000000000006d04                SYSTIMER_GetPassTick
+                0x0000000000006d28                SYSTIMER_GetPassTime
+                0x0000000000006d60                RTIM_TimeBaseStructInit
+                0x0000000000006d7a                RTIM_Cmd
+                0x0000000000006ec6                RTIM_GetCount
+                0x0000000000006ff0                RTIM_INTConfig
+                0x0000000000007156                RTIM_INTClear
+                0x0000000000007292                RTIM_TimeBaseInit
+                0x00000000000074b8                RTIM_DeInit
+                0x00000000000075e8                RTIM_INTClearPendingBit
+                0x0000000000007746                RTIM_GetFlagStatus
+                0x00000000000078e6                RTIM_GetINTStatus
+                0x0000000000007a8c                TRNG_Random_Delay
+                0x0000000000007ac6                TRNG_Security_Only
+                0x0000000000007af2                TRNG_INTConfig
+                0x0000000000007b14                TRNG_ClearINT
+                0x0000000000007b20                TRNG_GetINT
+                0x0000000000007b28                TRNG_Init
+                0x0000000000007b74                UART_DeInit
+                0x0000000000007b7a                UART_StructInit
+                0x0000000000007ba0                UART_BaudParaGetFull
+                0x0000000000007bda                UART_BaudParaGet
+                0x0000000000007c00                UART_SetBaud
+                0x0000000000007cae                UART_SetBaudExt
+                0x0000000000007d3c                UART_SetRxLevel
+                0x0000000000007d4e                UART_RxCmd
+                0x0000000000007d5e                UART_Writable
+                0x0000000000007d66                UART_Readable
+                0x0000000000007d6c                UART_CharPut
+                0x0000000000007d70                UART_CharGet
+                0x0000000000007d78                UART_ReceiveData
+                0x0000000000007daa                UART_SendData
+                0x0000000000007ddc                UART_ReceiveDataTO
+                0x0000000000007e2e                UART_SendDataTO
+                0x0000000000007e80                UART_RxByteCntClear
+                0x0000000000007e8a                UART_RxByteCntGet
+                0x0000000000007e92                UART_BreakCtl
+                0x0000000000007ea2                UART_ClearRxFifo
+                0x0000000000007ebe                UART_Init
+                0x0000000000007f6e                UART_ClearTxFifo
+                0x0000000000007f78                UART_INTConfig
+                0x0000000000007f90                UART_INT_Clear
+                0x0000000000007f98                UART_IntStatus
+                0x0000000000007f9c                UART_ModemStatusGet
+                0x0000000000007fa0                UART_LineStatusGet
+                0x0000000000007fa4                UART_WaitBusy
+                0x0000000000007fd8                irq_enable
+                0x0000000000007fdc                irq_disable
+                0x0000000000007fe0                irq_set_priority
+                0x0000000000007fe4                irq_get_priority
+                0x0000000000007fe8                irq_set_pending
+                0x0000000000007fec                irq_get_pending
+                0x0000000000007ff0                irq_clear_pending
+                0x0000000000007ff4                irq_register
+                0x0000000000008026                irq_unregister
+                0x000000000000804a                WDG_Wait_Busy
+                0x000000000000807c                WDG_StructInit
+                0x0000000000008090                WDG_Init
+                0x0000000000008128                WDG_Enable
+                0x0000000000008184                WDG_Timeout
+                0x0000000000008202                WDG_Refresh
+                0x000000000000825e                WDG_INTConfig
+                0x00000000000082f6                WDG_ClearINT
+                0x000000000000837c                IWDG_LP_Enable
+                0x00000000000083dc                WDG_Reset_Bypass
+                0x0000000000008478                WDG_Reset_Timeout
+                0x0000000000008490                WDG_Reset_ClearINT
+                0x0000000000008526                DiagVSprintf
+                0x0000000000008858                DiagPrintf
+                0x0000000000008890                DiagPrintfD
+                0x00000000000088c8                DiagSPrintf
+                0x00000000000088fa                DiagSnPrintf
+                0x0000000000008d08                cmd_rom_table
+                0x0000000000008d16                _rand
+                0x0000000000008d40                __wrap_rand
+                0x0000000000008d6a                RandBytes_Get
+                0x0000000000008e82                shell_array_init
+                0x0000000000008e9a                shell_get_argc
+                0x0000000000008ed4                shell_get_argv
+                0x0000000000008fd4                shell_cmd_chk
+                0x00000000000090f0                shell_uart_irq_rom
+                0x0000000000009254                shell_init_rom
+                0x00000000000092ec                shell_task_rom
+                0x0000000000009320                shell_rom
+                0x000000000000939e                _char2num
+                0x00000000000093e0                _2char2dec
+                0x000000000000948a                _2char2hex
+                0x000000000000952c                _memchr
+                0x00000000000095c0                _memcmp
+                0x0000000000009612                _memcpy
+                0x00000000000096ba                _memmove
+                0x000000000000978a                _memset
+                0x000000000000982c                _strcmp
+                0x0000000000009898                _stricmp
+                0x00000000000098cc                _strlen
+                0x0000000000009936                _strtoul
+                0x0000000000009aa8                _strupr
+                0x0000000000009ace                __wrap_memset
+                0x0000000000009ad0                __wrap_memcpy
+                0x0000000000009ad2                __wrap_memcmp
+                0x0000000000009ad4                __wrap_memchr
+                0x0000000000009ad6                __wrap_memmove
+                0x0000000000009ad8                __wrap_strlen
+                0x0000000000009ada                __wrap_strcmp
+                0x0000000000009adc                __wrap_stricmp
+                0x0000000000009ade                __wrap_strupr
+                0x0000000000009ae0                __wrap_strtoul
+                0x0000000000009ae2                mbedtls_asn1_get_len
+                0x0000000000009bb8                mbedtls_asn1_get_tag
+                0x0000000000009bdc                mbedtls_asn1_get_bool
+                0x0000000000009c18                mbedtls_asn1_get_int
+                0x0000000000009c72                mbedtls_asn1_get_mpi
+                0x0000000000009ca2                mbedtls_asn1_get_bitstring
+                0x0000000000009cfc                mbedtls_asn1_get_bitstring_null
+                0x0000000000009d38                mbedtls_asn1_get_sequence_of
+                0x0000000000009dde                mbedtls_asn1_get_alg
+                0x0000000000009e8e                mbedtls_asn1_get_alg_null
+                0x0000000000009eb6                mbedtls_asn1_free_named_data
+                0x0000000000009eee                mbedtls_asn1_free_named_data_list
+                0x0000000000009f1e                mbedtls_asn1_find_named_data
+                0x0000000000009f52                mbedtls_asn1_write_len
+                0x000000000000a088                mbedtls_asn1_write_tag
+                0x000000000000a0a6                mbedtls_asn1_write_raw_buffer
+                0x000000000000a0e0                mbedtls_asn1_write_mpi
+                0x000000000000a184                mbedtls_asn1_write_null
+                0x000000000000a1ba                mbedtls_asn1_write_oid
+                0x000000000000a206                mbedtls_asn1_write_algorithm_identifier
+                0x000000000000a270                mbedtls_asn1_write_bool
+                0x000000000000a2ca                mbedtls_asn1_write_int
+                0x000000000000a348                mbedtls_asn1_write_tagged_string
+                0x000000000000a3a0                mbedtls_asn1_write_utf8_string
+                0x000000000000a3a8                mbedtls_asn1_write_printable_string
+                0x000000000000a3b0                mbedtls_asn1_write_ia5_string
+                0x000000000000a3b8                mbedtls_asn1_write_bitstring
+                0x000000000000a46c                mbedtls_asn1_write_octet_string
+                0x000000000000a4b8                mbedtls_asn1_store_named_data
+                0x000000000000b08e                mbedtls_mpi_init
+                0x000000000000b09c                mbedtls_mpi_free
+                0x000000000000b0d6                mbedtls_mpi_grow
+                0x000000000000b14a                mbedtls_mpi_shrink
+                0x000000000000b1e6                mbedtls_mpi_copy
+                0x000000000000b260                mbedtls_mpi_swap
+                0x000000000000b294                mbedtls_mpi_safe_cond_assign
+                0x000000000000b322                mbedtls_mpi_safe_cond_swap
+                0x000000000000b3c4                mbedtls_mpi_lset
+                0x000000000000b40c                mbedtls_mpi_get_bit
+                0x000000000000b42c                mbedtls_mpi_set_bit
+                0x000000000000b49e                mbedtls_mpi_lsb
+                0x000000000000b4de                mbedtls_mpi_bitlen
+                0x000000000000b522                mbedtls_mpi_size
+                0x000000000000b532                mbedtls_mpi_read_binary
+                0x000000000000b5b2                mbedtls_mpi_write_binary
+                0x000000000000b63a                mbedtls_mpi_shift_l
+                0x000000000000b6fa                mbedtls_mpi_shift_r
+                0x000000000000b790                mbedtls_mpi_cmp_abs
+                0x000000000000b802                mbedtls_mpi_cmp_mpi
+                0x000000000000b88c                mbedtls_mpi_lt_mpi_ct
+                0x000000000000b924                mbedtls_mpi_cmp_int
+                0x000000000000b94e                mbedtls_mpi_add_abs
+                0x000000000000ba16                mbedtls_mpi_sub_abs
+                0x000000000000bad2                mbedtls_mpi_add_mpi
+                0x000000000000bb28                mbedtls_mpi_sub_mpi
+                0x000000000000bb7e                mbedtls_mpi_add_int
+                0x000000000000bba8                mbedtls_mpi_sub_int
+                0x000000000000bbd2                mbedtls_mpi_mul_mpi
+                0x000000000000bcc4                mbedtls_mpi_mul_int
+                0x000000000000bcdc                mbedtls_mpi_read_string
+                0x000000000000be2a                mbedtls_mpi_div_mpi
+                0x000000000000c208                mbedtls_mpi_div_int
+                0x000000000000c232                mbedtls_mpi_mod_mpi
+                0x000000000000c29e                mbedtls_mpi_mod_int
+                0x000000000000c2ce                mbedtls_mpi_write_string
+                0x000000000000c4a8                mbedtls_mpi_exp_mod
+                0x000000000000c8a8                mbedtls_mpi_gcd
+                0x000000000000c9b2                mbedtls_mpi_fill_random
+                0x000000000000cbde                mbedtls_mpi_inv_mod
+                0x000000000000ce68                mbedtls_mpi_is_prime_ext
+                0x000000000000ced4                mbedtls_mpi_is_prime
+                0x000000000000cede                mbedtls_mpi_gen_prime
+                0x000000000000d0fa                mbedtls_ecdh_gen_public
+                0x000000000000d148                mbedtls_ecdh_compute_shared
+                0x000000000000d1ac                mbedtls_ecdh_init
+                0x000000000000d1fc                mbedtls_ecdh_setup
+                0x000000000000d212                mbedtls_ecdh_free
+                0x000000000000d262                mbedtls_ecdh_make_params
+                0x000000000000d2dc                mbedtls_ecdh_read_params
+                0x000000000000d32e                mbedtls_ecdh_get_params
+                0x000000000000d3b0                mbedtls_ecdh_make_public
+                0x000000000000d41a                mbedtls_ecdh_read_public
+                0x000000000000d450                mbedtls_ecdh_calc_secret
+                0x000000000000d98a                mbedtls_ecdsa_sign
+                0x000000000000d99a                mbedtls_ecdsa_sign_det
+                0x000000000000d9aa                mbedtls_ecdsa_sign_det_ext
+                0x000000000000d9ac                mbedtls_ecdsa_verify
+                0x000000000000d9ae                mbedtls_ecdsa_write_signature_restartable
+                0x000000000000da7a                mbedtls_ecdsa_write_signature
+                0x000000000000da88                mbedtls_ecdsa_write_signature_det
+                0x000000000000da9a                mbedtls_ecdsa_read_signature_restartable
+                0x000000000000db3c                mbedtls_ecdsa_read_signature
+                0x000000000000db40                mbedtls_ecdsa_genkey
+                0x000000000000db78                mbedtls_ecdsa_init
+                0x000000000000db7c                mbedtls_ecdsa_free
+                0x000000000000db84                mbedtls_ecdsa_from_keypair
+                0x000000000000e6e0                mbedtls_ecp_curve_list
+                0x000000000000e6ea                mbedtls_ecp_grp_id_list
+                0x000000000000e72c                mbedtls_ecp_curve_info_from_grp_id
+                0x000000000000e748                mbedtls_ecp_curve_info_from_tls_id
+                0x000000000000e766                mbedtls_ecp_curve_info_from_name
+                0x000000000000e79a                mbedtls_ecp_point_init
+                0x000000000000e7bc                mbedtls_ecp_group_init
+                0x000000000000e818                mbedtls_ecp_keypair_init
+                0x000000000000e836                mbedtls_ecp_point_free
+                0x000000000000e83c                mbedtls_ecp_group_free
+                0x000000000000e8b6                mbedtls_ecp_keypair_free
+                0x000000000000e8d8                mbedtls_ecp_copy
+                0x000000000000e916                mbedtls_ecp_group_copy
+                0x000000000000e91e                mbedtls_ecp_set_zero
+                0x000000000000f160                mbedtls_ecp_is_zero
+                0x000000000000f176                mbedtls_ecp_point_cmp
+                0x000000000000f1b6                mbedtls_ecp_point_read_string
+                0x000000000000f1fa                mbedtls_ecp_point_write_binary
+                0x000000000000f2ca                mbedtls_ecp_point_read_binary
+                0x000000000000f36a                mbedtls_ecp_tls_read_point
+                0x000000000000f398                mbedtls_ecp_tls_write_point
+                0x000000000000f3cc                mbedtls_ecp_tls_read_group_id
+                0x000000000000f42c                mbedtls_ecp_tls_read_group
+                0x000000000000f44e                mbedtls_ecp_tls_write_group
+                0x000000000000f4a8                mbedtls_ecp_check_pubkey
+                0x000000000000f63a                mbedtls_ecp_check_privkey
+                0x000000000000f6c0                mbedtls_ecp_mul_restartable
+                0x000000000000fbde                mbedtls_ecp_mul
+                0x000000000000fc82                mbedtls_ecp_muladd_restartable
+                0x000000000000fd10                mbedtls_ecp_muladd
+                0x000000000000fd14                mbedtls_ecp_gen_privkey
+                0x000000000000fe4c                mbedtls_ecp_gen_keypair_base
+                0x000000000000fe96                mbedtls_ecp_gen_keypair
+                0x000000000000fea4                mbedtls_ecp_gen_key
+                0x000000000000fede                mbedtls_ecp_check_pub_priv
+                0x0000000000011030                mbedtls_ecp_group_load
+                0x000000000001149c                mbedtls_hmac_drbg_init
+                0x00000000000114be                mbedtls_hmac_drbg_update_ret
+                0x000000000001165c                mbedtls_hmac_drbg_update
+                0x000000000001165e                mbedtls_hmac_drbg_seed_buf
+                0x00000000000116c0                mbedtls_hmac_drbg_reseed
+                0x00000000000116c4                mbedtls_hmac_drbg_seed
+                0x0000000000011758                mbedtls_hmac_drbg_set_prediction_resistance
+                0x000000000001175c                mbedtls_hmac_drbg_set_entropy_len
+                0x0000000000011760                mbedtls_hmac_drbg_set_reseed_interval
+                0x0000000000011764                mbedtls_hmac_drbg_random_with_add
+                0x0000000000011830                mbedtls_hmac_drbg_random
+                0x0000000000011836                mbedtls_hmac_drbg_free
+                0x000000000001185e                mbedtls_md_list
+                0x0000000000011868                mbedtls_md_info_from_string
+                0x0000000000011928                mbedtls_md_info_from_type
+                0x0000000000011984                mbedtls_md_init
+                0x000000000001198c                mbedtls_md_free
+                0x00000000000119d6                mbedtls_md_clone
+                0x0000000000011a02                mbedtls_md_setup
+                0x0000000000011a64                mbedtls_md_init_ctx
+                0x0000000000011a68                mbedtls_md_starts
+                0x0000000000011a7c                mbedtls_md_update
+                0x0000000000011a90                mbedtls_md_finish
+                0x0000000000011aa4                mbedtls_md
+                0x0000000000011aba                mbedtls_md_hmac_starts
+                0x0000000000011ba2                mbedtls_md_hmac_update
+                0x0000000000011bba                mbedtls_md_hmac_finish
+                0x0000000000011c36                mbedtls_md_hmac_reset
+                0x0000000000011c7a                mbedtls_md_hmac
+                0x0000000000011ce8                mbedtls_md_process
+                0x0000000000011cfc                mbedtls_md_get_size
+                0x0000000000011d08                mbedtls_md_get_type
+                0x0000000000011d14                mbedtls_md_get_name
+                0x0000000000011d1a                mbedtls_md5_init
+                0x0000000000011d24                mbedtls_md5_free
+                0x0000000000011d30                mbedtls_md5_clone
+                0x0000000000011d42                mbedtls_md5_starts_ret
+                0x0000000000011d76                mbedtls_md5_starts
+                0x0000000000011d78                mbedtls_internal_md5_process
+                0x00000000000129e6                mbedtls_md5_process
+                0x00000000000129ea                mbedtls_md5_update_ret
+                0x0000000000012a8c                mbedtls_md5_update
+                0x0000000000012a8e                mbedtls_md5_finish_ret
+                0x0000000000012b88                mbedtls_md5_finish
+                0x0000000000012b8a                mbedtls_md5_ret
+                0x0000000000012bf2                mbedtls_md5
+                0x0000000000012d86                mbedtls_platform_zeroize
+                0x0000000000012d92                mbedtls_sha1_init
+                0x0000000000012d9c                mbedtls_sha1_free
+                0x0000000000012da6                mbedtls_sha1_clone
+                0x0000000000012db8                mbedtls_sha1_starts_ret
+                0x0000000000012df6                mbedtls_sha1_starts
+                0x0000000000012df8                mbedtls_internal_sha1_process
+                0x00000000000143e6                mbedtls_sha1_process
+                0x00000000000143ea                mbedtls_sha1_update_ret
+                0x000000000001448c                mbedtls_sha1_update
+                0x000000000001448e                mbedtls_sha1_finish_ret
+                0x00000000000145e0                mbedtls_sha1_finish
+                0x00000000000145e2                mbedtls_sha1_ret
+                0x000000000001462e                mbedtls_sha1
+                0x0000000000014630                mbedtls_sha256_init
+                0x000000000001463a                mbedtls_sha256_free
+                0x0000000000014646                mbedtls_sha256_clone
+                0x0000000000014658                mbedtls_sha256_starts_ret
+                0x0000000000014708                mbedtls_sha256_starts
+                0x000000000001470a                mbedtls_internal_sha256_process
+                0x00000000000153c0                mbedtls_sha256_process
+                0x00000000000153c4                mbedtls_sha256_update_ret
+                0x0000000000015466                mbedtls_sha256_update
+                0x0000000000015468                mbedtls_sha256_finish_ret
+                0x0000000000015618                mbedtls_sha256_finish
+                0x000000000001561a                mbedtls_sha256_ret
+                0x000000000001566a                mbedtls_sha256
+                0x000000000001566c                mbedtls_sha512_init
+                0x0000000000015676                mbedtls_sha512_free
+                0x0000000000015682                mbedtls_sha512_clone
+                0x0000000000015694                mbedtls_sha512_starts_ret
+                0x00000000000157ac                mbedtls_sha512_starts
+                0x00000000000157ae                mbedtls_internal_sha512_process
+                0x0000000000016522                mbedtls_sha512_process
+                0x0000000000016526                mbedtls_sha512_update_ret
+                0x00000000000165e2                mbedtls_sha512_update
+                0x00000000000165e4                mbedtls_sha512_finish_ret
+                0x00000000000168d4                mbedtls_sha512_finish
+                0x00000000000168d6                mbedtls_sha512_ret
+                0x0000000000016936                mbedtls_sha512
+
+.rom.rodata     0x000000000002d000     0x2290
+ .rom.rodata    0x000000000002d000     0x2290 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+                0x000000000002d000                __rom_entry_ns_start__
+                0x000000000002d000                rom_sec_call_ns_entry
+                0x000000000002d010                __rom_entry_ns_end__
+                0x000000000002d404                SPIC_CALIB_PATTERN
+                0x000000000002d40c                GPIO_PORTx
+                0x000000000002d414                GPIO_PORTx_S
+                0x000000000002ec08                mbedtls_sha512_info
+                0x000000000002ec38                mbedtls_sha384_info
+                0x000000000002ec68                mbedtls_sha256_info
+                0x000000000002ec98                mbedtls_sha224_info
+                0x000000000002ecc8                mbedtls_sha1_info
+                0x000000000002ecf8                mbedtls_md5_info
+
+.hal.rom.bss    0x0000000020000000      0xcac
+ .hal.rom.bss   0x0000000020000000      0xcac D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+                0x0000000020000000                UserIrqFunTable
+                0x0000000020000000                __rom_bss_start__
+                0x00000000200001c0                UserIrqDataTable
+                0x0000000020000380                SHA_OTPKEY
+                0x00000000200003a0                crypto_engine
+                0x00000000200005e0                crypto_sha_engine
+                0x0000000020000860                RBSS_UDELAY_CLK
+                0x0000000020000864                flash_init_para
+                0x00000000200008cc                FLASH_PLL_Source_IsCPU
+                0x00000000200008d0                PortA_IrqData
+                0x0000000020000950                PortA_IrqHandler
+                0x00000000200009d0                PortB_IrqData
+                0x0000000020000a50                PortB_IrqHandler
+                0x0000000020000ad4                ConfigDebugClose
+                0x0000000020000ad8                ConfigDebug
+                0x0000000020000b04                shell_argv_array
+                0x0000000020000b44                shell_ctl
+                0x0000000020000b68                shell_rxbuf
+                0x0000000020000be8                shell_buf
+                0x0000000020000c68                p_rom_ssl_ram_map
+                0x0000000020000c6c                rom_ssl_ram_map
+                0x0000000020000cac                __rom_bss_end__
+
+.ram_image1.entry
+                0x0000000020040020        0x0
+                0x0000000020040020                __ram_image1_text_start__ = .
+                0x0000000020040020                __ram_start_table_start__ = .
+ *(SORT_BY_NAME(.image1.entry.data*))
+ *(.image1.validate.rodata*)
+ *(.image1.export.symb*)
+ .ram_image1.entry
+                0x0000000020040020        0x0 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.ram_image1.text
+ *(.hal.ram.data*)
+
+.ram_retention.entry
+                0x0000000021020000        0x0
+                0x0000000021020000                __retention_entry_func__ = ABSOLUTE (.)
+ .ram_retention.entry
+                0x0000000021020000        0x0 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.ram.data       0x0000000020040020        0x0
+ *(.data*)
+ .ram.data      0x0000000020040020        0x0 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.ram.bss        0x0000000020040020        0x0
+ *(.bss*)
+ .ram.bss       0x0000000020040020        0x0 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.rom.text.libgcc
+                0x0000000000016938        0x0
+ *(.text*)
+ .rom.text.libgcc
+                0x0000000000016938        0x0 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+                0x000000000001c000                __rom_stdlib_text_start__ = 0x1c000
+                0x000000000001c8b4                _atoi = 0x1c8b4
+                0x000000000001c8b4                _stratoi = 0x1c8b4
+                0x000000000001c8b4                __wrap_atoi = 0x1c8b4
+                0x000000000001c8b4                __wrap_stratoi = 0x1c8b4
+                0x000000000001c8e6                __wrap_printf = 0x1c8e6
+                0x000000000001c8e6                _printf = 0x1c8e6
+                0x000000000001c9b4                __wrap_puts = 0x1c9b4
+                0x000000000001c9b4                _puts = 0x1c9b4
+                0x000000000001caf6                __wrap_snprintf = 0x1caf6
+                0x000000000001caf6                _snprintf = 0x1caf6
+                0x000000000001cba2                __wrap_sprintf = 0x1cba2
+                0x000000000001cba2                _sprintf = 0x1cba2
+                0x000000000001cbe8                __wrap_sscanf = 0x1cbe8
+                0x000000000001cbe8                _sscanf = 0x1cbe8
+                0x000000000001cd54                __wrap_strcat = 0x1cd54
+                0x000000000001cd54                _strcat = 0x1cd54
+                0x000000000001cd70                __wrap_strchr = 0x1cd70
+                0x000000000001cd70                _strchr = 0x1cd70
+                0x000000000001cd8a                __wrap_strcpy = 0x1cd8a
+                0x000000000001cd8a                _strcpy = 0x1cd8a
+                0x000000000001ce52                __wrap_strncat = 0x1ce52
+                0x000000000001ce52                _strncat = 0x1ce52
+                0x000000000001ce80                __wrap_strncmp = 0x1ce80
+                0x000000000001ce80                _strncmp = 0x1ce80
+                0x000000000001ceae                __wrap_strncpy = 0x1ceae
+                0x000000000001ceae                _strncpy = 0x1ceae
+                0x000000000001ced2                __wrap_strpbrk = 0x1ced2
+                0x000000000001ced2                _strpbrk = 0x1ced2
+                0x000000000001cf02                __wrap_strsep = 0x1cf02
+                0x000000000001cf02                _strsep = 0x1cf02
+                0x000000000001cf0a                __wrap_strstr = 0x1cf0a
+                0x000000000001cf0a                _strstr = 0x1cf0a
+                0x000000000001cf40                __wrap_strtok = 0x1cf40
+                0x000000000001cf40                _strtok = 0x1cf40
+                0x000000000001d0fc                __wrap_strtol = 0x1d0fc
+                0x000000000001d0fc                _strtol = 0x1d0fc
+                0x0000000000020130                __wrap_vsnprintf = 0x20130
+                0x0000000000020130                _vsnprintf = 0x20130
+                0x000000000002b8c0                __rom_stdlib_text_end__ = 0x2b8c0
+                0x0000000020002000                __rom_stdlib_data_start__ = 0x20002000
+                0x00000000200029aa                __rom_stdlib_data_end__ = 0x200029aa
+                0x00000000200029c0                __rom_stdlib_bss_start__ = 0x200029c0
+                0x0000000020002a24                __rom_stdlib_bss_end__ = 0x20002a24
+                0x0000000020002a40                __rom_stdlib_heap_start__ = 0x20002a40
+OUTPUT(target_rom.axf elf32-littleriscv)
+
+.rela.dyn       0x0000000000016938        0x0
+ .rela.rom.text
+                0x0000000000016938        0x0 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.debug_info     0x0000000000000000    0x2fe1e
+ .debug_info    0x0000000000000000    0x2fe1e D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.debug_abbrev   0x0000000000000000     0x797e
+ .debug_abbrev  0x0000000000000000     0x797e D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.debug_loc      0x0000000000000000    0x25451
+ .debug_loc     0x0000000000000000    0x25451 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.debug_aranges  0x0000000000000000     0x1238
+ .debug_aranges
+                0x0000000000000000     0x1238 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.debug_ranges   0x0000000000000000     0x2690
+ .debug_ranges  0x0000000000000000     0x2690 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.debug_line     0x0000000000000000    0x4f009
+ .debug_line    0x0000000000000000    0x4f009 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.debug_str      0x0000000000000000     0x91da
+ .debug_str     0x0000000000000000     0x91da D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+                                      0x16dca (size before relaxing)
+
+.comment        0x0000000000000000       0x2d
+ .comment       0x0000000000000000       0x2d D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+                                        0xa6c (size before relaxing)
+
+.riscv.attributes
+                0x0000000000000000       0x3f
+ .riscv.attributes
+                0x0000000000000000       0x3f D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+.debug_frame    0x0000000000000000     0x59a4
+ .debug_frame   0x0000000000000000     0x59a4 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+
+Cross Reference Table
+
+Symbol                                            File
+BKUP_Clear                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+BKUP_Read                                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+BKUP_Set                                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+BKUP_Write                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+BOOT_ROM_InitDebugFlg                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+BOOT_ROM_ResetVsr                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CPU_ClkGet                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CPU_ClkSrc_Get                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CPU_ClkSrc_Set                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_Cache_Sync                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_CipherDecryptAD                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_CipherEncryptAD                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_CipherInit                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_CleanCmdOk                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_ClearAllINT                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_Init                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_MemDump                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_OTPKey_Init                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_OTPKey_SHA_Init                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_ProcessAD                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_Reset                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_SHA_Init                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_SHA_Reset                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_SendSeqBuf                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_SetCmdBuf                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_SetDstDesc                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_SetSecurityModeAD                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_SetSrcDesc                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+CRYPTO_SrcDescKeyIv                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ConfigDebug                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ConfigDebugClose                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+DelayMs                                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+DelayNop                                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+DelayUs                                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+DiagPrintf                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+DiagPrintfD                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+DiagSPrintf                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+DiagSnPrintf                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+DiagVSprintf                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ECDSA_Basic_Func                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ECDSA_BufCmp                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ECDSA_BufSub                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ECDSA_Cmd                                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ECDSA_CurveSel                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ECDSA_ECDH_Compute_Shared                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ECDSA_EngRst                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ECDSA_HashBuf_Setting                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ECDSA_KeyGen                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ECDSA_Sign                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+ECDSA_Verify                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_Calibration                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_CalibrationNew                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_CalibrationNewCmd                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_CalibrationPLLPSCmd                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_CalibrationPLLPS_Shift                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_CalibrationPLLSel                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_CalibrationPLL_GetSrc                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_CalibrationPhase                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_CalibrationPhaseIdx                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_Calibration_PSPLL_Close                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_Calibration_PSPLL_Open                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_DeepPowerDown                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_Erase                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_Init                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_PLLInit_ClockDiv                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_PLL_Source_IsCPU                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_Read_HandShake                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_Read_HandShake_Cmd                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_RxCmd                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_RxData                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_SetSpiMode                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_SetStatus                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_SetStatusBits                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_StructInit                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_StructInit_GD                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_StructInit_MXIC                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_StructInit_Micron                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_TxCmd                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_TxData                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_WaitBusy                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_WaitBusy_Timeout                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_Wait_Boot_Finish                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_WriteEn                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+FLASH_WriteEn_Timeout                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_DeInit                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_DebounceClock                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_Direction                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_INTConfig                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_INTHandler                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_INTMode                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_Init                                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_LevelSync                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_PORTx                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_PORTx_S                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_PortDirection                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_PortRead                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_PortWrite                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_ReadDataBit                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_UserRegIrq                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+GPIO_WriteBit                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+IWDG_LP_Enable                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_AGGCmd                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_AGGPathAllCmd                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_AGGPathCmd                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_AGGSetSyncPattern                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_AGGSetThreshold                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_AGGSetTimeOut                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_BT_SendData                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_ClearRxFifo                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_DiagInit                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_GetChar                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_GetIMR                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_GetRxCount                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_GetStatus                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_INTClear                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_INTConfig                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_Init                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_LPBaudSet                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_MonitorParaConfig                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_PutChar                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_Readable                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_Relay_ClearRxFifo                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_Relay_LPSetBaud                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_Relay_RxCmd                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_Relay_SetBaud                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_Relay_SetFormat                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_Relay_StructInit                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_RxCmd                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_RxMonBaudCtrlRegGet                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_RxMonitorCmd                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_RxMonitorSatusGet                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_SetBaud                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_SetIMR                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_StructInit                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_WaitBusy                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+LOGUART_WaitTxComplete                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+PAD_CMD                                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+PAD_DrvStrength                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+PAD_PullCtrl                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+PAD_ResistorCtrl                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+PAD_SleepPullCtrl                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+PAD_SpicCtrl                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+PLL_ClkGet                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+Pinmux_Config                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+Pinmux_ConfigGet                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+Pinmux_SpicCtrl                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+Pinmux_Swdoff                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+Pinmux_UartLogCtrl                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+PortA_IrqData                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+PortA_IrqHandler                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+PortB_IrqData                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+PortB_IrqHandler                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RBSS_UDELAY_CLK                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockCmd                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_32K                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_ADC                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_AUDIOCODEC                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_CTC                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_GPIO                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_LOGUART                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_PSRAM                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_SDM                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_SPIC                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_SPORT                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_UART                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RCC_PeriphClockSource_VADMEM                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RSIP_IV_Set                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RSIP_MMU_Cache_Clean                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RSIP_MMU_Cmd                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RSIP_MMU_Config                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RSIP_OTF_Cmd                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RSIP_OTF_Enable                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RSIP_OTF_init                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RTIM_Cmd                                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RTIM_DeInit                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RTIM_GetCount                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RTIM_GetFlagStatus                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RTIM_GetINTStatus                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RTIM_INTClear                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RTIM_INTClearPendingBit                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RTIM_INTConfig                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RTIM_TimeBaseInit                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RTIM_TimeBaseStructInit                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+RandBytes_Get                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+Reset_Handler                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SHA_OTPKEY                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SPIC_CALIB_PATTERN                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_CHIPType_Get                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_GetRLNum                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_HWTrigDownload                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_AntiRollback                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_BootFlashBaud                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_DisBootLog                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_FaultLogDis                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_FlashDSleepEn                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_HUKDerivEn                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_LowBaudLog                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_RDPEn                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_RMAMode                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_RSIPEn                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_RSIPMode                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_RandDelayEn                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_RomPatchEn                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_SBootEn                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_SPICAddr4ByteEn                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_SPICBootSpeedUpDis                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_OTP_UartDownloadDis                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_RLVersion                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_ROMINFO_Get                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_ROMINFO_Set                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_SWTrigDownload                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_TRP_ICFG                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_TRP_OTPBYP                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_TRP_TestMode                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSCFG_TRP_UARTImage                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSTIMER_GetPassTick                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSTIMER_GetPassTime                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSTIMER_Init                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+SYSTIMER_TickGet                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+TRNG_ClearINT                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+TRNG_GetINT                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+TRNG_INTConfig                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+TRNG_Init                                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+TRNG_Random_Delay                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+TRNG_Security_Only                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_BaudParaGet                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_BaudParaGetFull                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_BreakCtl                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_CharGet                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_CharPut                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_ClearRxFifo                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_ClearTxFifo                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_DeInit                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_INTConfig                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_INT_Clear                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_Init                                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_IntStatus                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_LineStatusGet                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_ModemStatusGet                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_Readable                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_ReceiveData                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_ReceiveDataTO                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_RxByteCntClear                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_RxByteCntGet                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_RxCmd                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_SendData                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_SendDataTO                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_SetBaud                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_SetBaudExt                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_SetRxLevel                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_StructInit                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_WaitBusy                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UART_Writable                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UserIrqDataTable                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+UserIrqFunTable                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+WDG_ClearINT                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+WDG_Enable                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+WDG_INTConfig                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+WDG_Init                                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+WDG_Refresh                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+WDG_Reset_Bypass                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+WDG_Reset_ClearINT                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+WDG_Reset_Timeout                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+WDG_StructInit                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+WDG_Timeout                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+WDG_Wait_Busy                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+XTAL_ClkGet                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_2char2dec                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_2char2hex                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_LOGUART_Init                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_ClearPendingIRQ                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_DisableIRQ                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_EnableIRQ                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_GetActive                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_GetEnableIRQ                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_GetPendingIRQ                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_GetPriority                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_GetVector                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_GetVectorArg                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_SetPendingIRQ                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_SetPriority                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_SetVector                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__NVIC_SetVectorArg                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__km4_boot_text_start__                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__km4_flash_text_start__                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__km4_image3_flash_start__                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__kr4_flash_text_start__                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__kr4_image2_entry_func__                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__kr4_ipc_memory_start__                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__kr4_psram_text_start__                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__nspe_phy_addr__                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__ram_image1_text_start__                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__ram_start_table_start__                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__retention_entry_func__                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__rom_bss_end__                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__rom_bss_start__                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__rom_entry_ns_end__                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__rom_entry_ns_start__                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__rom_stdlib_text_start__                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__wrap_memchr                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__wrap_memcmp                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__wrap_memcpy                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__wrap_memmove                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__wrap_memset                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__wrap_rand                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__wrap_strcmp                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__wrap_stricmp                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__wrap_strlen                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__wrap_strtoul                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+__wrap_strupr                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_char2num                                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_memchr                                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_memcmp                                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_memcpy                                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_memmove                                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_memset                                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_rand                                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_strcmp                                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_stricmp                                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_strlen                                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_strtoul                                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+_strupr                                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+cmd_rom_table                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+crypto_engine                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+crypto_sha_engine                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+flash_init_para                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+hash_restore                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+hash_save                                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+io_assert_failed                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+irq_clear_pending                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+irq_disable                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+irq_enable                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+irq_get_pending                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+irq_get_priority                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+irq_register                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+irq_set_pending                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+irq_set_priority                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+irq_unregister                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_find_named_data                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_free_named_data                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_free_named_data_list                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_get_alg                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_get_alg_null                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_get_bitstring                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_get_bitstring_null                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_get_bool                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_get_int                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_get_len                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_get_mpi                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_get_sequence_of                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_get_tag                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_store_named_data                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_algorithm_identifier           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_bitstring                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_bool                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_ia5_string                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_int                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_len                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_mpi                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_null                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_octet_string                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_oid                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_printable_string               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_raw_buffer                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_tag                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_tagged_string                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_asn1_write_utf8_string                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdh_calc_secret                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdh_compute_shared                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdh_free                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdh_gen_public                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdh_get_params                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdh_init                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdh_make_params                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdh_make_public                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdh_read_params                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdh_read_public                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdh_setup                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_free                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_from_keypair                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_genkey                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_init                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_read_signature                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_read_signature_restartable          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_sign                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_sign_det                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_sign_det_ext                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_verify                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_write_signature                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_write_signature_det                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecdsa_write_signature_restartable         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_check_privkey                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_check_pub_priv                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_check_pubkey                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_copy                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_curve_info_from_grp_id                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_curve_info_from_name                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_curve_info_from_tls_id                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_curve_list                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_gen_key                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_gen_keypair                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_gen_keypair_base                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_gen_privkey                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_group_copy                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_group_free                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_group_init                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_group_load                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_grp_id_list                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_is_zero                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_keypair_free                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_keypair_init                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_mul                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_mul_restartable                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_muladd                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_muladd_restartable                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_point_cmp                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_point_free                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_point_init                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_point_read_binary                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_point_read_string                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_point_write_binary                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_set_zero                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_tls_read_group                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_tls_read_group_id                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_tls_read_point                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_tls_write_group                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_ecp_tls_write_point                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_free                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_init                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_random                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_random_with_add                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_reseed                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_seed                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_seed_buf                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_set_entropy_len                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_set_prediction_resistance       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_set_reseed_interval             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_update                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_hmac_drbg_update_ret                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_internal_md5_process                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_internal_sha1_process                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_internal_sha256_process                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_internal_sha512_process                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md                                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_clone                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_finish                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_finish_ret                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_free                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_info                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_init                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_process                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_ret                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_starts                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_starts_ret                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_update                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md5_update_ret                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_clone                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_finish                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_free                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_get_name                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_get_size                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_get_type                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_hmac                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_hmac_finish                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_hmac_reset                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_hmac_starts                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_hmac_update                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_info_from_string                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_info_from_type                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_init                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_init_ctx                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_list                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_process                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_setup                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_starts                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_md_update                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_add_abs                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_add_int                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_add_mpi                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_bitlen                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_cmp_abs                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_cmp_int                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_cmp_mpi                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_copy                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_div_int                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_div_mpi                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_exp_mod                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_fill_random                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_free                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_gcd                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_gen_prime                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_get_bit                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_grow                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_init                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_inv_mod                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_is_prime                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_is_prime_ext                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_lsb                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_lset                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_lt_mpi_ct                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_mod_int                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_mod_mpi                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_mul_int                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_mul_mpi                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_read_binary                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_read_string                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_safe_cond_assign                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_safe_cond_swap                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_set_bit                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_shift_l                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_shift_r                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_shrink                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_size                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_sub_abs                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_sub_int                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_sub_mpi                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_swap                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_write_binary                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_mpi_write_string                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_platform_zeroize                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_clone                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_finish                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_finish_ret                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_free                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_info                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_init                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_process                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_ret                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_starts                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_starts_ret                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_update                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha1_update_ret                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha224_info                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_clone                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_finish                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_finish_ret                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_free                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_info                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_init                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_process                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_ret                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_starts                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_starts_ret                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_update                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha256_update_ret                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha384_info                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_clone                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_finish                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_finish_ret                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_free                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_info                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_init                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_process                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_ret                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_starts                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_starts_ret                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_update                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+mbedtls_sha512_update_ret                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+md_hash_restore                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+md_hash_save                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+p_rom_ssl_ram_map                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_claim_irq                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_clear_sip                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_complete_irq                                 D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_disable_irq                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_enable_irq                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_get_active_irq_id                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_get_enable                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_get_irq_enable                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_get_irq_pending                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_get_irq_priority                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_get_threshold                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_init                                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_interrupt_handler                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_set_enable                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_set_irq_priority                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_set_sip                                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+plic_set_threshold                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rom_sec_call_ns_entry                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rom_ssl_ram_map                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_cbc_decrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_cbc_encrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_cbc_init                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_cfb_decrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_cfb_encrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_cfb_init                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_ctr_decrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_ctr_encrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_ctr_init                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_ecb_decrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_ecb_encrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_ecb_init                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_gcm_decrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_gcm_encrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_gcm_init                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_ofb_decrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_ofb_encrypt                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_aes_ofb_init                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_md5                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_md5_final                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_md5_init                          D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_md5_process                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_md5_update                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_md5_update_rom                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha1                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha1_final                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha1_init                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha1_process                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha1_update                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha1_update_rom                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha2                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha2_final                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha2_init                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha2_process                      D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha2_update                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_hmac_sha2_update_rom                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_md5                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_md5_final                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_md5_init                               D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_md5_process                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_md5_update                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_md5_update_rom                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha1                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha1_final                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha1_init                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha1_process                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha1_update                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha1_update_rom                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha2                                   D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha2_final                             D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha2_init                              D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha2_process                           D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha2_update                            D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+rtl_crypto_sha2_update_rom                        D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_argv_array                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_array_init                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_buf                                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_cmd_chk                                     D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_ctl                                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_get_argc                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_get_argv                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_init_rom                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_rom                                         D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_rxbuf                                       D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_task_rom                                    D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+shell_uart_irq_rom                                D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o
+sys_irq_dispatch                                  D:/0code/v03slave/Lite/project/realtek_amebaLite_va0_example/GCC-RELEASE/project_kr4/vsdk/lib/rl6842_rom_acut/rom.o

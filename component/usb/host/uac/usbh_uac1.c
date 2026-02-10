@@ -16,12 +16,45 @@
 #define USBH_UAC_WAIT_SLICE_MS              5
 #define USB_OTG_HFNUM_FRNUM_MAX             (0x3FFFUL)       /* Frame number max value */
 
+#define UBSH_UAC_AUDIO_CTRL_BUF_MAX_LEN     512U
+#define USBH_UAC_ISOC_BUF_LENGTH            1024U
+
+#define USBH_UAC_SAMPLING_FREQ_CONTROL      0x100
+
+#define USBH_UAC_ISOC_OUT_DIR               0
+#define USBH_UAC_ISOC_IN_DIR                1
+
+#define USBH_UAC_BIT_TO_BYTE                8U
+#define USBH_UAC_ONE_KHZ                    1000U
+
 #define USBH_LE16(addr)                     (((u16)(addr)[0]) | ((u16)(((u32)(addr)[1]) << 8)))
 #define USBH_UAC_FREQ(freq)                 (((u32)freq[0]) | (((u32)freq[1]) << 8) | (((u32)freq[2]) << 16))
 
 #if USBH_UAC_DEBUG
 #define USBH_UAC_DEBUG_LOOP_TIME            1000
 #endif
+
+/* States for class */
+typedef enum {
+	UAC_STATE_IDLE = 0U,
+	UAC_STATE_TRANSFER,
+	UAC_STATE_ERROR
+} usbh_uac_xfer_state_t;
+
+typedef enum {
+	UAC_STATE_CTRL_IDLE = 0U,
+	UAC_STATE_SET_OUT_ALT,
+	UAC_STATE_SET_OUT_FREQ,
+	UAC_STATE_SET_IN_ALT,
+	UAC_STATE_SET_IN_FREQ,
+	UAC_STATE_SET_VOLUME,
+	UAC_STATE_SET_MUTE,
+
+	UAC_STATE_GET_MUTE,
+	UAC_STATE_GET_CUR_VOLUME,
+	UAC_STATE_GET_VOLUME_MIN,
+	UAC_STATE_GET_VOLUME_MAX,
+} usbh_uac_ctrl_state_t;
 
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_uac_cb_attach(usb_host_t *host);
@@ -33,7 +66,6 @@ static int usbh_uac_cb_sof(usb_host_t *host);
 static int usbh_uac_cb_completed(usb_host_t *host, u8 pipe_num);
 static void usbh_uac_isoc_in_process(usb_host_t *host);
 static void usbh_uac_isoc_out_process_xfer(usb_host_t *host, u32 cur_frame);
-static void usbh_uac_isoc_out_process_complete(usb_host_t *host);
 static int usbh_uac_process_set_out_alt(usb_host_t *host);
 static int usbh_uac_process_set_out_freq(usb_host_t *host);
 static void usbh_uac_deinit_pipe(u8 dir);
@@ -42,22 +74,8 @@ static int usbh_uac_parse_interface_desc(usb_host_t *host);
 static int usbh_uac_parse_ac(usbh_itf_data_t *ac_itf);
 static int usbh_uac_parse_as(usbh_itf_data_t *as_itf);
 
-/*usb ring buf apis*/
-static int usb_ringbuf_is_empty(usb_ringbuf_manager_t *handle);
-static int usb_ringbuf_is_full(usb_ringbuf_manager_t *handle);
-static int usb_ringbuf_add_tail(usb_ringbuf_manager_t *handle, u8 *buf, u32 size);
-static usb_ringbuf_t *usb_ringbuf_get_head(usb_ringbuf_manager_t *handle);
-static int usb_ringbuf_release_head(usb_ringbuf_manager_t *handle);
-static int usb_ringbuf_write_partial(usb_ringbuf_manager_t *handle, u8 *data, u32 len);
-static int usb_ringbuf_finish_write(usb_ringbuf_manager_t *handle);
-static int usb_ringbuf_manager_init(usb_ringbuf_manager_t *handle, u16 cnt, u16 size, u8 cache_align);
-static int usb_ringbuf_manager_deinit(usb_ringbuf_manager_t *handle);
-
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "UAC";
-static u8 usbh_cur_volume = 0;
-
-#define mem_sync()    __sync_synchronize()
 
 /* USB UAC device identification */
 static const usbh_dev_id_t uac_devs[] = {
@@ -84,7 +102,6 @@ static usbh_class_driver_t usbh_uac_driver = {
 
 static usbh_uac_host_t usbh_uac_host;
 
-
 static int usbh_uac_usb_status_check(void)
 {
 	usbh_uac_host_t *uac = &usbh_uac_host;
@@ -97,25 +114,6 @@ static int usbh_uac_usb_status_check(void)
 }
 
 #if USBH_UAC_DEBUG
-/**
-  * @brief  Get the valid frame count
-  * @param  handle: Pointer to the ringbuf control structure
-  * @retval return frame count
-  */
-static u32 usb_ringbuf_get_count(usb_ringbuf_manager_t *handle)
-{
-	u32 h, t;
-
-	h = handle->head;
-	t = handle->tail;
-
-	if (t >= h) {
-		return t - h;
-	} else {
-		return t + handle->item_cnt - h;
-	}
-}
-
 /**
   * @brief  Dump UAC Audio stream interface info
   * @param  as_info: Audio stream interface descriptor info
@@ -153,7 +151,7 @@ static void usbh_uac_status_dump(void)
 {
 	usbh_uac_host_t *uac = &usbh_uac_host;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
-	usb_ringbuf_manager_t *handle = &(buf_ctrl->buf_list);
+	usb_ringbuf_manager_t *handle = &(buf_ctrl->buf_manager);
 	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
 
 	if (usbh_uac_usb_status_check() == HAL_OK) {
@@ -195,209 +193,6 @@ static void usbh_uac_status_dump_thread(void *param)
 	rtos_task_delete(NULL);
 }
 #endif
-
-/**
-  * @brief  Check the ringbuf is empty
-  * @param  handle: Pointer to the ringbuf control structure
-  * @retval if empty return 1, else return 0
-  */
-static int usb_ringbuf_is_empty(usb_ringbuf_manager_t *handle)
-{
-	return handle->head == handle->tail;
-}
-
-/**
-  * @brief  Check the ringbuf is full
-  * @param  handle: Pointer to the ringbuf control structure
-  * @retval if full return 1, else return 0
-  */
-static int usb_ringbuf_is_full(usb_ringbuf_manager_t *handle)
-{
-	return ((handle->tail + 1) % (handle->item_cnt)) == handle->head;
-}
-
-/**
-  * @brief  Add a new frame to the ringbuf tail
-  * @param  handle: Pointer to the ringbuf control structure
-  * @param  buf: write data handle
-  * @param  size: write data size
-  * @retval if success return HAL_ERR_PARA, else return HAL_OK
-  */
-static int usb_ringbuf_add_tail(usb_ringbuf_manager_t *handle, u8 *buf, u32 size)
-{
-	usb_ringbuf_t *target;
-	u32 cur_tail = handle->tail;
-	u32 next_tail = (cur_tail + 1) % (handle->item_cnt);
-
-	if (usb_ringbuf_is_full(handle)) {
-		return HAL_ERR_PARA;
-	}
-
-	target = &(handle->list_node[cur_tail]);
-	//check the size
-	if (size > handle->item_size) {
-		size = handle->item_size;
-	}
-	target->buf_len = size;
-	usb_os_memcpy((void *)(target->buf), (void *)buf, target->buf_len);
-
-	mem_sync();
-
-	handle->tail = next_tail;
-
-	return HAL_OK;
-}
-
-/*
-	The following APIs are used to write part of the data to ringbuf, take UAC as example:
-	audio writes data of various lengths to ringbuf, and USB sends them out with dma mode.
-	So there are two requirements: 1) the tx buf_addr should be cache aligned, 2) the length of the sent data is the length of one frame.
-
-	Therefore, usb needs to split the consecutive data transmitted from audio one by one and save them,
-	and ensure that the data at the end that does not meet the requirement of one frame is saved and can be combined with the data of the next time to form a complete data frame
-	USB achieves this specifically through ringbuf, where each item saves a frame of data
-
-	AudioData:     data1 data2 data3 data4 data4.......
-	USB Ringbuf:   frame1pad frame2pad frame3pad frame4pad ....
-
-	"Usb_ringbuf_write_partial" is used to write part of the data to ringbuf. The caller needs to control the amount of data written, which must not exceed the length of one frame
-	"Usb_ringbuf_finish_write" is used to indicate that this frame has been written, and the write idx switch to next position
-	"Usb_ringbuf_write_partial" combines "Usb_ringbuf_finish_write" to save the frame to the ringbuffer
-*/
-
-/**
-  * @brief  Write partial data to the tail
-  * @param  handle: Pointer to the ringbuf control structure
-  * @param  buf: write data handle
-  * @param  size: write data size
-  * @retval if full return 1, else return 0
-  */
-static int usb_ringbuf_write_partial(usb_ringbuf_manager_t *handle, u8 *buf, u32 size)
-{
-	usb_ringbuf_t *target;
-	u32 cur_tail = handle->tail;
-	u32 remain = handle->item_size - handle->written;
-
-	if (size > remain) {
-		size = remain;
-	}
-
-	target = &(handle->list_node[cur_tail]);
-
-	usb_os_memcpy((void *)(target->buf + handle->written), (void *)buf, size);
-	handle->written += size;
-	target->buf_len = handle->written;
-
-	mem_sync();
-
-	return size;
-}
-
-/**
-  * @brief  finish write a frame
-  * @param  handle: Pointer to the ringbuf control structure.
-  * @retval HAL_OK
-  */
-static int usb_ringbuf_finish_write(usb_ringbuf_manager_t *handle)
-{
-	handle->tail = (handle->tail + 1) % (handle->item_cnt);
-	handle->written = 0;
-
-	return HAL_OK;
-}
-
-/*
-	UAC use ringbuf memory for transmission, so the mmeory can not be overwritten until get the complete interrupt
-	so call "usb_ringbuf_get_head" to get the buffer handle, and do the transmission
-	and call "usb_ringbuf_release_head" to release the buffer in the complete interrupt
-	just get the head, but not change the head idx
-*/
-static usb_ringbuf_t *usb_ringbuf_get_head(usb_ringbuf_manager_t *handle)
-{
-	usb_ringbuf_t *target;
-	u32 cur_head = handle->head;
-
-	if (usb_ringbuf_is_empty(handle)) {
-		return NULL;
-	}
-
-	target = &(handle->list_node[cur_head]);
-
-	mem_sync();
-
-	return target;
-}
-
-/* release the head */
-static int usb_ringbuf_release_head(usb_ringbuf_manager_t *handle)
-{
-	u32 cur_head = handle->head;
-
-	if (usb_ringbuf_is_empty(handle)) {
-		return 0;
-	}
-
-	handle->head = (cur_head + 1) % (handle->item_cnt);
-
-	return 0;
-}
-
-static int usb_ringbuf_manager_init(usb_ringbuf_manager_t *handle, u16 cnt, u16 size, u8 cache_align)
-{
-	usb_ringbuf_t *pbuf_data;
-	u16 item_length = size;
-	int idx;
-
-	if (cnt == 0 || size == 0) {
-		return HAL_ERR_PARA;
-	}
-
-	if (cache_align) {
-		item_length = CACHE_LINE_ALIGNMENT(size);
-	}
-
-	handle->written = 0;
-	handle->item_cnt = cnt;
-	handle->item_size = item_length;
-
-	handle->buf = (u8 *)usb_os_malloc(handle->item_cnt * handle->item_size);
-	if (handle->buf == NULL) {
-		return HAL_ERR_MEM;
-	}
-
-	handle->list_node = (usb_ringbuf_t *)usb_os_malloc(handle->item_cnt * sizeof(usb_ringbuf_t));
-	if (handle->list_node == NULL) {
-		usb_os_mfree(handle->buf);
-		handle->buf = NULL;
-		return HAL_ERR_MEM;
-	}
-
-	for (idx = 0; idx < handle->item_cnt; idx++) {
-		pbuf_data = &(handle->list_node[idx]);
-		pbuf_data->buf_len = 0;
-		pbuf_data->buf = handle->buf + handle->item_size * idx;
-	}
-
-	handle->head = 0;
-	handle->tail = 0;
-
-	return HAL_OK;
-}
-
-static int usb_ringbuf_manager_deinit(usb_ringbuf_manager_t *handle)
-{
-	if (handle->buf != NULL) {
-		usb_os_mfree(handle->buf);
-		handle->buf = NULL;
-	}
-
-	if (handle->list_node != NULL) {
-		usb_os_mfree(handle->list_node);
-		handle->list_node = NULL;
-	}
-
-	return HAL_OK;
-}
 
 static inline u32 usbh_uac_frame_num_dec(u32 new, u32 start)
 {
@@ -1061,8 +856,8 @@ static int usbh_uac_process_set_ch_volume(usb_host_t *host, u8 ch_idx)
 	setup.req.wLength = 2U;
 	usbh_uac_dump_req_struct(&setup.req);
 
-	uac->audio_ctrl_buf[0] = (u8)(uac->volume_value);
-	uac->audio_ctrl_buf[1] = (u8)((uac->volume_value >> 8) & 0xFF);
+	uac->audio_ctrl_buf[0] = (u8)(uac->volume_db);
+	uac->audio_ctrl_buf[1] = (u8)((uac->volume_db >> 8) & 0xFF);
 
 	return usbh_ctrl_request(host, &setup, uac->audio_ctrl_buf);
 }
@@ -1381,18 +1176,22 @@ static void usbh_uac_isoc_out_process_xfer(usb_host_t *host, u32 cur_frame)
 	usbh_uac_host_t *uac = &usbh_uac_host;
 	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
 	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->isoc_out);
-	usb_ringbuf_t *pbuf = NULL;
+	usb_ringbuf_manager_t *buf_manager;
+	u32 read_len;
+	u8 zlp = 0;
 
-	if (!usb_ringbuf_is_empty(&(pdata_ctrl->buf_list))) {
+	buf_manager = &(pdata_ctrl->buf_manager);
+	if (!usb_ringbuf_is_empty(buf_manager)) {
 		// check valid data
-		pbuf = usb_ringbuf_get_head(&(pdata_ctrl->buf_list));
-		if (pbuf && pbuf->buf_len > 0) {
+		read_len = usb_ringbuf_remove_head(buf_manager, uac->isoc_tx_buf, USBH_UAC_ISOC_BUF_LENGTH, &zlp);
+		usb_os_sema_give(pdata_ctrl->isoc_sema);
+		if (read_len > 0) {
 			pipe->frame_num = usbh_uac_frame_num_inc(cur_frame, 1);
 #if USBH_UAC_DEBUG
 			uac->isoc_tx_start_cnt ++;
 #endif
-			pipe->xfer_buf = pbuf->buf;
-			pipe->xfer_len = pbuf->buf_len;
+			pipe->xfer_buf = uac->isoc_tx_buf;
+			pipe->xfer_len = read_len;
 			usbh_transfer_data(host, pipe);
 			pipe->xfer_state = USBH_EP_XFER_BUSY;
 		} else { //data invalid
@@ -1405,24 +1204,6 @@ static void usbh_uac_isoc_out_process_xfer(usb_host_t *host, u32 cur_frame)
 		uac->isoc_xfer_buf_empty_cnt ++;
 #endif
 	}
-}
-
-static void usbh_uac_isoc_out_process_complete(usb_host_t *host)
-{
-	UNUSED(host);
-	usbh_uac_host_t *uac = &usbh_uac_host;
-	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
-	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->isoc_out);
-
-#if USBH_UAC_DEBUG
-	uac->isoc_tx_done_cnt ++;
-#endif
-
-	usb_ringbuf_release_head(&(pdata_ctrl->buf_list));
-
-	rtos_sema_give(pdata_ctrl->isoc_sema);
-
-	pipe->xfer_state = USBH_EP_XFER_IDLE;
 }
 
 /**
@@ -1578,8 +1359,12 @@ static int usbh_uac_cb_completed(usb_host_t *host, u8 pipe_num)
 
 	if (pdata_ctrl->next_xfer == 1) {
 		if ((uac->as_isoc_out) && (pipe_num == uac->as_isoc_out->pipe.pipe_num)) {
-			usbh_uac_isoc_out_process_complete(host);
-			if (!usb_ringbuf_is_empty(&(pdata_ctrl->buf_list))) {
+#if USBH_UAC_DEBUG
+			uac->isoc_tx_done_cnt ++;
+#endif
+			pipe->xfer_state = USBH_EP_XFER_IDLE;
+
+			if (!usb_ringbuf_is_empty(&(pdata_ctrl->buf_manager))) {
 				//trigger next xfer after binterval
 				if (usbh_uac_frame_num_dec(usbh_uac_frame_num_inc(cur_frame, 1), pipe->frame_num) >= pipe->ep_interval) {
 					usbh_uac_isoc_out_process_xfer(host, cur_frame);
@@ -1762,8 +1547,9 @@ static u32 usbh_uac_next_packet_size(usbh_uac_buf_ctrl_t *pdata_ctrl)
   */
 static int usbh_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u32 size, u32 *written_len)
 {
-	usb_ringbuf_manager_t *handle = &(pdata_ctrl->buf_list);
-	u32 written_size = handle->written;
+	usbh_uac_host_t *uac = &usbh_uac_host;
+	usb_ringbuf_manager_t *handle = &(pdata_ctrl->buf_manager);
+	u32 written_size = pdata_ctrl->written;
 	u32 offset = 0;
 	u32 xfer_len;
 	u32 can_copy_len;
@@ -1774,14 +1560,17 @@ static int usbh_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, 
 		can_copy_len = xfer_len - written_size;
 		copy_len = size < can_copy_len ? size : can_copy_len;
 
-		usb_ringbuf_write_partial(handle, buffer, copy_len);
+		usb_os_memcpy((void *)(uac->ringbuf_partial_write_buf + written_size), (void *)buffer, copy_len);
+		pdata_ctrl->written += copy_len;
+
 		offset += copy_len;
 		*written_len += copy_len;
 
 		if (size >= can_copy_len) {
 			size -= copy_len;
-			usb_ringbuf_finish_write(handle);
+			usb_ringbuf_add_tail(handle, uac->ringbuf_partial_write_buf, xfer_len, 1);
 			pdata_ctrl->sample_accum = pdata_ctrl->last_sample_accum;
+			pdata_ctrl->written = 0;
 		} else {
 			return 0;
 		}
@@ -1793,9 +1582,8 @@ static int usbh_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, 
 		}
 
 		xfer_len = usbh_uac_next_packet_size(pdata_ctrl);
-
 		if (size >= xfer_len) {
-			usb_ringbuf_add_tail(handle, buffer + offset, xfer_len);
+			usb_ringbuf_add_tail(handle, buffer + offset, xfer_len, 1);
 
 			*written_len += xfer_len;
 			size -= xfer_len;
@@ -1812,8 +1600,8 @@ static int usbh_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, 
 			return 1;
 		}
 
-		usb_ringbuf_write_partial(handle, buffer + offset, size);
-
+		usb_os_memcpy((void *)(uac->ringbuf_partial_write_buf), (void *)buffer, size);
+		pdata_ctrl->written = size;
 		*written_len += size;
 	}
 	return 0;
@@ -1843,7 +1631,7 @@ static void usbh_uac_ep_buf_ctrl_deinit(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe
 
 		rtos_sema_delete(buf_ctrl->isoc_sema);
 	}
-	usb_ringbuf_manager_deinit(&(buf_ctrl->buf_list));
+	usb_ringbuf_manager_deinit(&(buf_ctrl->buf_manager));
 }
 
 /**
@@ -1865,7 +1653,7 @@ static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t 
 		return ret;
 	}
 
-	usb_ringbuf_manager_init(&(buf_ctrl->buf_list), buf_list_cnt, buf_ctrl->mps, 1);
+	usb_ringbuf_manager_init(&(buf_ctrl->buf_manager), buf_list_cnt, buf_ctrl->mps, 1);
 
 	rtos_sema_create(&(buf_ctrl->isoc_sema), 0U, 1U);
 	buf_ctrl->sema_valid = 1;
@@ -1906,6 +1694,87 @@ static int usbh_uac_wait_isoc_with_status_check(usbh_uac_buf_ctrl_t *pdata_ctrl,
 	return ret;
 }
 
+static u32 uach_mute(u16 argc, u8 *argv[])
+{
+	int status = HAL_OK;
+	u8 mute;
+
+	if (argc == 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid argument\n");
+		return HAL_ERR_PARA;
+	}
+
+	mute = 1;
+	if (argv[0]) {
+		mute = (u8)_strtoul((const char *)(argv[0]), (char **)NULL, 10);
+	}
+
+	usbh_uac_set_mute(mute);
+
+	return status;
+}
+
+static u32 uach_vol(u16 argc, u8 *argv[])
+{
+	usbh_uac_host_t *uac = &usbh_uac_host;
+	int status = HAL_OK;
+	u8 vol;
+
+	if (argc == 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid argument\n");
+		return HAL_ERR_PARA;
+	}
+
+	vol = 50;
+	if (argv[0]) {
+		vol = (u8)_strtoul((const char *)(argv[0]), (char **)NULL, 10);
+	}
+	uac->cur_volume = vol;
+	usbh_uac_set_volume(uac->cur_volume);
+
+	return status;
+}
+
+static u32 uach_volup(u16 argc, u8 *argv[])
+{
+	UNUSED(argc);
+	UNUSED(argv);
+	usbh_uac_host_t *uac = &usbh_uac_host;
+
+	uac->cur_volume += 5;
+	if (uac->cur_volume >= 100) {
+		uac->cur_volume = 100;
+	}
+	usbh_uac_set_volume(uac->cur_volume);
+
+	return HAL_OK;
+}
+
+static u32 uach_voldown(u16 argc, u8 *argv[])
+{
+	UNUSED(argc);
+	UNUSED(argv);
+	usbh_uac_host_t *uac = &usbh_uac_host;
+
+	if (uac->cur_volume < 5) {
+		uac->cur_volume = 0;
+	} else {
+		uac->cur_volume -= 5;
+	}
+
+	usbh_uac_set_volume(uac->cur_volume);
+
+	return HAL_OK;
+}
+
+CMD_TABLE_DATA_SECTION
+const COMMAND_TABLE usbh_uac_test_md_table[] = {
+	{"uach_mute", uach_mute},
+	{"uach_vol", uach_vol},
+	{"uach_volup", uach_volup},
+	{"uach_voldown", uach_voldown},
+};
+
 /* Exported functions --------------------------------------------------------*/
 
 /**
@@ -1922,10 +1791,22 @@ int usbh_uac_init(usbh_uac_cb_t *cb, int frame_cnt)
 	usb_os_memset(uac, 0x00, sizeof(usbh_uac_host_t));
 	buf_ctrl->frame_cnt = frame_cnt;
 
-	uac->audio_ctrl_buf = (u8 *)usb_os_malloc(UBSH_UAC_AUDIO_FMT_FREQ_LEN);
+	uac->audio_ctrl_buf = (u8 *)usb_os_malloc(UBSH_UAC_AUDIO_CTRL_BUF_MAX_LEN);
 	if (NULL == uac->audio_ctrl_buf) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc mem %d fail\n", UBSH_UAC_AUDIO_FMT_FREQ_LEN);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc mem %d fail\n", UBSH_UAC_AUDIO_CTRL_BUF_MAX_LEN);
 		return HAL_ERR_MEM;
+	}
+
+	uac->isoc_tx_buf = (u8 *)usb_os_malloc(USBH_UAC_ISOC_BUF_LENGTH);
+	if (NULL == uac->isoc_tx_buf) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc tx buf fail\n");
+		goto get_tx_buf_fail;
+	}
+
+	uac->ringbuf_partial_write_buf = (u8 *)usb_os_malloc(USBH_UAC_ISOC_BUF_LENGTH);
+	if (NULL == uac->ringbuf_partial_write_buf) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc wr buf fail\n");
+		goto get_wd_buf_fail;
 	}
 
 	if (cb != NULL) {
@@ -1947,8 +1828,17 @@ int usbh_uac_init(usbh_uac_cb_t *cb, int frame_cnt)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create usb status dump task fail\n");
 	}
 #endif
-
 	return HAL_OK;
+
+get_wd_buf_fail:
+	usb_os_mfree(uac->isoc_tx_buf);
+	uac->isoc_tx_buf = NULL;
+
+get_tx_buf_fail:
+	usb_os_mfree(uac->audio_ctrl_buf);
+	uac->audio_ctrl_buf = NULL;
+
+	return HAL_ERR_MEM;
 }
 
 /**
@@ -1985,6 +1875,17 @@ int usbh_uac_deinit(void)
 		usb_os_mfree(uac->audio_ctrl_buf);
 		uac->audio_ctrl_buf = NULL;
 	}
+
+	if (uac->isoc_tx_buf != NULL) {
+		usb_os_mfree(uac->isoc_tx_buf);
+		uac->isoc_tx_buf = NULL;
+	}
+
+	if (uac->ringbuf_partial_write_buf != NULL) {
+		usb_os_mfree(uac->ringbuf_partial_write_buf);
+		uac->ringbuf_partial_write_buf = NULL;
+	}
+
 
 	if (uac->as_isoc_out != NULL) {
 		if (uac->as_isoc_out->fmt_array) {
@@ -2177,11 +2078,11 @@ u32 usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms)
 		need_wait = 0;
 
 		if (timeout_ms) {
-			if (usb_ringbuf_is_full(&(pdata_ctrl->buf_list)) || last_zero) {
+			if (usb_ringbuf_is_full(&(pdata_ctrl->buf_manager)) || last_zero) {
 				need_wait = 1;
 			}
 		} else {
-			if (usb_ringbuf_is_full(&(pdata_ctrl->buf_list)) || last_zero) {
+			if (usb_ringbuf_is_full(&(pdata_ctrl->buf_manager)) || last_zero) {
 				break;
 			}
 		}
@@ -2265,7 +2166,7 @@ int usbh_uac_set_volume(u8 volume)
 
 	if ((uac->xfer_state == UAC_STATE_IDLE) || (uac->xfer_state == UAC_STATE_TRANSFER)) {
 		if (uac->ctrl_state == UAC_STATE_CTRL_IDLE) {
-			uac->volume_value = volume_db;
+			uac->volume_db = volume_db;
 			uac->ch_idx = 0;
 			uac->ctrl_state = UAC_STATE_SET_VOLUME;
 			uac->xfer_state = UAC_STATE_TRANSFER;
@@ -2299,81 +2200,3 @@ int usbh_uac_set_mute(u8 mute)
 
 	return ret;
 }
-
-static u32 uach_mute(u16 argc, u8 *argv[])
-{
-	int status = HAL_OK;
-	u8 mute;
-
-	if (argc == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid argument\n");
-		return HAL_ERR_PARA;
-	}
-
-	mute = 1;
-	if (argv[0]) {
-		mute = (u8)_strtoul((const char *)(argv[0]), (char **)NULL, 10);
-	}
-
-	usbh_uac_set_mute(mute);
-
-	return status;
-}
-
-static u32 uach_vol(u16 argc, u8 *argv[])
-{
-	int status = HAL_OK;
-	u8 vol;
-
-	if (argc == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid argument\n");
-		return HAL_ERR_PARA;
-	}
-
-	vol = 50;
-	if (argv[0]) {
-		vol = (u8)_strtoul((const char *)(argv[0]), (char **)NULL, 10);
-	}
-	usbh_cur_volume = vol;
-	usbh_uac_set_volume(usbh_cur_volume);
-
-	return status;
-}
-
-static u32 uach_volup(u16 argc, u8 *argv[])
-{
-	UNUSED(argc);
-	UNUSED(argv);
-
-	usbh_cur_volume += 5;
-	if (usbh_cur_volume >= 100) {
-		usbh_cur_volume = 100;
-	}
-	usbh_uac_set_volume(usbh_cur_volume);
-
-	return HAL_OK;
-}
-
-static u32 uach_voldown(u16 argc, u8 *argv[])
-{
-	UNUSED(argc);
-	UNUSED(argv);
-
-	if (usbh_cur_volume < 5) {
-		usbh_cur_volume = 0;
-	} else {
-		usbh_cur_volume -= 5;
-	}
-
-	usbh_uac_set_volume(usbh_cur_volume);
-
-	return HAL_OK;
-}
-
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbh_uac_test_md_table[] = {
-	{"uach_mute", uach_mute},
-	{"uach_vol", uach_vol},
-	{"uach_volup", uach_volup},
-	{"uach_voldown", uach_voldown},
-};

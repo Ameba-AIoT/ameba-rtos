@@ -765,7 +765,7 @@ static const cmd_table_t gattc_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_gattc(int argc, char *argv[])
+void fBLEGATTC(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, gattc_cmd_table, "[AT+BLEGATTC]");
+	atcmd_bt_excute(argc - 1, &argv[1], gattc_cmd_table, "[AT+BLEGATTC]");
 }

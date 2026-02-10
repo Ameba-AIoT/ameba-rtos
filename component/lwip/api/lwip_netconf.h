@@ -128,6 +128,8 @@ struct static_ip_config {
 
 
 /* Exported types ------------------------------------------------------------*/
+extern struct netif *pnetif_eth;
+extern int lwip_init_done;
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */

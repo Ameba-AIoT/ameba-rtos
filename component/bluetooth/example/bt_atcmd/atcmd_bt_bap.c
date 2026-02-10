@@ -302,8 +302,8 @@ static const cmd_table_t bap_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_bap_cmd(int argc, char *argv[])
+void fBLEBAP(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, bap_cmd_table, "[AT+BLEBAP]");
+	atcmd_bt_excute(argc - 1, &argv[1], bap_cmd_table, "[AT+BLEBAP]");
 }
 #endif

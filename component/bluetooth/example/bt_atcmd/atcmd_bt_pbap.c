@@ -182,7 +182,7 @@ static const cmd_table_t pbap_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_pbap_cmd(int argc, char *argv[])
+void fBTPBAP(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, pbap_cmd_table, "[AT+BTPBAP]");
+	atcmd_bt_excute(argc - 1, &argv[1], pbap_cmd_table, "[AT+BTPBAP]");
 }

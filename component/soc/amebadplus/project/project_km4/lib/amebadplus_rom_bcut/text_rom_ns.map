@@ -1,0 +1,1451 @@
+Archive member included to satisfy reference by file (symbol)
+
+/home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+                              (--whole-archive)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+EMPTY_SECTION    0x0000000000000000 0x0000000000000000 xrw
+KM4_IROM         0x0000000000000000 0x000000000001e000 xr
+KM4_IROM_NS      0x000000000001e000 0x0000000000015000 xr
+KM4_IROM_STDLIB_NS 0x0000000000033000 0x000000000000f000 xr
+KM4_DROM_NS      0x0000000000042000 0x0000000000002800 xr
+KM4_DROM         0x0000000000044800 0x0000000000003800 xr
+KM4_ROMBSS_RAM_S 0x0000000030007000 0x0000000000001000 rw
+KM4_MSP_RAM_S    0x0000000030008000 0x0000000000002000 rw
+KM4_BOOTLOADER_RAM_S 0x000000003000a020 0x0000000000005fe0 xrw
+KM4_FLOADER_RAM_S 0x000000003000a020 0x0000000000015fe0 xrw
+KM4_MSP_RAM_NS   0x0000000020003000 0x0000000000001000 rw
+KM4_ROMBSS_RAM_COM 0x0000000020004000 0x0000000000001000 rw
+KM4_ROMBSS_RAM_NS 0x0000000020005000 0x0000000000001000 rw
+KM4_STDLIB_HEAP_RAM_NS 0x0000000020006000 0x0000000000001000 rw
+KM0_BOOT_RAM     0x0000000020004d20 0x0000000000000020 xrw
+KM0_IPC_RAM      0x0000000020004e00 0x00000000000001e0 xrw
+KM4_BD_RAM       0x0000000020010020 0x000000000003ffe0 xrw
+KM0_BD_RAM       0x0000000020050020 0x000000000001ffe0 xrw
+KM4_BD_RAM_TZ_NSC 0x0000000020070020 0x0000000000000fe0 xrw
+KM4_BD_RAM_TZ_ENTRY 0x0000000020071000 0x0000000000004000 xrw
+KM4_BD_RAM_TZ_S  0x0000000030075020 0x000000000000afe0 xrw
+KM4_BD_PSRAM     0x0000000060000020 0x000000000015afe0 xrw
+KM0_BD_PSRAM     0x0000000060180020 0x000000000017ffe0 xrw
+KM4_BD_PSRAM_TZ_NSC 0x000000006015b020 0x0000000000000fe0 xrw
+KM4_BD_PSRAM_TZ_ENTRY 0x000000006015c000 0x0000000000004000 xrw
+KM4_BD_PSRAM_TZ_S 0x0000000070160020 0x000000000001ffe0 xrw
+RETENTION_RAM    0x0000000041008e00 0x0000000000000200 xrw
+KM0_IROM         0x0000000000000000 0x0000000000006000 xr
+KM0_IROM_STDLIB  0x0000000000006000 0x0000000000004000 xr
+KM0_DROM         0x000000000000a000 0x0000000000001000 xr
+WIFI_ROM         0x000000000000b000 0x000000000001d000 xr
+KM0_ROMBSS_RAM   0x0000000020000000 0x0000000000001000 rw
+KM0_MSP_RAM      0x0000000020001000 0x0000000000001000 rw
+KM0_STDLIB_HEAP_RAM 0x0000000020002000 0x0000000000001000 rw
+PHY_IMG1         0x0000000008001020 0x0000000000005fe0 xr
+PHY_IMG2         0x0000000008014000 0x00000000001cc000 xr
+KM4_IMG3         0x00000000081e0000 0x0000000000020000 xr
+KM4_BOOT_XIP     0x000000000f800020 0x00000000007fffe0 xr
+KM0_IMG2_XIP     0x000000000c000020 0x0000000001ffffe0 xr
+KM4_IMG2_XIP     0x000000000e000020 0x00000000017fffe0 xr
+BTRACE           0x00000000c8800000 0x0000000000800000 xr
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+LOAD /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a
+START GROUP
+LOAD /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/../toolchain/linux/asdk-10.3.1/linux/newlib/lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main+fp/fpu/libgcc.a
+LOAD /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/../toolchain/linux/asdk-10.3.1/linux/newlib/arm-none-eabi/lib/thumb/v8-m.main+fp/fpu/libc.a
+END GROUP
+START GROUP
+LOAD /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/../toolchain/linux/asdk-10.3.1/linux/newlib/lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main+fp/fpu/libgcc.a
+LOAD /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/../toolchain/linux/asdk-10.3.1/linux/newlib/arm-none-eabi/lib/thumb/v8-m.main+fp/fpu/libc.a
+LOAD /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/../toolchain/linux/asdk-10.3.1/linux/newlib/arm-none-eabi/lib/thumb/v8-m.main+fp/fpu/libnosys.a
+END GROUP
+                0x0000000020050020                __km0_image2_entry_func__ = ORIGIN (KM0_BD_RAM)
+                0x0000000020004e00                __km0_ipc_memory_start__ = ORIGIN (KM0_IPC_RAM)
+                0x000000000c000020                __km0_flash_text_start__ = ORIGIN (KM0_IMG2_XIP)
+                0x000000000e000020                __km4_flash_text_start__ = ORIGIN (KM4_IMG2_XIP)
+                0x0000000060180020                __km0_psram_text_start__ = ORIGIN (KM0_BD_PSRAM)
+                0x000000000f800020                __km4_boot_text_start__ = ORIGIN (KM4_BOOT_XIP)
+                0x00000000081e0000                __km4_image3_flash_start__ = ORIGIN (KM4_IMG3)
+                0x0000000008014000                __nspe_phy_addr__ = ORIGIN (PHY_IMG2)
+
+.glue_7         0x0000000000000000        0x0
+ .glue_7        0x0000000000000000        0x0 linker stubs
+
+.glue_7t        0x0000000000000000        0x0
+ .glue_7t       0x0000000000000000        0x0 linker stubs
+
+.vfp11_veneer   0x0000000000000000        0x0
+ .vfp11_veneer  0x0000000000000000        0x0 linker stubs
+
+.v4_bx          0x0000000000000000        0x0
+ .v4_bx         0x0000000000000000        0x0 linker stubs
+
+.iplt           0x0000000000000000        0x0
+ .iplt          0x0000000000000000        0x0 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.igot.plt       0x0000000000000000        0x0
+ .igot.plt      0x0000000000000000        0x0 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.rom.text       0x000000000001e000    0x12e70
+ .rom.text      0x000000000001e000    0x12e70 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+                0x000000000001ec00                rtl_crypto_aes_cbc_init
+                0x000000000001ec54                rtl_crypto_aes_cbc_encrypt
+                0x000000000001eca4                rtl_crypto_aes_cbc_decrypt
+                0x000000000001ecf4                rtl_crypto_aes_ecb_init
+                0x000000000001ed48                rtl_crypto_aes_ecb_encrypt
+                0x000000000001ed84                rtl_crypto_aes_ecb_decrypt
+                0x000000000001edc0                rtl_crypto_aes_ctr_init
+                0x000000000001ee14                rtl_crypto_aes_ctr_encrypt
+                0x000000000001ee5c                rtl_crypto_aes_ctr_decrypt
+                0x000000000001eea4                rtl_crypto_aes_cfb_init
+                0x000000000001eef8                rtl_crypto_aes_cfb_encrypt
+                0x000000000001ef40                rtl_crypto_aes_cfb_decrypt
+                0x000000000001ef88                rtl_crypto_aes_ofb_init
+                0x000000000001efdc                rtl_crypto_aes_ofb_encrypt
+                0x000000000001f024                rtl_crypto_aes_ofb_decrypt
+                0x000000000001f06c                rtl_crypto_aes_gcm_init
+                0x000000000001f0c0                rtl_crypto_aes_gcm_encrypt
+                0x000000000001f13c                rtl_crypto_aes_gcm_decrypt
+                0x000000000001f1b8                io_assert_failed
+                0x000000000001f1d8                BKUP_Write
+                0x000000000001f204                BKUP_Read
+                0x000000000001f22c                BKUP_Set
+                0x000000000001f254                BKUP_Clear
+                0x000000000001f280                EFUSE_GetPackageInfo
+                0x000000000001f2a4                EFUSE_GetBDNum
+                0x000000000001f2c4                EFUSE_GetChipVersion
+                0x000000000001f2e8                EFUSE_GetESFlag
+                0x000000000001f30c                EFUSE_GetUUID
+                0x000000000001f350                EFUSE_Get_Info
+                0x000000000001f3e0                XTAL_ClkGet
+                0x000000000001f3fc                PLL_ClkGet
+                0x000000000001f43c                _CPU_ClkSet
+                0x000000000001f540                CPU_ClkGet
+                0x000000000001f5cc                _CPU_ClkSrcSet
+                0x000000000001f620                CRYPTO_MemDump
+                0x000000000001f730                CRYPTO_SetSrcDesc
+                0x000000000001f7c0                CRYPTO_SetDstDesc
+                0x000000000001f84c                CRYPTO_CleanCmdOk
+                0x000000000001f8a0                CRYPTO_ClearAllINT
+                0x000000000001f8f0                CRYPTO_SetCmdBuf
+                0x000000000001fb84                CRYPTO_SrcDescKeyIv
+                0x000000000001ffa4                CRYPTO_Reset
+                0x000000000001ffec                CRYPTO_SHA_Reset
+                0x0000000000020034                CRYPTO_SetSecurityModeAD
+                0x00000000000201e4                CRYPTO_Init
+                0x0000000000020208                CRYPTO_SHA_Init
+                0x000000000002022c                CRYPTO_OTPKey_Init
+                0x000000000002028c                CRYPTO_OTPKey_SHA_Init
+                0x0000000000020300                CRYPTO_ProcessAD
+                0x0000000000020a68                CRYPTO_SendSeqBuf
+                0x0000000000020b70                CRYPTO_CipherInit
+                0x0000000000020b90                CRYPTO_CipherEncryptAD
+                0x0000000000020bc4                CRYPTO_CipherDecryptAD
+                0x0000000000020bf8                DelayNop
+                0x0000000000020c04                DelayUs
+                0x0000000000020c7c                DelayMs
+                0x0000000000020c90                DelayClkUpdate
+                0x0000000000020ca8                FLASH_UserMode_Enter
+                0x0000000000020cc0                FLASH_UserMode_Exit
+                0x0000000000020cd0                FLASH_Config
+                0x0000000000020d64                FLASH_SetSpiMode
+                0x0000000000020e6c                FLASH_RxCmd_InUserMode
+                0x0000000000020ee8                FLASH_RxCmd
+                0x0000000000020f04                FLASH_WaitBusy_InUserMode
+                0x0000000000020f8c                FLASH_RxData
+                0x00000000000210b4                FLASH_TxCmd_InUserMode
+                0x000000000002110c                FLASH_WriteEn_InUserMode
+                0x0000000000021130                FLASH_TxData
+                0x000000000002127c                FLASH_SetStatus
+                0x00000000000212a8                FLASH_Erase
+                0x0000000000021344                FLASH_Addr4ByteEn
+                0x0000000000021368                FLASH_Addr4ByteDis
+                0x000000000002138c                FLASH_DeepPowerDown
+                0x00000000000213ec                FLASH_SetStatusBits
+                0x00000000000214c4                FLASH_StructInit_Micron
+                0x0000000000021530                FLASH_StructInit_MXIC
+                0x000000000002159c                FLASH_StructInit_GD
+                0x0000000000021610                FLASH_StructInit
+                0x0000000000021680                FLASH_Init
+                0x00000000000216a0                FLASH_Wait_Boot_Finish
+                0x00000000000216c4                GPIO_INTMode
+                0x0000000000021748                GPIO_INTConfig
+                0x000000000002178c                GPIO_INTHandler
+                0x0000000000021844                GPIO_Direction
+                0x0000000000021890                GPIO_Init
+                0x0000000000021920                GPIO_DeInit
+                0x0000000000021994                GPIO_ReadDataBit
+                0x00000000000219cc                GPIO_WriteBit
+                0x0000000000021a18                GPIO_PortDirection
+                0x0000000000021a6c                GPIO_PortRead
+                0x0000000000021ab0                GPIO_PortWrite
+                0x0000000000021afc                GPIO_DebounceClock
+                0x0000000000021b4c                GPIO_LevelSync
+                0x0000000000021b98                GPIO_UserRegIrq
+                0x0000000000021bc4                GPIO_ODInit
+                0x0000000000021bf4                GPIO_ODWriteBit
+                0x0000000000021c0c                LOGUART_StructInit
+                0x0000000000021c44                LOGUART_SetBaud
+                0x0000000000021cf0                LOGUART_RxCmd
+                0x0000000000021d04                LOGUART_INTCoreConfig
+                0x0000000000021d18                LOGUART_AGGCmd
+                0x0000000000021d2c                LOGUART_AGGPathCmd
+                0x0000000000021dac                LOGUART_AGGSetTimeOut
+                0x0000000000021dc8                LOGUART_AGGSetThreshold
+                0x0000000000021df4                LOGUART_AGGSetSyncPattern
+                0x0000000000021e04                LOGUART_AGGPathAllCmd
+                0x0000000000021e28                LOGUART_WaitTx
+                0x0000000000021e64                LOGUART_PutChar
+                0x0000000000021eb0                LOGUART_GetChar
+                0x0000000000021ecc                LOGUART_Readable
+                0x0000000000021edc                LOGUART_GetRxCount
+                0x0000000000021ee8                LOGUART_GetIMR
+                0x0000000000021ef4                LOGUART_SetIMR
+                0x0000000000021f00                LOGUART_INTConfig
+                0x0000000000021f10                LOGUART_INTClear
+                0x0000000000021f18                LOGUART_GetStatus
+                0x0000000000021f1c                LOGUART_ClearRxFifo
+                0x0000000000021f3c                _LOGUART_Init
+                0x0000000000022090                LOGUART_Init
+                0x00000000000220f4                LOGUART_WaitBusy
+                0x0000000000022134                LOGUART_WaitTxComplete
+                0x0000000000022164                LOGUART_BT_SendData
+                0x000000000002219c                LOGUART_Relay_StructInit
+                0x00000000000221b0                LOGUART_Relay_SetFormat
+                0x0000000000022200                LOGUART_Relay_SetBaud
+                0x0000000000022258                LOGUART_Relay_ClearRxFifo
+                0x000000000002227c                LOGUART_Relay_RxCmd
+                0x0000000000022290                LOGUART_MonitorParaConfig
+                0x00000000000222d8                LOGUART_LPBaudSet
+                0x0000000000022384                LOGUART_Relay_LPSetBaud
+                0x00000000000223e4                LOGUART_RxMonitorCmd
+                0x00000000000223f8                LOGUART_RxMonBaudCtrlRegGet
+                0x00000000000223fc                LOGUART_RxMonitorSatusGet
+                0x0000000000022400                LOGUART_DiagInit
+                0x0000000000022490                md_hash_save
+                0x0000000000022510                md_hash_restore
+                0x00000000000225a0                rtl_crypto_md5_init
+                0x0000000000022614                rtl_crypto_md5_process
+                0x0000000000022670                rtl_crypto_md5_update_rom
+                0x00000000000226e4                rtl_crypto_md5_update
+                0x0000000000022748                rtl_crypto_md5_final
+                0x00000000000227c0                rtl_crypto_md5
+                0x00000000000227e8                rtl_crypto_hmac_md5_init
+                0x00000000000228a4                rtl_crypto_hmac_md5_process
+                0x00000000000228e4                rtl_crypto_hmac_md5_update_rom
+                0x0000000000022964                rtl_crypto_hmac_md5_update
+                0x00000000000229c8                rtl_crypto_hmac_md5_final
+                0x0000000000022a44                rtl_crypto_hmac_md5
+                0x0000000000022a70                clear_ns_rom_bss
+                0x0000000000022a88                RSIP_OTF_Load_Key
+                0x0000000000022aa0                RSIP_OTF_init
+                0x0000000000022ab0                RSIP_IV_Set
+                0x0000000000022ac8                RSIP_OTF_Cmd
+                0x0000000000022ae0                RSIP_OTF_Enable
+                0x0000000000022b78                RSIP_MMU_Config
+                0x0000000000022bb4                RSIP_MMU_Cmd
+                0x0000000000022bdc                RSIP_MMU_Cache_Clean
+                0x0000000000022be8                OTP_PowerCmd
+                0x0000000000022c04                OTP_GetPowerState
+                0x0000000000022c14                OTP_AccessCmd
+                0x0000000000022c2c                OTPPowerSwitch
+                0x0000000000022c50                OTPGetCRC
+                0x0000000000022c90                OTP_Read8
+                0x0000000000022d40                OTP_ProgramMarginRead8
+                0x0000000000022df4                _OTP_Write8
+                0x0000000000022ea0                OTP_Write8
+                0x0000000000022f48                OTP_Read32
+                0x0000000000022f80                OTP_PG_Packet_Byte
+                0x0000000000023050                OTP_PG_Packet_Word
+                0x0000000000023184                OTP_LogicalMap_Read
+                0x00000000000232ac                OTP_LogicalMap_Write
+                0x00000000000234c4                OTP_RemainLength
+                0x0000000000023510                PAD_DrvStrength
+                0x0000000000023534                PAD_SchmitCtrl
+                0x0000000000023554                PAD_SlewRateCtrl
+                0x0000000000023574                PAD_PullCtrl
+                0x000000000002363c                PAD_SleepPullCtrl
+                0x0000000000023704                PAD_ResistorCtrl
+                0x0000000000023728                PAD_InputCtrl
+                0x0000000000023748                PAD_CMD
+                0x0000000000023768                Pinmux_Config
+                0x0000000000023780                Pinmux_ConfigGet
+                0x0000000000023790                Pinmux_UartLogCtrl
+                0x00000000000237d8                PAD_SpicCtrl
+                0x00000000000238ac                Pinmux_BootSpicCtrl
+                0x00000000000238b8                Pinmux_ComboSpicCtrl
+                0x00000000000238c4                Pinmux_Swdoff
+                0x00000000000238d8                RCC_PeriphClockCmd
+                0x0000000000023978                RCC_PeriphClockSource_UART
+                0x0000000000023a00                RCC_PeriphClockSource_SPIC
+                0x0000000000023a1c                RCC_PeriphClockSource_PSRAM
+                0x0000000000023a38                RCC_PeriphClockSource_CTC
+                0x0000000000023a54                RCC_PeriphClockSource_ADC
+                0x0000000000023a70                RCC_PeriphClockSource_GPIO
+                0x0000000000023a8c                RCC_PeriphClockSource_SPORT
+                0x0000000000023acc                RCC_PeriphClockSource_LOGUART
+                0x0000000000023b24                IPC_SEMTake
+                0x0000000000023b50                IPC_SEMFree
+                0x0000000000023b78                hash_save
+                0x0000000000023bf8                hash_restore
+                0x0000000000023c88                rtl_crypto_sha1_init
+                0x0000000000023d10                rtl_crypto_sha1_process
+                0x0000000000023d48                rtl_crypto_sha1_update_rom
+                0x0000000000023dbc                rtl_crypto_sha1_update
+                0x0000000000023e20                rtl_crypto_sha1_final
+                0x0000000000023e94                rtl_crypto_sha1
+                0x0000000000023ebc                rtl_crypto_sha2_init
+                0x00000000000240ec                rtl_crypto_sha2_process
+                0x0000000000024128                rtl_crypto_sha2_update_rom
+                0x00000000000241a0                rtl_crypto_sha2_update
+                0x0000000000024204                rtl_crypto_sha2_final
+                0x000000000002427c                rtl_crypto_sha2
+                0x00000000000242a4                rtl_crypto_hmac_sha1_init
+                0x0000000000024374                rtl_crypto_hmac_sha1_process
+                0x00000000000243b0                rtl_crypto_hmac_sha1_update_rom
+                0x000000000002442c                rtl_crypto_hmac_sha1_update
+                0x0000000000024490                rtl_crypto_hmac_sha1_final
+                0x0000000000024508                rtl_crypto_hmac_sha1
+                0x0000000000024534                rtl_crypto_hmac_sha2_init
+                0x0000000000024820                rtl_crypto_hmac_sha2_process
+                0x0000000000024860                rtl_crypto_hmac_sha2_update_rom
+                0x00000000000248dc                rtl_crypto_hmac_sha2_update
+                0x0000000000024940                rtl_crypto_hmac_sha2_final
+                0x00000000000249bc                rtl_crypto_hmac_sha2
+                0x00000000000249e8                SYSCFG_RLVersion
+                0x0000000000024a0c                SYSCFG_GetRLNum
+                0x0000000000024a30                SYSCFG_TRP_UARTImage
+                0x0000000000024a40                SYSCFG_TRP_ICFG
+                0x0000000000024a58                SYSCFG_TRP_TestMode
+                0x0000000000024a68                SYSCFG_TRP_OTPBYP
+                0x0000000000024a78                SYSCFG_ROMINFO_Get
+                0x0000000000024a88                SYSCFG_ROMINFO_Set
+                0x0000000000024aa4                SYSCFG_CHIPType_Get
+                0x0000000000024ab4                SYSCFG_OTP_RDPEn
+                0x0000000000024ad4                SYSCFG_OTP_RSIPEn
+                0x0000000000024af4                SYSCFG_OTP_SBootEn
+                0x0000000000024b14                SYSCFG_OTP_LowBaudLog
+                0x0000000000024b24                SYSCFG_OTP_DisBootLog
+                0x0000000000024b34                SYSCFG_OTP_BootMCMFlash
+                0x0000000000024b5c                SYSCFG_OTP_BOOT_CNT_LMT_EN
+                0x0000000000024b6c                SYSCFG_OTP_BootFlashBaud
+                0x0000000000024b7c                SYSCFG_OTP_SPICBootSpeedUpDis
+                0x0000000000024b8c                SYSCFG_OTP_SPICAddr4ByteEn
+                0x0000000000024b9c                SYSCFG_OTP_FlashDSleepEn
+                0x0000000000024bac                SYSCFG_OTP_UsbClockCalEn
+                0x0000000000024bbc                SYSCFG_OTP_UsbDownloadEn
+                0x0000000000024bc8                SYSCFG_OTP_UartDownloadDis
+                0x0000000000024bd8                SYSCFG_OTP_AntiRollback
+                0x0000000000024bec                SYSCFG_OTP_FaultLogDis
+                0x0000000000024c00                SYSCFG_OTP_RSIPMode
+                0x0000000000024c18                SYSCFG_OTP_HUKDerivEn
+                0x0000000000024c2c                SYSCFG_OTP_RomPatchEn
+                0x0000000000024c4c                SYSCFG_OTP_RandDelayEn
+                0x0000000000024c5c                SYSCFG_OTP_RMAMode
+                0x0000000000024c80                SYSCFG_HWTrigDownload
+                0x0000000000024c94                SYSCFG_SWTrigDownload
+                0x0000000000024cb8                SYSTIMER_Init
+                0x0000000000024d04                SYSTIMER_TickGet
+                0x0000000000024d14                SYSTIMER_GetPassTick
+                0x0000000000024d34                SYSTIMER_GetPassTime
+                0x0000000000024d68                RTIM_TimeBaseStructInit
+                0x0000000000024d88                RTIM_Cmd
+                0x0000000000024dac                RTIM_GetCount
+                0x0000000000024dbc                RTIM_INTConfig
+                0x0000000000024e00                RTIM_INTClear
+                0x0000000000024e18                RTIM_TimeBaseInit
+                0x0000000000024f18                RTIM_DeInit
+                0x0000000000024f38                RTIM_INTClearPendingBit
+                0x0000000000024f78                RTIM_GetFlagStatus
+                0x0000000000024ff0                RTIM_GetINTStatus
+                0x0000000000025074                TRNG_Random_Delay
+                0x00000000000250e8                TRNG_Security_Only
+                0x0000000000025134                TRNG_INTConfig
+                0x0000000000025168                TRNG_ClearINT
+                0x0000000000025190                TRNG_GetINT
+                0x00000000000251b4                TRNG_Init
+                0x00000000000251b8                UART_DeInit
+                0x00000000000251c0                UART_StructInit
+                0x00000000000251dc                UART_BaudParaGetFull
+                0x000000000002521c                UART_BaudParaGet
+                0x0000000000025244                UART_SetBaud
+                0x00000000000252f4                UART_SetBaudExt
+                0x0000000000025384                UART_SetRxLevel
+                0x0000000000025394                UART_RxCmd
+                0x00000000000253a8                UART_Writable
+                0x00000000000253b0                UART_Readable
+                0x00000000000253b8                UART_CharPut
+                0x00000000000253bc                UART_CharGet
+                0x00000000000253c4                UART_ReceiveData
+                0x00000000000253ec                UART_SendData
+                0x0000000000025414                UART_ReceiveDataTO
+                0x0000000000025450                UART_SendDataTO
+                0x000000000002548c                UART_RxByteCntClear
+                0x0000000000025498                UART_RxByteCntGet
+                0x00000000000254a0                UART_BreakCtl
+                0x00000000000254b4                UART_ClearRxFifo
+                0x00000000000254d4                UART_Init
+                0x0000000000025570                UART_ClearTxFifo
+                0x000000000002557c                UART_INTConfig
+                0x000000000002558c                UART_INT_Clear
+                0x0000000000025594                UART_IntStatus
+                0x0000000000025598                UART_ModemStatusGet
+                0x000000000002559c                UART_LineStatusGet
+                0x00000000000255a0                UART_WaitBusy
+                0x00000000000255c4                INT_HardFault
+                0x00000000000255e8                INT_MemManage
+                0x000000000002560c                INT_BusFault
+                0x0000000000025630                INT_UsageFault
+                0x0000000000025654                INT_SecureFault
+                0x0000000000025678                INT_HardFault_C
+                0x0000000000025ac8                INT_NMI
+                0x0000000000025c54                irq_table_init
+                0x0000000000025ecc                irq_enable
+                0x0000000000025ee8                irq_disable
+                0x0000000000025f10                irq_set_priority
+                0x0000000000025f70                irq_get_priority
+                0x0000000000025f90                irq_set_pending
+                0x0000000000025fb0                irq_get_pending
+                0x0000000000025fd4                irq_clear_pending
+                0x0000000000025ff4                irq_register
+                0x0000000000026020                irq_unregister
+                0x0000000000026044                FaultPatch_register
+                0x0000000000026054                WDG_Wait_Busy
+                0x0000000000026078                WDG_StructInit
+                0x0000000000026088                WDG_Init
+                0x0000000000026104                WDG_Enable
+                0x000000000002615c                WDG_Timeout
+                0x00000000000261c4                WDG_Refresh
+                0x000000000002621c                WDG_INTConfig
+                0x000000000002628c                WDG_ClearINT
+                0x00000000000262f4                IWDG_LP_Enable
+                0x0000000000026334                DiagVSprintf
+                0x00000000000265e0                DiagPrintf
+                0x0000000000026614                DiagPrintfD
+                0x0000000000026648                DiagSPrintf
+                0x000000000002667c                DiagSnPrintf
+                0x0000000000026a38                cmd_rom_table
+                0x0000000000026a44                _rand
+                0x0000000000026aa0                __wrap_rand
+                0x0000000000026aa4                RandBytes_Get
+                0x0000000000026b90                shell_array_init
+                0x0000000000026b9e                shell_get_argc
+                0x0000000000026bca                shell_get_argv
+                0x0000000000026c10                shell_cmd_chk
+                0x0000000000026ccc                shell_uart_irq_rom
+                0x0000000000026d90                shell_init_rom
+                0x0000000000026e00                shell_task_rom
+                0x0000000000026e98                shell_rom
+                0x0000000000026edc                _char2num
+                0x0000000000026f0c                _2char2dec
+                0x0000000000026f80                _2char2hex
+                0x0000000000027000                _memchr
+                0x0000000000027080                _memcmp
+                0x00000000000270e0                _memcpy
+                0x00000000000271b0                _memmove
+                0x00000000000272a8                _memset
+                0x000000000002734c                _strcmp
+                0x00000000000273d8                _stricmp
+                0x000000000002742c                _strlen
+                0x0000000000027488                _strtoul
+                0x00000000000275b4                _strupr
+                0x00000000000275d0                __wrap_memset
+                0x00000000000275d8                __wrap_memcpy
+                0x00000000000275e0                __wrap_memcmp
+                0x00000000000275e8                __wrap_memchr
+                0x00000000000275f0                __wrap_memmove
+                0x00000000000275f8                __wrap_strlen
+                0x0000000000027600                __wrap_strcmp
+                0x0000000000027608                __wrap_stricmp
+                0x0000000000027610                __wrap_strupr
+                0x0000000000027618                __wrap_strtoul
+                0x0000000000027620                mbedtls_asn1_get_len
+                0x00000000000276b4                mbedtls_asn1_get_tag
+                0x00000000000276dc                mbedtls_asn1_get_bool
+                0x000000000002770c                mbedtls_asn1_get_int
+                0x0000000000027754                mbedtls_asn1_get_mpi
+                0x000000000002777a                mbedtls_asn1_get_bitstring
+                0x00000000000277ba                mbedtls_asn1_get_bitstring_null
+                0x00000000000277e2                mbedtls_asn1_get_sequence_of
+                0x0000000000027864                mbedtls_asn1_get_alg
+                0x00000000000278fa                mbedtls_asn1_get_alg_null
+                0x000000000002792a                mbedtls_asn1_free_named_data
+                0x0000000000027954                mbedtls_asn1_free_named_data_list
+                0x0000000000027978                mbedtls_asn1_find_named_data
+                0x00000000000279a0                mbedtls_asn1_write_len
+                0x0000000000027a88                mbedtls_asn1_write_tag
+                0x0000000000027aa4                mbedtls_asn1_write_raw_buffer
+                0x0000000000027ace                mbedtls_asn1_write_mpi
+                0x0000000000027b50                mbedtls_asn1_write_null
+                0x0000000000027b76                mbedtls_asn1_write_oid
+                0x0000000000027bac                mbedtls_asn1_write_algorithm_identifier
+                0x0000000000027bfe                mbedtls_asn1_write_bool
+                0x0000000000027c48                mbedtls_asn1_write_int
+                0x0000000000027cae                mbedtls_asn1_write_tagged_string
+                0x0000000000027cee                mbedtls_asn1_write_utf8_string
+                0x0000000000027d00                mbedtls_asn1_write_printable_string
+                0x0000000000027d12                mbedtls_asn1_write_ia5_string
+                0x0000000000027d24                mbedtls_asn1_write_bitstring
+                0x0000000000027dae                mbedtls_asn1_write_octet_string
+                0x0000000000027de4                mbedtls_asn1_store_named_data
+                0x000000000002891a                mbedtls_mpi_init
+                0x0000000000028926                mbedtls_mpi_free
+                0x0000000000028954                mbedtls_mpi_grow
+                0x00000000000289ac                mbedtls_mpi_shrink
+                0x0000000000028a20                mbedtls_mpi_copy
+                0x0000000000028a78                mbedtls_mpi_swap
+                0x0000000000028aa4                mbedtls_mpi_safe_cond_assign
+                0x0000000000028b0e                mbedtls_mpi_safe_cond_swap
+                0x0000000000028b90                mbedtls_mpi_lset
+                0x0000000000028bc8                mbedtls_mpi_get_bit
+                0x0000000000028bea                mbedtls_mpi_set_bit
+                0x0000000000028c3c                mbedtls_mpi_lsb
+                0x0000000000028c70                mbedtls_mpi_bitlen
+                0x0000000000028ca6                mbedtls_mpi_size
+                0x0000000000028cb2                mbedtls_mpi_read_binary
+                0x0000000000028d1e                mbedtls_mpi_write_binary
+                0x0000000000028d8a                mbedtls_mpi_shift_l
+                0x0000000000028e2a                mbedtls_mpi_shift_r
+                0x0000000000028e9e                mbedtls_mpi_cmp_abs
+                0x0000000000028f04                mbedtls_mpi_cmp_mpi
+                0x0000000000028f86                mbedtls_mpi_lt_mpi_ct
+                0x0000000000029016                mbedtls_mpi_cmp_int
+                0x0000000000029042                mbedtls_mpi_add_abs
+                0x00000000000290f2                mbedtls_mpi_sub_abs
+                0x000000000002918e                mbedtls_mpi_add_mpi
+                0x00000000000291d2                mbedtls_mpi_sub_mpi
+                0x0000000000029218                mbedtls_mpi_add_int
+                0x0000000000029244                mbedtls_mpi_sub_int
+                0x0000000000029270                mbedtls_mpi_mul_mpi
+                0x0000000000029338                mbedtls_mpi_mul_int
+                0x0000000000029352                mbedtls_mpi_read_string
+                0x0000000000029478                mbedtls_mpi_div_mpi
+                0x000000000002987e                mbedtls_mpi_div_int
+                0x00000000000298a8                mbedtls_mpi_mod_mpi
+                0x000000000002990c                mbedtls_mpi_mod_int
+                0x0000000000029946                mbedtls_mpi_write_string
+                0x0000000000029aec                mbedtls_mpi_exp_mod
+                0x0000000000029f02                mbedtls_mpi_gcd
+                0x000000000002a00a                mbedtls_mpi_fill_random
+                0x000000000002a202                mbedtls_mpi_inv_mod
+                0x000000000002a4ba                mbedtls_mpi_is_prime_ext
+                0x000000000002a514                mbedtls_mpi_is_prime
+                0x000000000002a51e                mbedtls_mpi_gen_prime
+                0x000000000002a730                mbedtls_ecdh_gen_public
+                0x000000000002a764                mbedtls_ecdh_compute_shared
+                0x000000000002a7b8                mbedtls_ecdh_init
+                0x000000000002a800                mbedtls_ecdh_setup
+                0x000000000002a814                mbedtls_ecdh_free
+                0x000000000002a85c                mbedtls_ecdh_make_params
+                0x000000000002a8c4                mbedtls_ecdh_read_params
+                0x000000000002a904                mbedtls_ecdh_get_params
+                0x000000000002a964                mbedtls_ecdh_make_public
+                0x000000000002a9b0                mbedtls_ecdh_read_public
+                0x000000000002a9dc                mbedtls_ecdh_calc_secret
+                0x000000000002ae74                mbedtls_ecdsa_sign
+                0x000000000002ae94                mbedtls_ecdsa_sign_det
+                0x000000000002aeb4                mbedtls_ecdsa_sign_det_ext
+                0x000000000002aec2                mbedtls_ecdsa_verify
+                0x000000000002aec4                mbedtls_ecdsa_write_signature_restartable
+                0x000000000002af6c                mbedtls_ecdsa_write_signature
+                0x000000000002af8c                mbedtls_ecdsa_write_signature_det
+                0x000000000002afaa                mbedtls_ecdsa_read_signature_restartable
+                0x000000000002b048                mbedtls_ecdsa_read_signature
+                0x000000000002b05a                mbedtls_ecdsa_genkey
+                0x000000000002b07e                mbedtls_ecdsa_init
+                0x000000000002b082                mbedtls_ecdsa_free
+                0x000000000002b08a                mbedtls_ecdsa_from_keypair
+                0x000000000002bddc                mbedtls_ecp_group_load
+                0x000000000002cc58                mbedtls_ecp_curve_list
+                0x000000000002cc60                mbedtls_ecp_grp_id_list
+                0x000000000002cc98                mbedtls_ecp_curve_info_from_grp_id
+                0x000000000002ccb0                mbedtls_ecp_curve_info_from_tls_id
+                0x000000000002cccc                mbedtls_ecp_curve_info_from_name
+                0x000000000002ccf8                mbedtls_ecp_point_init
+                0x000000000002cd14                mbedtls_ecp_group_init
+                0x000000000002cd56                mbedtls_ecp_keypair_init
+                0x000000000002cd72                mbedtls_ecp_point_free
+                0x000000000002cd78                mbedtls_ecp_group_free
+                0x000000000002cde4                mbedtls_ecp_keypair_free
+                0x000000000002ce04                mbedtls_ecp_copy
+                0x000000000002ce30                mbedtls_ecp_group_copy
+                0x000000000002ce36                mbedtls_ecp_set_zero
+                0x000000000002d674                mbedtls_ecp_is_zero
+                0x000000000002d686                mbedtls_ecp_point_cmp
+                0x000000000002d6bc                mbedtls_ecp_point_read_string
+                0x000000000002d6e8                mbedtls_ecp_point_write_binary
+                0x000000000002d784                mbedtls_ecp_point_read_binary
+                0x000000000002d7f4                mbedtls_ecp_tls_read_point
+                0x000000000002d824                mbedtls_ecp_tls_write_point
+                0x000000000002d854                mbedtls_ecp_tls_read_group_id
+                0x000000000002d898                mbedtls_ecp_tls_read_group
+                0x000000000002d8b4                mbedtls_ecp_tls_write_group
+                0x000000000002d8ec                mbedtls_ecp_check_pubkey
+                0x000000000002da74                mbedtls_ecp_check_privkey
+                0x000000000002dae8                mbedtls_ecp_mul_restartable
+                0x000000000002e050                mbedtls_ecp_mul
+                0x000000000002e0e2                mbedtls_ecp_muladd_restartable
+                0x000000000002e15c                mbedtls_ecp_muladd
+                0x000000000002e172                mbedtls_ecp_gen_privkey
+                0x000000000002e288                mbedtls_ecp_gen_keypair_base
+                0x000000000002e2bc                mbedtls_ecp_gen_keypair
+                0x000000000002e2d4                mbedtls_ecp_gen_key
+                0x000000000002e2fc                mbedtls_ecp_check_pub_priv
+                0x000000000002e3b0                mbedtls_hmac_drbg_init
+                0x000000000002e3c4                mbedtls_hmac_drbg_update_ret
+                0x000000000002e532                mbedtls_hmac_drbg_update
+                0x000000000002e536                mbedtls_hmac_drbg_seed_buf
+                0x000000000002e582                mbedtls_hmac_drbg_reseed
+                0x000000000002e586                mbedtls_hmac_drbg_seed
+                0x000000000002e5f0                mbedtls_hmac_drbg_set_prediction_resistance
+                0x000000000002e5f4                mbedtls_hmac_drbg_set_entropy_len
+                0x000000000002e5f8                mbedtls_hmac_drbg_set_reseed_interval
+                0x000000000002e5fc                mbedtls_hmac_drbg_random_with_add
+                0x000000000002e6bc                mbedtls_hmac_drbg_random
+                0x000000000002e6cc                mbedtls_hmac_drbg_free
+                0x000000000002e6e8                mbedtls_md5_init
+                0x000000000002e6f0                mbedtls_md5_free
+                0x000000000002e6fa                mbedtls_md5_clone
+                0x000000000002e704                mbedtls_md5_starts_ret
+                0x000000000002e730                mbedtls_md5_starts
+                0x000000000002e734                mbedtls_internal_md5_process
+                0x000000000002ee6c                mbedtls_md5_process
+                0x000000000002ee70                mbedtls_md5_update_ret
+                0x000000000002eeea                mbedtls_md5_update
+                0x000000000002eeee                mbedtls_md5_finish_ret
+                0x000000000002ef9c                mbedtls_md5_finish
+                0x000000000002efa0                mbedtls_md5_ret
+                0x000000000002effc                mbedtls_md5
+                0x000000000002f000                mbedtls_md_list
+                0x000000000002f008                mbedtls_md_info_from_string
+                0x000000000002f084                mbedtls_md_info_from_type
+                0x000000000002f0c0                mbedtls_md_init
+                0x000000000002f0ca                mbedtls_md_free
+                0x000000000002f108                mbedtls_md_clone
+                0x000000000002f130                mbedtls_md_setup
+                0x000000000002f178                mbedtls_md_init_ctx
+                0x000000000002f17e                mbedtls_md_starts
+                0x000000000002f194                mbedtls_md_update
+                0x000000000002f1a8                mbedtls_md_finish
+                0x000000000002f1bc                mbedtls_md
+                0x000000000002f1dc                mbedtls_md_hmac_starts
+                0x000000000002f2a4                mbedtls_md_hmac_update
+                0x000000000002f2c8                mbedtls_md_hmac_finish
+                0x000000000002f328                mbedtls_md_hmac_reset
+                0x000000000002f358                mbedtls_md_hmac
+                0x000000000002f3b0                mbedtls_md_process
+                0x000000000002f3c4                mbedtls_md_get_size
+                0x000000000002f3ca                mbedtls_md_get_type
+                0x000000000002f3d0                mbedtls_md_get_name
+                0x000000000002f4f0                mbedtls_platform_zeroize
+                0x000000000002f500                mbedtls_sha256_init
+                0x000000000002f508                mbedtls_sha256_free
+                0x000000000002f512                mbedtls_sha256_clone
+                0x000000000002f51c                mbedtls_sha256_starts_ret
+                0x000000000002f5c0                mbedtls_sha256_starts
+                0x000000000002f5c4                mbedtls_internal_sha256_process
+                0x000000000002fcc6                mbedtls_sha256_process
+                0x000000000002fcca                mbedtls_sha256_update_ret
+                0x000000000002fd44                mbedtls_sha256_update
+                0x000000000002fd48                mbedtls_sha256_finish_ret
+                0x000000000002fe4e                mbedtls_sha256_finish
+                0x000000000002fe52                mbedtls_sha256_ret
+                0x000000000002fe94                mbedtls_sha256
+                0x000000000002fe98                mbedtls_sha512_init
+                0x000000000002fea0                mbedtls_sha512_free
+                0x000000000002feaa                mbedtls_sha512_clone
+                0x000000000002feb4                mbedtls_sha512_starts_ret
+                0x000000000002ffe8                mbedtls_sha512_starts
+                0x000000000002ffec                mbedtls_internal_sha512_process
+                0x0000000000030b54                mbedtls_sha512_process
+                0x0000000000030b58                mbedtls_sha512_update_ret
+                0x0000000000030bea                mbedtls_sha512_update
+                0x0000000000030bee                mbedtls_sha512_finish_ret
+                0x0000000000030e26                mbedtls_sha512_finish
+                0x0000000000030e2a                mbedtls_sha512_ret
+                0x0000000000030e6c                mbedtls_sha512
+
+.rom.rodata     0x0000000000042000     0x2493
+ .rom.rodata    0x0000000000042000     0x2493 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+                0x0000000000042000                rom_sec_call_ns_entry
+                0x0000000000042000                __rom_entry_ns_start__
+                0x0000000000042010                __rom_entry_ns_end__
+                0x0000000000042064                SPIC_CALIB_PATTERN
+                0x000000000004206c                GPIO_PORTx_S
+                0x0000000000042074                GPIO_PORTx
+                0x0000000000042df4                mbedtls_sha512_info
+                0x0000000000042e24                mbedtls_sha384_info
+                0x0000000000042e54                mbedtls_sha256_info
+                0x0000000000042e84                mbedtls_sha224_info
+                0x0000000000042eb4                mbedtls_md5_info
+
+.hal.rom.bss    0x0000000020004000      0x8e0
+ .hal.rom.bss   0x0000000020004000      0x8e0 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+                0x0000000020004000                __rom_bss_start__
+                0x0000000020004000                ConfigDebugClose
+                0x0000000020004004                ConfigDebug
+                0x0000000020004014                flash_init_para
+                0x000000002000406c                shell_argv_array
+                0x00000000200040ac                shell_rxbuf
+                0x000000002000412c                shell_ctl
+                0x0000000020004144                shell_buf
+                0x00000000200041e0                SHA_OTPKEY
+                0x0000000020004200                crypto_engine
+                0x0000000020004440                crypto_sha_engine
+                0x00000000200046dc                RBSS_UDELAY_CLK
+                0x00000000200046e0                PortA_IrqHandler
+                0x0000000020004760                PortA_IrqData
+                0x00000000200047e0                PortB_IrqHandler
+                0x0000000020004860                PortB_IrqData
+                0x00000000200048e0                __rom_bss_chk__
+                0x00000000200048e0                __rom_bss_end__
+
+.hal.ns_rom.bss
+                0x0000000020005000      0x414
+ .hal.ns_rom.bss
+                0x0000000020005000      0x414 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+                0x0000000020005000                NewVectorTable
+                0x0000000020005000                __rom_bss_start_ns__
+                0x0000000020005180                FaultPatchHandler
+                0x0000000020005184                UserIrqFunTable
+                0x00000000200052c4                UserIrqDataTable
+                0x0000000020005404                p_rom_ssl_ram_map
+                0x0000000020005408                rom_ssl_ram_map
+                0x0000000020005414                __rom_bss_end_ns__
+
+.ram.data       0x0000000000000000        0x0
+ *(.data*)
+ .ram.data      0x0000000000000000        0x0 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.ram.bss        0x0000000000000000        0x0
+ *(.bss*)
+ .ram.bss       0x0000000000000000        0x0 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.rom.text.libgcc
+                0x0000000000000000        0x0
+ *(.text*)
+ *(.rodata*)
+ .rom.text.libgcc
+                0x0000000000000000        0x0 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+                [!provide]                        PROVIDE (__rom_stdlib_text_start__ = 0x33000)
+                [!provide]                        PROVIDE (stdlib_loguart_relocation = 0x337bd)
+                [!provide]                        PROVIDE (_atoi = 0x337c9)
+                [!provide]                        PROVIDE (_stratoi = 0x337c9)
+                [!provide]                        PROVIDE (__wrap_atoi = 0x337c9)
+                [!provide]                        PROVIDE (__wrap_stratoi = 0x337c9)
+                [!provide]                        PROVIDE (__wrap_printf = 0x337f5)
+                [!provide]                        PROVIDE (_printf = 0x337f5)
+                [!provide]                        PROVIDE (__wrap_putchar = 0x3381f)
+                [!provide]                        PROVIDE (_putchar = 0x3381f)
+                [!provide]                        PROVIDE (__wrap_puts = 0x33935)
+                [!provide]                        PROVIDE (_puts = 0x33935)
+                [!provide]                        PROVIDE (__wrap_snprintf = 0x339a3)
+                [!provide]                        PROVIDE (_snprintf = 0x339a3)
+                [!provide]                        PROVIDE (__wrap_sprintf = 0x33a41)
+                [!provide]                        PROVIDE (_sprintf = 0x33a41)
+                [!provide]                        PROVIDE (__wrap_sscanf = 0x33a81)
+                [!provide]                        PROVIDE (_sscanf = 0x33a81)
+                [!provide]                        PROVIDE (__wrap_strcat = 0x33bb7)
+                [!provide]                        PROVIDE (_strcat = 0x33bb7)
+                [!provide]                        PROVIDE (__wrap_strchr = 0x33be9)
+                [!provide]                        PROVIDE (_strchr = 0x33be9)
+                [!provide]                        PROVIDE (__wrap_strcpy = 0x33c75)
+                [!provide]                        PROVIDE (_strcpy = 0x33c75)
+                [!provide]                        PROVIDE (__wrap_strncat = 0x33d8d)
+                [!provide]                        PROVIDE (_strncat = 0x33d8d)
+                [!provide]                        PROVIDE (__wrap_strncmp = 0x33dcf)
+                [!provide]                        PROVIDE (_strncmp = 0x33dcf)
+                [!provide]                        PROVIDE (__wrap_strncpy = 0x33e2b)
+                [!provide]                        PROVIDE (_strncpy = 0x33e2b)
+                [!provide]                        PROVIDE (__wrap_strpbrk = 0x33e7f)
+                [!provide]                        PROVIDE (_strpbrk = 0x33e7f)
+                [!provide]                        PROVIDE (__wrap_strsep = 0x33eb3)
+                [!provide]                        PROVIDE (_strsep = 0x33eb3)
+                [!provide]                        PROVIDE (__wrap_strstr = 0x340d7)
+                [!provide]                        PROVIDE (_strstr = 0x340d7)
+                [!provide]                        PROVIDE (__wrap_strtok = 0x34215)
+                [!provide]                        PROVIDE (_strtok = 0x34215)
+                [!provide]                        PROVIDE (__wrap_strtol = 0x34395)
+                [!provide]                        PROVIDE (_strtol = 0x34395)
+                [!provide]                        PROVIDE (__wrap_vsnprintf = 0x37fd7)
+                [!provide]                        PROVIDE (_vsnprintf = 0x37fd7)
+                [!provide]                        PROVIDE (__rom_stdlib_text_end__ = 0x40a40)
+                [!provide]                        PROVIDE (__rom_stdlib_data_start__ = 0x20006000)
+                [!provide]                        PROVIDE (__rom_stdlib_data_end__ = 0x200069ae)
+                [!provide]                        PROVIDE (__rom_stdlib_bss_start__ = 0x200069c0)
+                [!provide]                        PROVIDE (rom_customer_log = 0x200069c0)
+                [!provide]                        PROVIDE (__rom_stdlib_bss_end__ = 0x20006a14)
+                [!provide]                        PROVIDE (__rom_stdlib_heap_start__ = 0x20006a20)
+OUTPUT(target_rom_ns.axf elf32-littlearm)
+LOAD linker stubs
+
+.rel.dyn        0x0000000000000000        0x0
+ .rel.iplt      0x0000000000000000        0x0 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.ram_retention.entry
+                0x0000000000000000        0x0
+ .ram_retention.entry
+                0x0000000000000000        0x0 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.comment        0x0000000000000000       0x36
+ .comment       0x0000000000000000       0x36 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+                                        0xc3f (size before relaxing)
+
+.ARM.attributes
+                0x0000000000000000       0x3e
+ .ARM.attributes
+                0x0000000000000000       0x3e /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.debug_info     0x0000000000000000    0x323cf
+ .debug_info    0x0000000000000000    0x323cf /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.debug_abbrev   0x0000000000000000     0x798f
+ .debug_abbrev  0x0000000000000000     0x798f /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.debug_loc      0x0000000000000000    0x2aeb6
+ .debug_loc     0x0000000000000000    0x2aeb6 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.debug_aranges  0x0000000000000000     0x13c0
+ .debug_aranges
+                0x0000000000000000     0x13c0 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.debug_ranges   0x0000000000000000     0x2d80
+ .debug_ranges  0x0000000000000000     0x2d80 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.debug_line     0x0000000000000000    0x28b6c
+ .debug_line    0x0000000000000000    0x28b6c /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+.debug_str      0x0000000000000000     0x8630
+ .debug_str     0x0000000000000000     0x8630 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+                                      0x147cd (size before relaxing)
+
+.debug_frame    0x0000000000000000     0x5008
+ .debug_frame   0x0000000000000000     0x5008 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+
+Cross Reference Table
+
+Symbol                                            File
+BKUP_Clear                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+BKUP_Read                                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+BKUP_Set                                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+BKUP_Write                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CPU_ClkGet                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_CipherDecryptAD                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_CipherEncryptAD                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_CipherInit                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_CleanCmdOk                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_ClearAllINT                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_Init                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_MemDump                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_OTPKey_Init                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_OTPKey_SHA_Init                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_ProcessAD                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_Reset                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_SHA_Init                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_SHA_Reset                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_SendSeqBuf                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_SetCmdBuf                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_SetDstDesc                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_SetSecurityModeAD                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_SetSrcDesc                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+CRYPTO_SrcDescKeyIv                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+ConfigDebug                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+ConfigDebugClose                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+DelayClkUpdate                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+DelayMs                                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+DelayNop                                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+DelayUs                                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+DiagPrintf                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+DiagPrintfD                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+DiagSPrintf                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+DiagSnPrintf                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+DiagVSprintf                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+EFUSE_GetBDNum                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+EFUSE_GetChipVersion                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+EFUSE_GetESFlag                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+EFUSE_GetPackageInfo                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+EFUSE_GetUUID                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+EFUSE_Get_Info                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_Addr4ByteDis                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_Addr4ByteEn                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_Config                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_DeepPowerDown                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_Erase                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_Init                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_RxCmd                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_RxCmd_InUserMode                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_RxData                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_SetSpiMode                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_SetStatus                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_SetStatusBits                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_StructInit                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_StructInit_GD                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_StructInit_MXIC                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_StructInit_Micron                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_TxCmd_InUserMode                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_TxData                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_UserMode_Enter                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_UserMode_Exit                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_WaitBusy_InUserMode                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_Wait_Boot_Finish                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FLASH_WriteEn_InUserMode                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FaultPatchHandler                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+FaultPatch_register                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_DeInit                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_DebounceClock                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_Direction                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_INTConfig                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_INTHandler                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_INTMode                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_Init                                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_LevelSync                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_ODInit                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_ODWriteBit                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_PORTx                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_PORTx_S                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_PortDirection                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_PortRead                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_PortWrite                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_ReadDataBit                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_UserRegIrq                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+GPIO_WriteBit                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+INT_BusFault                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+INT_HardFault                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+INT_HardFault_C                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+INT_MemManage                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+INT_NMI                                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+INT_SecureFault                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+INT_UsageFault                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+IPC_SEMFree                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+IPC_SEMTake                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+IWDG_LP_Enable                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_AGGCmd                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_AGGPathAllCmd                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_AGGPathCmd                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_AGGSetSyncPattern                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_AGGSetThreshold                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_AGGSetTimeOut                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_BT_SendData                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_ClearRxFifo                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_DiagInit                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_GetChar                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_GetIMR                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_GetRxCount                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_GetStatus                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_INTClear                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_INTConfig                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_INTCoreConfig                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_Init                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_LPBaudSet                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_MonitorParaConfig                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_PutChar                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_Readable                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_Relay_ClearRxFifo                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_Relay_LPSetBaud                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_Relay_RxCmd                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_Relay_SetBaud                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_Relay_SetFormat                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_Relay_StructInit                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_RxCmd                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_RxMonBaudCtrlRegGet                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_RxMonitorCmd                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_RxMonitorSatusGet                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_SetBaud                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_SetIMR                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_StructInit                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_WaitBusy                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_WaitTx                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+LOGUART_WaitTxComplete                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+NewVectorTable                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTPGetCRC                                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTPPowerSwitch                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_AccessCmd                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_GetPowerState                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_LogicalMap_Read                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_LogicalMap_Write                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_PG_Packet_Byte                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_PG_Packet_Word                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_PowerCmd                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_ProgramMarginRead8                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_Read32                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_Read8                                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_RemainLength                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+OTP_Write8                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PAD_CMD                                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PAD_DrvStrength                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PAD_InputCtrl                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PAD_PullCtrl                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PAD_ResistorCtrl                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PAD_SchmitCtrl                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PAD_SleepPullCtrl                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PAD_SlewRateCtrl                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PAD_SpicCtrl                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PLL_ClkGet                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+Pinmux_BootSpicCtrl                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+Pinmux_ComboSpicCtrl                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+Pinmux_Config                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+Pinmux_ConfigGet                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+Pinmux_Swdoff                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+Pinmux_UartLogCtrl                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PortA_IrqData                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PortA_IrqHandler                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PortB_IrqData                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+PortB_IrqHandler                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RBSS_UDELAY_CLK                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RCC_PeriphClockCmd                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RCC_PeriphClockSource_ADC                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RCC_PeriphClockSource_CTC                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RCC_PeriphClockSource_GPIO                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RCC_PeriphClockSource_LOGUART                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RCC_PeriphClockSource_PSRAM                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RCC_PeriphClockSource_SPIC                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RCC_PeriphClockSource_SPORT                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RCC_PeriphClockSource_UART                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RSIP_IV_Set                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RSIP_MMU_Cache_Clean                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RSIP_MMU_Cmd                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RSIP_MMU_Config                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RSIP_OTF_Cmd                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RSIP_OTF_Enable                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RSIP_OTF_Load_Key                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RSIP_OTF_init                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RTIM_Cmd                                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RTIM_DeInit                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RTIM_GetCount                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RTIM_GetFlagStatus                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RTIM_GetINTStatus                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RTIM_INTClear                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RTIM_INTClearPendingBit                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RTIM_INTConfig                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RTIM_TimeBaseInit                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RTIM_TimeBaseStructInit                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+RandBytes_Get                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SHA_OTPKEY                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SPIC_CALIB_PATTERN                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_CHIPType_Get                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_GetRLNum                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_HWTrigDownload                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_AntiRollback                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_BOOT_CNT_LMT_EN                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_BootFlashBaud                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_BootMCMFlash                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_DisBootLog                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_FaultLogDis                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_FlashDSleepEn                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_HUKDerivEn                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_LowBaudLog                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_RDPEn                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_RMAMode                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_RSIPEn                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_RSIPMode                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_RandDelayEn                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_RomPatchEn                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_SBootEn                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_SPICAddr4ByteEn                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_SPICBootSpeedUpDis                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_UartDownloadDis                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_UsbClockCalEn                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_OTP_UsbDownloadEn                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_RLVersion                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_ROMINFO_Get                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_ROMINFO_Set                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_SWTrigDownload                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_TRP_ICFG                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_TRP_OTPBYP                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_TRP_TestMode                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSCFG_TRP_UARTImage                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSTIMER_GetPassTick                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSTIMER_GetPassTime                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSTIMER_Init                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+SYSTIMER_TickGet                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+TRNG_ClearINT                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+TRNG_GetINT                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+TRNG_INTConfig                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+TRNG_Init                                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+TRNG_Random_Delay                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+TRNG_Security_Only                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_BaudParaGet                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_BaudParaGetFull                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_BreakCtl                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_CharGet                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_CharPut                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_ClearRxFifo                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_ClearTxFifo                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_DeInit                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_INTConfig                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_INT_Clear                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_Init                                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_IntStatus                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_LineStatusGet                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_ModemStatusGet                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_Readable                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_ReceiveData                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_ReceiveDataTO                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_RxByteCntClear                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_RxByteCntGet                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_RxCmd                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_SendData                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_SendDataTO                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_SetBaud                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_SetBaudExt                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_SetRxLevel                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_StructInit                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_WaitBusy                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UART_Writable                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UserIrqDataTable                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+UserIrqFunTable                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+WDG_ClearINT                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+WDG_Enable                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+WDG_INTConfig                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+WDG_Init                                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+WDG_Refresh                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+WDG_StructInit                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+WDG_Timeout                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+WDG_Wait_Busy                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+XTAL_ClkGet                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_2char2dec                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_2char2hex                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_CPU_ClkSet                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_CPU_ClkSrcSet                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_LOGUART_Init                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_OTP_Write8                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__km0_flash_text_start__                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__km0_image2_entry_func__                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__km0_ipc_memory_start__                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__km0_psram_text_start__                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__km4_boot_text_start__                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__km4_flash_text_start__                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__km4_image3_flash_start__                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__nspe_phy_addr__                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__retention_entry_func__                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__rom_bss_chk__                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__rom_bss_end__                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__rom_bss_end_ns__                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__rom_bss_start__                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__rom_bss_start_ns__                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__rom_entry_ns_end__                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__rom_entry_ns_start__                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__wrap_memchr                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__wrap_memcmp                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__wrap_memcpy                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__wrap_memmove                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__wrap_memset                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__wrap_rand                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__wrap_strcmp                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__wrap_stricmp                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__wrap_strlen                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__wrap_strtoul                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+__wrap_strupr                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_char2num                                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_memchr                                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_memcmp                                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_memcpy                                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_memmove                                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_memset                                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_rand                                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_strcmp                                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_stricmp                                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_strlen                                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_strtoul                                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+_strupr                                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+clear_ns_rom_bss                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+cmd_rom_table                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+crypto_engine                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+crypto_sha_engine                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+flash_init_para                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+hash_restore                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+hash_save                                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+io_assert_failed                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+irq_clear_pending                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+irq_disable                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+irq_enable                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+irq_get_pending                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+irq_get_priority                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+irq_register                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+irq_set_pending                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+irq_set_priority                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+irq_table_init                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+irq_unregister                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_find_named_data                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_free_named_data                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_free_named_data_list                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_get_alg                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_get_alg_null                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_get_bitstring                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_get_bitstring_null                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_get_bool                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_get_int                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_get_len                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_get_mpi                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_get_sequence_of                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_get_tag                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_store_named_data                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_algorithm_identifier           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_bitstring                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_bool                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_ia5_string                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_int                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_len                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_mpi                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_null                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_octet_string                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_oid                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_printable_string               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_raw_buffer                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_tag                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_tagged_string                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_asn1_write_utf8_string                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdh_calc_secret                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdh_compute_shared                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdh_free                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdh_gen_public                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdh_get_params                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdh_init                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdh_make_params                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdh_make_public                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdh_read_params                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdh_read_public                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdh_setup                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_free                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_from_keypair                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_genkey                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_init                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_read_signature                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_read_signature_restartable          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_sign                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_sign_det                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_sign_det_ext                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_verify                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_write_signature                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_write_signature_det                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecdsa_write_signature_restartable         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_check_privkey                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_check_pub_priv                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_check_pubkey                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_copy                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_curve_info_from_grp_id                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_curve_info_from_name                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_curve_info_from_tls_id                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_curve_list                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_gen_key                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_gen_keypair                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_gen_keypair_base                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_gen_privkey                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_group_copy                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_group_free                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_group_init                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_group_load                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_grp_id_list                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_is_zero                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_keypair_free                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_keypair_init                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_mul                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_mul_restartable                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_muladd                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_muladd_restartable                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_point_cmp                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_point_free                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_point_init                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_point_read_binary                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_point_read_string                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_point_write_binary                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_set_zero                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_tls_read_group                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_tls_read_group_id                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_tls_read_point                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_tls_write_group                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_ecp_tls_write_point                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_free                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_init                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_random                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_random_with_add                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_reseed                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_seed                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_seed_buf                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_set_entropy_len                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_set_prediction_resistance       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_set_reseed_interval             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_update                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_hmac_drbg_update_ret                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_internal_md5_process                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_internal_sha256_process                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_internal_sha512_process                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md                                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_clone                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_finish                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_finish_ret                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_free                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_info                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_init                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_process                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_ret                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_starts                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_starts_ret                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_update                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md5_update_ret                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_clone                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_finish                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_free                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_get_name                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_get_size                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_get_type                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_hmac                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_hmac_finish                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_hmac_reset                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_hmac_starts                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_hmac_update                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_info_from_string                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_info_from_type                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_init                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_init_ctx                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_list                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_process                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_setup                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_starts                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_md_update                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_add_abs                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_add_int                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_add_mpi                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_bitlen                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_cmp_abs                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_cmp_int                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_cmp_mpi                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_copy                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_div_int                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_div_mpi                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_exp_mod                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_fill_random                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_free                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_gcd                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_gen_prime                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_get_bit                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_grow                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_init                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_inv_mod                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_is_prime                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_is_prime_ext                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_lsb                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_lset                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_lt_mpi_ct                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_mod_int                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_mod_mpi                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_mul_int                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_mul_mpi                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_read_binary                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_read_string                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_safe_cond_assign                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_safe_cond_swap                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_set_bit                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_shift_l                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_shift_r                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_shrink                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_size                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_sub_abs                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_sub_int                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_sub_mpi                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_swap                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_write_binary                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_mpi_write_string                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_platform_zeroize                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha224_info                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_clone                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_finish                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_finish_ret                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_free                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_info                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_init                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_process                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_ret                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_starts                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_starts_ret                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_update                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha256_update_ret                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha384_info                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_clone                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_finish                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_finish_ret                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_free                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_info                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_init                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_process                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_ret                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_starts                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_starts_ret                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_update                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+mbedtls_sha512_update_ret                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+md_hash_restore                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+md_hash_save                                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+p_rom_ssl_ram_map                                 /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rom_sec_call_ns_entry                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rom_ssl_ram_map                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_cbc_decrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_cbc_encrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_cbc_init                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_cfb_decrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_cfb_encrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_cfb_init                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_ctr_decrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_ctr_encrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_ctr_init                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_ecb_decrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_ecb_encrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_ecb_init                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_gcm_decrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_gcm_encrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_gcm_init                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_ofb_decrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_ofb_encrypt                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_aes_ofb_init                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_md5                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_md5_final                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_md5_init                          /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_md5_process                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_md5_update                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_md5_update_rom                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha1                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha1_final                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha1_init                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha1_process                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha1_update                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha1_update_rom                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha2                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha2_final                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha2_init                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha2_process                      /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha2_update                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_hmac_sha2_update_rom                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_md5                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_md5_final                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_md5_init                               /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_md5_process                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_md5_update                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_md5_update_rom                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha1                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha1_final                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha1_init                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha1_process                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha1_update                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha1_update_rom                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha2                                   /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha2_final                             /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha2_init                              /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha2_process                           /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha2_update                            /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+rtl_crypto_sha2_update_rom                        /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_argv_array                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_array_init                                  /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_buf                                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_cmd_chk                                     /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_ctl                                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_get_argc                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_get_argv                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_init_rom                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_rom                                         /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_rxbuf                                       /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_task_rom                                    /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)
+shell_uart_irq_rom                                /home/zjian_zhang/Dplus_Z/project/realtek_amebaDplus_va0_example/GCC-RELEASE/project_km4/asdk/lib/rl6845_rom_bcut/rom_ns.a(rom_ns.o)

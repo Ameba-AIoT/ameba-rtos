@@ -1,0 +1,43 @@
+ENTRY(Reset_Handler)
+
+INCLUDE "../../ameba_layout.ld"
+
+SECTIONS
+{
+	.rom.text : { } > KM4_IROM
+	.rom.rodata : { } > KM4_DROM
+	.hal.rom.bss : { } > KM4_ROMBSS_RAM_COM
+	.hal.s_rom.bss : { } > KM4_ROMBSS_RAM_S
+
+	/* image1 entry, this section should in RAM and fixed address for ROM */
+	.ram_image1.entry :
+	{
+		__ram_start_table_start__ = .;
+		KEEP(*(SORT(.image1.entry.data*)))
+		KEEP(*(.image1.validate.rodata*))
+	} > KM4_BOOTLOADER_RAM_S
+
+	/* NS func entry, this section should in NS_ROM and fixed address for S_ROM */
+	.ns_rom.rodata :
+	{
+		__rom_entry_ns_start__ = ABSOLUTE(.);
+	} > KM4_DROM_NS
+
+	/* data & bss should have not any content */
+	.ram.data :
+	{
+		KEEP(*(.data*))
+	} > EMPTY_SECTION
+
+	.ram.bss :
+	{
+		KEEP(*(.bss*))
+	} > EMPTY_SECTION
+
+	/* should not any content in toolchain */
+	.rom.text.libgcc :
+	{
+		KEEP(*(.text*))
+		KEEP(*(.rodata*))
+	} > EMPTY_SECTION
+}

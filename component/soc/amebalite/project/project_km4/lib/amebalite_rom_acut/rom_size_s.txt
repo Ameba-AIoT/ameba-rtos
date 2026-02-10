@@ -1,0 +1,93 @@
+
+=============================================================
+      text       data        bss      total filename
+         0          0          0          0 ameba_vectors_km4.o
+         0          0          0          0 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+      2744       2198          0       4942 ameba_vector_rom.o
+        32         54          0         86 ameba_assert_rom.o
+       168         47          0        215 ameba_backup_reg.o
+       292         64          0        356 ameba_clk_rom.o
+       152          4          0        156 ameba_delay_rom.o
+      2560        140          0       2700 ameba_flash_rom.o
+      1580        365          0       1945 ameba_flashclk_rom.o
+      1288        627          0       1915 ameba_gpio_rom.o
+      2144        192          0       2336 ameba_loguart_rom.o
+       928         19          0        947 ameba_pinmux_rom.o
+       656         16          0        672 ameba_rcc_rom.o
+       628          0          0        628 ameba_syscfg_rom.o
+       172          0          0        172 ameba_systimer_rom.o
+      3092        154          0       3246 ameba_tim_rom.o
+       336         53          0        389 ameba_trng.o
+      1036         10          0       1046 ameba_uart_rom.o
+      1092        135          0       1227 ameba_wdg.o
+     18900       4078          0      22978 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+      4612        463          0       5075 ameba_boot_rom.o
+      1308          0          0       1308 ameba_secure_boot.o
+      1624        148          0       1772 ameba_aes.o
+      6732       1895          0       8627 ameba_crypto_rom.o
+      2228        928          0       3156 ameba_ecdsa.o
+      1616        174          0       1790 ameba_md5.o
+       340         16          0        356 ameba_otf_rom.o
+      4052        327          0       4379 ameba_sha.o
+     22512       3951          0      26463 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       212        296          0        508 monitor_rom.o
+      1020        399          0       1419 shell_rom.o
+      1232        695          0       1927 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+      1564         37          0       1601 diag.o
+       164          0          0        164 memset.o
+       296          0          0        296 rand.o
+       208          0          0        208 memcpy.o
+        96          0          0         96 memcmp.o
+       128          0          0        128 memchr.o
+       248          0          0        248 memmove.o
+       124          0          0        124 strcmp.o
+        92          0          0         92 strlen.o
+        84          0          0         84 stricmp.o
+        28          0          0         28 strupr.o
+       300          0          0        300 strtoul.o
+       292          0          0        292 char2num.o
+        80          0          0         80 strwrap.o
+      3704         37          0       3741 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+      1904        501          0       2405 xmodem_rom.o
+       412         29          0        441 xmodem_uart_rom.o
+       612         79          0        691 xmodem_update_rom.o
+      2928        609          0       3537 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+         4          0          0          4 boot_rom_homekit_ed25519.o
+       510          0          0        510 boot_rom_homekit_ed25519_open.o
+      7444       1080          0       8524 boot_rom_homekit_ed25519_ge_fe.o
+      3966          0          0       3966 boot_rom_homekit_ed25519_sc.o
+       538          0          0        538 rom_homekit_sha512.o
+     12462       1080          0      13542 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       896          0          0        896 mbedtls_rom_asn1parse.o
+      1308          0          0       1308 mbedtls_rom_asn1write.o
+     10360        689          0      11049 mbedtls_rom_bignum.o
+       788          0          0        788 mbedtls_rom_ecdh.o
+      1664         17          0       1681 mbedtls_rom_ecdsa.o
+      8700        288          0       8988 mbedtls_rom_ecp.o
+      4336       2284          0       6620 mbedtls_rom_ecp_curves.o
+       822          0          0        822 mbedtls_rom_hmac_drbg.o
+      1028         69          0       1097 mbedtls_rom_md.o
+       360        325          0        685 mbedtls_rom_md_wrap.o
+      2328          0          0       2328 mbedtls_rom_md5.o
+      4208          0          0       4208 mbedtls_rom_sha1.o
+      2456        256          0       2712 mbedtls_rom_sha256.o
+      4096        640          0       4736 mbedtls_rom_sha512.o
+        16          0          0         16 mbedtls_rom_platform_util.o
+         0         68          0         68 rom_ssl_ram_map.o
+     43366       4636          0      48002 (TOTALS)
+=============================================================
+    105104      15086          0     120190 (AUTO_TOTALS)

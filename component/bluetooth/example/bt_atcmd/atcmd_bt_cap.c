@@ -895,23 +895,29 @@ static const cmd_table_t cap_commander_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_cap_cmd(int argc, char *argv[])
+void fBLECAP(u16 argc, char *argv[])
 {
-	int ret = 0;
 	char tag[80] = "[AT+BLECAP]";
+
+	if (argc < 2) {
+		BT_LOGE("[%s]Error: Atcmd has too few params!!!\r\n", __func__);
+		return;
+	}
+
+	argc -= 1;
+	argv = &argv[1];
+
 	if (strcmp(argv[0], "initiator") == 0) {
 		strcat(tag, "[initiator]");
-		ret = atcmd_bt_excute(argc - 1, &argv[1], cap_initiator_cmd_table, tag);
+		atcmd_bt_excute(argc - 1, &argv[1], cap_initiator_cmd_table, tag);
 	} else if (strcmp(argv[0], "acceptor") == 0) {
 		strcat(tag, "[acceptor]");
-		ret = atcmd_bt_excute(argc - 1, &argv[1], cap_acceptor_cmd_table, tag);
+		atcmd_bt_excute(argc - 1, &argv[1], cap_acceptor_cmd_table, tag);
 	} else if (strcmp(argv[0], "commander") == 0) {
 		strcat(tag, "[commander]");
-		ret = atcmd_bt_excute(argc - 1, &argv[1], cap_commander_cmd_table, tag);
+		atcmd_bt_excute(argc - 1, &argv[1], cap_commander_cmd_table, tag);
 	} else {
 		BT_LOGE("[%s]Error: cap do not support %s\r\n", __func__, argv[0]);
-		ret = -1;
 	}
-	return ret;
 }
 #endif

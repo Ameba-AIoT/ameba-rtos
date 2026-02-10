@@ -58,7 +58,6 @@ ameba_list_append(private_sources
     ameba_psram.c
     ameba_flash_ram.c
     ameba_captouch.c
-    ameba_gdma_memcpy.c
     ameba_bor.c
     ameba_thermal.c
     ameba_clk.c

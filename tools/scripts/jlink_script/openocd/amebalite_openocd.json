@@ -18,10 +18,10 @@
                 "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
             ],
             "add-symbol-file": [
-                "amebalite_gcc_project/project_km4/asdk/image/target_loader.axf",
-                "amebalite_gcc_project/project_km4/asdk/lib/amebalite_rom_acut/target_rom.axf",
-                "amebalite_gcc_project/project_km4/asdk/lib/amebalite_rom_acut/target_rom_ns.axf",
-                "amebalite_gcc_project/project_km4/asdk/lib/amebalite_rom_acut/target_stdlib.axf"
+                "build_${socSelection}/build/project_km4/image/target_loader.axf",
+                "component/soc/amebalite/project/project_km4/lib/amebalite_rom_acut/target_rom.axf",
+                "component/soc/amebalite/project/project_km4/lib/amebalite_rom_acut/target_rom_ns.axf",
+                "component/soc/amebalite/project/project_km4/lib/amebalite_rom_acut/target_stdlib.axf"
             ]
         },
         "overrideCommands": [

@@ -277,7 +277,7 @@ static const cmd_table_t hfp_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_hfp_cmd(int argc, char *argv[])
+void fBTHFP(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, hfp_cmd_table, "[AT+BTHFP]");
+	atcmd_bt_excute(argc - 1, &argv[1], hfp_cmd_table, "[AT+BTHFP]");
 }

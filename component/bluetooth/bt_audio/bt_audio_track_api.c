@@ -56,7 +56,15 @@ void *rtk_bt_audio_track_init(uint32_t channels,
 		/* mixer period size is config within ameba_audio_mixer_usrcfg.cpp */
 		/* passthrough has no period size concept */
 		if (duration) {
+#if defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
+			/* For Mixer, buffer bytes means whole size of buffer space */
+			/* DMA tranfer will start when total number of return bytes of AudioTrack_Write() exceed AudioTrack_GetStartThresholdBytes() */
 			track_buf_size = (duration * ((rate / 1000) * channels * (bits / 8)) / 1000) * 6;
+#else
+			/* For passthrough, buffer bytes means "peirod size" of DMA */
+			/* DMA tranfer will start when total number of return bytes of AudioTrack_Write() exceed buffer bytes */
+			track_buf_size = (duration * ((rate / 1000) * channels * (bits / 8)) / 1000);
+#endif
 		} else {
 			track_buf_size = AudioTrack_GetMinBufferBytes(audio_track, AUDIO_CATEGORY_MEDIA, rate, format, channels) * 3;
 			//track_buf_size = 22608;

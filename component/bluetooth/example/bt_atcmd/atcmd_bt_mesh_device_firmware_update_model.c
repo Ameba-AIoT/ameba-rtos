@@ -285,10 +285,9 @@ static const cmd_table_t mesh_dfu_model_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_mesh_device_firmware_update(int argc, char *argv[])
+void fBLEMESHDFU(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_dfu_model_cmd_table, "[AT+BLEMESHDFU]");
-	return 0;
+	atcmd_bt_excute(argc - 1, &argv[1], mesh_dfu_model_cmd_table, "[AT+BLEMESHDFU]");
 }
 
 #endif  // RTK_BLE_MESH_SUPPORT

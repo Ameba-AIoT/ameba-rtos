@@ -325,7 +325,7 @@ static const cmd_table_t vendor_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_vendor(int argc, char *argv[])
+void fBTVENDOR(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, vendor_table, "[AT+BTVENDOR]");
+	atcmd_bt_excute(argc - 1, &argv[1], vendor_table, "[AT+BTVENDOR]");
 }

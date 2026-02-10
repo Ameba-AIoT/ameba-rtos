@@ -1,0 +1,1881 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+KM4_IROM         0x0000000000000000 0x000000000001e000 xr
+KM4_IROM_NS      0x000000000001e000 0x0000000000016000 xr
+KM4_IROM_STDLIB_NS 0x0000000000034000 0x000000000000d000 xr
+KM4_DROM_NS      0x0000000000041000 0x0000000000004000 xr
+KM4_DROM         0x0000000000045000 0x0000000000003000 xr
+KM4_ROMBSS_RAM_S 0x0000000030007000 0x0000000000001000 rw
+KM4_MSP_RAM_S    0x0000000030008000 0x0000000000002000 rw
+KM4_BOOTLOADER_RAM_S 0x000000003000a020 0x0000000000005fe0 xrw
+KM4_FLOADER_RAM_S 0x000000003000a020 0x0000000000015fe0 xrw
+KM4_BD_RAM_NSC   0x000000006015b020 0x0000000000000fe0 xrw
+KM4_BD_RAM_ENTRY 0x000000006015c000 0x0000000000004000 xrw
+KM4_BD_RAM_S     0x0000000070160020 0x000000000001ffe0 xrw
+KM4_MSP_RAM_NS   0x0000000020003000 0x0000000000001000 rw
+KM4_ROMBSS_RAM_COM 0x0000000020004000 0x0000000000001000 rw
+KM4_ROMBSS_RAM_NS 0x0000000020005000 0x0000000000001000 rw
+KM4_STDLIB_HEAP_RAM_NS 0x0000000020006000 0x0000000000001000 rw
+KM4_BD_RAM       0x0000000020010020 0x000000000001ffe0 xrw
+DSP_BD_RAM       0x0000000020030020 0x000000000000ffe0 xrw
+KR4_BD_RAM       0x0000000020040020 0x000000000001fce0 xrw
+KR4_IPC_RAM      0x000000002005fd00 0x0000000000000300 xrw
+KM4_AUDIO_BUFFER 0x0000000020060000 0x0000000000020000 rw
+DSP_TCM          0x0000000020080020 0x000000000003ffe0 xrw
+KM4_BD_PSRAM_NS_TZ 0x0000000060000020 0x000000000015afe0 xrw
+KM4_BD_PSRAM_NS_NTZ 0x0000000060000020 0x000000000017ffe0 xrw
+KR4_BD_PSRAM     0x0000000060180020 0x000000000017ffe0 xrw
+DSP_BD_PSRAM     0x0000000060300020 0x00000000004fffe0 xrw
+EXTENTION_SRAM   0x0000000022000000 0x0000000000000000 xrw
+RETENTION_RAM    0x0000000021020000 0x0000000000000200 xrw
+KR4_IROM         0x0000000000000000 0x000000000001c000 xr
+KR4_IROM_STDLIB  0x000000000001c000 0x0000000000011000 xr
+KR4_DROM         0x000000000002d000 0x0000000000003000 xr
+KR4_ROMBSS_RAM   0x0000000020000000 0x0000000000001000 rw
+KR4_MSP_RAM      0x0000000020001000 0x0000000000001000 rw
+KR4_STDLIB_HEAP_RAM 0x0000000020002000 0x0000000000001000 rw
+PHY_IMG1         0x0000000008001020 0x0000000000005fe0 xr
+KM4_BOOT         0x000000000f800020 0x00000000007fffe0 xr
+PHY_IMG2         0x0000000008014000 0x00000000001cc000 xr
+KM4_IMG3         0x00000000081e0000 0x0000000000020000 xr
+KR4_IMG2         0x000000000c000020 0x0000000001ffffe0 xr
+KM4_IMG2         0x000000000e000020 0x00000000017fffe0 xr
+BTRACE           0x0000000010000020 0x0000000000ffffe0 xr
+DSP_IROM         0x0000000000000000 0x0000000000000400 xr
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+                0x0000000000034000                __rom_stdlib_text_start__ = ORIGIN (KM4_IROM_STDLIB_NS)
+                0x0000000020040020                __kr4_image2_entry_func__ = ORIGIN (KR4_BD_RAM)
+                0x000000002005fd00                __kr4_ipc_memory_start__ = ORIGIN (KR4_IPC_RAM)
+                0x000000000c000020                __kr4_flash_text_start__ = ORIGIN (KR4_IMG2)
+                0x000000000e000020                __km4_flash_text_start__ = ORIGIN (KM4_IMG2)
+                0x0000000060180020                __kr4_psram_text_start__ = ORIGIN (KR4_BD_PSRAM)
+                0x000000000f800020                __km4_boot_text_start__ = ORIGIN (KM4_BOOT)
+                0x00000000081e0000                __km4_image3_flash_start__ = ORIGIN (KM4_IMG3)
+                0x0000000008014000                __nspe_phy_addr__ = ORIGIN (PHY_IMG2)
+
+.rom.text       0x0000000000000000    0x18cc8
+ *(.reset_entry)
+ .reset_entry   0x0000000000000000        0xa ./build/rom/ameba_vectors_kr4.o
+                0x0000000000000000                Reset_Handler
+ *(.hal.rom.text*)
+ .hal.rom.text  0x000000000000000a      0x670 ./build/rom/ameba_aes.o
+                0x000000000000000a                rtl_crypto_aes_cbc_init
+                0x0000000000000078                rtl_crypto_aes_cbc_encrypt
+                0x00000000000000c4                rtl_crypto_aes_cbc_decrypt
+                0x0000000000000110                rtl_crypto_aes_ecb_init
+                0x000000000000017e                rtl_crypto_aes_ecb_encrypt
+                0x00000000000001b6                rtl_crypto_aes_ecb_decrypt
+                0x00000000000001ee                rtl_crypto_aes_ctr_init
+                0x000000000000025c                rtl_crypto_aes_ctr_encrypt
+                0x000000000000029e                rtl_crypto_aes_ctr_decrypt
+                0x00000000000002e0                rtl_crypto_aes_cfb_init
+                0x000000000000034e                rtl_crypto_aes_cfb_encrypt
+                0x0000000000000390                rtl_crypto_aes_cfb_decrypt
+                0x00000000000003d2                rtl_crypto_aes_ofb_init
+                0x0000000000000440                rtl_crypto_aes_ofb_encrypt
+                0x0000000000000482                rtl_crypto_aes_ofb_decrypt
+                0x00000000000004c4                rtl_crypto_aes_gcm_init
+                0x0000000000000532                rtl_crypto_aes_gcm_encrypt
+                0x00000000000005d6                rtl_crypto_aes_gcm_decrypt
+ .hal.rom.text  0x000000000000067a      0x24a ./build/rom/ameba_arch_irq.o
+                0x000000000000067a                __NVIC_EnableIRQ
+                0x000000000000069e                __NVIC_GetEnableIRQ
+                0x00000000000006cc                __NVIC_DisableIRQ
+                0x00000000000006f0                __NVIC_GetPendingIRQ
+                0x000000000000071e                __NVIC_SetPendingIRQ
+                0x0000000000000748                __NVIC_ClearPendingIRQ
+                0x0000000000000772                __NVIC_GetActive
+                0x00000000000007d4                __NVIC_SetPriority
+                0x00000000000007f0                __NVIC_GetPriority
+                0x0000000000000804                __NVIC_SetVector
+                0x000000000000081c                __NVIC_GetVector
+                0x0000000000000838                __NVIC_SetVectorArg
+                0x0000000000000850                __NVIC_GetVectorArg
+                0x000000000000086c                sys_irq_dispatch
+ .hal.rom.text  0x00000000000008c4       0x2c ./build/rom/ameba_assert_rom.o
+                0x00000000000008c4                io_assert_failed
+ .hal.rom.text  0x00000000000008f0       0xfe ./build/rom/ameba_backup_reg.o
+                0x00000000000008f0                BKUP_Write
+                0x000000000000092c                BKUP_Read
+                0x0000000000000964                BKUP_Set
+                0x00000000000009a8                BKUP_Clear
+ .hal.rom.text  0x00000000000009ee      0x136 ./build/rom/ameba_boot_rom.o
+                0x00000000000009ee                BOOT_ROM_InitDebugFlg
+                0x0000000000000a0a                BOOT_ROM_ResetVsr
+ .hal.rom.text  0x0000000000000b24      0x178 ./build/rom/ameba_clk_rom.o
+                0x0000000000000b24                XTAL_ClkGet
+                0x0000000000000b40                CPU_ClkSrc_Set
+                0x0000000000000b56                CPU_ClkSrc_Get
+                0x0000000000000b64                PLL_ClkGet
+                0x0000000000000be6                CPU_ClkGet
+ .hal.rom.text  0x0000000000000c9c     0x1850 ./build/rom/ameba_crypto_rom.o
+                0x0000000000000c9c                CRYPTO_MemDump
+                0x0000000000000e28                CRYPTO_SetSrcDesc
+                0x0000000000000eac                CRYPTO_SetDstDesc
+                0x0000000000000f32                CRYPTO_CleanCmdOk
+                0x0000000000000f56                CRYPTO_ClearAllINT
+                0x0000000000000f6e                CRYPTO_SetCmdBuf
+                0x00000000000011de                CRYPTO_SrcDescKeyIv
+                0x000000000000167c                CRYPTO_Reset
+                0x00000000000016a2                CRYPTO_SHA_Reset
+                0x00000000000016c8                CRYPTO_SetSecurityModeAD
+                0x0000000000001918                CRYPTO_Init
+                0x0000000000001944                CRYPTO_SHA_Init
+                0x0000000000001970                CRYPTO_OTPKey_Init
+                0x00000000000019ca                CRYPTO_OTPKey_SHA_Init
+                0x0000000000001a38                CRYPTO_Cache_Sync
+                0x0000000000001c32                CRYPTO_ProcessAD
+                0x000000000000236a                CRYPTO_SendSeqBuf
+                0x0000000000002488                CRYPTO_CipherInit
+                0x000000000000249a                CRYPTO_CipherEncryptAD
+                0x00000000000024c2                CRYPTO_CipherDecryptAD
+ *fill*         0x00000000000024ec        0x4 
+ .hal.rom.text  0x00000000000024f0       0x88 ./build/rom/ameba_delay_rom.o
+                0x00000000000024f0                DelayNop
+                0x0000000000002500                DelayUs
+                0x0000000000002566                DelayMs
+ .hal.rom.text  0x0000000000002578      0xaaa ./build/rom/ameba_ecdsa.o
+                0x0000000000002578                ECDSA_BufSub
+                0x00000000000025dc                ECDSA_BufCmp
+                0x0000000000002640                ECDSA_HashBuf_Setting
+                0x00000000000027a4                ECDSA_CurveSel
+                0x0000000000002a58                ECDSA_EngRst
+                0x0000000000002a68                ECDSA_Cmd
+                0x0000000000002a88                ECDSA_KeyGen
+                0x0000000000002b78                ECDSA_Sign
+                0x0000000000002ce2                ECDSA_Verify
+                0x0000000000002dee                ECDSA_ECDH_Compute_Shared
+                0x0000000000002f0e                ECDSA_Basic_Func
+ .hal.rom.text  0x0000000000003022      0xb96 ./build/rom/ameba_flash_rom.o
+                0x0000000000003022                FLASH_SetSpiMode
+                0x000000000000311e                FLASH_RxCmd
+                0x00000000000031d8                FLASH_WaitBusy
+                0x00000000000032a4                FLASH_RxData
+                0x00000000000033a2                FLASH_TxCmd
+                0x0000000000003438                FLASH_WriteEn
+                0x0000000000003468                FLASH_TxData
+                0x000000000000359c                FLASH_SetStatus
+                0x00000000000035d0                FLASH_Erase
+                0x00000000000036a0                FLASH_DeepPowerDown
+                0x0000000000003712                FLASH_WaitBusy_Timeout
+                0x00000000000037aa                FLASH_WriteEn_Timeout
+                0x00000000000037da                FLASH_SetStatusBits
+                0x00000000000038c2                FLASH_StructInit_Micron
+                0x0000000000003950                FLASH_StructInit_MXIC
+                0x00000000000039de                FLASH_StructInit_GD
+                0x0000000000003a6c                FLASH_StructInit
+                0x0000000000003af8                FLASH_Init
+                0x0000000000003baa                FLASH_Wait_Boot_Finish
+ .hal.rom.text  0x0000000000003bb8      0x788 ./build/rom/ameba_flashclk_rom.o
+                0x0000000000003bb8                FLASH_CalibrationPLLSel
+                0x0000000000003bc2                FLASH_CalibrationPLL_GetSrc
+                0x0000000000003bcc                FLASH_Calibration_PSPLL_Open
+                0x0000000000003c32                FLASH_Calibration_PSPLL_Close
+                0x0000000000003c68                FLASH_CalibrationPLLPSCmd
+                0x0000000000003cb2                FLASH_CalibrationPLLPS_Shift
+                0x0000000000003cdc                FLASH_PLLInit_ClockDiv
+                0x0000000000003d7a                FLASH_CalibrationPhase
+                0x0000000000003e26                FLASH_CalibrationPhaseIdx
+                0x0000000000003e34                FLASH_CalibrationNewCmd
+                0x0000000000003e70                FLASH_CalibrationNew
+                0x0000000000004072                FLASH_Read_HandShake_Cmd
+                0x00000000000040ac                FLASH_Read_HandShake
+                0x00000000000041b6                FLASH_Calibration
+ .hal.rom.text  0x0000000000004340      0x52a ./build/rom/ameba_gpio_rom.o
+                0x0000000000004340                GPIO_INTMode
+                0x00000000000043ce                GPIO_INTConfig
+                0x00000000000043fc                GPIO_INTHandler
+                0x00000000000044f0                GPIO_Direction
+                0x000000000000451c                GPIO_Init
+                0x00000000000045d0                GPIO_DeInit
+                0x000000000000465a                GPIO_ReadDataBit
+                0x000000000000467e                GPIO_WriteBit
+                0x00000000000046ac                GPIO_PortDirection
+                0x0000000000004704                GPIO_PortRead
+                0x0000000000004746                GPIO_PortWrite
+                0x0000000000004796                GPIO_DebounceClock
+                0x00000000000047f6                GPIO_LevelSync
+                0x0000000000004842                GPIO_UserRegIrq
+ .hal.rom.text  0x000000000000486a      0x956 ./build/rom/ameba_loguart_rom.o
+                0x000000000000486a                LOGUART_StructInit
+                0x00000000000048b6                LOGUART_SetBaud
+                0x0000000000004968                LOGUART_RxCmd
+                0x0000000000004978                LOGUART_AGGCmd
+                0x0000000000004990                LOGUART_AGGPathCmd
+                0x0000000000004a38                LOGUART_AGGSetTimeOut
+                0x0000000000004a50                LOGUART_AGGSetThreshold
+                0x0000000000004a98                LOGUART_AGGSetSyncPattern
+                0x0000000000004aa8                LOGUART_AGGPathAllCmd
+                0x0000000000004ac4                LOGUART_PutChar
+                0x0000000000004b32                LOGUART_GetChar
+                0x0000000000004b4e                LOGUART_Readable
+                0x0000000000004b58                LOGUART_GetRxCount
+                0x0000000000004b62                LOGUART_GetIMR
+                0x0000000000004b6a                LOGUART_SetIMR
+                0x0000000000004b72                LOGUART_INTConfig
+                0x0000000000004b8a                LOGUART_INTClear
+                0x0000000000004b92                LOGUART_GetStatus
+                0x0000000000004b96                LOGUART_ClearRxFifo
+                0x0000000000004bb2                _LOGUART_Init
+                0x0000000000004d4a                LOGUART_Init
+                0x0000000000004dc0                LOGUART_WaitBusy
+                0x0000000000004e08                LOGUART_WaitTxComplete
+                0x0000000000004e4e                LOGUART_BT_SendData
+                0x0000000000004e80                LOGUART_Relay_StructInit
+                0x0000000000004e98                LOGUART_Relay_SetFormat
+                0x0000000000004ed6                LOGUART_Relay_SetBaud
+                0x0000000000004f32                LOGUART_Relay_ClearRxFifo
+                0x0000000000004f52                LOGUART_Relay_RxCmd
+                0x0000000000004f62                LOGUART_MonitorParaConfig
+                0x0000000000004fc8                LOGUART_LPBaudSet
+                0x0000000000005090                LOGUART_Relay_LPSetBaud
+                0x0000000000005108                LOGUART_RxMonitorCmd
+                0x0000000000005118                LOGUART_RxMonBaudCtrlRegGet
+                0x000000000000511c                LOGUART_RxMonitorSatusGet
+                0x0000000000005120                LOGUART_DiagInit
+ .hal.rom.text  0x00000000000051c0      0x6c0 ./build/rom/ameba_md5.o
+                0x00000000000051c0                md_hash_save
+                0x0000000000005240                md_hash_restore
+                0x00000000000052c0                rtl_crypto_md5_init
+                0x000000000000535c                rtl_crypto_md5_process
+                0x00000000000053c2                rtl_crypto_md5_update_rom
+                0x0000000000005468                rtl_crypto_md5_update
+                0x00000000000054c2                rtl_crypto_md5_final
+                0x0000000000005556                rtl_crypto_md5
+                0x000000000000558a                rtl_crypto_hmac_md5_init
+                0x000000000000564e                rtl_crypto_hmac_md5_process
+                0x0000000000005698                rtl_crypto_hmac_md5_update_rom
+                0x0000000000005748                rtl_crypto_hmac_md5_update
+                0x00000000000057a2                rtl_crypto_hmac_md5_final
+                0x000000000000583c                rtl_crypto_hmac_md5
+ .hal.rom.text  0x0000000000005880      0x182 ./build/rom/ameba_otf_rom.o
+                0x0000000000005880                RSIP_OTF_init
+                0x0000000000005892                RSIP_IV_Set
+                0x00000000000058e0                RSIP_OTF_Cmd
+                0x0000000000005900                RSIP_OTF_Enable
+                0x000000000000599c                RSIP_MMU_Config
+                0x00000000000059cc                RSIP_MMU_Cmd
+                0x00000000000059f0                RSIP_MMU_Cache_Clean
+ .hal.rom.text  0x0000000000005a02      0x43a ./build/rom/ameba_pinmux_rom.o
+                0x0000000000005a02                PAD_DrvStrength
+                0x0000000000005a28                PAD_PullCtrl
+                0x0000000000005ae2                PAD_SleepPullCtrl
+                0x0000000000005b9c                PAD_ResistorCtrl
+                0x0000000000005bb8                PAD_CMD
+                0x0000000000005bdc                Pinmux_Config
+                0x0000000000005bf8                Pinmux_ConfigGet
+                0x0000000000005c0e                Pinmux_UartLogCtrl
+                0x0000000000005c66                PAD_SpicCtrl
+                0x0000000000005cfc                Pinmux_SpicCtrl
+                0x0000000000005e2c                Pinmux_Swdoff
+ .hal.rom.text  0x0000000000005e3c      0x288 ./build/rom/ameba_plic.o
+                0x0000000000005e3c                plic_disable_irq
+                0x0000000000005e72                plic_get_irq_enable
+                0x0000000000005e94                plic_set_enable
+                0x0000000000005eac                plic_get_enable
+                0x0000000000005ec6                plic_set_irq_priority
+                0x0000000000005ee8                plic_enable_irq
+                0x0000000000005f36                plic_get_irq_priority
+                0x0000000000005f46                plic_get_irq_pending
+                0x0000000000005f66                plic_claim_irq
+                0x0000000000005f78                plic_complete_irq
+                0x0000000000005f8a                plic_set_threshold
+                0x0000000000005fa2                plic_get_threshold
+                0x0000000000005fb4                plic_interrupt_handler
+                0x0000000000006060                plic_set_sip
+                0x000000000000607a                plic_clear_sip
+                0x0000000000006094                plic_init
+                0x00000000000060ba                plic_get_active_irq_id
+ .hal.rom.text  0x00000000000060c4      0x29e ./build/rom/ameba_rcc_rom.o
+                0x00000000000060c4                RCC_PeriphClockCmd
+                0x0000000000006184                RCC_PeriphClockSource_UART
+                0x0000000000006202                RCC_PeriphClockSource_SPIC
+                0x000000000000621c                RCC_PeriphClockSource_PSRAM
+                0x0000000000006236                RCC_PeriphClockSource_SDM
+                0x0000000000006250                RCC_PeriphClockSource_VADMEM
+                0x000000000000626c                RCC_PeriphClockSource_AUDIOCODEC
+                0x000000000000628a                RCC_PeriphClockSource_CTC
+                0x00000000000062a4                RCC_PeriphClockSource_ADC
+                0x00000000000062be                RCC_PeriphClockSource_GPIO
+                0x00000000000062d8                RCC_PeriphClockSource_SPORT
+                0x000000000000630e                RCC_PeriphClockSource_32K
+                0x0000000000006324                RCC_PeriphClockSource_LOGUART
+ .hal.rom.text  0x0000000000006362     0x1016 ./build/rom/ameba_sha.o
+                0x0000000000006362                hash_save
+                0x00000000000063e2                hash_restore
+                0x0000000000006462                rtl_crypto_sha1_init
+                0x0000000000006508                rtl_crypto_sha1_process
+                0x0000000000006540                rtl_crypto_sha1_update_rom
+                0x00000000000065e2                rtl_crypto_sha1_update
+                0x000000000000663c                rtl_crypto_sha1_final
+                0x00000000000066cc                rtl_crypto_sha1
+                0x0000000000006700                rtl_crypto_sha2_init
+                0x0000000000006998                rtl_crypto_sha2_process
+                0x00000000000069d6                rtl_crypto_sha2_update_rom
+                0x0000000000006a7a                rtl_crypto_sha2_update
+                0x0000000000006ad4                rtl_crypto_sha2_final
+                0x0000000000006b66                rtl_crypto_sha2
+                0x0000000000006ba0                rtl_crypto_hmac_sha1_init
+                0x0000000000006c6e                rtl_crypto_hmac_sha1_process
+                0x0000000000006cb2                rtl_crypto_hmac_sha1_update_rom
+                0x0000000000006d5a                rtl_crypto_hmac_sha1_update
+                0x0000000000006db4                rtl_crypto_hmac_sha1_final
+                0x0000000000006e4a                rtl_crypto_hmac_sha1
+                0x0000000000006e8e                rtl_crypto_hmac_sha2_init
+                0x000000000000714e                rtl_crypto_hmac_sha2_process
+                0x0000000000007198                rtl_crypto_hmac_sha2_update_rom
+                0x0000000000007242                rtl_crypto_hmac_sha2_update
+                0x000000000000729c                rtl_crypto_hmac_sha2_final
+                0x0000000000007334                rtl_crypto_hmac_sha2
+ .hal.rom.text  0x0000000000007378      0x252 ./build/rom/ameba_syscfg_rom.o
+                0x0000000000007378                SYSCFG_RLVersion
+                0x0000000000007398                SYSCFG_GetRLNum
+                0x00000000000073b8                SYSCFG_TRP_UARTImage
+                0x00000000000073c6                SYSCFG_TRP_ICFG
+                0x00000000000073d2                SYSCFG_TRP_TestMode
+                0x00000000000073e0                SYSCFG_TRP_OTPBYP
+                0x00000000000073ee                SYSCFG_ROMINFO_Get
+                0x00000000000073fc                SYSCFG_ROMINFO_Set
+                0x0000000000007412                SYSCFG_CHIPType_Get
+                0x0000000000007420                SYSCFG_OTP_RDPEn
+                0x0000000000007442                SYSCFG_OTP_RSIPEn
+                0x0000000000007464                SYSCFG_OTP_SBootEn
+                0x0000000000007486                SYSCFG_OTP_LowBaudLog
+                0x0000000000007494                SYSCFG_OTP_DisBootLog
+                0x00000000000074a2                SYSCFG_OTP_BootFlashBaud
+                0x00000000000074b0                SYSCFG_OTP_SPICBootSpeedUpDis
+                0x00000000000074be                SYSCFG_OTP_SPICAddr4ByteEn
+                0x00000000000074cc                SYSCFG_OTP_FlashDSleepEn
+                0x00000000000074da                SYSCFG_OTP_UartDownloadDis
+                0x00000000000074ea                SYSCFG_OTP_AntiRollback
+                0x00000000000074fc                SYSCFG_OTP_FaultLogDis
+                0x000000000000750e                SYSCFG_OTP_RSIPMode
+                0x0000000000007522                SYSCFG_OTP_HUKDerivEn
+                0x0000000000007534                SYSCFG_OTP_RomPatchEn
+                0x000000000000754c                SYSCFG_OTP_RandDelayEn
+                0x000000000000755a                SYSCFG_OTP_RMAMode
+                0x000000000000757c                SYSCFG_HWTrigDownload
+                0x000000000000759e                SYSCFG_SWTrigDownload
+ .hal.rom.text  0x00000000000075ca       0xbe ./build/rom/ameba_systimer_rom.o
+                0x00000000000075ca                SYSTIMER_Init
+                0x0000000000007614                SYSTIMER_TickGet
+                0x0000000000007620                SYSTIMER_GetPassTick
+                0x000000000000764a                SYSTIMER_GetPassTime
+ .hal.rom.text  0x0000000000007688      0xd86 ./build/rom/ameba_tim_rom.o
+                0x0000000000007688                RTIM_TimeBaseStructInit
+                0x00000000000076a2                RTIM_Cmd
+                0x00000000000077f2                RTIM_GetCount
+                0x0000000000007920                RTIM_INTConfig
+                0x0000000000007a8e                RTIM_INTClear
+                0x0000000000007bce                RTIM_TimeBaseInit
+                0x0000000000007e14                RTIM_DeInit
+                0x0000000000007f52                RTIM_INTClearPendingBit
+                0x00000000000080b8                RTIM_GetFlagStatus
+                0x0000000000008260                RTIM_GetINTStatus
+ .hal.rom.text  0x000000000000840e       0xfc ./build/rom/ameba_trng.o
+                0x000000000000840e                TRNG_Random_Delay
+                0x0000000000008450                TRNG_Security_Only
+                0x0000000000008480                TRNG_INTConfig
+                0x00000000000084a2                TRNG_ClearINT
+                0x00000000000084ae                TRNG_GetINT
+                0x00000000000084b6                TRNG_Init
+ .hal.rom.text  0x000000000000850a      0x49e ./build/rom/ameba_uart_rom.o
+                0x000000000000850a                UART_DeInit
+                0x0000000000008510                UART_StructInit
+                0x0000000000008536                UART_BaudParaGetFull
+                0x0000000000008570                UART_BaudParaGet
+                0x00000000000085a0                UART_SetBaud
+                0x0000000000008658                UART_SetBaudExt
+                0x00000000000086e6                UART_SetRxLevel
+                0x00000000000086f8                UART_RxCmd
+                0x0000000000008708                UART_Writable
+                0x0000000000008710                UART_Readable
+                0x0000000000008716                UART_CharPut
+                0x000000000000871a                UART_CharGet
+                0x0000000000008722                UART_ReceiveData
+                0x000000000000875a                UART_SendData
+                0x0000000000008792                UART_ReceiveDataTO
+                0x00000000000087ea                UART_SendDataTO
+                0x0000000000008842                UART_RxByteCntClear
+                0x000000000000884c                UART_RxByteCntGet
+                0x0000000000008854                UART_BreakCtl
+                0x0000000000008864                UART_ClearRxFifo
+                0x0000000000008880                UART_Init
+                0x000000000000893a                UART_ClearTxFifo
+                0x0000000000008944                UART_INTConfig
+                0x000000000000895c                UART_INT_Clear
+                0x0000000000008964                UART_IntStatus
+                0x0000000000008968                UART_ModemStatusGet
+                0x000000000000896c                UART_LineStatusGet
+                0x0000000000008970                UART_WaitBusy
+ .hal.rom.text  0x00000000000089a8       0x92 ./build/rom/ameba_vector_rom.o
+                0x00000000000089a8                irq_enable
+                0x00000000000089b0                irq_disable
+                0x00000000000089b8                irq_set_priority
+                0x00000000000089c0                irq_get_priority
+                0x00000000000089c8                irq_set_pending
+                0x00000000000089d0                irq_get_pending
+                0x00000000000089d8                irq_clear_pending
+                0x00000000000089e0                irq_register
+                0x0000000000008a16                irq_unregister
+ .hal.rom.text  0x0000000000008a3a      0x53a ./build/rom/ameba_wdg.o
+                0x0000000000008a3a                WDG_Wait_Busy
+                0x0000000000008a70                WDG_StructInit
+                0x0000000000008a84                WDG_Init
+                0x0000000000008b26                WDG_Enable
+                0x0000000000008b8c                WDG_Timeout
+                0x0000000000008c14                WDG_Refresh
+                0x0000000000008c7a                WDG_INTConfig
+                0x0000000000008d20                WDG_ClearINT
+                0x0000000000008db4                IWDG_LP_Enable
+                0x0000000000008e1e                WDG_Reset_Bypass
+                0x0000000000008ebe                WDG_Reset_Timeout
+                0x0000000000008ed6                WDG_Reset_ClearINT
+ .hal.rom.text  0x0000000000008f74      0x734 ./build/rom/diag.o
+                0x0000000000008f74                DiagVSprintf
+                0x00000000000092b6                DiagPrintf
+                0x00000000000092f4                DiagPrintfD
+                0x0000000000009332                DiagSPrintf
+                0x000000000000936a                DiagSnPrintf
+ .hal.rom.text  0x00000000000096a8      0x108 ./build/rom/monitor_rom.o
+                0x00000000000097a2                cmd_rom_table
+ .hal.rom.text  0x00000000000097b0      0x170 ./build/rom/rand.o
+                0x00000000000097b0                _rand
+                0x00000000000097da                __wrap_rand
+                0x0000000000009804                RandBytes_Get
+ .hal.rom.text  0x0000000000009920      0x596 ./build/rom/shell_rom.o
+                0x0000000000009920                shell_array_init
+                0x0000000000009938                shell_get_argc
+                0x0000000000009972                shell_get_argv
+                0x0000000000009a98                shell_cmd_chk
+                0x0000000000009bb4                shell_uart_irq_rom
+                0x0000000000009d3c                shell_init_rom
+                0x0000000000009de8                shell_task_rom
+                0x0000000000009e26                shell_rom
+ *(.libc.rom.text*)
+ .libc.rom.text
+                0x0000000000009eb6      0x18e ./build/rom/char2num.o
+                0x0000000000009eb6                _char2num
+                0x0000000000009ef8                _2char2dec
+                0x0000000000009fa2                _2char2hex
+ .libc.rom.text
+                0x000000000000a044       0x94 ./build/rom/memchr.o
+                0x000000000000a044                _memchr
+ .libc.rom.text
+                0x000000000000a0d8       0x52 ./build/rom/memcmp.o
+                0x000000000000a0d8                _memcmp
+ .libc.rom.text
+                0x000000000000a12a       0xa8 ./build/rom/memcpy.o
+                0x000000000000a12a                _memcpy
+ .libc.rom.text
+                0x000000000000a1d2       0xd0 ./build/rom/memmove.o
+                0x000000000000a1d2                _memmove
+ .libc.rom.text
+                0x000000000000a2a2       0xa2 ./build/rom/memset.o
+                0x000000000000a2a2                _memset
+ .libc.rom.text
+                0x000000000000a344       0x6c ./build/rom/strcmp.o
+                0x000000000000a344                _strcmp
+ .libc.rom.text
+                0x000000000000a3b0       0x34 ./build/rom/stricmp.o
+                0x000000000000a3b0                _stricmp
+ .libc.rom.text
+                0x000000000000a3e4       0x6a ./build/rom/strlen.o
+                0x000000000000a3e4                _strlen
+ .libc.rom.text
+                0x000000000000a44e      0x172 ./build/rom/strtoul.o
+                0x000000000000a44e                _strtoul
+ .libc.rom.text
+                0x000000000000a5c0       0x26 ./build/rom/strupr.o
+                0x000000000000a5c0                _strupr
+ .libc.rom.text
+                0x000000000000a5e6       0x50 ./build/rom/strwrap.o
+                0x000000000000a5e6                __wrap_memset
+                0x000000000000a5ee                __wrap_memcpy
+                0x000000000000a5f6                __wrap_memcmp
+                0x000000000000a5fe                __wrap_memchr
+                0x000000000000a606                __wrap_memmove
+                0x000000000000a60e                __wrap_strlen
+                0x000000000000a616                __wrap_strcmp
+                0x000000000000a61e                __wrap_stricmp
+                0x000000000000a626                __wrap_strupr
+                0x000000000000a62e                __wrap_strtoul
+ *(.apple.rom.text*)
+ *(.ssl.rom.text*)
+ *(.FW.rom.text*)
+ .rom.text      0x000000000000a636      0x4d0 ./build/rom/mbedtls_rom_asn1parse.o
+                0x000000000000a636                mbedtls_asn1_get_len
+                0x000000000000a70c                mbedtls_asn1_get_tag
+                0x000000000000a736                mbedtls_asn1_get_bool
+                0x000000000000a778                mbedtls_asn1_get_int
+                0x000000000000a7d8                mbedtls_asn1_get_mpi
+                0x000000000000a812                mbedtls_asn1_get_bitstring
+                0x000000000000a872                mbedtls_asn1_get_bitstring_null
+                0x000000000000a8b4                mbedtls_asn1_get_sequence_of
+                0x000000000000a966                mbedtls_asn1_get_alg
+                0x000000000000aa2c                mbedtls_asn1_get_alg_null
+                0x000000000000aa5a                mbedtls_asn1_free_named_data
+                0x000000000000aa96                mbedtls_asn1_free_named_data_list
+                0x000000000000aacc                mbedtls_asn1_find_named_data
+ .rom.text      0x000000000000ab06      0x71c ./build/rom/mbedtls_rom_asn1write.o
+                0x000000000000ab06                mbedtls_asn1_write_len
+                0x000000000000ac3c                mbedtls_asn1_write_tag
+                0x000000000000ac5a                mbedtls_asn1_write_raw_buffer
+                0x000000000000ac9a                mbedtls_asn1_write_mpi
+                0x000000000000ad52                mbedtls_asn1_write_null
+                0x000000000000ad94                mbedtls_asn1_write_oid
+                0x000000000000adf2                mbedtls_asn1_write_algorithm_identifier
+                0x000000000000ae74                mbedtls_asn1_write_bool
+                0x000000000000aeda                mbedtls_asn1_write_int
+                0x000000000000af64                mbedtls_asn1_write_tagged_string
+                0x000000000000afce                mbedtls_asn1_write_utf8_string
+                0x000000000000afdc                mbedtls_asn1_write_printable_string
+                0x000000000000afea                mbedtls_asn1_write_ia5_string
+                0x000000000000aff8                mbedtls_asn1_write_bitstring
+                0x000000000000b0bc                mbedtls_asn1_write_octet_string
+                0x000000000000b11a                mbedtls_asn1_store_named_data
+ .rom.text      0x000000000000b222     0x2ffa ./build/rom/mbedtls_rom_bignum.o
+                0x000000000000bd10                mbedtls_mpi_init
+                0x000000000000bd1e                mbedtls_mpi_free
+                0x000000000000bd5c                mbedtls_mpi_grow
+                0x000000000000bdd8                mbedtls_mpi_shrink
+                0x000000000000be82                mbedtls_mpi_copy
+                0x000000000000bf10                mbedtls_mpi_swap
+                0x000000000000bf50                mbedtls_mpi_safe_cond_assign
+                0x000000000000bfe4                mbedtls_mpi_safe_cond_swap
+                0x000000000000c092                mbedtls_mpi_lset
+                0x000000000000c0e4                mbedtls_mpi_get_bit
+                0x000000000000c104                mbedtls_mpi_set_bit
+                0x000000000000c17c                mbedtls_mpi_lsb
+                0x000000000000c1bc                mbedtls_mpi_bitlen
+                0x000000000000c200                mbedtls_mpi_size
+                0x000000000000c216                mbedtls_mpi_read_binary
+                0x000000000000c2b2                mbedtls_mpi_write_binary
+                0x000000000000c33e                mbedtls_mpi_shift_l
+                0x000000000000c40a                mbedtls_mpi_shift_r
+                0x000000000000c4a6                mbedtls_mpi_cmp_abs
+                0x000000000000c518                mbedtls_mpi_cmp_mpi
+                0x000000000000c5a2                mbedtls_mpi_lt_mpi_ct
+                0x000000000000c63a                mbedtls_mpi_cmp_int
+                0x000000000000c66a                mbedtls_mpi_add_abs
+                0x000000000000c740                mbedtls_mpi_sub_abs
+                0x000000000000c80c                mbedtls_mpi_add_mpi
+                0x000000000000c87a                mbedtls_mpi_sub_mpi
+                0x000000000000c8e8                mbedtls_mpi_add_int
+                0x000000000000c918                mbedtls_mpi_sub_int
+                0x000000000000c948                mbedtls_mpi_mul_mpi
+                0x000000000000ca56                mbedtls_mpi_mul_int
+                0x000000000000ca74                mbedtls_mpi_read_string
+                0x000000000000cbf0                mbedtls_mpi_div_mpi
+                0x000000000000d076                mbedtls_mpi_div_int
+                0x000000000000d0a6                mbedtls_mpi_mod_mpi
+                0x000000000000d130                mbedtls_mpi_mod_int
+                0x000000000000d164                mbedtls_mpi_write_string
+                0x000000000000d368                mbedtls_mpi_exp_mod
+                0x000000000000d804                mbedtls_mpi_gcd
+                0x000000000000d95e                mbedtls_mpi_fill_random
+                0x000000000000dbfa                mbedtls_mpi_inv_mod
+                0x000000000000df2e                mbedtls_mpi_is_prime_ext
+                0x000000000000dfb0                mbedtls_mpi_is_prime
+                0x000000000000dfc0                mbedtls_mpi_gen_prime
+ .rom.text      0x000000000000e21c      0x47c ./build/rom/mbedtls_rom_ecdh.o
+                0x000000000000e21c                mbedtls_ecdh_gen_public
+                0x000000000000e272                mbedtls_ecdh_compute_shared
+                0x000000000000e2ea                mbedtls_ecdh_init
+                0x000000000000e35a                mbedtls_ecdh_setup
+                0x000000000000e374                mbedtls_ecdh_free
+                0x000000000000e3e4                mbedtls_ecdh_make_params
+                0x000000000000e46c                mbedtls_ecdh_read_params
+                0x000000000000e4ca                mbedtls_ecdh_get_params
+                0x000000000000e55c                mbedtls_ecdh_make_public
+                0x000000000000e5d0                mbedtls_ecdh_read_public
+                0x000000000000e60a                mbedtls_ecdh_calc_secret
+ .rom.text      0x000000000000e698      0x8b2 ./build/rom/mbedtls_rom_ecdsa.o
+                0x000000000000ec70                mbedtls_ecdsa_sign
+                0x000000000000ec86                mbedtls_ecdsa_sign_det
+                0x000000000000ec9c                mbedtls_ecdsa_sign_det_ext
+                0x000000000000eca4                mbedtls_ecdsa_verify
+                0x000000000000ecac                mbedtls_ecdsa_write_signature_restartable
+                0x000000000000eda2                mbedtls_ecdsa_write_signature
+                0x000000000000edb6                mbedtls_ecdsa_write_signature_det
+                0x000000000000edce                mbedtls_ecdsa_read_signature_restartable
+                0x000000000000ee92                mbedtls_ecdsa_read_signature
+                0x000000000000ee9c                mbedtls_ecdsa_genkey
+                0x000000000000eedc                mbedtls_ecdsa_init
+                0x000000000000eee4                mbedtls_ecdsa_free
+                0x000000000000eef0                mbedtls_ecdsa_from_keypair
+ .rom.text      0x000000000000ef4a     0x2c20 ./build/rom/mbedtls_rom_ecp.o
+                0x000000000000fd3c                mbedtls_ecp_curve_list
+                0x000000000000fd46                mbedtls_ecp_grp_id_list
+                0x000000000000fd88                mbedtls_ecp_curve_info_from_grp_id
+                0x000000000000fda4                mbedtls_ecp_curve_info_from_tls_id
+                0x000000000000fdc2                mbedtls_ecp_curve_info_from_name
+                0x000000000000fdfa                mbedtls_ecp_point_init
+                0x000000000000fe28                mbedtls_ecp_group_init
+                0x000000000000fe9a                mbedtls_ecp_keypair_init
+                0x000000000000fec8                mbedtls_ecp_point_free
+                0x000000000000fed4                mbedtls_ecp_group_free
+                0x000000000000ff6e                mbedtls_ecp_keypair_free
+                0x000000000000ffa0                mbedtls_ecp_copy
+                0x000000000000ffea                mbedtls_ecp_group_copy
+                0x000000000000fff6                mbedtls_ecp_set_zero
+                0x00000000000109f6                mbedtls_ecp_is_zero
+                0x0000000000010a10                mbedtls_ecp_point_cmp
+                0x0000000000010a5c                mbedtls_ecp_point_read_string
+                0x0000000000010aac                mbedtls_ecp_point_write_binary
+                0x0000000000010b90                mbedtls_ecp_point_read_binary
+                0x0000000000010c44                mbedtls_ecp_tls_read_point
+                0x0000000000010c78                mbedtls_ecp_tls_write_point
+                0x0000000000010cb2                mbedtls_ecp_tls_read_group_id
+                0x0000000000010d16                mbedtls_ecp_tls_read_group
+                0x0000000000010d42                mbedtls_ecp_tls_write_group
+                0x0000000000010da0                mbedtls_ecp_check_pubkey
+                0x0000000000010f9e                mbedtls_ecp_check_privkey
+                0x0000000000011040                mbedtls_ecp_mul_restartable
+                0x00000000000116d4                mbedtls_ecp_mul
+                0x000000000001179c                mbedtls_ecp_muladd_restartable
+                0x000000000001184a                mbedtls_ecp_muladd
+                0x0000000000011854                mbedtls_ecp_gen_privkey
+                0x00000000000119c4                mbedtls_ecp_gen_keypair_base
+                0x0000000000011a1a                mbedtls_ecp_gen_keypair
+                0x0000000000011a2e                mbedtls_ecp_gen_key
+                0x0000000000011a72                mbedtls_ecp_check_pub_priv
+ .rom.text      0x0000000000011b6a     0x1966 ./build/rom/mbedtls_rom_ecp_curves.o
+                0x0000000000013016                mbedtls_ecp_group_load
+ .rom.text      0x00000000000134d0      0x496 ./build/rom/mbedtls_rom_hmac_drbg.o
+                0x00000000000134d0                mbedtls_hmac_drbg_init
+                0x00000000000134f6                mbedtls_hmac_drbg_update_ret
+                0x00000000000136dc                mbedtls_hmac_drbg_update
+                0x00000000000136e4                mbedtls_hmac_drbg_seed_buf
+                0x0000000000013768                mbedtls_hmac_drbg_reseed
+                0x0000000000013772                mbedtls_hmac_drbg_seed
+                0x0000000000013822                mbedtls_hmac_drbg_set_prediction_resistance
+                0x0000000000013826                mbedtls_hmac_drbg_set_entropy_len
+                0x000000000001382a                mbedtls_hmac_drbg_set_reseed_interval
+                0x000000000001382e                mbedtls_hmac_drbg_random_with_add
+                0x0000000000013928                mbedtls_hmac_drbg_random
+                0x0000000000013934                mbedtls_hmac_drbg_free
+ .rom.text      0x0000000000013966      0x51a ./build/rom/mbedtls_rom_md.o
+                0x0000000000013966                mbedtls_md_list
+                0x0000000000013970                mbedtls_md_info_from_string
+                0x0000000000013a4c                mbedtls_md_info_from_type
+                0x0000000000013aa8                mbedtls_md_init
+                0x0000000000013ab4                mbedtls_md_free
+                0x0000000000013b06                mbedtls_md_clone
+                0x0000000000013b32                mbedtls_md_setup
+                0x0000000000013b94                mbedtls_md_init_ctx
+                0x0000000000013b9e                mbedtls_md_starts
+                0x0000000000013bb2                mbedtls_md_update
+                0x0000000000013bc6                mbedtls_md_finish
+                0x0000000000013bda                mbedtls_md
+                0x0000000000013bf0                mbedtls_md_hmac_starts
+                0x0000000000013ce4                mbedtls_md_hmac_update
+                0x0000000000013cfc                mbedtls_md_hmac_finish
+                0x0000000000013d78                mbedtls_md_hmac_reset
+                0x0000000000013dbc                mbedtls_md_hmac
+                0x0000000000013e4e                mbedtls_md_process
+                0x0000000000013e62                mbedtls_md_get_size
+                0x0000000000013e6e                mbedtls_md_get_type
+                0x0000000000013e7a                mbedtls_md_get_name
+ .rom.text      0x0000000000013e80      0xf3c ./build/rom/mbedtls_rom_md5.o
+                0x0000000000013e80                mbedtls_md5_init
+                0x0000000000013e8e                mbedtls_md5_free
+                0x0000000000013e9e                mbedtls_md5_clone
+                0x0000000000013eb4                mbedtls_md5_starts_ret
+                0x0000000000013ee8                mbedtls_md5_starts
+                0x0000000000013ef0                mbedtls_internal_md5_process
+                0x0000000000014b64                mbedtls_md5_process
+                0x0000000000014b6c                mbedtls_md5_update_ret
+                0x0000000000014c1e                mbedtls_md5_update
+                0x0000000000014c26                mbedtls_md5_finish_ret
+                0x0000000000014d30                mbedtls_md5_finish
+                0x0000000000014d38                mbedtls_md5_ret
+                0x0000000000014db4                mbedtls_md5
+ .rom.text      0x0000000000014dbc      0x228 ./build/rom/mbedtls_rom_md_wrap.o
+ .rom.text      0x0000000000014fe4       0x10 ./build/rom/mbedtls_rom_platform_util.o
+                0x0000000000014fe4                mbedtls_platform_zeroize
+ .rom.text      0x0000000000014ff4     0x1904 ./build/rom/mbedtls_rom_sha1.o
+                0x0000000000014ff4                mbedtls_sha1_init
+                0x0000000000015002                mbedtls_sha1_free
+                0x0000000000015012                mbedtls_sha1_clone
+                0x0000000000015028                mbedtls_sha1_starts_ret
+                0x0000000000015066                mbedtls_sha1_starts
+                0x000000000001506e                mbedtls_internal_sha1_process
+                0x0000000000016660                mbedtls_sha1_process
+                0x0000000000016668                mbedtls_sha1_update_ret
+                0x000000000001671a                mbedtls_sha1_update
+                0x0000000000016722                mbedtls_sha1_finish_ret
+                0x0000000000016884                mbedtls_sha1_finish
+                0x000000000001688c                mbedtls_sha1_ret
+                0x00000000000168f0                mbedtls_sha1
+ .rom.text      0x00000000000168f8     0x10a0 ./build/rom/mbedtls_rom_sha256.o
+                0x00000000000168f8                mbedtls_sha256_init
+                0x0000000000016906                mbedtls_sha256_free
+                0x0000000000016916                mbedtls_sha256_clone
+                0x000000000001692c                mbedtls_sha256_starts_ret
+                0x00000000000169dc                mbedtls_sha256_starts
+                0x00000000000169e4                mbedtls_internal_sha256_process
+                0x000000000001769e                mbedtls_sha256_process
+                0x00000000000176a6                mbedtls_sha256_update_ret
+                0x0000000000017758                mbedtls_sha256_update
+                0x0000000000017760                mbedtls_sha256_finish_ret
+                0x0000000000017920                mbedtls_sha256_finish
+                0x0000000000017928                mbedtls_sha256_ret
+                0x0000000000017990                mbedtls_sha256
+ .rom.text      0x0000000000017998     0x1330 ./build/rom/mbedtls_rom_sha512.o
+                0x0000000000017998                mbedtls_sha512_init
+                0x00000000000179a6                mbedtls_sha512_free
+                0x00000000000179b6                mbedtls_sha512_clone
+                0x00000000000179cc                mbedtls_sha512_starts_ret
+                0x0000000000017ae4                mbedtls_sha512_starts
+                0x0000000000017aec                mbedtls_internal_sha512_process
+                0x0000000000018864                mbedtls_sha512_process
+                0x000000000001886c                mbedtls_sha512_update_ret
+                0x0000000000018938                mbedtls_sha512_update
+                0x0000000000018940                mbedtls_sha512_finish_ret
+                0x0000000000018c40                mbedtls_sha512_finish
+                0x0000000000018c48                mbedtls_sha512_ret
+                0x0000000000018cc0                mbedtls_sha512
+ .rom.text      0x0000000000018cc8        0x0 ./build/rom/rom_ssl_ram_map.o
+
+.rom.rodata     0x000000000002d000     0x2290
+                0x000000000002d000                __rom_entry_ns_start__ = .
+ *(.hal.rom.entryns.rodata*)
+ .hal.rom.entryns.rodata
+                0x000000000002d000       0x10 ./build/rom/ameba_boot_rom.o
+                0x000000000002d000                rom_sec_call_ns_entry
+                0x000000000002d010                __rom_entry_ns_end__ = .
+ *(.sim.rom.rodata*)
+ *(.hal.rom.rodata*)
+ *fill*         0x000000000002d010       0x10 
+ .hal.rom.rodata
+                0x000000000002d020        0x4 ./build/rom/ameba_aes.o
+ .hal.rom.rodata
+                0x000000000002d024       0x40 ./build/rom/ameba_clk_rom.o
+ .hal.rom.rodata
+                0x000000000002d064      0x3a0 ./build/rom/ameba_ecdsa.o
+ .hal.rom.rodata
+                0x000000000002d404        0x8 ./build/rom/ameba_flash_rom.o
+                0x000000000002d404                SPIC_CALIB_PATTERN
+ .hal.rom.rodata
+                0x000000000002d40c       0x10 ./build/rom/ameba_gpio_rom.o
+                0x000000000002d40c                GPIO_PORTx
+                0x000000000002d414                GPIO_PORTx_S
+ .hal.rom.rodata
+                0x000000000002d41c       0x3c ./build/rom/ameba_loguart_rom.o
+ .hal.rom.rodata
+                0x000000000002d458       0x20 ./build/rom/monitor_rom.o
+ *(.libc.rom.rodata*)
+ *(.apple.rom.rodata*)
+ *(.ssl.rom.rodata*)
+ *(.FW.rom.rodata*)
+ *(.rom.rodata*)
+ .rom.rodata    0x000000000002d478       0x90 ./build/rom/ameba_aes.o
+ .rom.rodata.str1.4
+                0x000000000002d508       0x27 ./build/rom/ameba_arch_irq.o
+ *fill*         0x000000000002d52f        0x1 
+ .rom.rodata.str1.4
+                0x000000000002d530       0x36 ./build/rom/ameba_assert_rom.o
+ *fill*         0x000000000002d566        0x2 
+ .rom.rodata    0x000000000002d568       0x2f ./build/rom/ameba_backup_reg.o
+ *fill*         0x000000000002d597        0x1 
+ .rom.rodata.str1.4
+                0x000000000002d598      0x25a ./build/rom/ameba_crypto_rom.o
+ *fill*         0x000000000002d7f2        0x2 
+ .rom.rodata    0x000000000002d7f4       0x2d ./build/rom/ameba_crypto_rom.o
+ *fill*         0x000000000002d821        0x3 
+ .rom.rodata    0x000000000002d824       0x30 ./build/rom/ameba_ecdsa.o
+ .rom.rodata    0x000000000002d854       0x1c ./build/rom/ameba_flash_rom.o
+ .rom.rodata.str1.4
+                0x000000000002d870      0x16c ./build/rom/ameba_flashclk_rom.o
+ .rom.rodata    0x000000000002d9dc       0x63 ./build/rom/ameba_gpio_rom.o
+ *fill*         0x000000000002da3f        0x1 
+ .rom.rodata    0x000000000002da40       0x98 ./build/rom/ameba_loguart_rom.o
+ .rom.rodata    0x000000000002dad8       0xae ./build/rom/ameba_md5.o
+ *fill*         0x000000000002db86        0x2 
+ .rom.rodata    0x000000000002db88       0x10 ./build/rom/ameba_otf_rom.o
+ .rom.rodata    0x000000000002db98       0x13 ./build/rom/ameba_pinmux_rom.o
+ *fill*         0x000000000002dbab        0x1 
+ .rom.rodata.str1.4
+                0x000000000002dbac       0x22 ./build/rom/ameba_plic.o
+ *fill*         0x000000000002dbce        0x2 
+ .rom.rodata    0x000000000002dbd0      0x147 ./build/rom/ameba_sha.o
+ *fill*         0x000000000002dd17        0x1 
+ .rom.rodata    0x000000000002dd18       0x9a ./build/rom/ameba_tim_rom.o
+ *fill*         0x000000000002ddb2        0x2 
+ .rom.rodata    0x000000000002ddb4       0x35 ./build/rom/ameba_trng.o
+ *fill*         0x000000000002dde9        0x3 
+ .rom.rodata    0x000000000002ddec        0xa ./build/rom/ameba_uart_rom.o
+ *fill*         0x000000000002ddf6        0x2 
+ .rom.rodata    0x000000000002ddf8       0x87 ./build/rom/ameba_wdg.o
+ *fill*         0x000000000002de7f        0x1 
+ .rom.rodata.str1.4
+                0x000000000002de80       0x11 ./build/rom/diag.o
+ *fill*         0x000000000002de91        0x3 
+ .rom.rodata.str1.4
+                0x000000000002de94       0x11 ./build/rom/mbedtls_rom_bignum.o
+ *fill*         0x000000000002dea5        0x3 
+ .rom.rodata    0x000000000002dea8      0x2a0 ./build/rom/mbedtls_rom_bignum.o
+ .rom.rodata.str1.4
+                0x000000000002e148       0x11 ./build/rom/mbedtls_rom_ecdsa.o
+ *fill*         0x000000000002e159        0x3 
+ .rom.rodata.str1.4
+                0x000000000002e15c       0x8e ./build/rom/mbedtls_rom_ecp.o
+ *fill*         0x000000000002e1ea        0x2 
+ .rom.rodata    0x000000000002e1ec       0x90 ./build/rom/mbedtls_rom_ecp.o
+ .rom.rodata.str1.4
+                0x000000000002e27c       0x29 ./build/rom/mbedtls_rom_ecp_curves.o
+ *fill*         0x000000000002e2a5        0x3 
+ .rom.rodata    0x000000000002e2a8      0x8d0 ./build/rom/mbedtls_rom_ecp_curves.o
+ .rom.rodata.str1.4
+                0x000000000002eb78       0x2f ./build/rom/mbedtls_rom_md.o
+ *fill*         0x000000000002eba7        0x1 
+ .rom.rodata    0x000000000002eba8       0x34 ./build/rom/mbedtls_rom_md.o
+ .rom.rodata.str1.4
+                0x000000000002ebdc       0x2c ./build/rom/mbedtls_rom_md_wrap.o
+ .rom.rodata    0x000000000002ec08      0x120 ./build/rom/mbedtls_rom_md_wrap.o
+                0x000000000002ec08                mbedtls_sha512_info
+                0x000000000002ec38                mbedtls_sha384_info
+                0x000000000002ec68                mbedtls_sha256_info
+                0x000000000002ec98                mbedtls_sha224_info
+                0x000000000002ecc8                mbedtls_sha1_info
+                0x000000000002ecf8                mbedtls_md5_info
+ .rom.rodata    0x000000000002ed28      0x100 ./build/rom/mbedtls_rom_sha256.o
+ .rom.rodata    0x000000000002ee28      0x280 ./build/rom/mbedtls_rom_sha512.o
+ .rom.rodata.str1.4
+                0x000000000002f0a8      0x115 ./build/rom/monitor_rom.o
+ *fill*         0x000000000002f1bd        0x3 
+ .rom.rodata.str1.4
+                0x000000000002f1c0       0x2f ./build/rom/shell_rom.o
+ *(.rom.srodata*)
+ *fill*         0x000000000002f1ef        0x1 
+ .rom.srodata   0x000000000002f1f0        0x8 ./build/rom/ameba_rcc_rom.o
+ .rom.srodata   0x000000000002f1f8       0x18 ./build/rom/mbedtls_rom_ecp_curves.o
+ .rom.srodata.cst8
+                0x000000000002f210       0x80 ./build/rom/mbedtls_rom_sha512.o
+ *(.rodata*)
+
+.hal.rom.bss    0x0000000020000000      0xcac
+                0x0000000020000000                __rom_bss_start__ = .
+ *(.ram_vector_table1)
+ *(.ram_vector_table2)
+ .ram_vector_table2
+                0x0000000020000000      0x1c0 ./build/rom/ameba_arch_irq.o
+                0x0000000020000000                UserIrqFunTable
+ *(.ram_vector_table3)
+ .ram_vector_table3
+                0x00000000200001c0      0x1c0 ./build/rom/ameba_arch_irq.o
+                0x00000000200001c0                UserIrqDataTable
+ *(.hal.rom.bss*)
+ .hal.rom.bss   0x0000000020000380      0x4e0 ./build/rom/ameba_crypto_rom.o
+                0x0000000020000380                SHA_OTPKEY
+                0x00000000200003a0                crypto_engine
+                0x00000000200005e0                crypto_sha_engine
+ .hal.rom.bss   0x0000000020000860        0x4 ./build/rom/ameba_delay_rom.o
+                0x0000000020000860                RBSS_UDELAY_CLK
+ .hal.rom.bss   0x0000000020000864       0x68 ./build/rom/ameba_flash_rom.o
+                0x0000000020000864                flash_init_para
+ .hal.rom.bss   0x00000000200008cc        0x1 ./build/rom/ameba_flashclk_rom.o
+                0x00000000200008cc                FLASH_PLL_Source_IsCPU
+ *fill*         0x00000000200008cd        0x3 
+ .hal.rom.bss   0x00000000200008d0      0x200 ./build/rom/ameba_gpio_rom.o
+                0x00000000200008d0                PortA_IrqData
+                0x0000000020000950                PortA_IrqHandler
+                0x00000000200009d0                PortB_IrqData
+                0x0000000020000a50                PortB_IrqHandler
+ .hal.rom.bss   0x0000000020000ad0        0x4 ./build/rom/ameba_plic.o
+ .hal.rom.bss   0x0000000020000ad4       0x14 ./build/rom/diag.o
+                0x0000000020000ad4                ConfigDebugClose
+                0x0000000020000ad8                ConfigDebug
+ .hal.rom.bss   0x0000000020000ae8       0x10 ./build/rom/mbedtls_rom_ecp.o
+ .hal.rom.bss   0x0000000020000af8        0xc ./build/rom/mbedtls_rom_ecp_curves.o
+ .hal.rom.bss   0x0000000020000b04      0x164 ./build/rom/shell_rom.o
+                0x0000000020000b04                shell_argv_array
+                0x0000000020000b44                shell_ctl
+                0x0000000020000b68                shell_rxbuf
+                0x0000000020000be8                shell_buf
+ *(.hal.rom.bank.bss*)
+ *(.libc.ram.bss*)
+ *(.ssl_ram_map*)
+ .ssl_ram_map   0x0000000020000c68       0x44 ./build/rom/rom_ssl_ram_map.o
+                0x0000000020000c68                p_rom_ssl_ram_map
+                0x0000000020000c6c                rom_ssl_ram_map
+ *diag.o(.hal.rom.bss*)
+ *ameba_flash_rom.o(.hal.rom.bss*)
+ *shell_rom.o(.hal.rom.bss*)
+ *ameba_crypto_rom.o(.hal.rom.bss*)
+ *mbedtls_rom_ecp.o(.hal.rom.bss*)
+ *mbedtls_rom_ecp_curves.o(.hal.rom.bss*)
+ *(.hal.rom.bss*)
+ *(.FW.rom.bss*)
+                0x0000000020000cac                __rom_bss_end__ = .
+
+.ram_image1.entry
+                0x0000000020040020        0x0
+                0x0000000020040020                __ram_image1_text_start__ = .
+                0x0000000020040020                __ram_start_table_start__ = .
+ *(SORT_BY_NAME(.image1.entry.data*))
+ *(.image1.validate.rodata*)
+ *(.image1.export.symb*)
+
+.ram_image1.text
+ *(.hal.ram.data*)
+
+.ram_retention.entry
+                0x0000000021020000        0x0
+                0x0000000021020000                __retention_entry_func__ = ABSOLUTE (.)
+
+.ram.data       0x0000000020040020        0x0
+ *(.data*)
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_aes.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_arch_irq.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_assert_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_backup_reg.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_boot_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_clk_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_crypto_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_delay_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_ecdsa.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_flash_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_flashclk_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_gpio_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_loguart_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_md5.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_otf_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_pinmux_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_plic.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_rcc_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_sha.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_syscfg_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_systimer_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_tim_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_trng.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_uart_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_vector_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_vectors_kr4.o
+ .data          0x0000000020040020        0x0 ./build/rom/ameba_wdg.o
+ .data          0x0000000020040020        0x0 ./build/rom/char2num.o
+ .data          0x0000000020040020        0x0 ./build/rom/diag.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_asn1parse.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_asn1write.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_bignum.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_ecdh.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_ecdsa.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_ecp.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_ecp_curves.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_hmac_drbg.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_md.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_md5.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_md_wrap.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_platform_util.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_sha1.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_sha256.o
+ .data          0x0000000020040020        0x0 ./build/rom/mbedtls_rom_sha512.o
+ .data          0x0000000020040020        0x0 ./build/rom/memchr.o
+ .data          0x0000000020040020        0x0 ./build/rom/memcmp.o
+ .data          0x0000000020040020        0x0 ./build/rom/memcpy.o
+ .data          0x0000000020040020        0x0 ./build/rom/memmove.o
+ .data          0x0000000020040020        0x0 ./build/rom/memset.o
+ .data          0x0000000020040020        0x0 ./build/rom/monitor_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/rand.o
+ .data          0x0000000020040020        0x0 ./build/rom/rom_ssl_ram_map.o
+ .data          0x0000000020040020        0x0 ./build/rom/shell_rom.o
+ .data          0x0000000020040020        0x0 ./build/rom/strcmp.o
+ .data          0x0000000020040020        0x0 ./build/rom/stricmp.o
+ .data          0x0000000020040020        0x0 ./build/rom/strlen.o
+ .data          0x0000000020040020        0x0 ./build/rom/strtoul.o
+ .data          0x0000000020040020        0x0 ./build/rom/strupr.o
+ .data          0x0000000020040020        0x0 ./build/rom/strwrap.o
+
+.ram.bss        0x0000000020040020        0x0
+ *(.bss*)
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_aes.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_arch_irq.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_assert_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_backup_reg.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_boot_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_clk_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_crypto_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_delay_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_ecdsa.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_flash_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_flashclk_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_gpio_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_loguart_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_md5.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_otf_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_pinmux_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_plic.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_rcc_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_sha.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_syscfg_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_systimer_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_tim_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_trng.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_uart_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_vector_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_vectors_kr4.o
+ .bss           0x0000000020040020        0x0 ./build/rom/ameba_wdg.o
+ .bss           0x0000000020040020        0x0 ./build/rom/char2num.o
+ .bss           0x0000000020040020        0x0 ./build/rom/diag.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_asn1parse.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_asn1write.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_bignum.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_ecdh.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_ecdsa.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_ecp.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_ecp_curves.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_hmac_drbg.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_md.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_md5.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_md_wrap.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_platform_util.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_sha1.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_sha256.o
+ .bss           0x0000000020040020        0x0 ./build/rom/mbedtls_rom_sha512.o
+ .bss           0x0000000020040020        0x0 ./build/rom/memchr.o
+ .bss           0x0000000020040020        0x0 ./build/rom/memcmp.o
+ .bss           0x0000000020040020        0x0 ./build/rom/memcpy.o
+ .bss           0x0000000020040020        0x0 ./build/rom/memmove.o
+ .bss           0x0000000020040020        0x0 ./build/rom/memset.o
+ .bss           0x0000000020040020        0x0 ./build/rom/monitor_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/rand.o
+ .bss           0x0000000020040020        0x0 ./build/rom/rom_ssl_ram_map.o
+ .bss           0x0000000020040020        0x0 ./build/rom/shell_rom.o
+ .bss           0x0000000020040020        0x0 ./build/rom/strcmp.o
+ .bss           0x0000000020040020        0x0 ./build/rom/stricmp.o
+ .bss           0x0000000020040020        0x0 ./build/rom/strlen.o
+ .bss           0x0000000020040020        0x0 ./build/rom/strtoul.o
+ .bss           0x0000000020040020        0x0 ./build/rom/strupr.o
+ .bss           0x0000000020040020        0x0 ./build/rom/strwrap.o
+
+.rom.text.libgcc
+                0x0000000000018cc8        0x0
+ *(.text*)
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_aes.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_arch_irq.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_assert_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_backup_reg.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_boot_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_clk_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_crypto_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_delay_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_ecdsa.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_flash_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_flashclk_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_gpio_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_loguart_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_md5.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_otf_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_pinmux_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_plic.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_rcc_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_sha.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_syscfg_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_systimer_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_tim_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_trng.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_uart_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_vector_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_vectors_kr4.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/ameba_wdg.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/char2num.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/diag.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/memchr.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/memcmp.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/memcpy.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/memmove.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/memset.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/monitor_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/rand.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/shell_rom.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/strcmp.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/stricmp.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/strlen.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/strtoul.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/strupr.o
+ .text          0x0000000000018cc8        0x0 ./build/rom/strwrap.o
+LOAD ./build/rom/ameba_aes.o
+LOAD ./build/rom/ameba_arch_irq.o
+LOAD ./build/rom/ameba_assert_rom.o
+LOAD ./build/rom/ameba_backup_reg.o
+LOAD ./build/rom/ameba_boot_rom.o
+LOAD ./build/rom/ameba_clk_rom.o
+LOAD ./build/rom/ameba_crypto_rom.o
+LOAD ./build/rom/ameba_delay_rom.o
+LOAD ./build/rom/ameba_ecdsa.o
+LOAD ./build/rom/ameba_flash_rom.o
+LOAD ./build/rom/ameba_flashclk_rom.o
+LOAD ./build/rom/ameba_gpio_rom.o
+LOAD ./build/rom/ameba_loguart_rom.o
+LOAD ./build/rom/ameba_md5.o
+LOAD ./build/rom/ameba_otf_rom.o
+LOAD ./build/rom/ameba_pinmux_rom.o
+LOAD ./build/rom/ameba_plic.o
+LOAD ./build/rom/ameba_rcc_rom.o
+LOAD ./build/rom/ameba_sha.o
+LOAD ./build/rom/ameba_syscfg_rom.o
+LOAD ./build/rom/ameba_systimer_rom.o
+LOAD ./build/rom/ameba_tim_rom.o
+LOAD ./build/rom/ameba_trng.o
+LOAD ./build/rom/ameba_uart_rom.o
+LOAD ./build/rom/ameba_vector_rom.o
+LOAD ./build/rom/ameba_vectors_kr4.o
+LOAD ./build/rom/ameba_wdg.o
+LOAD ./build/rom/char2num.o
+LOAD ./build/rom/diag.o
+LOAD ./build/rom/mbedtls_rom_asn1parse.o
+LOAD ./build/rom/mbedtls_rom_asn1write.o
+LOAD ./build/rom/mbedtls_rom_bignum.o
+LOAD ./build/rom/mbedtls_rom_ecdh.o
+LOAD ./build/rom/mbedtls_rom_ecdsa.o
+LOAD ./build/rom/mbedtls_rom_ecp.o
+LOAD ./build/rom/mbedtls_rom_ecp_curves.o
+LOAD ./build/rom/mbedtls_rom_hmac_drbg.o
+LOAD ./build/rom/mbedtls_rom_md.o
+LOAD ./build/rom/mbedtls_rom_md5.o
+LOAD ./build/rom/mbedtls_rom_md_wrap.o
+LOAD ./build/rom/mbedtls_rom_platform_util.o
+LOAD ./build/rom/mbedtls_rom_sha1.o
+LOAD ./build/rom/mbedtls_rom_sha256.o
+LOAD ./build/rom/mbedtls_rom_sha512.o
+LOAD ./build/rom/memchr.o
+LOAD ./build/rom/memcmp.o
+LOAD ./build/rom/memcpy.o
+LOAD ./build/rom/memmove.o
+LOAD ./build/rom/memset.o
+LOAD ./build/rom/monitor_rom.o
+LOAD ./build/rom/rand.o
+LOAD ./build/rom/rom_ssl_ram_map.o
+LOAD ./build/rom/shell_rom.o
+LOAD ./build/rom/strcmp.o
+LOAD ./build/rom/stricmp.o
+LOAD ./build/rom/strlen.o
+LOAD ./build/rom/strtoul.o
+LOAD ./build/rom/strupr.o
+LOAD ./build/rom/strwrap.o
+OUTPUT(rom.o elf32-littleriscv)
+
+.debug_info     0x0000000000000000    0x2fe1e
+ .debug_info    0x0000000000000000     0x1065 ./build/rom/ameba_aes.o
+ .debug_info    0x0000000000001065      0xac1 ./build/rom/ameba_arch_irq.o
+ .debug_info    0x0000000000001b26      0x22c ./build/rom/ameba_assert_rom.o
+ .debug_info    0x0000000000001d52      0x2bc ./build/rom/ameba_backup_reg.o
+ .debug_info    0x000000000000200e      0x4bc ./build/rom/ameba_boot_rom.o
+ .debug_info    0x00000000000024ca      0x44b ./build/rom/ameba_clk_rom.o
+ .debug_info    0x0000000000002915     0x350a ./build/rom/ameba_crypto_rom.o
+ .debug_info    0x0000000000005e1f      0x1fc ./build/rom/ameba_delay_rom.o
+ .debug_info    0x000000000000601b     0x141c ./build/rom/ameba_ecdsa.o
+ .debug_info    0x0000000000007437     0x1274 ./build/rom/ameba_flash_rom.o
+ .debug_info    0x00000000000086ab     0x15b4 ./build/rom/ameba_flashclk_rom.o
+ .debug_info    0x0000000000009c5f      0xc09 ./build/rom/ameba_gpio_rom.o
+ .debug_info    0x000000000000a868     0x18f5 ./build/rom/ameba_loguart_rom.o
+ .debug_info    0x000000000000c15d     0x1106 ./build/rom/ameba_md5.o
+ .debug_info    0x000000000000d263      0x53c ./build/rom/ameba_otf_rom.o
+ .debug_info    0x000000000000d79f      0x81c ./build/rom/ameba_pinmux_rom.o
+ .debug_info    0x000000000000dfbb      0xc59 ./build/rom/ameba_plic.o
+ .debug_info    0x000000000000ec14      0x5f0 ./build/rom/ameba_rcc_rom.o
+ .debug_info    0x000000000000f204     0x1a4c ./build/rom/ameba_sha.o
+ .debug_info    0x0000000000010c50      0x655 ./build/rom/ameba_syscfg_rom.o
+ .debug_info    0x00000000000112a5      0x401 ./build/rom/ameba_systimer_rom.o
+ .debug_info    0x00000000000116a6      0x907 ./build/rom/ameba_tim_rom.o
+ .debug_info    0x0000000000011fad      0x4f7 ./build/rom/ameba_trng.o
+ .debug_info    0x00000000000124a4      0xbf3 ./build/rom/ameba_uart_rom.o
+ .debug_info    0x0000000000013097      0x3ee ./build/rom/ameba_vector_rom.o
+ .debug_info    0x0000000000013485       0x26 ./build/rom/ameba_vectors_kr4.o
+ .debug_info    0x00000000000134ab      0x77b ./build/rom/ameba_wdg.o
+ .debug_info    0x0000000000013c26      0x1b4 ./build/rom/char2num.o
+ .debug_info    0x0000000000013dda      0x69c ./build/rom/diag.o
+ .debug_info    0x0000000000014476      0xb2a ./build/rom/mbedtls_rom_asn1parse.o
+ .debug_info    0x0000000000014fa0      0xfcb ./build/rom/mbedtls_rom_asn1write.o
+ .debug_info    0x0000000000015f6b     0x497d ./build/rom/mbedtls_rom_bignum.o
+ .debug_info    0x000000000001a8e8     0x15d9 ./build/rom/mbedtls_rom_ecdh.o
+ .debug_info    0x000000000001bec1     0x219e ./build/rom/mbedtls_rom_ecdsa.o
+ .debug_info    0x000000000001e05f     0x64d6 ./build/rom/mbedtls_rom_ecp.o
+ .debug_info    0x0000000000024535     0x3d82 ./build/rom/mbedtls_rom_ecp_curves.o
+ .debug_info    0x00000000000282b7      0xc45 ./build/rom/mbedtls_rom_hmac_drbg.o
+ .debug_info    0x0000000000028efc      0xe8a ./build/rom/mbedtls_rom_md.o
+ .debug_info    0x0000000000029d86      0x829 ./build/rom/mbedtls_rom_md5.o
+ .debug_info    0x000000000002a5af     0x1400 ./build/rom/mbedtls_rom_md_wrap.o
+ .debug_info    0x000000000002b9af       0xee ./build/rom/mbedtls_rom_platform_util.o
+ .debug_info    0x000000000002ba9d      0x828 ./build/rom/mbedtls_rom_sha1.o
+ .debug_info    0x000000000002c2c5      0x8a0 ./build/rom/mbedtls_rom_sha256.o
+ .debug_info    0x000000000002cb65      0x901 ./build/rom/mbedtls_rom_sha512.o
+ .debug_info    0x000000000002d466      0x14f ./build/rom/memchr.o
+ .debug_info    0x000000000002d5b5      0x123 ./build/rom/memcmp.o
+ .debug_info    0x000000000002d6d8      0x14b ./build/rom/memcpy.o
+ .debug_info    0x000000000002d823      0x141 ./build/rom/memmove.o
+ .debug_info    0x000000000002d964      0x141 ./build/rom/memset.o
+ .debug_info    0x000000000002daa5      0x40e ./build/rom/monitor_rom.o
+ .debug_info    0x000000000002deb3      0x471 ./build/rom/rand.o
+ .debug_info    0x000000000002e324      0x35e ./build/rom/rom_ssl_ram_map.o
+ .debug_info    0x000000000002e682      0xccb ./build/rom/shell_rom.o
+ .debug_info    0x000000000002f34d       0xe9 ./build/rom/strcmp.o
+ .debug_info    0x000000000002f436      0x10e ./build/rom/stricmp.o
+ .debug_info    0x000000000002f544       0xe9 ./build/rom/strlen.o
+ .debug_info    0x000000000002f62d      0x1fa ./build/rom/strtoul.o
+ .debug_info    0x000000000002f827       0xdf ./build/rom/strupr.o
+ .debug_info    0x000000000002f906      0x518 ./build/rom/strwrap.o
+
+.debug_abbrev   0x0000000000000000     0x797e
+ .debug_abbrev  0x0000000000000000      0x209 ./build/rom/ameba_aes.o
+ .debug_abbrev  0x0000000000000209      0x24f ./build/rom/ameba_arch_irq.o
+ .debug_abbrev  0x0000000000000458       0xd9 ./build/rom/ameba_assert_rom.o
+ .debug_abbrev  0x0000000000000531       0xfe ./build/rom/ameba_backup_reg.o
+ .debug_abbrev  0x000000000000062f      0x22a ./build/rom/ameba_boot_rom.o
+ .debug_abbrev  0x0000000000000859      0x1c9 ./build/rom/ameba_clk_rom.o
+ .debug_abbrev  0x0000000000000a22      0x5f9 ./build/rom/ameba_crypto_rom.o
+ .debug_abbrev  0x000000000000101b      0x138 ./build/rom/ameba_delay_rom.o
+ .debug_abbrev  0x0000000000001153      0x2bd ./build/rom/ameba_ecdsa.o
+ .debug_abbrev  0x0000000000001410      0x314 ./build/rom/ameba_flash_rom.o
+ .debug_abbrev  0x0000000000001724      0x40d ./build/rom/ameba_flashclk_rom.o
+ .debug_abbrev  0x0000000000001b31      0x272 ./build/rom/ameba_gpio_rom.o
+ .debug_abbrev  0x0000000000001da3      0x334 ./build/rom/ameba_loguart_rom.o
+ .debug_abbrev  0x00000000000020d7      0x2fa ./build/rom/ameba_md5.o
+ .debug_abbrev  0x00000000000023d1      0x169 ./build/rom/ameba_otf_rom.o
+ .debug_abbrev  0x000000000000253a      0x1a7 ./build/rom/ameba_pinmux_rom.o
+ .debug_abbrev  0x00000000000026e1      0x342 ./build/rom/ameba_plic.o
+ .debug_abbrev  0x0000000000002a23      0x16f ./build/rom/ameba_rcc_rom.o
+ .debug_abbrev  0x0000000000002b92      0x318 ./build/rom/ameba_sha.o
+ .debug_abbrev  0x0000000000002eaa      0x12c ./build/rom/ameba_syscfg_rom.o
+ .debug_abbrev  0x0000000000002fd6      0x161 ./build/rom/ameba_systimer_rom.o
+ .debug_abbrev  0x0000000000003137      0x1df ./build/rom/ameba_tim_rom.o
+ .debug_abbrev  0x0000000000003316      0x1e8 ./build/rom/ameba_trng.o
+ .debug_abbrev  0x00000000000034fe      0x212 ./build/rom/ameba_uart_rom.o
+ .debug_abbrev  0x0000000000003710      0x102 ./build/rom/ameba_vector_rom.o
+ .debug_abbrev  0x0000000000003812       0x14 ./build/rom/ameba_vectors_kr4.o
+ .debug_abbrev  0x0000000000003826      0x186 ./build/rom/ameba_wdg.o
+ .debug_abbrev  0x00000000000039ac       0xcd ./build/rom/char2num.o
+ .debug_abbrev  0x0000000000003a79      0x201 ./build/rom/diag.o
+ .debug_abbrev  0x0000000000003c7a      0x226 ./build/rom/mbedtls_rom_asn1parse.o
+ .debug_abbrev  0x0000000000003ea0      0x2d5 ./build/rom/mbedtls_rom_asn1write.o
+ .debug_abbrev  0x0000000000004175      0x500 ./build/rom/mbedtls_rom_bignum.o
+ .debug_abbrev  0x0000000000004675      0x3d8 ./build/rom/mbedtls_rom_ecdh.o
+ .debug_abbrev  0x0000000000004a4d      0x353 ./build/rom/mbedtls_rom_ecdsa.o
+ .debug_abbrev  0x0000000000004da0      0x4eb ./build/rom/mbedtls_rom_ecp.o
+ .debug_abbrev  0x000000000000528b      0x334 ./build/rom/mbedtls_rom_ecp_curves.o
+ .debug_abbrev  0x00000000000055bf      0x2cb ./build/rom/mbedtls_rom_hmac_drbg.o
+ .debug_abbrev  0x000000000000588a      0x34e ./build/rom/mbedtls_rom_md.o
+ .debug_abbrev  0x0000000000005bd8      0x2da ./build/rom/mbedtls_rom_md5.o
+ .debug_abbrev  0x0000000000005eb2      0x233 ./build/rom/mbedtls_rom_md_wrap.o
+ .debug_abbrev  0x00000000000060e5       0x9b ./build/rom/mbedtls_rom_platform_util.o
+ .debug_abbrev  0x0000000000006180      0x2a1 ./build/rom/mbedtls_rom_sha1.o
+ .debug_abbrev  0x0000000000006421      0x2e5 ./build/rom/mbedtls_rom_sha256.o
+ .debug_abbrev  0x0000000000006706      0x2e5 ./build/rom/mbedtls_rom_sha512.o
+ .debug_abbrev  0x00000000000069eb       0xdb ./build/rom/memchr.o
+ .debug_abbrev  0x0000000000006ac6       0x89 ./build/rom/memcmp.o
+ .debug_abbrev  0x0000000000006b4f       0xc0 ./build/rom/memcpy.o
+ .debug_abbrev  0x0000000000006c0f       0xb9 ./build/rom/memmove.o
+ .debug_abbrev  0x0000000000006cc8       0xbe ./build/rom/memset.o
+ .debug_abbrev  0x0000000000006d86      0x19e ./build/rom/monitor_rom.o
+ .debug_abbrev  0x0000000000006f24      0x1d7 ./build/rom/rand.o
+ .debug_abbrev  0x00000000000070fb       0xb0 ./build/rom/rom_ssl_ram_map.o
+ .debug_abbrev  0x00000000000071ab      0x3d1 ./build/rom/shell_rom.o
+ .debug_abbrev  0x000000000000757c       0x7c ./build/rom/strcmp.o
+ .debug_abbrev  0x00000000000075f8       0x94 ./build/rom/stricmp.o
+ .debug_abbrev  0x000000000000768c       0x8b ./build/rom/strlen.o
+ .debug_abbrev  0x0000000000007717      0x108 ./build/rom/strtoul.o
+ .debug_abbrev  0x000000000000781f       0x9a ./build/rom/strupr.o
+ .debug_abbrev  0x00000000000078b9       0xc5 ./build/rom/strwrap.o
+
+.debug_loc      0x0000000000000000    0x25451
+ .debug_loc     0x0000000000000000     0x1178 ./build/rom/ameba_aes.o
+ .debug_loc     0x0000000000001178      0x57b ./build/rom/ameba_arch_irq.o
+ .debug_loc     0x00000000000016f3       0x6e ./build/rom/ameba_assert_rom.o
+ .debug_loc     0x0000000000001761      0x146 ./build/rom/ameba_backup_reg.o
+ .debug_loc     0x00000000000018a7       0x80 ./build/rom/ameba_boot_rom.o
+ .debug_loc     0x0000000000001927      0x2e9 ./build/rom/ameba_clk_rom.o
+ .debug_loc     0x0000000000001c10     0x25e7 ./build/rom/ameba_crypto_rom.o
+ .debug_loc     0x00000000000041f7      0x118 ./build/rom/ameba_delay_rom.o
+ .debug_loc     0x000000000000430f     0x1284 ./build/rom/ameba_ecdsa.o
+ .debug_loc     0x0000000000005593      0x98a ./build/rom/ameba_flash_rom.o
+ .debug_loc     0x0000000000005f1d      0x9b2 ./build/rom/ameba_flashclk_rom.o
+ .debug_loc     0x00000000000068cf      0xaed ./build/rom/ameba_gpio_rom.o
+ .debug_loc     0x00000000000073bc      0xbfc ./build/rom/ameba_loguart_rom.o
+ .debug_loc     0x0000000000007fb8      0x8d4 ./build/rom/ameba_md5.o
+ .debug_loc     0x000000000000888c      0x25e ./build/rom/ameba_otf_rom.o
+ .debug_loc     0x0000000000008aea      0x70d ./build/rom/ameba_pinmux_rom.o
+ .debug_loc     0x00000000000091f7      0x398 ./build/rom/ameba_plic.o
+ .debug_loc     0x000000000000958f      0x7bb ./build/rom/ameba_rcc_rom.o
+ .debug_loc     0x0000000000009d4a     0x1287 ./build/rom/ameba_sha.o
+ .debug_loc     0x000000000000afd1      0x2aa ./build/rom/ameba_syscfg_rom.o
+ .debug_loc     0x000000000000b27b      0x165 ./build/rom/ameba_systimer_rom.o
+ .debug_loc     0x000000000000b3e0      0x59c ./build/rom/ameba_tim_rom.o
+ .debug_loc     0x000000000000b97c       0xac ./build/rom/ameba_trng.o
+ .debug_loc     0x000000000000ba28      0x9eb ./build/rom/ameba_uart_rom.o
+ .debug_loc     0x000000000000c413      0x1c4 ./build/rom/ameba_vector_rom.o
+ .debug_loc     0x000000000000c5d7      0x4cf ./build/rom/ameba_wdg.o
+ .debug_loc     0x000000000000caa6      0x223 ./build/rom/char2num.o
+ .debug_loc     0x000000000000ccc9     0x1086 ./build/rom/diag.o
+ .debug_loc     0x000000000000dd4f      0x8ae ./build/rom/mbedtls_rom_asn1parse.o
+ .debug_loc     0x000000000000e5fd     0x131d ./build/rom/mbedtls_rom_asn1write.o
+ .debug_loc     0x000000000000f91a     0x6594 ./build/rom/mbedtls_rom_bignum.o
+ .debug_loc     0x0000000000015eae     0x1571 ./build/rom/mbedtls_rom_ecdh.o
+ .debug_loc     0x000000000001741f     0x19ee ./build/rom/mbedtls_rom_ecdsa.o
+ .debug_loc     0x0000000000018e0d     0x49e8 ./build/rom/mbedtls_rom_ecp.o
+ .debug_loc     0x000000000001d7f5     0x255b ./build/rom/mbedtls_rom_ecp_curves.o
+ .debug_loc     0x000000000001fd50      0x9e0 ./build/rom/mbedtls_rom_hmac_drbg.o
+ .debug_loc     0x0000000000020730      0xaaf ./build/rom/mbedtls_rom_md.o
+ .debug_loc     0x00000000000211df      0x607 ./build/rom/mbedtls_rom_md5.o
+ .debug_loc     0x00000000000217e6      0x84a ./build/rom/mbedtls_rom_md_wrap.o
+ .debug_loc     0x0000000000022030       0x63 ./build/rom/mbedtls_rom_platform_util.o
+ .debug_loc     0x0000000000022093      0x60a ./build/rom/mbedtls_rom_sha1.o
+ .debug_loc     0x000000000002269d      0x6b2 ./build/rom/mbedtls_rom_sha256.o
+ .debug_loc     0x0000000000022d4f      0x682 ./build/rom/mbedtls_rom_sha512.o
+ .debug_loc     0x00000000000233d1      0x18b ./build/rom/memchr.o
+ .debug_loc     0x000000000002355c      0x130 ./build/rom/memcmp.o
+ .debug_loc     0x000000000002368c      0x248 ./build/rom/memcpy.o
+ .debug_loc     0x00000000000238d4      0x2d9 ./build/rom/memmove.o
+ .debug_loc     0x0000000000023bad      0x154 ./build/rom/memset.o
+ .debug_loc     0x0000000000023d01       0xdc ./build/rom/monitor_rom.o
+ .debug_loc     0x0000000000023ddd      0x5a0 ./build/rom/rand.o
+ .debug_loc     0x000000000002437d      0x7c6 ./build/rom/shell_rom.o
+ .debug_loc     0x0000000000024b43       0x89 ./build/rom/strcmp.o
+ .debug_loc     0x0000000000024bcc       0x47 ./build/rom/stricmp.o
+ .debug_loc     0x0000000000024c13       0x7e ./build/rom/strlen.o
+ .debug_loc     0x0000000000024c91      0x48a ./build/rom/strtoul.o
+ .debug_loc     0x000000000002511b       0x1e ./build/rom/strupr.o
+ .debug_loc     0x0000000000025139      0x318 ./build/rom/strwrap.o
+
+.debug_aranges  0x0000000000000000     0x1238
+ .debug_aranges
+                0x0000000000000000       0xa8 ./build/rom/ameba_aes.o
+ .debug_aranges
+                0x00000000000000a8       0x88 ./build/rom/ameba_arch_irq.o
+ .debug_aranges
+                0x0000000000000130       0x20 ./build/rom/ameba_assert_rom.o
+ .debug_aranges
+                0x0000000000000150       0x38 ./build/rom/ameba_backup_reg.o
+ .debug_aranges
+                0x0000000000000188       0x28 ./build/rom/ameba_boot_rom.o
+ .debug_aranges
+                0x00000000000001b0       0x40 ./build/rom/ameba_clk_rom.o
+ .debug_aranges
+                0x00000000000001f0       0xb8 ./build/rom/ameba_crypto_rom.o
+ .debug_aranges
+                0x00000000000002a8       0x30 ./build/rom/ameba_delay_rom.o
+ .debug_aranges
+                0x00000000000002d8       0x70 ./build/rom/ameba_ecdsa.o
+ .debug_aranges
+                0x0000000000000348       0xb8 ./build/rom/ameba_flash_rom.o
+ .debug_aranges
+                0x0000000000000400       0x88 ./build/rom/ameba_flashclk_rom.o
+ .debug_aranges
+                0x0000000000000488       0x88 ./build/rom/ameba_gpio_rom.o
+ .debug_aranges
+                0x0000000000000510      0x138 ./build/rom/ameba_loguart_rom.o
+ .debug_aranges
+                0x0000000000000648       0x88 ./build/rom/ameba_md5.o
+ .debug_aranges
+                0x00000000000006d0       0x50 ./build/rom/ameba_otf_rom.o
+ .debug_aranges
+                0x0000000000000720       0x70 ./build/rom/ameba_pinmux_rom.o
+ .debug_aranges
+                0x0000000000000790       0xa0 ./build/rom/ameba_plic.o
+ .debug_aranges
+                0x0000000000000830       0x80 ./build/rom/ameba_rcc_rom.o
+ .debug_aranges
+                0x00000000000008b0       0xe8 ./build/rom/ameba_sha.o
+ .debug_aranges
+                0x0000000000000998       0xf8 ./build/rom/ameba_syscfg_rom.o
+ .debug_aranges
+                0x0000000000000a90       0x38 ./build/rom/ameba_systimer_rom.o
+ .debug_aranges
+                0x0000000000000ac8       0x68 ./build/rom/ameba_tim_rom.o
+ .debug_aranges
+                0x0000000000000b30       0x48 ./build/rom/ameba_trng.o
+ .debug_aranges
+                0x0000000000000b78       0xf8 ./build/rom/ameba_uart_rom.o
+ .debug_aranges
+                0x0000000000000c70       0x60 ./build/rom/ameba_vector_rom.o
+ .debug_aranges
+                0x0000000000000cd0       0x20 ./build/rom/ameba_vectors_kr4.o
+ .debug_aranges
+                0x0000000000000cf0       0x78 ./build/rom/ameba_wdg.o
+ .debug_aranges
+                0x0000000000000d68       0x30 ./build/rom/char2num.o
+ .debug_aranges
+                0x0000000000000d98       0x40 ./build/rom/diag.o
+ .debug_aranges
+                0x0000000000000dd8       0x20 ./build/rom/mbedtls_rom_asn1parse.o
+ .debug_aranges
+                0x0000000000000df8       0x20 ./build/rom/mbedtls_rom_asn1write.o
+ .debug_aranges
+                0x0000000000000e18       0x20 ./build/rom/mbedtls_rom_bignum.o
+ .debug_aranges
+                0x0000000000000e38       0x20 ./build/rom/mbedtls_rom_ecdh.o
+ .debug_aranges
+                0x0000000000000e58       0x20 ./build/rom/mbedtls_rom_ecdsa.o
+ .debug_aranges
+                0x0000000000000e78       0x20 ./build/rom/mbedtls_rom_ecp.o
+ .debug_aranges
+                0x0000000000000e98       0x20 ./build/rom/mbedtls_rom_ecp_curves.o
+ .debug_aranges
+                0x0000000000000eb8       0x20 ./build/rom/mbedtls_rom_hmac_drbg.o
+ .debug_aranges
+                0x0000000000000ed8       0x20 ./build/rom/mbedtls_rom_md.o
+ .debug_aranges
+                0x0000000000000ef8       0x20 ./build/rom/mbedtls_rom_md5.o
+ .debug_aranges
+                0x0000000000000f18       0x20 ./build/rom/mbedtls_rom_md_wrap.o
+ .debug_aranges
+                0x0000000000000f38       0x20 ./build/rom/mbedtls_rom_platform_util.o
+ .debug_aranges
+                0x0000000000000f58       0x20 ./build/rom/mbedtls_rom_sha1.o
+ .debug_aranges
+                0x0000000000000f78       0x20 ./build/rom/mbedtls_rom_sha256.o
+ .debug_aranges
+                0x0000000000000f98       0x20 ./build/rom/mbedtls_rom_sha512.o
+ .debug_aranges
+                0x0000000000000fb8       0x20 ./build/rom/memchr.o
+ .debug_aranges
+                0x0000000000000fd8       0x20 ./build/rom/memcmp.o
+ .debug_aranges
+                0x0000000000000ff8       0x20 ./build/rom/memcpy.o
+ .debug_aranges
+                0x0000000000001018       0x20 ./build/rom/memmove.o
+ .debug_aranges
+                0x0000000000001038       0x20 ./build/rom/memset.o
+ .debug_aranges
+                0x0000000000001058       0x30 ./build/rom/monitor_rom.o
+ .debug_aranges
+                0x0000000000001088       0x30 ./build/rom/rand.o
+ .debug_aranges
+                0x00000000000010b8       0x18 ./build/rom/rom_ssl_ram_map.o
+ .debug_aranges
+                0x00000000000010d0       0x60 ./build/rom/shell_rom.o
+ .debug_aranges
+                0x0000000000001130       0x20 ./build/rom/strcmp.o
+ .debug_aranges
+                0x0000000000001150       0x20 ./build/rom/stricmp.o
+ .debug_aranges
+                0x0000000000001170       0x20 ./build/rom/strlen.o
+ .debug_aranges
+                0x0000000000001190       0x20 ./build/rom/strtoul.o
+ .debug_aranges
+                0x00000000000011b0       0x20 ./build/rom/strupr.o
+ .debug_aranges
+                0x00000000000011d0       0x68 ./build/rom/strwrap.o
+
+.debug_ranges   0x0000000000000000     0x2690
+ .debug_ranges  0x0000000000000000       0x98 ./build/rom/ameba_aes.o
+ .debug_ranges  0x0000000000000098       0x78 ./build/rom/ameba_arch_irq.o
+ .debug_ranges  0x0000000000000110       0x10 ./build/rom/ameba_assert_rom.o
+ .debug_ranges  0x0000000000000120       0x28 ./build/rom/ameba_backup_reg.o
+ .debug_ranges  0x0000000000000148       0xd0 ./build/rom/ameba_boot_rom.o
+ .debug_ranges  0x0000000000000218       0x50 ./build/rom/ameba_clk_rom.o
+ .debug_ranges  0x0000000000000268      0x468 ./build/rom/ameba_crypto_rom.o
+ .debug_ranges  0x00000000000006d0       0x40 ./build/rom/ameba_delay_rom.o
+ .debug_ranges  0x0000000000000710       0x60 ./build/rom/ameba_ecdsa.o
+ .debug_ranges  0x0000000000000770       0xd0 ./build/rom/ameba_flash_rom.o
+ .debug_ranges  0x0000000000000840       0xe0 ./build/rom/ameba_flashclk_rom.o
+ .debug_ranges  0x0000000000000920       0x78 ./build/rom/ameba_gpio_rom.o
+ .debug_ranges  0x0000000000000998      0x1d8 ./build/rom/ameba_loguart_rom.o
+ .debug_ranges  0x0000000000000b70       0x78 ./build/rom/ameba_md5.o
+ .debug_ranges  0x0000000000000be8       0x40 ./build/rom/ameba_otf_rom.o
+ .debug_ranges  0x0000000000000c28       0x60 ./build/rom/ameba_pinmux_rom.o
+ .debug_ranges  0x0000000000000c88      0x108 ./build/rom/ameba_plic.o
+ .debug_ranges  0x0000000000000d90       0x70 ./build/rom/ameba_rcc_rom.o
+ .debug_ranges  0x0000000000000e00       0xd8 ./build/rom/ameba_sha.o
+ .debug_ranges  0x0000000000000ed8       0xe8 ./build/rom/ameba_syscfg_rom.o
+ .debug_ranges  0x0000000000000fc0       0x28 ./build/rom/ameba_systimer_rom.o
+ .debug_ranges  0x0000000000000fe8       0x58 ./build/rom/ameba_tim_rom.o
+ .debug_ranges  0x0000000000001040       0x58 ./build/rom/ameba_trng.o
+ .debug_ranges  0x0000000000001098       0xe8 ./build/rom/ameba_uart_rom.o
+ .debug_ranges  0x0000000000001180       0x50 ./build/rom/ameba_vector_rom.o
+ .debug_ranges  0x00000000000011d0       0x68 ./build/rom/ameba_wdg.o
+ .debug_ranges  0x0000000000001238       0xa0 ./build/rom/char2num.o
+ .debug_ranges  0x00000000000012d8      0x168 ./build/rom/diag.o
+ .debug_ranges  0x0000000000001440       0x70 ./build/rom/mbedtls_rom_asn1write.o
+ .debug_ranges  0x00000000000014b0      0x2c0 ./build/rom/mbedtls_rom_bignum.o
+ .debug_ranges  0x0000000000001770      0x1e0 ./build/rom/mbedtls_rom_ecdh.o
+ .debug_ranges  0x0000000000001950       0x18 ./build/rom/mbedtls_rom_ecdsa.o
+ .debug_ranges  0x0000000000001968      0x290 ./build/rom/mbedtls_rom_ecp.o
+ .debug_ranges  0x0000000000001bf8      0x628 ./build/rom/mbedtls_rom_ecp_curves.o
+ .debug_ranges  0x0000000000002220       0x38 ./build/rom/mbedtls_rom_hmac_drbg.o
+ .debug_ranges  0x0000000000002258       0x20 ./build/rom/mbedtls_rom_md.o
+ .debug_ranges  0x0000000000002278       0x30 ./build/rom/mbedtls_rom_md5.o
+ .debug_ranges  0x00000000000022a8       0x18 ./build/rom/mbedtls_rom_sha1.o
+ .debug_ranges  0x00000000000022c0       0x18 ./build/rom/mbedtls_rom_sha256.o
+ .debug_ranges  0x00000000000022d8       0x28 ./build/rom/mbedtls_rom_sha512.o
+ .debug_ranges  0x0000000000002300       0x10 ./build/rom/memchr.o
+ .debug_ranges  0x0000000000002310       0x10 ./build/rom/memcmp.o
+ .debug_ranges  0x0000000000002320       0x10 ./build/rom/memcpy.o
+ .debug_ranges  0x0000000000002330       0x10 ./build/rom/memmove.o
+ .debug_ranges  0x0000000000002340       0x10 ./build/rom/memset.o
+ .debug_ranges  0x0000000000002350       0x20 ./build/rom/monitor_rom.o
+ .debug_ranges  0x0000000000002370      0x148 ./build/rom/rand.o
+ .debug_ranges  0x00000000000024b8       0xb0 ./build/rom/shell_rom.o
+ .debug_ranges  0x0000000000002568       0x10 ./build/rom/strcmp.o
+ .debug_ranges  0x0000000000002578       0x70 ./build/rom/stricmp.o
+ .debug_ranges  0x00000000000025e8       0x10 ./build/rom/strlen.o
+ .debug_ranges  0x00000000000025f8       0x30 ./build/rom/strtoul.o
+ .debug_ranges  0x0000000000002628       0x10 ./build/rom/strupr.o
+ .debug_ranges  0x0000000000002638       0x58 ./build/rom/strwrap.o
+
+.debug_line     0x0000000000000000    0x4f009
+ .debug_line    0x0000000000000000     0x10e2 ./build/rom/ameba_aes.o
+ .debug_line    0x00000000000010e2      0x93e ./build/rom/ameba_arch_irq.o
+ .debug_line    0x0000000000001a20      0x327 ./build/rom/ameba_assert_rom.o
+ .debug_line    0x0000000000001d47      0x419 ./build/rom/ameba_backup_reg.o
+ .debug_line    0x0000000000002160      0x6f5 ./build/rom/ameba_boot_rom.o
+ .debug_line    0x0000000000002855      0x71d ./build/rom/ameba_clk_rom.o
+ .debug_line    0x0000000000002f72     0x46f2 ./build/rom/ameba_crypto_rom.o
+ .debug_line    0x0000000000007664      0x3e6 ./build/rom/ameba_delay_rom.o
+ .debug_line    0x0000000000007a4a     0x1937 ./build/rom/ameba_ecdsa.o
+ .debug_line    0x0000000000009381     0x237c ./build/rom/ameba_flash_rom.o
+ .debug_line    0x000000000000b6fd     0x1a0e ./build/rom/ameba_flashclk_rom.o
+ .debug_line    0x000000000000d10b     0x11b2 ./build/rom/ameba_gpio_rom.o
+ .debug_line    0x000000000000e2bd     0x211d ./build/rom/ameba_loguart_rom.o
+ .debug_line    0x00000000000103da     0x117a ./build/rom/ameba_md5.o
+ .debug_line    0x0000000000011554      0x625 ./build/rom/ameba_otf_rom.o
+ .debug_line    0x0000000000011b79      0xca2 ./build/rom/ameba_pinmux_rom.o
+ .debug_line    0x000000000001281b      0xb2a ./build/rom/ameba_plic.o
+ .debug_line    0x0000000000013345      0xb54 ./build/rom/ameba_rcc_rom.o
+ .debug_line    0x0000000000013e99     0x23a3 ./build/rom/ameba_sha.o
+ .debug_line    0x000000000001623c      0xab4 ./build/rom/ameba_syscfg_rom.o
+ .debug_line    0x0000000000016cf0      0x4c2 ./build/rom/ameba_systimer_rom.o
+ .debug_line    0x00000000000171b2     0x1a4a ./build/rom/ameba_tim_rom.o
+ .debug_line    0x0000000000018bfc      0x5e8 ./build/rom/ameba_trng.o
+ .debug_line    0x00000000000191e4     0x1285 ./build/rom/ameba_uart_rom.o
+ .debug_line    0x000000000001a469      0x429 ./build/rom/ameba_vector_rom.o
+ .debug_line    0x000000000001a892       0xd2 ./build/rom/ameba_vectors_kr4.o
+ .debug_line    0x000000000001a964      0xd62 ./build/rom/ameba_wdg.o
+ .debug_line    0x000000000001b6c6      0x566 ./build/rom/char2num.o
+ .debug_line    0x000000000001bc2c     0x1a2d ./build/rom/diag.o
+ .debug_line    0x000000000001d659     0x1099 ./build/rom/mbedtls_rom_asn1parse.o
+ .debug_line    0x000000000001e6f2     0x18b1 ./build/rom/mbedtls_rom_asn1write.o
+ .debug_line    0x000000000001ffa3     0xc890 ./build/rom/mbedtls_rom_bignum.o
+ .debug_line    0x000000000002c833      0xef8 ./build/rom/mbedtls_rom_ecdh.o
+ .debug_line    0x000000000002d72b     0x1719 ./build/rom/mbedtls_rom_ecdsa.o
+ .debug_line    0x000000000002ee44     0x764e ./build/rom/mbedtls_rom_ecp.o
+ .debug_line    0x0000000000036492     0x507c ./build/rom/mbedtls_rom_ecp_curves.o
+ .debug_line    0x000000000003b50e      0xb8b ./build/rom/mbedtls_rom_hmac_drbg.o
+ .debug_line    0x000000000003c099     0x106d ./build/rom/mbedtls_rom_md.o
+ .debug_line    0x000000000003d106     0x28c5 ./build/rom/mbedtls_rom_md5.o
+ .debug_line    0x000000000003f9cb      0x948 ./build/rom/mbedtls_rom_md_wrap.o
+ .debug_line    0x0000000000040313      0x21a ./build/rom/mbedtls_rom_platform_util.o
+ .debug_line    0x000000000004052d     0x3fb1 ./build/rom/mbedtls_rom_sha1.o
+ .debug_line    0x00000000000444de     0x325f ./build/rom/mbedtls_rom_sha256.o
+ .debug_line    0x000000000004773d     0x2e35 ./build/rom/mbedtls_rom_sha512.o
+ .debug_line    0x000000000004a572      0x4d2 ./build/rom/memchr.o
+ .debug_line    0x000000000004aa44      0x2b1 ./build/rom/memcmp.o
+ .debug_line    0x000000000004acf5      0x34f ./build/rom/memcpy.o
+ .debug_line    0x000000000004b044      0x3a9 ./build/rom/memmove.o
+ .debug_line    0x000000000004b3ed      0x4de ./build/rom/memset.o
+ .debug_line    0x000000000004b8cb      0x5da ./build/rom/monitor_rom.o
+ .debug_line    0x000000000004bea5      0x8c1 ./build/rom/rand.o
+ .debug_line    0x000000000004c766      0x266 ./build/rom/rom_ssl_ram_map.o
+ .debug_line    0x000000000004c9cc     0x1228 ./build/rom/shell_rom.o
+ .debug_line    0x000000000004dbf4      0x24a ./build/rom/strcmp.o
+ .debug_line    0x000000000004de3e      0x19a ./build/rom/stricmp.o
+ .debug_line    0x000000000004dfd8      0x2d6 ./build/rom/strlen.o
+ .debug_line    0x000000000004e2ae      0x625 ./build/rom/strtoul.o
+ .debug_line    0x000000000004e8d3      0x2c8 ./build/rom/strupr.o
+ .debug_line    0x000000000004eb9b      0x46e ./build/rom/strwrap.o
+
+.debug_str      0x0000000000000000    0x16dca
+ .debug_str     0x0000000000000000      0x698 ./build/rom/ameba_aes.o
+ .debug_str     0x0000000000000698      0xded ./build/rom/ameba_arch_irq.o
+ .debug_str     0x0000000000001485      0x448 ./build/rom/ameba_assert_rom.o
+ .debug_str     0x00000000000018cd      0x2e2 ./build/rom/ameba_backup_reg.o
+ .debug_str     0x0000000000001baf      0x49d ./build/rom/ameba_boot_rom.o
+ .debug_str     0x000000000000204c      0x477 ./build/rom/ameba_clk_rom.o
+ .debug_str     0x00000000000024c3      0xdf2 ./build/rom/ameba_crypto_rom.o
+ .debug_str     0x00000000000032b5      0x2f5 ./build/rom/ameba_delay_rom.o
+ .debug_str     0x00000000000035aa      0x818 ./build/rom/ameba_ecdsa.o
+ .debug_str     0x0000000000003dc2      0xa48 ./build/rom/ameba_flash_rom.o
+ .debug_str     0x000000000000480a      0xe85 ./build/rom/ameba_flashclk_rom.o
+ .debug_str     0x000000000000568f      0x63f ./build/rom/ameba_gpio_rom.o
+ .debug_str     0x0000000000005cce     0x1724 ./build/rom/ameba_loguart_rom.o
+ .debug_str     0x00000000000073f2      0x75f ./build/rom/ameba_md5.o
+ .debug_str     0x0000000000007b51      0x472 ./build/rom/ameba_otf_rom.o
+ .debug_str     0x0000000000007fc3      0x3d1 ./build/rom/ameba_pinmux_rom.o
+ .debug_str     0x0000000000008394      0xe5b ./build/rom/ameba_plic.o
+ .debug_str     0x00000000000091ef      0x4f5 ./build/rom/ameba_rcc_rom.o
+ .debug_str     0x00000000000096e4      0x8b5 ./build/rom/ameba_sha.o
+ .debug_str     0x0000000000009f99      0x4ef ./build/rom/ameba_syscfg_rom.o
+ .debug_str     0x000000000000a488      0x3e9 ./build/rom/ameba_systimer_rom.o
+ .debug_str     0x000000000000a871      0x4be ./build/rom/ameba_tim_rom.o
+ .debug_str     0x000000000000ad2f      0x5e8 ./build/rom/ameba_trng.o
+ .debug_str     0x000000000000b317      0x658 ./build/rom/ameba_uart_rom.o
+ .debug_str     0x000000000000b96f      0x3d8 ./build/rom/ameba_vector_rom.o
+ .debug_str     0x000000000000bd47      0x114 ./build/rom/ameba_vectors_kr4.o
+ .debug_str     0x000000000000be5b      0x3ef ./build/rom/ameba_wdg.o
+ .debug_str     0x000000000000c24a      0x259 ./build/rom/char2num.o
+ .debug_str     0x000000000000c4a3      0x370 ./build/rom/diag.o
+ .debug_str     0x000000000000c813      0x640 ./build/rom/mbedtls_rom_asn1parse.o
+ .debug_str     0x000000000000ce53      0x6fa ./build/rom/mbedtls_rom_asn1write.o
+ .debug_str     0x000000000000d54d      0xac9 ./build/rom/mbedtls_rom_bignum.o
+ .debug_str     0x000000000000e016      0x8ff ./build/rom/mbedtls_rom_ecdh.o
+ .debug_str     0x000000000000e915      0xbc7 ./build/rom/mbedtls_rom_ecdsa.o
+ .debug_str     0x000000000000f4dc     0x11c7 ./build/rom/mbedtls_rom_ecp.o
+ .debug_str     0x00000000000106a3      0xa4b ./build/rom/mbedtls_rom_ecp_curves.o
+ .debug_str     0x00000000000110ee      0x609 ./build/rom/mbedtls_rom_hmac_drbg.o
+ .debug_str     0x00000000000116f7      0x826 ./build/rom/mbedtls_rom_md.o
+ .debug_str     0x0000000000011f1d      0x41f ./build/rom/mbedtls_rom_md5.o
+ .debug_str     0x000000000001233c      0xb5b ./build/rom/mbedtls_rom_md_wrap.o
+ .debug_str     0x0000000000012e97      0x291 ./build/rom/mbedtls_rom_platform_util.o
+ .debug_str     0x0000000000013128      0x433 ./build/rom/mbedtls_rom_sha1.o
+ .debug_str     0x000000000001355b      0x45e ./build/rom/mbedtls_rom_sha256.o
+ .debug_str     0x00000000000139b9      0x45e ./build/rom/mbedtls_rom_sha512.o
+ .debug_str     0x0000000000013e17      0x267 ./build/rom/memchr.o
+ .debug_str     0x000000000001407e      0x239 ./build/rom/memcmp.o
+ .debug_str     0x00000000000142b7      0x260 ./build/rom/memcpy.o
+ .debug_str     0x0000000000014517      0x26c ./build/rom/memmove.o
+ .debug_str     0x0000000000014783      0x261 ./build/rom/memset.o
+ .debug_str     0x00000000000149e4      0x4e1 ./build/rom/monitor_rom.o
+ .debug_str     0x0000000000014ec5      0x34b ./build/rom/rand.o
+ .debug_str     0x0000000000015210      0x432 ./build/rom/rom_ssl_ram_map.o
+ .debug_str     0x0000000000015642      0x89b ./build/rom/shell_rom.o
+ .debug_str     0x0000000000015edd      0x232 ./build/rom/strcmp.o
+ .debug_str     0x000000000001610f      0x24c ./build/rom/stricmp.o
+ .debug_str     0x000000000001635b      0x24c ./build/rom/strlen.o
+ .debug_str     0x00000000000165a7      0x271 ./build/rom/strtoul.o
+ .debug_str     0x0000000000016818      0x250 ./build/rom/strupr.o
+ .debug_str     0x0000000000016a68      0x362 ./build/rom/strwrap.o
+
+.comment        0x0000000000000000      0xa6c
+ .comment       0x0000000000000000       0x2e ./build/rom/ameba_aes.o
+ .comment       0x000000000000002e       0x2e ./build/rom/ameba_arch_irq.o
+ .comment       0x000000000000005c       0x2e ./build/rom/ameba_assert_rom.o
+ .comment       0x000000000000008a       0x2e ./build/rom/ameba_backup_reg.o
+ .comment       0x00000000000000b8       0x2e ./build/rom/ameba_boot_rom.o
+ .comment       0x00000000000000e6       0x2e ./build/rom/ameba_clk_rom.o
+ .comment       0x0000000000000114       0x2e ./build/rom/ameba_crypto_rom.o
+ .comment       0x0000000000000142       0x2e ./build/rom/ameba_delay_rom.o
+ .comment       0x0000000000000170       0x2e ./build/rom/ameba_ecdsa.o
+ .comment       0x000000000000019e       0x2e ./build/rom/ameba_flash_rom.o
+ .comment       0x00000000000001cc       0x2e ./build/rom/ameba_flashclk_rom.o
+ .comment       0x00000000000001fa       0x2e ./build/rom/ameba_gpio_rom.o
+ .comment       0x0000000000000228       0x2e ./build/rom/ameba_loguart_rom.o
+ .comment       0x0000000000000256       0x2e ./build/rom/ameba_md5.o
+ .comment       0x0000000000000284       0x2e ./build/rom/ameba_otf_rom.o
+ .comment       0x00000000000002b2       0x2e ./build/rom/ameba_pinmux_rom.o
+ .comment       0x00000000000002e0       0x2e ./build/rom/ameba_plic.o
+ .comment       0x000000000000030e       0x2e ./build/rom/ameba_rcc_rom.o
+ .comment       0x000000000000033c       0x2e ./build/rom/ameba_sha.o
+ .comment       0x000000000000036a       0x2e ./build/rom/ameba_syscfg_rom.o
+ .comment       0x0000000000000398       0x2e ./build/rom/ameba_systimer_rom.o
+ .comment       0x00000000000003c6       0x2e ./build/rom/ameba_tim_rom.o
+ .comment       0x00000000000003f4       0x2e ./build/rom/ameba_trng.o
+ .comment       0x0000000000000422       0x2e ./build/rom/ameba_uart_rom.o
+ .comment       0x0000000000000450       0x2e ./build/rom/ameba_vector_rom.o
+ .comment       0x000000000000047e       0x2e ./build/rom/ameba_wdg.o
+ .comment       0x00000000000004ac       0x2e ./build/rom/char2num.o
+ .comment       0x00000000000004da       0x2e ./build/rom/diag.o
+ .comment       0x0000000000000508       0x2e ./build/rom/mbedtls_rom_asn1parse.o
+ .comment       0x0000000000000536       0x2e ./build/rom/mbedtls_rom_asn1write.o
+ .comment       0x0000000000000564       0x2e ./build/rom/mbedtls_rom_bignum.o
+ .comment       0x0000000000000592       0x2e ./build/rom/mbedtls_rom_ecdh.o
+ .comment       0x00000000000005c0       0x2e ./build/rom/mbedtls_rom_ecdsa.o
+ .comment       0x00000000000005ee       0x2e ./build/rom/mbedtls_rom_ecp.o
+ .comment       0x000000000000061c       0x2e ./build/rom/mbedtls_rom_ecp_curves.o
+ .comment       0x000000000000064a       0x2e ./build/rom/mbedtls_rom_hmac_drbg.o
+ .comment       0x0000000000000678       0x2e ./build/rom/mbedtls_rom_md.o
+ .comment       0x00000000000006a6       0x2e ./build/rom/mbedtls_rom_md5.o
+ .comment       0x00000000000006d4       0x2e ./build/rom/mbedtls_rom_md_wrap.o
+ .comment       0x0000000000000702       0x2e ./build/rom/mbedtls_rom_platform_util.o
+ .comment       0x0000000000000730       0x2e ./build/rom/mbedtls_rom_sha1.o
+ .comment       0x000000000000075e       0x2e ./build/rom/mbedtls_rom_sha256.o
+ .comment       0x000000000000078c       0x2e ./build/rom/mbedtls_rom_sha512.o
+ .comment       0x00000000000007ba       0x2e ./build/rom/memchr.o
+ .comment       0x00000000000007e8       0x2e ./build/rom/memcmp.o
+ .comment       0x0000000000000816       0x2e ./build/rom/memcpy.o
+ .comment       0x0000000000000844       0x2e ./build/rom/memmove.o
+ .comment       0x0000000000000872       0x2e ./build/rom/memset.o
+ .comment       0x00000000000008a0       0x2e ./build/rom/monitor_rom.o
+ .comment       0x00000000000008ce       0x2e ./build/rom/rand.o
+ .comment       0x00000000000008fc       0x2e ./build/rom/rom_ssl_ram_map.o
+ .comment       0x000000000000092a       0x2e ./build/rom/shell_rom.o
+ .comment       0x0000000000000958       0x2e ./build/rom/strcmp.o
+ .comment       0x0000000000000986       0x2e ./build/rom/stricmp.o
+ .comment       0x00000000000009b4       0x2e ./build/rom/strlen.o
+ .comment       0x00000000000009e2       0x2e ./build/rom/strtoul.o
+ .comment       0x0000000000000a10       0x2e ./build/rom/strupr.o
+ .comment       0x0000000000000a3e       0x2e ./build/rom/strwrap.o
+
+.riscv.attributes
+                0x0000000000000000       0x3f
+ .riscv.attributes
+                0x0000000000000000       0x3b ./build/rom/ameba_aes.o
+ .riscv.attributes
+                0x000000000000003b       0x3f ./build/rom/ameba_arch_irq.o
+ .riscv.attributes
+                0x000000000000007a       0x3b ./build/rom/ameba_assert_rom.o
+ .riscv.attributes
+                0x00000000000000b5       0x3b ./build/rom/ameba_backup_reg.o
+ .riscv.attributes
+                0x00000000000000f0       0x3f ./build/rom/ameba_boot_rom.o
+ .riscv.attributes
+                0x000000000000012f       0x3b ./build/rom/ameba_clk_rom.o
+ .riscv.attributes
+                0x000000000000016a       0x3f ./build/rom/ameba_crypto_rom.o
+ .riscv.attributes
+                0x00000000000001a9       0x3b ./build/rom/ameba_delay_rom.o
+ .riscv.attributes
+                0x00000000000001e4       0x3b ./build/rom/ameba_ecdsa.o
+ .riscv.attributes
+                0x000000000000021f       0x3b ./build/rom/ameba_flash_rom.o
+ .riscv.attributes
+                0x000000000000025a       0x3f ./build/rom/ameba_flashclk_rom.o
+ .riscv.attributes
+                0x0000000000000299       0x3b ./build/rom/ameba_gpio_rom.o
+ .riscv.attributes
+                0x00000000000002d4       0x3b ./build/rom/ameba_loguart_rom.o
+ .riscv.attributes
+                0x000000000000030f       0x3b ./build/rom/ameba_md5.o
+ .riscv.attributes
+                0x000000000000034a       0x3b ./build/rom/ameba_otf_rom.o
+ .riscv.attributes
+                0x0000000000000385       0x3b ./build/rom/ameba_pinmux_rom.o
+ .riscv.attributes
+                0x00000000000003c0       0x3f ./build/rom/ameba_plic.o
+ .riscv.attributes
+                0x00000000000003ff       0x3b ./build/rom/ameba_rcc_rom.o
+ .riscv.attributes
+                0x000000000000043a       0x3b ./build/rom/ameba_sha.o
+ .riscv.attributes
+                0x0000000000000475       0x3b ./build/rom/ameba_syscfg_rom.o
+ .riscv.attributes
+                0x00000000000004b0       0x3b ./build/rom/ameba_systimer_rom.o
+ .riscv.attributes
+                0x00000000000004eb       0x3b ./build/rom/ameba_tim_rom.o
+ .riscv.attributes
+                0x0000000000000526       0x3b ./build/rom/ameba_trng.o
+ .riscv.attributes
+                0x0000000000000561       0x3b ./build/rom/ameba_uart_rom.o
+ .riscv.attributes
+                0x000000000000059c       0x3b ./build/rom/ameba_vector_rom.o
+ .riscv.attributes
+                0x00000000000005d7       0x39 ./build/rom/ameba_vectors_kr4.o
+ .riscv.attributes
+                0x0000000000000610       0x3b ./build/rom/ameba_wdg.o
+ .riscv.attributes
+                0x000000000000064b       0x3b ./build/rom/char2num.o
+ .riscv.attributes
+                0x0000000000000686       0x3b ./build/rom/diag.o
+ .riscv.attributes
+                0x00000000000006c1       0x3b ./build/rom/mbedtls_rom_asn1parse.o
+ .riscv.attributes
+                0x00000000000006fc       0x3b ./build/rom/mbedtls_rom_asn1write.o
+ .riscv.attributes
+                0x0000000000000737       0x3b ./build/rom/mbedtls_rom_bignum.o
+ .riscv.attributes
+                0x0000000000000772       0x3b ./build/rom/mbedtls_rom_ecdh.o
+ .riscv.attributes
+                0x00000000000007ad       0x3b ./build/rom/mbedtls_rom_ecdsa.o
+ .riscv.attributes
+                0x00000000000007e8       0x3b ./build/rom/mbedtls_rom_ecp.o
+ .riscv.attributes
+                0x0000000000000823       0x3b ./build/rom/mbedtls_rom_ecp_curves.o
+ .riscv.attributes
+                0x000000000000085e       0x3b ./build/rom/mbedtls_rom_hmac_drbg.o
+ .riscv.attributes
+                0x0000000000000899       0x3b ./build/rom/mbedtls_rom_md.o
+ .riscv.attributes
+                0x00000000000008d4       0x3b ./build/rom/mbedtls_rom_md5.o
+ .riscv.attributes
+                0x000000000000090f       0x3b ./build/rom/mbedtls_rom_md_wrap.o
+ .riscv.attributes
+                0x000000000000094a       0x3b ./build/rom/mbedtls_rom_platform_util.o
+ .riscv.attributes
+                0x0000000000000985       0x3b ./build/rom/mbedtls_rom_sha1.o
+ .riscv.attributes
+                0x00000000000009c0       0x3b ./build/rom/mbedtls_rom_sha256.o
+ .riscv.attributes
+                0x00000000000009fb       0x3b ./build/rom/mbedtls_rom_sha512.o
+ .riscv.attributes
+                0x0000000000000a36       0x3b ./build/rom/memchr.o
+ .riscv.attributes
+                0x0000000000000a71       0x3b ./build/rom/memcmp.o
+ .riscv.attributes
+                0x0000000000000aac       0x3b ./build/rom/memcpy.o
+ .riscv.attributes
+                0x0000000000000ae7       0x3b ./build/rom/memmove.o
+ .riscv.attributes
+                0x0000000000000b22       0x3b ./build/rom/memset.o
+ .riscv.attributes
+                0x0000000000000b5d       0x3b ./build/rom/monitor_rom.o
+ .riscv.attributes
+                0x0000000000000b98       0x3b ./build/rom/rand.o
+ .riscv.attributes
+                0x0000000000000bd3       0x3b ./build/rom/rom_ssl_ram_map.o
+ .riscv.attributes
+                0x0000000000000c0e       0x3b ./build/rom/shell_rom.o
+ .riscv.attributes
+                0x0000000000000c49       0x3b ./build/rom/strcmp.o
+ .riscv.attributes
+                0x0000000000000c84       0x3b ./build/rom/stricmp.o
+ .riscv.attributes
+                0x0000000000000cbf       0x3b ./build/rom/strlen.o
+ .riscv.attributes
+                0x0000000000000cfa       0x3b ./build/rom/strtoul.o
+ .riscv.attributes
+                0x0000000000000d35       0x3b ./build/rom/strupr.o
+ .riscv.attributes
+                0x0000000000000d70       0x3b ./build/rom/strwrap.o
+
+.debug_frame    0x0000000000000000     0x59a4
+ .debug_frame   0x0000000000000000      0x298 ./build/rom/ameba_aes.o
+ .debug_frame   0x0000000000000298      0x12c ./build/rom/ameba_arch_irq.o
+ .debug_frame   0x00000000000003c4       0x2c ./build/rom/ameba_assert_rom.o
+ .debug_frame   0x00000000000003f0       0x9c ./build/rom/ameba_backup_reg.o
+ .debug_frame   0x000000000000048c       0x3c ./build/rom/ameba_boot_rom.o
+ .debug_frame   0x00000000000004c8       0xa8 ./build/rom/ameba_clk_rom.o
+ .debug_frame   0x0000000000000570      0x39c ./build/rom/ameba_crypto_rom.o
+ .debug_frame   0x000000000000090c       0x50 ./build/rom/ameba_delay_rom.o
+ .debug_frame   0x000000000000095c      0x204 ./build/rom/ameba_ecdsa.o
+ .debug_frame   0x0000000000000b60      0x2cc ./build/rom/ameba_flash_rom.o
+ .debug_frame   0x0000000000000e2c      0x1e4 ./build/rom/ameba_flashclk_rom.o
+ .debug_frame   0x0000000000001010      0x1f0 ./build/rom/ameba_gpio_rom.o
+ .debug_frame   0x0000000000001200      0x358 ./build/rom/ameba_loguart_rom.o
+ .debug_frame   0x0000000000001558      0x264 ./build/rom/ameba_md5.o
+ .debug_frame   0x00000000000017bc       0xa4 ./build/rom/ameba_otf_rom.o
+ .debug_frame   0x0000000000001860       0xf4 ./build/rom/ameba_pinmux_rom.o
+ .debug_frame   0x0000000000001954      0x14c ./build/rom/ameba_plic.o
+ .debug_frame   0x0000000000001aa0       0xe0 ./build/rom/ameba_rcc_rom.o
+ .debug_frame   0x0000000000001b80      0x490 ./build/rom/ameba_sha.o
+ .debug_frame   0x0000000000002010      0x1f0 ./build/rom/ameba_syscfg_rom.o
+ .debug_frame   0x0000000000002200       0x84 ./build/rom/ameba_systimer_rom.o
+ .debug_frame   0x0000000000002284      0x190 ./build/rom/ameba_tim_rom.o
+ .debug_frame   0x0000000000002414       0xa4 ./build/rom/ameba_trng.o
+ .debug_frame   0x00000000000024b8      0x2a4 ./build/rom/ameba_uart_rom.o
+ .debug_frame   0x000000000000275c       0xac ./build/rom/ameba_vector_rom.o
+ .debug_frame   0x0000000000002808      0x1b0 ./build/rom/ameba_wdg.o
+ .debug_frame   0x00000000000029b8       0x40 ./build/rom/char2num.o
+ .debug_frame   0x00000000000029f8      0x118 ./build/rom/diag.o
+ .debug_frame   0x0000000000002b10      0x200 ./build/rom/mbedtls_rom_asn1parse.o
+ .debug_frame   0x0000000000002d10      0x26c ./build/rom/mbedtls_rom_asn1write.o
+ .debug_frame   0x0000000000002f7c      0x858 ./build/rom/mbedtls_rom_bignum.o
+ .debug_frame   0x00000000000037d4      0x248 ./build/rom/mbedtls_rom_ecdh.o
+ .debug_frame   0x0000000000003a1c      0x2ac ./build/rom/mbedtls_rom_ecdsa.o
+ .debug_frame   0x0000000000003cc8      0x930 ./build/rom/mbedtls_rom_ecp.o
+ .debug_frame   0x00000000000045f8      0x204 ./build/rom/mbedtls_rom_ecp_curves.o
+ .debug_frame   0x00000000000047fc      0x204 ./build/rom/mbedtls_rom_hmac_drbg.o
+ .debug_frame   0x0000000000004a00      0x258 ./build/rom/mbedtls_rom_md.o
+ .debug_frame   0x0000000000004c58      0x188 ./build/rom/mbedtls_rom_md5.o
+ .debug_frame   0x0000000000004de0      0x2b0 ./build/rom/mbedtls_rom_md_wrap.o
+ .debug_frame   0x0000000000005090       0x20 ./build/rom/mbedtls_rom_platform_util.o
+ .debug_frame   0x00000000000050b0      0x18c ./build/rom/mbedtls_rom_sha1.o
+ .debug_frame   0x000000000000523c      0x180 ./build/rom/mbedtls_rom_sha256.o
+ .debug_frame   0x00000000000053bc      0x190 ./build/rom/mbedtls_rom_sha512.o
+ .debug_frame   0x000000000000554c       0x20 ./build/rom/memchr.o
+ .debug_frame   0x000000000000556c       0x20 ./build/rom/memcmp.o
+ .debug_frame   0x000000000000558c       0x20 ./build/rom/memcpy.o
+ .debug_frame   0x00000000000055ac       0x20 ./build/rom/memmove.o
+ .debug_frame   0x00000000000055cc       0x20 ./build/rom/memset.o
+ .debug_frame   0x00000000000055ec       0x6c ./build/rom/monitor_rom.o
+ .debug_frame   0x0000000000005658       0x58 ./build/rom/rand.o
+ .debug_frame   0x00000000000056b0      0x1a4 ./build/rom/shell_rom.o
+ .debug_frame   0x0000000000005854       0x20 ./build/rom/strcmp.o
+ .debug_frame   0x0000000000005874       0x20 ./build/rom/stricmp.o
+ .debug_frame   0x0000000000005894       0x20 ./build/rom/strlen.o
+ .debug_frame   0x00000000000058b4       0x20 ./build/rom/strtoul.o
+ .debug_frame   0x00000000000058d4       0x20 ./build/rom/strupr.o
+ .debug_frame   0x00000000000058f4       0xb0 ./build/rom/strwrap.o

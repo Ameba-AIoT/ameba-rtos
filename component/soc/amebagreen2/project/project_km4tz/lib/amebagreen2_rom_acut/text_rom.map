@@ -1,0 +1,2170 @@
+Archive member included to satisfy reference by file (symbol)
+
+../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+                              (--whole-archive)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+EMPTY_SECTION    0x0000000000000000 0x0000000000000000 xrw
+AP_IROM          0x0000000000000000 0x000000000001d000 xr
+AP_DROM          0x000000000001d000 0x0000000000002000 xr
+AP_ONLY_ROM      0x000000000001f000 0x0000000000001000 xr
+NP_SYS_ROM       0x0000000000100000 0x0000000000001000 xr
+SHARE_IROM       0x0000000000101000 0x000000000000b000 xr
+SHARE_DROM       0x000000000010c000 0x0000000000003000 xr
+OS_ROM           0x000000000010f000 0x0000000000005000 xr
+WIFI_ROM         0x0000000000114000 0x0000000000033800 xr
+DELAY_ROM        0x0000000000147800 0x0000000000000800 xr
+AP_ROMBSS_RAM_S  0x0000000030000000 0x0000000000000600 rw
+AP_MSP_RAM_S     0x0000000030000600 0x0000000000000a00 rw
+AP_ROMBSS_RAM_NS 0x0000000020001000 0x0000000000001400 rw
+AP_MSP_RAM_NS    0x0000000020002400 0x0000000000000c00 rw
+NP_ROMBSS_MMU    0x0000000020001000 0x0000000000001400 rw
+NP_ROMBSS_RAM    0x0000000020003000 0x0000000000001400 rw
+NP_MSP_RAM       0x0000000020004600 0x0000000000000a00 rw
+NP_IPC_RAM       0x0000000020004400 0x0000000000000200 xrw
+AP_BOOTLOADER_RAM_S 0x0000000030005020 0x0000000000005fe0 xrw
+AP_FLOADER_RAM_S 0x0000000030070020 0x000000000000ffe0 xrw
+FULLMAC_IMG2     0x0000000020002420 0x000000000006cbe0 xrw
+FULLMAC_BOOTLOADER 0x0000000030070020 0x000000000000efe0 xrw
+FULLMAC_MANIFEST 0x000000002007f000 0x0000000000001000 xrw
+FULLMAC_TCM_RAM  0x00000000000f0000 0x0000000000010000 xrw
+AP_BD_RAM        0x000000002000b020 0x0000000000044fe0 xrw
+NP_BD_RAM        0x0000000020050020 0x000000000002ffe0 xrw
+AP_BD_PSRAM      0x0000000060000020 0x000000000017ffe0 xrw
+NP_BD_PSRAM      0x0000000060180020 0x000000000017ffe0 xrw
+AP_PSRAM_HEAP_EXT 0x000000006fffffff 0x0000000000000000 xrw
+NP_PSRAM_HEAP_EXT 0x000000006fffffff 0x0000000000000000 xrw
+RETENTION_RAM    0x000000004080aa00 0x0000000000000200 xrw
+AP_BOOT_XIP      0x0000000010400020 0x00000000007fffe0 xr
+AP_IMG3_XIP      0x0000000010c00020 0x00000000003fffe0 xr
+AP_IMG2_XIP      0x0000000002000020 0x0000000001ffffe0 xr
+NP_IMG2_XIP      0x0000000004000020 0x0000000001ffffe0 xr
+BTRACE           0x00000000c8800000 0x0000000000800000 xr
+CTRACE           0x00000000ca000000 0x00000000007fffff xr
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+LOAD project_km4tz/asdk/make_rom/CMakeFiles/empty_obj_km4tz.dir/__/empty_file.o
+LOAD ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a
+START GROUP
+LOAD /opt/rtk-toolchain/asdk-12.3.1/linux/newlib/bin/../lib/gcc/arm-none-eabi/12.3.1/thumb/v8.1-m.main/libgcc.a
+LOAD /opt/rtk-toolchain/asdk-12.3.1/linux/newlib/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v8.1-m.main/libc.a
+END GROUP
+START GROUP
+LOAD /opt/rtk-toolchain/asdk-12.3.1/linux/newlib/bin/../lib/gcc/arm-none-eabi/12.3.1/thumb/v8.1-m.main/libgcc.a
+LOAD /opt/rtk-toolchain/asdk-12.3.1/linux/newlib/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v8.1-m.main/libc.a
+LOAD /opt/rtk-toolchain/asdk-12.3.1/linux/newlib/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v8.1-m.main/libnosys.a
+END GROUP
+                0x0000000020004400                __ipc_memory_start__ = ORIGIN (NP_IPC_RAM)
+                0x0000000004000020                __np_flash_text_start__ = ORIGIN (NP_IMG2_XIP)
+                0x0000000006000000                __np_flash_text_end__ = (ORIGIN (NP_IMG2_XIP) + LENGTH (NP_IMG2_XIP))
+                0x0000000002000020                __ap_flash_text_start__ = ORIGIN (AP_IMG2_XIP)
+                0x0000000004000000                __ap_flash_text_end__ = (ORIGIN (AP_IMG2_XIP) + LENGTH (AP_IMG2_XIP))
+                0x0000000010400020                __ap_boot_text_start__ = ORIGIN (AP_BOOT_XIP)
+                0x0000000010c00000                __ap_boot_text_end__ = (ORIGIN (AP_BOOT_XIP) + LENGTH (AP_BOOT_XIP))
+                0x0000000010c00020                __ap_img3_text_start__ = ORIGIN (AP_IMG3_XIP)
+                0x0000000011000000                __ap_img3_text_end__ = (ORIGIN (AP_IMG3_XIP) + LENGTH (AP_IMG3_XIP))
+                0x000000002000b000                __ap_bd_ram_start__ = (ORIGIN (AP_BD_RAM) - 0x20)
+                0x0000000060000000                __ap_bd_psram_start__ = (ORIGIN (AP_BD_PSRAM) - 0x20)
+
+.glue_7         0x0000000000000000        0x0
+ .glue_7        0x0000000000000000        0x0 linker stubs
+
+.glue_7t        0x0000000000000000        0x0
+ .glue_7t       0x0000000000000000        0x0 linker stubs
+
+.vfp11_veneer   0x0000000000000000        0x0
+ .vfp11_veneer  0x0000000000000000        0x0 linker stubs
+
+.v4_bx          0x0000000000000000        0x0
+ .v4_bx         0x0000000000000000        0x0 linker stubs
+
+.iplt           0x0000000000000000        0x0
+ .iplt          0x0000000000000000        0x0 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+.rom.text       0x0000000000000000    0x1b64c
+ .rom.text      0x0000000000000000        0x0 project_km4tz/asdk/make_rom/CMakeFiles/empty_obj_km4tz.dir/__/empty_file.o
+ .rom.text      0x0000000000000000    0x1b64c ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+                0x0000000000000000                __vectors_table
+                0x0000000000000020                Reset_Handler
+                0x0000000000000030                NMI_Handler
+                0x0000000000000034                HardFault_Handler
+                0x0000000000000038                MemManage_Handler
+                0x000000000000003c                BusFault_Handler
+                0x0000000000000040                UsageFault_Handler
+                0x0000000000000044                SecureFault_Handler
+                0x0000000000000060                __rom_xo_start__
+                0x0000000000000060                AES_Get_AES_Addr
+                0x0000000000000086                AES_get_km_aes_addr
+                0x00000000000000ac                AES_Get_DMA_Addr
+                0x00000000000000d2                AES_Disable_SCA_Mask
+                0x00000000000000e8                AES_Enable_SCA_Mask
+                0x00000000000000fe                AES_Set_SCA_Mask
+                0x000000000000012c                AES_DMA_Init
+                0x0000000000000158                AES_StructInit
+                0x0000000000000168                AES_Init
+                0x00000000000001d4                AES_Cmd
+                0x00000000000001f4                AES_GetIv
+                0x0000000000000214                AES_SetIv
+                0x0000000000000234                AES_GetTag
+                0x000000000000027c                AES_InitTag
+                0x000000000000029c                AES_ProcessDma
+                0x0000000000000620                AES_GCM_Set_Iv
+                0x0000000000000720                AES_lock_mutex
+                0x000000000000077e                AES_unlock_mutex
+                0x0000000000000792                AES_set_swap_setting
+                0x00000000000007c2                AES_get_swap_setting
+                0x00000000000007ec                AES_load_key
+                0x0000000000000902                crypto_aes_set_sw_key
+                0x0000000000000ae2                crypto_aes_share_secure_key
+                0x0000000000000b6e                crypto_aes_slave_start
+                0x0000000000000cc0                crypto_aes_ecb_slave
+                0x0000000000000ce0                crypto_aes_ctr_slave
+                0x0000000000000d02                crypto_aes_start
+                0x0000000000000dfe                crypto_aes_ecb
+                0x0000000000000e2a                crypto_aes_cbc
+                0x0000000000000e58                crypto_aes_cfb
+                0x0000000000000e7a                crypto_aes_ofb
+                0x0000000000000e9c                crypto_aes_ctr
+                0x0000000000000ebe                crypto_aes_xts
+                0x0000000000000f00                crypto_cmac
+                0x0000000000000f92                crypto_gcm_encrypt_and_tag
+                0x000000000000118e                crypto_gcm_auth_decrypt
+                0x00000000000012b8                SHA2_Get_SHA_Addr
+                0x00000000000012de                SHA2_get_km_hmac_addr
+                0x0000000000001304                SHA2_Get_DMA_Addr
+                0x000000000000132a                SHA2_Restore
+                0x00000000000013cc                SHA2_Save
+                0x0000000000001422                SHA2_Get_Final_Digest
+                0x0000000000001536                SHA_StructInit
+                0x0000000000001544                SHA2_Init
+                0x00000000000015f6                SHA2_DMA_Init
+                0x000000000000163e                SHA2_SlaveEnd
+                0x000000000000167a                SHA2_DmaStart
+                0x0000000000001930                SHA2_ProcessDma
+                0x00000000000019a8                SHA2_lock_mutex
+                0x0000000000001a06                SHA2_unlock_mutex
+                0x0000000000001a1a                SHA2_set_swap_setting
+                0x0000000000001a52                SHA2_get_swap_setting
+                0x0000000000001a7c                SHA2_hmac_load_key
+                0x0000000000001b3c                crypto_sha2_init
+                0x0000000000001bcc                crypto_sha2_update
+                0x0000000000001d90                crypto_sha2_final
+                0x0000000000001e64                crypto_hmac_sha2_set_sw_key
+                0x0000000000001fb2                crypto_hmac_sha2_share_secure_key
+                0x0000000000002032                crypto_hmac_sha2_init
+                0x0000000000002100                crypto_hmac_sha2_update
+                0x000000000000210e                crypto_hmac_sha2_final
+                0x000000000000211c                CRYPTO_Init
+                0x000000000000216c                CRYPTO_Addr_Not_Alined_Warning
+                0x00000000000021a6                CRYPTO_Length_Not_Alined_Warning
+                0x00000000000021e0                pke_ecp_group_init_in_rom
+                0x00000000000025ce                pke_ecp_set_mmem_curve_parameter
+                0x000000000000265a                pke_ecp_set_tmem_curve_parameter
+                0x00000000000026ee                pke_ecp_point_init
+                0x0000000000002706                pke_ecp_point_init_base_point
+                0x0000000000002732                pke_ecp_mul
+                0x00000000000028c2                pke_ecdsa_lalu_hash_process
+                0x000000000000292c                pke_ecdsa_set_key
+                0x0000000000002992                pke_ecdsa_genkey
+                0x0000000000002a6e                pke_ecdsa_write_signature
+                0x0000000000002bb0                pke_ecdsa_read_signature
+                0x0000000000002d10                pke_eddsa_genkey
+                0x0000000000002dde                pke_eddsa_write_signature_R
+                0x0000000000002eac                pke_eddsa_write_signature_S
+                0x0000000000002f7e                pke_eddsa_read_signature
+                0x00000000000030b2                pke_eddsa_ed25519_get_r_value
+                0x0000000000003150                pke_eddsa_ed25519_get_k_value
+                0x000000000000320c                pke_eddsa_ed25519_genkey
+                0x000000000000328e                pke_eddsa_ed25519_write_signature
+                0x000000000000337c                pke_eddsa_ed25519_read_signature
+                0x00000000000033ba                pke_rsa_witness
+                0x0000000000003462                pke_rsa_exp_mod
+                0x000000000000350e                pke_get_pke_addr
+                0x0000000000003530                pke_lock_mutex
+                0x00000000000035be                pke_unlock_mutex
+                0x00000000000035d0                pke_engine_init
+                0x0000000000003610                pke_engine_check_status
+                0x00000000000036ba                pke_engine_write
+                0x00000000000036e4                pke_function_set_entry
+                0x000000000000370e                pke_read_string
+                0x00000000000037da                pke_reverse_array
+                0x0000000000003800                otf_hw_crypto_set_iv_sw
+                0x0000000000003838                otf_hw_crypto
+                0x0000000000003988                otf_hw_crypto_gcm_set_iv_sw
+                0x00000000000039ac                otf_hw_crypto_gcm
+                0x0000000000003a78                RSIP_WAIT_IDLE
+                0x0000000000003aac                RSIP_IV_Set
+                0x0000000000003ac4                RSIP_OTF_init
+                0x0000000000003ae2                RSIP_OTF_Set_GCM_Tag
+                0x0000000000003b18                RSIP_OTF_Cmd
+                0x0000000000003b32                RSIP_OTF_Enable
+                0x0000000000003bb2                RSIP_MMU_Config
+                0x0000000000003be8                RSIP_MMU_Cmd
+                0x0000000000003c0c                RSIP_MMU_Cache_Clean
+                0x0000000000003c62                SBOOT_SwapData
+                0x0000000000003c7a                SBOOT_GetMdType
+                0x0000000000003cc6                SBOOT_EDDSA_Verify_HW
+                0x0000000000003d10                SBOOT_ECDSA_Verify_HW
+                0x0000000000003e4e                SBOOT_Validate_Algorithm
+                0x0000000000003e96                SBOOT_Validate_Signature
+                0x0000000000003f8c                SBOOT_Validate_PubKey
+                0x00000000000040d6                SBOOT_Validate_ImgHash
+                0x0000000000004264                SBOOT_SignatureVerify
+                0x00000000000044b2                SBOOT_Validate_Fail_Stuck
+                0x0000000000004562                SBOOT_Verify_BootFromRAM
+                0x0000000000004726                BOOT_ROM_SDIO_NS_Config
+                0x0000000000004740                BOOT_ROM_SDIO_BT_Config
+                0x000000000000476c                BOOT_ROM_SDIOInit
+                0x0000000000004888                BOOT_ROM_SDIOLoadIMG
+                0x000000000000494c                BOOT_ROM_FromRAM
+                0x0000000000004958                BOOT_ROM_FromHCI
+                0x0000000000004a40                BOOT_ROM_OTFCheck
+                0x0000000000004a98                BOOT_ROM_OTPCheck
+                0x0000000000004bc0                BOOT_ROM_DisableSWD
+                0x0000000000004c5e                BOOT_ROM_PatchCmd
+                0x0000000000004d08                BOOT_ROM_PatchEntry
+                0x0000000000004d44                BOOT_ROM_SPUFlash
+                0x0000000000004d8e                BOOT_ROM_InitSpic
+                0x0000000000004f04                BOOT_ROM_NandCopy
+                0x0000000000004fe0                BOOT_ROM_Copy
+                0x0000000000005012                BOOT_ROM_LoadImage
+                0x0000000000005158                BOOT_ROM_SignatureCheck
+                0x00000000000053d2                BOOT_ROM_LoaderEntry
+                0x00000000000054a2                BOOT_ROM_KeyDeriveFunc
+                0x000000000000563a                BOOT_ROM_HUKDerive
+                0x000000000000580a                BOOT_ROM_SecurityConfig
+                0x0000000000005c4a                BOOT_ROM_BootldrVersion
+                0x0000000000005c8e                BOOT_ROM_BootldrSelect
+                0x0000000000005f34                BOOT_ROM_InitFlash
+                0x0000000000006114                BOOT_ROM_FromFlash
+                0x00000000000061e4                BOOT_ROM_InitDebugFlg
+                0x000000000000622a                BOOT_ROM_OSC131_Enable
+                0x000000000000622c                BOOT_ROM_ResetVsr
+                0x0000000000007800                irq_enable
+                0x0000000000007800                __rom_xo_end__
+                0x000000000000781c                irq_disable
+                0x0000000000007840                irq_set_priority
+                0x0000000000007890                irq_get_priority
+                0x00000000000078b4                irq_set_pending
+                0x00000000000078d0                irq_get_pending
+                0x00000000000078f4                irq_clear_pending
+                0x0000000000007910                irq_register
+                0x0000000000007938                irq_unregister
+                0x0000000000007954                _char2num
+                0x0000000000007980                _2char2dec
+                0x0000000000007a00                _2char2hex
+                0x0000000000007a70                _memchr
+                0x0000000000007af8                _memcmp
+                0x0000000000007b64                _memcpy
+                0x0000000000007c0c                _memmove
+                0x0000000000007cf8                _memset
+                0x0000000000007e58                _vsscanf_minimal
+                0x00000000000082f0                _sscanf_ss
+                0x000000000000830c                _strcmp
+                0x0000000000008374                _strcpy
+                0x00000000000083c0                _stricmp
+                0x000000000000841c                _strlen
+                0x0000000000008468                _strncpy
+                0x00000000000084f4                _strtol
+                0x000000000000860c                _strtoul
+                0x000000000000874c                _strupr
+                0x0000000000008768                __wrap_memset
+                0x0000000000008770                __wrap_memcpy
+                0x0000000000008778                __wrap_memcmp
+                0x0000000000008780                __wrap_memchr
+                0x0000000000008788                __wrap_memmove
+                0x0000000000008790                __wrap_strlen
+                0x0000000000008798                __wrap_strcmp
+                0x00000000000087a0                __wrap_stricmp
+                0x00000000000087a8                __wrap_strupr
+                0x00000000000087b0                __wrap_strncpy
+                0x00000000000087b8                __wrap_strtoul
+                0x00000000000087c0                __wrap_strcpy
+                0x00000000000087c8                __wrap_strtol
+                0x00000000000087d0                __wrap_printf
+                0x00000000000087ec                __wrap_sprintf
+                0x0000000000008808                io_assert_failed
+                0x0000000000008824                FLASH_UserMode_Enter
+                0x0000000000008844                FLASH_UserMode_Exit
+                0x0000000000008860                FLASH_Config
+                0x00000000000088f4                FLASH_SetSpiMode
+                0x00000000000089d0                FLASH_RxCmd_InUserMode
+                0x0000000000008a10                FLASH_RxCmd
+                0x0000000000008a26                FLASH_WaitBusy_InUserMode
+                0x0000000000008a98                FLASH_RxBasic_InUserMode
+                0x0000000000008b9c                FLASH_RxData
+                0x0000000000008bc8                FLASH_TxBasic_InUserMode
+                0x0000000000008ca8                FLASH_TxCmd_InUserMode
+                0x0000000000008cd0                FLASH_WriteEn_InUserMode
+                0x0000000000008cf4                FLASH_TxBasic
+                0x0000000000008d30                FLASH_TxData
+                0x0000000000008d90                FLASH_SetStatus
+                0x0000000000008db8                FLASH_Erase
+                0x0000000000008e34                FLASH_Addr4ByteEn
+                0x0000000000008e56                FLASH_Addr4ByteDis
+                0x0000000000008e78                FLASH_DeepPowerDown
+                0x0000000000008ed0                FLASH_SetStatusBits
+                0x0000000000008f78                FLASH_RxBasic
+                0x0000000000008fc4                FLASH_StructInit
+                0x000000000000900c                FLASH_StructInit_Micron
+                0x0000000000009030                FLASH_StructInit_MXIC
+                0x0000000000009048                FLASH_StructInit_GD
+                0x0000000000009054                FLASH_Init
+                0x0000000000009074                FLASH_Wait_Boot_Finish
+                0x0000000000009098                FLASH_DeepSleep_PDEX
+                0x000000000000921c                OTP_Read8_Rom
+                0x0000000000009220                OTP_ProgramMarginRead8
+                0x0000000000009224                _OTP_Write8
+                0x00000000000092c0                OTP_Write8_Rom
+                0x0000000000009398                OTPGetCRC
+                0x00000000000093b4                OTP_Read8
+                0x00000000000093f8                OTP_Read32
+                0x0000000000009474                otp_logical_remain
+                0x000000000000948e                OTPSetCRC
+                0x000000000000959c                OTP_LogicalMap_Read
+                0x000000000000969c                OTP_Write8
+                0x00000000000097e8                OTP_LogicalMap_Write
+                0x00000000000099a8                shell_array_init
+                0x00000000000099b6                shell_get_argc
+                0x00000000000099e2                shell_get_argv
+                0x0000000000009aa4                shell_cmd_chk
+                0x0000000000009b90                shell_uart_irq_rom
+                0x0000000000009c40                shell_init_rom
+                0x0000000000009cb0                shell_task_rom
+                0x0000000000009cd8                shell_rom
+                0x0000000000009cf8                RTIM_TimeBaseStructInit
+                0x0000000000009d10                RTIM_Cmd
+                0x0000000000009d34                RTIM_GetCount
+                0x0000000000009d38                RTIM_INTConfig
+                0x0000000000009d6c                RTIM_INTClear
+                0x0000000000009d82                RTIM_TimeBaseInit
+                0x0000000000009ea8                RTIM_DeInit
+                0x0000000000009ec8                RTIM_INTClearPendingBit
+                0x0000000000009f00                RTIM_GetFlagStatus
+                0x0000000000009f48                RTIM_GetINTStatus
+                0x0000000000009f98                BKUP_Write
+                0x0000000000009fbc                BKUP_Read
+                0x0000000000009fe0                BKUP_Set
+                0x000000000000a008                BKUP_Clear
+                0x000000000000a06c                GPIO_INTMode
+                0x000000000000a0ec                GPIO_INTConfig
+                0x000000000000a130                GPIO_DeInit
+                0x000000000000a180                GPIO_ReadDataBit
+                0x000000000000a1b8                GPIO_PortDirection
+                0x000000000000a200                GPIO_PortRead
+                0x000000000000a23c                GPIO_PortWrite
+                0x000000000000a280                GPIO_DebounceClock
+                0x000000000000a2d4                GPIO_LevelSync
+                0x000000000000a314                GPIO_INTStatusGet
+                0x000000000000a31e                GPIO_INTStatusClearEdge
+                0x000000000000a32a                GPIO_SetDWWrapper
+                0x000000000000a350                GPIO_GetDWWrapper
+                0x000000000000a360                GPIO_Direction
+                0x000000000000a3c8                GPIO_Init
+                0x000000000000a454                GPIO_ODWriteBit
+                0x000000000000a468                GPIO_WriteBit
+                0x000000000000a4d0                GPIO_ODInit
+                0x000000000000a500                PAD_DrvStrength
+                0x000000000000a520                PAD_SchmitCtrl
+                0x000000000000a540                PAD_SlewRateCtrl
+                0x000000000000a560                PAD_PullCtrl
+                0x000000000000a650                PAD_SleepPullCtrl
+                0x000000000000a740                PAD_ResistorCtrl
+                0x000000000000a760                PAD_InputCtrl
+                0x000000000000a780                PAD_CMD
+                0x000000000000a7a0                PAD_SpicCtrl
+                0x000000000000a7f8                Pinmux_Config
+                0x000000000000a87e                Pinmux_ConfigGet
+                0x000000000000a88c                Pinmux_UartLogCtrl
+                0x000000000000a8b8                Pinmux_BootSpicCtrl
+                0x000000000000a8bc                Pinmux_ComboSpicCtrl
+                0x000000000000a8c6                Pinmux_Swdoff
+                0x000000000000a8dc                RCC_PeriphClockCmd
+                0x000000000000a9a8                SPIC_Config
+                0x000000000000aa7c                NAND_SetSpiMode
+                0x000000000000ab0c                NAND_RxCmd
+                0x000000000000abc8                NAND_GetStatus
+                0x000000000000abf4                NAND_WaitBusy
+                0x000000000000ac74                FLASH_UserModeEn
+                0x000000000000ac98                NAND_UserModeEn
+                0x000000000000ac9c                NAND_RxData
+                0x000000000000ad88                NAND_Page_Read_FromCache
+                0x000000000000ad94                NAND_TxCmd
+                0x000000000000ae3c                NAND_WriteEn
+                0x000000000000ae64                NAND_TxData
+                0x000000000000af60                NAND_Page_Write_Data_Xfer
+                0x000000000000af80                NAND_SetStatus
+                0x000000000000afb0                NAND_Erase
+                0x000000000000aff0                NAND_Page_Read_ArrayToCache
+                0x000000000000b024                NAND_Page_Read
+                0x000000000000b048                NAND_CheckBadBlock
+                0x000000000000b098                NAND_Page_Write_Program_Execute
+                0x000000000000b0d4                NAND_Page_Write
+                0x000000000000b110                NAND_SetStatusBits
+                0x000000000000b138                NAND_GetPageSize
+                0x000000000000b1e0                NAND_StructInit
+                0x000000000000b234                NAND_StructInit_Micron
+                0x000000000000b24a                NAND_StructInit_MXIC
+                0x000000000000b258                NAND_StructInit_GD
+                0x000000000000b268                NAND_Reset
+                0x000000000000b2b8                NAND_Init
+                0x000000000000b2d8                TRNG_Random_Delay
+                0x000000000000b348                TRNG_Security_Only
+                0x000000000000b37c                TRNG_INTConfig
+                0x000000000000b3a8                TRNG_ClearINT
+                0x000000000000b3d0                TRNG_GetINT
+                0x000000000000b3f4                TRNG_Init
+                0x000000000000b40c                TRNG_GetFIFOLevel
+                0x000000000000b430                _rand
+                0x000000000000b474                __wrap_rand
+                0x000000000000b478                TRNG_get_random_bytes
+                0x000000000000b540                TRNG_get_random_bytes_f_rng
+                0x000000000000b548                EFUSE_GetChipVersion
+                0x000000000000b568                EFUSE_GetBDNum
+                0x000000000000b588                EFUSE_GetESFlag
+                0x000000000000b5a8                EFUSE_GetUUID
+                0x000000000000b5f0                EFUSE_Get_Info
+                0x000000000000b660                EFUSE_GetChipInfo
+                0x000000000000b67c                LOGUART_StructInit
+                0x000000000000b6ac                LOGUART_SetBaud
+                0x000000000000b754                LOGUART_RxCmd
+                0x000000000000b766                LOGUART_INTCoreConfig
+                0x000000000000b776                LOGUART_INT_NP2AP
+                0x000000000000b794                LOGUART_INT_AP2NP
+                0x000000000000b7b0                LOGUART_AGGCmd
+                0x000000000000b7c2                LOGUART_AGGPathCmd
+                0x000000000000b82c                LOGUART_AGGSetTimeOut
+                0x000000000000b848                LOGUART_AGGSetThreshold
+                0x000000000000b86c                LOGUART_AGGSetSyncPattern
+                0x000000000000b87a                LOGUART_AGGPathAllCmd
+                0x000000000000b898                LOGUART_WaitTx
+                0x000000000000b8d0                LOGUART_PutChar
+                0x000000000000b910                LOGUART_GetChar
+                0x000000000000b924                LOGUART_PutStr
+                0x000000000000b97c                LOGUART_Writable
+                0x000000000000b9a8                LOGUART_Readable
+                0x000000000000b9b8                LOGUART_GetRxCount
+                0x000000000000b9c4                LOGUART_GetIMR
+                0x000000000000b9d0                LOGUART_SetIMR
+                0x000000000000b9dc                LOGUART_INTConfig
+                0x000000000000ba1a                LOGUART_INTClear
+                0x000000000000ba22                LOGUART_GetStatus
+                0x000000000000ba26                LOGUART_ClearRxFifo
+                0x000000000000ba42                _LOGUART_Init
+                0x000000000000bb9c                LOGUART_Init
+                0x000000000000bbfc                LOGUART_WaitBusy
+                0x000000000000bc34                LOGUART_WaitTxComplete
+                0x000000000000bc60                LOGUART_BT_SendData
+                0x000000000000bca4                LOGUART_Relay_StructInit
+                0x000000000000bcb6                LOGUART_Relay_SetFormat
+                0x000000000000bcfc                LOGUART_Relay_SetBaud
+                0x000000000000bd50                LOGUART_Relay_ClearRxFifo
+                0x000000000000bd72                LOGUART_Relay_RxCmd
+                0x000000000000bd84                LOGUART_MonitorParaConfig
+                0x000000000000bdc0                LOGUART_LPBaudSet
+                0x000000000000be64                LOGUART_Relay_LPSetBaud
+                0x000000000000bec0                LOGUART_RxMonitorCmd
+                0x000000000000bed2                LOGUART_RxMonBaudCtrlRegGet
+                0x000000000000bed6                LOGUART_RxMonitorSatusGet
+                0x000000000000beda                LOGUART_DiagInit
+                0x000000000000bf68                SDIO_StructInit
+                0x000000000000bf84                SDIO_Init
+                0x000000000000c030                SDIO_INTClear
+                0x000000000000c036                SDIO_INTClearAll
+                0x000000000000c042                SDIO_INTConfig
+                0x000000000000c05e                SDIO_INTStatus
+                0x000000000000c066                SDIO_RPWM1_Get
+                0x000000000000c06e                SDIO_RPWM2_Get
+                0x000000000000c076                SDIO_CPWM1_Set
+                0x000000000000c098                SDIO_CPWM2_Set
+                0x000000000000c0c0                SDIO_H2C_MSG_Get
+                0x000000000000c0c6                SDIO_H2C_MSG_EXT_Get
+                0x000000000000c0cc                SDIO_C2H_MSG_Set
+                0x000000000000c0da                SDIO_C2H_MSG_EXT_Set
+                0x000000000000c0e0                SDIO_Tx_AGG_Set
+                0x000000000000c0f8                SDIO_RXBD_RPTR_Get
+                0x000000000000c100                SDIO_RXBD_WPTR_Set
+                0x000000000000c106                SDIO_TXBD_WPTR_Get
+                0x000000000000c10e                SDIO_TXBD_RPTR_Set
+                0x000000000000c114                SDIO_TXBD_RPTR_Get
+                0x000000000000c11c                SDIO_DMA_Reset
+                0x000000000000c124                SDIO_DMA_CTRL_Get
+                0x000000000000c12a                SDIO_SetReady
+                0x000000000000c142                SDIO_RxReq
+                0x000000000000c14c                SYSCFG_TRP_UARTImage
+                0x000000000000c15c                SYSCFG_TRP_ICFG
+                0x000000000000c174                SYSCFG_TRP_TestMode
+                0x000000000000c184                SYSCFG_TRP_OTPBYP
+                0x000000000000c194                SYSCFG_TRP_Boot_Int
+                0x000000000000c1a4                SYSCFG_TRP_Boot_Nor
+                0x000000000000c1b4                SYSCFG_CHIPType_Get
+                0x000000000000c1c4                SYSCFG_RLVersion
+                0x000000000000c1e8                SYSCFG_GetRLNum
+                0x000000000000c20c                SYSCFG_OTP_BOOTSEL
+                0x000000000000c21a                SYSCFG_OTP_BTFUNC
+                0x000000000000c228                SYSCFG_OTP_SDIO_PINMUX
+                0x000000000000c236                SYSCFG_OTP_BootMCMFlash
+                0x000000000000c266                SYSCFG_OTP_FlashDSleepEn
+                0x000000000000c274                SYSCFG_OTP_SPICAddr4ByteEn
+                0x000000000000c282                SYSCFG_OTP_SPICBootSpeedUpDis
+                0x000000000000c290                SYSCFG_OTP_BootFlashBaud
+                0x000000000000c29e                SYSCFG_OTP_BigPageNand
+                0x000000000000c2ac                SYSCFG_OTP_BOOT_CNT_LMT_EN
+                0x000000000000c2ba                SYSCFG_OTP_BootFromNor
+                0x000000000000c2e4                SYSCFG_OTP_DisBootLog
+                0x000000000000c2f2                SYSCFG_OTP_LowBaudLog
+                0x000000000000c300                SYSCFG_OTP_SBootEn
+                0x000000000000c31e                SYSCFG_OTP_RDPEn
+                0x000000000000c33c                SYSCFG_OTP_RSIPEn
+                0x000000000000c35a                SYSCFG_OTP_UsbDownloadEn
+                0x000000000000c366                SYSCFG_OTP_RandDelayEn
+                0x000000000000c378                SYSCFG_OTP_AntiRollback
+                0x000000000000c38a                SYSCFG_OTP_FaultLogDis
+                0x000000000000c39c                SYSCFG_OTP_RSIPMode
+                0x000000000000c3b4                SYSCFG_OTP_HUKDerivEn
+                0x000000000000c3c6                SYSCFG_OTP_PKID2
+                0x000000000000c3d8                SYSCFG_HWTrigDownload
+                0x000000000000c408                SYSCFG_SWTrigDownload
+                0x000000000000c430                SYSCFG_OTP_AuthAlg
+                0x000000000000c43e                SYSCFG_OTP_HashAlg
+                0x000000000000c44a                SYSCFG_OTP_OTAAddr
+                0x000000000000c456                SYSCFG_OTP_BootVer
+                0x000000000000c48c                SYSCFG_OTP_RMAMode
+                0x000000000000c4bc                SYSCFG_OTP_RomPatchEn
+                0x000000000000c4d4                UART_DeInit
+                0x000000000000c4da                UART_StructInit
+                0x000000000000c4f6                UART_BaudParaGetFull
+                0x000000000000c52c                UART_BaudParaGet
+                0x000000000000c54c                UART_SetBaud
+                0x000000000000c5f4                UART_SetBaudExt
+                0x000000000000c680                UART_SetRxLevel
+                0x000000000000c690                UART_RxCmd
+                0x000000000000c6a2                UART_Writable
+                0x000000000000c6aa                UART_Readable
+                0x000000000000c6b2                UART_CharPut
+                0x000000000000c6b6                UART_CharGet
+                0x000000000000c6bc                UART_ReceiveData
+                0x000000000000c6e0                UART_SendData
+                0x000000000000c704                UART_ReceiveDataTO
+                0x000000000000c740                UART_SendDataTO
+                0x000000000000c77c                UART_RxByteCntClear
+                0x000000000000c786                UART_RxByteCntGet
+                0x000000000000c78c                UART_BreakCtl
+                0x000000000000c7a0                UART_ClearRxFifo
+                0x000000000000c7bc                UART_ClearTxFifo
+                0x000000000000c7c6                UART_Init
+                0x000000000000c874                UART_INTConfig
+                0x000000000000c882                UART_INT_Clear
+                0x000000000000c88a                UART_IntStatus
+                0x000000000000c88e                UART_ModemStatusGet
+                0x000000000000c892                UART_LineStatusGet
+                0x000000000000c896                UART_WaitBusy
+                0x000000000000c8b8                XTAL_ClkGet
+                0x000000000000c8c0                XTAL_Check_READY
+                0x000000000000c900                DelayNop
+                0x000000000000c90c                DelayUs
+                0x000000000000c96c                DelayMs
+                0x000000000000c980                DelayClkUpdate
+                0x000000000000caf4                cmd_rom_table
+                0x000000000000cb00                IPC_SEMAInit
+                0x000000000000cb20                IPC_SEMTake
+                0x000000000000cb68                IPC_SEMFree
+                0x000000000000cb8c                IPC_SEMDelayStub
+                0x000000000000cb98                SYSTIMER_Init
+                0x000000000000cbe4                SYSTIMER_TickGet
+                0x000000000000cbf4                SYSTIMER_GetPassTick
+                0x000000000000cc14                SYSTIMER_GetPassTime
+                0x000000000000cc44                WDG_Wait_Busy
+                0x000000000000cc64                WDG_StructInit
+                0x000000000000cc74                WDG_Init
+                0x000000000000ccb4                WDG_Enable
+                0x000000000000ccf8                WDG_Timeout
+                0x000000000000cd28                WDG_Refresh
+                0x000000000000cd38                WDG_INTConfig
+                0x000000000000cd60                WDG_ClearINT
+                0x000000000000cd7e                IWDG_LP_Enable
+                0x000000000000d0ec                DiagFVSNprintf
+                0x000000000000d4a6                DiagFVSNprintfNano
+                0x000000000000d61e                DiagVSNprintf
+                0x000000000000d638                DiagVSprintf
+                0x000000000000d644                DiagVprintf
+                0x000000000000d650                DiagPrintf
+                0x000000000000d66a                DiagVSNprintfNano
+                0x000000000000d684                DiagVprintfNano
+                0x000000000000d690                DiagPrintfNano
+                0x000000000000d6aa                DiagSPrintf
+                0x000000000000d6c4                DiagSnPrintf
+                0x000000000000d6e0                rtk_log_array_clear
+                0x000000000000d6fc                rtk_log_level_get
+                0x000000000000d74c                rtk_log_isprint
+                0x000000000000d75c                rtk_log_write
+                0x000000000000d79c                rtk_log_write_nano
+                0x000000000000d7dc                rtk_log_array_print
+                0x000000000000d884                rtk_log_level_set
+                0x000000000000d8f8                rtk_log_memory_dump_word
+                0x000000000000d978                rtk_log_memory_dump_byte
+                0x000000000000d9f0                rtk_log_memory_dump2char
+                0x000000000000dad8                crash_GetExStackContent
+                0x000000000000dbc4                crash_GetExStackDepth
+                0x000000000000dbd0                crash_SetExStackDepth
+                0x000000000000dbe8                crash_Diagnosis
+                0x000000000000df20                crash_GetExStack
+                0x000000000000df68                crash_GetFaultInfo
+                0x000000000000dfd8                crash_GetGeneralReg
+                0x000000000000e034                crash_GetSysStatus
+                0x000000000000e298                crash_GetExReason
+                0x000000000000e2ec                crash_Main
+                0x000000000000e358                FLASH_Read_HandShake_Cmd
+                0x000000000000e3a8                FLASH_Read_DataIsRight
+                0x000000000000e454                INT_HardFault
+                0x000000000000e45e                INT_MemManage
+                0x000000000000e468                INT_BusFault
+                0x000000000000e472                INT_UsageFault
+                0x000000000000e47c                INT_SecureFault
+                0x000000000000e486                INT_NMI
+                0x000000000000e49c                INT_SVCall
+                0x000000000000e4bc                INT_PendSV
+                0x000000000000e4dc                INT_SysTick
+                0x000000000000e698                INT_HardFault_C
+                0x000000000000e704                FaultHandler
+                0x000000000000e714                PreFaultPatch_register
+                0x000000000000e720                PostFaultPatch_register
+                0x000000000000e72c                SVCall_irqfunc_set
+                0x000000000000e738                SVCall_irqfunc_get
+                0x000000000000e744                PendSV_irqfunc_set
+                0x000000000000e750                PendSV_irqfunc_get
+                0x000000000000e75c                Systick_irqfunc_set
+                0x000000000000e768                Systick_irqfunc_get
+                0x000000000000e774                fih_delay_init
+                0x000000000000e778                fih_delay_random_uchar
+                0x000000000000e794                fih_panic_loop
+                0x000000000000e7ba                fih_cfi_get_and_increment
+                0x000000000000e810                fih_cfi_decrement
+                0x000000000000e85c                fih_cfi_validate
+                0x000000000000e8c4                boot_fih_memequal
+                0x000000000000e964                xmodem_img_rxbuffer
+                0x000000000000ed2c                xmodem_uart_init
+                0x000000000000eda0                xmodem_uart_port_init
+                0x000000000000eda8                xmodem_uart_port_deinit
+                0x000000000000edb4                xmodem_uart_readable
+                0x000000000000edbc                xmodem_uart_writable
+                0x000000000000edcc                xmodem_uart_getc
+                0x000000000000edd8                xmodem_uart_putc
+                0x000000000000ede4                xmodem_uart_putdata
+                0x000000000000ee08                xmodem_uart_getc_to
+                0x000000000000ee30                xmodem_uart_clean_rx
+                0x000000000000ee48                xmodem_uart_waitbusy
+                0x000000000000ee50                xmodem_uart_setbaud
+                0x000000000000ee84                xmodem_img_write
+                0x000000000000ef1c                xmodem_img_download
+                0x000000000000efe2                USBD_Core_Init
+                0x000000000000f064                USBD_Core_DeInit
+                0x000000000000f0a0                USBD_IRQHandler
+                0x000000000000f0c4                USBD_OpenEP
+                0x000000000000f0d8                USBD_CloseEP
+                0x000000000000f0e6                USBD_Transmit
+                0x000000000000f108                USBD_PrepareReceive
+                0x000000000000f116                USBD_GetRxDataSize
+                0x000000000000f11e                USBD_DataOutStage
+                0x000000000000f186                USBD_DataInStage
+                0x000000000000f214                USBD_Reset
+                0x000000000000f264                USBD_SetSpeed
+                0x000000000000f26a                USBD_Suspend
+                0x000000000000f27c                USBD_Resume
+                0x000000000000f288                USBD_DevConnected
+                0x000000000000f28c                USBD_DevDisconnected
+                0x000000000000f2a4                USBD_CtlSendData
+                0x000000000000f2be                USBD_CtlPrepareRx
+                0x000000000000f2d8                USBD_CtlError
+                0x000000000000f2f2                USBD_SetupStage
+                0x000000000000f6e0                USBD_GetString
+                0x000000000000f718                USBD_DebugInit
+                0x000000000000f764                USBD_Debug
+                0x000000000000f7a0                USB_GetTxFifoNum
+                0x000000000000f7aa                USB_HalInit
+                0x000000000000f894                USB_SetTurnaroundTime
+                0x000000000000f8b0                USB_EnableGlobalInt
+                0x000000000000f8c4                USB_DisableGlobalInt
+                0x000000000000f8d8                USB_SetDeviceMode
+                0x000000000000f90c                USB_FlushTxFifo
+                0x000000000000f944                USB_FlushRxFifo
+                0x000000000000f978                USB_SetDevSpeed
+                0x000000000000f988                USB_DevInit
+                0x000000000000fad8                USB_GetDevSpeed
+                0x000000000000faf4                USB_ActivateEndpoint
+                0x000000000000fb70                USB_DeactivateEndpoint
+                0x000000000000fbcc                USB_EP0StartXfer
+                0x000000000000fc8c                USB_WritePacket
+                0x000000000000fcaa                USB_EPStartXfer
+                0x000000000000fe04                USB_ReadPacket
+                0x000000000000fe20                USB_EPSetStall
+                0x000000000000fe54                USB_EPClearStall
+                0x000000000000fe88                USB_StopDevice
+                0x000000000000fed4                USB_SetDevAddress
+                0x000000000000fef4                USB_DevConnect
+                0x000000000000ff08                USB_DevDisconnect
+                0x000000000000ff1c                USB_ReadInterrupts
+                0x000000000000ff2c                USB_ReadDevAllOutEpInterrupt
+                0x000000000000ff3c                USB_ReadDevAllInEpInterrupt
+                0x000000000000ff4c                USB_ReadDevOutEPInterrupt
+                0x000000000000ff64                USB_ReadDevInEPInterrupt
+                0x000000000000ff8c                USB_ClearInterrupts
+                0x000000000000ff9c                USB_GetMode
+                0x000000000000ffac                USB_ActivateSetup
+                0x000000000000ffe4                USB_EP0_OutStart
+                0x0000000000010060                USB_OTP_Init
+                0x00000000000102d8                USB_PCD_Start
+                0x00000000000102e6                USB_PCD_Stop
+                0x0000000000010306                USB_PCD_DeInit
+                0x000000000001034c                USB_PCD_DevConnect
+                0x0000000000010356                USB_PCD_DevDisconnect
+                0x0000000000010360                USB_PCD_SetAddress
+                0x000000000001036a                USB_PCD_EP_Open
+                0x00000000000103bc                USB_PCD_EP_Close
+                0x00000000000103f8                USB_PCD_EP_Receive
+                0x000000000001043e                USB_PCD_EP_GetRxCount
+                0x000000000001044c                USB_PCD_EP_Transmit
+                0x0000000000010486                USB_PCD_EP_SetStall
+                0x00000000000104e0                USB_PCD_EP_ClrStall
+                0x000000000001052c                USB_PCD_EP_Flush
+                0x0000000000010544                USB_PCD_GetState
+                0x000000000001054a                USB_PCD_SetTxFiFo
+                0x000000000001058c                USB_PCD_SetRxFiFo
+                0x0000000000010598                USB_PCD_Init
+                0x00000000000109fc                USB_PCD_IRQHandler
+                0x0000000000011130                Fullmac_USBD_Process
+                0x00000000000111a4                Fullmac_USBD_Init
+                0x00000000000111dc                Fullmac_USBD_DeInit
+                0x00000000000115a2                USBD_Class_Transmit
+                0x0000000000011834                Download_USBD_IsAttached
+                0x0000000000011840                Download_USBD_Process
+                0x00000000000118a8                Download_USBD_Init
+                0x00000000000118d4                Download_USBD_DeInit
+                0x0000000000011bbe                USBD_CDC_Transmit
+                0x0000000000011c2c                mbedtls_asn1_get_len
+                0x0000000000011c96                mbedtls_asn1_get_tag
+                0x0000000000011d30                mbedtls_asn1_get_bool
+                0x0000000000011d62                mbedtls_asn1_get_int
+                0x0000000000011d68                mbedtls_asn1_get_enum
+                0x0000000000011d6e                mbedtls_asn1_get_mpi
+                0x0000000000011d94                mbedtls_asn1_get_bitstring
+                0x0000000000011dd8                mbedtls_asn1_traverse_sequence_of
+                0x0000000000011e66                mbedtls_asn1_get_bitstring_null
+                0x0000000000011e8e                mbedtls_asn1_sequence_free
+                0x0000000000011ea4                mbedtls_asn1_get_sequence_of
+                0x0000000000011ee0                mbedtls_asn1_get_alg
+                0x0000000000011f74                mbedtls_asn1_get_alg_null
+                0x0000000000011fb0                mbedtls_asn1_free_named_data
+                0x0000000000011fd8                mbedtls_asn1_free_named_data_list
+                0x0000000000012000                mbedtls_asn1_free_named_data_list_shallow
+                0x0000000000012018                mbedtls_asn1_find_named_data
+                0x0000000000012040                mbedtls_asn1_write_len
+                0x0000000000012088                mbedtls_asn1_write_tag
+                0x0000000000012120                mbedtls_asn1_write_raw_buffer
+                0x000000000001214a                mbedtls_asn1_write_mpi
+                0x00000000000121b6                mbedtls_asn1_write_null
+                0x00000000000121bc                mbedtls_asn1_write_oid
+                0x00000000000121d8                mbedtls_asn1_write_algorithm_identifier_ext
+                0x000000000001221c                mbedtls_asn1_write_algorithm_identifier
+                0x000000000001222e                mbedtls_asn1_write_bool
+                0x0000000000012258                mbedtls_asn1_write_int
+                0x000000000001225c                mbedtls_asn1_write_enum
+                0x0000000000012260                mbedtls_asn1_write_tagged_string
+                0x0000000000012282                mbedtls_asn1_write_utf8_string
+                0x0000000000012294                mbedtls_asn1_write_printable_string
+                0x00000000000122a6                mbedtls_asn1_write_ia5_string
+                0x00000000000122b8                mbedtls_asn1_write_bitstring
+                0x000000000001232c                mbedtls_asn1_write_named_bitstring
+                0x0000000000012368                mbedtls_asn1_write_octet_string
+                0x0000000000012384                mbedtls_asn1_store_named_data
+                0x0000000000012468                mbedtls_mpi_core_clz
+                0x000000000001246e                mbedtls_mpi_core_bitlen
+                0x000000000001249c                mbedtls_mpi_core_bigendian_to_host
+                0x00000000000124c2                mbedtls_mpi_core_uint_le_mpi
+                0x00000000000124ec                mbedtls_mpi_core_lt_ct
+                0x0000000000012528                mbedtls_mpi_core_cond_assign
+                0x0000000000012552                mbedtls_mpi_core_cond_swap
+                0x0000000000012588                mbedtls_mpi_core_read_le
+                0x00000000000125d4                mbedtls_mpi_core_read_be
+                0x000000000001261e                mbedtls_mpi_core_write_le
+                0x0000000000012688                mbedtls_mpi_core_write_be
+                0x00000000000126f0                mbedtls_mpi_core_shift_r
+                0x0000000000012784                mbedtls_mpi_core_shift_l
+                0x0000000000012812                mbedtls_mpi_core_add
+                0x0000000000012840                mbedtls_mpi_core_add_if
+                0x000000000001287a                mbedtls_mpi_core_sub
+                0x00000000000128b2                mbedtls_mpi_core_mla
+                0x0000000000012a04                mbedtls_mpi_core_mul
+                0x0000000000012a46                mbedtls_mpi_core_montmul_init
+                0x0000000000012a68                mbedtls_mpi_core_montmul
+                0x0000000000012c90                mbedtls_mpi_core_get_mont_r2_unsafe
+                0x0000000000012cc4                mbedtls_mpi_core_fill_random
+                0x0000000000012d22                mbedtls_mpi_core_random
+                0x0000000000012da6                mbedtls_mpi_core_exp_mod_working_limbs
+                0x0000000000012dbc                mbedtls_mpi_core_exp_mod
+                0x0000000000012ddc                mbedtls_mpi_core_exp_mod_unsafe
+                0x0000000000012dfe                mbedtls_mpi_core_sub_int
+                0x0000000000012e22                mbedtls_mpi_core_check_zero_ct
+                0x0000000000012e40                mbedtls_mpi_core_to_mont_rep
+                0x0000000000012e58                mbedtls_mpi_core_from_mont_rep
+                0x0000000000012ec2                mbedtls_mpi_lt_mpi_ct
+                0x0000000000012f28                mbedtls_mpi_init
+                0x0000000000012f32                mbedtls_mpi_free
+                0x0000000000012f4e                mbedtls_mpi_grow
+                0x0000000000012f9c                mbedtls_mpi_safe_cond_assign
+                0x0000000000012fee                mbedtls_mpi_safe_cond_swap
+                0x0000000000013078                mbedtls_mpi_shrink
+                0x00000000000130e8                mbedtls_mpi_copy
+                0x0000000000013154                mbedtls_mpi_swap
+                0x000000000001317c                mbedtls_mpi_lset
+                0x00000000000131b4                mbedtls_mpi_get_bit
+                0x00000000000131d4                mbedtls_mpi_set_bit
+                0x000000000001322c                mbedtls_mpi_lsb
+                0x000000000001325c                mbedtls_mpi_bitlen
+                0x0000000000013264                mbedtls_mpi_size
+                0x0000000000013270                mbedtls_mpi_read_binary_le
+                0x000000000001329c                mbedtls_mpi_read_binary
+                0x00000000000132c8                mbedtls_mpi_write_binary_le
+                0x00000000000132d4                mbedtls_mpi_write_binary
+                0x00000000000132e0                mbedtls_mpi_shift_l
+                0x000000000001331a                mbedtls_mpi_shift_r
+                0x000000000001332c                mbedtls_mpi_cmp_abs
+                0x0000000000013394                mbedtls_mpi_cmp_mpi
+                0x0000000000013428                mbedtls_mpi_cmp_int
+                0x0000000000013458                mbedtls_mpi_add_abs
+                0x00000000000134ec                mbedtls_mpi_sub_abs
+                0x00000000000135f0                mbedtls_mpi_add_mpi
+                0x00000000000135f4                mbedtls_mpi_sub_mpi
+                0x00000000000135fa                mbedtls_mpi_add_int
+                0x000000000001362a                mbedtls_mpi_sub_int
+                0x000000000001365a                mbedtls_mpi_mul_mpi
+                0x0000000000013732                mbedtls_mpi_mul_int
+                0x0000000000013798                mbedtls_mpi_read_string
+                0x00000000000138a4                mbedtls_mpi_div_mpi
+                0x0000000000013c54                mbedtls_mpi_div_int
+                0x0000000000013c82                mbedtls_mpi_mod_mpi
+                0x0000000000013ec8                mbedtls_mpi_mod_int
+                0x0000000000013f4c                mbedtls_mpi_write_string
+                0x0000000000014104                mbedtls_mpi_exp_mod
+                0x0000000000014116                mbedtls_mpi_exp_mod_unsafe
+                0x000000000001412a                mbedtls_mpi_gcd
+                0x0000000000014222                mbedtls_mpi_fill_random
+                0x00000000000143d4                mbedtls_mpi_random
+                0x0000000000014410                mbedtls_mpi_inv_mod
+                0x00000000000146b6                mbedtls_mpi_is_prime_ext
+                0x0000000000014712                mbedtls_mpi_gen_prime
+                0x0000000000014924                mbedtls_sha1_init
+                0x000000000001492c                mbedtls_sha1_free
+                0x0000000000014936                mbedtls_sha1_clone
+                0x0000000000014940                mbedtls_sha1_starts
+                0x0000000000014974                mbedtls_internal_sha1_process
+                0x000000000001589e                mbedtls_sha1_update
+                0x0000000000015910                mbedtls_sha1_finish
+                0x0000000000015a02                mbedtls_sha1
+                0x0000000000015a44                mbedtls_md_info_from_type
+                0x0000000000015a8c                mbedtls_md_init
+                0x0000000000015a94                mbedtls_md_free
+                0x0000000000015af8                mbedtls_md_clone
+                0x0000000000015b54                mbedtls_md_setup
+                0x0000000000015c20                mbedtls_md_starts
+                0x0000000000015c68                mbedtls_md_update
+                0x0000000000015cb0                mbedtls_md_finish
+                0x0000000000015cec                mbedtls_md
+                0x0000000000015d3c                mbedtls_md_get_size
+                0x0000000000015d42                mbedtls_md_get_type
+                0x0000000000015d48                mbedtls_md_list
+                0x0000000000015d50                mbedtls_md_info_from_string
+                0x0000000000015d7c                mbedtls_md_get_name
+                0x0000000000015d98                mbedtls_md_info_from_ctx
+                0x0000000000015d9e                mbedtls_md_hmac_starts
+                0x0000000000015f00                mbedtls_md_hmac_update
+                0x0000000000015f1c                mbedtls_md_hmac_finish
+                0x0000000000015f70                mbedtls_md_hmac_reset
+                0x0000000000015f9c                mbedtls_md_hmac
+                0x0000000000015ff8                mbedtls_md5_init
+                0x0000000000016000                mbedtls_md5_free
+                0x000000000001600a                mbedtls_md5_clone
+                0x0000000000016014                mbedtls_md5_starts
+                0x0000000000016040                mbedtls_internal_md5_process
+                0x0000000000016880                mbedtls_md5_update
+                0x00000000000168f2                mbedtls_md5_finish
+                0x00000000000169c4                mbedtls_md5
+                0x0000000000016a24                mbedtls_ecdh_can_do
+                0x0000000000016a28                mbedtls_ecdh_get_grp_id
+                0x0000000000016a2c                mbedtls_ecdh_init
+                0x0000000000016a40                mbedtls_ecdh_setup
+                0x0000000000016a90                mbedtls_ecdh_free
+                0x0000000000016aca                mbedtls_ecdh_make_params
+                0x0000000000016b3c                mbedtls_ecdh_read_params
+                0x0000000000016b80                mbedtls_ecdh_get_params
+                0x0000000000016be0                mbedtls_ecdh_make_public
+                0x0000000000016c34                mbedtls_ecdh_read_public
+                0x0000000000016c6c                mbedtls_ecdh_calc_secret
+                0x0000000000016cf4                mbedtls_ecdsa_can_do
+                0x0000000000016d00                mbedtls_ecdsa_sign_det_restartable
+                0x0000000000016e00                mbedtls_ecdsa_sign_det_ext
+                0x0000000000016e26                mbedtls_ecdsa_write_signature_restartable
+                0x0000000000016f04                mbedtls_ecdsa_write_signature
+                0x0000000000016f28                mbedtls_ecdsa_read_signature_restartable
+                0x0000000000016fc8                mbedtls_ecdsa_read_signature
+                0x0000000000016fda                mbedtls_ecdsa_init
+                0x0000000000016fde                mbedtls_ecdsa_free
+                0x0000000000016fe6                mbedtls_ecdsa_from_keypair
+                0x0000000000017c2a                mbedtls_ecp_group_load
+                0x00000000000180cc                mbedtls_zeroize_and_free
+                0x00000000000180f8                mbedtls_ct_memcmp
+                0x000000000001814a                mbedtls_ct_memcmp_partial
+                0x0000000000018198                mbedtls_ct_memmove_left
+                0x0000000000018204                mbedtls_ct_memcpy_if
+                0x0000000000018298                mbedtls_ct_memcpy_offset
+                0x00000000000182d2                mbedtls_ct_zeroize_if
+                0x0000000000018634                mbedtls_ctr_drbg_init
+                0x0000000000018656                mbedtls_ctr_drbg_free
+                0x0000000000018678                mbedtls_ctr_drbg_set_prediction_resistance
+                0x000000000001867c                mbedtls_ctr_drbg_set_entropy_len
+                0x0000000000018680                mbedtls_ctr_drbg_set_nonce_len
+                0x000000000001869c                mbedtls_ctr_drbg_set_reseed_interval
+                0x00000000000186a0                mbedtls_ctr_drbg_update
+                0x00000000000186cc                mbedtls_ctr_drbg_reseed
+                0x00000000000186d0                mbedtls_ctr_drbg_seed
+                0x0000000000018726                mbedtls_ctr_drbg_random_with_add
+                0x00000000000187f0                mbedtls_ctr_drbg_random
+                0x0000000000018800                mbedtls_hmac_drbg_init
+                0x0000000000018814                mbedtls_hmac_drbg_update
+                0x0000000000018986                mbedtls_hmac_drbg_seed_buf
+                0x00000000000189d2                mbedtls_hmac_drbg_reseed
+                0x00000000000189d6                mbedtls_hmac_drbg_seed
+                0x0000000000018a40                mbedtls_hmac_drbg_set_prediction_resistance
+                0x0000000000018a44                mbedtls_hmac_drbg_set_entropy_len
+                0x0000000000018a48                mbedtls_hmac_drbg_set_reseed_interval
+                0x0000000000018a4c                mbedtls_hmac_drbg_random_with_add
+                0x0000000000018b0c                mbedtls_hmac_drbg_random
+                0x0000000000018b1c                mbedtls_hmac_drbg_free
+                0x0000000000018c30                mbedtls_entropy_free
+                0x0000000000018c58                mbedtls_entropy_add_source
+                0x0000000000018c7e                mbedtls_entropy_init
+                0x0000000000018cb4                mbedtls_entropy_update_manual
+                0x0000000000018cbc                mbedtls_entropy_gather
+                0x0000000000018cc8                mbedtls_entropy_func
+                0x00000000000195d0                mbedtls_ecp_curve_list
+                0x00000000000195d8                mbedtls_ecp_grp_id_list
+                0x0000000000019610                mbedtls_ecp_curve_info_from_grp_id
+                0x0000000000019628                mbedtls_ecp_curve_info_from_tls_id
+                0x0000000000019644                mbedtls_ecp_curve_info_from_name
+                0x0000000000019670                mbedtls_ecp_get_type
+                0x0000000000019684                mbedtls_ecp_point_init
+                0x00000000000196a0                mbedtls_ecp_group_init
+                0x00000000000196e2                mbedtls_ecp_keypair_init
+                0x00000000000196fe                mbedtls_ecp_point_free
+                0x0000000000019704                mbedtls_ecp_group_free
+                0x000000000001976c                mbedtls_ecp_keypair_free
+                0x000000000001978c                mbedtls_ecp_copy
+                0x00000000000197b8                mbedtls_ecp_group_copy
+                0x00000000000197be                mbedtls_ecp_set_zero
+                0x0000000000019bdc                mbedtls_ecp_is_zero
+                0x0000000000019bee                mbedtls_ecp_point_cmp
+                0x0000000000019c24                mbedtls_ecp_point_read_string
+                0x0000000000019c50                mbedtls_ecp_point_write_binary
+                0x0000000000019d30                mbedtls_ecp_point_read_binary
+                0x0000000000019ebc                mbedtls_ecp_tls_read_point
+                0x0000000000019eec                mbedtls_ecp_tls_write_point
+                0x0000000000019f20                mbedtls_ecp_tls_read_group_id
+                0x0000000000019f70                mbedtls_ecp_tls_read_group
+                0x0000000000019f92                mbedtls_ecp_tls_write_group
+                0x0000000000019fd8                mbedtls_ecp_check_pubkey
+                0x000000000001a134                mbedtls_ecp_check_privkey
+                0x000000000001a7c6                mbedtls_ecp_muladd_restartable
+                0x000000000001a848                mbedtls_ecp_muladd
+                0x000000000001a85e                mbedtls_ecp_mul_restartable
+                0x000000000001a874                mbedtls_ecp_mul
+                0x000000000001a88a                mbedtls_ecp_gen_privkey
+                0x000000000001a92c                mbedtls_ecp_gen_keypair_base
+                0x000000000001a960                mbedtls_ecp_gen_keypair
+                0x000000000001a978                mbedtls_ecp_gen_key
+                0x000000000001a9a0                mbedtls_ecp_set_public_key
+                0x000000000001a9d0                mbedtls_ecp_read_key
+                0x000000000001aaf0                mbedtls_ecp_write_key
+                0x000000000001ab4c                mbedtls_ecp_write_key_ext
+                0x000000000001abac                mbedtls_ecp_write_public_key
+                0x000000000001abc4                mbedtls_ecp_check_pub_priv
+                0x000000000001ac7c                mbedtls_ecp_keypair_calc_public
+                0x000000000001ac96                mbedtls_ecp_keypair_get_group_id
+                0x000000000001ac9a                mbedtls_ecp_export
+                0x000000000001acd8                mbedtls_aes_init
+                0x000000000001ace4                mbedtls_aes_free
+                0x000000000001acee                mbedtls_aes_xts_init
+                0x000000000001ad02                mbedtls_aes_xts_free
+                0x000000000001ad1a                mbedtls_aes_setkey_enc
+                0x000000000001ad3e                mbedtls_aes_setkey_dec
+                0x000000000001ad42                mbedtls_aes_xts_setkey_enc
+                0x000000000001ad7e                mbedtls_aes_xts_setkey_dec
+                0x000000000001ad82                mbedtls_aes_crypt_ecb
+                0x000000000001ade4                mbedtls_aes_crypt_cbc
+                0x000000000001ae5c                mbedtls_aes_crypt_xts
+                0x000000000001aef4                mbedtls_aes_crypt_cfb128
+                0x000000000001af74                mbedtls_aes_crypt_cfb8
+                0x000000000001afdc                mbedtls_aes_crypt_ofb
+                0x000000000001b058                mbedtls_aes_crypt_ctr
+                0x000000000001b0e8                mbedtls_sha256_init
+                0x000000000001b0f8                mbedtls_sha256_free
+                0x000000000001b104                mbedtls_sha256_clone
+                0x000000000001b110                mbedtls_sha256_starts
+                0x000000000001b128                mbedtls_sha256_update
+                0x000000000001b13c                mbedtls_internal_sha256_process
+                0x000000000001b142                mbedtls_sha256_finish
+                0x000000000001b14c                mbedtls_sha256
+                0x000000000001b1ac                mbedtls_sha512_init
+                0x000000000001b1bc                mbedtls_sha512_free
+                0x000000000001b1c8                mbedtls_sha512_clone
+                0x000000000001b1d4                mbedtls_sha512_starts
+                0x000000000001b1f0                mbedtls_sha512_update
+                0x000000000001b204                mbedtls_internal_sha512_process
+                0x000000000001b20a                mbedtls_sha512_finish
+                0x000000000001b214                mbedtls_sha512
+                0x000000000001b3ac                mbedtls_ecdsa_sign
+                0x000000000001b4e8                mbedtls_ecdsa_verify
+                0x000000000001b588                mbedtls_ecdsa_genkey
+                0x000000000001b5c0                mbedtls_ecdh_gen_public
+                0x000000000001b5e4                mbedtls_ecdh_compute_shared
+                0x000000000001b62c                mbedtls_hardware_poll
+                0x000000000001b644                mbedtls_platform_zeroize
+
+.rom.data       0x000000000001b64c        0x0
+ .rom.data      0x000000000001b64c        0x0 project_km4tz/asdk/make_rom/CMakeFiles/empty_obj_km4tz.dir/__/empty_file.o
+
+.igot.plt       0x0000000000000000        0x0
+ .igot.plt      0x0000000000000000        0x0 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+.rom.bss        0x000000000001b64c        0x0
+ .rom.bss       0x000000000001b64c        0x0 project_km4tz/asdk/make_rom/CMakeFiles/empty_obj_km4tz.dir/__/empty_file.o
+
+.share.rodata   0x000000000010c000     0x2358
+ .share.rodata  0x000000000010c000     0x2358 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+                0x000000000010c000                __drom_common_start__
+                0x000000000010ced4                SPIC_CALIB_PATTERN
+                0x000000000010d194                GPIO_PORTx_S
+                0x000000000010d1a0                GPIO_PORTx
+                0x000000000010d512                _ctype_
+                0x000000000010e254                crash_reg_name
+                0x000000000010e298                crash_print_info
+                0x000000000010e358                __drom_common_end__
+
+.rom.rodata     0x000000000001d000     0x1972
+ .rom.rodata    0x000000000001d000     0x1972 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+                0x000000000001d000                RomVectorTable
+                0x000000000001d184                BAUDRATE_TABLE
+                0x000000000001d2a0                USBD_ClassCallback
+                0x000000000001d3a0                USBD_CDC_ClassCallback
+                0x000000000001d418                _fih_mask
+                0x000000000001d41c                FIH_FAILURE
+                0x000000000001d420                FIH_SUCCESS
+
+.hal.rom.bss    0x0000000020001000      0x4b0
+ .hal.rom.bss   0x0000000020001000      0x4b0 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+                0x0000000020001000                UserIrqFunTable
+                0x0000000020001000                __rom_bss_start__
+                0x0000000020001140                UserIrqDataTable
+                0x0000000020001280                flash_init_para
+                0x00000000200012b4                shell_ctl
+                0x00000000200012d0                shell_argv_array
+                0x0000000020001350                shell_buf
+                0x0000000020001358                shell_buf_array
+                0x00000000200013d8                shell_rxbuf
+                0x00000000200013e0                shell_rxbuf_array
+                0x0000000020001460                rtk_log_tag_array
+                0x000000002000148c                rtk_log_entry_count
+                0x0000000020001490                rtk_log_default_level
+                0x0000000020001494                DiagFun
+                0x0000000020001498                crash_dump_depth
+                0x000000002000149c                INT_SVCall_patch
+                0x00000000200014a0                INT_PendSV_patch
+                0x00000000200014a4                INT_SysTick_patch
+                0x00000000200014a8                PrePatchHandler
+                0x00000000200014ac                PostPatchHandler
+                0x00000000200014b0                __rom_bss_chk__
+                0x00000000200014b0                __rom_bss_end__
+
+.hal.s_rom.bss  0x0000000030000000      0x500
+ .hal.s_rom.bss
+                0x0000000030000000      0x500 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+                0x0000000030000000                RBSS_UDELAY_DIV
+                0x0000000030000000                __rom_bss_start_s__
+                0x0000000030000004                RBSS_UDELAY_CLK
+                0x0000000030000008                ipc_delay
+                0x000000003000000c                CrashDumpPatchHandler
+                0x0000000030000010                Ver
+                0x0000000030000020                valid_img1_addr
+                0x0000000030000024                DerivedKey
+                0x0000000030000034                _fih_cfi_ctr
+                0x000000003000003c                xmodem_ctrl
+                0x0000000030000048                usbd_ctrl
+                0x000000003000017c                USBD_Device
+                0x00000000300004f0                ssl_function_map
+                0x0000000030000500                __rom_bss_end_s__
+
+.ram.data       0x0000000000000000        0x0
+ *(.data*)
+ *(.bss*)
+ .ram.data      0x0000000000000000        0x0 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+.rom.text.libgcc
+                0x0000000000000000        0x0
+ *(.text*)
+ *(.rodata*)
+ .rom.text.libgcc
+                0x0000000000000000        0x0 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+OUTPUT(project_km4tz/asdk/make_rom/target_rom_km4tz.axf elf32-littlearm)
+LOAD linker stubs
+
+.rel.dyn        0x0000000000000000        0x0
+ .rel.iplt      0x0000000000000000        0x0 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+.debug_info     0x0000000000000000    0x5cf4d
+ .debug_info    0x0000000000000000    0x5cf4d ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+.debug_abbrev   0x0000000000000000     0xf3ff
+ .debug_abbrev  0x0000000000000000     0xf3ff ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+.debug_loc      0x0000000000000000    0x3d225
+ .debug_loc     0x0000000000000000    0x3d225 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+.debug_aranges  0x0000000000000000     0x2268
+ .debug_aranges
+                0x0000000000000000     0x2268 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+.debug_ranges   0x0000000000000000     0x5558
+ .debug_ranges  0x0000000000000000     0x5558 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+.debug_line     0x0000000000000000    0x3399f
+ .debug_line    0x0000000000000000    0x3399f ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+.debug_str      0x0000000000000000     0xeb83
+ .debug_str     0x0000000000000000     0xeb83 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+                                      0x2970b (size before relaxing)
+
+.comment        0x0000000000000000       0x36
+ .comment       0x0000000000000000       0x36 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+                                       0x13fb (size before relaxing)
+
+.ARM.attributes
+                0x0000000000000000       0x32
+ .ARM.attributes
+                0x0000000000000000       0x32 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+.debug_frame    0x0000000000000000     0x7ec4
+ .debug_frame   0x0000000000000000     0x7ec4 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+
+Cross Reference Table
+
+Symbol                                            File
+AES_Cmd                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_DMA_Init                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_Disable_SCA_Mask                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_Enable_SCA_Mask                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_GCM_Set_Iv                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_GetIv                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_GetTag                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_Get_AES_Addr                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_Get_DMA_Addr                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_Init                                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_InitTag                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_ProcessDma                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_SetIv                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_Set_SCA_Mask                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_StructInit                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_get_km_aes_addr                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_get_swap_setting                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_load_key                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_lock_mutex                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_set_swap_setting                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+AES_unlock_mutex                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BAUDRATE_TABLE                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BKUP_Clear                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BKUP_Read                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BKUP_Set                                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BKUP_Write                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_BootldrSelect                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_BootldrVersion                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_Copy                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_DisableSWD                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_FromFlash                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_FromHCI                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_FromRAM                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_HUKDerive                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_InitDebugFlg                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_InitFlash                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_InitSpic                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_KeyDeriveFunc                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_LoadImage                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_LoaderEntry                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_NandCopy                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_OSC131_Enable                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_OTFCheck                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_OTPCheck                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_PatchCmd                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_PatchEntry                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_ResetVsr                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_SDIOInit                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_SDIOLoadIMG                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_SDIO_BT_Config                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_SDIO_NS_Config                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_SPUFlash                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_SecurityConfig                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BOOT_ROM_SignatureCheck                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+BusFault_Handler                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+CRYPTO_Addr_Not_Alined_Warning                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+CRYPTO_Init                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+CRYPTO_Length_Not_Alined_Warning                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+CrashDumpPatchHandler                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DelayClkUpdate                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DelayMs                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DelayNop                                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DelayUs                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DerivedKey                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagFVSNprintf                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagFVSNprintfNano                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagFun                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagPrintf                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagPrintfNano                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagSPrintf                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagSnPrintf                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagVSNprintf                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagVSNprintfNano                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagVSprintf                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagVprintf                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+DiagVprintfNano                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Download_USBD_DeInit                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Download_USBD_Init                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Download_USBD_IsAttached                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Download_USBD_Process                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+EFUSE_GetBDNum                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+EFUSE_GetChipInfo                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+EFUSE_GetChipVersion                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+EFUSE_GetESFlag                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+EFUSE_GetUUID                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+EFUSE_Get_Info                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FIH_FAILURE                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FIH_SUCCESS                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_Addr4ByteDis                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_Addr4ByteEn                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_Config                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_DeepPowerDown                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_DeepSleep_PDEX                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_Erase                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_Init                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_Read_DataIsRight                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_Read_HandShake_Cmd                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_RxBasic                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_RxBasic_InUserMode                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_RxCmd                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_RxCmd_InUserMode                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_RxData                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_SetSpiMode                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_SetStatus                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_SetStatusBits                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_StructInit                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_StructInit_GD                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_StructInit_MXIC                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_StructInit_Micron                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_TxBasic                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_TxBasic_InUserMode                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_TxCmd_InUserMode                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_TxData                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_UserModeEn                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_UserMode_Enter                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_UserMode_Exit                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_WaitBusy_InUserMode                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_Wait_Boot_Finish                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FLASH_WriteEn_InUserMode                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+FaultHandler                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Fullmac_USBD_DeInit                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Fullmac_USBD_Init                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Fullmac_USBD_Process                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_DeInit                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_DebounceClock                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_Direction                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_GetDWWrapper                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_INTConfig                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_INTMode                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_INTStatusClearEdge                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_INTStatusGet                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_Init                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_LevelSync                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_ODInit                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_ODWriteBit                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_PORTx                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_PORTx_S                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_PortDirection                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_PortRead                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_PortWrite                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_ReadDataBit                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_SetDWWrapper                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+GPIO_WriteBit                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+HardFault_Handler                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_BusFault                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_HardFault                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_HardFault_C                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_MemManage                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_NMI                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_PendSV                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_PendSV_patch                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_SVCall                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_SVCall_patch                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_SecureFault                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_SysTick                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_SysTick_patch                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+INT_UsageFault                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+IPC_SEMAInit                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+IPC_SEMDelayStub                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+IPC_SEMFree                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+IPC_SEMTake                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+IWDG_LP_Enable                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_AGGCmd                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_AGGPathAllCmd                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_AGGPathCmd                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_AGGSetSyncPattern                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_AGGSetThreshold                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_AGGSetTimeOut                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_BT_SendData                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_ClearRxFifo                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_DiagInit                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_GetChar                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_GetIMR                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_GetRxCount                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_GetStatus                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_INTClear                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_INTConfig                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_INTCoreConfig                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_INT_AP2NP                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_INT_NP2AP                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_Init                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_LPBaudSet                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_MonitorParaConfig                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_PutChar                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_PutStr                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_Readable                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_Relay_ClearRxFifo                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_Relay_LPSetBaud                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_Relay_RxCmd                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_Relay_SetBaud                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_Relay_SetFormat                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_Relay_StructInit                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_RxCmd                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_RxMonBaudCtrlRegGet                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_RxMonitorCmd                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_RxMonitorSatusGet                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_SetBaud                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_SetIMR                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_StructInit                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_WaitBusy                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_WaitTx                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_WaitTxComplete                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+LOGUART_Writable                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+MemManage_Handler                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_CheckBadBlock                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_Erase                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_GetPageSize                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_GetStatus                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_Init                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_Page_Read                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_Page_Read_ArrayToCache                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_Page_Read_FromCache                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_Page_Write                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_Page_Write_Data_Xfer                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_Page_Write_Program_Execute                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_Reset                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_RxCmd                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_RxData                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_SetSpiMode                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_SetStatus                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_SetStatusBits                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_StructInit                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_StructInit_GD                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_StructInit_MXIC                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_StructInit_Micron                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_TxCmd                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_TxData                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_UserModeEn                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_WaitBusy                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NAND_WriteEn                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+NMI_Handler                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+OTPGetCRC                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+OTPSetCRC                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+OTP_LogicalMap_Read                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+OTP_LogicalMap_Write                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+OTP_ProgramMarginRead8                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+OTP_Read32                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+OTP_Read8                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+OTP_Read8_Rom                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+OTP_Write8                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+OTP_Write8_Rom                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PAD_CMD                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PAD_DrvStrength                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PAD_InputCtrl                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PAD_PullCtrl                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PAD_ResistorCtrl                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PAD_SchmitCtrl                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PAD_SleepPullCtrl                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PAD_SlewRateCtrl                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PAD_SpicCtrl                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PendSV_irqfunc_get                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PendSV_irqfunc_set                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Pinmux_BootSpicCtrl                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Pinmux_ComboSpicCtrl                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Pinmux_Config                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Pinmux_ConfigGet                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Pinmux_Swdoff                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Pinmux_UartLogCtrl                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PostFaultPatch_register                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PostPatchHandler                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PreFaultPatch_register                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+PrePatchHandler                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RBSS_UDELAY_CLK                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RBSS_UDELAY_DIV                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RCC_PeriphClockCmd                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RSIP_IV_Set                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RSIP_MMU_Cache_Clean                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RSIP_MMU_Cmd                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RSIP_MMU_Config                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RSIP_OTF_Cmd                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RSIP_OTF_Enable                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RSIP_OTF_Set_GCM_Tag                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RSIP_OTF_init                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RSIP_WAIT_IDLE                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RTIM_Cmd                                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RTIM_DeInit                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RTIM_GetCount                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RTIM_GetFlagStatus                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RTIM_GetINTStatus                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RTIM_INTClear                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RTIM_INTClearPendingBit                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RTIM_INTConfig                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RTIM_TimeBaseInit                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RTIM_TimeBaseStructInit                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Reset_Handler                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+RomVectorTable                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SBOOT_ECDSA_Verify_HW                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SBOOT_EDDSA_Verify_HW                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SBOOT_GetMdType                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SBOOT_SignatureVerify                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SBOOT_SwapData                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SBOOT_Validate_Algorithm                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SBOOT_Validate_Fail_Stuck                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SBOOT_Validate_ImgHash                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SBOOT_Validate_PubKey                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SBOOT_Validate_Signature                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SBOOT_Verify_BootFromRAM                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_C2H_MSG_EXT_Set                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_C2H_MSG_Set                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_CPWM1_Set                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_CPWM2_Set                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_DMA_CTRL_Get                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_DMA_Reset                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_H2C_MSG_EXT_Get                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_H2C_MSG_Get                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_INTClear                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_INTClearAll                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_INTConfig                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_INTStatus                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_Init                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_RPWM1_Get                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_RPWM2_Get                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_RXBD_RPTR_Get                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_RXBD_WPTR_Set                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_RxReq                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_SetReady                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_StructInit                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_TXBD_RPTR_Get                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_TXBD_RPTR_Set                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_TXBD_WPTR_Get                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SDIO_Tx_AGG_Set                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_DMA_Init                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_DmaStart                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_Get_DMA_Addr                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_Get_Final_Digest                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_Get_SHA_Addr                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_Init                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_ProcessDma                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_Restore                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_Save                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_SlaveEnd                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_get_km_hmac_addr                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_get_swap_setting                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_hmac_load_key                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_lock_mutex                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_set_swap_setting                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA2_unlock_mutex                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SHA_StructInit                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SPIC_CALIB_PATTERN                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SPIC_Config                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+STACK_TOP                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SVCall_irqfunc_get                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SVCall_irqfunc_set                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_CHIPType_Get                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_GetRLNum                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_HWTrigDownload                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_AntiRollback                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_AuthAlg                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_BOOTSEL                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_BOOT_CNT_LMT_EN                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_BTFUNC                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_BigPageNand                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_BootFlashBaud                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_BootFromNor                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_BootMCMFlash                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_BootVer                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_DisBootLog                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_FaultLogDis                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_FlashDSleepEn                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_HUKDerivEn                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_HashAlg                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_LowBaudLog                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_OTAAddr                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_PKID2                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_RDPEn                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_RMAMode                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_RSIPEn                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_RSIPMode                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_RandDelayEn                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_RomPatchEn                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_SBootEn                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_SDIO_PINMUX                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_SPICAddr4ByteEn                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_SPICBootSpeedUpDis                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_OTP_UsbDownloadEn                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_RLVersion                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_SWTrigDownload                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_TRP_Boot_Int                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_TRP_Boot_Nor                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_TRP_ICFG                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_TRP_OTPBYP                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_TRP_TestMode                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSCFG_TRP_UARTImage                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSTIMER_GetPassTick                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSTIMER_GetPassTime                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSTIMER_Init                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SYSTIMER_TickGet                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+SecureFault_Handler                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Systick_irqfunc_get                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Systick_irqfunc_set                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+TRNG_ClearINT                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+TRNG_GetFIFOLevel                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+TRNG_GetINT                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+TRNG_INTConfig                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+TRNG_Init                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+TRNG_Random_Delay                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+TRNG_Security_Only                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+TRNG_get_random_bytes                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+TRNG_get_random_bytes_f_rng                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_BaudParaGet                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_BaudParaGetFull                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_BreakCtl                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_CharGet                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_CharPut                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_ClearRxFifo                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_ClearTxFifo                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_DeInit                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_INTConfig                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_INT_Clear                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_Init                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_IntStatus                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_LineStatusGet                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_ModemStatusGet                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_Readable                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_ReceiveData                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_ReceiveDataTO                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_RxByteCntClear                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_RxByteCntGet                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_RxCmd                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_SendData                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_SendDataTO                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_SetBaud                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_SetBaudExt                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_SetRxLevel                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_StructInit                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_WaitBusy                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UART_Writable                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_CDC_ClassCallback                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_CDC_Transmit                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_ClassCallback                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_Class_Transmit                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_CloseEP                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_Core_DeInit                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_Core_Init                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_CtlError                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_CtlPrepareRx                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_CtlSendData                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_DataInStage                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_DataOutStage                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_Debug                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_DebugInit                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_DevConnected                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_DevDisconnected                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_Device                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_GetRxDataSize                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_GetString                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_IRQHandler                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_OpenEP                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_PrepareReceive                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_Reset                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_Resume                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_SetSpeed                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_SetupStage                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_Suspend                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USBD_Transmit                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_ActivateEndpoint                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_ActivateSetup                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_ClearInterrupts                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_DeactivateEndpoint                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_DevConnect                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_DevDisconnect                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_DevInit                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_DisableGlobalInt                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_EP0StartXfer                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_EP0_OutStart                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_EPClearStall                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_EPSetStall                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_EPStartXfer                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_EnableGlobalInt                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_FlushRxFifo                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_FlushTxFifo                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_GetDevSpeed                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_GetMode                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_GetTxFifoNum                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_HalInit                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_OTP_Init                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_DeInit                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_DevConnect                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_DevDisconnect                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_EP_Close                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_EP_ClrStall                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_EP_Flush                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_EP_GetRxCount                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_EP_Open                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_EP_Receive                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_EP_SetStall                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_EP_Transmit                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_GetState                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_IRQHandler                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_Init                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_SetAddress                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_SetRxFiFo                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_SetTxFiFo                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_Start                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_PCD_Stop                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_ReadDevAllInEpInterrupt                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_ReadDevAllOutEpInterrupt                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_ReadDevInEPInterrupt                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_ReadDevOutEPInterrupt                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_ReadInterrupts                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_ReadPacket                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_SetDevAddress                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_SetDevSpeed                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_SetDeviceMode                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_SetTurnaroundTime                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_StopDevice                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+USB_WritePacket                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UsageFault_Handler                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UserIrqDataTable                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+UserIrqFunTable                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+Ver                                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+WDG_ClearINT                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+WDG_Enable                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+WDG_INTConfig                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+WDG_Init                                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+WDG_Refresh                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+WDG_StructInit                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+WDG_Timeout                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+WDG_Wait_Busy                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+XTAL_Check_READY                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+XTAL_ClkGet                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_2char2dec                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_2char2hex                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_LOGUART_Init                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_OTP_Write8                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__ap_bd_psram_start__                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__ap_bd_ram_start__                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__ap_boot_text_end__                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__ap_boot_text_start__                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__ap_flash_text_end__                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__ap_flash_text_start__                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__ap_img3_text_end__                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__ap_img3_text_start__                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__drom_common_end__                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__drom_common_start__                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__ipc_memory_start__                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__np_flash_text_end__                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__np_flash_text_start__                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__rom_bss_chk__                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__rom_bss_end__                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__rom_bss_end_s__                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__rom_bss_start__                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__rom_bss_start_s__                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__rom_xo_end__                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__rom_xo_start__                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__vectors_table                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_memchr                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_memcmp                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_memcpy                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_memmove                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_memset                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_printf                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_rand                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_sprintf                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_strcmp                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_strcpy                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_stricmp                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_strlen                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_strncpy                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_strtol                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_strtoul                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+__wrap_strupr                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_char2num                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_ctype_                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_fih_cfi_ctr                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_fih_mask                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_memchr                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_memcmp                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_memcpy                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_memmove                                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_memset                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_rand                                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_sscanf_ss                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_strcmp                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_strcpy                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_stricmp                                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_strlen                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_strncpy                                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_strtol                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_strtoul                                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_strupr                                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+_vsscanf_minimal                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+boot_fih_memequal                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+cmd_rom_table                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_Diagnosis                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_GetExReason                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_GetExStack                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_GetExStackContent                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_GetExStackDepth                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_GetFaultInfo                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_GetGeneralReg                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_GetSysStatus                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_Main                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_SetExStackDepth                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_dump_depth                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_print_info                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crash_reg_name                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_cbc                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_cfb                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_ctr                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_ctr_slave                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_ecb                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_ecb_slave                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_ofb                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_set_sw_key                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_share_secure_key                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_slave_start                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_start                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_aes_xts                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_cmac                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_gcm_auth_decrypt                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_gcm_encrypt_and_tag                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_hmac_sha2_final                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_hmac_sha2_init                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_hmac_sha2_set_sw_key                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_hmac_sha2_share_secure_key                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_hmac_sha2_update                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_sha2_final                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_sha2_init                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+crypto_sha2_update                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+fih_cfi_decrement                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+fih_cfi_get_and_increment                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+fih_cfi_validate                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+fih_delay_init                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+fih_delay_random_uchar                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+fih_panic_loop                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+flash_init_para                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+io_assert_failed                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+ipc_delay                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+irq_clear_pending                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+irq_disable                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+irq_enable                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+irq_get_pending                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+irq_get_priority                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+irq_register                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+irq_set_pending                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+irq_set_priority                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+irq_unregister                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_crypt_cbc                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_crypt_cfb128                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_crypt_cfb8                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_crypt_ctr                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_crypt_ecb                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_crypt_ofb                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_crypt_xts                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_free                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_init                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_setkey_dec                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_setkey_enc                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_xts_free                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_xts_init                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_xts_setkey_dec                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_aes_xts_setkey_enc                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_find_named_data                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_free_named_data                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_free_named_data_list                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_free_named_data_list_shallow         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_get_alg                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_get_alg_null                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_get_bitstring                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_get_bitstring_null                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_get_bool                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_get_enum                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_get_int                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_get_len                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_get_mpi                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_get_sequence_of                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_get_tag                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_sequence_free                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_store_named_data                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_traverse_sequence_of                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_algorithm_identifier           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_algorithm_identifier_ext       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_bitstring                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_bool                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_enum                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_ia5_string                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_int                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_len                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_mpi                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_named_bitstring                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_null                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_octet_string                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_oid                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_printable_string               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_raw_buffer                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_tag                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_tagged_string                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_asn1_write_utf8_string                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ct_memcmp                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ct_memcmp_partial                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ct_memcpy_if                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ct_memcpy_offset                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ct_memmove_left                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ct_zeroize_if                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ctr_drbg_free                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ctr_drbg_init                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ctr_drbg_random                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ctr_drbg_random_with_add                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ctr_drbg_reseed                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ctr_drbg_seed                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ctr_drbg_set_entropy_len                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ctr_drbg_set_nonce_len                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ctr_drbg_set_prediction_resistance        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ctr_drbg_set_reseed_interval              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ctr_drbg_update                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_calc_secret                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_can_do                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_compute_shared                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_free                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_gen_public                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_get_grp_id                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_get_params                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_init                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_make_params                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_make_public                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_read_params                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_read_public                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdh_setup                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_can_do                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_free                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_from_keypair                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_genkey                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_init                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_read_signature                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_read_signature_restartable          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_sign                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_sign_det_ext                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_sign_det_restartable                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_verify                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_write_signature                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecdsa_write_signature_restartable         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_check_privkey                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_check_pub_priv                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_check_pubkey                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_copy                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_curve_info_from_grp_id                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_curve_info_from_name                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_curve_info_from_tls_id                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_curve_list                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_export                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_gen_key                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_gen_keypair                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_gen_keypair_base                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_gen_privkey                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_get_type                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_group_copy                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_group_free                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_group_init                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_group_load                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_grp_id_list                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_is_zero                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_keypair_calc_public                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_keypair_free                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_keypair_get_group_id                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_keypair_init                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_mul                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_mul_restartable                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_muladd                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_muladd_restartable                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_point_cmp                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_point_free                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_point_init                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_point_read_binary                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_point_read_string                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_point_write_binary                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_read_key                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_set_public_key                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_set_zero                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_tls_read_group                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_tls_read_group_id                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_tls_read_point                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_tls_write_group                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_tls_write_point                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_write_key                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_write_key_ext                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_ecp_write_public_key                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_entropy_add_source                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_entropy_free                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_entropy_func                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_entropy_gather                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_entropy_init                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_entropy_update_manual                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hardware_poll                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hmac_drbg_free                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hmac_drbg_init                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hmac_drbg_random                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hmac_drbg_random_with_add                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hmac_drbg_reseed                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hmac_drbg_seed                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hmac_drbg_seed_buf                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hmac_drbg_set_entropy_len                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hmac_drbg_set_prediction_resistance       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hmac_drbg_set_reseed_interval             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_hmac_drbg_update                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_internal_md5_process                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_internal_sha1_process                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_internal_sha256_process                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_internal_sha512_process                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md                                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md5                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md5_clone                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md5_finish                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md5_free                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md5_init                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md5_starts                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md5_update                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_clone                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_finish                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_free                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_get_name                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_get_size                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_get_type                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_hmac                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_hmac_finish                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_hmac_reset                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_hmac_starts                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_hmac_update                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_info_from_ctx                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_info_from_string                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_info_from_type                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_init                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_list                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_setup                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_starts                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_md_update                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_add_abs                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_add_int                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_add_mpi                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_bitlen                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_cmp_abs                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_cmp_int                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_cmp_mpi                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_copy                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_add                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_add_if                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_bigendian_to_host                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_bitlen                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_check_zero_ct                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_clz                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_cond_assign                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_cond_swap                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_exp_mod                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_exp_mod_unsafe                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_exp_mod_working_limbs            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_fill_random                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_from_mont_rep                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_get_mont_r2_unsafe               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_lt_ct                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_mla                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_montmul                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_montmul_init                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_mul                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_random                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_read_be                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_read_le                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_shift_l                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_shift_r                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_sub                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_sub_int                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_to_mont_rep                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_uint_le_mpi                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_write_be                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_core_write_le                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_div_int                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_div_mpi                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_exp_mod                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_exp_mod_unsafe                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_fill_random                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_free                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_gcd                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_gen_prime                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_get_bit                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_grow                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_init                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_inv_mod                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_is_prime_ext                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_lsb                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_lset                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_lt_mpi_ct                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_mod_int                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_mod_mpi                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_mul_int                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_mul_mpi                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_random                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_read_binary                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_read_binary_le                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_read_string                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_safe_cond_assign                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_safe_cond_swap                        ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_set_bit                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_shift_l                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_shift_r                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_shrink                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_size                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_sub_abs                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_sub_int                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_sub_mpi                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_swap                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_write_binary                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_write_binary_le                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_mpi_write_string                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_platform_zeroize                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha1                                      ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha1_clone                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha1_finish                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha1_free                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha1_init                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha1_starts                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha1_update                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha256                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha256_clone                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha256_finish                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha256_free                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha256_init                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha256_starts                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha256_update                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha512                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha512_clone                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha512_finish                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha512_free                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha512_init                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha512_starts                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_sha512_update                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+mbedtls_zeroize_and_free                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+otf_hw_crypto                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+otf_hw_crypto_gcm                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+otf_hw_crypto_gcm_set_iv_sw                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+otf_hw_crypto_set_iv_sw                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+otp_logical_remain                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_ecdsa_genkey                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_ecdsa_lalu_hash_process                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_ecdsa_read_signature                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_ecdsa_set_key                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_ecdsa_write_signature                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_ecp_group_init_in_rom                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_ecp_mul                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_ecp_point_init                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_ecp_point_init_base_point                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_ecp_set_mmem_curve_parameter                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_ecp_set_tmem_curve_parameter                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_eddsa_ed25519_genkey                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_eddsa_ed25519_get_k_value                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_eddsa_ed25519_get_r_value                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_eddsa_ed25519_read_signature                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_eddsa_ed25519_write_signature                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_eddsa_genkey                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_eddsa_read_signature                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_eddsa_write_signature_R                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_eddsa_write_signature_S                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_engine_check_status                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_engine_init                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_engine_write                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_function_set_entry                            ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_get_pke_addr                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_lock_mutex                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_read_string                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_reverse_array                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_rsa_exp_mod                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_rsa_witness                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+pke_unlock_mutex                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_array_clear                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_array_print                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_default_level                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_entry_count                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_isprint                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_level_get                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_level_set                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_memory_dump2char                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_memory_dump_byte                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_memory_dump_word                          ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_tag_array                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_write                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+rtk_log_write_nano                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_argv_array                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_array_init                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_buf                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_buf_array                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_cmd_chk                                     ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_ctl                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_get_argc                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_get_argv                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_init_rom                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_rom                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_rxbuf                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_rxbuf_array                                 ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_task_rom                                    ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+shell_uart_irq_rom                                ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+ssl_function_map                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+usbd_ctrl                                         ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+valid_img1_addr                                   ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_ctrl                                       ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_img_download                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_img_rxbuffer                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_img_write                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_clean_rx                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_getc                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_getc_to                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_init                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_port_deinit                           ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_port_init                             ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_putc                                  ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_putdata                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_readable                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_setbaud                               ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_waitbusy                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)
+xmodem_uart_writable                              ../project_km4tz/asdk/lib/amebagreen2_rom_acut/rom.a(rom.o)

@@ -14,8 +14,8 @@
 
 /* FreeRTOS Static Implementation */
 #if(configSUPPORT_STATIC_ALLOCATION == 1)
-extern StaticSemaphore_t *__reserved_get_mutex_from_poll(void);
-extern void __reserved_release_mutex_to_poll(void *buf);
+extern StaticSemaphore_t *__reserved_get_mutex_from_pool(void);
+extern void __reserved_release_mutex_to_pool(void *buf);
 #endif
 
 int rtos_mutex_create_static(rtos_mutex_t *pp_handle)
@@ -23,7 +23,7 @@ int rtos_mutex_create_static(rtos_mutex_t *pp_handle)
 #if(configSUPPORT_STATIC_ALLOCATION == 1)
 	StaticSemaphore_t *mutex;
 
-	mutex = __reserved_get_mutex_from_poll();
+	mutex = __reserved_get_mutex_from_pool();
 
 	if (mutex == NULL) {
 		return rtos_mutex_create(pp_handle);
@@ -45,7 +45,7 @@ int rtos_mutex_delete_static(rtos_mutex_t p_handle)
 {
 #if(configSUPPORT_STATIC_ALLOCATION == 1)
 	int ret = rtos_mutex_delete(p_handle);
-	__reserved_release_mutex_to_poll(p_handle);
+	__reserved_release_mutex_to_pool(p_handle);
 	return ret;
 #else
 	return rtos_mutex_delete(p_handle);
@@ -57,7 +57,7 @@ int rtos_mutex_recursive_create_static(rtos_mutex_t *pp_handle)
 #if(configSUPPORT_STATIC_ALLOCATION == 1)
 	StaticSemaphore_t *mutex;
 
-	mutex = __reserved_get_mutex_from_poll();
+	mutex = __reserved_get_mutex_from_pool();
 
 	if (mutex == NULL) {
 		return rtos_mutex_create(pp_handle);

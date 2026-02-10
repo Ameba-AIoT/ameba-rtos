@@ -996,6 +996,7 @@ int atcmd_bt_pts(int argc, char *argv[])
 }
 
 int ble_transfer_module_main(uint8_t enable);
+int atcmd_bt_transfer_module_cmd(int argc, char *argv[]);
 int atcmd_bt_transfer_module(int argc, char *argv[])
 {
 	int ret = 0;
@@ -1051,6 +1052,7 @@ int atcmd_bt_wifimate_device(int argc, char *argv[])
 }
 
 int ble_wifimate_configurator_main(uint8_t enable);
+int atcmd_bt_wifimate_configurator_cmd(int argc, char *argv[]);
 int atcmd_bt_wifimate_configurator(int argc, char *argv[])
 {
 	int ret = 0;
@@ -1210,7 +1212,7 @@ static const cmd_table_t example_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_example(int argc, char *argv[])
+void fBTDEMO(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, example_table, "[AT+BTDEMO]");
+	atcmd_bt_excute(argc - 1, &argv[1], example_table, "[AT+BTDEMO]");
 }

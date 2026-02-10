@@ -92,6 +92,7 @@ extern u8 __km4_tz_nsc_start__[];
 extern u8 __km4_tz_entry_start__[];
 extern u8 __km4_tz_entry_end__[];
 extern u8 __km4_bd_ram_start__[];
+extern u8 __km4_bd_ram_end__[];
 
 extern u8 __km4_psram_tz_nsc_start__[];
 extern u8 __km4_psram_tz_entry_start__[];

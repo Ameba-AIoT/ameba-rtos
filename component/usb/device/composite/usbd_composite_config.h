@@ -61,10 +61,30 @@
 
 #elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC)  //acm+uac
 /* Interfaces */
+/*
+	audio control
+	audio streaming record
+	audio streaming playback
+	acm control
+	acm data
+ */
+#if defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC2)
+#define USBD_UAC_AC_IF_NUM                     3U
+/* IF header interface num */
+#define USBD_COMP_UAC_AC_HEADSET               0x00
+#define USBD_COMP_UAC_AS_HEADSET_MICROPHONE    0x01
+#define USBD_COMP_UAC_AS_HEADSET_HEADPHONES    0x02
+#define USBD_COMP_CDC_COM_ITF                  0x03
+#define USBD_COMP_CDC_DAT_ITF                  0x04
+#else
+#define USBD_UAC_AC_IF_NUM                     2U
+/* IF header interface num */
 #define USBD_COMP_UAC_AC_HEADSET               0x00
 #define USBD_COMP_UAC_AS_HEADSET_HEADPHONES    0x01
 #define USBD_COMP_CDC_COM_ITF                  0x02
 #define USBD_COMP_CDC_DAT_ITF                  0x03
+#define USBD_COMP_UAC_AS_HEADSET_MICROPHONE    0x04
+#endif
 /* Endpoints */
 #if defined (CONFIG_AMEBAGREEN2)
 #define USBD_COMP_CDC_BULK_IN_EP               0x82U
@@ -122,10 +142,31 @@
 #define USBD_COMP_UAC_PID                      (USBD_COMP_PID)
 
 /* Interfaces */
+/*
+	audio control
+	audio streaming record
+	audio streaming playback
+	hid consumer
+	hid vendor interface
+ */
+#if defined(CONFIG_USBD_COMPOSITE_HID_UAC2)
+#define USBD_UAC_AC_IF_NUM                     3U
+/* IF header interface num */
+#define USBD_COMP_UAC_AC_HEADSET               0x00
+#define USBD_COMP_UAC_AS_HEADSET_MICROPHONE    0x01
+#define USBD_COMP_UAC_AS_HEADSET_HEADPHONES    0x02
+#define USBD_COMP_HID_ITF                      0x03
+#define USBD_COMP_HID_VEND_ITF                 0x04
+#else
+#define USBD_UAC_AC_IF_NUM                     2U
+/* IF header interface num */
 #define USBD_COMP_UAC_AC_HEADSET               0x00
 #define USBD_COMP_UAC_AS_HEADSET_HEADPHONES    0x01
 #define USBD_COMP_HID_ITF                      0x02
 #define USBD_COMP_HID_VEND_ITF                 0x03
+#define USBD_COMP_UAC_AS_HEADSET_MICROPHONE    0x04
+#endif
+#define USBD_HID_IF_NUM                        2U
 
 /* Endpoints */
 #if defined (CONFIG_AMEBAGREEN2)
@@ -218,4 +259,3 @@ typedef struct {
 /* Exported functions --------------------------------------------------------*/
 
 #endif // USBD_COMPOSITE_CONFIG_H
-

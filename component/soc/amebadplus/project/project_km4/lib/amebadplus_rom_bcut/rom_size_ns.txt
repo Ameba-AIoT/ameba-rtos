@@ -1,0 +1,72 @@
+
+=============================================================
+      text       data        bss      total filename
+      2704       2251          0       4955 ameba_vector_rom.o
+        24         16          0         40 ameba_ns_entry.o
+      1352        627          0       1979 ameba_gpio_rom.o
+        84         24          0        108 ameba_sema_rom.o
+       588         16          0        604 ameba_rcc_rom.o
+      2588        124          0       2712 ameba_flash_rom.o
+       720          0          0        720 ameba_syscfg_rom.o
+       968         19          0        987 ameba_pinmux_rom.o
+       576        106          0        682 ameba_clk_rom.o
+       736         95          0        831 ameba_wdg.o
+        32         54          0         86 ameba_assert_rom.o
+       780         98          0        878 ameba_tim_rom.o
+      2180        172          0       2352 ameba_loguart_rom.o
+      2344       1035          0       3379 ameba_otp_rom.o
+      1036         10          0       1046 ameba_uart_rom.o
+       352          0          0        352 ameba_chipinfo_rom.o
+       168         47          0        215 ameba_backup_reg.o
+       176          4          0        180 ameba_delay_rom.o
+       324         53          0        377 ameba_trng.o
+       176          0          0        176 ameba_systimer_rom.o
+      1464        148          0       1612 ameba_aes.o
+      5592       1895          0       7487 ameba_crypto_rom.o
+       352         16          0        368 ameba_otf_rom.o
+      1504        174          0       1678 ameba_md5.o
+      3696        327          0       4023 ameba_sha.o
+     30516       7311          0      37827 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       272        343          0        615 monitor_rom.o
+       844        387          0       1231 shell_rom.o
+      1116        730          0       1846 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+      1536         37          0       1573 diag.o
+       164          0          0        164 memset.o
+       332          0          0        332 rand.o
+       208          0          0        208 memcpy.o
+        96          0          0         96 memcmp.o
+       128          0          0        128 memchr.o
+       248          0          0        248 memmove.o
+       140          0          0        140 strcmp.o
+        92          0          0         92 strlen.o
+        84          0          0         84 stricmp.o
+        28          0          0         28 strupr.o
+       300          0          0        300 strtoul.o
+       292          0          0        292 char2num.o
+        80          0          0         80 strwrap.o
+      3728         37          0       3765 (TOTALS)
+=============================================================
+      text       data        bss      total filename
+       896          0          0        896 mbedtls_rom_asn1parse.o
+      1308          0          0       1308 mbedtls_rom_asn1write.o
+     10356        689          0      11045 mbedtls_rom_bignum.o
+       788          0          0        788 mbedtls_rom_ecdh.o
+      1664         17          0       1681 mbedtls_rom_ecdsa.o
+      8700        288          0       8988 mbedtls_rom_ecp.o
+      4336       2284          0       6620 mbedtls_rom_ecp_curves.o
+       822          0          0        822 mbedtls_rom_hmac_drbg.o
+       984         56          0       1040 mbedtls_rom_md.o
+       280        272          0        552 mbedtls_rom_md_wrap.o
+      2328          0          0       2328 mbedtls_rom_md5.o
+         0          0          0          0 mbedtls_rom_sha1.o
+      2456        256          0       2712 mbedtls_rom_sha256.o
+      4056        640          0       4696 mbedtls_rom_sha512.o
+        16          0          0         16 mbedtls_rom_platform_util.o
+         0         16          0         16 rom_ssl_ram_map.o
+     38990       4518          0      43508 (TOTALS)
+=============================================================
+     74350      12596          0      86946 (AUTO_TOTALS)
