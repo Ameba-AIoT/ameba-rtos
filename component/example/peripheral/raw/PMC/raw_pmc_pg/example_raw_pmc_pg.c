@@ -51,8 +51,12 @@ u32 pmu_aontimer_int(void *Data)
 	return 0;
 }
 
-void pmu_aontimer_test(void)
+
+void pmu_aontimer_wakeup_task(void)
 {
+	rtos_time_delay_ms(10000);
+
+	/*1. Init peripheral parameters*/
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 
 	AONTimer_Setting(WAKEUP_TIME);
@@ -60,7 +64,7 @@ void pmu_aontimer_test(void)
 
 	InterruptRegister((IRQ_FUN)pmu_aontimer_int, AON_TIM_IRQ, NULL, 3);
 	InterruptEn(AON_TIM_IRQ, 3);
-
+	/*2. Call API or modify sleepcfg.c to set wakeup mask.*/
 #if defined(CONFIG_AMEBALITE)
 	SOCPS_SetAPWakeEvent_MSK1(WAKE_SRC_AON_TIM, ENABLE);
 #elif defined(CONFIG_AMEBASMART)
@@ -68,37 +72,13 @@ void pmu_aontimer_test(void)
 #elif defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
 	SOCPS_SetAPWakeEvent(WAKE_SRC_AON_TIM, ENABLE);
 #endif
-
-}
-
-void pmu_init(void)
-{
-	/* KM4 need do pmc init */
-#if defined (CONFIG_ARM_CORE_CM4)
-	SOCPS_SleepInit();
-#endif
-
-	/*set AP sleep type*/
-	pmu_set_sleep_type(SLEEP_PG);
-	/*acquire wakelock to avoid AP enter sleep mode*/
-	pmu_acquire_wakelock(PMU_OS);
-
-#if defined(CONFIG_AMEBALITE)
-	if (dsp_status_on()) {
-		printf("need power off DSP!!!!!!!!!!!!\n");
-	}
-#endif
-}
-
-void pmu_aontimer_wakeup_task(void)
-{
-	rtos_time_delay_ms(10000);
-
+	/*3. (optional) Register sleep hook*/
 	pmu_register_sleep_callback(PMU_DEV_USER_BASE, (PSM_HOOK_FUN)app_peripheral_suspend, NULL, (PSM_HOOK_FUN)app_peripheral_resume, NULL);
 
-	pmu_aontimer_test();
-
-	/* release wakelock, to make CPU enter sleep mode */
+	/*4. (optional) Modify the ameba_sleepcfg.c if current wake-up source requires setting clock and voltage parameters.*/
+	/*5. Set sleep type*/
+	pmu_set_sleep_type(SLEEP_PG);
+	/*6. Release wakelock, to make CPU enter sleep mode */
 	pmu_release_wakelock(PMU_OS);
 
 	printf("lockbit:%lx \n", pmu_get_wakelock_status());
@@ -113,13 +93,9 @@ void pmu_aontimer_wakeup_task(void)
   */
 int example_raw_pmc_pg(void)
 {
-	pmu_init();
-
 	if (rtos_task_create(NULL, "PMU PERIPHERAL WAKEUP DEMO", (rtos_task_t)pmu_aontimer_wakeup_task, NULL, 3072, (1)) != RTK_SUCCESS) {
 		printf("Cannot create pmu_aontimer_wakeup_task demo task\n\r");
 	}
 
-	/* Enable Schedule, Start Kernel */
-	rtos_sched_start();
 	return 0;
 }

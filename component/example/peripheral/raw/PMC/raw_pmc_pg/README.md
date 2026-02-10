@@ -4,6 +4,7 @@ This example shows how to use freertos tickless with aontimer interruptable inte
 
 # HW Configuration
 
+None
 
 # SW Configuration
 

@@ -53,6 +53,10 @@ if AIVOICE_EN_MENU
         config VAD_V9_208K_MENU
             bool "vad_v9_208K"
             select VAD_V9_208K if CORE_AS_AP
+
+        config VAD_V11_208K_MENU
+            bool "vad_v11_208K"
+            select VAD_V11_208K if CORE_AS_AP
     endchoice
 
     config SELECT_KWS_RESOURCE
@@ -75,6 +79,10 @@ if AIVOICE_EN_MENU
         config KWS_CN_CUSTOMIZED_V3_750K_MENU
             bool "kws_cn_customized_v3_750K"
             select KWS_CN_CUSTOMIZED_V3_750K if CORE_AS_AP
+
+        config KWS_CN_CUSTOMIZED_V5_886K_MENU
+            bool "kws_cn_customized_v5_886K"
+            select KWS_CN_CUSTOMIZED_V5_886K if CORE_AS_AP
     endchoice
 
     config SELECT_ASR_RESOURCE
@@ -151,6 +159,9 @@ config VAD_V8_60K
 config VAD_V9_208K
     bool
 
+config VAD_V11_208K
+    bool
+
 config KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V4_300K
     bool
 
@@ -158,6 +169,9 @@ config KWS_XIAOQIANGXIAOQIANG_NIHAOXIAOQIANG_V5_125K
     bool
 
 config KWS_CN_CUSTOMIZED_V3_750K
+    bool
+
+config KWS_CN_CUSTOMIZED_V5_886K
     bool
 
 config ASR_CN_V8_2M
