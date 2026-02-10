@@ -105,7 +105,7 @@ void linux_ipc_otp_instruction(void *Data, u32 IrqStatus, u32 ChanNum)
 		break;
 	case LINUX_IPC_OTP_LOGI_READ_MAP:
 		DCache_Invalidate((u32)recv_req->param_buf, OPT_REQ_MSG_PARAM_NUM);
-		otp_data[0] = OTP_LogicalMap_Read(recv_req->param_buf, 0, OTP_LMAP_LEN);
+		otp_data[0] = OTP_LogicalRead(recv_req->param_buf, 0, OTP_LMAP_LEN);
 		DCache_CleanInvalidate((u32)recv_req->param_buf, OPT_REQ_MSG_PARAM_NUM);
 		DCache_Clean((u32)otp_data, 2);
 		DCache_Invalidate((u32)&ipc_msg, sizeof(IPC_MSG_STRUCT));
@@ -116,7 +116,7 @@ void linux_ipc_otp_instruction(void *Data, u32 IrqStatus, u32 ChanNum)
 		DCache_CleanInvalidate((u32)&ipc_msg, sizeof(IPC_MSG_STRUCT));
 		break;
 	case LINUX_IPC_OTP_LOGI_WRITE_MAP:
-		otp_data[0] = OTP_LogicalMap_Write(recv_req->addr, recv_req->len, recv_req->param_buf);
+		otp_data[0] = OTP_LogicalWrite(recv_req->addr, recv_req->len, recv_req->param_buf);
 		DCache_Clean((u32)otp_data, 2);
 		DCache_Invalidate((u32)&ipc_msg, sizeof(IPC_MSG_STRUCT));
 		ipc_msg.msg_type = IPC_USER_POINT;
@@ -127,7 +127,7 @@ void linux_ipc_otp_instruction(void *Data, u32 IrqStatus, u32 ChanNum)
 		break;
 	case LINUX_IPC_EFUSE_REMAIN_LEN:
 		DCache_Invalidate((u32)recv_req->param_buf, OPT_REQ_MSG_PARAM_NUM);
-		remain_length = otp_logical_remain();
+		remain_length = OTP_LogicalGetRemain();
 		recv_req->param_buf[0] = (remain_length >> 24) & 0xFF;
 		recv_req->param_buf[1] = (remain_length >> 16) & 0xFF;
 		recv_req->param_buf[2] = (remain_length >> 8) & 0xFF;

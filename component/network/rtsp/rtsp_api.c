@@ -1,9 +1,15 @@
+#include "FreeRTOS.h"
+#include "task.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "rtsp/rtsp_api.h"
 
 #include "wifi_api.h"// for _htons
 #include "lwip_netconf.h"	// for LwIP_GetMAC
+
+#if defined(CONFIG_AMEBAPRO3)
+#include "mmf2_dbg.h"
+#endif
 
 #define RTSP_CTX_ID_BASE	0
 static uint32_t rtsp_ctx_id_bitmap = 0;
@@ -93,8 +99,11 @@ void time_sync_enable(void)
 
 void set_rtsp_url(struct rtsp_context *rtsp_ctx, char *url)
 {
+	// TODO check this, not sure url is normal string or two or more separate strings
+	// if yes, use strncpy, if not use current implement
+	//strncpy(rtsp_ctx->rtsp_url, url, RTSP_URL_LEN);
 	memset(rtsp_ctx->rtsp_url, 0, RTSP_URL_LEN);
-	memcpy(rtsp_ctx->rtsp_url, url, strlen(url));
+	memcpy(rtsp_ctx->rtsp_url, url, strlen(url) > (RTSP_URL_LEN - 1) ? RTSP_URL_LEN - 1 : strlen(url));
 	printf("set_rtsp_url = %s\r\n", rtsp_ctx->rtsp_url);
 }
 
@@ -129,6 +138,10 @@ uint32_t rtsp_get_timestamp(struct stream_context *stream_ctx, uint32_t current_
 	if (stream_ctx->use_rtp_tick_inc) {
 		stream_ctx->rtp_timestamp += stream_ctx->statistics.rtp_tick_inc;
 	} else {
+		if (stream_ctx->old_depend_clock_tick == 0) {
+			stream_ctx->old_depend_clock_tick = current_clock_tick;
+			stream_ctx->rtp_timestamp = 0;
+		}
 		delta_clock_tick = current_clock_tick - stream_ctx->old_depend_clock_tick;
 		stream_ctx->old_depend_clock_tick = current_clock_tick;
 		stream_ctx->rtp_timestamp += (delta_clock_tick * rtsp_clock_hz) / RTSP_DEPEND_CLK_HZ;
@@ -247,6 +260,7 @@ void rtsp_stream_context_init(struct rtsp_context *rtsp_ctx, struct stream_conte
 	stream_ctx->framecontrol.drop_frame_enable = 1;
 	stream_ctx->framecontrol.rtp_drop_threshold = 600;
 	stream_ctx->framecontrol.packet_retry = 3;
+	stream_ctx->time_offset = 0;
 }
 
 void rtsp_stream_context_clear(struct stream_context *stream_ctx)
@@ -329,8 +343,9 @@ struct rtsp_context *rtsp_context_create(uint8_t nb_streams)
 	rtsp_ctx->state = RTSP_INIT;
 	rtsp_transport_init(rtsp_ctx);
 	rtsp_session_init(rtsp_ctx);
-	rtsp_ctx->is_rtsp_start = 0;
+	rtsp_ctx->rtsp_server_state = RTSP_SERV_INIT;
 	rtos_sema_create(&rtsp_ctx->start_rtsp_sema, 0, 0xFFFFFFFF);
+	rtos_sema_create(&rtsp_ctx->start_rtp_service_sema, 0, 0xFFFFFFFF);
 	rtsp_ctx->is_rtp_start = 0;
 	rtos_sema_create(&rtsp_ctx->start_rtp_sema, 0, 0xFFFFFFFF);
 	rtsp_ctx->rtp_service_handle = NULL;
@@ -373,29 +388,41 @@ struct rtsp_context *rtsp_context_create(uint8_t nb_streams)
 
 void rtsp_context_free(struct rtsp_context *rtsp_ctx)
 {
-	int i;
-	for (i = 0; i < rtsp_ctx->nb_streams; i++) {
-		rtsp_stream_context_clear(&rtsp_ctx->stream_ctx[i]);
-	}
-	free(rtsp_ctx->stream_ctx);
-	free(rtsp_ctx->response);
-	free(rtsp_ctx->connect_ctx.remote_ip);
-	rtos_sema_delete(rtsp_ctx->start_rtp_sema);
-	rtos_sema_delete(rtsp_ctx->rtp_input_sema);
-	rtos_sema_delete(rtsp_ctx->rtp_output_sema);
-	rtos_sema_delete(rtsp_ctx->start_rtsp_sema);
+	if (rtsp_ctx) {
+		for (int i = 0; i < rtsp_ctx->nb_streams; i++) {
+			rtsp_stream_context_clear(&rtsp_ctx->stream_ctx[i]);
+		}
+		if (rtsp_ctx->stream_ctx) {
+			free(rtsp_ctx->stream_ctx);
+			rtsp_ctx->stream_ctx = NULL;
+		}
+		if (rtsp_ctx->response) {
+			free(rtsp_ctx->response);
+			rtsp_ctx->response = NULL;
+		}
+		if (rtsp_ctx->connect_ctx.remote_ip) {
+			free(rtsp_ctx->connect_ctx.remote_ip);
+			rtsp_ctx->connect_ctx.remote_ip = NULL;
+		}
+		rtos_sema_delete(rtsp_ctx->start_rtp_sema);
+		rtos_sema_delete(rtsp_ctx->rtp_input_sema);
+		rtos_sema_delete(rtsp_ctx->rtp_output_sema);
+		rtos_sema_delete(rtsp_ctx->start_rtsp_sema);
+		rtos_sema_delete(rtsp_ctx->start_rtp_service_sema);
 #if ENABLE_PROXY_SEVER
-	rtos_sema_delete(rtsp_ctx->start_proxy_connect_sema);
+		rtos_sema_delete(rtsp_ctx->start_proxy_connect_sema);
 #endif
 #ifdef SUPPORT_RTCP
-	rtos_sema_delete(rtsp_ctx->start_rtcp_sema);
+		rtos_sema_delete(rtsp_ctx->start_rtcp_sema);
 #endif
-	rtsp_put_number(rtsp_ctx->id, RTSP_CTX_ID_BASE, &rtsp_ctx_id_bitmap, &rtsp_ctx_id_bitmap_lock);
+		rtsp_put_number(rtsp_ctx->id, RTSP_CTX_ID_BASE, &rtsp_ctx_id_bitmap, &rtsp_ctx_id_bitmap_lock);
+		rtos_mutex_delete(rtsp_ctx->socket_lock);
+		free(rtsp_ctx);
+		rtsp_ctx = NULL;
+	}
 	if (rtsp_ctx_id_bitmap == 0) {
 		rtos_mutex_delete(rtsp_ctx_id_bitmap_lock);
 	}
-	free(rtsp_ctx);
-	rtos_mutex_delete(rtsp_ctx->socket_lock);
 }
 
 uint32_t rtsp_get_request_len(char *request)
@@ -694,6 +721,7 @@ void rtsp_parse_request(struct rtsp_context *rtsp_ctx, char *request)
 	char *pstart = request;
 	char *pbody = NULL;
 	int len = rtsp_get_request_len(request);
+	(void)len;
 	pbody = rtsp_parse_header_line(rtsp_ctx, pstart);
 	while (*pbody != '\0') {
 		pbody = rtsp_parse_body_line(rtsp_ctx, pbody);
@@ -778,17 +806,29 @@ extern char base64_sps[128];
 extern char base64_pps[64];
 extern char plid[4];
 
+char *safe_strcat(char *destination, const char *source, size_t max_size)
+{
+	int dst_len = strlen(destination);
+	if (max_size - dst_len >= 1) {
+		return strncat(destination, source, max_size - dst_len);
+	} else {
+		RTSP_DBG_ERROR("check strcat dst buffer size\n\r");
+		return destination;
+	}
+}
+
 static void create_sdp_a_string(char *string, struct stream_context *s, void *extra)
 {
-	char spspps_string[256];
+#define SPSPPS_SIZE 255
+	char spspps_string[SPSPPS_SIZE + 1];
 	uint8_t *config = NULL;
 	if (extra != NULL) {
 		config = extradata2config(extra);
 	}
-
+	memset(spspps_string, 0x00, sizeof(spspps_string));
 	switch (s->codec->codec_id) {
 	case (AV_CODEC_ID_MJPEG):
-		sprintf(string, "a=rtpmap:%d JPEG/%d" CRLF \
+		sprintf(string, "a=rtpmap:%d JPEG/%lu" CRLF \
 				"a=control:streamid=%d" CRLF \
 				"a=framerate:%d" CRLF \
 				, s->codec->pt, s->codec->clock_rate, s->stream_id, s->framerate);
@@ -800,18 +840,18 @@ static void create_sdp_a_string(char *string, struct stream_context *s, void *ex
 			set_pps_string(base64_pps);
 		}
 		if (plid_string != NULL) {
-			strncat(spspps_string, ";profile-level-id=", sizeof(spspps_string));
-			strncat(spspps_string, plid_string, sizeof(spspps_string));
+			safe_strcat(spspps_string, ";profile-level-id=", SPSPPS_SIZE);
+			safe_strcat(spspps_string, plid_string, SPSPPS_SIZE);
 		}
 		if (sps_string != NULL) {
-			strncat(spspps_string, ";sprop-parameter-sets=", sizeof(spspps_string));
-			strncat(spspps_string, sps_string, sizeof(spspps_string));
+			safe_strcat(spspps_string, ";sprop-parameter-sets=", SPSPPS_SIZE);
+			safe_strcat(spspps_string, sps_string, SPSPPS_SIZE);
 			if (pps_string != NULL) {
-				strncat(spspps_string, ",", sizeof(spspps_string));
-				strncat(spspps_string, pps_string, sizeof(spspps_string));
+				safe_strcat(spspps_string, ",", SPSPPS_SIZE);
+				safe_strcat(spspps_string, pps_string, SPSPPS_SIZE);
 			}
 		}
-		sprintf(string, "a=rtpmap:%d H264/%d" CRLF \
+		sprintf(string, "a=rtpmap:%d H264/%lu" CRLF \
 				"a=control:streamid=%d" CRLF \
 				"a=fmtp:%d packetization-mode=0%s%s" CRLF \
 				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->stream_id, (s->codec->pt + s->stream_id), config ? (char *)config : "", spspps_string);
@@ -823,54 +863,55 @@ static void create_sdp_a_string(char *string, struct stream_context *s, void *ex
 			set_pps_string(base64_pps);
 		}
 		if (plid_string != NULL) {
-			strncat(spspps_string, ";profile-level-id=", sizeof(spspps_string));
-			strncat(spspps_string, plid_string, sizeof(spspps_string));
+			safe_strcat(spspps_string, ";profile-level-id=", SPSPPS_SIZE);
+			safe_strcat(spspps_string, plid_string, SPSPPS_SIZE);
 		}
 		if (sps_string != NULL) {
-			strncat(spspps_string, ";sprop-parameter-sets=", sizeof(spspps_string));
-			strncat(spspps_string, sps_string, sizeof(spspps_string));
+			safe_strcat(spspps_string, ";sprop-parameter-sets=", SPSPPS_SIZE);
+			safe_strcat(spspps_string, sps_string, SPSPPS_SIZE);
 			if (pps_string != NULL) {
-				strncat(spspps_string, ",", sizeof(spspps_string));
-				strncat(spspps_string, pps_string, sizeof(spspps_string));
+				safe_strcat(spspps_string, ",", SPSPPS_SIZE);
+				safe_strcat(spspps_string, pps_string, SPSPPS_SIZE);
 			}
 		}
-		sprintf(string, "a=rtpmap:%d H265/%d" CRLF \
+		sprintf(string, "a=rtpmap:%d H265/%lu" CRLF \
 				"a=control:streamid=%d" CRLF \
 				"a=fmtp:%d packetization-mode=0%s%s" CRLF \
 				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->stream_id, (s->codec->pt + s->stream_id), config ? (char *)config : "", spspps_string);
 		break;
 	case (AV_CODEC_ID_PCMU):
-		sprintf(string, "a=rtpmap:%d PCMU/%d" CRLF \
+		sprintf(string, "a=rtpmap:%d PCMU/%lu" CRLF \
 				"a=ptime:20" CRLF \
 				"a=control:streamid=%d" CRLF \
 				, s->codec->pt, s->samplerate, s->stream_id);
 		break;
 	case (AV_CODEC_ID_PCMA):
-		sprintf(string, "a=rtpmap:%d PCMA/%d" CRLF \
+		sprintf(string, "a=rtpmap:%d PCMA/%lu" CRLF \
 				"a=ptime:20" CRLF \
 				"a=control:streamid=%d" CRLF \
 				, s->codec->pt, s->samplerate, s->stream_id);
 		break;
 	case (AV_CODEC_ID_MP4A_LATM):
-		sprintf(string, "a=rtpmap:%d mpeg4-generic/%d/%d" CRLF \
+		sprintf(string, "a=rtpmap:%d mpeg4-generic/%lu/%lu" CRLF \
 				"a=fmtp:%d streamtype=5; profile-level-id=15; mode=AAC-hbr%s; sizeLength=13; indexLength=3; indexDeltaLength=3; constantDuration=1024; Profile=1" CRLF \
 				"a=control:streamid=%d" CRLF \
 				/*	"a=type:broadcast" CRLF \*/
 				, (s->codec->pt + s->stream_id), s->samplerate, s->channel, (s->codec->pt + s->stream_id), config ? (char *)config : "", s->stream_id);
 		break;
 	case (AV_CODEC_ID_MP4V_ES):
-		sprintf(string, "a=rtpmap:%d MPEG4-ES/%d" CRLF \
+		sprintf(string, "a=rtpmap:%d MPEG4-ES/%lu" CRLF \
 				"a=control:streamid=%d" CRLF \
 				"a=fmtp:%d profile-level-id=1%s" CRLF \
 				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->stream_id, (s->codec->pt + s->stream_id), config ? (char *)config : "");
 		break;
 	case (AV_CODEC_ID_OPUS):
-		sprintf(string, "a=rtpmap:%d opus/%d/%d" CRLF \
-				"a=fmtp:%d maxplaybackrate=%d; stereo=%d; useinbandfec=1; usedtx=0" CRLF \
+		sprintf(string, "a=rtpmap:%d opus/%lu/%lu" CRLF \
+				"a=fmtp:%d maxplaybackrate=%lu; stereo=%lu; useinbandfec=1; usedtx=0" CRLF \
 				"a=ptime:20" CRLF \
 				"a=maxptime:60" CRLF \
 				"a=control:streamid=%d" CRLF \
-				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->codec->audio_channels, (s->codec->pt + s->stream_id), s->samplerate, s->channel, s->stream_id);
+				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->channel, (s->codec->pt + s->stream_id), s->samplerate, s->channel,
+				s->stream_id);
 		//printf("OPUS\r\n%s\r\n",string);
 
 		/*
@@ -894,8 +935,9 @@ static void create_sdp_a_string(char *string, struct stream_context *s, void *ex
 
 static int get_frequency_index(int samplerate)
 {
-	uint32_t freq_idx_map[] = {96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350};
-	for (int i = 0; i < sizeof(freq_idx_map) / sizeof(freq_idx_map[0]); i++) {
+	int freq_idx_map[] = {96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350};
+	int map_len = sizeof(freq_idx_map) / sizeof(freq_idx_map[0]);
+	for (int i = 0; i < map_len; i++) {
 		if (samplerate == freq_idx_map[i]) {
 			return i;
 		}
@@ -990,7 +1032,7 @@ void rtsp_cmd_options(struct rtsp_context *rtsp_ctx)
 {
 	memset(rtsp_ctx->response, 0, RTSP_RESPONSE_BUF_SIZE);
 	sprintf(rtsp_ctx->response, "RTSP/1.0 200 OK" CRLF \
-			"CSeq: %d" CRLF \
+			"CSeq: %lu" CRLF \
 			"Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER" CRLF \
 			CRLF, rtsp_ctx->CSeq);
 }
@@ -999,8 +1041,8 @@ void rtsp_cmd_getparm(struct rtsp_context *rtsp_ctx)
 {
 	memset(rtsp_ctx->response, 0, RTSP_RESPONSE_BUF_SIZE);
 	sprintf(rtsp_ctx->response, "RTSP/1.0 200 OK" CRLF \
-			"CSeq: %d" CRLF \
-			"Session: %d;timeout=60" CRLF \
+			"CSeq: %lu" CRLF \
+			"Session: %lu;timeout=60" CRLF \
 			CRLF, rtsp_ctx->CSeq, rtsp_ctx->session.id);
 }
 
@@ -1013,7 +1055,7 @@ void rtsp_cmd_describe(struct rtsp_context *rtsp_ctx)
 	rtsp_create_sdp(rtsp_ctx, sdp_buffer, MAX_SDP_SIZE - 1);
 	sdp_content_len = strlen(sdp_buffer);
 	sprintf(rtsp_ctx->response, "RTSP/1.0 200 OK" CRLF \
-			"CSeq: %d" CRLF \
+			"CSeq: %lu" CRLF \
 			"Content-Type: application/sdp" CRLF \
 			"Content-Base: rtsp://%d.%d.%d.%d:%d" CRLF \
 			"Content-Length: %d" CRLF \
@@ -1039,23 +1081,23 @@ void rtsp_cmd_setup(struct rtsp_context *rtsp_ctx)
 	}
 	if (rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].castMode == UNICAST_UDP_MODE) {
 		sprintf(rtsp_ctx->response, "RTSP/1.0 200 OK" CRLF \
-				"CSeq: %d" CRLF \
-				"Session: %d;timeout=60" CRLF \
+				"CSeq: %lu" CRLF \
+				"Session: %lu;timeout=60" CRLF \
 				"Transport: RTP/AVP/UDP;%s;client_port=%d-%d;server_port=%d-%d" CRLF \
 				CRLF, rtsp_ctx->CSeq, rtsp_ctx->session.id, castmode, rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].clientport_low,
 				rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].clientport_high, rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].serverport_low,
 				rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].serverport_high);
 	} else if (rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].castMode == UNICAST_TCP_MODE) {
 		sprintf(rtsp_ctx->response, "RTSP/1.0 200 OK" CRLF \
-				"CSeq: %d" CRLF \
-				"Session: %d" CRLF \
+				"CSeq: %lu" CRLF \
+				"Session: %lu" CRLF \
 				"Transport: RTP/AVP/TCP;%s;interleaved=%d-%d" CRLF \
 				CRLF, rtsp_ctx->CSeq, rtsp_ctx->session.id, castmode, rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].interleaved_low,
 				rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].interleaved_high);
 	} else if (rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].castMode == MULTICAST_MODE) {
 		sprintf(rtsp_ctx->response, "RTSP/1.0 200 OK" CRLF \
-				"CSeq: %d" CRLF \
-				"Session: %d" CRLF \
+				"CSeq: %lu" CRLF \
+				"Session: %lu" CRLF \
 				"Transport: RTP/AVP/UDP;%s;port=%d-%d;ttl=%d" CRLF \
 				CRLF, rtsp_ctx->CSeq, rtsp_ctx->session.id, castmode, rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].port_low,
 				rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].port_high, rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].ttl);
@@ -1066,8 +1108,8 @@ void rtsp_cmd_play(struct rtsp_context *rtsp_ctx)
 {
 	memset(rtsp_ctx->response, 0, RTSP_RESPONSE_BUF_SIZE);
 	sprintf(rtsp_ctx->response, "RTSP/1.0 200 OK" CRLF \
-			"CSeq: %d" CRLF \
-			"Session: %d" CRLF \
+			"CSeq: %lu" CRLF \
+			"Session: %lu" CRLF \
 			CRLF, rtsp_ctx->CSeq, rtsp_ctx->session.id);
 }
 
@@ -1075,8 +1117,8 @@ void rtsp_cmd_pause(struct rtsp_context *rtsp_ctx)
 {
 	memset(rtsp_ctx->response, 0, RTSP_RESPONSE_BUF_SIZE);
 	sprintf(rtsp_ctx->response, "RTSP/1.0 200 OK" CRLF \
-			"CSeq: %d" CRLF \
-			"Session: %d" CRLF \
+			"CSeq: %lu" CRLF \
+			"Session: %lu" CRLF \
 			CRLF, rtsp_ctx->CSeq, rtsp_ctx->session.id);
 }
 
@@ -1084,8 +1126,8 @@ void rtsp_cmd_teardown(struct rtsp_context *rtsp_ctx)
 {
 	memset(rtsp_ctx->response, 0, RTSP_RESPONSE_BUF_SIZE);
 	sprintf(rtsp_ctx->response, "RTSP/1.0 200 OK" CRLF \
-			"CSeq: %d" CRLF \
-			"Session: %d" CRLF \
+			"CSeq: %lu" CRLF \
+			"Session: %lu" CRLF \
 			CRLF, rtsp_ctx->CSeq, rtsp_ctx->session.id);
 }
 
@@ -1093,7 +1135,7 @@ void rtsp_cmd_error(struct rtsp_context *rtsp_ctx)
 {
 	memset(rtsp_ctx->response, 0, RTSP_RESPONSE_BUF_SIZE);
 	sprintf(rtsp_ctx->response, "RTSP/1.0 400" CRLF \
-			"CSeq: %d" CRLF \
+			"CSeq: %lu" CRLF \
 			CRLF, rtsp_ctx->CSeq);
 }
 
@@ -1101,7 +1143,7 @@ void rtsp_cmd_unsupported_transport(struct rtsp_context *rtsp_ctx)
 {
 	memset(rtsp_ctx->response, 0, RTSP_RESPONSE_BUF_SIZE);
 	sprintf(rtsp_ctx->response, "RTSP/1.0 461" CRLF \
-			"CSeq: %d" CRLF \
+			"CSeq: %lu" CRLF \
 			CRLF, rtsp_ctx->CSeq);
 }
 
@@ -1109,7 +1151,7 @@ void rtsp_cmd_destination_unreachable(struct rtsp_context *rtsp_ctx)
 {
 	memset(rtsp_ctx->response, 0, RTSP_RESPONSE_BUF_SIZE);
 	sprintf(rtsp_ctx->response, "RTSP/1.0 462" CRLF \
-			"CSeq: %d" CRLF \
+			"CSeq: %lu" CRLF \
 			CRLF, rtsp_ctx->CSeq);
 }
 
@@ -1128,25 +1170,36 @@ int rtsp_is_stream_enabled(struct rtsp_context *rtsp_ctx)
 	return rtsp_ctx->allow_stream;
 }
 
-void rtsp_enable_service(struct rtsp_context *rtsp_ctx)
+int rtsp_enable_service(struct rtsp_context *rtsp_ctx)
 {
-	rtsp_ctx->is_rtsp_start = 1;
+	if ((rtsp_ctx->state & RTSP_SERV_MASK) == RTSP_SERV_INIT) {
+		rtsp_ctx->rtsp_server_state = RTSP_SERV_RUN;
+		return 0;
+	} else {
+		RTSP_DBG_ERROR("rtsp service init failed, there is an on-going rtsp service\r\n");
+		return -1;
+	}
 }
 
 void rtsp_disable_service(struct rtsp_context *rtsp_ctx)
 {
-	rtsp_ctx->is_rtsp_start = 0;
+	rtsp_ctx->rtsp_server_state = RTSP_SERV_SET_EXIT;
 }
 
 int rtsp_is_service_enabled(struct rtsp_context *rtsp_ctx)
 {
-	return rtsp_ctx->is_rtsp_start;
+	return rtsp_ctx->rtsp_server_state & RTSP_SERV_RUN;
 }
 
 void rtsp_close_service(struct rtsp_context *rtsp_ctx)
 {
 	rtsp_disable_stream(rtsp_ctx);
 	rtsp_disable_service(rtsp_ctx);
+	while (rtsp_ctx->rtsp_server_state != RTSP_SERV_EXIT) {
+		vTaskDelay(1);
+	}
+	rtsp_ctx->rtsp_server_state = RTSP_SERV_INIT;
+	printf("rtsp close service successfully\r\n");
 }
 
 void show_result_statistics(struct rtsp_context *rtsp_ctx)
@@ -1156,9 +1209,9 @@ void show_result_statistics(struct rtsp_context *rtsp_ctx)
 	for (i = 0; i < rtsp_ctx->nb_streams_setup; i++) {
 		stream = &rtsp_ctx->stream_ctx[i];
 		if ((stream->statistics.sent_packet == 0) && (stream->statistics.drop_packet == 0)) {
-			printf("\n\rch = %d sf:%d df:%d l:0%%", i, stream->statistics.sent_packet, stream->statistics.drop_packet);
+			printf("\n\rch = %d sf:%lu df:%lu l:0%%", i, stream->statistics.sent_packet, stream->statistics.drop_packet);
 		} else
-			printf("\n\rch = %d sf:%d df:%d l:%d%%", i, stream->statistics.sent_packet, stream->statistics.drop_packet, \
+			printf("\n\rch = %d sf:%lu df:%lu l:%lu%%", i, stream->statistics.sent_packet, stream->statistics.drop_packet, \
 				   (stream->statistics.drop_packet * 100) / (stream->statistics.sent_packet + stream->statistics.drop_packet));
 	}
 	printf("\n\r");
@@ -1311,11 +1364,15 @@ void proxy_connect_thread(void *param)
 #endif
 
 #define WLAN0_NAME "wlan0"
+#ifndef WLAN0_IDX
+#define WLAN0_IDX	0
+#endif
 void rtsp_start_service(struct rtsp_context *rtsp_ctx)
 {
 	char *request, *request_concat_buf;
 	int mode = 0;
 	struct rtw_wifi_setting setting = {0};
+	u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 	struct sockaddr_in server_addr, client_addr;
 	socklen_t client_addr_len = sizeof(struct sockaddr_in);
 
@@ -1331,10 +1388,16 @@ void rtsp_start_service(struct rtsp_context *rtsp_ctx)
 	request = malloc(RTSP_REQUEST_BUF_SIZE);
 	request_concat_buf = malloc(RTSP_REQUEST_BUF_SIZE);
 	if (request == NULL || request_concat_buf == NULL) {
+		if (request) {
+			free(request);
+		}
+		if (request_concat_buf) {
+			free(request_concat_buf);
+		}
 		RTSP_DBG_ERROR("allocate request buffer failed");
 		return;
 	}
-Redo:
+//Redo:
 	while (rtsp_is_service_enabled(rtsp_ctx)) {
 		rtos_time_delay_ms(1);
 		if (!rtsp_is_service_enabled(rtsp_ctx)) {
@@ -1342,14 +1405,15 @@ Redo:
 			return;
 		}
 		if (rtsp_ctx->interface <= 1) {
-			if (wifi_is_running(0) == TRUE) {
-				wifi_get_setting(STA_WLAN_INDEX, &setting);
+			if (wifi_is_running(0) > 0) {
+				wifi_get_setting(WLAN0_IDX, &setting);
 				mode = setting.mode;
-				if ((LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) && (mode == RTW_MODE_STA)) {
+				if (((wifi_get_join_status(&join_status) == RTK_SUCCESS && join_status == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) &&
+					(mode == RTW_MODE_STA)) {
 					printf("connect successful sta mode\r\n");
 					break;
 				}
-				if (wifi_is_running(STA_WLAN_INDEX) && (mode == RTW_MODE_AP)) {
+				if (wifi_is_running(WLAN0_IDX) && (mode == RTW_MODE_AP)) {
 					printf("connect successful ap mode\r\n");
 					break;
 				}
@@ -1369,11 +1433,9 @@ Redo:
 		}
 	}
 
-	rtw_interface_t interface = (mode == RTW_MODE_STA) ? RTW_STA_INTERFACE : RTW_AP_INTERFACE;
-
 	if (rtsp_connect_ctx_init(rtsp_ctx) < 0) {
 		RTSP_DBG_ERROR("rtsp connect context init failed");
-		return;
+		goto error;
 	}
 
 	uint8_t *mac = (uint8_t *) LwIP_GetMAC(rtsp_ctx->interface);
@@ -1520,7 +1582,7 @@ Redo:
 					keep_alive_time = rtos_time_get_current_system_time_ms();
 #endif
 					memset(request, 0, RTSP_REQUEST_BUF_SIZE);
-					int read_len = 0;
+					uint32_t read_len = 0;
 
 					rtos_mutex_take(rtsp_ctx->socket_lock, MUTEX_WAIT_TIMEOUT);
 					read_len = read(rtsp_ctx->client_socket, request, RTSP_REQUEST_BUF_SIZE);
@@ -1669,6 +1731,9 @@ Redo:
 						rtos_mutex_take(rtsp_ctx->socket_lock, MUTEX_WAIT_TIMEOUT);
 						ok = write(rtsp_ctx->client_socket, rtsp_ctx->response, strlen(rtsp_ctx->response));
 						rtos_mutex_give(rtsp_ctx->socket_lock);
+						if (rtsp_ctx->cb_stop) {
+							rtsp_ctx->cb_stop(NULL);
+						}
 						if (ok <= 0) {
 							RTSP_DBG_ERROR("send TEARDOWN response failed!");
 							goto out;
@@ -1677,9 +1742,6 @@ Redo:
 						RTSP_DBG_INFO("streaming teardown, state changed back to RTSP_INIT");
 						show_result_statistics(rtsp_ctx);
 						/*wait for rtp/rtcp server reinit*/
-						if (rtsp_ctx->cb_stop) {
-							rtsp_ctx->cb_stop(NULL);
-						}
 						//rtos_time_delay_ms(1000);
 						goto out;
 						break;
@@ -1698,6 +1760,10 @@ Redo:
 						}
 						rtsp_ctx->state = RTSP_PLAYING;
 						//here to start rtp/rtcp service
+						//Reset to zero
+						for (int i = 0; i < rtsp_ctx->nb_streams; i++) {
+							rtsp_ctx->stream_ctx[i].old_depend_clock_tick = 0;
+						}
 						rtos_sema_give(rtsp_ctx->start_rtp_sema);
 #ifdef SUPPORT_RTCP
 						rtos_sema_give(rtsp_ctx->start_rtcp_sema);
@@ -1746,8 +1812,9 @@ Redo:
 					}
 				}
 				if (rtsp_ctx->interface <= 1) {
+#if defined(CONFIG_WLAN)
 					if (mode == RTW_MODE_STA) {
-						if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID)) {
+						if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 							goto out;
 						}
 					} else if (mode == RTW_MODE_AP) {
@@ -1757,6 +1824,7 @@ Redo:
 					} else {
 						goto out;
 					}
+#endif
 				} else {
 					//For ethernet mode
 				}
@@ -1782,6 +1850,7 @@ out:
 		}
 
 		if (rtsp_ctx->interface <= 1) {
+#if defined(CONFIG_WLAN)
 			if (mode == RTW_MODE_STA) {
 				if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 					RTSP_DBG_ERROR("wifi Tx/Rx broke! rtsp service cannot stream");
@@ -1799,6 +1868,7 @@ out:
 			} else {
 				goto error;
 			}
+#endif
 		} else {
 			// For ethernet
 			//     printf("Go to out %d\r\n",__LINE__);
@@ -1811,8 +1881,9 @@ error:
 	if (request) {
 		free(request);
 	}
-	if (request_concat_buf);
-	free(request_concat_buf);
+	if (request_concat_buf) {
+		free(request_concat_buf);
+	}
 	printf("\n\rrtsp service stop");
 }
 
@@ -1823,6 +1894,7 @@ static void rtp_service_unicast(struct rtsp_context *rtsp_ctx)
 	struct stream_context *stream;
 	int i, ret;
 	unsigned int filter_count = 0;
+	(void)filter_count;
 	int rtp_socket;
 	if (cast_mode == UNICAST_TCP_MODE) {
 		/* reuse RTSP socket (TCP) to send RTP packet */
@@ -1960,12 +2032,16 @@ void rtcp_service_init(void *param)
 void rtsp_service_init(void *param)
 {
 	struct rtsp_context *rtsp_ctx = (struct rtsp_context *) param;
-	rtsp_enable_service(rtsp_ctx);
-	while (rtsp_is_service_enabled(rtsp_ctx)) {
-		if (rtos_sema_take(rtsp_ctx->start_rtsp_sema, 100) == RTK_SUCCESS) {
-			//rtsp start stream
-			rtsp_start_service(rtsp_ctx);
+	if (!rtsp_enable_service(rtsp_ctx)) {
+		rtos_sema_give(rtsp_ctx->start_rtp_service_sema);
+		while ((rtsp_ctx->rtsp_server_state & RTSP_SERV_SET_EXIT) == 0) {
+			if (rtos_sema_take(rtsp_ctx->start_rtsp_sema, 100) == RTK_SUCCESS) {
+				//rtsp start stream
+				rtsp_start_service(rtsp_ctx);
+			}
 		}
+		rtsp_ctx->rtsp_server_state = RTSP_SERV_EXIT;
+		RTSP_DBG_INFO("end of rtsp service\r\n");
 	}
 	RTSP_DBG_ERROR("rtsp service closed");
 	rtos_task_delete(NULL);
@@ -1990,6 +2066,10 @@ int rtsp_open(struct rtsp_context *rtsp_ctx)
 		goto error;
 	}
 #endif
+	if (rtos_sema_take(rtsp_ctx->start_rtp_service_sema, 10000) != RTK_SUCCESS) {
+		printf("\n\rwait rtsp service time out...");
+		goto error;
+	}
 	return 0;
 error:
 	rtsp_close_service(rtsp_ctx);

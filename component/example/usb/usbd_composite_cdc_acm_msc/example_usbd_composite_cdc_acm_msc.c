@@ -10,7 +10,7 @@
 #include "usbd.h"
 #include "usbd_composite_cdc_acm_msc.h"
 #include "os_wrapper.h"
-#ifdef CONFIG_USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+#ifdef CONFIG_USBD_COMPOSITE_MSC_SECOND_FLASH
 #include "vfs_second_nor_flash.h"
 #endif
 /* Private defines -----------------------------------------------------------*/
@@ -65,6 +65,10 @@ static usbd_config_t composite_cfg = {
 #elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 420U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, },
+#elif defined (CONFIG_AMEBAPRO3)
+	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
+	.rx_fifo_depth = 1424U,
+	.ptx_fifo_depth = {256U, 32U, 256U, },
 #endif
 };
 
@@ -294,7 +298,7 @@ static void example_usbd_composite_thread(void *param)
 	rtos_sema_create(&composite_attach_status_changed_sema, 0U, 1U);
 #endif
 
-#ifdef CONFIG_USBD_COMPOSITE_MSC_EXTERNAL_FLASH
+#ifdef CONFIG_USBD_COMPOSITE_MSC_SECOND_FLASH
 	second_flash_spi_init();
 	second_flash_get_id();
 #endif

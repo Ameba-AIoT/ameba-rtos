@@ -112,3 +112,7 @@ Choose one board as the sender and connect the user-defined serial port with PC 
 The role of `sender` and `receiver` will be on the devices at the same time. When user connect user-defined serial port with a USB-UART adapter on one device, this device acts as sender and sends data to other devices. The device receives the data will act as receiver. 
 
 Both sender and receiver can start scan.
+
+# Supported IC
+
+RTL8721F

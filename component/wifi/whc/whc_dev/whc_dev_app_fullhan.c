@@ -23,6 +23,11 @@ struct whc_dev_network_info whc_network_info[2] = {0};
 static struct rtw_softap_info ap = {0};
 static unsigned char password[129] = {0};
 
+//below softap related subcmd
+#define WHC_WIFI_SOFTAP_DISABLE 0
+#define WHC_WIFI_SOFTAP_ENABLE  1
+#define WHC_WIFI_SOFTAP_STANUM  2
+
 __weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
 {
 	(void)gate;
@@ -243,7 +248,12 @@ void whc_dev_cmd_connect_status(void)
 	buf_len += 1;
 
 	wifi_get_join_status(&status);
-	*ptr = status;
+
+	if (status == RTW_JOINSTATUS_SUCCESS) {
+		*ptr = 1;
+	} else {
+		*ptr = 0;
+	}
 	ptr += 1;
 	buf_len += 1;
 
@@ -270,6 +280,48 @@ void whc_dev_cmd_get_macaddr(u8 idx)
 	rtos_mem_free(buf);
 }
 
+void whc_dev_cmd_get_stanum(u8 num)
+{
+	u8 *ptr = NULL;
+	u8 *buf = rtos_mem_malloc(WHC_WIFI_TEST_BUF_SIZE);
+
+	ptr = buf;
+	*(u32 *)ptr = WHC_WIFI_TEST;
+	ptr += 4;
+	*ptr = WHC_WIFI_TEST_SOFTAP;
+	ptr += 1;
+	*ptr = WHC_WIFI_SOFTAP_STANUM;
+	ptr += 1;
+	*ptr = num;
+	//4+3=7
+	whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
+	rtos_mem_free(buf);
+}
+
+void whc_dev_softap_handler(u8 *buf)
+{
+	u8 *ptr = buf;
+	u8 subevent = *ptr;
+	u8 num;
+	struct rtw_client_list client_info = {0};
+	switch (subevent) {
+	case WHC_WIFI_SOFTAP_STANUM:
+		wifi_ap_get_connected_clients(&client_info);
+		/* 0xFF enough for client num */
+		num = (u8)client_info.count;
+		whc_dev_cmd_get_stanum(num);
+		break;
+	case WHC_WIFI_SOFTAP_ENABLE:
+		whc_dev_enable_ap(ptr + 1);
+		break;
+	case WHC_WIFI_SOFTAP_DISABLE:
+		wifi_stop_ap();
+		break;
+	default:
+		break;
+	}
+	return;
+}
 /* here in sdio rx done callback */
 __weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
 {
@@ -322,13 +374,8 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 				} else if (*ptr == WHC_WIFI_TEST_DISCONN) {
 					wifi_disconnect();
 				}  else if (*ptr == WHC_WIFI_TEST_SOFTAP) {
-					ptr++;
-					if (*ptr == 0) {
-						wifi_stop_ap();
-					} else {
-						ptr += 1;
-						whc_dev_enable_ap(ptr);
-					}
+					whc_dev_softap_handler(ptr + 1);
+
 				} else if (*ptr == WHC_WIFI_TEST_CONN_STATUS) {
 					whc_dev_cmd_connect_status();
 				} else if (*ptr == WHC_WIFI_TEST_SCAN) {

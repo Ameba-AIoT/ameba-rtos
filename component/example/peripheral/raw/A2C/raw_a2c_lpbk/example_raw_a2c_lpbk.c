@@ -1,213 +1,149 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 #include "example_a2c_ext.h"
 #include <stdio.h>
 
-static u32 a2c_ram_buffer_map[] = {
-	0x0, 0x6, 0xc, 0x12, 0x18, 0x1e, 0x24, 0x2a, 0x30,
-	0x36, 0x3c, 0x42, 0x48, 0x4e, 0x54, 0x5a, 0x60
-};
+static rtos_sema_t g_rx_semaphore;
 
-static void dump_rx_message(A2C_RxMsgTypeDef *RxMsg)
+/**
+ * @brief This task waits for a semaphore from the ISR, then reads all data from FIFO
+ *
+ * @param param, task parameter
+ */
+static void a2c0_rx_thread(void *param)
 {
-	u32 i;
-
-	printf("######################RX message start######################\n");
-	printf("RxMsg->StdId = %lx\n", RxMsg->StdId);
-	printf("RxMsg->ExtId = %lx\n", RxMsg->ExtId);
-	printf("RxMsg->MsgBufferIdx = %ld\n", RxMsg->MsgBufferIdx);
-
-	if (RxMsg->IDE == A2C_STANDARD_FRAME) {
-		printf("RxMsg->IDE = %lx (standard frame)\n", RxMsg->IDE);
-	} else if (RxMsg->IDE == A2C_EXTEND_FRAME) {
-		printf("RxMsg->IDE = %lx (extend frame)\n", RxMsg->IDE);
-	} else {
-		printf("wrong IDE value !!!: RxMsg->IDE = %lx\n", RxMsg->IDE);
-	}
-
-	if (RxMsg->RTR == A2C_DATA_FRAME) {
-		printf("RxMsg->RTR = %lx (data frame)\n", RxMsg->RTR);
-	} else if (RxMsg->RTR == A2C_REMOTE_FRAME) {
-		printf("RxMsg->RTR = %lx (remote frame)\n", RxMsg->RTR);
-	} else {
-		printf("wrong RTR value: RxMsg->RTR = %lx\n", RxMsg->RTR);
-	}
-
-	printf("RxMsg->DLC = %ld (data length)\n", RxMsg->DLC);
-	for (i = 0; i < 8; i++) {
-		printf("RxMsg->data[%ld] = %x\n", i, RxMsg->Data[i]);
-	}
-	printf("RxMsg->ID_MASK = %lx\n", RxMsg->ID_MASK);
-	printf("RxMsg->RTR_Mask = %lx\n", RxMsg->RTR_Mask);
-	printf("RxMsg->IDE_Mask = %lx\n", RxMsg->IDE_Mask);
-	printf("RxMsg->RxTimStamp = %ld\n", RxMsg->RxTimStamp);
-	printf("RxMsg->RxLost = %ld\n", RxMsg->RxLost);
-	printf("##########################RX message end######################\n\n\n");
-}
-
-static void check_rx_message(A2C_TypeDef *A2Cx)
-{
-	u32 i;
-	u32 status = 0;
+	A2C_TypeDef *A2Cx = (A2C_TypeDef *)param;
 	A2C_RxMsgTypeDef RxMsg;
+	u32 rx_count = 0;
+	u32 last_print_count = 0;
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "A2C RX Thread Started...\n");
 
-	_memset(&RxMsg, 0, sizeof(A2C_RxMsgTypeDef));
+	while (1) {
+		/*
+		 * Wait for the semaphore indefinitely.
+		 * The semaphore is given in the ISR when an RX interrupt occurs.
+		 */
+		if (rtos_sema_take(g_rx_semaphore, RTOS_MAX_TIMEOUT) == RTK_SUCCESS) {
 
-	for (i = A2C_MESSAGE_BUFFER_SIZE; i >  0; i--) {
-		RxMsg.MsgBufferIdx = i - 1;
-		if (A2C_MsgBufRxDoneStatusGet(A2Cx, RxMsg.MsgBufferIdx)) {
-			A2C_MsgBufRxDoneStatusClear(A2Cx, RxMsg.MsgBufferIdx);
-			A2C_ReadMsg(A2Cx, &RxMsg);
-			dump_rx_message(&RxMsg);
+			while (A2C_FifoStatusGet(A2Cx) != A2C_BIT_FIFO_MSG_EMPTY) {
 
-			if (RxMsg.StdId != 0x0 && RxMsg.StdId != 0x55) {
-				status = 1;
-			}
-			if (RxMsg.IDE != A2C_STANDARD_FRAME) {
-				status = 1;
-			}
-			if (RxMsg.RTR != A2C_DATA_FRAME) {
-				status = 1;
-			}
-			if (RxMsg.DLC != 8) {
-				status = 1;
+				_memset(&RxMsg, 0, sizeof(A2C_RxMsgTypeDef));
+				A2C_ReadRxMsgFromFifo(A2Cx, &RxMsg);
+
+				rx_count++;
+
+				/* Optional: Check data integrity (e.g. if ID is sequential) */
+				// RTK_LOGS(NOTAG, "RxMsg->RxLost = %ld\n", RxMsg->RxLost);
 			}
 
-			for (i = 0; i < 8; i++) {
-				if (RxMsg.Data[i] != i) {
-					status = 1;
-					break;
-				}
-			}
-			if (status == 1) {
-				status = 0;
-				printf("ERROR\n");
+			/*
+			 * Print stats only occasionally to avoid blocking.
+			 * Every 1000 frames is safe.
+			 */
+			if ((rx_count - last_print_count) >= 1000) {
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "[Perf] Total RX: %d frames. Last ID: 0x%x\n", rx_count, RxMsg.StdId);
+				last_print_count = rx_count;
 			}
 		}
 	}
 }
-
 
 static u32 a2c0_interrupt_handler(void *Data)
 {
 	(void)Data;
 	A2C_TypeDef *A2Cx = A2C_DEV_TABLE[0].A2Cx;
-	u32 IntStatus, ErrStatus, TxErCnt, RxErCnt, ErrPassive, ErrBusoff, ErrWarning;
+	u32 IntStatus;
+	u32 ErrStatus, TxErCnt, RxErCnt;
 
 	IntStatus = A2C_GetINTStatus(A2Cx);
 
-	/* ram move done interrupt */
-	if (IntStatus & A2C_RAM_MOVE_DONE_INT) {
-		A2C_ClearINT(A2Cx, A2C_BIT_RAM_MOVE_DONE_INT_FLAG);
+	/* 1. RX Interrupt: Data Received */
+	if (IntStatus & A2C_RX_INT) {
+		/* Clear the interrupt flag immediately */
+		A2C_ClearINT(A2Cx, A2C_BIT_RX_INT_FLAG);
 
+		/* Signal the RX thread to process data */
+		if (g_rx_semaphore != NULL) {
+			rtos_sema_give(g_rx_semaphore);
+		}
 	}
 
-	/* tx interrupt */
+	/* 2. TX Interrupt: Transmission Completed */
 	if (IntStatus & A2C_TX_INT) {
 		A2C_ClearINT(A2Cx, A2C_BIT_TX_INT_FLAG);
-
+		/* Do not print here */
 	}
 
-	/* rx interrupt */
-	if (IntStatus & A2C_RX_INT) {
-		A2C_ClearINT(A2Cx, A2C_BIT_RX_INT_FLAG);
-		printf("Clear Interrupt Status = %lx\n", A2C_GetINTStatus(A2Cx));
-
-		/* get current error status */
-		TxErCnt = A2C_TXErrCntGet(A2Cx);
-		RxErCnt = A2C_RXErrCntGet(A2Cx);
-		ErrPassive = (A2Cx->A2C_ERR_CNT_STS & A2C_BIT_ERROR_PASSIVE) >> 28;
-		ErrBusoff = (A2Cx->A2C_ERR_CNT_STS & A2C_BIT_ERROR_BUSOFF) >> 29;
-		ErrWarning = (A2Cx->A2C_ERR_CNT_STS & A2C_BIT_ERROR_WARNING) >> 30;
-		printf("****TEC = %ld, REC = %ld, ErrPassive = %ld, ErrBusoff = %ld, ErrWarning = %ld\n", TxErCnt, RxErCnt, ErrPassive, ErrBusoff, ErrWarning);
-
-		check_rx_message(A2Cx);
-
+	/* 3. RAM Move Done Interrupt */
+	if (IntStatus & A2C_RAM_MOVE_DONE_INT) {
+		A2C_ClearINT(A2Cx, A2C_BIT_RAM_MOVE_DONE_INT_FLAG);
 	}
 
-	/* bus off interrupt */
+	/* 4. Bus Off Interrupt */
 	if (IntStatus & A2C_BUSOFF_INT) {
 		A2C_ClearINT(A2Cx, A2C_BIT_BUSOFF_INT_FLAG);
-		printf("A2C0: bus off\n");
 	}
 
-	/* wakeup interrupt */
+	/* 5. Wakeup Interrupt */
 	if (IntStatus & A2C_WKUP_INT) {
 		A2C_ClearINT(A2Cx, A2C_BIT_WAKEUP_INT_FLAG);
-		printf("A2C0: wake up\n");
 	}
 
-	/* error interrupt */
+	/* 6. Error Interrupt */
 	if (IntStatus & A2C_ERR_INT) {
 		A2C_ClearINT(A2Cx, A2C_BIT_ERROR_INT_FLAG);
-		printf("A2C0: Clear Interrupt Status = %lx\n", A2C_GetINTStatus(A2Cx));
-
 		ErrStatus = A2C_GetErrStatus(A2Cx);
 		TxErCnt = A2C_TXErrCntGet(A2Cx);
 		RxErCnt = A2C_RXErrCntGet(A2Cx);
-		ErrPassive = (A2Cx->A2C_ERR_CNT_STS & A2C_BIT_ERROR_PASSIVE) >> 28;
-		ErrBusoff = (A2Cx->A2C_ERR_CNT_STS & A2C_BIT_ERROR_BUSOFF) >> 29;
-		ErrWarning = (A2Cx->A2C_ERR_CNT_STS & A2C_BIT_ERROR_WARNING) >> 30;
-
-		if (ErrStatus & A2C_BIT_ERROR_BIT0) {
-			A2C_ClearErrStatus(A2Cx, A2C_BIT_ERROR_BIT0);
-			printf("bit 0 error: tx = 0, but rx = 1\n");
-		}
-		if (ErrStatus & A2C_BIT_ERROR_BIT1) {
-			A2C_ClearErrStatus(A2Cx, A2C_BIT_ERROR_BIT1);
-			printf("bit 1 error: tx = 1, but rx = 0\n");
-		}
-		if (ErrStatus & A2C_BIT_ERROR_FORM) {
-			A2C_ClearErrStatus(A2Cx, A2C_BIT_ERROR_FORM);
-			printf("form error\n");
-		}
-		if (ErrStatus & A2C_BIT_ERROR_CRC) {
-			A2C_ClearErrStatus(A2Cx, A2C_BIT_ERROR_CRC);
-			printf("CRC error\n");
-		}
-		if (ErrStatus & A2C_BIT_ERROR_STUFF) {
-			A2C_ClearErrStatus(A2Cx, A2C_BIT_ERROR_STUFF);
-			printf("stuff error\n");
-		}
-		if (ErrStatus & A2C_BIT_ERROR_ACK) {
-			A2C_ClearErrStatus(A2Cx, A2C_BIT_ERROR_ACK);
-			printf("ACK error\n");
-		}
-		if (ErrStatus & A2C_BIT_ERROR_TX) {
-			A2C_ClearErrStatus(A2Cx, A2C_BIT_ERROR_TX);
-			printf("tx error\n");
-		}
-		if (ErrStatus & A2C_BIT_ERROR_RX) {
-			A2C_ClearErrStatus(A2Cx, A2C_BIT_ERROR_RX);
-			printf("rx error\n");
-		}
-
-		printf("TEC = %ld, REC = %ld\n", TxErCnt, RxErCnt);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "A2C0:Error Status = %x, TEC = %d, REC = %d\n n", ErrStatus, TxErCnt, RxErCnt);
+		A2C_ClearErrStatus(A2Cx, ErrStatus);
 	}
+
 	return 0;
 }
 
 static void a2c0_tx_thread(void *param)
 {
 	u32 i;
+	u8 j = 0;
 	A2C_TypeDef *A2Cx = (A2C_TypeDef *)param;
 	A2C_TxMsgTypeDef TxMsg;
-	/* config a2c0 tx thread: std data frame: id = 0x55, 0x0~0x7 */
-	do {
-		_memset(&TxMsg, 0, sizeof(A2C_TxMsgTypeDef));
 
-		TxMsg.RTR = A2C_DATA_FRAME;
-		TxMsg.IDE = A2C_STANDARD_FRAME;
-		TxMsg.RTR = A2C_DATA_FRAME;
-		TxMsg.MsgBufferIdx = 0x0;
-		TxMsg.StdId = 0x55;
-		TxMsg.DLC = 8;
-		for (i = 0; i < TxMsg.DLC; i++) {
-			TxMsg.Data[i] = i;
+	/* Config a2c0 tx thread: std data frame: id = 0x55, payload 0x0~0x7 */
+	do {
+		/*
+		 * Burst: Send 64 frames back-to-back.
+		 * This will fill the RX FIFO if the RX thread is slow.
+		 */
+		for (int burst_idx = 0; burst_idx < 64; burst_idx++) {
+			_memset(&TxMsg, 0, sizeof(A2C_TxMsgTypeDef));
+			TxMsg.RTR = A2C_DATA_FRAME;
+			TxMsg.IDE = A2C_STANDARD_FRAME;
+			TxMsg.MsgBufferIdx = 0x0;
+			TxMsg.StdId = j++; // Continuous ID
+			TxMsg.DLC = 8;
+			for (i = 0; i < 8; i++) {
+				TxMsg.Data[i] = i;
+			}
+
+			A2C_WriteMsg(A2Cx, &TxMsg);
+
+			/*
+			 * Tiny delay (optional) to prevent starving other tasks
+			 * if priority is same.
+			 * 200us is close to the transmission time of 1 frame in 1Mbps.
+			 * Remove this delay for maximum stress test.
+			 */
+			rtos_time_delay_us(200);
 		}
 
-		A2C_WriteMsg(A2Cx, &TxMsg);
-		rtos_time_delay_ms(1000);
+		/* Sleep 100ms after a burst to allow other tasks to run */
+		rtos_time_delay_ms(100);
 	} while (1);
 }
 
@@ -218,57 +154,76 @@ static void EMC_A2CInit(void)
 	A2C_InitTypeDef  A2C_InitStruct_0;
 	A2C_RxMsgTypeDef RxMsg_0;
 
+	/* 1. Enable Clocks */
+	A2C_CoreClockSet();
 	RCC_PeriphClockCmd(APBPeriph_A2C0, APBPeriph_A2C0_CLOCK, ENABLE);
-	RCC_PeriphClockDividerFENSet(USB_PLL_A2C, DISABLE);
-	RCC_PeriphClockDividerFENSet(SYS_PLL_A2C, DISABLE);
-	RCC_PeriphClockSourceSet(A2C, XTAL);
+
+	/* 2. Pinmux Configuration */
+	Pinmux_Config(A2C0_TX, PINMUX_FUNCTION_A2C0_TX);
+	Pinmux_Config(A2C0_RX, PINMUX_FUNCTION_A2C0_RX);
+
+	/* Pull the STB pin low to put the CAN transceiver into normal mode */
+	PAD_PullCtrl(A2C0_STB, GPIO_PuPd_DOWN);
 
 	A2Cx_0 = A2C_DEV_TABLE[0].A2Cx;
 	A2C_IRQ_0 = A2C_DEV_TABLE[0].IrqNum;
 
-
-	/* init a2c0 */
+	/* 3. Initialize A2C Hardware */
 	A2C_BusCmd(A2Cx_0, DISABLE);
 	A2C_StructInit(&A2C_InitStruct_0);
-	A2C_InitStruct_0.A2C_WorkMode = A2C_EXT_LOOPBACK_MODE;
+	A2C_CalcBitTiming(1000000, &A2C_InitStruct_0.A2C_Timing); /* 1Mbps */
+	A2C_InitStruct_0.A2C_WorkMode = A2C_EXT_LOOPBACK_MODE; /* Loopback for test */
+	A2C_InitStruct_0.A2C_RxFifoEn = ENABLE;
 	A2C_Init(A2Cx_0, &A2C_InitStruct_0);
 
-	A2C_RamBufferMapConfig(A2Cx_0, a2c_ram_buffer_map);
-
+	/* 4. Configure Interrupts */
 	InterruptDis(A2C_IRQ_0);
 	InterruptUnRegister(A2C_IRQ_0);
 	InterruptRegister((IRQ_FUN)a2c0_interrupt_handler, A2C_IRQ_0, NULL, INT_PRI_MIDDLE);
 	InterruptEn(A2C_IRQ_0, INT_PRI_MIDDLE);
+
 	A2C_INTConfig(A2Cx_0, (A2C_TX_INT | A2C_RX_INT | A2C_RAM_MOVE_DONE_INT | A2C_ERR_INT | A2C_BUSOFF_INT | A2C_WKUP_INT), ENABLE);
 	A2C_TxMsgBufINTConfig(A2Cx_0, A2C_MB_TXINT_EN(0xFFFF), ENABLE);
 	A2C_RxMsgBufINTConfig(A2Cx_0, A2C_MB_RXINT_EN(0xFFFF), ENABLE);
 
+	/* 5. Enable Bus */
 	A2C_Cmd(A2Cx_0, ENABLE);
 	A2C_BusCmd(A2Cx_0, ENABLE);
 
 	while (!A2C_BusStatusGet(A2Cx_0));
-	printf("a2c0 bus on\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "a2c0 bus on\n");
 
-
-	/* cocnfig a2c0 rx msg buffer */
-	_memset(&RxMsg_0, 0, sizeof(A2C_RxMsgTypeDef));
-	RxMsg_0.RTR = A2C_DATA_FRAME;
-	RxMsg_0.IDE = A2C_STANDARD_FRAME;
-	RxMsg_0.MsgBufferIdx = 15;
-	RxMsg_0.ExtId = 0x0;
-	RxMsg_0.StdId = 0x0;
-	RxMsg_0.ID_MASK = 0x0;
-	RxMsg_0.RTR_Mask = 0x0;
-	RxMsg_0.IDE_Mask = 0x0;
-	A2C_SetRxMsgBuf(A2Cx_0, &RxMsg_0);
+	/* 6. Config A2C0 RX Msg Buffer*/
+	for (int i = A2C_RX_FIFO_READ_MSG_IDX; i < A2C_MESSAGE_BUFFER_SIZE; i++) {
+		_memset(&RxMsg_0, 0, sizeof(A2C_RxMsgTypeDef));
+		RxMsg_0.RTR = A2C_DATA_FRAME;
+		RxMsg_0.IDE = A2C_STANDARD_FRAME;
+		RxMsg_0.MsgBufferIdx = i;
+		RxMsg_0.ExtId = 0x0;
+		RxMsg_0.StdId = 0x01;
+		RxMsg_0.ID_MASK = 0x0;
+		RxMsg_0.RTR_Mask = 0x0;
+		RxMsg_0.IDE_Mask = 0x0;
+		A2C_SetRxMsgBuf(A2Cx_0, &RxMsg_0);
+	}
 }
 
 int example_raw_a2c_lpbk(void)
 {
+	/* 1. Create Synchronization Semaphore */
+	rtos_sema_create_binary(&g_rx_semaphore);
+
+	/* 2. Initialize Hardware and Interrupts */
 	EMC_A2CInit();
 
-	if (rtos_task_create(NULL, "A2C0_TX_THREAD", a2c0_tx_thread, (void *)A2C0, 2048, 2) != RTK_SUCCESS) {
-		printf("\n%s: Create A2C0 tx thread error\n", __FUNCTION__);
+	/* 3. Create RX Task (High Priority recommended for data processing) */
+	if (rtos_task_create(NULL, "A2C0_RX_THREAD", a2c0_rx_thread, (void *)A2C_DEV_TABLE[0].A2Cx, 3072, 3) != RTK_SUCCESS) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n%s: Create A2C0 rx thread error\n", __FUNCTION__);
+	}
+
+	/* 4. Create TX Task (Test generator) */
+	if (rtos_task_create(NULL, "A2C0_TX_THREAD", a2c0_tx_thread, (void *)A2C_DEV_TABLE[0].A2Cx, 2048, 2) != RTK_SUCCESS) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n%s: Create A2C0 tx thread error\n", __FUNCTION__);
 	}
 
 	return 0;

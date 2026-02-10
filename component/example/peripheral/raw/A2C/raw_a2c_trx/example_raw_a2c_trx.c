@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 #include "example_a2c_ext.h"
@@ -338,11 +343,10 @@ static void EMC_A2CInit(void)
 	A2C_InitTypeDef  A2C_InitStruct_0, A2C_InitStruct_1;
 	A2C_RxMsgTypeDef RxMsg_0, RxMsg_1;
 
+	A2C_CoreClockSet();
 	RCC_PeriphClockCmd(APBPeriph_A2C0, APBPeriph_A2C0_CLOCK, ENABLE);
 	RCC_PeriphClockCmd(APBPeriph_A2C1, APBPeriph_A2C1_CLOCK, ENABLE);
-	RCC_PeriphClockDividerFENSet(USB_PLL_A2C, DISABLE);
-	RCC_PeriphClockDividerFENSet(SYS_PLL_A2C, DISABLE);
-	RCC_PeriphClockSourceSet(A2C, XTAL);
+
 	Pinmux_Config(A2C0_TX, PINMUX_FUNCTION_A2C0_TX);
 	Pinmux_Config(A2C0_RX, PINMUX_FUNCTION_A2C0_RX);
 	Pinmux_Config(A2C1_TX, PINMUX_FUNCTION_A2C1_TX);
@@ -359,6 +363,8 @@ static void EMC_A2CInit(void)
 	//init a2c0
 	A2C_BusCmd(A2Cx_0, DISABLE);
 	A2C_StructInit(&A2C_InitStruct_0);
+	A2C_InitStruct_0.A2C_RxFifoEn = DISABLE;
+	A2C_CalcBitTiming(1000000, &A2C_InitStruct_0.A2C_Timing); /* 1Mbps */
 	A2C_Init(A2Cx_0, &A2C_InitStruct_0);
 
 	A2C_RamBufferMapConfig(A2Cx_0, a2c_ram_buffer_map);
@@ -380,6 +386,8 @@ static void EMC_A2CInit(void)
 	//init a2c1
 	A2C_BusCmd(A2Cx_1, DISABLE);
 	A2C_StructInit(&A2C_InitStruct_1);
+	A2C_InitStruct_1.A2C_RxFifoEn = DISABLE;
+	A2C_CalcBitTiming(1000000, &A2C_InitStruct_1.A2C_Timing); /* 1Mbps */
 	A2C_Init(A2Cx_1, &A2C_InitStruct_1);
 
 	A2C_RamBufferMapConfig(A2Cx_1, a2c_ram_buffer_map);

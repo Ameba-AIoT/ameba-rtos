@@ -29,10 +29,10 @@
                 "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
             ],
             "add-symbol-file": [
-                "amebagreen2_gcc_project/project_km4tz/asdk/image/target_loader.axf",
-                "amebagreen2_gcc_project/project_km4tz/asdk/lib/amebagreen2_rom_bcut/target_rom.axf",
-                "amebagreen2_gcc_project/project_km4tz/asdk/lib/amebagreen2_rom_bcut/target_rom_ns.axf",
-                "amebagreen2_gcc_project/project_km4tz/asdk/lib/amebagreen2_rom_bcut/target_rom_wifi.axf"
+                "build_${socSelection}/build/project_km4tz/image/target_loader.axf",
+                "component/soc/amebagreen2/project/project_km4tz/lib/amebagreen2_rom_bcut/target_rom.axf",
+                "component/soc/amebagreen2/project/project_km4tz/lib/amebagreen2_rom_bcut/target_rom_ns.axf",
+                "component/soc/amebagreen2/project/project_km4tz/lib/amebagreen2_rom_bcut/target_rom_wifi.axf"
             ]
         },
         "overrideCommands": [
@@ -66,8 +66,8 @@
                 "component/soc/common/trusted-firmware-m/platform/ext/target/realtek/amebadplus/cmsis_core"
             ],
             "add-symbol-file": [
-                "amebagreen2_gcc_project/project_km4ns/asdk/lib/amebagreen2_rom_bcut/target_rom.axf",
-                "amebagreen2_gcc_project/project_km4ns/asdk/lib/amebagreen2_rom_bcut/target_rom_wifi.axf"
+                "component/soc/amebagreen2/project/project_km4ns/lib/amebagreen2_rom_bcut/target_rom.axf",
+                "component/soc/amebagreen2/project/project_km4ns/lib/amebagreen2_rom_bcut/target_rom_wifi.axf"
             ]
         },
         "overrideCommands": [

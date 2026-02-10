@@ -21,4 +21,4 @@ else()
 	get_filename_component(_compiler_name ${CMAKE_C_COMPILER} NAME)
 endif()
 
-configure_file(${CMAKE_FILES_DIR}/build_info.h.in ${PROJECTDIR}/inc/build_info.h @ONLY)
+configure_file(${CMAKE_FILES_DIR}/build_info.h.in ${PROJECTDIR}/build_info.h @ONLY)

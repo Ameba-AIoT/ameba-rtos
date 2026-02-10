@@ -410,7 +410,7 @@ static const cmd_table_t br_gap_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_br_gap(int argc, char *argv[])
+void fBRGAP(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, br_gap_cmd_table, "[AT+BRGAP]");
+	atcmd_bt_excute(argc - 1, &argv[1], br_gap_cmd_table, "[AT+BRGAP]");
 }

@@ -93,7 +93,7 @@ static const cmd_table_t a2dp_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_a2dp_cmd(int argc, char *argv[])
+void fBTA2DP(u16 argc, char *argv[])
 {
-	return atcmd_bt_excute(argc, argv, a2dp_cmd_table, "[AT+BTA2DP]");
+	atcmd_bt_excute(argc - 1, &argv[1], a2dp_cmd_table, "[AT+BTA2DP]");
 }

@@ -165,10 +165,9 @@ static const cmd_table_t mesh_prb_client_cmd_table[] = {
 	{NULL,},
 };
 
-int atcmd_bt_mesh_prb(int argc, char *argv[])
+void fBLEMESHPRB(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc, argv, mesh_prb_client_cmd_table, "AT+BLEMESHPRB");
-	return 0;
+	atcmd_bt_excute(argc - 1, &argv[1], mesh_prb_client_cmd_table, "AT+BLEMESHPRB");
 }
 
 #endif
