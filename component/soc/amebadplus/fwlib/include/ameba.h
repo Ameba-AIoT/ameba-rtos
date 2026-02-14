@@ -93,6 +93,19 @@ typedef struct {
 	u32 reserved[3];
 } IMAGE_HEADER;
 
+/* cert and manifest common header typedef */
+typedef struct {
+	u8 Pattern[8];
+	u8 Rsvd1[8];
+	u8 Ver;
+	u8 ImgID;
+	u8 AuthAlg;
+	u8 HashAlg;
+	u16 MajorKeyVer;
+	u16 MinorKeyVer;
+} AuthHeader_TypeDef;
+
+
 typedef enum  _HAL_Status {
 	HAL_OK            = 0x00,
 	HAL_BUSY          = 0x01,
