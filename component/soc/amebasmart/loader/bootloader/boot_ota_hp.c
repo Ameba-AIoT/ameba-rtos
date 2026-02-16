@@ -38,7 +38,7 @@ u32 OTA_Region[3][2];
 BOOT_RAM_TEXT_SECTION
 void BOOT_ImgCopy(void *__restrict dst0, const void *__restrict src0, size_t len0)
 {
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		_memcpy(dst0, src0, len0);
 	} else {
 		NandImgCopy((u8 *)dst0, (u8 *)src0, len0);
@@ -246,12 +246,12 @@ u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)
 
 	/* KM0 XIP & SRAM, read with virtual addr in case of encryption */
 	Cnt = sizeof(Km0Label) / sizeof(char *);
-	ImgAddr = SYSCFG_BootFromNor() ? LogAddr : PhyAddr;
+	ImgAddr = SYSCFG_OTP_BootFromNor() ? LogAddr : PhyAddr;
 
 	if (BOOT_LoadSubImage(&SubImgInfo[Index], ImgAddr, Cnt, Km0Label, TRUE) == FALSE) {
 		return FALSE;
 	}
-	SubImgInfo[Index].Addr = SYSCFG_BootFromNor() ? LogAddr : PhyAddr;
+	SubImgInfo[Index].Addr = SYSCFG_OTP_BootFromNor() ? LogAddr : PhyAddr;
 
 	for (i = 0; i < Cnt; i++) {
 		TotalLen += SubImgInfo[i].Len;
@@ -275,11 +275,11 @@ u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)
 
 	/* KM4 XIP & SRAM, read with virtual addr in case of encryption */
 	Cnt = sizeof(Km4Label) / sizeof(char *);
-	ImgAddr = SYSCFG_BootFromNor() ? LogAddr : PhyAddr;
+	ImgAddr = SYSCFG_OTP_BootFromNor() ? LogAddr : PhyAddr;
 	if (BOOT_LoadSubImage(&SubImgInfo[Index], ImgAddr, Cnt, Km4Label, TRUE) == FALSE) {
 		return FALSE;
 	}
-	SubImgInfo[Index].Addr = SYSCFG_BootFromNor() ? LogAddr : PhyAddr;
+	SubImgInfo[Index].Addr = SYSCFG_OTP_BootFromNor() ? LogAddr : PhyAddr;
 	Index += Cnt;
 
 	/* check if TrustZone enabled - try to load IMG3 */
@@ -437,7 +437,7 @@ u8 BOOT_OTA_IMG2(void)
 	 * 2. Extract OTA2 to override OTA1 After OTA2 secure boot check pass.
 	 * 3. Special pattern in manifest indicate extract is needed, clear pattern to 0 after extract.
 	 */
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		BOOT_OTA_Extract();
 	}
 #endif
@@ -565,7 +565,7 @@ u8 BOOT_OTA_AP(SubImgInfo_TypeDef *SubImgInfo, u8 Index, u8 ImgIndex)
 	/*AP RSIP configurations*/
 	BOOT_OTFCheck(LogAddr, (u32)__ca32_flash_text_end__ - 0x20, OTF_IV_IMG2_IDX, OTF_AP_IDX);
 
-	ImgAddr = SYSCFG_BootFromNor() ? LogAddr : PhyAddr;
+	ImgAddr = SYSCFG_OTP_BootFromNor() ? LogAddr : PhyAddr;
 
 	ret = BOOT_LoadSubImage(&SubImgInfo[Index], ImgAddr, Cnt, APLabel, TRUE); // Check sub-image pattern and load AP sub-image
 
