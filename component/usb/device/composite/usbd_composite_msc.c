@@ -245,12 +245,12 @@ static int usbd_composite_msc_sd_writeblocks(u32 sector, const u8 *data, u32 cou
 static void usbd_composite_msc_abort(usb_dev_t *dev)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
-	usbd_composite_msc_cbw_t *cbw = mdev->cbw;
+	usb_msc_bot_cbw_t *cbw = mdev->cbw;
 	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
 	usbd_ep_t *ep_bulk_in = &mdev->ep_bulk_in;
 
-	if ((cbw->bmCBWFlags == 0U) &&
-		(cbw->dCBWDataTransferLength != 0U) &&
+	if ((cbw->field.bmCBWFlags == 0U) &&
+		(cbw->field.dCBWDataTransferLength != 0U) &&
 		(mdev->bot_status == COMP_MSC_STATUS_NORMAL)) {
 		usbd_ep_set_stall(dev, ep_bulk_out);
 	}
@@ -258,7 +258,7 @@ static void usbd_composite_msc_abort(usb_dev_t *dev)
 	usbd_ep_set_stall(dev, ep_bulk_in);
 
 	if (mdev->bot_status == COMP_MSC_STATUS_ERROR) {
-		usbd_composite_msc_bulk_receive(dev, (u8 *)cbw, COMP_MSC_CB_WRAP_LEN);
+		usbd_composite_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN);
 	}
 }
 
@@ -296,7 +296,7 @@ static int usbd_composite_msc_set_config(usb_dev_t *dev, u8 config)
 	mdev->phase_error = 0;
 
 	/* Prepare to receive next BULK OUT packet */
-	usbd_composite_msc_bulk_receive(dev, (u8 *)mdev->cbw, COMP_MSC_CB_WRAP_LEN);
+	usbd_composite_msc_bulk_receive(dev, (u8 *)mdev->cbw, USB_MSC_CBW_LEN);
 
 	return ret;
 }
@@ -368,7 +368,7 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				usbd_ep_set_stall(dev, ep_bulk_in);
 				mdev->bot_status = COMP_MSC_STATUS_NORMAL;
 			} else if (((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) && (mdev->bot_status != COMP_MSC_STATUS_RECOVERY)) {
-				usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_FAILED);
+				usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
 			} else {
 				// Do nothing
 			}
@@ -381,7 +381,7 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	/* Class request */
 	case USB_REQ_TYPE_CLASS:
 		switch (req->bRequest) {
-		case COMP_MSC_REQUEST_GET_MAX_LUN:
+		case USB_MSC_REQUEST_GET_MAX_LUN:
 			if ((req->wValue  == 0U) && (req->wLength == 1U) &&
 				((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H)) {
 				ep0_in->xfer_buf[0] = 0U;
@@ -392,13 +392,13 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			break;
 
-		case COMP_MSC_REQUEST_RESET:
+		case USB_MSC_REQUEST_BOT_RESET:
 			if ((req->wValue  == 0U) && (req->wLength == 0U) &&
 				((req->bmRequestType & USB_REQ_DIR_MASK) != USB_D2H)) {
 				mdev->bot_state  = COMP_MSC_IDLE;
 				mdev->bot_status = COMP_MSC_STATUS_RECOVERY;
 				/* Prepare to receive BOT cmd */
-				usbd_composite_msc_bulk_receive(dev, (u8 *)mdev->cbw, COMP_MSC_CB_WRAP_LEN);
+				usbd_composite_msc_bulk_receive(dev, (u8 *)mdev->cbw, USB_MSC_CBW_LEN);
 			} else {
 				ret = HAL_ERR_PARA;
 			}
@@ -451,18 +451,18 @@ static void usbd_composite_msc_tx_process(void)
 	if (mdev->tx_status == HAL_OK) {
 		switch (mdev->bot_state) {
 		case COMP_MSC_DATA_IN:
-			if (usbd_composite_scsi_process_cmd(mdev, &mdev->cbw->CBWCB[0]) < 0) {
-				usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_FAILED);
+			if (usbd_composite_scsi_process_cmd(mdev, &mdev->cbw->field.CBWCB[0]) < 0) {
+				usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
 			}
 			break;
 
 		case COMP_MSC_SEND_DATA:
 		case COMP_MSC_LAST_DATA_IN:
 			if (mdev->phase_error == 1) {
-				usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_PHASE_ERROR);
+				usbd_composite_msc_send_csw(dev, BOT_CSW_PHASE_ERROR);
 				mdev->phase_error = 0;
 			} else {
-				usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_PASSED);
+				usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_PASSED);
 			}
 			break;
 
@@ -502,8 +502,8 @@ static int usbd_composite_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32
 static void usbd_composite_msc_rx_process(void)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
-	usbd_composite_msc_cbw_t *cbw = mdev->cbw;
-	usbd_composite_msc_csw_t *csw = mdev->csw;
+	usb_msc_bot_cbw_t *cbw = mdev->cbw;
+	usb_msc_bot_csw_t *csw = mdev->csw;
 	usb_dev_t *dev = mdev->dev;
 
 	usb_os_lock(usbd_composite_msc_sd_lock);
@@ -511,23 +511,23 @@ static void usbd_composite_msc_rx_process(void)
 	switch (mdev->bot_state) {
 	case COMP_MSC_IDLE:
 		/* Decode the CBW command */
-		csw->dCSWTag = cbw->dCBWTag;
-		csw->dCSWDataResidue = cbw->dCBWDataTransferLength;
+		csw->field.dCSWTag = cbw->field.dCBWTag;
+		csw->field.dCSWDataResidue = cbw->field.dCBWDataTransferLength;
 
-		if ((mdev->rx_data_length != COMP_MSC_CB_WRAP_LEN) ||
-			(cbw->dCBWSignature != COMP_MSC_CB_SIGN) ||
-			(cbw->bCBWLUN > 1U) ||
-			(cbw->bCBWCBLength < 1U) || (cbw->bCBWCBLength > 16U)) {
-			usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, INVALID_CDB);
+		if ((mdev->rx_data_length != USB_MSC_CBW_LEN) ||
+			(cbw->field.dCBWSignature != USB_MSC_CBW_SIGN) ||
+			(cbw->field.bCBWLUN > 1U) ||
+			(cbw->field.bCBWCBLength < 1U) || (cbw->field.bCBWCBLength > 16U)) {
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			mdev->bot_status = COMP_MSC_STATUS_ERROR;
 			usbd_composite_msc_abort(dev);
 		} else {
-			if (usbd_composite_scsi_process_cmd(mdev, &cbw->CBWCB[0]) < 0) {
+			if (usbd_composite_scsi_process_cmd(mdev, &cbw->field.CBWCB[0]) < 0) {
 				if (mdev->phase_error == 1) {
-					usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_PHASE_ERROR);
+					usbd_composite_msc_send_csw(dev, BOT_CSW_PHASE_ERROR);
 					mdev->phase_error = 0;
 				} else if (mdev->bot_state == COMP_MSC_NO_DATA) {
-					usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_FAILED);
+					usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
 				} else {
 					usbd_composite_msc_abort(dev);
 				}
@@ -537,14 +537,14 @@ static void usbd_composite_msc_rx_process(void)
 					 (mdev->bot_state != COMP_MSC_DATA_OUT) &&
 					 (mdev->bot_state != COMP_MSC_LAST_DATA_IN)) {
 				if (mdev->data_length > 0U) {
-					u16 length = (u16)MIN(cbw->dCBWDataTransferLength, mdev->data_length);
-					csw->dCSWDataResidue -= mdev->data_length;
-					csw->bCSWStatus = COMP_MSC_CSW_CMD_PASSED;
+					u16 length = (u16)MIN(cbw->field.dCBWDataTransferLength, mdev->data_length);
+					csw->field.dCSWDataResidue -= mdev->data_length;
+					csw->field.bCSWStatus = BOT_CSW_CMD_PASSED;
 					mdev->bot_state = COMP_MSC_SEND_DATA;
 
 					usbd_composite_msc_bulk_transmit(dev, mdev->data, length);
 				} else if (mdev->data_length == 0U) {
-					usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_PASSED);
+					usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_PASSED);
 				} else {
 					usbd_composite_msc_abort(dev);
 				}
@@ -553,8 +553,8 @@ static void usbd_composite_msc_rx_process(void)
 		break;
 
 	case COMP_MSC_DATA_OUT:
-		if (usbd_composite_scsi_process_cmd(mdev, &cbw->CBWCB[0]) < 0) {
-			usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_FAILED);
+		if (usbd_composite_scsi_process_cmd(mdev, &cbw->field.CBWCB[0]) < 0) {
+			usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
 		}
 
 		break;
@@ -709,13 +709,13 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 		goto data_buf_fail;
 	}
 
-	mdev->cbw = (usbd_composite_msc_cbw_t *)usb_os_malloc(COMP_MSC_CB_WRAP_LEN);
+	mdev->cbw = (usb_msc_bot_cbw_t *)usb_os_malloc(USB_MSC_CBW_LEN);
 	if (mdev->cbw == NULL) {
 		ret = HAL_ERR_MEM;
 		goto cbw_fail;
 	}
 
-	mdev->csw = (usbd_composite_msc_csw_t *)usb_os_malloc(COMP_MSC_CS_WRAP_LEN);
+	mdev->csw = (usb_msc_bot_csw_t *)usb_os_malloc(USB_MSC_CSW_LEN);
 	if (mdev->csw == NULL) {
 		ret = HAL_ERR_MEM;
 		goto csw_fail;
@@ -861,17 +861,17 @@ int usbd_composite_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u32 len)
 void usbd_composite_msc_send_csw(usb_dev_t *dev, u8 status)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
-	usbd_composite_msc_cbw_t *cbw = mdev->cbw;
-	usbd_composite_msc_csw_t *csw = mdev->csw;
+	usb_msc_bot_cbw_t *cbw = mdev->cbw;
+	usb_msc_bot_csw_t *csw = mdev->csw;
 #if COMP_MSC_FIX_CV_TEST_ISSUE
 	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
 #endif
 
-	csw->dCSWSignature = COMP_MSC_CS_SIGN;
-	csw->bCSWStatus = status;
+	csw->field.dCSWSignature = USB_MSC_CSW_SIGN;
+	csw->field.bCSWStatus = status;
 	mdev->bot_state = COMP_MSC_IDLE;
 
-	usbd_composite_msc_bulk_transmit(dev, (u8 *)csw, COMP_MSC_CS_WRAP_LEN);
+	usbd_composite_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN);
 
 #if COMP_MSC_FIX_CV_TEST_ISSUE
 	/* Fix CV test failure */
@@ -882,6 +882,5 @@ void usbd_composite_msc_send_csw(usb_dev_t *dev, u8 status)
 #endif
 
 	/* Prepare EP to Receive next Cmd */
-	usbd_composite_msc_bulk_receive(dev, (u8 *)cbw, COMP_MSC_CB_WRAP_LEN);
+	usbd_composite_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN);
 }
-
