@@ -290,7 +290,7 @@ FlashLayoutInfo_TypeDef *flash_get_layout_struct(void)
 	FlashLayoutInfo_TypeDef *pLayout;
 
 #ifdef CONFIG_LINUX_FW_EN
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		pLayout = Flash_Layout_Nor_Linux;
 	} else {
 		pLayout = Flash_Layout_Nand_Linux;
