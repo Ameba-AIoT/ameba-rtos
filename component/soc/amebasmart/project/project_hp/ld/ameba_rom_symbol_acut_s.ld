@@ -318,7 +318,7 @@ SECTIONS
     PROVIDE(SYSCFG_OTP_GetUsbPhyCalData = 0xc2c5);
     PROVIDE(SYSCFG_OTP_GetUsbPhyCalData2 = 0xc2d1);
     PROVIDE(SYSCFG_OTP_UsbDownloadEn = 0xc2dd);
-    PROVIDE(SYSCFG_BootFromNor = 0xc2e9);
+    PROVIDE(SYSCFG_OTP_BootFromNor = 0xc2e9);
     PROVIDE(SYSCFG_HWTrigDownload = 0xc311);
     PROVIDE(SYSCFG_SWTrigDownload = 0xc37d);
     PROVIDE(SYSTIMER_Init = 0xc3a1);
