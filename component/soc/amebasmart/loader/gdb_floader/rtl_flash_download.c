@@ -45,7 +45,7 @@ void BOOT_RAM_TEXT_SECTION
 RtlFlashProgram(void)
 {
 	u32 FlashWriteCnt, sector_addr, tx_len;
-	u32 boot_from_nor = SYSCFG_BootFromNor();
+	u32 boot_from_nor = SYSCFG_OTP_BootFromNor();
 
 	DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
 	SCB_DisableDCache();

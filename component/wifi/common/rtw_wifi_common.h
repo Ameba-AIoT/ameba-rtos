@@ -56,6 +56,15 @@ enum flash_operation_type {
 	FLASH_WRITE,       /**< write  flash                       */
 };
 
+/**
+ * @brief RTK Wi-Fi mac address derived increment (size: u8).
+ */
+enum rtw_mac_addr_inc {
+	RTW_MAC_ADDR_INC_SAP = 1,
+	RTW_MAC_ADDR_INC_NAN = 2,
+	RTW_MAC_ADDR_INC_MAX,
+};
+
 struct eth_drv_sg {
 	unsigned int    buf;
 	unsigned int     len;

@@ -30,8 +30,8 @@ extern "C" {
 
 /*ImgID_TypeDef*/
 #define IMGID_BOOT	0
-#define IMGID_NSPE	1
-#define IMGID_SPE	2
+#define IMGID_APP	1
+#define IMGID_DSP	2
 #define IMGID_BL1	3
 
 /*AuthAlg_TypeDef*/

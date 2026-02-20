@@ -25,6 +25,9 @@ def run_command(cmd, shell=True):
     except subprocess.CalledProcessError:
         print(f'\033[31mError: Command failed: {cmd}\033[0m')
         return 1
+    except KeyboardInterrupt:
+        print('\n\033[31mKeyboardInterrupt: build interrupted by user.\033[0m')
+        return 1
 
 
 def main(argc, argv):

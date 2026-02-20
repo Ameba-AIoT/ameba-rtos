@@ -221,7 +221,7 @@ u32 FLASH_CalibrationNew(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8
 	int window1_end = -1;
 
 	/* set bit mode  */
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		FLASH_SetSpiMode(&flash_init_para, SpicBitMode);
 	} else {
 		NAND_SetSpiMode(&flash_init_para, SpicBitMode);
@@ -291,7 +291,7 @@ u32 FLASH_CalibrationNew(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8
 	/* Recover  */
 	spi_flash->BAUDR = SCKDV(flash_init_para.FLASH_baud_boot);
 
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
 	} else {
 		NAND_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
@@ -326,7 +326,7 @@ u32 FLASH_Calibration(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8 Li
 	FLASH_CalibrationNewCmd(DISABLE);
 
 	/* set bit mode  */
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		FLASH_SetSpiMode(&flash_init_para, SpicBitMode);
 	} else {
 		NAND_SetSpiMode(&flash_init_para, SpicBitMode);
@@ -368,7 +368,7 @@ u32 FLASH_Calibration(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8 Li
 	}
 
 	/* Recover SPI mode */
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
 	} else {
 		NAND_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
@@ -469,7 +469,7 @@ int flash_calibration_highspeed(u8 div)
 		FLASH_CalibrationPhaseIdx(flash_init_para.phase_shift_idx);
 
 		/* this code is rom code, so it is safe */
-		if (SYSCFG_BootFromNor()) {
+		if (SYSCFG_OTP_BootFromNor()) {
 			FLASH_Init(spic_mode);
 		} else {
 			NAND_Init(spic_mode);
@@ -521,7 +521,7 @@ static const FlashInfo_TypeDef *flash_get_chip_info(u32 flash_id)
 	u32 i = 0;
 	u32 temp;
 	const FlashInfo_TypeDef *pAVL;
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		pAVL = Flash_AVL;
 	} else {
 		pAVL = NAND_AVL;
@@ -698,7 +698,7 @@ int flash_rx_mode_switch(u8 read_mode)
 		/* Try sequentially: 4IO, 4O, 2IO, 2O, 1bit */
 		spic_mode = 4 - i;
 
-		if (SYSCFG_BootFromNor()) {
+		if (SYSCFG_OTP_BootFromNor()) {
 			/* 4IO or 2IO should enable dummy byte function */
 			if ((spic_mode == SpicQuadIOBitMode) || (spic_mode == SpicDualIOBitMode)) {
 				flash_init_para.FLASH_dum_en = 1;
@@ -768,7 +768,7 @@ void flash_highspeed_setup(void)
 	/* set tSHSL (CS_H) to min 60ns (12 spic_clk) */
 	spi_flash->TPR0 = (spi_flash->TPR0 & ~MASK_CS_H_RD_DUM_LEN) | CS_H_RD_DUM_LEN(12);
 
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		/* Get flash ID to reinitialize FLASH_InitTypeDef structure */
 		flash_get_vendor();
 
