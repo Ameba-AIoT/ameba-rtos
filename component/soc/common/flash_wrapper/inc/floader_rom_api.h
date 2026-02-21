@@ -20,9 +20,7 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 
 /* Exported macros -----------------------------------------------------------*/
-#if !defined(CONFIG_AMEBASMART)
-#define SYSCFG_BootFromNor  SYSCFG_OTP_BootFromNor
-#endif
+
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions ------------------------------------------------------- */

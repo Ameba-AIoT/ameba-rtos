@@ -45,6 +45,8 @@
 #define MAX_EAPOLMSG_LEN        512
 #define MAX_EAPOLKEYMSG_LEN		(MAX_EAPOLMSG_LEN-(ETH_HLEN+LIB1X_EAPOL_HDRLEN))
 
+#define PSK_LOCAL_BUF_LEN 257
+
 #define DescTypePos				0
 #define KeyInfoPos				1
 #define KeyLenPos				3
@@ -215,6 +217,13 @@ struct eapol_params_2 {
 	union  _OCTET32_INTEGER *pCounter;
 };
 
+struct decrypt_gtk_data {
+	struct arc4context  rc4_ctx;
+	unsigned int		keydatapos;
+	unsigned char		tmp1[PSK_LOCAL_BUF_LEN];
+	unsigned char		tmp2[PSK_LOCAL_BUF_LEN];
+};
+
 struct _LIB1X_EAPOL_KEY {
 	unsigned char		key_desc_ver;
 	unsigned char		key_info[2];
@@ -285,4 +294,3 @@ int wifi_rom_eapol_check_rsne_pmkid(u8 *ie, u8 ie_len, u8 *pmkid);
 
 
 #endif	//_ROM_WPA_LITE_PSK_H_
-
