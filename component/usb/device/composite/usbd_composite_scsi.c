@@ -11,45 +11,6 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-/* SCSI Commands */
-#define SCSI_FORMAT_UNIT                            0x04U
-#define SCSI_INQUIRY                                0x12U
-#define SCSI_MODE_SELECT6                           0x15U
-#define SCSI_MODE_SELECT10                          0x55U
-#define SCSI_MODE_SENSE6                            0x1AU
-#define SCSI_MODE_SENSE10                           0x5AU
-#define SCSI_ALLOW_MEDIUM_REMOVAL                   0x1EU
-#define SCSI_READ6                                  0x08U
-#define SCSI_READ10                                 0x28U
-#define SCSI_READ12                                 0xA8U
-#define SCSI_READ16                                 0x88U
-
-#define SCSI_READ_CAPACITY10                        0x25U
-#define SCSI_READ_CAPACITY16                        0x9EU
-
-#define SCSI_REQUEST_SENSE                          0x03U
-#define SCSI_START_STOP_UNIT                        0x1BU
-#define SCSI_TEST_UNIT_READY                        0x00U
-#define SCSI_WRITE6                                 0x0AU
-#define SCSI_WRITE10                                0x2AU
-#define SCSI_WRITE12                                0xAAU
-#define SCSI_WRITE16                                0x8AU
-
-#define SCSI_VERIFY10                               0x2FU
-#define SCSI_VERIFY12                               0xAFU
-#define SCSI_VERIFY16                               0x8FU
-
-#define SCSI_SEND_DIAGNOSTIC                        0x1DU
-#define SCSI_READ_FORMAT_CAPACITIES                 0x23U
-
-#define READ_FORMAT_CAPACITY_DATA_LEN               0x0CU
-#define READ_CAPACITY10_DATA_LEN                    0x08U
-#define MODE_SENSE10_DATA_LEN                       0x08U
-#define MODE_SENSE6_DATA_LEN                        0x04U
-#define REQUEST_SENSE_DATA_LEN                      0x12U
-#define STANDARD_INQUIRY_DATA_LEN                   0x24U
-#define PAGE00_INQUIRY_DATA_LEN		                  7U
-
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -137,14 +98,14 @@ static int usbd_composite_scsi_test_unit_ready(usbd_composite_msc_dev_t *mdev, u
 	UNUSED(params);
 
 	/* case 9 : Hi > D0 */
-	if (mdev->cbw->dCBWDataTransferLength != 0U) {
-		usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, INVALID_CDB);
+	if (mdev->cbw->field.dCBWDataTransferLength != 0U) {
+		usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 
 		return -1;
 	}
 
 	if (mdev->is_open != 1) {
-		usbd_composite_scsi_sense_code(mdev, NOT_READY, MEDIUM_NOT_PRESENT);
+		usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 		mdev->bot_state = COMP_MSC_NO_DATA;
 
 		return -1;
@@ -166,7 +127,7 @@ static int  usbd_composite_scsi_inquiry(usbd_composite_msc_dev_t *mdev, u8 *para
 		mdev->data_length = PAGE00_INQUIRY_DATA_LEN;
 		usb_os_memcpy((void *)mdev->data, (void *)usbd_composite_msc_page0_inquiry_data, mdev->data_length);
 	} else {
-		mdev->data_length = MIN(params[4], STANDARD_INQUIRY_DATA_LEN);
+		mdev->data_length = MIN(params[4], INQUIRY_DATA_LEN);
 		usb_os_memcpy((void *)mdev->data, (void *)usbd_composite_msc_standard_inquiry_data, mdev->data_length);
 	}
 
@@ -185,7 +146,7 @@ static int usbd_composite_scsi_read_capacity10(usbd_composite_msc_dev_t *mdev, u
 
 	if (mdev->disk_ops.disk_getcapacity) {
 		if (mdev->disk_ops.disk_getcapacity(&mdev->num_sectors) != 0) {
-			usbd_composite_scsi_sense_code(mdev, NOT_READY, MEDIUM_NOT_PRESENT);
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return -1;
 		} else {
 			mdev->data[0] = (u8)((mdev->num_sectors - 1U) >> 24);
@@ -202,7 +163,7 @@ static int usbd_composite_scsi_read_capacity10(usbd_composite_msc_dev_t *mdev, u
 			return 0;
 		}
 	} else {
-		usbd_composite_scsi_sense_code(mdev, NOT_READY, MEDIUM_NOT_PRESENT);
+		usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 		return -1;
 	}
 }
@@ -220,7 +181,7 @@ static int usbd_composite_scsi_read_format_capacity(usbd_composite_msc_dev_t *md
 
 	if (mdev->disk_ops.disk_getcapacity) {
 		if (mdev->disk_ops.disk_getcapacity(&mdev->num_sectors) != 0) {
-			usbd_composite_scsi_sense_code(mdev, NOT_READY, MEDIUM_NOT_PRESENT);
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return -1;
 		} else {
 			mdev->data[3] = 0x08U;
@@ -238,7 +199,7 @@ static int usbd_composite_scsi_read_format_capacity(usbd_composite_msc_dev_t *md
 			return 0;
 		}
 	} else {
-		usbd_composite_scsi_sense_code(mdev, NOT_READY, MEDIUM_NOT_PRESENT);
+		usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 		return -1;
 	}
 }
@@ -282,7 +243,7 @@ static int usbd_composite_scsi_mode_sense10(usbd_composite_msc_dev_t *mdev, u8 *
 */
 static int usbd_composite_scsi_request_sense(usbd_composite_msc_dev_t *mdev, u8 *params)
 {
-	usbd_composite_msc_scsi_sense_data_t *data;
+	usb_msc_scsi_sense_data_t *data;
 
 	UNUSED(params);
 
@@ -293,9 +254,9 @@ static int usbd_composite_scsi_request_sense(usbd_composite_msc_dev_t *mdev, u8 
 
 	if ((mdev->scsi_sense_head != mdev->scsi_sense_tail)) {
 		data = &mdev->scsi_sense_data[mdev->scsi_sense_head];
-		mdev->data[2]     = data->skey;
-		mdev->data[12]    = data->w.b.ascq;
-		mdev->data[13]    = data->w.b.asc;
+		mdev->data[2]     = data->key;
+		mdev->data[12]    = data->ascq;
+		mdev->data[13]    = data->asc;
 		mdev->scsi_sense_head++;
 
 		if (mdev->scsi_sense_head == COMP_MSC_SENSE_LIST_DEPTH) {
@@ -328,7 +289,7 @@ static int usbd_composite_scsi_start_stop_unit(usbd_composite_msc_dev_t *mdev, u
 	 */
 	if (start) {
 		if (mdev->is_open != 1) {
-			usbd_composite_scsi_sense_code(mdev, NOT_READY, MEDIUM_NOT_PRESENT);
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return -1;
 		}
 
@@ -366,24 +327,24 @@ static int usbd_composite_scsi_prevent_allow(usbd_composite_msc_dev_t *mdev, u8 
 */
 static int usbd_composite_scsi_read(usbd_composite_msc_dev_t *mdev, u8 *params)
 {
-	usbd_composite_msc_cbw_t *cbw = mdev->cbw;
+	usb_msc_bot_cbw_t *cbw = mdev->cbw;
 
 	if (mdev->bot_state == COMP_MSC_IDLE) { /* Idle */
 		/* case 2 */
-		if ((cbw->dCBWDataTransferLength) == 0) {
-			usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, INVALID_CDB);
+		if ((cbw->field.dCBWDataTransferLength) == 0) {
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			mdev->phase_error = 1;
 			return -1;
 		}
 
 		/* case 10 : Ho <> Di */
-		if ((cbw->bmCBWFlags & 0x80U) != 0x80U) {
-			usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, INVALID_CDB);
+		if ((cbw->field.bmCBWFlags & 0x80U) != 0x80U) {
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			return -1;
 		}
 
 		if (mdev->is_open != 1) {
-			usbd_composite_scsi_sense_code(mdev, NOT_READY, MEDIUM_NOT_PRESENT);
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return -1;
 		}
 
@@ -400,8 +361,8 @@ static int usbd_composite_scsi_read(usbd_composite_msc_dev_t *mdev, u8 *params)
 		}
 
 		/* case 4 : Hi > Dn */
-		if (mdev->blklen == 0 || (cbw->dCBWDataTransferLength > (mdev->blklen * mdev->blksize))) {
-			usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, INVALID_CDB);
+		if (mdev->blklen == 0 || (cbw->field.dCBWDataTransferLength > (mdev->blklen * mdev->blksize))) {
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			return -1;
 		}
 
@@ -421,31 +382,31 @@ static int usbd_composite_scsi_read(usbd_composite_msc_dev_t *mdev, u8 *params)
 static int usbd_composite_scsi_write(usbd_composite_msc_dev_t *mdev, u8 *params)
 {
 	u32 len;
-	usbd_composite_msc_cbw_t *cbw = mdev->cbw;
+	usb_msc_bot_cbw_t *cbw = mdev->cbw;
 
 	if (mdev->bot_state == COMP_MSC_IDLE) { /* Idle */
 		/* case 3 : Hn < Do */
-		if (cbw->dCBWDataTransferLength == 0) {
-			usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, INVALID_CDB);
+		if (cbw->field.dCBWDataTransferLength == 0) {
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			mdev->phase_error = 1;
 			return -1;
 		}
 
 		/* case 8 : Hi <> Do */
-		if ((cbw->bmCBWFlags & 0x80U) == 0x80U) {
-			usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, INVALID_CDB);
+		if ((cbw->field.bmCBWFlags & 0x80U) == 0x80U) {
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			return -1;
 		}
 
 		/* Check whether Media is ready */
 		if (mdev->is_open != 1) {
-			usbd_composite_scsi_sense_code(mdev, NOT_READY, MEDIUM_NOT_PRESENT);
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return -1;
 		}
 
 		/* Check If media is write-protected */
 		if (mdev->ro != 0) {
-			usbd_composite_scsi_sense_code(mdev, NOT_READY, WRITE_PROTECTED);
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_WRITE_PROTECTED);
 			return -1;
 		}
 
@@ -465,8 +426,8 @@ static int usbd_composite_scsi_write(usbd_composite_msc_dev_t *mdev, u8 *params)
 		len = mdev->blklen * mdev->blksize;
 
 		/* case 11,13 : Ho <> Do */
-		if (cbw->dCBWDataTransferLength != len) {
-			usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, INVALID_CDB);
+		if (cbw->field.dCBWDataTransferLength != len) {
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			return -1;
 		}
 
@@ -490,7 +451,7 @@ static int usbd_composite_scsi_write(usbd_composite_msc_dev_t *mdev, u8 *params)
 static int usbd_composite_scsi_verify10(usbd_composite_msc_dev_t *mdev, u8 *params)
 {
 	if ((params[1] & 0x02U) == 0x02U) {
-		usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND);
+		usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
 		return -1; /* Error, Verify Mode Not supported*/
 	}
 
@@ -511,7 +472,7 @@ static int usbd_composite_scsi_verify10(usbd_composite_msc_dev_t *mdev, u8 *para
 static int usbd_composite_scsi_check_address_range(usbd_composite_msc_dev_t *mdev, u32 blk_offset, u32 blk_nbr)
 {
 	if ((blk_offset + blk_nbr) > mdev->num_sectors) {
-		usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, ADDRESS_OUT_OF_RANGE);
+		usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_ADDRESS_OUT_OF_RANGE);
 		return -1;
 	}
 	return 0;
@@ -525,18 +486,18 @@ static int usbd_composite_scsi_check_address_range(usbd_composite_msc_dev_t *mde
 static int usbd_composite_scsi_process_read(usbd_composite_msc_dev_t *mdev)
 {
 	u32 len = mdev->blklen * mdev->blksize;
-	usbd_composite_msc_cbw_t *cbw = mdev->cbw;
+	usb_msc_bot_cbw_t *cbw = mdev->cbw;
 
-	if (cbw->dCBWDataTransferLength < len) {
+	if (cbw->field.dCBWDataTransferLength < len) {
 		mdev->phase_error = 1;
-		len = cbw->dCBWDataTransferLength;
+		len = cbw->field.dCBWDataTransferLength;
 		mdev->blklen = (len >> mdev->blkbits);
 	}
 
 	len = MIN(len, COMP_MSC_BUFLEN);
 
 	if (mdev->disk_ops.disk_read(mdev->lba, mdev->data, (len >> mdev->blkbits))) {
-		usbd_composite_scsi_sense_code(mdev, HARDWARE_ERROR, UNRECOVERED_READ_ERROR);
+		usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_HARDWARE_ERROR, SCSI_ASC_UNRECOVERED_READ_ERROR);
 		return -1;
 	}
 
@@ -546,7 +507,7 @@ static int usbd_composite_scsi_process_read(usbd_composite_msc_dev_t *mdev)
 	mdev->blklen -= (len >> mdev->blkbits);
 
 	/* case 6 : Hi = Di */
-	mdev->csw->dCSWDataResidue -= len;
+	mdev->csw->field.dCSWDataResidue -= len;
 
 	if (mdev->blklen == 0U) {
 		mdev->bot_state = COMP_MSC_LAST_DATA_IN;
@@ -566,7 +527,7 @@ static int usbd_composite_scsi_process_write(usbd_composite_msc_dev_t *mdev)
 	len = MIN(len, COMP_MSC_BUFLEN);
 
 	if (mdev->disk_ops.disk_write(mdev->lba, mdev->data, (len >> mdev->blkbits))) {
-		usbd_composite_scsi_sense_code(mdev, HARDWARE_ERROR, WRITE_FAULT);
+		usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_HARDWARE_ERROR, SCSI_ASC_WRITE_FAULT);
 		return -1;
 	}
 
@@ -574,10 +535,10 @@ static int usbd_composite_scsi_process_write(usbd_composite_msc_dev_t *mdev)
 	mdev->blklen -= (len >> mdev->blkbits);
 
 	/* case 12 : Ho = Do */
-	mdev->csw->dCSWDataResidue -= len;
+	mdev->csw->field.dCSWDataResidue -= len;
 
 	if (mdev->blklen == 0U) {
-		usbd_composite_msc_send_csw(mdev->dev, COMP_MSC_CSW_CMD_PASSED);
+		usbd_composite_msc_send_csw(mdev->dev, BOT_CSW_CMD_PASSED);
 	} else {
 		len = MIN((mdev->blklen * mdev->blksize), COMP_MSC_BUFLEN);
 		/* Prepare EP to Receive next packet */
@@ -656,7 +617,7 @@ int usbd_composite_scsi_process_cmd(usbd_composite_msc_dev_t *mdev, u8 *cmd)
 		break;
 
 	default:
-		usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, INVALID_CDB);
+		usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 		return -1;
 	}
 	return ret;
@@ -665,16 +626,16 @@ int usbd_composite_scsi_process_cmd(usbd_composite_msc_dev_t *mdev, u8 *cmd)
 /**
 * @brief  Load the last error code in the error list
 * @param  mdev: Device instance
-* @param  skey: Sense Key
+* @param  key: Sense Key
 * @param  asc: Additional Sense Key
 * @retval none
 
 */
-void usbd_composite_scsi_sense_code(usbd_composite_msc_dev_t *mdev, u8 skey, u8 asc)
+void usbd_composite_scsi_sense_code(usbd_composite_msc_dev_t *mdev, u8 key, u8 asc)
 {
-	usbd_composite_msc_scsi_sense_data_t *data = &mdev->scsi_sense_data[mdev->scsi_sense_tail];
-	data->skey  = skey;
-	data->w.asc = asc << 8;
+	usb_msc_scsi_sense_data_t *data = &mdev->scsi_sense_data[mdev->scsi_sense_tail];
+	data->key  = key;
+	data->asc = asc << 8;
 	mdev->scsi_sense_tail++;
 	if (mdev->scsi_sense_tail == COMP_MSC_SENSE_LIST_DEPTH) {
 		mdev->scsi_sense_tail = 0U;
