@@ -28,5 +28,5 @@ extern struct xmit_priv_t dev_xmit_priv;
 void whc_dev_init_priv(void);
 void whc_dev_recv(int idx);
 void whc_dev_tx_done(int idx);
-
+void whc_dev_trigger_rx(void);
 #endif /* __INIC_DEV_TX_H__ */
