@@ -13,6 +13,8 @@ ameba_list_append(public_includes
     misc
     ${c_MBEDTLS_DIR}/include
     ${c_MBEDTLS_DIR}/hw_alt_legacy
+    ${c_MBEDTLS_DIR}/library
+    ${c_MBEDTLS_DIR}/thread_alt
     ${c_BASEDIR}/component/soc/common/include
     ${c_BASEDIR}/component/soc/common/lzma
 )
@@ -24,4 +26,3 @@ ameba_list_append(public_includes
 ameba_global_include(${public_includes})
 ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-achived
-

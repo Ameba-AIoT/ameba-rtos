@@ -155,7 +155,7 @@ _LONG_CALL_ u32 SYSCFG_OTP_RomPatchEn(void);
 _LONG_CALL_ u32 SYSCFG_OTP_GetUsbPhyCalData(void);
 _LONG_CALL_ u32 SYSCFG_OTP_GetUsbPhyCalData2(void);
 _LONG_CALL_ u32 SYSCFG_OTP_UsbDownloadEn(void);
-_LONG_CALL_ u32 SYSCFG_BootFromNor(void);
+_LONG_CALL_ u32 SYSCFG_OTP_BootFromNor(void);
 _LONG_CALL_ u32 SYSCFG_OTP_BootSelect(void);
 _LONG_CALL_ u32 SYSCFG_HWTrigDownload(void);
 _LONG_CALL_ u32 SYSCFG_SWTrigDownload(void);
