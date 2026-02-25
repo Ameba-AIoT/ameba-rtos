@@ -24,7 +24,7 @@
 #ifdef CONFIG_AMEBAPRO3
 #undef CONFIG_WIFI_TUNNEL
 #endif
-#if !defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_INTF_IPC)
+#if defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_INTF_IPC)
 #define CONFIG_WTN_SOCKET_APP
 #endif
 
@@ -205,4 +205,3 @@
 
 #define CONFIG_IOT_RS 1
 #endif /*#ifndef AUTOCONF_8721F_H */
-

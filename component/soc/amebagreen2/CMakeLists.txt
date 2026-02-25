@@ -15,6 +15,8 @@ ameba_list_append(public_includes
     ${c_CMPT_NETWORK_DIR}/mqtt/MQTTPacket #Repeat by disable wlan
     ${c_MBEDTLS_DIR}/include
     ${c_MBEDTLS_DIR}/hw_alt
+    ${c_MBEDTLS_DIR}/library
+    ${c_MBEDTLS_DIR}/thread_alt
     rom/include
     # ${c_BASEDIR}/component/soc/common/include
     # ${c_BASEDIR}/component/soc/common/lzma
@@ -26,4 +28,3 @@ ameba_list_append(public_includes
 ameba_global_include(${public_includes})
 ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-achived
-

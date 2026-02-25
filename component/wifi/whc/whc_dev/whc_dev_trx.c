@@ -175,3 +175,7 @@ void whc_dev_tx_done(int idx)
 	(void)idx;
 }
 
+void whc_dev_trigger_rx(void)
+{
+	whc_dev_trigger_rx_handle();
+}

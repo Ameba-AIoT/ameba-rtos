@@ -215,11 +215,26 @@ void wifi_tunnel_socket_enable(void)
 
 }
 
+#if defined(CONFIG_WHC_INTF_IPC)
 void whc_ipc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start)
 {
 	UNUSED(enable);
 	UNUSED(rnat_ap_start);
 }
+#else
+void whc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start)
+{
+	UNUSED(enable);
+	UNUSED(rnat_ap_start);
+}
+
+int whc_dev_wtn_socket_send(u8 *buf, u32 len)
+{
+	UNUSED(buf);
+	UNUSED(len);
+	return RTK_FAIL;
+}
+#endif
 #endif /* CONFIG_RMESH_SOCKET_EN */
 
 #ifndef CONFIG_RMESH_OTA_EN
