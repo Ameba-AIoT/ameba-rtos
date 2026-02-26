@@ -143,4 +143,9 @@ void whc_dev_cfg80211_cfgvendor_send_cmd_reply(void *data, int len);
 
 int whc_dev_ip_in_table_indicate(u8 gate, u8 ip);
 
+#ifdef CONFIG_WTN_SOCKET_APP
+int whc_dev_wtn_socket_send(u8 *buf, u32 len);
+void whc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start);
+#endif
+
 #endif
