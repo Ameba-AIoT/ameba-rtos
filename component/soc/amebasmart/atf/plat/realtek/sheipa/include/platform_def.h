@@ -71,7 +71,7 @@
 #define SEC_ROM_BASE			0x0
 #define SEC_ROM_SIZE			0x00000400
 
-#ifdef CONFIG_XIP_FLASH
+#ifdef CONFIG_IMG2_FLASH
 #ifdef AARCH32_SP_OPTEE
 #error "not support optee when XIP"
 #endif
@@ -121,7 +121,7 @@
  * Put BL1 RW at the top of the Secure SRAM. BL1_RW_BASE is calculated using
  * the current BL1 RW debug size plus a little space for growth.
  */
-#ifdef CONFIG_XIP_FLASH
+#ifdef CONFIG_IMG2_FLASH
 #define BL1_RO_SIZE			(0x4000)
 #define BL1_RW_SIZE			(0xC000)
 #else
@@ -139,7 +139,7 @@
  * Put BL2 just below BL3-1. BL2_BASE is calculated using the current BL2 debug
  * size plus a little space for growth.
  */
-#ifdef CONFIG_XIP_FLASH
+#ifdef CONFIG_IMG2_FLASH
 #define BL2_BASE			(BL1_RW_LIMIT)
 #define BL2_LIMIT			(BL2_BASE + 0x10000)
 #else
