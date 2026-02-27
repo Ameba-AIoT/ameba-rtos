@@ -19,13 +19,6 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/** @addtogroup USB_Common_API USB Common API
- *  @{
- */
-/** @addtogroup USB_Common_Constants USB Common Constants
- * @{
- */
-
 /**
  * @brief Defines the maximum timeout value for semaphore operations.
  */
@@ -70,13 +63,8 @@
 #ifndef USB_HIGH_BYTE
 #define USB_HIGH_BYTE(x)	((u8)(((x) >> 8) & 0x00FFU))
 #endif
-/** @} End of USB_Common_Constants group*/
 
 /* Exported types ------------------------------------------------------------*/
-
-/** @addtogroup USB_Common_Types USB Common Types
- * @{
- */
 /**
  * @brief Type definitions for abstracting OS objects.
  * @{
@@ -88,15 +76,11 @@ typedef rtos_queue_t usb_os_queue_t;  /**< Abstracted type for a message queue. 
 typedef rtos_task_t usb_os_task_t;    /**< Abstracted type for a task handle. */
 #endif
 /** @} */
-/** @} End of USB_Common_Types group*/
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
-/** @addtogroup USB_Common_Functions USB Common Functions
- * @{
- */
 /**
  * @brief Delays execution for a specified number of milliseconds.
  * @param[in] ms: The duration to sleep in milliseconds.
@@ -268,8 +252,6 @@ int usb_os_queue_receive(usb_os_queue_t queue, void *msg, u32 wait_ms);
  */
 u32 usb_os_get_free_heap_size(void);
 #endif
-/** @} End of USB_Common_Functions group */
-/** @} End of USB_Common_API group */
 
 #endif /* USB_OS_H */
 

@@ -37,7 +37,7 @@
 /*msg q task*/
 #define CONFIG_INIC_IPC_MSG_Q_PRI	(6)
 #if defined(CONFIG_WHC_HOST)
-#define WIFI_STACK_SIZE_INIC_MSG_Q	(568 + 128 + CONTEXT_SAVE_SIZE) /* max 568 in smart */
+#define WIFI_STACK_SIZE_INIC_MSG_Q	(608 + 128 + CONTEXT_SAVE_SIZE) /* max 600 in smart */
 #elif defined(CONFIG_WHC_DEV)
 #define WIFI_STACK_SIZE_INIC_MSG_Q	(688 + 128 + CONTEXT_SAVE_SIZE) /* max 688 in smart */
 #endif
@@ -67,7 +67,6 @@
 #define whc_host_init                                    whc_ipc_host_init
 #define whc_host_api_message_send                        whc_ipc_host_api_message_send
 #define whc_host_init_skb                                whc_ipc_host_init_skb
-#define whc_host_wifi_indication_enqueue                 whc_ipc_host_wifi_indication_enqueue
 #endif
 
 #ifdef CONFIG_NAN
@@ -160,7 +159,6 @@ struct ipc_host_unblk_api_func_t {
 void whc_ipc_host_init(void);
 void whc_ipc_host_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
 void whc_ipc_host_heap_statistics(u8 start);
-void whc_ipc_host_wifi_indication_enqueue(u32 event, u8 *evt_info, s32 evt_len);
 
 /*for ipc host api*/
 void whc_ipc_host_api_init(void);
