@@ -287,7 +287,7 @@ void at_list(u16 argc, char **argv)
 }
 
 #ifndef CONFIG_AMEBAD
-static Certificate_TypeDef cert[2];
+static AuthHeader_TypeDef cert[2];
 static s64 ver[2] = {0};  //32-bit full version
 static u32 ota_region[3][2] = {0};
 static const u32 image_pattern[2] = {
@@ -308,7 +308,7 @@ static u8 at_get_ota_version(void)
 	ota_region[IMG_IMG2][1] = ota_region[IMG_CERT][1] + 0x1000;
 
 	for (i = 0; i < 2; i++) {
-		_memcpy((void *)&cert[i], (void *)ota_region[IMG_CERT][i], sizeof(Certificate_TypeDef));
+		_memcpy((void *)&cert[i], (void *)ota_region[IMG_CERT][i], sizeof(AuthHeader_TypeDef));
 
 		if (_memcmp(cert[i].Pattern, image_pattern, sizeof(image_pattern)) == 0) {
 			MajorVer[i] = (u16)cert[i].MajorKeyVer;

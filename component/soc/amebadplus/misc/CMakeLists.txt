@@ -15,6 +15,8 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${c_MBEDTLS_DIR}/include
     ${c_MBEDTLS_DIR}/hw_alt_legacy
+    ${c_MBEDTLS_DIR}/library
+    ${c_MBEDTLS_DIR}/thread_alt
 )
 
 # Component public part, user config end

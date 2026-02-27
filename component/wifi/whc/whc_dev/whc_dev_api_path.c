@@ -1465,3 +1465,39 @@ void whc_dev_cfg80211_cfgvendor_send_cmd_reply(void *data, int len)
 
 }
 #endif
+
+#ifdef CONFIG_WIFI_TUNNEL
+#ifdef CONFIG_WTN_SOCKET_APP
+__weak void whc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start)
+{
+	u32 size;
+	u32 *param;
+
+	size = sizeof(u32) * 2;
+	param = (u32 *)rtos_mem_zmalloc(size);
+
+	param[0] = (u32)enable;
+	param[1] = (u32)rnat_ap_start;
+	whc_dev_api_message_send(WHC_API_WTN_SOCKET_INIT, (u8 *)param, size, NULL, 0);
+
+	rtos_mem_free((u8 *)param);
+}
+
+__weak int whc_dev_wtn_socket_send(u8 *pframe, u32 len)
+{
+	u32 size;
+	u32 *param;
+
+	size = sizeof(u32) + len;
+	param = (u32 *)rtos_mem_zmalloc(size);
+
+	param[0] = len;
+	memcpy((void *)(param + 1), pframe, len);
+	whc_dev_api_message_send(WHC_API_WTN_SOCKET_SEND, (u8 *)param, size, NULL, 0);
+
+	rtos_mem_free((u8 *)param);
+
+	return RTK_SUCCESS;
+}
+#endif
+#endif
