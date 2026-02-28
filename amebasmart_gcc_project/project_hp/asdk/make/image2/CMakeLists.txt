@@ -45,7 +45,7 @@ ameba_add_subdirectory(${c_MCU_PROJECT_DIR}/src)
 
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#
-if(CONFIG_XIP_FLASH)
+if(CONFIG_IMG2_FLASH)
     set(IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_non_trustzone_xip.ld)
 else()
     set(IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_non_trustzone_dram.ld)
