@@ -65,7 +65,7 @@ ameba_list_append_if(CONFIG_AMEBAPRO3 private_includes
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_external_app_library(rtsp
+ameba_add_internal_library(rtsp
     p_SOURCES
         ${private_sources}
     p_INCLUDES
