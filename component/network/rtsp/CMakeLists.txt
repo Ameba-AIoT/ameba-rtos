@@ -43,22 +43,6 @@ ameba_list_append(private_sources
     sdp.c
 )
 
-ameba_list_append(private_includes
-	${c_CMPT_NETWORK_DIR}
-	${c_CMPT_WIFI_DIR}/common
-	${c_CMPT_WIFI_DIR}/api
-	${c_CMPT_WIFI_DIR}/driver/include
-	${c_CMPT_LWIP_DIR}/api
-	${c_LWIP_DIR}/src/include
-	${c_LWIP_DIR}/port/realtek
-	${c_LWIP_DIR}/port/realtek/freertos
-)
-
-ameba_list_append_if(CONFIG_AMEBAPRO3 private_includes
-	${c_CMPT_SOC_DIR}/sw/media/rtp_codec
-	${c_CMPT_SOC_DIR}/sw/media/mmfv2
-)
-
 # Component private part, user config end
 #------------------------------#
 

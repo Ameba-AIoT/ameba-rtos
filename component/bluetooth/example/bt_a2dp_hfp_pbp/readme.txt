@@ -30,15 +30,11 @@ LE Audio Config:
 GCC menuconfig 
 ~~~~~~~~~~~
 1. BT Related:
-    Enter the SDK root directory, execute in order:
-    source env.sh
-    ./ameba.py soc RTL8730E
-    ./ameba.py menuconfig --> CONFIG BT --> BT Example Demo --> BT A2DP HFP and LE Audio PBP
-                                        --> BT Example Demo --> BLE Audio --> BLE Audio Public Broadcast Profile (optional)
+    ./menuconfig.py --> CONFIG BT --> BT Example Demo --> BT A2DP HFP and LE Audio PBP
+                                  --> BT Example Demo --> BLE Audio --> BLE Audio Public Broadcast Profile
 2. Audio Related:
-    ./ameba.py menuconfig --> CONFIG Application --> Audio Config --> Select Audio Interfaces (Mixer)
-                                                 --> Audio Config --> Third Party Lib --> Speex
-3. GCC : use CMD "./ameba.py build" to compile example
+    ./menuconfig.py --> CONFIG Application --> Audio Config --> Select Audio Interfaces (Mixer)
+3. GCC : use CMD "./build.py" to compile example
 
 Test ATCMD
 ~~~~~~~~~~~

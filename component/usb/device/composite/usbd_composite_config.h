@@ -13,15 +13,6 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/** @addtogroup USB_Device_API USB Device API
- *  @{
- */
-/** @addtogroup USB_Device_Constants USB Device Constants
- * @{
- */
-/** @addtogroup Device_Composite_Constants Device Composite Constants
- * @{
- */
 /* Defines configuration constants like VID/PID, USB strings, and power settings. */
 #define USBD_COMP_VID                     USB_VID      /**< Vendor ID. */
 #define USBD_COMP_PID                     USB_PID      /**< Product ID. */
@@ -33,8 +24,6 @@
 #define USBD_COMP_MFG_STRING              "Realtek"    /**< Manufacturer string. */
 #define USBD_COMP_PROD_STRING             "Realtek Composite Device"/**< Product string. */
 #define USBD_COMP_SN_STRING               "1234567890" /**< Serial number string. */
-/** @} End of Device_Composite_Constants group*/
-/** @} End of USB_Device_Constants group*/
 
 #if defined(CONFIG_USBD_COMPOSITE_CDC_ACM_HID)
 /* Interfaces */
@@ -220,12 +209,6 @@
 
 /* Exported types ------------------------------------------------------------*/
 
-/** @addtogroup USB_Device_Types USB Device Types
- * @{
- */
-/** @addtogroup Device_Composite_Types Device Composite Types
- * @{
- */
 /**
  * @brief Composite user callback structure.
  */
@@ -268,9 +251,6 @@ typedef struct {
 	usbd_composite_cb_t *cb;      /**< Composite user callback */
 	usb_dev_t *dev;               /**< USB device instance */
 } usbd_composite_dev_t;
-/** @} End of Device_Composite_Types group*/
-/** @} End of USB_Device_Types group*/
-/** @} End of USB_Device_API group */
 
 /* Exported macros -----------------------------------------------------------*/
 

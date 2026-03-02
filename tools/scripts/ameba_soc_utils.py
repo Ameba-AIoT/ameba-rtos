@@ -26,8 +26,11 @@ def run_script(target_dir, script_name, args) -> bool:
         return False
 
     cmd = [sys.executable, script_path] + args
-    result = subprocess.run(cmd, check=False)
-    return result.returncode == 0
+    try:
+        result = subprocess.run(cmd, check=False)
+        return result.returncode == 0
+    except KeyboardInterrupt:
+        return False
 
 class SocManager:
     def __init__(self, cwd=os.getcwd()):
