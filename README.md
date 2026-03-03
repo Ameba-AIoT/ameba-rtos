@@ -6,17 +6,21 @@ ameba-rtos is the development framework for Realtek SoCs supported on Linux and 
 
 # Supported SoCs
 
-|Chip         |          master       |     release/v1.0       |     release/v1.1       |
-|:----------- |:---------------------:| :---------------------:| :---------------------:|
-|AmebaSmart   |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-|AmebaLite    |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
-|AmebaDplus   |![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| Chip      |          master       |     release/v1.0       |     release/v1.1       |     release/v1.2       |
+|:--------- |:---------------------:| :---------------------:| :---------------------:| :---------------------:|
+| RTL8730E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8726E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8721Dx |![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8710E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8721F  |![alt text][supported] | ![alt text][not-support] |![alt text][not-support] | ![alt text][supported] |
+| RTL8720E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
+| RTL8713E  |![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |
 
 [supported]: https://img.shields.io/badge/-supported-green "supported"
 
 # Documentation
 
-Documentation for latest version: [RealMCU](https://aiot.realmcu.com/en/latest/index.html). Select a product from the menu bar to view the documentations of the specific SoC.
+Documentation for latest version: [RealMCU](https://aiot.realmcu.com/en/v1.1/index.html). Select a product from the menu bar to view the documentations of the specific SoC.
 
 **Note:** Each SoC series has its own documentation, please find documentation with the specified chip.
 
@@ -39,18 +43,20 @@ specifically for Realtek Ameba series chips, including:
 * Convenient flashing tools
 * Integrated serial port monitoring
 
-Refer to the [VS Code User Guide](https://aiot.realmcu.com/en/latest/rst_tools/vscode/index.html) for plugin installation instructions.
+Refer to the [VS Code User Guide](https://aiot.realmcu.com/en/v1.1/tools/vscode/index.html) for plugin installation instructions.
 After installing the plugin, you can efficiently complete environment setup, project compilation, flashing, and serial port monitoring.
 
 ## Manual Build Environment Configuration
 
-If you prefer to configure the build environment manually, please refer to the [FreeRTOS SDK User Guide](https://aiot.realmcu.com/en/latest/rst_rtos/rst_sdk/index.html).
+If you prefer to configure the build environment manually, please refer to the [FreeRTOS SDK User Guide](https://aiot.realmcu.com/en/v1.1/rtos/sdk/index.html).
 Follow the steps described in the guide to:
 
-* Set up the SDK environment
-* Compile your project
-* Flash the images
-* Monitor the serial port
+* Set up the SDK environment: Run `source ameba.sh` on Linux or `ameba.bat` on Windows.
+* Navigate to project directory: `cd amebaxxx_gcc_project`
+* Configure your project: `menuconfig.py`
+* Compile your project: `build.py`
+* Flash the images: `flash.py -p <PORT> -b <BAUDRATE> -i <BIN_FILE> <START_ADDR> <END_ADDR>`
+* Monitor the serial port: `monitor.py -p <PORT> -b 1500000`
 
 # Feedback
 
