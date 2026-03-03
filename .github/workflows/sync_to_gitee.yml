@@ -2,7 +2,7 @@ name: Sync to Gitee
 on:
   push:
     branches:
-      - master
+      - release/v1.2
 
 jobs:
   sync:
@@ -11,7 +11,7 @@ jobs:
     - name: Checkout code from Github
       uses: actions/checkout@v4
       with:
-        ref: master
+        ref: release/v1.2
         fetch-depth: 0
     - name: Debug GITEE_TOKEN
       run: echo "TOKEN_LENGTH=${#GITEE_TOKEN}"
@@ -22,7 +22,7 @@ jobs:
         GITEE_TOKEN: ${{ secrets.TOKEN_GITEE}}
       run: |
         git remote add gitee https://JenkinsRsWlan5:${GITEE_TOKEN}@gitee.com/ameba-aiot/ameba-rtos.git
-        git push gitee HEAD:refs/heads/master --force
+        git push gitee HEAD:refs/heads/release/v1.2 --force
 
     - name: Push to Gitee only
       env:
@@ -33,12 +33,12 @@ jobs:
           cd gitee_repo
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          if git show-ref --verify --quiet refs/heads/master; then
-              echo "master exists"
-              git checkout master
+          if git show-ref --verify --quiet refs/heads/release/v1.2; then
+              echo "release/v1.2 exists"
+              git checkout release/v1.2
           else
-              git checkout remotes/origin/master -b master
-              echo "create master from origin/master"
+              git checkout remotes/origin/release/v1.2 -b release/v1.2
+              echo "create release/v1.2 from origin/release/v1.2"
           fi
           sed -i 's/github.com\/Ameba-AIoT/gitee.com\/ameba-aiot/g' .gitmodules
           git add .gitmodules
@@ -62,4 +62,4 @@ jobs:
             git commit -m "automated sync from github"
           fi
 
-          git push origin master
+          git push origin release/v1.2
