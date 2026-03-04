@@ -20,21 +20,6 @@ struct whc_sdio_priv_t {
 
 };
 
-#ifdef WHC_SDIO_USE_GPIO_INT
-#define RX_REQ_PIN		_PA_26
-#define DEV_RX_REQ		1
-#define DEV_RX_IDLE		0
-
-static inline void whc_sdio_dev_set_rxreq_pin(u8 status)
-{
-#ifdef CONFIG_AMEBAGREEN2
-	GPIO_WriteBit(RX_REQ_PIN, status);
-#else
-	GPIO_WriteBit_Critical(RX_REQ_PIN, status);
-#endif
-}
-#endif
-
 void whc_sdio_dev_send(struct spdio_buf_t *pbuf);
 u8 whc_sdio_dev_tx_path_avail(void);
 void whc_sdio_dev_device_init(void);

@@ -24,15 +24,6 @@
 
 /* Exported functions --------------------------------------------------------*/
 
-/** @addtogroup USB_Device_API USB Device API
- *  @{
- */
-/** @addtogroup USB_Device_Functions USB Device Functions
- * @{
- */
-/** @addtogroup Device_Composite_CDC_ACM_MSC_Functions Device Composite CDC ACM MSC Functions
- * @{
- */
 /**
  * @brief  Init composite class
  * @param[in] cdc_bulk_out_xfer_size: CDC ACM bulk out xfer buffer size
@@ -48,9 +39,6 @@ int usbd_composite_init(u32 cdc_bulk_out_xfer_size, u32 cdc_bulk_in_xfer_size, u
  * @return None
  */
 void usbd_composite_deinit(void);
-/** @} End of Device_Composite_CDC_ACM_MSC_Functions group */
-/** @} End of USB_Device_Functions group */
-/** @} End of USB_Device_API group */
 
 #endif // USBD_COMPOSITE_CDC_ACM_MSC_H
 

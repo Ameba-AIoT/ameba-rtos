@@ -139,9 +139,6 @@ void whc_sdio_dev_device_init(void)
 	u32 i;
 	struct sk_buff *skb = NULL;
 	struct spdio_t *dev = &sdio_priv.dev;
-#ifdef WHC_SDIO_USE_GPIO_INT
-	GPIO_InitTypeDef GPIO_InitStruct;
-#endif
 
 	dev->priv = NULL;
 	dev->host_tx_bd_num = SPDIO_HOST_TX_BD_NUM;
@@ -183,15 +180,6 @@ void whc_sdio_dev_device_init(void)
 	pmu_acquire_wakelock(PMU_WHC_WIFI);
 
 	pmu_register_sleep_callback(PMU_WHC_WIFI, (PSM_HOOK_FUN)whc_sdio_dev_suspend, NULL, (PSM_HOOK_FUN)whc_sdio_dev_resume, NULL);
-
-#ifdef WHC_SDIO_USE_GPIO_INT
-	/* Initialize GPIO */
-	GPIO_InitStruct.GPIO_Pin = RX_REQ_PIN;
-	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_Init(&GPIO_InitStruct);
-	whc_sdio_dev_set_rxreq_pin(DEV_RX_IDLE);
-#endif
 
 	RTK_LOGI(TAG_WLAN_INIC, "SDIO device init done!\n");
 
@@ -264,12 +252,6 @@ void whc_sdio_dev_send(struct spdio_buf_t *pbuf)
 		/* wait for RXBD release */
 		rtos_sema_take(sdio_priv.rxbd_release_sema, 0xFFFFFFFF);
 	}
-
-#ifdef WHC_SDIO_USE_GPIO_INT
-	// Regardless of the previous state of the GPIO, generate a rising edge here.
-	whc_sdio_dev_set_rxreq_pin(DEV_RX_IDLE);
-	whc_sdio_dev_set_rxreq_pin(DEV_RX_REQ);
-#endif
 
 	rtos_mutex_give(sdio_priv.tx_lock);
 
