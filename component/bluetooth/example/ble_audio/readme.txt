@@ -25,13 +25,10 @@ Compile config
 GCC menuconfig 
 ~~~~~~~~~~~
 1. BT Related:
-    Enter the SDK root directory, execute in order:
-    source env.sh
-    ./ameba.py soc RTL8730E
-    ./ameba.py menuconfig --> CONFIG BT --> BT Example Demo --> BLE Audio --> BLE Audio Generic Demo
+    ./menuconfig.py --> CONFIG BT --> BT Example Demo --> BLE Audio --> BLE Audio Generic Demo
 2. Audio Related:
-    ./ameba.py --> CONFIG Application --> Audio Config --> Select Audio Interfaces (Mixer)
-3. GCC : use CMD "./ameba.py build" to compile example
+    ./menuconfig.py --> CONFIG Application --> Audio Config --> Select Audio Interfaces (Mixer)
+3. GCC : use CMD "./build.py" to compile example
 4. To Config Media Source (component/bluetooth/api/include/rtk_bt_le_audio_def.h)
      4.1 Config RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT to 1 for enabling birds thing audio stream
      4.2 Config RTK_BLE_AUDIO_RECORD_SUPPORT to 1 for enabling microphone audio stream

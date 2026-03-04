@@ -4,18 +4,15 @@
 #                                                                                #
 ##################################################################################
 
-Date: 2026 - 2 - 5
+Date: 2025 - 10 - 16
 
 Setup Guide
 ~~~~~~~~~~~
 GCC menuconfig 
 ~~~~~~~~~~~
 1. BT Related:
-    Enter the SDK root directory, execute in order:
-    source env.sh
-    ./ameba.py soc RTL8730E
-    ./ameba.py menuconfig --> CONFIG BT --> BT Example Demo --> BLE ISO Test
-2. GCC : use CMD "./ameba.py build" to compile example
+    ./menuconfig.py --> CONFIG BT --> BT Example Demo --> BLE ISO Test
+2. GCC : use CMD "./build.py" to compile example
 
 Test Guide
 ~~~~~~~~~~~

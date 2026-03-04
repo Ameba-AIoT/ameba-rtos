@@ -30,11 +30,6 @@ extern struct whc_sdio whc_sdio_priv;
 /* for rtos host only */
 #define WHC_WIFI_TEST_SET_HOST_RTOS  0xFF
 
-//below softap related subcmd
-#define WHC_WIFI_SOFTAP_DISABLE	0
-#define WHC_WIFI_SOFTAP_ENABLE	1
-#define WHC_WIFI_SOFTAP_STANUM	2
-
 //#define rtos_mem_zmalloc(n)		rt_malloc(n)
 #define rtos_mem_free(ptr)		rt_free(ptr)
 
@@ -110,26 +105,6 @@ void whc_host_set_connect_status(u8 *buf)
 	}
 }
 
-void whc_host_softap_handler(u8 *buf)
-{
-	u8 *ptr = buf;
-	u8 subevent = *buf;
-	int num;
-	switch (subevent) {
-	case WHC_WIFI_SOFTAP_STANUM:
-		ptr += 1;
-		num = (int)(*ptr);
-		if (whc_sdio_priv.host_send_block_sema && whc_sdio_priv.ret) {
-			memcpy(whc_sdio_priv.ret, (void *)&num, whc_sdio_priv.ret_len);
-			rtos_sema_give(whc_sdio_priv.host_send_block_sema);
-		}
-		break;
-	default:
-		break;
-	}
-
-}
-
 void whc_host_pkt_rx_to_user(u8 *payload)
 {
 	//(void)len;
@@ -147,12 +122,13 @@ void whc_host_pkt_rx_to_user(u8 *payload)
 			whc_host_scan_result(payload + 4);
 			break;
 		case WHC_WIFI_TEST_GET_MAC_ADDR:
+			printf("!!!!!!!!!!!!!get mac addr\r\n");
 			idx = *ptr;
 			ptr += 1;
 			LwIP_wlan_set_netif_info(idx, NULL, ptr);
 			break;
 		case WHC_WIFI_TEST_CONN_STATUS:
-			whc_host_set_connect_status(ptr);
+			whc_host_set_connect_status(payload + 4);
 			break;
 		case WHC_WIFI_TEST_GET_IP:
 			ipaddr = CONCAT_TO_UINT32(ptr[0], ptr[1], ptr[2], ptr[3]);
@@ -160,9 +136,6 @@ void whc_host_pkt_rx_to_user(u8 *payload)
 			gw = CONCAT_TO_UINT32(ptr[0], ptr[1], ptr[2], 1);
 			LwIP_SetIP(STA_WLAN_INDEX, ipaddr, netmask, gw);
 			LwIP_netif_set_link_up(0);
-			break;
-		case WHC_WIFI_TEST_SOFTAP:
-			whc_host_softap_handler(ptr);
 			break;
 		default:
 			break;
@@ -244,11 +217,13 @@ void whc_host_wifi_on(void)
 	whc_sdio_host_send_to_dev(buf, buf_len);
 }
 
-void whc_host_get_connet_status(int *status)
+void whc_host_get_connet_status(int status)
 {
 	uint8_t buf[12] = {0};
 	uint8_t *ptr = buf;
 	uint32_t buf_len = 0;
+
+	//rtos_sema_create(&(whc_host_get_status), 0, 1);
 
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
 	ptr += 4;
@@ -258,7 +233,7 @@ void whc_host_get_connet_status(int *status)
 	ptr += 1;
 	buf_len += 1;
 
-	whc_sdio_host_send_to_dev_block(buf, buf_len, (uint8_t *)status, sizeof(int));
+	whc_sdio_host_send_to_dev_block(buf, buf_len, (uint8_t *)&status, sizeof(int));
 }
 
 void whc_host_dhcp(void)
@@ -397,7 +372,7 @@ void whc_host_wifi_stop_ap(void)
 	ptr += 1;
 	buf_len += 1;
 
-	*ptr = WHC_WIFI_SOFTAP_DISABLE;
+	*ptr = 0;
 	ptr += 1;
 	buf_len += 1;
 
@@ -418,7 +393,7 @@ int whc_host_wifi_enable_ap(unsigned char *ssid, char *psk, int chn, unsigned in
 	ptr += 1;
 
 	// means enable
-	*ptr = WHC_WIFI_SOFTAP_ENABLE;
+	*ptr = 1;
 	ptr += 1;
 
 	len = strlen((char *)ssid);
@@ -449,27 +424,6 @@ int whc_host_wifi_enable_ap(unsigned char *ssid, char *psk, int chn, unsigned in
 	whc_sdio_host_send_to_dev(buf, buf_len);
 
 	return 0;
-}
-
-void whc_sdio_host_get_stanum(int *num)
-{
-	uint8_t buf[12] = {0};
-	uint8_t *ptr = buf;
-	uint32_t buf_len = 0;
-
-	*(uint32_t *)ptr = WHC_WIFI_TEST;
-	ptr += 4;
-	buf_len += 4;
-
-	*ptr = WHC_WIFI_TEST_SOFTAP;
-	ptr += 1;
-	buf_len += 1;
-
-	*ptr = WHC_WIFI_SOFTAP_STANUM;
-	ptr += 1;
-	buf_len += 1;
-
-	whc_sdio_host_send_to_dev_block(buf, buf_len, (u8 *)num, sizeof(int));
 }
 
 /**

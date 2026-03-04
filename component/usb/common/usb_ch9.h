@@ -13,12 +13,6 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/** @addtogroup USB_Common_API USB Common API
- *  @{
- */
-/** @addtogroup USB_Common_Constants USB Common Constants
- * @{
- */
 #define USB_VERSION_ID_0201                           0x0201 /**< USB Specification version 2.01. */
 
 /**
@@ -225,15 +219,11 @@
 #define USB_PORT_STAT_C_RESET              0x0010 /**< Reset completion has occurred. */
 /** @} */
 /** @} */ // End of Hub_Defs
-/** @} End of USB_Common_Constants group */
 
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
 
-/** @addtogroup USB_Common_Types USB Common Types
- * @{
- */
 /**
  * @brief Defines the transfer type of a USB endpoint.
  * @details Corresponds to the `bmAttributes` field in the endpoint descriptor.
@@ -267,8 +257,6 @@ typedef struct {
 	u16 wIndex;                   /**< Request-specific index, often an interface or endpoint number. */
 	u16 wLength;                  /**< Number of bytes to transfer in the data phase. */
 } __PACKED usb_setup_req_t;
-/** @} End of USB_Common_Types group */
-/** @} End of USB_Common_API group */
 
 /* Exported variables --------------------------------------------------------*/
 

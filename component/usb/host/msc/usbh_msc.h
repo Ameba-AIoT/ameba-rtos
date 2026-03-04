@@ -14,15 +14,6 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/** @addtogroup USB_Host_API USB Host API
- *  @{
- */
-/** @addtogroup USB_Host_Constants USB Host Constants
- * @{
- */
-/** @addtogroup Host_MSC_Constants Host MSC Constants
- * @{
- */
 /* MSC Class Request Codes */
 #define USBH_MSC_BOT_RESET                        0xFFU       /**< MSC reset request code. */
 #define USBH_MSC_GET_MAX_LUN                      0xFEU       /**< MSC get maximum LUN request code. */
@@ -200,12 +191,6 @@ typedef struct {
 	u8 state_changed;
 } usbh_msc_lun_t;
 
-/** @addtogroup USB_Host_Types USB Host Types
- * @{
- */
-/** @addtogroup Host_MSC_Types Host MSC Types
- * @{
- */
 /**
  * @brief MSC user callback structure.
  * @details This structure allows the user application to register callbacks for
@@ -228,8 +213,6 @@ typedef struct {
 	 */
 	int (*setup)(void);
 } usbh_msc_cb_t;
-/** @} End of Host_MSC_Types group*/
-/** @} End of USB_Host_Types group*/
 
 /**
  * @brief MSC host structure.
@@ -257,12 +240,6 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
-/** @addtogroup USB_Host_Functions USB Host Functions
- * @{
- */
-/** @addtogroup Host_MSC_Functions Host MSC Functions
- * @{
- */
 /**
  * @brief Initializes the MSC class driver with application callback handler.
  * @param[in] cb: Pointer to a user callback structure.
@@ -275,9 +252,6 @@ int usbh_msc_init(usbh_msc_cb_t *cb);
  * @return 0 on success, non-zero on failure.
  */
 int usbh_msc_deinit(void);
-/** @} End of Host_MSC_Functions group */
-/** @} End of USB_Host_Functions group */
-/** @} End of USB_Host_API group */
 
 /**
  * @brief Main processing function for the MSC BOT state machine.
