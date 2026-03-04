@@ -1056,14 +1056,14 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 	case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
 		rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
-		BT_LOGA("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %d, PHY: 0x%x, TxPower: %d, Len: %d\r\n",
+		BT_LOGA("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %d, PHY: 0x%x, TxPower: %d, Data_status: %d, Len: %d\r\n",
 				le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
 				(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-				scan_res_ind->tx_power, scan_res_ind->len);
-		BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%d,0x%x,%d,%d\r\n",
+				scan_res_ind->tx_power, scan_res_ind->data_status, scan_res_ind->len);
+		BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%d,0x%x,%d,%d,%d\r\n",
 					le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
 					(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-					scan_res_ind->tx_power, scan_res_ind->len);
+					scan_res_ind->tx_power, scan_res_ind->data_status, scan_res_ind->len);
 		break;
 	}
 #endif
@@ -2826,10 +2826,10 @@ static void rtk_bt_a2dp_demo_src_send_data_control(bool enable)
 		}
 		if (!bt_a2dp_demo_src_send_timer.handler) {
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
-			a2dp_src_data_send_interval_us = (src_a2dp_send_data_size * 2 * 1000) / (demo_in_rate * demo_in_channels * (16 / 8) / 1000) + 1;
+			a2dp_src_data_send_interval_us = (src_a2dp_send_data_size * 2 * 1000) / (demo_in_rate * demo_in_channels * (16 / 8) / 1000);
 #else
 			if (g_audio_resample_t) {
-				a2dp_src_data_send_interval_us = 1000 * (resample_out_frames * 1000 / g_audio_resample_t->out_rate) + 1;
+				a2dp_src_data_send_interval_us = 1000 * (resample_out_frames * 1000 / g_audio_resample_t->out_rate);
 			}
 #endif
 			BT_LOGA("[A2DP Demo] rtk_bt_a2dp_demo_src_send_data_control send interval(us) is %d \r\n", a2dp_src_data_send_interval_us);

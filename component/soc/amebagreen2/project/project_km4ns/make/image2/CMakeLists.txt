@@ -3,6 +3,7 @@ ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin)
 
 ###############################  ADD COMPONENT  ###################################
 ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
+ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
 ameba_add_subdirectory(${c_CMPT_BOOTLOADER_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_EXAMPLE_DIR})

@@ -693,6 +693,7 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 			memcpy(scan_res->addr.addr_val, p_info->bd_addr, RTK_BD_ADDR_LEN);
 			scan_res->direct_addr.type = (rtk_bt_le_addr_type_t)p_info->direct_addr_type;
 			memcpy(scan_res->direct_addr.addr_val, p_info->direct_addr, RTK_BD_ADDR_LEN);
+			scan_res->data_status = p_info->data_status;
 			scan_res->len = p_info->data_len;
 			memcpy(scan_res->data, p_info->p_data, p_info->data_len);
 			scan_res->rssi = p_info->rssi;

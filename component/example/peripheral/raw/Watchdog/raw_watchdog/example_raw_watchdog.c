@@ -61,6 +61,24 @@ IRQn_Type WDG_IRQNUM = CPU1_WDG_IRQ;
 #endif
 #endif
 
+#if defined (CONFIG_AMEBAPRO3)
+#define WDG_RESET_SRC	(AON_BIT_AON_WATCHDOG_STS | AON_BIT_NPWDT_STS | AON_BIT_MPWDT_STS | AON_BIT_FWWDT_STS | AON_BIT_CA32WDT_STS)
+#if defined (CONFIG_ARM_CORE_CM4_NP)
+WDG_TypeDef *WDG_DEV = NP_WDG_DEV;
+IRQn_Type WDG_IRQNUM = WDG_NP_IRQ;
+#elif defined (CONFIG_ARM_CORE_CM0)
+WDG_TypeDef *WDG_DEV = FP_WDG_DEV;
+IRQn_Type WDG_IRQNUM = WDG_FW_IRQ;
+#elif defined (CONFIG_ARM_CORE_CA32)
+WDG_TypeDef *WDG_DEV = AP_WDG_DEV;
+IRQn_Type WDG_IRQNUM = WDG_AP_IRQ;
+#elif defined (CONFIG_ARM_CORE_CM4_VP)
+WDG_TypeDef *WDG_DEV = VP_WDG_DEV;
+IRQn_Type WDG_IRQNUM = WDG_MP_IRQ;
+#endif
+#endif
+
+
 static rtos_timer_t xTimers_WDG;
 
 static u32 WDG_IrqHandler(void *Data)

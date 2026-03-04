@@ -155,7 +155,7 @@ void sys_clear_ota_signature(int ImgID)
 	ota_sig[1] = HAL_READ32(SPI_FLASH_BASE, Address[otaDstIdx] + 4);
 
 	if (ota_sig[0] == check_sig[0] && ota_sig[1] == check_sig[1]) {
-		if (SYSCFG_BootFromNor()) {
+		if (SYSCFG_OTP_BootFromNor()) {
 			FLASH_WriteStream(Address[otaCurIdx], 8, (u8 *)empty_sig);
 		} else {
 			sys_nand_flash_write_sig(Address[otaCurIdx], 8, (u8 *)empty_sig);
@@ -201,7 +201,7 @@ void sys_recover_ota_signature(int ImgID)
 	RTK_LOGA(TAG, "[%s] IMGID: %d, current OTA%d Address: 0x%08lx, target OTA%d Address: 0x%08lx\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
 			 otaDstIdx + 1,
 			 Address[otaDstIdx]);
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		backup = (u8 *)rtos_mem_malloc(0x1000);
 		if (backup == NULL) {
 			RTK_LOGE(TAG, "[%s] backup malloc failded\n", __func__);

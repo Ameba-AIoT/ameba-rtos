@@ -22,7 +22,7 @@
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
 #define CONFIG_WIFI_TUNNEL
-#if !defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_INTF_IPC)
+#if defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_INTF_IPC)
 #define CONFIG_WTN_SOCKET_APP
 #endif
 //#define CONFIG_WTN_JUST_LINKAP
@@ -168,4 +168,3 @@
 #endif
 #define CONFIG_IOT_RS 1
 #endif /*#ifndef AUTOCONF_8721DA_H */
-
