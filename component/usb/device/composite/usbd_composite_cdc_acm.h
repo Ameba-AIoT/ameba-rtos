@@ -15,16 +15,6 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/** @addtogroup USB_Device_API USB Device API
- *  @{
- */
-/** @addtogroup USB_Device_Constants USB Device Constants
- * @{
- */
-/** @addtogroup Device_Composite_CDC_ACM_Constants Composite CDC ACM Constants
- * @{
- */
-
 /**
  * @brief Configuration macro to enable or disable the CDC ACM notification endpoint.
  * @details Set to 1 to enable the Interrupt IN endpoint for sending notifications
@@ -35,17 +25,7 @@
 #define COMP_CDC_ACM_HS_INTR_IN_INTERVAL                 8U  /**< High-speed Interrupt IN endpoint polling interval. */
 #define COMP_CDC_ACM_FS_INTR_IN_INTERVAL                 8U  /**< Full-speed Interrupt IN endpoint polling interval. */
 
-/** @} End of Device_Composite_CDC_ACM_Constants group*/
-/** @} End of USB_Device_Constants group*/
-
 /* Exported types ------------------------------------------------------------*/
-
-/** @addtogroup USB_Device_Types USB Device Types
- * @{
- */
-/** @addtogroup Device_Composite_CDC_ACM_Types Composite CDC ACM Types
- * @{
- */
 
 /**
  * @brief User callback structure for CDC ACM events.
@@ -89,9 +69,6 @@ typedef struct {
 #endif
 } usbd_composite_cdc_acm_dev_t;
 
-/** @} End of Device_Composite_CDC_ACM_Types group*/
-/** @} End of USB_Device_Types group*/
-
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
@@ -99,13 +76,6 @@ typedef struct {
 extern const usbd_class_driver_t usbd_composite_cdc_acm_driver;
 
 /* Exported functions --------------------------------------------------------*/
-
-/** @addtogroup USB_Device_Functions USB Device Functions
- * @{
- */
-/** @addtogroup Device_Composite_CDC_ACM_Functions Composite CDC ACM Functions
- * @{
- */
 
 /**
  * @brief Initializes the CDC ACM composite function.
@@ -134,14 +104,11 @@ int usbd_composite_cdc_acm_transmit(u8 *buf, u32 len);
 #if CONFIG_COMP_CDC_ACM_NOTIFY
 /**
  * @brief Sends a SERIAL_STATE notification to the host over the CDC ACM Interrupt IN endpoint..
- * @param[in] serial_state: A bitmap of the serial line states (see @ref USB_CDC_ACM_CTRL_DCD, etc.).
+ * @param[in] serial_state: A bitmap of the serial line states (see @ref COMP_CDC_ACM_CTRL_DCD, etc.).
  * @return 0 on success, a negative error code on failure.
  */
 int usbd_composite_cdc_acm_notify_serial_state(u16 serial_state);
 #endif
 
-/** @} End of Device_Composite_CDC_ACM_Functions group */
-/** @} End of USB_Device_Functions group */
-/** @} End of USB_Device_API group */
-
 #endif  /* USBD_COMPOSITE_CDC_ACM_H */
+

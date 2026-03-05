@@ -155,7 +155,7 @@ void sys_clear_ota_signature(int ImgID)
 	ota_sig[1] = HAL_READ32(SPI_FLASH_BASE, Address[otaDstIdx] + 4);
 
 	if (ota_sig[0] == check_sig[0] && ota_sig[1] == check_sig[1]) {
-		if (SYSCFG_BootFromNor()) {
+		if (SYSCFG_OTP_BootFromNor()) {
 			FLASH_WriteStream(Address[otaCurIdx], 8, (u8 *)empty_sig);
 		} else {
 			sys_nand_flash_write_sig(Address[otaCurIdx], 8, (u8 *)empty_sig);
@@ -201,7 +201,7 @@ void sys_recover_ota_signature(int ImgID)
 	RTK_LOGA(TAG, "[%s] IMGID: %d, current OTA%d Address: 0x%08lx, target OTA%d Address: 0x%08lx\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx],
 			 otaDstIdx + 1,
 			 Address[otaDstIdx]);
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		backup = (u8 *)rtos_mem_malloc(0x1000);
 		if (backup == NULL) {
 			RTK_LOGE(TAG, "[%s] backup malloc failded\n", __func__);
@@ -235,8 +235,8 @@ void sys_log_uart_on(void)
 	/* Just Support S0 */
 	Pinmux_UartLogCtrl(PINMUX_S0, ON);
 
-	UART_INTConfig(UART2_DEV, RUART_BIT_ERBI, ENABLE);
-	UART_RxCmd(UART2_DEV, ENABLE);
+	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
+	LOGUART_RxCmd(LOGUART_DEV, ENABLE);
 }
 
 /**
@@ -245,8 +245,8 @@ void sys_log_uart_on(void)
   */
 void sys_log_uart_off(void)
 {
-	UART_INTConfig(UART2_DEV, RUART_BIT_ERBI, DISABLE);
-	UART_RxCmd(UART2_DEV, DISABLE);
+	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, DISABLE);
+	LOGUART_RxCmd(LOGUART_DEV, DISABLE);
 
 	/* Just Support S0 */
 	Pinmux_UartLogCtrl(PINMUX_S0, OFF);

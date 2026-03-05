@@ -1,5 +1,6 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
+#include "basic_types.h"
 #include "rtsp/sdp.h"
 
 
@@ -15,7 +16,7 @@ void sdp_fill_o_field(char *sdp_buf, int size, uint8_t *username, uint32_t sessi
 					  uint8_t *unicast_addr)
 {
 	char line[SDP_LINE_LEN] = {0};
-	sprintf(line, "o=%s %lu %d %s %s %d.%d.%d.%d" CRLF \
+	sprintf(line, "o=%s %d %d %s %s %d.%d.%d.%d" CRLF \
 			, (username) ? (char *)username : "-", session_id, session_version, nettype, addrtype, unicast_addr[0], unicast_addr[1], unicast_addr[2], unicast_addr[3]);
 	sdp_strcat(sdp_buf, size, line);
 }
@@ -30,16 +31,12 @@ void sdp_fill_s_field(char *sdp_buf, int size, uint8_t *session_name)
 
 void sdp_fill_i_field(char *sdp_buf, int size, uint8_t *session_info)
 {
-	(void)sdp_buf;
-	(void)size;
-	(void)session_info;
+
 }
 
 void sdp_fill_u_field(char *sdp_buf, int size, uint8_t *uri)
 {
-	(void)sdp_buf;
-	(void)size;
-	(void)uri;
+
 }
 
 void sdp_fill_c_field(char *sdp_buf, int size, uint8_t *nettype, uint8_t *addrtype, uint8_t *connection_addr, uint8_t ttl)
@@ -73,7 +70,7 @@ void sdp_fill_b_field(char *sdp_buf, int size, int bwtype, int bw)
 void sdp_fill_t_field(char *sdp_buf, int size, uint32_t start_time, uint32_t end_time)
 {
 	char line[SDP_LINE_LEN] = {0};
-	sprintf(line, "t=%lu %lu" CRLF \
+	sprintf(line, "t=%d %d" CRLF \
 			, start_time, end_time);
 	sdp_strcat(sdp_buf, size, line);
 }
@@ -113,10 +110,10 @@ void sdp_fill_a_rtpmap(char *sdp_buf, int size, struct codec_info *codec)
 {
 	char line[SDP_LINE_LEN] = {0};
 	if (codec->audio_channels <= 1) {
-		sprintf(line, "a=rtpmap:%d %s/%lu" CRLF \
+		sprintf(line, "a=rtpmap:%d %s/%d" CRLF \
 				, codec->pt, codec->codec_name, codec->clock_rate);
 	} else {
-		sprintf(line, "a=rtpmap:%d %s/%lu/%d" CRLF \
+		sprintf(line, "a=rtpmap:%d %s/%d/%d" CRLF \
 				, codec->pt, codec->codec_name, codec->clock_rate, codec->audio_channels);
 	}
 	sdp_strcat(sdp_buf, size, line);

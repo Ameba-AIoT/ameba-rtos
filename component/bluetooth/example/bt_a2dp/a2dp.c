@@ -1943,10 +1943,10 @@ static void rtk_bt_a2dp_demo_src_send_data_control(bool enable)
 		}
 		if (!bt_a2dp_demo_src_send_timer.handler) {
 #if defined(CONFIG_BT_AUDIO_SOURCE_OUTBAND) && CONFIG_BT_AUDIO_SOURCE_OUTBAND
-			a2dp_src_data_send_interval_us = (src_a2dp_send_data_size * 2 * 1000) / (demo_in_rate * demo_in_channels * (16 / 8) / 1000) + 1;
+			a2dp_src_data_send_interval_us = (src_a2dp_send_data_size * 2 * 1000) / (demo_in_rate * demo_in_channels * (16 / 8) / 1000);
 #else
 			if (g_audio_resample_t) {
-				a2dp_src_data_send_interval_us = 1000 * (resample_out_frames * 1000 / g_audio_resample_t->out_rate) + 1;
+				a2dp_src_data_send_interval_us = 1000 * (resample_out_frames * 1000 / g_audio_resample_t->out_rate);
 			}
 #endif
 			BT_LOGA("[A2DP Demo] rtk_bt_a2dp_demo_src_send_data_control send interval(us) is %d \r\n", a2dp_src_data_send_interval_us);

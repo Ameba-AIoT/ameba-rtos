@@ -14,15 +14,6 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/** @addtogroup USB_Host_API USB Host API
- *  @{
- */
-/** @addtogroup USB_Host_Constants USB Host Constants
- * @{
- */
-/** @addtogroup Host_Core_Constants Host Core Constants
- * @{
- */
 /* This define is used to trace transfer performance */
 #define USBH_TP_TRACE_DEBUG                 1U
 
@@ -59,17 +50,9 @@
  * @param pipe_num The pipe number associated with the change.
  */
 #define usbh_notify_class_state_change(host, pipe_num) usbh_notify_composite_class_state_change(host, pipe_num, USBH_EVENT_OWNER)
-/** @} End of Host_Core_Constants group */
-/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
-/** @addtogroup USB_Host_Types USB Host Types
- * @{
- */
-/** @addtogroup Host_Core_Types Host Core Types
- * @{
- */
 /**
  * @brief Defines the transfer states for an endpoint's pipe.
  */
@@ -344,19 +327,19 @@ typedef struct {
  * @details This is used by class drivers to identify supported devices.
  */
 typedef struct {
-	/* Match Mask: Specifies which fields participate in matching (e.g., USBH_DEV_ID_MATCH_ITF_INFO) */
+	/* Bitmask of flags from `USBH_DEV_ID_MATCH_XXX` specifying which fields are valid. */
 	u16 mMatchFlags;
 
-	/* Product-level matching: Specific Vendor and Product IDs */
+	/* Used for product specific matches. */
 	u16 idVendor;
 	u16 idProduct;
 
-	/* Device-level matching: Device Class/SubClass/Protocol */
+	/* Used for device class matches. */
 	u8 bDeviceClass;
 	u8 bDeviceSubClass;
 	u8 bDeviceProtocol;
 
-	/* Interface-level matching: Interface Class/SubClass/Protocol */
+	/* Used for interface class matches. */
 	u8 bInterfaceClass;
 	u8 bInterfaceSubClass;
 	u8 bInterfaceProtocol;
@@ -467,18 +450,13 @@ typedef struct _usb_host_t {
 	u8 dev_speed;                       /**< The speed of the attached device. */
 	u8 connect_state;                   /**< The current connection state. See @ref usbh_state_t. */
 } usb_host_t;
-/** @} End of Host_Core_Types group */
-/** @} End of USB_Host_Types group */
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
-/** @addtogroup USB_Host_Functions USB Host Functions
- * @{
- */
-/** @addtogroup Host_Core_Functions_For_Applications Host Core Functions For Applications
- * @{
+/*
+ * API for application
  */
 /**
  * @brief Initialize USB host core driver with user configuration and callback.
@@ -493,10 +471,9 @@ int usbh_init(usbh_config_t *cfg, usbh_user_cb_t *cb);
  * @return 0 on success, non-zero on failure.
  */
 int usbh_deinit(void);
-/** @} End of Host_Core_Functions_For_Applications group */
 
-/** @addtogroup Host_Core_Functions_For_Classes Host Core Functions For Classes
- * @{
+/*
+ * API for class
  */
 /**
  * @brief Register a host class driver, called in class initialization function.
@@ -724,8 +701,6 @@ void usbh_resume(void);
  * @return 0 on success, non-zero on failure.
  */
 int usbh_select_test_mode(u8 mode);
-/** @} End of Host_Core_Functions_For_Classes group */
-/** @} End of USB_Host_Functions group */
-/** @} End of USB_Host_API group */
 
 #endif /* USBH_H */
+
