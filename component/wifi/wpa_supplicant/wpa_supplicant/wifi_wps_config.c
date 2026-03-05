@@ -889,23 +889,33 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 #endif
 				wpas_wps_enrollee_init_probe_ie(wps_config);
 				is_overlap = wps_find_out_triger_wps_AP(&target_ssid[0], &target_bssid[0], wps_config);
-				if ((is_overlap == 0) || (is_overlap > 0)) {
-					break;
-				}
-#if defined(CONFIG_ENABLE_WPS_DISCOVERY) && CONFIG_ENABLE_WPS_DISCOVERY
-				if ((wps_config == WPS_CONFIG_DISPLAY) || (wps_config == WPS_CONFIG_KEYPAD)) {
-					if (start_discovery_phase(wps_config) == 0) {
-						clean_discovered_ssids();
-						ret = 0;
-						goto exit2;
-					}
-				}
-#endif
-			} else {
+			}
+
+			/*
+			*  Fix WPS QT logo test 10293:
+			*  Double-check the timestamp after the scan operation.
+			*  If the scan finishes after 120s, force timeout immediately
+			*  to avoid connecting after 120s, it will make 10293 test failed.
+			*/
+			current_time = rtos_time_get_current_system_time_ms();
+			if (((current_time - start_time) >= 120000) || wps_stop_notified) {
 				DiagPrintf("\r\nWPS: WPS Walking Time Out\n");
 				ret = -2;
 				goto exit2;
 			}
+
+			if ((is_overlap == 0) || (is_overlap > 0)) {
+				break;
+			}
+#if defined(CONFIG_ENABLE_WPS_DISCOVERY) && CONFIG_ENABLE_WPS_DISCOVERY
+			if ((wps_config == WPS_CONFIG_DISPLAY) || (wps_config == WPS_CONFIG_KEYPAD)) {
+				if (start_discovery_phase(wps_config) == 0) {
+					clean_discovered_ssids();
+					ret = 0;
+					goto exit2;
+				}
+			}
+#endif
 		}
 #if defined(CONFIG_ENABLE_WPS_DISCOVERY) && CONFIG_ENABLE_WPS_DISCOVERY
 		clean_discovered_ssids();

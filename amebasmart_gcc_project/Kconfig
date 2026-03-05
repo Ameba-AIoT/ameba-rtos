@@ -62,8 +62,11 @@ config SUPPORT_AUDIO_DEVICE
 #---------- FEATURE LIST END-------------#
 
 menu "CONFIG BOOT OPTION"
-    config XIP_FLASH
-        bool "XIP_FLASH"
+    config IMG2_FLASH
+        bool "IMG2_FLASH"
+    config PSRAM_AS_HEAP
+        bool "PSRAM_AS_HEAP" if !AMEBASMART
+        default y
 endmenu
 
 menu "CONFIG TrustZone"
