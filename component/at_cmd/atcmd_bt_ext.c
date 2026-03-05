@@ -12,7 +12,11 @@
 #include "bt_utils.h"
 #include "bt_api_config.h"
 
-
+#if (defined(CONFIG_MP_SHRINK) && CONFIG_MP_SHRINK) || \
+    (defined(CONFIG_BT_EXCLUDE_AT_COMMAND) && CONFIG_BT_EXCLUDE_AT_COMMAND) || \
+    (defined(CONFIG_BT_INIC) && CONFIG_BT_INIC)
+//No BT atcmd
+#else
 ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_bt_cmds[] = {
 	{"+BTDEMO",              fBTDEMO},
@@ -96,6 +100,7 @@ const log_item_t at_bt_cmds[] = {
 	{"+BTGAP",              fBTGAP},
 	{"+BTVENDOR",           fBTVENDOR},
 };
+#endif
 
 /* BT atcmd as a part of AT command "AT+LIST". */
 void print_bt_ext_at(void)

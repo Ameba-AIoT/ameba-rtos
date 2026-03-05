@@ -24,10 +24,7 @@ def parse_arguments():
 args = parse_arguments()
 
 PROJECT_DIR = os.path.abspath(args.project_dir)
-if 'gcc_project' in PROJECT_DIR:
-    SOC_TYPE = os.path.basename(PROJECT_DIR)[:-len('_gcc_project')]
-else:
-    SOC_TYPE = os.path.basename(os.path.dirname(PROJECT_DIR))
+SOC_TYPE = os.path.basename(os.path.dirname(PROJECT_DIR))
 action = args.action
 
 # =============== Load SOC Configuration =====================#
@@ -77,8 +74,6 @@ if not CONFIG:
 target_prj = CONFIG['IMG_PROJECT']
 target_prj_dir = os.path.join(PROJECT_DIR, f"project_{target_prj}")
 GDB_FLOADER = os.path.join(target_prj_dir, 'gnu_utility/gdb_floader')
-if not os.path.exists(GDB_FLOADER):  # for temporary compatibility
-    GDB_FLOADER = os.path.join(target_prj_dir, 'asdk/gnu_utility/gdb_floader')
 
 CONFIG_FILE = 'menuconfig/.config'
 BIN_MAP = CONFIG['BIN_MAP']
@@ -160,23 +155,52 @@ def get_bin_size(parent_dir, rel_path):
     abs_path = os.path.normpath(os.path.join(parent_dir, rel_path))
     return os.path.getsize(abs_path) if os.path.isfile(abs_path) else 0
 
+def fmt_path(path):
+    '''
+    Format windows path to gdb friendly path,
+    e.g. change "C:\path\to\file" to "C:/path/to/file"
+    '''
+    if path and isinstance(path, str):
+        return path.replace('\\', '/')
+    return path
+
+def fmt_gdb_arg(var_name, value):
+    '''
+    Format a gdb -ex argument to set a variable, for different OS,
+    e.g. on Windows: -ex "set $VAR=\"value\"", on Linux: -ex 'set $VAR="value"'
+    '''
+    if isinstance(value, str):
+        gdb_val = f'"{fmt_path(value)}"'
+    else:
+        gdb_val = str(value)
+
+    gdb_cmd = f'set ${var_name}={gdb_val}'
+    if os.name == 'nt': # Windows
+        escaped_cmd = gdb_cmd.replace('"', '\\"')
+        return f' -ex "{escaped_cmd}"'
+    else:
+        return f" -ex '{gdb_cmd}'"
+
 #===================implement the specified action===================#
-FLASH_SCRIPT = os.path.join(GNU_SCRIPT, 'rtl_gdb_flash_write.txt')
-DEBUG_SCRIPT = os.path.join(GNU_SCRIPT, 'rtl_gdb_debug.txt')
-ROM_SCRIPT = os.path.join(GNU_SCRIPT, 'rtl_gdb_jtag_load_rom.txt')
+FLASH_SCRIPT   = fmt_path(os.path.join(GNU_SCRIPT, 'rtl_gdb_flash_write.txt'))
+DEBUG_SCRIPT   = fmt_path(os.path.join(GNU_SCRIPT, 'rtl_gdb_debug.txt'))
+ROM_SCRIPT     = fmt_path(os.path.join(GNU_SCRIPT, 'rtl_gdb_jtag_load_rom.txt'))
+CMAKE_GDB      = fmt_path(CMAKE_GDB)
 
 # debug
 if action == 'debug':
     print('\033[32m============== gdb debug ================\033[0m')
 
     gdb_port = CONFIG.get('GDB_PORTS', {}).get(target_prj, 2335)
-    ex_commands = f" -ex 'set $GDB_PORT={gdb_port}'"
-
     reg_vars = CONFIG.get('REG_VARS', {})
-    for var_name, var_value in reg_vars.items():
-        ex_commands += f" -ex 'set ${var_name}={hex(var_value)}'"
 
-    IMAGE_PARENT = os.path.join(BUILD_DIR, f'project_{target_prj}')     # parent dir of /image
+    ex_list = []
+    ex_list.append(fmt_gdb_arg('GDB_PORT', gdb_port))
+    for var_name, var_value in reg_vars.items():
+        ex_list.append(fmt_gdb_arg(var_name, var_value))
+    ex_commands = "".join(ex_list)
+
+    IMAGE_PARENT = fmt_path(os.path.join(BUILD_DIR, f'project_{target_prj}'))     # parent dir of /image
     cmd = 'cd ' + IMAGE_PARENT + ' && ' + CMAKE_GDB + ex_commands + ' -x ' + DEBUG_SCRIPT
     print(' GDB CMD : ', cmd)
     rc = os.system(cmd)
@@ -189,15 +213,14 @@ if FPGA == True:
         print("No rom config, skip load rom")
     for core, file_list in rom_section.items():
         print(f'\033[32m============== gdb load rom: {core}  ================\033[0m')
-        LIB_PARENT = os.path.join(PROJECT_DIR, f'project_{core}')       # parent dir of /lib
-        if not os.path.exists(f'{LIB_PARENT}/lib'): # for temporary compatibility
-            LIB_PARENT = os.path.join(LIB_PARENT, 'asdk')
+        LIB_PARENT = fmt_path(os.path.join(PROJECT_DIR, f'project_{core}'))       # parent dir of /lib
 
-        ex_commands = f" -ex 'set $SCRIPT_DIR=\"{GNU_SCRIPT}\"'"
-        gdb_port_core = CONFIG.get('GDB_PORTS', {}).get(core, 2335)
-        ex_commands += f" -ex 'set $GDB_PORT={gdb_port_core}'"
-        ex_commands += f" -ex 'set $ROM_BIN = \"{file_list[0]}\"' "
-        ex_commands += f" -ex 'set $ROM_ADDR = {file_list[1]}' "
+        ex_list = []
+        ex_list.append(fmt_gdb_arg('SCRIPT_DIR', GNU_SCRIPT))
+        ex_list.append(fmt_gdb_arg('GDB_PORT', CONFIG.get('GDB_PORTS', {}).get(core, 2335)))
+        ex_list.append(fmt_gdb_arg('ROM_BIN', file_list[0]))
+        ex_list.append(fmt_gdb_arg('ROM_ADDR', file_list[1]))
+        ex_commands = "".join(ex_list)
 
         cmd = 'cd ' + LIB_PARENT +  ' && ' + CMAKE_GDB + ex_commands + ' -x ' + ROM_SCRIPT
         print(' GDB CMD : ', cmd)
@@ -207,7 +230,7 @@ print('\033[32m========== gdb load app image ============\033[0m')
 
 copy_files_with_glob(GDB_FLOADER, GNU_SCRIPT, '*')
 
-IMAGE_PARENT = os.path.join(BUILD_DIR, f'project_{target_prj}')        # parent dir of /image or /image_mp
+IMAGE_PARENT = fmt_path(os.path.join(BUILD_DIR, f'project_{target_prj}'))        # parent dir of /image or /image_mp
 BIN_PATHS = get_bin_paths(BIN_MAP, BUILD_TYPE)
 BIN_SIZES = {k: get_bin_size(IMAGE_PARENT, v) for k, v in BIN_PATHS.items()}
 for k, v in BIN_PATHS.items():
@@ -215,31 +238,30 @@ for k, v in BIN_PATHS.items():
 
 gdb_port = CONFIG.get('GDB_PORTS', {}).get(target_prj, 2335)
 
-ex_list = [
-    f"-ex 'set $SCRIPT_DIR=\"{GNU_SCRIPT}\"'",
-    f"-ex 'set $GDB_PORT={gdb_port}'",
-    f"-ex 'set $FlashFileSize={BIN_SIZES.get('FlashFileSize', 0)}'",
-    f"-ex 'set $XIPBootSize={BIN_SIZES.get('XIPBootSize', 0)}'",
-    f"-ex 'set $Img3FileSize={BIN_SIZES.get('Img3FileSize', 0)}'",
-    f"-ex 'set $DSPFlashSize={BIN_SIZES.get('DSPFlashSize', 0)}'",
-]
+ex_list = []
+ex_list.append(fmt_gdb_arg('SCRIPT_DIR', GNU_SCRIPT))
+ex_list.append(fmt_gdb_arg('GDB_PORT',   gdb_port))
+ex_list.append(fmt_gdb_arg('FlashFileSize', BIN_SIZES.get("FlashFileSize", 0)))
+ex_list.append(fmt_gdb_arg('XIPBootSize',   BIN_SIZES.get("XIPBootSize", 0)))
+ex_list.append(fmt_gdb_arg('Img3FileSize',  BIN_SIZES.get("Img3FileSize", 0)))
+ex_list.append(fmt_gdb_arg('DSPFlashSize',  BIN_SIZES.get("DSPFlashSize", 0)))
 
 reg_vars = CONFIG.get('REG_VARS', {})
 for var_name, var_value in reg_vars.items():
-    ex_list.append(f"-ex 'set ${var_name}={hex(var_value)}'")
+    ex_list.append(fmt_gdb_arg(var_name, var_value))
 
 flash_params = CONFIG.get('FLASH_PARAMS', {})
 for param_name, param_value in flash_params.items():
-    ex_list.append(f"-ex 'set ${param_name}={hex(param_value)}'")
+    ex_list.append(fmt_gdb_arg(param_name, param_value))
 
 if BIN_PATHS.get('FlashFileSize'):
-    ex_list.append(f"-ex 'set $BIN_IMG2_ALL=\"{BIN_PATHS['FlashFileSize']}\"'")
+    ex_list.append(fmt_gdb_arg('BIN_IMG2_ALL', BIN_PATHS["FlashFileSize"]))
 if BIN_PATHS.get('XIPBootSize'):
-    ex_list.append(f"-ex 'set $BIN_IMG1_BOOT=\"{BIN_PATHS['XIPBootSize']}\"'")
+    ex_list.append(fmt_gdb_arg('BIN_IMG1_BOOT', BIN_PATHS["XIPBootSize"]))
 if BIN_PATHS.get('Img3FileSize'):
-    ex_list.append(f"-ex 'set $BIN_KM4_IMG3=\"{BIN_PATHS['Img3FileSize']}\"'")
+    ex_list.append(fmt_gdb_arg('BIN_KM4_IMG3', BIN_PATHS["Img3FileSize"]))
 if BIN_PATHS.get('DSPFlashSize'):
-    ex_list.append(f"-ex 'set $BIN_DSP_ALL=\"{BIN_PATHS['DSPFlashSize']}\"'")
+    ex_list.append(fmt_gdb_arg('BIN_DSP_ALL', BIN_PATHS["DSPFlashSize"]))
 
 ex_cmds = ' '.join(ex_list)
 cmd = 'cd ' + IMAGE_PARENT +  ' && ' + CMAKE_GDB + ' ' + ex_cmds + ' -x ' + FLASH_SCRIPT

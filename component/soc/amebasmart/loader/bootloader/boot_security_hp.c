@@ -197,7 +197,7 @@ exit:
 BOOT_RAM_TEXT_SECTION
 int BOOT_Validate_ImgHash(u8 HashAlg, u8 *ImgHash, SubImgInfo_TypeDef *SubImgInfo, u8 Num)
 {
-	if (SYSCFG_BootFromNor()) {
+	if (SYSCFG_OTP_BootFromNor()) {
 		return SBOOT_Validate_ImgHash(HashAlg, ImgHash, SubImgInfo, Num);
 	} else {
 		return _BOOT_Validate_ImgHash(HashAlg, ImgHash, SubImgInfo, Num);
