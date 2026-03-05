@@ -12,7 +12,7 @@ Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
    
-# Expect result
+# Expected Result
 
 1. RTC Alarm Interrupt will be triggered When second counts upto 0.
 2. When Interrupt triggered, time information will be printed in `RTC_Handler`.

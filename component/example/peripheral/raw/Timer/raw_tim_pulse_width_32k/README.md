@@ -31,7 +31,7 @@ for example:
      For example:
      If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
-# Expect result
+# Expected Result
 This example will print out the pulse width of PWM channel output signal.
 
 # Note

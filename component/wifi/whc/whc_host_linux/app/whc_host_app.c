@@ -10,11 +10,22 @@
 #include <sys/socket.h>
 #include <signal.h>
 #include <poll.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
 
 #include <whc_host_app_api.h>
 #include <whc_host_netlink.h>
 
 //#define WHC_AUTO_SETTING	1
+//#define CONFIG_RMESH
+
+#ifdef CONFIG_RMESH
+#define SOCK_FD_NUM 3
+#else
+#define SOCK_FD_NUM 2
+#endif
+
 #define WHC_WIFI_SYSTEM_CMD_SIZE          200
 /* depends on real name, wlan0 for common, maybe wlan1 in some raspi*/
 /* enable auto setting after WHC_WIFI_NETDEV_NAME check */
@@ -25,6 +36,15 @@
 #define MAX_INPUT_SIZE 640
 
 struct whc_netlink whc_netlink_info;
+
+#ifdef CONFIG_RMESH
+int rmesh_tx_socketfd;
+uint32_t rmesh_server_port;
+uint8_t rmesh_server_ip[4];
+#define RMESH_PC_IP_ENTRY 2
+#define RMESH_PC_PORT_ENTRY 3
+#define RMESH_BCMC_PORT 12345
+#endif
 
 void whc_host_rx_buf_hdl(struct msgtemplate *msg);
 
@@ -551,6 +571,46 @@ void whc_host_mp_result(uint8_t *buf)
 	return;
 }
 
+#ifdef CONFIG_RMESH
+void whc_rmesh_socket_tx_handler(uint8_t *send_buf, uint32_t len)
+{
+	struct sockaddr_in dest_addr;
+	struct ifreq ifr;
+	socklen_t addr_len = sizeof(dest_addr);
+
+	/*need fill IP address in this packet*/
+	int fd = socket(AF_INET, SOCK_DGRAM, 0);
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, WHC_WIFI_NETDEV_NAME, IFNAMSIZ - 1);
+	if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
+		printf("get ip fail\n");
+	}
+	close(fd);
+
+	struct sockaddr_in *ipaddr = (struct sockaddr_in *)&ifr.ifr_addr;
+	*(uint32_t *)(send_buf + 42) = (uint32_t)(ipaddr->sin_addr.s_addr);
+
+
+	memset(&dest_addr, 0, sizeof(dest_addr));
+	dest_addr.sin_family = AF_INET;
+	dest_addr.sin_port = htons(rmesh_server_port);
+	dest_addr.sin_addr.s_addr = rmesh_server_ip[3] << 24 | rmesh_server_ip[2] << 16 | rmesh_server_ip[1] << 8 | rmesh_server_ip[0];
+	if (sendto(rmesh_tx_socketfd, send_buf, len, 0, (struct sockaddr *)&dest_addr, addr_len) < 0) {
+		printf("rmesh node rpt send fail");
+	}
+}
+
+void whc_host_rmesh_bcmc_sock_hdl(struct msgtemplate *msg)
+{
+	if (msg->buf[13] == RMESH_PC_IP_ENTRY) {
+		memcpy(rmesh_server_ip, msg->buf + 15, 4);
+	}
+	if (msg->buf[19] == RMESH_PC_PORT_ENTRY) {
+		memcpy(&rmesh_server_port, msg->buf + 21, 2);
+		rmesh_server_port = ntohs(rmesh_server_port);
+	}
+}
+#endif
 void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 {
 	struct nlattr *na;
@@ -602,6 +662,16 @@ void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 				break;
 			}
 		}
+#ifdef CONFIG_RMESH
+		else if (whc_event == WHC_RMESH_TEST) {
+			pos = pos + sizeof(uint32_t);
+			if (*pos == WHC_RMESH_TEST_SOCK_SEND) {
+				real_len = *(uint32_t *)(pos + sizeof(uint32_t));
+				pos = pos + sizeof(uint32_t) * 2;
+				whc_rmesh_socket_tx_handler(pos, real_len);
+			}
+		}
+#endif
 	}
 }
 
@@ -611,7 +681,11 @@ int main(void)
 	char input_buf[MAX_INPUT_SIZE];
 	struct msgtemplate msg;
 	int rx_len;
-	struct pollfd fds[2];
+	struct pollfd fds[SOCK_FD_NUM];
+#ifdef CONFIG_RMESH
+	struct sockaddr_in bcmc_addr;
+	int rmesh_bcmc_sock;
+#endif
 	printf("Waiting for message from kernel or input command from user space\n");
 
 	memset(&whc_netlink_info, 0, sizeof(struct whc_netlink));
@@ -632,6 +706,22 @@ int main(void)
 	}
 	//printf("Family ID for %s: %d\n", WHC_CMD_GENL_NAME, family_id);
 
+#ifdef CONFIG_RMESH
+	rmesh_tx_socketfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (rmesh_tx_socketfd < 0) {
+		printf("rmesh tx socket create fail\n");
+	}
+
+	rmesh_bcmc_sock = socket(AF_INET, SOCK_DGRAM, 0);
+	memset(&bcmc_addr, 0, sizeof(bcmc_addr));
+	bcmc_addr.sin_family = AF_INET;
+	bcmc_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	bcmc_addr.sin_port = htons(RMESH_BCMC_PORT);
+	if (bind(rmesh_bcmc_sock, (struct sockaddr *)&bcmc_addr, sizeof(bcmc_addr)) < 0) {
+		printf("UDP bind error");
+	}
+#endif
+
 	while (1) {
 		memset(input_buf, 0, MAX_INPUT_SIZE);
 
@@ -639,8 +729,11 @@ int main(void)
 		fds[0].events = POLLIN;  // Monitor for incoming Netlink messages
 		fds[1].fd = STDIN_FILENO;
 		fds[1].events = POLLIN;  // Monitor for standard input
-
-		int ret = poll(fds, 2, -1);  // Block until a file descriptor is ready
+#ifdef CONFIG_RMESH
+		fds[2].fd = rmesh_bcmc_sock;
+		fds[2].events = POLLIN;  // Monitor for standard input
+#endif
+		int ret = poll(fds, SOCK_FD_NUM, -1);  // Block until a file descriptor is ready
 		if (ret > 0) {
 			if (fds[0].revents & POLLIN) {
 				rx_len = recv(whc_netlink_info.sockfd, &msg, sizeof(msg), 0);
@@ -656,6 +749,16 @@ int main(void)
 					whc_host_cmd_hdl(input_buf);
 				}
 			}
+#ifdef CONFIG_RMESH
+			if (fds[2].revents & POLLIN) {
+				struct sockaddr_in from;
+				socklen_t fromlen = sizeof(from);
+				rx_len = recvfrom(rmesh_bcmc_sock, msg.buf, MAX_MSG_SIZE, 0, (struct sockaddr *)&from, &fromlen);
+				if (rx_len >= 23) {
+					whc_host_rmesh_bcmc_sock_hdl(&msg);
+				}
+			}
+#endif
 		} else {
 			perror("poll error");
 			break;
@@ -665,4 +768,3 @@ int main(void)
 	close(whc_netlink_info.sockfd);
 	return 0;
 }
-

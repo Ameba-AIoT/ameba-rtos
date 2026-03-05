@@ -36,7 +36,7 @@ For example:
 4. GPIO Interrupt Polarity will inverse in ISR.
 5. `GPIO_SIGNAL_SOURCE` is a signal source that changes level between high and low periodically.
 
-# Expect result
+# Expected Result
 
 In this example, you will see log that prints high/low level event periodically.
 

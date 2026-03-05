@@ -50,7 +50,7 @@ This example describes how to use GPIO Port read/write by RAW GPIO API.
    `1`: `PortB`
    `0`: `PortA`
 
-# Expect result
+# Expected Result
 
 - When test GPIO port output:
   - The LED is on when corresponding GPIO pin outputs `1`

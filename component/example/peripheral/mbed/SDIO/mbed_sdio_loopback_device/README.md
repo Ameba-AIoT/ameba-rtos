@@ -54,7 +54,8 @@ Or it will echo:
 
 #  Note
 
-- Refer to sdio_loopback_test_guide.pdf to get more information about running SDIO host.
+- Refer to the [SDIO Loopback Test Guide](../sdio_loopback_test_guide.pdf) for more information about running SDIO host.
+
 - SDIO host sends 2048 bytes, including 16-byte tx descriptor and 2032-byte payload.
 
 #  Supported IC

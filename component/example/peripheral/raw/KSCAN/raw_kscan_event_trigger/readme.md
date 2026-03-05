@@ -23,7 +23,7 @@ Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 
 - key press, key release will generate interrupt, one press or release trigger interrupt once.
 - Supports up to 6 keys to press at the same time

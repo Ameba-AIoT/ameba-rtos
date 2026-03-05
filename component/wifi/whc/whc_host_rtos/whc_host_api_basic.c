@@ -493,7 +493,12 @@ s32 wifi_scan_networks(struct rtw_scan_param *scan_param, u8 block)
 		scan_block_param = NULL;
 	}
 
+	goto exit;
+
 error:
+	rtw_scan_api_inprocess = 0;
+
+exit:
 	if (block_param) {
 		if (block_param->sema) {
 			rtos_sema_delete_static(block_param->sema);

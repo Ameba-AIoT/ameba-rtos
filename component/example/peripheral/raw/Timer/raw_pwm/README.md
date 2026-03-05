@@ -49,7 +49,7 @@ For example:
    - you can also modify pinmux group settings according to correct pinmux table. For example:
     If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
-# Expect result
+# Expected Result
 
   - The LED would gradually become brighter and then darker with different speed.
   - Connect the logic analyzer, and PWM waveforms on all six/eight channels can be displayed. The Waveform duty cycle gradually increases and then decreases.

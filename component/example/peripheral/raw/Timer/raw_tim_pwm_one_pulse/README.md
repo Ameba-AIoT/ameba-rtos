@@ -37,7 +37,7 @@
    - you can also modify pinmux group settings according to correct pinmux table.For example: 
      If you want to modify pinmux group setting in RTL8721Dx, then you should refer to UM1002_RTL8721Dx_pin_mux.xlsx
 
-# Expect result
+# Expected Result
   This example will print out interrupt information when button is pushed.
 
 # Note

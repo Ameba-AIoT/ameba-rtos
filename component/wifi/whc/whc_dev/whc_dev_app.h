@@ -16,6 +16,10 @@
 #define WHC_WIFI_TEST_WIFION         0x9
 #define WHC_WIFI_TEST_SCAN_RESULT    0xA
 
+#define WHC_RMESH_TEST 0xdda5a5a5
+#define WHC_RMESH_TEST_SOCK_INIT    0x1
+#define WHC_RMESH_TEST_SOCK_SEND    0x2
+
 /* for rtos host only */
 #define WHC_WIFI_TEST_SET_HOST_RTOS  0xFF
 
@@ -25,12 +29,5 @@
 #define CONFIG_WHC_WHC_CMD_USER_TASK_PRIO 		3
 
 #define at_printf(fmt, args...)    RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, fmt, ##args)
-
-typedef int (*cmd_handler_t)(void);
-
-struct whc_dev_command_entry {
-	char *cmd_name;
-	cmd_handler_t handler;
-};
 
 #endif

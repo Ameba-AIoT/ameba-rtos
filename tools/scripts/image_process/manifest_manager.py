@@ -43,8 +43,8 @@ CompressFlag = [0x504D4F43, 0x53534552]
 
 class ImgID(Enum):
     IMGID_BOOT = 0
-    IMGID_NSPE = 1
-    IMGID_SPE = 2
+    IMGID_APP = 1
+    IMGID_DSP = 2
     IMGID_BL1 = 3
     IMGID_CERT = 4
 
@@ -690,7 +690,7 @@ class ManifestManager(ABC):
 
             memmove(addressof(basic_manifest_part.RsipIV), bytes.fromhex(image_config.rsip_iv), 8)
             basic_manifest_part.RsipCfg = basic_manifest_part.RsipCfg & (((image_config.rsip_gcm_tag_len // 4) >> 1) | ~0x03)
-        if ImgID.IMGID_NSPE.value == basic_manifest_part.ImgID:
+        if ImgID.IMGID_APP.value == basic_manifest_part.ImgID:
             # Check image3's rdp_enable configuration instead of current image's config
             rdp_enable = False
             if self.image3 is not None and hasattr(self.image3, 'rdp_enable'):

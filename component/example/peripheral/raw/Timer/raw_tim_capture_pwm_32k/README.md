@@ -1,4 +1,5 @@
-# Description
+# Example Description
+
 This example describes how to use PWM input capture function.
 
 # HW Configuration
@@ -38,8 +39,12 @@ This example describes how to use PWM input capture function.
 
      If you want to modify pinmux group setting in RTL8721Dx, then you should refer to UM1002_RTL8721Dx_pin_mux.xlsx
 
-# Expect result
-This example will print out the frequency of pwm captured in trace tool.
+# Expected Result
+
+This example will print out the frequency of PWM captured in trace tool:
+```
+frequency: 32000
+```
 
 # Note
 none

@@ -12,7 +12,7 @@ Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 
 1. watchdog will reset system due to very small task refresh WDG (Refresh WDG between [window - reload] will trigger reset). loguart output: 
 	```

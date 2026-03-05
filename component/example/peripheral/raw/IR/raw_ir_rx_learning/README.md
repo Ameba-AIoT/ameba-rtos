@@ -28,7 +28,7 @@ Connect the rx pin to another board's tx pin (as defined in the header file of t
     - Define `IR_LOOP_TEST` to  `0`
     - Define `IR_TEST_LEARNNING` to `1`
     - Rebuild the image as described in sdk/component/example/peripheral/raw/IR/raw_ir_tx_nec_polling/README.md
-# Expect result
+# Expected Result
 
 This example will print out detect_time and frequency of received data.
 

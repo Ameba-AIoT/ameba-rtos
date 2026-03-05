@@ -101,6 +101,10 @@
 extern "C" {
 #endif
 
+/* APP image pattern, can't be modified */
+#define APP_IMAGE_PATTERN_1 	0x35393138U
+#define APP_IMAGE_PATTERN_2 	0x31313738U
+
 #define IMAGE_HEADER_LEN		0x20
 typedef struct {
 	u32 signature[2];
@@ -111,6 +115,18 @@ typedef struct {
 	u32 sb_header;
 	u32 reserved[3];
 } IMAGE_HEADER;
+
+/* cert and manifest common header typedef */
+typedef struct {
+	u8 Pattern[8];
+	u8 Rsvd1[8];
+	u8 Ver;
+	u8 ImgID;
+	u8 AuthAlg;
+	u8 HashAlg;
+	u16 MajorKeyVer;
+	u16 MinorKeyVer;
+} AuthHeader_TypeDef;
 
 typedef enum  _HAL_Status {
 	HAL_OK            = 0x00,

@@ -36,7 +36,7 @@ This example describes how to use GPIO read/write by MBED GPIO API.
 3. `GPIO_PUSHBT_PIN` is configured as input with internal pull-high
 4. `GPIO_LED_PIN` is configured as output
 
-# Expect result
+# Expected Result
 
 In this example, the LED is on when the push button is pressed.
 

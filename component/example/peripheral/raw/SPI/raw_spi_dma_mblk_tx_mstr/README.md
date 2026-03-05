@@ -52,7 +52,7 @@ Refer the README of example `raw_spi_dma_mblk_rx_slv` to build slave image and d
 - By default, this example select one pinmux group as MOSI/MISO/SCLK/CS, you can also modify pinmux group settings according to correct pinmux table.
 - For example, If you want to modify pinmux group setting in RTL8730E, then you should refer to `UM0602_RTL8730E_pinmux.xls`.
 
-# Expect result
+# Expected Result
 
 1. After example finishes, SPI master will print out "SPI tx Demo finished"
 2. If SPI master tx fail, it will notify "SPI Timeout"

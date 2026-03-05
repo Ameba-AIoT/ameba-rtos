@@ -21,7 +21,7 @@ Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 
 Normally, A2C0 will receive the standard data frame with StdId 0x55 and data 0-7 sent by A2C1.
 

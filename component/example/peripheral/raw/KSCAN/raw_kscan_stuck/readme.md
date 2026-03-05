@@ -23,7 +23,7 @@ Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 
 Key stuck will generate interrupt, mask stuck key, other keys work normal. For example, Press and hold the key (8,6), then release it. It's observed that a stuck interrupt is generated for key press and release. Bit[8] = 1 indicates that the key is pressed, and 0 indicates that the key is released.
 ```shell

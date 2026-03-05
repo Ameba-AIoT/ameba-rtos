@@ -37,7 +37,7 @@ This example describes how to use GPIO read/write in a light weight way by MBED 
 3. `GPIO_PUSHBT_PIN` as input with internal pull-high
 4. `GPIO_LED_PIN` as output
 
-# Expect result
+# Expected Result
 
 In this example, the LED is on when the push button is pressed.
 

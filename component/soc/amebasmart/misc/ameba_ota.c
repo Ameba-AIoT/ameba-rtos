@@ -5,6 +5,7 @@
  */
 
 #include "ameba_soc.h"
+#include "ameba_ota.h"
 #include "lwip_netconf.h"
 #include "flash_api.h"
 #include "vfs.h"
@@ -1359,4 +1360,3 @@ void ota_update_deinit(ota_context *ctx)
 		rtos_mem_free(ctx->otaTargetHdr);
 	}
 }
-

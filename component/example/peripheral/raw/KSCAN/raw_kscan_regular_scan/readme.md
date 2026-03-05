@@ -23,7 +23,7 @@ Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 
 key press will generate interrupt, any key press event is stored in the key event FIFO until it is released.
 
