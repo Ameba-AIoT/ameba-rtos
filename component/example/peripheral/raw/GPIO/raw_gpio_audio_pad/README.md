@@ -15,7 +15,7 @@ Logic Analyser or oscilloscope.
 3. If `DIGIT_PATH_EN`is NOT defined, `AUDIO_PAD_PIN`works as audio pin
 4. By default, `AUDIO_PAD_PIN`works under digital path
 
-# Expect result
+# Expected Result
 
 1. If `AUDIO_PAD_PIN` works under digital path:
    - `AUDIO_PAD_PIN` is configured as gpio in `digit_app_entry()`.

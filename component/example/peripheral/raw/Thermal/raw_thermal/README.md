@@ -4,7 +4,7 @@
 
 # HW Configuration
 
-1. none
+None.
 
 # SW Configuration
 
@@ -14,10 +14,15 @@
 
 # Expected Result
 
-1. Three forms of temperature values can be obtained:
-   String type: `TM_Display_Result(u32 Data)`
-   Celsius type: `TM_GetCdegree(u32 Data)`
-   Fahrenheit type:`TM_GetFdegree(u32 Data)`
+1. The temperature values will be printed out periodically in the following format:
+   ```
+   Temperature: +25.1234
+   Temperature = 25.1234 C
+   Temperature = 77.1234 F
+   ```
+2. If temperature threshold is reached, corresponding interrupt message will be printed:
+   - `Low warning temperature detect interrupt`
+   - `High warning temperature detect interrupt`
 
 # Note
 

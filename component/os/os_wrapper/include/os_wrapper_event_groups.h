@@ -50,48 +50,29 @@ rtos_event_bits_t rtos_event_group_wait_bits(rtos_event_group_t xEventGroup,
 
 /**
  * @brief  Clear bits within an event group.
- * Wrapper for FreeRTOS API: xEventGroupWaitBits and xEventGroupClearBitsFromISR
+ * Wrapper for FreeRTOS API: xEventGroupClearBits / xEventGroupClearBitsFromISR
  * @param  xEventGroup: The event group in which the bits are to be cleared.
  * @param  uxBitsToClear: A bitwise value that indicates the bit or bits to clear.
- * @retval The value of the event group before the specified bits were cleared.
+ * @retval RTK_SUCCESS on success, RTK_FAIL on failure (ISR context only, if timer queue is full).
+ * @note  This function is ISR-safe and will automatically use the appropriate FreeRTOS API.
+ * @note  In task context, this function always returns RTK_SUCCESS since xEventGroupClearBits
+ *        cannot fail. In ISR context, failure can occur if the timer command queue is full.
  */
-rtos_event_bits_t rtos_event_group_clear_bits(rtos_event_group_t xEventGroup,
-		const rtos_event_bits_t uxBitsToClear);
-
-/**
- * @brief  Clear bits within an event group from ISR.
- * Wrapper for FreeRTOS API: xEventGroupClearBitsFromISR
- * @param  xEventGroup: The event group in which the bits are to be cleared.
- * @param  uxBitsToClear: A bitwise value that indicates the bit or bits to clear.
- * @retval If the request to execute the function was posted successfully then
- * RTK_SUCCESS is returned, otherwise RTK_FAIL is returned. RTK_FAIL will be returned
- * if the timer service queue was full.
- */
-int rtos_event_group_clear_bits_from_isr(rtos_event_group_t xEventGroup,
-		const rtos_event_bits_t uxBitsToClear);
+int rtos_event_group_clear_bits(rtos_event_group_t xEventGroup,
+								const rtos_event_bits_t uxBitsToClear);
 
 /**
  * @brief  Set bits within an event group.
- * Wrapper for FreeRTOS API: xEventGroupSetBits
+ * Wrapper for FreeRTOS API: xEventGroupSetBits / xEventGroupSetBitsFromISR
  * @param  xEventGroup: The event group in which the bits are to be set.
  * @param  uxBitsToSet: A bitwise value that indicates the bit or bits to set.
- * @retval The value of the event group at the time the call to
- * rtos_event_group_set_bits() returns.
+ * @retval RTK_SUCCESS on success, RTK_FAIL on failure (ISR context only, if timer queue is full).
+ * @note  This function is ISR-safe and will automatically use the appropriate FreeRTOS API.
+ * @note  In task context, this function always returns RTK_SUCCESS since xEventGroupSetBits
+ *        cannot fail. In ISR context, failure can occur if the timer command queue is full.
  */
-rtos_event_bits_t rtos_event_group_set_bits(rtos_event_group_t xEventGroup,
-		const rtos_event_bits_t uxBitsToSet);
-
-/**
- * @brief  Set bits within an event group from ISR.
- * Wrapper for FreeRTOS API: xEventGroupSetBitsFromISR
- * @param  xEventGroup: The event group in which the bits are to be set.
- * @param  uxBitsToSet: A bitwise value that indicates the bit or bits to set.
- * @retval If the request to execute the function was posted successfully then
- * RTK_SUCCESS is returned, otherwise RTK_FAIL is returned.  RTK_FAIL will be returned
- * if the timer service queue was full.
- */
-int rtos_event_group_set_bits_from_isr(rtos_event_group_t xEventGroup,
-									   const rtos_event_bits_t uxBitsToSet);
+int rtos_event_group_set_bits(rtos_event_group_t xEventGroup,
+							  const rtos_event_bits_t uxBitsToSet);
 
 /**
  * @brief  Returns the current value of the bits in an event group.  This function

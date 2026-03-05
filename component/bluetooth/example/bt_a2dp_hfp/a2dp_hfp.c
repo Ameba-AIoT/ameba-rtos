@@ -2074,7 +2074,7 @@ static void rtk_bt_a2dp_demo_src_send_data_control(bool enable)
 		}
 		if (!bt_a2dp_demo_src_send_timer.handler) {
 			if (g_audio_resample_t) {
-				a2dp_src_data_send_interval_us = 1000 * (resample_out_frames * 1000 / g_audio_resample_t->out_rate) + 1;
+				a2dp_src_data_send_interval_us = 1000 * (resample_out_frames * 1000 / g_audio_resample_t->out_rate);
 			}
 			BT_LOGA("[A2DP Demo] rtk_bt_a2dp_demo_src_send_data_control send interval(us) is %d \r\n", a2dp_src_data_send_interval_us);
 			if (bt_a2dp_demo_src_send_timer.handler == NULL) {

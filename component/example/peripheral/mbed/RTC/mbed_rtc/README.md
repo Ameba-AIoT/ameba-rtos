@@ -13,7 +13,7 @@ Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 
 1. This example set initial calendar time: `2020.12.24 19:30:50`
 2. This example will print out the time information every second.

@@ -57,7 +57,7 @@ Refer the README of example `raw_spi_dma_mblk_tx_mstr` to build master image and
 
   - If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
-# Expect result
+# Expected Result
 
 1. After example finishes, SPI slave will print out "SPI rx Demo finished".
 2. If SPI master is selected as mentioned by step2(3), then "SPI RX test: OK!" will be shown after data received match sent.

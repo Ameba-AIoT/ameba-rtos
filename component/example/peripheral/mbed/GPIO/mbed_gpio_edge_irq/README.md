@@ -31,7 +31,7 @@ For example:
    - When `GPIO_IRQ_EDGE_PIN` catches rising edge events, it is changed back to listen to falling edge events
 4. `GPIO_SIGNAL_SOURCE` is signal source that changes level to high and low periodically.
 
-# Expect result
+# Expected Result
 
 In this example, you will see log that prints rising/falling edge event periodically.
 

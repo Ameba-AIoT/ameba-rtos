@@ -10,7 +10,7 @@ Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 1. After power-on and running for a period of time, the watchdog will be triggered to reset the entire SOC.
 2. After reset, loguart output: `watchdog mbed example exec succeed!`
 

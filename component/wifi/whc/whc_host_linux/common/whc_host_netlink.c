@@ -306,6 +306,13 @@ __attribute__((weak)) int whc_host_buf_rx_to_user(u8 *buf, u16 size)
 		return -1;
 	}
 
+#ifdef CONFIG_RMESH
+	if (wifi_event_user_genl_info.snd_portid == 0) {
+		/*when userspace not ready, just drop*/
+		return -1;
+	}
+#endif
+
 	skb = genlmsg_new(nla_total_size(size + 4), GFP_KERNEL);
 	if (!skb) {
 		return -1;

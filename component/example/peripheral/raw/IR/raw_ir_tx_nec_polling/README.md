@@ -37,7 +37,7 @@ Logic Analyzer or oscilloscope.
      - `NEC_EncodePacket`: encode the space symbol of IR waveform data with carrier symbol data
      - `NEC_DecodePacket`: decode the received IR waveform with carrier symbol to space symbol
 
-# Expect result
+# Expected Result
 
   - When Logic Analyzer or oscilloscope is connected to `IR_PINMUX_S1_TX` pin, and the **NEC Protocal** should be selected, then the tx data will be captured.
 

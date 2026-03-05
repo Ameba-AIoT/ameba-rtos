@@ -74,8 +74,8 @@ void sys_clear_ota_signature(int ImgID)
 		flash_get_layout_info(IMG_BOOT, &ota1_start_addr, NULL);
 		flash_get_layout_info(IMG_BOOT_OTA2, &ota2_start_addr, NULL);
 	} else {
-		check_sig[0] = 0x35393138;
-		check_sig[1] = 0x31313738;
+		check_sig[0] = APP_IMAGE_PATTERN_1;
+		check_sig[1] = APP_IMAGE_PATTERN_2;
 		flash_get_layout_info(IMG_APP_OTA1, &ota1_start_addr, NULL);
 		flash_get_layout_info(IMG_APP_OTA2, &ota2_start_addr, NULL);
 	}
@@ -127,8 +127,8 @@ void sys_recover_ota_signature(int ImgID)
 		flash_get_layout_info(IMG_BOOT, &ota1_start_addr, NULL);
 		flash_get_layout_info(IMG_BOOT_OTA2, &ota2_start_addr, NULL);
 	} else {
-		recover_sig[0] = 0x35393138;
-		recover_sig[1] = 0x31313738;
+		recover_sig[0] = APP_IMAGE_PATTERN_1;
+		recover_sig[1] = APP_IMAGE_PATTERN_2;
 		flash_get_layout_info(IMG_APP_OTA1, &ota1_start_addr, NULL);
 		flash_get_layout_info(IMG_APP_OTA2, &ota2_start_addr, NULL);
 	}

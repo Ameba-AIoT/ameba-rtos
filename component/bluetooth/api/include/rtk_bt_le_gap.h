@@ -1578,7 +1578,7 @@ typedef struct {
 #define RTK_BT_LE_EXT_ADV_EVT_BIT_SCAN_RESPONSE     (1 << 3)
 
 /**
- * @struct    rtk_bt_le_ext_adv_report_type_t
+ * @typedef    rtk_bt_le_ext_adv_report_type_t
  * @brief     Bluetooth LE ext adv report event type.
  */
 typedef enum {
@@ -1590,6 +1590,17 @@ typedef enum {
 	RTK_BT_LE_EXT_EVT_LEGACY_SCAN_RSP_TO_ADV_IND =      0x1B,
 	RTK_BT_LE_EXT_EVT_LEGACY_SCAN_RSP_TO_ADV_SCAN_IND = 0x1A,
 } rtk_bt_le_ext_adv_report_type_t;
+
+/**
+  * @typedef  rtk_bt_le_ext_adv_data_status_t
+  * @brief    Definition of data status in LE Extended Advertising Report.
+ */
+typedef enum {
+	RTK_BT_LE_EXT_ADV_DATA_STATUS_COMPLETE  = 0x00, /**< Data status: Complete */
+	RTK_BT_LE_EXT_ADV_DATA_STATUS_MORE      = 0x01, /**< Data status: Incomplete, more data to come */
+	RTK_BT_LE_EXT_ADV_DATA_STATUS_TRUNCATED = 0x02, /**< Data status: Incomplete, data truncated, no more to come */
+	RTK_BT_LE_EXT_ADV_DATA_STATUS_RFU       = 0x03  /**< Data status: Reserved for future use */
+} rtk_bt_le_ext_adv_data_status_t;
 
 /**
  * @struct    rtk_bt_le_ext_scan_res_ind_t
@@ -1605,6 +1616,7 @@ typedef struct {
 	uint8_t adv_sid;
 	int8_t tx_power;
 	uint16_t peri_adv_interval;
+	uint8_t data_status;  /*!< ref @ref rtk_bt_le_ext_adv_data_status_t */
 	uint16_t len;
 	uint8_t *data; /*!< Must be the last member */
 } rtk_bt_le_ext_scan_res_ind_t;

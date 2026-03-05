@@ -19,8 +19,27 @@ from .rt_settings import *
 from .spic_addr_mode import *
 from .memory_info import *
 from .config_utils import *
-from .remote_serial import RemoteSerial
 from typing import Optional, Dict, Any
+from pathlib import Path
+
+current_script_path = Path(__file__).resolve().parent
+remote_service_path = current_script_path.parent.parent / 'RemoteService'
+
+RemoteSerial = None
+
+if remote_service_path.exists():
+    sys.path.insert(0, str(remote_service_path))
+
+    try:
+        from remote_serial import RemoteSerial
+    except ImportError as e:
+        RemoteSerial = None
+        print(f"error: RemoteSerial ImportError: ", str(e))
+    except Exception as e:
+        RemoteSerial = None
+        print(f"error: RemoteSerial ImportException: ", str(e))
+else:
+    print(f"warning: RemoteSerial doesn't exists at: {remote_service_path}")
 
 _RTK_USB_VID = "0BDA"
 
@@ -111,6 +130,9 @@ class Ameba(object):
             if self.remote_server and self.remote_port:
                 self.logger.info(f"Connect to remote serial server: {self.remote_server}:{self.remote_port} (Serial port: {self.serial_port_name})")
                 # initialize remote serial port
+                if RemoteSerial is None:
+                    self.logger.error(f"RemoteSerial doesn't exists at: {remote_service_path} ")
+                    sys.exit(1)
                 self.serial_port = RemoteSerial(
                     remote_server=self.remote_server,
                     remote_port=self.remote_port,
@@ -121,6 +143,7 @@ class Ameba(object):
                 if self.remote_password:
                     self.logger.debug("Remote server: password set, will send validate command")
                     self.serial_port.validate(self.remote_password)
+                    self.serial_port.query_version()
                 self.serial_port.open()
             else:
                 # initialize local serial port

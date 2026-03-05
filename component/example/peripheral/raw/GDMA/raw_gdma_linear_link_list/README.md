@@ -12,7 +12,7 @@ Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 The log is displayed as:
 ```shell
 Block 0 Over

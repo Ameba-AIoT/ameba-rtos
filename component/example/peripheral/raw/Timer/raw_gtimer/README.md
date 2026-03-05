@@ -29,7 +29,7 @@ This example describes how to use general timer TIM2&TIM3 to generation periodic
     you can also modify pinmux group settings according to correct pinmux table. for example: 
    - If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
-# Expect result
+# Expected Result
 
   - The LED will periodically turn on and off.
   - Link logic analyzer, and two PWM waveforms with periods of 1s and 500ms can be find.

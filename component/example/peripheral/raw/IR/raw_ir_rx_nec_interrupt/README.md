@@ -39,7 +39,7 @@ Connect the rx pin to another board's tx pin (as defined in the header file of t
      - `NEC_EncodePacket`: encode the space symbol of IR waveform data with carrier symbol data
      - `NEC_DecodePacket`: decode the received IR waveform with carrier symbol to space symbol
 
-# Expect result
+# Expected Result
 
 This example will print out data received.
 

@@ -29,7 +29,7 @@ you can also modify pinmux group settings according to correct pinmux table. for
 
 - If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
-# Expect result
+# Expected Result
 The LED will periodically turn on and off.
 
 # Note

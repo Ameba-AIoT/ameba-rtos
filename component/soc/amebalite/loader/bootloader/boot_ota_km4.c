@@ -21,7 +21,7 @@ s64 Ver[2] = {0};  //32-bit full version
 //static SubImgInfo_TypeDef SubImgInfo[12]; //store sub image addr and length
 
 static const u32 ImagePattern[2] = {
-	0x35393138, 0x31313738,
+	APP_IMAGE_PATTERN_1, APP_IMAGE_PATTERN_2,
 };
 
 static const u32 CompressFlag[2] = {
@@ -125,7 +125,7 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 	for (i = 0; i < Num; i++) {
 		_memcpy((void *)&ImgHdr, (void *)StartAddr, IMAGE_HEADER_LEN);
 
-		if ((ImgHdr.signature[0] != 0x35393138) || (ImgHdr.signature[1] != 0x31313738)) {
+		if ((ImgHdr.signature[0] != APP_IMAGE_PATTERN_1) || (ImgHdr.signature[1] != APP_IMAGE_PATTERN_2)) {
 			if (ErrLog == TRUE) {
 				RTK_LOGE(TAG, "%s Invalid\n", ImgName[i]);
 			}

@@ -12,7 +12,7 @@ Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 1. If `abort_trasfer = 1`, the log is displayed as:
 ```shell
 transfer suspend, and 1024 bytes have been moved

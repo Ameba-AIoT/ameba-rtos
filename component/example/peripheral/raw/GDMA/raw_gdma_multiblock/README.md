@@ -17,7 +17,7 @@ None.
    - **ReloadSrcDst**,  transfer multiple blocks from the source address to multi blocks at the destination address.
    - **SingleBlock**, unavailable.
 
-# Expect result
+# Expected Result
 
 GDMA will display "DMA data complete MaxMuliBlock = x " in serial port tool.
 

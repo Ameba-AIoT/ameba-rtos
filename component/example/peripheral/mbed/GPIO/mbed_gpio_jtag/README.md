@@ -39,7 +39,7 @@ This example describes how to use disable JTAG module and use GPIO pin to blink 
 - `GPIO_JTAG_ENABLE_PIN` is configured as input with internal pull-high
 - `GPIO_LED_PIN` is configured as output
 
-# Expect result
+# Expected Result
 
 1. If button is not pressed while device boot up, then we don't turn off jtag module.
 2. If button is pressed while device boot up, then jtag module is turned off.

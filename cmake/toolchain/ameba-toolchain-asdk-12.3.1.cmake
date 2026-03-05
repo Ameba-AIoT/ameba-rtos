@@ -38,6 +38,8 @@ elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
 	endif()
 	set(SDK_TOOLCHAIN ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor}/mingw32/newlib) # Note: server needs to be updated, ${ToolChainVerMajor}-${ToolChainVerMinor}
 	set(TOOLCHAINNAME ${ToolChainVerMajor}-mingw32-newlib-build-${ToolChainVerMinor}-x86_64.zip)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "") # disable ccache
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "")
 else()
 	message(FATAL_ERROR "unknown host platform ")
 endif()

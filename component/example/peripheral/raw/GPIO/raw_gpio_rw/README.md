@@ -22,9 +22,14 @@ This example describes how to use GPIO read/write by RAW GPIO API.
 3. `GPIO_PUSHBT_PIN` is configured as input with internal pull-high
 4. `GPIO_LED_PIN` is configured as output
 
-# Expect result
+# Expected Result
 
-In this example, the LED is on when the push button is pressed.
+1. The example will start and print:
+   ```
+   raw_gpio_rw_demo
+   ```
+2. When the push button is pressed, the LED will turn on.
+3. When the push button is released, the LED will turn off.
 
 # Note
 
