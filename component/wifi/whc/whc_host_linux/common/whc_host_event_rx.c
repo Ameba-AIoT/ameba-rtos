@@ -536,7 +536,6 @@ void whc_host_event_task(struct work_struct *data)
 	case WHC_API_UPDATE_REGD_EVENT:
 		whc_host_event_update_regd_indicate(event_priv, param_buf);
 		break;
-
 	default:
 		dev_err(global_idev.pwhc_dev, "%s: Unknown Device event(%x)!\n\r", "event", p_recv_msg->event);
 		break;
@@ -592,4 +591,3 @@ void whc_host_event_deinit(void)
 
 	return;
 }
-

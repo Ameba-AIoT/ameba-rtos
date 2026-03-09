@@ -82,6 +82,10 @@
 #include "log.h"
 #include "sscanf_minimal.h"
 
+/* APP image pattern, can't be modified */
+#define APP_IMAGE_PATTERN_1 	0x35393138U
+#define APP_IMAGE_PATTERN_2 	0x31313738U
+
 #define IMAGE_HEADER_LEN		0x20
 typedef struct {
 	u32 signature[2];

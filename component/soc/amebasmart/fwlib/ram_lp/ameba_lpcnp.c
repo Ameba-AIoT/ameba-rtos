@@ -210,7 +210,7 @@ void np_set_ddr_sre(void)
 
 	ddrc->DDRC_CCR = DDRC_DPIT(ENABLE);
 	while ((ddrc->DDRC_CCR & DDRC_BIT_DPIT) != DDRC_BIT_DPIT);
-	if (dummy_value != 0x35393138) {
+	if (dummy_value != APP_IMAGE_PATTERN_1) {
 		RTK_LOGI(TAG, "DDR Check error \r\n");
 	}
 

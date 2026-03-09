@@ -174,6 +174,9 @@ int rtw_sdio_alloc_irq(struct whc_sdio *priv);
 #if defined(CONFIG_WHC_CMD_PATH)
 void whc_host_register_genl_family(void);
 void whc_host_unregister_genl_family(void);
+#ifdef CONFIG_RMESH
+void whc_host_rmesh_to_user(u32 *param_buf);
+#endif
 #endif
 
 #endif // __RTW_FUNCTIONS_H__

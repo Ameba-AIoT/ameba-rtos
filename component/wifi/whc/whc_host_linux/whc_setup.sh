@@ -54,6 +54,8 @@ if [ "$#" -ge 2 ]; then
 				cp ../../bluetooth/example/bt_host/linux_driver/sdio/rtb_sdio.c ./common/sdio
 				cp ../../bluetooth/example/bt_host/linux_driver/sdio/rtb_sdio.h ./common/sdio
 			fi
+		elif [ "$j" == "rmesh" ]; then
+			sed -i 's/CONFIG_RMESH = n/CONFIG_RMESH = y/g' Makefile
 		fi
 	done
 fi
