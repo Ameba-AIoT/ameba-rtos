@@ -3,15 +3,6 @@
 #include "mbedtls/ssl.h"
 #include "mbedtls/net_sockets.h"
 
-struct wss_tls {
-	mbedtls_ssl_context ctx;
-	mbedtls_ssl_config conf;
-	mbedtls_net_context socket;
-	mbedtls_x509_crt ca;             /*!< CA certificates */
-	mbedtls_x509_crt cert;           /*!< Certificate */
-	mbedtls_pk_context key;          /*!< Private key */
-};
-
 static char *ws_itoa(int value)
 {
 	char *val_str;
@@ -28,20 +19,24 @@ static char *ws_itoa(int value)
 }
 
 int ws_random(void *p_rng, unsigned char *output, size_t output_len);
-void *wss_tls_connect(int *sock, char *host, int port)
+int wss_tls_connect(wsclient_context *wsclient, char *host, int port)
 {
 	int ret;
 	struct wss_tls *tls = NULL;
 
-	tls = (struct wss_tls *) malloc(sizeof(struct wss_tls));
+	if (wsclient == NULL || wsclient->tls == NULL) {
+		printf("\n[WSCLIENT] ERROR: Invalid parameters\n");
+		return -1;
+	}
+
+	tls = (struct wss_tls *)wsclient->tls;
 
 	if (tls) {
 		mbedtls_ssl_context *ssl = &tls->ctx;
 		mbedtls_ssl_config *conf = &tls->conf;
 		mbedtls_net_context *server_fd = &tls->socket;
-		memset(tls, 0, sizeof(struct wss_tls));
 
-		server_fd->fd = *sock;
+		server_fd->fd = -1;
 		char *port_str = ws_itoa(port);
 
 		if ((ret = mbedtls_net_connect(server_fd, host, port_str, MBEDTLS_NET_PROTO_TCP)) != 0) {
@@ -51,7 +46,7 @@ void *wss_tls_connect(int *sock, char *host, int port)
 		}
 
 		free(port_str);
-		*sock = server_fd->fd;
+		wsclient->sockfd = server_fd->fd;
 		mbedtls_ssl_init(ssl);
 		mbedtls_ssl_config_init(conf);
 		mbedtls_ssl_set_bio(ssl, server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
@@ -72,19 +67,17 @@ void *wss_tls_connect(int *sock, char *host, int port)
 			goto exit;
 		}
 	} else {
-		printf("\n[WSCLIENT] ERROR: malloc\n");
+		printf("\n[WSCLIENT] ERROR: tls is NULL\n");
 		ret = -1;
 		goto exit;
 	}
 exit:
-	if (ret && tls) {
+	if (ret != 0 && tls) {
 		mbedtls_net_free(&tls->socket);
 		mbedtls_ssl_free(&tls->ctx);
 		mbedtls_ssl_config_free(&tls->conf);
-		free(tls);
-		tls = NULL;
 	}
-	return (void *) tls;
+	return ret;
 }
 
 static int _verify_func(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *flags)
