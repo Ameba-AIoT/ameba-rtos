@@ -208,12 +208,19 @@ int ws_set_fun_ops(wsclient_context *wsclient)
 void ws_close(wsclient_context **wsclient)
 {
 	wsclient_context *wsc = *wsclient;
-	if (wsclient == NULL || wsc->readyState == WSC_CLOSING || wsc->readyState == WSC_CLOSED) {
+	if (wsclient == NULL || wsc == NULL || wsc->readyState != WSC_OPEN) {
 		return;
 	}
-	wsc->readyState = WSC_CLOSING;
+
+	// Send CLOSE frame first before changing state to avoid race condition
+	// where ws_poll might call client_close while we're still accessing wsc
 	char pong_Frame[6] = {0x88, 0x80, 0x00, 0x00, 0x00, 0x00};
 	wsc->fun_ops.client_send(wsc, pong_Frame, 6);
+
+	rtos_mutex_take(wsc->connection_mutex, RTOS_MAX_TIMEOUT);
+	wsc->readyState = WSC_CLOSING;
+	rtos_mutex_give(wsc->connection_mutex);
+
 //	wsc->fun_ops.client_close(wsc);
 //	*wsclient = NULL;	//To fix the ws_getReadyState() after ws_close() faied issue, then free the context in the example
 	printf("\r\n\r\n\r\n>>>>>>>>>>>>>>>Closing the Connection with websocket server<<<<<<<<<<<<<<<<<<\r\n\r\n\r\n");
@@ -258,6 +265,10 @@ void ws_poll(int timeout, wsclient_context **wsclient)   // timeout in milliseco
 		return;
 	}
 	wsc = *wsclient;
+	if (wsc->readyState == WSC_CONNECTING) {
+		WSCLIENT_DEBUG("Not connected yet\n");
+		return;
+	}
 	if (wsc->readyState == WSC_CLOSING) {
 		closesocket(wsc->sockfd);
 		wsc->fun_ops.client_close(wsc);
@@ -438,24 +449,43 @@ int ws_connect_url(wsclient_context *wsclient)
 {
 	int ret;
 
-	ret = wsclient->fun_ops.hostname_connect(wsclient);
-	if (ret == -1) {
-		wsclient->fun_ops.client_close(wsclient);
+	rtos_mutex_take(wsclient->connection_mutex, RTOS_MAX_TIMEOUT);
+	if (wsclient->readyState != WSC_CLOSED) {
+		rtos_mutex_give(wsclient->connection_mutex);
+		WSCLIENT_ERROR("ERROR: Cannot connect from current state %d, must be CLOSED\n", wsclient->readyState);
 		return -1;
+	}
+	wsclient->readyState = WSC_CONNECTING;
+	wsclient->connection_abort_flag = 0; // Reset abort flag
+	rtos_mutex_give(wsclient->connection_mutex);
+
+	ret = wsclient->fun_ops.hostname_connect(wsclient);
+	if (wsclient->connection_abort_flag) {
+		WSCLIENT_ERROR("Connection aborted during hostname connect\n");
+		goto exit;
+	}
+	if (ret == -1) {
+		goto exit;
 	} else {
 		ret = ws_client_handshake(wsclient);
+		if (wsclient->connection_abort_flag) {
+			WSCLIENT_ERROR("Connection aborted during handshake\n");
+			goto exit;
+		}
 		if (ret <= 0) {
 			WSCLIENT_ERROR("ERROR: Sending handshake failed\n");
-			wsclient->fun_ops.client_close(wsclient);
-			return -1;
+			goto exit;
 		} else {
 			ret = ws_check_handshake(wsclient);
+			if (wsclient->connection_abort_flag) {
+				WSCLIENT_ERROR("Connection aborted during handshake check\n");
+				goto exit;
+			}
 			if (ret == 0) {
 				WSCLIENT_DEBUG("Connected with websocket server!\n");
 			} else {
 				WSCLIENT_ERROR("ERROR: Response header is wrong\n");
-				wsclient->fun_ops.client_close(wsclient);
-				return -1;
+				goto exit;
 			}
 		}
 	}
@@ -465,18 +495,24 @@ int ws_connect_url(wsclient_context *wsclient)
 	if (ret == 0) {
 		ret = fcntl(wsclient->sockfd, F_SETFL, O_NONBLOCK);
 		if (ret == 0) {
+			// Connection successful, update state
+			rtos_mutex_take(wsclient->connection_mutex, RTOS_MAX_TIMEOUT);
 			wsclient->readyState = WSC_OPEN;
+			rtos_mutex_give(wsclient->connection_mutex);
+
 			printf("\r\n\r\n\r\n>>>>>>>>>>>>>>>Connected to websocket server<<<<<<<<<<<<<<<<<<\r\n\r\n\r\n");
 			return wsclient->sockfd;
 		} else {
-			wsclient->fun_ops.client_close(wsclient);
-			return -1;
+			goto exit;
 		}
 	} else {
-		wsclient->fun_ops.client_close(wsclient);
 		WSCLIENT_ERROR("ERROR: Failed to set socket option\n");
-		return -1;
+		goto exit;
 	}
+
+exit:
+	wsclient->fun_ops.client_close(wsclient);
+	return -1;
 }
 
 void ws_setsockopt_keepalive(uint32_t keepalive_idle, uint32_t keepalive_interval, uint32_t keepalive_count)
@@ -760,6 +796,12 @@ wsclient_context *create_wsclient(char *url, int port, char *path, char *origin,
 	wsclient->rxRsvBits.RSV2 = 0;
 	wsclient->rxRsvBits.RSV3 = 0;
 
+	wsclient->connection_abort_flag = 0;
+
+	if (rtos_mutex_create(&wsclient->connection_mutex) != RTK_SUCCESS) {
+		WSCLIENT_ERROR("ERROR: Failed to create connection mutex\n\r");
+		goto create_wsclient_fail;
+	}
 
 	if (wsclient_set_fun_ops(wsclient) < 0) {
 		WSCLIENT_ERROR("ERROR: Init function failed\n");
