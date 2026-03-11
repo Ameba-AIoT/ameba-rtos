@@ -77,3 +77,4 @@ ChangeLog:
 20260205  v2.1.39 (1) Update eFuse AT cmds
                   (2) Fix log window auto scroll issue
                   (3) Fine tune GUI
+20260212  v2.1.40 Fix crash issue on unplug or replug
