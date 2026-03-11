@@ -42,7 +42,7 @@ struct internal_block_param *join_block_param = NULL;
 struct internal_block_param *scan_block_param = NULL;
 
 s32(*scan_user_callback_ptr)(u32, void *) = NULL;
-s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *) = NULL;
+s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *, u8 *, u32) = NULL;
 
 u8(*promisc_user_callback_ptr)(struct rtw_rx_pkt_info *pkt_info) = NULL;
 s32(*scan_acs_report_user_callback_ptr)(struct rtw_acs_mntr_rpt *acs_mntr_rpt) = NULL;

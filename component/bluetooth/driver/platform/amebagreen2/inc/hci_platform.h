@@ -26,6 +26,7 @@
 
 #define HCI_BT_COEX_ENABLE         1
 #define HCI_BT_COEX_SW_MAILBOX     0
+#define HCI_BT_COEX_BR_EDR_SUPPORT   0
 
 #define HCI_BT_KEEP_AWAKE          0
 

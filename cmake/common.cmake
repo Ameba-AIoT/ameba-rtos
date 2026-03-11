@@ -248,7 +248,7 @@ macro(ameba_mcu_project_create name mcu_type)
     ameba_set(c_MCU_SDK_DIR ${c_MCU_PROJECT_DIR}/${c_SDK_NAME})
     ameba_set(c_MCU_SRC_DIR ${c_MCU_PROJECT_DIR}/src)
     ameba_set(c_MCU_INC_DIR ${c_MCU_PROJECT_DIR}/inc)
-    if(${NEWDIR_FLAG}) # temperary compatibility for different dir structure
+    if(NOT IS_DIRECTORY "${c_MCU_SRC_DIR}")
         ameba_set(c_MCU_SRC_DIR ${c_MCU_PROJECT_DIR}/../../main/${name}/src)
         ameba_set(c_MCU_INC_DIR ${c_MCU_PROJECT_DIR}/../../main/${name}/inc)
         ameba_set(c_MCU_SDK_DIR ${c_MCU_PROJECT_DIR})

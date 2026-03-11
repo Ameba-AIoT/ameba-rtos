@@ -258,9 +258,13 @@ class RemoteSerial:
             self.close()
             raise SerialException(f"[RemoteSerial][{self.port}] Open serial failed: {str(e)}")
 
-    def close(self):
+    def close(self, close_tcp: bool = False):
         """
-        Close remote serial: send close_port command + cleanup TCP and thread
+        Close remote serial: send close_port command + optionally close TCP
+
+        :param close_tcp: If True, also close the TCP socket connection.
+                          Default is False to support multiple open/close on same connection.
+                          MCP layer should pass True when disconnecting.
         """
         self.logger.debug(f"[RemoteSerial][{self.port}] Start closing remote serial")
 
@@ -282,7 +286,13 @@ class RemoteSerial:
 
         self.is_open = False
         self.receive_buffer = b""
-        self.logger.debug(f"[RemoteSerial][{self.port}] Remote serial closed")
+
+        # Close TCP socket if requested
+        if close_tcp and self.tcp_socket:
+            self.tcp_socket.shutdown(socket.SHUT_WR)
+            self.tcp_socket.close()
+            self.tcp_socket = None
+            self.logger.debug(f"[RemoteSerial][{self.port}] TCP socket closed")
 
     def write(self, data: bytes):
         """
@@ -377,6 +387,118 @@ class RemoteSerial:
     @rts.setter
     def rts(self, value):
         self.logger.debug(f"[RemoteSerial][{self.port}] Set RTS: not supported, ignored value={value}")
+
+    def control_dtr_rts(self, timing: list, action_name: str = "control_dtr_rts", timeout: float = 10.0) -> bool:
+        """
+        Send control_dtr_rts command to execute DTR/RTS timing sequence on server.
+
+        This is a generic API for controlling DTR/RTS signals with custom timing sequences.
+
+        :param timing: List of timing steps. Each step is a dict with one of:
+                       - {"dtr": 0|1} - Set DTR signal
+                       - {"rts": 0|1} - Set RTS signal
+                       - {"delay": ms} - Delay in milliseconds
+        :param action_name: Description for logging (e.g., "enter_download_mode", "reset_device")
+        :param timeout: Response timeout (seconds)
+        :return: True if successful, raises exception otherwise
+        """
+        if not self.tcp_socket:
+            raise SerialException(f"[RemoteSerial][{self.port}] control_dtr_rts failed: TCP not connected")
+
+        try:
+            cmd = {
+                "type": "control_dtr_rts",
+                "port": self.port,
+                "timing": timing,
+                "action_name": action_name
+            }
+
+            self.logger.debug(f"[RemoteSerial][{self.port}] Sending control_dtr_rts command: {action_name}")
+            was_open = self.is_open
+            self.is_open = True
+            try:
+                resp = self._send_command(cmd, timeout=timeout)
+            finally:
+                self.is_open = was_open
+
+            if not resp.get("success", False):
+                raise SerialException(
+                    f"[RemoteSerial][{self.port}] control_dtr_rts failed: {resp.get('message', 'Unknown error')}"
+                )
+            self.logger.debug(f"[RemoteSerial][{self.port}] control_dtr_rts succeeded: {action_name}")
+            return True
+        except SerialException:
+            raise
+        except Exception as e:
+            raise SerialException(f"[RemoteSerial][{self.port}] control_dtr_rts exception: {str(e)}")
+
+    def enter_download_mode(self, timing: list = None, timeout: float = 10.0) -> bool:
+        """
+        Send enter_download_mode command to trigger DTR/RTS sequence on server.
+        Uses default timing from Reburn.cfg if not specified.
+        """
+        if timing is None:
+            timing = [
+                {"dtr": 0}, {"rts": 1}, {"delay": 200},
+                {"dtr": 1}, {"rts": 0}, {"delay": 100},
+                {"dtr": 0}
+            ]
+        return self.control_dtr_rts(timing, "enter_download_mode", timeout)
+
+    def set_baudrate(self, baudrate: int, timeout: float = 5.0) -> bool:
+        """
+        Set baudrate without closing the serial port (preserves DTR/RTS states)
+        :param baudrate: New baudrate to set
+        :param timeout: Response timeout (seconds)
+        :return: True if successful, raises exception otherwise
+        """
+        if not self.tcp_socket:
+            raise SerialException(f"[RemoteSerial][{self.port}] Set baudrate failed: TCP not connected")
+
+        try:
+            baudrate_cmd = {
+                "type": "baudrate",
+                "port": self.port,
+                "baud": baudrate
+            }
+
+            old_baudrate = self.baudrate
+            self.logger.debug(f"[RemoteSerial][{self.port}] Setting baudrate: {old_baudrate} -> {baudrate}")
+
+            # Temporarily set is_open for _send_command check
+            was_open = self.is_open
+            self.is_open = True
+            try:
+                resp = self._send_command(baudrate_cmd, timeout=timeout)
+            finally:
+                self.is_open = was_open
+
+            if not resp.get("success", False):
+                raise SerialException(
+                    f"[RemoteSerial][{self.port}] Set baudrate failed: {resp.get('message', 'Unknown error')}"
+                )
+
+            # Update local baudrate attribute
+            self.baudrate = baudrate
+            self.logger.debug(f"[RemoteSerial][{self.port}] Set baudrate succeeded")
+            return True
+        except SerialException:
+            raise
+        except Exception as e:
+            raise SerialException(f"[RemoteSerial][{self.port}] Set baudrate exception: {str(e)}")
+
+    def reset_device(self, timing: list = None, timeout: float = 10.0) -> bool:
+        """
+        Send reset_device command to trigger DTR/RTS reset sequence on server.
+        Uses default timing from Reset.cfg if not specified.
+        """
+        if timing is None:
+            timing = [
+                {"dtr": 0}, {"rts": 1}, {"delay": 200},
+                {"rts": 0}, {"dtr": 0}
+            ]
+        return self.control_dtr_rts(timing, "reset_device", timeout)
+
     # ------------------------------
     # Context manager support (with statement)
     # ------------------------------

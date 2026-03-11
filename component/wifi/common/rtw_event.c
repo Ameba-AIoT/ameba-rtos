@@ -18,6 +18,9 @@
 #if !defined (CONFIG_FULLMAC) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
 #include "wifi_api.h"
 #include "platform_stdlib.h"
+#ifdef CONFIG_WIFI_P2P_ENABLE
+#include "wifi_p2p_supplicant.h"
+#endif
 #if !defined(CONFIG_WHC_DEV)|| defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 #include "atcmd_service.h"
 #include "wpa_lite_intf.h"
@@ -152,6 +155,10 @@ void wifi_event_join_status_internal_hdl(u8 *evt_info)
 		wifi_cast_wifi_join_status_ev_hdl(evt_info);
 	}
 #endif
+
+#ifdef CONFIG_WIFI_P2P_ENABLE
+	wifi_p2p_join_status_hdl(evt_info);
+#endif
 #else
 	UNUSED(evt_info);
 #endif
@@ -165,6 +172,10 @@ void rtw_ap_sta_assoc_hdl(u8 *evt_info)
 	/* softap add sta */
 	mac_addr = sta_assoc_info->sta_mac; // GetAddr2Ptr
 	at_printf_indicate("client connected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
+
+#ifdef CONFIG_WIFI_P2P_ENABLE
+	wifi_p2p_group_notify_assoc(sta_assoc_info->frame, sta_assoc_info->frame_len);
+#endif
 }
 
 void rtw_ap_sta_disassoc_hdl(u8 *evt_info)
@@ -177,6 +188,10 @@ void rtw_ap_sta_disassoc_hdl(u8 *evt_info)
 	at_printf_indicate("client disconnected:\""MAC_FMT"\"\r\n", MAC_ARG(mac_addr));
 
 	rtw_psk_disconnect_hdl(mac_addr, IFACE_PORT1);
+
+#ifdef CONFIG_WIFI_P2P_ENABLE
+	wifi_p2p_group_notify_disassoc(mac_addr);
+#endif
 }
 
 void rtw_join_status_hdl(u8 *evt_info)
@@ -219,11 +234,33 @@ void rtw_dhcp_status_hdl(u8 *evt_info)
 #endif
 }
 
-void rtw_p2p_channel_switch_ready(u8 *evt_info)
+void rtw_sta_rx_mgnt_hdl(u8 *evt_info)
 {
-	(void)evt_info;
-#ifdef CONFIG_P2P
-	//TODO
+	struct rtw_event_rx_mgnt *rx_mgnt_info = (struct rtw_event_rx_mgnt *)evt_info;
+
+	if (rx_mgnt_info->frame_type == RTW_AUTH) {
+		rtw_sae_sta_rx_auth(evt_info);
+	}
+#ifdef CONFIG_WIFI_P2P_ENABLE
+	else if (rx_mgnt_info->frame_type == RTW_PROBEREQ ||
+			 rx_mgnt_info->frame_type == RTW_ACTION) {
+		wifi_p2p_rx_mgnt(evt_info);
+	}
+#endif
+}
+
+void rtw_ap_rx_mgnt_hdl(u8 *evt_info)
+{
+	struct rtw_event_rx_mgnt *rx_mgnt_info = (struct rtw_event_rx_mgnt *)evt_info;
+
+	if (rx_mgnt_info->frame_type == RTW_AUTH) {
+		rtw_sae_ap_rx_auth(evt_info);
+	}
+#ifdef CONFIG_WIFI_P2P_ENABLE
+	else if (rx_mgnt_info->frame_type == RTW_PROBEREQ ||
+			 rx_mgnt_info->frame_type == RTW_ACTION) {
+		wifi_p2p_rx_mgnt(evt_info);
+	}
 #endif
 }
 
@@ -243,8 +280,8 @@ const struct rtw_event_hdl_func_t event_internal_hdl[] = {
 #if !defined(CONFIG_WHC_DEV) && CONFIG_AUTO_RECONNECT
 	{RTW_EVENT_DHCP_STATUS,			rtw_dhcp_status_hdl},
 #endif
-	{RTW_EVENT_RX_MGNT,				rtw_sae_sta_rx_auth},
-	{RTW_EVENT_RX_MGNT_AP,			rtw_sae_ap_rx_auth},
+	{RTW_EVENT_RX_MGNT,				rtw_sta_rx_mgnt_hdl},
+	{RTW_EVENT_RX_MGNT_AP,			rtw_ap_rx_mgnt_hdl},
 	{RTW_EVENT_EXTERNAL_AUTH_REQ,	rtw_sae_sta_start},
 	{RTW_EVENT_WPA_STA_4WAY_START,	rtw_psk_sta_start_4way},
 	{RTW_EVENT_WPA_AP_4WAY_START,	rtw_psk_ap_start_4way},
@@ -267,8 +304,8 @@ const struct rtw_event_hdl_func_t event_internal_hdl[] = {
 	{RTW_EVENT_FT_RX_MGNT,			rtw_ft_rx_mgnt},
 #endif
 #endif
-#ifdef CONFIG_P2P
-	{RTW_EVENT_WPA_P2P_CHANNEL_RDY,	rtw_p2p_channel_switch_ready},
+#ifdef CONFIG_WIFI_P2P_ENABLE
+	{RTW_EVENT_WPA_P2P_CHANNEL_RDY,	wifi_p2p_channel_switch_ready},
 #endif
 	{RTW_EVENT_DEAUTH_INFO_FLASH,	rtw_psk_deauth_info_flash_event_hdl},
 #if defined(CONFIG_WHC_HOST) && !defined(CONFIG_PLATFORM_ZEPHYR) && !defined(CONFIG_MP_SHRINK) && defined(CONFIG_RMESH_EN)
