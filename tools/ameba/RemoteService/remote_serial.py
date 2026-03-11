@@ -6,13 +6,11 @@
 
 import socket
 import json
-import time
 import threading
 import base64
 from typing import Optional, Dict, Any
-import serial
 from serial.serialutil import SerialException, SerialTimeoutException
-from datetime import datetime
+from version_manager import *
 
 
 class RemoteSerial:
@@ -146,6 +144,13 @@ class RemoteSerial:
                 except base64.binascii.Error as e:
                     self.logger.error(f"[RemoteSerial][{self.port}] Base64 decode failed: {str(e)}, data: {base64_data[:100]}...")
 
+            elif msg_type == "report_version":
+                self.last_response = msg
+                self.logger.debug(
+                    f"[RemoteSerial][{self.port}] Received command response - "
+                    f"Success: {msg.get('success')}, message: {msg.get('message', '无')}"
+                )
+                self.response_event.set()
             else:
                 self.logger.warning(f"[RemoteSerial][{self.port}] Unknown message type: {msg_type}, message: {msg_str[:200]}...")
 
@@ -197,6 +202,27 @@ class RemoteSerial:
         except Exception as e:
             self.close()
             raise SerialException(f"[RemoteSerial][{self.port}] Validate serial failed: {str(e)}")
+
+    def query_version(self):
+        try:
+            query_version_cmd = {
+                "type": "query_version"
+            }
+            self.is_open = True
+            resp = self._send_command(query_version_cmd, timeout=10.0)
+            if not resp.get("version", None):
+                self.logger.debug(f"[RemoteSerial][{self.port}] query version not supported")
+                raise SerialException(f"[RemoteSerial][{self.port}] Remote serial query version not supported: Please update the latest from: {latest_url}")
+            else:
+                report_version = resp.get("version")
+                self.logger.debug(f"[RemoteSerial][{self.port}] query version: {report_version}")
+                if not isVersionLatest(report_version, version):
+                    self.logger.debug(f"[RemoteSerial][{self.port}] query version not matched")
+                    raise SerialException(f"[RemoteSerial][{self.port}] Remote serial query version[{report_version}] older than latest version[{version}]:  Please update the latest from: {latest_url}")
+            self.is_open = False
+        except Exception as e:
+            self.close()
+            raise SerialException(f"{str(e)}")
 
     def open(self):
         if self.is_open:
