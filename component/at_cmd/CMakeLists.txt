@@ -49,6 +49,7 @@ if(CONFIG_SUPPORT_ATCMD)
     ameba_list_append(private_includes
         ${c_CMPT_WIFI_DIR}/api
         ${c_CMPT_WIFI_DIR}/common
+        ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant
     )
 
     ameba_list_append_if(CONFIG_BT private_sources

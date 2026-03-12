@@ -28,6 +28,10 @@
 #define CONFIG_WTN_SOCKET_APP
 #endif
 
+#ifdef CONFIG_WIFI_P2P_ENABLE
+#define CONFIG_WPS_P2PGO 1
+#endif
+
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
 //#define CONFIG_NAN
@@ -37,6 +41,11 @@
 #define SUPPORT_ADAPTER_NUM	3
 #else
 #define SUPPORT_ADAPTER_NUM	2
+#endif
+
+#if defined(CONFIG_PLATFORM_ZEPHYR)
+#undef CONFIG_WIFI_TUNNEL
+#undef CONFIG_WTN_SOCKET_APP
 #endif
 /**************** configurations for concurrent mode end **********************/
 

@@ -12,6 +12,7 @@
 #include "usbh.h"
 
 /* Exported defines ----------------------------------------------------------*/
+
 #if defined(CONFIG_USBH_COMPOSITE_HID_UAC)
 #define USBH_COMPOSITE_HID_UAC_DEBUG             0
 
@@ -36,23 +37,39 @@
 #endif
 
 /* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Host_API USB Host API
+ *  @{
+ */
+/** @addtogroup USB_Host_Types USB Host Types
+ * @{
+ */
+/** @addtogroup Host_Composite_Types Host Composite Types
+ * @{
+ */
 typedef struct {
+	/**
+	 * @brief Called when USB attach status changes for application to support hot-plug events.
+	 * @param[in] old_status: The previous attach status.
+	 * @param[in] status: The new attach status.
+	 */
 	void (*status_changed)(u8 old_status, u8 status);
-	int (* set_config)(void);
 } usbh_composite_cb_t;
 
 typedef struct {
 #if defined(CONFIG_USBH_COMPOSITE_HID_UAC)
-	usbh_class_driver_t *hid;
-	usbh_class_driver_t *uac;
+	usbh_class_driver_t *hid;    /**< HID class. */
+	usbh_class_driver_t *uac;    /**< UAC class. */
 #elif defined(CONFIG_USBH_COMPOSITE_ACM_ECM)
-	usbh_class_driver_t *acm;
-	usbh_class_driver_t *ecm;
+	usbh_class_driver_t *acm;    /**< CDC ACM class. */
+	usbh_class_driver_t *ecm;    /**< CDC ECM class. */
 #endif
-	usbh_composite_cb_t *cb;
-	usb_host_t *host;
+	usbh_composite_cb_t *cb;      /**< Pointer to the user-defined callback structure. */
+	usb_host_t *host;             /**< Pointer to the host structure. */
 } usbh_composite_host_t;
-
+/** @} End of Host_Composite_Types group*/
+/** @} End of USB_Host_Types group*/
+/** @} End of USB_Host_API group */
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
