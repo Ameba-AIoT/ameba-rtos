@@ -63,7 +63,7 @@ u8 BOOT_LoadRDPImg(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u
 		rtl_crypto_aes_cbc_decrypt_rom(InBuf, 16, TmpIV, 16, Outbuf);
 
 		Hdr = (IMAGE_HEADER *)Outbuf;
-		if ((Hdr->signature[0] != 0x35393138) || (Hdr->signature[1] != 0x31313738)) {
+		if ((Hdr->signature[0] != APP_IMAGE_PATTERN_1) || (Hdr->signature[1] != APP_IMAGE_PATTERN_2)) {
 			RTK_LOGE(TAG, "%s Invalid\n", Km4Img3Label[i]);
 			goto RDP_FAIL;
 		}

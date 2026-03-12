@@ -127,7 +127,7 @@ void whc_dev_api_init(void);
 void whc_dev_wifi_event_indicate(u32 event_cmd, u8 *evt_info, s32 evt_len);
 void whc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void whc_dev_acs_info_indicate(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
-void whc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);
+void whc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data, u8 *ies, u32 ie_len);
 u8 whc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info);
 void whc_dev_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret);
 void whc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
@@ -142,5 +142,10 @@ void whc_dev_cfg80211_cfgvendor_send_cmd_reply(void *data, int len);
 #endif
 
 int whc_dev_ip_in_table_indicate(u8 gate, u8 ip);
+
+#ifdef CONFIG_WTN_SOCKET_APP
+int whc_dev_wtn_socket_send(u8 *buf, u32 len);
+void whc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start);
+#endif
 
 #endif

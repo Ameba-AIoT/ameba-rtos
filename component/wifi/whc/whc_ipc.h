@@ -67,6 +67,7 @@
 #define whc_host_init                                    whc_ipc_host_init
 #define whc_host_api_message_send                        whc_ipc_host_api_message_send
 #define whc_host_init_skb                                whc_ipc_host_init_skb
+#define whc_host_wifi_indication_enqueue                 whc_ipc_host_wifi_indication_enqueue
 #endif
 
 #ifdef CONFIG_NAN
@@ -149,7 +150,7 @@ struct whc_ipc_host_unblk_api_node {
 struct ipc_host_unblk_api_func_t {
 	u32 host_evt_id;
 	void (*func)(struct whc_ipc_host_unblk_api_node *p_unblk_api_node);
-	u8 free_idx;	/* indicate whether there are buffers that need to free, 0xFF means no need free */
+	u16 free_bitmap;	/* indicate whether there are buffers that need to free, each bit indicate buf index, 0x0 means no need free */
 };
 #endif
 
@@ -159,6 +160,7 @@ struct ipc_host_unblk_api_func_t {
 void whc_ipc_host_init(void);
 void whc_ipc_host_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
 void whc_ipc_host_heap_statistics(u8 start);
+void whc_ipc_host_wifi_indication_enqueue(u32 event, u8 *evt_info, s32 evt_len);
 
 /*for ipc host api*/
 void whc_ipc_host_api_init(void);
@@ -177,7 +179,7 @@ void whc_ipc_dev_api_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);
 void whc_ipc_dev_wifi_event_indicate(u32 event_cmd, u8 *evt_info, s32 evt_len);
 void whc_ipc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data);
 void whc_ipc_dev_acs_info_indicate(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
-void whc_ipc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data);
+void whc_ipc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data, u8 *ies, u32 ie_len);
 u8 whc_ipc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info);
 void whc_ipc_dev_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret);
 void whc_ipc_dev_update_regd_event_indicate(struct rtw_country_code_table *table);

@@ -13,6 +13,7 @@ export CONFIG_WHC_CMD_PATH = y
 export CONFIG_WHC_WIFI_API_PATH = y
 export CONFIG_WHC_HOST_RTW_CLI = n
 export CONFIG_WHC_ACTIVE_DETECT = n
+export CONFIG_RMESH = n
 
 ifeq ($(CONFIG_WHC_HCI_IPC),y)
 

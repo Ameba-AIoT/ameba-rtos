@@ -61,6 +61,7 @@ enum nl80211_multicast_groups {
 /* for test demo */
 #define WHC_WIFI_TEST 0xffa5a5a5
 #define WHC_ATCMD_TEST 0xeea5a5a5
+#define WHC_RMESH_TEST 0xdda5a5a5
 
 #define WHC_WIFI_TEST_GET_MAC_ADDR   0x1
 #define WHC_WIFI_TEST_GET_IP         0x2
@@ -74,6 +75,9 @@ enum nl80211_multicast_groups {
 #define WHC_WIFI_TEST_SCAN_RESULT    0xA
 #define WHC_WIFI_TEST_MP             0xB
 #define WHC_WIFI_TEST_DBG            0xC
+
+#define WHC_RMESH_TEST_SOCK_INIT    0x1
+#define WHC_RMESH_TEST_SOCK_SEND    0x2
 
 // todo: need sync, default 4k, however max buf in sdio & spi < 1.5k
 #define WHC_WIFI_MP_MSG_BUF_SIZE (4096)

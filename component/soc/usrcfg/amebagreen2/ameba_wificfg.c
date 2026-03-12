@@ -20,7 +20,11 @@ _WEAK void wifi_set_user_config(void)
 	/* below items for user config, for details, see wifi_user_conf in ameba_wificfg_common.h */
 	wifi_user_config.concurrent_enabled = (u8)TRUE;
 	wifi_user_config.softap_addr_offset_idx = 1;
+#ifdef CONFIG_WIFI_P2P_ENABLE
+	wifi_user_config.fast_reconnect_en = 0;
+#else
 	wifi_user_config.fast_reconnect_en = 1;
+#endif
 	wifi_user_config.auto_reconnect_en = 1;
 	wifi_user_config.auto_reconnect_count = 10;
 	wifi_user_config.auto_reconnect_interval = 5;

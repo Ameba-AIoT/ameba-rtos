@@ -64,7 +64,7 @@ int BOOT_DecRDPImg(u32 SrcAddr, u8 *RdpIV, SubImgInfo_TypeDef *SubImgInfo, u8 *C
 		rtl_crypto_aes_cbc_decrypt(InBuf, 16, TmpIV, 16, Outbuf);
 
 		Hdr = (IMAGE_HEADER *)Outbuf;
-		if ((Hdr->signature[0] != 0x35393138) || (Hdr->signature[1] != 0x31313738)) {
+		if ((Hdr->signature[0] != APP_IMAGE_PATTERN_1) || (Hdr->signature[1] != APP_IMAGE_PATTERN_2)) {
 			RTK_LOGE(TAG, "RDP image Decrypt Fail!\n");
 			CRYPTO_OTPKey_Init(0, DISABLE);
 			return FALSE;

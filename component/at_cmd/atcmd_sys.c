@@ -291,7 +291,7 @@ static AuthHeader_TypeDef cert[2];
 static s64 ver[2] = {0};  //32-bit full version
 static u32 ota_region[3][2] = {0};
 static const u32 image_pattern[2] = {
-	0x35393138, 0x31313738,
+	APP_IMAGE_PATTERN_1, APP_IMAGE_PATTERN_2,
 };
 
 static u8 at_get_ota_version(void)

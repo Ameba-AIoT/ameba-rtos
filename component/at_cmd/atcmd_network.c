@@ -190,14 +190,17 @@ void at_iperf(u16 argc, char **argv)
 
 	// Build input string, skipping "-u" parameter
 	char *p = input;
+	bool first = true;
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "-u") != 0) {
+			if (!first) {
+				*p++ = ',';
+			} else {
+				first = false;
+			}
 			int len = strlen(argv[i]);
 			memcpy(p, argv[i], len);
 			p += len;
-			if (i < argc - 1 && strcmp(argv[i + 1], "-u") != 0) {
-				*p++ = ',';
-			}
 		}
 	}
 	*p = '\0';
