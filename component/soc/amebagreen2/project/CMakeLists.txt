@@ -16,7 +16,6 @@ set(v_MBEDTLS_VER 3.6.5)
 set(v_AMEBA_LOG_LEVEL ${c_AMEBA_LOG_LEVEL_INFO})
 set(c_VERBOSE_MAKEFILE FALSE)
 
-set(NEWDIR_FLAG TRUE)
 ###############################################################################
 ameba_soc_project_create(amebagreen2 p_OUTPUT_MCU_PROJECT km4tz)
 

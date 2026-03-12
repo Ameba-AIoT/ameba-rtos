@@ -182,10 +182,6 @@ python $BASE_DIR/tools/scripts/check_requirements.py
 if [ "$(uname)" = "Linux" ]; then
     # 1. Build list of directories to scan
     SCAN_DIRS=()
-    # Add all *_gcc_project directories in current directory (one level)
-    for d in ./*_gcc_project; do
-        [ -d "$d" ] && SCAN_DIRS+=("$d")
-    done
     # Add ./tools directory if it exists
     [ -d "./tools" ] && SCAN_DIRS+=("./tools")
     # Example: Add a new directory if needed in future

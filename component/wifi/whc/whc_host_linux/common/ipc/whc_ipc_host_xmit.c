@@ -12,11 +12,14 @@
 
 void whc_ipc_host_xmit_done(int idx_wlan)
 {
+	u8 i = 0;
 	atomic_inc(&global_idev.xmit_priv.skb_free_num);
 	if (atomic_read(&global_idev.xmit_priv.skb_free_num) >= QUEUE_WAKE_THRES) {
-		//dev_dbg(global_idev.pwhc_dev, "wq %d\n", free_num);
-		netif_tx_wake_all_queues(global_idev.pndev[0]);
-		netif_tx_wake_all_queues(global_idev.pndev[1]);
+		for (i = 0; i < WHC_MAX_NET_PORT_NUM; i++) {
+			if (global_idev.pndev[i]) {
+				netif_tx_wake_all_queues(global_idev.pndev[i]);
+			}
+		}
 	}
 }
 

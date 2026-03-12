@@ -342,3 +342,43 @@ __weak void whc_dev_init_cmd_path_task(void)
 	}
 
 }
+
+#ifdef CONFIG_RMESH_SOCKET_EN
+__weak int whc_dev_wtn_socket_send(u8 *pframe, u32 len)
+{
+	u32 size;
+	u32 *param;
+
+	size = sizeof(u32) * 3 + len;
+	param = (u32 *)rtos_mem_zmalloc(size);
+
+	param[0] = WHC_RMESH_TEST;
+	param[1] = WHC_RMESH_TEST_SOCK_SEND;
+	param[2] = len;
+	memcpy((void *)(param + 3), pframe, len);
+
+	whc_dev_api_send_to_host((u8 *)param, size);
+
+	rtos_mem_free((u8 *)param);
+
+	return RTK_SUCCESS;
+}
+
+__weak void whc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start)
+{
+	u32 size;
+	u32 *param;
+
+	size = sizeof(u32) * 4;
+	param = (u32 *)rtos_mem_zmalloc(size);
+
+	param[0] = WHC_RMESH_TEST;
+	param[1] = WHC_RMESH_TEST_SOCK_INIT;
+	param[2] = (u32)enable;
+	param[3] = (u32)rnat_ap_start;
+
+	whc_dev_api_send_to_host((u8 *)param, size);
+
+	rtos_mem_free((u8 *)param);
+}
+#endif

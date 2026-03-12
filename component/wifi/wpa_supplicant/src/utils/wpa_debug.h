@@ -33,9 +33,6 @@ static inline int wpa_debug_reopen_file(void)
 	return 0;
 }
 
-
-#define wprintf(fmt, arg...) DiagPrintf("[%d] "fmt, rtos_time_get_current_system_time_ms(),##arg)
-
 #ifdef CONFIG_NO_STDOUT_DEBUG
 #define wpa_printf(args...) do { } while (0)
 #define wpa_hexdump_buf(l,t,b) do { } while (0)
@@ -43,14 +40,12 @@ static inline int wpa_debug_reopen_file(void)
 #define wpa_hexdump_ascii(l,t,b,le) do { } while (0)
 #define wpa_msg(args...) do { } while (0)
 #else
-//void wpa_printf(int level, const char *fmt, ...);
 #define wpa_printf(level, fmt, arg...)     \
 	do {\
 		if (level >= MSG_INFO) {\
 			{\
-				DiagPrintf("\r\n%d:", rtos_time_get_current_system_time_ms());\
-				DiagPrintf(fmt, ##arg);\
-				DiagPrintf("\n\r");\
+				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, fmt, ##arg);\
+				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS,"\n\r");\
 			} \
 		}\
 	}while(0)

@@ -1,13 +1,13 @@
+menu "CONFIG WIFI MODE"
 if WHC_DEV_MENU
-    menu "CONFIG WIFI MODE"
-        config NAN
-            bool "Enable NAN"
-            default n
-        config WIFI_P2P_ENABLE
-            bool "Enable P2P"
-            default n
-    endmenu
+    config NAN
+        bool "Enable NAN"
+        default n
 endif
+    config WIFI_P2P_ENABLE
+        bool "Enable P2P"
+        default n
+endmenu
 
 if WHC_INTF_IPC_MENU || WIFI_SINGLE_CORE_MENU
     config WIFI_WPS_ENABLE_MENU

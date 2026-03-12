@@ -24,8 +24,12 @@
 #ifdef CONFIG_AMEBAPRO3
 #undef CONFIG_WIFI_TUNNEL
 #endif
-#if !defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_INTF_IPC)
+#if defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_INTF_IPC)
 #define CONFIG_WTN_SOCKET_APP
+#endif
+
+#ifdef CONFIG_WIFI_P2P_ENABLE
+#define CONFIG_WPS_P2PGO 1
 #endif
 
 /* For STA+AP Concurrent MODE */
@@ -205,4 +209,3 @@
 
 #define CONFIG_IOT_RS 1
 #endif /*#ifndef AUTOCONF_8721F_H */
-
