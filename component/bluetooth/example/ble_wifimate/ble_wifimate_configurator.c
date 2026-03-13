@@ -82,14 +82,14 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_gap_app_callback(uint8_t evt_code, void 
 			scan_name = &(scan_res_ind->data[9]);
 			if (strstr((const char *)scan_name, target_name) != NULL) {
 				rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
-				BT_LOGA("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %d, PHY: 0x%x, TxPower: %d, Len: %d, adv_data: %s \r\n",
+				BT_LOGA("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %d, PHY: 0x%x, TxPower: %d, Data_status: %d, Len: %d, adv_data: %s \r\n",
 						le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
 						(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-						scan_res_ind->tx_power, scan_res_ind->len, &(scan_res_ind->data[9]));
-				BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%d,0x%x,%d,%d\r\n",
+						scan_res_ind->tx_power, scan_res_ind->data_status, scan_res_ind->len, &(scan_res_ind->data[9]));
+				BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%d,0x%x,%d,%d,%d\r\n",
 							le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
 							(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-							scan_res_ind->tx_power, scan_res_ind->len);
+							scan_res_ind->tx_power, scan_res_ind->data_status, scan_res_ind->len);
 			}
 		}
 		break;
