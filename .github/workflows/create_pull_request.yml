@@ -42,6 +42,7 @@ jobs:
           
           ADDED_FILES=$(git diff --name-only --diff-filter=A $TARGET_BRANCH HEAD)
           DELETED_FILES=$(git diff --name-only --diff-filter=D $TARGET_BRANCH HEAD)
+          MODIFIED_A_FILES=$(git diff --name-only --diff-filter=M $TARGET_BRANCH HEAD | grep '\.a$' || true)
           
           # 只有当列表不为空时才拼接代码块
           FILE_CHANGE_TEXT="
@@ -72,6 +73,19 @@ jobs:
           else
             FILE_CHANGE_TEXT="${FILE_CHANGE_TEXT}
           **Deletions:** None
+          "
+          fi
+
+          if [ -n "$MODIFIED_A_FILES" ]; then
+            FILE_CHANGE_TEXT="${FILE_CHANGE_TEXT}
+          **Modifications (.a files):**
+          \`\`\`
+          ${MODIFIED_A_FILES}
+          \`\`\`
+          "
+          else
+            FILE_CHANGE_TEXT="${FILE_CHANGE_TEXT}
+          **Modifications (.a files):** None
           "
           fi
 
