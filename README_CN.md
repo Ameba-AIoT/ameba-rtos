@@ -17,6 +17,7 @@ ameba-rtos是瑞昱官方推出的物联网开发框架，同时支持Linux和Wi
 | RTL8713E  |![alt text][supported] | ![alt text][supported]   | ![alt text][supported]   | ![alt text][supported]   |
 
 [supported]: https://img.shields.io/badge/-%E6%94%AF%E6%8C%81-green "supported"
+[not-support]: https://img.shields.io/badge/-%E4%B8%8D%E6%94%AF%E6%8C%81-red "not support"
 
 # 相关文档
 
