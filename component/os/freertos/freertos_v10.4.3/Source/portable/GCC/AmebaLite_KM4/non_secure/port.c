@@ -940,6 +940,7 @@ void vApplicationIdleHook(void)
 }
 
 #include "diag.h"
+__attribute__((optimize("O0")))
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
 	/* To avoid gcc warnings */

@@ -113,13 +113,13 @@ extern const usbd_class_driver_t usbd_composite_cdc_acm_driver;
  * @param[in] bulk_out_xfer_size: The desired transfer size for the Bulk OUT buffer.
  * @param[in] bulk_in_xfer_size: The desired transfer size for the Bulk IN buffer.
  * @param[in] cb: Pointer to the user callback structure.
- * @return 0 on success, a negative error code on failure.
+ * @return 0 on success, non-zero on failure.
  */
 int usbd_composite_cdc_acm_init(usbd_composite_dev_t *cdev, u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, usbd_composite_cdc_acm_usr_cb_t *cb);
 
 /**
  * @brief De-initializes the CDC ACM composite function.
- * @return 0 on success, a negative error code on failure.
+ * @return 0 on success, non-zero on failure.
  */
 int usbd_composite_cdc_acm_deinit(void);
 
@@ -127,7 +127,7 @@ int usbd_composite_cdc_acm_deinit(void);
  * @brief Transmits data over the CDC ACM Bulk IN endpoint.
  * @param[in] buf: Pointer to the data buffer to be transmitted.
  * @param[in] len: Length of the data in bytes.
- * @return 0 on success, a negative error code on failure.
+ * @return 0 on success, non-zero on failure.
  */
 int usbd_composite_cdc_acm_transmit(u8 *buf, u32 len);
 
@@ -135,7 +135,7 @@ int usbd_composite_cdc_acm_transmit(u8 *buf, u32 len);
 /**
  * @brief Sends a SERIAL_STATE notification to the host over the CDC ACM Interrupt IN endpoint..
  * @param[in] serial_state: A bitmap of the serial line states (see @ref USB_CDC_ACM_CTRL_DCD, etc.).
- * @return 0 on success, a negative error code on failure.
+ * @return 0 on success, non-zero on failure.
  */
 int usbd_composite_cdc_acm_notify_serial_state(u16 serial_state);
 #endif

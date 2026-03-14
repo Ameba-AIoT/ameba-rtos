@@ -71,7 +71,7 @@ def jlink_gdb_connect(config, core=None):
         if PLATFORM == "Windows":
             args += ["-nolocalhostonly"]
 
-        run_jlink_gdb(args)
+        run_jlink_gdb(args, title=f"JLink GDB Server - {c.upper()}")
         time.sleep(1.5)
 
 
@@ -156,9 +156,24 @@ def run_jlink(args, title="J-Link"):
         subprocess.Popen(cmd_str, shell=True)
     else:
         print(f"[EXEC] {executable} {args_str}")
-        subprocess.Popen([executable] + args)
+        # start a new JLink terminal based on available terminal emulators
+        term_cmd = None
+        cmd = [executable] + args
+        if shutil.which("gnome-terminal"):
+            term_cmd = ["gnome-terminal", "--title", title, "--"]
+        elif shutil.which("konsole"):
+            term_cmd = ["konsole", "-p", f"tabtitle={title}",  "-e"]
+        elif shutil.which("xfce4-terminal"):
+            term_cmd = ["xfce4-terminal", "--title", title, "-x"]
+        elif shutil.which("xterm"):
+            term_cmd = ["xterm", "-T", title, "-e"]
 
-def run_jlink_gdb(args):
+        if term_cmd:
+            subprocess.Popen(term_cmd + cmd)
+        else:
+            subprocess.call(cmd) # fallback to current terminal if no emulator found
+
+def run_jlink_gdb(args, title="JLink GDB Server"):
     executable = os.path.join(JLINK_DIR, JLINK_GDB_EXE_NAME)
 
     if not os.path.exists(executable):
@@ -170,7 +185,26 @@ def run_jlink_gdb(args):
     cmd = [str(x) for x in cmd]
     print(f"\n[EXEC] {' '.join(cmd)}")
     print("-" * 60)
-    subprocess.Popen(cmd)
+
+    if PLATFORM == "Windows":
+        subprocess.Popen(cmd)
+    else:
+        term_cmd = None
+        # start a new JLink terminal based on available terminal emulators
+        if shutil.which("gnome-terminal"):
+            term_cmd = ["gnome-terminal", "--title", title, "--"]
+        elif shutil.which("konsole"):
+            term_cmd = ["konsole", "-p", f"tabtitle={title}",  "-e"]
+        elif shutil.which("xfce4-terminal"):
+            term_cmd = ["xfce4-terminal", "--title", title, "-x"]
+        elif shutil.which("xterm"):
+            term_cmd = ["xterm", "-e", "-T", title]
+
+        if term_cmd:
+            bash_cmd = f"{' '.join(str(s) for s in cmd)}; echo; echo 'Press Enter to close...'; read" # Prevent immediate exit
+            subprocess.Popen(term_cmd + ["bash", "-c", bash_cmd])
+        else:
+            subprocess.call(cmd) # fallback to current terminal if no emulator found
 
 #============== 1. load jlink config ==============
 SOC_CONFIG = load_soc_config(os.path.join(SCRIPT_DIR, 'ameba_jlink_config.json5'))

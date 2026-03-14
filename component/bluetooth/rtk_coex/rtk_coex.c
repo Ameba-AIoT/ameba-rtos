@@ -128,11 +128,10 @@ static void bt_coex_set_profile_info_to_fw(void)
 
 	osif_mem_free(pbuf);
 }
-
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 static void bt_coex_setup_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_t profile_idx)
 {
 	struct rtk_bt_coex_monitor_node_t *p_monitor_node = NULL;
-
 	if (profile_idx != PROFILE_A2DP && profile_idx != PROFILE_PAN) {
 		return;
 	}
@@ -155,6 +154,15 @@ static void bt_coex_setup_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_
 	osif_mutex_take(p_rtk_bt_coex_priv->monitor_mutex, 0xFFFFFFFFUL);
 	list_add_tail(&p_monitor_node->list, &p_rtk_bt_coex_priv->monitor_list);
 	osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
+
+	if (p_rtk_bt_coex_priv->monitor_timer) {
+		uint32_t timer_state = 0;
+		osif_timer_state_get(&p_rtk_bt_coex_priv->monitor_timer, &timer_state);
+		//if monitor_timer stop or not start
+		if (!timer_state) {
+			osif_timer_start(&p_rtk_bt_coex_priv->monitor_timer);
+		}
+	}
 }
 
 static void bt_coex_del_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_t profile_idx)
@@ -189,7 +197,20 @@ static void bt_coex_del_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_t 
 	osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
 
 	osif_mem_free(p_monitor_node);
+
+	//stop timer if monitor_list is empty
+	if (list_empty(&p_rtk_bt_coex_priv->monitor_list)) {
+		if (p_rtk_bt_coex_priv->monitor_timer) {
+			uint32_t timer_state = 0;
+			osif_timer_state_get(&p_rtk_bt_coex_priv->monitor_timer, &timer_state);
+			//if monitor_timer start
+			if (timer_state) {
+				osif_timer_stop(&p_rtk_bt_coex_priv->monitor_timer);
+			}
+		}
+	}
 }
+#endif
 
 static void bt_coex_update_profile_info(struct rtk_bt_coex_conn_t *p_conn, uint8_t profile_index, bool b_is_add)
 {
@@ -204,7 +225,9 @@ static void bt_coex_update_profile_info(struct rtk_bt_coex_conn_t *p_conn, uint8
 				p_conn->profile_status_bitmap |= BIT(profile_index);
 			}
 			p_conn->profile_refcount[profile_index]++;
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 			bt_coex_setup_check_timer(p_conn, profile_index);
+#endif
 		}
 	} else {
 		if (p_conn->profile_refcount[profile_index] != 0) {
@@ -216,8 +239,9 @@ static void bt_coex_update_profile_info(struct rtk_bt_coex_conn_t *p_conn, uint8
 				if ((profile_index == PROFILE_HID) && (p_conn->profile_bitmap & BIT(PROFILE_HID_INTERVAL))) {
 					p_conn->profile_bitmap &= ~(BIT(PROFILE_HID_INTERVAL));
 				}
-
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 				bt_coex_del_check_timer(p_conn, profile_index);
+#endif
 			}
 		}
 	}
@@ -858,7 +882,7 @@ static void bt_coex_handle_handle_l2cap_dis_conn_req(struct rtk_bt_coex_conn_t *
 	osif_mem_free(p_profile);
 }
 
-
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 static void bt_coex_set_bitpool_to_fw(uint8_t *user_data, uint16_t length)
 {
 	struct sbc_frame_hdr *sbc_header = NULL;
@@ -920,6 +944,7 @@ static void bt_coex_packet_counter_handle(struct rtk_bt_coex_conn_t *p_conn, uin
 		p_conn->pan_cnt ++;
 	}
 }
+#endif
 
 void bt_coex_dump_frame(uint8_t *pdata, uint32_t len)
 {
@@ -991,12 +1016,16 @@ static void bt_coex_process_acl_data(uint8_t *pdata, uint16_t len, uint8_t dir)
 			break;
 		}
 	} else {
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 		if ((((p_conn->profile_bitmap & BIT(PROFILE_A2DP)) > 0) || ((p_conn->profile_bitmap & BIT(PROFILE_PAN)) > 0))) {
 			bt_coex_packet_counter_handle(p_conn, channel_id, dir, pdata + 9, pdu_len);
 		}
+#else
+		(void)pdu_len;
+#endif
 	}
 }
-
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 static void bt_coex_monitor_timer_handler(void *arg)
 {
 	UNUSED(arg);
@@ -1047,6 +1076,7 @@ static void bt_coex_monitor_timer_handler(void *arg)
 		plist = plist->next;
 	}
 }
+#endif
 
 #if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
 static void bt_coex_send_to_coex_driver(void);
@@ -1536,6 +1566,8 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 		}
 		memset(p_rtk_bt_coex_priv, 0, sizeof(struct rtk_bt_coex_priv_t));
 		INIT_LIST_HEAD(&p_rtk_bt_coex_priv->conn_list);
+
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 		INIT_LIST_HEAD(&p_rtk_bt_coex_priv->monitor_list);
 		if (false == osif_mutex_create(&p_rtk_bt_coex_priv->monitor_mutex)) {
 			return;
@@ -1543,8 +1575,10 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 
 		if (true == osif_timer_create(&p_rtk_bt_coex_priv->monitor_timer, "bt_coex_monitor_timer", NULL, BT_COEX_MONITOR_INTERVAL, true,
 									  bt_coex_monitor_timer_handler)) {
-			osif_timer_start(&p_rtk_bt_coex_priv->monitor_timer);
+			//start timer when need
+			//osif_timer_start(&p_rtk_bt_coex_priv->monitor_timer);
 		}
+#endif
 
 #if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
 		if (false == osif_mutex_create(&p_rtk_bt_coex_priv->info_paras_mutex)) {
@@ -1558,13 +1592,18 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 	void bt_coex_deinit(void)
 	{
 		struct list_head *plist = NULL;
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 		struct rtk_bt_coex_monitor_node_t *p_monitor = NULL;
+#endif
 		struct rtk_bt_coex_conn_t *p_conn = NULL;
 
 		DBG_BT_COEX("Deinit \r\n");
 		bt_coex_initialized = false;
 
-		osif_timer_stop(&p_rtk_bt_coex_priv->monitor_timer);
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
+		if (p_rtk_bt_coex_priv->monitor_timer) {
+			osif_timer_stop(&p_rtk_bt_coex_priv->monitor_timer);
+		}
 
 		osif_mutex_take(p_rtk_bt_coex_priv->monitor_mutex, 0xFFFFFFFFUL);
 		if (!list_empty(&p_rtk_bt_coex_priv->monitor_list)) {
@@ -1577,6 +1616,7 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 			}
 		}
 		osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
+#endif
 
 		plist = NULL;
 		if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
@@ -1599,9 +1639,13 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 				osif_mem_free(p_conn);
 			}
 		}
-
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 		osif_mutex_delete(p_rtk_bt_coex_priv->monitor_mutex);
-		osif_timer_delete(&p_rtk_bt_coex_priv->monitor_timer);
+		if (p_rtk_bt_coex_priv->monitor_timer) {
+			osif_timer_delete(&p_rtk_bt_coex_priv->monitor_timer);
+		}
+#endif
+
 #if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
 		osif_mutex_delete(p_rtk_bt_coex_priv->info_paras_mutex);
 		osif_timer_delete(&p_rtk_bt_coex_priv->setup_link_timer);

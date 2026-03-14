@@ -307,7 +307,6 @@ typedef struct _usbd_class_driver_t {
 	 * @param[in] dev: USB device.
 	 * @param[in] old_status: Previous status of USB device.
 	 * @param[in] status: Current status of USB device.
-	 * @return None
 	 */
 	void (*status_changed)(usb_dev_t *dev, u8 old_status, u8 status);
 } usbd_class_driver_t;
@@ -467,4 +466,3 @@ u16 usbd_get_str_desc(const char *str, u8 *desc);
 /** @} End of USB_Device_API group */
 
 #endif /* USBD_H */
-

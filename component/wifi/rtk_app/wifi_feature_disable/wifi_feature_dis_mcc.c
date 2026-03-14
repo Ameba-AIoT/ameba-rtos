@@ -114,7 +114,10 @@ u8 rtw_mccapi_swch_port2_comeback(u8 nan_chan, u8 nan_bw40_sc, u8 nan_bw)
 	UNUSED(nan_bw);
 	return 0;
 }
+void rtw_mcc_init(void)
+{
 
+}
 /* P2P Related */
 void rtw_p2p_go_noa_update(u8 type, u32 p1_tbtt_before, u32 ap_active_dur)
 {
@@ -122,5 +125,5 @@ void rtw_p2p_go_noa_update(u8 type, u32 p1_tbtt_before, u32 ap_active_dur)
 	UNUSED(p1_tbtt_before);
 	UNUSED(ap_active_dur);
 }
-#endif /* CONFIG_MCC_MODE */
 
+#endif /* CONFIG_MCC_MODE */
