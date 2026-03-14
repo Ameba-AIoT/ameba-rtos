@@ -293,7 +293,6 @@ static app_bt_le_audio_data_path_t app_le_audio_data_path[APP_LE_AUDIO_DEMO_DATA
 static uint8_t curr_volume = RTK_BT_DEFAULT_ABSOLUTE_VOLUME;
 static uint32_t fail_cnt;
 static bool lea_broadcast_start = false;
-static rtk_bt_audio_biquad_t bq_t = {0};
 static rtk_bt_audio_resample_t *g_audio_resample_t = NULL;
 static uint32_t resample_out_frames, resample_in_frames = 0;
 static uint32_t demo_in_rate = 44100;//input sample rate
@@ -1409,22 +1408,23 @@ static void app_bt_handle_packet_discarding(uint32_t dequeue_bytes)
 }
 
 /* ---------------------------- Audio PCM converter  ---------------------------- */
-static uint16_t app_bt_pcm_data_resample_engine_alloc(rtk_bt_audio_resample_t **pp_sample_t, uint32_t sample_rate_in, uint8_t in_channels)
+static rtk_bt_audio_resample_t *app_bt_pcm_data_resample_engine_alloc(uint32_t sample_rate_in, uint32_t in_channels, uint32_t sample_rate_out,
+																	  uint32_t out_channels)
 {
-	double sample_ratio;
+	rtk_bt_audio_resample_t *p_bt_resample = NULL;
 
 	demo_in_rate = sample_rate_in;
-	sample_ratio = (double)demo_out_rate / (double)demo_in_rate;
 	//calculate the expected input and output according to the sample rate
 	resample_out_frames = demo_out_rate * 10 / 1000;
 	resample_in_frames = (uint32_t)(resample_out_frames * (float)demo_in_rate / (float)demo_out_rate);
-	/* init bq filter */
-	rtk_bt_audio_bq_config(&bq_t, RTK_BT_AUDIO_LPF, RTK_BT_AUDIO_FILTER_DEFAULT_GAIN, (unsigned long)((1.0 / sample_ratio / 2) * (double)demo_in_rate),
-						   (unsigned long)demo_in_rate, RTK_BT_AUDIO_FILTER_DEFAULT_BANDWIDTH);
 	/* init sinc resample */
-	*pp_sample_t = rtk_bt_audio_resample_alloc((float)demo_in_rate, (float)demo_out_rate, in_channels, APP_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM, resample_in_frames);
+	p_bt_resample = rtk_bt_audio_resample_alloc((uint32_t)sample_rate_in, (uint32_t)sample_rate_out, in_channels, out_channels, resample_in_frames);
+	if (!p_bt_resample) {
+		BT_LOGE("%s rtk_bt_audio_resample_alloc fail \r\n", __func__);
+		return NULL;
+	}
 
-	return RTK_BT_OK;
+	return p_bt_resample;
 }
 
 static uint16_t app_bt_pcm_data_resample_engine_destroy(rtk_bt_audio_resample_t **pp_sample_t)
@@ -1449,7 +1449,9 @@ static uint16_t rtk_bt_audio_decode_pcm_data_callback(void *p_pcm_data, uint16_t
 #if 0
 	uint32_t time_stamp_before, time_stamp_after = 0;
 #endif
-	uint32_t out_frames = 0;
+	uint32_t input_frames = 0;
+	uint32_t left_frames = 0;
+	uint8_t *p_data = p_pcm_data;
 	/* if pbp broadcast has not started, stop resample */
 	if (false == lea_broadcast_start) {
 #if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
@@ -1466,17 +1468,30 @@ static uint16_t rtk_bt_audio_decode_pcm_data_callback(void *p_pcm_data, uint16_t
 #if 0
 	time_stamp_before = osif_sys_time_get();
 #endif
-	out_frames = rtk_bt_audio_resample_entry(g_audio_resample_t, &bq_t,
-											 (uint8_t *)p_pcm_data,
-											 p_len / (g_audio_resample_t->in_frame_size),
-											 (uint8_t *)out_frame_buf,
-											 demo_in_rate,
-											 demo_out_rate);
+	left_frames = p_len / (g_audio_resample_t->in_frame_size);
+	/* feed resample data */
+	do {
+		input_frames = rtk_bt_audio_resample_feed(g_audio_resample_t, (uint8_t *)p_data, left_frames);
+		p_data += (input_frames * (g_audio_resample_t->in_frame_size));
+		left_frames -= input_frames;
+	} while (left_frames);
+	/* read resample output data */
+	{
+		uint32_t ava_data = rtk_bt_audio_resample_available_data(g_audio_resample_t);
+		uint32_t size = 0;
+		if (ava_data > APP_RESAMPLE_OUTPUT_FRAME_BUF_MAX_LEN) {
+			size = APP_RESAMPLE_OUTPUT_FRAME_BUF_MAX_LEN;
+		} else {
+			size = ava_data;
+		}
+		rtk_bt_audio_resample_read(g_audio_resample_t, (void *)out_frame_buf, size);
+		enqueue_size = size;
+	}
 #if 0
 	time_stamp_after = osif_sys_time_get();
 	BT_LOGD("[APP] %s: time_stamp before :%u,time_stamp after:%u,delt_time:%d\r\n", __func__, time_stamp_before, time_stamp_after,
 			(int)(time_stamp_after - time_stamp_before));
-	BT_LOGD("[APP] in_frames:%u out_frames:%u \r\n", p_len / (g_audio_resample_t->in_frame_size), out_frames);
+	BT_LOGD("[APP] in_frames:%u out_frames:%u \r\n", p_len / (g_audio_resample_t->in_frame_size), enqueue_size / (g_audio_resample_t->out_frame_size));
 #endif
 	/* 2. enqueue */
 	{
@@ -1484,7 +1499,6 @@ static uint16_t rtk_bt_audio_decode_pcm_data_callback(void *p_pcm_data, uint16_t
 			BT_LOGE("[APP] %s p_enqueue_mtx is NULL\r\n", __func__);
 			goto exit;
 		}
-		enqueue_size = out_frames * g_audio_resample_t->out_frame_size;
 		BT_LOGD("[APP] %s enqueue_size\r\n", __func__, enqueue_size);
 		osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
 		if (RTK_BT_OK != app_queue_mgr_enqueue(&app_pcm_data_mgr_queue, out_frame_buf, enqueue_size)) {
@@ -2522,7 +2536,9 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 		a2dp_codec_entity = rtk_bt_audio_codec_add(&audio_a2dp_codec_conf);
 		// bt_a2dp_sink_event_handle(A2DP_SINK_STREAM_DATA_HANDLE_INIT, A2DP_SBC_CODEC, 0, NULL);
 		/* pcm convert engine init */
-		app_bt_pcm_data_resample_engine_alloc(&g_audio_resample_t, sbc_codec_t.decoder_t.sampling_frequency, ((sbc_codec_t.decoder_t.channel_mode != 0) ? 2 : 1));
+		g_audio_resample_t = app_bt_pcm_data_resample_engine_alloc(sbc_codec_t.decoder_t.sampling_frequency, ((sbc_codec_t.decoder_t.channel_mode != 0) ? 2 : 1),
+																   demo_out_rate,
+																   APP_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM);
 		BT_LOGA("[A2DP] Configure Complete CODEC %d \r\n", pa2dp_codec->codec_type);
 	}
 	break;
@@ -3902,15 +3918,15 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
 #if 0
-		BT_LOGA("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %d, PHY: 0x%x, TxPower: %d, Len: %d\r\n",
+		BT_LOGA("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %d, PHY: 0x%x, TxPower: %d, Data_status: %d, Len: %d\r\n",
 				le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
 				(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-				scan_res_ind->tx_power, scan_res_ind->len);
+				scan_res_ind->tx_power, scan_res_ind->data_status, scan_res_ind->len);
 #endif
-		BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%d,0x%x,%d,%d\r\n",
+		BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%d,0x%x,%d,%d,%d\r\n",
 					le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
 					(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-					scan_res_ind->tx_power, scan_res_ind->len);
+					scan_res_ind->tx_power, scan_res_ind->data_status, scan_res_ind->len);
 		if (bap_role & RTK_BT_LE_AUDIO_BAP_ROLE_BRO_SINK) {
 			app_bt_le_audio_scan_report_handle(scan_res_ind, APP_BT_LE_AUDIO_BASS_SCAN_TYPE);
 		}
