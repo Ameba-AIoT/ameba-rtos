@@ -50,6 +50,10 @@ static inline int wpa_debug_reopen_file(void)
 		}\
 	}while(0)
 #define wpa_msg(ctx,level,fmt,arg...) wpa_printf((level),(fmt), ##arg)
+#define p2p_dbg(ctx, fmt, arg...) wpa_printf(MSG_DEBUG, (fmt), ##arg)
+#define p2p_info(ctx, fmt, arg...) wpa_printf(MSG_INFO, (fmt), ##arg)
+#define p2p_err(ctx, fmt, arg...) wpa_printf(MSG_ERROR, (fmt), ##arg)
+
 void wpa_hexdump_key(int level, const char *title, const void *buf, size_t len);
 void wpa_hexdump_buf(int level, const char *title,
 					 const struct wpabuf *buf);
