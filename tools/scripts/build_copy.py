@@ -31,7 +31,7 @@ def copy_app_folder(app_name, target_dir, submodule_json_path):
     if os.path.exists(submodule_json_path):
         app_path = find_app_in_submodules(app_name, submodule_json_path)
     if not app_path:
-        example_base = os.path.join(sdk_root, 'component/example')
+        example_base = os.path.join(sdk_root, 'example')
         app_path = find_app_folder(app_name, example_base)
 
     if app_path:
@@ -135,7 +135,7 @@ def creat_Kconfig_file(target_dir):
             file.write("\r\n")
 
 def list_available_apps(submodule_info_path: str):
-    app_names = ["component/example/*/example_<app_name>.c"]
+    app_names = ["example/*/example_<app_name>.c"]
 
     if os.path.exists(submodule_info_path):
         with open(submodule_info_path, 'r') as f:

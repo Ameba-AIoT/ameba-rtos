@@ -1244,7 +1244,7 @@ void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize)
 
 /* Use global variables to reduce stack usage. */
 static HeapStats_t FailHookHeapStats;
-
+__attribute__((optimize("O0")))
 void vApplicationMallocFailedHook(size_t xWantedSize)
 {
 	char *pcCurrentTask = "NoTsk";

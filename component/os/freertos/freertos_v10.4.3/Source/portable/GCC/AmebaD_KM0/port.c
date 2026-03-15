@@ -385,6 +385,7 @@ void vApplicationIdleHook(void)
 }
 
 #include "diag.h"
+__attribute__((optimize("O0")))
 void vApplicationStackOverflowHook(xTaskHandle pxTask, char *pcTaskName)
 {
 	/* This function will be called if a task overflows its stack, if

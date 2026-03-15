@@ -38,8 +38,6 @@ if remote_service_path.exists():
     except Exception as e:
         RemoteSerial = None
         print(f"error: RemoteSerial ImportException: ", str(e))
-else:
-    print(f"warning: RemoteSerial doesn't exists at: {remote_service_path}")
 
 class SerialReader(StoppableThread):
     """
@@ -99,7 +97,7 @@ class SerialReader(StoppableThread):
         start_time = time.time()
         while self.running:
             try:
-                if isinstance(self.serial, RemoteSerial):
+                if RemoteSerial and isinstance(self.serial, RemoteSerial):
                     while self.serial.inWaiting() < 1:
                         time.sleep(0.01)
                         if self.expired(start_time):
@@ -128,7 +126,6 @@ class SerialReader(StoppableThread):
                         self.data_buffer = b''
                         break
             except Exception as e:
-                print_red(f"Failed to get cmd list: {str(e)}")
                 break
         if self.reset_mode:
             try:
@@ -140,7 +137,7 @@ class SerialReader(StoppableThread):
             start_time = time.time()
             while self.running:
                 try:
-                    if isinstance(self.serial, RemoteSerial):
+                    if RemoteSerial and isinstance(self.serial, RemoteSerial):
                         while self.serial.inWaiting() < 1:
                             time.sleep(0.01)
                             if self.expired(start_time):
@@ -173,7 +170,7 @@ class SerialReader(StoppableThread):
 
         while self.running:
             try:
-                if isinstance(self.serial, RemoteSerial):
+                if RemoteSerial and isinstance(self.serial, RemoteSerial):
                     while self.serial.inWaiting() < 1:
                         time.sleep(0.01)
                     data = self.serial.read(self.serial.inWaiting())

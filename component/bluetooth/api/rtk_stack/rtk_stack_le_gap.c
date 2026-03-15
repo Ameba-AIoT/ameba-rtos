@@ -74,10 +74,13 @@ bool rtk_ble_mesh_scan_enable_flag = false;
 #include <gap_credit_based_conn.h>
 #endif
 
+#define GAP_CONN_STATE_SLAVE_CONNECTING   0xFF
+
 typedef struct {
 	uint8_t is_pairing_initiator;
 	uint8_t is_active;
-	T_GAP_CONN_STATE conn_state;
+	uint8_t conn_state; /* 0x0-0x3: ref T_GAP_CONN_STATE;
+                           0xFF: ref GAP_CONN_STATE_SLAVE_CONNECTING, specific used for slave connecting.  */
 	T_GAP_REMOTE_ADDR_TYPE bd_type;
 	uint8_t peer_addr[GAP_BD_ADDR_LEN];
 	T_GAP_ROLE role;
@@ -2315,16 +2318,19 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 	rtk_bt_le_conn_ind_t *p_conn_ind;
 	rtk_bt_le_disconn_ind_t *p_disconn_ind;
 	T_GAP_CONN_INFO conn_info = {(T_GAP_CONN_STATE)0, (T_GAP_ROLE)0, {0}, 0};
+	T_GAP_DEV_STATE dev_state;
+	T_GAP_CAUSE cause;
 
 	/* always update conn_state */
-	bt_stack_le_link_tbl[conn_id].conn_state = (T_GAP_CONN_STATE)new_state;
+	bt_stack_le_link_tbl[conn_id].conn_state = new_state;
 
 	// BT_LOGD("----------------------------> bt_stack_le_gap_handle_conn_state_evt \r\n");
 	switch (new_state) {
 	case GAP_CONN_STATE_DISCONNECTED:
 		if (GAP_CONN_STATE_DISCONNECTING == prev_state ||
-			GAP_CONN_STATE_CONNECTED == prev_state) {
-			BT_LOGD("[conn_state_evt]: disconnect success, conn_id: %d, disconnect reason: 0x%x\r\n",
+			GAP_CONN_STATE_CONNECTED == prev_state ||
+			GAP_CONN_STATE_SLAVE_CONNECTING == prev_state) {
+			BT_LOGD("[conn_state_evt]: disconnected, conn_id: %d, disconnect reason: 0x%x\r\n",
 					conn_id, disc_cause);
 
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_DISCONN_IND,
@@ -2334,12 +2340,21 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 			}
 
 			p_disconn_ind = (rtk_bt_le_disconn_ind_t *)p_evt->data;
-
 			p_disconn_ind->reason = disc_cause;
-			p_disconn_ind->conn_handle = bt_stack_le_conn_handle[conn_id]; //le_get_conn_handle() returns 0xFFFF when disconnected;
-			p_disconn_ind->role = convert_rtk_link_role(bt_stack_le_link_tbl[conn_id].role);
-			p_disconn_ind->peer_addr.type = (rtk_bt_le_addr_type_t)bt_stack_le_link_tbl[conn_id].bd_type;
-			memcpy(p_disconn_ind->peer_addr.addr_val, &bt_stack_le_link_tbl[conn_id].peer_addr, RTK_BD_ADDR_LEN);
+			if (GAP_CONN_STATE_SLAVE_CONNECTING == prev_state) {
+				p_disconn_ind->conn_handle = le_get_conn_handle(conn_id);
+				if (!le_get_conn_info(conn_id, &conn_info)) {
+					BT_LOGE("le_get_conn_info failed\r\n");
+				}
+				p_disconn_ind->role = convert_rtk_link_role(conn_info.role);
+				p_disconn_ind->peer_addr.type = (rtk_bt_le_addr_type_t)conn_info.remote_bd_type;
+				memcpy(p_disconn_ind->peer_addr.addr_val, conn_info.remote_bd, RTK_BD_ADDR_LEN);
+			} else {
+				p_disconn_ind->conn_handle = bt_stack_le_conn_handle[conn_id];
+				p_disconn_ind->role = convert_rtk_link_role(bt_stack_le_link_tbl[conn_id].role);
+				p_disconn_ind->peer_addr.type = (rtk_bt_le_addr_type_t)bt_stack_le_link_tbl[conn_id].bd_type;
+				memcpy(p_disconn_ind->peer_addr.addr_val, &bt_stack_le_link_tbl[conn_id].peer_addr, RTK_BD_ADDR_LEN);
+			}
 
 			memset(&bt_stack_le_link_tbl[conn_id], 0, sizeof(bt_stack_le_link_info_t));
 			if (RTK_BT_LE_ROLE_SLAVE == p_disconn_ind->role && bt_stack_profile_check(RTK_BT_PROFILE_GATTS)) {
@@ -2378,7 +2393,7 @@ static void bt_stack_le_gap_handle_conn_state_evt(T_LE_GAP_MSG *p_gap_msg)
 		break;
 
 	case GAP_CONN_STATE_CONNECTED:
-		BT_LOGD("[conn_state_evt]: connected success, conn_id: %d\r\n", conn_id);
+		BT_LOGD("[conn_state_evt]: connected, conn_id: %d\r\n", conn_id);
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_CONNECT_IND,
 									sizeof(rtk_bt_le_conn_ind_t));
 		if (!p_evt) {
@@ -2447,6 +2462,15 @@ exit:
 
 	case GAP_CONN_STATE_CONNECTING:
 		BT_LOGD("[conn_state_evt]: connecting \r\n");
+		cause = le_get_gap_param(GAP_PARAM_DEV_STATE, &dev_state);
+		if (cause) {
+			BT_LOGE("GAP get dev state failed, cause: %d\r\n", cause);
+		}
+		if (dev_state.gap_conn_state != GAP_CONN_DEV_STATE_INITIATING) {
+			/* The connecting state is not caused by master create connection, when slave device
+			was connected, it will also report the connecting state. */
+			bt_stack_le_link_tbl[conn_id].conn_state = GAP_CONN_STATE_SLAVE_CONNECTING;
+		}
 		break;
 
 	case GAP_CONN_STATE_DISCONNECTING:
@@ -4623,7 +4647,7 @@ static uint16_t bt_stack_le_gap_set_max_mtu_size(void *param)
 	}
 	active_conn_num = le_get_active_link_num();
 
-	if ((GAP_CONN_STATE_CONNECTING == dev_state.gap_conn_state) || active_conn_num) {
+	if ((GAP_CONN_DEV_STATE_INITIATING == dev_state.gap_conn_state) || active_conn_num) {
 		return RTK_BT_ERR_STATE_INVALID;
 	}
 

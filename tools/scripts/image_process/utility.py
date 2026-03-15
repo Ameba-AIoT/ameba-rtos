@@ -209,16 +209,10 @@ def parse_project_info(path:str) -> dict:
                         pass
                     else:
                         default_logger.warning(f"File maybe not in right location: file name: {os.path.basename(path)}, mcu project from path: {mcu_project}")
-        else: # add for zephyr build
-            mcu_same_list=['km0', 'km4', 'ca32', 'kr4']
-            for mcu in mcu_same_list:
-                if mcu in file_body:
-                    mcu_project = mcu.lower()
-                    break
-            for key, value in mcu_dicts.items():
-                if key in file_body:
-                    mcu_project = key.lower()
-                    break
+        else:
+            # add for zephyr build, Extract mcu_project from filename pattern: xxxx_imagey_all.bin -> xxxx
+            if '_' in file_body:
+                mcu_project = file_body.split('_')[0].lower()
             if mcu_project == '':
                 default_logger.fatal(f"Failed to get mcu project from file name: {os.path.basename(path)}")
 
