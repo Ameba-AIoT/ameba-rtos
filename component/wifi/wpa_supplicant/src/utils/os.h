@@ -567,8 +567,16 @@ extern char *os_strdup(const char *string_copy_from);
 #ifdef _MSC_VER
 #define os_snprintf _snprintf
 #else
-#define os_snprintf snprintf
+#define os_snprintf DiagSnPrintf
 #endif
+#endif
+
+#ifndef os_sscanf
+#define os_sscanf _sscanf_ss
+#endif
+
+#ifndef os_sprintf
+#define os_sprintf DiagSPrintf
 #endif
 
 #endif /* OS_NO_C_LIB_DEFINES */

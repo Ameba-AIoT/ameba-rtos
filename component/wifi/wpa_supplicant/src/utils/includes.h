@@ -1,7 +1,7 @@
 #ifndef INCLUDES_H
 #define INCLUDES_H
 
-#define CONFIG_NO_STDOUT_DEBUG
+//#define CONFIG_NO_STDOUT_DEBUG
 
 #ifndef CONFIG_NO_STDOUT_DEBUG
 

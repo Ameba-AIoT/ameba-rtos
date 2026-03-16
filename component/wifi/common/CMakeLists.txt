@@ -66,6 +66,9 @@ include(sources.cmake OPTIONAL)
 
 # Component private part, user config end
 #------------------------------#
+ameba_list_append(private_includes
+    ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant
+)
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 if(CONFIG_WLAN)

@@ -7,6 +7,8 @@ ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_IMG3_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
+ameba_add_subdirectory(${c_CMPT_SSL_DIR})
+ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_SOC_DIR}/verification)
 
 ###############################  GENERATE IMAGE  ###################################

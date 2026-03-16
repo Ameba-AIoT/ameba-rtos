@@ -235,8 +235,8 @@ void sys_log_uart_on(void)
 	/* Just Support S0 */
 	Pinmux_UartLogCtrl(PINMUX_S0, ON);
 
-	UART_INTConfig(UART2_DEV, RUART_BIT_ERBI, ENABLE);
-	UART_RxCmd(UART2_DEV, ENABLE);
+	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
+	LOGUART_RxCmd(LOGUART_DEV, ENABLE);
 }
 
 /**
@@ -245,8 +245,8 @@ void sys_log_uart_on(void)
   */
 void sys_log_uart_off(void)
 {
-	UART_INTConfig(UART2_DEV, RUART_BIT_ERBI, DISABLE);
-	UART_RxCmd(UART2_DEV, DISABLE);
+	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, DISABLE);
+	LOGUART_RxCmd(LOGUART_DEV, DISABLE);
 
 	/* Just Support S0 */
 	Pinmux_UartLogCtrl(PINMUX_S0, OFF);

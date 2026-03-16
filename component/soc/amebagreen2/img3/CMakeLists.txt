@@ -9,6 +9,10 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #----------------------------------------#
 # Component public part, user config begin
 
+ameba_list_append(public_includes
+    include
+)
+
 # Component public part, user config end
 #----------------------------------------#
 
@@ -38,6 +42,8 @@ set(private_compile_options)         #private compile_options
 ameba_list_append(private_sources
     boot_img3.c
     secure_src.c
+    ecdsa_sign_service.c
+    ${c_CMPT_SOC_DIR}/app/monitor/ram/low_level_io.c
 )
 
 ameba_list_append(private_compile_options
