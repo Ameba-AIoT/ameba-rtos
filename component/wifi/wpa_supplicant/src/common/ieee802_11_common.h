@@ -44,6 +44,7 @@ struct ieee802_11_elems {
 	const u8 *ext_capab;
 	const u8 *bss_max_idle_period;
 	const u8 *ssid_list;
+	const u8 *pref_freq_list;
 
 	u8 ssid_len;
 	u8 supp_rates_len;
@@ -76,6 +77,7 @@ struct ieee802_11_elems {
 	u8 hs20_len;
 	u8 ext_capab_len;
 	u8 ssid_list_len;
+	u8 pref_freq_list_len;
 };
 
 enum ParseRes { ParseOK = 0, ParseUnknown = 1, ParseFailed = -1 };
@@ -99,5 +101,8 @@ struct hostapd_wmm_ac_params {
 
 int hostapd_config_wmm_ac(struct hostapd_wmm_ac_params wmm_ac_params[],
 						  const char *name, const char *val);
+
+int supp_rates_11b_only(struct ieee802_11_elems *elems);
+
 
 #endif /* IEEE802_11_COMMON_H */

@@ -708,13 +708,11 @@ int usbh_prepare_retransfer(usb_host_t *host, u8 pipe_num);
 /* Usbh CTS test operations. */
 /**
  * @brief  USB Host enter suspend.
- * @return None
  */
 void usbh_suspend(void);
 
 /**
  * @brief  USB Host exit suspend.
- * @return None
  */
 void usbh_resume(void);
 

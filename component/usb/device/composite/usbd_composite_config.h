@@ -235,7 +235,6 @@ typedef struct {
 	 * @details Called upon connection state changed for hot-plug support (e.g. do reinitialization on host disconnection)
 	 * @param[in] old_status: Previous status of USB device.
 	 * @param[in] status: Current status of USB device.
-	 * @return None
 	 */
 	void (*status_changed)(u8 old_status, u8 status);    /**< Called upon USB attach status changes for application to support hot-plug events. */
 	/**

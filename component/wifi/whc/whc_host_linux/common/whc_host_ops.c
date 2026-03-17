@@ -308,7 +308,7 @@ static int whc_host_scan_ops(struct wiphy *wiphy, struct cfg80211_scan_request *
 #ifdef CONFIG_P2P
 	scan_param->scan_user_data = (void *)(uintptr_t)whc_host_p2p_get_wdex_idx(wdev); /*for later cfg80211 indicate*/
 	if ((wdev == global_idev.p2p_global.pd_pwdev) && (wlan_idx == 1)) {
-		scan_param->options |= RTW_SCAN_WITH_P2P;
+		scan_param->options |= RTW_SCAN_WITH_PORT1;
 	}
 #endif
 	for (i = 0; i < request->n_ssids && ssids && i < RTW_SSID_SCAN_AMOUNT; i++) {
@@ -874,7 +874,7 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 		memset(&wps_info, 0, sizeof(struct wps_str));
 		connect_param->is_wps_trigger = 1;
 	}
-	whc_host_set_wps_phase(wps_info.wps_phase);
+	whc_host_set_wps_phase(wlan_idx, wps_info.wps_phase);
 
 #ifdef CONFIG_P2P
 	target_ptr = (struct element *)cfg80211_find_vendor_ie(WLAN_OUI_WFA, WLAN_OUI_TYPE_WFA_P2P, sme->ie, sme->ie_len);
@@ -915,7 +915,7 @@ static int whc_host_disconnect_ops(struct wiphy *wiphy, struct net_device *ndev,
 
 	if (wps_info.wps_phase) {
 		/* KM4 disable wps */
-		whc_host_set_wps_phase(0);
+		whc_host_set_wps_phase(wlan_idx, 0);
 	}
 
 	dev_dbg(global_idev.pwhc_dev, "[whc]: wlan_idx = %d, is_need_4way= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
@@ -1441,7 +1441,7 @@ static s32 whc_host_remain_on_channel(struct wiphy *wiphy, struct wireless_dev *
 	scan_param->chan_scan_time.passive_scan_time = duration;
 	scan_param->scan_user_data = (void *)(uintptr_t)whc_host_p2p_get_wdex_idx(wdev); /*for later cfg80211 indicate*/
 	if (wlan_idx == 1) {
-		scan_param->options |= RTW_SCAN_WITH_P2P;
+		scan_param->options |= RTW_SCAN_WITH_PORT1;
 	}
 
 	if (channel) {

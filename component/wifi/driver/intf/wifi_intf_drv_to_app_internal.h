@@ -468,7 +468,7 @@ int wifi_set_pmk_cache_enable(unsigned char value);
  * 	is_trigger_wps value should only be 0 or 1
  * @return  RTK_SUCCESS or RTK_FAIL
  */
-int wifi_set_wps_phase(unsigned char is_trigger_wps);
+int wifi_set_wps_phase(u8 wlan_idx, unsigned char is_trigger_wps);
 
 /**
  * @brief  Set the eap phase to wifi driver

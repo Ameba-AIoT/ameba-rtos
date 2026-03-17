@@ -64,6 +64,13 @@ struct wifi_user_conf {
 	/*!	The maximum number of STAs connected to the softap should not exceed the num specified in notes of func wifi_set_user_config(). */
 	u8 ap_sta_num;
 
+	/*!	SoftAP packet forwarding control
+		- 0: disable(default), 1: enable to prevent softap from forwarding packets to its associated STAs.
+		When enabled(1):
+		- Mitigates GTK abuse by preventing spoofed frames from reaching local clients.
+		- Blocks broadcast reflection attacks. */
+	u8 ap_bypass_forwarding;
+
 	/*!	IPS(Inactive power save), If disconnected for more than 2 seconds, WIFI will be powered off. */
 	u8 ips_enable;
 

@@ -892,6 +892,7 @@ void whc_event_p2p_remain_on_ch(u32 api_id, u32 *param_buf)
 	int ret;
 	u8 wlan_idx = (u8)param_buf[0];
 	u8 enable = (u8)param_buf[1];
+
 	ret = rtw_p2p_remain_on_ch(wlan_idx, enable);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
@@ -927,8 +928,10 @@ void whc_event_wifi_set_wps_phase(u32 api_id, u32 *param_buf)
 {
 	int ret = 0;
 
-	unsigned char is_trigger_wps = (unsigned char)param_buf[0];
-	ret = wifi_set_wps_phase(is_trigger_wps);
+	unsigned char wlan_idx = (unsigned char)param_buf[0];
+	unsigned char is_trigger_wps = (unsigned char)param_buf[1];
+	ret = wifi_set_wps_phase(wlan_idx, is_trigger_wps);
+
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
@@ -1216,11 +1219,13 @@ void whc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data)
 	whc_dev_api_message_send(WHC_API_SCAN_USER_CALLBACK, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
 }
 
-void whc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data)
+void whc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data, u8 *ies, u32 ie_len)
 {
 	/* TODO for Linux */
 	(void) scanned_ap_info;
 	(void) user_data;
+	(void) ies;
+	(void) ie_len;
 }
 
 u8 whc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info)

@@ -186,8 +186,8 @@ _LONG_CALL_ u32 SYSCFG_OTP_RomPatchEn(void);
 #define SYSCFG_OTP_BOOT_FROM_EXT					2
 
 /*******************  Macro definition for Lifecycle ********************/
-#define PSA_LIFECYCLE_RMA				        	1
-#define PSA_LIFECYCLE_DECOMMISSIONED			2
+#define RTK_PSA_LIFECYCLE_RMA				        	1
+#define RTK_PSA_LIFECYCLE_DECOMMISSIONED			2
 
 /*******************  Macro definition for RSIP MODE ********************/
 #define RSIP_XTS_MODE                     0

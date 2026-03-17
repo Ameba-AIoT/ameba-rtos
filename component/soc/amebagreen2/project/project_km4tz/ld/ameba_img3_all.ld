@@ -30,6 +30,8 @@ SECTIONS
 
 	.ram_image3.entry :
 	{
+		__image3_entry_func__ = .;
+		KEEP(*(.image3.entry.data))
 		KEEP(*(.image3.nsc_entry.text*))
 		. = ALIGN(32);
 	} > LMA_TZ_ENTRY
@@ -62,4 +64,9 @@ SECTIONS
 		. = . + 4096;
 	} > LMA_TZ_S_BSS
 
+	/* image2: normal image start */
+	.ram_image2.entry :
+	{
+		__image2_entry_func__ = .;
+	} > KM4TZ_BD_RAM
 }

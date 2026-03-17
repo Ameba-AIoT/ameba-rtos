@@ -519,7 +519,7 @@ uint32_t ulPortGetCoreId(void)
 #endif
 
 /*-----------------------------------------------------------*/
-
+__attribute__((optimize("O0")))
 void vApplicationStackOverflowHook(TaskHandle_t xTask, signed char *pcTaskName)
 {
 	(void) pcTaskName;
