@@ -13,8 +13,6 @@
 #include "eap_common/eap_defs.h"
 #include "eap_common/eap_wsc_common.h"
 
-#ifdef CONFIG_WPS_P2PGO
-
 struct eap_server_method wsc_server_eap;
 #if 0
 struct eap_wsc_data {
@@ -580,4 +578,3 @@ void *eap_wsc_server_init(char *identity, char identity_len)
 	return wsc_server_eap.init(identity, identity_len);
 }
 
-#endif
