@@ -1043,13 +1043,14 @@ int whc_host_set_pmf_mode(u8 pmf_mode)
 	return ret;
 }
 
-int whc_host_set_wps_phase(u8 enable)
+int whc_host_set_wps_phase(u8 wlan_idx, u8 enable)
 {
 	int ret = 0;
-	u32 param_buf[1];
-	param_buf[0] = (u32)enable;
+	u32 param_buf[2];
+	param_buf[0] = (u32)wlan_idx;
+	param_buf[1] = (u32)enable;
 
-	ret = whc_ipc_host_send_msg(WHC_API_WIFI_SET_WPS_PHASE, param_buf, 1);
+	ret = whc_ipc_host_send_msg(WHC_API_WIFI_SET_WPS_PHASE, param_buf, 2);
 	return ret;
 }
 

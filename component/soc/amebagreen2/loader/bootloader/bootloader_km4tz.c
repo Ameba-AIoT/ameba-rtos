@@ -22,21 +22,6 @@ extern PSRAMINFO_TypeDef PsramInfo;
 		}                                                  \
 	} while (0)
 
-__NO_RETURN void BOOT_NsStart(u32 Addr)
-{
-#ifndef CONFIG_TRUSTZONE
-	FuncPtr pFunc = (FuncPtr)Addr;
-	pFunc();
-#endif
-
-	/* jump to ns world */
-	nsfunc *fp = (nsfunc *)cmse_nsfptr_create(Addr);
-	fp();
-
-	/* avoid compiler to pop stack when exit BOOT_NsStart */
-	while (1);
-}
-
 __NO_RETURN void BOOT_ClearMSP_NsStart(u32 Addr)
 {
 	// do not use bss section after, because fullmac pg loader will overlay bss section
@@ -59,7 +44,11 @@ __NO_RETURN void BOOT_ClearMSP_NsStart(u32 Addr)
 
 	DCache_CleanInvalidate(MSPLIM_RAM_HP, MSP_RAM_HP - MSPLIM_RAM_HP);
 
-	BOOT_NsStart(Addr);
+	FuncPtr pFunc = (FuncPtr)Addr;
+	pFunc();
+
+	/* avoid compiler to pop stack */
+	while (1);
 }
 
 /* open some always on functions in this function */
@@ -255,7 +244,12 @@ void BOOT_Config_PMC_Role(void)
 
 void BOOT_WakeFromPG(void)
 {
-	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
+#ifndef CONFIG_TRUSTZONE
+	PRAM_START_FUNCTION ImageEntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
+#else
+	PRAM_START_FUNCTION ImageEntryFun = (PRAM_START_FUNCTION)__km4tz_tz_entry_start__;
+#endif
+
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
 
 	/* Config Non-Security World Registers Firstly in BOOT_WakeFromPG */
@@ -270,7 +264,7 @@ void BOOT_WakeFromPG(void)
 	/* Set PSPS Temp */
 	__set_PSP(MSP_RAM_HP_NS - 2048);
 
-	BOOT_NsStart((u32)Image2EntryFun->RamWakeupFun);
+	ImageEntryFun->RamWakeupFun();
 
 exit:
 	while (1);
@@ -446,7 +440,12 @@ void BOOT_Image1(void)
 	/* Set the depth of the stack to dump. */
 	crash_SetExStackDepth(MIN_DUMP_DEPTH);
 
+#ifndef CONFIG_TRUSTZONE
 	BOOT_ClearMSP_NsStart((u32)Image2EntryFun->RamStartFun);
+#else
+	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__km4tz_tz_entry_start__;
+	BOOT_ClearMSP_NsStart((u32)Image3EntryFun->RamStartFun);
+#endif
 
 exit:
 	SBOOT_Validate_Fail_Stuck(FALSE);

@@ -7,7 +7,6 @@
 #include "wifi_p2p_supplicant.h"
 #include "wifi_intf_drv_to_upper.h"
 
-#ifdef CONFIG_WIFI_P2P_ENABLE
 /*NETMASK*/
 #define P2P_NETMASK_ADDR0   255
 #define P2P_NETMASK_ADDR1   255
@@ -176,4 +175,3 @@ void cmd_p2p_connect(int argc, char **argv)
 	}
 }
 
-#endif

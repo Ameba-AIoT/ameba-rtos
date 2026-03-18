@@ -18,7 +18,7 @@
 #if !defined (CONFIG_FULLMAC) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
 #include "wifi_api.h"
 #include "platform_stdlib.h"
-#ifdef CONFIG_P2P
+#ifdef CONFIG_WIFI_P2P_ENABLE
 #include "wifi_p2p_supplicant.h"
 #endif
 #if !defined(CONFIG_WHC_DEV)|| defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
