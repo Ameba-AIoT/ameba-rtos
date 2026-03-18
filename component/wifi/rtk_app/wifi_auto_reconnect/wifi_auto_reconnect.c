@@ -216,8 +216,8 @@ s32 wifi_set_autoreconnect(u8 enable)
 		rtw_reconn.b_waiting = 0;
 		rtw_reconn.b_enable = 0;
 	} else if ((enable != 0) && (rtw_reconn.b_enable == 0)) {
-		if (rtos_timer_create(&(rtw_reconn.timer), "rtw_reconn_timer", NULL, wifi_user_config.auto_reconnect_interval * 1000, FALSE,
-							  rtw_reconn_timer_hdl) != RTK_SUCCESS) {
+		if (rtos_timer_create_static(&(rtw_reconn.timer), "rtw_reconn_timer", NULL, wifi_user_config.auto_reconnect_interval * 1000, FALSE,
+									 rtw_reconn_timer_hdl) != RTK_SUCCESS) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rtw_reconn_timer create fail\n");
 			return RTK_FAIL;
 		}
