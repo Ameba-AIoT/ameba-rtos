@@ -19,8 +19,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-/* USB Standard Device Descriptor */
-
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -359,4 +357,3 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 
 	return status;
 }
-

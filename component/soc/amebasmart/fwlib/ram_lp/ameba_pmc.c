@@ -161,9 +161,12 @@ void SOCPS_UartRxPinWakeSet(u32 status)
 {
 	u32 int_flag = 0;
 	if (status == ENABLE) {
+		/* First switch Pinmux to GPIO, then enable interrupts after the pin is stable.
+		 * This prevents glitches during Pinmux switching from triggering false interrupts.
+		 */
+		Pinmux_UartLogCtrl(PINMUX_S0, OFF);
 		SOCPS_UartRxIntEn(ENABLE);
 		GPIO_INTConfig(UART_LOG_RXD, ENABLE);
-		Pinmux_UartLogCtrl(PINMUX_S0, OFF);
 	} else {
 		int_flag = SOCPS_UartRxPinIntValid();
 
@@ -626,4 +629,3 @@ void SOCPS_SetPowerCut_Time(u32 time)
 	//set 0 for 8*2^5 = 256us
 	HAL_WRITE32(PMC_BASE, SYSPMC_CTRL, temp);
 }
-

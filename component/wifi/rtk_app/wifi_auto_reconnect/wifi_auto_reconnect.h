@@ -21,7 +21,7 @@
 struct rtw_auto_reconn_t {
 	struct rtw_network_info  conn_param;
 	rtos_timer_t        timer;
-	u8                  pwd[RTW_MAX_PSK_LEN + 1];
+	u8                  *pwd_buf;
 	u8                  cnt;
 	u8                  eap_method;
 	u8                  b_infinite: 1;
@@ -42,4 +42,3 @@ u8 wifi_is_autoreconnect_ongoing(void);
 #endif
 
 #endif
-

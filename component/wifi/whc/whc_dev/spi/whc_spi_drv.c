@@ -626,7 +626,7 @@ s8 whc_dev_spi_wait_dev_idle(void)
 	while (spi_priv.tx_req || spi_priv.dev_status != DEV_STS_IDLE || SSI_Busy(WHC_SPI_DEV)) {
 		spi_priv.wait_tx = TRUE;
 		if (rtos_sema_take(spi_priv.spi_transfer_done_sema, WHC_DEV_SPI_TRANSFER_TIMEOUT) == RTK_FAIL) {
-			RTK_LOGE(TAG_WLAN_INIC, "take sema fail,dev_sts:%d,tx_req:%d, SSI_Busy:%d\n",
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "take sema fail,dev_sts:%d,tx_req:%d, SSI_Busy:%d\n",
 					 spi_priv.dev_status, spi_priv.tx_req, SSI_Busy(WHC_SPI_DEV));
 #ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 			whc_dev_api_set_host_state(WHC_HOST_UNREADY);

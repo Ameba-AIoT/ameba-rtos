@@ -6,7 +6,6 @@
 
 #include "sys_api.h"
 #include "ameba_rtos_version.h"
-#include "build_info.h"
 #include "kv.h"
 #include "at_intf_spi.h"
 #include "at_intf_sdio.h"
@@ -286,78 +285,6 @@ void at_list(u16 argc, char **argv)
 	at_printf(ATCMD_OK_END_STR);
 }
 
-#ifndef CONFIG_AMEBAD
-static AuthHeader_TypeDef cert[2];
-static s64 ver[2] = {0};  //32-bit full version
-static u32 ota_region[3][2] = {0};
-static const u32 image_pattern[2] = {
-	APP_IMAGE_PATTERN_1, APP_IMAGE_PATTERN_2,
-};
-
-static u8 at_get_ota_version(void)
-{
-	u16 MajorVer[2] = {0}; //16-bit major
-	u16 MinorVer[2] = {0}; //16-bit minor
-	u32 Vertemp;
-	u8 ImgIndex, i;
-
-	flash_get_layout_info(IMG_APP_OTA1, &ota_region[IMG_CERT][0], NULL);
-	flash_get_layout_info(IMG_APP_OTA2, &ota_region[IMG_CERT][1], NULL);
-
-	ota_region[IMG_IMG2][0] = ota_region[IMG_CERT][0] + 0x1000;
-	ota_region[IMG_IMG2][1] = ota_region[IMG_CERT][1] + 0x1000;
-
-	for (i = 0; i < 2; i++) {
-		_memcpy((void *)&cert[i], (void *)ota_region[IMG_CERT][i], sizeof(AuthHeader_TypeDef));
-
-		if (_memcmp(cert[i].Pattern, image_pattern, sizeof(image_pattern)) == 0) {
-			MajorVer[i] = (u16)cert[i].MajorKeyVer;
-			MinorVer[i] = (u16)cert[i].MinorKeyVer;
-			Vertemp = (MajorVer[i] << 16) | MinorVer[i]; // get 32-bit full version number
-			ver[i] = (s64)Vertemp;
-		} else {
-			ver[i] = -1;
-		}
-	}
-
-	ImgIndex = ota_get_cur_index(1);
-
-	return ImgIndex;
-}
-#endif
-
-
-/****************************************************************
-AT command process:
-    AT+GMR
-    +GMR:<at-version>,<sdk-version>(<compile_time>)
-    [+GMR]: OK
-****************************************************************/
-void at_gmr(u16 argc, char **argv)
-{
-	UNUSED(argc);
-	UNUSED(argv);
-	u32 chip_info = 0;
-
-	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
-	at_printf("ATCMD VERSION: %d.%d.%d\r\n", ATCMD_VERSION, ATCMD_SUBVERSION, ATCMD_REVISION);
-
-#ifndef CONFIG_AMEBAD
-	u8 image_id = at_get_ota_version();
-	u32 version = (u32)(ver[image_id] & 0xFFFFFFFF);
-	at_printf("IMAGE VERSION: %d.%d\r\n", ((version >> 16) & 0xFFFF), (version & 0xFFFF));
-#endif
-
-	chip_info = ChipInfo_GetSocName_ToBuf();
-	at_printf("%x \r\n", chip_info);
-
-	at_printf("COMPILE TIME: %s\r\n", RTL_FW_COMPILE_TIME);
-	at_printf("COMPILE USER: %s@%s\r\n", RTL_FW_COMPILE_BY, RTL_FW_COMPILE_HOST);
-	at_printf("COMPILE ENV : %s\r\n", RTL_FW_COMPILER);
-
-	at_printf(ATCMD_OK_END_STR);
-}
-
 #ifdef CONFIG_MP_INCLUDED
 void at_gpiotest(u16 argc, char **argv)
 {
@@ -479,7 +406,6 @@ const log_item_t at_sys_items[] = {
 #endif
 	{"+TEST", at_test},
 	{"+LIST", at_list},
-	{"+GMR", at_gmr},
 #ifdef CONFIG_MP_INCLUDED
 	{"+GPIOTEST", at_gpiotest},
 #endif

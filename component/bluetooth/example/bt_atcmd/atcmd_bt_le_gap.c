@@ -373,6 +373,27 @@ static int atcmd_ble_gap_set_rand_addr(int argc, char **argv)
 	return 0;
 }
 
+static int atcmd_ble_gap_gen_rand_addr(int argc, char **argv)
+{
+	(void)argc;
+	uint16_t ret = 0;
+	uint8_t addr[RTK_BD_ADDR_LEN] = {0};
+	char addr_str[20];
+	rtk_bt_le_rand_addr_type_t type;
+
+	type = str_to_int(argv[0]);
+	ret = rtk_bt_le_gap_gen_rand_addr(type, addr);
+	if (ret) {
+		BT_LOGE("GAP generate random address failed! err: 0x%x\r\n", ret);
+		return bt_at_rtk_err_to_at_err(ret);
+	}
+
+	rtk_bt_addr_val_to_str(addr, addr_str, sizeof(addr_str));
+	BT_LOGA("GAP generate random address success, addr: %s\r\n", addr_str);
+	BT_AT_PRINT("+BLEGAP:gen_rand_addr,%s\r\n", addr_str);
+
+	return 0;
+}
 
 static int atcmd_ble_gap_set_channel_map(int argc, char **argv)
 {
@@ -2756,6 +2777,7 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"set_mtu",      atcmd_ble_gap_set_max_mtu_size,   2, 2},
 	{"pre_conn_param", atcmd_ble_gap_set_preferred_conn_param,     5, 5},
 	{"rand_addr",    atcmd_ble_gap_set_rand_addr,      2, 3},
+	{"gen_rand_addr", atcmd_ble_gap_gen_rand_addr,     2, 2},
 	{"adv_data",     atcmd_ble_gap_set_adv_data,       1, 2},
 	{"scan_rsp",     atcmd_ble_gap_set_scan_resp,      1, 2},
 	{"adv",          atcmd_ble_gap_op_adv,             2, 10},

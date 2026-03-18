@@ -208,6 +208,7 @@ ameba_list_append(private_includes
     ${c_CMPT_WIFI_DIR}/driver/halbtc
     ${c_CMPT_WIFI_DIR}/driver/phl
     ${c_CMPT_BLUETOOTH_DIR}/driver/bt_inic
+    ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant
 )
 
 if(CONFIG_AMEBALITE)

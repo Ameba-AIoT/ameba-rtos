@@ -56,6 +56,18 @@
 	__asm volatile ( "msr primask_ns, %0" : : "r" ( ulPrimaskValue ) : "memory" )
 
 /**
+ * @brief Get the secure PRIMASK value.
+ */
+#define secureportGET_SECURE_PRIMASK( ulPrimaskValue ) \
+	__asm volatile ( "mrs %0, primask" : "=r" ( ulPrimaskValue ) )
+
+/**
+ * @brief Get the non-secure PRIMASK value.
+ */
+#define secureportGET_NON_SECURE_PRIMASK( ulPrimaskValue ) \
+	__asm volatile ( "mrs %0, primask_ns" : "=r" ( ulPrimaskValue ) )
+
+/**
  * @brief Read the PSP value in the given variable.
  */
 #define secureportREAD_PSP( pucOutCurrentStackPointer ) \
@@ -118,6 +130,32 @@
  * @brief Enable non-secure interrupts.
  */
 #define secureportENABLE_NON_SECURE_INTERRUPTS()	secureportSET_NON_SECURE_PRIMASK( secureportPRIMASK_ENABLE_INTERRUPTS_VAL )
+
+/**
+ * @brief Save both secure and non-secure interrupt states and disable both.
+ * @param ulSavedSecurePrimask Variable to store the current PRIMASK (secure) value.
+ * @param ulSavedNonSecurePrimask Variable to store the current PRIMASK_NS (non-secure) value.
+ * @note Save order: NS first, then S. Disable order: NS first, then S.
+ */
+#define secureportSAVE_ALL_INTERRUPTS( ulSavedSecurePrimask, ulSavedNonSecurePrimask ) \
+	{ \
+		secureportGET_NON_SECURE_PRIMASK( ulSavedNonSecurePrimask ); \
+		secureportSET_NON_SECURE_PRIMASK( secureportPRIMASK_DISABLE_INTERRUPTS_VAL ); \
+		secureportGET_SECURE_PRIMASK( ulSavedSecurePrimask ); \
+		secureportSET_SECURE_PRIMASK( secureportPRIMASK_DISABLE_INTERRUPTS_VAL ); \
+	}
+
+/**
+ * @brief Restore both secure and non-secure interrupt states.
+ * @param ulSavedSecurePrimask Variable containing the saved PRIMASK (secure) value.
+ * @param ulSavedNonSecurePrimask Variable containing the saved PRIMASK_NS (non-secure) value.
+ * @note Restore order: S first, then NS (reverse of save order).
+ */
+#define secureportRESTORE_ALL_INTERRUPTS( ulSavedSecurePrimask, ulSavedNonSecurePrimask ) \
+	{ \
+		secureportSET_SECURE_PRIMASK( ulSavedSecurePrimask ); \
+		secureportSET_NON_SECURE_PRIMASK( ulSavedNonSecurePrimask ); \
+	}
 
 /**
  * @brief Assert definition.

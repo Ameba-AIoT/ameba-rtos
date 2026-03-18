@@ -141,6 +141,7 @@ void hci_platform_bt_rf_calibration(void)
 		rtk_coex_btc_bt_rfk(&p_temp_pram, sizeof(struct bt_rfk_param));
 	}
 
+#if 0 //remove G2 LOK Res from Cherry Cai
 	/* TX LOK Res */
 	/* 0x741[4] 0 for tx lok res valid */
 	if ((hci_phy_efuse[PEFUSE(0x741)] & BIT4) == 0) {
@@ -153,6 +154,8 @@ void hci_platform_bt_rf_calibration(void)
 
 		rtk_coex_btc_bt_rfk(&p_temp_pram, sizeof(struct bt_rfk_param));
 	}
+#endif
+
 #else
 	BT_LOGE("BT_COEXIST disabled! ignore bt_rfk!");
 #endif
@@ -414,7 +417,7 @@ bool rtk_bt_pre_enable(void)
 		return false;
 	}
 
-	wifi_ps_en_by_bt_on(DISABLE);
+	wifi_ps_en_by_bt_state(DISABLE);
 #endif
 
 	return true;
@@ -423,7 +426,7 @@ bool rtk_bt_pre_enable(void)
 void rtk_bt_post_enable(void)
 {
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
-	wifi_ps_en_by_bt_on(ENABLE);
+	wifi_ps_en_by_bt_state(ENABLE);
 #endif
 }
 

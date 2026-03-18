@@ -16,6 +16,7 @@
 
 #include <whc_host_app_api.h>
 #include <whc_host_netlink.h>
+#include <whc_host_app_ota.h>
 
 //#define WHC_AUTO_SETTING	1
 //#define CONFIG_RMESH
@@ -66,6 +67,7 @@ static struct whc_host_command_entry cmd_table[] = {
 	{"connect", whc_host_wifi_connect},
 	{"iwpriv", whc_host_wifi_mp},
 	{"dbg", whc_host_wifi_dbg},
+	{"ota", whc_host_ota},
 	{NULL, NULL}
 };
 
@@ -657,6 +659,9 @@ void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 				break;
 			case WHC_WIFI_TEST_MP:
 				whc_host_mp_result(pos + sizeof(uint32_t));
+				break;
+			case WHC_WIFI_TEST_OTA:
+				whc_host_ota_from_dev(pos);
 				break;
 			default:
 				break;

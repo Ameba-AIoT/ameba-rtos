@@ -13,8 +13,6 @@
 #include "eap_common/eap_defs.h"
 #include "eap_common/eap_wsc_common.h"
 
-#ifdef CONFIG_WPS_AP
-
 struct eap_server_method wsc_server_eap;
 #if 0
 struct eap_wsc_data {
@@ -222,6 +220,8 @@ static struct wpabuf *eap_wsc_build_start(struct eap_wsc_data *data, u8 id)
 {
 	struct wpabuf *reqbuf = NULL;
 
+	(void) data;
+
 	reqbuf = eap_msg_alloc(EAP_VENDOR_WFA, (enum EapType)EAP_VENDOR_TYPE_WSC, 2,
 						   EAP_CODE_REQUEST, id);
 	if (reqbuf == NULL) {
@@ -315,7 +315,7 @@ static struct wpabuf *eap_wsc_buildReq(void *priv, u8 id)
 			}
 			data->out_used = 0;
 		}
-	/* pass through */
+		return eap_wsc_build_msg(data, id);
 	case WAIT_FRAG_ACK:
 		return eap_wsc_build_msg(data, id);
 	case FRAG_ACK:
@@ -578,4 +578,3 @@ void *eap_wsc_server_init(char *identity, char identity_len)
 	return wsc_server_eap.init(identity, identity_len);
 }
 
-#endif //#ifdef CONFIG_WPS_AP
