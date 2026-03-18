@@ -196,14 +196,14 @@ __km4tz_img3_text_start__ = ORIGIN(KM4TZ_IMG3_XIP);
 __km4tz_img3_text_end__ = ORIGIN(KM4TZ_IMG3_XIP) + LENGTH(KM4TZ_IMG3_XIP);
 
 
-#if defined (CONFIG_TRUSTZONE_EN)
+#if defined (CONFIG_IMG3_PSRAM)
+__km4tz_tz_nsc_start__ = ORIGIN(KM4TZ_BD_PSRAM_TZ_NSC) - 0x20;
+__km4tz_tz_entry_start__ = ORIGIN(KM4TZ_BD_PSRAM_TZ_ENTRY) ;
+__km4tz_tz_entry_end__ = ORIGIN(KM4TZ_BD_PSRAM_TZ_S) + LENGTH(KM4TZ_BD_PSRAM_TZ_S) - SECURE_ADDR_OFFSET;
+#else
 __km4tz_tz_nsc_start__ = ORIGIN(KM4TZ_BD_RAM_TZ_NSC) - 0x20;
 __km4tz_tz_entry_start__ = ORIGIN(KM4TZ_BD_RAM_TZ_ENTRY);
-__km4tz_tz_entry_end__ = ORIGIN(KM4TZ_BD_RAM_TZ_ENTRY) + LENGTH(KM4TZ_BD_RAM_TZ_ENTRY);
-
-__km4tz_psram_tz_nsc_start__ = ORIGIN(KM4TZ_BD_PSRAM_TZ_NSC) - 0x20;
-__km4tz_psram_tz_entry_start__ = ORIGIN(KM4TZ_BD_PSRAM_TZ_ENTRY) ;
-__km4tz_psram_tz_entry_end__ = ORIGIN(KM4TZ_BD_PSRAM_TZ_ENTRY) + LENGTH(KM4TZ_BD_PSRAM_TZ_ENTRY);
+__km4tz_tz_entry_end__ = ORIGIN(KM4TZ_BD_RAM_TZ_S) + LENGTH(KM4TZ_BD_RAM_TZ_S) - SECURE_ADDR_OFFSET;
 #endif
 /*SRAM Layout boundary*/
 __km4tz_bd_ram_start__ = ORIGIN(KM4TZ_BD_RAM) - 0x20;

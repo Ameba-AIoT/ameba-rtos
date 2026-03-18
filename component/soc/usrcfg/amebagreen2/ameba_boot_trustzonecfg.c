@@ -7,16 +7,9 @@
 #include "ameba_soc.h"
 
 #ifdef CONFIG_TRUSTZONE
-
-#if defined (CONFIG_IMG3_SRAM) || defined (CONFIG_IMG3_FLASH)
 #define TZ_NSC_START  	(u32)__km4tz_tz_nsc_start__
 #define TZ_ENTRY_START	(u32)__km4tz_tz_entry_start__
 #define TZ_ENTRY_END	(u32)__km4tz_tz_entry_end__
-#else
-#define TZ_NSC_START  	(u32)__km4tz_psram_tz_nsc_start__
-#define TZ_ENTRY_START	(u32)__km4tz_psram_tz_entry_start__
-#define TZ_ENTRY_END	(u32)__km4tz_psram_tz_entry_end__
-#endif
 
 #define BD_RAM_START	(u32)__km4tz_bd_ram_start__
 #define BD_RAM_EMD

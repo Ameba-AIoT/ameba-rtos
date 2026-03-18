@@ -1244,7 +1244,9 @@ void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize)
 	return p;
 }
 
+
 #if defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAD) || defined (CONFIG_RTL8720F)
+__attribute__((optimize("O0")))
 void vApplicationMallocFailedHook(size_t xWantedSize)
 {
 	char *pcCurrentTask = "NoTsk";

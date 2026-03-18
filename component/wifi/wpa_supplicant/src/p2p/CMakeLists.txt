@@ -63,4 +63,17 @@ ameba_add_external_app_library(${TARGET_LIB}
         ${private_compile_options}
 )
 
+###NOTE: For open-source component, always build from source
+ameba_add_internal_library(p2p_config
+    p_SOURCES
+        ../../wpa_supplicant/wifi_p2p_config.c
+        ../../wpa_supplicant/wifi_p2p_disable.c
+    p_INCLUDES
+        ${private_includes}
+    p_DEFINITIONS
+        ${private_definitions}
+    p_COMPILE_OPTIONS
+        ${private_compile_options}
+)
+
 ##########################################################################################

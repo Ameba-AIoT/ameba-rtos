@@ -341,25 +341,6 @@ __attribute__((weak)) int whc_host_buf_rx_to_user(u8 *buf, u16 size)
 	return 0;
 }
 
-#ifdef CONFIG_RMESH
-void whc_host_rmesh_to_user(u32 *param_buf)
-{
-	u8 *user_buf;
-	u32 len = param_buf[0];
-
-	if (wifi_event_user_genl_info.snd_portid == 0) {
-		/*when userspace not ready, just drop*/
-		return;
-	}
-	user_buf = kzalloc(len + sizeof(u32) * 2, GFP_KERNEL);
-	*(u32 *)user_buf = WHC_RMESH_TEST;
-	*(u32 *)(user_buf + sizeof(u32)) = len;
-	memcpy(user_buf + sizeof(u32) * 2, (u8 *)param_buf + sizeof(u32), len);
-	whc_host_buf_rx_to_user(user_buf, len + sizeof(u32) * 2);
-	kfree(user_buf);
-}
-#endif
-
 void whc_host_register_genl_family(void)
 {
 	int ret = 0;
