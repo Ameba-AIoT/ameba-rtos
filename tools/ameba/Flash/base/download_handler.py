@@ -19,8 +19,25 @@ from .rt_settings import *
 from .spic_addr_mode import *
 from .memory_info import *
 from .config_utils import *
-from .remote_serial import RemoteSerial
 from typing import Optional, Dict, Any
+from pathlib import Path
+
+current_script_path = Path(__file__).resolve().parent
+remote_service_path = current_script_path.parent.parent / 'RemoteService'
+
+RemoteSerial = None
+
+if remote_service_path.exists():
+    sys.path.insert(0, str(remote_service_path))
+
+    try:
+        from remote_serial import RemoteSerial
+    except ImportError as e:
+        RemoteSerial = None
+        print(f"error: RemoteSerial ImportError: ", str(e))
+    except Exception as e:
+        RemoteSerial = None
+        print(f"error: RemoteSerial ImportException: ", str(e))
 
 _RTK_USB_VID = "0BDA"
 
@@ -55,7 +72,8 @@ class Ameba(object):
                  erase_info=None,
                  remote_server: Optional[str] = None,
                  remote_port: Optional[int] = None,
-                 remote_password: Optional[str] = None):
+                 remote_password: Optional[str] = None,
+                 close_tcp_on_cleanup: bool = False):
         self.logger = logger
         self.setting = setting
         self.profile_info = profile
@@ -64,6 +82,7 @@ class Ameba(object):
         self.remote_server = remote_server
         self.remote_port = remote_port
         self.remote_password = remote_password
+        self.close_tcp_on_cleanup = close_tcp_on_cleanup
         self.is_usb = self.is_realtek_usb() if not remote_server else False
         self.initial_serial_port()
         self.baudrate = baudrate
@@ -83,7 +102,10 @@ class Ameba(object):
             if self.is_open():
                 try:
                     self.logger.info(f"close {self.serial_port.port}...")
-                    self.serial_port.close()
+                    if RemoteSerial and isinstance(self.serial_port, RemoteSerial):
+                        self.serial_port.close(close_tcp=self.close_tcp_on_cleanup)
+                    else:
+                        self.serial_port.close()
                     self.logger.info(f"{self.serial_port.port} close done")
                 except Exception as e:
                     self.logger.error(f"close error: {e}", exc_info=True)
@@ -94,7 +116,10 @@ class Ameba(object):
             try:
                 if self.serial_port.is_open:
                     self.logger.info(f"close {self.serial_port.port}...")
-                    self.serial_port.close()
+                    if RemoteSerial and isinstance(self.serial_port, RemoteSerial):
+                        self.serial_port.close(close_tcp=self.close_tcp_on_cleanup)
+                    else:
+                        self.serial_port.close()
                 while self.serial_port.is_open:
                     pass
                 self.logger.info(f"{self.serial_port.port} closed.")
@@ -111,6 +136,9 @@ class Ameba(object):
             if self.remote_server and self.remote_port:
                 self.logger.info(f"Connect to remote serial server: {self.remote_server}:{self.remote_port} (Serial port: {self.serial_port_name})")
                 # initialize remote serial port
+                if RemoteSerial is None:
+                    self.logger.error(f"RemoteSerial doesn't exists at: {remote_service_path} ")
+                    sys.exit(1)
                 self.serial_port = RemoteSerial(
                     remote_server=self.remote_server,
                     remote_port=self.remote_port,
@@ -121,6 +149,7 @@ class Ameba(object):
                 if self.remote_password:
                     self.logger.debug("Remote server: password set, will send validate command")
                     self.serial_port.validate(self.remote_password)
+                    self.serial_port.query_version()
                 self.serial_port.open()
             else:
                 # initialize local serial port
@@ -148,7 +177,7 @@ class Ameba(object):
 
     # --- check if serial port is open (remote/local compatible) ---
     def is_open(self) -> bool:
-        if isinstance(self.serial_port, RemoteSerial):
+        if RemoteSerial and isinstance(self.serial_port, RemoteSerial):
             return self.serial_port.is_open
         elif isinstance(self.serial_port, serial.Serial):
             return self.serial_port.is_open
@@ -164,12 +193,10 @@ class Ameba(object):
         self.logger.debug(f"Switch baudrate: {self.serial_port.baudrate} -> {baud}")
 
         try:
-            # remote serial port: close and reopen (no dynamic switching supported yet)
-            if isinstance(self.serial_port, RemoteSerial):
-                self.serial_port.close()
-                #time.sleep(delay_s)
-                self.serial_port.baudrate = baud
-                self.serial_port.open()
+            # remote serial port: use set_baudrate to preserve DTR/RTS states
+            if RemoteSerial and isinstance(self.serial_port, RemoteSerial):
+                self.serial_port.set_baudrate(baud)
+                time.sleep(delay_s)
             else:
                 # local serial port
                 if self.is_usb:
@@ -399,7 +426,7 @@ class Ameba(object):
             self.logger.info(f'* MemoryType: NAND')
             self.logger.info(f'* FlashMID: 0x{format(self.device_info.flash_mid, "02X")}')  # customized, do not modify
             if self.device_info.flash_mid == FlashUtils.NandMfgMicron:
-                self.logger.info(f'* FlashDID: 0x{format(self.device_info.flash_did, "04X")}')
+                self.logger.info(f'* FlashDID: 0x{format(self.device_info.flash_did & 0xFF, "02x")}{format((self.device_info.flash_did >> 8) & 0xFF, "02x")}')
             else:
                 self.logger.info(f'* FlashDID: 0x{format(self.device_info.flash_did, "02X")}')
             self.logger.info(f'* FlashMFG: {self.device_info.flash_mfg}')
@@ -417,8 +444,8 @@ class Ameba(object):
             self.logger.info(f'* FlashReqHostEccLevel: {self.device_info.flash_req_host_ecc_level}')
         else:
             self.logger.info(f'* MemoryType: NOR')
-            self.logger.info(f'* FlashMID: {hex(self.device_info.flash_mid)}')
-            self.logger.info(f'* FlashDID: {hex(self.device_info.flash_did)}')
+            self.logger.info(f'* FlashMID: {format(self.device_info.flash_mid, "02X")}')
+            self.logger.info(f'* FlashDID: 0x{format(self.device_info.flash_did & 0xFF, "02x")}{format((self.device_info.flash_did >> 8) & 0xFF, "02x")}')
             self.logger.info(
                 f'* FlashCapacity: {self.device_info.flash_capacity // 1024 // (1024 // 8)}Mb/{self.device_info.flash_capacity // 1024 // 1024}MB')
             self.logger.info(f'* FlashPageSize: {self.device_info.flash_page_size}B')
@@ -626,7 +653,10 @@ class Ameba(object):
             reburn_timing = ConfigUtils.get_key_value_pairs(self.logger, reburn_timing_file)
             try:
                 if reburn_timing:
-                    ret = self.dtr_rts_timing_mapping(reburn_timing)
+                    if RemoteSerial and isinstance(self.serial_port, RemoteSerial):
+                        self.serial_port.control_dtr_rts(reburn_timing, "enter_download_mode")
+                    else:
+                        ret = self.dtr_rts_timing_mapping(reburn_timing)
             except Exception as err:
                 self.logger.error(f"Fail to auto enter download mode: {err}")
                 ret = ErrType.SYS_IO
@@ -646,7 +676,10 @@ class Ameba(object):
             reset_timing = ConfigUtils.get_key_value_pairs(self.logger, reset_timing_file)
             try:
                 if reset_timing:
-                    ret = self.dtr_rts_timing_mapping(reset_timing)
+                    if RemoteSerial and isinstance(self.serial_port, RemoteSerial):
+                        self.serial_port.control_dtr_rts(reset_timing, "reset_device")
+                    else:
+                        ret = self.dtr_rts_timing_mapping(reset_timing)
             except Exception as err:
                 self.logger.error(f"Fail to reset device: {err}")
                 ret = ErrType.SYS_IO

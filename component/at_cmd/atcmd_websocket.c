@@ -589,7 +589,7 @@ void at_wsconn(void *arg)
 		goto end;
 	} else {
 		if (ws_config[link_id].ws_client && ws_config[link_id].ws_client->readyState != WSC_CLOSED) {
-			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link %d is open\r\n", link_id);
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "link %d is open or in connecting\r\n", link_id);
 			error_no = 1;
 			goto end;
 		}
