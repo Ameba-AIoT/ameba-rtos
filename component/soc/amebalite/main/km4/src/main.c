@@ -145,7 +145,7 @@ int main(void)
 	/*IPC table initialization*/
 	ipc_table_init(IPCKM4_DEV);
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
-	IPC_SEMDelayStub((void *)rtos_time_delay_ms);
+	IPC_SEMDelayStub((void *)DelayMs);
 
 #ifdef CONFIG_VFS_ENABLED
 	app_filesystem_init();
@@ -191,4 +191,3 @@ int main(void)
 	/* Enable Schedule, Start Kernel */
 	rtos_sched_start();
 }
-
