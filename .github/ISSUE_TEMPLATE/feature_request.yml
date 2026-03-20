@@ -9,20 +9,33 @@ body:
         * We welcome any ideas or feature requests! It’s helpful if you can explain exactly why the feature would be useful.
         * There are usually some outstanding feature requests in the [closed](https://github.com/Ameba-AIoT/ameba-rtos/issues?q=is%3Aissue+label%3AType%3A+Feature+Request+is%3Aclosed) and [existing](https://github.com/Ameba-AIoT/ameba-rtos/issues?q=is%3Aissue+label%3AType%3A+Feature+Request+is%3Aopen), feel free to add comments to them.
         * If you would like to contribute, please read the [contributions guide].
-  - type: input
+  - type: dropdown
     id: branch
     attributes:
       label: Ameba-rtos branch.
       description: On which branch does this issue occur on? Run `git branch -v` to find it.
-      placeholder: ex. master/release/v1.0
+      options:
+        - master
+        - release/v1.2
+        - release/v1.1
+        - release/v1.0
+      default: 0
     validations:
       required: true
-  - type: input
+  - type: dropdown
     id: chip
     attributes:
       label: Ameba-rtos chip.
       description: On which chip does your application run on? Check the build project.
-      placeholder: ex. amebalite/amebadplus/amebasmart
+      options:
+        - RTL8730E
+        - RTL8726E
+        - RTL8721Dx
+        - RTL8710E
+        - RTL8721F
+        - RTL8720E
+        - RTL8713E
+      default: 0
     validations:
       required: true
   - type: input
