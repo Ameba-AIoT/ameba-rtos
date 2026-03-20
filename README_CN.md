@@ -2,6 +2,8 @@
 
 * [English Version](./README.md)
 
+* 更多关于 Ameba 系列芯片的信息，请访问官方产品页面：https://aiot.realmcu.com/zh/product/index.html
+
 ameba-rtos是瑞昱官方推出的物联网开发框架，同时支持Linux和Windows操作系统。
 
 # 支持的芯片
@@ -21,9 +23,7 @@ ameba-rtos是瑞昱官方推出的物联网开发框架，同时支持Linux和Wi
 
 # 相关文档
 
-最新版的文档: [RealMCU](https://aiot.realmcu.com/cn/latest/rtos/index.html) ，在菜单栏中选择产品来查看具体芯片的文档和手册。
-
-**注意:** 不同系列的芯片都有其相对应的数据手册，请根据特定的芯片名称查找手册。
+最新版的文档请访问: [FreeRTOS SDK 及使用指南](https://aiot.realmcu.com/zh/latest/rtos/index.html)
 
 # 使用Gitee加速
 
@@ -43,11 +43,11 @@ Ameba 扩展插件是在 Cline 基础上开发的 VS Code 扩展， 兼容原生
 * 固件烧录便捷工具
 * 串口监控集成支持
 
-参考[VS Code 使用指南](https://aiot.realmcu.com/cn/latest/tools/vscode/index.html)进行插件安装。安装插件后，即可高效完成环境配置、项目编译、固件烧录及串口监控等开发任务。
+参考[VS Code 使用指南](https://aiot.realmcu.com/zh/latest/tools/vscode/index.html)进行插件安装。安装插件后，即可高效完成环境配置、项目编译、固件烧录及串口监控等开发任务。
 
 ## 手动配置编译环境
 
-如果您希望手动完成环境配置，请参考[FreeRTOS SDK 使用指南](https://aiot.realmcu.com/cn/latest/rtos/sdk/index.html)。根据指南内容，逐步进行以下操作：
+如果您希望手动完成环境配置，请参考[FreeRTOS SDK 使用指南](https://aiot.realmcu.com/zh/latest/rtos/sdk/index.html)。根据指南内容，逐步进行以下操作：
 
 * SDK 环境配置: Linux 平台执行 `source env.sh`，Windows 平台执行 `env.bat`。
 * 工程配置：

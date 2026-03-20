@@ -9,9 +9,9 @@ body:
       label: Answers checklist.
       description: Before submitting a new issue, please follow the checklist and try to find the answer.
       options:
-        - label: I have read the documentation from [RealMCU](www.realmcu.com/) and the issue is not addressed there.
+        - label: I have read the documentation from [FreeRTOS SDK and User Guide](https://aiot.realmcu.com/en/latest/rtos/index.html). and the issue is not addressed there.
           required: true
-        - label: I have updated my ameba-rtos branch (master or release/v1.0) to the latest version and checked that the issue is present there.
+        - label: I have updated my ameba-rtos branch to the latest version and checked that the issue is present there.
           required: true
         - label: I have searched the issue tracker([closed](https://github.com/Ameba-AIoT/ameba-rtos/issues?q=is%3Aissue+label%3AType%3A+Bug+is%3Aopen) and [existing](https://github.com/Ameba-AIoT/ameba-rtos/issues?q=is%3Aissue+label%3AType%3A+Bug+is%3Aclosed)) for a similar issue and not found a similar issue.
           required: true
@@ -29,25 +29,35 @@ body:
       label: Ameba-rtos branch.
       description: On which branch does this issue occur on? Run `git branch -v` to find it.
       options:
-      - master
-      - release/v1.0
+        - master
+        - release/v1.2
+        - release/v1.1
+        - release/v1.0
       default: 0
     validations:
       required: true
   - type: input
     id: version
     attributes:
-      label: Ameba-rtos version.
-      description: On which version does this issue occur on? Run `git describe --tags` to find it.
-      placeholder: ex. default
+      label: Ameba-rtos git version.
+      description: On which git version does this issue occur on? Run `git describe --tags --always` to find it.
+      placeholder: ex. 0ce653673
     validations:
       required: true
-  - type: input
+  - type: dropdown
     id: chip
     attributes:
       label: Ameba-rtos chip.
       description: On which chip does your application run on? Check the build project.
-      placeholder: ex. amebalite/amebadplus/amebasmart
+      options:
+        - RTL8730E
+        - RTL8726E
+        - RTL8721Dx
+        - RTL8710E
+        - RTL8721F
+        - RTL8720E
+        - RTL8713E
+      default: 0
     validations:
       required: true
   - type: textarea
@@ -62,7 +72,7 @@ body:
     id: system
     attributes:
       label: Compile system used.
-      description: On which OS does this issue occur?
+      description: On which platform does this issue occur?
       options:
         - Linux
         - Windows

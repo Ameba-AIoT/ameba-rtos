@@ -2,6 +2,8 @@
 
 * [中文版](./README_CN.md)
 
+* For more information on the Ameba series chips, please refer to the following link: https://aiot.realmcu.com/en/product/index.html
+
 ameba-rtos is the development framework for Realtek SoCs supported on Linux and Windows.
 
 # Supported Chips
@@ -21,9 +23,7 @@ ameba-rtos is the development framework for Realtek SoCs supported on Linux and 
 
 # Documentation
 
-Documentation for latest version: [RealMCU](https://aiot.realmcu.com/en/latest/rtos/index.html). Select a product from the menu bar to view the documentations of the specific SoC.
-
-**Note:** Each SoC series has its own documentation, please find documentation with the specified chip.
+Documentation for latest version: [FreeRTOS SDK and User Guide](https://aiot.realmcu.com/en/latest/rtos/index.html).
 
 # Accelerate with Gitee
 
