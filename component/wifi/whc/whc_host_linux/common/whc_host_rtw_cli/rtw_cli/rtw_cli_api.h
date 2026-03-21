@@ -26,6 +26,7 @@ extern int sock_fd;
 
 #define MSG_EVENT_SCANING "CTRL-EVENT-SCANING"
 #define MSG_EVENT_SCAN_COMPLETE "CTRL-EVENT-SCAN-PROCESS-COMPLETE "
+#define MSG_EVENT_JOIN_STATUS "CTRL-EVENT-JOIN_STATUS "
 #define MSG_EVENT_GET_SCAN_RESULT "CTRL-EVENT-GET-SCAN-RESULT "
 
 #define MSG_EVENT_FAIL_BUSY "FAIL-BUSY"
@@ -34,7 +35,7 @@ extern int sock_fd;
 
 //For Event handle
 
-typedef void (*event_handler_t)(void);
+typedef void (*event_handler_t)(char *pos);
 
 struct event_func_t {
 	u32 wifi_event;
@@ -79,6 +80,8 @@ void rtw_cli_cmd_scan(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd
 void rtw_cli_cmd_scan_result(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 void rtw_cli_cmd_getmac(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 void rtw_cli_cmd_set_network(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
+void rtw_cli_cmd_wpas_cmd(int argc, char **argv, u8 api_id,
+						  u32 cmd_category, u8 cmd_id);
 void rtw_cli_cmd_get_join_status(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 
 void rtw_cli_cmd_wifi_on(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
@@ -91,9 +94,11 @@ void print_scan_result(struct rtw_scan_result *record);
 void whc_cmd_handle_rx_print_scan_result(char *pos, int chunk_index,
 		char last_chunk);
 
-void event_handler_scan_complete(void);
+void event_handler_scan_complete(char *pos);
+void event_handler_join_status(char *pos);
 void whc_cmd_handle_rx_list_network(char *pos);
 void whc_cmd_handle_rx_get_status(char *pos);
+void whc_cmd_handle_wpas_ofld_result(char *pos, int len);
 
 void whc_cmd_handle_rx_payload(char *pos, int len, int api_id,
 							   int chunk_index, char last_chunk);
