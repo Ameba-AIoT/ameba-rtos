@@ -189,9 +189,8 @@ int main(void)
 
 	/* Set delay function & critical function for hw ipc sema */
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
-	IPC_SEMDelayStub(rtos_time_delay_ms);
+	IPC_SEMDelayStub(DelayMs);
 
 	//Enable Schedule
 	rtos_sched_start();
 }
-

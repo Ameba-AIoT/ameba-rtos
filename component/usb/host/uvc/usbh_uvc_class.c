@@ -10,7 +10,6 @@
 
 
 /* Private defines -----------------------------------------------------------*/
-#define USBH_UVC_DEBUG 0
 
 /* Private types -------------------------------------------------------------*/
 
@@ -25,6 +24,7 @@ static int usbh_uvc_detach(usb_host_t *host);
 static int usbh_uvc_process(usb_host_t *host, u32 msg);
 static int usbh_uvc_sof(usb_host_t *host);
 static int usbh_uvc_setup(usb_host_t *host);
+static int usbh_uvc_completed(usb_host_t *host, u8 pipe_num);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -48,7 +48,8 @@ static usbh_class_driver_t usbh_uvc_driver = {
 	.detach = usbh_uvc_detach,
 	.setup = usbh_uvc_setup,
 	.process = usbh_uvc_process,
-	.sof = usbh_uvc_sof
+	.sof = usbh_uvc_sof,
+	.completed = usbh_uvc_completed
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -65,7 +66,7 @@ static int usbh_uvc_attach(usb_host_t *host)
 	usbh_uvc_setting_t *cur_set = NULL;
 	usbh_uvc_alt_t *alt_set = NULL;
 	usbh_ep_desc_t *ep = NULL;
-	usbh_pipe_t *pipe;
+	usbh_pipe_t *pipe = NULL;
 	int status = HAL_ERR_UNKNOWN;
 	int i = 0;
 	u32 xfer_len = 0;
@@ -74,7 +75,7 @@ static int usbh_uvc_attach(usb_host_t *host)
 
 	status = usbh_uvc_parse_cfgdesc(host);
 	if (status) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse uvc desc fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse cfg desc fail\n");
 		return status;
 	}
 
@@ -416,10 +417,9 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, u32 msg)
   */
 static int usbh_uvc_process(usb_host_t *host, u32 msg)
 {
-	int i, ret = HAL_OK;
+	int ret = HAL_OK;
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_event_t event;
-	usbh_uvc_stream_t *stream = NULL;
 	event.d32 = msg;
 
 	switch (uvc->state) {
@@ -433,16 +433,7 @@ static int usbh_uvc_process(usb_host_t *host, u32 msg)
 		break;
 
 	case UVC_STATE_TRANSFER:
-		for (i = 0; i < uvc->uvc_desc.vs_num; i++) {
-			if (uvc->stream[i].cur_setting.pipe.pipe_num == event.msg.pipe_num) {
-				stream = &uvc->stream[i];
-				break;
-			}
-		}
-
-		if ((stream != NULL) && (stream->next_xfer) && (stream->stream_data_state == STREAM_DATA_IN)) {
-			usbh_uvc_process_rx(stream);
-		}
+		// do nothing, need this state to start isoc in in sof cb
 		break;
 
 	case UVC_STATE_ERROR:
@@ -471,7 +462,17 @@ static int usbh_uvc_process(usb_host_t *host, u32 msg)
 static int usbh_uvc_sof(usb_host_t *host)
 {
 	usbh_uvc_process_sof(host);
+	return HAL_OK;
+}
 
+/**
+  * @brief  SOF callback
+  * @param  host: Host handle
+  * @retval Status
+  */
+static int usbh_uvc_completed(usb_host_t *host, u8 pipe_num)
+{
+	usbh_uvc_process_completed(host, pipe_num);
 	return HAL_OK;
 }
 

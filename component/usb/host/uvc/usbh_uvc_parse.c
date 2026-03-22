@@ -402,25 +402,27 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_vs_t *vs_intf = &uvc->uvc_desc.vs_intf[uvc->uvc_desc.vs_num];
-	uvc->stream[uvc->uvc_desc.vs_num].vs_intf = vs_intf;
-	uvc->uvc_desc.vs_num++;
-	u8 bAlternateSetting;
-	u8 *desc;
-	u8 type;
+	u8 *desc = NULL;
+	u8 *next_desc = NULL;
 	u16 len;
 	u16 itf_total_len = 0;
+	u8 bAlternateSetting;
+	u8 type;
+
+	uvc->stream[uvc->uvc_desc.vs_num].vs_intf = vs_intf;
+	uvc->uvc_desc.vs_num++;
 
 	if (uvc->uvc_desc.vs_num > USBH_UVC_VS_DESC_MAX_NUM) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Too many VS itf %d-%d\n", uvc->uvc_desc.vs_num, USBH_UVC_VS_DESC_MAX_NUM);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Too many VS itf %d>%d\n", uvc->uvc_desc.vs_num, USBH_UVC_VS_DESC_MAX_NUM);
 		return HAL_OK;
 	}
 
 	desc = itf_data->raw_data;
-	//save the first interface number
+	/* save the first interface number (Alt 0) */
 	vs_intf->p = desc;
 	vs_intf->bInterfaceNumber = desc[2];
 
-	/*find next descripter*/
+	/* Skip the first descriptor (Interface Alt 0) */
 	len = ((usbh_desc_header_t *) desc)->bLength;
 	desc += len;
 	itf_total_len += len;
@@ -431,6 +433,13 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 		}
 
 		type = ((usbh_desc_header_t *) desc)->bDescriptorType;
+		len = ((usbh_desc_header_t *) desc)->bLength;
+
+		if (len == 0) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Zero length desc!\n");
+			break;
+		}
+
 		switch (type) {
 		case USBH_UVC_DESC_TYPE_CS_INTERFACE:
 			usbh_uvc_parse_format(vs_intf, desc, &len);
@@ -448,21 +457,22 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 					vs_intf->altsetting[bAlternateSetting - 1].p = desc;
 					vs_intf->alt_num++;
 
-					len = ((usbh_desc_header_t *) desc)->bLength;
-					desc += len;
-					vs_intf->altsetting[bAlternateSetting - 1].endpoint = (usbh_ep_desc_t *)desc;
+					next_desc = desc + len;
+					if ((itf_total_len + len) < itf_data->raw_data_len) {
+						if (((usbh_desc_header_t *)next_desc)->bDescriptorType == USB_DESC_TYPE_ENDPOINT) {
+							vs_intf->altsetting[bAlternateSetting - 1].endpoint = (usbh_ep_desc_t *)next_desc;
+						}
+					}
 				} else {
 					RTK_LOGS(TAG, RTK_LOG_WARN, "Too many alt set %d-%d\n", bAlternateSetting, USBH_UVC_VS_ALTS_MAX_NUM);
 				}
 			} else {
 				return HAL_OK;
 			}
-			len = ((usbh_desc_header_t *) desc)->bLength;
 			desc += len;
 			break;
 
 		default:
-			len = ((usbh_desc_header_t *) desc)->bLength;
 			desc += len;
 			break;
 		}
@@ -491,7 +501,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 		return ret;
 	} else {
 		ret = usbh_uvc_parse_vc(itf_data);
-		if (ret) {
+		if (ret != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse vc fail\n");
 			return ret;
 		}
