@@ -124,7 +124,11 @@ static bool bt_stack_sbc_encoder_init(SBC_ENC_PARAMS *p_params, rtk_bt_sbc_encod
 		p_params->s16SamplingFreq = 0;
 		break;
 	}
-	p_params->u16BitRate = 229;
+	if (p_encode_t->sample_rate != 48000) {
+		p_params->u16BitRate = 229;
+	} else {
+		p_params->u16BitRate = 328;
+	}
 	memset((void *)encoded_data, 0, 4096 + 16);
 	p_params->pu8Packet = encoded_data;
 	p_params->u8NumPacketToEncode = p_encode_t->sbc_pkt_num;
