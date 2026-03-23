@@ -1,0 +1,91 @@
+Ameba_1-N_MP_ImageTool.exe v2.5.11 command migration description:
+
+1. help
+	old: Ameba_1-N_MP_ImageTool.exe -help
+	new: Ameba_1-N_MP_ImageTool.exe --help
+
+2. Settings for download
+	>> chip 
+	old: Ameba_1-N_MP_ImageTool.exe -set chip <CHIP>
+	new: Ameba_1-N_MP_ImageTool.exe -c <CHIP> or Ameba_1-N_MP_ImageTool.exe --chip=<CHIP>
+
+	>> image 
+	old: Ameba_1-N_MP_ImageTool.exe -set image <IMAGE>
+	new: Ameba_1-N_MP_ImageTool.exe -i <IMAGE> or Ameba_1-N_MP_ImageTool.exe --image=<IMAGE>
+
+	>> baudrate 
+	old: Ameba_1-N_MP_ImageTool.exe -set baudrate <BAUDRATE>
+	new: Ameba_1-N_MP_ImageTool.exe -b <BAUDRATE> or Ameba_1-N_MP_ImageTool.exe --baudrate=<BAUDRATE>
+
+	>> address 
+	old: Ameba_1-N_MP_ImageTool.exe -set address <ADDRESS>
+	new: Ameba_1-N_MP_ImageTool.exe -a <ADDRESS> or Ameba_1-N_MP_ImageTool.exe --address=<ADDRESS>
+
+	>> length 
+	old: Ameba_1-N_MP_ImageTool.exe -set length <LENGTH>
+	new: Ameba_1-N_MP_ImageTool.exe -l <LENGTH> or Ameba_1-N_MP_ImageTool.exe --length=<LENGTH>
+
+	>> skipsys 
+	old: Ameba_1-N_MP_ImageTool.exe -set skipsys <true|false>
+	new: Ameba_1-N_MP_ImageTool.exe -k <true|false> or Ameba_1-N_MP_ImageTool.exe --skipsys=<true|false>
+
+	>> verify 
+	old: Ameba_1-N_MP_ImageTool.exe -set verify <true|false>
+	new: Ameba_1-N_MP_ImageTool.exe -v <true|false> or Ameba_1-N_MP_ImageTool.exe --verify=<true|false>
+
+	>> skipwifi 
+	old: Ameba_1-N_MP_ImageTool.exe -set skipwifi <true|false>
+	new: Ameba_1-N_MP_ImageTool.exe -w <true|false> or Ameba_1-N_MP_ImageTool.exe --skipwifi=<true|false>
+
+	>> savelog 
+	old: Ameba_1-N_MP_ImageTool.exe -set savelog <true|false>
+	new: Ameba_1-N_MP_ImageTool.exe -s <true|false> or Ameba_1-N_MP_ImageTool.exe --savelog=<true|false>
+
+	>> dtrrtsconfig 
+	old: Ameba_1-N_MP_ImageTool.exe -set dtrrtsconfig <true|false>
+	new: Ameba_1-N_MP_ImageTool.exe -g <true|false> or Ameba_1-N_MP_ImageTool.exe --dtrrtsconfig=<true|false>
+
+	>> usbdownload 
+	old: Ameba_1-N_MP_ImageTool.exe -set usbdownload <true|false>
+	new: Ameba_1-N_MP_ImageTool.exe -u <true|false> or Ameba_1-N_MP_ImageTool.exe --usbdownload=<true|false>
+
+	>> profile 
+	old: Ameba_1-N_MP_ImageTool.exe -set profile <PROFILE>
+	new: Ameba_1-N_MP_ImageTool.exe -p <PROFILE> or Ameba_1-N_MP_ImageTool.exe --profile=<PROFILE>
+
+	>> flashpin 
+	old: Ameba_1-N_MP_ImageTool.exe -set flashpin <FLASHPIN>
+	new: Ameba_1-N_MP_ImageTool.exe -h <FLASHPIN> or Ameba_1-N_MP_ImageTool.exe --flashpin=<FLASHPIN>
+
+	>> chiperase
+	old: Ameba_1-N_MP_ImageTool.exe -set chiperase <true|false>
+	new: Ameba_1-N_MP_ImageTool.exe -e <true|false> or Ameba_1-N_MP_ImageTool.exe --chiperase=<true|false>
+
+	>> downloaddisplay 
+	old: Ameba_1-N_MP_ImageTool.exe -set downloaddisplay <true|false>
+	new: Ameba_1-N_MP_ImageTool.exe -y <true|false> or Ameba_1-N_MP_ImageTool.exe --downloaddisplay=<true|false>
+
+	>> support4bytesaddrmode 
+	old: Ameba_1-N_MP_ImageTool.exe -set support4bytesaddrmode <true|false>
+	new: Ameba_1-N_MP_ImageTool.exe -m <true|false> or Ameba_1-N_MP_ImageTool.exe --profile=<true|false>
+
+	>> checkflashaddrmodetimeoutsecond 
+	old: Ameba_1-N_MP_ImageTool.exe -set checkflashaddrmodetimeoutsecond <TIMEOUTSECOND>
+	new: Ameba_1-N_MP_ImageTool.exe -t <TIMEOUTSECOND> or Ameba_1-N_MP_ImageTool.exe --checkflashaddrmodetimeoutsecond=<TIMEOUTSECOND>
+
+	>> processflashbpsfordownload 
+	old: Ameba_1-N_MP_ImageTool.exe -set processflashbpsfordownload <ProcessFlashBPsForDownload>
+	new: Ameba_1-N_MP_ImageTool.exe -n <ProcessFlashBPsForDownload> or Ameba_1-N_MP_ImageTool.exe --processflashbpsfordownload=<ProcessFlashBPsForDownload>
+
+	>> processflashbpsforerase 
+	old: Ameba_1-N_MP_ImageTool.exe -set processflashbpsforerase <ProcessFlashBPsForErase>
+	new: Ameba_1-N_MP_ImageTool.exe -f <ProcessFlashBPsForErase> or Ameba_1-N_MP_ImageTool.exe --processflashbpsforerase=<ProcessFlashBPsForErase>
+
+3. Download
+	old: Ameba_1-N_MP_ImageTool.exe -download [COM3 COM4 COMn]
+	new: Ameba_1-N_MP_ImageTool.exe -d <COM3 COM4 COMn | added> or Ameba_1-N_MP_ImageTool.exe --download=<COM3 COM4 COMn | added>
+
+	NOTE:
+	(1) If devices has been added, user can run tool with command Ameba_1-N_MP_ImageTool.exe -d added
+	(2) New commandline support user download with mult-settings
+		e.g. Ameba_1-N_MP_ImageTool.exe -c rtl871xb -i E:\temp\image_all.bin -b 1500000 -s true -v true -d COM3 COM4 COM5
