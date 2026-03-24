@@ -203,7 +203,7 @@ int main(void)
 	app_example();
 
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
-	IPC_SEMDelayStub(&rtos_time_delay_ms);
+	IPC_SEMDelayStub(&DelayMs);
 
 	vPortEnableOtherCore();
 

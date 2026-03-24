@@ -116,8 +116,7 @@ static uint16_t src_a2dp_send_data_size = 0; // unit is sizeof(int16_t)
 static rtk_bt_audio_codec_conf_t audio_a2dp_codec_conf = {0};
 static rtk_bt_audio_codec_conf_t audio_hfp_codec_conf = {0};
 static uint32_t demo_in_rate = 48000;
-static uint8_t demo_in_channels = 2;
-static rtk_bt_audio_biquad_t bq_t = {0};
+static uint32_t demo_in_channels = 2;
 static rtk_bt_audio_resample_t *g_audio_resample_t = NULL;
 static uint32_t resample_out_frames, resample_in_frames;
 static rtk_bt_cvsd_codec_t cvsd_codec_t = {0};
@@ -1036,32 +1035,37 @@ static void app_a2dp_src_send_data(void)
 	static rtk_bt_a2dp_stream_data_send_t data_send_t = {0};
 	struct enc_codec_buffer *penc_codec_buffer_t = NULL;
 	short *pdata = NULL;
-	uint32_t out_frames = 0;
+	uint32_t input_frames = 0;
+	uint8_t index = 0;
 
+	if (!g_audio_resample_t) {
+		BT_LOGE("[A2DP] g_audio_resample_t is NULL \r\n");
+		return;
+	}
 	if (src_a2dp_credits) {
 		if (pcm_offset < (birds_sing_size / 2)) {
 			pdata = (short *)(birds_sing + pcm_offset);
-			if ((pcm_offset + (demo_read_size / 2)) < birds_sing_size / 2) {
-				out_frames = rtk_bt_audio_resample_entry(g_audio_resample_t, &bq_t,
-														 (uint8_t *)pdata,
-														 resample_in_frames,
-														 (uint8_t *)out_frame_buf,
-														 demo_in_rate,
-														 sbc_codec_t.encoder_t.sample_rate);
-				pcm_offset += (demo_read_size / 2);
-			} else {
-				memset((void *)in_frame_buf, 0, demo_read_size);
-				memcpy((void *)in_frame_buf, (void *)pdata, ((birds_sing_size / 2) - pcm_offset) * 2);
-				out_frames = rtk_bt_audio_resample_entry(g_audio_resample_t, &bq_t,
-														 (uint8_t *)in_frame_buf,
-														 resample_in_frames,
-														 (uint8_t *)out_frame_buf,
-														 demo_in_rate,
-														 sbc_codec_t.encoder_t.sample_rate);
-				pcm_offset = 0;
-			}
+			/* feed resample input data */
+			do {
+				if (index == 1) {
+					BT_LOGA("Do double feed avaibale data is %d \r\n", rtk_bt_audio_resample_available_data(g_audio_resample_t));
+				}
+				if ((pcm_offset + (demo_read_size / 2)) < birds_sing_size / 2) {
+					input_frames = rtk_bt_audio_resample_feed(g_audio_resample_t, (uint8_t *)pdata, resample_in_frames);
+					pcm_offset += input_frames * g_audio_resample_t->in_channels;
+				} else {
+					memset((void *)in_frame_buf, 0, demo_read_size);
+					memcpy((void *)in_frame_buf, (void *)pdata, ((birds_sing_size / 2) - pcm_offset) * 2);
+					input_frames = rtk_bt_audio_resample_feed(g_audio_resample_t, (uint8_t *)in_frame_buf, resample_in_frames);
+					pcm_offset = 0;
+				}
+				index ++;
+			} while (rtk_bt_audio_resample_available_data(g_audio_resample_t) < resample_out_frames * g_audio_resample_t->out_channels * (16 / 8));
+			/* read resample output data */
+			rtk_bt_audio_resample_read(g_audio_resample_t, (void *)out_frame_buf, resample_out_frames * g_audio_resample_t->out_channels * (16 / 8));
+			/* do encode func */
 			penc_codec_buffer_t = rtk_bt_audio_data_encode(RTK_BT_AUDIO_CODEC_SBC, a2dp_demo_codec_entity, (int16_t *)out_frame_buf,
-														   out_frames * g_audio_resample_t->out_frame_size);
+														   resample_out_frames * g_audio_resample_t->out_channels * (16 / 8));
 			if (penc_codec_buffer_t) {
 				memcpy((void *)data_send_t.bd_addr, (void *)remote_bd_addr, 6);
 				data_send_t.seq_num = a2dp_demo_send_data_seq++;
@@ -2015,28 +2019,26 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 	return 0;
 }
 
-static uint16_t app_bt_pcm_data_resample_engine_alloc(rtk_bt_audio_resample_t **pp_sample_t, uint32_t sample_rate_in, uint8_t in_channels,
-													  uint32_t sample_rate_out, uint8_t out_channels)
+static rtk_bt_audio_resample_t *app_bt_pcm_data_resample_engine_alloc(uint32_t sample_rate_in, uint32_t in_channels, uint32_t sample_rate_out,
+																	  uint32_t out_channels)
 {
-	double sample_ratio;
-
-	sample_ratio = (double)sample_rate_out / (double)sample_rate_in;
-	//calculate the expected input and output according to the sample rate
+	rtk_bt_audio_resample_t *p_bt_resample = NULL;
 	/* resample out frames should be matched with the sbc encode size */
 	resample_out_frames = (sbc_codec_t.encoder_t.blocks * sbc_codec_t.encoder_t.subbands * out_channels * sbc_codec_t.encoder_t.sbc_pkt_num) * 2 /
 						  (16 / 8 * out_channels);
 	resample_in_frames = (uint32_t)(resample_out_frames * (float)sample_rate_in / (float)sample_rate_out);
-	/* init bq filter */
-	rtk_bt_audio_bq_config(&bq_t, RTK_BT_AUDIO_LPF, 1.0, (unsigned long)((1.0 / sample_ratio / 2) * (double)sample_rate_in),
-						   (unsigned long)sample_rate_in, 0.2);
 	/* init sinc resample */
-	*pp_sample_t = rtk_bt_audio_resample_alloc((float)sample_rate_in, (float)sample_rate_out, in_channels, out_channels, resample_in_frames);
-	demo_read_size = resample_in_frames * in_channels * 16 / 8;
+	p_bt_resample = rtk_bt_audio_resample_alloc((uint32_t)sample_rate_in, (uint32_t)sample_rate_out, in_channels, out_channels, resample_in_frames);
+	if (!p_bt_resample) {
+		BT_LOGE("%s rtk_bt_audio_resample_alloc fail \r\n", __func__);
+		return NULL;
+	}
+	demo_read_size = resample_in_frames * in_channels * (16 / 8);
 	BT_LOGA("[A2DP] Resample allocate: rate in is %d, channel is %d, rate out is %d, channel is %d \r\n", sample_rate_in, in_channels, sample_rate_out,
 			out_channels);
 	BT_LOGA("[A2DP] resample_out_frames is %d, resample_in_frames is %d, demo_read_size is %d \r\n", resample_out_frames, resample_in_frames, demo_read_size);
 
-	return RTK_BT_OK;
+	return p_bt_resample;
 }
 
 static uint16_t app_bt_pcm_data_resample_engine_destroy(rtk_bt_audio_resample_t **pp_sample_t)
@@ -2075,7 +2077,9 @@ static void rtk_bt_a2dp_demo_src_send_data_control(bool enable)
 			osif_sem_take(a2dp_task.sem, BT_TIMEOUT_FOREVER);
 		}
 		if (!bt_a2dp_demo_src_send_timer.handler) {
-			a2dp_src_data_send_interval_us = ((resample_in_frames * demo_in_channels * 16 / 8) * 1000) / (demo_in_rate * demo_in_channels * (16 / 8) / 1000) + 1;
+			if (g_audio_resample_t) {
+				a2dp_src_data_send_interval_us = 1000 * (resample_out_frames * 1000 / g_audio_resample_t->out_rate);
+			}
 			BT_LOGA("[A2DP Demo] rtk_bt_a2dp_demo_src_send_data_control send interval(us) is %d \r\n", a2dp_src_data_send_interval_us);
 			if (bt_a2dp_demo_src_send_timer.handler == NULL) {
 				gtimer_init(&bt_a2dp_demo_src_send_timer, A2DP_SEND_TIMER_ID);
@@ -2259,8 +2263,8 @@ static rtk_bt_evt_cb_ret_t rtk_bt_a2dp_app_callback(uint8_t evt_code, void *para
 			src_a2dp_send_data_size = sbc_codec_t.encoder_t.sbc_pkt_num * sbc_codec_t.encoder_t.blocks * sbc_codec_t.encoder_t.subbands * ((
 										  sbc_codec_t.encoder_t.channel_mode == 0) ? 1 : 2);
 			/* default audio stream source is 48000 sample rate, 2 channels */
-			app_bt_pcm_data_resample_engine_alloc(&g_audio_resample_t, demo_in_rate, demo_in_channels, sbc_codec_t.encoder_t.sample_rate,
-												  ((sbc_codec_t.encoder_t.channel_mode != 0) ? 2 : 1));
+			g_audio_resample_t = app_bt_pcm_data_resample_engine_alloc(demo_in_rate, demo_in_channels, sbc_codec_t.encoder_t.sample_rate,
+																	   ((sbc_codec_t.encoder_t.channel_mode != 0) ? 2 : 1));
 			BT_LOGA("[A2DP] sbc_pkt_num is update to %d, src_a2dp_send_data_size is %d \r\n", sbc_codec_t.encoder_t.sbc_pkt_num, src_a2dp_send_data_size);
 		}
 	}
