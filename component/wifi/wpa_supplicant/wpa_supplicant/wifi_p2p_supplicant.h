@@ -31,12 +31,6 @@ enum rtw_p2p_state {
 	P2P_STATE_WSC_EXCHAGE_START = 24,
 };
 
-enum {
-	RTW_SCAN_FULL = 0,
-	RTW_SCAN_SOCIAL,
-	RTW_SCAN_ONE
-};
-
 enum p2p_group_removal_reason {
 	P2P_GROUP_REMOVAL_UNKNOWN,
 	P2P_GROUP_REMOVAL_SILENT,
@@ -109,6 +103,12 @@ struct p2p_cmd_priv {
 	rtos_sema_t wakeup_sema;
 };
 
+struct p2p_cmd_obj {
+	struct list_head	list;
+	u8	*parmbuf;
+	void(*cmd_hdl)(u8 *parmbuf);
+};
+
 /** P2P device scanned (only basic information) */
 #define P2P_EVENT_DEVICE_SCANNED "P2P-DEVICE-SCANNED "
 
@@ -140,8 +140,7 @@ void wifi_p2p_rx_mgnt(u8 *evt_info);
 int wifi_p2p_connect(const u8 *peer_addr,
 					 const char *pin, enum p2p_wps_method wps_method,
 					 int persistent_group, int auto_join, int join, int auth,
-					 int go_intent, int freq, int persistent_id, int pd,
-					 int ht40);
+					 int go_intent, int freq, int persistent_id, int pd);
 int wifi_p2p_start_wps(void *res);
 void wifi_p2p_set_state(u8 p2p_state);
 int wifi_p2p_group_notify_assoc(u8 *buf, u16 buf_len);
@@ -151,10 +150,10 @@ int wifi_cmd_p2p_listen(unsigned int timeout);
 void wifi_cmd_p2p_find(u32 timeout);
 void wifi_cmd_p2p_peers(void);
 void wifi_cmd_p2p_state(void);
-int wifi_cmd_p2p_connect(u8 *dest, enum p2p_wps_method config_method, char *pin);
+int wifi_cmd_p2p_connect(u8 *dest, enum p2p_wps_method config_method, char *pin, int go_intent, u32 timeout_sec);
 void wifi_cmd_p2p_disconnect(void);
 
-int wifi_p2p_init(u8 *dev_addr, int go_intent, u8 listen_ch, u8 op_ch);
+int wifi_p2p_init(u8 *dev_addr, u8 listen_ch, u8 op_ch);
 void wifi_p2p_deinit(void);
 void wifi_p2p_set_dev_name(const char *dev_name);
 void wifi_p2p_set_manufacturer(const char *manufacturer);
@@ -172,7 +171,7 @@ int wifi_p2p_set_remain_on_ch(unsigned char wlan_idx, u8 enable);
 void wifi_p2p_join_status_hdl(u8 *evt_info);
 void wifi_p2p_channel_switch_ready(u8 *evt_info);
 int wifi_p2p_start_go(char *ssid, char *passphrase, u8 channel);
-int wifi_p2p_start_auto_go(void);
+int wifi_p2p_start_auto_go(u8 channel);
 
 #endif //_WIFI_P2P_SUPPLICANT_H_
 

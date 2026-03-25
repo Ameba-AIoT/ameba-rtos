@@ -3,11 +3,11 @@
 static const char *const TAG = "example_main";
 
 #define PORT	8082
-static const char *host = "192.168.0.158";  //"m-apps.oss-cn-shenzhen.aliyuncs.com"
-static const char *resource = "ota_all.bin";     //"051103061600.bin"
+static const char *host = "192.168.0.158";
+static const char *resource = "ota_all.bin";
 static u8 ota_role = WIFI_CAST_OTA_RECEIVER;
 
-static ota_context *ctx = NULL;
+static ota_context_t *ctx = NULL;
 static rtos_queue_t g_scan_report_q;
 static rtos_queue_t g_ota_request_q;
 static rtos_queue_t g_ota_recv_cb_q;
@@ -403,30 +403,30 @@ static u32 example_image_download(struct example_ota_status *status)
 	u32 total_size = 0;
 	u32 start_ms = rtos_time_get_current_system_time_ms();
 
-	ctx = (ota_context *)rtos_mem_malloc(sizeof(ota_context));
+	ctx = (ota_context_t *)rtos_mem_malloc(sizeof(ota_context_t));
 	if (ctx == NULL) {
 		RTK_LOGE(TAG, "%s, ctx malloc failed\n", __func__);
 		goto exit;
 	}
 
-	memset(ctx, 0, sizeof(ota_context));
+	memset(ctx, 0, sizeof(ota_context_t));
 
-	ret = ota_update_init(ctx, (char *)host, PORT, (char *)resource, OTA_HTTP);
+	ret = ota_init(ctx, (char *)host, PORT, (char *)resource, OTA_HTTP);
 	if (ret != 0) {
-		RTK_LOGE(TAG, "%s, ota_update_init failed\n", __func__);
+		RTK_LOGE(TAG, "%s, ota_init failed\n", __func__);
 		goto exit;
 	}
 
-	ret = ota_update_start(ctx);
+	ret = ota_start(ctx);
 	if (ret != 0) {
 		RTK_LOGE(TAG, "%s, ota_update failed\n", __func__);
 		goto exit;
 	}
-	total_size = ctx->otactrl->ImageLen;
-	status->image_id = ctx->otactrl->ImgId;
-	ctx->otactrl->FlashAddr -= sizeof(ctx->otaTargetHdr->Manifest[0]);
-	status->image_addr = ctx->otactrl->FlashAddr;
-	status->checksum = ctx->otaTargetHdr->FileImgHdr[0].Checksum;
+	total_size = ctx->otaCtrl->ImageLen;
+	status->image_id = ctx->otaCtrl->ImgId;
+	ctx->otaCtrl->FlashAddr -= sizeof(ctx->otaHdrManager->Manifest[0]);
+	status->image_addr = ctx->otaCtrl->FlashAddr;
+	status->checksum = ctx->otaHdrManager->FileImgHdr[0].Checksum;
 	RTK_LOGI(TAG, "%s, server image download is finished, spend time: %d ms, total size: %d\n",
 			 __func__, rtos_time_get_current_system_time_ms() - start_ms, total_size);
 exit:
@@ -491,7 +491,7 @@ static void example_image_send(struct example_ota_status *status, struct example
 				hdr->seq = seq;
 				data_len = (seq == status->packet_num - 1) ?
 						   (status->total_size - seq * WIFI_CAST_OTA_PACKET_SIZE) : WIFI_CAST_OTA_PACKET_SIZE;
-				flash_stream_read(&flash_obj, ctx->otactrl->FlashAddr + seq * WIFI_CAST_OTA_PACKET_SIZE, data_len, data + sizeof(struct ota_packet_head));
+				flash_stream_read(&flash_obj, ctx->otaCtrl->FlashAddr + seq * WIFI_CAST_OTA_PACKET_SIZE, data_len, data + sizeof(struct ota_packet_head));
 				if (WIFI_CAST_OK != example_send(WIFI_CAST_OTA_DATA, WIFI_CAST_BROADCAST_MAC, data, data_len + sizeof(struct ota_packet_head))) {
 					rtos_time_delay_ms(2);
 				}
@@ -547,7 +547,7 @@ static void example_ota_task(void *param)
 exit:
 	rtos_mem_free(g_info_list);
 	g_info_list = NULL;
-	ota_update_deinit(ctx);
+	ota_deinit(ctx);
 	rtos_mem_free(ctx);
 	rtos_task_delete(NULL);
 }

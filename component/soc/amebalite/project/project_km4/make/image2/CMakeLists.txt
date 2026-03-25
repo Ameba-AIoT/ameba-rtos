@@ -20,6 +20,7 @@ ameba_add_subdirectory(${c_CMPT_MISC_DIR})
 ameba_add_subdirectory(${c_CMPT_MONITOR_DIR})
 ameba_add_subdirectory(${c_CMPT_NETWORK_DIR}) #port network/ and utilities
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
+ameba_add_subdirectory(${c_CMPT_OTA_DIR})
 ameba_add_subdirectory(${c_CMPT_PMC_DIR})
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
 ameba_add_subdirectory(${c_CMPT_SSL_DIR})

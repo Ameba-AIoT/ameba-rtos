@@ -93,15 +93,14 @@ void app_filesystem_init(void)
 }
 #endif
 
-u32 app_uart_rx_pin_wake_int_handler(void *data)
+void app_uart_rx_pin_wake_int_handler(void *data, u32 id)
 {
-	GPIO_InitTypeDef *GPIO_InitStruct = (GPIO_InitTypeDef *)data;
+	UNUSED(data);
+	UNUSED(id);
 	/*clear edge interrupt*/
-	GPIO_INTConfig(GPIO_InitStruct->GPIO_Pin, DISABLE);
+	GPIO_INTConfig(UART_LOG_RXD, DISABLE);
 	/*Keep the AP active for 5 seconds */
 	pmu_set_sysactive_time(5000);
-
-	return 0;
 }
 void app_uart_rx_pin_wake_init(void)
 {
@@ -120,7 +119,7 @@ void app_uart_rx_pin_wake_init(void)
 				 GPIO_InitStruct.GPIO_ITPolarity, GPIO_InitStruct.GPIO_ITDebounce);
 	InterruptRegister(GPIO_INTHandler, GPIOB_IRQ, (u32)GPIOB_BASE, INT_PRI_MIDDLE);
 	InterruptEn(GPIOB_IRQ, INT_PRI_MIDDLE);
-	GPIO_UserRegIrq(UART_LOG_RXD, app_uart_rx_pin_wake_int_handler, &GPIO_InitStruct);
+	GPIO_UserRegIrq(UART_LOG_RXD, app_uart_rx_pin_wake_int_handler, NULL);
 }
 
 void app_pmu_init(void)
@@ -187,7 +186,7 @@ int main(void)
 	app_example();
 
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
-	IPC_SEMDelayStub(&rtos_time_delay_ms);
+	IPC_SEMDelayStub(DelayMs);
 
 	vPortEnableOtherCore();
 
@@ -202,4 +201,3 @@ int main(void)
 	for more details.  */
 	for (;;);
 }
-

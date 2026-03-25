@@ -6,8 +6,21 @@
  *  This module is a confidential and proprietary property of RealTek and
  *  possession or use of this module requires written permission of RealTek.
  */
+
+/**
+ * @file example_CA32Trustzone.c
+ * @brief CA32 Trustzone secure service invocation example
+ *
+ * This example demonstrates how to invoke secure world services from the
+ * Non-Secure World via SMC (Secure Monitor Call).
+ *
+ * Secure service implementation:
+ * component/soc/amebasmart/atf/plat/realtek/sheipa/service/bsec_svc.c
+ */
+
 #include "ameba_soc.h"
 
+/* ARM SMCCC call result structure */
 struct arm_smccc_res {
 	unsigned long a0;
 	unsigned long a1;
@@ -15,12 +28,6 @@ struct arm_smccc_res {
 	unsigned long a3;
 };
 
-/**
- * struct arm_smccc_quirk - Contains quirk information
- * @id: quirk identification
- * @state: quirk specific information
- * @a6: Qualcomm quirk entry for returning post-smc call contents of a6
- */
 struct arm_smccc_quirk {
 	int id;
 	union {
@@ -35,6 +42,7 @@ extern void __arm_smccc_smc(unsigned long a0, unsigned long a1,
 
 #define arm_smccc_smc(...) __arm_smccc_smc(__VA_ARGS__, NULL)
 
+/* Invoke secure world test service via SMC call */
 static unsigned long invoke_securetest(unsigned long function_id, unsigned long arg0, unsigned long arg1, unsigned long arg2)
 {
 	struct arm_smccc_res res;
@@ -48,7 +56,7 @@ static unsigned long invoke_securetest(unsigned long function_id, unsigned long 
 
 int example_raw_ap_tz(void)
 {
-	/* here secure function entry */
+	/* Invoke secure world test service with Function ID 0x82000001 */
 	invoke_securetest(0x82000001, 0, 0, 0);
 
 	return 0;

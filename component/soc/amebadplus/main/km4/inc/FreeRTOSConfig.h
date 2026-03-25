@@ -79,7 +79,7 @@ extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
 #define configENABLE_FPU								1
 
 /* Configure secure image(RDP) exists or not. Set configENABLE_TRUSTZONE to 1 if enable RDP. */
-#if defined(CONFIG_RDP_BASIC) && (CONFIG_RDP_BASIC == 1)
+#ifdef CONFIG_TRUSTZONE
 #define configENABLE_TRUSTZONE							1
 #else
 #define configENABLE_TRUSTZONE							0
@@ -104,11 +104,7 @@ extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
 #define configMINIMAL_SECURE_STACK_SIZE					( 1024 )
 #define configMAX_TASK_NAME_LEN							( 24 )
 
-#if defined(CONFIG_SECURE_HEAP_SIZE)
-#define secureconfigTOTAL_SRAM_HEAP_SIZE			( ( ( size_t ) ( CONFIG_SECURE_HEAP_SIZE ) ) )
-#else
-#define secureconfigTOTAL_SRAM_HEAP_SIZE			( ( ( size_t ) ( 6 * 1024 ) ) )
-#endif
+/* secureconfigTOTAL_SRAM_HEAP_SIZE removed - now uses linker symbols */
 #define secureconfigTOTAL_PSRAM_HEAP_SIZE			( ( ( size_t ) ( 128 * 1024 ) ) )
 
 /* Constants that build features in or out. */

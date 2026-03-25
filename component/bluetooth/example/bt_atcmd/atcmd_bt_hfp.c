@@ -279,5 +279,11 @@ static const cmd_table_t hfp_cmd_table[] = {
 
 void fBTHFP(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], hfp_cmd_table, "[AT+BTHFP]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], hfp_cmd_table, "[AT+BTHFP]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }

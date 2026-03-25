@@ -5,7 +5,7 @@
 #include "os_wrapper.h"
 #include "flash_api.h"
 #include "sys_api.h"
-#include "ameba_ota.h"
+#include "ota_api.h"
 #include "kv.h"
 
 #define WIFI_CAST_OTA_PROGRESS_MAX		200

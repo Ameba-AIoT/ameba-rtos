@@ -1097,7 +1097,13 @@ static const cmd_table_t mesh_light_lightness_cmd_table[] = {
 
 void fBLEMESHLL(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_light_lightness_cmd_table, "[AT+BLEMESHLL]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_light_lightness_cmd_table, "[AT+BLEMESHLL]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 
 static const cmd_table_t mesh_light_ctl_cmd_table[] = {
@@ -1114,7 +1120,13 @@ static const cmd_table_t mesh_light_ctl_cmd_table[] = {
 
 void fBLEMESHLCTL(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_light_ctl_cmd_table, "[AT+BLEMESHLCTL]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_light_ctl_cmd_table, "[AT+BLEMESHLCTL]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 
 static const cmd_table_t mesh_light_hsl_cmd_table[] = {
@@ -1134,7 +1146,13 @@ static const cmd_table_t mesh_light_hsl_cmd_table[] = {
 
 void fBLEMESHLHSL(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_light_hsl_cmd_table, "[AT+BLEMESHLHSL]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_light_hsl_cmd_table, "[AT+BLEMESHLHSL]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 
 static const cmd_table_t mesh_light_xyl_cmd_table[] = {
@@ -1150,7 +1168,13 @@ static const cmd_table_t mesh_light_xyl_cmd_table[] = {
 
 void fBLEMESHLXYL(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_light_xyl_cmd_table, "[AT+BLEMESHLXYL]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_light_xyl_cmd_table, "[AT+BLEMESHLXYL]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 
 static const cmd_table_t mesh_light_lc_cmd_table[] = {
@@ -1167,6 +1191,12 @@ static const cmd_table_t mesh_light_lc_cmd_table[] = {
 
 void fBLEMESHLLC(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_light_lc_cmd_table, "[AT+BLEMESHLLC]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_light_lc_cmd_table, "[AT+BLEMESHLLC]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 #endif // end of RTK_BLE_MESH_SUPPORT

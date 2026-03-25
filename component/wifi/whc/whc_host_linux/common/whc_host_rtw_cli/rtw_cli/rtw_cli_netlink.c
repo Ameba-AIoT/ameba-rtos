@@ -19,7 +19,7 @@ static int ack_handler(struct nl_msg *msg, void *arg)
 	int *err = arg;
 	*err = 0;
 	//printf("%s\n", __FUNCTION__);
-	printf("OK\n");
+	printf("NL_OK\n");
 	return NL_STOP;
 }
 

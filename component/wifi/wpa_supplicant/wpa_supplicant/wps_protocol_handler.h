@@ -115,6 +115,7 @@ struct lib1x_eapol_message_hdr {
 extern struct rtw_wps_context g_wps_context;
 
 extern xqueue_handle_t queue_for_credential;
+extern u8 g_ap_device_type[WPS_DEV_TYPE_LEN];
 
 int get_wps_phase(void);
 int wpas_wps_dev_config(u8 *dev_addr, u8 bregistrar);

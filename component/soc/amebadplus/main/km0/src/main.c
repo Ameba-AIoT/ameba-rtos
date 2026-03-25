@@ -114,11 +114,10 @@ int main(void)
 	app_example();
 
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
-	IPC_SEMDelay(rtos_time_delay_ms);
+	IPC_SEMDelay(DelayMs);
 
 	RTK_LOGI(TAG, "KM0 OS START \n");
 
 	//Enable Schedule
 	rtos_sched_start();
 }
-

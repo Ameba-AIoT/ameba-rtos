@@ -26,9 +26,9 @@
  */
 #ifdef CONFIG_WLAN
 #if defined (CONFIG_WHC_DEV) && CONFIG_WHC_DEV
-#define MAX_MUTEX_BUF_NUM		28
-#define MAX_SEMA_BUF_NUM		14
-#define MAX_TIMER_BUF_NUM		14
+#define MAX_MUTEX_BUF_NUM		22
+#define MAX_SEMA_BUF_NUM		15
+#define MAX_TIMER_BUF_NUM		8
 #elif defined (CONFIG_WHC_NONE) && CONFIG_WHC_NONE
 #define MAX_MUTEX_BUF_NUM		31
 #define MAX_SEMA_BUF_NUM		7

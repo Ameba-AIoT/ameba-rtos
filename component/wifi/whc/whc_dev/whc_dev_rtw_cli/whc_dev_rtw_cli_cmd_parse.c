@@ -97,8 +97,20 @@ int whc_wpa_ops_cli_cmd_parse(char *ptr, u8 *buf)
 	msg_len = *ptr;
 	ptr += 4;
 
-	cmd = strtok(ptr, " ");
-	params = strtok(NULL, "");
+	cmd = ptr;
+	params = strchr(cmd, ' ');
+	if (params != NULL) {
+		*params = '\0';
+		params++;
+
+		while (*params == ' ') {
+			params++;
+		}
+
+		if (*params == '\0') {
+			params = NULL;
+		}
+	}
 
 	RTK_LOGI(TAG_WLAN_INIC, "%s, cmd: %s, params: %s, msg_len: %d\n", __func__, cmd, params, msg_len);
 
@@ -124,7 +136,7 @@ int whc_wpa_ops_cli_cmd_parse(char *ptr, u8 *buf)
 	} else if (strcmp(cmd, "remove_network") == 0) {
 		whc_dev_rtw_cli_remove_network(params, buf);
 	} else if (strcmp(cmd, "wpas_cmd") == 0) {
-		whc_dev_rtw_cli_wpas_test(params, buf, msg_len - strlen("wpas_cmd") - 1);
+		whc_dev_rtw_cli_wpas_cmd_hdl(params, buf, msg_len - strlen("wpas_cmd") - 1);
 	} else {
 		RTK_LOGI(TAG_WLAN_INIC, "%s, Unknown command\n", __func__);
 	}

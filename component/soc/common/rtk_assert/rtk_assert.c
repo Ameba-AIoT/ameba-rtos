@@ -6,8 +6,12 @@
 
 #include "stdio.h"
 #include "ameba_soc.h"
+#if (defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)) && defined(CONFIG_UNITY_TEST)
+#include "unity.h"
+#endif
 
 void __rtos_critical_enter_os(void);
+void __rtos_critical_exit_os(void);
 
 /* Forward declaration - use ROM function when available */
 extern void LOGUART_PutChar(u8 c);
@@ -92,5 +96,11 @@ void vAssertCalled(const char *pcFile, uint32_t ulLine)
 #elif defined(CONFIG_ASSERTION_SILENT) && CONFIG_ASSERTION_SILENT
 	rtk_assert_printf("Assert Error!\r\n", NULL, 0, 0);
 #endif
+
+#if (defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)) && defined(CONFIG_UNITY_TEST)
+	__rtos_critical_exit_os();
+	TEST_ABORT();
+#else
 	for (;;);
+#endif
 }

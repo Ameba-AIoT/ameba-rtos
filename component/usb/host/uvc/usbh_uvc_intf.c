@@ -11,7 +11,6 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBH_UVC_DEBUG 0
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -196,16 +195,29 @@ int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb)
 
 	usbh_uvc_class_init();
 
-#if USBH_UVC_USE_HW && USBH_HW_UVC_DUMP_ERR
-	rtos_sema_create(&uvc_host.dump_sema, 0, 1);
-	uvc_host.dump_task_exit = 0;
-	if (rtos_task_create(&(uvc_host.dump_status_task),
-						 ((const char *)"uvc_monitor"),
-						 usbh_uvc_status_dump_thread,
+#if USBH_UVC_USE_HW && USBH_UVC_DEBUG
+	rtos_sema_create(&uvc->hw_dump_sema, 0, 1);
+	uvc->hw_dump_task_exit = 0;
+	if (rtos_task_create(&(uvc->hw_dump_task),
+						 ((const char *)"uvc_hw_mon"),
+						 usbh_uvc_hw_status_dump_thread,
 						 NULL,
 						 1024U,
 						 1) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create UVC monitor task fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create HW dump task fail\n");
+	}
+#endif
+
+#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
+	uvc->max_hold_frame_ts = 0;
+	uvc->sw_dump_task_exit = 0;
+	if (rtos_task_create(&(uvc->sw_dump_task),
+						 ((const char *)"uvc_sw_mon"),
+						 usbh_uvc_sw_status_dump_thread,
+						 NULL,
+						 1024U,
+						 1) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create SW dump task fail\n");
 	}
 #endif
 
@@ -238,12 +250,8 @@ void usbh_uvc_deinit(void)
 		usbh_uvc_stream_t *stream = &uvc->stream[i];
 		stream->next_xfer = 0;
 		if (stream->is_resource_safe) {
+			rtos_time_delay_ms(10);
 			stream->is_resource_safe = 0;
-#if (USBH_UVC_USE_HW == 0)
-			do {
-				usb_os_delay_us(100U);
-			} while (stream->decoder_busy);
-#endif
 		}
 	}
 
@@ -263,12 +271,12 @@ void usbh_uvc_deinit(void)
 		uvc->request_buf = NULL;
 	}
 
-#if USBH_UVC_USE_HW && USBH_HW_UVC_DUMP_ERR
-	if (uvc->dump_task_alive) {
-		uvc->dump_task_exit = 1;
+#if USBH_UVC_USE_HW && USBH_UVC_DEBUG
+	if (uvc->hw_dump_task_alive) {
+		uvc->hw_dump_task_exit  = 1;
 
-		if (uvc->dump_sema) {
-			rtos_sema_give(uvc->dump_sema);
+		if (uvc->hw_dump_sema) {
+			rtos_sema_give(uvc->hw_dump_sema);
 			//thread will detete it
 		}
 
@@ -276,16 +284,31 @@ void usbh_uvc_deinit(void)
 		do {
 			rtos_time_delay_ms(1);
 			wait_cnt++;
-		} while (uvc->dump_task_alive && wait_cnt < 100);
+		} while (uvc->hw_dump_task_alive && wait_cnt < 100);
 
 		if (wait_cnt >= 100) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC Dump Task stop timeout!\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "HW dump task stop timeout!\n");
 		}
 	}
 
-	if (uvc->dump_sema) {
-		rtos_sema_delete(uvc->dump_sema);
-		uvc->dump_sema = NULL;
+	if (uvc->hw_dump_sema) {
+		rtos_sema_delete(uvc->hw_dump_sema);
+		uvc->hw_dump_sema = NULL;
+	}
+#endif
+
+#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
+	if (uvc->sw_dump_task_alive) {
+		uvc->sw_dump_task_exit = 1;
+		int wait_cnt = 0;
+		do {
+			rtos_time_delay_ms(1);
+			wait_cnt++;
+		} while (uvc->sw_dump_task_alive && wait_cnt < 100);
+
+		if (wait_cnt >= 100) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "SW dump task stop timeout!\n");
+		}
 	}
 #endif
 
@@ -403,21 +426,27 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num)
 
 #if (USBH_UVC_USE_HW == 0)
 	if (usb_os_sema_take(stream->frame_sema, USBH_UVC_GET_FRAME_TIMEOUT) == HAL_OK) {
+
+		usb_os_lock(stream->frame_mutex);
+
 		if (stream->stream_state != STREAMING_ON) {
+			usb_os_unlock(stream->frame_mutex);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Abort get frame\n");
 			return NULL;
 		}
 
 		if (list_empty(&stream->frame_chain)) {
 			/*should not reach here*/
+			usb_os_unlock(stream->frame_mutex);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "No frame in frame_chain\n");
 			return NULL;
 		} else {
 			frame = list_first_entry(&stream->frame_chain, usbh_uvc_frame_t, list);
 			list_del_init(&frame->list);
 			frame->state = UVC_FRAME_INUSE;
+			usb_os_unlock(stream->frame_mutex);
 #if USBH_UVC_DEBUG
-			RTK_LOGS(TAG, RTK_LOG_INFO, "get %d-%d\n", frame->timestamp, usb_os_get_timestamp_ms());
+			frame->get_frame_ts = usb_os_get_timestamp_ms();
 #endif
 			return frame;
 		}
@@ -431,9 +460,9 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Abort get frame\n");
 			return NULL;
 		}
-
 		stream->frame_buffer[stream->uvc_dec->frame_done_num].byteused = stream->uvc_dec->frame_done_size;
 		frame = &stream->frame_buffer[stream->uvc_dec->frame_done_num];
+		DCache_Invalidate((u32)frame->buf, (u32)frame->byteused);
 		return frame;
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to down frame sema\n");
@@ -454,13 +483,43 @@ void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num)
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = &uvc->stream[itf_num];
 
+	if (!frame) {
+		return;
+	}
+
+#if USBH_UVC_DEBUG
+	u32 hold_time;
+	u32 put_frame_ts = usb_os_get_timestamp_ms();
+	u32 get_frame_ts = frame->get_frame_ts;
+
+	if (put_frame_ts > get_frame_ts) {
+		hold_time = put_frame_ts - get_frame_ts;
+	} else {
+		hold_time = (0xFFFFFFFF - get_frame_ts) + put_frame_ts + 1;
+	}
+
+	if (hold_time > uvc->max_hold_frame_ts) {
+		uvc->max_hold_frame_ts = hold_time;
+		if (hold_time > 1000) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Slow consumer! Hold: %d ms\n", hold_time);
+		}
+	}
+#endif
+
 	if ((stream->stream_state == STREAMING_ON) && (frame != NULL)) {
+		usb_os_lock(stream->frame_mutex);
+
 		list_del_init(&frame->list);
 		frame->err = 0;
 		frame->byteused = 0;
 		frame->timestamp = 0;
+#if USBH_UVC_DEBUG
+		frame->get_frame_ts = 0;
+#endif
 		frame->state = UVC_FRAME_INIT;
 		list_add_tail(&frame->list, &stream->frame_empty);
+
+		usb_os_unlock(stream->frame_mutex);
 	}
 #else
 	UNUSED(frame);

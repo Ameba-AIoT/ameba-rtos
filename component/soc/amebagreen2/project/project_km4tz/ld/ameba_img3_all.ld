@@ -61,7 +61,8 @@ SECTIONS
 		*(COMMON)
 		__image3_bss_end__ = .;
 		end = .;
-		. = . + 4096;
+		. = ALIGN(32);
+		__image3_heap_start__ = .;
 	} > LMA_TZ_S_BSS
 
 	/* image2: normal image start */
@@ -70,3 +71,10 @@ SECTIONS
 		__image2_entry_func__ = .;
 	} > KM4TZ_BD_RAM
 }
+
+/* Calculate remaining space for secure heap */
+#if defined (CONFIG_IMG3_PSRAM)
+	__image3_heap_size__ = ORIGIN(KM4TZ_BD_PSRAM_TZ_S) + LENGTH(KM4TZ_BD_PSRAM_TZ_S) - __image3_heap_start__;
+#else
+	__image3_heap_size__ = ORIGIN(KM4TZ_BD_RAM_TZ_S) + LENGTH(KM4TZ_BD_RAM_TZ_S) - __image3_heap_start__;
+#endif

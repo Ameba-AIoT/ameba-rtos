@@ -10,39 +10,24 @@
 #include "ameba_diagnose.h"
 #ifdef CONFIG_MBEDTLS_ENABLED
 #include "threading_alt.h"
+#include "ssl_rom_to_ram_map.h"
 #endif
 
 static const char *const TAG = "MAIN";
 u32 use_hw_crypto_func;
 
-static void *app_mbedtls_calloc_func(size_t nelements, size_t elementSize)
-{
-	size_t size;
-	void *ptr = NULL;
-
-	size = nelements * elementSize;
-	ptr = rtos_mem_malloc(size);
-
-	if (ptr) {
-		memset(ptr, 0, size);
-	}
-
-	return ptr;
-}
-
-static void app_mbedtls_free_func(void *buf)
-{
-	rtos_mem_free(buf);
-}
-
+#ifdef CONFIG_MBEDTLS_ENABLED
 void app_mbedtls_rom_init(void)
 {
-	mbedtls_platform_set_calloc_free(app_mbedtls_calloc_func, app_mbedtls_free_func);
-	use_hw_crypto_func = 1;
+	ssl_function_map.ssl_calloc = (void *(*)(unsigned int, unsigned int))rtos_mem_calloc;
+	ssl_function_map.ssl_free = (void (*)(void *))rtos_mem_free;
+	ssl_function_map.ssl_printf = (long unsigned int (*)(const char *, ...))DiagPrintf;
+	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
 #if defined(CONFIG_MBEDTLS_THREADING)
 	mbedtls_threading_init();
 #endif
 }
+#endif
 
 void app_pmu_init(void)
 {
@@ -189,9 +174,8 @@ int main(void)
 
 	/* Set delay function & critical function for hw ipc sema */
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
-	IPC_SEMDelayStub(rtos_time_delay_ms);
+	IPC_SEMDelayStub(DelayMs);
 
 	//Enable Schedule
 	rtos_sched_start();
 }
-
