@@ -1,4 +1,5 @@
 #include "basic_types.h"
+#include "platform_autoconf.h"
 
 #ifndef CONFIG_WIFI_P2P_ENABLE
 u8 wifi_p2p_check_go(void)

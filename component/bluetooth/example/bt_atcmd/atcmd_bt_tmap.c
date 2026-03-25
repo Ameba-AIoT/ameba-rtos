@@ -23,5 +23,8 @@ void fBLETMAP(u16 argc, char *argv[])
 	(void)argc;
 	(void)argv;
 	BT_LOGE("There is no available supported bt tmap at cmd \r\n");
+#if defined(CONFIG_ATCMD_HOST_CONTROL) && CONFIG_ATCMD_HOST_CONTROL
+	BT_AT_PRINTERROR(BT_AT_ERR_CMD_INVALID);
+#endif
 }
 #endif

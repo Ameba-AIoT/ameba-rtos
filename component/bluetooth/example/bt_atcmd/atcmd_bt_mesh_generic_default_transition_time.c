@@ -73,7 +73,13 @@ static const cmd_table_t mesh_generic_default_transition_time_cmd_table[] = {
 
 void fBLEMESHGDTT(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_default_transition_time_cmd_table, "[AT+BLEMESHGDTT]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_default_transition_time_cmd_table, "[AT+BLEMESHGDTT]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

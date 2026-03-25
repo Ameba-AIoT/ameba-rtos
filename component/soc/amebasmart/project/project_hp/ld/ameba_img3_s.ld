@@ -44,7 +44,11 @@ SECTIONS
 		*(COMMON)
 		__image3_bss_end__ = .;
 		end = .;
-		. = . + 8192;
+		. = ALIGN(32);
+		__image3_heap_start__ = .;
 	} > KM4_BD_RAM_S
 
 }
+
+/* Calculate remaining space for secure heap */
+__image3_heap_size__ = ORIGIN(KM4_BD_RAM_S) + LENGTH(KM4_BD_RAM_S) - __image3_heap_start__;

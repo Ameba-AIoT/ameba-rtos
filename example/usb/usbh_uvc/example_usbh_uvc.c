@@ -45,7 +45,7 @@
 /* Frame buffer size in bytes
  * Size depends on format, resolution, and scene complexity.
  * Please increase this value if an oversize error occurs. */
-#define CONFIG_USBH_UVC_FRAME_BUF_SIZE             (50 * 1024)
+#define CONFIG_USBH_UVC_FRAME_BUF_SIZE             (150 * 1024)
 
 /* Most cameras have a single video stream interface, so use default 0.
  * If the camera supports dual streams, set this to 1.
@@ -56,7 +56,7 @@
 #define CONFIG_USBH_UVC_HOT_PLUG                   1
 
 /* Check image data validity (0: Disable, 1: Enable) */
-#define CONFIG_USBH_UVC_CHECK_MJEPG_DATA           0
+#define CONFIG_USBH_UVC_CHECK_MJEPG_DATA           1
 
 /* Number of frames to capture in the loop */
 #define CONFIG_USBH_UVC_LOOP                       200
@@ -159,6 +159,7 @@ u8 uvc_buf[CONFIG_USBH_UVC_FRAME_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZ
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
+	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = CONFIG_USBH_UVC_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
@@ -869,9 +870,10 @@ static void uvc_test(void *param)
 			}
 
 			len = buf->byteused;
+
 			if (len > CONFIG_USBH_UVC_FRAME_BUF_SIZE) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Frame %d overflow %d > %d\n", img_cnt, len, CONFIG_USBH_UVC_FRAME_BUF_SIZE);
 				usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_IF_NUM_0);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Frame %d overflow %d > %d\n", img_cnt, len, CONFIG_USBH_UVC_FRAME_BUF_SIZE);
 				return;
 			}
 

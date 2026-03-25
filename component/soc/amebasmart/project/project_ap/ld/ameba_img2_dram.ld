@@ -72,7 +72,7 @@ SECTIONS
 		__git_ver_table_end__ = .;
 		. = ALIGN (4);
 		__unity_table_start__ = .;
-		KEEP(*(.unity.table.data*))
+		KEEP(*(.rodata.unity.table*))
 		__unity_table_end__ = .;
 		. = ALIGN(4);
 		 __etext = .;

@@ -13,13 +13,11 @@ extern volatile UART_LOG_CTL		shell_ctl;
 extern UART_LOG_BUF shell_buf;
 extern UART_LOG_BUF shell_rxbuf;
 u8 shell_buf_array_l[CMD_BUFLEN];
-u8 shell_rxbuf_array_l[CMD_BUFLEN];
 #endif
 
 rtos_sema_t	shell_sema = NULL;
 
 #ifdef CONFIG_SUPPORT_ATCMD
-char atcmd_buf[CMD_BUFLEN];
 extern int atcmd_service(char *line_buf);
 extern void atcmd_service_init(void);
 #endif
@@ -180,9 +178,7 @@ static void shell_task_ram(void *Data)
 
 		if (shell_ctl.ExecuteCmd) {
 #if defined(CONFIG_SUPPORT_ATCMD)
-			shell_array_init((u8 *)atcmd_buf, (u8)sizeof(atcmd_buf), '\0');
-			strcpy(atcmd_buf, (const char *)pUartLogBuf->UARTLogBuf);
-			ret = atcmd_service(atcmd_buf);
+			ret = atcmd_service((char *)pUartLogBuf->UARTLogBuf);
 
 #ifdef CONFIG_MP_INCLUDED
 			if (ret == FALSE) {
@@ -218,10 +214,6 @@ void shell_init_ram(void)
 	shell_buf.UARTLogBuf = shell_buf_array_l;
 	shell_buf.UARTLogBufLen = CMD_BUFLEN;
 	shell_array_init(&shell_buf.UARTLogBuf[0], shell_buf.UARTLogBufLen, '\0');
-
-	shell_rxbuf.UARTLogBuf = shell_rxbuf_array_l;
-	shell_rxbuf.UARTLogBufLen = CMD_BUFLEN;
-	shell_array_init(&shell_rxbuf.UARTLogBuf[0], shell_buf.UARTLogBufLen, '\0');
 #endif
 
 	shell_ctl.pCmdTbl = (PCOMMAND_TABLE)__cmd_table_start__;

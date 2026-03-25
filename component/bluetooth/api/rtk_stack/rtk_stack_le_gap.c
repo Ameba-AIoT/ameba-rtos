@@ -2958,6 +2958,32 @@ static uint16_t bt_stack_le_gap_set_rand_addr(void *param)
 	return 0;
 }
 
+static uint16_t bt_stack_le_gap_gen_rand_addr(void *param)
+{
+	rtk_bt_le_gen_rand_addr_t *gen_rand = (rtk_bt_le_gen_rand_addr_t *)param;
+	T_GAP_CAUSE cause;
+
+	cause = le_gen_rand_addr((T_GAP_RAND_ADDR_TYPE)gen_rand->type, gen_rand->p_addr);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_gap_cfg_local_ident_addr(void *param)
+{
+	rtk_bt_le_ident_addr_t *ident_addr = (rtk_bt_le_ident_addr_t *)param;
+	T_GAP_CAUSE cause;
+
+	cause = le_cfg_local_identity_address(ident_addr->addr_val, (T_GAP_IDENT_ADDR_TYPE)ident_addr->type);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+
 #if (defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV) && (defined(F_BT_LE_5_0_AE_ADV_SUPPORT) && F_BT_LE_5_0_AE_ADV_SUPPORT)
 static bool bt_stack_le_gap_ext_adv_handle_valid(uint8_t handle)
 {
@@ -6253,7 +6279,21 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_PREFERRED_CONN_PARAM \r\n");
 		ret = bt_stack_le_gap_set_preferred_conn_param(p_cmd->param);
 		break;
-
+	case RTK_BT_LE_GAP_ACT_SET_RAND_ADDR:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_RAND_ADDR \r\n");
+		p_cmd->user_data = GAP_MSG_LE_SET_RAND_ADDR;
+		bt_stack_pending_cmd_insert(p_cmd);
+		ret = bt_stack_le_gap_set_rand_addr(p_cmd->param);
+		goto async_handle;
+		break;
+	case RTK_BT_LE_GAP_ACT_GEN_RAND_ADDR:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GEN_RAND_ADDR \r\n");
+		ret = bt_stack_le_gap_gen_rand_addr(p_cmd->param);
+		break;
+	case RTK_BT_LE_GAP_ACT_CFG_LOCAL_IDENT_ADDR:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_CFG_LOCAL_IDENT_ADDR");
+		ret = bt_stack_le_gap_cfg_local_ident_addr(p_cmd->param);
+		break;
 	case RTK_BT_LE_GAP_ACT_SET_ADV_DATA:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_ADV_DATA \r\n");
 		ret = bt_stack_le_gap_set_adv_data(p_cmd->param, p_cmd->param_len);
@@ -6486,13 +6526,6 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_LE_GAP_ACT_UPDATE_CONN_PARAM:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_UPDATE_CONN_PARAM \r\n");
 		ret = bt_stack_le_gap_update_conn_param(p_cmd->param);
-		break;
-	case RTK_BT_LE_GAP_ACT_SET_RAND_ADDR:
-		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_RAND_ADDR \r\n");
-		p_cmd->user_data = GAP_MSG_LE_SET_RAND_ADDR;
-		bt_stack_pending_cmd_insert(p_cmd);
-		ret = bt_stack_le_gap_set_rand_addr(p_cmd->param);
-		goto async_handle;
 		break;
 	case RTK_BT_LE_GAP_ACT_READ_RSSI:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_READ_RSSI \r\n");

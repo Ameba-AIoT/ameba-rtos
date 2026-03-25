@@ -40,12 +40,19 @@ endif()
 ameba_list_append(public_includes
     ${c_FREERTOS_DIR}/include #Path to freertos/freertos_vxxx/Source/include
     ${c_CMPT_OS_DIR}/freertos/os_wrapper/include
+    ${c_CMPT_OS_DIR}/os_wrapper/include
     ${portable_soc_mcu_dir}
 )
 
 ameba_list_append(public_includes
     heap_trace
 )
+
+if(EXISTS ${c_FREERTOS_DIR}/portable/Common/secure)
+    ameba_list_append(public_includes
+        ${c_FREERTOS_DIR}/portable/Common/secure
+    )
+endif()
 
 if(EXISTS ${portable_soc_mcu_dir}/secure)
     ameba_list_append(public_includes
@@ -99,7 +106,7 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
         ${c_FREERTOS_DIR}/portable/MemMang/heap_5.c
     )
 
-    if(CONFIG_AMEBAD OR CONFIG_AMEBADPLUS)
+    if(CONFIG_AMEBAD)
         if("${c_MCU_PROJECT_NAME}" STREQUAL "km0")
             ameba_list_append(private_sources
                 ${portable_soc_mcu_dir}/port.c
@@ -108,6 +115,17 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
             ameba_list_append(private_sources
                 ${portable_soc_mcu_dir}/non_secure/port.c
                 ${portable_soc_mcu_dir}/non_secure/portasm.c
+            )
+        endif()
+    elseif(CONFIG_AMEBADPLUS)
+        if("${c_MCU_PROJECT_NAME}" STREQUAL "km0")
+            ameba_list_append(private_sources
+                ${portable_soc_mcu_dir}/port.c
+            )
+        elseif("${c_MCU_PROJECT_NAME}" STREQUAL "km4")
+            ameba_list_append(private_sources
+                ${portable_soc_mcu_dir}/port.c
+                ${portable_soc_mcu_dir}/portasm.c
             )
         endif()
     elseif(CONFIG_AMEBASMART)
@@ -131,7 +149,12 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
                 ${portable_soc_mcu_dir}/portASM.S #OPTIMIZE: change name to portasm.c?
             )
         endif()
-    elseif(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F)
+    elseif(CONFIG_AMEBAGREEN2 OR CONFIG_RTL8720F)
+        ameba_list_append(private_sources
+            ${portable_soc_mcu_dir}/port.c
+            ${portable_soc_mcu_dir}/portasm.c
+        )
+    elseif(CONFIG_AMEBAL2)
         ameba_list_append(private_sources
             ${portable_soc_mcu_dir}/non_secure/port.c
             ${portable_soc_mcu_dir}/non_secure/portasm.c
@@ -139,8 +162,8 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
     elseif(CONFIG_AMEBALITE)
         if("${c_MCU_PROJECT_NAME}" STREQUAL "km4")
             ameba_list_append(private_sources
-                ${portable_soc_mcu_dir}/non_secure/port.c
-                ${portable_soc_mcu_dir}/non_secure/portasm.c
+                ${portable_soc_mcu_dir}/port.c
+                ${portable_soc_mcu_dir}/portasm.c
             )
         elseif("${c_MCU_PROJECT_NAME}" STREQUAL "kr4")
             ameba_list_append(private_sources
@@ -164,13 +187,24 @@ if(CONFIG_HEAP_PROTECTOR)
 endif()
 
 elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image3")
-    ameba_list_append(private_sources
-        ${portable_soc_mcu_dir}/secure/secure_context.c
-        ${portable_soc_mcu_dir}/secure/secure_context_port.c
-        ${portable_soc_mcu_dir}/secure/secure_heap.c
-        ${portable_soc_mcu_dir}/secure/secure_init.c
-        os_wrapper/os_wrapper_memory.c
-    )
+    # amebasmart uses chip-specific secure directory, others use Common/secure
+    if(CONFIG_AMEBASMART)
+        ameba_list_append(private_sources
+            ${portable_soc_mcu_dir}/secure/secure_context.c
+            ${portable_soc_mcu_dir}/secure/secure_context_port.c
+            ${portable_soc_mcu_dir}/secure/secure_heap.c
+            ${portable_soc_mcu_dir}/secure/secure_init.c
+            os_wrapper/os_wrapper_memory.c
+        )
+    else()
+        ameba_list_append(private_sources
+            ${c_FREERTOS_DIR}/portable/Common/secure/secure_context.c
+            ${c_FREERTOS_DIR}/portable/Common/secure/secure_context_port.c
+            ${c_FREERTOS_DIR}/portable/Common/secure/secure_heap.c
+            ${c_FREERTOS_DIR}/portable/Common/secure/secure_init.c
+            os_wrapper/os_wrapper_memory.c
+        )
+    endif()
     ameba_list_append(private_compile_options
         -O0
     )

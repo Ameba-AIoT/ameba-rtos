@@ -48,6 +48,7 @@ ameba_list_append(private_sources
 	atcmd_bt_gatts.c
 	atcmd_bt_gattc.c
 	atcmd_bt_vendor.c
+	atcmd_bt_cmd_sync.c
 )
 
 if(CONFIG_BT_HAS_BREDR)

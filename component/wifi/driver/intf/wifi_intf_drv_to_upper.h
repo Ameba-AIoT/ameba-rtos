@@ -79,9 +79,9 @@ void rtw_p2p_set_role(enum rtw_p2p_role role);
 u8 rtw_p2p_check_role(enum rtw_p2p_role role);
 int rtw_p2p_remain_on_ch(u8 wlan_idx, u8 enable);
 #endif
-#ifdef WHC_SKIP_NP_MSG_TASK
+
 void rtw_single_thread_wakeup(void);
-#endif
+
 
 int rtw_wltunnel_command(char *cmd);
 #ifdef CONFIG_WIFI_TUNNEL

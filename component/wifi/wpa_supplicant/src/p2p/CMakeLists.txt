@@ -42,6 +42,11 @@ set(private_compile_options)         #private compile_options
 
 #------------------------------#
 # Component private part, user config begin
+ameba_list_append(private_includes
+    #Use relative path: from current CMakeLists.txt's dir
+    ${c_CMPT_WIFI_DIR}/../network/dhcp
+)
+
 set(CSRC)
 include(sources.cmake OPTIONAL)
 
@@ -66,7 +71,6 @@ ameba_add_external_app_library(${TARGET_LIB}
 ###NOTE: For open-source component, always build from source
 ameba_add_internal_library(p2p_config
     p_SOURCES
-        ../../wpa_supplicant/wifi_p2p_config.c
         ../../wpa_supplicant/wifi_p2p_disable.c
     p_INCLUDES
         ${private_includes}
