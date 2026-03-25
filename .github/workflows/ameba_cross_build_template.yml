@@ -110,22 +110,14 @@ jobs:
       id: build_unix
       run: |
         echo "Build Current shell is ${{ matrix.shell }}"
-        if [ "${{ inputs.build_stage_name }}" == "B3" ] || [ "${{ inputs.build_stage_name }}" == "B5" ]; then 
-          python ameba.py build ${{ env.SOC_NAME }} -D USE_ALIYUN_URL=True
-        else
-          python ameba.py build ${{ env.SOC_NAME }}
-        fi
+        python ameba.py build ${{ env.SOC_NAME }}
       if: ${{ matrix.os != 'windows-latest' }}
 
     - name: Build_windows
       id: build_win
       run: |
           echo "Build Current shell is ${{ matrix.shell }}"
-          if ("${{ inputs.build_stage_name }}" -eq "B3" -or "${{ inputs.build_stage_name }}" -eq "B5") {
-            python ameba.py build ${{ env.SOC_NAME }} -D USE_ALIYUN_URL=True
-          } else {
-            python ameba.py build ${{ env.SOC_NAME }}
-          }
+          python ameba.py build ${{ env.SOC_NAME }}
       if: ${{ inputs.ic_name != 'amebasmart' && matrix.os == 'windows-latest' }}
 
     - name: Post-Build Cleanup
