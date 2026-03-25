@@ -41,5 +41,11 @@ static const cmd_table_t sdp_cmd_table[] = {
 
 void fBTSDP(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], sdp_cmd_table, "[AT+BTSDP]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], sdp_cmd_table, "[AT+BTSDP]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }

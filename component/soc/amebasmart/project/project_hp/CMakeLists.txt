@@ -42,8 +42,11 @@ if(CONFIG_TRUSTZONE)
     # Set image3 linker script for TrustZone secure image
     set(c_IMG3_LD ${c_SDK_LD_DIR}/ameba_img3_s.ld)
     ameba_add_subdirectory(make/image3)
-    get_property(image3_name TARGET ${c_MCU_PROJ_CONFIG} PROPERTY image3)
-    add_dependencies(${image2_name} ${image3_name}_postbuild)
+    ameba_get_image_target_name(image2 image2_name)
+    ameba_get_image_target_name(image3 image3_name)
+    if(image2_name AND image3_name)
+        add_dependencies(${image2_name} ${image3_name}_postbuild)
+    endif()
 endif()
 
 add_custom_target(

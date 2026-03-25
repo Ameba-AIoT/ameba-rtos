@@ -64,6 +64,11 @@ void rtw_reconn_timer_start(void)
 #ifdef CONFIG_PLATFORM_ZEPHYR
 		rtw_reconn.cnt = 0;
 #endif
+		if (rtw_reconn.pwd_buf) {
+			rtw_reconn.conn_param.password = NULL;
+			rtos_mem_free(rtw_reconn.pwd_buf);
+			rtw_reconn.pwd_buf = NULL;
+		}
 	} else {
 		rtw_reconn.b_waiting = 1;
 		rtos_timer_start(rtw_reconn.timer, 1000);
@@ -165,9 +170,13 @@ void rtw_reconn_new_conn(struct rtw_network_info *connect_param)
 		rtw_reconn.conn_param.pscan_option = 0;
 
 		if (connect_param->password_len) {
-			memcpy(&rtw_reconn.pwd, connect_param->password, connect_param->password_len);
-			rtw_reconn.pwd[connect_param->password_len] = '\0';
-			rtw_reconn.conn_param.password = rtw_reconn.pwd;
+			if (rtw_reconn.pwd_buf != NULL) {
+				rtos_mem_free(rtw_reconn.pwd_buf);
+			}
+			rtw_reconn.pwd_buf = rtos_mem_zmalloc(sizeof(u8) * (connect_param->password_len + 1));
+			memcpy(rtw_reconn.pwd_buf, connect_param->password, connect_param->password_len);
+			rtw_reconn.pwd_buf[connect_param->password_len] = '\0';
+			rtw_reconn.conn_param.password = rtw_reconn.pwd_buf;
 		} else {
 			rtw_reconn.conn_param.password = NULL;
 		}
@@ -186,6 +195,11 @@ int wifi_stop_autoreconnect(void)
 		rtw_reconn.b_waiting = 0;
 		rtw_reconn.cnt = 0;
 		rtw_reconn.b_disconn_by_app = 1;
+		if (rtw_reconn.pwd_buf) {
+			rtw_reconn.conn_param.password = NULL;
+			rtos_mem_free(rtw_reconn.pwd_buf);
+			rtw_reconn.pwd_buf = NULL;
+		}
 	}
 	return RTK_SUCCESS;
 }
@@ -202,8 +216,8 @@ s32 wifi_set_autoreconnect(u8 enable)
 		rtw_reconn.b_waiting = 0;
 		rtw_reconn.b_enable = 0;
 	} else if ((enable != 0) && (rtw_reconn.b_enable == 0)) {
-		if (rtos_timer_create(&(rtw_reconn.timer), "rtw_reconn_timer", NULL, wifi_user_config.auto_reconnect_interval * 1000, FALSE,
-							  rtw_reconn_timer_hdl) != RTK_SUCCESS) {
+		if (rtos_timer_create_static(&(rtw_reconn.timer), "rtw_reconn_timer", NULL, wifi_user_config.auto_reconnect_interval * 1000, FALSE,
+									 rtw_reconn_timer_hdl) != RTK_SUCCESS) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "rtw_reconn_timer create fail\n");
 			return RTK_FAIL;
 		}

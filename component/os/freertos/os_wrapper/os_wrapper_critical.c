@@ -68,6 +68,11 @@ void rtos_critical_enter(uint32_t component_id)
 	if (component_id >= RTOS_CRITICAL_MAX) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] component_id invalid\r\n", __func__);
 	}
+
+	if (!rtos_critical_is_in_interrupt()) {
+		vTaskSuspendAll();
+	}
+
 	portDISABLE_INTERRUPTS();
 
 	/* support the same core multi-times take a particular spin_lock */
@@ -118,8 +123,17 @@ void rtos_critical_exit(uint32_t component_id)
 			if (GetOSCriticalNesting(portGET_CORE_ID()) == 0) {
 				portENABLE_INTERRUPTS();
 			}
+
+			if (!rtos_critical_is_in_interrupt()) {
+				xTaskResumeAll();
+			}
+		}
+	} else {
+		if (!rtos_critical_is_in_interrupt()) {
+			xTaskResumeAll();
 		}
 	}
+
 #else
 	UNUSED(component_id);
 	/* Non-SMP env, keep privious actions */

@@ -332,10 +332,12 @@ struct rtk_bt_coex_conn_t {
 	uint16_t profile_status_bitmap;
 	uint8_t  profile_refcount[PROFILE_MAX];
 	struct list_head profile_list;
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 	uint32_t a2dp_cnt;
 	uint32_t a2dp_pre_cnt;
 	uint32_t pan_cnt;
 	uint32_t pan_pre_cnt;
+#endif
 };
 
 struct rtk_bt_coex_monitor_node_t {
@@ -347,9 +349,11 @@ struct rtk_bt_coex_monitor_node_t {
 
 struct rtk_bt_coex_priv_t {
 	struct list_head conn_list;
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 	struct list_head monitor_list;
 	void *monitor_mutex;
 	void *monitor_timer;
+#endif
 #if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
 	struct rtk_coex_bt_info_t bt_info_cur;
 	struct rtk_coex_bt_info_t bt_info_prev;

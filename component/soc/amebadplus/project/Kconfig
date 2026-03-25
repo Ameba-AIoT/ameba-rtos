@@ -72,9 +72,7 @@ config SUPPORT_AUDIO_CMD_PLAYER
 
 #---------- FEATURE LIST END-------------#
 
-menu "CONFIG TrustZone"
-    rsource "project_km4/Kconfig.tz"
-endmenu
+rsource "../../../soc/common/image3/Kconfig.trustzone"
 
 menu "CONFIG Memory Arch"
     config SECOND_FLASH_NOR
@@ -167,12 +165,7 @@ rsource "../../../os/Kconfig"
 
 orsource "../../../utils/Kconfig"
 
-menu "CONFIG OTA OPTION"
-    config UPGRADE_BOOTLOADER
-        bool "Enable Bootloader OTA"
-    config COMPRESS_OTA_IMG
-        bool "Enable Compress APP Image"
-endmenu
+rsource "../../../ota/Kconfig"
 
 rsource "../../../usb/Kconfig"
 
@@ -342,8 +335,6 @@ menu "CONFIG WIFI"
             bool
             depends on WHC_DEV # only work in NP
             select WLAN
-            select FW_DRIVER_COEXIST
-            select WIFI_FW_EN if !MP_SHRINK
             select WIFI_HOST_CONTROL
             select LWIP_LAYER if WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4
 
@@ -363,7 +354,6 @@ menu "CONFIG WIFI"
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
         config WIFI_FW_EN_FOR_KM0
-            depends on !WHC_DEV_MENU
             bool
             default !MP_SHRINK
 
@@ -437,9 +427,9 @@ endmenu
 
 rsource "../../../lwip/Kconfig"
 
-rsource "../../../ssl/Kconfig"
-
 orsource "../../../wpan/Kconfig"
+
+rsource "../../../ssl/Kconfig"
 
 rsource "../../../rtk_coex/Kconfig.coex"
 

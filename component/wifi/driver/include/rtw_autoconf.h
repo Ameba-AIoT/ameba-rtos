@@ -127,10 +127,6 @@
 #define CONFIG_AUTO_RECONNECT 0
 #endif
 
-#ifdef CONFIG_WHC_DEV
-#define WHC_SKIP_NP_MSG_TASK
-#endif
-
 #ifdef NAN_CUSTOMER_NANDOW
 #define MAX_NANDOW_PARA_LEN 2600
 #endif

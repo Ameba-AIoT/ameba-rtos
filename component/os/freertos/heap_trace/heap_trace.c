@@ -65,14 +65,17 @@ uint32_t heap_check_integrity(void)
 void heap_get_stats(rtos_heap_stats *pxHeapStats)
 {
 	vPortGetHeapStats((HeapStats_t *)pxHeapStats);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "********** Heap Usage Status **********\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Total Number Of Successful Allocations:    %u\n", pxHeapStats->xNumberOfSuccessfulAllocations);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Total Number Of Successful Frees:          %u\n", pxHeapStats->xNumberOfSuccessfulFrees);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Current Available Heap Space:              %u bytes\n", pxHeapStats->xAvailableHeapSpaceInBytes);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Minimum Ever Free Space Remaining:         %u bytes\n", pxHeapStats->xMinimumEverFreeBytesRemaining);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Number Of Free Blocks:                     %u\n", pxHeapStats->xNumberOfFreeBlocks);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Size Of Largest Free Block:                %u bytes\n", pxHeapStats->xSizeOfLargestFreeBlockInBytes);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Size Of Smallest Free Block:               %u bytes\n", pxHeapStats->xSizeOfSmallestFreeBlockInBytes);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AvailHeap: %u, MaxFreeBlock: %u, ",
+			 pxHeapStats->xAvailableHeapSpaceInBytes,
+			 pxHeapStats->xSizeOfLargestFreeBlockInBytes);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Allocs: %u, Frees: %u, ",
+			 pxHeapStats->xNumberOfSuccessfulAllocations,
+			 pxHeapStats->xNumberOfSuccessfulFrees);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "FreeBlocks: %u, MinFreeBlock: %u\r\n",
+			 pxHeapStats->xNumberOfFreeBlocks,
+			 pxHeapStats->xSizeOfSmallestFreeBlockInBytes);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "MinEverFree: %u\r\n",
+			 pxHeapStats->xMinimumEverFreeBytesRemaining);
 }
 
 #ifdef CONFIG_HEAP_TRACE

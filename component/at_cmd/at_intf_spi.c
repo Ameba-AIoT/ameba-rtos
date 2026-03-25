@@ -79,6 +79,7 @@ rtos_timer_t xTimers_SPI_Output;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
+extern int atcmd_service(char *line_buf);
 
 uint32_t checksum_32_spi(uint32_t start_value, uint8_t *data, int len)
 {
@@ -417,7 +418,9 @@ void atcmd_spi_task(void)
 void atcmd_spi_input_handler_task(void)
 {
 	PUART_LOG_BUF pShellRxBuf = &shell_rxbuf;
+	PUART_LOG_BUF pCmdLogBuf = shell_ctl.pTmpLogBuf;
 	u32 i = 0, actual_len = 0;
+	u32 ret = FALSE;
 	while (1) {
 		pShellRxBuf->BufCount = 0;
 		i = 0;
@@ -429,23 +432,30 @@ void atcmd_spi_input_handler_task(void)
 			continue;
 		}
 
-		actual_len = actual_len > CMD_BUFLEN ? CMD_BUFLEN : actual_len;
-		RingBuffer_Read(at_spi_rx_ring_buf, pShellRxBuf->UARTLogBuf, actual_len);
-
-		pShellRxBuf->BufCount = actual_len;
+		if (actual_len > CMD_BLOCK_SIZE) {
+			RingBuffer_Read(at_spi_rx_ring_buf, pShellRxBuf->UARTLogBuf, CMD_BLOCK_SIZE);
+			pShellRxBuf->BufCount = CMD_BLOCK_SIZE;
+		} else {
+			RingBuffer_Read(at_spi_rx_ring_buf, pShellRxBuf->UARTLogBuf, actual_len);
+			pShellRxBuf->BufCount = actual_len;
+		}
 
 recv_again:
 		if (shell_cmd_chk(pShellRxBuf->UARTLogBuf[i++], (UART_LOG_CTL *)&shell_ctl, ENABLE) == 2) {
-			if (shell_ctl.pTmpLogBuf != NULL) {
-				shell_ctl.ExecuteCmd = TRUE;
-
-				if (shell_ctl.shell_task_rdy) {
-					if (RingBuffer_Available(at_spi_rx_ring_buf) > 0) {
-						RingBuffer_Reset(at_spi_rx_ring_buf);
-					}
-					shell_ctl.GiveSema();
-					continue;
+			if (pCmdLogBuf != NULL) {
+				if (RingBuffer_Available(at_spi_rx_ring_buf) > 0) {
+					RingBuffer_Reset(at_spi_rx_ring_buf);
 				}
+
+				ret = atcmd_service((char *)(pCmdLogBuf->UARTLogBuf));
+				if (ret == FALSE) {
+					RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\nunknown command '%s'", pCmdLogBuf->UARTLogBuf);
+					RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n");
+				}
+
+				memset((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+				pCmdLogBuf->BufCount = 0;
+				continue;
 			} else {
 				memset(shell_ctl.pTmpLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
 			}
@@ -454,6 +464,10 @@ recv_again:
 		/* recv all data one time */
 		if ((pShellRxBuf->BufCount != i) && (pShellRxBuf->BufCount != 0)) {
 			goto recv_again;
+		}
+
+		if (actual_len > CMD_BLOCK_SIZE) {
+			rtos_sema_give(atcmd_spi_rx_sema);
 		}
 	}
 }
@@ -537,12 +551,10 @@ int atio_spi_init(void)
 		return -1;
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_input_handler_task"), (rtos_task_t)atcmd_spi_input_handler_task, NULL, 1024, 5) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_input_handler_task"), (rtos_task_t)atcmd_spi_input_handler_task, NULL, 4096, 5) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "\n\r%s rtos_task_create(atcmd_spi_input_handler_task) failed", __FUNCTION__);
 		return -1;
 	}
 
 	return 0;
 }
-
-

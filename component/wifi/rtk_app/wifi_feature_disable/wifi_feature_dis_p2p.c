@@ -22,6 +22,11 @@ void wifi_hal_p2p_addr_cam_init(void)
 {
 }
 
+void rtw_p2p_init(void)
+{
+
+}
+
 void rtw_p2p_set_role(enum rtw_p2p_role role)
 {
 	UNUSED(role);
@@ -141,5 +146,3 @@ int rtw_p2p_remain_on_ch(u8 wlan_idx, u8 enable)
 
 #endif
 #endif
-
-

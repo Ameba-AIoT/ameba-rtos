@@ -112,7 +112,6 @@
 #endif
 
 #elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAPRO3) || defined(CONFIG_AMEBAL2)
-#if defined(CONFIG_ARM_CORE_CM4)
 #if defined(CONFIG_COEXIST_HOST)
 /* configuration for AP */
 #define COEX_IPC_DIR_MSG_RX IPC_NP_TO_AP
@@ -125,7 +124,6 @@
 #define COEX_IPC_DIR_MSG_TX IPC_NP_TO_AP
 #define IPC_H2D_COEX_API_TRAN	IPC_A2N_COEX_API_TRAN
 #define IPC_D2H_COEX_API_TRAN	IPC_N2A_COEX_API_TRAN
-#endif
 #endif
 
 #elif defined(CONFIG_AMEBAD)

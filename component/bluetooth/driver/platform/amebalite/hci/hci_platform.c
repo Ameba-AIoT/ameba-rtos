@@ -377,7 +377,7 @@ bool rtk_bt_pre_enable(void)
 		return false;
 	}
 
-	wifi_ps_en_by_bt_on(DISABLE);
+	wifi_ps_en_by_bt_state(DISABLE);
 #endif
 
 	return true;
@@ -386,7 +386,7 @@ bool rtk_bt_pre_enable(void)
 void rtk_bt_post_enable(void)
 {
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
-	wifi_ps_en_by_bt_on(ENABLE);
+	wifi_ps_en_by_bt_state(ENABLE);
 #endif
 }
 

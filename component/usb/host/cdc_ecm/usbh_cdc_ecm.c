@@ -72,6 +72,14 @@
 /* [CDC]Class-Specific Codes End -----------------------------------------------------------*/
 
 typedef enum {
+	CDC_ECM_CAP_RCR_CMD      = (BIT0),  /* Receive Control Register, enables UDP functionality */
+	CDC_ECM_CAP_FIFO_CTRL    = (BIT1),  /* FIFO Control, controls the water level of the transmit and receive FIFOs */
+	CDC_ECM_CAP_MODIFY_MAC   = (BIT2),  /* MAC Settings, enables the function of setting MAC address */
+	CDC_ECM_CAP_MODIFY_LED   = (BIT3),  /* LED Settings, enables the function of setting LED value */
+	CDC_ECM_CAP_MAX,
+} usbh_cdc_ecm_dongle_capability_t;
+
+typedef enum {
 	CDC_ECM_MAC_UNINIT = 0U,
 	CDC_ECM_MAC_DONGLE_SUPPLY,
 	CDC_ECM_MAC_UPPER_LAYER_SET,
@@ -90,9 +98,9 @@ typedef enum {
 	CDC_ECM_STATE_CTRL_GET_ETHERNET_STATISTIC,
 #endif
 
-	CDC_ECM_STATE_CTRL_RCR_GET, //RTL8156,
+	CDC_ECM_STATE_CTRL_RCR_GET,
 	CDC_ECM_STATE_CTRL_RCR_SET,
-	CDC_ECM_STATE_FLOW_CTRL1, //RTL8152,
+	CDC_ECM_STATE_FLOW_CTRL1,
 	CDC_ECM_STATE_FLOW_CTRL2,
 
 	/*RTL8152, set mac address */
@@ -129,6 +137,11 @@ typedef enum {
 
 /* Private types -------------------------------------------------------------*/
 typedef int (*usb_timer_func)(void);
+
+typedef struct {
+	u16 pid;
+	u16 feature;
+} __PACKED usbh_cdc_ecm_priv_config_t;
 
 /*
 	Ethernet Networking Functional Descriptor
@@ -182,6 +195,14 @@ static void usbh_cdc_ecm_trace_task_deinit(void);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "ECMH";
 
+static const usbh_cdc_ecm_priv_config_t rtk_ecm_dongle[] = {
+	{0x8152, CDC_ECM_CAP_FIFO_CTRL | CDC_ECM_CAP_MODIFY_MAC | CDC_ECM_CAP_MODIFY_LED},
+	{0x8153, CDC_ECM_CAP_RCR_CMD | CDC_ECM_CAP_MODIFY_MAC | CDC_ECM_CAP_MODIFY_LED},
+	{0x8156, CDC_ECM_CAP_RCR_CMD | CDC_ECM_CAP_MODIFY_MAC | CDC_ECM_CAP_MODIFY_LED},
+
+	{0, 0x00},
+};
+
 /* USB CDC ECM device identification */
 static const usbh_dev_id_t ecm_devs[] = {
 	{
@@ -213,6 +234,27 @@ static usbh_cdc_ecm_host_t usbh_cdc_ecm_host;
 
 /* Private functions ---------------------------------------------------------*/
 /* USB basic functions ----------------------------------------------------*/
+static u8 usbh_cdc_ecm_support_feature(u16 pid, usbh_cdc_ecm_dongle_capability_t type)
+{
+	usbh_cdc_ecm_priv_config_t *ecm_dongle;
+	u16 i;
+
+	for (i = 0; rtk_ecm_dongle[i].pid; i++) {
+		ecm_dongle = (usbh_cdc_ecm_priv_config_t *) & (rtk_ecm_dongle[i]);
+		if (pid != ecm_dongle->pid) {
+			continue;
+		}
+
+		if (ecm_dongle->feature & type) {
+			return HAL_OK;
+		} else {
+			return HAL_ERR_PARA;
+		}
+	}
+
+	return HAL_ERR_PARA;
+}
+
 /**
   * @brief Convert hex data to char format
   * @retval
@@ -311,7 +353,7 @@ static u8 usbh_cdc_ecm_get_mac_str(usb_host_t *host)
 	u16 vid = cdc->vid;
 	u16 pid = cdc->pid;
 
-	if ((cdc->mac_src_type == CDC_ECM_MAC_UPPER_LAYER_SET) && (vid == USB_DEFAULT_VID) && ((pid == 0x8152) || (pid == 0x8153))) {
+	if ((cdc->mac_src_type == CDC_ECM_MAC_UPPER_LAYER_SET) && (vid == USB_DEFAULT_VID) && (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_MODIFY_MAC) == HAL_OK)) {
 		status = HAL_OK;
 		RTK_LOGS(TAG, RTK_LOG_INFO,  "Upper set mac[%02x %02x %02x %02x %02x %02x]\n", cdc->mac[0], cdc->mac[1], cdc->mac[2], cdc->mac[3], cdc->mac[4],
 				 cdc->mac[5]);
@@ -625,86 +667,71 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 
 	// RTK_LOGS(TAG, RTK_LOG_INFO, "mac issue status[%d]V(0x%04x)P(0x%04x) type %d\n",appx_cmd.sub_status,vid,pid,cdc->mac_src_type);
 
+	if ((vid != USB_DEFAULT_VID) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_MODIFY_MAC) != HAL_OK)) {
+		return;
+	}
+
 	switch (cdc->sub_status) {
 	case CDC_ECM_STATE_CTRL_MAC_GET_LOCK: //8152 mac
-		if ((pid != 0x8152) || (vid != USB_DEFAULT_VID) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
+		usb_os_memset(cdc->mac_ctrl_lock, 0, 4);
+		state = usbh_cdc_ecm_process_mac_get_lock(host);
+		if (state == HAL_OK) {
+			usb_os_memcpy(cdc->mac_ctrl_lock, cdc->dongle_ctrl_buf, CDC_ECM_CTRL_REG_BUF_LEN);
 			cdc->sub_status++;
-		} else {
-			usb_os_memset(cdc->mac_ctrl_lock, 0, 4);
-			state = usbh_cdc_ecm_process_mac_get_lock(host);
-			if (state == HAL_OK) {
-				usb_os_memcpy(cdc->mac_ctrl_lock, cdc->dongle_ctrl_buf, CDC_ECM_CTRL_REG_BUF_LEN);
-				cdc->sub_status++;
-			} else if (state != HAL_BUSY) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Get MAC lock err\n");
-				usb_os_sleep_ms(100);
-			}
+		} else if (state != HAL_BUSY) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Get MAC lock err\n");
+			usb_os_sleep_ms(100);
 		}
+
 		break;
 
 	case CDC_ECM_STATE_CTRL_MAC_DISABLE_LOCK: //8152 mac
-		if ((pid != 0x8152) || (vid != USB_DEFAULT_VID) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
+		cdc->mac_ctrl_lock[0] = 0xD0;
+		usb_os_memcpy(cdc->dongle_ctrl_buf, cdc->mac_ctrl_lock, CDC_ECM_CTRL_REG_BUF_LEN);
+		state = usbh_cdc_ecm_process_mac_set_dis_lock(host);
+		if (state == HAL_OK) {
 			cdc->sub_status++;
-		} else {
-			cdc->mac_ctrl_lock[0] = 0xD0;
-			usb_os_memcpy(cdc->dongle_ctrl_buf, cdc->mac_ctrl_lock, CDC_ECM_CTRL_REG_BUF_LEN);
-			state = usbh_cdc_ecm_process_mac_set_dis_lock(host);
-			if (state == HAL_OK) {
-				cdc->sub_status++;
-			} else if (state != HAL_BUSY) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Dis MAC lock err\n");
-				usb_os_sleep_ms(100);
-			}
+		} else if (state != HAL_BUSY) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Dis MAC lock err\n");
+			usb_os_sleep_ms(100);
 		}
 		break;
 
 	case CDC_ECM_STATE_CTRL_MAC_SET_MAC1: //8152 mac
-		if ((pid != 0x8152) || (vid != USB_DEFAULT_VID) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
+		usb_os_memcpy(cdc->dongle_ctrl_buf, &(cdc->mac[0]), CDC_ECM_CTRL_REG_BUF_LEN);
+		state = usbh_cdc_ecm_process_mac_set_mac1(host);
+		if (state == HAL_OK) {
 			cdc->sub_status++;
-		} else {
-			usb_os_memcpy(cdc->dongle_ctrl_buf, &(cdc->mac[0]), CDC_ECM_CTRL_REG_BUF_LEN);
-			state = usbh_cdc_ecm_process_mac_set_mac1(host);
-			if (state == HAL_OK) {
-				cdc->sub_status++;
-			} else if (state != HAL_BUSY) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Set MAC1 err\n");
-				usb_os_sleep_ms(100);
-			}
+		} else if (state != HAL_BUSY) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set MAC1 err\n");
+			usb_os_sleep_ms(100);
 		}
 		break;
 
 	case CDC_ECM_STATE_CTRL_MAC_SET_MAC2: //8152 mac
-		if ((pid != 0x8152) || (vid != USB_DEFAULT_VID) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
+		cdc->dongle_ctrl_buf[0] = cdc->mac[4];
+		cdc->dongle_ctrl_buf[1] = cdc->mac[5];
+		cdc->dongle_ctrl_buf[2] = cdc->dongle_ctrl_buf[3] = 0xFF;
+		state = usbh_cdc_ecm_process_mac_set_mac2(host);
+		if (state == HAL_OK) {
 			cdc->sub_status++;
-		} else {
-			cdc->dongle_ctrl_buf[0] = cdc->mac[4];
-			cdc->dongle_ctrl_buf[1] = cdc->mac[5];
-			cdc->dongle_ctrl_buf[2] = cdc->dongle_ctrl_buf[3] = 0xFF;
-			state = usbh_cdc_ecm_process_mac_set_mac2(host);
-			if (state == HAL_OK) {
-				cdc->sub_status++;
-			} else if (state != HAL_BUSY) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Set MAC2 err\n");
-				usb_os_sleep_ms(100);
-			}
+		} else if (state != HAL_BUSY) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set MAC2 err\n");
+			usb_os_sleep_ms(100);
 		}
 		break;
 
 	case CDC_ECM_STATE_CTRL_MAC_ENABLE_LOCK: //8152 mac
-		if ((pid != 0x8152) || (vid != USB_DEFAULT_VID) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY)) {
+		cdc->mac_ctrl_lock[0] = 0x10;
+		usb_os_memcpy(cdc->dongle_ctrl_buf, cdc->mac_ctrl_lock, CDC_ECM_CTRL_REG_BUF_LEN);
+		state = usbh_cdc_ecm_process_mac_en_lock(host);
+		if (state == HAL_OK) {
 			cdc->sub_status++;
-		} else {
-			cdc->mac_ctrl_lock[0] = 0x10;
-			usb_os_memcpy(cdc->dongle_ctrl_buf, cdc->mac_ctrl_lock, CDC_ECM_CTRL_REG_BUF_LEN);
-			state = usbh_cdc_ecm_process_mac_en_lock(host);
-			if (state == HAL_OK) {
-				cdc->sub_status++;
-				cdc->mac_valid = 1;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Mac set success \n");
-			} else if (state != HAL_BUSY) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "En MAC lock err\n");
-				usb_os_sleep_ms(100);
-			}
+			cdc->mac_valid = 1;
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Mac set success \n");
+		} else if (state != HAL_BUSY) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "En MAC lock err\n");
+			usb_os_sleep_ms(100);
 		}
 		break;
 
@@ -788,9 +815,8 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		break;
 #endif
 
-///just for 8156
 	case CDC_ECM_STATE_CTRL_RCR_GET:
-		if ((pid != 0x8156) || (vid != USB_DEFAULT_VID)) {
+		if ((vid != USB_DEFAULT_VID) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_RCR_CMD) != HAL_OK)) {
 			cdc->sub_status++;
 		} else {
 			usb_os_memset(cdc->rcr, 0, 4);
@@ -806,7 +832,7 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		break;
 
 	case CDC_ECM_STATE_CTRL_RCR_SET:
-		if ((pid != 0x8156) || (vid != USB_DEFAULT_VID)) {
+		if ((vid != USB_DEFAULT_VID) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_RCR_CMD) != HAL_OK)) {
 			cdc->sub_status++;
 		} else {
 			//set bit 0~3 set 1 will enable PING & UDP transfer
@@ -822,9 +848,8 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		}
 		break;
 
-	///just for 8152
 	case CDC_ECM_STATE_FLOW_CTRL1:
-		if ((pid != 0x8152) || (vid != USB_DEFAULT_VID)) {
+		if ((vid != USB_DEFAULT_VID) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_FIFO_CTRL) != HAL_OK)) {
 			cdc->sub_status++;
 		} else {
 			usb_os_memset(cdc->flow_ctrl, 0, 4);
@@ -841,7 +866,7 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		break;
 
 	case CDC_ECM_STATE_FLOW_CTRL2:
-		if ((pid != 0x8152) || (vid != USB_DEFAULT_VID)) {
+		if ((vid != USB_DEFAULT_VID) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_FIFO_CTRL) != HAL_OK)) {
 			cdc->sub_status++;
 		} else {
 			usb_os_memset(cdc->flow_ctrl, 0, 4);
@@ -862,11 +887,15 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 	case CDC_ECM_STATE_CTRL_MAC_SET_MAC1:
 	case CDC_ECM_STATE_CTRL_MAC_SET_MAC2:
 	case CDC_ECM_STATE_CTRL_MAC_ENABLE_LOCK:
-		usbh_cdc_ecm_config_dongle_mac(host, vid, pid);
+		if ((vid != USB_DEFAULT_VID) || (cdc->mac_src_type == CDC_ECM_MAC_DONGLE_SUPPLY) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_MODIFY_MAC) != HAL_OK)) {
+			cdc->sub_status = CDC_ECM_STATE_CTRL_LED_COLOR_SET;
+		} else {
+			usbh_cdc_ecm_config_dongle_mac(host, vid, pid);
+		}
 		break;
 
-	case CDC_ECM_STATE_CTRL_LED_COLOR_SET: //8152 led ctrl
-		if ((pid != 0x8152) || (vid != USB_DEFAULT_VID) || (cdc->led_cnt == 0) || (cdc->led_array == NULL)) {
+	case CDC_ECM_STATE_CTRL_LED_COLOR_SET:
+		if ((vid != USB_DEFAULT_VID) || (cdc->led_cnt == 0) || (cdc->led_array == NULL) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_MODIFY_LED) != HAL_OK)) {
 			cdc->sub_status++;
 		} else {
 			usb_os_memset(cdc->dongle_ctrl_buf, 0xFF, 4);

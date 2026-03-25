@@ -52,7 +52,15 @@ SECTIONS
 		*(COMMON)
 		__image3_bss_end__ = .;
 		end = .;
-		. = . + 8192;
+		. = ALIGN(32);
+		__image3_heap_start__ = .;
 	} > LMA_TZ_S
 
 }
+
+/* Calculate remaining space for secure heap */
+#ifdef CONFIG_IMG3_PSRAM
+	__image3_heap_size__ = ORIGIN(KM4_BD_PSRAM_TZ_S) + LENGTH(KM4_BD_PSRAM_TZ_S) - __image3_heap_start__;
+#else
+	__image3_heap_size__ = ORIGIN(KM4_BD_RAM_TZ_S) + LENGTH(KM4_BD_RAM_TZ_S) - __image3_heap_start__;
+#endif

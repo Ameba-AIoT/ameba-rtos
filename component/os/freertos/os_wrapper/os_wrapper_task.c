@@ -57,6 +57,11 @@ int rtos_task_create(rtos_task_t *pp_handle, const char *p_name, void (*p_routin
 					 void *p_param, size_t stack_size_in_byte, uint16_t priority)
 {
 	BaseType_t ret;
+
+	if (p_routine == NULL) {
+		return RTK_FAIL;
+	}
+
 #if defined (CONFIG_HEAP_PROTECTOR)
 	/* if enable heap trace, we need to increase heap size */
 	stack_size_in_byte += 1024;
