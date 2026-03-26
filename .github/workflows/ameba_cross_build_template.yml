@@ -110,7 +110,7 @@ jobs:
       id: build_unix
       run: |
         echo "Build Current shell is ${{ matrix.shell }}"
-        python ameba.py build ${{ env.SOC_NAME }} -D USE_ALIYUN_URL=True
+        python ameba.py build ${{ env.SOC_NAME }}
       if: ${{ matrix.os != 'windows-latest' }}
 
     - name: Build_windows
