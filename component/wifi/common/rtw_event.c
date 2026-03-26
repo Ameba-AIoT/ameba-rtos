@@ -63,9 +63,6 @@ extern void wtn_zrpp_get_ap_info_evt_hdl(u8 *evt_info);
 void wifi_event_join_status_internal_hdl(u8 *evt_info)
 {
 #if (!defined(CONFIG_MP_SHRINK) && !defined(CONFIG_WHC_DEV)) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
-	struct deauth_info  *deauth_data, *deauth_data_pre;
-	u8 zero_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
 	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
 	u8 join_status = join_status_info->status;
 	struct rtw_event_join_fail *join_fail;
@@ -126,18 +123,6 @@ void wifi_event_join_status_internal_hdl(u8 *evt_info)
 		LwIP_DHCP_stop(NETIF_WLAN_STA_INDEX);
 		LwIP_netif_set_link_down(NETIF_WLAN_STA_INDEX);
 #endif
-
-#if (!defined(CONFIG_WHC_DEV) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
-		deauth_data_pre = (struct deauth_info *)rtos_mem_zmalloc(sizeof(struct deauth_info));
-		rtw_psk_deauth_info_flash((u8 *)deauth_data_pre, sizeof(struct deauth_info), FLASH_READ);
-		if (memcmp(deauth_data_pre->bssid, zero_mac, 6) != 0) {
-			deauth_data = (struct deauth_info *)rtos_mem_zmalloc(sizeof(struct deauth_info));
-			rtw_psk_deauth_info_flash((u8 *)deauth_data, sizeof(struct deauth_info), FLASH_WRITE);
-			rtos_mem_free((u8 *)deauth_data);
-		}
-		rtos_mem_free((u8 *)deauth_data_pre);
-#endif
-
 		eap_disconnected_hdl();
 	}
 
