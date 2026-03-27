@@ -15,7 +15,6 @@ extern volatile UART_LOG_CTL		shell_ctl;
 rtos_sema_t	shell_sema = NULL;
 
 #ifdef CONFIG_SUPPORT_ATCMD
-char atcmd_buf[UART_LOG_CMD_BUFLEN];
 extern int atcmd_service(char *line_buf);
 extern void atcmd_service_init(void);
 #endif
@@ -166,9 +165,7 @@ static void shell_task_ram(void *Data)
 
 		if (shell_ctl.ExecuteCmd) {
 #if (defined CONFIG_SUPPORT_ATCMD)
-			shell_array_init((u8 *)atcmd_buf, sizeof(atcmd_buf), '\0');
-			strcpy(atcmd_buf, (const char *)pUartLogBuf->UARTLogBuf);
-			ret = atcmd_service(atcmd_buf);
+			ret = atcmd_service((char *)pUartLogBuf->UARTLogBuf);
 
 #if defined(CONFIG_MP_INCLUDED) && defined(CONFIG_WLAN)
 			if (ret == FALSE) {
@@ -222,4 +219,3 @@ const IPC_INIT_TABLE ipc_shell_table = {
 	.IPC_Direction = IPC_KM0_TO_KM4,
 	.IPC_Channel = IPC_N2A_LOGUART_RX_SWITCH
 };
-

@@ -1168,24 +1168,27 @@ endfunction()
 function(ameba_axf2bin_prepend_head output_file input_file symbol map_file)
     set(oneValueArgs
         p_BOOT_INDEX
+        p_FORCE_DEFAULT
     )
+
     cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+
+    set(base_command ${op_PREPEND_HEADER}
+        -o ${output_file}
+        -i ${input_file}
+        -s ${symbol}
+        -m ${map_file}
+    )
+
     if (ARG_p_BOOT_INDEX)
-        ameba_execute_process(COMMAND ${op_PREPEND_HEADER}
-            -o ${output_file}
-            -i ${input_file}
-            -s ${symbol}
-            -m ${map_file}
-            --boot-index ${ARG_p_BOOT_INDEX}
-        )
-    else()
-        ameba_execute_process(COMMAND ${op_PREPEND_HEADER}
-            -o ${output_file}
-            -i ${input_file}
-            -s ${symbol}
-            -m ${map_file}
-        )
+        list(APPEND base_command --boot-index ${ARG_p_BOOT_INDEX})
     endif()
+
+    if (ARG_p_FORCE_DEFAULT)
+        list(APPEND base_command --force-default ${ARG_p_FORCE_DEFAULT})
+    endif()
+
+    ameba_execute_process(COMMAND ${base_command})
 endfunction()
 
 # Usage:

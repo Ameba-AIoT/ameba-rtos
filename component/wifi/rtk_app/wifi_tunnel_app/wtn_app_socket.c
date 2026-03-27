@@ -86,21 +86,21 @@ void wtn_http_ota_task(void *param)
 {
 	struct rmesh_http_ota_param *ota_param = (struct rmesh_http_ota_param *)param;
 	int ret = -1;
-	ota_context *ctx = NULL;
+	ota_context_t *ctx = NULL;
 
-	ctx = (ota_context *)rtos_mem_malloc(sizeof(ota_context));
+	ctx = (ota_context_t *)rtos_mem_malloc(sizeof(ota_context_t));
 	if (ctx == NULL) {
 		goto exit;
 	}
 
-	memset(ctx, 0, sizeof(ota_context));
+	memset(ctx, 0, sizeof(ota_context_t));
 
-	ret = ota_update_init(ctx, (char *)ota_param->host, ota_param->port, (char *)ota_param->resource, OTA_HTTP);
+	ret = ota_init(ctx, (char *)ota_param->host, ota_param->port, (char *)ota_param->resource, OTA_HTTP);
 	if (ret != 0) {
 		goto exit;
 	}
 
-	ret = ota_update_start(ctx);
+	ret = ota_start(ctx);
 
 	if (!ret) {
 		/*send ota status to server*/
@@ -110,7 +110,7 @@ void wtn_http_ota_task(void *param)
 	}
 
 exit:
-	ota_update_deinit(ctx);
+	ota_deinit(ctx);
 	if (ctx) {
 		rtos_mem_free(ctx);
 	}

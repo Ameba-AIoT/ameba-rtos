@@ -514,7 +514,7 @@ void SPDIO_Board_Init(void)
 	for (idx = 0; idx < 6; idx++) {
 		PAD_PullCtrl(SDIO_PAD[SDIO_Pin_Grp][idx], GPIO_PuPd_UP);
 		Pinmux_Config(SDIO_PAD[SDIO_Pin_Grp][idx], PINMUX_FUNCTION_SDIO);
-		RTK_LOGI(TAG, "SDIO_%s --> P%c%d\n", sdio_pin[idx], 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][idx]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][idx]));
+		RTK_LOGS(TAG, RTK_LOG_INFO, "SDIO_%s --> P%c%d\n", sdio_pin[idx], 'A' + PORT_NUM(SDIO_PAD[SDIO_Pin_Grp][idx]), PIN_NUM(SDIO_PAD[SDIO_Pin_Grp][idx]));
 	}
 }
 
@@ -540,7 +540,7 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 		return RTK_FAIL;
 	}
 
-	RTK_LOGI(TAG, "SDIO_Device_Init==>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SDIO_Device_Init==>\n");
 
 	pgSPDIODev = &gSPDIODev;
 	pgSPDIODev->spdio_priv = (void *)obj;
@@ -589,7 +589,7 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 
 	pgSPDIODev->RXBDWPtr = pgSPDIODev->RXBDRPtr = SDIO_RXBD_RPTR_Get(SDIO_WIFI);
 
-	RTK_LOGI(TAG, "TXBDWPtr=0x%x TXBDRPtr=0x%x\n", pgSPDIODev->TXBDWPtr, pgSPDIODev->TXBDRPtr);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "TXBDWPtr=0x%x TXBDRPtr=0x%x\n", pgSPDIODev->TXBDWPtr, pgSPDIODev->TXBDRPtr);
 
 	pgSPDIODev->pTXBDHdl = (SPDIO_TX_BD_HANDLE *)rtos_mem_zmalloc(obj->host_tx_bd_num * sizeof(SPDIO_TX_BD_HANDLE));
 	if (NULL == pgSPDIODev->pTXBDHdl) {
@@ -614,7 +614,7 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 			goto SDIO_INIT_ERR;
 		}
 		pTxBdHdl->isFree = 1;
-		RTK_LOGI(TAG, "TX_BD%lu @ %p %p\n", i, pTxBdHdl, pTxBdHdl->pTXBD);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "TX_BD%lu @ %p %p\n", i, pTxBdHdl, pTxBdHdl->pTXBD);
 	}
 
 	pgSPDIODev->pRXBDHdl = (SPDIO_RX_BD_HANDLE *)rtos_mem_zmalloc(obj->host_rx_bd_num * sizeof(SPDIO_RX_BD_HANDLE));
@@ -665,7 +665,7 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 	/* Indicate the Host system that the TX/RX is ready */
 	SDIO_SetReady(SDIO_WIFI, ENABLE);
 
-	RTK_LOGI(TAG, "<==SDIO_Device_Init\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "<==SDIO_Device_Init\n");
 
 	return RTK_SUCCESS;
 

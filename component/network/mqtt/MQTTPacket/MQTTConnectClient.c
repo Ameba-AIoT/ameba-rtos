@@ -30,10 +30,10 @@ int MQTTSerialize_connectLength(MQTTPacket_connectData *options)
 
 	FUNC_ENTRY;
 
-	if (options->MQTTVersion == 3) {
-		len = 12;    /* variable depending on MQTT or MQIsdp */
-	} else if (options->MQTTVersion == 4) {
-		len = 10;
+	if (options->MQTTVersion == 4) {
+		len = 10;    /* variable depending on MQTT or MQIsdp */
+	} else {
+		len = 12;
 	}
 
 	len += MQTTstrlen(options->clientID) + 2;

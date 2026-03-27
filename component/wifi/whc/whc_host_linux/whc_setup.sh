@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir -p ./common/include
+
 sed -i 's/CONFIG_WHC_HCI_IPC = y/CONFIG_WHC_HCI_IPC = n/g' Makefile
 
 #select WPAoH or WPAoD host
@@ -85,17 +87,20 @@ if [[ "$1" == "sdio" ]]; then
             echo "AMEBAGREEN2 select"
             sed -i 's/#undef CONFIG_AMEBAGREEN2/#define CONFIG_AMEBAGREEN2 1/g' ./common/autoconf.h
             sed -i 's/#undef GREEN2_WA/#define GREEN2_WA 1/g' ./common/autoconf.h
+			cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./common/include
             ;;
         3)
             echo "AMEBAGREEN2 with FW DOWNLOAD select"
             sed -i 's/#undef CONFIG_AMEBAGREEN2/#define CONFIG_AMEBAGREEN2 1/g' ./common/autoconf.h
             sed -i 's/#undef CONFIG_FW_DOWNLOAD/#define CONFIG_FW_DOWNLOAD 1/g' ./common/autoconf.h
             sed -i 's/#undef GREEN2_WA/#define GREEN2_WA 1/g' ./common/autoconf.h
+			cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./common/include
             ;;
         4)
             echo "AMEBAX select"
             sed -i 's/#undef CONFIG_AMEBAGREEN2/#define CONFIG_AMEBAGREEN2 1/g' ./common/autoconf.h
 			sed -i 's/#undef GREEN2_WA/#define GREEN2_WA 1/g' ./common/autoconf.h
+			cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./common/include
             ;;
 
         *)
@@ -121,7 +126,6 @@ if [[ "$1" == "spi" ]]; then
             echo "AMEBADPLUS select"
             sed -i 's/#undef CONFIG_AMEBADPLUS/#define CONFIG_AMEBADPLUS 1/g' ./common/autoconf.h
             sed -i 's/#undef CALCULATE_FREE_TXBD/#define CALCULATE_FREE_TXBD 1/g' ./common/autoconf.h
-			cp ../../../soc/amebadplus/fwlib/include/ameba_inic.h ./common/include
             ;;
         2)
             echo "AMEBAGREEN2 select"
@@ -152,7 +156,6 @@ if [[ "$1" == "usb" ]]; then
         1)
             echo "AMEBADPLUS select"
             sed -i 's/#undef CONFIG_AMEBADPLUS/#define CONFIG_AMEBADPLUS 1/g' ./common/autoconf.h
-			cp ../../../soc/amebadplus/fwlib/include/ameba_inic.h ./common/include
             ;;
         2)
             echo "AMEBAGREEN2 select"
@@ -164,7 +167,6 @@ if [[ "$1" == "usb" ]]; then
     esac
 fi
 
-mkdir -p ./common/include
 cp ../../common/rtw_wifi_common.h ./common/include
 cp ../../common/rtw_inic_common.h ./common/include
 cp ../whc_def.h ./common/include

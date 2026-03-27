@@ -1,0 +1,34 @@
+menu "CONFIG OTA OPTION"
+    config OTA_SWITCH_STRATEGY
+        bool "OTA Image Switch Strategy"
+        default y
+        help
+            Select the strategy for choosing which OTA image to boot from.
+
+    if OTA_SWITCH_STRATEGY
+        choice
+            prompt "Select Strategy"
+            default OTA_SWITCH_BY_VERSION
+
+            config OTA_SWITCH_BY_VERSION
+                bool "Version Number Based"
+                help
+                    Always boot from the image with the higher version number.
+                    This method preserves both OTA1 and OTA2 for rollback capability.
+                    Suitable for production environments requiring version tracking.
+
+            config OTA_SWITCH_BY_VALID_HEADER
+                bool "Valid Header Based"
+                help
+                    Mark the old image as invalid by corrupting its header,
+                    forcing the bootloader to use the newly updated image.
+                    This method actively invalidates the fallback image.
+                    Suitable for longrun test or when rollback is not needed.
+        endchoice
+    endif
+
+    config UPGRADE_BOOTLOADER
+        bool "Enable Bootloader OTA"
+    config COMPRESS_OTA_IMG
+        bool "Enable Compress APP Image"
+endmenu

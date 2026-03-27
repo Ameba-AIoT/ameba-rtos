@@ -45,7 +45,6 @@ int usbd_composite_init(u32 cdc_bulk_out_xfer_size, u32 cdc_bulk_in_xfer_size, u
 
 /**
  * @brief  DeInit composite class
- * @return None
  */
 void usbd_composite_deinit(void);
 /** @} End of Device_Composite_CDC_ACM_MSC_Functions group */
@@ -53,4 +52,3 @@ void usbd_composite_deinit(void);
 /** @} End of USB_Device_API group */
 
 #endif // USBD_COMPOSITE_CDC_ACM_MSC_H
-

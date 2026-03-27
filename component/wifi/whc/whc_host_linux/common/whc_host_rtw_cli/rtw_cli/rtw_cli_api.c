@@ -37,11 +37,32 @@ int parse_string(int index, int argc, char **argv, u8 *buf, size_t buf_size)
 }
 
 /* For Event Handler */
-void event_handler_scan_complete(void)
+void event_handler_scan_complete(char *pos)
 {
+	(void)pos;
+
 	event_scan_flag = 0;
 }
 
+void event_handler_join_status(char *pos)
+{
+	if (pos == NULL) {
+		return;
+	}
+
+	printf("%s\n", pos);
+}
+
+void whc_cmd_handle_wpas_ofld_result(char *pos, int len)
+{
+	pos = pos + 1;
+	if (pos == NULL) {
+		return;
+	}
+
+	printf("\nwpa_supplicant rsp:\n");
+	printf("%s\n", pos);
+}
 
 /* End For Event Handler */
 
@@ -242,7 +263,6 @@ void rtw_cli_cmd_set_network(int argc, char **argv, u8 api_id, u32 cmd_category,
 	}
 
 	cmd.msg_len = msg_len;
-	printf("wpa ctrl cmd: %s %s\n", token, cmd.message);
 
 	ret = rtw_cli_send_nl_data(WHC_CMD_CUSTOM_API, (u8 *)&cmd,
 							   sizeof(cmd), api_id, NULL, NULL);

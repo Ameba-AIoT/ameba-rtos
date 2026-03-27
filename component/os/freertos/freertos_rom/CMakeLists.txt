@@ -15,8 +15,8 @@ ameba_list_append(public_includes
     ${c_CMPT_OS_DIR}/freertos/os_wrapper/include
     ${c_SOC_TYPE}/freertos_${v_FREERTOS_VER}/Source/include
     ${c_SOC_TYPE}/freertos_${v_FREERTOS_VER}/os_cfg
-    ${portable_soc_mcu_dir}/secure
-    ${portable_soc_mcu_dir}/non_secure
+    ${c_FREERTOS_DIR}/portable/Common/secure
+    ${portable_soc_mcu_dir}
 )
 
 # Component public part, user config end(DO NOT remove this line)
@@ -54,10 +54,10 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
     )
 elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image3")
     ameba_list_append(private_sources
-        ${portable_soc_mcu_dir}/secure/secure_context.c
-        ${portable_soc_mcu_dir}/secure/secure_context_port.c
-        ${portable_soc_mcu_dir}/secure/secure_heap.c
-        ${portable_soc_mcu_dir}/secure/secure_init.c
+        ${c_FREERTOS_DIR}/portable/Common/secure/secure_context.c
+        ${c_FREERTOS_DIR}/portable/Common/secure/secure_context_port.c
+        ${c_FREERTOS_DIR}/portable/Common/secure/secure_heap.c
+        ${c_FREERTOS_DIR}/portable/Common/secure/secure_init.c
     )
     ameba_list_append(private_compile_options
         -O0

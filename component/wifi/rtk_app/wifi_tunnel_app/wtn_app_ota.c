@@ -23,7 +23,7 @@
 #include "os_wrapper.h"
 #include "lwip_netconf.h"
 #include "ameba_soc.h"
-#include "ameba_ota.h"
+#include "ota_api.h"
 #include "dlist.h"
 #include "rtw_queue.h"
 #include <lwip/sockets.h>
@@ -69,7 +69,7 @@ struct rmesh_ota_priv {
 	u8 wait_num;
 
 	u32 ota_start_time;
-	ota_context *http_ota_ctx;
+	ota_context_t *http_ota_ctx;
 
 	rtos_sema_t 	slave_node_list_sema;
 	rtos_sema_t 	wait_node_list_sema;
@@ -1163,22 +1163,27 @@ void rmesh_ota_http_ota_task(void *param)
 {
 	int ret = -1;
 	struct rmesh_http_ota_param *ota_param = (struct rmesh_http_ota_param *)param;
-	ota_context *ctx = NULL;
+	ota_context_t *ctx = NULL;
 	struct rmesh_ota_info_to_flash ota_info = {0};
 	//rtos_timer_t http_ota_timer;
 
 	u32 start_ms = rtos_time_get_current_system_time_ms();
 
 	g_rmesh_ota_priv->ota_method = RMESH_HTTP_OTA;
-	ctx = (ota_context *)rtos_mem_malloc(sizeof(ota_context));
+	ctx = (ota_context_t *)rtos_mem_malloc(sizeof(ota_context_t));
 	if (ctx == NULL) {
 		goto exit;
 	}
 
-	memset(ctx, 0, sizeof(ota_context));
+	memset(ctx, 0, sizeof(ota_context_t));
 	g_rmesh_ota_priv->http_ota_ctx = ctx;
 
-	ret = ota_update_init(ctx, (char *)ota_param->host, ota_param->port, (char *)ota_param->resource, OTA_HTTP);
+#ifdef CONFIG_WHC_INTF_IPC
+	ret = ota_init(ctx, (char *)ota_param->host, ota_param->port, (char *)ota_param->resource, OTA_HTTP);
+#else
+	ret = ota_init(ctx, (char *)ota_param->host, ota_param->port, (char *)ota_param->resource, OTA_WHC);
+#endif
+
 	if (ret != 0) {
 		goto exit;
 	}
@@ -1191,7 +1196,7 @@ void rmesh_ota_http_ota_task(void *param)
 
 	g_rmesh_ota_priv->http_ota_fail_reset = 1;
 
-	ret = ota_update_start(ctx);
+	ret = ota_start(ctx);
 
 	//rtos_timer_stop(http_ota_timer, 0);
 	rtos_timer_stop(g_rmesh_ota_priv->reset_wait_timer, 0);
@@ -1206,13 +1211,13 @@ void rmesh_ota_http_ota_task(void *param)
 	g_rmesh_ota_priv->http_ota_fail_reset = 0;
 
 	RTK_LOGI(TAG, "%s, server firmware download is finished, spend time: %d ms, total size: %d\n",
-			 __func__, rtos_time_get_current_system_time_ms() - start_ms, ctx->otactrl->ImageLen);
+			 __func__, rtos_time_get_current_system_time_ms() - start_ms, ctx->otaCtrl->ImageLen);
 
 	rt_kv_get("rmesh_ota_info", (u8 *)&ota_info, sizeof(struct rmesh_ota_info_to_flash));
-	ota_info.ota_firmware_size = ctx->otactrl->ImageLen;
-	ota_info.image_id = ctx->otactrl->ImgId;
-	ota_info.image_addr = ctx->otactrl->FlashAddr - sizeof(Manifest_TypeDef);
-	ota_info.checksum = ctx->otaTargetHdr->FileImgHdr[0].Checksum;
+	ota_info.ota_firmware_size = ctx->otaCtrl->ImageLen;
+	ota_info.image_id = ctx->otaCtrl->ImgId;
+	ota_info.image_addr = ctx->otaCtrl->FlashAddr - sizeof(ota_manifest_t);
+	ota_info.checksum = ctx->otaHdrManager->FileImgHdr[0].Checksum;
 	ota_info.ota_ver_len = strlen(ota_param->resource);
 	memset(ota_info.cur_ota_ver, 0, RMESH_OTA_VER_MAX_LEN);
 	memcpy(ota_info.cur_ota_ver, ota_param->resource,  strlen(ota_param->resource));
@@ -1232,7 +1237,7 @@ exit:
 	//rtos_timer_delete(http_ota_timer, 0);
 
 	g_rmesh_ota_priv->http_ota_ctx = NULL;
-	ota_update_deinit(ctx);
+	ota_deinit(ctx);
 	if (ctx) {
 		rtos_mem_free(ctx);
 	}
@@ -1476,11 +1481,16 @@ int wtn_on_ota_request(u8 *buf, int recv_len, int *forward_sock_fd)
 	u8 http_resourcelen = 0;
 	u8 *self_mac_p1 = LwIP_GetMAC(NETIF_WLAN_AP_INDEX);
 	u8 *self_mac_p0 = LwIP_GetMAC(NETIF_WLAN_STA_INDEX);
+	u8 target_mac[6] = {0};
+#ifdef CONFIG_RNAT_EN
 	u8 *gw = LwIP_GetGW(NETIF_WLAN_AP_INDEX);
 	u8 client_ip = 0;
-	u8 target_mac[6] = {0};
 	u8 try_cnt = 5;
 	struct sockaddr_in ota_forward_dest_addr;
+#else
+	UNUSED(recv_len);
+	UNUSED(forward_sock_fd);
+#endif
 
 	if (buf[12] != ota_request_seq) {
 		ota_request_seq = buf[12];
@@ -1498,7 +1508,7 @@ int wtn_on_ota_request(u8 *buf, int recv_len, int *forward_sock_fd)
 		ota_param.resource = (char *)rtos_mem_zmalloc(http_resourcelen + 1);
 		memcpy(ota_param.resource, buf + 29 + httpiplen, http_resourcelen);
 		ota_param.ota_type = buf[31 + httpiplen + http_resourcelen];
-
+#ifdef CONFIG_RNAT_EN
 		if (wifi_user_config.wtn_rnat_en && wtn_rnat_ap_start) {
 			if (memcmp(target_mac, self_mac_p1, ETH_ALEN)) {
 				if (*forward_sock_fd < 0) {
@@ -1529,6 +1539,7 @@ int wtn_on_ota_request(u8 *buf, int recv_len, int *forward_sock_fd)
 				}
 			}
 		}
+#endif
 #ifdef WTN_MULTI_NODE_OTA
 		if ((wifi_user_config.wtn_rnat_en && (!memcmp(target_mac, self_mac_p1, ETH_ALEN))) ||
 			(!memcmp(target_mac, self_mac_p0, ETH_ALEN))) { /*ota cmd to my self, peform OTA*/

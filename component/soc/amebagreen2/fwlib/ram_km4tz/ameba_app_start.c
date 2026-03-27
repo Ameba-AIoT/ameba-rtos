@@ -188,8 +188,6 @@ void app_start(void)
 #endif
 
 #ifdef CONFIG_TRUSTZONE
-	BOOT_IMG3();
-
 	cmse_address_info_t cmse_address_info = cmse_TT((void *)app_start);
 	RTK_LOGI(TAG, "IMG2 SECURE STATE: %d\n", cmse_address_info.flags.secure);
 #endif

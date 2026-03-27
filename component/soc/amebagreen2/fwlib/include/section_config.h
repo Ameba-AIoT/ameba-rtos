@@ -22,7 +22,7 @@ extern "C" {
 #define CMD_TABLE_DATA_SECTION				SECTION(".cmd.table.data")
 #define GIT_VER_TABLE_SECTION				SECTION(".git.ver.data")
 #define IPC_TABLE_DATA_SECTION				SECTION(".ipc.table.data")
-#define UNITY_TABLE_DATA_SECTION			SECTION(".unity.table.data")
+#define UNITY_TABLE_DATA_SECTION			SECTION(".unity.table.rodata")
 
 /* ATCMD section type 1: used by all cores */
 #ifdef CONFIG_SUPPORT_ATCMD
@@ -48,6 +48,7 @@ extern "C" {
 
 // Image 3 Entry Data
 #define IMAGE3_ENTRY_SECTION				SECTION(".image3.nsc_entry.text")
+#define IMAGE3_BOOT_SECTION					SECTION(".image3.entry.data")
 
 // Define Non-Cacheable region
 #define SRAM_NOCACHE_DATA_SECTION			SECTION(".nocache.data")
