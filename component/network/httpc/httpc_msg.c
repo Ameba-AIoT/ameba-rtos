@@ -35,6 +35,10 @@ int httpc_request_write_header_start(struct httpc_conn *conn, char *method, char
 	int ret = 0;
 	size_t header_len = 0;
 
+	if (conn == NULL || method == NULL || resource == NULL) {
+		return -1;
+	}
+
 	// remove previous request header
 	if (conn->request_header) {
 		httpc_free(conn->request_header);
@@ -109,6 +113,10 @@ int httpc_request_write_header_raw(struct httpc_conn *conn, char *raw_req_header
 	char *request_header = NULL;
 	size_t header_len = 0;
 
+	if (conn == NULL || raw_req_header == NULL) {
+		return -1;
+	}
+
 	if (conn->request_header) {
 		header_len = strlen("%s%s") + strlen(raw_req_header) - 2 + strlen(HTTP_CRLF) - 2;
 		header_len += strlen(conn->request_header);
@@ -141,6 +149,10 @@ int httpc_request_write_header(struct httpc_conn *conn, char *name, char *value)
 	int ret = 0;
 	char *request_header = NULL;
 	size_t header_len = 0;
+
+	if (conn == NULL || name == NULL || value == NULL) {
+		return -1;
+	}
 
 	if (conn->request_header) {
 		header_len = strlen("%s: %s%s") + strlen(name) - 2 + strlen(value) - 2 + strlen(HTTP_CRLF) - 2;
@@ -644,7 +656,11 @@ int httpc_response_get_header_field(struct httpc_conn *conn, char *field, char *
 	int ret = 0;
 	char *field_buf = NULL;
 	char *ptr = NULL;
-	size_t value_len;
+	size_t value_len = 0;
+
+	if (conn == NULL || field == NULL || value == NULL) {
+		return -1;
+	}
 
 	*value = NULL;
 	field_buf = (char *) httpc_malloc(strlen(field) + 2);

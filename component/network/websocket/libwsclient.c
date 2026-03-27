@@ -242,6 +242,11 @@ void ws_get_random_bytes(void *buf, size_t len)
 	count = len / sizeof(unsigned int);
 	lp = (unsigned int *) buf;
 
+	if (buf == NULL) {
+		WSCLIENT_ERROR("ERROR: buf is NULL\n");
+		return;
+	}
+
 	for (i = 0; i < count; i ++) {
 		lp[i] = ws_arc4random();
 		len -= sizeof(unsigned int);

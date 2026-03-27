@@ -127,7 +127,7 @@ int data_flash_handshake_highspeed(void)
 		SPIC_COMBO->TPR1 = (SPIC_COMBO->TPR1 & ~MASK_CS_ACTIVE_SETUP) | CS_ACTIVE_SETUP(1);
 	}
 
-	RTK_LOGI(TAG, "DATA FLASH HandShake[0x%x %s]\n", div, Ret == RTK_SUCCESS ? "OK" : "FAIL");
+	RTK_LOGI(TAG, "DATA FLASH HandShake[%s]\n", Ret == RTK_SUCCESS ? "OK" : "FAIL");
 	return Ret;
 }
 

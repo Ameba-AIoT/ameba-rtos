@@ -19,7 +19,6 @@
 
 #ifndef CONFIG_BUILD_ROM
 /* ram headers */
-#include "ameba_ota.h"
 
 #include "os_wrapper.h"
 #include "heap_trace.h"
