@@ -34,28 +34,17 @@
 
 /* -------------------------------- Defines --------------------------------- */
 #define SKB_DATA_ALIGN(X)	(((X) + (4 - 1)) & ~(4 - 1))
-/* 308 from DP asm 2024/4/11 */
-#define WIFI_STACK_SIZE_INIC_TRX_HST	(512 + CONTEXT_SAVE_SIZE)
 
 // #ifndef CONFIG_AMEBAL2
 // #define WHC_RX_SKB_SHARE_TO_PBUF
 // #endif
 /* -------------------------------- Macros ---------------------------------- */
 /* ------------------------------- Data Types ------------------------------- */
-/* recv buffer to store the data from IPC to queue. */
-struct host_recv_buf {
-	struct list_head list;
-	int idx_wlan; /* index for wlan */
-	struct pbuf *p_buf; /* rx data for ethernet buffer*/
-};
 
 /* recv structure */
 struct host_priv {
-	rtos_sema_t recv_sema; /* sema to wait allloc skb from device */
-	rtos_sema_t alloc_skb_sema; /* sema to wait allloc skb from device */
 	rtos_sema_t host_send_sema; /* sema to protect inic ipc host send */
 	rtos_timer_t whc_stats_timer; /* sema to protect inic ipc host send */
-	struct __queue recv_queue; /* recv queue */
 	u32 rx_bytes; /* recv bytes */
 	u32 rx_pkts; /* recv number of packets */
 	u32 tx_bytes; /* xmit bytes */

@@ -1997,6 +1997,11 @@ typedef struct {
 
 /****************** Data structure for API func param pack and unpack ******************/
 typedef struct {
+	rtk_bt_le_rand_addr_type_t type;
+	uint8_t *p_addr;
+} rtk_bt_le_gen_rand_addr_t;
+
+typedef struct {
 	uint16_t conn_handle;
 	int8_t *p_rssi;
 } rtk_bt_le_read_rssi_param_t;
@@ -2693,7 +2698,7 @@ uint16_t rtk_bt_le_gap_set_appearance(uint16_t appearance);
 uint16_t rtk_bt_le_gap_set_preferred_conn_param(rtk_bt_le_preferred_conn_param_t *p_preferred_conn_param);
 
 /**
- * @brief     Set random address.
+ * @brief     Set random address to controller. If the address is static random address, also set it as local identity address.
  *            NOTE: This API shall not be excuted when advertising, scanning and initiating are enabled.
  * @param[in] auto_generate: Trigger auto generate address.
  * @param[in] type: Type of auto generated random address, ignore if auto_generate is false.
@@ -2704,6 +2709,30 @@ uint16_t rtk_bt_le_gap_set_preferred_conn_param(rtk_bt_le_preferred_conn_param_t
  *            - Others: Error code
  */
 uint16_t rtk_bt_le_gap_set_rand_addr(bool auto_generate, rtk_bt_le_rand_addr_type_t type, uint8_t *p_addr);
+
+/**
+ * @brief     Generate random address.
+ * @param[in] type: Type of random address to generate.
+ * @param[out] p_addr: Random address generated.
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_gen_rand_addr(rtk_bt_le_rand_addr_type_t type, uint8_t *p_addr);
+
+/**
+ * @brief     Configure local identity address.
+ *            NOTE: Only when you want to use a static random address as the device's address,
+ *            you'd better set it as local identity address which will be distributed during
+ *            BLE pairing process. For other type of address, we don't suggest to set it.
+ *            If not set, the default local identity address is your device's public address.
+ * @param[in] type: Type of identity address.
+ * @param[in] p_addr: Identity address value.
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_cfg_local_ident_addr(rtk_bt_le_ident_addr_type_t type, uint8_t *p_addr);
 
 /**
  * @brief     Set BLE GAP advertising data.

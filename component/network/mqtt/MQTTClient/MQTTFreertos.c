@@ -97,6 +97,11 @@ char TimerIsExpired(Timer *timer)
 
 void TimerInit(Timer *timer)
 {
+	if (timer == NULL) {
+		mqtt_printf(MQTT_ERROR, "TimerInit: timer is NULL\n");
+		return;
+	}
+
 	timer->ms_to_wait = 0;
 	memset(&timer->xTimeOut, '\0', sizeof(timer->xTimeOut));
 }
@@ -193,6 +198,11 @@ void FreeRTOS_disconnect(Network *n)
 
 void NetworkInit(Network *n)
 {
+	if (n == NULL) {
+		mqtt_printf(MQTT_ERROR, "NetworkInit: n is NULL\n");
+		return;
+	}
+
 	n->my_socket = -1;
 	n->mqttread = FreeRTOS_read;
 	n->mqttwrite = FreeRTOS_write;
@@ -276,6 +286,11 @@ int NetworkConnect(Network *n, char *addr, int port)
 	char   str[32];
 	int	keepalive_enable = 1;
 	int keep_idle = 30;
+
+	if (n == NULL) {
+		mqtt_printf(MQTT_ERROR, "NetworkConnect: n is NULL");
+		return -1;
+	}
 
 	if (n->my_socket >= 0) {
 		n->disconnect(n);

@@ -1214,5 +1214,11 @@ static const cmd_table_t example_table[] = {
 
 void fBTDEMO(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], example_table, "[AT+BTDEMO]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], example_table, "[AT+BTDEMO]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }

@@ -18,6 +18,7 @@ ameba_add_subdirectory(${c_CMPT_MISC_DIR})
 ameba_add_subdirectory(${c_CMPT_MONITOR_DIR})
 ameba_add_subdirectory(${c_CMPT_NETWORK_DIR})
 ameba_add_subdirectory(${c_CMPT_LWIP_DIR})
+ameba_add_subdirectory(${c_CMPT_OTA_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
 ameba_add_subdirectory(${c_CMPT_PMC_DIR})
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
@@ -49,7 +50,7 @@ add_custom_command(
 
 #----------------- LINKING -------------------#
 
-ameba_set_if(CONFIG_RDP_BASIC c_CMSE_IMPLIB
+ameba_set_if(CONFIG_TRUSTZONE c_CMSE_IMPLIB
     ${c_SDK_IMAGE_TARGET_DIR}/cmse_implib.lib
 )
 
@@ -106,6 +107,7 @@ add_custom_command(
         -DANALYZE_MP_IMG=${ANALYZE_MP_IMG}
         -DDAILY_BUILD=${DAILY_BUILD}
         -DEXTERN_DIR=${EXTERN_DIR}
+        -DCODE_ANALYZE_RETRY=${CODE_ANALYZE_RETRY}
 
         -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}
         -DCMAKE_SIZE=${CMAKE_SIZE}

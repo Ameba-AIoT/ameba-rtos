@@ -731,7 +731,13 @@ static const cmd_table_t mesh_generic_level_cmd_table[] = {
 
 void fBLEMESHGLE(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_level_cmd_table, "[AT+BLEMESHGLE]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_level_cmd_table, "[AT+BLEMESHGLE]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 
 static const cmd_table_t mesh_generic_power_on_off_cmd_table[] = {
@@ -742,7 +748,13 @@ static const cmd_table_t mesh_generic_power_on_off_cmd_table[] = {
 
 void fBLEMESHGPOO(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_power_on_off_cmd_table, "[AT+BLEMESHGPOO]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_power_on_off_cmd_table, "[AT+BLEMESHGPOO]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 
 static const cmd_table_t mesh_generic_power_level_cmd_table[] = {
@@ -758,7 +770,13 @@ static const cmd_table_t mesh_generic_power_level_cmd_table[] = {
 
 void fBLEMESHGPL(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_power_level_cmd_table, "[AT+BLEMESHGPL]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_power_level_cmd_table, "[AT+BLEMESHGPL]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 
 static const cmd_table_t mesh_generic_battery_cmd_table[] = {
@@ -768,7 +786,13 @@ static const cmd_table_t mesh_generic_battery_cmd_table[] = {
 
 void fBLEMESHGB(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_battery_cmd_table, "[AT+BLEMESHGB]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_battery_cmd_table, "[AT+BLEMESHGB]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 
 static const cmd_table_t mesh_generic_location_cmd_table[] = {
@@ -781,7 +805,13 @@ static const cmd_table_t mesh_generic_location_cmd_table[] = {
 
 void fBLEMESHGLO(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_location_cmd_table, "[AT+BLEMESHGLO]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_location_cmd_table, "[AT+BLEMESHGLO]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 
 static const cmd_table_t mesh_generic_property_cmd_table[] = {
@@ -800,7 +830,13 @@ static const cmd_table_t mesh_generic_property_cmd_table[] = {
 
 void fBLEMESHGP(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_property_cmd_table, "[AT+BLEMESHGP]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], mesh_generic_property_cmd_table, "[AT+BLEMESHGP]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }
 
 #endif // end of RTK_BLE_MESH_SUPPORT

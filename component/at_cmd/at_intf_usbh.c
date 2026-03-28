@@ -84,6 +84,7 @@ u32 uart_irq_count = 0;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
+extern int atcmd_service(char *line_buf);
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
@@ -440,7 +441,9 @@ example_exit:
 void atcmd_usbh_input_handler_task(void)
 {
 	PUART_LOG_BUF pShellRxBuf = &shell_rxbuf;
+	PUART_LOG_BUF pCmdLogBuf = shell_ctl.pTmpLogBuf;
 	u32 i = 0, actual_len = 0;
+	u32 ret = FALSE;
 	while (1) {
 		pShellRxBuf->BufCount = 0;
 		i = 0;
@@ -452,27 +455,34 @@ void atcmd_usbh_input_handler_task(void)
 			continue;
 		}
 
-		actual_len = actual_len > CMD_BUFLEN ? CMD_BUFLEN : actual_len;
 		rtos_mutex_take(usbh_rx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
-		RingBuffer_Read(at_usbh_rx_ring_buf, pShellRxBuf->UARTLogBuf, actual_len);
+		if (actual_len > CMD_BLOCK_SIZE) {
+			RingBuffer_Read(at_usbh_rx_ring_buf, pShellRxBuf->UARTLogBuf, CMD_BLOCK_SIZE);
+			pShellRxBuf->BufCount = CMD_BLOCK_SIZE;
+		} else {
+			RingBuffer_Read(at_usbh_rx_ring_buf, pShellRxBuf->UARTLogBuf, actual_len);
+			pShellRxBuf->BufCount = actual_len;
+		}
 		rtos_mutex_give(usbh_rx_ringbuf_mutex);
-
-		pShellRxBuf->BufCount = actual_len;
 
 recv_again:
 		if (shell_cmd_chk(pShellRxBuf->UARTLogBuf[i++], (UART_LOG_CTL *)&shell_ctl, ENABLE) == 2) {
-			if (shell_ctl.pTmpLogBuf != NULL) {
-				shell_ctl.ExecuteCmd = TRUE;
-
-				if (shell_ctl.shell_task_rdy) {
-					if (RingBuffer_Available(at_usbh_rx_ring_buf) > 0) {
-						rtos_mutex_take(usbh_rx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
-						RingBuffer_Reset(at_usbh_rx_ring_buf);
-						rtos_mutex_give(usbh_rx_ringbuf_mutex);
-					}
-					shell_ctl.GiveSema();
-					continue;
+			if (pCmdLogBuf != NULL) {
+				if (RingBuffer_Available(at_usbh_rx_ring_buf) > 0) {
+					rtos_mutex_take(usbh_rx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
+					RingBuffer_Reset(at_usbh_rx_ring_buf);
+					rtos_mutex_give(usbh_rx_ringbuf_mutex);
 				}
+
+				ret = atcmd_service((char *)(pCmdLogBuf->UARTLogBuf));
+				if (ret == FALSE) {
+					RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\nunknown command '%s'", pCmdLogBuf->UARTLogBuf);
+					RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n");
+				}
+
+				shell_array_init((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+				pCmdLogBuf->BufCount = 0;
+				continue;
 			} else {
 				memset((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
 			}
@@ -481,6 +491,10 @@ recv_again:
 		/* recv all data one time */
 		if ((pShellRxBuf->BufCount != i) && (pShellRxBuf->BufCount != 0)) {
 			goto recv_again;
+		}
+
+		if (actual_len > CMD_BLOCK_SIZE) {
+			rtos_sema_give(atcmd_usbh_rx_sema);
 		}
 	}
 }
@@ -534,4 +548,3 @@ void atio_usbh_init(void)
 	}
 }
 #endif
-

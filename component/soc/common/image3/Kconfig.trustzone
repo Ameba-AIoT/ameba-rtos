@@ -1,0 +1,30 @@
+# Common TrustZone Kconfig for Ameba SoCs
+# This file provides unified TrustZone configuration across different ICs
+
+menu "CONFIG TrustZone"
+
+config TRUSTZONE
+    bool "Enable TrustZone"
+config TRUSTZONE_EN
+    depends on TRUSTZONE
+    bool
+    default y
+
+if TRUSTZONE
+    config TRUSTZONE_MBEDTLS
+        bool "Enable MbedTLS in Image3"
+        default n
+        help
+            Enable MbedTLS library in TrustZone secure image (Image3).
+            When enabled, CONFIG_TZ_S_SIZE default will be increased to 128K.
+
+    config TZ_S_SIZE
+        int "TrustZone Secure Image Size (KB)"
+        default 128 if (AMEBADPLUS || AMEBASMART || AMEBALITE) && TRUSTZONE_MBEDTLS
+        default 44
+        help
+            Size of TrustZone secure image (Image3) in KB.
+            Default is 44KB, or 128KB for AMEBADPLUS/AMEBASMART/AMEBALITE with MbedTLS enabled.
+endif
+
+endmenu

@@ -52,7 +52,7 @@ static int usbh_composite_cdc_acm_process_intr_rx(usb_host_t *host);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "ACM";
 
-/* USB Standard Device Descriptor */
+/* USB Class Driver */
 const usbh_class_driver_t usbh_composite_cdc_acm_driver = {
 	.attach = usbh_composite_cdc_acm_attach,
 	.detach = usbh_composite_cdc_acm_detach,

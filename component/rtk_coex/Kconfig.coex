@@ -2,7 +2,7 @@ if WLAN_MENU
     menu "CONFIG COEX"
         config COEX_MENU
             bool "Enable Coex" if !AMEBA_RLS
-            default y if !AMEBAD
+            default y if !AMEBAD && !AMEBAL2
 
         if COEX_MENU
             config BT_COEXIST
@@ -96,6 +96,7 @@ if WLAN_MENU
                 default "PB_0" if AMEBADPLUS
                 default "PA_21" if AMEBAGREEN2
                 default "PA_26" if AMEBAD
+                default "PF_12" if AMEBAPRO3
 
             config EXT_PTA_PIN_PRI
                 string "Pin PTA Priority"
@@ -104,6 +105,7 @@ if WLAN_MENU
                 default "PB_2" if AMEBADPLUS
                 default "PA_18" if AMEBAGREEN2
                 default "PB_1" if AMEBAD
+                default "PF_13" if AMEBAPRO3
 
             config EXT_PTA_PIN_GNT
                 string "Pin PTA Gnt"
@@ -112,6 +114,7 @@ if WLAN_MENU
                 default "PB_1" if AMEBADPLUS
                 default "PA_19" if AMEBAGREEN2
                 default "PA_27" if AMEBAD
+                default "PF_11" if AMEBAPRO3
 
             config COEX_EXT_CHIP_SUPPORT
                 bool

@@ -32,6 +32,11 @@ extern struct table  ip_table;
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
 extern int cmd_wps(int argc, char **argv);
 #endif
+
+#ifdef CONFIG_WIFI_P2P_ENABLE
+#include "wifi_p2p_supplicant.h"
+#endif
+
 static struct rtw_network_info wifi = {0};
 static struct rtw_softap_info ap = {0};
 static unsigned char password[129] = {0};
@@ -1357,7 +1362,6 @@ void at_wlwps(u16 argc, char **argv)
 	wps_argv[1] = argv[1];
 	wps_argv[2] = argv[2];  /* Maybe NULL, but does not matter. */
 	error_no = cmd_wps(argc, wps_argv);
-
 #else
 	UNUSED(argc);
 	UNUSED(argv);
@@ -1374,6 +1378,240 @@ end:
 		if (error_no == RTW_AT_ERR_REQUIRED_PARAM_MISS || error_no == RTW_AT_ERR_INVALID_PARAM_VALUE) {
 			at_wlwps_help();
 		}
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+#endif
+
+#ifdef CONFIG_WIFI_P2P_ENABLE
+static void at_wlp2p_help(void)
+{
+	RTK_LOGI(NOTAG, "\r\n");
+	RTK_LOGI(NOTAG, "AT+WLP2PCONN=[<type>,<value>,<type>,<value>......]\n\r");
+	RTK_LOGI(NOTAG, "\t<type>:\tA string as \"peer\",\"pbc\",\"pin_keypad\",\"pin_display\",\"go_intent\"\r\n");
+	RTK_LOGI(NOTAG,
+			 "\t<value>:\tIf the <type> is \"pbc\",\"pin_display\", the value can be omitted. Otherwise, it should be <peer>, <pin_keypad>, <go_intent>\r\n");
+	RTK_LOGI(NOTAG, "\t<peer>:\thex-number string with colons to indicate the mac address of peer device, e.g. 1a:2b:3c:4d:5e:6f\r\n");
+	RTK_LOGI(NOTAG, "\t<pin_keypad>:\t8-digit PIN code\n\r");
+	RTK_LOGI(NOTAG, "\t<go_intent>:\tindicate the intent to become GO, must be 0~15, if absent, it will be a random value\n\r");
+}
+
+void at_wlp2p_start(u16 argc, char **argv)
+{
+	int error_no = RTW_AT_OK;
+	int listen_ch = 0;
+	int op_ch = 0;
+	u32 r = 0;
+	int i;
+
+	RTK_LOGI(NOTAG, "[+WLP2PSTART]: _AT_P2P_START_\n\r");
+
+	for (i = 1; i < argc; i += 2) {
+		if (os_strcmp(argv[i], "listen_ch") == 0) {
+			/* listen channel: ch1,6,11 for 2.4G. ch36,40,44,48 for 5G */
+			listen_ch = atoi(argv[i + 1]);
+		} else if (os_strcmp(argv[i], "op_ch") == 0) {
+			op_ch = atoi(argv[i + 1]);
+		} else {
+			RTK_LOGA(NOTAG, "Unknown parameters!\n");
+			return;
+		}
+	}
+
+	if (listen_ch == 0) {
+		r = _rand();
+		listen_ch = 1 + (r % 3) * 5;
+	}
+	if (op_ch == 0) {
+		r = _rand();
+		op_ch = 1 + (r % 3) * 5;
+	}
+
+	wifi_p2p_init(LwIP_GetMAC(0), listen_ch, op_ch);
+
+	if (error_no == RTW_AT_OK) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
+void at_wlp2p_stop(u16 argc, char **argv)
+{
+	int error_no = RTW_AT_OK;
+
+	UNUSED(argc);
+	UNUSED(argv);
+
+	RTK_LOGI(NOTAG, "[+WLP2PSTOP]: _AT_P2P_STOP_\n\r");
+	wifi_p2p_deinit();
+
+	if (error_no == RTW_AT_OK) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
+void at_wlp2p_autogo(u16 argc, char **argv)
+{
+	int error_no = RTW_AT_OK;
+	u8 channel = 6; // 1, 6, 11
+
+	if (argc > 2 && os_strcmp(argv[1], "ch") == 0) {
+		/* listen channel: ch1,6,11 for 2.4G. ch36,40,44,48 for 5G */
+		channel = atoi(argv[2]);
+	}
+
+	RTK_LOGI(NOTAG, "[+WLP2PGO]: _AT_P2P_AUTO_GO_START_\n\r");
+
+	if (wifi_p2p_start_auto_go(channel) < 0) {
+		RTK_LOGI(NOTAG, "\r\n[+WLP2PGO]: start p2p go fail.\n\r");
+	}
+
+	if (error_no == RTW_AT_OK) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
+void at_wlp2p_connect(u16 argc, char **argv)
+{
+	int error_no = RTW_AT_OK;
+	enum p2p_wps_method config_method = WPS_PBC;
+	char *pin = NULL;
+	u8 dest[ETH_ALEN];
+	int go_intent = -1;
+	int i = 0;
+
+	RTK_LOGI(NOTAG, "[+WLP2PCONN]: _AT_P2P_CONNECT_\n\r");
+
+	if (argc == 1) {
+		RTK_LOGW(NOTAG, "[+WLP2PCONN]: The parameters can not be ignored\r\n");
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
+		goto end;
+	}
+
+	for (i = 1; i < argc;) {
+		if (os_strcmp(argv[i], "peer") == 0) {
+			if (argv[i + 1] == NULL) {
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
+			os_sscanf(argv[i + 1], MAC_FMT, (int *)&dest[0], (int *)&dest[1], (int *)&dest[2],
+					  (int *)&dest[3], (int *)&dest[4], (int *)&dest[5]);
+			i += 2;
+		} else if (os_strcmp(argv[i], "pbc") == 0) {
+			config_method = WPS_PBC;
+			i++;
+		} else if (os_strcmp(argv[i], "pin_keypad") == 0) {
+			config_method = WPS_PIN_KEYPAD;
+			if (argv[i + 1] == NULL) {
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
+			pin = argv[i + 1];
+			i += 2;
+		} else if (os_strcmp(argv[i], "pin_display") == 0) {
+			config_method = WPS_PIN_DISPLAY;
+			i++;
+		} else if (os_strcmp(argv[i], "go_intent") == 0) {
+			if (argv[i + 1] == NULL) {
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
+			go_intent = atoi(argv[i + 1]) % 16;
+			i += 2;
+		} else {
+			RTK_LOGA(NOTAG, "Unknown parameters!\n");
+			return;
+		}
+	}
+
+	if (go_intent == -1) {
+		go_intent = _rand() % 16; /*0-15*/
+	}
+
+	wifi_cmd_p2p_connect(dest, config_method, pin, go_intent, 30);
+
+end:
+	if (error_no == RTW_AT_OK) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		if (error_no == RTW_AT_ERR_REQUIRED_PARAM_MISS || error_no == RTW_AT_ERR_INVALID_PARAM_VALUE) {
+			at_wlp2p_help();
+		}
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
+void at_wlp2p_disconnect(u16 argc, char **argv)
+{
+	int error_no = RTW_AT_OK;
+
+	UNUSED(argc);
+	UNUSED(argv);
+
+	RTK_LOGI(NOTAG, "[+WLP2PDISCONN]: _AT_P2P_DISCONNECT_\n\r");
+	wifi_cmd_p2p_disconnect();
+
+	if (error_no == RTW_AT_OK) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+void at_wlp2p_state(u16 argc, char **argv)
+{
+	int error_no = RTW_AT_OK;
+
+	UNUSED(argc);
+	UNUSED(argv);
+
+	RTK_LOGI(NOTAG, "[+WLP2PSTATE]: _AT_P2P_STATE_\n\r");
+	wifi_cmd_p2p_state();
+
+	if (error_no == RTW_AT_OK) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+void at_wlp2p_find(u16 argc, char **argv)
+{
+	int error_no = RTW_AT_OK;
+	u32 timeout = 30; //seconds
+
+	RTK_LOGI(NOTAG, "[+WLP2PFIND]: _AT_P2P_FIND_\n\r");
+
+	if (argc == 2) {
+		timeout = os_atoi(argv[1]);
+		RTK_LOGA(NOTAG, "\r\n%s(): timeout=%d\n", __func__, timeout);
+	}
+
+	wifi_cmd_p2p_find(timeout);
+
+	if (error_no == RTW_AT_OK) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+	}
+}
+
+void at_wlp2p_peers(u16 argc, char **argv)
+{
+	int error_no = RTW_AT_OK;
+
+	UNUSED(argc);
+	UNUSED(argv);
+
+	RTK_LOGI(NOTAG, "[+WLP2PPEERS]: _AT_P2P_PEERS_\n\r");
+	wifi_cmd_p2p_peers();
+
+	if (error_no == RTW_AT_OK) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
 		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
@@ -1722,6 +1960,16 @@ const log_item_t at_wifi_items[ ] = {
 	{"+WLDBG", at_wldbg},
 #ifdef CONFIG_WPS
 	{"+WLWPS", at_wlwps},
+#endif
+#ifdef CONFIG_WIFI_P2P_ENABLE
+	{"+WLP2PSTART", at_wlp2p_start},
+	{"+WLP2PSTOP", at_wlp2p_stop},
+	{"+WLP2PGO", at_wlp2p_autogo},
+	{"+WLP2PCONN", at_wlp2p_connect},
+	{"+WLP2PDISCONN", at_wlp2p_disconnect},
+	{"+WLP2PSTATE", at_wlp2p_state},
+	{"+WLP2PFIND", at_wlp2p_find},
+	{"+WLP2PPEERS", at_wlp2p_peers},
 #endif
 #ifdef CONFIG_CSI
 	{"+WLCSI", at_wlcsi},

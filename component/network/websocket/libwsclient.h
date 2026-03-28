@@ -4,6 +4,18 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 
+#include "mbedtls/ssl.h"
+#include "mbedtls/net_sockets.h"
+
+struct wss_tls {
+	mbedtls_ssl_context ctx;
+	mbedtls_ssl_config conf;
+	mbedtls_net_context socket;
+	mbedtls_x509_crt ca;             /*!< CA certificates */
+	mbedtls_x509_crt cert;           /*!< Certificate */
+	mbedtls_pk_context key;          /*!< Private key */
+};
+
 /****************Define the debug message level*********************/
 #define DEBUG_WSCLIENT    1
 
@@ -111,6 +123,10 @@ typedef struct _wsclient_context {
 	uint8_t enable_ws_msg_discarded;	//TRUE: Need to discard the websocket message
 	uint64_t discarded_ws_msg_total_len;	// The total length of discarded message
 	uint64_t discarded_ws_msg_rcv_len;	// The received length of discarded message
+
+	// For connection timeout control
+	volatile uint8_t connection_abort_flag;	// 0=normal, 1=abort connection
+	rtos_mutex_t connection_mutex;			// Mutex for connection state protection
 } wsclient_context;
 /*******************************************************************/
 
@@ -121,6 +137,7 @@ void ws_free(void *buf);
 int ws_client_handshake(wsclient_context *wsclient);
 int ws_check_handshake(wsclient_context *wsclient);
 int ws_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t fin_flag, wsclient_context *wsclient);
+int ws_abort_connect(wsclient_context *wsclient);
 /*******************************************************************/
 
 /*************Functions used by wsclient without SSL****************/
@@ -136,7 +153,7 @@ int wss_hostname_connect(wsclient_context *wsclient);
 int wss_client_read(wsclient_context *wsclient, char *data, size_t data_len);
 int wss_client_send(wsclient_context *wsclient, char *data, size_t data_len);
 void wss_client_close(wsclient_context *wsclient);
-void *wss_tls_connect(int *sock, char *host, int port);
+int wss_tls_connect(wsclient_context *wsclient, char *host, int port);
 int wss_tls_handshake(void *tls_in);
 void wss_tls_close(void *tls_in, int *sock);
 int wss_tls_write(void *tls_in, char *request, int request_len);
