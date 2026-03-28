@@ -100,7 +100,7 @@ config AFE_RES_2MIC50MM
 config AFE_RES_2MIC70MM
     bool
 
-config AFE_RES_CIRCLE_3MIC50MM
+config AFE_RES_CIRCLE3MIC50MM
     bool
 
 config VAD_V7_200K

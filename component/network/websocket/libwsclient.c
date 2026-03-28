@@ -279,7 +279,10 @@ void ws_client_close(wsclient_context *wsclient)
 		wsclient->sockfd = -1;
 	}
 
+	rtos_mutex_take(wsclient->connection_mutex, RTOS_MAX_TIMEOUT);
 	wsclient->readyState = WSC_CLOSED;
+	wsclient->connection_abort_flag = 0;
+	rtos_mutex_give(wsclient->connection_mutex);
 	wsclient->use_ssl = 0;
 	wsclient->port = 0;
 	wsclient->tx_len = 0;
@@ -322,6 +325,12 @@ void ws_client_close(wsclient_context *wsclient)
 
 	if (wsclient->queue_mutex) {
 		rtos_mutex_delete(wsclient->queue_mutex);
+		wsclient->queue_mutex = NULL;
+	}
+
+	if (wsclient->connection_mutex) {
+		rtos_mutex_delete(wsclient->connection_mutex);
+		wsclient->connection_mutex = NULL;
 	}
 
 	if (wsclient->txbuf) {
@@ -432,7 +441,7 @@ int ws_client_send(wsclient_context *wsclient, char *data, size_t data_len)
 int ws_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t fin_flag, wsclient_context *wsclient)
 {
 
-	if (wsclient->readyState == WSC_CLOSING || wsclient->readyState == WSC_CLOSED) {
+	if (wsclient->readyState != WSC_OPEN) {
 		return -1;
 	}
 
@@ -622,34 +631,52 @@ int ws_hostname_connect(wsclient_context *wsclient)
 		WSCLIENT_ERROR("ERROR: Getaddrinfo failed: %s(%d)\n", wsclient->host, wsclient->sockfd);
 		return -1;
 	}
+
 	for (p = result; p != NULL; p = p->ai_next) {
+		if (wsclient->connection_abort_flag) {
+			WSCLIENT_ERROR("Connection abort before socket creation\n");
+			freeaddrinfo(result);
+			return -1;
+		}
+
 		wsclient->sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
 		if (wsclient->sockfd == INVALID_SOCKET) {
 			continue;
 		}
+
 		if ((setsockopt(wsclient->sockfd, SOL_SOCKET, SO_KEEPALIVE, (const char *)&opt, sizeof(opt))) < 0) {
 			WSCLIENT_ERROR("ERROR: Setting socket option keepalive failed!\n");
-			return -1;
+			closesocket(wsclient->sockfd);
+			wsclient->sockfd = INVALID_SOCKET;
+			continue;
 		}
 		if ((setsockopt(wsclient->sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *)&option, sizeof(option))) < 0) {
 			WSCLIENT_ERROR("ERROR: Setting socket option SO_REUSEADDR failed!\n");
-			return -1;
+			closesocket(wsclient->sockfd);
+			wsclient->sockfd = INVALID_SOCKET;
+			continue;
 		}
 
 		if (wsclient_keepalive_idle != 0)
 			if (setsockopt(wsclient->sockfd, IPPROTO_TCP, TCP_KEEPIDLE, &wsclient_keepalive_idle, sizeof(wsclient_keepalive_idle)) != 0) {
 				WSCLIENT_ERROR("ERROR: set TCP_KEEPIDLE fail\n");
-				return -1;
+				closesocket(wsclient->sockfd);
+				wsclient->sockfd = INVALID_SOCKET;
+				continue;
 			}
 		if (wsclient_keepalive_interval != 0)
 			if (setsockopt(wsclient->sockfd, IPPROTO_TCP, TCP_KEEPINTVL, &wsclient_keepalive_interval, sizeof(wsclient_keepalive_interval)) != 0) {
 				WSCLIENT_ERROR("ERROR: set TCP_KEEPINTVL fail\n");
-				return -1;
+				closesocket(wsclient->sockfd);
+				wsclient->sockfd = INVALID_SOCKET;
+				continue;
 			}
 		if (wsclient_keepalive_count != 0)
 			if (setsockopt(wsclient->sockfd, IPPROTO_TCP, TCP_KEEPCNT, &wsclient_keepalive_count, sizeof(wsclient_keepalive_count)) != 0) {
 				WSCLIENT_ERROR("ERROR: set TCP_KEEPCNT fail\n");
-				return -1;
+				closesocket(wsclient->sockfd);
+				wsclient->sockfd = INVALID_SOCKET;
+				continue;
 			}
 
 		if (wsclient_recvtimeout != 0) {
@@ -658,7 +685,9 @@ int ws_hostname_connect(wsclient_context *wsclient)
 			timeout.tv_usec = (wsclient_recvtimeout % 1000) * 1000;
 			if (setsockopt(wsclient->sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) != 0) {
 				WSCLIENT_ERROR("ERROR: set SO_RCVTIMEO fail\n");
-				return -1;
+				closesocket(wsclient->sockfd);
+				wsclient->sockfd = INVALID_SOCKET;
+				continue;
 			}
 		}
 
@@ -668,7 +697,9 @@ int ws_hostname_connect(wsclient_context *wsclient)
 			timeout.tv_usec = (wsclient_sendtimeout % 1000) * 1000;
 			if (setsockopt(wsclient->sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) != 0) {
 				WSCLIENT_ERROR("ERROR: set SO_SNDTIMEO fail\n");
-				return -1;
+				closesocket(wsclient->sockfd);
+				wsclient->sockfd = INVALID_SOCKET;
+				continue;
 			}
 		}
 
@@ -686,7 +717,9 @@ int ws_hostname_connect(wsclient_context *wsclient)
 				FD_SET(wsclient->sockfd, &wfds);	// Only set server fd
 
 				// Use select to wait for non-blocking connect
-				if (select(wsclient->sockfd + 1, NULL, &wfds, NULL, &time_out) == 1) {
+				int select_ret = select(wsclient->sockfd + 1, NULL, &wfds, NULL, &time_out);
+
+				if (select_ret == 1) {
 					fcntl(wsclient->sockfd, F_SETFL, fcntl(wsclient->sockfd, F_GETFL, 0) & ~O_NONBLOCK);
 					break;
 				}
@@ -766,11 +799,28 @@ int wss_hostname_connect(wsclient_context *wsclient)
 {
 	int ret = -1;
 	static int opt = 1, option = 1;
+
 //ssl connect
 	wsclient->sockfd = -1;
-	wsclient->tls = (void *)wss_tls_connect(&wsclient->sockfd, wsclient->host, wsclient->port);
 
-	if (wsclient->tls == NULL) {
+	struct wss_tls *tls = (void *)ws_malloc(sizeof(struct wss_tls));
+	if (tls == NULL) {
+		WSCLIENT_ERROR("ERROR: Failed to allocate tls structure\n");
+		return -1;
+	}
+	memset(tls, 0, sizeof(struct wss_tls));
+	tls->socket.fd = -1;
+
+	wsclient->tls = tls;
+
+	ret = wss_tls_connect(wsclient, wsclient->host, wsclient->port);
+
+	if (wsclient->connection_abort_flag) {
+		WSCLIENT_ERROR("Connection abort during TCP connect\n");
+		goto exit;
+	}
+
+	if (ret != 0) {
 		WSCLIENT_ERROR("ERROR: ssl connect failed ret(%d)\n", ret);
 		goto exit;
 	}
@@ -819,7 +869,10 @@ void wss_client_close(wsclient_context *wsclient)
 {
 	wss_tls_close(wsclient->tls, &wsclient->sockfd);
 
+	rtos_mutex_take(wsclient->connection_mutex, RTOS_MAX_TIMEOUT);
 	wsclient->readyState = WSC_CLOSED;
+	wsclient->connection_abort_flag = 0;
+	rtos_mutex_give(wsclient->connection_mutex);
 	wsclient->use_ssl = 0;
 	wsclient->port = 0;
 	wsclient->tx_len = 0;
@@ -861,6 +914,12 @@ void wss_client_close(wsclient_context *wsclient)
 
 	if (wsclient->queue_mutex) {
 		rtos_mutex_delete(wsclient->queue_mutex);
+		wsclient->queue_mutex = NULL;
+	}
+
+	if (wsclient->connection_mutex) {
+		rtos_mutex_delete(wsclient->connection_mutex);
+		wsclient->connection_mutex = NULL;
 	}
 
 	if (wsclient->txbuf) {
@@ -965,3 +1024,53 @@ int wss_client_send(wsclient_context *wsclient, char *data, size_t data_len)
 	return ret;
 }
 #endif
+
+int ws_abort_connect(wsclient_context *wsclient)
+{
+	if (!wsclient) {
+		WSCLIENT_ERROR("wsclient is NULL\n");
+		return -1;
+	}
+
+	rtos_mutex_take(wsclient->connection_mutex, RTOS_MAX_TIMEOUT);
+	if (wsclient->readyState != WSC_CONNECTING) {
+		rtos_mutex_give(wsclient->connection_mutex);
+		WSCLIENT_ERROR("not in connecting\n");
+		return -1;
+	}
+	wsclient->connection_abort_flag = 1;
+	rtos_mutex_give(wsclient->connection_mutex);
+
+	if (wsclient->sockfd != -1) {
+		WSCLIENT_DEBUG("close socket: %d\n", wsclient->sockfd);
+		closesocket(wsclient->sockfd);
+		wsclient->sockfd = -1;
+	} else if (wsclient->use_ssl && wsclient->tls) {
+		struct wss_tls *tls = (struct wss_tls *)wsclient->tls;
+		if (tls->socket.fd != -1) {
+			WSCLIENT_DEBUG("close tls socket: %d\n", tls->socket.fd);
+			closesocket(tls->socket.fd);
+			tls->socket.fd = -1;
+			wsclient->sockfd = -1;
+		}
+	}
+
+	int wait_count = 0;
+	while (wait_count < 30) {
+		if (!wsclient) {
+			WSCLIENT_DEBUG("wsclient cleared, abort completed\n");
+			return 0;
+		}
+
+		if (wsclient->readyState != WSC_CONNECTING) {
+			WSCLIENT_DEBUG("Connection process completed, abort succeed\n");
+			return 0;
+		}
+
+		rtos_time_delay_ms(100);
+		wait_count++;
+	}
+
+	WSCLIENT_ERROR("Wait for connection process timeout\n");
+	return -1;
+}

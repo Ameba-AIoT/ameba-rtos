@@ -384,14 +384,14 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 	case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
 		rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
 		rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
-		BT_LOGA("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %d, PHY: 0x%x, TxPower: %d, Len: %d\r\n",
+		BT_LOGA("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %d, PHY: 0x%x, TxPower: %d, Data_status: %d, Len: %d\r\n",
 				le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
 				(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-				scan_res_ind->tx_power, scan_res_ind->len);
-		BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%d,0x%x,%d,%d\r\n",
+				scan_res_ind->tx_power, scan_res_ind->data_status, scan_res_ind->len);
+		BT_AT_PRINT("+BLEGAP:escan,%s,0x%x,%d,0x%x,%d,%d,%d\r\n",
 					le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
 					(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-					scan_res_ind->tx_power, scan_res_ind->len);
+					scan_res_ind->tx_power, scan_res_ind->data_status, scan_res_ind->len);
 		break;
 	}
 #endif
@@ -595,7 +595,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 		} else {
 			BT_LOGA("[APP] Read remote version, conn_handle: %d, version: 0x%x, company_id: 0x%x, subversion: 0x%x\r\n",
 					rmt_ver->conn_handle, rmt_ver->version, rmt_ver->company_id, rmt_ver->subversion);
-			BT_AT_PRINT("+BLEGAP:remote_version,%d,0,0x%x,0x%x,0x%x\r\n", mt_ver->conn_handle,
+			BT_AT_PRINT("+BLEGAP:remote_version,%d,0,0x%x,0x%x,0x%x\r\n", rmt_ver->conn_handle,
 						rmt_ver->version, rmt_ver->company_id, rmt_ver->subversion);
 		}
 		break;
