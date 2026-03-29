@@ -10,6 +10,7 @@
 #include <lwip/netdb.h>
 #include "os_wrapper.h"
 #include "wifi_api.h"
+#include "usbh.h"
 #include "mbedtls/md5.h"
 #include "lwip_netconf.h"
 #include "usbh_cdc_ecm.h"

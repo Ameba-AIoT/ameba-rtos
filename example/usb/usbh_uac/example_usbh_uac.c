@@ -11,6 +11,7 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_uac1.h"
+#include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
 #define USBH_UAC_HOT_PLUG_TEST        1     /* Hot plug / memory leak test */
@@ -361,3 +362,4 @@ void example_usbh_uac(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }
+

@@ -244,12 +244,10 @@ void usbh_uvc_deinit(void)
 {
 	int i;
 	usbh_uvc_host_t *uvc = &uvc_host;
-	usbh_uvc_stream_t *stream;
-	usbh_uvc_vs_t *vs_intf;
 
 	/* */
 	for (i = 0; i < uvc->uvc_desc.vs_num; i++) {
-		stream = &uvc->stream[i];
+		usbh_uvc_stream_t *stream = &uvc->stream[i];
 		stream->next_xfer = 0;
 		if (stream->is_resource_safe) {
 			rtos_time_delay_ms(10);
@@ -260,18 +258,13 @@ void usbh_uvc_deinit(void)
 	usbh_uvc_class_deinit();
 
 	for (i = 0; i < uvc->uvc_desc.vs_num; i++) {
-		stream = &uvc->stream[i];
+		usbh_uvc_stream_t *stream = &uvc->stream[i];
 		if (stream->stream_state == STREAMING_ON) {
 			usbh_uvc_stream_off(i);
 		}
 	}
 
 	usbh_uvc_desc_deinit();
-
-	for (i = 0; i < uvc->uvc_desc.vs_num; i++) {
-		vs_intf = uvc->stream[i].vs_intf;
-		usb_os_mfree(vs_intf->format);
-	}
 
 	if (uvc->request_buf != NULL) {
 		usb_os_mfree(uvc->request_buf);

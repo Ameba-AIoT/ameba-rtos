@@ -142,9 +142,7 @@ void SPDIO_HAL_DeInit(void)
 	pSPDIODev->spdio_priv = NULL;
 
 	SDIO_CPWM2_Set(SDIO_WIFI, CPWM2_IMG1_BIT, DISABLE);
-	// SPDIO_Device_DeInit(SDIO_WIFI); /* Avoid SDIO Function Reset */
-	SDIO_INTConfig(SDIO_WIFI, 0xffff, DISABLE);
-	SDIO_INTClearAll(SDIO_WIFI);
+	SPDIO_Device_DeInit(SDIO_WIFI);
 
 	InterruptDis(SDIO_WIFI_IRQ);
 	InterruptUnRegister(SDIO_WIFI_IRQ);

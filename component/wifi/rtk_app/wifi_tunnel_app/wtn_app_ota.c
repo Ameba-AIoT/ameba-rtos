@@ -1178,12 +1178,7 @@ void rmesh_ota_http_ota_task(void *param)
 	memset(ctx, 0, sizeof(ota_context_t));
 	g_rmesh_ota_priv->http_ota_ctx = ctx;
 
-#ifdef CONFIG_WHC_INTF_IPC
 	ret = ota_init(ctx, (char *)ota_param->host, ota_param->port, (char *)ota_param->resource, OTA_HTTP);
-#else
-	ret = ota_init(ctx, (char *)ota_param->host, ota_param->port, (char *)ota_param->resource, OTA_WHC);
-#endif
-
 	if (ret != 0) {
 		goto exit;
 	}
@@ -1481,16 +1476,11 @@ int wtn_on_ota_request(u8 *buf, int recv_len, int *forward_sock_fd)
 	u8 http_resourcelen = 0;
 	u8 *self_mac_p1 = LwIP_GetMAC(NETIF_WLAN_AP_INDEX);
 	u8 *self_mac_p0 = LwIP_GetMAC(NETIF_WLAN_STA_INDEX);
-	u8 target_mac[6] = {0};
-#ifdef CONFIG_RNAT_EN
 	u8 *gw = LwIP_GetGW(NETIF_WLAN_AP_INDEX);
 	u8 client_ip = 0;
+	u8 target_mac[6] = {0};
 	u8 try_cnt = 5;
 	struct sockaddr_in ota_forward_dest_addr;
-#else
-	UNUSED(recv_len);
-	UNUSED(forward_sock_fd);
-#endif
 
 	if (buf[12] != ota_request_seq) {
 		ota_request_seq = buf[12];
@@ -1508,7 +1498,7 @@ int wtn_on_ota_request(u8 *buf, int recv_len, int *forward_sock_fd)
 		ota_param.resource = (char *)rtos_mem_zmalloc(http_resourcelen + 1);
 		memcpy(ota_param.resource, buf + 29 + httpiplen, http_resourcelen);
 		ota_param.ota_type = buf[31 + httpiplen + http_resourcelen];
-#ifdef CONFIG_RNAT_EN
+
 		if (wifi_user_config.wtn_rnat_en && wtn_rnat_ap_start) {
 			if (memcmp(target_mac, self_mac_p1, ETH_ALEN)) {
 				if (*forward_sock_fd < 0) {
@@ -1539,7 +1529,6 @@ int wtn_on_ota_request(u8 *buf, int recv_len, int *forward_sock_fd)
 				}
 			}
 		}
-#endif
 #ifdef WTN_MULTI_NODE_OTA
 		if ((wifi_user_config.wtn_rnat_en && (!memcmp(target_mac, self_mac_p1, ETH_ALEN))) ||
 			(!memcmp(target_mac, self_mac_p0, ETH_ALEN))) { /*ota cmd to my self, peform OTA*/

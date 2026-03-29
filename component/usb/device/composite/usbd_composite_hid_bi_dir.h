@@ -36,17 +36,13 @@
 
 /* Exported types ------------------------------------------------------------*/
 
-/**
- * @brief User callback structure for HID events.
- * @details This structure allows the application layer to handle key HID events.
- */
 typedef struct {
-	int(* init)(void);                             /**< Called during class driver initialization for application resource setup. */
-	int(* deinit)(void);                           /**< Called during class driver deinitialization for resource cleanup. */
-	int(* setup)(usb_setup_req_t *req, u8 *buf);   /**< Called during control transfer SETUP/DATA phases to handle application-specific control requests. */
-	int(* set_config)(void);                       /**< Notifies application layer that the class driver becomes operational. */
-	int(* sof)(void);                              /**< Called upon SOF interrupt (GINTSTS.Sof) for timing-sensitive operations. */
-	int(* transmitted)(u8 status);                 /**< Called when interrupt IN transfer done, for asynchronous interrupt IN transfer status notification . */
+	int(* init)(void);
+	int(* deinit)(void);
+	int(* setup)(usb_setup_req_t *req, u8 *buf);
+	int(* set_config)(void);
+	int(* sof)(void);
+	int(* transmitted)(u8 status);
 } usbd_composite_hid_usr_cb_t;
 
 typedef struct {
@@ -94,46 +90,11 @@ extern const usbd_class_driver_t usbd_composite_hid_driver;
 
 int usbd_composite_hid_init(usbd_composite_dev_t *cdev, usbd_composite_hid_usr_cb_t *cb);
 int usbd_composite_hid_deinit(void);
-
-/**
- * @brief Transmits HID data via interrupt IN endpoint.
- * @param[in] data: Pointer to the data buffer to be transmitted.
- * @param[in] len: Length of the data in bytes.
- * @return 0 on success, non-zero on failure.
- */
 int usbd_composite_hid_send_data(u8 *data, u32 len);
-
-/**
- * @brief Transmits volume control request to USB host via interrupt IN endpoint.
- * @param[in] vol_up: 1 if volume up, else 0.
- * @return 0 on success, non-zero on failure.
- */
 int usbd_composite_hid_volume_ctrl(u8 vol_up);
-
-/**
- * @brief Transmits power control request to USB host via interrupt IN endpoint.
- * @return 0 on success, non-zero on failure.
- */
 int usbd_composite_hid_power_ctrl(void);
 
-/**
- * @brief Reads HID data from ring buffer.
- * @param[in] buffer: Pointer to the data buffer.
- * @param[in] size: Length of the data in bytes.
- * @param[in] time_out_ms:Time out.
- * @return copy len.
- */
 u32 usbd_composite_hid_read(u8 *buffer, u32 size, u32 time_out_ms);
-
-/**
- * @brief Gets queued HID frames count.
-  * @retval read buffer cnt
- */
 u32 usbd_composite_hid_get_read_buf_cnt(void);
-
-/**
- * @brief Check whether the HID received ring buffer is full.
-  * @retval 1 if the ring buf is full, else 0
- */
 u32 usbd_composite_hid_ring_buf_is_full(void);
 #endif // USBD_COMPOSITE_HID_BI_DIR_H

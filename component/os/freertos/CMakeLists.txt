@@ -174,6 +174,7 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
         endif()
     endif()
 
+if(CONFIG_HEAP_PROTECTOR)
     ameba_list_append(private_sources
         heap_trace/heap_trace.c
     )
@@ -183,6 +184,7 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
         SDK_TOOLCHAIN="${SDK_TOOLCHAIN}"
         IMAGE_DIR="${IMAGE_DIR}"
     )
+endif()
 
 elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image3")
     # amebasmart uses chip-specific secure directory, others use Common/secure

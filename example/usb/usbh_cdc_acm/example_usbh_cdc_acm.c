@@ -11,6 +11,7 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_cdc_acm.h"
+#include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -590,3 +591,4 @@ void example_usbh_cdc_acm(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }
+

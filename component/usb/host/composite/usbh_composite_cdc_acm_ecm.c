@@ -63,7 +63,7 @@ static const usbh_dev_id_t usbh_composite_acm_ecm_devs[] = {
 	},
 };
 
-/* USB Class Driver */
+/* USB Standard Device Descriptor */
 static usbh_class_driver_t usbh_composite_driver = {
 	.id_table = usbh_composite_acm_ecm_devs,
 	.attach = usbh_composite_acm_ecm_cb_attach,

@@ -13,7 +13,9 @@
 #include "whc_wpas_std_app.h"
 #endif
 
-extern struct whc_cmd_path_priv whc_cmdpath_data;
+
+extern rtos_sema_t whc_user_rx_sema;
+extern u8 *whc_rx_msg;
 
 __weak int whc_wpa_ops_disconnect(char *ptr, u8 *buf)
 {
@@ -151,10 +153,10 @@ void whc_dev_pkt_rx_to_user_task(void)
 	u8 *buf = NULL;
 
 	while (1) {
-		rtos_sema_take(whc_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);
-		if (whc_cmdpath_data.whc_rx_msg) {
-			ptr = whc_cmdpath_data.whc_rx_msg;
-			event = *(u32 *)ptr;
+		rtos_sema_take(whc_user_rx_sema, RTOS_MAX_TIMEOUT);
+		if (whc_rx_msg) {
+			ptr = whc_rx_msg;
+			event = *(u32 *)whc_rx_msg;
 			ptr += 4;
 
 			buf = rtos_mem_malloc(BRIDGE_WPA_OPS_BUF_SIZE);
@@ -194,9 +196,9 @@ void whc_dev_pkt_rx_to_user_task(void)
 				rtos_mem_free(buf);
 			}
 
-			rtos_mem_free(whc_cmdpath_data.whc_rx_msg_free_addr);
-			whc_cmdpath_data.whc_rx_msg = NULL;
-			whc_cmdpath_data.whc_rx_msg_free_addr = NULL;
+			rtos_mem_free(whc_rx_msg_free_addr);
+			whc_rx_msg = NULL;
+			whc_rx_msg_free_addr = NULL;
 		}
 	}
 

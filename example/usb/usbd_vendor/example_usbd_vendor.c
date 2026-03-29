@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------ */
 
 #include <platform_autoconf.h>
+#include "usbd.h"
 #include "usbd_vendor.h"
 #include "os_wrapper.h"
 
@@ -451,3 +452,4 @@ void example_usbd_vendor(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD vendor thread fail\n");
 	}
 }
+

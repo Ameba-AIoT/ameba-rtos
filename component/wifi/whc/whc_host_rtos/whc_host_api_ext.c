@@ -276,11 +276,6 @@ s32 wifi_get_setting(u8 wlan_idx, struct rtw_wifi_setting *psetting)
 	return ret;
 }
 
-void wifi_set_dbg_dp_log(char *buf)
-{
-	UNUSED(buf);
-}
-
 int wifi_set_ips_internal(u8 enable)
 {
 	int ret = 0;

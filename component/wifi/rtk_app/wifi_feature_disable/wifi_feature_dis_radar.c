@@ -87,16 +87,7 @@ void wifi_hal_radar_trx(u8 start)
 {
 	UNUSED(start);
 }
-
-s16 wifi_hal_radar_get_iso(void)
-{
-	return 0;
-}
-
-s16 wifi_hal_radar_get_rssi(void)
-{
-	return 0;
-}
 #endif
 
 #endif /* CONFIG_RADAR */
+

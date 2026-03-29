@@ -40,15 +40,11 @@
 
 /* Exported types ------------------------------------------------------------*/
 
-/**
- * @brief User callback structure for HID events.
- * @details This structure allows the application layer to handle key HID events.
- */
 typedef struct {
-	int(* init)(void);                             /**< Called during class driver initialization for application resource setup. */
-	void(* deinit)(void);                          /**< Called during class driver deinitialization for resource cleanup. */
-	int(* setup)(usb_setup_req_t *req, u8 *buf);   /**< Called during control transfer SETUP/DATA phases to handle application-specific control requests. */
-	void(* transmitted)(u8 status);                /**< Called when interrupt IN transfer done, for asynchronous interrupt IN transfer status notification . */
+	int(* init)(void);
+	void(* deinit)(void);
+	int(* setup)(usb_setup_req_t *req, u8 *buf);
+	void(* transmitted)(u8 status);
 } usbd_composite_hid_usr_cb_t;
 
 typedef struct {
@@ -67,13 +63,6 @@ extern const usbd_class_driver_t usbd_composite_hid_driver;
 
 int usbd_composite_hid_init(usbd_composite_dev_t *cdev, u16 tx_buf_len, usbd_composite_hid_usr_cb_t *cb);
 int usbd_composite_hid_deinit(void);
-
-/**
- * @brief Transmits HID data via interrupt IN endpoint.
- * @param[in] data: Pointer to the data buffer to be transmitted.
- * @param[in] len: Length of the data in bytes.
- * @return 0 on success, non-zero on failure.
- */
 int usbd_composite_hid_send_data(u8 *data, u16 len);
 
 #endif // USBD_COMPOSITE_HID_H

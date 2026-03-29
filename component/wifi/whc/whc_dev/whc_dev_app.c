@@ -4,8 +4,13 @@
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
 
-struct whc_cmd_path_priv whc_cmdpath_data;
+rtos_sema_t whc_user_rx_sema;
+u8 *whc_rx_msg = NULL;
+/* spi add header before msg, different from others */
+/* real addr needed for mem free */
+u8 *whc_rx_msg_free_addr = NULL;
 
+u16 rx_msg_size;
 #ifndef CONFIG_MP_SHRINK
 static struct rtw_network_info wifi = {0};
 #endif
@@ -184,18 +189,17 @@ end:
 /* here in sdio rx done callback */
 __weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
 {
-	while (whc_cmdpath_data.whc_rx_msg) {
+	while (whc_rx_msg) {
 		/* waiting last msg done */
 		rtos_time_delay_ms(1);
 	}
 
-	whc_cmdpath_data.whc_rx_msg = rxbuf;
-	whc_cmdpath_data.whc_rx_msg_free_addr = real_buf;
-	whc_cmdpath_data.rx_msg_size = size;
-	rtos_sema_give(whc_cmdpath_data.whc_user_rx_sema);
+	whc_rx_msg = rxbuf;
+	whc_rx_msg_free_addr = real_buf;
+	rx_msg_size = size;
+	rtos_sema_give(whc_user_rx_sema);
 }
 
-/* note： never use dev block send in this task, may cause deadlock */
 __weak void whc_dev_pkt_rx_to_user_task(void)
 {
 	u8 *ptr = NULL;
@@ -211,10 +215,10 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 	(void)ret;
 
 	while (1) {
-		rtos_sema_take(whc_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);
-		if (whc_cmdpath_data.whc_rx_msg) {
-			ptr = whc_cmdpath_data.whc_rx_msg;
-			event = *(u32 *)(whc_cmdpath_data.whc_rx_msg);
+		rtos_sema_take(whc_user_rx_sema, RTOS_MAX_TIMEOUT);
+		if (whc_rx_msg) {
+			ptr = whc_rx_msg;
+			event = *(u32 *)whc_rx_msg;
 			ptr += 4;
 
 			if (event == WHC_WIFI_TEST) {
@@ -314,26 +318,21 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					wifi_on(RTW_MODE_STA);
 				} else if (*ptr == WHC_WIFI_TEST_SET_HOST_RTOS) {
 					wifi_user_config.cfg80211 = 0;
-				} else if (*ptr == WHC_WIFI_TEST_OTA) {
-					whc_dev_api_ota_process(ptr);
 				}
 #endif
 				rtos_mem_free(buf);
 			}
-			rtos_mem_free(whc_cmdpath_data.whc_rx_msg_free_addr);
-			whc_cmdpath_data.whc_rx_msg = NULL;
-			whc_cmdpath_data.whc_rx_msg_free_addr = NULL;
+			rtos_mem_free(whc_rx_msg_free_addr);
+			whc_rx_msg = NULL;
+			whc_rx_msg_free_addr = NULL;
 		}
 	}
 }
 
 __weak void whc_dev_init_cmd_path_task(void)
 {
-	memset(&whc_cmdpath_data, 0, sizeof(struct whc_cmd_path_priv));
 	/* initialize the semaphores */
-	rtos_sema_create(&(whc_cmdpath_data.whc_user_rx_sema), 0, 0xFFFFFFFF);
-	rtos_sema_create(&(whc_cmdpath_data.whc_user_blocksend_sema), 0, 0xFFFFFFFF);
-	rtos_mutex_create(&whc_cmdpath_data.whc_user_blocksend_mutex);
+	rtos_sema_create(&whc_user_rx_sema, 0, 0xFFFFFFFF);
 
 	/* Initialize the event task */
 	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_dev_pkt_rx_to_user_task", (rtos_task_function_t)whc_dev_pkt_rx_to_user_task,

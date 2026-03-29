@@ -101,6 +101,19 @@ typedef struct {
 } usbh_uac_volume_info_t;
 
 /**
+  * @brief  UAC User Callback Interface.
+  */
+typedef struct {
+	int(* init)(void);      /**< Callback when UAC driver is initialized */
+	int(* deinit)(void);    /**< Callback when UAC driver is de-initialized */
+	int(* attach)(void);    /**< Callback when a UAC device is attached */
+	int(* detach)(void);    /**< Callback when a UAC device is detached */
+	int(* setup)(void);     /**< Callback during the Setup stage of a control transfer */
+	int(* isoc_transmitted)(usbh_urb_state_t state); /**< Callback when isochronous OUT (Play) transfer completes */
+	int(* isoc_received)(u8 *buf, u32 len);          /**< Callback when isochronous IN (Record) data is received */
+} usbh_composite_uac_usr_cb_t;
+
+/**
   * @brief  Audio Format Configuration Descriptor Information.
   */
 typedef struct {
@@ -146,28 +159,6 @@ typedef struct {
 	u8 choose_freq_idx;                   /**< Index of the currently selected frequency */
 } usbh_uac_as_itf_info_t;
 
-/** @addtogroup USB_Host_API USB Host API
- *  @{
- */
-/** @addtogroup USB_Host_Types USB Host Types
- * @{
- */
-/** @addtogroup Host_Composite_UAC_Types Host Composite UAC Types
- * @{
- */
-/**
-  * @brief  UAC User Callback Interface.
-  */
-typedef struct {
-	int(* init)(void);      /**< Callback when UAC driver is initialized */
-	int(* deinit)(void);    /**< Callback when UAC driver is de-initialized */
-	int(* attach)(void);    /**< Callback when a UAC device is attached */
-	int(* detach)(void);    /**< Callback when a UAC device is detached */
-	int(* setup)(void);     /**< Callback during the Setup stage of a control transfer */
-	int(* isoc_transmitted)(usbh_urb_state_t state); /**< Callback when isochronous OUT (Play) transfer completes */
-	int(* isoc_received)(u8 *buf, u32 len);          /**< Callback when isochronous IN (Record) data is received */
-} usbh_composite_uac_usr_cb_t;
-
 /**
   * @brief  Main UAC Host Class Driver Handle.
   */
@@ -206,8 +197,6 @@ typedef struct {
 	u8 next_xfer;              /**< Flag to trigger next transfer */
 	u8 cur_volume;             /**< Current volume percentage (0 ~ 100) */
 } usbh_composite_uac_t;
-/** @} End of Host_Composite_UAC_Types group*/
-/** @} End of USB_Host_Types group*/
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -215,25 +204,18 @@ typedef struct {
 extern const usbh_class_driver_t usbh_composite_uac_driver;  /**< Composite uac driver handle */
 
 /* Exported functions --------------------------------------------------------*/
-
-/** @addtogroup USB_Host_Functions USB Host Functions
- * @{
- */
-/** @addtogroup Host_Composite_UAC_Functions Host Composite UAC Functions
- * @{
- */
 /**
   * @brief  Initialize the UAC Class Driver.
   * @param  chost: Pointer to the composite host handle.
   * @param  cb: Pointer to the user callback structure.
   * @param  frame_cnt: Configuration for ring buffer size (frame count).
-  * @return 0 on success, non-zero on failure.
+  * @retval Status (0: Success, <0: Failure)
   */
 int usbh_composite_uac_init(usbh_composite_host_t *chost, usbh_composite_uac_usr_cb_t *cb, int frame_cnt);
 
 /**
   * @brief  De-initialize the UAC Class Driver and release resources.
-  * @return 0 on success, non-zero on failure.
+  * @retval Status
   */
 int usbh_composite_uac_deinit(void);
 
@@ -241,7 +223,7 @@ int usbh_composite_uac_deinit(void);
   * @brief  Get the volume information .
   *         Loop to find volume mute state, volume max min and cur value.
   * @param  host: Pointer to the USB core handle.
-  * @return 0 on success, non-zero on failure.
+  * @retval Status
   */
 int usbh_composite_uac_get_volume_infor(usb_host_t *host);
 
@@ -253,7 +235,7 @@ int usbh_composite_uac_get_volume_infor(usb_host_t *host);
   * @param  channels: Number of channels.
   * @param  bit_width: Bit width.
   * @param  sampling_freq: Sampling frequency in Hz.
-  * @return 0 on success, non-zero on failure.
+  * @retval Status
   */
 int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_freq);
 
@@ -261,28 +243,28 @@ int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sa
   * @brief  Get the list of audio formats supported by the connected device.
   * @param  dir: Direction (0: Playback/OUT, 1: Record/IN).
   * @param  fmt_cnt: Pointer to store the number of formats found.
-  * @return Pointer to the array of supported formats.
+  * @retval Pointer to the array of supported formats.
   */
 const usbh_audio_fmt_t *usbh_composite_uac_get_alt_setting(u8 dir, u8 *fmt_cnt);
 
 /**
   * @brief  Calculate the frame size (in bytes) based on current configuration.
   * @param  dir: Direction.
-  * @return Frame size in bytes.
+  * @retval Frame size in bytes.
   */
 u32 usbh_composite_uac_get_frame_size(u8 dir);
 
 /**
   * @brief  Set the volume level percentage.
   * @param  volume: Volume level (0-100).
-  * @return 0 on success, non-zero on failure.
+  * @retval Status
   */
 int usbh_composite_uac_set_volume(u8 volume);
 
 /**
   * @brief  Set the mute state.
   * @param  mute: 1 to mute, 0 to unmute.
-  * @return 0 on success, non-zero on failure.
+  * @retval Status
   */
 int usbh_composite_uac_set_mute(u8 mute);
 
@@ -291,7 +273,7 @@ int usbh_composite_uac_set_mute(u8 mute);
   * @param  buffer: Pointer to the PCM data buffer.
   * @param  size: Size of data to write (in bytes).
   * @param  timeout_ms: Timeout in milliseconds to wait if buffer is full.
-  * @return Actual number of bytes written.
+  * @retval Actual number of bytes written.
   */
 u32 usbh_composite_uac_write(u8 *buffer, u32 size, u32 timeout_ms);
 
@@ -305,9 +287,4 @@ void usbh_composite_uac_start_play(void);
   * @brief  Stop the audio playback process.
   */
 void usbh_composite_uac_stop_play(void);
-
-/** @} End of Host_Composite_UAC_Functions group */
-/** @} End of USB_Host_Functions group */
-/** @} End of USB_Host_API group */
-
 #endif  /* USBH_COMPOSITE_UAC1_H */

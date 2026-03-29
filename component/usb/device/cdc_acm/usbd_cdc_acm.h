@@ -14,15 +14,6 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/** @addtogroup USB_Device_API USB Device API
- *  @{
- */
-/** @addtogroup USB_Device_Constants USB Device Constants
- * @{
- */
-/** @addtogroup Device_CDC_ACM_Constants Device CDC ACM Constants
- * @{
- */
 #ifdef CONFIG_ATCMD_HOST_CONTROL
 #define CONFIG_CDC_ACM_NOTIFY                     1     /**< Enable/Disable notification feature. */
 #else
@@ -33,7 +24,12 @@
 
 #define CONFIG_CDC_ACM_BULK_TX_SKIP_MEMCPY        1     /**< Skip memcpy BULK IN DATA from application in class */
 
-/* Defines basic device parameters like VID, PID, and string descriptors. */
+/** @} */
+
+/**
+ * @brief Defines basic device parameters like VID, PID, and string descriptors.
+ * @{
+ */
 #define USBD_CDC_ACM_VID                              USB_VID               /**< Vendor ID. */
 #define USBD_CDC_ACM_PID                              USB_PID               /**< Product ID. */
 #define USBD_CDC_ACM_SELF_POWERED                     1U                    /**< Device is self-powered. */
@@ -43,8 +39,12 @@
 #define USBD_CDC_ACM_PROD_HS_STRING                   "Realtek CDC ACM (HS)"/**< Product string for High-Speed mode. */
 #define USBD_CDC_ACM_PROD_FS_STRING                   "Realtek CDC ACM (FS)"/**< Product string for Full-Speed mode. */
 #define USBD_CDC_ACM_SN_STRING                        "1234567890"          /**< Serial number string. */
+/** @} */
 
-/* Defines endpoint addresses for BULK and INTERRUPT transfers. */
+/**
+ * @brief Defines endpoint addresses for BULK and INTERRUPT transfers.
+ * @{
+ */
 #if defined (CONFIG_AMEBAGREEN2)
 #define USBD_CDC_ACM_BULK_IN_EP                       0x82U
 #define USBD_CDC_ACM_BULK_OUT_EP                      0x02U
@@ -53,25 +53,16 @@
 #define USBD_CDC_ACM_BULK_OUT_EP                      0x02U
 #endif
 #define USBD_CDC_ACM_INTR_IN_EP                       0x83U
+/** @} */
 
 #define USBD_CDC_ACM_HS_INTR_IN_INTERVAL              8U     /**< High speed INTR IN interval */
 #define USBD_CDC_ACM_FS_INTR_IN_INTERVAL              8U     /**< Full speed INTR IN interval */
 
 #define USBD_CDC_ACM_CTRL_BUF_SIZE                    512U   /**< Control transfer buffer size. */
 
-/** @} End of Device_CDC_ACM_Constants group*/
-/** @} End of USB_Device_Constants group*/
-
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
-
-/** @addtogroup USB_Device_Types USB Device Types
- * @{
- */
-/** @addtogroup Device_CDC_ACM_Types Device CDC ACM Types
- * @{
- */
 
 #if CONFIG_CDC_ACM_NOTIFY
 /**
@@ -152,19 +143,9 @@ typedef struct {
 #endif
 } usbd_cdc_acm_dev_t;
 
-/** @} End of Device_CDC_ACM_Types group*/
-/** @} End of USB_Device_Types group*/
-
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
-
-/** @addtogroup USB_Device_Functions USB Device Functions
- * @{
- */
-/** @addtogroup Device_CDC_ACM_Functions Device CDC ACM Functions
- * @{
- */
 
 /**
  * @brief Initializes class driver with application callback handler.
@@ -197,8 +178,5 @@ int usbd_cdc_acm_transmit(u8 *buf, u32 len);
  */
 int usbd_cdc_acm_notify_serial_state(u16 serial_state);
 #endif
-/** @} End of Device_CDC_ACM_Functions group */
-/** @} End of USB_Device_Functions group */
-/** @} End of USB_Device_API group */
-
 #endif  /* USBD_CDC_ACM_H */
+

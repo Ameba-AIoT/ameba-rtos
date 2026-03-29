@@ -25,7 +25,7 @@ menu "CONFIG SHELL"
             config ATCMD_NETWORK
                 bool "Enable Network"
                 default n
-            if ATCMD_NETWORK && !ATCMD_MANUAL_TEST
+            if ATCMD_NETWORK
                 config ATCMD_DNS
                     bool "Enable DNS"
                     default n
@@ -36,19 +36,17 @@ menu "CONFIG SHELL"
                     bool "Enable MDNS"
                     default n
             endif
-            if!ATCMD_MANUAL_TEST
-                config ATCMD_SOCKET
-                    bool "Enable Socket"
-                config ATCMD_HTTP
-                    bool "Enable HTTP"
-                config ATCMD_MQTT
-                    bool "Enable MQTT"
-                config ATCMD_WEBSOCKET
-                    bool "Enable WEBSOCKET"
-                config ATCMD_OTA
-                    bool "Enable OTA"
-                    default n
-            endif
+            config ATCMD_SOCKET
+                bool "Enable Socket"
+            config ATCMD_HTTP
+                bool "Enable HTTP"
+            config ATCMD_MQTT
+                bool "Enable MQTT"
+            config ATCMD_WEBSOCKET
+                bool "Enable WEBSOCKET"
+            config ATCMD_OTA
+                bool "Enable OTA"
+                default n
         endif
     endif
     config SHELL_TASK_STACK_BASIC_SIZE

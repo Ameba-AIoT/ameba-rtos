@@ -77,8 +77,6 @@ menu "CONFIG USB"
         bool
     config USBD_VENDOR
         bool
-    config USBD_UVC
-        bool
 
     config USBH_CDC_ACM
         bool

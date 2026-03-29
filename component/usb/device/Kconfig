@@ -111,8 +111,3 @@ config USBD_UAC_MENU
 config USBD_VENDOR_MENU
     bool "VENDOR"
     select USBD_VENDOR if WHC_HOST || WHC_NONE
-
-config USBD_UVC_MENU
-    bool "UVC"
-    depends on SUPPORT_USBD_UVC
-    select USBD_UVC if WHC_HOST || WHC_NONE

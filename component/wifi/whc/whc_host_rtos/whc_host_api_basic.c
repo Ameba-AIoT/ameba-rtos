@@ -512,33 +512,15 @@ exit:
 	return ret;
 }
 
-u8 promisc_callback_default(struct rtw_rx_pkt_info *pkt_info)
-{
-	(void) pkt_info;
-
-	return RTW_PROMISC_NEED_DRV_HDL;
-}
-
 void wifi_promisc_enable(u32 enable, struct rtw_promisc_para *para)
 {
 	u32 buf[3] = {0};
-
-	if (enable && para == NULL) {
-		RTK_LOGE(TAG_WLAN_INIC, "promisc param not set!\n");
-		return;
-	}
-
 	buf[0] = enable;
-	if (enable) {
-		buf[1] = (u32)para->filter_mode;
-		if (para->callback) {
-			promisc_user_callback_ptr = para->callback;
-			buf[2] = ENABLE;
-		}
-	} else {
-		promisc_user_callback_ptr = promisc_callback_default;
+	buf[1] = (u32)para->filter_mode;
+	if (para->callback) {
+		promisc_user_callback_ptr = para->callback;
+		buf[2] = ENABLE;
 	}
-
 	whc_host_api_message_send(WHC_API_WIFI_PROMISC_INIT, (u8 *)buf, 12, NULL, 0);
 }
 

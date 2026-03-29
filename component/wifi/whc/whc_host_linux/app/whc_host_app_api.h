@@ -9,8 +9,6 @@
 #include <linux/genetlink.h>
 #include "whc_dev_powersave.h"
 
-//#define CONFIG_RMESH
-
 typedef int (*cmd_handler_t)(void);
 
 struct whc_host_command_entry {
