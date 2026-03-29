@@ -117,6 +117,7 @@ typedef struct {
 	 * @brief Called when new data is received from the host on the INTR IN endpoint, used for keyboard.
 	 * @param[in] buf Pointer to the received data buffer.
 	 * @param[in] len Length of the received data in bytes.
+	 * @return 0 on success, non-zero on failure.
 	 */
 	void(* received)(u8 *buf, u32 len);
 #endif

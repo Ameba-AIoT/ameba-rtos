@@ -38,7 +38,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_np = 22;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 #endif
 	wifi_user_config.rx_ampdu_num = 16;
-	wifi_user_config.tx_ampdu_num = 20; /* 0/1: equivalent to wifi_user_config.ampdu_tx_enable = 0, Otherwise: max aggregation number, up to 0x3F*/
+	wifi_user_config.tx_ampdu_num = 0; /* 0: default 20, 1: equivalent to wifi_user_config.ampdu_tx_enable = 0, Otherwise: max aggregation number, up to 0x3F*/
 
 #ifdef CONFIG_WHC_NONE
 	wifi_user_config.skb_num_ap = 0;

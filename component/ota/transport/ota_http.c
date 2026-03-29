@@ -67,7 +67,7 @@ static int ota_http_send_request(ota_context_t *ctx)
   * @param  result: The struct that store the useful info from the http response
   * @retval  1:only got status code;3:got status code and content length,but not get the full header;4: got all info;-1:failed
   */
-int ota_http_parse_response(ota_context_t *ctx, u8 *response, u32 response_len, ota_http_response_t *result)
+static int ota_http_parse_response(ota_context_t *ctx, u8 *response, u32 response_len, ota_http_response_t *result)
 {
 	ota_http_redirect_t *redirect = ctx->redirect;
 	char *ptr_body_end;

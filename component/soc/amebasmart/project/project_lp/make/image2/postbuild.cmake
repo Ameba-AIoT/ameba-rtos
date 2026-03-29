@@ -50,7 +50,7 @@ message("========== Image manipulating end ==========")
 if(NOT CONFIG_AMEBA_RLS)
     message("========== Image analyze start ==========")
     ameba_execute_process(p_SHOW_OUTPUT
-        COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD} ${CODE_ANALYZE_RETRY}
+        COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD}
         WORKING_DIRECTORY ${c_SDK_IMAGE_TARGET_DIR}
     )
     ameba_execute_process(p_SHOW_OUTPUT

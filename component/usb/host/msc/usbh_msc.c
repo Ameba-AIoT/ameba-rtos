@@ -61,7 +61,7 @@ static int usbh_msc_attach(usb_host_t *host)
 	usbh_itf_data_t *itf_data;
 	usbh_ep_desc_t *ep_desc;
 	usbh_msc_host_t *msc = &usbh_msc_host;
-	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
+	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
 	usbh_itf_desc_t *msc_itf_desc;
 	usbh_pipe_t *bulk_out = &msc->bulk_out;
 	usbh_pipe_t *bulk_in = &msc->bulk_in;
@@ -96,8 +96,8 @@ static int usbh_msc_attach(usb_host_t *host)
 		msc->error = MSC_OK;
 		msc->req_state = MSC_REQ_IDLE;
 
-		cbw->field.dCBWSignature = USB_MSC_CBW_SIGN;
-		cbw->field.dCBWTag = USB_BOT_CBW_TAG;
+		cbw->field.Signature = USBH_BOT_CBW_SIGNATURE;
+		cbw->field.Tag = USBH_BOT_CBW_TAG;
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_SEND;
@@ -158,7 +158,7 @@ static int usbh_msc_setup(usb_host_t *host)
 		/* Issue GetMaxLUN request */
 		setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS
 								  | USB_REQ_RECIPIENT_INTERFACE;
-		setup.req.bRequest = USB_MSC_REQUEST_GET_MAX_LUN;
+		setup.req.bRequest = USBH_MSC_GET_MAX_LUN;
 		setup.req.wValue = 0U;
 		setup.req.wIndex = 0U;
 		setup.req.wLength = 1U;
@@ -461,15 +461,15 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
   *     3. dCSWTag matches the dCBWTag from the corresponding CBW.
   */
 
-static usb_msc_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
+static usbh_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
-	usb_msc_bot_csw_t *csw = msc->hbot.csw;
-	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
-	usb_msc_bot_csw_state_t status = BOT_CSW_CMD_FAILED;
+	usbh_bot_csw_t *csw = msc->hbot.csw;
+	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
+	usbh_bot_csw_state_t status = BOT_CSW_CMD_FAILED;
 
 	/*Checking if the transfer length is different than 13*/
-	if (usbh_get_last_transfer_size(host, &msc->bulk_in) != USB_MSC_CSW_LEN) {
+	if (usbh_get_last_transfer_size(host, &msc->bulk_in) != USBH_BOT_CSW_LENGTH) {
 		/*(4) Hi > Dn (Host expects to receive data from the device,
 		Device intends to transfer no data)
 		(5) Hi > Di (Host expects to receive data from the device,
@@ -485,14 +485,14 @@ static usb_msc_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
 		/* CSW length is Correct */
 
 		/* Check validity of the CSW Signature and CSWStatus */
-		if (csw->field.dCSWSignature == USB_MSC_CSW_SIGN) {
+		if (csw->field.Signature == USBH_BOT_CSW_SIGNATURE) {
 			/* Check Condition 1. dCSWSignature is equal to 53425355h */
 
-			if (csw->field.dCSWTag == cbw->field.dCBWTag) {
+			if (csw->field.Tag == cbw->field.Tag) {
 				/* Check Condition 3. dCSWTag matches the dCBWTag from the
 				corresponding CBW */
 
-				if (csw->field.bCSWStatus == 0U) {
+				if (csw->field.Status == 0U) {
 					/* Refer to USB Mass-Storage Class : BOT (www.usb.org)
 
 					Hn Host expects no data transfers
@@ -514,11 +514,11 @@ static usb_msc_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
 					*/
 
 					status = BOT_CSW_CMD_PASSED;
-				} else if (csw->field.bCSWStatus == 1U) {
+				} else if (csw->field.Status == 1U) {
 					status = BOT_CSW_CMD_FAILED;
 				}
 
-				else if (csw->field.bCSWStatus == 2U) {
+				else if (csw->field.Status == 2U) {
 					/* Refer to USB Mass-Storage Class : BOT (www.usb.org)
 					Section 6.7
 					(2) Hn < Di ( Host expects no data transfers,
@@ -562,11 +562,11 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 {
 	int status = HAL_BUSY;
 	int error  = HAL_BUSY;
-	usb_msc_bot_csw_state_t CSW_Status = BOT_CSW_CMD_FAILED;
+	usbh_bot_csw_state_t CSW_Status = BOT_CSW_CMD_FAILED;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usbh_setup_req_t setup;
-	usb_msc_bot_csw_t *csw = msc->hbot.csw;
-	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
+	usbh_bot_csw_t *csw = msc->hbot.csw;
+	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
 	usbh_pipe_t *bulk_out = &msc->bulk_out;
 	usbh_pipe_t *bulk_in = &msc->bulk_in;
 	int ret;
@@ -575,17 +575,17 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 	case BOT_SEND_CBW:
 
 		if (bulk_out->xfer_state == USBH_EP_XFER_START) {
-			cbw->field.bCBWLUN = lun;
+			cbw->field.LUN = lun;
 			bulk_out->xfer_buf = cbw->data;
-			bulk_out->xfer_len = USB_MSC_CBW_LEN;
+			bulk_out->xfer_len = USBH_BOT_CBW_LENGTH;
 			usbh_transfer_process(host, bulk_out);
 		} else {
 			ret = usbh_transfer_process(host, bulk_out);
 
 			if ((ret == HAL_OK) && (bulk_out->xfer_state == USBH_EP_XFER_IDLE)) {
-				if (cbw->field.dCBWDataTransferLength != 0U) {
+				if (cbw->field.DataTransferLength != 0U) {
 					/* If there is Data Transfer Stage */
-					if (((cbw->field.bmCBWFlags) & USB_REQ_DIR_MASK) == USB_D2H) {
+					if (((cbw->field.Flags) & USB_REQ_DIR_MASK) == USB_D2H) {
 						/* Data Direction is IN */
 						msc->hbot.state = BOT_DATA_IN;
 						bulk_in->xfer_state = USBH_EP_XFER_START;
@@ -611,7 +611,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 		if (bulk_in->xfer_state == USBH_EP_XFER_START) {
 			bulk_in->xfer_buf = msc->hbot.pbuf;
-			bulk_in->xfer_len = cbw->field.dCBWDataTransferLength;
+			bulk_in->xfer_len = cbw->field.DataTransferLength;
 			usbh_transfer_process(host, bulk_in);
 		} else {
 			ret = usbh_transfer_process(host, bulk_in);
@@ -632,7 +632,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 		if (bulk_out->xfer_state == USBH_EP_XFER_START) {
 			msc->tick = usbh_get_tick(host);
 			bulk_out->xfer_buf = msc->hbot.pbuf;
-			bulk_out->xfer_len = cbw->field.dCBWDataTransferLength;
+			bulk_out->xfer_len = cbw->field.DataTransferLength;
 			usbh_transfer_process(host, bulk_out);
 		} else {
 			ret = usbh_transfer_process(host, bulk_out);
@@ -652,7 +652,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 		if (bulk_in->xfer_state == USBH_EP_XFER_START) {
 			bulk_in->xfer_buf = csw->data;
-			bulk_in->xfer_len = USB_MSC_CSW_LEN;
+			bulk_in->xfer_len = USBH_BOT_CSW_LENGTH;
 			ret = usbh_transfer_process(host, bulk_in);
 		} else {
 			/* Decode CSW */
@@ -702,7 +702,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 	case BOT_UNRECOVERED_ERROR:
 		setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-		setup.req.bRequest = USB_MSC_REQUEST_BOT_RESET;
+		setup.req.bRequest = USBH_MSC_BOT_RESET;
 		setup.req.wValue = 0U;
 		setup.req.wIndex = 0U;
 		setup.req.wLength = 0U;
@@ -886,12 +886,12 @@ int usbh_msc_init(usbh_msc_cb_t *cb)
 		msc->cb = cb;
 	}
 
-	msc->hbot.cbw = usb_os_malloc(USB_MSC_CBW_LEN);
+	msc->hbot.cbw = usb_os_malloc(USBH_BOT_CSW_LENGTH);
 	if (msc->hbot.cbw == NULL) {
 		return HAL_ERR_MEM;
 	}
 
-	msc->hbot.csw = usb_os_malloc(USB_MSC_CSW_LEN);
+	msc->hbot.csw = usb_os_malloc(USBH_BOT_CBW_LENGTH);
 	if (msc->hbot.csw == NULL) {
 		ret = HAL_ERR_MEM;
 		goto exit_free;
@@ -976,3 +976,4 @@ int usbh_msc_deinit(void)
 
 	return ret;
 }
+

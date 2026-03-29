@@ -36,42 +36,56 @@ rtos_event_bits_t rtos_event_group_wait_bits(rtos_event_group_t xEventGroup,
 			(TickType_t) RTOS_CONVERT_MS_TO_TICKS(MsToWait));
 }
 
-int rtos_event_group_clear_bits(rtos_event_group_t xEventGroup,
-								const rtos_event_bits_t uxBitsToClear)
+rtos_event_bits_t rtos_event_group_clear_bits(rtos_event_group_t xEventGroup,
+		const rtos_event_bits_t uxBitsToClear)
 {
-	BaseType_t ret = RTK_FAIL;
 	if (rtos_critical_is_in_interrupt()) {
-		ret = xEventGroupClearBitsFromISR((EventGroupHandle_t) xEventGroup,
-										  (const EventBits_t) uxBitsToClear);
-		/* xEventGroupClearBitsFromISR returns pdPASS on success, pdFAIL if timer queue is full */
-		return (ret == pdPASS) ? RTK_SUCCESS : RTK_FAIL;
+		return (rtos_event_bits_t) xEventGroupClearBitsFromISR((EventGroupHandle_t) xEventGroup,
+				(const EventBits_t) uxBitsToClear);
 	} else {
-		/* xEventGroupClearBits returns the previous value of event bits, not a status code.
-		 * The operation itself cannot fail in task context, so we always return success. */
-		(void) xEventGroupClearBits((EventGroupHandle_t) xEventGroup,
-									(const EventBits_t) uxBitsToClear);
-		return RTK_SUCCESS;
+		return (rtos_event_bits_t) xEventGroupClearBits((EventGroupHandle_t) xEventGroup,
+				(const EventBits_t) uxBitsToClear);
 	}
 }
 
-int rtos_event_group_set_bits(rtos_event_group_t xEventGroup,
-							  const rtos_event_bits_t uxBitsToSet)
+int rtos_event_group_clear_bits_from_isr(rtos_event_group_t xEventGroup,
+		const rtos_event_bits_t uxBitsToClear)
 {
-	BaseType_t ret = RTK_FAIL;
+	BaseType_t ret;
 	BaseType_t task_woken = pdFALSE;
 
-	if (rtos_critical_is_in_interrupt()) {
-		ret = xEventGroupSetBitsFromISR((EventGroupHandle_t) xEventGroup,
-										(const EventBits_t) uxBitsToSet, &task_woken);
-		portEND_SWITCHING_ISR(task_woken);
-		/* xEventGroupSetBitsFromISR returns pdPASS on success, pdFAIL if timer queue is full */
-		return (ret == pdPASS) ? RTK_SUCCESS : RTK_FAIL;
-	} else {
-		/* xEventGroupSetBits returns the new value of event bits, not a status code.
-		 * The operation itself cannot fail in task context, so we always return success. */
-		(void) xEventGroupSetBits((EventGroupHandle_t) xEventGroup,
-								  (const EventBits_t) uxBitsToSet);
+	ret = xEventGroupClearBitsFromISR((EventGroupHandle_t) xEventGroup,
+									  (const EventBits_t) uxBitsToClear);
+	portEND_SWITCHING_ISR(task_woken);
+
+	if (ret == pdTRUE) {
 		return RTK_SUCCESS;
+	} else {
+		return RTK_FAIL;
+	}
+}
+
+rtos_event_bits_t rtos_event_group_set_bits(rtos_event_group_t xEventGroup,
+		const rtos_event_bits_t uxBitsToSet)
+{
+	return (rtos_event_bits_t) xEventGroupSetBits((EventGroupHandle_t) xEventGroup,
+			(const EventBits_t) uxBitsToSet);
+}
+
+int rtos_event_group_set_bits_from_isr(rtos_event_group_t xEventGroup,
+									   const rtos_event_bits_t uxBitsToSet)
+{
+	BaseType_t ret;
+	BaseType_t task_woken = pdFALSE;
+
+	ret = xEventGroupSetBitsFromISR((EventGroupHandle_t) xEventGroup,
+									(const EventBits_t) uxBitsToSet, &task_woken);
+	portEND_SWITCHING_ISR(task_woken);
+
+	if (ret == pdTRUE) {
+		return RTK_SUCCESS;
+	} else {
+		return RTK_FAIL;
 	}
 }
 

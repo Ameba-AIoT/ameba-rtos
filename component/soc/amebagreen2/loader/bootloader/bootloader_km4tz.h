@@ -24,10 +24,6 @@ void Boot_Fullmac_LoadIMGAll(void);
 void BOOT_FullSpeedCheck(u32 cpu_clk);
 void BOOT_ReasonSet(void);
 int BOOT_PSRAM_Init(void);
-void BOOT_Enable_NP(void);
-void Peripheral_Reset(void);
-bool BOOT_RRAM_InfoValid(void);
-void BOOT_Log_Init(void);
 
 #ifdef __cplusplus
 }

@@ -80,7 +80,7 @@ static int usbh_composite_uac_usb_status_check(void);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "UAC";
 
-/* USB Class Driver */
+/* USB Standard Device Descriptor */
 const usbh_class_driver_t usbh_composite_uac_driver = {
 	.attach = usbh_composite_uac_cb_attach,
 	.detach = usbh_composite_uac_cb_detach,

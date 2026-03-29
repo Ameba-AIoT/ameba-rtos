@@ -460,10 +460,7 @@ function(ameba_add_merge_module_library output_name output_path)
 endfunction()
 
 function(ameba_add_image name)
-    set(options
-        p_EXCLUDE_FROM_ALL
-        p_HIDE_FROM_ALL_PATH   # the image will not append to image_list
-    )
+    set(options p_EXCLUDE_FROM_ALL)
     set(oneValueArgs p_TYPE p_IMAGE_ALL)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "" ${ARGN})
     ameba_gen_wrap_name(${name} c_CURRENT_IMAGE)
@@ -519,9 +516,7 @@ function(ameba_add_image name)
     #Can be used to get target name of image1/image2/image2 somewhere else
     set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE_TYPE} "${c_CURRENT_IMAGE}")
     if (ARG_p_IMAGE_ALL)
-        if(NOT ARG_p_HIDE_FROM_ALL_PATH)
-            set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE_TYPE}_all "${c_SDK_IMAGE_TARGET_DIR}/${ARG_p_IMAGE_ALL}")
-        endif()
+        set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE_TYPE}_all "${c_SDK_IMAGE_TARGET_DIR}/${ARG_p_IMAGE_ALL}")
     endif()
     set(c_CURRENT_IMAGE ${c_CURRENT_IMAGE} PARENT_SCOPE)
     set(c_CURRENT_IMAGE_TYPE ${c_CURRENT_IMAGE_TYPE} PARENT_SCOPE)

@@ -7,7 +7,7 @@ CFLAGS += $(ccflags-y)
 
 LDFLAGS = -lpthread
 
-SRC_FILES = whc_host_app_api.c whc_host_app_ota.c  whc_host_app.c
+SRC_FILES = whc_host_app_api.c whc_host_app.c
 
 OBJ_FILES = $(SRC_FILES:.c=.o)
 

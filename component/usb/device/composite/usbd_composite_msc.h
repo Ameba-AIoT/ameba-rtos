@@ -11,19 +11,9 @@
 
 #include "usbd.h"
 #include "usbd_composite_config.h"
-#include "usb_msc.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
-/** @addtogroup USB_Device_API USB Device API
- *  @{
- */
-/** @addtogroup USB_Device_Constants USB Device Constants
- * @{
- */
-/** @addtogroup Device_Composite_MSC_Constants Device Composite MSC Constants
- * @{
- */
 #define COMP_MSC_TX_THREAD_PRIORITY             5U     /**< TX thread priority */
 #define COMP_MSC_RX_THREAD_PRIORITY             5U     /**< RX thread priority */
 
@@ -44,8 +34,21 @@
 #define COMP_MSC_RAM_DISK_SECTORS				(COMP_MSC_RAM_DISK_SIZE >> COMP_MSC_BLK_BITS) /**< Total number of sectors in RAM disk. */
 #endif
 
+/* MSC Request Codes */
+#define COMP_MSC_REQUEST_RESET					0xFF            /**< Bulk-Only Mass Storage Reset request. */
+#define COMP_MSC_REQUEST_GET_MAX_LUN			0xFE            /**< Get Max LUN request. */
+
 /* CBW/CSW configurations */
+#define COMP_MSC_CB_WRAP_LEN					31U            /**< Standard CBW length */
+#define COMP_MSC_CB_SIGN						0x43425355U    /**< Standard dCBWSignature, spells out USBC */
 #define COMP_MSC_MAX_DATA						256U
+#define COMP_MSC_CS_WRAP_LEN					13U            /**< Standard CSW length */
+#define COMP_MSC_CS_SIGN						0x53425355U    /**< Standard dCSWSignature, spells out 'USBS' */
+
+/* CSW Status Definitions */
+#define COMP_MSC_CSW_CMD_PASSED					0x00U          /**< The `pass` status of the command execution */
+#define COMP_MSC_CSW_CMD_FAILED					0x01U          /**< The `fail` status of the command execution */
+#define COMP_MSC_CSW_PHASE_ERROR				0x02U          /**< The `phase error` status of the command execution */
 
 /* BOT State */
 #define COMP_MSC_IDLE							0U             /* Idle state */
@@ -62,8 +65,6 @@
 
 /* Sense */
 #define COMP_MSC_SENSE_LIST_DEPTH               4U             /**< Depth of the SCSI sense data list. */
-/** @} End of Device_Composite_MSC_Constants group*/
-/** @} End of USB_Device_Constants group*/
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -97,15 +98,46 @@ typedef struct {
 	int(*disk_write)(u32 sector, const u8 *buffer, u32 count);
 } usbd_composite_msc_disk_ops_t;
 
+/* Command Block Wrapper */
+typedef struct {
+	u32 dCBWSignature;			/* CBW ID: 'USBC' */
+	u32 dCBWTag;				/* A Command Block Tag sent by the host, unique per command id */
+	u32 dCBWDataTransferLength;	/* The number of bytes of data that the host expects to transfer */
+	u8 bmCBWFlags;				/* Data transfer direction */
+	u8 bCBWLUN;					/* The device Logical Unit Number to which the command block is being sent */
+	u8 bCBWCBLength;			/* The valid length of the CBWCB in bytes */
+	u8 CBWCB[16];				/* The command block to be executed by the device */
+} usbd_composite_msc_cbw_t;
+
+/* Command Status Wrapper */
+typedef struct {
+	u32 dCSWSignature;			/* CSW ID: 'USBS' */
+	u32 dCSWTag;				/* The device shall set this field to the value received in the dCBWTag of the associated CBW */
+	u32 dCSWDataResidue;		/* The amount of data not transferred, shall <= dCBWDataTransferLength */
+	u8 bCSWStatus;				/* Execute command status */
+} usbd_composite_msc_csw_t;
+
+/* SCSI Sense data */
+typedef struct {
+	char skey;				/* Sense key */
+	union {
+		struct _asc {
+			char asc;		/* additional sense code */
+			char ascq;		/* additional sense code qualifier */
+		} b;
+		u8 asc;				/* additional sense code */
+	} w;
+} usbd_composite_msc_scsi_sense_data_t;
+
 typedef struct {
 	usbd_ep_t ep_bulk_in;
 	usbd_ep_t ep_bulk_out;
 	usb_dev_t *dev;
 	usbd_composite_dev_t *cdev;
-	usb_msc_bot_cbw_t *cbw;
-	usb_msc_bot_csw_t *csw;
+	usbd_composite_msc_cbw_t *cbw;
+	usbd_composite_msc_csw_t *csw;
 	usbd_composite_msc_disk_ops_t disk_ops;
-	usb_msc_scsi_sense_data_t scsi_sense_data[COMP_MSC_SENSE_LIST_DEPTH];
+	usbd_composite_msc_scsi_sense_data_t scsi_sense_data[COMP_MSC_SENSE_LIST_DEPTH];
 	rtos_task_t rx_task;
 	rtos_sema_t rx_sema;
 	rtos_task_t tx_task;
@@ -144,12 +176,6 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev);
  */
 void usbd_composite_msc_deinit(void);
 
-/** @addtogroup USB_Device_Functions USB Device Functions
- * @{
- */
-/** @addtogroup Device_Composite_MSC_Functions Device Composite MSC Functions
- * @{
- */
 /**
  * @brief Initializes the underlying storage disk.
  * @return 0 on success, non-zero on failure.
@@ -161,8 +187,5 @@ int usbd_composite_msc_disk_init(void);
  * @return 0 on success, non-zero on failure.
  */
 int usbd_composite_msc_disk_deinit(void);
-/** @} End of Device_Composite_MSC_Functions group */
-/** @} End of USB_Device_Functions group */
-/** @} End of USB_Device_API group */
 
 #endif // USBD_COMPOSITE_MSC_H

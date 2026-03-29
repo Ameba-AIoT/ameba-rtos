@@ -189,42 +189,6 @@ void whc_dev_api_send_to_host(u8 *data, u32 len)
 {
 	whc_dev_api_send_data(data, len);
 }
-
-/**
- * @brief  to send data to host
- * @param  data: data buf to be sent.
- * @param  len: data len to be sent.
- * @param  ret: return value buf.
- * @param  ret_len: return value len.
- * @return none.
- */
-void whc_dev_api_send_to_host_block(u8 *data, u32 len, uint8_t *ret, uint32_t ret_len)
-{
-	int val = -1;
-
-	if (ret && ret_len > 0) {
-		val = rtos_mutex_take(whc_cmdpath_data.whc_user_blocksend_mutex, 5000);
-		if (val != RTK_SUCCESS) {
-			RTK_LOGE(TAG_WLAN_INIC, "%s, fail to take mutex!!\n", __func__);
-			return;
-		} else {
-			whc_cmdpath_data.ret = ret;
-			whc_cmdpath_data.ret_len = ret_len;
-		}
-	}
-	whc_dev_api_send_data(data, len);
-	val = rtos_sema_take(whc_cmdpath_data.whc_user_blocksend_sema, 10000);
-	if (val != RTK_SUCCESS) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s, fail to take sema!!\n", __func__);
-		goto exit;
-	}
-
-exit:
-	whc_cmdpath_data.ret = NULL;
-	whc_cmdpath_data.ret_len = 0;
-	rtos_mutex_give(whc_cmdpath_data.whc_user_blocksend_mutex);
-}
-
 #endif
 
 /**

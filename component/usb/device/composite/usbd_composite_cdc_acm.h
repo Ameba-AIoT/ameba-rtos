@@ -15,16 +15,6 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/** @addtogroup USB_Device_API USB Device API
- *  @{
- */
-/** @addtogroup USB_Device_Constants USB Device Constants
- * @{
- */
-/** @addtogroup Device_Composite_CDC_ACM_Constants Composite CDC ACM Constants
- * @{
- */
-
 /**
  * @brief Configuration macro to enable or disable the CDC ACM notification endpoint.
  * @details Set to 1 to enable the Interrupt IN endpoint for sending notifications
@@ -35,17 +25,7 @@
 #define COMP_CDC_ACM_HS_INTR_IN_INTERVAL                 8U  /**< High-speed Interrupt IN endpoint polling interval. */
 #define COMP_CDC_ACM_FS_INTR_IN_INTERVAL                 8U  /**< Full-speed Interrupt IN endpoint polling interval. */
 
-/** @} End of Device_Composite_CDC_ACM_Constants group*/
-/** @} End of USB_Device_Constants group*/
-
 /* Exported types ------------------------------------------------------------*/
-
-/** @addtogroup USB_Device_Types USB Device Types
- * @{
- */
-/** @addtogroup Device_Composite_CDC_ACM_Types Composite CDC ACM Types
- * @{
- */
 
 /**
  * @brief User callback structure for CDC ACM events.
@@ -89,9 +69,6 @@ typedef struct {
 #endif
 } usbd_composite_cdc_acm_dev_t;
 
-/** @} End of Device_Composite_CDC_ACM_Types group*/
-/** @} End of USB_Device_Types group*/
-
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
@@ -100,26 +77,19 @@ extern const usbd_class_driver_t usbd_composite_cdc_acm_driver;
 
 /* Exported functions --------------------------------------------------------*/
 
-/** @addtogroup USB_Device_Functions USB Device Functions
- * @{
- */
-/** @addtogroup Device_Composite_CDC_ACM_Functions Composite CDC ACM Functions
- * @{
- */
-
 /**
  * @brief Initializes the CDC ACM composite function.
  * @param[in] cdev: Pointer to the composite device context.
  * @param[in] bulk_out_xfer_size: The desired transfer size for the Bulk OUT buffer.
  * @param[in] bulk_in_xfer_size: The desired transfer size for the Bulk IN buffer.
  * @param[in] cb: Pointer to the user callback structure.
- * @return 0 on success, non-zero on failure.
+ * @return 0 on success, a negative error code on failure.
  */
 int usbd_composite_cdc_acm_init(usbd_composite_dev_t *cdev, u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, usbd_composite_cdc_acm_usr_cb_t *cb);
 
 /**
  * @brief De-initializes the CDC ACM composite function.
- * @return 0 on success, non-zero on failure.
+ * @return 0 on success, a negative error code on failure.
  */
 int usbd_composite_cdc_acm_deinit(void);
 
@@ -127,21 +97,18 @@ int usbd_composite_cdc_acm_deinit(void);
  * @brief Transmits data over the CDC ACM Bulk IN endpoint.
  * @param[in] buf: Pointer to the data buffer to be transmitted.
  * @param[in] len: Length of the data in bytes.
- * @return 0 on success, non-zero on failure.
+ * @return 0 on success, a negative error code on failure.
  */
 int usbd_composite_cdc_acm_transmit(u8 *buf, u32 len);
 
 #if CONFIG_COMP_CDC_ACM_NOTIFY
 /**
  * @brief Sends a SERIAL_STATE notification to the host over the CDC ACM Interrupt IN endpoint..
- * @param[in] serial_state: A bitmap of the serial line states (see @ref USB_CDC_ACM_CTRL_DCD, etc.).
- * @return 0 on success, non-zero on failure.
+ * @param[in] serial_state: A bitmap of the serial line states (see @ref COMP_CDC_ACM_CTRL_DCD, etc.).
+ * @return 0 on success, a negative error code on failure.
  */
 int usbd_composite_cdc_acm_notify_serial_state(u16 serial_state);
 #endif
 
-/** @} End of Device_Composite_CDC_ACM_Functions group */
-/** @} End of USB_Device_Functions group */
-/** @} End of USB_Device_API group */
-
 #endif  /* USBD_COMPOSITE_CDC_ACM_H */
+

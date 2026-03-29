@@ -27,7 +27,6 @@
  * @brief	A module for tracing heap status for FreeRTOS.
  */
 
-#include <assert.h>
 #include "ameba_soc.h"
 #include "stdio.h"
 #include "stdint.h"

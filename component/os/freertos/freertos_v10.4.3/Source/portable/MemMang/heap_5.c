@@ -70,7 +70,9 @@
 #include <stdlib.h>
 #include "ameba.h"
 
+#if defined (CONFIG_HEAP_PROTECTOR) && (CONFIG_HEAP_PROTECTOR== 1)
 #include "heap_trace.h"
+#endif
 
 /* Defining MPU_WRAPPERS_INCLUDED_FROM_API_FILE prevents task.h from redefining
  * all the API functions to use the MPU wrappers.  That should only be done when
@@ -1242,8 +1244,8 @@ void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize)
 	return p;
 }
 
-/* Use global variables to reduce stack usage. */
-static HeapStats_t FailHookHeapStats;
+
+#if defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAD) || defined (CONFIG_RTL8720F)
 __attribute__((optimize("O0")))
 void vApplicationMallocFailedHook(size_t xWantedSize)
 {
@@ -1266,21 +1268,13 @@ void vApplicationMallocFailedHook(size_t xWantedSize)
 	taskENTER_CRITICAL();
 
 	/* 1. Basic info: Task name / Free Heap Size / WantedSize */
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], ", core_name, pcCurrentTask);
-	/* Use two lines of printing to reduce stack usage. */
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[xWantedSize:%u]\r\n", xWantedSize);
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], [free heap size: %d] [xWantedSize:%u]\r\n",
+			core_name, pcCurrentTask, xPortGetFreeHeapSize(), xWantedSize);
 
+#if defined (CONFIG_HEAP_PROTECTOR) && (CONFIG_HEAP_PROTECTOR== 1)
+	rtos_heap_stats stats;
 	/* 2. Full heap status */
-	/* Avoid calling heap_get_stats to reduce stack usage. */
-	vPortGetHeapStats(&FailHookHeapStats);
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "AvailHeap: %u, MaxFreeBlock: %u, ",
-			FailHookHeapStats.xAvailableHeapSpaceInBytes,
-			FailHookHeapStats.xSizeOfLargestFreeBlockInBytes);
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Allocs: %u, Frees: %u\r\n",
-			FailHookHeapStats.xNumberOfSuccessfulAllocations,
-			FailHookHeapStats.xNumberOfSuccessfulFrees);
-	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "MinEverFree: %u\r\n",
-			FailHookHeapStats.xMinimumEverFreeBytesRemaining);
+    heap_get_stats(&stats);
 
 #if defined (CONFIG_HEAP_TRACE) && (CONFIG_HEAP_TRACE == 1)
 	/* 3. Task heap useage */
@@ -1305,7 +1299,9 @@ void vApplicationMallocFailedHook(size_t xWantedSize)
 	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n");
 #endif /* CONFIG_ARM_CORE_CM4 || CONFIG_RSICV_CORE_KR4 */
 #endif /* CONFIG_HEAP_TRACE */
+#endif /* CONFIG_HEAP_PROTECTOR */
 	for (;;);
 }
+#endif
 
 /*-----------------------------------------------------------*/

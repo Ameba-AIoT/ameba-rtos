@@ -56,3 +56,4 @@ u16 usbh_composite_acm_ecm_get_device_pid(void);
 u8 usbh_composite_acm_ecm_is_ready(void);
 
 #endif  /* USBH_COMPOSITE_CDC_ACM_ECM_H */
+

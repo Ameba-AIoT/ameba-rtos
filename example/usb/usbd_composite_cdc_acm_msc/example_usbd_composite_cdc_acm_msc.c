@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------ */
 
 #include <platform_autoconf.h>
+#include "usbd.h"
 #include "usbd_composite_cdc_acm_msc.h"
 #include "os_wrapper.h"
 #ifdef CONFIG_USBD_COMPOSITE_MSC_SECOND_FLASH
@@ -167,18 +168,22 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_CDC_ACM_SET_COMM_FEATURE:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_SET_COMM_FEATURE\n");
 		/* Do nothing */
 		break;
 
 	case USB_CDC_ACM_GET_COMM_FEATURE:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_GET_COMM_FEATURE\n");
 		/* Do nothing */
 		break;
 
 	case USB_CDC_ACM_CLEAR_COMM_FEATURE:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_CLEAR_COMM_FEATURE\n");
 		/* Do nothing */
 		break;
 
 	case USB_CDC_ACM_SET_LINE_CODING:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_SET_LINE_CODING\n");
 		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
 			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
 			lc->b.bCharFormat = buf[4];
@@ -190,6 +195,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_CDC_ACM_GET_LINE_CODING:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_GET_LINE_CODING\n");
 		buf[0] = (u8)(lc->b.dwDteRate & 0xFF);
 		buf[1] = (u8)((lc->b.dwDteRate >> 8) & 0xFF);
 		buf[2] = (u8)((lc->b.dwDteRate >> 16) & 0xFF);
@@ -200,6 +206,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_SET_CONTROL_LINE_STATE\n");
 		/*
 		wValue:	wValue, Control Signal Bitmap
 				D2-15:	Reserved, 0
@@ -369,3 +376,4 @@ void example_usbd_composite(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD COMP thread fail\n");
 	}
 }
+

@@ -151,26 +151,11 @@ def main(argc, argv):
     if args.target:
         build_cmd += f' --target {args.target}'
 
-    # --- 8. Remove Old code_size.json Before Build ---
-    if args.build_dir:
-        old_file = os.path.join(os.path.dirname(args.build_dir), 'code_size.json')
-        if os.path.exists(old_file):
-            os.remove(old_file)
-
     # Execute Final Build
     if run_command(build_cmd) != 0:
         print('\033[31mError: Fail to build application\033[0m')
         # Return code will be truncated, e.g.: 256 => 0, so the raw return code will not be used
         sys.exit(1)
-
-    # --- Summary Code Size Result ---
-    if args.build_dir:
-        summary_script = os.path.join(os.path.dirname(args.build_dir), '../utils/code_analyze/code_analyze_summary.py')
-        if os.path.exists(summary_script):
-            code_size_json = os.path.join(os.path.dirname(args.build_dir), 'code_size.json')
-            run_summary_cmd = f'python "{summary_script}" "{code_size_json}"'
-            if run_command(run_summary_cmd) != 0:
-                print('\033[31mError: Fail to summary code size\033[0m')
 
     print('\033[32mBuild done\033[0m')
 

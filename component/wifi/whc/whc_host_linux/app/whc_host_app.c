@@ -16,12 +16,12 @@
 
 #include <whc_host_app_api.h>
 #include <whc_host_netlink.h>
-#include <whc_host_app_ota.h>
 
 //#define WHC_AUTO_SETTING	1
+//#define CONFIG_RMESH
 
 #ifdef CONFIG_RMESH
-#define SOCK_FD_NUM 4
+#define SOCK_FD_NUM 3
 #else
 #define SOCK_FD_NUM 2
 #endif
@@ -44,12 +44,6 @@ uint8_t rmesh_server_ip[4];
 #define RMESH_PC_IP_ENTRY 2
 #define RMESH_PC_PORT_ENTRY 3
 #define RMESH_BCMC_PORT 12345
-
-// for ota
-int rmesh_ota_socketfd;
-#define RMESH_UNICAST_PORT 54321
-uint8_t rmesh_self_mac[2][6];
-uint8_t rmesh_ap_gw[4];
 #endif
 
 void whc_host_rx_buf_hdl(struct msgtemplate *msg);
@@ -72,7 +66,6 @@ static struct whc_host_command_entry cmd_table[] = {
 	{"connect", whc_host_wifi_connect},
 	{"iwpriv", whc_host_wifi_mp},
 	{"dbg", whc_host_wifi_dbg},
-	{"ota", whc_host_ota},
 	{NULL, NULL}
 };
 
@@ -652,17 +645,11 @@ void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 				printf("MAC ADDR %02x:%02x:%02x:%02x:%02x:%02x\n", pos[2], pos[3], pos[4], pos[5], pos[6], pos[7]);
 				snprintf(mac, sizeof(mac) - 1, "%02x:%02x:%02x:%02x:%02x:%02x", pos[2], pos[3], pos[4], pos[5], pos[6], pos[7]);
 				whc_host_set_mac_internal(idx, mac);
-#ifdef CONFIG_RMESH
-				memcpy(rmesh_self_mac[pos[1]], &pos[2], 6);
-#endif
 				break;
 			case WHC_WIFI_TEST_GET_IP:
 				printf("IP ADDR %d.%d.%d.%d GW %d %d %d %d\n", pos[1], pos[2], pos[3], pos[4], pos[5], pos[6], pos[7], pos[8]);
 #ifdef WHC_AUTO_SETTING
 				whc_host_init_ip(&pos[1]);
-#endif
-#ifdef CONFIG_RMESH
-				memcpy(rmesh_ap_gw, &pos[5], 4);
 #endif
 				break;
 			case WHC_WIFI_TEST_SCAN_RESULT:
@@ -670,9 +657,6 @@ void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 				break;
 			case WHC_WIFI_TEST_MP:
 				whc_host_mp_result(pos + sizeof(uint32_t));
-				break;
-			case WHC_WIFI_TEST_OTA:
-				whc_host_ota_from_dev(pos);
 				break;
 			default:
 				break;
@@ -701,8 +685,6 @@ int main(void)
 #ifdef CONFIG_RMESH
 	struct sockaddr_in bcmc_addr;
 	int rmesh_bcmc_sock;
-
-	struct sockaddr_in server_addr;
 #endif
 	printf("Waiting for message from kernel or input command from user space\n");
 
@@ -738,19 +720,6 @@ int main(void)
 	if (bind(rmesh_bcmc_sock, (struct sockaddr *)&bcmc_addr, sizeof(bcmc_addr)) < 0) {
 		printf("UDP bind error");
 	}
-
-	rmesh_ota_socketfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (rmesh_ota_socketfd < 0) {
-		printf("rmesh ota socket create fail\n");
-	}
-	memset(&server_addr, 0, sizeof(server_addr));
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	server_addr.sin_port = htons(RMESH_UNICAST_PORT);
-	if (bind(rmesh_ota_socketfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-		perror("rmesh_ota_socketfd Bind failed");
-		close(rmesh_ota_socketfd);
-	}
 #endif
 
 	while (1) {
@@ -763,8 +732,6 @@ int main(void)
 #ifdef CONFIG_RMESH
 		fds[2].fd = rmesh_bcmc_sock;
 		fds[2].events = POLLIN;  // Monitor for standard input
-		fds[3].fd = rmesh_ota_socketfd;
-		fds[3].events = POLLIN;  // Monitor for ota input
 #endif
 		int ret = poll(fds, SOCK_FD_NUM, -1);  // Block until a file descriptor is ready
 		if (ret > 0) {
@@ -789,16 +756,6 @@ int main(void)
 				rx_len = recvfrom(rmesh_bcmc_sock, msg.buf, MAX_MSG_SIZE, 0, (struct sockaddr *)&from, &fromlen);
 				if (rx_len >= 23) {
 					whc_host_rmesh_bcmc_sock_hdl(&msg);
-				}
-			}
-			if (fds[3].revents & POLLIN) {
-				struct sockaddr_in from_ota;
-				socklen_t fromotalen = sizeof(from_ota);
-				rx_len = recvfrom(rmesh_ota_socketfd, msg.buf, MAX_MSG_SIZE, 0, (struct sockaddr *)&from_ota, &fromotalen);
-				if (rx_len > 5) {
-					whc_host_rmesh_ota_sock_hdl(&msg, rx_len);
-				} else if (rx_len < 0) {
-					perror("rmesh_ota_socketfd recv error\r\n");
 				}
 			}
 #endif

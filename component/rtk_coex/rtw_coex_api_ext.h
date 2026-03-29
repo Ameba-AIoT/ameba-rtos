@@ -37,9 +37,6 @@ static inline struct port_pin_t get_port_pin_from_name(char *pin_name)
 		port = PAD_PORT_B; //PORT_B
 	} else if (strstr(pin_name, "PC_") != NULL) {
 		port = PAD_PORT_C; //PORT_C
-	} else if (strstr(pin_name, "PF_") != NULL) {
-		port = PAD_PORT_F; //PORT_F
-
 	} else {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[COEX][EXT] !!!!!!!!!! error pin name, SHOULD be like PA_3 !!!!!!!!!!!");
 		return pad_port;

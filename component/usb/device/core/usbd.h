@@ -14,15 +14,6 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/** @addtogroup USB_Device_API USB Device API
- *  @{
- */
-/** @addtogroup USB_Device_Constants USB Device Constants
- * @{
- */
-/** @addtogroup Device_Core_Constants Device Core Constants
- * @{
- */
 #define USBD_TP_TRACE_DEBUG             1U  /**<This define is used to trace transfer performance */
 
 /* USB descriptor configurations */
@@ -48,19 +39,11 @@
 #define USBD_EOPF_INTR                  (BIT1) /**< End of Periodic Frame Interrupt (GINTSTS.EOPF). */
 #define USBD_EPMIS_INTR                 (BIT2) /**< Endpoint Mismatch Interrupt (GINTSTS.EPMis). */
 /** @} */
-/** @} End of Device_Core_Constants group*/
-/** @} End of USB_Device_Constants group*/
 
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
 
-/** @addtogroup USB_Device_Types USB Device Types
- * @{
- */
-/** @addtogroup Device_Core_Types Device Core Types
- * @{
- */
 /**
  * @brief USB device state.
  */
@@ -307,22 +290,16 @@ typedef struct _usbd_class_driver_t {
 	 * @param[in] dev: USB device.
 	 * @param[in] old_status: Previous status of USB device.
 	 * @param[in] status: Current status of USB device.
+	 * @return None
 	 */
 	void (*status_changed)(usb_dev_t *dev, u8 old_status, u8 status);
 } usbd_class_driver_t;
-/** @} End of Device_Core_Types group*/
-/** @} End of USB_Device_Types group*/
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
-/** @addtogroup USB_Device_Functions USB Device Functions
- * @{
- */
-/** @addtogroup Device_Core_Functions_For_Applications Device Core Functions For Applications
- * @{
- */
+/* API for application */
 /**
  * @brief Initialize USB device core driver with configuration.
  * @param[in] cfg: USB device configuration.
@@ -358,11 +335,8 @@ int usbd_get_bus_status(u32 *status);
  * @return 0 on success, non-zero on failure.
  */
 int usbd_wake_host(void);
-/** @} End of Device_Core_Functions_For_Applications group */
 
-/** @addtogroup Device_Core_Functions_For_Classes Device Core Functions For Classes
- * @{
- */
+/* API for class */
 /**
  * @brief Register a device class driver, called in class initialization function.
  * @param[in] driver: USB class driver.
@@ -461,8 +435,5 @@ int usbd_ep_is_stall(usb_dev_t *dev, usbd_ep_t *ep);
  */
 u16 usbd_get_str_desc(const char *str, u8 *desc);
 
-/** @} End of Device_Core_Functions_For_Classes group */
-/** @} End of USB_Device_Functions group */
-/** @} End of USB_Device_API group */
-
 #endif /* USBD_H */
+

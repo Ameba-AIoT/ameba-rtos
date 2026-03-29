@@ -170,7 +170,7 @@ static void usbh_composite_cdc_ecm_debug_task_deinit(void);
 
 static const char *const TAG = "ECMH";
 
-/* USB Class Driver */
+/* USB Standard Device Descriptor */
 const usbh_class_driver_t usbh_composite_cdc_ecm_driver = {
 	.attach  = usbh_composite_cdc_ecm_attach,
 	.detach  = usbh_composite_cdc_ecm_detach,

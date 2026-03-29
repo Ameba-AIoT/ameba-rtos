@@ -79,14 +79,6 @@ char ex_spdio_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type)
 	u32 space;
 
 	if (g_tt_mode) {
-		if (size > RingBuffer_Size(atcmd_tt_mode_rx_ring_buf)) {
-			g_tt_mode_stop_flag = 1;
-			g_tt_mode_stop_char_cnt = 0;
-			rtos_sema_give(atcmd_tt_mode_sema);
-			RTK_LOGE(TAG, "recv_len is larger than tt mode buffer size\n");
-			goto exit;
-		}
-
 		space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
 
 		if (g_tt_mode_check_watermark) {
@@ -139,7 +131,6 @@ char ex_spdio_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type)
 		}
 	}
 
-exit:
 	// manage rx_buf here
 	rtos_mem_free((char *)rx_buf->buf_allocated);
 
@@ -344,3 +335,4 @@ int atio_sdio_init(void)
 
 	return 0;
 }
+

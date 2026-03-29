@@ -24,7 +24,7 @@
 /*
  * we select different Mbedtls configuration files according to different target.
  */
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2) || defined(CONFIG_AMEBAPRO3)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2)
 #include "ameba.h"
 #include "mbedtls/mbedtls_config_green2.h"
 #elif defined(CONFIG_RTL8720F)

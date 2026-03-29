@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------ */
 
 #include <platform_autoconf.h>
+#include "usbd.h"
 #include "usbd_msc.h"
 #include "os_wrapper.h"
 #if defined(CONFIG_AMEBASMART)

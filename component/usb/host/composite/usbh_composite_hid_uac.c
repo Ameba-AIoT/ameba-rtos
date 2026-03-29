@@ -36,7 +36,7 @@ static const usbh_dev_id_t composite_devs[] = {
 	},
 };
 
-/* USB Class driver */
+/* USB Standard Device Descriptor */
 static usbh_class_driver_t usbh_composite_driver = {
 	.id_table = composite_devs,
 	.attach = usbh_composite_hid_uac_cb_attach,
@@ -228,7 +228,7 @@ static int usbh_composite_hid_uac_cb_process(usb_host_t *host, u32 msg)
 /* Exported functions --------------------------------------------------------*/
 
 /**
-  * @brief  Init composite class
+  * @brief  Init uac class
   * @param  cb: User callback
   * @retval Status
   */
@@ -263,7 +263,7 @@ int usbh_composite_init(usbh_composite_hid_usr_cb_t *hid_cb, usbh_composite_uac_
 }
 
 /**
-  * @brief  Deinit composite class
+  * @brief  Deinit uac class
   * @retval Status
   */
 int usbh_composite_deinit(void)

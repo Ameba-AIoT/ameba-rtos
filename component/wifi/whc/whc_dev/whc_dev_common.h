@@ -65,7 +65,5 @@ enum WHC_WIFI_CTRL_TYPE {
 #include "wpas_std_wifi_intf.h"
 #endif //CONFIG_WPA_STD
 
-#ifdef CONFIG_WHC_CMD_PATH
-#include "whc_dev_app.h"
-#endif
+
 #endif /* __WHC_DEV_COMMON_H__ */

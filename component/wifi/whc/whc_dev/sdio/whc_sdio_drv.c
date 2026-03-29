@@ -52,15 +52,15 @@ static char whc_sdio_dev_tx_done_cb(void *priv, void *pbuf)
 {
 	UNUSED(priv);
 	struct spdio_buf_t *tx_buf = (struct spdio_buf_t *)pbuf;
-	struct whc_txbuf_info_t *whc_tx = container_of(tx_buf, struct whc_txbuf_info_t, txbuf_info);
+	struct whc_txbuf_info_t *inic_tx = container_of(tx_buf, struct whc_txbuf_info_t, txbuf_info);
 
-	if (whc_tx->is_skb) {
-		dev_kfree_skb_any((struct sk_buff *) whc_tx->ptr);
+	if (inic_tx->is_skb) {
+		dev_kfree_skb_any((struct sk_buff *) inic_tx->ptr);
 	} else {
-		rtos_mem_free((u8 *)whc_tx->ptr);
+		rtos_mem_free((u8 *)inic_tx->ptr);
 	}
 
-	rtos_mem_free((u8 *)whc_tx);
+	rtos_mem_free((u8 *)inic_tx);
 
 	rtos_sema_give(sdio_priv.rxbd_release_sema);
 
@@ -223,7 +223,7 @@ u8 whc_sdio_dev_tx_path_avail(void)
 
 void whc_sdio_dev_send_data(u8 *data, u32 len)
 {
-	struct whc_txbuf_info_t *whc_tx = NULL;
+	struct whc_txbuf_info_t *inic_tx = NULL;
 	u8 *buf = NULL;
 
 	buf = rtos_mem_zmalloc(len);
@@ -233,22 +233,22 @@ void whc_sdio_dev_send_data(u8 *data, u32 len)
 		return;
 	}
 
-	whc_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
-	if (!whc_tx) {
+	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
+	if (!inic_tx) {
 		rtos_mem_free(buf);
 		return;
 	}
 
 	memcpy(buf, data, len);
 
-	whc_tx->txbuf_info.buf_allocated = whc_tx->txbuf_info.buf_addr = (u32)buf;
-	whc_tx->txbuf_info.size_allocated = whc_tx->txbuf_info.buf_size = len;
+	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)buf;
+	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = len;
 
-	whc_tx->ptr = buf;
-	whc_tx->is_skb = 0;
+	inic_tx->ptr = buf;
+	inic_tx->is_skb = 0;
 
 	/* buf free in sdio send done callback */
-	whc_sdio_dev_send(&whc_tx->txbuf_info);
+	whc_sdio_dev_send(&inic_tx->txbuf_info);
 
 	return;
 

@@ -286,7 +286,6 @@ enum PORT_e {
 	PAD_PORT_A = 0,
 	PAD_PORT_B = 1,
 	PAD_PORT_C = 2,
-	PAD_PORT_F = 5,
 };
 /**
  * @struct   port_pin_t

@@ -325,7 +325,7 @@ u32 pmc_wakeuptimer_int_hdl(void *Data)
 
 void pmu_init_wakeup_timer(void)
 {
-	InterruptRegister(pmc_wakeuptimer_int_hdl, PMC_TIMER_IRQ, 0, PMC_TIMER_INT_PRIO);
+	InterruptRegister(pmc_wakeuptimer_int_hdl, PMC_TIMER_IRQ, NULL, PMC_TIMER_INT_PRIO);
 	InterruptEn(PMC_TIMER_IRQ, PMC_TIMER_INT_PRIO);
 	PMCTimer_INTConfig(PMC_TIMER_DEV, PMC_WAKEUP_TIMER, ENABLE);
 }
