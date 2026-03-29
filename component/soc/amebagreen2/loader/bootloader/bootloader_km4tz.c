@@ -331,7 +331,7 @@ void Peripheral_Reset(void)
 }
 
 /* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
-static bool BOOT_RRAM_InfoValid(void)
+bool BOOT_RRAM_InfoValid(void)
 {
 	if (RRAM_DEV->MAGIC_NUMBER != 0x6969A5A5) {
 		return FALSE;
@@ -468,11 +468,7 @@ extern void z_arm_reset(void);
 IMAGE1_ENTRY_SECTION
 RAM_FUNCTION_START_TABLE RamStartTable = {
 	.RamStartFun = NULL,
-#ifdef __ZEPHYR__
-	.RamWakeupFun = NULL,
-#else
 	.RamWakeupFun = BOOT_WakeFromPG,
-#endif
 	.RamPatchFun0 = NULL,
 	.RamPatchFun1 = NULL,
 	.RamPatchFun2 = NULL,

@@ -497,7 +497,7 @@ void at_mdns(u16 argc, char **argv)
 			protocol = DNSSD_PROTO_TCP;
 		}
 
-		if (argc > 8) {
+		if (argc >= 8) {
 			if (strlen(argv[7])) {
 				if (atoi(argv[7]) > 6 || atoi(argv[7]) < 1) {
 					RTK_LOGE(NOTAG, "[at_mdns] txt_record_cnt must be 1~6\r\n");
@@ -567,13 +567,13 @@ void at_mdns(u16 argc, char **argv)
 			mdns_enable_state = MDNS_DISABLE;
 		}
 
-		if (mdns_resp_add_netif(pnetif_sta, hostname, 30)) {
+		if (mdns_resp_add_netif(pnetif_sta, hostname, 120)) {
 			error_no = 5;
 			RTK_LOGE(NOTAG, "[at_mdns]mdns_resp_add_netif fail \r\n");
 			goto end;
 		}
 
-		if (mdns_resp_add_service(pnetif_sta, service_name, service_type, protocol, port, 30, srv_txt, mdns_txt_record)) {
+		if (mdns_resp_add_service(pnetif_sta, service_name, service_type, protocol, port, 120, srv_txt, mdns_txt_record)) {
 			error_no = 5;
 			RTK_LOGE(NOTAG, "[at_mdns]mdns_resp_add_service fail \r\n");
 			goto end;
@@ -696,7 +696,7 @@ void at_sntpcfg(u16 argc, char **argv)
 	// interval parameter
 	if (argc >= 4 && strlen(argv[3]) > 0) {
 		interval_sec = atoi(argv[3]);
-		if (interval_sec <= 15) {
+		if (interval_sec < 15) {
 			RTK_LOGE(NOTAG, "[+SNTPCFG] Interval must be greater than 15 seconds\r\n");
 			error_no = 2;
 			goto end;
@@ -830,9 +830,13 @@ end:
 
 void at_sntptime(u16 argc, char **argv)
 {
-	UNUSED(argc);
 	UNUSED(argv);
 	int error_no = 0;
+
+	if (argc != 1) {
+		error_no = 1;
+		goto end;
+	}
 
 	time_t now;
 	struct tm timeinfo;
@@ -863,6 +867,7 @@ void at_sntptime(u16 argc, char **argv)
 			  timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
 			  timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, tz_display);
 
+end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {

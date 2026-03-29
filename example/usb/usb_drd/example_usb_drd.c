@@ -8,8 +8,6 @@
 
 #include <platform_autoconf.h>
 #include "os_wrapper.h"
-#include "usbd.h"
-#include "usbh.h"
 #include "usbd_msc.h"
 #include "usbh_msc.h"
 #include "vfs_fatfs.h"
@@ -355,4 +353,3 @@ void example_usb_drd(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USB DRD thread fail\n");
 	}
 }
-

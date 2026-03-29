@@ -11,8 +11,6 @@
 extern "C" {
 #endif
 
-#include <stdlib.h>
-
 /**
   * @brief  OTA Image ID
   */

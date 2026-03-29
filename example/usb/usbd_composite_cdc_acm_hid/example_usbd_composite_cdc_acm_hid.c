@@ -7,7 +7,6 @@
 /* Includes ------------------------------------------------------------------ */
 
 #include <platform_autoconf.h>
-#include "usbd.h"
 #include "usbd_composite_cdc_acm_hid.h"
 #include "os_wrapper.h"
 

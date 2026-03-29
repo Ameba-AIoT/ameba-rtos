@@ -53,7 +53,7 @@ static int usbh_composite_hid_cb_sof(usb_host_t *host);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "HID";
 
-/* USB Standard Device Descriptor */
+/* USB Class Driver */
 const usbh_class_driver_t usbh_composite_hid_driver = {
 	.attach = usbh_composite_hid_cb_attach,
 	.detach = usbh_composite_hid_cb_detach,

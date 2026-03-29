@@ -11,13 +11,19 @@
 
 #include "usbh.h"
 #include "usbh_msc_disk.h"
+#include "usb_msc.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
-/* MSC Class Request Codes */
-#define USBH_MSC_BOT_RESET                        0xFFU       /**< MSC reset request code. */
-#define USBH_MSC_GET_MAX_LUN                      0xFEU       /**< MSC get maximum LUN request code. */
-
+/** @addtogroup USB_Host_API USB Host API
+ *  @{
+ */
+/** @addtogroup USB_Host_Constants USB Host Constants
+ * @{
+ */
+/** @addtogroup Host_MSC_Constants Host MSC Constants
+ * @{
+ */
 /* MSC Class Codes */
 #define MSC_CLASS_CODE                            0x08U       /**< MSC interface class code. */
 
@@ -25,12 +31,6 @@
 #define USBH_MSC_BOT                              0x50U       /**< MSC `Bulk-Only Transport` interface protocol code. */
 #define USBH_MSC_TRANSPARENT                      0x06U       /**< MSC `SCSI Transparent Command Set` interface sub-class code. */
 
-/* Bulk Only Transport: CBW & CSW */
-#define USBH_BOT_CBW_SIGNATURE                    0x43425355U /**< 'USBC' signature for the Command Block Wrapper (CBW). */
-#define USBH_BOT_CBW_TAG                          0x20304050U /**< A default tag for CBW, should be unique per command. */
-#define USBH_BOT_CSW_SIGNATURE                    0x53425355U /**< 'USBS' signature for the Command Status Wrapper (CSW). */
-#define USBH_BOT_CBW_LENGTH                       31U         /**< Length of a CBW in bytes. */
-#define USBH_BOT_CSW_LENGTH                       13U         /**< Length of a CSW in bytes. */
 #define USBH_BOT_DATA_LENGTH                      64U         /**< Generic data buffer length for small transfers. */
 
 #define USBH_MSC_MAX_LUN                          1U          /**< Maximum number of logical units (LUNs) supported. */
@@ -47,15 +47,6 @@ typedef enum {
 	BOT_CMD_SEND,               /**< BOT is sending a command. */
 	BOT_CMD_BUSY,               /**< BOT is busy processing a command. */
 } usbh_bot_cmd_state_t;
-
-/**
- * @brief BOT CSW status enumeration.
- */
-typedef enum {
-	BOT_CSW_CMD_PASSED = 0x00,  /**< Command completed successfully. */
-	BOT_CSW_CMD_FAILED = 0x01,  /**< Command failed. */
-	BOT_CSW_PHASE_ERROR = 0x02, /**< A phase error occurred in the BOT protocol. */
-} usbh_bot_csw_state_t;
 
 /**
  * @brief BOT state machine enumeration for data transfer phases.
@@ -106,43 +97,14 @@ typedef enum {
 } usbh_msc_req_state_t;
 
 /**
- * @brief Bulk-Only Transport (BOT) Command Block Wrapper (CBW) structure.
- */
-typedef union {
-	struct {
-		u32 Signature;          /**< CBW Signature, must be 'USBC' (0x43425355). */
-		u32 Tag;                /**< A unique tag to associate this CBW with its CSW. */
-		u32 DataTransferLength; /**< Number of bytes of data to be transferred. */
-		u8 Flags;               /**< Bit 7: 0=Out, 1=In. Other bits are reserved. */
-		u8 LUN;                 /**< The logical unit number this command is for. */
-		u8 CBLength;            /**< The length of the Command Block (CB) in bytes (1-16). */
-		u8 CB[16];              /**< The SCSI Command Block to be executed. */
-	} field;
-	u8 data[31];                /**< Byte array access to the entire CBW structure. */
-} usbh_bot_cbw_t;
-
-/**
- * @brief Bulk-Only Transport (BOT) Command Status Wrapper (CSW) structure.
- */
-typedef union {
-	struct {
-		u32 Signature;          /**< CSW Signature, must be 'USBS' (0x53425355). */
-		u32 Tag;                /**< The tag copied from the corresponding CBW. */
-		u32 DataResidue;        /**< The difference between expected and actual data transfer length. */
-		u8 Status;              /**< The status of the command execution (0=Pass, 1=Fail, 2=Phase Error). */
-	} field;
-	u8 data[13];                /**< Byte array access to the entire CSW structure. */
-} usbh_bot_csw_t;
-
-/**
  * @brief BOT protocol handler structure.
  * @details Manages the state and buffers for a single BOT transaction.
  */
 typedef struct {
 	usbh_bot_state_t state;         /**< Current state of the BOT state machine. */
 	usbh_bot_cmd_state_t cmd_state; /**< Current state of the command processing. */
-	usbh_bot_cbw_t *cbw;            /**< Pointer to the Command Block Wrapper. */
-	usbh_bot_csw_t *csw;            /**< Pointer to the Command Status Wrapper. */
+	usb_msc_bot_cbw_t *cbw;         /**< Pointer to the Command Block Wrapper. */
+	usb_msc_bot_csw_t *csw;         /**< Pointer to the Command Status Wrapper. */
 	u32 origin_tx_pbuf_len;         /**< Original length of the user's transmit buffer. */
 	u32 origin_rx_pbuf_len;         /**< Original length of the user's receive buffer. */
 	u8 *origin_tx_pbuf;             /**< Pointer to the original user transmit buffer. */
@@ -160,16 +122,6 @@ typedef struct {
 	u16 block_size;                 /**< Size of each logical block in bytes. */
 } usbh_scsi_capacity_t;
 
-/**
- * @brief SCSI sense data structure.
- * @details Holds the key information from a REQUEST SENSE command.
- */
-typedef struct {
-	u8 key;                         /**< Sense Key: The general category of the error. */
-	u8 asc;                         /**< Additional Sense Code: Provides more detail about the error. */
-	u8 ascq;                        /**< Additional Sense Code Qualifier: Provides even more detail. */
-} usbh_scsi_sense_t;
-
 /* INQUIRY data */
 typedef struct {
 	u8 PeripheralQualifier;
@@ -183,7 +135,7 @@ typedef struct {
 /* Structure for LUN */
 typedef struct {
 	usbh_scsi_capacity_t capacity;
-	usbh_scsi_sense_t sense;
+	usb_msc_scsi_sense_data_t sense;
 	usbh_scsi_inquiry_t inquiry;
 	usbh_msc_state_t state;
 	usbh_msc_error_t error;
@@ -191,6 +143,12 @@ typedef struct {
 	u8 state_changed;
 } usbh_msc_lun_t;
 
+/** @addtogroup USB_Host_Types USB Host Types
+ * @{
+ */
+/** @addtogroup Host_MSC_Types Host MSC Types
+ * @{
+ */
 /**
  * @brief MSC user callback structure.
  * @details This structure allows the user application to register callbacks for
@@ -213,6 +171,8 @@ typedef struct {
 	 */
 	int (*setup)(void);
 } usbh_msc_cb_t;
+/** @} End of Host_MSC_Types group*/
+/** @} End of USB_Host_Types group*/
 
 /**
  * @brief MSC host structure.
@@ -240,6 +200,12 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
+/** @addtogroup USB_Host_Functions USB Host Functions
+ * @{
+ */
+/** @addtogroup Host_MSC_Functions Host MSC Functions
+ * @{
+ */
 /**
  * @brief Initializes the MSC class driver with application callback handler.
  * @param[in] cb: Pointer to a user callback structure.
@@ -252,6 +218,9 @@ int usbh_msc_init(usbh_msc_cb_t *cb);
  * @return 0 on success, non-zero on failure.
  */
 int usbh_msc_deinit(void);
+/** @} End of Host_MSC_Functions group */
+/** @} End of USB_Host_Functions group */
+/** @} End of USB_Host_API group */
 
 /**
  * @brief Main processing function for the MSC BOT state machine.
@@ -309,4 +278,3 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length);
 int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length);
 
 #endif  /* USBH_MSC_H */
-

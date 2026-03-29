@@ -37,12 +37,13 @@ int ota_transport_read(ota_context_t *ctx, u8 *buf, int len)
 {
 	int bytes_read = -1;
 
-	if (ctx->fd == -1) {
+	if ((ctx->type != OTA_WHC) && (ctx->fd == -1)) {
 		RTK_LOGE(OTA_TAG, "[TRANSPORT] Invalid fd\n");
 		return -1;
 	}
 
 	switch (ctx->type) {
+#ifdef CONFIG_WHC_INTF_IPC
 	case OTA_HTTPS:
 	case OTA_HTTP:
 		bytes_read = ota_http_read(ctx, buf, len);
@@ -51,7 +52,7 @@ int ota_transport_read(ota_context_t *ctx, u8 *buf, int len)
 	case OTA_VFS:
 		bytes_read = ota_vfs_read(ctx, buf, len);
 		break;
-
+#endif
 	case OTA_USER:
 		if (ctx->user_read_func) {
 			bytes_read = ctx->user_read_func(buf, len);
@@ -59,6 +60,12 @@ int ota_transport_read(ota_context_t *ctx, u8 *buf, int len)
 			RTK_LOGE(OTA_TAG, "[TRANSPORT] user_read_func is null\n");
 		}
 		break;
+
+#ifdef CONFIG_WHC_CMD_PATH
+	case OTA_WHC:
+		bytes_read = ota_whc_read(ctx, buf, len);
+		break;
+#endif
 
 	default:
 		RTK_LOGE(OTA_TAG, "[TRANSPORT] Unsupported type: %d\n", ctx->type);
@@ -80,10 +87,18 @@ int ota_transport_connect(ota_context_t *ctx)
 	RTK_LOGI(OTA_TAG, "[TRANSPORT] Connecting...\n");
 
 	switch (ctx->type) {
+#ifdef CONFIG_WHC_INTF_IPC
 	case OTA_HTTP:
 	case OTA_HTTPS:
 		ret = ota_http_connect(ctx);
 		break;
+#endif
+
+#ifdef CONFIG_WHC_CMD_PATH
+	case OTA_WHC:
+		ret = ota_whc_connect(ctx);
+		break;
+#endif
 
 	case OTA_VFS:
 		ret = ota_vfs_open(ctx);
@@ -119,14 +134,21 @@ void ota_transport_disconnect(ota_context_t *ctx)
 	RTK_LOGI(OTA_TAG, "[TRANSPORT] Disconnecting...\n");
 
 	switch (ctx->type) {
+#ifdef CONFIG_WHC_INTF_IPC
 	case OTA_HTTP:
 	case OTA_HTTPS:
 		ota_http_close(ctx);
 		break;
-
+#endif
 	case OTA_VFS:
 		ota_vfs_close(ctx);
 		break;
+
+#ifdef CONFIG_WHC_CMD_PATH
+	case OTA_WHC:
+		ota_whc_close(ctx);
+		break;
+#endif
 
 	default:
 		break;
@@ -142,7 +164,7 @@ int ota_transport_init(ota_context_t *ctx, char *host, int port, char *resource)
 	}
 
 	/* 1. check host and redirect. Need for http and https */
-	if (ctx->type == OTA_HTTP || ctx->type == OTA_HTTPS) {
+	if (ctx->type == OTA_HTTP || ctx->type == OTA_HTTPS || ctx->type == OTA_WHC) {
 		if (!host) {
 			RTK_LOGE(OTA_TAG, "[Transport] host can't be null");
 			return OTA_ERR;

@@ -9,7 +9,6 @@
 #include <platform_autoconf.h>
 #include "platform_stdlib.h"
 #include "basic_types.h"
-#include "usbh.h"
 #include "os_wrapper.h"
 #include "ff.h"
 #include "vfs_fatfs.h"
@@ -319,4 +318,3 @@ void example_usbh_msc(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }
-

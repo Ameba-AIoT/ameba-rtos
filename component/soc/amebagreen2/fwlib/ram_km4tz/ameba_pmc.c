@@ -22,17 +22,17 @@
 PMC_ENTRY_SECTION
 void PMC_ENTRY SOCPS_SleepInitEntry(struct PSCFG_TypeDef *ps_config)
 {
-	/*1. Clock configuration*/
+	/*2. Clock configuration*/
 	SOCPS_ClockSourceConfig(ps_config->sleep_to_08V, ps_config->xtal_mode_in_sleep, ps_config->keep_osc4m_on);
 
-	/*2. Power settings*/
+	/*3. Power settings*/
 	SOCPS_PowerManage(ps_config->sleep_to_08V);
 
-	if (EFUSE_GetChipVersion() <= SYSCFG_CUT_VERSION_B) {
-		/* Timing fix: Delay at least 1T before pulling down rst_n to avoid postsim bit errors.
-		This problem is fixed in Bcut by modifying pmc rom code */
+	if (EFUSE_GetChipVersion() == SYSCFG_CUT_VERSION_A) {
+		/*Timing fix: Delay at least 1T before pulling down rst_n to avoid postsim bit errors.
+		This problem will be fixed in Bcut by modifying pmc rom code*/
 		SOCPS_FixSpicRetFailPatch();
-		/* disable wake status of USB */
+		/*disable wake status of USB*/
 		SOCPS_USBSuspendWakeControl(DISABLE);
 	}
 

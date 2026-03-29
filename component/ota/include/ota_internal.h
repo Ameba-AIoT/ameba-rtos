@@ -46,6 +46,7 @@ typedef enum {
 	OTA_HTTP = 1,  /* HTTP transport */
 	OTA_HTTPS = 2, /* HTTPS transport */
 	OTA_VFS = 3,   /* VFS file system */
+	OTA_WHC = 4,   /* FOR WHC */
 } ota_type_t;
 
 /**
@@ -291,6 +292,7 @@ int ota_http_connect(ota_context_t *ctx);
 void ota_http_close(ota_context_t *ctx);
 int ota_http_write(ota_context_t *ctx, u8 *buf, int len);
 int ota_http_read(ota_context_t *ctx, u8 *buf, int len);
+int ota_http_parse_response(ota_context_t *ctx, u8 *response, u32 response_len, ota_http_response_t *result);
 
 int ota_http_tls_init(ota_context_t *ctx);
 void ota_http_tls_free(ota_context_t *ctx);
@@ -301,6 +303,11 @@ int ota_http_tls_read(ota_context_t *ctx, u8 *buf, int len);
 int ota_vfs_open(ota_context_t *ctx);
 void ota_vfs_close(ota_context_t *ctx);
 int ota_vfs_read(ota_context_t *ctx, u8 *buf, int len);
+
+/* WHC */
+int ota_whc_connect(ota_context_t *ctx);
+int ota_whc_read(ota_context_t *ctx, u8 *buf, int len);
+void ota_whc_close(ota_context_t *ctx);
 
 void *rtos_mem_malloc(uint32_t size);
 void *rtos_mem_zmalloc(uint32_t size);

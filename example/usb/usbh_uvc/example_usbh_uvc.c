@@ -979,4 +979,3 @@ void example_usbh_uvc(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }
-

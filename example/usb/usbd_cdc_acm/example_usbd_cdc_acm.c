@@ -8,7 +8,6 @@
 
 #include <platform_autoconf.h>
 #include "basic_types.h"
-#include "usbd.h"
 #include "usbd_cdc_acm.h"
 #include "os_wrapper.h"
 
@@ -31,11 +30,11 @@
 #define CONFIG_USBD_CDC_ACM_ASYNC_XFER				0
 
 // Asynchronous transfer size
-#define CONFIG_CDC_ACM_ASYNC_BUF_SIZE				2048U
+#define CONFIG_USBD_CDC_ACM_ASYNC_BUF_SIZE			2048U
 
 // Do not change the settings unless indeed necessary
-#define CONFIG_CDC_ACM_BULK_IN_XFER_SIZE			2048U
-#define CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE			2048U
+#define CONFIG_USBD_CDC_ACM_BULK_IN_XFER_SIZE			2048U
+#define CONFIG_USBD_CDC_ACM_BULK_OUT_XFER_SIZE			2048U
 
 // Thread priorities
 #define CONFIG_CDC_ACM_INIT_THREAD_PRIORITY			5
@@ -75,7 +74,7 @@ static usbd_config_t cdc_acm_cfg = {
 	.intr_use_ptx_fifo  = 0U,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
-	.ext_intr_enable        = USBD_EPMIS_INTR,
+	.ext_intr_enable = USBD_EPMIS_INTR,
 #elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 644U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
@@ -91,7 +90,7 @@ static usbd_config_t cdc_acm_cfg = {
 
 #if CONFIG_USBD_CDC_ACM_ASYNC_XFER
 static u32 cdc_acm_xfer_idx = 0;
-static u8 cdc_acm_async_xfer_buf[CONFIG_CDC_ACM_ASYNC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 cdc_acm_async_xfer_buf[CONFIG_USBD_CDC_ACM_ASYNC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 static u16 cdc_acm_async_xfer_buf_pos = 0;
 static volatile int cdc_acm_async_xfer_busy = 0;
 static rtos_sema_t cdc_acm_async_xfer_sema;
@@ -151,13 +150,13 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 #if CONFIG_USBD_CDC_ACM_ASYNC_XFER
 	int ret = HAL_OK;
 	if (0 == cdc_acm_async_xfer_busy) {
-		if ((cdc_acm_async_xfer_buf_pos + len) > CONFIG_CDC_ACM_ASYNC_BUF_SIZE) {
-			len = CONFIG_CDC_ACM_ASYNC_BUF_SIZE - cdc_acm_async_xfer_buf_pos;  // extra data discarded
+		if ((cdc_acm_async_xfer_buf_pos + len) > CONFIG_USBD_CDC_ACM_ASYNC_BUF_SIZE) {
+			len = CONFIG_USBD_CDC_ACM_ASYNC_BUF_SIZE - cdc_acm_async_xfer_buf_pos;  // extra data discarded
 		}
 
 		memcpy((void *)((u32)cdc_acm_async_xfer_buf + cdc_acm_async_xfer_buf_pos), buf, len);
 		cdc_acm_async_xfer_buf_pos += len;
-		if (cdc_acm_async_xfer_buf_pos >= CONFIG_CDC_ACM_ASYNC_BUF_SIZE) {
+		if (cdc_acm_async_xfer_buf_pos >= CONFIG_USBD_CDC_ACM_ASYNC_BUF_SIZE) {
 			cdc_acm_async_xfer_buf_pos = 0;
 			rtos_sema_give(cdc_acm_async_xfer_sema);
 		}
@@ -318,16 +317,16 @@ static void cdc_acm_xfer_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(cdc_acm_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			xfer_len = CONFIG_CDC_ACM_ASYNC_BUF_SIZE;
+			xfer_len = CONFIG_USBD_CDC_ACM_ASYNC_BUF_SIZE;
 			xfer_buf = cdc_acm_async_xfer_buf;
 			cdc_acm_async_xfer_busy = 1;
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Start xfer(%dB) idx(%d)\n", CONFIG_CDC_ACM_ASYNC_BUF_SIZE, cdc_acm_xfer_idx);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Start xfer(%dB) idx(%d)\n", CONFIG_USBD_CDC_ACM_ASYNC_BUF_SIZE, cdc_acm_xfer_idx);
 			while (xfer_len > 0) {
-				if (xfer_len > CONFIG_CDC_ACM_BULK_IN_XFER_SIZE) {
-					ret = usbd_cdc_acm_transmit(xfer_buf, CONFIG_CDC_ACM_BULK_IN_XFER_SIZE);
+				if (xfer_len > CONFIG_USBD_CDC_ACM_BULK_IN_XFER_SIZE) {
+					ret = usbd_cdc_acm_transmit(xfer_buf, CONFIG_USBD_CDC_ACM_BULK_IN_XFER_SIZE);
 					if (ret == HAL_OK) {
-						xfer_len -= CONFIG_CDC_ACM_BULK_IN_XFER_SIZE;
-						xfer_buf += CONFIG_CDC_ACM_BULK_IN_XFER_SIZE;
+						xfer_len -= CONFIG_USBD_CDC_ACM_BULK_IN_XFER_SIZE;
+						xfer_buf += CONFIG_USBD_CDC_ACM_BULK_IN_XFER_SIZE;
 					} else { // HAL_BUSY
 						RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[1]\n");
 						rtos_time_delay_us(200);
@@ -378,7 +377,8 @@ static void example_usbd_cdc_acm_thread(void *param)
 		goto exit_usbd_init_fail;
 	}
 
-	ret = usbd_cdc_acm_init(CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE, CONFIG_CDC_ACM_BULK_IN_XFER_SIZE, &cdc_acm_cb);
+	ret = usbd_cdc_acm_init(CONFIG_USBD_CDC_ACM_BULK_OUT_XFER_SIZE, CONFIG_USBD_CDC_ACM_BULK_IN_XFER_SIZE, &cdc_acm_cb);
+
 	if (ret != HAL_OK) {
 		goto exit_usbd_cdc_acm_init_fail;
 	}

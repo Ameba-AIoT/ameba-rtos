@@ -34,14 +34,14 @@ void gpio_level_irq_handler(uint32_t id, uint32_t event)
 		// Change to listen to high level event
 		*level = IRQ_HIGH;
 		gpio_irq_set(&gpio_level, IRQ_HIGH, 1);
-		gpio_irq_pull_ctrl(&gpio_level, PullDown);
+		//gpio_irq_pull_ctrl(&gpio_level, GPIO_PuPd_DOWN);
 	} else if (*level == IRQ_HIGH) {
 		printf("high level event\r\n");
 
 		// Change to listen to low level event
 		*level = IRQ_LOW;
 		gpio_irq_set(&gpio_level, IRQ_LOW, 1);
-		gpio_irq_pull_ctrl(&gpio_level, PullUp);
+		//gpio_irq_pull_ctrl(&gpio_level, GPIO_PuPd_UP);
 	}
 
 	//do this internal gpio_irq_enable
@@ -60,7 +60,7 @@ void mbed_gpio_level_irq_demo(void)
 
 	// configure level trigger handler
 	gpio_irq_init(&gpio_level, GPIO_IRQ_LEVEL_PIN, gpio_level_irq_handler, (uint32_t)(&current_level));
-	gpio_irq_pull_ctrl(&gpio_level, PullUp);
+	gpio_irq_pull_ctrl(&gpio_level, GPIO_PuPd_UP);
 	gpio_irq_set(&gpio_level, IRQ_LOW, 1);
 
 	gpio_irq_enable(&gpio_level);

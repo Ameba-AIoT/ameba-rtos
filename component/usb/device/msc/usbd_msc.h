@@ -10,9 +10,19 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbd.h"
+#include "usb_msc.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
+/** @addtogroup USB_Device_API USB Device API
+ *  @{
+ */
+/** @addtogroup USB_Device_Constants USB Device Constants
+ * @{
+ */
+/** @addtogroup Device_MSC_Constants Device MSC Constants
+ * @{
+ */
 #define USBD_MSC_TX_THREAD_PRIORITY                 5U                 /**< TX thread priority */
 #define USBD_MSC_RX_THREAD_PRIORITY                 5U                 /**< RX thread priority */
 
@@ -55,21 +65,6 @@
 #define USBD_MSC_BLK_SIZE                           (1 << USBD_MSC_BLK_BITS) /**< Block size in bytes (512). */
 #define USBD_MSC_BUFLEN                             (16 * 1024)              /**< Default size of the internal data buffer. */
 
-/* Defines MSC class-specific request codes for the bRequest field. */
-#define USBD_MSC_REQUEST_RESET                      0xFFU        /**< Bulk-Only Mass Storage Reset request. */
-#define USBD_MSC_REQUEST_GET_MAX_LUN                0xFEU        /**< Get Max LUN request. */
-
-/* CBW/CSW configurations */
-#define USBD_MSC_CB_WRAP_LEN                        31U          /**< Standard CBW length */
-#define USBD_MSC_CB_SIGN                            0x43425355U  /**< Standard dCBWSignature, spells out USBC */
-#define USBD_MSC_CS_WRAP_LEN                        13U          /**< Standard CSW length */
-#define USBD_MSC_CS_SIGN                            0x53425355U  /**< Standard dCSWSignature, spells out 'USBS' */
-
-/* CSW Status Definitions */
-#define USBD_MSC_CSW_CMD_PASSED                     0x00U        /**< The `pass` status of the command execution */
-#define USBD_MSC_CSW_CMD_FAILED                     0x01U        /**< The `fail` status of the command execution */
-#define USBD_MSC_CSW_PHASE_ERROR                    0x02U        /**< The `phase error` status of the command execution */
-
 /* BOT state */
 #define USBD_MSC_IDLE                               0U          /**< Idle state */
 #define USBD_MSC_DATA_OUT                           1U          /**< Data Out state */
@@ -85,47 +80,11 @@
 
 #define USBD_MSC_SENSE_LIST_DEPTH                   4U          /**< Depth of the SCSI sense data list. */
 
+/** @} End of Device_MSC_Constants group*/
+/** @} End of USB_Device_Constants group*/
+
 /* Exported types ------------------------------------------------------------*/
 
-/**
- * @brief Command Block Wrapper (CBW) structure.
- * @details This structure defines the format of a command sent from the host to the device.
- */
-typedef struct {
-	u32 dCBWSignature;            /**< CBW Signature, must be 'USBC' (0x43425355). */
-	u32 dCBWTag;                  /**< A unique tag sent by the host, returned in the CSW. */
-	u32 dCBWDataTransferLength;   /**< Number of bytes of data the host expects to transfer. */
-	u8 bmCBWFlags;                /**< Data transfer direction (bit 7: 0=OUT, 1=IN). */
-	u8 bCBWLUN;                   /**< The Logical Unit Number (LUN) to which the command is addressed. */
-	u8 bCBWCBLength;              /**< The length of the command block (CBWCB) in bytes (1-16). */
-	u8 CBWCB[16];                 /**< The SCSI command block to be executed by the device. */
-} usbd_msc_cbw_t;
-
-/**
- * @brief Command Status Wrapper (CSW) structure.
- * @details This structure defines the format of the status returned from the device to the host after a command.
- */
-typedef struct {
-	u32 dCSWSignature;            /**< CSW Signature, must be 'USBS' (0x53425355). */
-	u32 dCSWTag;                  /**< The device shall set this to the value from the associated CBW's dCBWTag. */
-	u32 dCSWDataResidue;          /**< The difference between the amount of data expected and the actual data processed. */
-	u8 bCSWStatus;                /**< The status of the command execution (0=Pass, 1=Fail, 2=Phase Error), see `USBD_MSC_CSW_XX`. */
-} usbd_msc_csw_t;
-
-/**
- * @brief SCSI Sense Data structure.
- * @details This structure holds sense data used to report errors for SCSI commands.
- */
-typedef struct {
-	char skey;                    /**< Sense Key. */
-	union {
-		struct _asc {
-			char asc;             /**< Additional Sense Code. */
-			char ascq;            /**< Additional Sense Code Qualifier. */
-		} b;                      /**< Access to ASC and ASCQ as separate bytes. */
-		u8 asc;                   /**< Access to ASC as a single byte. */
-	} w;
-} usbd_msc_scsi_sense_data_t;
 
 /**
  * @brief Disk operation functions structure.
@@ -159,6 +118,12 @@ typedef struct {
 	int (*disk_write)(u32 sector, const u8 *buffer, u32 count);
 } usbd_msc_disk_ops_t;
 
+/** @addtogroup USB_Device_Types USB Device Types
+ * @{
+ */
+/** @addtogroup Device_MSC_Types Device MSC Types
+ * @{
+ */
 /**
  * @brief MSC user callback structure.
  * @details This structure holds pointers to user-defined callback functions
@@ -172,6 +137,8 @@ typedef struct {
 	 */
 	void (*status_changed)(u8 old_status, u8 status);
 } usbd_msc_cb_t;
+/** @} End of Device_MSC_Types group*/
+/** @} End of USB_Device_Types group*/
 
 /**
  * @brief Main structure for the MSC device class.
@@ -181,8 +148,8 @@ typedef struct {
 typedef struct {
 	usbd_ep_t ep_bulk_in;                           /**< Structure for the Bulk IN endpoint. */
 	usbd_ep_t ep_bulk_out;                          /**< Structure for the Bulk OUT endpoint. */
-	usbd_msc_cbw_t *cbw;                            /**< Pointer to the Command Block Wrapper. */
-	usbd_msc_csw_t *csw;                            /**< Pointer to the Command Status Wrapper. */
+	usb_msc_bot_cbw_t *cbw;                         /**< Pointer to the Command Block Wrapper. */
+	usb_msc_bot_csw_t *csw;                         /**< Pointer to the Command Status Wrapper. */
 	usbd_msc_disk_ops_t disk_ops;                   /**< Structure with disk operation function pointers. */
 	usbd_msc_cb_t *cb;                              /**< Pointer to the user callback structure. */
 	usb_dev_t *dev;                                 /**< Pointer to the USB device structure. */
@@ -190,7 +157,7 @@ typedef struct {
 	rtos_sema_t rx_sema;                            /**< RTOS semaphore to signal data reception. */
 	rtos_task_t tx_task;                            /**< RTOS task handle for data transmission. */
 	rtos_sema_t tx_sema;                            /**< RTOS semaphore to signal data transmission. */
-	usbd_msc_scsi_sense_data_t scsi_sense_data[USBD_MSC_SENSE_LIST_DEPTH]; /**< Array to store SCSI sense data. */
+	usb_msc_scsi_sense_data_t scsi_sense_data[USBD_MSC_SENSE_LIST_DEPTH]; /**< Array to store SCSI sense data. */
 	u8 *ctrl_buf;                                   /**< Pointer to the control transfer buffer. */
 	u8 *data;                                       /**< Pointer to the data buffer for transfers. */
 	u32 data_length;                                /**< Transfer data length. */
@@ -212,6 +179,12 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
+/** @addtogroup USB_Device_Functions USB Device Functions
+ * @{
+ */
+/** @addtogroup Device_MSC_Functions Device MSC Functions
+ * @{
+ */
 /**
  * @brief Initializes the MSC device class driver with application callback handler.
  * @param[in] cb: Pointer to the user callback structure.
@@ -235,4 +208,8 @@ int usbd_msc_disk_init(void);
  * @return 0 on success, non-zero on failure.
  */
 int usbd_msc_disk_deinit(void);
+/** @} End of Device_MSC_Functions group */
+/** @} End of USB_Device_Functions group */
+/** @} End of USB_Device_API group */
+
 #endif // USBD_MSC_H
