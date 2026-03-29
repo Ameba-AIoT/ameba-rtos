@@ -11,7 +11,6 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_composite_hid_uac.h"
-#include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
 #define USBH_UAC_HOT_PLUG_TEST        1     /* Hot plug / memory leak test */
@@ -52,7 +51,7 @@ static int usbh_uac_cb_setup(void);
 static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state);
 static int usbh_uac_cb_process(usb_host_t *host, u8 msg);
 /* Private variables ---------------------------------------------------------*/
-static const char *const TAG = "UAC";
+static const char *const TAG = "COMP";
 
 static rtos_sema_t usbh_uac_detach_sema;
 static rtos_sema_t usbh_uac_attach_sema;
@@ -141,26 +140,26 @@ static int usbh_hid_cb_report(usbh_composite_hid_event_t *event)
 
 static int usbh_uac_cb_init(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC INIT\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
 	return HAL_OK;
 }
 
 static int usbh_uac_cb_deinit(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC DEINIT\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
 	return HAL_OK;
 }
 
 static int usbh_uac_cb_attach(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC ATTACH\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 	rtos_sema_give(usbh_uac_attach_sema);
 	return HAL_OK;
 }
 
 static int usbh_uac_cb_detach(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC DETACH\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 #if USBH_UAC_HOT_PLUG_TEST
 	rtos_sema_give(usbh_uac_detach_sema);
 #endif
@@ -170,7 +169,7 @@ static int usbh_uac_cb_detach(void)
 
 static int usbh_uac_cb_setup(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC SETUP\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	usbh_uac_is_ready = 1;
 	rtos_sema_give(usbh_uac_isoc_start_sema);
 	return HAL_OK;

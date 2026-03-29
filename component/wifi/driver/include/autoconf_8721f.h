@@ -42,6 +42,11 @@
 #else
 #define SUPPORT_ADAPTER_NUM	2
 #endif
+
+#if defined(CONFIG_PLATFORM_ZEPHYR)
+#undef CONFIG_WIFI_TUNNEL
+#undef CONFIG_WTN_SOCKET_APP
+#endif
 /**************** configurations for concurrent mode end **********************/
 
 /************************* Default Values of User Configure *****************************/

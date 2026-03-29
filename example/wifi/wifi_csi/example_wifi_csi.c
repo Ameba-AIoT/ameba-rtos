@@ -147,7 +147,6 @@ static struct csi_report_data *wifi_csi_dequeue_idle_q(void)
 			csi_rpt_pkt->length = 0;
 			rtw_list_delete(&csi_rpt_pkt->list);
 			g_csi_rpt_q_priv.busy_q_cnt--;
-			rtos_sema_take(wc_ready_sema, RTOS_SEMA_MIN_COUNT);
 		} else {
 			RTK_LOGA(NOTAG, "WARN: lack of csi buf!\n");
 		}
@@ -216,7 +215,7 @@ NEXT:
 	 * should use semaphore to wait wifi csi report happen
 	 * the following example shows that we wait for semaphore: wc_ready_sema
 	 */
-	rtos_sema_create(&wc_ready_sema, 0, CSI_REPORT_BUF_NUM);
+	rtos_sema_create(&wc_ready_sema, 0, 0xFFFFFFFF);
 	if (!wc_ready_sema) {
 		RTK_LOGA(NOTAG, "ERR: wc_ready_sema failed\r\n");
 		goto done;

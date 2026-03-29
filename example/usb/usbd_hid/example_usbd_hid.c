@@ -9,7 +9,6 @@
 #include <platform_autoconf.h>
 #include "platform_stdlib.h"
 #include "basic_types.h"
-#include "usbd.h"
 #include "usbd_hid.h"
 #include "os_wrapper.h"
 #include "example_usbd_hid.h"

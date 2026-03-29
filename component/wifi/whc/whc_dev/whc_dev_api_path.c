@@ -128,7 +128,7 @@ void whc_send_api_ret_value(u32 api_id, u8 *pbuf, u32 len)
 	/* send ret_msg + ret_val(pbuf, len) */
 	whc_dev_send(&inic_tx->txbuf_info);
 
-	RTK_LOGD(TAG_WLAN_INIC, "Host API %x return\n", api_id);
+	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Host API %x return\n", api_id);
 
 	return;
 
@@ -300,7 +300,7 @@ void whc_event_wifi_ap_get_connected_clients(u32 api_id, u32 *param_buf)
 	goto exit;
 
 error_exit:
-	RTK_LOGE(TAG_WLAN_INIC, "%s fail\n");
+	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "malloc fail\n");
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 
 exit:
@@ -574,7 +574,7 @@ void whc_event_wifi_scan_networks(u32 api_id, u32 *param_buf)
 	/* wait for xmit done to release skb, otherwise API/RET msg can't be received.
 		https://jira.realtek.com/browse/WQCCE-2914 */
 	if (!whc_dev_tx_path_avail()) {
-		RTK_LOGD(TAG_WLAN_INIC, "sdio tx path busy, scan fail\n");
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "sdio tx path busy, scan fail\n");
 		ret = -1;
 	} else {
 		ret = wifi_scan_networks(&scan_param, 0);
@@ -1338,7 +1338,7 @@ void whc_dev_cfg80211_indicate_scan_report(u32 channel, u32 frame_is_bcn, s32 rs
 		memcpy((void *)((u8 *)(param + 4) + ETH_ALEN), IEs, ie_len);
 	}
 
-	RTK_LOGD(TAG_WLAN_INIC, "CH%ld, %02x:%02x:%02x:%02x:%02x:%02x\n", channel,
+	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "CH%ld, %02x:%02x:%02x:%02x:%02x:%02x\n", channel,
 			 mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
 
 	whc_dev_api_message_send(WHC_API_CFG80211_SCAN_REPORT, (u8 *)param, size, NULL, 0);
@@ -1379,7 +1379,7 @@ void whc_dev_api_init(void)
 	/* Initialize the event task */
 	if (RTK_SUCCESS != rtos_task_create(&event_priv.api_dev_task, (const char *const)"whc_dev_api_task", (rtos_task_function_t)whc_dev_api_task, NULL,
 										WHC_API_STACK * 4, CONFIG_WHC_DEV_API_PRIO)) {
-		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_api_task Err!!\n");
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Create whc_dev_api_task Err!!\n");
 	}
 }
 

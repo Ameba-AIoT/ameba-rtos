@@ -532,13 +532,14 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 /**
   * @brief	Init uvc descriptor related
   * @param	None
-  * @retval None
+  * @retval Status
   */
-void usbh_uvc_desc_init(void)
+int usbh_uvc_desc_init(void)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 
 	INIT_LIST_HEAD(&uvc->entity_list);
+	return HAL_OK;
 }
 
 /**
@@ -551,17 +552,10 @@ void usbh_uvc_desc_deinit(void)
 	usbh_uvc_host_t *uvc = &uvc_host;
 	struct list_head *p, *n;
 	usbh_uvc_entity_t *ent;
-	usbh_uvc_vs_t *vs_intf;
-	int i;
 
 	list_for_each_safe(p, n, &uvc->entity_list) {
 		ent = list_entry(p, usbh_uvc_entity_t, list);
 		usbh_uvc_entity_t_free(ent);
-	}
-
-	for (i = 0; i < uvc->uvc_desc.vs_num; i++) {
-		vs_intf = uvc->stream[i].vs_intf;
-		usb_os_mfree(vs_intf->format);
 	}
 }
 

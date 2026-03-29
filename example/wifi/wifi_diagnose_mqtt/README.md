@@ -39,6 +39,7 @@ In the example, MQTT task is created to present MQTT connection and message proc
 
 # Note
 
+- For more MQTT details, please refer to `UM0060 Realtek Ameba-all MQTT User Guide.pdf`.
 - For more R-DIAG details, please refer to the R-DIAG section of the online documentation.
 
 # Supported IC

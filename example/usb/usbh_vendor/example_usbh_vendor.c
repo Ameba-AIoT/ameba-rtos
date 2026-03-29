@@ -10,7 +10,6 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_vendor.h"
-#include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
 #define CONFIG_USBH_VENDOR_HOT_PLUG_TEST           1/* Hot plug / memory leak test */
@@ -33,7 +32,7 @@ static int vendor_cb_detach(void);
 static int vendor_cb_setup(void);
 static int vendor_cb_process(usb_host_t *host, u8 msg);
 static int vendor_cb_transmit(u8 ep_type);
-static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, u8 status);
+static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "VND";
 
@@ -119,8 +118,9 @@ static int vendor_cb_setup(void)
 	return HAL_OK;
 }
 
-static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, u8 status)
+static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status)
 {
+	UNUSED(buf);
 	u16 vendor_bulk_in_mps = usbh_vendor_get_bulk_ep_mps();
 	u16 vendor_intr_in_mps = usbh_vendor_get_intr_ep_mps();
 
@@ -129,7 +129,7 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, u8 status)
 		if (status == HAL_OK) {
 			//limited the copy len
 			if ((len > 0) && ((vendor_bulk_total_rx_len + len) <= USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE)) {
-				memcpy(vendor_bulk_loopback_rx_buf + vendor_bulk_total_rx_len, buf, len);
+				//memcpy(vendor_bulk_loopback_rx_buf + vendor_bulk_total_rx_len, buf, len);
 			}
 			vendor_bulk_total_rx_len += len;
 			//ZLP or short packet
@@ -148,13 +148,13 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, u8 status)
 		if (status == HAL_OK) {
 			//limited the copy len
 			if ((len > 0) && ((vendor_intr_total_rx_len + len) <= USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) {
-				memcpy(vendor_intr_loopback_rx_buf + vendor_intr_total_rx_len, buf, len);
+				//memcpy(vendor_intr_loopback_rx_buf + vendor_intr_total_rx_len, buf, len);
 			}
 			vendor_intr_total_rx_len += len;
 
 			//transaction size > 0 and short packet
-			if ((len == 0) || ((len < vendor_intr_in_mps) && (vendor_intr_total_rx_len > 0))
-				|| (vendor_intr_total_rx_len > USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) { //
+			if (((len < vendor_intr_in_mps) && (vendor_intr_total_rx_len > 0))
+				|| (vendor_intr_total_rx_len >= USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) { //
 				vendor_intr_total_rx_len = 0;
 				rtos_sema_give(vendor_intr_receive_sema);
 			}
@@ -458,4 +458,3 @@ void example_usbh_vendor(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }
-

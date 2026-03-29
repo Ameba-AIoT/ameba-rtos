@@ -92,7 +92,6 @@ if(CONFIG_BT_INIC)
 	endif()
 elseif(CONFIG_BT_ZEPHYR)
 	if(CONFIG_SDN_BT)
-		ameba_list_append(private_sources vhci/hci_if_ipc.c)
 		ameba_list_append(private_sources vhci/hci_if_zephyr_sdn.c)
 	else()
 		ameba_list_append(private_sources hci/hci_if_zephyr.c)
@@ -114,7 +113,11 @@ ameba_list_append(private_includes
 )
 
 if(CONFIG_SDN_BT)
-	ameba_list_append(private_includes vhci)
+	ameba_list_append(private_includes 
+	vhci
+	${c_COMPONENT_DIR}/sdn/platform/${c_SOC_TYPE}/intf
+    ${c_COMPONENT_DIR}/sdn/platform/${c_SOC_TYPE}/intf/host
+	)
 endif()
 
 # Component private part, user config end

@@ -401,9 +401,9 @@ endmenu
 
 rsource "../../../lwip/Kconfig"
 
-rsource "../../../ssl/Kconfig"
-
 #orsource "../../../wpan/Kconfig"
+
+rsource "../../../ssl/Kconfig"
 
 rsource "../../../rtk_coex/Kconfig.coex"
 

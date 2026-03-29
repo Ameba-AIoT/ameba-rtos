@@ -209,12 +209,6 @@ static int usbh_vendor_attach(usb_host_t *host)
 	usbh_itf_data_t *itf_data;
 	usbh_dev_id_t dev_id = {0,};
 
-	vendor->ctrl_buf = (u8 *)usb_os_malloc(USB_CTRL_BUF_LENGTH);
-	if (vendor->ctrl_buf == NULL) {
-		return HAL_ERR_MEM;
-	}
-
-
 	dev_id.bInterfaceClass = VENDOR_CLASS_CODE;
 	dev_id.bInterfaceSubClass = VENDOR_SUBCLASS_CODE;
 	dev_id.bInterfaceProtocol = VENDOR_PROTOCOL;
@@ -516,10 +510,6 @@ static void usbh_vendor_intr_process_rx(usb_host_t *host)
 			vendor->cb->receive(pipe->ep_type, pipe->xfer_buf, len, status);
 		}
 	} else if ((pipe->xfer_state == USBH_EP_XFER_START)) {
-		len = usbh_get_last_transfer_size(host, pipe);
-		if ((pipe->xfer_len == 0) && (vendor->cb != NULL) && (vendor->cb->receive != NULL)) {//ZLP
-			vendor->cb->receive(pipe->ep_type, pipe->xfer_buf, len, status);
-		}
 		usbh_notify_class_state_change(host, pipe->pipe_num);
 	} else if (pipe->xfer_state == USBH_EP_XFER_ERROR) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX fail: %d\n", usbh_get_urb_state(host, pipe));
@@ -705,15 +695,23 @@ static int usbh_vendor_process(usb_host_t *host, u32 msg)
   */
 int usbh_vendor_init(usbh_vendor_cb_t *cb)
 {
+	int ret = HAL_OK;
 	usbh_vendor_host_t *vendor = &usbh_vendor_host;
 
 	if (cb != NULL) {
 		vendor->cb = cb;
+		if (cb->init != NULL) {
+			ret = cb->init();
+			if (ret != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "User init err %d\n", ret);
+				return ret;
+			}
+		}
 	}
 
 	usbh_register_class(&usbh_vendor_driver);
 
-	return HAL_OK;
+	return ret;
 }
 
 /**
@@ -727,15 +725,13 @@ int usbh_vendor_deinit(void)
 	usb_host_t *host = vendor->host;
 	UNUSED(host);
 
+	if ((vendor->cb != NULL) && (vendor->cb->deinit != NULL)) {
+		vendor->cb->deinit();
+	}
 	vendor->state = VENDOR_STATE_IDLE;
 
 	usbh_vendor_deinit_all_pipe();
 	usbh_vendor_deinit_all_xfer();
-
-	if (vendor->ctrl_buf != NULL) {
-		usb_os_mfree(vendor->ctrl_buf);
-		vendor->ctrl_buf = NULL;
-	}
 
 	usbh_unregister_class(&usbh_vendor_driver);
 

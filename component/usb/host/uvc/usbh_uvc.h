@@ -299,7 +299,7 @@ void usbh_uvc_stream_deinit(usbh_uvc_stream_t *stream);
 void usbh_uvc_process_sof(usb_host_t *host);
 int usbh_uvc_process_completed(usb_host_t *host, u8 pipe_num);
 int usbh_uvc_parse_cfgdesc(usb_host_t *host);
-void usbh_uvc_desc_init(void);
+int usbh_uvc_desc_init(void);
 void usbh_uvc_desc_deinit(void);
 #if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
 void usbh_uvc_sw_status_dump_thread(void *param);

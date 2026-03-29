@@ -7,7 +7,6 @@
 /* Includes ------------------------------------------------------------------ */
 
 #include <platform_autoconf.h>
-#include "usbd.h"
 #include "usbd_inic.h"
 #include "os_wrapper.h"
 
@@ -582,4 +581,3 @@ void example_usbd_inic(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD INIC thread fail\n");
 	}
 }
-

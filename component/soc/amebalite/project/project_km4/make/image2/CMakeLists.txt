@@ -109,6 +109,7 @@ add_custom_command(
         -DANALYZE_MP_IMG=${ANALYZE_MP_IMG}
         -DDAILY_BUILD=${DAILY_BUILD}
         -DEXTERN_DIR=${EXTERN_DIR}
+        -DCODE_ANALYZE_RETRY=${CODE_ANALYZE_RETRY}
 
         # special variables for current image
 

@@ -14,7 +14,27 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/** @addtogroup USB_Host_API USB Host API
+ *  @{
+ */
+/** @addtogroup USB_Host_Constants USB Host Constants
+ * @{
+ */
+/** @addtogroup Host_CDC_ACM_Constants Host CDC ACM Constants
+ * @{
+ */
+
+/** @} End of Host_CDC_ACM_Constants group*/
+/** @} End of USB_Host_Constants group*/
+
 /* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Host_Types USB Host Types
+ * @{
+ */
+/** @addtogroup Host_CDC_ACM_Types Host CDC ACM Types
+ * @{
+ */
 
 /**
  * @brief CDC ACM state machine.
@@ -111,11 +131,21 @@ typedef struct {
 	usbh_cdc_acm_state_t state;                 /**< Current state of the CDC ACM host driver. */
 } usbh_cdc_acm_host_t;
 
+/** @} End of Host_CDC_ACM_Types group*/
+/** @} End of USB_Host_Types group*/
+
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
+
+/** @addtogroup USB_Host_Functions USB Host Functions
+ * @{
+ */
+/** @addtogroup Host_CDC_ACM_Functions Host CDC ACM Functions
+ * @{
+ */
 
 /**
  * @brief Initializes the CDC ACM host class driver.
@@ -179,5 +209,9 @@ int usbh_cdc_acm_notify_receive(u8 *buf, u32 len);
  * @return The MPS in bytes.
  */
 u16 usbh_cdc_acm_get_bulk_ep_mps(void);
+
+/** @} End of Host_CDC_ACM_Functions group */
+/** @} End of USB_Host_Functions group */
+/** @} End of USB_Host_API group */
 
 #endif  /* USBH_CDC_ACM_H */

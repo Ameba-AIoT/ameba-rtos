@@ -182,7 +182,6 @@ int ota_storage_update_manifest(ota_hdr_manager_t *pOtaTgtHdr, u8 slotIdx, u8 hd
 	u32 addr;
 	ota_manifest_t *manifest = NULL;
 
-
 #if defined(CONFIG_OTA_SWITCH_BY_VALID_HEADER) && (CONFIG_OTA_SWITCH_BY_VALID_HEADER == 1)
 	u8 ota_old_index = slotIdx ^ 1;
 	u8 empty_sig[8] = {0x0};

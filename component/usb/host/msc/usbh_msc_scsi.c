@@ -19,8 +19,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-/* USB Standard Device Descriptor */
-
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -32,18 +30,18 @@
 int usbh_scsi_test_unit_ready(usbh_msc_host_t *msc, u8 lun)
 {
 	int status = HAL_ERR_UNKNOWN;
-	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
+	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
 
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
 		/*Prepare the CBW and relevent field*/
-		cbw->field.DataTransferLength = USBH_MSC_TEST_UNIT_READY_LEN;
-		cbw->field.Flags = USB_H2D;
-		cbw->field.CBLength = CBW_LENGTH;
+		cbw->field.dCBWDataTransferLength = TEST_UNIT_READY_LEN;
+		cbw->field.bmCBWFlags = USB_H2D;
+		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CB, 0, CBW_CB_LENGTH);
-		cbw->field.CB[0]  = USBH_MSC_TEST_UNIT_READY;
+		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
+		cbw->field.CBWCB[0] = SCSI_TEST_UNIT_READY;
 
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
@@ -72,18 +70,18 @@ int usbh_scsi_test_unit_ready(usbh_msc_host_t *msc, u8 lun)
 int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *capacity)
 {
 	int status = HAL_ERR_UNKNOWN;
-	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
+	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
 
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
 		/*Prepare the CBW and relevent field*/
-		cbw->field.DataTransferLength = USBH_MSC_READ_CAPACITY10_LEN;
-		cbw->field.Flags = USB_D2H;
-		cbw->field.CBLength = CBW_LENGTH;
+		cbw->field.dCBWDataTransferLength = READ_CAPACITY10_DATA_LEN;
+		cbw->field.bmCBWFlags = USB_D2H;
+		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CB, 0, CBW_CB_LENGTH);
-		cbw->field.CB[0]  = USBH_MSC_READ_CAPACITY10;
+		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
+		cbw->field.CBWCB[0] = SCSI_READ_CAPACITY10;
 
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
@@ -123,23 +121,23 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
 int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry)
 {
 	int status = HAL_ERR_UNKNOWN;
-	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
+	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
 
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
 		/*Prepare the CBW and relevent field*/
-		cbw->field.DataTransferLength = USBH_MSC_INQUIRY_LEN;
-		cbw->field.Flags = USB_D2H;
-		cbw->field.CBLength = CBW_LENGTH;
+		cbw->field.dCBWDataTransferLength = INQUIRY_DATA_LEN;
+		cbw->field.bmCBWFlags = USB_D2H;
+		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CB, 0, CBW_LENGTH);
-		cbw->field.CB[0]  = USBH_MSC_INQUIRY;
-		cbw->field.CB[1]  = (lun << 5);
-		cbw->field.CB[2]  = 0U;
-		cbw->field.CB[3]  = 0U;
-		cbw->field.CB[4]  = 0x24U;
-		cbw->field.CB[5]  = 0U;
+		usb_os_memset(cbw->field.CBWCB, 0, CBW_LENGTH);
+		cbw->field.CBWCB[0] = SCSI_INQUIRY;
+		cbw->field.CBWCB[1] = (lun << 5);
+		cbw->field.CBWCB[2] = 0U;
+		cbw->field.CBWCB[3] = 0U;
+		cbw->field.CBWCB[4] = 0x24U;
+		cbw->field.CBWCB[5] = 0U;
 
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
@@ -184,26 +182,26 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
   * @param  sense_data: pointer to the sense data structure
   * @retval Status
   */
-int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usbh_scsi_sense_t *sense_data)
+int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_data_t *sense_data)
 {
 	int status = HAL_ERR_UNKNOWN;
-	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
+	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
 
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
 		/*Prepare the CBW and relevent field*/
-		cbw->field.DataTransferLength = USBH_MSC_REQUEST_SENSE_LEN;
-		cbw->field.Flags = USB_D2H;
-		cbw->field.CBLength = CBW_LENGTH;
+		cbw->field.dCBWDataTransferLength = REQUEST_SENSE_DATA_LEN;
+		cbw->field.bmCBWFlags = USB_D2H;
+		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CB, 0, CBW_CB_LENGTH);
-		cbw->field.CB[0]  = USBH_MSC_REQUEST_SENSE;
-		cbw->field.CB[1]  = (lun << 5);
-		cbw->field.CB[2]  = 0U;
-		cbw->field.CB[3]  = 0U;
-		cbw->field.CB[4]  = USBH_MSC_REQUEST_SENSE_LEN;
-		cbw->field.CB[5]  = 0U;
+		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
+		cbw->field.CBWCB[0] = SCSI_REQUEST_SENSE;
+		cbw->field.CBWCB[1] = (lun << 5);
+		cbw->field.CBWCB[2] = 0U;
+		cbw->field.CBWCB[3] = 0U;
+		cbw->field.CBWCB[4] = REQUEST_SENSE_DATA_LEN;
+		cbw->field.CBWCB[5] = 0U;
 
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
@@ -242,40 +240,40 @@ int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usbh_scsi_sense_t *sen
 int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 length)
 {
 	int status = HAL_ERR_UNKNOWN;
-	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
+	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
 
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
 		/*Prepare the CBW and relevent field*/
-		cbw->field.DataTransferLength = length * msc->unit[0].capacity.block_size;
-		cbw->field.Flags = USB_H2D;
-		cbw->field.CBLength = CBW_LENGTH;
+		cbw->field.dCBWDataTransferLength = length * msc->unit[0].capacity.block_size;
+		cbw->field.bmCBWFlags = USB_H2D;
+		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CB, 0, CBW_CB_LENGTH);
-		cbw->field.CB[0]  = USBH_MSC_WRITE10;
+		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
+		cbw->field.CBWCB[0] = SCSI_WRITE10;
 
 		/*logical block address*/
-		cbw->field.CB[2]  = (((u8 *)(void *)&address)[3]);
-		cbw->field.CB[3]  = (((u8 *)(void *)&address)[2]);
-		cbw->field.CB[4]  = (((u8 *)(void *)&address)[1]);
-		cbw->field.CB[5]  = (((u8 *)(void *)&address)[0]);
+		cbw->field.CBWCB[2] = (((u8 *)(void *)&address)[3]);
+		cbw->field.CBWCB[3] = (((u8 *)(void *)&address)[2]);
+		cbw->field.CBWCB[4] = (((u8 *)(void *)&address)[1]);
+		cbw->field.CBWCB[5] = (((u8 *)(void *)&address)[0]);
 
 		/*Transfer length */
-		cbw->field.CB[7]  = (((u8 *)(void *)&length)[1]);
-		cbw->field.CB[8]  = (((u8 *)(void *)&length)[0]);
+		cbw->field.CBWCB[7] = (((u8 *)(void *)&length)[1]);
+		cbw->field.CBWCB[8] = (((u8 *)(void *)&length)[0]);
 
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.origin_tx_pbuf = pbuf;
-		msc->hbot.origin_tx_pbuf_len = cbw->field.DataTransferLength;
+		msc->hbot.origin_tx_pbuf_len = cbw->field.dCBWDataTransferLength;
 		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
 			usb_os_mfree(msc->hbot.pbuf);
 		}
-		msc->hbot.pbuf = (u8 *)usb_os_malloc(cbw->field.DataTransferLength);
+		msc->hbot.pbuf = (u8 *)usb_os_malloc(cbw->field.dCBWDataTransferLength);
 		if (msc->hbot.pbuf != NULL) {
-			usb_os_memcpy(msc->hbot.pbuf, pbuf, cbw->field.DataTransferLength);
+			usb_os_memcpy(msc->hbot.pbuf, pbuf, cbw->field.dCBWDataTransferLength);
 			status = HAL_BUSY;
 		}
 		break;
@@ -307,38 +305,38 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 len
 int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 length)
 {
 	int status = HAL_ERR_UNKNOWN;
-	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
+	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
 
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
 		/*Prepare the CBW and relevent field*/
-		cbw->field.DataTransferLength = length * msc->unit[0].capacity.block_size;
-		cbw->field.Flags = USB_D2H;
-		cbw->field.CBLength = CBW_LENGTH;
+		cbw->field.dCBWDataTransferLength = length * msc->unit[0].capacity.block_size;
+		cbw->field.bmCBWFlags = USB_D2H;
+		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CB, 0, CBW_CB_LENGTH);
-		cbw->field.CB[0]  = USBH_MSC_READ10;
+		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
+		cbw->field.CBWCB[0] = SCSI_READ10;
 
 		/*logical block address*/
-		cbw->field.CB[2]  = (((u8 *)(void *)&address)[3]);
-		cbw->field.CB[3]  = (((u8 *)(void *)&address)[2]);
-		cbw->field.CB[4]  = (((u8 *)(void *)&address)[1]);
-		cbw->field.CB[5]  = (((u8 *)(void *)&address)[0]);
+		cbw->field.CBWCB[2] = (((u8 *)(void *)&address)[3]);
+		cbw->field.CBWCB[3] = (((u8 *)(void *)&address)[2]);
+		cbw->field.CBWCB[4] = (((u8 *)(void *)&address)[1]);
+		cbw->field.CBWCB[5] = (((u8 *)(void *)&address)[0]);
 
 		/*Transfer length */
-		cbw->field.CB[7]  = (((u8 *)(void *)&length)[1]);
-		cbw->field.CB[8]  = (((u8 *)(void *)&length)[0]);
+		cbw->field.CBWCB[7] = (((u8 *)(void *)&length)[1]);
+		cbw->field.CBWCB[8] = (((u8 *)(void *)&length)[0]);
 
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.origin_rx_pbuf = pbuf;
-		msc->hbot.origin_rx_pbuf_len = cbw->field.DataTransferLength;
+		msc->hbot.origin_rx_pbuf_len = cbw->field.dCBWDataTransferLength;
 		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
 			usb_os_mfree(msc->hbot.pbuf);
 		}
-		msc->hbot.pbuf = (u8 *)usb_os_malloc(cbw->field.DataTransferLength);
+		msc->hbot.pbuf = (u8 *)usb_os_malloc(cbw->field.dCBWDataTransferLength);
 		if (msc->hbot.pbuf != NULL) {
 			status = HAL_BUSY;
 		}
@@ -359,4 +357,3 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 
 	return status;
 }
-

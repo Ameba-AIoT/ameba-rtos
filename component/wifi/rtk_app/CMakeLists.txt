@@ -122,7 +122,10 @@ ameba_add_internal_library(${TARGET_LIB_OPEN}
 )
 ##########################################################################################
 
-if(CONFIG_WHC_HOST AND NOT CONFIG_PLATFORM_ZEPHYR AND NOT CONFIG_MP_SHRINK)
-    ameba_add_subdirectory(wifi_tunnel_app)
+if(NOT CONFIG_PLATFORM_ZEPHYR AND NOT CONFIG_MP_SHRINK)
+if(CONFIG_WHC_HOST OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC))
+     ameba_add_subdirectory(wifi_tunnel_app)
 endif()
+endif()
+
 ameba_add_subdirectory(wifi_feature_disable)

@@ -125,7 +125,7 @@ SECTIONS
 		__git_ver_table_end__ = .;
 		. = ALIGN (4);
 		__unity_table_start__ = .;
-		KEEP(*(.rodata.unity.table*))
+		KEEP(*(.unity.table.rodata*))
 		__unity_table_end__ = .;
 
 		/* Add This for C++ support */

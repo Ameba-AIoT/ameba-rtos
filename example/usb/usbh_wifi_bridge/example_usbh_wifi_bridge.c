@@ -11,7 +11,6 @@
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
 #include "os_wrapper_time.h"
-#include "usbh.h"
 #include "usbh_cdc_ecm.h"
 #include "wifi_api.h"
 
