@@ -9,13 +9,6 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #----------------------------------------#
 # Component public part, user config begin
 
-# You may use if-else condition to set or update predefined variable above
-ameba_list_append(public_includes
-    #Use relative path: from current CMakeLists.txt's dir
-    src
-    include
-)
-
 # Component public part, user config end
 #----------------------------------------#
 
@@ -42,44 +35,22 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_sources
-    src/flash_api.c
-    src/pinmap_common.c
-    src/sys_api.c
-    src/us_ticker.c
-    src/timer_api.c
-    src/dma_api.c
-    src/gpio_api.c
-    src/gpio_irq_api.c
-    src/pinmap.c
-    src/port_api.c
-    src/spi_api.c
-    src/serial_api.c
-    src/i2c_api.c
-    src/pwmout_api.c
-    src/analogin_api.c
-    src/efuse_api.c
-    src/wdt_api.c
-    src/us_ticker_api.c
-    src/wait_api.c
-    src/rtc_api.c
-    src/captouch_api.c
-    src/spdio_api.c
+ameba_list_append(private_includes
+    ${c_CMPT_BLUETOOTH_DIR}/example/gatt_service/server
 )
 
-ameba_list_append(private_includes
-    ${c_MBEDTLS_DIR}/include
-    ${c_MBEDTLS_DIR}/hw_alt_legacy
-    ${c_MBEDTLS_DIR}/library
-    ${c_MBEDTLS_DIR}/thread_alt
+ameba_list_append(private_sources
+    ble_matter_adapter_peripheral_main.c
+    ble_matter_adapter_service.c
 )
+
 # Component private part, user config end
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(hal
+ameba_add_internal_library(ble_mesh_device
     p_SOURCES
         ${private_sources}
     p_INCLUDES

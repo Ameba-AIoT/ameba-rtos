@@ -6,7 +6,7 @@
 
 from distutils.version import LooseVersion
 
-version = "2.0.1"
+version = "2.0.2"
 # latest_url = "https://aiot.realmcu.com/en/latest/tools/vscode/index.html#advanced-features"
 latest_url = f"https://aiot.realmcu.com/download/misc/AmebaRemoteService_v{version}.exe"
 

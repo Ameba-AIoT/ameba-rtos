@@ -260,7 +260,7 @@ void ws_poll(int timeout, wsclient_context **wsclient)   // timeout in milliseco
 		char dummy[16];
 	} u_w;
 
-	if (*wsclient == NULL) {
+	if (wsclient == NULL || *wsclient == NULL) {
 		WSCLIENT_ERROR("ERROR: wsclient is NULL!\n");
 		return;
 	}
@@ -449,6 +449,11 @@ int ws_connect_url(wsclient_context *wsclient)
 {
 	int ret;
 
+	if (wsclient == NULL) {
+		WSCLIENT_ERROR("ERROR: wsclient is NULL!\n");
+		return -1;
+	}
+
 	rtos_mutex_take(wsclient->connection_mutex, RTOS_MAX_TIMEOUT);
 	if (wsclient->readyState != WSC_CLOSED) {
 		rtos_mutex_give(wsclient->connection_mutex);
@@ -628,6 +633,11 @@ wsclient_context *create_wsclient(char *url, int port, char *path, char *origin,
 	const int initial_item_num = 1;
 	send_buf *tmp_buf = NULL;
 	size_t url_len = 0;
+
+	if (url == NULL || strlen(url) < strlen("ws://")) {
+		WSCLIENT_ERROR("ERROR: Invalid url\n");
+		return NULL;
+	}
 
 	wsclient_context *wsclient = (wsclient_context *)ws_malloc(sizeof(wsclient_context));
 	if (wsclient == NULL) {
