@@ -13,7 +13,11 @@
 volatile UART_LOG_CTL	shell_ctl;
 u8						*shell_argv_array[MAX_ARGV];
 UART_LOG_BUF			shell_buf;
-UART_LOG_BUF			shell_rxbuf;
+#if defined (CONFIG_ARM_CORE_CA32)
+UART_LOG_BUF shell_rxbuf;
+#else
+extern UART_LOG_BUF shell_rxbuf;
+#endif
 
 //=================================================
 
@@ -149,7 +153,7 @@ static void shell_cmd_exec_rom(PUART_LOG_CTL   pUartLogCtlExe)
 	}
 
 	(*pUartLogBuf).BufCount = 0;
-	shell_array_init(&(*pUartLogBuf).UARTLogBuf[0], UART_LOG_CMD_BUFLEN, '\0');
+	shell_array_init(&(*pUartLogBuf).UARTLogBuf[0], 127, '\0');
 }
 
 
@@ -308,7 +312,7 @@ recv_again:
 
 	/* fetch all data in Uart-Log rx fifo before processing each character */
 	for (u8 idx = 0; idx < rxnum; idx++) {
-		if (pTmpRxLogBuf->BufCount >= UART_LOG_CMD_BUFLEN) {
+		if (pTmpRxLogBuf->BufCount >= 127) {
 			break;
 		}
 		pTmpRxLogBuf->UARTLogBuf[pTmpRxLogBuf->BufCount] = LOGUART_GetChar(PullMode);
@@ -381,7 +385,7 @@ void shell_init_rom(u32 TBLSz, void *pTBL)
 	shell_array_init(&shell_buf.UARTLogBuf[0], UART_LOG_CMD_BUFLEN, '\0');
 
 	shell_rxbuf.BufCount = 0;
-	shell_array_init(&shell_rxbuf.UARTLogBuf[0], UART_LOG_CMD_BUFLEN, '\0');
+	shell_array_init(&shell_rxbuf.UARTLogBuf[0], 127, '\0');
 
 	shell_ctl.NewIdx = 0;
 	shell_ctl.SeeIdx = 0;
@@ -483,4 +487,3 @@ void shell_rom(u32 MaxWaitCount)
 		}
 	} while (1);
 }
-
