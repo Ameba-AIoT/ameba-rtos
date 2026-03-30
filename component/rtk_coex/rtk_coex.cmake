@@ -82,6 +82,10 @@ if(CONFIG_MP_SHRINK)
         ameba_list_append(private_sources
             rtk_coex_wl_chip/rtw_coex_wl_chip_rl6955.c
         )
+    elseif(CONFIG_AMEBAPRO3)
+        ameba_list_append(private_sources
+            rtk_coex_wl_chip/rtw_coex_wl_chip_rl7013.c
+        )
     else()
 
     endif()
@@ -142,6 +146,11 @@ else()
         ameba_list_append(private_sources
             rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8721d.c
             rtk_coex_ext_chip/rtw_coex_ext_chip_rtl8721d.c
+        )
+        elseif(CONFIG_AMEBAPRO3)
+        ameba_list_append(private_sources
+            rtk_coex_wl_chip/rtw_coex_wl_chip_rl7013.c
+            rtk_coex_ext_chip/rtw_coex_ext_chip_rl7013.c
         )
     else()
 

@@ -96,7 +96,7 @@ void whc_host_sme_auth(dma_addr_t auth_data_phy);
 int whc_host_sme_set_assocreq_ie(u8 *ie, size_t ie_len, u8 wpa_rsn_exist);
 #endif
 int whc_host_set_pmf_mode(u8 pmf_mode);
-int whc_host_set_wps_phase(u8 enable);
+int whc_host_set_wps_phase(u8 wlan_idx, u8 enable);
 int whc_host_set_wpa_mode(u8 wpa_mode);
 int whc_host_set_owe_param(struct rtw_owe_param_t *owe_param);
 int whc_host_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags);

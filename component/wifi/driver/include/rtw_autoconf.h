@@ -48,7 +48,9 @@
 #define CONFIG_PROMISC
 
 /* For WPS and P2P */
+#ifndef CONFIG_WPA_STD
 #define CONFIG_WPS
+#endif
 
 /******************* Ameba Series Common Configurations ***********************/
 /*PHYDM version*/
@@ -127,10 +129,6 @@
 #define CONFIG_AUTO_RECONNECT 0
 #endif
 
-#ifdef CONFIG_WHC_DEV
-#define WHC_SKIP_NP_MSG_TASK
-#endif
-
 #ifdef NAN_CUSTOMER_NANDOW
 #define MAX_NANDOW_PARA_LEN 2600
 #endif
@@ -138,6 +136,10 @@
 /* When using supplicant SME, 11R is supported by default, instead of reuse the path of RTOS 11R */
 #ifdef CONFIG_SUPPLICANT_SME
 #undef CONFIG_IEEE80211R
+#endif
+
+#if defined(CONFIG_WHC_INTF_SPI) && defined(CONFIG_WHC_DEV)
+#define WHC_SKIP_NP_MSG_TASK
 #endif
 
 #endif //WLANCONFIG_H

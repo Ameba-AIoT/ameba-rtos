@@ -210,11 +210,15 @@ static const cmd_table_t iso_bis_receiver_cmd_table[] = {
 
 void fBLEISO(u16 argc, char *argv[])
 {
+	int ret = 0;
 	char tag[80] = "[AT+BLEISO]";
 
 	if (argc < 3) {
 		BT_LOGE("[%s]Error: Atcmd has too few params!!!\r\n", __func__);
-		return;
+#if defined(CONFIG_ATCMD_HOST_CONTROL) && CONFIG_ATCMD_HOST_CONTROL
+		ret = BT_AT_ERR_PARAM_INVALID;
+#endif
+		goto exit;
 	}
 
 	argc -= 1;
@@ -224,28 +228,44 @@ void fBLEISO(u16 argc, char *argv[])
 		if (strcmp(argv[1], "broadcaster") == 0) {
 			BT_LOGA("Set iso bis broadcaster\r\n");
 			strcat(tag, "[bis][broadcaster]");
-			atcmd_bt_excute(argc - 2, &argv[2], iso_bis_broadcaster_cmd_table, tag);
+			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_bis_broadcaster_cmd_table, tag);
 		} else if (strcmp(argv[1], "receiver") == 0) {
 			BT_LOGA("Set iso bis receiver\r\n");
 			strcat(tag, "[bis][receiver]");
-			atcmd_bt_excute(argc - 2, &argv[2], iso_bis_receiver_cmd_table, tag);
+			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_bis_receiver_cmd_table, tag);
 		} else {
 			BT_LOGE("[%s]Error: iso bis has no role %s\r\n", __func__, argv[1]);
+#if defined(CONFIG_ATCMD_HOST_CONTROL) && CONFIG_ATCMD_HOST_CONTROL
+			ret = BT_AT_ERR_PARAM_INVALID;
+#endif
 		}
 	} else if (strcmp(argv[0], "cis") == 0) {
 		if (strcmp(argv[1], "initiator") == 0) {
 			BT_LOGA("Set iso cis initiator\r\n");
 			strcat(tag, "[cis][initiator]");
-			atcmd_bt_excute(argc - 2, &argv[2], iso_cis_initiator_cmd_table, tag);
+			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_cis_initiator_cmd_table, tag);
 		} else if (strcmp(argv[1], "acceptor") == 0) {
 			BT_LOGA("Set iso cis acceptor\r\n");
 			strcat(tag, "[cis][acceptor]");
-			atcmd_bt_excute(argc - 2, &argv[2], iso_cis_acceptor_cmd_table, tag);
+			ret = atcmd_bt_excute(argc - 2, &argv[2], iso_cis_acceptor_cmd_table, tag);
 		} else {
 			BT_LOGE("[%s]Error: iso cis has no role %s\r\n", __func__, argv[1]);
+#if defined(CONFIG_ATCMD_HOST_CONTROL) && CONFIG_ATCMD_HOST_CONTROL
+			ret = BT_AT_ERR_PARAM_INVALID;
+#endif
 		}
 	} else {
 		BT_LOGE("[%s]Error: do not support %s\r\n", __func__, argv[0]);
+#if defined(CONFIG_ATCMD_HOST_CONTROL) && CONFIG_ATCMD_HOST_CONTROL
+		ret = BT_AT_ERR_PARAM_INVALID;
+#endif
+	}
+
+exit:
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
 	}
 }
 #endif

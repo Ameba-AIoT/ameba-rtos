@@ -295,12 +295,20 @@ static int rtw_dev_probe(struct platform_device *pdev)
 	return err;
 }
 
+#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
+static void rtw_dev_remove(struct platform_device *pdev)
+#else
 static int rtw_dev_remove(struct platform_device *pdev)
+#endif
 {
 	rtw_netdev_remove(&pdev->dev);
 	platform_device_deinit(pdev);
 
+#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
+	return;
+#else
 	return 0;
+#endif
 }
 
 static void rtw_dev_shutdown(struct platform_device *pdev)

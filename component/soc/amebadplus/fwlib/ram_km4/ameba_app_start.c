@@ -167,7 +167,7 @@ void app_start(void)
 	cmse_address_info_t cmse_address_info = cmse_TT((void *)app_start);
 	RTK_LOGI(TAG, "IMG2 SECURE STATE: %d\n", cmse_address_info.flags.secure);
 
-#if defined (CONFIG_RDP_BASIC) && (CONFIG_RDP_BASIC == 1U)
+#ifdef CONFIG_TRUSTZONE
 	BOOT_IMG3();
 #endif
 

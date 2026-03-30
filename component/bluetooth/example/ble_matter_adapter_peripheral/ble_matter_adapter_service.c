@@ -1,0 +1,264 @@
+/*
+ *******************************************************************************
+ * Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
+ *******************************************************************************
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <osif.h>
+
+#include <rtk_bt_def.h>
+#include <rtk_bt_common.h>
+#include <rtk_bt_le_gap.h>
+#include <rtk_service_config.h>
+#include <rtk_bt_att_defs.h>
+#include <rtk_bt_gatts.h>
+
+#include "matter_blemgr_common.h"
+#include "ble_matter_adapter_service.h"
+
+#define BLE_MATTER_UUID_SRV 0xFFF6
+#define BLE_MATTER_UUID_RX 0x11, 0x9D, 0x9F, 0x42, 0x9C, 0x4F, 0x9F, 0x95, 0x59, 0x45, 0x3D, 0x26, 0xF5, 0x2E, 0xEE, 0x18
+#define BLE_MATTER_UUID_TX 0x12, 0x9D, 0x9F, 0x42, 0x9C, 0x4F, 0x9F, 0x95, 0x59, 0x45, 0x3D, 0x26, 0xF5, 0x2E, 0xEE, 0x18
+#define BLE_MATTER_UUID_C3 0x04, 0x8F, 0x21, 0x83, 0x8A, 0x74, 0x7D, 0xB8, 0xF2, 0x45, 0x72, 0x87, 0x38, 0x02, 0x63, 0x64
+
+#define RTK_BT_UUID_BLE_MATTER BT_UUID_DECLARE_16(BLE_MATTER_UUID_SRV)
+#define RTK_BT_UUID_BLE_MATTER_RX BT_UUID_DECLARE_128(BLE_MATTER_UUID_RX)
+#define RTK_BT_UUID_BLE_MATTER_TX BT_UUID_DECLARE_128(BLE_MATTER_UUID_TX)
+#define RTK_BT_UUID_BLE_MATTER_C3 BT_UUID_DECLARE_128(BLE_MATTER_UUID_C3)
+
+#define BLE_MATTER_READ_MAX_LEN 60
+
+static uint8_t ble_matter_read_val[BLE_MATTER_READ_MAX_LEN] = {'D', 'e', 'm', 'o', '\0'};
+static uint8_t ble_matter_cccd_ind_val[] = "BLE matter indication data";
+
+static rtk_bt_gatt_attr_t ble_matter_attrs[] = {
+	/* Primary Service: simple BLE */
+	RTK_BT_GATT_PRIMARY_SERVICE(RTK_BT_UUID_BLE_MATTER),
+
+	/* Characteristic: demo for RX */
+	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_BLE_MATTER_RX,
+							   RTK_BT_GATT_CHRC_WRITE | RTK_BT_GATT_CHRC_WRITE_WITHOUT_RESP,
+							   RTK_BT_GATT_PERM_WRITE),
+
+	/* Characteristic: demo for TX */
+	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_BLE_MATTER_TX,
+							   RTK_BT_GATT_CHRC_INDICATE | RTK_BT_GATT_CHRC_READ,
+							   RTK_BT_GATT_PERM_READ),
+	RTK_BT_GATT_CCC(RTK_BT_GATT_PERM_READ | RTK_BT_GATT_PERM_WRITE),
+
+	/* <<Characteristic>> C3 Data TX */
+	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_BLE_MATTER_C3,
+							   RTK_BT_GATT_CHRC_READ,
+							   RTK_BT_GATT_PERM_READ),
+};
+
+static struct rtk_bt_gatt_service ble_matter_srv = RTK_BT_GATT_SERVICE(ble_matter_attrs, BLE_MATTER_ADAPTER_SRV_ID);
+
+extern bool ble_matter_adapter_send_callback_msg(uint16_t msg_type, uint16_t cb_type, void *arg);
+extern matter_blemgr_callback matter_blemgr_callback_func;
+extern void *matter_blemgr_callback_data;
+
+void ble_matter_adapter_ble_service_callback(uint8_t event, void *data)
+{
+	uint16_t ret = 0;
+
+	switch (event) {
+	case RTK_BT_GATTS_EVT_REGISTER_SERVICE: {
+		rtk_bt_gatts_reg_ind_t *p_gatts_reg_ind = (rtk_bt_gatts_reg_ind_t *)data;
+		if (p_gatts_reg_ind->reg_status == RTK_BT_OK) {
+			BT_LOGA("[APP] ble matter service register succeed!\r\n");
+		} else
+			BT_LOGE("[APP] ble matter service register failed, err: 0x%x\r\n",
+						p_gatts_reg_ind->reg_status);
+		break;
+	}
+	case RTK_BT_GATTS_EVT_READ_IND: {
+		rtk_bt_gatts_read_ind_t *p_read_ind = (rtk_bt_gatts_read_ind_t *)data;
+		uint16_t offset = p_read_ind->offset;
+		uint16_t actual_len = BLE_MATTER_READ_MAX_LEN - p_read_ind->offset;
+		if (BLE_MATTER_SERVICE_C3_INDEX == p_read_ind->index) {
+			BLE_MATTER_APP_READ_CB_ARG gap_read_cb_arg;
+			uint8_t *ptr = ble_matter_read_val;
+			gap_read_cb_arg.pp_value = &ptr;
+			gap_read_cb_arg.p_len = &actual_len;
+
+			if(matter_blemgr_callback_func) {
+				matter_blemgr_callback_func(matter_blemgr_callback_data, MATTER_BLEMGR_C3_CHAR_READ_CB, &gap_read_cb_arg);
+			}
+
+			if ((*gap_read_cb_arg.p_len) > offset) {
+				//send data to matter, connected msg require conn_id/length/*p_value
+				if ((*gap_read_cb_arg.p_len) < offset + 1)
+					break;
+
+				actual_len = actual_len - offset;
+				rtk_bt_gatts_read_resp_param_t read_resp = {
+					.app_id			= p_read_ind->app_id,
+					.conn_handle	= p_read_ind->conn_handle,
+					.cid			= p_read_ind->cid,
+					.index			= p_read_ind->index,
+					.data			= (*gap_read_cb_arg.pp_value) + offset,
+					.len			= actual_len,
+					.err_code		= 0,
+					.seq			= 0,
+				};
+				ret = rtk_bt_gatts_read_resp(&read_resp);
+				if (RTK_BT_OK == ret) {
+					BT_LOGA("[APP] ble matter respond for client read success, offset: %d\r\n", offset);
+				} else {
+					BT_LOGE("[APP] ble matter respond for client read failed, err: 0x%x\r\n", ret);
+				}
+			} else {
+				break;
+			}
+		} else if (BLE_MATTER_SERVICE_CHAR_TX_INDEX == p_read_ind->index) {
+			rtk_bt_gatts_read_resp_param_t read_resp = {
+				.app_id			= p_read_ind->app_id,
+				.conn_handle	= p_read_ind->conn_handle,
+				.cid			= p_read_ind->cid,
+				.index			= p_read_ind->index,
+				.data			= &ble_matter_read_val[offset],
+				.len			= actual_len,
+				.err_code		= 0,
+				.seq			= 0,
+			};
+			ret = rtk_bt_gatts_read_resp(&read_resp);
+			if (RTK_BT_OK == ret)
+				BT_LOGA("[APP] ble matter respond for client read success, offset: %d\r\n", offset);
+			else
+				BT_LOGE("[APP] ble matter respond for client read failed, err: 0x%x\r\n", ret);
+		} else {
+			BT_LOGE("[APP] ble matter read event unknown index: %d\r\n", p_read_ind->index);
+		}
+		break;
+	}
+	case RTK_BT_GATTS_EVT_WRITE_IND: {
+		rtk_bt_gatts_write_ind_t *p_write_ind = (rtk_bt_gatts_write_ind_t *)data;
+		rtk_bt_gatts_write_resp_param_t write_resp = {0};
+		if (BLE_MATTER_SERVICE_CHAR_RX_INDEX == p_write_ind->index) {
+			BT_LOGD("[APP] ble matter write event, len: %d, type: %d, data: \r\n",
+						p_write_ind->len, p_write_ind->type);
+
+			write_resp.app_id = p_write_ind->app_id;
+			write_resp.conn_handle = p_write_ind->conn_handle;
+			write_resp.cid = p_write_ind->cid,
+			write_resp.index = p_write_ind->index;
+			write_resp.type = p_write_ind->type;
+			write_resp.err_code = 0;
+			write_resp.seq = 0;
+
+			ret = rtk_bt_gatts_write_resp(&write_resp);
+			if (RTK_BT_OK == ret) {
+				BT_LOGA("[APP] ble matter response for client write success!\r\n");
+
+				BLE_MATTER_APP_WRITE_CB_ARG *write_msg_matter = (BLE_MATTER_APP_WRITE_CB_ARG *)osif_mem_alloc(0, sizeof(BLE_MATTER_APP_WRITE_CB_ARG));
+				if (write_msg_matter) {
+					//memset(write_msg_matter, 0, sizeof(BLE_MATTER_APP_WRITE_CB_ARG));
+					write_msg_matter->conn_handle = p_write_ind->conn_handle;
+					write_msg_matter->len = p_write_ind->len;
+					if (write_msg_matter->len != 0) {
+						write_msg_matter->p_value = osif_mem_alloc(0, write_msg_matter->len);
+						memcpy(write_msg_matter->p_value, p_write_ind->value, write_msg_matter->len);
+						if (ble_matter_adapter_send_callback_msg(BLE_MATTER_MSG_WRITE_CB, NULL, write_msg_matter) == false) {
+							if (write_msg_matter->len != 0) {
+								osif_mem_free(write_msg_matter->p_value);
+								write_msg_matter->p_value = NULL;
+							}
+							BT_LOGE("[APP] send callback msg failed\r\n");
+							osif_mem_free(write_msg_matter);
+							write_msg_matter = NULL;
+						}
+					} else {
+						BT_LOGE("[APP] write_msg_matter->len is 0, msg failed\r\n");
+					}
+				} else {
+					BT_LOGE("[APP] malloc failed\r\n");
+				}
+			} else {
+				BT_LOGE("[APP] ble matter response for client write failed, err: 0x%x\r\n", ret);
+			}
+		} else {
+			BT_LOGE("[APP] ble matter write event unknown index: %d\r\n", p_write_ind->index);
+		}
+		break;
+	}
+	case RTK_BT_GATTS_EVT_CCCD_IND: {
+		rtk_bt_gatts_cccd_ind_t *p_cccd_ind = (rtk_bt_gatts_cccd_ind_t *)data;
+		switch (p_cccd_ind->index) {
+		case BLE_MATTER_SERVICE_CHAR_INDICATE_CCCD_INDEX:
+			if (p_cccd_ind->value & RTK_BT_GATT_CCC_INDICATE) {
+				BT_LOGA("[APP] ble matter indicate cccd, indicate bit enable\r\n");
+				BLE_MATTER_APP_CCCD_CB_ARG *ind_en_msg_matter = (BLE_MATTER_APP_CCCD_CB_ARG *)osif_mem_alloc(0, sizeof(BLE_MATTER_APP_CCCD_CB_ARG));
+				if (ind_en_msg_matter) {
+					memset(ind_en_msg_matter, 0, sizeof(BLE_MATTER_APP_CCCD_CB_ARG));
+					ind_en_msg_matter->conn_handle = p_cccd_ind->conn_handle;
+					ind_en_msg_matter->indicationsEnabled = 1;
+					if (ble_matter_adapter_send_callback_msg(BLE_MATTER_MSG_CCCD_EN, NULL, ind_en_msg_matter) == false) {
+						BT_LOGE("[APP] send callback msg failed\r\n");
+						osif_mem_free(ind_en_msg_matter);
+						ind_en_msg_matter = NULL;
+					}
+				} else {
+					BT_LOGE("[APP] malloc failed\r\n");
+				}
+			} else {
+				BT_LOGA("[APP] ble matter indicate cccd, indicate bit disable\r\n");
+				BLE_MATTER_APP_CCCD_CB_ARG *ind_disable_msg_matter = (BLE_MATTER_APP_CCCD_CB_ARG *)osif_mem_alloc(0, sizeof(BLE_MATTER_APP_CCCD_CB_ARG));
+				if (ind_disable_msg_matter) {
+					memset(ind_disable_msg_matter, 0, sizeof(BLE_MATTER_APP_CCCD_CB_ARG));
+					ind_disable_msg_matter->conn_handle = p_cccd_ind->conn_handle;
+					ind_disable_msg_matter->indicationsEnabled = 0;
+					if (ble_matter_adapter_send_callback_msg(BLE_MATTER_MSG_CCCD_DIS, NULL, ind_disable_msg_matter) == false) {
+						BT_LOGE("[APP] send callback msg failed\r\n");
+						osif_mem_free(ind_disable_msg_matter);
+						ind_disable_msg_matter = NULL;
+					}
+				} else {
+					BT_LOGE("[APP] malloc failed\r\n");
+				}
+			}
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+
+	case RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND: {
+		rtk_bt_gatts_ntf_and_ind_ind_t *p_ind_ind = (rtk_bt_gatts_ntf_and_ind_ind_t *)data;
+		if (RTK_BT_OK == p_ind_ind->err_code) {
+			BT_LOGA("[APP] ble matter indicate succeed!\r\n");
+			BLE_MATTER_APP_SEND_COMPLETE_CB_ARG *send_complete_msg_matter =
+				(BLE_MATTER_APP_SEND_COMPLETE_CB_ARG *)osif_mem_alloc(0, sizeof(BLE_MATTER_APP_SEND_COMPLETE_CB_ARG));
+			if (send_complete_msg_matter) {
+				memset(send_complete_msg_matter, 0, sizeof(BLE_MATTER_APP_SEND_COMPLETE_CB_ARG));
+				send_complete_msg_matter->conn_handle = p_ind_ind->conn_handle;
+				if (ble_matter_adapter_send_callback_msg(BLE_MATTER_MSG_SEND_COMPLETE, NULL, send_complete_msg_matter) == false) {
+						BT_LOGE("[APP] send callback msg failed\r\n");
+					osif_mem_free(send_complete_msg_matter);
+					send_complete_msg_matter = NULL;
+				}
+			} else {
+				BT_LOGE("[APP] malloc failed\r\n");
+			}
+		} else {
+			BT_LOGE("[APP] ble matter indicate failed, err: 0x%x\r\n", p_ind_ind->err_code);
+		}
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+uint16_t ble_matter_adapter_srv_add(void)
+{
+	ble_matter_srv.type = GATT_SERVICE_OVER_BLE;
+	ble_matter_srv.server_info = 0;
+	ble_matter_srv.user_data = NULL;
+	ble_matter_srv.register_status = 0;
+
+	return rtk_bt_gatts_register_service(&ble_matter_srv);
+}
