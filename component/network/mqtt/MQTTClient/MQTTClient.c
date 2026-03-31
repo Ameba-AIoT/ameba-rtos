@@ -665,15 +665,18 @@ int MQTTDataHandle(MQTTClient *c, fd_set *readfd, MQTTPacket_connectData *connec
 {
 	short packet_type = 0;
 	int rc = 0;
-	int mqttstatus = c->mqttstatus;
+	int mqttstatus = 0;
 	int mqtt_rxevent = 0;
-	int mqtt_fd = c->ipstack->my_socket;
+	int mqtt_fd = -1;
 
 	if (c == NULL) {
+		mqtt_printf(MQTT_ERROR, "MQTTDataHandle: c is NULL");
 		rc = FAILURE;
 		goto exit;
 	}
 
+	mqttstatus = c->mqttstatus;
+	mqtt_fd = c->ipstack->my_socket;
 	mqtt_rxevent = (mqtt_fd >= 0) ? FD_ISSET(mqtt_fd, readfd) : 0;
 
 	if (mqttstatus == MQTT_START) {

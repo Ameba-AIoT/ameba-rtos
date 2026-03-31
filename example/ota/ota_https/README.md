@@ -1,46 +1,101 @@
 # Example Description
 
-This example is designed for firmware update by Over-the-air programming (OTA) via Wireless Network Connection.
+This example demonstrates secure image update using Over-the-Air (OTA) programming over HTTPS protocol via Wireless Network.
 
-Download `ota_all.bin` from the download server (in `tools\DownloadServer(HTTP)`) automatically.
+The Ameba board downloads `ota_all.bin` from the HTTPS download server (in `tools\DownloadServer(HTTP)`) automatically with SSL/TLS encryption.
 
 # HW Configuration
 
-None
+```
++------------------+          +------------------+           +------------------+
+|                  |          |                  |  WiFi/    |                  |
+|  Ameba Board     |   WiFi   |   WiFi Router    |  Ethernet |        PC        |
+|  (RTL8730E/...   |<-------->|   (Same LAN)     |<--------->|   (HTTPS Server) |
+|   RTL8726E, etc) |          |                  |           |                  |
+|                  |          |                  |           |                  |
++------------------+          +------------------+           +------------------+
+```
 
-# SW configuration
+**Connection Requirements:**
+- Ameba board connects to WiFi router via WiFi
+- PC connects to the same router via WiFi or Ethernet (both must be on the same LAN)
+- WiFi SSID and password need to be configured in the board
+- HTTPS server script should be executed on PC before board reset
 
-1. If encounter the following errors in an SSL connection. Set `MBEDTLS_SSL_IN_CONTENT_LEN` by using menuconfig and choose `CONFIG SSL`-> `Maximum len of incoming fragments` -> set large size.
+**Security Features:**
+- SSL/TLS encrypted connection for secure OTA updates
+- Server certificate verification for authentication (Optional)
 
-	```C
-	#define MBEDTLS_ERR_SSL_BAD_INPUT_DATA                    -0x7100
-	#define MBEDTLS_ERR_SSL_INVALID_RECORD                    -0x7200
-	```
+# SW Configuration
 
-2. Modify `PORT`, `HOST` and `RESOURCE` based on your download server. Set it with `IP` and `ota_all.bin`. e.g.
-	```C
-	#define PORT   443
-	static const char *HOST = "192.168.3.37";
-	static const char *RESOURCE = "ota_all.bin";
-	```
+1. **Configure HTTPS Server Settings**
 
-3. Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
+   Modify `PORT`, `HOST` and `RESOURCE` in `example_ota_https.c` based on your download server settings:
+   ```C
+   #define PORT   443
+   static const char *HOST = "192.168.3.37";
+   static const char *RESOURCE = "ota_all.bin";
+   ```
+   **Note:** Replace the IP address with your PC's actual IP address on the local network.
 
-4. Copy the `ota_all.bin` into `tools\DownloadServer(HTTP)`.
+2. **Select Image Switch Strategy**
 
-5. Configure the server as a https server according to `tools\DownloadServer(HTTP)\readme.txt` first then execute the script.
+   Refer to [Image Pattern and Version Number](https://aiot.realmcu.com/zh/latest/rtos/ota/index.html#version-number) to select the appropriate image switch strategy for your application.
 
-6. Reset the board and start the download.
+3. **Build and Flash**
+   - Refer to the [SDK Examples](https://aiot.realmcu.com/en/latest/rtos/sdk/sdk_example/index.html) to generate images
+   - Download images to board using Ameba Image Tool
 
-# Expect result
+4. **Setup HTTPS Server**
+   - Copy `ota_all.bin` into `tools\DownloadServer(HTTP)` folder
+   - Configure the server as HTTPS server according to `tools\DownloadServer(HTTP)\readme.txt`
+   - Execute the server script
+   - Keep the server running during the OTA process
 
-A https download example thread will be started automatically when booting.
+5. **Start OTA Update**
 
-# Note
+   Reset the board to start the download
 
-The https server script and board need to be on the same local area network.
+# Expected Result
+
+After booting, an HTTPS download example thread will be started automatically. The board will:
+1. Connect to the configured WiFi network using the provided SSID and password
+2. Establish a secure SSL/TLS connection to the HTTPS server on the PC (must be running before board reset)
+3. Download the `ota_all.bin` image from the server with encryption
+4. Verify the downloaded image integrity
+5. Automatically reset and boot from the new image after successful OTA
+
+**Note:** The board will boot from the new image only if:
+- The image switch strategy is set to "Valid Header Based Switch"
+- The new image version number is greater than the current image version number when the image switch strategy is set to "Version Number Based Switch"
+
+**Success Indicators:**
+- Serial console shows successful WiFi connection
+- SSL/TLS handshake completed successfully
+- HTTPS download progress is displayed
+- "OTA SUCCESS" message appears after image update
+- Board automatically reboots with the new image
+
+# Notes
+
+- The HTTPS server script and board must be on the same local area network
+- Ensure the HTTPS server is running before resetting the board
+- The board will automatically start downloading after booting if network and server are ready
+- If the board fails to connect to the router automatically, use the AT command `AT+WLCONN=ssid,<ssid>,pw,<password>` to connect manually
+
+**SSL/TLS Configuration:**
+If you encounter SSL connection errors:
+```c
+#define MBEDTLS_ERR_SSL_BAD_INPUT_DATA        -0x7100
+#define MBEDTLS_ERR_SSL_INVALID_RECORD        -0x7200
+```
+
+Increase `MBEDTLS_SSL_IN_CONTENT_LEN` in menuconfig:
+```
+CONFIG SSL --->
+   (16384) Maximum len of incoming fragments
+```
+Save and exit, then rebuild and test again.
 
 # Supported IC
 

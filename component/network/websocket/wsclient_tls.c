@@ -99,14 +99,17 @@ static int _verify_func(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *
 int wss_tls_set_cert_and_key(wsclient_context *wsclient, char *client_cert, char *client_key, char *ca_cert)
 {
 	int ret = 0;
-	struct wss_tls *tls = (struct wss_tls *)wsclient->tls;
-	mbedtls_ssl_config *conf = &tls->conf;
+	struct wss_tls *tls;
+	mbedtls_ssl_config *conf;
 
 	if (wsclient == NULL) {
 		WSCLIENT_ERROR("ERROR: wsclient is NULL\n");
 		ret = -1;
 		goto exit;
 	}
+
+	tls = (struct wss_tls *)wsclient->tls;
+	conf = &tls->conf;
 
 	mbedtls_x509_crt_init(&tls->ca);
 	mbedtls_x509_crt_init(&tls->cert);

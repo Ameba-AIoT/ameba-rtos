@@ -136,4 +136,8 @@
 #undef CONFIG_IEEE80211R
 #endif
 
+#if defined(CONFIG_WHC_INTF_SPI) && defined(CONFIG_WHC_DEV)
+#define WHC_SKIP_NP_MSG_TASK
+#endif
+
 #endif //WLANCONFIG_H
