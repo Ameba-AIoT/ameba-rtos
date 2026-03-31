@@ -309,12 +309,12 @@ bool demo_usb_deinit(void)
 #define DEMO_UART_IRQ_PRIO        (INT_PRI_LOWEST)
 #define DEMO_UART_TX_FIFO_SIZE    (32)
 #define DEMO_UART_RX_FIFO_SIZE    (32)
-#define DEMO_UART_RX_BUF_SIZE     (0xC000)   /* RX buffer size 48K */
-#define DEMO_UART_RX_ENABLE_SIZE  (2048)      /* Only 512 left to read */
+#define DEMO_UART_RX_BUF_SIZE     (4096 * 30)
+#define DEMO_UART_RX_ENABLE_SIZE  (4096 * 2)
 #if defined(DEMO_UART_USING_DMA) && DEMO_UART_USING_DMA
 #define DEMO_UART_RX_DISABLE_SIZE (2048)      /* Only 2048 left to write */
 #else
-#define DEMO_UART_RX_DISABLE_SIZE (4096)      /* Only 128 left to write */
+#define DEMO_UART_RX_DISABLE_SIZE (128)       /* Only 128 left to write */
 #endif
 #define DEMO_UART_DMA_TX_BURST_SIZE 8
 #define DEMO_UART_DMA_RX_BURST_SIZE 16 // RX_BURST_SIZE >= RX GDMA_SrcMsize
@@ -553,6 +553,19 @@ uint16_t demo_uart_read(uint8_t *buf, uint16_t len)
 	uint16_t read_len = demo_uart_rx_to_read_space();
 	// uint8_t *temp = NULL
 
+	if (demo_uart->rx_disabled && read_len <= DEMO_UART_RX_ENABLE_SIZE) {
+		// BT_LOGA("demo_uart rx enable! \r\n");
+		demo_uart->rx_disabled = 0;
+#if defined(DEMO_UART_USING_DMA) && DEMO_UART_USING_DMA
+		UART_INTConfig(DEMO_UART_DEV, (RUART_BIT_ERBI | RUART_BIT_ELSI), DISABLE);
+		UART_RXDMAConfig(DEMO_UART_DEV, DEMO_UART_DMA_RX_BURST_SIZE);
+		UART_RXDMACmd(DEMO_UART_DEV, ENABLE);
+		UART_RXGDMA_Init(DEMO_UART_INDEX, &demo_uart->GDMA_InitStruct, DEMO_UART_DEV, (IRQ_FUN)demo_uart_dma_recv_done, demo_dma_uart_recv_buff, SRX_BUF_SZ);
+		UART_INTConfig(DEMO_UART_DEV, RUART_BIT_ETOI, ENABLE);
+#else
+		UART_INTConfig(DEMO_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, ENABLE);
+#endif
+	}
 	if (read_len < len) {
 		// BT_LOGE("%s: no enough uart data to read! \r\n", __func__);
 		return 0;
@@ -566,20 +579,6 @@ uint16_t demo_uart_read(uint8_t *buf, uint16_t len)
 	}
 	demo_uart->read_ptr += len;
 	demo_uart->read_ptr %= demo_uart->ring_buffer_size;
-
-	if (demo_uart->rx_disabled && demo_uart_rx_to_read_space() <= DEMO_UART_RX_ENABLE_SIZE) {
-		// BT_LOGA("demo_uart rx enable! \r\n");
-		demo_uart->rx_disabled = 0;
-#if defined(DEMO_UART_USING_DMA) && DEMO_UART_USING_DMA
-		UART_INTConfig(DEMO_UART_DEV, (RUART_BIT_ERBI | RUART_BIT_ELSI), DISABLE);
-		UART_RXDMAConfig(DEMO_UART_DEV, DEMO_UART_DMA_RX_BURST_SIZE);
-		UART_RXDMACmd(DEMO_UART_DEV, ENABLE);
-		UART_RXGDMA_Init(DEMO_UART_INDEX, &demo_uart->GDMA_InitStruct, DEMO_UART_DEV, (IRQ_FUN)demo_uart_dma_recv_done, demo_dma_uart_recv_buff, SRX_BUF_SZ);
-		UART_INTConfig(DEMO_UART_DEV, RUART_BIT_ETOI, ENABLE);
-#else
-		UART_INTConfig(DEMO_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, ENABLE);
-#endif
-	}
 
 	return len;
 }

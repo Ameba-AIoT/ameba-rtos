@@ -106,6 +106,12 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 
 		/* handle buf data */
 		p_msg_info = (struct whc_msg_info *)(rx_skb->data + sizeof(INIC_TX_DESC));
+		if (!wifi_is_running(p_msg_info->wlan_idx)) {
+			/*free skb and return*/
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Port %d is down, drop!\n", p_msg_info->wlan_idx);
+			dev_kfree_skb_any(rx_skb);
+			goto drop_pkt;
+		}
 
 		skb_reserve(rx_skb, sizeof(INIC_TX_DESC) + sizeof(struct whc_msg_info) + p_msg_info->pad_len);
 		skb_put(rx_skb, size - sizeof(struct whc_msg_info) - p_msg_info->pad_len);
@@ -141,6 +147,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		/* free buf later, sdio ring buffer no need to modify. */
 	}
 
+drop_pkt:
 	return RTK_SUCCESS;
 }
 
