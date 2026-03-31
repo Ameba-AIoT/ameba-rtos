@@ -307,7 +307,6 @@ typedef struct _usbd_class_driver_t {
 	 * @param[in] dev: USB device.
 	 * @param[in] old_status: Previous status of USB device.
 	 * @param[in] status: Current status of USB device.
-	 * @return None
 	 */
 	void (*status_changed)(usb_dev_t *dev, u8 old_status, u8 status);
 } usbd_class_driver_t;
@@ -462,9 +461,18 @@ int usbd_ep_is_stall(usb_dev_t *dev, usbd_ep_t *ep);
  */
 u16 usbd_get_str_desc(const char *str, u8 *desc);
 
+/**
+ * @brief Sets the USB to enter Clock Gating (CG) state with a specific wakeup event.
+ * @details This function configures the USB device to enter a low-power clock gated state.
+ *          The wakeup mechanism depends on the value of the @ref sleep_ms parameter.
+ * @param[in] sleep_ms:
+ *          - 0: Wakeup is triggered by a USB event.
+ *          - others: Wakeup is triggered by an Anon timer event after the specified time.
+ */
+void usbd_enter_cg(u32 sleep_ms);
+
 /** @} End of Device_Core_Functions_For_Classes group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
 
 #endif /* USBD_H */
-

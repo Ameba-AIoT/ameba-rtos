@@ -496,7 +496,7 @@ enum rtw_scan_type {
 	RTW_SCAN_PASSIVE        = 0x02,  /**< Passive scan*/
 	RTW_SCAN_NO_HIDDEN_SSID = 0x04,  /**< Filter out hidden SSID APs*/
 	RTW_SCAN_REPORT_EACH    = 0x08,  /**< Report each found AP immediately */
-	RTW_SCAN_WITH_P2P       = 0x10,  /**< For P2P usage */
+	RTW_SCAN_WITH_PORT1       = 0x10,  /**< For P2P usage */
 	RTW_SCAN_FOR_ZRPP       = 0x20,  /**< For Zero R-mesh Provisioning Protocol usage */
 };
 
@@ -748,7 +748,8 @@ struct rtw_scan_result {
 	 *  Example: For China, country_code[0] = 'C', country_code[1] = 'N'. */
 	u8                 country_code[2];
 	u8                 wireless_mode;    /**< Wireless mode: @ref RTW_80211_B, @ref RTW_80211_A, etc.*/
-	u8                 rom_rsvd[3];
+	u8                 is_beacon;
+	u8                 rom_rsvd[2];
 };
 
 /**
@@ -786,9 +787,11 @@ struct rtw_scan_param {
 	/** @brief Callback for @ref RTW_SCAN_REPORT_EACH mode.
 	  * @param[in] scanned_ap_info: Pointer to details of a scanned AP.
 	  * @param[in] user_data: Pointer to user data (see `scan_user_data`).
+	  * @param[in] ies: Pointer to IEs.
+	  * @param[in] ie_len: The length of IE.
 	  * @return @ref RTK_SUCCESS or @ref RTK_FAIL.
 	  */
-	s32(*scan_report_each_mode_user_callback)(struct rtw_scan_result *scanned_ap_info, void *user_data);
+	s32(*scan_report_each_mode_user_callback)(struct rtw_scan_result *scanned_ap_info, void *user_data, u8 *ies, u32 ie_len);
 
 	/** @brief  Callback for reporting ACS (Automatic Channel Selection) info.
 	  * @param[in] scanned_ap_info: Pointer to channel busyness information.
@@ -1197,7 +1200,8 @@ struct rtw_rmesh_node_info {
 
 /* not included in any api groups*/
 extern  struct wifi_user_conf wifi_user_config;
-extern struct rtw_wifi_setting wifi_setting[2];
+extern struct rtw_wifi_setting wifi_setting[1];
+extern struct rtw_wifi_setting *ap_wifisetting;
 
 #ifdef __cplusplus
 }

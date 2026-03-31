@@ -1290,7 +1290,7 @@ void vApplicationIdleHook(void)
 	/* Use the idle task to place the CPU into a low power mode.  Greater power
 	saving could be achieved by not including any demo tasks that never block. */
 }
-
+__attribute__((optimize("O0")))
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
 	/* To avoid gcc warnings */

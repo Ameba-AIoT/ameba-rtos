@@ -12,6 +12,7 @@
 #include "utils/os.h"
 #define TO_TEST_WPS 0
 #define ETH_ALEN 6
+#define SSID_MAX_LEN 32
 
 #if defined(__linux__) || defined(__GLIBC__)
 #include <endian.h>

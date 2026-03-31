@@ -148,8 +148,8 @@ typedef struct {
 typedef struct {
 	usbd_ep_t ep_bulk_in;                           /**< Structure for the Bulk IN endpoint. */
 	usbd_ep_t ep_bulk_out;                          /**< Structure for the Bulk OUT endpoint. */
-	usb_msc_bot_cbw_t *cbw;                            /**< Pointer to the Command Block Wrapper. */
-	usb_msc_bot_csw_t *csw;                            /**< Pointer to the Command Status Wrapper. */
+	usb_msc_bot_cbw_t *cbw;                         /**< Pointer to the Command Block Wrapper. */
+	usb_msc_bot_csw_t *csw;                         /**< Pointer to the Command Status Wrapper. */
 	usbd_msc_disk_ops_t disk_ops;                   /**< Structure with disk operation function pointers. */
 	usbd_msc_cb_t *cb;                              /**< Pointer to the user callback structure. */
 	usb_dev_t *dev;                                 /**< Pointer to the USB device structure. */

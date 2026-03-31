@@ -1,0 +1,66 @@
+{
+    "KM4TZ": {
+        "preCommands": {
+            "set substitute-path": [],
+            "dir": [
+                "component/soc/RTL8720F/rom/rom_common",
+                "component/soc/RTL8720F/rom/string",
+                "component/soc/RTL8720F/rom/stdlib",
+                "component/soc/RTL8720F/rom/crashdump",
+                "component/soc/RTL8720F/rom/rom_km4tz",
+                "component/soc/RTL8720F/rom/fault_injection_hardening",
+                "component/soc/RTL8720F/rom/download/xmodem",
+                "component/ssl/mbedtls-3.6.5/library",
+                "component/ssl/mbedtls-3.6.5/hw_alt",
+                "component/wifi/common",
+                "component/wifi/common/secure",
+                "component/wifi/wpa_supplicant/wpa_lite/rom",
+                "component/wifi/driver/core_rom",
+                "component/wifi/driver/core_rom2024",
+                "component/wifi/driver/halcommon_rom",
+                "component/wifi/driver/rtl8721f_rom",
+                "component/soc/RTL8720F/fwlib/include",
+                "component/soc/common/include/cmsis"
+            ],
+            "add-symbol-file": [
+                "build_${socSelection}/build/project_km4tz/image/target_loader.axf",
+                "component/soc/RTL8720F/project/project_km4tz/lib/RTL8720F_rom_acut/target_rom.axf",
+                "component/soc/RTL8720F/project/project_km4tz/lib/RTL8720F_rom_acut/target_rom_ns.axf"
+            ]
+        },
+        "overrideCommands": [
+            "mem 0xa5a5a5a4 0xa5a5a5a6 none",
+            "mem 0xffffff00 0xffffffff none",
+            "set mem inaccessible-by-default off"
+        ]
+    },
+    "KM4NS": {
+        "preCommands": {
+            "set substitute-path": [],
+            "dir": [
+                "component/soc/RTL8720F/rom/rom_common",
+                "component/soc/RTL8720F/rom/string",
+                "component/soc/RTL8720F/rom/stdlib",
+                "component/soc/RTL8720F/rom/crashdump",
+                "component/soc/RTL8720F/rom/rom_km4ns",
+                "component/wifi/common",
+                "component/wifi/common/secure",
+                "component/wifi/wpa_supplicant/wpa_lite/rom",
+                "component/wifi/driver/core_rom",
+                "component/wifi/driver/core_rom2024",
+                "component/wifi/driver/halcommon_rom",
+                "component/wifi/driver/rtl8721f_rom",
+                "component/soc/RTL8720F/fwlib/include",
+                "component/soc/common/include/cmsis"
+            ],
+            "add-symbol-file": [
+                "component/soc/RTL8720F/project/project_km4ns/lib/RTL8720F_rom_acut/target_rom.axf"
+            ]
+        },
+        "overrideCommands": [
+            "mem 0xa5a5a5a4 0xa5a5a5a6 none",
+            "mem 0xffffff00 0xffffffff none",
+            "set mem inaccessible-by-default off"
+        ]
+    }
+}

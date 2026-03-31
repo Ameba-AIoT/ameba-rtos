@@ -47,6 +47,10 @@ exit:
 
 void httpc_conn_free(struct httpc_conn *conn)
 {
+	if (conn == NULL) {
+		return;
+	}
+
 	if (conn->tls) {
 		httpc_tls_free(conn->tls);
 	}
@@ -82,6 +86,11 @@ int httpc_conn_connect(struct httpc_conn *conn, char *host, uint16_t port, uint3
 	fd_set fdset;
 	struct timeval select_timeout;
 	struct timeval send_timeout;
+
+	if (conn == NULL || host == NULL) {
+		httpc_log("ERROR: Invalid parameter");
+		return -1;
+	}
 
 	recv_timeout = timeout * 1000;
 	send_timeout.tv_sec = timeout;
@@ -185,6 +194,11 @@ exit:
 
 void httpc_conn_close(struct httpc_conn *conn)
 {
+	if (conn == NULL) {
+		httpc_log("ERROR: Invalid null connection handle");
+		return;
+	}
+
 	if (conn->tls) {
 		httpc_tls_close(conn->tls);
 	}
@@ -198,9 +212,17 @@ void httpc_conn_close(struct httpc_conn *conn)
 int httpc_conn_setup_user_password(struct httpc_conn *conn, char *user, char *password)
 {
 	int ret = 0;
-	size_t auth_len = strlen(user) + 1 + strlen(password);
-	size_t base64_len = (auth_len + 2) / 3 * 4 + 1;
+	size_t auth_len = 0;
+	size_t base64_len = 0;
 	uint8_t *auth = NULL;
+
+	if (conn == NULL || user == NULL || password == NULL) {
+		httpc_log("ERROR: Invalid parameter");
+		return -1;
+	}
+
+	auth_len = strlen(user) + 1 + strlen(password);
+	base64_len = (auth_len + 2) / 3 * 4 + 1;
 
 	auth = (uint8_t *) httpc_malloc(auth_len);
 
@@ -252,6 +274,10 @@ void httpc_setup_debug(uint8_t debug)
 
 void httpc_enable_ignore_content_len(struct httpc_conn *conn)
 {
+	if (conn == NULL) {
+		httpc_log("ERROR: Invalid null connection handle");
+		return;
+	}
 	conn->ignore_content_len = 1;
 }
 

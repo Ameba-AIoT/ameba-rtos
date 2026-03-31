@@ -35,6 +35,10 @@ int httpc_request_write_header_start(struct httpc_conn *conn, char *method, char
 	int ret = 0;
 	size_t header_len = 0;
 
+	if (conn == NULL || method == NULL || resource == NULL || conn->host == NULL) {
+		return -1;
+	}
+
 	// remove previous request header
 	if (conn->request_header) {
 		httpc_free(conn->request_header);
@@ -109,6 +113,10 @@ int httpc_request_write_header_raw(struct httpc_conn *conn, char *raw_req_header
 	char *request_header = NULL;
 	size_t header_len = 0;
 
+	if (conn == NULL || raw_req_header == NULL) {
+		return -1;
+	}
+
 	if (conn->request_header) {
 		header_len = strlen("%s%s") + strlen(raw_req_header) - 2 + strlen(HTTP_CRLF) - 2;
 		header_len += strlen(conn->request_header);
@@ -141,6 +149,10 @@ int httpc_request_write_header(struct httpc_conn *conn, char *name, char *value)
 	int ret = 0;
 	char *request_header = NULL;
 	size_t header_len = 0;
+
+	if (conn == NULL || name == NULL || value == NULL) {
+		return -1;
+	}
 
 	if (conn->request_header) {
 		header_len = strlen("%s: %s%s") + strlen(name) - 2 + strlen(value) - 2 + strlen(HTTP_CRLF) - 2;
@@ -204,12 +216,21 @@ exit:
 
 int httpc_request_write_data(struct httpc_conn *conn, uint8_t *data, size_t data_len)
 {
+	if (conn == NULL) {
+		httpc_log("ERROR: Invalid null connection handle");
+		return -1;
+	}
 	return httpc_write(conn, data, data_len);
 }
 
 int httpc_response_is_status(struct httpc_conn *conn, char *status)
 {
 	int ret = 0;
+
+	if (conn == NULL || status == NULL) {
+		httpc_log("ERROR: Invalid null connection or status");
+		return 0;
+	}
 
 	if ((strlen(status) == conn->response.status_len) &&
 		(memcmp(status, conn->response.status, conn->response.status_len) == 0)) {
@@ -230,6 +251,11 @@ int httpc_response_read_header(struct httpc_conn *conn)
 	uint8_t data_byte = 0;
 
 	httpc_log_verbose("%s", __FUNCTION__);
+
+	if (conn == NULL) {
+		httpc_log("ERROR: Invalid null connection handle");
+		return -1;
+	}
 
 	// remove previous response header for keepalive connection
 	if (conn->response.header) {
@@ -511,6 +537,11 @@ int httpc_response_read_data(struct httpc_conn *conn, uint8_t *data, size_t data
 	int recv_len = 0;
 	char chunk[] = "chunked";
 
+	if (conn == NULL) {
+		httpc_log("ERROR: Invalid null connection handle");
+		return -1;
+	}
+
 	/* it is chunked read */
 	if ((conn->response.trans_enc) && (memcmp(conn->response.trans_enc, chunk, strlen(chunk)) == 0)) {
 		uint8_t    tmp_buf[10] = {0,};
@@ -644,7 +675,11 @@ int httpc_response_get_header_field(struct httpc_conn *conn, char *field, char *
 	int ret = 0;
 	char *field_buf = NULL;
 	char *ptr = NULL;
-	size_t value_len;
+	size_t value_len = 0;
+
+	if (conn == NULL || field == NULL || value == NULL) {
+		return -1;
+	}
 
 	*value = NULL;
 	field_buf = (char *) httpc_malloc(strlen(field) + 2);

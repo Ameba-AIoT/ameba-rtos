@@ -87,6 +87,7 @@ rtos_event_bits_t rtos_event_group_get_bits(rtos_event_group_t xEventGroup)
 rtos_event_bits_t rtos_event_group_sync(rtos_event_group_t xEventGroup, const rtos_event_bits_t uxBitsToSet,
 										const rtos_event_bits_t uxBitsToWaitFor, uint32_t MsToWait)
 {
+	configASSERT(xEventGroup != NULL);
 	return (rtos_event_bits_t) xEventGroupSync((EventGroupHandle_t) xEventGroup, (const EventBits_t) uxBitsToSet,
 			(const EventBits_t) uxBitsToWaitFor, (TickType_t) RTOS_CONVERT_MS_TO_TICKS(MsToWait));
 }

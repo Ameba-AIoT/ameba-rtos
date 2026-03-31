@@ -1321,6 +1321,8 @@ iperf_send(struct iperf_test *test, fd_set *write_setP)
 				 (write_setP == NULL || FD_ISSET(sp->socket, write_setP)))) {
 				if ((r = sp->snd(sp)) < 0) {
 					if (r == NET_SOFTERROR) {
+						//Add delay to avoid consuming too much CPU when data link layer is busy
+						rtos_time_delay_ms(2);
 						break;
 					}
 					i_errno = IESTREAMWRITE;
