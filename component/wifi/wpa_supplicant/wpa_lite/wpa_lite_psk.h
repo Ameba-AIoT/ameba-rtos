@@ -168,7 +168,6 @@ struct wpa_priv_t {
 	u8 					psk_rsnxe_ie[RSNXE_MAX_LEN];
 
 	u8					wpa_priv_port;
-	u8					b_wpa_priv_initialized : 1;
 };
 
 enum key_type {
@@ -194,7 +193,7 @@ static __inline__ struct _OCTET_STRING SubStr(struct _OCTET_STRING f, unsigned s
 #if defined(CONFIG_IEEE80211W) || defined(CONFIG_SAE_SUPPORT)
 extern const unsigned char igtk_expansion_const[];
 #endif
-extern struct wpa_priv_t	wpa_lite[2];
+extern struct wpa_priv_t	*wpa_lite[2];
 
 __inline static void set_eapol_params(
 	struct eapol_params *params,
@@ -219,17 +218,17 @@ __inline static void set_eapol_params(
 __inline static void set_eapol_params_2(
 	struct eapol_params_2 *params, unsigned char port, struct wpa_sta_info *pStaInfo)
 {
-	struct wpa_global *pGblInfo = &wpa_lite[port].wpa_global_info;
+	struct wpa_global *pGblInfo = &wpa_lite[port]->wpa_global_info;
 
 	params->pAuthInfoElement = &pGblInfo->AuthInfoElement;
 	params->MulticastCipher = pGblInfo->MulticastCipher;
 	params->pGTKInfo = pGblInfo->GTKInfo;
 	params->pIGTKInfo = pGblInfo->IGTKInfo;
 	params->AuthKeyMgmt = pGblInfo->AuthKeyMgmt;
-	params->mgnt_80211w_IPN = &wpa_lite[port].mgnt_80211w_IPN;
+	params->mgnt_80211w_IPN = &wpa_lite[port]->mgnt_80211w_IPN;
 	params->pCounter = &pGblInfo->Counter;
 	params->pPTK = pStaInfo->PTK;
-	params->dot11txpn = &wpa_lite[port].dot11txpn;
+	params->dot11txpn = &wpa_lite[port]->dot11txpn;
 }
 
 __inline static void set_eapol_hdr_params(

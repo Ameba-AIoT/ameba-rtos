@@ -27,6 +27,8 @@ class PrependHeader(OperationBase):
         parser.add_argument('-i', '--input-file', help='Input file to be process', required=True)
         parser.add_argument('-o', '--output-file', help='Output processed file', required=True)
         parser.add_argument('--boot-index', type=lambda x: int(x, 0), help='Boot index')
+        parser.add_argument('--force-default', type=int,choices=[0, 1], default=0, help='Force use default header pattern (0: auto detect by filename, 1: force default)'
+    )
 
     @staticmethod
     def require_manifest_file(context:Context) -> bool:
@@ -38,7 +40,7 @@ class PrependHeader(OperationBase):
 
     # @exit_on_failure(catch_exception=True)
     @staticmethod
-    def execute(context:Context, output_file:str, input_file:str, map_file:str = '', symbol:str = '', boot_index:Union[int, None] = None):
+    def execute(context:Context, output_file:str, input_file:str, map_file:str = '', symbol:str = '', boot_index:Union[int, None] = None, force_default: int = 0):
         file_name = os.path.basename(input_file)
         file_size = os.path.getsize(input_file)
         if map_file:
@@ -47,7 +49,9 @@ class PrependHeader(OperationBase):
             symbol_info = ('0', '?', '')
 
         header = ''
-        if file_name in ['ram_1.bin', 'xip_boot.bin', 'entry_1.bin']:
+        if force_default == 1:
+            header = PrependHeader.img2sign.to_bytes(8, 'big')
+        elif file_name in ['ram_1.bin', 'xip_boot.bin', 'entry_1.bin']:
             header = PrependHeader.pattern_1.to_bytes(4, 'big') +  PrependHeader.pattern_2.to_bytes(4, 'big')
         elif file_name == 'fatfs.bin':
             header = PrependHeader.pattern_fs_1.to_bytes(4, 'big') +  PrependHeader.pattern_fs_2.to_bytes(4, 'big')
@@ -85,7 +89,8 @@ class PrependHeader(OperationBase):
             self.context.args.input_file,
             self.context.args.map_file,
             self.context.args.symbol,
-            self.context.args.boot_index
+            self.context.args.boot_index,
+            self.context.args.force_default
         )
 
 

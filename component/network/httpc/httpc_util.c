@@ -18,6 +18,11 @@ void httpc_free(void *ptr)
 
 void httpc_conn_dump_header(struct httpc_conn *conn)
 {
+	if (conn == NULL) {
+		httpc_log("ERROR: Invalid null connection handle");
+		return;
+	}
+
 	if (conn->response.header) {
 		char buf[HTTPC_DUMP_BUFFER_LEN];
 

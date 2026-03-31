@@ -12,7 +12,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # You may use if-else condition to set or update predefined variable above
 
 
-if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F)
+if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F OR CONFIG_AMEBAPRO3)
 	ameba_list_append(public_includes
         hw_alt
 		thread_alt
@@ -182,8 +182,8 @@ ameba_list_append(private_sources
 
 # ========== Platforms with hardware acceleration (hw_alt) ==========
 # Both hw_alt and library sources are compiled. ALT macros in config headers control which implementation is used.
-if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F)
-    if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
+if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F OR CONFIG_AMEBAPRO3)
+    if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_AMEBAPRO3)
         ameba_list_append(private_sources
             hw_alt/aes_alt.c
         )

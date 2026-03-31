@@ -1010,11 +1010,12 @@ int whc_host_set_ch_plan(u8 ch_plan)
 	return ret;
 }
 
-int whc_host_set_wps_phase(u8 enable)
+int whc_host_set_wps_phase(u8 wlan_idx, u8 enable)
 {
 	int ret = 0;
-	u32 param_buf[1];
-	param_buf[0] = (u32)enable;
+	u32 param_buf[2];
+	param_buf[0] = wlan_idx;
+	param_buf[1] = (u32)enable;
 
 	whc_host_send_event(WHC_API_WIFI_SET_WPS_PHASE, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
 	return ret;

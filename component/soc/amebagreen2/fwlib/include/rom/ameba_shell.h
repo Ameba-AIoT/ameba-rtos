@@ -17,7 +17,7 @@ extern "C" {
 //UART_LOG_CMD_BUFLEN: only 126 bytes could be used for keeping input
 //                                     cmd, the last byte is for string end ('\0').
 #define UART_LOG_CMD_BUFLEN     127
-#define UART_LOG_CMD_BUFLEN_L	4096
+#define UART_LOG_CMD_BUFLEN_L	2000
 #ifdef CONFIG_LONGER_CMD
 #define CMD_BUFLEN UART_LOG_CMD_BUFLEN_L
 #else

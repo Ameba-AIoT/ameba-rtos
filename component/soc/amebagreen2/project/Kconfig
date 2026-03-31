@@ -64,14 +64,7 @@ config SUPPORT_AUDIO_CMD_PLAYER
 
 #---------- FEATURE LIST END-------------#
 
-menu "CONFIG TrustZone"
-    config TRUSTZONE
-        bool "Enable TrustZone"
-    config TRUSTZONE_EN
-        depends on TRUSTZONE
-        bool
-        default y
-endmenu
+rsource "../../../soc/common/image3/Kconfig.trustzone"
 
 menu "CONFIG Memory Arch"
     config SECOND_FLASH_NOR
@@ -163,13 +156,7 @@ rsource "../../../os/Kconfig"
 
 orsource "../../../utils/Kconfig"
 
-
-menu "CONFIG OTA OPTION"
-    config UPGRADE_BOOTLOADER
-        bool "Enable Bootloader OTA"
-    config COMPRESS_OTA_IMG
-        bool "Enable Compress APP Image"
-endmenu
+rsource "../../../ota/Kconfig"
 
 rsource "../../../usb/Kconfig"
 
@@ -451,9 +438,9 @@ endmenu
 
 rsource "../../../lwip/Kconfig"
 
-rsource "../../../ssl/Kconfig"
-
 orsource "../../../wpan/Kconfig"
+
+rsource "../../../ssl/Kconfig"
 
 rsource "../../../rtk_coex/Kconfig.coex"
 

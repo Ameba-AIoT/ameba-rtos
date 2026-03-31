@@ -32,6 +32,7 @@ int whc_spi_dev_dma_rx_done_cb(void *param)
 	struct whc_msg_info *msg_info;
 	u8 *buf = NULL;
 	u32 event;
+	u16 retry_num = 0;
 
 	/* disable gdma channel */
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
@@ -42,6 +43,7 @@ int whc_spi_dev_dma_rx_done_cb(void *param)
 
 	/* receives XMIT_PKTS */
 	if (event == WHC_WIFI_EVT_XIMT_PKTS) {
+		retry_num = 0;
 retry:
 		/* alloc new skb, blocked if no skb.
 		block value <= wifi_user_config.skb_num_np - (rx_ring_buffer + wifi_user_config.rx_ampdu_num + 1 for spi rx_dma_buffer)
@@ -50,13 +52,24 @@ retry:
 			((new_skb = dev_alloc_skb(SPI_BUFSZ, SPI_SKB_RSVD_LEN)) == NULL)) {
 			spi_priv->wait_for_txbuf = TRUE;
 
+#ifndef WHC_SKIP_NP_MSG_TASK
 			/* resume pending queue to release skb */
 			rtw_pending_q_resume();
+#endif
 
 			/* wait timeout to re-check skb, considering corner cases for wait_for_txbuf update */
-			rtos_sema_take(spi_priv->free_skb_sema, 5);
+			rtos_sema_take(spi_priv->free_skb_sema, 1);
 
-			goto retry;
+			/* retry 1ms * 5 = 5ms to get skb. */
+			if (retry_num < 5) {
+				retry_num++;
+				goto retry;
+			} else {
+				retry_num = 0;
+				spi_priv->wait_for_txbuf = FALSE;
+				new_skb = spi_priv->rx_skb;
+				goto drop_pkt;
+			}
 		} else {
 			spi_priv->wait_for_txbuf = FALSE;
 			spi_priv->rx_skb = new_skb;
@@ -64,6 +77,12 @@ retry:
 
 		/* process rx data */
 		msg_info = (struct whc_msg_info *) rx_pkt->data;
+		if (!wifi_is_running(msg_info->wlan_idx)) {
+			/*free skb and return*/
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Port %d is down, drop!\n", msg_info->wlan_idx);
+			dev_kfree_skb_any(rx_pkt);
+			goto drop_pkt;
+		}
 		skb_reserve(rx_pkt, sizeof(struct whc_msg_info) + msg_info->pad_len);
 		skb_put(rx_pkt, msg_info->data_len);
 
@@ -71,6 +90,7 @@ retry:
 
 		whc_spi_dev_event_int_hdl((u8 *)msg_info, rx_pkt);
 
+drop_pkt:
 		/* set new dest addr for RXDMA */
 		DCache_Invalidate((u32)new_skb->data, SPI_BUFSZ);
 		GDMA_SetDstAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, (u32)new_skb->data);
@@ -84,7 +104,7 @@ retry:
 		/* receives EVENTS */
 		buf = rtos_mem_zmalloc(SPI_BUFSZ);	//TODO: optimize
 		if (buf == NULL) {
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "%s, can't alloc buffer!!\n", __func__);
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "dma rcx cb:mem err\n");
 			goto exit;
 		}
 
@@ -124,7 +144,7 @@ u32 whc_spi_dev_rxdma_irq_handler(void *pData)
 	}
 
 	if (int_status & ErrType) {
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "spi rxdma err occurs!!\n");
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "rx dma err!\n");
 	}
 
 	return 0;
@@ -150,7 +170,7 @@ u32 whc_spi_dev_txdma_irq_handler(void *pData)
 	}
 
 	if (int_status & ErrType) {
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "spi txdma err occurs!!\n");
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "txdma err!\n");
 	}
 
 	return 0;
@@ -473,7 +493,7 @@ void whc_spi_dev_device_init(void)
 
 	skb = dev_alloc_skb(SPI_BUFSZ, SPI_SKB_RSVD_LEN);
 	if (skb == NULL || (((u32)skb->data) & 0x3) != 0) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s: alloc skb fail!\n", __func__);
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "spi_init: skb err!\n");
 		return;
 	}
 	whc_spi_priv->rx_skb = skb;
@@ -487,12 +507,12 @@ void whc_spi_dev_device_init(void)
 
 	/* Create irq task */
 	if (rtos_task_create(NULL, "SPI_RXDMA_IRQ_TASK", whc_spi_dev_rxdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 9) != RTK_SUCCESS) {
-		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_RXDMA_IRQ_TASK Err!!\n");
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "RX TASK Err!\n");
 		return;
 	}
 
 	if (rtos_task_create(NULL, "SPI_TXDMA_IRQ_TASK", whc_spi_dev_txdma_irq_task, (void *)whc_spi_priv, 1024 * 4, 9) != RTK_SUCCESS) {
-		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_TXDMA_IRQ_TASK Err!!\n");
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "TX TASK Err!\n");
 		return;
 	}
 
@@ -501,7 +521,7 @@ void whc_spi_dev_device_init(void)
 	set_dev_rdy_pin(DEV_READY);
 
 	if (WHC_WIFI_EVT_MAX > WHC_BT_EVT_BASE) {
-		RTK_LOGE(TAG_WLAN_INIC, "SPI ID may conflict!\n");
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "check event id!\n");
 	}
 
 	RTK_LOGI(TAG_WLAN_INIC, "SPI device init done!\n");
@@ -562,7 +582,7 @@ bool whc_spi_dev_txdma_init(
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 			GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 		} else {
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%lu\n", pTxData, Length);
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "txdma init err:Data=%x,  LEN=%d\n", pTxData, Length);
 			return FALSE;
 		}
 	} else {
@@ -626,7 +646,7 @@ s8 whc_dev_spi_wait_dev_idle(void)
 	while (spi_priv.tx_req || spi_priv.dev_status != DEV_STS_IDLE || SSI_Busy(WHC_SPI_DEV)) {
 		spi_priv.wait_tx = TRUE;
 		if (rtos_sema_take(spi_priv.spi_transfer_done_sema, WHC_DEV_SPI_TRANSFER_TIMEOUT) == RTK_FAIL) {
-			RTK_LOGE(TAG_WLAN_INIC, "take sema fail,dev_sts:%d,tx_req:%d, SSI_Busy:%d\n",
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "sema to, sts:%d, txreq:%d, spi:%d\n",
 					 spi_priv.dev_status, spi_priv.tx_req, SSI_Busy(WHC_SPI_DEV));
 #ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 			whc_dev_api_set_host_state(WHC_HOST_UNREADY);
@@ -683,7 +703,7 @@ void whc_spi_dev_send_data(u8 *buf, u32 len)
 	struct whc_txbuf_info_t *inic_tx;
 
 	if ((u32)buf & (DEV_DMA_ALIGN - 1)) {
-		RTK_LOGE(TAG_WLAN_INIC, "Send Error, Data buf unaligned!");
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Txbuf align Err!\n");
 		return;
 	}
 
@@ -783,7 +803,7 @@ void whc_spi_dev_send_cmd_data(u8 *buf, u32 len)
 	if (event != WHC_WIFI_EVT_RECV_PKTS) {
 		txbuf = rtos_mem_zmalloc(txsize);
 		if (!txbuf) {
-			RTK_LOGE(TAG_WLAN_INIC, "allocate buffer failed when to send in spi cmd data\n");
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "cmd path:no mem\n");
 			return;
 		}
 		hdr = (struct whc_cmd_path_hdr *)txbuf;
@@ -819,7 +839,11 @@ void whc_spi_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
 			break;
 		}
 		/* wakeup task */
+#ifndef WHC_SKIP_NP_MSG_TASK
 		rtos_sema_give(dev_xmit_priv.xmit_sema);
+#else
+		rtw_single_thread_wakeup();
+#endif
 
 		break;
 #ifdef CONFIG_WHC_WIFI_API_PATH
@@ -834,7 +858,7 @@ void whc_spi_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
 			rtos_sema_give(event_priv.api_ret_sema);
 		} else {
 			ret_msg = (struct whc_api_info *)rxbuf;
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_WARN, "too late to receive API ret, ID: 0x%x!\n", ret_msg->api_id);
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_WARN, "API ret TO, ID: 0x%x!\n", ret_msg->api_id);
 
 			/* free rx buffer */
 			rtos_mem_free((u8 *)ret_msg);

@@ -708,15 +708,23 @@ int usbh_prepare_retransfer(usb_host_t *host, u8 pipe_num);
 /* Usbh CTS test operations. */
 /**
  * @brief  USB Host enter suspend.
- * @return None
  */
 void usbh_suspend(void);
 
 /**
  * @brief  USB Host exit suspend.
- * @return None
  */
 void usbh_resume(void);
+
+/**
+ * @brief Sets the USB to enter Clock Gating (CG) state with a specific wakeup event.
+ * @details This function configures the USB host to enter a low-power clock gated state.
+ *          The wakeup mechanism depends on the value of the @ref sleep_ms parameter.
+ * @param[in] sleep_ms:
+ *          - 0: Wakeup is triggered by a USB event.
+ *          - others: Wakeup is triggered by an Anon timer event after the specified time.
+ */
+void usbh_enter_cg(u32 sleep_ms);
 
 /**
  * @brief  USB Host Port Test Control.

@@ -64,10 +64,5 @@ int atcmd_bt_excute(int argc, char *argv[], const cmd_table_t *cmd_table, const 
 	ret = BT_AT_ERR_CMD_INVALID;
 
 exit:
-	if (ret == 0) {
-		BT_AT_PRINTOK();
-	} else {
-		BT_AT_PRINTERROR(ret);
-	}
 	return ret;
 }

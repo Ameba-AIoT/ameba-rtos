@@ -77,7 +77,7 @@ ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image2_all.bin
 if(NOT CONFIG_AMEBA_RLS)
     message("========== Image analyze start ==========")
     ameba_execute_process(p_SHOW_OUTPUT
-        COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD}
+        COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD} ${CODE_ANALYZE_RETRY}
         WORKING_DIRECTORY ${c_SDK_IMAGE_TARGET_DIR}
     )
     ameba_execute_process(p_SHOW_OUTPUT

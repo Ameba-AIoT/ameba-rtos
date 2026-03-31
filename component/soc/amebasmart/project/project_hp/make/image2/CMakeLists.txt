@@ -19,6 +19,7 @@ ameba_add_subdirectory(${c_CMPT_OS_DIR})
 ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
 ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
 ameba_add_subdirectory(${c_CMPT_NETWORK_DIR})
+ameba_add_subdirectory(${c_CMPT_OTA_DIR})
 ameba_add_subdirectory(${c_CMPT_LWIP_DIR})
 ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_UI_DIR})
@@ -119,6 +120,7 @@ add_custom_command(
         -DANALYZE_MP_IMG=${ANALYZE_MP_IMG}
         -DDAILY_BUILD=${DAILY_BUILD}
         -DEXTERN_DIR=${EXTERN_DIR}
+        -DCODE_ANALYZE_RETRY=${CODE_ANALYZE_RETRY}
 
         # special variables for current image
 

@@ -26,6 +26,10 @@ int rtos_timer_create_static(rtos_timer_t *pp_handle, const char *p_timer_name, 
 	StaticTimer_t *timer;
 	TickType_t timer_ticks;
 
+	if (pp_handle == NULL || p_timer_callback == NULL) {
+		return RTK_FAIL;
+	}
+
 	timer = __reserved_get_timer_from_pool();
 
 	if (timer == NULL) {
@@ -51,6 +55,9 @@ int rtos_timer_delete_static(rtos_timer_t p_handle, uint32_t wait_ms)
 {
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
 	rtos_timer_t handle_for_delete = p_handle;
+	if (p_handle == NULL) {
+		return RTK_FAIL;
+	}
 	while (rtos_timer_delete(handle_for_delete, wait_ms) != RTK_SUCCESS) {};
 	// wait timer until inactive in __reserved_release_timer_to_pool
 	__reserved_release_timer_to_pool(p_handle);

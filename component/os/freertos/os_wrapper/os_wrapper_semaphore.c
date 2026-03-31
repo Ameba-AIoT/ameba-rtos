@@ -23,6 +23,10 @@ int rtos_sema_create_static(rtos_sema_t *pp_handle, uint32_t init_count, uint32_
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
 	StaticSemaphore_t *sema;
 
+	if (pp_handle == NULL) {
+		return RTK_FAIL;
+	}
+
 	sema = __reserved_get_sema_from_pool();
 
 	if (sema == NULL) {
@@ -46,6 +50,10 @@ int rtos_sema_create_binary_static(rtos_sema_t *pp_handle)
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
 	StaticSemaphore_t *sema;
 
+	if (pp_handle == NULL) {
+		return RTK_FAIL;
+	}
+
 	sema = __reserved_get_sema_from_pool();
 
 	if (sema == NULL) {
@@ -67,9 +75,12 @@ int rtos_sema_create_binary_static(rtos_sema_t *pp_handle)
 int rtos_sema_delete_static(rtos_sema_t p_handle)
 {
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
-	rtos_sema_delete(p_handle);
-	__reserved_release_sema_to_pool(p_handle);
-	return RTK_SUCCESS;
+	int ret = rtos_sema_delete(p_handle);
+
+	if (ret == RTK_SUCCESS) {
+		__reserved_release_sema_to_pool(p_handle);
+	}
+	return ret;
 #else
 	return rtos_sema_delete(p_handle);
 #endif

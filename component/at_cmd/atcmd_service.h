@@ -14,6 +14,7 @@
 #include "dlist.h"
 #include "ameba_soc.h"
 #include "os_wrapper.h"
+#include <stdlib.h>
 
 #if (defined CONFIG_ATCMD_HOST_CONTROL && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE))
 #include "ringbuffer.h"
@@ -57,6 +58,7 @@ void at_printf_unlock(void);
 #define ATCMD_DOWNSTREAM_TEST_END_STR "Downstream Test End\r\n"
 #define SMALL_BUF               512
 #define MAX_BUF_LEN             20000
+#define CMD_BLOCK_SIZE 127
 
 #if (defined CONFIG_ATCMD_HOST_CONTROL && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE))
 extern char g_host_control_mode;

@@ -113,7 +113,11 @@ ameba_list_append(private_includes
 )
 
 if(CONFIG_SDN_BT)
-	ameba_list_append(private_includes vhci)
+	ameba_list_append(private_includes 
+	vhci
+	${c_COMPONENT_DIR}/sdn/platform/${c_SOC_TYPE}/intf
+    ${c_COMPONENT_DIR}/sdn/platform/${c_SOC_TYPE}/intf/host
+	)
 endif()
 
 # Component private part, user config end

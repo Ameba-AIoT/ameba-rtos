@@ -85,6 +85,12 @@ void MQTTClientInit(MQTTClient *c, Network *network, unsigned int command_timeou
 					unsigned char *sendbuf, size_t sendbuf_size, unsigned char *readbuf, size_t readbuf_size)
 {
 	int i;
+
+	if (c == NULL || network == NULL || sendbuf == NULL || readbuf == NULL) {
+		mqtt_printf(MQTT_ERROR, "MQTTClientInit: invalid parameter");
+		return;
+	}
+
 	c->ipstack = network;
 
 	for (i = 0; i < MAX_MESSAGE_HANDLERS; ++i) {
@@ -354,6 +360,11 @@ int MQTTYield(MQTTClient *c, int timeout_ms)
 	int rc = RTK_SUCCESS;
 	Timer timer;
 
+	if (c == NULL) {
+		mqtt_printf(MQTT_ERROR, "MQTTYield: c is NULL");
+		return FAILURE;
+	}
+
 	TimerInit(&timer);
 	TimerCountdownMS(&timer, timeout_ms);
 
@@ -388,6 +399,10 @@ int MQTTConnect(MQTTClient *c, MQTTPacket_connectData *options)
 	MQTTPacket_connectData default_options = MQTTPacket_connectData_initializer;
 	int len = 0;
 
+	if (c == NULL) {
+		mqtt_printf(MQTT_ERROR, "MQTTConnect: c is NULL");
+		goto exit;
+	}
 	if (c->isconnected) { /* don't send connect packet again if we are already connected */
 		goto exit;
 	}
@@ -443,6 +458,10 @@ int MQTTSubscribe(MQTTClient *c, const char *topicFilter, enum QoS qos, messageH
 	topic.cstring = (char *)topicFilter;
 	int qos_val[1] = {qos};
 
+	if (c == NULL || topicFilter == NULL) {
+		mqtt_printf(MQTT_ERROR, "MQTTSubscribe: invalid parameter");
+		goto exit;
+	}
 	if (!c->isconnected) {
 		goto exit;
 	}
@@ -499,6 +518,10 @@ int MQTTUnsubscribe(MQTTClient *c, const char *topicFilter)
 	topic.cstring = (char *)topicFilter;
 	int len = 0;
 
+	if (c == NULL || topicFilter == NULL) {
+		mqtt_printf(MQTT_ERROR, "MQTTUnsubscribe: invalid parameter");
+		goto exit;
+	}
 	if (!c->isconnected) {
 		goto exit;
 	}
@@ -543,6 +566,10 @@ int MQTTPublish(MQTTClient *c, const char *topicName, MQTTMessage *message)
 	topic.cstring = (char *)topicName;
 	int len = 0;
 
+	if (c == NULL || topicName == NULL || message == NULL) {
+		mqtt_printf(MQTT_ERROR, "MQTTPublish: invalid parameter");
+		goto exit;
+	}
 	if (!c->isconnected) {
 		goto exit;
 	}
@@ -599,6 +626,11 @@ int MQTTDisconnect(MQTTClient *c)
 	Timer timer;     // we might wait for incomplete incoming publishes to complete
 	int len = 0;
 
+	if (c == NULL) {
+		mqtt_printf(MQTT_ERROR, "MQTTDisconnect: c is NULL");
+		return FAILURE;
+	}
+
 	TimerInit(&timer);
 	TimerCountdownMS(&timer, c->command_timeout_ms);
 
@@ -615,6 +647,16 @@ int MQTTDisconnect(MQTTClient *c)
 #if defined(MQTT_TASK)
 void MQTTSetStatus(MQTTClient *c, int mqttstatus)
 {
+	if (c == NULL) {
+		mqtt_printf(MQTT_ERROR, "MQTTSetStatus: c is NULL");
+		return;
+	}
+
+	if (mqttstatus < MQTT_START || mqttstatus > MQTT_RUNNING) {
+		mqtt_printf(MQTT_ERROR, "Invalid mqtt status: %d", mqttstatus);
+		return;
+	}
+
 	c->mqttstatus = mqttstatus;
 	mqtt_printf(MQTT_INFO, "Set mqtt status to %s", mqtt_status_str[mqttstatus]);
 }
@@ -623,10 +665,18 @@ int MQTTDataHandle(MQTTClient *c, fd_set *readfd, MQTTPacket_connectData *connec
 {
 	short packet_type = 0;
 	int rc = 0;
-	int mqttstatus = c->mqttstatus;
+	int mqttstatus = 0;
 	int mqtt_rxevent = 0;
-	int mqtt_fd = c->ipstack->my_socket;
+	int mqtt_fd = -1;
 
+	if (c == NULL) {
+		mqtt_printf(MQTT_ERROR, "MQTTDataHandle: c is NULL");
+		rc = FAILURE;
+		goto exit;
+	}
+
+	mqttstatus = c->mqttstatus;
+	mqtt_fd = c->ipstack->my_socket;
 	mqtt_rxevent = (mqtt_fd >= 0) ? FD_ISSET(mqtt_fd, readfd) : 0;
 
 	if (mqttstatus == MQTT_START) {

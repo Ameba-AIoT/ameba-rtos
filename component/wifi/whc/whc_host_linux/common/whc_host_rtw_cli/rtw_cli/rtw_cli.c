@@ -51,6 +51,7 @@ const struct cmd_func_t rtw_cli_cmd_handlers[] = {
 const struct event_func_t rtw_cli_event_handlers[] = {
 	{WHC_WPA_OPS_EVENT_SCANING, MSG_EVENT_SCANING, NULL},
 	{WHC_WPA_OPS_EVENT_SCAN_COMPLETE, MSG_EVENT_SCAN_COMPLETE, event_handler_scan_complete},
+	{WHC_WPA_OPS_EVENT_JOIN_STATUS, MSG_EVENT_JOIN_STATUS, event_handler_join_status},
 	{0, 0, NULL},
 };
 
@@ -77,11 +78,32 @@ void rtw_cli_host_cmd_hdl(char *input)
 	char *args[MAX_INPUT_SIZE / 2];
 	int arg_count = 0;
 	uint8_t idx = 0;
-	char *token = strtok(input, " ");
+	char *ptr = input;
+	char *space;
 
-	while (token != NULL) {
-		args[arg_count++] = token;
-		token = strtok(NULL, " ");
+	while (*ptr != '\0') {
+		while (*ptr == ' ') {
+			ptr++;
+		}
+
+		if (*ptr == '\0') {
+			break;
+		}
+
+		if (arg_count >= (MAX_INPUT_SIZE / 2)) {
+			break;
+		}
+
+		args[arg_count++] = ptr;
+
+		space = strchr(ptr, ' ');
+
+		if (space != NULL) {
+			*space = '\0';
+			ptr = space + 1;
+		} else {
+			break;
+		}
 	}
 
 	if (arg_count == 0) {
@@ -116,8 +138,7 @@ void whc_cmd_handle_rx_payload(char *pos, int len, int api_id,
 	int idx = 0;
 
 	if (api_id == CMD_WIFI_SCAN_RESULT) {
-		whc_cmd_handle_rx_print_scan_result(pos, chunk_index,
-											last_chunk);
+		whc_cmd_handle_rx_print_scan_result(pos, chunk_index, last_chunk);
 
 	} else {
 		whc_event = *(uint32_t *)pos;
@@ -137,6 +158,8 @@ void whc_cmd_handle_rx_payload(char *pos, int len, int api_id,
 			case WHC_WPA_OPS_UTIL_GET_STATUS:
 				whc_cmd_handle_rx_get_status(pos);
 				break;
+			case WHC_WPA_OPS_UTIL_OFLD_RESULT:
+				whc_cmd_handle_wpas_ofld_result(pos, len);
 			default:
 				break;
 			}
@@ -149,11 +172,12 @@ void whc_cmd_handle_rx_payload(char *pos, int len, int api_id,
 					}
 
 					if (rtw_cli_event_handlers[idx].handler) {
-						rtw_cli_event_handlers[idx].handler();
+						rtw_cli_event_handlers[idx].handler(pos + 1);
 					}
 				}
 			}
 		} //End WHC_WPA_OPS_EVENT
+
 
 	}
 
@@ -195,6 +219,11 @@ int main(int argc, char *argv[])
 
 	signal(SIGINT, sigint_handler);
 
+	fds[0].fd = nl_socket_get_fd(global->nl);
+	fds[0].events = POLLIN;  // Monitor for incoming Netlink messages
+	fds[1].fd = STDIN_FILENO;
+	fds[1].events = POLLIN;  // Monitor for standard input
+
 	if (argc > 1) {
 		for (int i = 1; i < argc; i++) {
 			strcat(input_buf, argv[i]);
@@ -207,6 +236,12 @@ int main(int argc, char *argv[])
 		printf("CLI: %s\n", input_buf);
 		rtw_cli_host_cmd_hdl(input_buf);
 
+		if (poll(fds, 1, 500) > 0) {
+			if (fds[0].revents & POLLIN) {
+				rtw_cli_nl_recv(global);
+			}
+		}
+
 		rtw_cli_deinit_nl_global(global);
 		free(global);
 
@@ -214,11 +249,6 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Waiting for message from kernel or input command from user space\n");
-
-	fds[0].fd = nl_socket_get_fd(global->nl);
-	fds[0].events = POLLIN;  // Monitor for incoming Netlink messages
-	fds[1].fd = STDIN_FILENO;
-	fds[1].events = POLLIN;  // Monitor for standard input
 
 	printf("> ");
 	fflush(stdout);
@@ -245,6 +275,7 @@ int main(int argc, char *argv[])
 			perror("poll error");
 			break;
 		}
+		memset(input_buf, 0, MAX_INPUT_SIZE);
 	}
 
 	rtw_cli_deinit_nl_global(global);

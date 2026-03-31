@@ -32,6 +32,9 @@
 #include "whc_dev_cust_evt.h"
 #include "whc_dev_api.h"
 
+#ifdef CONFIG_WHC_CMD_PATH
+#include "whc_dev_app.h"
+#endif
 #else
 #include "whc_dev_struct.h"
 #endif
@@ -64,6 +67,5 @@ enum WHC_WIFI_CTRL_TYPE {
 #if defined(CONFIG_WPA_STD)
 #include "wpas_std_wifi_intf.h"
 #endif //CONFIG_WPA_STD
-
 
 #endif /* __WHC_DEV_COMMON_H__ */

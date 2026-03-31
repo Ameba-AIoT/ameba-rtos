@@ -33,7 +33,8 @@ signed char UART_CTS = -1;
 u32 UART_BAUD = 38400;
 
 GDMA_InitTypeDef GDMA_InitStruct;
-rtos_sema_t uart_tx_sema;
+rtos_sema_t atcmd_uart_tx_sema;
+rtos_sema_t atcmd_uart_rx_sema;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
@@ -47,6 +48,7 @@ extern char g_tt_mode_indicate_high_watermark;
 extern char g_tt_mode_indicate_low_watermark;
 extern RingBuffer *atcmd_tt_mode_rx_ring_buf;
 extern rtos_sema_t atcmd_tt_mode_sema;
+extern int atcmd_service(char *line_buf);
 
 static u32 uart_get_idx(UART_TypeDef *Uartx)
 {
@@ -73,7 +75,7 @@ u32 uart_dma_cb(void *buf)
 {
 	(void) buf;
 	uart_dma_free();
-	rtos_sema_give(uart_tx_sema);
+	rtos_sema_give(atcmd_uart_tx_sema);
 
 	return 0;
 }
@@ -101,7 +103,7 @@ void atio_uart_out_dma(char *buf, int len)
 
 	if (!ret) {
 		RTK_LOGI(NOTAG, "%s Error(%d)\n", __FUNCTION__, ret);
-		rtos_sema_give(uart_tx_sema);
+		rtos_sema_give(atcmd_uart_tx_sema);
 	}
 }
 
@@ -118,7 +120,7 @@ void atio_uart_out_polling(char *buf, int len)
 
 void atio_uart_output(char *buf, int len)
 {
-	rtos_sema_take(uart_tx_sema, MUTEX_WAIT_TIMEOUT);
+	rtos_sema_take(atcmd_uart_tx_sema, MUTEX_WAIT_TIMEOUT);
 
 	if (len > POLL_LEN_MAX) {
 		// tx by dma
@@ -126,7 +128,7 @@ void atio_uart_output(char *buf, int len)
 	} else {
 		// tx by polling
 		atio_uart_out_polling(buf, len);
-		rtos_sema_give(uart_tx_sema);
+		rtos_sema_give(atcmd_uart_tx_sema);
 	}
 }
 
@@ -259,11 +261,7 @@ recv_again:
 	if (shell_cmd_chk(pShellRxBuf->UARTLogBuf[i++], (UART_LOG_CTL *)&shell_ctl, ENABLE) == 2) {
 		//4 check UartLog buffer to prevent from incorrect access
 		if (shell_ctl.pTmpLogBuf != NULL) {
-			shell_ctl.ExecuteCmd = TRUE;
-
-			if (shell_ctl.shell_task_rdy) {
-				shell_ctl.GiveSema();
-			}
+			rtos_sema_give(atcmd_uart_rx_sema);
 		} else {
 			memset((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
 		}
@@ -279,6 +277,24 @@ recv_again:
 	return 0;
 }
 
+void atcmd_uart_input_handler_task(void)
+{
+	PUART_LOG_BUF pCmdLogBuf = shell_ctl.pTmpLogBuf;
+	u32 ret = FALSE;
+
+	while (1) {
+		rtos_sema_take(atcmd_uart_rx_sema, 0xFFFFFFFF);
+
+		ret = atcmd_service((char *)pCmdLogBuf->UARTLogBuf);
+		if (ret == FALSE) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\nunknown command '%s'", pCmdLogBuf->UARTLogBuf);
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n");
+		}
+		memset((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+		pCmdLogBuf->BufCount = 0;
+	}
+}
+
 int atio_uart_init(void)
 {
 	UART_InitTypeDef UART_InitStruct;
@@ -289,7 +305,8 @@ int atio_uart_init(void)
 		return -1;
 	}
 
-	rtos_sema_create(&uart_tx_sema, 1, 0xFFFF);
+	rtos_sema_create(&atcmd_uart_tx_sema, 1, 0xFFFF);
+	rtos_sema_create(&atcmd_uart_rx_sema, 0, 0xFFFF);
 
 	/* enable uart clock and function */
 	RCC_PeriphClockCmd(APBPeriph_UARTx[uart_idx], APBPeriph_UARTx_CLOCK[uart_idx], ENABLE);
@@ -330,9 +347,13 @@ int atio_uart_init(void)
 	InterruptEn(UART_DEV_TABLE[uart_idx].IrqNum, INT_PRI_MIDDLE);
 	UART_INTConfig(UART_DEV, RUART_BIT_ERBI | RUART_BIT_ELSI | RUART_BIT_ETOI, ENABLE);
 
+	if (rtos_task_create(NULL, ((const char *)"atcmd_uart_input_handler_task"), (rtos_task_t)atcmd_uart_input_handler_task, NULL, 4096, 5) != RTK_SUCCESS) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create(atcmd_uart_input_handler_task) failed", __FUNCTION__);
+		return -1;
+	}
+
 	out_buffer = atio_uart_output;
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s @%dbps\n", __FUNCTION__, UART_BAUD);
 
 	return 0;
 }
-

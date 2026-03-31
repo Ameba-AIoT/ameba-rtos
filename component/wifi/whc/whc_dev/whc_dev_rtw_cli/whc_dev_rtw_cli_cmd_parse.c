@@ -13,9 +13,7 @@
 #include "whc_wpas_std_app.h"
 #endif
 
-
-extern rtos_sema_t whc_user_rx_sema;
-extern u8 *whc_rx_msg;
+extern struct whc_cmd_path_priv whc_cmdpath_data;
 
 __weak int whc_wpa_ops_disconnect(char *ptr, u8 *buf)
 {
@@ -97,8 +95,20 @@ int whc_wpa_ops_cli_cmd_parse(char *ptr, u8 *buf)
 	msg_len = *ptr;
 	ptr += 4;
 
-	cmd = strtok(ptr, " ");
-	params = strtok(NULL, "");
+	cmd = ptr;
+	params = strchr(cmd, ' ');
+	if (params != NULL) {
+		*params = '\0';
+		params++;
+
+		while (*params == ' ') {
+			params++;
+		}
+
+		if (*params == '\0') {
+			params = NULL;
+		}
+	}
 
 	RTK_LOGI(TAG_WLAN_INIC, "%s, cmd: %s, params: %s, msg_len: %d\n", __func__, cmd, params, msg_len);
 
@@ -124,7 +134,7 @@ int whc_wpa_ops_cli_cmd_parse(char *ptr, u8 *buf)
 	} else if (strcmp(cmd, "remove_network") == 0) {
 		whc_dev_rtw_cli_remove_network(params, buf);
 	} else if (strcmp(cmd, "wpas_cmd") == 0) {
-		whc_dev_rtw_cli_wpas_test(params, buf, msg_len - strlen("wpas_cmd") - 1);
+		whc_dev_rtw_cli_wpas_cmd_hdl(params, buf, msg_len - strlen("wpas_cmd") - 1);
 	} else {
 		RTK_LOGI(TAG_WLAN_INIC, "%s, Unknown command\n", __func__);
 	}
@@ -141,10 +151,10 @@ void whc_dev_pkt_rx_to_user_task(void)
 	u8 *buf = NULL;
 
 	while (1) {
-		rtos_sema_take(whc_user_rx_sema, RTOS_MAX_TIMEOUT);
-		if (whc_rx_msg) {
-			ptr = whc_rx_msg;
-			event = *(u32 *)whc_rx_msg;
+		rtos_sema_take(whc_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);
+		if (whc_cmdpath_data.whc_rx_msg) {
+			ptr = whc_cmdpath_data.whc_rx_msg;
+			event = *(u32 *)ptr;
 			ptr += 4;
 
 			buf = rtos_mem_malloc(BRIDGE_WPA_OPS_BUF_SIZE);
@@ -184,9 +194,9 @@ void whc_dev_pkt_rx_to_user_task(void)
 				rtos_mem_free(buf);
 			}
 
-			rtos_mem_free(whc_rx_msg_free_addr);
-			whc_rx_msg = NULL;
-			whc_rx_msg_free_addr = NULL;
+			rtos_mem_free(whc_cmdpath_data.whc_rx_msg_free_addr);
+			whc_cmdpath_data.whc_rx_msg = NULL;
+			whc_cmdpath_data.whc_rx_msg_free_addr = NULL;
 		}
 	}
 

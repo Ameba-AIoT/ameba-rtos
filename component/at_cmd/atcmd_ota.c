@@ -10,12 +10,13 @@
 #if defined(CONFIG_ATCMD_OTA) && (CONFIG_ATCMD_OTA == 1)
 #include "sys_api.h"
 #include "atcmd_service.h"
-#include "ameba_ota.h"
+#include "ota_api.h"
 #include "atcmd_ota.h"
 
 static const char *const TAG = "AT-OTA";
 
 static int at_ota_status = 0;
+static int g_ota_user_imglen = 0;
 
 static int ota_set_ssl_certificate(char **dest, CERT_TYPE cert_type, int index)
 {
@@ -57,10 +58,10 @@ static void at_otahttp_progress(int percent)
 
 static void at_ota_update_task(void *param)
 {
-	ota_context *ctx = (ota_context *)param;
+	ota_context_t *ctx = (ota_context_t *)param;
 	int ret = -1;
 
-	ret = ota_update_start(ctx);
+	ret = ota_start(ctx);
 	if (ret != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[+OTA] update failed\r\n");
 		at_printf_indicate("[OTA][HTTP]: UPDATE FAILED\r\n");
@@ -73,7 +74,7 @@ static void at_ota_update_task(void *param)
 		}
 	}
 
-	ota_update_deinit(ctx);
+	ota_deinit(ctx);
 	if (ctx) {
 		rtos_mem_free(ctx);
 		ctx = NULL;
@@ -89,7 +90,7 @@ static void at_otahttp_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+OTAHTTP=<sysrst>,<host>,<path>[,<port>],<conn_type>[,<cert_index>]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<sysrst>:\t1: the system will reset after ota finished. 0: the system will not reset after ota finished. Default:0\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<host>:\thostname\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<resource>:\tfirmware path, e.g. ota_all.bin\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<path>:\tfirmware path, e.g. ota_all.bin\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<port>:\t[0,65535]\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<conn_type>:\t[1,5]. Connection type.\r\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t\t1:\tHTTP.\r\n");
@@ -107,7 +108,7 @@ AT command process:
 ****************************************************************/
 void at_otahttp(u16 argc, char **argv)
 {
-	ota_context *ctx = NULL;
+	ota_context_t *ctx = NULL;
 	char *host = NULL;
 	char *resource = NULL;
 	char *ca_cert = NULL;
@@ -206,7 +207,7 @@ void at_otahttp(u16 argc, char **argv)
 		at_ota_status |= OTA_STATUS_SYSRST;
 	}
 
-	ctx = (ota_context *)rtos_mem_zmalloc(sizeof(ota_context));
+	ctx = (ota_context_t *)rtos_mem_zmalloc(sizeof(ota_context_t));
 	if (!ctx) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ctx malloc failed\r\n");
 		err_no = 2;
@@ -215,9 +216,9 @@ void at_otahttp(u16 argc, char **argv)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "host: %s, port: %d, resource: %s\r\n", host, port, resource);
 
-	ret = ota_update_init(ctx, host, port, resource, ota_type);
+	ret = ota_init(ctx, host, port, resource, ota_type);
 	if (ret != 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "ota_update_init failed\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ota_init failed\r\n");
 		err_no = 3;
 		goto end;
 	}
@@ -231,7 +232,7 @@ void at_otahttp(u16 argc, char **argv)
 	if (client_key) {
 		ctx->private_key = client_key;
 	}
-	ota_update_register_progress_cb(ctx, at_otahttp_progress);
+	ota_register_progress_cb(ctx, at_otahttp_progress);
 
 	rtos_task_t task;
 	if (rtos_task_create(&task, ((const char *)"at_ota_update_task"), at_ota_update_task, (void *)ctx, 1024 * 10, 1) != RTK_SUCCESS) {
@@ -243,7 +244,7 @@ void at_otahttp(u16 argc, char **argv)
 
 end:
 	if (err_no != 0) {
-		ota_update_deinit(ctx);
+		ota_deinit(ctx);
 		if (ctx) {
 			rtos_mem_free(ctx);
 			ctx = NULL;
@@ -263,6 +264,24 @@ static void at_otauser_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<length>:\timage ota_all.bin length\r\n");
 }
 
+static int ota_user_read(u8 *buf, int len)
+{
+	int tt_get_len = 0;
+	int frag_len = 0;
+
+	frag_len = (g_ota_user_imglen > len) ? len : g_ota_user_imglen;
+
+	tt_get_len = atcmd_tt_mode_get(buf, frag_len);
+	if (tt_get_len == 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "host stops tt mode\r\n");
+		return -1;
+	}
+
+	g_ota_user_imglen -= tt_get_len;
+
+	return tt_get_len;
+}
+
 /****************************************************************
 AT command process:
 	AT+OTAUSER=<sysrst>,<length>
@@ -270,10 +289,8 @@ AT command process:
 ****************************************************************/
 void at_otauser(u16 argc, char **argv)
 {
-	ota_context *ctx = NULL;
-	u8 *buffer = NULL;
+	ota_context_t *ctx = NULL;
 	int ret = -1, err_no = 0;
-	int frag_len = 0, tt_get_len = 0;
 	int length = 0, sysrst = 0;
 
 	if (argc == 1) {
@@ -309,29 +326,24 @@ void at_otauser(u16 argc, char **argv)
 		goto end;
 	}
 
-	buffer = (u8 *)rtos_mem_zmalloc(BUF_SIZE);
-	if (!buffer) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc failed\r\n");
-		err_no = 2;
-		goto end;
-	}
-
-	ctx = (ota_context *)rtos_mem_malloc(sizeof(ota_context));
+	ctx = (ota_context_t *)rtos_mem_malloc(sizeof(ota_context_t));
 	if (!ctx) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ctx malloc failed\r\n");
 		err_no = 2;
 		goto end;
 	}
 
-	memset(ctx, 0, sizeof(ota_context));
+	memset(ctx, 0, sizeof(ota_context_t));
 
-	ret = ota_update_init(ctx, NULL, 0, NULL, OTA_USER);
+	ret = ota_init(ctx, NULL, 0, NULL, OTA_USER);
 	if (ret != 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "ota_update_init failed\r\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ota_init failed\r\n");
 		err_no = 3;
 		goto end;
 	}
 	at_ota_status |= OTA_STATUS_RUNNING;
+	g_ota_user_imglen = length;
+	ota_register_user_read_func(ctx, ota_user_read);
 
 	/* tt mode */
 	ret = atcmd_tt_mode_start(length);
@@ -342,37 +354,23 @@ void at_otauser(u16 argc, char **argv)
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ota user download start, length: %d, sysrst: %d\r\n", length, sysrst);
+	ret = ota_start(ctx);
+	if (ret == OTA_OK) {
+		at_printf(ATCMD_OK_END_STR);
+		if (sysrst) {
+			rtos_time_delay_ms(20);
+			sys_reset();
+		}
+	}
 
-	while (length > 0) {
-		frag_len = (length < BUF_SIZE) ? length : BUF_SIZE;
-		tt_get_len = atcmd_tt_mode_get(buffer, frag_len);
-		if (tt_get_len == 0) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "host stops tt mode\r\n");
-			err_no = 5;
-			break;
-		}
-		ret = ota_update_fw_program(ctx, buffer, tt_get_len);
-		if (ret == OTA_RET_FINISH) {
-			at_printf(ATCMD_OK_END_STR);
-			if (sysrst) {
-				rtos_time_delay_ms(20);
-				sys_reset();
-			}
-		}
-		if (ret == OTA_RET_ERR) {
-			err_no = 6;
-			break;
-		}
-		length -= frag_len;
+	if (ret == OTA_ERR) {
+		err_no = 6;
 	}
 	atcmd_tt_mode_end();
 end:
-	ota_update_deinit(ctx);
+	ota_deinit(ctx);
 	if (ctx) {
 		rtos_mem_free(ctx);
-	}
-	if (buffer) {
-		rtos_mem_free(buffer);
 	}
 	at_ota_status = 0;
 	if (err_no != 0) {

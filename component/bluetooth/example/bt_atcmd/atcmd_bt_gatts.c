@@ -321,5 +321,11 @@ static const cmd_table_t gatts_cmd_table[] = {
 
 void fBLEGATTS(u16 argc, char *argv[])
 {
-	atcmd_bt_excute(argc - 1, &argv[1], gatts_cmd_table, "[AT+BLEGATTS]");
+	int ret = atcmd_bt_excute(argc - 1, &argv[1], gatts_cmd_table, "[AT+BLEGATTS]");
+
+	if (ret == 0) {
+		BT_AT_PRINTOK();
+	} else {
+		BT_AT_PRINTERROR(ret);
+	}
 }

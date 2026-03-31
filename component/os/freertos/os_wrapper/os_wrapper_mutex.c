@@ -23,6 +23,10 @@ int rtos_mutex_create_static(rtos_mutex_t *pp_handle)
 #if(configSUPPORT_STATIC_ALLOCATION == 1)
 	StaticSemaphore_t *mutex;
 
+	if (pp_handle == NULL) {
+		return RTK_FAIL;
+	}
+
 	mutex = __reserved_get_mutex_from_pool();
 
 	if (mutex == NULL) {
@@ -45,7 +49,10 @@ int rtos_mutex_delete_static(rtos_mutex_t p_handle)
 {
 #if(configSUPPORT_STATIC_ALLOCATION == 1)
 	int ret = rtos_mutex_delete(p_handle);
-	__reserved_release_mutex_to_pool(p_handle);
+
+	if (ret == RTK_SUCCESS) {
+		__reserved_release_mutex_to_pool(p_handle);
+	}
 	return ret;
 #else
 	return rtos_mutex_delete(p_handle);
@@ -56,6 +63,10 @@ int rtos_mutex_recursive_create_static(rtos_mutex_t *pp_handle)
 {
 #if(configSUPPORT_STATIC_ALLOCATION == 1)
 	StaticSemaphore_t *mutex;
+
+	if (pp_handle == NULL) {
+		return RTK_FAIL;
+	}
 
 	mutex = __reserved_get_mutex_from_pool();
 

@@ -52,15 +52,15 @@ static char whc_sdio_dev_tx_done_cb(void *priv, void *pbuf)
 {
 	UNUSED(priv);
 	struct spdio_buf_t *tx_buf = (struct spdio_buf_t *)pbuf;
-	struct whc_txbuf_info_t *inic_tx = container_of(tx_buf, struct whc_txbuf_info_t, txbuf_info);
+	struct whc_txbuf_info_t *whc_tx = container_of(tx_buf, struct whc_txbuf_info_t, txbuf_info);
 
-	if (inic_tx->is_skb) {
-		dev_kfree_skb_any((struct sk_buff *) inic_tx->ptr);
+	if (whc_tx->is_skb) {
+		dev_kfree_skb_any((struct sk_buff *) whc_tx->ptr);
 	} else {
-		rtos_mem_free((u8 *)inic_tx->ptr);
+		rtos_mem_free((u8 *)whc_tx->ptr);
 	}
 
-	rtos_mem_free((u8 *)inic_tx);
+	rtos_mem_free((u8 *)whc_tx);
 
 	rtos_sema_give(sdio_priv.rxbd_release_sema);
 
@@ -97,6 +97,12 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 
 		/* handle buf data */
 		p_msg_info = (struct whc_msg_info *)(rx_skb->data + sizeof(INIC_TX_DESC));
+		if (!wifi_is_running(p_msg_info->wlan_idx)) {
+			/*free skb and return*/
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Port %d is down, drop!\n", p_msg_info->wlan_idx);
+			dev_kfree_skb_any(rx_skb);
+			goto drop_pkt;
+		}
 
 		skb_reserve(rx_skb, sizeof(INIC_TX_DESC) + sizeof(struct whc_msg_info) + p_msg_info->pad_len);
 		skb_put(rx_skb, size - sizeof(struct whc_msg_info) - p_msg_info->pad_len);
@@ -131,6 +137,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		/* free buf later, sdio ring buffer no need to modify. */
 	}
 
+drop_pkt:
 	return RTK_SUCCESS;
 }
 
@@ -223,7 +230,7 @@ u8 whc_sdio_dev_tx_path_avail(void)
 
 void whc_sdio_dev_send_data(u8 *data, u32 len)
 {
-	struct whc_txbuf_info_t *inic_tx = NULL;
+	struct whc_txbuf_info_t *whc_tx = NULL;
 	u8 *buf = NULL;
 
 	buf = rtos_mem_zmalloc(len);
@@ -233,22 +240,22 @@ void whc_sdio_dev_send_data(u8 *data, u32 len)
 		return;
 	}
 
-	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
-	if (!inic_tx) {
+	whc_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
+	if (!whc_tx) {
 		rtos_mem_free(buf);
 		return;
 	}
 
 	memcpy(buf, data, len);
 
-	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)buf;
-	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = len;
+	whc_tx->txbuf_info.buf_allocated = whc_tx->txbuf_info.buf_addr = (u32)buf;
+	whc_tx->txbuf_info.size_allocated = whc_tx->txbuf_info.buf_size = len;
 
-	inic_tx->ptr = buf;
-	inic_tx->is_skb = 0;
+	whc_tx->ptr = buf;
+	whc_tx->is_skb = 0;
 
 	/* buf free in sdio send done callback */
-	whc_sdio_dev_send(&inic_tx->txbuf_info);
+	whc_sdio_dev_send(&whc_tx->txbuf_info);
 
 	return;
 
@@ -304,7 +311,11 @@ void whc_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
 			break;
 		}
 		/* wakeup task */
+#ifndef WHC_SKIP_NP_MSG_TASK
 		rtos_sema_give(dev_xmit_priv.xmit_sema);
+#else
+		rtw_single_thread_wakeup();
+#endif
 
 		break;
 #ifdef CONFIG_WHC_WIFI_API_PATH

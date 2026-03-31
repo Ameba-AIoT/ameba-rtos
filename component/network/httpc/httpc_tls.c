@@ -202,6 +202,11 @@ int httpc_base64_encode(uint8_t *data, size_t data_len, char *base64_buf, size_t
 	int ret = 0;
 	size_t output_len = 0;
 
+	if (data == NULL) {
+		httpc_log("\n[HTTPC] ERROR: Invalid null data pointer");
+		return -1;
+	}
+
 	if ((ret = mbedtls_base64_encode((unsigned char *)base64_buf, buf_len, &output_len, data, data_len)) != 0) {
 		printf("\n[HTTPC] ERROR: mbedtls_base64_encode %d\n", ret);
 		ret = -1;
