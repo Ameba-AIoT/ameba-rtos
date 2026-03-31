@@ -129,4 +129,9 @@
 #define WHC_SKIP_NP_MSG_TASK
 #endif
 
+
+#if (defined(CONFIG_WHC_INTF_SPI) || defined(CONFIG_WHC_INTF_SDIO))
+#define WHC_SKIP_NP_MSG_TASK
+#endif
+
 #endif //WLANCONFIG_H

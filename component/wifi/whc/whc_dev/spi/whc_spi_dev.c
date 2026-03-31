@@ -50,14 +50,16 @@ retry:
 			((new_skb = dev_alloc_skb(SPI_BUFSZ, SPI_SKB_RSVD_LEN)) == NULL)) {
 			spi_priv->wait_for_txbuf = TRUE;
 
+#ifndef WHC_SKIP_NP_MSG_TASK
 			/* resume pending queue to release skb */
 			rtw_pending_q_resume();
+#endif
 
 			/* wait timeout to re-check skb, considering corner cases for wait_for_txbuf update */
-			rtos_sema_take(spi_priv->free_skb_sema, 5);
+			rtos_sema_take(spi_priv->free_skb_sema, 1);
 
-			/* retry 5ms * 80 = 400ms to get skb. */
-			if (retry_num < 80) {
+			/* retry 1ms * 5 = 5ms to get skb. */
+			if (retry_num < 5) {
 				retry_num++;
 				goto retry;
 			} else {
