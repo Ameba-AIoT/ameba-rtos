@@ -16,6 +16,7 @@
 static const char *const TAG = "AT-OTA";
 
 static int at_ota_status = 0;
+static int g_ota_user_imglen = 0;
 
 static int ota_set_ssl_certificate(char **dest, CERT_TYPE cert_type, int index)
 {
@@ -266,11 +267,17 @@ static void at_otauser_help(void)
 static int ota_user_read(u8 *buf, int len)
 {
 	int tt_get_len = 0;
+	int frag_len = 0;
 
-	tt_get_len = atcmd_tt_mode_get(buf, len);
+	frag_len = (g_ota_user_imglen > len) ? len : g_ota_user_imglen;
+
+	tt_get_len = atcmd_tt_mode_get(buf, frag_len);
 	if (tt_get_len == 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "host stops tt mode\r\n");
+		return -1;
 	}
+
+	g_ota_user_imglen -= tt_get_len;
 
 	return tt_get_len;
 }
@@ -335,6 +342,7 @@ void at_otauser(u16 argc, char **argv)
 		goto end;
 	}
 	at_ota_status |= OTA_STATUS_RUNNING;
+	g_ota_user_imglen = length;
 	ota_register_user_read_func(ctx, ota_user_read);
 
 	/* tt mode */

@@ -207,8 +207,15 @@ int ws_set_fun_ops(wsclient_context *wsclient)
 
 void ws_close(wsclient_context **wsclient)
 {
-	wsclient_context *wsc = *wsclient;
-	if (wsclient == NULL || wsc == NULL || wsc->readyState != WSC_OPEN) {
+	wsclient_context *wsc;
+	if (wsclient == NULL || *wsclient == NULL) {
+		WSCLIENT_ERROR("ERROR: wsclient is NULL\n");
+		return;
+	}
+
+	wsc = *wsclient;
+	if (wsc->readyState != WSC_OPEN) {
+		WSCLIENT_DEBUG("Not in open state\n");
 		return;
 	}
 
@@ -405,44 +412,24 @@ void ws_poll(int timeout, wsclient_context **wsclient)   // timeout in milliseco
 
 int ws_sendPing(int use_mask, wsclient_context *wsclient)
 {
-	int ret = 0;
-	ret = ws_sendData(PING, 0, NULL, use_mask, 1, wsclient);
-	return ret;
+	return ws_sendData(PING, 0, NULL, use_mask, 1, wsclient);
 }
 
 int ws_sendBinary(uint8_t *message, int message_len, int use_mask, wsclient_context *wsclient)
 {
-	int ret = 0;
-	if (message_len > wsclient->max_tx_len) {
-		WSCLIENT_ERROR("ERROR: The length of data exceeded the max tx buf len: %d\n", wsclient->max_tx_len);
-		return -1;
-	}
-	ret = ws_sendData(BINARY_FRAME, (size_t)message_len, (uint8_t *)message, use_mask, 1, wsclient);
-	return ret;
+	return ws_sendData(BINARY_FRAME, (size_t)message_len, (uint8_t *)message, use_mask, 1, wsclient);
 }
 
 int ws_send(char *message, int message_len, int use_mask, wsclient_context *wsclient)
 {
-	int ret = 0;
 	WSCLIENT_DEBUG("Send data: %s\n", message);
-	if (message_len > wsclient->max_tx_len) {
-		WSCLIENT_ERROR("ERROR: The length of data exceeded the max tx buf len: %d\n", wsclient->max_tx_len);
-		return -1;
-	}
-	ret = ws_sendData(TEXT_FRAME, (size_t)message_len, (uint8_t *)message, use_mask, 1, wsclient);
-	return ret;
+	return ws_sendData(TEXT_FRAME, (size_t)message_len, (uint8_t *)message, use_mask, 1, wsclient);
 }
 
 int ws_send_with_opcode(char *message, int message_len, int use_mask, uint8_t opcode, uint8_t fin_flag, wsclient_context *wsclient)
 {
-	int ret = 0;
 	WSCLIENT_DEBUG("Send data: %s, opcode: %d\n", message, opcode);
-	if (message_len > wsclient->max_tx_len) {
-		WSCLIENT_ERROR("ERROR: The length of data exceeded the max tx buf len: %d\n", wsclient->max_tx_len);
-		return -1;
-	}
-	ret = ws_sendData(opcode, (size_t)message_len, (uint8_t *)message, use_mask, fin_flag, wsclient);
-	return ret;
+	return ws_sendData(opcode, (size_t)message_len, (uint8_t *)message, use_mask, fin_flag, wsclient);
 }
 
 int ws_connect_url(wsclient_context *wsclient)

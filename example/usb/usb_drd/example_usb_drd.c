@@ -27,7 +27,7 @@ static const char *const TAG = "DRD";
 
 // Thread priorities
 #define USB_DRD_INIT_THREAD_PRIORITY			5U
-#define USBH_MSC_THREAD_STACK_SIZE				(1024*8)
+#define USBH_MSC_THREAD_STACK_SIZE				(1024*12)
 #define USBH_MSC_TEST_BUF_SIZE					4096
 #define USBH_MSC_TEST_ROUNDS					20
 #define USBH_MSC_TEST_SEED						0xA5
@@ -350,7 +350,7 @@ void example_usb_drd(void)
 	int ret;
 	rtos_task_t task;
 
-	ret = rtos_task_create(&task, "example_usb_drd_thread", example_usb_drd_thread, NULL, 4096, USB_DRD_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usb_drd_thread", example_usb_drd_thread, NULL, USBH_MSC_THREAD_STACK_SIZE, USB_DRD_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USB DRD thread fail\n");
 	}
