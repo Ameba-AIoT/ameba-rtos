@@ -121,6 +121,25 @@
 
 //#define CONFIG_AUDIO_TSF
 
+/**************** configurations for task size **********************/
+#if defined (CONFIG_WHC_DEV)
+#if defined(CONFIG_WHC_INTF_IPC)
+#define WIFI_RECV_TASKLET_BASIC_SIZE	            1392
+#else
+#define WIFI_RECV_TASKLET_BASIC_SIZE	            3056
+#endif
+#else
+#define WIFI_RECV_TASKLET_BASIC_SIZE	            1024
+#endif
+#define WIFI_DRIVER_RESUME_TASKLET_BASIC_SIZE     352
+#define WIFI_LITTLE_TASKLET_BASIC_SIZE		        352
+#define WIFI_INIC_IPC_DEV_API_BASIC_SIZE          1048
+#define WIFI_INIC_MSG_Q_BASIC_SIZE                472
+#define WIFI_INIC_IPC_HST_API_BASIC_SIZE          336
+#define WIFI_INIC_IPC_HST_EVT_API_BASIC_SIZE      1880
+#define COEX_IPC_HST_API_BASIC_SIZE               288
+#define COEX_IPC_DEV_API_BASIC_SIZE               608
+
 /*************************** Config for Gen TxPower Tool *******************************/
 /** VERSION 0: only support extending one EXT PWR_LIMIT table
   * VERSION 1: support more EXT PWR_LIMIT tables, depending on customer configuration

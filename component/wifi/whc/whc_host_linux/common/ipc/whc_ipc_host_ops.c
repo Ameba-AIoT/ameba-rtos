@@ -69,7 +69,6 @@ int whc_host_set_user_config(struct wifi_user_conf *pwifi_usrcfg)
 	u32 param_buf[1];
 	dma_addr_t phy_addr;
 	int ret = 0;
-	struct device *pdev = global_idev.ipc_dev;
 	struct wifi_user_conf *pusrcfg;
 
 	pusrcfg = rtw_malloc(sizeof(struct wifi_user_conf), &phy_addr);
@@ -101,7 +100,6 @@ int whc_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 	u8 *mac_addr = NULL;
 	u32 param_buf[3];
 	int ret = 0;
-	struct device *pdev = global_idev.ipc_dev;
 
 	mac_addr = rtw_malloc(ETH_ALEN, &phy_addr);
 	if (mac_addr == NULL) {
@@ -462,7 +460,6 @@ int whc_host_set_EDCA_params(struct rtw_edca_param *pedca_param)
 	u32 param_buf[1];
 	dma_addr_t phy_addr;
 	int ret = 0;
-	struct device *pdev = global_idev.ipc_dev;
 	struct rtw_edca_param *pedca_param_temp;
 
 	pedca_param_temp = rtw_malloc(sizeof(struct rtw_edca_param), &phy_addr);
@@ -485,7 +482,6 @@ int whc_host_add_key(struct rtw_crypt_info *crypt)
 	u32 param_buf[1];
 	dma_addr_t dma_addr_crypt = 0;
 	struct rtw_crypt_info *crypt_temp = NULL;
-	struct device *pdev = global_idev.ipc_dev;
 
 	crypt_temp = rtw_malloc(sizeof(struct rtw_crypt_info), &dma_addr_crypt);
 	if (!crypt_temp) {
@@ -564,7 +560,6 @@ int whc_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	u32 param_buf[3];
 	u8 *mac_addr_tmp = NULL;
 	dma_addr_t dma_addr_mac_addr = 0;
-	struct device *pdev = global_idev.ipc_dev;
 
 	param_buf[0] = (u32)wlan_idx;
 	param_buf[1] = (u32)status;
@@ -670,7 +665,6 @@ int whc_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_phy_stats 
 	u8 *mac_addr_temp = NULL;
 	union rtw_phy_stats *stats_vir = NULL;
 	dma_addr_t stats_phy = 0;
-	struct device *pdev = global_idev.ipc_dev;
 
 	param_buf[0] = (u32)wlan_idx;
 
@@ -1070,7 +1064,6 @@ int whc_host_set_owe_param(struct rtw_owe_param_t *owe_param)
 	u32 param_buf[1];
 	dma_addr_t dma_data = 0;
 	struct rtw_owe_param_t *powe = NULL;
-	struct device *pdev = global_idev.ipc_dev;
 
 	powe = rtw_malloc(sizeof(struct rtw_owe_param_t), &dma_data);
 	if (powe == NULL) {
@@ -1091,7 +1084,6 @@ int whc_host_set_gen_ie(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flag
 	u32 param_buf[4];
 	dma_addr_t dma_data = 0;
 	char *data = NULL;
-	struct device *pdev = global_idev.ipc_dev;
 
 	data = rtw_malloc(buf_len, &dma_data);
 	if (data == NULL) {
@@ -1248,7 +1240,6 @@ int whc_host_get_edcca_mode(u8 *edcca_mode)
 	u32 param_buf[1];
 	u8 *virt_addr = NULL;
 	dma_addr_t dma_addr = 0;
-	struct device *pdev = global_idev.ipc_dev;
 
 	virt_addr = rtw_malloc(sizeof(u8), &dma_addr);
 	if (virt_addr == NULL) {
@@ -1273,7 +1264,6 @@ int whc_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)
 	u32 param_buf[2];
 	u8 *virt_addr = NULL;
 	dma_addr_t dma_addr = 0;
-	struct device *pdev = global_idev.ipc_dev;
 
 	virt_addr = rtw_malloc(2 * sizeof(u8), &dma_addr);
 	if (virt_addr == NULL) {
@@ -1299,7 +1289,6 @@ int whc_host_set_country_code(char *cc)
 	u32 param_buf[1];
 	dma_addr_t phy_addr = 0;
 	char *country_code = NULL;
-	struct device *pdev = global_idev.ipc_dev;
 
 	if (strlen(cc) != 2) {
 		dev_err(global_idev.pwhc_dev, "%s: the length of country is not 2.\n", __func__);
@@ -1326,7 +1315,6 @@ int whc_host_get_country_code(struct rtw_country_code_table *table)
 	u32 param_buf[1];
 	dma_addr_t phy_addr = 0;
 	struct rtw_country_code_table *virt_addr = NULL;
-	struct device *pdev = global_idev.ipc_dev;
 
 	if (table == NULL) {
 		dev_err(global_idev.pwhc_dev, "%s: input is NULL.\n", __func__);
@@ -1378,6 +1366,7 @@ int whc_host_set_promisc_enable(u32 enable, u8 mode)
 	return ret;
 }
 
+#ifdef CONFIG_IEEE80211R
 int whc_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status)
 {
 	dma_addr_t phy_addr = 0;
@@ -1405,3 +1394,4 @@ int whc_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status)
 
 	return ret;
 }
+#endif

@@ -17,6 +17,7 @@ export CONFIG_RMESH = n
 
 ifeq ($(CONFIG_WHC_HCI_IPC),y)
 
+drv_src := $(patsubst $(srctree)/%,%,$(src))
 ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
 ccflags-$(CONFIG_IEEE80211R) += -DCONFIG_IEEE80211R
@@ -27,9 +28,9 @@ ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/driv
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/api
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/whc
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/whc/whc_dev
-ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(src)/common/ipc
-ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(src)/common
-ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(src)/common/netdev
+ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/common/ipc
+ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/common
+ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/common/netdev
 
 ccflags-$(CONFIG_WHC_HCI_IPC) += -DCONFIG_WHC_HCI_IPC
 ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH

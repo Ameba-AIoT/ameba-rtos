@@ -30,14 +30,21 @@ static void whc_dev_xmit_tasklet_handler(void *msg)
  * @param  none.
  * @return none.
  */
-static void whc_dev_xmit_tasklet(void)
+void whc_dev_xmit_tasklet(void)
 {
 	struct whc_msg_node *p_node = NULL;
 	struct __queue *p_xmit_queue = NULL;
+#ifdef WHC_SKIP_NP_MSG_TASK
+	u8  continus_handle;
+#endif
 
 	p_xmit_queue = &dev_xmit_priv.xmit_queue;
+#ifndef WHC_SKIP_NP_MSG_TASK
 	do {
 		rtos_sema_take(dev_xmit_priv.xmit_sema, 0xFFFFFFFF);
+#else
+	continus_handle = 0;
+#endif
 
 		/* get the data from tx queue. */
 		p_node = whc_msg_dequeue(p_xmit_queue);
@@ -46,13 +53,21 @@ static void whc_dev_xmit_tasklet(void)
 
 			/* release node */
 			rtos_mem_free((u8 *)p_node);
+#ifdef WHC_SKIP_NP_MSG_TASK
+			continus_handle++;
+			if (continus_handle > (wifi_user_config.skb_num_np / 2)) {
+				break;
+			}
+#endif
 
 			/* get next item */
 			p_node = whc_msg_dequeue(p_xmit_queue);
 		}
+#ifndef WHC_SKIP_NP_MSG_TASK
 	} while (1);
 
 	rtos_task_delete(NULL);
+#endif
 }
 
 /* ---------------------------- Public Functions ---------------------------- */
@@ -64,8 +79,10 @@ static void whc_dev_xmit_tasklet(void)
  */
 void whc_dev_init_priv(void)
 {
+#ifndef WHC_SKIP_NP_MSG_TASK
 	/* initialize the sema of tx. */
 	rtos_sema_create_static(&dev_xmit_priv.xmit_sema, 0, 0xFFFFFFFF);
+#endif
 
 	/* initialize queue. */
 	rtw_init_queue(&(dev_xmit_priv.xmit_queue));
@@ -73,12 +90,14 @@ void whc_dev_init_priv(void)
 	dev_xmit_priv.tx_bytes = 0;
 	dev_xmit_priv.tx_pkts = 0;
 
+#ifndef WHC_SKIP_NP_MSG_TASK
 	/* Initialize the TX task */
 	/*modify single thread task's priority lower than INIC XMIT, https://jira.realtek.com/browse/AMEBALITE-434*/
 	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"inic_xmit_tasklet", (rtos_task_function_t)whc_dev_xmit_tasklet, NULL, 1024 * 4,
 										2)) {
 		RTK_LOGI(NOTAG, "Create inic_xmit_tasklet Err!!\n");
 	}
+#endif
 }
 
 /**
