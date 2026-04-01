@@ -65,7 +65,26 @@ static __IO int usbh_msc_is_rdy = 0;
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_DRD_SPEED,
+	.ext_intr_enable = USBH_SOF_INTR,
+	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 3U,
+	.tick_source = USBH_SOF_TICK,
+#if defined (CONFIG_AMEBAGREEN2)
+	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBAL2)
+	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
+	.rx_fifo_depth = 501,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBAPRO3)
+	/*FIFO total depth is 2232 DWORD, resv 8 DWORD for DMA addr */
+	.rx_fifo_depth = 1712,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#endif
 };
 
 static usbh_msc_cb_t usbh_msc_usr_cb = {

@@ -63,7 +63,7 @@ struct net_device_stats *rtw_ndev_get_stats(struct net_device *pnetdev)
 }
 
 /* Given a data frame determine the 802.1p/1d tag to use. */
-unsigned int rtw_classify8021d(struct sk_buff *skb)
+static unsigned int rtw_classify8021d(struct sk_buff *skb)
 {
 	unsigned int dscp;
 
@@ -87,7 +87,7 @@ unsigned int rtw_classify8021d(struct sk_buff *skb)
 	return dscp >> 5;
 }
 
-u8 qos_acm(u8 acm_mask, u8 priority)
+static u8 qos_acm(u8 acm_mask, u8 priority)
 {
 	u8 change_priority = priority;
 
@@ -245,7 +245,7 @@ void rtw_ndev_uninit(struct net_device *pnetdev)
 	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 }
 
-int rtw_ndev_open(struct net_device *pnetdev)
+static int rtw_ndev_open(struct net_device *pnetdev)
 {
 	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
 	rtw_netdev_priv_is_on(pnetdev) = true;
@@ -295,7 +295,7 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 	return 0;
 }
 
-int rtw_ndev_open_ap(struct net_device *pnetdev)
+static int rtw_ndev_open_ap(struct net_device *pnetdev)
 {
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	u8 is_mp = 0;

@@ -9,6 +9,7 @@ ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
 ccflags-$(CONFIG_WHC_ACTIVE_DETECT) += -DCONFIG_WHC_ACTIVE_DETECT
 ccflags-$(CONFIG_SUPPLICANT_SME) += -DCONFIG_SUPPLICANT_SME
 ccflags-$(CONFIG_RMESH) += -DCONFIG_RMESH
+ccflags-$(CONFIG_FW_DOWNLOAD) += -DCONFIG_FW_DOWNLOAD
 
 ccflags-y += -DCONFIG_FULLMAC
 ccflags-y += -I$(src)/../netdev
@@ -22,7 +23,6 @@ whc_sdio-$(CONFIG_WHC_HCI_SDIO) := \
 		../sdio/whc_sdio_host_ops.o \
 		../sdio/whc_sdio_host_probe.o \
 		../sdio/whc_sdio_host_init.o	\
-		../sdio/whc_sdio_host_fwdl.o	\
 		../netdev/whc_host_drv_probe.o \
 		../netdev/whc_host_ethtool_ops.o \
 		../netdev/whc_host_netdev_ops.o \
@@ -70,5 +70,8 @@ ifeq ($(CONFIG_WHC_CMD_PATH), y)
 endif
 
 whc_sdio-$(CONFIG_BT_INIC) += rtb_sdio.o
+
+include $(src)/../fwdl/Kbuild
+whc_sdio-$(CONFIG_FW_DOWNLOAD) += $(addprefix ../fwdl/, $(FWDL_OBJS))
 
 obj-m += whc_sdio.o

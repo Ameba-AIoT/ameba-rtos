@@ -46,7 +46,7 @@ free_ipc_ch:
 	return NULL;
 }
 
-void whc_host_ipc_data_ch_deinit(void)
+static void whc_host_ipc_data_ch_deinit(void)
 {
 	if (!global_idev.data_ch) {
 		dev_err(global_idev.pwhc_dev, "ERROR: event ch has been deinit.");
@@ -91,7 +91,7 @@ free_ipc_ch:
 	return NULL;
 }
 
-void whc_host_ipc_event_ch_deinit(void)
+static void whc_host_ipc_event_ch_deinit(void)
 {
 	if (!global_idev.event_ch) {
 		dev_err(global_idev.pwhc_dev, "ERROR: event ch has been deinit.");

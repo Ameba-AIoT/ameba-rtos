@@ -93,8 +93,16 @@ def main(argc, argv):
     if args.daily_build:
         cmake_config_cmd += f' -DDAILY_BUILD={args.daily_build}'
 
+    skip_current = False
+    fetch_retry = 0
     if args.Defined:
         for defs in args.Defined:
+            if defs.startswith("SKIP_CURRENT"):
+                skip_current = True
+                continue
+            if defs.startswith("CODE_ANALYZE_RETRY"):
+                fetch_retry = int(defs.split('=')[1])
+                # continue  # TODO
             cmake_config_cmd += f' -D{defs}'
 
     # --- 4. GDB / Debug ---
@@ -156,6 +164,15 @@ def main(argc, argv):
         old_file = os.path.join(os.path.dirname(args.build_dir), 'code_size.json')
         if os.path.exists(old_file):
             os.remove(old_file)
+        fetch_code_size_script = os.path.join(os.path.dirname(args.build_dir), '../utils/code_analyze/fetch_parent_size.py')
+        if os.path.exists(fetch_code_size_script):
+            ic_name = args.project_dir.strip("/").split('/')[-2]
+            fetch_cmd = f'python "{fetch_code_size_script}" --output "{os.path.dirname(args.build_dir)}" --ic {ic_name} --retry {fetch_retry}'
+            if skip_current:
+                fetch_cmd += ' --skip-current-as-parent'
+            print(fetch_cmd)
+            if run_command(fetch_cmd) != 0:
+                print('\033[31mError: Fail to fetch parent code size data\033[0m')
 
     # Execute Final Build
     if run_command(build_cmd) != 0:

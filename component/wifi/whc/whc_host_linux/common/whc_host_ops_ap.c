@@ -494,7 +494,7 @@ static int whc_host_stop_ap_ops(struct wiphy *wiphy, struct net_device *ndev
 	return ret;
 }
 
-int whc_host_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request)
+static int whc_host_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request)
 {
 	int ret = 0;
 	struct rtw_scan_param scan_param = {0};

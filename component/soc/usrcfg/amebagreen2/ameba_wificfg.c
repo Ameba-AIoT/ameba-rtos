@@ -35,7 +35,12 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_np = 20;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;
 	wifi_user_config.rx_ampdu_num = 8;
-#elif defined(CONFIG_WHC_INTF_SPI)  || defined(CONFIG_WHC_INTF_UART)
+#elif defined(CONFIG_WHC_INTF_SPI)
+	skb_num_np_rsvd = 7; /*4 for rx_ring_buffer + 2 for mgnt trx + 1 for spi rx_dma_buffer */
+	wifi_user_config.skb_num_np = 14;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
+	wifi_user_config.skb_num_ap = 0;
+	wifi_user_config.rx_ampdu_num = 0;
+#elif defined(CONFIG_WHC_INTF_UART)
 	skb_num_np_rsvd = 7; /*4 for rx_ring_buffer + 2 for mgnt trx + 1 for spi rx_dma_buffer */
 	wifi_user_config.skb_num_np = 14;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;
@@ -102,6 +107,10 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.rate_mask_cck = 0x0;
 	wifi_user_config.sgi = 1;
 	wifi_user_config.he_gi_ltf_cap = RTW_HE_GI_LTF_ALL;
+
+	/* WPS */
+	wifi_user_config.wps_retry_count = 4;
+	wifi_user_config.wps_retry_interval = 5000;
 
 #if defined(CONFIG_WHC_DEV) && !defined(CONFIG_WHC_INTF_IPC) &&  !defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 	/* Linux wifi supports cfg80211 ops. */

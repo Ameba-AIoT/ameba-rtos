@@ -43,6 +43,7 @@ define flash_write
     set $FILESTARTADDR = 0
     set $FLASHDATSRC = FlashDatSrc
     set FlashBlockWriteSize = $FLASHDATBUFSIZE
+    set FlashNextEraseAddr = 0
     set $FILEWRITESIZE = $FLASHDATBUFSIZE
 
     printf "global variables\n"
