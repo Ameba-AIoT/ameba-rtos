@@ -6,9 +6,10 @@
 
 #define DEV_DMA_ALIGN	SPDIO_DMA_ALIGN_4
 
-#define whc_dev_trigger_rx_handle   whc_sdio_dev_trigger_rx_handle
+#define whc_dev_trigger_rx_handle()   whc_sdio_dev_trigger_rx_handle()
 #define whc_dev_tx_path_avail       whc_sdio_dev_tx_path_avail
 #define whc_dev_send                whc_sdio_dev_send
+#define whc_dev_flowctrl(a, b)
 
 #define whc_sdio_dev_event_int_hdl  whc_sdio_dev_pkt_rx
 

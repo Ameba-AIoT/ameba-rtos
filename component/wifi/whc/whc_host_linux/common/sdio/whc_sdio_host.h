@@ -35,11 +35,6 @@ struct whc_sdio;
 #define PWR_STATE_ACTIVE	0
 #define PWR_STATE_SLEEP		1
 
-//for CONFIG_FW_DOWNLOAD
-#define FW1_START_ADDR 0x20003000 // km4 bootloader
-#define MAX_DLFW_PAGE_SIZE 4096 // firmware limit
-#define FW_RL005_SIZE (2 * 1024 * 1024) // 2M
-
 enum RPWM2_EVENT {
 	RPWM2_PWR_SUSPEND		= 0,		// Clock Gated
 	RPWM2_PWR_RESUME		= 1,		// Wakeup event
@@ -75,7 +70,7 @@ struct whc_sdio {
 	u8 dev_state;
 
 	int (*rx_process_func)(struct sk_buff *pskb);
-
+	void (*rx_recv_notify)(void);
 };
 
 extern struct whc_sdio whc_sdio_priv;

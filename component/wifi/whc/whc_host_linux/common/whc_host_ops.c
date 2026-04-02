@@ -699,7 +699,7 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 
 	dev_dbg(global_idev.pwhc_dev, "=>"FUNC_NDEV_FMT" - Start to Connection\n", FUNC_NDEV_ARG(ndev));
 	dev_dbg(global_idev.pwhc_dev,
-			"ssid=%s, ssid_len=%ld, freq=%d, bssid=[0x%x:0x%x:0x%x:0x%x:0x%x:0x%x], privacy=%d, key=%p, key_len=%d, key_idx=%d, auth_type=%d\n",
+			"ssid=%s, ssid_len=%d, freq=%d, bssid=[0x%x:0x%x:0x%x:0x%x:0x%x:0x%x], privacy=%d, key=%p, key_len=%d, key_idx=%d, auth_type=%d\n",
 			sme->ssid, sme->ssid_len, sme->channel->center_freq,
 			sme->bssid[0], sme->bssid[1], sme->bssid[2], sme->bssid[3], sme->bssid[4], sme->bssid[5],
 			sme->privacy, sme->key, sme->key_len, sme->key_idx, sme->auth_type);
@@ -1607,7 +1607,7 @@ void whc_host_mgmt_frame_register(struct wiphy *wiphy, struct wireless_dev *wdev
 #endif
 }
 #else
-void whc_host_update_mgmt_frame_register(struct wiphy *wiphy, struct wireless_dev *wdev, struct mgmt_frame_regs *upd)
+static void whc_host_update_mgmt_frame_register(struct wiphy *wiphy, struct wireless_dev *wdev, struct mgmt_frame_regs *upd)
 {
 #ifdef CONFIG_P2P
 	u16 frame_type_mask = 0;

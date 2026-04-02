@@ -5,7 +5,7 @@
 * @return true:
 * @return false:
 */
-int rtw_inc_and_chk_continual_io_error(struct whc_sdio *priv)
+static int rtw_inc_and_chk_continual_io_error(struct whc_sdio *priv)
 {
 	int ret = false;
 	int value;
@@ -20,12 +20,12 @@ int rtw_inc_and_chk_continual_io_error(struct whc_sdio *priv)
 /*
 * Set the continual_io_error of this @param dvobjprive to 0
 */
-void rtw_reset_continual_io_error(struct whc_sdio *priv)
+static void rtw_reset_continual_io_error(struct whc_sdio *priv)
 {
 	atomic_set(&priv->continual_io_error, 0);
 }
 
-bool rtw_sdio_claim_host_needed(struct sdio_func *func)
+static bool rtw_sdio_claim_host_needed(struct sdio_func *func)
 {
 	struct whc_sdio *priv = sdio_get_drvdata(func);
 
@@ -640,14 +640,17 @@ static void sdio_get_cmdaddr(
 {
 	switch (DomainID) {
 	case SDIO_LOCAL_DOMAIN_ID:
+		/* DeviceID[16]=0, DomainID[15:13]=0, Address/Len[12:0] is SDIO or SPDIO Control register */
 		*pCmdAddr = ((SDIO_LOCAL_DOMAIN_ID << 13) | (Param & SDIO_LOCAL_MSK));
 		break;
 
 	case SDIO_TX_FIFO_DOMAIN_ID:
+		/* DeviceID[16]=0, DomainID[15:13]=4, Address/Len[12:0] is Tx packet length, unit is 4-Byte */
 		*pCmdAddr = ((SDIO_TX_FIFO_DOMAIN_ID << 13) | (Param & SDIO_TX_FIFO_MSK));
 		break;
 
 	case SDIO_RX_FIFO_DOMAIN_ID:
+		/* DeviceID[16]=0, DomainID[15:13]=7, Address/Len[12:0] is stuff bit, shall be set to 0 */
 		*pCmdAddr = ((SDIO_RX_FIFO_DOMAIN_ID << 13) | (Param & SDIO_RX_FIFO_MSK));
 		break;
 
@@ -789,7 +792,7 @@ u32 sdio_read32(struct whc_sdio *priv, u32 addr)
 	return val;
 }
 
-s32 sdio_readN(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *pbuf)
+static s32 sdio_readN(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *pbuf)
 {
 
 	u8 deviceId;

@@ -111,7 +111,7 @@ func_exit:
 
 static void whc_host_event_join_status_indicate(struct event_priv_t *event_priv, struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
-	struct mlme_priv_t *mlme_priv = &global_idev.mlme_priv;
+	struct mlme_priv_t *pmlme_priv = &global_idev.mlme_priv;
 	u32 event = (u32)p_ipc_msg->param_buf[0];
 	char *evt_info = llhw_ipc_fw_phy_to_virt(p_ipc_msg->param_buf[1]);
 	struct device *pdev = NULL;
@@ -161,9 +161,9 @@ static void whc_host_event_join_status_indicate(struct event_priv_t *event_priv,
 			dev_dbg(global_idev.pwhc_dev, "%s: disassoc_reason=%d \n", __func__, disassoc_reason);
 			whc_host_disconnect_indicate(disassoc_reason, 1, join_status_info->bssid);
 		}
-		if (global_idev.mlme_priv.b_in_disconnect) {
-			complete(&global_idev.mlme_priv.disconnect_done_sema);
-			global_idev.mlme_priv.b_in_disconnect = false;
+		if (pmlme_priv->b_in_disconnect) {
+			complete(&pmlme_priv->disconnect_done_sema);
+			pmlme_priv->b_in_disconnect = false;
 		}
 	}
 	if (event == RTW_EVENT_AP_STA_ASSOC) {
@@ -322,14 +322,14 @@ static void whc_host_event_join_status_indicate(struct event_priv_t *event_priv,
 
 			passocrsp_data->buf = rx_assoc_rsp_info->frame;
 			passocrsp_data->len = rx_assoc_rsp_info->frame_len;
-			passocrsp_data->req_ies = mlme_priv->assoc_req_ie + WLAN_HDR_A3_LEN + 4 + (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6);/* re-assoc: current ap */
-			passocrsp_data->req_ies_len = mlme_priv->assoc_req_ie_len - WLAN_HDR_A3_LEN - 4 - (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6);
+			passocrsp_data->req_ies = pmlme_priv->assoc_req_ie + WLAN_HDR_A3_LEN + 4 + (*(u8 *)pmlme_priv->assoc_req_ie == 0 ? 0 : 6);/* re-assoc: current ap */
+			passocrsp_data->req_ies_len = pmlme_priv->assoc_req_ie_len - WLAN_HDR_A3_LEN - 4 - (*(u8 *)pmlme_priv->assoc_req_ie == 0 ? 0 : 6);
 			passocrsp_data->uapsd_queues = rx_assoc_rsp_info->uapsd_ac_enable;
 			passocrsp_data->links[0].bss = sme_priv->cfg80211_assoc_bss;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0))
 			passocrsp_data->links[0].status = *(u16 *)(passocrsp_data->buf + WLAN_HDR_A3_LEN + 2);
 #endif
-			passocrsp_data->links[0].addr = mlme_priv->assoc_req_ie + 4;
+			passocrsp_data->links[0].addr = pmlme_priv->assoc_req_ie + 4;
 
 			cfg80211_rx_assoc_resp(pndev, passocrsp_data);
 
@@ -512,7 +512,6 @@ static void whc_host_event_promisc_pkt_hdl(struct event_priv_t *event_priv, stru
 {
 	struct device *pdev = NULL;
 	struct rtw_rx_pkt_info *ppktinfo = NULL;
-	dma_addr_t phy_pkt = 0, phy_buf = 0;
 	uint8_t *buf = NULL;
 
 	pdev = global_idev.ipc_dev;
@@ -521,8 +520,8 @@ static void whc_host_event_promisc_pkt_hdl(struct event_priv_t *event_priv, stru
 		goto func_exit;
 	}
 
-	ppktinfo = llhw_ipc_fw_phy_to_virt(p_ipc_msg->param_buf[0]);
-	buf = llhw_ipc_fw_phy_to_virt(ppktinfo->buf);
+	ppktinfo = llhw_ipc_fw_phy_to_virt((phys_addr_t)p_ipc_msg->param_buf[0]);
+	buf = (uint8_t *)llhw_ipc_fw_phy_to_virt((phys_addr_t)ppktinfo->buf);
 
 	ppktinfo->buf = buf;
 	rtw_promisc_rx(ppktinfo);

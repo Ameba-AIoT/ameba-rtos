@@ -6,8 +6,8 @@ include(${c_CMAKE_FILES_DIR}/global_define.cmake)
 import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
 ameba_reset_global_define() #NOTE: Some variables like c_MP need to update after import kconfig
 
-if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
-    file(REMOVE ${FINAL_IMAGE_DIR}/${c_APP_BINARY_NAME})
+if ((NOT CONFIG_WHC_INTF_IPC_MENU) AND CONFIG_WHC_DEV_MENU)
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${FINAL_IMAGE_DIR}/km4tz_fullmac.bin ${FINAL_IMAGE_DIR}/${c_APP_BINARY_NAME})
     return()
 endif()
 

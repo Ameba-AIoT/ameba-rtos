@@ -1217,10 +1217,9 @@ int cmd_wps(int argc, char **argv)
 			unsigned int pin_val = 0;
 			/* start pin */
 			if (argc == 2) {
-				char device_pin[10];
+				char device_pin[10] = {0};
 				pin_val = wps_generate_pin();
 				DiagSnPrintf(device_pin, sizeof(device_pin), "%08d", pin_val);
-
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rWPS: Start WPS PIN Display. PIN: [%s]\n\r", device_pin);
 				ret = wps_start(WPS_CONFIG_DISPLAY, (char *)device_pin, 0, NULL);
 			} else {

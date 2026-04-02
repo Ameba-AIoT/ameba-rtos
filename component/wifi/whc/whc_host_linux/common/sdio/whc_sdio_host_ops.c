@@ -106,14 +106,12 @@ exit:
 	return;
 }
 
-void whc_sdio_host_recv_data_process(void *intf_priv)
+static void whc_sdio_host_recv_data_process(void *intf_priv)
 {
 	struct whc_sdio *sdio_priv = (struct whc_sdio *)intf_priv;
-	u8 tmp[4];
 	struct sk_buff *pskb;
-	u32 rx_len_rdy, himr;
-	u16 SdioRxFIFOSize;
-	u8 retry = 0;
+	u32 himr;
+	u32 SdioRxFIFOSize;
 
 	/* wakeup device if it's sleep */
 	if (sdio_priv->dev_state == PWR_STATE_SLEEP) {
@@ -125,31 +123,17 @@ void whc_sdio_host_recv_data_process(void *intf_priv)
 	}
 
 	do {
-		/* validate RX_LEN_RDY before reading RX0_REQ_LEN */
-		rx_len_rdy = sdio_read8(sdio_priv, SDIO_REG_RX0_REQ_LEN + 3) & BIT(7);
-
-		if (rx_len_rdy) {
-			sdio_local_read(sdio_priv, SDIO_REG_RX0_REQ_LEN, 4, tmp);
-			SdioRxFIFOSize = le16_to_cpu(*(u16 *)tmp);
-
-			if (SdioRxFIFOSize == 0) {
-				if (retry ++ < 3) {
-					continue;
-				} else {
-					break;
-				}
-			} else {
-				retry = 0;
-				pskb = whc_sdio_host_read_rxfifo(sdio_priv, SdioRxFIFOSize);
-				if (pskb) {
-					/* skip RX_DESC */
-					sdio_priv->rx_process_func(pskb);
-				} else {
-					break;
-				}
-			}
-		} else {
+		SdioRxFIFOSize = rtw_sdio_get_rx_len(sdio_priv);
+		if (SdioRxFIFOSize == 0) {
 			break;
+		} else {
+			pskb = whc_sdio_host_read_rxfifo(sdio_priv, SdioRxFIFOSize);
+			if (pskb) {
+				/* skip RX_DESC */
+				sdio_priv->rx_process_func(pskb);
+			} else {
+				break;
+			}
 		}
 	} while (1);
 

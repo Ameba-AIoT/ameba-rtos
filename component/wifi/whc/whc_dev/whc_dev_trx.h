@@ -29,4 +29,5 @@ void whc_dev_init_priv(void);
 void whc_dev_recv(int idx);
 void whc_dev_tx_done(int idx);
 void whc_dev_trigger_rx(void);
+void whc_dev_send_flowctrl_cmd(u8 fc_state);
 #endif /* __INIC_DEV_TX_H__ */

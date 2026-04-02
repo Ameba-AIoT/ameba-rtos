@@ -24,6 +24,8 @@ case $choice in
 		;;
 esac
 
+sed -i 's/CONFIG_FW_DOWNLOAD = y/CONFIG_FW_DOWNLOAD = n/g' Makefile
+
 if [ "$1" == "spi" ]; then
 	sed -i 's/CONFIG_WHC_HCI_SDIO = y/CONFIG_WHC_HCI_SDIO = n/g' Makefile
 	sed -i 's/CONFIG_WHC_HCI_USB = y/CONFIG_WHC_HCI_USB = n/g' Makefile
@@ -65,7 +67,6 @@ fi
 if [[ "$1" == "sdio" ]]; then
 	sed -i 's/#define CONFIG_AMEBADPLUS 1/#undef CONFIG_AMEBADPLUS/g' ./common/autoconf.h
 	sed -i 's/#define CONFIG_AMEBAGREEN2 1/#undef CONFIG_AMEBAGREEN2/g' ./common/autoconf.h
-	sed -i 's/#define CONFIG_FW_DOWNLOAD 1/#undef CONFIG_FW_DOWNLOAD/g' ./common/autoconf.h
 	sed -i 's/#define CALCULATE_FREE_TXBD 1/#undef CALCULATE_FREE_TXBD/g' ./common/autoconf.h
 	sed -i 's/#define GREEN2_WA 1/#undef GREEN2_WA/g' ./common/autoconf.h
 
@@ -92,9 +93,9 @@ if [[ "$1" == "sdio" ]]; then
         3)
             echo "AMEBAGREEN2 with FW DOWNLOAD select"
             sed -i 's/#undef CONFIG_AMEBAGREEN2/#define CONFIG_AMEBAGREEN2 1/g' ./common/autoconf.h
-            sed -i 's/#undef CONFIG_FW_DOWNLOAD/#define CONFIG_FW_DOWNLOAD 1/g' ./common/autoconf.h
             sed -i 's/#undef GREEN2_WA/#define GREEN2_WA 1/g' ./common/autoconf.h
-			cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./common/include
+            sed -i 's/CONFIG_FW_DOWNLOAD = n/CONFIG_FW_DOWNLOAD = y/g' Makefile
+            cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./common/include
             ;;
         4)
             echo "AMEBAX select"
@@ -144,7 +145,6 @@ fi
 if [[ "$1" == "usb" ]]; then
 	sed -i 's/#define CONFIG_AMEBADPLUS 1/#undef CONFIG_AMEBADPLUS/g' ./common/autoconf.h
 	sed -i 's/#define CONFIG_AMEBAGREEN2 1/#undef CONFIG_AMEBAGREEN2/g' ./common/autoconf.h
-	sed -i 's/#define CONFIG_FW_DOWNLOAD 1/#undef CONFIG_FW_DOWNLOAD/g' ./common/autoconf.h
 	sed -i 's/#define CALCULATE_FREE_TXBD 1/#undef CALCULATE_FREE_TXBD/g' ./common/autoconf.h
 
 	echo "choose target IC:"

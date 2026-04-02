@@ -32,7 +32,6 @@ int whc_spi_dev_dma_rx_done_cb(void *param)
 	struct whc_msg_info *msg_info;
 	u8 *buf = NULL;
 	u32 event;
-	u16 retry_num = 0;
 
 	/* disable gdma channel */
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
@@ -43,35 +42,16 @@ int whc_spi_dev_dma_rx_done_cb(void *param)
 
 	/* receives XMIT_PKTS */
 	if (event == WHC_WIFI_EVT_XIMT_PKTS) {
-		retry_num = 0;
-retry:
-		/* alloc new skb, blocked if no skb.
-		block value <= wifi_user_config.skb_num_np - (rx_ring_buffer + wifi_user_config.rx_ampdu_num + 1 for spi rx_dma_buffer)
-		e.g. 3 <= 14 - (4 + 4 + 1)*/
+		/* reserved 3 skb for rx */
 		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 3) ||
 			((new_skb = dev_alloc_skb(SPI_BUFSZ, SPI_SKB_RSVD_LEN)) == NULL)) {
-			spi_priv->wait_for_txbuf = TRUE;
-
 #ifndef WHC_SKIP_NP_MSG_TASK
 			/* resume pending queue to release skb */
 			rtw_pending_q_resume();
 #endif
-
-			/* wait timeout to re-check skb, considering corner cases for wait_for_txbuf update */
-			rtos_sema_take(spi_priv->free_skb_sema, 1);
-
-			/* retry 1ms * 5 = 5ms to get skb. */
-			if (retry_num < 5) {
-				retry_num++;
-				goto retry;
-			} else {
-				retry_num = 0;
-				spi_priv->wait_for_txbuf = FALSE;
-				new_skb = spi_priv->rx_skb;
-				goto drop_pkt;
-			}
+			new_skb = spi_priv->rx_skb;
+			goto drop_pkt;
 		} else {
-			spi_priv->wait_for_txbuf = FALSE;
 			spi_priv->rx_skb = new_skb;
 		}
 
@@ -86,7 +66,7 @@ retry:
 		skb_reserve(rx_pkt, sizeof(struct whc_msg_info) + msg_info->pad_len);
 		skb_put(rx_pkt, msg_info->data_len);
 
-		rx_pkt->dev = (void *)msg_info->wlan_idx;
+		rx_pkt->dev = (void *)((u32)msg_info->wlan_idx);
 
 		whc_spi_dev_event_int_hdl((u8 *)msg_info, rx_pkt);
 
@@ -136,7 +116,6 @@ u32 whc_spi_dev_rxdma_irq_handler(void *pData)
 	/* check and clear RX DMA ISR */
 	int_status = GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	if ((int_status & (TransferType)))  {
-		set_dev_rdy_pin(DEV_BUSY);
 		rtos_critical_enter(RTOS_CRITICAL_WIFI);
 		spi_priv.dev_status |= DEV_STS_WAIT_RXDMA_DONE;
 		rtos_critical_exit(RTOS_CRITICAL_WIFI);
@@ -178,85 +157,67 @@ u32 whc_spi_dev_txdma_irq_handler(void *pData)
 
 int whc_spi_dev_set_dev_status(struct whc_spi_priv_t *whc_spi_priv, u32 ops, u32 sts)
 {
-	do {
-		rtos_critical_enter(RTOS_CRITICAL_WIFI);
-		if ((ops == DISABLE) && (whc_spi_priv->dev_status & sts)) {
+	rtos_critical_enter(RTOS_CRITICAL_WIFI);
+	if ((ops == DISABLE) && (whc_spi_priv->dev_status & sts)) {
 #ifdef SPI_DEBUG
-			u32 pin = 0;
+		u32 pin = 0;
 
-			switch (sts) {
-			case DEV_STS_WAIT_TXDMA_DONE:
-				pin = _PB_2;
-				break;
-			case DEV_STS_WAIT_RXDMA_DONE:
-				pin = _PB_3;
-				break;
-			case DEV_STS_SPI_CS_LOW:
-				pin = _PB_10;
-				break;
-			default:
-				break;
-			}
-
-			GPIO_WriteBit(pin, 1);
-#endif
-			/* Clear status if exists */
-			whc_spi_priv->dev_status &= ~sts;
-
-			/* check if idle */
-			if (whc_spi_priv->dev_status == DEV_STS_IDLE) {
-
-				/* disable spi recover timer */
-				RTIM_Cmd(TIMx[WHC_RECOVER_TIM_IDX], DISABLE);
-
-				/* re-enable SPI RXF interrupt */
-				SSI_INTConfig(WHC_SPI_DEV, SPI_BIT_RXFIM, ENABLE);
-				whc_spi_priv->tx_req = FALSE;
-
-				if (!whc_spi_priv->wait_tx) {
-					/* set DEV_RDY pin to idle */
-					set_dev_rdy_pin(DEV_READY);
-				}
-			}
-#ifdef SPI_DEBUG
-			GPIO_WriteBit(pin, 0);
-#endif
-		} else if (ops == ENABLE) {
-			/* Set status */
-			set_dev_rdy_pin(DEV_BUSY);
-
-			if (whc_spi_priv->tx_req) {
-				/* Host initiate tx_req, set TX_REQ pin to idle */
-				set_dev_txreq_pin(DEV_TX_IDLE);
-			}
-			whc_spi_priv->dev_status = sts;
-
-			/* enable spi recover timer */
-			RTIM_Reset(TIMx[WHC_RECOVER_TIM_IDX]);
-			RTIM_Cmd(TIMx[WHC_RECOVER_TIM_IDX], ENABLE);
-		}
-		rtos_critical_exit(RTOS_CRITICAL_WIFI);
-
-		if (whc_spi_priv->dev_status == DEV_STS_IDLE) {
-			rtos_sema_give(whc_spi_priv->spi_transfer_done_sema);
-		}
-		if (whc_spi_priv->ssris_pending) {
-			whc_spi_priv->ssris_pending = FALSE;
-
-			ops = DISABLE;
-			sts = DEV_STS_SPI_CS_LOW;
-		} else if (whc_spi_priv->set_devsts_pending) {
-			whc_spi_priv->set_devsts_pending = FALSE;
-
-			ops = ENABLE;
-			sts = DEV_STS_SPI_CS_LOW | DEV_STS_WAIT_RXDMA_DONE;
-			if (whc_spi_priv->tx_req) {
-				sts |= DEV_STS_WAIT_TXDMA_DONE;
-			}
-		} else {
+		switch (sts) {
+		case DEV_STS_WAIT_TXDMA_DONE:
+			pin = _PB_2;
+			break;
+		case DEV_STS_WAIT_RXDMA_DONE:
+			pin = _PB_3;
+			break;
+		case DEV_STS_SPI_CS_LOW:
+			pin = _PB_10;
+			break;
+		default:
 			break;
 		}
-	} while (1);
+
+		GPIO_WriteBit(pin, 1);
+#endif
+		/* Clear status if exists */
+		whc_spi_priv->dev_status &= ~sts;
+
+		/* check if idle */
+		if (whc_spi_priv->dev_status == DEV_STS_IDLE) {
+
+			/* disable spi recover timer */
+			RTIM_Cmd(TIMx[WHC_RECOVER_TIM_IDX], DISABLE);
+
+			/* re-enable SPI RXF interrupt */
+			SSI_INTConfig(WHC_SPI_DEV, SPI_BIT_RXFIM, ENABLE);
+			whc_spi_priv->tx_req = FALSE;
+
+			if (!whc_spi_priv->wait_tx) {
+				/* set DEV_RDY pin to idle */
+				set_dev_rdy_pin(DEV_READY);
+			}
+		}
+#ifdef SPI_DEBUG
+		GPIO_WriteBit(pin, 0);
+#endif
+	} else if (ops == ENABLE) {
+		/* Set status */
+		set_dev_rdy_pin(DEV_BUSY);
+
+		if (whc_spi_priv->tx_req) {
+			/* Host initiate tx_req, set TX_REQ pin to idle */
+			set_dev_txreq_pin(DEV_TX_IDLE);
+		}
+		whc_spi_priv->dev_status = sts;
+
+		/* enable spi recover timer */
+		RTIM_Reset(TIMx[WHC_RECOVER_TIM_IDX]);
+		RTIM_Cmd(TIMx[WHC_RECOVER_TIM_IDX], ENABLE);
+	}
+	rtos_critical_exit(RTOS_CRITICAL_WIFI);
+
+	if (whc_spi_priv->dev_status == DEV_STS_IDLE) {
+		rtos_sema_give(whc_spi_priv->spi_transfer_done_sema);
+	}
 
 	return RTK_SUCCESS;
 }
@@ -274,10 +235,8 @@ u32 whc_spi_dev_recover(void *Data)
 
 	if (whc_spi_priv->dev_status & DEV_STS_SPI_CS_LOW) {
 		RTK_LOGD(TAG_WLAN_INIC, "SSR interrupt lost\n");
+		whc_spi_dev_set_dev_status(whc_spi_priv, DISABLE, DEV_STS_SPI_CS_LOW);
 
-		if (whc_spi_dev_set_dev_status(whc_spi_priv, DISABLE, DEV_STS_SPI_CS_LOW) == RTK_FAIL) {
-			whc_spi_priv->ssris_pending = TRUE;
-		}
 	} else if (whc_spi_priv->dev_status & DEV_STS_WAIT_TXDMA_DONE) {
 		RTK_LOGD(TAG_WLAN_INIC, "TXDMA not done\n");
 		rtos_sema_give(whc_spi_priv->txirq_sema);
@@ -334,17 +293,12 @@ u32 whc_spi_dev_interrupt_handler(void *param)
 		if (whc_spi_priv->tx_req) {
 			status |= DEV_STS_WAIT_TXDMA_DONE;
 		}
-
-		if (whc_spi_dev_set_dev_status(whc_spi_priv, ENABLE, status) == RTK_FAIL) {
-			whc_spi_priv->set_devsts_pending = TRUE;
-		}
+		whc_spi_dev_set_dev_status(whc_spi_priv, ENABLE, status);
 	}
 
 	if (interrupt_status & SPI_BIT_SSRIS) {
 		if (whc_spi_priv->dev_status & DEV_STS_SPI_CS_LOW) {
-			if (whc_spi_dev_set_dev_status(whc_spi_priv, DISABLE, DEV_STS_SPI_CS_LOW) == RTK_FAIL) {
-				whc_spi_priv->ssris_pending = TRUE;
-			}
+			whc_spi_dev_set_dev_status(whc_spi_priv, DISABLE, DEV_STS_SPI_CS_LOW);
 		}
 	}
 
@@ -433,7 +387,6 @@ void whc_spi_dev_device_init(void)
 
 	GPIO_InitStruct.GPIO_Pin = DEV_READY_PIN;
 	GPIO_Init(&GPIO_InitStruct);
-
 #ifdef SPI_DEBUG
 	GPIO_InitStruct.GPIO_Pin = _PB_2;
 	GPIO_Init(&GPIO_InitStruct);
@@ -610,10 +563,28 @@ bool whc_spi_dev_txdma_init(
 	return TRUE;
 }
 
-void whc_spi_dev_trigger_rx_handle(void)
+void whc_spi_dev_flowctrl(u8 *status, u8 send_cmd)
 {
-	if (spi_priv.wait_for_txbuf) {
-		rtos_sema_give(spi_priv.free_skb_sema);
+	u8 status_change = 0;
+
+	if (skbpriv.skb_buff_num - skbpriv.skb_buff_used < SPI_FLOWCTRL_LOW_THRESHOLD) {
+		if (!spi_priv.flowctrl_en) {
+			spi_priv.flowctrl_en = 1;
+			status_change = 1;
+		}
+	} else if (skbpriv.skb_buff_num - skbpriv.skb_buff_used > SPI_FLOWCTRL_HIGH_THRESHOLD) {
+		if (spi_priv.flowctrl_en) {
+			spi_priv.flowctrl_en = 0;
+			status_change = 1;
+		}
+	}
+
+	if (status) {
+		*status = spi_priv.flowctrl_en;
+	}
+
+	if (send_cmd && status_change) {
+		whc_dev_send_flowctrl_cmd(spi_priv.flowctrl_en);
 	}
 }
 
@@ -773,18 +744,17 @@ retry:
 
 	return;
 
-drop_send: {
-		inic_tx = container_of(pbuf, struct whc_txbuf_info_t, txbuf_info);
-		/* Dev drop tx, free tx skb or buffer */
-		if (inic_tx->is_skb) {
-			dev_kfree_skb_any((struct sk_buff *) inic_tx->ptr);
-		} else {
-			rtos_mem_free((u8 *)inic_tx->ptr);
-		}
-		rtos_mem_free((u8 *)inic_tx);
-
-		rtos_mutex_give(spi_priv.tx_lock);
+drop_send:
+	inic_tx = container_of(pbuf, struct whc_txbuf_info_t, txbuf_info);
+	/* Dev drop tx, free tx skb or buffer */
+	if (inic_tx->is_skb) {
+		dev_kfree_skb_any((struct sk_buff *) inic_tx->ptr);
+	} else {
+		rtos_mem_free((u8 *)inic_tx->ptr);
 	}
+	rtos_mem_free((u8 *)inic_tx);
+
+	rtos_mutex_give(spi_priv.tx_lock);
 }
 
 /**

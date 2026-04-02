@@ -109,7 +109,7 @@ void whc_dev_recv(int idx)
 {
 	struct sk_buff *skb = NULL;
 	u8 *ptr;
-	u8 pad_len;
+	u8 pad_len, tmp = 0;
 	struct whc_msg_info *msg_info = NULL;
 	struct whc_txbuf_info_t *inic_tx;
 
@@ -172,6 +172,9 @@ void whc_dev_recv(int idx)
 	msg_info->data_len = skb->len;
 	msg_info->pad_len = pad_len;
 
+	whc_dev_flowctrl(&tmp, 0);
+	msg_info->flow_ctrl_en = tmp;
+
 	/* construct struct whc_buf_info & whc_buf_info_t */
 	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
 	if (!inic_tx) {
@@ -184,6 +187,40 @@ void whc_dev_recv(int idx)
 
 	inic_tx->ptr = skb;
 	inic_tx->is_skb = 1;
+
+	/* send msg_info + pad + rx_pkt_data(skb->data, skb->len) */
+	whc_dev_send(&inic_tx->txbuf_info);
+}
+
+void whc_dev_send_flowctrl_cmd(u8 fc_state)
+{
+	struct whc_msg_info *msg_info = NULL;
+	struct whc_txbuf_info_t *inic_tx;
+
+	msg_info = rtos_mem_zmalloc(sizeof(struct whc_msg_info));
+	if ((u32)msg_info % DEV_DMA_ALIGN) {
+		RTK_LOGE(TAG_WLAN_INIC, "msg_info not 4-bytes aligned!\n");
+		return;
+	}
+
+	msg_info->event = WHC_WIFI_EVT_FLOWCTRL;
+	msg_info->wlan_idx = 0;
+	msg_info->data_len = 0;
+	msg_info->pad_len = 0;
+	msg_info->flow_ctrl_en = fc_state;
+
+	/* construct struct whc_buf_info & whc_buf_info_t */
+	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
+	if (!inic_tx) {
+		RTK_LOGE(TAG_WLAN_INIC, "fail to alloc struct whc_txbuf_info_t!\n");
+		return;
+	}
+
+	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)msg_info;
+	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = sizeof(struct whc_msg_info);
+
+	inic_tx->ptr = msg_info;
+	inic_tx->is_skb = 0;
 
 	/* send msg_info + pad + rx_pkt_data(skb->data, skb->len) */
 	whc_dev_send(&inic_tx->txbuf_info);
