@@ -46,6 +46,7 @@ enum WHC_WIFI_CTRL_TYPE {
 	WHC_WIFI_EVT_API_CALL,
 	WHC_WIFI_EVT_API_RETURN,
 	WHC_WIFI_EVT_BRIDGE,
+	WHC_WIFI_EVT_FLOWCTRL,
 	WHC_WIFI_EVT_MAX,
 	WHC_CUST_EVT, /* the ID to transmit data for the customer. */
 
@@ -66,7 +67,10 @@ struct whc_cust_hdr {
 
 struct whc_msg_info {
 	u32	event;
-	u32	wlan_idx;
+	u8	wlan_idx: 2;
+	u8	flow_ctrl_en: 1;
+	u8	rsvd1 : 5;
+	u8	rsvd2[3];
 	u32	data_len;
 	u32	pad_len;
 };

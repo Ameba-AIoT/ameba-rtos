@@ -315,7 +315,7 @@ retry:
 		skb_reserve(rx_pkt, sizeof(struct whc_msg_info) + msg_info->pad_len);
 		skb_put(rx_pkt, msg_info->data_len);
 
-		rx_pkt->dev = (void *)msg_info->wlan_idx;
+		rx_pkt->dev = (void *)((u32)msg_info->wlan_idx);
 
 		whc_uart_dev_event_int_hdl((u8 *)msg_info, rx_pkt);
 

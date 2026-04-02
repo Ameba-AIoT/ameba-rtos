@@ -451,6 +451,24 @@ int ota_register_user_open_func(ota_context_t *ctx, ota_user_open_func_t func)
 	return OTA_OK;
 }
 
+int ota_register_user_close_func(ota_context_t *ctx, ota_user_close_func_t func)
+{
+	if (!ctx) {
+		return OTA_ERR;
+	}
+	ctx->user_close_func = func;
+	return OTA_OK;
+}
+
+int ota_register_yield_func(ota_context_t *ctx, ota_yield_func_t func)
+{
+	if (!ctx) {
+		return OTA_ERR;
+	}
+	ctx->yield_func = func;
+	return OTA_OK;
+}
+
 static int ota_core_process(ota_context_t *ctx)
 {
 	u8 *buf = NULL;
@@ -493,6 +511,9 @@ static int ota_core_process(ota_context_t *ctx)
 		if (ret == OTA_ERR) {
 			RTK_LOGI(OTA_TAG, "[CORE] Process failed\n");
 			break;
+		}
+		if (ctx->yield_func) {
+			ctx->yield_func();
 		}
 	}
 

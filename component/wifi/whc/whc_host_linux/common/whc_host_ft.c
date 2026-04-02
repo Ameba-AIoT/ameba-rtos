@@ -132,7 +132,11 @@ static int _whc_host_ft_auth_rx(u8 *pframe, u32 pkt_len)
 
 	dev_dbg(global_idev.pwhc_dev, "%s===>\n", __func__);
 	if (_FT_CHECK_STATUS(_FT_AUTHENTICATING_STA)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,15,0)
+		timer_delete_sync(&lacal_ft_priv.ft_auth_timer);
+#else
 		del_timer_sync(&lacal_ft_priv.ft_auth_timer);
+#endif
 		ret = _whc_host_ft_auth_resp_process(pframe, pkt_len);
 		if (ret < 0) {
 			_FT_SET_STATUS(_FT_UNASSOCIATED_STA);

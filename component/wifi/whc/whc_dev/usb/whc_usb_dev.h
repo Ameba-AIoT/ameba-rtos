@@ -6,9 +6,10 @@
 #define whc_dev_tx_path_avail    whc_usb_dev_tx_path_avail
 #define whc_dev_send             whc_usb_dev_send
 #define whc_dev_init             whc_usb_dev_init
-#define whc_dev_trigger_rx_handle   whc_usb_dev_trigger_rx_handle
+#define whc_dev_trigger_rx_handle()   whc_usb_dev_trigger_rx_handle()
 #define _whc_dev_api_bus_is_idle       whc_usb_dev_bus_is_idle
 #define whc_dev_api_send_data    whc_usb_dev_send_cmd_data
+#define whc_dev_flowctrl(a, b)
 
 #define DEV_DMA_ALIGN			CACHE_LINE_SIZE
 #define USB_DMA_ALIGN(x)	(((x + CACHE_LINE_SIZE - 1) / CACHE_LINE_SIZE) * CACHE_LINE_SIZE)

@@ -22,6 +22,8 @@ int ota_start(ota_context_t *ctx);
 int ota_register_progress_cb(ota_context_t *ctx, ota_progress_cb_t cb);
 int ota_register_user_read_func(ota_context_t *ctx, ota_user_read_func_t func);
 int ota_register_user_open_func(ota_context_t *ctx, ota_user_open_func_t func);
+int ota_register_user_close_func(ota_context_t *ctx, ota_user_close_func_t func);
+int ota_register_yield_func(ota_context_t *ctx, ota_yield_func_t func);
 
 #ifdef __cplusplus
 }

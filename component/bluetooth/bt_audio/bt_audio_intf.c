@@ -250,7 +250,7 @@ static void do_audio_sync_flow(rtk_bt_audio_track_t *track, uint8_t packet_index
 					track->expt_sdu_frc += (int64_t)track->sdu_interval;
 					track->frc_cal_flag = false;
 					BT_LOGD("[BT AUDIO] %s: controller_free_run_clock not overflow \r\n", __func__);
-					//printf("[BT AUDIO] (track %p) expt_sdu_frc:%lld \r\n", track->audio_track_hdl, track->expt_sdu_frc);
+					// BT_LOGD("[BT AUDIO] (track %p) expt_sdu_frc:%lld \r\n", track->audio_track_hdl, track->expt_sdu_frc);
 				} else {
 					track->expt_sdu_frc = (int64_t)track->frc_drift + (int64_t)ts_us;
 					track->frc_cal_flag = true;
@@ -260,11 +260,11 @@ static void do_audio_sync_flow(rtk_bt_audio_track_t *track, uint8_t packet_index
 				track->expt_sdu_frc = (int64_t)track->frc_drift + (int64_t)ts_us;
 				track->frc_cal_flag = true;
 			}
-			//printf("[BT AUDIO] frc_drift: %lld, free_run_clock:%lld, ts_us:%lu \r\n", (int64_t)track->frc_drift,(int64_t)track->controller_free_run_clock, ts_us);
+			// BT_LOGD("[BT AUDIO] frc_drift: %lld, free_run_clock:%lld, ts_us:%lu \r\n", (int64_t)track->frc_drift,(int64_t)track->controller_free_run_clock, ts_us);
 		} else {
 			track->expt_sdu_frc += (int64_t)track->sdu_interval;
 			delta = (uint32_t)audio_delta(track->expt_sdu_frc, ((int64_t)track->frc_drift + (int64_t)ts_us));
-			// printf("expt sdu frc is %lld, actual frc is %lld, ts_us is %u, drift is %lld, delta is %ld \r\n",
+			// BT_LOGD("[BT AUDIO] expt sdu frc is %lld, actual frc is %lld, ts_us is %u, drift is %lld, delta is %ld \r\n",
 			//     track->expt_sdu_frc, (int64_t)track->frc_drift + (int64_t)ts_us, (unsigned int)ts_us, track->frc_drift, delta);
 			/* 10000 for 10 ms */
 			if (delta > 10000) {
@@ -1179,7 +1179,7 @@ uint16_t rtk_bt_audio_get_iso_ref_ap(rtk_bt_audio_track_t *track, uint16_t iso_c
 	/* ts overflow before Group_Anchor_Point, and ts overflow trigger get new clock drift in do_audio_sync_flow() */
 	if (ref_ap_host_time > 0xFFFFFFFF) {
 		BT_LOGA("[BT AUDIO] %s: ref_ap_host_time overflow \r\n", __func__);
-		// printf("[BT AUDIO] delt_time:%lld, cur_host_time:%lu, ref_ap_host_time:%lld, Group_Anchor_Point: %lu, frc_drift:%lld \r\n",
+		// BT_LOGD("[BT AUDIO] delt_time:%lld, cur_host_time:%lu, ref_ap_host_time:%lld, Group_Anchor_Point: %lu, frc_drift:%lld \r\n",
 		//      delt_time, cur_host_time, ref_ap_host_time, info.Group_Anchor_Point, track->frc_drift);
 		*sync_ref_ap = info.Group_Anchor_Point;
 		return 0;
@@ -1187,7 +1187,7 @@ uint16_t rtk_bt_audio_get_iso_ref_ap(rtk_bt_audio_track_t *track, uint16_t iso_c
 	if (delt_time >= 0) {
 		if (delt_time > ((uint32_t)iso_interval / info.Sdu_Interval) * 6000) {
 			BT_LOGE("[BT AUDIO] %s: no enough time for BT controller \r\n", __func__);
-			// printf("[BT AUDIO] delt_time:%lld, cur_host_time:%lu, ref_ap_host_time:%lld, Group_Anchor_Point: %lu, frc_drift:%lld \r\n",
+			// BT_LOGD("[BT AUDIO] delt_time:%lld, cur_host_time:%lu, ref_ap_host_time:%lld, Group_Anchor_Point: %lu, frc_drift:%lld \r\n",
 			//      delt_time, cur_host_time, ref_ap_host_time, info.Group_Anchor_Point, track->frc_drift);
 			return 1;
 		}
@@ -1195,7 +1195,7 @@ uint16_t rtk_bt_audio_get_iso_ref_ap(rtk_bt_audio_track_t *track, uint16_t iso_c
 	} else {
 		if (-delt_time > (int64_t)iso_interval) {
 			BT_LOGE("[BT AUDIO] %s: no enough time for BT controller \r\n", __func__);
-			// printf("[BT AUDIO] delt_time:%lld, cur_host_time:%lu, ref_ap_host_time:%lld, Group_Anchor_Point: %lu, frc_drift:%lld \r\n",
+			// BT_LOGD("[BT AUDIO] delt_time:%lld, cur_host_time:%lu, ref_ap_host_time:%lld, Group_Anchor_Point: %lu, frc_drift:%lld \r\n",
 			//      delt_time, cur_host_time, ref_ap_host_time, info.Group_Anchor_Point, track->frc_drift);
 			return 1;
 		}

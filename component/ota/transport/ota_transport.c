@@ -128,6 +128,12 @@ void ota_transport_disconnect(ota_context_t *ctx)
 		ota_vfs_close(ctx);
 		break;
 
+	case OTA_USER:
+		if (ctx->user_close_func) {
+			ctx->user_close_func();
+		}
+		break;
+
 	default:
 		break;
 	}

@@ -404,7 +404,11 @@ static void whc_host_abort_scan(struct wiphy *wiphy, struct wireless_dev *wdev)
 	dev_dbg(global_idev.pwhc_dev, "[whc]: %s", __func__);
 }
 
+#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
+static int whc_host_set_wiphy_params(struct wiphy *wiphy, int radio_idx, u32 changed)
+#else
 static int whc_host_set_wiphy_params(struct wiphy *wiphy, u32 changed)
+#endif
 {
 	dev_dbg(global_idev.pwhc_dev, "[whc]: %s", __func__);
 	return 0;
@@ -695,7 +699,7 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 
 	dev_dbg(global_idev.pwhc_dev, "=>"FUNC_NDEV_FMT" - Start to Connection\n", FUNC_NDEV_ARG(ndev));
 	dev_dbg(global_idev.pwhc_dev,
-			"ssid=%s, ssid_len=%ld, freq=%d, bssid=[0x%x:0x%x:0x%x:0x%x:0x%x:0x%x], privacy=%d, key=%p, key_len=%d, key_idx=%d, auth_type=%d\n",
+			"ssid=%s, ssid_len=%d, freq=%d, bssid=[0x%x:0x%x:0x%x:0x%x:0x%x:0x%x], privacy=%d, key=%p, key_len=%d, key_idx=%d, auth_type=%d\n",
 			sme->ssid, sme->ssid_len, sme->channel->center_freq,
 			sme->bssid[0], sme->bssid[1], sme->bssid[2], sme->bssid[3], sme->bssid[4], sme->bssid[5],
 			sme->privacy, sme->key, sme->key_len, sme->key_idx, sme->auth_type);
@@ -948,7 +952,11 @@ static int whc_host_disconnect_ops(struct wiphy *wiphy, struct net_device *ndev,
 	return ret;
 }
 
+#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
+static int whc_host_set_txpower(struct wiphy *wiphy, struct wireless_dev *wdev, int radio_idx, enum nl80211_tx_power_setting type, int mbm)
+#else
 static int whc_host_set_txpower(struct wiphy *wiphy, struct wireless_dev *wdev, enum nl80211_tx_power_setting type, int mbm)
+#endif
 {
 	dev_dbg(global_idev.pwhc_dev, "%s set %d %d", __func__, type, mbm);
 
@@ -956,7 +964,11 @@ static int whc_host_set_txpower(struct wiphy *wiphy, struct wireless_dev *wdev, 
 	return -EPERM;
 }
 
+#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
+static int whc_host_get_txpower(struct wiphy *wiphy, struct wireless_dev *wdev, int radio_idx, unsigned int link_id, int *dbm)
+#else
 static int whc_host_get_txpower(struct wiphy *wiphy, struct wireless_dev *wdev, int *dbm)
+#endif
 {
 	dev_dbg(global_idev.pwhc_dev, "[whc]: %s", __func__);
 
@@ -979,7 +991,11 @@ static int whc_host_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev,
 	return 0;
 }
 
+#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
+static int whc_host_set_monitor_channel(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_chan_def *chandef)
+#else
 static int whc_host_set_monitor_channel(struct wiphy *wiphy, struct cfg80211_chan_def *chandef)
+#endif
 {
 	int ret = 0;
 	int ch = 0;
@@ -1591,7 +1607,7 @@ void whc_host_mgmt_frame_register(struct wiphy *wiphy, struct wireless_dev *wdev
 #endif
 }
 #else
-void whc_host_update_mgmt_frame_register(struct wiphy *wiphy, struct wireless_dev *wdev, struct mgmt_frame_regs *upd)
+static void whc_host_update_mgmt_frame_register(struct wiphy *wiphy, struct wireless_dev *wdev, struct mgmt_frame_regs *upd)
 {
 #ifdef CONFIG_P2P
 	u16 frame_type_mask = 0;

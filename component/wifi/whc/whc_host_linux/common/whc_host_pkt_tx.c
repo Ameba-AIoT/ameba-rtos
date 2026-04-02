@@ -66,7 +66,9 @@ int whc_host_xmit_thread(void *data)
 		ret = down_interruptible(&xmit_priv->tx_sema);
 
 		/* dequeue msg node */
-		while ((!global_idev.mlme_priv.b_in_scan) && ((p_node = whc_host_dequeue_tx_packet(xmit_priv)) != NULL)) {
+		while ((!global_idev.mlme_priv.b_in_scan) &&
+			   (!global_idev.xmit_priv.flowctrl_en) &&
+			   ((p_node = whc_host_dequeue_tx_packet(xmit_priv)) != NULL)) {
 
 			pskb = p_node->msg;
 

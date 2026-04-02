@@ -3,9 +3,10 @@
 
 #include "whc_spi_dev.h"
 
-#define whc_dev_trigger_rx_handle   whc_spi_dev_trigger_rx_handle
+#define whc_dev_trigger_rx_handle()
 #define whc_dev_tx_path_avail       whc_spi_dev_tx_path_avail
 #define whc_dev_send                whc_spi_dev_send
+#define whc_dev_flowctrl(a, b)		whc_spi_dev_flowctrl(a, b)
 
 #define whc_spi_dev_event_int_hdl   whc_spi_dev_pkt_rx
 
@@ -56,6 +57,9 @@
 
 #define DEV_DMA_ALIGN				4
 
+#define SPI_FLOWCTRL_LOW_THRESHOLD		(3 + 1)  // 3 skb reserved for wifi rx in driver
+#define SPI_FLOWCTRL_HIGH_THRESHOLD		(3 + 2)
+
 enum whc_spi_dma_type {
 	WHC_SPI_TXDMA,
 	WHC_SPI_RXDMA
@@ -83,11 +87,12 @@ struct whc_spi_priv_t {
 
 	u8 tx_req;
 	u8 wait_tx;
-	u8 wait_for_txbuf;
 
 	u8 txdma_initialized: 1;
 	u8 ssris_pending: 1;
 	u8 set_devsts_pending: 1;
+
+	u8 flowctrl_en: 1;
 
 };
 
@@ -114,7 +119,7 @@ void whc_spi_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb);
 void whc_spi_dev_send(struct whc_buf_info *pbuf);
 u8 whc_spi_dev_tx_path_avail(void);
 void whc_spi_dev_send_to_host(u8 *buf, u8 *buf_alloc, u16 len);
-void whc_spi_dev_trigger_rx_handle(void);
+void whc_spi_dev_flowctrl(u8 *status, u8 send_cmd);
 void whc_spi_dev_send_data(u8 *buf, u32 len);
 void whc_spi_dev_send_cmd_data(u8 *buf, u32 len);
 

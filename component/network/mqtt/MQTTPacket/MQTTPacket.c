@@ -262,6 +262,10 @@ int MQTTPacket_equals(MQTTString *a, char *bptr)
 		blen = 0;
 	char *aptr;
 
+	if (a == NULL) {
+		return 0;
+	}
+
 	if (a->cstring) {
 		aptr = a->cstring;
 		alen = strlen(a->cstring);

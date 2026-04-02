@@ -480,7 +480,7 @@ recv_again:
 					RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n");
 				}
 
-				shell_array_init((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+				memset((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
 				pCmdLogBuf->BufCount = 0;
 				continue;
 			} else {
@@ -543,7 +543,7 @@ void atio_usbh_init(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"atcmd_usbh_input_handler_task"), (rtos_task_t)atcmd_usbh_input_handler_task, NULL, 1024, 5) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"atcmd_usbh_input_handler_task"), (rtos_task_t)atcmd_usbh_input_handler_task, NULL, 4096, 5) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "\n\r%s rtos_task_create(atcmd_usbh_input_handler_task) failed", __FUNCTION__);
 	}
 }
