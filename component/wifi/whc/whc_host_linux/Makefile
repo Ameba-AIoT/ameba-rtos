@@ -14,6 +14,8 @@ export CONFIG_WHC_WIFI_API_PATH = y
 export CONFIG_WHC_HOST_RTW_CLI = n
 export CONFIG_WHC_ACTIVE_DETECT = n
 export CONFIG_RMESH = n
+export CONFIG_FW_DOWNLOAD = n
+export CONFIG_WHC_HAL_CHIP = rtl8721f
 
 ifeq ($(CONFIG_WHC_HCI_IPC),y)
 

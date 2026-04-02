@@ -108,7 +108,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		skb_put(rx_skb, size - sizeof(struct whc_msg_info) - p_msg_info->pad_len);
 
 		/* save wlan_idx temporaries*/
-		rx_skb->dev = (void *) p_msg_info->wlan_idx;
+		rx_skb->dev = (void *)((u32)p_msg_info->wlan_idx);
 
 		whc_sdio_dev_event_int_hdl(pdata, rx_skb, size);
 

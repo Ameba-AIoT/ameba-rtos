@@ -220,7 +220,7 @@ static u32 bt_uart_bridge_irq(void *data)
 	(void)reg_lsr;
 	bt_uart_bridge_close_pattern(rc);
 #else
-	if ((reg_lsr & RUART_BIT_RXFIFO_INT) || (reg_lsr & RUART_BIT_TIMEOUT_INT)) {
+	if ((reg_lsr & LOGUART_BIT_RXFIFO_INT) || (reg_lsr & LOGUART_BIT_TIMEOUT_INT)) {
 		while (LOGUART_Readable()) {
 			rc = LOGUART_GetChar(FALSE);
 			ret = bt_uart_bridge_close_pattern(rc);
@@ -236,12 +236,12 @@ static u32 bt_uart_bridge_irq(void *data)
 		}
 
 		/* clear timeout interrupt flag */
-		if (reg_lsr & RUART_BIT_TIMEOUT_INT) {
+		if (reg_lsr & LOGUART_BIT_TIMEOUT_INT) {
 			LOGUART_INTClear(LOGUART_DEV, RUART_BIT_TOICF);
 		}
 	}
 
-	if (reg_lsr & RUART_BIT_RXFIFO_ERR) {
+	if (reg_lsr & LOGUART_BIT_RXFIFO_ERR) {
 		LOGUART_INTConfig(LOGUART_DEV, RUART_BIT_ELSI, DISABLE);
 		LOGUART_INTClear(LOGUART_DEV, RUART_BIT_RLSICF);
 	}

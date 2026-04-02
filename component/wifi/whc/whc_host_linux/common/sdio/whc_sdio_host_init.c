@@ -1,5 +1,32 @@
 #include <whc_host_linux.h>
-extern int rtw_sdio_firmware_download(struct whc_sdio *priv, u32 need_checksum);
+
+u32 rtw_sdio_get_rx_len(struct whc_sdio *priv)
+{
+	u8 retry = 0;
+	u32 rx_len_rdy;
+	u32 SdioRxFIFOSize = 0;
+
+	do {
+		/* validate RX_LEN_RDY before reading RX0_REQ_LEN */
+		rx_len_rdy = rtw_read32(priv, SDIO_REG_RX0_REQ_LEN) & SDIO_RX_REQ_LEN_RDY;
+
+		if (rx_len_rdy) {
+			// Sometimes rx length will be zero. driver need to use cmd53 read again.
+			// sdio_local_read(priv, SDIO_REG_RX0_REQ_LEN, 4, tmp);
+			SdioRxFIFOSize = rtw_read32(priv, SDIO_REG_RX0_REQ_LEN) & SDIO_RX_REQ_LEN_MSK;
+
+			if ((SdioRxFIFOSize == 0) && (retry++ < 3)) {
+				continue;
+			} else {
+				break;
+			}
+		} else {
+			break;
+		}
+	} while (1);
+
+	return SdioRxFIFOSize;
+}
 
 static u8 rtw_sdio_get_tx_max_size(struct whc_sdio *priv)
 {
@@ -9,8 +36,8 @@ static u8 rtw_sdio_get_tx_max_size(struct whc_sdio *priv)
 		return false;
 	}
 
-	//num * unit_sz(64 bytes) -32(reserved for safety)
-	priv->SdioTxMaxSZ = TxUnitCnt * 64 - 32;
+	//num * unit_sz(64 bytes).
+	priv->SdioTxMaxSZ = TxUnitCnt * 64;
 	dev_dbg(&priv->func->dev, "%s: TX_UNIT_BUF_MAX_SIZE @ %d bytes\n", __FUNCTION__, priv->SdioTxMaxSZ);
 
 	return true;
@@ -25,11 +52,6 @@ u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 	due to wifi DMA. keep wptr in host and only sync with hw when init */
 	u16 wptr = priv->txbd_wptr;
 	u16 rptr;
-
-	if (priv->txbd_size == 0) {
-		priv->txbd_size = rtw_read16(priv, SPDIO_REG_TXBD_NUM);
-		dev_dbg(&priv->func->dev, "txbd_size: %x\n", priv->txbd_size);
-	}
 
 	rptr = rtw_read8(priv, SPDIO_REG_TXBD_RPTR);
 
@@ -50,11 +72,6 @@ u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 	due to wifi DMA. keep wptr in host and only sync with hw when init */
 	u16 wptr = priv->txbd_wptr;
 	u16 rptr;
-
-	if (priv->txbd_size == 0) {
-		priv->txbd_size = rtw_read16(priv, SPDIO_REG_TXBD_NUM);
-		dev_dbg(&priv->func->dev, "txbd_size: %x\n", priv->txbd_size);
-	}
 
 	rptr = rtw_read8(priv, SPDIO_REG_TXBD_RPTR);
 
@@ -131,7 +148,7 @@ static void rtw_sdio_interrupt_handler(struct sdio_func *func)
 
 			//schedule_work(&(priv->rx_work));
 			//up(&priv->sdio_rx_sema);
-			whc_host_recv_notify();
+			priv->rx_recv_notify(); // rx_recv_notify is whc_host_recv_notify
 		}
 
 	} else {
@@ -151,6 +168,7 @@ int rtw_sdio_alloc_irq(struct whc_sdio *priv)
 
 	sdio_claim_host(func);
 
+	sdio_release_irq(func);
 	err = sdio_claim_irq(func, &rtw_sdio_interrupt_handler);
 
 	if (err) {
@@ -282,12 +300,44 @@ u32 rtw_sdio_enable_func(struct whc_sdio *priv)
 	return true;
 }
 
+u32 rtw_sdio_init_common(struct whc_sdio *priv)
+{
+	u8 value;
+
+	/* dplus workaround JIRA-RSWLANDIOT-7721  */
+	value = rtw_read8(priv, SDIO_REG_TX_CTRL) | SDIO_EN_HISR_MASK_TIMER;
+	rtw_write8(priv, SDIO_REG_TX_CTRL, value);
+
+	rtw_write16(priv, SDIO_REG_STATIS_RECOVERY_TIMOUT, 0x10); //500us
+
+#ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
+	rtw_sdio_init_txavailbd_threshold(priv);
+#endif
+
+#ifdef CONFIG_SDIO_RX_AGGREGATION
+	if (rtw_sdio_init_agg_setting(priv) == false) {
+		return false;
+	}
+#endif
+	priv->txbd_wptr = (u16)rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
+	priv->txbd_size = rtw_read16(priv, SPDIO_REG_TXBD_NUM);
+	rtw_sdio_query_txbd_status(priv);
+
+	if (rtw_sdio_get_tx_max_size(priv) == false) {
+		return false;
+	}
+	priv->bSurpriseRemoved = false;
+
+	rtw_sdio_init_interrupt(priv);
+
+	return true;
+}
+
 u32 rtw_sdio_init(struct whc_sdio *priv)
 {
 	struct sdio_func *func = priv->func;
 	u8 fw_ready;
 	u32 i;
-	u8 value;
 
 	/* enable func and set block size */
 	if (rtw_sdio_enable_func(priv) == false) {
@@ -295,12 +345,11 @@ u32 rtw_sdio_init(struct whc_sdio *priv)
 	}
 
 #ifdef CONFIG_FW_DOWNLOAD
-	/* image download, amebadplus not support yet */
-	if (rtw_sdio_firmware_download(priv, true) == true) {
-		rtw_write16(priv, SDIO_REG_HRPWM2, HRPWM2_BOOT_RAM);// BOOT-RAM
-		dev_info(&func->dev, "%s: fw download ok\n", __FUNCTION__);
+	/* image download */
+	if (whc_sdio_xfer_download(priv) == 0) {
 	} else {
-		dev_err(&func->dev, "%s: fw download fail!!!\n", __FUNCTION__);
+		dev_err(&func->dev, "%s: fw download fail (XFER)!!!\n", __FUNCTION__);
+		return false;
 	}
 #endif
 
@@ -317,53 +366,24 @@ u32 rtw_sdio_init(struct whc_sdio *priv)
 		return false;
 	}
 
-	value = rtw_read8(priv, SDIO_REG_TX_CTRL) | SDIO_EN_HISR_MASK_TIMER;
-	rtw_write8(priv, SDIO_REG_TX_CTRL, value);
+	priv->rx_recv_notify = whc_host_recv_notify;
 
-	rtw_write16(priv, SDIO_REG_STATIS_RECOVERY_TIMOUT, 0x10); //500us
-
-#ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
-	rtw_sdio_init_txavailbd_threshold(priv);
-#endif
-
-#ifdef CONFIG_SDIO_RX_AGGREGATION
-	if (rtw_sdio_init_agg_setting(priv) == false) {
-		return false;
-	}
-#endif
-	priv->txbd_wptr = (u16)rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
-	rtw_sdio_query_txbd_status(priv);
-
-	if (rtw_sdio_get_tx_max_size(priv) == false) {
-		return false;
-	}
-
-	rtw_sdio_init_interrupt(priv);
-	priv->bSurpriseRemoved = false;
-
-	return true;
+	return rtw_sdio_init_common(priv);
 }
 
 void rtw_sdio_deinit(struct whc_sdio *priv)
 {
-	struct sdio_func *func;
-	int err;
-
-	func = priv->func;
+	struct sdio_func *func = priv->func;
 
 	if (func) {
 		sdio_claim_host(func);
-		err = sdio_disable_func(func);
-		if (err) {
-			dev_err(&priv->func->dev, "%s: sdio_disable_func(%d)\n", __func__, err);
+		if (priv->irq_alloc) {
+			sdio_release_irq(func);
 		}
 
-		if (priv->irq_alloc) {
-			err = sdio_release_irq(func);
-			if (err) {
-				dev_err(&priv->func->dev, "%s: sdio_release_irq(%d)\n", __func__, err);
-			}
-		}
+		sdio_disable_func(func);
+
+		sdio_set_drvdata(func, NULL);
 
 		sdio_release_host(func);
 	}

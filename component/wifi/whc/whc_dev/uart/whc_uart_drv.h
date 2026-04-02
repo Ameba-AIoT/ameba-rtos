@@ -15,9 +15,10 @@
 
 #define whc_uart_dev_event_int_hdl   whc_uart_dev_pkt_rx
 
-#define whc_dev_trigger_rx_handle   whc_uart_dev_trigger_rx_handle
+#define whc_dev_trigger_rx_handle()   whc_uart_dev_trigger_rx_handle()
 #define whc_dev_tx_path_avail       whc_uart_dev_tx_path_avail
 #define whc_dev_send                whc_uart_dev_send
+#define whc_dev_flowctrl(a, b)
 
 #if defined (CONFIG_AMEBASMART)
 #define UART_TX		_PA_3 // UART0 TX

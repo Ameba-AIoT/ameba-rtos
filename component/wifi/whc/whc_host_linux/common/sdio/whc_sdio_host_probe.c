@@ -57,7 +57,6 @@ static int whc_sdio_host_probe(struct sdio_func *func, const struct sdio_device_
 
 exit:
 	if (status != true) {
-		sdio_set_drvdata(func, NULL);
 		rtw_sdio_deinit(priv);
 	}
 
@@ -87,7 +86,6 @@ static void whc_sdio_host_remove(struct sdio_func *func)
 		}
 	}
 
-	sdio_set_drvdata(func, NULL);
 	rtw_sdio_deinit(priv);
 }
 

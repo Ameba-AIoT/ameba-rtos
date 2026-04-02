@@ -60,8 +60,10 @@ void whc_cmd_handle_wpas_ofld_result(char *pos, int len)
 		return;
 	}
 
-	printf("\nwpa_supplicant rsp:\n");
-	printf("%s\n", pos);
+	//user data + cmd(5)
+	len = len - 5;
+	printf("\nwpa_supplicant rsp(len: %d):\n", len);
+	printf("%.*s\n", len, pos);
 }
 
 /* End For Event Handler */
