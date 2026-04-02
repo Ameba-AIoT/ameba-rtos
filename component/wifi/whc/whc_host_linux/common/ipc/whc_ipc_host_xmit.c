@@ -95,7 +95,7 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 	skb->tail = (unsigned char *)(skb_data_phy + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN));
 	skb->no_free = 1;
 	skb->len = 0;
-	skb->list.prev = skb->list.next = skb_phy + offsetof(struct dev_sk_buff, list);
+	skb->list.prev = skb->list.next = (void *)(skb_phy + offsetof(struct dev_sk_buff, list));
 	atomic_set(&skb->ref, 1);
 	dev_skb_put(skb, pskb->len);
 

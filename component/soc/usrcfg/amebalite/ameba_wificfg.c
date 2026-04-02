@@ -27,7 +27,7 @@ _WEAK void wifi_set_user_config(void)
 	skb_num_np_rsvd = 3; /* 2 for mgnt trx + 1 for spi rx_dma_buffer */
 	wifi_user_config.skb_num_np = 10;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;
-	wifi_user_config.rx_ampdu_num = 4;
+	wifi_user_config.rx_ampdu_num = 0;
 #else
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
 	wifi_user_config.skb_num_np = 10; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */

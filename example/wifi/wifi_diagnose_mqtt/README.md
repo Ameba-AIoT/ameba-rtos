@@ -43,7 +43,10 @@ In the example, MQTT task is created to present MQTT connection and message proc
 
 # Supported IC
 
-- AmebaSmart
-- AmebaLite
-- AmebaDplus
-- AmebaGreen2
+RTL8730E
+RTL8726E
+RTL8720E
+RTL8713E
+RTL8710E
+RTL8721Dx
+RTL8721F

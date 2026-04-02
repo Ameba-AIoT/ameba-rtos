@@ -79,7 +79,7 @@ void whc_spi_host_recv_data_process(void *intf_priv)
 	struct spi_message *spimsg = NULL;
 	struct spi_transfer *tr;
 	struct sk_buff *pskb = NULL, *tx_skb = NULL;
-	struct whc_msg_node *p_node;
+	struct whc_msg_node *p_node = NULL;
 	int rc;
 
 	mutex_lock(&priv->lock);
@@ -116,10 +116,12 @@ void whc_spi_host_recv_data_process(void *intf_priv)
 		tr->rx_buf = pskb->data;
 		tr->len = SPI_BUFSZ;
 
-		p_node = whc_host_dequeue_tx_packet(&global_idev.xmit_priv);
-		if (p_node != NULL) {
-			tx_skb = p_node->msg;
-			tr->tx_buf = tx_skb->data;
+		if (!global_idev.xmit_priv.flowctrl_en) {
+			p_node = whc_host_dequeue_tx_packet(&global_idev.xmit_priv);
+			if (p_node != NULL) {
+				tx_skb = p_node->msg;
+				tr->tx_buf = tx_skb->data;
+			}
 		}
 
 		rc = spi_sync(spidev, spimsg);

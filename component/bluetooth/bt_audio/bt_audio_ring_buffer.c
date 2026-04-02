@@ -102,7 +102,7 @@ uint32_t bt_audio_ring_buffer_bytes_read_available(bt_audio_ring_buffer_t *ring_
 		return 0;
 	}
 	if (ring_buffer->full) {
-		printf("[BT Audio] ring buffer is full \r\n");
+		BT_LOGE("[BT Audio] ring buffer is full \r\n");
 		return ring_buffer->size;
 	}
 	osif_mutex_take(ring_buffer->mtx, BT_TIMEOUT_FOREVER);
@@ -143,14 +143,14 @@ uint16_t bt_audio_ring_buffer_write(bt_audio_ring_buffer_t *ring_buffer, uint8_t
 		return 1;
 	}
 	if (bt_audio_ring_buffer_bytes_write_available(ring_buffer) < data_length) {
-		printf("[BT Audio] ring buffer free length %d is not enough for data length %d \r\n", (int)bt_audio_ring_buffer_bytes_write_available(ring_buffer),
-			   (int)data_length);
+		BT_LOGE("[BT Audio] ring buffer free length %d is not enough for data length %d \r\n", (int)bt_audio_ring_buffer_bytes_write_available(ring_buffer),
+				(int)data_length);
 		return 1;
 	}
 	BT_LOGD("write data %d, ava %d \r\n", data_length, bt_audio_ring_buffer_bytes_write_available(ring_buffer));
 	/* check data_length */
 	if (data_length == 0) {
-		printf("[BT Audio] bt audio ring buffer wirte fail, data length is 0 \r\n");
+		BT_LOGE("[BT Audio] bt audio ring buffer wirte fail, data length is 0 \r\n");
 		return 1;
 	}
 	osif_mutex_take(ring_buffer->mtx, BT_TIMEOUT_FOREVER);
@@ -196,7 +196,7 @@ uint32_t bt_audio_ring_buffer_read(bt_audio_ring_buffer_t *ring_buffer, uint8_t 
 	length = bt_audio_min(data_length, bt_audio_ring_buffer_bytes_read_available(ring_buffer));
 	/* simplify logic below by asserting data_length > 0 */
 	if (length == 0) {
-		printf("[BT Audio] There is no data in bt audio ring buffer \r\n");
+		BT_LOGE("[BT Audio] There is no data in bt audio ring buffer \r\n");
 		return 0;
 	}
 	osif_mutex_take(ring_buffer->mtx, BT_TIMEOUT_FOREVER);

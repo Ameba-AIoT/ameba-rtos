@@ -42,7 +42,9 @@ static int whc_host_add_key_ops(struct wiphy *wiphy, struct net_device *ndev
 {
 	struct rtw_crypt_info *crypt;
 	int ret = 0;
+#ifndef CONFIG_WHC_HCI_IPC
 	struct xmit_priv_t *xmit_priv = &global_idev.xmit_priv;
+#endif
 	u8 is_mp = 0;
 	u8 wlan_idx;
 	struct rtw_wpa_4way_status	rpt_4way = {0};

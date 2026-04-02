@@ -445,9 +445,16 @@ int ws_client_send(wsclient_context *wsclient, char *data, size_t data_len)
 
 int ws_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t fin_flag, wsclient_context *wsclient)
 {
-
-	if (wsclient->readyState != WSC_OPEN) {
+	if (wsclient == NULL || wsclient->readyState != WSC_OPEN) {
 		return -1;
+	}
+
+	if (type != PING && type != PONG && type != CLOSE) {
+		if ((int)message_size > wsclient->max_tx_len) {
+			WSCLIENT_ERROR("ERROR: The length of data (%d) exceeded the max tx buf len: %d\n",
+						   (int)message_size, wsclient->max_tx_len);
+			return -1;
+		}
 	}
 
 	uint8_t masking_key[4];

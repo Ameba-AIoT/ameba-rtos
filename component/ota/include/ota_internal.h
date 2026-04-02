@@ -161,6 +161,8 @@ typedef struct {
 typedef void (*ota_progress_cb_t)(int percent);
 typedef int (*ota_user_read_func_t)(u8 *buf, int len);
 typedef int (*ota_user_open_func_t)(void);
+typedef int (*ota_user_close_func_t)(void);
+typedef void (*ota_yield_func_t)(void);
 
 /**
   * @brief  OTA context structure definition
@@ -213,6 +215,14 @@ typedef struct {
 	/** @brief User-defined open function for custom connection handling (NULL for default, set for type == OTA_TYPE_USER)
 	 */
 	ota_user_open_func_t user_open_func;
+
+	/** @brief User-defined close function for custom connection handling (NULL for default, set for type == OTA_TYPE_USER)
+	 */
+	ota_user_close_func_t user_close_func;
+
+	/** @brief User-defined yield function for custom scheduling (NULL for default)
+	 */
+	ota_yield_func_t yield_func;
 } ota_context_t;
 
 

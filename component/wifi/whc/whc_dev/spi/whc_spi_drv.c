@@ -42,35 +42,35 @@ int whc_spi_dev_dma_rx_done_cb(void *param)
 
 	/* receives XMIT_PKTS */
 	if (event == WHC_WIFI_EVT_XIMT_PKTS) {
-retry:
-		/* alloc new skb, blocked if no skb.
-		block value <= wifi_user_config.skb_num_np - (rx_ring_buffer + wifi_user_config.rx_ampdu_num + 1 for spi rx_dma_buffer)
-		e.g. 3 <= 14 - (4 + 4 + 1)*/
+		/* reserved 3 skb for rx */
 		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 3) ||
 			((new_skb = dev_alloc_skb(SPI_BUFSZ, SPI_SKB_RSVD_LEN)) == NULL)) {
-			spi_priv->wait_for_txbuf = TRUE;
-
+#ifndef WHC_SKIP_NP_MSG_TASK
 			/* resume pending queue to release skb */
 			rtw_pending_q_resume();
-
-			/* wait timeout to re-check skb, considering corner cases for wait_for_txbuf update */
-			rtos_sema_take(spi_priv->free_skb_sema, 5);
-
-			goto retry;
+#endif
+			new_skb = spi_priv->rx_skb;
+			goto drop_pkt;
 		} else {
-			spi_priv->wait_for_txbuf = FALSE;
 			spi_priv->rx_skb = new_skb;
 		}
 
 		/* process rx data */
 		msg_info = (struct whc_msg_info *) rx_pkt->data;
+		if (!wifi_is_running(msg_info->wlan_idx)) {
+			/*free skb and return*/
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Port %d is down, drop!\n", msg_info->wlan_idx);
+			dev_kfree_skb_any(rx_pkt);
+			goto drop_pkt;
+		}
 		skb_reserve(rx_pkt, sizeof(struct whc_msg_info) + msg_info->pad_len);
 		skb_put(rx_pkt, msg_info->data_len);
 
-		rx_pkt->dev = (void *)msg_info->wlan_idx;
+		rx_pkt->dev = (void *)((u32)msg_info->wlan_idx);
 
 		whc_spi_dev_event_int_hdl((u8 *)msg_info, rx_pkt);
 
+drop_pkt:
 		/* set new dest addr for RXDMA */
 		DCache_Invalidate((u32)new_skb->data, SPI_BUFSZ);
 		GDMA_SetDstAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, (u32)new_skb->data);
@@ -413,7 +413,6 @@ void whc_spi_dev_device_init(void)
 
 	GPIO_InitStruct.GPIO_Pin = DEV_READY_PIN;
 	GPIO_Init(&GPIO_InitStruct);
-
 #ifdef SPI_DEBUG
 	GPIO_InitStruct.GPIO_Pin = _PB_2;
 	GPIO_Init(&GPIO_InitStruct);
@@ -590,10 +589,28 @@ bool whc_spi_dev_txdma_init(
 	return TRUE;
 }
 
-void whc_spi_dev_trigger_rx_handle(void)
+void whc_spi_dev_flowctrl(u8 *status, u8 send_cmd)
 {
-	if (spi_priv.wait_for_txbuf) {
-		rtos_sema_give(spi_priv.free_skb_sema);
+	u8 status_change = 0;
+
+	if (skbpriv.skb_buff_num - skbpriv.skb_buff_used < SPI_FLOWCTRL_LOW_THRESHOLD) {
+		if (!spi_priv.flowctrl_en) {
+			spi_priv.flowctrl_en = 1;
+			status_change = 1;
+		}
+	} else if (skbpriv.skb_buff_num - skbpriv.skb_buff_used > SPI_FLOWCTRL_HIGH_THRESHOLD) {
+		if (spi_priv.flowctrl_en) {
+			spi_priv.flowctrl_en = 0;
+			status_change = 1;
+		}
+	}
+
+	if (status) {
+		*status = spi_priv.flowctrl_en;
+	}
+
+	if (send_cmd && status_change) {
+		whc_dev_send_flowctrl_cmd(spi_priv.flowctrl_en);
 	}
 }
 
@@ -626,7 +643,7 @@ s8 whc_dev_spi_wait_dev_idle(void)
 	while (spi_priv.tx_req || spi_priv.dev_status != DEV_STS_IDLE || SSI_Busy(WHC_SPI_DEV)) {
 		spi_priv.wait_tx = TRUE;
 		if (rtos_sema_take(spi_priv.spi_transfer_done_sema, WHC_DEV_SPI_TRANSFER_TIMEOUT) == RTK_FAIL) {
-			RTK_LOGE(TAG_WLAN_INIC, "take sema fail,dev_sts:%d,tx_req:%d, SSI_Busy:%d\n",
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "take sema fail,dev_sts:%d,tx_req:%d, SSI_Busy:%d\n",
 					 spi_priv.dev_status, spi_priv.tx_req, SSI_Busy(WHC_SPI_DEV));
 #ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 			whc_dev_api_set_host_state(WHC_HOST_UNREADY);
@@ -753,18 +770,17 @@ retry:
 
 	return;
 
-drop_send: {
-		inic_tx = container_of(pbuf, struct whc_txbuf_info_t, txbuf_info);
-		/* Dev drop tx, free tx skb or buffer */
-		if (inic_tx->is_skb) {
-			dev_kfree_skb_any((struct sk_buff *) inic_tx->ptr);
-		} else {
-			rtos_mem_free((u8 *)inic_tx->ptr);
-		}
-		rtos_mem_free((u8 *)inic_tx);
-
-		rtos_mutex_give(spi_priv.tx_lock);
+drop_send:
+	inic_tx = container_of(pbuf, struct whc_txbuf_info_t, txbuf_info);
+	/* Dev drop tx, free tx skb or buffer */
+	if (inic_tx->is_skb) {
+		dev_kfree_skb_any((struct sk_buff *) inic_tx->ptr);
+	} else {
+		rtos_mem_free((u8 *)inic_tx->ptr);
 	}
+	rtos_mem_free((u8 *)inic_tx);
+
+	rtos_mutex_give(spi_priv.tx_lock);
 }
 
 /**
@@ -819,7 +835,11 @@ void whc_spi_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
 			break;
 		}
 		/* wakeup task */
+#ifndef WHC_SKIP_NP_MSG_TASK
 		rtos_sema_give(dev_xmit_priv.xmit_sema);
+#else
+		rtw_single_thread_wakeup();
+#endif
 
 		break;
 #ifdef CONFIG_WHC_WIFI_API_PATH

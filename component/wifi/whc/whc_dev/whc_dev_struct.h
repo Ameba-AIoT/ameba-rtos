@@ -60,7 +60,10 @@ struct whc_msg_node {
 
 struct whc_msg_info {
 	u32	event;
-	u32	wlan_idx;
+	u8	wlan_idx: 2;
+	u8	flow_ctrl_en: 1;
+	u8	rsvd1 : 5;
+	u8	rsvd2[3];
 	u32	data_len;
 	u32	pad_len;
 };

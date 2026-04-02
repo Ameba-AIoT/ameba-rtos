@@ -27,7 +27,7 @@ static const char *const TAG = "DRD";
 
 // Thread priorities
 #define USB_DRD_INIT_THREAD_PRIORITY			5U
-#define USBH_MSC_THREAD_STACK_SIZE				(1024*8)
+#define USBH_MSC_THREAD_STACK_SIZE				(1024*12)
 #define USBH_MSC_TEST_BUF_SIZE					4096
 #define USBH_MSC_TEST_ROUNDS					20
 #define USBH_MSC_TEST_SEED						0xA5
@@ -67,7 +67,26 @@ static __IO int usbh_msc_is_rdy = 0;
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_DRD_SPEED,
+	.ext_intr_enable = USBH_SOF_INTR,
+	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = 3U,
+	.tick_source = USBH_SOF_TICK,
+#if defined (CONFIG_AMEBAGREEN2)
+	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBAL2)
+	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
+	.rx_fifo_depth = 501,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined (CONFIG_AMEBAPRO3)
+	/*FIFO total depth is 2232 DWORD, resv 8 DWORD for DMA addr */
+	.rx_fifo_depth = 1712,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#endif
 };
 
 static usbh_msc_cb_t usbh_msc_usr_cb = {
@@ -350,7 +369,7 @@ void example_usb_drd(void)
 	int ret;
 	rtos_task_t task;
 
-	ret = rtos_task_create(&task, "example_usb_drd_thread", example_usb_drd_thread, NULL, 4096, USB_DRD_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usb_drd_thread", example_usb_drd_thread, NULL, USBH_MSC_THREAD_STACK_SIZE, USB_DRD_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USB DRD thread fail\n");
 	}
