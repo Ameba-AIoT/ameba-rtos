@@ -24,7 +24,7 @@ None
 	python vfs.py -t FATFS -s 512 -c 256 -dir html_demo -out fatfs.bin
 	```
 
-3. Place `fatfs.bin` under project path, e.g. `amebadplus_gcc_project/`.
+3. Place `fatfs.bin` under project path, e.g. `component/soc/amebagreen2/project/`.
 
 4. If you want to enable captive portal, please modify `dhcps.h`.
 	```C
