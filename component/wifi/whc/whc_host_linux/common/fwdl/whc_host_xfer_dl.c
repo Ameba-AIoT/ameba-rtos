@@ -1132,23 +1132,6 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 		if ((header->signature.d32[0] == image->signature[0]) && (header->signature.d32[1] == image->signature[1])) {
 			sub_image_size = header->image_size + WHC_XFER_IMAGE_HEADER_SIZE;
 			sub_image_start_addr = header->image_addr - WHC_XFER_IMAGE_HEADER_SIZE;
-			if (header->image_size == 0) {
-				WHC_XFER_DBG("empty-image (0x%08X) Send\n", sub_image_start_addr);
-
-				ret = ops->write(adapter, adapter->read_buf, 0xFFFFFFFF, WHC_XFER_IMAGE_HEADER_SIZE, false);
-				if (ret == 0) {
-					WHC_XFER_DBG("empty-image header write done\n");
-				} else {
-					WHC_XFER_DBG("Fail to write empty-image header\n");
-					break;
-				}
-
-				remain_image_size -= sub_image_size;
-				continue;
-			}
-			if (header->image_size == 0xFFFFFFFF) {
-				break;
-			}
 
 			region_index = whc_xfer_get_region_index(adapter, sub_image_start_addr);
 			if (region_index < 0) {
@@ -1161,7 +1144,7 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 			need_padding = false;
 			skip_download = false;
 
-			if (region->mem_type == WHC_MEM_TYPE_FLASH) {
+			if ((region->mem_type == WHC_MEM_TYPE_FLASH) && (header->image_size != 0)) {
 				WHC_XFER_DBG("Sub-image type: Flash\n");
 				need_padding = true;
 				sub_image_start_addr = image->flash_target_addr;

@@ -165,10 +165,10 @@ u32 rtc_irq_init(void *Data)
 // The Main App entry point
 void app_start(void)
 {
-#if !defined(CONFIG_WHC_IN_SINGLE_DIE) // When fullmac support XIP, need enable Cache and cannot share cache to TCM
+	// if(MCM_SINGLE_DIE != ChipInfo_MemoryType()) {
 	/* enable non-secure cache */
 	Cache_Enable(ENABLE);
-#endif
+	// }
 
 	/* Rom Bss NS Initial */
 	_memset((void *) __rom_bss_start_ns__, 0, (__rom_bss_end_ns__ - __rom_bss_start_ns__));

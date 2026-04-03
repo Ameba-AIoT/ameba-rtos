@@ -31,7 +31,8 @@
 static const char *const TAG = "HCI";
 
 HCI_AdapterTypeDef HCI_Adapter;
-IMAGE_HEADER EmptyImgHdr;
+IMAGE_HEADER EmptyXipImgHdr;
+IMAGE_HEADER EmptyPsramImgHdr;
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -45,9 +46,13 @@ static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 {
 	u32 i;
 
-	/* Host Send empty img header with addr == 0xFFFFFFFF */
-	if ((addr == 0xFFFFFFFF) && (size == IMAGE_HEADER_LEN)) {
-		addr = (u32)&EmptyImgHdr;
+	/* Host Send empty img header */
+	if (size == IMAGE_HEADER_LEN) {
+		if (IS_FLASH_ADDR(addr)) {
+			addr = (u32)&EmptyXipImgHdr;
+		} else {
+			addr = (u32)&EmptyPsramImgHdr;
+		}
 	}
 
 	if (IS_FLASH_ADDR(addr)) {
@@ -92,9 +97,13 @@ static int HCI_CalculateChecksum(u32 addr, u32 size, u32 *result)
 	u32 data;
 	u32 i;
 
-	/* Host Send empty img header with addr == 0xFFFFFFFF */
-	if ((addr == 0xFFFFFFFF) && (size == IMAGE_HEADER_LEN)) {
-		addr = (u32)&EmptyImgHdr;
+	/* Host Send empty img header */
+	if (size == IMAGE_HEADER_LEN) {
+		if (IS_FLASH_ADDR(addr)) {
+			addr = (u32)&EmptyXipImgHdr;
+		} else {
+			addr = (u32)&EmptyPsramImgHdr;
+		}
 	}
 
 	if (IS_FLASH_ADDR(addr)) {
@@ -421,7 +430,7 @@ int HCI_WaitForExit(void)
 			ret = HAL_ERR_PARA;
 			break;
 		}
-		DelayUs(10000);
+		DelayMs(10);
 	}
 
 	return ret;
