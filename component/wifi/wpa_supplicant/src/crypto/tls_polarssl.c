@@ -266,6 +266,9 @@ void tls_deinit(void *ssl_ctx)
 		mbedtls_net_free(tls_context->fd);
 		mbedtls_ssl_free(tls_context->ssl);
 		mbedtls_ssl_config_free(tls_context->conf);
+		os_free(tls_context->ssl, 0);
+		os_free(tls_context->conf, 0);
+		os_free(tls_context->fd, 0);
 		os_free(ssl_ctx, 0);
 	}
 }
@@ -846,4 +849,3 @@ void tls_connection_remove_session(struct tls_connection *conn)
 
 	wpa_printf(MSG_DEBUG, "TLS: tls_connection_get_success_data");
 }
-
