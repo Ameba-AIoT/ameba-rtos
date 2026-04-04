@@ -69,4 +69,6 @@ void whc_usb_host_enqueue(struct list_head *q, struct rtw_usbreq *req, int *coun
 struct rtw_usbreq *whc_usb_host_dequeue(struct list_head *q, int *counter);
 void whc_usb_host_recv_data_process(void *intf_priv);
 int whc_usb_host_send_event_check(u32 event_id);
+int whc_usb_xfer_download(struct whc_usb *priv);
+
 #endif /* __INIC_USB_H__ */

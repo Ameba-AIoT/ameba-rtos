@@ -35,7 +35,7 @@ static const char *const TAG = "SPDIO";
 SPDIO_TX_BD SPDIO_TXBDAddr[SPDIO_HOST_TX_BD_NUM];
 SPDIO_TX_BD_HANDLE g_TXBDHdl[SPDIO_HOST_TX_BD_NUM];
 struct spdio_buf_t spdio_dev_rx_buf[SPDIO_HOST_TX_BD_NUM];
-u32 spdio_dev_rx_buf_entry[SPDIO_DEVICE_RX_BUFSZ / sizeof(u32)];
+ALIGNMTO(CACHE_LINE_SIZE) u32 spdio_dev_rx_buf_entry[SPDIO_DEVICE_RX_BUFSZ / sizeof(u32)];
 
 SPDIO_RX_BD SPDIO_RXBDAddr[SPDIO_HOST_RX_BD_NUM];
 SPDIO_RX_BD_HANDLE g_RXBDHdl[SPDIO_HOST_RX_BD_NUM];

@@ -223,13 +223,14 @@ void BOOT_Share_Cache_To_TCM(void)
 	/* Set NP TCM share bit */
 	HAL_WRITE32(SYSTEM_CTRL_BASE_S, REG_LSYS_PLAT_STATUS, HAL_READ32(SYSTEM_CTRL_BASE_S, REG_LSYS_PLAT_STATUS) | LSYS_BIT_KM4NS_SHARE_CACHE_MEM);
 
-#ifdef CONFIG_WHC_IN_SINGLE_DIE // When fullmac support XIP, need enable Cache and cannot share cache to TCM
-	/* Disable AP CPU cache */
-	Cache_Enable(DISABLE);
+	// // When fullmac support XIP, need enable Cache and cannot share cache to TCM
+	// if(MCM_SINGLE_DIE == ChipInfo_MemoryType()) {
+	// 	/* Disable AP CPU cache */
+	// 	Cache_Enable(DISABLE);
 
-	/* Set AP TCM share bit */
-	HAL_WRITE32(SYSTEM_CTRL_BASE_S, REG_LSYS_PLAT_STATUS, HAL_READ32(SYSTEM_CTRL_BASE_S, REG_LSYS_PLAT_STATUS) | LSYS_BIT_KM4TZ_SHARE_CACHE_MEM);
-#endif
+	// 	/* Set AP TCM share bit */
+	// 	HAL_WRITE32(SYSTEM_CTRL_BASE_S, REG_LSYS_PLAT_STATUS, HAL_READ32(SYSTEM_CTRL_BASE_S, REG_LSYS_PLAT_STATUS) | LSYS_BIT_KM4TZ_SHARE_CACHE_MEM);
+	// }
 }
 
 void BOOT_Config_PMC_Role(void)
