@@ -482,9 +482,16 @@ void eap_eapol_recvd_hdl(char *buf, int buf_len, int flags, void *handler_user_d
 //	eap_eapol_recvd(buf, buf_len, flags, handler_user_data);
 
 	char *copy_buf = os_malloc(buf_len);
+
+	if (!copy_buf) {
+		wpa_printf(MSG_INFO, "EAP: malloc failed\n");
+		return;
+	}
+
 	memcpy(copy_buf, buf, buf_len);
 	if (rtos_task_create(&eap_recvd_tsk.task, "eap_recvd", (thread_func_t)eap_eapol_recvd, copy_buf, 4096, 1) != SUCCESS) {
 		DiagPrintf("\n\r%s eap_recvd failed\n", __FUNCTION__);
+		os_free(copy_buf, 0);
 	} else {
 		Rx_handle = rtos_task_handle_get();
 		rtos_task_suspend(NULL);
