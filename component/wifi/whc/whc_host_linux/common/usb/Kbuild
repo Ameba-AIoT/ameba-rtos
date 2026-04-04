@@ -7,6 +7,7 @@ ccflags-$(CONFIG_WHC_HCI_USB) += -DCONFIG_WHC_HCI_USB
 ccflags-$(CONFIG_WHC_CMD_PATH) += -DCONFIG_WHC_CMD_PATH
 ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
 ccflags-$(CONFIG_SUPPLICANT_SME) += -DCONFIG_SUPPLICANT_SME
+ccflags-$(CONFIG_FW_DOWNLOAD) += -DCONFIG_FW_DOWNLOAD
 
 ccflags-y += -DCONFIG_FULLMAC
 ccflags-y += -I$(src)/../netdev
@@ -46,5 +47,8 @@ ifeq ($(CONFIG_WHC_CMD_PATH), y)
             ../whc_host_netlink.o \
             ../whc_host_cmd_path_tx.o
 endif
+
+include $(src)/../fwdl/Kbuild
+whc_usb-$(CONFIG_FW_DOWNLOAD) += $(addprefix ../fwdl/, $(FWDL_OBJS))
 
 obj-m += whc_usb.o
