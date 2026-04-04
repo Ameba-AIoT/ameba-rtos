@@ -69,7 +69,7 @@ int get_method_handler(struct httpd_conn *conn)
 		mime_type = MIME_TYPE_HTML;
 	}
 
-	prefix = find_vfs_tag(VFS_REGION_2);
+	prefix = find_vfs_tag(VFS_REGION_3);
 	if (prefix == NULL) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] No fatfs.bin! Please generate it according to the README.md\n", __FUNCTION__);
 		return -1;
