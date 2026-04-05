@@ -227,8 +227,6 @@ menu "CONFIG WHC INTF"
             bool "Support WHC SUPPLICANT OFFLOAD"
         config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4TZ
             bool "Support WHC DEV TCPIP KEEPALIVE"
-        config WHC_IN_SINGLE_DIE
-            bool "Support Download to SRAM Only"
         endmenu
     endif
 
