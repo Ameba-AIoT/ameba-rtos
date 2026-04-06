@@ -3,6 +3,7 @@
 #include <linux/of_gpio.h>
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>
+#include "whc_usb_host.h"
 
 
 #define RTK_USB_VID							0x0BDA
@@ -200,6 +201,9 @@ static int whc_usb_host_probe(struct usb_interface *intf, const struct usb_devic
 
 	memset(priv, 0, sizeof(struct whc_usb));
 	mutex_init(&(priv->lock));
+	INIT_LIST_HEAD(&priv->tx_freeq);
+	INIT_LIST_HEAD(&priv->rx_freeq);
+	skb_queue_head_init(&priv->rxnode_list);
 
 	priv->usb_dev = usb;
 	priv->dev = &usb->dev;
@@ -213,6 +217,22 @@ static int whc_usb_host_probe(struct usb_interface *intf, const struct usb_devic
 		dev_err(priv->dev, "%s: initialize usb Failed!\n", __FUNCTION__);
 		goto exit;
 	}
+
+#ifdef CONFIG_FW_DOWNLOAD
+	/* Try firmware download first, without submitting any RX URBs */
+	status = whc_usb_xfer_download(priv);
+	if (status == 0) {
+		/* Image downloaded, device will reset and re-enumerate */
+		dev_info(priv->dev, "Firmware downloaded, waiting for re-enumeration\n");
+		whc_usb_host_deinit(priv);
+		usb_set_intfdata(intf, NULL);
+		return 0;
+	} else if (status < 0) {
+		dev_err(priv->dev, "%s: fw download fail\n", __FUNCTION__);
+		goto exit;
+	}
+	/* status == 1: firmware ready, continue to normal init */
+#endif
 
 	status = whc_usb_host_init_phase2(priv);
 	if (status != true) {
@@ -301,7 +321,7 @@ static int whc_usb_host_suspend(struct usb_interface *intf, pm_message_t message
 static int whc_usb_host_resume(struct usb_interface *intf)
 {
 	struct whc_usb *priv = &whc_usb_host_priv;
-	struct rtw_usbreq *req, *next;
+	struct rtw_usbreq *req = NULL, *next;
 	struct sk_buff	*skb;
 	int ret = 0;
 
