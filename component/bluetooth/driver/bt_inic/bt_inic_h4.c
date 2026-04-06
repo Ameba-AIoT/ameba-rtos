@@ -36,8 +36,8 @@
 #define UART_INDEX  0
 #define UART_TX     _PA_26
 #define UART_RX     _PA_27
-#define UART_CTS    _PB_22
-#define UART_RTS    _PA_30
+#define UART_CTS    _PA_28
+#define UART_RTS    _PA_29
 #elif defined(CONFIG_AMEBAGREEN2)
 #define UART_INDEX  0
 #define UART_TX     _PA_4
