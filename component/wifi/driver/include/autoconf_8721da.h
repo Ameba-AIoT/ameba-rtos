@@ -113,8 +113,7 @@
 #endif
 
 /* debug log level */
-#undef RELEASE_WIFI
-
+#define RELEASE_WIFI
 #define RA_RX_ACK_RSSI
 
 //#define CONFIG_SPEAKER_ENCRYPT

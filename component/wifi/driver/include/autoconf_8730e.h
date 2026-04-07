@@ -209,7 +209,6 @@
 #define WLAN_MAX_ETHFRM_LEN	1904/*max payload size of wifi frame*/
 
 /* debug log level */
-#undef RELEASE_WIFI
-
+#define RELEASE_WIFI
 #define CONFIG_IOT_RS 1
 #endif /*#ifndef AUTOCONF_8730A_H */
