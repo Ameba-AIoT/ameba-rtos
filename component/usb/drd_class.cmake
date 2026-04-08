@@ -39,31 +39,6 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_includes
-    common
-    device/core
-    host/core
-)
-
-ameba_list_append(private_sources
-    ${c_CMPT_SOC_DIR}/fwlib/ram_common/ameba_usb.c
-    common/usb_hal.c
-    common/usb_os.c
-    common/usb_ringbuf.c
-    device/core/usbd.c
-    device/core/usbd_core.c
-    device/core/usbd_hal.c
-    device/core/usbd_pcd.c
-    host/core/usbh.c
-    host/core/usbh_core.c
-    host/core/usbh_hal.c
-    host/core/usbh_hcd.c
-)
-
-ameba_list_append_ifnot(CONFIG_SUPPORT_USB_NO_PHY private_sources
-    common/usb_phy.c
-)
-
 include(device/class.cmake)
 
 include(host/class.cmake)
@@ -74,7 +49,7 @@ include(host/class.cmake)
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(usb_drd
+ameba_add_internal_library(usb_drd_class
     p_SOURCES
         ${private_sources}
     p_INCLUDES

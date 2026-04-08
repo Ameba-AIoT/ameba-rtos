@@ -90,7 +90,7 @@ uint32_t RingBuffer_Available(RingBuffer *rb)
 int32_t RingBuffer_Write(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 {
 	if (!count || !buffer) {
-		RTK_LOGW(LOG_TAG, "try to write from empty buffer.\n");
+		RTK_LOGS(LOG_TAG, RTK_LOG_ALWAYS, "try to write from empty buffer.\n");
 		return -1;
 	}
 	if (rb->type == SHARED_RINGBUFF) {
