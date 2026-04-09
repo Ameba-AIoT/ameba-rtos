@@ -12,7 +12,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # You may use if-else condition to set or update predefined variable above
 
 ameba_list_append_if(CONFIG_USB_DRD_EN public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_usb.a
+    ${c_SDK_LIB_APPLICATION_DIR}/lib_usb_drd.a
 )
 
 # Component public part, user config end
@@ -71,7 +71,7 @@ ameba_list_append_ifnot(CONFIG_SUPPORT_USB_NO_PHY private_sources
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_app_library(usb #target name, will be part of output library name: lib_usbd.a
+ameba_add_external_app_library(usb_drd #target name, will be part of output library name: lib_usb_drd.a
     p_SOURCES
         ${private_sources}
     p_INCLUDES
