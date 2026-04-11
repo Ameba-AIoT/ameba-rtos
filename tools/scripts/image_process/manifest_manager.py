@@ -82,7 +82,11 @@ class ManifestImageConfig:
 
         if image_type != ImageType.CERT:
             #RSIP
-            if image_type == ImageType.IMAGE1 or image_type == ImageType.IMAGE2 or image_type == ImageType.IMAGE3:
+            # IMG3 enc: SoCs before amebagreen2 use RDP, not RSIP; new SoCs use RSIP, not RDP
+            # Therefore, the rdp_ string is used to determine whether image3's RSIP is enabled.
+            if image_type == ImageType.IMAGE3 and any(k.startswith("rdp_") for k in config):
+                self.rsip_enable:bool = False
+            else:
                 self.rsip_enable:bool = config.get("rsip_enable", config.get("rsip_en", False))
 
             # For IMAGE3 with RDP enabled, rsip_iv is needed for RDP encryption (combined with rdp_iv)
