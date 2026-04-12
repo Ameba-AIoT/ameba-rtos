@@ -88,6 +88,9 @@ int mbedtls_sha256_update(mbedtls_sha256_context *ctx,
                           const unsigned char *input,
                           size_t ilen)
 {
+    if (ilen == 0) {
+        return 0;
+    }
     return crypto_sha2_update(ctx, input, NULL, ilen);
 }
 

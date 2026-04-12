@@ -47,6 +47,9 @@ extern void ipnat_dump(void);
 #endif
 
 extern int wifi_set_ips_internal(u8 enable);
+#if defined(CONFIG_IEEE80211R) && (WIFI_LOGO_CERTIFICATION == 1)
+extern int rtw_ft_reassoc_dbg(u16 argc, char **argv);
+#endif
 extern void wifi_set_dbg_dp_log(char *buf);
 
 #if defined(CONFIG_LWIP_ETHERNET)
@@ -60,6 +63,7 @@ static void init_wifi_struct(void)
 {
 	memset(wifi.ssid.val, 0, sizeof(wifi.ssid.val));
 	memset(wifi.bssid.octet, 0, ETH_ALEN);
+	memset(wifi.prev_bssid.octet, 0, ETH_ALEN);
 	memset(password, 0, sizeof(password));
 	wifi.ssid.len = 0;
 	wifi.password = NULL;
@@ -1290,6 +1294,12 @@ void at_wldbg(u16 argc, char **argv)
 		goto end;
 	}
 
+#if defined(CONFIG_IEEE80211R) && (WIFI_LOGO_CERTIFICATION == 1)
+	if (!strcmp("sta_reassoc", argv[1])) {
+		ret = rtw_ft_reassoc_dbg(argc - 2, &argv[2]);
+		goto end;
+	}
+#endif
 	// Construct command string
 	u32 pos = 0;
 	for (int i = 1; i < argc && pos < sizeof(buf) - 1; i++) {

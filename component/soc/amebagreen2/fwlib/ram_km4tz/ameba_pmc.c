@@ -33,9 +33,9 @@ void PMC_ENTRY SOCPS_SleepInitEntry(struct PSCFG_TypeDef *ps_config)
 		/* Timing fix: Delay at least 1T before pulling down rst_n to avoid postsim bit errors.
 		This problem is fixed in Bcut by modifying pmc rom code */
 		SOCPS_FixSpicRetFailPatch();
-		/*disable wake status of USB*/
-		SOCPS_USBSuspendWakeControl(DISABLE);
-	} else if (chip_version <= SYSCFG_CUT_VERSION_B) {
+	}
+
+	if (chip_version <= SYSCFG_CUT_VERSION_B) {
 		/* disable wake status of USB */
 		SOCPS_USBSuspendWakeControl(DISABLE);
 	}
