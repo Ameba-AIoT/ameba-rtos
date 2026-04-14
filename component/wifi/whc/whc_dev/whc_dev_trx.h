@@ -12,7 +12,6 @@
 /* ------------------------------- Data Types ------------------------------- */
 /* device tx structure */
 struct xmit_priv_t {
-	rtos_sema_t xmit_sema; /* tx sema */
 	u32 tx_bytes; /* xmit bytes */
 	u32 tx_pkts; /* xmit number of packets */
 

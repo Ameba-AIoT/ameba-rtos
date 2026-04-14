@@ -90,9 +90,10 @@ ALIGNMTO(CACHE_LINE_SIZE) static u8 Flash_Sync_Flag[CACHE_LINE_SIZE];
 
 static void Flash_Write_Lock_IPC(u8 sync_type)
 {
-	IPC_MSG_STRUCT ipc_msg_temp;
 	/* Set lock flag */
 	Flash_Sync_Flag[0] = sync_type;
+#if (defined CONFIG_WHC_INTF_IPC)
+	IPC_MSG_STRUCT ipc_msg_temp;
 	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
 
 	ipc_msg_temp.msg_type = IPC_USER_POINT;
@@ -107,6 +108,7 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 			break;
 		}
 	}
+#endif
 }
 #endif
 

@@ -290,9 +290,6 @@ retry:
 			((new_skb = dev_alloc_skb(UART_BUFSZ, UART_SKB_RSVD_LEN)) == NULL)) {
 			uart_priv.wait_for_skb = TRUE;
 
-			/* resume pending queue to release skb */
-			rtw_pending_q_resume();
-
 			/* wait timeout to re-check skb, considering corner cases for wait_for_txbuf update */
 			rtos_sema_take(uart_priv.free_skb_sema, 5);
 
@@ -565,7 +562,7 @@ void whc_uart_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
 			break;
 		}
 		/* wakeup task */
-		rtos_sema_give(dev_xmit_priv.xmit_sema);
+		rtw_single_thread_wakeup();
 
 		break;
 #ifdef CONFIG_WHC_WIFI_API_PATH
