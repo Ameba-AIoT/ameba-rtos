@@ -87,6 +87,9 @@ int mbedtls_sha512_update(mbedtls_sha512_context *ctx,
                           const unsigned char *input,
                           size_t ilen)
 {
+    if (ilen == 0) {
+        return 0;
+    }
     return crypto_sha2_update(ctx, input, NULL, ilen);
 }
 

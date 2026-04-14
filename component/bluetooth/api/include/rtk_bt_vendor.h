@@ -16,6 +16,8 @@ extern "C"
 {
 #endif
 
+#define VENDOR_EVT_FW_EXCEPTION  0x34
+
 /**
  * @typedef   rtk_bt_vendor_adv_tx_power_type_t
  * @brief     Set ADV TX power type.

@@ -218,11 +218,11 @@ s32 wifi_set_countrycode(u8 *cntcode);
 
 /**
  * @brief  Retrieve current country code information.
- * @param[in]  table: Pointer to store the country code table containing country code,
+ * @param[in]  pinfo: Pointer to store the country code info table containing country code,
  *                    channel plan code, and TX power limit index.
  * @return  @ref RTK_SUCCESS : The API executed successfully.
  */
-s32 wifi_get_countrycode(struct rtw_country_code_table *table);
+s32 wifi_get_countrycode(struct rtw_country_code_table *pinfo);
 
 /**
  * @brief  Get the list of available WiFi channels for the current regulatory domain.

@@ -95,6 +95,16 @@ s32 wifi_set_countrycode(u8 *cntcode)
 	return ret;
 }
 
+s32 wifi_get_countrycode(struct rtw_country_code_table *pinfo)
+{
+	if (pinfo == NULL) {
+		return -1;
+	}
+	whc_host_api_message_send(WHC_API_WIFI_GET_COUNTRY_CODE, NULL, 0, (u8 *)&pinfo, sizeof(struct rtw_country_code_table));
+
+	return 0;
+}
+
 int wifi_set_chplan(u8 chplan)
 {
 	int ret = 0;

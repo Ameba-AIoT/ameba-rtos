@@ -124,6 +124,9 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_strong_rssi_thresh = -50;
 	wifi_user_config.wtn_father_refresh_timeout = 3000;
 	wifi_user_config.wtn_child_refresh_timeout = 4000;
+	wifi_user_config.wtn_rnat_en = 0;
+	wifi_user_config.wtn_fixed_rnat_node = 0;
+	wifi_user_config.wtn_connect_only_to_rnat = 0;
 	wifi_user_config.wtn_max_node_num = 32;
 
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
