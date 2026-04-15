@@ -16,11 +16,11 @@
 uint8_t abort_transfer = 1;
 
 /* gdma link node*/
-struct GDMA_CH_LLI gdma_link[LINK_NODE_NUM];
+ALIGNMTO(CACHE_LINE_SIZE) struct GDMA_CH_LLI gdma_link[LINK_NODE_NUM];
 
 /*src/dst buffer*/
-ALIGNMTO(64) uint8_t src_buf[LINK_NODE_NUM][BLOCK_SIZE];
-ALIGNMTO(64) uint8_t dst_buf[LINK_NODE_NUM][BLOCK_SIZE];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t src_buf[LINK_NODE_NUM][BLOCK_SIZE];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t dst_buf[LINK_NODE_NUM][BLOCK_SIZE];
 
 volatile uint8_t dma_done = 0;
 
@@ -54,7 +54,10 @@ u32 gdma_loop_link_list_irq(void *data)
 	u32 ctl_low = 0;
 	GDMA_InitTypeDef *p_gdma_init = (GDMA_InitTypeDef *)data;
 	struct GDMA_CH_LLI *cur_node = &gdma_link[p_gdma_init->MuliBlockCunt % LINK_NODE_NUM];
-	if (!gdma_test_compare((u8 *)cur_node->LliEle.Sarx, (u8 *)cur_node->LliEle.Darx, (cur_node->BlockSize << 2))) {
+	u32 block_bytes = cur_node->BlockSize << p_gdma_init->GDMA_SrcDataWidth;
+	DCache_Invalidate((u32)cur_node->LliEle.Darx, block_bytes);
+
+	if (!gdma_test_compare((u8 *)cur_node->LliEle.Sarx, (u8 *)cur_node->LliEle.Darx, block_bytes)) {
 		printf("Block %lu Error: Check Data Error!!!\n", p_gdma_init->MuliBlockCunt);
 	}
 	isr_type = GDMA_ClearINT(0, p_gdma_init->GDMA_ChNum);
@@ -134,7 +137,7 @@ void gdma_loop_link_list_task(void)
 			gdma_link[i].pNextLli = &gdma_link[i + 1];
 		}
 	}
-
+	DCache_Clean((u32)gdma_link, sizeof(gdma_link));
 	GDMA_Init(gdma_init_struct.GDMA_Index, gdma_init_struct.GDMA_ChNum, &gdma_init_struct);
 	GDMA_SetLLP(gdma_init_struct.GDMA_Index, gdma_init_struct.GDMA_ChNum, gdma_init_struct.MaxMuliBlock, gdma_link, 1);
 	GDMA_Cmd(gdma_init_struct.GDMA_Index, gdma_init_struct.GDMA_ChNum, ENABLE);

@@ -15,8 +15,8 @@ uint8_t abort_transfer = 0;
 
 
 /*src/dst buffer*/
-ALIGNMTO(64) uint8_t src_buf[DATA_SIZE];
-ALIGNMTO(64) uint8_t dst_buf[DATA_SIZE];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t src_buf[DATA_SIZE];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t dst_buf[DATA_SIZE];
 
 volatile uint8_t dma_done = 0;
 

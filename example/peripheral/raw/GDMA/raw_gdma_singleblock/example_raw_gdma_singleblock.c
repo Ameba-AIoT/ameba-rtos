@@ -16,8 +16,8 @@
 #define DMA_SRC_OFFSET  0
 #define DMA_DST_OFFSET  0
 
-ALIGNMTO(64) uint8_t TestBuf1[DATA_SIZE];
-ALIGNMTO(64) uint8_t TestBuf2[DATA_SIZE];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t TestBuf1[DATA_SIZE];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t TestBuf2[DATA_SIZE];
 
 volatile uint8_t dma_done;
 

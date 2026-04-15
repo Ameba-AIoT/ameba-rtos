@@ -210,6 +210,8 @@ void app_start(void)
 		}
 
 	}
+	/* low power pin dont need pinmap init again after wake from dslp */
+	pinmap_init(); /* 1.7ms */
 
 #if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 #if defined (__GNUC__)
@@ -243,4 +245,3 @@ RAM_START_FUNCTION Img2EntryFun0 = {
 	SOCPS_WakeFromPG_AP,
 	(u32) RomVectorTable
 };
-
