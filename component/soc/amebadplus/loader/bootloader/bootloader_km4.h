@@ -18,7 +18,13 @@ void BOOT_Disable_PadSlewRate(void);
 u32 BOOT_Share_Memory_Patch(void);
 void BOOT_VerCheck(void);
 void BOOT_OTPCheck(void);
-
+bool BOOT_RRAM_InfoValid(void);
+void BOOT_Enable_KM0(void);
+void BOOT_ReasonSet(void);
+void BOOT_PSRAM_Init(void);
+void BOOT_SOC_ClkSet(void);
+void BOOT_ComboSpic_PLL_Open(void);
+void BOOT_Data_Flash_Init(void);
 /* declaration of boot_trustzone_km4.c*/
 void BOOT_RAM_TZCfg(void);
 
@@ -27,4 +33,3 @@ void BOOT_RAM_TZCfg(void);
 #endif
 
 #endif
-

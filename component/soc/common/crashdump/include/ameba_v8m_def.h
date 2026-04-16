@@ -238,6 +238,8 @@ enum {
 	REG_END
 };
 
+extern void fault_diagnosis(struct cmb_hard_fault_regs *regs);
+
 /* assert for developer. */
 #define CMB_ASSERT(EXPR)                                                       \
 if (!(EXPR))                                                                   \

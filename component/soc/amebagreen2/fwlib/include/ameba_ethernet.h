@@ -2278,32 +2278,265 @@ struct eth_mdio_ops;
 /*                       3. DMA Descriptors (FEMAC)                           */
 /* ========================================================================== */
 /* Descriptor Sizes */
-#define ETH_TX_DESC_SIZE            20  // Bytes
-#define ETH_RX_DESC_SIZE            16  // Bytes
+#define ETH_TX_DESC_SIZE            20  // Bytes (5 Words: 0x00, 0x04, 0x08, 0x0C, 0x10)
+#define ETH_RX_DESC_SIZE            16  // Bytes (4 Words: 0x00, 0x04, 0x08, 0x0C)
 
-/* --- Tx Descriptor Bit Definitions --- */
+/* ========================================================================== */
+/*                       TX Descriptor Bit Definitions                        */
+/* ========================================================================== */
+
+/* --- TX Word 0 (Offset 0x00): Command/Status --- */
+
+/* OWN: Ownership bit. 1=DMA owns (processing), 0=CPU owns (ready/done). */
 #define FEMAC_TX_DSC_SHIFT_OWN      31
 #define FEMAC_TX_DSC_BIT_OWN        ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_OWN)
+
+/* EOR: End of Descriptor Ring. 1=Last descriptor in the ring buffer. */
 #define FEMAC_TX_DSC_SHIFT_EOR      30
 #define FEMAC_TX_DSC_BIT_EOR        ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_EOR)
+
+/* FS: First Segment. 1=This descriptor contains the start of a packet. */
 #define FEMAC_TX_DSC_SHIFT_FS       29
 #define FEMAC_TX_DSC_BIT_FS         ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_FS)
+
+/* LS: Last Segment. 1=This descriptor contains the end of a packet. */
 #define FEMAC_TX_DSC_SHIFT_LS       28
 #define FEMAC_TX_DSC_BIT_LS         ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_LS)
+
+/* IPCS: IP Checksum Offload. 1=Hardware calculates IPv4 checksum. */
 #define FEMAC_TX_DSC_SHIFT_IPCS     27
 #define FEMAC_TX_DSC_BIT_IPCS       ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_IPCS)
+
+/* L4CS: L4 Checksum Offload. 1=Hardware calculates TCP/UDP/ICMP checksum. */
 #define FEMAC_TX_DSC_SHIFT_L4CS     26
 #define FEMAC_TX_DSC_BIT_L4CS       ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_L4CS)
+
+/* KEEP: Keep original packet. 1=Direct transmit, skip switch lookup. */
+#define FEMAC_TX_DSC_SHIFT_KEEP     25
+#define FEMAC_TX_DSC_BIT_KEEP       ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_KEEP)
+
+/* BLU: Bridging Lookup Only. 1=Perform L2 lookup only (if KEEP=0). */
+#define FEMAC_TX_DSC_SHIFT_BLU      24
+#define FEMAC_TX_DSC_BIT_BLU        ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_BLU)
+
+/* CRC: CRC Append. 1=Hardware appends CRC (FCS) at frame end. */
 #define FEMAC_TX_DSC_SHIFT_CRC      23
 #define FEMAC_TX_DSC_BIT_CRC        ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_CRC)
-#define FEMAC_TX_DSC_BIT_SIZE(dw1)  ((u32)((dw1) & 0x1FFFF))
 
-/* --- Rx Descriptor Bit Definitions --- */
+/* VSEL: Vendor/VLAN Select bit (Specific hardware usage). */
+#define FEMAC_TX_DSC_SHIFT_VSEL     22
+#define FEMAC_TX_DSC_BIT_VSEL       ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_VSEL)
+
+/* DISLRN: Disable Learning. 1=Do not learn source MAC address. */
+#define FEMAC_TX_DSC_SHIFT_DISLRN   21
+#define FEMAC_TX_DSC_BIT_DISLRN     ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_DISLRN)
+
+/* CPUTAG_IPCS: IP checksum status in CPU Tag. */
+#define FEMAC_TX_DSC_SHIFT_CPUTAG_IPCS 20
+#define FEMAC_TX_DSC_BIT_CPUTAG_IPCS ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_CPUTAG_IPCS)
+
+/* CPUTAG_L4CS: L4 checksum status in CPU Tag. */
+#define FEMAC_TX_DSC_SHIFT_CPUTAG_L4CS 19
+#define FEMAC_TX_DSC_BIT_CPUTAG_L4CS ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_CPUTAG_L4CS)
+
+/* CPUTAG_PSEL: CPU tag port selection (Based on image) */
+#define FEMAC_TX_DSC_SHIFT_CPUTAG_PSEL 18
+#define FEMAC_TX_DSC_BIT_CPUTAG_PSEL   ((u32)0x00000001 << FEMAC_TX_DSC_SHIFT_CPUTAG_PSEL)
+
+/* Data Length: Length of data in the buffer pointed by this descriptor. */
+#define FEMAC_TX_DSC_SIZE_MASK      0x1FFFF
+#define FEMAC_TX_DSC_VAL_SIZE(len)  ((u32)((len) & FEMAC_TX_DSC_SIZE_MASK))
+#define FEMAC_TX_DSC_GET_SIZE(dw)   ((u32)((dw) & FEMAC_TX_DSC_SIZE_MASK))
+
+/* --- TX Word 1 (Offset 0x04): Buffer Address --- */
+/* (Directly used as pointer to the data buffer) */
+
+/* --- TX Word 2 (Offset 0x08): VLAN/PPPoE/Tags --- */
+
+/* CPU_TAG: CPU Tag Present Indicator. */
+#define FEMAC_TX_W2_SHIFT_CPU_TAG   31
+#define FEMAC_TX_W2_BIT_CPU_TAG     ((u32)0x00000001 << FEMAC_TX_W2_SHIFT_CPU_TAG)
+
+/* ASPRI: Assign Priority Enable. */
+#define FEMAC_TX_W2_SHIFT_ASPRI     30
+#define FEMAC_TX_W2_BIT_ASPRI       ((u32)0x00000001 << FEMAC_TX_W2_SHIFT_ASPRI)
+
+/* CPRI: CPU Priority value (0-7). */
+#define FEMAC_TX_W2_SHIFT_CPRI      27
+#define FEMAC_TX_W2_MASK_CPRI       ((u32)0x7 << FEMAC_TX_W2_SHIFT_CPRI)
+
+/* VLAN_ACT: C-VLAN Egress Action. 00=Nop, 01=Add, 10=Remove, 11=Remark. */
+#define FEMAC_TX_W2_SHIFT_VLAN_ACT  25
+#define FEMAC_TX_W2_WIDTH_VLAN_ACT  0x3
+#define FEMAC_TX_W2_MASK_VLAN_ACT   ((u32)FEMAC_TX_W2_WIDTH_VLAN_ACT << FEMAC_TX_W2_SHIFT_VLAN_ACT)
+#define FEMAC_TX_W2_VAL_VLAN_ACT(x) (((u32)(x) & FEMAC_TX_W2_WIDTH_VLAN_ACT) << FEMAC_TX_W2_SHIFT_VLAN_ACT)
+#define FEMAC_TX_W2_GET_VLAN_ACT(dw) (((dw) & FEMAC_TX_W2_MASK_VLAN_ACT) >> FEMAC_TX_W2_SHIFT_VLAN_ACT)
+/* PPPOE_ACT: PPPoE Egress Action. 00=Nop, 01=Add, 10=Remove, 11=Remark. */
+#define FEMAC_TX_W2_SHIFT_PPPOE_ACT 23
+#define FEMAC_TX_W2_WIDTH_PPPOE_ACT 0x3
+#define FEMAC_TX_W2_MASK_PPPOE_ACT  ((u32)FEMAC_TX_W2_WIDTH_PPPOE_ACT << FEMAC_TX_W2_SHIFT_PPPOE_ACT)
+#define FEMAC_TX_W2_VAL_PPPOE_ACT(x) (((u32)(x) & FEMAC_TX_W2_WIDTH_PPPOE_ACT) << FEMAC_TX_W2_SHIFT_PPPOE_ACT)
+#define FEMAC_TX_W2_GET_PPPOE_ACT(dw) (((dw) & FEMAC_TX_W2_MASK_PPPOE_ACT) >> FEMAC_TX_W2_SHIFT_PPPOE_ACT)
+
+/* PPPOE_IDX: PPPoE Table Index for session ID lookup. */
+#define FEMAC_TX_W2_SHIFT_PPPOE_IDX 20
+#define FEMAC_TX_W2_WIDTH_PPPOE_IDX 0x7
+#define FEMAC_TX_W2_MASK_PPPOE_IDX  ((u32)FEMAC_TX_W2_WIDTH_PPPOE_IDX << FEMAC_TX_W2_SHIFT_PPPOE_IDX)
+#define FEMAC_TX_W2_VAL_PPPOE_IDX(x) (((u32)(x) & FEMAC_TX_W2_WIDTH_PPPOE_IDX) << FEMAC_TX_W2_SHIFT_PPPOE_IDX)
+#define FEMAC_TX_W2_GET_PPPOE_IDX(dw) (((dw) & FEMAC_TX_W2_MASK_PPPOE_IDX) >> FEMAC_TX_W2_SHIFT_PPPOE_IDX)
+
+/* EFID: Enhanced Filtering ID enable. */
+#define FEMAC_TX_W2_SHIFT_EFID      19
+
+/* EN_FID: Enhanced Filtering ID value. */
+#define FEMAC_TX_W2_SHIFT_EN_FID    16
+#define FEMAC_TX_W2_WIDTH_EN_FID    0x7
+#define FEMAC_TX_W2_MASK_EN_FID     ((u32)FEMAC_TX_W2_WIDTH_EN_FID << FEMAC_TX_W2_SHIFT_EN_FID)
+#define FEMAC_TX_W2_VAL_EN_FID(x)   (((u32)(x) & FEMAC_TX_W2_WIDTH_EN_FID) << FEMAC_TX_W2_SHIFT_EN_FID)
+#define FEMAC_TX_W2_GET_EN_FID(dw)  (((dw) & FEMAC_TX_W2_MASK_EN_FID) >> FEMAC_TX_W2_SHIFT_EN_FID)
+
+/* VLAN_TAG: 16-bit VLAN Tag data (VID, PRI, CFI) to insert/remark. */
+/* Multi-bit: VLAN Tag (16 bits: VID, PRI, CFI) */
+#define FEMAC_TX_W2_SHIFT_VLAN_TAG  0
+#define FEMAC_TX_W2_WIDTH_VLAN_TAG  0xFFFF
+#define FEMAC_TX_W2_MASK_VLAN_TAG   ((u32)FEMAC_TX_W2_WIDTH_VLAN_TAG << FEMAC_TX_W2_SHIFT_VLAN_TAG)
+#define FEMAC_TX_W2_VAL_VLAN_TAG(x) (((u32)(x) & FEMAC_TX_W2_WIDTH_VLAN_TAG) << FEMAC_TX_W2_SHIFT_VLAN_TAG)
+#define FEMAC_TX_W2_GET_VLAN_TAG(dw) (((dw) & FEMAC_TX_W2_MASK_VLAN_TAG) >> FEMAC_TX_W2_SHIFT_VLAN_TAG)
+
+/* --- TX Word 3 (Offset 0x0C): Dest Port Info --- */
+
+/* SRC_EXT: Source Extension Port number. */
+#define FEMAC_TX_W3_SHIFT_SRC_EXT   29
+#define FEMAC_TX_W3_MASK_SRC_EXT    ((u32)0x7 << FEMAC_TX_W3_SHIFT_SRC_EXT)
+
+/* DST_MASK: Destination Port Mask (physical ports). Valid if KEEP=0. */
+#define FEMAC_TX_W3_SHIFT_DST_MASK  23
+#define FEMAC_TX_W3_MASK_DST_MASK   ((u32)0x3F << FEMAC_TX_W3_SHIFT_DST_MASK)
+
+/* STRM_ID: Destination Stream ID (PON). Valid if KEEP=0. */
+#define FEMAC_TX_W3_SHIFT_STRM_ID   16
+#define FEMAC_TX_W3_MASK_STRM_ID    ((u32)0x7F << FEMAC_TX_W3_SHIFT_STRM_ID)
+
+/* VCS_MASK: ATM VCs Mask. Valid if KEEP=0. */
+#define FEMAC_TX_W3_MASK_VCS_MASK   0xFFFF
+
+/* --- TX Word 4 (Offset 0x10): Large Send --- */
+
+/* LGSEN: Large Send Enable (TSO/LSO). */
+#define FEMAC_TX_W4_SHIFT_LGSEN     31
+#define FEMAC_TX_W4_BIT_LGSEN       ((u32)0x00000001 << FEMAC_TX_W4_SHIFT_LGSEN)
+
+/* LGMSS: Large Send MSS (Maximum Segment Size). */
+#define FEMAC_TX_W4_SHIFT_LGMSS     20
+#define FEMAC_TX_W4_MASK_LGMSS      ((u32)0x7FF << FEMAC_TX_W4_SHIFT_LGMSS)
+
+
+/* ========================================================================== */
+/*                       RX Descriptor Bit Definitions                        */
+/* ========================================================================== */
+
+/* --- RX Word 0 (Offset 0x00): Status --- */
+
+/* OWN: Ownership bit. 1=DMA owns (empty), 0=CPU owns (received data). */
 #define FEMAC_RX_DSC_SHIFT_OWN      31
 #define FEMAC_RX_DSC_BIT_OWN        ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_OWN)
+
+/* EOR: End of Descriptor Ring. 1=Last descriptor in the ring buffer. */
 #define FEMAC_RX_DSC_SHIFT_EOR      30
 #define FEMAC_RX_DSC_BIT_EOR        ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_EOR)
-#define FEMAC_RX_DSC_LEN(dw1)       ((u32)((dw1) & 0x0FFF))
+
+/* FS: First Segment. 1=First descriptor of a frame. */
+#define FEMAC_RX_DSC_SHIFT_FS       29
+#define FEMAC_RX_DSC_BIT_FS         ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_FS)
+
+/* LS: Last Segment. 1=Last descriptor of a frame. */
+#define FEMAC_RX_DSC_SHIFT_LS       28
+#define FEMAC_RX_DSC_BIT_LS         ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_LS)
+
+/* CRCERR: CRC Error. 1=Frame has CRC/FCS error (if AER=1). */
+#define FEMAC_RX_DSC_SHIFT_CRCERR   27
+#define FEMAC_RX_DSC_BIT_CRCERR     ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_CRCERR)
+
+/* IPV4CSF: IPv4 Checksum Fail. 1=Hardware detected checksum error. */
+#define FEMAC_RX_DSC_SHIFT_IPV4CSF  26
+#define FEMAC_RX_DSC_BIT_IPV4CSF    ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_IPV4CSF)
+
+/* L4CSF: L4 (TCP/UDP) Checksum Fail. 1=Hardware detected checksum error. */
+#define FEMAC_RX_DSC_SHIFT_L4CSF    25
+#define FEMAC_RX_DSC_BIT_L4CSF      ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_L4CSF)
+
+/* IPFRAG: IP Fragment. 1=Packet is a fragmented IP packet. */
+#define FEMAC_RX_DSC_SHIFT_IPFRAG   23
+#define FEMAC_RX_DSC_BIT_IPFRAG     ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_IPFRAG)
+
+/* PPPOETAG: PPPoE Tag. 1=Packet contains PPPoE header. */
+#define FEMAC_RX_DSC_SHIFT_PPPOETAG 22
+#define FEMAC_RX_DSC_BIT_PPPOETAG   ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_PPPOETAG)
+
+/* PKTTYPE: Packet Type (0=Eth, 1=IPv4, 2=IPv4/PPTP, 3=IPv4/ICMP, 4=IPv4/IGMP,
+* 5=IPv4/TCP, 6=IPv4/UDP, 7=IPv6, 8=ICMPv6, 9=IPv6/TCP, 0xA=Ipv6/UDP).
+*/
+#define FEMAC_RX_DSC_SHIFT_PKTTYPE  17
+#define FEMAC_RX_DSC_MASK_PKTTYPE   ((u32)0xF << FEMAC_RX_DSC_SHIFT_PKTTYPE)
+
+/* L3RT: L3 Routing. 1=Packet is forwarded via L3 routing. */
+#define FEMAC_RX_DSC_SHIFT_L3RT     16
+#define FEMAC_RX_DSC_BIT_L3RT       ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_L3RT)
+
+/* ORIGFMT: Original Format. Pre-lookup packet format status. */
+#define FEMAC_RX_DSC_SHIFT_ORIGFMT  15
+#define FEMAC_RX_DSC_BIT_ORIGFMT    ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_ORIGFMT)
+
+/* PCTRL: PON Control Frame. */
+#define FEMAC_RX_DSC_SHIFT_PCTRL    14
+#define FEMAC_RX_DSC_BIT_PCTRL      ((u32)0x00000001 << FEMAC_RX_DSC_SHIFT_PCTRL)
+
+/* Data Length: Actual received byte count in this descriptor. */
+#define FEMAC_RX_DSC_LEN_MASK       0x0FFF
+#define FEMAC_RX_DSC_GET_LEN(dw)    ((u32)((dw) & FEMAC_RX_DSC_LEN_MASK))
+
+/* --- RX Word 1 (Offset 0x04): Buffer Address --- */
+/* (Directly used as pointer to the receiving buffer) */
+
+/* --- RX Word 2 (Offset 0x08): Extended Info 1 --- */
+
+/* PTP_CPU: PTP packet present in CPU tag. */
+#define FEMAC_RX_W2_SHIFT_PTP_CPU   30
+#define FEMAC_RX_W2_BIT_PTP_CPU     ((u32)0x00000001 << FEMAC_RX_W2_SHIFT_PTP_CPU)
+
+/* SVLAN: S-VLAN Tag present. */
+#define FEMAC_RX_W2_SHIFT_SVLAN     29
+#define FEMAC_RX_W2_BIT_SVLAN       ((u32)0x00000001 << FEMAC_RX_W2_SHIFT_SVLAN)
+
+/* PON_ID: PON Stream ID / PTP Sequence Number. */
+#define FEMAC_RX_W2_SHIFT_PON_ID    20
+#define FEMAC_RX_W2_MASK_PON_ID     ((u32)0x7F << FEMAC_RX_W2_SHIFT_PON_ID)
+
+/* CLAN： C-TAG of VLAN*/
+#define FEMAC_RX_W2_SHIFT_CTAVA     16
+#define FEMAC_RX_W2_BIT_CTAVA       ((u32)0x00000001 << FEMAC_RX_W2_SHIFT_CTAVA)
+#define FEMAC_RX_W2_MASK_CVLAN_TAG  0xFFFF
+/* --- RX Word 3 (Offset 0x0C): Extended Info 2 --- */
+
+/* SRC_PORT: Source Port Number (CPU Tag SPA). */
+#define FEMAC_RX_W3_SHIFT_SRC_PORT  27
+#define FEMAC_RX_W3_MASK_SRC_PORT   ((u32)0x1F << FEMAC_RX_W3_SHIFT_SRC_PORT)
+
+/* DST_MASK: Destination Port Mask (Target ports). */
+#define FEMAC_RX_W3_SHIFT_DST_MASK  21
+#define FEMAC_RX_W3_MASK_DST_MASK   ((u32)0x3F << FEMAC_RX_W3_SHIFT_DST_MASK)
+
+/* REASON: Trap/Drop Reason Code. */
+#define FEMAC_RX_W3_SHIFT_REASON    13
+#define FEMAC_RX_W3_MASK_REASON     ((u32)0xFF << FEMAC_RX_W3_SHIFT_REASON)
+
+/* INT_PRIO: Internal Priority for Rx ring map. */
+#define FEMAC_RX_W3_SHIFT_INT_PRIO  10
+#define FEMAC_RX_W3_MASK_INT_PRIO   ((u32)0x7 << FEMAC_RX_W3_SHIFT_INT_PRIO)
+
+/* EXT_TTL: Extension Port TTL-1 (IP Multicast). */
+#define FEMAC_RX_W3_SHIFT_EXT_TTL   5
+#define FEMAC_RX_W3_MASK_EXT_TTL    ((u32)0x1F << FEMAC_RX_W3_SHIFT_EXT_TTL)
 
 /**
  * @brief Tx Descriptor Structure
@@ -2526,6 +2759,59 @@ enum eth_vlan_action {
 	ETH_VLAN_HDR_REMOVE     = 2,
 	ETH_VLAN_HDR_REMARK_VID = 3,
 };
+
+/**
+ * @brief EEE Auto-Sleep Policies (Enter LPI Mode) enumeration.
+ *        These values map directly to ETH_EEE_CR1 register bits.
+ *        Multiple policies can be ORed together if supported by hardware logic.
+ */
+typedef enum {
+	ETH_EEE_SLEEP_LOW_TRAFFIC   = BIT_EEE_REQ_SET0,     /*!< Enter LPI based on low traffic rate (requires Threshold) */
+	ETH_EEE_SLEEP_QUEUE_EMPTY   = BIT_EEE_REQ_SET1,     /*!< Enter LPI immediately when TX queue is empty (Recommended) */
+	ETH_EEE_SLEEP_ON_PAUSE      = BIT_EEE_REQ_SET2,     /*!< Enter LPI when Flow Control Pause frame is received */
+
+	/* Internal mask for validation */
+	ETH_EEE_SLEEP_ALL_MASK      = (BIT_EEE_REQ_SET0 | BIT_EEE_REQ_SET1 | BIT_EEE_REQ_SET2)
+} ETH_EEE_SleepPolicy;
+
+/**
+ * @brief EEE Auto-Wake Policies (Exit LPI Mode) enumeration.
+ *        These values map directly to ETH_EEE_CR1 register bits.
+ *        Multiple policies can be ORed together.
+ */
+typedef enum {
+	ETH_EEE_WAKE_ANY_DATA       = BIT_EEE_WAKE_SET0,    /*!< Wake up on any new data in TX queue */
+	ETH_EEE_WAKE_HIGH_PRIO      = BIT_EEE_WAKE_SET1,    /*!< Wake up only on high priority data */
+
+	/* Internal mask for validation */
+	ETH_EEE_WAKE_ALL_MASK       = (BIT_EEE_WAKE_SET0 | BIT_EEE_WAKE_SET1)
+} ETH_EEE_WakePolicy;
+
+
+/**
+ * @brief  ETH EEE (Energy Efficient Ethernet) Configuration Structure
+ */
+typedef struct {
+	/* --- 1. Global Enable --- */
+	u32 EnableTx;               /*!< TX LPI Enable: 1=Enable MAC to enter TX LPI, 0=Disable */
+	u32 EnableRx;               /*!< RX LPI Enable: 1=Enable MAC to respond to PHY LPI, 0=Disable */
+
+	/* --- 2. Protocol Timers (For 100M mode) --- */
+	u8  Tw_WakeTime;            /*!< T_wq: Wake-up time (Unit: 1us). Must be >= PHY spec (Typ: 30us) */
+	u8  Tr_LpiInterval;         /*!< T_tr: LPI transmission interval (Unit: 1us). Min duration for LPI signal */
+	u8  Td_TxDelay;             /*!< T_delay: Decision delay (Unit: 8us). Idle time before entering LPI */
+	u8  Tp_PauseTime;           /*!< T_p: Pause time (Unit: 1us). Default: 10us */
+
+	/* --- 3. Decision Thresholds --- */
+	u16 TxTrafficThresh;        /*!< TX Traffic Threshold (Bytes).
+                                     Formula: Round[(10us * Rate)/8].
+                                     For 100Mbps: Set 0x7D (125 Bytes) */
+
+	/* --- 4. Policies (Using Enums) --- */
+	ETH_EEE_SleepPolicy SleepPolicy;   /*!< Auto-sleep policy selection */
+	ETH_EEE_WakePolicy  WakePolicy;    /*!< Auto-wake policy selection */
+
+} ETH_EEE_InitTypeDef;
 
 /**
  * \brief  Defines the type of ethernet packet.
@@ -2755,7 +3041,12 @@ struct eth_phy_ops {
 	/**
 	 * @brief Configure EEE (Energy Efficient Ethernet)
 	 */
-	int (*cfg_eee)(struct eth_phy_dev *dev, phy_eee_mode_t mode);
+	int (*cfg_eee)(struct eth_phy_dev *dev, uint32_t new_state);
+
+	/**
+	 * @brief Get PHY EEE Capabilities
+	 */
+	int (*get_eee_cap)(struct eth_phy_dev *dev, phy_eee_capability_t *cap);
 
 	/**
 	 * @brief Enable/Disable Loopback Mode
@@ -2815,21 +3106,9 @@ typedef struct {
 			uint32_t FlowCtrl       : 2; /* enum eth_flow_ctrl_mode(2 bits) */
 			uint32_t FlowForce      : 1; /* enum eth_flow_force    (1 bit)  */
 			uint32_t EEEEnable      : 1; /* (1 bit)  */
-			uint32_t EEEPEnable     : 1; /* (1 bit)  */
-			uint32_t Reserved       : 12;/* Reserved */
+			uint32_t Reserved       : 13;/* Reserved */
 		} Bits;
 	} MacConfig;
-	/* PHY Interface & Timing */
-	union {
-		uint32_t Raw;
-		struct {
-			/* Skew Timing */
-			uint32_t TxSetupTime    : 4; /* enum eth_phy_tx_setup   (4 bits) */
-			uint32_t RxSetupTime    : 4; /* enum eth_phy_rx_setup   (4 bits) */
-
-			uint32_t Reserved       : 24;
-		} Bits;
-	} PhyConfig;
 	/* VLAN Config */
 	union {
 		uint32_t Raw;
@@ -2837,13 +3116,12 @@ typedef struct {
 			/* Hardware Action */
 			uint32_t RxStrip        : 1; /* enum eth_vlan_strip     (1 bit)  */
 			uint32_t TxTagType      : 1; /* enum eth_vlan_type      (1 bit)  */
-			/* Driver Default Behavior (Software) */
-			uint32_t DefTxAction    : 2; /* enum eth_vlan_action    (2 bits) */
-			/* Parameters */
-			uint32_t DefTxVID       : 12; /* Default VLAN ID (0-4095) */
 			uint32_t STagPID        : 16; /* Service Tag PID (for QinQ) */
+			uint32_t Reserved       : 14; /* Reserved */
 		} Bits;
 	} VlanConfig;
+	/* EEE Configuration --- */
+	ETH_EEE_InitTypeDef *EEE_Config;
 	/* Packet Filter */
 	uint32_t PktFilter;
 	/* DMA Thresholds & Tuning */
@@ -2873,6 +3151,57 @@ typedef struct {
 	u16     ETH_RxBufSize;
 } ETH_InitTypeDef, *PETH_InitTypeDef;
 
+/**
+ * @brief Ethernet Packet Metadata (Covers ALL Apollo TX/RX Descriptor Features)
+ * @note  Strictly 4-byte aligned to prevent compiler padding and optimize cache.
+ *        Currently only length and VLAN features are implemented in TX/RX functions.
+ */
+typedef struct {
+	/* --- Word 0 --- */
+	u32 pkt_len;         /* TX/RX: Packet length (4 bytes) */
+
+	/* --- Word 1 --- */
+	u8  tx_keep;         /* TX: Skip switch lookup (1 byte) */
+	u8  tx_blu;          /* TX: L2 lookup only (1 byte) */
+	u8  tx_dislrn;       /* TX: Disable source MAC learning (1 byte) */
+	u8  tx_lgsen;        /* TX: Enable Large Send (1 byte) */
+
+	/* --- Word 2 --- */
+	u16 tx_lgmss;        /* TX: Large Send MSS (2 bytes, natural 2-byte aligned) */
+	u8  csum_ip;         /* TX/RX: IP Checksum control/status (1 byte) */
+	u8  csum_l4;         /* TX/RX: L4 Checksum control/status (1 byte) */
+
+	/* --- Word 3 --- */
+	u8  cpu_tag_en;      /* TX/RX: CPU Tag enable/status (1 byte) */
+	u8  cputag_psel;     /* TX: CPU Tag port selection (1 byte) */
+	u8  cputag_pri;      /* TX: CPU Priority (1 byte) */
+	u8  vlan_valid;      /* TX/RX: VLAN valid flag (1 byte) */
+
+	/* --- Word 4 --- */
+	u16 vlan_tci;        /* TX/RX: VLAN TCI (2 bytes, natural 2-byte aligned) */
+	u8  vlan_act;        /* TX: VLAN action (1 byte) */
+	u8  pppoe_valid;     /* TX/RX: PPPoE valid flag (1 byte) */
+
+	/* --- Word 5 --- */
+	u8  pppoe_act;       /* TX: PPPoE action (1 byte) */
+	u8  pppoe_idx;       /* TX: PPPoE table index (1 byte) */
+	u8  src_ext_port;    /* TX/RX: Source extension port (1 byte) */
+	u8  dst_port_mask;   /* TX/RX: Destination port mask (1 byte) */
+
+	/* --- Word 6 --- */
+	u8  strm_id;         /* TX/RX: PON Stream ID (1 byte) */
+	u8  rx_pkt_type;     /* RX: Packet type (1 byte) */
+	u8  rx_reason;       /* RX: Trap/Drop reason (1 byte) */
+	u8  rx_int_prio;     /* RX: Internal priority (1 byte) */
+
+	/* --- Word 7 --- */
+	u8  rx_crc_err;      /* RX: CRC Error flag (1 byte) */
+	u8  reserved[3];     /* Padding to ensure exact 4-byte total size alignment (3 bytes) */
+
+} __attribute__((aligned(4))) ETH_PktMetaDef;
+
+
+
 struct ETH_LoopBackTest {
 	uint32_t DataPattern    : 8;  /* Bit 0-7:  data */
 	uint32_t DisableTxCRC   : 1;  /* Bit 8:    Disable CRC */
@@ -2897,16 +3226,15 @@ void Ethernet_UseExtClk(u32 pin);
 void Ethernet_AutoPolling(u32 opt);
 
 /* Interrupts */
-void Ethernet_ConfigINT(u32 int_config, u32 enable);
 u32 Ethernet_GetPendingINT(void);
-void Ethernet_ClearINT(u32 int_status);
+void Ethernet_ClearINT(uint32_t int_events);
 void Ethernet_ClearAllINT(void);
 
 /* DMA & Packet Handling */
 void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct);
 u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct);
-void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, u32 size);
-u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, u32 *rx_len);
+void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta);
+u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta);
 void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct);
 
 /* PHY / Link Helper */

@@ -223,8 +223,7 @@ void AUDIO_CODEC_SetADCSRSrc(u32 src, u32 sr)
 static u32 AUDIO_CODEC_GetAdFifoEnBitForCh(u32 ad_chn)
 {
 	u32 en_bit = 0;
-	switch (ad_chn)
-	{
+	switch (ad_chn) {
 	case ADCHN1:
 		en_bit = AUD_BIT_AD_0_FIFO_EN;
 		break;
@@ -305,8 +304,7 @@ void AUDIO_CODEC_EnableADCFifo(u32 ad_chn, u32 newstate)
 static u32 AUDIO_CODEC_GetAdEnBitForCh(u32 ad_chn)
 {
 	u32 en_bit = 0;
-	switch (ad_chn)
-	{
+	switch (ad_chn) {
 	case ADCHN1:
 		en_bit = AUD_BIT_AD_0_EN;
 		break;

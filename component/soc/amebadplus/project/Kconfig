@@ -47,6 +47,9 @@ config SUPPORT_USBD_INIC
 config SUPPORT_USBD_UAC
     def_bool y
 
+config SUPPORT_AUDIO_FOR_USB
+    def_bool y
+
 config SUPPORT_HEAP_TRACE
     def_bool y
 
@@ -263,12 +266,12 @@ menu "CONFIG WHC INTF"
 
         choice
             prompt "WIFI Driver Location"
-            default KM4_AS_NP
-            config KM0_AS_NP
-                bool "KM0"
-                select WHC_DEV_FOR_KM0
+            default WHC_DEV_LOC_KM4_MENU
+            # config WHC_DEV_LOC_KM0_MENU
+            #     bool "KM0"
+            #     select WHC_DEV_FOR_KM0
 
-            config KM4_AS_NP
+            config WHC_DEV_LOC_KM4_MENU
                 bool "KM4"
                 select WHC_DEV_FOR_KM4
         endchoice
@@ -362,17 +365,11 @@ menu "CONFIG WIFI"
     if !WLAN_MENU
         config WLAN_DISABLE
             bool
-            select AS_INIC_AP if WHC_HOST
-            select AS_INIC_NP if WHC_DEV
     endif
 
     config WLAN
         bool
     config WHC_INTF_IPC
-        bool
-    config AS_INIC_NP
-        bool
-    config AS_INIC_AP
         bool
     config LWIP_LAYER
         bool
@@ -424,6 +421,11 @@ menu "CONFIG BT"
 
     endif
 endmenu
+
+config SHELL_TASK_STACK_BASIC_SIZE
+        int
+        default 1344 if (WHC_HOST || WHC_NONE)
+        default 588 if (!WHC_HOST && !WHC_NONE)
 
 rsource "../../../lwip/Kconfig"
 

@@ -19,12 +19,14 @@
  ******************************************************************************/
 
 #include "whc_host_xfer.h"
-#include "ameba_inic.h"
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/delay.h>
 #include <linux/jiffies.h>
 #include <linux/namei.h>
+#ifdef CONFIG_WHC_HCI_SDIO
+#include "ameba_inic.h"
+#endif
 
 /* Legacy exports for compatibility - these now get data from HAL */
 const struct whc_mem_region_t *whc_mem_regions = NULL;

@@ -41,14 +41,14 @@ static int ip_nat_wifi_restart_ap(struct rtw_softap_info *softAP_config)
 	u32 netmask;
 	u32 gw;
 	int timeout = 20;
-	struct netif *pnetif;
+	struct netif *pnetif = pnetif_ap;
 
 	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
 		idx = 1;
 	}
 
 	// stop dhcp server
-	dhcps_deinit();
+	dhcps_deinit(pnetif);
 	addr = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	netmask = CONCAT_TO_UINT32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
@@ -96,8 +96,8 @@ static int ip_nat_wifi_restart_ap(struct rtw_softap_info *softAP_config)
 
 	// start dhcp server
 	RTK_LOGI(TAG, "%s(%d)idx=%d\n", __FUNCTION__, __LINE__, idx);
-	pnetif = LwIP_idx_get_netif(idx);
 	dhcps_init(pnetif);
+	dhcps_start(pnetif);
 
 	return 0;
 }
@@ -329,6 +329,7 @@ static void example_wlan_repeater_thread(void *param)
 
 	RTK_LOGI(TAG, "\n\r[WLAN_REPEATER_EXAMPLE] Start DHCP server\n");
 	dhcps_init(pnetif_ap);
+	dhcps_start(pnetif_ap);
 	rtos_time_delay_ms(1000);
 
 	wifi_repeater_ap_config_complete = 1;

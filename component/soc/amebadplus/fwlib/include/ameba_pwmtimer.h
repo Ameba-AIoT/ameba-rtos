@@ -616,4 +616,3 @@ extern u32 TIM_IT_CCx[PWM_CHAN_MAX];
 /* MANUAL_GEN_END */
 
 #endif
-

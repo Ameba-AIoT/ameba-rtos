@@ -180,12 +180,12 @@ menu "CONFIG WHC INTF"
     if WHC_DEV_MENU
         choice
             prompt "WIFI Driver Location"
-            default KR4_AS_NP
-            config KR4_AS_NP
+            default WHC_DEV_LOC_KR4_MENU
+            config WHC_DEV_LOC_KR4_MENU
                 bool "KR4"
                 select WHC_DEV_FOR_KR4
 
-            #config KM4_AS_NP
+            #config WHC_DEV_LOC_KM4_MENU
             #    bool "KM4"
             #    select WHC_DEV_FOR_KM4
         endchoice
@@ -198,17 +198,17 @@ menu "CONFIG WHC INTF"
             bool "Support WHC WIFI API PATH"
 
         config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KR4
-            depends on KR4_AS_NP
+            depends on WHC_DEV_LOC_KR4_MENU
             bool "Support WHC SUPPLICANT OFFLOAD"
         #config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4
-        #    depends on KM4_AS_NP
+        #    depends on WHC_DEV_LOC_KM4_MENU
         #    bool "Support WHC SUPPLICANT OFFLOAD"
 
         config WHC_DEV_TCPIP_KEEPALIVE_FOR_KR4
-            depends on KR4_AS_NP
+            depends on WHC_DEV_LOC_KR4_MENU
             bool "Support WHC DEV TCPIP KEEPALIVE"
         #config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4
-        #    depends on KM4_AS_NP
+        #    depends on WHC_DEV_LOC_KM4_MENU
         #    bool "Support WHC DEV TCPIP KEEPALIVE"
 
         endmenu
@@ -227,14 +227,14 @@ menu "CONFIG WHC INTF"
 
     if WHC_INTF_IPC_MENU || WIFI_SINGLE_CORE_MENU
         choice
-            prompt "Select AP Core"
-            default AP_CORE_KM4
-            config AP_CORE_KM4
+            prompt "WHC Host Location"
+            default WHC_HOST_LOC_KM4_MENU
+            config WHC_HOST_LOC_KM4_MENU
                 bool "KM4"
                 select WHC_HOST_FOR_KM4 if WHC_INTF_IPC_MENU
                 select WHC_DEV_FOR_KR4 if WHC_INTF_IPC_MENU
                 select WHC_NONE_FOR_KM4 if WIFI_SINGLE_CORE_MENU
-            config AP_CORE_KR4
+            config WHC_HOST_LOC_KR4_MENU
                 bool "KR4"
                 select WHC_HOST_FOR_KR4 if WHC_INTF_IPC_MENU
                 select WHC_DEV_FOR_KM4 if WHC_INTF_IPC_MENU
@@ -315,18 +315,12 @@ menu "CONFIG WIFI"
     if !WLAN_MENU
         config WLAN_DISABLE
             bool
-            select AS_INIC_AP if WHC_HOST
-            select AS_INIC_NP if WHC_DEV
     endif
 
 
     config WLAN
         bool
     config WHC_INTF_IPC
-        bool
-    config AS_INIC_NP
-        bool
-    config AS_INIC_AP
         bool
     config LWIP_LAYER
         bool
@@ -398,6 +392,17 @@ menu "CONFIG BT"
 
     endif
 endmenu
+
+config SHELL_TASK_STACK_BASIC_SIZE_FOR_KM4
+    int
+    default 1248 if WHC_HOST || WHC_NONE
+    default 620
+
+config SHELL_TASK_STACK_BASIC_SIZE_FOR_KR4
+    int
+    default 1504 if WHC_HOST
+    default 2496 if WHC_NONE
+    default 720
 
 rsource "../../../lwip/Kconfig"
 

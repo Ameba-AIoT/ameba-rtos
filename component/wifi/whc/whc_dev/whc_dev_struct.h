@@ -73,7 +73,8 @@ struct whc_msg_info {
 #define SPI_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), 4)
 
 #define SPDIO_DEVICE_RX_BUFSZ	(SPDIO_RX_BUFSZ_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info) + sizeof(INIC_TX_DESC))) //n*64, must be rounded to 64
-#define SPDIO_SKB_RSVD_LEN		N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info) - sizeof(INIC_TX_DESC), SPDIO_DMA_ALIGN_4)
+// Change to SKB_CACHE_SZ to avoid DcacheInvalid affect
+#define SPDIO_SKB_RSVD_LEN		N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info) - sizeof(INIC_TX_DESC), SKB_CACHE_SZ)
 
 #define UART_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32 for cache line
 #define UART_BUFSZ		(UART_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))

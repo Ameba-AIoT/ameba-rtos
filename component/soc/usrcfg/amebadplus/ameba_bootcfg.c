@@ -30,12 +30,12 @@ const RCC_ConfDef RCC_Config[] = {
 	{APBPeriph_IPC,			APBPeriph_IPC_CLOCK,			ENABLE},
 	{APBPeriph_SHA,			APBPeriph_SHA_CLOCK,			ENABLE},
 	{APBPeriph_AES,			APBPeriph_AES_CLOCK,			ENABLE},
-	{APBPeriph_LX,			APBPeriph_LX_CLOCK,				ENABLE},
+	{APBPeriph_LX,			APBPeriph_LX_CLOCK,			ENABLE},
 	{APBPeriph_LTIM0,		APBPeriph_LTIM0_CLOCK,			ENABLE},
 	{APBPeriph_PTIM0,		APBPeriph_PTIM0_CLOCK,			ENABLE},
 	{APBPeriph_PTIM1,		APBPeriph_PTIM1_CLOCK,			ENABLE},
 
-	{0xFFFFFFFF,			NULL,							ENABLE},
+	{0xFFFFFFFF,			0,					ENABLE},
 };
 
 u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
@@ -83,4 +83,3 @@ u8 Boot_SocClk_Info_Idx = 6; /* 480M has an acceptable impact on the RF performa
 *	TRUE: enable
 */
 u8 Boot_Agg_En = FALSE;
-

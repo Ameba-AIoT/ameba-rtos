@@ -82,14 +82,14 @@ iperf_errexit(struct iperf_test *test, const char *format, ...)
 
 int i_errno;
 
-char *
-iperf_strerror(int int_errno)
+void
+iperf_strerror(int int_errno, char *buf, size_t buf_size)
 {
-	static char errstr[256];
-	int len, perr, herr;
-	perr = herr = 0;
+	int perr = 0;
+	int herr = 0;
+	char *errstr = buf;
+	int len = buf_size;
 
-	len = sizeof(errstr);
 	memset(errstr, 0, len);
 
 	switch (int_errno) {
@@ -393,6 +393,4 @@ iperf_strerror(int int_errno)
 	if (errno && perr) {
 		strncat(errstr, strerror(errno), len - strlen(errstr) - 1);
 	}
-
-	return errstr;
 }

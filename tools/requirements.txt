@@ -18,3 +18,4 @@ pywin32 ; platform_system == "Windows"
 prompt_toolkit
 click
 requests
+filelock

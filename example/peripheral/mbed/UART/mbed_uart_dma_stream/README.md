@@ -22,6 +22,10 @@ Required Components: USBtoTTL adapter.
 	- Connect `UART_TX(_PA_18)` to `RXD` of adapter
 	- Connect `UART_RX(_PA_19)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
+* On RTL8720F
+	- Connect `UART_TX(_PA_21)` to `RXD` of adapter
+	- Connect `UART_RX(_PA_22)` to `TXD` of adapter
+	- Connect `GND` to `GND` of adapter
 
 # SW Configuration
 

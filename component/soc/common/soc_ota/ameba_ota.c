@@ -7,9 +7,7 @@
 #include "ameba_soc.h"
 #include "ameba_ota.h"
 
-
-u32 IMG_ADDR[OTA_IMGID_MAX][2] = {0}; 			/* IMG Flash Physical Address use for OTA */
-
+u32 IMG_ADDR[OTA_IMGID_MAX][2] = {0}; /* IMG Flash Physical Address use for OTA */
 
 /**
   * @brief  get current image2 location
@@ -24,27 +22,42 @@ u8 ota_get_cur_index(u8 img_id)
 	u32 AddrStart;
 	RSIP_REG_TypeDef *RSIP = ((RSIP_REG_TypeDef *) RSIP_REG_BASE);
 
+#if defined(CONFIG_AMEBASMART)
 	if (img_id == OTA_IMGID_BOOT) {
 		AddrStart = RSIP->FLASH_MMU[MMU_BOOTLOADER_IDX].RSIP_REMAPxOR;
 		// Compatiable Nand and Nor Flash
-		u32 BootVer = 0;
-		u32 BootInfo = 0;
-		BootInfo = BKUP_Read(BKUP_REG0);
-		BootVer = (BootInfo & BOOT_VER_NUM) >> 30;
+		u32 BootInfo = BKUP_Read(BKUP_REG0);
+		u32 BootVer = (BootInfo & BOOT_VER_NUM) >> 30;
 		return BootVer;
 	} else {
 		AddrStart = RSIP->FLASH_MMU[MMU_LP_IDX].RSIP_REMAPxOR;
 	}
+#elif defined(CONFIG_RTL8720F)
+	AddrStart = RSIP->FLASH_MMU[img_id].RSIP_REMAP_x_OFFSET;
+#else
+	AddrStart = RSIP->FLASH_MMU[img_id].RSIP_REMAPxOR;
+#endif
 
-	if (IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_1] == 0) {
+#if defined(CONFIG_AMEBASMART)
+	if (IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_1] == 0)
+#else
+	if (IMG_ADDR[img_id][OTA_INDEX_1] == 0)
+#endif
+	{
 		flash_get_layout_info(IMG_BOOT, &IMG_ADDR[OTA_IMGID_BOOT][OTA_INDEX_1], NULL);
 		flash_get_layout_info(IMG_BOOT_OTA2, &IMG_ADDR[OTA_IMGID_BOOT][OTA_INDEX_2], NULL);
 		flash_get_layout_info(IMG_APP_OTA1, &IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_1], NULL);
 		flash_get_layout_info(IMG_APP_OTA2, &IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_2], NULL);
+
+#if defined(CONFIG_AMEBALITE)
+		flash_get_layout_info(IMG_DSP, &IMG_ADDR[OTA_IMGID_DSP][OTA_INDEX_1], NULL);
+		flash_get_layout_info(IMG_DSP, &IMG_ADDR[OTA_IMGID_DSP][OTA_INDEX_2], NULL);
+#endif
 	}
 
 	if (AddrStart & RSIP_BIT_REMAP_x_ENABLE) {
 		PhyAddr = (AddrStart >> 9) << 5;
+
 		if (img_id == OTA_IMGID_APP) {
 			/*add certificate and manifest*/
 			PhyAddr = PhyAddr - 0x2000;
@@ -52,6 +65,7 @@ u8 ota_get_cur_index(u8 img_id)
 			/*add manifest*/
 			PhyAddr = PhyAddr - 0x1000;
 		}
+
 		if (PhyAddr == IMG_ADDR[img_id][OTA_INDEX_1]) {
 			return OTA_INDEX_1;
 		} else {

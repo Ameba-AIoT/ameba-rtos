@@ -902,10 +902,6 @@ void BOOT_Image1(void)
 	BOOT_CACHEWRR_Set();
 	BOOT_TCMSet(Boot_TCM_Size);
 
-	/* backup flash_init_para address for KM0 */
-	DCache_Clean((u32)&flash_init_para, sizeof(FLASH_InitTypeDef));
-	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FLASH_PARA_ADDR, (u32)&flash_init_para);
-
 	//RRAM->IPC_Share_Mem = (u32) __km0_ipc_memory_start__;
 	RRAM->IMQ_INIT_DONE = 0;
 
@@ -950,6 +946,10 @@ void BOOT_Image1(void)
 	if (ret == FALSE) {
 		goto INVALID_IMG2;
 	}
+
+	/* backup flash_init_para address for KM0 */
+	DCache_Clean((u32)&flash_init_para, sizeof(FLASH_InitTypeDef));
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FLASH_PARA_ADDR, (u32)&flash_init_para);
 
 	/* it will switch shell control to KM0, disable loguart interrupt to avoid loguart irq not assigned in non-secure world.
 	 it should switch before BOOT_RAM_TZCfg to avoid crash when loguart intr occur but it has been set to ns intr. */

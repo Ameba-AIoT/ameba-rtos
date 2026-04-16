@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "wifi_api.h"
+#include "basic_types.h"
 
 /* S-curve coefficient * 1000, y = C3 * x^3 + C2 * x^2 + C1 * x + C0 */
 const s32 s_coef[4] = {198, 354, -294570, -1185900};

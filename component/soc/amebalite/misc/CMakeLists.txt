@@ -47,11 +47,6 @@ ameba_list_append(private_sources
     ameba_pmu.c
 )
 
-if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC))
-    ameba_list_append(private_sources
-        ameba_ota.c
-    )
-endif()
 # Component private part, user config end
 #------------------------------#
 

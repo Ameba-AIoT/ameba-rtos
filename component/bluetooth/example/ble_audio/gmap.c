@@ -3925,7 +3925,7 @@ int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			BT_APP_PROCESS(rtk_bt_le_gap_set_appearance(RTK_BT_LE_GAP_APPEARANCE_HEADSET));
 			/* Mix RTK_BT_DEV_NAME channel bt mac address */
 			strcpy(dev_name, APP_LE_AUDIO_GMAP_BROADCAST_GAME_RECEIVER_DEVICE_NAME);
-			snprintf(&dev_name[strlen(APP_LE_AUDIO_GMAP_BROADCAST_GAME_RECEIVER_DEVICE_NAME)], 10, " %s (%02X%02X)", channel, bd_addr.addr_val[1], bd_addr.addr_val[0]);
+			DiagSnPrintf(&dev_name[strlen(APP_LE_AUDIO_GMAP_BROADCAST_GAME_RECEIVER_DEVICE_NAME)], 10, " %s (%02X%02X)", channel, bd_addr.addr_val[1], bd_addr.addr_val[0]);
 			app_bt_le_audio_ext_adv_init((uint8_t *)dev_name, strlen((const char *)APP_LE_AUDIO_GMAP_BROADCAST_GAME_RECEIVER_DEVICE_NAME) + 9);
 			/* Register le audio event callback */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_BAP, app_bt_bap_callback));
@@ -4127,7 +4127,7 @@ int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			BT_APP_PROCESS(rtk_bt_le_gap_set_appearance(APP_LE_AUDIO_DEMO_GAP_APPERANCE));
 			/* Mix RTK_BT_DEV_NAME channel bt mac address */
 			strcpy(dev_name, APP_LE_AUDIO_GMAP_UNICAST_GAME_TERMINAL_DEVICE_NAME);
-			snprintf(&dev_name[strlen(APP_LE_AUDIO_GMAP_UNICAST_GAME_TERMINAL_DEVICE_NAME)], 10, " %s (%02X%02X)", channel, bd_addr.addr_val[1], bd_addr.addr_val[0]);
+			DiagSnPrintf(&dev_name[strlen(APP_LE_AUDIO_GMAP_UNICAST_GAME_TERMINAL_DEVICE_NAME)], 10, " %s (%02X%02X)", channel, bd_addr.addr_val[1], bd_addr.addr_val[0]);
 			app_bt_le_audio_ext_adv_init((uint8_t *)dev_name, strlen((const char *)APP_LE_AUDIO_GMAP_UNICAST_GAME_TERMINAL_DEVICE_NAME) + 9);
 			/* Register LE audio event callback */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_BAP, app_bt_bap_callback));

@@ -120,7 +120,6 @@ static int uvc_cb_attach(void);
 static int uvc_cb_detach(void);
 static int uvc_cb_setup(void);
 static int uvc_cb_setparam(void);
-static int uvc_cb_process(usb_host_t *host, u8 msg);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "UVC";
@@ -131,7 +130,7 @@ static rtos_sema_t uvc_start_sema;
 static rtos_sema_t uvc_setparam_sema;
 static rtos_mutex_t uvc_buf_mutex = NULL;
 static usbh_uvc_s_ctx_t uvc_s_ctx;
-static __IO int usbh_uvc_is_ready = 0;
+static rtos_task_t uvc_task;
 
 static u32 rx_total_H;
 static u32 rx_total_L;
@@ -196,10 +195,6 @@ static usbh_uvc_cb_t uvc_cb = {
 	.setparam = uvc_cb_setparam,
 };
 
-static usbh_user_cb_t usbh_usr_cb = {
-	.process = uvc_cb_process,
-};
-
 /* Private functions ---------------------------------------------------------*/
 
 static int uvc_cb_init(void)
@@ -227,14 +222,13 @@ static int uvc_cb_detach(void)
 #if CONFIG_USBH_UVC_HOT_PLUG
 	rtos_sema_give(uvc_detach_sema);
 #endif
-	usbh_uvc_is_ready = 0;
+
 	return HAL_OK;
 }
 
 static int uvc_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
-	usbh_uvc_is_ready = 1;
 	rtos_sema_give(uvc_start_sema);
 	return HAL_OK;
 }
@@ -243,25 +237,6 @@ static int uvc_cb_setparam(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETPARAM\n");
 	rtos_sema_give(uvc_setparam_sema);
-	return HAL_OK;
-}
-
-static int uvc_cb_process(usb_host_t *host, u8 msg)
-{
-	UNUSED(host);
-
-	switch (msg) {
-	case USBH_MSG_DISCONNECTED:
-		usbh_uvc_is_ready = 0;
-		break;
-
-	case USBH_MSG_CONNECTED:
-		break;
-
-	default:
-		break;
-	}
-
 	return HAL_OK;
 }
 
@@ -480,7 +455,7 @@ static int uvc_vfs_start(void)
 
 	uvc_rb = RingBuffer_Create(uvc_buf, CONFIG_USBH_UVC_FRAME_BUF_SIZE, LOCAL_RINGBUFF, 0);
 
-	ret = rtos_task_create(&task, "uvc_vfs_thread", uvc_vfs_thread, NULL, 1024U * 8, 1U);
+	ret = rtos_task_create(&task, "uvc_vfs_thread", uvc_vfs_thread, NULL, 1024U * 3, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create vfs thread fail\n");
 		ret = 1;
@@ -703,7 +678,7 @@ static int uvc_httpc_start(void)
 
 	rtos_sema_create(&uvc_httpc_save_img_sema, 0, 1);
 
-	ret = rtos_task_create(&task, "uvc_httpc_thread", uvc_httpc_thread, NULL, 1024 * 8, 2);
+	ret = rtos_task_create(&task, "uvc_httpc_thread", uvc_httpc_thread, NULL, 1024 * 5, 2);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create %s client thread fail\n", USBH_UVC_HTTP_TAG);
 		rtos_sema_delete(&uvc_httpc_save_img_sema);
@@ -715,6 +690,15 @@ static int uvc_httpc_start(void)
 #endif
 
 #if CONFIG_USBH_UVC_HOT_PLUG
+/**
+ * Hotplug handling:
+ * 1) usbh_uvc_stream_off(): stop internal UVC data stream and prepare for resource free.
+ * 2) After this, UVC data consumers must stop getting frames
+ *   (e.g. exit loop or delete uvc_test task).
+ * 3) On next attach, consumers can resume or be re-created after UVC re-init.
+ * 4) Thread priority: The hotplug handling thread MUST have higher priority than the UVC
+ *   get-frame thread to ensure stream stop and cleanup run first on detach.
+*/
 static void uvc_hotplug_thread(void *param)
 {
 	int ret = 0;
@@ -723,13 +707,20 @@ static void uvc_hotplug_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(uvc_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			rtos_time_delay_ms(100);
+
+			usbh_uvc_stream_off(CONFIG_USBH_UVC_IF_NUM_0);
+			if (uvc_task) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug: delete uvc_test task\n");
+				rtos_task_delete(uvc_task);
+				uvc_task = NULL;
+			}
+
 			usbh_uvc_deinit();
 			usbh_deinit();
 			rtos_time_delay_ms(10);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 
-			ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
+			ret = usbh_init(&usbh_cfg, NULL);
 			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
 				break;
@@ -760,7 +751,10 @@ static void uvc_test(void *param)
 
 	UNUSED(param);
 
-	if (rtos_sema_take(uvc_start_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+	while (1) {
+		if (rtos_sema_take(uvc_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
+			continue;
+		}
 
 		uvc_s_ctx.fmt_type = CONFIG_USBH_UVC_FORMAT_TYPE;
 		uvc_s_ctx.width = CONFIG_USBH_UVC_WIDTH;
@@ -776,8 +770,7 @@ static void uvc_test(void *param)
 			fmt_name = "YUV";
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Unsupport type %d\n", uvc_s_ctx.fmt_type);
-			rtos_task_delete(NULL);
-			return;
+			goto exit;
 		}
 
 		/* Trigger the UVC parameter setting process */
@@ -785,19 +778,17 @@ static void uvc_test(void *param)
 		/* Check if the request itself failed immediately */
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set param req: %d\n", ret);
-			rtos_task_delete(NULL);
-			return;
+			goto exit;
 		}
 
 		/* Wait for the semaphore indicating the setting is actually completed */
-		if (rtos_sema_take(uvc_setparam_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+		if (rtos_sema_take(uvc_setparam_sema, 1000) == RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Set paras ok: %s %d*%d@%dfps\n",
 					 fmt_name, uvc_s_ctx.width, uvc_s_ctx.height, uvc_s_ctx.frame_rate);
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set paras fail: %s %d*%d@%dfps\n",
 					 fmt_name, uvc_s_ctx.width, uvc_s_ctx.height, uvc_s_ctx.frame_rate);
-			rtos_task_delete(NULL);
-			return;
+			goto exit;
 		}
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
@@ -805,8 +796,7 @@ static void uvc_test(void *param)
 		ret = uvc_vfs_start();
 		if (ret != 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Start vfs err\n");
-			rtos_task_delete(NULL);
-			return;
+			goto exit;
 		}
 
 		while (uvc_vfs_is_init == 0) {
@@ -819,8 +809,7 @@ static void uvc_test(void *param)
 		ret = uvc_httpc_start();
 		if (ret != 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Start httpc err\n");
-			rtos_task_delete(NULL);
-			return;
+			goto exit;
 		}
 
 		while (uvc_httpc_is_init == 0) {
@@ -835,8 +824,8 @@ static void uvc_test(void *param)
 		ret = usbh_uvc_stream_on(&uvc_s_ctx, CONFIG_USBH_UVC_IF_NUM_0);
 
 		if (ret) {
-			rtos_task_delete(NULL);
-			return;
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Stream on err\n");
+			goto exit;
 		}
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
 		while (uvc_httpc_is_init) {
@@ -846,27 +835,17 @@ static void uvc_test(void *param)
 		rx_start = SYSTIMER_TickGet();
 		while (img_cnt < CONFIG_USBH_UVC_LOOP) {
 #endif
-
-			if (!usbh_uvc_is_ready) {
-				rtos_time_delay_ms(500);
-				RTK_LOGS(TAG, RTK_LOG_WARN, "Device disconnect, test abort\n");
-				break;
-			}
-
 			buf = usbh_uvc_get_frame(CONFIG_USBH_UVC_IF_NUM_0);
 
 			if (buf == NULL) {
-				if (usbh_uvc_is_ready) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Capture frame %d fail\n", img_cnt);
-					fail_cnt++;
-					if (fail_cnt >= CONFIG_USBH_UVC_MAX_FAIL_COUNT) {
-						RTK_LOGS(TAG, RTK_LOG_INFO, "Stop Capture (fail:%d)\n", fail_cnt);
-						break;
-					}
+				fail_cnt++;
+				if (fail_cnt >= CONFIG_USBH_UVC_MAX_FAIL_COUNT) {
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Stop (fail:%d)\n", fail_cnt);
+					break;
 				}
 
-				rtos_time_delay_ms(10);
-				break;
+				rtos_time_delay_ms(1);
+				continue;
 			}
 
 			len = buf->byteused;
@@ -887,21 +866,18 @@ static void uvc_test(void *param)
 			img_cnt ++;
 		}
 
-		if (usbh_uvc_is_ready) {
-			uvc_calculate_tp(img_cnt);
-			usbh_uvc_stream_off(CONFIG_USBH_UVC_IF_NUM_0);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Stream off\n");
-		}
+		uvc_calculate_tp(img_cnt);
+		usbh_uvc_stream_off(CONFIG_USBH_UVC_IF_NUM_0);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream off\n");
 	}
 
-	rtos_time_delay_ms(1000);
+exit:
 	rtos_task_delete(NULL);
-
+	uvc_task = NULL;
 }
 
 static void example_usbh_uvc_task(void *param)
 {
-	rtos_task_t uvc_task;
 #if CONFIG_USBH_UVC_HOT_PLUG
 	rtos_task_t hotplug_task;
 #endif
@@ -915,7 +891,7 @@ static void example_usbh_uvc_task(void *param)
 	rtos_sema_create(&uvc_setparam_sema, 0U, 1U);
 	rtos_mutex_create(&uvc_buf_mutex);
 
-	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
+	ret = usbh_init(&usbh_cfg, NULL);
 	if (ret != HAL_OK) {
 		goto free_sema_exit;
 	}
@@ -933,10 +909,15 @@ static void example_usbh_uvc_task(void *param)
 	}
 #endif
 
-	if (rtos_sema_take(uvc_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-		ret = rtos_task_create(&uvc_task, "uvc_test", uvc_test, NULL, 1024U * 2, CONFIG_USBH_UVC_TEST_THREAD_PRIORITY);
-		if (ret != RTK_SUCCESS) {
-			goto delete_hotplug_task_exit;
+	while (1) {
+		if (rtos_sema_take(uvc_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (uvc_task == NULL) {
+				ret = rtos_task_create(&uvc_task, "uvc_test", uvc_test, NULL,
+									   1024U, CONFIG_USBH_UVC_TEST_THREAD_PRIORITY);
+				if (ret != RTK_SUCCESS) {
+					goto delete_hotplug_task_exit;
+				}
+			}
 		}
 	}
 
@@ -974,7 +955,7 @@ void example_usbh_uvc(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UVC demo start\n");
 
-	status = rtos_task_create(&task, "example_usbh_uvc_thread", example_usbh_uvc_task, NULL, 1024 * 16U, 1U);
+	status = rtos_task_create(&task, "example_usbh_uvc_thread", example_usbh_uvc_task, NULL, 1024U, 1U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}

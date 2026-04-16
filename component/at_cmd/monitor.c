@@ -416,13 +416,7 @@ const COMMAND_TABLE shell_cmd_table[] = {
 	{"EW", cmd_write_word},
 	{"REBOOT", cmd_reboot},
 #ifndef CONFIG_MP_SHRINK
-#if (defined(CONFIG_AMEBASMART) && (defined(CONFIG_ARM_CORE_CA32) || defined(CONFIG_ARM_CORE_CM4))) || \
-    (defined(CONFIG_AMEBAD) && defined(CONFIG_ARM_CORE_CM4)) || \
-    (defined(CONFIG_AMEBALITE) && defined(CONFIG_ARM_CORE_CM4)) || \
-    (defined(CONFIG_AMEBADPLUS) && defined(CONFIG_ARM_CORE_CM4)) || \
-    (defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) || \
-    (defined(CONFIG_AMEBAL2) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) || \
-    (defined(CONFIG_RTL8720F) && defined(CONFIG_ARM_CORE_CM4_KM4TZ))
+#if defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)
 	{"EFUSE", cmd_efuse_protect},
 #endif
 	{"TICKPS", CmdTickPS},

@@ -11,8 +11,6 @@
 extern "C" {
 #endif
 
-extern struct cmb_hard_fault_regs regs;
-
 typedef uint32_t (*crash_on_task)(uint32_t *reg, uint32_t src);
 
 extern crash_on_task crash_task_info;
@@ -41,8 +39,6 @@ extern char *vTaskName(void);
 extern uint32_t vTaskStatus(uint32_t src);
 
 extern uint32_t vTaskCrashCallback(uint32_t *reg, uint32_t src);
-
-extern void fault_diagnosis(struct cmb_hard_fault_regs *regs);
 
 #ifdef __cplusplus
 }

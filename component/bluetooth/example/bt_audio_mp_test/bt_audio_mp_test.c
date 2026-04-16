@@ -922,7 +922,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 				if (p_attr_t->attr[i].length) {
 					memset((void *)temp_buff, 0, 50);
 					uint16_t len = p_attr_t->attr[i].length + strlen(attr[p_attr_t->attr[i].attribute_id]) + 1;
-					snprintf((char *)temp_buff, len, "%s%s\r\n", attr[p_attr_t->attr[i].attribute_id], p_attr_t->attr[i].p_buf);
+					DiagSnPrintf((char *)temp_buff, len, "%s%s\r\n", attr[p_attr_t->attr[i].attribute_id], p_attr_t->attr[i].p_buf);
 					BT_LOGA("[AVRCP] %s \r\n", temp_buff);
 				}
 			}
@@ -943,7 +943,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 					p_list_t->bd_addr[5], p_list_t->bd_addr[4], p_list_t->bd_addr[3], p_list_t->bd_addr[2], p_list_t->bd_addr[1], p_list_t->bd_addr[0]);
 			for (uint8_t i = 0; i < p_list_t->num_of_attr; i ++) {
 				memset((void *)temp_buff, 0, 10);
-				snprintf((char *)temp_buff, len, "%s\r\n", attr[p_list_t->p_attr_id[i]]);
+				DiagSnPrintf((char *)temp_buff, len, "%s\r\n", attr[p_list_t->p_attr_id[i]]);
 				BT_LOGA("[AVRCP] %s \r\n", temp_buff);
 			}
 		}
@@ -973,7 +973,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_avrcp_app_callback(uint8_t evt_code, void *par
 					p_rsp_t->bd_addr[5], p_rsp_t->bd_addr[4], p_rsp_t->bd_addr[3], p_rsp_t->bd_addr[2], p_rsp_t->bd_addr[1], p_rsp_t->bd_addr[0]);
 			for (uint8_t i = 0; i < p_rsp_t->num_of_attr; i ++) {
 				memset((void *)temp_buff, 0, 20);
-				snprintf((char *)temp_buff, len, "%s 0x%x\r\n", attr[p_rsp_t->p_app_setting[i].attr], p_rsp_t->p_app_setting[i].value);
+				DiagSnPrintf((char *)temp_buff, len, "%s 0x%x\r\n", attr[p_rsp_t->p_app_setting[i].attr], p_rsp_t->p_app_setting[i].value);
 				BT_LOGA("[AVRCP] %s \r\n", temp_buff);
 			}
 		}
@@ -2345,7 +2345,7 @@ int bt_audio_mp_test_main(uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_GAP, br_gap_app_callback));
 		/* mix RTK_BT_DEV_NAME with bt mac address */
 		strcpy(dev_name, RTK_BT_DEV_NAME);
-		snprintf(&dev_name[strlen(RTK_BT_DEV_NAME)], 7, "(%02X%02X)", bd_addr.addr[1], bd_addr.addr[0]);
+		DiagSnPrintf(&dev_name[strlen(RTK_BT_DEV_NAME)], 7, "(%02X%02X)", bd_addr.addr[1], bd_addr.addr[0]);
 		BT_APP_PROCESS(rtk_bt_br_gap_set_device_name((const uint8_t *)dev_name));
 		/* Initilize SDP part */
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_BR_GP_SDP, rtk_bt_sdp_app_callback));

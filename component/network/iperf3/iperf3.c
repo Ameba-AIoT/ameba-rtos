@@ -62,7 +62,12 @@ void server_thread(void *param)
 	while (!g_server_terminate) {
 		rc = iperf_run_server(test);
 		if (rc < 0) {
-			iperf_err(test, "error - %s\n", iperf_strerror(i_errno));
+			char *err_buf = malloc(MSG_BUF_SIZE);
+			if (err_buf) {
+				iperf_strerror(i_errno, err_buf, MSG_BUF_SIZE);
+				iperf_err(test, "error - %s\n", err_buf);
+				free(err_buf);
+			}
 			if (rc < -1) {
 				iperf_err(test, "exiting\n");
 			}
@@ -91,7 +96,12 @@ void client_thread(void *param)
 	printf("client test start\n");
 
 	if (iperf_run_client(test) < 0) {
-		iperf_err(test, "error - %s", iperf_strerror(i_errno));
+		char *err_buf = malloc(MSG_BUF_SIZE);
+		if (err_buf) {
+			iperf_strerror(i_errno, err_buf, MSG_BUF_SIZE);
+			iperf_err(test, "error - %s\n", err_buf);
+			free(err_buf);
+		}
 	}
 
 	iperf_free_test(test);
@@ -123,6 +133,7 @@ static void indicate_server(void)
 int cmd_iperf3(int argc, char **argv)
 {
 	int error_no = 0;
+	char *err_buf = NULL;
 
 	if (strcmp(argv[1], "stop") == 0) {
 		switch (test->role) {
@@ -154,15 +165,22 @@ int cmd_iperf3(int argc, char **argv)
 		goto Exit;
 	}
 
+	err_buf = malloc(MSG_BUF_SIZE);
 	test = iperf_new_test();
 	if (!test) {
-		iperf_err(NULL, "create new test error - %s", iperf_strerror(i_errno));
+		if (err_buf) {
+			iperf_strerror(i_errno, err_buf, MSG_BUF_SIZE);
+			iperf_err(NULL, "create new test error - %s", err_buf);
+		}
 		goto Exit;
 	}
 
 	iperf_defaults(test);	/* sets defaults */
 	if (iperf_parse_arguments(test, argc, argv) < 0) {
-		iperf_err(test, "parameter error - %s", iperf_strerror(i_errno));
+		if (err_buf) {
+			iperf_strerror(i_errno, err_buf, MSG_BUF_SIZE);
+			iperf_err(test, "parameter error - %s", err_buf);
+		}
 		printf("\n");
 		usage_long(stdout);
 		iperf_free_test(test);
@@ -189,5 +207,8 @@ int cmd_iperf3(int argc, char **argv)
 		break;
 	}
 Exit:
+	if (err_buf) {
+		free(err_buf);
+	}
 	return error_no;
 }

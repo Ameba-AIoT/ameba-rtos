@@ -48,7 +48,7 @@ void cpu_util(double pcpu[3]);
 
 const char *get_system_info(void);
 
-const char *get_optional_features(void);
+void get_optional_features(char *buf, size_t buf_size);
 
 cJSON *iperf_json_printf(const char *format, ...);
 

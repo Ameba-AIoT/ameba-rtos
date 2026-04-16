@@ -541,9 +541,9 @@ static int atcmd_ble_gap_get_adv_param(int argc, char **argv)
 	}
 
 	addr_val = adv_param.peer_addr.addr_val;
-	snprintf(addr_str, sizeof(addr_str), "%02x%02x%02x%02x%02x%02x",
-			 addr_val[5], addr_val[4], addr_val[3],
-			 addr_val[2], addr_val[1], addr_val[0]);
+	DiagSnPrintf(addr_str, sizeof(addr_str), "%02x%02x%02x%02x%02x%02x",
+				 addr_val[5], addr_val[4], addr_val[3],
+				 addr_val[2], addr_val[1], addr_val[0]);
 	BT_LOGA("GAP get adv param success, param: %d,%d,%d,%d,%s,%d,%d,%d\r\n",
 			adv_param.type, adv_param.own_addr_type, adv_param.filter_policy,
 			adv_param.peer_addr.type, addr_str, adv_param.interval_min,

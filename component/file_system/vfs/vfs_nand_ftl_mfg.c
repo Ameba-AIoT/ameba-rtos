@@ -76,32 +76,32 @@ static u8 NAND_FTL_ReadParameterPage(NAND_FTL_DeviceTypeDef *nand, u8 *data);
 
 /* Private variables ---------------------------------------------------------*/
 
-static NAND_FTL_MfgOpsTypeDef NandDefaultOps = {
+static const NAND_FTL_MfgOpsTypeDef NandDefaultOps = {
 	.GetEccStatus = NAND_FTL_Common_GetEccStatus,
 };
 
 
-static NAND_FTL_MfgOpsTypeDef DosiliconOps = {
+static const NAND_FTL_MfgOpsTypeDef DosiliconOps = {
 	.GetEccStatus = NAND_FTL_Dosilicon_GetEccStatus,
 };
 
 
-static NAND_FTL_MfgOpsTypeDef GigaDeviceOps = {
+static const NAND_FTL_MfgOpsTypeDef GigaDeviceOps = {
 	.GetEccStatus = NAND_FTL_GigaDevice_GetEccStatus,
 };
 
 
-static NAND_FTL_MfgOpsTypeDef MacronixOps = {
+static const NAND_FTL_MfgOpsTypeDef MacronixOps = {
 	.GetEccStatus = NAND_FTL_Macronix_GetEccStatus,
 };
 
 
-static NAND_FTL_MfgOpsTypeDef MicronOps = {
+static const NAND_FTL_MfgOpsTypeDef MicronOps = {
 	.GetEccStatus = NAND_FTL_Micron_GetEccStatus,
 };
 
 
-static NAND_FTL_MfgOpsTypeDef WinbondOps = {
+static const NAND_FTL_MfgOpsTypeDef WinbondOps = {
 	.Init = NAND_FTL_Winbond_Init,
 	.SelectTarget = NAND_FTL_Winbond_SelectTarget,
 	.GetEccStatus = NAND_FTL_Winbond_GetEccStatus,
@@ -570,4 +570,3 @@ u8 NAND_FTL_MfgInit(NAND_FTL_DeviceTypeDef *nand)
 
 	return ret;
 }
-

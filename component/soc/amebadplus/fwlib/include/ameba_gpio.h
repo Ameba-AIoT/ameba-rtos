@@ -448,4 +448,3 @@ _LONG_CALL_ void GPIO_ODWriteBit(u8 PinName, u32 PinState);
 /* MANUAL_GEN_END */
 
 #endif
-

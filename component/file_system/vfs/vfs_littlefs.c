@@ -447,7 +447,7 @@ int littlefs_unmount(int interface)
 	return ret;
 }
 
-vfs_opt littlefs_drv = {
+const vfs_opt littlefs_drv = {
 	.open = littlefs_open,
 	.read = littlefs_read,
 	.write = littlefs_write,
@@ -472,5 +472,6 @@ vfs_opt littlefs_drv = {
 	.access = littlefs_access,
 	.mount = littlefs_mount,
 	.unmount = littlefs_unmount,
-	.TAG	= "littlefs"
+	.TAG	= "littlefs",
+	.vfs_type = VFS_LITTLEFS
 };

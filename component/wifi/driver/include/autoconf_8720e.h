@@ -111,26 +111,6 @@
 
 //#define RA_RX_ACK_RSSI
 
-/**************** configurations for task size **********************/
-#if defined (CONFIG_WHC_DEV)
-#if defined(CONFIG_WHC_INTF_IPC)
-#define WIFI_RECV_TASKLET_BASIC_SIZE	            1520
-#else
-#define WIFI_RECV_TASKLET_BASIC_SIZE	            3056
-#endif
-#else
-#define WIFI_RECV_TASKLET_BASIC_SIZE	            1024
-#endif
-
-#define WIFI_DRIVER_RESUME_TASKLET_BASIC_SIZE     480
-#define WIFI_LITTLE_TASKLET_BASIC_SIZE		        528
-#define WIFI_INIC_IPC_DEV_API_BASIC_SIZE          1360
-#define WIFI_INIC_MSG_Q_BASIC_SIZE                468
-#define WIFI_INIC_IPC_HST_API_BASIC_SIZE          308
-#define WIFI_INIC_IPC_HST_EVT_API_BASIC_SIZE      1800
-#define COEX_IPC_HST_API_BASIC_SIZE               248
-#define COEX_IPC_DEV_API_BASIC_SIZE               864
-
 /*************************** Config for Gen TxPower Tool *******************************/
 /** VERSION 0: only support extending one EXT PWR_LIMIT table
   * VERSION 1: support more EXT PWR_LIMIT tables, depending on customer configuration
@@ -181,7 +161,7 @@
 #define WLAN_MAX_ETHFRM_LEN	1514/*max payload size of wifi frame*/
 
 /* debug log level */
-#define RELEASE_WIFI
+#define RELEASE_WIFI  /* will be defined when release*/
 
 #define CONFIG_IOT_RS 1
 #endif /*#ifndef AUTOCONF_8720E_H */

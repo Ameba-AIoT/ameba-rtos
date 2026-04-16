@@ -176,7 +176,6 @@
 #define PERI_CLK_LIMIT			(100 * MHZ_TICK_CNT)
 #define SRAM_CLK_LIMIT			(200 * MHZ_TICK_CNT)
 
-
 /** @defgroup HS_RCC_definitions
   * @{
   */

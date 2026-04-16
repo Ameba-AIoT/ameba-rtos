@@ -1,4 +1,5 @@
 #include "example_captive_portal.h"
+#include "dhcp/dhcps.h"
 
 /* ------------------------ Defines --------------------------------------- */
 /* The size of the buffer in which the dynamic WEB page is created. */
@@ -466,8 +467,6 @@ int EraseApinfo(void)
 }
 #endif
 
-extern void dhcps_init(struct netif *pnetif);
-extern void dhcps_deinit(void);
 int wifi_restart_ap(struct rtw_softap_info *softAP_config)
 {
 	unsigned char idx = 0;
@@ -475,7 +474,7 @@ int wifi_restart_ap(struct rtw_softap_info *softAP_config)
 	u32 ip_addr;
 	u32 netmask;
 	u32 gw;
-	struct netif *pnetif;
+	struct netif *pnetif = pnetif_ap;
 #endif
 
 #ifdef  CONFIG_CONCURRENT_MODE
@@ -490,7 +489,7 @@ int wifi_restart_ap(struct rtw_softap_info *softAP_config)
 
 	// stop dhcp server
 #ifdef CONFIG_LWIP_LAYER
-	dhcps_deinit();
+	dhcps_deinit(pnetif);
 #endif
 
 #ifdef  CONFIG_CONCURRENT_MODE
@@ -502,7 +501,7 @@ int wifi_restart_ap(struct rtw_softap_info *softAP_config)
 #endif
 	{
 #ifdef CONFIG_LWIP_LAYER
-		dhcps_deinit();
+		dhcps_deinit(pnetif);
 		ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 		netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 		gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
@@ -545,8 +544,9 @@ int wifi_restart_ap(struct rtw_softap_info *softAP_config)
 
 #ifdef CONFIG_LWIP_LAYER
 	// start dhcp server
-	pnetif = LwIP_idx_get_netif(idx);
+	RTK_LOGI(NOTAG, "%s(%d)idx=%d\n", __FUNCTION__, __LINE__, idx);
 	dhcps_init(pnetif);
+	dhcps_start(pnetif);
 #endif
 
 	return 0;
@@ -1620,7 +1620,7 @@ static void example_start_captive_portal(void *param)
 	int timeout = 20;
 
 #ifdef CONFIG_LWIP_LAYER
-	dhcps_deinit();
+	dhcps_deinit(pnetif);
 	ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 	netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
@@ -1670,6 +1670,7 @@ static void example_start_captive_portal(void *param)
 
 #ifdef CONFIG_LWIP_LAYER
 	dhcps_init(pnetif);
+	dhcps_start(pnetif);
 #endif
 
 	scan_result.ap_list = (ap_list_t *)malloc(2 * SCAN_AP_LIST_MAX * sizeof(ap_list_t));

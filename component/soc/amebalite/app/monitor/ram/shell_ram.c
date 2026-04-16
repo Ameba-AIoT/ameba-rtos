@@ -95,6 +95,13 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 
 #ifdef CONFIG_ARM_CORE_CM4
 UART_LOG_BUF				tmp_log_buf;
+#if defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)
+#define WHC_HOST_CPU_ID		KM4_CPU_ID
+#define WHC_DEV_CPU_ID		KR4_CPU_ID
+#else
+#define WHC_HOST_CPU_ID		KR4_CPU_ID
+#define WHC_DEV_CPU_ID		KM4_CPU_ID
+#endif
 
 void shell_loguratRx_Ipc_Tx(u32 ipc_dir, u32 ipc_ch)
 {
@@ -124,27 +131,17 @@ void shell_loguartRx_dispatch(void)
 				cmd_done = TRUE;
 				break;
 			}
-#ifdef CONFIG_AP_CORE_KR4
+
 			if ((shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '~')) {
 				i = i + 1; /* remove flag */
 				CpuId = DSP_CPU_ID; /* CMD should processed by DSP */
 			} else if (shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '@') {
 				i = i + 1; /* remove flag */
-				CpuId = KM4_CPU_ID; /* CMD should processed by KM4 itself */
+				CpuId = WHC_DEV_CPU_ID;
 			} else {
-				CpuId = KR4_CPU_ID;
+				CpuId = WHC_HOST_CPU_ID;
 			}
-#else
-			if ((shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '~')) {
-				i = i + 1; /* remove flag */
-				CpuId = DSP_CPU_ID; /* CMD should processed by DSP */
-			} else if (shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '@') {
-				i = i + 1; /* remove flag */
-				CpuId = KR4_CPU_ID; /* CMD should processed by KR4 itself */
-			} else {
-				CpuId = KM4_CPU_ID;
-			}
-#endif
+
 			/* avoid useless space */
 			_memcpy(&pUartLogBuf->UARTLogBuf[0], &pUartLogBuf->UARTLogBuf[i], UART_LOG_CMD_BUFLEN - i);
 			break;

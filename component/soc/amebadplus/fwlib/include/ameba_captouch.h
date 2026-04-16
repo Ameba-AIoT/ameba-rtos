@@ -682,4 +682,3 @@ u32 CapTouch_DbgRawData(CAPTOUCH_TypeDef *CapTouch);
 /* MANUAL_GEN_END */
 
 #endif
-

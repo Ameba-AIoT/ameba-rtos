@@ -30,7 +30,6 @@
 /*dnrd.c will use this*/
 extern char *rptssid;
 extern int wifi_repeater_ap_config_complete;
-extern struct table ip_table; /*for rnat search client ip*/
 rtos_task_t rnat_ap_start_task_hdl = NULL;
 rtos_task_t rnat_poll_ip_task_hdl = NULL;
 
@@ -45,7 +44,7 @@ static void rnat_wifi_stop_ap(void)
 	u32 gw;
 
 	// stop dhcp server
-	dhcps_deinit();
+	dhcps_deinit(pnetif_ap);
 	addr = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	netmask = CONCAT_TO_UINT32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
@@ -103,6 +102,7 @@ static int rnat_wifi_restart_ap(struct rtw_softap_info *softAP_config, u32 softa
 	LwIP_SetIP(NETIF_WLAN_AP_INDEX, addr, netmask, gw);
 	// start dhcp server
 	dhcps_init(pnetif_ap);
+	dhcps_start(pnetif_ap);
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
 	LwIP_AUTOIP_IPv6(NETIF_WLAN_AP_INDEX);
 #endif
@@ -247,6 +247,7 @@ static void rnat_ap_start_thread(void *param)
 
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r[RMESH NAT] Start DHCP server\n");
 	dhcps_init(pnetif_ap);
+	dhcps_start(pnetif_ap);
 
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
 	LwIP_AUTOIP_IPv6(NETIF_WLAN_AP_INDEX);
@@ -261,7 +262,7 @@ exit:
 
 u8 wtn_rnat_search_client_ip(u8 *src_mac)
 {
-	return dhcps_search_client_ip(src_mac);
+	return dhcps_search_client_ip(pnetif_ap, src_mac);
 }
 #endif
 

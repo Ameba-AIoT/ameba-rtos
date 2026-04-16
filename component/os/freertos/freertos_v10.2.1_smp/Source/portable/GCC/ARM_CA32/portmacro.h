@@ -71,6 +71,8 @@ not need to be guarded with a critical section. */
 #define portTICK_PERIOD_MS			( ( TickType_t ) 1000 / configTICK_RATE_HZ )
 #define portBYTE_ALIGNMENT			64
 
+#define portPrimaryCoreID			0
+
 /*-----------------------------------------------------------*/
 
 /* Task utilities. */

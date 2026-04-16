@@ -9,15 +9,66 @@
 #include <atcmd_service.h>
 #include <bt_utils.h>
 #include <atcmd_bt_impl.h>
+#include <osif.h>
+
+/* Task stack size and priority */
+#define BT_ATCMD_TASK_STACK_SIZE  4096
+#define BT_ATCMD_TASK_PRIORITY    3
+
+/* Task parameter structures */
+typedef struct {
+	uint8_t  role;
+	uint8_t  enable;
+	int      ret;
+	void     *sem_handle;
+} bt_atcmd_demo_task_param_t;
+
+typedef struct {
+	uint8_t  role;
+	uint8_t  enable;
+	uint32_t channel;
+	int      ret;
+	void     *sem_handle;
+} bt_atcmd_audio_demo_task_param_t;
+
+typedef struct {
+	uint8_t  enable;
+	uint16_t timeout;
+	int      ret;
+	void     *sem_handle;
+} bt_atcmd_wifimate_demo_task_param_t;
 
 int bt_demo_main(void);
+static void bt_demo_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_demo_main();
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_demo(int argc, char *argv[])
 {
 	(void)argc;
 	(void)argv;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 
-	if (bt_demo_main()) {
-		BT_LOGE("Error: demo example failed!\r\n");
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_demo_task", bt_demo_task_entry, &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("demo example failed!\r\n");
 		return -1;
 	}
 
@@ -26,19 +77,45 @@ int atcmd_bt_demo(int argc, char *argv[])
 }
 
 int bt_audio_mp_test_main(uint8_t enable);
+static void bt_audio_mp_test_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_audio_mp_test_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_audio_mp_test(int argc, char *argv[])
 {
 	(void)argc;
 	(void)argv;
 	uint8_t op;
-
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
+
 	if ((op = (uint8_t)str_to_int(argv[0])) > 2) {
 		BT_LOGE("Error: wrong value (%d) for bt audio mp test example!\r\n", op);
 		return -1;
 	}
-	if (bt_audio_mp_test_main(op)) {
-		BT_LOGE("Error: bt audio mp test example %s failed!\r\n", action[op]);
+
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_audio_mp_test_task", bt_audio_mp_test_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("bt audio mp test example failed!\r\n");
 		return -1;
 	}
 
@@ -47,10 +124,21 @@ int atcmd_bt_audio_mp_test(int argc, char *argv[])
 }
 
 int ble_central_main(uint8_t enable);
+static void ble_central_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_central_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_central(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
@@ -58,8 +146,22 @@ int atcmd_bt_central(int argc, char *argv[])
 		return -1;
 	}
 
-	if (ble_central_main(op)) {
-		BT_LOGE("Error: central example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_central_task", ble_central_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("central example failed!\r\n");
 		return -1;
 	}
 
@@ -68,10 +170,21 @@ int atcmd_bt_central(int argc, char *argv[])
 }
 
 int hogp_gamepad_main(uint8_t enable);
+static void hogp_gamepad_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = hogp_gamepad_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_hogp_gamepad(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
@@ -79,8 +192,22 @@ int atcmd_bt_hogp_gamepad(int argc, char *argv[])
 		return -1;
 	}
 
-	if (hogp_gamepad_main(op)) {
-		BT_LOGE("Error: HOGP example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_hogp_task", hogp_gamepad_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("HOGP example failed!\r\n");
 		return -1;
 	}
 
@@ -89,10 +216,21 @@ int atcmd_bt_hogp_gamepad(int argc, char *argv[])
 }
 
 int ble_peripheral_main(uint8_t enable);
+static void ble_peripheral_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_peripheral_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_peripheral(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
@@ -100,8 +238,22 @@ int atcmd_bt_peripheral(int argc, char *argv[])
 		return -1;
 	}
 
-	if (ble_peripheral_main(op)) {
-		BT_LOGE("Error: peripheral example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_peripheral_task", ble_peripheral_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("peripheral example failed!\r\n");
 		return -1;
 	}
 
@@ -110,10 +262,21 @@ int atcmd_bt_peripheral(int argc, char *argv[])
 }
 
 int ble_scatternet_main(uint8_t enable);
+static void ble_scatternet_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_scatternet_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_scatternet(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
@@ -121,8 +284,22 @@ int atcmd_bt_scatternet(int argc, char *argv[])
 		return -1;
 	}
 
-	if (ble_scatternet_main(op)) {
-		BT_LOGE("Error: scatternet example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_scatternet_task", ble_scatternet_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("scatternet example failed!\r\n");
 		return -1;
 	}
 
@@ -132,9 +309,20 @@ int atcmd_bt_scatternet(int argc, char *argv[])
 
 int atcmd_bt_throughput_test(int argc, char *argv[]);
 int ble_throughput_main(uint8_t enable);
+static void ble_throughput_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_throughput_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_throughput(int argc, char *argv[])
 {
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((strcmp("conn", argv[0]) == 0) || (strcmp("test_start", argv[0]) == 0) ||
@@ -147,8 +335,22 @@ int atcmd_bt_throughput(int argc, char *argv[])
 			return -1;
 		}
 
-		if (ble_throughput_main(op)) {
-			BT_LOGE("Error: throughput example %s failed!\r\n", action[op]);
+		if (!osif_sem_create(&sem_handle, 0, 1)) {
+			BT_LOGE("Error: create sem failed!\r\n");
+			return -1;
+		}
+		task_param.enable = op;
+		task_param.sem_handle = sem_handle;
+		if (!osif_task_create(&task_handle, "bt_throughput_task", ble_throughput_task_entry,
+							  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+			BT_LOGE("Error: create task failed!\r\n");
+			osif_sem_delete(sem_handle);
+			return -1;
+		}
+		osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+		osif_sem_delete(sem_handle);
+		if (task_param.ret != 0) {
+			BT_LOGE("throughput example failed!\r\n");
 			return -1;
 		}
 
@@ -160,10 +362,21 @@ int atcmd_bt_throughput(int argc, char *argv[])
 }
 
 int ble_ota_central_main(uint8_t enable);
+static void ble_ota_central_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_ota_central_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_ota_central(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
@@ -171,8 +384,22 @@ int atcmd_bt_ota_central(int argc, char *argv[])
 		return -1;
 	}
 
-	if (ble_ota_central_main(op)) {
-		BT_LOGE("Error: ble ota central example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_ota_central_task", ble_ota_central_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("ble ota central example failed!\r\n");
 		return -1;
 	}
 
@@ -181,10 +408,21 @@ int atcmd_bt_ota_central(int argc, char *argv[])
 }
 
 int ble_ota_peripheral_main(uint8_t enable);
+static void ble_ota_peripheral_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_ota_peripheral_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_ota_peripheral(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
@@ -192,8 +430,22 @@ int atcmd_bt_ota_peripheral(int argc, char *argv[])
 		return -1;
 	}
 
-	if (ble_ota_peripheral_main(op)) {
-		BT_LOGE("Error: ble ota peripheral example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_ota_peripheral_task", ble_ota_peripheral_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("ble ota peripheral example failed!\r\n");
 		return -1;
 	}
 
@@ -202,10 +454,21 @@ int atcmd_bt_ota_peripheral(int argc, char *argv[])
 }
 
 int ble_mesh_provisioner_main(uint8_t enable);
+static void ble_mesh_provisioner_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_mesh_provisioner_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_mesh_provisioner(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	op = (uint8_t)str_to_int(argv[0]);
@@ -213,9 +476,22 @@ int atcmd_bt_mesh_provisioner(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for mesh provisioner example!\r\n", op);
 		return -1;
 	}
-
-	if (ble_mesh_provisioner_main(op)) {
-		BT_LOGE("Error: mesh provisioner example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_mesh_prov_task", ble_mesh_provisioner_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("mesh provisioner example failed!\r\n");
 		return -1;
 	}
 
@@ -224,10 +500,21 @@ int atcmd_bt_mesh_provisioner(int argc, char *argv[])
 }
 
 int ble_mesh_device_main(uint8_t enable);
+static void ble_mesh_device_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_mesh_device_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_mesh_device(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	op = (uint8_t)str_to_int(argv[0]);
@@ -235,9 +522,22 @@ int atcmd_bt_mesh_device(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for mesh device example!\r\n", op);
 		return -1;
 	}
-
-	if (ble_mesh_device_main(op)) {
-		BT_LOGE("Error: mesh device example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_mesh_dev_task", ble_mesh_device_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("mesh device example failed!\r\n");
 		return -1;
 	}
 
@@ -247,9 +547,20 @@ int atcmd_bt_mesh_device(int argc, char *argv[])
 
 int atcmd_bt_mesh_performence_test(int argc, char *argv[]);
 int ble_mesh_provisioner_test_main(uint8_t enable);
+static void ble_mesh_provisioner_test_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_mesh_provisioner_test_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_mesh_provisioner_test(int argc, char *argv[])
 {
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (!strcmp("start", argv[0]) || !strcmp("result", argv[0]) || !strcmp("cmd", argv[0])) {
@@ -260,9 +571,22 @@ int atcmd_bt_mesh_provisioner_test(int argc, char *argv[])
 			BT_LOGE("Error: wrong value (%d) for mesh provisioner example!\r\n", op);
 			return -1;
 		}
-
-		if (ble_mesh_provisioner_test_main(op)) {
-			BT_LOGE("Error: mesh provisioner example %s failed!\r\n", action[op]);
+		if (!osif_sem_create(&sem_handle, 0, 1)) {
+			BT_LOGE("Error: create sem failed!\r\n");
+			return -1;
+		}
+		task_param.enable = op;
+		task_param.sem_handle = sem_handle;
+		if (!osif_task_create(&task_handle, "bt_mesh_prov_test_task", ble_mesh_provisioner_test_task_entry,
+							  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+			BT_LOGE("Error: create task failed!\r\n");
+			osif_sem_delete(sem_handle);
+			return -1;
+		}
+		osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+		osif_sem_delete(sem_handle);
+		if (task_param.ret != 0) {
+			BT_LOGE("mesh provisioner test example failed!\r\n");
 			return -1;
 		}
 
@@ -274,10 +598,21 @@ int atcmd_bt_mesh_provisioner_test(int argc, char *argv[])
 }
 
 int ble_mesh_device_test_main(uint8_t enable);
+static void ble_mesh_device_test_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_mesh_device_test_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_mesh_device_test(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	op = (uint8_t)str_to_int(argv[0]);
@@ -285,9 +620,22 @@ int atcmd_bt_mesh_device_test(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for mesh device example!\r\n", op);
 		return -1;
 	}
-
-	if (ble_mesh_device_test_main(op)) {
-		BT_LOGE("Error: mesh device test example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_mesh_dev_test_task", ble_mesh_device_test_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("mesh device test example failed!\r\n");
 		return -1;
 	}
 
@@ -296,10 +644,21 @@ int atcmd_bt_mesh_device_test(int argc, char *argv[])
 }
 
 int ble_mesh_provisioner_scatternet_main(uint8_t enable);
+static void ble_mesh_provisioner_scatternet_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_mesh_provisioner_scatternet_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_mesh_provisioner_scatternet(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	op = (uint8_t)str_to_int(argv[0]);
@@ -307,9 +666,22 @@ int atcmd_bt_mesh_provisioner_scatternet(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for mesh provisioner scatternet example!\r\n", op);
 		return -1;
 	}
-
-	if (ble_mesh_provisioner_scatternet_main(op)) {
-		BT_LOGE("Error: mesh provisioner scatternet example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_mesh_prov_scatternet_task", ble_mesh_provisioner_scatternet_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("mesh provisioner scatternet example failed!\r\n");
 		return -1;
 	}
 
@@ -318,10 +690,21 @@ int atcmd_bt_mesh_provisioner_scatternet(int argc, char *argv[])
 }
 
 int ble_mesh_device_scatternet_main(uint8_t enable);
+static void ble_mesh_device_scatternet_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_mesh_device_scatternet_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_mesh_device_scatternet(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	op = (uint8_t)str_to_int(argv[0]);
@@ -330,8 +713,22 @@ int atcmd_bt_mesh_device_scatternet(int argc, char *argv[])
 		return -1;
 	}
 
-	if (ble_mesh_device_scatternet_main(op)) {
-		BT_LOGE("Error: mesh device scatternet example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_mesh_dev_scatternet_task", ble_mesh_device_scatternet_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("mesh device scatternet example failed!\r\n");
 		return -1;
 	}
 
@@ -340,11 +737,22 @@ int atcmd_bt_mesh_device_scatternet(int argc, char *argv[])
 }
 
 int bt_a2dp_main(uint8_t role, uint8_t enable);
+static void bt_a2dp_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_a2dp_main(p->role, p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_a2dp(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "snk") == 0) {
@@ -361,8 +769,23 @@ int atcmd_bt_a2dp(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for a2dp example!\r\n", op);
 		return -1;
 	}
-	if (bt_a2dp_main(role, op)) {
-		BT_LOGE("Error: a2dp example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = role;
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_a2dp_task", bt_a2dp_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("a2dp example failed!\r\n");
 		return -1;
 	}
 
@@ -371,11 +794,22 @@ int atcmd_bt_a2dp(int argc, char *argv[])
 }
 
 int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable);
+static void bt_a2dp_scatternet_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_a2dp_scatternet_main(p->role, p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_a2dp_scatternet(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "snk") == 0) {
@@ -392,8 +826,23 @@ int atcmd_bt_a2dp_scatternet(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for a2dp scatternet example!\r\n", op);
 		return -1;
 	}
-	if (bt_a2dp_scatternet_main(role, op)) {
-		BT_LOGE("Error: a2dp scatternet example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = role;
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_a2dp_scatternet_task", bt_a2dp_scatternet_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("a2dp scatternet example failed!\r\n");
 		return -1;
 	}
 
@@ -402,19 +851,43 @@ int atcmd_bt_a2dp_scatternet(int argc, char *argv[])
 }
 
 int bt_a2dp_sink_pbp_source_main(uint8_t enable);
+static void bt_a2dp_pbp_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_a2dp_sink_pbp_source_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_a2dp_pbp(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)(str_to_int(argv[0]))) > 2) {
 		BT_LOGE("Error: wrong value (%d) for a2dp pbp example!\r\n", op);
 		return -1;
 	}
-
-	if (bt_a2dp_sink_pbp_source_main(op)) {
-		BT_LOGE("Error: a2dp pbp example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_a2dp_pbp_task", bt_a2dp_pbp_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("a2dp pbp example failed!\r\n");
 		return -1;
 	}
 
@@ -423,19 +896,43 @@ int atcmd_bt_a2dp_pbp(int argc, char *argv[])
 }
 
 int bt_a2dp_hfp_pbp_main(uint8_t enable);
+static void bt_a2dp_hfp_pbp_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_a2dp_hfp_pbp_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_a2dp_hfp_pbp(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)(str_to_int(argv[0]))) > 2) {
 		BT_LOGE("Error: wrong value (%d) for a2dp hfp pbp example!\r\n", op);
 		return -1;
 	}
-
-	if (bt_a2dp_hfp_pbp_main(op)) {
-		BT_LOGE("Error: a2dp hfp pbp example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_a2dp_hfp_pbp_task", bt_a2dp_hfp_pbp_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("a2dp hfp pbp example failed!\r\n");
 		return -1;
 	}
 
@@ -444,19 +941,43 @@ int atcmd_bt_a2dp_hfp_pbp(int argc, char *argv[])
 }
 
 int bt_a2dp_hfp_pbp_peripheral_main(uint8_t enable);
+static void bt_a2dp_hfp_pbp_peripheral_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_a2dp_hfp_pbp_peripheral_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_a2dp_hfp_pbp_peripheral(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)(str_to_int(argv[0]))) > 2) {
 		BT_LOGE("Error: wrong value (%d) for a2dp hfp pbp peripheral example!\r\n", op);
 		return -1;
 	}
-
-	if (bt_a2dp_hfp_pbp_peripheral_main(op)) {
-		BT_LOGE("Error: a2dp hfp pbp peripheral example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_a2dp_hfp_pbp_periph_task", bt_a2dp_hfp_pbp_peripheral_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("a2dp hfp pbp peripheral example failed!\r\n");
 		return -1;
 	}
 
@@ -465,12 +986,24 @@ int atcmd_bt_a2dp_hfp_pbp_peripheral(int argc, char *argv[])
 }
 
 int bt_a2dp_sink_tmap_main(uint8_t enable, uint8_t role);
+static void bt_a2dp_tmap_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_a2dp_sink_tmap_main(p->enable, p->role);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_a2dp_tmap(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role = 0;
 	uint8_t op = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
+
 	if (strcmp(argv[0], "ums") == 0) {
 		role = 0x04;
 		BT_LOGA("Set a2dp sink ums role\r\n");
@@ -488,8 +1021,23 @@ int atcmd_bt_a2dp_tmap(int argc, char *argv[])
 	}
 
 	if (role == 0x04 || role == 0x10) {
-		if (bt_a2dp_sink_tmap_main(op, role)) {
-			BT_LOGE("Error: a2dp sink tmap example %s failed!\r\n", action[op]);
+		if (!osif_sem_create(&sem_handle, 0, 1)) {
+			BT_LOGE("Error: create sem failed!\r\n");
+			return -1;
+		}
+		task_param.role = role;
+		task_param.enable = op;
+		task_param.sem_handle = sem_handle;
+		if (!osif_task_create(&task_handle, "bt_a2dp_tmap_task", bt_a2dp_tmap_task_entry,
+							  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+			BT_LOGE("Error: create task failed!\r\n");
+			osif_sem_delete(sem_handle);
+			return -1;
+		}
+		osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+		osif_sem_delete(sem_handle);
+		if (task_param.ret != 0) {
+			BT_LOGE("a2dp sink tmap example failed!\r\n");
 			return -1;
 		}
 		BT_LOGA("a2dp sink tmap example %s OK!\r\n", action[op]);
@@ -499,11 +1047,22 @@ int atcmd_bt_a2dp_tmap(int argc, char *argv[])
 }
 
 int bt_hfp_main(uint8_t role, uint8_t enable);
+static void bt_hfp_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_hfp_main(p->role, p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_hfp(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "hf") == 0) {
@@ -520,8 +1079,23 @@ int atcmd_bt_hfp(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for hfp example!\r\n", op);
 		return -1;
 	}
-	if (bt_hfp_main(role, op)) {
-		BT_LOGE("Error: hfp example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = role;
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_hfp_task", bt_hfp_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("hfp example failed!\r\n");
 		return -1;
 	}
 
@@ -530,11 +1104,22 @@ int atcmd_bt_hfp(int argc, char *argv[])
 }
 
 int bt_audio_a2dp_hfp_main(uint8_t role, uint8_t enable);
+static void bt_a2dp_hfp_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_audio_a2dp_hfp_main(p->role, p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_a2dp_hfp(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
 	uint8_t role;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "snk") == 0) {
@@ -551,8 +1136,23 @@ int atcmd_bt_a2dp_hfp(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for a2dp hfp example!\r\n", op);
 		return -1;
 	}
-	if (bt_audio_a2dp_hfp_main(role, op)) {
-		BT_LOGE("Error: a2dp hfp example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = role;
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_a2dp_hfp_task", bt_a2dp_hfp_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("a2dp hfp example failed!\r\n");
 		return -1;
 	}
 
@@ -561,11 +1161,22 @@ int atcmd_bt_a2dp_hfp(int argc, char *argv[])
 }
 
 int bt_spp_main(uint8_t role, uint8_t enable);
+static void bt_spp_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_spp_main(p->role, p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_spp(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "client") == 0) {
@@ -582,8 +1193,23 @@ int atcmd_bt_spp(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for spp!\r\n", op);
 		return -1;
 	}
-	if (bt_spp_main(role, op)) {
-		BT_LOGE("Error: spp example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = role;
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_spp_task", bt_spp_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("spp example failed!\r\n");
 		return -1;
 	}
 
@@ -592,18 +1218,43 @@ int atcmd_bt_spp(int argc, char *argv[])
 }
 
 int bt_rfc_main(uint8_t enable);
+static void bt_rfc_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_rfc_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_rfc(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 2) {
 		BT_LOGE("Error: wrong value (%d) for spp!\r\n", op);
 		return -1;
 	}
-	if (bt_rfc_main(op)) {
-		BT_LOGE("Error: rfc example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_rfc_task", bt_rfc_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("rfc example failed!\r\n");
 		return -1;
 	}
 
@@ -612,11 +1263,22 @@ int atcmd_bt_rfc(int argc, char *argv[])
 }
 
 int bt_hid_main(uint8_t role, uint8_t enable);
+static void bt_hid_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_hid_main(p->role, p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_hid(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "gamepad") == 0) {
@@ -633,8 +1295,23 @@ int atcmd_bt_hid(int argc, char *argv[])
 		BT_LOGE("Error: wrong value (%d) for hid example!\r\n", op);
 		return -1;
 	}
-	if (bt_hid_main(role, op)) {
-		BT_LOGE("Error: hid example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = role;
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_hid_task", bt_hid_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("hid example failed!\r\n");
 		return -1;
 	}
 
@@ -643,11 +1320,22 @@ int atcmd_bt_hid(int argc, char *argv[])
 }
 
 int bt_le_iso_main(uint8_t role, uint8_t enable);
+static void bt_le_iso_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_le_iso_main(p->role, p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_ble_iso(int argc, char **argv)
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "bis") == 0) {
@@ -684,8 +1372,23 @@ int atcmd_ble_iso(int argc, char **argv)
 		BT_LOGE("Error: wrong value (%d) for iso example!\r\n", op);
 		return -1;
 	}
-	if (bt_le_iso_main(role, op)) {
-		BT_LOGE("Error: iso example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = role;
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_le_iso_task", bt_le_iso_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("iso example failed!\r\n");
 		return -1;
 	}
 
@@ -694,12 +1397,23 @@ int atcmd_ble_iso(int argc, char **argv)
 }
 
 int bt_le_audio_generic_demo_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
+static void bt_le_audio_generic_demo_task_entry(void *param)
+{
+	bt_atcmd_audio_demo_task_param_t *p = (bt_atcmd_audio_demo_task_param_t *)param;
+	p->ret = bt_le_audio_generic_demo_main(p->role, p->enable, p->channel);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_le_audio_generic_demo(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
 	uint32_t channel = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_audio_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "acceptor") == 0) {
@@ -740,8 +1454,24 @@ int atcmd_bt_le_audio_generic_demo(int argc, char *argv[])
 			return -1;
 		}
 	}
-	if (bt_le_audio_generic_demo_main(role, op, channel)) {
-		BT_LOGE("Error: cap example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = role;
+	task_param.enable = op;
+	task_param.channel = channel;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_cap_demo_task", bt_le_audio_generic_demo_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("cap example failed!\r\n");
 		return -1;
 	}
 
@@ -750,12 +1480,23 @@ int atcmd_bt_le_audio_generic_demo(int argc, char *argv[])
 }
 
 int bt_pbp_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
+static void bt_pbp_task_entry(void *param)
+{
+	bt_atcmd_audio_demo_task_param_t *p = (bt_atcmd_audio_demo_task_param_t *)param;
+	p->ret = bt_pbp_main(p->role, p->enable, p->channel);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_pbp(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
 	uint32_t channel = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_audio_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "source") == 0) {
@@ -797,9 +1538,24 @@ int atcmd_bt_pbp(int argc, char *argv[])
 			return -1;
 		}
 	}
-
-	if (bt_pbp_main(role, op, channel)) {
-		BT_LOGE("Error: pbp example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = role;
+	task_param.enable = op;
+	task_param.channel = channel;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_pbp_task", bt_pbp_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("pbp example failed!\r\n");
 		return -1;
 	}
 
@@ -808,12 +1564,23 @@ int atcmd_bt_pbp(int argc, char *argv[])
 }
 
 int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
+static void bt_tmap_task_entry(void *param)
+{
+	bt_atcmd_audio_demo_task_param_t *p = (bt_atcmd_audio_demo_task_param_t *)param;
+	p->ret = bt_tmap_main(p->role, p->enable, p->channel);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_tmap(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t role;
 	uint8_t op;
 	uint32_t channel = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_audio_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "cg") == 0) {
@@ -866,8 +1633,24 @@ int atcmd_bt_tmap(int argc, char *argv[])
 			return -1;
 		}
 	}
-	if (bt_tmap_main(role, op, channel)) {
-		BT_LOGE("Error: tmap example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = role;
+	task_param.enable = op;
+	task_param.channel = channel;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_tmap_task", bt_tmap_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("tmap example failed!\r\n");
 		return -1;
 	}
 
@@ -876,11 +1659,22 @@ int atcmd_bt_tmap(int argc, char *argv[])
 }
 
 int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel);
+static void bt_gmap_task_entry(void *param)
+{
+	bt_atcmd_audio_demo_task_param_t *p = (bt_atcmd_audio_demo_task_param_t *)param;
+	p->ret = bt_gmap_main(p->role, p->enable, p->channel);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_gmap(int argc, char *argv[])
 {
 	uint8_t role;
 	uint8_t op;
 	uint32_t channel = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_audio_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (strcmp(argv[0], "ugg") == 0) {
@@ -925,8 +1719,24 @@ int atcmd_bt_gmap(int argc, char *argv[])
 			return -1;
 		}
 	}
-	if (bt_gmap_main(role, op, channel)) {
-		BT_LOGE("Error: gmap example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = role;
+	task_param.enable = op;
+	task_param.channel = channel;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_gmap_task", bt_gmap_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("gmap example failed!\r\n");
 		return -1;
 	}
 
@@ -935,11 +1745,22 @@ int atcmd_bt_gmap(int argc, char *argv[])
 }
 
 int le_audio_generic_demo_peripheral(uint8_t enable, uint32_t sound_channel);
+static void le_audio_generic_demo_peripheral_task_entry(void *param)
+{
+	bt_atcmd_audio_demo_task_param_t *p = (bt_atcmd_audio_demo_task_param_t *)param;
+	p->ret = le_audio_generic_demo_peripheral(p->enable, p->channel);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_le_audio_generic_demo_peripheral(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
 	uint32_t channel = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_audio_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 2) {
@@ -963,8 +1784,24 @@ int atcmd_bt_le_audio_generic_demo_peripheral(int argc, char *argv[])
 		BT_LOGE("Error: cap example only support left, right and stereo channel!\r\n");
 		return -1;
 	}
-	if (le_audio_generic_demo_peripheral(op, channel)) {
-		BT_LOGE("Error: le_audio_generic_demo_peripheral example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.role = 0;
+	task_param.enable = op;
+	task_param.channel = channel;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_le_audio_periph_task", le_audio_generic_demo_peripheral_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("cap acceptor peripheral example failed!\r\n");
 		return -1;
 	}
 
@@ -974,21 +1811,45 @@ int atcmd_bt_le_audio_generic_demo_peripheral(int argc, char *argv[])
 
 int atcmd_bt_pts_cmd(int argc, char *argv[]);
 int bt_pts_main(uint8_t enable);
+static void bt_pts_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_pts_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_pts(int argc, char *argv[])
 {
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 
 	if (!strcmp("adv_data", argv[0])) {
 		atcmd_bt_pts_cmd(argc, argv);
 	} else if ((uint8_t)str_to_int(argv[0]) == 1 || (uint8_t)str_to_int(argv[0]) == 0) {
 		op = (uint8_t)str_to_int(argv[0]) > 2 ? 2 : (uint8_t)str_to_int(argv[0]);
-		if (bt_pts_main(op)) {
-			BT_LOGE("Error: pts example %s failed!\r\n", action[op]);
+		if (!osif_sem_create(&sem_handle, 0, 1)) {
+			BT_LOGE("Error: create sem failed!\r\n");
 			return -1;
-		} else {
-			BT_LOGA("pts example %s OK!\r\n", action[op]);
 		}
+		task_param.enable = op;
+		task_param.sem_handle = sem_handle;
+		if (!osif_task_create(&task_handle, "bt_pts_task", bt_pts_task_entry,
+							  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+			BT_LOGE("Error: create task failed!\r\n");
+			osif_sem_delete(sem_handle);
+			return -1;
+		}
+		osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+		osif_sem_delete(sem_handle);
+		if (task_param.ret != 0) {
+			BT_LOGE("pts example failed!\r\n");
+			return -1;
+		}
+		BT_LOGA("pts example %s OK!\r\n", action[op]);
 	} else {
 		BT_LOGE("Error: wrong pts atcmd!\r\n");
 	}
@@ -997,18 +1858,43 @@ int atcmd_bt_pts(int argc, char *argv[])
 
 int ble_transfer_module_main(uint8_t enable);
 int atcmd_bt_transfer_module_cmd(int argc, char *argv[]);
+static void ble_transfer_module_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_transfer_module_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_transfer_module(int argc, char *argv[])
 {
 	int ret = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
+
 	if ((strcmp("0", argv[0]) == 0) || (strcmp("1", argv[0]) == 0)) {
 		uint8_t op = (uint8_t)str_to_int(argv[0]);
 		if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 			BT_LOGE("Error: wrong parameter (%d) for transfer module example!\r\n", op);
 			return BT_AT_ERR_PARAM_INVALID;
 		}
-
-		if (ble_transfer_module_main(op)) {
-			BT_LOGE("Error: transfer module example %s failed!\r\n", (op == 1) ? "enable" : "disable");
+		if (!osif_sem_create(&sem_handle, 0, 1)) {
+			BT_LOGE("Error: create sem failed!\r\n");
+			return BT_AT_FAIL;
+		}
+		task_param.enable = op;
+		task_param.sem_handle = sem_handle;
+		if (!osif_task_create(&task_handle, "bt_transfer_module_task", ble_transfer_module_task_entry,
+							  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+			BT_LOGE("Error: create task failed!\r\n");
+			osif_sem_delete(sem_handle);
+			return BT_AT_FAIL;
+		}
+		osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+		osif_sem_delete(sem_handle);
+		if (task_param.ret != 0) {
+			BT_LOGE("transfer module example failed!\r\n");
 			return BT_AT_FAIL;
 		}
 
@@ -1020,10 +1906,21 @@ int atcmd_bt_transfer_module(int argc, char *argv[])
 }
 
 int ble_wifimate_device_main(uint8_t enable, uint16_t timeout);
+static void ble_wifimate_device_task_entry(void *param)
+{
+	bt_atcmd_wifimate_demo_task_param_t *p = (bt_atcmd_wifimate_demo_task_param_t *)param;
+	p->ret = ble_wifimate_device_main(p->enable, p->timeout);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_wifimate_device(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_wifimate_demo_task_param_t task_param = {0};
 	char *action[] = {"disable", "enable"};
 	uint16_t timeout = 60;
 
@@ -1041,9 +1938,23 @@ int atcmd_bt_wifimate_device(int argc, char *argv[])
 		timeout = (uint16_t)str_to_int(argv[1]);
 		BT_LOGA("Ble wifimate timeout=%d\r\n", timeout);
 	}
-
-	if (ble_wifimate_device_main(op, timeout)) {
-		BT_LOGE("Error: ble wifimate device example %s failed!\r\n", action[op]);
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return BT_AT_FAIL;
+	}
+	task_param.enable = op;
+	task_param.timeout = timeout;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_wifimate_dev_task", ble_wifimate_device_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return BT_AT_FAIL;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("Ble wifimate device example failed!\r\n");
 		return BT_AT_FAIL;
 	}
 
@@ -1053,18 +1964,43 @@ int atcmd_bt_wifimate_device(int argc, char *argv[])
 
 int ble_wifimate_configurator_main(uint8_t enable);
 int atcmd_bt_wifimate_configurator_cmd(int argc, char *argv[]);
+static void ble_wifimate_configurator_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = ble_wifimate_configurator_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_wifimate_configurator(int argc, char *argv[])
 {
 	int ret = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
+
 	if ((strcmp("0", argv[0]) == 0) || (strcmp("1", argv[0]) == 0)) {
 		uint8_t op = (uint8_t)str_to_int(argv[0]);
 		if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 			BT_LOGE("Error: wrong parameter (%d) for ble wifimate configurator example!\r\n", op);
 			return BT_AT_ERR_PARAM_INVALID;
 		}
-
-		if (ble_wifimate_configurator_main(op)) {
-			BT_LOGE("Error: ble wifimate configurator example %s failed!\r\n", (op == 1) ? "enable" : "disable");
+		if (!osif_sem_create(&sem_handle, 0, 1)) {
+			BT_LOGE("Error: create sem failed!\r\n");
+			return BT_AT_FAIL;
+		}
+		task_param.enable = op;
+		task_param.sem_handle = sem_handle;
+		if (!osif_task_create(&task_handle, "bt_wifimate_cfg_task", ble_wifimate_configurator_task_entry,
+							  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+			BT_LOGE("Error: create task failed!\r\n");
+			osif_sem_delete(sem_handle);
+			return BT_AT_FAIL;
+		}
+		osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+		osif_sem_delete(sem_handle);
+		if (task_param.ret != 0) {
+			BT_LOGE("ble wifimate configurator example failed!\r\n");
 			return BT_AT_FAIL;
 		}
 
@@ -1078,17 +2014,44 @@ int atcmd_bt_wifimate_configurator(int argc, char *argv[])
 #if defined(CONFIG_BT_FUZZ_TEST) && CONFIG_BT_FUZZ_TEST
 extern int bt_fuzz_test_main(uint8_t enable, uint8_t role);
 extern int atcmd_bt_fuzz_test_cmd(int argc, char *argv[]);
+static void bt_fuzz_test_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = bt_fuzz_test_main(p->enable, p->role);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
 int atcmd_bt_fuzz_test(int argc, char *argv[])
 {
 	int ret = 0;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
+
 	if ((strcmp("0", argv[0]) == 0) || (strcmp("1", argv[0]) == 0)) {
 		uint8_t op = (uint8_t)str_to_int(argv[0]);
 		if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 			BT_LOGE("Error: wrong parameter (%d) for bt fuzz test example!\r\n", op);
 			return BT_AT_ERR_PARAM_INVALID;
 		}
-		if (bt_fuzz_test_main(op, 1)) {
-			BT_LOGE("Error: bt fuzz test example %s failed!\r\n", (op == 1) ? "enable" : "disable");
+		if (!osif_sem_create(&sem_handle, 0, 1)) {
+			BT_LOGE("Error: create sem failed!\r\n");
+			return BT_AT_FAIL;
+		}
+		task_param.role = 1;
+		task_param.enable = op;
+		task_param.sem_handle = sem_handle;
+		if (!osif_task_create(&task_handle, "bt_fuzz_test_task", bt_fuzz_test_task_entry,
+							  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+			BT_LOGE("Error: create task failed!\r\n");
+			osif_sem_delete(sem_handle);
+			return BT_AT_FAIL;
+		}
+		osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+		osif_sem_delete(sem_handle);
+		if (task_param.ret != 0) {
+			BT_LOGE("bt fuzz test example failed!\r\n");
 			return BT_AT_FAIL;
 		}
 

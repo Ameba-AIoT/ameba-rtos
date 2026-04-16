@@ -28,7 +28,6 @@
 #endif
 
 #ifdef CONFIG_WLAN
-extern struct table  ip_table;
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
 extern int cmd_wps(int argc, char **argv);
 #endif
@@ -47,6 +46,9 @@ extern void ipnat_dump(void);
 #endif
 
 extern int wifi_set_ips_internal(u8 enable);
+#if defined(CONFIG_IEEE80211R) && (WIFI_LOGO_CERTIFICATION == 1)
+extern int rtw_ft_reassoc_dbg(u16 argc, char **argv);
+#endif
 extern void wifi_set_dbg_dp_log(char *buf);
 
 #if defined(CONFIG_LWIP_ETHERNET)
@@ -60,6 +62,7 @@ static void init_wifi_struct(void)
 {
 	memset(wifi.ssid.val, 0, sizeof(wifi.ssid.val));
 	memset(wifi.bssid.octet, 0, ETH_ALEN);
+	memset(wifi.prev_bssid.octet, 0, ETH_ALEN);
 	memset(password, 0, sizeof(password));
 	wifi.ssid.len = 0;
 	wifi.password = NULL;
@@ -229,7 +232,7 @@ static void at_wlconn_help(void)
 	RTK_LOGI(NOTAG, "\t<ssid>:\tA string SSID name\r\n");
 	RTK_LOGI(NOTAG, "\t<bssid>:\tA hex-number string with colons, e.g. 1a:2b:3c:4d:5e:6f\r\n");
 	RTK_LOGI(NOTAG, "\t<pw>:\tWPA or WPA2 with length 8~64, WEP with length 5 or 13\r\n");
-	RTK_LOGI(NOTAG, "\t<key_id>:\tFor WEP security, must be 0~3, if absent, it is 0\r\n");
+	RTK_LOGI(NOTAG, "\t<key_id>:\tFor WEP security, must be 0~3\r\n");
 }
 
 /****************************************************************
@@ -697,6 +700,7 @@ void at_wlstartap(u16 argc, char **argv)
 #ifdef CONFIG_LWIP_LAYER
 	u32 ip_addr, netmask, gw;
 	struct ip_addr start_ip, end_ip;
+	int pool_specified = 0;
 #endif
 	int timeout = 20;
 	struct rtw_wifi_setting *setting = NULL;
@@ -810,7 +814,7 @@ void at_wlstartap(u16 argc, char **argv)
 				goto end;
 			}
 
-			dhcps_set_addr_pool(1, &start_ip, &end_ip);
+			pool_specified = 1;
 			i += 1;
 		} else if (0 == strcmp("gw", argv[i])) {
 			if (argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
@@ -889,7 +893,7 @@ void at_wlstartap(u16 argc, char **argv)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	dhcps_deinit();
+	dhcps_deinit(pnetif_ap);
 	ip_addr = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	netmask = CONCAT_TO_UINT32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
@@ -945,6 +949,10 @@ void at_wlstartap(u16 argc, char **argv)
 	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
 	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
 	dhcps_init(pnetif_ap);
+	if (pool_specified) {
+		dhcps_set_addr_pool(pnetif_ap, 1, &start_ip, &end_ip);
+	}
+	dhcps_start(pnetif_ap);
 #endif
 
 end:
@@ -953,6 +961,10 @@ end:
 	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
+#ifdef CONFIG_LWIP_LAYER
+		dhcps_deinit(pnetif_ap);
+#endif
+		wifi_stop_ap();
 		if (error_no >= RTW_AT_ERR_REQUIRED_PARAM_MISS && error_no <= RTW_AT_ERR_PARAM_NUM_ERR) {
 			at_wlstartap_help();
 		}
@@ -973,6 +985,9 @@ void at_wlstopap(u16 argc, char **argv)
 	UNUSED(argc);
 	UNUSED(argv);
 
+#ifdef CONFIG_LWIP_LAYER
+	dhcps_deinit(pnetif_ap);
+#endif
 	wifi_stop_ap();
 	at_printf(ATCMD_OK_END_STR);
 }
@@ -1006,7 +1021,7 @@ void at_wlstate(u16 argc, char **argv)
 	}
 
 	RTK_LOGI(NOTAG, "[+WLSTATE]: _AT_WLAN_INFO_\r\n");
-	for (i = 0; i < NET_IF_NUM; i++) {
+	for (i = 0; i < WLAN_NET_IF_NUM; i++) {
 		if (wifi_is_running(i)) {
 #ifdef CONFIG_LWIP_LAYER
 			mac = LwIP_GetMAC(i);
@@ -1044,7 +1059,7 @@ void at_wlstate(u16 argc, char **argv)
 					for (client_number = 0; client_number < client_info.count; client_number++) {
 						at_printf("Client %d:\r\n", client_number + 1);
 						u8 *mac = client_info.mac_list[client_number].octet;
-						u8 ip_addr4 = dhcps_search_client_ip(mac);
+						u8 ip_addr4 = dhcps_search_client_ip(pnetif_ap, mac);
 						if (ip_addr4) {
 							at_printf("IPv4 address: %d.%d.%d.%d, ", gw[0], gw[1], gw[2], ip_addr4);
 							at_printf("MAC address: %02x:%02x:%02x:%02x:%02x:%02x, ", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
@@ -1290,6 +1305,14 @@ void at_wldbg(u16 argc, char **argv)
 		goto end;
 	}
 
+#ifdef CONFIG_WHC_HOST
+#if defined(CONFIG_IEEE80211R) && (WIFI_LOGO_CERTIFICATION == 1)
+	if (!strcmp("sta_reassoc", argv[1])) {
+		ret = rtw_ft_reassoc_dbg(argc - 2, &argv[2]);
+		goto end;
+	}
+#endif
+#endif
 	// Construct command string
 	u32 pos = 0;
 	for (int i = 1; i < argc && pos < sizeof(buf) - 1; i++) {

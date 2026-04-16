@@ -2092,7 +2092,7 @@ void usbh_composite_uac_start_play(void)
 	pipe->xfer_state = USBH_EP_XFER_START;
 	usbh_notify_composite_class_state_change(uac->driver->host, pipe->pipe_num, USBH_COMPOSITE_UAC_EVENT);
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC start %d\n", uac->ctrl_state);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "UAC start %d\n", uac->ctrl_state);
 }
 
 /**
@@ -2111,7 +2111,7 @@ void usbh_composite_uac_stop_play(void)
 	usbh_composite_uac_reset_test_cnt();
 #endif
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC stop\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "UAC stop\n");
 }
 
 int usbh_composite_uac_set_volume(u8 volume)

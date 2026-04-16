@@ -182,6 +182,7 @@ typedef struct {
 
 	__IO u32 timeout_cnt;
 	__IO u32 overwrite_cnt;
+	__IO u32 append_overwrite_cnt;
 #endif
 
 	__IO u16 written;        /* Part write data length */

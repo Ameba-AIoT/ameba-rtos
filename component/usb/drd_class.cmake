@@ -9,6 +9,10 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #----------------------------------------#
 # Component public part, user config begin
 
+# You may use if-else condition to set or update predefined variable above
+
+#FIXME: miss role for public_libraries
+
 # Component public part, user config end
 #----------------------------------------#
 
@@ -35,18 +39,17 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC))
-    ameba_list_append(private_sources
-        ameba_ota.c
-    )
-endif()
+include(device/class.cmake)
+
+include(host/class.cmake)
+
 # Component private part, user config end
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(misc
+ameba_add_internal_library(usb_drd_class
     p_SOURCES
         ${private_sources}
     p_INCLUDES

@@ -10,125 +10,8 @@ static const char *const TAG = "LPCNP";
 u32 NPSleepTick = 0;
 u32 np_sleep_type;
 u32 np_sleep_timeout = 0xffffffff;
-u32 np_flash_dummy = 0;
-u32 np_flash_phase_shift_idx = 0;
-u32 np_flash_FLASH_rd_sample_phase_cal = 0;
-u32 np_flash_FLASH_rd_sample_phase = 0;
 //u32 mem_type = 0;
 u32 np_dslp_en = 0;
-
-SRAM_ONLY_TEXT_SECTION
-u32 FLASH_CalibrationNewCmd(u32 NewStatus)
-{
-	u32 temp = 0;
-	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
-
-	/* set PLL 600M phase shift enable */
-	temp = PLL->PLL_PS;
-	if (NewStatus == ENABLE) {
-		temp |= PLL_BIT_EN_CK600M_PS;
-	} else {
-		temp &= ~PLL_BIT_EN_CK600M_PS;
-	}
-	PLL->PLL_PS = temp;
-
-	/* set phase calibration enable */
-	temp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL);
-
-	if (NewStatus == ENABLE) {
-		temp |= HSYS_BIT_FLASH_CAL_EN;
-	} else {
-		temp &= ~HSYS_BIT_FLASH_CAL_EN;
-	}
-
-	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL, temp);
-
-	return TRUE;
-}
-
-SRAM_ONLY_TEXT_SECTION
-void FLASH_ClockSwitch(u32 Source, u32 Protection)
-{
-	/* To avoid gcc warnings */
-	(void) Source;
-	(void) Protection;
-	u32 Temp = 0;
-	u32 timeout = 20;
-	SPIC_TypeDef *spi_flash = SPIC;
-
-	Temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0);
-	Temp &= (LSYS_MASK_CKSL_SPIC);
-
-	if (Source == Temp) {
-		return;
-	}
-
-	if (Protection) {
-		asm volatile("cpsid i" : : : "memory");
-		//asm volatile ("cpsid f" : : : "memory");
-		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
-	}
-
-	if (Source == BIT_LSYS_CKSL_SPIC_XTAL) {
-		/* 1. clock source switch to XTAL */
-		Temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0);
-		Temp &= ~(LSYS_MASK_CKSL_SPIC);
-		Temp |= LSYS_CKSL_SPIC(Source);
-		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0, Temp);
-		DelayUs(10);
-
-		np_flash_dummy = GET_IN_PHYSICAL_CYC(spi_flash->AUTO_LENGTH);
-
-		/* set phase calibration disable */
-		FLASH_CalibrationNewCmd(DISABLE);
-
-		/* user read need to switch to onebit mode */
-		flash_init_para.phase_shift_idx = 0;
-		flash_init_para.FLASH_rd_sample_phase = SPIC_LOWSPEED_SAMPLE_PHASE;
-
-		spi_flash->AUTO_LENGTH &= (~MASK_IN_PHYSICAL_CYC);
-
-	} else  if (Source == BIT_LSYS_CKSL_SPIC_PLL) {
-
-		FLASH_CalibrationNewCmd(ENABLE);
-		Temp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL);
-		Temp |= (HSYS_BIT_FLASH_PS_DIV_EN | HSYS_BIT_FLASH_DIV_EN); /* enable clock ps div & enable clock div*/
-		HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL, Temp);
-
-		while (timeout > 0) {
-			timeout--;
-			Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_HSYS_SPIC_CTRL);
-			if ((Temp & HSYS_BIT_FLASH_PS_DIV_RDY) && (Temp & HSYS_BIT_FLASH_DIV_RDY)) {
-				break;
-			}
-		}
-
-		/* 2. clock source switch */
-		Temp =  HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0);
-		Temp &= ~(LSYS_MASK_CKSL_SPIC);
-		Temp |= LSYS_CKSL_SPIC(Source);
-		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0, Temp);
-		DelayUs(10);
-
-		/* 3. SPIC Dummy to high speed dummy */
-		Temp = spi_flash->AUTO_LENGTH;
-		Temp &= (~MASK_IN_PHYSICAL_CYC);
-		Temp |= IN_PHYSICAL_CYC(np_flash_dummy);
-		spi_flash->AUTO_LENGTH = Temp;
-
-		/* 4. refill flash para for user mode */
-		flash_init_para.phase_shift_idx = np_flash_phase_shift_idx;
-		flash_init_para.FLASH_rd_sample_phase = np_flash_FLASH_rd_sample_phase;
-		flash_init_para.FLASH_rd_sample_phase_cal = np_flash_FLASH_rd_sample_phase_cal;
-
-	}
-
-	if (Protection) {
-		SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
-		asm volatile("cpsie i" : : : "memory");
-		//asm volatile ("cpsie f" : : : "memory");
-	}
-}
 
 _OPTIMIZE_NONE_
 void np_set_ddr_sre(void)
@@ -414,11 +297,6 @@ void np_power_gate_ctrl(void)
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0, Rtemp);
 		DelayUs(10);
 	} else {
-		/* 0. backup flash para */
-		np_flash_phase_shift_idx = flash_init_para.phase_shift_idx;
-		np_flash_FLASH_rd_sample_phase_cal = flash_init_para.FLASH_rd_sample_phase_cal;
-		np_flash_FLASH_rd_sample_phase = flash_init_para.FLASH_rd_sample_phase;
-
 		/* switch clock to XTAL, disable dummy cycle and diable cal */
 		FLASH_ClockSwitch(BIT_LSYS_CKSL_SPIC_XTAL, 1);
 	}
@@ -700,11 +578,6 @@ void np_clk_gate_ctrl(void)
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0, Rtemp);
 		DelayUs(10);
 	} else {
-		/* 0. backup flash para */
-		np_flash_phase_shift_idx = flash_init_para.phase_shift_idx;
-		np_flash_FLASH_rd_sample_phase_cal = flash_init_para.FLASH_rd_sample_phase_cal;
-		np_flash_FLASH_rd_sample_phase = flash_init_para.FLASH_rd_sample_phase;
-
 		/* switch clock to XTAL, disable dummy cycle and diable cal */
 		FLASH_ClockSwitch(BIT_LSYS_CKSL_SPIC_XTAL, 1);
 	}

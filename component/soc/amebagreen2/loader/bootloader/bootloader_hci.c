@@ -14,7 +14,8 @@
 #endif
 
 static const char *const TAG = "BOOT";
-extern IMAGE_HEADER EmptyImgHdr;
+extern IMAGE_HEADER EmptyXipImgHdr;
+extern IMAGE_HEADER EmptyPsramImgHdr;
 
 static void _Init_SDIO_By_PinGrp(void)
 {
@@ -50,60 +51,53 @@ void Boot_SDIO_Pinmux_init(void)
 }
 
 #if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
-void Boot_Fullmac_ImgInfo_Set(SubImgInfo_TypeDef *SubImgInfo, IMAGE_HEADER *ImgHdr)
+static void Boot_Fullmac_SetImgInfo(SubImgInfo_TypeDef *SubImgInfo, IMAGE_HEADER *ImgHdr, const char *Label)
 {
-	if (ImgHdr != &EmptyImgHdr) {
+	if (ImgHdr->image_size > 0) {
 		SubImgInfo->Addr = ImgHdr->image_addr - IMAGE_HEADER_LEN;
 		SubImgInfo->Len = ImgHdr->image_size + IMAGE_HEADER_LEN;
+		assert_param(SubImgInfo->Addr == (u32)ImgHdr);
 	} else {
-		SubImgInfo->Addr = (u32)&EmptyImgHdr;
+		SubImgInfo->Addr = (u32)ImgHdr;
 		SubImgInfo->Len = IMAGE_HEADER_LEN;
 	}
+	RTK_LOGI(TAG, "%s[%08lx:%lx]\n", Label, ImgHdr->image_addr, ImgHdr->image_size);
 }
 
-void Boot_Fullmac_Secure_Check(u8 ImgCnt, u8 FlashValid, u8 PsramValid)
+static IMAGE_HEADER *Boot_Fullmac_ResolveImgHdr(IMAGE_HEADER *EmptyHdr, u8 Valid, u32 RealAddr)
+{
+	if (Valid && (EmptyHdr->image_addr == 0)) {
+		return (IMAGE_HEADER *)RealAddr;
+	}
+	assert_param((EmptyHdr->image_addr != 0) && (EmptyHdr->image_size == 0));
+	return EmptyHdr;
+}
+
+void Boot_Fullmac_Secure_Check(u8 FlashValid, u8 PsramValid)
 {
 	SubImgInfo_TypeDef SubImgInfo[3];
+	const char *ApLabel[] = {"AP XIP IMG", "AP SRAM", "AP PSRAM"};
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
 	Manifest_TypeDef *Manifest;
 	IMAGE_HEADER *ImgHdr;
 
-	char *ApLabel[] = {"AP XIP IMG", "AP SRAM", "AP PSRAM"};
-	u8 Cnt = sizeof(ApLabel) / sizeof(char *);
+	assert_param(sizeof(ApLabel) / sizeof(ApLabel[0]) == sizeof(SubImgInfo) / sizeof(SubImgInfo[0]));
 
-	if (ImgCnt == 1) {
-		// Trandionly fullmac download, put manifest after sram_2.bin
-		ImgHdr = (IMAGE_HEADER *)((u32)__image2_entry_func__ - IMAGE_HEADER_LEN);
-		Boot_Fullmac_ImgInfo_Set(&SubImgInfo[0], ImgHdr);
-		assert_param(SubImgInfo[0].Addr == (u32)ImgHdr);
-		Manifest = (Manifest_TypeDef *)(SubImgInfo[0].Addr + SubImgInfo[0].Len);
-		Cnt = ImgCnt;
-	} else {
-		Boot_Fullmac_ImgInfo_Set(&SubImgInfo[0], &EmptyImgHdr);
-		ImgHdr = (IMAGE_HEADER *)((u32)__image2_entry_func__ - IMAGE_HEADER_LEN);
-		Boot_Fullmac_ImgInfo_Set(&SubImgInfo[1], ImgHdr);
-		Boot_Fullmac_ImgInfo_Set(&SubImgInfo[2], &EmptyImgHdr);
+	/* for sram recycle, manifest is locate at 0x3007F000. */
+	Manifest = (Manifest_TypeDef *)0x3007F000;
 
-		// for sram recycle, manifest is locate at 0x3007F000.
-		Manifest = (Manifest_TypeDef *)0x3007F000;
-		assert_param(SubImgInfo[1].Addr == (u32)ImgHdr);
+	ImgHdr = Boot_Fullmac_ResolveImgHdr(&EmptyXipImgHdr, FlashValid, (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN);
+	Boot_Fullmac_SetImgInfo(&SubImgInfo[0], ImgHdr, ApLabel[0]);
 
-		if (FlashValid) {
-			ImgHdr = (IMAGE_HEADER *)((u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN);
-			Boot_Fullmac_ImgInfo_Set(&SubImgInfo[0], ImgHdr);
-			Cnt = ImgCnt;
-		}
-		if (PsramValid) {
-			ImgHdr = (IMAGE_HEADER *)((u32)__km4tz_bd_psram_start__);
-			Boot_Fullmac_ImgInfo_Set(&SubImgInfo[2], ImgHdr);
-			Cnt = ImgCnt;
-		}
-	}
+	ImgHdr = (IMAGE_HEADER *)((u32)__image2_entry_func__ - IMAGE_HEADER_LEN);
+	Boot_Fullmac_SetImgInfo(&SubImgInfo[1], ImgHdr, ApLabel[1]);
 
-	assert_param(Cnt <= sizeof(SubImgInfo) / sizeof(SubImgInfo_TypeDef));
+	ImgHdr = Boot_Fullmac_ResolveImgHdr(&EmptyPsramImgHdr, PsramValid, (u32)__km4tz_bd_psram_start__);
+	Boot_Fullmac_SetImgInfo(&SubImgInfo[2], ImgHdr, ApLabel[2]);
+
 	DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
 
-	FIH_CALL(BOOT_Extract_SignatureCheck, fih_rc, Manifest, &SubImgInfo[0], Cnt);
+	FIH_CALL(BOOT_Extract_SignatureCheck, fih_rc, Manifest, &SubImgInfo[0], sizeof(SubImgInfo) / sizeof(SubImgInfo[0]));
 	if (FIH_EQ(fih_rc, FIH_SUCCESS)) {
 		return;
 	}
@@ -130,7 +124,7 @@ static void Boot_ResetSystem(void)
 }
 
 /** Note:
- *  1. HCI_WriteImage receive empty EmptyImgHdr if addr is 0xFFFFFFFF and size is 0x20
+ *  1. HCI_WriteImage receive empty EmptyImgHdr if size is 0x20
  *  2. Manifest is download at 0x3007F000
  */
 void Boot_Fullmac_ImgDownload(void)
@@ -163,7 +157,6 @@ void Boot_Fullmac_LoadIMGAll(void)
 		Boot_Fullmac_LoadImage();
 	} else {
 		switch (mem_type) {
-#ifndef CONFIG_WHC_IN_SINGLE_DIE
 		case MCM_TYPE_NOR_FLASH:
 			/* rom code init flash only when BOOT_FROM_FLASH */
 			void BOOT_ROM_InitFlash(void);
@@ -172,20 +165,19 @@ void Boot_Fullmac_LoadIMGAll(void)
 
 			Boot_Fullmac_ImgDownload();
 			Boot_Fullmac_XipEn();
-			Boot_Fullmac_Secure_Check(3, TRUE, FALSE);
+			Boot_Fullmac_Secure_Check(TRUE, FALSE);
 			break;
 		case MCM_TYPE_PSRAM:
 			/* Ensure BOOT_PSRAM_Init() in called in Bootloader */
 			Boot_Fullmac_ImgDownload();
-			Boot_Fullmac_Secure_Check(3, FALSE, TRUE);
+			Boot_Fullmac_Secure_Check(FALSE, TRUE);
 			break;
-#endif
 		default:
 		case MCM_SINGLE_DIE:
-			Boot_Fullmac_Secure_Check(1, FALSE, FALSE);
+			Boot_Fullmac_ImgDownload();
+			Boot_Fullmac_Secure_Check(FALSE, FALSE);
 			break;
 		}
 	}
 }
 #endif
-

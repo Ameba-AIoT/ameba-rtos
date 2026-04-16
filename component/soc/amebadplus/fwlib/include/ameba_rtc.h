@@ -586,5 +586,3 @@ _LONG_CALL_ u32 RTC_SmoothCalibConfig(u32 CalibSign, u32 Value, u32 CalibPeriod,
 /* MANUAL_GEN_END */
 
 #endif
-
-

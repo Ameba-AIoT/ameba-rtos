@@ -567,7 +567,7 @@ int fatfs_ummount(int interface)
 	return ret;
 }
 
-vfs_opt fatfs_drv = {
+const vfs_opt fatfs_drv = {
 #if !FF_FS_READONLY
 	.write = fatfs_write,
 	.fflush = fatfs_fflush,
@@ -595,5 +595,6 @@ vfs_opt fatfs_drv = {
 	.mount = fatfs_mount,
 	.unmount = fatfs_ummount,
 	.get_interface = fatfs_get_interface,
-	.TAG	= "fatfs"
+	.TAG	= "fatfs",
+	.vfs_type = VFS_FATFS
 };

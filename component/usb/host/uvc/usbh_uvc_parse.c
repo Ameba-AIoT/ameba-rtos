@@ -36,7 +36,6 @@ static usbh_uvc_entity_t *usbh_uvc_entity_t_alloc(u32 extrabytes)
 
 	entity = (usbh_uvc_entity_t *) usb_os_malloc(sizeof(usbh_uvc_entity_t) + extrabytes);
 	if (entity == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc entity fail\n");
 		return NULL;
 	}
 
@@ -124,7 +123,7 @@ static u8 usbh_uvc_parse_entity(u8 *desc)
 		break;
 
 	default:
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong entity type");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wrong entity t");
 		break;
 	}
 
@@ -152,6 +151,11 @@ static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 
 	desc = itf_data->raw_data;
 	//save the first interface number
+	if (vc_intf == NULL) {
+		//RTK_LOGS(TAG, RTK_LOG_ERROR, "vc_intf null %x\n", vc_intf);
+		return HAL_OK;
+	}
+
 	vc_intf->p = desc;
 	vc_intf->bInterfaceNumber = desc[2];
 
@@ -165,12 +169,16 @@ static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 		desc += len;
 		itf_total_len += len;
 
+		if (desc == NULL) {
+			//RTK_LOGS(TAG, RTK_LOG_ERROR, "desc null %x\n", desc);
+			break;
+		}
 		type = ((usbh_desc_header_t *) desc)->bDescriptorType;
 		switch (type) {
 		case USBH_UVC_DESC_TYPE_CS_INTERFACE:
 			ret = usbh_uvc_parse_entity((u8 *)desc);
 			if (ret) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to parse entity\n");
+				//RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to parse entity\n");
 				return ret;
 			}
 			break;
@@ -179,7 +187,7 @@ static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 			if (((usbh_ep_desc_t *)desc)->bmAttributes == USB_CH_EP_TYPE_INTR) {
 				vc_intf->intr_ep = desc;
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_WARN, "Wrong endpoint type\n");
+				//RTK_LOGS(TAG, RTK_LOG_WARN, "Wrong endpoint type\n");
 			}
 			break;
 
@@ -189,7 +197,7 @@ static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 				((usbh_uvc_vc_intr_ep_desc_t *)desc)->bDescriptorSubType == USB_CH_EP_TYPE_INTR) {
 				vc_intf->cs_intr_desc = desc;
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_WARN, "Wrong cs vc intr desc\n");
+				//RTK_LOGS(TAG, RTK_LOG_WARN, "Wrong cs vc intr desc\n");
 			}
 			break;
 
@@ -197,7 +205,7 @@ static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 			return HAL_OK;
 
 		default:
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Wrong desc type: %d\n", type);
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Wrong desc t:%d\n", type);
 			return HAL_OK;
 		}
 	}
@@ -225,12 +233,12 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	u16 totallen = 0;
 
 	if (desc[2] != USBH_UVC_VS_INPUT_HEADER) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Header is no vs input\n");
+		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Header is no vs input\n");
 		return HAL_ERR_PARA;
 	}
 
 	if (*length < 6) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc too short\n");
+		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Desc too short\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -277,7 +285,7 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 				vs_intf->has_h264 = 1;
 			} else {
 				vs_intf->has_h264 = 0;
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "GUID is not H264, not support\n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Unsupported GUID\n");
 			}
 			nformat++;
 			break;
@@ -295,7 +303,7 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			break;
 
 		default:
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Unsupported vs format desc");
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Err fmt dec");
 			break;
 		}
 		/*find next descripter*/
@@ -310,7 +318,6 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	vs_intf->format = (usbh_uvc_vs_format_t *) usb_os_malloc(nformat * sizeof(usbh_uvc_vs_format_t) + \
 					  (nframe_mjepg + nframe_uncomp + nframe_framebased) * sizeof(usbh_uvc_vs_frame_t));
 	if (vs_intf->format == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc format buf fai\n");
 		return HAL_ERR_MEM;
 	}
 
@@ -373,7 +380,7 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			break;
 
 		default:
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Unsupported vs format len");
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Err fmt len");
 			break;
 
 		}
@@ -385,7 +392,7 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 
 	/* Some camera wTotalLength from vs input desc is not right, we use real len */
 	if (real_len != totallen) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid itf size 0x%x, should be 0x%x\n", totallen, real_len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid itf size 0x%x-0x%x\n", totallen, real_len);
 	}
 
 	*length = real_len;
@@ -413,7 +420,7 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 	uvc->uvc_desc.vs_num++;
 
 	if (uvc->uvc_desc.vs_num > USBH_UVC_VS_DESC_MAX_NUM) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Too many VS itf %d>%d\n", uvc->uvc_desc.vs_num, USBH_UVC_VS_DESC_MAX_NUM);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Ovrl VS num %d>%d\n", uvc->uvc_desc.vs_num, USBH_UVC_VS_DESC_MAX_NUM);
 		return HAL_OK;
 	}
 
@@ -436,7 +443,7 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 		len = ((usbh_desc_header_t *) desc)->bLength;
 
 		if (len == 0) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Zero length desc!\n");
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "ZL desc\n");
 			break;
 		}
 
@@ -448,7 +455,7 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 
 		case USB_DESC_TYPE_INTERFACE:
 			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != vs_intf->bInterfaceNumber) { //find another itf, maybe it is the as itf, should return
-				RTK_LOGS(TAG, RTK_LOG_DEBUG, "VC intf new %d:old %d, return\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, vs_intf->bInterfaceNumber);
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "VC intf %d-%d\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, vs_intf->bInterfaceNumber);
 				return HAL_OK;
 			}
 			bAlternateSetting = ((usbh_itf_desc_t *)desc)->bAlternateSetting;
@@ -464,7 +471,7 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 						}
 					}
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_WARN, "Too many alt set %d-%d\n", bAlternateSetting, USBH_UVC_VS_ALTS_MAX_NUM);
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Ovrl alt %d>%d\n", bAlternateSetting, USBH_UVC_VS_ALTS_MAX_NUM);
 				}
 			} else {
 				return HAL_OK;
@@ -497,12 +504,12 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	if (itf_data == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get vc itf fail\n");
+		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get vc itf fail\n");
 		return ret;
 	} else {
 		ret = usbh_uvc_parse_vc(itf_data);
 		if (ret != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse vc fail\n");
+			//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Parse vc fail\n");
 			return ret;
 		}
 	}
@@ -513,15 +520,15 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 
 	if (itf_data == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "No VS itf found\n");
+		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "No VS itf\n");
 		return HAL_ERR_UNKNOWN;
 	}
 
 	while (itf_data) {
 		ret = usbh_uvc_parse_vs(itf_data);
 		if (ret != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse vs fail, itf=%d\n",
-					 itf_data->itf_desc_array[0].bInterfaceNumber);
+			//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Parse vs%d fail%d\n",
+			//		 itf_data->itf_desc_array[0].bInterfaceNumber);
 			return ret;
 		}
 		itf_data = itf_data->next;
@@ -555,7 +562,10 @@ void usbh_uvc_desc_deinit(void)
 
 	list_for_each_safe(p, n, &uvc->entity_list) {
 		ent = list_entry(p, usbh_uvc_entity_t, list);
+		list_del(p);
 		usbh_uvc_entity_t_free(ent);
 	}
+
+	INIT_LIST_HEAD(&uvc->entity_list);
 }
 

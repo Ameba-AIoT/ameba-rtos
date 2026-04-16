@@ -6,6 +6,9 @@ include(${c_CMAKE_FILES_DIR}/global_define.cmake)
 import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
 ameba_reset_global_define() #NOTE: Some variables like c_MP need to update after import kconfig
 
+ameba_set_if(CONFIG_MP_INCLUDED c_SDK_IMAGE_FOLDER_NAME image_mp p_ELSE image)
+ameba_set_if(CONFIG_WHC_HOST_LOC_KM4_MENU AP_IMAGEDIR ${CMAKE_BINARY_DIR}/project_km4/${c_SDK_IMAGE_FOLDER_NAME} p_ELSE ${CMAKE_BINARY_DIR}/project_kr4/${c_SDK_IMAGE_FOLDER_NAME})
+
 message( "========== Image app generate start ==========")
 
 set(app_full_path ${c_IMAGE_OUTPUT_DIR}/${c_APP_BINARY_NAME})
@@ -64,7 +67,7 @@ if(CONFIG_FATFS_WITHIN_APP_IMG)
             ${c_SOC_PROJECT_DIR}/fatfs_prepend.bin
             ${c_SOC_PROJECT_DIR}/fatfs.bin
             VFS1_FLASH_BASE_ADDR
-           ${c_IMAGE_OUTPUT_DIR}/target_img2.map
+            ${AP_IMAGEDIR}/target_img2.map
         )
         ameba_execute_process(
             COMMAND ${CMAKE_COMMAND} -E cat ${app_tmp_full_path} ${c_SOC_PROJECT_DIR}/fatfs_prepend.bin

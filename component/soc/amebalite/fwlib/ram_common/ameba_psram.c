@@ -851,12 +851,9 @@ void set_psram_sleep_mode(u32 type)
 	PSPHY_TypeDef *psram_phy = PSRAMPHY_DEV;
 	psram_phy->PSPHY_CAL_CTRL = PSRAM_MASK_CAL_ITT;
 
-	rram->psram_backup[0] = HAL_READ32((u32)__km4_bd_psram_start__, 0x0);
-	rram->psram_backup[1] = HAL_READ32((u32)__km4_bd_psram_start__, 0x50000);
-	rram->psram_backup[2] = HAL_READ32((u32)__km4_bd_psram_start__, 0x100000);
-	rram->psram_backup[3] = HAL_READ32((u32)__km4_bd_psram_start__, 0x150000);
-	rram->psram_backup[4] = HAL_READ32((u32)__km4_bd_psram_start__, 0x200000);
-	rram->psram_backup[5] = HAL_READ32((u32)__km4_bd_psram_start__, 0x250000);
+	for (int i = 0; i < 6; i++) {
+		rram->psram_backup[i] = HAL_READ32((u32)__km4_bd_psram_start__, i * 0x50000);
+	}
 
 	PSRAM_AutoGating(DISABLE, NULL, NULL);
 
@@ -926,12 +923,10 @@ void set_psram_wakeup_mode(u32 type)
 		temp = psram_phy->PSPHY_CAL_CTRL;
 		psram_phy->PSPHY_CAL_CTRL = temp;
 		PSRAM_calibration();
-		HAL_WRITE32((u32)__km4_bd_psram_start__, 0x0, rram->psram_backup[0]);
-		HAL_WRITE32((u32)__km4_bd_psram_start__, 0x50000, rram->psram_backup[1]);
-		HAL_WRITE32((u32)__km4_bd_psram_start__, 0x100000, rram->psram_backup[2]);
-		HAL_WRITE32((u32)__km4_bd_psram_start__, 0x150000, rram->psram_backup[3]);
-		HAL_WRITE32((u32)__km4_bd_psram_start__, 0x200000, rram->psram_backup[4]);
-		HAL_WRITE32((u32)__km4_bd_psram_start__, 0x250000, rram->psram_backup[5]);
+		for (int i = 0; i < 6; i++) {
+			HAL_WRITE32((u32)__km4_bd_psram_start__, i * 0x50000, rram->psram_backup[i]);
+			DCache_CleanInvalidate((u32)__km4_bd_psram_start__ + i * 0x50000, CACHE_LINE_SIZE);
+		}
 	}
 	if (cur_src == BIT_LSYS_CKSL_PSRAM_LBUS) {
 		PSRAM_AutoGating(ENABLE, Psram_IDLETIME_XTAL, Psram_RESUMECNT_XTAL);

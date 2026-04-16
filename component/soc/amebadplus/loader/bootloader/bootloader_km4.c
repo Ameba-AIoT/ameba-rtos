@@ -54,7 +54,7 @@ void BOOT_NsStart(u32 Addr)
 	}
 #else
 	/* jump to ns world */
-	nsfunc *fp = cmse_nsfptr_create(Addr);
+	nsfunc *fp = (nsfunc *)cmse_nsfptr_create(Addr);
 	fp();
 #endif
 
@@ -68,11 +68,11 @@ void BOOT_RccConfig(void)
 	u32 idx = 0;
 	u32 TempVal = 0;
 
-	u32 FenReg[4] = {REG_LSYS_FEN_GRP0, REG_LSYS_FEN_GRP1, NULL, REG_AON_FEN};
+	u32 FenReg[4] = {REG_LSYS_FEN_GRP0, REG_LSYS_FEN_GRP1, 0, REG_AON_FEN};
 	u32 FenSet[4] = {0};
 	u32 FuncRegIndx = 0;
 
-	u32 CenReg[4] = {REG_LSYS_CKE_GRP0, REG_LSYS_CKE_GRP1, NULL, REG_AON_CLK};
+	u32 CenReg[4] = {REG_LSYS_CKE_GRP0, REG_LSYS_CKE_GRP1, 0, REG_AON_CLK};
 	u32 CenSet[4] = {0};
 	u32 ClkRegIndx = 0;
 
@@ -481,7 +481,7 @@ void SDIO_Pinmux_pre_init(void)
 }
 
 /* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
-static bool BOOT_RRAM_InfoValid(void)
+bool BOOT_RRAM_InfoValid(void)
 {
 	if (RRAM_DEV->MAGIC_NUMBER != 0x6969A5A5) {
 		return FALSE;
@@ -623,14 +623,25 @@ BOOT_EXPORT_SYMB_TABLE boot_export_symbol = {
 
 };
 
+#ifdef __ZEPHYR__
+extern void z_arm_reset(void);
+#endif
+
 IMAGE1_ENTRY_SECTION
 RAM_FUNCTION_START_TABLE RamStartTable = {
 	.RamStartFun = NULL,
+#ifdef __ZEPHYR__
+	.RamWakeupFun = NULL,
+#else
 	.RamWakeupFun = BOOT_WakeFromPG,
+#endif
 	.RamPatchFun0 = NULL,
 	.RamPatchFun1 = NULL,
 	.RamPatchFun2 = NULL,
+#ifdef __ZEPHYR__
+	.FlashStartFun = z_arm_reset,
+#else
 	.FlashStartFun = BOOT_Image1,
+#endif
 	.ExportTable = &boot_export_symbol
 };
-

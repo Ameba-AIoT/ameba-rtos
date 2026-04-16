@@ -851,4 +851,3 @@ _LONG_CALL_ u32 LOGUART_RxMonitorSatusGet(LOGUART_TypeDef *UARTLOG);
 /* MANUAL_GEN_END */
 
 #endif
-

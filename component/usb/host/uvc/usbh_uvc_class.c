@@ -73,6 +73,7 @@ static int usbh_uvc_attach(usb_host_t *host)
 
 	uvc->host = host;
 
+	usbh_uvc_desc_init();
 	status = usbh_uvc_parse_cfgdesc(host);
 	if (status) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse cfg desc fail\n");
@@ -86,7 +87,7 @@ static int usbh_uvc_attach(usb_host_t *host)
 		cur_set->cur_vs_intf = &uvc->uvc_desc.vs_intf[i];
 		alt_set = &cur_set->cur_vs_intf->altsetting[0];
 		if (alt_set == NULL || alt_set->p == NULL) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Stream[%d] Alt is NULL\n", i);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "S[%d] no alt\n", i);
 			continue;
 		}
 		cur_set->altsetting = alt_set;
@@ -96,11 +97,11 @@ static int usbh_uvc_attach(usb_host_t *host)
 		pipe = &cur_set->pipe;
 		ep = alt_set->endpoint;
 		if (ep == NULL) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Stream[%d] %d/%d no ep\n", i, cur_set->bInterfaceNumber, cur_set->bAlternateSetting);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "S[%d] %d/%d no ep\n", i, cur_set->bInterfaceNumber, cur_set->bAlternateSetting);
 			cur_set->valid = 0;
 			pipe->ep_addr = 0;
 			pipe->xfer_len = 0;
-			stream->stream_data_state = STREAM_STATE_IDLE;
+			stream->stream_data_state = STREAM_DATA_OFF;
 			continue;
 		}
 		xfer_len = ep->wMaxPacketSize;
@@ -120,16 +121,10 @@ static int usbh_uvc_attach(usb_host_t *host)
 		cur_set->valid = 1;
 
 #if USBH_UVC_DEBUG
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream[%d]->cur_set.altsetting:%d\n", i, cur_set->altsetting);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream[%d]->cur_set.bInterfaceNumber:%d\n", i, cur_set->bInterfaceNumber);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream[%d]->cur_set.bAlternateSetting:%d\n", i, cur_set->bAlternateSetting);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream[%d]->cur_set.pipe.ep_addr:%d\n", i, pipe->ep_addr);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream[%d]->cur_set.pipe.xfer_len:%d\n", i, pipe->xfer_len);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream[%d]->cur_set.pipe.ep_mps:%d\n", i, pipe->ep_mps);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream[%d]->cur_set.pipe.ep_interval:%d\n", i, pipe->ep_interval);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Stream[%d]->cur_set.pipe.ep_type:%d\n", i, pipe->ep_type);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "S[%d] Itf/alt:%d/%d ", i, cur_set->bInterfaceNumber, cur_set->bAlternateSetting);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "EP:%d-%d-%d-%d-%d-%d\n", pipe->ep_addr, pipe->xfer_len, pipe->ep_mps, pipe->ep_interval, pipe->ep_type);
 #endif
-		stream->stream_data_state = STREAM_STATE_IDLE;
+		stream->stream_data_state = STREAM_DATA_OFF;
 	}
 
 	if ((uvc->cb != NULL) && (uvc->cb->attach != NULL)) {
@@ -149,16 +144,29 @@ static int usbh_uvc_detach(usb_host_t *host)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream;
-	usbh_pipe_t *pipe;
+	usbh_uvc_vs_t *vs_intf;
+	int vs_num;
 	int i;
 
+	UNUSED(host);
 	uvc->state = UVC_STATE_IDLE;
-	for (i = 0; i < uvc->uvc_desc.vs_num; i ++) {
+	vs_num = uvc->uvc_desc.vs_num;
+
+	for (i = 0; i < vs_num; i ++) {
 		stream = &uvc->stream[i];
 		stream->state = STREAM_STATE_CTRL_IDLE;
-		pipe = &stream->cur_setting.pipe;
-		if (pipe->pipe_num) {
-			usbh_close_pipe(host, pipe);
+		if (stream->stream_state == STREAMING_ON) {
+			usbh_uvc_stream_stop(stream);
+		}
+	}
+
+	usbh_uvc_desc_deinit();
+
+	for (i = 0; i < vs_num; i ++) {
+		vs_intf = uvc->stream[i].vs_intf;
+		if (vs_intf->format) {
+			usb_os_mfree(vs_intf->format);
+			vs_intf->format = NULL;
 		}
 	}
 
@@ -207,25 +215,17 @@ static void usbh_uvc_find_alt(usbh_uvc_stream_t *stream)
 
 			max_ep_size = xfer_len;
 			pipe->xfer_len = xfer_len;
+#if USBH_UVC_DEBUG
+			RTK_LOGS(TAG, RTK_LOG_INFO, "F Itf/alt:%d/%d\n", cur_set->bInterfaceNumber, cur_set->bAlternateSetting);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "F EP:%d-%d-%d-%d-%d-%d\n", pipe->ep_addr, pipe->xfer_len, pipe->ep_mps, pipe->ep_interval, pipe->ep_type);
+#endif
 		}
 	}
 
-#if USBH_UVC_DEBUG
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.altsetting:%x\n",  cur_set->altsetting);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.bInterfaceNumber:%d\n", cur_set->bInterfaceNumber);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.bAlternateSetting:%d\n", cur_set->bAlternateSetting);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.ep_addr:%d\n", pipe->ep_addr);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.xfer_len:%d\n", pipe->xfer_len);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.ep_mps:%d\n", pipe->ep_mps);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.ep_interval:%d\n", pipe->ep_interval);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.ep_type:%d\n", pipe->ep_type);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Steam->cur_set.pipe.pipe_num:%d\n", pipe->pipe_num);
-#endif
 	uvc->state = UVC_STATE_CTRL;
 	stream->state = STREAM_STATE_SET_ALT;
 	uvc->stream_in_ctrl = stream->stream_idx;
 	usbh_notify_class_state_change(uvc->host, 0);
-
 }
 
 /**
@@ -267,8 +267,8 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, u32 msg)
 	u8 size;
 	UNUSED(msg);
 
-	if (stream_idx >= uvc->uvc_desc.vs_num) {// actual vs num
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Err STREAM[%d]\n", stream_idx);
+	if (stream_idx >= uvc->uvc_desc.vs_num) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Err S[%d]\n", stream_idx);
 		return HAL_OK;
 	}
 
@@ -293,7 +293,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, u32 msg)
 		if (ret == HAL_OK) {
 			stream->state = STREAM_STATE_PROBE_UPDATE;
 		} else if (ret != HAL_BUSY) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Probe1 err\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "P1 err\n");
 			stream->state = STREAM_STATE_PROBE_UPDATE;
 			ret_status = HAL_OK;
 		}
@@ -327,7 +327,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, u32 msg)
 #endif
 			}
 		} else if (ret != HAL_BUSY) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Probe2 err\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "P2 err\n");
 			stream->state = STREAM_STATE_PROBE_FINAL;
 			ret_status = HAL_OK;
 		}
@@ -338,7 +338,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, u32 msg)
 		if (ret == HAL_OK) {
 			stream->state = STREAM_STATE_COMMIT;
 		} else if (ret != HAL_BUSY) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Probe3 err\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "P3 err\n");
 			stream->state = STREAM_STATE_COMMIT;
 			ret_status = HAL_OK;
 		}
@@ -346,7 +346,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, u32 msg)
 
 	/* Commit flow */
 	case STREAM_STATE_COMMIT:
-		ret = usbh_uvc_set_video(stream, 0); // Commit
+		ret = usbh_uvc_set_video(stream, 0);
 		if (ret == HAL_OK) {
 			if (stream->set_alt == 1) {
 				stream->state = STREAM_STATE_FIND_ALT;
@@ -355,7 +355,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, u32 msg)
 				ret_status = HAL_OK;
 			}
 		} else if (ret != HAL_BUSY) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Commit err\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "C err\n");
 			if (stream->set_alt == 1) {
 				stream->state = STREAM_STATE_FIND_ALT;
 			} else {
@@ -499,4 +499,3 @@ void usbh_uvc_class_deinit(void)
 {
 	usbh_unregister_class(&usbh_uvc_driver);
 }
-

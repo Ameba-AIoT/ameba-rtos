@@ -552,13 +552,13 @@ static int phy_rtl8201_cfg_refclock(struct eth_phy_dev *phy, enum eth_refclk_dir
  *
  * @return     RTK_SUCCESS on success, error code otherwise.
  */
-static int phy_rtl8201_cfg_eee(struct eth_phy_dev *phy, phy_eee_mode_t mode)
+static int phy_rtl8201_cfg_eee(struct eth_phy_dev *phy, uint32_t new_state)
 {
 	int err = RTK_SUCCESS;
 	uint16_t adv_val = 0;
 
 	/* Prepare Advertisement Value (Only 100BASE-TX supported for EEE on 8201) */
-	if (mode == PHY_EEE_ENABLE_AN) {
+	if (new_state == ENABLE) {
 		adv_val = EEE_ADVERT_100;
 	}
 
@@ -574,6 +574,43 @@ static int phy_rtl8201_cfg_eee(struct eth_phy_dev *phy, phy_eee_mode_t mode)
 	return err;
 }
 
+/**
+ * @brief      Get PHY EEE Capabilities
+ *
+ * Queries PHY for supported EEE features.
+ *
+ * @param[in]  phy       Pointer to the Ethernet PHY device structure.
+ * @param[out] cap       Pointer to EEE capability structure.
+ *
+ * @return     RTK_SUCCESS on success, error code otherwise.
+ */
+static int phy_rtl8201_get_eee_cap(struct eth_phy_dev *phy, phy_eee_capability_t *cap)
+{
+	int err = RTK_SUCCESS;
+	uint16_t adv_val;
+
+	if (!phy || !cap) {
+		RTK_LOGE(TAG, "NULL parameters\n");
+		return RTK_FAIL;
+	}
+
+	/* Initialize capability structure */
+	_memset(cap, 0, sizeof(phy_eee_capability_t));
+
+	/* Select Page 0 */
+	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
+
+	/* Read EEE Advertisement Register via MMD */
+	adv_val = phy_rtl8201fr_mmd_read_safe(phy, MMD_AN, MMD_EEEAR, &err);
+	if (err == RTK_SUCCESS) {
+		/* RTL8201FR only supports 100BASE-TX EEE */
+		cap->eee_100m_capable = (adv_val & EEE_ADVERT_100) != 0;
+		cap->eee_tx_lpi_capable = cap->eee_100m_capable;
+		cap->eee_rx_lpi_capable = cap->eee_100m_capable;
+	}
+
+	return err;
+}
 /**
  * @brief      Enable/Disable Digital Loopback
  *
@@ -628,6 +665,7 @@ static int phy_rtl8201_set_link_callback(struct eth_phy_dev *phy, phy_link_cb_t 
 	// phy_rtl8201_get_link(phy, NULL); //dummy to avoid warning
 	return RTK_SUCCESS;
 }
+
 extern const struct eth_mdio_ops eth_mdio_bus;
 
 const struct eth_phy_ops phy_rtl8201fr_ops = {
@@ -638,6 +676,7 @@ const struct eth_phy_ops phy_rtl8201fr_ops = {
 	.autoneg_restart    = phy_rtl8201_autoneg_restart,
 	.cfg_refclock       = phy_rtl8201_cfg_refclock,
 	.cfg_eee            = phy_rtl8201_cfg_eee,
+	.get_eee_cap        = phy_rtl8201_get_eee_cap,
 	.set_loopback       = phy_rtl8201_set_loopback,
 	.set_link_callback  = phy_rtl8201_set_link_callback,
 };

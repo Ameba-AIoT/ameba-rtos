@@ -185,14 +185,12 @@ void ex_spdio_thread(void *param)
 	}
 
 	for (i = 0; i < spdio_dev.host_tx_bd_num; i++) {
-		spdio_dev.rx_buf[i].buf_allocated = (u32)rtos_mem_malloc(spdio_dev.device_rx_bufsz + SPDIO_DMA_ALIGN_4);
+		spdio_dev.rx_buf[i].buf_allocated = spdio_dev.rx_buf[i].buf_addr = (u32)rtos_mem_malloc(spdio_dev.device_rx_bufsz);
 		if (!spdio_dev.rx_buf[i].buf_allocated) {
 			RTK_LOGE(TAG, "malloc failed for spdio buffer!\n");
 			return;
 		}
-		spdio_dev.rx_buf[i].size_allocated = spdio_dev.device_rx_bufsz + SPDIO_DMA_ALIGN_4;
-		// this buffer must be 4 byte alignment
-		spdio_dev.rx_buf[i].buf_addr = (u32)N_BYTE_ALIGMENT((u32)(spdio_dev.rx_buf[i].buf_allocated), SPDIO_DMA_ALIGN_4);
+		spdio_dev.rx_buf[i].size_allocated = spdio_dev.rx_buf[i].buf_size = spdio_dev.device_rx_bufsz;
 	}
 
 	spdio_dev.pSDIO = SDIO_WIFI;

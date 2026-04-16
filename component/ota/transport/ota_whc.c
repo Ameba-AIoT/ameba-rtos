@@ -7,7 +7,7 @@
 #include "ameba_soc.h"
 #include "ota_internal.h"
 
-#if defined(CONFIG_WHC_CMD_PATH)
+#if defined(CONFIG_WLAN) && defined(CONFIG_WHC_CMD_PATH)
 #include "whc_dev_ota.h"
 
 static int ota_whc_recv_response(ota_context_t *ctx)

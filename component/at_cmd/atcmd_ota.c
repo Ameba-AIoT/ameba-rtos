@@ -172,6 +172,9 @@ void at_otahttp(u16 argc, char **argv)
 		err_no = 1;
 		goto end;
 	}
+	if (conn_type >= OTA_HTTPS_VERIFY_NONE) {
+		ota_type = OTA_HTTPS;
+	}
 
 	if (argc == 7) {
 		cert_index = atoi(argv[6]);
@@ -182,7 +185,6 @@ void at_otahttp(u16 argc, char **argv)
 				err_no = 6;
 				goto end;
 			}
-			ota_type = OTA_HTTPS;
 		}
 
 		if (conn_type == OTA_HTTPS_VERIFY_CLIENT || conn_type == OTA_HTTPS_VERIFY_BOTH) {
@@ -196,7 +198,6 @@ void at_otahttp(u16 argc, char **argv)
 				err_no = 6;
 				goto end;
 			}
-			ota_type = OTA_HTTPS;
 		}
 	}
 

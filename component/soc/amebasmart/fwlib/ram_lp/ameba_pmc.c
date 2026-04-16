@@ -170,11 +170,14 @@ void SOCPS_UartRxPinWakeSet(u32 status)
 	} else {
 		int_flag = SOCPS_UartRxPinIntValid();
 
-		Pinmux_UartLogCtrl(PINMUX_S0, ON);
 		if (!int_flag) {
+			/* Disable interrupt BEFORE Pinmux switch to prevent false glitch interrupt. */
 			SOCPS_UartRxIntEn(DISABLE);
 			GPIO_INTConfig(UART_LOG_RXD, DISABLE);
 		}
+
+		/* Restore Pinmux. If int_flag == 1, interrupt remains enabled for ISR. */
+		Pinmux_UartLogCtrl(PINMUX_S0, ON);
 	}
 }
 

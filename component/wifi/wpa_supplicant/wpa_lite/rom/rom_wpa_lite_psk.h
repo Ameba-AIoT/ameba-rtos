@@ -20,6 +20,7 @@
 #define GMK_LEN					32
 #define GTK_LEN					32
 #define IGTK_LEN				16
+#define IPN_LEN					6
 #define WPA_IGTK_MAX_LEN		32
 #define NumGroupKey				4
 #define KEY_NONCE_LEN		32

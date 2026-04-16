@@ -613,5 +613,4 @@ _LONG_CALL_ void GDMA_Suspend(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ void GDMA_Resume(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ u8   GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum);
 
-
 #endif //_AMEBA_GDMA_H_

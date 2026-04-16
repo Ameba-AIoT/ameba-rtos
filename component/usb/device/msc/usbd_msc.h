@@ -25,6 +25,7 @@
  */
 #define USBD_MSC_TX_THREAD_PRIORITY                 5U                 /**< TX thread priority */
 #define USBD_MSC_RX_THREAD_PRIORITY                 5U                 /**< RX thread priority */
+#define USBD_MSC_TRX_THREAD_STACK_SIZE              (256*4)            /**< TX/RX thread tack size */
 
 /* Defines configuration constants like VID/PID, USB strings, and power settings. */
 #define USBD_MSC_VID                                USB_VID            /**< Vendor ID. */

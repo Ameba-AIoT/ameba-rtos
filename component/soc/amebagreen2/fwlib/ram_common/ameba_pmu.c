@@ -213,8 +213,7 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 		sleep_param.dlps_enable = ENABLE;
 	} else {
 #if defined(CONFIG_STANDARD_TICKLESS)
-#if (defined(CONFIG_KM4TZ_AS_AP) && defined(CONFIG_ARM_CORE_CM4_KM4TZ)) \
-	|| (defined(CONFIG_KM4NS_AS_AP) && defined(CONFIG_ARM_CORE_CM4_KM4NS))
+#if defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)
 		sleep_param.sleep_time = *tick_before_sleep;
 #else
 		sleep_param.sleep_time = pmu_get_sleep_time();//*expected_idle_time;

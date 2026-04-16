@@ -227,8 +227,6 @@ menu "CONFIG WHC INTF"
             bool "Support WHC SUPPLICANT OFFLOAD"
         config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4TZ
             bool "Support WHC DEV TCPIP KEEPALIVE"
-        config WHC_IN_SINGLE_DIE
-            bool "Support Download to SRAM Only"
         endmenu
     endif
 
@@ -272,14 +270,14 @@ menu "CONFIG WHC INTF"
 
     if WHC_INTF_IPC_MENU || WIFI_SINGLE_CORE_MENU
         choice
-            prompt "Select AP Core"
-            default KM4TZ_AS_AP
-            config KM4TZ_AS_AP
+            prompt "WHC Host Location"
+            default WHC_HOST_LOC_KM4TZ_MENU
+            config WHC_HOST_LOC_KM4TZ_MENU
                 bool "KM4TZ"
                 select WHC_HOST_FOR_KM4TZ if WHC_INTF_IPC_MENU
                 select WHC_DEV_FOR_KM4NS if WHC_INTF_IPC_MENU
                 select WHC_NONE_FOR_KM4TZ if WIFI_SINGLE_CORE_MENU
-            config KM4NS_AS_AP
+            config WHC_HOST_LOC_KM4NS_MENU
                 bool "KM4NS"
                 select WHC_HOST_FOR_KM4NS if WHC_INTF_IPC_MENU
                 select WHC_DEV_FOR_KM4TZ if WHC_INTF_IPC_MENU
@@ -297,6 +295,8 @@ menu "CONFIG WHC INTF"
     config WHC_DEV_FOR_KM4TZ
         bool
     config WHC_NONE_FOR_KM4TZ
+        bool
+    config WHC_NONE_FOR_KM4NS
         bool
     config WHC_WIFI_API_PATH
         bool
@@ -435,6 +435,11 @@ menu "CONFIG ETHERNET"
 		endchoice
 	endif
 endmenu
+
+config SHELL_TASK_STACK_BASIC_SIZE
+    int
+    default 1264 if WHC_HOST || WHC_NONE
+    default 688
 
 rsource "../../../lwip/Kconfig"
 

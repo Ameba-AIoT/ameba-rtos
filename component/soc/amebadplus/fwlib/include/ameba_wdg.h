@@ -210,4 +210,3 @@ _LONG_CALL_ void WDG_Cmd(WDG_TypeDef *WDG, u32 NewState);
 /* MANUAL_GEN_END */
 
 #endif
-

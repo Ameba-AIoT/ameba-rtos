@@ -78,4 +78,3 @@ void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32));
   */
 
 #endif
-

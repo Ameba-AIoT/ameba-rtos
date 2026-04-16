@@ -374,7 +374,6 @@ s32 wifi_stop_ap(void)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	dhcps_deinit();
 	LwIP_netif_set_down(NETIF_WLAN_AP_INDEX);
 	LwIP_netif_set_link_down(NETIF_WLAN_AP_INDEX);
 #endif

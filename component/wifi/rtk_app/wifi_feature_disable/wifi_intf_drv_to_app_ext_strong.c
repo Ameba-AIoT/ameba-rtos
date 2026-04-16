@@ -93,9 +93,9 @@ s32 wifi_set_countrycode(u8 *cntcode)
 	return RTK_FAIL;
 }
 
-s32 wifi_get_countrycode(struct rtw_country_code_table *table)
+s32 wifi_get_countrycode(struct rtw_country_code_table *pinfo)
 {
-	UNUSED(table);
+	UNUSED(pinfo);
 	call_noused = __LINE__;
 	return RTK_FAIL;
 }

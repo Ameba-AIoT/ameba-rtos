@@ -156,25 +156,6 @@
 #define PHYSTS_WORK_AROUND
 #define RTL8721F_WORK_AROUND
 
-/**************** configurations for task size **********************/
-#if defined (CONFIG_WHC_DEV)
-#if defined(CONFIG_WHC_INTF_IPC)
-#define WIFI_RECV_TASKLET_BASIC_SIZE	            1344
-#else
-#define WIFI_RECV_TASKLET_BASIC_SIZE	            3056
-#endif
-#else
-#define WIFI_RECV_TASKLET_BASIC_SIZE	            1024
-#endif
-#define WIFI_DRIVER_RESUME_TASKLET_BASIC_SIZE     368
-#define WIFI_LITTLE_TASKLET_BASIC_SIZE		        376
-#define WIFI_INIC_IPC_DEV_API_BASIC_SIZE          1384
-#define WIFI_INIC_MSG_Q_BASIC_SIZE                488
-#define WIFI_INIC_IPC_HST_API_BASIC_SIZE          336
-#define WIFI_INIC_IPC_HST_EVT_API_BASIC_SIZE      1848
-#define COEX_IPC_HST_API_BASIC_SIZE               264
-#define COEX_IPC_DEV_API_BASIC_SIZE               680
-
 /*************************** Config for Gen TxPower Tool *******************************/
 /** VERSION 0: only support extending one EXT PWR_LIMIT table
   * VERSION 1: support more EXT PWR_LIMIT tables, depending on customer configuration
@@ -220,7 +201,11 @@
 /************************* Config for MP_MODE end *****************************/
 
 /*Config for SKB Size*/
+#ifdef CONFIG_AMEBAPRO3
+#define SKB_CACHE_SZ	64/*max(AP_Core_Cache, NP_Core_Cache)*/
+#else
 #define SKB_CACHE_SZ	32/*max(AP_Core_Cache, NP_Core_Cache)*/
+#endif
 #define SKB_ALIGNMENT	__attribute__((aligned(SKB_CACHE_SZ)))
 #define TXDESC_SIZE	40
 #define RXDESC_SIZE	24
@@ -229,7 +214,7 @@
 #define WLAN_MAX_ETHFRM_LEN	1514/*max payload size of wifi frame*/
 
 /* debug log level */
-#define RELEASE_WIFI
+#define RELEASE_WIFI  /* will be defined when release*/
 
 #define CONFIG_IOT_RS 1
 #endif /*#ifndef AUTOCONF_8721F_H */
