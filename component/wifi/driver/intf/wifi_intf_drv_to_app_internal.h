@@ -187,7 +187,7 @@ struct rtw_kvr_param_t {
 	u8 ft_cap;
 	u8 privacy;
 	u32 grp_privacy;
-	u8 ie[5 + MAX_WPA_IE_LEN + MAX_FT_IE_LEN]; /**<  1.NP->AP: rsnie; 2.AP->NP: mdie+rsnie+ftie*/
+	u8 ie[5 + MAX_WPA_IE_LEN + MAX_FT_IE_LEN + RSNXE_MAX_LEN]; /**<  1.NP->AP: rsnie + rsnxe_ie; 2.AP->NP: mdie+rsnie+ftie*/
 	u32 ielen;
 #endif
 #endif
@@ -257,7 +257,7 @@ struct _Rltk_wlan_t {
 	unsigned char		enable;
 	rtos_sema_t			netif_rx_sema;	/**<  Prevent race condition on .skb in rltk_netif_rx(). */
 };
-extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
+extern struct _Rltk_wlan_t rltk_wlan_info[WLAN_NET_IF_NUM];
 
 #define netdev_priv(dev)		dev->priv
 #define rtw_is_netdev_enable(idx)	(rltk_wlan_info[idx].enable)

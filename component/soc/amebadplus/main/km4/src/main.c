@@ -2,7 +2,7 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 #include "main.h"
-#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE || defined CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+#if defined(CONFIG_VFS_ENABLED)
 #include "vfs.h"
 #endif
 #include "ameba_rtos_version.h"

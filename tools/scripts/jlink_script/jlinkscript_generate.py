@@ -536,9 +536,9 @@ void SetupTarget(void) {
 *       SWDPWD_Read_ID
 */
 void SWDPWD_READ_ID(void) {
+    int tmp;
     Report("J-Link script: SWD_READ_ID");
 
-    int tmp;
     JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x0020);
     tmp=JLINK_CORESIGHT_ReadAP(JLINK_CORESIGHT_AP_REG_DATA);
     Report1("SWD ID:",tmp);

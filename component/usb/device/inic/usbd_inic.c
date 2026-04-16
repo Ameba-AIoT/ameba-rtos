@@ -12,9 +12,10 @@
 /* Private defines -----------------------------------------------------------*/
 
 #define USBD_INIC_MFG_STRING	"Realtek"
-#define USBD_INIC_PROD_STRING	"802.11n  WLAN Adapter"
+#define USBD_INIC_PROD_STRING	"802.11ax  WLAN Adapter"
 #define USBD_INIC_SN_STRING		"00E04C000001"
 #define USBD_INIC_BT_STRING		"Bluetooth Radio"
+#define USBD_NIC_VID             0x8006
 
 /* Private types -------------------------------------------------------------*/
 
@@ -1284,6 +1285,9 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 			buf[USB_DEV_DESC_OFFSET_VID + 1] = USB_HIGH_BYTE(otp->vid);
 			buf[USB_DEV_DESC_OFFSET_PID] = USB_LOW_BYTE(otp->pid);
 			buf[USB_DEV_DESC_OFFSET_PID + 1] = USB_HIGH_BYTE(otp->pid);
+		} else if (SYSCFG_OTP_BOOTSEL() == BOOT_FROM_USB) {
+			buf[USB_DEV_DESC_OFFSET_PID] = USB_LOW_BYTE(USBD_NIC_VID);
+			buf[USB_DEV_DESC_OFFSET_PID + 1] = USB_HIGH_BYTE(USBD_NIC_VID);
 		}
 		break;
 

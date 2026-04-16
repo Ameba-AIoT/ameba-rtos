@@ -96,6 +96,22 @@ static void bt_hci_uart_deinit(void)
 }
 #endif /* CONFIG_AMEBALITE or CONFIG_AMEBASMART */
 
+
+#if defined(CONFIG_SDN_BT) && CONFIG_SDN_BT
+void sdn_send_to_loguart(uint8_t type, uint8_t *data, uint16_t len)
+{
+	uint16_t i = 0;
+
+	while (!LOGUART_Writable());
+	LOGUART_PutChar_RAM(type);
+
+	while (i < len) {
+		while (!LOGUART_Writable());
+		LOGUART_PutChar_RAM(data[i++]);
+	}
+}
+#endif
+
 static void bt_uart_bridge_close(void)
 {
 #if ((defined(CONFIG_AMEBALITE) && (CONFIG_AMEBALITE == 1)) \
@@ -145,16 +161,18 @@ static void bt_uart_bridge_close(void)
 #elif defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1)
 	// todo
 #else /* not (CONFIG_AMEBALITE or CONFIG_AMEBASMART) */
-	u32 TempVal;
 
 	LOGUART_WaitTxComplete();
 	/*restore the Baud register value*/
 	LOGUART_SetBaud(LOGUART_DEV, LOGUART_BAUDRATE);
 	LOGUART_INT_AP2NP();
 
+#if !(defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+	u32 TempVal;
 	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0);
 	TempVal &= ~(LSYS_BIT_FORCE_LOGUART_USE_LOGUART_PAD_B | LSYS_BIT_WL_USE_REQ);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0, TempVal);
+#endif
 #endif /* CONFIG_AMEBALITE or CONFIG_AMEBASMART */
 }
 
@@ -210,40 +228,38 @@ static u32 bt_uart_bridge_irq(void *data)
 {
 	(void)data;
 
-	uint8_t rc = 0, ret = 0;
+	uint8_t rc = 0;
 	uint32_t reg_lsr = LOGUART_GetStatus(LOGUART_DEV);
 
 	/* when rx FIFO not empty */
 #if (defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1))
 	// todo
-	(void)ret;
 	(void)reg_lsr;
 	bt_uart_bridge_close_pattern(rc);
 #else
 	if ((reg_lsr & LOGUART_BIT_RXFIFO_INT) || (reg_lsr & LOGUART_BIT_TIMEOUT_INT)) {
 		while (LOGUART_Readable()) {
 			rc = LOGUART_GetChar(FALSE);
-			ret = bt_uart_bridge_close_pattern(rc);
+			if (bt_uart_bridge_close_pattern(rc) != TRUE) {
 #if ((defined(CONFIG_AMEBALITE) && (CONFIG_AMEBALITE == 1)) \
     || (defined(CONFIG_AMEBASMART) && (CONFIG_AMEBASMART == 1)))
-			if (ret != TRUE) {
 				while (!UART_Writable(HCI_UART_DEV));
 				UART_CharPut(HCI_UART_DEV, rc);
-			}
-#else
-			UNUSED(ret);
+#elif defined(CONFIG_SDN_BT) && CONFIG_SDN_BT
+				sdn_bqb_h4_rx(rc);
 #endif
+			}
 		}
 
 		/* clear timeout interrupt flag */
 		if (reg_lsr & LOGUART_BIT_TIMEOUT_INT) {
-			LOGUART_INTClear(LOGUART_DEV, RUART_BIT_TOICF);
+			LOGUART_INTClear(LOGUART_DEV, LOGUART_BIT_TOICF);
 		}
 	}
 
 	if (reg_lsr & LOGUART_BIT_RXFIFO_ERR) {
-		LOGUART_INTConfig(LOGUART_DEV, RUART_BIT_ELSI, DISABLE);
-		LOGUART_INTClear(LOGUART_DEV, RUART_BIT_RLSICF);
+		LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ELSI, DISABLE);
+		LOGUART_INTClear(LOGUART_DEV, LOGUART_BIT_RLSICF);
 	}
 #endif
 	return 0;
@@ -299,19 +315,21 @@ void bt_uart_bridge_open(void)
 	// todo
 	bt_uart_bridge_irq(NULL);
 #else /* not (CONFIG_AMEBALITE or CONFIG_AMEBASMART) */
-	u32 TempVal;
 
 	LOGUART_WaitTxComplete();
 
+#if !(defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+	u32 TempVal;
 	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0);
 	TempVal |= (LSYS_BIT_FORCE_LOGUART_USE_LOGUART_PAD_B | LSYS_BIT_WL_USE_REQ);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0, TempVal);
-
-	/*set Baud*/
-	LOGUART_SetBaud(LOGUART_DEV, HCI_UART_BAUDRATE);
+#endif
 
 	/* Switch LOGUART interrupt from NP to AP */
 	LOGUART_INT_NP2AP();
+
+	/*set Baud*/
+	LOGUART_SetBaud(LOGUART_DEV, HCI_UART_BAUDRATE);
 
 	/* Register Log Uart Callback function */
 	irq_register((IRQ_FUN)bt_uart_bridge_irq, UART_LOG_IRQ, (uint32_t)NULL, INT_PRI4);

@@ -14,7 +14,7 @@
 #define UART_BAUD	38400
 #define DMA_TX_BURST_SIZE	8
 #define DMA_RX_BURST_SIZE	16 // RX_BURST_SIZE >= RX GDMA_SrcMsize
-/*note that timeout(second) = RX_TO_BIT / baudrate, this value is recomanded 64~65535 */
+/* note that timeout(second) = RX_TO_BIT / baudrate. The recommended value is 64~65535. */
 #define RX_TO_BIT	6000
 
 #define CACHE_LINE_SIZE_	32
@@ -31,7 +31,7 @@ volatile u32 tx_busy = 0;
 volatile u32 rx_done = 0;
 volatile u32 wait_rx = 0;
 
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 const u8 UART_TX_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_TXD,
 	PINMUX_FUNCTION_UART1_TXD,
@@ -150,7 +150,7 @@ void uart_stream_rx_dma_flow_ctrl_demo(void)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, PINMUX_FUNCTION_UART);
 	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART);
-#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
+#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, UART_TX_FID[uart_idx]);
 	Pinmux_Config(UART_RX, UART_RX_FID[uart_idx]);

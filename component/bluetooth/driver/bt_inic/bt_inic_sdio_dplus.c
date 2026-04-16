@@ -252,12 +252,6 @@ void bt_inic_sdio_init(void)
 		dev->rx_buf[i].buf_allocated = dev->rx_buf[i].buf_addr = (u32) buf;
 		dev->rx_buf[i].size_allocated = dev->rx_buf[i].buf_size = dev->device_rx_bufsz;
 		dev->rx_buf[i].priv = buf;
-
-		// this buffer must be 4 byte alignment
-		if (dev->rx_buf[i].buf_addr % 4) {
-			RTK_LOGE("BT_INIC", "rx buffer address not 4-byte aligned!\n");
-			return;
-		}
 	}
 
 	dev->device_rx_done_cb = inic_sdio_dev_rx_done_cb;

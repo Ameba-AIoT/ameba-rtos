@@ -254,14 +254,10 @@ exit:
 FLASH_RAM_TEXT_SECTION
 void FLASH_ClockSwitch(u32 Source, u32 Protection)
 {
-	u32 Temp = 0;
-	u32 PreState_tick = 0;
-	u32 PreState_irq = 0;
+	u32 Temp, PreState_irq;
 
 	if (Protection) {
-		PreState_tick = Systick_State();
 		PreState_irq = irq_disable_save();
-		Systick_Cmd(DISABLE);
 	}
 
 	/* sequence should be followed strickly */
@@ -287,7 +283,8 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 
 		/* 3. SPIC Dummy to low speed dummy */
 		flash_init_para.FLASH_rd_sample_dly_cycle = SPIC_LOWSPEED_SAMPLE_PHASE;
-		FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
+		SPIC->AUTO_LENGTH = (SPIC->AUTO_LENGTH & ~MASK_IN_PHYSICAL_CYC) | IN_PHYSICAL_CYC(flash_init_para.FLASH_rd_sample_dly_cycle);
+		// FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
 	} else {
 		/* 1. enable 400M & 400MPS */
 		/*HW need DSPPLL & CPUPLL open*/
@@ -333,11 +330,11 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 
 		/* 3. SPIC Dummy to high speed dummy */
 		flash_init_para.FLASH_rd_sample_dly_cycle = flash_init_para.FLASH_rd_sample_dly_cycle_cal;
-		FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
+		SPIC->AUTO_LENGTH = (SPIC->AUTO_LENGTH & ~MASK_IN_PHYSICAL_CYC) | IN_PHYSICAL_CYC(flash_init_para.FLASH_rd_sample_dly_cycle);
+		// FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
 	}
 
 	if (Protection) {
-		Systick_Cmd(PreState_tick);
 		irq_enable_restore(PreState_irq);
 	}
 }

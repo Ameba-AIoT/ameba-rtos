@@ -43,7 +43,6 @@ set(private_compile_options)         #private compile_options
 ameba_list_append(private_definitions CONFIG_BUILD_NONSECURE=1)
 ameba_list_append(private_definitions -Drand_bytes=TRNG_get_random_bytes)
 ameba_list_append(private_compile_options
-    -mfloat-abi=softfp
     -O3
     -w
 )

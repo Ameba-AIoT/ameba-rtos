@@ -63,6 +63,10 @@ ameba_list_append(private_includes
 	${c_CMPT_BLUETOOTH_DIR}/driver/inc/hci
 )
 
+ameba_list_append_if(CONFIG_SDN_BT private_includes
+    ${c_COMPONENT_DIR}/sdn/platform/${c_SOC_TYPE}/intf
+)
+
 ameba_list_append_if(CONFIG_AMEBADPLUS private_includes
 	bt_fast_mp
 )

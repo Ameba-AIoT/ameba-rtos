@@ -54,7 +54,6 @@ ameba_list_append(private_sources
     ameba_vad.c
     ameba_vad_bt.c
     ameba_vad_handler.c
-    ameba_flashclk.c
     ameba_nandflash.c
 )
 

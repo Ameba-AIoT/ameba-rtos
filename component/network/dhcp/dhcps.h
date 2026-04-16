@@ -1,18 +1,36 @@
-
 #ifndef __DHCPS_H__
 #define __DHCPS_H__
 #include "lwip_netconf.h"
 
 
-#define DHCP_POOL_START			100
-#define DHCP_POOL_END			200
+#define DHCP_UNLIMITED_POOL_START	2
+#define DHCP_UNLIMITED_POOL_END		254
+
+#define DHCP_POOL_START				100
+#define DHCP_POOL_END				200
 
 #define DHCPS_MAX_CLIENT_NUM 	(DHCP_POOL_END-DHCP_POOL_START+1)
 
-#define IS_USE_FIXED_IP	0
-#define DEBUG_DHCPS 0
 #define CONFIG_ENABLE_CAPTIVE_PORTAL  0
 
+/* DHCPS log levels */
+enum {
+	DHCPS_DEBUG,
+	DHCPS_INFO,
+	DHCPS_WARNING,
+	DHCPS_ERROR
+};
+
+#ifndef DHCPS_DEBUG_LEVEL
+#define DHCPS_DEBUG_LEVEL   DHCPS_INFO
+#endif
+
+#define DHCPS_LOG(level, fmt, arg...)     \
+	do {\
+		if (level >= DHCPS_DEBUG_LEVEL) {\
+			RTK_LOGS("DHCPS", RTK_LOG_ALWAYS, fmt, ##arg);\
+		}\
+	}while(0)
 
 /* dhcp server states */
 #define DHCP_SERVER_STATE_OFFER 			(1)
@@ -21,16 +39,21 @@
 #define DHCP_SERVER_STATE_NAK 				(4)
 #define DHCP_SERVER_STATE_IDLE 				(5)
 
-
 #define DHCP_MESSAGE_OP_REQUEST        			(1)
 #define DHCP_MESSAGE_OP_REPLY          			(2)
 
 #define DHCP_MESSAGE_HTYPE 				(1)
 #define DHCP_MESSAGE_HLEN  				(6)
 
+#ifndef DNS_SERVER_PORT
 #define DNS_SERVER_PORT 				(53)
+#endif
+#ifndef DHCP_SERVER_PORT
 #define DHCP_SERVER_PORT  				(67)
+#endif
+#ifndef DHCP_CLIENT_PORT
 #define DHCP_CLIENT_PORT  				(68)
+#endif
 
 #define DHCP_MESSAGE_TYPE_DISCOVER  			(1)
 #define DHCP_MESSAGE_TYPE_OFFER     			(2)
@@ -102,6 +125,58 @@ struct table {
 	uint8_t *ip_addr4;
 };
 
+/* DHCP Server Instance Structure */
+typedef struct dhcps_s {
+	// Linked list pointer
+	struct dhcps_s *next;               // Pointer to next DHCP server instance in global list
+
+	// Network interface binding
+	struct netif *dhcps_netif;          // Bound network interface
+
+	// UDP control blocks
+	struct udp_pcb *dhcps_pcb;          // DHCP server UDP control block
+	struct udp_pcb *dns_pcb;            // DNS server UDP control block
+
+	// IP address configuration
+	ip_addr_t broadcast_address;
+	ip_addr_t local_address;
+	ip_addr_t local_mask;
+	ip_addr_t local_gateway;
+	ip_addr_t network_id;
+	ip_addr_t subnet_broadcast;
+
+	// IP address pool management
+	ip_addr_t addr_pool_start;
+	ip_addr_t addr_pool_end;
+	int addr_pool_set;
+
+	// Client allocation records
+	struct eth_addr allocated_client_ethaddr;
+	ip_addr_t allocated_client_address;
+
+	// IP allocation table
+	struct table ip_table;
+	rtos_mutex_t ip_table_sema;
+
+	// DHCP message handling
+	struct dhcp_msg *message_repository;
+	int message_options_max_len;
+
+	// Temporary variables
+	ip_addr_t client_request_ip;
+	uint8_t client_addr[6];
+
+	// State machine
+	uint8_t state_machine;
+
+	// Transaction ID
+	uint8_t recorded_xid[4];
+
+	// DNS related
+	uint8_t *domain_name_buf;
+	uint8_t domain_name_buf_len;
+} dhcps_t;
+
 PACK_STRUCT_BEGIN
 /** DNS message header */
 struct dns_hdr {
@@ -115,30 +190,25 @@ struct dns_hdr {
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 
-/* 01~32 */
-#define MARK_RANGE1_IP_BIT(table, ip)	((table.ip_range[0]) | (1 << ((ip) - 1)))
-/* 33~64 */
-#define MARK_RANGE2_IP_BIT(table, ip)	((table.ip_range[1]) | (1 << ((ip) - 1)))
-/* 65~96 */
-#define MARK_RANGE3_IP_BIT(table, ip)	((table.ip_range[2]) | (1 << ((ip) - 1)))
-/* 97~128 */
-#define MARK_RANGE4_IP_BIT(table, ip)	((table.ip_range[3]) | (1 << ((ip) - 1)))
-/* 129~160 */
-#define MARK_RANGE5_IP_BIT(table, ip)	((table.ip_range[4]) | (1 << ((ip) - 1)))
-/* 161~192 */
-#define MARK_RANGE6_IP_BIT(table, ip)	((table.ip_range[5]) | (1 << ((ip) - 1)))
-/* 193~224 */
-#define MARK_RANGE7_IP_BIT(table, ip)	((table.ip_range[6]) | (1 << ((ip) - 1)))
-/* 225~255 */
-#define MARK_RANGE8_IP_BIT(table, ip)	((table.ip_range[7]) | (1 << ((ip) - 1)))
+/* Helper macros for IP bit operations */
+#define IP_TO_RANGE_IDX(ip)				(((ip) - 1) >> 5)
+#define IP_TO_BIT_OFFSET(ip)			(((ip) - 1) & 0x1F)
+#define IP_BIT_MASK(ip)					BIT(IP_TO_BIT_OFFSET(ip))
+
+#define CHECK_IP_BIT_IN_TABLE(tbl, ip)	((tbl).ip_range[IP_TO_RANGE_IDX(ip)] & IP_BIT_MASK(ip))
+#define CHECK_IP_OFFER_BIT(tbl, ip)		((tbl).ip_range_offer[IP_TO_RANGE_IDX(ip)] & IP_BIT_MASK(ip))
+#define SET_IP_BIT_IN_TABLE(tbl, ip)	((tbl).ip_range[IP_TO_RANGE_IDX(ip)] |= IP_BIT_MASK(ip))
+#define SET_IP_OFFER_BIT(tbl, ip)		((tbl).ip_range_offer[IP_TO_RANGE_IDX(ip)] |= IP_BIT_MASK(ip))
+#define CLEAR_IP_BIT_IN_TABLE(tbl, ip)	((tbl).ip_range[IP_TO_RANGE_IDX(ip)] &= ~IP_BIT_MASK(ip))
+#define CLEAR_IP_OFFER_BIT(tbl, ip)		((tbl).ip_range_offer[IP_TO_RANGE_IDX(ip)] &= ~IP_BIT_MASK(ip))
 
 /* expose API */
-void dhcps_set_addr_pool(int addr_pool_set, struct ip_addr *addr_pool_start, struct ip_addr *addr_pool_end);
-void dhcps_init(struct netif *pnetif);
-void dhcps_deinit(void);
-int dhcps_ip_in_table_check(uint8_t gate, uint8_t d);
-uint8_t dhcps_search_client_ip(uint8_t *src_mac);
-
-extern struct netif *netif_default;
+void dhcps_set_addr_pool(struct netif *pnetif, int addr_pool_set, struct ip_addr *addr_pool_start, struct ip_addr *addr_pool_end);
+dhcps_t *dhcps_init(struct netif *pnetif);
+err_t dhcps_start(struct netif *pnetif);
+void dhcps_stop(struct netif *pnetif);
+void dhcps_deinit(struct netif *pnetif);
+int dhcps_ip_in_table_check(struct netif *pnetif, uint8_t gate, uint8_t d);
+uint8_t dhcps_search_client_ip(struct netif *pnetif, uint8_t *src_mac);
 
 #endif

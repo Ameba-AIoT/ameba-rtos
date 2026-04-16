@@ -328,4 +328,3 @@ void Combo_SPIC_Output_Div_Clk(u32 Div)
 	/* Select source clock firstly, then div module can work corectly */
 	RCC_PeriphClockSource_PSRAM(BIT_LSYS_CKSL_PSRAM_CPUPLL);
 }
-

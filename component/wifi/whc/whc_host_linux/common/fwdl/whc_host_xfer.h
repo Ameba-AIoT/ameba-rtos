@@ -23,6 +23,7 @@
 #include <linux/types.h>
 #include <linux/stddef.h>
 #include <linux/wait.h>
+#include <linux/mutex.h>
 
 /* XFER protocol commands */
 #define WHC_XFER_REQ_QUERY				0x01
@@ -158,6 +159,11 @@ struct whc_xfer_adapter_t {
 	/* SDIO XFER specific fields for interrupt-driven RX */
 	wait_queue_head_t sdio_rx_wq;
 	u8 sdio_rx_ready;
+#endif
+#ifdef CONFIG_WHC_HCI_USB
+	/* USB XFER specific fields for control transfers */
+	struct mutex ctrl_mutex;
+	u8 *ctrl_in_buf;
 #endif
 };
 

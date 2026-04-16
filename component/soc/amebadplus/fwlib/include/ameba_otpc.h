@@ -393,4 +393,3 @@ _LONG_CALL_ u32 OTP_Write8_Rom(u32 Addr, u8 Data);
 /* MANUAL_GEN_END */
 
 #endif
-

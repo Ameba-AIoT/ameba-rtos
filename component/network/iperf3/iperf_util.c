@@ -323,90 +323,88 @@ get_system_info(void)
 }
 
 
-const char *
-get_optional_features(void)
+void
+get_optional_features(char *buf, size_t buf_size)
 {
-	static char features[1024];
 	unsigned int numfeatures = 0;
+	char *features = buf;
 
-	DiagSnPrintf(features, sizeof(features), "Optional features available: ");
+	DiagSnPrintf(features, buf_size, "Optional features available: ");
 
 #if defined(HAVE_CPU_AFFINITY)
 	if (numfeatures > 0) {
 		strncat(features, ", ",
-				sizeof(features) - strlen(features) - 1);
+				buf_size - strlen(features) - 1);
 	}
 	strncat(features, "CPU affinity setting",
-			sizeof(features) - strlen(features) - 1);
+			buf_size - strlen(features) - 1);
 	numfeatures++;
 #endif /* HAVE_CPU_AFFINITY */
 
 #if defined(HAVE_FLOWLABEL)
 	if (numfeatures > 0) {
 		strncat(features, ", ",
-				sizeof(features) - strlen(features) - 1);
+				buf_size - strlen(features) - 1);
 	}
 	strncat(features, "IPv6 flow label",
-			sizeof(features) - strlen(features) - 1);
+			buf_size - strlen(features) - 1);
 	numfeatures++;
 #endif /* HAVE_FLOWLABEL */
 
 #if defined(HAVE_SCTP)
 	if (numfeatures > 0) {
 		strncat(features, ", ",
-				sizeof(features) - strlen(features) - 1);
+				buf_size - strlen(features) - 1);
 	}
 	strncat(features, "SCTP",
-			sizeof(features) - strlen(features) - 1);
+			buf_size - strlen(features) - 1);
 	numfeatures++;
 #endif /* HAVE_SCTP */
 
 #if defined(HAVE_TCP_CONGESTION)
 	if (numfeatures > 0) {
 		strncat(features, ", ",
-				sizeof(features) - strlen(features) - 1);
+				buf_size - strlen(features) - 1);
 	}
 	strncat(features, "TCP congestion algorithm setting",
-			sizeof(features) - strlen(features) - 1);
+			buf_size - strlen(features) - 1);
 	numfeatures++;
 #endif /* HAVE_TCP_CONGESTION */
 
 #if defined(HAVE_SENDFILE)
 	if (numfeatures > 0) {
 		strncat(features, ", ",
-				sizeof(features) - strlen(features) - 1);
+				buf_size - strlen(features) - 1);
 	}
 	strncat(features, "sendfile / zerocopy",
-			sizeof(features) - strlen(features) - 1);
+			buf_size - strlen(features) - 1);
 	numfeatures++;
 #endif /* HAVE_SENDFILE */
 
 #if defined(HAVE_SO_MAX_PACING_RATE)
 	if (numfeatures > 0) {
 		strncat(features, ", ",
-				sizeof(features) - strlen(features) - 1);
+				buf_size - strlen(features) - 1);
 	}
 	strncat(features, "socket pacing",
-			sizeof(features) - strlen(features) - 1);
+			buf_size - strlen(features) - 1);
 	numfeatures++;
 #endif /* HAVE_SO_MAX_PACING_RATE */
 
 #if defined(HAVE_SSL)
 	if (numfeatures > 0) {
 		strncat(features, ", ",
-				sizeof(features) - strlen(features) - 1);
+				buf_size - strlen(features) - 1);
 	}
 	strncat(features, "authentication",
-			sizeof(features) - strlen(features) - 1);
+			buf_size - strlen(features) - 1);
 	numfeatures++;
 #endif /* HAVE_SSL */
 
 	if (numfeatures == 0) {
 		strncat(features, "None",
-				sizeof(features) - strlen(features) - 1);
+				buf_size - strlen(features) - 1);
 	}
-
-	return features;
 }
 
 /* Helper routine for building cJSON objects in a printf-like manner.

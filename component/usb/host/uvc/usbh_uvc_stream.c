@@ -75,7 +75,7 @@ static void usbh_uvc_sw_status_dump(void)
 
 				usbh_uvc_dump_simple(stream);
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "cnt:%d-%d-%d,mem:%d-%d-%d-%d/buf:%d-%d-%d/state:%d-%d-%d/%d/%d-%d\n"
-						 "uvc:%d-%d-%d-%d, %d-%d-%d-%d, frame:%d-%d-%d\n",
+						 "uvc:%d-%d-%d-%d, %d-%d-%d-%d, m:%d\n",
 						 stream->rx_frame_cnt, stream->err_frame_cnt, stream->drop_frame_cnt,
 						 stream->dec_no_buf_cnt, stream->foi_no_buf_cnt, stream->eof_no_buf_cnt, stream->next_no_buf_cnt,
 						 stream->cur_packet, stream->cur_urb, cur_frame_idx,
@@ -129,6 +129,11 @@ static int usbh_uvc_set_urb(usbh_uvc_stream_t *stream)
 	u32 max_pkt_size, pkt_cnt, pkt_stride;
 
 	max_pkt_size = stream->cur_setting.pipe.xfer_len;
+	if ((max_pkt_size <= 0)) {
+		//RTK_LOGS(TAG, RTK_LOG_ERROR, "mkts %d\n", max_pkt_size);
+		return HAL_ERR_PARA;
+	}
+
 	pkt_stride = CACHE_LINE_ALIGNMENT(max_pkt_size);
 	pkt_cnt = USBH_UVC_URB_SIZE / max_pkt_size;
 
@@ -136,14 +141,24 @@ static int usbh_uvc_set_urb(usbh_uvc_stream_t *stream)
 	stream->urb_buffer_size = pkt_cnt * pkt_stride;
 	stream->urb_buffer = (u8 *)usb_os_malloc(USBH_UVC_URB_NUMS * stream->urb_buffer_size);
 	if (stream->urb_buffer == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc urb buf fail\n");
 		return HAL_ERR_MEM;
 	}
 
 	for (i = 0; i < USBH_UVC_URB_NUMS; i ++) {
 		stream->urb[i] = (usbh_uvc_urb_t *)usb_os_malloc(sizeof(usbh_uvc_urb_t) + (pkt_cnt + 1) * sizeof(usbh_uvc_packet_desc_t));
 		if (stream->urb[i] == NULL) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc urb buf[%d] fail\n", i);
+
+			while (--i >= 0) {
+				if (stream->urb[i]) {
+					usb_os_mfree(stream->urb[i]);
+					stream->urb[i] = NULL;
+				}
+			}
+
+			if (stream->urb_buffer) {
+				usb_os_mfree(stream->urb_buffer);
+				stream->urb_buffer = NULL;
+			}
 			return HAL_ERR_MEM;
 		}
 		stream->urb[i]->addr = (u8 *)((u32)stream->urb_buffer + i * stream->urb_buffer_size);
@@ -174,7 +189,7 @@ static int usbh_uvc_fill_giveback_queue(usbh_uvc_stream_t *stream)
 	int i = 0;
 	for (i = 1; i < USBH_UVC_URB_NUMS; i ++) {
 		if (usb_os_queue_send(stream->urb_giveback_queue, (void *)&stream->urb[i], RTOS_MAX_TIMEOUT) != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Push to giveback Q %d fail\n", i);
+			//RTK_LOGS(TAG, RTK_LOG_ERROR, "Push to giveback Q %d fail\n", i);
 			return HAL_ERR_UNKNOWN;
 		}
 	}
@@ -205,6 +220,7 @@ static void usbh_uvc_reset_urb(usbh_uvc_stream_t *stream)
 	if (stream->urb_buffer != NULL) {
 		usb_os_mfree(stream->urb_buffer);
 		stream->urb_buffer = NULL;
+		stream->urb_buffer_size = 0;
 	}
 }
 
@@ -302,7 +318,7 @@ static void usbh_uvc_combine_thread(void *param)
 			continue;
 		}
 
-		if (usb_os_sema_take(stream->urb_ready_sema, wait_recv_timeout) != HAL_OK) {
+		if (rtos_sema_take(stream->urb_ready_sema, wait_recv_timeout) != HAL_OK) {
 			continue;
 		}
 
@@ -311,14 +327,14 @@ static void usbh_uvc_combine_thread(void *param)
 		}
 
 		if (usb_os_queue_receive(stream->urb_wait_queue, (void *)&urb_tmp, 0) != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Urb W Queue empty!\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Urb W Q empty!\n");
 			continue;
 		}
 
 		usbh_uvc_combine_urb(stream, urb_tmp);
 
 		while (stream->is_resource_safe && usb_os_queue_send(stream->urb_giveback_queue, (void *)&urb_tmp, giveback_send_timeout) != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to push urb back\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to P urb\n");
 			if (stream->is_resource_safe == 0) {
 				break;
 			}
@@ -326,6 +342,7 @@ static void usbh_uvc_combine_thread(void *param)
 		}
 	}
 
+	stream->combine_task = NULL;
 	rtos_task_delete(NULL);
 }
 
@@ -336,21 +353,33 @@ static void usbh_uvc_combine_thread(void *param)
   */
 static void usbh_uvc_combine_thread_deinit(usbh_uvc_stream_t *stream)
 {
-	usbh_uvc_urb_t *urb_tmp;
+	stream->complete_flag = 0;
+	stream->complete_on = 0;
+	stream->is_resource_safe = 0;
 
 	if (stream->urb_ready_sema) {
 		rtos_sema_give(stream->urb_ready_sema);
+	}
+}
+
+/**
+  * @brief	Free UVC combine thread resources
+  * @param	stream: uvc stream interface
+  * @retval None
+  */
+static void usbh_uvc_free_combine_resources(usbh_uvc_stream_t *stream)
+{
+	int retry = 100;
+	usbh_uvc_urb_t *urb_tmp;
+
+	while (retry-- && stream->combine_task != NULL) {
+		usb_os_sleep_ms(10);
+	}
+
+	if (stream->urb_ready_sema) {
 		rtos_sema_delete(stream->urb_ready_sema);
 		stream->urb_ready_sema = NULL;
 	}
-
-	if (stream->combine_task != NULL) {
-		rtos_task_delete(stream->combine_task);
-		stream->combine_task = NULL;
-	}
-
-	stream->complete_flag = 0;
-	stream->complete_on = 0;
 
 	if (stream->urb_wait_queue != NULL) {
 		/*
@@ -383,15 +412,17 @@ static void usbh_uvc_combine_thread_deinit(usbh_uvc_stream_t *stream)
 static int usbh_uvc_combine_resources_init(usbh_uvc_stream_t *stream)
 {
 	if (usb_os_queue_create(&stream->urb_wait_queue, sizeof(usbh_uvc_urb_t *), USBH_UVC_URB_NUMS) != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init wait Q fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init W Q fail\n");
 		return HAL_ERR_UNKNOWN;
 	}
 
 	if (usb_os_queue_create(&stream->urb_giveback_queue, sizeof(usbh_uvc_urb_t *), USBH_UVC_URB_NUMS) != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init giveback Q fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init G Q fail\n");
 		usb_os_queue_delete(stream->urb_wait_queue);
+		stream->urb_wait_queue = NULL;
 		return HAL_ERR_UNKNOWN;
 	}
+
 	return HAL_OK;
 }
 
@@ -590,7 +621,7 @@ static void usbh_uvc_combine_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 			/* should not reach here */
 			if (list_empty(&stream->frame_empty)) {
 				usb_os_unlock(stream->frame_mutex);
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reclaim fatal error\n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec err\n");
 				return;
 			}
 		}
@@ -618,7 +649,7 @@ static void usbh_uvc_combine_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 		header = (usbh_uvc_vs_payload_header_t *)data;
 
 		if (length < header_len) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Err: payload len(%d) < header len(%d)\n", length, header_len);
+			//RTK_LOGS(TAG, RTK_LOG_ERROR, "Err: payload len(%d) < header len(%d)\n", length, header_len);
 			continue;
 		}
 
@@ -720,8 +751,8 @@ static inline u32 usbh_uvc_frame_num_inc(u32 frame, u32 inc)
 static void usbh_uvc_isoc_in_process_xfer(usbh_uvc_stream_t *stream, u32 cur_frame)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
-	usbh_uvc_setting_t *cur_setting = &stream->cur_setting;
-	usbh_pipe_t *pipe = &cur_setting->pipe;
+	usbh_uvc_setting_t *cur_setting;
+	usbh_pipe_t *pipe;
 	u32 urb_index;
 	u32 packet_index;
 
@@ -729,6 +760,8 @@ static void usbh_uvc_isoc_in_process_xfer(usbh_uvc_stream_t *stream, u32 cur_fra
 #if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
 		uvc->isoc_rx_start_cnt ++;
 #endif
+		cur_setting = &stream->cur_setting;
+		pipe = &cur_setting->pipe;
 		urb_index = stream->cur_urb;
 		packet_index = stream->cur_packet;
 		pipe->frame_num = usbh_uvc_frame_num_inc(cur_frame, 1);
@@ -772,6 +805,23 @@ int usbh_uvc_process_completed(usb_host_t *host, u8 pipe_num)
 			pipe = &(stream->cur_setting.pipe);
 
 			if (pipe->pipe_num == pipe_num) {
+				urb_index = &(stream->cur_urb);
+				packet_index = &(stream->cur_packet);
+				// drop remain data when dettach
+				if ((stream->next_xfer == 0) ||
+					(stream->is_resource_safe == 0) ||
+					(!stream->complete_flag)) {
+					if (*packet_index > 0 && stream->urb[*urb_index]) {
+						usbh_uvc_urb_t *cur_urb = stream->urb[*urb_index];
+						for (u32 j = 0; j < *packet_index; j++) {
+							cur_urb->packet_info[j].length = 0;
+						}
+						*packet_index = 0;
+					}
+
+					pipe->xfer_state = USBH_EP_XFER_IDLE;
+					return HAL_OK;
+				}
 
 				urb_state = usbh_get_urb_state(host, pipe);
 				if (urb_state == USBH_URB_DONE) {
@@ -781,9 +831,6 @@ int usbh_uvc_process_completed(usb_host_t *host, u8 pipe_num)
 #endif
 
 					rx_len = usbh_get_last_transfer_size(host, pipe);
-
-					urb_index = &(stream->cur_urb);
-					packet_index = &(stream->cur_packet);
 
 					/* some cameras send payload header without any valid payload packets, to reduce cpu loading just filter it */
 					if (rx_len > 12) {
@@ -803,6 +850,11 @@ int usbh_uvc_process_completed(usb_host_t *host, u8 pipe_num)
 								// update urb
 								*urb_index = next_urb->index;
 							}// else: get free urb fail, reuse current urb
+
+							if (usbh_uvc_usb_status_check() != HAL_OK) {
+								pipe->xfer_state = USBH_EP_XFER_IDLE;
+								return HAL_OK;
+							}
 
 							*packet_index = 0;
 						}
@@ -902,6 +954,11 @@ usbh_uvc_urb_t *usbh_uvc_urb_complete(usbh_uvc_stream_t *stream, usbh_uvc_urb_t 
 		return NULL;
 	}
 
+	if ((stream->urb_giveback_queue == NULL) ||
+		(stream->urb_wait_queue == NULL) ||
+		(stream->urb_ready_sema == NULL)) {
+		return NULL;
+	}
 	// ISR write urb(urb_wait_queue or reuse not submit urb), combine urb read urb(urb_giveback_queue)
 	// rule: urb never block isoc in
 	// 0. if no valid payload, just reuse cur urb and don't increase packet num
@@ -909,19 +966,23 @@ usbh_uvc_urb_t *usbh_uvc_urb_complete(usbh_uvc_stream_t *stream, usbh_uvc_urb_t 
 	if (usb_os_queue_receive(stream->urb_giveback_queue, (void *)&next_urb, 0) == HAL_OK) {
 		if (usb_os_queue_send(stream->urb_wait_queue, (void *)&cur_urb, 0) != HAL_OK) {
 			// shouldn't reach here
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Send wait q fail\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Tx W Q fail\n");
 		} else {
 			usb_os_sema_give(stream->urb_ready_sema);
 			return next_urb;
 		}
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Rx G Q fail\n");
 	}
 
 	if (usb_os_queue_receive(stream->urb_wait_queue, (void *)&next_urb, 0) == HAL_OK) {
 		if (usb_os_queue_send(stream->urb_wait_queue, (void *)&cur_urb, 0) != HAL_OK) {
 			// shouldn't reach here
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reuse, send wait q fail\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Rsend W Q fail\n");
 		}
 		return next_urb;
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Rx W Q fail\n");
 	}
 
 	// shouldn't reach here. If reach here, cur urb won't be send and rx process will reuse it
@@ -951,7 +1012,7 @@ int usbh_uvc_set_video(usbh_uvc_stream_t *stream, int probe)
 	if (USB_IS_MEM_DMA_ALIGNED(uvc->request_buf)) {
 		DCache_Clean((u32)uvc->request_buf, size);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "req buf align err!\n", uvc->request_buf);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "buf align err\n", uvc->request_buf);
 		return HAL_ERR_MEM;
 	}
 
@@ -1013,7 +1074,7 @@ int usbh_uvc_video_init(usbh_uvc_stream_t *stream)
 {
 	usbh_uvc_stream_control_t *ctrl = &stream->stream_ctrl;
 	usbh_uvc_vs_t *vs = stream->vs_intf;
-	u32 num_format = vs->nformat;
+	u32 num_format;
 	u32 num_frame;
 	usbh_uvc_vs_format_t *format = NULL;
 	usbh_uvc_vs_frame_t *frame = NULL;
@@ -1021,10 +1082,19 @@ int usbh_uvc_video_init(usbh_uvc_stream_t *stream)
 	int found_format = 0;
 	int found_frame = 0;
 
+	if (!vs) {
+		//RTK_LOGS(TAG, RTK_LOG_ERROR, "vs_intf NULL\n");
+		return HAL_ERR_UNKNOWN;
+	}
+	num_format = vs->nformat;
+
 	/*select matched format */
 	for (i = 0; i < (int)num_format; i ++) {
 		format = &vs->format[i];
-
+		if (!format) {
+			//RTK_LOGS(TAG, RTK_LOG_ERROR, "vs_fmt NULL\n", stream);
+			return HAL_ERR_UNKNOWN;
+		}
 		if (format->index == ctrl->bFormatIndex) {
 			found_format = 1;
 			break;
@@ -1052,44 +1122,6 @@ int usbh_uvc_video_init(usbh_uvc_stream_t *stream)
 	}
 
 	return HAL_OK;
-}
-
-
-static void usbh_uvc_free_combine_resources(usbh_uvc_stream_t *stream)
-{
-	int i;
-
-	if (stream->combine_task != NULL) {
-		rtos_task_delete(stream->combine_task);
-		stream->combine_task = NULL;
-		stream->complete_flag = 0;
-	}
-
-	if (stream->urb_wait_queue != NULL) {
-		usb_os_queue_delete(stream->urb_wait_queue);
-		stream->urb_wait_queue = NULL;
-	}
-
-	if (stream->urb_giveback_queue != NULL) {
-		usb_os_queue_delete(stream->urb_giveback_queue);
-		stream->urb_giveback_queue = NULL;
-	}
-
-	for (i = 0; i < USBH_UVC_URB_NUMS; i++) {
-		if (stream->urb[i] != NULL) {
-			usb_os_mfree(stream->urb[i]);
-			stream->urb[i] = NULL;
-		}
-	}
-
-	if (stream->urb_buffer != NULL) {
-		usb_os_mfree(stream->urb_buffer);
-		stream->urb_buffer = NULL;
-		stream->urb_buffer_size = 0;
-	}
-
-	stream->is_resource_safe = 0;
-	stream->cur_urb = 0;
 }
 
 #if (USBH_UVC_USE_HW == 1)
@@ -1196,6 +1228,30 @@ void usbh_uvc_hw_status_dump_thread(void *param)
 #endif /* USBH_UVC_USE_HW == 1 */
 
 /**
+  * @brief	Stop video streaming
+  * @param	None
+  * @retval Status
+  */
+int usbh_uvc_stream_stop(usbh_uvc_stream_t *stream)
+{
+	usbh_uvc_host_t *uvc = &uvc_host;
+	if (stream->stream_state >= STREAMING_STOP) {
+		return HAL_OK;
+	}
+
+	stream->next_xfer = 0;
+	stream->stream_state = STREAMING_STOP;
+	stream->stream_data_state = STREAM_DATA_OFF;
+
+	usbh_pipe_t *pipe = &stream->cur_setting.pipe;
+	if (pipe->pipe_num) {
+		usbh_close_pipe(uvc->host, pipe);
+	}
+
+	return HAL_OK;
+}
+
+/**
   * @brief  Init streaming data
   * @param	stream: uvc stream interface
   * @retval Status
@@ -1206,16 +1262,17 @@ int usbh_uvc_stream_init(usbh_uvc_stream_t *stream)
 	u32 frame_buf_size = CACHE_LINE_ALIGNMENT(stream->frame_buffer_size);
 	int i;
 
+#if (USBH_UVC_USE_HW == 0)
 	usb_os_sema_create(&stream->frame_sema);
 	usb_os_lock_create(&stream->frame_mutex);
+#endif
 
 	/*init frame buffer*/
 	INIT_LIST_HEAD(&stream->frame_chain);
 	INIT_LIST_HEAD(&stream->frame_empty);
 	stream->frame_buf = (u8 *)usb_os_malloc(USBH_UVC_VIDEO_FRAME_NUMS * frame_buf_size);
 	if (stream->frame_buf == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc frame buf fail\n");
-		return HAL_ERR_MEM;
+		goto exit;
 	}
 
 	for (i = 0; i < USBH_UVC_VIDEO_FRAME_NUMS; i++) {
@@ -1233,7 +1290,7 @@ int usbh_uvc_stream_init(usbh_uvc_stream_t *stream)
 
 	/* set urb buffer */
 	if (usbh_uvc_set_urb(stream) != HAL_OK) {
-		goto clean_combine_exit;
+		goto exit;
 	}
 
 #if (USBH_UVC_USE_HW == 0)
@@ -1241,12 +1298,12 @@ int usbh_uvc_stream_init(usbh_uvc_stream_t *stream)
 
 	status = usbh_uvc_combine_resources_init(stream);
 	if (status != HAL_OK) {
-		goto clean_combine_exit;
+		goto exit;
 	}
 
 	status = usbh_uvc_fill_giveback_queue(stream);
 	if (status != HAL_OK) {
-		goto clean_combine_exit;
+		goto exit;
 	}
 
 	stream->is_resource_safe = 1;
@@ -1254,7 +1311,7 @@ int usbh_uvc_stream_init(usbh_uvc_stream_t *stream)
 	/* init combine thread */
 	status = usbh_uvc_combine_thread_init(stream);
 	if (status != HAL_OK) {
-		goto clean_combine_exit;
+		goto exit;
 	}
 #endif
 
@@ -1265,7 +1322,8 @@ int usbh_uvc_stream_init(usbh_uvc_stream_t *stream)
 
 	stream->uvc_dec = usbh_hw_uvc_alloc_channel();
 	if (stream->uvc_dec == NULL) {
-		return HAL_ERR_PARA;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc ch err\n");
+		goto exit;
 	}
 
 	stream->is_resource_safe = 1;
@@ -1293,9 +1351,26 @@ int usbh_uvc_stream_init(usbh_uvc_stream_t *stream)
 
 	return HAL_OK;
 
-clean_combine_exit:
-	usbh_uvc_free_combine_resources(stream);
+exit:
+	usbh_uvc_stream_deinit(stream);
 	return HAL_ERR_MEM;
+}
+
+/**
+  * @brief  Wait for get-frame thread to exit safely
+  * @param  stream: uvc stream interface
+  * @retval None
+  */
+static void usbh_uvc_exit_get_frame(usbh_uvc_stream_t *stream)
+{
+	/* only in dettach */
+	if (usbh_uvc_usb_status_check() != HAL_OK) {
+		while (stream->get_valid && !stream->get_exit) {
+			rtos_time_delay_ms(1);
+		}
+		stream->get_valid = 0;
+		stream->get_exit  = 0;
+	}
 }
 
 /**
@@ -1305,18 +1380,18 @@ clean_combine_exit:
   */
 void usbh_uvc_stream_deinit(usbh_uvc_stream_t *stream)
 {
-	usbh_uvc_host_t *uvc = &uvc_host;
-	usbh_uvc_setting_t *cur_setting = &stream->cur_setting;
 	usbh_uvc_frame_t *frame = NULL;
 	int i = 0;
 
-#if USBH_UVC_USE_HW
-	if (stream->uvc_dec) {
-		usbh_hw_uvc_stop(stream->uvc_dec);
-		usbh_hw_uvc_deinit(stream->uvc_dec);
-		usbh_hw_uvc_free_channel(stream->uvc_dec);
-		stream->uvc_dec = NULL;
+	if (stream->stream_state == STREAMING_OFF) {
+		return;
+	}
+	stream->stream_state = STREAMING_OFF;
 
+#if (USBH_UVC_USE_HW == 1)
+	usbh_uvc_host_t *uvc = &uvc_host;
+	usbh_hw_uvc_dec_t *dec = stream->uvc_dec;
+	if (dec) {
 		rtos_critical_enter(RTOS_CRITICAL_USB);
 		if (uvc->hw_irq_ref_cnt > 0) {
 			uvc->hw_irq_ref_cnt--;
@@ -1325,20 +1400,43 @@ void usbh_uvc_stream_deinit(usbh_uvc_stream_t *stream)
 			}
 		}
 		rtos_critical_exit(RTOS_CRITICAL_USB);
-	}
-#endif
 
-	/* close pipe */
-	usbh_close_pipe(uvc->host, &cur_setting->pipe);
+		usbh_hw_uvc_stop(dec);
+		usbh_hw_uvc_deinit(dec);
+
+		if (dec->dec_sema) {
+			rtos_sema_give(dec->dec_sema);
+		}
+		usbh_uvc_exit_get_frame(stream);
+
+		usbh_hw_uvc_free_channel(dec);
+		stream->uvc_dec = NULL;
+	}
+#else
+
+	if (stream->frame_sema) {
+		rtos_sema_give(stream->frame_sema);
+	}
+	usbh_uvc_exit_get_frame(stream);
 
 	/* delete combine task */
-#if (USBH_UVC_USE_HW == 0)
 	usbh_uvc_combine_thread_deinit(stream);
+
+	usbh_uvc_free_combine_resources(stream);
+
+	if (stream->frame_sema) {
+		rtos_sema_delete(stream->frame_sema);
+		stream->frame_sema = NULL;
+	}
+
+	if (stream->frame_mutex) {
+		usb_os_lock_delete(stream->frame_mutex);
+		stream->frame_mutex = NULL;
+	}
 #endif
 
 	/* reset urb buffer */
 	usbh_uvc_reset_urb(stream);
-
 	INIT_LIST_HEAD(&stream->frame_chain);
 	INIT_LIST_HEAD(&stream->frame_empty);
 
@@ -1355,18 +1453,6 @@ void usbh_uvc_stream_deinit(usbh_uvc_stream_t *stream)
 	stream->last_fid = 0;
 	stream->cur_frame_buf = 0;
 	stream->urb_buffer_size = 0;
-
-	if (stream->frame_sema) {
-		rtos_sema_give(stream->frame_sema);
-		rtos_sema_delete(stream->frame_sema);
-		stream->frame_sema = NULL;
-	}
-
-	if (stream->frame_mutex) {
-		usb_os_unlock(stream->frame_mutex);
-		usb_os_lock_delete(stream->frame_mutex);
-		stream->frame_mutex = NULL;
-	}
 
 	if (stream->frame_buf) {
 		usb_os_mfree(stream->frame_buf);

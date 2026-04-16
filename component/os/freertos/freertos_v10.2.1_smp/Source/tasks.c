@@ -691,6 +691,43 @@ static void freertos_tasks_c_additions_init(void) PRIVILEGED_FUNCTION;
 #endif
 
 /*-----------------------------------------------------------*/
+#if ( configUSE_NEWLIB_REENTRANT == 1 )
+struct _reent xPrimaryCoreReenat[configNUM_CORES] = {0};
+
+extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
+
+struct _reent * __getreent(void)
+{
+    uint32_t core_id = portGET_CORE_ID();
+    if( uxPortSchedulerStart[core_id] == pdFALSE )
+    {
+        /* To prevent core0 and core1 calling the newlib function before kernel
+         * startup, such as "printf" in main() before vTaskStartScheduler(),
+         * we provide a primary core reent structure for each core.
+         */
+        return &xPrimaryCoreReenat[core_id];
+    }
+    else
+    {
+        return pxTaskGetReent();
+    }
+}
+
+
+struct _reent * pxTaskGetReent(void)
+{
+	TaskHandle_t xCurrentTask;
+	uint32_t ulState;
+
+	ulState = portDISABLE_INTERRUPTS();
+	xCurrentTask = pxCurrentTCBs[ portGET_CORE_ID() ];
+ 	portRESTORE_INTERRUPTS(ulState);
+
+	return &( xCurrentTask->xNewLib_reent );
+}
+#endif /* configUSE_NEWLIB_REENTRANT */
+
+/*-----------------------------------------------------------*/
 
 BaseType_t xTaskGetCurrentYieldPending(void)
 {
@@ -2296,14 +2333,6 @@ void vTaskStartScheduler(void)
 		starts to run. */
 		portDISABLE_INTERRUPTS();
 
-#if ( configUSE_NEWLIB_REENTRANT == 1 )
-		{
-			/* Switch Newlib's _impure_ptr variable to point to the _reent
-			structure specific to the task that will run first. */
-			_impure_ptr = &(pxCurrentTCB->xNewLib_reent);
-		}
-#endif /* configUSE_NEWLIB_REENTRANT */
-
 		xNextTaskUnblockTime = portMAX_DELAY;
 		xSchedulerRunning = pdTRUE;
 		xTickCount = (TickType_t) configINITIAL_TICK_COUNT;
@@ -3389,13 +3418,6 @@ void vTaskSwitchContext(BaseType_t xCoreID)
 					/* Reset highest ready priority */
 					taskRESET_READY_PRIORITY();
 
-#if ( configUSE_NEWLIB_REENTRANT == 1 )
-					{
-						/* Switch Newlib's _impure_ptr variable to point to the _reent
-						structure specific to this task. */
-						_impure_ptr = &(pxCurrentTCBs[ xCoreID ]->xNewLib_reent);
-					}
-#endif /* configUSE_NEWLIB_REENTRANT */
 				} else {
 					mtCOVERAGE_TEST_MARKER();
 				}
@@ -3471,13 +3493,6 @@ void vTaskSwitchContext(BaseType_t xCoreID)
 		/* Reset highest ready priority */
 		taskRESET_READY_PRIORITY();
 
-#if ( configUSE_NEWLIB_REENTRANT == 1 )
-		{
-			/* Switch Newlib's _impure_ptr variable to point to the _reent
-			structure specific to this task. */
-			_impure_ptr = &(pxCurrentTCBs[ xCoreID ]->xNewLib_reent);
-		}
-#endif /* configUSE_NEWLIB_REENTRANT */
 	}
 
 	portRELEASE_TASK_LOCK();

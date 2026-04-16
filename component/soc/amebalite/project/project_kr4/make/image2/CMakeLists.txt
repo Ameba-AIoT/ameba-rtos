@@ -30,7 +30,7 @@ ameba_add_subdirectory(${c_CMPT_DIAGNOSE_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_VERIFICATION_DIR})
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_fw)
-
+ameba_add_subdirectory(${c_CMPT_SOC_OTA_DIR})
 ameba_add_subdirectory(${c_MCU_SRC_DIR})
 
 ###############################  GENERATE IMAGE  ###################################

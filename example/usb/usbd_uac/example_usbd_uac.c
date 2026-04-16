@@ -16,12 +16,10 @@
 /* This used to check the USB issue */
 /*
 	Note:
-	Currently supported on AMEBASMART/AMEBADPLUS/AMEBAGREEN2, configuration CONFIG_USBD_AUDIO_EN = 1
-	If EVB is AMEBAGREEN2 and CONFIG_USBD_AUDIO_EN=1, then OS needs to be configured as FREERTOS(default is FREERTOS_ROM)
+	If EVB is AMEBAGREEN2 and CONFIG_SUPPORT_AUDIO_FOR_USB=1, then OS needs to be configured as FREERTOS(default is FREERTOS_ROM)
 */
-#define CONFIG_USBD_AUDIO_EN                          0
 
-#if CONFIG_USBD_AUDIO_EN
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 #include "audio/audio_control.h"
 #include "audio/audio_equalizer.h"
 #include "audio/audio_track.h"
@@ -99,7 +97,7 @@ static rtos_sema_t uac_ready_sema;
 
 static volatile u8 audio_task_stop = 0;
 
-#if CONFIG_USBD_AUDIO_EN
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 /*
 	the buffer which will write to the audio track
 	the basic length is USB_AUDIO_BUF_SIZE
@@ -316,9 +314,12 @@ static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 	if (byte_width != 0U) {
 		uac_cb.out.byte_width = byte_width;
 	}
-	rtos_sema_give(uac_ready_sema);
-	audio_task_stop = 1;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set ch_cnt %d\n", sampling_freq, ch_cnt);
+
+	if (sampling_freq && ch_cnt && byte_width) {
+		rtos_sema_give(uac_ready_sema);
+		audio_task_stop = 1;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set ch_cnt %d\n", sampling_freq, ch_cnt);
+	}
 }
 /* playback , USB OUT */
 static void example_audio_track_play(void)
@@ -333,7 +334,7 @@ static void example_audio_track_play(void)
 		}
 	} while (1);
 
-#if  CONFIG_USBD_AUDIO_EN
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 	struct AudioTrack *audio_track;
 	uint32_t format;
 	int32_t track_buf_size;

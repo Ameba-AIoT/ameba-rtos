@@ -11,7 +11,6 @@ ameba_add_subdirectory(${c_CMPT_FILE_SYSTEM_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_HAL_DIR})
 ameba_add_subdirectory(${c_CMPT_LWIP_DIR})
-ameba_add_subdirectory(${c_CMPT_MISC_DIR})
 ameba_add_subdirectory(${c_CMPT_MONITOR_DIR})
 ameba_add_subdirectory(${c_CMPT_NETWORK_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
@@ -27,7 +26,7 @@ ameba_add_subdirectory_if_exist(${c_CMPT_APP_DIR}/benchmark)
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_fw)
 ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR})
-
+ameba_add_subdirectory(${c_CMPT_SOC_OTA_DIR})
 ameba_add_subdirectory(${c_MCU_SRC_DIR})
 
 ###############################  GENERATE IMAGE  ###################################

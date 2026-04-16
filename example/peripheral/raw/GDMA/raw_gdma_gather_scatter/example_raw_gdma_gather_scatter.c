@@ -16,11 +16,11 @@
 
 
 /*src/dst buffer must be aligned with cache line*/
-ALIGNMTO(64) uint8_t gather_src_buf[DATA_SIZE];
-ALIGNMTO(64) uint8_t gather_dst_buf[DATA_SIZE];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t gather_src_buf[DATA_SIZE];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t gather_dst_buf[DATA_SIZE];
 
-ALIGNMTO(64) uint8_t scatter_src_buf[DATA_SIZE];
-ALIGNMTO(64) uint8_t scatter_dst_buf[DATA_SIZE * 2];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t scatter_src_buf[DATA_SIZE];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t scatter_dst_buf[DATA_SIZE * 2];
 
 volatile uint8_t src_gather_done = 0;
 volatile uint8_t dst_scatter_done = 0;

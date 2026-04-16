@@ -45,10 +45,6 @@ int whc_spi_dev_dma_rx_done_cb(void *param)
 		/* reserved 3 skb for rx */
 		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 3) ||
 			((new_skb = dev_alloc_skb(SPI_BUFSZ, SPI_SKB_RSVD_LEN)) == NULL)) {
-#ifndef WHC_SKIP_NP_MSG_TASK
-			/* resume pending queue to release skb */
-			rtw_pending_q_resume();
-#endif
 			new_skb = spi_priv->rx_skb;
 			goto drop_pkt;
 		} else {
@@ -809,12 +805,7 @@ void whc_spi_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
 			break;
 		}
 		/* wakeup task */
-#ifndef WHC_SKIP_NP_MSG_TASK
-		rtos_sema_give(dev_xmit_priv.xmit_sema);
-#else
 		rtw_single_thread_wakeup();
-#endif
-
 		break;
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	case WHC_WIFI_EVT_API_CALL:

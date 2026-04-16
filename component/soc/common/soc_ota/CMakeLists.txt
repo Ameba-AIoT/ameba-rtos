@@ -9,10 +9,6 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #----------------------------------------#
 # Component public part, user config begin
 
-# You may use if-else condition to set or update predefined variable above
-
-#FIXME: miss role for public_libraries
-
 # Component public part, user config end
 #----------------------------------------#
 
@@ -39,49 +35,26 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_includes
-    ${c_CMPT_USB_DIR}/common
-    ${c_CMPT_USB_DIR}/device/core
-    ${c_CMPT_USB_DIR}/host/core
-)
-
-ameba_list_append(private_sources
-    ${c_CMPT_SOC_DIR}/fwlib/ram_common/ameba_usb.c
-    ${c_CMPT_USB_DIR}/common/usb_hal.c
-    ${c_CMPT_USB_DIR}/common/usb_os.c
-    ${c_CMPT_USB_DIR}/device/core/usbd.c
-    ${c_CMPT_USB_DIR}/device/core/usbd_core.c
-    ${c_CMPT_USB_DIR}/device/core/usbd_hal.c
-    ${c_CMPT_USB_DIR}/device/core/usbd_pcd.c
-    ${c_CMPT_USB_DIR}/host/core/usbh.c
-    ${c_CMPT_USB_DIR}/host/core/usbh_core.c
-    ${c_CMPT_USB_DIR}/host/core/usbh_hal.c
-    ${c_CMPT_USB_DIR}/host/core/usbh_hcd.c
-)
-
-ameba_list_append_ifnot(CONFIG_SUPPORT_USB_NO_PHY private_sources
-    ${c_CMPT_USB_DIR}/common/usb_phy.c
-)
-
-include(${c_CMPT_USB_DIR}/device/class.cmake)
-
-include(${c_CMPT_USB_DIR}/host/class.cmake)
+if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC))
+    ameba_list_append(private_sources ameba_ota.c)
+endif()
 
 # Component private part, user config end
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-###NOTE: For open-source component, always build from source
-ameba_add_internal_library(usb_drd
-    p_SOURCES
-        ${private_sources}
-    p_INCLUDES
-        ${private_includes}
-    p_DEFINITIONS
-        ${private_definitions}
-    p_COMPILE_OPTIONS
-        ${private_compile_options}
-    p_DROP_IF_NO_SOURCES
-)
+###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
+if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC))
+    ameba_add_internal_library(ameba_ota
+        p_SOURCES
+            ${private_sources}
+        p_INCLUDES
+            ${private_includes}
+        p_DEFINITIONS
+            ${private_definitions}
+        p_COMPILE_OPTIONS
+            ${private_compile_options}
+    )
+endif()
 ##########################################################################################

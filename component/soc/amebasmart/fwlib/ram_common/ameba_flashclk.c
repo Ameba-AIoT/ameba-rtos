@@ -26,7 +26,6 @@ static u8 check_config_reg = 0;
   *		 @arg FLASH_CLK_DIV9 => SPIC-1/9 nppll
   *		 @arg FLASH_CLK_DIV10 => SPIC-1/10 nppll
   */
-BOOT_RAM_TEXT_SECTION
 u32 FLASH_ClockDiv(u8 Div)
 {
 	u32 temp = 0;
@@ -97,7 +96,6 @@ u32 FLASH_ClockDiv(u8 Div)
   * @brief  Set New Calibration Clock Phase shift step for calibration
   * @param  phase_idx: get from calibration to set FLASH_PS_PHASE
   */
-BOOT_RAM_TEXT_SECTION
 u32 FLASH_CalibrationPhaseIdx(u8 phase_idx)
 {
 	u32 temp = 0;
@@ -163,7 +161,7 @@ u32 FLASH_CalibrationPhaseIdx(u8 phase_idx)
   * @brief  Set New Calibration Disable/Enable
   * @param  NewStatus: Disable/Enable
   */
-BOOT_RAM_TEXT_SECTION
+SRAMDRAM_ONLY_TEXT_SECTION
 u32 FLASH_CalibrationNewCmd(u32 NewStatus)
 {
 	u32 temp = 0;
@@ -206,7 +204,6 @@ u32 FLASH_CalibrationNewCmd(u32 NewStatus)
   * @note step=2 & 100MHz will take 56.5us for a LineDelay calibration
   * @note cache will be disable in this function, you should open cache after this function if needed
   */
-BOOT_RAM_TEXT_SECTION
 u32 FLASH_CalibrationNew(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8 Div, u8 CalStep, u8 LineDelay,
 						 u8 StartIdx)
 {
@@ -309,7 +306,6 @@ u32 FLASH_CalibrationNew(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8
   * @retval 1: calibration success
   *		0: calibration fail
   */
-BOOT_RAM_TEXT_SECTION
 u32 FLASH_Calibration(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8 LineDelay)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
@@ -385,7 +381,115 @@ u32 FLASH_Calibration(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8 Li
 	}
 }
 
-BOOT_RAM_TEXT_SECTION
+/**
+  * @brief  Open PLL Power
+  */
+SRAMDRAM_ONLY_TEXT_SECTION
+void FLASH_Calibration_PLL_Open(void)
+{
+	// u32 temp = 0;
+	// PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
+
+	// /* 3. clear PLL_PS[14], then set to 1. Should delay 10 us before enable clock div */
+	// temp = PLL->PLL_PS;
+	// temp &= ~PLL_BIT_POW_CKGEN;
+	// PLL->PLL_PS = temp;
+
+	// temp |= PLL_BIT_POW_CKGEN;
+	// PLL->PLL_PS = temp;
+	// DelayUs(10);
+
+	// /* 4. Enable CK_400M and CK_400M_PS for divider */
+	// PLL->PLL_PS |= PLL_BIT_EN_CK600M | PLL_BIT_EN_CK600M_PS;
+}
+/**
+  * @brief  Close PLL Power
+  * @param  none.
+  */
+SRAMDRAM_ONLY_TEXT_SECTION
+void FLASH_Calibration_PLL_Close(void)
+{
+	// PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
+
+	// /* set PLL 600M phase shift enable */
+	// PLL->PLL_PS &= ~(PLL_BIT_EN_CK600M | PLL_BIT_EN_CK600M_PS);
+
+	// /* 2. clear PLL_PS[14] to dislabe PLL power */
+	// PLL->PLL_PS &= ~PLL_BIT_POW_CKGEN;
+}
+
+/**
+  * @brief    Configure SPIC IP Clock.
+  * @param  Source:  This parameter can be one of the following values:
+  *                            @arg BIT_LSYS_CKSL_SPIC_XTAL
+  *                            @arg BIT_LSYS_CKSL_SPIC_PLL
+  * @param  Protection:  if disable interrupt when switch clock:
+  * @retval   None
+  */
+SRAMDRAM_ONLY_TEXT_SECTION
+void FLASH_ClockSwitch(u32 Source, u32 Protection)
+{
+	FLASH_InitTypeDef *FLASH_InitStruct = &flash_init_para;
+	u32 Temp, PreState_irq;
+
+	if (Protection) {
+		PreState_irq = irq_disable_save();
+	}
+
+	/* sequence should be followed strickly */
+	if (Source == BIT_LSYS_CKSL_SPIC_XTAL) {
+		/* 1. clock source switch to XTAL */
+		RCC_PeriphClockSource_SPIC(BIT_LSYS_CKSL_SPIC_XTAL);
+
+		/* 2. close 400M & 400MPS */
+		Temp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL);
+		Temp &= ~(HSYS_BIT_FLASH_DIV_EN | HSYS_BIT_FLASH_PS_DIV_EN); /* disable clock ps div & disable clock div*/
+		HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL, Temp);
+
+		FLASH_CalibrationNewCmd(DISABLE);
+
+		FLASH_Calibration_PLL_Close();
+
+		/* 3. SPIC Dummy to low speed dummy */
+		FLASH_InitStruct->FLASH_rd_sample_phase = SPIC_LOWSPEED_SAMPLE_PHASE;
+		SPIC->AUTO_LENGTH = (SPIC->AUTO_LENGTH & ~MASK_IN_PHYSICAL_CYC) | IN_PHYSICAL_CYC(FLASH_InitStruct->FLASH_rd_sample_phase);
+	} else {
+		/* 1. enable 600M & 600MPS */
+		FLASH_Calibration_PLL_Open();
+
+		// Temp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL);
+		// Temp &= ~HSYS_MASK_FLASH_PS_PHASE; /* set phase shift: 5bits : 1/2 np PLL clock cycles */
+		// Temp |= HSYS_FLASH_PS_PHASE(flash_init_para.phase_shift_idx);
+		// HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL, Temp);
+
+		Temp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL);
+		Temp |= (HSYS_BIT_FLASH_DIV_EN | HSYS_BIT_FLASH_PS_DIV_EN); /* enable clock ps div & enable clock div*/
+		HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL, Temp);
+
+		/* wait clock ready timing need check */
+		while (1) {
+			Temp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_SPIC_CTRL);
+			if ((Temp & HSYS_BIT_FLASH_PS_DIV_RDY) && (Temp & HSYS_BIT_FLASH_DIV_RDY)) {
+				break;
+			}
+		}
+
+		FLASH_CalibrationNewCmd(ENABLE);
+
+		/* 2. clock source switch */
+		RCC_PeriphClockSource_SPIC(BIT_LSYS_CKSL_SPIC_PLL);
+
+		/* 3. SPIC Dummy to high speed dummy */
+		FLASH_InitStruct->FLASH_rd_sample_phase = FLASH_InitStruct->FLASH_rd_sample_phase_cal;
+		SPIC->AUTO_LENGTH = (SPIC->AUTO_LENGTH & ~MASK_IN_PHYSICAL_CYC) | IN_PHYSICAL_CYC(FLASH_InitStruct->FLASH_rd_sample_phase);
+		// FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
+	}
+
+	if (Protection) {
+		irq_enable_restore(PreState_irq);
+	}
+}
+
 bool _flash_calibration_highspeed(u8 SpicBitMode, u8 div)
 {
 	u32 line_delay_temp = 0;
@@ -451,7 +555,6 @@ bool _flash_calibration_highspeed(u8 SpicBitMode, u8 div)
 	return FALSE;
 }
 
-BOOT_RAM_TEXT_SECTION
 int flash_calibration_highspeed(u8 div)
 {
 	int Ret = RTK_SUCCESS;
@@ -489,12 +592,10 @@ int flash_calibration_highspeed(u8 div)
 	return Ret;
 }
 
-BOOT_RAM_TEXT_SECTION
 static u8 flash_get_option(u32 sys_data, bool is_speed)
 {
 	u16 tmp = 0x8000;
 	u8 cnt = 0;
-
 	while (tmp) {
 		if ((sys_data & tmp) != 0) {
 			break;
@@ -515,7 +616,6 @@ static u8 flash_get_option(u32 sys_data, bool is_speed)
 	return cnt;
 }
 
-BOOT_RAM_TEXT_SECTION
 static const FlashInfo_TypeDef *flash_get_chip_info(u32 flash_id)
 {
 	u32 i = 0;
@@ -539,7 +639,6 @@ static const FlashInfo_TypeDef *flash_get_chip_info(u32 flash_id)
 	return NULL;
 }
 
-BOOT_RAM_TEXT_SECTION
 static void flash_get_vendor(void)
 {
 	u8 flash_ID[4];
@@ -606,7 +705,6 @@ static void flash_get_vendor(void)
 
 }
 
-BOOT_RAM_TEXT_SECTION
 static void nand_get_vendor(void)
 {
 	u8 flash_ID[4];
@@ -645,7 +743,6 @@ static void nand_get_vendor(void)
 	}
 }
 
-BOOT_RAM_TEXT_SECTION
 static void flash_set_status_register(void)
 {
 	u8 StatusLen = 1;
@@ -686,7 +783,6 @@ static void flash_set_status_register(void)
 	}
 }
 
-BOOT_RAM_TEXT_SECTION
 int flash_rx_mode_switch(u8 read_mode)
 {
 	int Ret = RTK_SUCCESS;
@@ -741,7 +837,6 @@ int flash_rx_mode_switch(u8 read_mode)
 	return Ret;
 }
 
-BOOT_RAM_TEXT_SECTION
 void flash_highspeed_setup(void)
 {
 	u8 read_mode;
@@ -802,4 +897,3 @@ void flash_highspeed_setup(void)
 
 	__asm volatile("cpsie i");
 }
-

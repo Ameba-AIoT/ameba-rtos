@@ -1,5 +1,4 @@
 #include <cmsis.h>
-#include "build_info.h"
 #include "lwip_netconf.h"
 #include "ethernet_api.h"
 #include "wifi_api.h"
@@ -112,14 +111,14 @@ static void eth_config_gpio(void)
 int eth_send(struct pbuf *p)
 {
 	int ret = RTK_FAIL;
-	u32 total_size = 0;
+	ETH_PktMetaDef meta;
 	struct pbuf *q;
 	u8 *dma_buffer = NULL;
 
 	if (p == NULL) {
 		return ret;
 	}
-
+	memset(&meta, 0, sizeof(ETH_PktMetaDef));
 	/* Lock TX to prevent race conditions */
 	rtos_mutex_take(eth_tx_mutex, MUTEX_WAIT_TIMEOUT);
 
@@ -129,17 +128,17 @@ int eth_send(struct pbuf *p)
 	if (dma_buffer != NULL) {
 		/* Copy data from pbuf chain to flat DMA buffer (Zero-Copy to HW) */
 		for (q = p; q != NULL; q = q->next) {
-			if (total_size + q->len > ETH_MAX_BUF_SIZE) {
+			if (meta.pkt_len + q->len > ETH_MAX_BUF_SIZE) {
 				RTK_LOGE(TAG, "Packet too large for buffer!\n");
 				break;
 			}
 			memcpy(dma_buffer, (void *)q->payload, q->len);
 			dma_buffer += q->len;
-			total_size += q->len;
+			meta.pkt_len += q->len;
 		}
 
 		/* Trigger Hardware Transmission */
-		Ethernet_UpdateTXDESCAndSend(&eth_handle, total_size);
+		Ethernet_UpdateTXDESCAndSend(&eth_handle, &meta);
 		ret = RTK_SUCCESS;
 	}
 
@@ -195,7 +194,7 @@ u32 eth_isr_handler(void *data)
 void eth_rx_thread(void *param)
 {
 	(void)param;
-	u32 len = 0;
+	ETH_PktMetaDef meta;
 	struct pbuf *p = NULL;
 	u8 *buf = NULL;
 	enum prehandler_ret ret;
@@ -207,17 +206,17 @@ void eth_rx_thread(void *param)
 		}
 
 		while (1) {
-			buf = Ethernet_GetRXPktInfo(&eth_handle, &len);
+			buf = Ethernet_GetRXPktInfo(&eth_handle, &meta);
 
-			if ((len == 0) || (buf == NULL)) {
+			if ((meta.pkt_len == 0) || (buf == NULL)) {
 				/* Ring buffer empty */
 				break;
 			}
 
-			if (len > 2) {
+			if (meta.pkt_len > 2) {
 				/* Optional: Custom Pre-processing for test*/
 				if (eth_rx_preprocess_cb) {
-					ret = eth_rx_preprocess_cb(&p, buf, len);
+					ret = eth_rx_preprocess_cb(&p, buf, meta.pkt_len);
 					if (ret == UPLOAD_TO_LWIP && p != NULL) {
 						ethernetif_rmii_netif_recv(p);
 					} else if (p != NULL) {
@@ -226,8 +225,8 @@ void eth_rx_thread(void *param)
 					}
 				} else {
 					/* Standard Path: Copy to pbuf and send to LwIP */
-					/* Note: len-2 excludes CRC usually, depending on HW setting */
-					p = ethernetif_rmii_buf_copy(len - 2, buf);
+					/* Note: meta.pkt_len-2 excludes CRC usually, depending on HW setting */
+					p = ethernetif_rmii_buf_copy(meta.pkt_len - 2, buf);
 					if (p != NULL) {
 						ethernetif_rmii_netif_recv(p);
 					}
@@ -432,7 +431,6 @@ static void eth_init_thread(void *param)
 	Ethernet_Init(&eth_handle);
 
 	/* Interrupt Init */
-	Ethernet_ConfigINT(ETH_EVT_RX_DONE | ETH_EVT_TX_DONE | ETH_EVT_LINK_CHG | ETH_EVT_RX_ERROR | ETH_EVT_TX_ERROR | ETH_EVT_RDU_RING1, ENABLE);
 	InterruptRegister((IRQ_FUN)eth_isr_handler, (IRQn_Type)RMII_IRQ, (u32)&eth_handle, 5);
 	InterruptEn(RMII_IRQ, 5);
 	/* Sync Objects Creation */

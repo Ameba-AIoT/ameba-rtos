@@ -665,76 +665,77 @@ iperf_on_test_finish(struct iperf_test *test)
 
 /******************************************************************************/
 
+static const struct option iperf_longopts[] = {
+	{"port", required_argument, NULL, 'p'},
+	{"format", required_argument, NULL, 'f'},
+	{"interval", required_argument, NULL, 'i'},
+	{"daemon", no_argument, NULL, 'D'},
+	{"one-off", no_argument, NULL, '1'},
+	{"verbose", no_argument, NULL, 'V'},
+	{"json", no_argument, NULL, 'J'},
+	{"version", no_argument, NULL, 'v'},
+	{"server", no_argument, NULL, 's'},
+	{"client", required_argument, NULL, 'c'},
+	{"udp", no_argument, NULL, 'u'},
+	{"bitrate", required_argument, NULL, 'b'},
+	{"bandwidth", required_argument, NULL, 'b'},
+	{"time", required_argument, NULL, 't'},
+	{"bytes", required_argument, NULL, 'n'},
+	{"blockcount", required_argument, NULL, 'k'},
+	{"length", required_argument, NULL, 'l'},
+	{"parallel", required_argument, NULL, 'P'},
+	{"reverse", no_argument, NULL, 'R'},
+	{"window", required_argument, NULL, 'w'},
+	{"bind", required_argument, NULL, 'B'},
+	{"cport", required_argument, NULL, OPT_CLIENT_PORT},
+	{"set-mss", required_argument, NULL, 'M'},
+	{"no-delay", no_argument, NULL, 'N'},
+	{"version4", no_argument, NULL, '4'},
+	{"version6", no_argument, NULL, '6'},
+	{"tos", required_argument, NULL, 'S'},
+	{"dscp", required_argument, NULL, OPT_DSCP},
+#if defined(HAVE_FLOWLABEL)
+	{"flowlabel", required_argument, NULL, 'L'},
+#endif /* HAVE_FLOWLABEL */
+	{"zerocopy", no_argument, NULL, 'Z'},
+	{"omit", required_argument, NULL, 'O'},
+	{"file", required_argument, NULL, 'F'},
+#if defined(HAVE_CPU_AFFINITY)
+	{"affinity", required_argument, NULL, 'A'},
+#endif /* HAVE_CPU_AFFINITY */
+	{"title", required_argument, NULL, 'T'},
+#if defined(HAVE_TCP_CONGESTION)
+	{"congestion", required_argument, NULL, 'C'},
+	{"linux-congestion", required_argument, NULL, 'C'},
+#endif /* HAVE_TCP_CONGESTION */
+#if defined(HAVE_SCTP)
+	{"sctp", no_argument, NULL, OPT_SCTP},
+	{"nstreams", required_argument, NULL, OPT_NUMSTREAMS},
+	{"xbind", required_argument, NULL, 'X'},
+#endif
+	{"pidfile", required_argument, NULL, 'I'},
+	{"logfile", required_argument, NULL, OPT_LOGFILE},
+	{"forceflush", no_argument, NULL, OPT_FORCEFLUSH},
+	{"get-server-output", no_argument, NULL, OPT_GET_SERVER_OUTPUT},
+	{"udp-counters-64bit", no_argument, NULL, OPT_UDP_COUNTERS_64BIT},
+	{"no-fq-socket-pacing", no_argument, NULL, OPT_NO_FQ_SOCKET_PACING},
+#if defined(HAVE_SSL)
+	{"username", required_argument, NULL, OPT_CLIENT_USERNAME},
+	{"rsa-public-key-path", required_argument, NULL, OPT_CLIENT_RSA_PUBLIC_KEY},
+	{"rsa-private-key-path", required_argument, NULL, OPT_SERVER_RSA_PRIVATE_KEY},
+	{"authorized-users-path", required_argument, NULL, OPT_SERVER_AUTHORIZED_USERS},
+#endif /* HAVE_SSL */
+	{"fq-rate", required_argument, NULL, OPT_FQ_RATE},
+	{"pacing-timer", required_argument, NULL, OPT_PACING_TIMER},
+	{"connect-timeout", required_argument, NULL, OPT_CONNECT_TIMEOUT},
+	{"debug", no_argument, NULL, 'd'},
+	{"help", no_argument, NULL, 'h'},
+	{NULL, 0, NULL, 0}
+};
+
 int
 iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 {
-	static struct option longopts[] = {
-		{"port", required_argument, NULL, 'p'},
-		{"format", required_argument, NULL, 'f'},
-		{"interval", required_argument, NULL, 'i'},
-		{"daemon", no_argument, NULL, 'D'},
-		{"one-off", no_argument, NULL, '1'},
-		{"verbose", no_argument, NULL, 'V'},
-		{"json", no_argument, NULL, 'J'},
-		{"version", no_argument, NULL, 'v'},
-		{"server", no_argument, NULL, 's'},
-		{"client", required_argument, NULL, 'c'},
-		{"udp", no_argument, NULL, 'u'},
-		{"bitrate", required_argument, NULL, 'b'},
-		{"bandwidth", required_argument, NULL, 'b'},
-		{"time", required_argument, NULL, 't'},
-		{"bytes", required_argument, NULL, 'n'},
-		{"blockcount", required_argument, NULL, 'k'},
-		{"length", required_argument, NULL, 'l'},
-		{"parallel", required_argument, NULL, 'P'},
-		{"reverse", no_argument, NULL, 'R'},
-		{"window", required_argument, NULL, 'w'},
-		{"bind", required_argument, NULL, 'B'},
-		{"cport", required_argument, NULL, OPT_CLIENT_PORT},
-		{"set-mss", required_argument, NULL, 'M'},
-		{"no-delay", no_argument, NULL, 'N'},
-		{"version4", no_argument, NULL, '4'},
-		{"version6", no_argument, NULL, '6'},
-		{"tos", required_argument, NULL, 'S'},
-		{"dscp", required_argument, NULL, OPT_DSCP},
-#if defined(HAVE_FLOWLABEL)
-		{"flowlabel", required_argument, NULL, 'L'},
-#endif /* HAVE_FLOWLABEL */
-		{"zerocopy", no_argument, NULL, 'Z'},
-		{"omit", required_argument, NULL, 'O'},
-		{"file", required_argument, NULL, 'F'},
-#if defined(HAVE_CPU_AFFINITY)
-		{"affinity", required_argument, NULL, 'A'},
-#endif /* HAVE_CPU_AFFINITY */
-		{"title", required_argument, NULL, 'T'},
-#if defined(HAVE_TCP_CONGESTION)
-		{"congestion", required_argument, NULL, 'C'},
-		{"linux-congestion", required_argument, NULL, 'C'},
-#endif /* HAVE_TCP_CONGESTION */
-#if defined(HAVE_SCTP)
-		{"sctp", no_argument, NULL, OPT_SCTP},
-		{"nstreams", required_argument, NULL, OPT_NUMSTREAMS},
-		{"xbind", required_argument, NULL, 'X'},
-#endif
-		{"pidfile", required_argument, NULL, 'I'},
-		{"logfile", required_argument, NULL, OPT_LOGFILE},
-		{"forceflush", no_argument, NULL, OPT_FORCEFLUSH},
-		{"get-server-output", no_argument, NULL, OPT_GET_SERVER_OUTPUT},
-		{"udp-counters-64bit", no_argument, NULL, OPT_UDP_COUNTERS_64BIT},
-		{"no-fq-socket-pacing", no_argument, NULL, OPT_NO_FQ_SOCKET_PACING},
-#if defined(HAVE_SSL)
-		{"username", required_argument, NULL, OPT_CLIENT_USERNAME},
-		{"rsa-public-key-path", required_argument, NULL, OPT_CLIENT_RSA_PUBLIC_KEY},
-		{"rsa-private-key-path", required_argument, NULL, OPT_SERVER_RSA_PRIVATE_KEY},
-		{"authorized-users-path", required_argument, NULL, OPT_SERVER_AUTHORIZED_USERS},
-#endif /* HAVE_SSL */
-		{"fq-rate", required_argument, NULL, OPT_FQ_RATE},
-		{"pacing-timer", required_argument, NULL, OPT_PACING_TIMER},
-		{"connect-timeout", required_argument, NULL, OPT_CONNECT_TIMEOUT},
-		{"debug", no_argument, NULL, 'd'},
-		{"help", no_argument, NULL, 'h'},
-		{NULL, 0, NULL, 0}
-	};
 	int flag;
 	int blksize;
 	int server_flag, client_flag, rate_flag, duration_flag;
@@ -753,7 +754,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 	char *client_username = NULL, *client_rsa_public_key = NULL;
 #endif /* HAVE_SSL */
 
-	while ((flag = getopt_long(argc, argv, "p:f:i:D1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dI:hX:", longopts, NULL)) != -1) {
+	while ((flag = getopt_long(argc, argv, "p:f:i:D1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dI:hX:", iperf_longopts, NULL)) != -1) {
 		switch (flag) {
 		case 'p':
 			test->server_port = strtol(optarg, &endptr, 10);
@@ -805,11 +806,18 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		case 'J':
 			test->json_output = 1;
 			break;
-		case 'v':
-			RTK_LOGI("NOTAG", "%s (cJSON %s)\n%s\n%s\n", version, cJSON_Version(), get_system_info(),
-					 get_optional_features());
+		case 'v': {
+			char *features = malloc(MSG_BUF_SIZE);
+			if (features) {
+				get_optional_features(features, MSG_BUF_SIZE);
+				RTK_LOGI("NOTAG", "%s (cJSON %s)\n%s\n%s\n", version, cJSON_Version(),
+						 get_system_info(), features);
+				free(features);
+			}
 			iperf_free_test(test);
+			i_errno = IENONE;
 			goto exit;
+		}
 		case 's':
 			if (test->role == 'c') {
 				i_errno = IESERVCLIENT;
@@ -3708,7 +3716,12 @@ iperf_got_sigend(struct iperf_test *test)
 		(void) Nwrite(test->ctrl_sck, (char *) &test->state, sizeof(signed char), Ptcp);
 	}
 	i_errno = (test->role == 'c') ? IECLIENTTERM : IESERVERTERM;
-	iperf_errexit(test, "interrupt - %s", iperf_strerror(i_errno));
+	char *err_buf = malloc(MSG_BUF_SIZE);
+	if (err_buf) {
+		iperf_strerror(i_errno, err_buf, MSG_BUF_SIZE);
+		iperf_errexit(test, "interrupt - %s", err_buf);
+		free(err_buf);
+	}
 }
 #endif
 /* Try to write a PID file if requested, return -1 on an error. */

@@ -118,7 +118,7 @@ int find_vfs_number(const char *name, int *prefix_len, int *user_id)
 		return ret;
 	}
 
-	for (i = 0; i < VFS_FS_MAX; i++) {
+	for (i = 0; i < VFS_USER_REGION_MAX; i++) {
 		if (vfs.user[i].tag == NULL) {
 			VFS_DBG(VFS_INFO, "VFS tag not match!");
 			break;
@@ -286,15 +286,13 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 	return;
 }
 
-int vfs_register(vfs_opt *drv, int vfs_type)
+int vfs_register(const vfs_opt *drv)
 {
 	unsigned char drv_num = -1;
 	if (vfs.drv_num < VFS_FS_MAX) {
-		drv->drv_num = vfs.drv_num;	// record driver number for a specific disk
 		vfs.drv[vfs.drv_num] = drv;
-		vfs.drv[vfs.drv_num]->vfs_type = vfs_type;
+		drv_num = vfs.drv_num;
 		vfs.drv_num++;
-		drv_num = drv->drv_num;
 	}
 	return drv_num;
 }
@@ -347,12 +345,12 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 			vfs_num = vfs_scan_vfs(vfs_type);
 			if (vfs_num < 0) {
 				if (vfs_type == VFS_LITTLEFS) {
-					vfs_num = vfs_register(&littlefs_drv, vfs_type);
+					vfs_num = vfs_register(&littlefs_drv);
 					VFS_DBG(VFS_INFO, "littlefs register");
 				}
 #ifdef CONFIG_VFS_FATFS_INCLUDED
 				else {
-					vfs_num = vfs_register(&fatfs_drv, vfs_type);
+					vfs_num = vfs_register(&fatfs_drv);
 					VFS_DBG(VFS_INFO, "fatfs register");
 				}
 #endif

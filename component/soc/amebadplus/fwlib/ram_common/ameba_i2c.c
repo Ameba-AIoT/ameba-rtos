@@ -183,8 +183,8 @@ void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct)
   */
 void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk)
 {
+	u32 ICHtime = 0;
 	u32 ICHLcnt;
-	u32 ICHtime;
 	u32 ICLtime;
 	u32 IPClkM = I2CIPClk / 1000000;
 

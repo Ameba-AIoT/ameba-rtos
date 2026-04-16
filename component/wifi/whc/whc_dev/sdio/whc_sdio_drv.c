@@ -311,11 +311,7 @@ void whc_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
 			break;
 		}
 		/* wakeup task */
-#ifndef WHC_SKIP_NP_MSG_TASK
-		rtos_sema_give(dev_xmit_priv.xmit_sema);
-#else
 		rtw_single_thread_wakeup();
-#endif
 
 		break;
 #ifdef CONFIG_WHC_WIFI_API_PATH

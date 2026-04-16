@@ -210,6 +210,8 @@ enum bt_rfk_type {
 	BT_DCK          = 5,
 	BT_IQK          = 6,
 	BT_FLATK        = 7,
+	BT_IQK_TX		= 8,
+	BT_IQK_RX		= 9,
 };
 /**
  * @struct   bt_rfk_param

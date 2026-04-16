@@ -169,5 +169,3 @@ _LONG_CALL_ void RTCIO_GetTimeInfo(RTCIO_TimeInfo *pDataOut);
 /* MANUAL_GEN_END */
 
 #endif
-
-

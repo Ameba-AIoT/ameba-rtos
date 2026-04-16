@@ -925,4 +925,3 @@ _LONG_CALL_ void AUDIO_CODEC_EnableADCFifoForMask(u32 ad_chn_mask);
 /* MANUAL_GEN_END */
 
 #endif
-

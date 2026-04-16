@@ -105,20 +105,20 @@ void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len)
 		strncpy(type, "random-id", 10);
 		break;
 	default:
-		snprintf(type, sizeof(type), "0x%02x", addr->type);
+		DiagSnPrintf(type, sizeof(type), "0x%02x", addr->type);
 		break;
 	}
-	snprintf(str, len, "%02X:%02X:%02X:%02X:%02X:%02X(%s)",
-			 addr->addr_val[5], addr->addr_val[4], addr->addr_val[3],
-			 addr->addr_val[2], addr->addr_val[1], addr->addr_val[0], type);
+	DiagSnPrintf(str, len, "%02X:%02X:%02X:%02X:%02X:%02X(%s)",
+				 addr->addr_val[5], addr->addr_val[4], addr->addr_val[3],
+				 addr->addr_val[2], addr->addr_val[1], addr->addr_val[0], type);
 }
 
 void rtk_bt_addr_val_to_str(uint8_t *paddr, char *str, uint32_t len)
 {
 	memset(str, 0, len);
-	snprintf(str, len, "%02X:%02X:%02X:%02X:%02X:%02X",
-			 paddr[5], paddr[4], paddr[3],
-			 paddr[2], paddr[1], paddr[0]);
+	DiagSnPrintf(str, len, "%02X:%02X:%02X:%02X:%02X:%02X",
+				 paddr[5], paddr[4], paddr[3],
+				 paddr[2], paddr[1], paddr[0]);
 }
 
 void rtk_bt_br_addr_to_str(uint8_t *paddr, char *str, uint32_t len)
@@ -148,12 +148,12 @@ void rtk_bt_addr_to_str(uint8_t addr_type, uint8_t *paddr, char *str, uint32_t l
 		strncpy(str_type + strlen(str_type), "classic", 8);
 		break;
 	default:
-		snprintf(str_type, sizeof(str_type), "0x%02x", addr_type);
+		DiagSnPrintf(str_type, sizeof(str_type), "0x%02x", addr_type);
 		break;
 	}
-	snprintf(str, len, "%02X:%02X:%02X:%02X:%02X:%02X(%s)",
-			 paddr[5], paddr[4], paddr[3],
-			 paddr[2], paddr[1], paddr[0], str_type);
+	DiagSnPrintf(str, len, "%02X:%02X:%02X:%02X:%02X:%02X(%s)",
+				 paddr[5], paddr[4], paddr[3],
+				 paddr[2], paddr[1], paddr[0], str_type);
 }
 
 #if defined(RTK_BT_API_MEM_PRE_ALLOC) && RTK_BT_API_MEM_PRE_ALLOC

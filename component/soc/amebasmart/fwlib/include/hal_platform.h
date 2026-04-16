@@ -601,5 +601,7 @@ typedef struct {
 #define CONTEXT_SAVE_SIZE	80	/* hw (8 + 1 rsvd) *4 + sw 32 = 80B */
 #endif
 
+#define CONTEXT_SAVE_SIZE_WITH_MARGIN		(CONTEXT_SAVE_SIZE + 64)
+
 /** @} End of group AmebaD_Outline */
 #endif //_HAL_PLATFORM_

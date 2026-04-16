@@ -43,10 +43,15 @@ extern "C" {
  * @{
  */
 
-#define STA_WLAN_INDEX	    0
-#define SOFTAP_WLAN_INDEX	1
-#define NAN_WLAN_INDEX	    2
-#define NONE_WLAN_INDEX	    0xFF
+enum rtw_wlan_if_index {
+	STA_WLAN_INDEX = 0,
+	SOFTAP_WLAN_INDEX = 1,
+#ifdef CONFIG_NAN
+	NAN_WLAN_INDEX = 2,
+#endif
+	WLAN_NET_IF_NUM,
+	NONE_WLAN_INDEX	= 0xFF
+};
 
 /** When set to this value, a fast survey is conducted with a scan time of 25 ms on the specified channel.
  *  Otherwise, a normal scan is performed with a duration of 110 ms on the specified channel. */
@@ -449,6 +454,16 @@ enum rtw_csi_role {
 	RTW_CSI_OP_ROLE_MAX
 };
 
+/**
+  * @brief Radar type for reporting info (size: u8).
+  */
+enum rtw_radar_type {
+	RTW_RADAR_TYPE_CFAR_AI_S_FAR = 0,      /**< cfar_and_ai_short_far. */
+	RTW_RADAR_TYPE_CFAR_AI_S_NEAR,         /**< cfar_and_ai_short_near */
+	RTW_RADAR_TYPE_AI_L_FAR,               /**< ai_long_far. */
+	RTW_RADAR_TYPE_AI_L_NEAR,              /**< ai_long_near. */
+	RTW_RADAR_TYPE_MAX,
+};
 
 /**
 * @brief Total Radiated Power (TRP) and Total Isotropic Sensitivity (TIS) certification modes (size: u8).
@@ -942,6 +957,7 @@ struct rtw_softap_info {
 	u8 		           *password;      /**< Pointer to SoftAP password. */
 	u8 		            password_len;  /**< The length of password. */
 	u8		            channel;       /**< Desired operating channel for the SoftAP. */
+	u8 					b_no_rsp_to_probereq : 1;       /**< Set 1 to not send probe response when receive probe request. */
 };
 
 #ifndef CONFIG_FULLMAC

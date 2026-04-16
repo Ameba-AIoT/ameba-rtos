@@ -13,6 +13,9 @@ extern "C" {
 
 void Systick_Cmd(u32 enable);
 
+void irq_enable_restore(u32 PrevStatus);
+u32 irq_disable_save(void);
+
 #ifdef __cplusplus
 }
 #endif

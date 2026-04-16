@@ -502,11 +502,6 @@ struct p2p_config {
 	struct p2p_channel *pref_chan;
 
 	/**
-	 * p2p_6ghz_disable - Disable 6GHz for P2P operations
-	 */
-	bool p2p_6ghz_disable;
-
-	/**
 	 * pri_dev_type - Primary Device Type (see WPS)
 	 */
 	u8 pri_dev_type[8];
@@ -1251,15 +1246,13 @@ enum p2p_discovery_type {
  *	P2P_FIND_START_WITH_FULL behavior. 0 = Use normal full scan.
  *	If p2p_find is already in progress, this parameter is ignored and full
  *	scan will be executed.
- * @include_6ghz: Include 6 GHz channels in P2P find
  * Returns: 0 on success, -1 on failure
  */
 int p2p_find(struct p2p_data *p2p, unsigned int timeout,
 			 enum p2p_discovery_type type,
 			 unsigned int num_req_dev_types, const u8 *req_dev_types,
 			 const u8 *dev_id, unsigned int search_delay,
-			 u8 seek_count, const char **seek_string, int freq,
-			 bool include_6ghz);
+			 u8 seek_count, const char **seek_string, int freq);
 
 /**
  * p2p_notify_scan_trigger_status - Indicate scan trigger status
@@ -2115,8 +2108,6 @@ void p2p_update_channel_list(struct p2p_data *p2p,
 							 const struct p2p_channels *chan,
 							 const struct p2p_channels *cli_chan);
 
-bool is_p2p_6ghz_disabled(struct p2p_data *p2p);
-
 /**
  * p2p_set_best_channels - Update best channel information
  * @p2p: P2P module context from p2p_init()
@@ -2422,9 +2413,6 @@ struct wpabuf *p2p_build_probe_resp_template(struct p2p_data *p2p,
 
 bool p2p_peer_wfd_enabled(struct p2p_data *p2p, const u8 *peer_addr);
 bool p2p_wfd_enabled(struct p2p_data *p2p);
-bool is_p2p_allow_6ghz(struct p2p_data *p2p);
-void set_p2p_allow_6ghz(struct p2p_data *p2p, bool value);
-int p2p_remove_6ghz_channels(unsigned int *pref_freq_list, int size);
 void p2p_group_info_dump(struct p2p_group *group);
 
 #endif /* P2P_H */

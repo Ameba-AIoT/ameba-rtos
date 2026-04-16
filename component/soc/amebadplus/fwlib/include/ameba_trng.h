@@ -291,5 +291,3 @@ _LONG_CALL_ void TRNG_Random_Delay(void);
 /* MANUAL_GEN_END */
 
 #endif
-
-

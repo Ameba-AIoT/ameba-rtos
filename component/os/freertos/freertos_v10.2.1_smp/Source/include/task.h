@@ -2485,10 +2485,15 @@ void vTaskInternalSetTimeOutState(TimeOut_t *const pxTimeOut) PRIVILEGED_FUNCTIO
  */
 void vTaskYieldWithinAPI(void);
 
+#if ( configUSE_NEWLIB_REENTRANT == 1 )
+/*
+ * This function is used by the Newlib C library port layer.
+ * Get the reentrant structure for the running task.
+ */
+struct _reent * pxTaskGetReent(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
 #endif /* INC_TASK_H */
-
-
-

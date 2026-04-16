@@ -656,6 +656,7 @@ _LONG_CALL_ u32 SSI_GetRawIsr(SPI_TypeDef *spi_dev);
 _LONG_CALL_ u32 SSI_GetSlaveEnable(SPI_TypeDef *spi_dev);
 _LONG_CALL_ void SSI_SlaveOutputEnable(SPI_TypeDef *spi_dev, u32 Status);
 _LONG_CALL_ u32 SSI_GetDataFrameSize(SPI_TypeDef *spi_dev);
+_LONG_CALL_ u32 SSI_GetDataFrameNumber(SPI_TypeDef *spi_dev);
 _LONG_CALL_ void SSI_SetSampleDelay(SPI_TypeDef *spi_dev, u32 SampleDelay);
 _LONG_CALL_ void SSI_Init(SPI_TypeDef *spi_dev, SSI_InitTypeDef *SSI_InitStruct);
 _LONG_CALL_ void SSI_StructInit(SSI_InitTypeDef *SSI_InitStruct);

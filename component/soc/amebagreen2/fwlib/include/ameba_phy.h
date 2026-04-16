@@ -139,6 +139,26 @@ extern "C" {
 
 /* --- Private definitions for new phy --- */
 
+/**
+ * @brief  Extended PHY EEE Configuration
+ */
+typedef struct {
+	bool eee_100m_enable;     /**< Enable 100BASE-TX EEE */
+	bool eee_1000m_enable;    /**< Enable 1000BASE-T EEE (if supported) */
+	uint16_t wake_timer_us;     /**< Wake timer value in microseconds */
+	uint16_t lpi_assert_time_us; /**< LPI assert time in microseconds */
+} phy_eee_config_t;
+
+/**
+ * @brief  PHY EEE Capabilities
+ */
+typedef struct {
+	bool eee_100m_capable;   /**< PHY supports 100M EEE */
+	bool eee_1000m_capable;  /**< PHY supports 1G EEE */
+	bool eee_tx_lpi_capable;  /**< PHY supports TX LPI */
+	bool eee_rx_lpi_capable;  /**< PHY supports RX LPI */
+} phy_eee_capability_t;
+
 extern const struct eth_phy_ops phy_rtl8201fr_ops;
 
 #ifdef __cplusplus

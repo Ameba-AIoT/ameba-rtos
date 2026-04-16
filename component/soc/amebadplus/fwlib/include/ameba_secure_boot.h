@@ -147,4 +147,3 @@ int SBOOT_SignatureVerify(u8 *PubKeyHash, Manifest_TypeDef *Manifest, SubImgInfo
 u32 BOOT_OTA_GetManifestSize(Manifest_TypeDef *Manifest);
 
 #endif
-

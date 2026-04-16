@@ -125,7 +125,7 @@ __STATIC_FORCEINLINE void TZ_ConfigSlaveSecurity(PPC_Id ppc_idx, u32 msk_bit, u3
 */
 __STATIC_FORCEINLINE u32 TrustZone_IsSecure(void)
 {
-#if defined (CONFIG_ARM_CORE_CM4)
+#if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
 	cmse_address_info_t cmse_address_info = cmse_TT((void *)DiagPrintf);
 	return cmse_address_info.flags.secure;
 #else

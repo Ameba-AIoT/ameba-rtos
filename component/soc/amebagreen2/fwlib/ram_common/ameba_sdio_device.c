@@ -28,11 +28,12 @@ void SDIO_TxBdHdl_Init(SPDIO_TX_BD_HANDLE *g_TXBDHdl, SPDIO_TX_BD *SPDIO_TXBDAdd
 		pTxBdHdl->dev_rx_buf = &spdio_dev_rx_buf[i];
 		pTxBdHdl->pTXBD->Address = spdio_dev_rx_buf[i].buf_addr;
 		assert_param(spdio_dev_rx_buf[i].buf_addr != 0);
-		assert_param(spdio_dev_rx_buf[i].buf_addr % SPDIO_DMA_ALIGN_4 == 0);
+		/* Avoid DCacheInvalid affect other data */
+		assert_param(spdio_dev_rx_buf[i].buf_addr % CACHE_LINE_SIZE == 0);
 		DCache_CleanInvalidate(spdio_dev_rx_buf[i].buf_allocated, spdio_dev_rx_buf[i].size_allocated);
 
 		pTxBdHdl->isFree = TRUE;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "TX_BD%d @ 0x%x 0x%x\n", i, pTxBdHdl, pTxBdHdl->pTXBD);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "TX_BD%d @ 0x%x 0x%x\n", i, pTxBdHdl, pTxBdHdl->pTXBD);
 	}
 	DCache_Clean((u32)SPDIO_TXBDAddr, host_tx_bd_num * sizeof(SPDIO_TX_BD));
 }

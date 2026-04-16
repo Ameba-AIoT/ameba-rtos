@@ -36,7 +36,7 @@ ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_SOC_DIR}/verification)
 ameba_add_subdirectory_if_exist(${c_CMPT_SOC_DIR}/rom)
 ameba_add_subdirectory(${c_CMPT_MISC_DIR})
-
+ameba_add_subdirectory(${c_CMPT_SOC_OTA_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_PMC_DIR})
 

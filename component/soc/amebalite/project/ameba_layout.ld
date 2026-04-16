@@ -91,7 +91,7 @@ IMG3 size is 0.   │   │    TZ_ENTRY(16K)     │  │
 #define KM4_RAM_TZ_SECURE_START		(KM4_RAM_TZ_ENTRY_START + RAM_TZ_ENTRY_SIZE )	/* 0x20016400 ~ 0x20021400 | unavailable */
 
 /* IMG2 Size*/
-#if defined(CONFIG_AP_CORE_KM4)
+#if defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)
 #define RAM_KR4_IMG2_SIZE			KBYTES(96)
 #define KM4_IMG2_RAM_START			(KM4_RAM_TZ_SECURE_START + RAM_KM4_IMG3_SIZE)	/* 0x20021400 ~ 0x20068000 | 0x2000D000 ~ 0x20068000*/
 #define KR4_IMG2_RAM_START			(SRAM_END - RAM_KR4_IMG2_SIZE) 					/* 0x20068000 ~ 0x20078000 | 0x20068000 ~ 0x20078000*/
@@ -176,7 +176,7 @@ MEMORY
 	KR4_TIMER_IDLE_TASK_STACK (rw) :        ORIGIN = 0x20002000, LENGTH = 0x20003000 - 0x20002000	/* KR4 TIMER and IDLE task stack: 4k */
 
 	/* Flash */
-	KR4_IMG2_XIP (rx) :                     ORIGIN = 0x0C000020, LENGTH = 0x0E000000 - 0x0C000020	/* KR4 IMG2 Virtual address: 32768k */
+	KR4_IMG2_XIP (rx) :                     ORIGIN = 0x0C000020, LENGTH = 0x0D000000 - 0x0C000020	/* KR4 IMG2 Virtual address: 32768k */
 	DSP_IMG2_XIP (rx) :                     ORIGIN = 0x0D000020, LENGTH = 0x0E000000 - 0x0D000020	/* DSP IMG2 Virtual address: 24576k */
 	KM4_IMG2_XIP (rx) :                     ORIGIN = 0x0E000020, LENGTH = 0x0F800000 - 0x0E000020	/* KM4 IMG2 Virtual address: 24576k */
 	KM4_BOOT_XIP (rx) :                     ORIGIN = 0x0F800020, LENGTH = 0x10000000 - 0x0F800020	/* KM4 Bootloader Virtual address: 8192k */
@@ -192,7 +192,7 @@ MEMORY
 	KM4_BOOTLOADER_ENTRY (rwx) :             ORIGIN = 0x3000A020, LENGTH = 0x3000A400 - 0x3000A020	/* KM4 IMG1 Entry: 1024B aligned for flashloader */
 	KM4_BOOTLOADER_RAM_MP (rwx) :            ORIGIN = 0x30013400 + IMAGE_HEADER_LEN, LENGTH = 0x3001A000 - 0x30013400 - IMAGE_HEADER_LEN	/* KM4 BootLoader RAM: 32k */
 
-#if defined(CONFIG_AP_CORE_KM4)
+#if defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)
 	KR4_BD_RAM_MP (rwx) :                   ORIGIN = 0x2001A060, LENGTH = 0x20061F80 - 0x2001A060 /* KR4 BD RAM: 288k */
 	KR4_BD_RAM_MP_END (rwx) :               ORIGIN = 0x20061F80 - 32, LENGTH = 32                 /* Only for KR4 shrink MP image2 */
 	KM4_BD_RAM_MP (rwx) :                   ORIGIN = 0x20062060, LENGTH = 0x2007FFA0 - 0x20062060 /* KM4 BD RAM: TZ off,120k */

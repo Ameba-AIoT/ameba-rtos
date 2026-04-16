@@ -126,6 +126,13 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 	BaseType_t ret;
 	BaseType_t task_woken = pdFALSE;
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
+	if (uxPortSchedulerStart[portPrimaryCoreID] == pdFALSE) {
+		return RTK_FAIL;
+	}
+#endif
+
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreTakeFromISR((QueueHandle_t)p_handle, &task_woken);
 		if (ret != pdTRUE) {
@@ -152,6 +159,13 @@ int rtos_mutex_give(rtos_mutex_t p_handle)
 {
 	BaseType_t ret;
 	BaseType_t task_woken = pdFALSE;
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
+	if (uxPortSchedulerStart[portPrimaryCoreID] == pdFALSE) {
+		return RTK_FAIL;
+	}
+#endif
 
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreGiveFromISR(p_handle, &task_woken);

@@ -481,7 +481,8 @@ void RCC_PeriphClockDivSet(const struct Rcc_ClkDiv *pdiv)
 u8 RCC_PeriphClockEnableChk(u32 APBPeriph_Clock_in)
 {
 	u8 ret;
-	u32 CkeRegVal, CkeRegOffset, CkeBitMask;
+	u32 CkeRegVal, CkeBitMask;
+	u32 CkeRegOffset = 0;
 
 	u32 ClkRegIndx = (APBPeriph_Clock_in >> 30) & 0x03;
 	assert_param((ClkRegIndx == 0x0) || (ClkRegIndx == 0x1) || (ClkRegIndx == 0x3));

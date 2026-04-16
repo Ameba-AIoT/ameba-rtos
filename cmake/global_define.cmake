@@ -63,6 +63,7 @@ ameba_set(c_CMPT_LZMA_DIR         ${c_COMPONENT_DIR}/soc/common/lzma)
 ameba_set(c_CMPT_ED25519_DIR      ${c_COMPONENT_DIR}/soc/common/rom_ed25519)
 ameba_set(c_CMPT_DIAGNOSE_DIR     ${c_COMPONENT_DIR}/soc/common/diagnose)
 ameba_set(c_CMPT_SOC_PQC_DIR      ${c_COMPONENT_DIR}/soc/common/pqc)
+ameba_set(c_CMPT_SOC_OTA_DIR      ${c_COMPONENT_DIR}/soc/common/soc_ota)
 #-------------------------#
 
 # Define dynamic dirs under component/
@@ -118,12 +119,9 @@ ameba_set(c_MCU_SRC_DIR)    # PATH to the ${c_MCU_PROJECT_DIR}/src directory.
 ameba_set(c_MCU_INC_DIR)    # PATH to the ${c_MCU_PROJECT_DIR}/inc directory.
 
 # sub dirs in ${c_MCU_PROJECT_DIR}/*sdk/
-ameba_set(c_SDK_BUILD_DIR)
 ameba_set(c_SDK_GNU_UTILITY_DIR)
 ameba_set(c_SDK_GNU_SCRIPT_DIR)
 ameba_set(c_SDK_IMGTOOL_FLOADER_DIR)
-ameba_set(c_SDK_IMAGE_DIR)
-ameba_set(c_SDK_IMAGE_MP_DIR)
 ameba_set(c_SDK_IMAGE_UTILITY_DIR)
 ameba_set(c_SDK_LD_DIR)
 ameba_set(c_SDK_LD_NS_DIR)

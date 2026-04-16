@@ -10,6 +10,7 @@
 #include "task.h"
 #include "os_wrapper.h"
 #include "log.h"
+#include <sys/reent.h>
 
 /* Refer to stdlib.h, stdio.h, time.h */
 StaticSemaphore_t __lock___sinit_recursive_mutex; // newlib 4.1.0 still use
@@ -18,6 +19,10 @@ StaticSemaphore_t __lock___atexit_recursive_mutex; // e.g. called by atexit
 StaticSemaphore_t __lock___env_recursive_mutex; // e.g. called by getenv, setenv
 StaticSemaphore_t __lock___tz_mutex; // e.g. called by mktime, localtime
 
+#ifdef CONFIG_ARM_CORE_CA32
+extern volatile uint32_t uxPortSchedulerStart[CONFIG_CPUS_NUM];
+#endif
+
 static const char *const TAG = "LOCKS";
 
 
@@ -25,7 +30,6 @@ static const char *const TAG = "LOCKS";
 static void init_retarget_locks(void)
 {
 #ifdef CONFIG_ARM_CORE_CA32
-#error "CA32 do not need for __wrap_printf has spinlock"
 	RTK_LOGI(TAG, "CA32 %s\n", __func__);
 #elif defined CONFIG_ARM_CORE_CM4
 	RTK_LOGI(TAG, "KM4 %s\n", __func__);
@@ -38,6 +42,12 @@ static void init_retarget_locks(void)
 	xSemaphoreCreateRecursiveMutexStatic(&__lock___atexit_recursive_mutex);
 	xSemaphoreCreateRecursiveMutexStatic(&__lock___env_recursive_mutex);
 	xSemaphoreCreateMutexStatic(&__lock___tz_mutex);
+#endif
+#ifdef CONFIG_ARM_CORE_CA32
+	for (uint32_t i = 0; i < CONFIG_CPUS_NUM; ++i) {
+		extern struct _reent xPrimaryCoreReenat[CONFIG_CPUS_NUM];
+		_REENT_INIT_PTR(&xPrimaryCoreReenat[i]);
+	}
 #endif
 }
 
@@ -91,7 +101,11 @@ void __retarget_lock_acquire(_LOCK_T lock)
 	BaseType_t ret;
 	BaseType_t task_woken = pdFALSE;
 
+#ifdef CONFIG_ARM_CORE_CA32
+	if (uxPortSchedulerStart[portGET_CORE_ID()] == pdFALSE) {
+#else
 	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+#endif
 		return;
 	}
 
@@ -115,7 +129,11 @@ void __retarget_lock_acquire_recursive(_LOCK_T lock)
 {
 	BaseType_t ret;
 
+#ifdef CONFIG_ARM_CORE_CA32
+	if (uxPortSchedulerStart[portGET_CORE_ID()] == pdFALSE) {
+#else
 	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+#endif
 		return;
 	}
 
@@ -136,7 +154,11 @@ int __retarget_lock_try_acquire(_LOCK_T lock)
 	BaseType_t ret;
 	BaseType_t task_woken = pdFALSE;
 
+#ifdef CONFIG_ARM_CORE_CA32
+	if (uxPortSchedulerStart[portGET_CORE_ID()] == pdFALSE) {
+#else
 	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+#endif
 		return 0;
 	}
 
@@ -161,7 +183,11 @@ int __retarget_lock_try_acquire_recursive(_LOCK_T lock)
 {
 	BaseType_t ret;
 
+#ifdef CONFIG_ARM_CORE_CA32
+	if (uxPortSchedulerStart[portGET_CORE_ID()] == pdFALSE) {
+#else
 	if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+#endif
 		return 0;
 	}
 
@@ -183,6 +209,12 @@ void __retarget_lock_release(_LOCK_T lock)
 	BaseType_t ret;
 	BaseType_t task_woken = pdFALSE;
 
+#ifdef CONFIG_ARM_CORE_CA32
+	if (uxPortSchedulerStart[portGET_CORE_ID()] == pdFALSE) {
+		return;
+	}
+#endif
+
 	if (!lock) {
 		return;
 	}
@@ -203,6 +235,12 @@ void __retarget_lock_release(_LOCK_T lock)
 void __retarget_lock_release_recursive(_LOCK_T lock)
 {
 	BaseType_t ret;
+
+#ifdef CONFIG_ARM_CORE_CA32
+	if (uxPortSchedulerStart[portGET_CORE_ID()] == pdFALSE) {
+		return;
+	}
+#endif
 
 	if (!lock) {
 		return;

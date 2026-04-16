@@ -355,4 +355,7 @@ struct iperf_test {
 #define MAX_MSS (9 * 1024)
 #define MAX_STREAMS 128
 
+/* Buffer size for error messages and feature strings */
+#define MSG_BUF_SIZE 256
+
 #endif /* !__IPERF_H */

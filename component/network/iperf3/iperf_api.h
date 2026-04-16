@@ -286,7 +286,7 @@ int iflush(struct iperf_test *test);
 /* Error routines. */
 void iperf_err(struct iperf_test *test, const char *format, ...) __attribute__((format(printf, 2, 3)));
 //void iperf_errexit(struct iperf_test *test, const char *format, ...) __attribute__((format(printf, 2, 3), noreturn));
-char *iperf_strerror(int);
+void iperf_strerror(int int_errno, char *buf, size_t buf_size);
 extern int i_errno;
 enum {
 	IESTOP = -1,    // focestop

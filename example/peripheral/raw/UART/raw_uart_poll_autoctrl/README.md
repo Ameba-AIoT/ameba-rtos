@@ -30,6 +30,12 @@ Required Components: another peer device.
 	- Connect `UART_RTS(_PA_25)` to `UART_CTS(_PA_26)` of peer device
 	- Connect `UART_CTS(_PA_26)` to `UART_RTS(_PA_25)` of peer device
 	- Connect `GND` to `GND` of peer device
+* On RTL8720F
+	- Connect `UART_TX(_PA_21)` to `UART_RX(_PA_22)` of peer device
+	- Connect `UART_RX(_PA_22)` to `UART_TX(_PA_21)` of peer device
+	- Connect `UART_RTS(_PA_23)` to `UART_CTS(_PA_24)` of peer device
+	- Connect `UART_CTS(_PA_24)` to `UART_RTS(_PA_23)` of peer device
+	- Connect `GND` to `GND` of peer device
 
 # SW Configuration
 

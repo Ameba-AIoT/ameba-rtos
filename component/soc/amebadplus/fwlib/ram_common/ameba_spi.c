@@ -982,6 +982,17 @@ u32 SSI_GetDataFrameSize(SPI_TypeDef *spi_dev)
 }
 
 /**
+  * @brief Get SPIx data frame number.
+  * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
+  * @retval  Data frame number
+  */
+u32 SSI_GetDataFrameNumber(SPI_TypeDef *spi_dev)
+{
+	u32 ndf = ((spi_dev->SPI_CTRLR1) & SPI_MASK_NDF) + 1;
+	return ndf;
+}
+
+/**
   * @brief  Detemine SPIx is busy or not.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @retval SPIx busy status value:

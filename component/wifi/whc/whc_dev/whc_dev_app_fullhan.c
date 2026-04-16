@@ -215,6 +215,10 @@ void whc_dev_enable_ap(u8 *buf)
 	}
 	//DiagPrintf("ap info: ssid %s ip %x psk %x %s \r\n", ap.ssid.val, value, ap.password, password);
 
+#ifdef CONFIG_LWIP_LAYER
+	extern void dhcps_deinit(struct netif * pnetif);
+	dhcps_deinit(pnetif_ap);
+#endif
 	wifi_stop_ap();
 	wifi_start_ap(&ap);
 #ifdef CONFIG_LWIP_LAYER
@@ -222,8 +226,10 @@ void whc_dev_enable_ap(u8 *buf)
 	netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
 	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
-	extern void dhcps_init(struct netif * pnetif);
+	extern dhcps_t *dhcps_init(struct netif * pnetif);
+	extern err_t dhcps_start(struct netif * pnetif);
 	dhcps_init(pnetif_ap);
+	dhcps_start(pnetif_ap);
 #endif
 
 	memset(ap.ssid.val, 0, sizeof(ap.ssid.val));

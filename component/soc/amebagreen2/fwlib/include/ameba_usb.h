@@ -80,7 +80,7 @@ extern "C" {
   * @{
   */
 #define USB_VID                                             0x0BDA
-#define USB_PID                                             0x8006
+#define USB_PID                                             0xF851
 /** @} */
 
 /** @} */

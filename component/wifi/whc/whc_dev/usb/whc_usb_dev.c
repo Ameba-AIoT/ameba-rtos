@@ -96,8 +96,6 @@ static void whc_usb_dev_irq_task(void)
 				if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 2) ||
 					((new_skb = dev_alloc_skb(USB_BUFSZ, USB_SKB_RSVD_LEN)) == NULL)) {
 					whc_usb_priv.irq_info.wait_xmit_skb = 1;
-					/* resume pending queue to release skb */
-					rtw_pending_q_resume();
 					break;
 				}
 				msg_info = (struct whc_msg_info *)skb_rcv->data;
@@ -374,7 +372,7 @@ void whc_usb_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
 			break;
 		}
 		/* wakeup task */
-		rtos_sema_give(dev_xmit_priv.xmit_sema);
+		rtw_single_thread_wakeup();
 
 		break;
 	default:

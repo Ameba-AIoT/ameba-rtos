@@ -623,8 +623,13 @@ iperf_run_client(struct iperf_test *test)
 cleanup_and_fail:
 	iperf_client_end(test);
 	if (test->json_output) {
-		IPERF3_DBG("cleanup_and_fail,test->json_output:%d\n", test->json_output);
-		cJSON_AddStringToObject(test->json_top, "error", iperf_strerror(i_errno));
+		char *err_buf = malloc(MSG_BUF_SIZE);
+		if (err_buf) {
+			iperf_strerror(i_errno, err_buf, MSG_BUF_SIZE);
+			IPERF3_DBG("cleanup_and_fail,test->json_output:%d\n", test->json_output);
+			cJSON_AddStringToObject(test->json_top, "error", err_buf);
+			free(err_buf);
+		}
 		iperf_json_finish(test);
 		iflush(test);
 		// Return 0 and not -1 since all terminating function were done here.

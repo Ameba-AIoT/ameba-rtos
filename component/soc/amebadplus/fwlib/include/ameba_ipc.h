@@ -313,4 +313,3 @@ extern const IPC_INIT_TABLE  ipc_init_config[];
 /* MANUAL_GEN_END */
 
 #endif
-

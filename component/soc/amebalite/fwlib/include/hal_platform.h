@@ -550,6 +550,8 @@ extern "C" {
 #define CONTEXT_SAVE_SIZE	64	/* not support hw float, 15*4 */
 #endif
 
+#define CONTEXT_SAVE_SIZE_WITH_MARGIN		(CONTEXT_SAVE_SIZE + 64)
+
 /** @} End of group AmebaD_Outline */
 
 #ifdef __cplusplus

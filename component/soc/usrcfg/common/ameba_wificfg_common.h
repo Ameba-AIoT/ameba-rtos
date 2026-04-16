@@ -294,6 +294,12 @@ struct wifi_user_conf {
 
 	/*! Max node number in R-mesh network, this is used for decide each node's beacon window.*/
 	u16 wtn_max_node_num;
+
+	/*! 0: Disable R-Mesh TDMA feature, 1: Enable R-Mesh TDMA feature.*/
+	u8 wtn_tdma_en;
+
+	/*! 0: Disable TPC feature, 1: Enable TPC feature. */
+	u8 tpc_enable;
 };
 
 /** @} End of WIFI_Exported_Structure_Types group*/
@@ -309,4 +315,3 @@ void wifi_set_user_config(void);
 #endif
 
 #endif
-

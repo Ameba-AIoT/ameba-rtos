@@ -218,11 +218,11 @@ s32 wifi_set_countrycode(u8 *cntcode);
 
 /**
  * @brief  Retrieve current country code information.
- * @param[in]  table: Pointer to store the country code table containing country code,
+ * @param[in]  pinfo: Pointer to store the country code info table containing country code,
  *                    channel plan code, and TX power limit index.
  * @return  @ref RTK_SUCCESS : The API executed successfully.
  */
-s32 wifi_get_countrycode(struct rtw_country_code_table *table);
+s32 wifi_get_countrycode(struct rtw_country_code_table *pinfo);
 
 /**
  * @brief  Get the list of available WiFi channels for the current regulatory domain.
@@ -663,6 +663,17 @@ s32 wifi_acs_find_ideal_channel(struct rtw_acs_config *acs_config, u8 *ideal_ch)
  */
 s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting);
 
+/**
+ * @brief  Configure TSF sync to the specified target.
+ * @param[in]  enable: 1 to enable, 0 to disable.
+ * @param[in]  mac: Pointer to the mac address of the specified target.
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode,
+ *                      unable to access Wi-Fi registers.
+ */
+s32 wifi_tsf_sync_to_user_target(u8 enable, u8 *mac_addr);
+
 /** @} End of Extended_Functions group */
 /** @} End of WIFI_Exported_Functions group*/
 /** @} End of WIFI_API group*/
@@ -672,4 +683,3 @@ s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting);
 #endif
 
 #endif // __WIFI_API_EXT_H
-

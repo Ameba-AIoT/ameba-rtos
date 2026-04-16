@@ -68,7 +68,7 @@ const SPI_DevTable SPI_DEV_TABLE[2] = {
   * @{
   */
 /**
-  * @brief  Fills each SSI_InitStruct member with its default value.
+  * @brief  Fill each SSI_InitStruct member with its default value.
   * @param  SSI_InitStruct: pointer to a SSI_InitTypeDef structure which will be
   *         initialized.
   * @retval None
@@ -93,7 +93,7 @@ SSI_StructInit(SSI_InitTypeDef *SSI_InitStruct)
 
 
 /**
-  * @brief    Initializes the SPI registers according to the specified parameters
+  * @brief    Initialize the SPI registers according to the specified parameters
   *         in SSI_InitStruct.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  SSI_InitStruct: pointer to a SSI_InitTypeDef structure that contains
@@ -140,7 +140,7 @@ void SSI_Init(SPI_TypeDef *spi_dev, SSI_InitTypeDef *SSI_InitStruct)
 }
 
 /**
-  * @brief  Enables or disables SPIx peripheral.
+  * @brief  Enable or disable SPIx peripheral.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  NewStatus: This parameter can be one of the following values:
   *            @arg ENABLE
@@ -158,7 +158,7 @@ void SSI_Cmd(SPI_TypeDef *spi_dev, u32 NewStatus)
 }
 
 /**
-  * @brief  Masks or unmasks SPIx interrupt.
+  * @brief  Mask or unmask SPIx interrupt.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  SSI_IT: This parameter can be one of the following values or mixed:
   *            @arg SPI_BIT_TXEIM
@@ -293,6 +293,22 @@ void SSI_SetDataFrameSize(SPI_TypeDef *spi_dev, u32 DataFrameSize)
 }
 
 /**
+  * @brief Set slave output enable.
+  * @note  Valid only when the device is configured as a slave.
+  * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
+  * @param  Status: where Status can be ENABLE or DISABLE.
+  * @retval  None.
+  */
+void SSI_SlaveOutputEnable(SPI_TypeDef *spi_dev, u32 Status)
+{
+	if (Status) {
+		spi_dev->SPI_CTRLR0 &= ~SPI_BIT_SLV_OE;
+	} else {
+		spi_dev->SPI_CTRLR0 |= SPI_BIT_SLV_OE;
+	}
+}
+
+/**
   * @brief  Set SPI SS Toggle Phase.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  TogglePhase: This parameter can be one of the following values:
@@ -396,7 +412,7 @@ void SSI_SetBaudDiv(SPI_TypeDef *spi_dev, u32 ClockDivider)
 
 
 /**
-  * @brief Enables or disables SPIx TDMA and RDMA .
+  * @brief Enable or disable SPIx TDMA and RDMA .
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  newState:  This parameter can be one of the following values:
   *              @arg ENABLE
@@ -734,7 +750,7 @@ void SSI_SetSlaveEnable(SPI_TypeDef *spi_dev, u32 SlaveIndex)
 }
 
 /**
-  * @brief  Detemines whether SPIx transmit FIFO is full or not
+  * @brief  Detemine whether SPIx transmit FIFO is full or not
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @retval Transmit FIFO is full or not:
   *        - 1: Not Full
@@ -780,7 +796,7 @@ u32 SSI_ReadData(SPI_TypeDef *spi_dev)
 }
 
 /**
-  * @brief  receive data from rx FIFO
+  * @brief  Receive data from rx FIFO.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  RxData: buffer to save data read from SPI FIFO.
   * @param  Length: number of data to be read.
@@ -971,6 +987,17 @@ u32 SSI_GetDataFrameSize(SPI_TypeDef *spi_dev)
 }
 
 /**
+  * @brief Get SPIx data frame number.
+  * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
+  * @retval  Data frame number
+  */
+u32 SSI_GetDataFrameNumber(SPI_TypeDef *spi_dev)
+{
+	u32 ndf = ((spi_dev->SPI_CTRLR1) & SPI_MASK_NDF) + 1;
+	return ndf;
+}
+
+/**
   * @brief  Detemine SPIx is busy or not.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @retval SPIx busy status value:
@@ -1093,6 +1120,26 @@ u32 SSI_GetSlaveEnable(SPI_TypeDef *spi_dev)
 {
 	return spi_dev->SPI_SER;
 }
+
+/**
+  * @brief  Get Masks or unmasks SPIx interrupt.
+  * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
+  * @retval  SSI_IT: This parameter can be one of the following values or mixed:
+  *            @arg SPI_BIT_TXEIM
+  *            @arg SPI_BIT_TXOIM
+  *            @arg SPI_BIT_RXUIM
+  *            @arg SPI_BIT_RXOIM
+  *            @arg SPI_BIT_RXFIM
+  *            @arg SPI_BIT_MSTIM_FAEIM
+  *            @arg SPI_BIT_TXUIM
+  *            @arg SPI_BIT_SSRIM
+  * @note  BITx is 1 means the corrsponding intr is enabled, otherwise is disabled.
+  */
+u32 SPI_GetINTConfig(SPI_TypeDef *spi_dev)
+{
+	return spi_dev->SPI_IMR;
+}
+
 /**@}*/
 /**@}*/
 /**@}*/
