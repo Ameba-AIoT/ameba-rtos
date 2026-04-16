@@ -233,7 +233,7 @@ static void at_wlconn_help(void)
 	RTK_LOGI(NOTAG, "\t<ssid>:\tA string SSID name\r\n");
 	RTK_LOGI(NOTAG, "\t<bssid>:\tA hex-number string with colons, e.g. 1a:2b:3c:4d:5e:6f\r\n");
 	RTK_LOGI(NOTAG, "\t<pw>:\tWPA or WPA2 with length 8~64, WEP with length 5 or 13\r\n");
-	RTK_LOGI(NOTAG, "\t<key_id>:\tFor WEP security, must be 0~3, if absent, it is 0\r\n");
+	RTK_LOGI(NOTAG, "\t<key_id>:\tFor WEP security, must be 0~3\r\n");
 }
 
 /****************************************************************

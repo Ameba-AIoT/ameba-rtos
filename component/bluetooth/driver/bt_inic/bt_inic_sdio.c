@@ -189,7 +189,7 @@ void bt_inic_sdio_init(void)
 	}
 
 	for (i = 0; i < spdio_bt_dev.host_tx_bd_num; i++) {
-		spdio_bt_dev.rx_buf[i].buf_allocated = spdio_bt_dev.rx_buf[i].buf_addr = (u32)osif_mem_aligned_alloc(0, spdio_bt_dev.device_rx_bufsz, 4);
+		spdio_bt_dev.rx_buf[i].buf_allocated = spdio_bt_dev.rx_buf[i].buf_addr = (u32)osif_mem_aligned_alloc(0, spdio_bt_dev.device_rx_bufsz, 32);
 		if (!spdio_bt_dev.rx_buf[i].buf_allocated) {
 			osif_mem_aligned_free((void *)(spdio_bt_dev.rx_buf));
 			BT_LOGA("malloc failed for spdio buffer!\r\n");

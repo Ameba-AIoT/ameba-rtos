@@ -41,12 +41,17 @@
 #elif defined(CONFIG_WHC_DEV)
 #define WIFI_STACK_SIZE_INIC_MSG_Q	(688 + 128 + CONTEXT_SAVE_SIZE) /* max 688 in smart */
 #endif
+#if defined(CONFIG_EAP) || defined(CONFIG_WPS)
+#define STACK_SIZE_FOR_WPS_OR_EAP	1920   /* WA: for dp: enable WPS need 748, enable EAP need 1368; g2 EAP need 1880; smart EAP need 1192; lite EAP need 1404*/
+#else
+#define STACK_SIZE_FOR_WPS_OR_EAP   0
+#endif
 
 /*host api task*/
 #define CONFIG_INIC_IPC_HOST_API_PRIO 3
 #define CONFIG_INIC_IPC_HOST_EVT_API_PRIO 3
 #define WIFI_STACK_SIZE_INIC_IPC_HST_API (WIFI_INIC_IPC_HST_API_BASIC_SIZE + 128 + CONTEXT_SAVE_SIZE)	// for psp overflow when update group key: jira: https://jira.realtek.com/browse/RSWLANQC-1027
-#define WIFI_STACK_SIZE_INIC_IPC_HST_EVT_API (WIFI_INIC_IPC_HST_EVT_API_BASIC_SIZE + 128 + CONTEXT_SAVE_SIZE)
+#define WIFI_STACK_SIZE_INIC_IPC_HST_EVT_API (WIFI_INIC_IPC_HST_EVT_API_BASIC_SIZE + STACK_SIZE_FOR_WPS_OR_EAP + 128 + CONTEXT_SAVE_SIZE)
 #define CONFIG_INIC_IPC_HOST_EVT_Q_DEPTH 10
 
 #define whc_dev_init                                     whc_ipc_dev_init
