@@ -112,6 +112,9 @@ u32 whc_spi_dev_rxdma_irq_handler(void *pData)
 	/* check and clear RX DMA ISR */
 	int_status = GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	if ((int_status & (TransferType)))  {
+		/* patch for SPI RXF interrupt status cleared by RXDMA or masked by cpsid.
+			RXDMA would move data from RXFIFO to memory, which would make RXFIFO empty and clear RXF interrupt.*/
+		set_dev_rdy_pin(DEV_BUSY);
 		rtos_critical_enter(RTOS_CRITICAL_WIFI);
 		spi_priv.dev_status |= DEV_STS_WAIT_RXDMA_DONE;
 		rtos_critical_exit(RTOS_CRITICAL_WIFI);

@@ -6,8 +6,8 @@
 #include "os_wrapper.h"
 #include "diag.h"
 
-int fatfs_mount_flag = 0;
-int fatfs2_mount_flag = 0;
+volatile uint8_t fatfs_mount_flag = 0;
+volatile uint8_t fatfs2_mount_flag = 0;
 static struct dirent *fatfs_ent;
 fatfs_params_t fatfs_flash_param;
 
@@ -528,9 +528,9 @@ int fatfs_mount(int interface)
 	}
 
 	if (interface == VFS_INF_SD || interface == VFS_INF_SECOND_FLASH || interface == VFS_INF_SD_SPI || interface == VFS_INF_USBH) {
-		fatfs2_mount_flag = (ret == 0 ? 1 : -1);
+		fatfs2_mount_flag = (ret == 0 ? 1 : 0);
 	} else if (interface == VFS_INF_FLASH) {
-		fatfs_mount_flag = (ret == 0 ? 1 : -1);
+		fatfs_mount_flag = (ret == 0 ? 1 : 0);
 	}
 
 	return ret;
