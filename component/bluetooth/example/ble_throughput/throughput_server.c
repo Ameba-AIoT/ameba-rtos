@@ -176,8 +176,8 @@ static void ble_throughput_server_terminate_test(uint16_t conn_handle)
 	p_server_result->end_time = osif_sys_time_get();
 	p_server_result->elapsed_time = ble_throughput_get_elapsed_time(p_server_result->start_time,
 																	p_server_result->end_time);
-	p_server_result->rx_all_Bps = p_server_result->rx_all_pkts * p_cfg_param->length_c
-								  * 1000 / p_server_result->elapsed_time;
+	p_server_result->rx_all_Bps = (uint32_t)(((uint64_t)p_server_result->rx_all_pkts * p_cfg_param->length_c * 1000)
+											 / p_server_result->elapsed_time);
 
 	if (tx_end & THROUGHPUT_TX_END_CLIENT) {
 		BT_LOGA("\r\nCONN_HANDLE: %d, START TIME: %d ms, END TIME: %d ms, ELAPSED TIME: %d ms\r\n",

@@ -25,17 +25,17 @@ else()
 endif()
 
 if(CONFIG_FATFS_WITHIN_APP_IMG)
-    if(EXISTS {c_SOC_PROJECT_DIR}/fatfs.bin)
+    if(EXISTS ${c_SOC_PROJECT_DIR}/fatfs.bin)
         ameba_axf2bin_pad(${app_full_path} 4096)
         ameba_axf2bin_pad(${app_ns_full_path} 4096)
         ameba_axf2bin_prepend_head(
-            {c_SOC_PROJECT_DIR}/fatfs_prepend.bin
-            {c_SOC_PROJECT_DIR}/fatfs.bin
+            ${c_SOC_PROJECT_DIR}/fatfs_prepend.bin
+            ${c_SOC_PROJECT_DIR}/fatfs.bin
             VFS1_FLASH_BASE_ADDR
             ${c_IMAGE_OUTPUT_DIR}/target_img2.map
         )
-        ameba_file_append(${app_full_path} {c_SOC_PROJECT_DIR}/fatfs_prepend.bin)
-        ameba_file_append(${app_ns_full_path} {c_SOC_PROJECT_DIR}/fatfs_prepend.bin)
+        ameba_file_append(${app_full_path} ${c_SOC_PROJECT_DIR}/fatfs_prepend.bin)
+        ameba_file_append(${app_ns_full_path} ${c_SOC_PROJECT_DIR}/fatfs_prepend.bin)
     endif()
 endif()
 
