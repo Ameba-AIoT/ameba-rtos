@@ -33,6 +33,11 @@ void ota_task(void *param)
 	memset(ctx, 0, sizeof(ota_context_t));
 
 	prefix = find_vfs_tag(VFS_REGION_3);
+	if (prefix == NULL) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%s] fatfs region is not exist\n", __FUNCTION__);
+		goto exit;
+	}
+
 	DiagSnPrintf(path, sizeof(path), "%s:%s", prefix, RESOURCE);
 
 	ret = ota_init(ctx, NULL, NULL, (char *)path, OTA_VFS);

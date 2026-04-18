@@ -1378,7 +1378,7 @@ void whc_dev_api_init(void)
 
 	/* Initialize the event task */
 	if (RTK_SUCCESS != rtos_task_create(&event_priv.api_dev_task, (const char *const)"whc_dev_api_task", (rtos_task_function_t)whc_dev_api_task, NULL,
-										WHC_API_STACK * 4, CONFIG_WHC_DEV_API_PRIO)) {
+										WIFI_TASK_SIZE_WHC_DEV_API, CONFIG_WHC_DEV_API_PRIO)) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Create whc_dev_api_task Err!!\n");
 	}
 }

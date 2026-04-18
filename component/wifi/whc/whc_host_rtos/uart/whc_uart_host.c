@@ -9,10 +9,10 @@ extern struct event_priv_t event_priv;
 #ifdef WHC_UART_DEBUG
 static void dump_buf(char *info, uint8_t *buf, uint32_t len)
 {
-	printf("%s", info);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", info);
 	for (uint32_t i = 0; i < len; i++) {
-		printf("%s0x%02X%s", i % 16 == 0 ? "\n     " : ",",
-			   buf[i], i == len - 1 ? "\n" : "");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s0x%02x%s", i % 16 == 0 ? "\n     " : ",",
+				 buf[i], i == len - 1 ? "\n" : "");
 	}
 }
 #endif
@@ -604,7 +604,7 @@ static void whc_uart_host_drv_init(void)
 
 	/* Initialize the event task */
 	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_host_api_task", (rtos_task_function_t)whc_host_api_task, NULL,
-										WIFI_STACK_SIZE_INIC_IPC_HST_API, 3)) {
+										WIFI_TASK_SIZE_WHC_HST_API, 3)) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create api_host_task Err\n");
 	}
 #endif
