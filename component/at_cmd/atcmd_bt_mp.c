@@ -166,8 +166,9 @@ static void bt_uart_bridge_close(void)
 	/*restore the Baud register value*/
 	LOGUART_SetBaud(LOGUART_DEV, LOGUART_BAUDRATE);
 	LOGUART_INT_AP2NP();
-
-#if !(defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
+#else
 	u32 TempVal;
 	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0);
 	TempVal &= ~(LSYS_BIT_FORCE_LOGUART_USE_LOGUART_PAD_B | LSYS_BIT_WL_USE_REQ);
@@ -318,7 +319,9 @@ void bt_uart_bridge_open(void)
 
 	LOGUART_WaitTxComplete();
 
-#if !(defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, DISABLE);
+#else
 	u32 TempVal;
 	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0);
 	TempVal |= (LSYS_BIT_FORCE_LOGUART_USE_LOGUART_PAD_B | LSYS_BIT_WL_USE_REQ);

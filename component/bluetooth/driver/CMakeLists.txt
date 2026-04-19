@@ -65,11 +65,7 @@ ameba_list_append(private_sources
 )
 
 if(CONFIG_BT_INIC)
-	if(CONFIG_SDN_BT)
-		ameba_list_append(private_sources vhci/hci_if_inic_sdn.c)
-	else()
-		ameba_list_append(private_sources hci/hci_if_inic.c)
-	endif()
+	ameba_list_append_ifnot(CONFIG_SDN_BT private_sources hci/hci_if_inic.c)
 
 	if(CONFIG_BT_INIC_H4)
 		ameba_list_append(private_sources bt_inic/bt_inic_h4.c)

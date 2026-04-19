@@ -3,12 +3,6 @@
 
 /* -------------------------------- Defines --------------------------------- */
 #define CONFIG_WHC_DEV_API_PRIO 3
-#if defined(CONFIG_PHYDM_CMD) || defined(NAN_CUSTOMER_NANDOW) /*halbb debug cmd need bigger stack size*/
-#define WHC_API_STACK 1024
-#else
-#define WHC_API_STACK 512
-#endif
-
 #define DEV_REQ_NETWORK_INFO_MAX_LEN	6
 
 /* ------------------------------- Data Types ------------------------------- */

@@ -54,9 +54,9 @@ void uart_format_string_output(const char *fmt, ...);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "ACM";
 
-static u8 cdc_acm_loopback_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 cdc_acm_loopback_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
+static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
+static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
 
 u8 uart_show_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] = {0};
 char uart_format_buffer[FORMAT_LEN];
@@ -612,4 +612,3 @@ void example_atcmd_host_usbh(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }
-

@@ -28,7 +28,7 @@ typedef struct {
 
 typedef struct {
 	ll_diskio_drv	*drv[_VOLUMES];
-	unsigned int nbr;
+	unsigned char nbr;
 } ff_disk_drv;
 
 extern ff_disk_drv  disk;
@@ -40,7 +40,7 @@ extern ll_diskio_drv FLASH_second_disk_Driver;
 extern void (*fatfs_hostplug_usr_cb)(int);
 
 typedef struct fatfs_flash_param_s {
-	int drv_num;
+	signed char drv_num;
 	char drv[4];
 	FATFS fs;
 } fatfs_params_t;
