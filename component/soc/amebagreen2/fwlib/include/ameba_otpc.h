@@ -360,6 +360,10 @@ _LONG_CALL_ int OTP_SetCRC(void);
 _LONG_CALL_ int OTP_Read8(u32 Addr, u8 *Data);
 _LONG_CALL_ int OTP_Write8(u32 Addr, u8 Data);
 _LONG_CALL_ int OTP_Read32(u32 Addr, u32 *Data);
+_LONG_CALL_ int OTP_WritePhyBuf(u32 addr, const u8 *data, u32 len);
+_LONG_CALL_ int OTP_ClearPhyBit(u32 addr, u8 bit);
+_LONG_CALL_ int OTP_SetLogBit(u32 addr, u8 bit, u8 val);
+
 #ifdef __cplusplus
 }
 #endif

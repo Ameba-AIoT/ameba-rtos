@@ -67,6 +67,9 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
         atcmd_coex.c
         atcmd_otp.c
     )
+    ameba_list_append_if(CONFIG_ATCMD_SECURE private_sources
+        atcmd_secure.c
+    )
     ameba_list_append_if(CONFIG_WLAN private_sources
         atcmd_http.c
         atcmd_mqtt.c

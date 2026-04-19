@@ -176,7 +176,7 @@ MEMORY
 	KR4_TIMER_IDLE_TASK_STACK (rw) :        ORIGIN = 0x20002000, LENGTH = 0x20003000 - 0x20002000	/* KR4 TIMER and IDLE task stack: 4k */
 
 	/* Flash */
-	KR4_IMG2_XIP (rx) :                     ORIGIN = 0x0C000020, LENGTH = 0x0E000000 - 0x0C000020	/* KR4 IMG2 Virtual address: 32768k */
+	KR4_IMG2_XIP (rx) :                     ORIGIN = 0x0C000020, LENGTH = 0x0D000000 - 0x0C000020	/* KR4 IMG2 Virtual address: 32768k */
 	DSP_IMG2_XIP (rx) :                     ORIGIN = 0x0D000020, LENGTH = 0x0E000000 - 0x0D000020	/* DSP IMG2 Virtual address: 24576k */
 	KM4_IMG2_XIP (rx) :                     ORIGIN = 0x0E000020, LENGTH = 0x0F800000 - 0x0E000020	/* KM4 IMG2 Virtual address: 24576k */
 	KM4_BOOT_XIP (rx) :                     ORIGIN = 0x0F800020, LENGTH = 0x10000000 - 0x0F800020	/* KM4 Bootloader Virtual address: 8192k */

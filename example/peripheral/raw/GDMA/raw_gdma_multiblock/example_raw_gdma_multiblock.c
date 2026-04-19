@@ -35,8 +35,8 @@ struct gdma_s {
 typedef struct gdma_s gdma_t;
 gdma_t gdma;
 
-ALIGNMTO(64) uint8_t TestBuf1[DATA_SIZE];
-ALIGNMTO(64) uint8_t TestBuf2[DATA_SIZE];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t TestBuf1[DATA_SIZE];
+ALIGNMTO(CACHE_LINE_SIZE) uint8_t TestBuf2[DATA_SIZE];
 
 volatile uint8_t dma_done;
 

@@ -33,7 +33,7 @@
 #include "usbh_hw_uvc.h"
 #endif
 
-#define USBH_UVC_GET_FRAME_TIMEOUT                    2000   /**< Timeout for getting a frame in ms. */
+#define USBH_UVC_GET_FRAME_TIMEOUT                    500   /**< Timeout for getting a frame in ms. */
 
 /* Supported Video Formats */
 #define USBH_UVC_FORMAT_MJPEG                         0x6    /**< Motion-JPEG format. */
@@ -42,12 +42,12 @@
 
 /* USB Request Block (URB) Configuration */
 #define USBH_UVC_URB_NUMS                             4      /**< Number of URBs used for streaming. */
-#define USBH_UVC_URB_SIZE                             ((3072 + 32) * 8)   /**< Size of each URB buffer in bytes. */
+#define USBH_UVC_URB_SIZE                             ((3072 + 32) * 4)   /**< Size of each URB buffer in bytes. */
 
 #define USBH_UVC_VIDEO_FRAME_NUMS                     3      /**< Number of video frame buffers. Fixed to 3 if using HW decoder. */
 
 /* Task Configuration */
-#define USBH_UVC_COMBINE_TASK_STACK                    (512 * 4)   /**< Stack size for the combine task in bytes. */
+#define USBH_UVC_COMBINE_TASK_STACK                    (1024U)   /**< Stack size for the combine task in bytes. */
 #define USBH_UVC_COMBINE_TASK_PRIORITY                 5           /**< Priority of the combine task. */
 
 #define UBSH_UVC_REQUEST_BUF_LEN                       64     /**< Length of the UVC control request buffer. */
@@ -71,15 +71,16 @@
  * @brief UVC Streaming State.
  */
 typedef enum {
-	STREAMING_OFF = 0,    /**< Streaming is currently stopped. */
-	STREAMING_ON          /**< Streaming is active. */
+	STREAMING_ON = 1,     /**< Streaming is active. */
+	STREAMING_STOP,       /**< Streaming is stop. */
+	STREAMING_OFF,        /**< Streaming is off. */
 } usbh_uvc_streaming_state_t;
 
 /**
  * @brief UVC Stream Data Transfer State.
  */
 typedef enum {
-	STREAM_STATE_IDLE = 1, /**< Idle state, no data transfer. */
+	STREAM_DATA_OFF = 1, /**< Idle state, no data transfer. */
 	STREAM_DATA_IN,        /**< Data IN transfer state. */
 } usbh_uvc_stream_data_state_t;
 
