@@ -58,6 +58,11 @@ int pthread_barrier_destroy( pthread_barrier_t * barrier )
 {
     pthread_barrier_internal_t * pxBarrier = ( pthread_barrier_internal_t * ) ( barrier );
 
+    if( uxSemaphoreGetCount( ( SemaphoreHandle_t ) &pxBarrier->xThreadCountSemaphore ) != ( pxBarrier->uThreshold ) )
+    {
+        return EBUSY;
+    }
+
     /* Free all resources used by the barrier. */
     ( void ) vEventGroupDelete( ( EventGroupHandle_t ) &pxBarrier->xBarrierEventGroup );
     ( void ) vSemaphoreDelete( ( SemaphoreHandle_t ) &pxBarrier->xThreadCountSemaphore );

@@ -52,10 +52,10 @@
 #define UART_RTS    _PA_7
 #elif defined(CONFIG_RTL8720F)
 #define UART_INDEX  0
-#define UART_TX     _PA_4
-#define UART_RX     _PA_5
-#define UART_CTS    _PA_6
-#define UART_RTS    _PA_7
+#define UART_TX     _PA_13
+#define UART_RX     _PA_14
+#define UART_CTS    _PA_15
+#define UART_RTS    _PA_16
 #endif
 
 #define UART_DEV    UART_DEV_TABLE[UART_INDEX].UARTx
@@ -271,13 +271,12 @@ void bt_inic_h4_init(void)
 	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART);
 	Pinmux_Config(UART_CTS, PINMUX_FUNCTION_UART_RTSCTS);
 	Pinmux_Config(UART_RTS, PINMUX_FUNCTION_UART_RTSCTS);
-#elif defined(CONFIG_AMEBALITE) || defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
+#else
 	/* Configure UART TX and RX pin */
 	Pinmux_Config(UART_TX, UART_FUNCID(TXD, UART_INDEX));
 	Pinmux_Config(UART_RX, UART_FUNCID(RXD, UART_INDEX));
 	Pinmux_Config(UART_CTS, UART_FUNCID(CTS, UART_INDEX));
 	Pinmux_Config(UART_RTS, UART_FUNCID(RTS, UART_INDEX));
-#elif defined(CONFIG_AMEBAL2)
 #endif
 
 	PAD_PullCtrl(UART_TX, GPIO_PuPd_UP); /* pull up Tx/Rx pin */

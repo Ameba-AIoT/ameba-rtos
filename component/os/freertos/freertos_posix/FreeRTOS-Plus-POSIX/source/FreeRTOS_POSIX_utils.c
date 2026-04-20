@@ -250,7 +250,7 @@ int UTILS_TimespecAddNanoseconds( const struct timespec * const x,
         llTotalNSec = x->tv_nsec + llNanoseconds;
 
         /* check for nano seconds overflow */
-        if( llTotalNSec < 0 )
+        if( ( llNanoseconds > 0 ) && ( llTotalNSec < 0 ) )
         {
             iStatus = 1;
         }
@@ -258,6 +258,13 @@ int UTILS_TimespecAddNanoseconds( const struct timespec * const x,
         {
             pxResult->tv_nsec = llTotalNSec % NANOSECONDS_PER_SECOND;
             pxResult->tv_sec = x->tv_sec + ( llTotalNSec / NANOSECONDS_PER_SECOND );
+
+            /* check if nano seconds value needs to borrow */
+            if( ( llNanoseconds < 0 ) && (pxResult->tv_nsec < 0 ) )
+            {
+                pxResult->tv_sec--;
+                pxResult->tv_nsec += ( long ) NANOSECONDS_PER_SECOND;
+            }
 
             /* check for seconds overflow */
             if( pxResult->tv_sec < 0 )

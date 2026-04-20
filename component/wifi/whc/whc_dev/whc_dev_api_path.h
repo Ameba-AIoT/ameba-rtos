@@ -3,12 +3,6 @@
 
 /* -------------------------------- Defines --------------------------------- */
 #define CONFIG_WHC_DEV_API_PRIO 3
-#if defined(CONFIG_PHYDM_CMD) || defined(NAN_CUSTOMER_NANDOW) /*halbb debug cmd need bigger stack size*/
-#define WHC_API_STACK 1024
-#else
-#define WHC_API_STACK 512
-#endif
-
 #define DEV_REQ_NETWORK_INFO_MAX_LEN	6
 
 /* ------------------------------- Data Types ------------------------------- */
@@ -74,6 +68,7 @@ void whc_event_wifi_set_host_rtos(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_edcca_param(u32 api_id, u32 *param_buf);
 void whc_event_wifi_get_edcca_mode(u32 api_id, u32 *param_buf);
 void whc_event_wifi_get_ant_info(u32 api_id, u32 *param_buf);
+void whc_event_wifi_set_ant_info(u32 api_id, u32 *param_buf);
 void whc_event_war_offload_ctrl(u32 api_id, u32 *param_buf);
 void whc_event_war_set_mdns_para(u32 api_id, u32 *param_buf);
 void whc_event_wifi_driver_is_mp(u32 api_id, u32 *param_buf);

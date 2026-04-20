@@ -43,6 +43,10 @@ ameba_add_subdirectory_if(CONFIG_BT_HOGP
     ble_hogp_gamepad
 )
 
+ameba_add_subdirectory_if(CONFIG_BT_HOGP_ULL
+    ble_hogp_ull
+)
+
 ameba_add_subdirectory_if(CONFIG_BT_MESH_DEVICE
     ble_mesh_device
 )

@@ -105,10 +105,9 @@ static rtos_sema_t tt_mode_tx_sema;
 static void *uart_irq_handle_sema;
 static void *uart_show_sema;
 static char uart_format_buffer[FORMAT_LEN];
-static u8 uart_irq_buffer[MAX_CMD_LEN] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 uart_irq_buffer[MAX_CMD_LEN] ALIGNMTO(CACHE_LINE_SIZE);
 static u32 uart_irq_count = 0;
 static u8 tt_mode_task_start = 0;
-static volatile u8 high_water_mark = 0;
 static RingBuffer *at_usbd_rx_ring_buf = NULL;
 static u8 uart_show_buf[CONFIG_CDC_ACM_BULK_IN_XFER_SIZE] = {0};
 
@@ -210,11 +209,6 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 	}
 
 	if (tt_mode_task_start) {
-		if (memcmp(buf, ATCMD_TT_MODE_HIGH_WATERMARK_STR, strlen(ATCMD_TT_MODE_HIGH_WATERMARK_STR)) == 0) {
-			high_water_mark = 1;
-		} else if (memcmp(buf, ATCMD_TT_MODE_LOW_WATERMARK_STR, strlen(ATCMD_TT_MODE_LOW_WATERMARK_STR)) == 0) {
-			high_water_mark = 0;
-		}
 		uart_send_string(&sobj, (char *)buf, len);
 	} else {
 		if (memcmp(buf, ATCMD_DOWNSTREAM_TEST_START_STR, strlen(ATCMD_DOWNSTREAM_TEST_START_STR)) == 0) {
@@ -462,21 +456,17 @@ static void tt_mode_test_task(void *param)
 
 	while (1) {
 		while (tt_len > 0) {
-			if (high_water_mark == 0) {
-				xSemaphoreTake(tt_mode_tx_sema, 0xFFFFFFFF);
-				send_len = tt_len > (CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE) ? (CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE) : tt_len;
+			xSemaphoreTake(tt_mode_tx_sema, 0xFFFFFFFF);
+			send_len = tt_len > (CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE) ? (CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE) : tt_len;
+			ret = usbd_cdc_acm_transmit(tt_tx_buf, send_len);
+			while (ret != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\r\n");
+				rtos_time_delay_ms(1);
 				ret = usbd_cdc_acm_transmit(tt_tx_buf, send_len);
-				while (ret != HAL_OK) {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\r\n");
-					rtos_time_delay_ms(1);
-					ret = usbd_cdc_acm_transmit(tt_tx_buf, send_len);
-				}
-				xSemaphoreTake(atcmd_usbd_tx_done_sema, 0xFFFFFFFF);
-				tt_len -= send_len;
-				xSemaphoreGive(tt_mode_tx_sema);
-			} else {
-				vTaskDelay(20);
 			}
+			xSemaphoreTake(atcmd_usbd_tx_done_sema, 0xFFFFFFFF);
+			tt_len -= send_len;
+			xSemaphoreGive(tt_mode_tx_sema);
 		}
 
 		printf("tt mode end\r\n");
@@ -558,4 +548,3 @@ void example_atcmd_host_usbd(void)
 	xTaskCreate((void *)tt_mode_test_task, ((const char *)"tt_mode_test_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 1, NULL);
 	xTaskCreate((void *)uart_show_rx_data_task, ((const char *)"uart_show_rx_data_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 1, NULL);
 }
-

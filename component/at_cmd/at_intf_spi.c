@@ -247,10 +247,14 @@ void atcmd_spi_task(void)
 					} else {
 						while (1) {
 							rtos_time_delay_ms(1);
-							space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
-							if (space >= recv_len) {
-								RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
-								rtos_sema_give(atcmd_tt_mode_sema);
+							if (g_tt_mode) {
+								space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+								if (space >= recv_len) {
+									RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
+									rtos_sema_give(atcmd_tt_mode_sema);
+									break;
+								}
+							} else {
 								break;
 							}
 						}

@@ -22,7 +22,6 @@ ameba_add_subdirectory(${c_CMPT_NETWORK_DIR})
 ameba_add_subdirectory(${c_CMPT_OTA_DIR})
 ameba_add_subdirectory(${c_CMPT_LWIP_DIR})
 ameba_add_subdirectory(${c_CMPT_SSL_DIR})
-ameba_add_subdirectory_if_exist(${c_CMPT_UI_DIR})
 ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 

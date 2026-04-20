@@ -708,6 +708,21 @@ s32 wifi_get_antdiv_info(u8 *antdiv_mode, u8 *curr_ant)
 #endif
 }
 
+s32 wifi_set_antdiv_info(u8 antdiv_mode)
+{
+#ifdef CONFIG_WIFI_ANTDIV
+	int ret = 0;
+	u32 param_buf[1];
+
+	param_buf[0] = (u32)antdiv_mode;
+	whc_host_api_message_send(WHC_API_WIFI_SET_ANTENNA_INFO, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
+	return ret;
+#else
+	UNUSED(antdiv_mode);
+	return -1;
+#endif
+}
+
 /*
  * @brief get WIFI band type
  *@retval  the support band type.
@@ -866,4 +881,3 @@ s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting)
 }
 
 #endif	//#if CONFIG_WLAN
-

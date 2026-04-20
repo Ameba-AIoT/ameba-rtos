@@ -19,3 +19,5 @@ prompt_toolkit
 click
 requests
 filelock
+fastmcp
+pqcrypto

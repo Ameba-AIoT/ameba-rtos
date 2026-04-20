@@ -2413,6 +2413,5 @@ struct wpabuf *p2p_build_probe_resp_template(struct p2p_data *p2p,
 
 bool p2p_peer_wfd_enabled(struct p2p_data *p2p, const u8 *peer_addr);
 bool p2p_wfd_enabled(struct p2p_data *p2p);
-void p2p_group_info_dump(struct p2p_group *group);
 
 #endif /* P2P_H */
