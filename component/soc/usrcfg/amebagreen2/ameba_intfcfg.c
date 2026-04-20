@@ -43,5 +43,3 @@ u8 SDH_Pin_Grp = 0x4;
 
 /* ethernet pinmux group: 0x0-0x3 */
 u8 ETHERNET_Pin_Grp = 0x0;
-
-

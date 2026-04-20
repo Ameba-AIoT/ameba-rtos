@@ -813,6 +813,12 @@ int usbd_cdc_acm_deinit(void)
 #endif
 	while (is_busy) {
 		usb_os_delay_us(100);
+
+#if CONFIG_CDC_ACM_NOTIFY
+		is_busy = ep_bulk_in->is_busy || ep_intr_in->is_busy;
+#else
+		is_busy = ep_bulk_in->is_busy;
+#endif
 	}
 
 	usbd_unregister_class();
@@ -873,9 +879,9 @@ int usbd_cdc_acm_transmit(u8 *buf, u32 len)
 #else
 			usb_os_memcpy((void *)ep_bulk_in->xfer_buf, (void *)buf, len);
 #endif
-			if ((ep_bulk_in->skip_dcache_pre_clean) && (buf != NULL) && (len != 0)) {
-				if (USB_IS_MEM_DMA_ALIGNED(buf)) {
-					DCache_Clean((u32)buf, len);
+			if ((ep_bulk_in->skip_dcache_pre_clean) && (ep_bulk_in->xfer_buf != NULL) && (len != 0)) {
+				if (USB_IS_MEM_DMA_ALIGNED(ep_bulk_in->xfer_buf)) {
+					DCache_Clean((u32)ep_bulk_in->xfer_buf, len);
 				} else {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "EP TX buf align err\n");
 					return HAL_ERR_MEM;

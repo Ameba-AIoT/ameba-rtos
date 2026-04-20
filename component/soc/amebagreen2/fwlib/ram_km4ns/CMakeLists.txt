@@ -37,7 +37,6 @@ set(private_compile_options)         #private compile_options
 
 ameba_list_append(private_sources
     ameba_app_start.c
-    ameba_pinmap.c
     ameba_pmc.c
     ameba_npcap.c
 )

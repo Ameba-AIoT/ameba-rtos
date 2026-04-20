@@ -73,9 +73,6 @@ void app_start(void)
 	/* configure FreeRTOS interrupt and heap region for printf(RTK_LOGx)*/
 	os_init();
 
-	/* low power pin dont need pinmap init again after wake from dslp */
-	pinmap_init(); /* 1.7ms */
-
 	newlib_locks_init();
 
 	/* 6. Configure MPU */

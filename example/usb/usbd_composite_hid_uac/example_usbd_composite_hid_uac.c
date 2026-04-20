@@ -16,12 +16,10 @@
 /* This used to check the USB issue */
 /*
 	Note:
-	Currently supported on AMEBASMART/AMEBADPLUS/AMEBAGREEN2, configuration CONFIG_USBD_AUDIO_EN = 1
-	If EVB is AMEBAGREEN2 and CONFIG_USBD_AUDIO_EN=1, then OS needs to be configured as FREERTOS(default is FREERTOS_ROM)
+	If EVB is AMEBAGREEN2 and CONFIG_SUPPORT_AUDIO_FOR_USB=1, then OS needs to be configured as FREERTOS(default is FREERTOS_ROM)
 */
-#define CONFIG_USBD_COMPOSITE_AUDIO_EN                          0
 
-#if  CONFIG_USBD_COMPOSITE_AUDIO_EN
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 #include "audio/audio_control.h"
 #include "audio/audio_equalizer.h"
 #include "audio/audio_track.h"
@@ -32,27 +30,28 @@
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "COMP";
 
-// This configuration is used to enable a thread to check hotplug event
-// and reset USB stack to avoid memory leak, only for example.
 #define CONFIG_USBD_COMPOSITE_HOTPLUG                            1
 
 #define CONFIG_USBD_HID_CONSTANT_LOOP                            2
 #define CONFIG_USBD_COMP_HID_TX_BUG_LEN                          1024
 
-#if CONFIG_USBD_COMPOSITE_AUDIO_EN
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 #define CONFIG_USBD_UAC_DEMUX_CH_DEBUG                           1
 #else
 #define CONFIG_USBD_UAC_DEMUX_CH_DEBUG                           0
 #endif
 
 #define CONFIG_COMP_USBD_MSG_QUEUE_DEPTH                         10
-
 #define COMP_USBD_HOT_PLUG_STATUS                                1
 
 #define CONFIG_COMP_USBD_UAC_RECORD_TEST_CNT                     6
 #define CONFIG_COMP_USBD_UAC_RECORD_TEST_TIME                    10
 
-// USB speed
+/* Task exit wait timeout */
+#define TASK_EXIT_WAIT_TIMEOUT_MS                                5000
+#define TASK_EXIT_POLL_INTERVAL_MS                               100
+
+/* USB speed */
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define CONFIG_USBD_COMPOSITE_SPEED USB_SPEED_FULL
 #elif defined(CONFIG_USBD_COMPOSITE_HID_UAC1)
@@ -64,34 +63,26 @@ static const char *const TAG = "COMP";
 #define ENABLE_USB_RECORD_FEATURE                                1
 #endif
 
-// Thread priorities
+/* Thread priorities */
 #define CONFIG_USBD_COMPOSITE_HID_THREAD_PRIORITY                5U
 #define CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY                6U
 #define CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY               7U
-#define CONFIG_USBD_COMPOSITE_EVENT_TASK_PRIORITY                8U // Should be higher than
+#define CONFIG_USBD_COMPOSITE_EVENT_TASK_PRIORITY                8U
 
-/* ms */
+/* Buffer sizes */
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define COMP_USBD_AUDIO_MS_BUF_SIZE               1023U
 #else
-/* the buffer size maybe need to be changed if format( AUDIO_BYTE_WIDTH_SIZE * AUDIO_CHANNEL_NUM num * AUDIO_SAMPLING_RATE) changes */
-//#define COMP_USBD_AUDIO_MS_BUF_SIZE             ((AUDIO_BYTE_WIDTH_SIZE) * (AUDIO_CHANNEL_NUM) * (AUDIO_SAMPLING_RATE) / 1000)
 #define COMP_USBD_AUDIO_MS_BUF_SIZE               1024U
 #endif
-#define COMP_USBD_AUDIO_PLAYER_BUF_SIZE                          ((COMP_USBD_AUDIO_MS_BUF_SIZE) * 1)
+#define COMP_USBD_AUDIO_PLAYER_BUF_SIZE           ((COMP_USBD_AUDIO_MS_BUF_SIZE) * 5)
 
 /* Private types -------------------------------------------------------------*/
-typedef struct {
-	u8 func_cmd;      //left & right : alt win shift alt command
-	u8 padding;       //constant panding
-	u8 cmd[30];       //6 command key values
-} __PACKED composite_usbd_hid_report_data_t;
-
-/* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
-static void composite_cb_status_changed(u8 old_status, u8 status);;
+static void composite_cb_status_changed(u8 old_status, u8 status);
 static int composite_cb_set_config(void);
+
 /* HID */
 static int composite_hid_cb_init(void);
 static int composite_hid_cb_deinit(void);
@@ -109,37 +100,31 @@ static int composite_uac_cb_volume_changed(u8 volume);
 static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 
 /* Private variables ---------------------------------------------------------*/
-/*
-* USB Common
-*/
+/* USB Common */
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 static __IO u8 composite_attach_status;
 #endif
 
 static usb_os_queue_t msg_queue;
+static __IO u8 usb_ready_flag = 0;           /* USB ready */
 
-static __IO u8 usb_ready_flag = 0;
+/* HID */
+static __IO u8 usbd_comp_hid_ready = 0;      /* HID ready */
+static __IO u8 hid_tx_xfer_done = 0;         /* HID tx xfer done */
+static u8 hid_report_buf[CONFIG_USBD_COMP_HID_TX_BUG_LEN];    /* HID tx buffer */
+static u8 hid_rx_buf[USBD_COMP_HID_MAX_BUF_SIZE];             /* HID rx buffer */
 
-/*  HID */
-static __IO u8 usbd_comp_hid_ready = 0;
-static __IO u8 hid_rx_len = 0;
-static __IO u8 hid_transmit_flag = 0;
-static __IO u8 usbd_comp_hid_task_stop = 0;
-static u8 hid_report_buf[CONFIG_USBD_COMP_HID_TX_BUG_LEN];
-static u8 hid_rx_buf[USBD_COMP_HID_MAX_BUF_SIZE];
-
+/*  UAC */
+static __IO u8 usbd_comp_audio_ready = 0;         /* UAC ready: playback & record */
 /*  UAC play */
-static __IO u8 usbd_comp_audio_play_ready = 0;         /* UAC ready */
-static __IO u8 usbd_comp_audio_play_start = 0;         /* Audio format change */
-static __IO u8 usbd_comp_write_audio_track_stop = 0;   /* Write audio track */
+static __IO u8 usbd_comp_audio_play_stop = 0;     /* Audio play stop */
 static __IO u8 usbd_comp_audio_play_task_alive = 0;    /* Audio play task */
 
-/*  UAC record */
+/* UAC record */
 #if defined(ENABLE_USB_RECORD_FEATURE)
-static __IO u8 usbd_comp_uac_record_start = 0;
-static __IO u8 usbd_comp_uac_record_ready = 0;
-static __IO u8 usbd_comp_audio_record_stop = 0;
-static __IO u8 usbd_comp_audio_record_task_alive = 0;
+static __IO u8 usbd_comp_user_enable_uac_record = 0;    /* User enable uac record function */
+static __IO u8 usbd_comp_audio_record_stop = 0;         /* Audio record stop */
+static __IO u8 usbd_comp_audio_record_task_alive = 0;   /* Audio record task */
 
 static int usbh_uac_busy_count;
 static int usbh_uac_err_count;
@@ -160,13 +145,7 @@ static u8 composite_usbd_uac_play_buf[COMP_USBD_AUDIO_PLAYER_BUF_SIZE];
 */
 static u8 composite_usbd_uac_recv_buf[COMP_USBD_AUDIO_PLAYER_BUF_SIZE];
 
-/* HID */
-composite_usbd_hid_report_data_t composite_hid_report_data[] = {
-	{1,   1,   {1,    1,    1,    1,    1,    1} },    //all released
-	{2,   2,   {2,    2,    2,    2,    2,    2} },    //enter a pressed
-	{3,   3,   {3,    3,    3,    3,    3,    3} },    //enter a released
-};
-
+/* Callback structures */
 static usbd_composite_cb_t composite_usbd_cb = {
 	.status_changed = composite_cb_status_changed,
 	.set_config = composite_cb_set_config,
@@ -223,6 +202,67 @@ static usbd_composite_uac_usr_cb_t composite_uac_usr_cb = {
 };
 
 /* Private functions ---------------------------------------------------------*/
+/**
+ * @brief Wait for task to exit with timeout
+ * @param task_alive_flag: Pointer to task alive flag
+ * @param timeout_ms: Timeout in milliseconds
+ * @return 0 if success, -1 if timeout
+ */
+static int composite_wait_task_exit(volatile u8 *task_alive_flag, u32 timeout_ms)
+{
+	u32 elapsed = 0;
+
+	while (*task_alive_flag == 1 && elapsed < timeout_ms) {
+		usb_os_sleep_ms(TASK_EXIT_POLL_INTERVAL_MS);
+		elapsed += TASK_EXIT_POLL_INTERVAL_MS;
+	}
+
+	if (*task_alive_flag == 1) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Task exit timeout\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Stop all tasks for hotplug handling
+ */
+static void composite_stop_all_tasks(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Stop all tasks\n");
+
+	/* Stop HID task */
+	usbd_comp_hid_ready = 0;
+
+	/* Stop UAC */
+	usbd_comp_audio_ready = 0;
+
+	/* Stop UAC play task */
+	usbd_comp_audio_play_stop = 1;
+	usbd_composite_uac_stop_play();
+
+#if defined(ENABLE_USB_RECORD_FEATURE)
+	/* Stop UAC record task */
+	usbd_comp_user_enable_uac_record = 0;
+	usbd_comp_audio_record_stop = 1;
+	usbd_composite_uac_stop_record();
+
+	/* Wait for record task exit */
+	if (composite_wait_task_exit(&usbd_comp_audio_record_task_alive, TASK_EXIT_WAIT_TIMEOUT_MS) != 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Record task exit fail\n");
+	}
+#endif
+
+	/* Wait for play task exit */
+	if (composite_wait_task_exit(&usbd_comp_audio_play_task_alive, TASK_EXIT_WAIT_TIMEOUT_MS) != 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Play task exit fail\n");
+	}
+}
+
+/**
+ * @brief USB status change callback
+ */
 static void composite_cb_status_changed(u8 old_status, u8 status)
 {
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Status change: %d-%d-%d\n", old_status, status, usb_ready_flag);
@@ -235,19 +275,23 @@ static void composite_cb_status_changed(u8 old_status, u8 status)
 #endif
 }
 
+/**
+ * @brief USB set config callback
+ */
 static int composite_cb_set_config(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB Set Cfg\n");
 	usb_ready_flag = 1;
 
 	return HAL_OK;
 }
 
+/**
+ * @brief Reinitialize USB device
+ */
 static void composite_do_reinit(void)
 {
 	int ret;
 
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "DETACHED\n");
 	usb_ready_flag = 0;
 	usbd_composite_deinit();
 	ret = usbd_deinit();
@@ -257,9 +301,10 @@ static void composite_do_reinit(void)
 
 	rtos_time_delay_ms(100);
 
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 	ret = usbd_init(&composite_usbd_cfg);
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
 		return ;
 	}
 
@@ -267,62 +312,44 @@ static void composite_do_reinit(void)
 							  &composite_uac_usr_cb,
 							  &composite_usbd_cb);
 	if (ret != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "usbd_composite_init fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Comp init fail\n");
 		usbd_deinit();
 	}
 }
 
+/**
+ * @brief Event handling task
+ */
 static void composite_handle_event_task(void *param)
 {
 	UNUSED(param);
 	u32 msg;
+	int ret;
 
 	for (;;) {
-		int ret = usb_os_queue_receive(msg_queue, &msg, 0xFFFFFFFF);
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "Get Event %d state %d\n", msg, ret);
-		if (ret == HAL_OK) { /*handle the event*/
-			switch (msg) {
+		ret = usb_os_queue_receive(msg_queue, &msg, 0xFFFFFFFF);
+		if (ret != HAL_OK) {
+			continue;
+		}
+
+		switch (msg) {
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
-			case COMP_USBD_HOT_PLUG_STATUS:
-				if (composite_attach_status == USBD_ATTACH_STATUS_DETACHED) {
-					/* hid task*/
-					usbd_comp_hid_task_stop = 1;
-
-					/* audio play task*/
-					usbd_comp_audio_play_task_alive = 0;
-					usbd_comp_write_audio_track_stop = 1;
-					usbd_composite_uac_stop_play();
-
-#if defined(ENABLE_USB_RECORD_FEATURE)
-					/* audio record task*/
-					usbd_comp_audio_record_stop = 1;
-					usbd_comp_audio_record_task_alive = 0;
-					usbd_composite_uac_stop_record();
-
-					do {
-						rtos_time_delay_ms(10);
-					} while (usbd_comp_audio_record_task_alive == 0);
-#endif
-					//wait read task exit
-					do {
-						rtos_time_delay_ms(100);
-					} while (usbd_comp_audio_play_task_alive == 0);
-
-					composite_do_reinit();
-				}
-				break;
-#endif
-			default:
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Can not handle type %d\n", msg);
-				break;
+		case COMP_USBD_HOT_PLUG_STATUS:
+			if (composite_attach_status == USBD_ATTACH_STATUS_DETACHED) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "USB detached\n");
+				composite_stop_all_tasks();
+				composite_do_reinit();
 			}
+			break;
+#endif
+		default:
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Unknown event %d\n", msg);
+			break;
 		}
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Event thread fail\n");
 	rtos_task_delete(NULL);
 }
-
 
 /**
   * @brief  Initializes the CDC media layer
@@ -364,7 +391,7 @@ static int composite_hid_cb_received(u8 *buf, u32 len)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "\n");
 		}
 	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "\n\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\n");
 
 	return HAL_OK;
 }
@@ -372,8 +399,8 @@ static int composite_hid_cb_received(u8 *buf, u32 len)
 static int composite_hid_cb_transmitted(u8 status)
 {
 	UNUSED(status);
-	DiagPrintf("HID TX\n");
-	hid_transmit_flag = 1;
+
+	hid_tx_xfer_done = 1;
 
 	return HAL_OK;
 }
@@ -400,13 +427,10 @@ static int composite_hid_cb_setup(usb_setup_req_t *req, u8 *buf)
   */
 static int composite_hid_cb_set_config(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "HID set config\n");
 	usbd_comp_hid_ready = 1;
 
 	return HAL_OK;
 }
-
-
 
 /* Private functions -UAC --------------------------------------------------------*/
 /**
@@ -436,48 +460,44 @@ static int composite_uac_cb_deinit(void)
   */
 static int composite_uac_cb_set_config(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "UAC set config\n");
-	usbd_comp_audio_play_ready = 1;
+	usbd_comp_audio_ready = 1;
 
-#if defined(ENABLE_USB_RECORD_FEATURE)
-	usbd_comp_uac_record_ready = 1;
-#endif
 	return HAL_OK;
 }
 
 static int composite_uac_cb_mute_changed(u8 mute)
 {
 	UNUSED(mute);
-	// RTK_LOGS(TAG, RTK_LOG_DEBUG,"UAC set mute %d\n", mute);
-
 	return HAL_OK;
 }
 
 static int composite_uac_cb_volume_changed(u8 volume)
 {
 	UNUSED(volume);
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "UAC set volume %d\n", volume);
 
 	return HAL_OK;
 }
 
 static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
-	usbd_composite_uac_stop_play();
-	usbd_comp_write_audio_track_stop = 1;
-	usbd_comp_audio_play_start = 1;
+	usbd_audio_cfg_t *out = &(composite_uac_usr_cb.out);
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC format rate %d ch %d\n", sampling_freq, ch_cnt);
 
 	if (sampling_freq != 0U) {
-		composite_uac_usr_cb.out.sampling_freq = sampling_freq;
+		out->sampling_freq = sampling_freq;
 	}
 	if (ch_cnt != 0U) {
-		composite_uac_usr_cb.out.ch_cnt = ch_cnt;
+		out->ch_cnt = ch_cnt;
 	}
 	if (byte_width != 0U) {
-		composite_uac_usr_cb.out.byte_width = byte_width;
+		out->byte_width = byte_width;
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC set sampling_freq %d ch_cnt %d\n", sampling_freq, ch_cnt);
+	if (out->sampling_freq && out->ch_cnt && out->byte_width) {
+		usbd_composite_uac_stop_play();
+		usbd_comp_audio_play_stop = 1;
+	}
 
 	return HAL_OK;
 }
@@ -485,7 +505,6 @@ static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte
 /* Private functions --------------------------------------------------------*/
 static void composite_usbd_audio_track_play(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track demo begin\n");
 	u32 read_data_len = 0;
 	u32 zero_pkt = 0;
 
@@ -494,17 +513,20 @@ static void composite_usbd_audio_track_play(void)
 		if (usbd_composite_uac_start_play() == HAL_OK) {
 			break;
 		}
-	} while (!usbd_comp_write_audio_track_stop);
+	} while (!usbd_comp_audio_play_stop);
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Will Play\n");
+	if (usbd_comp_audio_play_stop || (0 == usbd_comp_audio_ready)) {
+		return;
+	}
 
-#if CONFIG_USBD_COMPOSITE_AUDIO_EN
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Play begin\n");
+
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 	struct AudioTrack *audio_track;
 	uint32_t format;
 	int32_t track_buf_size;
 
 	/* audio trace config params */
-	// RTK_LOGS(TAG, RTK_LOG_DEBUG,"Audio info %d-%d-%d\n",composite_uac_usr_cb.out.byte_width,composite_uac_usr_cb.out.ch_cnt,composite_uac_usr_cb.out.sampling_freq);
 	uint32_t g_track_rate = composite_uac_usr_cb.out.sampling_freq;
 	uint32_t g_track_channel = composite_uac_usr_cb.out.ch_cnt;
 	uint32_t g_track_format = composite_uac_usr_cb.out.byte_width * 8;
@@ -551,7 +573,7 @@ static void composite_usbd_audio_track_play(void)
 		track_buf_size = g_track_rate * g_track_format / 8 * play_track_channel / 1000 * 100;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Track buf resize to %d\n", track_buf_size);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Track buf size:%d\n", track_buf_size);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Track buf size %d\n", track_buf_size);
 	}
 	AudioTrackConfig  track_config;
 	track_config.category_type = AUDIO_CATEGORY_MEDIA;
@@ -570,14 +592,12 @@ static void composite_usbd_audio_track_play(void)
 		return;
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track will loop to write\n");
-	while (!usbd_comp_write_audio_track_stop) {
+	while (!usbd_comp_audio_play_stop) {
 		read_data_len = usbd_composite_uac_read(composite_usbd_uac_recv_buf, COMP_USBD_AUDIO_PLAYER_BUF_SIZE, 500, &zero_pkt);
 		if (zero_pkt) {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Audio track start ret %d-0x%08x\n", read_data_len, zero_pkt);
 			zero_pkt = 0;
 		}
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG,"Audio track read_data_len %d\n", read_data_len);
+
 		if (read_data_len > 0) {
 #if CONFIG_USBD_UAC_DEMUX_CH_DEBUG
 			play_data_size = 0;
@@ -590,13 +610,12 @@ static void composite_usbd_audio_track_play(void)
 			}
 
 			AudioTrack_Write(audio_track, (u8 *)composite_usbd_uac_play_buf, play_data_size, true);
-			//RTK_LOGS(TAG, RTK_LOG_DEBUG,"Audio track start %d-%d\n",read_data_len,play_data_size);
 #else
 			AudioTrack_Write(audio_track, (u8 *)composite_usbd_uac_recv_buf, read_data_len, true);
 #endif
 		}
 	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track exit\n");
+
 	usbd_composite_uac_stop_play();
 
 	AudioTrack_Pause(audio_track);
@@ -608,7 +627,7 @@ static void composite_usbd_audio_track_play(void)
 #else
 	u32 total_len = 0;
 	u32 read_cnt = 0;
-	while (!usbd_comp_write_audio_track_stop) {
+	while (!usbd_comp_audio_play_stop) {
 		zero_pkt = 0;
 		read_data_len = usbd_composite_uac_read(composite_usbd_uac_recv_buf, COMP_USBD_AUDIO_PLAYER_BUF_SIZE, 500, &zero_pkt);
 		if (zero_pkt) {
@@ -627,7 +646,7 @@ static void composite_usbd_audio_track_play(void)
 	}
 #endif
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track demo stop\n\n\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Play exit\n");
 }
 
 static void composite_usbd_audio_track_thread(void *param)
@@ -637,31 +656,30 @@ static void composite_usbd_audio_track_thread(void *param)
 	//wait usb init success
 	do {
 		/*wait uac class alive*/
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USBD wait playback init\n");
-		usbd_comp_audio_play_task_alive = 1;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USBD wait playback init\n");
+		usbd_comp_audio_play_task_alive = 0;
+		do {
+			rtos_time_delay_ms(1000);
+		} while (usbd_comp_audio_ready == 0); //wait uac ready
 
 		do {
 			rtos_time_delay_ms(1000);
-		} while ((usbd_comp_audio_play_ready == 0) && usbd_comp_audio_play_task_alive);
-		usbd_comp_audio_play_ready = 0;
+		} while (usbd_comp_audio_play_stop == 0);  //wait set config
+		usbd_comp_audio_play_stop = 0;
 
-		do {
-			do {
-				rtos_time_delay_ms(1000);
-			} while ((usbd_comp_audio_play_start == 0) && usbd_comp_audio_play_task_alive);
-			usbd_comp_audio_play_start = 0;
-
-			if (usbd_comp_audio_play_task_alive) {
-				usbd_comp_write_audio_track_stop = 0;
-				composite_usbd_audio_track_play();
-			}
-		} while (usbd_comp_audio_play_task_alive);
+		usbd_comp_audio_play_task_alive = 1;
+		composite_usbd_audio_track_play();
 	} while (1);
 
 	rtos_task_delete(NULL);
 }
 
+/* Audio record functions ----------------------------------------------------*/
 #if defined(ENABLE_USB_RECORD_FEATURE)
+/**
+ * @brief Audio record implementation - continuous loop mode
+ * @note Records audio continuously until stop signal received
+ */
 static void composite_usbd_audio_record(void)
 {
 	const unsigned char *usbh_uac_audio_data_handle = usbd_uac_record_audio_data;
@@ -671,81 +689,86 @@ static void composite_usbd_audio_record(void)
 	u32 send_len = 0;
 	u32 offset;
 	u32 ret;
-	u32 i = 0;
-	u32 j;
+	u32 loop_count = 0;
 
 	usbd_composite_uac_config(&(composite_uac_usr_cb.in), 1, 0);
 	usbd_composite_uac_start_record();
 
+	/* Wait for user to trigger recording */
 	do {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Type \"comp_record\" to start record\n");
 		rtos_time_delay_ms(5000);
-	} while ((usbd_comp_uac_record_start == 0) && (usbd_comp_audio_record_stop == 0));
+	} while ((usbd_comp_user_enable_uac_record == 0) && (usbd_comp_audio_record_stop == 0));
 
-	if (0 == usbd_comp_audio_record_stop) {
-		for (i = 0; i < (u32)CONFIG_COMP_USBD_UAC_RECORD_TEST_CNT; i++) {
-			if (usbd_comp_audio_record_stop) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Record exit\n");
-				return;
-			}
-
-			RTK_LOGS(TAG, RTK_LOG_INFO, "record test %d start, test_cnt %d, size %d\n", i, CONFIG_COMP_USBD_UAC_RECORD_TEST_CNT, audio_total_data_len);
-			usbh_uac_busy_count = 0;
-			usbh_uac_err_count = 0;
-
-			total_len = audio_total_data_len;
-			offset = 0;
-
-			for (j = 0; j < (u32)CONFIG_COMP_USBD_UAC_RECORD_TEST_TIME; j++) {
-				if (usbd_comp_audio_record_stop) {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Record exit\n");
-					return;
-				}
-
-				offset = 0;
-				while (offset < total_len) {
-					TRNG_get_random_bytes(&send_len, 4);
-					send_len = send_len % 1000;
-					if (send_len == 0) {
-						continue;
-					}
-
-					send_len = 64;
-					// RTK_LOGS(TAG, RTK_LOG_INFO, "record xfer len %d\n",send_len);
-					// static u8 value = 1;
-					// value ++;
-
-					do {
-						if (offset + send_len >= total_len) {
-							send_len = total_len - offset;
-						}
-
-						buffer = (u8 *)(usbh_uac_audio_data_handle + offset);
-
-						// usb_os_memset(buffer, value, send_len);
-
-						ret = usbd_composite_uac_write(buffer, send_len, 1000);
-						offset += ret;
-
-						if (ret != send_len) {
-							RTK_LOGS(TAG, RTK_LOG_INFO, "Test %d-%d %d\n", ret, send_len, usbh_uac_err_count);
-
-							usbh_uac_err_count++;
-							send_len -= ret;
-						} else {
-							break;
-						}
-					} while (usbd_comp_audio_record_stop == 0);
-				}
-			}
-
-			rtos_time_delay_ms(50);
-			usbd_composite_uac_stop_record();
-			RTK_LOGS(TAG, RTK_LOG_INFO, "%d Send finished. Total bytes sent: %u, err count %d, busy count %d\n", i, offset, usbh_uac_err_count, usbh_uac_busy_count);
-		}
+	if (usbd_comp_audio_record_stop) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Record cancelled before start\n");
+		usbd_composite_uac_stop_record();
+		return;
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Record test done\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Record start\n");
+
+	/* Continuous recording loop until stop signal received */
+	while (usbd_comp_audio_record_stop == 0) {
+		loop_count++;
+
+		usbh_uac_busy_count = 0;
+		usbh_uac_err_count = 0;
+		total_len = audio_total_data_len;
+		offset = 0;
+
+		/* Send one complete round of audio data */
+		while ((offset < total_len) && (usbd_comp_audio_record_stop == 0)) {
+			/* Fixed send length of 64 bytes */
+			send_len = 64;
+
+			/* Retry loop until success or stop requested */
+			do {
+				/* Check if stop is requested */
+				if (usbd_comp_audio_record_stop) {
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Record stopped at offset %u\n", offset);
+					goto exit_record;
+				}
+
+				/* Adjust length for the last transmission */
+				if (offset + send_len >= total_len) {
+					send_len = total_len - offset;
+				}
+
+				buffer = (u8 *)(usbh_uac_audio_data_handle + offset);
+
+				/* Send data */
+				ret = usbd_composite_uac_write(buffer, send_len, 1000);
+				offset += ret;
+
+				if (ret != send_len) {
+					/* Transmission failed, log error and retry */
+					usbh_uac_err_count++;
+					send_len -= ret;
+
+					if (usbh_uac_err_count % 100 == 0) {
+						RTK_LOGS(TAG, RTK_LOG_WARN, "Record error count: %d (sent %u, expected %u)\n", usbh_uac_err_count, ret, send_len + ret);
+					}
+				} else {
+					/* Transmission successful, exit retry loop */
+					break;
+				}
+			} while (usbd_comp_audio_record_stop == 0);
+		}
+
+		/* One round of data transmission completed */
+		if (loop_count % 10 == 0) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Record loop #%u done: %u bytes, errors: %d\n", loop_count, offset, usbh_uac_err_count);
+		}
+
+		/* Brief delay to avoid excessive CPU usage */
+		rtos_time_delay_ms(10);
+	}
+
+exit_record:
+	usbd_composite_uac_stop_record();
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Recording stopped after %u loops, total errors: %d\n", loop_count, usbh_uac_err_count);
 }
 
 static void composite_usbd_audio_record_thread(void *param)
@@ -753,23 +776,19 @@ static void composite_usbd_audio_record_thread(void *param)
 	UNUSED(param);
 
 	//wait usb init success
-#if defined(ENABLE_USB_RECORD_FEATURE)
 	do {
 		/*wait uac class alive*/
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USBD wait record init\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USBD wait record init\n");
+		usbd_comp_audio_record_task_alive = 0;
 		usbd_comp_audio_record_stop = 0;
-		usbd_comp_audio_record_task_alive = 1;
 
 		do {
 			rtos_time_delay_ms(1000);
-		} while (usbd_comp_uac_record_ready == 0);
-		usbd_comp_uac_record_ready = 0;
+		} while (usbd_comp_audio_ready == 0);
 
-		do {
-			composite_usbd_audio_record();
-		} while (usbd_comp_audio_record_task_alive);
+		usbd_comp_audio_record_task_alive = 1;
+		composite_usbd_audio_record();
 	} while (1);
-#endif
 
 	rtos_task_delete(NULL);
 }
@@ -781,7 +800,7 @@ static void composite_usbd_init_thread(void *param)
 	int ret = 0;
 	rtos_task_t task;
 
-	hid_transmit_flag = 1;
+	hid_tx_xfer_done = 1;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD HID_UAC demo start\n");
 	usb_os_queue_create(&msg_queue, CONFIG_COMP_USBD_MSG_QUEUE_DEPTH, sizeof(u32));
@@ -805,8 +824,6 @@ static void composite_usbd_init_thread(void *param)
 
 	rtos_time_delay_ms(100);
 
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "USBD COMP demo start\n");
-
 	rtos_task_delete(NULL);
 
 	return;
@@ -818,7 +835,6 @@ exit_usbd_composite_init_fail:
 	usbd_deinit();
 
 exit_usbd_init_fail:
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "USBD COMP demo stop\n");
 	usb_os_queue_delete(msg_queue);
 	rtos_task_delete(NULL);
 }
@@ -835,25 +851,29 @@ static void composite_usbd_flag_check(__IO u8 *flag)
 
 static u32 hidd_comp_tx(u16 argc, u8 *argv[])
 {
-	int status = HAL_OK;
 	u16 size = 10;
+	int ret;
 
 	if (argc == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid argument\n");
-		return HAL_ERR_PARA;
-	}
-
-	if (argv[0]) {
+		size = 10;
+	} else {
 		size = (u16)_strtoul((const char *)(argv[0]), (char **)NULL, 10);
-	}
-	if (size > 1024) {
-		size = 1024;
-	}
-	composite_usbd_flag_check(&hid_transmit_flag);
-	memset(&hid_report_buf[0], (u8)(size & 0xFF), size);
-	usbd_composite_hid_send_data((u8 *)&hid_report_buf[0], size);
 
-	return status;
+		if (size > 1024) {
+			size = 1024;
+		}
+	}
+
+	composite_usbd_flag_check(&hid_tx_xfer_done);
+
+	memset(&hid_report_buf[0], (u8)(size & 0xFF), size);
+	ret = usbd_composite_hid_send_data((u8 *)&hid_report_buf[0], size);
+
+	if (ret == HAL_OK) {
+		hid_tx_xfer_done = 0;
+	}
+
+	return HAL_OK;
 }
 
 static u32 hidd_comp_volup(u16 argc, u8 *argv[])
@@ -862,7 +882,6 @@ static u32 hidd_comp_volup(u16 argc, u8 *argv[])
 	UNUSED(argv);
 
 	usbd_composite_hid_volume_ctrl(1);
-
 	return HAL_OK;
 }
 
@@ -872,7 +891,6 @@ static u32 hidd_comp_voldown(u16 argc, u8 *argv[])
 	UNUSED(argv);
 
 	usbd_composite_hid_volume_ctrl(0);
-
 	return HAL_OK;
 }
 
@@ -881,7 +899,7 @@ static u32 comp_record_start(u16 argc, u8 *argv[])
 	UNUSED(argc);
 	UNUSED(argv);
 #if defined(ENABLE_USB_RECORD_FEATURE)
-	usbd_comp_uac_record_start = 1;
+	usbd_comp_user_enable_uac_record = 1;
 #endif
 	return HAL_OK;
 }
@@ -891,29 +909,22 @@ static void composite_usbd_hid_rx_thread(void *param)
 	UNUSED(param);
 	u32 read_data_len = 0;
 
-	/*wait hid class alive*/
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "USBD wait hid init\n");
-
 	do {
-		rtos_time_delay_ms(1000);
-	} while (usbd_comp_hid_ready == 0);
-	usbd_comp_hid_ready = 0;
+		/*wait hid class alive*/
+		while (usbd_comp_hid_ready == 0) {
+			rtos_time_delay_ms(1000);
+		}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "HID init success\n");
-
-	//wait usb init success
-	while (!usbd_comp_hid_task_stop) {
-		read_data_len = usbd_composite_hid_read(hid_rx_buf, USBD_COMP_HID_MAX_BUF_SIZE, 1000);
+		read_data_len = usbd_composite_hid_read(hid_rx_buf, USBD_COMP_HID_MAX_BUF_SIZE, 500);
 		if (read_data_len > 0) {
 			composite_hid_cb_received(hid_rx_buf, read_data_len);
 		} else {
 			rtos_time_delay_ms(1);
 		}
-	}
+	} while (1);
 
 	rtos_task_delete(NULL);
 }
-
 /* Exported functions --------------------------------------------------------*/
 /**
   * @brief  USB download de-initialize
@@ -925,15 +936,13 @@ void example_usbd_composite(void)
 	int ret;
 	rtos_task_t task;
 
-	usbd_comp_audio_play_task_alive = 0;
-	usbd_comp_audio_play_ready = 0;
-	usbd_comp_audio_play_start = 0;
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD composite demo start\n");
+	usbd_comp_audio_ready = 0;
+	usbd_comp_audio_play_stop = 0;
 
 	ret = rtos_task_create(&task, "composite_usbd_init_thread", composite_usbd_init_thread, NULL, 1024, CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD COMP thread fail\n");
+		return;
 	}
 
 #if defined(ENABLE_USB_RECORD_FEATURE)
