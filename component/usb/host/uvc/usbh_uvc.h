@@ -201,7 +201,7 @@ typedef struct {
 	u32 frame_buffer_size;                  // Size of one frame buffer
 	u8 *frame_buf;                          // Raw memory block allocated for all frames
 
-	usb_os_sema_t urb_ready_sema;
+	usb_os_sema_t urb_ready_sema;           // Queue: ready for give
 	usb_os_queue_t urb_wait_queue;          // Queue: waiting for combine
 	usb_os_queue_t urb_giveback_queue;      // Queue: reclaim after URB combined
 	usbh_uvc_urb_t *urb[USBH_UVC_URB_NUMS]; // URB object pool
@@ -230,6 +230,8 @@ typedef struct {
 	__IO u8 set_alt;                        // Flag used in ctrl process machine: 0 (Unset), 1 (Set).
 	__IO u8 next_xfer;                      // Flag for next xfer: 0 (Stop), 1 (Start).
 	__IO u8 is_resource_safe;               // Flag for uvc resource: 0 (UnSafe), 1 (Safe).
+	__IO u8 get_valid;                      // Flag for get_frame in use: 0 (not used), 1 (used).
+	__IO u8 get_exit;                       // Flag for notifying class get_frame safely exited: 0 (unsafe), 1 (safe).
 } usbh_uvc_stream_t;
 
 typedef struct {
@@ -263,7 +265,7 @@ typedef struct {
 #if USBH_UVC_DEBUG
 	/* HW Dump Task control */
 	rtos_task_t hw_dump_task;
-	rtos_sema_t hw_dump_sema;
+	usb_os_sema_t hw_dump_sema;
 	__IO u8 hw_dump_task_alive;
 	__IO u8 hw_dump_task_exit;
 #endif
@@ -299,7 +301,8 @@ void usbh_uvc_stream_deinit(usbh_uvc_stream_t *stream);
 void usbh_uvc_process_sof(usb_host_t *host);
 int usbh_uvc_process_completed(usb_host_t *host, u8 pipe_num);
 int usbh_uvc_parse_cfgdesc(usb_host_t *host);
-void usbh_uvc_desc_init(void);
+int usbh_uvc_stream_stop(usbh_uvc_stream_t *stream);
+int usbh_uvc_desc_init(void);
 void usbh_uvc_desc_deinit(void);
 #if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
 void usbh_uvc_sw_status_dump_thread(void *param);

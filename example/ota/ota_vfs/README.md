@@ -73,6 +73,8 @@ The Ameba board downloads `ota_all.bin` from the VFS (FATFS) automatically. This
    - Refer to the [SDK Examples](https://aiot.realmcu.com/en/latest/rtos/sdk/sdk_example/index.html) to generate images
    - Download images to board using Ameba Image Tool
 
+   - If the combined size of app.bin and fatfs.bin exceeds the IMG_APP_OTA1 address range, enlarge the IMG_APP_OTA1 range (refer to [Flash Layout Modification Guide](https://aiot.realmcu.com/en/latest/rtos/sdk/memory_layout/flash_layout/index.html#flash-layout-modification-guide)) to fit the image, then re-build and re-flash.
+
 7. **Start OTA Update**
 
    Reset the board to start the download
@@ -98,7 +100,6 @@ After booting, a VFS download example thread will be started automatically. The 
 
 - Ensure the FATFS binary is properly generated and copied to the project folder
 - The VFS method does not require network connectivity
-- The OTA image size should fit within the allocated FATFS space
 
 # Supported IC
 

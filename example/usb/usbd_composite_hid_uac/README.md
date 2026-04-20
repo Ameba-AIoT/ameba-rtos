@@ -80,7 +80,7 @@ None
 		click rescan ,choose "Realtek HID Priv Device" device,and click connect
 	- Test
 		USBD RX:type "0x1F,1,2,3,4" in the HIDPyToy,and click "Send Out Report", the LOGUART console will print the message
-		USBD TX:type "usbd tx" in the LOGUART console, and click "Read In Reports" in the HIDPyToy, you will get a message from the ameba device
+		USBD TX:type "hidd_comp_tx xx" in the LOGUART console, and click "Read In Reports" in the HIDPyToy, you will get a message from the ameba device
 		Notice:please trigger USBD RX first
 	```
 

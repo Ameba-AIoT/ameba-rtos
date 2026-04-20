@@ -47,6 +47,9 @@ config SUPPORT_USBD_INIC
 config SUPPORT_USBD_UAC
     def_bool y
 
+config SUPPORT_AUDIO_FOR_USB
+    def_bool y
+
 config SUPPORT_HEAP_TRACE
     def_bool y
 
