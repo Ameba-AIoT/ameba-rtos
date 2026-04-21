@@ -39,6 +39,4 @@ extern uint32_t vTaskStatus(uint32_t src);
 
 extern uint32_t vTaskCrashCallback(uint32_t *reg, uint32_t src);
 
-extern void fault_diagnosis(struct cmb_hard_fault_regs *regs);
-
 #endif
