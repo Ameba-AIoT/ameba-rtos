@@ -8,7 +8,7 @@
 #include "ethernet_ex_api.h"
 #include "timer_api.h"
 #include "kv.h"
-#include "wifi_hal_eeprom.h"
+
 static const char *const TAG = "ETH";
 
 #define ETH_TX_DESC_CNT         8
@@ -403,10 +403,10 @@ static void eth_init_thread(void *param)
 	hwinfo_buf = (u8 *)rtos_mem_zmalloc(OTP_LMAP_LEN);
 	if (hwinfo_buf) {
 		OTP_LogicalRead(hwinfo_buf, 0, OTP_LMAP_LEN);
-		memcpy(eth_mac, &hwinfo_buf[EEPROM_MAC_ADDR], ETH_ALEN);
+		memcpy(eth_mac, &hwinfo_buf[EFUSE_ETH_MAC_ADDR], ETH_ALEN);
 
 		/* Check if MAC is invalid (all 0xFF) */
-		if (!memcmp(&hwinfo_buf[EEPROM_MAC_ADDR], "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
+		if (!memcmp(&hwinfo_buf[EFUSE_ETH_MAC_ADDR], "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
 			/* Generate Random MAC based on default prefix */
 			random_byte = (u8)(_rand() % 1000) & 0xFE;
 			default_mac[5] = random_byte;
@@ -432,7 +432,6 @@ static void eth_init_thread(void *param)
 	Ethernet_Init(&eth_handle);
 
 	/* Interrupt Init */
-	Ethernet_ConfigINT(ETH_EVT_RX_DONE | ETH_EVT_TX_DONE | ETH_EVT_LINK_CHG | ETH_EVT_RX_ERROR | ETH_EVT_TX_ERROR | ETH_EVT_RDU_RING1, ENABLE);
 	InterruptRegister((IRQ_FUN)eth_isr_handler, (IRQn_Type)RMII_IRQ, (u32)&eth_handle, 5);
 	InterruptEn(RMII_IRQ, 5);
 	/* Sync Objects Creation */
