@@ -8,12 +8,7 @@ None
 
 # SW configuration
 
-1. Enable Audio
-	To enable audio output via the speaker, set CONFIG_USBD_AUDIO_EN to 1 in the configuration file located at "example/usb/usbd_composite_hid_uac/example_usbd_composite_hid_uac.c".
-	Once configured, audio playback from the host will be transmitted to the speaker connected to the EVB.
-
-
-2. Menuconfig
+1. Menuconfig
 	Use menuconfig and :
 	- Choose `CONFIG USB --->`:
 	```
@@ -42,7 +37,7 @@ None
 	```
 	Save and exit.
 
-3. Build and Download:
+2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
@@ -84,7 +79,7 @@ None
 		Notice:please trigger USBD RX first
 	```
 
-6. Type "usbd vol1"/"usbd vol2" in the LOGUART console, the windows volume control bar will pop-up, and the volume will up/down
+6. Type "hidd_comp_volup"/"hidd_comp_voldown" in the LOGUART console, the windows volume control bar will pop-up, and the volume will up/down
 
 7. Reset and check the log via LOGUART console, make sure there is no error reported
    

@@ -14,7 +14,7 @@ static const char *const TAG = "ETH";
  */
 void Ethernet_ClearAllINT(void)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
 	/* Construct mask of all possible ISR status bits */
 	u32 all_isr_mask = BIT_ISR_ROK | BIT_ISR_RER_OVF | BIT_ISR_RER_RUNT |
@@ -24,7 +24,7 @@ void Ethernet_ClearAllINT(void)
 					   BIT_ISR_RDU4 | BIT_ISR_RDU5 | BIT_ISR_RDU6;
 
 	/* Write 1 to clear status bits */
-	RMII->ETH_ISR_AND_IMR |= all_isr_mask;
+	ETHx->ETH_ISR_AND_IMR |= all_isr_mask;
 }
 
 /**
@@ -34,12 +34,11 @@ void Ethernet_ClearAllINT(void)
  */
 u32 Ethernet_GetPendingINT(void)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
 	/* Read the combined ISR (Status) and IMR (Mask) register */
-	volatile u32 raw_reg = RMII->ETH_ISR_AND_IMR;
+	volatile u32 raw_reg = ETHx->ETH_ISR_AND_IMR;
 	u32 int_status = ETH_EVT_NO_EVENT;
-	u32 rdu_isr_mask = 0, rdu_imr_mask = 0;
 
 	/*
 	 * Logic: An interrupt is valid only if both the Status bit (ISR)
@@ -72,19 +71,6 @@ u32 Ethernet_GetPendingINT(void)
 		int_status |= ETH_EVT_TX_ERROR;
 	}
 
-	/* 6. Check RX Descriptor Unavailable (Any Ring) */
-	/* Combine all RDU bits for simplicity */
-	rdu_isr_mask = BIT_ISR_RDU1 | BIT_ISR_RDU2 | BIT_ISR_RDU3 |
-				   BIT_ISR_RDU4 | BIT_ISR_RDU5 | BIT_ISR_RDU6;
-	rdu_imr_mask = BIT_IMR_RDU1 | BIT_IMR_RDU2 | BIT_IMR_RDU3 |
-				   BIT_IMR_RDU4 | BIT_IMR_RDU5 | BIT_IMR_RDU6;
-
-	/* IMR bits are shifted, need careful check or just check ISR if global int enabled */
-	/* Assuming simple check: if any ISR bit is set, report it */
-	if ((raw_reg & rdu_isr_mask) && ((raw_reg) & rdu_imr_mask)) {
-		int_status |= ETH_EVT_RDU_RING1;
-	}
-
 	return int_status;
 }
 
@@ -95,7 +81,7 @@ u32 Ethernet_GetPendingINT(void)
  */
 void Ethernet_ClearINT(uint32_t int_events)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	u32 clear_mask = 0;
 
 	if (int_events & ETH_EVT_RX_DONE) {
@@ -118,58 +104,12 @@ void Ethernet_ClearINT(uint32_t int_events)
 		clear_mask |= BIT_ISR_TER;
 	}
 
-	if (int_events & ETH_EVT_RDU_RING1) {
-		clear_mask |= BIT_ISR_RDU1;
-	}
-
 	/* Write 1 to clear the interrupt status bits */
 	if (clear_mask != 0) {
-		RMII->ETH_ISR_AND_IMR |= clear_mask;
+		ETHx->ETH_ISR_AND_IMR |= clear_mask;
 	}
 }
-/**
- * @brief  Configure (Enable or Disable) Interrupt Mask Bits.
- *         Maps logical events to Hardware IMR bits.
- */
-void Ethernet_ConfigINT(u32 int_config, u32 enable)
-{
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-	u32 imr_mask = 0;
 
-	if (int_config & ETH_EVT_RX_DONE) {
-		imr_mask |= BIT_IMR_ROK;
-	}
-
-	if (int_config & ETH_EVT_TX_DONE) {
-		imr_mask |= BIT_IMR_TOK_TI;
-	}
-
-	if (int_config & ETH_EVT_LINK_CHG) {
-		imr_mask |= BIT_IMR_LINKCHG;
-	}
-
-	if (int_config & ETH_EVT_RX_ERROR) {
-		/* Enable both Overflow and Runt interrupts for RX Error */
-		imr_mask |= (BIT_IMR_RER_OVF | BIT_IMR_RER_RUNT);
-	}
-
-	if (int_config & ETH_EVT_TX_ERROR) {
-		imr_mask |= BIT_IMR_TER;
-	}
-
-	if (int_config & ETH_EVT_RDU_RING1) {
-		/* Enable IMR for all descriptor rings */
-		imr_mask |= BIT_IMR_RDU1;
-	}
-
-	if (enable) {
-		RMII->ETH_ISR_AND_IMR |= imr_mask;
-	} else {
-		/* Clear bits to DISABLE interrupts */
-		/* Note: imr_mask contains IMR bits (high 16 bits), so ~imr_mask works correctly */
-		RMII->ETH_ISR_AND_IMR &= ~imr_mask;
-	}
-}
 /**
  *  @brief To set the start address of Tx/Rx descriptor ring.
  *
@@ -182,16 +122,18 @@ void Ethernet_ConfigINT(u32 int_config, u32 enable)
 void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct)
 {
 
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
 	if ((ETH_InitStruct == NULL) || (ETH_InitStruct->ETH_TxDesc == NULL) || (ETH_InitStruct->ETH_RxDesc == NULL)) {
 		RTK_LOGE(TAG, "Invalid para\n");
 		return;
 	}
 
-	if ((IS_CACHE_LINE_ALIGNED((u32)ETH_InitStruct->ETH_TxDesc)) || (IS_CACHE_LINE_ALIGNED((u32)ETH_InitStruct->ETH_RxDesc))) {
-		RMII->ETH_TXFDP1 = (u32)(ETH_InitStruct->ETH_TxDesc);
-		RMII->ETH_RX_FDP1 = (u32)(ETH_InitStruct->ETH_RxDesc);
+	/* Both TX and RX descriptors must be cache-line aligned for proper DMA operation */
+	if (IS_CACHE_LINE_ALIGNED((u32)ETH_InitStruct->ETH_TxDesc) &&
+		IS_CACHE_LINE_ALIGNED((u32)ETH_InitStruct->ETH_RxDesc)) {
+		ETHx->ETH_TXFDP1 = (u32)(ETH_InitStruct->ETH_TxDesc);
+		ETHx->ETH_RX_FDP1 = (u32)(ETH_InitStruct->ETH_RxDesc);
 	} else {
 		RTK_LOGE(TAG, "Descriptor misalignment\n");
 	}
@@ -206,16 +148,16 @@ void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct)
  */
 void Ethernet_SetMacAddr(u8 *ETH_MacAddr)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
 	if (ETH_MacAddr == NULL) {
 		RTK_LOGE(TAG, "Invalid para\n");
 		return;
 	}
 
-	RMII->ETH_IDR0 = ((ETH_MacAddr[0]) << 24) | ((ETH_MacAddr[1]) << 16) | ((ETH_MacAddr[2]) << 8) |
+	ETHx->ETH_IDR0 = ((ETH_MacAddr[0]) << 24) | ((ETH_MacAddr[1]) << 16) | ((ETH_MacAddr[2]) << 8) |
 					 (ETH_MacAddr[3]);
-	RMII->ETH_IDR4 = ((ETH_MacAddr[4]) << 24) | ((ETH_MacAddr[5]) << 16);
+	ETHx->ETH_IDR4 = ((ETH_MacAddr[4]) << 24) | ((ETH_MacAddr[5]) << 16);
 }
 
 /**
@@ -225,13 +167,13 @@ void Ethernet_SetMacAddr(u8 *ETH_MacAddr)
   */
 void Ethernet_SetRefclkDirec(u32 refclk_mode)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
 	if (refclk_mode) {
-		RMII->ETH_MSR |= BIT_REFCLK_ON;
+		ETHx->ETH_MSR |= BIT_REFCLK_ON;
 
 	} else {
-		RMII->ETH_MSR &= ~BIT_REFCLK_ON;
+		ETHx->ETH_MSR &= ~BIT_REFCLK_ON;
 	}
 }
 
@@ -247,11 +189,11 @@ void Ethernet_UseExtClk(u32 pin)
 
 void Ethernet_AutoPolling(u32 opt)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	if (opt == DISABLE) {
-		RMII->ETH_MIIAR |= BIT_DISABLE_AUTO_POLLING;
+		ETHx->ETH_MIIAR |= BIT_DISABLE_AUTO_POLLING;
 	} else {
-		RMII->ETH_MIIAR &= ~BIT_DISABLE_AUTO_POLLING;
+		ETHx->ETH_MIIAR &= ~BIT_DISABLE_AUTO_POLLING;
 	}
 }
 
@@ -264,7 +206,7 @@ void Ethernet_AutoPolling(u32 opt)
  */
 u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	u8 tx_idx = ETH_InitStruct->ETH_TxDescCurrentNum;
 	u8 *buf = NULL;
 
@@ -277,7 +219,7 @@ u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct)
 	if ((((u32)(ETH_InitStruct->ETH_TxDesc[tx_idx].dw1)) & FEMAC_TX_DSC_BIT_OWN) == 0) {
 		buf = (u8 *)ETH_InitStruct->ETH_TxDesc[tx_idx].addr;
 	} else {
-		RMII->ETH_ISR_AND_IMR |= BIT_ISR_TOK_TI;
+		ETHx->ETH_ISR_AND_IMR |= BIT_ISR_TOK_TI;
 	}
 
 	return buf;
@@ -293,7 +235,7 @@ u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct)
  */
 void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, u32 size)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	u8 tx_idx = ETH_InitStruct->ETH_TxDescCurrentNum;
 
 	if (ETH_InitStruct == NULL) {
@@ -320,8 +262,8 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, u32 size)
 
 	ETH_InitStruct->ETH_TxDesc[tx_idx].dw1 |= FEMAC_TX_DSC_BIT_OWN;
 
-	RMII->ETH_ISR_AND_IMR |= BIT_ISR_TOK_TI;
-	RMII->ETH_ETHER_IO_CMD |= BIT_TXFN1ST; //TODO: not need set for each pkt
+	ETHx->ETH_ISR_AND_IMR |= BIT_ISR_TOK_TI;
+	ETHx->ETH_ETHER_IO_CMD |= BIT_TXFN1ST; //TODO: not need set for each pkt
 
 	ETH_InitStruct->ETH_TxDescCurrentNum = (tx_idx + 1) % (ETH_InitStruct->ETH_TxDescNum);
 }
@@ -336,7 +278,7 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, u32 size)
  */
 u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, u32 *rx_len)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	u32 pkt_size = 0;
 	u8 rx_idx = ETH_InitStruct->ETH_RxDescCurrentNum;
 	u8 *buf = NULL;
@@ -347,7 +289,7 @@ u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, u32 *rx_len)
 		buf = (u8 *)(ETH_InitStruct->ETH_RxDesc[rx_idx].addr + 2);
 		DCache_Invalidate((u32)(ETH_InitStruct->ETH_RxDesc[rx_idx].addr), (u32)pkt_size);
 	} else {
-		RMII->ETH_ISR_AND_IMR |= BIT_ISR_ROK;
+		ETHx->ETH_ISR_AND_IMR |= BIT_ISR_ROK;
 	}
 
 	*rx_len = pkt_size;
@@ -364,7 +306,7 @@ u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, u32 *rx_len)
  */
 void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	u8 read_idx = ETH_InitStruct->ETH_RxDescCurrentNum;
 
 	if ((ETH_InitStruct == NULL)) {
@@ -378,7 +320,7 @@ void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct)
 	ETH_InitStruct->ETH_RxDesc[read_idx].dw2 = 0;
 	ETH_InitStruct->ETH_RxDesc[read_idx].dw3 = 0;
 
-	RMII->ETH_ISR_AND_IMR |= BIT_ISR_ROK;
+	ETHx->ETH_ISR_AND_IMR |= BIT_ISR_ROK;
 	ETH_InitStruct->ETH_RxDescCurrentNum = (read_idx + 1) % (ETH_InitStruct->ETH_RxDescNum);
 }
 
@@ -389,9 +331,9 @@ void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct)
  */
 u32 Ethernet_GetLinkStatus(void)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
-	return !GET_LINKB(RMII->ETH_MSR);
+	return !GET_LINKB(ETHx->ETH_MSR);
 }
 
 /**
@@ -400,10 +342,10 @@ u32 Ethernet_GetLinkStatus(void)
  */
 void Ethernet_GetSpeedDuplex(void)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	/* Get and Log MAC Link Info (Only if link is up) */
-	u32 speed = GET_SPEED(RMII->ETH_MSR);
-	u32 duplex = GET_FULLDUPREG(RMII->ETH_MSR);
+	u32 speed = GET_SPEED(ETHx->ETH_MSR);
+	u32 duplex = GET_FULLDUPREG(ETHx->ETH_MSR);
 
 	RTK_LOGI(TAG, "MAC Link Info: %s, %s\n",
 			 (speed == ETH_SPEED_100M) ? "100 Mb/s" :
@@ -444,7 +386,7 @@ static inline int Ethernet_WaitPhyIdle(ETHERNET_TypeDef *regs, uint32_t timeout_
 int Ethernet_ReadPhyReg(uint8_t phy_addr, uint8_t reg_addr, uint16_t *data)
 {
 	/* 1. Get the register base from the private data */
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
 	/* Parameter check */
 	if (reg_addr > 31) {
@@ -452,21 +394,21 @@ int Ethernet_ReadPhyReg(uint8_t phy_addr, uint8_t reg_addr, uint16_t *data)
 	}
 
 	/* 2. Wait for bus idle (Legacy logic: check busy before operation) */
-	if (Ethernet_WaitPhyIdle(RMII, MDIO_WAIT_TIME) != RTK_SUCCESS) {
+	if (Ethernet_WaitPhyIdle(ETHx, MDIO_WAIT_TIME) != RTK_SUCCESS) {
 		return -RTK_ERR_BUSY;
 	}
 
 	/* 3. Initiate Read: Write PHY address and Reg address to MIIAR */
 	/* Note: For Read, BIT_FLAG is 0. */
-	RMII->ETH_MIIAR = (PHYADDRESS(phy_addr) | REGADDR4_0(reg_addr));
+	ETHx->ETH_MIIAR = (PHYADDRESS(phy_addr) | REGADDR4_0(reg_addr));
 
 	/* 4. Wait for data to be ready (Busy bit clears when read is done) */
-	if (Ethernet_WaitPhyIdle(RMII, MDIO_WAIT_TIME) != RTK_SUCCESS) {
+	if (Ethernet_WaitPhyIdle(ETHx, MDIO_WAIT_TIME) != RTK_SUCCESS) {
 		return -RTK_ERR_BUSY;
 	}
 
 	/* 5. Extract the 16-bit data */
-	*data = (uint16_t)GET_DATA15_0(RMII->ETH_MIIAR);
+	*data = (uint16_t)GET_DATA15_0(ETHx->ETH_MIIAR);
 
 	return RTK_SUCCESS;
 }
@@ -484,19 +426,19 @@ int Ethernet_ReadPhyReg(uint8_t phy_addr, uint8_t reg_addr, uint16_t *data)
  */
 int Ethernet_WritePhyReg(uint8_t phy_addr, uint8_t reg_addr, uint16_t data)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
 	if (reg_addr > 31) {
 		return -RTK_FAIL;
 	}
 
 	/* 1. Wait for bus idle */
-	if (Ethernet_WaitPhyIdle(RMII, MDIO_WAIT_TIME) != RTK_SUCCESS) {
+	if (Ethernet_WaitPhyIdle(ETHx, MDIO_WAIT_TIME) != RTK_SUCCESS) {
 		return -RTK_ERR_BUSY;
 	}
 
 	/* 2. Initiate Write: Set Flag, Disable Auto Poll, Addr, and Data */
-	RMII->ETH_MIIAR = (BIT_FLAG | BIT_DISABLE_AUTO_POLLING |
+	ETHx->ETH_MIIAR = (BIT_FLAG | BIT_DISABLE_AUTO_POLLING |
 					   PHYADDRESS(phy_addr) | REGADDR4_0(reg_addr) | data);
 
 	/* Note: The write is triggered immediately. Some drivers wait for idle here too. */
@@ -510,9 +452,9 @@ int Ethernet_WritePhyReg(uint8_t phy_addr, uint8_t reg_addr, uint16_t data)
   */
 void ETH_EnableRx(void)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	/* enable Rx ring1 */
-	RMII->ETH_IO_CMD1 |= BIT_RXRING1;
+	ETHx->ETH_IO_CMD1 |= BIT_RXRING1;
 }
 
 /**
@@ -548,7 +490,7 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 	ETH_InitStruct->PhyConfig.Bits.RxSetupTime = ETH_PHY_RX_SETUP_TIME_8NS;
 
 	/* Buffer / DMA Defaults */
-	ETH_InitStruct->DMA_TxThreshold = ETH_RX_THRESHOLD_256B;
+	ETH_InitStruct->DMA_RxThreshold = ETH_RX_THRESHOLD_512B;
 	ETH_InitStruct->DMA_TxThreshold = ETH_TX_THRESHOLD_256B;
 	ETH_InitStruct->DMA_RxTriggerLevel = ETH_TRIGGER_LEVEL_1_PKT;
 	ETH_InitStruct->DMA_TxTriggerLevel = ETH_TRIGGER_LEVEL_1_PKT;
@@ -567,7 +509,7 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 
 int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 {
-	ETHERNET_TypeDef *RMII = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	u8 i, filter_mode;
 	u32 timeout = 1000;
 	int32_t ret = RTK_SUCCESS;
@@ -585,9 +527,9 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	DelayMs(50);
 
 	/* reset MAC */
-	RMII->ETH_CR |= BIT_RST;
+	ETHx->ETH_CR |= BIT_RST;
 
-	while ((RMII->ETH_CR & BIT_RST) && timeout--) {
+	while ((ETHx->ETH_CR & BIT_RST) && timeout--) {
 		DelayUs(10);
 	}
 	if (timeout == 0) {
@@ -628,16 +570,16 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 			phy->link_cfg.speed = PHY_SPEED_10M;
 			phy->link_cfg.advertise_10m = TRUE;
 		}
-		RMII->ETH_MSR &= ~MASK_FORCE_SPD;
-		RMII->ETH_MSR |= BIT_FORCE_SPD_MODE | FORCE_SPD(ETH_InitStruct->MacConfig.Bits.Speed);
+		ETHx->ETH_MSR &= ~MASK_FORCE_SPD;
+		ETHx->ETH_MSR |= BIT_FORCE_SPD_MODE | FORCE_SPD(ETH_InitStruct->MacConfig.Bits.Speed);
 		/* Duplex */
 		if (ETH_InitStruct->MacConfig.Bits.Duplex == ETH_FULL_DUPLEX) {
 			phy->link_cfg.duplex = PHY_DUPLEX_FULL;
 		} else {
 			phy->link_cfg.duplex = PHY_DUPLEX_HALF;
 		}
-		RMII->ETH_MSR &= ~BIT_FORCEDFULLDUP;
-		RMII->ETH_MSR |= FORCEDFULLDUP(ETH_InitStruct->MacConfig.Bits.Duplex);
+		ETHx->ETH_MSR &= ~BIT_FORCEDFULLDUP;
+		ETHx->ETH_MSR |= FORCEDFULLDUP(ETH_InitStruct->MacConfig.Bits.Duplex);
 
 	}
 	if (phy->ops->cfg_link) {
@@ -650,18 +592,18 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 		}
 	}
 	/* Tx settings */
-	RMII->ETH_MSR |= BIT_REG_RMII2MII_EN;
+	ETHx->ETH_MSR |= BIT_REG_RMII2MII_EN;
 	Ethernet_SetRefclkDirec(ETH_InitStruct->MacConfig.Bits.RefClkDir);
 
-	RMII->ETH_MSR |= BIT_TXFCE;
-	RMII->ETH_MSR |= BIT_RXFCE; /* Rx flow control bit can be set only in full duplex mode */
-	RMII->ETH_MSR |= REFCLK_PHASE(ETH_InitStruct->MacConfig.Bits.RefClkPhase);
+	ETHx->ETH_MSR |= BIT_TXFCE;
+	ETHx->ETH_MSR |= BIT_RXFCE; /* Rx flow control bit can be set only in full duplex mode */
+	ETHx->ETH_MSR |= REFCLK_PHASE(ETH_InitStruct->MacConfig.Bits.RefClkPhase);
 
-	RMII->ETH_TCR &= ~MASK_IFG2_0;
-	RMII->ETH_TCR |= IFG2_0(ETH_InitStruct->MacConfig.Bits.IFGTime);
+	ETHx->ETH_TCR &= ~MASK_IFG2_0;
+	ETHx->ETH_TCR |= IFG2_0(ETH_InitStruct->MacConfig.Bits.IFGTime);
 
-	RMII->ETH_TCR &= ~MASK_LBK;
-	RMII->ETH_TCR |= LBK(ETH_InitStruct->MacConfig.Bits.Loopback);
+	ETHx->ETH_TCR &= ~MASK_LBK;
+	ETHx->ETH_TCR |= LBK(ETH_InitStruct->MacConfig.Bits.Loopback);
 
 	/* Rx settings */
 	Ethernet_SetMacAddr(ETH_InitStruct->ETH_MacAddr);
@@ -671,12 +613,12 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	switch (filter_mode) {
 	case ETH_FILTER_WITH_MULTICAST:
 		/* Accept multicast, broadcast and physical match packets */
-		RMII->ETH_RCR = BIT_APM | BIT_AB | BIT_AM;
+		ETHx->ETH_RCR = BIT_APM | BIT_AB | BIT_AM;
 		break;
 
 	case ETH_FILTER_STRICT_UNICAST:
 		/* Accept only physical match packets. Ignore Broadcast. */
-		RMII->ETH_RCR = BIT_APM;
+		ETHx->ETH_RCR = BIT_APM;
 		break;
 
 	case ETH_FILTER_PROMISCUOUS:
@@ -687,7 +629,7 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 		 * BIT_AM:  Explicitly enable Multicast.
 		 * Use case: Network sniffing (Wireshark) or software bridging.
 		 */
-		RMII->ETH_RCR = BIT_AAP | BIT_AB | BIT_AM;
+		ETHx->ETH_RCR = BIT_AAP | BIT_AB | BIT_AM;
 		break;
 
 	case ETH_FILTER_DIAGNOSTIC_ALL:
@@ -697,32 +639,32 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 		 * Combine AAP/AB/AM to ensure no valid frames are filtered out,
 		 * while AR/AER captures the corrupted ones.
 		 */
-		RMII->ETH_RCR = BIT_AAP | BIT_AB | BIT_AM | BIT_AR | BIT_AER;
+		ETHx->ETH_RCR = BIT_AAP | BIT_AB | BIT_AM | BIT_AR | BIT_AER;
 		break;
 
 	default:
 		/* Default Standard Mode (Unicast + Broadcast + Multicast).
 		 * Excluding Multicast (BIT_AM) here might break IPv6 or Service Discovery.
 		 */
-		RMII->ETH_RCR = BIT_APM | BIT_AB | BIT_AM;
+		ETHx->ETH_RCR = BIT_APM | BIT_AB | BIT_AM;
 		break;
 	}
 
 	if (ETH_InitStruct->MacConfig.Bits.RxJumbo == ETH_RX_JUMBO_ENABLE) {
-		RMII->ETH_CR |= BIT_RXJUMBO; // TODO:Support jumbo packet
+		ETHx->ETH_CR |= BIT_RXJUMBO; // TODO:Support jumbo packet
 	}
 	/* DMA descriptor control*/
-	RMII->ETH_ETHRNTRXCPU_DES_NUM1 = RX_PSE_DES_THRES_OFF_1_7_0(0x01) | \
+	ETHx->ETH_ETHRNTRXCPU_DES_NUM1 = RX_PSE_DES_THRES_OFF_1_7_0(0x01) | \
 									 RX_PSE_DES_THRES_ON_1_11_8((ETH_InitStruct->ETH_RxDescNum - 2) >> 8) | RX_PSE_DES_THRES_ON_1_7_0(ETH_InitStruct->ETH_RxDescNum - 2) | \
 									 ETHRNTRXCPU_DES_NUM_1_11_8((ETH_InitStruct->ETH_RxDescNum - 1) >> 8) | ETHRNTRXCPU_DES_NUM_1_7_0(ETH_InitStruct->ETH_RxDescNum - 1);
-	RMII->ETH_RX_RINGSIZE1 |= RXRINGSIZE_1_LOW(ETH_InitStruct->ETH_RxDescNum - 1);
+	ETHx->ETH_RX_RINGSIZE1 |= RXRINGSIZE_1_LOW(ETH_InitStruct->ETH_RxDescNum - 1);
 	/* I/O command: short desc. format = 1, Tx & Rx FIFO threshold = 256 bytes */
-	RMII->ETH_IO_CMD1 = DSC_FORMAT_EXTRA(0x3) | BIT_EN_4GB;
-	RMII->ETH_ETHER_IO_CMD = RXFTH(ETH_InitStruct->DMA_TxThreshold) | TSH(ETH_InitStruct->DMA_TxThreshold) |
+	ETHx->ETH_IO_CMD1 = DSC_FORMAT_EXTRA(0x3) | BIT_EN_4GB;
+	ETHx->ETH_ETHER_IO_CMD = RXFTH(ETH_InitStruct->DMA_RxThreshold) | TSH(ETH_InitStruct->DMA_TxThreshold) |
 							 BIT_SHORTDESFORMAT;
 
-	RMII->ETH_TXFDP1 = (u32)ETH_InitStruct->ETH_TxDesc;
-	RMII->ETH_RX_FDP1 = (u32)ETH_InitStruct->ETH_RxDesc;
+	ETHx->ETH_TXFDP1 = (u32)ETH_InitStruct->ETH_TxDesc;
+	ETHx->ETH_RX_FDP1 = (u32)ETH_InitStruct->ETH_RxDesc;
 
 	/* Initialize Tx descriptors */
 	for (i = 0; i < (ETH_InitStruct->ETH_TxDescNum); i++) {
@@ -746,10 +688,10 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	}
 
 	/* enable Tx & Rx */
-	RMII->ETH_ETHER_IO_CMD |= BIT_TE | BIT_RE;
+	ETHx->ETH_ETHER_IO_CMD |= BIT_TE | BIT_RE;
 
 	/* isr & imr */
-	RMII->ETH_ISR_AND_IMR =  ETH_InitStruct->ETH_IntMaskAndStatus;
+	ETHx->ETH_ISR_AND_IMR =  ETH_InitStruct->ETH_IntMaskAndStatus;
 
 	/* enable auto-polling */
 	Ethernet_AutoPolling(ENABLE);
@@ -760,7 +702,7 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	if (ETH_InitStruct->MacConfig.Bits.AutoNego) {
 		timeout = 50000;
 		while (timeout--) {
-			if (GET_NWCOMPLETE((RMII->ETH_MSR) & BIT_NWCOMPLETE)) {
+			if (GET_NWCOMPLETE((ETHx->ETH_MSR) & BIT_NWCOMPLETE)) {
 				break;
 			}
 		}

@@ -27,6 +27,7 @@ extern uint32_t wsclient_sendblocktime;
 extern uint32_t wsclient_connecttimeout;
 
 extern void (*ws_close_cb)(wsclient_context *);
+extern void (*ws_receive_pong_cb)(wsclient_context **);
 
 
 /***************Base Framing Protocol for reference*****************/
@@ -589,7 +590,9 @@ int ws_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask
 			}
 			WSCLIENT_ERROR("ERROR: Not get usable buffer, Please enlarge max_queue_size!\r\n");
 			ws_free(header);
-			//wsclient->fun_ops.client_close(wsclient);
+			if (type == PING) {
+				ws_receive_pong_cb(&wsclient);
+			}
 			return -1;
 		}
 	}
