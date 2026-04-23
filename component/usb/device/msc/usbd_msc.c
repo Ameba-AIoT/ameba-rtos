@@ -877,13 +877,13 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 	rtos_sema_create(&cdev->rx_sema, 0U, 1U);
 	rtos_sema_create(&cdev->tx_sema, 0U, 1U);
 
-	ret = rtos_task_create(&cdev->rx_task, "usbd_msc_rx_thread", usbd_msc_rx_thread, NULL, 1024U, USBD_MSC_RX_THREAD_PRIORITY);
+	ret = rtos_task_create(&cdev->rx_task, "usbd_msc_rx_thread", usbd_msc_rx_thread, NULL, USBD_MSC_TRX_THREAD_STACK_SIZE, USBD_MSC_RX_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX thread fail\n");
 		goto create_rx_thread_fail;
 	}
 
-	ret = rtos_task_create(&cdev->tx_task, "usbd_msc_tx_thread", usbd_msc_tx_thread, NULL, 1024U, USBD_MSC_TX_THREAD_PRIORITY);
+	ret = rtos_task_create(&cdev->tx_task, "usbd_msc_tx_thread", usbd_msc_tx_thread, NULL, USBD_MSC_TRX_THREAD_STACK_SIZE, USBD_MSC_TX_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX thread fail\n");
 		goto create_tx_thread_fail;

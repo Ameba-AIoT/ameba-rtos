@@ -55,6 +55,7 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SET_EDCCA_PARAM, whc_event_wifi_set_edcca_param},
 	{WHC_API_WIFI_GET_EDCCA_MODE, whc_event_wifi_get_edcca_mode},
 	{WHC_API_WIFI_GET_ANTENNA_INFO, whc_event_wifi_get_ant_info},
+	{WHC_API_WIFI_SET_ANTENNA_INFO, whc_event_wifi_set_ant_info},
 #ifdef CONFIG_NAN
 	{WHC_API_NAN_INIT,	whc_event_nan_init},
 	{WHC_API_NAN_DEINIT,		whc_event_nan_deinit},
@@ -1050,6 +1051,16 @@ void whc_event_wifi_get_ant_info(u32 api_id, u32 *param_buf)
 	wifi_get_antdiv_info(&value[0], &value[1]);
 
 	whc_send_api_ret_value(api_id, (u8 *)value, sizeof(value));
+}
+
+void whc_event_wifi_set_ant_info(u32 api_id, u32 *param_buf)
+{
+	int ret = 0;
+	u8 antdiv_mode = (u8)param_buf[0];
+
+	ret = wifi_set_antdiv_info(antdiv_mode);
+
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
 void whc_event_war_offload_ctrl(u32 api_id, u32 *param_buf)

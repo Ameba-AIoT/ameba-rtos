@@ -397,6 +397,16 @@ s32 wifi_get_txbuf_pkt_num(s32 *pkt_num);
 s32 wifi_get_antdiv_info(u8 *antdiv_mode, u8 *curr_ant);
 
 /**
+ * @brief  Set antenna diversity infomation.
+ * @param[in]  antdiv_mode: value of antenna diversity mode.
+ *                           Values: @ref RTW_ANTDIV_AUTO, @ref RTW_ANTDIV_FIX_MAIN, etc.
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ *    - @ref RTK_FAIL : CONFIG_WIFI_ANTDIV is not defined.
+ */
+s32 wifi_set_antdiv_info(u8 antdiv_mode);
+
+/**
  * @brief Get the supported frequency band type.
  * @param[out]  band_type: Pointer to store the supported band type. Values:
  *                       - @ref RTW_SUPPORT_BAND_2_4G : 2.4GHz only

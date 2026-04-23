@@ -2897,7 +2897,6 @@ void Ethernet_UseExtClk(u32 pin);
 void Ethernet_AutoPolling(u32 opt);
 
 /* Interrupts */
-void Ethernet_ConfigINT(u32 int_config, u32 enable);
 u32 Ethernet_GetPendingINT(void);
 void Ethernet_ClearINT(u32 int_status);
 void Ethernet_ClearAllINT(void);

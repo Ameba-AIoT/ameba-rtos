@@ -255,15 +255,12 @@ macro(ameba_mcu_project_create name mcu_type)
     endif()
 
     # sub dirs in *sdk/
-    ameba_set(c_SDK_BUILD_DIR           ${c_MCU_SDK_DIR}/build)
     ameba_set(c_SDK_FLASHLOADER_DIR     ${c_MCU_SDK_DIR}/flashloader)
     ameba_set(c_SDK_GNU_UTILITY_DIR     ${c_MCU_SDK_DIR}/gnu_utility)
-    ameba_set(c_SDK_GNU_SCRIPT_DIR      ${c_SDK_GNU_UTILITY_DIR}/gnu_script)
+    ameba_set(c_SDK_GNU_SCRIPT_DIR      ${c_BASEDIR}/tools/scripts/gnu_script)
     ameba_set(c_SDK_GDB_FLOADER_DIR     ${c_SDK_GNU_UTILITY_DIR}/gdb_floader)
     ameba_set(c_SDK_IMGTOOL_FLOADER_DIR ${c_SDK_GNU_UTILITY_DIR}/image_tool_flashloader)
     ameba_set(c_SDK_FLOADER_BIN_DIR     ${c_SDK_IMGTOOL_FLOADER_DIR}/${c_SOC_TYPE}_acut)
-    ameba_set(c_SDK_IMAGE_DIR           ${c_MCU_SDK_DIR}/image)
-    ameba_set(c_SDK_IMAGE_MP_DIR        ${c_MCU_SDK_DIR}/image_mp)
     ameba_set(c_SDK_IMAGE_UTILITY_DIR   ${c_BASEDIR}/tools/scripts/img_utility)
     ameba_set(c_SDK_LD_DIR              ${c_MCU_SDK_DIR}/ld)
     ameba_set(c_SDK_LD_NS_DIR           ${c_MCU_SDK_DIR}/ld_ns)
@@ -408,7 +405,6 @@ function(ameba_firmware_package output_app_name)
             -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
             -Dc_IMAGE_OUTPUT_DIR=${c_IMAGE_OUTPUT_DIR}
             -Dc_APP_BINARY_NAME=${c_APP_BINARY_NAME}
-            -Dc_SDK_IMAGE_FOLDER_NAME=${c_SDK_IMAGE_FOLDER_NAME}
             -Dc_IMAGE1_ALL_FILES="${image1_all_files}" #NOTE: transfer as list
             -Dc_IMAGE2_ALL_FILES="${image2_all_files}" #NOTE: transfer as list
             -Dc_IMAGE3_ALL_FILES="${image3_all_files}" #NOTE: transfer as list
