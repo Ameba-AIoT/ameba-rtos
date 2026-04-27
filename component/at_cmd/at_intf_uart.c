@@ -347,7 +347,7 @@ int atio_uart_init(void)
 	InterruptEn(UART_DEV_TABLE[uart_idx].IrqNum, INT_PRI_MIDDLE);
 	UART_INTConfig(UART_DEV, RUART_BIT_ERBI | RUART_BIT_ELSI | RUART_BIT_ETOI, ENABLE);
 
-	if (rtos_task_create(NULL, ((const char *)"atcmd_uart_input_handler_task"), (rtos_task_t)atcmd_uart_input_handler_task, NULL, 4096, 5) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"atcmd_uart_input_handler_task"), (rtos_task_t)atcmd_uart_input_handler_task, NULL, 6 * 1024, 5) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create(atcmd_uart_input_handler_task) failed", __FUNCTION__);
 		return -1;
 	}

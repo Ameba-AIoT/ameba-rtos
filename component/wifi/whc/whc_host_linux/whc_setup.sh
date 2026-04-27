@@ -53,8 +53,8 @@ if [ "$#" -ge 2 ]; then
 				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.c ./common/spi
 				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.h ./common/spi
 			elif [ "$1" == "sdio" ]; then
-				cp ../../bluetooth/example/bt_host/linux_driver/sdio/rtb_sdio.c ./common/sdio
-				cp ../../bluetooth/example/bt_host/linux_driver/sdio/rtb_sdio.h ./common/sdio
+				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.c ./common/sdio
+				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.h ./common/sdio
 			fi
 		elif [ "$j" == "rmesh" ]; then
 			sed -i 's/CONFIG_RMESH = n/CONFIG_RMESH = y/g' Makefile
