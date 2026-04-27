@@ -81,14 +81,6 @@ char ex_spdio_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type)
 	if (g_tt_mode) {
 		space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
 
-		if (g_tt_mode_check_watermark) {
-			if (space - size < MAX_TT_HEAP_SIZE * (1 - TT_MODE_HIGH_WATERMARK) && g_tt_mode_indicate_high_watermark == 0) {
-				g_tt_mode_indicate_high_watermark = 1;
-				g_tt_mode_indicate_low_watermark = 0;
-				at_printf(ATCMD_TT_MODE_HIGH_WATERMARK_STR);
-			}
-		}
-
 		/*recv stop char under tt mode*/
 		if (size == 1 && pdata[0] == '<') {
 			g_tt_mode_stop_char_cnt++;
@@ -98,12 +90,20 @@ char ex_spdio_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type)
 			if (space >= size) {
 				RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, pdata, size);
 				rtos_sema_give(atcmd_tt_mode_sema);
-			} else if (space > 0) {
-				RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, pdata, space);
-				rtos_sema_give(atcmd_tt_mode_sema);
-				RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop partial data\n");
-			} else {
-				RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
+			} else  {
+				while (1) {
+					rtos_time_delay_ms(1);
+					if (g_tt_mode) {
+						space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+						if (space >= size) {
+							RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, pdata, size);
+							rtos_sema_give(atcmd_tt_mode_sema);
+							break;
+						}
+					} else {
+						break;
+					}
+				}
 			}
 		}
 
