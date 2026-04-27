@@ -137,9 +137,9 @@ add_custom_target(
 
 set(clean_files
     ${c_SDK_IMAGE_TARGET_DIR}
-    ${FINAL_IMAGE_DIR}/kr4_km4_app.bin
-    ${FINAL_IMAGE_DIR}/kr4_km4_dsp_app.bin
-    ${FINAL_IMAGE_DIR}/kr4_km4_app_mp.bin
+    ${FINAL_IMAGE_DIR}/app.bin
+    ${FINAL_IMAGE_DIR}/dsp_app.bin
+    ${FINAL_IMAGE_DIR}/app_mp.bin
     ${FINAL_IMAGE_DIR}/ota_all.bin
 )
 

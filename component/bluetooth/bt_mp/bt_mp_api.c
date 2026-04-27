@@ -9,6 +9,7 @@
 #if defined(CONFIG_SDN_BT) && CONFIG_SDN_BT
 #include "sdn_host.h"
 #include "hci_common.h"
+#include "os_wrapper_memory.h"
 #else
 #include "hci_transport.h"
 #include "hci_controller.h"
@@ -24,7 +25,7 @@ enum {
 };
 
 #define HCI_H4_HDR_MAX_SIZE    4
-#define HCI_H4_BODY_MAX_SIZE   1024
+#define HCI_H4_BODY_MAX_SIZE   256
 static struct h4_rx {
 	uint8_t rx_state;
 	uint8_t type;

@@ -23,7 +23,7 @@ For example:
 
   - `Connect GPIO_SIGNAL_SOURCE (_PA_25)` to `GPIO_IRQ_LEVEL_PIN (_PA_26)`
 
-# SW configuration
+# SW Configuration
 
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -33,7 +33,7 @@ For example:
 4. GPIO Interrupt Polarity will inverse in ISR.
 5. `GPIO_SIGNAL_SOURCE` is a signal source that changes level between high and low periodically.
 
-# Expect result
+# Expected Result
 
 In this example, you will see log that prints high/low level event periodically.
 

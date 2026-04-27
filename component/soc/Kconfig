@@ -1,0 +1,7 @@
+# RSIP Key Configuration
+# Legacy group (single key, 1 group 2 keys): RTL8721Dx, RTL8720E, RTL8710E, RTL8713E, RTL8726E, RTL8730E
+# Default group (dual key, 2 groups 4 keys): RTL8721F, RTL8720F
+
+config RSIP_SINGLE_KEY
+	bool
+	default y if AMEBADPLUS || AMEBALITE || AMEBASMART

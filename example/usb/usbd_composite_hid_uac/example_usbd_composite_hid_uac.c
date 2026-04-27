@@ -155,16 +155,18 @@ static usbd_config_t composite_usbd_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
 	.isr_priority = INT_PRI_HIGHEST,
 	.isr_in_critical = 0,
-	.intr_use_ptx_fifo = 0U,
-	.ext_intr_enable        = USBD_EPMIS_INTR | USBD_EOPF_INTR | USBD_SOF_INTR,
+#if defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBADPLUS)
+	.ext_intr_enable = USBD_EPMIS_INTR | USBD_EOPF_INTR | USBD_SOF_INTR,
 	.nptx_max_epmis_cnt = 100U,
-#if defined (CONFIG_AMEBAGREEN2)
+#elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 420U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, },
+	.ext_intr_enable = USBD_EOPF_INTR | USBD_SOF_INTR,
 #elif defined (CONFIG_AMEBAPRO3)
 	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
 	.rx_fifo_depth = 1424U,
 	.ptx_fifo_depth = {256U, 32U, 256U, },
+	.ext_intr_enable = USBD_EOPF_INTR | USBD_SOF_INTR,
 #endif
 };
 

@@ -267,6 +267,13 @@ s32 wifi_get_antdiv_info(u8 *antdiv_mode, u8 *curr_ant)
 	return -1;
 }
 
+s32 wifi_set_antdiv_info(u8 antdiv_mode)
+{
+	UNUSED(antdiv_mode);
+	call_noused = __LINE__;
+	return -1;
+}
+
 int wifi_set_pmk_cache_enable(unsigned char value)
 {
 	UNUSED(value);

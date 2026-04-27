@@ -9,7 +9,7 @@ This example does not support the loguart command response.
 
 Logic Analyser or oscilloscope.
 
-# SW configuration
+# SW Configuration
 
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -40,7 +40,7 @@ Logic Analyser or oscilloscope.
      - `NEC_EncodePacket`: encode the space symbol of IR waveform data with carrier symbol data
      - `NEC_DecodePacket`: decode the received IR waveform with carrier symbol to space symbol
 
-# Expect result
+# Expected Result
 
    When LA or oscilloscope is connected to `IR_PINMUX_S1_TX` pin, tx data will be captured.
 

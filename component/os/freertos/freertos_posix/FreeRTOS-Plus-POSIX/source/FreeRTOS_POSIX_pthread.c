@@ -94,17 +94,20 @@ static void prvExitThread( void )
 {
     pthread_internal_t * pxThread = ( pthread_internal_t * ) pthread_self();
 
+    vTaskSuspendAll();
     /* If this thread is joinable, wait for a call to pthread_join. */
     if( pthreadIS_JOINABLE( pxThread->xAttr.usSchedPriorityDetachState ) )
     {
         ( void ) xSemaphoreGive( ( SemaphoreHandle_t ) &pxThread->xJoinBarrier );
 
+        ( void ) xTaskResumeAll();
         /* Suspend until the call to pthread_join. The caller of pthread_join
          * will perform cleanup. */
         vTaskSuspend( NULL );
     }
     else
     {
+        ( void ) xTaskResumeAll();
         /* For a detached thread, perform cleanup of thread object. */
         vPortFree( pxThread );
         vTaskDelete( NULL );
@@ -630,7 +633,13 @@ int pthread_detach( pthread_t pthread )
         }
         else
         {
-            /* Release xJoinBarrier and delete it. */
+
+            if (xSemaphoreTake( ( SemaphoreHandle_t ) &pxThread->xJoinBarrier, 0))
+            {
+                pThreadState = eSuspended;
+            }
+
+           /* Release xJoinBarrier and delete it. */
             ( void ) xSemaphoreGive( ( SemaphoreHandle_t ) &pxThread->xJoinBarrier );
             vSemaphoreDelete( ( SemaphoreHandle_t ) &pxThread->xJoinBarrier );
 

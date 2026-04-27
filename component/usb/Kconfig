@@ -45,6 +45,8 @@ menu "CONFIG USB"
 
     config USBD_CDC_ACM
         bool
+    config USBD_CDC_ECM
+        bool
     config USBD_COMPOSITE
         bool
     config USBD_COMPOSITE_CDC_ACM_HID

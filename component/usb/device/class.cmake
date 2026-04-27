@@ -16,6 +16,15 @@ if(CONFIG_USBD_CDC_ACM)
     )
 endif()
 
+if(CONFIG_USBD_CDC_ECM)
+    ameba_list_append(private_includes
+        ${USBD_CLASS_DIR}/cdc_ecm
+    )
+    ameba_list_append(private_sources
+        ${USBD_CLASS_DIR}/cdc_ecm/usbd_cdc_ecm.c
+    )
+endif()
+
 ameba_list_append_if(CONFIG_USBD_COMPOSITE private_includes
     ${USBD_CLASS_DIR}/composite
 )

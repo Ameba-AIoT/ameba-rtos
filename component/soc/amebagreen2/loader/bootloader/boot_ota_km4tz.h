@@ -35,8 +35,9 @@ void BOOT_RSIPIvSet(Manifest_TypeDef *Manifest, u32 IV_index);
 u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char **ImgName, u8 ErrLog);
 u8 BOOT_OTA_IMG(void);
 
-u32 Boot_Fullmac_XipEn(void);
-void Boot_Fullmac_LoadImage(void);
+void BOOT_OTA_Region_Init(void);
+void Boot_Fullmac_OTA(void);
+u32 Boot_Fullmac_RSIP_Set(u8 img_type, u8 ImgIndex);
 fih_ret BOOT_OTFCheck(u32 start_addr, u32 end_addr, u32 IV_index, u32 OTF_index);
 
 #ifdef __cplusplus

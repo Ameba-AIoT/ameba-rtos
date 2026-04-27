@@ -123,6 +123,24 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 		} else {
 			BT_LOGE("[%s] MSG_CIG_MGR_START_SETTING: find no pending command \r\n", __func__);
 		}
+
+		/* Send event to application layer with cis_conn_handle */
+		if (p_data->p_cig_mgr_start_setting_rsp->cause == GAP_SUCCESS) {
+			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_ISO, RTK_BT_LE_ISO_EVT_CIG_START_SETTING_INFO,
+										sizeof(rtk_bt_le_iso_cig_start_setting_info_t));
+			if (p_evt) {
+				rtk_bt_le_iso_cig_start_setting_info_t *p_info = (rtk_bt_le_iso_cig_start_setting_info_t *)p_evt->data;
+				p_info->cause = p_data->p_cig_mgr_start_setting_rsp->cause;
+				p_info->cig_id = p_data->p_cig_mgr_start_setting_rsp->cig_id;
+				p_info->cis_count = p_data->p_cig_mgr_start_setting_rsp->cis_count;
+				for (i = 0; (i < p_info->cis_count) && (i < RTK_BLE_CIS_MAX_NUM); i++) {
+					p_info->cis_info[i].cis_id = p_data->p_cig_mgr_start_setting_rsp->cis_info[i].cis_id;
+					p_info->cis_info[i].cis_conn_handle = p_data->p_cig_mgr_start_setting_rsp->cis_info[i].cis_conn_handle;
+				}
+				rtk_bt_evt_indicate(p_evt, NULL);
+			}
+		}
+
 	}
 	break;
 
@@ -2729,23 +2747,27 @@ uint16_t bt_stack_le_iso_init(void *p_conf)
 	} else {
 		p_le_iso_app_conf = (rtk_bt_le_iso_app_conf_t *)p_conf;
 	}
-	cause = cig_mgr_init(p_le_iso_app_conf->cig_num, p_le_iso_app_conf->cis_num);
-	if (cause != GAP_CAUSE_SUCCESS) {
-		BT_LOGE("%s cig_mgr_init fail (cause = 0x%x)\r\n", __func__, cause);
-		return RTK_BT_FAIL;
+	if ((p_le_iso_app_conf->iso_role == RTK_BLE_ISO_ROLE_CIS_INITIATOR) || (p_le_iso_app_conf->iso_role == RTK_BLE_ISO_ROLE_CIS_ACCEPTOR)) {
+		cause = cig_mgr_init(p_le_iso_app_conf->cig_num, p_le_iso_app_conf->cis_num);
+		if (cause != GAP_CAUSE_SUCCESS) {
+			BT_LOGE("%s cig_mgr_init fail (cause = 0x%x)\r\n", __func__, cause);
+			return RTK_BT_FAIL;
+		}
+		cause = le_set_gap_param(GAP_PARAM_CIS_HOST_SUPPORT, sizeof(cis_flag), &cis_flag);
+		if (cause != GAP_CAUSE_SUCCESS) {
+			BT_LOGE("%s le_set_gap_param fail (cause = 0x%x)\r\n", __func__, cause);
+			return RTK_BT_FAIL;
+		}
 	}
-	cause = le_set_gap_param(GAP_PARAM_CIS_HOST_SUPPORT, sizeof(cis_flag), &cis_flag);
-	if (cause != GAP_CAUSE_SUCCESS) {
-		BT_LOGE("%s le_set_gap_param fail (cause = 0x%x)\r\n", __func__, cause);
-		return RTK_BT_FAIL;
+	if ((p_le_iso_app_conf->iso_role == RTK_BLE_ISO_ROLE_BIS_BROADCASTER) || (p_le_iso_app_conf->iso_role == RTK_BLE_ISO_ROLE_BIS_RECEIVER)) {
+		cause = gap_big_mgr_init(p_le_iso_app_conf->big_num, p_le_iso_app_conf->bis_num);
+		if (cause != GAP_CAUSE_SUCCESS) {
+			BT_LOGE("%s gap_big_mgr_init fail (cause = 0x%x)\r\n", __func__, cause);
+			return RTK_BT_FAIL;
+		}
 	}
 	BT_LOGA("%s cig_num = 0x%x, cis_num = 0x%x, big_num = 0x%x, bis_num = 0x%x \r\n", __func__, p_le_iso_app_conf->cig_num, p_le_iso_app_conf->cis_num,
 			p_le_iso_app_conf->big_num, p_le_iso_app_conf->bis_num);
-	cause = gap_big_mgr_init(p_le_iso_app_conf->big_num, p_le_iso_app_conf->bis_num);
-	if (cause != GAP_CAUSE_SUCCESS) {
-		BT_LOGE("%s cig_mgr_init fail (cause = 0x%x)\r\n", __func__, cause);
-		return RTK_BT_FAIL;
-	}
 	gap_register_direct_cb(bt_stack_le_iso_data_direct_callback);
 	/* initiator */
 	if (RTK_BLE_ISO_ROLE_CIS_INITIATOR == p_le_iso_app_conf->iso_role) {

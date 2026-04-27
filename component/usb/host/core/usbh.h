@@ -296,9 +296,10 @@ typedef struct {
 	                                     Min value 16 and max value restricted by SoC hardware. */
 	u16 ptx_fifo_depth;               /**< Periodic TxFIFO depth in dwords (Dedicated FIFO only).
 	                                     Min value 16 and max value restricted by SoC hardware. */
+	u16 main_task_stack_size;         /**< USB main task stack size. */
+	u8 main_task_priority;            /**< USB main task priority, the main task processes the USB host messages. */
 	u8 isr_priority;                  /**< USB ISR priority. */
 	u8 isr_in_critical;               /**< Flag to process USB ISR within a critical section (0: Disable, 1: Enable). */
-	u8 main_task_priority;            /**< USB main task priority, the main task processes the USB host messages. */
 	/**
 	 * @brief USB speed mode. See @ref usb_speed_type_t.
 	 * - `USB_SPEED_HIGH`: USB 2.0 High-Speed mode(for HS-capable SoCs).
@@ -670,40 +671,6 @@ u32 usbh_get_last_transfer_size(usb_host_t *host, usbh_pipe_t *pipe);
  * @return 0 on success, non-zero on failure.
  */
 int usbh_transfer_process(usb_host_t *host, usbh_pipe_t *pipe);
-
-/**
- * @brief  Enable NAK mask for the pipe.
- * @param[in] host: Host Handle.
- * @param[in] pipe_num: Pipe number.
- * @return 0 on success, non-zero on failure.
- */
-int usbh_enable_nak_interrupt(usb_host_t *host, u8 pipe_num);
-
-/**
- * @brief  Check NAK time out.
- * @param[in] host: Host Handle.
- * @param[in] pipe_num: Pipe number.
- * @param[in] tick_cnt: Timout tick count.
- * @return 0 on success, non-zero on failure.
-*/
-int usbh_check_nak_timeout(usb_host_t *host, u8 pipe_num, u32 tick_cnt);
-
-/**
- * @brief  Increase pipe busy count.
- * @param[in] host: Host Handle.
- * @param[in] pipe_num: Pipe number.
- * @param[in] step: Increase step.
- * @return 0 on success, non-zero on failure.
- */
-int usbh_increase_busy_cnt(usb_host_t *host, u8 pipe_num, u8 step);
-
-/**
- * @brief  Prepare for retransfer.
- * @param[in] host: Host Handle.
- * @param[in] pipe_num: Pipe number.
- * @return 0 on success, non-zero on failure.
- */
-int usbh_prepare_retransfer(usb_host_t *host, u8 pipe_num);
 
 /* Usbh CTS test operations. */
 /**

@@ -16,9 +16,10 @@ typedef enum {
 	PMU_WLAN_DEVICE		= 1,
 	PMU_KM4_RUN			= 2,
 	PMU_AP_RUN	= 3,
-	PMU_BT_CONTROLLER	= 4,
-	PMU_BT_HOST	= 5,
-	PMU_VAD_DEVICE	= 6,
+	PMU_WLAN_FW_DEVICE		= 4,
+	PMU_BT_CONTROLLER	= 5,
+	PMU_BT_HOST	= 6,
+	PMU_VAD_DEVICE	= 7,
 	PMU_DHCP_PROCESS,
 	PMU_LWIP_STACK,
 	PMU_DEV_USER_BASE, /* reserved for customer use */
@@ -43,7 +44,6 @@ typedef uint32_t (*PSM_HOOK_FUN)(uint32_t, void *param_ptr);
 #define PMU_DEVICE_TIMER_MAX_INTERVAL		(1000*30) /* max 30sec */
 
 typedef struct {
-	uint32_t					nDeviceId;
 	PSM_HOOK_FUN		sleep_hook_fun;
 	void				*sleep_param_ptr;
 	PSM_HOOK_FUN		wakeup_hook_fun;

@@ -669,7 +669,7 @@ static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 	usbd_cdc_acm_ntf_t *ntf = (usbd_cdc_acm_ntf_t *)ep_intr_in->xfer_buf;
 
 	if (!dev->is_ready) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX %d not ready\n", USBD_CDC_ACM_INTR_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", USBD_CDC_ACM_INTR_IN_EP);
 		return ret;
 	}
 
@@ -797,7 +797,6 @@ USBD_CDC_Init_exit:
   */
 int usbd_cdc_acm_deinit(void)
 {
-	u8 is_busy;
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
@@ -807,18 +806,11 @@ int usbd_cdc_acm_deinit(void)
 #endif
 
 #if CONFIG_CDC_ACM_NOTIFY
-	is_busy = ep_bulk_in->is_busy || ep_intr_in->is_busy;
+	while (ep_bulk_in->is_busy || ep_intr_in->is_busy) {
 #else
-	is_busy = ep_bulk_in->is_busy;
+	while (ep_bulk_in->is_busy) {
 #endif
-	while (is_busy) {
 		usb_os_delay_us(100);
-
-#if CONFIG_CDC_ACM_NOTIFY
-		is_busy = ep_bulk_in->is_busy || ep_intr_in->is_busy;
-#else
-		is_busy = ep_bulk_in->is_busy;
-#endif
 	}
 
 	usbd_unregister_class();
@@ -861,7 +853,7 @@ int usbd_cdc_acm_transmit(u8 *buf, u32 len)
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 
 	if (!dev->is_ready) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX %d not ready\n", USBD_CDC_ACM_BULK_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", USBD_CDC_ACM_BULK_IN_EP);
 		return ret;
 	}
 
@@ -920,4 +912,3 @@ int usbd_cdc_acm_notify_serial_state(u16 serial_state)
 	return ret;
 }
 #endif
-

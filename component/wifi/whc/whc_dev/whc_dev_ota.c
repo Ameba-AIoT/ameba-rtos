@@ -59,22 +59,39 @@ exit:
 	}
 
 	if (whc_ota_info) {
+		if (whc_ota_info->host) {
+			rtos_mem_free(whc_ota_info->host);
+		}
+		if (whc_ota_info->resource) {
+			rtos_mem_free(whc_ota_info->resource);
+		}
 		rtos_mem_free(whc_ota_info);
 		whc_ota_info = NULL;
 	}
 	rtos_task_delete(NULL);
 }
 
+
 void whc_dev_api_start_ota(struct whc_dev_ota_info *ota_info)
 {
 	u8 ota_type = ota_info->ota_type;
-	u32 len;
+	u32 len, offset;
+	u8 *ptr = (u8 *)ota_info;
 	(void)len;
+
+	offset = offsetof(struct whc_dev_ota_info, host);
 
 	if (ota_type == OTA_FOR_NORMAL) {
 		if (whc_ota_info == NULL) {
 			whc_ota_info = rtos_mem_zmalloc(sizeof(struct whc_dev_ota_info));
-			memcpy(whc_ota_info, ota_info, sizeof(struct whc_dev_ota_info));
+			whc_ota_info->host = rtos_mem_zmalloc(ota_info->host_len);
+			whc_ota_info->resource = rtos_mem_zmalloc(ota_info->resource_len);
+
+			memcpy(whc_ota_info, ota_info, offset);
+			ptr += offset;
+			memcpy(whc_ota_info->host, ptr, ota_info->host_len);
+			ptr += ota_info->host_len;
+			memcpy(whc_ota_info->resource, ptr, ota_info->resource_len);
 		}
 
 		if (rtos_task_create(NULL, ((const char *)"whc_update_ota_task"), whc_update_ota_task, NULL, 1024 * 5, 1) != RTK_SUCCESS) {
@@ -83,15 +100,20 @@ void whc_dev_api_start_ota(struct whc_dev_ota_info *ota_info)
 #ifdef CONFIG_RMESH_OTA_EN
 	} else if (ota_type == OTA_FOR_RMESH) {
 		memset(&ota_param, 0, sizeof(struct rmesh_http_ota_param));
-		len = strlen(ota_info->host);
-		ota_param.host = (char *)rtos_mem_zmalloc(len + 1);
-		memcpy(ota_param.host, ota_info->host, len);
 		memcpy(&ota_param.port, &(ota_info->port), 2);
-
-		len = strlen(ota_info->resource);
-		ota_param.resource = (char *)rtos_mem_zmalloc(len + 1);
-		memcpy(ota_param.resource, ota_info->resource, len);
 		ota_param.ota_type = ota_info->rmesh_ota_type;
+
+		ptr += offset;
+		/* host & resource */
+		len = ota_info->host_len;
+		ota_param.host = (char *)rtos_mem_zmalloc(len + 1);
+		memcpy(ota_param.host, ptr, len);
+		ptr += ota_info->host_len;
+
+		len = ota_info->resource_len;
+		ota_param.resource = (char *)rtos_mem_zmalloc(len + 1);
+		memcpy(ota_param.resource, ptr, len);
+
 		rmesh_ota_cmd_recv(&ota_param);
 #endif
 	}
@@ -187,33 +209,3 @@ int whc_dev_ota_close(void)
 	return 0;
 }
 
-#ifdef CONFIG_RMESH_OTA_EN
-void whc_dev_api_rmesh_ota_start(struct rmesh_http_ota_param *ota_param)
-{
-	u8 *buf = rtos_mem_zmalloc(1024);
-	u8 *ptr = buf;
-	struct whc_dev_ota_hdr *ota_hdr;
-	struct whc_dev_ota_info *ota_info;
-	u32 buf_len = 0;
-
-	*(u32 *)ptr = WHC_WIFI_TEST;
-	ptr += 4;
-
-	ota_hdr = (struct whc_dev_ota_hdr *)ptr;
-	ota_hdr->type = WHC_WIFI_TEST_OTA;
-	ota_hdr->subtype = WHC_OTA_START;
-
-	ptr += sizeof(struct whc_dev_ota_hdr);
-
-	ota_info = (struct whc_dev_ota_info *)ptr;
-	ota_info->port = (u32)ota_param->port;
-	memcpy(ota_info->host, ota_param->host, strlen(ota_param->host));
-	memcpy(ota_info->resource, ota_param->resource, strlen(ota_param->resource));
-
-	buf_len = 4 + sizeof(struct whc_dev_ota_hdr) + sizeof(struct whc_dev_ota_info);
-
-	whc_dev_api_send_to_host(buf, buf_len);
-
-	rtos_mem_free(buf);
-}
-#endif

@@ -112,12 +112,9 @@ static u8 play_buf[USB_AUDIO_BUF_SIZE];
 */
 static u8 recv_buf[USB_AUDIO_BUF_SIZE * 2];
 
-
 static usbd_config_t uac_cfg = {
 	.speed = CONFIG_USBD_UAC_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
-	.ext_intr_enable = 0,
-	.intr_use_ptx_fifo = 0U,
 #if defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 420U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, },

@@ -58,6 +58,7 @@ typedef struct SignalCondThreadArgs
     int iStatus;             /**< The status the thread reports. */
     int iSharedVariable;     /**< Shared variable for condition. */
     pthread_cond_t * pxCond; /**< Condition variable. */
+    pthread_mutex_t *pxMutex; /**< Mutex for condition. */
 } SignalCondThreadArgs_t;
 
 /*-----------------------------------------------------------*/
@@ -114,8 +115,10 @@ static void * prvSignalCondThread( void * pvArgs )
     SignalCondThreadArgs_t * pxArgs = ( SignalCondThreadArgs_t * ) pvArgs;
 
     /* Increment the shared variable and signal cond. */
+    pthread_mutex_lock(pxArgs->pxMutex);
     pxArgs->iSharedVariable++;
     pxArgs->iStatus = pthread_cond_signal( pxArgs->pxCond );
+    pthread_mutex_unlock(pxArgs->pxMutex);
 
     return NULL;
 }
@@ -410,7 +413,8 @@ TEST( Full_POSIX_PTHREAD, pthread_create_join )
 
 TEST( Full_POSIX_PTHREAD, pthread_detach_before_running )
 {
-    int iThreadCreateStatus = 0, iStatus = 0;
+    int iThreadCreateStatus = 0;
+    volatile int iStatus = 0;
     pthread_t xNewThread = NULL;
     pthread_barrier_t xBarrier = { 0 };
 
@@ -450,7 +454,10 @@ TEST( Full_POSIX_PTHREAD, pthread_detach_before_running )
     }
 
     /* Destroy the barrier. */
-    ( void ) pthread_barrier_destroy( &xBarrier );
+    while( pthread_barrier_destroy( &xBarrier ) == EBUSY)
+    {
+        taskYIELD();
+    }
 }
 
 /*-----------------------------------------------------------*/
@@ -501,7 +508,10 @@ TEST( Full_POSIX_PTHREAD, pthread_detach_while_running )
     }
 
     /* Destroy the barrier. */
-    ( void ) pthread_barrier_destroy( &xBarrier );
+    while( pthread_barrier_destroy( &xBarrier ) == EBUSY)
+    {
+        taskYIELD();
+    }
 }
 
 /*-----------------------------------------------------------*/
@@ -582,7 +592,10 @@ TEST( Full_POSIX_PTHREAD, pthread_detach_while_blocked )
     }
 
     /* Destroy the barrier. */
-    ( void ) pthread_barrier_destroy( &xBarrier );
+    while( pthread_barrier_destroy( &xBarrier ) == EBUSY)
+    {
+        taskYIELD();
+    }
 }
 
 /*-----------------------------------------------------------*/
@@ -656,7 +669,10 @@ TEST( Full_POSIX_PTHREAD, pthread_detach_after_running )
     }
 
     /* Destroy the barrier. */
-    ( void ) pthread_barrier_destroy( &xBarrier );
+    while( pthread_barrier_destroy( &xBarrier ) == EBUSY)
+    {
+        taskYIELD();
+    }
 }
 
 /*-----------------------------------------------------------*/
@@ -824,7 +840,7 @@ TEST( Full_POSIX_PTHREAD, pthread_barrier )
 
 TEST( Full_POSIX_PTHREAD, pthread_cond_signal )
 {
-    int iStatus = 0;
+    volatile int iStatus = 0;
     BaseType_t xMutexCreated = pdFALSE;
     volatile BaseType_t xThreadCreated = pdFALSE;
     pthread_cond_t xCond = PTHREAD_COND_INITIALIZER;
@@ -833,6 +849,7 @@ TEST( Full_POSIX_PTHREAD, pthread_cond_signal )
     pthread_t xNewThread;
     SignalCondThreadArgs_t xThreadArgs = { 0 };
     struct timespec xWaitTime = { 0 };
+    xThreadArgs.pxMutex = &xMutex;
 
     /* Create an error-checking mutex. This mutex types allows verification
      * of mutex owner. */
@@ -897,6 +914,8 @@ TEST( Full_POSIX_PTHREAD, pthread_cond_signal )
     {
         ( void ) pthread_join( xNewThread, NULL );
     }
+
+    pthread_cond_destroy(&xCond);
 }
 
 /*-----------------------------------------------------------*/
@@ -942,6 +961,8 @@ TEST( Full_POSIX_PTHREAD, pthread_cond_broadcast )
         TEST_ASSERT_EQUAL( pdTRUE, xThreadsCreated[ i ] );
         TEST_ASSERT_EQUAL_INT( 0, ( int ) xThreadReturnValues[ i ] );
     }
+
+    pthread_cond_destroy(&xCond);
 }
 
 /*-----------------------------------------------------------*/

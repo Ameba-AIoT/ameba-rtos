@@ -42,3 +42,4 @@ Log output should show:
 # Supported IC
 
 RTL8721F
+RTL8720F

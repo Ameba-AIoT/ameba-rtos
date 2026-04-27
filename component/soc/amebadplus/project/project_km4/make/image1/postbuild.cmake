@@ -44,7 +44,7 @@ else()
         OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_boot.bin
     )
       ameba_axf2bin_fw_pack(
-        ${c_SDK_IMAGE_TARGET_DIR}/km4_boot_all.bin
+        ${c_SDK_IMAGE_TARGET_DIR}/${c_BOOT_BINARY_NAME}
         p_IMAGE1
             ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_boot.bin
     )
@@ -53,7 +53,7 @@ endif()
 message( "========== Image manipulating end ==========")
 
 if (NOT IMGTOOL_LOADER)
-    set(KM4_BOOT_ALL ${c_SDK_IMAGE_TARGET_DIR}/km4_boot_all.bin)
+    set(KM4_BOOT_ALL ${c_SDK_IMAGE_TARGET_DIR}/${c_BOOT_BINARY_NAME})
     if(EXISTS ${KM4_BOOT_ALL})
         ameba_execute_process(
             COMMAND ${CMAKE_COMMAND} -E copy ${KM4_BOOT_ALL} ${FINAL_IMAGE_DIR}

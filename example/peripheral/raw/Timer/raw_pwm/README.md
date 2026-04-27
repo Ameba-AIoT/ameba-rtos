@@ -1,4 +1,4 @@
-# Description
+# Example Description
 This example describes how to use pwm.
 
 # HW Configuration
@@ -40,7 +40,7 @@ For example:
 	GND <--> LED1 <---> PA_7
 	GND <--> LED2 <---> PA_8
 	GND <--> LED3 <---> PA_10
-# SW configuration
+# SW Configuration
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
@@ -49,7 +49,7 @@ For example:
    - you can also modify pinmux group settings according to correct pinmux table. For example:
     If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
-# Expect result
+# Expected Result
 
   - The LED would gradually become brighter and then darker with different speed.
   - Connect the logic analyzer, and PWM waveforms on all six/eight channels can be displayed. The Waveform duty cycle gradually increases and then decreases.

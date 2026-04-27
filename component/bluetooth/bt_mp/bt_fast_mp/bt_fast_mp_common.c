@@ -85,7 +85,7 @@ static void bt_fast_mp_test_start_dut_func(uint8_t bt_channel)
 
 	/// 1.3 set tx gain k
 	if (bt_efuse.bit_map & bt_efuse.bit_map_gaink_valid) {
-		if (false == rtk_bt_mp_dtm_set_tx_gaink((uint32_t)(bt_efuse.tx_gain_k))) {
+		if (false == rtk_bt_mp_dtm_set_tx_gaink(bt_efuse.tx_gain_k)) {
 			BT_LOGE("DUT set TX Gain K failed!\r\n");
 			goto exit;
 		}

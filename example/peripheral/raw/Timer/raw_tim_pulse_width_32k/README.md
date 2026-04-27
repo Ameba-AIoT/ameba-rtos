@@ -1,4 +1,4 @@
-# Description
+# Example Description
 This example describes how to use Pulse Timer to capture pulse width.
 
 # HW Configuration
@@ -21,7 +21,7 @@ for example:
    _PB_17 <--> _PB_19
 4. If you run this example in RTL8721F, then connect as below
    _PA_3 <--> _PB_16
-# SW configuration
+# SW Configuration
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
@@ -31,7 +31,7 @@ for example:
      For example:
      If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
-# Expect result
+# Expected Result
 This example will print out the pulse width of PWM channel output signal.
 
 # Note

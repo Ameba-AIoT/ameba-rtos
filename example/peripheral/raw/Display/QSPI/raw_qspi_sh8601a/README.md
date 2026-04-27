@@ -1,4 +1,4 @@
-#  Example Description
+# Example Description
 
 This example shows how to use QSPI to driver LCD SH8601A. CPU will write data to QSPI FIFO and then to LCD.
 
@@ -19,20 +19,20 @@ CPU will carry data from memory to QSPI, user should connect QSPI pins with LCD 
 
 Also, the other pin of LCD should be connected correctly, like GND and VCC.
 
-#  SW configuration
+# SW Configuration
 
 Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-#  Expect result
+# Expected Result
 SH8601A will show RED, GREEN, BLUE in turn.
 
-#  Note
+# Note
 
 None
 
-#  Supported IC
+# Supported IC
 
 RTL8721Dx
 

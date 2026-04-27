@@ -607,7 +607,7 @@ exit3:
 }
 
 
-SRAM_WLAN_CRITICAL_CODE_SECTION
+SRAM_IPERF_CRITICAL_CODE_SECTION
 uint32_t send_udp_packets(struct iperf_data_t *iperf_data, struct iperf_udp_client_hdr *client_hdr, char *udp_client_buffer, struct sockaddr_in *ser_addr)
 {
 	int addrlen = sizeof(struct sockaddr_in);
@@ -807,7 +807,7 @@ exit2:
 	return 0;
 }
 
-SRAM_WLAN_CRITICAL_CODE_SECTION
+SRAM_IPERF_CRITICAL_CODE_SECTION
 void recv_udp_packets(struct iperf_data_t *iperf_data, int first_packet_size, uint8_t boundary_type, uint32_t client_amount, char *udp_server_buffer)
 {
 	struct sockaddr_in client_addr;

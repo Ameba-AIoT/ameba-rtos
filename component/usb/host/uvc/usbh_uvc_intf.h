@@ -33,27 +33,37 @@
 #include "usbh_hw_uvc.h"
 #endif
 
-#define USBH_UVC_GET_FRAME_TIMEOUT                    500   /**< Timeout for getting a frame in ms. */
-
 /* Supported Video Formats */
 #define USBH_UVC_FORMAT_MJPEG                         0x6    /**< Motion-JPEG format. */
 #define USBH_UVC_FORMAT_YUV                           0x4    /**< Uncompressed YUV format. */
 #define USBH_UVC_FORMAT_H264                          0x10   /**< H.264 format. */
 
-/* USB Request Block (URB) Configuration */
-#define USBH_UVC_URB_NUMS                             8      /**< Number of URBs used for streaming. */
-#define USBH_UVC_URB_SIZE                             ((3072 + 32) * 2)   /**< Size of each URB buffer in bytes. */
+/* Configuration */
+/* Maximum number of supported VideoStreaming (VS) descriptors is 2 */
+#define USBH_UVC_VS_DESC_MAX_NUM                      1
 
+/* Maximum number of VideoStreaming alternate settings supported.
+ * The actual number of alternate settings depends on the capabilities
+ * of the connected UVC camera.
+ */
+#define USBH_UVC_VS_ALTS_MAX_NUM                      12
+
+/* USB Vedio Frame Configuration */
+#define USBH_UVC_GET_FRAME_TIMEOUT                    1000   /**< Timeout for getting a frame in ms. */
 #define USBH_UVC_VIDEO_FRAME_NUMS                     3      /**< Number of video frame buffers. Fixed to 3 if using HW decoder. */
 
-/* Task Configuration */
-#define USBH_UVC_COMBINE_TASK_STACK                    (1024U)   /**< Stack size for the combine task in bytes. */
-#define USBH_UVC_COMBINE_TASK_PRIORITY                 5           /**< Priority of the combine task. */
+#if (USBH_UVC_USE_HW == 0)
+/* USB Urb Block Configuration */
+#define USBH_UVC_URB_NUMS                             4      /**< Number of URBs used for streaming. */
+#define USBH_UVC_PKTS_PER_URB                         4      /**< Size of each URB buffer in bytes. */
 
-#define UBSH_UVC_REQUEST_BUF_LEN                       64     /**< Length of the UVC control request buffer. */
+/* Task Configuration */
+#define USBH_UVC_COMBINE_TASK_STACK                    768U   /**< Stack size for the combine task in bytes. */
+#define USBH_UVC_COMBINE_TASK_PRIORITY                 5      /**< Priority of the combine task. */
+#endif
 
 /* Debug / Error Handling */
-#define USBH_UVC_DEBUG                                 0
+#define USBH_UVC_DEBUG                                 1
 
 /** @} End of Host_UVC_Constants group */
 /** @} End of USB_Host_Constants group */
@@ -77,14 +87,6 @@ typedef enum {
 } usbh_uvc_streaming_state_t;
 
 /**
- * @brief UVC Stream Data Transfer State.
- */
-typedef enum {
-	STREAM_DATA_OFF = 1, /**< Idle state, no data transfer. */
-	STREAM_DATA_IN,        /**< Data IN transfer state. */
-} usbh_uvc_stream_data_state_t;
-
-/**
  * @brief UVC Frame Buffer State.
  */
 typedef enum  {
@@ -98,11 +100,11 @@ typedef enum  {
  * @brief UVC Stream Context / Parameters.
  */
 typedef struct  {
-	int fmt_type;          /**< Video format type (e.g., USBH_UVC_FORMAT_MJPEG). */
-	int width;             /**< Video frame width in pixels. */
-	int height;            /**< Video frame height in pixels. */
-	int frame_rate;        /**< Video frame rate (fps). */
 	u32 frame_buf_size;    /**< Size of a single video frame buffer in bytes. */
+	u16 width;             /**< Video frame width in pixels. */
+	u16 height;            /**< Video frame height in pixels. */
+	u8 frame_rate;        /**< Video frame rate (fps). */
+	u8 fmt_type;          /**< Video format type (e.g., USBH_UVC_FORMAT_MJPEG). */
 } usbh_uvc_s_ctx_t;
 
 /**
@@ -164,15 +166,14 @@ typedef struct {
 typedef struct {
 	struct list_head list;      /**< Linked list node for queue management. */
 	u8 *buf;                    /**< Pointer to the data buffer containing the frame. */
-	u32 index;                  /**< Index of the frame in the pool. */
 	u32 byteused;               /**< Actual number of bytes used in the buffer (frame size). */
-	u32 err;                    /**< Error flags associated with this frame. */
 	u32 timestamp;              /**< Presentation timestamp of the frame. */
-	usbh_uvc_frame_state_t state; /**< Current state of this frame buffer. */
 #if USBH_UVC_DEBUG
 	u32 get_frame_ts;           /**< Timestamp recorded when consumer gets this frame. */
 	u32 submit_frame_ts;        /**< Timestamp recorded when driver submits this frame. */
 #endif
+	u8 err;                    /**< Error flags associated with this frame. */
+	u8 state;             /**< Current state of this frame buffer, @ref usbh_uvc_frame_state_t. */
 } usbh_uvc_frame_t;
 
 /** @} End of Host_UVC_Types group */

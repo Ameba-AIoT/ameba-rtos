@@ -25,6 +25,8 @@ extern "C"  {
 #define BLE_WIFIMATE_SRV_ID                 11
 #define TRANSFER_MODULE_SRV_ID              12
 #define BLE_OTA_SRV_ID                      13
+#define BT_BLE_SERVICE_HID_ISO              14
+#define SCAN_PARAM_SRV_ID                   15
 
 #define TRANSFER_MODULE_SRV_ID_BASE         0x80
 

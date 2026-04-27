@@ -814,7 +814,7 @@ int usbd_hid_send_data(u8 *data, u32 len)
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
 
 	if (!dev->is_ready) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX %d not ready\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS, len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS);
 		return ret;
 	}
 
@@ -844,4 +844,3 @@ int usbd_hid_send_data(u8 *data, u32 len)
 
 	return ret;
 }
-

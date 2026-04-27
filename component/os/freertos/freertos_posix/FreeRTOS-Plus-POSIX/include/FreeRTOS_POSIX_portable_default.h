@@ -31,6 +31,10 @@
 #ifndef _FREERTOS_POSIX_PORTABLE_DEFAULT_H_
 #define _FREERTOS_POSIX_PORTABLE_DEFAULT_H_
 
+#ifdef CONFIG_POSIX_TEST
+/* Unify NAME_MAX with posix test (test_fixture.h) */
+#include <limits.h>
+#endif
 /**
  * @name The FreeRTOS task name given to pthreads.
  */
@@ -61,6 +65,14 @@
     #define posixconfigMQ_MAX_SIZE    128 /**< Maximum size (in bytes) of each message. */
 #endif
 /**@} */
+
+/**
+ * @name Defaults for POSIX conditions implementation.
+ */
+/**@{ */
+#ifndef posixconfigPTHREAD_COND_MAX_WAITERS
+    #define posixconfigPTHREAD_COND_MAX_WAITERS 4 /**< Maximum number of tasks that can wait on a cond at one time */
+#endif
 
 /**
  * @name POSIX implementation-dependent constants usually defined in limits.h.
@@ -128,9 +140,6 @@
 #ifndef posixconfigENABLE_USECONDS_T
     #define posixconfigENABLE_USECONDS_T             1 /**< useconds_t in sys/types.h */
 #endif
-#ifndef posixconfigENABLE_TM
-    #define posixconfigENABLE_TM                     1 /**< struct tm in time.h */
-#endif
 #ifndef posixconfigENABLE_TIMESPEC
     #define posixconfigENABLE_TIMESPEC               1 /**< struct timespec in time.h */
 #endif
@@ -142,6 +151,9 @@
 #endif
 #ifndef posixconfigENABLE_PTHREAD_BARRIER_T
     #define posixconfigENABLE_PTHREAD_BARRIER_T      1 /**< pthread_barrier_t in sys/types.h */
+#endif
+#ifndef posixconfigENABLE_SCHED_PARAM
+    #define posixconfigENABLE_SCHED_PARAM            1 /**< sched_param in sched.h */
 #endif
 /**@} */
 

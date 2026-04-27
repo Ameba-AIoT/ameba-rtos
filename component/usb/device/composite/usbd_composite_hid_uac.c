@@ -142,7 +142,6 @@ static int usbd_composite_set_config(usb_dev_t *dev, u8 config)
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 
 	cdev->dev = dev;
-	// RTK_LOGS(TAG, RTK_LOG_INFO, "Set cfg\n");
 
 	if ((cdev->hid != NULL) && (cdev->hid->set_config != NULL)) {
 		cdev->hid->set_config(dev, config);
@@ -320,8 +319,6 @@ static int usbd_composite_handle_ep0_data_out(usb_dev_t *dev)
 {
 	int ret = HAL_OK;
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
-
-	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "usbd_composite_handle_ep0_data_out\n");
 
 	if ((cdev->hid != NULL) && (cdev->hid->ep0_data_out)) {
 		cdev->hid->ep0_data_out(dev);

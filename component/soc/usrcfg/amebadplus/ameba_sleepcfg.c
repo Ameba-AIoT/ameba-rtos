@@ -7,37 +7,16 @@
 #include "ameba_soc.h"
 
 /* Wakeup entry can be set to WAKEUP_NULL/WAKEUP_KM4/WAKEUP_KM0 */
-struct WakeEvent_TypeDef sleep_wevent_config[] = {
+const struct WakeEvent_TypeDef sleep_wevent_config[] = {
 //  	Module								Wakeup
 #ifdef CONFIG_WHC_INTF_SDIO
 	{WAKE_SRC_SDIO,							WAKEUP_KM0},
 #else
 	{WAKE_SRC_SDIO,							WAKEUP_NULL},
 #endif
-	{WAKE_SRC_AON_WAKEPIN,					WAKEUP_NULL},
-	{WAKE_SRC_AON_TIM,						WAKEUP_NULL},
-	{WAKE_SRC_Keyscan,						WAKEUP_NULL},
-	{WAKE_SRC_PWR_DOWN,						WAKEUP_NULL},
-	{WAKE_SRC_BOR,							WAKEUP_NULL},
-	{WAKE_SRC_ADC_COMP,						WAKEUP_NULL},
-	{WAKE_SRC_ADC,							WAKEUP_NULL},
-	{WAKE_SRC_RTC,							WAKEUP_NULL},
-	{WAKE_SRC_CTOUCH,						WAKEUP_NULL},
-	{WAKE_SRC_I2C1,							WAKEUP_NULL},
-	{WAKE_SRC_I2C0,							WAKEUP_NULL},
 	{WAKE_SRC_GPIOB,						WAKEUP_KM4},
-	{WAKE_SRC_GPIOA,						WAKEUP_NULL},
-	{WAKE_SRC_UART_LOG,						WAKEUP_NULL},
-	{WAKE_SRC_UART2_BT,						WAKEUP_NULL},
-	{WAKE_SRC_UART1,						WAKEUP_NULL},
-	{WAKE_SRC_UART0,						WAKEUP_NULL},
 	{WAKE_SRC_pmc_timer1,					WAKEUP_KM0},	/* internal usage, do not change it*/
 	{WAKE_SRC_pmc_timer0,					WAKEUP_KM4},	/* internal usage, do not change it*/
-	{WAKE_SRC_Timer7,						WAKEUP_NULL},
-	{WAKE_SRC_Timer6,						WAKEUP_NULL},
-	{WAKE_SRC_Timer5,						WAKEUP_NULL},
-	{WAKE_SRC_Timer4,						WAKEUP_NULL},
-	{WAKE_SRC_IWDG0,						WAKEUP_NULL},
 	{WAKE_SRC_IPC_KM4,						WAKEUP_KM4},	/* IPC can only wakeup KM4, do not change it*/
 	{WAKE_SRC_BT_WAKE_HOST,					WAKEUP_NULL},
 	{WAKE_SRC_KM4_WAKE_IRQ,					WAKEUP_KM0},	/* internal usage, do not change it*/

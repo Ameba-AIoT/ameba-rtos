@@ -6,16 +6,16 @@ This example describes how to switch audio pad pin between digital path and anal
 
 Logic Analyser or oscilloscope.
 
-# SW configuration
+# SW Configuration
 
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool. 
+   * `Download` images to board by Ameba Image Tool.
 2. If `DIGIT_PATH_EN` is defined, `AUDIO_PAD_PIN` works under digital path
 3. If `DIGIT_PATH_EN`is NOT defined, `AUDIO_PAD_PIN`works as audio pin
 4. By default, `AUDIO_PAD_PIN`works under digital path
 
-# Expect result
+# Expected Result
 
 1. If `AUDIO_PAD_PIN` works under digital path:
    - `AUDIO_PAD_PIN` is configured as gpio in `digit_app_entry()`.

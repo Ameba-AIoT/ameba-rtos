@@ -578,6 +578,28 @@ typedef struct {
 } rtk_bt_le_iso_cig_initiator_create_cis_done_t;
 
 /**
+ * @struct    rtk_bt_le_iso_cig_start_setting_cis_info_t
+ * @brief     Bluetooth BLE ISO management CIG start setting CIS info.
+ */
+typedef struct {
+	uint8_t  cis_id;            /**< Identifier of a CIS.*/
+	uint16_t cis_conn_handle;   /**< Connection handle of the CIS */
+} rtk_bt_le_iso_cig_start_setting_cis_info_t;
+
+/**
+ * @struct    rtk_bt_le_iso_cig_start_setting_info_t
+ * @brief     Bluetooth BLE ISO management CIG start setting indication definition.
+ * @note      This event is triggered when CIG start setting is done, contains cis_conn_handle
+ *            which is needed for creating CIS later.
+ */
+typedef struct {
+	uint16_t cause;             /**< process result */
+	uint8_t  cig_id;            /**< Identifier of a CIG.*/
+	uint8_t  cis_count;         /**< CIS count. If cause is not 0, cis_count is meaningless*/
+	rtk_bt_le_iso_cig_start_setting_cis_info_t cis_info[RTK_BLE_CIS_MAX_NUM]; /**< CIS info */
+} rtk_bt_le_iso_cig_start_setting_info_t;
+
+/**
  * @struct    rtk_bt_le_iso_cig_cis_established_info_t
  * @brief     Bluetooth BLE ISO management CIG CIS established indication definition.
  */

@@ -425,6 +425,13 @@ struct p2p_channel {
 	u8 chan;
 };
 
+enum p2p_role {
+	P2P_R_DISABLE = 0,
+	P2P_R_DEVICE = 1,
+	P2P_R_CLIENT = 2,
+	P2P_R_GO = 3
+};
+
 /**
  * struct p2p_config - P2P configuration
  *
@@ -798,8 +805,6 @@ struct p2p_config {
 	 * within 15 seconds.
 	 */
 	void (*go_neg_completed)(void *ctx, struct p2p_go_neg_results *res);
-
-	void (*set_idle_state)(void *ctx, u8 state);
 
 	/**
 	 * sd_request - Callback on Service Discovery Request
@@ -2395,8 +2400,6 @@ void p2p_expire_peers(struct p2p_data *p2p);
 void p2p_set_own_pref_freq_list(struct p2p_data *p2p,
 								const unsigned int *pref_freq_list,
 								unsigned int size);
-void p2p_set_override_pref_op_chan(struct p2p_data *p2p, u8 op_class,
-								   u8 chan);
 
 /**
  * p2p_group_get_common_freqs - Get the group common frequencies
@@ -2413,6 +2416,5 @@ struct wpabuf *p2p_build_probe_resp_template(struct p2p_data *p2p,
 
 bool p2p_peer_wfd_enabled(struct p2p_data *p2p, const u8 *peer_addr);
 bool p2p_wfd_enabled(struct p2p_data *p2p);
-void p2p_group_info_dump(struct p2p_group *group);
 
 #endif /* P2P_H */

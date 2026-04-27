@@ -67,7 +67,7 @@ u32 gdma_loop_link_list_irq(void *data)
 
 	if (abort_transfer) {
 		ctl_low = cur_node->LliEle.CtlxLow;
-#ifdef CONFIG_AMEBAGREEN2
+#if defined(CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 		ctl_low = ~(GDMA_BIT_CTLx_L_LLP_SRC_EN | GDMA_BIT_CTLx_L_LLP_DST_EN);
 #else
 		ctl_low = ~(BIT_CTLX_LO_LLP_SRC_EN | BIT_CTLX_LO_LLP_DST_EN);

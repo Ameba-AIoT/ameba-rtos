@@ -62,7 +62,7 @@ static usbd_config_t vendor_cfg = {
 	/* EOPF for ISOC OUT */
 	.ext_intr_enable = USBD_EPMIS_INTR | USBD_EOPF_INTR,
 	.nptx_max_epmis_cnt = 100U,
-	/*DFIFO total 1024 DWORD, resv 8 DWORD for DMA addr*/
+	.intr_use_ptx_fifo = 0U,
 #elif defined (CONFIG_AMEBAGREEN2)
 	/*DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 292U,
@@ -77,7 +77,6 @@ static usbd_config_t vendor_cfg = {
 	.rx_fifo_depth = 1424U,
 	.ptx_fifo_depth = {256U, 256U, 32U},
 #endif
-	.intr_use_ptx_fifo = 0U,
 };
 
 static usbd_vendor_cb_t vendor_cb = {

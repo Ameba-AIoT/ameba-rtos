@@ -134,8 +134,7 @@ class FirmwarePackage(OperationBase):
         parser.add_argument('--image2', type=str, nargs='+', help='Input image2 file path, the order and project path is important')
         parser.add_argument('--image3', type=str, help='Input image3 file path')
         parser.add_argument('--imgtool-floader', type=str, help='Input imagetool flashloader file path')
-        parser.add_argument('--fullmac-image1', type=str, help='Input fullmac image1 file path')
-        parser.add_argument('--fullmac-image2', type=str, help='Input fullmac image2 file path')
+        parser.add_argument('--fullmac-image', type=str, help='Input fullmac image file path')
         parser.add_argument('--dsp', type=str, help='Input dsp file path')
         parser.add_argument('-o', '--output-file', type=str, help='Output file name', required=True)
         parser.add_argument('--output-project', type=str, help='Output project name') #if not set, output project is decided by output_file
@@ -185,10 +184,8 @@ class FirmwarePackage(OperationBase):
             return self.process_app()
         elif self.context.args.imgtool_floader:
             return self.process_imgtool_floader()
-        elif self.context.args.fullmac_image1:
-            return self.process_fullmac_image1()
-        elif self.context.args.fullmac_image2:
-            return self.process_fullmac_image2()
+        elif self.context.args.fullmac_image:
+            return self.process_fullmac_image()
         else:
             self.logger.fatal("No image input")
             return Error(ErrorType.INVALID_INPUT, "No image input")
@@ -208,38 +205,21 @@ class FirmwarePackage(OperationBase):
         else:
             return self.process_app_without_sboot()
 
-    def process_fullmac_image1(self) -> Error:
+    def process_fullmac_image(self) -> Error:
         #Final output file's structure
         # ┌───────────────────────────┐
-        # │ fullmac_ram_1_prepend.bin │
-        # ├───────────────────────────┤
         # │       manifest.bin        │
+        # ├───────────────────────────┤
+        # │ fullmac_ram_1_prepend.bin │
         # └───────────────────────────┘
 
-        manifest_file_name = os.path.join(self.output_image_dir, 'manifest_fullmac_image1.bin') #output manifest file
-        res = self.manifest_manager.create_manifest(manifest_file_name, self.context.args.fullmac_image1, ImageType.IMAGE1)
+        manifest_file_name = os.path.join(self.output_image_dir, 'manifest_fullmac_image.bin') #output manifest file
+        res = self.manifest_manager.create_manifest(manifest_file_name, self.context.args.fullmac_image, ImageType.IMAGE1)
         if res:
             self.logger.fatal("Failed generating manifest file")
             return res
         #NOTE: manifest file is behind input file
-        merge_files(self.output_file, self.context.args.fullmac_image1, manifest_file_name)  # merge_files api will overwrite output_file file
-        return Error.success()
-
-    def process_fullmac_image2(self) -> Error:
-        #Final output file's structure
-        # ┌────────────────────────────┐
-        # │ fullmac_sram_2_prepend.bin │
-        # ├────────────────────────────┤
-        # │        manifest.bin        │
-        # └────────────────────────────┘
-
-        manifest_file_name = os.path.join(self.output_image_dir, 'manifest_fullmac_image2.bin') #output manifest file
-        res = self.manifest_manager.create_manifest(manifest_file_name, self.context.args.fullmac_image2, ImageType.IMAGE2)
-        if res:
-            self.logger.fatal("Failed generating manifest file")
-            return res
-        #NOTE: manifest file is behind input file
-        merge_files(self.output_file, self.context.args.fullmac_image2, manifest_file_name)  # merge_files api will overwrite output_file file
+        merge_files(self.output_file, manifest_file_name, self.context.args.fullmac_image)  # merge_files api will overwrite output_file file
         return Error.success()
 
     def process_imgtool_floader(self) -> Error:

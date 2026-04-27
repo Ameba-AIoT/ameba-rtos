@@ -24,7 +24,7 @@
 /* -------------------------------- Defines --------------------------------- */
 /*host api task*/
 #define CONFIG_COEX_IPC_HOST_API_PRIO 3
-#define COEX_STACK_SIZE_IPC_HST_API (COEX_IPC_HST_API_BASIC_SIZE + 128 + CONTEXT_SAVE_SIZE)
+#define COEX_STACK_SIZE_IPC_HST_API (COEX_IPC_HST_API_BASIC_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN)
 
 /* ---------------------------- Global Variables ---------------------------- */
 rtos_sema_t  g_host_coex_ipc_api_task_wake_sema = NULL;

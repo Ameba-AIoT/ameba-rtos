@@ -511,13 +511,13 @@ typedef enum {
 	RTK_BT_LE_ISO_EVT_CIG_ACCEPTOR_REQUEST_CIS_IND,               /*!< comes when receive a request to establish a CIS for acceptor */
 	RTK_BT_LE_ISO_EVT_CIG_SETUP_DATA_PATH,                        /*!< comes when receive a cig setup data path successfully event */
 	RTK_BT_LE_ISO_EVT_CIG_REMOVE_DATA_PATH,                       /*!< comes when receive a cig remove data path successfully event */
+	RTK_BT_LE_ISO_EVT_CIG_START_SETTING_INFO,                     /*!< comes when CIG start setting is done, contains cis_conn_handle */
 	RTK_BT_LE_ISO_EVT_BIG_BROADCASTER_CREATE_CMPL_INFO,           /*!< comes when RTK_BT_LE_ISO_ACT_BIG_BROADCASTER_CREATE is done */
 	RTK_BT_LE_ISO_EVT_BIG_BROADCASTER_SYNC_STATE_IND,             /*!< comes when broadcaster synchronization state change */
 	RTK_BT_LE_ISO_EVT_BIG_RECEIVER_SYNC_ESTABLISHED_INFO,         /*!< comes when RTK_BT_LE_ISO_ACT_BIG_RECEIVER_CREATE_SYNC is done */
 	RTK_BT_LE_ISO_EVT_BIG_RECEIVER_SYNC_STATE_IND,                /*!< comes when receiver synchronization state change */
 	RTK_BT_LE_ISO_EVT_BIG_SETUP_DATA_PATH,                        /*!< comes when receive a big setup data path successfully event */
 	RTK_BT_LE_ISO_EVT_BIG_REMOVE_DATA_PATH,                       /*!< comes when receive a big remove data path successfully event */
-	RTK_BT_LE_ISO_EVT_DATA_SEND_DONE,                             /*!< comes when RTK_BT_LE_ISO_ACT_ISO_DATA_SEND is done */
 	RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND,                           /*!< comes when receive iso data. Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_LE_ISO_EVT_MAX
 } rtk_bt_le_iso_evt_code_t;

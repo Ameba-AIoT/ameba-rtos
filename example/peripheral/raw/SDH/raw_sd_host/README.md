@@ -1,10 +1,10 @@
 # Example Description
 
-This example shows how to use SD host. It will erase, read and write SD card and check data. 
+This example shows how to use SD host. It will erase, read and write SD card and check data.
 
 # HW Configuration
 
-User should prepare a SD card and plug it into SD card socket before runnig this example. 
+User should prepare a SD card and plug it into SD card socket before runnig this example.
 
 Pin defination:
 |  PIN    | Description |

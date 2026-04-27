@@ -57,7 +57,7 @@ void SOCPS_SleepInit(void);
 /*1.1 wake source settings.*/
 void SOCPS_SetNPWakeEvent(u32 Option, u32 NewStatus);
 void SOCPS_SetAPWakeEvent(u32 Option, u32 NewStatus);
-void SOCPS_WakeSourceSet(struct WakeEvent_TypeDef *sleep_wevent_config);
+void SOCPS_WakeSourceSet(const struct WakeEvent_TypeDef *sleep_wevent_config);
 /*1.2 Power setting*/
 void SOCPS_ReguDelayAdjust(u8 delay_count);
 void SOCPS_PowerManage(u8 regu_state);

@@ -45,6 +45,9 @@ ameba_list_append(private_sources
 	rtk_long_uuid_service.c
 	rtk_simple_ble_service.c
 	rtk_cte_service.c
+	rtk_scan_param_srv.c
+	rtk_hids_gamepad.c
+	rtk_hids_iso.c
 )
 
 ameba_list_append(private_includes

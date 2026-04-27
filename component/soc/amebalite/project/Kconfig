@@ -72,6 +72,7 @@ menu "CONFIG Link Option"
         default DATA_HEAP_SRAM
         config DATA_HEAP_SRAM
             bool "SRAM"
+            depends on !DSP_EN
         config DATA_HEAP_PSRAM
             bool "PSRAM"
             select PSRAM_USED

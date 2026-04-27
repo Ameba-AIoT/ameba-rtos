@@ -212,3 +212,5 @@ menu "CONFIG SECURE TEST"
 endmenu
 
 endif
+
+rsource "../Kconfig"

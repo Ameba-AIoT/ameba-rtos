@@ -68,10 +68,9 @@ static u16 atcmd_usbd_ctrl_line_state;
 static usbd_config_t atcmd_usbd_cfg = {
 	.speed = CONFIG_USBD_CDC_ACM_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
-	.intr_use_ptx_fifo  = 0U,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
-	.ext_intr_enable        = USBD_EPMIS_INTR,
+	.ext_intr_enable = USBD_EPMIS_INTR,
 #elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 644U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
@@ -541,7 +540,7 @@ int atio_usbd_init(void)
 		return -1;
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"atcmd_usbd_input_handler_task"), (rtos_task_t)atcmd_usbd_input_handler_task, NULL, 4096, 5) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"atcmd_usbd_input_handler_task"), (rtos_task_t)atcmd_usbd_input_handler_task, NULL, 6 * 1024, 5) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "\n\r%s rtos_task_create(atcmd_usbd_input_handler_task) failed", __FUNCTION__);
 		return -1;
 	}

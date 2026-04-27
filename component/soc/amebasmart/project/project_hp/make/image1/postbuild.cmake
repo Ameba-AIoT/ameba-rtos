@@ -34,7 +34,7 @@ if(IMGTOOL_LOADER)
 else()
     ameba_copy_file(${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/km4_boot.bin)
     ameba_axf2bin_fw_pack(
-        ${c_SDK_IMAGE_TARGET_DIR}/km4_boot_all.bin
+        ${c_SDK_IMAGE_TARGET_DIR}/${c_BOOT_BINARY_NAME}
         p_IMAGE1
             ${c_SDK_IMAGE_TARGET_DIR}/km4_boot.bin
     )
@@ -44,6 +44,6 @@ message( "========== Image manipulating end ==========")
 
 if (NOT IMGTOOL_LOADER)
     ameba_execute_process(
-        COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/km4_boot_all.bin ${FINAL_IMAGE_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/${c_BOOT_BINARY_NAME} ${FINAL_IMAGE_DIR}
     )
 endif()

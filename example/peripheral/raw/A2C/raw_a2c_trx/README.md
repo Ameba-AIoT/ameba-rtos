@@ -15,13 +15,13 @@ These pins need to be connected to the CAN PHY device(chip). Then the CAN_H and 
 
 This test example is designed specifically for the 8721FE0 board. For other models, you must adjust the PIN configuration according to the corresponding schematic. Additionally, if a CAN PHY chip is used, ensure that control pins related to operating modes (such as STB) are set to the correct logic levels. Improper configuration may prevent the CAN PHY from transmitting and receiving data properly.
 
-# SW configuration
+# SW Configuration
 
 Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 
 Normally, A2C0 will receive the standard data frame with StdId 0x55 and data 0-7 sent by A2C1.
 

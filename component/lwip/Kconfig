@@ -18,7 +18,7 @@ menu "CONFIG LWIP"
             Skipping it will provide higher throughput but reduce reliability.
 
     config LWIP_USB_ETHERNET
-        depends on USBH_ECM_ETHERNET_MENU||USBH_ECM_ETHERNET_BRIDGE_MENU||USBH_ECM_MENU || USBH_COMPOSITE_ACM_ECM_MENU
+        depends on USBH_ECM_ETHERNET_MENU||USBH_ECM_ETHERNET_BRIDGE_MENU||USBH_ECM_MENU || USBH_COMPOSITE_ACM_ECM_MENU || USBD_CDC_ECM_MENU
         bool "Enable LWIP USB ETHERNET"
 
     config LWIP_USB_ETHERNET_BRIDGE

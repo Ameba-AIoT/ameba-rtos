@@ -229,6 +229,34 @@ struct rtw_event_report_frame {
 	u8 frame[];
 };
 
+struct rtw_task_size {
+	/* common task size */
+#if defined(CONFIG_WHC_NONE) || defined(CONFIG_WHC_DEV)
+	u16 little_task;
+	u16 single_task;
+#if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+	u16 resume_task;
+#endif
+#endif
+	/* IPC mode task size */
+#if defined(CONFIG_WHC_INTF_IPC)
+#if defined(CONFIG_WHC_HOST)
+	u16 ipc_unblk_api_task;
+	u16 ipc_blk_api_task;
+	u16 ipc_msg_q_task;
+#elif defined(CONFIG_WHC_DEV)
+	u16 ipc_dev_api_task;
+#endif
+	/* Card mode task size */
+#else
+#if defined(CONFIG_WHC_HOST)
+	u16 whc_hst_api_task;
+#elif defined(CONFIG_WHC_DEV)
+	u16 whc_dev_api_task;
+#endif
+#endif
+};
+
 #ifndef CONFIG_FULLMAC
 /**
  * @brief  The structure is join block param.
@@ -552,6 +580,10 @@ void wifi_event_init(void);
 void wifi_indication(u32 event, u8 *evt_info, s32 evt_len);
 void wifi_indication_ext(u32 event, u8 *info_buf, s32 info_len, u8 *frame_buf, s32 frame_len);
 int wifi_event_handle(u32 event_cmd, u8 *evt_info);
+void wifi_set_task_size(void);
+
+extern struct rtw_task_size g_rtw_task_size;
+
 #ifdef __cplusplus
 }
 #endif

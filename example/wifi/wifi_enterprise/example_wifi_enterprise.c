@@ -19,9 +19,9 @@ extern int eap_start(char *method);
 
 void example_eap_config(void)
 {
-	eap_target_ssid = "Test_eap";
-	eap_identity = "guest2";
-	eap_password = "test2";
+	eap_target_ssid = "802.1X";
+	eap_identity = "kelly";
+	eap_password = "kelly123";
 
 	/*
 		Set client cert is only used for EAP-TLS connection.
@@ -116,6 +116,8 @@ static void example_eap_thread(void *method)
 		eap_start("peap");
 	} else if (strcmp(method, "ttls") == 0) {
 		eap_start("ttls");
+	} else if (strcmp(method, "fast") == 0) {
+		eap_start("fast");
 	} else {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Invalid method\n");
 	}

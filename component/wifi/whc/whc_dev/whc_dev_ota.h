@@ -41,12 +41,17 @@ struct whc_dev_ota_hdr {
 
 struct whc_dev_ota_info {
 	uint32_t port;
-	char host[16];
-	/* fix less than 20B now */
-	char resource[20];
+
+	uint32_t host_len;
+	uint32_t resource_len;
+
 	uint8_t ota_type;
 	uint8_t rmesh_ota_type;
 	uint8_t rsvd[2];
+
+	char *host;
+	char *resource;
+
 };
 
 struct whc_dev_ota_readbuf {

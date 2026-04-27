@@ -120,6 +120,10 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 
 #endif /* __CYGWIN__ || CONFIG_NATIVE_WINDOWS */
 
+#ifndef bswap_16
+#define bswap_16(a) ((((u16) ((a) << 8)) & 0xff00) | (((u16) ((a) >> 8)) & 0xff))
+#endif
+
 #ifndef bswap_32
 #define bswap_32(a) ((((u32) (a) << 24) & 0xff000000) | \
 		     (((u32) (a) << 8) & 0xff0000) | \
@@ -393,11 +397,7 @@ size_t utf8_escape(const char *inp, size_t in_size,
 size_t utf8_unescape(const char *inp, size_t in_size,
 					 char *outp, size_t out_size);
 int is_ctrl_char(char c);
-
-#ifndef bswap_16
-#define bswap_16(a) ((((u16) (a) << 8) & 0xff00) | (((u16) (a) >> 8) & 0xff))
-#endif
-
+void forced_memzero(void *ptr, size_t len);
 
 /*
  * gcc 4.4 ends up generating strict-aliasing warnings about some very common

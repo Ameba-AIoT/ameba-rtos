@@ -12,7 +12,7 @@
    `Connect Master's MISO to Slave's MISO`
    `Connect Master's SCLK to Slave's SCLK`
    `Connect Master's CS to Slave's CS`
-   The related Master's and Slave's pins are defined in the current example's header file. 
+   The related Master's and Slave's pins are defined in the current example's header file.
    - The relevant header file can be found in the directory:
      `example/peripheral/{mebd|raw}/{peripheral_name}/{example_folder_name}/`
    In this header file, the macros with prefix of SPI1 are master's pins, and macros with prefix of SPI0 are slave's pins.
@@ -45,11 +45,11 @@
 Refer the README of example `raw_spi_dma_mblk_tx_mstr` to build master image and download into another EVB board.
 4. Reset Slave device first and then Master device.
 
-# SW configuration
+# SW Configuration
 
 - Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool. 
+   * `Download` images to board by Ameba Image Tool.
 - By default, this example select one pinmux group as MOSI/MISO/SCLK/CS,
 
   - you can also modify pinmux group settings according to correct pinmux table.
@@ -57,7 +57,7 @@ Refer the README of example `raw_spi_dma_mblk_tx_mstr` to build master image and
 
   - If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
-# Expect result
+# Expected Result
 
 1. After example finishes, SPI slave will print out "SPI rx Demo finished".
 2. If SPI master is selected as mentioned by step2(3), then "SPI RX test: OK!" will be shown after data received match sent.

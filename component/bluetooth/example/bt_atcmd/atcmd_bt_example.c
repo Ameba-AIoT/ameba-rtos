@@ -124,6 +124,7 @@ int atcmd_bt_audio_mp_test(int argc, char *argv[])
 }
 
 int ble_central_main(uint8_t enable);
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 static void ble_central_task_entry(void *param)
 {
 	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
@@ -131,21 +132,24 @@ static void ble_central_task_entry(void *param)
 	osif_sem_give(p->sem_handle);
 	osif_task_delete(NULL);
 }
+#endif
 
 int atcmd_bt_central(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 	void *task_handle = NULL;
 	void *sem_handle = NULL;
 	bt_atcmd_demo_task_param_t task_param = {0};
+#endif
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 		BT_LOGE("Error: wrong value (%d) for central example!\r\n", op);
 		return -1;
 	}
-
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 	if (!osif_sem_create(&sem_handle, 0, 1)) {
 		BT_LOGE("Error: create sem failed!\r\n");
 		return -1;
@@ -164,7 +168,12 @@ int atcmd_bt_central(int argc, char *argv[])
 		BT_LOGE("central example failed!\r\n");
 		return -1;
 	}
-
+#else
+	if (ble_central_main(op)) {
+		BT_LOGE("Error: central example %s failed!\r\n", action[op]);
+		return -1;
+	}
+#endif
 	BT_LOGA("central example %s OK!\r\n", action[op]);
 	return 0;
 }
@@ -216,6 +225,7 @@ int atcmd_bt_hogp_gamepad(int argc, char *argv[])
 }
 
 int ble_peripheral_main(uint8_t enable);
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 static void ble_peripheral_task_entry(void *param)
 {
 	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
@@ -223,14 +233,16 @@ static void ble_peripheral_task_entry(void *param)
 	osif_sem_give(p->sem_handle);
 	osif_task_delete(NULL);
 }
-
+#endif
 int atcmd_bt_peripheral(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 	void *task_handle = NULL;
 	void *sem_handle = NULL;
 	bt_atcmd_demo_task_param_t task_param = {0};
+#endif
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
@@ -238,6 +250,7 @@ int atcmd_bt_peripheral(int argc, char *argv[])
 		return -1;
 	}
 
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 	if (!osif_sem_create(&sem_handle, 0, 1)) {
 		BT_LOGE("Error: create sem failed!\r\n");
 		return -1;
@@ -256,12 +269,18 @@ int atcmd_bt_peripheral(int argc, char *argv[])
 		BT_LOGE("peripheral example failed!\r\n");
 		return -1;
 	}
-
+#else
+	if (ble_peripheral_main(op)) {
+		BT_LOGE("Error: peripheral example %s failed!\r\n", action[op]);
+		return -1;
+	}
+#endif
 	BT_LOGA("peripheral example %s OK!\r\n", action[op]);
 	return 0;
 }
 
 int ble_scatternet_main(uint8_t enable);
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 static void ble_scatternet_task_entry(void *param)
 {
 	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
@@ -269,21 +288,24 @@ static void ble_scatternet_task_entry(void *param)
 	osif_sem_give(p->sem_handle);
 	osif_task_delete(NULL);
 }
+#endif
 
 int atcmd_bt_scatternet(int argc, char *argv[])
 {
 	(void)argc;
 	uint8_t op;
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 	void *task_handle = NULL;
 	void *sem_handle = NULL;
 	bt_atcmd_demo_task_param_t task_param = {0};
+#endif
 	char *action[] = {"disable", "enable"};
 
 	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
 		BT_LOGE("Error: wrong value (%d) for scatternet example!\r\n", op);
 		return -1;
 	}
-
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 	if (!osif_sem_create(&sem_handle, 0, 1)) {
 		BT_LOGE("Error: create sem failed!\r\n");
 		return -1;
@@ -302,6 +324,12 @@ int atcmd_bt_scatternet(int argc, char *argv[])
 		BT_LOGE("scatternet example failed!\r\n");
 		return -1;
 	}
+#else
+	if (ble_scatternet_main(op)) {
+		BT_LOGE("Error: scatternet example %s failed!\r\n", action[op]);
+		return -1;
+	}
+#endif
 
 	BT_LOGA("scatternet example %s OK!\r\n", action[op]);
 	return 0;
@@ -309,6 +337,7 @@ int atcmd_bt_scatternet(int argc, char *argv[])
 
 int atcmd_bt_throughput_test(int argc, char *argv[]);
 int ble_throughput_main(uint8_t enable);
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 static void ble_throughput_task_entry(void *param)
 {
 	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
@@ -316,13 +345,15 @@ static void ble_throughput_task_entry(void *param)
 	osif_sem_give(p->sem_handle);
 	osif_task_delete(NULL);
 }
-
+#endif
 int atcmd_bt_throughput(int argc, char *argv[])
 {
 	uint8_t op;
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 	void *task_handle = NULL;
 	void *sem_handle = NULL;
 	bt_atcmd_demo_task_param_t task_param = {0};
+#endif
 	char *action[] = {"disable", "enable"};
 
 	if ((strcmp("conn", argv[0]) == 0) || (strcmp("test_start", argv[0]) == 0) ||
@@ -334,7 +365,7 @@ int atcmd_bt_throughput(int argc, char *argv[])
 			BT_LOGE("Error: wrong value (%d) for throughput example!\r\n", op);
 			return -1;
 		}
-
+#if !defined(CONFIG_RTL8720F) || !CONFIG_RTL8720F
 		if (!osif_sem_create(&sem_handle, 0, 1)) {
 			BT_LOGE("Error: create sem failed!\r\n");
 			return -1;
@@ -353,7 +384,12 @@ int atcmd_bt_throughput(int argc, char *argv[])
 			BT_LOGE("throughput example failed!\r\n");
 			return -1;
 		}
-
+#else
+		if (ble_throughput_main(op)) {
+			BT_LOGE("Error: throughput example %s failed!\r\n", action[op]);
+			return -1;
+		}
+#endif
 		BT_LOGA("throughput example %s OK!\r\n", action[op]);
 	} else {
 		BT_LOGE("Input wrong parameters!!!\r\n");
@@ -2062,6 +2098,106 @@ int atcmd_bt_fuzz_test(int argc, char *argv[])
 	return ret;
 }
 #endif
+
+int hogp_ull_device_main(uint8_t enable);
+static void hogp_ull_device_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = hogp_ull_device_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
+int atcmd_bt_hogp_ull_device(int argc, char *argv[])
+{
+	(void)argc;
+	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
+	char *action[] = {"disable", "enable"};
+
+	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
+		BT_LOGE("Error: wrong value (%d) for HOGP ULL device example!\r\n", op);
+		return -1;
+	}
+
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_hogp_ull_dev_task", hogp_ull_device_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("HOGP ULL device example %s failed!\r\n", action[op]);
+		return -1;
+	}
+
+	BT_LOGA("HOGP ULL device example %s OK!\r\n", action[op]);
+	return 0;
+}
+
+int hogp_ull_report_host_main(uint8_t enable);
+static void hogp_ull_report_host_task_entry(void *param)
+{
+	bt_atcmd_demo_task_param_t *p = (bt_atcmd_demo_task_param_t *)param;
+	p->ret = hogp_ull_report_host_main(p->enable);
+	osif_sem_give(p->sem_handle);
+	osif_task_delete(NULL);
+}
+
+int atcmd_bt_hogp_ull_report_host(int argc, char *argv[])
+{
+	(void)argc;
+	uint8_t op;
+	void *task_handle = NULL;
+	void *sem_handle = NULL;
+	bt_atcmd_demo_task_param_t task_param = {0};
+	char *action[] = {"disable", "enable"};
+
+	if ((op = (uint8_t)str_to_int(argv[0])) > 1) {
+		BT_LOGE("Error: wrong value (%d) for HOGP ULL report host example!\r\n", op);
+		return -1;
+	}
+
+	if (!osif_sem_create(&sem_handle, 0, 1)) {
+		BT_LOGE("Error: create sem failed!\r\n");
+		return -1;
+	}
+	task_param.enable = op;
+	task_param.sem_handle = sem_handle;
+	if (!osif_task_create(&task_handle, "bt_hogp_ull_host_task", hogp_ull_report_host_task_entry,
+						  &task_param, BT_ATCMD_TASK_STACK_SIZE, BT_ATCMD_TASK_PRIORITY)) {
+		BT_LOGE("Error: create task failed!\r\n");
+		osif_sem_delete(sem_handle);
+		return -1;
+	}
+	osif_sem_take(sem_handle, BT_TIMEOUT_FOREVER);
+	osif_sem_delete(sem_handle);
+	if (task_param.ret != 0) {
+		BT_LOGE("HOGP ULL report host example %s failed!\r\n", action[op]);
+		return -1;
+	}
+
+	BT_LOGA("HOGP ULL report host example %s OK!\r\n", action[op]);
+	return 0;
+}
+
+int atcmd_bt_hogp_ull_cmd(int argc, char *argv[]);
+
+int atcmd_bt_hogp_ull(int argc, char *argv[])
+{
+	return atcmd_bt_hogp_ull_cmd(argc, argv);
+}
+
 static const cmd_table_t example_table[] = {
 #if defined(CONFIG_BT_AUDIO_MP_TEST) && CONFIG_BT_AUDIO_MP_TEST
 	{"bt_audio_mp_test", atcmd_bt_audio_mp_test,    2, 2},
@@ -2171,6 +2307,11 @@ static const cmd_table_t example_table[] = {
 #endif
 #if defined(CONFIG_BT_FUZZ_TEST) && CONFIG_BT_FUZZ_TEST
 	{"fuzz_test",        atcmd_bt_fuzz_test, 2, 6},
+#endif
+#if defined(CONFIG_BT_HOGP_ULL) && CONFIG_BT_HOGP_ULL
+	{"hogp_ull_device",      atcmd_bt_hogp_ull_device,      2, 2},
+	{"hogp_ull_report_host", atcmd_bt_hogp_ull_report_host,  2, 2},
+	{"hogp_ull",             atcmd_bt_hogp_ull,              2, 10},
 #endif
 	{NULL,},
 };

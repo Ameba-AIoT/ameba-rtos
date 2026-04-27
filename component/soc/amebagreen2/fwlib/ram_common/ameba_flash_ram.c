@@ -117,6 +117,7 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
  * @note  All interrupt include systick will be stopped.
  * @retval None
  */
+__weak
 void FLASH_Write_Lock(void)
 {
 	rtos_sched_suspend();
@@ -137,6 +138,7 @@ void FLASH_Write_Lock(void)
  * @note All interrupt will be restored.
  * @retval None
  */
+__weak
 void FLASH_Write_Unlock(void)
 {
 #ifdef CONFIG_ARM_CORE_CM4_KM4TZ

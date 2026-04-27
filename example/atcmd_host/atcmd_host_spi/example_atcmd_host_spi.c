@@ -50,8 +50,8 @@ u32 last_uart_count = 0;
 volatile u8 tt_mode_task_start = 0;
 u32 tt_len = 2 * 1024 * 1024;;
 
-u8 MasterRxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-u8 MasterTxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+u8 MasterRxBuf[ATCMD_SPI_DMA_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
+u8 MasterTxBuf[ATCMD_SPI_DMA_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
 
 void (*spi_recv_data_callback)(u8 *data, u16 len);
 

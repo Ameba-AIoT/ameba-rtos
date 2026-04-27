@@ -55,6 +55,7 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SET_EDCCA_PARAM, whc_event_wifi_set_edcca_param},
 	{WHC_API_WIFI_GET_EDCCA_MODE, whc_event_wifi_get_edcca_mode},
 	{WHC_API_WIFI_GET_ANTENNA_INFO, whc_event_wifi_get_ant_info},
+	{WHC_API_WIFI_SET_ANTENNA_INFO, whc_event_wifi_set_ant_info},
 #ifdef CONFIG_NAN
 	{WHC_API_NAN_INIT,	whc_event_nan_init},
 	{WHC_API_NAN_DEINIT,		whc_event_nan_deinit},
@@ -1052,6 +1053,16 @@ void whc_event_wifi_get_ant_info(u32 api_id, u32 *param_buf)
 	whc_send_api_ret_value(api_id, (u8 *)value, sizeof(value));
 }
 
+void whc_event_wifi_set_ant_info(u32 api_id, u32 *param_buf)
+{
+	int ret = 0;
+	u8 antdiv_mode = (u8)param_buf[0];
+
+	ret = wifi_set_antdiv_info(antdiv_mode);
+
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
+}
+
 void whc_event_war_offload_ctrl(u32 api_id, u32 *param_buf)
 {
 	int ret = 0;
@@ -1378,7 +1389,7 @@ void whc_dev_api_init(void)
 
 	/* Initialize the event task */
 	if (RTK_SUCCESS != rtos_task_create(&event_priv.api_dev_task, (const char *const)"whc_dev_api_task", (rtos_task_function_t)whc_dev_api_task, NULL,
-										WHC_API_STACK * 4, CONFIG_WHC_DEV_API_PRIO)) {
+										g_rtw_task_size.whc_dev_api_task, CONFIG_WHC_DEV_API_PRIO)) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Create whc_dev_api_task Err!!\n");
 	}
 }

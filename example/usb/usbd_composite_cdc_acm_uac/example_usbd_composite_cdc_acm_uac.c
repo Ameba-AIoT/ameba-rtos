@@ -84,7 +84,6 @@ static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte
 static usbd_config_t composite_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
-	.intr_use_ptx_fifo = 0U,
 #if defined (CONFIG_AMEBASMART)
 	.ext_intr_enable = USBD_EPMIS_INTR,
 	.nptx_max_epmis_cnt = 100U,
@@ -656,4 +655,3 @@ void example_usbd_composite(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create audio track fail\n");
 	}
 }
-

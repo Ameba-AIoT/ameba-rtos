@@ -64,7 +64,7 @@ ameba_list_append(private_includes
 )
 
 ameba_list_append_if(CONFIG_SDN_BT private_includes
-    ${c_COMPONENT_DIR}/sdn/platform/${c_SOC_TYPE}/intf
+    ${c_COMPONENT_DIR}/sdn/hci
 )
 
 ameba_list_append_if(CONFIG_AMEBADPLUS private_includes
