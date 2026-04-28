@@ -246,6 +246,7 @@ static void ws_server_poll(ws_conn *conn)
 
 	if ((ret = select(conn->sock + 1, &read_fds, &write_fds, NULL, &timeout))) {
 		if (FD_ISSET(conn->sock, &read_fds)) {
+
 			ret = ws_server_read(conn, &conn->rxbuf[conn->rx_len], (ws_server_rx_size - conn->rx_len) > 1500 ? 1500 : (ws_server_rx_size - conn->rx_len));
 			if (ret == 0) {
 				return;
