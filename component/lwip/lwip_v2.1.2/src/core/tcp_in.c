@@ -114,6 +114,7 @@ static void tcp_remove_sacks_gt(struct tcp_pcb *pcb, u32_t seq);
  * @param p received TCP segment to process (p->payload pointing to the TCP header)
  * @param inp network interface on which this segment was received
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 tcp_input(struct pbuf *p, struct netif *inp)
 {
@@ -596,6 +597,7 @@ dropped:
  * any more.
  * @returns 1 if the pcb has been closed and deallocated, 0 otherwise
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static int
 tcp_input_delayed_close(struct tcp_pcb *pcb)
 {
@@ -1047,6 +1049,7 @@ tcp_process(struct tcp_pcb *pcb)
  *
  * Called from tcp_receive()
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static void
 tcp_oos_insert_segment(struct tcp_seg *cseg, struct tcp_seg *next)
 {
@@ -1084,6 +1087,7 @@ tcp_oos_insert_segment(struct tcp_seg *cseg, struct tcp_seg *next)
 #endif /* TCP_QUEUE_OOSEQ */
 
 /** Remove segments from a list if the incoming ACK acknowledges them */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static struct tcp_seg *
 tcp_free_acked_segments(struct tcp_pcb *pcb, struct tcp_seg *seg_list, const char *dbg_list_name,
                         struct tcp_seg *dbg_other_seg_list)
@@ -1137,6 +1141,7 @@ tcp_free_acked_segments(struct tcp_pcb *pcb, struct tcp_seg *seg_list, const cha
  *
  * Called from tcp_process().
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static void
 tcp_receive(struct tcp_pcb *pcb)
 {
@@ -1886,6 +1891,7 @@ tcp_receive(struct tcp_pcb *pcb)
   }
 }
 
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static u8_t
 tcp_get_next_optbyte(void)
 {
@@ -1907,6 +1913,7 @@ tcp_get_next_optbyte(void)
  *
  * @param pcb the tcp_pcb for which a segment arrived
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static void
 tcp_parseopt(struct tcp_pcb *pcb)
 {

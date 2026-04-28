@@ -23,7 +23,7 @@
 /** @addtogroup Device_Core_Constants Device Core Constants
  * @{
  */
-#define USBD_TP_TRACE_DEBUG             1U  /**<This define is used to trace transfer performance */
+#define USBD_TP_TRACE_DEBUG             0U  /**<This define is used to trace transfer performance */
 
 /* USB descriptor configurations */
 #define USBD_MAX_NUM_INTERFACES			16U
@@ -89,44 +89,32 @@ struct _usbd_class_driver_t;
  */
 typedef struct {
 	u8 *xfer_buf;                             /**< Pointer to the transfer buffer. */
-	u8 *rem_xfer_buf;                         /**< Pointer to the remaining part of the transfer buffer. */
 	u32 xfer_len;                             /**< Total length of the data to transfer. */
-	u32 rem_xfer_len;                         /**< Remaining length of data to transfer (used for EP0). */
 	u32 xfer_buf_len;                         /**< Total length of the class transfer buffer. */
 	u16 mps;                                  /**< Maximum Packet Size for this endpoint (0-64KB). */
-	u8 addr;                                  /**< Endpoint address (includes direction). */
-	u8 num;                                   /**< Endpoint number (0-15). */
-	u8 type;                                  /**< Endpoint type (Control, Bulk, Isochronous, Interrupt). */
-	u8 binterval;                             /**< Polling interval for the endpoint. */
-	u8 skip_dcache_pre_clean;                 /**< Skip `DCache_Clean` in TRX API and it will be called in class. */
-	u8 skip_dcache_post_invalidate;           /**< Skip `DCache_Invalidate` when RX complete and it will be called in class. */
 	__IO u8 xfer_state;                       /**< Current state of the class transfer. */
 	__IO u8 tx_zlp;                           /**< Flag to indicate if a Zero-Length Packet should be sent. */
-	__IO u8 dis_zlp;                          /**< Flag to disable Zero-Length Packet for the current transfer. */
 	__IO u8 is_busy;                          /**< Flag indicating if the endpoint is currently busy. */
+	u8 addr;                                  /**< Endpoint address (includes direction). */
+	u8 binterval;                             /**< Polling interval for the endpoint. */
+	u8 type : 2;                              /**< Endpoint type (Control, Bulk, Isochronous, Interrupt). */
+	u8 dis_zlp : 1;                           /**< Flag to disable Zero-Length Packet for the current transfer. */
+	u8 skip_dcache_pre_clean : 1;             /**< Skip `DCache_Clean` in TRX API and it will be called in class. */
+	u8 skip_dcache_post_invalidate : 1;       /**< Skip `DCache_Invalidate` when RX complete and it will be called in class. */
 } usbd_ep_t;
 
 /**
  * @brief Defines the core driver configuration parameters for the USB device.
  */
 typedef struct {
+#ifdef CONFIG_SUPPORT_USB_SHARED_DFIFO
 	/**
 	 * @brief Threshold count of EPMis interrupts for non-periodic IN transfers.
 	 * @details If the mismatch count exceeds this value, the GINTSTS.EPMis interrupt is handled.
 	 *          This is only active if `USBD_EPMIS_INTR` is enabled (Shared FIFO mode only).
 	 */
 	u32 nptx_max_epmis_cnt;
-
-	/**
-	 * @brief Enables extra interrupts.
-	 * @details Optional USB interrupt enable flags:
-	 * - `USBD_SOF_INTR`: For SOF-based timing synchronization.
-	 * - `USBD_EOPF_INTR`: For ISOC transfers parity setting in slave mode.
-	 * - `USBD_EPMIS_INTR`: To handle endpoint mismatches in shared FIFO mode.
-	 *    For restarting IN transfers, applicable to scenarios with multiple non-periodic IN endpoints.
-	 */
-	u32 ext_intr_enable;
-
+#else
 	u16 rx_fifo_depth;                        /**< RxFIFO depth in dwords which must not exceed hardware limits(Dedicated FIFO mode only). */
 
 	/**
@@ -138,20 +126,27 @@ typedef struct {
 	 *      rx_fifo_depth + all ptx_fifo_depth[n] <= Hardware total FIFO depth
 	 */
 	u16 ptx_fifo_depth[USB_MAX_ENDPOINTS - 1];
-
+#endif
+	/**
+	 * @brief Enables extra interrupts.
+	 * @details Optional USB interrupt enable flags:
+	 * - `USBD_SOF_INTR`: For SOF-based timing synchronization.
+	 * - `USBD_EOPF_INTR`: For ISOC transfers parity setting in slave mode.
+	 * - `USBD_EPMIS_INTR`: To handle endpoint mismatches in shared FIFO mode.
+	 *    For restarting IN transfers, applicable to scenarios with multiple non-periodic IN endpoints.
+	 */
+	u16 ext_intr_enable;
+	u8 isr_priority;                          /**< Priority of the USB interrupt. */
 	/**
 	 * @brief USB device speed mode. See @ref usb_speed_type_t.
 	 * - `USB_SPEED_HIGH`: USB 2.0 High-Speed PHY (for HS-capable SoCs).
 	 * - `USB_SPEED_HIGH_IN_FULL`: USB 2.0 PHY operating in Full-Speed mode (for HS-capable SoCs with low bandwidth applcations like UAC).
 	 * - `USB_SPEED_FULL`: USB 1.1 Full-Speed transceiver (for FS-only SoCs).
 	 */
-	u8 speed;
-
-	u8 isr_priority;                          /**< Priority of the USB interrupt. */
-	u8 isr_in_critical;                       /**< Flag to process USB ISR within a critical section. */
-	u8 intr_use_ptx_fifo;                     /**< Use Periodic TxFIFO for Interrupt IN transfers (Shared TxFIFO mode only). */
-#if USBD_TP_TRACE_DEBUG
-	u8 tp_trace;                              /**< Enable/disable tracing for transfer performance. */
+	u8 speed : 2;
+	u8 isr_in_critical : 1;                       /**< Flag to process USB ISR within a critical section. */
+#ifdef CONFIG_SUPPORT_USB_SHARED_DFIFO
+	u8 intr_use_ptx_fifo : 1;                     /**< Use Periodic TxFIFO for Interrupt IN transfers (Shared TxFIFO mode only). */
 #endif
 } usbd_config_t;
 
@@ -171,22 +166,18 @@ typedef struct {
 	usbd_ep_t ep0_out;                       /**< Control endpoint 0 OUT. */
 	struct _usbd_class_driver_t *driver;     /**< Pointer to the active class driver. */
 	void *pcd;                               /**< Pointer to the low-level PCD (Platform Controller Driver) handle. */
-	u32 ep0_out_intr;                        /**< Previous interrupt status for EP0 OUT. */
-	u16 ep0_data_len;                        /**< Data length for the current EP0 transfer. */
-	u8 ep0_state;                            /**< Current state of the EP0 state machine. */
-	u8 ep0_old_state;                        /**< Previous state of the EP0 state machine. */
+	__IO u8 is_ready;                        /**< Device ready or not, 0-disabled, 1-enabled */
+	__IO u8 is_connected;                    /**< Device connected or not,0-disabled, 1-enabled */
 	u8 dev_config;                           /**< Current device configuration index. */
-	u8 dev_speed;                            /**< Current device speed. See @ref usb_speed_type_t. */
-	u8 dev_state;                            /**< Current device state. See @ref usbd_state_t. */
-	u8 dev_old_state;                        /**< Previous device state. */
-	u8 dev_attach_status;                    /**< Current device attach status. See @ref usbd_attach_status_t. */
-	u8 dev_old_attach_status;                /**< Previous device attach status. */
 	u8 test_mode;                            /**< Flag indicating if the device is in a test mode. */
-	u8 self_powered;                         /**< Power source status: 0 for bus-powered, 1 for self-powered. */
-	u8 remote_wakeup_en;                     /**< Remote wakeup enable or not, 0-disabled, 1-enabled */
-	u8 remote_wakeup;                        /**< Remote wakeup flag. */
-	u8 is_ready;                             /**< Device ready or not, 0-disabled, 1-enabled */
-	u8 is_connected;                         /**< Device connected or not,0-disabled, 1-enabled */
+	u8 dev_state : 3;                        /**< Current device state. See @ref usbd_state_t. */
+	u8 dev_old_state : 3;                    /**< Previous device state. See @ref usbd_state_t. */
+	u8 dev_attach_status : 2;                /**< Current device attach status. See @ref usbd_attach_status_t. */
+	u8 dev_old_attach_status : 2;            /**< Previous device attach status. See @ref usbd_attach_status_t. */
+	u8 dev_speed : 2;                        /**< Current device speed. See @ref usb_speed_type_t. */
+	u8 self_powered : 1;                     /**< Power source status: 0 for bus-powered, 1 for self-powered. */
+	u8 remote_wakeup_en : 1;                 /**< Remote wakeup enable or not, 0-disabled, 1-enabled */
+	u8 remote_wakeup : 1;                    /**< Remote wakeup flag. */
 } usb_dev_t;
 
 /**

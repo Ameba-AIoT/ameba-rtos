@@ -87,7 +87,6 @@ void pmu_register_sleep_callback(uint32_t nDeviceId, PSM_HOOK_FUN sleep_hook_fun
 	assert_param((sleep_hook_fun != NULL) || (wakeup_hook_fun != NULL));
 
 	pPsmDdHookInfo = &gPsmDdHookInfo[nDeviceId];
-	pPsmDdHookInfo->nDeviceId			= nDeviceId;
 	pPsmDdHookInfo->sleep_hook_fun		= sleep_hook_fun;
 	pPsmDdHookInfo->sleep_param_ptr		= sleep_param_ptr;
 	pPsmDdHookInfo->wakeup_hook_fun		= wakeup_hook_fun;

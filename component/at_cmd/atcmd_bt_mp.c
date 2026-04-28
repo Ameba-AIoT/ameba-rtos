@@ -112,6 +112,10 @@ void sdn_send_to_loguart(uint8_t type, uint8_t *data, uint16_t len)
 }
 #endif
 
+#if (defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1))
+static void *UartBkFunc = NULL;
+#endif
+
 static void bt_uart_bridge_close(void)
 {
 #if ((defined(CONFIG_AMEBALITE) && (CONFIG_AMEBALITE == 1)) \
@@ -159,15 +163,34 @@ static void bt_uart_bridge_close(void)
 	ConfigDebugClose = 0;
 
 #elif defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1)
-	// todo
+	u32 TempVal;
+
+	LOGUART_WaitTxComplete();
+	/*restore the Baud register value*/
+	LOGUART_SetBaud(LOGUART_DEV, LOGUART_BAUDRATE);
+
+	SYSON_TypeDef *SYSON = (SYSON_TypeDef *)SYSON_BASE;
+	TempVal = SYSON->PON_BT_CTRL;
+	TempVal &= ~(SYSON_BIT_FORCE_LOGUART_USE_LOGUART_PAD);
+	SYSON->PON_BT_CTRL = TempVal;
+
+	AON_TypeDef *AON = (AON_TypeDef *)AON_BASE;
+	TempVal = AON->AON_WL_CTRL;
+	TempVal &= ~(AON_BIT_WL_USE_REQ);
+	AON->AON_WL_CTRL = TempVal;
+
+	/* NP restore shell loguart irq func */
+	UserIrqFunTable[LOG_UART_IRQ] = (IRQ_FUN)UartBkFunc;
+
 #else /* not (CONFIG_AMEBALITE or CONFIG_AMEBASMART) */
 
 	LOGUART_WaitTxComplete();
 	/*restore the Baud register value*/
 	LOGUART_SetBaud(LOGUART_DEV, LOGUART_BAUDRATE);
 	LOGUART_INT_AP2NP();
-
-#if !(defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
+#else
 	u32 TempVal;
 	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0);
 	TempVal &= ~(LSYS_BIT_FORCE_LOGUART_USE_LOGUART_PAD_B | LSYS_BIT_WL_USE_REQ);
@@ -232,11 +255,6 @@ static u32 bt_uart_bridge_irq(void *data)
 	uint32_t reg_lsr = LOGUART_GetStatus(LOGUART_DEV);
 
 	/* when rx FIFO not empty */
-#if (defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1))
-	// todo
-	(void)reg_lsr;
-	bt_uart_bridge_close_pattern(rc);
-#else
 	if ((reg_lsr & LOGUART_BIT_RXFIFO_INT) || (reg_lsr & LOGUART_BIT_TIMEOUT_INT)) {
 		while (LOGUART_Readable()) {
 			rc = LOGUART_GetChar(FALSE);
@@ -261,7 +279,6 @@ static u32 bt_uart_bridge_irq(void *data)
 		LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ELSI, DISABLE);
 		LOGUART_INTClear(LOGUART_DEV, LOGUART_BIT_RLSICF);
 	}
-#endif
 	return 0;
 }
 
@@ -312,13 +329,37 @@ void bt_uart_bridge_open(void)
 	irq_enable(UART_LOG_IRQ);
 
 #elif defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1)
-	// todo
-	bt_uart_bridge_irq(NULL);
+	u32 TempVal;
+
+	LOGUART_WaitTxComplete();
+
+	SYSON_TypeDef *SYSON = (SYSON_TypeDef *)SYSON_BASE;
+	TempVal = SYSON->PON_BT_CTRL;
+	TempVal |= (SYSON_BIT_FORCE_LOGUART_USE_LOGUART_PAD);
+	SYSON->PON_BT_CTRL = TempVal;
+
+	AON_TypeDef *AON = (AON_TypeDef *)AON_BASE;
+	TempVal = AON->AON_WL_CTRL;
+	TempVal |= (AON_BIT_WL_USE_REQ);
+	AON->AON_WL_CTRL = TempVal;
+
+	/*set Baud*/
+	LOGUART_SetBaud(LOGUART_DEV, HCI_UART_BAUDRATE);
+
+	/* NP backup shell loguart irq func */
+	UartBkFunc = (void *)UserIrqFunTable[LOG_UART_IRQ];
+
+	/* Register Log Uart Callback function */
+	irq_register((IRQ_FUN)bt_uart_bridge_irq, LOG_UART_IRQ, (uint32_t)NULL, INT_PRI4);
+	irq_enable(LOG_UART_IRQ);
+
 #else /* not (CONFIG_AMEBALITE or CONFIG_AMEBASMART) */
 
 	LOGUART_WaitTxComplete();
 
-#if !(defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, DISABLE);
+#else
 	u32 TempVal;
 	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0);
 	TempVal |= (LSYS_BIT_FORCE_LOGUART_USE_LOGUART_PAD_B | LSYS_BIT_WL_USE_REQ);

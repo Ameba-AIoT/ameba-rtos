@@ -2,8 +2,10 @@
 /*
  * < CONFIG IC
  */
+#ifndef CONFIG_WHC_HCI_IPC
 #define CONFIG_AMEBADPLUS 1
 #undef CONFIG_AMEBAGREEN2
 #undef CONFIG_AMEBALITE
 #define CALCULATE_FREE_TXBD 1
 #undef GREEN2_WA
+#endif

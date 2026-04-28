@@ -1014,13 +1014,19 @@ uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 	uint8_t *pucAlignedHeap;
 	size_t xAddress, xEndAddress;
 	size_t xTotalRegionSize, xCurBlockSize;
+	BaseType_t xIsISR = CPU_InInterrupt();
+	UBaseType_t uxSavedInterruptStatus = 0;
 
 	/* Count from the first heap region */
 	const HeapRegion_t *pxHeapRegion;
 	BaseType_t xDefinedRegions = 0;
 	pxHeapRegion = &(xHeapRegions[ xDefinedRegions ]);
 
-	vTaskSuspendAll();
+	if (xIsISR) {
+		uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
+	} else {
+		vTaskSuspendAll();
+	}
 
 	while (pxHeapRegion->xSizeInBytes > 0) {
 		/* Check the last block of the previous region. */
@@ -1122,7 +1128,11 @@ uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 		pxHeapRegion = &(xHeapRegions[ xDefinedRegions ]);
 	}
 
-	(void) xTaskResumeAll();
+	if (xIsISR) {
+		taskEXIT_CRITICAL_FROM_ISR(uxSavedInterruptStatus);
+	} else {
+		(void) xTaskResumeAll();
+	}
 
 	if (pxBlockToCheck != pxEnd) {
 		configASSERT(pdFAIL);

@@ -71,7 +71,6 @@ static u16 cdc_acm_ctrl_line_state;
 static usbd_config_t cdc_acm_cfg = {
 	.speed = CONFIG_USBD_CDC_ACM_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
-	.intr_use_ptx_fifo  = 0U,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
 	.ext_intr_enable = USBD_EPMIS_INTR,
@@ -289,7 +288,7 @@ static void cdc_acm_hotplug_thread(void *param)
 				if (ret != 0) {
 					break;
 				}
-				ret = usbd_cdc_acm_init(CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE, CONFIG_CDC_ACM_BULK_IN_XFER_SIZE, &cdc_acm_cb);
+				ret = usbd_cdc_acm_init(CONFIG_USBD_CDC_ACM_BULK_OUT_XFER_SIZE, CONFIG_USBD_CDC_ACM_BULK_IN_XFER_SIZE, &cdc_acm_cb);
 				if (ret != 0) {
 					usbd_deinit();
 					break;
@@ -450,4 +449,3 @@ void example_usbd_cdc_acm(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD CDC ACM thread fail\n");
 	}
 }
-

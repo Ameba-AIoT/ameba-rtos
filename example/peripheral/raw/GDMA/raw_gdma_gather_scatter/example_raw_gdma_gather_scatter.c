@@ -41,8 +41,8 @@ u32 gdma_source_gather_irq(void *data)
 {
 	GDMA_InitTypeDef *p_gdma_init = (GDMA_InitTypeDef *)data;
 
-	/* Write the cached value back to memory */
-	DCache_Clean((u32)gather_dst_buf, sizeof(gather_dst_buf));
+	/* Invalidate the cache to read the updated data from memory (written by DMA) */
+	DCache_Invalidate((u32)gather_dst_buf, sizeof(gather_dst_buf));
 
 	if (TransferType & GDMA_ClearINT(0, p_gdma_init->GDMA_ChNum)) {
 		GDMA_ChnlFree(p_gdma_init->GDMA_Index, p_gdma_init->GDMA_ChNum);
@@ -57,8 +57,8 @@ u32 gdma_dest_scatter_irq(void *data)
 {
 	GDMA_InitTypeDef *p_gdma_init = (GDMA_InitTypeDef *)data;
 
-	/* Write the cached value back to memory */
-	DCache_Clean((u32)scatter_dst_buf, sizeof(scatter_dst_buf));
+	/* Invalidate the cache to read the updated data from memory (written by DMA) */
+	DCache_Invalidate((u32)scatter_dst_buf, sizeof(scatter_dst_buf));
 
 	if (TransferType & GDMA_ClearINT(0, p_gdma_init->GDMA_ChNum)) {
 		GDMA_ChnlFree(p_gdma_init->GDMA_Index, p_gdma_init->GDMA_ChNum);
@@ -101,7 +101,7 @@ void gdma_source_gather_task(void)
 
 	gdma_init_struct.GDMA_SrcAddr = (u32)gather_src_buf;
 	gdma_init_struct.GDMA_DstAddr = (u32)gather_dst_buf;
-	gdma_init_struct.GDMA_BlockSize = (sizeof(gather_src_buf) >> gdma_init_struct.GDMA_SrcDataWidth);
+	gdma_init_struct.GDMA_BlockSize = (sizeof(gather_src_buf) / 2 >> gdma_init_struct.GDMA_SrcDataWidth);
 
 	GDMA_Init(gdma_init_struct.GDMA_Index, gdma_init_struct.GDMA_ChNum, &gdma_init_struct);
 

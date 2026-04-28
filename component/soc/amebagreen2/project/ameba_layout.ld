@@ -205,3 +205,8 @@ __km4tz_bd_ram_start__ = ORIGIN(KM4TZ_BD_RAM) - 0x20;
 /*PSRAM Layout boundary*/
 __km4tz_bd_psram_start__ = ORIGIN(KM4TZ_BD_PSRAM) - 0x20;
 __non_secure_psram_end__ = PSRAM_END;
+
+/* code analyse used */
+__img1_sram_start__ = ORIGIN(KM4TZ_BOOTLOADER_RAM_S) - SECURE_ADDR_OFFSET - IMAGE_HEADER_LEN;
+__img1_sram_size__ = LENGTH(KM4TZ_BOOTLOADER_RAM_S) + IMAGE_HEADER_LEN;
+__img3_sram_size__ = RAM_TZ_NSC_SIZE + RAM_TZ_ENTRY_SIZE + RAM_KM4TZ_IMG3_SIZE;

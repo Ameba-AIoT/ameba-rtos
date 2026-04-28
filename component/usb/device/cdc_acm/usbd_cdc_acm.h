@@ -29,7 +29,9 @@
 #define CONFIG_CDC_ACM_NOTIFY                     1     /**< Enable/Disable notification feature. */
 #endif
 
+#if CONFIG_CDC_ACM_NOTIFY
 #define CONFIG_CDC_ACM_NOTIFY_LOOP_TEST           0     /**< Enable notification loopback test mode. */
+#endif
 
 #define CONFIG_CDC_ACM_BULK_TX_SKIP_MEMCPY        1     /**< Skip memcpy BULK IN DATA from application in class */
 
@@ -147,7 +149,7 @@ typedef struct {
 	usbd_ep_t ep_intr_in;       /**< INTERRUPT IN endpoint structure. */
 	usb_dev_t *dev;             /**< Pointer to the USB device instance. */
 	usbd_cdc_acm_cb_t *cb;      /**< Pointer to the user-defined callback structure. */
-#if CONFIG_CDC_ACM_NOTIFY
+#if defined(CONFIG_CDC_ACM_NOTIFY_LOOP_TEST) && (CONFIG_CDC_ACM_NOTIFY_LOOP_TEST == 1)
 	u16 intr_notify_idx;        /**< Index for managing interrupt notifications. */
 #endif
 } usbd_cdc_acm_dev_t;

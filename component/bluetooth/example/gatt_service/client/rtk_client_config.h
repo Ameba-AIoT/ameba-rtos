@@ -20,6 +20,9 @@ extern "C"  {
 #define TRANSFER_MODULE_CLIENT_PROFILE_ID   6
 #define BLE_OTA_CLIENT_PROFILE_ID           7
 #define BLE_WIFIMATE_CLIENT_PROFILE_ID      8
+#define HID_ISO_CLIENT_PROFILE_ID           9   /* HID ISO Client */
+#define HIDS_GP_CLIENT_PROFILE_ID           10  /* HIDS Gamepad Client */
+#define SCAN_PARAM_CLIENT_PROFILE_ID        11  /* Scan Parameters Client */
 
 
 typedef enum {

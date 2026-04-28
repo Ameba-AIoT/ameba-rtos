@@ -17,13 +17,13 @@ Support up to 8*8 keyboard, and this example hardware connection is as follows:
 | Row 7 | PA 24 | Col 7 | PB 2  |
 | Row 8 | PB 7  | Col 8 | PB 3  |
 
-# SW configuration
+# SW Configuration
 
 Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 
 key press will generate interrupt, any key press event is stored in the key event FIFO until it is released.
 
@@ -33,4 +33,4 @@ Since the PA 30 and PA 31 pins are used for SWD, they need to be turned off befo
 
 # Supported IC
 
- RTL8721Dx
+RTL8721Dx

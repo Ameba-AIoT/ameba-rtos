@@ -277,6 +277,17 @@ static inline int os_memcmp_const(const void *a, const void *b, size_t len)
 	return res;
 }
 
+/**
+ * os_memdup - Allocate duplicate of passed memory chunk
+ * @src: Source buffer to duplicate
+ * @len: Length of source buffer
+ * Returns: %NULL if allocation failed, copy of src buffer otherwise
+ *
+ * This function allocates a memory block like os_malloc() would, and
+ * copies the given source buffer into it.
+ */
+void *os_memdup(const void *src, size_t len);
+
 /*
  * The following functions are wrapper for standard ANSI C or POSIX functions.
  * By default, they are just defined to use the standard function name and no
@@ -597,6 +608,18 @@ static inline void *os_realloc_array(void *ptr, size_t nmemb, size_t size)
 		return os_realloc(ptr, nmemb * size, nmemb * size);
 	}
 }
+
+/**
+ * os_strlcpy - Copy a string with size bound and NUL-termination
+ * @dest: Destination
+ * @src: Source
+ * @siz: Size of the target buffer
+ * Returns: Total length of the target string (length of src) (not including
+ * NUL-termination)
+ *
+ * This function matches in behavior with the strlcpy(3) function in OpenBSD.
+ */
+size_t os_strlcpy(char *dest, const char *src, size_t siz);
 
 void *os_xqueue_create(unsigned long uxQueueLength, unsigned long uxItemSize) ;
 

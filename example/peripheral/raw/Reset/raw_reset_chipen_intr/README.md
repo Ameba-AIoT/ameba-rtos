@@ -4,7 +4,7 @@ This example shows how to use chipen interrupt mode to wakeup system.
 
 # HW Configuration
 
-After the system boots, press and hold the `CHIP_EN` button for a duration longer than:  
+After the system boots, press and hold the `CHIP_EN` button for a duration longer than:
 `DEBOUNCE_TIME + SHORTPRESS_TIME + LONGPRESS_TIME`.
 
 # SW Configuration

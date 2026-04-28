@@ -923,6 +923,7 @@ lwip_listen(int s, int backlog)
  * until "len" bytes are received or we're otherwise done.
  * Keeps sock->lastdata for peeking or partly copying.
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static ssize_t
 lwip_recv_tcp(struct lwip_sock *sock, void *mem, size_t len, int flags)
 {
@@ -1026,6 +1027,7 @@ lwip_recv_tcp_done:
 #endif
 
 /* Convert a netbuf's address data to struct sockaddr */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static int
 lwip_sock_make_addr(struct netconn *conn, ip_addr_t *fromaddr, u16_t port,
                     struct sockaddr *from, socklen_t *fromlen)
@@ -1093,6 +1095,7 @@ lwip_recv_tcp_from(struct lwip_sock *sock, struct sockaddr *from, socklen_t *fro
 /* Helper function to receive a netbuf from a udp or raw netconn.
  * Keeps sock->lastdata for peeking.
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static err_t
 lwip_recvfrom_udp_raw(struct lwip_sock *sock, int flags, struct msghdr *msg, u16_t *datagram_len, int dbg_s)
 {
@@ -1204,6 +1207,7 @@ lwip_recvfrom_udp_raw(struct lwip_sock *sock, int flags, struct msghdr *msg, u16
   return ERR_OK;
 }
 
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 ssize_t
 lwip_recvfrom(int s, void *mem, size_t len, int flags,
               struct sockaddr *from, socklen_t *fromlen)
@@ -1257,6 +1261,7 @@ lwip_recvfrom(int s, void *mem, size_t len, int flags,
   return ret;
 }
 
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 ssize_t
 lwip_read(int s, void *mem, size_t len)
 {
@@ -1280,6 +1285,7 @@ lwip_readv(int s, const struct iovec *iov, int iovcnt)
   return lwip_recvmsg(s, &msg, 0);
 }
 
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 ssize_t
 lwip_recv(int s, void *mem, size_t len, int flags)
 {
@@ -1387,6 +1393,7 @@ lwip_recvmsg(int s, struct msghdr *message, int flags)
 #endif /* LWIP_UDP || LWIP_RAW */
 }
 
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 ssize_t
 lwip_send(int s, const void *data, size_t size, int flags)
 {
@@ -1590,6 +1597,7 @@ sendmsg_emsgsize:
 #endif /* LWIP_UDP || LWIP_RAW */
 }
 
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 ssize_t
 lwip_sendto(int s, const void *data, size_t size, int flags,
             const struct sockaddr *to, socklen_t tolen)
@@ -1750,6 +1758,7 @@ lwip_socket(int domain, int type, int protocol)
   return i;
 }
 
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 ssize_t
 lwip_write(int s, const void *data, size_t size)
 {
@@ -1839,6 +1848,7 @@ lwip_unlink_select_cb(struct lwip_select_cb *select_cb)
  * @param exceptset_out set os sockets that had error events
  * @return number of sockets that had events (read/write/exception) (>= 0)
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static int
 lwip_selscan(int maxfdp1, fd_set *readset_in, fd_set *writeset_in, fd_set *exceptset_in,
              fd_set *readset_out, fd_set *writeset_out, fd_set *exceptset_out)
@@ -1911,6 +1921,7 @@ lwip_selscan(int maxfdp1, fd_set *readset_in, fd_set *writeset_in, fd_set *excep
  * All sockets are marked (and later unmarked), whether they are open or not.
  * This is OK as lwip_selscan aborts select when non-open sockets are found.
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static void
 lwip_select_inc_sockets_used_set(int maxfdp, fd_set *fdset, fd_set *used_sockets)
 {
@@ -1948,6 +1959,7 @@ lwip_select_inc_sockets_used(int maxfdp, fd_set *fdset1, fd_set *fdset2, fd_set 
 }
 
 /* Let go all sockets that were marked as used when starting select */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static void
 lwip_select_dec_sockets_used(int maxfdp, fd_set *used_sockets)
 {
@@ -2481,6 +2493,7 @@ lwip_poll_should_wake(const struct lwip_select_cb *scb, int fd, int has_recveven
  *   NETCONN_EVT_ERROR
  * This requirement will be asserted in select_check_waiters()
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static void
 event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len)
 {
@@ -2704,6 +2717,7 @@ lwip_shutdown(int s, int how)
   return (err == ERR_OK ? 0 : -1);
 }
 
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static int
 lwip_getaddrname(int s, struct sockaddr *name, socklen_t *namelen, u8_t local)
 {

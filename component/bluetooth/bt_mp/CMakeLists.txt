@@ -47,7 +47,7 @@ ameba_list_append(private_sources
 ameba_list_append_if(CONFIG_AMEBADPLUS private_sources
 	bt_fast_mp/bt_fast_mp_api.c
 	bt_fast_mp/bt_fast_mp_common.c
-	bt_fast_mp/bt_fast_mp_dplus.c
+	bt_fast_mp/bt_fast_mp_amebadplus.c
 	bt_fast_mp/hci_if_dtm.c
 )
 
@@ -64,7 +64,7 @@ ameba_list_append(private_includes
 )
 
 ameba_list_append_if(CONFIG_SDN_BT private_includes
-    ${c_COMPONENT_DIR}/sdn/platform/${c_SOC_TYPE}/intf
+    ${c_COMPONENT_DIR}/sdn/hci
 )
 
 ameba_list_append_if(CONFIG_AMEBADPLUS private_includes

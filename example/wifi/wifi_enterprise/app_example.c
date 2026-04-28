@@ -8,6 +8,7 @@
 void app_example(void)
 {
 	example_eap("tls");
-	//example_eap("peap");
-	//example_eap("ttls");
+	// example_eap("peap");
+	// example_eap("ttls");
+	// example_eap("fast");
 }

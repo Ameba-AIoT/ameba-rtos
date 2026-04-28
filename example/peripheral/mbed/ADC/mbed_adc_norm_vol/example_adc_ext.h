@@ -23,6 +23,9 @@
 #elif defined (CONFIG_AMEBAGREEN2)
 #define ADC_PIN1	AD_1
 #define ADC_PIN2	AD_2
+#elif defined (CONFIG_RTL8720F)
+#define ADC_PIN1	AD_0
+#define ADC_PIN2	AD_1
 #endif
 
 extern int example_mbed_adc_norm_vol(void);

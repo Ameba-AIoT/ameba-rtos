@@ -209,6 +209,7 @@ udp_input_local_match(struct udp_pcb *pcb, struct netif *inp, u8_t broadcast)
  * @param inp network interface on which the datagram was received.
  *
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 udp_input(struct pbuf *p, struct netif *inp)
 {
@@ -482,6 +483,7 @@ chkerr:
  *
  * @see udp_disconnect() udp_sendto()
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 udp_send(struct udp_pcb *pcb, struct pbuf *p)
 {
@@ -535,6 +537,7 @@ udp_send_chksum(struct udp_pcb *pcb, struct pbuf *p,
  *
  * @see udp_disconnect() udp_send()
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 udp_sendto(struct udp_pcb *pcb, struct pbuf *p,
            const ip_addr_t *dst_ip, u16_t dst_port)
@@ -639,6 +642,7 @@ udp_sendto_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_ip,
  *
  * @see udp_disconnect() udp_send()
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 udp_sendto_if(struct udp_pcb *pcb, struct pbuf *p,
               const ip_addr_t *dst_ip, u16_t dst_port, struct netif *netif)
@@ -714,6 +718,7 @@ udp_sendto_if_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_i
 
 /** @ingroup udp_raw
  * Same as @ref udp_sendto_if, but with source address */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 udp_sendto_if_src(struct udp_pcb *pcb, struct pbuf *p,
                   const ip_addr_t *dst_ip, u16_t dst_port, struct netif *netif, const ip_addr_t *src_ip)
@@ -1141,6 +1146,7 @@ udp_connect(struct udp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port)
  *
  * @param pcb the udp pcb to disconnect.
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 udp_disconnect(struct udp_pcb *pcb)
 {
@@ -1173,6 +1179,7 @@ udp_disconnect(struct udp_pcb *pcb)
  * @param recv function pointer of the callback function
  * @param recv_arg additional argument to pass to the callback function
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 udp_recv(struct udp_pcb *pcb, udp_recv_fn recv, void *recv_arg)
 {

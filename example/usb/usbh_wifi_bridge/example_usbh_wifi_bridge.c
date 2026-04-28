@@ -61,6 +61,7 @@ static usbh_config_t usbh_ecm_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = 0, //USBH_SOF_INTR
 	.isr_priority = USBH_ECM_ISR_PRIORITY,
+	.main_task_stack_size = 1280U,
 	.main_task_priority = USBH_ECM_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.hub_support = 1U,
@@ -482,6 +483,11 @@ static void ecm_hotplug_thread(void *param)
 #endif
 
 /* Exported functions --------------------------------------------------------*/
+int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
+{
+	return usbh_cdc_ecm_send_data(buf, len, block);
+}
+
 void example_usbh_wifi_bridge(void)
 {
 	int status;

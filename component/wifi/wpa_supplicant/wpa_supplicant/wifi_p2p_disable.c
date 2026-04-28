@@ -2,8 +2,9 @@
 #include "platform_autoconf.h"
 
 #ifndef CONFIG_WIFI_P2P_ENABLE
-u8 wifi_p2p_check_go(void)
+u8 wifi_p2p_check_role(u8 role)
 {
+	UNUSED(role);
 	return 0;
 }
 

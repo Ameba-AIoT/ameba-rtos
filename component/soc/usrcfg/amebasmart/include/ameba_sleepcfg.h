@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-extern struct WakeEvent_TypeDef sleep_wevent_config[];
+extern const struct WakeEvent_TypeDef sleep_wevent_config[];
 
 extern struct PSCFG_TypeDef ps_config;
 extern UARTCFG_TypeDef uart_config[];

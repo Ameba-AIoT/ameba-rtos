@@ -44,7 +44,7 @@
 Refer the README of example `raw_spi_dma_sblk_tx_mstr` to build master image and download into another EVB board.
 4. Reset Slave device first and then Master device.
 
-# SW configuration
+# SW Configuration
 
 - Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -53,7 +53,7 @@ Refer the README of example `raw_spi_dma_sblk_tx_mstr` to build master image and
   you can also modify pinmux group settings according to correct pinmux table.
 - For example, if you want to modify pinmux group setting in RTL8730E, then you should refer to `UM0602_RTL8730E_pinmux.xls`
 
-# Expect result
+# Expected Result
 
 1. After example finishes, SPI slave will print out "SPI rx Demo finished"
 2. If SPI master is selected as mentioned by step2(3), then "SPI RX test: OK!" will be shown after data received match sent.

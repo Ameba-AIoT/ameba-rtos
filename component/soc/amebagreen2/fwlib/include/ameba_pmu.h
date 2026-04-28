@@ -37,7 +37,6 @@ typedef uint32_t (*PSM_HOOK_FUN)(uint32_t, void *param_ptr);
 #define PMU_DEVICE_TIMER_MAX_INTERVAL		(1000*30) /* max 30sec */
 
 typedef struct {
-	uint32_t			nDeviceId;
 	PSM_HOOK_FUN		sleep_hook_fun;
 	void				*sleep_param_ptr;
 	PSM_HOOK_FUN		wakeup_hook_fun;

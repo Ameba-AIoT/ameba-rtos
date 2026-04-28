@@ -588,7 +588,6 @@ int usbd_inic_transmit_ctrl_data(u8 *buf, u16 len)
 	if (len > ep0_in->xfer_buf_len) {
 		len = ep0_in->xfer_buf_len;
 	}
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "CTRL TX len=%d\n", len);
 	usb_os_memcpy((void *)ep0_in->xfer_buf, (void *)buf, len);
 	ep0_in->xfer_len = len;
 	usbd_ep_transmit(dev, ep0_in);
@@ -605,7 +604,7 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 	usbd_ep_t *ep;
 
 	if (USB_EP_IS_OUT(ep_addr) || (num >= USB_MAX_ENDPOINTS)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid IN EP num: 0x%02x\n", ep_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP 0x%02x\n", ep_addr);
 		return HAL_ERR_PARA;
 	}
 
@@ -616,7 +615,6 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 	ep = &idev->in_ep[num].ep;
 
 	if (ep->xfer_state == USBD_INIC_EP_STATE_IDLE) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "EP%02x TX len=%d data=%d\n", num, len, buf[0]);
 		ep->xfer_state = USBD_INIC_EP_STATE_BUSY;
 		idev->in_ep[num].userdata = userdata;
 		ep->xfer_buf = buf; /*Application should free this txbuf only afer TX DONE*/
@@ -631,7 +629,7 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 		}
 		ret = usbd_ep_transmit(idev->dev, ep);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX len=%d data=%d: BUSY\n", num, len, buf[0]);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX BUSY\n", ep_addr);
 		ret = HAL_BUSY;
 	}
 
@@ -670,4 +668,3 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 	}
 	return usbd_ep_receive(idev->dev, ep);
 }
-

@@ -9,7 +9,7 @@ Connect the rx pin to another board's tx pin (as defined in the header file of t
 - The relevant header file can be found in the directory:
   `example/peripheral/{mebd|raw}/{peripheral_name}/{example_folder_name}/`
 
-# SW configuration
+# SW Configuration
 
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -39,7 +39,7 @@ Connect the rx pin to another board's tx pin (as defined in the header file of t
      - `NEC_EncodePacket`: encode the space symbol of IR waveform data with carrier symbol data
      - `NEC_DecodePacket`: decode the received IR waveform with carrier symbol to space symbol
 
-# Expect result
+# Expected Result
 
 This example will print out data received.
 

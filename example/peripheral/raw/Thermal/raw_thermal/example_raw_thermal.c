@@ -2,13 +2,19 @@
 #include "os_wrapper.h"
 #include <stdio.h>
 
-#define TEMP_DECIMAL_OUT(x)		((u32)((x) & 0x000003FF))
+#if defined(CONFIG_RTL8720F)
+#define TM_BIT_ISR_TM_LOW_WT ADC_BIT_IT_TM_LOW_WT_STS
+#define TM_BIT_ISR_TM_HIGH_WT ADC_BIT_IT_TM_HIGH_WT_STS
+#define THERMAL_IRQ ADC_IRQ
+#endif
 
 void TM_Display_Result(u32 Data)
 {
 	char s;
 	u8 integer = 0;
 	u16 decimal = 0;
+
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBALITE) || defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
 	u32 temp = 0;
 
 	if (Data >= 0x40000) {
@@ -21,9 +27,21 @@ void TM_Display_Result(u32 Data)
 		integer = (int)(Data >> 10);
 		decimal = (int)(TEMP_DECIMAL_OUT(Data) * 10000 >> 10);
 	}
-	printf("Temperature: %c%d.%4d\n", s, integer, decimal);
-}
+#elif defined(CONFIG_RTL8720F)
+	float Cdegree = 0.4964f * Data - 292.3;
 
+	if (Cdegree >= 0) {
+		s = '+';
+		integer = (int)(Cdegree);
+		decimal = (int)((Cdegree - integer) * 10000);
+	} else {
+		s = '-';
+		integer = (int)(abs(Cdegree));
+		decimal = (int)((abs(Cdegree) - integer) * 10000);
+	}
+#endif
+	printf("Temperature: %c%d.%4d C\n", s, integer, decimal);
+}
 
 u32 TMIrqHandler(void *Data)
 {
@@ -40,14 +58,13 @@ u32 TMIrqHandler(void *Data)
 	}
 
 	value = TM_GetTempResult();
+	/* note: %f cannot be printed in irq handler */
 	TM_Display_Result(value);
 
 	TM_INTClearPendingBits(status);
 
 	return 0;
-
 }
-
 
 _OPTIMIZE_NONE_
 void raw_thermal_task(void)
@@ -60,12 +77,20 @@ void raw_thermal_task(void)
 	TM_InitTypeDef TM_InitStruct;
 
 	TM_StructInit(&TM_InitStruct);
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBALITE) || defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
 	TM_InitStruct.TM_DownSampRate = 2;
 	TM_InitStruct.TM_AdcClkDiv = 1;
-	TM_InitStruct.TM_HighProtectThreshold = 125;
-	TM_InitStruct.TM_HighWarnThreshold = 35;
-	TM_InitStruct.TM_LowWarnThreshold = 30;
+	TM_InitStruct.TM_HighProtectThreshold = 125; // 125 Celsius
+	TM_InitStruct.TM_HighWarnThreshold = 50;	 // 50 Celsius
+	TM_InitStruct.TM_LowWarnThreshold = 20;		 // 20 Celsius
 	TM_InitStruct.TM_TimePeriod = 15;
+#elif defined(CONFIG_RTL8720F)
+	TM_InitStruct.TM_HighProtectThreshold = 841; // 125 Celsius
+	TM_InitStruct.TM_HighWarnThreshold = 690;	 // 50 Celsius
+	TM_InitStruct.TM_LowWarnThreshold = 630;	 // 20 Celsius
+	TM_InitStruct.TM_TimePeriod = 0x8;			 // N * 0.65s = 5.2s
+#endif
+
 	TM_Init(&TM_InitStruct);
 
 	InterruptRegister((IRQ_FUN)TMIrqHandler, THERMAL_IRQ, NULL, 5);
@@ -82,7 +107,6 @@ void raw_thermal_task(void)
 	printf("Temperature = %4f F\n", tm);
 
 	while (1);
-
 }
 
 int example_raw_thermal(void)
@@ -95,5 +119,3 @@ int example_raw_thermal(void)
 
 	return 0;
 }
-
-

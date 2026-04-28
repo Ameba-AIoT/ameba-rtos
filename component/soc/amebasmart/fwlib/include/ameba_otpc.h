@@ -421,6 +421,10 @@ extern int OTP_LogicalWrite(u32 addr, u32 cnts, u8 *data);
 extern u32 OTP_LogicalGetRemain(void);
 extern u32 OTPGetCRC(void);
 extern int OTP_SetCRC(void);
+extern int OTP_WritePhyBuf(u32 addr, const u8 *data, u32 len);
+extern int OTP_ClearPhyBit(u32 addr, u8 bit);
+extern int OTP_SetLogBit(u32 addr, u8 bit, u8 val);
+
 #ifdef __cplusplus
 }
 #endif

@@ -397,6 +397,16 @@ s32 wifi_get_txbuf_pkt_num(s32 *pkt_num);
 s32 wifi_get_antdiv_info(u8 *antdiv_mode, u8 *curr_ant);
 
 /**
+ * @brief  Set antenna diversity infomation.
+ * @param[in]  antdiv_mode: value of antenna diversity mode.
+ *                           Values: @ref RTW_ANTDIV_AUTO, @ref RTW_ANTDIV_FIX_MAIN, etc.
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ *    - @ref RTK_FAIL : CONFIG_WIFI_ANTDIV is not defined.
+ */
+s32 wifi_set_antdiv_info(u8 antdiv_mode);
+
+/**
  * @brief Get the supported frequency band type.
  * @param[out]  band_type: Pointer to store the supported band type. Values:
  *                       - @ref RTW_SUPPORT_BAND_2_4G : 2.4GHz only
@@ -673,6 +683,16 @@ s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting);
  *                      unable to access Wi-Fi registers.
  */
 s32 wifi_tsf_sync_to_user_target(u8 enable, u8 *mac_addr);
+
+/**
+ * @brief  Configure TSF offset of port1 and port0.
+ * @param[in]  offset: tsf offset, unit us.
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode,
+ *                      unable to access Wi-Fi registers.
+ */
+s32 wifi_set_p1_to_p0_tsf_offset(u16 offset_us);
 
 /** @} End of Extended_Functions group */
 /** @} End of WIFI_Exported_Functions group*/

@@ -37,7 +37,7 @@ For example:
   - Connect `SPI0_SCLK (_PA_29)` to `SPI1_SCLK (_PB_7)`
   - Connect `SPI0_CS (_PB_0)` to `SPI1_CS (_PB_10)`
 
-# SW configuration
+# SW Configuration
 
 - Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -45,7 +45,7 @@ For example:
 - By default, this example select two pinmux groups as MOSI/MISO/SCLK/CS, you can also modify pinmux group settings according to correct pinmux table.
 - For example, if you want to modify pinmux group setting in RTL8730E, then you should refer to `UM0602_RTL8730E_pinmux.xls`.
 
-# Expect result
+# Expected Result
 
 1. After boot up, Master SPI and slave SPI communicate with each other, and exchanged data will be displayed and compared.
 2. Master SPI Transmits data to slave SPI, and data transmitted by master and data received by slave will be displayed and compared.

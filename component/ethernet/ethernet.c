@@ -7,7 +7,7 @@
 #include "ethernet_ex_api.h"
 #include "timer_api.h"
 #include "kv.h"
-#include "wifi_hal_eeprom.h"
+
 static const char *const TAG = "ETH";
 
 #define ETH_TX_DESC_CNT         8
@@ -402,10 +402,10 @@ static void eth_init_thread(void *param)
 	hwinfo_buf = (u8 *)rtos_mem_zmalloc(OTP_LMAP_LEN);
 	if (hwinfo_buf) {
 		OTP_LogicalRead(hwinfo_buf, 0, OTP_LMAP_LEN);
-		memcpy(eth_mac, &hwinfo_buf[EEPROM_MAC_ADDR], ETH_ALEN);
+		memcpy(eth_mac, &hwinfo_buf[EFUSE_ETH_MAC_ADDR], ETH_ALEN);
 
 		/* Check if MAC is invalid (all 0xFF) */
-		if (!memcmp(&hwinfo_buf[EEPROM_MAC_ADDR], "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
+		if (!memcmp(&hwinfo_buf[EFUSE_ETH_MAC_ADDR], "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
 			/* Generate Random MAC based on default prefix */
 			random_byte = (u8)(_rand() % 1000) & 0xFE;
 			default_mac[5] = random_byte;

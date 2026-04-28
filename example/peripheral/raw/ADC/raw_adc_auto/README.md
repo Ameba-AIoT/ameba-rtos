@@ -22,6 +22,10 @@ In this example, ADC is configured to sample data in `2 normal channels`.
 	- Connect `ADC_CH1_PIN(_PA_19)` to `to-be-measured signal`
 	- Connect `ADC_CH2_PIN(_PA_18)` to `to-be-measured signal`
 	- Connect `GND` to `GND` of to-be-measured device
+* On RTL8720F
+	- Connect `ADC_CH0_PIN(_PA_13)` to `to-be-measured signal`
+	- Connect `ADC_CH1_PIN(_PA_14)` to `to-be-measured signal`
+	- Connect `GND` to `GND` of to-be-measured device
 
 # SW Configuration
 
@@ -49,6 +53,8 @@ In this example, ADC is configured to sample data in `2 normal channels`.
 	`0 ~ 3.3V`
 * On RTL8721F
 	`0 ~ 3.3V`
+* On RTL8720F
+	`0 ~ 3.3V`
 
 2. Each ADC channel has a unique corresponding pad. If `ADC_CHAN` is modified, `ADC_PAD` must be modified accordingly.
 
@@ -61,3 +67,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F

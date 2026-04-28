@@ -13,8 +13,8 @@
 extern lfs_t g_lfs;
 extern lfs_t g_second_lfs;
 extern int rt_lfs_init(lfs_t *lfs);
-int lfs_mount_flag = 0;
-int lfs2_mount_flag = 0;
+volatile uint8_t lfs_mount_flag = 0;
+volatile uint8_t lfs2_mount_flag = 0;
 static struct dirent *lfs_ent;
 
 int fmodeflags(const char *mode)
@@ -407,9 +407,9 @@ int littlefs_mount(int interface)
 	if (ret) {
 		VFS_DBG(VFS_ERROR, "Littlefs mount fail, ret is %d", ret);
 		if (interface == VFS_INF_SECOND_FLASH) {
-			lfs2_mount_flag = -1;
+			lfs2_mount_flag = 0;
 		} else if (interface == VFS_INF_FLASH) {
-			lfs_mount_flag = -1;
+			lfs_mount_flag = 0;
 		}
 		return ret;
 	}

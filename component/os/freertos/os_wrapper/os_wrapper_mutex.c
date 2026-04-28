@@ -124,7 +124,6 @@ int rtos_mutex_delete(rtos_mutex_t p_handle)
 int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 {
 	BaseType_t ret;
-	BaseType_t task_woken = pdFALSE;
 
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
@@ -133,23 +132,24 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 	}
 #endif
 
-	if (rtos_critical_is_in_interrupt()) {
-		ret = xSemaphoreTakeFromISR((QueueHandle_t)p_handle, &task_woken);
-		if (ret != pdTRUE) {
-			return RTK_FAIL;
-		}
-		portEND_SWITCHING_ISR(task_woken);
-	} else {
-		/* If WiFi calls this function in suspend flow, and if timeout is not 0, FreeRTOS will assert. */
-		if (!pmu_yield_os_check()) {
-			wait_ms = 0;
-		}
+	/*
+	 * NOTE: xSemaphoreTakeFromISR() is NOT designed for mutex!
+	 * FreeRTOS mutex uses a queue internally, and the FromISR API is only
+	 * for binary semaphores and counting semaphores. Using FromISR with mutex
+	 * causes priority inversion and undefined behavior.
+	 *
+	 * Instead of silently failing, we call xSemaphoreTake() directly.
+	 * If configASSERT is enabled in FreeRTOS, it will trigger an assert
+	 * when called from ISR context, immediately catching this bug.
+	 */
+	if (!pmu_yield_os_check()) {
+		wait_ms = 0;
+	}
 
-		ret = xSemaphoreTake((QueueHandle_t)p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
+	ret = xSemaphoreTake((QueueHandle_t)p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 
-		if (ret != pdTRUE) {
-			return RTK_FAIL;
-		}
+	if (ret != pdTRUE) {
+		return RTK_FAIL;
 	}
 
 	return RTK_SUCCESS;
@@ -158,7 +158,6 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 int rtos_mutex_give(rtos_mutex_t p_handle)
 {
 	BaseType_t ret;
-	BaseType_t task_woken = pdFALSE;
 
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
@@ -167,24 +166,22 @@ int rtos_mutex_give(rtos_mutex_t p_handle)
 	}
 #endif
 
-	if (rtos_critical_is_in_interrupt()) {
-		ret = xSemaphoreGiveFromISR(p_handle, &task_woken);
-		if (ret != pdTRUE) {
-			return RTK_FAIL;
-		}
-		portEND_SWITCHING_ISR(task_woken);
-	} else {
-		ret = xSemaphoreGive(p_handle);
-		if (ret != pdTRUE) {
-			return RTK_FAIL;
-		}
-	}
-
-	if (ret == pdTRUE) {
-		return RTK_SUCCESS;
-	} else {
+	/*
+	 * NOTE: xSemaphoreGiveFromISR() is NOT designed for mutex!
+	 * FreeRTOS mutex uses a queue internally, and the FromISR API is only
+	 * for binary semaphores and counting semaphores. Using FromISR with mutex
+	 * causes priority inversion and undefined behavior.
+	 *
+	 * Instead of silently failing, we call xSemaphoreGive() directly.
+	 * If configASSERT is enabled in FreeRTOS, it will trigger an assert
+	 * when called from ISR context, immediately catching this bug.
+	 */
+	ret = xSemaphoreGive(p_handle);
+	if (ret != pdTRUE) {
 		return RTK_FAIL;
 	}
+
+	return RTK_SUCCESS;
 }
 
 int rtos_mutex_recursive_create(rtos_mutex_t *pp_handle)

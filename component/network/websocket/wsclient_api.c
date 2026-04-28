@@ -11,7 +11,7 @@ uint32_t wsclient_keepalive_interval = 0;
 uint32_t wsclient_keepalive_count = 0;
 uint32_t wsclient_recvtimeout = 0;
 uint32_t wsclient_sendtimeout = 0;
-uint32_t wsclient_sendblocktime = 30000;
+uint32_t wsclient_sendblocktime = 300;
 uint32_t wsclient_connecttimeout = 0;
 
 
@@ -255,7 +255,7 @@ void ws_pong(void (*callback)(wsclient_context **))
 
 void ws_poll(int timeout, wsclient_context **wsclient)   // timeout in milliseconds
 {
-	int ret = 0;
+	int ret = 0, sent_cnt = 0;
 	send_buf *tmp_buf = NULL;
 	wsclient_context *wsc;
 	union {
@@ -365,7 +365,8 @@ void ws_poll(int timeout, wsclient_context **wsclient)   // timeout in milliseco
 					}
 					ret = wsc->fun_ops.client_send(wsc, (char *)tmp_buf->txbuf + tmp_buf->send_offset, (remain_len > 10 * 1024 ? 10 * 1024 : remain_len));
 					if (ret == 0) {
-						return;
+						rtos_time_delay_ms(25);
+						continue;
 					} else if (ret < 0) {
 						closesocket(wsc->sockfd);
 						wsc->fun_ops.client_close(wsc);
@@ -379,6 +380,7 @@ void ws_poll(int timeout, wsclient_context **wsclient)   // timeout in milliseco
 					tmp_buf->send_offset += ret;
 				} while (remain_len > 0);
 			}
+
 			rtos_mutex_take(wsc->queue_mutex, MUTEX_WAIT_TIMEOUT);
 			rtos_queue_receive(wsc->ready_send_buf, (void *)&tmp_buf, 0);
 			wsc->ready_send_buf_num--;
@@ -404,6 +406,11 @@ void ws_poll(int timeout, wsclient_context **wsclient)   // timeout in milliseco
 				WSCLIENT_DEBUG("send back buffer to recycle queue\r\n");
 			}
 			rtos_mutex_give(wsc->queue_mutex);
+
+			sent_cnt++;
+			if (sent_cnt > 100) {
+				break;
+			}
 		}
 		WSCLIENT_DEBUG("ready_send_buf num: %d, recycle_send_buf num: %d\r\n", wsc->ready_send_buf_num, wsc->recycle_send_buf_num);
 	}

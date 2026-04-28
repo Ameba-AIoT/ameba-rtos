@@ -367,6 +367,7 @@ struct eap_sm {
 	struct wpabuf *ext_pw_buf;
 
 	unsigned int expected_failure: 1;
+	unsigned int waiting_ext_cert_check: 1;
 
 	//struct dl_list erp_keys; /* struct eap_erp_key */
 };

@@ -32,6 +32,7 @@ set(KM4_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km4)
 set(KR4_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_kr4)
 set(KM4_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km4)
 set(KR4_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_kr4)
+set(boot_name boot.bin) # for temporary compatibility with extension
 ###############################################################################
 
 ###############################################################################
@@ -46,9 +47,9 @@ add_subdirectory(project_km4)
 configure_file(${c_MENUCONFIG_DIR}/.config ${CMAKE_CURRENT_BINARY_DIR}/.config COPYONLY)
 import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config)
 if(CONFIG_DSP_WITHIN_APP_IMG)
-    ameba_set_if(CONFIG_MP_INCLUDED app_name kr4_km4_dsp_app_mp.bin p_ELSE kr4_km4_dsp_app.bin)
+    ameba_set_if(CONFIG_MP_INCLUDED app_name dsp_app_mp.bin p_ELSE dsp_app.bin)
 else()
-    ameba_set_if(CONFIG_MP_INCLUDED app_name kr4_km4_app_mp.bin p_ELSE kr4_km4_app.bin)
+    ameba_set_if(CONFIG_MP_INCLUDED app_name app_mp.bin p_ELSE app.bin)
 endif()
 ameba_firmware_package(
     ${app_name}         #Output app name, referred by c_APP_BINARY_NAME in postbuild.cmake

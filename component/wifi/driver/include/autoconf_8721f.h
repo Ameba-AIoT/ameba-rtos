@@ -62,6 +62,8 @@
 #define CONFIG_EFUSE_RAW
 /* For efuse or flash config end */
 
+#define CONFIG_TPC
+
 /* 0: 20 MHz, 1: 40 MHz, 2: 80 MHz, 3: 160MHz, 4: 80+80MHz
 * 2.4G use bit 0 ~ 3, 5G use bit 4 ~ 7
 * 0x21 means enable 2.4G 40MHz & 5G 80MHz */
@@ -174,7 +176,6 @@
 #define DRV_BB_STATISTICS_DISABLE
 #define DRV_BB_DGB_SUPPORT_DISABLE
 #define DRV_BB_CH_INFO_DISABLE
-#define DRV_BB_CFO_TRK_DISABLE
 #define DRV_BB_ENV_MNTR_DISABLE
 #define DRV_BB_PHYSTS_PARSING_DISABLE
 #define DRV_BB_TIMER_SUPPORT_DISABLE
@@ -182,6 +183,7 @@
 #undef CONFIG_TWT
 #undef CONFIG_MCC_MODE
 #undef CONFIG_DFS
+#undef CONFIG_TPC
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_IEEE80211W
 #undef CONFIG_WIFI_RA

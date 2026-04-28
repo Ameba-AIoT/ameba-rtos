@@ -180,7 +180,7 @@ menu "CONFIG APPLICATION"
 
     menu "AI Config"
         orsource "../../../tflite_micro/Kconfig"
-        orsource "../../../aivoice/Kconfig.dplus"
+        orsource "../../../aivoice/Kconfig"
     endmenu
 
     orsource "../../../application/Kconfig"
@@ -324,6 +324,10 @@ menu "CONFIG WIFI"
 
     if WLAN_MENU
         orsource "../../../wifi/Kconfig.wifi"
+
+        config HIGH_TP_TEST
+            bool "Enable HIGH TP"
+            default n
 
         config WHC_INTF_IPC_MENU
             bool

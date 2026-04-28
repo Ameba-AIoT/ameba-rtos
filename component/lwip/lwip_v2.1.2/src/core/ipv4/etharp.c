@@ -818,7 +818,7 @@ etharp_output_to_arp_index(struct netif *netif, struct pbuf *q, netif_addr_idx_t
  * or the return type of either etharp_query() or ethernet_output().
  */
 /* Added by Realtek start */
-SRAM_WLAN_CRITICAL_CODE_SECTION
+SRAM_LWIP_CRITICAL_CODE_SECTION_L1
 /* Added by Realtek end */
 err_t
 etharp_output(struct netif *netif, struct pbuf *q, const ip4_addr_t *ipaddr)

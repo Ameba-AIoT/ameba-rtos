@@ -1,6 +1,6 @@
 # Example Description
 
-1. In this case, use hardware ECDSA for signature and verification 
+1. In this case, use hardware ECDSA for signature and verification
    otp_key : 0 for not use OTP key while 1 for key 0 and 2 for key 1.
 
 # HW Configuration
@@ -14,7 +14,7 @@
 
 # Expected Result
 
-1. The code will check the correctness of encryption, decryption. 
+1. The code will check the correctness of encryption, decryption.
    	If it is correct, it will print success, and if it is incorrect, it will print failed.
 
 # Note

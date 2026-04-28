@@ -45,27 +45,22 @@ typedef enum {
 typedef struct {
 	u32 buf_start_addr;
 	u32 buf_size;
-	u32 is_used;
 } usbh_hw_uvc_dec_buf;
 
 typedef struct {
 	usbh_hw_uvc_dec_buf buf[USBH_HW_UVC_MAX_BUF_NUM];
 	void *priv;
 	void (*err_cb)(usbh_hw_uvc_err_status_t err);
-	u32 ch;
+
 	u32 frame_done_num;
 	u32 frame_done_size;
 	u32 free_buf_cnt;
 
 	/* cmd reg related */
-	u32 xfer_len;
-	u32 ep_mps;
 	rtos_sema_t dec_sema;
 
-	u8 ep_num;
-	u8 pipe_num;
-	u8 interval;
 	u8 dev_addr;
+	u8 ch;
 	__IO u8 is_active;
 } usbh_hw_uvc_dec_t;
 

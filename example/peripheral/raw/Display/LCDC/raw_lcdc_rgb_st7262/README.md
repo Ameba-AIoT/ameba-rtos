@@ -1,4 +1,4 @@
-#  Example Description
+# Example Description
 
 This example shows how to use LCDC to drive LCD ST7262 of 24-bit RGB888 mode.
 
@@ -42,7 +42,7 @@ LCDC will carry data from memory to LCD, user should connect LCDC pins with LCD 
 
 Also, the other pin of LCD should be connected correctly, like GND and VCC.
 
-#  SW configuration
+# SW Configuration
 
 Cancel the comment about macro `ALLOC_BUFFER_FOR_DISPLAY` in src file of this demo.
 
@@ -50,10 +50,10 @@ Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-#  Expect result
+# Expected Result
 ST7262 will show BLUE, GREEN, RED in turn.
 
-#  Note
+# Note
 None
 
 # Trouble shooting
@@ -61,7 +61,7 @@ When a display abnormality occurs, please check whether the pixel data in the fr
 
 In this demo, three frame buffers are used, indicated by `PIX_DATA0`, `PIX_DATA1`, and `PIX_DATA2`. Their addresses are `0x60000000`, `0x60100000`, and `0x60200000`, respectively.
 
-#  Supported IC
+# Supported IC
 
 RTL8721F
 

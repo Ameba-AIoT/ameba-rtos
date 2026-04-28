@@ -235,3 +235,8 @@ __km4_bd_boot_download_addr__ = 0x30012000;
 __kr4_bd_ram_mp_start__ = ORIGIN(KR4_BD_RAM_MP);
 __km4_bd_ram_mp_start__ = ORIGIN(KM4_BD_RAM_MP);
 __kr4_boot_entry2_addr__ = ORIGIN(KR4_RAM_ONLY);
+
+/* code analyse used */
+__img1_sram_start__ = ORIGIN(KM4_BOOTLOADER_RAM_S) - SECURE_ADDR_OFFSET - IMAGE_HEADER_LEN;
+__img1_sram_size__ = LENGTH(KM4_BOOTLOADER_RAM_S) + IMAGE_HEADER_LEN;
+__img3_sram_size__ = RAM_TZ_NSC_SIZE + RAM_TZ_ENTRY_SIZE + RAM_KM4_IMG3_SIZE;

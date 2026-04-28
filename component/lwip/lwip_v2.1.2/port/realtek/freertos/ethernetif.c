@@ -96,8 +96,7 @@ static rtos_mutex_t usb_eth_tx_mutex;
 static u8 TX_BUFFER[MAX_BUFFER_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 static u8 RX_BUFFER[MAX_BUFFER_SIZE];
 
-extern int usbh_cdc_ecm_send_data(u8 *buf, u32 len);
-extern u16 usbh_cdc_ecm_get_receive_mps(void);
+extern int usb_ethernet_transmit(u8 *buf, u32 len, u8 block); //tx
 #endif
 
 /**
@@ -153,7 +152,7 @@ static void low_level_init(struct netif *netif)
  *       to become availale since the stack doesn't retry to send a packet
  *       dropped because of memory failure (except for the TCP timers).
  */
-SRAM_WLAN_CRITICAL_CODE_SECTION
+SRAM_LWIP_CRITICAL_CODE_SECTION_L1
 static err_t low_level_output(struct netif *netif, struct pbuf *p)
 {
 	/* Refer to eCos lwip eth_drv_send() */
@@ -258,7 +257,7 @@ static err_t low_level_output_usb_eth(struct netif *netif, struct pbuf *p)
 	}
 
 	rtos_mutex_take(usb_eth_tx_mutex, MUTEX_WAIT_TIMEOUT);
-	ret = usbh_cdc_ecm_send_data(TX_BUFFER, size);
+	ret = usb_ethernet_transmit(TX_BUFFER, size, 1);
 	rtos_mutex_give(usb_eth_tx_mutex);
 
 	if (ret != 0) {

@@ -217,7 +217,7 @@ void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_
 		pLliEle = &pGdmaChLli->LliEle;
 
 		/* Clear the last element llp enable bit */
-		if ((1 == MultiBlockCount) & (~round)) {
+		if ((MultiBlockCount == 1) && (round == 0)) {
 			CtlxLow &= ~(BIT_CTLX_LO_LLP_DST_EN |
 						 BIT_CTLX_LO_LLP_SRC_EN);
 		}

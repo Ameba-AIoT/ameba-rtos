@@ -141,6 +141,7 @@ static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_FULL,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
+	.main_task_stack_size = 768U,
 	.main_task_priority = USBH_UAC_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)

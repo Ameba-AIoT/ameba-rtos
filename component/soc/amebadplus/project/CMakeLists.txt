@@ -31,6 +31,7 @@ set(KM0_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km0)
 set(KM4_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km4)
 set(KM0_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km0)
 set(KM4_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km4)
+set(boot_name boot.bin) # for temporary compatibility with extension
 ###############################################################################
 
 ###############################################################################
@@ -45,7 +46,7 @@ add_subdirectory(project_km0)
 configure_file(${c_MENUCONFIG_DIR}/.config ${CMAKE_CURRENT_BINARY_DIR}/.config COPYONLY)
 import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config)
 
-ameba_set_if(CONFIG_MP_INCLUDED app_name km0_km4_app_mp.bin p_ELSE km0_km4_app.bin)
+ameba_set_if(CONFIG_MP_INCLUDED app_name app_mp.bin p_ELSE app.bin)
 ameba_firmware_package(
     ${app_name}         #Output app name, referred by c_APP_BINARY_NAME in ${c_POST_BUILD_SCRIPT}
     p_MCU_PROJECTS      #MCU project list, notice the ORDER is important which determines the image2/image3 order in final binary file

@@ -17,6 +17,10 @@ wakeup operation:
 * On RTL8721F,
 	- Connect PA_3/PA_2/PA_1/PA_0 to to GND
 	- Or connect PA_3/PA_2/PA_1/PA_0 to V3.3
+* On RTL8720F,
+	- Connect PA_19/PA_20/PA_21/PA_22 to to GND
+	- Or connect PA_19/PA_20/PA_21/PA_22 to V3.3
+
 
 # SW Configuration
 
@@ -28,6 +32,7 @@ wakeup operation:
 | RTL8726E/RTL8720E/RTL8713E/RTL8710E | PA 0 | PA 1 | | |
 | RTL8721Dx| PB30 | PB 31 | | |
 | RTL8721F | PA 3 | PA 2 | PA 1| PA 0 |
+| RTL8720F | PA 19 | PA 20 | PA 21| PA 22 |
 
 3. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -62,4 +67,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
-
+RTL8720F

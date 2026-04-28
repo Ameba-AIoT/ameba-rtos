@@ -44,7 +44,7 @@
 
 /* Frame buffer size in bytes
  * Size depends on format, resolution, and scene complexity.
- * Please increase this value if an oversize error occurs. */
+ * Note: Please increase this value if an oversize error occurs. */
 #define CONFIG_USBH_UVC_FRAME_BUF_SIZE             (150 * 1024)
 
 /* Most cameras have a single video stream interface, so use default 0.
@@ -160,6 +160,7 @@ static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
+	.main_task_stack_size = 768,
 	.main_task_priority = CONFIG_USBH_UVC_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -455,7 +456,7 @@ static int uvc_vfs_start(void)
 
 	uvc_rb = RingBuffer_Create(uvc_buf, CONFIG_USBH_UVC_FRAME_BUF_SIZE, LOCAL_RINGBUFF, 0);
 
-	ret = rtos_task_create(&task, "uvc_vfs_thread", uvc_vfs_thread, NULL, 1024U * 3, 1U);
+	ret = rtos_task_create(&task, "uvc_vfs_thread", uvc_vfs_thread, NULL, 3584U, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create vfs thread fail\n");
 		ret = 1;
@@ -678,7 +679,7 @@ static int uvc_httpc_start(void)
 
 	rtos_sema_create(&uvc_httpc_save_img_sema, 0, 1);
 
-	ret = rtos_task_create(&task, "uvc_httpc_thread", uvc_httpc_thread, NULL, 1024 * 5, 2);
+	ret = rtos_task_create(&task, "uvc_httpc_thread", uvc_httpc_thread, NULL, 5888U, 2);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create %s client thread fail\n", USBH_UVC_HTTP_TAG);
 		rtos_sema_delete(&uvc_httpc_save_img_sema);
@@ -903,7 +904,7 @@ static void example_usbh_uvc_task(void *param)
 	}
 
 #if CONFIG_USBH_UVC_HOT_PLUG
-	ret = rtos_task_create(&hotplug_task, "uvc_hotplug_thread", uvc_hotplug_thread, NULL, 1024U, CONFIG_USBH_UVC_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&hotplug_task, "uvc_hotplug_thread", uvc_hotplug_thread, NULL, 768U, CONFIG_USBH_UVC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto usbh_uvc_deinit_exit;
 	}
@@ -913,7 +914,7 @@ static void example_usbh_uvc_task(void *param)
 		if (rtos_sema_take(uvc_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (uvc_task == NULL) {
 				ret = rtos_task_create(&uvc_task, "uvc_test", uvc_test, NULL,
-									   1024U, CONFIG_USBH_UVC_TEST_THREAD_PRIORITY);
+									   768U, CONFIG_USBH_UVC_TEST_THREAD_PRIORITY);
 				if (ret != RTK_SUCCESS) {
 					goto delete_hotplug_task_exit;
 				}
@@ -955,7 +956,7 @@ void example_usbh_uvc(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UVC demo start\n");
 
-	status = rtos_task_create(&task, "example_usbh_uvc_thread", example_usbh_uvc_task, NULL, 1024U, 1U);
+	status = rtos_task_create(&task, "example_usbh_uvc_thread", example_usbh_uvc_task, NULL, 768U, 1U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}

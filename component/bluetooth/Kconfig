@@ -34,6 +34,11 @@ if BT_EXAMPLE_DEMO_MENU
         bool "BLE HOGP"
         default n
 
+    config BT_HOGP_ULL_MENU
+        depends on AMEBASMART && !AMEBA_RLS    #amebasmart internal
+        bool "BLE HOGP ULL"
+        default n
+
     config BT_THROUGHPUT
         depends on !AMEBA_RLS    #internal
         bool "BLE Throughput"
@@ -392,6 +397,11 @@ if BT
         select BT_PROFILE_A2DP_SUPPORT
         select BT_PROFILE_AVRCP_SUPPORT
         select BT_PROFILE_SDP_SUPPORT
+
+    config BT_HOGP_ULL_MENU
+        bool
+        select BT_HOGP_ULL
+        select BT_ISO_SUPPORT
 endif
 
 # Only select item needs following
@@ -406,6 +416,8 @@ config BT_MESH_DEVICE_SCATTERNET
 config BT_MESH_PROVISIONER_TEST
     bool
 config BT_MESH_DEVICE_TEST
+    bool
+config BT_HOGP_ULL
     bool
 config BT_ISO_TEST
     bool

@@ -84,7 +84,11 @@ int sem_init( sem_t * sem,
     /* Check value parameter. */
     if( value > SEM_VALUE_MAX )
     {
-        errno = EINVAL;
+        #if ( configUSE_POSIX_ERRNO == 1 )
+        {
+            errno = EINVAL;
+        }
+        #endif
         iStatus = -1;
     }
 
@@ -132,6 +136,7 @@ int sem_timedwait( sem_t * sem,
     int iStatus = 0;
     sem_internal_t * pxSem = ( sem_internal_t * ) ( sem );
     TickType_t xDelay = portMAX_DELAY;
+    int iPreviousValue = Atomic_Decrement_u32( ( uint32_t * ) &pxSem->value );
 
     if( abstime != NULL )
     {
@@ -165,8 +170,6 @@ int sem_timedwait( sem_t * sem,
         }
     }
 
-    int iPreviousValue = Atomic_Decrement_u32( ( uint32_t * ) &pxSem->value );
-
     /* If previous semaphore value is larger than zero, the thread entering this function call
      * can take the semaphore without yielding. Else (<=0), calling into FreeRTOS API to yield.
      */
@@ -183,11 +186,19 @@ int sem_timedwait( sem_t * sem,
         {
             if( iStatus == 0 )
             {
-                errno = ETIMEDOUT;
+                #if ( configUSE_POSIX_ERRNO == 1 )
+                {
+                    errno = ETIMEDOUT;
+                }
+                #endif
             }
             else
             {
-                errno = iStatus;
+                #if ( configUSE_POSIX_ERRNO == 1 )
+                {
+                    errno = iStatus;
+                }
+                #endif
             }
 
             iStatus = -1;
@@ -215,10 +226,14 @@ int sem_trywait( sem_t * sem )
 
     /* POSIX specifies that this function should set errno to EAGAIN and not
      * ETIMEDOUT. */
-    if( ( iStatus == -1 ) && ( errno == ETIMEDOUT ) )
+    #if ( configUSE_POSIX_ERRNO == 1 )
     {
-        errno = EAGAIN;
+        if( ( iStatus == -1 ) && ( errno == ETIMEDOUT ) )
+        {
+            errno = EAGAIN;
+        }
     }
+    #endif
 
     return iStatus;
 }

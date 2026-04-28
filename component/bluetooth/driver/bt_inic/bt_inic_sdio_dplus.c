@@ -8,6 +8,8 @@
 #include "bt_inic_defs.h"
 #include <string.h>
 
+#define SIZE_TX_DESC    (sizeof(INIC_TX_DESC))
+
 #if !(defined(CONFIG_WHC_INTF_SDIO) && CONFIG_WHC_INTF_SDIO)
 struct bt_inic_sdio_priv_t {
 	struct spdio_t dev;

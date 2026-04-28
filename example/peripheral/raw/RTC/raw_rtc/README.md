@@ -7,14 +7,14 @@
 
 None.
 
-# SW configuration
+# SW Configuration
 
 Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
-   
 
-# Expect result
+
+# Expected Result
 
 1. This example set initial calendar time: `2009.10.28 11:35:37`
 2. This example will print out the time information every second.

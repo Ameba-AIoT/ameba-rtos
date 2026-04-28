@@ -123,7 +123,6 @@ void pmu_register_sleep_callback(uint32_t nDeviceId, PSM_HOOK_FUN sleep_hook_fun
 	assert_param((sleep_hook_fun != NULL) || (wakeup_hook_fun != NULL));
 
 	pPsmDdHookInfo = &gPsmDdHookInfo[nDeviceId];
-	pPsmDdHookInfo->nDeviceId			= nDeviceId;
 	pPsmDdHookInfo->sleep_hook_fun		= sleep_hook_fun;
 	pPsmDdHookInfo->sleep_param_ptr		= sleep_param_ptr;
 	pPsmDdHookInfo->wakeup_hook_fun		= wakeup_hook_fun;
@@ -465,4 +464,3 @@ int pmu_secondary_cpu_state_is_wake(uint32_t CoreID)
 	return (cpuhp_flag[CoreID] == CPU1_WAKE_FROM_PG);
 }
 #endif
-

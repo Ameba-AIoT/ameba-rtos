@@ -47,10 +47,6 @@ config WIFI_SPEAKER_ENABLE
     bool "Enable WIFI SPEAKER"
     default n
 
-config HIGH_TP_TEST
-    bool "Enable HIGH TP"
-    default n
-
 config RMESH_EN
     bool "Enable R-mesh"
     default n

@@ -7,7 +7,7 @@
 
 Logic Analyzer or oscilloscope.
 
-# SW configuration
+# SW Configuration
 
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -37,7 +37,7 @@ Logic Analyzer or oscilloscope.
      - `NEC_EncodePacket`: encode the space symbol of IR waveform data with carrier symbol data
      - `NEC_DecodePacket`: decode the received IR waveform with carrier symbol to space symbol
 
-# Expect result
+# Expected Result
 
   - When Logic Analyzer or oscilloscope is connected to `IR_PINMUX_S1_TX` pin, and the **NEC Protocal** should be selected, then the tx data will be captured.
 
@@ -45,14 +45,14 @@ Logic Analyzer or oscilloscope.
     - If set the macro `IR_LOOP_TEST` to `1`:
       - The 2bytes data of ir_code[1] and ir_code[0] will be updated in each loop, and the 2bytes's data can be traced in Serial Port Tool
         - The real tx data contain 4bytes in sequence of:
-          - ir_code[0], ~ir_code[0], ir_code[1], ~ir_code[1] 
-          - For example: 
+          - ir_code[0], ~ir_code[0], ir_code[1], ~ir_code[1]
+          - For example:
             - The first loop ir_code[1] is 0x0, ir_code[0] is 0x1
             - Then the real tx data in is: 0x1, 0xfe, 0x0, 0xff
     - If set the macro `IR_LOOP_TEST` to `0`:
       - The 2bytes data ir_code[1] and ir_code[0] will keep the same in each loop
         - The real tx data contain 4Bytes in sequence of:
-          - ir_code[0], ~ir_code[0], ir_code[1], ~ir_code[1] 
+          - ir_code[0], ~ir_code[0], ir_code[1], ~ir_code[1]
           - In this example:
             - The ir_code[1] is 0x34, and ir_code[0] is 0x12
             - Then the real tx data in is: 0x12, 0xed, 0x34, 0xcb

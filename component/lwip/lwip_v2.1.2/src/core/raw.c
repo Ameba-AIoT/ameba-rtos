@@ -332,6 +332,7 @@ raw_disconnect(struct raw_pcb *pcb)
  * - not free the packet, and return zero. The packet will be matched
  *   against further PCBs and/or forwarded to another protocol layers.
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 raw_recv(struct raw_pcb *pcb, raw_recv_fn recv, void *recv_arg)
 {

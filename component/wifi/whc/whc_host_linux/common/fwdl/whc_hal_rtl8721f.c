@@ -38,10 +38,18 @@ static const struct whc_mem_region_t rtl8721f_mem_regions[] = {
 	{0}  /* Terminator */
 };
 
+#ifdef CONFIG_WHC_HCI_SDIO
+#define WHC_FW_1_NAME "RTL8851FS_FW_1.bin"
+#define WHC_FW_2_NAME "RTL8851FS_FW_2.bin"
+#else
+#define WHC_FW_1_NAME "RTL8851FU_FW_1.bin"
+#define WHC_FW_2_NAME "RTL8851FU_FW_2.bin"
+#endif
+
 /* Image configuration for RTL8721F */
 static const struct whc_image_t rtl8721f_images[] = {
-	{WHC_DEFINE_IMAGE("km4tz_fullmac_img_1.bin", 0x96969999, 0xFC66CC3F, 0, 0, WHC_IMAGE_TYPE_BOOTLOADER, WHC_POST_PROCESS_BOOT)},
-	{WHC_DEFINE_IMAGE("km4tz_fullmac_img_2.bin", 0x35393138, 0x31313738, 0x08040000, 0x3007F000, WHC_IMAGE_TYPE_APPLICATION, WHC_POST_PROCESS_BOOT)},
+	{WHC_DEFINE_IMAGE(WHC_FW_1_NAME, 0x96969999, 0xFC66CC3F, 0x00000000, 0x00000000, WHC_IMAGE_TYPE_BOOTLOADER, WHC_POST_PROCESS_BOOT)},
+	{WHC_DEFINE_IMAGE(WHC_FW_2_NAME, 0x35393138, 0x31313738, 0x08040000, 0x3007F000, WHC_IMAGE_TYPE_APPLICATION, WHC_POST_PROCESS_BOOT)},
 	{0}  /* Terminator */
 };
 
@@ -59,7 +67,7 @@ static const struct whc_hal_config_t rtl8721f_config = {
 	.hash_size = 32,
 	.xfer_page_size = 2 * 1024,		/* 2KB */
 	.read_buf_size = 16 * 1024,		/* 16KB (8 pages) */
-	.manifest_pos = WHC_XFER_MANIFEST_POS_TAIL,
+	.manifest_pos = WHC_XFER_MANIFEST_POS_HEAD,
 
 	/* Memory regions and images */
 	.mem_regions = rtl8721f_mem_regions,

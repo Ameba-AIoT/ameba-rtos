@@ -459,13 +459,12 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	UNUSED(dev);
 
+	if (status != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
+	}
+
 	if (ep_addr == USBD_VENDOR_INTR_IN_EP) {
 		ep_intr_in->xfer_state = 0U;
-		if (status == HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR TX done\n");
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR TX err: %d\n", status);
-		}
 		if (cb->intr_transmitted != NULL) {
 			cb->intr_transmitted(status);
 		}
@@ -473,22 +472,12 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 
 	if (ep_addr == USBD_VENDOR_BULK_IN_EP) {
 		ep_bulk_in->xfer_state = 0U;
-		if (status == HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX done\n");
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX err: %d\n", status);
-		}
 		if (cb->bulk_transmitted != NULL) {
 			cb->bulk_transmitted(status);
 		}
 	}
 
 	if (ep_addr == USBD_VENDOR_ISOC_IN_EP) {
-		if (status == HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC TX done\n");
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC TX err: %d\n", status);
-		}
 		if (cb->isoc_transmitted != NULL) {
 			cb->isoc_transmitted(status);
 		}
@@ -782,9 +771,7 @@ int usbd_vendor_deinit(void)
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 	usbd_ep_t *ep_intr_out = &cdev->ep_intr_out;
 
-	u8 is_busy = ep_intr_in->is_busy;
-
-	while (is_busy) {
+	while (ep_intr_in->is_busy) {
 		usb_os_delay_us(100);
 	}
 
@@ -846,7 +833,6 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len)
 	}
 
 	if (ep_bulk_in->xfer_state == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX len %d data %d \n", len, buf[0]);
 		ep_bulk_in->xfer_state = 1U;
 		usb_os_memcpy((void *)ep_bulk_in->xfer_buf, (void *)buf, len);
 		ep_bulk_in->xfer_len = len;
@@ -874,7 +860,6 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u32 len)
 	}
 
 	if (ep_intr_in->xfer_state == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR TX len %d data %d \n", len, buf[0]);
 		ep_intr_in->xfer_state = 1U;
 		usb_os_memcpy((void *)ep_intr_in->xfer_buf, (void *)buf, len);
 		ep_intr_in->xfer_len = len;
@@ -899,7 +884,6 @@ int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len)
 	if (len > ep_isoc_in->mps) {
 		len = ep_isoc_in->mps;
 	}
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC TX len %d data %d \n", len, buf[0]);
 
 	usb_os_memcpy(ep_isoc_in->xfer_buf, buf, len);
 	ep_isoc_in->xfer_len = len;

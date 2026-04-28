@@ -119,6 +119,7 @@ ip4_addr_netmask_valid(u32_t netmask)
  * @param cp IP address in ascii representation (e.g. "127.0.0.1")
  * @return ip address in network order
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 u32_t
 ipaddr_addr(const char *cp)
 {

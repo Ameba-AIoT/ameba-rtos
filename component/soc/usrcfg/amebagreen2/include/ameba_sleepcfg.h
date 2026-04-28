@@ -12,10 +12,7 @@ extern "C" {
 #endif
 
 /* wakeup attribute can be set to WAKEUP_NULL/WAKEUP_NP/WAKEUP_AP */
-extern struct WakeEvent_TypeDef sleep_wevent_config[];
-
-/* config attribute can be set to LOW_LEVEL_WAKEUP/HIGH_LEVEL_WAKEUP/DISABLE_WAKEPIN */
-extern struct WAKEPIN_TypeDef sleep_wakepin_config[];
+extern const struct WakeEvent_TypeDef sleep_wevent_config[];
 
 extern struct PSCFG_TypeDef ps_config;
 

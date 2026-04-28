@@ -330,10 +330,6 @@ void IR_learning_wave_capture(uint32_t *rev_buf)
 	}
 
 	/* | -keyIndex- | -Frequency- | -DectTimeNum- | --wave data-- | */
-#ifdef RTL8730E_TODO
-	//storage related data to flash
-
-#endif
 	printf("[ir_learn_wave_capture]save data flag: %d, 0 success, or failed, frequency: %lu. \n", return_flag, rev_buf[0]);
 }
 
@@ -453,7 +449,7 @@ void IR_learning_thread(void)
 
 		if (rtos_sema_take(IR_learn_sema, RMC_IR_LEARN_TIMEOUT_MS) == RTK_SUCCESS) {
 			if (g_ir_learn_packet.data_receive_completed) {
-				//TODO: receive complete
+				// IR data receive complete, process wave data
 				IR_learning_wave_capture((uint32_t *)&recv_buf);
 				printf("the number of IR data:0x%lx\n", recv_buf[1]);
 			} else {

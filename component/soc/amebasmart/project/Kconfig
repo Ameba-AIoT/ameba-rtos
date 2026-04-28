@@ -221,6 +221,10 @@ menu "CONFIG WIFI"
 
         rsource "../../../wifi/Kconfig.wifi"
 
+        config HIGH_TP_TEST
+            bool "Enable HIGH TP"
+            default n
+
         config WHC_INTF_IPC_MENU
             bool
             select WHC_WIFI_API_PATH
