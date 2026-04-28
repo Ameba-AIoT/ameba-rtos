@@ -88,6 +88,7 @@ ameba_add_external_app_library(${release_target_name}
 ameba_add_internal_library(rtw_event
     p_SOURCES
         rtw_event.c
+        rtw_task_size.c
     p_INCLUDES
         ${private_includes}
     p_DEFINITIONS

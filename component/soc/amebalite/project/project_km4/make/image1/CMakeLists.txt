@@ -79,7 +79,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
 ################################  EXTRA PROCESS  ###################################
 set(clean_files
     ${c_SDK_IMAGE_TARGET_DIR}
-    ${FINAL_IMAGE_DIR}/${c_MCU_PROJECT_NAME}_boot_all.bin
+    ${FINAL_IMAGE_DIR}/${c_BOOT_BINARY_NAME}
 )
 
 set(link_deps

@@ -47,7 +47,7 @@ For example:
   - master's `SPI_GPIO_CS0 (_PA_26)` connect to slave0's `CS (_PB_0)`
   - master's `SPI_GPIO_CS1 (_PA_25)` connect to slave1's `CS (_PB_0)`
 
-# SW configuration
+# SW Configuration
 
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -60,7 +60,7 @@ For example:
 3. By default it use SPI0 as slave, and use SPI1 as master.
 4. User can configure several slave selected lines of the master.
 
-# Expect result
+# Expected Result
 
 1. At first, slave1 would receive data in decreasing order in a loop, while slave0 which is not selected by master receives nothing and generates rx timeout at the same time.
 2. In the next loop, slave0 selected by the master receives data in increasing order, while slave1 receives nothing and generates rx timeout.

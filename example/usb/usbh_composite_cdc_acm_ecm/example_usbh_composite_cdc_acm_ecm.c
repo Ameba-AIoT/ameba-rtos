@@ -1082,6 +1082,12 @@ static void composite_dev_hotplug_thread(void *param)
 
 /* Exported functions --------------------------------------------------------*/
 #if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+
+int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
+{
+	return usbh_composite_cdc_ecm_send_data(buf, len, block);
+}
+
 void example_usbh_composite_cdc_acm_ecm(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH Composite ECM demo start\n");

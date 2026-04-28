@@ -19,7 +19,7 @@ For example:
 - On RTL8721F, then connect as below
   - Connect `GPIO_SIGNAL_SOURCE (_PA_25)` to `GPIO_IRQ_EDGE_PIN (_PA_26)`
 
-# SW configuration
+# SW Configuration
 
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -31,7 +31,7 @@ For example:
    - When `GPIO_IRQ_EDGE_PIN` catches rising edge events, it is changed back to listen to falling edge events
 4. `GPIO_SIGNAL_SOURCE` is signal source that changes level to high and low periodically.
 
-# Expect result
+# Expected Result
 
 In this example, you will see log that prints rising/falling edge event periodically.
 

@@ -220,6 +220,7 @@ pbuf_init_alloced_pbuf(struct pbuf *p, void *payload, u16_t tot_len, u16_t len, 
  * @return the allocated pbuf. If multiple pbufs where allocated, this
  * is the first pbuf of a pbuf chain.
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 struct pbuf *
 pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 {
@@ -323,6 +324,7 @@ pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
  *
  * @return the allocated pbuf.
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 struct pbuf *
 pbuf_alloc_reference(void *payload, u16_t length, pbuf_type type)
 {
@@ -359,6 +361,7 @@ pbuf_alloc_reference(void *payload, u16_t length, pbuf_type type)
  * @param payload_mem_len the size of the 'payload_mem' buffer, must be at least
  *        big enough to hold 'length' plus the header size
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 struct pbuf *
 pbuf_alloced_custom(pbuf_layer l, u16_t length, pbuf_type type, struct pbuf_custom *p,
                     void *payload_mem, u16_t payload_mem_len)
@@ -398,6 +401,7 @@ pbuf_alloced_custom(pbuf_layer l, u16_t length, pbuf_type type, struct pbuf_cust
  *
  * @note Despite its name, pbuf_realloc cannot grow the size of a pbuf (chain).
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 pbuf_realloc(struct pbuf *p, u16_t new_len)
 {
@@ -547,6 +551,7 @@ pbuf_add_header_impl(struct pbuf *p, size_t header_size_increment, u8_t force)
  * @return non-zero on failure, zero on success.
  *
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 u8_t
 pbuf_add_header(struct pbuf *p, size_t header_size_increment)
 {
@@ -578,6 +583,7 @@ pbuf_add_header_force(struct pbuf *p, size_t header_size_increment)
  * @return non-zero on failure, zero on success.
  *
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 u8_t
 pbuf_remove_header(struct pbuf *p, size_t header_size_decrement)
 {
@@ -667,6 +673,7 @@ pbuf_header_force(struct pbuf *p, s16_t header_size_increment)
  *                   takes an u16_t not s16_t!
  * @return the new head pbuf
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 struct pbuf *
 pbuf_free_header(struct pbuf *q, u16_t size)
 {
@@ -721,6 +728,7 @@ pbuf_free_header(struct pbuf *q, u16_t size)
  * 1->1->1 becomes .......
  *
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 u8_t
 pbuf_free(struct pbuf *p)
 {
@@ -805,6 +813,7 @@ pbuf_free(struct pbuf *p)
  * @param p first pbuf of chain
  * @return the number of pbufs in a chain
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 u16_t
 pbuf_clen(const struct pbuf *p)
 {
@@ -825,6 +834,7 @@ pbuf_clen(const struct pbuf *p)
  * @param p pbuf to increase reference counter of
  *
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 pbuf_ref(struct pbuf *p)
 {
@@ -849,6 +859,7 @@ pbuf_ref(struct pbuf *p)
  *
  * @see pbuf_chain()
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 pbuf_cat(struct pbuf *h, struct pbuf *t)
 {
@@ -891,6 +902,7 @@ pbuf_cat(struct pbuf *h, struct pbuf *t)
  * The ->ref field of the first pbuf of the tail chain is adjusted.
  *
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 pbuf_chain(struct pbuf *h, struct pbuf *t)
 {
@@ -957,6 +969,7 @@ pbuf_dechain(struct pbuf *p)
  *         ERR_ARG if one of the pbufs is NULL or p_to is not big
  *                 enough to hold p_from
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 pbuf_copy(struct pbuf *p_to, const struct pbuf *p_from)
 {
@@ -1023,6 +1036,7 @@ pbuf_copy(struct pbuf *p_to, const struct pbuf *p_from)
  * @param offset offset into the packet buffer from where to begin copying len bytes
  * @return the number of bytes copied, or 0 on failure
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 u16_t
 pbuf_copy_partial(const struct pbuf *buf, void *dataptr, u16_t len, u16_t offset)
 {
@@ -1192,6 +1206,7 @@ pbuf_skip(struct pbuf *in, u16_t in_offset, u16_t *out_offset)
  *
  * @return ERR_OK if successful, ERR_MEM if the pbuf is not big enough
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 pbuf_take(struct pbuf *buf, const void *dataptr, u16_t len)
 {
@@ -1236,6 +1251,7 @@ pbuf_take(struct pbuf *buf, const void *dataptr, u16_t len)
  *
  * @return ERR_OK if successful, ERR_MEM if the pbuf is not big enough
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 pbuf_take_at(struct pbuf *buf, const void *dataptr, u16_t len, u16_t offset)
 {
@@ -1274,6 +1290,7 @@ pbuf_take_at(struct pbuf *buf, const void *dataptr, u16_t len, u16_t offset)
  * @return a new, single pbuf (p->next is NULL)
  *         or the old pbuf if allocation fails
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 struct pbuf *
 pbuf_coalesce(struct pbuf *p, pbuf_layer layer)
 {
@@ -1302,6 +1319,7 @@ pbuf_coalesce(struct pbuf *p, pbuf_layer layer)
  *
  * @return a new pbuf or NULL if allocation fails
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 struct pbuf *
 pbuf_clone(pbuf_layer layer, pbuf_type type, struct pbuf *p)
 {

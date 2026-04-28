@@ -1090,6 +1090,7 @@ netif_set_link_callback(struct netif *netif, netif_status_callback_fn link_callb
  * @return ERR_OK if the packet has been sent
  *         ERR_MEM if the pbuf used to copy the packet couldn't be allocated
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 netif_loop_output(struct netif *netif, struct pbuf *p)
 {
@@ -1696,6 +1697,7 @@ netif_index_to_name(u8_t idx, char *name)
 *
 * @param idx index of netif to find
 */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 struct netif *
 netif_get_by_index(u8_t idx)
 {
@@ -1721,6 +1723,7 @@ netif_get_by_index(u8_t idx)
  * @param name the name of the netif (like netif->name) plus concatenated number
  * in ascii representation (e.g. 'en0')
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 struct netif *
 netif_find(const char *name)
 {

@@ -750,7 +750,7 @@ static void whc_spi_host_drv_init(void)
 
 	/* Initialize the event task */
 	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_host_api_task", (rtos_task_function_t)whc_host_api_task, NULL,
-										WIFI_STACK_SIZE_INIC_IPC_HST_API, 3)) {
+										g_rtw_task_size.whc_hst_api_task, 3)) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create api_host_task Err\n");
 	}
 #endif
@@ -775,5 +775,3 @@ void whc_spi_host_init(void)
 
 	whc_host_init_done = 1;
 }
-
-

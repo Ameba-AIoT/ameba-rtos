@@ -25,7 +25,7 @@
 
 # Expected Result
 
-1. The code will check the correctness of encryption, decryption. 
+1. The code will check the correctness of encryption, decryption.
    	If it is correct, it will print success, and if it is incorrect, it will print failed and print incorrect results.
 
 # Note

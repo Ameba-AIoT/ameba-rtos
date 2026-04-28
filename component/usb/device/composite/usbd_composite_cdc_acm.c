@@ -483,7 +483,7 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 	usbd_composite_cdc_acm_ntf_t *ntf = (usbd_composite_cdc_acm_ntf_t *)ep_intr_in->xfer_buf;
 
 	if (!dev->is_ready) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_CDC_INTR_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX not ready\n", USBD_COMP_CDC_INTR_IN_EP);
 		return ret;
 	}
 
@@ -516,7 +516,7 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 			/* TX not ready*/
 		}
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d busy\n", USBD_COMP_CDC_INTR_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX busy\n", USBD_COMP_CDC_INTR_IN_EP);
 		ret = HAL_BUSY;
 	}
 
@@ -611,7 +611,6 @@ usbd_composite_cdc_acm_init_exit:
   */
 int usbd_composite_cdc_acm_deinit(void)
 {
-	u8 is_busy;
 	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;
 	usbd_ep_t *ep_bulk_in = &cdc->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdc->ep_bulk_out;
@@ -620,11 +619,10 @@ int usbd_composite_cdc_acm_deinit(void)
 #endif
 
 #if CONFIG_COMP_CDC_ACM_NOTIFY
-	is_busy = ep_bulk_in->is_busy || ep_intr_in->is_busy;
+	while (ep_bulk_in->is_busy || ep_intr_in->is_busy) {
 #else
-	is_busy = ep_bulk_in->is_busy;
+	while (ep_bulk_in->is_busy) {
 #endif
-	while (is_busy) {
 		usb_os_delay_us(100);
 	}
 
@@ -666,7 +664,7 @@ int usbd_composite_cdc_acm_transmit(u8 *buf, u32 len)
 	usbd_ep_t *ep_bulk_in = &cdc->ep_bulk_in;
 
 	if (!dev->is_ready) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_CDC_BULK_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX not ready\n", USBD_COMP_CDC_BULK_IN_EP);
 		return ret;
 	}
 
@@ -693,7 +691,7 @@ int usbd_composite_cdc_acm_transmit(u8 *buf, u32 len)
 			/*TX not ready*/
 		}
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d busy\n", USBD_COMP_CDC_BULK_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX busy\n", USBD_COMP_CDC_BULK_IN_EP);
 		ret = HAL_BUSY;
 	}
 
@@ -706,4 +704,3 @@ int usbd_composite_cdc_acm_notify_serial_state(u16 serial_state)
 	return composite_acm_cdc_notify(USB_CDC_ACM_NOTIFY_SERIAL_STATE, 0, &serial_state, sizeof(serial_state));
 }
 #endif
-

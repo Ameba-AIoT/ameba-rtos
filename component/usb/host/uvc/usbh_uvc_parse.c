@@ -184,21 +184,10 @@ static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 			break;
 
 		case USB_DESC_TYPE_ENDPOINT:
-			if (((usbh_ep_desc_t *)desc)->bmAttributes == USB_CH_EP_TYPE_INTR) {
-				vc_intf->intr_ep = desc;
-			} else {
-				//RTK_LOGS(TAG, RTK_LOG_WARN, "Wrong endpoint type\n");
-			}
 			break;
 
-		//class-specific VC interrupt endpoint descriptor
+		//class-specific VC interrupt endpoint descriptor, not support
 		case USBH_UVC_DESC_TYPE_CS_ENDPOINT:
-			if (((usbh_uvc_vc_intr_ep_desc_t *)desc)->bDescriptorType == 0x25 && \
-				((usbh_uvc_vc_intr_ep_desc_t *)desc)->bDescriptorSubType == USB_CH_EP_TYPE_INTR) {
-				vc_intf->cs_intr_desc = desc;
-			} else {
-				//RTK_LOGS(TAG, RTK_LOG_WARN, "Wrong cs vc intr desc\n");
-			}
 			break;
 
 		case USB_DESC_TYPE_INTERFACE:

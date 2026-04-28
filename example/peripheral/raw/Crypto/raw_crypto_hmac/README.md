@@ -1,7 +1,7 @@
 # Example Description
 
-1. In this case, sha256 hmac will be used to calculate the digital of the message. 
-   If the OTPkey is greater than 1, the engine uses the key passed in by the software. 
+1. In this case, sha256 hmac will be used to calculate the digital of the message.
+   If the OTPkey is greater than 1, the engine uses the key passed in by the software.
    When OTPkey is less than or equal to 1, the crypto engine will load the OTP key from efuse.
    To prevent errors caused by multi-core access to crypto simultaneously, a lock is added before CRYPTO_OTPKey_Init, and the lock is released after crypto calculation.
 
@@ -21,7 +21,7 @@
 
 # Expected Result
 
-1. The code will check the correctness of encryption, decryption. 
+1. The code will check the correctness of encryption, decryption.
    	If it is correct, it will print success, and if it is incorrect, it will print failed and print incorrect results.
 
 # Note

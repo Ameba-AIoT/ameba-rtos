@@ -52,6 +52,7 @@
 /* For efuse or flash config end */
 /* PHY layer band config */
 #define CONFIG_DFS
+#define CONFIG_TPC
 
 /* 0: 20 MHz, 1: 40 MHz, 2: 80 MHz, 3: 160MHz, 4: 80+80MHz
 * 2.4G use bit 0 ~ 3, 5G use bit 4 ~ 7
@@ -166,6 +167,7 @@
 #undef CONFIG_TWT
 #undef CONFIG_MCC_MODE
 #undef CONFIG_DFS
+#undef CONFIG_TPC
 #undef CONFIG_FW_C2H_PKT
 #undef CONFIG_IEEE80211W
 #undef CONFIG_WIFI_RA

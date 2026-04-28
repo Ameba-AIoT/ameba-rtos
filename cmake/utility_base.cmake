@@ -1215,8 +1215,7 @@ function(ameba_axf2bin_fw_pack output_file)
     )
     set(oneValueArgs
         p_IMAGE3
-        p_FULLMAC_IMAGE1
-        p_FULLMAC_IMAGE2
+        p_FULLMAC_IMAGE
         p_IMAGE_IMGTOOL_FLOADER
         p_DSP
     )
@@ -1232,8 +1231,7 @@ function(ameba_axf2bin_fw_pack output_file)
     ameba_list_append_if(ARG_p_IMAGE1 full_args --image1 ${ARG_p_IMAGE1})
     ameba_list_append_if(ARG_p_IMAGE2 full_args --image2 ${ARG_p_IMAGE2})
     ameba_list_append_if(ARG_p_IMAGE3 full_args --image3 ${ARG_p_IMAGE3})
-    ameba_list_append_if(ARG_p_FULLMAC_IMAGE1 full_args --fullmac-image1 ${ARG_p_FULLMAC_IMAGE1})
-    ameba_list_append_if(ARG_p_FULLMAC_IMAGE2 full_args --fullmac-image2 ${ARG_p_FULLMAC_IMAGE2})
+    ameba_list_append_if(ARG_p_FULLMAC_IMAGE full_args --fullmac-image ${ARG_p_FULLMAC_IMAGE})
     ameba_list_append_if(ARG_p_IMAGE_IMGTOOL_FLOADER full_args --imgtool-floader ${ARG_p_IMAGE_IMGTOOL_FLOADER})
     ameba_list_append_if(ARG_p_DSP full_args --dsp ${ARG_p_DSP})
     ameba_list_append_if(ARG_p_SBOOT_FOR_IMAGE full_args --sboot-for-image ${ARG_p_SBOOT_FOR_IMAGE})

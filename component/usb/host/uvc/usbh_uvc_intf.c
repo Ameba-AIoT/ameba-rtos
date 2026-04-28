@@ -271,7 +271,7 @@ int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb)
 						 ((const char *)"uvc_sw_mon"),
 						 usbh_uvc_sw_status_dump_thread,
 						 NULL,
-						 1024U,
+						 768U,
 						 1) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create SW dump task fail\n");
 	}
@@ -305,7 +305,6 @@ void usbh_uvc_deinit(void)
 
 	for (i = 0; i < uvc->uvc_desc.vs_num; i++) {
 		stream = &uvc->stream[i];
-		stream->next_xfer = 0;
 		usbh_uvc_stream_deinit(stream);
 	}
 
@@ -373,9 +372,16 @@ int usbh_uvc_stream_on(usbh_uvc_s_ctx_t *para, u32 itf_num)
 	int ret;
 
 	if ((itf_num >= USBH_UVC_VS_DESC_MAX_NUM) || ((para == NULL) || (para->frame_buf_size == 0))) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid paras\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Paras err\n");
 		return HAL_ERR_PARA;
 	}
+
+#if USBH_UVC_USE_HW
+	if (para->frame_buf_size <= USBH_HW_UVC_ISOC_MPS) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Buf size err\n");
+		return HAL_ERR_PARA;
+	}
+#endif
 
 	stream = &uvc->stream[itf_num];
 	if (stream->stream_state == STREAMING_ON) {
@@ -392,10 +398,8 @@ int usbh_uvc_stream_on(usbh_uvc_s_ctx_t *para, u32 itf_num)
 	}
 
 	stream->stream_state = STREAMING_ON;
-	stream->next_xfer = 1;
 #if (USBH_UVC_USE_HW == 0)
-	stream->cur_setting.last_frame = usbh_get_current_frame_number(uvc->host);
-	stream->stream_data_state = STREAM_DATA_IN;
+	stream->next_xfer = 1;
 #endif
 	return HAL_OK;
 }
@@ -583,6 +587,7 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num)
 #endif
 
 exit:
+	stream->get_valid = 0;
 	if ((stream->stream_state != STREAMING_ON) && stream) {
 		stream->get_exit = 1;
 	} else {

@@ -58,8 +58,6 @@ SECTIONS
 	{
 		__flash_text_start__ = .;
 		FLASH_INPUT_TEXT_SECTION
-		*(.xip.only.text*)
-		*(.xip.only.rodata*)
 		. = ALIGN(32);
 		__flash_text_end__ = .;
 	} > KM4TZ_IMG2_XIP

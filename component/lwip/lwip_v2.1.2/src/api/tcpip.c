@@ -123,6 +123,7 @@ again:
  *
  * @param arg unused argument
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static void
 tcpip_thread(void *arg)
 {
@@ -236,7 +237,7 @@ tcpip_thread_poll_one(void)
  * @param inp the network interface on which the packet was received
  * @param input_fn input function to call
  */
-SRAM_WLAN_CRITICAL_CODE_SECTION
+SRAM_LWIP_CRITICAL_CODE_SECTION_L1
 err_t
 tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
 {
@@ -280,7 +281,7 @@ tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
  *          NETIF_FLAG_ETHERNET flags)
  * @param inp the network interface on which the packet was received
  */
-SRAM_WLAN_CRITICAL_CODE_SECTION
+SRAM_LWIP_CRITICAL_CODE_SECTION_L1
 err_t
 tcpip_input(struct pbuf *p, struct netif *inp)
 {
@@ -343,6 +344,7 @@ tcpip_callback(tcpip_callback_fn function, void *ctx)
  *
  * @see tcpip_callback
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcpip_try_callback(tcpip_callback_fn function, void *ctx)
 {
@@ -464,6 +466,7 @@ tcpip_timeout_noblock(u32_t msecs, sys_timeout_handler h, void *arg)
  * @param sem semaphore to wait on
  * @return ERR_OK if the function was called, another err_t if not
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcpip_send_msg_wait_sem(tcpip_callback_fn fn, void *apimsg, sys_sem_t *sem)
 {
@@ -500,6 +503,7 @@ tcpip_send_msg_wait_sem(tcpip_callback_fn fn, void *apimsg, sys_sem_t *sem)
  * @param call Call parameters
  * @return Return value from tcpip_api_call_fn
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcpip_api_call(tcpip_api_call_fn fn, struct tcpip_api_call_data *call)
 {

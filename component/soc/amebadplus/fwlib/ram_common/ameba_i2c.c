@@ -713,7 +713,7 @@ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 		if (((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE) != 0)) {
 			RTK_LOGI(TAG, "I2C EARLY RX DONE\n");
 			return MAX(cnt - I2Cx->IC_TXFLR, 0);
-		};
+		}
 
 		I2Cx->IC_DATA_CMD = (*pBuf++);
 	}

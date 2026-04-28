@@ -28,10 +28,28 @@ u32 VFS1_FLASH_SIZE = 0;
 u32 VFS2_FLASH_BASE_ADDR = 0;
 u32 VFS2_FLASH_SIZE = 0;
 
+void vfs_build_filename(int vfs_id, int user_id,
+						const char *filename, int prefix_len,
+						char *out_name, size_t out_size)
+{
+	if (vfs.drv[vfs_id]->vfs_type == VFS_FATFS) {
+		int drv_id = vfs.drv[vfs_id]->get_interface(vfs.user[user_id].vfs_interface_type);
+		char temp[4] = {0};
+
+		temp[0] = drv_id + '0';
+		temp[1] = ':';
+		temp[2] = '/';
+
+		DiagSnPrintf(out_name, out_size, "%s%s", temp, filename + prefix_len);
+	} else {
+		DiagSnPrintf(out_name, out_size, "%s", filename + prefix_len);
+	}
+}
+
 int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char *operation)
 {
 	(void) operation;
-	int *check_flag = NULL;
+	volatile uint8_t *check_flag = NULL;
 	switch (vfs_type) {
 #ifdef CONFIG_VFS_FATFS_INCLUDED
 	case VFS_FATFS:

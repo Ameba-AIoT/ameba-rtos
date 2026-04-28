@@ -6,7 +6,7 @@ This example describes how to use GDMA's multi-block transfer mode.
 
 None.
 
-# SW configuration
+# SW Configuration
 
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -17,7 +17,7 @@ None.
    - **ReloadSrcDst**,  transfer multiple blocks from the source address to multi blocks at the destination address.
    - **SingleBlock**, unavailable.
 
-# Expect result
+# Expected Result
 
 GDMA will display "DMA data complete MaxMuliBlock = x " in serial port tool.
 
@@ -36,7 +36,7 @@ GDMA will display "DMA data complete MaxMuliBlock = x " in serial port tool.
      - Users need to select the correct **.rdev** file when downloading image.
    - Change the development board, and select 8726E.
 
-# 6. Supported IC
+# Supported IC
 
 RTL8730E
 RTL8726E
@@ -45,3 +45,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F

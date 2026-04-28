@@ -386,6 +386,7 @@ tcp_write_checks(struct tcp_pcb *pcb, u16_t len)
  * - TCP_WRITE_FLAG_MORE (0x02) for TCP connection, PSH flag will not be set on last segment sent,
  * @return ERR_OK if enqueued, another err_t on error
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
 {
@@ -997,6 +998,7 @@ memerr:
  * @param pcb the tcp_pcb over which to send a segment
  * @return ERR_OK if sent, another err_t otherwise
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcp_send_fin(struct tcp_pcb *pcb)
 {
@@ -1028,6 +1030,7 @@ tcp_send_fin(struct tcp_pcb *pcb)
  * @param pcb Protocol control block for the TCP connection.
  * @param flags TCP header flags to set in the outgoing segment.
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcp_enqueue_flags(struct tcp_pcb *pcb, u8_t flags)
 {
@@ -1233,6 +1236,7 @@ tcp_build_wnd_scale_option(u32_t *opts)
  * @return ERR_OK if data has been sent or nothing to send
  *         another err_t on error
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcp_output(struct tcp_pcb *pcb)
 {
@@ -1682,6 +1686,7 @@ tcp_rexmit_rto_prepare(struct tcp_pcb *pcb)
  *
  * @param pcb the tcp_pcb for which to re-enqueue all unacked segments
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 tcp_rexmit_rto_commit(struct tcp_pcb *pcb)
 {
@@ -1703,6 +1708,7 @@ tcp_rexmit_rto_commit(struct tcp_pcb *pcb)
  *
  * @param pcb the tcp_pcb for which to re-enqueue all unacked segments
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 tcp_rexmit_rto(struct tcp_pcb *pcb)
 {
@@ -1720,6 +1726,7 @@ tcp_rexmit_rto(struct tcp_pcb *pcb)
  *
  * @param pcb the tcp_pcb for which to retransmit the first unacked segment
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcp_rexmit(struct tcp_pcb *pcb)
 {
@@ -1779,6 +1786,7 @@ tcp_rexmit(struct tcp_pcb *pcb)
  *
  * @param pcb the tcp_pcb for which to retransmit the first unacked segment
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 tcp_rexmit_fast(struct tcp_pcb *pcb)
 {
@@ -1980,6 +1988,7 @@ tcp_output_control_segment(const struct tcp_pcb *pcb, struct pbuf *p,
  * @param local_port the local TCP port to send the segment from
  * @param remote_port the remote TCP port to send the segment to
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 tcp_rst(const struct tcp_pcb *pcb, u32_t seqno, u32_t ackno,
         const ip_addr_t *local_ip, const ip_addr_t *remote_ip,

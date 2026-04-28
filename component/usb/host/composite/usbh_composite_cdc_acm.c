@@ -10,10 +10,10 @@
 #include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
-
-#define USB_BULK_OUT_MAX_TIMEOUT_TICK          8000 //sof
-#define USB_BULK_IN_MAX_TIMEOUT_TICK           100  //sof
-#define USB_INTR_MAX_TIMEOUT_TICK              1000
+#define USBH_CDC_ACM_DEBUG                     0
+#define USBH_BULK_OUT_MAX_TIMEOUT_TICK         8000 //sof
+#define USBH_BULK_IN_MAX_TIMEOUT_TICK          100  //sof
+#define USBH_INTR_MAX_TIMEOUT_TICK             1000
 #define USBH_CDC_ACM_NOTIFY_BUF_SIZE           256
 #define USBH_CDC_ACM_LOOPBACK_BUF_SIZE         1024
 
@@ -66,7 +66,7 @@ static usbh_composite_cdc_acm_host_t usbh_composite_cdc_acm_host;
 /* Private functions ---------------------------------------------------------*/
 static void usbh_composite_cdc_acm_dump_desc(void)
 {
-#if 1
+#if USBH_CDC_ACM_DEBUG
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
 	usbh_pipe_t *pipe_info;
 
@@ -196,7 +196,7 @@ static int usbh_composite_cdc_acm_attach(usb_host_t *host)
 	}
 
 	if (cdc->param_item == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Can not find acm cfg\n");
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Find cfg err\n");
 		return status;
 	}
 
@@ -222,16 +222,16 @@ static int usbh_composite_cdc_acm_attach(usb_host_t *host)
 					if (ep_desc->bmAttributes == USB_CH_EP_TYPE_BULK) {
 						if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
 							usbh_open_pipe(host, bulk_in, ep_desc);
-							bulk_in->max_timeout_tick = USB_BULK_IN_MAX_TIMEOUT_TICK;
+							bulk_in->max_timeout_tick = USBH_BULK_IN_MAX_TIMEOUT_TICK;
 						} else {
 							usbh_open_pipe(host, bulk_out, ep_desc);
-							bulk_out->max_timeout_tick = USB_BULK_IN_MAX_TIMEOUT_TICK;
+							bulk_out->max_timeout_tick = USBH_BULK_IN_MAX_TIMEOUT_TICK;
 						}
 					} else if (ep_desc->bmAttributes == USB_CH_EP_TYPE_INTR) {
 						usbh_open_pipe(host, intr_in, ep_desc);
-						intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
+						intr_in->max_timeout_tick = USBH_INTR_MAX_TIMEOUT_TICK;
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_INFO,  "Unknown support transfer type(%d)\n", ep_desc->bmAttributes);
+						RTK_LOGS(TAG, RTK_LOG_INFO,  "Unknown xfer type(%d)\n", ep_desc->bmAttributes);
 					}
 				}
 
@@ -256,7 +256,7 @@ static int usbh_composite_cdc_acm_attach(usb_host_t *host)
 		ep_desc = &comm_if_desc->ep_desc_all[0];
 		if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
 			usbh_open_pipe(host, intr_in, ep_desc);
-			intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
+			intr_in->max_timeout_tick = USBH_INTR_MAX_TIMEOUT_TICK;
 		}
 	}
 
@@ -276,10 +276,10 @@ static int usbh_composite_cdc_acm_attach(usb_host_t *host)
 			ep_desc = &data_if_desc->ep_desc_all[i];
 			if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
 				usbh_open_pipe(host, bulk_in, ep_desc);
-				bulk_in->max_timeout_tick = USB_BULK_IN_MAX_TIMEOUT_TICK;
+				bulk_in->max_timeout_tick = USBH_BULK_IN_MAX_TIMEOUT_TICK;
 			} else {
 				usbh_open_pipe(host, bulk_out, ep_desc);
-				bulk_out->max_timeout_tick = USB_BULK_OUT_MAX_TIMEOUT_TICK;
+				bulk_out->max_timeout_tick = USBH_BULK_OUT_MAX_TIMEOUT_TICK;
 			}
 		}
 	}
@@ -481,7 +481,7 @@ static int usbh_composite_cdc_acm_process_tx(usb_host_t *host)
 	} else if (bulk_out->xfer_state == USBH_EP_XFER_START) {
 		usbh_notify_class_state_change(host, bulk_out->pipe_num);
 	} else if (bulk_out->xfer_state == USBH_EP_XFER_ERROR) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail: %d\n", usbh_get_urb_state(host, bulk_out));
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail %d\n", usbh_get_urb_state(host, bulk_out));
 		if ((cdc->cb != NULL) && (cdc->cb->bulk_send != NULL)) {
 			cdc->cb->bulk_send(status);
 		}
@@ -509,7 +509,7 @@ static int usbh_composite_cdc_acm_process_rx(usb_host_t *host)
 	} else if (bulk_in->xfer_state == USBH_EP_XFER_START) {
 		usbh_notify_class_state_change(host, bulk_in->pipe_num);
 	} else if (bulk_in->xfer_state == USBH_EP_XFER_ERROR) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX fail: %d\n", usbh_get_urb_state(host, bulk_in));
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX fail %d\n", usbh_get_urb_state(host, bulk_in));
 		if ((cdc->cb != NULL) && (cdc->cb->bulk_received != NULL)) {
 			cdc->cb->bulk_received(bulk_in->xfer_buf, rx_len);
 		}
@@ -537,7 +537,7 @@ static int usbh_composite_cdc_acm_process_intr_rx(usb_host_t *host)
 	} else if ((intr_in->xfer_state == USBH_EP_XFER_START)) {
 		usbh_notify_class_state_change(host, intr_in->pipe_num);
 	} else if (intr_in->xfer_state == USBH_EP_XFER_ERROR) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX fail: %d\n", usbh_get_urb_state(host, intr_in));
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX fail %d\n", usbh_get_urb_state(host, intr_in));
 		if ((cdc->cb != NULL) && (cdc->cb->intr_received != NULL)) {
 			cdc->cb->intr_received(intr_in->xfer_buf, rx_len);
 		}

@@ -6,13 +6,13 @@ This example describes how to use GDMA's gather and scatter function.
 
 None.
 
-# SW configuration
+# SW Configuration
 
 Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 
 GDMA will display "transfer over " in serial port tool,  and displays the results of source data and destination data.
 
@@ -26,3 +26,4 @@ GDMA will display "transfer over " in serial port tool,  and displays the result
 # Supported IC
 
 RTL8721F
+RTL8720F

@@ -22,9 +22,11 @@ extern usbh_uvc_host_t uvc_host;
 static int usbh_uvc_attach(usb_host_t *host);
 static int usbh_uvc_detach(usb_host_t *host);
 static int usbh_uvc_process(usb_host_t *host, u32 msg);
-static int usbh_uvc_sof(usb_host_t *host);
 static int usbh_uvc_setup(usb_host_t *host);
+#if (USBH_UVC_USE_HW == 0)
+static int usbh_uvc_sof(usb_host_t *host);
 static int usbh_uvc_completed(usb_host_t *host, u8 pipe_num);
+#endif
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -48,8 +50,10 @@ static usbh_class_driver_t usbh_uvc_driver = {
 	.detach = usbh_uvc_detach,
 	.setup = usbh_uvc_setup,
 	.process = usbh_uvc_process,
+#if (USBH_UVC_USE_HW == 0)
 	.sof = usbh_uvc_sof,
 	.completed = usbh_uvc_completed
+#endif
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -101,7 +105,6 @@ static int usbh_uvc_attach(usb_host_t *host)
 			cur_set->valid = 0;
 			pipe->ep_addr = 0;
 			pipe->xfer_len = 0;
-			stream->stream_data_state = STREAM_DATA_OFF;
 			continue;
 		}
 		xfer_len = ep->wMaxPacketSize;
@@ -124,7 +127,6 @@ static int usbh_uvc_attach(usb_host_t *host)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "S[%d] Itf/alt:%d/%d ", i, cur_set->bInterfaceNumber, cur_set->bAlternateSetting);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "EP:%d-%d-%d-%d-%d-%d\n", pipe->ep_addr, pipe->xfer_len, pipe->ep_mps, pipe->ep_interval, pipe->ep_type);
 #endif
-		stream->stream_data_state = STREAM_DATA_OFF;
 	}
 
 	if ((uvc->cb != NULL) && (uvc->cb->attach != NULL)) {
@@ -215,12 +217,13 @@ static void usbh_uvc_find_alt(usbh_uvc_stream_t *stream)
 
 			max_ep_size = xfer_len;
 			pipe->xfer_len = xfer_len;
-#if USBH_UVC_DEBUG
-			RTK_LOGS(TAG, RTK_LOG_INFO, "F Itf/alt:%d/%d\n", cur_set->bInterfaceNumber, cur_set->bAlternateSetting);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "F EP:%d-%d-%d-%d-%d-%d\n", pipe->ep_addr, pipe->xfer_len, pipe->ep_mps, pipe->ep_interval, pipe->ep_type);
-#endif
 		}
 	}
+
+#if USBH_UVC_DEBUG
+	RTK_LOGS(TAG, RTK_LOG_INFO, "F Itf/alt:%d/%d\n", cur_set->bInterfaceNumber, cur_set->bAlternateSetting);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "F EP:%d-%d-%d-%d-%d\n", pipe->ep_addr, pipe->xfer_len, pipe->ep_mps, pipe->ep_interval, pipe->ep_type);
+#endif
 
 	uvc->state = UVC_STATE_CTRL;
 	stream->state = STREAM_STATE_SET_ALT;
@@ -454,6 +457,7 @@ static int usbh_uvc_process(usb_host_t *host, u32 msg)
 	return ret;
 }
 
+#if (USBH_UVC_USE_HW == 0)
 /**
   * @brief  SOF callback
   * @param  host: Host handle
@@ -475,6 +479,7 @@ static int usbh_uvc_completed(usb_host_t *host, u8 pipe_num)
 	usbh_uvc_process_completed(host, pipe_num);
 	return HAL_OK;
 }
+#endif
 
 /* Exported functions --------------------------------------------------------*/
 

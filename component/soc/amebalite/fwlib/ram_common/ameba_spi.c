@@ -605,7 +605,7 @@ SSI_RXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 		} else {
-			RTK_LOGE(TAG, "SSI_RXGDMA_Init: Aligment Err: pTxData=%p, Length=%lu\n", pRxData, Length);
+			RTK_LOGE(TAG, "SSI_RXGDMA_Init: Aligment Err: pRxData=%p, Length=%lu\n", pRxData, Length);
 			return FALSE;
 		}
 	} else {

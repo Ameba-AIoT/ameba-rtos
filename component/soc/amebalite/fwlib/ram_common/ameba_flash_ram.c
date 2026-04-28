@@ -283,8 +283,8 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 
 		/* 3. SPIC Dummy to low speed dummy */
 		flash_init_para.FLASH_rd_sample_dly_cycle = SPIC_LOWSPEED_SAMPLE_PHASE;
-		SPIC->AUTO_LENGTH = (SPIC->AUTO_LENGTH & ~MASK_IN_PHYSICAL_CYC) | IN_PHYSICAL_CYC(flash_init_para.FLASH_rd_sample_dly_cycle);
-		// FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
+		// SPIC->AUTO_LENGTH = (SPIC->AUTO_LENGTH & ~MASK_IN_PHYSICAL_CYC) | IN_PHYSICAL_CYC(flash_init_para.FLASH_rd_sample_dly_cycle);
+		FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
 	} else {
 		/* 1. enable 400M & 400MPS */
 		/*HW need DSPPLL & CPUPLL open*/
@@ -330,9 +330,10 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 
 		/* 3. SPIC Dummy to high speed dummy */
 		flash_init_para.FLASH_rd_sample_dly_cycle = flash_init_para.FLASH_rd_sample_dly_cycle_cal;
-		SPIC->AUTO_LENGTH = (SPIC->AUTO_LENGTH & ~MASK_IN_PHYSICAL_CYC) | IN_PHYSICAL_CYC(flash_init_para.FLASH_rd_sample_dly_cycle);
-		// FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
+		// SPIC->AUTO_LENGTH = (SPIC->AUTO_LENGTH & ~MASK_IN_PHYSICAL_CYC) | IN_PHYSICAL_CYC(flash_init_para.FLASH_rd_sample_dly_cycle);
+		FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
 	}
+	// DSB(); add fence in KR4 to wait register write done.
 
 	if (Protection) {
 		irq_enable_restore(PreState_irq);

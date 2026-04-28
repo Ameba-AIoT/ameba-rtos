@@ -215,6 +215,8 @@ struct rtw_event_radar_report_info {
 	s16 doppler_t2f_strt_idx[3];
 	s16 doppler_t2f_end_idx[3];
 	u16 doppler_sample_num;
+	float aagc_gain;
+	float dagc_gain_normal_mode[4];
 	u8 rsvd[6];                   /**< Ensure the total sizes of struct is 4-byte alignment */
 	u32 radar_data_length;        /**< radar raw data length, unit: byte. [segments report raw data len or complete repoprt raw data len] */
 	u8 radar_data[];              /**< radar raw data head address */

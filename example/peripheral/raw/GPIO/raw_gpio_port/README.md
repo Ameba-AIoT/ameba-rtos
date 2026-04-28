@@ -38,11 +38,11 @@ This example describes how to use GPIO Port read/write by RAW GPIO API.
   - Connect the selected GPIO pins to signal source
   - the selected pins  are the same with above output test
 
-# SW configuration
+# SW Configuration
 
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool. 
+   * `Download` images to board by Ameba Image Tool.
 2. Modify macro `PORT_OUTPUT_TEST` to change output/input test
    `1`: for output test
    `0`: for input test
@@ -50,7 +50,7 @@ This example describes how to use GPIO Port read/write by RAW GPIO API.
    `1`: `PortB`
    `0`: `PortA`
 
-# Expect result
+# Expected Result
 
 - When test GPIO port output:
   - The LED is on when corresponding GPIO pin outputs `1`

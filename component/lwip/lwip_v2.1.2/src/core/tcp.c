@@ -491,6 +491,7 @@ tcp_close_shutdown_fin(struct tcp_pcb *pcb)
  * @return ERR_OK if connection has been closed
  *         another err_t if closing failed and pcb is not freed
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcp_close(struct tcp_pcb *pcb)
 {
@@ -522,6 +523,7 @@ tcp_close(struct tcp_pcb *pcb)
  * @return ERR_OK if shutdown succeeded (or the PCB has already been shut down)
  *         another err_t on error.
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcp_shutdown(struct tcp_pcb *pcb, int shut_rx, int shut_tx)
 {
@@ -570,6 +572,7 @@ tcp_shutdown(struct tcp_pcb *pcb, int shut_rx, int shut_tx)
  * @param pcb the tcp_pcb to abort
  * @param reset boolean to indicate whether a reset should be sent
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 tcp_abandon(struct tcp_pcb *pcb, int reset)
 {
@@ -975,6 +978,7 @@ tcp_update_rcv_ann_wnd(struct tcp_pcb *pcb)
  * @param pcb the tcp_pcb for which data is read
  * @param len the amount of bytes that have been read by the application
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 tcp_recved(struct tcp_pcb *pcb, u16_t len)
 {
@@ -1566,6 +1570,7 @@ tcp_txnow(void)
 }
 
 /** Pass pcb->refused_data to the recv callback */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcp_process_refused_data(struct tcp_pcb *pcb)
 {
@@ -1711,6 +1716,7 @@ tcp_seg_copy(struct tcp_seg *seg)
  * Default receive callback that is called if the user didn't register
  * a recv callback for the pcb.
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 tcp_recv_null(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
 {
@@ -1861,6 +1867,7 @@ tcp_handle_closepend(void)
  * @param prio priority for the new pcb
  * @return a new tcp_pcb that initially is in state CLOSED
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 struct tcp_pcb *
 tcp_alloc(u8_t prio)
 {
@@ -2038,6 +2045,7 @@ tcp_arg(struct tcp_pcb *pcb, void *arg)
  * @param pcb tcp_pcb to set the recv callback
  * @param recv callback function to call for this pcb when data is received
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 tcp_recv(struct tcp_pcb *pcb, tcp_recv_fn recv)
 {
@@ -2058,6 +2066,7 @@ tcp_recv(struct tcp_pcb *pcb, tcp_recv_fn recv)
  * @param pcb tcp_pcb to set the sent callback
  * @param sent callback function to call for this pcb when data is successfully sent
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 tcp_sent(struct tcp_pcb *pcb, tcp_sent_fn sent)
 {
@@ -2154,6 +2163,7 @@ tcp_poll(struct tcp_pcb *pcb, tcp_poll_fn poll, u8_t interval)
  *
  * @param pcb tcp_pcb to purge. The pcb itself is not deallocated!
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 void
 tcp_pcb_purge(struct tcp_pcb *pcb)
 {
@@ -2782,7 +2792,7 @@ u8_t check_tcp_tmr_removable(void)
           (u32_t)(tcp_ticks - pcb->tmr) >= (pcb->keep_idle + pcb->keep_cnt_sent * TCP_KEEP_INTVL(pcb)) / TCP_SLOW_INTERVAL) {
         ret = 0;
         goto exit;
-      } else if ((u32_t)(tcp_ticks - pcb->tmr) >= pcb->keep_idle / TCP_SLOW_INTERVAL && 
+      } else if ((u32_t)(tcp_ticks - pcb->tmr) >= pcb->keep_idle / TCP_SLOW_INTERVAL &&
                 (u32_t)(tcp_ticks - pcb->tmr) < (pcb->keep_idle + pcb->keep_cnt_sent * TCP_KEEP_INTVL(pcb)) / TCP_SLOW_INTERVAL) {
         /* keepalive has sent, not arrive next send time, max sleep time is keep_intvl */
         max_sleep_time = (pcb->keep_idle + pcb->keep_cnt_sent * TCP_KEEP_INTVL(pcb)) / TCP_SLOW_INTERVAL - (u32_t)(tcp_ticks - pcb->tmr);

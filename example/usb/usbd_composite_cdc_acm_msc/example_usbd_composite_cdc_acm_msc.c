@@ -57,7 +57,6 @@ static void composite_cb_status_changed(u8 old_status, u8 status);
 static usbd_config_t composite_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
 	.isr_priority = CONFIG_USBD_COMPOSITE_ISR_THREAD_PRIORITY,
-	.intr_use_ptx_fifo = 0U,
 #if defined (CONFIG_AMEBASMART)
 	.ext_intr_enable = USBD_EPMIS_INTR,
 	.nptx_max_epmis_cnt = 100U,
@@ -213,7 +212,6 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "USB_CDC_ACM_SEND_BREAK\n");
 		/* Do nothing */
 		break;
 

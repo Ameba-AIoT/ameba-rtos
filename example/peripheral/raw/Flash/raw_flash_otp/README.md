@@ -16,7 +16,7 @@ Build and Download:
 # Expected Result
 
 ReceiveData[] is:
-xx xx xx xx xx xx xx xx 
+xx xx xx xx xx xx xx xx
  ########Test security registers before OTP finished########
 
 # Note

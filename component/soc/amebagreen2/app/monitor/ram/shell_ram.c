@@ -96,6 +96,14 @@ UART_LOG_BUF tmp_log_buf = {
 	.UARTLogBufLen = CMD_BUFLEN,
 };//recv CPU Wr and Other CPU Rd
 
+#if defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)
+#define WHC_HOST_CPU_ID		NP_CPU_ID
+#define WHC_DEV_CPU_ID		AP_CPU_ID
+#else
+#define WHC_HOST_CPU_ID		AP_CPU_ID
+#define WHC_DEV_CPU_ID		NP_CPU_ID
+#endif
+
 void shell_loguratRx_Ipc_Tx(u32 ipc_dir, u32 ipc_ch)
 {
 	IPC_MSG_STRUCT ipc_msg_temp;
@@ -115,7 +123,7 @@ void shell_loguratRx_Ipc_Tx(u32 ipc_dir, u32 ipc_ch)
 
 void shell_loguartRx_dispatch(void)
 {
-	u32 i, CpuId, cmd_done = FALSE;
+	u32 i, CpuId = 0, cmd_done = FALSE;
 	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
 
 	for (i = 0; i < pUartLogBuf->UARTLogBufLen; i++) {
@@ -129,9 +137,9 @@ void shell_loguartRx_dispatch(void)
 
 			if (pUartLogBuf->UARTLogBuf[i] == '@') {
 				i = i + 1; /* remove flag */
-				CpuId = NP_CPU_ID;
+				CpuId = WHC_DEV_CPU_ID;
 			} else {
-				CpuId = AP_CPU_ID;
+				CpuId = WHC_HOST_CPU_ID;
 			}
 
 			/* avoid useless space */

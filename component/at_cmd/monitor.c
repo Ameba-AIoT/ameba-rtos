@@ -122,6 +122,12 @@ CmdTickPS(
 		pmu_acquire_wakelock(PMU_OS);
 	}
 
+	// FIXME: Remain for testing use
+	//if (_strcmp((const char *)argv[0], "active") == 0) { // SNZ_MCU/SNZ_COMBO -> ACTIVE
+	//	pmu_acquire_wakelock(PMU_OS);
+	//	pmu_set_power_event(EVENT_ENTER_ACTIVE);
+	//}
+
 	if (_strcmp((const char *)argv[0], "type") == 0) { // PG or CG
 		if (_strcmp((const char *)argv[1], "pg") == 0) {
 			pmu_set_sleep_type(SLEEP_PG);

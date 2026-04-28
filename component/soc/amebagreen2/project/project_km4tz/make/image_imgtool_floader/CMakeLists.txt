@@ -15,10 +15,10 @@ ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
 target_sources(${c_CURRENT_IMAGE} PRIVATE
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_reset.c
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_tim.c
-    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_usb.c
     ${c_CMPT_FWLIB_DIR}/ram_km4tz/ameba_flashclk.c
     ${c_CMPT_USRCFG_DIR}/ameba_bootcfg.c
 
+    ${c_CMPT_USB_DIR}/hal/amebagreen2_usb.c
     ${c_CMPT_USB_DIR}/common/usb_os.c
     ${c_CMPT_USB_DIR}/common/usb_hal.c
     ${c_CMPT_USB_DIR}/common/usb_phy.c
@@ -77,7 +77,6 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
         -Dc_MCU_PROJECT_NAME=${c_MCU_PROJECT_NAME} # name of current mcu project
         -Dc_MCU_KCONFIG_FILE=${c_MCU_KCONFIG_FILE} # file of current project's kconfig file
         -Dc_SDK_IMAGE_TARGET_DIR=${c_SDK_IMAGE_TARGET_DIR} # dir of image output
-        -Dc_BOOT_BINARY_NAME=${boot_name} # name of boot image
 
         # user's variables
         -DFINAL_IMAGE_DIR=${FINAL_IMAGE_DIR}

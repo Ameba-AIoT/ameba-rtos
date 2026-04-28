@@ -505,6 +505,7 @@ ip_reass_chain_frag_into_datagram_and_validate(struct ip_reassdata *ipr, struct 
  * @param p points to a pbuf chain of the fragment
  * @return NULL if reassembly is incomplete, ? otherwise
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 struct pbuf *
 ip4_reass(struct pbuf *p)
 {
@@ -709,7 +710,7 @@ void comp_ip_reas_time(u32_t ms)
     return;
   }
   u32_t comp_ms = ms < IP_TMR_INTERVAL ? IP_TMR_INTERVAL : ms;
-  
+
   while (r != NULL) {
     r->timer = r->timer > comp_ms / IP_TMR_INTERVAL ? r->timer - comp_ms / IP_TMR_INTERVAL : 0;
     r = r->next;
@@ -790,6 +791,7 @@ ipfrag_free_pbuf_custom(struct pbuf *p)
  *
  * @return ERR_OK if sent successfully, err_t otherwise
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 ip4_frag(struct pbuf *p, struct netif *netif, const ip4_addr_t *dest)
 {

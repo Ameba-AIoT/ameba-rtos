@@ -19,9 +19,9 @@ target_sources(${c_CURRENT_IMAGE} PRIVATE
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_otp.c
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_ipc_api.c
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_tim.c
-    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_usb.c
     ${c_CMPT_FWLIB_DIR}/ram_hp/ameba_codec.c
 
+    ${c_CMPT_USB_DIR}/hal/amebasmart_usb.c
     ${c_CMPT_USB_DIR}/common/usb_hal.c
     ${c_CMPT_USB_DIR}/common/usb_os.c
     ${c_CMPT_USB_DIR}/common/usb_phy.c
@@ -102,7 +102,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
 
 set(clean_files
     ${c_SDK_IMAGE_TARGET_DIR}
-    ${FINAL_IMAGE_DIR}/km4_boot_all.bin
+    ${FINAL_IMAGE_DIR}/${c_BOOT_BINARY_NAME}
 )
 
 set(link_deps

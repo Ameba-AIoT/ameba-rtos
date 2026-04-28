@@ -53,6 +53,7 @@ void Boot_SDIO_Pinmux_init(void)
 #if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 static void Boot_Fullmac_SetImgInfo(SubImgInfo_TypeDef *SubImgInfo, IMAGE_HEADER *ImgHdr, const char *Label)
 {
+	RTK_LOGI(TAG, "%s[%08lx:%lx]\n", Label, ImgHdr->image_addr, ImgHdr->image_size);
 	if (ImgHdr->image_size > 0) {
 		SubImgInfo->Addr = ImgHdr->image_addr - IMAGE_HEADER_LEN;
 		SubImgInfo->Len = ImgHdr->image_size + IMAGE_HEADER_LEN;
@@ -61,7 +62,6 @@ static void Boot_Fullmac_SetImgInfo(SubImgInfo_TypeDef *SubImgInfo, IMAGE_HEADER
 		SubImgInfo->Addr = (u32)ImgHdr;
 		SubImgInfo->Len = IMAGE_HEADER_LEN;
 	}
-	RTK_LOGI(TAG, "%s[%08lx:%lx]\n", Label, ImgHdr->image_addr, ImgHdr->image_size);
 }
 
 static IMAGE_HEADER *Boot_Fullmac_ResolveImgHdr(IMAGE_HEADER *EmptyHdr, u8 Valid, u32 RealAddr)
@@ -85,6 +85,9 @@ void Boot_Fullmac_Secure_Check(u8 FlashValid, u8 PsramValid)
 
 	/* for sram recycle, manifest is locate at 0x3007F000. */
 	Manifest = (Manifest_TypeDef *)0x3007F000;
+	_memcpy((void *)&Manifest[0], (void *)Manifest, sizeof(Manifest_TypeDef));
+	BOOT_OTA_Region_Init();
+	Boot_Fullmac_RSIP_Set(IMG_CERT, 0);
 
 	ImgHdr = Boot_Fullmac_ResolveImgHdr(&EmptyXipImgHdr, FlashValid, (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN);
 	Boot_Fullmac_SetImgInfo(&SubImgInfo[0], ImgHdr, ApLabel[0]);
@@ -154,7 +157,7 @@ void Boot_Fullmac_LoadIMGAll(void)
 	u8 mem_type = ChipInfo_MemoryType();
 	if ((boot_src == BOOT_FROM_FLASH) || (boot_src == BOOT_FROM_FLASH1)) { // for test purpose, delete it later
 		flash_highspeed_setup();
-		Boot_Fullmac_LoadImage();
+		Boot_Fullmac_OTA();
 	} else {
 		switch (mem_type) {
 		case MCM_TYPE_NOR_FLASH:
@@ -164,7 +167,6 @@ void Boot_Fullmac_LoadIMGAll(void)
 			flash_highspeed_setup();
 
 			Boot_Fullmac_ImgDownload();
-			Boot_Fullmac_XipEn();
 			Boot_Fullmac_Secure_Check(TRUE, FALSE);
 			break;
 		case MCM_TYPE_PSRAM:

@@ -43,7 +43,6 @@ static int is_stdio(FILE *stream)
 FILE *__wrap_fopen(const char *filename, const char *mode)
 {
 	int prefix_len = 0;
-	int drv_id = 0;
 	int ret = 0;
 	int user_id = 0;
 	int vfs_id = find_vfs_number(filename, &prefix_len, &user_id);
@@ -70,16 +69,7 @@ FILE *__wrap_fopen(const char *filename, const char *mode)
 	finfo->vfs_id = vfs_id;
 	finfo->user_id = user_id;
 
-	if (vfs.drv[vfs_id]->vfs_type == VFS_FATFS) {
-		drv_id = vfs.drv[vfs_id]->get_interface(vfs.user[user_id].vfs_interface_type);
-		char temp[4] = {0};
-		temp[0] = drv_id + '0';
-		temp[1] = ':';
-		temp[2] = '/';
-		DiagSnPrintf(finfo->name, sizeof(finfo->name), "%s%s", temp, filename + prefix_len);
-	} else {
-		DiagSnPrintf(finfo->name, sizeof(finfo->name), "%s", filename + prefix_len);
-	}
+	vfs_build_filename(vfs_id, user_id, filename, prefix_len, finfo->name, sizeof(finfo->name));
 
 	ret = vfs.drv[vfs_id]->open(vfs.user[user_id].fs, finfo->name, mode, finfo);
 	if (ret < 0) {
@@ -267,17 +257,7 @@ int __wrap_remove(const char *filename)
 		return -1;
 	}
 
-	if (vfs.drv[vfs_id]->vfs_type == VFS_FATFS) {
-		int drv_id = 0;
-		drv_id = vfs.drv[vfs_id]->get_interface(vfs.user[user_id].vfs_interface_type);
-		char temp[4] = {0};
-		temp[0] = drv_id + '0';
-		temp[1] = ':';
-		temp[2] = '/';
-		DiagSnPrintf(name, VFS_PATH_MAX, "%s%s", temp, filename + prefix_len);
-	} else {
-		DiagSnPrintf(name, VFS_PATH_MAX, "%s", filename + prefix_len);
-	}
+	vfs_build_filename(vfs_id, user_id, filename, prefix_len, name, VFS_PATH_MAX);
 
 	ret = vfs.drv[vfs_id]->remove(vfs.user[user_id].fs, name);
 	rtos_mem_free(name);
@@ -319,19 +299,8 @@ int __wrap_rename(const char *oldname, const char *newname)
 		return -1;
 	}
 
-	if (vfs.drv[vfs_id]->vfs_type == VFS_FATFS) {
-		int drv_id = 0;
-		drv_id = vfs.drv[vfs_id]->get_interface(vfs.user[user_id].vfs_interface_type);
-		char temp[4] = {0};
-		temp[0] = drv_id + '0';
-		temp[1] = ':';
-		temp[2] = '/';
-		DiagSnPrintf(old_name, VFS_PATH_MAX, "%s%s", temp, oldname + prefix_len);
-		DiagSnPrintf(new_name, VFS_PATH_MAX, "%s%s", temp, newname + prefix_len);
-	} else {
-		DiagSnPrintf(old_name, VFS_PATH_MAX, "%s", oldname + prefix_len);
-		DiagSnPrintf(new_name, VFS_PATH_MAX, "%s", newname + prefix_len);
-	}
+	vfs_build_filename(vfs_id, user_id, oldname, prefix_len, old_name, VFS_PATH_MAX);
+	vfs_build_filename(vfs_id, user_id, newname, prefix_len, new_name, VFS_PATH_MAX);
 
 	ret = vfs.drv[vfs_id]->rename(vfs.user[user_id].fs, old_name, new_name);
 	rtos_mem_free(new_name);
@@ -435,17 +404,8 @@ void *__wrap_opendir(const char *name)
 	memset(finfo, 0x00, sizeof(vfs_file));
 	finfo->vfs_id = vfs_id;
 	finfo->user_id = user_id;
-	if (vfs.drv[vfs_id]->vfs_type == VFS_FATFS) {
-		int drv_id = 0;
-		drv_id = vfs.drv[vfs_id]->get_interface(vfs.user[user_id].vfs_interface_type);
-		char temp[4] = {0};
-		temp[0] = drv_id + '0';
-		temp[1] = ':';
-		temp[2] = '/';
-		DiagSnPrintf(finfo->name, sizeof(finfo->name), "%s%s", temp, name + prefix_len);
-	} else {
-		DiagSnPrintf(finfo->name, sizeof(finfo->name), "%s", name + prefix_len);
-	}
+
+	vfs_build_filename(vfs_id, user_id, name, prefix_len, finfo->name, sizeof(finfo->name));
 
 	ret = vfs.drv[vfs_id]->opendir(vfs.user[user_id].fs, finfo->name, finfo);
 	if (ret != 0) {
@@ -510,17 +470,7 @@ int __wrap_rmdir(const char *path)
 		return -1;
 	}
 
-	if (vfs.drv[vfs_id]->vfs_type == VFS_FATFS) {
-		int drv_id = 0;
-		drv_id = vfs.drv[vfs_id]->get_interface(vfs.user[user_id].vfs_interface_type);
-		char temp[4] = {0};
-		temp[0] = drv_id + '0';
-		temp[1] = ':';
-		temp[2] = '/';
-		DiagSnPrintf(name, VFS_PATH_MAX, "%s%s", temp, path + prefix_len);
-	} else {
-		DiagSnPrintf(name, VFS_PATH_MAX, "%s", path + prefix_len);
-	}
+	vfs_build_filename(vfs_id, user_id, path, prefix_len, name, VFS_PATH_MAX);
 
 	ret = vfs.drv[vfs_id]->rmdir(vfs.user[user_id].fs, name);
 	rtos_mem_free(name);
@@ -555,17 +505,7 @@ int __wrap_mkdir(const char *pathname, mode_t mode)
 		return -1;
 	}
 
-	if (vfs.drv[vfs_id]->vfs_type == VFS_FATFS) {
-		int drv_id = 0;
-		drv_id = vfs.drv[vfs_id]->get_interface(vfs.user[user_id].vfs_interface_type);
-		char temp[4] = {0};
-		temp[0] = drv_id + '0';
-		temp[1] = ':';
-		temp[2] = '/';
-		DiagSnPrintf(name, VFS_PATH_MAX, "%s%s", temp, pathname + prefix_len);
-	} else {
-		DiagSnPrintf(name, VFS_PATH_MAX, "%s", pathname + prefix_len);
-	}
+	vfs_build_filename(vfs_id, user_id, pathname, prefix_len, name, VFS_PATH_MAX);
 
 	ret = vfs.drv[vfs_id]->mkdir(vfs.user[user_id].fs, name);
 	rtos_mem_free(name);
@@ -594,17 +534,7 @@ int __wrap_access(const char *pathname, int mode)
 		return -1;
 	}
 
-	if (vfs.drv[vfs_id]->vfs_type == VFS_FATFS) {
-		int drv_id = 0;
-		drv_id = vfs.drv[vfs_id]->get_interface(vfs.user[user_id].vfs_interface_type);
-		char temp[4] = {0};
-		temp[0] = drv_id + '0';
-		temp[1] = ':';
-		temp[2] = '/';
-		DiagSnPrintf(name, VFS_PATH_MAX, "%s%s", temp, pathname + prefix_len);
-	} else {
-		DiagSnPrintf(name, VFS_PATH_MAX, "%s", pathname + prefix_len);
-	}
+	vfs_build_filename(vfs_id, user_id, pathname, prefix_len, name, VFS_PATH_MAX);
 
 	ret = vfs.drv[vfs_id]->access(vfs.user[user_id].fs, name, mode);
 	rtos_mem_free(name);
@@ -633,17 +563,7 @@ int __wrap_stat(const char *path, struct stat *buf)
 		return -1;
 	}
 
-	if (vfs.drv[vfs_id]->vfs_type == VFS_FATFS) {
-		int drv_id = 0;
-		drv_id = vfs.drv[vfs_id]->get_interface(vfs.user[user_id].vfs_interface_type);
-		char temp[4] = {0};
-		temp[0] = drv_id + '0';
-		temp[1] = ':';
-		temp[2] = '/';
-		DiagSnPrintf(name, VFS_PATH_MAX, "%s%s", temp, path + prefix_len);
-	} else {
-		DiagSnPrintf(name, VFS_PATH_MAX, "%s", path + prefix_len);
-	}
+	vfs_build_filename(vfs_id, user_id, path, prefix_len, name, VFS_PATH_MAX);
 
 	ret = vfs.drv[vfs_id]->stat(vfs.user[user_id].fs, name, buf);
 	rtos_mem_free(name);

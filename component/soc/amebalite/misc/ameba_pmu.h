@@ -36,7 +36,6 @@ enum PMU_DEVICE {
 typedef uint32_t (*PSM_HOOK_FUN)(uint32_t, void *param_ptr);
 
 typedef struct {
-	uint32_t					nDeviceId;
 	PSM_HOOK_FUN		sleep_hook_fun;
 	void				*sleep_param_ptr;
 	PSM_HOOK_FUN		wakeup_hook_fun;

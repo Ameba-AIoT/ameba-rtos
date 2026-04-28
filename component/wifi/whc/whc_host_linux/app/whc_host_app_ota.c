@@ -35,19 +35,36 @@ extern uint8_t rmesh_ap_gw[4];
 
 void whc_host_ota_updata_init(struct whc_host_ota_info *ota_info)
 {
-	if (ota_info == NULL) {
-		printf("ota_info shouldn't be empty\r\n");
-	}
-
-	whc_ota_ongoing = 1;
-	uint32_t buf_len = 4 + sizeof(struct whc_host_ota_hdr) + sizeof(struct whc_host_ota_info);
-	uint8_t *buf = malloc(buf_len);
-	uint8_t *ptr = buf;
-
+	uint32_t buf_len, offset;
+	uint8_t *buf;
+	uint8_t *ptr;
 	struct whc_host_ota_hdr *pota_hdr;
 	struct whc_host_ota_info *pota_info;
 
+	if (ota_info == NULL) {
+		printf("ota_info shouldn't be empty\r\n");
+		return;
+	}
+
+	whc_ota_ongoing = 1;
+
+	if ((ota_info->host_len <= 0) || (ota_info->resource_len <= 0)) {
+		printf("wrong ota info\r\n");
+		return;
+	}
+
+	/* sizeof(struct whc_host_ota_info) can -8 in total len, didn't do here for margin for align */
+	buf_len = 4 + sizeof(struct whc_host_ota_hdr) + sizeof(struct whc_host_ota_info) + ota_info->host_len + ota_info->resource_len;
+
+	buf = malloc(buf_len);
 	memset(buf, 0, buf_len);
+
+	if (buf == NULL) {
+		printf("%s mem error\r\n", __func__);
+		return;
+	}
+
+	ptr = buf;
 
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
 	ptr += 4;
@@ -58,10 +75,24 @@ void whc_host_ota_updata_init(struct whc_host_ota_info *ota_info)
 
 	ptr += sizeof(struct whc_host_ota_hdr);
 
-	memcpy(ptr, ota_info, sizeof(struct whc_host_ota_info));
+	pota_info = (struct whc_host_ota_info *)ptr;
+
+	offset = offsetof(struct whc_host_ota_info, host);
+	memcpy(pota_info, ota_info, offset);
+	ptr += offset;
+
+	memcpy(ptr, ota_info->host, ota_info->host_len);
+	ptr += ota_info->host_len;
+
+	memcpy(ptr, ota_info->resource, ota_info->resource_len);
+	ptr += ota_info->resource_len;
+
 	/* tell dev prepare */
 	whc_host_api_send_nl_data(buf, buf_len);
-	free(buf);
+
+	if (buf) {
+		free(buf);
+	}
 
 	if (whc_ota_ctx) {
 		printf("error!, whc_ota_ctx should be empty \r\n");
@@ -204,14 +235,32 @@ int whc_host_ota(void)
 
 	memset(&pota_info, 0, sizeof(struct whc_host_ota_info));
 	pota_info.port = PORT;
+	pota_info.ota_type = OTA_FOR_NORMAL;
+
+	pota_info.host_len = strlen(ota_host) + 1;
+	pota_info.resource_len = strlen(ota_resource) + 1;
+
+	pota_info.host = malloc(pota_info.host_len);
+	memset(pota_info.host, 0, pota_info.host_len);
+
+	pota_info.resource = malloc(pota_info.resource_len);
+	memset(pota_info.resource, 0, pota_info.resource_len);
+
 	memcpy(pota_info.host, ota_host, strlen(ota_host));
 	memcpy(pota_info.resource, ota_resource, strlen(ota_resource));
-	pota_info.ota_type = OTA_FOR_NORMAL;
 
 	/* sync with dev, set param */
 	whc_host_ota_updata_init(&pota_info);
 
 	whc_host_ota_updata_start(whc_ota_ctx);
+
+	if (pota_info.host) {
+		free(pota_info.host);
+	}
+
+	if (pota_info.resource) {
+		free(pota_info.resource);
+	}
 	return 0;
 }
 
@@ -318,27 +367,40 @@ int whc_host_remsh_ota_request(uint8_t *buf, int recv_len)
 		/*get target mac when rnat*/
 		memcpy(target_mac, buf + 15, ETH_ALEN);
 		/*get host and resource*/
-		httpiplen = buf[22];
 		memset(&ota_info, 0, sizeof(struct whc_host_ota_info));
-		if (httpiplen > 15) {
-			printf("%s error size too long \r\n", __func__);
-		}
 
+		/* host */
+		httpiplen = buf[22];
+		ota_info.host_len = httpiplen;
+		ota_info.host = malloc(httpiplen);
+		memset(ota_info.host, 0, httpiplen);
 		memcpy(ota_info.host, buf + 23, httpiplen);
+
+		/* port */
 		memcpy(&ota_info.port, buf + 25 + httpiplen, 2);
 		ota_info.port = ntohs(ota_info.port);
-		http_resourcelen = buf[28 + httpiplen];
-		if (http_resourcelen > 19) {
-			printf("%s error http_resourcelen too long \r\n", __func__);
-		}
 
+		/* resource */
+		http_resourcelen = buf[28 + httpiplen];
+		ota_info.resource_len = http_resourcelen;
+		ota_info.resource =  malloc(http_resourcelen);
+		memset(ota_info.resource, 0, http_resourcelen);
 		memcpy(ota_info.resource, buf + 29 + httpiplen, http_resourcelen);
+
 		ota_info.ota_type = OTA_FOR_RMESH;
 		ota_info.rmesh_ota_type = buf[31 + httpiplen + http_resourcelen];
 
 		if (!memcmp(target_mac, self_mac_p0, ETH_ALEN)) { /*ota cmd to my self, peform OTA*/
 			whc_host_ota_updata_init(&ota_info);
 			whc_host_ota_updata_start(whc_ota_ctx);
+		}
+
+		if (ota_info.host) {
+			free(ota_info.host);
+		}
+
+		if (ota_info.resource) {
+			free(ota_info.resource);
 		}
 	}
 	return 0;

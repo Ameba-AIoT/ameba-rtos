@@ -58,8 +58,8 @@ macro(ameba_soc_project_create name)
     '/opt/rtk-toolchain' in linux and 'C:/rtk-toolchain' in windows.")
 
     #NOTICE: Cache variable FINAL_IMAGE_DIR will be deleted at the end.
-    set(FINAL_IMAGE_DIR ${FINAL_IMAGE_DIR} CACHE PATH "Final images path, i.e., xxx_boot_all.bin, ota_all.bin \
-    and xxx_app.bin final path. If FINAL_IMAGE_DIR is specified by user, final images will be copied to \
+    set(FINAL_IMAGE_DIR ${FINAL_IMAGE_DIR} CACHE PATH "Final images path, i.e., boot.bin, ota_all.bin \
+    and app.bin final path. If FINAL_IMAGE_DIR is specified by user, final images will be copied to \
     <FINAL_IMAGE_DIR> after building. Default final image directory is project root path, \
     where the current CMakeLists.txt is located.")
     ###############################################################################

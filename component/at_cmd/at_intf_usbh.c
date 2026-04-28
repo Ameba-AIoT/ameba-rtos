@@ -303,14 +303,6 @@ WAIT_CONNECT:
 				continue;
 			}
 
-			if (g_tt_mode_check_watermark) {
-				if (space - atcmd_usbh_rx_len < MAX_TT_HEAP_SIZE * (1 - TT_MODE_HIGH_WATERMARK) && g_tt_mode_indicate_high_watermark == 0) {
-					g_tt_mode_indicate_high_watermark = 1;
-					g_tt_mode_indicate_low_watermark = 0;
-					at_printf(ATCMD_TT_MODE_HIGH_WATERMARK_STR);
-				}
-			}
-
 			/*recv stop char under tt mode*/
 			if (atcmd_usbh_rx_len == 1 && cdc_acm_loopback_rx_buf[0] == '<') {
 				g_tt_mode_stop_char_cnt++;
@@ -320,12 +312,20 @@ WAIT_CONNECT:
 				if (space >= atcmd_usbh_rx_len) {
 					RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, cdc_acm_loopback_rx_buf, atcmd_usbh_rx_len);
 					rtos_sema_give(atcmd_tt_mode_sema);
-				} else if (space > 0) {
-					RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, cdc_acm_loopback_rx_buf, space);
-					rtos_sema_give(atcmd_tt_mode_sema);
-					RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop partial data\n");
 				} else {
-					RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
+					while (1) {
+						rtos_time_delay_ms(1);
+						if (g_tt_mode) {
+							space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+							if (space >= atcmd_usbh_rx_len) {
+								RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, cdc_acm_loopback_rx_buf, atcmd_usbh_rx_len);
+								rtos_sema_give(atcmd_tt_mode_sema);
+								break;
+							}
+						} else {
+							break;
+						}
+					}
 				}
 			}
 
@@ -543,7 +543,7 @@ void atio_usbh_init(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"atcmd_usbh_input_handler_task"), (rtos_task_t)atcmd_usbh_input_handler_task, NULL, 4096, 5) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"atcmd_usbh_input_handler_task"), (rtos_task_t)atcmd_usbh_input_handler_task, NULL, 6 * 1024, 5) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "\n\r%s rtos_task_create(atcmd_usbh_input_handler_task) failed", __FUNCTION__);
 	}
 }

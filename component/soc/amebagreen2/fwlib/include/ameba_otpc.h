@@ -342,6 +342,9 @@ enum OTP_OPMode {
 #define EFUSE_REAL_CONTENT_LEN						OTP_REAL_CONTENT_LEN
 #define EFUSE_OOB_PROTECT_BYTES						(EFUSE_REAL_CONTENT_LEN - LOGICAL_MAP_SECTION_LEN)
 
+#define EFUSE_ETH_MAC_ADDR					0x300
+#define EFUSE_ETH_MAC_ADDR_LEN      6
+
 #define OTP_CRC0_BASE								0x370
 #define OTP_CRC1_BASE								0x372
 #define OTP_CRC2_BASE								0x374
@@ -360,6 +363,10 @@ _LONG_CALL_ int OTP_SetCRC(void);
 _LONG_CALL_ int OTP_Read8(u32 Addr, u8 *Data);
 _LONG_CALL_ int OTP_Write8(u32 Addr, u8 Data);
 _LONG_CALL_ int OTP_Read32(u32 Addr, u32 *Data);
+_LONG_CALL_ int OTP_WritePhyBuf(u32 addr, const u8 *data, u32 len);
+_LONG_CALL_ int OTP_ClearPhyBit(u32 addr, u8 bit);
+_LONG_CALL_ int OTP_SetLogBit(u32 addr, u8 bit, u8 val);
+
 #ifdef __cplusplus
 }
 #endif

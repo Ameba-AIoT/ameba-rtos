@@ -4,12 +4,12 @@ This example describes how to build and use MIPI, Which shows how to display pic
 # HW Configuration
 `PA_14` shall connect to LCM reset pin During the PCB design phase.
 
-# SW configuration
+# SW Configuration
 - Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 There are five pictures on the screen that keep switching.
 
 # Note

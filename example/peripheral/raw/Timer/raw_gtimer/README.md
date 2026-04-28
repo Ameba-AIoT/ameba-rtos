@@ -1,4 +1,4 @@
-# Description
+# Example Description
 This example describes how to use general timer TIM2&TIM3 to generation periodic signal.
 
 # HW Configuration
@@ -20,16 +20,16 @@ This example describes how to use general timer TIM2&TIM3 to generation periodic
 
 	GND <--> LED1 <---> PB_17
 	GND <--> LED2 <---> PB_18
-# SW configuration
+# SW Configuration
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
-   
+
 2. How to modify gpio pin:
-    you can also modify pinmux group settings according to correct pinmux table. for example: 
+    you can also modify pinmux group settings according to correct pinmux table. for example:
    - If you want to modify pinmux group setting in RTL8730E, then you should refer to UM0602_RTL8730E_pinmux.xls
 
-# Expect result
+# Expected Result
 
   - The LED will periodically turn on and off.
   - Link logic analyzer, and two PWM waveforms with periods of 1s and 500ms can be find.

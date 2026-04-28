@@ -149,6 +149,7 @@ etharp_rarp_input(struct netif *netif, struct eth_addr *ethaddr, struct pbuf *p)
  * @see ETHARP_SUPPORT_VLAN
  * @see LWIP_HOOK_VLAN_CHECK
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 ethernet_input(struct pbuf *p, struct netif *netif)
 {
@@ -347,7 +348,7 @@ free_and_return:
  * @param eth_type ethernet type (@ref lwip_ieee_eth_type)
  * @return ERR_OK if the packet was sent, any other err_t on failure
  */
-SRAM_WLAN_CRITICAL_CODE_SECTION
+SRAM_LWIP_CRITICAL_CODE_SECTION_L1
 err_t
 ethernet_output(struct netif * netif, struct pbuf * p,
                 const struct eth_addr * src, const struct eth_addr * dst,

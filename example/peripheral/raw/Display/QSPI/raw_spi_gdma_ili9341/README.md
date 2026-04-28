@@ -1,4 +1,4 @@
-#  Example Description
+# Example Description
 
 This example shows how to use SPI interface to driver ILI9341 LCD Module through GDMA. GDMA will carry data from SRAM to QSPI FIFO and then to LCD.
 
@@ -16,21 +16,21 @@ The following is PIN definition and how to connect with ILI9341 LCD module:
 
 Also, GND should connect with each other and VCC of ILI9341 LCD module should connect with DUT 3.3V.
 
-#  SW configuration
+# SW Configuration
 
 Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-#  Expect result
+# Expected Result
 
 ILI9341 LCD will show RED, GREEN, BLUE in turn.
 
-#  Note
+# Note
 
 None
 
-#  Supported IC
+# Supported IC
 
 RTL8721Dx
 

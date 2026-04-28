@@ -1,28 +1,28 @@
-CC=gcc
+CC := $(CROSS_COMPILE)gcc
+O := $(shell pwd)
 
-CFLAGS = -I. -I.. -I../.. -I../common -I../common/include
+CFLAGS += -I. -I.. -I../.. -I../common -I../common/include
+CFLAGS += -I../../whc_dev
 
 ccflags-y += -DCONFIG_FULLMAC
 CFLAGS += $(ccflags-y)
 
-LDFLAGS = -lpthread
+LDFLAGS += -lpthread
 
-SRC_FILES = whc_host_app_api.c whc_host_app_ota.c  whc_host_app.c
+SRC_FILES := whc_host_app_api.c whc_host_app_ota.c  whc_host_app.c
 
-OBJ_FILES = $(SRC_FILES:.c=.o)
+OBJ_FILES := $(addprefix $(O)/, $(SRC_FILES:.c=.o))
 
-TARGET = whc_cust_path_demo
+TARGET := whc_cust_path_demo
 
-all: $(TARGET)
+all: $(O)/$(TARGET)
 
-$(TARGET): $(OBJ_FILES)
-	$(CC) $(OBJ_FILES) -o $@ $(LDFLAGS)
+$(O)/$(TARGET): $(OBJ_FILES)
+	$(CC) $(OBJ_FILES) -o $@ $(LDFLAGS) $(CFLAGS)
 
-../%.o: ../%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(O)/%.o: %.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -c $< -o $@
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
-	
 clean:
-	rm -f $(TARGET) *.o
+	rm -fr $(O)/$(TARGET)
+	rm -fr $(O)/*.o $(O)/*.a

@@ -8,11 +8,7 @@ None
 
 # SW configuration
 
-1. Enable Audio
-	To enable audio output via the speaker, set CONFIG_USBD_AUDIO_EN to 1 in the configuration file located at "example/usb/usbd_uac/example_usbd_uac.c".
-	Once configured, audio playback from the host will be transmitted to the speaker connected to the EVB.
-
-2. Menuconfig
+1. Menuconfig
 	Use menuconfig and :
 	- Choose `CONFIG USB --->`:
 	```
@@ -25,9 +21,9 @@ None
 	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
 	```
 	[*] Enable Audio Framework
-			Select Audio Interfaces (PassThrough)  --->
+			Select Audio Interfaces (Mixer)  --->
 
-	Note: If the audio speaker is not very smooth, choose `Select Audio Interfaces (Mixer)`, check the audio composite note to get more details.
+	Note: For details on audio configuration, please refer to https://aiot.realmcu.com/en/latest/rtos/multimedia/audio/index.html
 	```
 
 	If the development board model is RTL8721F, please follow the steps below to select FREERTOS via menuconfig.
@@ -39,7 +35,7 @@ None
 	```
 	Save and exit.
 
-3. Build and Download:
+2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 

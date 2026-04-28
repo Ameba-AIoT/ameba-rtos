@@ -66,6 +66,9 @@ extern "C" {
    https://jira.realtek.com/browse/RSWLANDIOT-9400 */
 /* Wlan critical code, which could be put in sram */
 #define SRAM_WLAN_CRITICAL_CODE_SECTION     SECTION(".wlan.critical.text")
+#define SRAM_IPERF_CRITICAL_CODE_SECTION     SECTION(".wlan.critical.text")
+#define SRAM_LWIP_CRITICAL_CODE_SECTION_L1   SECTION(".wlan.critical.text")
+#define SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 
 // Wlan Section(Not Used)
 #define WLAN_ROM_TEXT_SECTION

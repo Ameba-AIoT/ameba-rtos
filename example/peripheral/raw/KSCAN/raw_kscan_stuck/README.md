@@ -17,13 +17,13 @@ Support up to 8*8 keyboard, and this example hardware connection is as follows:
 | Row 7 | PA 24 | Col 7 | PB 2  |
 | Row 8 | PB 7  | Col 8 | PB 3  |
 
-# SW configuration
+# SW Configuration
 
 Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
-# Expect result
+# Expected Result
 
 Key stuck will generate interrupt, mask stuck key, other keys work normal. For example, Press and hold the key (8,6), then release it. It's observed that a stuck interrupt is generated for key press and release. Bit[8] = 1 indicates that the key is pressed, and 0 indicates that the key is released.
 ```shell

@@ -18,6 +18,7 @@ ameba_set_if_unset(v_MBEDTLS_VER 3.6.2)
 ameba_set_if_unset(v_HTTP2_VER 1.31.0)
 
 ameba_set_if_unset(v_GIC_VER 2)
+ameba_set_if_unset(c_BOOT_BINARY_NAME boot.bin)
 
 ############################## Global Definitions MUST NOT be Override Manually ################################
 

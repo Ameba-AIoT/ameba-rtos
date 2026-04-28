@@ -155,6 +155,7 @@ ip4_route_src(const ip4_addr_t *src, const ip4_addr_t *dest)
  * @param dest the destination IP address for which to find the route
  * @return the netif on which to send to reach dest
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 struct netif *
 ip4_route(const ip4_addr_t *dest)
 {
@@ -401,6 +402,7 @@ return_noroute:
 #endif /* IP_FORWARD */
 
 /** Return true if the current input packet should be accepted on this netif */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 static int
 ip4_input_accept(struct netif *netif)
 {
@@ -453,7 +455,7 @@ ip4_input_accept(struct netif *netif)
  * @return ERR_OK if the packet was processed (could return ERR_* if it wasn't
  *         processed, but currently always returns ERR_OK)
  */
-SRAM_WLAN_CRITICAL_CODE_SECTION
+SRAM_LWIP_CRITICAL_CODE_SECTION_L1
 err_t
 ip4_input(struct pbuf *p, struct netif *inp)
 {
@@ -832,6 +834,7 @@ ip4_input(struct pbuf *p, struct netif *inp)
  * @note ip_id: RFC791 "some host may be able to simply use
  *  unique identifiers independent of destination"
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 ip4_output_if(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest,
               u8_t ttl, u8_t tos,
@@ -847,6 +850,7 @@ ip4_output_if(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest,
  * @ param ip_options pointer to the IP options, copied into the IP header
  * @ param optlen length of ip_options
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 ip4_output_if_opt(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest,
                   u8_t ttl, u8_t tos, u8_t proto, struct netif *netif, void *ip_options,
@@ -872,6 +876,7 @@ ip4_output_if_opt(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest,
  * Same as ip_output_if() but 'src' address is not replaced by netif address
  * when it is 'any'.
  */
+SRAM_LWIP_CRITICAL_CODE_SECTION_L2
 err_t
 ip4_output_if_src(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest,
                   u8_t ttl, u8_t tos,
@@ -885,7 +890,7 @@ ip4_output_if_src(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest,
  * Same as ip_output_if_opt() but 'src' address is not replaced by netif address
  * when it is 'any'.
  */
-SRAM_WLAN_CRITICAL_CODE_SECTION
+SRAM_LWIP_CRITICAL_CODE_SECTION_L1
 err_t
 ip4_output_if_opt_src(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest,
                       u8_t ttl, u8_t tos, u8_t proto, struct netif *netif, void *ip_options,

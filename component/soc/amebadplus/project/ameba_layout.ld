@@ -85,8 +85,8 @@ IMG3 size is 0.    │  │     KM4_IMG3(44K)    │    │
  0x20080000──────────►└──────────────────────┴────────┘
 */
 /* BOOT(IMG1)/IMG3/IMG2 layout*/												/* Trstzone On			   | Trustzone off			*/
-#define KM4_IMG1_RAM_SATRT   		(SRAM_BASE + KM0_KM4_RAM_SIZE)				/* 0x2000A000 ~ 0x20010000 | 0x2000A000 ~ 0x2000B000*/
-#define KM4_RAM_TZ_NSC_START		(KM4_IMG1_RAM_SATRT + KM4_IMG1_SIZE )		/* 0x20010000 ~ 0x20011000 | unavailable */
+#define KM4_IMG1_RAM_START   		(SRAM_BASE + KM0_KM4_RAM_SIZE)				/* 0x2000A000 ~ 0x20010000 | 0x2000A000 ~ 0x2000B000*/
+#define KM4_RAM_TZ_NSC_START		(KM4_IMG1_RAM_START + KM4_IMG1_SIZE )		/* 0x20010000 ~ 0x20011000 | unavailable */
 #define KM4_RAM_TZ_ENTRY_START		(KM4_RAM_TZ_NSC_START + RAM_TZ_NSC_SIZE )		/* 0x20011000 ~ 0x20015000 | unavailable */
 #define KM4_RAM_TZ_SECURE_START		(KM4_RAM_TZ_ENTRY_START + RAM_TZ_ENTRY_SIZE )	/* 0x20015000 ~ 0x20020000 | unavailable */
 #define KM4_IMG2_RAM_START			(KM4_RAM_TZ_SECURE_START + RAM_KM4_IMG3_SIZE)	/* 0x20020000 ~ 0x20068000 | 0x2000B000 ~ 0x20068000*/
@@ -117,7 +117,7 @@ MEMORY
 	KM4_ROMBSS_RAM_S (rw) :                 ORIGIN = 0x30007000, LENGTH = 0x30008000 - 0x30007000	/* KM4 ROM BSS RAM S: 4k */
 	KM4_MSP_RAM_S (rw) :                    ORIGIN = 0x30009000, LENGTH = 0x3000A000 - 0x30009000	/* KM4 MSP_S RAM: 4k */
 	KM0_RTOS_STATIC_0_NS(rw):               ORIGIN = 0x20008000, LENGTH = 0x20009000 - 0x20008000	/* KM0 KM0_RTOS_STATIC_0_NS RAM: 4k */
-	KM4_BOOTLOADER_RAM_S (rwx) :            ORIGIN = KM4_IMG1_RAM_SATRT + SECURE_ADDR_OFFSET + IMAGE_HEADER_LEN, LENGTH = KM4_IMG1_SIZE  - IMAGE_HEADER_LEN		/* KM4 BOOT Loader RAM: 4K or 24k */
+	KM4_BOOTLOADER_RAM_S (rwx) :            ORIGIN = KM4_IMG1_RAM_START + SECURE_ADDR_OFFSET + IMAGE_HEADER_LEN, LENGTH = KM4_IMG1_SIZE  - IMAGE_HEADER_LEN		/* KM4 BOOT Loader RAM: 4K or 24k */
 	KM4_FLOADER_RAM_S (rwx) :               ORIGIN = 0x3000A020, LENGTH = 0x30020000 - 0x3000A020	/* KM4 ImgTool Flash Loader RAM: 88k */
 
 	/* KM4 Non-secure RAM */
@@ -208,3 +208,8 @@ __km4_bd_boot_download_addr__ = 0x30012000;
 __km0_bd_ram_mp_start__ = ORIGIN(KM0_BD_RAM_MP);
 __km4_bd_ram_mp_start__ = ORIGIN(KM4_BD_RAM_MP);
 __km0_image2_entry_func_mp__ = ORIGIN(KM0_IMG2_ENTRY);
+
+/* code analyse used */
+__img1_sram_start__ = ORIGIN(KM4_BOOTLOADER_RAM_S) - SECURE_ADDR_OFFSET - IMAGE_HEADER_LEN;
+__img1_sram_size__ = LENGTH(KM4_BOOTLOADER_RAM_S) + IMAGE_HEADER_LEN;
+__img3_sram_size__ = RAM_TZ_NSC_SIZE + RAM_TZ_ENTRY_SIZE + RAM_KM4_IMG3_SIZE;

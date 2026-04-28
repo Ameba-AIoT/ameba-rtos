@@ -19,6 +19,7 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_fast_connect
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_auto_reconnect
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel_app
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_radar
 )
 
 set(need_external_lib OFF)
@@ -68,6 +69,7 @@ set(private_compile_options_open)         #private compile_options
 if(NOT CONFIG_MP_SHRINK)
     if(CONFIG_WHC_NONE OR CONFIG_WHC_HOST)
         ameba_list_append(private_sources wifi_acs/wifi_acs.c)
+        ameba_list_append(private_sources wifi_radar/wifi_radar.c)
     endif()
     if(NOT CONFIG_PLATFORM_ZEPHYR)
         ameba_list_append_if(CONFIG_WHC_HOST private_sources wifi_cast/wifi_intf_drv_to_app_cast.c)
