@@ -665,7 +665,7 @@ void BOOT_WakeFromPG(void)
 
 	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
 	if (meminfo.mem_type & MCM_TYPE_DDR) {
-		RTK_LOGI(TAG, "ReInit DDR\r\n");
+		RTK_LOGD(TAG, "ReInit DDR\r\n");
 
 		RCC_PeriphClockCmd(APBPeriph_DDRP, APBPeriph_DDRP_CLOCK, ENABLE);
 		RCC_PeriphClockCmd(APBPeriph_DDRC, APBPeriph_DDRC_CLOCK, ENABLE);
