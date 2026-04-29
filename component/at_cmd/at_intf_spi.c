@@ -247,10 +247,14 @@ void atcmd_spi_task(void)
 					} else {
 						while (1) {
 							rtos_time_delay_ms(1);
-							space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
-							if (space >= recv_len) {
-								RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
-								rtos_sema_give(atcmd_tt_mode_sema);
+							if (g_tt_mode) {
+								space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+								if (space >= recv_len) {
+									RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, SlaveRxBuf + 4, recv_len);
+									rtos_sema_give(atcmd_tt_mode_sema);
+									break;
+								}
+							} else {
 								break;
 							}
 						}
@@ -551,7 +555,7 @@ int atio_spi_init(void)
 		return -1;
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_input_handler_task"), (rtos_task_t)atcmd_spi_input_handler_task, NULL, 4096, 5) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"atcmd_spi_input_handler_task"), (rtos_task_t)atcmd_spi_input_handler_task, NULL, 6 * 1024, 5) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "\n\r%s rtos_task_create(atcmd_spi_input_handler_task) failed", __FUNCTION__);
 		return -1;
 	}

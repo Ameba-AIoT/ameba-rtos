@@ -75,6 +75,7 @@ enum nl80211_multicast_groups {
 #define WHC_WIFI_TEST_SCAN_RESULT    0xA
 #define WHC_WIFI_TEST_MP             0xB
 #define WHC_WIFI_TEST_DBG            0xC
+#define WHC_WIFI_TEST_OTA            0x10
 
 #define WHC_RMESH_TEST_SOCK_INIT    0x1
 #define WHC_RMESH_TEST_SOCK_SEND    0x2

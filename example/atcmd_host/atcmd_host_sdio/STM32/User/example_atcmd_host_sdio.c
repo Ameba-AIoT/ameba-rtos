@@ -10,15 +10,12 @@ u32 MAX_TX_BUF_SIZE = 0;
 volatile u8 tt_mode_task_start = 0;
 
 #define NULL 0
-#define ATCMD_TT_MODE_HIGH_WATERMARK_STR	"[$][TT]:High Watermark\r\n"
-#define ATCMD_TT_MODE_LOW_WATERMARK_STR		"[$][TT]:Low Watermark\r\n"
 #define ATCMD_DOWNSTREAM_TEST_START_STR 	"Downstream Test Start\r\n"
 #define ATCMD_DOWNSTREAM_TEST_END_STR 		"Downstream Test End\r\n"
 
 rtw_semaphore_type_t host_irq_sema;
 rtw_semaphore_type_t host_recv_sema;
 rtw_semaphore_type_t uart_recv_sema;
-rtw_semaphore_type_t tt_mode_tx_sema;
 
 rtw_result_t sd_init(void)
 {
@@ -122,12 +119,6 @@ rtw_result_t host_init(void)
 		return result;
 	}
 
-	result = rtw_rtos_init_semaphore(&tt_mode_tx_sema);
-	if (result != RTW_SUCCESS) {
-		return result;
-	}
-	rtw_rtos_set_semaphore(&tt_mode_tx_sema, RTW_FALSE);
-
 	result = device_is_ready();
 	if (result != RTW_SUCCESS) {
 		printf(("device_is_ready fail\n"));
@@ -193,7 +184,6 @@ static void host_tt_mode_task(void *arg)
 	sdio_read_common(SDIO_REG_FREE_TXBD_NUM, 1, &free_txbd_num);
 
 	while (tt_len > 0) {
-		rtw_rtos_get_semaphore(&tt_mode_tx_sema, (uint32_t) 0xFFFFFFFF, RTW_FALSE);
 
 		while (free_txbd_num == 0) {
 			vTaskDelay(1);
@@ -204,7 +194,6 @@ static void host_tt_mode_task(void *arg)
 		sdio_host_send_to_dev(tt_tx_buf, send_len);
 		free_txbd_num--;
 		tt_len -= send_len;
-		rtw_rtos_set_semaphore(&tt_mode_tx_sema, RTW_FALSE);
 	}
 
 	vPortFree(tt_tx_buf);
@@ -231,11 +220,6 @@ void host_show_recv_data(uint8_t *data)
 	}
 
 	if (tt_mode_task_start) {
-		if ((len > 0) && (memcmp(payload, ATCMD_TT_MODE_HIGH_WATERMARK_STR, strlen(ATCMD_TT_MODE_HIGH_WATERMARK_STR)) == 0)) {
-			rtw_rtos_get_semaphore(&tt_mode_tx_sema, (uint32_t) 0xFFFFFFFF, RTW_FALSE);
-		} else if ((len > 0) && (memcmp(payload, ATCMD_TT_MODE_LOW_WATERMARK_STR, strlen(ATCMD_TT_MODE_LOW_WATERMARK_STR)) == 0)) {
-			rtw_rtos_set_semaphore(&tt_mode_tx_sema, RTW_FALSE);
-		}
 		Usart_SendString(DEBUG_USART, payload, len);
 	} else {
 		if (len > 0) {
