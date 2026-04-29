@@ -16,16 +16,18 @@ menu "CONFIG AT CMD"
         config ATCMD_NETWORK
             bool "Enable Network"
             default n
-        config ATCMD_SOCKET
-            bool "Enable Socket"
-        config ATCMD_HTTP
-            bool "Enable HTTP"
-        config ATCMD_MQTT
-            bool "Enable MQTT"
-        config ATCMD_WEBSOCKET
-            bool "Enable WEBSOCKET"
-        config ATCMD_OTA
-            bool "Enable OTA"
-            default n
+        if!ATCMD_MANUAL_TEST
+            config ATCMD_SOCKET
+                bool "Enable Socket"
+            config ATCMD_HTTP
+                bool "Enable HTTP"
+            config ATCMD_MQTT
+                bool "Enable MQTT"
+            config ATCMD_WEBSOCKET
+                bool "Enable WEBSOCKET"
+            config ATCMD_OTA
+                bool "Enable OTA"
+                default n
+        endif
     endif
 endmenu
