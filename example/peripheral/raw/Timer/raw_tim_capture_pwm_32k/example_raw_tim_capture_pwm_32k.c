@@ -14,7 +14,7 @@
 #include <stdio.h>
 
 #define CAPTURE_CHNL			TIM_Channel_0
-#if defined(CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 #define PWM_GEN_CHNL			TIM_Channel_3
 #else
 #define PWM_GEN_CHNL			TIM_Channel_5
@@ -68,7 +68,7 @@ void tim_gen_pwm_32k(void)
 	TIM_CCInitStruct.TIM_CCPolarity = TIM_CCPolarity_High;
 	RTIM_CCxInit(TIMx[PWM_TIMER], &TIM_CCInitStruct, pwm_chan);
 	RTIM_CCxCmd(TIMx[PWM_TIMER], pwm_chan, TIM_CCx_Enable);
-#if defined CONFIG_AMEBAGREEN2
+#if defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 	Pinmux_Config(PWM_GEN_32KHz_CH3_PIN, PINMUX_FUNCTION_TIM4_PWM3);
 #else
 	Pinmux_Config(PWM_GEN_32KHz_CH5_PIN, PINMUX_FUNCTION_PWM5);
@@ -92,12 +92,12 @@ void tim_capture_32k(void)
 #if defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBALITE)
 	UPS_SrcConfig(UPS_SRC_GPIO);
 	UPS_DstConfig(UPS_DST_PWM_TRIG);
-#elif defined(CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 	UPS_SrcConfig(UPS_SRC_GPIO, (u8)(PWM_TIMER - 4));
 	UPS_DstConfig(UPS_DST_PWM_TRIG, (u8)PWM_TIMER - 4);
 #endif
 
-#if defined(CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 	Pinmux_Config(TIM4_TRIG_PIN, PINMUX_FUNCTION_PWM_TIM4_TRIG);
 	PAD_PullCtrl(TIM4_TRIG_PIN, GPIO_PuPd_UP);
 #else

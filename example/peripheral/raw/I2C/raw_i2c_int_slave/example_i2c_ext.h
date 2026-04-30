@@ -35,6 +35,11 @@
 #define I2C_SLV_SDA    _PA_26
 #define I2C_SLV_SCL    _PA_25
 
+#elif defined (CONFIG_RTL8720F)
+
+#define I2C_SLV_SDA    _PA_22
+#define I2C_SLV_SCL    _PA_21
+
 #endif
 extern int example_raw_i2c_int_slave(void);
 #endif

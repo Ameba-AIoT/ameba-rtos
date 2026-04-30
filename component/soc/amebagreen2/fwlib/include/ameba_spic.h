@@ -1146,9 +1146,11 @@ typedef enum _FLASH_REGION_TYPE_ {
 /** @defgroup FLASH_Erase_Type
   * @{
   */
-#define EraseChip				0
-#define EraseBlock				1
-#define EraseSector				2
+typedef enum _FLASH_ERASE_TYPE_ {
+	EraseChip = 0,
+	EraseBlock,
+	EraseSector
+} FLASH_Erase_Type;
 /** @} */
 
 /** @defgroup FLASH_Wait_Type

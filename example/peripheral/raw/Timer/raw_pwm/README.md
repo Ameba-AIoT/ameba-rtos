@@ -40,7 +40,15 @@ For example:
 	GND <--> LED1 <---> PA_7
 	GND <--> LED2 <---> PA_8
 	GND <--> LED3 <---> PA_10
-# SW Configuration
+
+4. If you run this example in RTL8720F, then connect as below
+
+	GND <--> LED0 <---> PA_15
+	GND <--> LED1 <---> PA_16
+	GND <--> LED2 <---> PA_25
+	GND <--> LED3 <---> PA_26
+
+# SW configuration
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.

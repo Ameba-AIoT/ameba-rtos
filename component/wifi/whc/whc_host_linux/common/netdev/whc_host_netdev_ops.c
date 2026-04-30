@@ -542,6 +542,7 @@ void rtw_nan_iface_free(struct wiphy *wiphy)
 		if (rtnl_lock_need) {
 			rtnl_lock();
 		}
+		global_idev.pwdev_global[2]->netdev = NULL; // set to null for kernel to stop NAN
 		cfg80211_unregister_wdev(global_idev.pwdev_global[2]);
 		if (rtnl_lock_need) {
 			rtnl_unlock();
@@ -550,6 +551,7 @@ void rtw_nan_iface_free(struct wiphy *wiphy)
 	}
 
 	if (global_idev.pndev[2] && (global_idev.pndev[2]->reg_state == NETREG_REGISTERED)) {
+		global_idev.pwdev_global[2]->netdev = global_idev.pndev[2];
 		if (rtnl_lock_need) {
 			/* hold rtnl_lock in unregister_netdev. */
 			unregister_netdev(global_idev.pndev[2]);
@@ -566,6 +568,10 @@ void rtw_nan_iface_free(struct wiphy *wiphy)
 		dev_info(global_idev.pwhc_dev, "remove wdev done for NAN.");
 		/* remove wireless_dev in ndev. */
 		global_idev.pndev[2]->ieee80211_ptr = NULL;
+	}
+	if (global_idev.pndev[2]) {
+		free_netdev(global_idev.pndev[2]);
+		global_idev.pndev[2] = NULL;
 	}
 
 	whc_host_deinit_nan();
@@ -698,6 +704,9 @@ void rtw_ndev_unregister(void)
 	}
 #ifdef CONFIG_P2P
 	whc_host_p2p_pdwdev_free();
+#endif
+#ifdef CONFIG_NAN
+	rtw_nan_iface_free(NULL);
 #endif
 }
 

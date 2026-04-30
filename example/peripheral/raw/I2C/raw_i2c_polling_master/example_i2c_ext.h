@@ -40,6 +40,12 @@ __attribute__((unused)) static u32 I2CCLK_TABLE[2] = {40000000, 40000000};
 #define I2C_MTR_SCL    _PA_25
 __attribute__((unused)) static u32 I2CCLK_TABLE[2] = {10000000, 10000000};
 
+#elif defined (CONFIG_RTL8720F)
+
+#define I2C_MTR_SDA    _PA_22
+#define I2C_MTR_SCL    _PA_21
+__attribute__((unused)) static u32 I2CCLK_TABLE[2] = {100000000, 100000000};
+
 #endif
 
 extern int example_raw_i2c_polling_master(void);

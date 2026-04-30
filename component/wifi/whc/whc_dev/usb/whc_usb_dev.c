@@ -23,21 +23,22 @@ static usbd_config_t whc_usb_wifi_cfg = {
 /* host->device */
 static int whc_usb_dev_rx_done_cb(usbd_inic_ep_t *out_ep, u32 len)
 {
-	if (out_ep->ep.addr == WIFI_WHC_USB_BULKOUT_1 || out_ep->ep.addr == WIFI_WHC_USB_BULKOUT_2
-		|| out_ep->ep.addr == WIFI_WHC_USB_BULKOUT_3) {
+	usb_ep_info_t *info = &out_ep->ep.info;
+	if (info->addr == WIFI_WHC_USB_BULKOUT_1 || info->addr == WIFI_WHC_USB_BULKOUT_2
+		|| info->addr == WIFI_WHC_USB_BULKOUT_3) {
 		if ((whc_usb_priv.irq_info.rxdone_epnum[whc_usb_priv.irq_info.intr_widx] == 0) &&
 			(whc_usb_priv.irq_info.len[whc_usb_priv.irq_info.intr_widx] == 0)) {
-			whc_usb_priv.irq_info.rxdone_epnum[whc_usb_priv.irq_info.intr_widx] = out_ep->ep.addr;
+			whc_usb_priv.irq_info.rxdone_epnum[whc_usb_priv.irq_info.intr_widx] = info->addr;
 			whc_usb_priv.irq_info.len[whc_usb_priv.irq_info.intr_widx] = len;
 			whc_usb_priv.irq_info.intr_widx = (whc_usb_priv.irq_info.intr_widx + 1) % WIFI_WHC_USB_BULKOUT_EP_NUM;
 			rtos_sema_give(whc_usb_priv.usb_irq_sema);
 		} else {
-			usbd_inic_receive_data(out_ep->ep.addr, out_ep->ep.xfer_buf, USB_BUFSZ, NULL);
+			usbd_inic_receive_data(info->addr, out_ep->ep.xfer_buf, USB_BUFSZ, NULL);
 			RTK_LOGS(NOTAG, RTK_LOG_WARN, "rx cb list full, drop this message!\n");
 		}
 	}
 #if defined(CONFIG_BT) && defined(CONFIG_BT_INIC_USB)
-	else if (out_ep->ep.addr == USBD_INIC_BT_EP2_BULK_OUT) {
+	else if (info->addr == USBD_INIC_BT_EP2_BULK_OUT) {
 		bt_inic_usb_hci_acl_hdl(out_ep->ep.xfer_buf, len);
 	}
 #endif
@@ -120,8 +121,8 @@ static void whc_usb_dev_irq_task(void)
 static void whc_usb_dev_tx_done_cb(usbd_inic_ep_t *in_ep, u8 status)
 {
 	UNUSED(status);
-
-	if (in_ep->ep.addr == WIFI_WHC_USB_BULKIN_EP) {
+	usb_ep_info_t *info = &in_ep->ep.info;
+	if (info->addr == WIFI_WHC_USB_BULKIN_EP) {
 		if (whc_usb_priv.irq_info.txdone == 0) {
 			whc_usb_priv.irq_info.txdone = 1;
 			rtos_sema_give(whc_usb_priv.usb_irq_sema);
@@ -130,9 +131,9 @@ static void whc_usb_dev_tx_done_cb(usbd_inic_ep_t *in_ep, u8 status)
 		}
 	}
 #if defined(CONFIG_BT) && defined(CONFIG_BT_INIC_USB)
-	else if (in_ep->ep.addr == USBD_INIT_BT_EP1_INTR_IN) {
+	else if (info->addr == USBD_INIT_BT_EP1_INTR_IN) {
 		bt_inic_usb_evt_txdone_cb(in_ep->ep.xfer_buf);
-	} else if (in_ep->ep.addr == USBD_INIC_BT_EP2_BULK_IN) {
+	} else if (info->addr == USBD_INIC_BT_EP2_BULK_IN) {
 		bt_inic_usb_acl_txdone_cb(in_ep->ep.xfer_buf);
 	}
 #endif

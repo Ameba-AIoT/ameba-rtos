@@ -28,12 +28,13 @@ struct whc_ota_context *whc_ota_ctx;
 #ifdef todo
 #endif
 #define OTA_MAX_BUFSZ	1200
+#define HTTP_HEADER_BAK_LEN 32
 int whc_ota_ongoing;
 
 extern uint8_t rmesh_self_mac[2][6];
 extern uint8_t rmesh_ap_gw[4];
 
-void whc_host_ota_updata_init(struct whc_host_ota_info *ota_info)
+void whc_host_ota_init(struct whc_host_ota_info *ota_info)
 {
 	uint32_t buf_len, offset;
 	uint8_t *buf;
@@ -132,7 +133,39 @@ void whc_host_ota_deinit(void)
 
 }
 
-int whc_host_ota_update_http_connect_server(struct whc_ota_context *ctx)
+int whc_host_ota_conn_read(struct whc_ota_context *ctx, uint8_t *data, int data_len)
+{
+	int bytes_rcvd = -1;
+
+	if (ctx->fd == -1) {
+		printf("[%s], socket is invalid\n", __FUNCTION__);
+		return bytes_rcvd;
+	}
+
+	if (ctx->type == OTA_HTTPS) {
+#ifdef todo
+#endif
+	} else {
+		bytes_rcvd = read(ctx->fd, data, data_len);
+	}
+
+	if (bytes_rcvd < 0) {
+		printf("[%s], Close HTTP Socket[%d].\n", __FUNCTION__, ctx->fd);
+		return -2;
+	}
+	return bytes_rcvd;
+}
+
+int whc_host_ota_conn_write(struct whc_ota_context *ctx, uint8_t *data, int data_len)
+{
+	if (ctx->type == OTA_HTTPS) {
+#ifdef todo
+#endif
+	}
+	return write(ctx->fd, data, data_len);
+}
+
+int whc_host_ota_http_connect_server(struct whc_ota_context *ctx)
 {
 	struct sockaddr_in server_addr;
 	struct hostent *server;
@@ -175,16 +208,7 @@ int whc_host_ota_update_http_connect_server(struct whc_ota_context *ctx)
 	return 0;
 }
 
-int whc_host_ota_update_conn_write(struct whc_ota_context *ctx, uint8_t *data, int data_len)
-{
-	if (ctx->type == OTA_HTTPS) {
-#ifdef todo
-#endif
-	}
-	return write(ctx->fd, data, data_len);
-}
-
-int whc_host_ota_update_http_send_request(struct whc_ota_context *ctx)
+int whc_host_ota_http_send_request(struct whc_ota_context *ctx)
 {
 	uint8_t *request = NULL;
 	int ret = -1;
@@ -192,23 +216,177 @@ int whc_host_ota_update_http_send_request(struct whc_ota_context *ctx)
 	request = (uint8_t *)malloc(strlen("GET /") + strlen(ctx->resource) + strlen(" HTTP/1.1\r\nHost: ")
 								+ strlen(ctx->host) + strlen("\r\n\r\n") + 1);
 	sprintf((char *)request, "GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n", ctx->resource, ctx->host);
-	ret = whc_host_ota_update_conn_write(ctx, request, strlen((char *)request));
+	ret = whc_host_ota_conn_write(ctx, request, strlen((char *)request));
 	free(request);
 	return ret;
 }
 
-int whc_host_ota_update_http_prepare(struct whc_ota_context *whc_ota_ctx)
+int whc_host_ota_http_parse_response(struct whc_ota_context *ctx, uint8_t *response, uint32_t response_len, struct whc_ota_http_response *result)
+{
+	char *ptr_body_end;
+
+	//Get status code
+	if (0 == result->parse_status) { //didn't get the http response
+		char *crlf_ptr = strstr((char *)response, "\r\n");
+		if (crlf_ptr == NULL) { //didn't get the status code
+			return -1;
+		}
+		result->status_code = atoi((char const *)response + 9); //get the status code
+		if (result->status_code == 200) {
+			result->parse_status = 1;
+		} else if (result->status_code == 302) {
+			// 302 response means redirect, which is not supported now, can be added in the future if needed
+			printf("[HTTP] Response 302:%s \r\n", response);
+			return -1;
+		} else {
+			printf("[HTTP] Response status code: %lu\n", result->status_code);
+			return -1;
+		}
+	}
+
+	//if didn't receive the full http header
+	if (3 == result->parse_status) { //didn't get the http response
+		if (NULL != (ptr_body_end = strstr((char *)response, "\r\n\r\n"))) {
+			result->parse_status = 4;
+			result->header_len = (uint32_t)ptr_body_end - (uint32_t)response + 4;
+			result->body = response + result->header_len;
+		}
+
+		if (3 == result->parse_status) {//Still didn't receive the full header
+			memcpy(result->header_bak, response + response_len - HTTP_HEADER_BAK_LEN, HTTP_HEADER_BAK_LEN);
+		}
+	}
+
+	printf("[HTTP] Response: %s\n", response);
+
+	//Get Content-Length
+	if (1 == result->parse_status) { //didn't get the content length
+		char *tmp_ptr;
+
+		/* parse response_content_len */
+		if (NULL != (tmp_ptr = strstr((char *)response, "Content-Length")) ||
+			NULL != (tmp_ptr = strstr((char *)response, "CONTENT-LENGTH"))) {
+			result->body_len = atoi(tmp_ptr + strlen("Content-Length: "));
+			result->parse_status = 2;
+		}
+		if (NULL != (ptr_body_end = strstr((char *)response, "\r\n\r\n"))) {
+			if (result->parse_status == 2) { //get the full header and the content length
+				result->parse_status = 4;
+				result->header_len = (uint32_t)ptr_body_end - (uint32_t)response + 4;
+				result->body = response + result->header_len;
+			} else { //there are no content length in header
+				printf("[HTTP] No Content-Length in header\n");
+				return -1;
+			}
+		}
+
+		if (1 == result->parse_status) {//didn't get the content length and the full header
+			memcpy(result->header_bak, response + response_len - HTTP_HEADER_BAK_LEN, HTTP_HEADER_BAK_LEN);
+		} else if (2 == result->parse_status) { //didn't get the full header but get the content length
+			result->parse_status = 3;
+			memcpy(result->header_bak, response + response_len - HTTP_HEADER_BAK_LEN, HTTP_HEADER_BAK_LEN);
+		}
+	}
+
+	return result->parse_status;
+}
+
+static int whc_host_ota_http_recv_response(struct whc_ota_context *ctx)
+{
+	int read_bytes = 0;
+	int remain_len = -1;
+	struct whc_ota_http_response rsp_result = {0};
+	uint32_t idx = 0;
+	uint8_t *buf = NULL;
+
+	buf = (uint8_t *)malloc(OTA_MAX_BUFSZ);
+	rsp_result.header_bak = malloc(HTTP_HEADER_BAK_LEN + 1);
+
+	if (!buf || !rsp_result.header_bak) {
+		printf("[HTTP] Malloc failed\n");
+		goto exit;
+	}
+	memset(buf, 0, OTA_MAX_BUFSZ);
+	memset(rsp_result.header_bak, 0, HTTP_HEADER_BAK_LEN + 1);
+
+	while (3 >= rsp_result.parse_status) { //still read header
+		if (0 == rsp_result.parse_status) { //didn't get the http response
+			memset(buf, 0, OTA_MAX_BUFSZ);
+			read_bytes = whc_host_ota_conn_read(ctx, buf, OTA_MAX_BUFSZ);
+			if (read_bytes <= 0) {
+				printf("[HTTP]  Read socket failed\n");
+				goto exit;
+			}
+			idx = read_bytes;
+			memset(&rsp_result, 0, sizeof(rsp_result));
+			if (whc_host_ota_http_parse_response(ctx, buf, idx, &rsp_result) == -1) {
+				goto exit;
+			}
+		} else if ((1 == rsp_result.parse_status) || (3 == rsp_result.parse_status)) { //just get the status code
+			memset(buf, 0, OTA_MAX_BUFSZ);
+			memcpy(buf, rsp_result.header_bak, HTTP_HEADER_BAK_LEN);
+			read_bytes = whc_host_ota_conn_read(ctx, buf + HTTP_HEADER_BAK_LEN, (OTA_MAX_BUFSZ - HTTP_HEADER_BAK_LEN));
+			if (read_bytes <= 0) {
+				printf("[HTTP]  Read socket failed\n");
+				goto exit;
+			}
+			idx = read_bytes + HTTP_HEADER_BAK_LEN;
+			if (whc_host_ota_http_parse_response(ctx, buf, read_bytes + HTTP_HEADER_BAK_LEN, &rsp_result) == -1) {
+				goto exit;
+			}
+		}
+	}
+
+	if (0 == rsp_result.body_len) {
+		printf("[HTTP] New firmware size = 0 !\n");
+		goto exit;
+	} else {
+		printf("[HTTP] Download new firmware begin, total size : %lu\n", rsp_result.body_len);
+	}
+
+	printf("[HTTP] idx = %lu, rsp_result.header_len = %lu\n", idx, rsp_result.header_len);
+
+	remain_len = idx - rsp_result.header_len;
+	/* remove http header_len from buf*/
+	if (remain_len > 0) {
+		ctx->NextImgBuf = malloc(remain_len);
+		if (!ctx->NextImgBuf) {
+			printf("[HTTP] Malloc failed\n");
+			remain_len = -1;
+			goto exit;
+		}
+		memset(ctx->NextImgBuf, 0, remain_len);
+		memcpy((void *)ctx->NextImgBuf, (void *)(buf + rsp_result.header_len), remain_len);
+		ctx->NextImgLen = remain_len;
+	}
+
+exit:
+	if (buf) {
+		free(buf);
+	}
+	if (rsp_result.header_bak) {
+		free(rsp_result.header_bak);
+	}
+	return remain_len;
+}
+
+int whc_host_ota_http_prepare(struct whc_ota_context *whc_ota_ctx)
 {
 	int ret = -1;
 
-	ret = whc_host_ota_update_http_connect_server(whc_ota_ctx);
+	ret = whc_host_ota_http_connect_server(whc_ota_ctx);
 	if (ret != 0) {
 		return -1;
 	}
 
-	ret = whc_host_ota_update_http_send_request(whc_ota_ctx);
+	ret = whc_host_ota_http_send_request(whc_ota_ctx);
 	if (!ret) {
 		printf("[%s] Send HTTP request failed\n", __FUNCTION__);
+		return -1;
+	}
+
+	if (whc_host_ota_http_recv_response(whc_ota_ctx) < 0) {
+		printf("[HTTP] Parse response failed\n");
 		return -1;
 	}
 
@@ -218,10 +396,10 @@ int whc_host_ota_update_http_prepare(struct whc_ota_context *whc_ota_ctx)
 
 int whc_host_ota_s1_prepare(struct whc_ota_context *whc_ota_ctx)
 {
-	whc_host_ota_update_http_prepare(whc_ota_ctx);
+	whc_host_ota_http_prepare(whc_ota_ctx);
 }
 
-void whc_host_ota_updata_start(struct whc_ota_context *whc_ota_ctx)
+void whc_host_ota_start(struct whc_ota_context *whc_ota_ctx)
 {
 	int ret = -1;
 
@@ -250,9 +428,9 @@ int whc_host_ota(void)
 	memcpy(pota_info.resource, ota_resource, strlen(ota_resource));
 
 	/* sync with dev, set param */
-	whc_host_ota_updata_init(&pota_info);
+	whc_host_ota_init(&pota_info);
 
-	whc_host_ota_updata_start(whc_ota_ctx);
+	whc_host_ota_start(whc_ota_ctx);
 
 	if (pota_info.host) {
 		free(pota_info.host);
@@ -262,29 +440,6 @@ int whc_host_ota(void)
 		free(pota_info.resource);
 	}
 	return 0;
-}
-
-int whc_host_ota_update_conn_read(struct whc_ota_context *ctx, uint8_t *data, int data_len)
-{
-	int bytes_rcvd = -1;
-
-	if (ctx->fd == -1) {
-		printf("[%s], socket is invalid\n", __FUNCTION__);
-		return bytes_rcvd;
-	}
-
-	if (ctx->type == OTA_HTTPS) {
-#ifdef todo
-#endif
-	} else {
-		bytes_rcvd = read(ctx->fd, data, data_len);
-	}
-
-	if (bytes_rcvd < 0) {
-		printf("[%s], Close HTTP Socket[%d].\n", __FUNCTION__, ctx->fd);
-		return -2;
-	}
-	return bytes_rcvd;
 }
 
 void whc_host_ota_data_to_dev(int16_t len)
@@ -310,9 +465,22 @@ void whc_host_ota_data_to_dev(int16_t len)
 
 	ptr += sizeof(struct whc_host_ota_hdr);
 
-	read_bytes = whc_host_ota_update_conn_read(whc_ota_ctx, ptr, len);
-	if (read_bytes < 0) {
-		printf("[%s] Read socket failed\n", __FUNCTION__);
+	if (whc_ota_ctx->NextImgLen > 0) {
+		read_bytes = whc_ota_ctx->NextImgLen > len ? len : whc_ota_ctx->NextImgLen;
+		memcpy(ptr, whc_ota_ctx->NextImgBuf, read_bytes);
+		if (read_bytes < whc_ota_ctx->NextImgLen) {
+			memcpy(whc_ota_ctx->NextImgBuf, whc_ota_ctx->NextImgBuf + read_bytes, whc_ota_ctx->NextImgLen - read_bytes);
+		}
+		whc_ota_ctx->NextImgLen -= read_bytes;
+		if (whc_ota_ctx->NextImgLen == 0) {
+			free(whc_ota_ctx->NextImgBuf);
+			whc_ota_ctx->NextImgBuf = NULL;
+		}
+	} else {
+		read_bytes = whc_host_ota_conn_read(whc_ota_ctx, ptr, len);
+		if (read_bytes < 0) {
+			printf("[%s] Read socket failed\n", __FUNCTION__);
+		}
 	}
 
 	ota_hdr->len = (int16_t)read_bytes;
@@ -391,8 +559,8 @@ int whc_host_remsh_ota_request(uint8_t *buf, int recv_len)
 		ota_info.rmesh_ota_type = buf[31 + httpiplen + http_resourcelen];
 
 		if (!memcmp(target_mac, self_mac_p0, ETH_ALEN)) { /*ota cmd to my self, peform OTA*/
-			whc_host_ota_updata_init(&ota_info);
-			whc_host_ota_updata_start(whc_ota_ctx);
+			whc_host_ota_init(&ota_info);
+			whc_host_ota_start(whc_ota_ctx);
 		}
 
 		if (ota_info.host) {

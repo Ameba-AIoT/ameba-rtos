@@ -272,10 +272,6 @@ void i2c_master_rx_check(void)
 	int     result = 0;
 
 	RTK_LOGI(TAG, "check master received data>>>\n");
-	for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt += 2) {
-//		RTK_LOGI(TAG,"i2c data: %02x \t %02x\n",i2cdatarddst[i2clocalcnt],i2cdatarddst[i2clocalcnt+1]);
-	}
-
 	// verify result
 	result = 1;
 	for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt++) {

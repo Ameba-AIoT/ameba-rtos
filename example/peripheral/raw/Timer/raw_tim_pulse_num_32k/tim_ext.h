@@ -12,6 +12,9 @@
 #if defined (CONFIG_AMEBAGREEN2)
 #define PWM_TIMER		4
 #define CAPTURE_TIMER   8
+#elif defined (CONFIG_RTL8720F)
+#define PWM_TIMER		4
+#define CAPTURE_TIMER   6
 #else
 #define PWM_TIMER		8
 #define CAPTURE_TIMER   9
@@ -34,6 +37,10 @@
 #elif defined (CONFIG_AMEBAGREEN2)
 #define TIM8_TRIG_PIN		_PA_3
 #define PWM_32K_CH3_PIN	    _PB_16
+
+#elif defined (CONFIG_RTL8720F)
+#define TIM6_TRIG_PIN		_PA_15
+#define PWM_32K_CH3_PIN	    _PA_16
 #endif
 
 
