@@ -43,6 +43,7 @@ int ota_transport_read(ota_context_t *ctx, u8 *buf, int len)
 	}
 
 	switch (ctx->type) {
+#ifdef CONFIG_WHC_INTF_IPC
 	case OTA_HTTPS:
 	case OTA_HTTP:
 		bytes_read = ota_http_read(ctx, buf, len);
@@ -51,7 +52,7 @@ int ota_transport_read(ota_context_t *ctx, u8 *buf, int len)
 	case OTA_VFS:
 		bytes_read = ota_vfs_read(ctx, buf, len);
 		break;
-
+#endif
 	case OTA_USER:
 		if (ctx->user_read_func) {
 			bytes_read = ctx->user_read_func(buf, len);
@@ -80,10 +81,12 @@ int ota_transport_connect(ota_context_t *ctx)
 	RTK_LOGI(OTA_TAG, "[TRANSPORT] Connecting...\n");
 
 	switch (ctx->type) {
+#ifdef CONFIG_WHC_INTF_IPC
 	case OTA_HTTP:
 	case OTA_HTTPS:
 		ret = ota_http_connect(ctx);
 		break;
+#endif
 
 	case OTA_VFS:
 		ret = ota_vfs_open(ctx);
@@ -119,11 +122,12 @@ void ota_transport_disconnect(ota_context_t *ctx)
 	RTK_LOGI(OTA_TAG, "[TRANSPORT] Disconnecting...\n");
 
 	switch (ctx->type) {
+#ifdef CONFIG_WHC_INTF_IPC
 	case OTA_HTTP:
 	case OTA_HTTPS:
 		ota_http_close(ctx);
 		break;
-
+#endif
 	case OTA_VFS:
 		ota_vfs_close(ctx);
 		break;

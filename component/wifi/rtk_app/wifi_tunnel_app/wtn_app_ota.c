@@ -1178,7 +1178,16 @@ void rmesh_ota_http_ota_task(void *param)
 	memset(ctx, 0, sizeof(ota_context_t));
 	g_rmesh_ota_priv->http_ota_ctx = ctx;
 
+#ifdef CONFIG_WHC_INTF_IPC
 	ret = ota_init(ctx, (char *)ota_param->host, ota_param->port, (char *)ota_param->resource, OTA_HTTP);
+#else
+	ret = ota_init(ctx, NULL, 0, NULL, OTA_USER);
+	if (ret == OTA_OK) {
+		ota_register_user_read_func(ctx, whc_dev_ota_read);
+		ota_register_user_close_func(ctx, whc_dev_ota_close);
+	}
+#endif
+
 	if (ret != 0) {
 		goto exit;
 	}
