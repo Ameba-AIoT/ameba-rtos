@@ -20,7 +20,7 @@ extern "C"
 
 #define RTK_BT_AUDIO_TRACK_PRES_MAX_COUNT 100 /* 10ms duration for 1s */
 #define RTK_BT_AUDIO_TRACK_PRES_DELTA_THRESHOLD_NS 1000000
-
+#define BT_AUDIO_CLOCK_EPOCH_THRESHOLD  0x80000000  /*!< 32-bit clock half cycle */
 /**
  * @typedef   rtk_bt_audio_role_t
  * @brief     audio role
@@ -78,18 +78,18 @@ typedef struct {
 	uint32_t                   sdu_interval;                                                   /*!< record sdu interval(micro second) */
 	bool
 	frc_cal_flag;                                                   /*!< indicate whether free run clock calculation is done previously */
-	bool                       ts_oveflow_flag;                                                /*!< indicate whether timestamp is overflow  */
 	int64_t                    expt_sdu_frc;                                                   /*!< calculate the expected sdu time stamp */
 	int64_t
 	frc_drift;                                                      /*!< save free run clock drift between app core and lower stack core */
 	uint64_t                   controller_free_run_clock;                                      /*!< save free controller_free_run_clock */
 	uint32_t                   pres_delay_us;                                                  /*!< indicate presentation delay value */
 	uint32_t                   prev_ts_us;                                                     /*!< recording previous timestamp to check sdu loss */
+	bool                       prev_ts_valid;                                                  /*!< indicate whether prev_ts_us has been assigned a valid value */
 	uint32_t                   mixer_start_threshold;                                          /*!< record Audio Mixer start threshhold */
 	uint32_t
 	prev_sys_us;                                                    /*!< recording previous timestamp DTimestamp_Get() to check overflow */
 	bool                       ref_ap_oveflow_flag;                                            /*!< indicate CIG/BIG reference point occur overflow*/
-	bool                       audio_mixer_conf;                                                    /*!< indicate Audio Mixer or Passthrough*/
+	bool                       audio_mixer_conf;                                               /*!< indicate Audio Mixer or Passthrough*/
 	uint64_t                   trans_bytes;                                                    /*!< to record successfully transmitted audio bytes */
 	uint32_t                   delta_index;                                                    /*!< to record delta number buffered in pres_delta_sum */
 	int64_t                    pres_delta_sum;                                                 /*!< record sum of render data time delta */
