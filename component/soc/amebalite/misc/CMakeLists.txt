@@ -11,6 +11,10 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${c_MBEDTLS_DIR}/include
+    ${c_MBEDTLS_DIR}/hw_alt_legacy
+    ${c_MBEDTLS_DIR}/library
+    ${c_MBEDTLS_DIR}/thread_alt
 )
 
 # Component public part, user config end
@@ -43,7 +47,7 @@ ameba_list_append(private_sources
     ameba_pmu.c
 )
 
-if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
+if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC))
     ameba_list_append(private_sources
         ameba_ota.c
     )
