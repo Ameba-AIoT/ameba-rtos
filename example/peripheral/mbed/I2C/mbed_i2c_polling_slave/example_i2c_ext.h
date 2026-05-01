@@ -36,6 +36,11 @@
 #define MBED_I2C_SLV_SDA    _PA_26
 #define MBED_I2C_SLV_SCL    _PA_25
 
+#elif defined (CONFIG_RTL8720F)
+
+#define MBED_I2C_SLV_SDA    _PA_22
+#define MBED_I2C_SLV_SCL    _PA_21
+
 #endif
 extern int example_mbed_i2c_polling_slave(void);
 #endif

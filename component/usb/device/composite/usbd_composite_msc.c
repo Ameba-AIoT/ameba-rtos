@@ -274,17 +274,20 @@ static int usbd_composite_msc_set_config(usb_dev_t *dev, u8 config)
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
 	usbd_ep_t *ep_bulk_in = &mdev->ep_bulk_in;
+	usb_ep_info_t *info;
 
 	UNUSED(config);
 
 	mdev->dev = dev;
 
 	/* Init BULK IN EP */
-	ep_bulk_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? COMP_MSC_HS_MAX_PACKET_SIZE : COMP_MSC_FS_MAX_PACKET_SIZE;
+	info = &ep_bulk_in->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? COMP_MSC_HS_MAX_PACKET_SIZE : COMP_MSC_FS_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_bulk_in);
 
 	/* Init BULK OUT EP */
-	ep_bulk_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? COMP_MSC_HS_MAX_PACKET_SIZE : COMP_MSC_FS_MAX_PACKET_SIZE;
+	info = &ep_bulk_out->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? COMP_MSC_HS_MAX_PACKET_SIZE : COMP_MSC_FS_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_bulk_out);
 
 	mdev->bot_state = COMP_MSC_IDLE;
@@ -341,6 +344,7 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
 	usbd_ep_t *ep_bulk_in = &mdev->ep_bulk_in;
+
 	int ret = HAL_OK;
 	u8 ep_addr;
 
@@ -351,9 +355,9 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		case USB_REQ_CLEAR_FEATURE:
 			/* DeInit EP */
 			ep_addr = (u8)req->wIndex & 0xFF;
-			if (ep_addr == ep_bulk_out->addr) {
+			if (ep_addr == ep_bulk_out->info.addr) {
 				usbd_ep_deinit(dev, ep_bulk_out);
-			} else if (ep_addr == ep_bulk_in->addr) {
+			} else if (ep_addr == ep_bulk_in->info.addr) {
 				usbd_ep_deinit(dev, ep_bulk_in);
 			}
 
@@ -679,6 +683,7 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 	usbd_composite_msc_disk_ops_t *ops = &mdev->disk_ops;
 	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
 	usbd_ep_t *ep_bulk_in = &mdev->ep_bulk_in;
+	usb_ep_info_t *info;
 	int ret = HAL_OK;
 
 	RTK_LOGS(TAG,  RTK_LOG_INFO, "Init\n");
@@ -739,11 +744,13 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 	mdev->blkbits = COMP_MSC_BLK_BITS;
 	mdev->blksize = COMP_MSC_BLK_SIZE;
 
-	ep_bulk_out->addr = USBD_COMP_MSC_BULK_OUT_EP;
-	ep_bulk_out->type = USB_CH_EP_TYPE_BULK;
+	info = &ep_bulk_out->info;
+	info->addr = USBD_COMP_MSC_BULK_OUT_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
 
-	ep_bulk_in->addr = USBD_COMP_MSC_BULK_IN_EP;
-	ep_bulk_in->type = USB_CH_EP_TYPE_BULK;
+	info = &ep_bulk_in->info;
+	info->addr = USBD_COMP_MSC_BULK_IN_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_in->dis_zlp = 1;
 
 	usbd_register_class(&usbd_composite_msc_driver);

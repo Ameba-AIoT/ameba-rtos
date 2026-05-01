@@ -5,13 +5,17 @@
  */
 
 #include "platform_autoconf.h"
-#if defined(CONFIG_SDN) && CONFIG_SDN
+#if defined(CONFIG_SDN_DEV) && CONFIG_SDN_DEV
 
 #include "atcmd_service.h"
 
-void atcmd_sdn_cmd(u16 argc, char **argv);
+__WEAK void atcmd_sdn_cmd(u16 argc, char **argv)
+{
+	(void)argc;
+	(void)argv;
+}
 
 ATCMD_TABLE_DATA_SECTION
 const log_item_t at_sdn_cmd = {"+BTSDN",    atcmd_sdn_cmd};
 
-#endif /* CONFIG_SDN */
+#endif /* CONFIG_SDN_DEV */

@@ -24,6 +24,11 @@
 #define GPIO_LED_PIN1		_PB_17
 #define GPIO_LED_PIN2		_PB_18
 
+#elif defined (CONFIG_RTL8720F)
+
+#define GPIO_LED_PIN1		_PA_15
+#define GPIO_LED_PIN2		_PA_16
+
 #endif
 int example_raw_gtimer(void);
 #endif

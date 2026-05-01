@@ -37,7 +37,7 @@ void raw_pwm_demo(void)
 		RTIM_CCxCmd(TIMx[PWM_TIMER], pwm_chan, TIM_CCx_Enable);
 #if defined(CONFIG_AMEBASMART)
 		Pinmux_Config(PWM_GPIOx_S0[pwm_chan], PINMUX_FUNCTION_PWM);
-#elif defined(CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
 		Pinmux_Config(PWM_GPIOx_S0[pwm_chan], (PINMUX_FUNCTION_TIM4_PWM0 + pwm_chan));
 #else
 		Pinmux_Config(PWM_GPIOx_S0[pwm_chan], (PINMUX_FUNCTION_PWM0 + pwm_chan));

@@ -12,8 +12,8 @@
 #include "usb_ch9.h"
 #include <stdio.h>
 #include <ctype.h>
-static usbd_uvc_process_unit_t p_data;
-static usbd_uvc_process_unit_t x_data;
+usbd_uvc_process_unit_t p_data;
+usbd_uvc_process_unit_t x_data;
 static int uvc_format = 0;
 
 #define ITT_CAMERA      0x01
@@ -165,6 +165,70 @@ void usbd_uvc_get_command_process_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctr
 	}
 }
 /**
+  * @brief  Handle UVC Extension Unit GET/SET requests
+  *         - Process class-specific control requests from host
+  *         - Return current/min/max/default/resolution/length/info values
+  *         - Data is copied from internal x_data structure
+  * @param  dev: Pointer to UVC device context
+  * @param  ctrl: USB setup request (contains bRequest type)
+  * @param  resp: Response buffer to send back to host
+  * @retval None
+  * @note
+  *         - This is a weak function and can be overridden by user
+  *         - Only GET requests are handled here, SET_CUR is empty by default
+  *         - Ensure resp->data buffer is large enough for copied data
+  *         - x_data should be properly initialized before use
+  */
+__weak void get_command_extension_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp)
+{
+	(void)dev;
+	switch (ctrl->bRequest) {
+	case USBD_UVC_SET_CUR:
+		break;
+	case USBD_UVC_GET_CUR:
+		memcpy(resp->data, (unsigned char *)&x_data.cur, sizeof(int));
+		break;
+	case USBD_UVC_GET_MIN:
+		memcpy(resp->data, (unsigned char *)&x_data.min, sizeof(int));
+		break;
+	case USBD_UVC_GET_MAX:
+		memcpy(resp->data, (unsigned char *)&x_data.max, sizeof(int));
+		break;
+	case USBD_UVC_GET_DEF:
+		memcpy(resp->data, (unsigned char *)&x_data.def, sizeof(int));
+		break;
+	case USBD_UVC_GET_RES:
+		memcpy(resp->data, (unsigned char *)&x_data.res, sizeof(int));
+		break;
+	case USBD_UVC_GET_LEN:
+		memcpy(resp->data, (unsigned char *)&x_data.len, sizeof(int));
+		break;
+	case USBD_UVC_GET_INFO:
+		memcpy(resp->data, (unsigned char *)&x_data.info, sizeof(int));
+		break;
+	}
+}
+
+/**
+  * @brief  Handle UVC Extension Unit SET request
+  *         - Receive data from host and update internal parameters
+  *         - Typically used for vendor-specific control commands
+  * @param  dev: Pointer to UVC device context
+  * @param  data: Received control data from host
+  * @retval None
+  * @note
+  *         - This is a weak function and should be implemented by user
+  *         - Called when host issues SET_CUR request
+  *         - User should parse data->data and update corresponding parameters
+  *         - Ensure proper validation to avoid invalid memory access
+  */
+__weak void set_command_extension_unit(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data)
+{
+	(void)dev;
+	(void)data;
+}
+
+/**
   * @brief  Handle UVC control interface requests
   *         Parse entity, selector, and request type,
   *         then dispatch to corresponding handler.
@@ -186,7 +250,7 @@ usbd_uvc_events_process_control(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 	} else if (dev->command_entity == ITT_CAMERA) {
 		//get_command_camera(dev, ctrl, resp);
 	} else if (dev->command_entity == EXTENSION_UNIT) {
-		//get_command_extension_unit(dev, ctrl, resp);
+		get_command_extension_unit(dev, ctrl, resp);
 	}
 }
 /**
@@ -251,13 +315,13 @@ usbd_uvc_fill_streaming_control(usbd_uvc_dev_t *dev,
 		ctrl->dwMaxVideoFrameSize = (frame->width * frame->height * 3) / 2;
 		break;
 	case USBD_UVC_FORMAT_TYPE_MJPEG:
-		ctrl->dwMaxVideoFrameSize = 460800;
+		ctrl->dwMaxVideoFrameSize = frame->width * frame->height;
 		break;
 	case USBD_UVC_FORMAT_TYPE_H264:
-		ctrl->dwMaxVideoFrameSize = 150000;
+		ctrl->dwMaxVideoFrameSize = frame->width * frame->height ;
 		break;
 	case USBD_UVC_FORMAT_TYPE_H265:
-		ctrl->dwMaxVideoFrameSize = 150000;
+		ctrl->dwMaxVideoFrameSize = frame->width * frame->height;
 		break;
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Type %d\r\n", format->fcc);
@@ -285,7 +349,7 @@ usbd_uvc_events_process_streaming(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 		return;
 	}
 
-	ctrl_stream = (usbd_uvc_streaming_control_t *)(void*)&resp->data;
+	ctrl_stream = (usbd_uvc_streaming_control_t *)(void *)&resp->data;
 	resp->length = sizeof * ctrl_stream;
 	resp->length = ctrl->wLength;
 	switch (req) {
@@ -397,7 +461,7 @@ usbd_uvc_events_process_setup(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 void usbd_uvc_set_command_process_unit(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data)
 {
 	(void)dev;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "set_command_process_unit %d %d\r\n", data->data[0], data->data[1]);
+	(void)data;
 }
 /**
   * @brief  Process control interface data stage
@@ -416,7 +480,7 @@ usbd_uvc_control_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data
 		usbd_uvc_set_command_process_unit(dev, data);
 		break;
 	case UVC_VC_EXTENSION_UNIT:
-		//set_command_extension_unit(dev, data);
+		set_command_extension_unit(dev, data);
 		break;
 	default:
 		RTK_LOGS(TAG, RTK_LOG_INFO, "setting unknown control, length = %d\n", data->length);
@@ -443,6 +507,7 @@ usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *da
 
 	switch (dev->control) {
 	case USBD_UVC_VS_PROBE_CONTROL:
+		RTK_LOGS(TAG, RTK_LOG_INFO, "setting probe control, length = %d\r\n", data->length);
 		target = &dev->probe;
 		break;
 
@@ -455,7 +520,7 @@ usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *da
 		return;
 	}
 
-	ctrl = (usbd_uvc_streaming_control_t *)(void*)&data->data;
+	ctrl = (usbd_uvc_streaming_control_t *)(void *)&data->data;
 	iformat = ctrl->bFormatIndex;
 
 	format = &uvcd_formats[iformat - 1];
@@ -484,17 +549,22 @@ usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *da
 		target->dwMaxVideoFrameSize = (frame->width * frame->height * 3) / 2;
 		break;
 	case USBD_UVC_FORMAT_TYPE_MJPEG:
-		target->dwMaxVideoFrameSize = 460800;
+		target->dwMaxVideoFrameSize = frame->width * frame->height;
 		break;
 	case USBD_UVC_FORMAT_TYPE_H264:
-		ctrl->dwMaxVideoFrameSize = 150000;
+		ctrl->dwMaxVideoFrameSize = frame->width * frame->height;
 		break;
 	case USBD_UVC_FORMAT_TYPE_H265:
-		ctrl->dwMaxVideoFrameSize = 150000;
+		ctrl->dwMaxVideoFrameSize = frame->width * frame->height;
 		break;
 	}
 	uvc_format = format->fcc;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "format = %d w = %d h = %d fps = %d\r\n", format->fcc, frame->width, frame->height, *interval);
+
+	dev->uvc_format_ptr->format = format->fcc;
+	dev->uvc_format_ptr->width = frame->width;
+	dev->uvc_format_ptr->height = frame->height;
+	dev->uvc_format_ptr->fps = 10000000 / (*interval);
 
 	target->dwFrameInterval = *interval;
 

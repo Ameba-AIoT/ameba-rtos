@@ -537,20 +537,23 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
 #endif
+	usb_ep_info_t *info;
 
 	UNUSED(config);
 
 	hid->dev = dev;
 
 	/* Init INTR IN EP */
+	info = &ep_intr_in->info;
 	ep_intr_in->xfer_state = 0;
 	ep_intr_in->is_busy = 0U;
-	ep_intr_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_intr_in);
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	/* Init INTR OUT EP */
-	ep_intr_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
+	info = &ep_intr_out->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_intr_out);
 	/* Prepare to receive next INTR OUT packet */
 	usbd_hid_receive();
@@ -724,11 +727,13 @@ int usbd_hid_init(u32 tx_buf_len, usbd_hid_usr_cb_t *cb)
 	int ret = HAL_OK;
 	usbd_hid_t *hid = &hid_device;
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
+	usb_ep_info_t *info;
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
-	ep_intr_out->addr = USBD_HID_INTERRUPT_OUT_EP_ADDRESS;
-	ep_intr_out->type = USB_CH_EP_TYPE_INTR;
+	info = &ep_intr_out->info;
+	info->addr = USBD_HID_INTERRUPT_OUT_EP_ADDRESS;
+	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_out->xfer_buf_len = USBD_HID_INTR_OUT_BUF_SIZE;
 	ep_intr_out->xfer_buf = (u8 *)usb_os_malloc(ep_intr_out->xfer_buf_len);
 	ep_intr_out->xfer_len = ep_intr_out->xfer_buf_len;
@@ -742,8 +747,9 @@ int usbd_hid_init(u32 tx_buf_len, usbd_hid_usr_cb_t *cb)
 		tx_buf_len = USBD_HID_INTR_IN_BUF_SIZE;
 	}
 
-	ep_intr_in->addr = USBD_HID_INTERRUPT_IN_EP_ADDRESS;
-	ep_intr_in->type = USB_CH_EP_TYPE_INTR;
+	info = &ep_intr_in->info;
+	info->addr = USBD_HID_INTERRUPT_IN_EP_ADDRESS;
+	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_in->xfer_buf_len = tx_buf_len;
 	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(tx_buf_len);
 	if (ep_intr_in->xfer_buf == NULL) {
