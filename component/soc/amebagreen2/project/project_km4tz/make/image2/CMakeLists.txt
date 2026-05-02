@@ -35,6 +35,8 @@ ameba_add_subdirectory(${c_CMPT_SOC_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_DONGLE_LIB_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_OTA_DIR})
 ameba_add_subdirectory(${c_MCU_SRC_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_AIVOICE_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_TFLITE_DIR}/cmake)
 
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#

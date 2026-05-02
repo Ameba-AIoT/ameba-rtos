@@ -28,6 +28,7 @@ void BOOT_Enable_NP(void);
 void Peripheral_Reset(void);
 bool BOOT_RRAM_InfoValid(void);
 void BOOT_Log_Init(void);
+int BOOT_Data_Flash_Init(void);
 
 #ifdef __cplusplus
 }

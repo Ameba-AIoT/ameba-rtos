@@ -20,7 +20,12 @@ This example describes how to use general timer TIM2&TIM3 to generation periodic
 
 	GND <--> LED1 <---> PB_17
 	GND <--> LED2 <---> PB_18
-# SW Configuration
+5. If you run this example in RTL8720F, then connect as below
+
+	GND <--> LED1 <---> PA_15
+	GND <--> LED2 <---> PA_16
+
+# SW configuration
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.

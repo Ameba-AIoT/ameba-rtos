@@ -161,9 +161,6 @@ void Boot_Fullmac_LoadIMGAll(void)
 	} else {
 		switch (mem_type) {
 		case MCM_TYPE_NOR_FLASH:
-			/* rom code init flash only when BOOT_FROM_FLASH */
-			void BOOT_ROM_InitFlash(void);
-			BOOT_ROM_InitFlash();
 			flash_highspeed_setup();
 
 			Boot_Fullmac_ImgDownload();

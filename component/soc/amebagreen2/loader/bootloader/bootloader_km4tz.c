@@ -342,7 +342,11 @@ bool BOOT_RRAM_InfoValid(void)
 }
 
 // 3 Image 1
-void BOOT_Image1(void)
+/* Originally used in the FreeRTOS boot flow without weak linkage.
+ * Marked as weak for Zephyr code reuse, so it can be overridden by
+ * the Zephyr-specific redirection implementation.
+ */
+__weak void BOOT_Image1(void)
 {
 	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
@@ -462,10 +466,6 @@ BOOT_EXPORT_SYMB_TABLE boot_export_symbol = {
 
 };
 
-#ifdef __ZEPHYR__
-extern void z_arm_reset(void);
-#endif
-
 IMAGE1_ENTRY_SECTION
 RAM_FUNCTION_START_TABLE RamStartTable = {
 	.RamStartFun = NULL,
@@ -473,12 +473,8 @@ RAM_FUNCTION_START_TABLE RamStartTable = {
 	.RamPatchFun0 = NULL,
 	.RamPatchFun1 = NULL,
 	.RamPatchFun2 = NULL,
-#ifdef __ZEPHYR__
-	.FlashStartFun = z_arm_reset,
-#else
 #ifndef CONFIG_FULLMAC_PG_LOADER
 	.FlashStartFun = BOOT_Image1,
-#endif
 #endif
 	.ExportTable = &boot_export_symbol,
 };

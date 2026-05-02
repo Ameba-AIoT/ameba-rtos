@@ -166,6 +166,11 @@ menu "CONFIG APPLICATION"
 
     orsource "../../../audio/Kconfig"
 
+    menu "AI Config"
+        orsource "../../../tflite_micro/Kconfig"
+        orsource "../../../aivoice/Kconfig"
+    endmenu
+
     orsource "../../../application/Kconfig"
 
     orsource "${RTK_APP_DIR}/Kconfig"
