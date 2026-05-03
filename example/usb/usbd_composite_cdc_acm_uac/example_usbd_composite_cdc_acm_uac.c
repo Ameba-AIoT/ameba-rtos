@@ -111,8 +111,6 @@ static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 
 static usb_cdc_line_coding_t composite_cdc_acm_line_coding;
 
-static u16 composite_cdc_acm_ctrl_line_state;
-
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define COMP_USBD_AUDIO_MS_BUF_SIZE               1023U
 #else
@@ -266,6 +264,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = HAL_OK;
 	usb_cdc_line_coding_t *lc = &composite_cdc_acm_line_coding;
+	u16 composite_cdc_acm_ctrl_line_state;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:

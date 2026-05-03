@@ -835,30 +835,35 @@ static int usbd_inic_set_wifi_config(usb_dev_t *dev, u8 config)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_ep_t *ep;
+	usb_ep_info_t *info;
 
 	UNUSED(config);
 
 	/* Init BULK IN EP4 */
 	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_IN)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP5 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP5_BULK_OUT)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP6 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP6_BULK_OUT)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP7 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP7_BULK_OUT)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
@@ -875,24 +880,28 @@ static int usbd_inic_set_bt_config(usb_dev_t *dev, u8 config)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_ep_t *ep;
+	usb_ep_info_t *info;
 
 	UNUSED(config);
 
 	/* Init INTR IN EP1 */
 	ep = &idev->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_INTR_MPS : USBD_INIC_FS_INTR_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_INTR_MPS : USBD_INIC_FS_INTR_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK IN EP2 */
 	ep = &idev->in_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP2 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
@@ -1411,33 +1420,38 @@ static int usbd_inic_wifi_init(void)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_ep_t *ep;
+	usb_ep_info_t *info;
 	u8 ep_num;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_IN);
 	ep = &idev->in_ep[ep_num].ep;
-	ep->addr = USBD_WHC_WIFI_EP4_BULK_IN;
-	ep->type = USB_CH_EP_TYPE_BULK;
+	info = &ep->info;
+	info->addr = USBD_WHC_WIFI_EP4_BULK_IN;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep->skip_dcache_pre_clean = 0;
 	ep->skip_dcache_post_invalidate = 0;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP5_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
-	ep->addr = USBD_WHC_WIFI_EP5_BULK_OUT;
-	ep->type = USB_CH_EP_TYPE_BULK;
+	info = &ep->info;
+	info->addr = USBD_WHC_WIFI_EP5_BULK_OUT;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep->skip_dcache_pre_clean = 0;
 	ep->skip_dcache_post_invalidate = 0;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP6_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
-	ep->addr = USBD_WHC_WIFI_EP6_BULK_OUT;
-	ep->type = USB_CH_EP_TYPE_BULK;
+	info = &ep->info;
+	info->addr = USBD_WHC_WIFI_EP6_BULK_OUT;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep->skip_dcache_pre_clean = 0;
 	ep->skip_dcache_post_invalidate = 0;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP7_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
-	ep->addr = USBD_WHC_WIFI_EP7_BULK_OUT;
-	ep->type = USB_CH_EP_TYPE_BULK;
+	info = &ep->info;
+	info->addr = USBD_WHC_WIFI_EP7_BULK_OUT;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep->skip_dcache_pre_clean = 0;
 	ep->skip_dcache_post_invalidate = 0;
 
@@ -1450,22 +1464,26 @@ static int usbd_inic_bt_init(void)
 	int ret = HAL_OK;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_ep_t *ep;
+	usb_ep_info_t *info;
 	u8 ep_num;
 
 	ep_num = USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN);
 	ep = &idev->in_ep[ep_num].ep;
-	ep->addr = USBD_INIT_BT_EP1_INTR_IN;
-	ep->type = USB_CH_EP_TYPE_INTR;
+	info = &ep->info;
+	info->addr = USBD_INIT_BT_EP1_INTR_IN;
+	info->type = USB_CH_EP_TYPE_INTR;
 
 	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN);
 	ep = &idev->in_ep[ep_num].ep;
-	ep->addr = USBD_INIC_BT_EP2_BULK_IN;
-	ep->type = USB_CH_EP_TYPE_INTR;
+	info = &ep->info;
+	info->addr = USBD_INIC_BT_EP2_BULK_IN;
+	info->type = USB_CH_EP_TYPE_INTR;
 
 	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
-	ep->addr = USBD_INIC_BT_EP2_BULK_OUT;
-	ep->type = USB_CH_EP_TYPE_INTR;
+	info = &ep->info;
+	info->addr = USBD_INIC_BT_EP2_BULK_OUT;
+	info->type = USB_CH_EP_TYPE_INTR;
 
 	return ret;
 }

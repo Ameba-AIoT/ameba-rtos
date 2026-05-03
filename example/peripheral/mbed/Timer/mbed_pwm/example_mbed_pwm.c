@@ -55,7 +55,7 @@ void mbed_pwm_demo(void)
 	int i;
 
 	for (i = 0; i < 4; i++) {
-#if defined CONFIG_AMEBAGREEN2
+#if defined (CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
 		pwm_led[i].pwmtimer_idx = 4;
 #elif defined CONFIG_AMEBAL2
 		pwm_led[i].pwmtimer_idx = 6;

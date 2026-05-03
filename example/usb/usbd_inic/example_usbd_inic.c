@@ -362,7 +362,7 @@ static int inic_cb_received(usbd_inic_ep_t *out_ep, u32 len)
 	usbd_ep_t *ep = &out_ep->ep;
 	u8 ep_num;
 
-	switch (ep->addr) {
+	switch (ep->info.addr) {
 	case USBD_INIC_BT_EP2_BULK_OUT:
 		// Loopback with EP2
 		ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN);
@@ -398,7 +398,7 @@ static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status)
 {
 	usbd_ep_t *ep = &in_ep->ep;
 	(void)status;
-	switch (ep->addr) {
+	switch (ep->info.addr) {
 	case USBD_INIT_BT_EP1_INTR_IN:
 		// TBD
 		break;

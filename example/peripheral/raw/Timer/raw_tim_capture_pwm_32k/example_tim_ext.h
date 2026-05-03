@@ -9,7 +9,7 @@
 #ifndef TIM_EXT_H
 #define TIM_EXT_H
 #include "platform_autoconf.h"
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 #define PWM_TIMER		4
 #else
 #define PWM_TIMER		8
@@ -32,6 +32,11 @@
 #elif defined (CONFIG_AMEBAGREEN2)
 #define TIM4_TRIG_PIN			_PA_3
 #define PWM_GEN_32KHz_CH3_PIN	_PB_16
+
+#elif defined (CONFIG_RTL8720F)
+#define TIM4_TRIG_PIN			_PA_15
+#define PWM_GEN_32KHz_CH3_PIN	_PA_16
+
 #endif
 
 

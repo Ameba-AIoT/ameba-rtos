@@ -88,16 +88,13 @@ struct _usbd_class_driver_t;
  * @brief Defines the structure for an USB endpoint.
  */
 typedef struct {
+	usb_ep_info_t info;                       /**< Endpoint information: addr, mps, type, binterval, interval. */
 	u8 *xfer_buf;                             /**< Pointer to the transfer buffer. */
 	u32 xfer_len;                             /**< Total length of the data to transfer. */
 	u32 xfer_buf_len;                         /**< Total length of the class transfer buffer. */
-	u16 mps;                                  /**< Maximum Packet Size for this endpoint (0-64KB). */
 	__IO u8 xfer_state;                       /**< Current state of the class transfer. */
 	__IO u8 tx_zlp;                           /**< Flag to indicate if a Zero-Length Packet should be sent. */
 	__IO u8 is_busy;                          /**< Flag indicating if the endpoint is currently busy. */
-	u8 addr;                                  /**< Endpoint address (includes direction). */
-	u8 binterval;                             /**< Polling interval for the endpoint. */
-	u8 type : 2;                              /**< Endpoint type (Control, Bulk, Isochronous, Interrupt). */
 	u8 dis_zlp : 1;                           /**< Flag to disable Zero-Length Packet for the current transfer. */
 	u8 skip_dcache_pre_clean : 1;             /**< Skip `DCache_Clean` in TRX API and it will be called in class. */
 	u8 skip_dcache_post_invalidate : 1;       /**< Skip `DCache_Invalidate` when RX complete and it will be called in class. */
@@ -170,10 +167,10 @@ typedef struct {
 	__IO u8 is_connected;                    /**< Device connected or not,0-disabled, 1-enabled */
 	u8 dev_config;                           /**< Current device configuration index. */
 	u8 test_mode;                            /**< Flag indicating if the device is in a test mode. */
-	u8 dev_state : 3;                        /**< Current device state. See @ref usbd_state_t. */
-	u8 dev_old_state : 3;                    /**< Previous device state. See @ref usbd_state_t. */
-	u8 dev_attach_status : 2;                /**< Current device attach status. See @ref usbd_attach_status_t. */
-	u8 dev_old_attach_status : 2;            /**< Previous device attach status. See @ref usbd_attach_status_t. */
+	u8 dev_state;                            /**< Current device state. See @ref usbd_state_t. */
+	u8 dev_old_state;                        /**< Previous device state. See @ref usbd_state_t. */
+	u8 dev_attach_status;                    /**< Current device attach status. See @ref usbd_attach_status_t. */
+	u8 dev_old_attach_status;                /**< Previous device attach status. See @ref usbd_attach_status_t. */
 	u8 dev_speed : 2;                        /**< Current device speed. See @ref usb_speed_type_t. */
 	u8 self_powered : 1;                     /**< Power source status: 0 for bus-powered, 1 for self-powered. */
 	u8 remote_wakeup_en : 1;                 /**< Remote wakeup enable or not, 0-disabled, 1-enabled */

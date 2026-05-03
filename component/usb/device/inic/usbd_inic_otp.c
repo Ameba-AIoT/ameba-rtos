@@ -12,14 +12,14 @@
 
 static const char *const TAG = "INIC";
 /* Private defines -----------------------------------------------------------*/
-#define USB_OTP_START	0x2A0U
-#define USB_OTP_END		0x2DFU
-#define USB_OTP_LEN		64U // USB_OTP_END - USB_OTP_START, aligned to 4 bytes
-#define USB_OTP_STR_START	0x2A5U
-#define USB_OTP_OFFSET_VID			(0x2A0U - USB_OTP_START)
-#define USB_OTP_OFFSET_PID			(0x2A2U - USB_OTP_START)
-#define USB_OTP_OFFSET_STR			(USB_OTP_STR_START - USB_OTP_START)
-#define USB_OTP_STR_LEN				(USB_OTP_END - USB_OTP_STR_START + 1U)
+#define USB_OTP_START              0x2A0U
+#define USB_OTP_END                0x2DFU
+#define USB_OTP_LEN                64U // USB_OTP_END - USB_OTP_START, aligned to 4 bytes
+#define USB_OTP_STR_START          0x2A5U
+#define USB_OTP_OFFSET_VID         (0x2A0U - USB_OTP_START)
+#define USB_OTP_OFFSET_PID         (0x2A2U - USB_OTP_START)
+#define USB_OTP_OFFSET_STR         (USB_OTP_STR_START - USB_OTP_START)
+#define USB_OTP_STR_LEN            (USB_OTP_END - USB_OTP_STR_START + 1U)
 
 /* Private types -------------------------------------------------------------*/
 
@@ -103,7 +103,7 @@ int usbd_otp_init(usbd_otp_t *otp)
 		return HAL_ERR_MEM;
 	}
 
-	otp->otp_map = (u8 *)usb_os_malloc(OTP_LMAP_LEN);
+	otp->otp_map = (u8 *)usb_os_malloc(USB_OTP_LEN);
 	if (otp->otp_map == NULL) {
 		usb_os_mfree(otp->mfg_str);
 		otp->mfg_str = NULL;
@@ -198,4 +198,3 @@ void usbd_otp_deinit(usbd_otp_t *otp)
 		otp->otp_map = NULL;
 	}
 }
-

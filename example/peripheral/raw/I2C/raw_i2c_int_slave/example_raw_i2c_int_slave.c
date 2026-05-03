@@ -43,19 +43,7 @@ void i2c_rx_check(void)
 	int     i2clocalcnt;
 	int     result = 0;
 
-	RTK_LOGI(TAG, "check slave source data>>>\n");
-	for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt += 1) {
-		RTK_LOGI(TAG, "%s%02X%s", i2clocalcnt % 16 == 0 ? "\n     " : " ",
-				 i2cdatasrc[i2clocalcnt], i2clocalcnt == I2C_DATA_LENGTH - 1 ? "\n" : "");
-	}
-
 	RTK_LOGI(TAG, "check slave received data>>>\n");
-	for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH - 1; i2clocalcnt += 1) {
-
-		RTK_LOGI(TAG, "%s%02X%s", i2clocalcnt % 16 == 0 ? "\n	  " : " ",
-				 i2cdatadst[i2clocalcnt], i2clocalcnt == I2C_DATA_LENGTH - 1 ? "\n" : "");
-	}
-
 	// verify result
 	result = 1;
 	for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt++) {
@@ -321,6 +309,7 @@ void i2c_interrupt_mode_task(void)
 	RtkI2CInit(&i2cslave, I2C_SLV_SDA, I2C_SLV_SCL);
 
 	// Master write - Slave read
+	RTK_LOGI(TAG, "Slave read 1>>>\n");
 	i2cslave.pbuf = i2cdatadst;
 	i2cslave.datalength = length;
 	rx_done = 0;
@@ -330,6 +319,7 @@ void i2c_interrupt_mode_task(void)
 	i2c_rx_check();
 
 	// Master read - Slave write
+	RTK_LOGI(TAG, "Slave write 1>>>\n");
 	i2cslave.pbuf = i2cdatasrc;
 	i2cslave.datalength = length;
 	tx_done = 0;
@@ -337,13 +327,16 @@ void i2c_interrupt_mode_task(void)
 	while (tx_done == 0);
 
 	// Master write - Slave read
+	RTK_LOGI(TAG, "Slave read 2>>>\n");
 	i2cslave.pbuf = i2cdatadst;
 	i2cslave.datalength = length;
 	rx_done = 0;
 	I2C_INTConfig(i2cslave.I2Cint.I2Cx, (I2C_BIT_M_RX_FULL | I2C_BIT_M_RX_OVER | I2C_BIT_M_RX_UNDER | I2C_BIT_R_STOP_DET), ENABLE);
 	while (rx_done == 0);
+	i2c_rx_check();
 
 	// Master read - Slave write
+	RTK_LOGI(TAG, "Slave write 2>>>\n");
 	i2cslave.pbuf = i2cdatasrc;
 	i2cslave.datalength = length;
 	rx_done = 0;
@@ -351,13 +344,16 @@ void i2c_interrupt_mode_task(void)
 	while (rx_done == 0);
 
 	// Master write - Slave read
+	RTK_LOGI(TAG, "Slave read 3>>>\n");
 	i2cslave.pbuf = i2cdatadst;
 	i2cslave.datalength = length;
 	rx_done = 0;
 	I2C_INTConfig(i2cslave.I2Cint.I2Cx, (I2C_BIT_M_RX_FULL | I2C_BIT_M_RX_OVER | I2C_BIT_M_RX_UNDER | I2C_BIT_R_STOP_DET), ENABLE);
 	while (rx_done == 0);
+	i2c_rx_check();
 
 	// Master read - Slave write
+	RTK_LOGI(TAG, "Slave write 3>>>\n");
 	i2cslave.pbuf = i2cdatasrc;
 	i2cslave.datalength = length;
 	rx_done = 0;

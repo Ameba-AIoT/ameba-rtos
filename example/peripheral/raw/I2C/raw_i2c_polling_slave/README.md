@@ -11,8 +11,8 @@ slave's GND connect to master's GND
 
 * On RTL8730E
   - slave's `SDA (_PA_9)` connect to master's `SDA`
-  - slave's  `SCL (_PA_10)` connect to master's `SCL`
-  - slave's  `GND` connect to slave's `GND`
+  - slave's `SCL (_PA_10)` connect to master's `SCL`
+  - slave's `GND` connect to slave's `GND`
 
 * On RTL8726E/RTL8720E/RTL8713E/RTL8710E
   - slave's `SDA (_PA_29)` connect to master's `SDA`
@@ -20,14 +20,19 @@ slave's GND connect to master's GND
   - slave's `GND` connect to master's `GND`
 
 * On RTL8721Dx
-  - slave's`SDA (_PB_15)` connect to master's `SDA`
+  - slave's `SDA (_PB_15)` connect to master's `SDA`
   - slave's `SCL (_PB_16)` connect to master's `SCL`
   - slave's `GND` connect to master's `GND`
 
 * On RTL8721F
-  - slave's`SDA (_PA_26)` connect to slave's `SDA`
-  - slave's `SCL (_PA_25)` connect to slave's `SCL`
-  - slave's `GND` connect to slave's `GND`
+  - slave's `SDA (_PA_26)` connect to master's `SDA`
+  - slave's `SCL (_PA_25)` connect to master's `SCL`
+  - slave's `GND` connect to master's `GND`
+
+* On RTL8720F
+  - slave's `SDA (_PA_22)` connect to master's `SDA`
+  - slave's `SCL (_PA_21)` connect to master's `SCL`
+  - slave's `GND` connect to master's `GND`
 
 # SW Configuration
 
@@ -62,3 +67,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F

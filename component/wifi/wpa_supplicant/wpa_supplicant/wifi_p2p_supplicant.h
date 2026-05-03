@@ -127,6 +127,7 @@ int wifi_p2p_set_remain_on_ch(unsigned char wlan_idx, u8 enable);
 void wifi_p2p_join_status_hdl(u8 *evt_info);
 void wifi_p2p_channel_switch_ready(u8 *evt_info);
 int wifi_p2p_start_auto_go(struct p2p_auto_go_params *param);
+int wifi_p2p_drv_deinit(enum p2p_group_removal_reason removal_reason);
 int wifi_p2p_disconnect(void);
 void wifi_p2p_find(u32 timeout);
 void wifi_p2p_show_peers(void);
