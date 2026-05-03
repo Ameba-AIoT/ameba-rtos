@@ -3295,6 +3295,13 @@ static void app_bt_pbp_bsrc_encode_task_entry(void *ctx)
 							}
 						}
 						pre_ts_us = ts_us;
+					} else {
+						/* reuse BIS[0] sync result, all BIS share the same BIG anchor point */
+						if (!app_le_audio_data_path[i].sdu_sync_flag && app_le_audio_data_path[0].sdu_sync_flag) {
+							app_le_audio_data_path[i].sdu_sync_flag = true;
+							app_le_audio_data_path[i].sdu_tx_cnt = 0;
+							BT_LOGA("[APP] %s: BIS[%d] reuse BIS[0] sync result\r\n", __func__, i);
+						}
 					}
 				}
 #endif
