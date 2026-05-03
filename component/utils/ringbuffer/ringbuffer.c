@@ -29,13 +29,13 @@ RingBuffer *RingBuffer_Create(void *data, uint32_t size, int32_t type, int32_t o
 {
 	RingBuffer *rb = (RingBuffer *)rtos_mem_malloc(sizeof(RingBuffer));
 	if (!rb) {
-		RTK_LOGE(LOG_TAG, "alloc struct fail.\n");
+		RTK_LOGS(LOG_TAG, RTK_LOG_ERROR, "alloc struct fail.\n");
 		return NULL;
 	}
 	if (owns) {
 		rb->start = rtos_mem_malloc(size);
 		if (!rb->start) {
-			RTK_LOGE(LOG_TAG, "alloc data fail.\n");
+			RTK_LOGS(LOG_TAG, RTK_LOG_ERROR, "alloc data fail.\n");
 			rtos_mem_free(rb);
 			return NULL;
 		}
@@ -90,7 +90,7 @@ uint32_t RingBuffer_Available(RingBuffer *rb)
 int32_t RingBuffer_Write(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 {
 	if (!count || !buffer) {
-		RTK_LOGW(LOG_TAG, "try to write from empty buffer.\n");
+		RTK_LOGS(LOG_TAG, RTK_LOG_ALWAYS, "try to write from empty buffer.\n");
 		return -1;
 	}
 	if (rb->type == SHARED_RINGBUFF) {
@@ -139,7 +139,7 @@ int32_t RingBuffer_Write(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 int32_t RingBuffer_Read(RingBuffer *rb, uint8_t *buffer, uint32_t count)
 {
 	if (!count || !buffer) {
-		RTK_LOGW(LOG_TAG, "try to read to empty buffer.\n");
+		RTK_LOGS(LOG_TAG, RTK_LOG_WARN, "try to read to empty buffer.\n");
 		return -1;
 	}
 	if (rb->type == SHARED_RINGBUFF) {
