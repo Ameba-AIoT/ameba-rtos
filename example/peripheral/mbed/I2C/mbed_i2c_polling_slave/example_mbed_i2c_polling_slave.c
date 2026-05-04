@@ -39,9 +39,9 @@ void i2c_slave_rx_check(void)
 	int result = 0;
 
 	RTK_LOGI(TAG, "check slave received data>>>\n");
-	for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt += 2) {
-		RTK_LOGI(TAG, "i2c data: %02x \t %02x\n", i2cdatadst[i2clocalcnt], i2cdatadst[i2clocalcnt + 1]);
-	}
+	// for (i2clocalcnt = 0; i2clocalcnt < I2C_DATA_LENGTH; i2clocalcnt += 2) {
+	// 	RTK_LOGI(TAG, "i2c data: %02x \t %02x\n", i2cdatadst[i2clocalcnt], i2cdatadst[i2clocalcnt + 1]);
+	// }
 	//HalDelayUs(5000);
 	// verify result
 	result = 1;

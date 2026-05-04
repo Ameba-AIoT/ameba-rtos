@@ -256,6 +256,18 @@ typedef enum {
 } usb_speed_type_t;
 
 /**
+ * @brief USB endpoint information structure.
+ * @details Contains basic endpoint configuration: interval, address, max packet size, and type.
+ */
+typedef struct {
+	u16 interval;                       /**< Endpoint polling interval in ticks, High-speed means 2^(binterval-1). */
+	u16 mps : 11;                       /**< Maximum Packet Size for this endpoint (0-1024). */
+	u16 type : 2;                       /**< Endpoint type (Control, Bulk, Isochronous, Interrupt). */
+	u8 binterval;                       /**< Polling interval for the endpoint. Full Speed: 1-255, High Speed: 1-16 */
+	u8 addr;                            /**< Endpoint address (includes direction). */
+} usb_ep_info_t;
+
+/**
  * @brief Standard USB setup request packet structure.
  * @details This structure represents the 8-byte setup packet sent
  *          during the setup phase of a control transfer. (USB Spec 2.0, Table 9-2)
@@ -275,4 +287,3 @@ typedef struct {
 /* Exported functions --------------------------------------------------------*/
 
 #endif /* USB_CH9_H */
-

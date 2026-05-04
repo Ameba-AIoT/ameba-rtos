@@ -37,7 +37,7 @@ int ota_transport_read(ota_context_t *ctx, u8 *buf, int len)
 {
 	int bytes_read = -1;
 
-	if ((ctx->type != OTA_WHC) && (ctx->fd == -1)) {
+	if (ctx->fd == -1) {
 		RTK_LOGE(OTA_TAG, "[TRANSPORT] Invalid fd\n");
 		return -1;
 	}
@@ -60,12 +60,6 @@ int ota_transport_read(ota_context_t *ctx, u8 *buf, int len)
 			RTK_LOGE(OTA_TAG, "[TRANSPORT] user_read_func is null\n");
 		}
 		break;
-
-#ifdef CONFIG_WHC_CMD_PATH
-	case OTA_WHC:
-		bytes_read = ota_whc_read(ctx, buf, len);
-		break;
-#endif
 
 	default:
 		RTK_LOGE(OTA_TAG, "[TRANSPORT] Unsupported type: %d\n", ctx->type);
@@ -91,12 +85,6 @@ int ota_transport_connect(ota_context_t *ctx)
 	case OTA_HTTP:
 	case OTA_HTTPS:
 		ret = ota_http_connect(ctx);
-		break;
-#endif
-
-#ifdef CONFIG_WHC_CMD_PATH
-	case OTA_WHC:
-		ret = ota_whc_connect(ctx);
 		break;
 #endif
 
@@ -144,11 +132,6 @@ void ota_transport_disconnect(ota_context_t *ctx)
 		ota_vfs_close(ctx);
 		break;
 
-#ifdef CONFIG_WHC_CMD_PATH
-	case OTA_WHC:
-		ota_whc_close(ctx);
-		break;
-#endif
 	case OTA_USER:
 		if (ctx->user_close_func) {
 			ctx->user_close_func();
@@ -169,7 +152,7 @@ int ota_transport_init(ota_context_t *ctx, char *host, int port, char *resource)
 	}
 
 	/* 1. check host and redirect. Need for http and https */
-	if (ctx->type == OTA_HTTP || ctx->type == OTA_HTTPS || ctx->type == OTA_WHC) {
+	if (ctx->type == OTA_HTTP || ctx->type == OTA_HTTPS) {
 		if (!host) {
 			RTK_LOGE(OTA_TAG, "[Transport] host can't be null");
 			return OTA_ERR;

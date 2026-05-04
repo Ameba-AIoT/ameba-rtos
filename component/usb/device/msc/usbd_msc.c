@@ -342,17 +342,19 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
-
+	usb_ep_info_t *info;
 	UNUSED(config);
 
 	cdev->dev = dev;
 
 	/* Init BULK IN EP */
-	ep_bulk_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
+	info = &ep_bulk_in->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_bulk_in);
 
 	/* Init BULK OUT EP */
-	ep_bulk_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
+	info = &ep_bulk_out->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_bulk_out);
 
 	cdev->bot_state = USBD_MSC_IDLE;
@@ -409,7 +411,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
-
+	usb_ep_info_t *info;
 	int ret = HAL_OK;
 
 	//RTK_LOGD(TAG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
@@ -448,8 +450,10 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 		case USB_REQ_CLEAR_FEATURE:
 
-			ep_bulk_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
-			ep_bulk_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
+			info = &ep_bulk_in->info;
+			info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
+			info = &ep_bulk_out->info;
+			info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
 
 			if ((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) {
 				usbd_ep_deinit(dev, ep_bulk_in);
@@ -835,7 +839,7 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 	usbd_msc_disk_ops_t *ops = &cdev->disk_ops;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
-
+	usb_ep_info_t *info;
 	int ret = HAL_OK;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
@@ -889,15 +893,14 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 		goto create_tx_thread_fail;
 	}
 
-	cdev->blkbits = USBD_MSC_BLK_BITS;
-	cdev->blksize = USBD_MSC_BLK_SIZE;
-
-	ep_bulk_in->addr = USBD_MSC_BULK_IN_EP;
-	ep_bulk_in->type = USB_CH_EP_TYPE_BULK;
+	info = &ep_bulk_in->info;
+	info->addr = USBD_MSC_BULK_IN_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_in->dis_zlp = 1;
 
-	ep_bulk_out->addr = USBD_MSC_BULK_OUT_EP;
-	ep_bulk_out->type = USB_CH_EP_TYPE_BULK;
+	info = &ep_bulk_out->info;
+	info->addr = USBD_MSC_BULK_OUT_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
 
 	usbd_register_class(&usbd_msc_driver);
 

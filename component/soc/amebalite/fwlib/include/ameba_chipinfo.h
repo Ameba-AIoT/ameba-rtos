@@ -52,7 +52,6 @@ Compile_Assert(sizeof(MCM_MemTypeDef) == 4, "MCM_MemInfo size shall be 4");
 /** * @}  */
 
 typedef struct {
-	u8 sub_num;
 	u8 package_num;
 	u16 bd_num;
 
@@ -331,4 +330,3 @@ _LONG_CALL_ MCM_MemTypeDef ChipInfo_MCMInfo(void);
 #endif
 
 #endif
-

@@ -153,10 +153,10 @@ static int usbd_scsi_read_capacity10(usbd_msc_dev_t *cdev, u8 *params)
 			cdev->data[2] = (u8)((cdev->num_sectors - 1U) >>  8);
 			cdev->data[3] = (u8)(cdev->num_sectors - 1U);
 
-			cdev->data[4] = (u8)(cdev->blksize >>  24);
-			cdev->data[5] = (u8)(cdev->blksize >>  16);
-			cdev->data[6] = (u8)(cdev->blksize >>  8);
-			cdev->data[7] = (u8)(cdev->blksize);
+			cdev->data[4] = (u8)(USBD_MSC_BLK_SIZE >>  24);
+			cdev->data[5] = (u8)(USBD_MSC_BLK_SIZE >>  16);
+			cdev->data[6] = (u8)(USBD_MSC_BLK_SIZE >>  8);
+			cdev->data[7] = (u8)(USBD_MSC_BLK_SIZE);
 
 			cdev->data_length = READ_CAPACITY10_DATA_LEN;
 			return 0;
@@ -190,9 +190,9 @@ static int usbd_scsi_read_format_capacity(usbd_msc_dev_t *cdev, u8 *params)
 			cdev->data[7] = (u8)(cdev->num_sectors - 1U);
 
 			cdev->data[8] = 0x02U;
-			cdev->data[9] = (u8)(cdev->blksize >>  16);
-			cdev->data[10] = (u8)(cdev->blksize >>  8);
-			cdev->data[11] = (u8)(cdev->blksize);
+			cdev->data[9] = (u8)(USBD_MSC_BLK_SIZE >>  16);
+			cdev->data[10] = (u8)(USBD_MSC_BLK_SIZE >>  8);
+			cdev->data[11] = (u8)(USBD_MSC_BLK_SIZE);
 
 			cdev->data_length = READ_FORMAT_CAPACITY_DATA_LEN;
 			return 0;
@@ -253,9 +253,9 @@ static int usbd_scsi_request_sense(usbd_msc_dev_t *cdev, u8 *params)
 
 	if ((cdev->scsi_sense_head != cdev->scsi_sense_tail)) {
 		data = &cdev->scsi_sense_data[cdev->scsi_sense_head];
-		cdev->data[2]     = data->key;
-		cdev->data[12]    = data->ascq;
-		cdev->data[13]    = data->asc;
+		cdev->data[2] = data->key;
+		cdev->data[12] = data->ascq;
+		cdev->data[13] = data->asc;
 		cdev->scsi_sense_head++;
 
 		if (cdev->scsi_sense_head == USBD_MSC_SENSE_LIST_DEPTH) {
@@ -360,7 +360,7 @@ static int usbd_scsi_read(usbd_msc_dev_t *cdev, u8 *params)
 		}
 
 		/* case 4 : Hi > Dn */
-		if (cdev->blklen == 0 || (cbw->field.dCBWDataTransferLength > (cdev->blklen * cdev->blksize))) {
+		if (cdev->blklen == 0 || (cbw->field.dCBWDataTransferLength > (cdev->blklen * USBD_MSC_BLK_SIZE))) {
 			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			return -1;
 		}
@@ -422,7 +422,7 @@ static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 			return -1; /* error */
 		}
 
-		len = cdev->blklen * cdev->blksize;
+		len = cdev->blklen * USBD_MSC_BLK_SIZE;
 
 		/* case 11,13 : Ho <> Do */
 		if (cbw->field.dCBWDataTransferLength != len) {
@@ -484,26 +484,26 @@ static int usbd_scsi_check_address_range(usbd_msc_dev_t *cdev, u32 blk_offset, u
 */
 static int usbd_scsi_process_read(usbd_msc_dev_t *cdev)
 {
-	u32 len = cdev->blklen * cdev->blksize;
+	u32 len = cdev->blklen * USBD_MSC_BLK_SIZE;
 	usb_msc_bot_cbw_t *cbw = cdev->cbw;
 
 	if (cbw->field.dCBWDataTransferLength < len) {
 		cdev->phase_error = 1;
 		len = cbw->field.dCBWDataTransferLength;
-		cdev->blklen = (len >> cdev->blkbits);
+		cdev->blklen = (len >> USBD_MSC_BLK_BITS);
 	}
 
 	len = MIN(len, USBD_MSC_BUFLEN);
 
-	if (cdev->disk_ops.disk_read(cdev->lba, cdev->data, (len >> cdev->blkbits))) {
+	if (cdev->disk_ops.disk_read(cdev->lba, cdev->data, (len >> USBD_MSC_BLK_BITS))) {
 		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_HARDWARE_ERROR, SCSI_ASC_UNRECOVERED_READ_ERROR);
 		return -1;
 	}
 
 	usbd_msc_bulk_transmit(cdev->dev, cdev->data, len);
 
-	cdev->lba += (len >> cdev->blkbits);
-	cdev->blklen -= (len >> cdev->blkbits);
+	cdev->lba += (len >> USBD_MSC_BLK_BITS);
+	cdev->blklen -= (len >> USBD_MSC_BLK_BITS);
 
 	/* case 6 : Hi = Di */
 	cdev->csw->field.dCSWDataResidue -= len;
@@ -521,17 +521,17 @@ static int usbd_scsi_process_read(usbd_msc_dev_t *cdev)
 */
 static int usbd_scsi_process_write(usbd_msc_dev_t *cdev)
 {
-	u32 len = cdev->blklen * cdev->blksize;
+	u32 len = cdev->blklen * USBD_MSC_BLK_SIZE;
 
 	len = MIN(len, USBD_MSC_BUFLEN);
 
-	if (cdev->disk_ops.disk_write(cdev->lba, cdev->data, (len >> cdev->blkbits))) {
+	if (cdev->disk_ops.disk_write(cdev->lba, cdev->data, (len >> USBD_MSC_BLK_BITS))) {
 		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_HARDWARE_ERROR, SCSI_ASC_WRITE_FAULT);
 		return -1;
 	}
 
-	cdev->lba += (len >> cdev->blkbits);
-	cdev->blklen -= (len >> cdev->blkbits);
+	cdev->lba += (len >> USBD_MSC_BLK_BITS);
+	cdev->blklen -= (len >> USBD_MSC_BLK_BITS);
 
 	/* case 12 : Ho = Do */
 	cdev->csw->field.dCSWDataResidue -= len;
@@ -539,7 +539,7 @@ static int usbd_scsi_process_write(usbd_msc_dev_t *cdev)
 	if (cdev->blklen == 0U) {
 		usbd_msc_send_csw(cdev->dev, BOT_CSW_CMD_PASSED);
 	} else {
-		len = MIN((cdev->blklen * cdev->blksize), USBD_MSC_BUFLEN);
+		len = MIN((cdev->blklen * USBD_MSC_BLK_SIZE), USBD_MSC_BUFLEN);
 		/* Prepare EP to Receive next packet */
 		usbd_msc_bulk_receive(cdev->dev, cdev->data, len);
 	}

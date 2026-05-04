@@ -12,7 +12,7 @@
 #include "main.h"
 #include "os_wrapper.h"
 
-#if defined(CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 #define PWM_GEN_CHNL			TIM_Channel_3
 #else
 #define PWM_GEN_CHNL			TIM_Channel_5
@@ -35,7 +35,7 @@ void tim_gen_pwm_32k(void)
 	TIM_CCInitStruct.TIM_OCPulse = PWM_PERIOD / 2;
 	RTIM_CCxInit(TIMx[PWM_TIMER], &TIM_CCInitStruct, pwm_chan);
 	RTIM_CCxCmd(TIMx[PWM_TIMER], pwm_chan, TIM_CCx_Enable);
-#if defined CONFIG_AMEBAGREEN2
+#if defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 	Pinmux_Config(PWM_32K_CH3_PIN, PINMUX_FUNCTION_TIM4_PWM3);
 #else
 	Pinmux_Config(PWM_32K_CH5_PIN, PINMUX_FUNCTION_PWM5);
@@ -73,6 +73,9 @@ void tim_capture_pulse_num(void)
 #if defined(CONFIG_AMEBAGREEN2)
 	Pinmux_Config(TIM8_TRIG_PIN, PINMUX_FUNCTION_CAPT_TIM8_TRIG);
 	PAD_PullCtrl(TIM8_TRIG_PIN, GPIO_PuPd_UP);
+#elif defined(CONFIG_RTL8720F)
+	Pinmux_Config(TIM6_TRIG_PIN, PINMUX_FUNCTION_PWM_TIM6_TRIG);
+	PAD_PullCtrl(TIM6_TRIG_PIN, GPIO_PuPd_UP);
 #else
 	Pinmux_Config(TIM9_TRIG_PIN, PINMUX_FUNCTION_TIMER);
 	PAD_PullCtrl(TIM9_TRIG_PIN, GPIO_PuPd_UP);

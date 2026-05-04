@@ -17,16 +17,9 @@
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
-#define USBD_UVC_FRAME_WIDTH  1280
-#define USBD_UVC_FRAME_HEIGHT 720
+/* #define UVC_ORIGINAL_TYPE */
+#ifdef UVC_SINGLE_STREAM
 
-#define USBD_UVC_YUY2 1
-#define USBD_UVC_NV12 1
-#define USBD_UVC_MJPG 1
-#define USBD_UVC_H264 1
-#define USBD_UVC_H265 1
-
-#define USBD_UVC_WBVAL(x)   ((x) & 0xFF), (((x) >> 8) & 0xFF)
 /* UVC Device Descriptor Set */
 u8 usbd_uvc_descriptors[] = {
 
@@ -113,7 +106,7 @@ u8 usbd_uvc_descriptors[] = {
 	0x01,                   // bNrInPins
 	0x02,                   // baSourceID(1) = PU
 	0x03,                   // bControlSize
-	0x00, 0x00, 0x00,       // bmControls
+	0x00, 0x1e, 0x00,       // bmControls
 	0x00,                   // iExtension
 
 	/* =========================
@@ -244,7 +237,7 @@ usbd_uvc_streaming_control_t usbd_uvc_probe = {
 	.wCompQuality = 0,
 	.wCompWindowSize = 0,
 	.wDelay = 0,
-	.dwMaxVideoFrameSize = USBD_UVC_1080p,
+	.dwMaxVideoFrameSize = USBD_UVC_FRAME_WIDTH * USBD_UVC_FRAME_HEIGHT * 3,
 	.dwMaxPayloadTransferSize = 0,
 	.dwClockFrequency = 48000000,
 	.bmFramingInfo = 0,
@@ -263,7 +256,7 @@ usbd_uvc_streaming_control_t usbd_uvc_commit = {
 	.wCompQuality = 0,
 	.wCompWindowSize = 0,
 	.wDelay = 0,
-	.dwMaxVideoFrameSize = USBD_UVC_1080p,
+	.dwMaxVideoFrameSize = USBD_UVC_FRAME_WIDTH * USBD_UVC_FRAME_HEIGHT * 3,
 	.dwMaxPayloadTransferSize = 0,
 	.dwClockFrequency = 48000000,
 	.bmFramingInfo = 0,
@@ -280,3 +273,252 @@ usbd_uvc_frame_info_t uvc_frames_h264[] = {
 usbd_uvc_format_info_t uvcd_formats[] = {
 	{ USBD_UVC_FORMAT_TYPE_H264, uvc_frames_h264 },
 };
+#else
+
+u8 usbd_uvc_descriptors[] = {
+	// ============================================
+	// Configuration Descriptor (9 bytes)
+	// ============================================
+	0x09, 0x02, 0xDC, 0x01, 0x02, 0x01, 0x01, 0x80,
+	0x32,
+
+	// ============================================
+	// Interface Association Descriptor (8 bytes)
+	// ============================================
+	0x08, 0x0B, 0x00, 0x02, 0x0E, 0x03, 0x00, 0x00,
+
+	// ============================================
+	// Video Control Interface (9 bytes)
+	// ============================================
+	0x09, 0x04, 0x00, 0x00, 0x01, 0x0E, 0x01, 0x00,
+	0x00,
+
+	// ============================================
+	// VC Interface Header (13 bytes)
+	// ============================================
+	0x0D, 0x24, 0x01, 0x00, 0x01, 0x4F, 0x00, 0x00,
+	0x6C, 0xDC, 0x02, 0x01, 0x01,
+
+	// ============================================
+	// Camera Terminal (18 bytes)
+	// ============================================
+	0x12, 0x24, 0x02, 0x01, 0x01, 0x02, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xFF,
+	0xFF, 0xFF,
+
+	// ============================================
+	// Processing Unit (11 bytes)
+	// ============================================
+	0x0B, 0x24, 0x05, 0x02, 0x01, 0x00, 0x40, 0x02,
+	0xFF, 0xFF, 0x00,
+
+	// ============================================
+	// Extension Unit (28 bytes)
+	// ============================================
+	0x1C, 0x24, 0x06, 0x03, 0xCE, 0xB9, 0x55, 0x2B,
+	0xB0, 0x14, 0x49, 0xA8, 0xB2, 0x2E, 0xF6, 0xB0,
+	0xA0, 0x12, 0x82, 0x74, 0x18, 0x01, 0x02, 0x03,
+	0x00, 0x1e, 0x00, 0x00,
+
+	// ============================================
+	// Output Terminal (9 bytes)
+	// ============================================
+	0x09, 0x24, 0x03, 0x04, 0x01, 0x01, 0x00, 0x03,
+	0x00,
+
+	// ============================================
+	// VC Interrupt Endpoint (7 bytes)
+	// ============================================
+	0x07, 0x05, 0x81, 0x03, 0x40, 0x00, 0x08,
+
+	// ============================================
+	// CS VC Interrupt Endpoint (5 bytes)
+	// ============================================
+	0x05, 0x25, 0x03, 0x40, 0x00,
+
+	// ============================================
+	// Video Streaming Interface Alt 0 (9 bytes)
+	// ============================================
+	0x09, 0x04, 0x01, 0x00, 0x00, 0x0E, 0x02, 0x00,
+	0x00,
+
+	// ============================================
+	// VS Input Header (17 bytes)
+	// ============================================
+	0x11, 0x24, 0x01, 0x04, 0x4E, 0x01, 0x83, 0x00,  //bLength=0x11(17), bNumFormats=0x04
+	0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,  //wTotalLength=0x014E(334)
+	0x00,
+
+	// ============================================
+	// Format 1: NV16 Uncompressed (27 bytes)
+	// ============================================
+	0x1B, 0x24, 0x04, 0x01, 0x01, 0x4E, 0x56, 0x31,
+	0x36, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00,
+	0xAA, 0x00, 0x38, 0x9B, 0x71, 0x10, 0x01, 0x00,
+	0x00, 0x00, 0x00,
+
+	// Frame Descriptor - NV16 (38 bytes)
+	0x26, 0x24, 0x05, 0x01, 0x00,
+	USBD_UVC_WBVAL(USBD_UVC_FRAME_WIDTH * 2),
+	USBD_UVC_WBVAL(USBD_UVC_FRAME_HEIGHT * 3 / 2),
+	0x00, 0x80, 0xF4, 0x03, 0x00, 0xC0, 0xA9,
+	0x1D, 0x00, 0x48, 0x3F, 0x00, 0x9A, 0x5B, 0x06,
+	0x00, 0x03, 0x9A, 0x5B, 0x06, 0x00, 0x2A, 0x2C,
+	0x0A, 0x00, 0x40, 0x42, 0x0F, 0x00,
+
+	// ============================================
+	// Format 2: NV12 Uncompressed (27 bytes)
+	// ============================================
+	0x1B, 0x24, 0x04, 0x02, 0x01, 0x4E, 0x56, 0x31,
+	0x32, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00,
+	0xAA, 0x00, 0x38, 0x9B, 0x71, 0x0C, 0x01, 0x00,
+	0x00, 0x00, 0x00,
+
+	// Frame Descriptor - NV12 (38 bytes)
+	0x26, 0x24, 0x05, 0x01, 0x00,
+	USBD_UVC_WBVAL(USBD_UVC_FRAME_WIDTH),
+	USBD_UVC_WBVAL(USBD_UVC_FRAME_HEIGHT),
+	0x00, 0xEC, 0x5E, 0x00, 0x00, 0xEA, 0xC7,
+	0x02, 0x00, 0x76, 0x2F, 0x00, 0x9A, 0x5B, 0x06,
+	0x00, 0x03, 0x9A, 0x5B, 0x06, 0x00, 0x2A, 0x2C,
+	0x0A, 0x00, 0x40, 0x42, 0x0F, 0x00,
+
+	// ============================================
+	// Format 3: MJPEG (11 bytes)
+	// ============================================
+	0x0B, 0x24, 0x06, 0x03, 0x01, 0x01, 0x01, 0x00,
+	0x00, 0x00, 0x00,
+
+	// Frame Descriptor - MJPEG (38 bytes)
+	0x26, 0x24, 0x07, 0x01, 0x00,
+	USBD_UVC_WBVAL(USBD_UVC_JPEG_FRAME_WIDTH),
+	USBD_UVC_WBVAL(USBD_UVC_JPEG_FRAME_HEIGHT),
+	0x00, 0xC4, 0x1C, 0x01, 0x00, 0x4C, 0x56,
+	0x03, 0x00, 0x08, 0x07, 0x00, 0x9A, 0x5B, 0x06,
+	0x00, 0x03, 0x9A, 0x5B, 0x06, 0x00, 0x2A, 0x2C,
+	0x0A, 0x00, 0x40, 0x42, 0x0F, 0x00,
+
+	// ============================================
+	// Format 4: H.264 (28 bytes)
+	// ============================================
+	0x1C, 0x24, 0x10, 0x04, 0x01, 0x48, 0x32, 0x36,
+	0x34, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00,
+	0xAA, 0x00, 0x38, 0x9B, 0x71, 0x0C, 0x01, 0x00,
+	0x00, 0x00, 0x00, 0x01,
+
+	// Frame Descriptor - H.264 (38 bytes)
+	0x26, 0x24, 0x11, 0x01, 0x00,
+	USBD_UVC_WBVAL(USBD_UVC_FRAME_WIDTH),
+	USBD_UVC_WBVAL(USBD_UVC_FRAME_HEIGHT),
+	0x00, 0xC4, 0x1C, 0x01, 0x00, 0x4C, 0x56,
+	0x03, 0x9A, 0x5B, 0x06, 0x00, 0x03, 0x00, 0x00,
+	0x00, 0x00, 0x9A, 0x5B, 0x06, 0x00, 0x2A, 0x2C,
+	0x0A, 0x00, 0x40, 0x42, 0x0F, 0x00,
+
+	// ============================================
+	// Format 5: HEVC (28 bytes)
+	// ============================================
+	0x1C, 0x24, 0x10, 0x05, 0x01, 0x48, 0x45, 0x56,
+	0x43, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00,
+	0xAA, 0x00, 0x38, 0x9B, 0x71, 0x0C, 0x01, 0x00,
+	0x00, 0x00, 0x00, 0x01,
+
+	// Frame Descriptor - HEVC (38 bytes)
+	0x26, 0x24, 0x11, 0x01, 0x00,
+	USBD_UVC_WBVAL(USBD_UVC_FRAME_WIDTH),
+	USBD_UVC_WBVAL(USBD_UVC_FRAME_HEIGHT),
+	0x00, 0xC4, 0x1C, 0x01, 0x00, 0x4C, 0x56,
+	0x03, 0x9A, 0x5B, 0x06, 0x00, 0x03, 0x00, 0x00,
+	0x00, 0x00, 0x9A, 0x5B, 0x06, 0x00, 0x2A, 0x2C,
+	0x0A, 0x00, 0x40, 0x42, 0x0F, 0x00,
+
+	// ============================================
+	// Color Matching Descriptor (6 bytes)
+	// ============================================
+	0x06, 0x24, 0x0D, 0x01, 0x01, 0x04,
+
+	// ============================================
+	// Video Streaming Interface Alt 1 (9 bytes)
+	// ============================================
+	0x09, 0x04, 0x01, 0x01, 0x01, 0x0E, 0x02, 0x00,
+	0x00,
+
+	// ============================================
+	// Isochronous Endpoint (7 bytes)
+	// ============================================
+	0x07, 0x05, 0x83, 0x05, 0x00, 0x04, 0x01
+};
+
+int usbd_uvc_descriptors_size = sizeof(usbd_uvc_descriptors);
+
+usbd_uvc_streaming_control_t usbd_uvc_probe = {
+	.bmHint = 0,
+	.bFormatIndex = 1,
+	.bFrameIndex = 1,
+	.dwFrameInterval = 666666,
+	.wKeyFrameRate = 0,
+	.wPFrameRate = 0,
+	.wCompQuality = 0,
+	.wCompWindowSize = 0,
+	.wDelay = 0,
+	.dwMaxVideoFrameSize = USBD_UVC_FRAME_WIDTH * USBD_UVC_FRAME_HEIGHT * 3,
+	.dwMaxPayloadTransferSize = 0,
+	.dwClockFrequency = 48000000,
+	.bmFramingInfo = 0,
+	.bPreferedVersion = 0,
+	.bMinVersion    = 0,
+	.bMaxVersion    = 0,
+};
+
+usbd_uvc_streaming_control_t usbd_uvc_commit = {
+	.bmHint = 0,
+	.bFormatIndex = 1,
+	.bFrameIndex = 1,
+	.dwFrameInterval = 666666,
+	.wKeyFrameRate = 0,
+	.wPFrameRate = 0,
+	.wCompQuality = 0,
+	.wCompWindowSize = 0,
+	.wDelay = 0,
+	.dwMaxVideoFrameSize = USBD_UVC_FRAME_WIDTH * USBD_UVC_FRAME_HEIGHT * 3,
+	.dwMaxPayloadTransferSize = 0,
+	.dwClockFrequency = 48000000,
+	.bmFramingInfo = 0,
+	.bPreferedVersion = 0,
+	.bMinVersion    = 0,
+	.bMaxVersion    = 0,
+};
+
+usbd_uvc_frame_info_t uvc_frames_yuy2[] = {
+	{ USBD_UVC_FRAME_WIDTH * 2, USBD_UVC_FRAME_HEIGHT * 1.5, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
+	{ 0, 0, { 0, },  },
+};
+
+usbd_uvc_frame_info_t uvc_frames_nv12[] = {
+	{ USBD_UVC_FRAME_WIDTH, USBD_UVC_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
+	{ 0, 0, { 0, }, },
+};
+
+usbd_uvc_frame_info_t uvc_frames_mjpeg[] = {
+	{ USBD_UVC_JPEG_FRAME_WIDTH, USBD_UVC_JPEG_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
+	{ 0, 0, { 0, }, },
+};
+
+usbd_uvc_frame_info_t uvc_frames_h264[] = {
+	{ USBD_UVC_FRAME_WIDTH, USBD_UVC_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
+	{ 0, 0, { 0, }, },
+};
+
+usbd_uvc_frame_info_t uvc_frames_h265[] = {
+	{ USBD_UVC_FRAME_WIDTH, USBD_UVC_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
+	{ 0, 0, { 0, }, },
+};
+
+usbd_uvc_format_info_t uvcd_formats[] = {
+	{ USBD_UVC_FORMAT_TYPE_YUY2, uvc_frames_yuy2 },
+	{ USBD_UVC_FORMAT_TYPE_NV12, uvc_frames_nv12 },
+	{ USBD_UVC_FORMAT_TYPE_MJPEG, uvc_frames_mjpeg},
+	{ USBD_UVC_FORMAT_TYPE_H264, uvc_frames_h264 },
+	{ USBD_UVC_FORMAT_TYPE_H265, uvc_frames_h265 },
+};
+#endif

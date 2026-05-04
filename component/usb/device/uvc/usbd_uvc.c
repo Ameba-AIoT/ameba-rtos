@@ -187,9 +187,26 @@ usbd_uvc_video_encode_isoc(usb_dev_t *dev, usbd_uvc_video_t *video, usbd_uvc_buf
 	int len = USBD_UVC_IN_BUF_SIZE;
 	int ret;
 	usbd_uvc_dev_t *uvc_ctx = &usbd_uvc_dev;
+
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "encode_isoc: buf=%p, mem=%p, bytesused=%u, buf_used=%u\n",
+			 buf, (buf ? buf->mem : NULL), (buf ? buf->bytesused : 0), video->buf_used);
+
+	if (buf == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "encode_isoc: buf is NULL!\n");
+		return;
+	}
+	if (buf->mem == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "encode_isoc: buf->mem is NULL! bytesused=%u\n", buf->bytesused);
+		return;
+	}
+	if (buf->bytesused == 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "encode_isoc: buf->bytesused is 0!\n");
+		return;
+	}
+
 	if (uvc_ctx->frame_done) {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "encode_isoc: frame_done, return buffer\n");
 		uvc_ctx->frame_done = 0;
-		usbd_uvc_video_put_out_stream_queue(&video->uvc_buffer);
 		usb_os_sema_give(usbd_uvc_dev.video.output_frame_sema);
 		return;
 	}
@@ -198,11 +215,13 @@ usbd_uvc_video_encode_isoc(usb_dev_t *dev, usbd_uvc_video_t *video, usbd_uvc_buf
 	video->req_size = USBD_UVC_IN_BUF_SIZE;
 
 	ret = usbd_uvc_video_encode_header(video, buf, mem, len);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "encode header: ret=%d, len=%d\n", ret, len);
 	mem += ret;
 	len -= ret;
 
 	/* Process video data. */
 	ret = usbd_uvc_video_encode_data(video, buf, mem, len);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "encode data: ret=%d, len=%d\n", ret, len);
 
 	len -= ret;
 
@@ -212,12 +231,14 @@ usbd_uvc_video_encode_isoc(usb_dev_t *dev, usbd_uvc_video_t *video, usbd_uvc_buf
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
 	ep_isoc_in->xfer_len = video->req_size - len;
 	ep_isoc_in->xfer_buf = cdev->uvc_in_buf;
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "iso transmit: xfer_len=%u, frame_done=%d\n",
+			 ep_isoc_in->xfer_len, (buf->bytesused == video->buf_used));
 	usbd_ep_transmit(dev, ep_isoc_in);
 
 	if (buf->bytesused == video->buf_used) {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "encode_isoc: frame complete! bytesused=%u\n", buf->bytesused);
 		video->buf_used = 0;
 		uvc_ctx->frame_done = 1;
-		buf = &video->uvc_buffer;
 		video->fid ^= USBD_UVC_STREAM_FID;
 	}
 }
@@ -313,6 +334,7 @@ void usbd_uvc_wait_frame_down(void)
 {
 	usbd_uvc_dev_t *uvc_ctx = &usbd_uvc_dev;
 	usb_os_sema_take(uvc_ctx->video.output_frame_sema, RTOS_MAX_DELAY);
+	usbd_uvc_video_put_out_stream_queue(&uvc_ctx->video.uvc_buffer);
 	usb_os_sema_give(usbd_uvc_dev.video.output_queue_sema);
 }
 /**
@@ -345,9 +367,11 @@ static int usbd_uvc_handle_ep0_data_out(usb_dev_t *dev)
 	usbd_uvc_req_data_t req_data;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 	req_data.type = USBD_UVC_EVENT_DATA;
+	DCache_Invalidate((u32)ep0_out->xfer_buf, cdev->ctrl_data_len);
 	memcpy(req_data.uvc_data.data, ep0_out->xfer_buf, cdev->ctrl_data_len);
 	req_data.uvc_data.length = cdev->ctrl_data_len;
-	rtos_queue_send(cdev->uvc_cmd_queue, &req_data, 0);
+	usbd_uvc_events_process(cdev, &req_data);
+
 	return ret;
 }
 /**
@@ -373,9 +397,28 @@ static int usbd_uvc_handle_ep0_data_in(usb_dev_t *dev, u8 status)
 static int usbd_uvc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	int ret = HAL_OK;
-	(void)ep_addr;
-	(void)status;
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
+
+	// Check if UVC is initialized
+	if (!cdev->init_done) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ep_data_in: UVC not initialized! init_done=%d\n", cdev->init_done);
+		return ret;
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "ep_data_in: ep=0x%02X, status=%d, running=%d\n",
+			 ep_addr, status, cdev->running);
+
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "ep_data_in: uvc_buffer ptr=%p, mem=%p, bytesused=%u, buf_used=%u\n",
+			 &cdev->video.uvc_buffer,
+			 (cdev->video.uvc_buffer.mem ? cdev->video.uvc_buffer.mem : NULL),
+			 cdev->video.uvc_buffer.bytesused,
+			 cdev->video.buf_used);
+
+	if (cdev->running == 0) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "ep_data_in: not running, skip\n");
+		return ret;
+	}
+
 	usbd_uvc_video_encode_isoc(dev, &cdev->video, &cdev->video.uvc_buffer);
 
 	return ret;
@@ -505,8 +548,10 @@ static int usbd_uvc_set_config(usb_dev_t *dev, u8 config)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "%s %d %d\r\n", __FUNCTION__, __LINE__, config);
 	/* Init ISOC IN EP */
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
-	ep_isoc_in->mps = 1024;
-	ep_isoc_in->binterval = 1;
+	usb_ep_info_t *info = &ep_isoc_in->info;
+
+	info->mps = 1024;
+	info->binterval = 1;
 	usbd_ep_init(dev, ep_isoc_in);
 	return ret;
 }
@@ -538,7 +583,8 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	int ret = HAL_OK;
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "usbd_uvc_setup bmRequestType=0x%02X bRequest=0x%02X wLength=0x%04X wValue=%x wIndex %x\n",
+
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "usbd_uvc_setup bmRequestType=0x%02X bRequest=0x%02X wLength=0x%04X wValue=%x wIndex %x\n",
 			 req->bmRequestType,
 			 req->bRequest,
 			 req->wLength,
@@ -581,12 +627,12 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		}
 		break;
 	case USB_REQ_TYPE_CLASS :
-		RTK_LOGS(TAG, RTK_LOG_INFO, "USB_REQ_TYPE_CLASS\r\n");
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_REQ_TYPE_CLASS\r\n");
 		usbd_uvc_req_data_t req_data;
 		memset(&req_data, 0x00, sizeof(req_data));
 		req_data.type = USBD_UVC_EVENT_SETUP;
 		memcpy(&req_data.req, req, sizeof(req_data.req));
-		RTK_LOGS(TAG, RTK_LOG_INFO, "USB_REQ_TYPE_CLASS\r\n");
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_REQ_TYPE_CLASS\r\n");
 		if (req->bmRequestType & 0x80U) {
 
 		} else {
@@ -598,10 +644,10 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ep0_out->xfer_len = req->wLength;
 			usbd_ep_receive(dev, ep0_out);
 		} else {
-			usbd_uvc_events_process(cdev, &req_data);
+			//usbd_uvc_events_process(cdev, &req_data);
 			//rtos_queue_send(cdev->uvc_cmd_queue, &req_data, 0);
 		}
-
+		usbd_uvc_events_process(cdev, &req_data);
 		break;
 	default:
 		ret = HAL_ERR_HW;
@@ -622,15 +668,25 @@ static u8 usbd_uvc_set_interface(usb_dev_t *dev, u8 interface, u8 alt)
 {
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
+	usb_ep_info_t *info = &ep_isoc_in->info;
+	// Check if UVC is properly initialized
+	if (!cdev->init_done) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "set_interface: UVC not initialized! init_done=%d\n", cdev->init_done);
+		return 1;
+	}
+
 	if (interface == 1 && alt == 1) {
 		if (cdev->running == 0) {
 			cdev->frame_done = 0;
-			ep_isoc_in->mps = 1024;
-			ep_isoc_in->binterval = 1;
+			info->mps = 1024;
+			info->binterval = 1;
 			usbd_ep_init(dev, ep_isoc_in);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "start to send the frame\r\n");
 			cdev->running = 1;
 			usb_os_sema_give(usbd_uvc_dev.video.output_queue_sema);
+			if (usbd_uvc_dev.change_parm_cb) {
+				cdev->change_parm_cb(cdev->uvc_format_ptr);
+			}
 		}
 	} else if (interface == 1 && alt == 0) {
 		if (cdev->running) {
@@ -673,25 +729,46 @@ static void usbd_uvc_get_frame_handler(void *parm)
 	(void)parm;
 
 	usbd_uvc_buffer_t *payload = NULL;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "usbd_uvcd_get_frame_handler\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "usbd_uvcd_get_frame_handler started\r\n");
 	while (1) {
 		usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
+
+		// Check if UVC is still initialized
+		if (!cdev->init_done) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "get_frame: UVC not initialized, exit\n");
+			break;
+		}
+
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "get_frame: wait sema, running=%d\n", cdev->running);
 		usb_os_sema_take(cdev->video.output_queue_sema, RTOS_MAX_DELAY);
 		if (usbd_uvc_get_status() == 0) {
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "get_frame: not running, continue\n");
 			continue;
 		}
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "get_frame: try to get payload from queue\n");
 		for (int i = 0; i < 100000; i++) {
 			payload = usbd_uvc_video_in_stream_queue(cdev);
 			if (payload) {
 				cdev->video.uvc_buffer = *payload;
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "get_frame: got payload %p, mem=%p, bytesused=%u\n",
+						 payload, payload->mem, payload->bytesused);
 				break;
 			}
 			rtos_time_delay_ms(1);
 			if ((cdev->running == 0) && (i > 30)) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "The uvc is not running\r\n");
+				RTK_LOGS(TAG, RTK_LOG_WARN, "get_frame: timeout, running=%d, i=%d\n", cdev->running, i);
 				break;
 			}
 		}
+
+		// Skip if no valid payload from queue
+		if (payload == NULL) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "get_frame: no payload, skip frame\n");
+			continue;
+		}
+
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "get_frame: call encode, uvc_buffer mem=%p bytesused=%u\n",
+				 cdev->video.uvc_buffer.mem, cdev->video.uvc_buffer.bytesused);
 		usbd_uvc_video_encode_isoc(cdev->dev, &cdev->video, &cdev->video.uvc_buffer);
 	}
 	rtos_task_delete(NULL);
@@ -709,11 +786,13 @@ static void usbd_uvc_get_frame_handler(void *parm)
 int usbd_uvc_init(void)
 {
 	int ret = HAL_OK;
+	usbd_uvc_dev_t *dev = &usbd_uvc_dev;
+	usb_ep_info_t *info = &dev->ep_isoc_in.info;
 
 	usbd_uvc_parameter_init();
-	memset(&usbd_uvc_dev, 0, sizeof(usbd_uvc_dev_t));
-	usbd_uvc_dev.probe = usbd_uvc_probe;
-	usbd_uvc_dev.commit = usbd_uvc_commit;
+	memset(dev, 0, sizeof(usbd_uvc_dev_t));
+	dev->probe = usbd_uvc_probe;
+	dev->commit = usbd_uvc_commit;
 
 	usbd_uvc_cmd_queue_init();
 
@@ -722,26 +801,33 @@ int usbd_uvc_init(void)
 	usbd_uvc_commit.bFormatIndex = 1;
 	usbd_uvc_commit.bFrameIndex = 1;
 
-	INIT_LIST_HEAD(&usbd_uvc_dev.video.input_queue);
-	INIT_LIST_HEAD(&usbd_uvc_dev.video.output_queue);
-	usb_os_lock_create(&usbd_uvc_dev.video.input_lock);
-	usb_os_lock_create(&usbd_uvc_dev.video.output_lock);
+	INIT_LIST_HEAD(&dev->video.input_queue);
+	INIT_LIST_HEAD(&dev->video.output_queue);
+	usb_os_lock_create(&dev->video.input_lock);
+	usb_os_lock_create(&dev->video.output_lock);
 
-	INIT_LIST_HEAD(&usbd_uvc_dev.bod_list);
-	usb_os_lock_create(&usbd_uvc_dev.bod_mutex);
+	INIT_LIST_HEAD(&dev->bod_list);
+	usb_os_lock_create(&dev->bod_mutex);
 
 
-	usb_os_lock_create(&usbd_uvc_dev.lock);
+	usb_os_lock_create(&dev->lock);
 
-	usb_os_sema_create(&usbd_uvc_dev.uvc_Cmd_wakeup_sema);
-	usb_os_sema_create(&usbd_uvc_dev.video.output_queue_sema);
-	usb_os_sema_create(&usbd_uvc_dev.video.output_frame_sema);
+	usb_os_sema_create(&dev->uvc_Cmd_wakeup_sema);
+	usb_os_sema_create(&dev->video.output_queue_sema);
+	usb_os_sema_create(&dev->video.output_frame_sema);
 
-	usb_os_queue_create(&usbd_uvc_dev.video.complete_bf_req, 10, sizeof(int));
+	usb_os_queue_create(&dev->video.complete_bf_req, 10, sizeof(int));
 
-	usbd_uvc_dev.ep_isoc_in.addr = USBD_UVC_ISO_IN_EP;
-	usbd_uvc_dev.ep_isoc_in.type = USB_CH_EP_TYPE_ISOC;
-	usbd_uvc_dev.ep_isoc_in.binterval = 1;
+	info->addr = USBD_UVC_ISO_IN_EP;
+	info->type = USB_CH_EP_TYPE_ISOC;
+	info->binterval = 1;
+
+	usbd_uvc_dev.uvc_format_ptr = malloc(sizeof(usbd_uvc_format_t));
+	memset(usbd_uvc_dev.uvc_format_ptr, 0, sizeof(usbd_uvc_format_t));
+	usb_os_sema_create(&usbd_uvc_dev.uvc_format_ptr->uvcd_change_sema);
+
+	// Mark as initialized before creating tasks, so tasks can run properly
+	usbd_uvc_dev.init_done = 1;
 
 	ret = rtos_task_create(NULL, "usbd_uvcd_cmd_handler", usbd_uvc_cmd_handler, NULL, 1024U, 5);
 	if (ret != SUCCESS) {
@@ -757,7 +843,7 @@ int usbd_uvc_init(void)
 		goto exit;
 	}
 
-	usbd_uvc_dev.uvc_in_buf = malloc(USBD_UVC_IN_BUF_SIZE);
+	dev->uvc_in_buf = malloc(USBD_UVC_IN_BUF_SIZE);
 	usbd_register_class(&usbd_uvc_driver);
 exit:
 	return ret;
@@ -783,8 +869,37 @@ void usbd_uvc_deinit(void)
 	INIT_LIST_HEAD(&usbd_uvc_dev.video.input_queue);
 	INIT_LIST_HEAD(&usbd_uvc_dev.video.output_queue);
 	INIT_LIST_HEAD(&usbd_uvc_dev.bod_list);
+	usbd_uvc_dev.init_done = 0;
 	if (usbd_uvc_dev.uvc_in_buf) {
 		free(usbd_uvc_dev.uvc_in_buf);
 		usbd_uvc_dev.uvc_in_buf = NULL;
 	}
+}
+/**
+  * @brief  Register UVC parameter change callback
+  *         - Set callback function for UVC parameter updates
+  *         - Triggered when format, resolution, or FPS changes
+  * @param  cb: Callback function pointer (void (*)(void *))
+  * @retval None
+  * @note
+  *         - Callback should be non-blocking
+  *         - May be called from control or streaming context
+  */
+void usbd_uvc_set_change_parm_cb(int cb)
+{
+	usbd_uvc_dev.change_parm_cb = (void (*)(void *))cb;
+}
+/**
+  * @brief  Get current UVC format configuration
+  *         - Return pointer to internal UVC format structure
+  *         - Contains resolution, format, FPS, and ISP settings
+  * @retval Pointer to usbd_uvc_format_t
+  * @note
+  *         - Do not free returned pointer
+  *         - Ensure UVC is initialized before calling
+  *         - Shared resource, may require synchronization
+  */
+usbd_uvc_format_t *usbd_uvc_get_format(void)
+{
+	return usbd_uvc_dev.uvc_format_ptr;
 }
