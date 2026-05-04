@@ -280,7 +280,7 @@ int atcmd_tt_mode_start(u32 len)
 		return -1;
 	}
 
-	if (ring_buf_size == MAX_TT_HEAP_SIZE && g_host_control_mode != AT_HOST_CONTROL_SPI) {
+	if (ring_buf_size == MAX_TT_HEAP_SIZE && (g_host_control_mode == AT_HOST_CONTROL_UART && UART_RTS < 0)) {
 		g_tt_mode_check_watermark = 1;
 	}
 
