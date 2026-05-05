@@ -1097,16 +1097,19 @@ static int usbd_composite_uac_set_config(usb_dev_t *dev, u8 config)
 	usbd_composite_uac_buf_ctrl_t *buf_ctrl;
 	usb_speed_type_t speed = cdev->dev->dev_speed;
 	usbd_ep_t *ep;
+	usb_ep_info_t *info;
+
 
 	uac->alt_setting = 0U;
 
 	/* Init ISOC OUT EP */
 	buf_ctrl = &(uac->isoc_out);
 	ep = &(buf_ctrl->ep);
-	ep->binterval = (speed == USB_SPEED_HIGH) ? USBD_UAC_HS_ISOC_OUT_BINTERVAL : USBD_UAC_FS_ISOC_OUT_BINTERVAL;
+	info = &(ep->info);
+	info->binterval = (speed == USB_SPEED_HIGH) ? USBD_UAC_HS_ISOC_OUT_BINTERVAL : USBD_UAC_FS_ISOC_OUT_BINTERVAL;
 	usbd_composite_uac_ep_update_mps(buf_ctrl, (usbd_audio_cfg_t *) & (buf_ctrl->audio_config), cdev->dev->dev_speed, 0);
 
-	ep->mps = buf_ctrl->mps;
+	info->mps = buf_ctrl->mps;
 	usbd_ep_init(cdev->dev, ep);
 	ep->xfer_buf = usbd_composite_uac_rx_buf;
 	ep->xfer_len = buf_ctrl->mps;
@@ -1115,9 +1118,10 @@ static int usbd_composite_uac_set_config(usb_dev_t *dev, u8 config)
 	/* Init ISOC IN EP */
 	buf_ctrl = &(uac->isoc_in);
 	ep = &(buf_ctrl->ep);
-	ep->binterval = ((speed == USB_SPEED_HIGH) ? USBD_UAC_HS_ISOC_IN_BINTERVAL : USBD_UAC_FS_ISOC_IN_BINTERVAL);
+	info = &(ep->info);
+	info->binterval = ((speed == USB_SPEED_HIGH) ? USBD_UAC_HS_ISOC_IN_BINTERVAL : USBD_UAC_FS_ISOC_IN_BINTERVAL);
 	usbd_composite_uac_ep_update_mps(buf_ctrl, (usbd_audio_cfg_t *) & (buf_ctrl->audio_config), cdev->dev->dev_speed, 1);
-	ep->mps = buf_ctrl->mps;
+	info->mps = buf_ctrl->mps;
 	usbd_ep_init(cdev->dev, ep);
 
 	if (uac->cb->set_config != NULL) {
@@ -1780,12 +1784,14 @@ static int usbd_composite_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 s
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usbd_composite_uac_buf_ctrl_t *buf_ctrl;
 	usbd_ep_t *ep;
+	usb_ep_info_t *info;
 	UNUSED(status);
 
 	buf_ctrl = &(uac->isoc_in);
 	ep = &(buf_ctrl->ep);
+	info = &(ep->info);
 
-	if ((buf_ctrl->xfer_continue == 1) && (ep_addr == ep->addr)) {
+	if ((buf_ctrl->xfer_continue == 1) && (ep_addr == info->addr)) {
 		usbd_composite_uac_isoc_in_process_complete(dev);
 
 		if (!usb_ringbuf_is_empty(&(buf_ctrl->buf_list))) {
@@ -2192,6 +2198,7 @@ int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_c
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usbd_ep_t *ep_out = &(uac->isoc_out.ep);
 	usbd_ep_t *ep_in = &(uac->isoc_in.ep);
+	usb_ep_info_t *info;
 
 	usb_os_memset(uac, 0x00, sizeof(usbd_composite_uac_device_t));
 
@@ -2204,11 +2211,13 @@ int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_c
 	usbd_composite_uac_ep_buf_ctrl_deinit(&(uac->isoc_in));
 	usbd_composite_uac_ep_buf_ctrl_deinit(&(uac->isoc_out));
 
-	ep_out->addr = USBD_COMP_UAC_ISOC_OUT_EP;
-	ep_out->type = USB_CH_EP_TYPE_ISOC;
+	info = &(ep_out->info);
+	info->addr = USBD_COMP_UAC_ISOC_OUT_EP;
+	info->type = USB_CH_EP_TYPE_ISOC;
 
-	ep_in->addr = USBD_COMP_UAC_ISOC_IN_EP;
-	ep_in->type = USB_CH_EP_TYPE_ISOC;
+	info = &(ep_in->info);
+	info->addr = USBD_COMP_UAC_ISOC_IN_EP;
+	info->type = USB_CH_EP_TYPE_ISOC;
 
 	if (cb != NULL) {
 		if ((cb->in.enable == 0) && (cb->out.enable == 0)) {

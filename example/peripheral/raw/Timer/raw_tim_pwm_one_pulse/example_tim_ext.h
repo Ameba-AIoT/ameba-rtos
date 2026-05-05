@@ -37,6 +37,11 @@
 #define INTERRUPT_PIN   _PB_0
 #define BUTTON_PIN		_PA_3
 #define PWM_GEN_CH3_PIN	_PB_16
+
+#elif defined (CONFIG_RTL8720F)
+#define INTERRUPT_PIN   _PA_15
+#define BUTTON_PIN		_PA_17
+#define PWM_GEN_CH3_PIN	_PA_16
 #endif
 
 

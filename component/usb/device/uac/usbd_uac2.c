@@ -1976,6 +1976,7 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
 	usbd_ep_t *ep_isoc_out = &cdev->ep_isoc_out;
+	usb_ep_info_t *info;
 	u32 freq;
 	s16 volume_value = 0;
 	u8 ch_cnt;
@@ -2021,8 +2022,9 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 						/* DeInit ISOC IN EP */
 						usbd_ep_deinit(dev, ep_isoc_in);
 						/* Init ISO IN EP */
-						ep_isoc_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ?  USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, freq) \
-										  : USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, freq);
+						info = &ep_isoc_in->info;
+						info->mps = (dev->dev_speed == USB_SPEED_HIGH) ?  USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, freq) \
+									: USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, freq);
 						usbd_ep_init(dev, ep_isoc_in);
 					}
 
@@ -2030,8 +2032,9 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 						/* DeInit ISOC OUT EP */
 						usbd_ep_deinit(dev, ep_isoc_out);
 						/* Init ISO OUT EP */
-						ep_isoc_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ?  USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, freq) \
-										   : USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, freq);
+						info = &ep_isoc_out->info;
+						info->mps = (dev->dev_speed == USB_SPEED_HIGH) ?  USBD_UAC_CALC_HS_MPS(ch_cnt, byte_width, freq) \
+									: USBD_UAC_CALC_FS_MPS(ch_cnt, byte_width, freq);
 						usbd_ep_init(dev, ep_isoc_out);
 					}
 
@@ -2344,6 +2347,7 @@ int usbd_uac_init(usbd_uac_cb_t *cb)
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
 	usbd_ep_t *ep_isoc_out = &cdev->ep_isoc_out;
+	usb_ep_info_t *info;
 
 	cdev->cur_volume = 0x001F;
 	cdev->cur_mute = 0;
@@ -2352,12 +2356,13 @@ int usbd_uac_init(usbd_uac_cb_t *cb)
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_in));
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_out));
 
-	ep_isoc_out->addr = USBD_UAC_ISOC_OUT_EP;
-	ep_isoc_out->type = USB_CH_EP_TYPE_ISOC;
-	ep_isoc_out->binterval = 1U;
-	ep_isoc_in->addr = USBD_UAC_ISOC_IN_EP;
-	ep_isoc_in->type = USB_CH_EP_TYPE_ISOC;
-	ep_isoc_out->binterval = 1U;
+	info = &ep_isoc_out->info;
+	info->type = USB_CH_EP_TYPE_ISOC;
+	info->binterval = 1U;
+	info = &ep_isoc_in->info;
+	info->addr = USBD_UAC_ISOC_IN_EP;
+	info->type = USB_CH_EP_TYPE_ISOC;
+	info->binterval = 1U;
 
 	if (cb != NULL) {
 		if ((cb->in.enable == 0) && (cb->out.enable == 0)) {

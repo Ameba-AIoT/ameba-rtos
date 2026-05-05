@@ -21,6 +21,8 @@ for example:
    _PB_17 <--> _PB_19
 4. If you run this example in RTL8721F, then connect as below
    _PA_3 <--> _PB_16
+5. If you run this example in RTL8720F, then connect as below
+   _PA_15 <--> _PA_16
 # SW Configuration
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

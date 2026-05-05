@@ -535,6 +535,7 @@ static int ota_core_prepare(ota_context_t *ctx)
 		/* redirect.port != 0 means there is redirect URL can be downloaded*/
 		if (redirect->port != 0) {
 			RTK_LOGI(OTA_TAG, "[CORE] Redirect host: %s, port: %d, resource: %s\r\n", ctx->host, ctx->port, ctx->resource);
+			ota_transport_disconnect(ctx);
 			ret = ota_transport_connect(ctx);
 		}
 

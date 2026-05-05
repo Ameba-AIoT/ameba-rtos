@@ -9,7 +9,7 @@
 #ifndef TIM_EXT_H
 #define TIM_EXT_H
 #include "platform_autoconf.h"
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 #define PWM_TIMER		4
 #else
 #define PWM_TIMER		8
@@ -22,7 +22,7 @@
 #define PWM_CHANNEL_MAX		6
 int pwms[PWM_CHANNEL_MAX] = {0, PWM_PERIOD / 6, PWM_PERIOD / 3, PWM_PERIOD / 2, PWM_PERIOD / 3 * 2, PWM_PERIOD / 6 * 5};
 int steps[PWM_CHANNEL_MAX] = {PWM_STEP, PWM_STEP, PWM_STEP, PWM_STEP, PWM_STEP, PWM_STEP};
-#elif defined (CONFIG_AMEBAGREEN2)
+#elif defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
 #define PWM_CHANNEL_MAX		4
 int pwms[PWM_CHANNEL_MAX] = {0, PWM_PERIOD / 4, PWM_PERIOD / 2, PWM_PERIOD / 4 * 3};
 int steps[PWM_CHANNEL_MAX] = {PWM_STEP, PWM_STEP, PWM_STEP, PWM_STEP};
@@ -73,6 +73,14 @@ u8 PWM_GPIOx_S0[PWM_CHANNEL_MAX] = {
 	_PA_7,
 	_PA_8,
 	_PA_10,
+
+#elif defined (CONFIG_RTL8720F)
+
+	_PA_15,
+	_PA_16,
+	_PA_25,
+	_PA_26,
+
 #endif
 
 };

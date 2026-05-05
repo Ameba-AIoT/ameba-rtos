@@ -5,7 +5,7 @@
 #include "bt_debug.h"
 #include "spdio_api.h"
 
-#if defined (CONFIG_SDN) && CONFIG_SDN
+#if defined (CONFIG_BT_SDN) && CONFIG_BT_SDN
 #include "hci_if_inic_sdn.h"
 #else
 #include "hci_if_inic.h"

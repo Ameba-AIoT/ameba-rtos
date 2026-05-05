@@ -20,11 +20,11 @@ if TRUSTZONE
 
     config TZ_S_SIZE
         int "TrustZone Secure Image Size (KB)"
-        default 128 if (AMEBADPLUS || AMEBASMART || AMEBALITE) && TRUSTZONE_MBEDTLS
+        default 128 if (AMEBADPLUS || AMEBASMART || AMEBALITE || AMEBAGREEN2) && TRUSTZONE_MBEDTLS
         default 44
         help
             Size of TrustZone secure image (Image3) in KB.
-            Default is 44KB, or 128KB for AMEBADPLUS/AMEBASMART/AMEBALITE with MbedTLS enabled.
+            Default is 44KB, or 128KB for AMEBADPLUS/AMEBASMART/AMEBALITE/AMEBAGREEN2 with MbedTLS enabled.
 endif
 
 endmenu

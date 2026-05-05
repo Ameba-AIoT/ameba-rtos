@@ -88,10 +88,10 @@ static usbd_config_t cdc_acm_cfg = {
 };
 
 #if CONFIG_USBD_CDC_ACM_ASYNC_XFER
-static u32 cdc_acm_xfer_idx = 0;
+static u32 cdc_acm_xfer_idx;
 static u8 cdc_acm_async_xfer_buf[CONFIG_USBD_CDC_ACM_ASYNC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-static u16 cdc_acm_async_xfer_buf_pos = 0;
-static volatile int cdc_acm_async_xfer_busy = 0;
+static u16 cdc_acm_async_xfer_buf_pos;
+static volatile int cdc_acm_async_xfer_busy;
 static rtos_sema_t cdc_acm_async_xfer_sema;
 #endif
 

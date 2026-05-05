@@ -86,10 +86,7 @@ static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 
 static usb_cdc_line_coding_t composite_cdc_acm_line_coding;
 
-static u16 composite_cdc_acm_ctrl_line_state;
-
 static u16 composite_hid_protocol;
-
 static u16 composite_hid_idle_state;
 
 static usbd_composite_hid_usr_cb_t composite_hid_usr_cb = {
@@ -212,6 +209,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = HAL_OK;
 	usb_cdc_line_coding_t *lc = &composite_cdc_acm_line_coding;
+	u16 composite_cdc_acm_ctrl_line_state;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
