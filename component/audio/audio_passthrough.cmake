@@ -50,5 +50,10 @@ ameba_add_merge_app_library(audio_passthrough
     audio_control_passthrough
     audio_stream_passthrough
     audio_effect_passthrough
+    audio_effect_sw_algorithm_bundle
+    audio_effect_sw_algorithm_common
+    audio_effect_sw_algorithm_eq
+    audio_effect_sw_algorithm_wrapper
+
 )
 ##########################################################################################
