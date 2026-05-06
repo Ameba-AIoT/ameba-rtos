@@ -541,7 +541,7 @@ int atio_usbd_init(void)
 		return -1;
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"atcmd_usbd_input_handler_task"), (rtos_task_t)atcmd_usbd_input_handler_task, NULL, 4096, 5) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"atcmd_usbd_input_handler_task"), (rtos_task_t)atcmd_usbd_input_handler_task, NULL, 6 * 1024, 5) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "\n\r%s rtos_task_create(atcmd_usbd_input_handler_task) failed", __FUNCTION__);
 		return -1;
 	}

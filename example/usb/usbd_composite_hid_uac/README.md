@@ -23,9 +23,9 @@ None
 	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
 	```
 	[*] Enable Audio Framework
-			Select Audio Interfaces (PassThrough)  --->
-		
-	Note: If the audio speaker is not very smooth, choose `Select Audio Interfaces (Mixer)`, check the audio composite note to get more details.
+			Select Audio Interfaces (Mixer)  --->
+
+	Note: For details on audio configuration, please refer to https://aiot.realmcu.com/en/latest/rtos/multimedia/audio/index.html
 	```
 
 	If the development board model is RTL8721F, please follow the steps below to select FREERTOS via menuconfig.
