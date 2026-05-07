@@ -66,6 +66,7 @@ static u8 usbd_composite_lang_id_desc[USB_LEN_LANGID_STR_DESC] USB_DMA_ALIGNED =
 	USB_LOW_BYTE(USBD_COMP_LANGID), USB_HIGH_BYTE(USBD_COMP_LANGID)	/* wLANGID */
 };  /* usbd_composite_lang_id_desc */
 
+#ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static u8 usbd_composite_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_DMA_ALIGNED = {
 	USB_LEN_DEV_QUALIFIER_DESC,										/* bLength */
@@ -78,6 +79,7 @@ static u8 usbd_composite_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_D
 	0x01,															/* bNumConfigurations */
 	0x00,															/* Reserved */
 };  /* usbd_composite_device_qualifier_desc */
+#endif
 
 /* USB CDC ACM Device High Speed Configuration Descriptor */
 static u8 usbd_composite_config_desc[USB_LEN_CFG_DESC] USB_DMA_ALIGNED = {
@@ -318,7 +320,9 @@ static u8 *usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
+#endif
 		usb_os_memcpy((void *)desc, (void *)usbd_composite_config_desc, USB_LEN_CFG_DESC);
 		desc += USB_LEN_CFG_DESC;
 		total_len += USB_LEN_CFG_DESC;
@@ -330,18 +334,22 @@ static u8 *usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 		usb_os_memcpy((void *)desc, (void *)buf, desc_len);
 		total_len += desc_len;
 		buf = cdev->ctrl_buf;
+#ifndef CONFIG_USB_FS
 		if (((req->wValue >> 8) & 0xFF) == USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION) {
 			buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		}
+#endif
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(total_len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(total_len);
 		*len = total_len;
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		buf = usbd_composite_device_qualifier_desc;
 		*len = sizeof(usbd_composite_device_qualifier_desc);
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (req->wValue & 0xFF) {
@@ -465,4 +473,3 @@ void usbd_composite_deinit(void)
 		cdev->ctrl_buf = NULL;
 	}
 }
-
