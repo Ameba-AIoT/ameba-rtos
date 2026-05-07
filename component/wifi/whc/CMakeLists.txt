@@ -94,6 +94,7 @@ if(CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC)
     if(CONFIG_WHC_CMD_PATH)
         ameba_list_append(private_sources
             whc_dev/whc_dev_app.c
+            whc_dev/whc_dev_ota.c
         )
         if(CONFIG_RTW_CLI AND CONFIG_WPA_LITE)
             ameba_list_append(private_sources

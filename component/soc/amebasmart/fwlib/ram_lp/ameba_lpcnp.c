@@ -135,7 +135,7 @@ void np_set_ddr_sre(void)
 {
 	DDRC_TypeDef *ddrc = DDRC_DEV;
 	u32 temp;
-	RTK_LOGI(TAG, "np_set_ddr_sre enter\n");
+	RTK_LOGD(TAG, "np_set_ddr_sre enter\n");
 	u32 dummy_value;
 	/* dummy read to wake up device first */
 	DCache_Invalidate(0x60000000, 32);
@@ -214,7 +214,7 @@ void np_set_ddr_sre(void)
 		RTK_LOGI(TAG, "DDR Check error \r\n");
 	}
 
-	RTK_LOGI(TAG, "np_set_ddr_sre exit\n");
+	RTK_LOGD(TAG, "np_set_ddr_sre exit\n");
 }
 
 void np_set_ddrphy_pll_off(void)

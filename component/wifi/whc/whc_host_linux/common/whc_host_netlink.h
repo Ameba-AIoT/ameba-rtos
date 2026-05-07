@@ -75,6 +75,15 @@ enum nl80211_multicast_groups {
 #define WHC_WIFI_TEST_SCAN_RESULT    0xA
 #define WHC_WIFI_TEST_MP             0xB
 #define WHC_WIFI_TEST_DBG            0xC
+#define WHC_WIFI_TEST_OTA            0x10
+/* used in fullhan now */
+#define WHC_WIFI_TEST_SOFTAP         0x11
+#define WHC_WIFI_TEST_CONN_STATUS    0x12
+#define WHC_WIFI_TEST_DISCONN        0x13
+#define WHC_WIFI_TEST_WIFIOFF        0x14
+
+/* for rtos host only */
+#define WHC_WIFI_TEST_SET_HOST_RTOS  0xFF
 
 #define WHC_RMESH_TEST_SOCK_INIT    0x1
 #define WHC_RMESH_TEST_SOCK_SEND    0x2

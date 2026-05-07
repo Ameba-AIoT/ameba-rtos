@@ -41,7 +41,7 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
+if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC))
     ameba_list_append(private_includes
         ${c_CMPT_WIFI_DIR}/api
         ${c_CMPT_WIFI_DIR}/common
