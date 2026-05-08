@@ -87,8 +87,6 @@ SECTIONS
 	{
 		__image2_backtrace_start__ = .;
 
-		*(.img2_custom_signature*)
-
 		WLAN_CRITICAL_TEXT
 
 		*(.text*)
@@ -107,6 +105,7 @@ SECTIONS
 		KEEP(*(.git.ver.data))
 		__git_ver_table_end__ = .;
 
+#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 		/* Add This for C++ support */
 		. = ALIGN(4);
 		__preinit_array_start = .;
@@ -125,7 +124,7 @@ SECTIONS
 
 		*(.gcc_except_table*)
 		/*-----------------*/
-
+#endif
 		__image2_backtrace_end__ = .;
 		. = ALIGN (32);
 	} > IMG2_TEXT_LMA_REGION

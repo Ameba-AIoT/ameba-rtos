@@ -47,11 +47,9 @@ endif()
 #NOTE: These compile options are not required for rom's component
 add_compile_options(-fdata-sections -ffunction-sections)
 
-if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_INTF_IPC AND CONFIG_WHC_DEV))
-    ameba_add_subdirectory(make/image2)
-    add_custom_target(
-        ${c_MCU_PROJECT_NAME}
-        COMMENT "build ${c_MCU_PROJECT_NAME} only"
-        DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image_list>
-    )
-endif()
+ameba_add_subdirectory(make/image2)
+add_custom_target(
+    ${c_MCU_PROJECT_NAME}
+    COMMENT "build ${c_MCU_PROJECT_NAME} only"
+    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image_list>
+)
