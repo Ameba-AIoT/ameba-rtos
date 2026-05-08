@@ -686,6 +686,10 @@ GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 
 	assert_param(IS_GDMA_Index(GDMA_Index));
 
+	if (IPC_SEMTake(IPC_SEM_GDMA, 1000) == FALSE) {
+		return GDMA_ChNum;
+	}
+
 	/* Match idle channel. */
 	ValTemp = HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW + 3);
 
@@ -702,6 +706,8 @@ GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 	} else {
 		GDMA_ChNum = 0xFF;
 	}
+
+	IPC_SEMFree(IPC_SEM_GDMA);
 	return GDMA_ChNum;
 }
 
@@ -720,6 +726,10 @@ GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum)
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
 
+	if (IPC_SEMTake(IPC_SEM_GDMA, 1000) == FALSE) {
+		return ret;
+	}
+
 	if (TrustZone_IsSecure()) {
 		/* disable secure, or non-secure can not use this channel */
 		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
@@ -727,6 +737,8 @@ GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum)
 	}
 
 	GDMA_ChnlUnRegister(GDMA_Index, GDMA_ChNum);
+
+	IPC_SEMFree(IPC_SEM_GDMA);
 
 	ret = TRUE;
 	return ret;
