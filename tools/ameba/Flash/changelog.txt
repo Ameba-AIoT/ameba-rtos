@@ -38,3 +38,5 @@ ChangeLog:
 20250309  v1.1.5  (1) Fix read wifi-mac fail issue 
                   (2) Enable auto program sipc addr 4-byte mode as default
 				  (3) Optimize the display format of device info
+				  (4) Optimize check device alive method
+				  (5) Optimize check serial_port status method
