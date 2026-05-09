@@ -1095,7 +1095,7 @@ void cmd_wps(int argc, char **argv)
 			unsigned int pin_val = 0;
 			/* start pin */
 			if (argc == 2) {
-				char device_pin[10];
+				char device_pin[10] = {0};
 				pin_val = wps_generate_pin();
 				DiagSnPrintf(device_pin, sizeof(device_pin), "%08d", pin_val);
 				/* Display PIN 3 times to prevent to be overwritten by logs from other tasks */
