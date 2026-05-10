@@ -58,8 +58,6 @@ SECTIONS
 	{
 		__flash_text_start__ = .;
 		FLASH_INPUT_TEXT_SECTION
-		*(.xip.only.text*)
-		*(.xip.only.rodata*)
 		. = ALIGN(32);
 		__flash_text_end__ = .;
 	} > KM4TZ_IMG2_XIP
@@ -97,7 +95,6 @@ SECTIONS
 	{
 		__image2_backtrace_start__ = .;
 
-		*(.img2_custom_signature*)
 		*(.image2.net.ram.text*)
 
 		/* fix lwip text section to a high cache hit area, start at 0xXXXXX900, reduce cache conflicts between LwIP and ROM code*/
@@ -128,10 +125,9 @@ SECTIONS
 		KEEP(*(.unity.table.rodata*))
 		__unity_table_end__ = .;
 
+#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 		/* Add This for C++ support */
 		. = ALIGN(4);
-		__c_plus_plus_support_start__ = .;
-#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 		__preinit_array_start = .;
 		KEEP(*(.preinit_array))
 		__preinit_array_end = .;
@@ -145,9 +141,8 @@ SECTIONS
 		KEEP(*(SORT(.fini_array.*)))
 		KEEP(*(.fini_array))
 		__fini_array_end = .;
-#endif
-		__c_plus_plus_support_end__ = .;
 		/*-----------------*/
+#endif
 		__image2_backtrace_end__ = .;
 
 		. = ALIGN (32);
@@ -240,7 +235,6 @@ ASSERT(__psram_image2_start__ == ORIGIN(KM4TZ_BD_PSRAM), "__psram_image2_start__
 #if defined(CONFIG_DATA_HEAP_SRAM)
 	#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 		//ASSERT(__ipc_table_start__ == __ipc_table_end__, "fullmac does not require ipc table!")
-		ASSERT(__c_plus_plus_support_start__ == __c_plus_plus_support_end__, "fullmac does not support C++!")
 
 		__bdram_heap_buffer_size__ = SRAM_END - __bdram_heap_buffer_start__;
 		__tcm_heap_buffer_start__ = ORIGIN(FULLMAC_TCM_RAM);
