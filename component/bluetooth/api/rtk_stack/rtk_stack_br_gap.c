@@ -383,7 +383,7 @@ static void bt_stack_br_gap_config(void *evt_msg_q)
 	bool auto_accept_acl = false;
 
 	uint8_t pair_mode = GAP_PAIRING_MODE_PAIRABLE;
-	uint16_t auth_flags = GAP_AUTHEN_BIT_GENERAL_BONDING_FLAG | GAP_AUTHEN_BIT_SC_FLAG;
+	uint16_t auth_flags = GAP_AUTHEN_BIT_GENERAL_BONDING_FLAG;
 	uint8_t io_cap = GAP_IO_CAP_NO_INPUT_NO_OUTPUT;
 	uint8_t oob_enable = false;
 	uint8_t bt_mode = GAP_BT_MODE_21ENABLED;

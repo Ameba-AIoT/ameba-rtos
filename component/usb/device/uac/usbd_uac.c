@@ -79,6 +79,7 @@ static u8 usbd_uac_lang_id_desc[USB_LEN_LANGID_STR_DESC] USB_DMA_ALIGNED = {
 	USB_HIGH_BYTE(USBD_UAC_LANGID_STRING),
 }; /* usbd_uac_lang_id_desc */
 
+#ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static u8 usbd_uac_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_DMA_ALIGNED = {
 	USB_LEN_DEV_QUALIFIER_DESC,        /* bLength */
@@ -92,6 +93,7 @@ static u8 usbd_uac_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_DMA_ALI
 	0x01,                              /* bNumConfigurations */
 	0x00,                              /* Reserved */
 }; /* usbd_uac_device_qualifier_desc */
+#endif
 
 /* USB UAC Device Configuration Descriptor */
 static const u8 usbd_uac_config_desc[USB_LEN_CFG_DESC] = {
@@ -1064,6 +1066,7 @@ static u8 *usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_spe
 		buf = desc;
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		buf = usbd_uac_device_qualifier_desc;
 		*len = sizeof(usbd_uac_device_qualifier_desc);
@@ -1076,6 +1079,7 @@ static u8 *usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_spe
 		desc[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		buf = desc;
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (req->wValue & 0xFF) {
