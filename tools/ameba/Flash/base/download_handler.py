@@ -120,8 +120,12 @@ class Ameba(object):
                         self.serial_port.close(close_tcp=self.close_tcp_on_cleanup)
                     else:
                         self.serial_port.close()
-                while self.serial_port.is_open:
-                    pass
+                deadline = time.monotonic() + 3.0
+                while self.serial_port.is_open and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                if self.serial_port.is_open:
+                    self.logger.error(f"{self.serial_port.port} close timeout")
+                    return ErrType.SYS_IO
                 self.logger.info(f"{self.serial_port.port} closed.")
             except Exception as err:
                 self.logger.error(f"close error: {err}", exc_info=True)
@@ -204,8 +208,12 @@ class Ameba(object):
                         try:
                             if self.serial_port.is_open:
                                 self.serial_port.close()
-                            while self.serial_port.is_open:
-                                pass
+                            deadline = time.monotonic() + 3.0
+                            while self.serial_port.is_open and time.monotonic() < deadline:
+                                time.sleep(0.01)
+                            if self.serial_port.is_open:
+                                self.logger.error(f"{self.serial_port.port} close timeout")
+                                return ErrType.SYS_IO
                             ret = ErrType.OK
                             break
                         except:
@@ -308,8 +316,12 @@ class Ameba(object):
                     if self.serial_port.is_open:
                         self.serial_port.close()
 
-                    while self.serial_port.is_open:
-                        pass
+                    deadline = time.monotonic() + 3.0
+                    while self.serial_port.is_open and time.monotonic() < deadline:
+                        time.sleep(0.01)
+                    if self.serial_port.is_open:
+                        self.logger.error(f"{self.serial_port.port} close timeout")
+                        return ErrType.SYS_IO
                     ret = ErrType.OK
                 except:
                     ret = ErrType.SYS_IO

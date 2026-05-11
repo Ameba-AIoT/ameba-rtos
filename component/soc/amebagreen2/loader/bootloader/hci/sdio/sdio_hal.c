@@ -35,7 +35,7 @@ static const char *const TAG = "SPDIO";
 SPDIO_TX_BD SPDIO_TXBDAddr[SPDIO_HOST_TX_BD_NUM];
 SPDIO_TX_BD_HANDLE g_TXBDHdl[SPDIO_HOST_TX_BD_NUM];
 struct spdio_buf_t spdio_dev_rx_buf[SPDIO_HOST_TX_BD_NUM];
-u32 spdio_dev_rx_buf_entry[SPDIO_DEVICE_RX_BUFSZ / sizeof(u32)];
+ALIGNMTO(CACHE_LINE_SIZE) u32 spdio_dev_rx_buf_entry[SPDIO_DEVICE_RX_BUFSZ / sizeof(u32)];
 
 SPDIO_RX_BD SPDIO_RXBDAddr[SPDIO_HOST_RX_BD_NUM];
 SPDIO_RX_BD_HANDLE g_RXBDHdl[SPDIO_HOST_RX_BD_NUM];
@@ -119,7 +119,7 @@ void SPDIO_HAL_Init(void *adapter)
 	pSPDIODev->pTXBDHdl = g_TXBDHdl;
 	pSPDIODev->pTXBDAddr = SPDIO_TXBDAddr;
 	SDIO_TxBdHdl_Init(g_TXBDHdl, SPDIO_TXBDAddr, spdio_dev_rx_buf, SPDIO_HOST_TX_BD_NUM);
-	RTK_LOGI(TAG, "TXBDWPtr=0x%x TXBDRPtr=0x%x\n", pSPDIODev->TXBDWPtr, pSPDIODev->TXBDRPtr);
+	RTK_LOGD(TAG, "TXBDWPtr=0x%x TXBDRPtr=0x%x\n", pSPDIODev->TXBDWPtr, pSPDIODev->TXBDRPtr);
 
 	pSPDIODev->pRXBDHdl = g_RXBDHdl;
 	pSPDIODev->pRXBDAddr = SPDIO_RXBDAddr;
