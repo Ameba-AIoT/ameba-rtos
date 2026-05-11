@@ -86,6 +86,7 @@ static const u8 usbd_uac_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
 	USB_HIGH_BYTE(USBD_UAC_LANGID_STRING),
 }; /* usbd_uac_lang_id_desc */
 
+#ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_uac_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,        /* bLength */
@@ -568,6 +569,7 @@ static const u8 usbd_uac_hs_config_desc[USBD_UAC_HS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	0x00,                                                    /* internal clock recovery circuitry */
 #endif
 };
+#endif
 
 /* USB UAC Device Configuration Descriptor */
 /* USB Standard Configuration Descriptor */
@@ -2018,10 +2020,13 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 			cdev->uac_isoc_in.isoc_mps  = usbd_uac_get_mps(&(cdev->cb->in), speed);
 		}
 
+#ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
 			len = sizeof(usbd_uac_hs_config_desc);
 			desc = (u8 *)&usbd_uac_hs_config_desc;
-		} else {
+		} else
+#endif
+		{
 			len = sizeof(usbd_uac_fs_config_desc);
 			desc = (u8 *)&usbd_uac_fs_config_desc;
 		}
@@ -2029,6 +2034,7 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		usb_os_memcpy((void *)buf, (void *)desc, len);
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_uac_device_qualifier_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_uac_device_qualifier_desc, len);
@@ -2045,6 +2051,7 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		usb_os_memcpy((void *)buf, (void *)desc, len);
 		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {

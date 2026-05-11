@@ -64,6 +64,7 @@ static const u8 usbd_msc_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
 	USB_HIGH_BYTE(USBD_MSC_LANGID_STRING),
 };  /* usbd_msc_lang_id_desc */
 
+#ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_msc_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
@@ -124,6 +125,7 @@ static const u8 usbd_msc_hs_config_desc[] = {
 	USB_HIGH_BYTE(USBD_MSC_HS_MAX_PACKET_SIZE),
 	0x00                                            /* bInterval */
 };  /* usbd_msc_hs_config_desc */
+#endif
 
 /* USB MSC Device Full Speed Configuration Descriptor */
 static const u8 usbd_msc_fs_config_desc[] = {
@@ -674,10 +676,13 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
 			desc = (u8 *)usbd_msc_hs_config_desc;
 			len = sizeof(usbd_msc_hs_config_desc);
-		} else {
+		} else
+#endif
+		{
 			desc = (u8 *)usbd_msc_fs_config_desc;
 			len = sizeof(usbd_msc_fs_config_desc);
 		}
@@ -686,6 +691,7 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_msc_device_qualifier_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_msc_device_qualifier_desc, len);
@@ -704,6 +710,7 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
@@ -1025,4 +1032,3 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	/* Prepare EP to Receive next Cmd */
 	usbd_msc_bulk_receive(dev, (u8 *)cbw, USBD_MSC_CB_WRAP_LEN);
 }
-
