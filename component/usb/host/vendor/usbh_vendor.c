@@ -20,7 +20,7 @@
 
 static int usbh_vendor_attach(usb_host_t *host);
 static int usbh_vendor_detach(usb_host_t *host);
-static int usbh_vendor_process(usb_host_t *host, u32 msg);
+static int usbh_vendor_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_vendor_setup(usb_host_t *host);
 static int usbh_vendor_sof(usb_host_t *host);
 
@@ -642,11 +642,9 @@ static void usbh_vendor_isoc_process_tx(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_vendor_process(usb_host_t *host, u32 msg)
+static int usbh_vendor_process(usb_host_t *host, usbh_event_t *event)
 {
 	usbh_vendor_host_t *vendor = &usbh_vendor_host;
-	usbh_event_t event;
-	event.d32 = msg;
 
 	switch (vendor->state) {
 
@@ -654,18 +652,20 @@ static int usbh_vendor_process(usb_host_t *host, u32 msg)
 		break;
 
 	case VENDOR_STATE_XFER:
-		if (event.msg.pipe_num == vendor->bulk_in_xfer.pipe.pipe_num) {
-			usbh_vendor_bulk_process_rx(host);
-		} else if (event.msg.pipe_num == vendor->bulk_out_xfer.pipe.pipe_num) {
-			usbh_vendor_bulk_process_tx(host);
-		} else if (event.msg.pipe_num == vendor->intr_in_xfer.pipe.pipe_num) {
-			usbh_vendor_intr_process_rx(host);
-		} else if (event.msg.pipe_num == vendor->intr_out_xfer.pipe.pipe_num) {
-			usbh_vendor_intr_process_tx(host);
-		} else if (event.msg.pipe_num == vendor->isoc_in_xfer.pipe.pipe_num) {
-			usbh_vendor_isoc_process_rx(host);
-		} else if (event.msg.pipe_num == vendor->isoc_out_xfer.pipe.pipe_num) {
-			usbh_vendor_isoc_process_tx(host);
+		if (event) {
+			if (event->pipe_num == vendor->bulk_in_xfer.pipe.pipe_num) {
+				usbh_vendor_bulk_process_rx(host);
+			} else if (event->pipe_num == vendor->bulk_out_xfer.pipe.pipe_num) {
+				usbh_vendor_bulk_process_tx(host);
+			} else if (event->pipe_num == vendor->intr_in_xfer.pipe.pipe_num) {
+				usbh_vendor_intr_process_rx(host);
+			} else if (event->pipe_num == vendor->intr_out_xfer.pipe.pipe_num) {
+				usbh_vendor_intr_process_tx(host);
+			} else if (event->pipe_num == vendor->isoc_in_xfer.pipe.pipe_num) {
+				usbh_vendor_isoc_process_rx(host);
+			} else if (event->pipe_num == vendor->isoc_out_xfer.pipe.pipe_num) {
+				usbh_vendor_isoc_process_tx(host);
+			}
 		}
 		vendor->ep_mask = USBH_VENDOR_MASK_ALL_EPS;
 		vendor->isoc_in_xfer.test_mask  = USBH_VENDOR_MASK_ISOC_IN;

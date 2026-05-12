@@ -92,6 +92,9 @@ extern struct static_ip_config user_static_ip;
 #define CONNECTION_VALID 0
 #define CONNECTION_INVALID 1
 
+#define NETWORK_SEGMENT_POOL_START    43
+#define NETWORK_SEGMENT_POOL_END      254
+
 enum {
 #if defined(CONFIG_WLAN)
 	NETIF_WLAN_STA_INDEX = STA_WLAN_INDEX,
@@ -165,6 +168,9 @@ int LwIP_netif_get_idx(struct netif *pnetif);
 struct netif *LwIP_idx_get_netif(uint8_t idx);
 int LwIP_Check_Connectivity(uint8_t idx);
 uint8_t LwIP_IP_Address_Request(uint8_t idx);
+int LwIP_subnet_is_used(struct ip_addr *check_ip);
+int LwIP_alloc_ip(uint8_t idx);
+int LwIP_manage_subnet_conflict(uint8_t idx);
 
 #ifdef __cplusplus
 }

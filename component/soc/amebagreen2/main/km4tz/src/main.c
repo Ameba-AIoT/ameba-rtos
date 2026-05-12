@@ -170,11 +170,6 @@ int main(void)
 	/* pre-processor of application example */
 	app_pre_example();
 
-#ifdef CONFIG_ETHERNET
-	extern void eth_init(void);
-	eth_init();
-#endif
-
 #if defined(CONFIG_BT_COEXIST)
 	/* init coex ipc */
 	coex_ipc_entry();

@@ -33,7 +33,10 @@ typedef struct _at_command_mp_ext_item_ {
 #define SELECTION_BT_ANTENNA	"ATM2=ant,TARGET <TARGET: s0/s1>\n"
 
 /* Exported functions --------------------------------------------------------*/
-extern void sdn_bqb_h4_rx(uint8_t ch);
+#if defined(CONFIG_SDN_BT) && CONFIG_SDN_BT
+extern void sdn_host_bridge_open(bool to_loguart);
+extern void sdn_host_bridge_close(void);
+#endif
 extern void rtk_bt_mp_power_on(void);
 extern void rtk_bt_mp_power_off(void);
 extern void rtk_bt_set_bt_antenna(uint8_t ant);

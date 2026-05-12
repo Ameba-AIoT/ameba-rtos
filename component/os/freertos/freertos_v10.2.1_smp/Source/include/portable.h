@@ -170,6 +170,8 @@ void vPortFree( void *pv ) PRIVILEGED_FUNCTION;
 void* pvPortReAlloc( void *pv,  size_t xWantedSize ) PRIVILEGED_FUNCTION;
 void* pvPortReAllocBase( void *pv,  size_t xWantedSize, uint32_t startAddr) PRIVILEGED_FUNCTION;
 void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize) PRIVILEGED_FUNCTION;
+void *pvPortMallocCacheAligned(size_t xWantedSize) PRIVILEGED_FUNCTION;
+void *pvPortReAllocCacheAligned(void *pv, size_t xWantedSize) PRIVILEGED_FUNCTION;
 void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;

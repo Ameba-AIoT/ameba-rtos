@@ -18,7 +18,8 @@ For example:
   - Connect `GPIO_SIGNAL_SOURCE (_PB_10)` to `GPIO_IRQ_EDGE_PIN (_PA_12)`
 - On RTL8721F, then connect as below
   - Connect `GPIO_SIGNAL_SOURCE (_PA_25)` to `GPIO_IRQ_EDGE_PIN (_PA_26)`
-
+- On RTL8720F, then connect as below
+  - Connect `GPIO_SIGNAL_SOURCE (_PA_23)` to `GPIO_IRQ_EDGE_PIN (_PA_24)`
 # SW configuration
 
 1. Build and Download:
@@ -48,3 +49,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F

@@ -9,6 +9,7 @@
 #else
 #include "platform_autoconf.h"
 #include <wifi_api.h>
+#include "rtw_skbuff.h"
 #endif
 
 struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
@@ -61,7 +62,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_ap = 0;
 #endif
 #endif
-	wifi_user_config.skb_buf_size = 0;
+	wifi_user_config.skb_buf_size = MAX_SKB_BUF_SIZE;
 	wifi_user_config.wifi_wpa_mode_force = RTW_WPA_AUTO_MODE;
 
 	/*Regulatory related*/
@@ -70,6 +71,8 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.bw_40_enable = 0;
 	wifi_user_config.freq_band_support = RTW_SUPPORT_BAND_MAX;
 	wifi_user_config.tx_pwr_table_selection = 2;
+	wifi_user_config.tpc_enable = 0; /* 1: apply TPC for FCC/MKK/KCC(5.25~5.35GHz, 5.47~5.725GHz), CN(5.25~5.35GHz),
+														 IC/ETSI(5.15~5.25GHz, 5.25~5.35GHz, 5.47~5.725GHz) */
 	wifi_user_config.rtw_802_11d_en = 0;
 	wifi_user_config.rtw_trp_tis_cert_en = RTW_TRP_TIS_DISABLE;
 	wifi_user_config.rtw_edcca_mode = RTW_EDCCA_NORM;

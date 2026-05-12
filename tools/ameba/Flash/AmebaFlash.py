@@ -485,7 +485,7 @@ def main(argc, argv):
         for sp in serial_ports:
             flash_thread = threading.Thread(target=flash_process_entry, args=(
             profile_info, sp, serial_baudrate, image_dir, settings, deepcopy(images_info), chip_erase,
-            memory_type, memory_info, download, log_level, log_f, read_wifimac:=read_wifimac,
+            memory_type, memory_info, download, log_level, log_f, read_wifimac,
             remote_server, remote_port, remote_password))
             threads_list.append(flash_thread)
             flash_thread.start()

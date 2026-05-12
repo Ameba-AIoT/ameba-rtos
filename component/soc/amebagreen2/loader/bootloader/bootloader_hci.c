@@ -85,9 +85,16 @@ void Boot_Fullmac_Secure_Check(u8 FlashValid, u8 PsramValid)
 
 	/* for sram recycle, manifest is locate at 0x3007F000. */
 	Manifest = (Manifest_TypeDef *)0x3007F000;
-	_memcpy((void *)&Manifest[0], (void *)Manifest, sizeof(Manifest_TypeDef));
-	BOOT_OTA_Region_Init();
-	Boot_Fullmac_RSIP_Set(IMG_CERT, 0);
+
+	// Do not support RSIP-OTF, manifest cannot be found for image Header is encrypted.
+	assert_param(SYSCFG_OTP_BootFromNor());
+
+	/* set IMG2 IV */
+	BOOT_RSIPIvSet(Manifest, RSIP_IV1);
+
+	RSIP_MMU_Config(MMU_ID2, (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN, (u32)__km4tz_flash_text_end__, 0x08000000);
+	RSIP_MMU_Cmd(MMU_ID2, ENABLE);
+	RSIP_MMU_Cache_Clean();
 
 	ImgHdr = Boot_Fullmac_ResolveImgHdr(&EmptyXipImgHdr, FlashValid, (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN);
 	Boot_Fullmac_SetImgInfo(&SubImgInfo[0], ImgHdr, ApLabel[0]);
@@ -153,33 +160,25 @@ void Boot_Fullmac_ImgDownload(void)
 
 void Boot_Fullmac_LoadIMGAll(void)
 {
-	u32 boot_src = SYSCFG_OTP_BOOTSEL();
 	u8 mem_type = ChipInfo_MemoryType();
-	if ((boot_src == BOOT_FROM_FLASH) || (boot_src == BOOT_FROM_FLASH1)) { // for test purpose, delete it later
-		flash_highspeed_setup();
-		Boot_Fullmac_OTA();
-	} else {
-		switch (mem_type) {
-		case MCM_TYPE_NOR_FLASH:
-			/* rom code init flash only when BOOT_FROM_FLASH */
-			void BOOT_ROM_InitFlash(void);
-			BOOT_ROM_InitFlash();
-			flash_highspeed_setup();
 
-			Boot_Fullmac_ImgDownload();
-			Boot_Fullmac_Secure_Check(TRUE, FALSE);
-			break;
-		case MCM_TYPE_PSRAM:
-			/* Ensure BOOT_PSRAM_Init() in called in Bootloader */
-			Boot_Fullmac_ImgDownload();
-			Boot_Fullmac_Secure_Check(FALSE, TRUE);
-			break;
-		default:
-		case MCM_SINGLE_DIE:
-			Boot_Fullmac_ImgDownload();
-			Boot_Fullmac_Secure_Check(FALSE, FALSE);
-			break;
-		}
+	switch (mem_type) {
+	case MCM_TYPE_NOR_FLASH:
+		flash_highspeed_setup();
+
+		Boot_Fullmac_ImgDownload();
+		Boot_Fullmac_Secure_Check(TRUE, FALSE);
+		break;
+	case MCM_TYPE_PSRAM:
+		/* Ensure BOOT_PSRAM_Init() in called in Bootloader */
+		Boot_Fullmac_ImgDownload();
+		Boot_Fullmac_Secure_Check(FALSE, TRUE);
+		break;
+	default:
+	case MCM_SINGLE_DIE:
+		Boot_Fullmac_ImgDownload();
+		Boot_Fullmac_Secure_Check(FALSE, FALSE);
+		break;
 	}
 }
 #endif

@@ -59,12 +59,17 @@ const unsigned int led_pattern[LED_PATTERN_NUM] = {0x20FF000, 0x20FE000, 0x20FD0
 #if GPIO_TEST_PORT	//portB
 uint32_t pin_mask = 0x7EA0000;	//PB17 , 19, 21 ~ 26 (QFN68 & QFN100)
 //each bit map to one pin for output test: 0- pin output low; 1- pin output high
-const uint32_t led_pattern[LED_PATTERN_NUM] = {0x7EA0000, 0x7E80000, 0x7E20000 , 0x7CA0000, 0x7AA0000, 0x76A0000,0x6EA0000, 0x5EA0000, 0x3EA0000, 0x7EA0000, 0x7EA0000, 0x0};
+const uint32_t led_pattern[LED_PATTERN_NUM] = {0x7EA0000, 0x7E80000, 0x7E20000, 0x7CA0000, 0x7AA0000, 0x76A0000, 0x6EA0000, 0x5EA0000, 0x3EA0000, 0x7EA0000, 0x7EA0000, 0x0};
 
 #else	//portA
 uint32_t pin_mask = 0x1FF00000;	//PA22 ~ 28 (QFN68 & QFN100)
 const uint32_t led_pattern[LED_PATTERN_NUM] = {0x1FF00000, 0x1FE00000, 0x1FD00000, 0x1FB00000, 0x1F700000, 0x1EF00000, 0x1DF00000, 0x1BF00000, 0x17F00000, 0xFF00000, 0x1FF00000, 0x0};
 #endif
+
+#elif defined (CONFIG_RTL8720F)
+//for PortA
+unsigned int pin_mask = 0x01E04000;
+const unsigned int led_pattern[LED_PATTERN_NUM] = {0x01E04000, 0x01E00000, 0x01C00000, 0x01800000, 0x01000000, 0x00000000, 0x01E04000, 0x01E00000, 0x01C00000, 0x01800000, 0x01000000, 0x00000000};
 
 #endif
 

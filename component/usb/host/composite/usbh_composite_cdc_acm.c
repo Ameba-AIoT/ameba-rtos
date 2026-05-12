@@ -40,7 +40,7 @@ static u8 usbh_composite_cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] __a
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_composite_cdc_acm_attach(usb_host_t *host);
 static int usbh_composite_cdc_acm_detach(usb_host_t *host);
-static int usbh_composite_cdc_acm_process(usb_host_t *host, u32 msg);
+static int usbh_composite_cdc_acm_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_composite_cdc_acm_sof(usb_host_t *host);
 static int usbh_composite_cdc_acm_setup(usb_host_t *host);
 static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
@@ -351,13 +351,11 @@ static int usbh_composite_cdc_acm_setup(usb_host_t *host)
 * @param  host:Host handle
 * @retval Status
 */
-static int usbh_composite_cdc_acm_process(usb_host_t *host, u32 msg)
+static int usbh_composite_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 {
 	int status = HAL_BUSY;
 	u8 req_status = HAL_OK;
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
-	usbh_event_t event;
-	event.d32 = msg;
 
 	switch (cdc->state) {
 
@@ -366,12 +364,14 @@ static int usbh_composite_cdc_acm_process(usb_host_t *host, u32 msg)
 		break;
 
 	case CDC_ACM_STATE_TRANSFER:
-		if (event.msg.pipe_num == cdc->bulk_out.pipe_num) {
-			usbh_composite_cdc_acm_process_tx(host);
-		} else if (event.msg.pipe_num == cdc->bulk_in.pipe_num) {
-			usbh_composite_cdc_acm_process_rx(host);
-		} else if (event.msg.pipe_num == cdc->intr_in.pipe_num) {
-			usbh_composite_cdc_acm_process_intr_rx(host);
+		if (event) {
+			if (event->pipe_num == cdc->bulk_out.pipe_num) {
+				usbh_composite_cdc_acm_process_tx(host);
+			} else if (event->pipe_num == cdc->bulk_in.pipe_num) {
+				usbh_composite_cdc_acm_process_rx(host);
+			} else if (event->pipe_num == cdc->intr_in.pipe_num) {
+				usbh_composite_cdc_acm_process_intr_rx(host);
+			}
 		}
 		break;
 

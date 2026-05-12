@@ -51,8 +51,8 @@ SECTIONS
 		__boot_text_start__ = .;
 		__image2_entry_func__ = .;
 		KEEP(*(SORT(.image2.entry.data*)))
-		__boot_text_end__ = .;
 		. = ALIGN(32);
+		__boot_text_end__ = .;
 	} > KM4_BOOT_RAM
 
 	/* xip part */
@@ -76,7 +76,6 @@ SECTIONS
 		__sram_image2_start__ = .;
 		SRAM_INPUT_TEXT_SECTION
 		__sram_image2_end__ = .;
-		. = ALIGN(32);
 	} > KM4_BD_RAM
 
 	/* image2: normal image start */
@@ -135,7 +134,6 @@ SECTIONS
 		/*-----------------*/
 		__image2_backtrace_end__ = .;
 
-		. = ALIGN (32);
 	} > IMG2_TEXT_LMA_REGION
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
@@ -155,10 +153,8 @@ SECTIONS
 	/* sram/psram part */
 	OUT_DATA_SECTION :
 	{
+		. = ALIGN (32);
 		*(.data*)
-
-		/*cache line size aligned in order to avoid MMU remap err*/
-		. = ALIGN(32);
 	} > IMG2_DATA_LMA_REGION
 
 	/*-----------------*/

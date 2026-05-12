@@ -1,4 +1,5 @@
 if(CONFIG_KERNEL)
+    ameba_add_subdirectory(${c_CMPT_LIBC_WRAP_DIR})
     if(CONFIG_PLATFORM_FREERTOS_ROM)
         ameba_add_subdirectory(freertos/freertos_rom)
     else()

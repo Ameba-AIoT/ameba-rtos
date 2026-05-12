@@ -103,8 +103,11 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
         ${c_FREERTOS_DIR}/timers.c
         ${c_FREERTOS_DIR}/event_groups.c
         ${c_FREERTOS_DIR}/stream_buffer.c
-        ${c_FREERTOS_DIR}/portable/MemMang/heap_5.c
     )
+
+    if(NOT CONFIG_TLSF_HEAP)
+        ameba_list_append(private_sources ${c_FREERTOS_DIR}/portable/MemMang/heap_5.c)
+    endif()
 
     if(CONFIG_AMEBAD)
         if("${c_MCU_PROJECT_NAME}" STREQUAL "km0")

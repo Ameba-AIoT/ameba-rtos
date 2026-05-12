@@ -73,6 +73,7 @@ static const u8 usbd_hid_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
 	USB_HIGH_BYTE(USBD_HID_LANGID_STRING),
 };
 
+#ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_hid_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
@@ -86,6 +87,7 @@ static const u8 usbd_hid_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	0x01,                                           /* bNumConfigurations */
 	0x00,                                           /* Reserved */
 };
+#endif
 
 /* USB HID device FS Configuration Descriptor */
 static const u8 usbd_hid_fs_config_desc[] = {
@@ -151,6 +153,7 @@ static const u8 usbd_hid_fs_config_desc[] = {
 #endif
 };
 
+#ifndef CONFIG_USB_FS
 /* USB HID device HS Configuration Descriptor */
 static const u8 usbd_hid_hs_config_desc[] = {
 	/* USB Standard Configuration Descriptor */
@@ -214,6 +217,7 @@ static const u8 usbd_hid_hs_config_desc[] = {
 	0xA,											/*bInterval*/
 #endif
 };
+#endif
 
 /* USB HID Descriptor */
 static const u8 usbd_hid_desc[USBD_HID_DESC_SIZE] = {
@@ -537,20 +541,23 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
 #endif
+	usb_ep_info_t *info;
 
 	UNUSED(config);
 
 	hid->dev = dev;
 
 	/* Init INTR IN EP */
+	info = &ep_intr_in->info;
 	ep_intr_in->xfer_state = 0;
 	ep_intr_in->is_busy = 0U;
-	ep_intr_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_intr_in);
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	/* Init INTR OUT EP */
-	ep_intr_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
+	info = &ep_intr_out->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_intr_out);
 	/* Prepare to receive next INTR OUT packet */
 	usbd_hid_receive();
@@ -629,10 +636,13 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
 			desc = (u8 *)usbd_hid_hs_config_desc;
 			len = sizeof(usbd_hid_hs_config_desc);
-		} else {
+		} else
+#endif
+		{
 			desc = (u8 *)usbd_hid_fs_config_desc;
 			len = sizeof(usbd_hid_fs_config_desc);
 		}
@@ -643,6 +653,7 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_hid_device_qualifier_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_hid_device_qualifier_desc, len);
@@ -663,6 +674,7 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
 		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
@@ -724,11 +736,13 @@ int usbd_hid_init(u32 tx_buf_len, usbd_hid_usr_cb_t *cb)
 	int ret = HAL_OK;
 	usbd_hid_t *hid = &hid_device;
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
+	usb_ep_info_t *info;
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
-	ep_intr_out->addr = USBD_HID_INTERRUPT_OUT_EP_ADDRESS;
-	ep_intr_out->type = USB_CH_EP_TYPE_INTR;
+	info = &ep_intr_out->info;
+	info->addr = USBD_HID_INTERRUPT_OUT_EP_ADDRESS;
+	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_out->xfer_buf_len = USBD_HID_INTR_OUT_BUF_SIZE;
 	ep_intr_out->xfer_buf = (u8 *)usb_os_malloc(ep_intr_out->xfer_buf_len);
 	ep_intr_out->xfer_len = ep_intr_out->xfer_buf_len;
@@ -742,8 +756,9 @@ int usbd_hid_init(u32 tx_buf_len, usbd_hid_usr_cb_t *cb)
 		tx_buf_len = USBD_HID_INTR_IN_BUF_SIZE;
 	}
 
-	ep_intr_in->addr = USBD_HID_INTERRUPT_IN_EP_ADDRESS;
-	ep_intr_in->type = USB_CH_EP_TYPE_INTR;
+	info = &ep_intr_in->info;
+	info->addr = USBD_HID_INTERRUPT_IN_EP_ADDRESS;
+	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_in->xfer_buf_len = tx_buf_len;
 	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(tx_buf_len);
 	if (ep_intr_in->xfer_buf == NULL) {

@@ -58,7 +58,6 @@ SECTIONS
 		*(.sram.only.text*)
 		SRAM_INPUT_TEXT_SECTION
 		__sram_image2_end__ = .;
-		. = ALIGN(32);
 	} > KM4_BD_RAM
 	/* psram part */
 	.psram_image2.text.data ORIGIN(KM4_BD_PSRAM):
@@ -113,7 +112,6 @@ SECTIONS
 		/*-----------------*/
 		__image2_backtrace_end__ = .;
 
-		. = ALIGN (32);
 	} > IMG2_LMA_REGION
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
@@ -132,11 +130,9 @@ SECTIONS
 
 	.sram_image2.text.data :
 	{
+		. = ALIGN (32);
 		*(.sram.only.data*)
 		*(.data*)
-
-		/*cache line size aligned in order to avoid MMU remap err*/
-		. = ALIGN(32);
 	} > KM4_BD_RAM
 
 	/*-----------------*/

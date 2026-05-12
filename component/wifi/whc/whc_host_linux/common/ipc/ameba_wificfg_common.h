@@ -188,7 +188,7 @@ struct wifi_user_conf {
 		Considering the length field of L-SIG is 12 bits, the max PSDU size is 4095 bytes, so skb_buf_size is suggested not exceed 4k.\n
 		ps1:.If the trx buffer is specified through skb_buf_size, the actual rx_pkt_size <= skb_buf_size - WLAN_HW_INFO_LEN.\n
 		ps2:.If the skb_buf_size is a larger value, it is necessary to consider whether the heap of cores is sufficient?(amebaxxx_layout.ld may need to be modified).\n
-		0: use default size. */
+		*/
 	u32 skb_buf_size;
 
 	/*!	Every data tx is forced to start with cts2self. */

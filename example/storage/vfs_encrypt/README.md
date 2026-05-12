@@ -1,6 +1,6 @@
 # Example Description
 
-This example demonstrates how to use the VFS module for data encryption. Unlike standard situations, `vfs_set_user_encrypt_callback` must be invoked prior use the VFS module for data storage. Encryption algorithm interface and keys should be prepared in advance. Plaintxt will be padded according to the length of grouped data.
+This example demonstrates how to use the VFS module for data encryption. Unlike standard situations, `vfs_set_user_encrypt_callback` must be invoked prior use the VFS module for data storage. Encryption algorithm interface and keys should be prepared in advance.
 
 Here is the prototype of the interface :
 ```C

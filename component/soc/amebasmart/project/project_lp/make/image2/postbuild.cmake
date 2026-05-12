@@ -43,7 +43,6 @@ ameba_execute_process(
     COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/xip_image2_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/sram_2_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/psram_image2_prepend.bin
     OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/km0_image2_all.bin
 )
-ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/km0_image2_all.bin 4096)
 
 message("========== Image manipulating end ==========")
 

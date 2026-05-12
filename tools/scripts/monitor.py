@@ -8,7 +8,7 @@ import os
 import subprocess
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-MONITOR_TOOL = os.path.realpath(os.path.join(script_dir, "../ameba/Monitor/monitor.py"))
+MONITOR_TOOL = os.path.realpath(os.path.join(script_dir, "..", "ameba", "Monitor", "monitor.py"))
 
 def run_monitor(argv):
     cmds = [sys.executable, MONITOR_TOOL] + argv
@@ -44,7 +44,7 @@ def main():
     parser.add_argument('-p', '--port', help='Serial port name, e.g., COM3 (Windows) or /dev/ttyUSB0 (Linux)')
     parser.add_argument('-b', '--baudrate', type=int, help='Serial baud rate, e.g., 9600, 115200')
     parser.add_argument('-reset', action='store_true',
-                       help='Enable reset mode: Wait 100ms after connection to send "reboot" command, start output only after detecting "ROM:["')
+                       help='Enable reset mode: Try soft reset first (send "reboot" command), if fails then try hard reset (DTR/RTS), start output after detecting "ROM:["')
     parser.add_argument('-debug', action='store_true',
                        help='Enable debug mode: Display raw hexadecimal data of sent and received bytes')
     parser.add_argument('--remote-server', type=str, help='remote serial server IP address')

@@ -15,11 +15,11 @@
 #define PINMUX_FUNCTION_IR_TX	PINMUX_FUNCTION_IR
 #define PINMUX_FUNCTION_IR_RX	PINMUX_FUNCTION_IR
 
-#define IR_PINMUX_S0_TX		_PA_3
-#define IR_PINMUX_S0_RX		_PA_4
+#define IR_PINMUX_S0_TX		_PB_11
+#define IR_PINMUX_S0_RX		_PB_10
 
-#define IR_PINMUX_S1_TX		_PB_11
-#define IR_PINMUX_S1_RX		_PB_10
+#define IR_PINMUX_S1_TX		_PA_3
+#define IR_PINMUX_S1_RX		_PA_4
 
 #define IR_PINMUX_S2_TX		_PB_21
 #define IR_PINMUX_S2_RX		_PB_22
@@ -91,6 +91,18 @@
 #define IR_PINMUX_S2_RX		_PB_31
 
 #define IR_CLOCK_HZ			100000000
+
+#elif defined (CONFIG_RTL8720F)
+#define IR_PINMUX_S1_TX		_PA_23
+#define IR_PINMUX_S1_RX		_PA_24
+
+#define IR_PINMUX_S0_TX		_PA_9
+#define IR_PINMUX_S0_RX		_PA_10
+
+#define IR_PINMUX_S2_TX		_PA_25
+#define IR_PINMUX_S2_RX		_PA_26
+
+#define IR_CLOCK_HZ			40000000
 #endif
 
 extern int example_raw_ir_rx_learning(void);

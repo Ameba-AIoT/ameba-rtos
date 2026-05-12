@@ -25,15 +25,14 @@ SECTIONS
 		*(.text*)
 		*(.boot.rodata*)
 		*(.rodata*)
-		. = ALIGN (4);
 	} > KM4_BOOTLOADER_RAM_S
 
 	.ram_image1.data . :
 	{
+		. = ALIGN(32);
 		__ram_image1_data_start__ = .;
 		*(.data*)
 		*(.sramdram.only.data)
-		. = ALIGN(16);
 		__ram_image1_data_end__ = .;
 
 		__ram_image1_text_end__ = .;

@@ -51,7 +51,6 @@ ameba_list_append(private_sources
     os_wrapper_timer.c
     os_wrapper_event_groups.c
     os_wrapper_static_functions.c
-    ${c_CMPT_SWLIB_DIR}/gcc_wrap.c #TODO: move this file to current dir
 )
 
 # Component private part, user config end(DO NOT remove this line)

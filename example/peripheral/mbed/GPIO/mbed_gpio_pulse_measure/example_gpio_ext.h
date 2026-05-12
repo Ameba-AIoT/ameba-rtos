@@ -31,6 +31,9 @@
 #define GPIO_OUT_PIN		_PA_25
 #define GPIO_IRQ_PIN		_PA_26
 
+#elif defined (CONFIG_RTL8720F)
+#define GPIO_OUT_PIN		_PA_23
+#define GPIO_IRQ_PIN		_PA_24
 #endif
 extern int example_mbed_gpio_pulse_measure(void);
 #endif

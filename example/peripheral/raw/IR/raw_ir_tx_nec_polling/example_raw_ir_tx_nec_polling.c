@@ -48,7 +48,7 @@ void Board_IR_Init(u8 group)
 		printf("pinmux S2\n");
 		break;
 
-#ifndef CONFIG_AMEBAD
+#if !defined(CONFIG_AMEBAD) && !defined(CONFIG_RTL8720F)
 	case PINMUX_S3:
 		Pinmux_Config(IR_PINMUX_S3_TX, PINMUX_FUNCTION_IR_TX);
 		Pinmux_Config(IR_PINMUX_S3_RX, PINMUX_FUNCTION_IR_RX);
@@ -86,7 +86,7 @@ void IR_TX_thread(void)
 
 	uint32_t tx_count;
 	uint8_t tx_thres = 15;
-
+	rtos_time_delay_ms(3000);
 	IR_Cmd(IR_DEV, IR_InitStruct.IR_Mode, DISABLE);
 
 	/* Initialize IR */

@@ -65,6 +65,7 @@ ameba_set(c_CMPT_ED25519_DIR      ${c_COMPONENT_DIR}/soc/common/rom_ed25519)
 ameba_set(c_CMPT_DIAGNOSE_DIR     ${c_COMPONENT_DIR}/soc/common/diagnose)
 ameba_set(c_CMPT_SOC_PQC_DIR      ${c_COMPONENT_DIR}/soc/common/pqc)
 ameba_set(c_CMPT_SOC_OTA_DIR      ${c_COMPONENT_DIR}/soc/common/soc_ota)
+ameba_set(c_CMPT_LIBC_WRAP_DIR    ${c_COMPONENT_DIR}/soc/common/libc_wrap)
 #-------------------------#
 
 # Define dynamic dirs under component/

@@ -63,7 +63,7 @@ static const u8 usbd_composite_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
 	USB_LOW_BYTE(USBD_COMP_LANGID), USB_HIGH_BYTE(USBD_COMP_LANGID)  /* wLANGID */
 };  /* usbd_composite_lang_id_desc */
 
-#if !defined(CONFIG_USBD_COMPOSITE_HID_UAC1)
+#if !defined(CONFIG_USBD_COMPOSITE_HID_UAC1) && !defined(CONFIG_USB_FS)
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_composite_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                                      /* bLength */
@@ -382,7 +382,7 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-#if !defined(CONFIG_USBD_COMPOSITE_HID_UAC1)
+#if !defined(CONFIG_USBD_COMPOSITE_HID_UAC1) && !defined(CONFIG_USB_FS)
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 #endif
 		usb_os_memcpy((void *)buf, (void *)usbd_composite_config_desc, USB_LEN_CFG_DESC);
@@ -403,7 +403,7 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 
 		/* other speed issue for UAC2.0*/
 		buf = dev->ep0_in.xfer_buf;
-#if !defined(CONFIG_USBD_COMPOSITE_HID_UAC1)
+#if !defined(CONFIG_USBD_COMPOSITE_HID_UAC1) && !defined(CONFIG_USB_FS)
 		if (USB_HIGH_BYTE(req->wValue) == USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION) {
 			buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		}
@@ -415,7 +415,7 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 
 		break;
 
-#if !defined(CONFIG_USBD_COMPOSITE_HID_UAC1)
+#if !defined(CONFIG_USBD_COMPOSITE_HID_UAC1) && !defined(CONFIG_USB_FS)
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_composite_device_qualifier_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_composite_device_qualifier_desc, len);

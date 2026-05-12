@@ -35,7 +35,6 @@ SECTIONS
 		SRAM_INPUT_TEXT_SECTION
 		WLAN_CRITICAL_TEXT
 		__sram_image2_end__ = .;
-		. = ALIGN(32);
 
 		*port.o(*.uxIdleTaskStack*)
 		*port.o(*.uxTimerTaskStack*)
@@ -83,7 +82,6 @@ SECTIONS
 		/*-----------------*/
 		__image2_backtrace_end__ = .;
 
-		. = ALIGN (32);
 	} > KM4_BD_RAM_MP
 
 
@@ -103,11 +101,9 @@ SECTIONS
 
 	.sram_image2.text.data :
 	{
+		. = ALIGN (32);
 		*(.sram.only.data*)
 		*(.data*)
-
-		/*cache line size aligned in order to avoid MMU remap err*/
-		. = ALIGN(32);
 	} > KM4_BD_RAM_MP
 
 	/*-----------------*/

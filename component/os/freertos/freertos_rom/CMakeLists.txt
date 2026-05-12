@@ -50,8 +50,10 @@ set(private_compile_options)         #private compile_options
 if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
     ameba_list_append(private_sources
         ${c_SOC_TYPE}/freertos_${v_FREERTOS_VER}/os_cfg/os_cfg_ram.c
-        ${c_SOC_TYPE}/freertos_${v_FREERTOS_VER}/Source/portable/MemMang/heap_5_patch.c
     )
+    if(NOT CONFIG_TLSF_HEAP)
+        ameba_list_append(private_sources ${c_SOC_TYPE}/freertos_${v_FREERTOS_VER}/Source/portable/MemMang/heap_5_patch.c)
+    endif()
 elseif(${c_CURRENT_IMAGE_TYPE} STREQUAL "image3")
     ameba_list_append(private_sources
         ${c_FREERTOS_DIR}/portable/Common/secure/secure_context.c

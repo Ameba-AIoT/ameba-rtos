@@ -5,9 +5,9 @@
 
 #define whc_dev_tx_path_avail    whc_usb_dev_tx_path_avail
 #define whc_dev_send             whc_usb_dev_send
-#define whc_dev_init             whc_usb_dev_init
+#define whc_dev_intf_init             whc_usb_dev_init
 #define whc_dev_trigger_rx_handle()   whc_usb_dev_trigger_rx_handle()
-#define _whc_dev_api_bus_is_idle       whc_usb_dev_bus_is_idle
+#define whc_dev_bus_is_idle       whc_usb_dev_bus_is_idle
 #define whc_dev_api_send_data    whc_usb_dev_send_cmd_data
 #define whc_dev_flowctrl(a, b)
 
@@ -73,7 +73,7 @@ struct whc_usb_priv_t {
 struct whc_buf_info;
 void whc_usb_dev_init(void);
 void whc_usb_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb);
-void whc_usb_dev_send(struct whc_buf_info *pbuf);
+void whc_usb_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb);
 u8 whc_usb_dev_tx_path_avail(void);
 void whc_usb_dev_trigger_rx_handle(void);
 u8 whc_usb_dev_bus_is_idle(void);

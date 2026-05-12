@@ -56,6 +56,66 @@ def create_littlefs_image(source_dir, output_image, block_size, block_count):
     with open(output_image, 'wb') as f:
         f.write(lfs.context.buffer)
 
+class BlockDevice:
+    """Block device wrapper for littlefs-python that supports slice operations"""
+    def __init__(self, data):
+        self.data = bytearray(data)
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
+def unpack_littlefs_image(input_image, output_dir, block_size=None):
+    with open(input_image, 'rb') as f:
+        image_data = f.read()
+
+    block_size = block_size or 4096
+    block_count = len(image_data) // block_size
+
+    # Create block device wrapper
+    bd = BlockDevice(image_data)
+
+    # Create LittleFS instance and mount
+    lfs = LittleFS(block_size=block_size, block_count=block_count)
+    lfs.context.buffer = bd
+
+    try:
+        lfs.mount()
+    except Exception as e:
+        print(f"Failed to mount littlefs image: {e}")
+        raise
+
+    # Read all files recursively
+    def walk_lfs(path, prefix=''):
+        try:
+            entries = list(lfs.scandir(path))
+        except Exception:
+            return
+
+        for entry in entries:
+            # entry.name is the filename, entry.type is 1 for file, 2 for directory
+            full_path = os.path.join(path, entry.name)
+            try:
+                # entry.type: 1 = file, 2 = directory
+                if entry.type == 2:
+                    os.makedirs(os.path.join(output_dir, prefix, entry.name), exist_ok=True)
+                    walk_lfs(full_path, os.path.join(prefix, entry.name))
+                else:
+                    with lfs.open(full_path, 'rb') as f:
+                        data = f.read()
+                    rel_path = os.path.join(prefix, entry.name) if prefix else entry.name
+                    out_file = os.path.join(output_dir, rel_path)
+                    os.makedirs(os.path.dirname(out_file), exist_ok=True)
+                    with open(out_file, 'wb') as of:
+                        of.write(data)
+            except Exception as e:
+                print(f"Warning: Failed to read {full_path}: {e}")
+
+    walk_lfs('/')
+    print(f"Unpacked {input_image} -> {output_dir}")
+
 def create_fatfs_image(source_dir, output_image, sector_size, sector_count):
     total_bytes = sector_size * sector_count
     fat_type = 12 if total_bytes <= 32*1024*1024 else 16 if total_bytes <= 2*1024*1024*1024 else 32
@@ -79,6 +139,40 @@ def create_fatfs_image(source_dir, output_image, sector_size, sector_count):
     process_directory(source_dir, mkdir, write_file)
 
     fat_fs.close()
+
+def unpack_fatfs_image(input_image, output_dir):
+    fat_fs = PyFatFS(input_image)
+
+    # Use walk to traverse all files and directories
+    # Note: dirs and files are lists of Info objects, not strings
+    for root, dirs, files in fat_fs.walk('/'):
+        # root is like '/', '/subdir', etc.
+        # Convert to relative path for output
+        rel_root = root.lstrip('/')
+
+        # Create directories (dirs is list of Info objects)
+        for d in dirs:
+            dir_name = d.name
+            out_dir = os.path.join(output_dir, rel_root, dir_name) if rel_root else os.path.join(output_dir, dir_name)
+            os.makedirs(out_dir, exist_ok=True)
+
+        # Copy files (files is list of Info objects)
+        for f in files:
+            file_name = f.name
+            src_path = os.path.join(root, file_name).replace(os.sep, '/')
+            rel_path = os.path.join(rel_root, file_name) if rel_root else file_name
+            out_file = os.path.join(output_dir, rel_path)
+            os.makedirs(os.path.dirname(out_file), exist_ok=True)
+
+            try:
+                data = fat_fs.getbytes(src_path)
+                with open(out_file, 'wb') as of:
+                    of.write(data)
+            except Exception as e:
+                print(f"Warning: Failed to read {src_path}: {e}")
+
+    fat_fs.close()
+    print(f"Unpacked {input_image} -> {output_dir}")
 
 def dynamic_safety_factor(fs_type, avg_file_size_kb):
     if fs_type == "FATFS":
@@ -116,11 +210,39 @@ def main():
                         type=str,
                         default="vfs.bin",
                         help="Output image file (default: vfs.bin)")
+    parser.add_argument("-u", "--unpack",
+                        type=str,
+                        help="Unpack image to specified directory")
 
     args = parser.parse_args()
 
+    # Handle unpack mode
+    if args.unpack:
+        if not os.path.exists(args.source_directory):
+            print(f"Error: Input image '{args.source_directory}' does not exist.")
+            exit(1)
+
+        os.makedirs(args.unpack, exist_ok=True)
+
+        if args.type == "LITTLEFS":
+            try:
+                unpack_littlefs_image(args.source_directory, args.unpack, args.block_size or 4096)
+                print(f"Unpack completed: {args.source_directory} -> {args.unpack}")
+                return
+            except Exception as e:
+                print(f"Failed to unpack LittleFS image: {e}")
+                exit(1)
+        else:  # FATFS
+            try:
+                unpack_fatfs_image(args.source_directory, args.unpack)
+                print(f"Unpack completed: {args.source_directory} -> {args.unpack}")
+                return
+            except Exception as e:
+                print(f"Failed to unpack FATFS image: {e}")
+                exit(1)
+
     if not os.path.exists(args.source_directory):
-        print(f"Source directory '{global_args.source_directory}' does not exist.")
+        print(f"Source directory '{args.source_directory}' does not exist.")
         exit(1)
 
     if args.type == "LITTLEFS":

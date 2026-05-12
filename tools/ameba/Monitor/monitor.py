@@ -81,7 +81,7 @@ class Monitor():
         self.logAGG_enabled = True if logAGG else False
         self.log_handler = LogHandler(self.elf_file, self.output_queue, timestamps, enable_address_decoding, toolchain_path,
                                       log_enabled, log_dir, port, logAGG, rom_elf_file=rom_file)
-                                      
+
         if self.target_os == "freertos":
             from base.coredump_freertos import CoreDump
             self.coredump = CoreDump(decode_coredumps, self.event_queue, self.log_handler, self.elf_file, self.rom_file,
@@ -104,7 +104,8 @@ class Monitor():
         if isinstance(self, SerialMonitor):
             self.serial_reader = SerialReader(port, baudrate, self.event_queue,
                                               reset_mode=reset_mode, debug=debug,
-                                              remote_server=remote_server, remote_port=remote_port, remote_password=remote_password)
+                                              remote_server=remote_server, remote_port=remote_port,
+                                              remote_password=remote_password)
 
         else:
             self.serial = subprocess.Popen([self.elf_file], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -175,14 +176,14 @@ class Monitor():
         elif event_tag == TAG_KEY:
             self.serial_write(data)
         elif event_tag == TAG_SERIAL:
-            if self.logAGG_enabled:            
-                events = self.log_handler.logAGG_parse(data)           
+            if self.logAGG_enabled:
+                events = self.log_handler.logAGG_parse(data)
                 for ev in events:
                     src = 0
                     payload = ''
                     if ev[0] == "raw":
                         _, payload = ev
-                    else: 
+                    else:
                         _, src, payload = ev
                     if not payload:
                         payload_str = ''
@@ -190,7 +191,7 @@ class Monitor():
                         payload_str = payload.decode('utf-8', errors='ignore')
                     self.serial_handler.handle_serial_input(payload_str, self.coredump, src)
             else:
-                payload_str = self.serial_reader.decode(data)              
+                payload_str = self.serial_reader.decode(data)
                 self.serial_handler.handle_serial_input(payload_str, self.coredump)
 
             if self._invoke_processing_last_line_timer is not None:
@@ -318,7 +319,7 @@ def main():
 
             cls = SerialMonitor
         rom_file = ""
-        monitor = cls(args.port, args.baud,
+        monitor = cls(port, args.baud,
                         timestamps=args.timestamps,
                         elf_file=elf_file,
                         toolchain_path=toolchain_path,
@@ -363,17 +364,17 @@ def get_parser():
                         help="Add timestamp for each line. Default is False")
     parser.add_argument("--toolchain-dir", help="Set toolchain dir. If not set, will get from config.")
 
-    parser.add_argument('--reset', action='store_true', 
-                       help='Enable reset mode: Wait 100ms after connection to send "reboot" command, start output only after detecting "ROM:["')
-    parser.add_argument('--debug', action='store_true', 
+    parser.add_argument('--reset', action='store_true',
+                       help='Enable reset mode: send "reboot", if soft reset fails then try hardware reset via DTR/RTS')
+    parser.add_argument('--debug', action='store_true',
                        help='Enable debug mode: Display raw hexadecimal data of sent and received bytes')
     parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
     parser.add_argument('--remote-password', type=str, help='remote serial server validation password')
-    parser.add_argument('--log', action='store_true', 
+    parser.add_argument('--log', action='store_true',
                        help='Enable logging mode: save logs to log file')
     parser.add_argument('--log-dir', type=str, default="",
                        help='Specify the target log file directory, if not, the logs will save to under xxxx_gcc_project when logging enabled')
-    parser.add_argument('--logAGG', nargs='+', 
+    parser.add_argument('--logAGG', nargs='+',
                          help='the logAGG enabled and source marked '
                         )
 

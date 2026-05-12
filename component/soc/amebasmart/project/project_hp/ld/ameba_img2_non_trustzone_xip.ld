@@ -19,7 +19,6 @@ SECTIONS
 		*(.sramdram.only.text*)
 
 		__sram_image2_end__ = .;
-		. = ALIGN(32);
 	} > KM4_BD_RAM
 
 	/* image2: normal image start */
@@ -28,6 +27,7 @@ SECTIONS
 		__psram_image2_start__ = .;
 		__image2_entry_func__ = .;
 		KEEP(*(SORT(.image2.entry.data*)))
+		. = ALIGN(32);
 
 		__psram_image2_end__ = .;
 	} > KM4_BD_DRAM
@@ -89,16 +89,13 @@ SECTIONS
 		/*-----------------*/
 		__image2_backtrace_end__ = .;
 
-		. = ALIGN(32);
 	} > KM4_IMG2_XIP
 
 	.psram_image2.text.data :
 	{
-
+		. = ALIGN(32);
 		*(.data*)
 		*(.sramdram.only.data)
-		/*cache line size aligned in order to avoid MMU remap err*/
-		. = ALIGN(32);
 	} > KM4_BD_DRAM
 
 	/*-----------------*/
@@ -108,7 +105,6 @@ SECTIONS
 		*(.bss*)
 		*(COMMON)
 		__bss_end__ = .;
-		. = ALIGN(32);
 	} > KM4_BD_DRAM
 
 	.ram_image2.nocache.data (NOLOAD):
@@ -118,14 +114,6 @@ SECTIONS
 		*(.nocache.data*)
 		. = ALIGN(32);
 		__ram_nocache_end__ = .;
-	} > KM4_BD_DRAM
-
-	.ram_heap.data (NOLOAD):
-	{
-		. = ALIGN(32);
-		/*reserved heap to 8k for sbrk*/
-		end = .;
-		. = . + 8192;
 	} > KM4_BD_DRAM
 
 	/* put in the end of sram part */

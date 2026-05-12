@@ -1,0 +1,8 @@
+choice
+    prompt "Heap Selection"
+    default DEFAULT_HEAP5
+    config DEFAULT_HEAP5
+        bool "Default heap5"
+    config TLSF_HEAP
+        bool "tlsf heap"
+endchoice

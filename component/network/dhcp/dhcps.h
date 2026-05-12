@@ -86,7 +86,7 @@ enum {
 #define DHCP_OPTION_CODE_END         			(255)
 
 /* Reference by RFC 2131 */
-struct dhcp_msg {
+struct dhcps_msg {
 	uint8_t op; 		/* Message op code/message type. 1 = BOOTREQUEST, 2 = BOOTREPLY */
 	uint8_t	htype;		/* Hardware address type */
 	uint8_t hlen;		/* Hardware address length */
@@ -159,7 +159,7 @@ typedef struct dhcps_s {
 	rtos_mutex_t ip_table_sema;
 
 	// DHCP message handling
-	struct dhcp_msg *message_repository;
+	struct dhcps_msg *message_repository;
 	int message_options_max_len;
 
 	// Temporary variables
@@ -203,6 +203,7 @@ PACK_STRUCT_END
 #define CLEAR_IP_OFFER_BIT(tbl, ip)		((tbl).ip_range_offer[IP_TO_RANGE_IDX(ip)] &= ~IP_BIT_MASK(ip))
 
 /* expose API */
+dhcps_t *dhcps_get_from_netif(struct netif *pnetif);
 void dhcps_set_addr_pool(struct netif *pnetif, int addr_pool_set, struct ip_addr *addr_pool_start, struct ip_addr *addr_pool_end);
 dhcps_t *dhcps_init(struct netif *pnetif);
 err_t dhcps_start(struct netif *pnetif);

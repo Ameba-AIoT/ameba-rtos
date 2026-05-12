@@ -9,6 +9,9 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 #------------------------------------------------------------------#
 # Component public part, user config begin(DO NOT remove this line)
 # You may use if-else condition to set or update predefined variable above
+ameba_list_append(public_includes
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 # Component public part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#

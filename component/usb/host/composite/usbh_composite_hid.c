@@ -47,7 +47,7 @@ static void usbh_composite_hid_in_process(usb_host_t *host);
 static int usbh_composite_hid_cb_attach(usb_host_t *host);
 static int usbh_composite_hid_cb_detach(usb_host_t *host);
 static int usbh_composite_hid_cb_setup(usb_host_t *host);
-static int usbh_composite_hid_cb_process(usb_host_t *host, u32 msg);
+static int usbh_composite_hid_cb_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_composite_hid_cb_sof(usb_host_t *host);
 
 /* Private variables ---------------------------------------------------------*/
@@ -706,17 +706,15 @@ static int usbh_composite_hid_cb_setup(usb_host_t *host)
 /**
   * @brief  State machine handling callback
   * @param  host: Host handle
-  * @param  msg: event message
+  * @param  event: USB host event
   * @retval Status
   */
-static int usbh_composite_hid_cb_process(usb_host_t *host, u32 msg)
+static int usbh_composite_hid_cb_process(usb_host_t *host, usbh_event_t *event)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	usbh_pipe_t *pipe = &(hid->pipe);
-	usbh_event_t event;
-	event.d32 = msg;
 
-	if ((hid->hid_ctrl_buf) && (event.msg.pipe_num == pipe->pipe_num)) {
+	if (event && (hid->hid_ctrl_buf) && (event->pipe_num == pipe->pipe_num)) {
 		hid->next_xfer = 0;
 		usbh_composite_hid_in_process(host);
 		if (hid->next_xfer) {

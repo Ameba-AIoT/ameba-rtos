@@ -222,7 +222,7 @@ void BOOT_OTFCheck(u32 start_addr, u32 end_addr, u32 IV_index, u32 OTF_index)
 /* Load km0/km4 img and check pattern if secure boot enabled*/
 u8 BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 {
-	SubImgInfo_TypeDef SubImgInfo[11];
+	SubImgInfo_TypeDef SubImgInfo[10];
 	u32 LogAddr, PhyAddr, ImgAddr, TotalLen = 0;
 	u8 Cnt;
 	u8 i;
@@ -258,12 +258,6 @@ u8 BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 		TotalLen += SubImgInfo[i].Len;
 	}
 	Index += Cnt;
-
-	/* add 4K-align padding info */
-	SubImgInfo[Index].Addr = ImgAddr + TotalLen;
-	SubImgInfo[Index].Len = ((((TotalLen - 1) >> 12) + 1) << 12) - TotalLen;
-	TotalLen += SubImgInfo[Index].Len;
-	Index ++;
 
 	/* remap KM4 XIP image */
 	PhyAddr += TotalLen;

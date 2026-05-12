@@ -59,7 +59,7 @@ int whc_wpa_ops_get_status(char *ptr, u8 *buf)
 	buf_p += 1;
 
 	memcpy(buf_p, p_wifi_status, sizeof(struct whc_rtw_cli_wifi_status));
-	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE, NULL, 0);
 
 	rtos_mem_free((void *)p_wifi_setting);
 	rtos_mem_free((void *)p_wifi_status);
@@ -173,7 +173,7 @@ int whc_wpa_ops_list_network(char *ptr, u8 *buf)
 
 	if (ssid->ssid != NULL) {
 		memcpy(buf_p, ssid->ssid, ssid->ssid_len);
-		whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+		whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE, NULL, 0);
 	}
 
 
@@ -244,7 +244,7 @@ int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf)
 	ptr += 1;
 	memcpy(ptr, dev_mac.octet, 6);
 	//6+4+1=11
-	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE, NULL, 0);
 
 	return 0;
 
@@ -271,7 +271,7 @@ s32 whc_rtw_cli_scan_callback(u32 scanned_AP_num, void *data)
 	*ptr = WHC_WPA_OPS_EVENT_SCAN_COMPLETE;
 	ptr += 1;
 
-	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE, NULL, 0);
 
 
 	if (scanned_AP_num != 0) {
@@ -303,7 +303,7 @@ s32 whc_rtw_cli_scan_callback(u32 scanned_AP_num, void *data)
 			memcpy(ptr, scanned_AP_list_index, sizeof(struct rtw_scan_result));
 			scanned_AP_list_index += 1;
 
-			whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+			whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE, NULL, 0);
 
 			ix -= 1;
 		}
@@ -344,7 +344,7 @@ int whc_wpa_ops_do_scan(u8 *input, u8 *buf)
 	*ptr = WHC_WPA_OPS_EVENT_SCANING;
 	ptr += 1;
 
-	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE, NULL, 0);
 
 
 	return 0;

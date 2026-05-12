@@ -245,7 +245,7 @@ static void bt_coex_setup_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_
 	list_add_tail(&p_monitor_node->list, &p_rtk_bt_coex_priv->monitor_list);
 	spin_unlock_irqrestore(&p_rtk_bt_coex_priv->monitor_lock, flags);
 
-	if (p_rtk_bt_coex_priv->monitor_timer) {
+	if (&p_rtk_bt_coex_priv->monitor_timer) {
 		//if monitor_timer stop or not start
 		if (!timer_pending(&p_rtk_bt_coex_priv->monitor_timer)) {
 			add_timer(&p_rtk_bt_coex_priv->monitor_timer);
@@ -289,7 +289,7 @@ static void bt_coex_del_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_t 
 
 	//stop timer if monitor_list is empty
 	if (list_empty(&p_rtk_bt_coex_priv->monitor_list)) {
-		if (p_rtk_bt_coex_priv->monitor_timer) {
+		if (&p_rtk_bt_coex_priv->monitor_timer) {
 			//if monitor_timer start
 			if (timer_pending(&p_rtk_bt_coex_priv->monitor_timer)) {
 				del_timer(&p_rtk_bt_coex_priv->monitor_timer);

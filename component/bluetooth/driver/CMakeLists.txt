@@ -66,32 +66,26 @@ ameba_list_append(private_sources
 
 if(CONFIG_BT_INIC)
 	ameba_list_append_ifnot(CONFIG_SDN_BT private_sources hci/hci_if_inic.c)
+	ameba_list_append_if(CONFIG_SDN_BT private_sources hci/vhci_if_inic_sdn.c)
 
-	if(CONFIG_BT_INIC_H4)
-		ameba_list_append(private_sources bt_inic/bt_inic_h4.c)
-	elseif(CONFIG_BT_INIC_H5)
-		ameba_list_append(private_sources bt_inic/bt_inic_h5.c)
-	elseif(CONFIG_BT_INIC_SPI)
-		ameba_list_append(private_sources bt_inic/bt_inic_spi_dev.c)
-	elseif(CONFIG_BT_INIC_USB)
-		ameba_list_append(private_sources bt_inic/bt_inic_usbd.c)
-		ameba_list_append(private_sources bt_inic/bt_inic_usb.c)
-		ameba_list_append(private_includes
-			${c_CMPT_USB_DIR}/common
-		 	${c_CMPT_USB_DIR}/device/core
-		 	${c_CMPT_USB_DIR}/device/inic
-		)
-	elseif(CONFIG_BT_INIC_SDIO)
-		ameba_list_append_if(CONFIG_AMEBADPLUS private_sources bt_inic/bt_inic_sdio_dplus.c)
-		ameba_list_append_if(CONFIG_AMEBAGREEN2 private_sources bt_inic/bt_inic_sdio.c)
-		ameba_list_append_if(CONFIG_RTL8720F private_sources bt_inic/bt_inic_sdio.c)
+	ameba_list_append_if(CONFIG_BT_INIC_H4 private_sources bt_inic/bt_inic_h4.c)
+	ameba_list_append_if(CONFIG_BT_INIC_H5 private_sources bt_inic/bt_inic_h5.c)
+	ameba_list_append_if(CONFIG_BT_INIC_SPI private_sources bt_inic/bt_inic_spi_dev.c)
+	ameba_list_append_if(CONFIG_BT_INIC_USB private_sources bt_inic/bt_inic_usbd.c)
+	ameba_list_append_if(CONFIG_BT_INIC_USB private_sources bt_inic/bt_inic_usb.c)
+	ameba_list_append_if(CONFIG_BT_INIC_USB private_includes
+		${c_CMPT_USB_DIR}/common
+	 	${c_CMPT_USB_DIR}/device/core
+	 	${c_CMPT_USB_DIR}/device/inic
+	)
+	if(CONFIG_AMEBADPLUS)
+		ameba_list_append_if(CONFIG_BT_INIC_SDIO private_sources bt_inic/bt_inic_sdio_dplus.c)
+	else()
+		ameba_list_append_if(CONFIG_BT_INIC_SDIO private_sources bt_inic/bt_inic_sdio.c)
 	endif()
 elseif(CONFIG_BT_ZEPHYR)
-	if(CONFIG_SDN_BT)
-		ameba_list_append(private_sources vhci/hci_if_zephyr_sdn.c)
-	else()
-		ameba_list_append(private_sources hci/hci_if_zephyr.c)
-	endif()
+	ameba_list_append_if(CONFIG_SDN_BT private_sources hci/vhci_if_sdn.c)
+	ameba_list_append_ifnot(CONFIG_SDN_BT private_sources hci/hci_if_zephyr.c)
 	ameba_list_append(private_includes
 		 ${c_CMPT_BLUETOOTH_DIR}/zephyr/include
 		 ${c_CMPT_BLUETOOTH_DIR}/zephyr/port
@@ -109,8 +103,7 @@ ameba_list_append(private_includes
 )
 
 if(CONFIG_SDN_BT)
-	ameba_list_append(private_includes 
-	vhci
+	ameba_list_append(private_includes
 	${c_COMPONENT_DIR}/sdn/hci
     ${c_COMPONENT_DIR}/sdn/hci/host
 	)

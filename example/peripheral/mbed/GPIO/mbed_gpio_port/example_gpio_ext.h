@@ -62,6 +62,9 @@ uint32_t pin_mask = 0x1FF00000;	//PA20 ~ 28 (QFN68 & QFN100)
 const uint32_t led_pattern[LED_PATTERN_NUM] = {0x1FF00000, 0x1FE00000, 0x1FD00000, 0x1FB00000, 0x1F700000, 0x1EF00000, 0x1DF00000, 0x1BF00000, 0x17F00000, 0xFF00000, 0x1FF00000, 0x0};
 #endif
 
+#elif defined (CONFIG_RTL8720F)
+unsigned int pin_mask = 0x01E04000;
+const unsigned int led_pattern[LED_PATTERN_NUM] = {0x01E04000, 0x01E00000, 0x01C00000, 0x01800000, 0x01000000, 0x00000000, 0x01E04000, 0x01E00000, 0x01C00000, 0x01800000, 0x01000000, 0x00000000};
 
 #endif
 extern int example_mbed_gpio_port(void);

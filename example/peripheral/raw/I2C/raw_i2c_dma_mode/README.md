@@ -17,6 +17,11 @@ This test needs two demo board, one as master and the other as slave.
   - Master board I2C0 SCL (`_PA_25`) to Slave board I2C0 SCL (`_PA_25`) pin.
   - Master's `GND` connect to Slave's `GND`
 
+* On RTL8720F
+  - Master board I2C0 SDA (`_PA_22`) to Slave board I2C0 SDA (`_PA_22`) pin,
+  - Master board I2C0 SCL (`_PA_21`) to Slave board I2C0 SCL (`_PA_21`) pin.
+  - Master's `GND` connect to Slave's `GND`
+
 # SW Configuration
 
 1. The codes of Master and Slave are distinguished by the value of macro 'I2C_MASTER_DEVICE' in the code.
@@ -41,3 +46,4 @@ none
 
 RTL8721Dx
 RTL8721F
+RTL8720F

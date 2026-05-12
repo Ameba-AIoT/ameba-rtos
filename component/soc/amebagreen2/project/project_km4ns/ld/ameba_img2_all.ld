@@ -70,7 +70,6 @@ SECTIONS
 		*(.sram.only.text*)
 		*(.sram.only.data*)
 		__sram_image2_end__ = .;
-		. = ALIGN(32);
 	} > KM4NS_BD_RAM
 
 	/* psram part */
@@ -86,8 +85,6 @@ SECTIONS
 	OUT_TEXT_SECTION :
 	{
 		__image2_backtrace_start__ = .;
-
-		*(.img2_custom_signature*)
 
 		WLAN_CRITICAL_TEXT
 
@@ -107,6 +104,7 @@ SECTIONS
 		KEEP(*(.git.ver.data))
 		__git_ver_table_end__ = .;
 
+#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 		/* Add This for C++ support */
 		. = ALIGN(4);
 		__preinit_array_start = .;
@@ -125,9 +123,8 @@ SECTIONS
 
 		*(.gcc_except_table*)
 		/*-----------------*/
-
+#endif
 		__image2_backtrace_end__ = .;
-		. = ALIGN (32);
 	} > IMG2_TEXT_LMA_REGION
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
 	.ARM.extab  :
@@ -145,9 +142,8 @@ SECTIONS
 
 	OUT_DATA_SECTION :
 	{
-
-		*(.data*)
 		. = ALIGN (32);
+		*(.data*)
 	} > IMG2_DATA_LMA_REGION
 
 	.ram_image2.bss (NOLOAD):
@@ -158,15 +154,6 @@ SECTIONS
 		*(COMMON)
 
 		__bss_end__ = .;
-	} > IMG2_DATA_LMA_REGION
-
-	.ram_image2.bd.data (NOLOAD):
-	{
-		. = ALIGN (32);
-		__ram_bd_start__ = .;
-		*(.bdsram.data*)
-		. = ALIGN (32);
-		__ram_bd_end__ = .;
 	} > IMG2_DATA_LMA_REGION
 
 	.ram_image2.nocache.data (NOLOAD):

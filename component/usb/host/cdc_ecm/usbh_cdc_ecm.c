@@ -99,7 +99,7 @@ typedef struct {
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_cdc_ecm_attach(usb_host_t *host);
 static int usbh_cdc_ecm_detach(usb_host_t *host);
-static int usbh_cdc_ecm_process(usb_host_t *host, u32 msg);
+static int usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_cdc_ecm_setup(usb_host_t *host);
 static int usbh_cdc_ecm_sof(usb_host_t *host);
 static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host);
@@ -1185,13 +1185,11 @@ static int usbh_cdc_ecm_setup(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_cdc_ecm_process(usb_host_t *host, u32 param)
+static int usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
 {
 	u8 req_status = HAL_OK;
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-	usbh_event_t event;
-	event.d32 = param;
-	u8 msg = event.msg.pipe_num;
+	u8 pipe_num;
 
 	switch (cdc->state) {
 	case CDC_ECM_STATE_PRE_SETTING:
@@ -1206,12 +1204,15 @@ static int usbh_cdc_ecm_process(usb_host_t *host, u32 param)
 		break;
 
 	case CDC_ECM_STATE_TRANSFER:
-		if (msg == cdc->bulk_tx.pipe.pipe_num) {
-			usbh_cdc_ecm_process_bulk_out(host);
-		} else if (msg == cdc->bulk_rx.pipe.pipe_num) {
-			usbh_cdc_ecm_process_bulk_in(host);
-		} else if (msg == cdc->intr_rx.pipe.pipe_num) {
-			usbh_cdc_ecm_process_intr_in(host);
+		if (event) {
+			pipe_num = event->pipe_num;
+			if (pipe_num == cdc->bulk_tx.pipe.pipe_num) {
+				usbh_cdc_ecm_process_bulk_out(host);
+			} else if (pipe_num == cdc->bulk_rx.pipe.pipe_num) {
+				usbh_cdc_ecm_process_bulk_in(host);
+			} else if (pipe_num == cdc->intr_rx.pipe.pipe_num) {
+				usbh_cdc_ecm_process_intr_in(host);
+			}
 		}
 		break;
 
