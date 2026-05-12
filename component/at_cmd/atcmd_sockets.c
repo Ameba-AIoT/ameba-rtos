@@ -500,7 +500,7 @@ void socket_server_tcp_auto_rcv_client_and_data(void *param)
 	static int max_fd = INVALID_SOCKET_ID;
 	struct sockaddr_in client_addr;
 	socklen_t client_addr_len = 0;
-	static fd_set read_fds;
+	fd_set read_fds;
 	int ret = 0;
 	int index = -1;
 	struct _node *current_node = (struct _node *)param;

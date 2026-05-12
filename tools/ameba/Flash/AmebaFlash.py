@@ -439,60 +439,64 @@ def main(argc, argv):
         else:
             logger.info(f"Chip erase: False")
 
-    # check device profile
     try:
-        profile_json = JsonUtils.load_from_file(profile)
-        if profile_json is None:
-            logger.error(f"Fail to load device profile {profile}")
+        # check device profile
+        try:
+            profile_json = JsonUtils.load_from_file(profile)
+            if profile_json is None:
+                logger.error(f"Fail to load device profile {profile}")
+                sys.exit(1)
+            profile_info = RtkDeviceProfile(**profile_json)
+            ver = profile_info.get_version()
+            if ver.major >= MinSupportedDeviceProfileMajorVersion and ver.minor >= MinSupportedDeviceProfileMinorVersion and profile_info.device_id != 0:
+                logger.info(f"Device profile {profile} loaded")
+            else:
+                logger.error(f"Fail to load device profile {profile}, unsupported version {ver.__repr__()}")
+                sys.exit(1)
+        except Exception as err:
+            logger.error(f"Load device profile {profile} exception: {err}")
             sys.exit(1)
-        profile_info = RtkDeviceProfile(**profile_json)
-        ver = profile_info.get_version()
-        if ver.major >= MinSupportedDeviceProfileMajorVersion and ver.minor >= MinSupportedDeviceProfileMinorVersion and profile_info.device_id != 0:
-            logger.info(f"Device profile {profile} loaded")
-        else:
-            logger.error(f"Fail to load device profile {profile}, unsupported version {ver.__repr__()}")
-            sys.exit(1)
+
+        # load settings
+        setting_path = os.path.realpath(os.path.join(RtkUtils.get_executable_root_path(), setting_file))
+        logger.info(f"Settings path: {setting_path}")
+        try:
+            if os.path.exists(setting_path):
+                dt = JsonUtils.load_from_file(setting_path, need_decrypt=False)
+                settings = RtSettings(** dt)
+            else:
+                logger.debug(f"{setting_file} not exists!")
+                settings = RtSettings(**{})
+        except Exception as err:
+            logger.error(f"Load settings exception: {err}")
+            settings = RtSettings(** {})
+        # save Setting.json
+        try:
+            if no_reset:
+                settings.post_process = "NONE"
+            else:
+                settings.post_process = "RESET"
+            JsonUtils.save_to_file(setting_path, settings.__repr__())
+        except Exception as err:
+            logger.debug(f"save {setting_file} exception: {err}")
+
+        threads_list = []
+
+        for sp in serial_ports:
+            flash_thread = threading.Thread(target=flash_process_entry, args=(
+            profile_info, sp, serial_baudrate, image_dir, settings, deepcopy(images_info), chip_erase,
+            memory_type, memory_info, download, log_level, log_f, read_wifimac,
+            remote_server, remote_port, remote_password))
+            threads_list.append(flash_thread)
+            flash_thread.start()
+
+        for thred in threads_list:
+            thred.join()
+
+        logger.info(f"All flash threads have completed")
     except Exception as err:
-        logger.error(f"Load device profile {profile} exception: {err}")
-        sys.exit(1)
-
-    # load settings
-    setting_path = os.path.realpath(os.path.join(RtkUtils.get_executable_root_path(), setting_file))
-    logger.info(f"Settings path: {setting_path}")
-    try:
-        if os.path.exists(setting_path):
-            dt = JsonUtils.load_from_file(setting_path, need_decrypt=False)
-            settings = RtSettings(** dt)
-        else:
-            logger.debug(f"{setting_file} not exists!")
-            settings = RtSettings(**{})
-    except Exception as err:
-        logger.error(f"Load settings exception: {err}")
-        settings = RtSettings(** {})
-    # save Setting.json
-    try:
-        if no_reset:
-            settings.post_process = "NONE"
-        else:
-            settings.post_process = "RESET"
-        JsonUtils.save_to_file(setting_path, settings.__repr__())
-    except Exception as err:
-        logger.debug(f"save {setting_file} exception: {err}")
-
-    threads_list = []
-
-    for sp in serial_ports:
-        flash_thread = threading.Thread(target=flash_process_entry, args=(
-        profile_info, sp, serial_baudrate, image_dir, settings, deepcopy(images_info), chip_erase,
-        memory_type, memory_info, download, log_level, log_f, read_wifimac:=read_wifimac,
-        remote_server, remote_port, remote_password))
-        threads_list.append(flash_thread)
-        flash_thread.start()
-
-    for thred in threads_list:
-        thred.join()
-
-    logger.info(f"All flash threads have completed")
+        logger.error(f"Main process exception: {err}")
+        sys_exit(logger, False, err)
 
 
 if __name__ == "__main__":

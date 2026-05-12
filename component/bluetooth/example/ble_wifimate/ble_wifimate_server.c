@@ -729,7 +729,7 @@ static uint16_t ble_wifimate_aes_ecb_decrypt(uint8_t src_len, uint8_t *src, uint
 	mbedtls_aes_init(&ctx);
 
 	// set AES decrypt key
-	if (mbedtls_aes_setkey_enc(&ctx, key_le, key_bit) != 0) {
+	if (mbedtls_aes_setkey_dec(&ctx, key_le, key_bit) != 0) {
 		BT_LOGE("%s: mbedtls AES key set fail\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
