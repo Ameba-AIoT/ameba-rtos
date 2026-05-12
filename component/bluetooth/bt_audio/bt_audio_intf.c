@@ -230,12 +230,13 @@ static void do_audio_sync_flow(rtk_bt_audio_track_t *track, uint8_t packet_index
 
 	/* first frame */
 	if (packet_index == 0) {
-		/* judge whether ts_us is overflow */
-		delta = audio_delta(ts_us, track->prev_ts_us);
-		if (delta > (track->sdu_interval * 10)) {
-			BT_LOGA("[BT AUDIO] %s: sdu is overflow ts_us %d \r\n", __func__, ts_us);
-			track->frc_cal_flag = false;
-			track->ts_oveflow_flag = true;
+		/* judge whether ts_us is overflow, skip the first packet */
+		if (track->prev_ts_valid) {
+			delta = audio_delta(ts_us, track->prev_ts_us);
+			if (delta > (track->sdu_interval * 10)) {
+				BT_LOGA("[BT AUDIO] %s: sdu is overflow ts_us %d \r\n", __func__, ts_us);
+				track->frc_cal_flag = false;
+			}
 		}
 		if (!track->frc_cal_flag) {
 			if (rtk_bt_get_hc_clock_offset(&track->frc_drift)) {
@@ -243,23 +244,18 @@ static void do_audio_sync_flow(rtk_bt_audio_track_t *track, uint8_t packet_index
 			}
 			p_clock = rtk_bt_get_hc_free_run_clock();
 			track->controller_free_run_clock = p_clock->controller_free_run_clock[0];
-			/* judge whether controller_free_run_clock is overflow */
-			if (track->ts_oveflow_flag) {
-				delta = (uint32_t)audio_delta((uint64_t)track->controller_free_run_clock, (uint64_t)0xFFFFFFFF);
-				if (delta < track->sdu_interval * 10) {
-					track->expt_sdu_frc += (int64_t)track->sdu_interval;
-					track->frc_cal_flag = false;
-					BT_LOGD("[BT AUDIO] %s: controller_free_run_clock not overflow \r\n", __func__);
-					// BT_LOGD("[BT AUDIO] (track %p) expt_sdu_frc:%lld \r\n", track->audio_track_hdl, track->expt_sdu_frc);
-				} else {
-					track->expt_sdu_frc = (int64_t)track->frc_drift + (int64_t)ts_us;
-					track->frc_cal_flag = true;
-					track->ts_oveflow_flag = false;
-				}
+			/* epoch alignment: check if ts_us and controller are in same 32-bit epoch */
+			uint32_t ctrl_clock_32 = (uint32_t)track->controller_free_run_clock;
+			if (ctrl_clock_32 > ts_us && (ctrl_clock_32 - ts_us) > BT_AUDIO_CLOCK_EPOCH_THRESHOLD) {
+				/* ts_us overflowed but controller hasn't: compensate by adding one epoch */
+				BT_LOGA("[BT AUDIO] %s: ts_us epoch ahead, compensate ts_us: %u , ctrl: %u\r\n",
+						__func__, ts_us, ctrl_clock_32);
+				track->expt_sdu_frc = (int64_t)track->frc_drift + (int64_t)ts_us + 0x100000000LL;
 			} else {
+				/* normal case: same epoch or both overflowed */
 				track->expt_sdu_frc = (int64_t)track->frc_drift + (int64_t)ts_us;
-				track->frc_cal_flag = true;
 			}
+			track->frc_cal_flag = true;
 			// BT_LOGD("[BT AUDIO] frc_drift: %lld, free_run_clock:%lld, ts_us:%lu \r\n", (int64_t)track->frc_drift,(int64_t)track->controller_free_run_clock, ts_us);
 		} else {
 			track->expt_sdu_frc += (int64_t)track->sdu_interval;
@@ -419,6 +415,7 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 		}
 		if (track->audio_sync_flag) {
 			track->prev_ts_us = ts_us;
+			track->prev_ts_valid = true;
 		}
 		data += frame_size * frame_num;
 		size -= frame_size * frame_num;
@@ -1094,6 +1091,7 @@ uint16_t rtk_bt_audio_track_sync_restart(rtk_bt_audio_track_t *track)
 		track->pres_comp_event = RTK_BT_AUDIO_TRACK_PRES_INIT;
 		track->audio_hal_buff_count = 0;
 		track->frc_cal_flag = false;
+		track->prev_ts_valid = false;
 		track->trans_bytes = 0;
 		osif_mutex_give(track->audio_sync_mutex);
 		rtk_bt_audio_track_resume(track->audio_track_hdl);
