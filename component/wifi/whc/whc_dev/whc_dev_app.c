@@ -132,7 +132,7 @@ s32 whc_dev_scan_callback(u32 scanned_AP_num, void *data)
 			rtw_scan_result_to_string(scanned_AP_list_index, ptr, buf_size - 8);
 			scanned_AP_list_index += 1;
 
-			whc_dev_api_send_to_host(result_buf, buf_size);
+			whc_dev_api_send_to_host(result_buf, buf_size, NULL, 0);
 			ap_num -= 1;
 		}
 
@@ -145,7 +145,7 @@ s32 whc_dev_scan_callback(u32 scanned_AP_num, void *data)
 		/* 0 means end */
 		*ptr = 0;
 		ptr += 1;
-		whc_dev_api_send_to_host(result_buf, buf_size);
+		whc_dev_api_send_to_host(result_buf, buf_size, NULL, 0);
 
 		rtos_mem_free(result_buf);
 		rtos_mem_free(scanned_AP_list);
@@ -240,7 +240,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 						ptr += 1;
 						memcpy(ptr, dev_mac.octet, 6);
 						//6+4+1=11
-						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
+						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 					}
 				} else if (*ptr == WHC_WIFI_TEST_SCAN) {
 					whc_dev_cmd_scan();
@@ -296,7 +296,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 						ip = LwIP_GetGW(idx);
 						memcpy(ptr, ip, 4);
 						ptr += 4;
-						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
+						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 					}
 #endif
 #ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
@@ -358,7 +358,7 @@ __weak int whc_dev_wtn_socket_send(u8 *pframe, u32 len)
 	param[2] = len;
 	memcpy((void *)(param + 3), pframe, len);
 
-	whc_dev_api_send_to_host((u8 *)param, size);
+	whc_dev_api_send_to_host((u8 *)param, size, NULL, 0);
 
 	rtos_mem_free((u8 *)param);
 
@@ -378,7 +378,7 @@ __weak void whc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start)
 	param[2] = (u32)enable;
 	param[3] = (u32)rnat_ap_start;
 
-	whc_dev_api_send_to_host((u8 *)param, size);
+	whc_dev_api_send_to_host((u8 *)param, size, NULL, 0);
 
 	rtos_mem_free((u8 *)param);
 }

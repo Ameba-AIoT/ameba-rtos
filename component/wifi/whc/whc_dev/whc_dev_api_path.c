@@ -100,7 +100,6 @@ void whc_send_api_ret_value(u32 api_id, u8 *pbuf, u32 len)
 {
 	u8 *buf = NULL;
 	struct whc_api_info *ret_msg;
-	struct whc_txbuf_info_t *inic_tx;
 
 	buf = rtos_mem_zmalloc(sizeof(struct whc_api_info) + len + DEV_DMA_ALIGN);
 	if (!buf) {
@@ -114,20 +113,8 @@ void whc_send_api_ret_value(u32 api_id, u8 *pbuf, u32 len)
 
 	memcpy((void *)(ret_msg + 1), pbuf, len);
 
-	/* construct struct whc_buf_info & whc_buf_info_t */
-	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
-	if (!inic_tx) {
-		goto exit;
-	}
-
-	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)ret_msg;
-	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = sizeof(struct whc_api_info) + len;
-
-	inic_tx->ptr = buf;
-	inic_tx->is_skb = 0;
-
 	/* send ret_msg + ret_val(pbuf, len) */
-	whc_dev_send(&inic_tx->txbuf_info);
+	whc_dev_send((u8 *)ret_msg, sizeof(struct whc_api_info) + len, buf, 0);
 
 	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Host API %x return\n", api_id);
 
@@ -137,11 +124,8 @@ exit:
 	if (buf) {
 		rtos_mem_free(buf);
 	}
-	if (inic_tx) {
-		rtos_mem_free((u8 *)inic_tx);
-	}
-	return;
 
+	return;
 }
 
 /**
@@ -1110,7 +1094,6 @@ void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret
 	u8 *buf = NULL;
 	struct whc_api_info *info;
 	struct whc_api_info *ret_msg;
-	struct whc_txbuf_info_t *inic_tx;
 
 	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Device Call API %ld\n", id);
 
@@ -1126,20 +1109,8 @@ void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret
 
 	memcpy((void *)(info + 1), param, param_len);
 
-	/* construct struct whc_buf_info & whc_buf_info_t */
-	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
-	if (!inic_tx) {
-		goto exit;
-	}
-
-	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)info;
-	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = sizeof(struct whc_api_info) + param_len;
-
-	inic_tx->ptr = buf;
-	inic_tx->is_skb = 0;
-
 	/* send ret_msg + ret_val(buf, len) */
-	whc_dev_send(&inic_tx->txbuf_info);
+	whc_dev_send((u8 *)info, sizeof(struct whc_api_info) + param_len, buf, 0);
 
 	/* wait for API calling done */
 	event_priv.b_waiting_for_ret = 1;
@@ -1175,9 +1146,6 @@ void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret
 exit:
 	if (buf) {
 		rtos_mem_free(buf);
-	}
-	if (inic_tx) {
-		rtos_mem_free((u8 *)inic_tx);
 	}
 
 	rtos_mutex_give(event_priv.send_mutex);

@@ -20,6 +20,8 @@ This example describes how to use GPIO read/write to generate a pulse and to mea
     - Connect `GPIO_IRQ_PIN (_PA_12)` to `GPIO_OUT_PIN (_PB_10)`
   - On RTL8721F, connect as below
     - Connect `GPIO_IRQ_PIN (_PA_26)` to `GPIO_OUT_PIN (_PA_25)`
+  - On RTL8720F, connect as below
+    - Connect `GPIO_IRQ_PIN (_PA_24)` to `GPIO_OUT_PIN (_PA_23)`
 
 # SW configuration
 
@@ -47,3 +49,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F

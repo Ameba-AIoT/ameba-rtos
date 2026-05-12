@@ -11,13 +11,10 @@
 #ifndef __WHC_DEV_TCPIP_H__
 #define __WHC_DEV_TCPIP_H__
 
-#include "lwip/opt.h"
-#include "lwip/prot/ethernet.h"
-
-#define PORT_TO_BOTH	0x0
-#define PORT_TO_UP		0x1
-#define PORT_TO_HOST	0x2
-#define PORT_TO_UNKNOWN 0xFF
+#define INDICATE_TO_BOTH			0x0
+#define INDICATE_TO_DEV_LWIP		0x1
+#define INDICATE_TO_HOST			0x2
+#define INDICATE_UNKNOWN			0xFF
 
 #define IP_ICMP_REQUEST 0x08
 #ifndef DHCP_SERVER_PORT
@@ -28,12 +25,12 @@
 #endif
 
 // Mask definitions (These values can depend on your specific mask setup)
-#define MASK_SRC_IP       BIT0
-#define MASK_DST_IP       BIT1
-#define MASK_SRC_PORT     BIT2
-#define MASK_DST_PORT     BIT3
-#define MASK_TYPE         BIT4
-#define MASK_IDX          BIT5
+#define MASK_SRC_IP       BIT(0)
+#define MASK_DST_IP       BIT(1)
+#define MASK_SRC_PORT     BIT(2)
+#define MASK_DST_PORT     BIT(3)
+#define MASK_PROTO_TYPE   BIT(4)
+#define MASK_PORT_IDX     BIT(5)
 
 struct whc_pkt_attrib {
 	u16_t protocol;
@@ -57,12 +54,10 @@ struct whc_dev_pkt_filter {
 	u8_t index; // STA_WLAN_INDEX/SOFTAP_WLAN_INDEX
 	u8_t type;  // IP_PROTO_TCP/IP_PROTO_UDP/IP_PROTO_ICMP
 	u8_t mask;  // filter mask, MASK_SRC_IP | MASK_SRC_PORT..
-	u8_t direction; // PORT_TO_BOTH/PORT_TO_UP(DEV LWIP)/PORT_TO_HOST(HOST)
-	u8_t state; // entry enable or not
-	u8_t rsvd[3];
+	u8_t direction; // INDICATE_TO_BOTH/INDICATE_TO_DEV_LWIP/INDICATE_TO_HOST
 };
 
-struct PktFilterNode {
+struct whc_dev_pktfilter_node {
 	struct list_head list;
 	struct whc_dev_pkt_filter filter;
 };

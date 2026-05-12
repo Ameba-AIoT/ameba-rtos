@@ -16,6 +16,8 @@
 
 #if defined (CONFIG_AMEBAGREEN2)
 extern GPIO_TypeDef *GPIO_PORTx[3];
+#elif defined (CONFIG_RTL8720F)
+extern GPIO_TypeDef *GPIO_PORTx[1];
 #else
 extern GPIO_TypeDef *GPIO_PORTx[2];
 #endif

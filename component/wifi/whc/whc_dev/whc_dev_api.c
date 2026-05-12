@@ -6,37 +6,12 @@
 #include "whc_dev.h"
 
 #ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
-#include "whc_dev_tcpip.h"
-
-#include "lwip/sys.h"
-#include "lwip/etharp.h"
-#include "lwip/prot/tcp.h"
-#include "lwip/prot/dns.h"
-#include "lwip/udp.h"
 #include "lwip_netconf.h"
 
 /* set host state for dev */
-u8 whc_hostrdy;
-
-u8 whc_default_direction = PORT_TO_HOST;
+static u8 whc_hostrdy;
+static u8 whc_default_direction = INDICATE_TO_HOST;
 struct list_head whc_filter_head;
-
-/**
- * @brief  create a node for target filter
- * @param  filter: target entry
- * @return none
- */
-struct PktFilterNode *whc_dev_api_create_filter_node(struct whc_dev_pkt_filter *filter)
-{
-	struct PktFilterNode *new_node = (struct PktFilterNode *)rtos_mem_zmalloc(sizeof(struct PktFilterNode));
-	if (!new_node) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
-		return NULL;
-	}
-
-	memcpy((u8 *) & (new_node->filter), (u8 *)filter, sizeof(struct whc_dev_pkt_filter));
-	return new_node;
-}
 
 /**
  * @brief  add target filter entry
@@ -45,12 +20,13 @@ struct PktFilterNode *whc_dev_api_create_filter_node(struct whc_dev_pkt_filter *
  */
 void whc_dev_api_add_filter_node(struct whc_dev_pkt_filter *filter)
 {
-	struct PktFilterNode *new_node = whc_dev_api_create_filter_node(filter);
+	struct whc_dev_pktfilter_node *new_node = (struct whc_dev_pktfilter_node *)rtos_mem_zmalloc(sizeof(struct whc_dev_pktfilter_node));
 
 	if (!new_node) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s, fail to add filter!!\n", __func__);
+		RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
 		return;
 	}
+	memcpy((u8 *) & (new_node->filter), (u8 *)filter, sizeof(struct whc_dev_pkt_filter));
 
 	// Insert the new node at the end of the list
 	rtw_list_insert_tail(&(new_node->list), &whc_filter_head);
@@ -64,7 +40,7 @@ void whc_dev_api_add_filter_node(struct whc_dev_pkt_filter *filter)
 void whc_dev_api_get_filter_node(struct whc_dev_pkt_filter *filter, u32_t identity)
 {
 	struct list_head *plist, *phead;
-	struct PktFilterNode *target;
+	struct whc_dev_pktfilter_node *target;
 	u8 match = 0;
 	phead = &whc_filter_head;
 	if (list_empty(phead)) {
@@ -74,7 +50,7 @@ void whc_dev_api_get_filter_node(struct whc_dev_pkt_filter *filter, u32_t identi
 	plist = get_next(phead);
 
 	while ((rtw_end_of_queue_search(phead, plist)) == FALSE) {
-		target = LIST_CONTAINOR(plist, struct PktFilterNode, list);
+		target = LIST_CONTAINOR(plist, struct whc_dev_pktfilter_node, list);
 
 		if (target && target->filter.identity == identity) {
 			match = 1;
@@ -102,7 +78,7 @@ error:
 void whc_dev_api_delete_filter_node(u32_t identity)
 {
 	struct list_head *plist, *phead;
-	struct PktFilterNode *target;
+	struct whc_dev_pktfilter_node *target;
 	u8 match = 0;
 
 	phead = &whc_filter_head;
@@ -114,7 +90,7 @@ void whc_dev_api_delete_filter_node(u32_t identity)
 	plist = get_next(phead);
 
 	while ((rtw_end_of_queue_search(phead, plist)) == FALSE) {
-		target = LIST_CONTAINOR(plist, struct PktFilterNode, list);
+		target = LIST_CONTAINOR(plist, struct whc_dev_pktfilter_node, list);
 
 		if (target && target->filter.identity == identity) {
 			match = 1;
@@ -160,7 +136,7 @@ u8 whc_dev_api_get_host_rdy(void)
 
 /**
  * @brief  set default direction for pkts when pkt not match any filter entry
- * @param  dir: PORT_TO_HOST/PORT_TO_BOTH/PORT_TO_UP
+ * @param  dir: INDICATE_TO_HOST/INDICATE_TO_BOTH/INDICATE_TO_DEV_LWIP
  */
 void whc_dev_api_set_default_direction(u8 dir)
 {
@@ -169,8 +145,8 @@ void whc_dev_api_set_default_direction(u8 dir)
 
 /**
  * @brief  set default direction for pkts when pkt not match any filter entry
- * @return PORT_TO_HOST/PORT_TO_BOTH/PORT_TO_UP
- * @note: default PORT_TO_HOST in RTK code.
+ * @return INDICATE_TO_HOST/INDICATE_TO_BOTH/INDICATE_TO_DEV_LWIP
+ * @note: default INDICATE_TO_HOST in RTK code.
  */
 u8  whc_dev_api_get_default_direction(void)
 {
@@ -183,24 +159,13 @@ u8  whc_dev_api_get_default_direction(void)
  * @brief  to send data to host
  * @param  data: data buf to be sent.
  * @param  len: data len to be sent.
+ * @param  ret: return value buf. It can be NULL if return value is not needed.
+ * @param  ret_len: return value len. It can be 0 if return value is not needed.
  * @return none.
  */
-void whc_dev_api_send_to_host(u8 *data, u32 len)
+void whc_dev_api_send_to_host(u8 *data, u32 len, uint8_t *ret, uint32_t ret_len)
 {
-	whc_dev_api_send_data(data, len);
-}
-
-/**
- * @brief  to send data to host
- * @param  data: data buf to be sent.
- * @param  len: data len to be sent.
- * @param  ret: return value buf.
- * @param  ret_len: return value len.
- * @return none.
- */
-void whc_dev_api_send_to_host_block(u8 *data, u32 len, uint8_t *ret, uint32_t ret_len)
-{
-	int val = -1;
+	int val;
 
 	if (ret && ret_len > 0) {
 		val = rtos_mutex_take(whc_cmdpath_data.whc_user_blocksend_mutex, 5000);
@@ -212,17 +177,19 @@ void whc_dev_api_send_to_host_block(u8 *data, u32 len, uint8_t *ret, uint32_t re
 			whc_cmdpath_data.ret_len = ret_len;
 		}
 	}
-	whc_dev_api_send_data(data, len);
-	val = rtos_sema_take(whc_cmdpath_data.whc_user_blocksend_sema, 10000);
-	if (val != RTK_SUCCESS) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s, fail to take sema!!\n", __func__);
-		goto exit;
-	}
 
-exit:
-	whc_cmdpath_data.ret = NULL;
-	whc_cmdpath_data.ret_len = 0;
-	rtos_mutex_give(whc_cmdpath_data.whc_user_blocksend_mutex);
+	whc_dev_api_send_data(data, len);
+
+	if (ret && ret_len > 0) {
+		val = rtos_sema_take(whc_cmdpath_data.whc_user_blocksend_sema, 10000);
+		if (val != RTK_SUCCESS) {
+			RTK_LOGE(TAG_WLAN_INIC, "%s, fail to take sema!!\n", __func__);
+		}
+
+		whc_cmdpath_data.ret = NULL;
+		whc_cmdpath_data.ret_len = 0;
+		rtos_mutex_give(whc_cmdpath_data.whc_user_blocksend_mutex);
+	}
 }
 
 #endif
@@ -234,5 +201,5 @@ exit:
  */
 u8 whc_dev_api_bus_is_idle(void)
 {
-	return _whc_dev_api_bus_is_idle();
+	return whc_dev_bus_is_idle();
 }

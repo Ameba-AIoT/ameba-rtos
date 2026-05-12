@@ -30,6 +30,9 @@
 #define GPIO_SIGNAL_SOURCE		_PA_25
 #define GPIO_IRQ_LEVEL_PIN		_PA_26
 
+#elif defined (CONFIG_RTL8720F)
+#define GPIO_SIGNAL_SOURCE		_PA_23
+#define GPIO_IRQ_LEVEL_PIN		_PA_24
 #endif
 extern int example_raw_gpio_level_irq(void);
 #endif

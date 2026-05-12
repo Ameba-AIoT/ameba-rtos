@@ -54,7 +54,7 @@ const SPI_DevTable SPI_DEV_TABLE[2] = {
   * @{
   */
 
-/** @defgroup SPI
+/** @defgroup SPI SPI
 * @brief SPI driver modules
 * @{
 */
@@ -70,7 +70,6 @@ const SPI_DevTable SPI_DEV_TABLE[2] = {
   * @brief  Fill each SSI_InitStruct member with its default value.
   * @param  SSI_InitStruct: pointer to a SSI_InitTypeDef structure which will be
   *         initialized.
-  * @retval None
   */
 void
 SSI_StructInit(SSI_InitTypeDef *SSI_InitStruct)
@@ -97,7 +96,6 @@ SSI_StructInit(SSI_InitTypeDef *SSI_InitStruct)
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  SSI_InitStruct: pointer to a SSI_InitTypeDef structure that contains
   *         the configuration information for the SPI peripheral.
-  * @retval None
   */
 
 void SSI_Init(SPI_TypeDef *spi_dev, SSI_InitTypeDef *SSI_InitStruct)
@@ -144,7 +142,6 @@ void SSI_Init(SPI_TypeDef *spi_dev, SSI_InitTypeDef *SSI_InitStruct)
   * @param  NewStatus: This parameter can be one of the following values:
   *            @arg ENABLE
   *            @arg DISABLE
-  * @retval None
   */
 
 void SSI_Cmd(SPI_TypeDef *spi_dev, u32 NewStatus)
@@ -168,10 +165,9 @@ void SSI_Cmd(SPI_TypeDef *spi_dev, u32 NewStatus)
   *            @arg SPI_BIT_MSTIM_FAEIM
   *            @arg SPI_BIT_TXUIM
   *            @arg SPI_BIT_SSRIM
-  * @param   newState:This parameter can be one of the following values:
+  * @param   newState: This parameter can be one of the following values:
   *            @arg ENABLE
   *            @arg DISABLE
-  * @retval None
   * @note  BIT_IMR_TXUIM, BIT_IMR_SSRIM are for Slave only.
   */
 void SSI_INTConfig(SPI_TypeDef *spi_dev, u32 SSI_IT, u32 newState)
@@ -191,7 +187,6 @@ void SSI_INTConfig(SPI_TypeDef *spi_dev, u32 SSI_IT, u32 newState)
   * @param  role: This parameter can be one of the following values:
   *            @arg SSI_MASTER
   *            @arg SSI_SLAVE
-  * @retval None
   */
 void SSI_SetRole(SPI_TypeDef *spi_dev, u32 role)
 {
@@ -219,7 +214,6 @@ void SSI_SetRole(SPI_TypeDef *spi_dev, u32 role)
   * @param  SclkPolarity: This parameter can be one of the following values:
   *            @arg SCPOL_INACTIVE_IS_HIGH
   *            @arg SCPOL_INACTIVE_IS_LOW
-  * @retval None
   */
 
 void SSI_SetSclkPolarity(SPI_TypeDef *spi_dev, u32 SclkPolarity)
@@ -241,7 +235,6 @@ void SSI_SetSclkPolarity(SPI_TypeDef *spi_dev, u32 SclkPolarity)
   * @param  SclkPhase: This parameter can be one of the following values:
   *            @arg SCPH_TOGGLES_AT_START
   *            @arg SCPH_TOGGLES_IN_MIDDLE
-  * @retval None
   */
 
 void SSI_SetSclkPhase(SPI_TypeDef *spi_dev, u32 SclkPhase)
@@ -274,7 +267,6 @@ void SSI_SetSclkPhase(SPI_TypeDef *spi_dev, u32 SclkPhase)
   *            @arg DFS_14_BITS
   *            @arg DFS_15_BITS
   *            @arg DFS_16_BITS
-  * @retval None
   */
 
 void SSI_SetDataFrameSize(SPI_TypeDef *spi_dev, u32 DataFrameSize)
@@ -295,9 +287,8 @@ void SSI_SetDataFrameSize(SPI_TypeDef *spi_dev, u32 DataFrameSize)
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  TogglePhase: This parameter can be one of the following values:
   *            @arg SPI_SS_NOT_TOGGLE , means SPI support continuous transfer when spi_cph=0
-  *            @arg SPI_SS_TOGGLE, means SPI donot support continuous transfer when spi_cph=0
+  *            @arg SPI_SS_TOGGLE, means SPI does not support continuous transfer when spi_cph=0
   *              and SS(CS) needs break.
-  * @retval None
   * @note  SS Toggle function is valid only for master.
   */
 void SSI_SetSSTogglePhase(SPI_TypeDef *spi_dev, u32 TogglePhase)
@@ -322,10 +313,9 @@ void SSI_SetSSTogglePhase(SPI_TypeDef *spi_dev, u32 TogglePhase)
   *            @arg SPI_BIT_TXBITSWAP
   *            @arg SPI_BIT_RXBYTESWAP
   *            @arg SPI_BIT_RXBITSWAP
-  * @param   newState:This parameter can be one of the following values:
+  * @param   newState: This parameter can be one of the following values:
   *            @arg ENABLE
   *            @arg DISABLE
-  * @retval None
   */
 void SSI_SetDataSwap(SPI_TypeDef *spi_dev, u32 SwapStatus, u32 newState)
 {
@@ -343,11 +333,10 @@ void SSI_SetDataSwap(SPI_TypeDef *spi_dev, u32 SwapStatus, u32 newState)
 }
 
 /**
-  * @brief  Set SPIx Rx Sample Dealy. support form AZ BCUT
+  * @brief  Set SPIx Rx Sample Delay. support form AZ BCUT
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  SampleDelay: The number of ssi_clk cycles that to be delayed.
-  * @retval None
-  * @note  the max clk dealy cycle is 4.
+  * @note  the max clk delay cycle is 4.
   */
 
 void SSI_SetSampleDelay(SPI_TypeDef *spi_dev, u32 SampleDelay)
@@ -362,7 +351,6 @@ void SSI_SetSampleDelay(SPI_TypeDef *spi_dev, u32 SampleDelay)
   * @note Valid only when the device is configured as a master in TMOD_RO mode
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  DataFrameNumber: The number of data frames that to be received.
-  * @retval None
   */
 
 void SSI_SetReadLen(SPI_TypeDef *spi_dev, u32 DataFrameNumber)
@@ -381,7 +369,6 @@ void SSI_SetReadLen(SPI_TypeDef *spi_dev, u32 DataFrameNumber)
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  ClockDivider: Even value between 2 and 65534.
   *		     And Fsclk_out=Fssi_clk/ClockDivider.
-  * @retval None
   */
 
 void SSI_SetBaudDiv(SPI_TypeDef *spi_dev, u32 ClockDivider)
@@ -402,7 +389,6 @@ void SSI_SetBaudDiv(SPI_TypeDef *spi_dev, u32 ClockDivider)
   * @param  Mask:  This parameter can be one of the following values or mixed:
   *              @arg SPI_BIT_TDMAE
   *              @arg SPI_BIT_RDMAE
-  * @retval None
   */
 
 void SSI_SetDmaEnable(SPI_TypeDef *spi_dev, u32 newState, u32 Mask)
@@ -423,7 +409,6 @@ void SSI_SetDmaEnable(SPI_TypeDef *spi_dev, u32 newState, u32 Mask)
   * @param  RxLevel:  Receive FIFO Threshold level.Value range: 0 to 63.
   *		The dma_rx_req is generated when the number of valid data entries in the
   *		receive FIFO is equal to or above this field value + 1.
-  * @retval None
   */
 
 void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLevel, u32 RxLevel)
@@ -444,7 +429,7 @@ void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLevel, u32 RxLevel)
   * @param  CallbackFunc: GDMA callback function.
   * @param  pTxData: Tx Buffer.
   * @param  Length: Tx Count.
-  * @retval   TRUE/FLASE
+  * @return   TRUE/FALSE
   */
 
 bool SSI_TXGDMA_Init(
@@ -484,7 +469,7 @@ bool SSI_TXGDMA_Init(
 	GDMA_InitStruct->GDMA_DstInc = NoChange;
 	GDMA_InitStruct->GDMA_SrcInc = IncType;
 
-	/*  Cofigure GDMA transfer */
+	/*  Configure GDMA transfer */
 	if (DataFrameSize > 8) {
 		/*  16~9 bits mode */
 		if (((Length & 0x03) == 0) && (((u32)(pTxData) & 0x03) == 0)) {
@@ -502,7 +487,7 @@ bool SSI_TXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 			GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 		} else {
-			RTK_LOGE(TAG, "SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%lu\n", pTxData, Length);
+			RTK_LOGE(TAG, "SSI_TXGDMA_Init: Alignment Err: pTxData=%p,  Length=%lu\n", pTxData, Length);
 			return FALSE;
 		}
 	} else {
@@ -542,7 +527,7 @@ bool SSI_TXGDMA_Init(
   * @param  CallbackFunc: GDMA callback function.
   * @param  pRxData: Rx Buffer.
   * @param  Length: Rx Count.
-  * @retval   TRUE/FLASE
+  * @return   TRUE/FALSE
   */
 
 bool
@@ -585,7 +570,7 @@ SSI_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_DstInc = IncType;
 	GDMA_InitStruct->GDMA_SrcInc = NoChange;
 
-	/*  Cofigure GDMA transfer */
+	/*  Configure GDMA transfer */
 	if (DataFrameSize > 8) {
 		/*  16~9 bits mode */
 		GDMA_InitStruct->GDMA_SrcMsize = MsizeFour;
@@ -601,7 +586,7 @@ SSI_RXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 		} else {
-			RTK_LOGE(TAG, "SSI_RXGDMA_Init: Aligment Err: pRxData=%p,  Length=%lu\n", pRxData, Length);
+			RTK_LOGE(TAG, "SSI_RXGDMA_Init: Alignment Err: pRxData=%p,  Length=%lu\n", pRxData, Length);
 			return FALSE;
 		}
 	} else {
@@ -635,7 +620,6 @@ SSI_RXGDMA_Init(
   * @brief Clear SPIx interrupt status.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  InterruptStatus:  The value of current interrupt status .
-  * @retval None
   */
 
 void SSI_SetIsrClean(SPI_TypeDef *spi_dev, u32 InterruptStatus)
@@ -674,7 +658,6 @@ void SSI_SetIsrClean(SPI_TypeDef *spi_dev, u32 InterruptStatus)
   * @brief Write data to SPIx transmit FIFO.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  value:  The data value that is to be transmitted .
-  * @retval None
   */
 
 void SSI_WriteData(SPI_TypeDef *spi_dev, u32 value)
@@ -688,7 +671,6 @@ void SSI_WriteData(SPI_TypeDef *spi_dev, u32 value)
   * @param  RxThresholdLevel:  Rx FIFO Threshold Level.Value range: 0 to 63.
   *		When the number of receive FIFO entries is greater than or equal to
   *		this value + 1, the receive FIFO full interrupt is triggered.
-  * @retval None
   */
 
 void SSI_SetRxFifoLevel(SPI_TypeDef *spi_dev, u32 RxThresholdLevel)
@@ -702,7 +684,6 @@ void SSI_SetRxFifoLevel(SPI_TypeDef *spi_dev, u32 RxThresholdLevel)
   * @param  TxThresholdLevel:  Tx FIFO Threshold Level.Value range: 0 to 63.
   *		When the number of transmit FIFO entries is less than or equal to this
   *		value, the transmit FIFO empty interrupt is triggered.
-  * @retval None
   */
 
 void SSI_SetTxFifoLevel(SPI_TypeDef *spi_dev, u32 TxThresholdLevel)
@@ -715,7 +696,6 @@ void SSI_SetTxFifoLevel(SPI_TypeDef *spi_dev, u32 TxThresholdLevel)
   * @note  Valid only when the device is configured as a master.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  SlaveIndex: the index of slave to be selected.
-  * @retval None
   */
 
 void SSI_SetSlaveEnable(SPI_TypeDef *spi_dev, u32 SlaveIndex)
@@ -729,11 +709,11 @@ void SSI_SetSlaveEnable(SPI_TypeDef *spi_dev, u32 SlaveIndex)
 }
 
 /**
-  * @brief  Detemine whether SPIx transmit FIFO is full or not
+  * @brief  Determine whether SPIx transmit FIFO is full or not
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval Transmit FIFO is full or not:
-  *        - 1: Not Full
-  *        - 0: Full
+  * @return Transmit FIFO is full or not:
+  *         - 1: Not Full
+  *         - 0: Full
   */
 
 u32 SSI_Writeable(SPI_TypeDef *spi_dev)
@@ -748,11 +728,11 @@ u32 SSI_Writeable(SPI_TypeDef *spi_dev)
 }
 
 /**
-  * @brief  Detemine SPIx Receive FIFO is empty or not.
+  * @brief  Determine SPIx Receive FIFO is empty or not.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval Receive FIFO is empty or not:
-  *        - 1: Not Empty
-  *        - 0: Empty
+  * @return Receive FIFO is empty or not:
+  *         - 1: Not Empty
+  *         - 0: Empty
   */
 
 u32 SSI_Readable(SPI_TypeDef *spi_dev)
@@ -766,7 +746,7 @@ u32 SSI_Readable(SPI_TypeDef *spi_dev)
 /**
   * @brief Read data from SPIx receive FIFO .
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval The data received.
+  * @return Data received from SPI receive FIFO.
   */
 
 u32 SSI_ReadData(SPI_TypeDef *spi_dev)
@@ -779,7 +759,7 @@ u32 SSI_ReadData(SPI_TypeDef *spi_dev)
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  RxData: buffer to save data read from SPI FIFO.
   * @param  Length: number of data to be read.
-  * @retval transfer len
+  * @return transfer len
   */
 
 u32 SSI_ReceiveData(SPI_TypeDef *spi_dev,
@@ -835,7 +815,7 @@ u32 SSI_ReceiveData(SPI_TypeDef *spi_dev,
   * @param  TxData: buffer to be written to Tx FIFO.
   * @param  Length: number of data to be written.
   * @param  Role: SSI_MASTER or SSI_SLAVE.
-  * @retval transfer len
+  * @return transfer len
   */
 
 u32 SSI_SendData(SPI_TypeDef *spi_dev,
@@ -895,16 +875,16 @@ u32 SSI_SendData(SPI_TypeDef *spi_dev,
 /**
   * @brief  Get Masks or unmasks SPIx interrupt.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval  SSI_IT: This parameter can be one of the following values or mixed:
-  *            @arg SPI_BIT_TXEIM
-  *            @arg SPI_BIT_TXOIM
-  *            @arg SPI_BIT_RXUIM
-  *            @arg SPI_BIT_RXOIM
-  *            @arg SPI_BIT_RXFIM
-  *            @arg SPI_BIT_MSTIM_FAEIM
-  *            @arg SPI_BIT_TXUIM
-  *            @arg SPI_BIT_SSRIM
-  * @note  BITx is 1 means the corrsponding intr is enabled, otherwise is disabled.
+  * @return  SSI_IT: This parameter can be one of the following values or mixed:
+  *            - SPI_BIT_TXEIM
+  *            - SPI_BIT_TXOIM
+  *            - SPI_BIT_RXUIM
+  *            - SPI_BIT_RXOIM
+  *            - SPI_BIT_RXFIM
+  *            - SPI_BIT_MSTIM_FAEIM
+  *            - SPI_BIT_TXUIM
+  *            - SPI_BIT_SSRIM
+  * @note  BITx is 1 means the corresponding intr is enabled, otherwise is disabled.
   */
 u32 SPI_GetINTConfig(SPI_TypeDef *spi_dev)
 {
@@ -914,7 +894,7 @@ u32 SPI_GetINTConfig(SPI_TypeDef *spi_dev)
 /**
   * @brief Get SPIx the number of valid entries in receive FIFO.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval  The number of valid entries in receive FIFO.Value range:0-64.
+  * @return  The number of valid entries in receive FIFO.Value range:0-64.
   */
 u32 SSI_GetRxCount(SPI_TypeDef *spi_dev)
 {
@@ -924,7 +904,7 @@ u32 SSI_GetRxCount(SPI_TypeDef *spi_dev)
 /**
   * @brief Get SPIx the number of valid entries in transmit FIFO.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval  The number of valid entries in transmit FIFO.Value range:0-64.
+  * @return  The number of valid entries in transmit FIFO.Value range:0-64.
   */
 u32 SSI_GetTxCount(SPI_TypeDef *spi_dev)
 {
@@ -933,34 +913,33 @@ u32 SSI_GetTxCount(SPI_TypeDef *spi_dev)
 
 /**
   * @brief Get SPIx transfer status.
+  * @details
+  *   bit 5 : TXE	Transmission Error.(valid when device is slave)
+  *       - 0 : No Error
+  *       - 1 : Transmission error
+  *
+  *   bit 4 : RFF	Receive FIFO Full.
+  *       - 0 : Receive FIFO is not full
+  *       - 1 : Receive FIFO is full
+  *
+  *   bit 3 : RFNE	Receive FIFO Not Empty.
+  *       - 0 : Receive FIFO is empty
+  *       - 1 : Receive FIFO is not empty
+  *
+  *   bit 2 : TFE	Transmit FIFO Empty.
+  *       - 0 : Transmit FIFO is not empty
+  *       - 1 : Transmit FIFO is empty
+  *
+  *   bit 1 : TFNF	Transmit FIFO Not Full.
+  *       - 0 : Transmit FIFO is full
+  *       - 1 : Transmit FIFO is not full
+  *
+  *   bit 0 : BUSY	SSI Busy Flag.
+  *       - 0 : idle or disable
+  *       - 1 : active transferring data
+  *
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval  Current transfer status,each bit of this value represents one
-  *		transfer status which is as follows:
-  *
-  *		bit 5 : TXE	Transmission Error.(valid when device is slave)
-  *			- 0 : No Error
-  *			- 1 : Transmission error
-  *
-  *		bit 4 : RFF	Receive FIFO Full.
-  *			- 0 : Receive FIFO is not full
-  *			- 1 : Receive FIFO is full
-  *
-  *		bit 3 : RFNE	Receive FIFO Not Empty.
-  *			- 0 : Receive FIFO is empty
-  *			- 1 : Receive FIFO is not empty
-  *
-  *		bit 2 : TFE	Transmit FIFO Empty.
-  *			- 0 : Transmit FIFO is not empty
-  *			- 1 : Transmit FIFO is empty
-  *
-  *		bit 1 : TFNF	Transmit FIFO Not Full.
-  *			- 0 : Transmit FIFO is full
-  *			- 1 : Transmit FIFO is not full
-  *
-  *		bit 0 : BUSY	SSI Busy Flag.
-  *			- 0 : idle or disable
-  *			- 1 : active transferring data
-  *
+  * @return Current transfer status, each bit of this value represents one transfer status.
   */
 
 u32 SSI_GetStatus(SPI_TypeDef *spi_dev)
@@ -971,7 +950,7 @@ u32 SSI_GetStatus(SPI_TypeDef *spi_dev)
 /**
   * @brief Get SPIx data frame size.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval  Data frame size(value range : 4-16):
+  * @return  Data frame size(value range : 4-16):
   *		- n : current data frame length is n bits
   */
 
@@ -984,7 +963,7 @@ u32 SSI_GetDataFrameSize(SPI_TypeDef *spi_dev)
 /**
   * @brief Get SPIx data frame number.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval  Data frame number
+  * @return  Data frame number
   */
 u32 SSI_GetDataFrameNumber(SPI_TypeDef *spi_dev)
 {
@@ -993,11 +972,11 @@ u32 SSI_GetDataFrameNumber(SPI_TypeDef *spi_dev)
 }
 
 /**
-  * @brief  Detemine SPIx is busy or not.
+  * @brief  Determine SPIx is busy or not.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval SPIx busy status value:
-  *           - 1: Busy
-  *           - 0: Not Busy
+  * @return SPIx busy status value:
+  *         - 1: Busy
+  *         - 0: Not Busy
   */
 
 u32 SSI_Busy(SPI_TypeDef *spi_dev)
@@ -1010,45 +989,45 @@ u32 SSI_Busy(SPI_TypeDef *spi_dev)
 
 /**
   * @brief Get SPIx Interrupt Status.
+  * @details
+  *   bit 7 : SSRIS  SS_N Rising Edge Detect Interrupt Status. (valid when device is slave)
+  *       - 0 : ssi_ssr_intr interrupt not active after masking
+  *       - 1 : ssi_ssr_intr interrupt is active after masking
+  *
+  *   bit 6 : TXUIS  Transmit FIFO Under Flow Interrupt Status. (valid when device is slave)
+  *       - 0 : ssi_txu_intr interrupt is not active after masking
+  *       - 1 : ssi_txu_intr interrupt is active after masking
+  *
+  *   bit 5 : FAEIS  Frame Alignment Interrupt Status. (valid when device is slave)
+  *       - 0 : ssi_fae_intr interrupt not active after masking
+  *       - 1 : ssi_fae_intr interrupt is active after masking
+  *
+  *   bit 5 : MSTIS  Multi-Master Contention Interrupt Status. (valid when device is master)
+  *       - 0 : ssi_mst_intr interrupt not active after masking
+  *       - 1 : ssi_mst_intr interrupt is active after masking
+  *
+  *   bit 4 : RXFIS	Receive FIFO Full Interrupt Status.
+  *       - 0 : ssi_rxf_intr interrupt is not active after masking
+  *       - 1 : ssi_rxf_intr interrupt is full after masking
+  *
+  *   bit 3 : RXOIS	Receive FIFO Overflow Interrupt Status.
+  *       - 0 : ssi_rxo_intr interrupt is not active after masking
+  *       - 1 : ssi_rxo_intr interrupt is active after masking
+  *
+  *   bit 2 : RXUIS	Receive FIFO Underflow Interrupt Status.
+  *       - 0 : ssi_rxu_intr interrupt is not active after masking
+  *       - 1 : ssi_rxu_intr interrupt is active after masking
+  *
+  *   bit 1 : TXOIS	Transmit FIFO Overflow Interrupt Status.
+  *       - 0 : ssi_txo_intr interrupt is not active after masking
+  *       - 1 : ssi_txo_intr interrupt is active after masking
+  *
+  *   bit 0 : TXEIS	Transmit FIFO Empty Interrupt Status.
+  *       - 0 : ssi_txe_intr interrupt is not active after masking
+  *       - 1 : ssi_txe_intr interrupt is active after masking
+  *
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval Current Interrupt Status,each bit of this value represents one
-  *		interrupt status which is as follows:
-  *
-  *		bit 7 : SSRIS  SS_N Rising Edge Detect Interrupt Status. (valid when device is slave)
-  *			- 0 : ssi_ssr_intr interrupt not active after masking
-  *			- 1 : ssi_ssr_intr interrupt is active after masking
-  *
-  *		bit 6 : TXUIS  Transmit FIFO Under Flow Interrupt Status. (valid when device is slave)
-  *			- 0 : ssi_txu_intr interrupt is not active after masking
-  *			- 1 : ssi_txu_intr interrupt is active after masking
-  *
-  *		bit 5 : FAEIS  Frame Alignment Interrupt Status. (valid when device is slave)
-  *			- 0 : ssi_fae_intr interrupt not active after masking
-  *			- 1 : ssi_fae_intr interrupt is active after masking
-  *
-  *		bit 5 : MSTIS  Multi-Master Contention Interrupt Status. (valid when device is master)
-  *			- 0 : ssi_mst_intr interrupt not active after masking
-  *			- 1 : ssi_mst_intr interrupt is active after masking
-  *
-  *		bit 4 : RXFIS	Receive FIFO Full Interrupt Status.
-  *			- 0 : ssi_rxf_intr interrupt is not active after masking
-  *			- 1 : ssi_rxf_intr interrupt is full after masking
-  *
-  *		bit 3 : RXOIS	Receive FIFO Overflow Interrupt Status.
-  *			- 0 : ssi_rxo_intr interrupt is not active after masking
-  *			- 1 : ssi_rxo_intr interrupt is active after masking
-  *
-  *		bit 2 : RXUIS	Receive FIFO Underflow Interrupt Status.
-  *			- 0 : ssi_rxu_intr interrupt is not active after masking
-  * 		- 1 : ssi_rxu_intr interrupt is active after masking
-  *
-  *		bit 1 : TXOIS	Transmit FIFO Overflow Interrupt Status.
-  *			- 0 : ssi_txo_intr interrupt is not active after masking
-  *			- 1 : ssi_txo_intr interrupt is active after masking
-  *
-  *		bit 0 : TXEIS	Transmit FIFO Empty Interrupt Status.
-  *			- 0 : ssi_txe_intr interrupt is not active after masking
-  *			- 1 : ssi_txe_intr interrupt is active after masking
+  * @return Current Interrupt Status, each bit of this value represents one interrupt status.
   */
 
 u32 SSI_GetIsr(SPI_TypeDef *spi_dev)
@@ -1058,45 +1037,45 @@ u32 SSI_GetIsr(SPI_TypeDef *spi_dev)
 
 /**
   * @brief Get SPIx Raw Interrupt Status.
+  * @details
+  *   bit 7 : SSRIR  SS_N Rising Edge Detect Interrupt Status. (valid when device is slave)
+  *       - 0 : ssi_ssr_intr interrupt not active after masking
+  *       - 1 : ssi_ssr_intr interrupt is active after masking
+  *
+  *   bit 6 : TXUIR  Transmit FIFO Under Flow Interrupt Status. (valid when device is slave)
+  *       - 0 : ssi_txu_intr interrupt is not active after masking
+  *       - 1 : ssi_txu_intr interrupt is active after masking
+  *
+  *   bit 5 : FAEIR  Frame Alignment Interrupt Status. (valid when device is slave)
+  *       - 0 : ssi_fae_intr interrupt not active after masking
+  *       - 1 : ssi_fae_intr interrupt is active after masking
+  *
+  *   bit 5 : MSTIR	Multi-Master Contention Raw Interrupt Status.(valid when device is master)
+  *       - 0 : ssi_mst_intr interrupt not active prior to masking
+  *       - 1 : ssi_mst_intr interrupt is active prior to masking
+  *
+  *   bit 4 : RXFIR	Receive FIFO Full Raw Interrupt Status.
+  *       - 0 : ssi_rxf_intr interrupt is not active prior to masking
+  *       - 1 : ssi_rxf_intr interrupt is full prior to masking
+  *
+  *   bit 3 : RXOIR	Receive FIFO Overflow Raw Interrupt Status.
+  *       - 0 : ssi_rxo_intr interrupt is not active prior to masking
+  *       - 1 : ssi_rxo_intr interrupt is active prior to masking
+  *
+  *   bit 2 : RXUIR	Receive FIFO Underflow Raw Interrupt Status.
+  *       - 0 : ssi_rxu_intr interrupt is not active prior to masking
+  *       - 1 : ssi_rxu_intr interrupt is active prior to masking
+  *
+  *   bit 1 : TXOIR	 Transmit FIFO Overflow Raw Interrupt Status.
+  *       - 0 : ssi_txo_intr interrupt is not active prior to masking
+  *       - 1 : ssi_txo_intr interrupt is active prior to masking
+  *
+  *   bit 0 : TXEIR	Transmit FIFO Empty Raw Interrupt Status.
+  *       - 0 : ssi_txe_intr interrupt is not active prior to masking
+  *       - 1 : ssi_txe_intr interrupt is active prior to masking
+  *
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval  Current Raw Interrupt Status,each bit of this value represents one
-  *		raw interrupt status which is as follows:
-  *
-  *		bit 7 : SSRIR  SS_N Rising Edge Detect Interrupt Status. (valid when device is slave)
-  *			- 0 : ssi_ssr_intr interrupt not active after masking
-  *			- 1 : ssi_ssr_intr interrupt is active after masking
-  *
-  *		bit 6 : TXUIR  Transmit FIFO Under Flow Interrupt Status. (valid when device is slave)
-  *			- 0 : ssi_txu_intr interrupt is not active after masking
-  *			- 1 : ssi_txu_intr interrupt is active after masking
-  *
-  *		bit 5 : FAEIR  Frame Alignment Interrupt Status. (valid when device is slave)
-  *			- 0 : ssi_fae_intr interrupt not active after masking
-  *			- 1 : ssi_fae_intr interrupt is active after masking
-  *
-  *		bit 5 : MSTIR	Multi-Master Contention Raw Interrupt Status.(valid when device is master)
-  *			- 0 : ssi_mst_intr interrupt not active prior to masking
-  *			- 1 : ssi_mst_intr interrupt is active prior to masking
-  *
-  *		bit 4 : RXFIR	Receive FIFO Full Raw Interrupt Status.
-  *			- 0 : ssi_rxf_intr interrupt is not active prior to masking
-  *			- 1 : ssi_rxf_intr interrupt is full prior to masking
-  *
-  *		bit 3 : RXOIR	Receive FIFO Overflow Raw Interrupt Status.
-  *			- 0 : ssi_rxo_intr interrupt is not active prior to masking
-  *			- 1 : ssi_rxo_intr interrupt is active prior to masking
-  *
-  *		bit 2 : RXUIR	Receive FIFO Underflow Raw Interrupt Status.
-  *			- 0 : ssi_rxu_intr interrupt is not active prior to masking
-  *  		- 1 : ssi_rxu_intr interrupt is active prior to masking
-  *
-  *		bit 1 : TXOIR	 Transmit FIFO Overflow Raw Interrupt Status.
-  *			- 0 : ssi_txo_intr interrupt is not active prior to masking
-  *			- 1 : ssi_txo_intr interrupt is active prior to masking
-  *
-  *		bit 0 : TXEIR	Transmit FIFO Empty Raw Interrupt Status.
-  *			- 0 : ssi_txe_intr interrupt is not active prior to masking
-  *			- 1 : ssi_txe_intr interrupt is active prior to masking
+  * @return Current Raw Interrupt Status, each bit of this value represents one raw interrupt status.
   */
 
 u32 SSI_GetRawIsr(SPI_TypeDef *spi_dev)
@@ -1108,7 +1087,7 @@ u32 SSI_GetRawIsr(SPI_TypeDef *spi_dev)
   * @brief Get which slave is selected.
   * @note  Valid only when the device is configured as a master.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
-  * @retval  Each bit of this value which is set to 1 corresponds to the slave being slected.
+  * @return  Each bit of this value which is set to 1 corresponds to the slave being selected.
   */
 u32 SSI_GetSlaveEnable(SPI_TypeDef *spi_dev)
 {
@@ -1120,7 +1099,6 @@ u32 SSI_GetSlaveEnable(SPI_TypeDef *spi_dev)
   * @note  Valid only when the device is configured as a slave.
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  Status: where Status can be ENABLE or DISABLE.
-  * @retval  None.
   */
 void SSI_SlaveOutputEnable(SPI_TypeDef *spi_dev, u32 Status)
 {

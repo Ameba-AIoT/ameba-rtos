@@ -14,9 +14,11 @@ ameba_list_append(public_includes
     lwip_${v_LWIP_VER}/src/include
     lwip_${v_LWIP_VER}/src/include/lwip/apps
     lwip_${v_LWIP_VER}/src/include/netif
+    lwip_${v_LWIP_VER}/src/core/ipv4/ip_nat
     lwip_${v_LWIP_VER}/port/realtek
     lwip_${v_LWIP_VER}/port/realtek/freertos
     api
+    rnapt
 )
 
 # Component public part, user config end
@@ -63,6 +65,7 @@ ameba_list_append(private_sources
     lwip_${v_LWIP_VER}/src/core/stats.c
     lwip_${v_LWIP_VER}/src/core/sys.c
     api/lwip_netconf.c
+    rnapt/rnapt_netif.c
 
     lwip_${v_LWIP_VER}/src/core/tcp_in.c
     lwip_${v_LWIP_VER}/src/core/tcp_out.c

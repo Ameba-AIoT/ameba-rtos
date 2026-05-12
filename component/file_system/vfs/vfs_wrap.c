@@ -105,17 +105,18 @@ size_t __wrap_fread(void *ptr, size_t size, size_t count, FILE *stream)
 
 	if (vfs.user[finfo->user_id].vfs_dec_callback != NULL) {
 		unsigned char *aesencsw;
-		unsigned char iv_len = vfs.user[finfo->user_id].enc_iv_len;
-		unsigned short msglen = (size * count / iv_len + 1) * iv_len;
+		unsigned int data_len = size * count;
+		unsigned long file_offset;
 
-		if (msglen > 16383) {
+		if (data_len > 16383) {
 			VFS_DBG(VFS_ERROR, "Encrypt content length should be smaller than 16383 !!!");
 			return -1;
 		}
 
-		aesencsw = rtos_mem_calloc(msglen, sizeof(unsigned char));
-		ret = vfs.drv[finfo->vfs_id]->read(vfs.user[finfo->user_id].fs, aesencsw, msglen, 1, (vfs_file *)stream);
-		vfs.user[finfo->user_id].vfs_dec_callback(aesencsw, ptr, size * count);
+		file_offset = vfs.drv[finfo->vfs_id]->fgetpos(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
+		aesencsw = rtos_mem_calloc(data_len, sizeof(unsigned char));
+		ret = vfs.drv[finfo->vfs_id]->read(vfs.user[finfo->user_id].fs, aesencsw, data_len, 1, (vfs_file *)stream);
+		vfs.user[finfo->user_id].vfs_dec_callback(aesencsw, ptr, data_len, file_offset);
 		rtos_mem_free(aesencsw);
 
 	} else {
@@ -145,17 +146,18 @@ size_t __wrap_fwrite(const void *ptr, size_t size, size_t count, FILE *stream)
 
 	if (vfs.user[finfo->user_id].vfs_enc_callback != NULL) {
 		unsigned char *aesencsw;
-		unsigned char iv_len = vfs.user[finfo->user_id].enc_iv_len;
-		unsigned short msglen = (size * count / iv_len + 1) * iv_len;
+		unsigned int data_len = size * count;
+		unsigned long file_offset;
 
-		if (msglen > 16383) {
+		if (data_len > 16383) {
 			VFS_DBG(VFS_ERROR, "Encrypt Content length should be smaller than 16383 !!!");
 			return -1;
 		}
 
-		aesencsw = rtos_mem_calloc(msglen, sizeof(unsigned char));
-		vfs.user[finfo->user_id].vfs_enc_callback((void *)ptr, aesencsw, size * count);
-		ret = vfs.drv[finfo->vfs_id]->write(vfs.user[finfo->user_id].fs, (void *)aesencsw, msglen, 1, (vfs_file *)stream);
+		file_offset = vfs.drv[finfo->vfs_id]->fgetpos(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
+		aesencsw = rtos_mem_calloc(data_len, sizeof(unsigned char));
+		vfs.user[finfo->user_id].vfs_enc_callback((void *)ptr, aesencsw, data_len, file_offset);
+		ret = vfs.drv[finfo->vfs_id]->write(vfs.user[finfo->user_id].fs, (void *)aesencsw, data_len, 1, (vfs_file *)stream);
 		rtos_mem_free(aesencsw);
 
 	} else {

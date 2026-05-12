@@ -18,6 +18,25 @@
 #endif
 /* -------------------------------- Includes -------------------------------- */
 
+/* remove after rom freeze */
+#ifndef CONFIG_BUILD_ROM
+#include "bt_inic_defs.h"
+
+enum WHC_WIFI_CTRL_TYPE {
+	WHC_WIFI_EVT_XIMT_PKTS = 0xa5a5a500,
+	WHC_WIFI_EVT_RECV_PKTS,
+	WHC_WIFI_EVT_API_CALL,
+	WHC_WIFI_EVT_API_RETURN,
+	WHC_WIFI_EVT_BRIDGE,
+	WHC_WIFI_EVT_FLOWCTRL,
+	WHC_WIFI_EVT_MAX,
+	WHC_CUST_EVT, /* the ID to transmit data for the customer. */
+
+	WHC_BT_EVT_BASE = WHC_BT_ID_BASE,
+	WHC_BT_EVT_MAX = WHC_BT_ID_BASE + 0x1000000
+};
+#endif
+
 struct whc_api_info {
 	u32	event;
 	u32	api_id;

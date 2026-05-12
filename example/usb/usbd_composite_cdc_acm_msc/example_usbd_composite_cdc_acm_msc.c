@@ -35,8 +35,7 @@ static const char *const TAG = "COMP";
 
 // Thread priorities
 #define CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY				5U
-#define CONFIG_USBD_COMPOSITE_ISR_THREAD_PRIORITY				7U
-#define CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY			8U // Should be higher than CONFIG_USBD_COMPOSITE_ISR_THREAD_PRIORITY
+#define CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY			8U // Should be higher than device ISR priority
 
 /* Private types -------------------------------------------------------------*/
 
@@ -56,7 +55,7 @@ static void composite_cb_status_changed(u8 old_status, u8 status);
 
 static usbd_config_t composite_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
-	.isr_priority = CONFIG_USBD_COMPOSITE_ISR_THREAD_PRIORITY,
+	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBASMART)
 	.ext_intr_enable = USBD_EPMIS_INTR,
 	.nptx_max_epmis_cnt = 100U,
@@ -79,8 +78,6 @@ static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 };
 
 static usb_cdc_line_coding_t composite_cdc_acm_line_coding;
-
-static u16 composite_cdc_acm_ctrl_line_state;
 
 static usbd_composite_cb_t composite_cb = {
 	.status_changed = composite_cb_status_changed,
@@ -155,6 +152,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = HAL_OK;
 	usb_cdc_line_coding_t *lc = &composite_cdc_acm_line_coding;
+	u16 composite_cdc_acm_ctrl_line_state;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
@@ -184,7 +182,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "USB_CDC_ACM_SET_LINE_CODING XXX\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "SET_LINE_CODING XXX\n");
 		}
 		break;
 

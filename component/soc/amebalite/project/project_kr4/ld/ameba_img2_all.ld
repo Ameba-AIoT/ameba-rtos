@@ -43,8 +43,8 @@ SECTIONS
 		__boot_text_start__ = .;
 		/* add for bootloader, because bootloader and image2 build together now.*/
 		KEEP(*(SORT(.image1.entry.data*)))
-		__boot_text_end__ = .;
 		. = ALIGN(32);
+		__boot_text_end__ = .;
 	} > KR4_BOOT_RAM_BACKUP
 
 	/* fixed region. do not add any code to this region */
@@ -82,7 +82,6 @@ SECTIONS
 		SRAM_INPUT_TEXT_SECTION
 
 		__sram_image2_end__ = .;
-		. = ALIGN(32);
 	} > KR4_BD_RAM
 
 	/* psram part */
@@ -141,14 +140,13 @@ SECTIONS
 		/*-----------------*/
 
 		__image2_backtrace_end__ = .;
-		. = ALIGN (32);
 	} > IMG2_TEXT_LMA_REGION
 
 	OUT_DATA_SECTION :
 	{
+		. = ALIGN (32);
 		*(.data*)
 
-		. = ALIGN (32);
 	} > IMG2_DATA_LMA_REGION
 
 	/* We want the small data sections together, so single-instruction offsets

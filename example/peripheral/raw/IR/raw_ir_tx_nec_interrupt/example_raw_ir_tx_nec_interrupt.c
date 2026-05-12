@@ -139,7 +139,7 @@ void Board_IR_Init(u8 group)
 		//printf("pinmux PB_21 TX; PB_22 RX\n");
 		printf("pinmux S2\n");
 		break;
-#ifndef CONFIG_AMEBAD
+#if !defined(CONFIG_AMEBAD) && !defined(CONFIG_RTL8720F)
 	case PINMUX_S3:
 		Pinmux_Config(IR_PINMUX_S3_TX, PINMUX_FUNCTION_IR_TX);
 		Pinmux_Config(IR_PINMUX_S3_RX, PINMUX_FUNCTION_IR_RX);

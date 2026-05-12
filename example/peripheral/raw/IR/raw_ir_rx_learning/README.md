@@ -50,3 +50,4 @@ This example will print out detect_time and frequency of received data.
 RTL8730E
 RTL8721Dx
 RTL8721F
+RTL8720F

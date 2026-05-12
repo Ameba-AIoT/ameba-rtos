@@ -122,11 +122,12 @@
   * @{
   */
 
-/** @defgroup SPI
+/** @defgroup SPI SPI
   * @brief SPI driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -424,6 +425,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -431,7 +433,7 @@ extern "C" {
 #endif
 
 
-//Please add your defination here
+//Please add your definition here
 
 /* Exported Types --------------------------------------------------------*/
 /** @addtogroup SPI_Exported_Types SPI Exported Types
@@ -471,7 +473,7 @@ typedef struct {
 	u32  SPI_SlaveSelectEnable;     /*!< Set the slave select enable flag.
 							     This Parameter controls which slave to be selected by master,each bit in SER register
 							     corresponds to a slave select line(ss_x_n) from spi master.
-							     @note The default vlaue of this parameter is 0,and one slave is selected.if more slaves to be selected,
+							     @note The default value of this parameter is 0,and one slave is selected.if more slaves to be selected,
 							     you may use SW way to do this.And this parameter is used only when the device is master. */
 
 	u32  SPI_ClockDivider;		    /*!< Specifies the SPI Baud Rate.
@@ -490,7 +492,7 @@ typedef struct {
 
 	u32   SPI_DataFrameSize;        /*!< Selects the data frame length .
 							    This parameter can be a value of @ref SPI_Data_Frame_Size.
-							    @note Need to right-justify transmit data before writting into the transmit FIFO
+							    @note Need to right-justify transmit data before writing into the transmit FIFO
 							    The transmit logic ignores the upper unused bits when transmitting the data. */
 
 	u32   SPI_InterruptMask;	     /*!< Specifies which interrupt to be enable.
@@ -536,7 +538,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup SPI_TMOD
+/** @defgroup SPI_TMOD SPI Transfer Mode
   * @{
   */
 #define TMOD_TR				(0)
@@ -546,7 +548,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup SPI_SC_Polarity
+/** @defgroup SPI_SC_Polarity SPI Clock Polarity
   * @{
   */
 #define SCPOL_INACTIVE_IS_LOW		(0)
@@ -555,7 +557,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup SPI_SC_Phase
+/** @defgroup SPI_SC_Phase SPI Clock Phase
   * @{
   */
 #define SCPH_TOGGLES_IN_MIDDLE		(0)
@@ -564,7 +566,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup SPI_Data_Frame_Size
+/** @defgroup SPI_Data_Frame_Size SPI Data Frame Size
   * @{
   */
 #define DFS_4_BITS				(3)
@@ -584,7 +586,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup SPI_SS_Toggle_Phase
+/** @defgroup SPI_SS_Toggle_Phase SPI Slave Select Toggle Phase
   * @{
   */
 #define SPI_SS_NOT_TOGGLE		(0)
@@ -593,7 +595,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup SPI_Role
+/** @defgroup SPI_Role SPI Role
   * @{
   */
 #define SSI_SLAVE				(0)
@@ -602,7 +604,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup SPI_Frame_Format
+/** @defgroup SPI_Frame_Format SPI Frame Format
   * @{
   */
 #define FRF_MOTOROLA_SPI		(0)
@@ -610,7 +612,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup SPI_DMA_Control
+/** @defgroup SPI_DMA_Control SPI DMA Control
   * @{
   */
 #define SSI_NODMA				(0)
@@ -621,7 +623,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup SPI_FIFO_Depth
+/** @defgroup SPI_FIFO_Depth SPI FIFO Depth
   * @{
   */
 #define SSI_TX_FIFO_DEPTH				(64)
@@ -638,6 +640,7 @@ typedef struct {
 
 /** @} */
 
+/// @cond
 _LONG_CALL_ void SSI_Cmd(SPI_TypeDef *spi_dev, u32 NewStaus);
 _LONG_CALL_ void SSI_SetSclkPolarity(SPI_TypeDef *spi_dev, u32 SclkPolarity);
 _LONG_CALL_ void SSI_SetSclkPhase(SPI_TypeDef *spi_dev, u32 SclkPhase);
@@ -670,7 +673,6 @@ _LONG_CALL_ void SSI_SetDataFrameSize(SPI_TypeDef *spi_dev, u32 DataFrameSize);
 _LONG_CALL_ void SSI_SetDataFrameNumber(SPI_TypeDef *spi_dev, u32 DataFrameNumber);
 _LONG_CALL_ void SSI_SetSSTogglePhase(SPI_TypeDef *spi_dev, u32 TogglePhase);
 _LONG_CALL_ void SSI_SetDataSwap(SPI_TypeDef *spi_dev, u32 SwapStatus, u32 newState);
-_LONG_CALL_ void SSI_SetBaud(SPI_TypeDef *SPIx, u32 BaudRate, u32 IpClk);
 _LONG_CALL_ void SSI_SetIsrClean(SPI_TypeDef *spi_dev, u32 InterruptStatus);
 _LONG_CALL_ void SSI_SetReadLen(SPI_TypeDef *spi_dev, u32 DataFrameNumber);
 _LONG_CALL_ void SSI_SetBaudDiv(SPI_TypeDef *spi_dev, u32 ClockDivider);
@@ -683,8 +685,7 @@ _LONG_CALL_ bool SSI_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, vo
 								 IRQ_FUN CallbackFunc, u8  *pRxData, u32 Length);
 _LONG_CALL_ void SSI_SetDmaEnable(SPI_TypeDef *spi_dev, u32 newState, u32 Mask);
 _LONG_CALL_ void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLeve, u32 RxLevel);
-
-
+/// @endcond
 
 
 /* Other Definitions --------------------------------------------------------*/

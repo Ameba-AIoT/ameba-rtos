@@ -149,6 +149,12 @@ extern unsigned int sys_now(void);
 #endif
 #endif
 
+#if defined(CONFIG_RNAPT)
+#define IP_FORWARD                      1
+#define IP_NAT                          1
+#define LWIP_NETIF_EXT_STATUS_CALLBACK  1
+#endif
+
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
 #define LWIP_IPV6_FORWARD               1
 #define LWIP_HOOK_IP6_ROUTE nd6_find_nhb_netif

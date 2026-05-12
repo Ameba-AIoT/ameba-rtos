@@ -77,15 +77,14 @@ static void hid_send_device_data(void *data);
 
 /* Private variables ---------------------------------------------------------*/
 
-static rtos_sema_t hid_connect_sema;
-static rtos_sema_t hid_transmit_sema;
-
 #if CONFIG_USBD_HID_HOTPLUG
 static u8 hid_attach_status;
 static rtos_sema_t hid_attach_status_changed_sema;
 #endif
 
 #if CONFIG_USBD_HID_CONSTANT_DATA
+static rtos_sema_t hid_connect_sema;
+static rtos_sema_t hid_transmit_sema;
 #if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
 static usbd_hid_mouse_data_t mdata[] = {
 	{0,   0,   0,  50,   0,   0},	//move the cursor 50 pixels to the right
@@ -179,8 +178,9 @@ static void hid_cb_setup(void)
 static void hid_cb_transmitted(u8 status)
 {
 	UNUSED(status);
-
+#if CONFIG_USBD_HID_CONSTANT_DATA
 	rtos_sema_give(hid_transmit_sema);
+#endif
 }
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
@@ -342,9 +342,12 @@ static void example_usbd_hid_thread(void *param)
 	UNUSED(param);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD HID demo start\n");
 
+#if CONFIG_USBD_HID_CONSTANT_DATA
 	rtos_sema_create(&hid_connect_sema, 0U, 1U);
 	rtos_sema_create(&hid_transmit_sema, 0U, 1U);
 	rtos_sema_give(hid_transmit_sema);
+#endif
+
 #if CONFIG_USBD_HID_HOTPLUG
 	rtos_sema_create(&hid_attach_status_changed_sema, 0U, 1U);
 #endif
@@ -407,8 +410,10 @@ example_usbd_hid_device_thread_fail:
 #if CONFIG_USBD_HID_HOTPLUG
 	rtos_sema_delete(hid_attach_status_changed_sema);
 #endif
+#if CONFIG_USBD_HID_CONSTANT_DATA
 	rtos_sema_delete(hid_connect_sema);
 	rtos_sema_delete(hid_transmit_sema);
+#endif
 	rtos_task_delete(NULL);
 }
 

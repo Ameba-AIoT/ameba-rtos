@@ -35,9 +35,9 @@ SECTIONS
 
 		__image2_entry_func__ = .;
 		KEEP(*(SORT(.image2.entry.data*)))
+		. = ALIGN(32);
 
 		__img2_entry_end__ = .;
-		. = ALIGN(32);
 	} > KM0_IMG2_ENTRY
 
 	/* xip part */
@@ -55,7 +55,6 @@ SECTIONS
 		WLAN_CRITICAL_TEXT
 		*(.sram.only.text*)
 		__sram_image2_end__ = .;
-		. = ALIGN(32);
 
 		*(.non.dram.text*)
 
@@ -86,9 +85,6 @@ SECTIONS
 		__git_ver_table_end__ = .;
 
 		__image2_backtrace_end__ = .;
-		. = ALIGN (32);
-
-
 	} > KM0_BD_RAM_MP
 
 
@@ -108,11 +104,11 @@ SECTIONS
 
 	.sram_image2.text.data :
 	{
+		. = ALIGN (32);
 		/* add for bootloader, because bootloader and image2 build together now.*/
 		*(.sram.only.data*)
 
 		*(.data*)
-		. = ALIGN (32);
 	} > KM0_BD_RAM_MP
 
 	.ram_image2.bss (NOLOAD):
@@ -124,15 +120,6 @@ SECTIONS
 		*(COMMON)
 
 		__bss_end__ = .;
-	} > KM0_BD_RAM_MP
-
-	.ram_image2.bd.data (NOLOAD):
-	{
-		. = ALIGN (32);
-		__ram_bd_start__ = .;
-		*(.bdsram.data*)
-		. = ALIGN (32);
-		__ram_bd_end__ = .;
 	} > KM0_BD_RAM_MP
 
 	.ram_image2.nocache.data (NOLOAD):

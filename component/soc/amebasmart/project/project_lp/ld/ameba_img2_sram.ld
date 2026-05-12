@@ -22,9 +22,9 @@ SECTIONS
 
 		__image2_entry_func__ = .;
 		KEEP(*(SORT(.image2.entry.data*)))
+		. = ALIGN(32);
 
 		__sram_image2_end__ = .;
-		. = ALIGN(32);
 	} > KM0_BD_RAM
 
 	/* psram part */
@@ -64,17 +64,16 @@ SECTIONS
 		__git_ver_table_end__ = .;
 
 		__image2_backtrace_end__ = .;
-		. = ALIGN (32);
 	} > KM0_BD_RAM
 
 	.sram_image2.text.data :
 	{
+		. = ALIGN (32);
 		/* add for bootloader, because bootloader and image2 build together now.*/
 		*(.sram.only.data*)
 
 		*(.data*)
 		*(.sramdram.only.data)
-		. = ALIGN (32);
 	} > KM0_BD_RAM
 
 	.ram_image2.bss (NOLOAD):
@@ -93,16 +92,6 @@ SECTIONS
 		*(.nocache.data*)
 		. = ALIGN (32);
 		__ram_nocache_end__ = .;
-	} > KM0_BD_RAM
-
-	.ram_heap.data (NOLOAD):
-	{
-		__HeapBase = .;
-		__end__ = .;
-		end = __end__;
-		. = . + 4096;	/* reserved for _sbrk */
-
-		__HeapLimit = .;
 	} > KM0_BD_RAM
 
 	/* put in the end of sram part */
@@ -125,3 +114,7 @@ ASSERT( __psram_image2_start__ == ORIGIN(KM0_BD_DRAM), "__psram_image2_start__ i
 
 __bdram_heap_buffer_size__ = ORIGIN(KM0_BD_RAM) + LENGTH(KM0_BD_RAM) - __bdram_heap_buffer_start__;
 __psram_heap_buffer_size__ = ORIGIN(KM0_BD_DRAM) + LENGTH(KM0_BD_DRAM) - __psram_heap_buffer_start__;
+
+/* code analyse used */
+__rtk_fixed_addr__ = 0x23002000;
+__misc_sram_size__ = LENGTH(KM0_IPC_RAM);

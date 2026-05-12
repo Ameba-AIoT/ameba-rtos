@@ -32,7 +32,7 @@ void wifi_tunnelapi_rnat_softap_bcnie_record(u8 *IEs, u32 ie_len)
 	UNUSED(ie_len);
 }
 
-void wifi_tunnelapi_pending_q_resume(void)
+void wifi_tunnelapi_pending_q_resume_all(void)
 {
 
 }
@@ -147,6 +147,13 @@ void wtn_ps_p1_bcn_interrupt_hdl(void)
 void wifi_tunnel_tdma_p1_bcn_interrupt_hdl(void)
 {
 
+}
+
+s32 wifi_tunnelapi_check_queue_pending(u8 hw_queue)
+{
+	UNUSED(hw_queue);
+
+	return FALSE;
 }
 
 int wifi_tunnelapi_rx_process(u8 *rx_desc, void *precvframe)

@@ -25,7 +25,7 @@
  */
 #define USBD_MSC_TX_THREAD_PRIORITY                 5U                 /**< TX thread priority */
 #define USBD_MSC_RX_THREAD_PRIORITY                 5U                 /**< RX thread priority */
-#define USBD_MSC_TRX_THREAD_STACK_SIZE              (256*4)            /**< TX/RX thread tack size */
+#define USBD_MSC_TRX_THREAD_STACK_SIZE              768U               /**< TX/RX thread tack size */
 
 /* Defines configuration constants like VID/PID, USB strings, and power settings. */
 #define USBD_MSC_VID                                USB_VID            /**< Vendor ID. */
@@ -159,23 +159,20 @@ typedef struct {
 	rtos_task_t tx_task;                            /**< RTOS task handle for data transmission. */
 	rtos_sema_t tx_sema;                            /**< RTOS semaphore to signal data transmission. */
 	usb_msc_scsi_sense_data_t scsi_sense_data[USBD_MSC_SENSE_LIST_DEPTH]; /**< Array to store SCSI sense data. */
-	u8 *ctrl_buf;                                   /**< Pointer to the control transfer buffer. */
 	u8 *data;                                       /**< Pointer to the data buffer for transfers. */
 	u32 data_length;                                /**< Transfer data length. */
 	u32 num_sectors;                                /**< Total number of sectors on the disk. */
 	u32 lba;                                        /**< Current logical block address for operations. */
-	u32 blkbits;                                    /**< Number of bits per block. */
-	u32 blksize;                                    /**< Block size in bytes. */
 	u32 blklen;                                     /**< The data length requested by the host. */
 	u16 rx_data_length;                             /**< BULK Received data length. */
 	u8 tx_status;                                   /**< BULK Transmitted status. */
-	u8 ro;                                          /**< Flag for media is write-protected. */
 	u8 bot_state;                                   /**< BOT state. */
 	u8 bot_status;                                  /**< BOT status. */
 	u8 scsi_sense_head;                             /**< Head index of SCSI sense data list. */
 	u8 scsi_sense_tail;                             /**< Tail index of SCSI sense data list. */
 	u8 is_open : 1;                                 /**< MSC is ready for data transfer. */
 	u8 phase_error : 1;                             /**< SCSI check status. */
+	u8 ro : 1;                                       /**< Flag for media is write-protected. */
 } usbd_msc_dev_t;
 
 /* Exported functions --------------------------------------------------------*/

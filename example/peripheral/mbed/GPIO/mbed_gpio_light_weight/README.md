@@ -27,7 +27,9 @@ This example describes how to use GPIO read/write in a light weight way by MBED 
   - On RTL8721F, connect as below
     - Connect a push button to `GPIO_PUSHBT_PIN _PA_26` and GND
     - Connect a LED to `GPIO_LED_PIN _PA_25` and GND
-
+  - On RTL8720F, connect as below
+    - Connect a push button to `GPIO_PUSHBT_PIN _PA_24` and GND
+    - Connect a LED to `GPIO_LED_PIN _PA_23` and GND
 # SW configuration
 
 1. Build and Download:
@@ -54,3 +56,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F

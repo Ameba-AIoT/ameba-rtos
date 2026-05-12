@@ -59,7 +59,7 @@ typedef enum {
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_uac_cb_attach(usb_host_t *host);
 static int usbh_uac_cb_detach(usb_host_t *host);
-static int usbh_uac_cb_process(usb_host_t *host, u32 msg);
+static int usbh_uac_cb_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_uac_ctrl_setting(usb_host_t *host, u32 msg);
 static int usbh_uac_cb_setup(usb_host_t *host);
 static int usbh_uac_cb_sof(usb_host_t *host);
@@ -155,7 +155,7 @@ static void usbh_uac_status_dump(void)
 	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
 
 	if (usbh_uac_usb_status_check() == HAL_OK) {
-		int ready_cnt = usb_ringbuf_get_count(handle);
+		u8 ready_cnt = usb_ringbuf_get_count(handle);
 		if (uac && uac->host) {
 			usb_host_t *host = uac->host;
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "UAC:%d-%d %d-%d/%d-%d-%d-%d/xfer=%d-%d-%d %d-%d-%d/%d-%d-%d-%d\n",
@@ -1478,23 +1478,23 @@ static int usbh_uac_ctrl_setting(usb_host_t *host, u32 msg)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_uac_cb_process(usb_host_t *host, u32 msg)
+static int usbh_uac_cb_process(usb_host_t *host, usbh_event_t *event)
 {
 	usbh_uac_host_t *uac = &usbh_uac_host;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
-	usbh_event_t event;
 	int ret = HAL_OK;
-	event.d32 = msg;
 
 	switch (uac->xfer_state) {
 	case UAC_STATE_TRANSFER:
-		if (event.msg.pipe_num == 0x00) { //ctrl msg
-			ret = usbh_uac_ctrl_setting(host, 0);
-		} else if ((buf_ctrl->next_xfer) && (uac->as_isoc_in) && (event.msg.pipe_num == uac->as_isoc_in->pipe.pipe_num)) {
-			uac->next_xfer = 0;
-			usbh_uac_isoc_in_process(host);
-			if (uac->next_xfer) {
-				usbh_notify_class_state_change(host, uac->as_isoc_in->pipe.pipe_num);
+		if (event) {
+			if (event->pipe_num == 0x00) { //ctrl msg
+				ret = usbh_uac_ctrl_setting(host, 0);
+			} else if ((buf_ctrl->next_xfer) && (uac->as_isoc_in) && (event->pipe_num == uac->as_isoc_in->pipe.pipe_num)) {
+				uac->next_xfer = 0;
+				usbh_uac_isoc_in_process(host);
+				if (uac->next_xfer) {
+					usbh_notify_class_state_change(host, uac->as_isoc_in->pipe.pipe_num);
+				}
 			}
 		}
 		break;
@@ -1643,7 +1643,7 @@ static void usbh_uac_ep_buf_ctrl_deinit(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe
 static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t *pipe)
 {
 	int ret = HAL_ERR_MEM;
-	u16 buf_list_cnt;
+	u8 buf_list_cnt;
 
 	buf_list_cnt = buf_ctrl->frame_cnt;
 	buf_ctrl->mps = pipe->ep_mps;
@@ -1782,7 +1782,7 @@ const COMMAND_TABLE usbh_uac_test_md_table[] = {
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_uac_init(usbh_uac_cb_t *cb, int frame_cnt)
+int usbh_uac_init(usbh_uac_cb_t *cb, u8 frame_cnt)
 {
 	int ret;
 	usbh_uac_host_t *uac = &usbh_uac_host;

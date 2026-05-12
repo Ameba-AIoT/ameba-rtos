@@ -96,22 +96,6 @@ static void bt_hci_uart_deinit(void)
 }
 #endif /* CONFIG_AMEBALITE or CONFIG_AMEBASMART */
 
-
-#if defined(CONFIG_SDN_BT) && CONFIG_SDN_BT
-void sdn_send_to_loguart(uint8_t type, uint8_t *data, uint16_t len)
-{
-	uint16_t i = 0;
-
-	while (!LOGUART_Writable());
-	LOGUART_PutChar_RAM(type);
-
-	while (i < len) {
-		while (!LOGUART_Writable());
-		LOGUART_PutChar_RAM(data[i++]);
-	}
-}
-#endif
-
 #if (defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1))
 static void *UartBkFunc = NULL;
 #endif
@@ -188,14 +172,11 @@ static void bt_uart_bridge_close(void)
 	/*restore the Baud register value*/
 	LOGUART_SetBaud(LOGUART_DEV, LOGUART_BAUDRATE);
 	LOGUART_INT_AP2NP();
-#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
-	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
-#else
+
 	u32 TempVal;
 	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0);
 	TempVal &= ~(LSYS_BIT_FORCE_LOGUART_USE_LOGUART_PAD_B | LSYS_BIT_WL_USE_REQ);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0, TempVal);
-#endif
 #endif /* CONFIG_AMEBALITE or CONFIG_AMEBASMART */
 }
 
@@ -263,8 +244,6 @@ static u32 bt_uart_bridge_irq(void *data)
     || (defined(CONFIG_AMEBASMART) && (CONFIG_AMEBASMART == 1)))
 				while (!UART_Writable(HCI_UART_DEV));
 				UART_CharPut(HCI_UART_DEV, rc);
-#elif defined(CONFIG_SDN_BT) && CONFIG_SDN_BT
-				sdn_bqb_h4_rx(rc);
 #endif
 			}
 		}
@@ -357,14 +336,10 @@ void bt_uart_bridge_open(void)
 
 	LOGUART_WaitTxComplete();
 
-#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
-	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, DISABLE);
-#else
 	u32 TempVal;
 	TempVal = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0);
 	TempVal |= (LSYS_BIT_FORCE_LOGUART_USE_LOGUART_PAD_B | LSYS_BIT_WL_USE_REQ);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BT_CTRL0, TempVal);
-#endif
 
 	/* Switch LOGUART interrupt from NP to AP */
 	LOGUART_INT_NP2AP();
@@ -381,22 +356,38 @@ void bt_uart_bridge_open(void)
 static int mp_ext2_uart_bridge(void **argv, int argc)
 {
 	MP_EXT2_PRINTF("_AT_MP_BRIDGE_\n");
+#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+	bool to_loguart = true;
+#endif
 
 	if (argc == 1) {
-		if (strncmp(argv[0], "close", 5) == 0) {
+		if (strcmp(argv[0], "close") == 0) {
 			MP_EXT2_PRINTF("close UART bridge.\n");
 			if (open_flag == 0) {
 				return 0;
 			}
 
+#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+			sdn_host_bridge_close();
+#else
 			bt_uart_bridge_close();
+#endif
 			open_flag = 0;
 			return 0;
 		}
+#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+		else if (strcmp(argv[0], "hci") == 0) {
+			to_loguart = false;
+		}
+#endif
 	}
 
 	MP_EXT2_PRINTF("open UART bridge.\n");
+#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+	sdn_host_bridge_open(to_loguart);
+#else
 	bt_uart_bridge_open();
+#endif
 	open_flag = 1;
 
 	return 0;
@@ -423,11 +414,24 @@ static int mp_ext2_gnt_bt(void **argv, int argc)
 
 	if (strcmp(argv[0], "wifi") == 0) {
 		MP_EXT2_PRINTF("Switch GNT_BT to WIFI.\n\r");
+#if defined(CONFIG_RTL8720F)
+		uint32_t value = 0;
+		value = HAL_READ32(0x40801250, 0);
+		value |= (0xF << 8);
+		HAL_WRITE32(0x40801250, 0, value);
+#endif
 #if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
 #endif
 	} else if (strcmp(argv[0], "bt") == 0) {
 		MP_EXT2_PRINTF("Switch GNT_BT to BT.\n\r");
+#if defined(CONFIG_RTL8720F)
+		uint32_t value = 0;
+		value = HAL_READ32(0x40801250, 0);
+		value &= ~(0xF << 8);
+		value |= (0x1 << 8);
+		HAL_WRITE32(0x40801250, 0, value);
+#endif
 #if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
 #endif

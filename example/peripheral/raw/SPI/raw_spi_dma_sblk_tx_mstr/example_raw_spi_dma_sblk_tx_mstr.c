@@ -14,7 +14,7 @@
 
 /* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
-#if defined(CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI1
 //#define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI0
 #else
@@ -24,7 +24,7 @@
 #endif
 
 #define DataFrameSize	DFS_8_BITS
-#define ClockDivider	20
+#define ClockDivider	1000
 #define TEST_BUF_SIZE	2048 //for dma mode, buffer size should be multiple of CACHE_LINE_SIZE
 
 /* for dma mode, start address of buffer should be CACHE_LINE_SIZE aligned*/

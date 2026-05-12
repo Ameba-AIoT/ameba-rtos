@@ -26,7 +26,7 @@ file(TO_CMAKE_PATH "${TOOLCHAINDIR}" TOOLCHAINDIR)
 
 if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
 	if(NOT TOOLCHAINDIR)
-		set(TOOLCHAINDIR /opt/rtk-toolchain)
+		set(TOOLCHAINDIR "$ENV{HOME}/rtk-toolchain")
 		message("Default toolchain path: ${TOOLCHAINDIR}")
 	endif()
 	set(SDK_TOOLCHAIN ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor}/linux/newlib) # Note: server needs to be updated, ${ToolChainVerMajor}-${ToolChainVerMinor}

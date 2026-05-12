@@ -100,6 +100,7 @@ static const u8 usbd_cdc_ecm_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
 	USB_HIGH_BYTE(USBD_CDC_ECM_LANGID_STRING),
 };
 
+#ifndef CONFIG_USB_FS
 /* USB Device Qualifier Descriptor */
 static const u8 usbd_cdc_ecm_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
@@ -213,6 +214,7 @@ static const u8 usbd_cdc_ecm_hs_config_desc[] = {
 	USB_HIGH_BYTE(USB_BULK_HS_MAX_MPS),
 	0x00                                            /* bInterval */
 };
+#endif
 
 /* USB CDC ECM Full Speed Configuration Descriptor */
 static const u8 usbd_cdc_ecm_fs_config_desc[] = {
@@ -563,23 +565,26 @@ static int cdc_ecm_set_config(usb_dev_t *dev, u8 config)
 	usbd_ep_t *ep_bulk_in = &ecm->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &ecm->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &ecm->ep_intr_in;
-
+	usb_ep_info_t *info;
 	UNUSED(config);
 
 	ecm->dev = dev;
 
 	/* Initialize INTR IN endpoint */
 	ep_intr_in->xfer_state = 0U;
-	ep_intr_in->mps = USB_CDC_ECM_INTR_IN_PACKET_SIZE;
+	info = &ep_intr_in->info;
+	info->mps = USB_CDC_ECM_INTR_IN_PACKET_SIZE;
 	usbd_ep_init(dev, ep_intr_in);
 
 	/* Initialize BULK IN endpoint */
 	ep_bulk_in->xfer_state = 0U;
-	ep_bulk_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USB_BULK_HS_MAX_MPS : USB_BULK_FS_MAX_MPS;
+	info = &ep_bulk_in->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USB_BULK_HS_MAX_MPS : USB_BULK_FS_MAX_MPS;
 	usbd_ep_init(dev, ep_bulk_in);
 
 	/* Initialize BULK OUT endpoint */
-	ep_bulk_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USB_BULK_HS_MAX_MPS : USB_BULK_FS_MAX_MPS;
+	info = &ep_bulk_out->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USB_BULK_HS_MAX_MPS : USB_BULK_FS_MAX_MPS;
 	usbd_ep_init(dev, ep_bulk_out);
 
 	/* Start receiving */
@@ -814,15 +819,23 @@ static u16 cdc_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-		desc = (speed == USB_SPEED_HIGH) ?
-			   usbd_cdc_ecm_hs_config_desc : usbd_cdc_ecm_fs_config_desc;
-		len = (speed == USB_SPEED_HIGH) ?
-			  sizeof(usbd_cdc_ecm_hs_config_desc) : sizeof(usbd_cdc_ecm_fs_config_desc);
+#ifndef CONFIG_USB_FS
+		if (speed == USB_SPEED_HIGH) {
+			desc = (u8 *)usbd_cdc_ecm_hs_config_desc;
+			len = sizeof(usbd_cdc_ecm_hs_config_desc);
+		} else
+#endif
+		{
+			desc = (u8 *)usbd_cdc_ecm_fs_config_desc;
+			len = sizeof(usbd_cdc_ecm_fs_config_desc);
+		}
+
 		usb_os_memcpy((void *)buf, (void *)desc, len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_cdc_ecm_device_qualifier_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_cdc_ecm_device_qualifier_desc, len);
@@ -838,6 +851,7 @@ static u16 cdc_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (desc_idx) {
@@ -901,19 +915,22 @@ int usbd_cdc_ecm_init(usbd_cdc_ecm_cb_t *cb)
 	usbd_ep_t *ep_bulk_in = &ecm->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &ecm->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &ecm->ep_intr_in;
+	usb_ep_info_t *info;
 	int ret = HAL_OK;
 
 	usb_os_sema_create(&(ecm->bulk_tx_sema));
 
 	/* BULK IN use the caller buffer */
-	ep_bulk_in->addr = USBD_CDC_ECM_BULK_IN_EP;
-	ep_bulk_in->type = USB_CH_EP_TYPE_BULK;
+	info = &ep_bulk_in->info;
+	info->addr = USBD_CDC_ECM_BULK_IN_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_in->xfer_buf_len = 0;
 	ep_bulk_in->xfer_buf = NULL;
 
 	/* Allocate BULK OUT buffer */
-	ep_bulk_out->addr = USBD_CDC_ECM_BULK_OUT_EP;
-	ep_bulk_out->type = USB_CH_EP_TYPE_BULK;
+	info = &ep_bulk_out->info;
+	info->addr = USBD_CDC_ECM_BULK_OUT_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_out->xfer_buf_len = USBD_CDC_ECM_BULK_BUF_MAX_SIZE;
 	ep_bulk_out->xfer_buf = (u8 *)usb_os_malloc(ep_bulk_out->xfer_buf_len);
 	ep_bulk_out->xfer_len = ep_bulk_out->xfer_buf_len;
@@ -924,8 +941,9 @@ int usbd_cdc_ecm_init(usbd_cdc_ecm_cb_t *cb)
 	}
 
 	/* Allocate INTR IN buffer */
-	ep_intr_in->addr = USBD_CDC_ECM_INTR_IN_EP;
-	ep_intr_in->type = USB_CH_EP_TYPE_INTR;
+	info = &ep_intr_in->info;
+	info->addr = USBD_CDC_ECM_INTR_IN_EP;
+	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_in->xfer_buf_len = USB_CDC_ECM_INTR_IN_PACKET_SIZE;
 	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(ep_intr_in->xfer_buf_len);
 	if (ep_intr_in->xfer_buf == NULL) {

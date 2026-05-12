@@ -168,13 +168,23 @@
 #define USBD_UVC_CONTROL_CAP_AUTOUPDATE			(1 << 3)
 #define USBD_UVC_CONTROL_CAP_ASYNCHRONOUS		(1 << 4)
 
-/* Video Resolution */
-#define USBD_UVC_160p          40960
-#define USBD_UVC_360p          460800
-#define USBD_UVC_720p          1843200
-#define USBD_UVC_1080p         3110400
-#define USBD_UVC_1080p_422v    4147200
+#define USBD_UVC_FPS(fps) (10000000/fps)
 
+#define USBD_UVC_FORMAT_TYPE_YUY2        0
+#define USBD_UVC_FORMAT_TYPE_NV12        1
+#define USBD_UVC_FORMAT_TYPE_MJPEG       2
+#define USBD_UVC_FORMAT_TYPE_H264        3
+#define USBD_UVC_FORMAT_TYPE_H265        4
+
+//#define UVC_SINGLE_STREAM //Mark the marco for tuning tool
+
+#define USBD_UVC_FRAME_WIDTH  2688
+#define USBD_UVC_FRAME_HEIGHT 1520
+
+#define USBD_UVC_JPEG_FRAME_WIDTH  1920
+#define USBD_UVC_JPEG_FRAME_HEIGHT 1080
+
+#define USBD_UVC_WBVAL(x)   ((x) & 0xFF), (((x) >> 8) & 0xFF)
 /**
  * @brief UVC Streaming Control structure.
  * @details
@@ -200,6 +210,30 @@ typedef struct {
 	uint8_t  bMinVersion;
 	uint8_t  bMaxVersion;
 } __PACKED usbd_uvc_streaming_control_t;
+
+/**
+ * @brief UVC Video Format Configuration structure.
+ * @details
+ * This structure defines the current video format and ISP-related settings
+ * used by the USB Video Class (UVC) device. It includes resolution, frame rate,
+ * pixel format, and image processing options, as well as synchronization and
+ * initialization state control.
+ *
+ * The structure is typically updated during UVC negotiation or runtime
+ * reconfiguration, and is accessed by both control and streaming paths.
+ */
+typedef  struct {
+	int width;
+	int height;
+	int format;
+	int fps;
+	int state;
+	int isp_format;//1:YUV420 2:YUV422 3:Bayer
+	int ldc;//0:Disable 1:Enable
+	int bayer_type;
+	usb_os_sema_t uvcd_change_sema;
+	int init;//It only support whether the uvc is first init 0:Not initialized 1: Initialized
+} usbd_uvc_format_t;
 
 /* Exported variables --------------------------------------------------------*/
 

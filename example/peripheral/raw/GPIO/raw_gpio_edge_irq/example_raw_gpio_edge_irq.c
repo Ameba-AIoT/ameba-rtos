@@ -12,8 +12,13 @@
 #include "os_wrapper.h"
 #include <stdio.h>
 
+#ifdef CONFIG_RTL8720F
+IRQn_Type GPIO_IrqNum[1] = {GPIOA_IRQ};
+u32 GPIO_RegBase[1] = {(u32)GPIOA_BASE};
+#else
 IRQn_Type GPIO_IrqNum[2] = {GPIOA_IRQ, GPIOB_IRQ};
 u32 GPIO_RegBase[2] = {(u32)GPIOA_BASE, (u32)GPIOB_BASE};
+#endif
 
 void gpio_demo_irq_handler(uint32_t id, u32 event)
 {

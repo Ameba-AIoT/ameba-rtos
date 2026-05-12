@@ -147,8 +147,8 @@ typedef struct {
 	int vfs_type;
 } vfs_opt;
 
-typedef int (*vfs_enc_callback_t)(unsigned char *input, unsigned char *output, unsigned int len);
-typedef int (*vfs_dec_callback_t)(unsigned char *input, unsigned char *output, unsigned int len);
+typedef int (*vfs_enc_callback_t)(unsigned char *input, unsigned char *output, unsigned int len, unsigned long offset);
+typedef int (*vfs_dec_callback_t)(unsigned char *input, unsigned char *output, unsigned int len, unsigned long offset);
 
 typedef struct {
 	int vfs_type;

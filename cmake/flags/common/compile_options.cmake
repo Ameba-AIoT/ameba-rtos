@@ -37,7 +37,7 @@ ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS
     -Wno-maybe-uninitialized
     -Wall
     -Wextra
-    #-Werror
+    -Werror
 
     # When the memory length is 4 bytes, memset/memcpy will be optimized for direct 32-bit reading and writing.
     # If the source address is not aligned, an error will result because the hardware does not support unaligned accesses.

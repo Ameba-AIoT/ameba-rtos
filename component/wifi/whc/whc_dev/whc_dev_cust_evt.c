@@ -43,7 +43,6 @@ void whc_dev_send_cust_evt(u8 *buf_in, u32 len)
 {
 	u8 *buf = NULL;
 	struct whc_cust_hdr *head = NULL;
-	struct whc_txbuf_info_t *inic_tx = NULL;
 
 	buf = rtos_mem_zmalloc(sizeof(struct whc_cust_hdr) + len + DEV_DMA_ALIGN);
 	if (!buf) {
@@ -54,20 +53,9 @@ void whc_dev_send_cust_evt(u8 *buf_in, u32 len)
 	/* notify NP that event is finished */
 	head->event = WHC_CUST_EVT;
 	head->len = len;
-	/* construct struct whc_buf_info & whc_buf_info_t */
-	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
-	if (!inic_tx) {
-		rtos_mem_free(buf);
-		return;
-	}
+
 	memcpy((void *)(head + 1), buf_in, len);
 
-	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)head;
-	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = sizeof(struct whc_cust_hdr) + len;
-
-	inic_tx->ptr = buf;
-	inic_tx->is_skb = 0;
-
 	/* send ret_msg + ret_val(buf, len) */
-	whc_dev_send(&inic_tx->txbuf_info);
+	whc_dev_send((u8 *)head, sizeof(struct whc_cust_hdr) + len, buf, 0);
 }

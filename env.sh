@@ -35,7 +35,7 @@ Linux)
             RTK_TOOLCHAIN_DIR="$HOME${RTK_TOOLCHAIN_DIR:1}"
         fi
     else
-        RTK_TOOLCHAIN_DIR=/opt/rtk-toolchain
+        RTK_TOOLCHAIN_DIR="$HOME/rtk-toolchain"
     fi
 
     export AMEBA_SDK="$BASE_DIR"

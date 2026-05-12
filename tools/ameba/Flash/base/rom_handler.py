@@ -303,7 +303,7 @@ class RomHandler(object):
             if all_data:
                 # 将错误日志中的十六进制数据改为打印可读的ASCII码
                 readable = self.normalize_log_bytes(bytes(all_data))
-                self.logger.error(f"Check alive error, expect NAK, get:\n{readable}")
+                self.logger.debug(f"Check alive error, expect NAK, get:\n{readable}")
                 ret = ErrType.SYS_PROTO
             else:
                 self.logger.debug("Check alive error, no data received")

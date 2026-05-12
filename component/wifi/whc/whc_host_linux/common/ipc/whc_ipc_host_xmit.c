@@ -123,7 +123,7 @@ int whc_host_xmit_init(void)
 	struct device *pdev = global_idev.ipc_dev;
 	struct xmit_priv_t *xmit_priv = &global_idev.xmit_priv;
 	int skb_num_ap = global_idev.wifi_user_config.skb_num_ap;
-	int skb_buf_size = global_idev.wifi_user_config.skb_buf_size ? global_idev.wifi_user_config.skb_buf_size : MAX_SKB_BUF_SIZE;
+	int skb_buf_size = global_idev.wifi_user_config.skb_buf_size;
 	unsigned char *skb_data_buf = NULL;
 	int i;
 

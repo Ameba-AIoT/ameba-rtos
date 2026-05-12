@@ -41,16 +41,15 @@ SECTIONS
 		__ram_image3_text_start__ = .;
 		*(.text*)
 		*(.rodata*)
-		. = ALIGN(32);
 	} > LMA_TZ_S_TEXT_RO
 
 	.ram_image3.data :
 	{
+		. = ALIGN(32);
 		__ram_image3_data_start__ = .;
 		*(.data*)
 		__ram_image3_data_end__ = .;
 
-		. = ALIGN(32);
 		__ram_image3_text_end__ = .;
 	} > LMA_TZ_S_TEXT_RO
 
@@ -61,7 +60,6 @@ SECTIONS
 		*(COMMON)
 		__image3_bss_end__ = .;
 		end = .;
-		. = ALIGN(32);
 		__image3_heap_start__ = .;
 	} > LMA_TZ_S_BSS
 

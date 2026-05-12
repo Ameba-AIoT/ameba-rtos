@@ -12,12 +12,6 @@
 #include "os_wrapper.h"
 #include <stdio.h>
 
-#if defined (CONFIG_AMEBAGREEN2)
-extern GPIO_TypeDef *GPIO_PORTx[3];
-#else
-extern GPIO_TypeDef *GPIO_PORTx[2];
-#endif
-
 void raw_gpio_demo(void)
 {
 	/* Enable GPIO function and clock */

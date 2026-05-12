@@ -30,6 +30,10 @@
 #elif defined (CONFIG_AMEBAGREEN2)
 #define GPIO_LED_PIN		_PA_25
 #define GPIO_PUSHBT_PIN		_PA_26
+
+#elif defined (CONFIG_RTL8720F)
+#define GPIO_LED_PIN		_PA_23
+#define GPIO_PUSHBT_PIN		_PA_24
 #endif
 
 extern int example_mbed_gpio_light_weight(void);

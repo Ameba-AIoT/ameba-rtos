@@ -7,6 +7,10 @@ menu "CONFIG LWIP"
         bool "Enable NAT REPEATER"
         select IP_NAT if WHC_HOST || WHC_NONE
 
+    config RNAPT_MENU
+        bool "Enable R-NAPT"
+        select RNAPT if WHC_HOST || WHC_NONE
+
     config LWIP_IPV6_MENU
         bool "Enable LWIP IPV6"
         select LWIP_IPV6 if WHC_HOST || WHC_NONE
@@ -32,6 +36,8 @@ menu "CONFIG LWIP"
     config FAST_DHCP
         bool
     config IP_NAT
+        bool
+    config RNAPT
         bool
     config LWIP_IPV6
         bool

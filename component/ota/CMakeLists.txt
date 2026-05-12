@@ -53,7 +53,6 @@ if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INT
         transport/ota_http.c
         transport/ota_https.c
         transport/ota_vfs.c
-        transport/ota_whc.c
     )
 else()
     return()

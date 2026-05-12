@@ -61,3 +61,4 @@ This example will print out data received.
 RTL8730E
 RTL8721Dx
 RTL8721F
+RTL8720F
