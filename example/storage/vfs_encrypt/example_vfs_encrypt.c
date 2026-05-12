@@ -1,6 +1,7 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 #include "mbedtls/aes.h"
+#include "ctr.h"
 #include "vfs.h"
 #include "example_vfs_encrypt.h"
 
@@ -15,6 +16,9 @@ static const unsigned char aeskey[32] = {
 	0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a
 } ;
 
+static unsigned char iv[16] ALIGNMTO(CACHE_LINE_SIZE);
+static unsigned char stream_block[16] ALIGNMTO(CACHE_LINE_SIZE);
+
 #if DUMP_BUFFER
 static void dump_buf(char *info, uint8_t *buf, uint32_t len)
 {
@@ -27,62 +31,116 @@ static void dump_buf(char *info, uint8_t *buf, uint32_t len)
 #endif
 
 
-//output buffer should be 16 bytes aligned for aes cbc demand
-int vfs_mbedtls_aes_cbc_encrypt(unsigned char *input, unsigned char *output, unsigned int len)
+// AES-CTR encryption - supports arbitrary length and random access
+// Uses file offset to calculate correct counter for random access support
+int vfs_mbedtls_aes_ctr_encrypt(unsigned char *input, unsigned char *output, unsigned int len, unsigned long offset)
 {
-	unsigned char Iv[16] = {0};
 	mbedtls_aes_context ctx;
-	unsigned char *message;
-	unsigned short msglen = (len / 16 + 1) * 16;
+	unsigned char *input_align;
+	unsigned char *output_align;
+	int msg_len = len < CACHE_LINE_SIZE ? CACHE_LINE_SIZE : (len / CACHE_LINE_SIZE + 1) * CACHE_LINE_SIZE;
+	unsigned long block_index;
+	size_t nc_off;
+	int ret;
 
-	message = rtos_mem_calloc(msglen, sizeof(unsigned char));
-	memcpy(message, input, len);
+	input_align = rtos_mem_calloc(msg_len, sizeof(unsigned char));
+	output_align = rtos_mem_calloc(msg_len, sizeof(unsigned char));
+	memcpy(input_align, input, len);
 
 #if DUMP_BUFFER
-	dump_buf("write encrypt before", message, len);
+	dump_buf("write encrypt before", input, len);
 #endif
+
+	// Calculate block index and offset within block
+	block_index = offset / 16;
+	nc_off = offset % 16;
+
+	// Set nonce_counter: high 12 bytes are nonce (0), low 4 bytes are counter
+	// Counter is stored in big-endian: lowest byte at iv[15], highest at iv[12]
+	iv[15] = (block_index >> 0) & 0xFF;
+	iv[14] = (block_index >> 8) & 0xFF;
+	iv[13] = (block_index >> 16) & 0xFF;
+	iv[12] = (block_index >> 24) & 0xFF;
 
 	mbedtls_aes_init(&ctx);
 	mbedtls_aes_setkey_enc(&ctx, aeskey, AES_KEY_LEN * 8);
-	mbedtls_aes_crypt_cbc(&ctx, 1, msglen, Iv, message, output);
-	mbedtls_aes_free(&ctx);
+
+	// If nc_off > 0, pre-generate stream_block using current iv's counter
+	// because mbedtls_aes_crypt_ctr uses stream_block[offset:] directly when offset > 0
+	if (nc_off > 0) {
+		mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT, iv, stream_block);
+		mbedtls_ctr_increment_counter(iv);
+	}
+
+	ret = mbedtls_aes_crypt_ctr(&ctx, msg_len, &nc_off, iv, stream_block, input_align, output_align);
+
+	memcpy(output, output_align, len);
 
 #if DUMP_BUFFER
-	dump_buf("write encrypt after", output, msglen);
+	dump_buf("write encrypt after", output, len);
 #endif
 
-	rtos_mem_free(message);
-
-	return 0;
+	mbedtls_aes_free(&ctx);
+	memset(iv, 0, 16);
+	memset(stream_block, 0, 16);
+	rtos_mem_free(input_align);
+	rtos_mem_free(output_align);
+	return ret;
 }
 
-//input buffer should be 16 bytes aligned for aes cbc demand
-int vfs_mbedtls_aes_cbc_decrypt(unsigned char *input, unsigned char *output, unsigned int len)
+// AES-CTR decryption - supports arbitrary length and random access
+int vfs_mbedtls_aes_ctr_decrypt(unsigned char *input, unsigned char *output, unsigned int len, unsigned long offset)
 {
-	unsigned char Iv[16] = {0};
 	mbedtls_aes_context ctx;
-	unsigned char *aesdecsw;
-	unsigned short msglen = (len / 16 + 1) * 16;
+	unsigned char *input_align;
+	unsigned char *output_align;
+	int msg_len = len < CACHE_LINE_SIZE ? CACHE_LINE_SIZE : (len / CACHE_LINE_SIZE + 1) * CACHE_LINE_SIZE;
+	unsigned long block_index;
+	size_t nc_off;
+	int ret;
 
-	aesdecsw = rtos_mem_calloc(msglen, sizeof(unsigned char));
+	input_align = rtos_mem_calloc(msg_len, sizeof(unsigned char));
+	output_align = rtos_mem_calloc(msg_len, sizeof(unsigned char));
+	memcpy(input_align, input, len);
 
 #if DUMP_BUFFER
-	dump_buf("read decrypt before", input, msglen);
+	dump_buf("read decrypt before", input, len);
 #endif
+
+	// Calculate block index and offset within block
+	block_index = offset / 16;
+	nc_off = offset % 16;
+
+	// Set nonce_counter: high 12 bytes are nonce (0), low 4 bytes are counter
+	// Counter is stored in big-endian: lowest byte at iv[15], highest at iv[12]
+	iv[15] = (block_index >> 0) & 0xFF;
+	iv[14] = (block_index >> 8) & 0xFF;
+	iv[13] = (block_index >> 16) & 0xFF;
+	iv[12] = (block_index >> 24) & 0xFF;
 
 	mbedtls_aes_init(&ctx);
-	mbedtls_aes_setkey_dec(&ctx, aeskey, AES_KEY_LEN * 8);
-	mbedtls_aes_crypt_cbc(&ctx, 0, msglen, Iv, input, aesdecsw);
-	mbedtls_aes_free(&ctx);
+	mbedtls_aes_setkey_enc(&ctx, aeskey, AES_KEY_LEN * 8);
+
+	// If nc_off > 0, pre-generate stream_block using current iv's counter
+	if (nc_off > 0) {
+		mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT, iv, stream_block);
+		mbedtls_ctr_increment_counter(iv);
+	}
+
+	ret = mbedtls_aes_crypt_ctr(&ctx, msg_len, &nc_off, iv, stream_block, input_align, output_align);
+
+	memcpy(output, output_align, len);
 
 #if DUMP_BUFFER
-	dump_buf("read decrypt after", aesdecsw, len);
+	dump_buf("read decrypt after", output, len);
 #endif
 
-	memcpy(output, aesdecsw, len);
-	rtos_mem_free(aesdecsw);
-
-	return 0;
+	mbedtls_aes_free(&ctx);
+	memset(iv, 0, 16);
+	memset(stream_block, 0, 16);
+	rtos_mem_free(input_align);
+	rtos_mem_free(output_align);
+	return ret;
 }
 
 void example_vfs_encrypt_thread(void *param)
@@ -101,7 +159,7 @@ void example_vfs_encrypt_thread(void *param)
 
 	prefix = find_vfs_tag(VFS_REGION_1);
 
-	vfs_set_user_encrypt_callback(prefix, vfs_mbedtls_aes_cbc_encrypt, vfs_mbedtls_aes_cbc_decrypt, 16);
+	vfs_set_user_encrypt_callback(prefix, vfs_mbedtls_aes_ctr_encrypt, vfs_mbedtls_aes_ctr_decrypt, 16);
 
 	DiagSnPrintf(path, sizeof(path), "%s:%s", prefix, filename);
 
@@ -112,7 +170,7 @@ void example_vfs_encrypt_thread(void *param)
 	}
 
 	res = fwrite(content, strlen(content), 1, finfo);
-	if (res != (int)(strlen(content) / 16 + 1) * 16) {
+	if (res != (int)strlen(content)) {
 		printf("[%s] fwrite() failed, err is %d\r\n", __FUNCTION__, res);
 	} else {
 		printf("[%s] fwrite() succeeded, write %d characters:%s\r\n", __FUNCTION__, res, content);

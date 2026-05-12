@@ -4,28 +4,22 @@
  *
  ******************************************************************************/
 #include "whc_dev.h"
-#include "whc_dev_tcpip.h"
-#include "whc_dev_api.h"
-
-#include "lwip/sys.h"
-#include "lwip/etharp.h"
 #include "lwip/prot/tcp.h"
 #include "lwip/prot/dns.h"
-#include "lwip/udp.h"
 #include "lwip_netconf.h"
 
 struct sk_buff *skb_transit = NULL;
 
 extern struct list_head whc_filter_head;
 
-u8(*whc_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct whc_pkt_attrib *pattrib);
+u8(*whc_dev_pkt_redir_cusptr)(struct sk_buff *skb, struct whc_pkt_attrib *pattrib) = NULL;
 
 void whc_dev_pktfilter_init(void)
 {
 	rtw_init_listhead(&whc_filter_head);
 }
 
-void whc_dev_packet_attrib_parse(struct sk_buff *skb, struct whc_pkt_attrib *pattrib)
+static void whc_dev_packet_attrib_parse(struct sk_buff *skb, struct whc_pkt_attrib *pattrib)
 {
 	u16_t protocol, src_port = 0, dst_port = 0;
 	u8_t type = 0;
@@ -93,7 +87,7 @@ void whc_dev_packet_attrib_parse(struct sk_buff *skb, struct whc_pkt_attrib *pat
 static bool whc_dev_match_filter(struct whc_pkt_attrib *pattrib, struct whc_dev_pkt_filter *filter)
 {
 	/* consider concurrent mode */
-	if ((filter->mask & MASK_IDX) && pattrib->port_idx != filter->index) {
+	if ((filter->mask & MASK_PORT_IDX) && pattrib->port_idx != filter->index) {
 		return false;
 	}
 
@@ -115,17 +109,17 @@ static bool whc_dev_match_filter(struct whc_pkt_attrib *pattrib, struct whc_dev_
 		return false;
 	}
 
-	if ((filter->mask & MASK_TYPE) && pattrib->type != filter->type) {
+	if ((filter->mask & MASK_PROTO_TYPE) && pattrib->type != filter->type) {
 		return false;
 	}
 
 	return true;
 }
 
-u8_t whc_dev_rcvpkt_filter(struct whc_pkt_attrib *pattrib)
+static u8 whc_dev_rcvpkt_filter(struct whc_pkt_attrib *pattrib)
 {
 	struct list_head *plist, *phead;
-	struct PktFilterNode *target;
+	struct whc_dev_pktfilter_node *target;
 
 	phead = &whc_filter_head;
 	if (list_empty(phead)) {
@@ -135,7 +129,7 @@ u8_t whc_dev_rcvpkt_filter(struct whc_pkt_attrib *pattrib)
 	plist = get_next(phead);
 
 	while ((rtw_end_of_queue_search(phead, plist)) == FALSE) {
-		target = LIST_CONTAINOR(plist, struct PktFilterNode, list);
+		target = LIST_CONTAINOR(plist, struct whc_dev_pktfilter_node, list);
 
 		if (target && whc_dev_match_filter(pattrib, &target->filter)) {
 			return target->filter.direction;
@@ -146,46 +140,46 @@ u8_t whc_dev_rcvpkt_filter(struct whc_pkt_attrib *pattrib)
 	return whc_dev_api_get_default_direction();
 }
 
-u8 whc_dev_rcvpkt_redirect(struct sk_buff *skb, struct whc_pkt_attrib *pattrib)
+static u8 whc_dev_rcvpkt_redirect(struct sk_buff *skb, struct whc_pkt_attrib *pattrib)
 {
 	u8 icmp_type = 0;
-	u8 type = PORT_TO_UNKNOWN;
+	u8 type = INDICATE_UNKNOWN;
 
 	if (whc_dev_pkt_redir_cusptr) {
 		type = whc_dev_pkt_redir_cusptr(skb, pattrib);
-		if (type != PORT_TO_UNKNOWN) {
+		if (type != INDICATE_UNKNOWN) {
 			return type;
 		}
 	}
 
 	if (!(whc_dev_api_get_host_rdy())) {
-		return PORT_TO_UP;
+		return INDICATE_TO_DEV_LWIP;
 	}
 
 	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
-		return PORT_TO_BOTH;
+		return INDICATE_TO_BOTH;
 	}
 
 	if (pattrib->type == IP_PROTO_ICMP) {
 		icmp_type = *(u8 *)(skb->data + ETH_HLEN + sizeof(struct ip_hdr));
 		if (icmp_type == IP_ICMP_REQUEST) {
-			return PORT_TO_UP;
+			return INDICATE_TO_DEV_LWIP;
 		} else {
-			return PORT_TO_BOTH;
+			return INDICATE_TO_BOTH;
 		}
 	}
 
 	if (pattrib->src_port == 0 || pattrib->dst_port == 0) {
-		return PORT_TO_BOTH;
+		return INDICATE_TO_BOTH;
 	}
 
 	if (pattrib->type == IP_PROTO_UDP) {
 		if (pattrib->src_port == DNS_SERVER_PORT) {
-			return PORT_TO_BOTH;
+			return INDICATE_TO_BOTH;
 		} else if ((pattrib->src_port == DHCP_SERVER_PORT) && (pattrib->port_idx == STA_WLAN_INDEX)) {
-			return PORT_TO_UP;
+			return INDICATE_TO_DEV_LWIP;
 		} else if ((pattrib->src_port == DHCP_CLIENT_PORT) && (pattrib->port_idx == SOFTAP_WLAN_INDEX)) {
-			return PORT_TO_UP;
+			return INDICATE_TO_DEV_LWIP;
 		}
 	}
 
@@ -213,7 +207,6 @@ u8 whc_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 	pattrib = (struct whc_pkt_attrib *)rtos_mem_zmalloc(sizeof(struct whc_pkt_attrib));
 	whc_dev_packet_attrib_parse(skb, pattrib);
 
-
 	if (pattrib->protocol == lwip_htons(ETHTYPE_IPV6)) {
 		dev_kfree_skb_any(skb);
 		rtos_mem_free(pattrib);
@@ -225,8 +218,9 @@ u8 whc_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 	direction = whc_dev_rcvpkt_redirect(skb, pattrib);
 
 	switch (direction) {
-	case PORT_TO_BOTH:
-		skb_backup = skb_copy(skb, GFP_ATOMIC, SKB_WLAN_TX_EXTRA_LEN); 	//skb will be corrupt when copy to pbuf, thus use a new skb
+	case INDICATE_TO_BOTH:
+		/* skb will be corrupt when copy to pbuf(refer to rltk_wlan_recv), thus use a new skb */
+		skb_backup = skb_copy(skb, GFP_ATOMIC, SKB_WLAN_TX_EXTRA_LEN);
 		if (skb_backup) {
 			rltk_wlan_info[*idx].skb = (void *)skb_backup;
 			LwIP_ethernetif_recv(*idx, skb_backup->len); //BRIDGE_TODO: indicate to host will happen after lwip processed, do we need accelerate
@@ -235,18 +229,18 @@ u8 whc_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 			RTK_LOGD(TAG_WLAN_DRV, "both, alloc skb for lwip failed\n");
 		}
 		break;
-	case PORT_TO_UP:
+	case INDICATE_TO_DEV_LWIP:
 		LwIP_ethernetif_recv(*idx, skb->len);
 		dev_kfree_skb_any(skb);
 		break;
-	case PORT_TO_HOST:
+	case INDICATE_TO_HOST:
 		break;
 	default:
 		break;
 	}
 
 	rtos_mem_free(pattrib);
-	if (direction == PORT_TO_HOST || direction == PORT_TO_BOTH) {
+	if (direction == INDICATE_TO_HOST || direction == INDICATE_TO_BOTH) {
 		*skb_send = skb;
 		return 1;
 	} else {

@@ -44,6 +44,9 @@ static int security = -1;
 #if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
 extern void ipnat_dump(void);
 #endif
+#if defined(CONFIG_RNAPT)
+extern void rnapt_print_status(void);
+#endif
 
 extern int wifi_set_ips_internal(u8 enable);
 #if defined(CONFIG_IEEE80211R) && (WIFI_LOGO_CERTIFICATION == 1)
@@ -716,7 +719,6 @@ void at_wlstartap(u16 argc, char **argv)
 	int ret = 0, i = 0, j = 0;
 	int error_no = RTW_AT_OK;
 #ifdef CONFIG_LWIP_LAYER
-	u32 ip_addr, netmask, gw;
 	struct ip_addr start_ip, end_ip;
 	int pool_specified = 0;
 #endif
@@ -912,10 +914,7 @@ void at_wlstartap(u16 argc, char **argv)
 
 #ifdef CONFIG_LWIP_LAYER
 	dhcps_deinit(pnetif_ap);
-	ip_addr = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	netmask = CONCAT_TO_UINT32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-	gw = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
+	LwIP_ReleaseIP(SOFTAP_WLAN_INDEX);
 #endif
 
 	if (ap.channel == 0) {
@@ -962,10 +961,7 @@ void at_wlstartap(u16 argc, char **argv)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
-	netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
-	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
+	LwIP_alloc_ip(NETIF_WLAN_AP_INDEX);
 	dhcps_init(pnetif_ap);
 	if (pool_specified) {
 		dhcps_set_addr_pool(pnetif_ap, 1, &start_ip, &end_ip);
@@ -1128,6 +1124,9 @@ void at_wlstate(u16 argc, char **argv)
 	print_rlocal_nhb();
 #endif
 	ipnat_dump();
+#endif
+#if defined(CONFIG_RNAPT)
+	rnapt_print_status();
 #endif
 
 	at_printf(ATCMD_OK_END_STR);

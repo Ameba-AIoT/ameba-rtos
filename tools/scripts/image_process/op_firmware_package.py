@@ -208,9 +208,9 @@ class FirmwarePackage(OperationBase):
     def process_fullmac_image(self) -> Error:
         #Final output file's structure
         # ┌───────────────────────────┐
-        # │       manifest.bin        │
-        # ├───────────────────────────┤
         # │ fullmac_ram_1_prepend.bin │
+        # ├───────────────────────────┤
+        # │       manifest.bin        │
         # └───────────────────────────┘
 
         manifest_file_name = os.path.join(self.output_image_dir, 'manifest_fullmac_image.bin') #output manifest file
@@ -219,7 +219,7 @@ class FirmwarePackage(OperationBase):
             self.logger.fatal("Failed generating manifest file")
             return res
         #NOTE: manifest file is behind input file
-        merge_files(self.output_file, manifest_file_name, self.context.args.fullmac_image)  # merge_files api will overwrite output_file file
+        merge_files(self.output_file, self.context.args.fullmac_image, manifest_file_name)  # merge_files api will overwrite output_file file
         return Error.success()
 
     def process_imgtool_floader(self) -> Error:

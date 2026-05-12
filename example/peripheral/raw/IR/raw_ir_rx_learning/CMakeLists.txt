@@ -34,7 +34,7 @@ set(private_compile_options)         #private compile_options
 
 #------------------------------#
 # Component private part, user config begin
-if(CONFIG_AMEBADPLUS OR CONFIG_AMEBASMART OR CONFIG_AMEBAGREEN2 OR AMEBAD)
+if(CONFIG_AMEBADPLUS OR CONFIG_AMEBASMART OR CONFIG_AMEBAGREEN2 OR AMEBAD OR CONFIG_RTL8720F)
 ameba_list_append(private_sources
     example_raw_ir_rx_learning.c
     app_example.c
@@ -48,7 +48,7 @@ endif()
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-if(CONFIG_AMEBADPLUS OR CONFIG_AMEBASMART OR CONFIG_AMEBAGREEN2 OR AMEBAD)
+if(CONFIG_AMEBADPLUS OR CONFIG_AMEBASMART OR CONFIG_AMEBAGREEN2 OR AMEBAD OR CONFIG_RTL8720F)
 ameba_add_internal_library(example_raw_ir_rx_learning
     p_SOURCES
         ${private_sources}

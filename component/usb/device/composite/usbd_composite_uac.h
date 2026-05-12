@@ -275,13 +275,13 @@ u32 usbd_composite_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt
  * @brief Gets the number of available audio frames count ready for reading.
  * @return The number of queued audio frames.
  */
-u32  usbd_composite_uac_get_read_frame_cnt(void);
+u8  usbd_composite_uac_get_read_frame_cnt(void);
 
 /**
  * @brief Gets the time duration of available audio frames.
  * @return return the time duration for the queued audio frames duration in us
  */
-u32  usbd_composite_uac_get_read_frame_time_in_us(void);
+u8  usbd_composite_uac_get_read_frame_time_in_us(void);
 
 /**
  * @brief Starts the audio record, get audio data from ring buffer, and will send to USB bus.

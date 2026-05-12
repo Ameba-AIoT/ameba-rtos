@@ -129,7 +129,7 @@ s32 whc_dev_scan_callback(u32 scanned_AP_num, void *data)
 			rtw_scan_result_for_fullhan(scanned_AP_list_index, ptr, buf_size - 8);
 			scanned_AP_list_index += 1;
 
-			whc_dev_api_send_to_host(result_buf, buf_size);
+			whc_dev_api_send_to_host(result_buf, buf_size, NULL, 0);
 			ap_num -= 1;
 		}
 
@@ -142,7 +142,7 @@ s32 whc_dev_scan_callback(u32 scanned_AP_num, void *data)
 		/* 0 means end */
 		*ptr = 0;
 		ptr += 1;
-		whc_dev_api_send_to_host(result_buf, buf_size);
+		whc_dev_api_send_to_host(result_buf, buf_size, NULL, 0);
 
 		rtos_mem_free(result_buf);
 		rtos_mem_free(scanned_AP_list);
@@ -263,7 +263,7 @@ void whc_dev_cmd_connect_status(void)
 	ptr += 1;
 	buf_len += 1;
 
-	whc_dev_api_send_to_host(buf, buf_len);
+	whc_dev_api_send_to_host(buf, buf_len, NULL, 0);
 }
 
 void whc_dev_cmd_get_macaddr(u8 idx)
@@ -282,7 +282,7 @@ void whc_dev_cmd_get_macaddr(u8 idx)
 	ptr += 1;
 	memcpy(ptr, dev_mac.octet, 6);
 	//6+4+1=11
-	whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
+	whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 	rtos_mem_free(buf);
 }
 
@@ -300,7 +300,7 @@ void whc_dev_cmd_get_stanum(u8 num)
 	ptr += 1;
 	*ptr = num;
 	//4+3=7
-	whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
+	whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 	rtos_mem_free(buf);
 }
 
@@ -438,7 +438,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 						ip = LwIP_GetGW(idx);
 						memcpy(ptr, ip, 4);
 						ptr += 4;
-						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
+						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 						whc_dev_api_set_host_state(WHC_HOST_READY);
 					}
 #endif

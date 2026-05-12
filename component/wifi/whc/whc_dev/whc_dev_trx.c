@@ -8,23 +8,6 @@
 struct xmit_priv_t dev_xmit_priv;
 
 /**
- * @brief  to handle the inic message from the host. They incude tx data and
- *	command.
- * @param  pxmitbuf[inout]: the xmit buffer from xmit queue.
- * @return none.
- */
-static void whc_dev_xmit_tasklet_handler(void *msg)
-{
-	struct sk_buff *skb = (struct sk_buff *) msg;
-
-	dev_xmit_priv.tx_bytes += skb->len;
-	dev_xmit_priv.tx_pkts++;
-	wifi_if_send_skb((int)skb->dev, skb);
-
-	return;
-}
-
-/**
  * @brief  rx task to handle the rx data, get the data from the rx queue and
  * 	send to upper layer.
  * @param  none.
@@ -35,6 +18,7 @@ void whc_dev_xmit_tasklet(void)
 	struct whc_msg_node *p_node = NULL;
 	struct __queue *p_xmit_queue = NULL;
 	u8  continus_handle;
+	struct sk_buff *skb;
 
 	p_xmit_queue = &dev_xmit_priv.xmit_queue;
 	continus_handle = 0;
@@ -42,7 +26,8 @@ void whc_dev_xmit_tasklet(void)
 	/* get the data from tx queue. */
 	p_node = whc_msg_dequeue(p_xmit_queue);
 	while (p_node) {
-		whc_dev_xmit_tasklet_handler(p_node->msg);
+		skb = (struct sk_buff *) p_node->msg;
+		wifi_if_send_skb((int)skb->dev, skb);
 
 		/* release node */
 		rtos_mem_free((u8 *)p_node);
@@ -63,13 +48,10 @@ void whc_dev_xmit_tasklet(void)
  * @param  none.
  * @return none.
  */
-void whc_dev_init_priv(void)
+void whc_dev_xmit_init(void)
 {
 	/* initialize queue. */
 	rtw_init_queue(&(dev_xmit_priv.xmit_queue));
-
-	dev_xmit_priv.tx_bytes = 0;
-	dev_xmit_priv.tx_pkts = 0;
 }
 
 /**
@@ -77,13 +59,12 @@ void whc_dev_init_priv(void)
  * @param  idx_wlan[in]: which port of wifi to set.
  * @return none.
  */
-void whc_dev_recv(int idx)
+void whc_dev_netif_rx(int idx)
 {
 	struct sk_buff *skb = NULL;
 	u8 *ptr;
 	u8 pad_len, tmp = 0;
 	struct whc_msg_info *msg_info = NULL;
-	struct whc_txbuf_info_t *inic_tx;
 
 #if defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
 	if (whc_dev_recv_pkt_process((u8 *)&idx, &skb) == 0) {
@@ -147,27 +128,13 @@ void whc_dev_recv(int idx)
 	whc_dev_flowctrl(&tmp, 0);
 	msg_info->flow_ctrl_en = tmp;
 
-	/* construct struct whc_buf_info & whc_buf_info_t */
-	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
-	if (!inic_tx) {
-		RTK_LOGE(TAG_WLAN_INIC, "fail to alloc struct whc_txbuf_info_t!\n");
-		return;
-	}
-
-	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)msg_info;
-	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = sizeof(struct whc_msg_info) + pad_len + skb->len;
-
-	inic_tx->ptr = skb;
-	inic_tx->is_skb = 1;
-
 	/* send msg_info + pad + rx_pkt_data(skb->data, skb->len) */
-	whc_dev_send(&inic_tx->txbuf_info);
+	whc_dev_send((u8 *)msg_info, sizeof(struct whc_msg_info) + pad_len + skb->len, skb, 1);
 }
 
 void whc_dev_send_flowctrl_cmd(u8 fc_state)
 {
 	struct whc_msg_info *msg_info = NULL;
-	struct whc_txbuf_info_t *inic_tx;
 
 	msg_info = rtos_mem_zmalloc(sizeof(struct whc_msg_info));
 	if ((u32)msg_info % DEV_DMA_ALIGN) {
@@ -181,21 +148,8 @@ void whc_dev_send_flowctrl_cmd(u8 fc_state)
 	msg_info->pad_len = 0;
 	msg_info->flow_ctrl_en = fc_state;
 
-	/* construct struct whc_buf_info & whc_buf_info_t */
-	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
-	if (!inic_tx) {
-		RTK_LOGE(TAG_WLAN_INIC, "fail to alloc struct whc_txbuf_info_t!\n");
-		return;
-	}
-
-	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)msg_info;
-	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = sizeof(struct whc_msg_info);
-
-	inic_tx->ptr = msg_info;
-	inic_tx->is_skb = 0;
-
 	/* send msg_info + pad + rx_pkt_data(skb->data, skb->len) */
-	whc_dev_send(&inic_tx->txbuf_info);
+	whc_dev_send((u8 *)msg_info, sizeof(struct whc_msg_info), msg_info, 0);
 }
 
 void whc_dev_tx_done(int idx)
@@ -206,4 +160,23 @@ void whc_dev_tx_done(int idx)
 void whc_dev_trigger_rx(void)
 {
 	whc_dev_trigger_rx_handle();
+}
+
+struct whc_txbuf_info_t *whc_dev_alloc_buf_info(u8 *buf, u16 len, void *alloc_buf, u8 is_skb)
+{
+	struct whc_txbuf_info_t *buf_info = NULL;
+
+	/* construct struct whc_buf_info & whc_buf_info_t */
+	buf_info = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
+	if (!buf_info) {
+		return NULL;
+	}
+
+	buf_info->txbuf_info.buf_allocated = buf_info->txbuf_info.buf_addr = (u32)buf;
+	buf_info->txbuf_info.size_allocated = buf_info->txbuf_info.buf_size = len;
+
+	buf_info->ptr = alloc_buf;
+	buf_info->is_skb = is_skb;
+
+	return buf_info;
 }

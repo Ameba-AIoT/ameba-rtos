@@ -91,7 +91,7 @@ menu "CONFIG Link Option"
     endif
 
     config PSRAM_ALL_FOR_AP_HEAP
-        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM
+        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM && !MP_SHRINK
         bool "ALL PSRAM USED FOR APPLICATION HEAP"
         default y
 
@@ -105,9 +105,11 @@ menu "CONFIG Mass Production"
     if MP_INCLUDED
         choice
             prompt "MP Mode"
-            default MP_EXPAND
+            default MP_SHRINK
             config MP_EXPAND
                 bool "expand"
+            config MP_SHRINK
+                bool "shrink"
         endchoice
     endif
 endmenu

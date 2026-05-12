@@ -26,28 +26,6 @@ extern "C" {
   * @{
   */
 
-/** @addtogroup MBED_UART
- *  @brief      MBED_UART driver modules.
- *  @{
- */
-
-/** @addtogroup MBED_UART_Exported_Types MBED_UART Exported Types
-  * @{
-  */
-
-/** @addtogroup MBED_UART_Enumeration_Type Enumeration Type
-  * @{
-  */
-
-typedef enum {
-	UART_0 = 0,
-	UART_1,
-	UART_2,
-	UART_3,
-} UARTName;
-/** @}*/
-/** @}*/
-/** @}*/
 
 /** @addtogroup MBED_ADC
  *  @brief      MBED_ADC driver modules.
@@ -74,45 +52,8 @@ typedef enum {
 /** @}*/
 /** @}*/
 
-/** @addtogroup MBED_SPI
- *  @brief    MBED_SPI driver modules.
- *  @{
- */
-
-/** @addtogroup MBED_SPI_Exported_Types MBED_SPI Exported Types
-  * @{
-  */
-/** @addtogroup MBED_SPI_Enumeration_Type Enumeration Type
-  * @{
-  */
-typedef enum {
-	SPI_0 = 0,
-	SPI_1,
-} SPIName;
-/** @}*/
-/** @}*/
-/** @}*/
 
 
-/** @addtogroup MBED_I2C
- *  @brief    MBED_I2C driver modules.
- *  @{
- */
-
-/** @addtogroup MBED_I2C_Exported_Types MBED_I2C Exported Types
-  * @{
-  */
-
-/** @addtogroup MBED_I2C_Enumeration_Type Enumeration Type
-  * @{
-  */
-typedef enum {
-	I2C_0 = 0,
-	I2C_1,
-} I2CName;
-/** @}*/
-/** @}*/
-/** @}*/
 
 /** @addtogroup MBED_PWM
  *  @brief    MBED_PWM driver modules.

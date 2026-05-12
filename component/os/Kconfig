@@ -110,4 +110,5 @@ menu "CONFIG OS"
         default n
         help
             When enabled, AP core will only sleep xExpectedIdleTime after enter tickless.
+    rsource "../soc/common/libc_wrap/Kconfig"
 endmenu

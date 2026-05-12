@@ -28,7 +28,7 @@
 #include "whc_ipc.h"
 
 #define whc_dev_tx_done             whc_ipc_dev_tx_done
-#define whc_dev_recv                whc_ipc_dev_recv
+#define whc_dev_netif_rx            whc_ipc_dev_recv
 
 /* -------------------------------- Defines --------------------------------- */
 
@@ -39,7 +39,7 @@
 /* ---------------------------- Global Variables ---------------------------- */
 
 /* -------------------------- Function declaration -------------------------- */
-void whc_dev_recv(int idx);
+void whc_dev_netif_rx(int idx);
 void whc_ipc_dev_tx_done(int idx);
 void whc_ipc_dev_trx_event_hdl(u8 event_num, u32 msg_addr, u8 wlan_idx);
 #endif /* __INIC_IPC_DEV_TX_H__ */

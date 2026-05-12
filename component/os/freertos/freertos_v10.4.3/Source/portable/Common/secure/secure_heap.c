@@ -462,3 +462,58 @@ void vApplicationMallocFailedHook(void)
 	DiagPrintf("Malloc secure memory failed [free heap size: %d]\r\n", xPortGetFreeHeapSize());
 	for (;;);
 }
+
+void *pvPortMallocCacheAligned(size_t xWantedSize)
+{
+	return pvPortMalloc(xWantedSize);
+}
+
+void *pvPortReAllocCacheAligned(void *pv, size_t xWantedSize)
+{
+	if (pv == NULL) {
+		return pvPortMallocCacheAligned(xWantedSize);
+	}
+	if (xWantedSize == 0) {
+		vPortFree(pv);
+		return NULL;
+	}
+
+	void *newArea = pvPortMallocCacheAligned(xWantedSize);
+	if (newArea) {
+		BlockLink_t *pxLink = (void *)(((uint8_t *)pv) - xHeapStructSize);
+		size_t oldSize = (pxLink->xBlockSize & ~xBlockAllocatedBit) - xHeapStructSize;
+		size_t copySize = (oldSize < xWantedSize) ? oldSize : xWantedSize;
+		_memcpy(newArea, pv, copySize);
+		vPortFree(pv);
+	}
+	return newArea;
+}
+
+void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
+{
+	(void)startAddr;
+	return pvPortMalloc(xWantedSize);
+}
+
+void *pvPortReAllocBase(void *pv, size_t xWantedSize, uint32_t startAddr)
+{
+	(void)startAddr;
+
+	if (pv == NULL) {
+		return pvPortMalloc(xWantedSize);
+	}
+	if (xWantedSize == 0) {
+		vPortFree(pv);
+		return NULL;
+	}
+
+	void *newArea = pvPortMalloc(xWantedSize);
+	if (newArea) {
+		BlockLink_t *pxLink = (void *)(((uint8_t *)pv) - xHeapStructSize);
+		size_t oldSize = (pxLink->xBlockSize & ~xBlockAllocatedBit) - xHeapStructSize;
+		size_t copySize = (oldSize < xWantedSize) ? oldSize : xWantedSize;
+		_memcpy(newArea, pv, copySize);
+		vPortFree(pv);
+	}
+	return newArea;
+}

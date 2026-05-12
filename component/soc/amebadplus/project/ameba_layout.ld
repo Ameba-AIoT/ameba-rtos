@@ -210,6 +210,6 @@ __km4_bd_ram_mp_start__ = ORIGIN(KM4_BD_RAM_MP);
 __km0_image2_entry_func_mp__ = ORIGIN(KM0_IMG2_ENTRY);
 
 /* code analyse used */
-__img1_sram_start__ = ORIGIN(KM4_BOOTLOADER_RAM_S) - SECURE_ADDR_OFFSET - IMAGE_HEADER_LEN;
-__img1_sram_size__ = LENGTH(KM4_BOOTLOADER_RAM_S) + IMAGE_HEADER_LEN;
+__rtk_fixed_addr__ = SRAM_BASE + KM0_KM4_RAM_SIZE;
+__img1_sram_size__ = KM4_IMG1_SIZE;
 __img3_sram_size__ = RAM_TZ_NSC_SIZE + RAM_TZ_ENTRY_SIZE + RAM_KM4_IMG3_SIZE;

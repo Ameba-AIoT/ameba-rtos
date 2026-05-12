@@ -10,6 +10,8 @@ message( "========== Image app generate start ==========")
 
 set(app_full_path ${c_IMAGE_OUTPUT_DIR}/${c_APP_BINARY_NAME})
 ameba_modify_file_path(${app_full_path} app_ns_full_path p_SUFFIX _ns)
+ameba_set_if(CONFIG_MP_INCLUDED c_SDK_IMAGE_FOLDER_NAME image_mp p_ELSE image)
+ameba_set_if(CONFIG_WHC_INTF_IPC_MENU AP_IMAGEDIR ${CMAKE_BINARY_DIR}/project_ap/${c_SDK_IMAGE_FOLDER_NAME} p_ELSE ${CMAKE_BINARY_DIR}/project_hp/${c_SDK_IMAGE_FOLDER_NAME})
 
 if (c_IMAGE3_ALL_FILES)
     ameba_axf2bin_fw_pack(
@@ -32,7 +34,7 @@ if(CONFIG_FATFS_WITHIN_APP_IMG)
             ${c_SOC_PROJECT_DIR}/fatfs_prepend.bin
             ${c_SOC_PROJECT_DIR}/fatfs.bin
             VFS1_FLASH_BASE_ADDR
-            ${c_IMAGE_OUTPUT_DIR}/target_img2.map
+            ${AP_IMAGEDIR}/target_img2.map
         )
         ameba_file_append(${app_full_path} ${c_SOC_PROJECT_DIR}/fatfs_prepend.bin)
         ameba_file_append(${app_ns_full_path} ${c_SOC_PROJECT_DIR}/fatfs_prepend.bin)

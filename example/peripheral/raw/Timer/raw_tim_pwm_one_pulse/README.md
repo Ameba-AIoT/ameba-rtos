@@ -28,6 +28,11 @@
    PB_0 <--> PB_16
    GND <--> button <---> PA_3
 
+5. If you run this example in RTL8720F, then connect as below
+
+   PA_15 <--> PA_16
+   GND <--> button <---> PA_17
+
 # SW Configuration
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

@@ -28,6 +28,8 @@
 #define CONFIG_WTN_SOCKET_APP
 #endif
 
+//#define CONFIG_WIFI_XMESH
+
 #ifdef CONFIG_WIFI_P2P_ENABLE
 #define CONFIG_WPS_P2PGO 1
 #endif

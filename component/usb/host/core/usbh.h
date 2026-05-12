@@ -270,18 +270,11 @@ typedef union {
  * @brief Packed structure for a USB event message.
  */
 typedef struct {
+	u32 data;                          /**< Event Private data. */
 	u16 tick;                          /**< Tick count when the event occurred. */
 	u8 pipe_num;                       /**< Pipe number associated with the event. */
 	u8 type: 4;                        /**< Message type, corresponds to `usbh_event_type_t`. */
 	u8 owner: 4;                       /**< Owner of the message (e.g., core, class). */
-} __PACKED usbh_event_msg_t;
-
-/**
- * @brief Union for a USB event.
- */
-typedef union {
-	u32 d32;                          /**< 32-bit access to the event data. */
-	usbh_event_msg_t msg;             /**< Access as a structured event message. */
 } usbh_event_t;
 
 /**
@@ -396,10 +389,10 @@ typedef struct {
 	/**
 	* @brief Main processing loop for the class driver after class setup to process class-specific transfers.
 	* @param[in] host: USB host.
-	* @param[in] msg: @ref usbh_msg_t.
+	* @param[in] event: @ref usbh_event_t.
 	* @return 0 on success, non-zero on failure.
 	*/
-	int(*process)(struct _usb_host_t *host, u32 msg);
+	int(*process)(struct _usb_host_t *host, usbh_event_t *event);
 
 	/**
 	* @brief Called at each Start-of-Frame (SOF) interrupt for class-specific timing process.

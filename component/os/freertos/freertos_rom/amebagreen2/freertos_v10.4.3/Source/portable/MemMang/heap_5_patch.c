@@ -614,3 +614,179 @@ void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize)
 	return p;
 }
 
+/*
+ * Cache-aligned allocation for DMA-coherent buffers.
+ *
+ * Layout inside a free block:
+ *
+ *   |<--- original free block --------------------------------------->|
+ *   |                |                          |                      |
+ *   |   front gap    |  BlockLink_t + user data |      tail gap        |
+ *   | (may be 0)     |  (user addr aligned to   |  (remainder, may     |
+ *   |                |   cache line boundary)    |   be 0)              |
+ *   |                |                          |                      |
+ *
+ * 1. Round up xWantedSize to portBYTE_CACHE_ALIGNMENT so the user area
+ *    spans whole cache lines (prevents DMA stomping on adjacent data).
+ * 2. Walk the free list looking for a block large enough to hold:
+ *      xFrontGap + xHeapStructSize + xAlignedSize  (+ optional tail gap)
+ *    where the user address (block + xHeapStructSize) falls on a
+ *    portBYTE_CACHE_ALIGNMENT boundary.
+ * 3. If the front gap is non-zero but smaller than heapMINIMUM_BLOCK_SIZE,
+ *    skip to the next cache line (a free block must be at least
+ *    heapMINIMUM_BLOCK_SIZE to be tracked).
+ * 4. Split off front and/or tail fragments as separate free blocks when
+ *    they are large enough.
+ * 5. Return the cache-line-aligned user pointer.
+ */
+void *pvPortMallocCacheAlignedCore(size_t xWantedSize)
+{
+	BlockLink_t *pxBlock, *pxPreviousBlock, *pxNewBlockLink;
+	void *pvReturn = NULL;
+	size_t xAlignedSize, xUserAddr, xBlockAddr, xFrontGap;
+
+	if (xWantedSize == 0) {
+		return NULL;
+	}
+
+	/* Round up to cache line boundary */
+	xAlignedSize = (xWantedSize + portBYTE_CACHE_ALIGNMENT_MASK) & ~portBYTE_CACHE_ALIGNMENT_MASK;
+
+	configASSERT(pxEnd);
+
+	vTaskSuspendAll();
+	{
+		/* Overflow check */
+		if (((xHeapStructSize + xAlignedSize) & xBlockAllocatedBit) == 0) {
+			pxPreviousBlock = &xStart;
+			pxBlock = xStart.pxNextFreeBlock;
+
+			/* Walk the free list to find a block that can satisfy the aligned request */
+			while (pxBlock != pxEnd) {
+				/* First candidate: align (block + xHeapStructSize) up to cache line */
+				xUserAddr = ((size_t)pxBlock + xHeapStructSize + portBYTE_CACHE_ALIGNMENT_MASK) & ~portBYTE_CACHE_ALIGNMENT_MASK;
+				/* The BlockLink_t header sits immediately before the aligned user address */
+				xBlockAddr = xUserAddr - xHeapStructSize;
+				/* Bytes between the original block start and the aligned header */
+				xFrontGap = xBlockAddr - (size_t)pxBlock;
+
+				/* If front gap exists but is too small to form a valid free block,
+				 * bump to the next cache line to avoid an unusable fragment */
+				if (xFrontGap > 0 && xFrontGap < heapMINIMUM_BLOCK_SIZE) {
+					xUserAddr += portBYTE_CACHE_ALIGNMENT;
+					xBlockAddr = xUserAddr - xHeapStructSize;
+					xFrontGap = xBlockAddr - (size_t)pxBlock;
+				}
+
+				/* Check if this free block has enough space */
+				if ((xFrontGap + xHeapStructSize + xAlignedSize) <= pxBlock->xBlockSize) {
+					break;
+				}
+
+				pxPreviousBlock = pxBlock;
+				pxBlock = pxBlock->pxNextFreeBlock;
+			}
+
+			if (pxBlock != pxEnd) {
+				size_t xOrigBlockSize = pxBlock->xBlockSize;
+				size_t xAllocSize = xHeapStructSize + xAlignedSize;
+
+				/* Take the original block out of the free list */
+				pxPreviousBlock->pxNextFreeBlock = pxBlock->pxNextFreeBlock;
+
+				/* If front gap is large enough, return it as a separate free block */
+				if (xFrontGap >= heapMINIMUM_BLOCK_SIZE) {
+					pxBlock->xBlockSize = xFrontGap;
+					prvInsertBlockIntoFreeList(pxBlock);
+				}
+
+				/* The aligned block header starts at xBlockAddr */
+				BlockLink_t *pxAlignedBlock = (BlockLink_t *)xBlockAddr;
+
+				/* If the remaining tail is large enough, split it off as a free block */
+				size_t xTailGap = xOrigBlockSize - xFrontGap - xAllocSize;
+				if (xTailGap >= heapMINIMUM_BLOCK_SIZE) {
+					pxNewBlockLink = (BlockLink_t *)(xBlockAddr + xAllocSize);
+					pxNewBlockLink->xBlockSize = xTailGap;
+					prvInsertBlockIntoFreeList(pxNewBlockLink);
+				} else {
+					/* Tail too small to split: absorb it into this allocation */
+					xAllocSize = xOrigBlockSize - xFrontGap;
+				}
+
+				pxAlignedBlock->xBlockSize = xAllocSize;
+
+				xFreeBytesRemaining -= pxAlignedBlock->xBlockSize;
+				if (xFreeBytesRemaining < xMinimumEverFreeBytesRemaining) {
+					xMinimumEverFreeBytesRemaining = xFreeBytesRemaining;
+				}
+
+				/* Mark block as allocated */
+				pxAlignedBlock->xBlockSize |= xBlockAllocatedBit;
+				pxAlignedBlock->pxNextFreeBlock = NULL;
+				xNumberOfSuccessfulAllocations++;
+
+				pvReturn = (void *)xUserAddr;
+				traceMALLOC(pvReturn, xWantedSize);
+			}
+		}
+
+		(void) xTaskResumeAll();
+	}
+
+	return pvReturn;
+}
+
+void *pvPortMallocCacheAligned(size_t xWantedSize)
+{
+	void *pvReturn = pvPortMallocCacheAlignedCore( xWantedSize );
+
+#if ( configUSE_MALLOC_FAILED_HOOK == 1 )
+	{
+		if (pvReturn == NULL) {
+			extern void vApplicationMallocFailedHook(void);
+			vApplicationMallocFailedHook();
+		}
+	}
+#endif /* if ( configUSE_MALLOC_FAILED_HOOK == 1 ) */
+
+	return pvReturn;
+}
+/*-----------------------------------------------------------*/
+
+/*
+ * Cache-aligned reallocation: allocate a new cache-aligned block, copy
+ * existing data, then free the old block.
+ */
+void *pvPortReAllocCacheAligned(void *pv, size_t xWantedSize)
+{
+	BlockLink_t *pxLink;
+	unsigned char *puc = (unsigned char *)pv;
+
+	if (pv) {
+		if (!xWantedSize) {
+			vPortFree(pv);
+			return NULL;
+		}
+
+		/* Allocate a new cache-aligned block */
+		void *newArea = pvPortMallocCacheAligned(xWantedSize);
+		if (newArea) {
+			/* Recover usable size of the old block from its BlockLink_t header */
+			puc -= xHeapStructSize;
+			pxLink = (void *)puc;
+
+			size_t oldSize = (pxLink->xBlockSize & ~xBlockAllocatedBit) - xHeapStructSize;
+			size_t copySize = (oldSize < xWantedSize) ? oldSize : xWantedSize;
+			memcpy(newArea, pv, copySize);
+
+			/* Release the old block (may not have been cache-aligned) */
+			vPortFree(pv);
+			return newArea;
+		}
+	} else if (xWantedSize) {
+		return pvPortMallocCacheAligned(xWantedSize);
+	}
+
+	return NULL;
+}

@@ -102,6 +102,4 @@ void *rtos_heap_types_calloc(uint32_t elementNum, uint32_t elementSize, MALLOC_T
 
 void *rtos_heap_types_realloc(void *pbuf, uint32_t size, MALLOC_TYPES type);
 
-void rtos_heap_types_free(void *pbuf);
-
 #endif

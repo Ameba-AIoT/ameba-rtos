@@ -12,15 +12,6 @@
 #include "usbd_video.h"
 
 /* Exported defines ----------------------------------------------------------*/
-
-#define USBD_UVC_FPS(fps) (10000000/fps)
-
-#define USBD_UVC_FORMAT_TYPE_YUY2        0
-#define USBD_UVC_FORMAT_TYPE_NV12        1
-#define USBD_UVC_FORMAT_TYPE_MJPEG       2
-#define USBD_UVC_FORMAT_TYPE_H264        3
-#define USBD_UVC_FORMAT_TYPE_H265        4
-
 #define USBD_UVC_INTF_CONTROL        0
 #define USBD_UVC_INTF_STREAMING      1
 
@@ -39,13 +30,14 @@
 #define USBD_UVC_MAX_REQUEST_SIZE		64
 #define USBD_UVC_MAX_EVENTS				4
 
-//Tuning tool
-#define USBD_UVC_VendorCommand   	0X0A
-#define USBD_UVC_VendorData      	0X0B
-#define USBD_UVC_VendorLength    	0X08
-#define USBD_UVC_UserDefineCommand  	0X0E
-#define USBD_UVC_UserDownloadData   	0X0F
-#define USBD_UVC_UserDefineLength   	0X40
+#define USBD_TUNING_MODE 0
+#if USBD_TUNING_MODE
+#define USBD_TUNING_W (USBD_UVC_FRAME_WIDTH*2)
+#define USBD_TUNING_H (USBD_UVC_FRAME_HEIGHT*3/2)
+#else
+#define USBD_TUNING_W USBD_UVC_FRAME_WIDTH
+#define USBD_TUNING_H USBD_UVC_FRAME_HEIGHT
+#endif
 
 
 #define USBD_UVC_WEBCAM_VENDOR_ID		USB_VID
@@ -252,12 +244,14 @@ typedef  struct {
 	struct list_head	bod_list;
 	usb_os_lock_t lock;
 	u32 running;
+	u32 init_done;    // 0: not initialized, 1: fully initialized
 	u8  ctrl_req;
 	u8  ctrl_data_len;
 	u8 *uvc_in_buf;
 	usbd_ep_t ep_isoc_in;
 	rtos_queue_t uvc_cmd_queue;
 	u32 frame_done;
+	usbd_uvc_format_t *uvc_format_ptr;
 } usbd_uvc_dev_t;
 
 /* Exported variables --------------------------------------------------------*/
@@ -281,4 +275,6 @@ int usbd_uvc_uvcd_get_status(void);
 void usbd_uvc_uvcd_wait_frame_down(void);
 int usbd_uvc_parameter_init(void);
 void usbd_uvc_deinit(void);
+void usbd_uvc_set_change_parm_cb(int cb);
+usbd_uvc_format_t *usbd_uvc_get_format(void);
 #endif /* USBD_UVC_H */

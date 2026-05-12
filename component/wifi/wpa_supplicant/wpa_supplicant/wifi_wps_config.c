@@ -141,29 +141,6 @@ __weak int wps_registrar_wps_cancel(void *priv)
 	return 0;
 }
 
-__weak void wpas_wsc_ap_send_eap_reqidentity(void *priv, u8 *rx_buf)
-{
-	(void) priv;
-	(void) rx_buf;
-}
-
-__weak void wpas_wsc_ap_check_eap_rspidentity(void *priv, u8 *rx_buf)
-{
-	(void) priv;
-	(void) rx_buf;
-}
-
-__weak void wpas_wsc_registrar_send_eap_fail(void *priv)
-{
-	(void) priv;
-}
-
-__weak void wpas_wsc_registrar_handle_recvd(void *priv, u8 *rx_buf)
-{
-	(void) priv;
-	(void) rx_buf;
-}
-
 __weak void *eap_wsc_server_process_hdl(void *priv, void *req, u8 id)
 {
 	(void) priv;

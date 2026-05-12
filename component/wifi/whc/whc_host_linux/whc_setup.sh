@@ -139,8 +139,6 @@ cp ../../common/rtw_wifi_common.h ./common/include
 cp ../../common/rtw_inic_common.h ./common/include
 cp ../whc_def.h ./common/include
 cp ../whc_dev/whc_dev.h ./common/include
-cp ../whc_dev/whc_dev_common.h ./common/include
-cp ../whc_dev/whc_dev_intf.h ./common/include
 cp ../whc_dev/whc_dev_struct.h ./common/include
 cp ../whc_dev/whc_dev_protocal_offload.h ./common/include
 cp ../../api/wifi_api_types.h ./common/include

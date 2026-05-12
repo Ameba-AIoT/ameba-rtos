@@ -187,13 +187,14 @@ static int composite_hid_set_config(usb_dev_t *dev, u8 config)
 	int ret = HAL_OK;
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
+	usb_ep_info_t *info = &ep_intr_in->info;
 
 	UNUSED(config);
 
 	ep_intr_in->xfer_state = 0U;
 	ep_intr_in->is_busy = 0U;
 	/* Init INTR IN EP */
-	ep_intr_in->mps = COMP_HID_INTR_IN_PACKET_SIZE;
+	info->mps = COMP_HID_INTR_IN_PACKET_SIZE;
 	usbd_ep_init(dev, ep_intr_in);
 
 	return ret;
@@ -273,7 +274,9 @@ static u16 composite_hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8
 	switch (USB_HIGH_BYTE(req->wValue)) {
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
+#endif
 		len = sizeof(usbd_composite_hid_itf_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_composite_hid_itf_desc, len);
 		buf[COMP_HID_ITF_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
@@ -294,9 +297,10 @@ int usbd_composite_hid_init(usbd_composite_dev_t *cdev, u16 tx_buf_len, usbd_com
 	int ret = HAL_OK;
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
+	usb_ep_info_t *info = &ep_intr_in->info;
 
-	ep_intr_in->addr = USBD_COMP_HID_INTR_IN_EP;
-	ep_intr_in->type = USB_CH_EP_TYPE_INTR;
+	info->addr = USBD_COMP_HID_INTR_IN_EP;
+	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_in->xfer_buf_len = tx_buf_len;
 	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(tx_buf_len);
 

@@ -29,7 +29,9 @@ This example describes how to use disable JTAG module and use GPIO pin to blink 
   - On RTL8721F, connect as below
     - Connect a push button to `GPIO_JTAG_ENABLE_PIN _PA_26` and GND
     - Connect a LED to `GPIO_LED_PIN _PA_18` and GND
-
+  - On RTL8720F, connect as below
+    - Connect a push button to `GPIO_JTAG_ENABLE_PIN _PA_23` and GND
+    - Connect a LED to `GPIO_LED_PIN _PA_15` and GND
 # SW configuration
 
 - Build and Download:
@@ -58,3 +60,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F

@@ -18,7 +18,7 @@
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_composite_acm_ecm_cb_attach(usb_host_t *host);
 static int usbh_composite_acm_ecm_cb_detach(usb_host_t *host);
-static int usbh_composite_acm_ecm_cb_process(usb_host_t *host, u32 msg);
+static int usbh_composite_acm_ecm_cb_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_composite_acm_ecm_cb_setup(usb_host_t *host);
 static int usbh_composite_acm_ecm_cb_sof(usb_host_t *host);
 static int usbh_composite_acm_ecm_cb_completed(usb_host_t *host, u8 pipe_num);
@@ -257,7 +257,7 @@ static int usbh_composite_acm_ecm_cb_completed(usb_host_t *host, u8 pipe_num)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_acm_ecm_cb_process(usb_host_t *host, u32 msg)
+static int usbh_composite_acm_ecm_cb_process(usb_host_t *host, usbh_event_t *event)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	int ret = HAL_BUSY;
@@ -266,11 +266,11 @@ static int usbh_composite_acm_ecm_cb_process(usb_host_t *host, u32 msg)
 		if the pocess has handle the msg, it return HAL_OK, else return HAL_BUSY
 	*/
 	if ((chost->acm != NULL) && (chost->acm->process != NULL)) {
-		ret = chost->acm->process(host, msg);
+		ret = chost->acm->process(host, event);
 	}
 
 	if ((ret != HAL_OK) && (chost->ecm != NULL) && (chost->ecm->process != NULL)) {
-		ret = chost->ecm->process(host, msg);
+		ret = chost->ecm->process(host, event);
 	}
 
 	return ret;

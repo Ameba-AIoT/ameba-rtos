@@ -54,6 +54,7 @@
 #define USBD_INIC_FW_TYPE_APPLICATION					0xF2U
 
 #define USBD_INIC_RESET_THREAD_PRIORITY					6
+#define USBD_INIC_RESET_THREAD_STACK_SIZE				384   /**< Thread tack size */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -223,4 +224,3 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
  */
 u8 usbd_inic_is_bt_en(void);
 #endif  /* USBD_INIC_H */
-

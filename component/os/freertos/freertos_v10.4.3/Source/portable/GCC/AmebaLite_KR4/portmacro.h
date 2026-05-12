@@ -298,10 +298,12 @@ typedef struct Task_Stack_Guard {
 #define portTICK_PERIOD_MS ((TickType_t)1000 / configTICK_RATE_HZ)
 #ifdef __riscv64
 #error This is the RV32 port that has not yet been adapted for 64.
-#define portBYTE_ALIGNMENT 32
+#define portBYTE_ALIGNMENT 8
 #else
-#define portBYTE_ALIGNMENT 32
+#define portBYTE_ALIGNMENT 8
 #endif
+#define portBYTE_CACHE_ALIGNMENT		32
+#define portBYTE_CACHE_ALIGNMENT_MASK	(portBYTE_CACHE_ALIGNMENT - 1)
 /*-----------------------------------------------------------*/
 void vPortFreeRTOSInit(StackType_t xTopOfStack);
 

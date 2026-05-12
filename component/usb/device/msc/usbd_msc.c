@@ -66,6 +66,7 @@ static const u8 usbd_msc_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
 	USB_HIGH_BYTE(USBD_MSC_LANGID_STRING),
 };  /* usbd_msc_lang_id_desc */
 
+#ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_msc_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
@@ -126,6 +127,7 @@ static const u8 usbd_msc_hs_config_desc[] = {
 	USB_HIGH_BYTE(USBD_MSC_HS_MAX_PACKET_SIZE),
 	0x00                                            /* bInterval */
 };  /* usbd_msc_hs_config_desc */
+#endif
 
 /* USB MSC Device Full Speed Configuration Descriptor */
 static const u8 usbd_msc_fs_config_desc[] = {
@@ -342,17 +344,19 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
-
+	usb_ep_info_t *info;
 	UNUSED(config);
 
 	cdev->dev = dev;
 
 	/* Init BULK IN EP */
-	ep_bulk_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
+	info = &ep_bulk_in->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_bulk_in);
 
 	/* Init BULK OUT EP */
-	ep_bulk_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
+	info = &ep_bulk_out->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_bulk_out);
 
 	cdev->bot_state = USBD_MSC_IDLE;
@@ -409,7 +413,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
-
+	usb_ep_info_t *info;
 	int ret = HAL_OK;
 
 	//RTK_LOGD(TAG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
@@ -448,8 +452,10 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 		case USB_REQ_CLEAR_FEATURE:
 
-			ep_bulk_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
-			ep_bulk_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
+			info = &ep_bulk_in->info;
+			info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
+			info = &ep_bulk_out->info;
+			info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
 
 			if ((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) {
 				usbd_ep_deinit(dev, ep_bulk_in);
@@ -686,10 +692,13 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
 			desc = (u8 *)usbd_msc_hs_config_desc;
 			len = sizeof(usbd_msc_hs_config_desc);
-		} else {
+		} else
+#endif
+		{
 			desc = (u8 *)usbd_msc_fs_config_desc;
 			len = sizeof(usbd_msc_fs_config_desc);
 		}
@@ -698,6 +707,7 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_msc_device_qualifier_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_msc_device_qualifier_desc, len);
@@ -716,6 +726,7 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
@@ -835,7 +846,7 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 	usbd_msc_disk_ops_t *ops = &cdev->disk_ops;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
-
+	usb_ep_info_t *info;
 	int ret = HAL_OK;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
@@ -889,15 +900,14 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 		goto create_tx_thread_fail;
 	}
 
-	cdev->blkbits = USBD_MSC_BLK_BITS;
-	cdev->blksize = USBD_MSC_BLK_SIZE;
-
-	ep_bulk_in->addr = USBD_MSC_BULK_IN_EP;
-	ep_bulk_in->type = USB_CH_EP_TYPE_BULK;
+	info = &ep_bulk_in->info;
+	info->addr = USBD_MSC_BULK_IN_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_in->dis_zlp = 1;
 
-	ep_bulk_out->addr = USBD_MSC_BULK_OUT_EP;
-	ep_bulk_out->type = USB_CH_EP_TYPE_BULK;
+	info = &ep_bulk_out->info;
+	info->addr = USBD_MSC_BULK_OUT_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
 
 	usbd_register_class(&usbd_msc_driver);
 

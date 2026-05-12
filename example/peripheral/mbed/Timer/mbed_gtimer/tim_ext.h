@@ -28,6 +28,11 @@
 
 #define GPIO_LED_PIN1       PA_13
 #define GPIO_LED_PIN2       PA_14
+
+#elif defined (CONFIG_RTL8720F)
+
+#define GPIO_LED_PIN1       PA_15
+#define GPIO_LED_PIN2       PA_16
 #endif
 
 #endif

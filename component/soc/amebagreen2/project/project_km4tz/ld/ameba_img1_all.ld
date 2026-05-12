@@ -56,14 +56,13 @@ SECTIONS
 		SRAM_INPUT_BOOT_RODATA
 		SRAM_INPUT_RODATA
 		*(.sramdram.only.text*)
-		. = ALIGN (32);
 	} > IMG1_LMA_REGION
 
 	.ram_image1.data . :
 	{
+		. = ALIGN(32);
 		__ram_image1_data_start__ = .;
 		*(.data*)
-		. = ALIGN(32);
 		__ram_image1_data_end__ = .;
 
 		. = ALIGN(4);

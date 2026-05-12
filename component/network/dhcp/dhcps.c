@@ -14,7 +14,7 @@ static const char g_dhcps_domain_name[] = "amebaiot.com";
   * @param  pnetif: pointer to the network interface to search for.
   * @retval Pointer to DHCP server instance (dhcps_t *), or NULL if not found.
   */
-static dhcps_t *dhcps_get_from_netif(struct netif *pnetif)
+dhcps_t *dhcps_get_from_netif(struct netif *pnetif)
 {
 	dhcps_t *current;
 
@@ -506,7 +506,7 @@ ERROR:
   * @param  dhcp_message_repository: pointer to the DHCP message structure to initialize.
   * @retval None.
   */
-static void dhcps_initialize_message(dhcps_t *dhcps, struct dhcp_msg *dhcp_message_repository)
+static void dhcps_initialize_message(dhcps_t *dhcps, struct dhcps_msg *dhcp_message_repository)
 {
 	dhcp_message_repository->op = DHCP_MESSAGE_OP_REPLY;
 	dhcp_message_repository->htype = DHCP_MESSAGE_HTYPE;
@@ -560,7 +560,7 @@ static struct pbuf *dhcps_prepare_message(dhcps_t *dhcps, struct pbuf *original_
 	}
 
 	dhcps->message_options_max_len = DHCP_OPTION_TOTAL_LENGTH_MAX;
-	dhcps->message_repository = (struct dhcp_msg *)response_packet->payload;
+	dhcps->message_repository = (struct dhcps_msg *)response_packet->payload;
 
 	dhcps_initialize_message(dhcps, dhcps->message_repository);
 
@@ -658,7 +658,7 @@ static void dhcps_send_offer(dhcps_t *dhcps, struct pbuf *packet_buffer)
   */
 static void dhcps_send_nak(dhcps_t *dhcps, struct pbuf *packet_buffer)
 {
-	dhcps->message_repository = (struct dhcp_msg *)packet_buffer->payload;
+	dhcps->message_repository = (struct dhcps_msg *)packet_buffer->payload;
 	dhcps_initialize_message(dhcps, dhcps->message_repository);
 	add_msg_type(&dhcps->message_repository->options[4], DHCP_MESSAGE_TYPE_NAK);
 	udp_sendto_if(dhcps->dhcps_pcb, packet_buffer,
@@ -817,7 +817,7 @@ static uint8_t dhcps_handle_msg_options(dhcps_t *dhcps, uint8_t *option_start, i
 static uint8_t dhcps_check_msg_and_handle_options(dhcps_t *dhcps, struct pbuf *packet_buffer)
 {
 	int dhcp_message_option_offset;
-	dhcps->message_repository = (struct dhcp_msg *)packet_buffer->payload;
+	dhcps->message_repository = (struct dhcps_msg *)packet_buffer->payload;
 	dhcp_message_option_offset = ((int)dhcps->message_repository->options
 								  - (int)packet_buffer->payload);
 	dhcps->message_options_max_len = (packet_buffer->len
@@ -860,7 +860,7 @@ static void dhcps_receive_udp_packet_handler(void *arg, struct udp_pcb *udp_pcb,
 
 	dhcps_t *dhcps = (dhcps_t *)arg;  // Get dhcps instance from arg
 
-	dhcps->message_repository = (struct dhcp_msg *)udp_packet_buffer->payload;
+	dhcps->message_repository = (struct dhcps_msg *)udp_packet_buffer->payload;
 
 	if (sender_port == DHCP_CLIENT_PORT) {
 		if (LwIP_netif_get_idx(ip_current_input_netif()) == 0) {
@@ -1097,6 +1097,7 @@ err_t dns_server_init(dhcps_t *dhcps)
 	// Create DNS UDP PCB
 	if (dhcps->dns_pcb != NULL) {
 		udp_remove(dhcps->dns_pcb);
+		dhcps->dns_pcb = NULL;
 	}
 
 	dhcps->dns_pcb = udp_new();
@@ -1105,7 +1106,8 @@ err_t dns_server_init(dhcps_t *dhcps)
 		goto cleanup_dns_buf;
 	}
 
-	udp_bind(dhcps->dns_pcb, IP_ADDR_ANY, DNS_SERVER_PORT);
+	udp_bind_netif(dhcps->dns_pcb, dhcps->dhcps_netif);
+	udp_bind(dhcps->dns_pcb, &dhcps->local_address, DNS_SERVER_PORT);
 	udp_recv(dhcps->dns_pcb, (udp_recv_fn)dnss_receive_udp_packet_handler, dhcps);
 
 	return ERR_OK;
@@ -1191,50 +1193,13 @@ dhcps_t *dhcps_init(struct netif *pnetif)
 
 	IP4_ADDR(ip_2_ip4(&dhcps->broadcast_address), 255, 255, 255, 255);
 
-	// Get network interface information
-	memcpy(&dhcps->local_address, &pnetif->ip_addr, sizeof(struct ip_addr));
-	memcpy(&dhcps->local_mask, &pnetif->netmask, sizeof(struct ip_addr));
-	memcpy(&dhcps->local_gateway, &pnetif->gw, sizeof(struct ip_addr));
-
-	// Calculate network ID and broadcast address
-	ip4_addr_set_u32(ip_2_ip4(&dhcps->network_id),
-					 (ip_addr_get_ip4_u32(netif_ip_addr4(pnetif)) &
-					  ip_addr_get_ip4_u32(netif_ip_netmask4(pnetif))));
-	ip4_addr_set_u32(ip_2_ip4(&dhcps->subnet_broadcast),
-					 (ip4_addr_get_u32(ip_2_ip4(&dhcps->network_id)) |
-					  ~ip_addr_get_ip4_u32(netif_ip_netmask4(pnetif))));
-
 	// Create mutex
 	rtos_mutex_create(&dhcps->ip_table_sema);
-
-	// Mark server IP and gateway as occupied
-	mark_ip_in_table(dhcps, (uint8_t)ip4_addr4(ip_2_ip4(&dhcps->local_address)));
-	mark_ip_in_table(dhcps, (uint8_t)ip4_addr4(ip_2_ip4(&dhcps->local_gateway)));
-#if 0
-	for (i = 1; i < ip4_addr4(&dhcps->local_address); i++) {
-		mark_ip_in_table(dhcps, i);
-	}
-#endif
 
 	// Insert into list
 	dhcps_list_insert(dhcps);
 
-	// Set default address pool if not already set
-	if (ip4_addr_get_u32(ip_2_ip4(&dhcps->addr_pool_start)) == 0 &&
-		ip4_addr_get_u32(ip_2_ip4(&dhcps->addr_pool_end)) == 0) {
-		ip_addr_t default_start, default_end;
-
-		// Set default pool range [100, 200]
-		memcpy(&default_start, &dhcps->local_address, sizeof(struct ip_addr));
-		((uint8_t *)&default_start)[3] = DHCP_POOL_START;
-
-		memcpy(&default_end, &dhcps->local_address, sizeof(struct ip_addr));
-		((uint8_t *)&default_end)[3] = DHCP_POOL_END;
-
-		dhcps_set_addr_pool(pnetif, 1, &default_start, &default_end);
-	}
-
-	DHCPS_LOG(DHCPS_DEBUG, "netif %c dhcps_init success\r\n", pnetif->name[1]);
+	DHCPS_LOG(DHCPS_DEBUG, "netif %c dhcps_init success (IP not set yet)\r\n", pnetif->name[1]);
 	return dhcps;
 }
 
@@ -1254,9 +1219,63 @@ err_t dhcps_start(struct netif *pnetif)
 		return ERR_ARG;
 	}
 
+	// Get network interface information
+	memcpy(&dhcps->local_address, &pnetif->ip_addr, sizeof(struct ip_addr));
+	memcpy(&dhcps->local_mask, &pnetif->netmask, sizeof(struct ip_addr));
+	memcpy(&dhcps->local_gateway, &pnetif->gw, sizeof(struct ip_addr));
+
+	// Calculate network ID and broadcast address
+	ip4_addr_set_u32(ip_2_ip4(&dhcps->network_id),
+					 (ip_addr_get_ip4_u32(netif_ip_addr4(pnetif)) &
+					  ip_addr_get_ip4_u32(netif_ip_netmask4(pnetif))));
+	ip4_addr_set_u32(ip_2_ip4(&dhcps->subnet_broadcast),
+					 (ip4_addr_get_u32(ip_2_ip4(&dhcps->network_id)) |
+					  ~ip_addr_get_ip4_u32(netif_ip_netmask4(pnetif))));
+
+	// Mark server IP and gateway as occupied
+	mark_ip_in_table(dhcps, (uint8_t)ip4_addr4(ip_2_ip4(&dhcps->local_address)));
+	mark_ip_in_table(dhcps, (uint8_t)ip4_addr4(ip_2_ip4(&dhcps->local_gateway)));
+#if 0
+	for (i = 1; i < ip4_addr4(&dhcps->local_address); i++) {
+		mark_ip_in_table(dhcps, i);
+	}
+#endif
+
+	// Set or update address pool based on current server IP
+	ip_addr_t pool_start, pool_end;
+	uint8_t start_host, end_host;
+	int addr_pool_set;
+
+	// Determine the address pool mode and host range
+	if (ip4_addr_get_u32(ip_2_ip4(&dhcps->addr_pool_start)) == 0 &&
+		ip4_addr_get_u32(ip_2_ip4(&dhcps->addr_pool_end)) == 0) {
+		// First time start, use default values [100, 200]
+		start_host = DHCP_POOL_START;
+		end_host = DHCP_POOL_END;
+		addr_pool_set = 1;
+	} else if (!dhcps->addr_pool_set) {
+		// Unlimited mode (addr_pool_set=0 but pool already calculated as 2-254)
+		addr_pool_set = 0;
+	} else {
+		// Custom pool set (addr_pool_set=1), extract host part and reuse
+		start_host = ip4_addr4(ip_2_ip4(&dhcps->addr_pool_start));
+		end_host = ip4_addr4(ip_2_ip4(&dhcps->addr_pool_end));
+		addr_pool_set = 1;
+	}
+
+	// Build new pool addresses with current server IP's network segment
+	memcpy(&pool_start, &dhcps->local_address, sizeof(struct ip_addr));
+	((uint8_t *)&pool_start)[3] = start_host;
+
+	memcpy(&pool_end, &dhcps->local_address, sizeof(struct ip_addr));
+	((uint8_t *)&pool_end)[3] = end_host;
+
+	dhcps_set_addr_pool(pnetif, addr_pool_set, &pool_start, &pool_end);
+
 	// Create DHCP UDP PCB
 	if (dhcps->dhcps_pcb != NULL) {
 		udp_remove(dhcps->dhcps_pcb);
+		dhcps->dhcps_pcb = NULL;
 	}
 
 	dhcps->dhcps_pcb = udp_new();
@@ -1265,8 +1284,8 @@ err_t dhcps_start(struct netif *pnetif)
 		return ERR_MEM;
 	}
 
-	// Bind port and register callback
-	udp_bind(dhcps->dhcps_pcb, IP_ADDR_ANY, DHCP_SERVER_PORT);
+	udp_bind_netif(dhcps->dhcps_pcb, pnetif);
+	udp_bind(dhcps->dhcps_pcb, &pnetif->ip_addr, DHCP_SERVER_PORT);
 	udp_recv(dhcps->dhcps_pcb, (udp_recv_fn)dhcps_receive_udp_packet_handler, dhcps);
 
 #ifndef IP_NAT
@@ -1299,6 +1318,21 @@ void dhcps_stop(struct netif *pnetif)
 		DHCPS_LOG(DHCPS_ERROR, "DHCPS instance not found\r\n");
 		return;
 	}
+
+	// Clear IP allocation table
+	rtos_mutex_take(dhcps->ip_table_sema, RTOS_MAX_DELAY);
+
+	memset(dhcps->ip_table.ip_range, 0, sizeof(dhcps->ip_table.ip_range));
+	memset(dhcps->ip_table.ip_range_offer, 0, sizeof(dhcps->ip_table.ip_range_offer));
+
+	if (dhcps->ip_table.ip_addr4 != NULL) {
+		memset(dhcps->ip_table.ip_addr4, 0, wifi_user_config.ap_sta_num * sizeof(uint8_t));
+	}
+	if (dhcps->ip_table.client_mac != NULL) {
+		memset(dhcps->ip_table.client_mac, 0, wifi_user_config.ap_sta_num * 6 * sizeof(uint8_t));
+	}
+
+	rtos_mutex_give(dhcps->ip_table_sema);
 
 	// Close UDP control blocks
 	if (dhcps->dhcps_pcb != NULL) {

@@ -6,6 +6,7 @@
 
 #include "platform_autoconf.h"
 #include <wifi_api.h>
+#include "rtw_skbuff.h"
 
 struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
 
@@ -43,7 +44,7 @@ _WEAK void wifi_set_user_config(void)
 #endif
 #endif
 	wifi_user_config.tx_ampdu_num = 20; /* 0/1: equivalent to wifi_user_config.ampdu_tx_enable = 0, Otherwise: max aggregation number, up to 0x3F*/
-	wifi_user_config.skb_buf_size = 0;
+	wifi_user_config.skb_buf_size = MAX_SKB_BUF_SIZE;
 	wifi_user_config.wifi_wpa_mode_force = RTW_WPA_AUTO_MODE;
 
 	/*Regulatory related*/

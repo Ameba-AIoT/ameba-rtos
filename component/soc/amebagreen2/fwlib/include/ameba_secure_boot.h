@@ -7,7 +7,7 @@
 #ifndef _AMEBA_SECURITY_BOOT_H_
 #define _AMEBA_SECURITY_BOOT_H_
 
-#include "bootutil_misc.h"
+#include "rom/bootutil_misc.h"
 
 #define SBOOT_ERR_AUTH_NOT_SUPPORT					-1
 #define SBOOT_ERR_PK_HASH_INVALID					-2
@@ -112,4 +112,3 @@ __NO_RETURN void SBOOT_Validate_Fail_Stuck(u32 wdg_fresh);
 }
 #endif
 #endif
-

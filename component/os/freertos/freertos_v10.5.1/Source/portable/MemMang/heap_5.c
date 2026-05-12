@@ -324,7 +324,7 @@ static size_t xPortCanaryCheck(BlockLink_t *pxBlock)
 /*-----------------------------------------------------------*/
 
 #if ( ( !defined CONFIG_HEAP_CORRUPTION_DETECT_LITE ) )
-void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
+void *pvPortMallocBaseCore(size_t xWantedSize, uint32_t startAddr)
 {
 	BlockLink_t *pxBlock, * pxPreviousBlock, * pxNewBlockLink;
 	void *pvReturn = NULL;
@@ -447,22 +447,11 @@ void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
 	}
 	(void) xTaskResumeAll();
 
-#if ( configUSE_MALLOC_FAILED_HOOK == 1 )
-	{
-		if (pvReturn == NULL) {
-			extern void vApplicationMallocFailedHook(size_t xWantedSize);
-			vApplicationMallocFailedHook(xWantedSize);
-		} else {
-			mtCOVERAGE_TEST_MARKER();
-		}
-	}
-#endif /* if ( configUSE_MALLOC_FAILED_HOOK == 1 ) */
-
 	configASSERT((((size_t) pvReturn) & (size_t) portBYTE_ALIGNMENT_MASK) == 0);
 	return pvReturn;
 }
 #else /* !defined CONFIG_HEAP_CORRUPTION_DETECT_LITE */
-void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
+void *pvPortMallocBaseCore(size_t xWantedSize, uint32_t startAddr)
 {
 	BlockLink_t *pxBlock, * pxPreviousBlock, * pxNewBlockLink;
 	void *pvReturn = NULL;
@@ -618,6 +607,15 @@ void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
 	}
 	(void) xTaskResumeAll();
 
+	configASSERT((((size_t) pvReturn) & (size_t) portBYTE_ALIGNMENT_MASK) == 0);
+	return pvReturn;
+}
+#endif /* defined CONFIG_HEAP_CORRUPTION_DETECT_LITE */
+
+void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
+{
+	void *pvReturn = pvPortMallocBaseCore(xWantedSize, startAddr);
+
 #if ( configUSE_MALLOC_FAILED_HOOK == 1 )
 	{
 		if (pvReturn == NULL) {
@@ -629,10 +627,8 @@ void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
 	}
 #endif /* if ( configUSE_MALLOC_FAILED_HOOK == 1 ) */
 
-	configASSERT((((size_t) pvReturn) & (size_t) portBYTE_ALIGNMENT_MASK) == 0);
 	return pvReturn;
 }
-#endif /* defined CONFIG_HEAP_CORRUPTION_DETECT_LITE */
 
 void *pvPortMalloc(size_t xWantedSize)
 {
@@ -1300,3 +1296,207 @@ void vApplicationMallocFailedHook(size_t xWantedSize)
 }
 
 /*-----------------------------------------------------------*/
+
+/*
+ * Cache-aligned allocation for DMA-coherent buffers.
+ *
+ * Layout inside a free block:
+ *
+ *   |<--- original free block --------------------------------------->|
+ *   |                |                          |                      |
+ *   |   front gap    |  BlockLink_t + user data |      tail gap        |
+ *   | (may be 0)     |  (user addr aligned to   |  (remainder, may     |
+ *   |                |   cache line boundary)    |   be 0)              |
+ *   |                |                          |                      |
+ *
+ * 1. Round up xWantedSize to portBYTE_CACHE_ALIGNMENT so the user area
+ *    spans whole cache lines (prevents DMA stomping on adjacent data).
+ * 2. Walk the free list looking for a block large enough to hold:
+ *      xFrontGap + xHeaderOffset + xAlignedSize  (+ optional tail canary)
+ *    where the user address falls on a portBYTE_CACHE_ALIGNMENT boundary.
+ * 3. If the front gap is non-zero but smaller than heapMINIMUM_BLOCK_SIZE,
+ *    skip to the next cache line (a free block must be at least
+ *    heapMINIMUM_BLOCK_SIZE to be tracked).
+ * 4. Split off front and/or tail fragments as separate free blocks when
+ *    they are large enough.
+ * 5. Return the cache-line-aligned user pointer.
+ */
+void *pvPortMallocCacheAlignedCore(size_t xWantedSize)
+{
+	BlockLink_t *pxBlock, *pxPreviousBlock, *pxNewBlockLink;
+	void *pvReturn = NULL;
+	size_t xAlignedSize, xUserAddr, xBlockAddr, xFrontGap, xAllocSize;
+
+#if( defined CONFIG_HEAP_PROTECTOR && defined CONFIG_HEAP_CORRUPTION_DETECT_LITE )
+	/* Canary enabled: header = BlockLink_t + head canary */
+	size_t xHeaderOffset = xHeapStructSize + xHeadCanarySize;
+#else
+	size_t xHeaderOffset = xHeapStructSize;
+#endif
+
+	if (xWantedSize == 0) {
+		return NULL;
+	}
+
+	/* Round up to cache line boundary */
+	xAlignedSize = (xWantedSize + portBYTE_CACHE_ALIGNMENT_MASK) & ~portBYTE_CACHE_ALIGNMENT_MASK;
+
+	configASSERT(pxEnd != NULL);
+
+	vTaskSuspendAll();
+	{
+		/* Overflow check */
+#if( defined CONFIG_HEAP_PROTECTOR && defined CONFIG_HEAP_CORRUPTION_DETECT_LITE )
+		if (((xHeaderOffset + xAlignedSize + xTailCanarySize) & xBlockAllocatedBit) == 0) {
+			xAllocSize = xHeaderOffset + xAlignedSize + xTailCanarySize;
+#else
+		if (((xHeaderOffset + xAlignedSize) & xBlockAllocatedBit) == 0) {
+			xAllocSize = xHeaderOffset + xAlignedSize;
+#endif
+			pxPreviousBlock = &xStart;
+			pxBlock = heapPROTECT_BLOCK_POINTER(xStart.pxNextFreeBlock);
+
+			/* Walk the free list to find a block that can satisfy the aligned request */
+			while (pxBlock != pxEnd) {
+				/* Align (block + header_offset) up to cache line */
+				xUserAddr = ((size_t)pxBlock + xHeaderOffset + portBYTE_CACHE_ALIGNMENT_MASK) & ~portBYTE_CACHE_ALIGNMENT_MASK;
+				/* BlockLink_t header sits immediately before the aligned user area */
+				xBlockAddr = xUserAddr - xHeaderOffset;
+				/* Bytes between the original block start and the aligned header */
+				xFrontGap = xBlockAddr - (size_t)pxBlock;
+
+				/* If front gap too small for a valid free block, skip to next cache line */
+				if (xFrontGap > 0 && xFrontGap < heapMINIMUM_BLOCK_SIZE) {
+					xUserAddr += portBYTE_CACHE_ALIGNMENT;
+					xBlockAddr = xUserAddr - xHeaderOffset;
+					xFrontGap = xBlockAddr - (size_t)pxBlock;
+				}
+
+				if ((xFrontGap + xAllocSize) <= pxBlock->xBlockSize) {
+					break;
+				}
+
+				pxPreviousBlock = pxBlock;
+				pxBlock = heapPROTECT_BLOCK_POINTER(pxBlock->pxNextFreeBlock);
+			}
+
+			if (pxBlock != pxEnd) {
+				size_t xOrigBlockSize = pxBlock->xBlockSize;
+
+				/* Take the original block out of the free list */
+				pxPreviousBlock->pxNextFreeBlock = heapPROTECT_BLOCK_POINTER(pxBlock->pxNextFreeBlock);
+
+				/* If front gap is large enough, return it as a separate free block */
+				if (xFrontGap >= heapMINIMUM_BLOCK_SIZE) {
+					pxBlock->xBlockSize = xFrontGap;
+					prvInsertBlockIntoFreeList(pxBlock);
+				}
+
+				/* Aligned block header at xBlockAddr */
+				BlockLink_t *pxAlignedBlock = (BlockLink_t *)xBlockAddr;
+
+				/* Split tail if large enough */
+				size_t xTailGap = xOrigBlockSize - xFrontGap - xAllocSize;
+				if (xTailGap >= heapMINIMUM_BLOCK_SIZE) {
+					pxNewBlockLink = (BlockLink_t *)(xBlockAddr + xAllocSize);
+					pxNewBlockLink->xBlockSize = xTailGap;
+					prvInsertBlockIntoFreeList(pxNewBlockLink);
+				} else {
+					/* Absorb tail waste into this allocation */
+					xAllocSize = xOrigBlockSize - xFrontGap;
+				}
+
+				pxAlignedBlock->xBlockSize = xAllocSize;
+
+				xFreeBytesRemaining -= pxAlignedBlock->xBlockSize;
+				if (xFreeBytesRemaining < xMinimumEverFreeBytesRemaining) {
+					xMinimumEverFreeBytesRemaining = xFreeBytesRemaining;
+				}
+
+#if( defined CONFIG_HEAP_PROTECTOR && defined CONFIG_HEAP_CORRUPTION_DETECT_LITE )
+				/* Write head canary */
+				uint32_t *pvHeadCanary = (uint32_t *)((uint8_t *)pxAlignedBlock + xHeapStructSize);
+				for (size_t i = 0; i < xHeadCanarySize / sizeof(uint32_t); i++) {
+					*(pvHeadCanary + i) = xHeadCanaryValue;
+				}
+				/* Write tail canary at end of block */
+				uint32_t *pvTailCanary = (uint32_t *)((uint8_t *)pxAlignedBlock + pxAlignedBlock->xBlockSize - xTailCanarySize);
+				for (size_t i = 0; i < xTailCanarySize / sizeof(uint32_t); i++) {
+					*(pvTailCanary + i) = xTailCanaryValue;
+				}
+#endif
+
+				/* Mark block as allocated */
+				pxAlignedBlock->xBlockSize |= xBlockAllocatedBit;
+				pxAlignedBlock->pxNextFreeBlock = heapPROTECT_BLOCK_POINTER(NULL);
+				xNumberOfSuccessfulAllocations++;
+
+				pvReturn = (void *)xUserAddr;
+				traceMALLOC(pvReturn, xWantedSize);
+			}
+		}
+
+		(void) xTaskResumeAll();
+	}
+
+	return pvReturn;
+}
+
+void *pvPortMallocCacheAligned(size_t xWantedSize)
+{
+	void *pvReturn = pvPortMallocCacheAlignedCore(xWantedSize);
+
+#if ( configUSE_MALLOC_FAILED_HOOK == 1 )
+	{
+		if (pvReturn == NULL) {
+			vApplicationMallocFailedHook(xWantedSize);
+		}
+	}
+#endif
+
+	return pvReturn;
+}
+
+/*-----------------------------------------------------------*/
+
+/*
+ * Cache-aligned reallocation: allocate new cache-aligned block, copy
+ * existing data, then free the old block.
+ */
+void *pvPortReAllocCacheAligned(void *pv, size_t xWantedSize)
+{
+	BlockLink_t *pxLink;
+	unsigned char *puc = (unsigned char *)pv;
+
+	if (pv) {
+		if (!xWantedSize) {
+			vPortFree(pv);
+			return NULL;
+		}
+
+		/* Allocate new cache-aligned block */
+		void *newArea = pvPortMallocCacheAligned(xWantedSize);
+		if (newArea) {
+			/* Recover usable size of old block from its header */
+#if( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE )
+			puc -= (xHeapStructSize + xHeadCanarySize);
+			pxLink = (void *)puc;
+			size_t oldSize = (pxLink->xBlockSize & ~xBlockAllocatedBit) - (xHeapStructSize + xHeadCanarySize + xTailCanarySize);
+#else
+			puc -= xHeapStructSize;
+			pxLink = (void *)puc;
+			size_t oldSize = (pxLink->xBlockSize & ~xBlockAllocatedBit) - xHeapStructSize;
+#endif
+			size_t copySize = (oldSize < xWantedSize) ? oldSize : xWantedSize;
+			memcpy(newArea, pv, copySize);
+
+			/* Release the old block */
+			vPortFree(pv);
+			return newArea;
+		}
+	} else if (xWantedSize) {
+		return pvPortMallocCacheAligned(xWantedSize);
+	}
+
+	return NULL;
+}

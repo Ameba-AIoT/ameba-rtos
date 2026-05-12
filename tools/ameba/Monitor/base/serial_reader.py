@@ -23,7 +23,15 @@ import re
 from pathlib import Path
 
 current_script_path = Path(__file__).resolve().parent
-remote_service_path = current_script_path.parent.parent / 'RemoteService'
+
+# Define possible target paths
+_possible_paths = [
+    current_script_path.parents[1] / 'RemoteService',
+    *(p / 'tools/ameba/RemoteService' for p in current_script_path.parents)
+]
+
+# Find the first existing path, default to the first one if none found
+remote_service_path = next((p for p in _possible_paths if p.exists()), _possible_paths[0])
 
 RemoteSerial = None
 
@@ -127,6 +135,8 @@ class SerialReader(StoppableThread):
                         break
             except Exception as e:
                 break
+
+        # Reset mode: Try Soft reset first, fallback to hard reset
         if self.reset_mode:
             try:
                 self.event_queue.put((TAG_KEY, 'reboot\r\n'), True) # Send reboot command (manually add \r\n)
@@ -135,19 +145,21 @@ class SerialReader(StoppableThread):
 
             self.data_buffer = b''
             start_time = time.time()
+            soft_reset_success = False
+
             while self.running:
                 try:
                     if RemoteSerial and isinstance(self.serial, RemoteSerial):
                         while self.serial.inWaiting() < 1:
                             time.sleep(0.01)
                             if self.expired(start_time):
-                                raise Exception("Reset expired")
+                                break
                         if self.expired(start_time):
-                            raise Exception("Reset expired")
+                            break
                         data = self.serial.read(self.serial.inWaiting())
                     else:
                         if self.expired(start_time):
-                            raise Exception("Reset expired")
+                            break
                         data = self.serial.read(1)
                         if not data:
                             continue
@@ -162,11 +174,28 @@ class SerialReader(StoppableThread):
                     filtered = re.sub(rb'\xff.', b'', self.data_buffer)
                     if b'reboot' in filtered:
                         if b'BOOT-I' in filtered:
+                            soft_reset_success = True
                             break
                 except Exception as e:
-                    print_red(f"Failed to reset, pelase reset manually: {str(e)}")
-                    self.data_buffer = b''
                     break
+
+            # If soft reset failed or timed out, attempt hard reset via DTR/RTS
+            if not soft_reset_success:
+                try:
+                    if RemoteSerial and isinstance(self.serial, RemoteSerial):
+                        self.serial.reset_device()
+                    else:
+                        self.serial.setDTR(True)
+                        self.serial.setRTS(True)
+                        time.sleep(0.1)
+                        self.serial.setDTR(False)
+                        self.serial.setRTS(False)
+                    time.sleep(0.1)
+                    print_yellow("Hard reset triggered.")
+                except Exception as e:
+                    print_red(f"Hard reset failed, please reset manually: {str(e)}")
+
+            self.data_buffer = b''
 
         while self.running:
             try:
@@ -252,7 +281,7 @@ class SerialReader(StoppableThread):
             # logger.addHandler(file_handler)
         return logger
 
-    def open_serial(self, ):
+    def open_serial(self):
         try:
             if self.remote_server and self.remote_port:
                 # print_yellow(f"Connect to remote serial server: {self.remote_server}:{self.remote_port} (Serial port: {self.port})")

@@ -31,6 +31,9 @@
 #define GPIO_LED_PIN			_PA_18	// SWD_CLK
 #define GPIO_JTAG_ENABLE_PIN	_PA_26
 
+#elif defined (CONFIG_RTL8720F)
+#define GPIO_LED_PIN			_PA_15	// SWD_CLK
+#define GPIO_JTAG_ENABLE_PIN	_PA_23
 #endif
 extern int example_mbed_gpio_jtag(void);
 #endif

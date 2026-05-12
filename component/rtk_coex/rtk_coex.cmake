@@ -172,12 +172,11 @@ endif()
 ameba_list_append(private_includes
     rtk_coex_wl_chip
     rtk_coex_ext_chip
-)
 if(CONFIG_RTL8720F)
-ameba_list_append(private_includes
+    ${c_COMPONENT_DIR}/sdn/coex
     ${c_COMPONENT_DIR}/sdn/platform/RTL8720F
+endif()
 )
-endif(CONFIG_RTL8720F)
 
 # Component private part, user config end
 #------------------------------#

@@ -321,7 +321,7 @@ void BOOT_OTA_Extract(void)
 /* Load km0/km4 img and check pattern if secure boot enabled*/
 u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)
 {
-	SubImgInfo_TypeDef SubImgInfo[18];
+	SubImgInfo_TypeDef SubImgInfo[17];
 	u32 LogAddr, PhyAddr, ImgAddr, TotalLen = 0;
 	u8 Cnt;
 	u8 i;
@@ -358,12 +358,6 @@ u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)
 		TotalLen += SubImgInfo[i].Len;
 	}
 	Index += Cnt;
-
-	/* add 4K-align padding info */
-	SubImgInfo[Index].Addr = ImgAddr + TotalLen;
-	SubImgInfo[Index].Len = ((((TotalLen - 1) >> 12) + 1) << 12) - TotalLen;
-	TotalLen += SubImgInfo[Index].Len;
-	Index ++;
 
 	/* remap KM4 XIP image */
 	PhyAddr += TotalLen;

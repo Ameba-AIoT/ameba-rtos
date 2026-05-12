@@ -617,13 +617,11 @@ void at_state(u16 argc, char **argv)
 	}
 #endif
 
-	HeapStats_t pxHeapStats;
-	vPortGetHeapStats(&pxHeapStats);
 	at_printf("HeapStats: \r\n");
 	at_printf("Total Heap:\t%u\r\n", total_heap_size);
-	at_printf("Heap Free Now:\t%u\r\n", pxHeapStats.xAvailableHeapSpaceInBytes);
-	at_printf("Heap Used Now:\t%u\r\n", total_heap_size - pxHeapStats.xAvailableHeapSpaceInBytes);
-	at_printf("Heap Used Max:\t%u\r\n", total_heap_size - pxHeapStats.xMinimumEverFreeBytesRemaining);
+	at_printf("Heap Free Now:\t%u\r\n", (unsigned int)xPortGetFreeHeapSize());
+	at_printf("Heap Used Now:\t%u\r\n", total_heap_size - (unsigned int)xPortGetFreeHeapSize());
+	at_printf("Heap Used Max:\t%u\r\n", total_heap_size - (unsigned int)xPortGetMinimumEverFreeHeapSize());
 
 	at_printf(ATCMD_OK_END_STR);
 }

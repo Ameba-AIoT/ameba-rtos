@@ -86,13 +86,12 @@ typedef struct {
 	u32 last_sample_accum; /**< Previous accumulator value */
 	u32 pkt_per_second;    /**< Number of USB packets per second (e.g., 1000 for Full Speed) */
 
-	u16 frame_cnt;         /**< Number of frames configured for the buffer */
-
 	__IO u16 written;        /**< Length of data already written to the current packet buffer */
 	__IO u16 mps;            /**< Endpoint Maximum Packet Size */
 	__IO u8 sema_valid;      /**< Flag indicating if the semaphore is valid */
 	__IO u8 write_wait_sema; /**< Flag indicating if a write operation is waiting for the semaphore */
 	__IO u8 next_xfer;       /**< Flag to trigger the next transfer */
+	u8 frame_cnt;         /**< Number of frames configured for the buffer */
 } usbh_uac_buf_ctrl_t;
 
 /**
@@ -214,7 +213,7 @@ typedef struct {
   * @param  frame_cnt: Configuration for ring buffer size (frame count).
   * @retval Status (0: Success, <0: Failure)
   */
-int usbh_uac_init(usbh_uac_cb_t *cb, int frame_cnt);
+int usbh_uac_init(usbh_uac_cb_t *cb, u8 frame_cnt);
 
 /**
   * @brief  De-initialize the UAC Class Driver and release resources.

@@ -342,7 +342,11 @@ bool BOOT_RRAM_InfoValid(void)
 }
 
 // 3 Image 1
-void BOOT_Image1(void)
+/* Originally used in the FreeRTOS boot flow without weak linkage.
+ * Marked as weak for Zephyr code reuse, so it can be overridden by
+ * the Zephyr-specific redirection implementation.
+ */
+__weak void BOOT_Image1(void)
 {
 	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
@@ -393,12 +397,13 @@ void BOOT_Image1(void)
 		LDO_MemSetInSleep(MLDO_SLEEP);
 	}
 
-#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
-	BOOT_Data_Flash_Init();
+	u32 Temp = SYSCFG_OTP_BOOTSEL();
+	if ((Temp == BOOT_FROM_FLASH) || (Temp == BOOT_FROM_FLASH1)) {
+		BOOT_Data_Flash_Init();
 
-	flash_highspeed_setup();
-	BOOT_LoadImages();
-#endif
+		flash_highspeed_setup();
+		BOOT_LoadImages();
+	}
 
 	/* it will switch shell control to NP, disable loguart interrupt to avoid loguart irq not assigned in non-secure world.
 	 it should switch before BOOT_RAM_TZCfg to avoid crash when loguart intr occur but it has been set to ns intr. */
@@ -419,7 +424,10 @@ void BOOT_Image1(void)
 	BOOT_Enable_NP();
 #else
 	BOOT_Share_Cache_To_TCM();
-	Boot_Fullmac_LoadIMGAll();
+	Temp = SYSCFG_OTP_BOOTSEL();
+	if ((Temp != BOOT_FROM_FLASH) && (Temp != BOOT_FROM_FLASH1)) {
+		Boot_Fullmac_LoadIMGAll();
+	}
 #endif
 
 	// vector_table = (u32 *)Image2EntryFun->VectorNS;
@@ -462,10 +470,6 @@ BOOT_EXPORT_SYMB_TABLE boot_export_symbol = {
 
 };
 
-#ifdef __ZEPHYR__
-extern void z_arm_reset(void);
-#endif
-
 IMAGE1_ENTRY_SECTION
 RAM_FUNCTION_START_TABLE RamStartTable = {
 	.RamStartFun = NULL,
@@ -473,12 +477,8 @@ RAM_FUNCTION_START_TABLE RamStartTable = {
 	.RamPatchFun0 = NULL,
 	.RamPatchFun1 = NULL,
 	.RamPatchFun2 = NULL,
-#ifdef __ZEPHYR__
-	.FlashStartFun = z_arm_reset,
-#else
 #ifndef CONFIG_FULLMAC_PG_LOADER
 	.FlashStartFun = BOOT_Image1,
-#endif
 #endif
 	.ExportTable = &boot_export_symbol,
 };

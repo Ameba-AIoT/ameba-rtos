@@ -78,6 +78,19 @@
 #define SPI1_MISO  _PB_9
 #define SPI1_SCLK  _PB_7
 #define SPI1_CS    _PB_10
+
+#elif defined (CONFIG_RTL8720F)
+// SPI0 - Slave
+#define SPI0_MOSI  _PA_8
+#define SPI0_MISO  _PA_9
+#define SPI0_SCLK  _PA_7
+#define SPI0_CS    _PA_10
+
+// SPI1 - Master
+#define SPI1_MOSI  _PA_26
+#define SPI1_MISO  _PA_27
+#define SPI1_SCLK  _PA_25
+#define SPI1_CS    _PA_28
 #endif
 
 extern int example_mbed_spi_trx_dma(void);

@@ -11,7 +11,7 @@
 
 
 #include <assert.h>
-static_assert(RTOS_MEM_BYTE_ALIGNMENT == portBYTE_ALIGNMENT, "Incorrect RTOS_MEM_BYTE_ALIGNMENT value config");
+static_assert(RTOS_MEM_BYTE_ALIGNMENT == portBYTE_CACHE_ALIGNMENT, "Incorrect RTOS_MEM_BYTE_ALIGNMENT value config");
 
 // freertos_heap5_config.c
 void os_heap_init(void);
@@ -23,14 +23,14 @@ void rtos_mem_init(void)
 
 void *rtos_mem_malloc(uint32_t size)
 {
-	return pvPortMalloc(size);
+	return pvPortMallocCacheAligned(size);
 }
 
 void *rtos_mem_zmalloc(uint32_t size)
 {
 	void *pbuf = NULL;
 
-	pbuf = pvPortMalloc(size);
+	pbuf = rtos_mem_malloc(size);
 	if (pbuf != NULL) {
 		memset(pbuf, 0, size);
 	}
@@ -46,7 +46,7 @@ void *rtos_mem_calloc(uint32_t elementNum, uint32_t elementSize)
 
 void *rtos_mem_realloc(void *pbuf, uint32_t size)
 {
-	return pvPortReAlloc(pbuf, size);
+	return pvPortReAllocCacheAligned(pbuf, size);
 }
 
 void rtos_mem_free(void *pbuf)
@@ -109,9 +109,4 @@ void *rtos_heap_types_realloc(void *pbuf, uint32_t size, MALLOC_TYPES type)
 	default:
 		return pvPortReAllocBase(pbuf, size, 0);
 	}
-}
-
-void rtos_heap_types_free(void *pbuf)
-{
-	rtos_mem_free(pbuf);
 }

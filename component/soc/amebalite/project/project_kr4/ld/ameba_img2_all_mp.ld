@@ -19,8 +19,8 @@ SECTIONS
 		__boot_text_start__ = .;
 		/* add for bootloader, because bootloader and image2 build together now.*/
 		KEEP(*(SORT(.image1.entry.data*)))
-		__boot_text_end__ = .;
 		. = ALIGN(32);
+		__boot_text_end__ = .;
 	} > KR4_BOOT_RAM_BACKUP
 
 	/* fixed region. do not add any code to this region */
@@ -49,7 +49,6 @@ SECTIONS
 		WLAN_CRITICAL_TEXT
 
 		__sram_image2_end__ = .;
-		. = ALIGN(32);
 
 		*(.sram.only.text*)
 		. = ALIGN(32);

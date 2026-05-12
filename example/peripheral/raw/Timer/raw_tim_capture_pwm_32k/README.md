@@ -27,7 +27,12 @@ This example describes how to use PWM input capture function.
 4. If you run this example in RTL8721F, then connect as below
 
    PA_3 <--> PB_16
-# SW Configuration
+
+5. If you run this example in RTL8720F, then connect as below
+
+   PA_15 <--> PA_16
+
+# SW configuration
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.

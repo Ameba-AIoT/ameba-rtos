@@ -55,8 +55,8 @@ if(CONFIG_SUPPORT_ATCMD)
     ameba_list_append_if(CONFIG_BT private_sources
         atcmd_bt_ext.c
     )
-    ameba_list_append_if(CONFIG_SDN private_sources
-        atcmd_sdn.c
+    ameba_list_append_if(CONFIG_SDN_DEV private_sources
+        # atcmd_sdn.c
     )
 
 if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)

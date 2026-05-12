@@ -60,7 +60,7 @@ This example describes how to use GPIO Port read/write by RAW GPIO API.
 
 # Note
 
-- On RTL8730E, led_pattern is only supported in `PortA`
+- On RTL8730E and RTL8720F, led_pattern is only supported in `PortA`
 - On RTL8726E/RTL8720E/RTL8713E/RTL8710E, the pin of number for `PortB` is 20
 
 # Supported IC
@@ -72,3 +72,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F

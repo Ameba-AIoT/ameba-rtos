@@ -46,7 +46,6 @@ SECTIONS
 		/* image1 text */
 		/* If there is any code that must be placed in RAM, please use .sramdram.only.text section*/
 		*(.sramdram.only.text*)
-		. = ALIGN (32);
 	} > KM4_LOADER_LMA
 
 	.OUTSECTION.text :
@@ -55,14 +54,13 @@ SECTIONS
 		*(.text*)
 		*(.non.dram.text*)
 		*(.rodata*)
-		. = ALIGN (32);
 	} > IMG1_LMA_REGION
 
 	.ram_image1.data :
 	{
+		. = ALIGN(32);
 		__ram_image1_data_start__ = .;
 		*(.data*)
-		. = ALIGN(32);
 		__ram_image1_data_end__ = .;
 
 		__ram_image1_text_end__ = .;
@@ -87,7 +85,6 @@ SECTIONS
 		__ram_image3_start__ = .;
 		__ram_image3_end__ = __ram_image3_start__ + LENGTH(LMA_TZ_REGION);
 	} > LMA_TZ_REGION
-
 }
 
 __rom_stdlib_text_start__ = ORIGIN(KM4_IROM_STDLIB_NS);

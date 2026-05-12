@@ -16,7 +16,7 @@ static Manifest_TypeDef Manifest[2]; //Manifest of SlotA & SlotB
 u8 Signature[2][SIGN_MAX_LEN];
 s64 Ver[2] = {0};  //32-bit full version
 
-static SubImgInfo_TypeDef SubImgInfo[14]; //store sub image addr and length
+static SubImgInfo_TypeDef SubImgInfo[13]; //store sub image addr and length
 
 static const u32 ImagePattern[2] = {
 	APP_IMAGE_PATTERN_1, APP_IMAGE_PATTERN_2,
@@ -257,12 +257,6 @@ u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)
 		TotalLen += SubImgInfo[i].Len;
 	}
 	Index += Cnt;
-
-	/* add 4K-align padding info */
-	SubImgInfo[Index].Addr = ImgAddr + TotalLen;
-	SubImgInfo[Index].Len = ((((TotalLen - 1) >> 12) + 1) << 12) - TotalLen;
-	TotalLen += SubImgInfo[Index].Len;
-	Index ++;
 
 	/* remap KM4 XIP image */
 	PhyAddr += TotalLen;
