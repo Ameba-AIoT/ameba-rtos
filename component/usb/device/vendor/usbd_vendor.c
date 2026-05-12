@@ -68,6 +68,7 @@ static u8 usbd_vendor_lang_id_desc[USB_LEN_LANGID_STR_DESC] USB_DMA_ALIGNED = {
 	USB_HIGH_BYTE(USBD_VENDOR_LANGID_STRING),
 };  /* usbd_vendor_lang_id_desc */
 
+#ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static u8 usbd_vendor_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_DMA_ALIGNED = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
@@ -193,6 +194,7 @@ static u8 usbd_vendor_hs_config_desc[USBD_VENDOR_CONFIG_DESC_SIZE] USB_DMA_ALIGN
 	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
 	USBD_VENDOR_HS_ISOC_IN_INTERVAL,				/* bInterval */
 };  /* usbd_vendor_hs_config_desc */
+#endif
 
 /* USB Vendor Device Full Speed Configuration Descriptor */
 static u8 usbd_vendor_fs_config_desc[USBD_VENDOR_CONFIG_DESC_SIZE] USB_DMA_ALIGNED = {
@@ -691,15 +693,19 @@ static u8 *usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
 			buf = usbd_vendor_hs_config_desc;
 			*len = sizeof(usbd_vendor_hs_config_desc);
-		} else {
+		} else
+#endif
+		{
 			buf = usbd_vendor_fs_config_desc;
 			*len = sizeof(usbd_vendor_fs_config_desc);
 		}
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		buf = usbd_vendor_device_qualifier_desc;
 		*len = sizeof(usbd_vendor_device_qualifier_desc);
@@ -717,6 +723,7 @@ static u8 *usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_
 		desc[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		buf = desc;
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (req->wValue & 0xFF) {
@@ -1075,4 +1082,3 @@ int usbd_vendor_receive_isoc_data(void)
 
 	return HAL_OK;
 }
-
