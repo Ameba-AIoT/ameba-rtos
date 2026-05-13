@@ -9,10 +9,15 @@ PWD := $(shell pwd)
 KVER := $(shell uname -r)
 KDIR := /lib/modules/$(KVER)/build
 
-all:
+prepare:
+	@if [ ! -L rtk_coex.c ]; then ln -s ../rtk_coex.c rtk_coex.c; fi
+	@if [ ! -L rtk_coex.h ]; then ln -s ../rtk_coex.h rtk_coex.h; fi
+	@if [ ! -L rtw_coex_host_api.h ]; then ln -s ../rtw_coex_host_api.h rtw_coex_host_api.h; fi
+
+all: prepare
 	make ${KBUILD_EXTRA_SYMBOLS} -C $(KDIR) M=$(PWD) modules
 
 clean:
 	make -C $(KDIR) M=$(PWD) clean
-
+	rm -f rtk_coex.c rtk_coex.h rtw_coex_host_api.h
 

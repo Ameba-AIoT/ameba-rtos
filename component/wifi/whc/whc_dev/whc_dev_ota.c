@@ -12,6 +12,9 @@
 #include "wtn_app_ota.h"
 extern struct rmesh_http_ota_param ota_param;
 #endif
+/* time for reset when ota done, default 1s, change if needed */
+#define WHC_WAITING_RESET 1000
+extern void sys_reset(void);
 
 void whc_update_ota_task(void *param)
 {
@@ -41,9 +44,11 @@ void whc_update_ota_task(void *param)
 	RTK_LOGE(TAG_WLAN_INIC, "ota exit");
 	if (!ret) {
 		RTK_LOGE(TAG_WLAN_INIC, "can reboot\n");
-#ifdef todo
-#endif
-		// sys_reset();
+		if (ret == OTA_OK) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%s] Ready to reboot\n", __FUNCTION__);
+			rtos_time_delay_ms(WHC_WAITING_RESET);
+			sys_reset();
+		}
 	}
 
 exit:
@@ -179,5 +184,6 @@ int whc_dev_ota_close(void)
 
 	whc_dev_api_send_to_host(buf, buf_len);
 
+	rtos_mem_free(buf);
 	return 0;
 }

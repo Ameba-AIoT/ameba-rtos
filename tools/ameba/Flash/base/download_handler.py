@@ -120,8 +120,12 @@ class Ameba(object):
                         self.serial_port.close(close_tcp=self.close_tcp_on_cleanup)
                     else:
                         self.serial_port.close()
-                while self.serial_port.is_open:
-                    pass
+                deadline = time.monotonic() + 3.0
+                while self.serial_port.is_open and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                if self.serial_port.is_open:
+                    self.logger.error(f"{self.serial_port.port} close timeout")
+                    return ErrType.SYS_IO
                 self.logger.info(f"{self.serial_port.port} closed.")
             except Exception as err:
                 self.logger.error(f"close error: {err}", exc_info=True)
@@ -204,8 +208,12 @@ class Ameba(object):
                         try:
                             if self.serial_port.is_open:
                                 self.serial_port.close()
-                            while self.serial_port.is_open:
-                                pass
+                            deadline = time.monotonic() + 3.0
+                            while self.serial_port.is_open and time.monotonic() < deadline:
+                                time.sleep(0.01)
+                            if self.serial_port.is_open:
+                                self.logger.error(f"{self.serial_port.port} close timeout")
+                                return ErrType.SYS_IO
                             ret = ErrType.OK
                             break
                         except:
@@ -308,8 +316,12 @@ class Ameba(object):
                     if self.serial_port.is_open:
                         self.serial_port.close()
 
-                    while self.serial_port.is_open:
-                        pass
+                    deadline = time.monotonic() + 3.0
+                    while self.serial_port.is_open and time.monotonic() < deadline:
+                        time.sleep(0.01)
+                    if self.serial_port.is_open:
+                        self.logger.error(f"{self.serial_port.port} close timeout")
+                        return ErrType.SYS_IO
                     ret = ErrType.OK
                 except:
                     ret = ErrType.SYS_IO
@@ -489,7 +501,10 @@ class Ameba(object):
                                                                (self.setting.switch_baudrate_at_floader == 1) else self.baudrate)
         boot_delay = self.setting.usb_floader_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.floader_boot_delay_in_second
 
-        if (not self.is_usb) and (self.setting.auto_switch_to_download_mode_with_dtr_rts != 0):
+        # default disable auto_switch_to_download_mode_with_dtr_rts_first
+        # if need to enter download mode with dtr/rts first, enable auto_switch_to_download_mode_with_dtr_rts_first
+        if (not self.is_usb) and (self.setting.auto_switch_to_download_mode_with_dtr_rts != 0) and \
+                (self.setting.auto_switch_to_download_mode_with_dtr_rts_first != 0):
             ret = self.auto_enter_download_mode()
             if ret != ErrType.OK:
                 self.logger.error(f"Enter download mode by DTR/RTS fail: {ret}")
@@ -497,8 +512,21 @@ class Ameba(object):
 
         ret, is_floader = self.check_download_mode()
         if ret != ErrType.OK:
-            self.logger.error(f"Enter download mode fail: {ret}")
-            return ret
+            # default enable dtr/rts
+            # if reboot uartburn not work, will try enter download mode with dtr/rts
+            if (not self.is_usb) and (self.setting.auto_switch_to_download_mode_with_dtr_rts != 0):
+                ret = self.auto_enter_download_mode()
+                if ret != ErrType.OK:
+                    self.logger.error(f"Enter download mode by DTR/RTS fail: {ret}")
+                    return ret
+                else:
+                    ret, is_floader = self.check_download_mode()
+                    if ret != ErrType.OK:
+                        self.logger.error(f"Enter download mode fail: {ret}")
+                        return ret
+            else:
+                self.logger.error(f"Enter download mode fail: {ret}")
+                return ret
 
         if not is_floader:
             # download flashloader to RAM
@@ -701,18 +729,19 @@ class Ameba(object):
             next_op = NextOpType.NONE
 
         if next_op != NextOpType.NONE:
-            if (next_op == NextOpType.RESET) and (not self.is_usb) and (self.setting.auto_reset_device_with_dtr_rts != 0):
-                self.logger.debug(f"Reset device with DTR/RTS...")
-                ret = self.auto_reset_device()
-                if ret != ErrType.OK:
-                    self.logger.warning(f"Reset device with DTR/RTS fail: {ret}")
-            else:
-                if next_op == NextOpType.RESET:
-                    self.logger.info(f"Reset device without DTR/RTS")
+            if next_op == NextOpType.RESET:
+                self.logger.debug(f"Reset device with WDG")
 
-                ret = self.floader_handler.next_operation(next_op, 0)
-                if ret != ErrType.OK:
-                    self.logger.warning(f"Next option {next_op} fail: {ret}")
+            ret = self.floader_handler.next_operation(next_op, 0)
+            if ret != ErrType.OK:
+                self.logger.warning(f"Next option {next_op} fail: {ret}")
+
+        # reset device with dtr/rts
+        if (next_op == NextOpType.RESET) and (not self.is_usb) and (self.setting.auto_reset_device_with_dtr_rts != 0):
+            self.logger.debug(f"Reset device with DTR/RTS...")
+            ret = self.auto_reset_device()
+            if ret != ErrType.OK:
+                self.logger.warning(f"Reset device with DTR/RTS fail: {ret}")
 
         return ret
 
