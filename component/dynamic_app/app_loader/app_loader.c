@@ -75,6 +75,10 @@ int LoadAppFromRAM(const uint8_t *tinf_img, int tinf_img_size, void *apps_info, 
 			if (tinf->data_size > 0) {
 				*app_data_base = (uintptr_t)&sys;
 
+				if (tinf->data_size < 1 || apps_info_size > (int)((tinf->data_size - 1) * sizeof(uint32_t))) {
+					RTK_LOGE(TAG, "App data_size too small for apps_info!\n");
+					return APP_INVALID;
+				}
 				memset(apps_info, 0x0, apps_info_size);
 				memcpy(apps_info, app_data_base + 1, apps_info_size);
 				DCache_CleanInvalidate((u32)apps_info, apps_info_size);
@@ -171,13 +175,17 @@ int LoadApp(const uint8_t *tinf_img, int tinf_img_size, void *apps_info, int app
 		RTK_LOGI(TAG, "App GOT entries: %ld\n", tinf->got_entries);
 		// Allocate memory for data and bss section of the app on the heap
 		uint32_t app_data_size = tinf->rel_data_size + tinf->data_size + tinf->got_entries + tinf->bss_size;
+		uint32_t alloc_words = app_data_size + DEFAULT_STACK_SIZE;
+		if (alloc_words < app_data_size) {
+			RTK_LOGE(TAG, "App data size overflow!\n");
+			return APP_INVALID;
+		}
 		// TODO: Add the size of the stack actually required by the app, currently hardcoded to DEFAULT_STACK_SIZE words, change in the xTaskCreate API also
-		RTK_LOGI(TAG, "Allocating app memory of %ld bytes\n", app_data_size * 4);
-		StackType_t *app_rel_data_base = malloc((app_data_size + DEFAULT_STACK_SIZE) * 4);
+		RTK_LOGI(TAG, "Allocating app memory of %ld bytes\n", (long)(alloc_words * sizeof(uint32_t)));
+		StackType_t *app_rel_data_base = calloc(alloc_words, sizeof(uint32_t));
 		if (app_rel_data_base == NULL) {
 			return APP_OOM;
 		}
-		memset(app_rel_data_base, 0x0, (app_data_size + DEFAULT_STACK_SIZE) * 4);
 		uint32_t *app_data_base = app_rel_data_base + tinf->rel_data_size;
 		// app_stack_base is the address of the base of the stack used by
 		// the rtos task
@@ -217,6 +225,11 @@ int LoadApp(const uint8_t *tinf_img, int tinf_img_size, void *apps_info, int app
 			}
 			if (tinf->data_size > 0) {
 				// Copy data section from flash to the RAM we allocated above
+				if ((uint8_t *)(data_base + tinf->data_size) > tinf_img + tinf_img_size) {
+					RTK_LOGE(TAG, "App data_size exceeds image bounds!\n");
+					free(app_rel_data_base);
+					return APP_INVALID;
+				}
 				memcpy(app_data_base, data_base, (tinf->data_size * 4));
 
 				RTK_LOGI(TAG, "Data at data section (flash): 0x%08X\n", *(uint32_t *)(tinf->bin + (tinf->text_size)));
@@ -226,6 +239,11 @@ int LoadApp(const uint8_t *tinf_img, int tinf_img_size, void *apps_info, int app
 				// This is where the sys_struct address was kept by the linker script
 				*app_data_base = (uintptr_t)&sys;
 
+				if (tinf->data_size < 1 || apps_info_size > (int)((tinf->data_size - 1) * sizeof(uint32_t))) {
+					RTK_LOGE(TAG, "App data_size too small for apps_info!\n");
+					free(app_rel_data_base);
+					return APP_INVALID;
+				}
 				memset(apps_info, 0x0, apps_info_size);
 				memcpy(apps_info, app_data_base + 1, apps_info_size);
 				DCache_CleanInvalidate((u32)apps_info, apps_info_size);
