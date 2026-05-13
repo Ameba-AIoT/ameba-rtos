@@ -82,10 +82,28 @@ HAL_SSI_ADAPTOR ssi_adapter_g[2];
 /** @} */
 
 
+/**
+  * @brief  Enable or disable slave.
+  * @note  Valid only when the device is configured as a master.
+  * @param  obj: SPI master object defined in application software.
+  * @param  slaveindex: the index of slave to be selected.
+  */
+void spi_slave_select(spi_t *obj, ChipSelect slaveindex)
+{
+	uint8_t spi_idx = obj->spi_idx & 0x01;
+	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
+
+	if (ssi_adapter->Role == SSI_MASTER) {
+		SSI_SetSlaveEnable(ssi_adapter->spi_dev, slaveindex);
+	} else {
+		assert_param(0);
+	}
+}
 
 /** @defgroup MBED_SPI_Exported_Functions MBED_SPI Exported Functions
   * @{
   */
+
 void spi_flush_rx_fifo(spi_t *obj);
 
 static void spi_tx_done_callback(void *spi_obj)
@@ -131,7 +149,6 @@ static void spi_bus_tx_done_callback(void *spi_obj)
   * @param  obj: SPI object defined in application software.
   * @param  handler: Interrupt bus Tx done callback function.
   * @param  id: Interrupt bus Tx done callback parameter.
-  * @retval none
   */
 void spi_bus_tx_done_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id)
 {
@@ -436,7 +453,6 @@ static u32 spi_stop_recv(spi_t *obj)
   * @param  miso: MISO PinName according to pinmux spec.
   * @param  sclk: SCLK PinName according to pinmux spec.
   * @param  ssel: CS PinName according to pinmux spec.
-  * @retval none
   * @attention Remember to set obj->spi_index to MBED_SPI0 or MBED_SPI1 before calling spi_init.
   */
 void spi_init(spi_t *obj, PinName mosi, PinName miso, PinName sclk, PinName ssel)
@@ -496,7 +512,6 @@ void spi_init(spi_t *obj, PinName mosi, PinName miso, PinName sclk, PinName ssel
 /**
   * @brief  Deinitialize and Disable the SPI device, include interrupt/DMA/DISABLE SPI.
   * @param  obj: SPI object defined in application software.
-  * @retval none
   */
 void spi_free(spi_t *obj)
 {
@@ -555,7 +570,6 @@ void spi_free(spi_t *obj)
   * @param  slave: This parameter can be one of the following values:
   *		@arg 0: Configure SPI as the master.
   *		@arg 1: Configure SPI as the slave.
-  * @retval none
   */
 void spi_format(spi_t *obj, int bits, int mode, int slave)
 {
@@ -633,9 +647,7 @@ void spi_format(spi_t *obj, int bits, int mode, int slave)
   * @brief  Set SPI baudrate.
   * @param  obj: SPI master object defined in application software.
   * @param  hz: Baudrate for SPI bus in units of Hz.
-  * @retval none
   * @attention Baudrate to be set should be less than or equal to half of the SPI IpClk.
-  * @note none.
   */
 void spi_frequency(spi_t *obj, int hz)
 {
@@ -663,25 +675,6 @@ void spi_frequency(spi_t *obj, int hz)
 	}
 
 	SSI_SetBaudDiv(ssi_adapter->spi_dev, ClockDivider);
-}
-
-/**
-  * @brief  Enable or disable slave .
-  * @note  Valid only when the device is configured as a master.
-  * @param  obj: SPI master object defined in application software.
-  * @param  slaveindex: the index of slave to be selected.
-  * @retval None
-  */
-void spi_slave_select(spi_t *obj, ChipSelect slaveindex)
-{
-	uint8_t spi_idx = obj->spi_idx & 0x01;
-	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
-
-	if (ssi_adapter->Role == SSI_MASTER) {
-		SSI_SetSlaveEnable(ssi_adapter->spi_dev, slaveindex);
-	} else {
-		assert_param(0);
-	}
 }
 
 static inline void ssi_write(spi_t *obj, int value)
@@ -745,7 +738,6 @@ int spi_slave_read(spi_t *obj)
   * @brief  Slave SPI sends one frame.
   * @param  obj: SPI slave object defined in application software.
   * @param  value: Data to be transmitted.
-  * @retval none
   */
 void spi_slave_write(spi_t *obj, int value)
 {
@@ -768,7 +760,6 @@ int spi_busy(spi_t *obj)
 /**
   * @brief  SPI device to flush Rx FIFO.
   * @param  obj: SPI object defined in application software.
-  * @retval none
   */
 void spi_flush_rx_fifo(spi_t *obj)
 {
@@ -790,9 +781,9 @@ void spi_flush_rx_fifo(spi_t *obj)
   * @param  obj: SPI slave object defined in application software.
   * @param  rx_buffer: Buffer to save data read from SPI FIFO.
   * @param  length: Number of data bytes to be read.
-  * @return Stream init status.
-  * @retval HAL_OK: Success.
-  * @retval HAL_BUSY: Error.
+  * @return Operation status:
+  *         - HAL_OK: Success.
+  *         - HAL_BUSY: Error.
   */
 int32_t spi_slave_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
 {
@@ -820,9 +811,9 @@ int32_t spi_slave_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
   * @param  obj: SPI slave object defined in application software.
   * @param  tx_buffer: Buffer to be written to Tx FIFO.
   * @param  length: Number of data bytes to be sent.
-  * @return Stream init status.
-  * @retval HAL_OK: Success.
-  * @retval HAL_BUSY: Error.
+  * @return Operation status:
+  *         - HAL_OK: Success.
+  *         - HAL_BUSY: Error.
   */
 int32_t spi_slave_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
 {
@@ -848,9 +839,9 @@ int32_t spi_slave_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
   * @param  obj: SPI master object defined in application software.
   * @param  rx_buffer: Buffer to save data read from SPI FIFO.
   * @param  length: Number of data bytes to be read.
-  * @return Stream init status.
-  * @retval HAL_OK: Success.
-  * @retval HAL_BUSY: Error.
+  * @return Operation status:
+  *         - HAL_OK: Success.
+  *         - HAL_BUSY: Error.
   */
 int32_t spi_master_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
 {
@@ -888,9 +879,9 @@ int32_t spi_master_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
   * @param  obj: SPI master object defined in application software.
   * @param  tx_buffer: Buffer to be written to Tx FIFO.
   * @param  length: Number of data bytes to be sent.
-  * @return Stream init status.
-  * @retval HAL_OK: Success.
-  * @retval HAL_BUSY: Error.
+  * @return Operation status:
+  *         - HAL_OK: Success.
+  *         - HAL_BUSY: Error.
   */
 int32_t spi_master_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
 {
@@ -919,9 +910,9 @@ int32_t spi_master_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
   * @param  tx_buffer: Buffer to be written to Tx FIFO.
   * @param  rx_buffer: Buffer to save data read from SPI FIFO.
   * @param  length: Number of data bytes to be sent and receive.
-  * @return Stream init status.
-  * @retval HAL_OK: Success.
-  * @retval HAL_BUSY: Error.
+  * @return Operation status:
+  *         - HAL_OK: Success.
+  *         - HAL_BUSY: Error.
   */
 int32_t spi_master_write_read_stream(spi_t *obj, char *tx_buffer,
 									 char *rx_buffer, uint32_t length)
@@ -960,7 +951,6 @@ int32_t spi_master_write_read_stream(spi_t *obj, char *tx_buffer,
   * @param  obj: SPI object defined in application software.
   * @param  handler: SPI Interrupt callback function.
   * @param  id: SPI Interrupt callback parameter.
-  * @retval none
   */
 void spi_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id)
 {
@@ -973,9 +963,9 @@ void spi_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id)
   * @param  obj: SPI slave object defined in application software.
   * @param  rx_buffer: Buffer to save data read from SPI FIFO.
   * @param  length: Number of data bytes to be read.
-  * @return Stream init status.
-  * @retval HAL_OK: Success.
-  * @retval HAL_BUSY: Error.
+  * @return Operation status:
+  *         - HAL_OK: Success.
+  *         - HAL_BUSY: Error.
   */
 int32_t spi_slave_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
 {
@@ -1002,9 +992,9 @@ int32_t spi_slave_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
   * @param  obj: SPI slave object defined in application software.
   * @param  tx_buffer: Buffer to be written to Tx FIFO.
   * @param  length: Number of data bytes to be send.
-  * @return Stream init status.
-  * @retval HAL_OK: Success.
-  * @retval HAL_BUSY: Error.
+  * @return Operation status:
+  *         - HAL_OK: Success.
+  *         - HAL_BUSY: Error.
   */
 int32_t spi_slave_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length)
 {
@@ -1031,9 +1021,9 @@ int32_t spi_slave_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length)
   * @param  obj: SPI master object defined in application software.
   * @param  rx_buffer: Buffer to save data read from SPI FIFO.
   * @param  length: Number of data bytes to be read.
-  * @return Stream init status.
-  * @retval HAL_OK: Success.
-  * @retval HAL_BUSY: Error.
+  * @return Operation status:
+  *         - HAL_OK: Success.
+  *         - HAL_BUSY: Error.
   * @note DMA or Interrupt mode can be used to TX dummy data
   */
 int32_t spi_master_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
@@ -1077,9 +1067,9 @@ int32_t spi_master_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
   * @param  obj: SPI master object defined in application software.
   * @param  tx_buffer: Buffer to be written to Tx FIFO.
   * @param  length: Number of data bytes to be sent.
-  * @return Stream init status.
-  * @retval HAL_OK: Success.
-  * @retval HAL_BUSY: Error.
+  * @return Operation status:
+  *         - HAL_OK: Success.
+  *         - HAL_BUSY: Error.
   */
 int32_t spi_master_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length)
 {
@@ -1108,9 +1098,9 @@ int32_t spi_master_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length
   * @param  tx_buffer: Buffer to be written to Tx FIFO.
   * @param  rx_buffer: Buffer to save data read from SPI FIFO.
   * @param  length: Number of data bytes to be sent and received.
-  * @return Stream init status.
-  * @retval HAL_OK: Success.
-  * @retval HAL_BUSY: Error.
+  * @return Operation status:
+  *         - HAL_OK: Success.
+  *         - HAL_BUSY: Error.
   */
 int32_t spi_master_write_read_stream_dma(spi_t *obj, char *tx_buffer,
 		char *rx_buffer, uint32_t length)
@@ -1367,7 +1357,6 @@ EndOfCS:
 /**
   * @brief  Enable SPI device clock.
   * @param  obj: SPI object defined in application software.
-  * @retval none
   */
 void spi_enable(spi_t *obj)
 {
@@ -1383,7 +1372,6 @@ void spi_enable(spi_t *obj)
 /**
   * @brief  Disable SPI device clock.
   * @param  obj: SPI object defined in application software.
-  * @retval none
   */
 void spi_disable(spi_t *obj)
 {
