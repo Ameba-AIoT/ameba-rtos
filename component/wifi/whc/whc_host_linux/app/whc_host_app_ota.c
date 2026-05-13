@@ -14,6 +14,7 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
+#include <sys/syscall.h>
 
 #include <whc_host_app_api.h>
 #include <whc_host_netlink.h>
@@ -23,6 +24,13 @@
 static const char *ota_host = "192.168.50.55";  //"m-apps.oss-cn-shenzhen.aliyuncs.com"
 static const char *ota_resource = "ota_all.bin";     //"051103061600.bin"
 #define OTA_TYPE OTA_HTTP
+
+//#define WHC_OTA_AUTO_RMMOD	1
+#ifdef WHC_OTA_AUTO_RMMOD
+/* For example only. Replace with the real module name as needed. */
+static const char *module_name = "whc_sdio";
+#endif
+
 struct whc_ota_context *whc_ota_ctx;
 
 #ifdef todo
@@ -495,6 +503,18 @@ void whc_host_ota_data_to_dev(int16_t len)
 	free(buf);
 }
 
+void whc_host_ota_end(void)
+{
+	whc_host_ota_deinit();
+#ifdef WHC_OTA_AUTO_RMMOD
+	unsigned int flags = 0; // O_NONBLOCK
+	int ret = syscall(SYS_delete_module, module_name, flags);
+	if (ret != 0) {
+		printf("[%s] fail to rmmod target module \n", __FUNCTION__);
+	}
+#endif
+}
+
 void whc_host_ota_from_dev(uint8_t *buf)
 {
 	struct whc_host_ota_hdr *ota_hdr = (struct whc_host_ota_hdr *)buf;
@@ -506,6 +526,7 @@ void whc_host_ota_from_dev(uint8_t *buf)
 		whc_host_ota_data_to_dev(len);
 		break;
 	case WHC_OTA_END:
+		whc_host_ota_end();
 		break;
 	default:
 		break;

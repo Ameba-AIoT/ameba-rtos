@@ -66,6 +66,22 @@ static s64 BOOT_OTA_GetCertRollbackVer(void)
 	return Anti_VerNum;
 }
 
+static void BOOT_OTA_ValidIMGNum(void)
+{
+	s64 VN_CERT; //32-bit full version in OTP
+	/* --------------------------------- Get bootldr version in OTP if anti-rollback --------------------------------- */
+	VN_CERT = BOOT_OTA_GetCertRollbackVer();
+
+	/* --------------------------------- Check full KeyVerion in certificate--------------------------------- */
+	if ((VN_CERT > Ver[0]) && (VN_CERT > Ver[1])) {
+		ValidIMGNum = NONEVALIDIMG;
+	} else if ((VN_CERT <= Ver[0]) && (VN_CERT <= Ver[1])) {
+		ValidIMGNum = TWOVALIDIMG;
+	} else {
+		ValidIMGNum = ONEVALIDIMG;
+	}
+}
+
 /**
   * @brief  check Certificate pattern and version
   * @param none
@@ -76,8 +92,7 @@ u8 BOOT_OTA_SlotSelect(void)
 	u16 MajorVer[2] = {0}; //16-bit major
 	u16 MinorVer[2] = {0}; //16-bit minor
 	u32 Vertemp;
-	s64 VN_CERT; //32-bit full version in OTP
-	u8 ImgIndex, i;
+	u8 i;
 
 	/* ----1 load certificate(Slot A & Slot B) from flash to SRAM, get full version and check validation---- */
 	for (i = 0; i < 2; i++) {
@@ -97,20 +112,9 @@ u8 BOOT_OTA_SlotSelect(void)
 		}
 	}
 
-	/* ---------------------------------2 Get bootldr version in OTP if anti-rollback --------------------------------- */
-	VN_CERT = BOOT_OTA_GetCertRollbackVer();
+	BOOT_OTA_ValidIMGNum();
 
-	/* ---------------------------------3 Check full KeyVerion in certificate--------------------------------- */
-	if ((VN_CERT > Ver[0]) && (VN_CERT > Ver[1])) {
-		ValidIMGNum = NONEVALIDIMG;
-	} else if ((VN_CERT <= Ver[0]) && (VN_CERT <= Ver[1])) {
-		ValidIMGNum = TWOVALIDIMG;
-	} else {
-		ValidIMGNum = ONEVALIDIMG;
-	}
-
-	ImgIndex = (Ver[0] >= Ver[1]) ? BOOT_FROM_OTA1 : BOOT_FROM_OTA2;
-	return ImgIndex;
+	return (Ver[0] >= Ver[1]) ? BOOT_FROM_OTA1 : BOOT_FROM_OTA2;
 }
 
 u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char **ImgName, u8 ErrLog)
@@ -330,7 +334,6 @@ void BOOT_OTA_Region_Init(void)
 u8 BOOT_Extract_SlotSelect(void)
 {
 	u32 Vertemp;
-	s64 VN_CERT; //32-bit full version in OTP
 	u8 i, ExtractIdx;
 
 	/* 1. load manifest(Slot A & Slot B) from flash to SRAM, treat OTA1's certificate as Manifest because header 24B is same */
@@ -361,18 +364,7 @@ u8 BOOT_Extract_SlotSelect(void)
 		return 0;
 	}
 
-	/* ---------------------------------2 Get anti-rollback version in OTP --------------------------------- */
-	VN_CERT = (s64)BOOT_OTA_GetCertRollbackVer();
-
-	/* ---------------------------------3 Check full KeyVerion in certificate--------------------------------- */
-	if ((VN_CERT > Ver[0]) && (VN_CERT > Ver[1])) {
-		/* No IMG Valid, let BOOT_OTA_IMG2 handle this */
-		ValidIMGNum = NONEVALIDIMG;
-	} else if ((VN_CERT <= Ver[0]) && (VN_CERT <= Ver[1])) {
-		ValidIMGNum = TWOVALIDIMG;
-	} else {
-		ValidIMGNum = ONEVALIDIMG;
-	}
+	BOOT_OTA_ValidIMGNum();
 
 	return ExtractIdx;
 }
@@ -424,67 +416,6 @@ void BOOT_OTA_Extract(void)
 }
 #endif
 
-u32 Boot_Fullmac_XipEn(void)
-{
-	u32 LogAddr, PhyAddr, ImgAddr;
-
-	// Do not support RSIP-OTF, manifest cannot be found for image Header is encrypted.
-	assert_param(SYSCFG_OTP_BootFromNor());
-
-	/* Note: remove BOOT_OTA_Region_Init later and set PhyAddr directly */
-	BOOT_OTA_Region_Init();
-	PhyAddr = OTA_Region[IMG_CERT][0];
-	LogAddr = (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN;
-
-	RSIP_MMU_Config(MMU_ID2, LogAddr, (u32)__km4tz_flash_text_end__, PhyAddr);
-	RSIP_MMU_Cmd(MMU_ID2, ENABLE);
-	RSIP_MMU_Cache_Clean();
-
-	ImgAddr = SYSCFG_OTP_BootFromNor() ? LogAddr : PhyAddr;
-	return ImgAddr;
-}
-
-void Boot_Fullmac_LoadImage(void)
-{
-	SubImgInfo_TypeDef SubImgInfo[3];
-	u32 ImgAddr, TotalLen = 0;
-	u8 Cnt, i;
-	FIH_DECLARE(fih_rc, FIH_FAILURE);
-
-	char *ApLabel[] = {"AP XIP IMG", "AP SRAM", "AP PSRAM"};
-
-	// 1. for sram recycle, manifest is locate after image bin.
-	ImgAddr = Boot_Fullmac_XipEn();
-
-	Cnt = sizeof(ApLabel) / sizeof(char *);
-	if (BOOT_LoadSubImage(&SubImgInfo[0], ImgAddr, Cnt, ApLabel, TRUE) == FALSE) {
-		goto Fail;
-	}
-
-	assert_param(SubImgInfo[1].Addr == ((u32)__image2_entry_func__ - IMAGE_HEADER_LEN));
-
-	for (i = 0; i < Cnt; i++) {
-		TotalLen += SubImgInfo[i].Len;
-	}
-	/* Here LogAddr is same as PhyAddr */
-	ImgAddr += TotalLen;
-
-	/* 2. locate manifest */
-	BOOT_ImgCopy((void *)&Manifest[0], (void *)ImgAddr, sizeof(Manifest_TypeDef));
-
-	/* 3. verify signature */
-	assert_param(Cnt <= sizeof(SubImgInfo) / sizeof(SubImgInfo_TypeDef));
-	FIH_CALL(BOOT_Extract_SignatureCheck, fih_rc, &Manifest[0], &SubImgInfo[0], Cnt);
-	if (FIH_EQ(fih_rc, FIH_SUCCESS)) {
-		return;
-	}
-
-Fail:
-	RTK_LOGE(TAG, "FULLMAC IMG2 Load IMG Fail!\n");
-	/* stuck and clear msp if boot fail */
-	SBOOT_Validate_Fail_Stuck(FALSE);
-}
-
 u8 BOOT_OTA_IMG(void)
 {
 	u8 i, ImgIndex = 0;
@@ -512,7 +443,6 @@ u8 BOOT_OTA_IMG(void)
 		goto Fail;
 	}
 
-	version = (u32)(Ver[ImgIndex] & 0xFFFFFFFF);
 	/* step3: check img from selected idx */
 	for (i = 0; i < ValidIMGNum; i++) {
 

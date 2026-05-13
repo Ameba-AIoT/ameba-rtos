@@ -6,11 +6,6 @@ include(${c_CMAKE_FILES_DIR}/global_define.cmake)
 import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
 ameba_reset_global_define() #NOTE: Some variables like c_MP need to update after import kconfig
 
-if ((NOT CONFIG_WHC_INTF_IPC_MENU) AND CONFIG_WHC_DEV_MENU)
-    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${FINAL_IMAGE_DIR}/km4tz_fullmac.bin ${FINAL_IMAGE_DIR}/${c_APP_BINARY_NAME})
-    return()
-endif()
-
 message( "========== Image app generate start ==========")
 
 set(app_full_path ${c_IMAGE_OUTPUT_DIR}/${c_APP_BINARY_NAME})
@@ -19,6 +14,17 @@ ameba_modify_file_path(${app_full_path} app_tmp_full_path p_SUFFIX _tmp)
 ameba_modify_file_path(${app_ns_full_path} app_ns_tmp_full_path p_SUFFIX _tmp)
 ameba_modify_file_path(${app_full_path} app_compress p_SUFFIX _compress)
 ameba_modify_file_path(${app_ns_full_path} app_compress_ns p_SUFFIX _compress)
+
+if (CONFIG_WHC_INTF_SDIO)
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_1.bin ${FINAL_IMAGE_DIR}/RTL8851FS_FW_1.bin)
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_2.bin ${FINAL_IMAGE_DIR}/RTL8851FS_FW_2.bin)
+elseif (CONFIG_WHC_INTF_USB)
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_1.bin ${FINAL_IMAGE_DIR}/RTL8851FU_FW_1.bin)
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_2.bin ${FINAL_IMAGE_DIR}/RTL8851FU_FW_2.bin)
+else()
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E remove ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_1.bin)
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E remove ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_2.bin)
+endif()
 
 if(CONFIG_TRUSTZONE)
     ameba_axf2bin_fw_pack(

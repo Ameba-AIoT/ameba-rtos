@@ -35,14 +35,15 @@ def create_logger(name, log_level="INFO", stream=sys.stdout, file=None):
         logging.addLevelName(logging.WARNING, f"{Fore.YELLOW}W{Style.RESET_ALL}")
         logging.addLevelName(logging.ERROR, f"{Fore.RED}E{Style.RESET_ALL}")
         logging.addLevelName(logging.FATAL, f"{Fore.RED}{Style.BRIGHT}F{Style.RESET_ALL}")
-        consoleHandler = logging.StreamHandler(stream)
-        consoleHandler.setFormatter(formatter)
-        logger.addHandler(consoleHandler)
 
         if file is not None:
             fileHandler = logging.FileHandler(file, mode='a')
             fileHandler.setFormatter(formatter)
             logger.addHandler(fileHandler)
+
+        consoleHandler = logging.StreamHandler(stream)
+        consoleHandler.setFormatter(formatter)
+        logger.addHandler(consoleHandler)
 
         logger.propagate = False  # Prevent logging from propagating to the root logger
         logger.setLevel(level)

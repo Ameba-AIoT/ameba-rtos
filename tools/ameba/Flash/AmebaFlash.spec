@@ -1,8 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 import sys
+import os
 from pathlib import Path
-sys.path.insert(0, str((Path("__name__").parent)))
-from tempfile import  NamedTemporaryFile
+
+current_dir = os.path.abspath(SPECPATH if 'SPECPATH' in globals() else '.')
+sys.path.insert(0, current_dir)
+
 from version_info import version
 
 temp_version_file=Path("version.tmp")
