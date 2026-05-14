@@ -75,7 +75,7 @@ int LoadAppFromRAM(const uint8_t *tinf_img, int tinf_img_size, void *apps_info, 
 			if (tinf->data_size > 0) {
 				*app_data_base = (uintptr_t)&sys;
 
-				if (tinf->data_size < 1 || apps_info_size > (int)((tinf->data_size - 1) * sizeof(uint32_t))) {
+				if (apps_info_size > (int)((tinf->data_size - 1) * sizeof(uint32_t))) {
 					RTK_LOGE(TAG, "App data_size too small for apps_info!\n");
 					return APP_INVALID;
 				}
@@ -239,7 +239,7 @@ int LoadApp(const uint8_t *tinf_img, int tinf_img_size, void *apps_info, int app
 				// This is where the sys_struct address was kept by the linker script
 				*app_data_base = (uintptr_t)&sys;
 
-				if (tinf->data_size < 1 || apps_info_size > (int)((tinf->data_size - 1) * sizeof(uint32_t))) {
+				if (apps_info_size > (int)((tinf->data_size - 1) * sizeof(uint32_t))) {
 					RTK_LOGE(TAG, "App data_size too small for apps_info!\n");
 					free(app_rel_data_base);
 					return APP_INVALID;
