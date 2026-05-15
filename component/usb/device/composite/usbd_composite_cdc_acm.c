@@ -29,6 +29,7 @@ static int composite_cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 
 
 static const char *const TAG = "COMP";
 
+#ifndef CONFIG_USB_FS
 /* USB CDC ACM Device High Speed Interface Descriptor */
 static const u8 usbd_composite_cdc_acm_hs_itf_desc[] = {
 	/* IAD Descriptor */
@@ -113,6 +114,7 @@ static const u8 usbd_composite_cdc_acm_hs_itf_desc[] = {
 	USB_LOW_BYTE(COMP_CDC_ACM_HS_BULK_MAX_PACKET_SIZE), USB_HIGH_BYTE(COMP_CDC_ACM_HS_BULK_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
 	0x00											/* bInterval */
 };  /* usbd_composite_cdc_acm_hs_itf_desc */
+#endif
 
 /* USB CDC ACM Device Full Speed Interface Descriptor */
 static const u8 usbd_composite_cdc_acm_fs_itf_desc[] = {
@@ -443,16 +445,20 @@ static u16 composite_cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req
 	switch (USB_HIGH_BYTE(req->wValue)) {
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
 			desc = (u8 *)usbd_composite_cdc_acm_hs_itf_desc;
 			len = sizeof(usbd_composite_cdc_acm_hs_itf_desc);
-		} else {
+		} else
+#endif
+		{
 			desc = (u8 *)usbd_composite_cdc_acm_fs_itf_desc;
 			len = sizeof(usbd_composite_cdc_acm_fs_itf_desc);
 		}
 		usb_os_memcpy((void *)buf, (void *)desc, len);
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (speed == USB_SPEED_HIGH) {
 			desc = (u8 *)usbd_composite_cdc_acm_fs_itf_desc;
@@ -463,6 +469,7 @@ static u16 composite_cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req
 		}
 		usb_os_memcpy((void *)buf, (void *)desc, len);
 		break;
+#endif
 
 	default:
 		break;

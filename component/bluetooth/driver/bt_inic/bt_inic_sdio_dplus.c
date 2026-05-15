@@ -34,8 +34,11 @@ struct bt_inic_sdio_hdr {
 #define HCI_SDIO_PKT_HDR_LEN            (HCI_SDIO_PKT_EVENT_FIELD + HCI_SDIO_PKT_LEN_FIELD + HCI_SDIO_PKT_SERVICE_ID_FIELD)
 
 #if defined(CONFIG_WHC_INTF_SDIO) && CONFIG_WHC_INTF_SDIO
-// extern void whc_sdio_dev_send_data(u8 *data, u32 len);
+#ifndef CONFIG_WHC_BRIDGE
+extern void whc_sdio_dev_send_data(u8 *data, u32 len);
+#else
 extern void whc_bridge_dev_api_send_to_host(u8 *data, u32 len);
+#endif
 extern void (*bt_inic_sdio_recv_ptr)(uint8_t *buffer, uint16_t len);
 void bt_inic_sdio_recv_from_host(uint8_t *pdata, uint16_t len);
 
@@ -68,8 +71,11 @@ void bt_inic_send_to_host(u8 type, u8 *pbuf, u32 len)
 
 	// BT_LOGD("BT dev send type %d len %d\n", type, sdiolen);
 	// BT_DUMPA("Share TX:\r\n", buf, sdiolen);
-	// whc_sdio_dev_send_data((u8 *)hdr, sdiolen);
+#ifndef CONFIG_WHC_BRIDGE
+	whc_sdio_dev_send_data((u8 *)hdr, sdiolen);
+#else
 	whc_bridge_dev_api_send_to_host((u8 *)hdr, sdiolen);
+#endif
 	osif_mem_free(buf);
 
 	return;
