@@ -560,6 +560,8 @@ static u16 usbd_composite_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *re
 		}
 		usb_os_memcpy((void *)buf, (void *)desc, len);
 		break;
+
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (speed == USB_SPEED_HIGH) {
 			desc = (u8 *)usbd_composite_msc_fs_itf_desc;
@@ -570,6 +572,8 @@ static u16 usbd_composite_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *re
 		}
 		usb_os_memcpy((void *)buf, (void *)desc, len);
 		break;
+#endif
+
 	default:
 		break;
 	}

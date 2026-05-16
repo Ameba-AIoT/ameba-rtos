@@ -157,3 +157,8 @@ ChangeLog:
                   (4) Fix nand flash download fail issue
                   (5) Support RTL8721F nand flash download
                   (6) Fix RTL872XE download fail issue
+20260113  v2.8.11 (1) Added support for SoCs with hybrid flash
+                  (2) Resolved the Wi-Fi MAC issue
+				  (3) Improved handshake reliability
+				  (4) Resolved the issue where setting DTR/RTS took too long
+				  (5) Resolved the protocol error during floader download
