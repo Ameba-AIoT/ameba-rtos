@@ -62,6 +62,7 @@ static const u8 usbd_hid_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
 	USB_HIGH_BYTE(USBD_HID_LANGID_STRING),
 };
 
+#ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_hid_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
@@ -75,6 +76,7 @@ static const u8 usbd_hid_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	0x01,                                           /* bNumConfigurations */
 	0x00,                                           /* Reserved */
 };
+#endif
 
 /* USB HID device FS Configuration Descriptor */
 static const u8 usbd_hid_fs_config_desc[] = {
@@ -140,6 +142,7 @@ static const u8 usbd_hid_fs_config_desc[] = {
 #endif
 };
 
+#ifndef CONFIG_USB_FS
 /* USB HID device HS Configuration Descriptor */
 static const u8 usbd_hid_hs_config_desc[] = {
 	/* USB Standard Configuration Descriptor */
@@ -203,6 +206,7 @@ static const u8 usbd_hid_hs_config_desc[] = {
 	0xA,											/*bInterval*/
 #endif
 };
+#endif
 
 /* USB HID Descriptor */
 static const u8 usbd_hid_desc[USBD_HID_DESC_SIZE] = {
@@ -613,10 +617,13 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
 			desc = (u8 *)usbd_hid_hs_config_desc;
 			len = sizeof(usbd_hid_hs_config_desc);
-		} else {
+		} else
+#endif
+		{
 			desc = (u8 *)usbd_hid_fs_config_desc;
 			len = sizeof(usbd_hid_fs_config_desc);
 		}
@@ -627,6 +634,7 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_hid_device_qualifier_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_hid_device_qualifier_desc, len);
@@ -647,6 +655,7 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
 		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
