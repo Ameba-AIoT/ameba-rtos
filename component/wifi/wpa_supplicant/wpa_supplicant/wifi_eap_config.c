@@ -79,7 +79,6 @@ void judge_station_disconnect(void)
 	}
 }
 
-extern void eap_peer_unregister_methods(void);
 extern void eap_sm_deinit(void);
 __weak void eap_disconnected_hdl(void)
 {
@@ -87,7 +86,6 @@ __weak void eap_disconnected_hdl(void)
 	if (eap_event_reg_disconn) {
 		wifi_unreg_event_handler(RTW_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl);
 		eap_event_reg_disconn = 0;
-		//eap_peer_unregister_methods();
 		eap_sm_deinit();
 		//reset_config();
 	}
@@ -167,6 +165,7 @@ void eap_config(void){
 "-----END CERTIFICATE-----\r\n";
 }
 */
+extern void eap_peer_unregister_methods(void);
 
 __weak int eap_start(char *method)
 {
@@ -240,9 +239,10 @@ __weak int eap_start(char *method)
 	if (ret != 0) {
 		judge_station_disconnect();
 		eap_disconnected_hdl();
-		rtos_time_delay_ms(200);	//wait handler done
 		DiagPrintf("\r\nERROR: connect to AP by %s failed\n", method);
 	}
+
+	eap_peer_unregister_methods();  //free malloc when register
 
 	eap_sm_deinit();
 	DiagPrintf("\n==================== %s_finish ====================\n", method);
@@ -276,6 +276,9 @@ int connect_by_open_system(char *target_ssid)
 
 void eap_autoreconnect_thread(void *method)
 {
+	while (get_eap_phase()) {
+		rtos_time_delay_ms(200);  //wait pre-conn handler done
+	}
 	eap_start((char *)method);
 	rtos_task_delete(NULL);
 }

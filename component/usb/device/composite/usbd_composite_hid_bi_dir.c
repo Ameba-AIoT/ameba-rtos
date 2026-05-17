@@ -614,7 +614,9 @@ static u16 composite_hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8
 	switch (USB_HIGH_BYTE(req->wValue)) {
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
+#endif
 		len = sizeof(usbd_composite_hid_itf_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_composite_hid_itf_desc, len);
 		report_len = sizeof(usbd_comp_hid_report_desc);
