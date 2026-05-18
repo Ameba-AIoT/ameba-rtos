@@ -49,7 +49,7 @@ include(host/class.cmake)
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_internal_library(usb_drd
+ameba_add_internal_library(usb_drd_class
     p_SOURCES
         ${private_sources}
     p_INCLUDES
