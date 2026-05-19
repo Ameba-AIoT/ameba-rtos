@@ -36,44 +36,85 @@ if defined VIRTUAL_ENV (
 
 if exist "%PREBUILTS_DIR%\setenv.bat" (
 	call "%PREBUILTS_DIR%\setenv.bat"
-) else (
-
-	if exist "%BASE_DIR%\.venv" rmdir /s /q "%BASE_DIR%\.venv"
-
-	set "lastMatchedFolder="
-
-	for /d %%D in ("%RTK_TOOLCHAIN_DIR%\prebuilts-win*") do (
-		set "currentFolder=%%~nxD"
-		if "!lastMatchedFolder!" lss "!currentFolder!" set "lastMatchedFolder=!currentFolder!"
-	)
-
-	if defined lastMatchedFolder (
-		echo use !lastMatchedFolder! to update prebuilts
-		call "%RTK_TOOLCHAIN_DIR%\!lastMatchedFolder!\setenv.bat"
-		if not exist "%PREBUILTS_DIR%.zip" (
-			echo download....
-			wget -P %RTK_TOOLCHAIN_DIR% %PREBUILTS_WIN_URL% || (
-				echo Try to download from %PREBUILTS_WIN_URL_ALIYUN%
-				wget -P %RTK_TOOLCHAIN_DIR% %PREBUILTS_WIN_URL_ALIYUN% || (
-					echo Download failed. Please check your network or download manually
-					goto end
-				)
-			)
-		)
-		echo unzip....
-		7z x "%PREBUILTS_DIR%.zip" -o%RTK_TOOLCHAIN_DIR% || (
-			echo unzip failed. Please unzip %PREBUILTS_DIR%.zip manually
-			goto end
-		)
-		call "%PREBUILTS_DIR%\setenv.bat"
-
-	) else (
-		echo RTK software suite not exist or outdated, please download newest version from %PREBUILTS_WIN_URL%  or %PREBUILTS_WIN_URL_ALIYUN% and unzip it at %RTK_TOOLCHAIN_DIR%
-		goto end
-	)
-
+	goto :prebuilts_done
 )
 
+if exist "%BASE_DIR%\.venv" rmdir /s /q "%BASE_DIR%\.venv"
+
+set "lastMatchedFolder="
+
+for /d %%D in ("%RTK_TOOLCHAIN_DIR%\prebuilts-win*") do (
+	set "currentFolder=%%~nxD"
+	if "!lastMatchedFolder!" lss "!currentFolder!" set "lastMatchedFolder=!currentFolder!"
+)
+
+if defined lastMatchedFolder (
+	if "!lastMatchedFolder!" neq "prebuilts-win-%PREBUILTS_VERSION%" (
+		echo !lastMatchedFolder! is out of date, updating prebuilts...
+	) else (
+		echo !lastMatchedFolder! is incomplete, reinstalling...
+	)
+	rmdir /s /q "%RTK_TOOLCHAIN_DIR%\!lastMatchedFolder!" >nul 2>&1
+) else (
+	echo RTK software suite not found, downloading for first-time setup...
+)
+
+if exist "%PREBUILTS_DIR%.zip" (
+	tar -tf "%PREBUILTS_DIR%.zip" >nul 2>&1
+	if !errorlevel! neq 0 (
+		echo Incomplete download detected, re-downloading...
+		del /f /q "%PREBUILTS_DIR%.zip"
+	)
+)
+if not exist "%PREBUILTS_DIR%.zip" (
+	where curl.exe >nul 2>&1
+	if !errorlevel! neq 0 (
+		echo curl.exe not found. Please download manually from:
+		echo   %PREBUILTS_WIN_URL%
+		echo   %PREBUILTS_WIN_URL_ALIYUN%
+		echo and unzip it at %RTK_TOOLCHAIN_DIR%
+		goto end
+	)
+	echo download....
+	curl.exe -fL# -o "%PREBUILTS_DIR%.zip" "%PREBUILTS_WIN_URL%"
+	if !errorlevel! neq 0 (
+		if exist "%PREBUILTS_DIR%.zip" del /f /q "%PREBUILTS_DIR%.zip"
+		echo Try to download from %PREBUILTS_WIN_URL_ALIYUN%
+		curl.exe -fL# -o "%PREBUILTS_DIR%.zip" "%PREBUILTS_WIN_URL_ALIYUN%"
+		if !errorlevel! neq 0 (
+			if exist "%PREBUILTS_DIR%.zip" del /f /q "%PREBUILTS_DIR%.zip"
+			echo Download failed. Please download manually from:
+			echo   %PREBUILTS_WIN_URL%
+			echo   %PREBUILTS_WIN_URL_ALIYUN%
+			echo and unzip it at %RTK_TOOLCHAIN_DIR%
+			goto end
+		)
+	)
+)
+where tar.exe >nul 2>&1
+if !errorlevel! neq 0 (
+	echo tar.exe not found. Please unzip %PREBUILTS_DIR%.zip manually to %RTK_TOOLCHAIN_DIR%
+	goto end
+)
+if exist "%PREBUILTS_DIR%" (
+	rmdir /s /q "%PREBUILTS_DIR%" >nul 2>&1
+	if exist "%PREBUILTS_DIR%" (
+		echo Error: Cannot remove "%PREBUILTS_DIR%". Please close any program locking it and retry.
+		goto end
+	)
+)
+echo unzip....
+tar -xf "%PREBUILTS_DIR%.zip" -C "%RTK_TOOLCHAIN_DIR%" || (
+	echo unzip failed. Please unzip %PREBUILTS_DIR%.zip manually to %RTK_TOOLCHAIN_DIR%
+	goto end
+)
+if not exist "%PREBUILTS_DIR%\setenv.bat" (
+	echo Error: setenv.bat not found after extraction. Prebuilts may be corrupted.
+	goto end
+)
+call "%PREBUILTS_DIR%\setenv.bat"
+
+:prebuilts_done
 if exist "%BASE_DIR%\.venv\Scripts\activate.bat" (
 	call "%BASE_DIR%\.venv\Scripts\activate.bat"
 ) else (
