@@ -42,8 +42,8 @@ Linux)
     ACTIVE_CMD="source $BASE_DIR/.venv/bin/activate"
     PREBUILTS_DIR=$RTK_TOOLCHAIN_DIR/prebuilts-linux-$PREBUILTS_VERSION
     PREBUILTS_ZIP_FILE=$PREBUILTS_DIR.tar.gz
-    DOWNLOAD_URL=$PREBUILTS_LINUX_URL
-    DOWNLOAD_URL_ALIYUN=$PREBUILTS_LINUX_URL_ALIYUN
+    DOWNLOAD_URL=$PREBUILTS_LINUX_URL_ALIYUN
+    DOWNLOAD_URL_ALIYUN=$PREBUILTS_LINUX_URL
     alias menuconfig.py='python menuconfig.py'
 	alias build.py='python build.py'
 	alias flash.py='python flash.py'
@@ -61,8 +61,8 @@ Linux)
     ACTIVE_CMD="source $BASE_DIR/.venv/Scripts/activate"
     PREBUILTS_DIR=$RTK_TOOLCHAIN_DIR/prebuilts-win-$PREBUILTS_VERSION
     PREBUILTS_ZIP_FILE=$PREBUILTS_DIR.zip
-    DOWNLOAD_URL=$PREBUILTS_WIN_URL
-    DOWNLOAD_URL_ALIYUN=$PREBUILTS_WIN_URL_ALIYUN
+    DOWNLOAD_URL=$PREBUILTS_WIN_URL_ALIYUN
+    DOWNLOAD_URL_ALIYUN=$PREBUILTS_WIN_URL
 
     alias menuconfig.py='winpty python menuconfig.py'
 	alias build.py='winpty python build.py'
