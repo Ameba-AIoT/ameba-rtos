@@ -53,6 +53,7 @@ uint8_t rmesh_ap_gw[4];
 #endif
 
 void whc_host_rx_buf_hdl(struct msgtemplate *msg);
+void whc_host_mp_result(uint8_t *buf);
 
 static char *whc_cmd_args[MAX_ARG_COUNT] = {0};
 char whc_cmd_backup[MAX_INPUT_SIZE] = {0};
@@ -311,8 +312,9 @@ int whc_host_wifi_mp(void)
 		printf("msg send fail\n");
 	}
 
-	int rep_len = recv(whc_netlink_info.sockfd, &ans, sizeof(ans), 0);
-	whc_host_rx_buf_hdl(&ans);
+	recv(whc_netlink_info.sockfd, &ans, sizeof(ans), 0);
+	struct nlattr *na = (struct nlattr *)GENLMSG_DATA(&ans);
+	whc_host_mp_result((uint8_t *)NLA_DATA(na));
 
 	return ret;
 }
