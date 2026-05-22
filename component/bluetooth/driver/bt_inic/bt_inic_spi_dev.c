@@ -104,7 +104,7 @@ static void _spi_rx_queue_deinit(void)
 
 #if defined(CONFIG_WHC_INTF_SPI) && CONFIG_WHC_INTF_SPI
 
-void inic_dev_send_from_upper(u8 *buf, u8 *buf_alloc, u16 len);
+void whc_spi_dev_send(u8 *buf, u16 len, u8 *buf_alloc, u8 is_skb);
 extern void (*bt_inic_spi_recv_ptr)(uint8_t *buffer, uint16_t len);
 void bt_inic_spi_recv_from_host(u8 *buf, uint16_t len);
 void bt_inic_spi_init(void)
@@ -139,7 +139,7 @@ void bt_inic_send_to_host(u8 type, u8 *pbuf, u32 len)
 
 	BT_LOGD("BT dev send type %d len %d\n", type, spilen);
 	BT_DUMPA("Share TX:\r\n", buf, spilen);
-	inic_dev_send_from_upper((u8 *)hdr, buf, spilen);
+	whc_spi_dev_send((u8 *)hdr, spilen, buf, 0);
 
 	return;
 }
