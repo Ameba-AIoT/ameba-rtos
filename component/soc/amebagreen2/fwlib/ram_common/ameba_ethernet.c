@@ -237,7 +237,7 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, u32 size)
 {
 	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	u8 tx_idx = ETH_InitStruct->ETH_TxDescCurrentNum;
-
+	u32 cmd_sts = 0;
 	if (ETH_InitStruct == NULL) {
 		RTK_LOGE(TAG, "Invalid para\n");
 		return;
@@ -249,23 +249,32 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, u32 size)
 	}
 
 	DCache_Clean((u32)ETH_InitStruct->ETH_TxDesc[tx_idx].addr, (u32)size);
-	ETH_InitStruct->ETH_TxDesc[tx_idx].dw1 = FEMAC_TX_DSC_BIT_FS | FEMAC_TX_DSC_BIT_IPCS | \
-			FEMAC_TX_DSC_BIT_L4CS | FEMAC_TX_DSC_BIT_LS | FEMAC_TX_DSC_BIT_CRC | \
-			FEMAC_TX_DSC_BIT_SIZE(size);
+
+	cmd_sts = FEMAC_TX_DSC_BIT_FS | FEMAC_TX_DSC_BIT_IPCS | FEMAC_TX_DSC_BIT_L4CS | \
+			  FEMAC_TX_DSC_BIT_LS | FEMAC_TX_DSC_BIT_CRC | FEMAC_TX_DSC_BIT_SIZE(size);
+
 	ETH_InitStruct->ETH_TxDesc[tx_idx].dw2 = 0;
 	ETH_InitStruct->ETH_TxDesc[tx_idx].dw3 = 0;
 	ETH_InitStruct->ETH_TxDesc[tx_idx].dw4 = 0;
 
-	if (tx_idx == ((ETH_InitStruct->ETH_TxDescNum) - 1)) {
-		ETH_InitStruct->ETH_TxDesc[tx_idx].dw1 = FEMAC_TX_DSC_BIT_EOR;
+	if (tx_idx == (ETH_InitStruct->ETH_TxDescNum - 1)) {
+		cmd_sts |= FEMAC_TX_DSC_BIT_EOR;
 	}
+	/* Ensuring that dw2/dw3/dw4 has been actually written to physical memory  */
+	__DSB();
+	/* Set OWN bit to transfer ownership to DMA */
+	ETH_InitStruct->ETH_TxDesc[tx_idx].dw1 = (cmd_sts | FEMAC_TX_DSC_BIT_OWN);
 
-	ETH_InitStruct->ETH_TxDesc[tx_idx].dw1 |= FEMAC_TX_DSC_BIT_OWN;
+	/* Update TX index */
+	tx_idx++;
+	if (tx_idx >= ETH_InitStruct->ETH_TxDescNum) {
+		tx_idx = 0;
+	}
+	ETH_InitStruct->ETH_TxDescCurrentNum = tx_idx;
 
 	ETHx->ETH_ISR_AND_IMR |= BIT_ISR_TOK_TI;
-	ETHx->ETH_ETHER_IO_CMD |= BIT_TXFN1ST; //TODO: not need set for each pkt
+	ETHx->ETH_ETHER_IO_CMD |= BIT_TXFN1ST;
 
-	ETH_InitStruct->ETH_TxDescCurrentNum = (tx_idx + 1) % (ETH_InitStruct->ETH_TxDescNum);
 }
 
 /**
