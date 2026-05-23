@@ -61,6 +61,7 @@ static const u8 usbd_cdc_acm_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
 };  /* usbd_cdc_acm_lang_id_desc */
 
 /* USB Standard Device Qualifier Descriptor */
+#ifndef CONFIG_USB_FS
 static const u8 usbd_cdc_acm_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
@@ -167,6 +168,7 @@ static const u8 usbd_cdc_acm_hs_config_desc[] = {
 	USB_HIGH_BYTE(CDC_ACM_HS_BULK_MAX_PACKET_SIZE),
 	0x00                                            /* bInterval */
 };  /* usbd_cdc_acm_hs_config_desc */
+#endif
 
 /* USB CDC ACM Device Full Speed Configuration Descriptor */
 static const u8 usbd_cdc_acm_fs_config_desc[] = {
@@ -549,10 +551,13 @@ static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
 			desc = (u8 *)usbd_cdc_acm_hs_config_desc;
 			len = sizeof(usbd_cdc_acm_hs_config_desc);
-		} else {
+		} else
+#endif
+		{
 			desc = (u8 *)usbd_cdc_acm_fs_config_desc;
 			len = sizeof(usbd_cdc_acm_fs_config_desc);
 		}
@@ -561,6 +566,7 @@ static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_cdc_acm_device_qualifier_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_cdc_acm_device_qualifier_desc, len);
@@ -581,6 +587,7 @@ static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
