@@ -13,6 +13,8 @@ set "PREBUILTS_VERSION=1.0.3"
 set "PREBUILTS_DIR=%RTK_TOOLCHAIN_DIR%\prebuilts-win-%PREBUILTS_VERSION%"
 set "PREBUILTS_WIN_URL=https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.3/prebuilts-win-1.0.3.zip"
 set "PREBUILTS_WIN_URL_ALIYUN=https://rs-wn.oss-cn-shanghai.aliyuncs.com/prebuilts-win-1.0.3.zip"
+set "DOWNLOAD_URL=%PREBUILTS_WIN_URL_ALIYUN%"
+set "DOWNLOAD_URL_SECOND_SOURCE=%PREBUILTS_WIN_URL%"
 
 set "BASE_DIR=%~dp0"
 if "%BASE_DIR:~-1%"=="\" set "BASE_DIR=%BASE_DIR:~0,-1%"
@@ -52,9 +54,9 @@ if exist "%PREBUILTS_DIR%\setenv.bat" (
 		call "%RTK_TOOLCHAIN_DIR%\!lastMatchedFolder!\setenv.bat"
 		if not exist "%PREBUILTS_DIR%.zip" (
 			echo download....
-			wget -P %RTK_TOOLCHAIN_DIR% %PREBUILTS_WIN_URL% || (
-				echo Try to download from %PREBUILTS_WIN_URL_ALIYUN%
-				wget -P %RTK_TOOLCHAIN_DIR% %PREBUILTS_WIN_URL_ALIYUN% || (
+			wget -P %RTK_TOOLCHAIN_DIR% %DOWNLOAD_URL% || (
+				echo Try to download from %DOWNLOAD_URL_SECOND_SOURCE%
+				wget -P %RTK_TOOLCHAIN_DIR% %DOWNLOAD_URL_SECOND_SOURCE% || (
 					echo Download failed. Please check your network or download manually
 					goto end
 				)
@@ -68,7 +70,7 @@ if exist "%PREBUILTS_DIR%\setenv.bat" (
 		call "%PREBUILTS_DIR%\setenv.bat"
 
 	) else (
-		echo RTK software suite not exist or outdated, please download newest version from %PREBUILTS_WIN_URL%  or %PREBUILTS_WIN_URL_ALIYUN% and unzip it at %RTK_TOOLCHAIN_DIR%
+		echo RTK software suite not exist or outdated, please download newest version from %DOWNLOAD_URL%  or %DOWNLOAD_URL_SECOND_SOURCE% and unzip it at %RTK_TOOLCHAIN_DIR%
 		goto end
 	)
 
