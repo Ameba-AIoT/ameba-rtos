@@ -576,9 +576,9 @@ code_extract:
 	@echo "========== Image extract end =========="
 
 download_toolchain:
-ifeq ($(URL), aliyun)
-	@echo "Download toolchain from $(TOOLCHAINURL_ALIYUN)"
-	$(call download_toolchain_func,$(TOOLCHAINURL_ALIYUN))
+ifeq ($(URL), second_source)
+	@echo "Download toolchain from $(TOOLCHAINURL_SECOND_SOURCE)"
+	$(call download_toolchain_func,$(TOOLCHAINURL_SECOND_SOURCE))
 else
 	@echo "Download toolchain from $(TOOLCHAINURL)"
 	$(call download_toolchain_func,$(TOOLCHAINURL))
