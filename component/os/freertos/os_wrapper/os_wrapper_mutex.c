@@ -8,6 +8,7 @@
 #include "ameba.h"
 #include "ameba_pmu.h"
 #include "FreeRTOS.h"
+#include "task.h"
 #include "semphr.h"
 #include "os_wrapper.h"
 #include "os_wrapper_specific.h"
@@ -142,7 +143,12 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 	 * If configASSERT is enabled in FreeRTOS, it will trigger an assert
 	 * when called from ISR context, immediately catching this bug.
 	 */
-	if (!pmu_yield_os_check()) {
+	/* Force non-blocking when the OS cannot perform a context switch:
+	 * - PMU suspend flow: FreeRTOS would assert on blocking call.
+	 * - Inside critical section: PendSV is masked by BASEPRI, causing an
+	 *   infinite spin with corrupted scheduler event-list state. */
+	if (!pmu_yield_os_check() ||
+		rtos_get_critical_state()) {
 		wait_ms = 0;
 	}
 
@@ -211,8 +217,12 @@ int rtos_mutex_recursive_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 		return RTK_FAIL;
 	}
 
-	/* If WiFi calls this function in suspend flow, and if timeout is not 0, FreeRTOS will assert. */
-	if (!pmu_yield_os_check()) {
+	/* Force non-blocking when the OS cannot perform a context switch:
+	 * - PMU suspend flow: FreeRTOS would assert on blocking call.
+	 * - Inside critical section: PendSV is masked by BASEPRI, causing an
+	 *   infinite spin with corrupted scheduler event-list state. */
+	if (!pmu_yield_os_check() ||
+		rtos_get_critical_state()) {
 		wait_ms = 0;
 	}
 

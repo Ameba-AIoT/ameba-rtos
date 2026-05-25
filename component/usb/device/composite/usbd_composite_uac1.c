@@ -720,6 +720,8 @@ static inline u8 usbd_composite_uac_ep_enable(usbd_audio_cfg_t *ep)
 
 /**
   * @brief  Set UAC class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -759,6 +761,8 @@ static int usbd_composite_uac_set_config(usb_dev_t *dev, u8 config)
 
 /**
   * @brief  Clear UAC configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -852,6 +856,8 @@ static u8 usbd_composite_uac_volume_linear_interpolation(const u8 x_points[], co
 
 /**
   * @brief  Handle UAC specific CTRL requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: USB CTRL requests
   * @retval Status
@@ -1093,6 +1099,8 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 /**
   * @brief  Data sent on non-control IN endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -1108,6 +1116,8 @@ static int usbd_composite_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 s
 
 /**
   * @brief  uac_handle_ep0_data_out
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   *         Handle EP0 Rx Ready event
   * @param  dev: USB device instance
   * @retval Status
@@ -1175,6 +1185,13 @@ static int usbd_composite_uac_handle_ep0_data_out(usb_dev_t *dev)
 	return ret;
 }
 
+/**
+  * @brief  Handle SOF event for UAC
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @retval Status
+  */
 static int usbd_composite_uac_sof(usb_dev_t *dev)
 {
 	UNUSED(dev);
@@ -1202,6 +1219,8 @@ static int usbd_composite_uac_sof(usb_dev_t *dev)
 
 /**
   * @brief  Data received on non-control Out endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -1272,6 +1291,8 @@ static int usbd_composite_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32
 
 /**
   * @brief  Get descriptor callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
   * @param  buf: Poniter to Buffer
@@ -1310,6 +1331,8 @@ static u16 usbd_composite_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *re
 
 /**
   * @brief  USB attach status change
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  old_status: USB old attach status
   * @param  status: USB attach status
@@ -1467,6 +1490,11 @@ int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_c
 	usbd_ep_t *ep_in = &(uac->isoc_in.ep);
 	usb_ep_info_t *info;
 
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
 	usb_os_memset(uac, 0x00, sizeof(usbd_composite_uac_device_t));
 
 	uac->cur_volume = 0x001F;
@@ -1486,24 +1514,19 @@ int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_c
 	info->addr = USBD_COMP_UAC_ISOC_IN_EP;
 	info->type = USB_CH_EP_TYPE_ISOC;
 
-	if (cb != NULL) {
-		if ((cb->in.enable == 0) && (cb->out.enable == 0)) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Pls cfg UAC EP\n");
-			return HAL_ERR_PARA;
-		}
-
-		uac->cb = cb;
-
-		usb_os_memcpy(&(uac->isoc_in.audio_config), &(cb->in), sizeof(usbd_audio_cfg_t));
-		usb_os_memcpy(&(uac->isoc_out.audio_config), &(cb->out), sizeof(usbd_audio_cfg_t));
-
-		uac->isoc_out.audio_config.ch_cnt = USBD_UAC_OUT_DEFAULT_CH_CNT;//init the default value
-		uac->isoc_out.audio_config.sampling_freq = USBD_UAC_SAMPLING_FREQ_48K;
-		uac->isoc_out.audio_config.byte_width = USBD_UAC_OUT_DEFAULT_BYTE_WIDTH;
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cb is NULL\n");
+	if ((cb->in.enable == 0) && (cb->out.enable == 0)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Pls cfg UAC EP\n");
 		return HAL_ERR_PARA;
 	}
+
+	uac->cb = cb;
+
+	usb_os_memcpy(&(uac->isoc_in.audio_config), &(cb->in), sizeof(usbd_audio_cfg_t));
+	usb_os_memcpy(&(uac->isoc_out.audio_config), &(cb->out), sizeof(usbd_audio_cfg_t));
+
+	uac->isoc_out.audio_config.ch_cnt = USBD_UAC_OUT_DEFAULT_CH_CNT;//init the default value
+	uac->isoc_out.audio_config.sampling_freq = USBD_UAC_SAMPLING_FREQ_48K;
+	uac->isoc_out.audio_config.byte_width = USBD_UAC_OUT_DEFAULT_BYTE_WIDTH;
 
 	if (cb->init != NULL) {
 		ret = cb->init();

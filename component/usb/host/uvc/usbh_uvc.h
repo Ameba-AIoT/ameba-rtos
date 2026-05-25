@@ -206,12 +206,10 @@ typedef struct {
 	u8 cur_urb;                             // Index of the URB currently being filled by combine_urb
 	u8 cur_packet;                          // Index of the packet within the current URB
 	u8 last_fid;                            // Last Frame ID (toggled bit in UVC payloadheader)
-
 	__IO u8 complete_flag;                  // Flag for ISR Gate: 1=Allow pushing to queue, 0=Drop (protects queue access)
 	__IO u8 complete_on;                    // Flag for Thread Loop: 1=Run, 0=Exit (controls combine task lifecycle)
 	__IO u8 next_xfer;                      // Flag for next xfer: 0 (Stop), 1 (Start).
 #endif// USBH_UVC_USE_HW == 0
-
 	__IO u8 stream_state;                   // Stream state, @ref usbh_uvc_streaming_state_t
 	__IO u8 state;                          // State for state machine, @ref usbh_stream_state_t
 	__IO u8 get_valid;                      // Flag indicating get_frame is in use. Set to 1 when entering get_frame, cleared to 0 when exiting.
@@ -244,6 +242,12 @@ typedef struct {
 #endif
 
 #if USBH_UVC_USE_HW
+	/**
+	 * @brief Called when the HW UVC engine reports an error condition.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @param[in] err: HW UVC error status, see @ref usbh_hw_uvc_err_status_t.
+	 */
 	void (*hw_error)(usbh_hw_uvc_err_status_t err);
 	usbh_uvc_err_t hw_stats;
 	usbh_uvc_err_t hw_stats_shadow;

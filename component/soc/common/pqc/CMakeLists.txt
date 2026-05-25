@@ -11,9 +11,7 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 # You may use if-else condition to set or update predefined variable above
 
-ameba_list_append(public_includes
-    pqm4/mupq/pqclean/crypto_sign/ml-dsa-65/clean
-)
+ameba_list_append(public_libraries ${c_SDK_LIB_SOC_DIR}/lib_pqc.a)
 
 # Component public part, user config end
 #----------------------------------------#
@@ -43,6 +41,7 @@ set(private_compile_options)         #private compile_options
 
 ameba_list_append(private_includes
     pqm4/mupq/common
+    pqm4/mupq/pqclean/crypto_sign/ml-dsa-65/clean
 )
 
 file(GLOB ML_DSA_65_Clean_Sources "pqm4/mupq/pqclean/crypto_sign/ml-dsa-65/clean/*.c")
@@ -66,9 +65,8 @@ endif()
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-###NOTE: For open-source component, always build from source
-ameba_add_internal_library(pqc
+###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
+ameba_add_external_soc_library(pqc
     p_SOURCES
         ${private_sources}
     p_INCLUDES

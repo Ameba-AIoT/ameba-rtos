@@ -19,6 +19,7 @@
 # python intermediate files
 /**/__pycache__/
 *.pyc
+*.egg-info/
 
 # all bin files
 *.bin
@@ -31,6 +32,9 @@
 
 # log files
 *.log
+
+# ameba pytest log root (default --log-dir)
+/ameba-pytest/
 
 # git version files
 lib_*_git_version.c

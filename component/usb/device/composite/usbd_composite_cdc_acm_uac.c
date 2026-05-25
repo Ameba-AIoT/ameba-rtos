@@ -106,6 +106,8 @@ static usbd_composite_dev_t usbd_composite_dev;
 
 /**
   * @brief  Set CDC class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -125,6 +127,8 @@ static int usbd_composite_set_config(usb_dev_t *dev, u8 config)
 
 /**
   * @brief  Clear CDC ACM configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -163,6 +167,8 @@ static int usbd_composite_is_uac_class_request(int entityId, usb_setup_req_t *re
 
 /**
   * @brief  Handle CDC specific CTRL requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: USB CTRL requests
   * @retval Status
@@ -216,6 +222,8 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 /**
   * @brief  Data sent on non-control IN endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -235,6 +243,8 @@ static int usbd_composite_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 statu
 
 /**
   * @brief  Data received on non-control Out endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -260,6 +270,8 @@ static int usbd_composite_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len
 /**
   * @brief  usbd_composite_handle_ep0_data_out
   *         Handle EP0 Rx Ready event
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @retval Status
   */
@@ -276,6 +288,8 @@ static int usbd_composite_handle_ep0_data_out(usb_dev_t *dev)
 
 /**
   * @brief  USB attach status change
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  old_status: USB old attach status
   * @param  status: USB attach status
@@ -294,6 +308,8 @@ static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 stat
 
 /**
   * @brief  Get descriptor callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
   * @param  buf: Poniter to Buffer
@@ -410,15 +426,11 @@ int usbd_composite_init(u32 cdc_bulk_out_xfer_size, u32 cdc_bulk_in_xfer_size, u
 	int ret;
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 
-	if ((cdc_cb == NULL) || (uac_cb == NULL)) {
-		ret = HAL_ERR_PARA;
+	if ((cdc_cb == NULL) || (uac_cb == NULL) || (cb == NULL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
-		return ret;
+		return HAL_ERR_PARA;
 	}
-
-	if (cb != NULL) {
-		cdev->cb = cb;
-	}
+	cdev->cb = cb;
 
 	ret = usbd_composite_cdc_acm_init(cdev, cdc_bulk_out_xfer_size, cdc_bulk_in_xfer_size, cdc_cb);
 	if (ret != HAL_OK) {
@@ -453,4 +465,3 @@ void usbd_composite_deinit(void)
 	usbd_composite_uac_deinit();
 	usbd_composite_cdc_acm_deinit();
 }
-

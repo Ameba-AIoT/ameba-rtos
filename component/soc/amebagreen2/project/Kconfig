@@ -12,6 +12,10 @@ config AMEBAGREEN2
 #---------- FEATURE LIST START-----------#
 #All features are invisible in menuconfig
 
+config CRASHDUMP_IN_ROM
+    def_bool y
+
+
 config SUPPORT_NAND_FLASH
     def_bool y
 
@@ -159,6 +163,8 @@ orsource "../../../utils/Kconfig"
 rsource "../../../ota/Kconfig"
 
 rsource "../../../usb/Kconfig"
+
+rsource "../../usrcfg/amebagreen2/Kconfig"
 
 menu "CONFIG APPLICATION"
 

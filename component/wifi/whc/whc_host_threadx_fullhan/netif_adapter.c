@@ -67,7 +67,7 @@ struct eth_drv_sg {
 #define ETH_P_IP	0x0800		/* Internet Protocol packet	*/
 
 
-void LwIP_SetIP(uint8_t idx, u32_t addr, u32_t netmask_addr, u32_t gw_addr)
+void lwip_set_ip(uint8_t idx, u32_t addr, u32_t netmask_addr, u32_t gw_addr)
 {
 	struct netif *pnetif = &xnetif[idx];
 	ip_addr_t ipaddr;
@@ -80,7 +80,7 @@ void LwIP_SetIP(uint8_t idx, u32_t addr, u32_t netmask_addr, u32_t gw_addr)
 	netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
 }
 
-void LwIP_netif_set_link_up(uint8_t idx)
+void lwip_netif_set_link_up(uint8_t idx)
 {
 	struct netif *pnetif = &xnetif[idx];
 	netifapi_netif_set_link_up(pnetif);
@@ -92,7 +92,7 @@ void LwIP_netif_set_link_up(uint8_t idx)
 	}
 }
 
-void LwIP_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr)
+void lwip_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr)
 {
 	printf("mac: %d %02x:%02x:%02x:%02x:%02x:%02x \r\n", idx_wlan, dev_addr[0], dev_addr[1], dev_addr[2], dev_addr[3], dev_addr[4], dev_addr[5]);
 	memcpy(xnetif[idx_wlan].hwaddr, dev_addr, 6);
@@ -162,7 +162,7 @@ static void low_level_init(struct netif *netif)
 	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP;
 
 #if LWIP_IGMP
-	/* make LwIP_Init do igmp_start to add group 224.0.0.1 */
+	/* make lwip_module_init do igmp_start to add group 224.0.0.1 */
 	netif->flags |= NETIF_FLAG_IGMP;
 #endif
 #if defined(CONFIG_BRIDGE) && CONFIG_BRIDGE
@@ -178,7 +178,7 @@ static void low_level_init(struct netif *netif)
 	/* Wlan interface is initialized later */
 }
 
-err_t ethernetif_init_rtk(struct netif *netif)
+err_t netif_adapter_init_rtk(struct netif *netif)
 {
 	LWIP_ASSERT("netif != NULL", (netif != NULL));
 
@@ -204,7 +204,7 @@ err_t ethernetif_init_rtk(struct netif *netif)
 	return ERR_OK;
 }
 
-void LwIP_Init(void)
+void lwip_module_init(void)
 {
 	ip_addr_t ipaddr;
 	ip_addr_t netmask;
@@ -240,7 +240,7 @@ void LwIP_Init(void)
 		}
 
 
-		netifapi_netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_init_rtk, &tcpip_input);
+		netifapi_netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &netif_adapter_init_rtk, &tcpip_input);
 
 		printf("interface %d is initialized\n", idx);
 
@@ -258,7 +258,7 @@ void LwIP_Init(void)
 #endif
 }
 
-err_t LwIP_ethernetif_recv_inic(uint8_t wlan_idx, struct pbuf *p)
+err_t netif_adapter_wifi_recv_whc(uint8_t wlan_idx, struct pbuf *p)
 {
 	struct netif *netif;
 #if 1

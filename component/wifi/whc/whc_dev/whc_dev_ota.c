@@ -4,7 +4,6 @@
  *
  ******************************************************************************/
 #include "whc_dev.h"
-
 #include "lwip_netconf.h"
 #include "ameba_soc.h"
 #include "ota_api.h"
@@ -16,7 +15,7 @@ extern struct rmesh_http_ota_param ota_param;
 #define WHC_WAITING_RESET 1000
 extern void sys_reset(void);
 
-void whc_update_ota_task(void *param)
+void whc_dev_ota_task(void *param)
 {
 	int ret = -1;
 	ota_context_t *ctx = NULL;
@@ -41,14 +40,12 @@ void whc_update_ota_task(void *param)
 
 	ret = ota_start(ctx);
 
-	RTK_LOGE(TAG_WLAN_INIC, "ota exit");
-	if (!ret) {
-		RTK_LOGE(TAG_WLAN_INIC, "can reboot\n");
-		if (ret == OTA_OK) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%s] Ready to reboot\n", __FUNCTION__);
-			rtos_time_delay_ms(WHC_WAITING_RESET);
-			sys_reset();
-		}
+	RTK_LOGI(TAG_WLAN_INIC, "ota exit");
+
+	if (ret == OTA_OK) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%s] Ready to reboot\n", __FUNCTION__);
+		rtos_time_delay_ms(WHC_WAITING_RESET);
+		sys_reset();
 	}
 
 exit:
@@ -61,7 +58,7 @@ exit:
 }
 
 
-void whc_dev_api_start_ota(struct whc_dev_ota_info *ota_info)
+void whc_dev_ota_start(struct whc_dev_ota_info *ota_info)
 {
 	u8 ota_type = ota_info->ota_type;
 	u32 len, offset;
@@ -73,7 +70,7 @@ void whc_dev_api_start_ota(struct whc_dev_ota_info *ota_info)
 	offset = offsetof(struct whc_dev_ota_info, host);
 
 	if (ota_type == OTA_FOR_NORMAL) {
-		if (rtos_task_create(NULL, ((const char *)"whc_update_ota_task"), whc_update_ota_task, NULL, 1024 * 5, 1) != RTK_SUCCESS) {
+		if (rtos_task_create(NULL, ((const char *)"whc_dev_ota_task"), whc_dev_ota_task, NULL, 1024 * 5, 1) != RTK_SUCCESS) {
 			RTK_LOGE(TAG_WLAN_INIC, "create ota task err\n");
 		}
 #ifdef CONFIG_RMESH_OTA_EN
@@ -99,7 +96,7 @@ void whc_dev_api_start_ota(struct whc_dev_ota_info *ota_info)
 
 }
 
-void whc_dev_api_ota_write(u8 *buf)
+void whc_dev_ota_write(u8 *buf)
 {
 	struct whc_dev_ota_hdr *ota_hdr = (struct whc_dev_ota_hdr *)buf;
 	struct whc_dev_ota_readbuf *readbuf;
@@ -114,20 +111,18 @@ void whc_dev_api_ota_write(u8 *buf)
 	}
 }
 
-void whc_dev_api_ota_process(u8 *buf)
+void whc_dev_ota_process(u8 *buf)
 {
-	u8 *ptr;
 	struct whc_dev_ota_hdr *ota_hdr = (struct whc_dev_ota_hdr *)buf;
 	struct whc_dev_ota_info *ota_info;
-	ptr = buf + sizeof(struct whc_dev_ota_hdr);
 
 	switch (ota_hdr->subtype) {
 	case WHC_OTA_START:
-		ota_info = (struct whc_dev_ota_info *)ptr;
-		whc_dev_api_start_ota(ota_info);
+		ota_info = (struct whc_dev_ota_info *)(buf + sizeof(struct whc_dev_ota_hdr));
+		whc_dev_ota_start(ota_info);
 		break;
 	case WHC_OTA_WRITE:
-		whc_dev_api_ota_write(buf);
+		whc_dev_ota_write(buf);
 		break;
 
 	case WHC_OTA_END:
@@ -142,10 +137,12 @@ int whc_dev_ota_read(u8 *data, int data_len)
 	u32 buf_len = 4 + sizeof(struct whc_dev_ota_hdr);
 	u8 *buf = rtos_mem_malloc(buf_len);
 	u8 *ptr = buf;
-	u32 read_len;
 	struct whc_dev_ota_readbuf rbuf;
-
 	struct whc_dev_ota_hdr *ota_hdr;
+
+	if (!buf) {
+		return -1;
+	}
 
 	rbuf.buf = data;
 
@@ -163,11 +160,9 @@ int whc_dev_ota_read(u8 *data, int data_len)
 	/* len from host */
 	whc_dev_api_send_to_host(buf, buf_len, (u8 *)&rbuf, ota_hdr->len);
 
-	ota_hdr = &(rbuf.ota_hdr);
-	read_len = (int16_t)ota_hdr->len;
-
 	rtos_mem_free(buf);
-	return read_len;
+
+	return rbuf.ota_hdr.len;
 }
 
 int whc_dev_ota_close(void)
@@ -176,6 +171,10 @@ int whc_dev_ota_close(void)
 	u8 *buf = rtos_mem_malloc(buf_len);
 	u8 *ptr = buf;
 	struct whc_dev_ota_hdr *ota_hdr;
+
+	if (!buf) {
+		return -1;
+	}
 
 	*(u32 *)ptr = WHC_WIFI_TEST;
 	ptr += 4;

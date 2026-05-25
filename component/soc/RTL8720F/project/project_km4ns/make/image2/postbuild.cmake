@@ -1,0 +1,93 @@
+#Note: Previously defined variables cannot be used directly in this file
+#unless passed through -D
+cmake_minimum_required(VERSION 3.20.0)
+include(${c_CMAKE_FILES_DIR}/axf2bin.cmake)
+include(${c_CMAKE_FILES_DIR}/utility.cmake)
+include(${c_CMAKE_FILES_DIR}/global_define.cmake)
+import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
+set(t_USER_CUSTOM_LOG_PREFIX "KM4NS_IMG2_POSTBUILD")
+
+ameba_execute_process(COMMAND ${CMAKE_OBJCOPY} -j .sram_image2.text.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/sram_2.bin)
+ameba_execute_process(COMMAND ${CMAKE_OBJCOPY} -j .xip_image2.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/xip_image2.bin)
+ameba_execute_process(COMMAND ${CMAKE_OBJCOPY} -j .psram_image2.text.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/psram_2.bin)
+
+if(CONFIG_BT)
+    ameba_execute_process(COMMAND ${CMAKE_OBJCOPY} -j .bluetooth_trace.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/APP.trace)
+endif()
+
+if(CONFIG_BT_COEXIST AND CONFIG_COEXIST_DEV)
+    ameba_execute_process(COMMAND ${CMAKE_OBJCOPY} -j .coex_trace.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/COEX.trace)
+endif()
+
+if(CONFIG_SDN_DEV)
+    ameba_execute_process(COMMAND ${CMAKE_OBJCOPY} -j .sdn_trace.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/SDN.trace)
+endif()
+
+message( "========== Image manipulating start ==========")
+ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/xip_image2.bin 32)
+ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/sram_2.bin 32)
+ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/psram_2.bin 32)
+
+ameba_axf2bin_prepend_head(
+    ${c_SDK_IMAGE_TARGET_DIR}/sram_2_prepend.bin
+    ${c_SDK_IMAGE_TARGET_DIR}/sram_2.bin
+    __sram_image2_start__
+    ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
+    p_BOOT_INDEX 0x02020202
+)
+ameba_axf2bin_prepend_head(
+    ${c_SDK_IMAGE_TARGET_DIR}/psram_2_prepend.bin
+    ${c_SDK_IMAGE_TARGET_DIR}/psram_2.bin
+    __psram_image2_start__
+    ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
+)
+ameba_axf2bin_prepend_head(
+    ${c_SDK_IMAGE_TARGET_DIR}/xip_image2_prepend.bin
+    ${c_SDK_IMAGE_TARGET_DIR}/xip_image2.bin
+    __flash_text_start__
+    ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
+)
+
+ameba_execute_process(
+    COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/xip_image2_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/sram_2_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/psram_2_prepend.bin
+    OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image2_all.bin
+)
+
+if(CONFIG_SOLO)
+    ameba_axf2bin_fw_pack(
+        ${c_SDK_IMAGE_TARGET_DIR}/iot_app.bin
+        p_IMAGE2 ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image2_all.bin
+    )
+
+ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/iot_app.bin ${FINAL_IMAGE_DIR})
+
+set(ota_image ${c_SDK_IMAGE_TARGET_DIR}/iot_app_ota.bin)
+
+if(CONFIG_COMPRESS_OTA_IMG)
+    ameba_modify_file_path(${c_SDK_IMAGE_TARGET_DIR}/iot_app.bin app_compress p_SUFFIX _compress)
+    ameba_axf2bin_compress(${app_compress} ${c_SDK_IMAGE_TARGET_DIR}/iot_app.bin)
+    ameba_axf2bin_ota_prepend_head(${ota_image} ${app_compress})
+else()
+    ameba_axf2bin_ota_prepend_head(${ota_image} ${c_SDK_IMAGE_TARGET_DIR}/iot_app.bin)
+endif()
+
+ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${ota_image} ${FINAL_IMAGE_DIR})
+
+endif()
+
+
+message("========== Image manipulating end ==========")
+
+
+if(NOT CONFIG_AMEBA_RLS)
+    message("========== Image analyze start ==========")
+    ameba_execute_process(p_SHOW_OUTPUT
+        COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD} ${CODE_ANALYZE_RETRY}
+        WORKING_DIRECTORY ${c_SDK_IMAGE_TARGET_DIR}
+    )
+    ameba_execute_process(p_SHOW_OUTPUT
+        COMMAND ${STATIC_ANALYZE_PYTHON} ${DAILY_BUILD} ${c_MCU_PROJECT_DIR}
+        WORKING_DIRECTORY ${c_SDK_IMAGE_TARGET_DIR}/../
+    )
+    message("========== Image analyze end ==========")
+endif()

@@ -167,10 +167,6 @@ void app_start(void)
 	cmse_address_info_t cmse_address_info = cmse_TT((void *)app_start);
 	RTK_LOGI(TAG, "IMG2 SECURE STATE: %d\n", cmse_address_info.flags.secure);
 
-#ifdef CONFIG_TRUSTZONE
-	BOOT_IMG3();
-#endif
-
 	SystemCoreClockUpdate();
 
 	XTAL_INIT();
@@ -216,4 +212,3 @@ RAM_START_FUNCTION Img2EntryFun0 = {
 	NULL,//BOOT_RAM_WakeFromPG,
 	(u32)NewVectorTable
 };
-

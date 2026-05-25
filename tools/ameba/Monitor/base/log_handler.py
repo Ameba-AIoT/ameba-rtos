@@ -56,12 +56,12 @@ class LogHandler(StoppableThread):
         self.running = True
         while self.running:
             try:
-                text = self.output_queue.get(timeout=EVENT_QUEUE_TIMEOUT)           
+                text = self.output_queue.get(timeout=EVENT_QUEUE_TIMEOUT)
             except queue.Empty:
                 continue
 
             if self.output_enabled:
-                print(text, end='')
+                print(text, end='', flush=True)
             if self.log_file:
                 if datetime.datetime.now().date() != self.log_date:
                     self.stop_logging()
@@ -137,8 +137,8 @@ class LogHandler(StoppableThread):
             elif pathnum == 0x2:
                 line_prefix = t + f" [{self.logAGG_srcname[1]}]"
             elif pathnum == 0x4:
-                line_prefix = t + f" [{self.logAGG_srcname[2]}]"                     
-            
+                line_prefix = t + f" [{self.logAGG_srcname[2]}]"
+
             # If the output is at the start of a new line, prefix it with the timestamp text.
             if self._start_of_line:
                 text = line_prefix + text
@@ -156,7 +156,7 @@ class LogHandler(StoppableThread):
         elif text:
             self._start_of_line = text.endswith(new_line_char)
 
-        self.output_queue.put(text, False)   
+        self.output_queue.put(text, False)
 
     def output_toggle(self):  # type: () -> None
         self.output_enabled = not self.output_enabled
@@ -226,8 +226,8 @@ class LogHandler(StoppableThread):
 
             "" " 3) checksum compare：bit1 must be 0，bit0 == popcount(header>>2) % 2 " ""
             "" " header bit7~2 """
-            high6 = header >> 2              
-            odd_parity = bin(high6).count("1") & 1 
+            high6 = header >> 2
+            odd_parity = bin(high6).count("1") & 1
             bit1_ok = (csum & 0x2) == 0
             bit0_ok = (csum & 0x1) == odd_parity
             if not (bit1_ok and bit0_ok):

@@ -25,6 +25,7 @@
  * @{
  */
 #define USBH_COMPOSITE_HID_THREAD_PRIORITY     3U      /**< HID processing thread priority */
+#define USBH_COMPOSITE_HID_THREAD_STACK_SIZE   512U    /**< HID msg parse thread stack size */
 #define USBH_COMPOSITE_HID_MST_COUNT           10U     /**< Maximum support touch count (if applicable) */
 #define USBH_COMPOSITE_HID_MSG_LENGTH          16U     /**< Message queue length */
 
@@ -160,17 +161,15 @@ typedef struct {
  * Maintains the context while parsing the HID Report Descriptor.
  */
 typedef struct {
-	u32 usage_page;             /**< Current Usage Page */
+	usbh_composite_hid_ctrl_caps_t *device_info; /**< Pointer to capabilities struct to populate */
 	int logical_min;            /**< Current Logical Minimum */
 	int logical_max;            /**< Current Logical Maximum */
-	u32 report_size;            /**< Current Report Size (bits) */
-	u32 report_count;           /**< Current Report Count */
-	u32 report_id;              /**< Current Report ID */
-
-	int usage_stack_ptr;        /**< Stack pointer for Push/Pop items */
-	int collection_depth;       /**< Current depth of Collection nesting */
-
-	usbh_composite_hid_ctrl_caps_t *device_info; /**< Pointer to capabilities struct to populate */
+	u16 usage_page;             /**< Current Usage Page */
+	u16 report_size;            /**< Current Report Size (bits) */
+	u16 report_count;           /**< Current Report Count */
+	u8 report_id;               /**< Current Report ID */
+	u8 usage_stack_ptr;         /**< Stack pointer for Push/Pop items */
+	u8 collection_depth;        /**< Current depth of Collection nesting */
 } usbh_composite_hid_parse_state;
 
 /**

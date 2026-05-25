@@ -38,12 +38,21 @@ extern "C" {
   * @{
   */
 
-/** @defgroup MBED_SPI
+/** @defgroup MBED_SPI MBED SPI
  *  @brief    MBED_SPI driver modules.
  *  @{
  */
 
-/** @defgroup MBED_SPI_Exported_Constants MBED_SPI Exported Contsants
+/**
+  * @brief enum SPI_CS_TOGGLE_MODE
+  * SPI Master mode: for continuous transfer, how the CS toggle
+  */
+typedef enum {
+	SPI_CS_TOGGLE_EVERY_FRAME = 0,     // let SCPH=0 then the CS toggle every frame
+	SPI_CS_TOGGLE_START_STOP = 1       // let SCPH=1 the CS toggle at start and stop
+} SPI_CS_TOGGLE_MODE;
+
+/** @defgroup MBED_SPI_Exported_Constants MBED_SPI Exported Constants
   * @{
   */
 #define SPI_DMA_RX_EN           (1<<0)
@@ -62,28 +71,33 @@ extern "C" {
   * @{
   */
 
-enum {
+/**
+  * @brief enum SPI_SCLK_IDLE_LEVEL
+  */
+typedef enum {
 	SPI_SCLK_IDLE_LOW = 0,      // the SCLK is Low when SPI is inactive
 	SPI_SCLK_IDLE_HIGH = 2      // the SCLK is High when SPI is inactive
-};
+} SPI_SCLK_IDLE_LEVEL;
 
-// SPI Master mode: for continuous transfer, how the CS toggle:
-enum {
-	SPI_CS_TOGGLE_EVERY_FRAME = 0,     // let SCPH=0 then the CS toggle every frame
-	SPI_CS_TOGGLE_START_STOP = 1       // let SCPH=1 the CS toggle at start and stop
-};
-
-enum {
+/**
+  * @brief enum SPI_SCLK_TOGGLE_MODE
+  */
+typedef enum {
 	SPI_SCLK_TOGGLE_MIDDLE = 0,    // Serial Clk toggle at middle of 1st data bit and latch data at 1st Clk edge
 	SPI_SCLK_TOGGLE_START = 1      // Serial Clk toggle at start of 1st data bit and latch data at 2nd Clk edge
-};
+} SPI_SCLK_TOGGLE_MODE;
 
+/**
+  * @brief enum SpiIrq
+  */
 typedef enum {
 	SpiRxIrq,
 	SpiTxIrq
 } SpiIrq;
 
-
+/**
+  * @brief enum ChipSelect
+  */
 typedef enum {
 	CS_0 = 0,
 	CS_1 = 1,
@@ -107,7 +121,7 @@ void spi_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id);
 void spi_bus_tx_done_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id);
 void spi_slave_flush_fifo(spi_t *obj);
 
-/**
+/*
   * @brief  Close SPI device clock.
   * @param  obj: spi object define in application software.
   * @param  rx_delay: sample rx delay cycle, 1T = 20ns.
@@ -123,7 +137,7 @@ int32_t spi_master_write_read_stream(spi_t *obj, char *tx_buffer, char *rx_buffe
 int32_t spi_slave_read_stream_timeout(spi_t *obj, char *rx_buffer, uint32_t length, uint32_t timeout_ms);
 int32_t spi_slave_read_stream_terminate(spi_t *obj, char *rx_buffer, uint32_t length);
 
-/**
+/*
   * @brief  slave recv target undetermined length data use interrupt mode for one time.
   * @param  obj: spi slave object define in application software.
   * @param  rx_buffer: buffer to save data read from SPI FIFO.
@@ -140,6 +154,7 @@ int32_t spi_master_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
 int32_t spi_master_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length);
 int32_t spi_slave_read_stream_dma_timeout(spi_t *obj, char *rx_buffer, uint32_t length, uint32_t timeout_ms);
 int32_t spi_slave_read_stream_dma_terminate(spi_t *obj, char *rx_buffer, uint32_t length);
+
 //#endif
 
 

@@ -30,7 +30,6 @@ set(HP_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_hp)
 set(LP_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_lp)
 set(AP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_ap)
 set(HP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_hp)
-set(boot_name boot.bin) # for temporary compatibility with extension
 ###############################################################################
 
 ###############################################################################

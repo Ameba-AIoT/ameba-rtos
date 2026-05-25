@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup RTC
+/** @defgroup RTC RTC
   * @brief RTC driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -242,6 +243,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -317,7 +319,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup RTC_Input_Parameter_Format
+/** @defgroup RTC_Input_Parameter_Format RTC Input Parameter Format
   * @{
   */
 #define RTC_Format_BIN			((u32)0x000000000)
@@ -327,7 +329,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Hour_Format
+/** @defgroup RTC_Hour_Format RTC Hour Format
   * @{
   */
 #define RTC_HourFormat_24					((u32)0x00000000)
@@ -340,7 +342,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Asynchronous_Predivider
+/** @defgroup RTC_Asynchronous_Predivider RTC Asynchronous Predivider
   * @{
   */
 #define IS_RTC_ASYNCH_PREDIV(PREDIV)   ((PREDIV) <= 0x1FF)
@@ -348,7 +350,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Synchronous_Predivider
+/** @defgroup RTC_Synchronous_Predivider RTC Synchronous Predivider
   * @{
   */
 #define IS_RTC_SYNCH_PREDIV(PREDIV)    ((PREDIV) <= 0x1FF)
@@ -356,7 +358,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Day_Threshold
+/** @defgroup RTC_Day_Threshold RTC Day Threshold
   * @{
   */
 #define RTC_DAYTHRES_MSK			((u32)0xFF800000)
@@ -365,7 +367,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Base_Year
+/** @defgroup RTC_Base_Year RTC Base Year
   * @{
   */
 #define RTC_BASE_YEAR		((u16)1900)
@@ -373,7 +375,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Year_Threshold
+/** @defgroup RTC_Year_Threshold RTC Year Threshold
   * @{
   */
 #define IS_RTC_YEAR_THRES(YEAR)		((YEAR >= RTC_BASE_YEAR) && \
@@ -382,7 +384,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Time_Definitions
+/** @defgroup RTC_Time_Definitions RTC Time Definitions
   * @{
   */
 #define IS_RTC_HOUR12(HOUR)		(((HOUR) > 0) && ((HOUR) <= 12))
@@ -393,7 +395,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_AM_PM
+/** @defgroup RTC_AM_PM RTC AM PM
   * @{
   */
 #define RTC_H12_AM				((u8)0x00) //AM or 24-hour format
@@ -403,7 +405,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_AlarmMask1
+/** @defgroup RTC_AlarmMask1 RTC Alarm Mask 1
   * @{
   */
 #define RTC_AlarmMask_None		((u32)0x00000000)
@@ -416,7 +418,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_AlarmMask2
+/** @defgroup RTC_AlarmMask2 RTC Alarm Mask 2
   * @{
   */
 #define RTC_Alarm2Mask_None		((u32)0x00000000)
@@ -426,7 +428,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Alarm_Control
+/** @defgroup RTC_Alarm_Control RTC Alarm Control
   * @{
   */
 #define RTC_Alarm				((u32)0x00000100)
@@ -436,7 +438,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Alarm_Interrupt_Control
+/** @defgroup RTC_Alarm_Interrupt_Control RTC Alarm Interrupt Control
   * @{
   */
 #define RTC_Alarm_IntEn			((u32)0x00001000)
@@ -444,7 +446,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_DayLightSaving_Control
+/** @defgroup RTC_DayLightSaving_Control RTC DayLight Saving Control
   * @{
   */
 #define RTC_DayLightSaving_SUB1H		((u32)0x00000002)
@@ -460,7 +462,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Output_Control
+/** @defgroup RTC_Output_Control RTC Output Control
   * @{
   */
 #define RTC_Output_Disable		((u32)0x00000000)
@@ -476,7 +478,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Smooth_Calibration_Control
+/** @defgroup RTC_Smooth_Calibration_Control RTC Smooth Calibration Control
   * @{
   */
 #define RTC_CalibPeriod_1MIN		((u32)0x00000000)
@@ -514,7 +516,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_TR_Mask
+/** @defgroup RTC_TR_Mask RTC TR Mask
   * @{
   */
 #define RTC_TR_RESERVED_MASK	((u32)0xFFFF7F7F)
@@ -522,7 +524,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Timeout_Control
+/** @defgroup RTC_Timeout_Control RTC Timeout Control
   * @{
   */
 #define INITMODE_TIMEOUT	((u32) 0x00010000)
@@ -534,7 +536,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Shift_Control
+/** @defgroup RTC_Shift_Control RTC Shift Control
   * @{
   */
 #define RTC_SHIFT_ALR_HU	16

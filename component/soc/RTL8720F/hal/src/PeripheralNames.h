@@ -1,0 +1,154 @@
+/* mbed Microcontroller Library
+ * Copyright (c) 2006-2013 ARM Limited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#ifndef MBED_PERIPHERALNAMES_H
+#define MBED_PERIPHERALNAMES_H
+
+#include "cmsis.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** @addtogroup Ameba_Mbed_API
+  * @{
+  */
+
+
+/** @addtogroup MBED_ADC
+ *  @brief      MBED_ADC driver modules.
+ *  @{
+ */
+
+/** @addtogroup MBED_ADC_Exported_Types MBED_ADC Exported Types
+  * @{
+  */
+
+/** @defgroup MBED_ADC_Enumeration_Type Enumeration Type
+  * @{
+  */
+
+/**
+  * @brief enum ADCName
+  */
+typedef enum {
+	ADC0_0 = 0,
+	ADC0_1,
+	ADC0_2,
+	ADC0_3,
+	ADC0_4,
+	ADC0_5,
+	ADC0_6
+} ADCName;
+/** @} */
+
+/** @} */
+/** @} */
+
+
+
+/** @addtogroup MBED_PWM
+ *  @brief    MBED_PWM driver modules.
+ *  @{
+ */
+
+/** @addtogroup MBED_PWM_Exported_Types MBED_PWM Exported Types
+ * @{
+ */
+
+/** @defgroup MBED_PWM_Enumeration_Type Enumeration Type
+  * @{
+  */
+
+/**
+  * @brief enum PWMName
+  */
+typedef enum {
+	PWM_0 = 1,
+	PWM_1,
+	PWM_2,
+	PWM_3,
+	PWM_4,
+	PWM_5,
+	PWM_6,
+	PWM_7
+} PWMName;
+/** @} */
+
+/** @} */
+/** @} */
+
+/** @addtogroup MBED_WDG
+ *  @brief      MBED_WDG driver modules.
+ *  @{
+ */
+
+/** @addtogroup MBED_WDG_Exported_Types MBED_WDG Exported Types
+ * @{
+ */
+
+/** @defgroup MBED_WDG_Enumeration_Type Enumeration Type
+  * @{
+  */
+
+/**
+  * @brief enum WDGName
+  */
+typedef enum {
+	IWDG = 0,
+	WDG_1,
+	WDG_2,
+	WDG_3,
+	WDG_4
+} WDGName;
+/** @} */
+
+/** @} */
+/** @} */
+
+/** @addtogroup MBED_CAPTOUCH
+ *  @brief      MBED_CAPTOUCH driver modules.
+ *  @{
+ */
+
+/** @addtogroup MBED_CAPTOUCH_Exported_Types MBED_CAPTOUCH Exported Types
+ * @{
+ */
+
+/** @defgroup MBED_CAPTOUCH_Enumeration_Type Enumeration Type
+  * @{
+  */
+
+/**
+  * @brief enum CaptouchName
+  */
+typedef enum {
+	CapTouch_0 = 0,
+	CapTouch_1,
+	CapTouch_2,
+	CapTouch_3
+} CaptouchName;
+/** @} */
+
+/** @} */
+
+/** @} */
+/** @} */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

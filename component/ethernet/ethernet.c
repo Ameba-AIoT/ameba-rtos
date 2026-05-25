@@ -219,7 +219,7 @@ void eth_rx_thread(void *param)
 				if (eth_rx_preprocess_cb) {
 					ret = eth_rx_preprocess_cb(&p, buf, meta.pkt_len);
 					if (ret == UPLOAD_TO_LWIP && p != NULL) {
-						ethernetif_rmii_netif_recv(p);
+						netif_adapter_eth_recv(p);
 					} else if (p != NULL) {
 						pbuf_free(p);
 						p = NULL;
@@ -227,9 +227,9 @@ void eth_rx_thread(void *param)
 				} else {
 					/* Standard Path: Copy to pbuf and send to LwIP */
 					/* Note: meta.pkt_len-2 excludes CRC usually, depending on HW setting */
-					p = ethernetif_rmii_buf_copy(meta.pkt_len - 2, buf);
+					p = netif_adapter_eth_buf_copy(meta.pkt_len - 2, buf);
 					if (p != NULL) {
-						ethernetif_rmii_netif_recv(p);
+						netif_adapter_eth_recv(p);
 					}
 				}
 
@@ -315,7 +315,7 @@ static void eth_init_thread(void *param)
 	/* Initialize LwIP Stack (One-time) */
 #ifndef CONFIG_RMII_VERIFY
 	if (!lwip_init_done) {
-		LwIP_Init();
+		lwip_module_init();
 	}
 #endif
 

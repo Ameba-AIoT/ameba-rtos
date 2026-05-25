@@ -667,6 +667,7 @@ _LONG_CALL_ void SSI_Init(SPI_TypeDef *spi_dev, SSI_InitTypeDef *SSI_InitStruct)
 _LONG_CALL_ void SSI_StructInit(SSI_InitTypeDef *SSI_InitStruct);
 _LONG_CALL_ void SSI_SetDataFrameSize(SPI_TypeDef *spi_dev, u32 DataFrameSize);
 _LONG_CALL_ void SSI_SlaveOutputEnable(SPI_TypeDef *spi_dev, u32 Status);
+_LONG_CALL_ u32 SSI_SlaveErrRecovery(SPI_TypeDef *spi_dev);
 _LONG_CALL_ void SSI_SetSSTogglePhase(SPI_TypeDef *spi_dev, u32 TogglePhase);
 _LONG_CALL_ void SSI_SetDataSwap(SPI_TypeDef *spi_dev, u32 SwapStatus, u32 newState);
 _LONG_CALL_ void SSI_SetIsrClean(SPI_TypeDef *spi_dev, u32 InterruptStatus);

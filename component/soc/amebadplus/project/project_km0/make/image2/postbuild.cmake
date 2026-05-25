@@ -97,4 +97,3 @@ if(NOT CONFIG_AMEBA_RLS)
     )
     message("========== Image analyze end ==========")
 endif()
-

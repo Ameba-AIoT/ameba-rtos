@@ -8,6 +8,7 @@
 #include <assert.h>
 #include "ameba.h"
 #include "FreeRTOS.h"
+#include "task.h"
 #include "event_groups.h"
 #include "os_wrapper.h"
 #include "os_wrapper_specific.h"
@@ -29,11 +30,18 @@ rtos_event_bits_t rtos_event_group_wait_bits(rtos_event_group_t xEventGroup,
 		const rtos_event_bits_t uxBitsToWaitFor, const long xClearOnExit,
 		const long xWaitForAllBits, uint32_t MsToWait)
 {
+	TickType_t ticks = RTOS_CONVERT_MS_TO_TICKS(MsToWait);
+
+	/* Force non-blocking when the OS cannot perform a context switch. */
+	if (rtos_get_critical_state()) {
+		ticks = 0;
+	}
+
 	return (rtos_event_bits_t) xEventGroupWaitBits((EventGroupHandle_t) xEventGroup,
 			(const EventBits_t) uxBitsToWaitFor,
 			(const BaseType_t) xClearOnExit,
 			(const BaseType_t) xWaitForAllBits,
-			(TickType_t) RTOS_CONVERT_MS_TO_TICKS(MsToWait));
+			ticks);
 }
 
 int rtos_event_group_clear_bits(rtos_event_group_t xEventGroup,
@@ -87,7 +95,15 @@ rtos_event_bits_t rtos_event_group_get_bits(rtos_event_group_t xEventGroup)
 rtos_event_bits_t rtos_event_group_sync(rtos_event_group_t xEventGroup, const rtos_event_bits_t uxBitsToSet,
 										const rtos_event_bits_t uxBitsToWaitFor, uint32_t MsToWait)
 {
+	TickType_t ticks = RTOS_CONVERT_MS_TO_TICKS(MsToWait);
+
 	configASSERT(xEventGroup != NULL);
+
+	/* Force non-blocking when the OS cannot perform a context switch. */
+	if (rtos_get_critical_state()) {
+		ticks = 0;
+	}
+
 	return (rtos_event_bits_t) xEventGroupSync((EventGroupHandle_t) xEventGroup, (const EventBits_t) uxBitsToSet,
-			(const EventBits_t) uxBitsToWaitFor, (TickType_t) RTOS_CONVERT_MS_TO_TICKS(MsToWait));
+			(const EventBits_t) uxBitsToWaitFor, ticks);
 }

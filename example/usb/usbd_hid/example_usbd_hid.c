@@ -170,11 +170,24 @@ static void hid_cb_deinit(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
 }
 
+/**
+  * @brief  Handle HID class control (setup) requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @retval None
+  */
 static void hid_cb_setup(void)
 {
 	rtos_sema_give(hid_connect_sema);
 }
 
+/**
+  * @brief  Notify completion of an HID IN transfer
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  status: Transfer completion status
+  * @retval None
+  */
 static void hid_cb_transmitted(u8 status)
 {
 	UNUSED(status);
@@ -184,20 +197,41 @@ static void hid_cb_transmitted(u8 status)
 }
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+/**
+  * @brief  Data received over USB HID OUT endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  buf: RX buffer
+  * @param  len: RX data length (in bytes)
+  * @retval None
+  */
 static void hid_cb_received(u8 *buf, u32 len)
 {
-	if (len > 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "RX %d byte(s): 0x%02x\n", len, buf[0]);
-	}
+	UNUSED(buf);
+	UNUSED(len);
+	//if (len > 0) {
+	//	RTK_LOGS(TAG, RTK_LOG_INFO, "RX %d byte(s): 0x%02x\n", len, buf[0]);
+	//}
 }
 #endif
 
+/**
+  * @brief  Handle HID attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void hid_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_HID_HOTPLUG
 	hid_attach_status = status;
 	rtos_sema_give(hid_attach_status_changed_sema);
+#else
+	UNUSED(status);
 #endif
 }
 

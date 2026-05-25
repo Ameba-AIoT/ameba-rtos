@@ -2,45 +2,46 @@ ENTRY(Reset_Handler)
 
 #include "../../ameba_layout.ld"
 #include "project_km4tz/platform_autoconf.h"
-#if defined CONFIG_IMG3_PSRAM
-	#define LMA_TZ_NSC        KM4TZ_BD_PSRAM_TZ_NSC
-	#define LMA_TZ_ENTRY      KM4TZ_BD_PSRAM_TZ_ENTRY
-	#define LMA_TZ_S_TEXT_RO  KM4TZ_BD_PSRAM_TZ_S
-	#define LMA_TZ_S_BSS      KM4TZ_BD_PSRAM_TZ_S
-#elif defined CONFIG_IMG3_FLASH
-	#define LMA_TZ_NSC        KM4TZ_BD_RAM_TZ_NSC
-	#define LMA_TZ_ENTRY      KM4TZ_BD_RAM_TZ_ENTRY
-	#define LMA_TZ_S_TEXT_RO  KM4TZ_IMG3_XIP
-	#define LMA_TZ_S_BSS      KM4TZ_BD_RAM_TZ_S
+
+#if defined(CONFIG_IMG3_PSRAM)
+#define RAM_IMAGE3_TZ     KM4TZ_BD_PSRAM_TZ
+#define LMA_TZ_S_TEXT_RO  KM4TZ_BD_PSRAM_TZ
+#elif defined(CONFIG_IMG3_FLASH)
+#define RAM_IMAGE3_TZ     KM4TZ_BD_RAM_TZ
+#define LMA_TZ_S_TEXT_RO  KM4TZ_IMG3_XIP
 #else
-	#define LMA_TZ_NSC        KM4TZ_BD_RAM_TZ_NSC
-	#define LMA_TZ_ENTRY      KM4TZ_BD_RAM_TZ_ENTRY
-	#define LMA_TZ_S_TEXT_RO  KM4TZ_BD_RAM_TZ_S
-	#define LMA_TZ_S_BSS      KM4TZ_BD_RAM_TZ_S
+#define RAM_IMAGE3_TZ     KM4TZ_BD_RAM_TZ
+#define LMA_TZ_S_TEXT_RO  KM4TZ_BD_RAM_TZ
 #endif
+
 
 SECTIONS
 {
-	/* image3: security image start */
-	.gnu.sgstubs :
-	{
-		__ram_image3_nsc_start__ = .;
-		. = ALIGN(32);
-	} > LMA_TZ_NSC
 
 	.ram_image3.entry :
 	{
 		__image3_entry_func__ = .;
 		KEEP(*(.image3.entry.data))
 		KEEP(*(.image3.nsc_entry.text*))
+		__ram_tz_end__ = .;
+	} > LMA_TZ_S_TEXT_RO
+
+	.gnu.sgstubs :
+	{
 		. = ALIGN(32);
-	} > LMA_TZ_ENTRY
+		__ram_image3_nsc_start__ = .;
+		*(.gnu.sgstubs*)
+		. = ALIGN(32);
+	} > LMA_TZ_S_TEXT_RO
+
+	__ram_image3_nsc_end__ = ADDR(.gnu.sgstubs) + SIZEOF(.gnu.sgstubs);
 
 	.ram_image3.text :
 	{
 		__ram_image3_text_start__ = .;
 		*(.text*)
 		*(.rodata*)
+		__ram_image3_text_end__ = .;
 	} > LMA_TZ_S_TEXT_RO
 
 	.ram_image3.data :
@@ -49,9 +50,7 @@ SECTIONS
 		__ram_image3_data_start__ = .;
 		*(.data*)
 		__ram_image3_data_end__ = .;
-
-		__ram_image3_text_end__ = .;
-	} > LMA_TZ_S_TEXT_RO
+	} > RAM_IMAGE3_TZ
 
 	.ram_image3.bss (NOLOAD):
 	{
@@ -61,7 +60,7 @@ SECTIONS
 		__image3_bss_end__ = .;
 		end = .;
 		__image3_heap_start__ = .;
-	} > LMA_TZ_S_BSS
+	} > RAM_IMAGE3_TZ
 
 	/* image2: normal image start */
 	.ram_image2.entry :
@@ -70,9 +69,6 @@ SECTIONS
 	} > KM4TZ_BD_RAM
 }
 
-/* Calculate remaining space for secure heap */
-#if defined (CONFIG_IMG3_PSRAM)
-	__image3_heap_size__ = ORIGIN(KM4TZ_BD_PSRAM_TZ_S) + LENGTH(KM4TZ_BD_PSRAM_TZ_S) - __image3_heap_start__;
-#else
-	__image3_heap_size__ = ORIGIN(KM4TZ_BD_RAM_TZ_S) + LENGTH(KM4TZ_BD_RAM_TZ_S) - __image3_heap_start__;
-#endif
+__image3_ram_start__ = ORIGIN(RAM_IMAGE3_TZ) - IMAGE_HEADER_LEN;
+__image3_ram_end__ = __image3_ram_start__ + LENGTH(RAM_IMAGE3_TZ);
+__image3_heap_size__ = __image3_ram_end__ - __image3_heap_start__;

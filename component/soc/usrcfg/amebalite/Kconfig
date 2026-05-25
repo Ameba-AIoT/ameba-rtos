@@ -1,0 +1,94 @@
+menu "User Config"
+
+menu "Flash Layout Configuration"
+
+# Boot Manifest(4K) + KM4 Bootloader(252K)
+comment "BOOT Offset: 0x8000000 (fixed)"
+
+config FLASH_BOOT_OFFSET
+    hex
+    default 0x8000000
+
+config FLASH_BOOT_SIZE
+    hex "BOOT Size"
+    default 0x14000
+
+# Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA1 + RDP IMG OTA1
+config FLASH_OTA1_OFFSET
+    hex "APP OTA1 Offset"
+    default 0x8014000
+
+config FLASH_OTA1_SIZE
+    hex "APP OTA1 Size"
+    default 0x80000
+
+# Boot Manifest(4K) + KM4 Bootloader(252K) OTA
+config FLASH_BOOT_OTA2_OFFSET
+    hex "BOOT OTA2 Offset"
+    default 0x8200000
+
+config FLASH_BOOT_OTA2_SIZE
+    hex "BOOT OTA2 Size"
+    default 0x14000
+
+# Certificate(4K) + Manifest(4K) + KM0 & KM4 & CA32 Application OTA2 + RDP IMG OTA2
+config FLASH_OTA2_OFFSET
+    hex "APP OTA2 Offset"
+    default 0x8214000
+
+config FLASH_OTA2_SIZE
+    hex "APP OTA2 Size"
+    default 0x80000
+
+# VFS region 1 (512K)
+config FLASH_VFS1_OFFSET
+    hex "VFS1 Offset"
+    default 0x8703000
+
+config FLASH_VFS1_SIZE
+    hex "VFS1 Size"
+    default 0x20000
+
+# Manifest(4K) + DSP IMG
+config FLASH_DSP_OFFSET
+    hex "DSP Offset"
+    default 0x08400000
+
+config FLASH_DSP_SIZE
+    hex "DSP Size" if DSP_EN
+    default 0x300000 if DSP_EN
+    default 0
+
+# VFS region 2
+config FLASH_VFS2_OFFSET
+    hex "VFS2 Offset"
+    default 0
+
+config FLASH_VFS2_SIZE
+    hex "VFS2 Size"
+    default 0
+
+# reserve for user
+config FLASH_USER_OFFSET
+    hex "USER Offset"
+    default 0
+
+config FLASH_USER_SIZE
+    hex "USER Size"
+    default 0
+
+endmenu
+
+menu "Boot Configuration"
+
+config LOGUART_AGG_EN
+    bool "Enable Loguart AGG"
+    default n
+    help
+        Enable or disable Loguart log aggregation (Boot_Agg_En).
+        If the output character sequence of the serial port tool is
+        disordered, enable this option according to the chip ID.
+
+endmenu
+
+endmenu

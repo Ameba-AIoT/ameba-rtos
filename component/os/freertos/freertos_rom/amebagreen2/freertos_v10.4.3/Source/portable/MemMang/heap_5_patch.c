@@ -130,7 +130,7 @@ static size_t xBlockAllocatedBit = 0;
 
 /*-----------------------------------------------------------*/
 
-void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
+void *pvPortMallocBaseCore(size_t xWantedSize, uint32_t startAddr)
 {
 	BlockLink_t *pxBlock, * pxPreviousBlock, * pxNewBlockLink;
 	void *pvReturn = NULL;
@@ -238,6 +238,13 @@ void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
 		traceMALLOC(pvReturn, xWantedSize);
 	}
 	(void) xTaskResumeAll();
+
+	return pvReturn;
+}
+
+void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
+{
+	void * pvReturn = pvPortMallocBaseCore(xWantedSize, startAddr);
 
 #if ( configUSE_MALLOC_FAILED_HOOK == 1 )
 	{

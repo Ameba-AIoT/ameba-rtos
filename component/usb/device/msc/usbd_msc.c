@@ -334,6 +334,8 @@ static void usbd_msc_abort(usb_dev_t *dev)
 
 /**
   * @brief  Set MSC class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -375,6 +377,8 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 
 /**
   * @brief  Clear MSC configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -403,6 +407,8 @@ static int usbd_msc_clear_config(usb_dev_t *dev, u8 config)
 
 /**
   * @brief  Handle MSC specific CTRL requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: USB CTRL requests
   * @retval Status
@@ -416,7 +422,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usb_ep_info_t *info;
 	int ret = HAL_OK;
 
-	//RTK_LOGD(TAG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
+	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
 	//		 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
@@ -523,6 +529,8 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 /**
   * @brief  Data sent on non-control IN endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -581,6 +589,8 @@ static void usbd_msc_tx_process(void)
 
 /**
   * @brief  Data received on non-control Out endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -671,6 +681,8 @@ static void usbd_msc_rx_process(void)
 
 /**
   * @brief  Get descriptor callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
   * @param  buf: Poniter to Buffer
@@ -766,6 +778,8 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 /**
   * @brief  USB attach status change
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  old_status: USB old attach status
   * @param  status: USB attach status
@@ -849,11 +863,14 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 	usb_ep_info_t *info;
 	int ret = HAL_OK;
 
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
 
-	if (cb != NULL) {
-		cdev->cb = cb;
-	}
+	cdev->cb = cb;
 
 #ifdef CONFIG_USBD_MSC_RAM_DISK
 	ops->disk_getcapacity = RAM_GetCapacity;

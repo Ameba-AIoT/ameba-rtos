@@ -231,6 +231,11 @@ int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb)
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = NULL;
 
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
 	usb_os_memset(uvc, 0x00, sizeof(usbh_uvc_host_t));
 	uvc->request_buf = (u8 *)usb_os_malloc(UBSH_UVC_REQUEST_BUF_LEN);
 	if (uvc->request_buf == NULL) {
@@ -277,13 +282,11 @@ int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb)
 	}
 #endif
 
-	if (cb != NULL) {
-		uvc->cb = cb;
-		if (cb->init != NULL) {
-			ret = cb->init();
-			if (ret != HAL_OK) {
-				return ret;
-			}
+	uvc->cb = cb;
+	if (cb->init != NULL) {
+		ret = cb->init();
+		if (ret != HAL_OK) {
+			return ret;
 		}
 	}
 

@@ -65,7 +65,6 @@ typedef struct {
 	short *p_encode_data;
 	uint32_t last_decode_offset;
 	struct enc_codec_buffer *p_enc_codec_buffer_t;
-	uint32_t rx_valid_cnt;
 	uint32_t encode_byte;
 } app_bt_le_audio_data_path_t;
 
@@ -1271,13 +1270,7 @@ static uint16_t app_bt_le_audio_data_received(uint16_t iso_handle, uint8_t path_
 		BT_LOGD("[APP] %s: iso_handle: 0x%x, not ready \r\n", __func__, iso_handle);
 		return 1;
 	}
-	/* set mute in a few valid data of start to optimize rx sync music zz */
-	if ((p_app_bt_le_audio_data_path->rx_valid_cnt++) <= APP_BT_AUDIO_RX_SYNC_VALID_DATA_SHRESHOLD) {
-		if (data) {
-			memset((void *)data, 0, data_len);
-			BT_LOGA("[APP] %s: iso_handle: 0x%x, set mute \r\n", __func__, iso_handle);
-		}
-	}
+
 	/* do audio data received flow */
 	if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_LC3,
 								   p_app_bt_le_audio_data_path->p_track_hdl,

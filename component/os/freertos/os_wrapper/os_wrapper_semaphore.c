@@ -8,6 +8,7 @@
 #include "ameba.h"
 #include "ameba_pmu.h"
 #include "FreeRTOS.h"
+#include "task.h"
 #include "semphr.h"
 #include "os_wrapper.h"
 #include "os_wrapper_specific.h"
@@ -140,8 +141,12 @@ int rtos_sema_take(rtos_sema_t p_handle, uint32_t wait_ms)
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
-		/* If WiFi calls this function in suspend flow, and if timeout is not 0, FreeRTOS will assert. */
-		if (!pmu_yield_os_check()) {
+		/* Force non-blocking when the OS cannot perform a context switch:
+		 * - PMU suspend flow: FreeRTOS would assert on blocking call.
+		 * - Inside critical section: PendSV is masked by BASEPRI, causing an
+		 *   infinite spin with corrupted scheduler event-list state. */
+		if (!pmu_yield_os_check() ||
+			rtos_get_critical_state()) {
 			wait_ms = 0;
 		}
 

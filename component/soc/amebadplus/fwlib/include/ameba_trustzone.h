@@ -106,6 +106,7 @@ typedef enum {
 
 
 void BOOT_RAM_TZCfg(void);
+void BOOT_CPU_TZCfg(const SAU_CFG_TypeDef *sau_config);
 void TZ_ConfigSlaveSecurity(PPC_PeripheralId Perip, u32 Status);
 
 

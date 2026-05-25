@@ -229,6 +229,14 @@ __non_secure_psram_end__ = PSRAM_END;
 __ap_sram_heap_start = SRAM_END;
 __ap_sram_heap_size = KBYTES(256);
 
+/* Region 0: KM4 IROM*/
+__rom_text_region0_start__ = ORIGIN(KM4_IROM);
+__rom_text_region0_end__   = ORIGIN(KM4_IROM_STDLIB_NS) + LENGTH(KM4_IROM_STDLIB_NS);
+
+/* Region 1: KR4 IROM*/
+__rom_text_region1_start__ = ORIGIN(KR4_IROM);
+__rom_text_region1_end__   = ORIGIN(KR4_IROM_STDLIB) + LENGTH(KR4_IROM_STDLIB);
+
 
 /* mp used */
 __km4_bd_boot_download_addr__ = 0x30012000;

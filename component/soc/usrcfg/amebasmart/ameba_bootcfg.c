@@ -96,10 +96,4 @@ SocClk_Info_TypeDef SocClk_Info[1] = {
 #endif
 };
 
-/**
-* @brif  Loguart AGG enable or disable
-* 	FALSE: disable
-*	TRUE: enable
-*/
-u8 Boot_Agg_En = FALSE;
 

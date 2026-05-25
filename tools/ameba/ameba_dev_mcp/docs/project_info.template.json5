@@ -1,0 +1,24 @@
+/*
+ * project_info.json5 — flashing-image config for each SoC.
+ *
+ * Two modes per project:
+ *   - "auto":    images / addresses are filled in by build_firmware.
+ *                Do NOT hand-edit the generated images[] block.
+ *   - "manual":  user-managed; MCP only validates and never overwrites.
+ *
+ * All paths must be absolute. Address strings must be 0x... hex.
+ * See tools/ameba/ameba_dev_mcp/docs/project_info.md for full schema.
+ */
+{
+  "schema_version": 1,
+
+  /* Global defaults; each project may override. */
+  "defaults": {
+    "memory_type": "nor",
+    "chip_erase": false
+  },
+
+  /* Keyed by SoC name (matches build_<SOC>/). */
+  "projects": {
+  }
+}

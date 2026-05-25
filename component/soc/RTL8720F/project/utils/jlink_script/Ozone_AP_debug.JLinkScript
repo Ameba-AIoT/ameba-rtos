@@ -1,0 +1,9 @@
+void ConfigTargetSettings(void) {
+  JLINK_CORESIGHT_AddAP(0, CORESIGHT_APB_AP);
+  JLINK_CORESIGHT_AddAP(1, CORESIGHT_AHB_AP);
+  JLINK_CORESIGHT_AddAP(2, CORESIGHT_AHB_AP);
+  JLINK_CORESIGHT_IndexAHBAPToUse = 2;
+  
+  JTAG_WriteClocks(1);
+  JTAG_Speed = 1000;
+}

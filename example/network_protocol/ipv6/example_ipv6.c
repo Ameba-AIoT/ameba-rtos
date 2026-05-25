@@ -561,13 +561,13 @@ static void example_ipv6_thread(void *param)
 	(void) param;
 
 	// Delay to check successful WiFi connection and obtain of an IP address
-	while (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+	while (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 		rtos_time_delay_ms(2000);
 	}
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: ipv6====================\r\n");
 
-	LwIP_AUTOIP_IPv6(NETIF_WLAN_STA_INDEX);
+	lwip_autoip_ipv6(NETIF_WLAN_STA_INDEX);
 	//Wait for ipv6 addr process conflict done
 	while (!ip6_addr_isvalid(netif_ip6_addr_state(pnetif_sta, 0))) {
 		rtos_time_delay_ms(10);

@@ -96,6 +96,10 @@ static usbh_user_cb_t usbh_usr_cb = {
 
 /* Private functions ---------------------------------------------------------*/
 
+/**
+  * @brief  Vendor attach callback
+  * @retval Status
+  */
 static int vendor_cb_attach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
@@ -103,6 +107,10 @@ static int vendor_cb_attach(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Vendor detach callback
+  * @retval Status
+  */
 static int vendor_cb_detach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
@@ -112,6 +120,10 @@ static int vendor_cb_detach(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Vendor setup callback
+  * @retval Status
+  */
 static int vendor_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
@@ -119,6 +131,16 @@ static int vendor_cb_setup(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Vendor receive callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  ep_type: Endpoint type
+  * @param  buf: RX buffer
+  * @param  len: RX data length (in bytes)
+  * @param  status: Transfer status
+  * @retval Status
+  */
 static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status)
 {
 	UNUSED(buf);
@@ -140,9 +162,10 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status)
 				vendor_bulk_total_rx_len = 0;
 				rtos_sema_give(vendor_bulk_receive_sema);
 			}
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "%d RX fail: %d\n", ep_type, status);
 		}
+		//else {
+		//	RTK_LOGS(TAG, RTK_LOG_ERROR, "%d RX fail: %d\n", ep_type, status);
+		//}
 
 		break;
 	case USB_CH_EP_TYPE_INTR:
@@ -173,6 +196,13 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Vendor transmit complete callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  ep_type: Endpoint type
+  * @retval Status
+  */
 static int vendor_cb_transmit(u8 ep_type)
 {
 	switch (ep_type) {

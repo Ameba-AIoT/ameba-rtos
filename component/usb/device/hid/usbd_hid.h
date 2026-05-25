@@ -103,11 +103,15 @@ typedef struct {
 
 	/**
 	 * @brief Called to handle class-specific SETUP requests.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 */
 	void(* setup)(void);
 
 	/**
 	 * @brief Called when a data transmission to the host on the BULK IN endpoint is complete.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] status The status of the transmission.
 	 */
 	void(* transmitted)(u8 status);
@@ -115,6 +119,8 @@ typedef struct {
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	/**
 	 * @brief Called when new data is received from the host on the INTR IN endpoint, used for keyboard.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] buf Pointer to the received data buffer.
 	 * @param[in] len Length of the received data in bytes.
 	 */
@@ -123,6 +129,8 @@ typedef struct {
 
 	/**
 	 * @brief Called when USB attach status changes for application to support hot-plug events.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] old_status The previous attach status.
 	 * @param[in] status The new attach status.
 	 */

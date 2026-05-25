@@ -67,7 +67,7 @@ static int _whc_host_ipc_cmd_work(u32 cmd, char *buf, u32 buf_len, struct genl_i
 
 	buf_len = strlen(user_buf + hdr_len);
 	user_buf[buf_len + hdr_len] = '\0';
-	ret = whc_host_buf_rx_to_user(user_buf, buf_len + 1);
+	ret = whc_host_buf_rx_to_user(user_buf + hdr_len, buf_len + 1);
 
 func_exit:
 	if (user_buf) {
@@ -203,9 +203,9 @@ static int whc_host_mp(struct genl_info *info)
 	/* rsvd 8B for mp  result header */
 	user_buf = kzalloc(WHC_WIFI_MP_MSG_BUF_SIZE + hdr_len, GFP_KERNEL);
 	whc_host_mp_cmd((dma_addr_t)buf, buf_len, (dma_addr_t)(user_buf + hdr_len));
-	*(uint32_t *)user_buf = WHC_WIFI_TEST;
-	*(user_buf + sizeof(uint32_t)) = WHC_WIFI_TEST_MP;
-	whc_host_buf_rx_to_user(user_buf, WHC_WIFI_MP_MSG_BUF_SIZE);
+	buf_len = strlen(user_buf + hdr_len);
+	user_buf[hdr_len + buf_len] = '\0';
+	whc_host_buf_rx_to_user(user_buf + hdr_len, buf_len + 1);
 
 	kfree(user_buf);
 
@@ -222,7 +222,9 @@ static int whc_host_dbg(struct genl_info *info)
 	buf_len = strlen(buf) + 1;
 	user_buf = kzalloc(WHC_WIFI_MP_MSG_BUF_SIZE, GFP_KERNEL);
 	whc_host_iwpriv_cmd((dma_addr_t)buf, buf_len, buf, user_buf);
-	whc_host_buf_rx_to_user(user_buf, WHC_WIFI_MP_MSG_BUF_SIZE);
+	buf_len = strlen(user_buf);
+	user_buf[buf_len] = '\0';
+	whc_host_buf_rx_to_user(user_buf, buf_len + 1);
 	kfree(user_buf);
 	return 0;
 }

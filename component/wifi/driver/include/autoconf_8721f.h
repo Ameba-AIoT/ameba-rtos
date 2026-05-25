@@ -155,7 +155,9 @@
 /* enable csi function */
 #define CONFIG_CSI
 
+#ifndef CONFIG_WPA_STD
 #define CONFIG_P2P /*https://jira.realtek.com/browse/RSWLANDIOT-9254*/
+#endif
 
 #define PHYSTS_WORK_AROUND
 #define RTL8721F_WORK_AROUND

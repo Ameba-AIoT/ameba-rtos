@@ -486,8 +486,29 @@ class secure_boot():
             msg_bytes = string_at(addressof(msg), mlen)
             der = mbedtls_pk_binary_to_der(privkey, string_at(addressof(pubkey), csize * 2).hex())
             key = mbedtls.pk.ECC.from_DER(der)
-            sig_bytes = key.sign(msg_bytes, digestmod=self.MdType)
-            r,s = ecdsa.util.sigdecode_der(sig_bytes, 0)
+            if self.IsHMAC:
+                hmackey_bytes = bytes.fromhex(self.HmacKey)
+                # mbedtls sign(digestmod=None) re-hashes with SHA256 — use ecdsa library
+                # with custom secp224k1 curve (225-bit order) for correct hash truncation
+                from ecdsa.ellipticcurve import CurveFp, PointJacobi
+                from ecdsa import curves as _ecdsa_curves, SigningKey as _EcdsaSignKey
+                _secp224k1_n = 0x10000000000000000000000000001DCE8D2EC6184CAF0A971769FB1F7
+                _secp224k1_p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFE56D
+                _secp224k1_Gx = 0xA1455B334DF099DF30FC28A169A467E9E47075A90F7E650EB6B7A45C
+                _secp224k1_Gy = 0x7E089FED7FBA344282CAFBD6F7E319F7C0B0BD59E2CA4BDB556D61A5
+                _crv224k1 = CurveFp(_secp224k1_p, 0, 5)
+                _G224k1 = PointJacobi(_crv224k1, _secp224k1_Gx, _secp224k1_Gy, 1, _secp224k1_n, generator=False)
+                _SECP224K1 = _ecdsa_curves.Curve("secp224k1", _crv224k1, _G224k1, (1, 3, 132, 0, 32))
+                d_int = int(privkey, 16)
+                _ekey = _EcdsaSignKey.from_secret_exponent(d_int, curve=_SECP224K1)
+                def _hmac_fn(data, _k=hmackey_bytes, _md=self.MdType):
+                    return mbedtls.hmac.new(key=_k, buffer=data, digestmod=_md)
+                _raw_sig = _ekey.sign(msg_bytes, hashfunc=_hmac_fn)
+                r = int.from_bytes(_raw_sig[:csize], 'big')
+                s = int.from_bytes(_raw_sig[csize:], 'big')
+            else:
+                sig_bytes = key.sign(msg_bytes, digestmod=self.MdType)
+                r,s = ecdsa.util.sigdecode_der(sig_bytes, 0)
             r_arr = point_to_bignum_arr(r, csize, 0)
             s_arr = point_to_bignum_arr(s, csize, 0)
 

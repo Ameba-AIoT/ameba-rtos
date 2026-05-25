@@ -29,7 +29,6 @@ set(KM4TZ_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km4tz)
 set(KM4NS_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km4ns)
 set(KM4NS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km4ns)
 set(KM4TZ_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km4tz)
-set(boot_name boot.bin) # for temporary compatibility with extension
 ###############################################################################
 
 ###############################################################################

@@ -208,6 +208,9 @@ static void do_audio_track_write(rtk_bt_audio_track_t *track, uint8_t *data, uin
 	// for (uint32_t i = 0; i < size; i++) {
 	//  data[i] *= 10;
 	// }
+	if (track->audio_sync_flag) {
+		osif_mutex_take(track->audio_sync_mutex, BT_TIMEOUT_FOREVER);
+	}
 	write_bytes = rtk_bt_audio_track_play(track->audio_track_hdl, (void *)data, size);
 	/* empty buffer */
 	if (write_bytes > 0) {
@@ -218,6 +221,9 @@ static void do_audio_track_write(rtk_bt_audio_track_t *track, uint8_t *data, uin
 #if defined(CONFIG_AUDIO_PASSTHROUGH) && CONFIG_AUDIO_PASSTHROUGH
 		rtk_bt_audio_handle_xrun(track, data, size);
 #endif
+	}
+	if (track->audio_sync_flag) {
+		osif_mutex_give(track->audio_sync_mutex);
 	}
 	BT_LOGD("%s: Done trans_bytes is %llu \r\n", __func__, track->trans_bytes);
 }
@@ -267,7 +273,6 @@ static void do_audio_sync_flow(rtk_bt_audio_track_t *track, uint8_t packet_index
 				BT_LOGA("[BT AUDIO] %s: expt sdu frc is overflow, do free run clock again \r\n", __func__);
 				BT_LOGA("[BT_AUDIO] %s: pres_comp_event RTK_BT_AUDIO_TRACK_PRES_INIT \r\n", __func__);
 				track->pres_comp_event = RTK_BT_AUDIO_TRACK_PRES_INIT;
-				track->audio_hal_buff_count = 0;
 				track->frc_cal_flag = false;
 			}
 		}
@@ -911,7 +916,7 @@ rtk_bt_audio_track_t *rtk_bt_get_audio_track(void *timer, uint32_t type)
 	plist = priv->track_list.next;
 	while (plist != &priv->track_list) {
 		rtk_bt_audio_track_t *track_tmp = (rtk_bt_audio_track_t *)plist;
-		if (track_tmp->audio_delay_start_timer == timer) {
+		if (track_tmp->mixer_pre_start_timer == timer) {
 			ptrack = track_tmp;
 			goto exit;
 		}
@@ -1053,6 +1058,11 @@ uint16_t rtk_bt_audio_track_enable_sync_mode(rtk_bt_audio_track_t *ptrack, uint3
 		BT_LOGE("[BT AUDIO] ptrack->audio_sync_mutex create failed!\r\n");
 		return RTK_BT_AUDIO_FAIL;
 	}
+	/* init sync task */
+	if (bt_audio_sync_track_add(ptrack)) {
+		BT_LOGE("[BT AUDIO] bt_audio_sync_track_add failed!\r\n");
+		goto fail;
+	}
 	/* allocate ringbuffer for dalay play */
 	/* calculate pcm buffer need by presentation delay plus offset for cig/big refer point */
 	BT_LOGA("[BT_AUDIO] bt audio track sync mode is on, pd is %d \r\n", pd);
@@ -1061,7 +1071,7 @@ uint16_t rtk_bt_audio_track_enable_sync_mode(rtk_bt_audio_track_t *ptrack, uint3
 	/* register track sync state in table, used for audio sync between multiple tracks */
 	if (rtk_bt_audio_track_sync_state_register(ptrack)) {
 		BT_LOGE("[BT AUDIO] bt_audio_track_sync_state_register failed!\r\n");
-		return RTK_BT_AUDIO_FAIL;
+		goto fail;
 	}
 #if defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
 	ptrack->audio_mixer_conf = true;
@@ -1074,6 +1084,14 @@ uint16_t rtk_bt_audio_track_enable_sync_mode(rtk_bt_audio_track_t *ptrack, uint3
 	ptrack->audio_sync_flag = true;
 
 	return RTK_BT_AUDIO_OK;
+fail:
+	if (ptrack->audio_sync_mutex) {
+		osif_mutex_delete(ptrack->audio_sync_mutex);
+		ptrack->audio_sync_mutex = NULL;
+	}
+	bt_audio_sync_track_del(ptrack);
+
+	return RTK_BT_AUDIO_FAIL;
 }
 
 uint16_t rtk_bt_audio_track_sync_restart(rtk_bt_audio_track_t *track)
@@ -1086,17 +1104,12 @@ uint16_t rtk_bt_audio_track_sync_restart(rtk_bt_audio_track_t *track)
 		BT_LOGA("[APP] %s: do not support audio sync\r\n", __func__);
 		return 0;
 	}
-	if (track->audio_mixer_conf) {
-		osif_mutex_take(track->audio_sync_mutex, BT_TIMEOUT_FOREVER);
-		track->pres_comp_event = RTK_BT_AUDIO_TRACK_PRES_INIT;
-		track->audio_hal_buff_count = 0;
-		track->frc_cal_flag = false;
-		track->prev_ts_valid = false;
-		track->trans_bytes = 0;
-		osif_mutex_give(track->audio_sync_mutex);
-		rtk_bt_audio_track_resume(track->audio_track_hdl);
-		BT_LOGA("%s: RTK_BT_AUDIO_TRACK_PRES_INIT \r\n", __func__);
-	}
+	osif_mutex_take(track->audio_sync_mutex, BT_TIMEOUT_FOREVER);
+	track->pres_comp_event = RTK_BT_AUDIO_TRACK_PRES_INIT;
+	track->frc_cal_flag = false;
+	track->prev_ts_valid = false;
+	osif_mutex_give(track->audio_sync_mutex);
+	BT_LOGA("%s: RTK_BT_AUDIO_TRACK_PRES_INIT \r\n", __func__);
 
 	return 0;
 }
@@ -1351,12 +1364,11 @@ uint16_t rtk_bt_audio_track_del(uint32_t type, rtk_bt_audio_track_t *ptrack)
 	if (ptrack->audio_sync_flag) {
 		bt_audio_ring_buffer_deinit(&ptrack->audio_delay_buff);
 		rtk_bt_audio_track_sync_state_unregister(ptrack);
-	}
-	if (ptrack->audio_delay_start_timer) {
-		osif_timer_delete(&ptrack->audio_delay_start_timer);
+		bt_audio_sync_track_del(ptrack);
 	}
 	if (ptrack->audio_sync_mutex) {
 		osif_mutex_delete(ptrack->audio_sync_mutex);
+		ptrack->audio_sync_mutex = NULL;
 	}
 	osif_mem_free(ptrack);
 	osif_mutex_give(bt_audio_intf_priv_mutex);
@@ -1601,6 +1613,11 @@ uint16_t rtk_bt_audio_init(void)
 	if (err) {
 		return err;
 	}
+	/* init audio sync */
+	err = bt_audio_sync_init();
+	if (err) {
+		return err;
+	}
 	/* foreach bt_audio_intf_private_table and init list */
 	while (1) {
 		if (bt_audio_intf_private_table[i].type == RTK_BT_AUDIO_CODEC_MAX) {
@@ -1651,6 +1668,8 @@ uint16_t rtk_bt_audio_deinit(void)
 		BT_LOGE("[BT_AUDIO] bt_audio_app_data_handle_deinit fail \r\n");
 		return err;
 	}
+	/* deinit audio sync task */
+	bt_audio_sync_deinit();
 	osif_mutex_delete(bt_audio_intf_priv_mutex);
 	bt_audio_intf_priv_mutex = NULL;
 	BT_LOGA("[BT_AUDIO] deinit complete ! \r\n");

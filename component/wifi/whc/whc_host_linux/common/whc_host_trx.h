@@ -32,9 +32,6 @@
 #define QUEUE_WAKE_THRES	4
 
 #ifndef CONFIG_WHC_HCI_IPC
-/* internal pkt tx: from user space to dev by cmd path */
-void whc_host_send_cmd_data(u8 *buf, u32 len);
-
 /* internal pkt rx: from dev to host kernel space */
 int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb);
 #endif

@@ -1,30 +1,42 @@
-
-#include "whc_dev_app.h"
+#include "whc_dev.h"
 #include "lwip/sys.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
 
 struct whc_cmd_path_priv whc_cmdpath_data;
 
-#ifndef CONFIG_MP_SHRINK
-static struct rtw_network_info wifi = {0};
-#endif
 /* update from host in mode s1d */
 struct whc_dev_network_info whc_network_info[2] = {0};
 
+/**
+  * @brief  Check if an IP address is already in the IP allocation table.
+  * @param  gate: the third octet of the IP address (network segment).
+  * @param  d: the fourth octet of the IP address (host ID).
+  * @retval 0: IP is available; 1: IP is marked or network segment mismatch.
+  * @note   this weak API is used when both the API_PATH and TCPIP keepalive are disabled.
+  */
 __weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
 {
 	(void)gate;
 	(void)ip;
 
-	//return 1 to forward all pkt now.
+	/* TODO */
+
+	/* return 1 to forward all pkt now.*/
 	return 1;
-	//todo
 }
 
+/**
+  * @brief  Get ip, gw, gw_mask information.
+  * @param  type: info type, it can be WHC_WLAN_GET_IP/WHC_WLAN_GET_GW/WHC_WLAN_GET_GWMSK.
+  * @param  input: ip address if needed.
+  * @param  index: netif index
+  * @retval the address where ip/gw/gw_mask info is stored.
+  * @note   this weak API is used when both the API_PATH and TCPIP keepalive are disabled.
+  */
 __weak int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index)
 {
-	int ret;
+	int ret = 0;
 	(void)input;
 
 	switch (type) {
@@ -109,10 +121,19 @@ s32 whc_dev_scan_callback(u32 scanned_AP_num, void *data)
 
 	if (ap_num) {
 		scanned_AP_list = (struct rtw_scan_result *)rtos_mem_zmalloc(scanned_AP_num * sizeof(struct rtw_scan_result));
+		if (!scanned_AP_list) {
+			return -1;
+		}
 		result_buf = rtos_mem_zmalloc(buf_size);
+		if (!result_buf) {
+			rtos_mem_free(scanned_AP_list);
+			return -1;
+		}
 		if (wifi_get_scan_records(&ap_num, scanned_AP_list) < 0) {
 			RTK_LOGE(TAG_WLAN_INIC, "%s, ERROR: Get result failed\n", __func__);
 			rtos_mem_free((void *)scanned_AP_list);
+			rtos_mem_free(result_buf);
+			return -1;
 		}
 
 		scanned_AP_list_index = scanned_AP_list;
@@ -182,7 +203,7 @@ end:
 }
 
 /* here in sdio rx done callback */
-__weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
+__weak void whc_dev_cmd_rx_to_user(u8 *rxbuf)
 {
 	while (whc_cmdpath_data.whc_rx_msg) {
 		/* waiting last msg done */
@@ -190,39 +211,36 @@ __weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
 	}
 
 	whc_cmdpath_data.whc_rx_msg = rxbuf;
-	whc_cmdpath_data.whc_rx_msg_free_addr = real_buf;
-	whc_cmdpath_data.rx_msg_size = size;
 	rtos_sema_give(whc_cmdpath_data.whc_user_rx_sema);
 }
 
-/* note： never use dev block send in this task, may cause deadlock */
-__weak void whc_dev_pkt_rx_to_user_task(void)
+/* note: never use dev block send in this task, may cause deadlock */
+__weak void whc_dev_cmd_rx_to_user_task(void)
 {
-	u8 *ptr = NULL;
+	struct rtw_network_info *wifi;
+	u8 *ptr = NULL, *dst;
 	u32 event = 0;
-	u8 *ip, *buf, idx = 0;
-	(void)ip;
+	u8 *ip, idx = 0;
 	u8 len;
 	char *password = NULL;
+	int ret = RTK_FAIL;
+	u8 buf[WHC_WIFI_TEST_BUF_SIZE];
+
+	(void)ip;
 	(void)len;
 	(void)password;
 	(void)idx;
-	int ret;
 	(void)ret;
 
 	while (1) {
 		rtos_sema_take(whc_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);
+
 		if (whc_cmdpath_data.whc_rx_msg) {
-			ptr = whc_cmdpath_data.whc_rx_msg;
-			event = *(u32 *)(whc_cmdpath_data.whc_rx_msg);
+			ptr = whc_cmdpath_data.whc_rx_msg + sizeof(struct whc_cmd_path_hdr);
+			event = *(u32 *)(ptr);
 			ptr += 4;
 
 			if (event == WHC_WIFI_TEST) {
-				buf = rtos_mem_malloc(WHC_WIFI_TEST_BUF_SIZE);
-				if (!buf) {
-					RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
-					return;
-				}
 #ifndef CONFIG_MP_SHRINK
 				if (*ptr == WHC_WIFI_TEST_GET_MAC_ADDR) {
 					struct rtw_mac dev_mac = {0};
@@ -231,14 +249,15 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 						RTK_LOGE(TAG_WLAN_INIC, "%s, port %d is not running!\n", __func__, idx);
 					} else {
 						wifi_get_mac_address(idx, &dev_mac, 0);
-						ptr = buf;
-						*(u32 *)ptr = WHC_WIFI_TEST;
-						ptr += 4;
-						*ptr = WHC_WIFI_TEST_GET_MAC_ADDR;
-						ptr += 1;
-						*ptr = idx;
-						ptr += 1;
-						memcpy(ptr, dev_mac.octet, 6);
+						memset(buf, 0, WHC_WIFI_TEST_BUF_SIZE);
+						dst = buf;
+						*(u32 *)dst = WHC_WIFI_TEST;
+						dst += 4;
+						*dst = WHC_WIFI_TEST_GET_MAC_ADDR;
+						dst += 1;
+						*dst = idx;
+						dst += 1;
+						memcpy(dst, dev_mac.octet, 6);
 						//6+4+1=11
 						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 					}
@@ -246,34 +265,43 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					whc_dev_cmd_scan();
 #ifdef CONFIG_LWIP_LAYER
 				} else if (*ptr == WHC_WIFI_TEST_DHCP) {
-					LwIP_netif_set_link_up(NETIF_WLAN_STA_INDEX);
+					lwip_netif_set_link_up(NETIF_WLAN_STA_INDEX);
 					/* Start DHCPClient */
-					LwIP_IP_Address_Request(STA_WLAN_INDEX);
+					lwip_request_ip(STA_WLAN_INDEX);
 #endif
 				} else if (*ptr == WHC_WIFI_TEST_CONNECT) {
-					memset(&wifi, 0, sizeof(struct rtw_network_info));
+					wifi = rtos_mem_zmalloc(sizeof(struct rtw_network_info));
+					if (!wifi) {
+						goto connect_fail;
+					}
 					ptr += 1;
 					len = *ptr;
-					wifi.ssid.len = len;
-					memcpy((char *)wifi.ssid.val, ptr + 1, len);
+					wifi->ssid.len = len;
+					memcpy((char *)wifi->ssid.val, ptr + 1, len);
 
 					ptr += len + 1;
 					len = *ptr;
 					if (len > 0) {
 						password = rtos_mem_zmalloc(129);
+						if (!password) {
+							goto connect_fail;
+						}
 						memcpy((char *)password, ptr + 1, len);
-						wifi.password = (u8 *)password;
-						wifi.password_len = len;
+						wifi->password = (u8 *)password;
+						wifi->password_len = len;
 					}
-					ret = wifi_connect(&wifi, 1);
-
+					ret = wifi_connect(wifi, 1);
+connect_fail:
 					if (password) {
 						rtos_mem_free(password);
+					}
+					if (wifi) {
+						rtos_mem_free(wifi);
 					}
 #ifdef CONFIG_LWIP_LAYER
 					if (ret == RTK_SUCCESS) {
 						/* Start DHCPClient */
-						LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
+						lwip_request_ip(NETIF_WLAN_STA_INDEX);
 					} else {
 						RTK_LOGE(TAG_WLAN_INIC, "connect fail !\n");
 					}
@@ -285,17 +313,18 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					if (!wifi_is_running(idx)) {
 						RTK_LOGE(TAG_WLAN_INIC, "%s, port %d is not running!\n", __func__, idx);
 					} else {
-						ip = LwIP_GetIP(idx);
-						ptr = buf;
-						*(u32 *)ptr = WHC_WIFI_TEST;
-						ptr += 4;
-						*ptr = WHC_WIFI_TEST_GET_IP;
-						ptr += 1;
-						memcpy(ptr, ip, 4);
-						ptr += 4;
-						ip = LwIP_GetGW(idx);
-						memcpy(ptr, ip, 4);
-						ptr += 4;
+						memset(buf, 0, WHC_WIFI_TEST_BUF_SIZE);
+						ip = lwip_get_ip(idx);
+						dst = buf;
+						*(u32 *)dst = WHC_WIFI_TEST;
+						dst += 4;
+						*dst = WHC_WIFI_TEST_GET_IP;
+						dst += 1;
+						memcpy(dst, ip, 4);
+						dst += 4;
+						ip = lwip_get_gw(idx);
+						memcpy(dst, ip, 4);
+						dst += 4;
 						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 					}
 #endif
@@ -315,31 +344,29 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 				} else if (*ptr == WHC_WIFI_TEST_SET_HOST_RTOS) {
 					wifi_user_config.cfg80211 = 0;
 				} else if (*ptr == WHC_WIFI_TEST_OTA) {
-					whc_dev_api_ota_process(ptr);
+					whc_dev_ota_process(ptr);
 				}
 #endif
-				rtos_mem_free(buf);
 			}
-			rtos_mem_free(whc_cmdpath_data.whc_rx_msg_free_addr);
+			rtos_mem_free(whc_cmdpath_data.whc_rx_msg);
 			whc_cmdpath_data.whc_rx_msg = NULL;
-			whc_cmdpath_data.whc_rx_msg_free_addr = NULL;
 		}
 	}
 }
 
-__weak void whc_dev_init_cmd_path_task(void)
+__weak void whc_dev_init_cmd_path(void)
 {
 	memset(&whc_cmdpath_data, 0, sizeof(struct whc_cmd_path_priv));
+
 	/* initialize the semaphores */
 	rtos_sema_create(&(whc_cmdpath_data.whc_user_rx_sema), 0, 0xFFFFFFFF);
 	rtos_sema_create(&(whc_cmdpath_data.whc_user_blocksend_sema), 0, 0xFFFFFFFF);
 	rtos_mutex_create(&whc_cmdpath_data.whc_user_blocksend_mutex);
 
 	/* Initialize the event task */
-	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_dev_pkt_rx_to_user_task", (rtos_task_function_t)whc_dev_pkt_rx_to_user_task,
-										NULL,
-										WHC_WHC_CMD_USER_TASK_STACK_SIZE, CONFIG_WHC_WHC_CMD_USER_TASK_PRIO)) {
-		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_pkt_rx_to_user_task Err!!\n");
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_dev_cmd_rx_to_user_task", (rtos_task_function_t)whc_dev_cmd_rx_to_user_task,
+										NULL, WHC_WHC_CMD_USER_TASK_STACK_SIZE, CONFIG_WHC_WHC_CMD_USER_TASK_PRIO)) {
+		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_cmd_rx_to_user_task Err!!\n");
 	}
 
 }

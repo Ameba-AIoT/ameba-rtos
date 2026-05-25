@@ -6,7 +6,7 @@
 
 # HW Configuration
 
-None
+Four spi pins and two sync pins should be connected correctly between atcmd device and host.
 
 # SW configuration
 1. For atcmd device:

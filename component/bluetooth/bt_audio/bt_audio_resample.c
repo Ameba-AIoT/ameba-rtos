@@ -93,7 +93,7 @@ void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *p_bt_resample)
 	osif_mem_free((void *)p_bt_resample);
 }
 
-static short in_buffer[(48000 / 1000 * 10) * 2] = {0};
+static short in_buffer[(48000 / 1000 * 10) * 10] = {0};
 
 static void bt_audio_input_data_channel_convert(rtk_bt_audio_resample_t *p_resample, short *in, short *out, uint32_t frames)
 {

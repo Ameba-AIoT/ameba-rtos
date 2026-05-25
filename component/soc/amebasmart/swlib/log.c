@@ -18,6 +18,11 @@ static volatile uint32_t rtk_log_entry_count = 0;
 
 #ifdef CONFIG_ARM_CORE_CA32
 rtos_mutex_t log_mutex = NULL;
+
+void rtk_log_mutex_init(void)
+{
+	rtos_mutex_create_static(&log_mutex);
+}
 #endif
 
 /***
@@ -266,12 +271,10 @@ void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, co
 			return;
 		}
 #ifdef CONFIG_ARM_CORE_CA32
-		/* The CA32 has two cores that need to be locked when printing to avoid interrupting each other */
-		if (log_mutex == NULL) {
-			rtos_mutex_create(&log_mutex);
+		u32 in_isr = CPU_InInterrupt();
+		if ((!in_isr) && (log_mutex != NULL)) {
+			rtos_mutex_take(log_mutex, RTOS_MAX_DELAY);
 		}
-
-		rtos_mutex_take(log_mutex, RTOS_MAX_DELAY);
 #endif
 		if (tag[0] != '#') {
 			DiagPrintf("[%s-%c] ", tag, letter);
@@ -280,7 +283,9 @@ void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, co
 		DiagVprintf(fmt, ap);
 		va_end(ap);
 #ifdef CONFIG_ARM_CORE_CA32
-		rtos_mutex_give(log_mutex);
+		if ((!in_isr) && (log_mutex != NULL)) {
+			rtos_mutex_give(log_mutex);
+		}
 #endif
 	}
 }
@@ -294,12 +299,10 @@ void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char lette
 			return;
 		}
 #ifdef CONFIG_ARM_CORE_CA32
-		/* The CA32 has two cores that need to be locked when printing to avoid interrupting each other */
-		if (log_mutex == NULL) {
-			rtos_mutex_create(&log_mutex);
+		u32 in_isr = CPU_InInterrupt();
+		if ((!in_isr) && (log_mutex != NULL)) {
+			rtos_mutex_take(log_mutex, RTOS_MAX_DELAY);
 		}
-
-		rtos_mutex_take(log_mutex, RTOS_MAX_DELAY);
 #endif
 		if (tag[0] != '#') {
 			DiagPrintfNano("[%s-%c] ", tag, letter);
@@ -308,7 +311,9 @@ void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char lette
 		DiagVprintfNano(fmt, ap);
 		va_end(ap);
 #ifdef CONFIG_ARM_CORE_CA32
-		rtos_mutex_give(log_mutex);
+		if ((!in_isr) && (log_mutex != NULL)) {
+			rtos_mutex_give(log_mutex);
+		}
 #endif
 	}
 }

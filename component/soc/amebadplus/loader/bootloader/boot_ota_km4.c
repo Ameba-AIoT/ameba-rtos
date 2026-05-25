@@ -510,7 +510,7 @@ u8 BOOT_OTA_IMG(void)
 		goto Fail;
 	}
 
-#ifdef CONFIG_RDP_TFM
+#ifdef CONFIG_TRUSTZONE
 	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__ram_image3_start__;
 	Image3EntryFun->VectorNS = (u32)&Manifest[ImgIndex];
 #endif

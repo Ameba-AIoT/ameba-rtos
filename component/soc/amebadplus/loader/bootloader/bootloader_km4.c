@@ -43,7 +43,7 @@ void BOOT_NsStart(u32 Addr)
 	pFunc();
 #endif
 
-#ifdef CONFIG_RDP_TFM
+#ifdef CONFIG_TRUSTZONE
 	UNUSED(Addr); // TFM get addr from VTOR_NS
 	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__ram_image3_start__;
 	if (HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG) & LSYS_BIT_BOOT_WAKE_FROM_PS_HS) {
@@ -427,19 +427,17 @@ void BOOT_SOC_ClkSet(void)
 
 void BOOT_Log_Init(void)
 {
-	u32 ChipType;
-
 	/* close AGG function for auto test */
-	if (Boot_Agg_En) {
-		ChipType = SYSCFG_CHIPType_Get();
-		if (!((ChipType == CHIP_TYPE_PALADIUM) || (ChipType == CHIP_TYPE_RTLSIM_PRESIM))) {
-			/* open loguart agg function */
-			LOGUART_WaitTxComplete();
-			LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, DISABLE);
-			LOGUART_AGGCmd(LOGUART_DEV, ENABLE);
-			LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, ENABLE);
-		}
+#ifdef CONFIG_LOGUART_AGG_EN
+	u32 ChipType = SYSCFG_CHIPType_Get();
+	if (!((ChipType == CHIP_TYPE_PALADIUM) || (ChipType == CHIP_TYPE_RTLSIM_PRESIM))) {
+		/* open loguart agg function */
+		LOGUART_WaitTxComplete();
+		LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, DISABLE);
+		LOGUART_AGGCmd(LOGUART_DEV, ENABLE);
+		LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, ENABLE);
 	}
+#endif
 
 	/* open KM0 log */
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);

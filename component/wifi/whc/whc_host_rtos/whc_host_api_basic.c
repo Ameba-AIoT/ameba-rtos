@@ -68,7 +68,7 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 	struct internal_block_param *block_param = NULL;
 	unsigned int timeout;
 
-	u8 *param_buf = rtos_mem_zmalloc(sizeof(struct rtw_network_info) + connect_param->password_len);
+	u8 *param_buf;
 	u8 *ptr;
 	u8 no_need_indicate = 0;
 	struct rtw_event_join_status_info join_status_info;
@@ -115,6 +115,7 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 
 	}
 
+	param_buf = rtos_mem_zmalloc(sizeof(struct rtw_network_info) + connect_param->password_len);
 
 	ptr = param_buf;
 	memcpy(ptr, &connect_param->ssid, sizeof(connect_param->ssid));
@@ -189,7 +190,7 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 #if defined(TODO) && defined(CONFIG_LWIP_LAYER)
 	if (result == RTK_SUCCESS) {
 		/* Start DHCPClient */
-		LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
+		lwip_request_ip(NETIF_WLAN_STA_INDEX);
 	}
 #endif
 
@@ -272,7 +273,7 @@ s32 wifi_on(u8 mode)
 	if (ret == RTK_SUCCESS) { //wifi on success
 #if defined(CONFIG_LWIP_LAYER)
 		if (mode == RTW_MODE_STA) {
-			LwIP_netif_set_up(NETIF_WLAN_STA_INDEX);
+			lwip_netif_set_up(NETIF_WLAN_STA_INDEX);
 		}
 #endif
 	}
@@ -327,7 +328,7 @@ s32 wifi_start_ap(struct rtw_softap_info *softap_config)
 	ptr += sizeof(softap_config->channel);
 
 	if (softap_config->password_len) {
-		memcpy(ptr, softap_config->password, sizeof(softap_config->password_len));
+		memcpy(ptr, softap_config->password, softap_config->password_len);
 	}
 
 	rtw_wpa_init(SOFTAP_WLAN_INDEX);
@@ -348,8 +349,8 @@ s32 wifi_start_ap(struct rtw_softap_info *softap_config)
 
 	if (ret == RTK_SUCCESS) {
 #ifdef CONFIG_LWIP_LAYER
-		LwIP_netif_set_up(NETIF_WLAN_AP_INDEX);
-		LwIP_netif_set_link_up(SOFTAP_WLAN_INDEX);
+		lwip_netif_set_up(NETIF_WLAN_AP_INDEX);
+		lwip_netif_set_link_up(SOFTAP_WLAN_INDEX);
 #endif
 	}
 
@@ -374,8 +375,8 @@ s32 wifi_stop_ap(void)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	LwIP_netif_set_down(NETIF_WLAN_AP_INDEX);
-	LwIP_netif_set_link_down(NETIF_WLAN_AP_INDEX);
+	lwip_netif_set_down(NETIF_WLAN_AP_INDEX);
+	lwip_netif_set_link_down(NETIF_WLAN_AP_INDEX);
 #endif
 
 	whc_host_api_message_send(WHC_API_WIFI_STOP_AP, NULL, 0, (u8 *)&ret, sizeof(ret));
@@ -462,7 +463,7 @@ s32 wifi_scan_networks(struct rtw_scan_param *scan_param, u8 block)
 	ptr += sizeof(u32);
 
 	if (ssid_len) {
-		memcpy(ptr, &scan_param->ssid, sizeof(ssid_len));
+		memcpy(ptr, &scan_param->ssid, ssid_len);
 		ptr += ssid_len;
 	}
 

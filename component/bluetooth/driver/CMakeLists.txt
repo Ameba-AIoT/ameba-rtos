@@ -41,7 +41,7 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if(NOT CONFIG_SDN_BT)
+if(NOT CONFIG_BT_SDN)
 	ameba_list_append(private_sources
 		hci/hci_process/hci_process.c
 		hci/hci_process/hci_download_v1.c
@@ -65,8 +65,8 @@ ameba_list_append(private_sources
 )
 
 if(CONFIG_BT_INIC)
-	ameba_list_append_ifnot(CONFIG_SDN_BT private_sources hci/hci_if_inic.c)
-	ameba_list_append_if(CONFIG_SDN_BT private_sources hci/vhci_if_inic_sdn.c)
+	ameba_list_append_ifnot(CONFIG_BT_SDN private_sources hci/hci_if_inic.c)
+	ameba_list_append_if(CONFIG_BT_SDN private_sources hci/vhci_if_inic_sdn.c)
 
 	ameba_list_append_if(CONFIG_BT_INIC_H4 private_sources bt_inic/bt_inic_h4.c)
 	ameba_list_append_if(CONFIG_BT_INIC_H5 private_sources bt_inic/bt_inic_h5.c)
@@ -84,8 +84,8 @@ if(CONFIG_BT_INIC)
 		ameba_list_append_if(CONFIG_BT_INIC_SDIO private_sources bt_inic/bt_inic_sdio.c)
 	endif()
 elseif(CONFIG_BT_ZEPHYR)
-	ameba_list_append_if(CONFIG_SDN_BT private_sources hci/vhci_if_sdn.c)
-	ameba_list_append_ifnot(CONFIG_SDN_BT private_sources hci/hci_if_zephyr.c)
+	ameba_list_append_if(CONFIG_BT_SDN private_sources hci/vhci_if_sdn.c)
+	ameba_list_append_ifnot(CONFIG_BT_SDN private_sources hci/hci_if_zephyr.c)
 	ameba_list_append(private_includes
 		 ${c_CMPT_BLUETOOTH_DIR}/zephyr/include
 		 ${c_CMPT_BLUETOOTH_DIR}/zephyr/port
@@ -102,7 +102,7 @@ ameba_list_append(private_includes
 	${c_CMPT_BLUETOOTH_DIR}/rtk_coex
 )
 
-if(CONFIG_SDN_BT)
+if(CONFIG_BT_SDN)
 	ameba_list_append(private_includes
 	${c_COMPONENT_DIR}/sdn/hci
     ${c_COMPONENT_DIR}/sdn/hci/host

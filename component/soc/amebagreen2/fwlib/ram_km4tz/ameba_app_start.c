@@ -7,6 +7,7 @@
 #include "ameba_soc.h"
 #include "FreeRTOS.h"
 #include "os_wrapper_memory.h"
+#include "ameba_v8m_backtrace.h"
 
 static const char *TAG = "APP";
 
@@ -235,6 +236,8 @@ void app_start(void)
 	/*Register RTC_DET_IRQ callback function */
 	InterruptRegister((IRQ_FUN) rtc_irq_init, RTC_DET_IRQ, (u32)NULL, INT_PRI_LOWEST);
 	InterruptEn(RTC_DET_IRQ, INT_PRI_LOWEST);
+
+	PostFaultPatch_register(backtrace_post_patch_ameba);
 
 	main(); /* project/xxxx/src/main.c */
 }

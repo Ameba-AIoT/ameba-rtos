@@ -30,72 +30,51 @@
 #if defined (CONFIG_AMEBASMART)
 #define UART_TX		_PA_3 // UART0 TX
 #define UART_RX		_PA_2 // UART0 RX
-#define UART_RTS	_PA_5 // UART0 RTS
-#define UART_CTS	_PA_4 // UART0 CTS
-
 #elif defined (CONFIG_AMEBALITE)
 /* fully programmable zone */
 #define UART_TX		_PA_28 // UART0 TX
 #define UART_RX		_PA_29 // UART0 RX
-#define UART_RTS	_PA_30 // UART0 RTS
-#define UART_CTS	_PA_31 // UART0 CTS
-
 #elif defined (CONFIG_AMEBADPLUS)
 /* fully programmable zone */
 #define UART_TX		_PA_26 // UART0 TX
 #define UART_RX		_PA_27 // UART0 RX
-#define UART_RTS	_PA_28 // UART0 RTS
-#define UART_CTS	_PA_29 // UART0 CTS
-
 #elif defined (CONFIG_AMEBAGREEN2)
 /* fully programmable zone */
-#define UART_TX		_PA_18 // UART0 TX
-#define UART_RX		_PA_19 // UART0 RX
-#define UART_RTS	_PA_25 // UART0 RTS
-#define UART_CTS	_PA_26 // UART0 CTS
-
+#define UART_TX		_PA_25//_PA_18 // UART0 TX
+#define UART_RX		_PA_26//_PA_19 // UART0 RX
 #endif
 
-struct whc_uart_hdr {
-	u16 buf_size;
-	u16 rsvd;
-	u32 seq;
-};
 struct whc_uart_host_priv_t {
-	u32 dev_status;
-
-	u8 uart_idx;
-	u8 wait_for_skb: 1;
-	u8 txdma_initialized: 1;
-	u8 rx_state;
-	u32 rx_size_done;
-	u32 rx_size_total;
+	GDMA_InitTypeDef UARTTxGdmaInitStruct;
+	GDMA_InitTypeDef UARTRxGdmaInitStruct;
+	UART_InitTypeDef UART_InitStruct;
 
 	rtos_mutex_t tx_lock;
 	rtos_mutex_t rx_lock;
 	rtos_mutex_t host_send;
-
 	rtos_sema_t rxirq_sema;
 	rtos_sema_t txirq_sema;
 	rtos_sema_t free_skb_sema;
 
-	GDMA_InitTypeDef UARTTxGdmaInitStruct;
-	GDMA_InitTypeDef UARTRxGdmaInitStruct;
-
-	UART_InitTypeDef UART_InitStruct;
-
-	u8 *rx_buf;
 	struct whc_buf_info *txbuf_info;
+	u8 *rx_buf;
+
+	u32 dev_status;
+	u32 rx_size_done;
+	u32 rx_size_total;
+	u32 checksum;
 	u8 rx_hdr[sizeof(struct whc_uart_hdr)];
+
+	u8 uart_idx;
+	u8 rx_state;
+	u8 wait_for_skb: 1;
+	u8 txdma_initialized: 1;
 };
-
-
 
 #define WHC_UART_HOST_RX_DONE       0x0
 #define WHC_UART_HOST_RX_HEADER     0x1
 #define WHC_UART_HOST_RX_PAYLOAD    0x2
 #define WHC_UART_HOST_RX_END        0x3
-
 
 void whc_uart_host_send_data(struct whc_buf_info *pbuf);
 void whc_uart_host_init(void);

@@ -460,6 +460,8 @@ static int usbh_uvc_process(usb_host_t *host, usbh_event_t *event)
 #if (USBH_UVC_USE_HW == 0)
 /**
   * @brief  SOF callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
   * @retval Status
   */
@@ -470,8 +472,11 @@ static int usbh_uvc_sof(usb_host_t *host)
 }
 
 /**
-  * @brief  SOF callback
+  * @brief  Pipe transfer completed callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
+  * @param  pipe_num: Pipe number whose transfer completed
   * @retval Status
   */
 static int usbh_uvc_completed(usb_host_t *host, u8 pipe_num)

@@ -39,9 +39,9 @@ extern "C" {
   */
 
 /** @addtogroup MBED_GDMA
- *  @brief      MBED_GDMA driver modules.
- *  @{
- */
+  * @brief      MBED_GDMA driver modules.
+  * @{
+  */
 
 /* reserved region for storage enum and structure, used by Doxygen */
 

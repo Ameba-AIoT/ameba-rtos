@@ -1156,6 +1156,31 @@ void SSI_SlaveOutputEnable(SPI_TypeDef *spi_dev, u32 Status)
 		spi_dev->SPI_CTRLR0 |= SPI_BIT_SLV_OE;
 	}
 }
+
+/**
+  * @brief  Perform FAE (Frame Alignment Error) recovery for SPI.
+  * @note   When a FAE error is detected, SSI_EN is reset to recover the peripheral.
+  * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
+  * @return Recovery result:
+  *         - TRUE: FAE error was detected and recovery performed.
+  *         - FALSE: No FAE error detected.
+  */
+u32 SSI_SlaveErrRecovery(SPI_TypeDef *spi_dev)
+{
+	/* By spec, SPI_BIT_MSTIR_FAEIR is not visible to master under normal conditions,
+	 * so this API can be safely called regardless of the current role configuration (by dd).
+	 */
+
+	/* Check if FAE error occurred */
+	if (SSI_GetRawIsr(spi_dev) & SPI_BIT_MSTIR_FAEIR) {
+		RTK_LOGW(TAG, "fae err occurs, reset SSI_EN\r\n");
+		SSI_Cmd(spi_dev, DISABLE);
+		SSI_Cmd(spi_dev, ENABLE);
+		return TRUE;
+	}
+
+	return FALSE;
+}
 /**
   * @}
   */

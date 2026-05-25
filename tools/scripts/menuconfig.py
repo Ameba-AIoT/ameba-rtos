@@ -4,7 +4,9 @@
 # Copyright (c) 2024 Realtek Semiconductor Corp.
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 import os
+import re
 import sys
 import argparse
 import shutil
@@ -12,7 +14,9 @@ from configparser import ConfigParser
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(script_dir, '../../cmake'))
+sys.path.append(os.path.join(script_dir, '../../cmake/Kconfig'))
 from Kconfig.manager import Manager
+import kconfiglib
 
 def main():
 
@@ -70,6 +74,26 @@ def main():
         help=argparse.SUPPRESS #an external sub-kconfig under this path will be included
     )
 
+    parser.add_argument(
+        "--get",
+        nargs='+',
+        metavar='SYMBOL',
+        help="get current value(s) of config symbols (JSON output, CONFIG_ prefix optional)"
+    )
+
+    parser.add_argument(
+        "--set",
+        nargs='+',
+        metavar='SYMBOL=VALUE',
+        help="set config symbol values and regenerate per-core headers (JSON output, strict)"
+    )
+
+    parser.add_argument(
+        "--search",
+        metavar='PATTERN',
+        help="search symbols by name/prompt, case-insensitive regex (JSON output)"
+    )
+
     args = parser.parse_args()
 
     project_dir = os.path.abspath(args.project_dir)
@@ -95,6 +119,78 @@ def main():
         out_dir = menuconfigdir,
         top_kconfig = os.path.join(project_dir, 'Kconfig')
     )
+
+    top_kconfig = os.path.join(project_dir, 'Kconfig')
+
+    if args.get:
+        if not os.path.exists(manager.config_in):
+            print(json.dumps({"success": False, "error": ".config not found — run menuconfig first"}))
+            sys.exit(1)
+        kconf = kconfiglib.Kconfig(top_kconfig, suppress_traceback=True)
+        kconf.load_config(manager.config_in)
+        values = {}
+        for raw in args.get:
+            name = raw.removeprefix('CONFIG_')
+            values[f'CONFIG_{name}'] = kconf.syms[name].str_value if name in kconf.syms else None
+        print(json.dumps({"success": True, "values": values}))
+        return
+
+    if args.search:
+        kconf = kconfiglib.Kconfig(top_kconfig, suppress_traceback=True)
+        if os.path.exists(manager.config_in):
+            kconf.load_config(manager.config_in)
+        pat = re.compile(args.search, re.IGNORECASE)
+        matches = []
+        for name, sym in kconf.syms.items():
+            prompt = next((n.prompt[0] for n in sym.nodes if n.prompt), '')
+            if pat.search(name) or pat.search(prompt):
+                matches.append({
+                    "name": f'CONFIG_{name}',
+                    "type": kconfiglib.TYPE_TO_STR[sym.orig_type],
+                    "prompt": prompt,
+                    "value": sym.str_value,
+                })
+        print(json.dumps({"success": True, "matches": matches}))
+        return
+
+    if args.set:
+        if not os.path.exists(manager.config_in):
+            print(json.dumps({"success": False, "error": ".config not found — run menuconfig first"}))
+            sys.exit(1)
+        kconf = kconfiglib.Kconfig(top_kconfig, suppress_traceback=True)
+        kconf.load_config(manager.config_in)
+        errors = []
+        applied = {}
+        for assignment in args.set:
+            if '=' not in assignment:
+                errors.append({"symbol": assignment, "error": "missing '='"})
+                continue
+            raw_name, value = assignment.split('=', 1)
+            name = raw_name.removeprefix('CONFIG_')
+            if name not in kconf.syms:
+                errors.append({"symbol": f'CONFIG_{name}', "error": "symbol not found"})
+                continue
+            sym = kconf.syms[name]
+            if not sym.set_value(value):
+                errors.append({"symbol": f'CONFIG_{name}',
+                               "error": f"invalid value {value!r} for {kconfiglib.TYPE_TO_STR[sym.orig_type]} symbol"})
+                continue
+            if sym.str_value != value:
+                errors.append({"symbol": f'CONFIG_{name}',
+                               "error": f"dependency not satisfied: tried {value!r}, got {sym.str_value!r}"})
+                continue
+            applied[f'CONFIG_{name}'] = value
+        if errors:
+            print(json.dumps({"success": False, "errors": errors, "applied": applied}))
+            sys.exit(1)
+        kconf.write_config(manager.config_in)
+        if manager.check_invalid_config():
+            print(json.dumps({"success": False, "error": "invalid config detected after set"}))
+            sys.exit(1)
+        manager.parse_general_config()
+        manager.process_projects()
+        print(json.dumps({"success": True, "applied": applied}))
+        return
 
     if args.clean:
         manager.clean_all(script_dir, project_dir)

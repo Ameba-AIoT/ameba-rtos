@@ -11,10 +11,6 @@
 #ifndef __WHC_DEV_POWERSAVE_H__
 #define __WHC_DEV_POWERSAVE_H__
 
-#ifndef CONFIG_FULLMAC
-#include "ameba_soc.h"
-#endif
-
 enum whc_tickps_cmd_subtype {
 	WHC_CMD_TICKPS_R = 0,
 	WHC_CMD_TICKPS_A = 1,

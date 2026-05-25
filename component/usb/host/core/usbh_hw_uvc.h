@@ -50,6 +50,12 @@ typedef struct {
 typedef struct {
 	usbh_hw_uvc_dec_buf buf[USBH_HW_UVC_MAX_BUF_NUM];
 	void *priv;
+	/**
+	 * @brief Called when the HW UVC decoder reports an error condition.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @param[in] err: HW UVC error status, see @ref usbh_hw_uvc_err_status_t.
+	 */
 	void (*err_cb)(usbh_hw_uvc_err_status_t err);
 
 	u32 frame_done_num;

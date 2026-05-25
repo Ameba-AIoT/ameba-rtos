@@ -18,7 +18,7 @@ GDMA will display "DMA Copy Memory Compare OK!! " in serial port tool. Otherwise
 
 # Note
 
-1. If the output character sequence of the serial port tool is disordered, please configure `Boot_Agg_En = TRUE` in ameba_bootcfg.c according to the chip ID.
+1. If the output character sequence of the serial port tool is disordered, please enable `CONFIG_LOGUART_AGG_EN` in menuconfig (`User Config` > `Boot Configuration` > `Enable Loguart AGG`) according to the chip ID.
 2. RTL8730E only supports Mbed API on ap and hp cores.
 
 3. RTL8721Dx only support Mbed API on KM4.

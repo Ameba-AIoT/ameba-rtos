@@ -27,7 +27,7 @@ enum WHC_WIFI_CTRL_TYPE {
 	WHC_WIFI_EVT_RECV_PKTS,
 	WHC_WIFI_EVT_API_CALL,
 	WHC_WIFI_EVT_API_RETURN,
-	WHC_WIFI_EVT_BRIDGE,
+	WHC_WIFI_EVT_CMD,
 	WHC_WIFI_EVT_FLOWCTRL,
 	WHC_WIFI_EVT_MAX,
 	WHC_CUST_EVT, /* the ID to transmit data for the customer. */
@@ -48,7 +48,6 @@ struct whc_cust_hdr {
 	u32	len;
 };
 
-/* for spi, due to full duplex communication in spi. Also for usb, due to the lack of length info. */
 struct whc_cmd_path_hdr {
 	u32	event;
 	u32	len;

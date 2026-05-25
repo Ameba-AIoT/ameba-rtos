@@ -21,11 +21,12 @@ from typing import Union
 from base import __version__
 from base.console_parser import ConsoleParser
 from base.console_reader import ConsoleReader
+from base.stdin_cmd_reader import StdinCmdReader
 from base.constants import CTRL_C, CTRL_H, EVENT_QUEUE_TIMEOUT, LAST_LINE_THREAD_INTERVAL, TAG_CMD, TAG_KEY, TAG_SERIAL, \
     TAG_SERIAL_FLUSH, CMD_STOP
 from base.key_config import EXIT_KEY, EXIT_MENU_KEY, MENU_KEY
 from base.log_handler import LogHandler
-from base.color_output import print_normal, print_yellow, print_red
+from base.color_output import print_normal, print_yellow, print_red, set_diag_to_stderr
 from base.serial_handler import SerialHandler, SerialStopException
 from base.serial_reader import LinuxReader, SerialReader
 from typing import Optional, Dict, Any, List
@@ -67,7 +68,8 @@ class Monitor():
             remote_password: Optional[str] = None,
             log_enabled: bool = False,
             log_dir: Optional[List[str]] = None,
-            logAGG: Optional[List[str]] = None
+            logAGG: Optional[List[str]] = None,
+            no_console: bool = False,
     ):
         self.event_queue = queue.Queue()
         self.cmd_queue = queue.Queue()
@@ -78,6 +80,8 @@ class Monitor():
         self.rom_file = rom_file or ""
         self.elf_exists = os.path.exists(self.elf_file)
         self.debug = debug
+        self.no_console = no_console
+        set_diag_to_stderr(no_console)
         self.logAGG_enabled = True if logAGG else False
         self.log_handler = LogHandler(self.elf_file, self.output_queue, timestamps, enable_address_decoding, toolchain_path,
                                       log_enabled, log_dir, port, logAGG, rom_elf_file=rom_file)
@@ -115,7 +119,10 @@ class Monitor():
         self.serial_handler = SerialHandler("", self.log_handler, target_os, self.elf_file)
 
         self.console_parser = ConsoleParser(eol)
-        self.console_reader = ConsoleReader(self.event_queue, self.cmd_queue, self.console_parser)
+        if self.no_console:
+            self.console_reader = StdinCmdReader(self.event_queue, self.cmd_queue, self.console_parser)
+        else:
+            self.console_reader = ConsoleReader(self.event_queue, self.cmd_queue, self.console_parser)
 
         # internal state
         self._invoke_processing_last_line_timer = None
@@ -233,7 +240,10 @@ class SerialMonitor(Monitor):
             if self.debug:
                 hex_str = ' '.join(f'{b:02X}' for b in data_to_send)
                 print(f"[Sent Data (Hex)]: {hex_str}")
-            self.serial_reader.serial.write(data_to_send)
+            serial_obj = getattr(self.serial_reader, "serial", None)
+            if serial_obj is None:
+                return
+            serial_obj.write(data_to_send)
             self.timeout_cnt = 0
         except serial.SerialTimeoutException:
             if not self.timeout_cnt:
@@ -243,6 +253,8 @@ class SerialMonitor(Monitor):
             self.timeout_cnt %= 3
         except serial.SerialException:
             pass  # this shouldn't happen, but sometimes port has closed in serial thread
+        except AttributeError:
+            pass  # serial may be cleared during shutdown in no-console mode
         except UnicodeEncodeError:
             pass  # this can happen if a non-ascii character was passed, ignoring
 
@@ -267,7 +279,6 @@ def main():
     colorama.init()
     parser = get_parser()
     args = parser.parse_args()
-
     if args.decode_coredumps :
         if not args.toolchain_dir:
             print_red("Note: No toolchain_dir specified for decode-coredumps, monitor starts failed!")
@@ -336,7 +347,8 @@ def main():
                         remote_password=args.remote_password,
                         log_enabled = args.log,
                         log_dir=args.log_dir,
-                        logAGG = args.logAGG)
+                        logAGG = args.logAGG,
+                        no_console=args.no_console)
 
         print_yellow("--- Exit monitor: Ctrl+C ---")
 
@@ -377,6 +389,8 @@ def get_parser():
     parser.add_argument('--logAGG', nargs='+',
                          help='the logAGG enabled and source marked '
                         )
+    parser.add_argument('--no-console', action='store_true',
+                        help='Disable prompt toolkit TUI and read commands from stdin pipe')
 
     return parser
 

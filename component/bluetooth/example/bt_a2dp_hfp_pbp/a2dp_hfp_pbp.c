@@ -2409,26 +2409,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 
 	return 0;
 }
-#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
-static void app_bt_le_audio_iso_data_path_tx_track_pause(void)
-{
-	rtk_bt_audio_track_t *p_track = NULL;
-	for (uint16_t i = 0; i < APP_LE_AUDIO_DEMO_DATA_PATH_NUM; i ++) {
-		if (app_le_audio_data_path[i].used && (app_le_audio_data_path[i].path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX)) {
-			if (!app_le_audio_data_path[i].p_track_hdl) {
-				BT_LOGA("%s: p_track_hdl is NULL \r\n", __func__);
-				return;
-			}
-			p_track = (rtk_bt_audio_track_t *)app_le_audio_data_path[i].p_track_hdl;
-			if (p_track->audio_sync_flag) {
-				rtk_bt_audio_track_pause(p_track->audio_track_hdl);
-				BT_LOGA("%s: rtk_bt_audio_track_pause\r\n", __func__);
-			}
-		}
-	}
-	return ;
-}
-#endif
+
 static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, uint32_t len)
 {
 	(void)len;
@@ -2582,9 +2563,6 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 		pbp_broadcast_dequeue_flag = false;
 		/* pkt drop flag reset*/
 		app_bt_handle_packet_drop_reset();
-#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
-		app_bt_le_audio_iso_data_path_tx_track_pause();
-#endif
 		if (a2dp_audio_track_hdl) {
 			rtk_bt_audio_track_pause(a2dp_audio_track_hdl->audio_track_hdl);
 		}

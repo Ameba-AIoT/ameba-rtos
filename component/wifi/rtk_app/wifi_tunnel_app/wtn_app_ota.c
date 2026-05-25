@@ -36,6 +36,7 @@
 #include "wtn_app_socket.h"
 #include "wtn_app_ota.h"
 #include "wtn_app_rnat.h"
+#include "whc_dev_ota.h"
 
 #define _TO_DS_		BIT(8)
 #define _FROM_DS_	BIT(9)
@@ -45,6 +46,8 @@
 
 #define RMESH_OTA_GET_BITS(data, bits)        ( (((uint8_t *)(data))[(bits) >> 0x3]) & ( 1 << ((bits) & 0x7)) )
 #define RMESH_OTA_SET_BITS(data, bits)        do { (((uint8_t *)(data))[(bits) >> 0x3]) |= ( 1 << ((bits) & 0x7)); } while(0);
+
+#define RMESH_INTERNAL_OTA_EN
 
 struct rmesh_ota_node {
 	u8 mac[ETH_ALEN];
@@ -840,13 +843,14 @@ response:
 		memcpy(ota_info.cur_ota_ver, g_rmesh_ota_priv->ongoing_ota_ver,  ota_info.ota_ver_len);
 		rt_kv_set("rmesh_ota_info", &ota_info, sizeof(struct rmesh_ota_info_to_flash));
 
-
+#ifdef RMESH_INTERNAL_OTA_EN
 		/*send firmware to slave nodes*/
 		if (g_rmesh_ota_priv->slave_num) {
 			if (rtos_task_create(NULL, ((const char *)"rmesh_ota_internal_send_task"), rmesh_ota_internal_send_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 				RTK_LOGE(TAG, "Failed to create rmesh_ota_internal_send_task\n");
 			}
 		}
+#endif
 		rtos_timer_stop(g_rmesh_ota_priv->reset_wait_timer, 0);
 		rtos_timer_change_period(g_rmesh_ota_priv->reset_wait_timer, RMESH_OTA_RESET_WAIT_TO, 0);
 		rtos_timer_start(g_rmesh_ota_priv->reset_wait_timer, 1);
@@ -919,11 +923,12 @@ void rmesh_ota_update_wait_timer(void *arg)
 void rmesh_ota_request_wait_timer(void *arg)
 {
 	(void) arg;
-
+#ifdef RMESH_INTERNAL_OTA_EN
 	/*timeout, create task to start to send firmware*/
 	if (rtos_task_create(NULL, ((const char *)"rmesh_ota_internal_send_task"), rmesh_ota_internal_send_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Failed to create rmesh_ota_internal_send_task\n");
 	}
+#endif
 }
 
 void rmesh_ota_http_timer(void *arg)
@@ -1227,13 +1232,16 @@ void rmesh_ota_http_ota_task(void *param)
 	memcpy(ota_info.cur_ota_ver, ota_param->resource,  strlen(ota_param->resource));
 	rt_kv_set("rmesh_ota_info", &ota_info, sizeof(struct rmesh_ota_info_to_flash));
 
+#ifdef RMESH_INTERNAL_OTA_EN
 	/*check if need send firmware to other nodes*/
 	if (g_rmesh_ota_priv->slave_num) {
 		g_rmesh_ota_priv->http_ota_reset_delayed = 1;
 		if (rtos_task_create(NULL, ((const char *)"rmesh_ota_internal_send_task"), rmesh_ota_internal_send_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 			RTK_LOGE(TAG, "Failed to create rmesh_ota_internal_send_task\n");
 		}
-	} else {
+	} else
+#endif
+	{
 		rmesh_ota_firmware_download_end(1);
 	}
 
@@ -1455,6 +1463,7 @@ void rmesh_ota_cmd_recv(struct rmesh_http_ota_param *ota_param)
 	memcpy(g_rmesh_ota_priv->ongoing_ota_ver, ota_param->resource, ota_ver_len);
 	g_rmesh_ota_priv->ongoing_ota_ver[ota_ver_len] = 0;
 
+#ifdef RMESH_INTERNAL_OTA_EN
 	if (wifi_user_config.wtn_rnat_en) {/*case 1: self is RNAT*/
 		rmesh_ota_create_http_download_task(ota_param);
 	} else if (g_rmesh_ota_priv->self_layer == 1) {/*case 2.1: self is not RNAT and self is root*/
@@ -1474,6 +1483,9 @@ void rmesh_ota_cmd_recv(struct rmesh_http_ota_param *ota_param)
 			rmesh_ota_check_root_and_father_ver_and_choose_download_method(240 * g_rmesh_ota_priv->self_layer, ota_param);
 		}
 	}
+#else
+	rmesh_ota_create_http_download_task(ota_param);
+#endif
 }
 
 #if defined(WTN_SINGLE_NODE_OTA) || defined(WTN_MULTI_NODE_OTA)
@@ -1483,11 +1495,11 @@ int wtn_on_ota_request(u8 *buf, int recv_len, int *forward_sock_fd)
 	u8 ota_request_seq = 0;
 	u8 httpiplen = 0;
 	u8 http_resourcelen = 0;
-	u8 *self_mac_p1 = LwIP_GetMAC(NETIF_WLAN_AP_INDEX);
-	u8 *self_mac_p0 = LwIP_GetMAC(NETIF_WLAN_STA_INDEX);
+	u8 *self_mac_p1 = lwip_get_mac(NETIF_WLAN_AP_INDEX);
+	u8 *self_mac_p0 = lwip_get_mac(NETIF_WLAN_STA_INDEX);
 	u8 target_mac[6] = {0};
 #ifdef CONFIG_RNAT_EN
-	u8 *gw = LwIP_GetGW(NETIF_WLAN_AP_INDEX);
+	u8 *gw = lwip_get_gw(NETIF_WLAN_AP_INDEX);
 	u8 client_ip = 0;
 	u8 try_cnt = 5;
 	struct sockaddr_in ota_forward_dest_addr;

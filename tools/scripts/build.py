@@ -9,13 +9,31 @@ import os
 import shutil
 import sys
 import subprocess
+import time
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 copy_script_dir = os.path.join(script_dir, 'build_copy.py')
 
+sys.path.append(script_dir)
+from ameba_output import (
+    BuildFilter,
+    OutputMode,
+    get_output_mode,
+    is_quiet,
+    print_quiet_summary,
+    run_filtered,
+)
+
+# A single filter instance shared across the whole build.py invocation so
+# quiet-mode summaries see every warning/error across configure + build steps.
+_build_filter = BuildFilter(mode=get_output_mode())
+
 
 def run_command(cmd, shell=True):
     """Helper function: run shell command and print log."""
+    if is_quiet():
+        return run_filtered(cmd, _build_filter, shell=shell)
+
     print(f"\033[36mRunning: {cmd}\033[0m")
     try:
         # Use subprocess.check_call. It raises an exception on failure,
@@ -48,8 +66,28 @@ def main(argc, argv):
     parser.add_argument('-D', '--Defined', nargs='+', help='user defined variables')
     parser.add_argument('--new',  nargs=1,
                          help='build.py --new <target_dir> [-a <APP>] (use [-a list-apps] to check available apps)')
+    parser.add_argument('-q', '--quiet', action='store_true',
+                        help='suppress verbose output; show only [INFOR] lines, errors, and final status')
 
     args = parser.parse_args()
+
+    # Track start time and register quiet-mode summary (runs on any exit path).
+    _build_start = time.monotonic()
+    _build_state = {'success': False, 'final_image_dir': None, 'build_dir': None}
+
+    def _emit_quiet_summary():
+        if not is_quiet():
+            return
+        print_quiet_summary(
+            filt=_build_filter,
+            final_image_dir=_build_state['final_image_dir'],
+            build_dir=_build_state['build_dir'],
+            duration_s=time.monotonic() - _build_start,
+            success=_build_state['success'],
+        )
+
+    import atexit
+    atexit.register(_emit_quiet_summary)
 
     project_dir = os.path.abspath(args.project_dir)
     if not project_dir or not os.path.isdir(project_dir):
@@ -74,13 +112,15 @@ def main(argc, argv):
     # --- 2. Pristine Build (Deep Clean) ---
     if os.path.exists(menuconfig_dir) and args.pristine:
         shutil.rmtree(menuconfig_dir)
-        print(f"Removed {menuconfig_dir}")
+        if not is_quiet():
+            print(f"Removed {menuconfig_dir}")
 
     if os.path.exists(build_dir):
         if args.pristine:
             shutil.rmtree(build_dir)
             os.makedirs(build_dir)
-            print(f"Re-created {build_dir}")
+            if not is_quiet():
+                print(f"Re-created {build_dir}")
         else:
             pass
     else:
@@ -103,7 +143,10 @@ def main(argc, argv):
             if defs.startswith("CODE_ANALYZE_RETRY"):
                 fetch_retry = int(defs.split('=')[1])
                 # continue  # TODO
+            if defs.startswith('FINAL_IMAGE_DIR='):
+                _build_state['final_image_dir'] = defs.split('=', 1)[1]
             cmake_config_cmd += f' -D{defs}'
+    _build_state['build_dir'] = build_dir
 
     # --- 4. GDB / Debug ---
     gdb_script_dir = os.path.join(script_dir, 'gdb.py')
@@ -139,7 +182,8 @@ def main(argc, argv):
         if run_command(cmake_config_cmd) != 0:
             sys.exit(1)
     else:
-        print('Note: No application specified, choose default project')
+        if not is_quiet():
+            print('Note: No application specified, choose default project')
         # If no app specified, run standard configure once
         if run_command(cmake_config_cmd) != 0:
             sys.exit(1)
@@ -170,7 +214,8 @@ def main(argc, argv):
             fetch_cmd = f'python "{fetch_code_size_script}" --output "{os.path.dirname(args.build_dir)}" --ic {ic_name} --retry {fetch_retry}'
             if skip_current:
                 fetch_cmd += ' --skip-current-as-parent'
-            print(fetch_cmd)
+            if not is_quiet():
+                print(fetch_cmd)
             if run_command(fetch_cmd) != 0:
                 print('\033[31mError: Fail to fetch parent code size data\033[0m')
 
@@ -189,7 +234,9 @@ def main(argc, argv):
             if run_command(run_summary_cmd) != 0:
                 print('\033[31mError: Fail to summary code size\033[0m')
 
-    print('\033[32mBuild done\033[0m')
+    _build_state['success'] = True
+    if not is_quiet():
+        print('\033[32mBuild done\033[0m')
 
 
 if __name__ == '__main__':

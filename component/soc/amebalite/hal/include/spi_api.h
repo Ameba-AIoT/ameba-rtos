@@ -38,7 +38,7 @@ extern "C" {
   * @{
   */
 
-/** @defgroup MBED_SPI
+/** @defgroup MBED_SPI MBED SPI
  *  @brief    MBED_SPI driver modules.
  *  @{
  */
@@ -47,8 +47,12 @@ extern "C" {
   * @{
   */
 
-/** @defgroup MBED_SPI_Enumeration_Type Enumeration Type
+/** @defgroup MBED_SPI_Enumeration_Type MBED_SPI Enumeration Type
   * @{
+  */
+
+/**
+  * @brief enum MBED_SPI_IDX
   */
 typedef enum {
 	MBED_SPI0 = 0xF0,	/*!< means SPI0 */

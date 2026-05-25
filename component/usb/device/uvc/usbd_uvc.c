@@ -36,7 +36,7 @@ static usbd_uvc_dev_t usbd_uvc_dev;
 
 
 static void usbd_uvc_get_frame_handler(void *parm);
-//unsigned char uvc_in_buf[USBD_UVC_IN_BUF_SIZE] USB_DMA_ALIGNED = {0};
+
 
 static const char *const TAG = "USBD_UVC";
 
@@ -124,7 +124,7 @@ void usbd_uvc_cmd_handler(void *parm)
 
 	while (1) {
 		if (rtos_queue_receive(cdev->uvc_cmd_queue, &req_data, 0xffffffff) == RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Receive type=%lu len=%d\n", req_data.type, req_data.uvc_data.length);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Receive type=%d len=%d\n", req_data.type, req_data.uvc_data.length);
 		}
 		usbd_uvc_events_process(cdev, &req_data);
 	}
@@ -140,7 +140,7 @@ void usbd_uvc_cmd_handler(void *parm)
   * @retval Header length in bytes
   */
 static int
-usbd_uvc_video_encode_header(usbd_uvc_video_t *video, usbd_uvc_buffer_t *buf, u8 *data, unsigned int len)
+usbd_uvc_video_encode_header(usbd_uvc_video_t *video, usbd_uvc_buffer_t *buf, u8 *data, u32 len)
 {
 	data[0] = 2;
 	data[1] = USBD_UVC_STREAM_EOH | video->fid;
@@ -162,12 +162,12 @@ usbd_uvc_video_encode_header(usbd_uvc_video_t *video, usbd_uvc_buffer_t *buf, u8
 static int
 usbd_uvc_video_encode_data(usbd_uvc_video_t *video, usbd_uvc_buffer_t *buf, u8 *data, int len)
 {
-	unsigned int nbytes;
+	u32 nbytes;
 	void *mem;
 
 	/* Copy video data to the USB buffer. */
 	mem = buf->mem + video->buf_used;
-	nbytes = min((unsigned int)len, buf->bytesused - video->buf_used);
+	nbytes = min((u32)len, buf->bytesused - video->buf_used);
 	memcpy(data, mem, nbytes);
 	video->buf_used += nbytes;
 	return nbytes;
@@ -184,9 +184,9 @@ usbd_uvc_video_encode_data(usbd_uvc_video_t *video, usbd_uvc_buffer_t *buf, u8 *
 static void
 usbd_uvc_video_encode_isoc(usb_dev_t *dev, usbd_uvc_video_t *video, usbd_uvc_buffer_t *buf)
 {
-	unsigned char *mem ;
+	u8 *mem ;
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
-	int len = USBD_UVC_IN_BUF_SIZE;
+	u32 len = USBD_UVC_IN_BUF_SIZE;
 	int ret;
 	usbd_uvc_dev_t *uvc_ctx = &usbd_uvc_dev;
 
@@ -358,6 +358,8 @@ int usbd_uvc_get_status(void)
 }
 /**
   * @brief  Handle EP0 OUT data stage (Control OUT)
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   *         Receive class-specific control data from host
   * @param  dev USB device instance
   * @retval HAL status
@@ -378,6 +380,8 @@ static int usbd_uvc_handle_ep0_data_out(usb_dev_t *dev)
 }
 /**
   * @brief  Handle EP0 IN data stage
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev USB device instance
   * @param  status Transfer status
   * @retval HAL status
@@ -390,6 +394,8 @@ static int usbd_uvc_handle_ep0_data_in(usb_dev_t *dev, u8 status)
 }
 /**
   * @brief  Handle isochronous IN endpoint transfer complete
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   *         Trigger next video packet transmission
   * @param  dev     USB device instance
   * @param  ep_addr Endpoint address
@@ -427,6 +433,8 @@ static int usbd_uvc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 }
 /**
   * @brief  Handle USB data OUT endpoint callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   *         This function is called when data is received from host
   *         on a non-control OUT endpoint.
   *         (Currently not used for UVC video streaming)
@@ -445,6 +453,8 @@ static int usbd_uvc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 }
 /**
   * @brief  Get USB descriptor callback for UVC device
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev   USB device instance
   * @param  req   USB setup request
   * @param  buf   Buffer to store descriptor data
@@ -539,6 +549,8 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 /**
   * @brief  Set UVC device configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   *         Initialize isochronous IN endpoint for video streaming
   * @param  dev     USB device instance
   * @param  config  Configuration index
@@ -562,6 +574,8 @@ static int usbd_uvc_set_config(usb_dev_t *dev, u8 config)
 
 /**
   * @brief  Clear UVC device configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   *         De-initialize isochronous endpoint
   * @param  dev     USB device instance
   * @param  config  Configuration index
@@ -578,6 +592,8 @@ static int usbd_uvc_clear_config(usb_dev_t *dev, u8 config)
 }
 /**
   * @brief  Handle USB setup requests for UVC class and standard requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev  USB device instance
   * @param  req  USB setup request
   * @retval HAL status

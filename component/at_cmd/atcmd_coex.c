@@ -34,134 +34,131 @@ static const char *const AT_COEX_TAG = "AT_COEX";
 // @state
 // AT+COEX=<type=state>
 //
-// @enable
-// AT+COEX=<type=enable>[,<value>]
-// <value>: 0: disable, 1: enable
+// @dbg
+// AT+COEX=<type=dbg>[,<dbgcmd>]
+// <dbgcmd>: enable[,<value>](NULL: get coex disable or enable, 0: disable coex, 1: enable coex)
+// <dbgcmd>: log[,<value>](0xFF: enable all coex log, 0: disable all coex log)
+// <dbgcmd>: gnt[,<value>](wifi: gnt to wifi, bt: gnt to bt, auto: gnt by auto)
 //
-// @gnt
-// AT+COEXBT=<type=gnt>,<value>
-// <value>: wifi: gnt to wifi, bt: gnt to bt, auto: gnt by auto
-//
+
+#define RTK_COEX_CMD_MAX_LEN  64
 static void fCOMMONCOEX(u16 argc, char **argv)
 {
-	int error_no = 0;
-	int pid = 0, vid = 0;
-	static int wl_slot = 0;
-	bool coex_is_en = false;
-	bool coex_ext_is_en = false;
-	int i = 0, j = 0;
 
-	if (argc == 1) {
-		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: No input args number!\r\n", CMD_NAME_COEX);
-		error_no = 1;
-		goto exit;
-	}
+	int error_no = 0;
+	static int wl_slot = 0;
 
 	if (argc < 2) {
-		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: Wrong input args number!\r\n", CMD_NAME_COEX);
 		error_no = 1;
 		goto exit;
 	}
 
-	if ((strlen(argv[1]) == 0)) {
-		RTK_LOGE(AT_COEX_TAG, "[AT%s] Input <type>  is NULL\r\n", CMD_NAME_COEX);
-		error_no = 1;
-		goto exit;
-	} else if (0 == strcasecmp(argv[1], "vendor")) {
-		/* The parameters appear by pairs, so i += 2. */
-		for (i = 2; argc > i; i += 2) {
-			j = i + 1;  /* next i. */
-			/* vid. */
-			if (0 == strcasecmp("vid", argv[i])) {
-				if ((argc <= j) || (strlen(argv[j]) == 0) || (atoi(argv[j]) > 0xff)) {
-					RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid VID\r\n", CMD_NAME_COEX);
-					error_no = 11;
-					goto exit;
-				}
-				vid = atoi(argv[j]);
-			}
-			/* pid. */
-			else if (0 == strcasecmp("pid", argv[i])) {
-				if ((argc <= j) || (strlen(argv[j]) == 0) || (atoi(argv[j]) > 0xff)) {
-					RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid PID\r\n", CMD_NAME_COEX);
-					error_no = 12;
-					goto exit;
-				}
-				pid = atoi(argv[j]);
-			}
-			/* Invalid input. */
-			else {
-				RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid parameter type\r\n", CMD_NAME_COEX);
-				error_no = 13;
-				goto exit;
+	/* -------------------------------------------------------
+	 * Construct command string from argv[1..argc-1]
+	 * e.g. argv = ["COEX", "vendor", "vid", "10", "pid", "20"]
+	 *      cmd  = "vid 10 pid 20"
+	 * ----------------------------------------------------- */
+	size_t cmd_size = 1;
+	for (u8 k = 1; k < argc; k++) {
+		cmd_size += strlen(argv[k]);
+		if (k > 1) {
+			cmd_size += 1;
+		}
+	}
+	cmd_size = (cmd_size < RTK_COEX_CMD_MAX_LEN) ? cmd_size : RTK_COEX_CMD_MAX_LEN;
+
+	char cmd[RTK_COEX_CMD_MAX_LEN] = {0};
+	int  pos = 0;
+
+	for (u8 k = 1; k < argc; k++) {
+		int remaining = (int)cmd_size - 1 - pos;  /* reserve space for '\0' */
+		if (remaining <= 0) {
+			break;
+		}
+		/* insert space before each argument except the first */
+		if (k > 1) {
+			cmd[pos++] = ' ';
+			remaining--;
+			if (remaining <= 0) {
+				break;
 			}
 		}
-		at_printf("pid=0x%x, vid=0x%x\r\n", pid, vid);
+
+		int copy_len = (int)strlen(argv[k]);
+		if (copy_len > remaining) {
+			copy_len = remaining;
+		}
+		memcpy(cmd + pos, argv[k], (size_t)copy_len);
+		pos += copy_len;
+	}
+
+	cmd[pos] = '\0'; 	/* null-terminate */
+
+	/* -------------------------------------------------------
+	 * get subcmd
+	 * ----------------------------------------------------- */
+	char subcmd[32] = {0};
+	if (_sscanf_ss(cmd, "%31s", subcmd, (unsigned)sizeof(subcmd)) != 1) {
+		error_no = 1;
+		goto exit;
+	}
+
+	/* -------------------------------------------------------
+	 * dispatch subcmd
+	 * ----------------------------------------------------- */
+	if (0 == strcasecmp(subcmd, "vendor")) {
+		int pid = -1, vid = -1;
+		int matched = 0;
+
+		matched = _sscanf_ss(cmd, "vid %d pid %d", &vid, &pid);
+		if (matched != 2) {
+			matched = _sscanf_ss(cmd, "pid %d vid %d", &pid, &vid);
+		}
+		if (matched != 2) {
+			error_no = 10;
+			goto exit;
+		}
+		if (vid < 0 || vid > 0xFF || pid < 0 || pid > 0xFF) {
+			error_no = 11;
+			goto exit;
+		}
+
+		RTK_LOGW(AT_COEX_TAG, "pid=0x%x, vid=0x%x\r\n", pid, vid);
 		rtk_coex_com_vendor_info_set(pid, vid);
 
-	} else if (0 == strcasecmp(argv[1], "wl_slot")) {
-		if (argc == 2) {
-			at_printf("\r\nwl_slot=%d%%\r\n", wl_slot);
-		} else if (atoi(argv[2]) > 100) {
-			RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid wl_slot value\r\n", CMD_NAME_COEX);
-			error_no = 21;
-			goto exit;
+	} else if (0 == strcasecmp(subcmd, "wl_slot")) {
+		const char *param = cmd + strlen(subcmd);
+		while (*param == ' ') {
+			param++;
+		}
+		if (*param == '\0') {
+			RTK_LOGW(AT_COEX_TAG, "get wl_slot=%d\r\n", wl_slot);
 		} else {
-			wl_slot = atoi(argv[2]);
-			at_printf("\r\nwl_slot=%d%%\r\n", wl_slot);
+			int val = -1;
+			if (_sscanf_ss(cmd, "%d", &val) != 1 || val < 0 || val > 100) {
+				error_no = 21;
+				goto exit;
+			}
+			wl_slot = val;
+			RTK_LOGW(AT_COEX_TAG, "set wl_slot=%d\r\n", wl_slot);
 			rtk_coex_com_wl_slot_set(wl_slot);
 		}
 
-	} else if (0 == strcasecmp(argv[1], "state")) {
+	} else if (0 == strcasecmp(subcmd, "state")) {
 		rtk_coex_com_state_get();
-	} else if (0 == strcasecmp(argv[1], "enable")) {
-		if (argc == 2) {
-			coex_is_en = rtk_coex_com_coex_is_enabled();
-			coex_ext_is_en = rtk_coex_extc_is_ready();
-			at_printf("\r\n[coex,ext]=%d,%d\r\n", coex_is_en, coex_ext_is_en);
-		} else if (argc == 3) {
-			rtk_coex_com_coex_set_enable((atoi(argv[2]) ? 1 : 0));
-		} else {
-			RTK_LOGW(AT_COEX_TAG, "[AT%s] Wrong Params Number\r\n", CMD_NAME_COEX);
-			error_no = 22;
-			goto exit;
-		}
-	} else if (0 == strcasecmp(argv[1], "gnt")) {
-		if (argc == 3 && 0 == strcasecmp(argv[2], "wifi")) {
-			rtk_coex_btc_set_pta(PTA_WIFI, 0, 0);
-		} else if (argc == 3 && 0 == strcasecmp(argv[2], "bt")) {
-			rtk_coex_btc_set_pta(PTA_BT, 0, 0);
-		} else if (argc == 3 && 0 == strcasecmp(argv[2], "auto")) {
-			rtk_coex_btc_set_pta(PTA_AUTO, 0, 0);
-		} else {
-			RTK_LOGW(AT_COEX_TAG, "[AT%s] Invalid Params\r\n", CMD_NAME_COEX);
-			error_no = 23;
-			goto exit;
-		}
-	} else if (0 == strcasecmp(argv[1], "help")) {
-		at_printf("\r\n");
-		at_printf("AT%s=<type=vendor>,vid,<vid>,pid,<pid>\r\n", CMD_NAME_COEX);
-		at_printf("\t<vid>: 0-255 (dec)\r\n");
-		at_printf("\t<pid>: 0-255 (dec)\r\n");
-		at_printf("AT%s=<type=wl_slot>[,<value>]\r\n", CMD_NAME_COEX);
-		at_printf("\t<value>: 0: disable, [1-100]: percent (dec)\r\n");
-		at_printf("AT%s=<type=state>\r\n", CMD_NAME_COEX);
-		at_printf("AT%s=<type=enable>[,<value>]\r\n", CMD_NAME_COEX);
-		at_printf("\t<value>: 0: disable, 1: enable\r\n");
-		at_printf("AT%s=<type=gnt>[,<value>]\r\n", CMD_NAME_COEX);
-		at_printf("\t<value>: wifi: gnt to wifi, bt: gnt to bt, auto: gnt by auto\r\n");
+
+	} else if (0 == strcasecmp(subcmd, "dbg")) {
+		rtk_coex_com_dbg(cmd + 4, cmd_size - 4);
+
 	} else {
-		error_no = 21;
+		RTK_LOGW(AT_COEX_TAG, "Unknown cmd\r\n");
+		error_no = 31;
 	}
 
 exit:
-	if (error_no == 0) {
-		at_printf("\r\nOK\r\n");
-	} else {
-		at_printf("\r\nERROR:%d\r\n", error_no);
+	if (error_no) {
+		RTK_LOGW(AT_COEX_TAG, "ERR:%d\r\n", error_no);
 	}
-
-	return;
 }
 
 static void fBTCOEX(u16 argc, char **argv)
@@ -191,18 +188,15 @@ static void fEXTCOEX(u16 argc, char **argv)
 	int chan_num = 0;
 
 	if (argc < 2) {
-		RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: Wrong input args number!\r\n", CMD_NAME_EXTC);
 		error_no = 1;
 		goto exit;
 	}
 
 	if ((strlen(argv[1]) == 0)) {
-		RTK_LOGE(AT_COEX_TAG, "[AT%s] Input <type>  is NULL\r\n", CMD_NAME_EXTC);
 		error_no = 1;
 		goto exit;
 	} else if (0 == strcasecmp(argv[1], "chan")) {
 		if (argc != 3) {
-			RTK_LOGE(AT_COEX_TAG, "[AT%s] Error: Wrong input args number!\r\n", CMD_NAME_EXTC);
 			error_no = 31;
 			goto exit;
 		}

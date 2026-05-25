@@ -660,6 +660,7 @@ _LONG_CALL_ u32 SSI_SendData(SPI_TypeDef *spi_dev, void *TxData, u32 Length, u32
 _LONG_CALL_ u32 SSI_GetRawIsr(SPI_TypeDef *spi_dev);
 _LONG_CALL_ u32 SSI_GetSlaveEnable(SPI_TypeDef *spi_dev);
 _LONG_CALL_ void SSI_SlaveOutputEnable(SPI_TypeDef *spi_dev, u32 Status);
+_LONG_CALL_ u32 SSI_SlaveErrRecovery(SPI_TypeDef *spi_dev);
 _LONG_CALL_ u32 SSI_GetDataFrameSize(SPI_TypeDef *spi_dev);
 _LONG_CALL_ u32 SSI_GetDataFrameNumber(SPI_TypeDef *spi_dev);
 _LONG_CALL_ void SSI_SetSampleDelay(SPI_TypeDef *spi_dev, u32 SampleDelay);

@@ -1,8 +1,13 @@
 PREBUILTS_VERSION=1.0.3
 PREBUILTS_WIN_URL='https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.3/prebuilts-win-1.0.3.zip'
 PREBUILTS_LINUX_URL='https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.3/prebuilts-linux-1.0.3.tar.gz'
-PREBUILTS_WIN_URL_ALIYUN='https://rs-wn.oss-cn-shanghai.aliyuncs.com/prebuilts-win-1.0.3.zip'
-PREBUILTS_LINUX_URL_ALIYUN='https://rs-wn.oss-cn-shanghai.aliyuncs.com/prebuilts-linux-1.0.3.tar.gz'
+PREBUILTS_WIN_URL_ALIYUN='https://aiot.realmcu.com/download/prebuilts/prebuilts-win-1.0.3.zip'
+PREBUILTS_LINUX_URL_ALIYUN='https://aiot.realmcu.com/download/prebuilts/prebuilts-linux-1.0.3.tar.gz'
+
+case $(uname) in
+    Linux)  RTK_TOOLCHAIN_DIR_LINUX="$HOME/rtk-toolchain" ;;
+    *_NT*)  RTK_TOOLCHAIN_DIR_NT=/c/rtk-toolchain ;;
+esac
 
 function get_script_dir
 {
@@ -35,7 +40,7 @@ Linux)
             RTK_TOOLCHAIN_DIR="$HOME${RTK_TOOLCHAIN_DIR:1}"
         fi
     else
-        RTK_TOOLCHAIN_DIR="$HOME/rtk-toolchain"
+        RTK_TOOLCHAIN_DIR=$RTK_TOOLCHAIN_DIR_LINUX
     fi
 
     export AMEBA_SDK="$BASE_DIR"
@@ -44,8 +49,8 @@ Linux)
     ACTIVE_CMD="source $BASE_DIR/.venv/bin/activate"
     PREBUILTS_DIR=$RTK_TOOLCHAIN_DIR/prebuilts-linux-$PREBUILTS_VERSION
     PREBUILTS_ZIP_FILE=$PREBUILTS_DIR.tar.gz
-    DOWNLOAD_URL=$PREBUILTS_LINUX_URL
-    DOWNLOAD_URL_ALIYUN=$PREBUILTS_LINUX_URL_ALIYUN
+    DOWNLOAD_URL=$PREBUILTS_LINUX_URL_ALIYUN
+    DOWNLOAD_URL_SECOND_SOURCE=$PREBUILTS_LINUX_URL
     alias menuconfig.py='python menuconfig.py'
 	alias build.py='python build.py'
 	alias flash.py='python flash.py'
@@ -57,7 +62,7 @@ Linux)
     if [ -n "$RTK_TOOLCHAIN_DIR" ]; then
         RTK_TOOLCHAIN_DIR=$(cygpath -u "$RTK_TOOLCHAIN_DIR")
     else
-        RTK_TOOLCHAIN_DIR=/c/rtk-toolchain
+        RTK_TOOLCHAIN_DIR=$RTK_TOOLCHAIN_DIR_NT
     fi
 
     WIN_SDK_PATH=$(cygpath -w "$BASE_DIR")
@@ -67,8 +72,8 @@ Linux)
     ACTIVE_CMD="source $BASE_DIR/.venv/Scripts/activate"
     PREBUILTS_DIR=$RTK_TOOLCHAIN_DIR/prebuilts-win-$PREBUILTS_VERSION
     PREBUILTS_ZIP_FILE=$PREBUILTS_DIR.zip
-    DOWNLOAD_URL=$PREBUILTS_WIN_URL
-    DOWNLOAD_URL_ALIYUN=$PREBUILTS_WIN_URL_ALIYUN
+    DOWNLOAD_URL=$PREBUILTS_WIN_URL_ALIYUN
+    DOWNLOAD_URL_SECOND_SOURCE=$PREBUILTS_WIN_URL
 
     alias menuconfig.py='winpty python menuconfig.py'
 	alias build.py='winpty python build.py'
@@ -96,56 +101,72 @@ _ameba_py_completion() {
 complete -F _ameba_py_completion ameba.py
 
 
-function update_prebuilts
+function download_update_prebuilts
 {
     case $(uname) in
+        Linux)   local pattern='prebuilts-linux*' ;;
+        *_NT*)   local pattern='prebuilts-win*'   ;;
+    esac
+    mkdir -p "$RTK_TOOLCHAIN_DIR"
+    local last_matched_folder=$(find "$RTK_TOOLCHAIN_DIR" -type d -name "$pattern" 2>/dev/null | sort | tail -n 1)
+
+    if [[ -n "$last_matched_folder" ]]; then
+        if [[ "$last_matched_folder" != "$PREBUILTS_DIR" ]]; then
+            echo "$last_matched_folder is out of date, updating prebuilts..."
+        else
+            echo "$last_matched_folder is incomplete, reinstalling..."
+        fi
+        rm -rf "$last_matched_folder"
+    else
+        echo "RTK software suite not found, downloading for first-time setup..."
+    fi
+
+    if [ -f "$PREBUILTS_ZIP_FILE" ]; then
+        case $(uname) in
+            Linux)  tar -tf "$PREBUILTS_ZIP_FILE" >/dev/null 2>&1 ;;
+            *_NT*)  unzip -t "$PREBUILTS_ZIP_FILE" >/dev/null 2>&1 ;;
+        esac
+        if [ $? -ne 0 ]; then
+            echo "Incomplete download detected, re-downloading..."
+            rm -f "$PREBUILTS_ZIP_FILE"
+        fi
+    fi
+    if [ ! -f "$PREBUILTS_ZIP_FILE" ]; then
+        echo "download.... "
+        curl -fL# -o "$PREBUILTS_ZIP_FILE" "$DOWNLOAD_URL"
+
+        if [ $? -ne 0 ]; then
+            rm -f "$PREBUILTS_ZIP_FILE"
+            echo "Try to download from $DOWNLOAD_URL_SECOND_SOURCE"
+            curl -fL# -o "$PREBUILTS_ZIP_FILE" "$DOWNLOAD_URL_SECOND_SOURCE"
+            if [ $? -ne 0 ]; then
+                rm -f "$PREBUILTS_ZIP_FILE"
+                echo "Download failed. Please check your network, or download manually from:"
+                echo "  $DOWNLOAD_URL"
+                echo "  $DOWNLOAD_URL_SECOND_SOURCE"
+                return 1
+            fi
+        fi
+    fi
+
+    rm -rf "$PREBUILTS_DIR"
+    echo "unzip ... "
+    case $(uname) in
         Linux)
-            last_matched_folder=$(find "$RTK_TOOLCHAIN_DIR" -type d -name 'prebuilts-linux*' | sort | tail -n 1)
+            tar -xf "$PREBUILTS_ZIP_FILE" -C "$RTK_TOOLCHAIN_DIR"
             ;;
         *_NT*)
-            last_matched_folder=$(find "$RTK_TOOLCHAIN_DIR" -type d -name 'prebuilts-win*' | sort | tail -n 1)
+            unzip -q -o "$PREBUILTS_ZIP_FILE" -d "$RTK_TOOLCHAIN_DIR"
             ;;
     esac
 
-    if [[ -n "$last_matched_folder" ]]; then
-        echo "use $last_matched_folder to update prebuilts"
-        source "$last_matched_folder/setenv.sh"
-
-        if [ ! -f "$PREBUILTS_ZIP_FILE" ]; then
-            echo "download.... "
-            wget -P $RTK_TOOLCHAIN_DIR $DOWNLOAD_URL
-
-            if [ $? -ne 0 ]; then
-                echo "Try to download from $DOWNLOAD_URL_ALIYUN"
-                wget -P $RTK_TOOLCHAIN_DIR $DOWNLOAD_URL_ALIYUN
-                if [ $? -ne 0 ]; then
-                    echo "Download failed. Please check your network or download manually"
-                    return 1
-                fi
-            fi
-        fi
-
-        echo "unzip ... "
-        case $(uname) in
-            Linux)
-                tar -xzf $PREBUILTS_DIR.tar.gz -C $RTK_TOOLCHAIN_DIR
-                ;;
-            *_NT*)
-                7z x $PREBUILTS_DIR.zip -o$RTK_TOOLCHAIN_DIR
-                ;;
-        esac
-
-        if [ $? -ne 0 ]; then
-            echo "Unzip failed. Please unzip $PREBUILTS_DIR.zip manually"
-            return 1
-        fi
-
-        source "$PREBUILTS_DIR/setenv.sh"
-    else
-        echo "RTK software suite not exist, please download from $DOWNLOAD_URL or $DOWNLOAD_URL_ALIYUN and unzip it at $RTK_TOOLCHAIN_DIR"
+    if [ $? -ne 0 ]; then
+        rm -rf "$PREBUILTS_DIR"
+        echo "Unzip failed. Please unzip $PREBUILTS_ZIP_FILE manually to $RTK_TOOLCHAIN_DIR"
         return 1
     fi
 
+    source "$PREBUILTS_DIR/setenv.sh"
     return 0
 }
 
@@ -155,7 +176,7 @@ if [ -f "$PREBUILTS_DIR/setenv.sh" ]; then
 else
 
 	rm -rf $BASE_DIR/.venv
-    update_prebuilts
+    download_update_prebuilts
     if [ $? -ne 0 ]; then
         return
     fi
@@ -176,6 +197,19 @@ if [ -z "$VIRTUAL_ENV" ] || [ "$VIRTUAL_ENV" != "$EXPECTED_VENV_PATH" ]; then
         pip list
     fi
 fi
+
+# Install ameba-mcp launcher into the venv (idempotent).
+# Re-runs only when the launcher is missing or pyproject.toml has changed —
+# keeps `claude mcp add ameba-dev -- <SDK>/tools/ameba/ameba_dev_mcp/launcher.sh` working
+# without forcing the user to manage PYTHONPATH.
+_AMEBA_MCP_PYPROJECT="$BASE_DIR/tools/ameba/pyproject.toml"
+_AMEBA_MCP_BIN="$BASE_DIR/.venv/bin/ameba-mcp"
+[ -x "$_AMEBA_MCP_BIN" ] || _AMEBA_MCP_BIN="$BASE_DIR/.venv/Scripts/ameba-mcp.exe"
+if [ ! -x "$_AMEBA_MCP_BIN" ] || [ "$_AMEBA_MCP_PYPROJECT" -nt "$_AMEBA_MCP_BIN" ]; then
+    pip install -e "$BASE_DIR/tools/ameba" >/dev/null 2>&1 \
+        || echo "[WARNING] Failed to install ameba-mcp; run 'pip install -e tools/ameba' manually."
+fi
+unset _AMEBA_MCP_PYPROJECT _AMEBA_MCP_BIN
 
 python $BASE_DIR/tools/scripts/check_requirements.py
 

@@ -295,10 +295,12 @@
          ret =rtl_crypto_aes_cbc_encrypt(input + length_done, length - length_done, iv_tmp, 16, output_buf_aligned + length_done);
          memcpy(iv, (output_buf_aligned + length - 16), 16);//check
      }
-     memcpy(output, output_buf_aligned, length);
-     mbedtls_free(output_buf);
- 
+     if (ret == 0) {
+         memcpy(output, output_buf_aligned, length);
+     }
+
  exit:
+     mbedtls_free(output_buf);
      IPC_SEMFree(IPC_SEM_CRYPTO);
      return ret;
  }
@@ -550,7 +552,18 @@
      }
  
      rtl_crypto_aes_ofb_encrypt(input + length_done, length - length_done, iv, 16, output + length_done);
- 
+
+     /* Advance iv for full blocks in final fragment */
+     {
+         size_t last_len = length - length_done;
+         size_t full_blocks = last_len / 16;
+         size_t k;
+         for (k = 0; k < full_blocks; k++) {
+             rtl_crypto_aes_ecb_init(ctx->key_val, (ctx->key_len_bits / 8));
+             rtl_crypto_aes_ecb_encrypt(iv, 16, NULL, 0, iv);
+         }
+     }
+
      *iv_off = n + stream_bytes;
  
  exit:
@@ -614,7 +627,23 @@
      }
  
      rtl_crypto_aes_ctr_encrypt(input + length_done, length - length_done, nonce_counter, 16, output + length_done);
- 
+
+     /* Increment nonce_counter for all full blocks in last fragment */
+     {
+         size_t last_len = length - length_done;
+         size_t full_blocks = last_len / 16;
+         size_t k;
+         for (k = 0; k < full_blocks; k++) {
+             int ii;
+             for (ii = 16; ii > 0; ii--) {
+                 if (++nonce_counter[ii - 1] != 0) {
+                     break;
+                 }
+             }
+         }
+         _memcpy(stream_block, nonce_counter, 16);
+     }
+
      *nc_off = n;
  
  exit:

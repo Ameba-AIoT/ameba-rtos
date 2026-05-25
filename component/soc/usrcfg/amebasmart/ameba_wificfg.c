@@ -52,8 +52,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.country_code[1] = 0;
 	wifi_user_config.freq_band_support = RTW_SUPPORT_BAND_MAX;
 	wifi_user_config.tx_pwr_table_selection = 2;
-	wifi_user_config.tpc_enable = 0; /* 1: apply TPC for FCC/MKK/KCC(5.25~5.35GHz, 5.47~5.725GHz), CN(5.25~5.35GHz),
-														 IC/ETSI(5.15~5.25GHz, 5.25~5.35GHz, 5.47~5.725GHz) */
+	wifi_user_config.tpc_enable = 0; /* 1: apply TPC for FCC/MKK/KCC/IC/ETSI(5.25~5.35GHz, 5.47~5.725GHz), CN(5.25~5.35GHz) */
 	wifi_user_config.rtw_802_11d_en = 0;
 	wifi_user_config.rtw_trp_tis_cert_en = RTW_TRP_TIS_DISABLE;
 	wifi_user_config.rtw_edcca_mode = RTW_EDCCA_NORM;
@@ -80,6 +79,7 @@ _WEAK void wifi_set_user_config(void)
 	/* Softap related */
 	wifi_user_config.ap_sta_num = 12;	/*should not exceed 12 */
 	wifi_user_config.ap_polling_sta = 0;
+	wifi_user_config.ap_bypass_forwarding = 0;
 
 	/* MISC */
 	wifi_user_config.en_mcc = 0;  /* must select ENABLE_MCC in menuconfig when wifi_user_config.en_mcc=1 */

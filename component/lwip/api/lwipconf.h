@@ -57,6 +57,6 @@
 #include "netif/ppp/pppapi.h"
 #include "netif/ppp/pppoe.h"
 
-#include "ethernetif.h"
+#include "netif_adapter.h"
 
 #endif //__LWIPCONF_H

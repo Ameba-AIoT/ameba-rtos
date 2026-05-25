@@ -19,5 +19,7 @@ prompt_toolkit
 click
 requests
 filelock
-fastmcp
+fastmcp>=2.0
+pydantic>=2.0
+pydantic-core>=2.0
 pqcrypto

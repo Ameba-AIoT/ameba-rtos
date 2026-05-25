@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "ameba.h"
 #include "FreeRTOS.h"
+#include "task.h"
 #include "queue.h"
 #include "os_wrapper.h"
 #include "os_wrapper_specific.h"
@@ -68,6 +69,10 @@ int rtos_queue_send(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms)
 			portEND_SWITCHING_ISR(task_woken);
 		}
 	} else {
+		/* Force non-blocking when the OS cannot perform a context switch. */
+		if (rtos_get_critical_state()) {
+			wait_ms = 0;
+		}
 		ret = xQueueSendToBack((QueueHandle_t)p_handle, p_msg, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 	}
 
@@ -93,6 +98,10 @@ int rtos_queue_send_to_front(rtos_queue_t p_handle, void *p_msg, uint32_t wait_m
 			portEND_SWITCHING_ISR(task_woken);
 		}
 	} else {
+		/* Force non-blocking when the OS cannot perform a context switch. */
+		if (rtos_get_critical_state()) {
+			wait_ms = 0;
+		}
 		ret = xQueueSendToFront((QueueHandle_t)p_handle, p_msg, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 	}
 
@@ -118,6 +127,10 @@ int rtos_queue_receive(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms)
 			portEND_SWITCHING_ISR(task_woken);
 		}
 	} else {
+		/* Force non-blocking when the OS cannot perform a context switch. */
+		if (rtos_get_critical_state()) {
+			wait_ms = 0;
+		}
 		ret = xQueueReceive((QueueHandle_t)p_handle, p_msg, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 	}
 
@@ -139,6 +152,10 @@ int rtos_queue_peek(rtos_queue_t p_handle, void *p_msg, uint32_t wait_ms)
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xQueuePeekFromISR((QueueHandle_t)p_handle, p_msg);
 	} else {
+		/* Force non-blocking when the OS cannot perform a context switch. */
+		if (rtos_get_critical_state()) {
+			wait_ms = 0;
+		}
 		ret = xQueuePeek((QueueHandle_t)p_handle, p_msg, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 	}
 

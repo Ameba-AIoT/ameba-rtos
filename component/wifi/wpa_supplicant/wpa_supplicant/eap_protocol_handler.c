@@ -123,7 +123,7 @@ int set_eap_fast_method(void)
 
 void eap_send_eapol_start(u8 *dst_mac)
 {
-	u8 *dev_mac = LwIP_GetMAC(NETIF_WLAN_STA_INDEX);
+	u8 *dev_mac = lwip_get_mac(NETIF_WLAN_STA_INDEX);
 	struct wlan_ethhdr_t *eth_hdr;
 	struct lib1x_eapol *eapol;
 	u8 *buf = NULL;

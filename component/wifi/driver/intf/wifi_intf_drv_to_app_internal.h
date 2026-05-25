@@ -581,6 +581,7 @@ void wifi_indication(u32 event, u8 *evt_info, s32 evt_len);
 void wifi_indication_ext(u32 event, u8 *info_buf, s32 info_len, u8 *frame_buf, s32 frame_len);
 int wifi_event_handle(u32 event_cmd, u8 *evt_info);
 void wifi_set_task_size(void);
+s32 wifi_radar_send_data(u16 frame_num, u8 frame_type, u8 *data);
 
 extern struct rtw_task_size g_rtw_task_size;
 
