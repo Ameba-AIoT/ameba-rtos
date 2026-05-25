@@ -79,17 +79,15 @@ void ws_server_dispatch(void (*callback)(ws_conn *, int, enum opcode_type))
 
 void ws_server_dispatchBinary(ws_conn *conn)
 {
-	int data_start = 0;//the lenth of data already read
-	int rlen = conn->rx_len;
-	ws_server_log_verbose("%s called by connection %d to dispatch data with length %d", __FUNCTION__, conn->sock, rlen);
+	ws_server_log_verbose("%s called by connection %d to dispatch data with length %d", __FUNCTION__, conn->sock, conn->rx_len);
 	while (1) {
 		struct ws_data_header_type ws;
-		int rxbuf_len;
-		rxbuf_len = rlen - data_start;//lenth of data not read
+		int rxbuf_len = conn->rx_len;
+
 		if (rxbuf_len < 2) {
 			return;
 		}
-		const uint8_t *data = (uint8_t *) &conn->rxbuf[data_start];  // peek, but don't consume
+		const uint8_t *data = (uint8_t *)conn->rxbuf;  // peek, but don't consume
 		ws.fin = (data[0] & 0x80) == 0x80;
 		ws.opcode = (enum opcode_type)(data[0] & 0x0f);
 		ws.mask = (data[1] & 0x80) == 0x80;
@@ -131,18 +129,26 @@ void ws_server_dispatchBinary(ws_conn *conn)
 			ws.masking_key[3] = 0;
 		}
 		if ((uint64_t)rxbuf_len < ws.header_size + ws.N) {
+			if (ws.N > ws_server_rx_size) {
+				conn->rx_len = 0;
+			}
 			return; /* Need: ws.header_size+ws.N - rxbuf.size() */
+		} else if ((uint64_t)rxbuf_len == ws.header_size + ws.N) {
+			if (ws.N > ws_server_rx_size) {
+				conn->rx_len = 0;
+				return;
+			}
 		}
 		ws_server_log_verbose("websocket message size: 0x%x(H)+0x%x(L)", (uint32_t)((ws.header_size + ws.N) >> 32), (uint32_t)(ws.header_size + ws.N));
 		// We got a whole message, now do something with it:
 		if (ws.opcode == TEXT_FRAME || ws.opcode == BINARY_FRAME || ws.opcode == CONTINUATION) {
 			if (ws.mask) {
 				for (size_t i = 0; i != ws.N; ++i) {
-					conn->rxbuf[i + data_start + ws.header_size] ^= ws.masking_key[i & 0x3];
+					conn->rxbuf[i + ws.header_size] ^= ws.masking_key[i & 0x3];
 				}
 			}
 			memset(conn->receivedData, 0, ws_server_rx_size);
-			memcpy(conn->receivedData, (conn->rxbuf + data_start + ws.header_size), ws.N);
+			memcpy(conn->receivedData, (conn->rxbuf + ws.header_size), ws.N);
 			ws_server_log_verbose("message content: %s", conn->receivedData);
 			if (ws.fin != 0) {
 				conn->last_data_comm_time = rtos_time_get_current_system_time_ms();
@@ -186,8 +192,11 @@ void ws_server_dispatchBinary(ws_conn *conn)
 		} else {
 			ws_server_log("ERROR: Got unexpected WebSocket message.\n");
 		}
-		data_start = data_start + ws.header_size + ws.N;
-		conn->rx_len = 0;
+
+		conn->rx_len = conn->rx_len - (ws.header_size + ws.N);
+		if (conn->rx_len > 0) {
+			memmove(conn->rxbuf, (conn->rxbuf + ws.header_size + ws.N), conn->rx_len);
+		}
 	}
 }
 
@@ -906,4 +915,3 @@ int ws_server_handshake_response(ws_conn *conn)
 	return ws_response_write_header_finish(conn);
 
 }
-
