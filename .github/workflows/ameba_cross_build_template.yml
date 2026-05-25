@@ -110,14 +110,14 @@ jobs:
       id: build_unix
       run: |
         echo "Build Current shell is ${{ matrix.shell }}"
-        python ameba.py build ${{ env.SOC_NAME }}
+        python ameba.py build ${{ env.SOC_NAME }} -D USE_SECOND_SOURCE=True
       if: ${{ matrix.os != 'windows-latest' }}
 
     - name: Build_windows
       id: build_win
       run: |
           echo "Build Current shell is ${{ matrix.shell }}"
-          python ameba.py build ${{ env.SOC_NAME }}
+          python ameba.py build ${{ env.SOC_NAME }} -D USE_SECOND_SOURCE=True
       if: ${{ inputs.ic_name != 'amebasmart' && matrix.os == 'windows-latest' }}
 
     - name: Post-Build Cleanup
