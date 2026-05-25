@@ -169,6 +169,7 @@ extern "C"
 /* The type of callback will only be used after APP calls @ref le_ext_adv_gap_msg_info_way(false). */
 #define GAP_MSG_LE_EXT_ADV_STATE_CHANGE_INFO        0x66 //!<Notification msg type for extended advertising state
 #endif
+#define GAP_MSG_LE_EXT_ADV_SET_TERMINATE_INFO       0x67 //!<Notification msg type for extended advertising set terminate event
 #endif
 #if F_BT_LE_5_0_PA_ADV_SUPPORT
 //gap_pa_adv.h
@@ -513,6 +514,14 @@ typedef struct
     uint8_t  state;            /**< GAP extended advertising state. @ref T_GAP_EXT_ADV_STATE. */
 } T_LE_EXT_ADV_STATE_CHANGE_INFO;
 #endif
+
+typedef struct
+{
+    uint16_t cause;
+    uint8_t adv_handle;
+    uint16_t conn_handle;
+    uint8_t num_cmpl_ext_adv_evt;
+} T_LE_EXT_ADV_SET_TERMINATE_INFO;
 #endif
 
 #if F_BT_LE_5_0_PA_ADV_SUPPORT
@@ -806,6 +815,7 @@ typedef union
     /* The callback data will only be used after APP calls @ref le_ext_adv_gap_msg_info_way(false). */
     T_LE_EXT_ADV_STATE_CHANGE_INFO           *p_le_ext_adv_state_change_info;
 #endif
+    T_LE_EXT_ADV_SET_TERMINATE_INFO          *p_le_ext_adv_set_terminate_info;
 #endif
 
 #if F_BT_LE_5_0_PA_ADV_SUPPORT
