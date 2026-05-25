@@ -89,14 +89,14 @@ jobs:
       run: |
         echo "Build Current shell is ${{ matrix.shell }}"
         cd ${{ inputs.ic_name }}_gcc_project
-        python build.py
+        python build.py -D USE_SECOND_SOURCE=True
       if: ${{ matrix.os != 'windows-latest' }}
 
     - name: Build_windows
       run: |
           echo "Build Current shell is ${{ matrix.shell }}"
           cd ${{ inputs.ic_name }}_gcc_project
-          python build.py
+          python build.py -D USE_SECOND_SOURCE=True
       if: ${{ inputs.ic_name != 'amebasmart' && matrix.os == 'windows-latest' }}
 
     - name: Post-Build Cleanup
