@@ -211,9 +211,11 @@ static int usbh_composite_acm_ecm_cb_setup(usb_host_t *host)
 }
 
 /**
-  * @brief  Sof callback
-  * @param  host: Host handle
-  * @retval Status
+  * @brief  SOF callback for class-specific timing process.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param[in] host: USB host handle.
+  * @return 0 on success, non-zero on failure.
   */
 static int usbh_composite_acm_ecm_cb_sof(usb_host_t *host)
 {
@@ -231,10 +233,12 @@ static int usbh_composite_acm_ecm_cb_sof(usb_host_t *host)
 }
 
 /**
-  * @brief  Complete callback
-  * @param  host: Host handle
-  * @param  pipe_num: pipe index
-  * @retval Status
+  * @brief  Transfer completion callback.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param[in] host: USB host handle.
+  * @param[in] pipe_num: Pipe number of the completed transfer.
+  * @return 0 on success, non-zero on failure.
   */
 static int usbh_composite_acm_ecm_cb_completed(usb_host_t *host, u8 pipe_num)
 {

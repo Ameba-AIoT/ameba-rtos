@@ -144,6 +144,8 @@ static usbd_uac_cb_t uac_cb = {
 
 /**
   * @brief  Handle the uac class control requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  cmd: Command code
   * @param  buf: Buffer containing command data (request parameters)
   * @param  len: Number of data to be sent (in bytes)
@@ -181,6 +183,8 @@ static int uac_cb_deinit(void)
 
 /**
   * @brief  Set config callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  None
   * @retval Status
   */
@@ -190,12 +194,23 @@ static int uac_cb_set_config(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Handle UAC attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void uac_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_UAC_HOTPLUG
 	uac_attach_status = status;
 	rtos_sema_give(uac_attach_status_changed_sema);
+#else
+	UNUSED(status);
 #endif
 }
 
@@ -266,7 +281,7 @@ static void example_usbd_uac_thread(void *param)
 
 	rtos_time_delay_ms(100);
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD uac demo start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UAC demo start\n");
 
 	rtos_task_delete(NULL);
 
@@ -283,23 +298,48 @@ clear_usb_driver_exit:
 	usbd_deinit();
 
 exit:
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD uac demo stop\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UAC demo stop\n");
 #if CONFIG_USBD_UAC_HOTPLUG
 	rtos_sema_delete(uac_attach_status_changed_sema);
 #endif
 	rtos_task_delete(NULL);
 }
 
+/**
+  * @brief  Handle UAC mute control changes from the host
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  mute: New mute state
+  * @retval None
+  */
 static void uac_cb_mute_changed(u8 mute)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set mute %d\n", mute);
+	UNUSED(mute);
+	// RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set mute %d\n", mute);
 }
 
+/**
+  * @brief  Handle UAC volume control changes from the host
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  volume: New volume value
+  * @retval None
+  */
 static void uac_cb_volume_changed(u8 volume)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set volume %d\n", volume);
+	UNUSED(volume);
+	// RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set volume %d\n", volume);
 }
 
+/**
+  * @brief  Handle UAC stream format (sampling rate / channel count / sample width) changes from the host
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  sampling_freq: New sampling frequency in Hz (0 means unchanged)
+  * @param  ch_cnt: New channel count (0 means unchanged)
+  * @param  byte_width: New sample byte width (0 means unchanged)
+  * @retval None
+  */
 static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
 	if (sampling_freq != 0U) {
@@ -315,7 +355,7 @@ static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 	if (sampling_freq && ch_cnt && byte_width) {
 		rtos_sema_give(uac_ready_sema);
 		audio_task_stop = 1;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set ch_cnt %d\n", sampling_freq, ch_cnt);
+		// RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set ch_cnt %d\n", sampling_freq, ch_cnt);
 	}
 }
 /* playback , USB OUT */
@@ -482,7 +522,7 @@ void example_usbd_uac(void)
 	rtos_sema_create(&uac_ready_sema, 0U, 1U);
 	status = rtos_task_create(&task, "example_usbd_uac_thread", example_usbd_uac_thread, NULL, 1024U, CONFIG_USBD_UAC_INIT_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD uac thread fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD UAC thread fail\n");
 	}
 
 	if (rtos_task_create(NULL, ((const char *)"example_audio_track_thread"), example_audio_track_thread, NULL, 1024 * 16,

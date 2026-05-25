@@ -1,0 +1,42 @@
+/*
+ * board_info.json5 — test-bench config: which SoC is on which serial port.
+ *
+ * Each entry under "boards" uses an alias as the unique key. MCP tools
+ * (flash, serial_*, reset_device) take the alias as their only mandatory
+ * argument and read the rest from this file.
+ *
+ * Naming convention (suggested, not enforced): <SOC>_<PORT> for local
+ * boards, with `_remote` suffix for remote boards.
+ *
+ * Defaults below apply to every board unless overridden per entry.
+ * See tools/ameba/ameba_dev_mcp/docs/board_info.md for full schema.
+ */
+{
+  "schema_version": 1,
+
+  "defaults": {
+    /* Both flash and serial monitor default to 1.5 Mbps. */
+    "baudrate": 1500000,
+    "monitor_baudrate": 1500000,
+    /* Erase entire flash chip before each flash. */
+    "chip_erase": false
+  },
+
+  /* Add board entries here. Examples:
+   *
+   *   "RTL8721F_ttyUSB0": {
+   *     "soc": "RTL8721F",
+   *     "transport": "local",
+   *     "port": "/dev/ttyUSB0"
+   *   },
+   *
+   *   "RTL8730E_COM5_remote": {
+   *     "soc": "RTL8730E",
+   *     "transport": "remote",
+   *     "port": "COM5",
+   *     "remote": { "host": "192.168.1.100", "port": 58916, "password": "" }
+   *   }
+   */
+  "boards": {
+  }
+}

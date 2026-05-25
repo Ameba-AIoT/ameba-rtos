@@ -62,6 +62,9 @@ void SOCPS_SleepCG(void)
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "APCW\n");
 
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RUNNING);
+
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
 	//pmu_acquire_wakelock(PMU_OS);

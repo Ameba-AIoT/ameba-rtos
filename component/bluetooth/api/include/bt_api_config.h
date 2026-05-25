@@ -205,11 +205,7 @@ extern "C"
 #endif /* RTK_BLE_SUPPORT */
 
 #if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
-#if defined(CONFIG_SDN) && CONFIG_SDN
-#define RTK_BLE_PRIVACY_SUPPORT             0
-#else
 #define RTK_BLE_PRIVACY_SUPPORT             1
-#endif
 #define RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT    1
 #endif /* RTK_BLE_4_2_SUPPORT */
 

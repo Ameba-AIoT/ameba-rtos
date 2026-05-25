@@ -152,6 +152,22 @@ s32 wifi_csi_config(struct rtw_csi_action_parm *act_param)
 	return -1;
 }
 
+s32 wifi_radar_config(struct rtw_radar_action_parm *act_param)
+{
+	(void)act_param;
+	call_noused = __LINE__;
+	return -1;
+}
+
+s32 wifi_radar_send_data(u16 frame_num, u8 frame_type, u8 *data)
+{
+	(void)frame_num;
+	(void)frame_type;
+	(void)data;
+	call_noused = __LINE__;
+	return -1;
+}
+
 int wifi_set_wps_phase(u8 wlan_idx, unsigned char is_trigger_wps)
 {
 	UNUSED(wlan_idx);

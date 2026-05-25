@@ -141,8 +141,8 @@ extern "C" {
 #define AUDIO_I2S_OUT_MCLK_PIN           _PB_7
 #define AUDIO_I2S_OUT_BCLK_PIN           _PB_8
 #define AUDIO_I2S_OUT_LRCLK_PIN          _PB_9
-#define AUDIO_I2S_OUT_DATA0_PIN          _PB_10
-#define AUDIO_I2S_OUT_DATA1_PIN          _PB_11
+#define AUDIO_I2S_OUT_DATA0_PIN          _PA_2
+#define AUDIO_I2S_OUT_DATA1_PIN          _PA_3
 #define AUDIO_I2S_OUT_DATA2_PIN          _PA_4
 #define AUDIO_I2S_OUT_DATA3_PIN          _PB_18
 

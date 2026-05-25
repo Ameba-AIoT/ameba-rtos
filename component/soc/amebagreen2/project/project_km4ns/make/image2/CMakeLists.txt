@@ -19,6 +19,7 @@ if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_INTF_IPC AND CONFIG_WHC_DE
     ameba_add_subdirectory(${c_CMPT_RTK_COEX_DIR})
     ameba_add_subdirectory(${c_CMPT_SSL_DIR})
     ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
+    ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
     ameba_add_subdirectory(${c_CMPT_USB_DIR})
     ameba_add_subdirectory(${c_CMPT_USRCFG_DIR} usrcfg)
     ameba_add_subdirectory(${c_CMPT_DIAGNOSE_DIR})

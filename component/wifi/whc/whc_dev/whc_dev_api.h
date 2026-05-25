@@ -20,7 +20,7 @@ struct whc_dev_network_info {
 	u8 gw_mask[4];
 };
 
-void whc_dev_init_cmd_path_task(void);
+void whc_dev_init_cmd_path(void);
 
 #ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 u8 whc_dev_api_get_host_rdy(void);
@@ -39,7 +39,7 @@ void whc_dev_api_set_host_state(u8 state);
 
 /* pkt rx: pkt from host to device */
 /* weak func in rtk code, Reimplement the function if needed */
-void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size);
+void whc_dev_cmd_rx_to_user(u8 *rxbuf);
 
 /* pkt tx: pkt send to host from dev */
 void whc_dev_api_send_to_host(u8 *data, u32 len, uint8_t *ret, uint32_t ret_len);

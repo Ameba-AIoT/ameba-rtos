@@ -27,6 +27,10 @@ extern u8 __image3_bss_start__[];
 extern u8 __image3_bss_end__[];
 extern u8 __image3_heap_start__[];
 extern u8 __image3_heap_size__[];
+extern u8 __image3_ram_start__[];
+extern u8 __image3_ram_end__[];
+extern u8 __ram_image3_nsc_start__[];
+extern u8 __ram_image3_nsc_end__[];
 extern u8 __ram_image2_text_end__[];
 
 extern u8 __ipc_table_start__[];
@@ -89,18 +93,27 @@ extern u8 __rom_stdlib_data_end__[];
 extern u8 __rom_stdlib_text_start__[];
 extern u8 __rom_stdlib_text_end__[];
 
-/* sym for trustzone config */
-extern u8 __km4_tz_nsc_start__[];
-extern u8 __km4_tz_entry_start__[];
-extern u8 __km4_tz_entry_end__[];
+/* sym for trustzone config - merged TZ region: ENTRY + SECURE + NSC */
 extern u8 __km4_bd_ram_start__[];
 extern u8 __km4_bd_ram_end__[];
 
-extern u8 __km4_psram_tz_nsc_start__[];
-extern u8 __km4_psram_tz_entry_start__[];
-extern u8 __km4_psram_tz_entry_end__[];
 extern u8 __km4_bd_psram_start__[];
 extern u8 __non_secure_psram_end__[]; /* if psram is 8MB, than write 0x60800000 will write 0x60000000 */
+
+/* backtrace addr */
+extern u8 __rom_text_region0_start__[];
+extern u8 __rom_text_region0_end__[];
+extern u8 __rom_text_region1_start__[];
+extern u8 __rom_text_region1_end__[];
+/* Declared as __weak: Defaults to 0 if not defined in the linker script (e.g., in Bootloader builds), preventing linker errors. */
+extern u8 __image2_backtrace_start__[] __weak;
+extern u8 __image2_backtrace_end__[] __weak;
+extern u8 __flash_text_start__[] __weak;
+extern u8 __flash_text_end__[] __weak;
+extern u8 __sram_image2_start__[] __weak;
+extern u8 __sram_image2_end__[] __weak;
+extern u8 __psram_image2_start__[] __weak;
+extern u8 __psram_image2_end__[] __weak;
 
 extern u8 __git_ver_table_start__[];
 extern u8 __git_ver_table_end__[];
@@ -109,6 +122,9 @@ extern u8 __git_ver_table_end__[];
 extern u8 __km0_bd_ram_mp_start__[];
 extern u8 __km4_bd_ram_mp_start__[];
 extern u8 __km0_image2_entry_func_mp__[];
+
+extern u32 __km4_msp_ram_ns_limit__[];
+extern u32 __km0_msp_ram_limit__[];
 
 enum _BOOT_TYPE_ {
 	BOOT_FROM_FLASH = 0,

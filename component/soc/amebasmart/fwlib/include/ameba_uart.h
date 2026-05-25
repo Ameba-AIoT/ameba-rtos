@@ -631,7 +631,7 @@ typedef struct {
 _LONG_CALL_ void UART_DeInit(UART_TypeDef *UARTx);
 _LONG_CALL_ void UART_StructInit(UART_InitTypeDef *UART_InitStruct);
 _LONG_CALL_ void UART_Init(UART_TypeDef *UARTx, UART_InitTypeDef *UART_InitStruct);
-_LONG_CALL_ u32 UART_BaudParaGet(u32 baudrate, u32 *ovsr, u32 *ovsr_adj);
+_LONG_CALL_ void UART_BaudParaGet(u32 baudrate, u32 *ovsr, u32 *ovsr_adj);
 _LONG_CALL_ void UART_BaudParaGetFull(u32 IPclk, u32 baudrate, u32 *ovsr, u32 *ovsr_adj);
 _LONG_CALL_ void UART_SetBaudExt(UART_TypeDef *UARTx, u32 Ovsr, u32 Ovsr_adj);
 _LONG_CALL_ void UART_SetBaud(UART_TypeDef *UARTx, u32 BaudRate);
@@ -662,9 +662,9 @@ _LONG_CALL_ void UART_RXDMAConfig(UART_TypeDef *UARTx, u32 RxDmaBurstSize);
 _LONG_CALL_ void UART_TXDMACmd(UART_TypeDef *UARTx, u32 NewState);
 _LONG_CALL_ void UART_RXDMACmd(UART_TypeDef *UARTx, u32 NewState);
 _LONG_CALL_ bool UART_TXGDMA_Init(u8 UartIndex, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
-								  IRQ_FUN CallbackFunc, u8 *pTxBuf, int TxCount);
+								  IRQ_FUN CallbackFunc, u8 *pTxBuf, u32 TxCount);
 _LONG_CALL_ bool UART_RXGDMA_Init(u8 UartIndex, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
-								  IRQ_FUN CallbackFunc, u8 *pRxBuf, int RxCount);
+								  IRQ_FUN CallbackFunc, u8 *pRxBuf, u32 RxCount);
 
 _LONG_CALL_ void UART_MonitorParaConfig(UART_TypeDef *UARTx, u32 BitNumThres, u32 OscPerbitUpdCtrl);
 _LONG_CALL_ void UART_LPRxBaudSet(UART_TypeDef *UARTx, u32 BaudRate, u32 RxIPClockHz);
@@ -719,4 +719,3 @@ UART_GetRxFlag(u32 UartIdx)
 /* MANUAL_GEN_END */
 
 #endif
-

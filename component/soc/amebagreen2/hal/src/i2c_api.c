@@ -23,9 +23,9 @@
   */
 
 /** @addtogroup MBED_I2C
- *  @brief      MBED_I2C driver modules.
- *  @{
- */
+  * @brief      MBED_I2C driver modules.
+  * @{
+  */
 
 /* Exported constants ------------------------------------------------------------*/
 /** @defgroup MBED_I2C_Exported_Constants MBED_I2C Exported Contants
@@ -55,9 +55,10 @@ static uint32_t master_addr_retry = 1;
 /* group: MBED_I2C_Exported_Functions */
 /* Static function in the group should not be extracted to the doxygen doc */
 
-/* brief Check whether the pin has I2C SDA functionality.
-   param  sda: SDA PinName according to pinmux spec.
-   return 0 if the pin is available fo I2C SDA function or asserted if not.
+/**
+  * @brief  Check whether the pin has I2C SDA functionality.
+  * @param  sda: SDA PinName according to pinmux spec.
+  * @return 0 if the pin is available for I2C SDA function or asserted if not.
   */
 static uint32_t i2c_index_get(PinName sda)
 {
@@ -73,7 +74,6 @@ static uint32_t i2c_index_get(PinName sda)
   * @param  obj: I2C object defined in application software.
   * @param  sda: SDA PinName according to pinmux spec.
   * @param  scl: SCL PinName according to pinmux spec.
-  * @retval none
   */
 void i2c_init(i2c_t *obj, PinName sda, PinName scl)
 {
@@ -135,7 +135,6 @@ void i2c_init(i2c_t *obj, PinName sda, PinName scl)
   * @brief  Set I2C frequency.
   * @param  obj: I2C object defined in application software.
   * @param  hz: I2C clock frequency in units of Hz.
-  * @retval none
   */
 void i2c_frequency(i2c_t *obj, int hz)
 {
@@ -167,7 +166,7 @@ void i2c_frequency(i2c_t *obj, int hz)
 /**
   * @brief  Start I2C device.
   * @param  obj: I2C object defined in application software.
-  * @retval 0
+  * @return 0
   */
 inline int i2c_start(i2c_t *obj)
 {
@@ -180,7 +179,7 @@ inline int i2c_start(i2c_t *obj)
 /**
   * @brief  Stop I2C device.
   * @param  obj: I2C object defined in application software.
-  * @retval 0
+  * @return 0
   */
 inline int i2c_stop(i2c_t *obj)
 {
@@ -368,7 +367,7 @@ int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop)
   * @param  Readlen: Length of data that to be received.
   * @return Length of received data.
   */
-int i2c_repeatread(i2c_t *obj, int address, uint8_t *pWriteBuf, int Writelen, uint8_t *pReadBuf, int Readlen)
+int i2c_repeatread(i2c_t *obj, int address, u8 *pWriteBuf, int Writelen, u8 *pReadBuf, int Readlen)
 {
 
 	if (i2c_target_addr[obj->i2c_idx] != address) {
@@ -393,7 +392,7 @@ int i2c_repeatread(i2c_t *obj, int address, uint8_t *pWriteBuf, int Writelen, ui
   * @param  pBuf: Pointer to the data to be sent.
   * @param  len: Length of data that to be sent.
   * @param  restart: Specify whether a RESTART is issued after all the bytes are sent.
-  * @retval Length of sent data.
+  * @return Length of sent data.
   */
 int i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
 {
@@ -456,7 +455,6 @@ int i2c_byte_write(i2c_t *obj, int data)
 /**
   * @brief  Deinitialize the I2C device.
   * @param  obj: I2C object defined in application software.
-  * @retval none
   */
 void i2c_reset(i2c_t *obj)
 {
@@ -470,7 +468,6 @@ void i2c_reset(i2c_t *obj)
 /**
   * @brief  Enable I2C master RESTART function.
   * @param  obj: I2C object defined in application software.
-  * @retval none
   */
 void i2c_restart_enable(i2c_t *obj)
 {
@@ -493,7 +490,6 @@ void i2c_restart_enable(i2c_t *obj)
 /**
   * @brief  Disable I2C Master RESTART function.
   * @param  obj: I2C object defined in application software.
-  * @retval none
   */
 void i2c_restart_disable(i2c_t *obj)
 {
@@ -519,7 +515,7 @@ void i2c_restart_disable(i2c_t *obj)
   * @param  enable: This parameter can be one of the following values:
   *		@arg 0: Disable I2C Device.
   *		@arg 1: Enable I2C Device.
-  * @retval 0
+  * @return 0
   */
 int i2c_enable_control(i2c_t *obj, int enable)
 {
@@ -539,7 +535,6 @@ int i2c_enable_control(i2c_t *obj, int enable)
   *		@arg 0: I2C0 Device
   * @param  address: Slave address.
   * @param  mask: Mask of address.
-  * @retval none
   */
 void i2c_slave_address(i2c_t *obj, int idx, uint32_t address, uint32_t mask)
 {
@@ -569,7 +564,6 @@ void i2c_slave_address(i2c_t *obj, int idx, uint32_t address, uint32_t mask)
   * @param  enable_slave: Enable slave function, this parameter can be one of the following values:
   *		@arg 1: Set I2C device to be slave.
   *		@arg 0: No action.
-  * @retval none
   */
 void i2c_slave_mode(i2c_t *obj, int enable_slave)
 {
@@ -625,8 +619,7 @@ int i2c_slave_read(i2c_t *obj, char *data, int length)
   * @param  obj: I2C object defined in application software.
   * @param  data: Pointer to the data to be sent.
   * @param  length: Length of data that to be sent.
-  * @return Write result.
-  * @retval Length of sent data.
+  * @return Length of sent data.
   */
 int i2c_slave_write(i2c_t *obj, const char *data, int length)
 {
@@ -637,9 +630,9 @@ int i2c_slave_write(i2c_t *obj, const char *data, int length)
   * @brief  Set/clear I2C slave RD_REQ interrupt mask.
   * @param  obj: I2C object defined in application software.
   * @param  set: Set or clear for read request.
-  * @return Result.
-  * @retval 1: Success.
-  * @retval Others: Error.
+  * @return Result:
+  *         - 1: Success.
+  *         - Others: Error.
   */
 int i2c_slave_set_for_rd_req(i2c_t *obj, int set)
 {
@@ -656,7 +649,7 @@ int i2c_slave_set_for_rd_req(i2c_t *obj, int set)
   * @brief  Set/clear I2C slave NAK or ACK data part in transfer.
   * @param  obj: I2C object defined in application software.
   * @param  set_nak: Set or clear for data NAK.
-  * @retval 0.
+  * @return 0.
   */
 int i2c_slave_set_for_data_nak(i2c_t *obj, int set_nak)
 {

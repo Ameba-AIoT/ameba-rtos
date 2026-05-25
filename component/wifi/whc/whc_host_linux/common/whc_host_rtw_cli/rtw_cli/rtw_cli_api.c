@@ -46,6 +46,7 @@ void event_handler_scan_complete(char *pos)
 
 void event_handler_join_status(char *pos)
 {
+	pos += 1;
 	if (pos == NULL) {
 		return;
 	}
@@ -55,14 +56,19 @@ void event_handler_join_status(char *pos)
 
 void whc_cmd_handle_wpas_ofld_result(char *pos, int len)
 {
-	pos = pos + 1;
+	u8 idx = 0;
+
+	pos += 1;
+	idx = *pos;
+
+	pos += 1;
 	if (pos == NULL) {
 		return;
 	}
 
-	//user data + cmd(5)
-	len = len - 5;
-	printf("\nwpa_supplicant rsp(len: %d):\n", len);
+	//user data + cmd(5) + idx(1)
+	len = len - 6;
+	printf("\nwpa_supplicant rsp(idx: %d len: %d):\n", idx, len);
 	printf("%.*s\n", len, pos);
 }
 
@@ -212,6 +218,8 @@ void rtw_cli_cmd_getmac(int argc, char **argv, u8 api_id, u32 cmd_category, u8 c
 		return;
 	}
 
+	memset(&cmd, 0, sizeof(cmd));
+
 	if (argv[1] == NULL) {
 		cmd.idx = 0;
 	} else {
@@ -222,8 +230,6 @@ void rtw_cli_cmd_getmac(int argc, char **argv, u8 api_id, u32 cmd_category, u8 c
 			cmd.idx = idx;
 		}
 	}
-
-	memset(&cmd, 0, sizeof(cmd));
 
 	cmd.category = cmd_category;
 	cmd.cmd_id = cmd_id;

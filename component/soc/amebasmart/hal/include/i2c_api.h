@@ -52,10 +52,13 @@ extern "C" {
   * @{
   */
 
-enum {
+/**
+  * @brief enum I2C_ERR_REASON
+  */
+typedef enum {
 	I2C_ERROR_NO_SLAVE = -1,
 	I2C_ERROR_BUS_BUSY = -2
-};
+} I2C_ERR_REASON;
 
 /**
   * @}
@@ -100,6 +103,7 @@ int i2c_slave_read(i2c_t *obj, char *data, int length);
 int i2c_slave_write(i2c_t *obj, const char *data, int length);
 int i2c_slave_set_for_rd_req(i2c_t *obj, int set);
 int i2c_slave_set_for_data_nak(i2c_t *obj, int set_nak);
+int i2c_repeatread(i2c_t *obj, int address, u8 *pWriteBuf, int Writelen, u8 *pReadBuf, int Readlen);
 
 
 #ifdef __cplusplus

@@ -47,6 +47,11 @@ ameba_list_append(private_includes
     PrivateInclude
 )
 
+# Fix compilation error: the ARM_MATH_DSP check in component/soc/common/cmsis-dsp/Source/FilteringFunctions/arm_conv_partial_q7.c uses #if ARM_MATH_DSP, not #ifdef ARM_MATH_DSP. 
+ameba_list_append(private_compile_options
+    -Wno-undef
+)
+
 if(${c_CURRENT_IMAGE_IS_ROM})
     ameba_list_append(private_sources
         rom/ameba_faac_tables.c

@@ -1343,7 +1343,7 @@ void *pvPortMallocCacheAlignedCore(size_t xWantedSize)
 
 	configASSERT(pxEnd != NULL);
 
-	vTaskSuspendAll();
+	taskENTER_CRITICAL();
 	{
 		/* Overflow check */
 #if( defined CONFIG_HEAP_PROTECTOR && defined CONFIG_HEAP_CORRUPTION_DETECT_LITE )
@@ -1384,7 +1384,7 @@ void *pvPortMallocCacheAlignedCore(size_t xWantedSize)
 				size_t xOrigBlockSize = pxBlock->xBlockSize;
 
 				/* Take the original block out of the free list */
-				pxPreviousBlock->pxNextFreeBlock = heapPROTECT_BLOCK_POINTER(pxBlock->pxNextFreeBlock);
+				pxPreviousBlock->pxNextFreeBlock = pxBlock->pxNextFreeBlock;
 
 				/* If front gap is large enough, return it as a separate free block */
 				if (xFrontGap >= heapMINIMUM_BLOCK_SIZE) {
@@ -1436,7 +1436,7 @@ void *pvPortMallocCacheAlignedCore(size_t xWantedSize)
 			}
 		}
 
-		(void) xTaskResumeAll();
+		taskEXIT_CRITICAL();
 	}
 
 	return pvReturn;

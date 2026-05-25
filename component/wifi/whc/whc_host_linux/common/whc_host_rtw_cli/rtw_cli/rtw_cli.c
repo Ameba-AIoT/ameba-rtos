@@ -146,8 +146,9 @@ void whc_cmd_handle_rx_payload(char *pos, int len, int api_id,
 			pos = pos + sizeof(uint32_t);
 			switch (*pos) {
 			case WHC_WPA_OPS_UTIL_GET_MAC_ADDR:
-				printf("\nMAC ADDR %02x:%02x:%02x:%02x:%02x:%02x\n",
-					   (u8)pos[1], (u8)pos[2], (u8)pos[3], (u8)pos[4], (u8)pos[5], (u8)pos[6]);
+				printf("\nMACADDR(idx: %d) %02x:%02x:%02x:%02x:%02x:%02x\n",
+					   (u8)pos[1], (u8)pos[2], (u8)pos[3], (u8)pos[4],
+					   (u8)pos[5], (u8)pos[6], (u8)pos[7]);
 				break;
 			case WHC_WIFI_TEST_GET_IP:
 				printf("\nIP ADDR %d.%d.%d.%d\n", pos[1], pos[2], pos[3], pos[4]);

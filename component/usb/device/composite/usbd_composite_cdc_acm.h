@@ -54,9 +54,24 @@
 typedef struct {
 	int(* init)(void);                             /**< Called during class driver initialization for application resource setup. */
 	int(* deinit)(void);                           /**< Called during class driver deinitialization for resource cleanup. */
-	int(* setup)(usb_setup_req_t *req, u8 *buf);   /**< Called during control transfer SETUP/DATA phases to handle application-specific control requests. */
-	int(* received)(u8 *buf, u32 len);             /**< Called when new data is received on the Bulk OUT endpoint. */
-	void(* transmitted)(u8 status);                /**< Called after data transmission on the Bulk IN endpoint is complete. */
+	/**
+	 * @brief Called during control transfer SETUP/DATA phases to handle application-specific control requests.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 */
+	int(* setup)(usb_setup_req_t *req, u8 *buf);
+	/**
+	 * @brief Called when new data is received on the Bulk OUT endpoint.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 */
+	int(* received)(u8 *buf, u32 len);
+	/**
+	 * @brief Called after data transmission on the Bulk IN endpoint is complete.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 */
+	void(* transmitted)(u8 status);
 } usbd_composite_cdc_acm_usr_cb_t;
 
 #if CONFIG_COMP_CDC_ACM_NOTIFY

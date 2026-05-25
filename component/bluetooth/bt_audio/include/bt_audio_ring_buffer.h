@@ -96,12 +96,20 @@ uint16_t bt_audio_ring_buffer_write(bt_audio_ring_buffer_t *ring_buffer, uint8_t
  * @param[in] ring_buffer: ring buffer pointer
  * @param[in] p_out: pointer to the output buffer
  * @param[in] data_length: stream data length(unit 2 bytes)
- * @param[in] number_of_bytes_read: actual read data length
  * @return
  *            - Read size
  */
 uint32_t bt_audio_ring_buffer_read(bt_audio_ring_buffer_t *ring_buffer, uint8_t *p_out, uint32_t data_length);
 
+/**
+ * @fn        uint32_t bt_audio_ring_buffer_clear(bt_audio_ring_buffer_t *ring_buffer, uint32_t data_length)
+ * @brief     clear audio stream data from bt audio ring buffer
+ * @param[in] ring_buffer: ring buffer pointer
+ * @param[in] data_length: stream data length(unit 2 bytes)
+ * @return
+ *            - Clear size
+ */
+uint32_t bt_audio_ring_buffer_clear(bt_audio_ring_buffer_t *ring_buffer, uint32_t data_length);
 #ifdef __cplusplus
 }
 #endif

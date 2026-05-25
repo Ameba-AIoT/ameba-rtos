@@ -65,8 +65,8 @@ typedef struct {
 	usbh_uac_vol_ctrl_info controls[USBH_UAC_FU_MAX_CNT];  /**< Array of Feature Units found */
 	usbh_uac_term_info terminals[USBH_UAC_TERM_MAX_CNT];   /**< Array of Terminals found */
 
-	u32 volume_ctrl_count; /**< Count of valid Feature Units */
-	u32 terminal_count;    /**< Count of valid Terminals */
+	u8 volume_ctrl_count;  /**< Count of valid Feature Units (max: USBH_UAC_FU_MAX_CNT=8) */
+	u8 terminal_count;     /**< Count of valid Terminals (max: USBH_UAC_TERM_MAX_CNT=8) */
 	u8 best_match_idx;     /**< Index of the best matching Feature Unit (for main volume control) */
 	u8 ac_itf_idx;         /**< Interface index of the Audio Control interface */
 } usbh_uac_ac_itf_info_t;
@@ -84,7 +84,7 @@ typedef struct {
 	u32 sample_rem;        /**< Remainder when dividing frequency by packets/sec (for fractional sample rates) */
 	u32 sample_accum;      /**< Accumulator for fractional sample rate calculation */
 	u32 last_sample_accum; /**< Previous accumulator value */
-	u32 pkt_per_second;    /**< Number of USB packets per second (e.g., 1000 for Full Speed) */
+	u16 packet_rate;       /**< Number of USB packets per second (max: 8000 for HS ISOC) */
 
 	__IO u16 written;        /**< Length of data already written to the current packet buffer */
 	__IO u16 mps;            /**< Endpoint Maximum Packet Size */
@@ -188,14 +188,16 @@ typedef struct {
 	__IO u32 isoc_xfer_buf_empty_cnt; /**< Buffer underrun counter */
 	__IO u32 isoc_xfer_buf_err_cnt;   /**< Transfer error counter */
 	__IO u32 isoc_xfer_interval_cnt;  /**< Interval mismatch counter */
+#endif
+	u16 volume_db;             /**< Current volume in dB representation */
 
+#if USBH_UAC_DEBUG
 	__IO u8 dump_status_task_alive;
 	__IO u8 dump_status_task_exit;
 #endif
 
 	__IO u8 xfer_state;        /**< Current data transfer state (IDLE/BUSY/WAIT_SOF) */
 	__IO u8 ctrl_state;        /**< Current control transfer state */
-	u16 volume_db;             /**< Current volume in dB representation */
 	u8 ch_idx;                 /**< Current channel index being operated on */
 	u8 mute_value;             /**< Global mute state (1: Mute, 0: Unmute) */
 	u8 next_xfer;              /**< Flag to trigger next transfer */

@@ -22,9 +22,9 @@
   */
 
 /** @addtogroup MBED_GDMA
- *  @brief    MBED_GDMA driver modules.
- *  @{
- */
+  * @brief    MBED_GDMA driver modules.
+  * @{
+  */
 
 /** @defgroup MBED_GDMA_Exported_Functions MBED_GDMA Exported Functions
   * @{
@@ -58,7 +58,6 @@ static u32 dma_memcpy_int(void *pData)
  *  @param dma_obj: GDMA object defined in application software.
  *  @param handler: User-defined GDMA IRQ callback function.
  *  @param id: User-defined GDMA IRQ callback parameter.
- *  @retval None
  *
  */
 void dma_memcpy_init(gdma_t *dma_obj, dma_irq_handler handler, uint32_t id)
@@ -80,7 +79,6 @@ void dma_memcpy_init(gdma_t *dma_obj, dma_irq_handler handler, uint32_t id)
 /**
  *  @brief Deinitialize the GDMA.
  *  @param dma_obj: GDMA object defined in application software.
- *  @retval None
  *
  */
 void dma_memcpy_deinit(gdma_t *dma_obj)
@@ -94,7 +92,6 @@ void dma_memcpy_deinit(gdma_t *dma_obj)
  *  @param dst: Destination memory address.
  *  @param src: Source memory address.
  *  @param len: Copy data length.
- *  @retval None
  */
 void dma_memcpy(gdma_t *dma_obj, void *dst, void *src, uint32_t len)
 {

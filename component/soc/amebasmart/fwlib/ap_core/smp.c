@@ -152,6 +152,18 @@ void vPortSecondaryStart(void)
 	/* Wait until scheduler starts */
 	DiagPrintf("CPU%d: on\n", (int)portGET_CORE_ID());
 
+#ifdef CONFIG_CA32_FREERTOS_V11_1_0
+	/* CPU1 wake from pg */
+	if (pmu_get_secondary_cpu_state(portGET_CORE_ID()) == CPU1_WAKE_FROM_PG) {
+		portDISABLE_INTERRUPTS();
+		/* Back to idle task */
+		SOCPS_Restore_CPU1();
+
+		/* Should never reach here */
+		for (;;);
+	}
+#endif
+
 	/* Secondary core is up, set cpu state to CPU1_RUNNING */
 	pmu_set_secondary_cpu_state(1, CPU1_RUNNING);
 

@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef __CMSIS_CPU_H__
+#define __CMSIS_CPU_H__
+
+#include "platform_autoconf.h"
+#include "ameba_vector_table.h"
+
+#if defined (CONFIG_ARM_CORE_CM4)
+
+/* ========  Configuration of Core Peripherals  ================================== */
+#define __CM55_REV                0x0001U   /* Core revision r0p1 */
+// #define __ARMv81MML_REV           0x0001U   /* Core revision r0p1 */
+#define __SAUREGION_PRESENT       1U        /* SAU regions present */
+#define __MPU_PRESENT             1U        /* MPU present */
+#define __VTOR_PRESENT            1U        /* VTOR present */
+#define __NVIC_PRIO_BITS          3U        /* Number of Bits used for Priority Levels */
+#define __Vendor_SysTickConfig    0U        /* Set to 1 if different SysTick Config is used */
+#define __FPU_DP                  0U        /* double precision FPU */
+#define __PMU_PRESENT             1U        /* PMU present */
+#define __PMU_NUM_EVENTCNT        4U        /* Number of PMU event counters */
+#define __ICACHE_PRESENT          1U        /* Instruction Cache present */
+#define __DCACHE_PRESENT          1U        /* Data Cache present */
+
+/* KM4TZ & KM4NS has different configuration */
+#if defined (CONFIG_ARM_CORE_CM4_KM4TZ)
+#define __FPU_PRESENT             1U        /* FPU present */
+#define __DSP_PRESENT             1U        /* DSP extension present */
+#else
+#define __FPU_PRESENT             0U        /* FPU present */
+#define __DSP_PRESENT             0U        /* DSP extension present */
+#endif
+
+/* CM33 does not support Cache and PMU */
+#include "core_cm55.h"                 /* Processor and core peripherals */
+// #include "core_armv81mml.h"
+#include "cmsis_ridr.h"
+
+#if defined (__ARM_FEATURE_CMSE) &&  (__ARM_FEATURE_CMSE == 3U)
+#include <arm_cmse.h>
+#endif /* __ARM_FEATURE_CMSE */
+
+#endif
+
+#endif /* __CMSIS_CPU_H__ */

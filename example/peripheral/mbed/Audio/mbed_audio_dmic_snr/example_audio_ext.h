@@ -15,6 +15,10 @@
 
 #define SPORT_RX_INDEX     0
 
+#elif defined (CONFIG_AMEBAGREEN2)
+
+#define SPORT_RX_INDEX     0
+
 #endif
 
 #if defined (CONFIG_AMEBASMART)
@@ -31,6 +35,11 @@
 
 #define MBED_AUDIO_DMIC_CLK    _PB_0
 #define MBED_AUDIO_DMIC_DATA   _PB_1
+
+#elif defined (CONFIG_AMEBAGREEN2)
+
+#define MBED_AUDIO_DMIC_CLK    _PB_3
+#define MBED_AUDIO_DMIC_DATA   _PB_4
 
 #endif
 

@@ -130,6 +130,17 @@ void app_pmu_init(void)
 	app_uart_rx_pin_wake_init();
 }
 
+#ifdef CONFIG_CA32_FREERTOS_V11_1_0
+void app_affinity_idle_task(void *param)
+{
+	UNUSED(param);
+	/* bind idle task to core0 and passive idle task to core1. */
+	rtos_task_set_affinity(rtos_task_handle_get_idle(0), 0);
+	rtos_task_set_affinity(rtos_task_handle_get_idle(1), 1);
+	rtos_task_delete(NULL);
+}
+#endif
+
 /*
  * Starts all the other tasks, then starts the scheduler.
  */
@@ -189,6 +200,11 @@ int main(void)
 	IPC_SEMDelayStub(DelayMs);
 
 	vPortEnableOtherCore();
+
+#ifdef CONFIG_CA32_FREERTOS_V11_1_0
+	/* bind idle task to core0 and passive idle task to core1. */
+	rtos_task_create(NULL, NULL, (rtos_task_function_t) app_affinity_idle_task, NULL, 1024, 9);
+#endif
 
 	/* Start the tasks and timer running. */
 	RTK_LOGI(TAG, "Cortex-A Start Scheduler\n");

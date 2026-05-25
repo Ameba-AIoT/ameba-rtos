@@ -105,10 +105,18 @@ static usbh_user_cb_t usbh_usr_cb = {
 };
 
 /* Private functions ---------------------------------------------------------*/
-
+/**
+  * @brief  Handle attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void usbd_msc_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Device status change: %d->%d\n", old_status, status);
+	UNUSED(old_status);
+	UNUSED(status);
 }
 
 static int usbh_msc_cb_attach(void)
@@ -144,10 +152,10 @@ static int usbh_msc_cb_process(usb_host_t *host, u8 msg)
 
 static void usbd_msc_help(void)
 {
-	RTK_LOGI(NOTAG, "\r\n");
-	RTK_LOGI(NOTAG, "AT+USBDMSC=<command>\r\n");
-	RTK_LOGI(NOTAG, "\t<command>:\tinit: init device msc driver\r\n");
-	RTK_LOGI(NOTAG, "\t<command>:\tdeinit: deinit device msc driver\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+USBDMSC=<command>\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tinit: init device msc driver\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tdeinit: deinit device msc driver\r\n");
 
 }
 
@@ -217,7 +225,7 @@ void usbh_msc_trx_test(void *param)
 	char logical_drv[4];
 	char path[64] = {'0'};
 	int ret = 0;
-	u32 filenum = 0;
+	int filenum = 0;
 	u32 br;
 	u32 bw;
 	u32 round = 0;
@@ -286,7 +294,7 @@ void usbh_msc_trx_test(void *param)
 		}
 
 next_file:
-		sprintf(&path[3], "TEST%ld.DAT", filenum);
+		sprintf(&path[3], "TEST%d.DAT", filenum);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Open file: %s\n", path);
 		/* Open test file */
 		res = f_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
@@ -398,12 +406,12 @@ exit:
 
 static void usbh_msc_help(void)
 {
-	RTK_LOGI(NOTAG, "\r\n");
-	RTK_LOGI(NOTAG, "AT+USBHMSC=<command>[,<file_cnt>]\r\n");
-	RTK_LOGI(NOTAG, "\t<command>:\tinit: init host msc driver\r\n");
-	RTK_LOGI(NOTAG, "\t<command>:\tdeinit: deinit host msc driver\r\n");
-	RTK_LOGI(NOTAG, "\t<command>:\trw_test: file read and write test\r\n");
-	RTK_LOGI(NOTAG, "\t<file_cnt>:\trw test file cnt, default: 5\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+USBHMSC=<command>[,<file_cnt>]\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tinit: init host msc driver\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tdeinit: deinit host msc driver\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\trw_test: file read and write test\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<file_cnt>:\trw test file cnt, default: 5\r\n");
 }
 
 static void usbh_msc_cmd_test(u16 argc, char **argv)

@@ -47,8 +47,18 @@
 typedef struct {
 	int(* init)(void);                             /**< Called during class driver initialization for application resource setup. */
 	void(* deinit)(void);                          /**< Called during class driver deinitialization for resource cleanup. */
-	int(* setup)(usb_setup_req_t *req, u8 *buf);   /**< Called during control transfer SETUP/DATA phases to handle application-specific control requests. */
-	void(* transmitted)(u8 status);                /**< Called when interrupt IN transfer done, for asynchronous interrupt IN transfer status notification . */
+	/**
+	 * @brief Called during control transfer SETUP/DATA phases to handle application-specific control requests.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 */
+	int(* setup)(usb_setup_req_t *req, u8 *buf);
+	/**
+	 * @brief Called when interrupt IN transfer done, for asynchronous interrupt IN transfer status notification.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 */
+	void(* transmitted)(u8 status);
 } usbd_composite_hid_usr_cb_t;
 
 typedef struct {

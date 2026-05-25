@@ -598,7 +598,7 @@ static void usbh_composite_cdc_ecm_set_dongle_mac(u8 *mac)
 	usbh_composite_cdc_ecm_host_t *cdc = &usbh_composite_cdc_ecm_host;
 
 	if (NULL == mac) {
-		RTK_LOGE(TAG, "Param error,mac is NULL\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Param error,mac is NULL\n");
 		return ;
 	}
 
@@ -611,7 +611,7 @@ static void usbh_composite_cdc_ecm_set_dongle_led_array(u16 *led, u8 len)
 	usbh_composite_cdc_ecm_host_t *cdc = &usbh_composite_cdc_ecm_host;
 
 	if (led == NULL || len == 0) {
-		RTK_LOGE(TAG, "Param error,led is NULL or len %ld\n", (u32)len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Param error,led is NULL or len %d\n", len);
 		return ;
 	}
 
@@ -1239,6 +1239,13 @@ static int usbh_composite_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
 	return req_status;
 }
 
+/**
+  * @brief  SOF callback for composite CDC-ECM class-specific timing process.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  host: USB host handle.
+  * @retval Status
+  */
 static int usbh_composite_cdc_ecm_sof(usb_host_t *host)
 {
 	UNUSED(host);
@@ -1600,7 +1607,7 @@ void usbh_composite_cdc_ecm_debug_task_init(void)
 void usbh_composite_cdc_ecm_debug_task_deinit(void)
 {
 	if (usbh_composite_cdc_ecm_trace_task != NULL) {
-		RTK_LOGI(TAG, "Del debug task\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Del debug task\n");
 		rtos_task_delete(usbh_composite_cdc_ecm_trace_task);
 		usbh_composite_cdc_ecm_trace_task = NULL;
 	}
@@ -1619,6 +1626,12 @@ int usbh_composite_cdc_ecm_init(usbh_composite_host_t *host, usbh_composite_cdc_
 {
 	int ret = HAL_OK;
 	usbh_composite_cdc_ecm_host_t *cdc = &usbh_composite_cdc_ecm_host;
+
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
 	usb_os_memset(cdc, 0x00, sizeof(usbh_composite_cdc_ecm_host_t));
 
 	cdc->driver = host;
@@ -1626,14 +1639,13 @@ int usbh_composite_cdc_ecm_init(usbh_composite_host_t *host, usbh_composite_cdc_
 
 	cdc->dongle_ctrl_buf = (u8 *)usb_os_malloc(USBH_CDC_ECM_MAC_STRING_LEN);
 	if (NULL == cdc->dongle_ctrl_buf) {
-		RTK_LOGE(TAG, "Alloc mem %d fail\n", USBH_CDC_ECM_MAC_STRING_LEN);
 		return HAL_ERR_MEM;
 	}
 
 	cdc->mac_valid = 0;
 
 	if (priv == NULL) {
-		RTK_LOGE(TAG, "Param error\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Param error\n");
 		USBH_COMPOSITE_CDC_ECM_FREE_MEM(cdc->led_array);
 		cdc->led_cnt = 0;
 	} else {
@@ -1645,14 +1657,12 @@ int usbh_composite_cdc_ecm_init(usbh_composite_host_t *host, usbh_composite_cdc_
 		}
 	}
 
-	if (cb != NULL) {
-		cdc->cb = cb;
-		if (cb->init != NULL) {
-			ret = cb->init();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "User init err %d", ret);
-				return ret;
-			}
+	cdc->cb = cb;
+	if (cb->init != NULL) {
+		ret = cb->init();
+		if (ret != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "User init err %d", ret);
+			return ret;
 		}
 	}
 
@@ -1870,4 +1880,3 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 {
 	return usbh_composite_cdc_ecm_send_data(buf, len, block);
 }
-

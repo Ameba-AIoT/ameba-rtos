@@ -114,11 +114,11 @@ void wifi_roaming_thread(void *param)
 	roaming_ap.rssi = -100;
 	u8 autoreconn_en = 0;
 #ifdef CONFIG_LWIP_LAYER
-	uint8_t *IP = LwIP_GetIP(NETIF_WLAN_STA_INDEX);
+	uint8_t *IP = lwip_get_ip(NETIF_WLAN_STA_INDEX);
 #endif
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nExample: wifi_roaming \n");
 	while (1) {
-		if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
+		if (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
 			wifi_get_phy_stats(STA_WLAN_INDEX, NULL, &phy_stats);
 			if ((phy_stats.sta.rssi < RSSI_THRESHOLD)) {
 				if (polling_count >= (MAX_POLLING_COUNT - 1)) {
@@ -162,7 +162,7 @@ connect_ap:
 							if (RTK_SUCCESS == wifi_connect(&connect_param, 1)) {
 #ifdef CONFIG_LWIP_LAYER
 
-								LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
+								lwip_request_ip(NETIF_WLAN_STA_INDEX);
 
 								if (memcmp(roaming_ap.ip, IP, 4)) {
 									wifi_ip_changed_hdl(NULL, 0, 0, NULL);

@@ -556,14 +556,7 @@ void whc_event_wifi_scan_networks(u32 api_id, u32 *param_buf)
 	memcpy(&scan_param.scan_user_data, ptr, sizeof(u32));
 	ptr += sizeof(u32);
 
-	/* wait for xmit done to release skb, otherwise API/RET msg can't be received.
-		https://jira.realtek.com/browse/WQCCE-2914 */
-	if (!whc_dev_tx_path_avail()) {
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "sdio tx path busy, scan fail\n");
-		ret = -1;
-	} else {
-		ret = wifi_scan_networks(&scan_param, 0);
-	}
+	ret = wifi_scan_networks(&scan_param, 0);
 
 	if (ssid) {
 		rtos_mem_free(ssid);

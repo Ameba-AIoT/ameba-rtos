@@ -32,7 +32,6 @@ set(KM4_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km4)
 set(KR4_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_kr4)
 set(KM4_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km4)
 set(KR4_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_kr4)
-set(boot_name boot.bin) # for temporary compatibility with extension
 ###############################################################################
 
 ###############################################################################

@@ -26,32 +26,33 @@
 #define CHECKSUM_EN 0
 #define TT_MODE_TEST 0
 
-void *master_tx_done_sema;
-void *master_rx_done_sema;
-void *master_trx_done_sema;
-void *master_gpio_sema;
-void *uart_irq_handle_sema;
-void *tx_ringbuffer_mutex;
+static void *master_tx_done_sema;
+static void *master_rx_done_sema;
+static void *master_trx_done_sema;
+static void *master_gpio_sema;
+static void *uart_irq_handle_sema;
+static void *tx_ringbuffer_mutex;
 
-RingBuffer *atcmd_host_tx_ring_buf = NULL;
-TimerHandle_t xTimers_UART_Output;
-gpio_t at_spi_master_to_slave_gpio;
-gpio_irq_t at_spi_slave_to_master_irq;
+static RingBuffer *atcmd_host_tx_ring_buf = NULL;
+static TimerHandle_t xTimers_UART_Output;
+static gpio_t at_spi_master_to_slave_gpio;
+static gpio_irq_t at_spi_slave_to_master_irq;
 
-spi_t spi_master;
-serial_t sobj;
+static spi_t spi_master;
+static serial_t sobj;
 
-char uart_format_buffer[FORMAT_LEN];
+static char uart_format_buffer[FORMAT_LEN];
 
-int current_edge = IRQ_FALL;
-char uart_irq_buffer[MAX_CMD_LEN] = {0};
-u32 uart_irq_count = 0;
-u32 last_uart_count = 0;
-volatile u8 tt_mode_task_start = 0;
-u32 tt_len = 2 * 1024 * 1024;;
+static int current_edge = IRQ_FALL;
+static char uart_irq_buffer[MAX_CMD_LEN] = {0};
+static u32 uart_irq_count = 0;
+static u32 last_uart_count = 0;
 
-u8 MasterRxBuf[ATCMD_SPI_DMA_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
-u8 MasterTxBuf[ATCMD_SPI_DMA_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
+static volatile u8 tt_mode_task_start = 0;
+static u32 tt_len = 2 * 1024 * 1024;
+
+static u8 MasterRxBuf[ATCMD_SPI_DMA_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
+static u8 MasterTxBuf[ATCMD_SPI_DMA_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
 
 void (*spi_recv_data_callback)(u8 *data, u16 len);
 
@@ -76,12 +77,12 @@ static uint32_t checksum_32_spi(uint32_t start_value, uint8_t *data, int len)
 }
 #endif
 
-void spi_m2s_pin_set(u8 val)
+static void spi_m2s_pin_set(u8 val)
 {
 	gpio_write(&at_spi_master_to_slave_gpio, val);
 }
 
-void spi_master_send(u8 *buf, u32 len)
+static void spi_master_send(u8 *buf, u32 len)
 {
 	u32 space;
 
@@ -102,7 +103,7 @@ void spi_master_send(u8 *buf, u32 len)
 	}
 }
 
-void uart_send_string(serial_t *sobj, char *pstr, u16 len)
+static void uart_send_string(serial_t *sobj, char *pstr, u16 len)
 {
 	unsigned int i = 0;
 	while (*(pstr + i) != 0 && i < len) {
@@ -111,7 +112,7 @@ void uart_send_string(serial_t *sobj, char *pstr, u16 len)
 	}
 }
 
-void uart_format_string_output(const char *fmt, ...)
+static void uart_format_string_output(const char *fmt, ...)
 {
 	int len_fmt = 0;
 	va_list ap;
@@ -127,7 +128,7 @@ void uart_format_string_output(const char *fmt, ...)
 }
 
 
-void uart_irq(uint32_t id, SerialIrq event)
+static void uart_irq(uint32_t id, SerialIrq event)
 {
 	serial_t *sobj = (void *)id;
 	BaseType_t task_woken = pdFALSE;
@@ -150,7 +151,7 @@ void uart_irq(uint32_t id, SerialIrq event)
 	}
 }
 
-void uart_irq_handle_task(void)
+static void uart_irq_handle_task(void)
 {
 	xTimerStart(xTimers_UART_Output, 0);
 	while (1) {
@@ -164,7 +165,7 @@ void uart_irq_handle_task(void)
 	}
 }
 
-void Master_tr_done_callback(uint32_t pdata, SpiIrq event)
+static void Master_tr_done_callback(uint32_t pdata, SpiIrq event)
 {
 	(void)pdata;
 
@@ -184,7 +185,7 @@ void Master_tr_done_callback(uint32_t pdata, SpiIrq event)
 	}
 }
 
-void gpio_edge_irq_handler(uint32_t id, uint32_t event)
+static void gpio_edge_irq_handler(uint32_t id, uint32_t event)
 {
 	(void)event;
 	(void)id;
@@ -194,7 +195,8 @@ void gpio_edge_irq_handler(uint32_t id, uint32_t event)
 	portEND_SWITCHING_ISR(task_woken);
 }
 
-void atcmd_tt_mode_task(void)
+#if TT_MODE_TEST
+static void atcmd_tt_mode_task(void)
 {
 	u32 tt_len_tmp = tt_len;
 	u32 send_len;
@@ -211,8 +213,9 @@ void atcmd_tt_mode_task(void)
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "atcmd_tt_mode_task end\r\n");
 	vTaskDelete(NULL);
 }
+#endif
 
-void spi_handle_recv_data(u8 *data, u16 len)
+static void spi_handle_recv_data(u8 *data, u16 len)
 {
 	static u32 start_time = 0, end_time = 0, ds_count = 0;
 	char *str_find = NULL;
@@ -264,7 +267,7 @@ void spi_handle_recv_data(u8 *data, u16 len)
 	}
 }
 
-void atcmd_host_spi_task(void)
+static void atcmd_host_spi_task(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[M] atcmd_host_spi_task start\n");
 	vTaskDelay(1000);
@@ -337,8 +340,6 @@ void atcmd_host_spi_task(void)
 			spi_master_write_read_stream_dma(&spi_master, (char *)MasterTxBuf, (char *)MasterRxBuf, ATCMD_SPI_DMA_SIZE);
 			xSemaphoreTake(master_tx_done_sema, 0xFFFFFFFF);
 			xSemaphoreTake(master_rx_done_sema, 0xFFFFFFFF);
-			memset(uart_irq_buffer, 0, MAX_CMD_LEN);
-			uart_irq_count = 0;
 		} else {
 			xSemaphoreGive(tx_ringbuffer_mutex);
 			spi_master_read_stream_dma(&spi_master, (char *)MasterRxBuf, ATCMD_SPI_DMA_SIZE);
@@ -387,7 +388,7 @@ NEXT:
 	}
 }
 
-void uart_output_timer_handle(void *arg)
+static void uart_output_timer_handle(void *arg)
 {
 	(void) arg;
 	if (uart_irq_count > 0) {

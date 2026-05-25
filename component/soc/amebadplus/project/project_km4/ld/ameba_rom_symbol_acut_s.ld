@@ -61,6 +61,8 @@ SECTIONS
     PROVIDE(rtl_crypto_sha2_process = 0x2969);
     PROVIDE(rtl_crypto_sha2_update_rom = 0x29ad);
     PROVIDE(rtl_crypto_sha2_update = 0x2a35);
+    /* Renamed so the RAM patch in ameba_rom_patch.c can call the ROM entry directly. */
+    PROVIDE(_rtl_crypto_sha2_final = 0x2aa5);
     PROVIDE(rtl_crypto_sha2_final = 0x2aa5);
     PROVIDE(rtl_crypto_sha2 = 0x2b25);
     PROVIDE(rtl_crypto_hmac_sha1_init = 0x2b51);

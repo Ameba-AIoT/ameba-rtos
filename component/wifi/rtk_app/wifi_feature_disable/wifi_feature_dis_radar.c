@@ -17,9 +17,22 @@
 #include "wifi_api_types.h"
 
 #ifdef CONFIG_RADAR
+void wifi_hal_radar_support_set(void)
+{
+
+}
+
 void wifi_hal_radar_en_by_user(u8 *radar_en_by_user)
 {
 	*radar_en_by_user = 0;
+}
+
+s32 wifi_hal_radar_recv_data(u16 frame_num, u8 frame_type, u8 *data)
+{
+	UNUSED(frame_num);
+	UNUSED(frame_type);
+	UNUSED(data);
+	return -1;
 }
 
 void wifi_hal_radar_deinit(void *a)

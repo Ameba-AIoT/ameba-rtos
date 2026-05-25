@@ -46,15 +46,13 @@ void wifi_init_thread(void *param)
 	UNUSED(param);
 	wifi_set_task_size();
 #ifdef CONFIG_LWIP_LAYER
-	LwIP_Init();
+	lwip_module_init();
 #endif
 
 	whc_host_init();
 
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	wifi_on(RTW_MODE_STA);
-
-	RTK_LOGS(TAG_WLAN_DRV, RTK_LOG_INFO, "Available heap after wifi init %d\n", rtos_mem_get_free_heap_size() + WIFI_STACK_SIZE_INIT);
 #endif
 
 	rtos_task_delete(NULL);
@@ -69,7 +67,7 @@ void wifi_init_thread(void *param)
 	UNUSED(param);
 	wifi_set_task_size();
 #if defined(CONFIG_LWIP_LAYER) && defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
-	LwIP_Init();
+	lwip_module_init();
 #endif
 
 	whc_dev_init();
@@ -89,13 +87,10 @@ void wifi_init_thread(void *param)
 #endif
 
 #ifdef CONFIG_LWIP_LAYER
-	LwIP_Init();
+	lwip_module_init();
 #endif
 
 	wifi_on(RTW_MODE_STA);
-
-	RTK_LOGS(TAG_WLAN_DRV, RTK_LOG_INFO, "Available heap after wifi init %d\n", rtos_mem_get_free_heap_size() + WIFI_STACK_SIZE_INIT);
-
 	/* Kill init thread after all init tasks done */
 	rtos_task_delete(NULL);
 }

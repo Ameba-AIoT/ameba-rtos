@@ -7,6 +7,7 @@
 #ifndef _AMEBA_RTC_IO_H_
 #define _AMEBA_RTC_IO_H_
 
+/// @cond
 /* AUTO_GEN_START */
 
 /** @addtogroup Ameba_Periph_Driver
@@ -19,6 +20,7 @@
   */
 
 /* AUTO_GEN_END */
+/// @endcond
 
 
 /* MANUAL_GEN_START */
@@ -34,7 +36,7 @@ extern "C" {
   * @{
   */
 
-/** @defgroup RTC_IO_Work_Mode
+/** @defgroup RTC_IO_Work_Mode RTC IO Work Mode
   * @brief RTC_IO work mode
   * @{
   */
@@ -43,7 +45,7 @@ extern "C" {
 #define MODE_RTC_START							(2)
 /** @} */
 
-/** @defgroup RTC_IO_RECV_RVAL
+/** @defgroup RTC_IO_RECV_RVAL RTC IO RECV RVAL
   * @brief RTC_IO recv new Rval or Reset value
   * @{
   */
@@ -51,7 +53,7 @@ extern "C" {
 #define RTCIO_RECV_RVAL_CAL						FALSE
 /** @} */
 
-/** @defgroup RTC_IO_Time_Convert
+/** @defgroup RTC_IO_Time_Convert RTC IO Time Convert
   * @brief Time Convert from TIME_PRE to TIME_POST
   * @{
   */
@@ -83,8 +85,10 @@ typedef struct {//Take Care!!! member's Order and Size are forbidden change
 } RTCIO_TimeInfo;
 /** @} */
 
+/// @cond
 /** @} */
 /** @} */
+/// @endcond
 
 /* following shouldn't be placed into ebook -------------------------------*/
 

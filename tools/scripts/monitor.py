@@ -63,6 +63,8 @@ def main():
     parser.add_argument('--logAGG', nargs='+',
                         help='the logAGG enabled and source marked ')
     parser.add_argument("--ca32", action="store_true", help="If core is ca32, should set this.")
+    parser.add_argument('--no-console', action='store_true',
+                        help='Disable prompt toolkit TUI and read commands from stdin pipe')
 
     args = parser.parse_args()
 
@@ -119,6 +121,8 @@ def main():
         cmds.append(f"{args.toolchain_dir}")
     if args.ca32:
         cmds.append("--ca32")
+    if args.no_console:
+        cmds.append("--no-console")
 
     run_monitor(cmds)
 

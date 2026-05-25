@@ -6,7 +6,190 @@
 
 #include "ameba_soc.h"
 
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup ETHERNET ETHERNET
+  *
+  * @brief  ETHERNET driver modules
+  * @{
+  */
+
+/**
+ * @brief  Fills the EEE_Config structure with default IEEE 802.3az values.
+ *         Use this to ensure safe defaults before tweaking specific parameters.
+ * @param  EEE_Config Pointer to the EEE configuration structure.
+ */
+void Ethernet_EEE_StructInit(ETH_EEE_InitTypeDef *EEE_Config)
+{
+	/* 1. Global Direction: Enable both TX (Sleep) and RX (Wake) logic */
+	EEE_Config->EnableTx = ENABLE;
+	EEE_Config->EnableRx = ENABLE;
+
+	/* 2. Standard Timings (Units are specific to hardware register definitions) */
+	/* Tw (Wake Time): Min 30us for 100Base-TX.
+	   Assuming register unit is 1us -> Set 30 or slightly higher for safety */
+	EEE_Config->Tw_WakeTime = 30;
+
+	/* Tr (LPI Interval): Min duration of LPI signal. Default ~20-22us */
+	EEE_Config->Tr_LpiInterval = 22;
+
+	/* Td (Decision Delay): Wait time before entering sleep. Unit: 8us.
+	   Value 5 = 40us delay. Prevents sleeping during very short gaps. */
+	EEE_Config->Td_TxDelay = 5;
+
+	/* Tp (Pause Time): Default 10us */
+	EEE_Config->Tp_PauseTime = 10;
+
+	/* 3. Thresholds */
+	/* TxTrafficThresh: 125 bytes is a standard balance point for 100M */
+	EEE_Config->TxTrafficThresh = 0x7D;
+
+	/* 4. Policies (Simplicity for Customer) */
+	/* Sleep Policy:
+	   SLEEP_QUEUE_EMPTY is the safest. It sleeps as soon as there is no data. */
+	EEE_Config->SleepPolicy = ETH_EEE_SLEEP_QUEUE_EMPTY;
+
+	/* Wake Policy:
+	   WAKE_ANY_DATA ensures no packet loss. Wake up on any packet. */
+	EEE_Config->WakePolicy = ETH_EEE_WAKE_ANY_DATA;
+}
+/**
+  * @brief  Initializes the EEE (Energy Efficient Ethernet) functionality according to the 6-step procedure.
+  * @param  ETHx Pointer to ETH register base address.
+  * @param  EEE_Config Pointer to the configuration structure.
+  */
+void Ethernet_EEE_Init(ETHERNET_TypeDef *ETHx, ETH_EEE_InitTypeDef *EEE_Config)
+{
+	u32 temp_cr1 = 0;
+	u32 temp_cr3 = 0;
+	u32 temp_cr4 = 0;
+
+	/* If the feature is disabled globally, clear all enable bits and return immediately */
+	if ((EEE_Config->EnableTx) == 0 && (EEE_Config->EnableRx == 0)) {
+		ETHx->ETH_EEE_CR1 &= ~(BIT_EN_EEE | BIT_EN_EEE_TX | BIT_EN_EEE_RX);
+		return;
+	}
+
+	/* Read current CR1 value to preserve other settings */
+	temp_cr1 = ETHx->ETH_EEE_CR1;
+
+	/* 1. Configure Timer Unit - ETH_EEE_CR1. */
+	temp_cr1 &= ~(MASK_EEE_TIMER_UNIT_100_1 | MASK_EEE_TIMER_UNIT_100_2);
+
+	/* Set units as per requirement for 100M:
+	   EEE_TIMER_UNIT_100_1 = 00 (1us) -> Base for Tw, Tr, Tp
+	   EEE_TIMER_UNIT_100_2 = 00 (8us) -> Base for Td
+	*/
+	temp_cr1 |= EEE_TIMER_UNIT_100_1(0) | EEE_TIMER_UNIT_100_2(0);
+
+	/* 2. Set Protocol Timers - ETH_EEE_CR3.
+	* Configure CR3 for 100M mode operation based on struct params
+	*/
+	temp_cr3 = EEE_TIMER_TW_100(EEE_Config->Tw_WakeTime)    | \
+			   EEE_TIMER_TR_100(EEE_Config->Tr_LpiInterval) | \
+			   EEE_TIMER_TD_100(EEE_Config->Td_TxDelay)     | \
+			   EEE_TIMER_TP_100(EEE_Config->Tp_PauseTime);
+
+	ETHx->ETH_EEE_CR3 = temp_cr3;
+
+	/* 3. Configure Decision Thresholds - ETH_EEE_CR4.*/
+	temp_cr4 = ETHx->ETH_EEE_CR4 & (~MASK_EEE_TX_THR_100);
+
+	/* Set the 100M TX Byte Threshold */
+	temp_cr4 |= EEE_TX_THR_100(EEE_Config->TxTrafficThresh);
+
+	ETHx->ETH_EEE_CR4 = temp_cr4;
+
+	/* 4. Enable Enter & Exit Policies - ETH_EEE_CR1. */
+	temp_cr1 &= ~ETH_EEE_SLEEP_ALL_MASK; /* Clears REQ_SET 0, 1, 2 */
+	temp_cr1 &= ~ETH_EEE_WAKE_ALL_MASK;  /* Clears WAKE_SET 0, 1 */
+
+	/* Apply new policies from structure (Masking ensures safety) */
+	temp_cr1 |= (EEE_Config->SleepPolicy & ETH_EEE_SLEEP_ALL_MASK);
+	temp_cr1 |= (EEE_Config->WakePolicy  & ETH_EEE_WAKE_ALL_MASK);
+
+	/* 5. Global Enable - ETH_EEE_CR1.*/
+	temp_cr1 &= ~(BIT_EN_EEE | BIT_EN_EEE_TX | BIT_EN_EEE_RX);
+
+	/* Write configuration to register first (Policies & Timers) */
+	ETHx->ETH_EEE_CR1 = temp_cr1;
+
+	if (EEE_Config->EnableTx) {
+		temp_cr1 |= BIT_EN_EEE_TX;
+	}
+	if (EEE_Config->EnableRx) {
+		temp_cr1 |= BIT_EN_EEE_RX;
+	}
+
+	/* Enable General EEE bit and internal statistic timers (TXTimer & RXTimer) */
+	temp_cr1 |= BIT_EN_EEE | BIT_EEE_TXTIMER_EN | BIT_EEE_RXTIMER_EN;
+
+	ETHx->ETH_EEE_CR1 = temp_cr1;
+}
+
+/**
+  * @brief  Get EEE Real-time Status (Step 6 - Real-time Status)
+  * @param  ETHx Pointer to ETH register base address.
+  * @retval Status Bitmap. The return value is a combination of the following flags:
+  *         - BIT_EEE_TX_STS:    TX is in LPI mode (Bit 18)
+  *         - BIT_EEE_RX_STS:    RX is in LPI mode (Bit 17)
+  *         - BIT_EEE_STS:       Both TX and RX are in LPI mode simultaneously (Bit 19)
+  *         - BIT_EEE_PAUSEFLAG: LPI request triggered by RX Pause frame (Bit 16)
+  */
+u32 Ethernet_EEE_GetStatus(ETHERNET_TypeDef *ETHx)
+{
+	/* Read the EEE Control/Status Register (assuming CR1 contains these bits) */
+	u32 tmpreg = ETHx->ETH_EEE_CR1;
+	u32 status = 0;
+
+	/* Check if TX is in LPI mode using the provided GET macro */
+	if (GET_EEE_TX_STS(tmpreg)) {
+		status |= BIT_EEE_TX_STS;
+	}
+
+	/* Check if RX is in LPI mode using the provided GET macro */
+	if (GET_EEE_RX_STS(tmpreg)) {
+		status |= BIT_EEE_RX_STS;
+	}
+
+	/* Check if BOTH are in LPI mode using the provided GET macro */
+	if (GET_EEE_STS(tmpreg)) {
+		status |= BIT_EEE_STS;
+	}
+
+	/* Check for Pause Frame LPI trigger using the provided GET macro */
+	if (GET_EEE_PAUSEFLAG(tmpreg)) {
+		status |= BIT_EEE_PAUSEFLAG;
+	}
+
+	return status;
+}
+
+/**
+  * @brief  Get Cumulative LPI Power Saving Time (Step 6 - Statistics)
+  * @param  ETHx Pointer to ETH register base address.
+  * @param  TxLpiTime Pointer to store TX LPI accumulation time (us). Can be NULL.
+  * @param  RxLpiTime Pointer to store RX LPI accumulation time (us). Can be NULL.
+  */
+void Ethernet_EEE_GetSaveTime(ETHERNET_TypeDef *ETHx, u32 *TxLpiTime, u32 *RxLpiTime)
+{
+	/* Read LPI Time registers if pointers are valid */
+	if (TxLpiTime) {
+		*TxLpiTime = GET_EEE_TXLPI_TIME(ETHx->ETH_EEE_LPI_TM1_REG);
+	}
+	if (RxLpiTime) {
+		*RxLpiTime = GET_EEE_RXLPI_TIME(ETHx->ETH_EEE_LPI_TMO_REG);
+	}
+}
+
 static const char *const TAG = "ETH";
+
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup ETHERNET_Exported_Functions ETHERNET Exported Functions
+  * @{
+  */
 
 /**
  * @brief  Clear all pending interrupt status bits.
@@ -77,7 +260,7 @@ u32 Ethernet_GetPendingINT(void)
 /**
  * @brief  Clear specified interrupt events.
  *         Converts software events back to hardware register write-1-to-clear.
- * @param  int_events: Bitmask of events to clear.
+ * @param  int_events Bitmask of events to clear.
  */
 void Ethernet_ClearINT(uint32_t int_events)
 {
@@ -114,10 +297,6 @@ void Ethernet_ClearINT(uint32_t int_events)
  *  @brief To set the start address of Tx/Rx descriptor ring.
  *
  *  @param[in]  ETH_InitStruct The pointer to ETH_InitTypeDef.
- *  @param[in]  tx_desc The start address of Tx descriptor ring.
- *  @param[in]  rx_desc The start address of Rx descriptor ring.
- *
- *  @returns    void.
  */
 void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct)
 {
@@ -142,9 +321,7 @@ void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct)
 /**
  *  @brief To set the ethernet MAC address.
  *
- *  @param[in]  ETH_InitStruct The pointer to ETH_InitTypeDef.
- *
- *  @returns    void.
+ *  @param[in]  ETH_MacAddr The MAC address pointer.
  */
 void Ethernet_SetMacAddr(u8 *ETH_MacAddr)
 {
@@ -162,8 +339,7 @@ void Ethernet_SetMacAddr(u8 *ETH_MacAddr)
 
 /**
   * @brief  To set the ethernet refclk mode.
-  * @param  refclk_mode: 0 ETH_REFCLK_PHY2MAC   1 ETH_REFCLK_MAC2PHY
-  * @retval None
+  * @param  refclk_mode 0 ETH_REFCLK_PHY2MAC   1 ETH_REFCLK_MAC2PHY
   */
 void Ethernet_SetRefclkDirec(u32 refclk_mode)
 {
@@ -178,15 +354,21 @@ void Ethernet_SetRefclkDirec(u32 refclk_mode)
 }
 
 /**
-  * @brief  use externel 50M clk as source clk.
-  * @param  pin
-  * @retval None
+  * @brief  Use external 50M clock as the RMII reference source clock.
+  * @param  pin The pin used to input the external 50MHz clock signal.
+  *             It must be a pin that supports the EXT_CLK50M_IN pinmux function.
   */
 void Ethernet_UseExtClk(u32 pin)
 {
 	Pinmux_Config(pin, PINMUX_FUNCTION_EXT_CLK50M_IN);
 }
 
+/**
+  * @brief  Enable or disable MDIO auto-polling of the PHY status registers.
+  * @param  opt This parameter can be one of the following values:
+  *         - ENABLE:  Enable auto-polling.
+  *         - DISABLE: Disable auto-polling (required before manual MDIO read/write).
+  */
 void Ethernet_AutoPolling(u32 opt)
 {
 	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
@@ -320,9 +502,10 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDe
 /**
  * @brief  Get current RX packet buffer address and extract Meta Data.
  *
- * @param[in]  ETH_InitStruct
+ * @param[in]  ETH_InitStruct Pointer to Ethernet initialization structure
+ *                            containing the RX descriptor ring and current index.
  * @param[out] meta           Pointer to Meta Data to be filled by driver.
- * @return u8* packet buffer adderss
+ * @return Packet buffer address, or NULL if no complete frame is available.
  */
 u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta)
 {
@@ -597,179 +780,9 @@ int Ethernet_WritePhyReg(uint8_t phy_addr, uint8_t reg_addr, uint16_t data)
 }
 
 /**
- * @brief  Fills the EEE_Config structure with default IEEE 802.3az values.
- *         Use this to ensure safe defaults before tweaking specific parameters.
- * @param  EEE_Config: Pointer to the EEE configuration structure.
- * @retval None
- */
-void Ethernet_EEE_StructInit(ETH_EEE_InitTypeDef *EEE_Config)
-{
-	/* 1. Global Direction: Enable both TX (Sleep) and RX (Wake) logic */
-	EEE_Config->EnableTx = ENABLE;
-	EEE_Config->EnableRx = ENABLE;
-
-	/* 2. Standard Timings (Units are specific to hardware register definitions) */
-	/* Tw (Wake Time): Min 30us for 100Base-TX.
-	   Assuming register unit is 1us -> Set 30 or slightly higher for safety */
-	EEE_Config->Tw_WakeTime = 30;
-
-	/* Tr (LPI Interval): Min duration of LPI signal. Default ~20-22us */
-	EEE_Config->Tr_LpiInterval = 22;
-
-	/* Td (Decision Delay): Wait time before entering sleep. Unit: 8us.
-	   Value 5 = 40us delay. Prevents sleeping during very short gaps. */
-	EEE_Config->Td_TxDelay = 5;
-
-	/* Tp (Pause Time): Default 10us */
-	EEE_Config->Tp_PauseTime = 10;
-
-	/* 3. Thresholds */
-	/* TxTrafficThresh: 125 bytes is a standard balance point for 100M */
-	EEE_Config->TxTrafficThresh = 0x7D;
-
-	/* 4. Policies (Simplicity for Customer) */
-	/* Sleep Policy:
-	   SLEEP_QUEUE_EMPTY is the safest. It sleeps as soon as there is no data. */
-	EEE_Config->SleepPolicy = ETH_EEE_SLEEP_QUEUE_EMPTY;
-
-	/* Wake Policy:
-	   WAKE_ANY_DATA ensures no packet loss. Wake up on any packet. */
-	EEE_Config->WakePolicy = ETH_EEE_WAKE_ANY_DATA;
-}
-/**
-  * @brief  Initializes the EEE (Energy Efficient Ethernet) functionality according to the 6-step procedure.
-  * @param  ETHx: Pointer to ETH register base address.
-  * @param  EEE_Config: Pointer to the configuration structure.
-  * @retval None
-  */
-void Ethernet_EEE_Init(ETHERNET_TypeDef *ETHx, ETH_EEE_InitTypeDef *EEE_Config)
-{
-	u32 temp_cr1 = 0;
-	u32 temp_cr3 = 0;
-	u32 temp_cr4 = 0;
-
-	/* If the feature is disabled globally, clear all enable bits and return immediately */
-	if ((EEE_Config->EnableTx) == 0 && (EEE_Config->EnableRx == 0)) {
-		ETHx->ETH_EEE_CR1 &= ~(BIT_EN_EEE | BIT_EN_EEE_TX | BIT_EN_EEE_RX);
-		return;
-	}
-
-	/* Read current CR1 value to preserve other settings */
-	temp_cr1 = ETHx->ETH_EEE_CR1;
-
-	/* 1. Configure Timer Unit - ETH_EEE_CR1. */
-	temp_cr1 &= ~(MASK_EEE_TIMER_UNIT_100_1 | MASK_EEE_TIMER_UNIT_100_2);
-
-	/* Set units as per requirement for 100M:
-	   EEE_TIMER_UNIT_100_1 = 00 (1us) -> Base for Tw, Tr, Tp
-	   EEE_TIMER_UNIT_100_2 = 00 (8us) -> Base for Td
-	*/
-	temp_cr1 |= EEE_TIMER_UNIT_100_1(0) | EEE_TIMER_UNIT_100_2(0);
-
-	/* 2. Set Protocol Timers - ETH_EEE_CR3.
-	* Configure CR3 for 100M mode operation based on struct params
-	*/
-	temp_cr3 = EEE_TIMER_TW_100(EEE_Config->Tw_WakeTime)    | \
-			   EEE_TIMER_TR_100(EEE_Config->Tr_LpiInterval) | \
-			   EEE_TIMER_TD_100(EEE_Config->Td_TxDelay)     | \
-			   EEE_TIMER_TP_100(EEE_Config->Tp_PauseTime);
-
-	ETHx->ETH_EEE_CR3 = temp_cr3;
-
-	/* 3. Configure Decision Thresholds - ETH_EEE_CR4.*/
-	temp_cr4 = ETHx->ETH_EEE_CR4 & (~MASK_EEE_TX_THR_100);
-
-	/* Set the 100M TX Byte Threshold */
-	temp_cr4 |= EEE_TX_THR_100(EEE_Config->TxTrafficThresh);
-
-	ETHx->ETH_EEE_CR4 = temp_cr4;
-
-	/* 4. Enable Enter & Exit Policies - ETH_EEE_CR1. */
-	temp_cr1 &= ~ETH_EEE_SLEEP_ALL_MASK; /* Clears REQ_SET 0, 1, 2 */
-	temp_cr1 &= ~ETH_EEE_WAKE_ALL_MASK;  /* Clears WAKE_SET 0, 1 */
-
-	/* Apply new policies from structure (Masking ensures safety) */
-	temp_cr1 |= (EEE_Config->SleepPolicy & ETH_EEE_SLEEP_ALL_MASK);
-	temp_cr1 |= (EEE_Config->WakePolicy  & ETH_EEE_WAKE_ALL_MASK);
-
-	/* 5. Global Enable - ETH_EEE_CR1.*/
-	temp_cr1 &= ~(BIT_EN_EEE | BIT_EN_EEE_TX | BIT_EN_EEE_RX);
-
-	/* Write configuration to register first (Policies & Timers) */
-	ETHx->ETH_EEE_CR1 = temp_cr1;
-
-	if (EEE_Config->EnableTx) {
-		temp_cr1 |= BIT_EN_EEE_TX;
-	}
-	if (EEE_Config->EnableRx) {
-		temp_cr1 |= BIT_EN_EEE_RX;
-	}
-
-	/* Enable General EEE bit and internal statistic timers (TXTimer & RXTimer) */
-	temp_cr1 |= BIT_EN_EEE | BIT_EEE_TXTIMER_EN | BIT_EEE_RXTIMER_EN;
-
-	ETHx->ETH_EEE_CR1 = temp_cr1;
-}
-
-/**
-  * @brief  Get EEE Real-time Status (Step 6 - Real-time Status)
-  * @param  ETHx: Pointer to ETH register base address.
-  * @retval Status Bitmap. The return value is a combination of the following flags:
-  *         - BIT_EEE_TX_STS:    TX is in LPI mode (Bit 18)
-  *         - BIT_EEE_RX_STS:    RX is in LPI mode (Bit 17)
-  *         - BIT_EEE_STS:       Both TX and RX are in LPI mode simultaneously (Bit 19)
-  *         - BIT_EEE_PAUSEFLAG: LPI request triggered by RX Pause frame (Bit 16)
-  */
-u32 Ethernet_EEE_GetStatus(ETHERNET_TypeDef *ETHx)
-{
-	/* Read the EEE Control/Status Register (assuming CR1 contains these bits) */
-	u32 tmpreg = ETHx->ETH_EEE_CR1;
-	u32 status = 0;
-
-	/* Check if TX is in LPI mode using the provided GET macro */
-	if (GET_EEE_TX_STS(tmpreg)) {
-		status |= BIT_EEE_TX_STS;
-	}
-
-	/* Check if RX is in LPI mode using the provided GET macro */
-	if (GET_EEE_RX_STS(tmpreg)) {
-		status |= BIT_EEE_RX_STS;
-	}
-
-	/* Check if BOTH are in LPI mode using the provided GET macro */
-	if (GET_EEE_STS(tmpreg)) {
-		status |= BIT_EEE_STS;
-	}
-
-	/* Check for Pause Frame LPI trigger using the provided GET macro */
-	if (GET_EEE_PAUSEFLAG(tmpreg)) {
-		status |= BIT_EEE_PAUSEFLAG;
-	}
-
-	return status;
-}
-
-/**
-  * @brief  Get Cumulative LPI Power Saving Time (Step 6 - Statistics)
-  * @param  ETHx: Pointer to ETH register base address.
-  * @param  TxLpiTime: Pointer to store TX LPI accumulation time (us). Can be NULL.
-  * @param  RxLpiTime: Pointer to store RX LPI accumulation time (us). Can be NULL.
-  * @retval None
-  */
-void Ethernet_EEE_GetSaveTime(ETHERNET_TypeDef *ETHx, u32 *TxLpiTime, u32 *RxLpiTime)
-{
-	/* Read LPI Time registers if pointers are valid */
-	if (TxLpiTime) {
-		*TxLpiTime = GET_EEE_TXLPI_TIME(ETHx->ETH_EEE_LPI_TM1_REG);
-	}
-	if (RxLpiTime) {
-		*RxLpiTime = GET_EEE_RXLPI_TIME(ETHx->ETH_EEE_LPI_TMO_REG);
-	}
-}
-/**
-  * \brief  Initialize ETH_InitTypeDef.
-  * \param  ETH_InitStruct: The pointer to ETH_InitTypeDef.
-  * \return None.
+  * @brief  Initialize ETH_InitTypeDef.
+  * @param  ETH_InitStruct The pointer to ETH_InitTypeDef.
+  * @param  PHY_Dev The pointer to eth_phy_dev.
   */
 void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PHY_Dev)
 {
@@ -822,6 +835,13 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 										   BIT_IMR_RER_OVF | BIT_IMR_ROK | 0xFFFF;
 }
 
+/**
+  * @brief  Initialize Ethernet MAC, PHY, and DMA descriptors.
+  * @param  ETH_InitStruct Pointer to ETH_InitTypeDef containing the full Ethernet configuration.
+  * @return RTK_SUCCESS on success, or a negative error code:
+  *         - -RTK_ERR_BADARG if ETH_InitStruct, phy_dev, or phy_dev->ops is NULL.
+  *         - -RTK_ERR_TIMEOUT if MAC reset or auto-negotiation timed out.
+  */
 int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 {
 	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
@@ -1088,3 +1108,8 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 exit:
 	return ret;
 }
+/** @} */
+
+/** @} */
+
+/** @} */

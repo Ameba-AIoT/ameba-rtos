@@ -40,8 +40,9 @@ void app_mbedtls_image3_init(void)
 	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
 }
 
-#if defined(CONFIG_AMEBAGREEN2)
-/* amebagreen2 specific: TrustZone boot functions */
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBADPLUS)
+extern const SAU_CFG_TypeDef sau_config[];
+
 __NO_RETURN void IMG3_NsStart(u32 Addr)
 {
 	nsfunc *fp = (nsfunc *)cmse_nsfptr_create(Addr);
@@ -64,6 +65,8 @@ void BOOT_IMG3(void)
 			 TrustZone_IsSecure());
 	/* reset img3 bss */
 	_memset((void *) __image3_bss_start__, 0, (__image3_bss_end__ - __image3_bss_start__));
+
+	BOOT_CPU_TZCfg(sau_config);
 
 #ifdef CONFIG_TRUSTZONE_MBEDTLS
 	app_mbedtls_image3_init();

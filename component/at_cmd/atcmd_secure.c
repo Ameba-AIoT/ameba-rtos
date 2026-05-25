@@ -778,7 +778,7 @@ static int sboot_write_alg(u8 auth, u8 hash)
 		return RTK_SUCCESS;    /* already correct */
 	}
 
-	if (OTP_Write8(OTP_SBOOT_ALG, to_clear) != RTK_SUCCESS) {
+	if (OTP_Write8(OTP_SBOOT_ALG, desired) != RTK_SUCCESS) {
 		return RTK_FAIL;
 	}
 

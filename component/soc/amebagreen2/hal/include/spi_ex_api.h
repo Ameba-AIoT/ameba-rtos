@@ -43,6 +43,15 @@ extern "C" {
  *  @{
  */
 
+/**
+  * @brief enum SPI_CS_TOGGLE_MODE
+  * SPI Master mode: for continuous transfer, how the CS toggle
+  */
+typedef enum {
+	SPI_CS_TOGGLE_EVERY_FRAME = 0,     // let SCPH=0 then the CS toggle every frame
+	SPI_CS_TOGGLE_START_STOP = 1       // let SCPH=1 the CS toggle at start and stop
+} SPI_CS_TOGGLE_MODE;
+
 /** @defgroup MBED_SPI_Exported_Constants MBED_SPI Exported Constants
   * @{
   */
@@ -68,15 +77,6 @@ typedef enum {
 	SPI_SCLK_IDLE_LOW = 0,      // the SCLK is Low when SPI is inactive
 	SPI_SCLK_IDLE_HIGH = 2      // the SCLK is High when SPI is inactive
 } SPI_SCLK_IDLE_LEVEL;
-
-/**
-  * @brief enum SPI_CS_TOGGLE_MODE
-  * SPI Master mode: for continuous transfer, how the CS toggle
-  */
-typedef enum {
-	SPI_CS_TOGGLE_EVERY_FRAME = 0,     // let SCPH=0 then the CS toggle every frame
-	SPI_CS_TOGGLE_START_STOP = 1       // let SCPH=1 the CS toggle at start and stop
-} SPI_CS_TOGGLE_MODE;
 
 /**
   * @brief enum SPI_SCLK_TOGGLE_MODE

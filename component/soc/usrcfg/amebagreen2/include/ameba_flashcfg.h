@@ -16,7 +16,7 @@ extern const u16 Data_Flash_ReadMode;
 
 extern const FlashInfo_TypeDef Flash_AVL[];
 
-extern FlashLayoutInfo_TypeDef Flash_Layout[];
+extern const FlashLayoutInfo_TypeDef Flash_Layout[];
 
 extern void flash_init_userdef(void);
 

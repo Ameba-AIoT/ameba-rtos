@@ -49,6 +49,11 @@ volatile u8 sp_full_buf[SP_FULL_BUF_SIZE];
 #define ALC1019 0           // 1:enable  0:disable
 #define HT513 1             // 1:enable  0:disable
 
+#elif defined (CONFIG_AMEBAGREEN2)
+
+volatile u8 sp_rx_buf[SP_RX_DMA_PAGE_SIZE * SP_RX_DMA_PAGE_NUM];
+volatile u8 sp_full_buf[SP_FULL_BUF_SIZE];
+
 #endif
 
 volatile u8 record_flag = 1;
@@ -62,6 +67,7 @@ extern volatile u32 pagecnt_ext;
 
 #define IS_SNR_NOT_90DB(x)	((x) < 90)
 #define IS_SNR_NOT_70DB(x)	((x) < 70)
+#define IS_SNR_NOT_20DB(x)	((x) < 20)
 
 #if defined (CONFIG_AMEBASMART)
 
@@ -115,6 +121,9 @@ static void example_audio_init(void)
 #elif defined (CONFIG_AMEBADPLUS)
 	RCC_PeriphClockCmd(APBPeriph_SPORT0, APBPeriph_SPORT0_CLOCK, ENABLE);
 	RCC_PeriphClockSource_SPORT(AUDIO_SPORT0_DEV, CKSL_I2S_XTAL40M);
+#elif defined (CONFIG_AMEBAGREEN2)
+	RCC_PeriphClockCmd(APBPeriph_SPORT, APBPeriph_SPORT_CLOCK, ENABLE);
+	RCC_PeriphClockSource_SPORT(AUDIO_SPORT0_DEV, CKSL_I2S_XTAL40M);
 #endif
 
 	RCC_PeriphClockCmd(APBPeriph_AC, APBPeriph_AC_CLOCK, ENABLE);
@@ -138,6 +147,11 @@ static void example_audio_init(void)
 	SP_InitStruct.SP_SelI2SMonoStereo = SP_CH_STEREO;
 	SP_InitStruct.SP_SelTDM = I2S_NOTDM;
 	SP_InitStruct.SP_SelFIFO = SP_RX_FIFO2;
+#elif defined (CONFIG_AMEBAGREEN2)
+	SP_InitStruct.SP_SelWordLen = SP_RXWL_16;
+	SP_InitStruct.SP_SelI2SMonoStereo = SP_CH_STEREO;
+	SP_InitStruct.SP_SelTDM = I2S_NOTDM;
+	SP_InitStruct.SP_SelFIFO = SP_RX_FIFO2;
 #endif
 
 	AUDIO_SP_Init(SPORT_RX_INDEX, SP_DIR_RX, &SP_InitStruct);
@@ -153,6 +167,8 @@ static void example_audio_init(void)
 #elif defined (CONFIG_AMEBALITE)
 	I2S_InitStruct.CODEC_SelRxI2STdm = I2S_TDM4;
 #elif defined (CONFIG_AMEBADPLUS)
+	I2S_InitStruct.CODEC_SelRxI2STdm = I2S_NOTDM;
+#elif defined (CONFIG_AMEBAGREEN2)
 	I2S_InitStruct.CODEC_SelRxI2STdm = I2S_NOTDM;
 #endif
 
@@ -174,6 +190,16 @@ static void example_audio_init(void)
 	Pinmux_Config(MBED_AUDIO_DMIC_DATA, PINMUX_FUNCTION_DMIC_DATA);
 #endif
 	AUDIO_CODEC_SetDmicClk(DMIC_5M, ENABLE);
+#elif defined (CONFIG_AMEBAGREEN2)
+	Pinmux_Config(MBED_AUDIO_DMIC_CLK, PINMUX_FUNCTION_DMIC_CLK);
+	Pinmux_Config(MBED_AUDIO_DMIC_DATA, PINMUX_FUNCTION_DMIC_DATA);
+	if (SP_InitStruct.SP_SR == SP_96K) {
+		AUDIO_CODEC_SetDmicClk(DMIC_5M, ENABLE);
+	} else {
+		AUDIO_CODEC_SetDmicClk(DMIC_2P5M, ENABLE);
+	}
+	AUDIO_CODEC_SetADCVolume(ADC1, 0x7F);
+	AUDIO_CODEC_SetADCVolume(ADC2, 0x7F);
 #endif
 }
 
@@ -217,6 +243,8 @@ void audio_deinit(void)
 	RCC_PeriphClockCmd(APBPeriph_AC_AIP, APBPeriph_CLOCK_NULL, DISABLE);
 #elif defined (CONFIG_AMEBADPLUS)
 	RCC_PeriphClockCmd(APBPeriph_SPORT0, APBPeriph_SPORT0_CLOCK, DISABLE);
+#elif defined (CONFIG_AMEBAGREEN2)
+	RCC_PeriphClockCmd(APBPeriph_SPORT, APBPeriph_SPORT_CLOCK, DISABLE);
 #endif
 
 	RCC_PeriphClockCmd(APBPeriph_AC, APBPeriph_AC_CLOCK, DISABLE);
@@ -432,6 +460,42 @@ void example_audio_dmic_recorder_thread(void)
 		THDTest((u32 *)sp_rx_buf, &adcTHD1, &adcTHD2);
 
 		if (IS_SNR_NOT_70DB(adcTHD1) || IS_SNR_NOT_70DB(adcTHD2)) {
+			ErrFlag_THD++;
+		}
+
+		RTK_LOGI(TAG, "DMIC1 SNR: %d\n", adcSNR1);
+		RTK_LOGI(TAG, "DMIC2 SNR: %d\n", adcSNR2);
+
+		RTK_LOGI(TAG, "DMIC1 THD: %d\n", adcTHD1);
+		RTK_LOGI(TAG, "DMIC2 THD: %d\n", adcTHD2);
+
+		if (ErrFlag_SNR > 0) {
+			ErrFlag_SNR = 0;
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "<== AUDIO SNR TEST fAIL!\n");
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "<== AUDIO SNR TEST PASS!\n");
+		}
+
+		if (ErrFlag_THD > 0) {
+			ErrFlag_THD = 0;
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "<== AUDIO THD TEST fAIL!\n");
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "<== AUDIO THD TEST PASS!\n");
+		}
+
+		rtos_time_delay_ms(50);
+
+#elif defined (CONFIG_AMEBAGREEN2)
+		FFTTest((u32 *)sp_rx_buf, &adcSNR1, &adcSNR2);
+
+		if (IS_SNR_NOT_20DB(adcSNR1) || IS_SNR_NOT_20DB(adcSNR2)) {
+			ErrFlag_SNR++;
+		}
+
+		/*for THD test*/
+		THDTest((u32 *)sp_rx_buf, &adcTHD1, &adcTHD2);
+
+		if (IS_SNR_NOT_20DB(adcTHD1) || IS_SNR_NOT_20DB(adcTHD2)) {
 			ErrFlag_THD++;
 		}
 

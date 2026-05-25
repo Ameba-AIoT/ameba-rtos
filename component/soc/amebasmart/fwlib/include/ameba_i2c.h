@@ -68,11 +68,12 @@
   * @{
   */
 
-/** @defgroup I2C
+/** @defgroup I2C I2C Driver
   * @brief I2C driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -573,6 +574,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -647,7 +649,7 @@ typedef struct {
 } I2C_InitTypeDef;
 
 /**
-  * @brief  I2C Intrerrupt Mode Structure Definition
+  * @brief  I2C IntMode Structure Definition
   */
 typedef struct {
 	void (*I2CSendSem)(u32 IsWrite);    /*!< Interface for releasing semaphores */
@@ -672,7 +674,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup I2C_Addr_Mode
+/** @defgroup I2C_Addr_Mode I2C Address Mode
   * @{
   */
 #define I2C_ADDR_7BIT			((u32)0x00000000)
@@ -683,7 +685,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup I2C_Speed_Mode
+/** @defgroup I2C_Speed_Mode I2C Speed Mode
   * @{
   */
 #define I2C_SS_MODE				((u32)0x00000001)
@@ -696,7 +698,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup I2C_Role_Mode
+/** @defgroup I2C_Role_Mode I2C Role Mode
   * @{
   */
 #define I2C_SLAVE_MODE			((u32)0x00000000)
@@ -705,7 +707,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup I2C_Timing_Mode
+/** @defgroup I2C_Timing_Mode I2C Timing Mode
   * @{
   */
 #define I2C_SS_MIN_SCL_HTIME		4600    //the unit is ns.
@@ -723,7 +725,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup I2C_BUF_DEPTH_Mode
+/** @defgroup I2C_BUF_DEPTH_Mode I2C Buffer Depth Mode
   * @{
   */
 
@@ -749,7 +751,7 @@ _LONG_CALL_ u32 I2C_GetRawINT(I2C_TypeDef *I2Cx);
 _LONG_CALL_ u32 I2C_GetINT(I2C_TypeDef *I2Cx);
 _LONG_CALL_ u8 I2C_CheckFlagState(I2C_TypeDef *I2Cx, u32 I2C_FLAG);
 _LONG_CALL_ void I2C_INTConfig(I2C_TypeDef *I2Cx, u32 I2C_IT, u32 NewState);
-_LONG_CALL_ u32 I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrAddr);
+_LONG_CALL_ u32 I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrBit);
 _LONG_CALL_ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk);
 _LONG_CALL_ void I2C_StructInit(I2C_InitTypeDef *I2C_InitStruct);
 _LONG_CALL_ u8 I2C_ReceiveData(I2C_TypeDef *I2Cx);
@@ -764,8 +766,8 @@ _LONG_CALL_ u32 I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
 _LONG_CALL_ u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
 _LONG_CALL_ u32 I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Writelen, u8 *pReadBuf, u32 Readlen);
 _LONG_CALL_ void I2C_SetSlaveAddress(I2C_TypeDef *I2Cx, u16 Address);
-_LONG_CALL_ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times);
-_LONG_CALL_ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times);
+_LONG_CALL_ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms);
+_LONG_CALL_ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms);
 _LONG_CALL_ s32 I2C_MasterSendNullData_TimeOut(I2C_TypeDef *I2Cx, int address, u32 timeout_ms);
 _LONG_CALL_ u32 I2C_MasterWriteInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
 _LONG_CALL_ u32 I2C_MasterReadInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
@@ -777,9 +779,6 @@ _LONG_CALL_ u32 I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
 _LONG_CALL_ void I2C_SlaveSend(I2C_TypeDef *I2Cx, u8 Data);
 
 
-/*I2C_Exported_PowerSave_Functions I2C Exported PowerSave Functions*/
-_LONG_CALL_ void I2C_Sleep_Cmd(I2C_TypeDef *I2Cx, u32 NewStatus);
-_LONG_CALL_ void I2C_WakeUp(I2C_TypeDef *I2Cx);
 
 /**
   * @}

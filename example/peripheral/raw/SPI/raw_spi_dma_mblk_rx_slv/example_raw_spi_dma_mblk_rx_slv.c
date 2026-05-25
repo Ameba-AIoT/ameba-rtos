@@ -93,6 +93,8 @@ u32 Gdma_multiblock_irq(void *Data)
 		GDMA_InitStruct->MuliBlockCunt++;
 	}
 
+	SSI_SlaveErrRecovery(spi_obj->spi_dev);
+
 	//last IRQ is TransferType in multi-block
 	if (IsrTypeMap & TransferType) {
 //		printf("DMA Block %d\n",GDMA_InitStruct->MuliBlockCunt);

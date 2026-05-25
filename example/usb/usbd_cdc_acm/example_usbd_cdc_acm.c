@@ -73,7 +73,6 @@ static usbd_config_t cdc_acm_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
-	.ext_intr_enable = USBD_EPMIS_INTR,
 #elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 644U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
@@ -140,6 +139,8 @@ static int cdc_acm_cb_deinit(void)
 
 /**
   * @brief  Data received over USB OUT endpoint are sent over CDC interface through this function.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  Buf: RX buffer
   * @param  Len: RX data length (in bytes)
   * @retval Status
@@ -160,7 +161,7 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 			rtos_sema_give(cdc_acm_async_xfer_sema);
 		}
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Busy, discard %dB\n", len);
+		// RTK_LOGS(TAG, RTK_LOG_WARN, "Busy, discard %dB\n", len);
 		ret = HAL_BUSY;
 	}
 
@@ -172,6 +173,8 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 
 /**
   * @brief  Handle the CDC class control requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  cmd: Command code
   * @param  buf: Buffer containing command data (request parameters)
   * @param  len: Number of data to be sent (in bytes)
@@ -230,7 +233,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		*/
 		cdc_acm_ctrl_line_state = req->wValue;
 		if (cdc_acm_ctrl_line_state & 0x01) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
+			// RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
 #if CONFIG_CDC_ACM_NOTIFY
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 #endif
@@ -248,6 +251,14 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Handle CDC ACM attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void cdc_acm_cb_status_changed(u8 old_status, u8 status)
 {
 	/*
@@ -259,11 +270,13 @@ static void cdc_acm_cb_status_changed(u8 old_status, u8 status)
 		Status 2 to 1: Represents transition from detached to attached state; for example, when the device
 		is hot-plugged in, performs a remote wakeup, or the host resumes.
 	*/
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
+	UNUSED(old_status);
 
 #if CONFIG_USBD_CDC_ACM_HOTPLUG
 	cdc_acm_attach_status = status;
 	rtos_sema_give(cdc_acm_attach_status_changed_sema);
+#else
+	UNUSED(status);
 #endif
 }
 

@@ -20,7 +20,7 @@ GDMA will display "DMA Copy Memory Compare OK!! " in serial port tool. Otherwise
 
 1. If multi blocks is being transferred, reference raw/multi block example.
 
-2. If the output character sequence of the serial port tool is disordered, please configure `Boot_Agg_En = TRUE` in ameba_bootcfg.c according to the chip ID.
+2. If the output character sequence of the serial port tool is disordered, please enable `CONFIG_LOGUART_AGG_EN` in menuconfig (`User Config` > `Boot Configuration` > `Enable Loguart AGG`) according to the chip ID.
 
 3. Since the lp core of RTL8730E does not compile GDMA driver code, the compilation of this example will fail on this core. But the core supports GDMA function.
 

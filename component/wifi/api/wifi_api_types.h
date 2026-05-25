@@ -455,6 +455,24 @@ enum rtw_csi_role {
 };
 
 /**
+  * @brief Radar action types for wifi_radar_config().
+  */
+enum rtw_radar_action_type {
+	RTW_RADAR_ACT_EN,           /**< enable or disable radar func */
+	RTW_RADAR_ACT_CFG,          /**< config radar parameters */
+	RTW_RADAR_ACT_MAX
+};
+
+/**
+  * @brief Radar mode.
+  */
+enum rtw_radar_mode {
+	RTW_RADAR_SINGLE_MODE = 0,  /**< single mode (only range fft). */
+	RTW_RADAR_NORMAL_MODE,         /**< normal mode (range fft + doppler fft + cfar). */
+	RTW_RADAR_MODE_MAX,
+};
+
+/**
   * @brief Radar type for reporting info (size: u8).
   */
 enum rtw_radar_type {
@@ -1113,6 +1131,21 @@ struct rtw_csi_action_parm {
 	 * others are reserved. \n
 	 * Value=1 ~ 15 (0 is reserved)*/
 	u8 trig_flag;
+};
+
+/**********************************************************************************************
+ *                                     radar structures
+ *********************************************************************************************/
+/**
+  * @brief  Configuration parameters used for Radar.
+  */
+struct rtw_radar_action_parm {
+	u8 act;         /**< Enable Radar or configure Radar parameters. val: @ref RTW_RADAR_ACT_EN, @ref RTW_RADAR_ACT_CFG. */
+	u8 enable;      /**< 0: disable RADAR function; 1: enable RADAR function. */
+	u8 mode;        /**< Mode for Radar. val: @ref RTW_RADAR_SINGLE_MODE, @ref RTW_RADAR_NORMAL_MODE*/
+	u8 channel; /**< FMCW center frequency (recommended ch: 7). */
+	u8 chrip_bw;  /**< 0: 70M; 1: 40M; 2: 20M */
+	u8 trig_period; /**< FMCW interval, unit: ms (recommended value: 15ms). */
 };
 
 

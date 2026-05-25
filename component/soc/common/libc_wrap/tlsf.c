@@ -36,22 +36,33 @@
 */
 
 /*
- * SPDX-License-Identifier: LicenseRef-Realtek-Proprietary
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Copyright (c) 2023, Realtek Semiconductor Corp. All rights reserved.
  */
 
-#include <assert.h>
+// #include <assert.h>
+#include "os_wrapper_specific.h"
+#include "os_wrapper.h"
 #include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include "log.h"
 
 #include "tlsf.h"
 
-#ifdef CONFIG_DEBUG_HEAP_TRACE
+#ifndef CONFIG_HEAP_PROTECTOR
+#define CONFIG_HEAP_PROTECTOR 0
+#endif
+
+#ifndef _DEBUG
+#define _DEBUG 0
+#endif
+
+#if (defined(CONFIG_HEAP_TRACE) && (CONFIG_HEAP_TRACE == 1))
 #include "heap_trace.h"
 #endif
 
@@ -322,7 +333,7 @@ enum tlsf_private {
 ** Set assert macro, if it has not been provided by the user.
 */
 #if !defined (tlsf_assert)
-#define tlsf_assert assert
+#define tlsf_assert configASSERT
 #endif
 
 /*
@@ -371,30 +382,33 @@ typedef struct block_header_t {
 	struct block_header_t *prev_free;
 } block_header_t;
 
-#if ( configENABLE_HEAP_PROTECTOR == 1 )
-extern uint8_t ucHeap[ configTOTAL_HEAP_SIZE ];
+#if ( CONFIG_HEAP_PROTECTOR == 1 )
 /* Canary value for protecting internal heap pointers. */
 extern portPOINTER_SIZE_TYPE xHeapCanary;
+
+/* Highest and lowest heap addresses across all regions. */
+extern uint8_t *pucHeapHighAddress;
+extern uint8_t *pucHeapLowAddress;
 
 /* Macro to load/store pointers to memory. By XORing the pointers
  * with a random canary value, heap overflows will result in
  * randomly unpredictable pointer values which will be caught by
  * heapVALIDATE_BLOCK_POINTER assert. */
 #define heapPROTECT_BLOCK_POINTER(p)    ((block_header_t *)(((uintptr_t)(p)) ^ xHeapCanary))
+
+/* Assert that a heap block pointer is within the heap bounds. */
+#define heapVALIDATE_BLOCK_POINTER(p)                                                 \
+	configASSERT( ( pucHeapHighAddress != NULL ) &&                                   \
+	              ( pucHeapLowAddress != NULL ) &&                                      \
+	              ( (uint8_t *)(p) >= pucHeapLowAddress ) &&                            \
+	              ( (uint8_t *)(p) < pucHeapHighAddress ) )
 #else
 
 #define heapPROTECT_BLOCK_POINTER(p)    (p)
 
-#endif /* configENABLE_HEAP_PROTECTOR */
+#define heapVALIDATE_BLOCK_POINTER(p)   ((void)(p))
 
-#if ( configENABLE_HEAP_PROTECTOR == 1 )
-/* Assert that a heap block pointer is within the heap bounds. */
-#define heapVALIDATE_BLOCK_POINTER(p)                          \
-    	configASSERT(((uint8_t *)(p) >= &(ucHeap[0])) && \
-                  ((uint8_t *) (p) <= &(ucHeap[configTOTAL_HEAP_SIZE - 1])))
-#else
-#define heapVALIDATE_BLOCK_POINTER(p)   (p)
-#endif
+#endif /* CONFIG_HEAP_PROTECTOR */
 
 /*
 ** Since block sizes are always at least a multiple of 4, the two least
@@ -548,11 +562,13 @@ static block_header_t *offset_to_block(const void *ptr, size_t size)
 }
 
 /* Return location of previous block. */
+#if 0
 static block_header_t *block_prev(const block_header_t *block)
 {
 	tlsf_assert(block_is_prev_free(block) && "previous block must be free");
 	return tlsf_get_prev_phys(block);
 }
+#endif
 
 /* Return location of next existing block. */
 static block_header_t *block_next(const block_header_t *block)
@@ -999,7 +1015,7 @@ int tlsf_check(tlsf_t tlsf)
 static void default_walker(void *ptr, size_t size, int used, void *user)
 {
 	(void)user;
-	printf("\t%p %s size: %x (%p)\n", ptr, used ? "used" : "free", (unsigned int)size, block_from_ptr(ptr));
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\t%x %s size: %x (%x)\n", ptr, used ? "used" : "free", (unsigned int)size, block_from_ptr(ptr));
 }
 
 void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void *user)
@@ -1085,20 +1101,20 @@ pool_t tlsf_add_pool(tlsf_t tlsf, void *mem, size_t bytes)
 	const size_t pool_bytes = align_down(bytes - pool_overhead, ALIGN_SIZE);
 
 	if (((ptrdiff_t)mem % ALIGN_SIZE) != 0) {
-		printf("tlsf_add_pool: Memory must be aligned by %u bytes.\n",
-			   (unsigned int)ALIGN_SIZE);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "tlsf_add_pool: Memory must be aligned by %u bytes.\n",
+				 (unsigned int)ALIGN_SIZE);
 		return 0;
 	}
 
 	if (pool_bytes < block_size_min || pool_bytes > block_size_max) {
 #if defined (TLSF_64BIT)
-		printf("tlsf_add_pool: Memory size must be between 0x%x and 0x%x00 bytes.\n",
-			   (unsigned int)(pool_overhead + block_size_min),
-			   (unsigned int)((pool_overhead + block_size_max) / 256));
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "tlsf_add_pool: Memory size must be between 0x%x and 0x%x00 bytes.\n",
+				 (unsigned int)(pool_overhead + block_size_min),
+				 (unsigned int)((pool_overhead + block_size_max) / 256));
 #else
-		printf("tlsf_add_pool: Memory size must be between %u and %u bytes.\n",
-			   (unsigned int)(pool_overhead + block_size_min),
-			   (unsigned int)(pool_overhead + block_size_max));
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "tlsf_add_pool: Memory size must be between %u and %u bytes.\n",
+				 (unsigned int)(pool_overhead + block_size_min),
+				 (unsigned int)(pool_overhead + block_size_max));
 #endif
 		return 0;
 	}
@@ -1163,7 +1179,7 @@ int test_ffs_fls()
 #endif
 
 	if (rv) {
-		printf("test_ffs_fls: %x ffs/fls tests failed.\n", rv);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "test_ffs_fls: %x ffs/fls tests failed.\n", rv);
 	}
 	return rv;
 }
@@ -1178,8 +1194,8 @@ tlsf_t tlsf_create(void *mem)
 #endif
 
 	if (((tlsfptr_t)mem % ALIGN_SIZE) != 0) {
-		printf("tlsf_create: Memory must be aligned to %u bytes.\n",
-			   (unsigned int)ALIGN_SIZE);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "tlsf_create: Memory must be aligned to %u bytes.\n",
+				 (unsigned int)ALIGN_SIZE);
 		return 0;
 	}
 
@@ -1213,7 +1229,7 @@ void *tlsf_malloc(tlsf_t tlsf, size_t size)
 	block_header_t *block = block_locate_free(control, adjust);
 	void *ptr = block_prepare_used(control, block, adjust);
 
-#ifdef CONFIG_DEBUG_HEAP_TRACE
+#if defined(CONFIG_HEAP_TRACE) && (CONFIG_HEAP_TRACE == 1)
 	if (ptr != NULL) {
 		trace_malloc(ptr, (uint32_t)size);
 	}
@@ -1280,7 +1296,7 @@ void tlsf_free(tlsf_t tlsf, void *ptr)
 {
 	/* Don't attempt to free a NULL pointer. */
 	if (ptr) {
-#ifdef CONFIG_DEBUG_HEAP_TRACE
+#if defined(CONFIG_HEAP_TRACE) && (CONFIG_HEAP_TRACE == 1)
 		trace_free(ptr, 0);
 #endif
 		control_t *control = tlsf_cast(control_t *, tlsf);

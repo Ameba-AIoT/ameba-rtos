@@ -115,12 +115,20 @@ static int cdc_ecm_cb_deinit(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  CDC ECM attach callback
+  * @retval Status
+  */
 static int cdc_ecm_cb_attach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 	return HAL_OK;
 }
 
+/**
+  * @brief  CDC ECM detach callback
+  * @retval Status
+  */
 static int cdc_ecm_cb_detach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
@@ -130,16 +138,26 @@ static int cdc_ecm_cb_detach(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  CDC ECM setup callback
+  * @retval Status
+  */
 static int cdc_ecm_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	return HAL_OK;
 }
 
+/**
+  * @brief  CDC ECM bulk receive callback
+  * @param  buf: RX buffer
+  * @param  length: RX data length (in bytes)
+  * @retval Status
+  */
 static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
 {
 	if (length > 0) {
-		ethernetif_usb_eth_recv(buf, length);
+		netif_adapter_usb_eth_recv(buf, length);
 	}
 
 	return HAL_OK;
@@ -437,7 +455,7 @@ static void ecm_example_bridge_thread(void *param)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Bridge example \n");
 
-	while (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+	while (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for WIFI connection ...\n");
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Please use AT+WLCONN=ssid,xx,pw,yy to connect AP first time\n");
 		rtos_time_delay_ms(2000);

@@ -634,7 +634,9 @@ uint32_t send_udp_packets(struct iperf_data_t *iperf_data, struct iperf_udp_clie
 		if (sendto(iperf_data->client_fd, udp_client_buffer, iperf_data->buf_size, 0, (struct sockaddr *)ser_addr, addrlen) < 0) {
 			if (iperf_data->total_size == 0) {
 				//Add delay to avoid consuming too much CPU when data link layer is busy
+#if !defined(CONFIG_AMEBAPRO3)
 				rtos_time_delay_ms(2);
+#endif
 			} else {
 				//tptest_res_log("[ERROR] %s: UDP client send data error\n\r",__func__);
 			}

@@ -21,11 +21,11 @@ static void my_eth_link_callback(int link_up)
 		netifapi_netif_set_link_up(pnetif_eth);
 
 		/* DHCP */
-		u32 dhcp_status = LwIP_IP_Address_Request(NETIF_ETH_INDEX);
+		u32 dhcp_status = lwip_request_ip(NETIF_ETH_INDEX);
 		if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
 			netifapi_netif_set_default(pnetif_eth);
 
-			uint8_t *ip = LwIP_GetIP(NETIF_ETH_INDEX);
+			uint8_t *ip = lwip_get_ip(NETIF_ETH_INDEX);
 			RTK_LOGI(TAG, "Ethernet DHCP got IP: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
 		} else {
 			RTK_LOGW(TAG, "Ethernet DHCP failed to get IP\n");
@@ -36,7 +36,7 @@ static void my_eth_link_callback(int link_up)
 
 		/* Release IP and bring down the interface */
 		netifapi_netif_set_link_down(pnetif_eth);
-		LwIP_ReleaseIP(NETIF_ETH_INDEX);
+		lwip_clear_ip(NETIF_ETH_INDEX);
 		RTK_LOGI(TAG, "Ethernet IP released\n");
 	}
 }

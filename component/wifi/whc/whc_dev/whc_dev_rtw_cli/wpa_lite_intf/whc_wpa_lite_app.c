@@ -2,10 +2,6 @@
 #include "lwip/sys.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
-#include "whc_dev_rtw_cli_cmd_define.h"
-#include "whc_dev_rtw_cli_cmd_parse.h"
-#include "whc_wpa_lite_app.h"
-
 #include "cfg_parse_config_ssid.h"
 
 struct wpa_ops_ssid ssid_a = {0};

@@ -33,6 +33,11 @@ extern u8 __image3_bss_start__[];
 extern u8 __image3_bss_end__[];
 extern u8 __image3_heap_start__[];
 extern u8 __image3_heap_size__[];
+extern u8 __image3_ram_start__[];
+extern u8 __image3_ram_end__[];
+extern u8 __image3_entry_func__[];
+extern u8 __ram_image3_nsc_start__[];
+extern u8 __ram_image3_nsc_end__[];
 extern u8 __ram_image2_text_end__[];
 
 extern u8 __ipc_table_start__[];
@@ -65,13 +70,24 @@ extern u8 __retrieve_ap_buffer_start__[];
 extern u8 __retrieve_ap_buffer_size__[];
 
 /* for trustzone config */
-extern u8 __km4tz_tz_nsc_start__[];
-extern u8 __km4tz_tz_entry_start__[];
-extern u8 __km4tz_tz_entry_end__[];
 extern u8 __km4tz_bd_ram_start__[];
 
 extern u8 __km4tz_bd_psram_start__[];
 extern u8 __non_secure_psram_end__[]; /* if psram is 8MB, than write 0x60800000 will write 0x60000000 */
+
+/* backtrace addr */
+extern u8 __rom_text_region0_start__[];
+extern u8 __rom_text_region0_end__[];
+extern u8 __rom_text_region1_start__[];
+extern u8 __rom_text_region1_end__[];
+extern u8 __image2_backtrace_start__[];
+extern u8 __image2_backtrace_end__[];
+extern u8 __flash_text_start__[];
+extern u8 __flash_text_end__[];
+extern u8 __sram_image2_start__[];
+extern u8 __sram_image2_end__[];
+extern u8 __psram_image2_start__[];
+extern u8 __psram_image2_end__[];
 
 #if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 extern u8 __tcm_heap_buffer_start__[];
@@ -192,4 +208,3 @@ extern void BOOT_RccConfig(void);
 #endif
 
 #endif   //_AMEBA_BOOT_H_
-

@@ -22,7 +22,7 @@
  */
 
 #include "ameba.h"
-
+#include "rtw_coex_api_struct.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -62,8 +62,7 @@ enum coex_subtype_h2c_com {
 	COEX_H2C_COM_VENDOR_INFO_SET,
 	COEX_H2C_COM_WL_SLOT_SET,
 	COEX_H2C_COM_STATE_GET,
-	COEX_H2C_COM_SET_COEX_ENABLE,
-	COEX_H2C_COM_GET_IS_ENABLED,
+	COEX_H2C_COM_COEX_DBG,
 	/* end */
 	COEX_H2C_COM_INVALID = ((1 << SUBTYPE_BITS) - 1),
 };
@@ -174,30 +173,7 @@ struct rtk_coex_vendor_info {
 //////////////////////////////////////////////////////////
 ///////// for BT Variables
 //////////////////////////////////////////////////////////
-/**
- * @brief  The enumeration lists pta request module type.
- */
-enum pta_host_role {
-	PTA_HOST_WIFI			= 0,
-	PTA_HOST_BT				= 1
-};
-/**
- * @brief  The enumeration lists action for pta running.
- */
-enum pta_process_action {
-	COMMON_ACTION			= 0,
-	CALIBRATION_START		= 1,
-	CALIBRATION_STOP		= 2
-};
-/**
- * @brief  The enumeration lists pta winner module type.
- */
-enum pta_type {
-	PTA_AUTO            = 0,
-	PTA_WIFI			= 1,
-	PTA_BT				= 2,
-	PTA_DISABLE		    = 0xFF,
-};
+
 /**
  * @brief  The enumeration lists bt rfk type.
  */
@@ -334,19 +310,7 @@ struct extchip_para_t {
 //////////////////////////////////////////////////////////
 ///////// for COMMON Function Declare
 //////////////////////////////////////////////////////////
-/**
- * @brief      set coex enable or disable.
- * @param[in]  enable coex enable status
- * @return
- *             - None.
- */
-void rtk_coex_com_coex_set_enable(bool enable);
-/**
- * @brief      get if coex is enabled.
- * @return
- *             - true: coex enabled, false: coex disabled.
- */
-bool rtk_coex_com_coex_is_enabled(void);
+void rtk_coex_com_dbg(char *cmd, u8 cmd_len);
 /**
  * @brief      Vendor info set.
  * @param[in]  vendor_id
@@ -368,6 +332,7 @@ void rtk_coex_com_wl_slot_set(u8 wl_slot);
  *             - None. (print as result)
  */
 void rtk_coex_com_state_get(void);
+
 
 //////////////////////////////////////////////////////////
 ///////// for BT Function Declare

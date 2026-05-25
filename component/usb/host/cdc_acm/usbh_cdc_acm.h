@@ -128,7 +128,7 @@ typedef struct {
 	usbh_cdc_acm_cb_t *cb;                      /**< Pointer to the user-defined callback structure. */
 	usb_cdc_line_coding_t *line_coding;    /**< Current line coding of the device. */
 	usb_cdc_line_coding_t *user_line_coding; /**< User requested line coding. */
-	usbh_cdc_acm_state_t state;                 /**< Current state of the CDC ACM host driver. */
+	u8 state;                                   /**< Current state of the CDC ACM host driver, @ref usbh_cdc_acm_state_t. */
 } usbh_cdc_acm_host_t;
 
 /** @} End of Host_CDC_ACM_Types group*/

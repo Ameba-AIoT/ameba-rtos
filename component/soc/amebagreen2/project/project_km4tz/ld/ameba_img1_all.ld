@@ -12,6 +12,16 @@ ENTRY(Reset_Handler)
 
 #define IMG2_DATA_LMA_REGION	 KM4TZ_BD_RAM
 
+#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
+#if defined (CONFIG_IMG3_PSRAM)
+	#define IMG3_TZ_REGION		KM4TZ_BD_PSRAM_TZ
+#elif defined (CONFIG_IMG3_FLASH)
+	#define IMG3_TZ_REGION		KM4TZ_IMG3_XIP
+#else
+	#define IMG3_TZ_REGION		KM4TZ_BD_RAM_TZ
+#endif
+#endif
+
 #if defined(GENERATE_FLOADER_LD) || \
 	(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV)) || \
 	!defined(CONFIG_IMG1_FLASH)
@@ -94,6 +104,14 @@ SECTIONS
 	{
 		__image2_entry_func__ = .;
 	} > IMG2_DATA_LMA_REGION
+
+#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
+	/* image3 TZ RAM: define entry symbol for image1->image3 jump */
+	.ram_image3.text :
+	{
+		__image3_entry_func__ = .;
+	} > IMG3_TZ_REGION
+#endif
 }
 
 #ifdef CONFIG_FULLMAC_PG_LOADER
@@ -101,14 +119,3 @@ ASSERT(__image1_bss_start__ == __image1_bss_end__, "FULLMAC PG Loader can not co
 #endif
 __km4tz_pg_loader_ram_start__ = ORIGIN(FULLMAC_PG_LOADER_RAM);
 
-#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
-#if defined (CONFIG_IMG3_PSRAM)
-__km4tz_tz_nsc_start__ = ORIGIN(KM4TZ_BD_PSRAM_TZ_NSC) - 0x20;
-__km4tz_tz_entry_start__ = ORIGIN(KM4TZ_BD_PSRAM_TZ_ENTRY) ;
-__km4tz_tz_entry_end__ = ORIGIN(KM4TZ_BD_PSRAM_TZ_S) + LENGTH(KM4TZ_BD_PSRAM_TZ_S) - SECURE_ADDR_OFFSET;
-#else
-__km4tz_tz_nsc_start__ = ORIGIN(KM4TZ_BD_RAM_TZ_NSC) - 0x20;
-__km4tz_tz_entry_start__ = ORIGIN(KM4TZ_BD_RAM_TZ_ENTRY);
-__km4tz_tz_entry_end__ = ORIGIN(KM4TZ_BD_RAM_TZ_S) + LENGTH(KM4TZ_BD_RAM_TZ_S) - SECURE_ADDR_OFFSET;
-#endif
-#endif

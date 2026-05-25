@@ -23,7 +23,7 @@
   * @{
   */
 
-/** @defgroup MBED_RTC
+/** @defgroup MBED_RTC MBED_RTC
  *  @brief    MBED_RTC driver modules.
  *  @{
  */
@@ -40,16 +40,43 @@ static const u8 dim[12] = {
 };
 /* end of the group */
 
+/**
+  * @brief  Register RTC alarm interrupt handler.
+  * @param  data RTC IRQ callback data.
+  * @return 0.
+  */
+u32 rtc_alarm_intr_handler(void *data)
+{
+	/* To avoid gcc warnings */
+	(void) data;
+
+	alarm_irq_handler hdl;
+
+	/*clear alarm flag*/
+	RTC_AlarmClear();
+
+	/* execute user handler*/
+	if (rtc_alarm_handler != NULL) {
+		hdl = (alarm_irq_handler)rtc_alarm_handler;
+		hdl();
+	}
+
+	/*disable alarm*/
+	rtc_disable_alarm();
+
+	return 0;
+}
+
 /** @defgroup MBED_RTC_Exported_Functions MBED_RTC Exported Functions
   * @{
   */
 
 /**
   * @brief  Judge whether a year is a leap year or not.
-  * @param  year: Actual year - 1900.
-  * @return Result.
-  * @retval 1: This year is a leap year.
-  * @retval 0: This year is not a leap year.
+  * @param  year Actual year - 1900.
+  * @return Result:
+  *         - 1: This year is a leap year.
+  *         - 0: This year is not a leap year.
   */
 static inline bool is_leap_year(unsigned int year)
 {
@@ -59,8 +86,8 @@ static inline bool is_leap_year(unsigned int year)
 
 /**
   * @brief  Calculate total days in a specified month of a specified year.
-  * @param  year: Actual year - 1900.
-  * @param  month: Specified the number of months from  a specified year.
+  * @param  year Actual year - 1900.
+  * @param  month Specified the number of months from  a specified year.
   * @note 0 represents January.
   * @return Number of days in the month of the year.
   */
@@ -75,12 +102,11 @@ static u8 days_in_month(u8 month, u8 year)
 
 /**
   * @brief  Calculate month and day of the month according to year and day of the year.
-  * @param  year: Actual year - 1900.
-  * @param  yday: Day of the year.
-  * @param  mon: Pointer to the variable that stores month, which can be 0~11.
+  * @param  year Actual year - 1900.
+  * @param  yday Day of the year.
+  * @param  mon Pointer to the variable that stores month, which can be 0~11.
   * @note 0 represents January.
-  * @param  mday: Pointer to the variable that stores day of month, which can be 1~31.
-  * @retval none
+  * @param  mday Pointer to the variable that stores day of month, which can be 1~31.
   */
 static void rtc_calculate_mday(int year, int yday, int *mon, int *mday)
 {
@@ -98,13 +124,12 @@ static void rtc_calculate_mday(int year, int yday, int *mon, int *mday)
 #if 0//fix warning
 /**
   * @brief  Calculate the day of a week according to date.
-  * @param  year: Actual year - 1900.
-  * @param  mon: Month of the year, which can be 0~11.
+  * @param  year Actual year - 1900.
+  * @param  mon Month of the year, which can be 0~11.
   * @note 0 represents January.
-  * @param  mday: Day of the month.
-  * @param  wday: Pointer to the variable that stores day of a week, which can be 0~6.
+  * @param  mday Day of the month.
+  * @param  wday Pointer to the variable that stores day of a week, which can be 0~6.
   * @note 0 represents Sunday.
-  * @retval none
   */
 static void rtc_calculate_wday(int year, int mon, int mday, int *wday)
 {
@@ -130,8 +155,6 @@ static void rtc_calculate_wday(int year, int mon, int mday, int *wday)
 
 /**
   * @brief  Initialize the RTC device, including clock, function and RTC registers.
-  * @param  none
-  * @retval  none
   */
 void rtc_init(void)
 {
@@ -156,8 +179,6 @@ void rtc_init(void)
 
 /**
   * @brief  Deinitialize the RTC device.
-  * @param  none
-  * @retval  none
   */
 void rtc_free(void)
 {
@@ -167,10 +188,9 @@ void rtc_free(void)
 
 /**
   * @brief  Judge whether RTC is enabled or not.
-  * @param  none
-  * @return RTC status. It can be one of the following values:
-  * @retval 1: RTC has been enabled.
-  * @retval 0: RTC has not been enabled.
+  * @return RTC status:
+  *         - 1: RTC has been enabled.
+  *         - 0: RTC has not been enabled.
   */
 int rtc_isenabled(void)
 {
@@ -179,8 +199,7 @@ int rtc_isenabled(void)
 
 /**
   * @brief  Set the specified timestamp in seconds to RTC.
-  * @param  t: Seconds from 1970.1.1 00:00:00 to specified data and time which is to be set.
-  * @retval none
+  * @param  t Seconds from 1970.1.1 00:00:00 to specified data and time which is to be set.
   */
 void rtc_write(time_t t)
 {
@@ -202,7 +221,6 @@ void rtc_write(time_t t)
 
 /**
   * @brief  Get current timestamp in seconds from RTC.
-  * @param  none
   * @return Current timestamp in seconds which is calculated from 1970.1.1 00:00:00.
   */
 time_t rtc_read(void)
@@ -243,8 +261,6 @@ time_t rtc_read(void)
 
 /**
   * @brief  Disable RTC Alarm.
-  * @param  none
-  * @retval   none
   */
 void rtc_disable_alarm(void)
 {
@@ -256,39 +272,12 @@ void rtc_disable_alarm(void)
 }
 
 /**
-  * @brief  Register RTC alarm interrupt handler.
-  * @param  data: RTC IRQ callback data.
-  * @retval 0
-  */
-u32 rtc_alarm_intr_handler(void *data)
-{
-	/* To avoid gcc warnings */
-	(void) data;
-
-	alarm_irq_handler hdl;
-
-	/*clear alarm flag*/
-	RTC_AlarmClear();
-
-	/* execute user handler*/
-	if (rtc_alarm_handler != NULL) {
-		hdl = (alarm_irq_handler)rtc_alarm_handler;
-		hdl();
-	}
-
-	/*disable alarm*/
-	rtc_disable_alarm();
-
-	return 0;
-}
-
-/**
   * @brief  Set the specified RTC Alarm and interrupt.
-  * @param  alarm: Alarm object defined in application software.
-  * @param  alarmHandler:  Alarm interrupt callback function.
-  * @return Status. It can be one of the following values:
-  * @retval 1: Success.
-  * @retval Others: Error.
+  * @param  alrm Alarm object defined in application software.
+  * @param  alarmHandler  Alarm interrupt callback function.
+  * @return Status:
+  *         - 1: Success.
+  *         - Others: Error.
   */
 u32 rtc_set_alarm(alarm_t *alrm, alarm_irq_handler alarmHandler)
 {

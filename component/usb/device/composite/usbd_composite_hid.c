@@ -120,6 +120,14 @@ const usbd_class_driver_t usbd_composite_hid_driver = {
 
 /* Private functions ---------------------------------------------------------*/
 
+/**
+  * @brief  Handle HID specific CTRL requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  req: USB CTRL requests
+  * @retval Status
+  */
 static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	int ret = HAL_OK;
@@ -182,6 +190,14 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	return ret;
 }
 
+/**
+  * @brief  Set HID class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  config: USB configuration index
+  * @retval Status
+  */
 static int composite_hid_set_config(usb_dev_t *dev, u8 config)
 {
 	int ret = HAL_OK;
@@ -200,6 +216,14 @@ static int composite_hid_set_config(usb_dev_t *dev, u8 config)
 	return ret;
 }
 
+/**
+  * @brief  Clear HID class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  config: USB configuration index
+  * @retval Status
+  */
 static int composite_hid_clear_config(usb_dev_t *dev, u8 config)
 {
 	int ret = 0;
@@ -214,6 +238,15 @@ static int composite_hid_clear_config(usb_dev_t *dev, u8 config)
 	return ret;
 }
 
+/**
+  * @brief  Data sent on non-control IN endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  ep_addr: endpoint address
+  * @param  status: transfer status
+  * @retval Status
+  */
 static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
@@ -238,6 +271,8 @@ static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status
 
 /**
   * @brief  Handle EP0 Rx Ready event
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @retval Status
   */
@@ -259,6 +294,8 @@ static int composite_hid_handle_ep0_data_out(usb_dev_t *dev)
 
 /**
   * @brief  Get descriptor callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
   * @param  len: Descriptor length
@@ -299,6 +336,11 @@ int usbd_composite_hid_init(usbd_composite_dev_t *cdev, u16 tx_buf_len, usbd_com
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
 	usb_ep_info_t *info = &ep_intr_in->info;
 
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
 	info->addr = USBD_COMP_HID_INTR_IN_EP;
 	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_in->xfer_buf_len = tx_buf_len;
@@ -309,13 +351,11 @@ int usbd_composite_hid_init(usbd_composite_dev_t *cdev, u16 tx_buf_len, usbd_com
 		goto usbd_composite_hid_init_exit;
 	}
 
-	if (cb != NULL) {
-		hid->cb = cb;
-		if (cb->init != NULL) {
-			ret = cb->init();
-			if (ret != HAL_OK) {
-				goto usbd_composite_hid_clean_all_exit;
-			}
+	hid->cb = cb;
+	if (cb->init != NULL) {
+		ret = cb->init();
+		if (ret != HAL_OK) {
+			goto usbd_composite_hid_clean_all_exit;
 		}
 	}
 

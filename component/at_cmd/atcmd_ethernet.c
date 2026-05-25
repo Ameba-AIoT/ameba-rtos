@@ -73,14 +73,14 @@ void at_ethip(u16 argc, char **argv)
 	}
 
 	if (netif_dhcp_data(pnetif_eth) != NULL) {
-		LwIP_DHCP_stop(NETIF_ETH_INDEX);
+		lwip_dhcp_stop(NETIF_ETH_INDEX);
 	} else {
-		LwIP_ReleaseIP(NETIF_ETH_INDEX);
+		lwip_clear_ip(NETIF_ETH_INDEX);
 	}
 
-	LwIP_netif_set_down(NETIF_ETH_INDEX);
-	LwIP_netif_set_up(NETIF_ETH_INDEX);
-	LwIP_SetIP(NETIF_ETH_INDEX, ip, netmask, gw);
+	lwip_netif_set_down(NETIF_ETH_INDEX);
+	lwip_netif_set_up(NETIF_ETH_INDEX);
+	lwip_set_ip(NETIF_ETH_INDEX, ip, netmask, gw);
 
 end:
 	if (error_no == 0) {

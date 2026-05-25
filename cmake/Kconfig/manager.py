@@ -213,6 +213,14 @@ class Manager(object):
             print(f"{YELLOW}Press [Enter] to continue: Skip Kconfig updating and using current .config{RESET}")
             print(f"{YELLOW}Press [CTRL+C] to exit: Run menuconfig.py to reconfiguration after exiting\r\n{RESET}")
 
+            if not sys.stdin.isatty() or os.environ.get('AMEBA_KCONFIG_AUTO_SKIP') == '1':
+                print(f"{MAGENTA}Non-interactive shell detected, re-syncing .config to current Kconfig{RESET}")
+                if self.run_set_config(config_in=self.config_in, config_out=self.config_in, content=[]) != 0:
+                    print(f"{RED}.config re-sync failed{RESET}")
+                    return 4
+                os.remove(self.config_default_old)
+                return 0
+
             user_input = input(f"{YELLOW}Press [Enter] to continue or Press [CTRL+C] to exit\r\n{RESET}")
             if user_input == '': # Enter is press
                 print(f"{MAGENTA}[Enter] is pressed, kconfig updating is ignored{RESET}")
@@ -356,6 +364,51 @@ class Manager(object):
                 processed_lines.append(line)
         with open(filename_ouput, 'w') as file:
             file.writelines(list(dict.fromkeys(processed_lines)))
+
+    def check_flash_layout_overlap(self) -> int:
+        if not os.path.exists(self.config_in):
+            return 0
+
+        offsets: Dict[str, int] = {}
+        sizes: Dict[str, int] = {}
+        offset_pat = re.compile(r'^CONFIG_(FLASH_\w+_OFFSET)=(0x[0-9a-fA-F]+|\d+)')
+        size_pat   = re.compile(r'^CONFIG_(FLASH_\w+_SIZE)=(0x[0-9a-fA-F]+|\d+)')
+
+        with open(self.config_in, 'r') as f:
+            for line in f:
+                m = offset_pat.match(line.strip())
+                if m:
+                    offsets[m.group(1)] = int(m.group(2), 0)
+                    continue
+                m = size_pat.match(line.strip())
+                if m:
+                    sizes[m.group(1)] = int(m.group(2), 0)
+
+        partitions = []
+        for offset_key, start in offsets.items():
+            base = offset_key[:-len('_OFFSET')]
+            size = sizes.get(base + '_SIZE', 0)
+            if start == 0xFFFFFFFF or size == 0:
+                continue
+            partitions.append((base, start, start + size - 1))
+
+        errors = []
+        for i in range(len(partitions)):
+            for j in range(i + 1, len(partitions)):
+                name_a, start_a, end_a = partitions[i]
+                name_b, start_b, end_b = partitions[j]
+                if start_a <= end_b and start_b <= end_a:
+                    errors.append(
+                        f"  {name_a} [0x{start_a:08X}, 0x{end_a:08X}] overlaps "
+                        f"{name_b} [0x{start_b:08X}, 0x{end_b:08X}]"
+                    )
+
+        if errors:
+            print(f"{RED}ERROR: Flash layout overlap detected:{RESET}")
+            for e in errors:
+                print(f"{RED}{e}{RESET}")
+            return 1
+        return 0
 
     def process_projects(self) -> int:
         for proj, core in self.projects.items():

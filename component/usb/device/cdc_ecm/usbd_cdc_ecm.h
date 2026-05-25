@@ -40,6 +40,9 @@
 #define USBD_CDC_ECM_COMM_INTERFACE_NUM               0x00U  /**< Communication interface */
 #define USBD_CDC_ECM_DATA_INTERFACE_NUM               0x01U  /**< Data interface */
 
+/* Number of ping-pong RX buffers used to decouple USB OUT from upper-layer RX. */
+#define USBD_CDC_ECM_RX_BUF_NUM                       2U
+
 /** @} End of Device_CDC_ECM_Constants group*/
 /** @} End of USB_Device_Constants group*/
 
@@ -68,7 +71,7 @@ typedef struct {
  */
 typedef struct {
 	/**
-	 * @brief Pointer to the USB CDC ECM private data structue
+	 * @brief Pointer to the USB CDC ECM private data structure.
 	 */
 	usbd_cdc_ecm_priv_data_t *priv;
 
@@ -86,6 +89,8 @@ typedef struct {
 
 	/**
 	 * @brief Called to handle class-specific SETUP requests.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] req: Pointer to the setup request packet.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
@@ -102,6 +107,8 @@ typedef struct {
 
 	/**
 	 * @brief Called when USB attach status changes for application to support hot-plug events.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] old_status: The previous attach status.
 	 * @param[in] status: The new attach status.
 	 */
@@ -112,21 +119,36 @@ typedef struct {
  * @brief Structure representing the CDC ECM device instance.
  */
 typedef struct {
-	u8 mac[CDC_ECM_MAC_STR_LEN];/**< Buffer for saving MAC address */
-	usb_setup_req_t ctrl_req;   /**< Stores the current control request. */
-	usbd_ep_t ep_bulk_in;       /**< BULK IN endpoint structure. */
-	usbd_ep_t ep_bulk_out;      /**< BULK OUT endpoint structure. */
-	usbd_ep_t ep_intr_in;       /**< INTERRUPT IN endpoint structure. */
-	usb_dev_t *dev;             /**< Pointer to the USB device instance. */
-	usbd_cdc_ecm_cb_t *cb;      /**< Pointer to the user-defined callback structure. */
-	usb_os_sema_t bulk_tx_sema; /* Semaphore for BULK TX synchronization */
+	u8 *rx_buf[USBD_CDC_ECM_RX_BUF_NUM];  /**< Ping-pong RX buffers (ISR and RxThread). */
 
-	u8 connect_status;          /**< NetworkConnection. */
-	u8 notify_state;            /**< Notify Type. */
-	u8 interface_id;            /**< Choose interface number. */
-	__IO u8 bulk_tx_block;      /* Flag indicating BULK TX is blocked/busy */
-	u8 mac_valid;               /* Flag indicating if MAC address is valid */
-	u8 mac_src_type;            /* ECM dongle MAC source type, see @ref usbd_cdc_ecm_dongle_mac_type_t */
+	usb_setup_req_t ctrl_req;   /**< Saved control request for EP0 OUT data phase. */
+	usbd_ep_t ep_bulk_in;       /**< BULK IN endpoint. */
+	usbd_ep_t ep_bulk_out;      /**< BULK OUT endpoint. */
+	usbd_ep_t ep_intr_in;       /**< INTERRUPT IN endpoint. */
+
+	usb_os_sema_t bulk_tx_sema;       /**< Semaphore: unblocks caller when BULK IN transfer completes. */
+	usb_os_task_t rx_task;            /**< RX delivery thread handle. */
+	usb_os_sema_t rx_data_ready_sema; /**< ISR -> thread: signals a buffer holds a frame. */
+
+	usb_dev_t *dev;        /**< USB device instance. */
+	usbd_cdc_ecm_cb_t *cb; /**< User-defined callback structure. */
+	u8 *rx_msg_buf;        /**< Buffer pointer handed to the RX thread for current frame. */
+
+	u32 rx_msg_len;             /**< Frame length handed to the RX thread. */
+	__IO u32 rx_pending_len;    /**< Deferred frame length waiting in rx_buf[rx_xfer_idx]. */
+
+	u8 mac[CDC_ECM_MAC_STR_LEN];          /**< Device MAC address (6 bytes). */
+
+	u8 connect_status;          /**< Current network connection state (1=connected, 0=disconnected). */
+	u8 notify_state;            /**< Active notification type, see usbd_cdc_ecm_notify_state. */
+	u8 alt_setting;             /**< Currently selected data alternate setting. */
+	u8 mac_valid;               /**< 1 when mac[] holds a valid address. */
+	u8 mac_src_type;            /**< MAC source, see usbd_cdc_ecm_dongle_mac_type_t. */
+	u8 rx_xfer_idx;             /**< Index of the buffer currently armed for USB OUT (0 or 1). */
+	u8 notify_retry;            /**< 1 when a notification send failed; SOF handler retries. */
+	__IO u8 bulk_tx_block;      /**< 1 while usbd_cdc_ecm_transmit is blocking on the semaphore. */
+	__IO u8 rx_buf_free;        /**< thread->ISR: 1=buffer available, 0=held by RX thread. */
+	__IO u8 rx_thread_running;  /**< RX thread loop guard; cleared to 0 to request exit. */
 } usbd_cdc_ecm_dev_t;
 
 /** @} End of Device_CDC_ECM_Types group*/
@@ -145,8 +167,6 @@ typedef struct {
 
 /**
  * @brief Initializes class driver with application callback handler.
- * @param[in] bulk_out_xfer_size: BULK OUT xfer buffer malloc length.
- * @param[in] bulk_in_xfer_size: BULK IN xfer buffer malloc length.
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 on success, non-zero on failure.
  */
@@ -169,8 +189,8 @@ int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block);
 
 /**
  * @brief  Gets the device connect status.
- * @return 1: Device connect to the host
- *         0:
+ * @return 1: Device is connected to the host.
+ *         0: Device is disconnected.
  */
 int usbd_cdc_ecm_get_connect_status(void);
 

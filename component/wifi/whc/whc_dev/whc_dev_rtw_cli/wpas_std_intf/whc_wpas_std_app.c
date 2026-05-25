@@ -1,10 +1,8 @@
 #include "whc_dev.h"
 #include "os_wrapper.h"
-#include "whc_dev_rtw_cli_cmd_define.h"
-#include "whc_dev_rtw_cli_cmd_parse.h"
 
 extern int start_wpa_supplicant(char *iface_name);
-extern void whc_rtw_cli_send_to_host(u32 cmd_category, u8 cmd_id,
+extern void whc_rtw_cli_send_to_host(u8 idx, u32 cmd_category, u8 cmd_id,
 									 u8 *user_data, u32 user_data_len);
 
 
@@ -63,6 +61,8 @@ int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf)
 	ptr += 4;
 	*ptr = WHC_WPA_OPS_UTIL_GET_MAC_ADDR;
 	ptr += 1;
+	*ptr = idx;
+	ptr += 1;
 	memcpy(ptr, dev_mac.octet, 6);
 	//6+4+1=11
 	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE, NULL, 0);
@@ -71,12 +71,18 @@ int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf)
 
 }
 
-void whc_dev_rtw_cli_wpas_reply_hdl(char *test_rx, char *reply, size_t reply_len)
+void whc_dev_rtw_cli_wpas_reply_info_hdl(u8 idx, char *reply, size_t reply_len)
 {
-	(void)test_rx;
 
-	whc_rtw_cli_send_to_host(WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_OFLD_RESULT,
+	whc_rtw_cli_send_to_host(idx, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_OFLD_RESULT,
 							 (u8 *)reply, reply_len);
 }
 
+
+void whc_dev_rtw_cli_wpas_reply_event_hdl(u8 idx, const char *reply, size_t reply_len)
+{
+
+	whc_rtw_cli_send_to_host(idx, WHC_WPA_OPS_EVENT, WHC_WPA_OPS_EVENT_JOIN_STATUS,
+							 (u8 *)reply, reply_len);
+}
 

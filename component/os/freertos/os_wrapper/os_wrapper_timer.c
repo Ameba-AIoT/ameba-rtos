@@ -6,6 +6,7 @@
 
 #include "ameba.h"
 #include "FreeRTOS.h"
+#include "task.h"
 #include "timers.h"
 #include "os_wrapper.h"
 #include "os_wrapper_specific.h"
@@ -97,6 +98,11 @@ int rtos_timer_delete(rtos_timer_t p_handle, uint32_t wait_ms)
 		return RTK_FAIL;
 	}
 
+	/* Force non-blocking when the OS cannot perform a context switch. */
+	if (rtos_get_critical_state()) {
+		wait_ms = 0;
+	}
+
 	ret = xTimerDelete((TimerHandle_t) p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 
 	if (ret == pdTRUE) {
@@ -123,6 +129,10 @@ int rtos_timer_start(rtos_timer_t p_handle, uint32_t wait_ms)
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
+		/* Force non-blocking when the OS cannot perform a context switch. */
+		if (rtos_get_critical_state()) {
+			wait_ms = 0;
+		}
 		ret = xTimerStart((TimerHandle_t) p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 	}
 
@@ -151,6 +161,10 @@ int rtos_timer_stop(rtos_timer_t p_handle, uint32_t wait_ms)
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
+		/* Force non-blocking when the OS cannot perform a context switch. */
+		if (rtos_get_critical_state()) {
+			wait_ms = 0;
+		}
 		ret = xTimerStop((TimerHandle_t) p_handle, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 	}
 
@@ -182,6 +196,10 @@ int rtos_timer_change_period(rtos_timer_t p_handle, uint32_t interval_ms, uint32
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
+		/* Force non-blocking when the OS cannot perform a context switch. */
+		if (rtos_get_critical_state()) {
+			wait_ms = 0;
+		}
 		ret = xTimerChangePeriod((TimerHandle_t) p_handle, timer_ticks, RTOS_CONVERT_MS_TO_TICKS(wait_ms));
 	}
 
@@ -226,6 +244,10 @@ int rtos_timer_pend_function_call(void (*p_func)(void *, uint32_t),
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
+		/* Force non-blocking when the OS cannot perform a context switch. */
+		if (rtos_get_critical_state()) {
+			wait_ms = 0;
+		}
 		ret = xTimerPendFunctionCall((PendedFunction_t)p_func,
 									 pv_parameter1,
 									 ul_parameter2,

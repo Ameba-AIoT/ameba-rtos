@@ -55,16 +55,16 @@
 /* MSC configurations */
 #define USBD_MSC_FIX_CV_TEST_ISSUE                  0                  /* Enable for CV test */
 
-/* RAM disk configurations */
-#ifdef CONFIG_USBD_MSC_RAM_DISK
-#define USBD_MSC_RAM_DISK_SIZE                      (USBD_MSC_BUFLEN * 8) /**< Total size of the RAM disk. Should be > 64KB to support ATTO benchmark test. */
-#define USBD_MSC_RAM_DISK_SECTORS                   (USBD_MSC_RAM_DISK_SIZE >> USBD_MSC_BLK_BITS) /**< Total number of sectors in RAM disk. */
-#endif
-
 /* Defines storage-related parameters like block size and buffer length. */
 #define USBD_MSC_BLK_BITS                           9                        /**< Number of bits per block (log2(512)). */
 #define USBD_MSC_BLK_SIZE                           (1 << USBD_MSC_BLK_BITS) /**< Block size in bytes (512). */
 #define USBD_MSC_BUFLEN                             (16 * 1024)              /**< Default size of the internal data buffer. */
+
+/* RAM disk configurations */
+#ifdef CONFIG_USBD_MSC_RAM_DISK
+#define USBD_MSC_RAM_DISK_SIZE                      (128 * 1024) /**< Total size of the RAM disk. Should be > 64KB to support ATTO benchmark test. */
+#define USBD_MSC_RAM_DISK_SECTORS                   (USBD_MSC_RAM_DISK_SIZE >> USBD_MSC_BLK_BITS) /**< Total number of sectors in RAM disk. */
+#endif
 
 /* BOT state */
 #define USBD_MSC_IDLE                               0U          /**< Idle state */
@@ -133,6 +133,8 @@ typedef struct {
 typedef struct {
 	/**
 	 * @brief Called when the USB device status changes for application to support USB hot-plug events.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] old_status: The previous USB device status.
 	 * @param[in] status: The new USB device status.
 	 */

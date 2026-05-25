@@ -20,6 +20,7 @@
 #include "semphr.h"
 #include "queue.h"
 #include "ringbuffer.h"
+#include "stdlib.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -81,7 +82,6 @@ static usbd_config_t cdc_acm_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
-	.ext_intr_enable = USBD_EPMIS_INTR,
 #elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 644U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
@@ -103,14 +103,16 @@ static rtos_sema_t atcmd_usbd_tx_done_sema;
 static rtos_sema_t tt_mode_tx_sema;
 static void *uart_irq_handle_sema;
 static void *uart_show_sema;
+static void *usbd_rx_ringbuf_mutex = NULL;
 static char uart_format_buffer[FORMAT_LEN];
 static u8 uart_irq_buffer[MAX_CMD_LEN] ALIGNMTO(CACHE_LINE_SIZE);
 static u32 uart_irq_count = 0;
 static u8 tt_mode_task_start = 0;
+static u32 tt_len = 10 * 1024 * 1024;
 static RingBuffer *at_usbd_rx_ring_buf = NULL;
 static u8 uart_show_buf[CONFIG_CDC_ACM_BULK_IN_XFER_SIZE] = {0};
 
-void uart_irq(uint32_t id, SerialIrq event)
+static void uart_irq(uint32_t id, SerialIrq event)
 {
 	serial_t *sobj = (void *)id;
 	BaseType_t task_woken = pdFALSE;
@@ -133,7 +135,7 @@ void uart_irq(uint32_t id, SerialIrq event)
 	}
 }
 
-void uart_send_string(serial_t *sobj, char *pstr, u16 len)
+static void uart_send_string(serial_t *sobj, char *pstr, u16 len)
 {
 	unsigned int i = 0;
 	while (*(pstr + i) != 0 && i < len) {
@@ -142,7 +144,7 @@ void uart_send_string(serial_t *sobj, char *pstr, u16 len)
 	}
 }
 
-void uart_format_string_output(const char *fmt, ...)
+static void uart_format_string_output(const char *fmt, ...)
 {
 	int len_fmt = 0;
 	va_list ap;
@@ -234,7 +236,9 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 				ds_count += len;
 			}
 		} else {
+			xSemaphoreTake(usbd_rx_ringbuf_mutex, 0xFFFFFFFF);
 			RingBuffer_Write(at_usbd_rx_ring_buf, buf, len);
+			xSemaphoreGive(usbd_rx_ringbuf_mutex);
 			xSemaphoreGive(uart_show_sema);
 		}
 	}
@@ -242,7 +246,7 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 	return 0;
 }
 
-void cdc_acm_cb_transmitted(u8 status)
+static void cdc_acm_cb_transmitted(u8 status)
 {
 	if (status == HAL_OK) {
 		rtos_sema_give(atcmd_usbd_tx_done_sema);
@@ -448,15 +452,16 @@ exit_usbd_init_fail:
 static void tt_mode_test_task(void *param)
 {
 	UNUSED(param);
-	u32 tt_len = 10 * 1024 * 1024;
+	u32 tt_len_tmp;
 	u32 send_len;
 	u8 *tt_tx_buf = pvPortMalloc(CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE);
 	int ret;
 
 	while (1) {
-		while (tt_len > 0) {
+		tt_len_tmp = tt_len;
+		while (tt_len_tmp > 0) {
 			xSemaphoreTake(tt_mode_tx_sema, 0xFFFFFFFF);
-			send_len = tt_len > (CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE) ? (CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE) : tt_len;
+			send_len = tt_len_tmp > (CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE) ? (CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE) : tt_len_tmp;
 			ret = usbd_cdc_acm_transmit(tt_tx_buf, send_len);
 			while (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\r\n");
@@ -464,26 +469,24 @@ static void tt_mode_test_task(void *param)
 				ret = usbd_cdc_acm_transmit(tt_tx_buf, send_len);
 			}
 			xSemaphoreTake(atcmd_usbd_tx_done_sema, 0xFFFFFFFF);
-			tt_len -= send_len;
+			tt_len_tmp -= send_len;
 			xSemaphoreGive(tt_mode_tx_sema);
 		}
 
 		printf("tt mode end\r\n");
 		xSemaphoreTake(tt_mode_tx_sema, 0xFFFFFFFF);
-		tt_len = 10 * 1024 * 1024;
 		tt_mode_task_start = 0;
 	}
-
-
-	vPortFree(tt_tx_buf);
-	vTaskDelete(NULL);
 }
 
-void uart_irq_handle_task(void)
+static void uart_irq_handle_task(void)
 {
 	int ret;
 	while (1) {
 		xSemaphoreTake(uart_irq_handle_sema, 0xFFFFFFFF);
+		if (strstr((char *)uart_irq_buffer, "\r\n") && strstr((char *)uart_irq_buffer, "AT+TEST=1,")) {
+			tt_len = atoi((char *)&uart_irq_buffer[10]);
+		}
 		ret = usbd_cdc_acm_transmit(uart_irq_buffer, uart_irq_count);
 		while (ret != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\r\n");
@@ -496,7 +499,7 @@ void uart_irq_handle_task(void)
 	}
 }
 
-void uart_show_rx_data_task(void *param)
+static void uart_show_rx_data_task(void *param)
 {
 	u32 actual_len, show_len;
 	UNUSED(param);
@@ -507,7 +510,9 @@ void uart_show_rx_data_task(void *param)
 		actual_len = RingBuffer_Available(at_usbd_rx_ring_buf);
 		while (actual_len > 0) {
 			show_len = actual_len > CONFIG_CDC_ACM_BULK_IN_XFER_SIZE ? CONFIG_CDC_ACM_BULK_IN_XFER_SIZE : actual_len;
+			xSemaphoreTake(usbd_rx_ringbuf_mutex, 0xFFFFFFFF);
 			RingBuffer_Read(at_usbd_rx_ring_buf, uart_show_buf, show_len);
+			xSemaphoreGive(usbd_rx_ringbuf_mutex);
 			uart_send_string(&sobj, (char *)uart_show_buf, show_len);
 			actual_len -= show_len;
 		}
@@ -531,7 +536,8 @@ void example_atcmd_host_usbd(void)
 	uart_irq_handle_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	tt_mode_tx_sema = (void *)xSemaphoreCreateCounting(1, 0);
 	uart_show_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
-	rtos_sema_create(&atcmd_usbd_tx_done_sema, 0, 0xFFFF);
+	atcmd_usbd_tx_done_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	usbd_rx_ringbuf_mutex = (void *)xSemaphoreCreateMutex();
 
 	at_usbd_rx_ring_buf = RingBuffer_Create(NULL, 4 * 1024, LOCAL_RINGBUFF, 1);
 

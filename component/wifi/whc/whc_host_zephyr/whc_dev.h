@@ -5,6 +5,9 @@
 //#define CONFIG_SDIO_TX_ENABLE_AVAL_INT 1
 #endif
 
+/* type */
+#define WHC_WIFI_TEST  0x1
+/* subtype */
 #define WHC_WIFI_TEST_GET_MAC_ADDR 0x1
 #define WHC_WIFI_TEST_GET_IP       0x2
 #define WHC_WIFI_TEST_SET_READY    0x3
@@ -30,8 +33,6 @@ struct whc_api_info {
 enum WHC_WIFI_CTRL_TYPE {
 	INIC_WIFI_EVT_XIMT_PKTS = 0xa5a5a500,
 	INIC_WIFI_EVT_RECV_PKTS,
-
-	WHC_WIFI_TEST = 0xffa5a5a5,
 
 	INIC_WIFI_EVT_MAX,
 };

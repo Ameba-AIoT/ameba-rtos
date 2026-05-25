@@ -6,7 +6,7 @@
 
 from packaging.version import parse as Version
 
-version = "2.0.2"
+version = "2.0.3"
 # latest_url = "https://aiot.realmcu.com/en/latest/tools/vscode/index.html#advanced-features"
 latest_url = f"https://aiot.realmcu.com/download/misc/AmebaRemoteService_v{version}.exe"
 

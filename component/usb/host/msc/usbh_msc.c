@@ -162,7 +162,7 @@ static int usbh_msc_setup(usb_host_t *host)
 		setup.req.wValue = 0U;
 		setup.req.wIndex = 0U;
 		setup.req.wLength = 1U;
-		status = usbh_ctrl_request(host, &setup, (u8 *)(void *)msc->max_lun_buf);
+		status = usbh_ctrl_request(host, &setup, msc->max_lun_buf);
 		/* When devices do not support the GetMaxLun request, this should
 		   be considred as only one logical unit is supported */
 		if (status == HAL_ERR_PARA) {
@@ -882,9 +882,12 @@ int usbh_msc_init(usbh_msc_cb_t *cb)
 	int ret = HAL_OK;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 
-	if (cb != NULL) {
-		msc->cb = cb;
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
 	}
+
+	msc->cb = cb;
 
 	msc->hbot.cbw = usb_os_malloc(USB_MSC_CBW_LEN);
 	if (msc->hbot.cbw == NULL) {

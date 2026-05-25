@@ -1,0 +1,27 @@
+comment "----------CPU config----------"
+
+menu "CONFIG CHIP"
+    choice
+        prompt "ArmCore"
+        default ARM_CORE_CM4_KM4TZ_FOR_KM4TZ
+        config ARM_CORE_CM4_KM4TZ_FOR_KM4TZ
+            bool "ARM_CM4_KM4TZ"
+    endchoice
+
+    config ARM_CORE_CM4_FOR_KM4TZ
+        bool
+        default y
+
+    choice
+        prompt "Chip Version"
+        default RTL8720F_A_CUT_FOR_KM4TZ
+        config RTL8720F_A_CUT_FOR_KM4TZ
+            bool "RTL8720F_A_Cut"
+    endchoice
+
+    config CPU_HAS_FPU_FOR_KM4TZ
+        bool
+        default y
+endmenu
+
+

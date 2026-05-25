@@ -73,9 +73,9 @@
  * Describes a single video frame size and its supported frame intervals.
  */
 typedef  struct {
-	unsigned int width;
-	unsigned int height;
-	unsigned int intervals[4];
+	u32 width;
+	u32 height;
+	u32 intervals[4];
 } usbd_uvc_frame_info_t;
 
 /**
@@ -84,7 +84,7 @@ typedef  struct {
  * Defines a video format and its supported frame resolutions.
  */
 typedef  struct {
-	unsigned int fcc;
+	u32 fcc;
 	usbd_uvc_frame_info_t *frames;
 } usbd_uvc_format_info_t;
 
@@ -94,13 +94,13 @@ typedef  struct {
  * Used for vendor-defined control or data transfer commands over USB.
  */
 typedef  struct {
-	unsigned char cmd;
-	unsigned char subcmd;
-	unsigned short address;
-	unsigned short length;
-	unsigned short reserved;
-	unsigned char buffer[8];
-} usbd_uvc_vendorcmd_t;
+	u8 cmd;
+	u8 subcmd;
+	u16 address;
+	u16 length;
+	u16 reserved;
+	u8 buffer[8];
+} __PACKED usbd_uvc_vendorcmd_t;
 
 /**
  * @brief UVC Processing Unit control data.
@@ -150,8 +150,8 @@ typedef  struct {
  */
 typedef  struct {
 	struct list_head buffer_list;
-	unsigned char *mem;
-	unsigned int bytesused;
+	u8 *mem;
+	u32 bytesused;
 	void *exbuf;
 	int index;
 } usbd_uvc_buffer_t;
@@ -166,7 +166,7 @@ typedef  struct {
 	union {
 		usb_setup_req_t req;
 		usbd_uvc_request_data_t uvc_data;
-		unsigned char buf[64];
+		u8 buf[64];
 	};
 	struct list_head	list;
 } usbd_uvc_req_data_t;
@@ -180,26 +180,24 @@ typedef  struct {
 typedef  struct {
 	usbd_uvc_buffer_t uvc_buffer;
 	int stream_index;
-	/* Frame parameters */
-	u8 bpp;
 	u32 fcc;
-	unsigned int width;
-	unsigned int height;
-	unsigned int imagesize;
-	unsigned int frm_type;
+	u32 width;
+	u32 height;
+	u32 imagesize;
+	u32 frm_type;
 
 	/* Requests */
-	unsigned int req_size;
+	u32 req_size;
 
 	/* Context data used by the completion handler */
 	u32 payload_size;
 	u32 max_payload_size;
 
 	//struct uvc_video_queue queue;
-	unsigned int fid;
-	unsigned int format;
-	unsigned int buf_used;
-	unsigned int end_flag;
+	u32 fid;
+	u32 format;
+	u32 buf_used;
+	u32 end_flag;
 
 	// payload list
 	struct list_head input_queue;
@@ -210,6 +208,8 @@ typedef  struct {
 	usb_os_sema_t output_frame_sema;
 	usb_os_queue_t complete_bf_req;
 	void *complete_bf_task;
+	/* Frame parameters */
+	u8 bpp;
 } usbd_uvc_video_t;
 
 /**
@@ -220,21 +220,22 @@ typedef  struct {
  */
 typedef  struct {
 	usbd_uvc_video_t video;
-
 	usbd_uvc_streaming_control_t probe;
 	usbd_uvc_streaming_control_t commit;
-
-	u16 interface_number;
-	u8 config;
-
 	usbd_uvc_req_data_t req_data;
 	/* Events */
-	unsigned int event_length;
-	unsigned int event_setup_out : 1;
+	u32 event_length;
+	u32 event_setup_out : 1;
 	int control;		   //control selector
 	int command_interface; //Interface and entiny 0x00 control 0x01 streaming &0xff
 	int command_entity;	   //0x02 process unit 0x03 extension unit >>8&0xff
-	unsigned char result[64];
+	u8 result[64];
+	/**
+	 * @brief Called when UVC streaming parameters are committed/changed by the host.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @param[in] uvc_format_ptr: Pointer to the active UVC format descriptor.
+	 */
 	void (*change_parm_cb)(void *);
 	usb_dev_t *dev;
 
@@ -245,13 +246,15 @@ typedef  struct {
 	usb_os_lock_t lock;
 	u32 running;
 	u32 init_done;    // 0: not initialized, 1: fully initialized
-	u8  ctrl_req;
-	u8  ctrl_data_len;
-	u8 *uvc_in_buf;
 	usbd_ep_t ep_isoc_in;
 	rtos_queue_t uvc_cmd_queue;
 	u32 frame_done;
 	usbd_uvc_format_t *uvc_format_ptr;
+	u8 *uvc_in_buf;
+	u16 interface_number;
+	u8 config;
+	u8  ctrl_req;
+	u8  ctrl_data_len;
 } usbd_uvc_dev_t;
 
 /* Exported variables --------------------------------------------------------*/

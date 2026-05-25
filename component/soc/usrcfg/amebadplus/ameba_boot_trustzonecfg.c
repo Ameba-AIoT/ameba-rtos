@@ -14,23 +14,20 @@
 #define BOOT_XIP_START  	((u32)__km4_boot_text_start__ - IMAGE_HEADER_LEN)
 #define BOOT_XIP_END		0x10000000
 
-#if defined (CONFIG_IMG3_SRAM)
-#define TZ_NSC_START  	(u32)__km4_tz_nsc_start__
-#define TZ_ENTRY_START	(u32)__km4_tz_entry_start__
-#define TZ_ENTRY_END	(u32)__km4_tz_entry_end__
-#else
-#define TZ_NSC_START  	(u32)__km4_psram_tz_nsc_start__
-#define TZ_ENTRY_START	(u32)__km4_psram_tz_entry_start__
-#define TZ_ENTRY_END	(u32)__km4_psram_tz_entry_end__
-#endif
+/* Only define sau_config when compiling IMG3 */
+#define TZ_ENTRY_START  	(u32)__image3_ram_start__
+#define TZ_NSC_START		(u32)__ram_image3_nsc_start__
+#define TZ_NSC_END			(u32)__ram_image3_nsc_end__
+#define TZ_S_END			(u32)__image3_ram_end__
+
 
 const SAU_CFG_TypeDef sau_config[SAU_ENTRY_NUM] = {
 //  Start				End						NSC
 	{0x0001E000,		0x000447FF,				0},	/* entry0: IROM & DROM NS */
 	{SPI_FLASH_BASE,	BOOT_XIP_START - 1,		0},	/* entry1: Flash */
-	{BOOT_XIP_END,		TZ_NSC_START - 1,		0},	/* entry2: BOOT_XIP ~ NSC */
-	{TZ_NSC_START,		TZ_ENTRY_START - 1,		1},	/* entry3: NSC */
-	{TZ_ENTRY_END,		0xFFFFFFFF,				0},	/* entry4: TZ Entry ~ End */
+	{BOOT_XIP_END,		TZ_ENTRY_START - 1,		0},	/* entry2: BOOT_XIP ~ NSC */
+	{TZ_NSC_START,		TZ_NSC_END - 1,			1},	/* entry3: NSC region */
+	{TZ_S_END,			0xFFFFFFFF,				0},	/* entry4: After merged TZ region ~ End */
 	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry5: TODO */
 	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry6: TODO */
 	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry7: TODO */
@@ -65,4 +62,3 @@ const TZ_CFG_TypeDef mpc1_config[MPC_ENTRY_NUM] =						/* Security configuration
 	{0xFFFFFFFF,					0xFFFFFFFF,			MPC_RW | MPC_NS},	/* entry7: TODO */
 };
 #endif
-

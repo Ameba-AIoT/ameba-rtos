@@ -53,6 +53,26 @@ enum usbd_cdc_ecm_dongle_mac_type_t {
 /* Buffer sizes */
 #define USBD_CDC_ECM_BULK_BUF_MAX_SIZE                ((USB_CDC_ECM_MAX_SEGMENT_SIZE + USB_BULK_HS_MAX_MPS - 1) / USB_BULK_HS_MAX_MPS * USB_BULK_HS_MAX_MPS)
 
+/* RX decoupling: ping-pong buffers + dedicated thread to deliver received frames
+ * out of USB context. State lives in usbd_cdc_ecm_dev_t; see usbd_cdc_ecm.h.
+ *
+ * Synchronization:
+ *   - rx_data_ready_sema (ISR -> thread): given by ISR when a buffer holds a
+ *     frame; taken (blocking) by the RX thread to start processing.
+ *   - rx_buf_free (thread -> ISR): volatile flag. Set to 1 by the RX thread
+ *     after processing; cleared to 0 by the ISR when it claims the buffer.
+ *
+ * Flow control via SOF interrupt (no drop):
+ *   If rx_buf_free == 0 when ep_data_out fires, usbd_ep_receive is NOT trigger
+ *   (bulk-out endpoint NAKs the host). rx_pending is set with the frame length.
+ *   The SOF handler (fires every 1 ms FS / 125 us HS) polls the flag and
+ *   trigger the endpoint as soon as the thread frees the buffer.
+ *
+ * rx_xfer_idx tracks which of the two buffers is currently armed for USB OUT. */
+#define USBD_CDC_ECM_RX_THREAD_STACK_SIZE             768U
+#define USBD_CDC_ECM_RX_THREAD_PRIORITY               6U
+#define USBD_CDC_ECM_RX_SEMA_TAKE_TIMEOUT_MS          100U
+
 /* Private function prototypes -----------------------------------------------*/
 
 static int cdc_ecm_set_config(usb_dev_t *dev, u8 config);
@@ -62,10 +82,14 @@ static u16 cdc_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 static int cdc_ecm_handle_ep0_data_out(usb_dev_t *dev);
 static int cdc_ecm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int cdc_ecm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
+static int cdc_ecm_sof(usb_dev_t *dev);
 static void cdc_ecm_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 static int cdc_ecm_bulk_tx_status_check(void);
 static int cdc_ecm_intr_in_send(void *data, u16 len);
 static int cdc_ecm_send_notification(void);
+static inline u8 cdc_ecm_char_to_hex(u8 value);
+static void cdc_ecm_mac_to_string(u8 *mac, char *mac_str);
+static void cdc_ecm_set_mac(u8 *mac);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -326,6 +350,7 @@ static const usbd_class_driver_t usbd_cdc_driver = {
 	.ep0_data_out = cdc_ecm_handle_ep0_data_out,
 	.ep_data_in = cdc_ecm_handle_ep_data_in,
 	.ep_data_out = cdc_ecm_handle_ep_data_out,
+	.sof = cdc_ecm_sof,
 	.status_changed = cdc_ecm_status_changed,
 };
 
@@ -333,43 +358,54 @@ static const usbd_class_driver_t usbd_cdc_driver = {
 static usbd_cdc_ecm_dev_t usbd_cdc_ecm_dev;
 
 /* Private functions ---------------------------------------------------------*/
-static inline u8 usbh_cdc_ecm_char_to_hex(u8 value)
+/**
+ * @brief Convert a nibble (0-15) to its ASCII hex character.
+ * @param value: Nibble value (0x0-0xF).
+ * @retval ASCII character '0'-'9' or 'A'-'F'. Returns '0' for out-of-range input.
+ */
+static inline u8 cdc_ecm_char_to_hex(u8 value)
 {
 	if (value <= 0x9) {
-		/* 0-9 convert to '0'-'9' (0x30-0x39) */
 		return 0x30 + value;
 	} else if (value <= 0xF) {
-		/* 10-15 convert to 'A'-'F' (0x41-0x46) */
 		return 0x41 + (value - 0xA);
 	} else {
-		/* error '0' */
 		return 0x30;
 	}
 }
 
-static void usbd_cdc_ecm_mac_to_string(u8 *mac, char *mac_str)
+/**
+ * @brief Convert a 6-byte MAC address to a 12-character uppercase hex string.
+ * @param mac:     Input MAC address buffer (6 bytes).
+ * @param mac_str: Output null-terminated string (must be at least 13 bytes).
+ */
+static void cdc_ecm_mac_to_string(u8 *mac, char *mac_str)
 {
 	u8 str_index = 0;
 	u8 i;
 
 	for (i = 0; i < 6; i++) {
 		/* high 4 bits */
-		mac_str[str_index++] = usbh_cdc_ecm_char_to_hex((mac[i] >> 4) & 0x0F);
+		mac_str[str_index++] = cdc_ecm_char_to_hex((mac[i] >> 4) & 0x0F);
 
-		/* high 4 bits */
-		mac_str[str_index++] = usbh_cdc_ecm_char_to_hex(mac[i] & 0x0F);
+		/* low 4 bits */
+		mac_str[str_index++] = cdc_ecm_char_to_hex(mac[i] & 0x0F);
 	}
 
 	mac_str[str_index] = '\0';
 }
 
-static void usbd_cdc_ecm_set_dongle_mac(u8 *mac)
+/**
+ * @brief Set the device MAC address from an external source.
+ * @param mac: Pointer to a 6-byte MAC address buffer. NULL is ignored.
+ */
+static void cdc_ecm_set_mac(u8 *mac)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 
 	if (NULL == mac) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "No Param\n");
-		return ;
+		return;
 	}
 
 	memcpy((void *) & (ecm->mac[0]), (void *)mac, CDC_ECM_MAC_STR_LEN);
@@ -378,10 +414,15 @@ static void usbd_cdc_ecm_set_dongle_mac(u8 *mac)
 	ecm->mac_valid = 1;
 }
 
+/**
+ * @brief Unblock a pending usbd_cdc_ecm_transmit and wait for it to exit.
+ * @details Gives the semaphore once to unblock the blocked transmit caller,
+ *          then spins until bulk_tx_block is cleared. Called during deinit only.
+ */
 static int cdc_ecm_bulk_tx_status_check(void)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
-	if (ecm->bulk_tx_block) {
+	if (ecm->bulk_tx_block && ecm->bulk_tx_sema != NULL) {
 		//release the sema to return usbd_cdc_ecm_transmit
 		do {
 			usb_os_sema_give(ecm->bulk_tx_sema);
@@ -392,6 +433,11 @@ static int cdc_ecm_bulk_tx_status_check(void)
 	return HAL_OK;
 }
 
+/**
+ * @brief Deliver a received frame to the upper-layer callback.
+ * @param buf:    Pointer to the received data buffer.
+ * @param length: Length of the received frame in bytes.
+ */
 static int cdc_ecm_bulk_receive(u8 *buf, u32 length)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
@@ -423,7 +469,11 @@ static int cdc_ecm_bulk_receive(u8 *buf, u32 length)
 }
 
 /**
- * @brief Process notification state machine
+ * @brief  Send the next pending INTR IN notification and advance the state machine.
+ * @note   This function is called within an interrupt service routine (ISR) context;
+ *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+ * @retval HAL_OK on success, HAL_ERR_PARA if no notification is pending,
+ *         or a HAL error code if the transfer could not be submitted.
  */
 static int cdc_ecm_send_notification(void)
 {
@@ -431,6 +481,7 @@ static int cdc_ecm_send_notification(void)
 	usb_cdc_ecm_notify_t event;
 	int status;
 	u16 length;
+	u8 next_state;
 
 	event.bmRequestType = 0xA1;
 	event.wIndex = USBD_CDC_ECM_DATA_INTERFACE_NUM;
@@ -441,7 +492,7 @@ static int cdc_ecm_send_notification(void)
 		event.wValue = ecm->connect_status;
 		event.wLength = 0;
 		length = USB_CDC_ECM_NETWORK_CONNECTION_SIZE;
-		ecm->notify_state = ECM_NOTIFY_SPEED;
+		next_state = ECM_NOTIFY_SPEED;
 		break;
 
 	case ECM_NOTIFY_SPEED:
@@ -451,7 +502,7 @@ static int cdc_ecm_send_notification(void)
 		event.data.DLBitRate = 0; /* Downstream bits/sec */
 		event.data.ULBitRate = 0; /* Upstream bits/sec */
 		length = USB_CDC_ECM_CONNECTION_SPEED_CHANGE_SIZE;
-		ecm->notify_state = ECM_NOTIFY_CONNECT;
+		next_state = ECM_NOTIFY_CONNECT;
 		break;
 
 	case ECM_NOTIFY_NONE:
@@ -460,8 +511,9 @@ static int cdc_ecm_send_notification(void)
 	}
 
 	status = cdc_ecm_intr_in_send(&event, length);
-	if (status != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Notify fail %d\n", status);
+	if (status == HAL_OK) {
+		/* Advance state only on success; retry will re-send the same notification. */
+		ecm->notify_state = next_state;
 	}
 
 	return status;
@@ -555,6 +607,8 @@ static int cdc_ecm_bulk_send(u8 *buf, u32 len)
 
 /**
  * @brief Set CDC ECM configuration
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  * @param dev: USB device instance
  * @param config: Configuration number
  * @retval Status
@@ -595,6 +649,8 @@ static int cdc_ecm_set_config(usb_dev_t *dev, u8 config)
 
 /**
  * @brief Clear CDC ECM configuration
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  * @param dev: USB device instance
  * @param config: Configuration number
  * @retval Status
@@ -615,6 +671,8 @@ static int cdc_ecm_clear_config(usb_dev_t *dev, u8 config)
 
 /**
  * @brief Handle CDC ECM SETUP requests
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  * @param dev: USB device instance
  * @param req: SETUP request
  * @retval Status
@@ -626,17 +684,19 @@ static int cdc_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 	int ret = HAL_OK;
 	u8 req_type = req->bmRequestType & USB_REQ_TYPE_MASK;
+	u8 interface_id;
 
 	switch (req_type) {
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
 		case USB_REQ_SET_INTERFACE:
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				ecm->interface_id = req->wIndex;
+				interface_id = USB_LOW_BYTE(req->wIndex);
+				ecm->alt_setting = USB_LOW_BYTE(req->wValue);
 
-				if (ecm->interface_id == USBD_CDC_ECM_DATA_INTERFACE_NUM) {
+				if (interface_id == USBD_CDC_ECM_DATA_INTERFACE_NUM) {
 					/* Trigger network connection notification */
-					ecm->notify_state = ECM_NOTIFY_SPEED;
+					ecm->notify_state = ECM_NOTIFY_CONNECT;
 					ecm->connect_status = 1;
 					cdc_ecm_send_notification();
 				}
@@ -651,7 +711,7 @@ static int cdc_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 		case USB_REQ_GET_INTERFACE:
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				ep0_in->xfer_buf[0] = ecm->interface_id;
+				ep0_in->xfer_buf[0] = ecm->alt_setting;
 				ep0_in->xfer_len = 1U;
 				usbd_ep_transmit(dev, ep0_in);
 			} else {
@@ -679,14 +739,16 @@ static int cdc_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	case USB_REQ_TYPE_CLASS:
 		if (req->wLength > 0) {
 			if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
-				/* Host-to-Device with data stage */
-				ret = ecm->cb->setup(req, ep0_in->xfer_buf);
-				if (ret == HAL_OK) {
-					ep0_in->xfer_len = req->wLength;
-					usbd_ep_transmit(dev, ep0_in);
+				/* Device-to-Host with data stage */
+				if (ecm->cb && ecm->cb->setup) {
+					ret = ecm->cb->setup(req, ep0_in->xfer_buf);
+					if (ret == HAL_OK) {
+						ep0_in->xfer_len = req->wLength;
+						usbd_ep_transmit(dev, ep0_in);
+					}
 				}
 			} else {
-				/* Device-to-Host with data stage */
+				/* Host-to-Device with data stage */
 				usb_os_memcpy((void *)&ecm->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
 				ep0_out->xfer_len = req->wLength;
 				usbd_ep_receive(dev, ep0_out);
@@ -709,6 +771,8 @@ static int cdc_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 /**
  * @brief Handle EP data IN completion
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  * @param dev: USB device instance
  * @param ep_addr: Endpoint address
  * @param status: Transfer status
@@ -721,18 +785,16 @@ static int cdc_ecm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	usbd_ep_t *ep_intr_in = &ecm->ep_intr_in;
 
 	UNUSED(dev);
+	UNUSED(status);
 
 	if (ep_addr == USBD_CDC_ECM_BULK_IN_EP) {
 		ep_bulk_in->xfer_state = 0U;
 		usb_os_sema_give(ecm->bulk_tx_sema);
-		if (status != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail %d\n", status);
-		}
 	} else if (ep_addr == USBD_CDC_ECM_INTR_IN_EP) {
 		ep_intr_in->xfer_state = 0U;
-		cdc_ecm_send_notification(); /* Continue notification state machine */
-		if (status != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Notify TX fail %d\n", status);
+		if (cdc_ecm_send_notification() != HAL_OK) {
+			/* Send failed; SOF handler will retry when the endpoint is free. */
+			ecm->notify_retry = 1U;
 		}
 	}
 
@@ -740,7 +802,42 @@ static int cdc_ecm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 }
 
 /**
+ * @brief RX delivery thread
+ * @details Waits on rx_data_ready_sema, forwards each frame to the user callback,
+ *          then sets rx_buf_free so the USB OUT path can hand off again.
+ *          Decouples upper-layer (lwIP) processing from USB completion context.
+ */
+static void cdc_ecm_rx_thread(void *param)
+{
+	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
+	UNUSED(param);
+
+	while (ecm->rx_thread_running) {
+		if (usb_os_sema_take(ecm->rx_data_ready_sema, USBD_CDC_ECM_RX_SEMA_TAKE_TIMEOUT_MS) != HAL_OK) {
+			/* timeout - re-check running flag */
+			continue;
+		}
+
+		if (!ecm->rx_thread_running) {
+			break;
+		}
+
+		if ((ecm->rx_msg_buf != NULL) && (ecm->rx_msg_len > 0U)) {
+			cdc_ecm_bulk_receive(ecm->rx_msg_buf, ecm->rx_msg_len);
+		}
+
+		/* Previous buffer consumed; let the OUT EP path hand off another. */
+		ecm->rx_buf_free = 1U;
+	}
+
+	ecm->rx_task = NULL;
+	rtos_task_delete(NULL);
+}
+
+/**
  * @brief Handle EP data OUT completion
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  * @param dev: USB device instance
  * @param ep_addr: Endpoint address
  * @param len: Received data length
@@ -762,9 +859,25 @@ static int cdc_ecm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 		DCache_Invalidate((u32)ep_bulk_out->xfer_buf, len);
 	}
 
-	/* Notify application */
-	if (len > 0) {
-		cdc_ecm_bulk_receive(ep_bulk_out->xfer_buf, len);
+	if (len > 0U) {
+		/* Try to hand off the current buffer to the RX thread.
+		 * Check the volatile flag - safe in ISR context, no semaphore needed. */
+		if (ecm->rx_buf_free != 0U) {
+			ecm->rx_buf_free = 0U;
+			ecm->rx_msg_buf = ecm->rx_buf[ecm->rx_xfer_idx];
+			ecm->rx_msg_len = len;
+			usb_os_sema_give(ecm->rx_data_ready_sema);
+
+			/* Flip to the other buffer for the next OUT transfer. */
+			ecm->rx_xfer_idx ^= 1U;
+			ep_bulk_out->xfer_buf = ecm->rx_buf[ecm->rx_xfer_idx];
+		} else {
+			/* RX thread still busy. Do NOT re-arm the endpoint; the host will
+			 * see NAK on the bulk-out pipe. Mark as pending so the SOF handler
+			 * re trigger the endpoint as soon as the thread frees the buffer. */
+			ecm->rx_pending_len = len;
+			return HAL_OK;
+		}
 	}
 
 	/* Continue receiving */
@@ -772,7 +885,57 @@ static int cdc_ecm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 }
 
 /**
+ * @brief   SOF interrupt handler
+ * @note    This function is called within an interrupt service routine (ISR) context;
+ *          time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+ * @details Re xfer the bulk-out endpoint when a previously-deferred frame can
+ *          now be handed to the RX thread (i.e. rx_buf_free == 1). Called every
+ *          SOF (1 ms FS / 125 us HS) so the endpoint stall is short-lived and
+ *          no frames are dropped.
+ */
+static int cdc_ecm_sof(usb_dev_t *dev)
+{
+	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
+	usbd_ep_t *ep_bulk_out = &ecm->ep_bulk_out;
+	usbd_ep_t *ep_intr_in = &ecm->ep_intr_in;
+
+	UNUSED(dev);
+
+	/* Retry a previously-failed notification when the endpoint is free. */
+	if (ecm->notify_retry && ep_intr_in->xfer_state == 0U) {
+		if (cdc_ecm_send_notification() == HAL_OK) {
+			ecm->notify_retry = 0U;
+		}
+	}
+
+	if (ecm->rx_pending_len == 0U) {
+		return HAL_OK;
+	}
+
+	/* Thread still busy - wait for the next SOF. */
+	if (ecm->rx_buf_free == 0U) {
+		return HAL_OK;
+	}
+
+	/* Buffer is free: hand off the pending frame and re-arm the endpoint. */
+	ecm->rx_buf_free = 0U;
+	ecm->rx_msg_buf = ecm->rx_buf[ecm->rx_xfer_idx];
+	ecm->rx_msg_len = ecm->rx_pending_len;
+	usb_os_sema_give(ecm->rx_data_ready_sema);
+
+	ecm->rx_xfer_idx ^= 1U;
+	ep_bulk_out->xfer_buf = ecm->rx_buf[ecm->rx_xfer_idx];
+	ecm->rx_pending_len = 0U;
+
+	usbd_ep_receive(ecm->dev, ep_bulk_out);
+
+	return HAL_OK;
+}
+
+/**
  * @brief Handle EP0 data OUT phase
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  * @param dev: USB device instance
  * @retval Status
  */
@@ -794,6 +957,8 @@ static int cdc_ecm_handle_ep0_data_out(usb_dev_t *dev)
 
 /**
  * @brief Get USB descriptor
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  * @param dev: USB device instance
  * @param req: SETUP request
  * @param buf: Buffer to fill descriptor
@@ -870,7 +1035,7 @@ static u16 cdc_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 			len = usbd_get_str_desc(USBD_CDC_ECM_SN_STRING, buf);
 			break;
 		case USBD_CDC_ECM_MAC_STRING_INDEX:
-			usbd_cdc_ecm_mac_to_string((u8 *)(ecm->mac), mac_buf);
+			cdc_ecm_mac_to_string((u8 *)(ecm->mac), mac_buf);
 			len = usbd_get_str_desc(mac_buf, buf);
 			break;
 		default:
@@ -887,6 +1052,8 @@ static u16 cdc_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 
 /**
  * @brief USB attach status changed callback
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  * @param dev: USB device instance
  * @param old_status: Previous status
  * @param status: Current status
@@ -896,6 +1063,20 @@ static void cdc_ecm_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 
 	UNUSED(dev);
+
+	if (status == USBD_ATTACH_STATUS_DETACHED) {
+		/* Clear link state immediately so upper layers see link_is_up == 0
+		 * without waiting for usbd_cdc_ecm_deinit(). */
+		ecm->connect_status = 0;
+		ecm->notify_state = ECM_NOTIFY_NONE;
+		ecm->notify_retry = 0U;
+
+		ecm->rx_pending_len = 0U;
+
+		if (ecm->bulk_tx_block && ecm->bulk_tx_sema != NULL) {
+			usb_os_sema_give(ecm->bulk_tx_sema);
+		}
+	}
 
 	if (ecm->cb && ecm->cb->status_changed) {
 		ecm->cb->status_changed(old_status, status);
@@ -918,7 +1099,17 @@ int usbd_cdc_ecm_init(usbd_cdc_ecm_cb_t *cb)
 	usb_ep_info_t *info;
 	int ret = HAL_OK;
 
-	usb_os_sema_create(&(ecm->bulk_tx_sema));
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
+	ecm->ctrl_req.bRequest = 0xFFU;
+
+	if (usb_os_sema_create(&(ecm->bulk_tx_sema)) != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create bulk_tx sema fail\n");
+		return HAL_ERR_MEM;
+	}
 
 	/* BULK IN use the caller buffer */
 	info = &ep_bulk_in->info;
@@ -927,17 +1118,47 @@ int usbd_cdc_ecm_init(usbd_cdc_ecm_cb_t *cb)
 	ep_bulk_in->xfer_buf_len = 0;
 	ep_bulk_in->xfer_buf = NULL;
 
-	/* Allocate BULK OUT buffer */
+	/* Allocate BULK OUT ping-pong buffers */
 	info = &ep_bulk_out->info;
 	info->addr = USBD_CDC_ECM_BULK_OUT_EP;
 	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_out->xfer_buf_len = USBD_CDC_ECM_BULK_BUF_MAX_SIZE;
-	ep_bulk_out->xfer_buf = (u8 *)usb_os_malloc(ep_bulk_out->xfer_buf_len);
 	ep_bulk_out->xfer_len = ep_bulk_out->xfer_buf_len;
-	if (ep_bulk_out->xfer_buf == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc BULK OUT buf fail\n");
+
+	ecm->rx_buf[0] = (u8 *)usb_os_malloc(USBD_CDC_ECM_BULK_BUF_MAX_SIZE);
+	if (ecm->rx_buf[0] == NULL) {
 		ret = HAL_ERR_MEM;
 		goto exit;
+	}
+
+	ecm->rx_buf[1] = (u8 *)usb_os_malloc(USBD_CDC_ECM_BULK_BUF_MAX_SIZE);
+	if (ecm->rx_buf[1] == NULL) {
+		ret = HAL_ERR_MEM;
+		goto cleanup_rx_buf0;
+	}
+
+	ecm->rx_xfer_idx = 0U;
+	ep_bulk_out->xfer_buf = ecm->rx_buf[ecm->rx_xfer_idx];
+
+	/* rx_data_ready_sema: ISR -> thread, given when a buffer is filled. */
+	if (usb_os_sema_create(&ecm->rx_data_ready_sema) != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX data_ready sema fail\n");
+		ret = HAL_ERR_MEM;
+		goto cleanup_rx_buf1;
+	}
+
+	ecm->rx_buf_free    = 1U;
+	ecm->rx_pending_len = 0U;
+
+	/* Start RX delivery thread */
+	ecm->rx_thread_running = 1;
+	ret = rtos_task_create(&ecm->rx_task, "usbd_cdc_ecm_rx", cdc_ecm_rx_thread, NULL,
+						   USBD_CDC_ECM_RX_THREAD_STACK_SIZE, USBD_CDC_ECM_RX_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX thread fail\n");
+		ecm->rx_thread_running = 0;
+		ret = HAL_ERR_HW;
+		goto cleanup_rx_data_ready_sema;
 	}
 
 	/* Allocate INTR IN buffer */
@@ -947,27 +1168,24 @@ int usbd_cdc_ecm_init(usbd_cdc_ecm_cb_t *cb)
 	ep_intr_in->xfer_buf_len = USB_CDC_ECM_INTR_IN_PACKET_SIZE;
 	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(ep_intr_in->xfer_buf_len);
 	if (ep_intr_in->xfer_buf == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc INTR IN buf fail\n");
 		ret = HAL_ERR_MEM;
-		goto cleanup_bulk_out;
+		goto cleanup_rx_thread;
+	}
+
+	if ((cb != NULL) && (cb->priv != NULL) && (cb->priv->mac_value != NULL)) {
+		cdc_ecm_set_mac(cb->priv->mac_value);
+	} else {
+		cdc_ecm_set_mac((u8 *)ecm_mac);
 	}
 
 	/* Initialize user callbacks */
-	if (cb != NULL) {
-		ecm->cb = cb;
+	ecm->cb = cb;
 
-		if ((cb->priv != NULL) && (cb->priv->mac_value)) {
-			usbd_cdc_ecm_set_dongle_mac(cb->priv->mac_value);
-		} else {
-			usbd_cdc_ecm_set_dongle_mac((u8 *)ecm_mac);
-		}
-
-		if (cb->init != NULL) {
-			ret = cb->init();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "User init fail: %d\n", ret);
-				goto cleanup_intr_in;
-			}
+	if (cb->init != NULL) {
+		ret = cb->init();
+		if (ret != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "User init fail: %d\n", ret);
+			goto cleanup_intr_in;
 		}
 	}
 
@@ -980,12 +1198,30 @@ cleanup_intr_in:
 	usb_os_mfree(ep_intr_in->xfer_buf);
 	ep_intr_in->xfer_buf = NULL;
 
-cleanup_bulk_out:
-	usb_os_mfree(ep_bulk_out->xfer_buf);
+cleanup_rx_thread:
+	ecm->rx_thread_running = 0;
+	/* Wake the thread so it can observe running=0 and exit. */
+	usb_os_sema_give(ecm->rx_data_ready_sema);
+	while (ecm->rx_task != NULL) {
+		usb_os_sleep_ms(10);
+	}
+
+cleanup_rx_data_ready_sema:
+	usb_os_sema_delete(ecm->rx_data_ready_sema);
+	ecm->rx_data_ready_sema = NULL;
+
+cleanup_rx_buf1:
+	usb_os_mfree(ecm->rx_buf[1]);
+	ecm->rx_buf[1] = NULL;
+
+cleanup_rx_buf0:
+	usb_os_mfree(ecm->rx_buf[0]);
+	ecm->rx_buf[0] = NULL;
 	ep_bulk_out->xfer_buf = NULL;
 
 exit:
 	usb_os_sema_delete(ecm->bulk_tx_sema);
+	ecm->bulk_tx_sema = NULL;
 
 	return ret;
 }
@@ -1012,8 +1248,25 @@ int usbd_cdc_ecm_deinit(void)
 	usbd_unregister_class();
 
 	cdc_ecm_bulk_tx_status_check();
-	usb_os_sema_delete(ecm->bulk_tx_sema);
+	if (ecm->bulk_tx_sema != NULL) {
+		usb_os_sema_delete(ecm->bulk_tx_sema);
+		ecm->bulk_tx_sema = NULL;
+	}
 
+	/* Stop the RX delivery thread and wait for it to exit. */
+	ecm->rx_thread_running = 0;
+	if (ecm->rx_data_ready_sema != NULL) {
+		usb_os_sema_give(ecm->rx_data_ready_sema);
+	}
+	while (ecm->rx_task != NULL) {
+		usb_os_sleep_ms(10);
+	}
+
+	/* Tear down RX semaphores. */
+	if (ecm->rx_data_ready_sema != NULL) {
+		usb_os_sema_delete(ecm->rx_data_ready_sema);
+		ecm->rx_data_ready_sema = NULL;
+	}
 	/* Call user deinit */
 	if (ecm->cb && ecm->cb->deinit) {
 		ecm->cb->deinit();
@@ -1025,10 +1278,14 @@ int usbd_cdc_ecm_deinit(void)
 		ep_intr_in->xfer_buf = NULL;
 	}
 
-	if (ep_bulk_out->xfer_buf != NULL) {
-		usb_os_mfree(ep_bulk_out->xfer_buf);
-		ep_bulk_out->xfer_buf = NULL;
+	/* Free RX ping-pong buffers. */
+	for (u8 i = 0; i < USBD_CDC_ECM_RX_BUF_NUM; i++) {
+		if (ecm->rx_buf[i] != NULL) {
+			usb_os_mfree(ecm->rx_buf[i]);
+			ecm->rx_buf[i] = NULL;
+		}
 	}
+	ep_bulk_out->xfer_buf = NULL;
 
 	return HAL_OK;
 }
@@ -1062,7 +1319,7 @@ int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block)
 			//success
 			break;
 		}
-		if (++retry_cnt > 100) { //100ms
+		if (++retry_cnt > 100) { /* retry limit: 100 x 1us = 100us */
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "TX drop(%d)\n", len);
 			ret = HAL_ERR_UNKNOWN;
 			break;
@@ -1071,8 +1328,8 @@ int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block)
 		}
 	}
 
-	//wait cdc_ecm_handle_ep_data_in to give the sema
-	if ((ret == HAL_OK) && block) {
+	/* Block until cdc_ecm_handle_ep_data_in gives the semaphore. */
+	if ((ret == HAL_OK) && block && (ecm->bulk_tx_sema != NULL)) {
 		ecm->bulk_tx_block = 1;
 		usb_os_sema_take(ecm->bulk_tx_sema, USB_OS_SEMA_TIMEOUT);
 #if USBD_ECM_TX_SPEED_CHECK
@@ -1120,7 +1377,7 @@ const u8 *usbd_cdc_ecm_get_mac_str(void)
   * @brief  Get ecm device connect status
   * @retval device connect status
   */
-int usbd_cdc_ecm_get_connect_status(void)//1 up
+int usbd_cdc_ecm_get_connect_status(void)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 

@@ -101,18 +101,30 @@ static usbh_user_cb_t usbh_usr_cb = {
 
 /* Private functions ---------------------------------------------------------*/
 
+/**
+  * @brief  UAC init callback
+  * @retval Status
+  */
 static int usbh_uac_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
 	return HAL_OK;
 }
 
+/**
+  * @brief  UAC deinit callback
+  * @retval Status
+  */
 static int usbh_uac_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
 	return HAL_OK;
 }
 
+/**
+  * @brief  UAC attach callback
+  * @retval Status
+  */
 static int usbh_uac_cb_attach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
@@ -120,6 +132,10 @@ static int usbh_uac_cb_attach(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  UAC detach callback
+  * @retval Status
+  */
 static int usbh_uac_cb_detach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
@@ -130,6 +146,10 @@ static int usbh_uac_cb_detach(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  UAC setup callback
+  * @retval Status
+  */
 static int usbh_uac_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
@@ -138,6 +158,11 @@ static int usbh_uac_cb_setup(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  UAC isoc transmit complete callback
+  * @param  state: URB state
+  * @retval Status
+  */
 static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state)
 {
 	if (state == USBH_URB_DONE) {

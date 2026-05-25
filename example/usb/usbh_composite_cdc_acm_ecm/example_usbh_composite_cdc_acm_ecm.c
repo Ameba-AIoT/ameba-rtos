@@ -187,6 +187,12 @@ static u8 *composite_dev_dongle_get_netinfo(u8 *name)
 	return NULL;
 }
 
+/**
+  * @brief  Composite ACM bulk receive callback
+  * @param  pbuf: RX buffer
+  * @param  len: RX data length (in bytes)
+  * @retval Status
+  */
 static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer type
 {
 	u32 i;
@@ -676,12 +682,22 @@ static int composite_dev_dongle_diag_cmd(void)
 	return 0;
 }
 
+/**
+  * @brief  Composite ECM bulk receive callback
+  * @param  buf: RX buffer
+  * @param  len: RX data length (in bytes)
+  * @retval Status
+  */
 static int composite_ecm_cb_rxdata(u8 *buf, u32 len)
 {
-	ethernetif_usb_eth_recv(buf, len);
+	netif_adapter_usb_eth_recv(buf, len);
 	return HAL_OK;
 }
 
+/**
+  * @brief  Composite ECM detach callback
+  * @retval Status
+  */
 static int composite_ecm_cb_detach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
@@ -747,7 +763,7 @@ static void composite_eth_link_change_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netif_set_link_up(pnetif_usb_eth);
 
-				dhcp_status = LwIP_IP_Address_Request(NETIF_USB_ETH_INDEX);
+				dhcp_status = lwip_request_ip(NETIF_USB_ETH_INDEX);
 				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
 					netifapi_netif_set_default(pnetif_usb_eth);	//Set default gw to ether netif
 					dhcp_done = 1;
@@ -772,7 +788,7 @@ static void composite_eth_link_change_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netif_set_link_up(pnetif_usb_eth);
 
-				dhcp_status = LwIP_IP_Address_Request(NETIF_USB_ETH_INDEX);
+				dhcp_status = lwip_request_ip(NETIF_USB_ETH_INDEX);
 				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
 					netifapi_netif_set_default(pnetif_usb_eth);	//Set default gw to ether netif
 					dhcp_done = 1;

@@ -376,6 +376,8 @@ static void usbh_vendor_next_transfer(usb_host_t *host, usbh_vendor_xfer_t *xfer
 
 /**
   * @brief  SOF callback function.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
   * @retval Status
   */
@@ -698,14 +700,17 @@ int usbh_vendor_init(usbh_vendor_cb_t *cb)
 	int ret = HAL_OK;
 	usbh_vendor_host_t *vendor = &usbh_vendor_host;
 
-	if (cb != NULL) {
-		vendor->cb = cb;
-		if (cb->init != NULL) {
-			ret = cb->init();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "User init err %d\n", ret);
-				return ret;
-			}
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
+	vendor->cb = cb;
+	if (cb->init != NULL) {
+		ret = cb->init();
+		if (ret != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "User init err %d\n", ret);
+			return ret;
 		}
 	}
 

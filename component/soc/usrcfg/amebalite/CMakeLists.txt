@@ -47,6 +47,7 @@ ameba_list_append(private_sources
     ameba_flashcfg.c
     ameba_pinmapcfg.c
     ameba_sleepcfg.c
+    ameba_xtal_trackingcfg.c
 )
 
 

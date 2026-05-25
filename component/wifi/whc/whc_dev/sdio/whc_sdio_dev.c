@@ -2,7 +2,6 @@
 
 struct whc_sdio_priv_t sdio_priv = {0};
 
-void rtw_pending_q_resume(void);
 void (*bt_inic_sdio_recv_ptr)(uint8_t *buffer, uint16_t len);
 
 static u32 whc_sdio_dev_suspend(u32 expected_idle_time, void *param)
@@ -54,13 +53,7 @@ static char whc_sdio_dev_tx_done_cb(void *priv, void *pbuf)
 	struct spdio_buf_t *tx_buf = (struct spdio_buf_t *)pbuf;
 	struct whc_txbuf_info_t *whc_tx = container_of(tx_buf, struct whc_txbuf_info_t, txbuf_info);
 
-	if (whc_tx->is_skb) {
-		dev_kfree_skb_any((struct sk_buff *) whc_tx->ptr);
-	} else {
-		rtos_mem_free((u8 *)whc_tx->ptr);
-	}
-
-	rtos_mem_free((u8 *)whc_tx);
+	whc_dev_free_txbuf(whc_tx);
 
 	rtos_sema_give(sdio_priv.rxbd_release_sema);
 
@@ -72,7 +65,6 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 {
 	struct spdio_buf_t *rx_buf = (struct spdio_buf_t *)pbuf;
 	u32 event = *(u32 *)pdata;
-	u8 *buf = NULL;
 	struct sk_buff *new_skb = NULL, *rx_skb;
 	struct whc_msg_info *p_msg_info;
 
@@ -83,11 +75,10 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		/* SPDIO receives XMIT_PKTS */
 		rx_skb = (struct sk_buff *)rx_buf->priv;
 
-		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 5) ||
+		/* reserved 3 skb for rx */
+		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 3) ||
 			((new_skb = dev_alloc_skb(SPDIO_DEVICE_RX_BUFSZ, SPDIO_SKB_RSVD_LEN)) == NULL)) {
-			/* resume pending queue to release skb */
-			rtw_pending_q_resume();
-			return RTK_FAIL;
+			goto drop_pkt;
 		}
 
 		/* assign new buffer for SPDIO RX ring */
@@ -110,7 +101,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		/* save wlan_idx temporaries*/
 		rx_skb->dev = (void *)((u32)p_msg_info->wlan_idx);
 
-		whc_sdio_dev_event_int_hdl(pdata, rx_skb, size);
+		whc_dev_event_int_hdl(pdata, rx_skb);
 
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	} else if (event == WHC_CUST_EVT) {
@@ -122,19 +113,8 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 			bt_inic_sdio_recv_ptr(pdata, SPDIO_DEVICE_RX_BUFSZ);
 		}
 	} else {
-		/* SPDIO receives EVENTS */
-		buf = rtos_mem_zmalloc(size);
-
-		if (buf == NULL) {
-			RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
-			return RTK_FAIL;
-		}
-
-		memcpy(buf, pdata, size);
-
-		whc_sdio_dev_event_int_hdl(buf, NULL, size);
-
-		/* free buf later, sdio ring buffer no need to modify. */
+		/* SPDIO receives EVENTS, free buf later, sdio ring buffer no need to modify */
+		whc_dev_dispatch_event_copy(pdata, size);
 	}
 
 drop_pkt:
@@ -159,23 +139,22 @@ void whc_sdio_dev_init(void)
 
 	dev->rx_buf = (struct spdio_buf_t *)rtos_mem_zmalloc(dev->host_tx_bd_num * sizeof(struct spdio_buf_t));
 	if (!dev->rx_buf) {
-		RTK_LOGE(TAG_WLAN_INIC, "malloc failed for spdio buffer structure!\n");
+		RTK_LOGE(TAG_WLAN_INIC, "malloc fail for spdio buf!\n");
 		return;
 	}
-	//DiagPrintf("%s %d %d %d dev->host_tx_bd_num: %d\r\n", __func__, __LINE__, SPDIO_DEVICE_RX_BUFSZ, SPDIO_SKB_RSVD_LEN, dev->host_tx_bd_num);
 
 	for (i = 0; i < dev->host_tx_bd_num; i++) {
 		skb = dev_alloc_skb(SPDIO_DEVICE_RX_BUFSZ, SPDIO_SKB_RSVD_LEN);
 
+		// this buffer must be 4 byte alignment
+		if (skb == NULL || (u32)skb->data % 4) {
+			RTK_LOGE(TAG_WLAN_INIC, "alloc rx buf fail!\n");
+			goto fail;
+		}
+
 		dev->rx_buf[i].buf_allocated = dev->rx_buf[i].buf_addr = (u32) skb->data;
 		dev->rx_buf[i].size_allocated = dev->rx_buf[i].buf_size = dev->device_rx_bufsz;
 		dev->rx_buf[i].priv = skb;
-
-		// this buffer must be 4 byte alignment
-		if (dev->rx_buf[i].buf_addr % 4) {
-			RTK_LOGE(TAG_WLAN_INIC, "rx buffer address not 4-byte aligned! %x \n", dev->rx_buf[i].buf_addr);
-			return;
-		}
 	}
 
 	dev->pSDIO = SDIO_WIFI;
@@ -203,49 +182,17 @@ void whc_sdio_dev_init(void)
 #endif
 
 	RTK_LOGI(TAG_WLAN_INIC, "SDIO device init done!\n");
+	return;
 
-}
-
-void whc_sdio_dev_trigger_rx_handle(void)
-{
-	spdio_trigger_rx_handle();
-}
-
-u8 whc_sdio_dev_tx_path_avail(void)
-{
-	u32 delay_cnt = 0;
-	u8 ret = FALSE;
-
-	while (delay_cnt++ < 100) {
-		/* wait for TXBD empty and skb allocatable */
-		if ((SDIO_TXBD_WPTR_Get(SDIO_WIFI) == SDIO_TXBD_RPTR_Get(SDIO_WIFI)) &&
-			(skbpriv.skb_buff_num - skbpriv.skb_buff_used) > 3) {
-			ret = TRUE;
-			break;
-		} else {
-			rtos_time_delay_ms(1);
+fail:
+	/* free allocated skb and buffer */
+	for (i = 0; i < dev->host_tx_bd_num; i++) {
+		if (dev->rx_buf[i].priv) {
+			dev_kfree_skb_any(dev->rx_buf[i].priv);
 		}
 	}
 
-	return ret;
-}
-
-void whc_sdio_dev_send_data(u8 *data, u32 len)
-{
-	u8 *buf = NULL;
-
-	buf = rtos_mem_zmalloc(len);
-
-	if (!buf) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s Send Error !!", __func__);
-		return;
-	}
-
-	memcpy(buf, data, len);
-
-	/* buf free in sdio send done callback */
-	whc_sdio_dev_send(buf, len, buf, 0);
-
+	rtos_mem_free(dev->rx_buf);
 	return;
 }
 
@@ -294,57 +241,3 @@ u8 whc_sdio_dev_bus_is_idle(void)
 	return TRUE;
 }
 
-/**
- * @brief  to haddle the inic message interrupt. If the message queue is
- * 	initialized, it will enqueue the message and wake up the message
- * 	task to haddle the message. If last send message cannot be done, I will
- * 	set pending for next sending message.
- * @param  rxbuf: rx data.
- * @return none.
- */
-void whc_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
-{
-	(void)size;
-	u32 event = *(u32 *)rxbuf;
-	struct whc_api_info *ret_msg;
-	(void) ret_msg;
-
-	switch (event) {
-	case WHC_WIFI_EVT_XIMT_PKTS:
-		/* put the inic message to the queue */
-		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == RTK_FAIL) {
-			break;
-		}
-		/* wakeup task */
-		rtw_single_thread_wakeup();
-
-		break;
-#ifdef CONFIG_WHC_WIFI_API_PATH
-	case WHC_WIFI_EVT_API_CALL:
-		event_priv.rx_api_msg = rxbuf;
-		rtos_sema_give(event_priv.task_wake_sema);
-
-		break;
-	case WHC_WIFI_EVT_API_RETURN:
-		if (event_priv.b_waiting_for_ret) {
-			event_priv.rx_ret_msg = rxbuf;
-			rtos_sema_give(event_priv.api_ret_sema);
-		} else {
-			ret_msg = (struct whc_api_info *)rxbuf;
-			RTK_LOGW(TAG_WLAN_INIC, "too late to receive API ret, ID: 0x%x!\n", ret_msg->api_id);
-
-			/* free rx buffer */
-			rtos_mem_free((u8 *)ret_msg);
-		}
-
-		break;
-#endif
-	default:
-#ifdef CONFIG_WHC_CMD_PATH
-		whc_dev_pkt_rx_to_user(rxbuf, rxbuf, size);
-#else
-		RTK_LOGE(TAG_WLAN_INIC, "Event(%ld) unknown!\n", event);
-#endif
-		break;
-	}
-}

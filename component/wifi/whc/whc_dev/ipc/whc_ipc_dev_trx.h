@@ -27,7 +27,7 @@
 /* internal head files */
 #include "whc_ipc.h"
 
-#define whc_dev_tx_done             whc_ipc_dev_tx_done
+#define whc_dev_tx_done(a)          whc_ipc_dev_tx_done(a)
 #define whc_dev_netif_rx            whc_ipc_dev_recv
 
 /* -------------------------------- Defines --------------------------------- */

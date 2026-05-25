@@ -599,6 +599,31 @@ s32 wifi_set_cts2self_duration_and_send(u8 wlan_idx, u16 duration);
 s32 wifi_csi_config(struct rtw_csi_action_parm *act_param);
 
 /**
+ * @brief   Configure and control the Radar functionality.
+ * @param[in]  act_param: Pointer to the configuration parameters.
+ *                      - Set `act_param->act` to @ref RTW_RADAR_ACT_CFG to configure Radar parameters.
+ *                      - Set `act_param->act` to @ref RTW_RADAR_ACT_EN to enable/disable Radar.
+ *                        If disabled, reconfigure parameters before re-enabling.
+ * @code
+ *    // config Radar parameters and enable Radar
+ *    struct rtw_radar_action_parm act_param = {0};
+ *    act_param.mode = RTW_RADAR_NORMAL_MODE;
+ *    // ... (set other parameters)
+ *    act_param.act = RTW_RADAR_ACT_CFG;  //radar cfg
+ *    wifi_radar_config(&act_param);
+ *    act_param.act = RTW_RADAR_ACT_EN;  //radar en
+ *    act_param.enable = 1;
+ *    wifi_radar_config(&act_param);
+ * @endcode
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ *    - @ref RTK_FAIL : CONFIG_RADAR is not defined or driver internal error.
+ *    - -@ref RTK_ERR_BADARG :
+ *      - Invalid `act_param->act`
+ */
+s32 wifi_radar_config(struct rtw_radar_action_parm *act_param);
+
+/**
  * @brief  Configure Wi-Fi speaker settings for audio module.
  * @param[in]  set_type: Wi-Fi speaker setting type:
  *                - @ref RTW_SPEAKER_SET_INIT

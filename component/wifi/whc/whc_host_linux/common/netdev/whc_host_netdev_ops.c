@@ -312,7 +312,14 @@ static int rtw_ndev_open_ap(struct net_device *pnetdev)
 
 	netif_tx_start_all_queues(pnetdev);
 	netif_tx_wake_all_queues(pnetdev);
+#elif defined(CONFIG_WHC_HOST_RTW_CLI)
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+
+	rtw_netdev_priv_is_on(pnetdev) = true;
+	netif_carrier_off(pnetdev);
+	netif_tx_stop_all_queues(pnetdev);
 #endif
+
 	return 0;
 }
 
@@ -350,6 +357,12 @@ static int rtw_ndev_close_ap(struct net_device *pnetdev)
 		whc_host_deinit_ap();
 	}
 	rtw_netdev_priv_is_on(pnetdev) = false;
+#elif defined(CONFIG_WHC_HOST_RTW_CLI)
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+
+	rtw_netdev_priv_is_on(pnetdev) = false;
+	netif_carrier_off(pnetdev);
+	netif_tx_stop_all_queues(pnetdev);
 #endif
 	return 0;
 }

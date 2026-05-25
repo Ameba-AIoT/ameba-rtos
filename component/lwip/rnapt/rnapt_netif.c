@@ -301,7 +301,7 @@ rnapt_netif_t *rnapt_netif_create(uint8_t idx, const rnapt_netif_config_t *confi
 					 ip4_addr3(&config->ip_info->ip), ip4_addr4(&config->ip_info->ip));
 
 			/* Check if custom IP subnet conflicts */
-			if (!LwIP_subnet_is_used(&check_ip)) {
+			if (!lwip_subnet_is_used(&check_ip)) {
 				/* No conflict, use custom IP */
 				use_custom_ip = true;
 			} else {
@@ -316,7 +316,7 @@ rnapt_netif_t *rnapt_netif_create(uint8_t idx, const rnapt_netif_config_t *confi
 									&config->ip_info->netmask, &config->ip_info->gw);
 		} else {
 			/* Alloc non-conflicting IP from pool */
-			if (LwIP_alloc_ip(netif->idx) != 0) {
+			if (lwip_alloc_ip(netif->idx) != 0) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "[%s] Failed to alloc IP\n", netif->if_desc);
 				free(netif);
 				return NULL;
@@ -426,9 +426,9 @@ static int rnapt_netif_start_sta(rnapt_netif_t *netif, void *arg)
 
 	/* Request IP address */
 	if (netif->ip_method == RNAPT_IP_METHOD_DHCP_CLIENT) {
-		u32 dhcp_status = LwIP_IP_Address_Request(netif->idx);
+		u32 dhcp_status = lwip_request_ip(netif->idx);
 		if (dhcp_status == DHCP_ADDRESS_ASSIGNED) {
-			uint8_t *ip = LwIP_GetIP(netif->idx);
+			uint8_t *ip = lwip_get_ip(netif->idx);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] DHCP got IP: %d.%d.%d.%d\n",
 					 netif->if_desc, ip[0], ip[1], ip[2], ip[3]);
 		} else {
@@ -555,9 +555,9 @@ static void rnapt_eth_link_callback(int link_up)
 			/* WAN mode: DHCP Client */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "ETH Mode: DHCP Client\n");
 
-			u32 dhcp_status = LwIP_IP_Address_Request(NETIF_ETH_INDEX);
+			u32 dhcp_status = lwip_request_ip(NETIF_ETH_INDEX);
 			if (dhcp_status == DHCP_ADDRESS_ASSIGNED) {
-				uint8_t *ip = LwIP_GetIP(NETIF_ETH_INDEX);
+				uint8_t *ip = lwip_get_ip(NETIF_ETH_INDEX);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "ETH DHCP got IP: %d.%d.%d.%d\n",
 						 ip[0], ip[1], ip[2], ip[3]);
 			} else {
@@ -589,7 +589,7 @@ static void rnapt_eth_link_callback(int link_up)
 
 		if (eth_netif->ip_method == RNAPT_IP_METHOD_DHCP_CLIENT) {
 			netifapi_netif_set_link_down(eth_netif->lwip_netif);
-			LwIP_ReleaseIP(NETIF_ETH_INDEX);
+			lwip_clear_ip(NETIF_ETH_INDEX);
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "ETH IP released\n");
 		} else if (eth_netif->ip_method == RNAPT_IP_METHOD_DHCP_SERVER) {
@@ -690,7 +690,7 @@ int rnapt_netif_stop(rnapt_netif_t *netif)
 		/* STA: Disconnect */
 		wifi_disconnect();
 		if (netif->ip_method == RNAPT_IP_METHOD_DHCP_CLIENT) {
-			LwIP_ReleaseIP(NETIF_WLAN_STA_INDEX);
+			lwip_clear_ip(NETIF_WLAN_STA_INDEX);
 		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] Disconnected\n", netif->if_desc);
 		break;

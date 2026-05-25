@@ -10,7 +10,13 @@
 uint32_t cur_device_id = 0;
 
 static uint32_t wakelock     = DEFAULT_WAKELOCK;
+
+/* WHC_DEV and WHC_HOST need CG, while SPI INTF need PG */
+#if defined (CONFIG_WHC_INTF_SDIO) || defined (CONFIG_WHC_INTF_USB)
+static uint32_t sleep_type = SLEEP_CG; /* 0 is power gate, 1 is clock gate */
+#else
 static uint32_t sleep_type = SLEEP_PG; /* 0 is power gate, 1 is clock gate */
+#endif
 SLEEP_ParamDef sleep_param ALIGNMTO(32); /* cacheline aligned for lp & np */
 
 static uint32_t deepwakelock     = DEFAULT_DEEP_WAKELOCK;

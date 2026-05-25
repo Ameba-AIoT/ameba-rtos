@@ -1,4 +1,5 @@
 #include <whc_host_linux.h>
+#include <whc_host_cmd_path_api.h>
 
 void whc_host_recv_notify(void)
 {
@@ -56,6 +57,26 @@ static void whc_host_recv_pkts(struct sk_buff *pskb)
 
 	return;
 }
+
+#ifdef CONFIG_WHC_CMD_PATH
+int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb)
+{
+	u32 event = *(u32 *)(pskb->data + SIZE_RX_DESC);
+	struct whc_cmd_path_hdr *hdr = NULL;
+	u8 *rxbuf = NULL;
+
+	switch (event) {
+	case WHC_WIFI_EVT_CMD:
+		hdr = (struct whc_cmd_path_hdr *)(pskb->data + SIZE_RX_DESC);
+		rxbuf = (u8 *)pskb->data + SIZE_RX_DESC + sizeof(struct whc_cmd_path_hdr);
+		whc_host_buf_rx_to_user(rxbuf, hdr->len);
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+#endif
 
 int whc_host_recv_process(struct sk_buff *pskb)
 {

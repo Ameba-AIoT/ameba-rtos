@@ -71,7 +71,7 @@ const FlashInfo_TypeDef Flash_AVL[] = {
 *  In each entry, the first item is flash regoin type, the second item is start address, the second item is end address */
 
 #ifdef CONFIG_SOC_SOLO
-FlashLayoutInfo_TypeDef Flash_Layout[] = {
+const FlashLayoutInfo_TypeDef Flash_Layout[] = {
 	/*Region_Type,	[StartAddr,	EndAddr] */
 	{IMG_BOOT,		0x08000000,	0x08013FFF},	//Boot Manifest(4K) + KM4 Bootloader(76K)
 	//Users should modify below according to their own memory
@@ -90,19 +90,21 @@ FlashLayoutInfo_TypeDef Flash_Layout[] = {
 	{0xFF, 			0xFFFFFFFF, 0xFFFFFFFF},
 };
 #else
-FlashLayoutInfo_TypeDef Flash_Layout[] = {
+#ifndef CALC_END_ADDR
+#define CALC_END_ADDR(offset, size) ((size) == 0 ? (offset) : (offset) + (size) - 1)
+#endif
+
+const FlashLayoutInfo_TypeDef Flash_Layout[] = {
 	/* Region_Type, [StartAddr, EndAddr] */
-	{IMG_BOOT,      0x08000000, 0x08013FFF}, //Boot Manifest(4K) + KM4 Bootloader(76K)
+	{IMG_BOOT,      CONFIG_FLASH_BOOT_OFFSET,      CALC_END_ADDR(CONFIG_FLASH_BOOT_OFFSET, CONFIG_FLASH_BOOT_SIZE)}, //Boot Manifest(4K) + KM4 Bootloader(76K)
 	//Users should modify below according to their own memory
-	{IMG_APP_OTA1,  0x08014000, 0x081FFFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA1 + RDP IMG OTA1
-
-	{IMG_BOOT_OTA2, 0x08200000, 0x08213FFF}, //Boot Manifest(4K) + KM4 Bootloader(76K) OTA
-	{IMG_APP_OTA2,  0x08214000, 0x083DCFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA2 + RDP IMG OTA2
-	{VFS1,          0x083E0000, 0x083FFFFF}, //VFS region 1 (128K)
-	{IMG_DSP,       0x08400000, 0x086FFFFF}, //Manifest(4K) + DSP IMG, only one DSP region in layout
-	{VFS2,          0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
-	{USER,          0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
-
+	{IMG_APP_OTA1,  CONFIG_FLASH_OTA1_OFFSET,      CALC_END_ADDR(CONFIG_FLASH_OTA1_OFFSET, CONFIG_FLASH_OTA1_SIZE)}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA1 + RDP IMG OTA1
+	{IMG_BOOT_OTA2, CONFIG_FLASH_BOOT_OTA2_OFFSET, CALC_END_ADDR(CONFIG_FLASH_BOOT_OTA2_OFFSET, CONFIG_FLASH_BOOT_OTA2_SIZE)}, //Boot Manifest(4K) + KM4 Bootloader(76K) OTA
+	{IMG_APP_OTA2,  CONFIG_FLASH_OTA2_OFFSET,      CALC_END_ADDR(CONFIG_FLASH_OTA2_OFFSET, CONFIG_FLASH_OTA2_SIZE)}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA2 + RDP IMG OTA2
+	{VFS1,          CONFIG_FLASH_VFS1_OFFSET,      CALC_END_ADDR(CONFIG_FLASH_VFS1_OFFSET, CONFIG_FLASH_VFS1_SIZE)}, //VFS region 1 (128K)
+	{IMG_DSP,       CONFIG_FLASH_DSP_OFFSET, CALC_END_ADDR(CONFIG_FLASH_DSP_OFFSET, CONFIG_FLASH_DSP_SIZE)}, //Manifest(4K) + DSP IMG, only one DSP region in layout
+	{VFS2,          CONFIG_FLASH_VFS2_OFFSET, CALC_END_ADDR(CONFIG_FLASH_VFS2_OFFSET, CONFIG_FLASH_VFS2_SIZE)}, //VFS region 2
+	{USER,          CONFIG_FLASH_USER_OFFSET, CALC_END_ADDR(CONFIG_FLASH_USER_OFFSET, CONFIG_FLASH_USER_SIZE)}, //reserve for user
 	/* End */
 	{0xFF,          0xFFFFFFFF, 0xFFFFFFFF},
 };

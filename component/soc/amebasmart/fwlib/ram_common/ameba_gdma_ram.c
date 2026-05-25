@@ -36,7 +36,7 @@ static u8 GDMA_IrqNum[8] = {
   * @{
   */
 
-/** @defgroup GDMA
+/** @defgroup GDMA GDMA
   * @brief	GDMA driver modules
   * @{
   */
@@ -47,10 +47,9 @@ static u8 GDMA_IrqNum[8] = {
   */
 
 /**
-  * @brief  Fills each GDMA_InitStruct member with its default value.
+  * @brief  Fill each GDMA_InitStruct member with its default value.
   * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure which will be
   *         initialized.
-  * @retval None
   */
 __weak
 void GDMA_StructInit(PGDMA_InitTypeDef GDMA_InitStruct)
@@ -67,13 +66,12 @@ void GDMA_StructInit(PGDMA_InitTypeDef GDMA_InitStruct)
 }
 
 /**
-  * @brief  Initializes the GDMA registers according to the specified parameters
+  * @brief  Initialize the GDMA registers according to the specified parameters
   *         in GDMA_InitStruct.
-  * @param  GDMA_Index: 0.
-  * @param  GDMA_ChNum: 0 ~ 7
+  * @param  GDMA_Index: Always 0.
+  * @param  GDMA_ChNum: 0 ~ 7.
   * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
   *         the configuration information for the GDMA peripheral.
-  * @retval   None
   */
 __weak
 void GDMA_Init(u8 GDMA_Index, u8 GDMA_ChNum, PGDMA_InitTypeDef GDMA_InitStruct)
@@ -179,13 +177,14 @@ void GDMA_Init(u8 GDMA_Index, u8 GDMA_ChNum, PGDMA_InitTypeDef GDMA_InitStruct)
 }
 
 /**
-  * @brief  Set LLP mode when use GDMA LLP (AmebaZ not support this mode).
-  * @param  GDMA_Index: 0.
+  * @brief  Set LLP mode when use GDMA Linked List Pointer Register.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @param  MultiBlockCount: block counts.
   * @param  pGdmaChLli: LLP node list, point to a Linked List Item.
-  * @param  round: 0: Linear list, last node id last one 1:last node is not the end.
-  * @retval   None
+  * @param  round:
+  *        @arg 0 Linear list, last node id last one
+  *        @arg 1 Last node is not the end.
   */
 __weak
 void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_CH_LLI *pGdmaChLli, u32 round)
@@ -240,18 +239,17 @@ void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_
 
 /**
   * @brief  Clear the specidied Pending Interrupt status.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @param  GDMA_IT: specifies the UARTx interrupt sources whose interrupt status will be cleared.
   *          This parameter can be one or combinations of the following values:
   *            @arg TransferType
   *            @arg BlockType
   *            @arg ErrType
-  *            @arg or the combination of the interrupt types above
-  * @note  this function completes clearing the specified type interrupt status. Which type
+  * @note  This function completes clearing the specified type interrupt status. Which type
   *            interrupt status will be cleared, refer to the parameter "GDMA_IT".
-  * @retval   active interrupt types whose interrupt status is cleared.
-  *               this return value refers to @ref DMA_interrupts_definition
+  * @return Active interrupt types whose interrupt status is cleared,
+  *         refer to @ref GDMA_Interrupt_Type.
   */
 __weak  u32
 GDMA_ClearINTPendingBit(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT)
@@ -300,11 +298,11 @@ GDMA_ClearINTPendingBit(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT)
 
 /**
   * @brief  Clear all the Pending Interrupt status.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @note    clear all the active interrupts status for the current GDMA channel.
-  * @retval   active interrupt types whose interrupt status is cleared.
-  *               this return value refers to @ref DMA_interrupts_definition
+  * @note    Clear all the active interrupts status for the current GDMA channel.
+  * @return Active interrupt types whose interrupt status is cleared,
+  *         refer to @ref GDMA_Interrupt_Type.
   */
 __weak  u32
 GDMA_ClearINT(u8 GDMA_Index, u8 GDMA_ChNum)
@@ -345,16 +343,14 @@ GDMA_ClearINT(u8 GDMA_Index, u8 GDMA_ChNum)
 
 /**
   * @brief  Enables or disables the specified GDMA interrupts.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @param  GDMA_IT: specifies the GDMA interrupt sources to be enabled or disabled.
   *          This parameter can be one or combinations of the following values:
   *            @arg TransferType
   *            @arg BlockType
   *            @arg ErrType
-  *            @arg or the combination of the interrupt types above
   * @param  NewState: DISABLE/ENABLE.
-  * @retval   None
   */
 __weak  void
 GDMA_INTConfig(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT, u32 NewState)
@@ -406,10 +402,9 @@ GDMA_INTConfig(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT, u32 NewState)
 
 /**
   * @brief  GDMA channel Disable/Enable.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @param  NewState: Disable/Enable.
-  * @retval   None
   */
 __weak  void
 GDMA_Cmd(u8 GDMA_Index, u8 GDMA_ChNum, u32 NewState)
@@ -441,12 +436,11 @@ GDMA_Cmd(u8 GDMA_Index, u8 GDMA_ChNum, u32 NewState)
 
 /**
   * @brief  GDMA AutoReload set.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @param  CleanType: This parameter can be any combination of the following values:
   *		 @arg CLEAN_RELOAD_SRC
   *		 @arg CLEAN_RELOAD_DST
-  * @retval   None
   */
 __weak  void
 GDMA_ChCleanAutoReload(u8 GDMA_Index, u8 GDMA_ChNum, u32 CleanType)
@@ -478,10 +472,9 @@ GDMA_ChCleanAutoReload(u8 GDMA_Index, u8 GDMA_ChNum, u32 CleanType)
 
 /**
   * @brief  Set source address.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @param  SrcAddr: source address
-  * @retval   None
   */
 __weak
 void GDMA_SetSrcAddr(u8 GDMA_Index, u8 GDMA_ChNum, u32 SrcAddr)
@@ -501,9 +494,9 @@ void GDMA_SetSrcAddr(u8 GDMA_Index, u8 GDMA_ChNum, u32 SrcAddr)
 
 /**
   * @brief  Get the source reading address during DMA transmission.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval value: source address
+  * @return Source address.
   */
 __weak
 u32 GDMA_GetSrcAddr(u8 GDMA_Index, u8 GDMA_ChNum)
@@ -523,9 +516,9 @@ u32 GDMA_GetSrcAddr(u8 GDMA_Index, u8 GDMA_ChNum)
 
 /**
   * @brief  Get the destination writing address during DMA transmission.
-  * @param  GDMA_Index: 0 .
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval value: destination address
+  * @return Destination address.
   */
 __weak
 u32 GDMA_GetDstAddr(u8 GDMA_Index, u8 GDMA_ChNum)
@@ -545,10 +538,9 @@ u32 GDMA_GetDstAddr(u8 GDMA_Index, u8 GDMA_ChNum)
 
 /**
   * @brief  Set destination address.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @param  DstAddr: destination address
-  * @retval   None
   */
 __weak
 void GDMA_SetDstAddr(u8 GDMA_Index, u8 GDMA_ChNum, u32 DstAddr)
@@ -568,10 +560,9 @@ void GDMA_SetDstAddr(u8 GDMA_Index, u8 GDMA_ChNum, u32 DstAddr)
 
 /**
   * @brief  Set GDMA block size
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   * @param  BlkSize:
-  * @retval   None
   */
 __weak
 void GDMA_SetBlkSize(u8 GDMA_Index, u8 GDMA_ChNum, u32 BlkSize)
@@ -596,10 +587,10 @@ void GDMA_SetBlkSize(u8 GDMA_Index, u8 GDMA_ChNum, u32 BlkSize)
 }
 
 /**
-  * @brief  Gets the total number of data bytes written to the target memory or peripheral device during DMA transmission.
-  * @param  GDMA_Index: 0.
+  * @brief  Get the total number of data bytes written to the target memory or peripheral device during DMA transmission.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval   block size configured for the current GDMA channel
+  * @return Block size configured for the current GDMA channel.
   */
 __weak
 u32 GDMA_GetBlkSize(u8 GDMA_Index, u8 GDMA_ChNum)
@@ -624,9 +615,11 @@ u32 GDMA_GetBlkSize(u8 GDMA_Index, u8 GDMA_ChNum)
 
 /**
   * @brief  Register channel if this channel is used.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval value: TRUE/FALSE
+  * @param  IrqFun: IRQ handler function.
+  * @param  IrqData: IRQ handler data.
+  * @param  IrqPriority: IRQ priority.
   */
 static void GDMA_ChnlRegister(u8 GDMA_Index, u8 GDMA_ChNum, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 {
@@ -649,9 +642,8 @@ static void GDMA_ChnlRegister(u8 GDMA_Index, u8 GDMA_ChNum, IRQ_FUN IrqFun, u32 
 
 /**
   * @brief  Unregister channel if this channel is not used.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval   None
   */
 static void GDMA_ChnlUnRegister(u8 GDMA_Index, u8 GDMA_ChNum)
 {
@@ -670,12 +662,12 @@ static void GDMA_ChnlUnRegister(u8 GDMA_Index, u8 GDMA_ChNum)
 }
 
 /**
-  * @brief  Alloc a free channel.
-  * @param  GDMA_Index: 0 .
+  * @brief  Allocate a free channel.
+  * @param  GDMA_Index: Always 0.
   * @param  IrqFun: GDMA IRQ callback function.
   * @param  IrqData: GDMA IRQ callback data.
   * @param  IrqPriority: GDMA IrqPriority.
-  * @retval value: GDMA_ChNum
+  * @return Allocated GDMA channel number, or 0xFF if no free channel is available.
   */
 __weak  u8
 GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
@@ -713,9 +705,9 @@ GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 
 /**
   * @brief  Free a channel, this channel will not be used.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval   TRUE/FALSE
+  * @return TRUE if the channel is successfully freed, FALSE otherwise.
   */
 __weak  u8
 GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum)
@@ -745,12 +737,12 @@ GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum)
 }
 
 /**
- * @brief Get whether the fifo is empty
- *
- * @param  GDMA_Index: 0.
- * @param  GDMA_ChNum: 0 ~ 7.
- * @retval TRUE/FALSE
- */
+  * @brief Get whether the fifo is empty
+  *
+  * @param  GDMA_Index: Always 0.
+  * @param  GDMA_ChNum: 0 ~ 7.
+  * @return TRUE if the channel FIFO is empty, FALSE otherwise.
+  */
 __weak u8
 GDMA_ChnlFIFOIsEmpty(u8 GDMA_Index, u8 GDMA_ChNum)
 {
@@ -772,9 +764,9 @@ GDMA_ChnlFIFOIsEmpty(u8 GDMA_Index, u8 GDMA_ChNum)
 }
 /**
   * @brief  Get irq number for a channel.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval   IrqNum
+  * @return IRQ number for the specified GDMA channel.
   */
 __weak  u8
 GDMA_GetIrqNum(u8 GDMA_Index, u8 GDMA_ChNum)
@@ -791,9 +783,9 @@ GDMA_GetIrqNum(u8 GDMA_Index, u8 GDMA_ChNum)
 
 /**
   * @brief  Set channel priority.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval   IrqNum
+  * @param  ChnlPriority: channel priority to set.
   */
 __weak  void
 GDMA_SetChnlPriority(u8 GDMA_Index, u8 GDMA_ChNum, u32 ChnlPriority)
@@ -819,7 +811,7 @@ GDMA_SetChnlPriority(u8 GDMA_Index, u8 GDMA_ChNum, u32 ChnlPriority)
 
 /**
   * @brief  Suspend a channel.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   */
 __weak  void
@@ -838,7 +830,7 @@ GDMA_Suspend(u8 GDMA_Index, u8 GDMA_ChNum)
 
 /**
   * @brief  Resume a channel.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
   */
 __weak  void
@@ -857,9 +849,9 @@ GDMA_Resume(u8 GDMA_Index, u8 GDMA_ChNum)
 
 /**
   * @brief  Abort a channel.
-  * @param  GDMA_Index: 0.
+  * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval TRUE/FALSE
+  * @return TRUE if the channel is successfully aborted, FALSE otherwise.
   */
 __weak  u8
 GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum)

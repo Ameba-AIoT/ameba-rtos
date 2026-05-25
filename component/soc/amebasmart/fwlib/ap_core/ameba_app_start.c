@@ -31,6 +31,9 @@ void app_start(void)
 
 	rtos_mem_init();
 
+	/* Init log mutex very early. Never use RTK log API or printf before this */
+	rtk_log_mutex_init();
+
 #if defined (__GNUC__)
 	extern void __libc_init_array(void);
 	/* Add This for C++ support */

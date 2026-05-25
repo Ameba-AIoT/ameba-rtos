@@ -608,19 +608,17 @@ u32 BOOT_Share_Memory_Patch(void)
 
 void BOOT_Log_Init(void)
 {
-	u32 ChipType;
-
 	/* close AGG function for auto test */
-	if (Boot_Agg_En) {
-		ChipType = SYSCFG_CHIPType_Get();
-		if (!((ChipType == CHIP_TYPE_PALADIUM) || (ChipType == CHIP_TYPE_RTLSIM))) {
-			/* open loguart agg function */
-			LOGUART_WaitTxComplete();
-			LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, DISABLE);
-			LOGUART_AGGCmd(LOGUART_DEV, ENABLE);
-			LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, ENABLE);
-		}
+#ifdef CONFIG_LOGUART_AGG_EN
+	u32 ChipType = SYSCFG_CHIPType_Get();
+	if (!((ChipType == CHIP_TYPE_PALADIUM) || (ChipType == CHIP_TYPE_RTLSIM))) {
+		/* open loguart agg function */
+		LOGUART_WaitTxComplete();
+		LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, DISABLE);
+		LOGUART_AGGCmd(LOGUART_DEV, ENABLE);
+		LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, ENABLE);
 	}
+#endif
 
 	/* open KR4 log */
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);

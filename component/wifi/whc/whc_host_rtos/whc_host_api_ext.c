@@ -100,7 +100,7 @@ s32 wifi_get_countrycode(struct rtw_country_code_table *pinfo)
 	if (pinfo == NULL) {
 		return -1;
 	}
-	whc_host_api_message_send(WHC_API_WIFI_GET_COUNTRY_CODE, NULL, 0, (u8 *)&pinfo, sizeof(struct rtw_country_code_table));
+	whc_host_api_message_send(WHC_API_WIFI_GET_COUNTRY_CODE, NULL, 0, (u8 *)pinfo, sizeof(struct rtw_country_code_table));
 
 	return 0;
 }
@@ -402,11 +402,12 @@ s32 wifi_set_wireless_mode(u32 wmode)
 	return ret;
 }
 
-int wifi_set_wps_phase(unsigned char is_trigger_wps)
+int wifi_set_wps_phase(u8 wlan_idx, unsigned char is_trigger_wps)
 {
 	int ret = 0;
-	u32 param_buf[1];
-	param_buf[0] = is_trigger_wps;
+	u32 param_buf[2];
+	param_buf[0] = (u32)wlan_idx;
+	param_buf[1] = (u32)is_trigger_wps;
 
 	whc_host_api_message_send(WHC_API_WIFI_SET_WPS_PHASE, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
 	return ret;
@@ -491,7 +492,11 @@ int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, u16 buf_len, u16 flags
 	int ret = 0;
 	u32 *param_buf;
 	int size = 12 + buf_len;
+
 	param_buf = (u32 *)rtos_mem_zmalloc(size);
+	if (!param_buf) {
+		return -1;
+	}
 
 	param_buf[0] = (u32)wlan_idx;
 	param_buf[1] = (u32)flags;
@@ -565,6 +570,10 @@ s32 wifi_add_custom_ie(struct rtw_custom_ie *cus_ie, s32 ie_num)
 	}
 
 	ptr = param_buf = (u8 *)rtos_mem_zmalloc(size);
+	if (!param_buf) {
+		return -1;
+	}
+
 	ptr[0] = 0;
 	ptr[1] = ie_num;
 	ptr += 2;
@@ -593,6 +602,9 @@ s32 wifi_update_custom_ie(struct rtw_custom_ie *cus_ie, s32 ie_index)
 
 	size = 3 + 2 + pcus_ie->ie[1];
 	ptr = param_buf = (u8 *)rtos_mem_zmalloc(size);
+	if (!param_buf) {
+		return -1;
+	}
 
 	ptr[0] = 1;
 	ptr[1] = (u8)ie_index;
@@ -747,6 +759,16 @@ s32 wifi_csi_config(struct rtw_csi_action_parm *act_param)
 	return ret;
 }
 
+s32 wifi_radar_config(struct rtw_radar_action_parm *act_param)
+{
+	int ret = 0;
+	u32 param_buf[1];
+
+	param_buf[0] = (u32)act_param;
+	whc_host_api_message_send(WHC_API_WIFI_CONFIG_RADAR, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
+	return ret;
+}
+
 //----------------------------------------------------------------------------//
 
 int wifi_set_wpa_mode(u8 wpa_mode)
@@ -774,6 +796,10 @@ int wifi_wpa_add_key(struct rtw_crypt_info *crypt)
 	char *param_buf = rtos_mem_zmalloc(sizeof(struct rtw_crypt_info));
 	int ret = 0;
 
+	if (!param_buf) {
+		return -1;
+	}
+
 	memcpy(param_buf, (void *)crypt, sizeof(struct rtw_crypt_info));
 
 	whc_host_api_message_send(WHC_API_WIFI_ADD_KEY, (u8 *)param_buf, sizeof(struct rtw_crypt_info), (u8 *)&ret, sizeof(ret));
@@ -785,6 +811,11 @@ int wifi_wpa_add_key(struct rtw_crypt_info *crypt)
 void wifi_wpa_pmksa_ops(struct rtw_pmksa_ops_t *pmksa_ops)
 {
 	char *param_buf = rtos_mem_zmalloc(sizeof(struct rtw_pmksa_ops_t));
+
+	if (!param_buf) {
+		return;
+	}
+
 	memcpy(param_buf, (void *)pmksa_ops, sizeof(struct rtw_pmksa_ops_t));
 	whc_host_api_message_send(WHC_API_WPA_PMKSA_OPS, (u8 *)param_buf, sizeof(struct rtw_pmksa_ops_t), NULL, 0);
 

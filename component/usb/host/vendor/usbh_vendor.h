@@ -100,6 +100,8 @@ typedef struct {
 
 	/**
 	 * @brief Called when IN transfer is completed, used for application to handle the received IN data.
+	 * @note   This function may be called within an interrupt service routine (ISR) context
+	 *         (e.g., on the SOF path); time-consuming operations (e.g., `RTK_LOG`,`rtos_sema_take`) are not permitted.
 	 * @param  ep_type: Endpoint type (BULK/INTR/ISOC).
 	 * @param  buf: Pointer to the received data buffer.
 	 * @param  len: Length of received data in bytes.
@@ -110,6 +112,8 @@ typedef struct {
 
 	/**
 	 * @brief Called when OUT transfer is completed, used to report OUT transfer completion status.
+	 * @note   This function may be called within an interrupt service routine (ISR) context
+	 *         (e.g., on the SOF path); time-consuming operations (e.g., `RTK_LOG`,`rtos_sema_take`) are not permitted.
 	 * @param ep_type: Endpoint type(BULK/INTR/ISOC)..
 	 * @return 0 on success, non-zero on failure.
 	 */
@@ -123,11 +127,11 @@ typedef struct {
 	usbh_pipe_t pipe;          /**< USB Host pipe handle */
 	u8 *xfer_bk_buf;           /**< Backup pointer to the original user buffer */
 	u8 *test_buf;              /**< Buffer for verification/testing */
-	u32 test_mask;             /**< Bitmask to identify the active transfer */
 	u32 xfer_max_len;          /**< Max length of a single transfer */
-	u32 cur_frame;             /**< Current frame number (for ISOC synchronization) */
+	u16 cur_frame;             /**< Current frame number (for ISOC synchronization) */
 	u8 xfer_cnt;               /**< Current transfer count (for test loops) */
 	u8 xfer_max_cnt;           /**< Target transfer count (for test loops) */
+	u8 test_mask;              /**< Single-bit mask identifying which endpoint this transfer belongs to (one of @ref USBH_VENDOR_MASK_XX) */
 } usbh_vendor_xfer_t;
 
 /**
@@ -142,9 +146,9 @@ typedef struct {
 	usbh_vendor_xfer_t isoc_out_xfer;   /**< Isochronous OUT transfer handle */
 	usbh_vendor_cb_t *cb;               /**< Pointer to user callback structure */
 	usb_host_t *host;                   /**< Pointer to USB Host core handle */
-	usbh_vendor_state_t state;          /**< Current class state machine state */
 	u8 *ctrl_buf;                       /**< Buffer for control transfer */
-	u32 ep_mask;                        /**< Active endpoint mask */
+	u8 ep_mask;                         /**< Active endpoint mask */
+	u8 state;                           /**< Current class state machine state, @ref usbh_vendor_state_t. */
 } usbh_vendor_host_t;
 /** @} End of Host_Vendor_Types group*/
 /** @} End of USB_Host_Types group*/
