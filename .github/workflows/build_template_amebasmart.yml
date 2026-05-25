@@ -67,6 +67,7 @@ jobs:
     - name: Compile
       run: |
         cd amebasmart_gcc_project
+        make toolchain URL=second_source
         make all
         cd -
     - name: Upload artifacts
