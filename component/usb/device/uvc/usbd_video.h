@@ -193,22 +193,22 @@
  * frame interval, bandwidth requirements, and payload size.
  */
 typedef struct {
-	uint16_t bmHint;
-	uint8_t  bFormatIndex;
-	uint8_t  bFrameIndex;
-	uint32_t dwFrameInterval;
-	uint16_t wKeyFrameRate;
-	uint16_t wPFrameRate;
-	uint16_t wCompQuality;
-	uint16_t wCompWindowSize;
-	uint16_t wDelay;
-	uint32_t dwMaxVideoFrameSize;
-	uint32_t dwMaxPayloadTransferSize;
-	uint32_t dwClockFrequency;
-	uint8_t  bmFramingInfo;
-	uint8_t  bPreferedVersion;
-	uint8_t  bMinVersion;
-	uint8_t  bMaxVersion;
+	u16 bmHint;
+	u8  bFormatIndex;
+	u8  bFrameIndex;
+	u32 dwFrameInterval;
+	u16 wKeyFrameRate;
+	u16 wPFrameRate;
+	u16 wCompQuality;
+	u16 wCompWindowSize;
+	u16 wDelay;
+	u32 dwMaxVideoFrameSize;
+	u32 dwMaxPayloadTransferSize;
+	u32 dwClockFrequency;
+	u8  bmFramingInfo;
+	u8  bPreferedVersion;
+	u8  bMinVersion;
+	u8  bMaxVersion;
 } __PACKED usbd_uvc_streaming_control_t;
 
 /**
@@ -223,16 +223,16 @@ typedef struct {
  * reconfiguration, and is accessed by both control and streaming paths.
  */
 typedef  struct {
-	int width;
-	int height;
-	int format;
-	int fps;
-	int state;
-	int isp_format;//1:YUV420 2:YUV422 3:Bayer
-	int ldc;//0:Disable 1:Enable
-	int bayer_type;
+	u32 width;
+	u32 height;
+	u32 format;
+	u32 fps;
+	u32 state;
+	u32 isp_format;//1:YUV420 2:YUV422 3:Bayer
+	u32 ldc;//0:Disable 1:Enable
+	u32 bayer_type;
 	usb_os_sema_t uvcd_change_sema;
-	int init;//It only support whether the uvc is first init 0:Not initialized 1: Initialized
+	u32 init;//It only support whether the uvc is first init 0:Not initialized 1: Initialized
 } usbd_uvc_format_t;
 
 /* Exported variables --------------------------------------------------------*/

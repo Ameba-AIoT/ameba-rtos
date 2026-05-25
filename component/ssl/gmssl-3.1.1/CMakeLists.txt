@@ -63,7 +63,7 @@ option(ENABLE_SM3_XMSS "Enable SM3-XMSS signature" ON)
 
 option(ENABLE_SHA1 "Enable SHA1" ON)
 option(ENABLE_SHA2 "Enable SHA2" ON)
-option(ENABLE_AES "Enable AES" ON)
+set(ENABLE_AES OFF CACHE BOOL "Enable AES" FORCE) # platform provides aes_encrypt/aes_decrypt; disable GmSSL AES to avoid multiple definition with lib_wifi_com_sec
 option(ENABLE_CHACHA20 "Enable Chacha20" ON)
 
 option(ENABLE_SKF "Enable SKF module" OFF)

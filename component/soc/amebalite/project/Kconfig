@@ -26,6 +26,9 @@ config SUPPORT_AUDIO_CMD_ARECORD
 config SUPPORT_AUDIO_CMD_APLAY
     def_bool y
 
+config SUPPORT_AUDIO_CMD_EQUALIZER
+    def_bool y
+
 config SUPPORT_AUDIO_CMD_PLAYER
     def_bool y
 
@@ -125,6 +128,8 @@ rsource "../../../os/Kconfig"
 orsource "../../../utils/Kconfig"
 
 rsource "../../../ota/Kconfig"
+
+rsource "../../usrcfg/amebalite/Kconfig"
 
 menu "CONFIG APPLICATION"
 

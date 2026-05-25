@@ -390,6 +390,13 @@ static int usbh_composite_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 	return status;
 }
 
+/**
+  * @brief  SOF callback for class-specific timing process.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param[in] host: USB host handle.
+  * @return 0 on success, non-zero on failure.
+  */
 static int usbh_composite_cdc_acm_sof(usb_host_t *host)
 {
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
@@ -593,10 +600,11 @@ int usbh_composite_cdc_acm_init(usbh_composite_host_t *driver, usbh_composite_cd
 	}
 
 	/* set acm line coding */
-	cdc->user_line_coding->b.dwDteRate = 115200;
-	cdc->user_line_coding->b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
-	cdc->user_line_coding->b.bParityType = LINE_CODING_PARITY_NO;
-	cdc->user_line_coding->b.bDataBits = 8;
+	usb_cdc_line_coding_t *ulc = cdc->user_line_coding;
+	ulc->b.dwDteRate = 115200;
+	ulc->b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
+	ulc->b.bParityType = LINE_CODING_PARITY_NO;
+	ulc->b.bDataBits = 8;
 
 	return ret;
 }
@@ -659,10 +667,12 @@ int usbh_composite_cdc_acm_ctrl_setting(usb_host_t *host)
 		state = usbh_composite_cdc_acm_get_line_coding(host, cdc->line_coding);
 		if (state == HAL_OK) {
 			cdc->sub_status = CDC_ACM_STATE_CTRL_IDLE;
-			if ((cdc->line_coding->b.bCharFormat == cdc->user_line_coding->b.bCharFormat) &&
-				(cdc->line_coding->b.bDataBits == cdc->user_line_coding->b.bDataBits) &&
-				(cdc->line_coding->b.bParityType == cdc->user_line_coding->b.bParityType) &&
-				(cdc->line_coding->b.dwDteRate == cdc->user_line_coding->b.dwDteRate)) {
+			usb_cdc_line_coding_t *lc = cdc->line_coding;
+			usb_cdc_line_coding_t *ulc = cdc->user_line_coding;
+			if ((lc->b.bCharFormat == ulc->b.bCharFormat) &&
+				(lc->b.bDataBits == ulc->b.bDataBits) &&
+				(lc->b.bParityType == ulc->b.bParityType) &&
+				(lc->b.dwDteRate == ulc->b.dwDteRate)) {
 				if ((cdc->cb != NULL) && (cdc->cb->line_coding_changed != NULL)) {
 					cdc->cb->line_coding_changed(cdc->line_coding);
 				}

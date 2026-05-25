@@ -143,7 +143,7 @@ bool UART_TXGDMA_Init(
 	void *CallbackData,
 	IRQ_FUN CallbackFunc,
 	u8 *pTxBuf,
-	int TxCount
+	u32 TxCount
 )
 {
 	u8 GdmaChnl;
@@ -215,7 +215,7 @@ bool UART_RXGDMA_Init(
 	void *CallbackData,
 	IRQ_FUN CallbackFunc,
 	u8 *pRxBuf,
-	int RxCount
+	u32 RxCount
 )
 {
 	u8 GdmaChnl;

@@ -729,6 +729,8 @@ static int usbh_composite_hid_cb_process(usb_host_t *host, usbh_event_t *event)
 
 /**
   * @brief  Sof callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
   * @retval Status
   */
@@ -750,7 +752,7 @@ static void usbh_composite_hid_msg_parse_thread(void *param)
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	usb_ringbuf_manager_t *handle = &(hid->report_msg);
 	u8 report_msg[10];
-	u32 read_cnt;
+	u8 read_cnt;
 
 	hid->parse_task_alive = 1;
 	hid->parse_task_exit = 0;
@@ -787,7 +789,6 @@ int usbh_composite_hid_init(usbh_composite_host_t *driver, usbh_composite_hid_us
 
 	hid->hid_ctrl_buf = (u8 *)usb_os_malloc(UBSH_COMPOSITE_HID_CTRL_BUF_LEN);
 	if (NULL == hid->hid_ctrl_buf) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc mem %d fail\n", UBSH_COMPOSITE_HID_CTRL_BUF_LEN);
 		return HAL_ERR_MEM;
 	}
 
@@ -805,7 +806,7 @@ int usbh_composite_hid_init(usbh_composite_host_t *driver, usbh_composite_hid_us
 	usb_ringbuf_manager_init(&(hid->report_msg), USBH_COMPOSITE_HID_MST_COUNT, USBH_COMPOSITE_HID_MSG_LENGTH, 0);
 
 	if (rtos_task_create(&(hid->msg_parse_task), ((const char *)"usbh_composite_hid_msg_parse"), usbh_composite_hid_msg_parse_thread,
-						 NULL, 4 * 1024U, USBH_COMPOSITE_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
+						 NULL, USBH_COMPOSITE_HID_THREAD_STACK_SIZE, USBH_COMPOSITE_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hid parse task fail\n");
 	}
 

@@ -58,12 +58,12 @@
 #define USB_ECM_GW_ADDR3   1
 
 /* Private types -------------------------------------------------------------*/
-enum eth_state_t {
+typedef enum {
 	ETH_STATUS_IDLE = 0U,
 	ETH_STATUS_DEINIT,
 	ETH_STATUS_INIT,
 	ETH_STATUS_MAX,
-} ;
+} eth_state_t;
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -85,6 +85,7 @@ static const char *const TAG = "ECM";
 extern struct netif *pnetif_usb_eth;
 static u8 dhcp_server_started = 0;
 static u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+static __IO u8 cdc_ecm_link_disconnected = 0;
 
 static usbd_cdc_ecm_priv_data_t ecm_priv = {
 	mac_valid,
@@ -104,17 +105,20 @@ static usbd_config_t cdc_ecm_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
-	.ext_intr_enable = USBD_EPMIS_INTR,
+	.ext_intr_enable = USBD_EPMIS_INTR | USBD_SOF_INTR,
 #elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 644U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
+	.ext_intr_enable = USBD_SOF_INTR,
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 661U,
 	.ptx_fifo_depth = {256U, 16U, 32U, 16U, },
+	.ext_intr_enable = USBD_SOF_INTR,
 #elif defined (CONFIG_AMEBAPRO3)
 	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
 	.rx_fifo_depth = 1664U,
 	.ptx_fifo_depth = {256U, 32U, 16U, },
+	.ext_intr_enable = USBD_SOF_INTR,
 #endif
 };
 
@@ -205,6 +209,7 @@ static const uint8_t usb_cdc_ecm_dhcp_offer_pkt[368] = {
 
 #if CONFIG_USBD_CDC_ECM_HOTPLUG
 static __IO u8 cdc_ecm_attach_status = USBD_ATTACH_STATUS_INIT;
+static __IO u8 cdc_ecm_attach_old_status = USBD_ATTACH_STATUS_INIT;
 static rtos_sema_t cdc_ecm_attach_status_changed_sema = NULL;
 static __IO u8 cdc_ecm_hotplug_thread_running = 0;
 #endif
@@ -212,7 +217,7 @@ static __IO u8 cdc_ecm_hotplug_thread_running = 0;
 /* Private functions ---------------------------------------------------------*/
 static void ecm_link_change_thread(void *param)
 {
-	u8 ethernet_unplug = ETH_STATUS_IDLE;
+	eth_state_t ethernet_state = ETH_STATUS_IDLE;
 	u8 link_is_up = 0;
 	u8 *mac;
 
@@ -222,13 +227,18 @@ static void ecm_link_change_thread(void *param)
 	while (1) {
 		link_is_up = usbd_cdc_ecm_get_connect_status();
 
-		if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {
+		if (cdc_ecm_link_disconnected) {
+			cdc_ecm_link_disconnected = 0;
+			link_is_up = 0;
+		}
+
+		if (1 == link_is_up && (ethernet_state < ETH_STATUS_INIT)) {
 			mac = (u8 *)usbd_cdc_ecm_get_mac_str();
 			if (mac == NULL || pnetif_usb_eth == NULL) {
 				rtos_time_delay_ms(1000);
 			} else {
 				if (!dhcp_server_started) {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Starting USB ECM DHCP Server...\n");
+					// RTK_LOGS(TAG, RTK_LOG_INFO, "Starting USB ECM DHCP Server...\n");
 
 					// 1. Deinit DHCP server
 					memcpy(pnetif_usb_eth->hwaddr, mac, 6);
@@ -242,7 +252,7 @@ static void ecm_link_change_thread(void *param)
 					u32 ip_addr = CONCAT_TO_UINT32(USB_ECM_IP_ADDR0, USB_ECM_IP_ADDR1, USB_ECM_IP_ADDR2, USB_ECM_IP_ADDR3);
 					u32 netmask = CONCAT_TO_UINT32(USB_ECM_NETMASK_ADDR0, USB_ECM_NETMASK_ADDR1, USB_ECM_NETMASK_ADDR2, USB_ECM_NETMASK_ADDR3);
 					u32 gw = CONCAT_TO_UINT32(USB_ECM_GW_ADDR0, USB_ECM_GW_ADDR1, USB_ECM_GW_ADDR2, USB_ECM_GW_ADDR3);
-					LwIP_SetIP(NETIF_USB_ETH_INDEX, ip_addr, netmask, gw);
+					lwip_set_ip(NETIF_USB_ETH_INDEX, ip_addr, netmask, gw);
 
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Device IP: %d.%d.%d.%d\n", USB_ECM_IP_ADDR0, USB_ECM_IP_ADDR1, USB_ECM_IP_ADDR2, USB_ECM_IP_ADDR3);
 
@@ -256,13 +266,13 @@ static void ecm_link_change_thread(void *param)
 					dhcps_start(pnetif_usb_eth);
 
 					dhcp_server_started = 1;
-					ethernet_unplug = ETH_STATUS_INIT;
+					ethernet_state = ETH_STATUS_INIT;
 
-					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server started successfully!\n");
+					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server started\n");
 				}
 			}
-		} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {
-			ethernet_unplug = ETH_STATUS_DEINIT;
+		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {
+			ethernet_state = ETH_STATUS_DEINIT;
 			// USB disconnected, stop DHCP server
 			if (dhcp_server_started) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Stopping USB ECM DHCP Server...\n");
@@ -324,7 +334,7 @@ static int cdc_ecm_cb_received(u8 *buf, u32 length)
 
 	/* Forward to network stack */
 	if (length > 0) {
-		ethernetif_usb_eth_recv(buf, length);
+		netif_adapter_usb_eth_recv(buf, length);
 	}
 
 	return HAL_OK;
@@ -332,6 +342,8 @@ static int cdc_ecm_cb_received(u8 *buf, u32 length)
 
 /**
   * @brief  Handle the CDC ECM class control requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  req: USB setup request
   * @param  buf: Buffer containing command data
   * @retval Status
@@ -354,39 +366,20 @@ static int cdc_ecm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		u16 alt_setting = req->wValue;
 		u16 interface = req->wIndex;
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Set itf %d-%d\n", interface, alt_setting);
-
 		// When data interface alternate setting 1 is selected, send DHCP offer
 		if ((alt_setting == 1) && (interface == USBD_CDC_ECM_DATA_INTERFACE_NUM)) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Send DHCP Offer packet (%u bytes)\n", (unsigned int)sizeof(usb_cdc_ecm_dhcp_offer_pkt));
-
 			ret = usb_ethernet_transmit((u8 *)usb_cdc_ecm_dhcp_offer_pkt, sizeof(usb_cdc_ecm_dhcp_offer_pkt), 1);
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Send DHCP Offer fail %d\n", ret);
-			}
 		}
 #endif
-	}
-	// Handle ECM-specific requests
-	else if (req_type == USB_REQ_TYPE_CLASS) {
+	} else if (req_type == USB_REQ_TYPE_CLASS) {
 		switch (req_code) {
 		case USB_CDC_ECM_SET_ETHERNET_PACKET_FILTER:
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Set filter 0x%04x\n", req->wValue);
-			// Handle packet filter setting
 			break;
-
 		case USB_CDC_ECM_SET_ETHERNET_MULTICAST_FILTERS:
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Set mul filter\n");
-			// Handle multicast filter setting
 			break;
-
 		case USB_CDC_ECM_GET_ETHERNET_STATISTIC:
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Get eth 0x%04x\n", req->wValue);
-			// Return statistics data in buf
 			break;
-
 		default:
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Unknown request 0x%02x\n", req_code);
 			ret = HAL_ERR_UNKNOWN;
 			break;
 		}
@@ -397,6 +390,8 @@ static int cdc_ecm_cb_setup(usb_setup_req_t *req, u8 *buf)
 
 /**
   * @brief  USB attach status changed callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  old_status: Previous attach status
   * @param  status: Current attach status
   */
@@ -411,14 +406,21 @@ static void cdc_ecm_cb_status_changed(u8 old_status, u8 status)
 		Status 2 to 1: Represents transition from detached to attached state; for example, when the device
 		is hot-plugged in, performs a remote wakeup, or the host resumes.
 	*/
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change %d -> %d \n", old_status, status);
 
 #if CONFIG_USBD_CDC_ECM_HOTPLUG
 	cdc_ecm_attach_status = status;
+	cdc_ecm_attach_old_status = old_status;
 	if (cdc_ecm_attach_status_changed_sema != NULL) {
 		rtos_sema_give(cdc_ecm_attach_status_changed_sema);
 	}
+#else
+	UNUSED(status);
+	UNUSED(old_status);
 #endif
+
+	if (status == USBD_ATTACH_STATUS_DETACHED) {
+		cdc_ecm_link_disconnected = 1;
+	}
 }
 
 #if CONFIG_USBD_CDC_ECM_HOTPLUG
@@ -440,6 +442,7 @@ static void cdc_ecm_hotplug_thread(void *param)
 			continue;
 		}
 
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Status change %d -> %d \n", cdc_ecm_attach_status, cdc_ecm_attach_old_status);
 		current_status = cdc_ecm_attach_status;
 
 		if (current_status == USBD_ATTACH_STATUS_DETACHED) {

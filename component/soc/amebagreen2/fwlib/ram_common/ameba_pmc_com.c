@@ -16,19 +16,20 @@ void SOCPS_NVICBackup(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC
 	bk->SYSTICKbackup_HP[1] = systick->LOAD;
 	bk->SYSTICKbackup_HP[2] = systick->VAL;
 
+	/* [0..2] enable mask (ISER read == ICER read, no need to save twice)
+	 * [3..5] pending mask
+	 */
 	bk->NVICbackup_HP[0] = nvic->ISER[0];
 	bk->NVICbackup_HP[1] = nvic->ISER[1];
 	bk->NVICbackup_HP[2] = nvic->ISER[2];
-	bk->NVICbackup_HP[3] = nvic->ICER[0];
-	bk->NVICbackup_HP[4] = nvic->ICER[1];
-	bk->NVICbackup_HP[5] = nvic->ICER[2];
+
 	for (i = 0; i < MAX_PERIPHERAL_IRQ_NUM; i++) {
 		bk->NVICIPbackup_HP[i] = nvic->IPR[i];
 	}
 
-	bk->NVICbackup_HP[6] = nvic->ISPR[0];
-	bk->NVICbackup_HP[7] = nvic->ISPR[1];
-	bk->NVICbackup_HP[8] = nvic->ISPR[2];
+	bk->NVICbackup_HP[3] = nvic->ISPR[0];
+	bk->NVICbackup_HP[4] = nvic->ISPR[1];
+	bk->NVICbackup_HP[5] = nvic->ISPR[2];
 
 	bk->SCBbackup_HP[0] = scb->VTOR;
 }
@@ -37,18 +38,21 @@ void SOCPS_NVICReFill(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC
 {
 	int i = 0;
 
+	/* Restore VTOR first so any subsequent exception/IRQ uses the correct
+	 * vector table instead of the ROM table left over from wake path.
+	 */
+	scb->VTOR = bk->SCBbackup_HP[0];
+	__DSB();
+	__ISB();
+
 	/* Configure SysTick to interrupt at the requested rate. */
 	systick->CTRL = bk->SYSTICKbackup_HP[0];
 	systick->LOAD = bk->SYSTICKbackup_HP[1];
 	systick->VAL = bk->SYSTICKbackup_HP[2];
 
-	nvic->ISPR[0] = bk->NVICbackup_HP[6];
-	nvic->ISPR[1] = bk->NVICbackup_HP[7];
-	nvic->ISPR[2] = bk->NVICbackup_HP[8];
-
-	nvic->ICER[0] = bk->NVICbackup_HP[3];
-	nvic->ICER[1] = bk->NVICbackup_HP[4];
-	nvic->ICER[2] = bk->NVICbackup_HP[5];
+	nvic->ISPR[0] = bk->NVICbackup_HP[3];
+	nvic->ISPR[1] = bk->NVICbackup_HP[4];
+	nvic->ISPR[2] = bk->NVICbackup_HP[5];
 
 	for (i = 0; i < MAX_PERIPHERAL_IRQ_NUM; i++) {
 		nvic->IPR[i] = bk->NVICIPbackup_HP[i];
@@ -57,8 +61,6 @@ void SOCPS_NVICReFill(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC
 	nvic->ISER[0] = bk->NVICbackup_HP[0];
 	nvic->ISER[1] = bk->NVICbackup_HP[1];
 	nvic->ISER[2] = bk->NVICbackup_HP[2];
-
-	scb->VTOR = bk->SCBbackup_HP[0];
 }
 
 void SOCPS_MPUBackup(struct CPU_BackUp_TypeDef *bk, MPU_Type *mpu)

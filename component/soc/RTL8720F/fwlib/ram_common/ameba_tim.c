@@ -1,0 +1,1318 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "ameba_soc.h"
+static const char *const TAG = "TIM";
+
+int TIMx_irq[TimerNum] = {
+	TIMER0_IRQ,
+	TIMER1_IRQ,
+	TIMER2_IRQ,
+	TIMER3_IRQ,
+	TIMER4_IRQ,
+	TIMER5_IRQ,
+	TIMER6_IRQ,
+};
+
+RTIM_TypeDef *TIMx[TimerNum] = {
+	TIM0,
+	TIM1,
+	TIM2,
+	TIM3,
+	TIM4,
+	TIM5,
+	TIM6,
+};
+
+u32 APBPeriph_TIMx[TimerNum] = {
+	APBPeriph_LTIM0,
+	APBPeriph_LTIM1,
+	APBPeriph_LTIM2,
+	APBPeriph_LTIM3,
+	APBPeriph_PWM0,
+	APBPeriph_PWM1,
+	APBPeriph_PWM2,
+};
+
+u32 APBPeriph_TIMx_CLOCK[TimerNum] = {
+	APBPeriph_LTIM0_CLOCK,
+	APBPeriph_LTIM1_CLOCK,
+	APBPeriph_LTIM2_CLOCK,
+	APBPeriph_LTIM3_CLOCK,
+	APBPeriph_PWM0_CLOCK,
+	APBPeriph_PWM1_CLOCK,
+	APBPeriph_PWM2_CLOCK,
+};
+
+RTIM_TypeDef *TIMx_S[TimerNum] = {
+	TIM0_S,
+	TIM1_S,
+	TIM2_S,
+	TIM3_S,
+	TIM4_S,
+	TIM5_S,
+	TIM6_S,
+};
+
+u32 TIM_IT_CCx[PWM_CHAN_MAX] = {
+	TIM_IT_CC0,
+	TIM_IT_CC1,
+	TIM_IT_CC2,
+	TIM_IT_CC3,
+	TIM_IT_CC4,
+	TIM_IT_CC5
+};
+
+const PWM1_DevTable PWM1_DEV_TABLE[1] = {
+	{
+		TIM5, GDMA_HANDSHAKE_INTERFACE_PWM1_TX
+	} /* */
+};
+
+/**
+  * @brief  Enables or Disables the TIMx Update event(UEV).
+  * @param  TIMx: where x can be 0-8 to select the TIM peripheral.
+  * @param  NewState: new state of the TIMx UDIS bit
+  *          This parameter can be:ENABLE or DISABLE
+  * @note
+  *		- If NewState is ENABLE, Update Disable Bit is set, UEV disable and shadow registers keep their value.
+  *		- If NewState is DISABLE, Update Disable Bit is clear, UEV enable and buffered registers are loaded with
+  *		their preload values when UEV happen.
+  * @retval None
+  */
+void RTIM_UpdateDisableConfig(RTIM_TypeDef *TIMx, u32 NewState)
+{
+	if (NewState != DISABLE) {
+		/* Set the Update Disable Bit */
+		TIMx->CR |= TIM_BIT_UDIS;
+	} else {
+		/* Reset the Update Disable Bit */
+		TIMx->CR &= ~TIM_BIT_UDIS;
+	}
+}
+
+/**
+  * @brief  Enables or disables TIMx peripheral Preload register on ARR.
+  * @param  TIMx: where x can be 0-8 to select the TIM peripheral.
+  * @param  NewState: new state of the TIMx peripheral Preload register
+  *          This parameter can be: ENABLE or DISABLE.
+  * @note
+  *		- DISABLE: TIMx_ARR register is not buffered, and shadow register will update immediately
+  *		- ENABLE: TIMx_ARR register is buffered, and shadow register will update after overflow
+  * @retval None
+  */
+void RTIM_ARRPreloadConfig(RTIM_TypeDef *TIMx, u32 NewState)
+{
+	if (NewState != DISABLE) {
+		/* Set the ARR Preload Bit */
+		TIMx->CR |= TIM_BIT_ARPE;
+	} else {
+		/* Reset the ARR Preload Bit */
+		TIMx->CR &= ~TIM_BIT_ARPE;
+	}
+}
+
+/**
+  * @brief  Configures the TIMx Update Request Interrupt source.
+  * @param  TIMx: where x can be 0-8 to select the TIM peripheral.
+  * @param  TIM_UpdateSource: specifies the Update source.
+  *          This parameter can be one of the following values:
+  *            @arg TIM_UpdateSource_Global: Source of update is the counter
+  *                 overflow or the setting of UG bit.
+  *            @arg TIM_UpdateSource_Overflow: Source of update is counter overflow.
+  * @retval None
+  */
+void RTIM_UpdateRequestConfig(RTIM_TypeDef *TIMx, u32 TIM_UpdateSource)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_UPDATE_SOURCE(TIM_UpdateSource));
+
+	if (TIM_UpdateSource != TIM_UpdateSource_Global) {
+		/* Set the URS Bit */
+		TIMx->CR |= TIM_BIT_URS;
+	} else {
+		/* Reset the URS Bit */
+		TIMx->CR &= (u32)~TIM_BIT_URS;
+	}
+}
+
+/**
+  * @brief  Configures the TIMx Prescaler.
+  * @param  TIMx: where x can be 4-8 to select the TIM peripheral.
+  * @param  Prescaler: specifies the Prescaler Register value,which can be a number in 0~0xFFFF range for TIM4-8.
+  * @param  TIM_PSCReloadMode: specifies the TIM Prescaler Reload mode
+  *          This parameter can be one of the following values:
+  *            @arg TIM_PSCReloadMode_Update: The Prescaler is loaded at the update event.
+  *            @arg TIM_PSCReloadMode_Immediate: The Prescaler is loaded immediatly.
+  * @retval None
+  */
+void RTIM_PrescalerConfig(RTIM_TypeDef *TIMx, u32 Prescaler, u32 TIM_PSCReloadMode)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_CCM_TIM(TIMx));
+	assert_param(IS_TIM_PSC(Prescaler));
+	assert_param(IS_TIM_PRESCALER_RELOAD(TIM_PSCReloadMode));
+
+	/* Set the Prescaler value */
+	TIMx->PSC = Prescaler;
+	/* Set or reset the UG Bit */
+	TIMx->EGR = TIM_PSCReloadMode;
+}
+
+/**
+  * @brief  Configures the TIMx event to be generate by software.
+  * @param  TIMx: where x can be 0-8 to select the TIM peripheral.
+  * @param  TIM_EventSource: specifies the event source.
+  *          This parameter can be one or more of the following values @ref TIMx_Event_Generation_definitons
+  * @note
+  *		- TIM0-8 have Timer update Event source TIM_EventSource_Update
+  *		- TIM8 has 1 Timer Capture Compare Event source TIM_EventSource_CC0
+  *		- TIM4-7 has 4 Timer Capture Compare Event source TIM_EventSource_CC0-3.
+  * @retval None
+  */
+void RTIM_GenerateEvent(RTIM_TypeDef *TIMx, u32 TIM_EventSource)
+{
+	/* Check the parameters */
+	assert_param((IS_HP_TIM_EVENT_SOURCE(TIM_EventSource) || IS_LP_TIM_EVENT_SOURCE(TIM_EventSource)));
+
+	/* Set the event sources */
+	TIMx->EGR = TIM_EventSource;
+}
+
+/**
+  * @brief  Sets the TIMx Autoreload Register(TIMx_ARR) value to change period
+  * @param  TIMx: where x can be 0-8 to select the TIM peripheral.
+  * @param  Autoreload: specifies the Autoreload register new value.
+  *			To TIM0-3, this value can be a number in 0~0xFFFFFFFF range.
+  *			To TIM4-8, this value can be a number in 0~0xFFFF range.
+  * @retval None
+  */
+void RTIM_ChangePeriodImmediate(RTIM_TypeDef *TIMx, u32 Autoreload)
+{
+	/* Check the parameters */
+//	assert_param(IS_TIM_ALL_TIM(TIMx));
+
+	/* Reset the ARR Preload Bit */
+	/* period will update immediatly */
+	TIMx->CR &= ~TIM_BIT_ARPE;
+
+	/* Set the Autoreload Register value */
+	if (IS_TIM_PWM_TIM(TIMx)) {
+		/* Ensure phasesync value is less than arr value*/
+		for (u8 i = 0; i < PWM_CHAN_MAX; i++) {
+			u32 syncphase = TIMx->PSYNCx[i] & TIM_MASK_SYNCPHASEx;
+			assert_param(syncphase <= Autoreload);
+		}
+		TIMx->ARR = TIM_CNT(Autoreload);
+	} else if (IS_TIM_INPULSE_TIM(TIMx)) {
+		TIMx->ARR = TIM_CNT(Autoreload);
+	} else {
+		TIMx->ARR = TIMBasic_CNT(Autoreload);
+	}
+
+	/* Generate an update event */
+	/* 1) reload the Prescaler immediatly */
+	/* 2) reload the ARR immediatly */
+	/* 3) hadrware will clear this bit after reload  */
+	/* 4) UEV will reset counter, and counter will start from 0 */
+	/* 5) gen a interrupt if use TIM_UpdateSource_Global */
+	TIMx->EGR = TIM_PSCReloadMode_Immediate;
+
+	/* poll EGR UG done */
+	while (1) {
+		if (TIMx->SR & TIM_BIT_UG_DONE) {
+			break;
+		}
+	}
+}
+
+/**
+  * @brief  Sets the TIMx Autoreload Register(TIMx_ARR) value to change period with protection
+  * @param  TIMx: where x can be 0-8 to select the TIM peripheral.
+  * @param  Autoreload: specifies the Autoreload register new value.
+  *			To TIM0-3, this value can be a number in 0~0xFFFFFFFF range.
+  *			To TIM4-8, this value can be a number in 0~0xFFFF range.
+  * @retval None
+  */
+void RTIM_ChangePeriod(RTIM_TypeDef *TIMx, u32 Autoreload)
+{
+	/* Check the parameters */
+//	assert_param(IS_TIM_ALL_TIM(TIMx));
+
+	/* Set the Autoreload Register value */
+	if (IS_TIM_PWM_TIM(TIMx)) {
+		/* Ensure phasesync value is less than arr value*/
+		for (u8 i = 0; i < PWM_CHAN_MAX; i++) {
+			u32 syncphase = TIMx->PSYNCx[i] & TIM_MASK_SYNCPHASEx;
+			assert_param(syncphase <= Autoreload);
+		}
+
+		TIMx->ARR = TIM_CNT(Autoreload);
+	} else if (IS_TIM_INPULSE_TIM(TIMx)) {
+		TIMx->ARR = TIM_CNT(Autoreload);
+	} else {
+		TIMx->ARR = TIMBasic_CNT(Autoreload);
+	}
+}
+
+/**
+  * @brief  Sets the TIMx Autoreload Register(TIMx_ARR) value to change period(us).
+  * @param  TIMx: where x can be 0-8 to select the TIM peripheral.
+  * @param  tim_idx: where x can be 0-8.
+  * @param  period_us: Period to be set in microseconds.
+  * @retval None
+  */
+void RTIM_ChangePeriodImmediate_us(RTIM_TypeDef *TIMx, u8 tim_idx, u32 period_us)
+{
+	u8 clk_source = 0;
+	u32 temp;
+	if (IS_TIM_BASIC_TIM(TIMx)) {
+		switch (tim_idx) {
+		case 0:
+			clk_source = RCC_PeriphClockSourceGet(LTIM0);
+			break;
+		case 1:
+			clk_source = RCC_PeriphClockSourceGet(LTIM1);
+			break;
+		case 2:
+			clk_source = RCC_PeriphClockSourceGet(LTIM2);
+			break;
+		case 3:
+			clk_source = RCC_PeriphClockSourceGet(LTIM3);
+			break;
+		}
+
+		if (!clk_source) {
+			temp = (u32)((float)period_us / 1000000 * 32768) - 1;
+		} else {
+			temp = (u32)period_us - 1;
+		}
+	} else {
+		temp = (u32)((float)(period_us / 1000000 * 40000000 / TIMx->PSC));
+	}
+
+	RTIM_ChangePeriodImmediate(TIMx, temp);
+}
+
+/**
+  * @brief  Sets the TIMx Autoreload Register(TIMx_ARR) value to change period(us) with protection.
+  * @param  TIMx: where x can be 0-8 to select the TIM peripheral.
+  * @param  tim_idx: where x can be 0-8.
+  * @param  period_us: Period to be set in microseconds.
+  * @retval None
+  */
+void RTIM_ChangePeriod_us(RTIM_TypeDef *TIMx, u8 tim_idx, u32 period_us)
+{
+	u8 clk_source = 0;
+	u32 temp;
+	if (IS_TIM_BASIC_TIM(TIMx)) {
+		switch (tim_idx) {
+		case 0:
+			clk_source = RCC_PeriphClockSourceGet(LTIM0);
+			break;
+		case 1:
+			clk_source = RCC_PeriphClockSourceGet(LTIM1);
+			break;
+		case 2:
+			clk_source = RCC_PeriphClockSourceGet(LTIM2);
+			break;
+		case 3:
+			clk_source = RCC_PeriphClockSourceGet(LTIM3);
+			break;
+		}
+
+		if (!clk_source) {
+			temp = (u32)((float)period_us / 1000000 * 32768) - 1;
+		} else {
+			temp = (u32)period_us - 1;
+		}
+	} else {
+		temp = (u32)((float)(period_us / 1000000 * 40000000 / TIMx->PSC));
+	}
+
+	RTIM_ChangePeriod(TIMx, temp);
+}
+
+/**
+  * @brief  Reset timer, counter will start from 0
+  * @param  TIMx: where x can be 0-8 to select the TIM peripheral.
+  * @retval None
+  */
+void RTIM_Reset(RTIM_TypeDef *TIMx)
+{
+	/* Check the parameters */
+//	assert_param(IS_TIM_ALL_TIM(TIMx));
+
+	/* Generate an update event */
+	/* 1) reload the Prescaler immediatly */
+	/* 2) reload the ARR immediatly */
+	/* 3) hadrware will clear this bit after reload  */
+	/* 4) UEV will reset counter, and counter will start from 0 */
+	/* 5) gen a interrupt if use TIM_UpdateSource_Global */
+	TIMx->EGR = TIM_PSCReloadMode_Immediate;
+
+	/* poll EGR UG done */
+	while (1) {
+		if (TIMx->SR & TIM_BIT_UG_DONE) {
+			break;
+		}
+	}
+}
+
+/**
+  * @brief  Fills each TIM_CCInitStruct member with its default value.
+  * @param  TIM_CCInitStruct: pointer to a TIM_CCInitTypeDef structure which will
+  *         be initialized.
+  * @retval None
+  */
+void RTIM_CCStructInit(TIM_CCInitTypeDef *TIM_CCInitStruct)
+{
+	/* Set the default configuration */
+	TIM_CCInitStruct->TIM_CCMode = TIM_CCMode_PWM;
+	TIM_CCInitStruct->TIM_CCPolarity = TIM_CCPolarity_High;
+	TIM_CCInitStruct->TIM_OCProtection = TIM_OCPreload_Enable;
+	TIM_CCInitStruct->TIM_OCPulse = 0xFFF;
+}
+
+/**
+  * @brief  Initializes the TIMx Channel 0-3 according to the specified parameters in
+  *         the TIM_CCInitStruct.
+  * @param  TIMx: where x can be 4-8, to select the TIM peripheral.
+  * @param  TIM_CCInitStruct: pointer to a TIM_CCInitTypeDef structure that contains
+  *         the configuration information for the specified TIM peripheral.
+  * @param  TIM_Channel: the channel need to be initialized,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @note
+  *		- TIM8 only has 1 channel: TIM_Channel_0
+  *		- TIM4-7 has 4 channels: TIM_Channel_0-3.
+  * @retval None
+  */
+void RTIM_CCxInit(RTIM_TypeDef *TIMx, TIM_CCInitTypeDef *TIM_CCInitStruct, u16 TIM_Channel)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_CCM_TIM(TIMx));
+	assert_param(IS_TIM_CC_MODE(TIM_CCInitStruct->TIM_CCMode));
+	assert_param(IS_TIM_CC_POLARITY(TIM_CCInitStruct->TIM_CCPolarity));
+	assert_param(IS_TIM_OCPRELOAD_STATE(TIM_CCInitStruct->TIM_OCProtection));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+
+	u32 Status;
+
+	/* Reset the CCMR Bit */
+	TIMx->CCRx[TIM_Channel] = 0;
+
+	/* Write to TIMx CCMR */
+	if (IS_TIM_PWM_TIM(TIMx)) {
+		TIMx->CCRx[TIM_Channel] = (TIM_CCInitStruct->TIM_CCPolarity |
+								   TIM_CCInitStruct->TIM_OCProtection |
+								   TIM_CCInitStruct->TIM_CCMode |
+								   TIM_CCInitStruct->TIM_OCPulse);
+	} else if (IS_TIM_INPULSE_TIM(TIMx)) {
+		TIMx->CCRx[TIM_Channel] = (TIM_CCInitStruct->TIM_CCPolarity |
+								   TIM_CCInitStruct->TIM_ICPulseMode);
+	}
+
+	/* Generate an update event */
+	/* 1) reload the CCRx immediatly */
+	/* 2) hadrware will clear this bit after reload, about 71.936 us (2*32k cycles) */
+	/* 3) UEV will reset counter, and counter will start from 0 */
+	/* 4) gen a interrupt if use TIM_UpdateSource_Global */
+	TIMx->EGR = TIM_PSCReloadMode_Immediate;
+
+	/* poll EGR UG done */
+	while (1) {
+		if (TIMx->SR & TIM_BIT_UG_DONE) {
+			break;
+		}
+	}
+
+	/* Clear all flags: PWM: 0x3F007F, Capture: 0x3, Basic: 0x1 */
+	Status = TIMx->SR;
+	TIMx->SR = Status;
+}
+
+/**
+  * @brief  Initializes the TIMx Channel 0-3 CCmode.
+  * @param  TIMx: where x can only be 4-7.
+  * @param  TIM_Channel: the channel need to be set mode,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions.
+  * @param  TIM_CCMode: CCx working mode which can be one of the following parameters:
+  *		@arg TIM_CCMode_PWM
+  *		@arg TIM_CCMode_Inputcapture
+  * @note
+  *		- TIM4-7 has 4 channels:  TIM_Channel_0-3.
+  * @retval None
+  */
+void RTIM_CCRxMode(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_CCMode)
+{
+	u32 tmpccmr = TIMx->CCRx[TIM_Channel];
+
+	/* Check the parameters */
+	assert_param(IS_TIM_PWM_TIM(TIMx));
+	assert_param(IS_TIM_CC_MODE(TIM_CCMode));
+
+	tmpccmr &= ~TIM_BIT_CCxM;
+	tmpccmr |= TIM_CCMode;
+
+	/* Write to TIMx CCMR */
+	TIMx->CCRx[TIM_Channel] = tmpccmr;
+}
+
+/**
+  * @brief  Sets the TIMx Capture Compare X register value
+  * @param  TIMx: where x can only be 4-7.
+  * @param  Compare: the value specifies pulsewidth, which is in the 0x00~0xFFFF range.
+  *					Duty cycle = Compare / (ARR+1).
+  * @param  TIM_Channel: the channel to be set,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions.
+  * @retval None
+  * @note
+  *		- CCRx=0 will give 0% cycle pwm pulse.
+  *		- CCRx>=TIM_Period there will be 100% pwm pulse.
+  *		- TIM4-7 has 4 channels:  TIM_Channel_0-3.
+  */
+void RTIM_CCRxSet(RTIM_TypeDef *TIMx, u32 Compare, u16 TIM_Channel)
+{
+	u32 PulseWidth = 0;
+	u32 tmpccmr = 0;
+
+	/* Check the parameters */
+	assert_param(IS_TIM_PWM_TIM(TIMx));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+	assert_param(IS_TIM_CC_PULSEWIDTH(Compare));
+
+	/* CCRx=0 will give 0% cycle pwm pulse */
+	PulseWidth = Compare;
+
+	tmpccmr = TIMx->CCRx[TIM_Channel];
+
+	/* reset Compare val */
+	tmpccmr &= ~TIM_CCMode_CCR;
+
+	/* Set the Capture CompareX Register value */
+	tmpccmr |= (u32)PulseWidth;
+
+	/* set CCMR */
+	TIMx->CCRx[TIM_Channel] = tmpccmr;
+}
+
+/**
+  * @brief  Gets the TIMx Capture Compare X register value.
+  * @param  TIMx: where x can be 4-8, to select the TIM peripheral.
+  * @param  TIM_Channel: the channel to be read,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions.
+  * @retval  Capture Compare x Register value.
+  * @note	If you want to get pulse width of PWM, remember to plus 1 to
+  *			the retval of this function.
+  *		- TIM8 only has 1 channel:  TIM_Channel_0
+  *		- TIM4-7 has 4 channels:  TIM_Channel_0-3.
+  */
+u32 RTIM_CCRxGet(RTIM_TypeDef *TIMx, u16 TIM_Channel)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_CCM_TIM(TIMx));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+
+	/* Get the Capture Compare x Register value */
+	return (TIMx->CCRx[TIM_Channel] & TIM_CCMode_CCR);
+}
+
+/**
+  * @brief  Enables or disables the TIMx peripheral Preload register on CCRx.
+  * @param  TIMx: where x can only be 4-7.
+  * @param  TIM_OCProtection: new state of the TIMx peripheral Preload register
+  *          This parameter can be one of the following values:
+  *            @arg TIM_OCPreload_Enable: value is loaded in the active register at each update event.
+  *            @arg TIM_OCPreload_Disable: new value is taken in account immediately
+  * @param  TIM_Channel: the channel need to be set,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @note
+  *		- TIM4-7 has 4 channels:  TIM_Channel_0-3.
+  * @retval None
+  */
+void RTIM_OCxPreloadConfig(RTIM_TypeDef *TIMx, u32 TIM_OCProtection, u16 TIM_Channel)
+{
+	u32 tmpccmr = 0;
+
+	/* Check the parameters */
+	assert_param(IS_TIM_PWM_TIM(TIMx));
+	assert_param(IS_TIM_OCPRELOAD_STATE(TIM_OCProtection));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+
+	tmpccmr = TIMx->CCRx[TIM_Channel];
+
+	/* Reset the OC1PE Bit */
+	tmpccmr &= ~(TIM_BIT_OCxPE);
+
+	/* Enable or Disable the Output Compare Preload feature */
+	tmpccmr |= TIM_OCProtection;
+
+	/* Write to TIMx CCMR1 register */
+	TIMx->CCRx[TIM_Channel] = tmpccmr;
+}
+
+/**
+  * @brief  Configures the TIMx channel x polarity.
+  * @param  TIMx: where x can be 4-8, to select the TIM peripheral.
+  * @param  TIM_OCPolarity: specifies the OCx Polarity
+  *          This parameter can be one of the following values:
+  *            @arg TIM_CCPolarity_High: Output Compare active high
+  *            @arg TIM_CCPolarity_Low: Output Compare active low
+  * @retval None
+  * @note
+  * 	-TIM8 has only 1 channel: TIM_Channel_0
+  *		-TIM4-7 has 4 channels: CCR0-3
+  */
+void RTIM_CCxPolarityConfig(RTIM_TypeDef *TIMx, u32 TIM_OCPolarity, u16 TIM_Channel)
+{
+	u32 tmpccmr = 0;
+
+	/* Check the parameters */
+	assert_param(IS_TIM_CCM_TIM(TIMx));
+	assert_param(IS_TIM_CC_POLARITY(TIM_OCPolarity));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+
+	tmpccmr = TIMx->CCRx[TIM_Channel];
+
+	/* Set or Reset the CCxP Bit */
+	tmpccmr &= ~(TIM_BIT_CCxP);
+	tmpccmr |= TIM_OCPolarity;
+
+	/* Write to TIMx CCER register */
+	TIMx->CCRx[TIM_Channel] = tmpccmr;
+}
+
+/**
+  * @brief  Enables or disables the TIM Capture Compare Channel x.
+  * @param  TIMx: where x can be 4-8, to select the TIM peripheral.
+  * @param  TIM_Channel: specifies the TIM Channel
+  *          This parameter can be one of the following values @ref TIM_Channel_definitions
+  * @param  TIM_CCx: specifies the TIM Channel CCxE bit new state.
+  *          This parameter can be one of the following values:
+  *		@arg TIM_CCx_Enable
+  *		@arg TIM_CCx_Disable
+  * @note
+  *		- TIM8 has only 1 channel:  TIM_Channel_0
+  *		- TIM4-7 has 4 channels:  TIM_Channel_0-3.
+  * @retval None
+  */
+void RTIM_CCxCmd(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_CCx)
+{
+	u32 tmpccmr = TIMx->CCRx[TIM_Channel];
+
+	/* Check the parameters */
+	assert_param(IS_TIM_CCM_TIM(TIMx));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+	assert_param(IS_TIM_CCX(TIM_CCx));
+
+	tmpccmr &= ~TIM_BIT_CCxE;
+	tmpccmr |= TIM_CCx;
+
+	/* Set or reset the CCxE Bit */
+	TIMx->CCRx[TIM_Channel] =  tmpccmr;
+}
+
+/**
+  * @brief  Set the TIMx's One Pulse Mode (output one pulse PWM mode).
+  * @param  TIMx: where x can only be 4-7.
+  * @param  TIM_OPMode: specifies the OPM Mode to be used.
+  *          This parameter can be one of the following values:
+  *            @arg TIM_OPMode_Single
+  *            @arg TIM_OPMode_Repetitive
+  * @param  TrigerPolarity: specifies the OPM Mode Triger Polarity.
+  *          This parameter can be one of the following values:
+  *            @arg TIM_OPMode_ETP_positive
+  *            @arg TIM_OPMode_ETP_negative
+  *            @arg TIM_OPMode_ETP_bothedge
+  * @note  You must select  TIM_OPMode_Single if you want to set One Pluse Mode,
+  *		which makes the counter stop automatically at the next UEV.
+  * @retval None
+  */
+void RTIM_SetOnePulseOutputMode(RTIM_TypeDef *TIMx, u32 TIM_OPMode, u32 TrigerPolarity)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_ONE_PULSE_TIM(TIMx));
+	assert_param(IS_TIM_OPM_MODE(TIM_OPMode));
+	assert_param(IS_TIM_OPM_ETP_MODE(TrigerPolarity));
+
+	/* Reset the OPM & ETP Bit */
+	TIMx->CR &= (u32)~(TIM_BIT_OPM | TIM_MASK_ETP);
+
+	/* Configure the OPM Mode */
+	TIMx->CR |= TIM_OPMode | TrigerPolarity;
+}
+
+/**
+  * @brief  Set the TIMx's default level in one pulse mode.
+  * @note Takes effect only in PWM output mode's One-Pulse-Mode
+  * @param  TIMx: where x can only be 4-7.
+  * @param  TIM_Channel: the channel to be set,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions.
+  * @param  DefaultLevel: specifies the OPM Mode Default Level.
+  *          This parameter can be one of the following values:
+  *            @arg TIMPWM_DefaultLevel_High
+  *            @arg TIMPWM_DefaultLevel_Low
+  * @note  You must select  TIM_OPMode_Single if you want to set One Pluse Mode,
+  *		which makes the counter stop automatically at the next UEV.
+  * @retval None
+  */
+void RTIM_SetOnePulseDefaultLevel(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 DefaultLevel)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_ONE_PULSE_TIM(TIMx));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+	assert_param(IS_TIMPWM_DefaultLevel(DefaultLevel));
+
+	if (DefaultLevel == TIMPWM_DefaultLevel_High) {
+		TIMx->CCRx[TIM_Channel] |= TIM_BIT_OPM_DLx;
+	} else {
+		TIMx->CCRx[TIM_Channel] &= ~(TIM_BIT_OPM_DLx);
+	}
+}
+
+/**
+  * @brief  Sets the TIMx Phase Sync X value
+  * @param  TIMx: where x can only be 4-7.
+  * @param  TIM_Channel: the channel to be set,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions.
+  * @param  TIM_SyncPhase: the phase sync value compared to CNT in TIM_CNT
+  * @retval None
+  * @note
+  *		- TIM_SyncPhase should always smaller than ARR value
+  */
+void RTIM_PSyncxSet(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_SyncPhase)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_PWM_TIM(TIMx));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+
+	u32 tmppsync = 0;
+	u32 arr = 0;
+
+	tmppsync = TIMx->PSYNCx[TIM_Channel];
+	arr = TIMx->ARR;
+
+	/* Ensure phasesync value is less than arr value*/
+	assert_param(TIM_SyncPhase <= arr);
+
+	tmppsync &= ~(TIM_MASK_SYNCPHASEx);
+	tmppsync |= TIM_SYNCPHASEx(TIM_SyncPhase);
+
+	TIMx->PSYNCx[TIM_Channel] =  tmppsync;
+}
+
+/**
+  * @brief  Gets the TIMx Phase Sync X value
+  * @param  TIMx: where x can only be 4-7.
+  * @param  TIM_Channel: the channel to be read,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions.
+  * @retval  TIMx Phase Sync X value
+  */
+u32 RTIM_PSyncxGet(RTIM_TypeDef *TIMx, u16 TIM_Channel)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_PWM_TIM(TIMx));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+
+	return TIM_SYNCPHASEx(TIMx->PSYNCx[TIM_Channel]);
+}
+
+/**
+  * @brief  Sets the TIMx Phase Sync X direction
+  * @param  TIMx: where x can only be 4-7.
+  * @param  TIM_Channel: the channel to be set,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions.
+  * @param  TIM_SyncDir: TIMPWM_PSync_Delay/TIMPWM_PSync_Ahead
+  * @retval None
+  */
+void RTIM_PSyncxDir(RTIM_TypeDef *TIMx, u16 TIM_Channel, u8 TIM_SyncDir)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_PWM_TIM(TIMx));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+	assert_param(IS_TIMPWM_PSync_Dir(TIM_SyncDir));
+
+	u32 tmppsync = TIMx->PSYNCx[TIM_Channel];
+
+	if (TIM_SyncDir == TIMPWM_PSync_Delay) {
+		tmppsync &= ~(TIM_BIT_SYNCDIRx);
+	} else {
+		tmppsync |= TIM_BIT_SYNCDIRx;
+	}
+
+	TIMx->PSYNCx[TIM_Channel] =  tmppsync;
+}
+
+/**
+  * @brief  Enables or disables the preload function of TIMx phase sync register.
+  * @param  TIMx: where x can only be 4-7.
+  * @param  TIM_Channel: the channel need to be set,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @param  TIM_OCProtection: TIMPWM_PSyncPreload_Enable/TIMPWM_PSyncPreload_Disable
+  *            @arg TIMPWM_PSyncPreload_Enable: value is loaded in the active register at each update event.
+  *            @arg TIMPWM_PSyncPreload_Disable: new value is taken in account immediately
+  * @retval None
+  */
+void RTIM_PSyncxPreloadConfig(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_PSyncProtection)
+{
+	u32 tmppsync = 0;
+
+	/* Check the parameters */
+	assert_param(IS_TIM_PWM_TIM(TIMx));
+	assert_param(IS_TIMPWM_PPRELOAD_STATE(TIM_PSyncProtection));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+	tmppsync = TIMx->PSYNCx[TIM_Channel];
+
+	/* Reset the OC1PE Bit */
+	if (TIM_PSyncProtection == TIMPWM_PSyncPreload_Enable) {
+		tmppsync |= TIM_BIT_SYNCPEx;
+	} else {
+		tmppsync &= ~(TIM_BIT_SYNCPEx);
+	}
+
+	TIMx->PSYNCx[TIM_Channel] = tmppsync;
+}
+
+/**
+  * @brief  Enables or disables the TIM4-7 Phase Sync function.
+  * @param  TIMx: where x can only be 4-7.
+  * @param  TIM_Channel: specifies the TIM Channel
+  *          This parameter can be one of the following values @ref TIM_Channel_definitions
+  * @param  NewState: ENABLE/DISABLE.
+  * @retval None
+  */
+void RTIM_PSyncxCmd(RTIM_TypeDef *TIMx, u16 TIM_Channel, u8 NewState)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_PWM_TIM(TIMx));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+
+	u32 tmppsync = TIMx->PSYNCx[TIM_Channel];
+
+	if (NewState != DISABLE) {
+		tmppsync |= TIM_BIT_SYNCENx;
+	} else {
+		tmppsync &= ~(TIM_BIT_SYNCENx);
+	}
+
+	TIMx->PSYNCx[TIM_Channel] =  tmppsync;
+	UNUSED(NewState);
+}
+
+/**
+  * @brief  Gets the TIMx Channel Counter value.
+  * @param  TIMx: where x can only be 4-7.
+  * @param  TIM_Channel: specifies the TIM Channel
+  *          This parameter can be one of the following values @ref TIM_Channel_definitions
+  * @retval Counter Register value
+  */
+u32 RTIM_GetChannelCountx(RTIM_TypeDef *TIMx, u16 TIM_Channel)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_PWM_TIM(TIMx));
+	assert_param(IS_TIM_CHANNEL(TIM_Channel));
+
+	return TIMx->PHASECNTx[TIM_Channel];
+}
+
+/**
+  * @brief  Fills each TIM_AudInitStruct member with its default value.
+  * @param  TIM_AudInitStruct: pointer to a TIM_AudInitStruct structure which will
+  *         be initialized.
+  * @retval None
+  */
+void RTIM_AudStructInit(TIM_AudInitTypeDef *TIM_AudInitStruct)
+{
+	/* Set the default configuration */
+	TIM_AudInitStruct->TIM_IdleLevel = PWM_OUTPUT_LOW;
+	TIM_AudInitStruct->TIM_AudBrkLevel = PWM_OUTPUT_LOW;
+	TIM_AudInitStruct->TIM_AudEmgBrk = PWM_EMGBRK_ENABLE;
+	TIM_AudInitStruct->TIM_AudEmgBrkLevel = PWM_EMGBRK_OUTPUT_HIGH;
+	TIM_AudInitStruct->TIM_AudCCRSourceSel = PWM_CCR_SOURCE_FIFO;
+	TIM_AudInitStruct->TIM_AudPolSel = PWM_POLARITY_OPPOSITE;
+	TIM_AudInitStruct->TIM_AudChnNum = PWM_CHANNEL_OUTPUT_TWOPAD;
+	TIM_AudInitStruct->TIM_AudDeadZoneEn  = PWM_DeadzoneDis;
+	TIM_AudInitStruct->TIM_AudFIFOemptyMode = PWM_FIFO_EMPTY_BRAKE;
+}
+
+/**
+  * @brief  Initializes the TIMx Channel 0-5 according to the specified parameters in
+  *         the TIM_AudInitStruct.
+  * @param  TIMx: where x only can be 5.
+  * @param  TIM_AudInitStruct: pointer to a TIM_AudInitTypeDef structure that contains
+  *         the configuration information for the specified TIM peripheral.
+  * @param  TIM_Channel: the channel need to be initialized,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @note
+  *		- TIM5 has 6 channels: TIM_Channel_0-5.
+  * @retval None
+  */
+void RTIM_AudxInit(RTIM_TypeDef *TIMx, TIM_AudInitTypeDef *TIM_AudInitStruct, u16 TIM_Channel)
+{
+	/* Check the parameters */
+	assert_param(IS_PWM_TIM5(TIMx));
+
+	/* Reset the AUDx reg Bit */
+	TIMx->AUDx[TIM_Channel] = 0;
+
+	/* Write to TIMx_AUDx */
+	TIMx->AUDx[TIM_Channel] = (TIM_AudInitStruct->TIM_IdleLevel |
+							   TIM_AudInitStruct->TIM_AudEmgBrk |
+							   TIM_AudInitStruct->TIM_AudEmgBrkLevel |
+							   TIM_AudInitStruct->TIM_AudCCRSourceSel |
+							   TIM_AudInitStruct->TIM_AudPolSel |
+							   TIM_AudInitStruct->TIM_AudChnNum |
+							   TIM_AudInitStruct->TIM_AudDeadZoneEn |
+							   TIM_AudInitStruct->TIM_AudFIFOemptyMode);
+
+	/* enable FIFO empty intr */
+	RTIM_AudioandMotorINTConfig(TIMx, TIM_IT_FIFO_EMPTY, ENABLE);
+
+	/* Clear all audx intr flags */
+	TIMx->ISR |= TIM_IT_AUD_ALL_FLAG;
+}
+
+// /**
+//   * @brief   Enables or disables TIM5 with BrakeState.
+//   * @param  TIMx: where x only can be 5.
+//   * @param  NewState: new state of the TIMx peripheral.
+//   *   This parameter can be: ENABLE or DISABLE.
+//   * @param  BrakeState: new state of the TIMx peripheral.
+//   *   This parameter can be: HIGH or LOW.
+//   * @retval None
+//   */
+// void RTIM_AudCmd(RTIM_TypeDef *TIMx, u32 NewState, u32 BrakeState)
+// {
+
+// }
+
+/**
+  * @brief  ENABLE/DISABLE the TIM5's audio and motor interrupt bits.
+  * @param  TIMx: where x only can be 5.
+  * @param  TIM_IT: specifies the interrupt bit to configure.
+  *   This parameter can be any combination of the following values:
+  *     @arg TIM_IT_EMG_BRK_RELEASE: emergency brake release.
+  *     @arg TIM_IT_FIFO_EMPTY: FIFO empty intr.
+  * @param NewState: ENABLE or DISABLE
+  * @retval None
+  */
+void RTIM_AudioandMotorINTConfig(RTIM_TypeDef *TIMx, u32 TIM_IT, u32 NewState)
+{
+	/* Check the parameters */
+	assert_param(IS_TIM_AUD_IT(TIM_IT));
+
+	if (NewState != DISABLE) {
+		/* Enable the AUDx Interrupt sources */
+		TIMx->ISR |= TIM_IT;
+	} else {
+		/* Disable the AUDx Interrupt sources */
+		TIMx->ISR &= ~TIM_IT;
+	}
+}
+
+/**
+  * @brief  Clears the TIM5's audio and motor interrupt bits.
+  * @param  TIMx: where x only can be 5.
+  * @retval None
+  */
+void RTIM_AudioandMotorINTClear(RTIM_TypeDef *TIMx)
+{
+	u32 CounterIndex = 0;
+	u32 Status = TIMx->ISR;
+
+	/* Clear the IT pending Bits */
+	TIMx->ISR = Status;
+
+	/* make sure write ok, because bus delay */
+	while (1) {
+		CounterIndex++;
+		if (CounterIndex >= TIMER_POLLING_TIMES) {
+			break;
+		}
+
+		/* this action need sync to timer clk domain, costing about 3cycles,
+		for 32K timer, this action need about 100us;
+		bus clk is optional from 4M and 40M */
+		if (((TIMx->ISR) & TIM_IT_AUD_ALL_FLAG) == 0) {
+			break;
+		}
+	}
+}
+
+/**
+  * @brief  Set the TIM5's brake status.
+  * @param  TIMx: where x only can be 5.
+  * @param  BRAKE_LEVEL: specifies the channel brake level.
+  *   This parameter can be any of the following values:
+  *     @arg PWM_OUTPUT_LOW
+  *     @arg PWM_OUTPUT_HIGH
+  * @param  TIM_Channel: the channel need to be initialized,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @retval None
+  */
+void RTIM_AudioandMotorSetBrakeLevel(RTIM_TypeDef *TIMx, u32 BRAKE_LEVEL, u16 TIM_Channel)
+{
+	u32 temp = TIMx->AUDx[TIM_Channel] & (~TIM_BIT_CHx_BRK_ST);
+	temp |= BRAKE_LEVEL;
+	TIMx->AUDx[TIM_Channel] = temp;
+}
+
+/**
+  * @brief For fifo empty, after configuring the brake state of all channels, set brake state up and the brake state will take effect.
+  * @param  TIMx: where x only can be 5.
+  * @retval None.
+  */
+void RTIM_AudioandMotorSetBrakeLevelUp(RTIM_TypeDef *TIMx)
+{
+	TIMx->CFG |= TIM_BIT_CH_BRK_UP;
+}
+
+/**
+  * @brief  Set the TIM5's FIFO empty mode.
+  * @param  TIMx: where x only can be 5.
+  * @param  FIFO_EMPTY_MODE: specifies the FIFO empty mode.
+  *   This parameter can be any of the following values:
+  *     @arg PWM_FIFO_EMPTY_MAINTAIN
+  *     @arg PWM_FIFO_EMPTY_BRAKE
+  * @param  TIM_Channel: the channel need to be initialized,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @retval None
+  */
+void RTIM_AudioandMotorSetFIFOEmptyMode(RTIM_TypeDef *TIMx, u32 FIFO_EMPTY_MODE, u16 TIM_Channel)
+{
+	u32 temp = TIMx->AUDx[TIM_Channel] & (~TIM_BIT_CHx_FIFO_EMPTY_MODE_SEL);
+	temp |= FIFO_EMPTY_MODE;
+	TIMx->AUDx[TIM_Channel] = temp;
+}
+
+/**
+  * @brief  Clears the TIM5's audio and motor interrupt bits.
+  * @param  TIMx: where x only can be 5.
+  * @param  TIM_IT_AUD_FLAG: specifies the TIM audio and motor interrupt flag to check.
+  *      This parameter can be one of the following values:
+  *     @arg TIM_IT_EMG_BRK_RELEASE_FLAG: emergency brake release intr flag.
+  *     @arg TIM_IT_FIFO_EMPTY_FLAG: FIFO empty intr flag.
+  * @retval TRUE: The specified TIM interrupt has occurred
+  *         FALSE: The specified TIM interrupt has not occurred.
+  */
+u32 RTIM_GetAudioandMotorINTStatus(RTIM_TypeDef *TIMx, u32 TIM_IT_AUD_FLAG)
+{
+	u32 bitstatus = FALSE;
+
+	/* Check the parameters */
+	assert_param(IS_TIM_AUD_IT_FLAG(TIM_IT_AUD_FLAG));
+
+	if ((TIMx->ISR & TIM_IT_AUD_FLAG) != 0) {
+		bitstatus = TRUE;
+	} else {
+		bitstatus = FALSE;
+	}
+
+	return bitstatus;
+}
+
+/**
+  * @brief  Set deadzone_tim
+  * @param  TIMx: where x only can be 5.
+  * @param  deadzone_tim: it means delay cycles on positive edge, it's count by 40M.
+  * @param  TIM_Channel: the channel need to be initialized,
+  * 		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @retval None.
+  */
+void RTIM_SetDeadzoneTim(RTIM_TypeDef *TIMx, u32 deadzone_tim, u16 TIM_Channel)
+{
+	u32 temp = TIMx->AUDx[TIM_Channel];
+	temp &= ~TIM_MASK_CHx_DEADZONE_TIM;
+	temp |= TIM_CHx_DEADZONE_TIM(deadzone_tim);
+	TIMx->AUDx[TIM_Channel] = temp;
+}
+
+
+/**
+  * @brief  Enable or disable deadzone control function.
+  * @param  TIMx: where x only can be 5.
+  * @param  TIM_Channel: the channel need to be configured,
+  * 		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @param  NewState: new state of the deadzone control function.
+  *   This parameter can be: ENABLE or DISABLE.
+  * @retval None.
+  */
+void RTIM_DeadzoneCmd(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 NewState)
+{
+	u32 temp = TIMx->AUDx[TIM_Channel];
+
+	if (NewState != DISABLE) {
+		temp |= TIM_BIT_CHx_DEADZONE_EN;
+	} else {
+		temp &= ~TIM_BIT_CHx_DEADZONE_EN;
+	}
+
+	TIMx->AUDx[TIM_Channel] = temp;
+}
+
+/**
+  * @brief  Select output phase in audio/motor scenario.
+  * @param  TIMx: where x only can be 5.
+  * @param  TIM_Channel: the channel need to be configured,
+  * 		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @param  Phase: output phase selection.
+  *   This parameter can be one of the following values:
+  *     @arg 0: opposite phase
+  *     @arg 1: same phase
+  * @retval None.
+  */
+void RTIM_SetPhaseSel(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 Phase)
+{
+	u32 temp = TIMx->AUDx[TIM_Channel];
+
+	if (Phase != 0) {
+		temp |= TIM_BIT_CHx_PHASE_SEL;
+	} else {
+		temp &= ~TIM_BIT_CHx_PHASE_SEL;
+	}
+
+	TIMx->AUDx[TIM_Channel] = temp;
+}
+
+/**
+  * @brief  Set the max deadzone_tim'channel id
+  * @param  TIMx: where x only can be 5.
+  * @retval None.
+  */
+void RTIM_SetDeadzoneMAXChnID(RTIM_TypeDef *TIMx)
+{
+	u32 deadzone_tim_max = (TIMx->AUDx[TIM5_Channel_0] & TIM_MASK_CHx_DEADZONE_TIM);
+	u32 deadzone_tim_max_chnid = 0;
+	u32 cfg = 0;
+	for (u8 i = 1; i < PWM_CHAN_MAX; i++) {
+		if ((TIMx->AUDx[i] & TIM_MASK_CHx_DEADZONE_TIM) > deadzone_tim_max) {
+			deadzone_tim_max = (TIMx->AUDx[i] & TIM_MASK_CHx_DEADZONE_TIM);
+			deadzone_tim_max_chnid = i;
+		}
+	}
+	cfg = TIMx->CFG & (~TIM_MASK_CH_ID_DEADZONE_MAX);
+	DiagPrintf("deadzone_tim_max_chnid is: %d\n", deadzone_tim_max_chnid);
+	TIMx->CFG = cfg | (TIM_CH_ID_DEADZONE_MAX(deadzone_tim_max_chnid));
+}
+
+/**
+  * @brief  Enable/Disable debounce function of TIM emergency brake.
+  * @param  TIMx: TIMx: where x only can be 5.
+  * @param  NewState: new state of the TIMx peripheral.
+  *   This parameter can be: ENABLE or DISABLE.
+  * @retval None
+  */
+void RTIM_EmgBrkDbcCmd(RTIM_TypeDef *TIMx, u32 NewState)
+{
+	if (NewState != DISABLE) {
+		/* Set the ARR Preload Bit */
+		TIMx->CR |= TIM_BIT_ARPE;
+	} else {
+		/* Reset the ARR Preload Bit */
+		TIMx->CR &= ~TIM_BIT_ARPE;
+	}
+}
+
+/**
+  * @brief  Set debounce counter under XTAL40M to realize signal deglitch.
+  * @param  TIMx: TIMx: where x only can be 5.
+  * @param  Dbc_Cnt: Debounce counter to be set.
+  *	@note
+  *       Dbc_Cnt = 0 means debounce function is disabled.
+  * @retval None
+  */
+void RTIM_SetEmgBrkDbcCnt(RTIM_TypeDef *TIMx, u16 Dbc_Cnt)
+{
+	u32 temp = TIMx->CFG & (~TIM_MASK_EMG_BRK_DBC_CNT);
+	temp |= TIM_EMG_BRK_DBC_CNT(Dbc_Cnt);
+	TIMx->CFG = temp;
+}
+
+/**
+  * @brief Set emergency brake level.
+  * @param  TIMx: TIMx: where x only can be 5.
+  * @param  EMG_BRK_LEVEL: It means when emergency brake is triggered, the PWM output level.
+  *   This parameter can be: PWM_EMGBRK_OUTPUT_LOW or PWM_EMGBRK_OUTPUT_HIGH.
+  * @param  TIM_Channel: the channel need to be initialized,
+  *		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @retval None
+  */
+void RTIM_SetEmgBrkLevel(RTIM_TypeDef *TIMx, u32 EMG_BRK_LEVEL, u16 TIM_Channel)
+{
+	u32 temp = TIMx->AUDx[TIM_Channel] & (~TIM_BIT_CHx_EMG_BRK_ST);
+	temp |= EMG_BRK_LEVEL;
+	TIMx->AUDx[TIM_Channel] = temp;
+}
+
+/**
+  * @brief Set emergency brake trigger polarity.
+  * @param  TIMx: where x only can be 5.
+  * @param  EMG_BRK_POLARITY: Emergency brake trigger polarity.
+  *   This parameter can be one of the following values:
+  *     @arg PWM_EMGBRK_POLARITY_HIGH: High level to trigger emergency braking
+  *     @arg PWM_EMGBRK_POLARITY_LOW: Low level to trigger emergency braking
+  * @retval None
+  */
+void RTIM_SetEmgBrkPolarity(RTIM_TypeDef *TIMx, u32 EMG_BRK_POLARITY)
+{
+	u32 temp = TIMx->CFG & (~TIM_BIT_EMG_BRK_TRIG_POLARITY);
+	temp |= EMG_BRK_POLARITY;
+	TIMx->CFG = temp;
+}
+
+/**
+  * @brief  When writing a FIFO for the first time, you should configure the level of FIFO before FIFO to be read.
+  * 		Generally greater than the number of chn working in FIFO.
+  * @param  TIMx: TIMx: where x only can be 5.
+  * @param  FIFO_Level: the level of FIFO before FIFO to be read.
+  * @retval None
+  */
+void RTIM_SetFIFOFirstLevel(RTIM_TypeDef *TIMx, u16 FIFO_Level)
+{
+	/*clear old value.*/
+	TIMx->FIFO = 0;
+	/*set new value.*/
+	TIMx->FIFO = TIM_FIFO_AF_LEVEL(FIFO_Level);
+}
+
+/**
+  * @brief  Set the PAD output mode for the specified channel.
+  *         Used to select the correspondence between ch and output pad.
+  * @param  TIMx:    where x only can be 5.
+  * @param  Channel: the index of the channel, range [0, PWM_CHAN_MAX-1].
+  * @param  Mode:    the PAD output mode selection.
+  *                  This parameter can be one of the following values:
+  *                  @arg TIM_PAD_OUT_MODE_TWO_CHN: Two chns control two output pad.
+  *                  @arg TIM_PAD_OUT_MODE_ONE_CHN: One chn controls two output pad.
+  * @retval None
+  */
+void RTIM_SetPadOutMode(RTIM_TypeDef *TIMx, u32 Channel, u32 Mode)
+{
+	u32 tmp = TIMx->AUDx[Channel];
+
+	if (Mode == PWM_CHANNEL_OUTPUT_ONEPAD) {
+		tmp |= TIM_BIT_CHx_PAD_OUT_MODE_SEL;
+	} else {
+		tmp &= ~TIM_BIT_CHx_PAD_OUT_MODE_SEL;
+	}
+
+	TIMx->AUDx[Channel] = tmp;
+}
+
+/**
+  * @brief  Reset FIFO.
+  * @param  TIMx: TIMx: where x only can be 5.
+  * @retval None
+  */
+void RTIM_ResetFIFO(RTIM_TypeDef *TIMx)
+{
+	TIMx->FIFO |= TIM_BIT_FIFO_CLR;
+}
+
+/**
+ * @brief  PWM and GDMA handshake on or off.
+ * @param  TIMx: TIMx: where x only can be 5.
+ * @param  NewState: new state of the handshake of GDMA-PWM.
+ *         This parameter can be: ENABLE or DISABLE.
+ * @retval None
+ */
+void PWM_DmaCmd(RTIM_TypeDef *TIMx, u32 NewState)
+{
+	if (NewState == ENABLE) {
+		TIMx->DMA |= TIM_BIT_TXDMA_EN;
+	} else {
+		TIMx->DMA &= ~TIM_BIT_TXDMA_EN;
+	}
+}
+
+/**
+ * @brief  set DMA burstsize = 2^(n+1).
+ * @param  TIMx: TIMx: where x only can be 5.
+ * @param  msize: burstsize = 2^(n+1)
+ * it can be one of the following parameters @ref GDMA_Msize.
+ * @note
+ * 		PWM bursrsize must be same as GDMA burstsize.
+ * @retval None
+ */
+void PWM_DmaBurstSize(RTIM_TypeDef *TIMx, u32 msize)
+{
+	TIMx->DMA &= ~TIM_MASK_TXDMA_MSIZE;
+	TIMx->DMA |= TIM_TXDMA_MSIZE(msize);
+}
+
+
+/**
+ * @brief  Initialize GDMA peripheral.
+ * @param  Index: 0.
+ * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
+ *         the configuration information for the GDMA peripheral.
+ * @param  CallbackData: GDMA callback data.
+ * @param  CallbackFunc: GDMA callback function.
+ * @param  pTXData: TX Buffer.
+ * @param  Length: TX Count.
+ * @retval TRUE/FLASE
+ */
+bool PWM_TXGDMA_Init(
+	u32 Index,
+	GDMA_InitTypeDef *GDMA_InitStruct,
+	void *CallbackData,
+	IRQ_FUN CallbackFunc,
+	u8 *pTXData,
+	u32 Length)
+{
+	u8 GdmaChnl;
+
+	assert_param(GDMA_InitStruct != NULL);
+	DCache_CleanInvalidate((u32)pTXData, Length);
+	/*obtain a DMA channel and register DMA interrupt handler*/
+	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI4);
+	if (GdmaChnl == 0xFF) {
+		// No Available DMA channel
+		return FALSE;
+	}
+
+	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
+
+	/*set GDMA initial structure member value*/
+	GDMA_InitStruct->MuliBlockCunt = 0;
+	GDMA_InitStruct->GDMA_ReloadSrc = 0;
+	// GDMA_InitStruct->GDMA_ReloadSrc = 1;
+	GDMA_InitStruct->MaxMuliBlock = 1;
+	GDMA_InitStruct->GDMA_DIR = TTFCMemToPeri;
+	GDMA_InitStruct->GDMA_DstHandshakeInterface = PWM1_DEV_TABLE[Index].Tx_HandshakeInterface;
+	GDMA_InitStruct->GDMA_DstAddr = (u32)&PWM1_DEV_TABLE[Index].TIMx->FIFO_DATA;
+	GDMA_InitStruct->GDMA_Index = 0;
+	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
+	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
+	GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
+	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
+	GDMA_InitStruct->GDMA_DstInc = NoChange;
+	GDMA_InitStruct->GDMA_SrcInc = IncType;
+
+	/*	Configure GDMA transfer */
+	if (((Length & 0x07) == 0) && (((u32)(pTXData) & 0x07) == 0)) {
+		/*	8-bytes aligned, move 8 bytes each transfer */
+		GDMA_InitStruct->GDMA_SrcMsize = MsizeFour;
+		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
+		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
+	} else if (((Length & 0x01) == 0) && (((u32)(pTXData) & 0x01) == 0)) {
+		/*	2-bytes aligned, move 2 bytes each transfer */
+		GDMA_InitStruct->GDMA_SrcMsize = MsizeOne;
+		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
+		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
+	} else {
+		RTK_LOGE(TAG, "PWM_TXGDMA_Init: Aligment Err: pTXData=%p,  Length=%lu\n", pTXData, Length);
+		return FALSE;
+	}
+
+	/*configure GDMA source address */
+	GDMA_InitStruct->GDMA_SrcAddr = (u32)pTXData;
+
+	/*	Enable GDMA for TX */
+	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
+	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
+	return TRUE;
+}

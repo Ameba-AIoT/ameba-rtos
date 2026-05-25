@@ -1,5 +1,5 @@
 
-#include "whc_dev_app.h"
+#include "whc_dev.h"
 #include "lwip/sys.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
@@ -14,7 +14,6 @@ u8 *whc_rx_msg = NULL;
 /* real addr needed for mem free */
 u8 *whc_rx_msg_free_addr = NULL;
 
-u16 rx_msg_size;
 #ifndef CONFIG_MP_SHRINK
 static struct rtw_network_info wifi = {0};
 #endif
@@ -225,7 +224,7 @@ void whc_dev_enable_ap(u8 *buf)
 	ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 	netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
+	lwip_set_ip(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
 	extern dhcps_t *dhcps_init(struct netif * pnetif);
 	extern err_t dhcps_start(struct netif * pnetif);
 	dhcps_init(pnetif_ap);
@@ -329,7 +328,7 @@ void whc_dev_softap_handler(u8 *buf)
 	return;
 }
 /* here in sdio rx done callback */
-__weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
+__weak void whc_dev_cmd_rx_to_user(u8 *rxbuf)
 {
 	while (whc_rx_msg) {
 		/* waiting last msg done */
@@ -337,12 +336,10 @@ __weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
 	}
 
 	whc_rx_msg = rxbuf;
-	whc_rx_msg_free_addr = real_buf;
-	rx_msg_size = size;
 	rtos_sema_give(whc_user_rx_sema);
 }
 
-__weak void whc_dev_pkt_rx_to_user_task(void)
+__weak void whc_dev_cmd_rx_to_user_task(void)
 {
 	u8 *ptr = NULL;
 	u32 event = 0;
@@ -388,9 +385,9 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					whc_dev_cmd_scan();
 #ifdef CONFIG_LWIP_LAYER
 				} else if (*ptr == WHC_WIFI_TEST_DHCP) {
-					LwIP_netif_set_link_up(NETIF_WLAN_STA_INDEX);
+					lwip_netif_set_link_up(NETIF_WLAN_STA_INDEX);
 					/* Start DHCPClient */
-					LwIP_IP_Address_Request(STA_WLAN_INDEX);
+					lwip_request_ip(STA_WLAN_INDEX);
 #endif
 				} else if (*ptr == WHC_WIFI_TEST_CONNECT) {
 					memset(&wifi, 0, sizeof(struct rtw_network_info));
@@ -415,7 +412,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 #ifdef CONFIG_LWIP_LAYER
 					if (ret == RTK_SUCCESS) {
 						/* Start DHCPClient */
-						LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
+						lwip_request_ip(NETIF_WLAN_STA_INDEX);
 					} else {
 						RTK_LOGE(TAG_WLAN_INIC, "connect fail !\n");
 					}
@@ -427,7 +424,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					if (!wifi_is_running(idx)) {
 						RTK_LOGE(TAG_WLAN_INIC, "%s, port %d is not running!\n", __func__, idx);
 					} else {
-						ip = LwIP_GetIP(idx);
+						ip = lwip_get_ip(idx);
 						ptr = buf;
 						*(u32 *)ptr = WHC_WIFI_TEST;
 						ptr += 4;
@@ -435,7 +432,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 						ptr += 1;
 						memcpy(ptr, ip, 4);
 						ptr += 4;
-						ip = LwIP_GetGW(idx);
+						ip = lwip_get_gw(idx);
 						memcpy(ptr, ip, 4);
 						ptr += 4;
 						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
@@ -468,16 +465,15 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 	}
 }
 
-__weak void whc_dev_init_cmd_path_task(void)
+__weak void whc_dev_init_cmd_path(void)
 {
 	/* initialize the semaphores */
 	rtos_sema_create(&whc_user_rx_sema, 0, 0xFFFFFFFF);
 
 	/* Initialize the event task */
-	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_dev_pkt_rx_to_user_task", (rtos_task_function_t)whc_dev_pkt_rx_to_user_task,
-										NULL,
-										WHC_WHC_CMD_USER_TASK_STACK_SIZE, CONFIG_WHC_WHC_CMD_USER_TASK_PRIO)) {
-		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_pkt_rx_to_user_task Err!!\n");
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_dev_cmd_rx_to_user_task", (rtos_task_function_t)whc_dev_cmd_rx_to_user_task,
+										NULL, WHC_WHC_CMD_USER_TASK_STACK_SIZE, CONFIG_WHC_WHC_CMD_USER_TASK_PRIO)) {
+		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_cmd_rx_to_user_task Err!!\n");
 	}
 
 }

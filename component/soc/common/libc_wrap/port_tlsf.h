@@ -22,9 +22,36 @@
  * even if advised of the possibility of such damage.
  */
 
+#ifndef PORT_TLSF_H
+#define PORT_TLSF_H
+
 #include "tlsf.h"
 
-extern tlsf_t tlsf;
+/* Provide defaults for Kconfig macros when not defined by build system */
+#ifndef CONFIG_HEAP_PROTECTOR
+#define CONFIG_HEAP_PROTECTOR 0
+#endif
+
+#ifndef CONFIG_HEAP_CORRUPTION_DETECT_LITE
+#define CONFIG_HEAP_CORRUPTION_DETECT_LITE 0
+#endif
+
+#ifndef CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE
+#define CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE 0
+#endif
+
+#ifndef CONFIG_HEAP_TRACE
+#define CONFIG_HEAP_TRACE 0
+#endif
+
+#ifndef _DEBUG
+#define _DEBUG 0
+#endif
+
+/**
+ * @brief   Initialize TLSF with heap regions (replaces vPortDefineHeapRegions for TLSF).
+ */
+void vPortDefineHeapRegions(const HeapRegion_t *pxHeapRegions);
 
 /**
  * @brief   Freertos heap malloc operation.
@@ -39,3 +66,37 @@ void *pvPortMalloc(size_t xWantedSize);
  * @param   pv: pointer to the free memory.
  */
 void vPortFree(void *pv);
+
+/**
+ * @brief   Freertos heap realloc operation.
+ *
+ * @param   pv: pointer to the memory to reallocate.
+ * @param   xWantedSize: new size in bytes.
+ */
+void *pvPortReAlloc(void *pv, size_t xWantedSize);
+
+/**
+ * @brief   Freertos heap malloc with base address hint.
+ *
+ * @param   xWantedSize: malloc size in bytes.
+ * @param   startAddr: base address hint, 0 for any type.
+ */
+void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr);
+
+/**
+ * @brief   Freertos heap realloc with base address hint.
+ *
+ * @param   pv: pointer to the memory to reallocate.
+ * @param   xWantedSize: new size in bytes.
+ * @param   startAddr: base address hint, 0 for any type.
+ */
+void *pvPortReAllocBase(void *pv, size_t xWantedSize, uint32_t startAddr);
+
+/**
+ * @brief   Freertos heap malloc with cache-line alignment.
+ *
+ * @param   xWantedSize: malloc size in bytes.
+ */
+void *pvPortMallocCacheAligned(size_t xWantedSize);
+
+#endif /* PORT_TLSF_H */

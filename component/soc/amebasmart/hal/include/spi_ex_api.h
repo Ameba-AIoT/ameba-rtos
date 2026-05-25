@@ -38,12 +38,21 @@ extern "C" {
   * @{
   */
 
-/** @defgroup MBED_SPI
+/** @defgroup MBED_SPI MBED SPI
  *  @brief    MBED_SPI driver modules.
  *  @{
  */
 
-/** @defgroup MBED_SPI_Exported_Constants MBED_SPI Exported Contsants
+/**
+  * @brief enum SPI_CS_TOGGLE_MODE
+  * SPI Master mode: for continuous transfer, how the CS toggle
+  */
+typedef enum {
+	SPI_CS_TOGGLE_EVERY_FRAME = 0,     // let SCPH=0 then the CS toggle every frame
+	SPI_CS_TOGGLE_START_STOP = 1       // let SCPH=1 the CS toggle at start and stop
+} SPI_CS_TOGGLE_MODE;
+
+/** @defgroup MBED_SPI_Exported_Constants MBED_SPI Exported Constants
   * @{
   */
 #define SPI_DMA_RX_EN           (1<<0)
@@ -62,22 +71,26 @@ extern "C" {
 /** @defgroup MBED_SPI_Enumeration_Type MBED_SPI Enumeration Type
   * @{
   */
-enum {
+
+/**
+  * @brief enum SPI_SCLK_IDLE_LEVEL
+  */
+typedef enum {
 	SPI_SCLK_IDLE_LOW = 0,      // the SCLK is Low when SPI is inactive
 	SPI_SCLK_IDLE_HIGH = 2      // the SCLK is High when SPI is inactive
-};
+} SPI_SCLK_IDLE_LEVEL;
 
-// SPI Master mode: for continuous transfer, how the CS toggle:
-enum {
-	SPI_CS_TOGGLE_EVERY_FRAME = 0,     // let SCPH=0 then the CS toggle every frame
-	SPI_CS_TOGGLE_START_STOP = 1       // let SCPH=1 the CS toggle at start and stop
-};
-
-enum {
+/**
+  * @brief enum SPI_SCLK_TOGGLE_MODE
+  */
+typedef enum {
 	SPI_SCLK_TOGGLE_MIDDLE = 0,    // Serial Clk toggle at middle of 1st data bit and latch data at 1st Clk edge
 	SPI_SCLK_TOGGLE_START = 1      // Serial Clk toggle at start of 1st data bit and latch data at 2nd Clk edge
-};
+} SPI_SCLK_TOGGLE_MODE;
 
+/**
+  * @brief enum ChipSelect
+  */
 typedef enum {
 	CS_0 = 0,
 	CS_1 = 1,
@@ -89,6 +102,9 @@ typedef enum {
 	CS_7 = 7
 } ChipSelect;
 
+/**
+  * @brief enum SpiIrq
+  */
 typedef enum {
 	SpiRxIrq,
 	SpiTxIrq

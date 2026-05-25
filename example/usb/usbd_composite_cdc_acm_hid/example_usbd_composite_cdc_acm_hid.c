@@ -189,6 +189,8 @@ static int composite_cdc_acm_cb_deinit(void)
 
 /**
   * @brief  Data received over USB OUT endpoint are sent over CDC interface through this function.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  Buf: RX buffer
   * @param  Len: RX data length (in bytes)
   * @retval Status
@@ -200,6 +202,8 @@ static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 
 /**
   * @brief  Handle the CDC class control requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  cmd: Command code
   * @param  buf: Buffer containing command data (request parameters)
   * @param  len: Number of data to be sent (in bytes)
@@ -277,6 +281,14 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	return ret;
 }
 
+/**
+  * @brief  Handle the HID class control (setup) requests for the composite device
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  req: USB setup request
+  * @param  buf: Buffer containing the setup data payload
+  * @retval Status
+  */
 static int composite_hid_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = HAL_OK;
@@ -297,7 +309,7 @@ static int composite_hid_cb_setup(usb_setup_req_t *req, u8 *buf)
 		buf[0] = (u8)(composite_hid_idle_state & 0xFF);
 		break;
 	default:
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid HID bRequest 0x%02x\n", req->bRequest);
+		// RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid HID bRequest 0x%02x\n", req->bRequest);
 		ret = HAL_ERR_PARA;
 		break;
 	}
@@ -342,12 +354,23 @@ static void composite_hid_send_device_data(void *pdata)
 	usbd_composite_hid_send_data(byte, 4);
 }
 
+/**
+  * @brief  Handle composite device attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void composite_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	composite_attach_status = status;
 	rtos_sema_give(composite_attach_status_changed_sema);
+#else
+	UNUSED(status);
 #endif
 }
 

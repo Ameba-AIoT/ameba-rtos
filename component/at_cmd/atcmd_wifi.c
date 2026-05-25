@@ -61,6 +61,16 @@ extern struct netif *pnetif_eth;
 extern struct netif *pnetif_usb_eth;
 #endif
 
+#ifdef CONFIG_WIFI_XMESH
+rtos_task_t xmesh_tx_task_hdl = NULL;
+int xmesh_tx_stop_req = 0;
+
+struct xmesh_tx_param {
+	int cnt;
+	int interval;
+};
+#endif
+
 static void init_wifi_struct(void)
 {
 	memset(wifi.ssid.val, 0, sizeof(wifi.ssid.val));
@@ -384,7 +394,7 @@ void at_wlconn(u16 argc, char **argv)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	ret = LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
+	ret = lwip_request_ip(NETIF_WLAN_STA_INDEX);
 	tick3 = rtos_time_get_current_system_time_ms();
 	if (DHCP_ADDRESS_ASSIGNED == ret) {
 		RTK_LOGI(NOTAG, "\r\n[+WLCONN] Got IP after %d ms.\r\n", (unsigned int)(tick3 - tick1));
@@ -468,7 +478,7 @@ void at_wldisconn(u16 argc, char **argv)
 end:
 #ifdef CONFIG_LWIP_LAYER
 	user_static_ip.use_static_ip = 0;
-	LwIP_ReleaseIP(NETIF_WLAN_STA_INDEX);
+	lwip_clear_ip(NETIF_WLAN_STA_INDEX);
 #endif
 	init_wifi_struct();
 	if (error_no == RTW_AT_OK) {
@@ -725,7 +735,7 @@ void at_wlstartap(u16 argc, char **argv)
 	int timeout = 20;
 	struct rtw_wifi_setting *setting = NULL;
 	struct rtw_acs_config acs_config;
-	acs_config.band = RTW_SUPPORT_BAND_2_4G_5G_BOTH;
+	acs_config.band = RTW_SUPPORT_BAND_2_4G;
 
 	if (argc == 1) {
 		RTK_LOGW(NOTAG, "[+WLSTARTAP] The parameters can not be ignored\r\n");
@@ -914,7 +924,7 @@ void at_wlstartap(u16 argc, char **argv)
 
 #ifdef CONFIG_LWIP_LAYER
 	dhcps_deinit(pnetif_ap);
-	LwIP_ReleaseIP(SOFTAP_WLAN_INDEX);
+	lwip_clear_ip(SOFTAP_WLAN_INDEX);
 #endif
 
 	if (ap.channel == 0) {
@@ -961,7 +971,7 @@ void at_wlstartap(u16 argc, char **argv)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	LwIP_alloc_ip(NETIF_WLAN_AP_INDEX);
+	lwip_alloc_ip(NETIF_WLAN_AP_INDEX);
 	dhcps_init(pnetif_ap);
 	if (pool_specified) {
 		dhcps_set_addr_pool(pnetif_ap, 1, &start_ip, &end_ip);
@@ -1017,10 +1027,10 @@ void at_wlstate(u16 argc, char **argv)
 {
 	int i = 0;
 #ifdef CONFIG_LWIP_LAYER
-	u8 *mac = LwIP_GetMAC(NETIF_WLAN_STA_INDEX);
-	u8 *ip = LwIP_GetIP(NETIF_WLAN_STA_INDEX);
-	u8 *gw = LwIP_GetGW(NETIF_WLAN_STA_INDEX);
-	u8 *msk = LwIP_GetMASK(NETIF_WLAN_STA_INDEX);
+	u8 *mac = lwip_get_mac(NETIF_WLAN_STA_INDEX);
+	u8 *ip = lwip_get_ip(NETIF_WLAN_STA_INDEX);
+	u8 *gw = lwip_get_gw(NETIF_WLAN_STA_INDEX);
+	u8 *msk = lwip_get_mask(NETIF_WLAN_STA_INDEX);
 #endif
 	struct rtw_wifi_setting *p_wifi_setting = NULL;
 
@@ -1038,10 +1048,10 @@ void at_wlstate(u16 argc, char **argv)
 	for (i = 0; i < WLAN_NET_IF_NUM; i++) {
 		if (wifi_is_running(i)) {
 #ifdef CONFIG_LWIP_LAYER
-			mac = LwIP_GetMAC(i);
-			ip = LwIP_GetIP(i);
-			gw = LwIP_GetGW(i);
-			msk = LwIP_GetMASK(i);
+			mac = lwip_get_mac(i);
+			ip = lwip_get_ip(i);
+			gw = lwip_get_gw(i);
+			msk = lwip_get_mask(i);
 #endif
 			at_printf("WLAN%d Status: Running\r\n",  i);
 			at_printf("==============================\r\n");
@@ -1485,7 +1495,7 @@ void at_wlp2p_start(u16 argc, char **argv)
 		op_ch = 1 + (r % 3) * 5;
 	}
 
-	wifi_p2p_init(LwIP_GetMAC(0), listen_ch, op_ch, ssid_postfix);
+	wifi_p2p_init(lwip_get_mac(0), listen_ch, op_ch, ssid_postfix);
 
 end:
 	if (error_no == RTW_AT_OK) {
@@ -1842,7 +1852,7 @@ void at_wlstaticip(u16 argc, char **argv)
 		goto end;
 	}
 
-	/* Static IP will be set in LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX). */
+	/* Static IP will be set in lwip_request_ip(NETIF_WLAN_STA_INDEX). */
 	user_static_ip.use_static_ip = 1;
 	user_static_ip.addr = PP_HTONL(inet_addr(argv[1]));
 	if (argc == 4) {
@@ -2064,6 +2074,113 @@ end:
 }
 #endif
 
+#ifdef CONFIG_WIFI_XMESH
+static void xmesh_tx_task(void *param)
+{
+	struct xmesh_tx_param *p = (struct xmesh_tx_param *)param;
+	static u32 last_tx_time_ms = 0;
+	int i = 0;
+	int cnt = p->cnt;
+	int interval = p->interval;
+	u16 frame_len = 24 + 16 + 1 + 2 + 64;
+	u16 retry_offset = 24 + 15; /* WLAN_HDR_A3_LEN + xmesh retry field offset within xmesh hdr */
+	rtos_mem_free(p);
+
+	u8 XMESH_PATTERN[5] = {0x58, 0x4d, 0x45, 0x53, 0x48};
+	u8 *buf = (u8 *)rtos_mem_zmalloc(frame_len);
+	if (buf == NULL) {
+		xmesh_tx_task_hdl = NULL;
+		rtos_task_delete(NULL);
+		return;
+	}
+
+	buf[0] = 0x08;
+	buf[1] = 0x02;
+	memset(buf + 4, 0xff, ETH_ALEN);
+	memcpy(buf + 16, lwip_get_mac(STA_WLAN_INDEX), ETH_ALEN);
+	memcpy(buf + 24, XMESH_PATTERN, sizeof(XMESH_PATTERN));
+
+	struct rtw_raw_frame_desc desc = {0};
+	desc.buf = buf;
+	desc.buf_len = frame_len;
+	desc.tx_rate = RTW_RATE_18M;
+
+
+	for (i = 0; cnt < 0 || i < cnt; i++) {
+		if (xmesh_tx_stop_req) {
+			break;
+		}
+
+		for (int j = 0; j < 3; j++) {
+			buf[retry_offset] = (j > 0) ? 1 : 0;
+			int ret = wifi_send_raw_frame(&desc);
+			if (ret < 0) {
+				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "TXFAIL\n");
+			}
+		}
+		u32 cur_tx_time_ms = rtos_time_get_current_system_time_ms();
+		if (cur_tx_time_ms - last_tx_time_ms > 500) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "gravitation show ""xmesh_txcnt:%d\n", (i + 1));
+			last_tx_time_ms = cur_tx_time_ms;
+		}
+		rtos_time_delay_ms(interval);
+	}
+
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "gravitation show ""xmesh_txcnt:%d\n", (i));
+	rtos_mem_free(buf);
+	xmesh_tx_task_hdl = NULL;
+	xmesh_tx_stop_req = 0;
+	rtos_task_delete(NULL);
+}
+
+/****************************************************************
+AT command process:
+	AT+WLXMESH=tx,<interval_ms>[,<cnt>]  start xmesh tx task (cnt omitted = infinite)
+	AT+WLXMESH=tx,stop                   stop xmesh tx task
+****************************************************************/
+void at_wlxmesh(u16 argc, char **argv)
+{
+	if (argc < 2 || strcmp(argv[1], "tx") != 0) {
+		at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_PARAM_NUM_ERR);
+		return;
+	}
+
+	if (argc >= 2 && strcmp(argv[2], "stop") == 0) {
+		if (xmesh_tx_task_hdl == NULL) {
+			at_printf(ATCMD_OK_END_STR);
+			return;
+		}
+		xmesh_tx_stop_req = 1;
+
+		at_printf(ATCMD_OK_END_STR);
+		return;
+	}
+
+	if (argc < 3) {
+		at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_PARAM_NUM_ERR);
+		return;
+	}
+
+	if (xmesh_tx_task_hdl != NULL) {
+		at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_PARAM_NUM_ERR);
+		return;
+	}
+
+	struct xmesh_tx_param *p = (struct xmesh_tx_param *)rtos_mem_zmalloc(sizeof(struct xmesh_tx_param));
+	p->interval = atoi(argv[2]);
+	p->cnt = (argc >= 4) ? atoi(argv[3]) : -1;
+	xmesh_tx_stop_req = 0;
+
+	if (rtos_task_create(&xmesh_tx_task_hdl, "xmesh_tx_task", xmesh_tx_task, p, 1024, 2) != RTK_SUCCESS) {
+		rtos_mem_free(p);
+		at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_PARAM_NUM_ERR);
+		return;
+	}
+
+	at_printf(ATCMD_OK_END_STR);
+}
+#endif /* CONFIG_WIFI_XMESH */
+
 ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_wifi_items[ ] = {
 #if !(!defined(CONFIG_WHC_INTF_IPC) && !defined(CONFIG_WHC_WIFI_API_PATH) && !defined(CONFIG_WHC_NONE))
@@ -2097,6 +2214,9 @@ const log_item_t at_wifi_items[ ] = {
 	{"+WLCSI", at_wlcsi},
 #endif
 	{"+WLPS", at_wlps},
+#ifdef CONFIG_WIFI_XMESH
+	{"+WLXMESH", at_wlxmesh},
+#endif
 #endif /* CONFIG_WLAN */
 #endif
 };

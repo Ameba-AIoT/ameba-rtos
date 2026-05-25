@@ -119,6 +119,8 @@ static int composite_cdc_acm_cb_deinit(void)
 
 /**
   * @brief  Data received over USB OUT endpoint are sent over CDC interface through this function.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  Buf: RX buffer
   * @param  Len: RX data length (in bytes)
   * @retval Status
@@ -131,6 +133,8 @@ static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 
 /**
   * @brief  Data transmit callback.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  status: TX status
   */
 static void composite_cdc_acm_cb_transmitted(u8 status)
@@ -143,6 +147,8 @@ static void composite_cdc_acm_cb_transmitted(u8 status)
 
 /**
   * @brief  Handle the CDC class control requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  cmd: Command code
   * @param  buf: Buffer containing command data (request parameters)
   * @param  len: Number of data to be sent (in bytes)
@@ -222,12 +228,23 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	return ret;
 }
 
+/**
+  * @brief  Handle composite device attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void composite_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d\n", old_status, status);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	composite_attach_status = status;
 	rtos_sema_give(composite_attach_status_changed_sema);
+#else
+	UNUSED(status);
 #endif
 }
 

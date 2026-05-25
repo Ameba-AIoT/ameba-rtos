@@ -136,41 +136,39 @@ extern int lwip_init_done;
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void LwIP_Init(void);
-void LwIP_ReleaseIP(uint8_t idx);
-uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state);
-void LwIP_DHCP_stop(uint8_t idx);
-void LwIP_netif_set_up(uint8_t idx);
-void LwIP_netif_set_down(uint8_t idx);
-void LwIP_netif_set_link_up(uint8_t idx);
-void LwIP_netif_set_link_down(uint8_t idx);
-uint8_t *LwIP_GetMAC(uint8_t idx);
-unsigned char *LwIP_GetIP(uint8_t idx);
-unsigned char *LwIP_GetGW(uint8_t idx);
-uint8_t *LwIP_GetMASK(uint8_t idx);
-void LwIP_wlan_set_netif_info(uint8_t idx, void *dev, unsigned char *dev_addr);
-void LwIP_ethernetif_recv(uint8_t idx, int total_len);
-void LwIP_ethernetif_recv_inic(uint8_t idx, struct pbuf *p_buf);
-int LwIP_netif_is_valid_IP(uint8_t idx, unsigned char *ip_dest);
+void lwip_module_init(void);
+void lwip_clear_ip(uint8_t idx);
+uint8_t lwip_dhcp(uint8_t idx, uint8_t dhcp_state);
+void lwip_dhcp_stop(uint8_t idx);
+void lwip_netif_set_up(uint8_t idx);
+void lwip_netif_set_down(uint8_t idx);
+void lwip_netif_set_link_up(uint8_t idx);
+void lwip_netif_set_link_down(uint8_t idx);
+uint8_t *lwip_get_mac(uint8_t idx);
+unsigned char *lwip_get_ip(uint8_t idx);
+unsigned char *lwip_get_gw(uint8_t idx);
+uint8_t *lwip_get_mask(uint8_t idx);
+void lwip_wlan_set_netif_info(uint8_t idx, void *dev, unsigned char *dev_addr);
+int lwip_is_valid_ip(uint8_t idx, unsigned char *ip_dest);
 #if LWIP_DNS
-void LwIP_GetDNS(struct ip_addr *dns);
-void LwIP_SetDNS(struct ip_addr *dns);
+void lwip_get_dns(struct ip_addr *dns);
+void lwip_set_dns(struct ip_addr *dns);
 #endif
-void LwIP_SetIP(uint8_t idx, u32_t addr, u32_t netmask, u32_t gw);
+void lwip_set_ip(uint8_t idx, u32_t addr, u32_t netmask, u32_t gw);
 #if LWIP_AUTOIP
-void LwIP_AUTOIP(uint8_t idx);
-void LwIP_AUTOIP_STOP(uint8_t idx);
+void lwip_autoip(uint8_t idx);
+void lwip_autoip_stop(uint8_t idx);
 #endif
 #if LWIP_IPV6
-void LwIP_AUTOIP_IPv6(uint8_t idx);
+void lwip_autoip_ipv6(uint8_t idx);
 #endif
-int LwIP_netif_get_idx(struct netif *pnetif);
-struct netif *LwIP_idx_get_netif(uint8_t idx);
-int LwIP_Check_Connectivity(uint8_t idx);
-uint8_t LwIP_IP_Address_Request(uint8_t idx);
-int LwIP_subnet_is_used(struct ip_addr *check_ip);
-int LwIP_alloc_ip(uint8_t idx);
-int LwIP_manage_subnet_conflict(uint8_t idx);
+int lwip_netif_get_idx(struct netif *pnetif);
+struct netif *lwip_idx_get_netif(uint8_t idx);
+int lwip_check_connectivity(uint8_t idx);
+uint8_t lwip_request_ip(uint8_t idx);
+int lwip_subnet_is_used(struct ip_addr *check_ip);
+int lwip_alloc_ip(uint8_t idx);
+int lwip_manage_subnet_conflict(uint8_t idx);
 
 #ifdef __cplusplus
 }

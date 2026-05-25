@@ -120,7 +120,7 @@ void whc_spi_host_rx_handler(u8 *buf)
 	}
 
 	if (p_buf != NULL) {
-		LwIP_ethernetif_recv_inic(msg_info->wlan_idx, p_buf);
+		netif_adapter_wifi_recv_whc(msg_info->wlan_idx, p_buf);
 	}
 }
 
@@ -195,7 +195,7 @@ int whc_spi_host_recv_process(void)
 #endif
 
 #ifdef CONFIG_WHC_CMD_PATH
-	case WHC_WIFI_EVT_BRIDGE:
+	case WHC_WIFI_EVT_CMD:
 		hdr = (struct whc_cmd_path_hdr *)recv_msg;
 		whc_host_pkt_rx_to_user((u8 *)(hdr + 1), hdr->len);
 		break;

@@ -68,11 +68,12 @@
   * @{
   */
 
-/** @defgroup I2C
+/** @defgroup I2C I2C Driver
   * @brief I2C driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -641,6 +642,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -746,145 +748,8 @@ typedef struct {
 } I2C_DevTable;
 
 /**
-  * @}
+  * @brief  I2C Backup Structure Definition
   */
-
-/* Exported constants --------------------------------------------------------*/
-/** @defgroup I2C_Exported_Constants I2C Exported Constants
-  * @{
-  */
-
-/** @defgroup I2C_Controller IDs
-  * @{
-  */
-
-enum {
-	I2C_ID_0,
-	I2C_ID_1,
-	I2C_MAX_NUM
-};
-#define IS_I2C_ID(ID) (((ID) == I2C_ID_0) || \
-									   ((ID) == I2C_ID_1))
-/**
-  * @}
-  */
-
-/** @defgroup I2C_Addr_Mode
-  * @{
-  */
-#define I2C_ADDR_7BIT			((u32)0x00000000)
-#define I2C_ADDR_10BIT			((u32)0x00000001)
-#define IS_I2C_ADDR_MODE(MODE) (((MODE) == I2C_ADDR_7BIT) || \
-									   ((MODE) == I2C_ADDR_10BIT))
-/**
-  * @}
-  */
-
-/** @defgroup I2C_Speed_Mode
-  * @{
-  */
-#define I2C_SS_MODE				((u32)0x00000001)
-#define I2C_FS_MODE				((u32)0x00000002)
-#define I2C_HS_MODE				((u32)0x00000003)
-#define IS_I2C_SPEED_MODE(MODE) (((MODE) == I2C_SS_MODE) || \
-									   ((MODE) == I2C_FS_MODE) || \
-									   ((MODE) == I2C_HS_MODE))
-/**
-  * @}
-  */
-
-/** @defgroup I2C_Role_Mode
-  * @{
-  */
-#define I2C_SLAVE_MODE			((u32)0x00000000)
-#define I2C_MASTER_MODE		((u32)0x00000001)
-/**
-  * @}
-  */
-
-/** @defgroup I2C_Clock
-  * @{
-  */
-#define I2C0_1_IPCLK			40000000
-/**
-  * @}
-  */
-/** @defgroup I2C_DMA_Mode_definitions
-  * @{
-  */
-#define I2C_DMA_LEGACY			((u32)0x00000000)
-#define I2C_DMA_REGISTER		((u32)0x00000001)
-#define I2C_DMA_DESCRIPTOR		((u32)0x00000002)
-#define IS_I2C_DMA_MODE(MODE) (((MODE) == I2C_DMA_LEGACY) || \
-                                   ((MODE) == I2C_DMA_REGISTER) || \
-                                   ((MODE) == I2C_DMA_DESCRIPTOR))
-/**
-  * @}
-  */
-/** @defgroup I2C_DMA_DATA_LENGTH
-  * @{
-  */
-#define IS_I2C_DMA_DATA_LEN(LENGTH)   ((LENGTH) <= 0xFFFF)
-/**
-  * @}
-  */
-
-
-/**
-  * @}
-  */
-
-/** @} */
-/** @} */
-
-/*I2C_Exported_Normal_Functions I2C Exported Normal Functions*/
-_LONG_CALL_ void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct);
-_LONG_CALL_ void I2C_Cmd(I2C_TypeDef *I2Cx, u8 NewState);
-_LONG_CALL_ u32 I2C_ClearAllINT(I2C_TypeDef *I2Cx);
-_LONG_CALL_ u32 I2C_GetRawINT(I2C_TypeDef *I2Cx);
-_LONG_CALL_ u32 I2C_GetINT(I2C_TypeDef *I2Cx);
-_LONG_CALL_ u8 I2C_CheckFlagState(I2C_TypeDef *I2Cx, u32 I2C_FLAG);
-_LONG_CALL_ void I2C_INTConfig(I2C_TypeDef *I2Cx, u32 I2C_IT, u32 NewState);
-_LONG_CALL_ u32 I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrAddr);
-_LONG_CALL_ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk);
-_LONG_CALL_ void I2C_StructInit(I2C_InitTypeDef *I2C_InitStruct);
-_LONG_CALL_ u8 I2C_ReceiveData(I2C_TypeDef *I2Cx);
-_LONG_CALL_ s32 I2C_PollFlagRawINT(I2C_TypeDef *I2Cx, u32 I2C_FLAG, u32 I2C_RawINT, u32 timeout_ms, u32 *txflr_out);
-
-/*I2C_Exported_Master_Functions I2C Exported Master Functions*/
-_LONG_CALL_ void I2C_MasterSendNullData(I2C_TypeDef *I2Cx, u8 *pBuf, u8  I2CCmd, u8  I2CStop, u8  I2CReSTR);
-_LONG_CALL_ void I2C_MasterSend(I2C_TypeDef *I2Cx, u8 *pBuf, u8  I2CCmd, u8  I2CStop, u8  I2CReSTR);
-_LONG_CALL_ u32 I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
-_LONG_CALL_ u32 I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
-_LONG_CALL_ u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
-_LONG_CALL_ u32 I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Writelen, u8 *pReadBuf, u32 Readlen);
-_LONG_CALL_ void I2C_SetSlaveAddress(I2C_TypeDef *I2Cx, u16 Address);
-_LONG_CALL_ u32 I2C_MasterWriteInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
-_LONG_CALL_ u32 I2C_MasterReadInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
-_LONG_CALL_ void I2C_MasterISRHandle(I2C_IntModeCtrl *I2C_SemStruct);
-_LONG_CALL_ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms);
-_LONG_CALL_ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms);
-_LONG_CALL_ s32 I2C_MasterSendNullData_TimeOut(I2C_TypeDef *I2Cx, int address, u32 timeout_ms);
-_LONG_CALL_ u32 I2C_ISRHandle(I2C_IntModeCtrl *I2C_SemStruct);
-
-/*I2C_Exported_Slave_Functions I2C Exported Slave Functions*/
-_LONG_CALL_ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
-_LONG_CALL_ u32 I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
-_LONG_CALL_ void I2C_SlaveSend(I2C_TypeDef *I2Cx, u8 Data);
-
-
-/*I2C_Exported_PowerSave_Functions I2C Exported PowerSave Functions*/
-_LONG_CALL_ void I2C_Sleep_Cmd(I2C_TypeDef *I2Cx, u32 NewStatus);
-_LONG_CALL_ void I2C_WakeUp(I2C_TypeDef *I2Cx);
-
-/* I2C_Exported_DMA_Functions I2C Exported DMA Functions */
-_LONG_CALL_ void I2C_DMAControl(I2C_TypeDef *I2Cx, u32 DmaCtrl, u8 NewState);
-_LONG_CALL_ void I2C_DmaMode1Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_DmaBLen);
-_LONG_CALL_ void I2C_DmaMode2Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_DmaBLen);
-_LONG_CALL_ bool I2C_TXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pTxBuf, int TxCount);
-_LONG_CALL_ bool I2C_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pRxBuf, int RxCount);
-
-/*I2C_Backup_Functions I2C Backup Functions*/
 typedef struct {
 	uint32_t IC_CON;
 	uint32_t IC_TAR;
@@ -910,15 +775,93 @@ typedef struct {
 	uint32_t IC_SAR2;
 } I2C_Backup;
 
-_LONG_CALL_ bool I2C_Config_BackupBuf(u32 i2c_id, I2C_Backup *I2C_BackupStruct);
-_LONG_CALL_ bool I2C_Suspend(u32 i2c_id);
-_LONG_CALL_ bool I2C_Resume(u32 i2c_id);
-_LONG_CALL_ void I2C_SuspendAll(void);
-_LONG_CALL_ void I2C_ResumeAll(void);
+/**
+  * @}
+  */
 
-/* Other Definitions --------------------------------------------------------*/
-#if 1
-//I2C Timing Parameters
+/* Exported constants --------------------------------------------------------*/
+/** @defgroup I2C_Exported_Constants I2C Exported Constants
+  * @{
+  */
+
+/** @defgroup I2C_Controller IDs
+  * @{
+  */
+
+typedef enum {
+	I2C_ID_0,
+	I2C_ID_1,
+	I2C_MAX_NUM
+} I2C_ID_Type;
+#define IS_I2C_ID(ID) (((ID) == I2C_ID_0) || \
+									   ((ID) == I2C_ID_1))
+/**
+  * @}
+  */
+
+/** @defgroup I2C_Addr_Mode I2C Address Mode
+  * @{
+  */
+#define I2C_ADDR_7BIT			((u32)0x00000000)
+#define I2C_ADDR_10BIT			((u32)0x00000001)
+#define IS_I2C_ADDR_MODE(MODE) (((MODE) == I2C_ADDR_7BIT) || \
+									   ((MODE) == I2C_ADDR_10BIT))
+/**
+  * @}
+  */
+
+/** @defgroup I2C_Speed_Mode I2C Speed Mode
+  * @{
+  */
+#define I2C_SS_MODE				((u32)0x00000001)
+#define I2C_FS_MODE				((u32)0x00000002)
+#define I2C_HS_MODE				((u32)0x00000003)
+#define IS_I2C_SPEED_MODE(MODE) (((MODE) == I2C_SS_MODE) || \
+									   ((MODE) == I2C_FS_MODE) || \
+									   ((MODE) == I2C_HS_MODE))
+/**
+  * @}
+  */
+
+/** @defgroup I2C_Role_Mode I2C Role Mode
+  * @{
+  */
+#define I2C_SLAVE_MODE			((u32)0x00000000)
+#define I2C_MASTER_MODE		((u32)0x00000001)
+/**
+  * @}
+  */
+
+/** @defgroup I2C_Clock I2C Clock
+  * @{
+  */
+#define I2C0_1_IPCLK			40000000
+/**
+  * @}
+  */
+/** @defgroup I2C_DMA_Mode_definitions I2C DMA Mode
+  * @{
+  */
+#define I2C_DMA_LEGACY			((u32)0x00000000)
+#define I2C_DMA_REGISTER		((u32)0x00000001)
+#define I2C_DMA_DESCRIPTOR		((u32)0x00000002)
+#define IS_I2C_DMA_MODE(MODE) (((MODE) == I2C_DMA_LEGACY) || \
+                                   ((MODE) == I2C_DMA_REGISTER) || \
+                                   ((MODE) == I2C_DMA_DESCRIPTOR))
+/**
+  * @}
+  */
+/** @defgroup I2C_DMA_DATA_LENGTH I2C DMA Data Length
+  * @{
+  */
+#define IS_I2C_DMA_DATA_LEN(LENGTH)   ((LENGTH) <= 0xFFFF)
+/**
+  * @}
+  */
+
+/** @defgroup I2C_Timing_Mode I2C Timing Mode
+  * @{
+  */
 #define I2C_SS_MIN_SCL_HTIME		4600    //the unit is ns.
 #define I2C_SS_MIN_SCL_LTIME		5400    //the unit is ns.
 
@@ -930,13 +873,82 @@ _LONG_CALL_ void I2C_ResumeAll(void);
 
 #define I2C_HS_MIN_SCL_HTIME_400    200     //the unit is ns, with bus loading = 400pf, Maximum supported speed=1.7M
 #define I2C_HS_MIN_SCL_LTIME_400    388     //the unit is ns, with bus loading = 400pf, Maximum supported speed=1.7M
+/**
+  * @}
+  */
 
+/** @defgroup I2C_BUF_DEPTH_Mode I2C Buffer Depth Mode
+  * @{
+  */
+
+#define I2C_TRX_BUFFER_DEPTH 16
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/** @} */
+/** @} */
+
+/*I2C_Exported_Normal_Functions I2C Exported Normal Functions*/
+_LONG_CALL_ void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct);
+_LONG_CALL_ void I2C_Cmd(I2C_TypeDef *I2Cx, u8 NewState);
+_LONG_CALL_ u32 I2C_ClearAllINT(I2C_TypeDef *I2Cx);
+_LONG_CALL_ u32 I2C_GetRawINT(I2C_TypeDef *I2Cx);
+_LONG_CALL_ u32 I2C_GetINT(I2C_TypeDef *I2Cx);
+_LONG_CALL_ u8 I2C_CheckFlagState(I2C_TypeDef *I2Cx, u32 I2C_FLAG);
+_LONG_CALL_ void I2C_INTConfig(I2C_TypeDef *I2Cx, u32 I2C_IT, u32 NewState);
+_LONG_CALL_ u32 I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrBit);
+_LONG_CALL_ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk);
+_LONG_CALL_ void I2C_StructInit(I2C_InitTypeDef *I2C_InitStruct);
+_LONG_CALL_ u8 I2C_ReceiveData(I2C_TypeDef *I2Cx);
+_LONG_CALL_ s32 I2C_PollFlagRawINT(I2C_TypeDef *I2Cx, u32 I2C_FLAG, u32 I2C_RawINT, u32 timeout_ms, u32 *txflr_out);
+
+/*I2C_Exported_Master_Functions I2C Exported Master Functions*/
+_LONG_CALL_ void I2C_MasterSendNullData(I2C_TypeDef *I2Cx, u8 *pBuf, u8  I2CCmd, u8  I2CStop, u8  I2CReSTR);
+_LONG_CALL_ void I2C_MasterSend(I2C_TypeDef *I2Cx, u8 *pBuf, u8  I2CCmd, u8  I2CStop, u8  I2CReSTR);
+_LONG_CALL_ u32 I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
+_LONG_CALL_ u32 I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
+_LONG_CALL_ u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
+_LONG_CALL_ u32 I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Writelen, u8 *pReadBuf, u32 Readlen);
+_LONG_CALL_ void I2C_SetSlaveAddress(I2C_TypeDef *I2Cx, u16 Address);
+_LONG_CALL_ u32 I2C_MasterWriteInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
+_LONG_CALL_ u32 I2C_MasterReadInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
+_LONG_CALL_ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms);
+_LONG_CALL_ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms);
+_LONG_CALL_ s32 I2C_MasterSendNullData_TimeOut(I2C_TypeDef *I2Cx, int address, u32 timeout_ms);
+_LONG_CALL_ u32 I2C_ISRHandle(I2C_IntModeCtrl *I2C_SemStruct);
+
+/*I2C_Exported_Slave_Functions I2C Exported Slave Functions*/
+_LONG_CALL_ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
+_LONG_CALL_ u32 I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
+_LONG_CALL_ void I2C_SlaveSend(I2C_TypeDef *I2Cx, u8 Data);
+
+
+/* I2C_Exported_DMA_Functions I2C Exported DMA Functions */
+_LONG_CALL_ void I2C_DMAControl(I2C_TypeDef *I2Cx, u32 DmaCtrl, u8 NewState);
+_LONG_CALL_ void I2C_DmaMode1Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_DmaBLen);
+_LONG_CALL_ void I2C_DmaMode2Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_DmaBLen);
+_LONG_CALL_ bool I2C_TXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pTxBuf, int TxCount);
+_LONG_CALL_ bool I2C_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pRxBuf, int RxCount);
+
+/*I2C_Backup_Functions I2C Backup Functions*/
+_LONG_CALL_ bool I2C_Config_BackupBuf(u32 i2c_id, I2C_Backup *I2C_BackupStruct);
+_LONG_CALL_ bool I2C_Suspend(u32 i2c_id);
+_LONG_CALL_ bool I2C_Resume(u32 i2c_id);
+_LONG_CALL_ void I2C_SuspendAll(void);
+_LONG_CALL_ void I2C_ResumeAll(void);
+
+/* Other Definitions --------------------------------------------------------*/
+#if 1
 extern const I2C_DevTable I2C_DEV_TABLE[2];
 extern u32 I2C_SLAVEWRITE_PATCH;
 extern u32 IC_FS_SCL_HCNT_TRIM;
 extern u32 IC_FS_SCL_LCNT_TRIM;
 #define I2C_EARLY_RX_DONE 			-1
-#define I2C_TRX_BUFFER_DEPTH 16
 #define I2C_POLL_TIMEOUT_MS  1000
 #define I2C_POLL_DELAY_US    2
 

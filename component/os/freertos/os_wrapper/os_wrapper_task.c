@@ -163,3 +163,16 @@ void *rtos_task_get_thread_local_storage_pointer(rtos_task_t p_handle,  uint16_t
 	return pvTaskGetThreadLocalStoragePointer(p_handle, index);
 }
 #endif
+
+
+#ifdef CONFIG_CA32_FREERTOS_V11_1_0
+rtos_task_t rtos_task_handle_get_idle(uint32_t coreID)
+{
+	return (rtos_task_t) xTaskGetIdleTaskHandleForCore(coreID);
+}
+
+void rtos_task_set_affinity(rtos_task_t p_handle, uint32_t coreID)
+{
+	vTaskCoreAffinitySet((TaskHandle_t) p_handle, 1 << coreID);
+}
+#endif

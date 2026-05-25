@@ -194,10 +194,17 @@ int scan_result_cb(u8 *scan_data)
 
 }
 
-int getmac_address_cb(u8 *macaddr)
+static int getmac_address_cb(u8 *buf)
 {
-	//TODO idx
-	int idx = 0;
+	u8 idx = 0;
+	const u8 *macaddr;
+
+	idx = buf[0];
+	macaddr = buf + 1;
+
+	if (!global_idev.pndev[idx]) {
+		return 1;
+	}
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
 	memcpy((void *)global_idev.pndev[idx]->dev_addr, macaddr, ETH_ALEN);
@@ -213,16 +220,19 @@ static int join_event_cb(u8 *buf_p)
 {
 	static const char *const event_success    = "RTW_JOINSTATUS_SUCCESS";
 	static const char *const event_disconnect = "RTW_JOINSTATUS_DISCONNECT";
+	static const char *const event_p2p_group_started = "P2P-GROUP-STARTED";
+	static const char *const event_p2p_group_removed = "P2P-GROUP-REMOVED";
 	int idx = 0, ret = 0;
 
 	if (buf_p == NULL) {
 		return 0;
 	}
 
-	//TODO interface
-	idx = 0;
+	idx = *buf_p;
 
-	printk("EVENT: %s\n", buf_p);
+	buf_p += 1;
+
+	printk("EVENT(idx: %d): %s\n", idx, buf_p);
 
 	memset(join_event, 0, sizeof(join_event));
 
@@ -230,8 +240,16 @@ static int join_event_cb(u8 *buf_p)
 
 	if (strstr(join_event, event_success)) {
 		netif_carrier_on(global_idev.pndev[idx]);
+		netif_tx_wake_all_queues(global_idev.pndev[idx]);
 	} else if (strstr(join_event, event_disconnect)) {
 		netif_carrier_off(global_idev.pndev[idx]);
+		netif_tx_stop_all_queues(global_idev.pndev[idx]);
+	} else if (strstr(join_event, event_p2p_group_removed)) {
+		netif_carrier_off(global_idev.pndev[idx]);
+		netif_tx_stop_all_queues(global_idev.pndev[idx]);
+	} else if (strstr(join_event, event_p2p_group_started)) {
+		netif_carrier_on(global_idev.pndev[idx]);
+		netif_tx_wake_all_queues(global_idev.pndev[idx]);
 	}
 
 	return 0;

@@ -117,6 +117,8 @@ static rtos_sema_t vendor_attach_status_changed_sema;
 
 /**
   * @brief  Handle the vendor class control requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  cmd: Command code
   * @param  buf: Buffer containing command data (request parameters)
   * @param  len: Number of data to be sent (in bytes)
@@ -158,6 +160,8 @@ static int vendor_cb_deinit(void)
 
 /**
   * @brief  Set config callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  None
   * @retval Status
   */
@@ -168,6 +172,8 @@ static int vendor_cb_set_config(void)
 
 /**
   * @brief  Data received over USB INTR OUT endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  buf: RX buffer
   * @param  len: RX data length (in bytes)
   * @retval Status
@@ -202,6 +208,8 @@ static void vendor_intr_xfer_thread(void *param)
 
 /**
   * @brief  Data received over USB ISOC OUT endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  buf: RX buffer
   * @param  len: RX data length (in bytes)
   * @retval Status
@@ -235,6 +243,8 @@ static void vendor_isoc_xfer_thread(void *param)
 
 /**
   * @brief  Data received over USB BULK OUT endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  buf: RX buffer
   * @param  len: RX data length (in bytes)
   * @retval Status
@@ -266,12 +276,23 @@ static void vendor_bulk_xfer_thread(void *param)
 }
 #endif // CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
 
+/**
+  * @brief  Handle vendor class attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void vendor_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_VENDOR_HOTPLUG
 	vendor_attach_status = status;
 	rtos_sema_give(vendor_attach_status_changed_sema);
+#else
+	UNUSED(status);
 #endif
 }
 

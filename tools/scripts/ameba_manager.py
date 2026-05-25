@@ -10,6 +10,7 @@ from typing import List, Dict, Callable, Any, Optional
 from enum import IntEnum
 
 from ameba_soc_utils import *
+from ameba_output import is_quiet
 
 __all__ = ['AmebaManager']
 
@@ -337,7 +338,8 @@ class AmebaManager:
         if is_external_app and '-a' not in args and '--app' not in args:
              build_args += ['-a', self.current_dir]
 
-        print(f"Start to build {GREEN}{soc_info['name']}{RESET} ...")
+        if not is_quiet():
+            print(f"Start to build {GREEN}{soc_info['name']}{RESET} ...", flush=True)
         return run_script(self.script_dir, "build.py", build_args)
 
     def op_menuconfig(self, args: List) -> bool:

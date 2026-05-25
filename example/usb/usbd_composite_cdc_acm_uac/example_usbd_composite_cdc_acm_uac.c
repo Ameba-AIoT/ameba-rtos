@@ -158,18 +158,36 @@ static rtos_sema_t composite_attach_status_changed_sema;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
+/**
+  * @brief  Handle composite device attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void composite_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	composite_attach_status = status;
 	rtos_sema_give(composite_attach_status_changed_sema);
+#else
+	UNUSED(status);
 #endif
 }
 
+/**
+  * @brief  Set config callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  None
+  * @retval Status
+  */
 static int composite_cb_set_config(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB Set Cfg\n");
+	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB Set Cfg\n");
 	return HAL_OK;
 }
 
@@ -244,6 +262,8 @@ static int composite_cdc_acm_cb_deinit(void)
 
 /**
   * @brief  Data received over USB OUT endpoint are sent over CDC interface through this function.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  Buf: RX buffer
   * @param  Len: RX data length (in bytes)
   * @retval Status
@@ -255,6 +275,8 @@ static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 
 /**
   * @brief  Handle the CDC class control requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  cmd: Command code
   * @param  buf: Buffer containing command data (request parameters)
   * @param  len: Number of data to be sent (in bytes)
@@ -314,9 +336,11 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				D0:	DTR, 0 - Not Present, 1 - Present
 		*/
 		composite_cdc_acm_ctrl_line_state = req->wValue;
-		if (composite_cdc_acm_ctrl_line_state & 0x01) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
-		}
+		UNUSED(composite_cdc_acm_ctrl_line_state);
+
+		//if (composite_cdc_acm_ctrl_line_state & 0x01) {
+		//	RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
+		//}
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
@@ -334,6 +358,8 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 
 /**
   * @brief  Handle the uac class control requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  cmd: Command code
   * @param  buf: Buffer containing command data (request parameters)
   * @param  len: Number of data to be sent (in bytes)
@@ -370,32 +396,57 @@ static int composite_uac_cb_deinit(void)
 
 /**
   * @brief  Set config callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  None
   * @retval Status
   */
 static int composite_uac_cb_set_config(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "UAC set config\n");
+	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "UAC set config\n");
 	return HAL_OK;
 }
 
+/**
+  * @brief  Mute state change notification from the USB host
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  mute: New mute state
+  * @retval Status
+  */
 static int composite_uac_cb_mute_changed(u8 mute)
 {
 	UNUSED(mute);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set mute %d\n", mute);
+	// RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set mute %d\n", mute);
 	return HAL_OK;
 }
 
+/**
+  * @brief  Volume change notification from the USB host
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  volume: New volume value
+  * @retval Status
+  */
 static int composite_uac_cb_volume_changed(u8 volume)
 {
 	UNUSED(volume);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set volume %d\n", volume);
+	// RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set volume %d\n", volume);
 	return HAL_OK;
 }
 
+/**
+  * @brief  Audio format change notification from the USB host
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  sampling_freq: New sampling frequency
+  * @param  ch_cnt: New channel count
+  * @param  byte_width: New sample byte width
+  * @retval Status
+  */
 static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set ch_cnt %d\n", sampling_freq, ch_cnt);
+	// RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set ch_cnt %d\n", sampling_freq, ch_cnt);
 	if (sampling_freq != 0U) {
 		composite_uac_usr_cb.out.sampling_freq = sampling_freq;
 	}

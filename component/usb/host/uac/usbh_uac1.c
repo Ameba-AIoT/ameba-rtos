@@ -394,7 +394,7 @@ static int usbh_uac_find_best_ac(void)
 	usbh_uac_vol_ctrl_info *best = NULL;
 	usbh_uac_vol_ctrl_info *info;
 	int best_priority = -1;
-	u32 i;
+	u8 i;
 
 	for (i = 0; i < ac_info->volume_ctrl_count; i++) {
 		usbh_uac_vol_ctrl_info *current = &(ac_info->controls[i]);
@@ -471,7 +471,7 @@ static int usbh_uac_parse_ac(usbh_itf_data_t *itf_data)
 	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_in);
 	usb_ac_itf_desc_header_t *ac_header;
 	u8 *desc;
-	u32 t;
+	u8 t;
 	u8 ch;
 	u8 type;
 	u8 subtype;
@@ -1177,7 +1177,7 @@ static void usbh_uac_isoc_out_process_xfer(usb_host_t *host, u32 cur_frame)
 	usbh_pipe_t *pipe = &(uac->as_isoc_out->pipe);
 	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->isoc_out);
 	usb_ringbuf_manager_t *buf_manager;
-	u32 read_len;
+	u16 read_len;
 	u8 zlp = 0;
 
 	buf_manager = &(pdata_ctrl->buf_manager);
@@ -1305,6 +1305,8 @@ static int usbh_uac_cb_setup(usb_host_t *host)
 
 /**
   * @brief  Sof callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
   * @retval Status
   */
@@ -1346,6 +1348,8 @@ static int usbh_uac_cb_sof(usb_host_t *host)
 
 /**
   * @brief  Xfer complete callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
   * @param  pipe_num: pipe number
   * @retval Status
@@ -1525,8 +1529,8 @@ static u32 usbh_uac_next_packet_size(usbh_uac_buf_ctrl_t *pdata_ctrl)
 	u32 ret;
 
 	sample_accum = pdata_ctrl->sample_accum + pdata_ctrl->sample_rem;
-	if (sample_accum >= pdata_ctrl->pkt_per_second) {
-		sample_accum -= pdata_ctrl->pkt_per_second;
+	if (sample_accum >= pdata_ctrl->packet_rate) {
+		sample_accum -= pdata_ctrl->packet_rate;
 		ret = as_itf->packet_size_large;
 	} else {
 		ret = as_itf->packet_size_small;
@@ -1970,11 +1974,11 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 		ep_desc = &(as_itf->itf_info_array[as_itf->choose_alt_idx].ep_desc);
 
 		/* full speed*/
-		pdata_ctrl->pkt_per_second = USBH_UAC_ONE_KHZ >> (ep_desc->bInterval - 1);
-		pdata_ctrl->sample_rem = sampling_freq % pdata_ctrl->pkt_per_second;
+		pdata_ctrl->packet_rate = USBH_UAC_ONE_KHZ >> (ep_desc->bInterval - 1);
+		pdata_ctrl->sample_rem = sampling_freq % pdata_ctrl->packet_rate;
 		//calculate accurate one frame size(byte)
-		as_itf->packet_size_small = channels * bit_width / USBH_UAC_BIT_TO_BYTE * (sampling_freq / pdata_ctrl->pkt_per_second);
-		as_itf->packet_size_large = channels * bit_width / USBH_UAC_BIT_TO_BYTE * ((sampling_freq + (pdata_ctrl->pkt_per_second - 1)) / pdata_ctrl->pkt_per_second);
+		as_itf->packet_size_small = channels * bit_width / USBH_UAC_BIT_TO_BYTE * (sampling_freq / pdata_ctrl->packet_rate);
+		as_itf->packet_size_large = channels * bit_width / USBH_UAC_BIT_TO_BYTE * ((sampling_freq + (pdata_ctrl->packet_rate - 1)) / pdata_ctrl->packet_rate);
 
 		usbh_uac_stop_play();
 

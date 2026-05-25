@@ -101,8 +101,6 @@ typedef enum {
  * @details Manages the state and buffers for a single BOT transaction.
  */
 typedef struct {
-	usbh_bot_state_t state;         /**< Current state of the BOT state machine. */
-	usbh_bot_cmd_state_t cmd_state; /**< Current state of the command processing. */
 	usb_msc_bot_cbw_t *cbw;         /**< Pointer to the Command Block Wrapper. */
 	usb_msc_bot_csw_t *csw;         /**< Pointer to the Command Status Wrapper. */
 	u32 origin_tx_pbuf_len;         /**< Original length of the user's transmit buffer. */
@@ -111,6 +109,8 @@ typedef struct {
 	u8 *origin_rx_pbuf;             /**< Pointer to the original user receive buffer. */
 	u8 *pbuf;                       /**< Internal pointer to the current data buffer for transfer. */
 	u8 *data;                       /**< A general-purpose data buffer. */
+	u8 state;                       /**< Current state of the BOT state machine, @ref usbh_bot_state_t. */
+	u8 cmd_state;                   /**< Current state of the command processing, @ref usbh_bot_cmd_state_t. */
 } usbh_bot_handle_t;
 
 /**
@@ -124,12 +124,12 @@ typedef struct {
 
 /* INQUIRY data */
 typedef struct {
-	u8 PeripheralQualifier;
-	u8 DeviceType;
-	u8 RemovableMedia;
 	u8 vendor_id[8];
 	u8 product_id[16];
 	u8 revision_id[4];
+	u8 PeripheralQualifier;
+	u8 DeviceType;
+	u8 RemovableMedia;
 } usbh_scsi_inquiry_t;
 
 /* Structure for LUN */
@@ -183,15 +183,15 @@ typedef struct {
 	usbh_pipe_t bulk_out;                  /**< Pipe handle for the Bulk OUT endpoint. */
 	usbh_bot_handle_t hbot;                /**< Handle for the BOT protocol layer. */
 	usbh_msc_lun_t unit[USBH_MSC_MAX_LUN]; /**< Array to hold information for each LUN. */
-	usbh_msc_state_t state;                /**< Current state of the main MSC state machine. */
-	usbh_msc_error_t error;                /**< Stores the last occurred error. */
-	usbh_msc_req_state_t req_state;        /**< Current state of the MSC control request state machine. */
 	usbh_msc_cb_t *cb;                     /**< Pointer to the user-registered callback structure. */
 	usb_host_t *host;                      /**< Pointer to the parent USB host structure. */
-	u32 *max_lun_buf;                      /**< Buffer to hold the result of GET MAX LUN request. */
-	u32 max_lun;                           /**< The maximum logical unit number supported by the device. */
+	u8 *max_lun_buf;                       /**< Buffer to hold the result of GET MAX LUN request. */
 	u32 tick;                              /**< A tick counter for timeouts. */
-	u16 current_lun;                       /**< The currently active logical unit number. */
+	u8 max_lun;                            /**< The maximum logical unit number supported by the device. */
+	u8 current_lun;                        /**< The currently active logical unit number. */
+	u8 state;                              /**< Current state of the main MSC state machine, @ref usbh_msc_state_t. */
+	u8 error;                              /**< Stores the last occurred error, @ref usbh_msc_error_t. */
+	u8 req_state;                          /**< Current state of the MSC control request state machine, @ref usbh_msc_req_state_t. */
 } usbh_msc_host_t;
 
 /* Exported macros -----------------------------------------------------------*/

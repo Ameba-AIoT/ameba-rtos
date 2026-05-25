@@ -12,35 +12,15 @@
 #define PSRAM_END					(0x60400000)
 
 /* layout configuration */
-#define TZ_NSC_SIZE 	 			(4)
-#define TZ_ENTRY_SIZE 				(16)
-#if defined(CONFIG_TZ_S_SIZE)
-#define TZ_S_SIZE 					(CONFIG_TZ_S_SIZE)
-#else
-#define TZ_S_SIZE 					(44)
-#endif
-
 #if defined(CONFIG_IMG3_SRAM)
-#define RAM_TZ_NSC_SIZE 	 		KBYTES(TZ_NSC_SIZE)
-#define RAM_TZ_ENTRY_SIZE 			KBYTES(TZ_ENTRY_SIZE)
-#define RAM_KM4_IMG3_SIZE 			KBYTES(TZ_S_SIZE)
-#define PSRAM_TZ_NSC_SIZE 	 		KBYTES(0)
-#define PSRAM_TZ_ENTRY_SIZE 		KBYTES(0)
-#define PSRAM_KM4_IMG3_SIZE 		KBYTES(0)
+#define KM4_RAM_TZ_SIZE				KBYTES(CONFIG_TZ_S_SIZE)
+#define KM4_PSRAM_TZ_SIZE			KBYTES(0)
 #elif defined(CONFIG_IMG3_PSRAM)
-#define RAM_TZ_NSC_SIZE 	 		KBYTES(0)
-#define RAM_TZ_ENTRY_SIZE 			KBYTES(0)
-#define RAM_KM4_IMG3_SIZE 			KBYTES(0)
-#define PSRAM_TZ_NSC_SIZE 	 		KBYTES(TZ_NSC_SIZE)
-#define PSRAM_TZ_ENTRY_SIZE 		KBYTES(TZ_ENTRY_SIZE)
-#define PSRAM_KM4_IMG3_SIZE 		KBYTES(TZ_S_SIZE)
+#define KM4_RAM_TZ_SIZE				KBYTES(0)
+#define KM4_PSRAM_TZ_SIZE			KBYTES(CONFIG_TZ_S_SIZE)
 #else /* undefine trustzone */
-#define RAM_TZ_NSC_SIZE 	 		KBYTES(0)
-#define RAM_TZ_ENTRY_SIZE 			KBYTES(0)
-#define RAM_KM4_IMG3_SIZE 			KBYTES(0)
-#define PSRAM_TZ_NSC_SIZE 	 		KBYTES(0)
-#define PSRAM_TZ_ENTRY_SIZE 		KBYTES(0)
-#define PSRAM_KM4_IMG3_SIZE 		KBYTES(0)
+#define KM4_RAM_TZ_SIZE				KBYTES(0)
+#define KM4_PSRAM_TZ_SIZE			KBYTES(0)
 #endif
 
 #if defined(CONFIG_IMG1_FLASH)
@@ -65,9 +45,9 @@ fix addr              │                      │
                       │                      │  │
                    ┌──┼──────────────────────┼──┴─┐
                    │  │  KM4 Trustzone(IMG3) │    │
-If Trustzone off,  │  │      TZ_NSC(4K)      │    │        If Trustzone on,
-              ◄────┤  │     TZ_ENTRY(16K)    │    ├─────►  IMG3 = RAM_TZ_NSC_SIZE + RAM_TZ_ENTRY_SIZE + RAM_KM4_IMG3_SIZE
-IMG3 size is 0.    │  │     KM4_IMG3(44K)    │    │
+If Trustzone off,  │  │                      │    │        If Trustzone on,
+              ◄────┤  │        RAM_TZ        │    ├─────►  IMG3 = KM4_RAM_TZ_SIZE
+IMG3 size is 0.    │  │                      │    │
                    └──┼──────────────────────┼────┴─┐
                       │                      │      │
                       │                      │      │
@@ -86,19 +66,15 @@ IMG3 size is 0.    │  │     KM4_IMG3(44K)    │    │
 */
 /* BOOT(IMG1)/IMG3/IMG2 layout*/												/* Trstzone On			   | Trustzone off			*/
 #define KM4_IMG1_RAM_START   		(SRAM_BASE + KM0_KM4_RAM_SIZE)				/* 0x2000A000 ~ 0x20010000 | 0x2000A000 ~ 0x2000B000*/
-#define KM4_RAM_TZ_NSC_START		(KM4_IMG1_RAM_START + KM4_IMG1_SIZE )		/* 0x20010000 ~ 0x20011000 | unavailable */
-#define KM4_RAM_TZ_ENTRY_START		(KM4_RAM_TZ_NSC_START + RAM_TZ_NSC_SIZE )		/* 0x20011000 ~ 0x20015000 | unavailable */
-#define KM4_RAM_TZ_SECURE_START		(KM4_RAM_TZ_ENTRY_START + RAM_TZ_ENTRY_SIZE )	/* 0x20015000 ~ 0x20020000 | unavailable */
-#define KM4_IMG2_RAM_START			(KM4_RAM_TZ_SECURE_START + RAM_KM4_IMG3_SIZE)	/* 0x20020000 ~ 0x20068000 | 0x2000B000 ~ 0x20068000*/
+#define KM4_RAM_TZ_START			(KM4_IMG1_RAM_START + KM4_IMG1_SIZE)			/* 0x20010000 ~ 0x20020000 | unavailable */
+#define KM4_IMG2_RAM_START			(KM4_RAM_TZ_START + KM4_RAM_TZ_SIZE)	/* 0x20020000 ~ 0x20068000 | 0x2000B000 ~ 0x20068000*/
 #define KM0_IMG2_RAM_START			(SRAM_END - RAM_KM0_IMG2_SIZE) 					/* 0x20068000 ~ 0x20080000 | 0x20068000 ~ 0x20080000*/
 
 /* IMG3 On PSRAM */
-#define KM4_PSRAM_TZ_NSC_START		(PSRAM_BASE)									/* 0x60000000 ~ 0x60001000 | unavailable */
-#define KM4_PSRAM_TZ_ENTRY_START	(KM4_PSRAM_TZ_NSC_START + PSRAM_TZ_NSC_SIZE )	/* 0x60001000 ~ 0x60005000 | unavailable */
-#define KM4_PSRAM_TZ_SECURE_START	(KM4_PSRAM_TZ_ENTRY_START + PSRAM_TZ_ENTRY_SIZE)/* 0x60005000 ~ 0x60010000 | unavailable */
+#define KM4_PSRAM_TZ_START			(PSRAM_BASE)									/* 0x60000000 ~ 0x60010000 | unavailable */
 
-#define PSRAM_KM4_IMG2_SIZE			(KBYTES(3220) - (PSRAM_TZ_NSC_SIZE + PSRAM_TZ_ENTRY_SIZE + PSRAM_KM4_IMG3_SIZE))
-#define KM4_IMG2_PSRAM_START		(KM4_PSRAM_TZ_SECURE_START + PSRAM_KM4_IMG3_SIZE)	/* 0x60010000 ~ 0x60325000 | 0x60000000 ~ 0x60325000*/
+#define PSRAM_KM4_IMG2_SIZE			(KBYTES(3220) - KM4_PSRAM_TZ_SIZE)
+#define KM4_IMG2_PSRAM_START		(KM4_PSRAM_TZ_START + KM4_PSRAM_TZ_SIZE)		/* 0x60011000 ~ 0x60326000 | 0x60000000 ~ 0x60325000*/
 #define KM0_IMG2_PSRAM_START		(KM4_IMG2_PSRAM_START + PSRAM_KM4_IMG2_SIZE) 	 	/* 0x60325000 ~ 0x60400000 | 0x60325000 ~ 0x60400000*/
 #define PSRAM_KM0_IMG2_SIZE			(PSRAM_END - KM0_IMG2_PSRAM_START)
 
@@ -133,15 +109,11 @@ MEMORY
 	KM0_IPC_RAM (rwx) :                     ORIGIN = 0x20004E00, LENGTH = 0x20005000 - 0x20004E20	/* KM0 IPC RAM: 512B */
 
 	/* IMG2 RAM */
-	KM4_BD_RAM_TZ_NSC (rwx) :               ORIGIN = KM4_RAM_TZ_NSC_START + IMAGE_HEADER_LEN, 	LENGTH = RAM_TZ_NSC_SIZE - IMAGE_HEADER_LEN		/* KM4 BD RAM NSC: TZ Off,0;TZ On, 4K*/
-	KM4_BD_RAM_TZ_ENTRY (rwx) :             ORIGIN = KM4_RAM_TZ_ENTRY_START, 				  	LENGTH = RAM_TZ_ENTRY_SIZE						/* KM4 BD RAM ENTRY: TZ Off,0;TZ On,16k */
-	KM4_BD_RAM_TZ_S (rwx) :                 ORIGIN = KM4_RAM_TZ_SECURE_START + SECURE_ADDR_OFFSET  + IMAGE_HEADER_LEN, LENGTH = RAM_KM4_IMG3_SIZE - IMAGE_HEADER_LEN/* KM4 BD RAM S: TZ Off,0;TZ On,44k*/
+	KM4_BD_RAM_TZ (rwx) :                   ORIGIN = KM4_RAM_TZ_START + IMAGE_HEADER_LEN, 		LENGTH = KM4_RAM_TZ_SIZE - IMAGE_HEADER_LEN						/* KM4 BD RAM TZ: 64KB */
 	KM4_BD_RAM (rwx) :                      ORIGIN = KM4_IMG2_RAM_START + IMAGE_HEADER_LEN,   	LENGTH = KM0_IMG2_RAM_START - KM4_IMG2_RAM_START - IMAGE_HEADER_LEN	/* KM4 BD RAM: TZ off,372K,0;TZ On,288k */
 	KM0_BD_RAM (rwx) :                      ORIGIN = KM0_IMG2_RAM_START + IMAGE_HEADER_LEN,   	LENGTH = RAM_KM0_IMG2_SIZE - IMAGE_HEADER_LEN	/* KM0 BD RAM: TZ off,96K,0;TZ On,96k */
 
-	KM4_BD_PSRAM_TZ_NSC (rwx) :             ORIGIN = KM4_PSRAM_TZ_NSC_START + IMAGE_HEADER_LEN, LENGTH = PSRAM_TZ_NSC_SIZE - IMAGE_HEADER_LEN	/* KM4 BD PSRAM NSC: Tz off, 0; TZ On, 4k */
-	KM4_BD_PSRAM_TZ_ENTRY (rwx) :           ORIGIN = KM4_PSRAM_TZ_ENTRY_START, 					LENGTH = PSRAM_TZ_ENTRY_SIZE					/* KM4 BD PSRAM ENTRY: Tz off, 0; TZ On, 16k */
-	KM4_BD_PSRAM_TZ_S (rwx) :               ORIGIN = KM4_PSRAM_TZ_SECURE_START + SECURE_ADDR_OFFSET  + IMAGE_HEADER_LEN, LENGTH = PSRAM_KM4_IMG3_SIZE - IMAGE_HEADER_LEN	/* KM4 BD PSRAM S: Tz off, 0; TZ On, 44k */
+	KM4_BD_PSRAM_TZ (rwx) :                 ORIGIN = KM4_PSRAM_TZ_START + IMAGE_HEADER_LEN, 	LENGTH = KM4_PSRAM_TZ_SIZE - IMAGE_HEADER_LEN					/* KM4 BD PSRAM TZ: 64KB */
 	/* KM4 Non-secure PSRAM */
 	KM4_BD_PSRAM (rwx) :                    ORIGIN = KM4_IMG2_PSRAM_START + IMAGE_HEADER_LEN, LENGTH = PSRAM_KM4_IMG2_SIZE - IMAGE_HEADER_LEN	/* KM4 BD PSRAM : Tz off,3220K;TZ on, 3156K */
 	KM0_BD_PSRAM (rwx) :                    ORIGIN = KM0_IMG2_PSRAM_START + IMAGE_HEADER_LEN, LENGTH = PSRAM_KM0_IMG2_SIZE - IMAGE_HEADER_LEN	/* KM0 BD PSRAM: 876K */
@@ -190,16 +162,10 @@ __km0_psram_text_start__ = ORIGIN(KM0_BD_PSRAM);
 __km4_boot_text_start__ = ORIGIN(KM4_BOOT_XIP);
 
 /*SRAM Layout boundary*/
-__km4_tz_nsc_start__ = ORIGIN(KM4_BD_RAM_TZ_NSC) - IMAGE_HEADER_LEN;
-__km4_tz_entry_start__ = ORIGIN(KM4_BD_RAM_TZ_ENTRY);
-__km4_tz_entry_end__ = ORIGIN(KM4_BD_RAM_TZ_ENTRY) + LENGTH(KM4_BD_RAM_TZ_ENTRY);
 __km4_bd_ram_start__ = ORIGIN(KM4_BD_RAM) - IMAGE_HEADER_LEN;
 __km4_bd_ram_end__ = ORIGIN(KM4_BD_RAM) + LENGTH(KM4_BD_RAM);
 
 /*PSRAM Layout boundary*/
-__km4_psram_tz_nsc_start__ = ORIGIN(KM4_BD_PSRAM_TZ_NSC) - IMAGE_HEADER_LEN;
-__km4_psram_tz_entry_start__ = ORIGIN(KM4_BD_PSRAM_TZ_ENTRY) ;
-__km4_psram_tz_entry_end__ = ORIGIN(KM4_BD_PSRAM_TZ_ENTRY) + LENGTH(KM4_BD_PSRAM_TZ_ENTRY);
 __km4_bd_psram_start__ = ORIGIN(KM4_BD_PSRAM) - IMAGE_HEADER_LEN;
 __non_secure_psram_end__ = PSRAM_END;
 
@@ -209,7 +175,17 @@ __km0_bd_ram_mp_start__ = ORIGIN(KM0_BD_RAM_MP);
 __km4_bd_ram_mp_start__ = ORIGIN(KM4_BD_RAM_MP);
 __km0_image2_entry_func_mp__ = ORIGIN(KM0_IMG2_ENTRY);
 
+/* Region 0: KM4 IROM */
+__rom_text_region0_start__ = ORIGIN(KM4_IROM);                                        /* 0x00000000 */
+__rom_text_region0_end__   = ORIGIN(KM4_IROM_STDLIB_NS) + LENGTH(KM4_IROM_STDLIB_NS); /* 0x00042000 */
+/* Region 1: KM0 IROM + WIFI ROM */
+__rom_text_region1_start__ = ORIGIN(KM0_IROM);                                        /* 0x00000000 */
+__rom_text_region1_end__   = ORIGIN(WIFI_ROM) + LENGTH(WIFI_ROM);                     /* 0x00028000 */
+
 /* code analyse used */
 __rtk_fixed_addr__ = SRAM_BASE + KM0_KM4_RAM_SIZE;
 __img1_sram_size__ = KM4_IMG1_SIZE;
-__img3_sram_size__ = RAM_TZ_NSC_SIZE + RAM_TZ_ENTRY_SIZE + RAM_KM4_IMG3_SIZE;
+__img3_sram_size__ = KM4_RAM_TZ_SIZE;
+
+__km4_msp_ram_ns_limit__ = ORIGIN(KM4_MSP_RAM_NS);
+__km0_msp_ram_limit__ = ORIGIN(KM0_MSP_RAM);

@@ -10,7 +10,7 @@ void whc_dev_init(void)
 	rtk_log_level_set(TAG_WLAN_INIC, RTK_LOG_DEBUG);
 
 #ifdef CONFIG_WHC_CMD_PATH
-	whc_dev_init_cmd_path_task();
+	whc_dev_init_cmd_path();
 #endif
 
 	wifi_set_user_config();

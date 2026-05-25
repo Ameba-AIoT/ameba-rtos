@@ -142,25 +142,6 @@ static void whc_sdio_host_recv_data_process(void *intf_priv)
 	sdio_local_write(sdio_priv, SDIO_REG_HIMR, 4, (u8 *)&himr);
 }
 
-#ifdef CONFIG_WHC_CMD_PATH
-void whc_host_send_cmd_data(u8 *buf, u32 len)
-{
-	whc_sdio_host_send_data(buf, len, NULL);
-}
-
-int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb)
-{
-	int ret = 0;
-	u16 size;
-
-	/* size after padding for align */
-	size = *(u16 *)pskb->data;
-	ret = whc_host_buf_rx_to_user((u8 *)pskb->data + SIZE_RX_DESC, size);
-
-	return ret;
-}
-#endif
-
 struct hci_ops_t whc_sdio_host_intf_ops = {
 	.send_data = whc_sdio_host_send_data,
 	.recv_data_process = whc_sdio_host_recv_data_process,

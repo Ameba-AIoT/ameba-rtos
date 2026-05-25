@@ -41,7 +41,7 @@ struct CPU_BackUp_TypeDef {
 	u32 CPURegbackup_HP[25];
 	u32 CPUPSP_HP;
 	u32 PortSVC_Backup_HP;
-	u32 NVICbackup_HP[9];
+	u32 NVICbackup_HP[6];
 	u32 SYSTICKbackup_HP[4];
 	u32 SCBbackup_HP[4];
 	u32 BASEPRI_backup_HP;

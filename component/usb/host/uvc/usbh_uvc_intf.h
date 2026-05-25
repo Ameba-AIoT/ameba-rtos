@@ -63,7 +63,7 @@
 #endif
 
 /* Debug / Error Handling */
-#define USBH_UVC_DEBUG                                 1
+#define USBH_UVC_DEBUG                                 0
 
 /** @} End of Host_UVC_Constants group */
 /** @} End of USB_Host_Constants group */

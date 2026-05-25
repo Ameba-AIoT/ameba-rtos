@@ -501,9 +501,11 @@
 /** @} End of group AmebaD_Peripheral_Declaration */
 
 #define MSP_RAM_LP					0x20001FFC						/* rom used, can not change */
+#define MSPLIM_RAM_LP			  (u32)__km0_msp_ram_limit__
 #define MSPLIM_RAM_HP				0x30009000						/* rom: MSPLIM = 30008000; bootloader/image2 MSPLIM = 30009000 */
 #define MSP_RAM_HP					0x30009FFC						/* rom used, can not change */
 #define MSP_RAM_HP_NS				0x20004000						/* rom used, can not change */
+#define MSPLIM_RAM_HP_NS    (u32)__km4_msp_ram_ns_limit__
 
 #define HS_SRAM_S_ADDR_START		HP_SRAM0_BASE_S 				/* rom used, can not change */
 #define HS_SRAM_S_ADDR_END			(HP_SRAM0_BASE_S + 0x00FFFFFF)	/* rom used, can not change */

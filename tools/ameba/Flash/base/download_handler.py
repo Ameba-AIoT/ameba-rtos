@@ -156,7 +156,8 @@ class Ameba(object):
                     remote_port=self.remote_port,
                     port=self.serial_port_name,
                     baudrate=self.profile_info.handshake_baudrate,
-                    logger=self.logger
+                    logger=self.logger,
+                    source="flash"
                 )
                 if self.remote_password:
                     self.logger.debug("Remote server: password set, will send validate command")

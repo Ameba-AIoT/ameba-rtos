@@ -28,7 +28,7 @@ void TM_Display_Result(u32 Data)
 		decimal = (int)(TEMP_DECIMAL_OUT(Data) * 10000 >> 10);
 	}
 #elif defined(CONFIG_RTL8720F)
-	float Cdegree = 0.4964f * Data - 292.3;
+	float Cdegree = TM_GetCdegree(Data);
 
 	if (Cdegree >= 0) {
 		s = '+';

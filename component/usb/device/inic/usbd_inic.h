@@ -112,6 +112,8 @@ typedef struct {
 
 	/**
 	 * @brief Called during control transfer SETUP/DATA phases to handle application-specific control requests.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] req: Pointer to the setup request packet.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
@@ -120,18 +122,24 @@ typedef struct {
 
 	/**
 	 * @brief Notifies application layer when INIC driver becomes operational.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @return 0 on success, non-zero on failure.
 	 */
 	int(* set_config)(void);
 
 	/**
 	 * @brief Notifies application layer when INIC driver becomes non-operational.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @return 0 on success, non-zero on failure.
 	 */
 	int(* clear_config)(void);
 
 	/**
 	 * @brief Called when non-control IN transfer done, for asynchronous non-control IN transfer status notification.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] in_ep: Pointer to the INIC IN endpoint.
 	 * @param[in] status: The status of the transmission.
 	 */
@@ -139,6 +147,8 @@ typedef struct {
 
 	/**
 	 * @brief Called when non-control OUT transfer done, for application to handle the received host command/data.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] out_ep: Pointer to the INIC OUT endpoint.
 	 * @param[in] len: Length of the received data in bytes.
 	 * @return 0 on success, non-zero on failure.
@@ -147,6 +157,8 @@ typedef struct {
 
 	/**
 	 * @brief Called when the USB device status changes for application to support USB hot-plug events.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] old_status: The previous USB device status.
 	 * @param[in] status: The new USB device status.
 	 */

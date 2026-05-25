@@ -356,7 +356,7 @@ void bt_uart_bridge_open(void)
 static int mp_ext2_uart_bridge(void **argv, int argc)
 {
 	MP_EXT2_PRINTF("_AT_MP_BRIDGE_\n");
-#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+#ifdef CONFIG_BT_SDN
 	bool to_loguart = true;
 #endif
 
@@ -367,7 +367,7 @@ static int mp_ext2_uart_bridge(void **argv, int argc)
 				return 0;
 			}
 
-#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+#ifdef CONFIG_BT_SDN
 			sdn_host_bridge_close();
 #else
 			bt_uart_bridge_close();
@@ -375,7 +375,7 @@ static int mp_ext2_uart_bridge(void **argv, int argc)
 			open_flag = 0;
 			return 0;
 		}
-#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+#ifdef CONFIG_BT_SDN
 		else if (strcmp(argv[0], "hci") == 0) {
 			to_loguart = false;
 		}
@@ -383,7 +383,7 @@ static int mp_ext2_uart_bridge(void **argv, int argc)
 	}
 
 	MP_EXT2_PRINTF("open UART bridge.\n");
-#if (defined(CONFIG_SDN_BT) && CONFIG_SDN_BT)
+#ifdef CONFIG_BT_SDN
 	sdn_host_bridge_open(to_loguart);
 #else
 	bt_uart_bridge_open();

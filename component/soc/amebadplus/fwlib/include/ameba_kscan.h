@@ -7,6 +7,7 @@
 #ifndef _AMEBA_KSCAN_H_
 #define _AMEBA_KSCAN_H_
 
+/// @cond
 /* AUTO_GEN_START */
 
 /** @addtogroup Ameba_Periph_Driver
@@ -285,6 +286,7 @@ typedef struct {
 } KSCAN_TypeDef;
 /** @} */
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -342,7 +344,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup KSCAN_Peripheral_definitions
+/** @defgroup KSCAN_Peripheral_definitions KSCAN Peripheral Definitions
   * @{
   */
 #define IS_KEYSCAN_ALL_PERIPH(PERIPH) ((PERIPH) == KEYSCAN_DEV || (PERIPH) == KEYSCAN_DEV_S)
@@ -350,7 +352,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup KSCAN_Work_Mode_definitions
+/** @defgroup KSCAN_Work_Mode_definitions KSCAN Work Mode Definitions
   * @{
   */
 #define KS_REGULAR_SCAN_MODE			((u32)0x00000000)
@@ -361,7 +363,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup KSCAN_FIFO_Overflow_Control
+/** @defgroup KSCAN_FIFO_Overflow_Control KSCAN FIFO Overflow Control
   * @{
   */
 #define KS_FIFO_OVER_CTRL_DIS_NEW		((u32)0x00000000)
@@ -372,7 +374,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup KSCAN_All_Interrupt_Mask
+/** @defgroup KSCAN_All_Interrupt_Mask KSCAN All Interrupt Mask
   * @{
   */
 #define KS_BIT_ALL_INT_MSK				(KS_BIT_ALL_DEFAULT_INT_MASK | \
@@ -388,7 +390,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup KSCAN_All_Interrupt_Clear
+/** @defgroup KSCAN_All_Interrupt_Clear KSCAN All Interrupt Clear
   * @{
   */
 #define KS_BIT_ALL_INT_CLR				(KS_BIT_ALL_DEFAULT_INT_CLR | \
@@ -401,7 +403,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup KSCAN_FIFO_LimitLevel_Control
+/** @defgroup KSCAN_FIFO_LimitLevel_Control KSCAN FIFO Limit Level Control
   * @{
   */
 #define IS_KS_FIFO_LIMIT_LEVEL(DATA_NUM)	((DATA_NUM) <= 6)
@@ -409,7 +411,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup KSCAN_FIFO_ThreholdLevel_Control
+/** @defgroup KSCAN_FIFO_ThreholdLevel_Control KSCAN FIFO Threshold Level Control
   * @{
   */
 #define IS_KS_FIFO_TH_LEVEL(DATA_NUM)		(((DATA_NUM) > 0) && ((DATA_NUM) < 16))
@@ -421,9 +423,11 @@ typedef struct {
   * @}
   */
 
+/// @cond
 /** @} */
 
 /** @} */
+/// @endcond
 
 _LONG_CALL_ void KeyScan_StructInit(KeyScan_InitTypeDef *KeyScan_InitStruct);
 _LONG_CALL_ void KeyScan_Init(KSCAN_TypeDef *KeyScan, KeyScan_InitTypeDef *KeyScan_InitStruct);

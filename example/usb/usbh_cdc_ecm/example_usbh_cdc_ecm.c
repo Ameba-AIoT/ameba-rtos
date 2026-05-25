@@ -61,7 +61,7 @@ static u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 #endif
 
 static u8 dhcp_done = 0;
-
+static __IO u8 cdc_ecm_detach_pending = 0;
 static usb_os_sema_t cdc_ecm_detach_sema;
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
 rtos_task_t 	            hotplug_task;
@@ -71,7 +71,6 @@ rtos_task_t 	            hotplug_task;
 /* Ethernet State */
 typedef enum {
 	ETH_STATUS_IDLE = 0U,
-	ETH_STATUS_DEINIT,
 	ETH_STATUS_INIT,
 	ETH_STATUS_MAX,
 } eth_state_t;
@@ -144,43 +143,71 @@ static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max)
 	return usbh_cdc_ecm_check_config_desc(host);
 }
 
+/**
+  * @brief  CDC ECM init callback
+  * @retval Status
+  */
 static int cdc_ecm_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
 	return HAL_OK;
 }
 
+/**
+  * @brief  CDC ECM deinit callback
+  * @retval Status
+  */
 static int cdc_ecm_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
 	return HAL_OK;
 }
 
+/**
+  * @brief  CDC ECM attach callback
+  * @retval Status
+  */
 static int cdc_ecm_cb_attach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 	return HAL_OK;
 }
 
+/**
+  * @brief  CDC ECM detach callback
+  * @retval Status
+  */
 static int cdc_ecm_cb_detach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
+
+	cdc_ecm_detach_pending = 1;
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
 	usb_os_sema_give(cdc_ecm_detach_sema);
 #endif
 	return HAL_OK;
 }
 
+/**
+  * @brief  CDC ECM setup callback
+  * @retval Status
+  */
 static int cdc_ecm_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	return HAL_OK;
 }
 
+/**
+  * @brief  CDC ECM bulk receive callback
+  * @param  buf: RX buffer
+  * @param  length: RX data length (in bytes)
+  * @retval Status
+  */
 static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
 {
 	if (length > 0) {
-		ethernetif_usb_eth_recv(buf, length);
+		netif_adapter_usb_eth_recv(buf, length);
 	}
 
 	return HAL_OK;
@@ -239,7 +266,7 @@ static void ecm_link_change_thread(void *param)
 	u8 *mac;
 	u32 dhcp_status = 0;
 	u8 link_is_up = 0;
-	eth_state_t ethernet_unplug = ETH_STATUS_IDLE;
+	eth_state_t ethernet_state = ETH_STATUS_IDLE;
 
 	UNUSED(param);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task!\n");
@@ -251,20 +278,34 @@ static void ecm_link_change_thread(void *param)
 	}
 
 	while (1) {
+		/* Consume detach events first: USB callback context only flags this
+		 * bit, so even if the dongle has already been re-plugged by the time
+		 * we poll (link_is_up reads back as 1), we still tear down the eth
+		 * default route here. Without this, branch 2 below would miss the
+		 * transition and netif_set_default(pnetif_sta) would never run. */
+		if (cdc_ecm_detach_pending) {
+			cdc_ecm_detach_pending = 0;
+			if (ethernet_state >= ETH_STATUS_INIT) {
+				ethernet_state = ETH_STATUS_IDLE;
+				netif_set_default(pnetif_sta);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Swicth to unlink (detach event)\n");
+			}
+		}
+
 		link_is_up = usbh_cdc_ecm_get_connect_status();
 
-		if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {	// unlink -> link
+		if (1 == link_is_up && (ethernet_state < ETH_STATUS_INIT)) {	// unlink -> link
 			mac = (u8 *)usbh_cdc_ecm_process_mac_str();
 			if (mac == NULL) {
 				rtos_time_delay_ms(1000);
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
-				ethernet_unplug = ETH_STATUS_INIT;
+				ethernet_state = ETH_STATUS_INIT;
 				memcpy(pnetif_usb_eth->hwaddr, mac, 6);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netif_set_link_up(pnetif_usb_eth);
 
-				dhcp_status = LwIP_IP_Address_Request(NETIF_USB_ETH_INDEX);
+				dhcp_status = lwip_request_ip(NETIF_USB_ETH_INDEX);
 				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
 					netifapi_netif_set_default(pnetif_usb_eth);	//Set default gw to ether netif
 					dhcp_done = 1;
@@ -273,8 +314,8 @@ static void ecm_link_change_thread(void *param)
 					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Fail\n");
 				}
 			}
-		} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {	// link -> unlink
-			ethernet_unplug = ETH_STATUS_DEINIT;
+		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink
+			ethernet_state = ETH_STATUS_IDLE;
 			netif_set_default(pnetif_sta);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Swicth to unlink\n");
 		} else {

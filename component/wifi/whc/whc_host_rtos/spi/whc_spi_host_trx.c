@@ -67,7 +67,7 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	int ret = RTK_SUCCESS, i = 0;
 	int pad_len = 0;
 	struct whc_msg_info *msg;
-	struct whc_txbuf_info_t *inic_tx = rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
+	struct whc_txbuf_info_t *inic_tx;
 
 	if (!whc_host_init_done) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host trx err: wifi not init\n");
@@ -80,12 +80,14 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 
 	if (*ptr != 0) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s fail buf busy !\n\r", __func__);
-		return -RTK_ERR_WIFI_TX_BUF_FULL;
+		ret = -RTK_ERR_WIFI_TX_BUF_FULL;
+		goto exit;
 	}
 
 	if (total_len > MAXIMUM_ETHERNET_PACKET_SIZE) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s: len(%d) > MAXIMUM_ETHERNET_PACKET_SIZE !\n\r", __func__, total_len);
-		return -RTK_ERR_BUFFER_OVERFLOW;
+		ret = -RTK_ERR_BUFFER_OVERFLOW;
+		goto exit;
 	}
 
 	ptr += 4;
@@ -106,6 +108,11 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 		msg->data_len += psg_list->len;
 	}
 
+	inic_tx = rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
+	if (!inic_tx) {
+		goto exit;
+	}
+
 	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)msg;
 	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = msg->data_len + sizeof(struct whc_msg_info);
 
@@ -115,6 +122,8 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	whc_spi_host_send_data(&inic_tx->txbuf_info);
 
 	used_buf_num = (used_buf_num + 1) % fix_tx_buf_num;
+
+exit:
 	rtos_sema_give(spi_host_priv.host_send);
 
 	//rtos_mem_free(inic_tx);
@@ -151,7 +160,7 @@ void whc_spi_host_send_to_dev(u8 *buf, u32 len)
 	}
 
 	hdr = (struct whc_cmd_path_hdr *)txbuf;
-	hdr->event = WHC_WIFI_EVT_BRIDGE;
+	hdr->event = WHC_WIFI_EVT_CMD;
 	hdr->len = len;
 	/* copy data */
 	memcpy(txbuf + sizeof(struct whc_cmd_path_hdr), buf, len);

@@ -1,6 +1,6 @@
 # Example Description
 
-In this application, Ameba is designed as an USB CDC ECM host which can communicate with USB CDC ECM device and do DHCP test.
+In this application, Ameba is designed as an USB CDC ECM device which can communicate with USB CDC ECM host and do DHCP test.
 
 The topology:
 ```
@@ -38,10 +38,14 @@ None
 3. If the test run success, the console will show:
 	```
 	Device IP: 192.168.45.1
+	DHCP Server started
 	```
 
-
 4. After get the ip address, type command "AT+PING=XX", XX is the ECM Host Ip Address, make sure the ping success and no packet losted
+
+5. The example also support iperf test, type "AT+IPERF=-s" to act as a TCP iperf server, type "AT+IPERF=-c,xx.xx.xx.x,-i,1,-t,10" to act as a TCP client. of course it also support UDP test, type "AT+IPERF" to get more information about the iperf
+
+	Note: For detailed information about iperf and ping, please refer to https://aiot.realmcu.com/zh/latest/rtos/atcmd/at_command_network.html
 
 # Note
 

@@ -20,9 +20,9 @@ ENTRY(Reset_Handler)
 
 /* define trustzone load memory address */
 #ifdef CONFIG_IMG3_SRAM
-	#define LMA_TZ_REGION KM4_BD_RAM_TZ_S
+	#define LMA_TZ_REGION KM4_BD_RAM_TZ
 #else
-	#define LMA_TZ_REGION KM4_BD_PSRAM_TZ_S
+	#define LMA_TZ_REGION KM4_BD_PSRAM_TZ
 #endif
 
 

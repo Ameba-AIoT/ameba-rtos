@@ -1,7 +1,8 @@
 #include "rtw_whc_common.h"
 
-#define WHC_WIFI_TEST 0xffa5a5a5
-
+/* type */
+#define WHC_WIFI_TEST  0x1
+/* subtype */
 #define WHC_WIFI_TEST_GET_MAC_ADDR 0x1
 #define WHC_WIFI_TEST_GET_IP       0x2
 #define WHC_WIFI_TEST_SET_READY    0x3
@@ -28,14 +29,14 @@ __weak void whc_host_pkt_rx_to_user(u8 *pbuf)
 		case WHC_WIFI_TEST_GET_MAC_ADDR:
 			idx = *ptr;
 			ptr += 1;
-			LwIP_wlan_set_netif_info(STA_WLAN_INDEX, NULL, ptr);
+			lwip_wlan_set_netif_info(STA_WLAN_INDEX, NULL, ptr);
 			break;
 		case WHC_WIFI_TEST_GET_IP:
 			ipaddr = CONCAT_TO_UINT32(ptr[0], ptr[1], ptr[2], ptr[3]);
 			netmask = CONCAT_TO_UINT32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 			gw = CONCAT_TO_UINT32(ptr[0], ptr[1], ptr[2], 1);
-			LwIP_SetIP(STA_WLAN_INDEX, ipaddr, netmask, gw);
-			LwIP_netif_set_link_up(0);
+			lwip_set_ip(STA_WLAN_INDEX, ipaddr, netmask, gw);
+			lwip_netif_set_link_up(0);
 			break;
 
 		default:

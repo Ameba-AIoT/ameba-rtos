@@ -53,7 +53,7 @@ extern "C" {
   */
 
 /**
-  * @brief struct alarm_s
+  * @brief Struct alarm_s
   */
 typedef struct alarm_s {
 	uint32_t yday;//which day of the year
@@ -64,12 +64,15 @@ typedef struct alarm_s {
 /** @}*/
 
 /**
-  * @brief typedef function pointer to point interrupt handler
+  * @brief Typedef function pointer to point interrupt handler
   */
 typedef void (*alarm_irq_handler)(void);
 /** @}*/
-/** @}*/
-/** @}*/
+
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup MBED_RTC_Exported_Functions MBED_RTC Exported Functions
+  * @{
+  */
 
 void rtc_init(void);
 void rtc_free(void);
@@ -78,6 +81,10 @@ time_t rtc_read(void);
 void rtc_write(time_t t);
 u32 rtc_set_alarm(alarm_t *alrm, alarm_irq_handler alarmHandler);
 void rtc_disable_alarm(void);
+
+/** @}*/
+/** @}*/
+/** @}*/
 
 #ifdef __cplusplus
 }

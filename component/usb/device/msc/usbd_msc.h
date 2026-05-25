@@ -133,6 +133,8 @@ typedef struct {
 typedef struct {
 	/**
 	 * @brief Called when the USB device status changes for application to support USB hot-plug events.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] old_status: The previous USB device status.
 	 * @param[in] status: The new USB device status.
 	 */

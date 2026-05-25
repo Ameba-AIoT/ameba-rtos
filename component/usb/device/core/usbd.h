@@ -187,6 +187,8 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback to get a descriptor during enumeration when host requests USB descriptors.
 	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *     time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    The class driver must return the descriptor data buffer and length againt the `wValue` value of host setup request:
 	 *     - `USB_DESC_TYPE_DEVICE`: Device Descriptor, mandatory.
 	 *     - `USB_DESC_TYPE_CONFIGURATION`: Configuration Descriptor, mandatory.
@@ -203,6 +205,8 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback to set the device configuration.
 	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *     time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    Called upon `SET_CONFIGURATION` request in ADDRESSED state. The device class driver must:
 	 *     - Initialize endpoints via @ref usbd_ep_init.
 	 *     - Prepare first OUT transfer via @ref usbd_ep_receive.
@@ -215,6 +219,8 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback to clear the device configuration.
 	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *     time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    Called upon:
 	 *      - Core driver receives `SET_CONFIGURATION` control request in CONFIGURED state and needs to switch configuration.
 	 *      - Core driver receives `SET_CONFIGURATION` control request in non-ADDRESSED/CONFIGURED state.
@@ -230,6 +236,9 @@ typedef struct _usbd_class_driver_t {
 
 	/**
 	 * @brief Callback to handle class-specific or vendor-specific setup requests at control transfer setup phase.
+	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *     time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @details
 	 *     - Standard interface requests (`SET_INTERFACE/GET_INTERFACE/GET_STATUS`).
 	 *     - Class-specific requests per relevant class specifications.
@@ -242,6 +251,9 @@ typedef struct _usbd_class_driver_t {
 
 	/**
 	 * @brief Callback invoked at the Start-of-Frame (SOF).
+	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @details Called upon SOF interrupt (GINTSTS.Sof) for timing-sensitive operations (e.g. UAC clock synchronization).
 	 * @param[in] dev: USB device.
 	 * @return 0 on success, non-zero on failure.
@@ -250,6 +262,9 @@ typedef struct _usbd_class_driver_t {
 
 	/**
 	 * @brief Callback invoked when an IN data transfer on EP0 is complete.
+	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] dev: USB device.
 	 * @param[in] status: Status of the completed transfer.
 	 * @return 0 on success, non-zero on failure.
@@ -259,6 +274,8 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback invoked when an OUT data transfer on EP0 is complete.
 	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    The device driver does not need to re-enable the control OUT transfer since it is automatically done in core driver.
 	 * @param[in] dev: USB device.
 	 * @return 0 on success, non-zero on failure.
@@ -268,6 +285,8 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback invoked when a bulk/interrupt/isochronous IN data transfer on EP is complete.
 	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    The device class driver may mark endpoint ready for next transfer or retry failed transfers.
 	 * @param[in] dev: USB device structure.
 	 * @param[in] ep_addr: Endpoint address.
@@ -279,6 +298,8 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback invoked when a bulk/interrupt/isochronous OUT data transfer on EP is complete.
 	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    Typically, the device class driver shall:
 	 *      - Process received data via application callback.
 	 *      - Prepare next OUT transfer via @ref usbd_ep_receive.
@@ -291,6 +312,9 @@ typedef struct _usbd_class_driver_t {
 
 	/**
 	 * @brief Callback invoked when USB status change. See @ref usbd_attach_status_t.
+	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @details Called upon connection state changed for hot-plug support (e.g. do reinitialization on host disconnection)
 	 * @param[in] dev: USB device.
 	 * @param[in] old_status: Previous status of USB device.

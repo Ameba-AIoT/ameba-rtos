@@ -33,6 +33,8 @@ int whc_host_nl_custom_api(struct sk_buff *skb, struct genl_info *info)
 		payload_len = nla_len(info->attrs[WHC_ATTR_PAYLOAD]);
 		buf_len += payload_len;
 
+		printk("SEND_BUF: %s\n", payload + 9);
+
 		buf = kzalloc(buf_len, GFP_KERNEL);
 
 		if (!buf) {

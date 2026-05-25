@@ -43,9 +43,13 @@ if(${c_ISA_TYPE} STREQUAL "ARM")
     ameba_list_append(private_sources
         ameba_freertos_backtrace.c
         arm/ameba_v8m_backtrace.c
-        arm/ameba_v8m_crashdump.c
-        arm/ameba_v8m_fault_diagnosis.c
     )
+    if(NOT CONFIG_CRASHDUMP_IN_ROM)
+        ameba_list_append(private_sources
+            arm/ameba_v8m_crashdump.c
+            arm/ameba_v8m_fault_diagnosis.c
+        )
+    endif()
 elseif(${c_ISA_TYPE} STREQUAL "RISC-V")
     ameba_list_append(private_sources
         ameba_freertos_backtrace.c

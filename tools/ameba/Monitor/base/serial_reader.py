@@ -145,7 +145,8 @@ class SerialReader(StoppableThread):
 
             self.data_buffer = b''
             start_time = time.time()
-            soft_reset_success = False
+            hard_reset_done = False
+            reset_success = False
 
             while self.running:
                 try:
@@ -155,11 +156,11 @@ class SerialReader(StoppableThread):
                             if self.expired(start_time):
                                 break
                         if self.expired(start_time):
-                            break
+                            raise Exception("Reset timeout")
                         data = self.serial.read(self.serial.inWaiting())
                     else:
                         if self.expired(start_time):
-                            break
+                            raise Exception("Reset timeout")
                         data = self.serial.read(1)
                         if not data:
                             continue
@@ -172,30 +173,38 @@ class SerialReader(StoppableThread):
 
                     self.data_buffer += data
                     filtered = re.sub(rb'\xff.', b'', self.data_buffer)
-                    if b'reboot' in filtered:
+                    if hard_reset_done:
                         if b'BOOT-I' in filtered:
-                            soft_reset_success = True
+                            reset_success = True
+                            break
+                    else:
+                        if b'reboot' in filtered and b'BOOT-I' in filtered:
+                            reset_success = True
                             break
                 except Exception as e:
-                    break
-
-            # If soft reset failed or timed out, attempt hard reset via DTR/RTS
-            if not soft_reset_success:
-                try:
-                    if RemoteSerial and isinstance(self.serial, RemoteSerial):
-                        self.serial.reset_device()
-                    else:
-                        self.serial.setDTR(True)
-                        self.serial.setRTS(True)
-                        time.sleep(0.1)
-                        self.serial.setDTR(False)
-                        self.serial.setRTS(False)
-                    time.sleep(0.1)
+                    if hard_reset_done:
+                        break
+                    # Soft reset timed out → escalate to hard reset
+                    self.data_buffer = b''
                     print_yellow("Hard reset triggered.")
-                except Exception as e:
-                    print_red(f"Hard reset failed, please reset manually: {str(e)}")
+                    try:
+                        if RemoteSerial and isinstance(self.serial, RemoteSerial):
+                            self.serial.reset_device()
+                        else:
+                            self.serial.setDTR(True)
+                            self.serial.setRTS(True)
+                            time.sleep(0.1)
+                            self.serial.setDTR(False)
+                            self.serial.setRTS(False)
+                        time.sleep(0.1)
+                    except Exception as he:
+                        break
+                    hard_reset_done = True
+                    start_time = time.time()
 
-            self.data_buffer = b''
+            if not reset_success:
+                print_red("Failed to reset, please reset manually.")
+                self.data_buffer = b''
 
         while self.running:
             try:
@@ -293,7 +302,8 @@ class SerialReader(StoppableThread):
                         remote_port=self.remote_port,
                         port=self.port,
                         baudrate=self.baud,
-                        logger=self._setup_logger()
+                        logger=self._setup_logger(),
+                        source="monitor"
                 )
                 if self.remote_password:
                     self.serial.validate(self.remote_password)

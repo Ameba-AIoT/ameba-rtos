@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ameba-dev-mcp"
+version = "1.0.0"
+description = "FastMCP server for Realtek Ameba SoC development"
+requires-python = ">=3.7"
+
+[project.scripts]
+ameba-mcp = "ameba_dev_mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ameba_dev_mcp*"]

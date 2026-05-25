@@ -77,9 +77,3 @@ u8 Boot_SocClk_Info_Idx = 6; /* Make sure the PLL_CLK for USB is an integer mult
 u8 Boot_SocClk_Info_Idx = 6; /* 480M has an acceptable impact on the RF performance of SiP Psram and SiP Flash */
 #endif
 
-/**
-* @brif  Loguart AGG enable or disable
-* 	FALSE: disable
-*	TRUE: enable
-*/
-u8 Boot_Agg_En = FALSE;

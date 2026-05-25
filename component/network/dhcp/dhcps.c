@@ -863,7 +863,7 @@ static void dhcps_receive_udp_packet_handler(void *arg, struct udp_pcb *udp_pcb,
 	dhcps->message_repository = (struct dhcps_msg *)udp_packet_buffer->payload;
 
 	if (sender_port == DHCP_CLIENT_PORT) {
-		if (LwIP_netif_get_idx(ip_current_input_netif()) == 0) {
+		if (lwip_netif_get_idx(ip_current_input_netif()) == 0) {
 			pbuf_free(udp_packet_buffer);
 			return;
 		}

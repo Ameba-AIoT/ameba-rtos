@@ -264,21 +264,28 @@ static void composite_stop_all_tasks(void)
 
 /**
  * @brief USB status change callback
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  */
 static void composite_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Status change: %d-%d-%d\n", old_status, status, usb_ready_flag);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	composite_attach_status = status;
 	if ((USBD_ATTACH_STATUS_DETACHED == status) && (usb_ready_flag)) {
 		u32 msg = COMP_USBD_HOT_PLUG_STATUS;
 		usb_os_queue_send(msg_queue, &msg, 0);
 	}
+#else
+	UNUSED(status);
 #endif
 }
 
 /**
  * @brief USB set config callback
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  */
 static int composite_cb_set_config(void)
 {
@@ -398,6 +405,13 @@ static int composite_hid_cb_received(u8 *buf, u32 len)
 	return HAL_OK;
 }
 
+/**
+  * @brief  HID transmit complete callback
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  status: TX status
+  * @retval Status
+  */
 static int composite_hid_cb_transmitted(u8 status)
 {
 	UNUSED(status);
@@ -409,6 +423,8 @@ static int composite_hid_cb_transmitted(u8 status)
 
 /**
   * @brief  Handle the CDC class control requests
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  cmd: Command code
   * @param  buf: Buffer containing command data (request parameters)
   * @param  len: Number of data to be sent (in bytes)
@@ -424,6 +440,8 @@ static int composite_hid_cb_setup(usb_setup_req_t *req, u8 *buf)
 
 /**
   * @brief  Set config callback
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  None
   * @retval Status
   */
@@ -457,6 +475,8 @@ static int composite_uac_cb_deinit(void)
 
 /**
   * @brief  Set config callback
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  None
   * @retval Status
   */
@@ -467,12 +487,26 @@ static int composite_uac_cb_set_config(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Mute state change notification from the USB host
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  mute: New mute state
+  * @retval Status
+  */
 static int composite_uac_cb_mute_changed(u8 mute)
 {
 	UNUSED(mute);
 	return HAL_OK;
 }
 
+/**
+  * @brief  Volume change notification from the USB host
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  volume: New volume value
+  * @retval Status
+  */
 static int composite_uac_cb_volume_changed(u8 volume)
 {
 	UNUSED(volume);
@@ -480,11 +514,20 @@ static int composite_uac_cb_volume_changed(u8 volume)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Audio format change notification from the USB host
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  sampling_freq: New sampling frequency
+  * @param  ch_cnt: New channel count
+  * @param  byte_width: New sample byte width
+  * @retval Status
+  */
 static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
 	usbd_audio_cfg_t *out = &(composite_uac_usr_cb.out);
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC format rate %d ch %d\n", sampling_freq, ch_cnt);
+	//RTK_LOGS(TAG, RTK_LOG_INFO, "UAC format rate %d ch %d\n", sampling_freq, ch_cnt);
 
 	if (sampling_freq != 0U) {
 		out->sampling_freq = sampling_freq;

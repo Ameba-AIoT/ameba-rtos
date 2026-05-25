@@ -221,10 +221,12 @@ static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 		req_status = usbh_cdc_acm_process_get_line_coding(host, cdc->line_coding);
 		if (req_status == HAL_OK) {
 			cdc->state = USBH_CDC_ACM_STATE_IDLE;
-			if ((cdc->line_coding->b.bCharFormat == cdc->user_line_coding->b.bCharFormat) &&
-				(cdc->line_coding->b.bDataBits == cdc->user_line_coding->b.bDataBits) &&
-				(cdc->line_coding->b.bParityType == cdc->user_line_coding->b.bParityType) &&
-				(cdc->line_coding->b.dwDteRate == cdc->user_line_coding->b.dwDteRate)) {
+			usb_cdc_line_coding_t *lc = cdc->line_coding;
+			usb_cdc_line_coding_t *ulc = cdc->user_line_coding;
+			if ((lc->b.bCharFormat == ulc->b.bCharFormat) &&
+				(lc->b.bDataBits == ulc->b.bDataBits) &&
+				(lc->b.bParityType == ulc->b.bParityType) &&
+				(lc->b.dwDteRate == ulc->b.dwDteRate)) {
 				if ((cdc->cb != NULL) && (cdc->cb->line_coding_changed != NULL)) {
 					cdc->cb->line_coding_changed(cdc->line_coding);
 				}
@@ -513,10 +515,12 @@ int usbh_cdc_acm_set_line_coding(usb_cdc_line_coding_t *line_coding)
 
 	if (host->connect_state == USBH_STATE_SETUP) {
 		cdc->state = USBH_CDC_ACM_STATE_SET_LINE_CODING;
-		cdc->user_line_coding->b.dwDteRate = line_coding->b.dwDteRate;
-		cdc->user_line_coding->b.bCharFormat = line_coding->b.bCharFormat;
-		cdc->user_line_coding->b.bParityType = line_coding->b.bParityType;
-		cdc->user_line_coding->b.bDataBits = line_coding->b.bDataBits;
+		usb_cdc_line_coding_t *ulc = cdc->user_line_coding;
+		usb_cdc_line_coding_t *lc = line_coding;
+		ulc->b.dwDteRate = lc->b.dwDteRate;
+		ulc->b.bCharFormat = lc->b.bCharFormat;
+		ulc->b.bParityType = lc->b.bParityType;
+		ulc->b.bDataBits = lc->b.bDataBits;
 		usbh_notify_class_state_change(host, 0);
 		ret = HAL_OK;
 	}
@@ -536,10 +540,12 @@ int usbh_cdc_acm_get_line_coding(usb_cdc_line_coding_t *line_coding)
 	int ret = HAL_ERR_UNKNOWN;
 
 	if ((host->connect_state == USBH_STATE_SETUP) || (host->connect_state == USBH_STATE_ATTACH)) {
-		line_coding->b.dwDteRate = cdc->line_coding->b.dwDteRate;
-		line_coding->b.bCharFormat = cdc->line_coding->b.bCharFormat;
-		line_coding->b.bParityType = cdc->line_coding->b.bParityType;
-		line_coding->b.bDataBits = cdc->line_coding->b.bDataBits;
+		usb_cdc_line_coding_t *lc = cdc->line_coding;
+		usb_cdc_line_coding_t *ulc = line_coding;
+		ulc->b.dwDteRate = lc->b.dwDteRate;
+		ulc->b.bCharFormat = lc->b.bCharFormat;
+		ulc->b.bParityType = lc->b.bParityType;
+		ulc->b.bDataBits = lc->b.bDataBits;
 		ret = HAL_OK;
 	}
 

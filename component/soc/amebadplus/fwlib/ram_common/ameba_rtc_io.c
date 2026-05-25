@@ -9,7 +9,7 @@
   * @{
   */
 
-/** @defgroup RTC_IO
+/** @defgroup RTC_IO RTC_IO
 * @brief RTC_IO driver modules
 * @{
 */
@@ -21,12 +21,11 @@
 
 /**
   * @brief  Configure RTCIO work mode,it works MODE_SHIFT_DISABLE by default
-  * @param  Mode: new work mode of RTCIO.
+  * @param  Mode: New work mode of RTCIO.
   *   This parameter can be:
   *    MODE_SHIFT_DISABLE,
   *    MODE_SHIFT_ENABLE,
   *    MODE_RTC_START,
-  * @retval None
   */
 void RTCIO_SetWorkMode(u32 Mode)
 {
@@ -41,12 +40,10 @@ void RTCIO_SetWorkMode(u32 Mode)
 
 /**
   * @brief  Get RTCIO work mode
-  * @param  None
-  * @retval Mode: current work mode of RTCIO.
-  *    This parameter can be:
-  *    0: MODE_SHIFT_DISABLE,
-  *    1: MODE_SHIFT_ENABLE,
-  *    2: MODE_RTC_START,
+  * @return Current work mode of RTCIO:
+  *    - 0: MODE_SHIFT_DISABLE
+  *    - 1: MODE_SHIFT_ENABLE
+  *    - 2: MODE_RTC_START
   */
 u32 RTCIO_GetWorkMode(void)
 {
@@ -59,10 +56,9 @@ u32 RTCIO_GetWorkMode(void)
 
 /**
   * @brief Check RTCIO Module enabled or not
-  * @param None
-  * @retval
-  *    TRUE: enabled
-  *    FALSE: disabled
+  * @return Whether RTCIO is enabled:
+  *    - TRUE: enabled
+  *    - FALSE: disabled
   */
 u32 RTCIO_IsEnabled(void)
 {
@@ -77,9 +73,9 @@ u32 RTCIO_IsEnabled(void)
 /**
   * @brief Check RTC Module PredivAsync setting
            under RTCIO Module permission or not
-  * @param None
-  * @retval TRUE: under permission
-            FALSE: beyond permission.
+  * @return Whether under RTCIO Module permission:
+  *    - TRUE: under permission
+  *    - FALSE: beyond permission
   */
 static u32 RTCIO_CheckRTCPredivAsync(void)
 {
@@ -102,11 +98,9 @@ static u32 RTCIO_CheckRTCPredivAsync(void)
 
 /**
   * @brief Receive calibration value from rtc_sio
-  * @param
-  *   This parameter can be:
+  * @param  ResetRcal: Reset Rcal flag. This parameter can be:
   *    RTCIO_RECV_RVAL_RST,
   *    RTCIO_RECV_RVAL_CAL
-  * @retval None
   */
 void RTCIO_SetRValue(u32 ResetRcal)
 {
@@ -145,8 +139,6 @@ void RTCIO_SetRValue(u32 ResetRcal)
 
 /**
   * @brief Enable RTCIO by setting work mode to MODE_RTC_START
-  * @param None
-  * @retval None
   */
 void RTCIO_ModeRTCStart(void)
 {
@@ -161,8 +153,7 @@ void RTCIO_ModeRTCStart(void)
   * @brief Shift out time info:
   *         1.time stored from RTC before power off
   *         2.counter in power off period
-  * @outparam struct RTCIO_TimeInfo
-  * @retval None
+  * @param  pDataOut: Pointer to RTCIO_TimeInfo structure to store time information.
   */
 static void RTCIO_ShiftOutTimeInfo(RTCIO_TimeInfo *pDataOut)
 {
@@ -200,8 +191,7 @@ static void RTCIO_ShiftOutTimeInfo(RTCIO_TimeInfo *pDataOut)
 
 /**
   * @brief Output time info after setting work mode to MODE_SHIFT_ENABLE
-  * @paramOut struct RTCIO_TimeInfo
-  * @retval None
+  * @param  pDataOut: Pointer to RTCIO_TimeInfo structure to store time information.
   */
 void RTCIO_GetTimeInfo(RTCIO_TimeInfo *pDataOut)
 {

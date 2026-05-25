@@ -8,6 +8,7 @@
 #define _AMEBA_TRUSTZONE_H_
 
 #include "ameba_rxi300.h"
+#include "rom/fault_injection_hardening.h"
 
 
 #ifdef __cplusplus
@@ -133,6 +134,7 @@ __STATIC_FORCEINLINE u32 TrustZone_IsSecure(void)
 #endif
 }
 
+fih_ret BOOT_CPU_TZCfg(const SAU_CFG_TypeDef *sau_config);
 #ifdef __cplusplus
 }
 #endif

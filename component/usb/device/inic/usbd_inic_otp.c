@@ -121,7 +121,7 @@ int usbd_otp_init(usbd_otp_t *otp)
 		((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SQNUM_ROM) == 0U)) {
 		status = OTP_LogicalRead(otp->otp_map, USB_OTP_START, USB_OTP_LEN);
 		if (status != RTK_SUCCESS) {
-			RTK_LOGE(TAG, "OTP read fail %d\n", status);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP read fail %d\n", status);
 			return HAL_ERR_HW;
 		}
 

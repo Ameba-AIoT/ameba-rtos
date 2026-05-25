@@ -7,33 +7,46 @@
 #include "ameba_soc.h"
 
 #ifdef CONFIG_TRUSTZONE
-#define TZ_NSC_START  	(u32)__km4tz_tz_nsc_start__
-#define TZ_ENTRY_START	(u32)__km4tz_tz_entry_start__
-#define TZ_ENTRY_END	(u32)__km4tz_tz_entry_end__
 
-#define BD_RAM_START	(u32)__km4tz_bd_ram_start__
-#define BD_RAM_EMD
-
-#define BD_PSRAM_START 	(u32)__km4tz_bd_psram_start__
-#define BD_PSRAM_END	(u32)__non_secure_psram_end__
+#ifdef CONFIG_IMG3_FLASH
+/* XIP-flash mode: Secure code runs from XIP (0x00C00020–0x00FFFFFF).
+ * entry1 must end before XIP start so the Secure XIP range is not marked NS.
+ * entry3 must cover flash+SRAM between Secure XIP end and Secure SRAM start
+ * so NS XIP code (0x02000000, 0x04000000) and NS stack (0x20001000–0x20005FFF)
+ * remain NS-accessible. KM4TZ_IMG3_XIP ends at 0x01000000. */
+#define TZ_ENTRY_START		(u32)__image3_entry_func__
+#define TZ_SRAM_START		(u32)__image3_ram_start__
+#define TZ_XIP_REGION_END	0x01000000U
+#else
+#define TZ_ENTRY_START		(u32)__image3_ram_start__
+#define TZ_SRAM_START		(u32)__image3_ram_start__
+#define TZ_XIP_REGION_END	0U	/* unused in SRAM mode */
+#endif
+#define TZ_NSC_START		(u32)__ram_image3_nsc_start__
+#define TZ_NSC_END			(u32)__ram_image3_nsc_end__
+#define TZ_S_END			(u32)__image3_ram_end__
 
 const SAU_CFG_TypeDef sau_config[SAU_ENTRY_NUM] = {
-//  Start					End						NSC
-	{0x0001F000,			0x00200000 - 1,			0},	/* entry0: Share ROM NS */
-#if defined (CONFIG_TRUSTZONE_EN)
-	{0x00200000,			TZ_NSC_START - 1,		0},	/* entry1: IMG1/IMG3 S */
-	{TZ_NSC_START,			TZ_ENTRY_START - 1,		1},	/* entry2: NSC */
-	{TZ_ENTRY_END,			0xFFFFFFFF,				0},	/* entry3: TODO */
+//  Start				End						NSC
+	{0x0001F000,		0x00200000 - 1,			0},	/* entry0: Share ROM NS */
+	{0x00200000,		TZ_ENTRY_START - 1,		0},	/* entry1: flash/SRAM before Secure TZ area */
+	{TZ_NSC_START,		TZ_NSC_END - 1,			1},	/* entry2: NSC inside merged TZ area */
+#ifdef CONFIG_IMG3_FLASH
+	/* entry3: flash+SRAM between Secure XIP end and Secure SRAM (covers NS XIP code + NS stack) */
+	{TZ_XIP_REGION_END,	TZ_SRAM_START - 1,		0},
+	{TZ_S_END,			0xFFFFFFFF,				0},	/* entry4: region after Secure SRAM TZ */
 #else
-	{0x00200000,			0xFFFFFFFF,				0},	/* entry1: Others */
-	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry2: TODO */
-	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry3: TODO */
+	{TZ_S_END,			0xFFFFFFFF,				0},	/* entry3: region after Secure SRAM TZ */
+	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry4: TODO */
 #endif
-	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry4: TODO */
-	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry5: TODO */
-	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry6: TODO */
-	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry7: TODO */
+	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry5: TODO */
+	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry6: TODO */
+	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry7: TODO */
 };
+
+#define BD_RAM_START	(u32)__km4tz_bd_ram_start__
+#define BD_PSRAM_START 	(u32)__km4tz_bd_psram_start__
+#define BD_PSRAM_END	(u32)__non_secure_psram_end__
 
 const TZ_CFG_TypeDef mpc3_config[MPC_ENTRY_NUM] =						/* Security configuration for PSRAM */
 {

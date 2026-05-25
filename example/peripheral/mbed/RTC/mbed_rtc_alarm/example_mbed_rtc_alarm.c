@@ -14,17 +14,11 @@
 #include <time.h>
 #include "timer_api.h"
 
+volatile uint32_t rtc_alarm_flag = 0;
+
 alarm_irq_handler rtc_handler(void)
 {
-	time_t t;
-	struct tm *timeinfo;
-
-	t = rtc_read();
-	timeinfo = localtime(&t);
-
-	printf("alarm time = %d-%d-%d %d:%d:%d\n",
-		   timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour,
-		   timeinfo->tm_min, timeinfo->tm_sec);
+	rtc_alarm_flag = 1;
 	return 0;
 }
 
@@ -38,9 +32,9 @@ void mbed_rtc_alarm_demo(void)
 	rtc_write(t);
 	timeinfo = localtime(&t);
 
-	printf("now time = %d-%d-%d %d:%d:%d\n",
-		   timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour,
-		   timeinfo->tm_min, timeinfo->tm_sec);
+	RTK_LOGI(NOTAG, "now time = %d-%d-%d %d:%d:%d\n",
+			 timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour,
+			 timeinfo->tm_min, timeinfo->tm_sec);
 
 	alarm.hour = 0;
 	alarm.yday = 0;
@@ -48,7 +42,17 @@ void mbed_rtc_alarm_demo(void)
 	alarm.sec = 10;
 	rtc_set_alarm(&alarm, (alarm_irq_handler) rtc_handler);
 
-	while (1);
+	while (1) {
+		if (rtc_alarm_flag) {
+			rtc_alarm_flag = 0;
+			t = rtc_read();
+			timeinfo = localtime(&t);
+			RTK_LOGI(NOTAG, "alarm time = %d-%d-%d %d:%d:%d\n",
+					 timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour,
+					 timeinfo->tm_min, timeinfo->tm_sec);
+		}
+		rtos_time_delay_ms(100);
+	}
 }
 
 int example_mbed_rtc_alarm(void)
@@ -60,4 +64,3 @@ int example_mbed_rtc_alarm(void)
 	// rtos_sched_start();
 	return 0;
 }
-

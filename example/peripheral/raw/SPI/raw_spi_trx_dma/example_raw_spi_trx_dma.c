@@ -69,6 +69,8 @@ u32 Ssi_dma_tx_irq(void *Data)
 	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 
+	SSI_SlaveErrRecovery(spi_obj->spi_dev);
+
 	/*  Call user TX complete callback */
 	if (spi_obj->Index == 0) {
 		SlaveTxDone = 1;
@@ -97,6 +99,8 @@ u32 Ssi_dma_rx_irq(void *Data)
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 
 	DCache_Invalidate((u32) pRxData, Length);
+
+	SSI_SlaveErrRecovery(spi_obj->spi_dev);
 
 	/*  Call user RX complete callback */
 	if (spi_obj->Index == 0) {

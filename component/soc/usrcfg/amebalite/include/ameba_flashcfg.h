@@ -49,7 +49,7 @@ extern const u16 Flash_Speed;
 extern const u16 Flash_ReadMode;
 
 extern const FlashInfo_TypeDef Flash_AVL[];
-extern FlashLayoutInfo_TypeDef Flash_Layout[];
+extern const FlashLayoutInfo_TypeDef Flash_Layout[];
 
 //================functions=================
 void flash_init_userdef(void);

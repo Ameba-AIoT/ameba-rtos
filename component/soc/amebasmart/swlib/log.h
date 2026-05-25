@@ -75,6 +75,9 @@ int rtk_log_level_set(const char *tag, rtk_log_level_t level);
 int rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array);
 void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, const char *fmt, ...);
 void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char letter, const char *fmt, ...);
+#ifdef CONFIG_ARM_CORE_CA32
+void rtk_log_mutex_init(void);
+#endif
 //6. Memory dump API
 #define DISPLAY_NUMBER 8
 #define BYTES_PER_LINE 16

@@ -376,6 +376,8 @@ static void usbh_vendor_next_transfer(usb_host_t *host, usbh_vendor_xfer_t *xfer
 
 /**
   * @brief  SOF callback function.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
   * @retval Status
   */

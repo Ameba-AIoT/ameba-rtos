@@ -111,29 +111,29 @@ void usbd_uvc_get_command_process_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctr
 			break;
 
 		case USBD_UVC_GET_CUR:
-			memcpy(resp->data, (unsigned char *)&p_data.cur, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&p_data.cur, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_MIN:
-			memcpy(resp->data, (unsigned char *)&p_data.min, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&p_data.min, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_MAX:
-			memcpy(resp->data, (unsigned char *)&p_data.max, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&p_data.max, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_DEF:
-			memcpy(resp->data, (unsigned char *)&p_data.def, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&p_data.def, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_RES:
-			memcpy(resp->data, (unsigned char *)&p_data.res, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&p_data.res, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_LEN:
-			memcpy(resp->data, (unsigned char *)&p_data.len, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&p_data.len, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_INFO:
-			memcpy(resp->data, (unsigned char *)&p_data.info, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&p_data.info, ctrl->wLength);
 			break;
 		}
 	} else if (dev->command_entity == EXTENSION_UNIT) {
@@ -141,25 +141,25 @@ void usbd_uvc_get_command_process_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctr
 		case USBD_UVC_SET_CUR:
 			break;
 		case USBD_UVC_GET_CUR:
-			memcpy(resp->data, (unsigned char *)&x_data.cur, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&x_data.cur, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_MIN:
-			memcpy(resp->data, (unsigned char *)&x_data.min, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&x_data.min, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_MAX:
-			memcpy(resp->data, (unsigned char *)&x_data.max, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&x_data.max, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_DEF:
-			memcpy(resp->data, (unsigned char *)&x_data.def, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&x_data.def, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_RES:
-			memcpy(resp->data, (unsigned char *)&x_data.res, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&x_data.res, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_LEN:
-			memcpy(resp->data, (unsigned char *)&x_data.len, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&x_data.len, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_INFO:
-			memcpy(resp->data, (unsigned char *)&x_data.info, ctrl->wLength);
+			memcpy(resp->data, (u8 *)&x_data.info, ctrl->wLength);
 			break;
 		}
 	}
@@ -186,25 +186,25 @@ __weak void get_command_extension_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctr
 	case USBD_UVC_SET_CUR:
 		break;
 	case USBD_UVC_GET_CUR:
-		memcpy(resp->data, (unsigned char *)&x_data.cur, sizeof(int));
+		memcpy(resp->data, (u8 *)&x_data.cur, sizeof(int));
 		break;
 	case USBD_UVC_GET_MIN:
-		memcpy(resp->data, (unsigned char *)&x_data.min, sizeof(int));
+		memcpy(resp->data, (u8 *)&x_data.min, sizeof(int));
 		break;
 	case USBD_UVC_GET_MAX:
-		memcpy(resp->data, (unsigned char *)&x_data.max, sizeof(int));
+		memcpy(resp->data, (u8 *)&x_data.max, sizeof(int));
 		break;
 	case USBD_UVC_GET_DEF:
-		memcpy(resp->data, (unsigned char *)&x_data.def, sizeof(int));
+		memcpy(resp->data, (u8 *)&x_data.def, sizeof(int));
 		break;
 	case USBD_UVC_GET_RES:
-		memcpy(resp->data, (unsigned char *)&x_data.res, sizeof(int));
+		memcpy(resp->data, (u8 *)&x_data.res, sizeof(int));
 		break;
 	case USBD_UVC_GET_LEN:
-		memcpy(resp->data, (unsigned char *)&x_data.len, sizeof(int));
+		memcpy(resp->data, (u8 *)&x_data.len, sizeof(int));
 		break;
 	case USBD_UVC_GET_INFO:
-		memcpy(resp->data, (unsigned char *)&x_data.info, sizeof(int));
+		memcpy(resp->data, (u8 *)&x_data.info, sizeof(int));
 		break;
 	}
 }
@@ -282,7 +282,7 @@ usbd_uvc_fill_streaming_control(usbd_uvc_dev_t *dev,
 {
 	const usbd_uvc_format_info_t *format;
 	const usbd_uvc_frame_info_t *frame;
-	unsigned int nframes;
+	u32 nframes;
 	(void)dev;
 
 	format = &uvcd_formats[iformat];
@@ -339,8 +339,8 @@ usbd_uvc_events_process_streaming(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 								  usbd_uvc_request_data_t *resp)
 {
 	usbd_uvc_streaming_control_t *ctrl_stream;
-	unsigned int cs = ctrl->wValue >> 8;
-	unsigned int req = ctrl->bRequest;
+	u32 cs = ctrl->wValue >> 8;
+	u32 req = ctrl->bRequest;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "streaming request (req %02x cs %02x)\n", req, cs);
 
@@ -501,9 +501,9 @@ usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *da
 	usbd_uvc_streaming_control_t *ctrl;
 	const usbd_uvc_format_info_t *format;
 	const usbd_uvc_frame_info_t *frame;
-	const unsigned int *interval;
-	unsigned int iformat, iframe;
-	unsigned int nframes;
+	const u32 *interval;
+	u32 iformat, iframe;
+	u32 nframes;
 
 	switch (dev->control) {
 	case USBD_UVC_VS_PROBE_CONTROL:
@@ -534,7 +534,7 @@ usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *da
 	interval = frame->intervals;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Interval[0] = %d\r\n", interval[0]);
 	while (interval[0] < ctrl->dwFrameInterval && interval[1]) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "interval %lu\r\n", ctrl->dwFrameInterval);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "interval %u\r\n", ctrl->dwFrameInterval);
 		++interval;
 	}
 

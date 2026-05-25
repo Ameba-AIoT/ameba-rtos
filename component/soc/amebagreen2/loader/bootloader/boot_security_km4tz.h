@@ -50,4 +50,3 @@ fih_ret BOOT_Wake_TZCfg(void);
 #endif
 
 #endif
-

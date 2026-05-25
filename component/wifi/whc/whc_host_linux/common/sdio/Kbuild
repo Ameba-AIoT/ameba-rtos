@@ -60,6 +60,7 @@ ifeq ($(CONFIG_WHC_CMD_PATH), y)
             ../whc_host_cmd_path_tx.o
 
     ifeq ($(CONFIG_WHC_HOST_RTW_CLI),y)
+        ccflags-$(CONFIG_WHC_HOST_RTW_CLI) += -DCONFIG_WHC_HOST_RTW_CLI
         ccflags-y += -I$(src)/../whc_host_rtw_cli
 
         whc_sdio-$(CONFIG_WHC_HCI_SDIO) += \

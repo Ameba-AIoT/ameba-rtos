@@ -162,7 +162,7 @@ static int usbh_msc_setup(usb_host_t *host)
 		setup.req.wValue = 0U;
 		setup.req.wIndex = 0U;
 		setup.req.wLength = 1U;
-		status = usbh_ctrl_request(host, &setup, (u8 *)(void *)msc->max_lun_buf);
+		status = usbh_ctrl_request(host, &setup, msc->max_lun_buf);
 		/* When devices do not support the GetMaxLun request, this should
 		   be considred as only one logical unit is supported */
 		if (status == HAL_ERR_PARA) {

@@ -19,6 +19,9 @@ void os_heap_init(void);
 void rtos_mem_init(void)
 {
 	os_heap_init();
+
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Init heap: %d\n", rtos_mem_get_free_heap_size());
+
 }
 
 void *rtos_mem_malloc(uint32_t size)

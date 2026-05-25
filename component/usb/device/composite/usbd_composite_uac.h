@@ -108,6 +108,8 @@ typedef struct {
 
 	/**
 	 * @brief Called during control transfer SETUP/DATA phases to handle class-specific SETUP requests.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] req: Pointer to the setup request packet.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
@@ -116,12 +118,16 @@ typedef struct {
 
 	/**
 	 * @brief Notifies application layer when UAC driver becomes operational.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @return 0 on success, non-zero on failure.
 	 */
 	int(* set_config)(void);
 
 	/**
 	 * @brief Called when USB attach status changes for application to support hot-plug events.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] old_status: The previous attach status.
 	 * @param[in] status: The new attach status.
 	 */
@@ -129,18 +135,24 @@ typedef struct {
 
 	/**
 	 * @brief Handles mute setting updates from USB host.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] mute: Mute value, 0 unmute, 1 mute
 	 */
 	int(* mute_changed)(u8 mute);
 
 	/**
 	 * @brief Adjusts playback volume according to host-side volume changes.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] volume: Volume value, from 0~100
 	 */
 	int(* volume_changed)(u8 volume);
 
 	/**
 	 * @brief Called when the audio parameters(sample rate/channels) are modified by host.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] sampling_freq: New sample frequency.
 	 * @param[in] ch_cnt: New channel count. such as 2,4,6,8...
 	 * @param[in] byte_width: New byte width, such as 1,2,3,4.
@@ -149,6 +161,8 @@ typedef struct {
 
 	/**
 	 * @brief Called upon SOF interrupt for clock synchronization.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 */
 	int(* sof)(void);
 } usbd_composite_uac_usr_cb_t;

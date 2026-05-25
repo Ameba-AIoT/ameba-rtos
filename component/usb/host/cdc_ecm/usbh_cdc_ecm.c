@@ -217,8 +217,10 @@ static u8 usbh_cdc_ecm_hex_to_char(u8 hex_num)
 }
 
 /**
-  * @brief  check USB device enum status
-  * @retval return HAL_OK if enum success, else return HAL_BUSY
+  * @brief  Check whether the device has completed enumeration.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @return HAL_OK if enumeration is complete, HAL_BUSY otherwise.
   */
 static int usbh_cdc_ecm_check_enum_status(void)
 {
@@ -574,7 +576,7 @@ static void usbh_cdc_ecm_set_dongle_mac(u8 *mac)
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 
 	if (NULL == mac) {
-		RTK_LOGE(TAG, "Param error,mac is NULL\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Param error,mac is NULL\n");
 		return ;
 	}
 
@@ -587,7 +589,7 @@ static void usbh_cdc_ecm_set_dongle_led_array(u16 *led, u8 len)
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 
 	if (led == NULL || len == 0) {
-		RTK_LOGE(TAG, "Param error,led is NULL or len %ld\n", (u32)len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Param error,led is NULL or len %d\n", len);
 		return ;
 	}
 
@@ -1233,6 +1235,13 @@ static int usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
 	return req_status;
 }
 
+/**
+  * @brief  SOF callback for class-specific timing process.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param[in] host: USB host handle.
+  * @return 0 on success, non-zero on failure.
+  */
 static int usbh_cdc_ecm_sof(usb_host_t *host)
 {
 	UNUSED(host);
@@ -1374,8 +1383,10 @@ static void usbh_cdc_ecm_process_intr_in(usb_host_t *host)
 }
 
 /**
-  * @brief Check ECM BULK RX status and tiemout, whether should trigger
-  * @retval Status
+  * @brief  Check ECM BULK RX status and timeout, whether should trigger.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @return HAL_OK if a new transfer should be triggered, HAL_BUSY otherwise.
   */
 static int usbh_cdc_ecm_bulk_rx_time_check(void)
 {
@@ -1455,8 +1466,10 @@ static int usbh_cdc_ecm_intr_rx_time_check(void)
 }
 
 /**
-  * @brief  Send event to transmit BULK data
-  * @retval Status
+  * @brief  Send event to transmit BULK data.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @return 0 on success, non-zero on failure.
   */
 static int usbh_cdc_ecm_bulk_tx(void)
 {
@@ -1481,8 +1494,10 @@ static int usbh_cdc_ecm_bulk_tx(void)
 }
 
 /**
-  * @brief  Send event to receive BULK data
-  * @retval Status
+  * @brief  Send event to receive BULK data.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @return 0 on success, non-zero on failure.
   */
 static int usbh_cdc_ecm_bulk_receive(void)
 {
@@ -1510,8 +1525,10 @@ static int usbh_cdc_ecm_bulk_receive(void)
 }
 
 /**
-  * @brief  Send event to receive INTR data
-  * @retval Status
+  * @brief  Send event to receive INTR data.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @return 0 on success, non-zero on failure.
   */
 static int usbh_cdc_ecm_intr_receive(void)
 {
@@ -1659,7 +1676,7 @@ void usbh_cdc_ecm_trace_task_init(void)
 void usbh_cdc_ecm_trace_task_deinit(void)
 {
 	if (usbh_cdc_ecm_trace_task != NULL) {
-		RTK_LOGI(TAG, "Del trace task\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Del trace task\n");
 		rtos_task_delete(usbh_cdc_ecm_trace_task);
 		usbh_cdc_ecm_trace_task = NULL;
 	}
@@ -1744,14 +1761,17 @@ int usbh_cdc_ecm_init(usbh_cdc_ecm_state_cb_t *cb, usbh_cdc_ecm_priv_data_t *pri
 
 	cdc->dongle_ctrl_buf = (u8 *)usb_os_malloc(USBH_CDC_ECM_MAC_STRING_LEN);
 	if (NULL == cdc->dongle_ctrl_buf) {
-		RTK_LOGE(TAG, "Alloc mem %d fail\n", USBH_CDC_ECM_MAC_STRING_LEN);
+		ret = HAL_ERR_MEM;
 		goto ctrl_buf_fail;
 	}
 
 	cdc->mac_valid = 0;
 
+	/* priv == NULL is valid (e.g. usbh_wifi_bridge always passes NULL). mac_valid is set later
+	 * during enumeration; led_array/led_cnt == 0 causes LED setup to be skipped gracefully.
+	 * Return HAL_OK so callers checking ret < 0 are not falsely triggered. */
 	if (priv == NULL) {
-		RTK_LOGE(TAG, "Param error\n");
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Param error\n");
 		USBH_CDC_ECM_FREE_MEM(cdc->led_array);
 		cdc->led_cnt = 0;
 	} else {

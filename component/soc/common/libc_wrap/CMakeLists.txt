@@ -43,6 +43,12 @@ ameba_list_append_if(CONFIG_TLSF_HEAP private_sources
     port_tlsf.c
     tlsf.c
 )
+
+if(CONFIG_TLSF_HEAP AND CONFIG_HEAP_TRACE)
+    ameba_list_append(private_includes
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../os/freertos/heap_trace
+    )
+endif()
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 

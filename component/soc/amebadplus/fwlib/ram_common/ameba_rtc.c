@@ -9,20 +9,23 @@
   * @{
   */
 
-/** @defgroup RTC
+/** @defgroup RTC RTC
 * @brief RTC driver modules
 * @{
 */
 
-/* Exported functions --------------------------------------------------------*/
-/** @defgroup RTC_Exported_Functions RTC Exported Functions
-  * @{
+/**
+  * @brief  This function is meaningless, only for compatibility with Zephyr.
   */
+void RTC_Enable(u8 NewState)
+{
+	UNUSED(NewState);
+}
 
 /**
   * @brief  Convert a 2 digit decimal to BCD format.
-  * @param  Value: Byte to be converted.
-  * @retval Converted byte
+  * @param  Value Byte to be converted.
+  * @return Converted byte.
   */
 u8 RTC_ByteToBcd2(u8 Value)
 {
@@ -38,8 +41,8 @@ u8 RTC_ByteToBcd2(u8 Value)
 
 /**
   * @brief  Convert from 2 digit BCD to Binary.
-  * @param  Value: BCD value to be converted.
-  * @retval Converted word
+  * @param  Value BCD value to be converted.
+  * @return Converted word.
   */
 u8 RTC_Bcd2ToByte(u8 Value)
 {
@@ -50,9 +53,8 @@ u8 RTC_Bcd2ToByte(u8 Value)
 
 /**
   * @brief  Enter the RTC Initialization mode.
-  * @note  the time, date and prescaler registers can be updated in init mode.
-  * @param  None
-  * @retval status value:
+  * @note  The time, date and prescaler registers can be updated in init mode.
+  * @return Status value:
   *          - 1: RTC is in Init mode
   *          - 0: RTC is not in Init mode
   */
@@ -96,9 +98,6 @@ u32 RTC_EnterInitMode(void)
   * @brief  Exit the RTC Initialization mode.
   * @note   When the initialization sequence is complete, the calendar restarts
   *         counting after 4 RTCCLK cycles.
-  * @param  None
-  * @retval None
-  * @about 3 RTC clock
   */
 void RTC_ExitInitMode(void)
 {
@@ -121,11 +120,9 @@ void RTC_ExitInitMode(void)
   *         The software must then wait until it is set again before reading
   *         the calendar, which means that the calendar registers have been
   *         correctly copied into the RTC_TR shadow registers.
-  * @param  None
-  * @retval status value:
+  * @return Status value:
   *          - 1: RTC registers are synchronised
   *          - 0: RTC registers are not synchronised
-  * @about 2 RTC clock
   */
 u32 RTC_WaitForSynchro(void)
 {
@@ -172,14 +169,21 @@ u32 RTC_WaitForSynchro(void)
 	return (status);
 }
 
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup RTC_Exported_Functions RTC Exported Functions
+  * @{
+  */
+
 /**
   * @brief  Enable or Disable the Bypass Shadow feature.
   * @note   When the Bypass Shadow is enabled the calendar value are taken
   *         directly from the Calendar counter.
-  * @param  NewState: new state of the Bypass Shadow feature.
+  * @param  NewState New state of the Bypass Shadow feature.
   *         This parameter can be: ENABLE or DISABLE.
-  * @retval None
-*/
+  * @return Status value:
+  *          - 1: success
+  *          - 0: fail
+  */
 u32 RTC_BypassShadowCmd(u32 NewState)
 {
 	RTC_TypeDef *RTC = RTC_DEV;
@@ -224,9 +228,8 @@ u32 RTC_BypassShadowCmd(u32 NewState)
 
 /**
   * @brief  Fill each RTC_InitStruct member with its default value.
-  * @param  RTC_InitStruct: pointer to a RTC_InitTypeDef structure which will be
+  * @param  RTC_InitStruct Pointer to a RTC_InitTypeDef structure which will be
   *         initialized.
-  * @retval None
   */
 void RTC_StructInit(RTC_InitTypeDef *RTC_InitStruct)
 {
@@ -246,11 +249,11 @@ void RTC_StructInit(RTC_InitTypeDef *RTC_InitStruct)
 /**
   * @brief  Initialize the RTC registers according to the specified parameters
   *         in RTC_InitStruct.
-  * @param  RTC_InitStruct: pointer to a RTC_InitTypeDef structure that contains
+  * @param  RTC_InitStruct Pointer to a RTC_InitTypeDef structure that contains
   *         the configuration information for the RTC peripheral.
   * @note   The RTC Prescaler register is write protected and can be written in
   *         initialization mode only.
-  * @retval status value:
+  * @return Status value:
   *          - 1: RTC registers are initialized
   *          - 0: RTC registers are not initialized
   */
@@ -311,9 +314,8 @@ u32 RTC_Init(RTC_InitTypeDef *RTC_InitStruct)
 /**
   * @brief  Fill each RTC_TimeStruct member with its default value
   *         (Time = 00d:00h:00min:00sec).
-  * @param  RTC_TimeStruct: pointer to a RTC_TimeTypeDef structure which will be
+  * @param  RTC_TimeStruct Pointer to a RTC_TimeTypeDef structure which will be
   *         initialized.
-  * @retval None
   */
 void RTC_TimeStructInit(RTC_TimeTypeDef *RTC_TimeStruct)
 {
@@ -328,13 +330,13 @@ void RTC_TimeStructInit(RTC_TimeTypeDef *RTC_TimeStruct)
 
 /**
   * @brief  Set the RTC current time.
-  * @param  RTC_Format: specifies the format of the entered parameters.
+  * @param  RTC_Format Specifies the format of the entered parameters.
   *          This parameter can be  one of the following values:
   *            @arg RTC_Format_BIN:  Binary data format
   *            @arg RTC_Format_BCD:  BCD data format
-  * @param  RTC_TimeStruct: pointer to a RTC_TimeTypeDef structure that contains
+  * @param  RTC_TimeStruct Pointer to a RTC_TimeTypeDef structure that contains
   *                        the time configuration information for the RTC.
-  * @retval status value:
+  * @return Status value:
   *          - 1: RTC Time register is configured
   *          - 0: RTC Time register is not configured
   */
@@ -424,13 +426,12 @@ u32 RTC_SetTime(u32 RTC_Format, RTC_TimeTypeDef *RTC_TimeStruct)
 
 /**
   * @brief  Get the RTC current Time.
-  * @param  RTC_Format: specifies the format of the returned parameters.
+  * @param  RTC_Format Specifies the format of the returned parameters.
   *          This parameter can be  one of the following values:
   *            @arg RTC_Format_BIN:  Binary data format
   *            @arg RTC_Format_BCD:  BCD data format
-  * @param  RTC_TimeStruct: pointer to a RTC_TimeTypeDef structure that will
+  * @param  RTC_TimeStruct Pointer to a RTC_TimeTypeDef structure that will
   *                        contain the returned current time configuration.
-  * @retval None
   */
 void RTC_GetTime(u32 RTC_Format, RTC_TimeTypeDef *RTC_TimeStruct)
 {
@@ -468,11 +469,9 @@ void RTC_GetTime(u32 RTC_Format, RTC_TimeTypeDef *RTC_TimeStruct)
 
 /**
   * @brief  Set the RTC current time for day and year.
-  * @param  RTC_TimeDay: specifies the day to be set
-  *         RTC_TimeYear: specifies the year to be set
-  * @note   param RTC_TimeDay starts from 0
-  * @note   param RTC_TimeYear starts from 1900
-  * @retval status value:
+  * @param  RTC_TimeDay Specifies the day to be set. Starts from 0.
+  * @param  RTC_TimeYear Specifies the year to be set. Starts from 1900.
+  * @return Status value:
   *          - 1: RTC Time day and year are configured
   *          - 0: RTC Time day and year are not configured
   */
@@ -522,7 +521,6 @@ u32 RTC_SetTimeDayYear(u32 RTC_TimeDay, u32 RTC_TimeYear)
 
 /**
   * @brief  Clear day over threshold pending interrupt.
-  * @retval None
   */
 void RTC_DayIntClear(void)
 {
@@ -559,8 +557,11 @@ void RTC_DayIntClear(void)
 
 /**
   * @brief  Enable or disable the RTC day over threshold interrupt.
-  * @param  NewState: new state of the RTC day over threshold interrupt.
+  * @param  NewState New state of the RTC day over threshold interrupt.
   *          This parameter can be: ENABLE or DISABLE.
+  * @return Status value:
+  *          - 1: success
+  *          - 0: fail
   */
 u32 RTC_DayIntCmd(u32 NewState)
 {
@@ -609,9 +610,9 @@ u32 RTC_DayIntCmd(u32 NewState)
 
 /**
   * @brief  Set the RTC day threshold.
-  * @param  DayThres: specifies the day threshold to be configured.
+  * @param  DayThres Specifies the day threshold to be configured.
   *          This parameter can be a value of @ref RTC_Day_Threshold.
-  * @retval status value:
+  * @return Status value:
   *          - 1: RTC day threshold is configured
   *          - 0: RTC day threshold is not configured
   */
@@ -660,7 +661,7 @@ u32 RTC_DayThresSet(u32 DayThres)
 
 /**
   * @brief  Get the RTC day threshold value in RTC_CR register.
-  * @retval RTC day threshold value
+  * @return RTC day threshold value.
   */
 u32 RTC_DayThresGet(void)
 {
@@ -677,13 +678,13 @@ u32 RTC_DayThresGet(void)
   * @brief  Set the specified RTC Alarm.
   * @note   The Alarm register can only be written when the corresponding Alarm
   *         is disabled (Use the RTC_AlarmCmd(DISABLE)).
-  * @param  RTC_Format: specifies the format of the returned parameters.
+  * @param  RTC_Format Specifies the format of the returned parameters.
   *          This parameter can be one of the following values:
   *            @arg RTC_Format_BIN: Binary data format
   *            @arg RTC_Format_BCD: BCD data format
-  * @param  RTC_AlarmStruct: pointer to a RTC_AlarmTypeDef structure that
+  * @param  RTC_AlarmStruct Pointer to a RTC_AlarmTypeDef structure that
   *                          contains the alarm configuration parameters.
-  * @retval status value:
+  * @return Status value:
   *          - 1: RTC Time Alarm is configured
   *          - 0: RTC Time Alarm is not configured
   */
@@ -788,9 +789,8 @@ u32 RTC_SetAlarm(u32 RTC_Format, RTC_AlarmTypeDef *RTC_AlarmStruct)
   * @brief  Fill each RTC_AlarmStruct member with its default value
   *         (Time = 00d:00h:00mn:20sec / Date = 1st day of the month/Mask =
   *         all fields are masked except Alarm Seconds field).
-  * @param  RTC_AlarmStruct: pointer to a @ref RTC_AlarmTypeDef structure which
+  * @param  RTC_AlarmStruct Pointer to a @ref RTC_AlarmTypeDef structure which
   *         will be initialized.
-  * @retval None
   */
 void RTC_AlarmStructInit(RTC_AlarmTypeDef *RTC_AlarmStruct)
 {
@@ -810,13 +810,12 @@ void RTC_AlarmStructInit(RTC_AlarmTypeDef *RTC_AlarmStruct)
 
 /**
   * @brief  Get the RTC Alarm value and masks.
-  * @param  RTC_Format: specifies the format of the output parameters.
+  * @param  RTC_Format Specifies the format of the output parameters.
   *          This parameter can be one of the following values:
   *            @arg RTC_Format_BIN: Binary data format
   *            @arg RTC_Format_BCD: BCD data format
-  * @param  RTC_AlarmStruct: pointer to a RTC_AlarmTypeDef structure that will
+  * @param  RTC_AlarmStruct Pointer to a RTC_AlarmTypeDef structure that will
   *                          contains the output alarm configuration values.
-  * @retval None
   */
 void RTC_GetAlarm(u32 RTC_Format, RTC_AlarmTypeDef *RTC_AlarmStruct)
 {
@@ -854,7 +853,7 @@ void RTC_GetAlarm(u32 RTC_Format, RTC_AlarmTypeDef *RTC_AlarmStruct)
 
 /**
   * @brief  Enable or disable the specified RTC Alarm.
-  * @param  NewState: new state of the specified alarm.
+  * @param  NewState New state of the specified alarm.
   *          This parameter can be: ENABLE or DISABLE.
   */
 void RTC_AlarmCmd(u32 NewState)
@@ -906,7 +905,6 @@ void RTC_AlarmCmd(u32 NewState)
 
 /**
   * @brief  Clear alarm pending interrupt.
-  * @retval None
   */
 void RTC_AlarmClear(void)
 {
@@ -950,11 +948,9 @@ void RTC_AlarmClear(void)
   *         By the time WUTE bit is synchronized, other control bits of
   *         wakeup timer has already been synchronized, because these
   *          bits are configure before WUTE bit.
-  * @param  None
-  * @retval status value:
+  * @return Status value:
   *          - 1: RTC Wakeup Timer registers are synchronised
   *          - 0: RTC Wakeup Timer registers are not synchronised
-  * @about 2 RTC clock
   */
 u32 RTC_WaitForWUTSynchro(void)
 {
@@ -999,9 +995,9 @@ u32 RTC_WaitForWUTSynchro(void)
   * @brief  Set the specified RTC Wakeup Timer.
   * @note   The Wakeup Timer register can only be written when the WakeupTimer
   *         is disabled (Use the RTC_WakeupTimerCmd(DISABLE)).
-  * @param  RTC_WakeupRange: wakeup time to be configured.
+  * @param  RTC_WakeupRange Wakeup time to be configured.
   *	This parameter can be a value from 0x1 to 0x1FF.
-  * @retval status value:
+  * @return Status value:
   *          - 1: RTC WakeupTimer is configured
   *          - 0: RTC WakeupTimer is not configured
   */
@@ -1054,8 +1050,7 @@ u32 RTC_SetWakeup(u32 RTC_WakeupRange)
 
 /**
   * @brief  Get the RTC Wakeup Timer value and masks.
-  * @param  none.
-  * @retval the wakeup time value.
+  * @return The wakeup time value.
   */
 u32 RTC_GetWakeup(void)
 {
@@ -1071,9 +1066,9 @@ u32 RTC_GetWakeup(void)
 
 /**
   * @brief  Enable or disable the specified RTC Alarm.
-  * @param  NewState: new state of the specified alarm.
+  * @param  NewState New state of the specified alarm.
   *          This parameter can be: ENABLE or DISABLE.
-  * @note: wakeup timer starts down counting after 3 to 4 seconds
+  * @note Wakeup timer starts down counting after 3 to 4 seconds
   */
 void RTC_WakeupCmd(u32 NewState)
 {
@@ -1122,7 +1117,6 @@ void RTC_WakeupCmd(u32 NewState)
 
 /**
   * @brief  Clear wakeup pending interrupt.
-  * @retval None
   */
 void RTC_WakeupClear(void)
 {
@@ -1156,16 +1150,18 @@ void RTC_WakeupClear(void)
 
 /**
   * @brief  Add or substract one hour from the current time.
-  * @param  RTC_DayLightSaving: the value of hour adjustment.
+  * @param  RTC_DayLightSaving The value of hour adjustment.
   *          This parameter can be one of the following values:
   *            @arg RTC_DayLightSaving_SUB1H: Substract one hour (winter time)
   *            @arg RTC_DayLightSaving_ADD1H: Add one hour (summer time)
-  * @param  RTC_StoreOperation: Specifies the value to be written in the BCK bit
+  * @param  RTC_StoreOperation Specifies the value to be written in the BCK bit
   *                            in CR register to store the operation.
   *          This parameter can be one of the following values:
   *            @arg RTC_StoreOperation_Reset: BCK Bit Reset
   *            @arg RTC_StoreOperation_Set: BCK Bit Set
-  * @retval None
+  * @return Status value:
+  *          - 1: success
+  *          - 0: fail
   */
 u32 RTC_DayLightSavingConfig(u32 RTC_DayLightSaving, u32 RTC_StoreOperation)
 {
@@ -1219,7 +1215,7 @@ u32 RTC_DayLightSavingConfig(u32 RTC_DayLightSaving, u32 RTC_StoreOperation)
 
 /**
   * @brief  Return the RTC Day Light Saving stored operation.
-  * @retval RTC Day Light Saving stored operation.
+  * @return RTC Day Light Saving stored operation.
   *          - RTC_StoreOperation_Reset
   *          - RTC_StoreOperation_Set
   */
@@ -1236,13 +1232,15 @@ u32 RTC_GetStoreOperation(void)
 
 /**
   * @brief  Configure the RTC output.
-  * @param  RTC_Output: Specifies which signal will be routed to the RTC output.
+  * @param  RTC_Output Specifies which signal will be routed to the RTC output.
   *          This parameter can be one of the following values:
   *            @arg RTC_Output_Disable: No output selected
   *            @arg RTC_Output_Alarm: signal of Alarm mapped to output
   *            @arg RTC_Output_clkspre: signal of clkspre mapped to output
   *            @arg RTC_Output_clkapre: signal of clkapre mapped to output
-  * @retval None
+  * @return Status value:
+  *          - 1: success
+  *          - 0: fail
   */
 u32 RTC_OutputConfig(u32 RTC_Output)
 {
@@ -1293,12 +1291,12 @@ u32 RTC_OutputConfig(u32 RTC_Output)
 
 /**
   * @brief  Configure the Coarse calibration parameters.
-  * @param  CalibSign: CalibSign specifies the sign of the coarse calibration value.
+  * @param  CalibSign CalibSign specifies the sign of the coarse calibration value.
   *          This parameter can be  one of the following values:
   *            @arg RTC_CalibSign_Positive: The value sign is positive
   *            @arg RTC_CalibSign_Negative: The value sign is negative
-  * @param  Value: value of coarse calibration expressed in ppm (coded on 7 bits).
-  * @param  CalibPeriod: Calibration period, Compensate DC clkapre cycles every (CALP+1) minutes (coded on 3 bits).
+  * @param  Value Value of coarse calibration expressed in ppm (coded on 7 bits).
+  * @param  CalibPeriod Calibration period, Compensate DC clkapre cycles every (CALP+1) minutes (coded on 3 bits).
   *   This parameter can be one of the following values:
   *		 @arg RTC_CalibPeriod_1MIN
   *		 @arg RTC_CalibPeriod_2MIN
@@ -1308,8 +1306,8 @@ u32 RTC_OutputConfig(u32 RTC_Output)
   *		 @arg RTC_CalibPeriod_6MIN
   *		 @arg RTC_CalibPeriod_7MIN
   *		 @arg RTC_CalibPeriod_8MIN
-  * @param  Calib_Enable: RTC_Calib_Disable or RTC_Calib_Enable .
-  * @retval status value:
+  * @param  Calib_Enable RTC_Calib_Disable or RTC_Calib_Enable .
+  * @return Status value:
   *          - 1: RTC Coarse calibration are initialized
   *          - 0: RTC Coarse calibration are not initialized
   */
@@ -1366,14 +1364,6 @@ u32 RTC_SmoothCalibConfig(u32 CalibSign, u32 Value, u32 CalibPeriod, u32 Calib_E
 	RTC->RTC_WPR = RTC_KEY(0xFF);
 
 	return status;
-}
-
-/**
-  * @brief  This function is meaningless, only for compatibility with Zephyr.
-  */
-void RTC_Enable(u8 NewState)
-{
-	UNUSED(NewState);
 }
 
 /**

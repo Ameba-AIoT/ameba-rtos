@@ -5,6 +5,7 @@
  */
 
 #include "ameba_soc.h"
+#include "ameba_v8m_backtrace.h"
 
 static const char *const TAG = "APP";
 extern void newlib_locks_init(void);
@@ -80,6 +81,8 @@ void app_start(void)
 	app_mpu_nocache_init();
 
 	/* NP can not assign non-cache region which is less than 512M */
+	PostFaultPatch_register(backtrace_post_patch_ameba);
+
 	main();
 }
 

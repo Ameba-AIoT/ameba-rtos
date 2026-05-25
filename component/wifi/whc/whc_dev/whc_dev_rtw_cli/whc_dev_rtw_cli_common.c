@@ -2,17 +2,18 @@
 #include "lwip/sys.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
-#include "whc_dev_rtw_cli_cmd_define.h"
-#include "whc_dev_rtw_cli_cmd_parse.h"
 
-void whc_rtw_cli_send_to_host(u32 cmd_category, u8 cmd_id,
+void whc_rtw_cli_send_to_host(u8 idx, u32 cmd_category, u8 cmd_id,
 							  u8 *user_data, u32 user_data_len)
 {
 	u8 *buf = NULL;
 	u8 *buf_p = NULL;
+	int len = 0;
 
-	//user data + cmd
-	buf = rtos_mem_zmalloc(user_data_len + 5);
+	//user data + cmd(cmd_c(4) + cmd_id(1) + idx(1))
+	len = user_data_len + 6;
+
+	buf = rtos_mem_zmalloc(len);
 	if (buf == NULL) {
 		RTK_LOGI(TAG_WLAN_INIC, "%s, alloc whc_rtw_cli_send_to_host fail\n", __FUNCTION__);
 		return;
@@ -23,13 +24,14 @@ void whc_rtw_cli_send_to_host(u32 cmd_category, u8 cmd_id,
 	buf_p += 4;
 	*buf_p = cmd_id;
 	buf_p += 1;
+	*buf_p = idx;
+	buf_p += 1;
 
 	if (user_data_len > 0) {
 		memcpy(buf_p, user_data, user_data_len);
 	}
 
-	//user data + cmd
-	whc_dev_api_send_to_host(buf, user_data_len + 5, NULL, 0);
+	whc_dev_api_send_to_host(buf, len, NULL, 0);
 
 	if (buf != NULL) {
 		rtos_mem_free((void *)buf);
@@ -187,7 +189,7 @@ void whc_rtw_cli_join_status_hdl(u8 *evt_info)
 	p += n;
 	rem -= n;
 
-	whc_rtw_cli_send_to_host(WHC_WPA_OPS_EVENT, WHC_WPA_OPS_EVENT_JOIN_STATUS,
+	whc_rtw_cli_send_to_host(0, WHC_WPA_OPS_EVENT, WHC_WPA_OPS_EVENT_JOIN_STATUS,
 							 p_event_status, REPORT_EVENT_JOIN_STATUS_LEN);
 
 	if (p_event_status != NULL) {

@@ -376,6 +376,13 @@ static int usbd_hid_receive(void)
 	return usbd_ep_receive(hid->dev, &hid->ep_intr_out);
 }
 
+/**
+  * @brief  Handle EP0 Rx Ready event
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @retval Status
+  */
 static int hid_handle_ep0_data_out(usb_dev_t *dev)
 {
 	int ret = HAL_ERR_HW;
@@ -391,6 +398,15 @@ static int hid_handle_ep0_data_out(usb_dev_t *dev)
 	return ret;
 }
 
+/**
+  * @brief  Data received on non-control Out endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  ep_addr: endpoint address
+  * @param  len: received data length
+  * @retval Status
+  */
 static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_hid_t *hid = &hid_device;
@@ -410,6 +426,14 @@ static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 #endif // USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 
+/**
+  * @brief  Handle HID specific CTRL requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  req: USB CTRL requests
+  * @retval Status
+  */
 static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	usbd_hid_t *hid = &hid_device;
@@ -533,6 +557,14 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	return ret;
 }
 
+/**
+  * @brief  Set HID class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  config: USB configuration index
+  * @retval Status
+  */
 static int hid_set_config(usb_dev_t *dev, u8 config)
 {
 	int ret = HAL_OK;
@@ -566,6 +598,14 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 	return ret;
 }
 
+/**
+  * @brief  Clear HID class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  config: USB configuration index
+  * @retval Status
+  */
 static int hid_clear_config(usb_dev_t *dev, u8 config)
 {
 	int ret = HAL_OK;
@@ -586,6 +626,15 @@ static int hid_clear_config(usb_dev_t *dev, u8 config)
 	return ret;
 }
 
+/**
+  * @brief  Data sent on non-control IN endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  ep_addr: endpoint address
+  * @param  status: transfer status
+  * @retval Status
+  */
 static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_hid_t *hid = &hid_device;
@@ -607,6 +656,8 @@ static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 
 /**
   * @brief  Get descriptor callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
   * @param  buf: Poniter to Buffer
@@ -713,6 +764,8 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 
 /**
   * @brief  USB attach status change
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  old_status: USB old attach status
   * @param  status: USB USB attach status

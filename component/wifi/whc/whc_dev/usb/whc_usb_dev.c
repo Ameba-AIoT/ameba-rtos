@@ -9,8 +9,6 @@ struct whc_usb_priv_t whc_usb_priv = {0};
 
 u8 wifi_whc_usb_status = WIFI_WHC_USB_STATUS_ACTIVE;
 
-void rtw_pending_q_resume(void);
-
 static usbd_config_t whc_usb_wifi_cfg = {
 	.speed = WIFI_WHC_USB_SPEED,
 	.isr_priority = 4,
@@ -47,7 +45,6 @@ static int whc_usb_dev_rx_done_cb(usbd_inic_ep_t *out_ep, u32 len)
 
 static void whc_usb_dev_irq_task(void)
 {
-	u8 *buf = NULL;
 	struct sk_buff *new_skb = NULL;
 	struct sk_buff *skb_rcv = NULL;
 	struct whc_msg_info *msg_info;
@@ -61,13 +58,7 @@ static void whc_usb_dev_irq_task(void)
 		if (whc_usb_priv.irq_info.txdone != 0) {
 			whc_txbuf = (struct whc_txbuf_info_t *)whc_usb_priv.tx_buf;
 
-			if (whc_txbuf->is_skb) {
-				dev_kfree_skb_any((struct sk_buff *) whc_txbuf->ptr);
-			} else {
-				rtos_mem_free((u8 *)whc_txbuf->ptr);
-			}
-
-			rtos_mem_free((u8 *)whc_txbuf);
+			whc_dev_free_txbuf(whc_txbuf);
 			whc_usb_priv.irq_info.txdone = 0;  // clear tx done flag
 			whc_usb_priv.tx_buf = NULL;
 			rtos_sema_give(whc_usb_priv.usb_tx_sema);
@@ -83,31 +74,23 @@ static void whc_usb_dev_irq_task(void)
 			event = *(u32 *)skb_rcv->data;
 
 			if (event != WHC_WIFI_EVT_XIMT_PKTS) {
-				buf = rtos_mem_zmalloc(len);
-
-				if (buf == NULL) {
-					RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
-				} else {
-					memcpy(buf, skb_rcv->data, len);
-					whc_usb_dev_event_int_hdl(buf, NULL);
-				}
-				/* buf will be freed later*/
+				whc_dev_dispatch_event_copy(skb_rcv->data, len);
 				new_skb = skb_rcv;  // not need to malloc new skb
 			} else {
-				if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 2) ||
+				if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 3) ||
 					((new_skb = dev_alloc_skb(USB_BUFSZ, USB_SKB_RSVD_LEN)) == NULL)) {
-					whc_usb_priv.irq_info.wait_xmit_skb = 1;
-					break;
+					new_skb = skb_rcv;
+					goto drop_pkt;
 				}
 				msg_info = (struct whc_msg_info *)skb_rcv->data;
 				skb_reserve(skb_rcv, sizeof(struct whc_msg_info));
 
 				skb_put(skb_rcv, msg_info->data_len);
 				skb_rcv->dev = (void *)((u32)msg_info->wlan_idx);
-				whc_usb_dev_event_int_hdl((u8 *)msg_info, skb_rcv);
+				whc_dev_event_int_hdl((u8 *)msg_info, skb_rcv);
 				whc_usb_priv.rx_skb_addr[EPNUM_TO_IDX(ep_num)] = (u8 *)new_skb;
 			}
-
+drop_pkt:
 			whc_usb_priv.irq_info.rxdone_epnum[whc_usb_priv.irq_info.task_ridx] = 0;
 			whc_usb_priv.irq_info.len[whc_usb_priv.irq_info.task_ridx] = 0;
 			whc_usb_priv.irq_info.task_ridx = (whc_usb_priv.irq_info.task_ridx + 1) % (WIFI_WHC_USB_BULKOUT_EP_NUM);
@@ -327,68 +310,6 @@ void whc_usb_dev_init(void)
 	RTK_LOGI(TAG_WLAN_INIC, "USB device init done!\n");
 }
 
-
-/**
- * @brief  to haddle the inic message interrupt. If the message queue is
- * 	initialized, it will enqueue the message and wake up the message
- * 	task to haddle the message. If last send message cannot be done, I will
- * 	set pending for next sending message.
- * @param  rxbuf: rx data.
- * @return none.
- */
-void whc_usb_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
-{
-	u32 event = *(u32 *)rxbuf;
-#ifdef CONFIG_WHC_WIFI_API_PATH
-	struct whc_api_info *ret_msg;
-#endif
-#ifdef CONFIG_WHC_CMD_PATH
-	struct whc_cmd_path_hdr *hdr;
-#endif
-
-	switch (event) {
-#ifdef CONFIG_WHC_WIFI_API_PATH
-	case WHC_WIFI_EVT_API_CALL:
-		event_priv.rx_api_msg = rxbuf;
-		rtos_sema_give(event_priv.task_wake_sema);
-
-		break;
-	case WHC_WIFI_EVT_API_RETURN:
-		if (event_priv.b_waiting_for_ret) {
-			event_priv.rx_ret_msg = rxbuf;
-			rtos_sema_give(event_priv.api_ret_sema);
-		} else {
-			ret_msg = (struct whc_api_info *)rxbuf;
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_WARN, "too late to receive API ret, ID: 0x%x!\n", ret_msg->api_id);
-
-			/* free rx buffer */
-			rtos_mem_free((u8 *)ret_msg);
-		}
-
-		break;
-#endif
-	case WHC_WIFI_EVT_XIMT_PKTS:
-		/* put the inic message to the queue */
-		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == RTK_FAIL) {
-			break;
-		}
-		/* wakeup task */
-		rtw_single_thread_wakeup();
-
-		break;
-	default:
-#ifdef CONFIG_WHC_CMD_PATH
-		hdr = (struct whc_cmd_path_hdr *)rxbuf;
-		whc_dev_pkt_rx_to_user(rxbuf + sizeof(struct whc_cmd_path_hdr), rxbuf, hdr->len);
-#else
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Event(%ld) unknown!\n", event);
-#endif
-		break;
-	}
-
-}
-
-
 /*wifi recv pkt, send to host*/
 void whc_usb_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb)
 {
@@ -438,62 +359,3 @@ u8 whc_usb_dev_bus_is_idle(void)
 	return TRUE;
 }
 
-u8 whc_usb_dev_tx_path_avail(void)
-{
-	u32 delay_cnt = 0;
-	u8 ret = FALSE;
-
-	while (delay_cnt++ < 100) {
-		/* wait for skb allocatable */
-		if ((skbpriv.skb_buff_num - skbpriv.skb_buff_used) > 3) {
-			ret = TRUE;
-			break;
-		} else {
-			rtos_time_delay_ms(1);
-		}
-	}
-
-	return ret;
-}
-
-void whc_usb_dev_trigger_rx_handle(void)
-{
-	if (whc_usb_priv.irq_info.wait_xmit_skb == 1) {
-		whc_usb_priv.irq_info.wait_xmit_skb = 0;
-		rtos_sema_give(whc_usb_priv.usb_irq_sema);
-	}
-}
-
-/**
-* @brief  send buf for cmd path
-* @param  buf: data buf to be sent.
-* @param  len: data len to be sent.
-* @return none.
-*/
-void whc_usb_dev_send_cmd_data(u8 *data, u32 len)
-{
-	u8 *buf = NULL, *txbuf = NULL;
-	u32 event = *(u32 *)data;
-	u32 txsize = len;
-	struct whc_cmd_path_hdr *hdr = NULL;
-
-	if (event != WHC_WIFI_EVT_RECV_PKTS) {
-		txsize += sizeof(struct whc_cmd_path_hdr);
-	}
-	buf = rtos_mem_zmalloc(txsize + DEV_DMA_ALIGN);
-	if (!buf) {
-		return;
-	}
-
-	txbuf = (u8 *)N_BYTE_ALIGMENT((u32)buf, DEV_DMA_ALIGN);
-	if (event != WHC_WIFI_EVT_RECV_PKTS) {
-		hdr = (struct whc_cmd_path_hdr *)txbuf;
-		hdr->event = WHC_WIFI_EVT_BRIDGE;
-		hdr->len = len;
-		memcpy(txbuf + sizeof(struct whc_cmd_path_hdr), data, len);
-	} else {
-		memcpy(txbuf, data, len);
-	}
-
-	whc_usb_dev_send(txbuf, txsize, buf, 0);
-}

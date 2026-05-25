@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup ETHERNET
+/** @defgroup ETHERNET ETHERNET
   * @brief ETHERNET driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -2239,6 +2240,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -2252,6 +2254,10 @@ extern "C" {
 /* ========================================================================== */
 struct eth_phy_dev;
 struct eth_mdio_ops;
+
+/** @defgroup ETHERNET_Exported_Constants ETHERNET Exported Constants
+  * @{
+  */
 
 /* ========================================================================== */
 /*                       2. Packet & Frame Constants                          */
@@ -2538,6 +2544,13 @@ struct eth_mdio_ops;
 #define FEMAC_RX_W3_SHIFT_EXT_TTL   5
 #define FEMAC_RX_W3_MASK_EXT_TTL    ((u32)0x1F << FEMAC_RX_W3_SHIFT_EXT_TTL)
 
+/** @}
+  */
+
+/** @addtogroup ETHERNET_Exported_Types ETHERNET Exported Types
+  * @{
+  */
+
 /**
  * @brief Tx Descriptor Structure
  */
@@ -2559,6 +2572,12 @@ typedef struct {
 	uint32_t dw3;    /* Reserved */
 } ETH_RxDescTypeDef;
 
+/** @}
+  */
+
+/** @addtogroup ETHERNET_Exported_Constants ETHERNET Exported Constants
+  * @{
+  */
 
 /* ========================================================================== */
 /*                       4. Hardware & Timing Constants                       */
@@ -2572,6 +2591,12 @@ typedef struct {
 #define WAIT_SMI_READ_DONE          1
 #define WAIT_RMII_LINKUP            2
 
+/** @}
+  */
+
+/** @addtogroup ETHERNET_Exported_Types ETHERNET Exported Types
+  * @{
+  */
 
 /* ========================================================================== */
 /*                       5. Configuration Enums                               */
@@ -2867,6 +2892,9 @@ enum eth_sys_hw_ctrl_e {
 	ETH_SYS_HW_LX_EN,
 };
 
+/** @}
+  */
+
 /* ========================================================================== */
 /*                   6. Modern Driver Interface (MDIO)                        */
 /* ========================================================================== */
@@ -2933,6 +2961,14 @@ struct eth_mdio_ops {
 	int (*mdio_write_c45)(uint8_t phy_addr, uint8_t dev_addr, uint16_t reg_addr, uint16_t data);
 
 };
+/**
+ * @endcond INTERNAL_HIDDEN end
+ */
+
+/** @addtogroup ETHERNET_Exported_Types ETHERNET Exported Types
+  * @{
+  */
+
 /* ========================================================================== */
 /*                            PHY Driver Operations                           */
 /* ========================================================================== */
@@ -3088,9 +3124,9 @@ typedef void (*eth_task_yield)(void);
 typedef struct {
 	struct eth_phy_dev  *phy_dev;  /* Now this works because eth_phy_dev is defined above */
 	/* MAC Core & Flow Control */
-	union {
+	union eth_mac_config_u {
 		uint32_t Raw;
-		struct {
+		struct eth_mac_config_bits {
 			/* Basic Config */
 			uint32_t MacMode        : 1; /* enum eth_mode          (1 bits) */
 			uint32_t Loopback       : 2; /* enum eth_loopback_mode (2 bits) */
@@ -3110,9 +3146,9 @@ typedef struct {
 		} Bits;
 	} MacConfig;
 	/* VLAN Config */
-	union {
+	union eth_vlan_config_u {
 		uint32_t Raw;
-		struct {
+		struct eth_vlan_config_bits {
 			/* Hardware Action */
 			uint32_t RxStrip        : 1; /* enum eth_vlan_strip     (1 bit)  */
 			uint32_t TxTagType      : 1; /* enum eth_vlan_type      (1 bit)  */
@@ -3213,9 +3249,17 @@ struct ETH_LoopBackTest {
 	uint32_t Enable         : 1;  /* Bit 15:   Function Enale */
 	uint32_t Reserved       : 16;
 };
+
+/** @}
+  */
+
 /* ========================================================================== */
 /*                       8. HAL Function Prototypes                           */
 /* ========================================================================== */
+
+/** @defgroup ETHERNET_Exported_Functions ETHERNET Exported Functions
+  * @{
+  */
 
 /* Initialization & Control */
 void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PHY_Dev);
@@ -3242,6 +3286,9 @@ int Ethernet_ReadPhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t *data);
 int Ethernet_WritePhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t data);
 u32 Ethernet_GetLinkStatus(void);
 void Ethernet_GetSpeedDuplex(void);
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }

@@ -8,8 +8,7 @@
 struct xmit_priv_t dev_xmit_priv;
 
 /**
- * @brief  rx task to handle the rx data, get the data from the rx queue and
- * 	send to upper layer.
+ * @brief  xmit handler to get frames from xmit queue and forward to WIFI stack
  * @param  none.
  * @return none.
  */
@@ -132,34 +131,60 @@ void whc_dev_netif_rx(int idx)
 	whc_dev_send((u8 *)msg_info, sizeof(struct whc_msg_info) + pad_len + skb->len, skb, 1);
 }
 
-void whc_dev_send_flowctrl_cmd(u8 fc_state)
+void whc_dev_flowctrl(u8 *status, u8 send_cmd)
 {
 	struct whc_msg_info *msg_info = NULL;
+	u8 status_change = 0;
 
-	msg_info = rtos_mem_zmalloc(sizeof(struct whc_msg_info));
-	if ((u32)msg_info % DEV_DMA_ALIGN) {
-		RTK_LOGE(TAG_WLAN_INIC, "msg_info not 4-bytes aligned!\n");
-		return;
+	if (skbpriv.skb_buff_num - skbpriv.skb_buff_used < WHC_FLOWCTRL_LOW_THRESHOLD) {
+		if (!dev_xmit_priv.flowctrl_en) {
+			dev_xmit_priv.flowctrl_en = 1;
+			status_change = 1;
+		}
+	} else if (skbpriv.skb_buff_num - skbpriv.skb_buff_used > WHC_FLOWCTRL_HIGH_THRESHOLD) {
+		if (dev_xmit_priv.flowctrl_en) {
+			dev_xmit_priv.flowctrl_en = 0;
+			status_change = 1;
+		}
 	}
 
-	msg_info->event = WHC_WIFI_EVT_FLOWCTRL;
-	msg_info->wlan_idx = 0;
-	msg_info->data_len = 0;
-	msg_info->pad_len = 0;
-	msg_info->flow_ctrl_en = fc_state;
+	if (status) {
+		*status = dev_xmit_priv.flowctrl_en;
+	}
 
-	/* send msg_info + pad + rx_pkt_data(skb->data, skb->len) */
-	whc_dev_send((u8 *)msg_info, sizeof(struct whc_msg_info), msg_info, 0);
+	if (send_cmd && status_change) {
+		msg_info = rtos_mem_zmalloc(sizeof(struct whc_msg_info));
+		msg_info->event = WHC_WIFI_EVT_FLOWCTRL;
+		msg_info->wlan_idx = 0;
+		msg_info->data_len = 0;
+		msg_info->pad_len = 0;
+		msg_info->flow_ctrl_en = dev_xmit_priv.flowctrl_en;
+
+		/* send msg_info + pad + rx_pkt_data(skb->data, skb->len) */
+		whc_dev_send((u8 *)msg_info, sizeof(struct whc_msg_info), msg_info, 0);
+	}
 }
 
-void whc_dev_tx_done(int idx)
+void whc_dev_dispatch_event_copy(const u8 *src, u32 size)
 {
-	(void)idx;
+	u8 *buf = rtos_mem_zmalloc(size);
+
+	if (!buf) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s: no mem\n", __func__);
+		return;
+	}
+	memcpy(buf, src, size);
+	whc_dev_event_int_hdl(buf, NULL);
 }
 
-void whc_dev_trigger_rx(void)
+void whc_dev_free_txbuf(struct whc_txbuf_info_t *buf_info)
 {
-	whc_dev_trigger_rx_handle();
+	if (buf_info->is_skb) {
+		dev_kfree_skb_any((struct sk_buff *)buf_info->ptr);
+	} else {
+		rtos_mem_free((u8 *)buf_info->ptr);
+	}
+	rtos_mem_free((u8 *)buf_info);
 }
 
 struct whc_txbuf_info_t *whc_dev_alloc_buf_info(u8 *buf, u16 len, void *alloc_buf, u8 is_skb)
@@ -180,3 +205,59 @@ struct whc_txbuf_info_t *whc_dev_alloc_buf_info(u8 *buf, u16 len, void *alloc_bu
 
 	return buf_info;
 }
+
+/**
+ * @brief  to haddle the inic message interrupt. If the message queue is
+ * 	initialized, it will enqueue the message and wake up the message
+ * 	task to haddle the message. If last send message cannot be done, I will
+ * 	set pending for next sending message.
+ * @param  rxbuf: rx data.
+ * @return none.
+ */
+void whc_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
+{
+	u32 event = *(u32 *)rxbuf;
+	struct whc_api_info *ret_msg;
+
+	(void) ret_msg;
+
+	switch (event) {
+	case WHC_WIFI_EVT_XIMT_PKTS:
+		/* put the inic message to the queue */
+		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == RTK_FAIL) {
+			break;
+		}
+		/* wakeup task */
+		rtw_single_thread_wakeup();
+		break;
+#ifdef CONFIG_WHC_WIFI_API_PATH
+	case WHC_WIFI_EVT_API_CALL:
+		event_priv.rx_api_msg = rxbuf;
+		rtos_sema_give(event_priv.task_wake_sema);
+
+		break;
+	case WHC_WIFI_EVT_API_RETURN:
+		if (event_priv.b_waiting_for_ret) {
+			event_priv.rx_ret_msg = rxbuf;
+			rtos_sema_give(event_priv.api_ret_sema);
+		} else {
+			ret_msg = (struct whc_api_info *)rxbuf;
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_WARN, "API ret TO, ID: 0x%x!\n", ret_msg->api_id);
+
+			/* free rx buffer */
+			rtos_mem_free((u8 *)ret_msg);
+		}
+
+		break;
+#endif
+#ifdef CONFIG_WHC_CMD_PATH
+	case WHC_WIFI_EVT_CMD:
+		whc_dev_cmd_rx_to_user(rxbuf);
+		break;
+#endif
+	default:
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Event(%x) unknown!\n", event);
+	}
+
+}
+

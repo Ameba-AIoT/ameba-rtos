@@ -2,16 +2,6 @@
 #include "lwip/sys.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
-#include "whc_dev_rtw_cli_cmd_define.h"
-#include "whc_dev_rtw_cli_cmd_parse.h"
-
-#ifdef CONFIG_WPA_LITE
-#include "whc_wpa_lite_app.h"
-#endif
-
-#ifdef CONFIG_WPA_STD
-#include "whc_wpas_std_app.h"
-#endif
 
 extern struct whc_cmd_path_priv whc_cmdpath_data;
 
@@ -144,7 +134,7 @@ int whc_wpa_ops_cli_cmd_parse(char *ptr, u8 *buf)
 }
 
 
-void whc_dev_pkt_rx_to_user_task(void)
+void whc_dev_cmd_rx_to_user_task(void)
 {
 	u8 *ptr = NULL;
 	u32 event = 0;
@@ -153,7 +143,7 @@ void whc_dev_pkt_rx_to_user_task(void)
 	while (1) {
 		rtos_sema_take(whc_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);
 		if (whc_cmdpath_data.whc_rx_msg) {
-			ptr = whc_cmdpath_data.whc_rx_msg;
+			ptr = whc_cmdpath_data.whc_rx_msg + sizeof(struct whc_cmd_path_hdr);
 			event = *(u32 *)ptr;
 			ptr += 4;
 
@@ -194,9 +184,8 @@ void whc_dev_pkt_rx_to_user_task(void)
 				rtos_mem_free(buf);
 			}
 
-			rtos_mem_free(whc_cmdpath_data.whc_rx_msg_free_addr);
+			rtos_mem_free(whc_cmdpath_data.whc_rx_msg);
 			whc_cmdpath_data.whc_rx_msg = NULL;
-			whc_cmdpath_data.whc_rx_msg_free_addr = NULL;
 		}
 	}
 

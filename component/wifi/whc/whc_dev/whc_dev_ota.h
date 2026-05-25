@@ -11,8 +11,6 @@
 #ifndef __WHC_DEV_OTA_H__
 #define __WHC_DEV_OTA_H__
 
-#include "whc_dev.h"
-
 #define WHC_OTA_START		0
 #define WHC_OTA_READ		1
 #define WHC_OTA_WRITE		2
@@ -59,7 +57,7 @@ struct whc_dev_ota_readbuf {
 	u8 *buf;
 };
 
-void whc_dev_api_ota_process(u8 *buf);
+void whc_dev_ota_process(u8 *buf);
 int whc_dev_ota_read(u8 *data, int data_len);
 int whc_dev_ota_close(void);
 

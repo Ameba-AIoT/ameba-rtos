@@ -26,7 +26,6 @@ extern CACHEWRR_TypeDef CACHEWRR_Def[];
 extern u8 Boot_AP_Enbale;
 extern u8 Boot_MemSwr_Only;
 extern SocClk_Info_TypeDef SocClk_Info[];
-extern u8 Boot_Agg_En;
 
 #ifdef __cplusplus
 }

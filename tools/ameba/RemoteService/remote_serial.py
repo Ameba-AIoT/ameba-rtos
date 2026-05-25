@@ -14,7 +14,7 @@ from version_manager import *
 
 
 class RemoteSerial:
-    def __init__(self, logger, remote_server: str, remote_port: int, port: str, baudrate: int = 9600):
+    def __init__(self, logger, remote_server: str, remote_port: int, port: str, baudrate: int = 9600, source: str = "unknown"):
         """
         Initialize remote serial proxy
         :param logger: logger object (external input, for unified log format)
@@ -22,12 +22,14 @@ class RemoteSerial:
         :param remote_port: remote serial server port
         :param port: remote serial port name (e.g. "COM3", "/dev/ttyUSB0")
         :param baudrate: serial baud rate
+        :param source: caller identity, "flash" or "monitor"
         """
         self.logger = logger
         self.remote_server = remote_server
         self.remote_port = remote_port
         self.port = port
         self.baudrate = baudrate
+        self.source = source
 
         # Core state variables
         self.tcp_socket: Optional[socket.socket] = None
@@ -151,6 +153,11 @@ class RemoteSerial:
                     f"Success: {msg.get('success')}, message: {msg.get('message', '无')}"
                 )
                 self.response_event.set()
+            elif msg_type == "port_preempted":
+                self.logger.warning(
+                    f"[RemoteSerial][{self.port}] Port preempted by flash, stopping."
+                )
+                self.is_open = False
             else:
                 self.logger.warning(f"[RemoteSerial][{self.port}] Unknown message type: {msg_type}, message: {msg_str[:200]}...")
 
@@ -234,6 +241,7 @@ class RemoteSerial:
             open_cmd = {
                 "type": "open_port",
                 "port": self.port,
+                "source": self.source,
                 "options": {
                     "baudRate": self.baudrate,
                     "dataBits": 8,

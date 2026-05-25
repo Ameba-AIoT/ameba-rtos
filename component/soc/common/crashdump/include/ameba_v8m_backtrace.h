@@ -15,6 +15,10 @@ void do_stack_backtrace(uint32_t *pc, uint32_t *sp, uint32_t *lr);
 void get_call_stack(void **caller, uint32_t max_level);
 void set_backtrace_depth(uint32_t backtrace_depth);
 
+#if defined(CONFIG_CRASHDUMP_IN_ROM)
+uint32_t backtrace_post_patch_ameba(uint32_t *MSP, uint32_t lr, uint32_t fault_id);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

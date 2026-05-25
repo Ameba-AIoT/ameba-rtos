@@ -248,7 +248,7 @@ void BOOT_WakeFromPG(void)
 #ifndef CONFIG_TRUSTZONE
 	PRAM_START_FUNCTION ImageEntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
 #else
-	PRAM_START_FUNCTION ImageEntryFun = (PRAM_START_FUNCTION)__km4tz_tz_entry_start__;
+	PRAM_START_FUNCTION ImageEntryFun = (PRAM_START_FUNCTION)__image3_entry_func__;
 #endif
 
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
@@ -294,23 +294,21 @@ void BOOT_SWD_SwCtrl(void)
 
 void BOOT_Log_Init(void)
 {
-	u32 ChipType;
-
 	/* close AGG function for auto test */
-	if (Boot_Agg_En) {
-		ChipType = SYSCFG_CHIPType_Get();
-		if (!(ChipType == CHIP_TYPE_PALADIUM)) {
-			/* open loguart agg function */
-			LOGUART_WaitTxComplete();
-			LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, DISABLE);
-			LOGUART_AGGCmd(LOGUART_DEV, ENABLE);
-			LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, ENABLE);
-		}
-	} else {
+#ifdef CONFIG_LOGUART_AGG_EN
+	u32 ChipType = SYSCFG_CHIPType_Get();
+	if (!(ChipType == CHIP_TYPE_PALADIUM)) {
+		/* open loguart agg function */
 		LOGUART_WaitTxComplete();
-		/* counter src is xtal40MHz when agg_en is 0 */
-		LOGUART_AGGSetTimeOut(LOGUART_DEV, 0x3FFF);
+		LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, DISABLE);
+		LOGUART_AGGCmd(LOGUART_DEV, ENABLE);
+		LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_1, ENABLE);
 	}
+#else
+	LOGUART_WaitTxComplete();
+	/* counter src is xtal40MHz when agg_en is 0 */
+	LOGUART_AGGSetTimeOut(LOGUART_DEV, 0x3FFF);
+#endif
 
 	/* open NP log */
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_2, ENABLE);
@@ -452,7 +450,7 @@ __weak void BOOT_Image1(void)
 #ifndef CONFIG_TRUSTZONE
 	BOOT_ClearMSP_NsStart((u32)Image2EntryFun->RamStartFun);
 #else
-	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__km4tz_tz_entry_start__;
+	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__image3_entry_func__;
 	BOOT_ClearMSP_NsStart((u32)Image3EntryFun->RamStartFun);
 #endif
 

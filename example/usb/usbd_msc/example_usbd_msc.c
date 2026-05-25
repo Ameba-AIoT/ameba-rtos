@@ -97,14 +97,25 @@ usbd_msc_hotplug_type_t msc_hotplug_ongoing_type;
 #endif
 /* Private functions ---------------------------------------------------------*/
 
+/**
+  * @brief  Handle MSC attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void msc_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USB status change: %d -> %d\n", old_status, status);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_MSC_USB_HOTPLUG
 	msc_usb_attach_status = status;
 	if (msc_hotplug_ongoing_type != USBD_MSC_SD_HOTPLUG) {
 		rtos_sema_give(msc_usb_status_changed_sema);
 	}
+#else
+	UNUSED(status);
 #endif
 }
 

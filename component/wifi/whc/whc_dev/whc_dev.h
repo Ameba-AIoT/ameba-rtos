@@ -37,6 +37,18 @@
 
 #ifdef CONFIG_WHC_CMD_PATH
 #include "whc_dev_app.h"
+#include "whc_dev_ota.h"
+#endif
+
+#if defined(CONFIG_RTW_CLI)
+#include "whc_dev_rtw_cli/whc_dev_rtw_cli_cmd_define.h"
+#include "whc_dev_rtw_cli/whc_dev_rtw_cli_cmd_parse.h"
+#ifdef CONFIG_WPA_LITE
+#include "whc_dev_rtw_cli/wpa_lite_intf/whc_wpa_lite_app.h"
+#endif
+#ifdef CONFIG_WPA_STD
+#include "whc_dev_rtw_cli/wpas_std_intf/whc_wpas_std_app.h"
+#endif
 #endif
 
 #if defined(CONFIG_NAN)

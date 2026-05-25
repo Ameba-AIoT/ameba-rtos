@@ -93,7 +93,7 @@ extern "C" {
   *****************************************************************************************
   *      To use the GDMA, the following steps are mandatory:
   *
-  *      1. Allocate a GDMA channel using the follwoing function.
+  *      1. Allocate a GDMA channel using the following function.
   *			GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
   *
   *			@note  This function also includes the following operation:
@@ -121,11 +121,12 @@ extern "C" {
   * @{
   */
 
-/** @defgroup GDMA
+/** @defgroup GDMA GDMA
   * @brief  GDMA driver modules
   * @{
   */
 
+/// @cond
 /* Registers Definitions ----------------------------------------------------------------*/
 /** @defgroup GDMA_Register_Definitions GDMA Register Definitions
   * @{
@@ -290,6 +291,11 @@ typedef struct {
 	__IO uint32_t DmaTestReg;		      /*!< DMA Test Register,					Address offset: 0x03B0 */
 	uint32_t RSVD29;
 } GDMA_TypeDef;
+/// @endcond
+
+/** @addtogroup GDMA_Exported_Types GDMA Exported Types
+  * @{
+  */
 
 /**
   * @brief  GDMA Init Structure Definition
@@ -302,8 +308,8 @@ typedef struct {
 					                         This parameter can be the value 0 ~ 7.*/
 
 	u8	GDMA_ChPrior;           /*!< Specifies the GDMA channel priority.
-					                         This parameter can be the value 0 ~ 7, while 0 for highset priority.
-	                                 If more than one channel are set with the same priroty value,
+					                         This parameter can be the value 0 ~ 7, while 0 for highest priority.
+	                                 If more than one channel are set with the same priority value,
 							                     the channel with small channel number index has higher priority.*/
 
 	u32	GDMA_DIR;	              /*!< Specifies the GDMA transmission direction.
@@ -338,17 +344,15 @@ typedef struct {
 					                         GDMA will move data here from source address space*/
 
 	u32	GDMA_BlockSize; 	      /*!< Specifies the GDMA block transfer size.
-	                                 This parameter can be a value between 0 ~ 65535.
 					                         @note This parameter indicates the total number of single transactions for
-					                         every block transfer. The field for this parameter locates in CTLx[47:32], so
-					                         the value of this parameter must be no more than 0xffff.*/
+					                         every block transfer.*/
 
 	u32	GDMA_IsrType;           /*!< Specifies the GDMA interrupt types.
 					                         This parameter can be a value of @ref GDMA_Interrupt_Type */
 
 	u32	GDMA_ReloadSrc;         /*!< Specifies the GDMA automatic source reload .
 					                         This parameter can be the 0 or 1.(0 : disable / 1 : enable).
-					                         @note if this value is setted 1, source address register can be automatically
+					                         @note if this value is set to 1, source address register can be automatically
 					                         reloaded from its initial value at the end of every block for multi-block transfers.
 					                         this parameter is only valid in multi block transmission mode*/
 
@@ -398,7 +402,7 @@ typedef struct {
 	                                 in block chaining. This parameter stores the DMA control parameters of the current block transfer.*/
 
 	u32 CtlxUp;                 /*!< Specifies the GDMA channel x Control Register(CTRx) High 32 bit value field of a block descriptor
-	                                 in block chaining.This parameter stores the DMA control parameters of the current block transfer.*/
+	                                 in block chaining. This parameter stores the DMA control parameters of the current block transfer.*/
 
 	u32 Temp;                   /*!< Specifies the reserved GDMA channel x register value field of a block descriptor in block chaining.*/
 
@@ -409,7 +413,7 @@ typedef struct {
   */
 struct GDMA_CH_LLI {
 	GDMA_CH_LLI_ELE	 LliEle;    /*!< Specifies the GDMA Linked List Item Element structure field of Linked List Item
-	                                 in block chaining.This structure variable stores the necessary parameters of a block descriptor.*/
+	                                 in block chaining. This structure variable stores the necessary parameters of a block descriptor.*/
 
 	u32 BlockSize;              /*!< Specifies the GDMA block size of one block in block chaining.
 					                         This parameter indicates the block size of the current block transfer.*/
@@ -422,12 +426,18 @@ struct GDMA_CH_LLI {
   * @}
   */
 
+/// @cond
+/**
+  * @}
+  */
+/// @endcond
+
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup GDMA_Exported_Constants GDMA Exported Constants
   * @{
   */
 
-/** @defgroup GDMA_Index_Channel_Definition
+/** @defgroup GDMA_Index_Channel_Definition GDMA Index Channel Definition
   * @{
   */
 #define MAX_GDMA_INDX		            (0)
@@ -439,7 +449,7 @@ struct GDMA_CH_LLI {
   * @}
   */
 
-/** @defgroup GDMA_Data_Transfer_Direction
+/** @defgroup GDMA_Data_Transfer_Direction GDMA Data Transfer Direction
   * @{
   */
 #define TTFCMemToMem						    ((u32)0x00000000)
@@ -463,7 +473,7 @@ struct GDMA_CH_LLI {
   * @}
   */
 
-/** @defgroup GDMA_Data_Size
+/** @defgroup GDMA_Data_Size GDMA Data Size
   * @{
   */
 #define TrWidthOneByte						  ((u32)0x00000000)
@@ -476,7 +486,7 @@ struct GDMA_CH_LLI {
   * @}
   */
 
-/** @defgroup GDMA_Msize
+/** @defgroup GDMA_Msize GDMA Msize
   * @{
   */
 #define MsizeOne							      ((u32)0x00000000)
@@ -491,7 +501,7 @@ struct GDMA_CH_LLI {
   * @}
   */
 
-/** @defgroup GDMA_Increment_Mode
+/** @defgroup GDMA_Increment_Mode GDMA Increment Mode
   * @{
   */
 #define IncType								      ((u32)0x00000000)
@@ -504,7 +514,7 @@ struct GDMA_CH_LLI {
   * @}
   */
 
-/** @defgroup GDMA_Interrupt_Type
+/** @defgroup GDMA_Interrupt_Type GDMA Interrupt Type
   * @{
   */
 #define TransferType							  ((u32)0x00000001)
@@ -518,7 +528,7 @@ struct GDMA_CH_LLI {
   * @}
   */
 
-/** @defgroup GDMA_Reload_Definition
+/** @defgroup GDMA_Reload_Definition GDMA Reload Definition
   * @{
   */
 #define CLEAN_RELOAD_SRC					  ((u32)0x00000001)
@@ -528,7 +538,7 @@ struct GDMA_CH_LLI {
   * @}
   */
 
-/** @defgroup GDMA0_HS_HandShake_Interface
+/** @defgroup GDMA0_HS_HandShake_Interface GDMA0 HS HandShake Interface
   * @{
   */
 #define GDMA_HANDSHAKE_INTERFACE_UART0_TX		  (0)

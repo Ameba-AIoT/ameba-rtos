@@ -10,7 +10,7 @@
 uint32_t cur_device_id = 0;
 
 static uint32_t wakelock     = DEFAULT_WAKELOCK;
-static uint32_t sleep_type = SLEEP_PG; /* 0 is power gate, 1 is clock gate */
+static uint8_t sleep_type = SLEEP_PG; /* 0 is power gate, 1 is clock gate */
 SLEEP_ParamDef sleep_param ALIGNMTO(32); /* cacheline aligned for lp & np */
 
 static uint32_t deepwakelock     = DEFAULT_DEEP_WAKELOCK;

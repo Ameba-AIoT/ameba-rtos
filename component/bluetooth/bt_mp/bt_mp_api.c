@@ -6,7 +6,7 @@
 
 #include "bt_debug.h"
 #include <platform_autoconf.h>
-#if defined(CONFIG_SDN_BT) && CONFIG_SDN_BT
+#ifdef CONFIG_BT_SDN
 #include "sdn_host.h"
 #include "hci_common.h"
 #else
@@ -23,7 +23,7 @@
 void rtk_bt_mp_power_on(void)
 {
 	hci_set_mp(true);
-#if defined(CONFIG_SDN_BT) && CONFIG_SDN_BT
+#ifdef CONFIG_BT_SDN
 	sdn_host_enable(SDN_INTF_BT);
 	sdn_host_set_mp(true);
 #else
@@ -45,7 +45,7 @@ void rtk_bt_mp_power_on(void)
  */
 void rtk_bt_mp_power_off(void)
 {
-#if defined(CONFIG_SDN_BT) && CONFIG_SDN_BT
+#ifdef CONFIG_BT_SDN
 	sdn_host_set_mp(false);
 	sdn_host_disable(SDN_INTF_BT);
 #else

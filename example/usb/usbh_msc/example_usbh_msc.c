@@ -197,7 +197,7 @@ next_file:
 		/* open test file */
 		res = f_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 		if (res) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to open file: TEST%d.DAT\n", filenum);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to open file: TEST%ld.DAT\n", filenum);
 			goto exit_unmount;
 		}
 

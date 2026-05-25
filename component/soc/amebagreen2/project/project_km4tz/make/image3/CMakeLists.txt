@@ -2,7 +2,6 @@ ameba_add_image(target_img3 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image3_all.bin)
 # Use variable c_CURRENT_IMAGE to represent full image target name
 
 ###############################  ADD COMPONENT  ###################################
-
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_FWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_IMG3_DIR})
@@ -10,6 +9,8 @@ ameba_add_subdirectory(${c_CMPT_OS_DIR})
 ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_SOC_DIR}/verification)
+ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
+ameba_add_subdirectory(${c_CMPT_USRCFG_DIR})
 ameba_add_subdirectory_if(CONFIG_MATTER_SECURE_EN
     ${EXAMPLEDIR}/project/cmake/component/matter_secure lib_matter_secure
 )
@@ -65,25 +66,25 @@ add_custom_command(
     COMMAND ${CMAKE_OBJDUMP} -j .gnu.sgstubs -d ${c_SDK_IMAGE_TARGET_DIR}/target_img3.axf > ${c_SDK_IMAGE_TARGET_DIR}/cmse_implib.asm
 
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_MCU_PROJECT_NAME}_image3_all.bin"
-    COMMAND ${CMAKE_OBJCOPY}  -j .ram_image3.text -j .ram_image3.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin
-    COMMAND ${CMAKE_OBJCOPY}  -j .gnu.sgstubs -j .ram_image3.entry -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc.bin
+    COMMAND ${CMAKE_OBJCOPY}  -j .ram_image3.entry -j .gnu.sgstubs -j .ram_image3.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s.bin
+    COMMAND ${CMAKE_OBJCOPY}  -j .ram_image3.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin
 
     COMMAND ${CMAKE_COMMAND} -E echo "========== Image manipulating start =========="
+    COMMAND ${op_PAD} -i ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s.bin -l 32
     COMMAND ${op_PAD} -i ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin -l 32
-    COMMAND ${op_PAD} -i ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc.bin -l 32
 
+    COMMAND ${op_PREPEND_HEADER}
+        -o ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s_prepend.bin
+        -i ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s.bin
+        -s __image3_entry_func__
+        -m ${c_SDK_IMAGE_TARGET_DIR}/target_img3.map
     COMMAND ${op_PREPEND_HEADER}
         -o ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s_prepend.bin
         -i ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin
-        -s __ram_image3_text_start__
-        -m ${c_SDK_IMAGE_TARGET_DIR}/target_img3.map
-    COMMAND ${op_PREPEND_HEADER}
-        -o ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc_prepend.bin
-        -i ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc.bin
-        -s __ram_image3_nsc_start__
+        -s __ram_image3_data_start__
         -m ${c_SDK_IMAGE_TARGET_DIR}/target_img3.map
 
-    COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc_prepend.bin > ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image3_all.bin
+    COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s_prepend.bin > ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image3_all.bin
 
     DEPENDS ${c_CURRENT_IMAGE}
     WORKING_DIRECTORY ${c_SOC_PROJECT_DIR}

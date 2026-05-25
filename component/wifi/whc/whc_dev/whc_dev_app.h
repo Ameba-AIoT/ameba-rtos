@@ -1,11 +1,9 @@
 #ifndef _WHC_DEV_APP_H_
 #define _WHC_DEV_APP_H_
 
-#include "whc_dev.h"
-#include "whc_dev_ota.h"
-
-#define WHC_WIFI_TEST 0xffa5a5a5
-
+/* type */
+#define WHC_WIFI_TEST  0x1
+/* subtype */
 #define WHC_WIFI_TEST_GET_MAC_ADDR   0x1
 #define WHC_WIFI_TEST_GET_IP         0x2
 #define WHC_WIFI_TEST_SET_READY      0x3
@@ -43,10 +41,6 @@ struct whc_cmd_path_priv {
 	rtos_mutex_t whc_user_blocksend_mutex;
 	rtos_sema_t whc_user_blocksend_sema;
 	u8 *whc_rx_msg;
-	/* spi add header before msg, different from others */
-	/* real addr needed for mem free */
-	u8 *whc_rx_msg_free_addr;
-	u16 rx_msg_size;
 
 	u8 *ret;
 	u32 ret_len;

@@ -188,4 +188,17 @@ void rtos_task_set_time_out_state(rtos_time_out_t *const p_rtos_time_out);
  */
 int rtos_task_check_for_time_out(rtos_time_out_t *const p_rtos_time_out, uint32_t *p_ms_to_wait);
 
+/**
+ * @brief  Get idle task handle.
+ * @retval Idle task handle pointer.
+ */
+rtos_task_t rtos_task_handle_get_idle(uint32_t coreID);
+
+/**
+ * @brief  Set task affinity to bind the task to a specific core.
+ * @param  p_handle: Task handle.
+ * @param  coreID: the core ID to bind.
+ */
+void rtos_task_set_affinity(rtos_task_t p_handle, uint32_t coreID);
+
 #endif

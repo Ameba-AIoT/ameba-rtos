@@ -64,6 +64,7 @@
   * @endverbatim
   */
 
+/// @cond
 /* AUTO_GEN_START */
 
 /** @addtogroup Ameba_Periph_Driver
@@ -636,6 +637,7 @@ typedef struct {
 } I2C_TypeDef;
 /** @} */
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -749,7 +751,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup I2C_Addr_Mode
+/** @defgroup I2C_Addr_Mode I2C Address Mode
   * @{
   */
 #define I2C_ADDR_7BIT			((u32)0x00000000)
@@ -760,7 +762,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup I2C_Speed_Mode
+/** @defgroup I2C_Speed_Mode I2C Speed Mode
   * @{
   */
 #define I2C_SS_MODE				((u32)0x00000001)
@@ -773,7 +775,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup I2C_Role_Mode
+/** @defgroup I2C_Role_Mode I2C Role Mode
   * @{
   */
 #define I2C_SLAVE_MODE			((u32)0x00000000)
@@ -782,14 +784,14 @@ typedef struct {
   * @}
   */
 
-/** @defgroup I2C_Clock
+/** @defgroup I2C_Clock I2C Clock
   * @{
   */
 #define I2C0_1_IPCLK			40000000
 /**
   * @}
   */
-/** @defgroup I2C_DMA_Mode_definitions
+/** @defgroup I2C_DMA_Mode_definitions I2C DMA Mode
   * @{
   */
 #define I2C_DMA_LEGACY			((u32)0x00000000)
@@ -801,7 +803,7 @@ typedef struct {
 /**
   * @}
   */
-/** @defgroup I2C_DMA_DATA_LENGTH
+/** @defgroup I2C_DMA_DATA_LENGTH I2C DMA Data Length
   * @{
   */
 #define IS_I2C_DMA_DATA_LEN(LENGTH)   ((LENGTH) <= 0xFFFF)
@@ -809,15 +811,42 @@ typedef struct {
   * @}
   */
 
+/** @defgroup I2C_Timing_Mode I2C Timing Mode
+  * @{
+  */
+#define I2C_SS_MIN_SCL_HTIME		4600    //the unit is ns.
+#define I2C_SS_MIN_SCL_LTIME		5400    //the unit is ns.
+
+#define I2C_FS_MIN_SCL_HTIME		800     //the unit is ns.
+#define I2C_FS_MIN_SCL_LTIME		1700    //the unit is ns.
+
+#define I2C_HS_MIN_SCL_HTIME_100    100      //the unit is ns, with bus loading = 100pf, Maximum supported speed=3.4M
+#define I2C_HS_MIN_SCL_LTIME_100    194     //the unit is ns., with bus loading = 100pf, Maximum supported speed=3.4M
+
+#define I2C_HS_MIN_SCL_HTIME_400    200     //the unit is ns, with bus loading = 400pf, Maximum supported speed=1.7M
+#define I2C_HS_MIN_SCL_LTIME_400    388     //the unit is ns, with bus loading = 400pf, Maximum supported speed=1.7M
+/**
+  * @}
+  */
+
+/** @defgroup I2C_BUF_DEPTH_Mode I2C Buffer Depth Mode
+  * @{
+  */
+
+#define I2C_TRX_BUFFER_DEPTH 16
+/**
+  * @}
+  */
 
 /**
   * @}
   */
 
-
+/// @cond
 /** @} */
 
 /** @} */
+/// @endcond
 
 /* I2C_Exported_Normal_Functions I2C Exported Normal Functions */
 _LONG_CALL_ void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct);
@@ -827,7 +856,7 @@ _LONG_CALL_ u32 I2C_GetRawINT(I2C_TypeDef *I2Cx);
 _LONG_CALL_ u32 I2C_GetINT(I2C_TypeDef *I2Cx);
 _LONG_CALL_ u8 I2C_CheckFlagState(I2C_TypeDef *I2Cx, u32 I2C_FLAG);
 _LONG_CALL_ void I2C_INTConfig(I2C_TypeDef *I2Cx, u32 I2C_IT, u32 NewState);
-_LONG_CALL_ u32 I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrAddr);
+_LONG_CALL_ u32 I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrBit);
 _LONG_CALL_ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk);
 _LONG_CALL_ void I2C_StructInit(I2C_InitTypeDef *I2C_InitStruct);
 _LONG_CALL_ u8 I2C_ReceiveData(I2C_TypeDef *I2Cx);
@@ -844,7 +873,6 @@ _LONG_CALL_ u32 I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Write
 _LONG_CALL_ void I2C_SetSlaveAddress(I2C_TypeDef *I2Cx, u16 Address);
 _LONG_CALL_ u32 I2C_MasterWriteInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
 _LONG_CALL_ u32 I2C_MasterReadInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
-_LONG_CALL_ void I2C_MasterISRHandle(I2C_IntModeCtrl *I2C_SemStruct);
 _LONG_CALL_ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms);
 _LONG_CALL_ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms);
 _LONG_CALL_ s32 I2C_MasterSendNullData_TimeOut(I2C_TypeDef *I2Cx, int address, u32 timeout_ms);
@@ -854,11 +882,6 @@ _LONG_CALL_ u32 I2C_ISRHandle(I2C_IntModeCtrl *I2C_SemStruct);
 _LONG_CALL_ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
 _LONG_CALL_ u32 I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
 _LONG_CALL_ void I2C_SlaveSend(I2C_TypeDef *I2Cx, u8 Data);
-
-/* I2C_Exported_PowerSave_Functions I2C Exported PowerSave Functions */
-_LONG_CALL_ void I2C_Sleep_Cmd(I2C_TypeDef *I2Cx, u32 NewStatus);
-_LONG_CALL_ void I2C_WakeUp(I2C_TypeDef *I2Cx);
-
 
 /* I2C_Exported_DMA_Functions I2C Exported DMA Functions */
 _LONG_CALL_ void I2C_DMAControl(I2C_TypeDef *I2Cx, u32 DmaCtrl, u8 NewState);
@@ -870,26 +893,11 @@ _LONG_CALL_ bool I2C_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, vo
 
 /* Other Definitions --------------------------------------------------------*/
 #if 1
-//I2C Timing Parameters
-#define I2C_SS_MIN_SCL_HTIME		4600    //the unit is ns.
-#define I2C_SS_MIN_SCL_LTIME		5400    //the unit is ns.
-
-#define I2C_FS_MIN_SCL_HTIME		800     //the unit is ns.
-#define I2C_FS_MIN_SCL_LTIME		1700    //the unit is ns.
-
-#define I2C_HS_MIN_SCL_HTIME_100    100      //the unit is ns, with bus loading = 100pf, Maximum supported speed=3.4M
-#define I2C_HS_MIN_SCL_LTIME_100    194     //the unit is ns., with bus loading = 100pf, Maximum supported speed=3.4M
-
-#define I2C_HS_MIN_SCL_HTIME_400    200     //the unit is ns, with bus loading = 400pf, Maximum supported speed=1.7M
-#define I2C_HS_MIN_SCL_LTIME_400    388     //the unit is ns, with bus loading = 400pf, Maximum supported speed=1.7M
-
-
 extern const I2C_DevTable I2C_DEV_TABLE[2];
 extern u32 I2C_SLAVEWRITE_PATCH;
 extern u32 IC_FS_SCL_HCNT_TRIM;
 extern u32 IC_FS_SCL_LCNT_TRIM;
 #define I2C_EARLY_RX_DONE 			-1
-#define I2C_TRX_BUFFER_DEPTH 16
 #define I2C_POLL_TIMEOUT_MS  1000
 #define I2C_POLL_DELAY_US    2
 

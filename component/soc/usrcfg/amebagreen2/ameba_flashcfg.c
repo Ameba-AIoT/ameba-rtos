@@ -56,19 +56,22 @@ const FlashInfo_TypeDef Flash_AVL[] = {
 	{0xFF,			0xFFFFFFFF,		FlashClassNone,		0xFFFFFFFF,		NULL},
 };
 
-FlashLayoutInfo_TypeDef Flash_Layout[] = {
+#ifndef CALC_END_ADDR
+#define CALC_END_ADDR(offset, size) ((size) == 0 ? (offset) : (offset) + (size) - 1)
+#endif
+
+const FlashLayoutInfo_TypeDef Flash_Layout[] = {
 	/* Region_Type, [StartAddr, EndAddr] */
-	{IMG_BOOT,      0x08000000, 0x0803FFFF}, //Boot Manifest(4K) + AP Bootloader(76K)
+	{IMG_BOOT,      CONFIG_FLASH_BOOT_OFFSET, CALC_END_ADDR(CONFIG_FLASH_BOOT_OFFSET, CONFIG_FLASH_BOOT_SIZE)}, //Boot Manifest(4K) + KM4 Bootloader(252K)
 	//Users should modify below according to their own memory
-	{IMG_APP_OTA1,  0x08040000, 0x081BFFFF}, //Certificate(4K) + Manifest(4K) + AP Application OTA1 + RDP IMG OTA1
-
-	{IMG_BOOT_OTA2, 0x081C0000, 0x081FFFFF}, //Boot Manifest(4K) + AP Bootloader(76K) OTA
-	{IMG_APP_OTA2,  0x08200000, 0x0837FFFF}, //Certificate(4K) + Manifest(4K) + AP Application OTA2 + RDP IMG OTA2
-
-	{VFS1,          0x083C0000, 0x0843FFFF}, //VFS region 1 (512K)
-	{VFS2,          0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
-	{USER,          0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
-
+	{IMG_APP_OTA1,  CONFIG_FLASH_OTA1_OFFSET, CALC_END_ADDR(CONFIG_FLASH_OTA1_OFFSET, CONFIG_FLASH_OTA1_SIZE)}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 Application OTA1 + RDP IMG OTA1
+	// + AP IMG OTA1
+	{IMG_BOOT_OTA2, CONFIG_FLASH_BOOT_OTA2_OFFSET, CALC_END_ADDR(CONFIG_FLASH_BOOT_OTA2_OFFSET, CONFIG_FLASH_BOOT_OTA2_SIZE)}, //Boot Manifest(4K) + KM4 Bootloader(252K) OTA
+	{IMG_APP_OTA2,  CONFIG_FLASH_OTA2_OFFSET, CALC_END_ADDR(CONFIG_FLASH_OTA2_OFFSET, CONFIG_FLASH_OTA2_SIZE)}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 Application OTA2 + RDP IMG OTA2
+	// + AP IMG OTA2
+	{VFS1,          CONFIG_FLASH_VFS1_OFFSET, CALC_END_ADDR(CONFIG_FLASH_VFS1_OFFSET, CONFIG_FLASH_VFS1_SIZE)}, //VFS region 1 (512K)
+	{VFS2,          CONFIG_FLASH_VFS2_OFFSET, CALC_END_ADDR(CONFIG_FLASH_VFS2_OFFSET, CONFIG_FLASH_VFS2_SIZE)}, //VFS region 2
+	{USER,          CONFIG_FLASH_USER_OFFSET, CALC_END_ADDR(CONFIG_FLASH_USER_OFFSET, CONFIG_FLASH_USER_SIZE)}, //reserve for user
 	/* End */
 	{0xFF,          0xFFFFFFFF, 0xFFFFFFFF},
 };
@@ -306,7 +309,7 @@ FlashInfo_TypeDef *data_flash_get_chip_info(u32 flash_id)
 void flash_get_layout_info(u32 type, u32 *start, u32 *end)
 {
 	u32 i = 0;
-	FlashLayoutInfo_TypeDef *pLayout = Flash_Layout;
+	const FlashLayoutInfo_TypeDef *pLayout = Flash_Layout;
 
 	while (pLayout[i].region_type != 0xFF) {
 		if (pLayout[i].region_type == type) {
@@ -325,7 +328,7 @@ void flash_get_layout_info(u32 type, u32 *start, u32 *end)
 void flash_get_layout_info_by_addr(u32 addr, u32 *start, u32 *end)
 {
 	u32 i = 0;
-	FlashLayoutInfo_TypeDef *pLayout = Flash_Layout;
+	const FlashLayoutInfo_TypeDef *pLayout = Flash_Layout;
 
 	while (pLayout[i].region_type != 0xFF) {
 		if (addr >= pLayout[i].start_addr && addr <= pLayout[i].end_addr) {

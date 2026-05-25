@@ -232,6 +232,8 @@
 typedef struct {
 	/**
 	 * @brief Callback invoked when USB status change. See @ref usbd_attach_status_t.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @details Called upon connection state changed for hot-plug support (e.g. do reinitialization on host disconnection)
 	 * @param[in] old_status: Previous status of USB device.
 	 * @param[in] status: Current status of USB device.
@@ -239,6 +241,8 @@ typedef struct {
 	void (*status_changed)(u8 old_status, u8 status);    /**< Called upon USB attach status changes for application to support hot-plug events. */
 	/**
 	 * @brief Called in the `set_config` callback of @ref usbd_class_driver_t to notifies application layer that the class driver becomes operational.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @return None
 	 */
 	int (* set_config)(void);
