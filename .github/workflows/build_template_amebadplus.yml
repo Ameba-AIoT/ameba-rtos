@@ -61,6 +61,7 @@ jobs:
     - name: Compile
       run: |
         cd amebadplus_gcc_project
+        make toolchain URL=second_source
         make all
         cd -
     - name: Upload artifacts

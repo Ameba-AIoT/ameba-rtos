@@ -76,6 +76,7 @@ jobs:
     - name: Compile
       run: |
         cd amebalite_gcc_project
+        make toolchain URL=second_source
         make all
         cd -
     - name: Upload artifacts
