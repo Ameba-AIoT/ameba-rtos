@@ -33,7 +33,7 @@
 
 /**
   * @brief  Configure the selected pin as GPIO.
-  * @param  pin: PinName according to pinmux spec.
+  * @param  pin PinName according to pinmux spec.
   * @return Selected pin with GPIO function.
   */
 uint32_t gpio_set(PinName pin)
@@ -50,9 +50,8 @@ uint32_t gpio_set(PinName pin)
 
 /**
   * @brief  Initialize the GPIO device, including mode, direction and pull control registers.
-  * @param  obj: GPIO object defined in application software.
-  * @param  pin: PinName according to pinmux spec.
-  * @retval none
+  * @param  obj GPIO object defined in application software.
+  * @param  pin PinName according to pinmux spec.
   */
 void gpio_init(gpio_t *obj, PinName pin)
 {
@@ -76,19 +75,18 @@ void gpio_init(gpio_t *obj, PinName pin)
 
 /**
   * @brief  Set GPIO mode, including pullnone, pulldown and pullup.
-  * @param  obj: GPIO object defined in application software.
-  * @param  mode: This parameter can be one of the following values:
+  * @param  obj GPIO object defined in application software.
+  * @param  mode This parameter can be one of the following values:
   *	  @arg PullNone: HighZ, user can input high or low with this pin.
   *	  @arg PullDown: Pull down.
   *	  @arg PullUp: Pull up.
-  * @retval none
   */
 void gpio_mode(gpio_t *obj, PinMode mode)
 {
 	u32 GPIO_PuPd;
 
 	switch (mode) {
-	case PullNone:/* No driver -> Input & High Impendance */
+	case PullNone:/* No driver -> Input & High Impedance */
 		GPIO_PuPd = GPIO_PuPd_NOPULL;
 		break;
 
@@ -110,11 +108,10 @@ void gpio_mode(gpio_t *obj, PinMode mode)
 
 /**
   * @brief  Set GPIO direction, including input and output.
-  * @param  obj: GPIO object defined in application software.
-  * @param  direction: This parameter can be one of the following values:
+  * @param  obj GPIO object defined in application software.
+  * @param  direction This parameter can be one of the following values:
   *	  @arg PIN_INPUT: The pin is set as input.
   *	  @arg PIN_OUTPUT: The pin is set as output.
-  * @retval none
   */
 void gpio_dir(gpio_t *obj, PinDirection direction)
 {
@@ -129,11 +126,10 @@ void gpio_dir(gpio_t *obj, PinDirection direction)
 
 /**
   * @brief  Change GPIO direction.
-  * @param  obj: GPIO object defined in application software.
-  * @param  direction: This parameter can be one of the following values:
+  * @param  obj GPIO object defined in application software.
+  * @param  direction This parameter can be one of the following values:
   *	  @arg  PIN_INPUT: The pin is changed to input.
   *	  @arg  PIN_OUTPUT: The pin is changed to output.
-  * @retval none
   * @note It is the same with function gpio_dir();
   */
 void gpio_change_dir(gpio_t *obj, PinDirection direction)
@@ -143,12 +139,11 @@ void gpio_change_dir(gpio_t *obj, PinDirection direction)
 
 /**
   * @brief  Set output value of the selected gpio pin.
-  * @param  obj: GPIO object defined in application software.
-  * @param  value: The value to be written to the selected pin.
+  * @param  obj GPIO object defined in application software.
+  * @param  value The value to be written to the selected pin.
   * 	This parameter can be one of the following values:
   *	  @arg 0: Set selected pin to low.
   *	  @arg 1: Set selected pin to high.
-  * @retval none
   */
 void gpio_write(gpio_t *obj, int value)
 {
@@ -159,12 +154,11 @@ void gpio_write(gpio_t *obj, int value)
 
 /**
   * @brief  Set output value of the selected gpio pin.
-  * @param  obj: GPIO object defined in application software.
-  * @param  value: The value to be written to the selected pin.
+  * @param  obj GPIO object defined in application software.
+  * @param  value The value to be written to the selected pin.
   * 	This parameter can be one of the following values:
   *	  @arg 0: Set selected pin to low.
   *	  @arg 1: Set selected pin to high.
-  * @retval none
   * @note It is the same with function gpio_write();
   */
 void gpio_direct_write(gpio_t *obj, bool value)
@@ -174,10 +168,10 @@ void gpio_direct_write(gpio_t *obj, bool value)
 
 /**
   * @brief  Read value of the specified gpio pin.
-  * @param  obj: GPIO object defined in application software.
+  * @param  obj GPIO object defined in application software.
   * @return State of the specified gpio pin. It can be one of the following values:
-  * @retval 0: Pin state is low.
-  * @retval 1: Pin state is high.
+  *         - 0: Pin state is low.
+  *         - 1: Pin state is high.
   */
 int gpio_read(gpio_t *obj)
 {
@@ -188,12 +182,11 @@ int gpio_read(gpio_t *obj)
 
 /**
   * @brief  Set pull type of the selected pin, including pullnone, pulldown and pullup.
-  * @param  obj: GPIO object defined in application software.
-  * @param  pull_type: This parameter can be one of the following values:
+  * @param  obj GPIO object defined in application software.
+  * @param  pull_type This parameter can be one of the following values:
   *	  @arg PullNone: HighZ, user can input high or low with this pin.
   *	  @arg PullDown: Pull down.
   *	  @arg PullUp: Pull up.
-  * @retval none
   * @note It is the same with function gpio_mode();
   */
 void gpio_pull_ctrl(gpio_t *obj, PinMode pull_type)
@@ -201,7 +194,7 @@ void gpio_pull_ctrl(gpio_t *obj, PinMode pull_type)
 	u32 GPIO_PuPd;
 
 	switch (pull_type) {
-	case PullNone:/* No driver -> Input & High Impendance */
+	case PullNone:/* No driver -> Input & High Impedance */
 		GPIO_PuPd = GPIO_PuPd_NOPULL;
 		break;
 
@@ -223,8 +216,7 @@ void gpio_pull_ctrl(gpio_t *obj, PinMode pull_type)
 
 /**
   * @brief  Deinitialize the GPIO device, including mode, direction and pull control registers.
-  * @param  obj: GPIO object defined in application software.
-  * @retval none
+  * @param  obj GPIO object defined in application software.
   */
 void gpio_deinit(gpio_t *obj)
 {

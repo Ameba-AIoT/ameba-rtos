@@ -15,7 +15,7 @@ struct GPIO_IrqContext GPIO_IrqTable[GPIO_IRQ_TABLE_MAX_NUM] = {0};
   * @{
   */
 
-/** @defgroup GPIO
+/** @defgroup GPIO GPIO
 * @brief GPIO driver modules
 * @{
 */
@@ -27,8 +27,8 @@ struct GPIO_IrqContext GPIO_IrqTable[GPIO_IRQ_TABLE_MAX_NUM] = {0};
 
 /**
   * @brief  The common GPIO interrupt handler
-  * @param  pData: the data pointer from the registered IRQ handler
-  * @retval None
+  * @param  pData The data pointer from the registered IRQ handler
+  * @return 0 on success, 0xFFFFFFFF on error
   */
 u32 GPIO_INTHandler(void *pData)
 {
@@ -83,12 +83,11 @@ u32 GPIO_INTHandler(void *pData)
 }
 
 /**
-  * @brief  To register a user interrupt handler for a specified pin
-  * @param  GPIO_Pin: GPIO pin num from PinName.
-  * @param  IrqHandler: The IRQ handler to be assigned to the specified pin
-  * @param  IrqData: The pointer will be pass the the IRQ handler
+  * @brief  Register a user interrupt handler for a specified pin
+  * @param  GPIO_Pin GPIO pin num from PinName.
+  * @param  IrqHandler The IRQ handler to be assigned to the specified pin
+  * @param  IrqData The pointer will be passed to the IRQ handler
   *
-  * @retval None
   */
 void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData)
 {
@@ -102,7 +101,7 @@ void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData)
 		}
 	}
 
-	/* step2: find an idle entry when the the GPIO_Pin hasn't owned one entry */
+	/* step2: find an idle entry when the GPIO_Pin hasn't owned one entry */
 	if (idx == GPIO_IRQ_TABLE_MAX_NUM) {
 		for (idx = 0; idx < GPIO_IRQ_TABLE_MAX_NUM; idx++) {
 			if ((GPIO_IrqTable[idx].IrqIdleEntryFlag) != GPIO_IRQ_ENTRY_USED_MAGIC_NUMBER) {
@@ -125,9 +124,8 @@ void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData)
 }
 
 /**
-  * @brief  To Unregister a user interrupt handler for a specified pin
-  *
-  * @retval None
+  * @brief  Unregister a user interrupt handler for a specified pin
+  * @param  GPIO_Pin GPIO pin num from PinName.
   */
 void GPIO_UserUnRegIrq(u32 GPIO_Pin)
 {

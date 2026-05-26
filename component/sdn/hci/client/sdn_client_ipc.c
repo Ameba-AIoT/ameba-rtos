@@ -28,14 +28,13 @@ void sdn_c2h(struct sdn_data_buf *pdata_buf)
 	IPC_MSG_STRUCT ipc_tx = {0};
 
 	if (pdata_buf) {
-		ipc_tx.msg_type = IPC_USER_POINT;
 		ipc_tx.msg = (uint32_t)pdata_buf->pmsg;
 		ipc_tx.msg_len = pdata_buf->len;
-		DCache_Clean(ipc_tx.msg, ipc_tx.msg_len);
-	} else { /* ctrl message is processed done. */
-		ipc_tx.msg_type = IPC_USER_DATA;
-		ipc_tx.msg_len = sizeof(uint32_t);
+	} else {
+		ipc_tx.msg = (uint32_t)NULL;
+		ipc_tx.msg_len = 0;
 	}
+	DCache_Clean(ipc_tx.msg, ipc_tx.msg_len);
 
 	ipc_send_message(IPC_NP_TO_AP, IPC_N2A_BT_VIRTUAL_HCI, &ipc_tx);
 }

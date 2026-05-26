@@ -77,7 +77,6 @@ void app_pmu_init(void)
 
 	SOCPS_SleepInit();
 	pmu_init_wakeup_timer();
-	pmu_set_sleep_type(SLEEP_PG);
 
 	/* only one core in fullmac mode */
 #if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))

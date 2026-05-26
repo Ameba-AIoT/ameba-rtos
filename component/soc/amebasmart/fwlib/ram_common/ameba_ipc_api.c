@@ -5,18 +5,24 @@
  */
 
 #include "ameba_soc.h"
+
+#define IS_SEND_TO_NP(MODE)		(((MODE) == IPC_LP_TO_NP) || \
+								((MODE) == IPC_AP_TO_NP))
+
+#define IS_SEND_TO_AP(MODE)		(((MODE) == IPC_LP_TO_AP) || \
+								((MODE) == IPC_NP_TO_AP))
+
+#define IS_SEND_TO_LP(MODE)		(((MODE) == IPC_NP_TO_LP) || \
+								((MODE) == IPC_AP_TO_LP))
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
 
-/** @defgroup IPC
+/** @defgroup IPC IPC
 * @brief IPC driver modules
 * @{
 */
 
-/** @defgroup IPC_Exported_Constants IPC Exported Constants
-  * @{
-  */
 static const char *const TAG = "IPC";
 rtos_sema_t ipc_Semaphore[IPC_TX_CHANNEL_NUM];
 
@@ -25,20 +31,57 @@ void (*ipc_delay_func)(uint32_t);
 void (*ipc_enter_func)(u32);
 void (*ipc_exit_func)(u32);
 
-/**@}*/
+/**
+  * @brief  Processing functions when the IPC channel is occupied
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @param  IPC_ChNum IPC_ChNum
+  * @return IPC_REQ_TIMEOUT or IPC_SEMA_TIMEOUT or RTK_SUCCESS
+  */
+u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
+{
+	u32 timeout;
+
+	timeout = 10000000;
+
+	if (CPU_InInterrupt() || (IPC_IrqHandler[IPC_ChNum] == NULL)) {
+		while (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
+			timeout--;
+			if (timeout == 0) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Request Timeout\r\n");
+				return IPC_REQ_TIMEOUT;
+			}
+		}
+	} else {
+		if (ipc_Semaphore[IPC_ChNum] == NULL) {
+			rtos_sema_create_binary(&ipc_Semaphore[IPC_ChNum]);
+		}
+
+		/* clear pending interrupt status */
+		IPC_INTClear(IPCx, IPC_ChNum);
+
+		/* if TX channel cleared during waiting then break waiting */
+		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
+			IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
+			while (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Get Semaphore Timeout\r\n");
+			}
+			IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
+		}
+	}
+	return 0;
+}
 
 /** @defgroup IPC_Exported_Functions IPC Exported Functions
   * @{
   */
 /**
-  * @brief  init ipc interrupt handler table.
-  * @param  where IPCx can be IPCLP_DEV for CM0, IPCNP_DEV for CM4, IPCAP_DEV for CA7.
-  * @retval   None
+  * @brief  Init ipc interrupt handler table.
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
   */
 void ipc_table_init(IPC_TypeDef *IPCx)
 {
 	u32 i;
-	u32 IPC_Dir;
+	IPC_Direction_Mode IPC_Dir;
 	u32 IPC_ChNum;
 	u32 IPC_GroupShift;
 	u32 IPC_ChShift;
@@ -103,9 +146,9 @@ void ipc_table_init(IPC_TypeDef *IPCx)
 
 /**
   * @brief  The common IPC Tx interrupt handler
-  * @param  Data: the data pointer to IPCx
-  * @param  IrqStatus: Value of IPC_ISR
-  * @param  ChanNum: ChanNum
+  * @param  Data The data pointer to IPCx
+  * @param  IrqStatus Value of IPC_ISR
+  * @param  ChanNum ChanNum
   */
 void IPC_TXHandler(void *Data, u32 IrqStatus, u32 ChanNum)
 {
@@ -123,66 +166,18 @@ void IPC_TXHandler(void *Data, u32 IrqStatus, u32 ChanNum)
 }
 
 /**
-  * @brief  Processing functions when the IPC channel is occupied
-  * @param  IPCx: where IPCx can be IPCKM0_DEV for KM0, IPCKM4_DEV for CM4.
-  * @param  IPC_ChNum: IPC_ChNum
-  * @retval IPC_REQ_TIMEOUT or IPC_SEMA_TIMEOUT or RTK_SUCCESS
+  * @brief  Exchange messages between cores.
+  * @param  IPC_Dir Specifies core to core direction. This parameter can be a value of @ref IPC_Direction_Mode.
+  * @param  IPC_ChNum The IPC channel number.
+  * @param  IPC_Msg Pointer to the message to be exchanged,and should not be stored in stack.
+  * @return IPC_SEND_SUCCESS or IPC_SEND_TIMEOUT
   */
-u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
-{
-	u32 timeout;
-
-	timeout = 10000000;
-
-	if (CPU_InInterrupt() || (IPC_IrqHandler[IPC_ChNum] == NULL)) {
-		while (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
-			timeout--;
-			if (timeout == 0) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Request Timeout\r\n");
-				return IPC_REQ_TIMEOUT;
-			}
-		}
-	} else {
-		if (ipc_Semaphore[IPC_ChNum] == NULL) {
-			rtos_sema_create_binary(&ipc_Semaphore[IPC_ChNum]);
-		}
-
-		/* clear pending interrupt status */
-		IPC_INTClear(IPCx, IPC_ChNum);
-
-		/* if TX channel cleared during waiting then break waiting */
-		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
-			IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
-			while (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != RTK_SUCCESS) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Get Semaphore Timeout\r\n");
-			}
-			IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
-		}
-	}
-	return 0;
-}
-
-/**
-  * @brief  exchange messages between KM0 and KM4.
-  * @param  IPC_Dir: Specifies core to core direction
-  *          This parameter can be one of the following values:
-  *		 		@arg IPC_LP_TO_NP: LP send request to NP
-  *		 		@arg IPC_LP_TO_AP: LP send request to NP
-  *		 		@arg IPC_NP_TO_LP: NP send request to LP
-  *		 		@arg IPC_NP_TO_AP: NP send request to AP
-  *		 		@arg IPC_AP_TO_LP: AP send request to LP
-  *		 		@arg IPC_AP_TO_NP: AP send request to NP
-  * @param  IPC_ChNum: the IPC channel number.
-  * @param  Message: pointer to the message to be exchanged,and should not stored in stack.
-  * @retval   None
-  */
-u32 ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
+u32 ipc_send_message(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
 {
 	u32 ipc_shift;
 
 	ipc_shift = 0;
 	/* Check the parameters */
-	assert_param(IS_IPC_DIR_MODE(IPC_Dir));
 	assert_param(IS_IPC_VALID_CHNUM(IPC_ChNum));
 
 	PIPC_MSG_STRUCT IPC_MSG = (PIPC_MSG_STRUCT)__km0_ipc_memory_start__;
@@ -234,20 +229,13 @@ u32 ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
 }
 
 /**
-  * @brief  get ipc message.
-  * @param  IPC_Dir: Specifies core to core direction
-  *          This parameter can be one of the following values:
-  *		 		@arg IPC_LP_TO_NP: LP send request to NP
-  *		 		@arg IPC_LP_TO_AP: LP send request to NP
-  *		 		@arg IPC_NP_TO_LP: NP send request to LP
-  *		 		@arg IPC_NP_TO_AP: NP send request to AP
-  *		 		@arg IPC_AP_TO_LP: AP send request to LP
-  *		 		@arg IPC_AP_TO_NP: AP send request to NP
-  * @param  IPC_ChNum: the IPC channel number.
-  * @retval  : pointer to the message to be exchanged.
-  * @note for data massage, corresponding data cache should be invalidate before access.
+  * @brief  Get ipc message.
+  * @param  IPC_Dir Specifies core to core direction. This parameter can be a value of @ref IPC_Direction_Mode.
+  * @param  IPC_ChNum The IPC channel number.
+  * @return Pointer to the message to be exchanged.
+  * @note For data message, corresponding data cache should be invalidate before access.
   */
-PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum)
+PIPC_MSG_STRUCT ipc_get_message(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum)
 {
 	PIPC_MSG_STRUCT IPC_MSG = NULL;
 	u32 msg_idx = IPC_TX_CHANNEL_NUM * IPC_TX_CHANNEL_SWITCH(IPC_Dir) + IPC_TX0_CHANNEL_NUM * IPC_TX0_CHANNEL_SWITCH(IPC_Dir) + IPC_ChNum;
@@ -260,8 +248,8 @@ PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum)
 
 /**
   * @brief  Set delay function for ipc sema.
-  * @param  pfunc: delay function.
-  * @retval   None
+  * @param  pfunc1 Enter critical function.
+  * @param  pfunc2 Exit critical function.
   */
 void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32))
 {
@@ -270,10 +258,22 @@ void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32))
 }
 
 /**
-  * @brief  Get core-to-core hardware semaphone.
-  * @param  SEM_Idx: 0~15.
-  * @param  timeout: timeout to wait. 0 means never wait, 0xffffffff means waiting permanently.
-  * @retval   TRUE/FALSE
+  * @brief  Set delay stub function for ipc sema.
+  * @param  pfunc Delay function.
+  */
+void IPC_SEMDelayStub(void (*pfunc)(uint32_t))
+{
+	ipc_delay_func = pfunc;
+}
+/**@}*/
+
+/**
+  * @brief  Get core-to-core hardware semaphore.
+  * @param  SEM_Idx 0~15.
+  * @param  timeout Timeout to wait. 0 means never wait, 0xffffffff means waiting permanently.
+  * @return The semaphore operation result:
+  *         - TRUE: success
+  *         - FALSE: failure
   */
 u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout)
 {
@@ -341,9 +341,11 @@ fail:
 
 
 /**
-  * @brief  Free core-to-core hardware semaphone.
-  * @param  SEM_Idx: 0~15.
-  * @retval   TRUE/FALSE
+  * @brief  Free core-to-core hardware semaphore.
+  * @param  SEM_Idx 0~15.
+  * @return The semaphore operation result:
+  *         - TRUE: success
+  *         - FALSE: failure
   */
 
 u32 IPC_SEMFree(u32 SEM_Idx)
@@ -363,17 +365,5 @@ u32 IPC_SEMFree(u32 SEM_Idx)
 
 	return TRUE;
 }
-
-
-/**
-  * @brief  Set delay function for ipc sema.
-  * @param  pfunc: delay function.
-  * @retval   None
-  */
-void IPC_SEMDelayStub(void (*pfunc)(uint32_t))
-{
-	ipc_delay_func = pfunc;
-}
-/**@}*/
 /**@}*/
 /**@}*/

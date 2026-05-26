@@ -15,10 +15,98 @@ void *IPC_IrqData[IPC_CHANNEL_NUM];
   * @{
   */
 
-/** @defgroup IPC
+/** @defgroup IPC IPC
   * @brief  IPC driver modules
   * @{
   */
+
+/**
+  * @brief  Set IPC share mode.
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @param  share_mode
+  *		 1: with share mem
+  *		 0: without share mem
+  */
+void IPC_SelectMode(IPC_TypeDef *IPCx, u32 share_mode)
+{
+	IPCx->IPC_MODE = share_mode;
+}
+
+/**
+  * @brief  Set IPC threshold for tx fifo.
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @param  threshold Must >=1
+  */
+void IPC_SetTxThreshold(IPC_TypeDef *IPCx, u32 threshold)
+{
+	u32 Temp;
+
+	assert_param(IS_IPC_VALID_Threshold(threshold));
+
+	Temp = IPCx->IPC_TX_ST;
+	Temp &= ~IPC_MASK_TX0_FIFO_AF_LEVEL;
+	Temp |= IPC_TX0_FIFO_AF_LEVEL(threshold);
+	IPCx->IPC_TX_ST = Temp;
+
+}
+
+/**
+  * @brief  Set IPC Tx timeout.
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @param  timeout If the number of data in fifo is below the threshold for a period longer than that timeout, an interrupt will be triggered
+  */
+void IPC_SetTxtTimeout(IPC_TypeDef *IPCx, u32 timeout)
+{
+	u32 Temp;
+
+	Temp = IPCx->IPC_TX_ST;
+	Temp &= ~IPC_MASK_TX0_FIFO_TIMEOUT_TH;
+	Temp |= IPC_TX0_FIFO_TIMEOUT_TH(timeout);
+	IPCx->IPC_TX_ST = Temp;
+}
+
+/**
+  * @brief  Get IPC device.
+  * @param  IPC_Dir Specifies core to core direction. This parameter can be a value of @ref IPC_Direction_Mode.
+  * @param  Is_Rx 0: TX; 1: RX.
+  * @return IPC device
+  */
+IPC_TypeDef *IPC_GetDev(IPC_Direction_Mode IPC_Dir, u32 Is_Rx)
+{
+	IPC_TypeDef *IPCx_DEV;
+
+	if (Is_Rx) {
+		if (IPC_Dir == IPC_AP_TO_NP) {
+			IPCx_DEV = IPCNP_DEV;
+		} else {
+			IPCx_DEV = IPCAP_DEV;
+		}
+	} else {
+		if (IPC_Dir == IPC_AP_TO_NP) {
+			IPCx_DEV = IPCAP_DEV;
+		} else {
+			IPCx_DEV = IPCNP_DEV;
+		}
+	}
+
+	return IPCx_DEV;
+}
+
+/**
+  * @brief  Get IPC device.
+  * @param  cpu_id CPU ID. This parameter can be one of the following values:
+  *            @arg 0: KM4TZ_CPU_ID
+  *            @arg 1: KM4NS_CPU_ID
+  * @return IPC device
+  */
+IPC_TypeDef *IPC_GetDevById(u32 cpu_id)
+{
+	if (cpu_id == KM4TZ_CPU_ID) {
+		return IPCAP_DEV;
+	} else {
+		return IPCNP_DEV;
+	}
+}
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup IPC_Exported_Functions IPC Exported Functions
@@ -26,10 +114,9 @@ void *IPC_IrqData[IPC_CHANNEL_NUM];
   */
 /**
   * @brief  Enables or disables the specified IPC Channel interrupts.
-  * @param  where IPCx can be IPCNP_DEV for NP, IPCAP_DEV for CM4.
-  * @param  IPC_Shiftbit: 0 ~ 31.
-  * @param  NewState: DISABLE/ENABLE.
-  * @retval   None
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @param  IPC_Shiftbit 0 ~ 31.
+  * @param  NewState DISABLE/ENABLE.
   */
 void IPC_INTConfig(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, u32 NewState)
 {
@@ -41,10 +128,9 @@ void IPC_INTConfig(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, u32 NewState)
 }
 
 /**
-  * @brief  set IMR of specified IPC Channel interrupts.
-  * @param  where IPCx can be IPCNP_DEV for NP, IPCAP_DEV for CM4.
-  * @param  IPC_Chs: the Channels that want to be enable.
-  * @retval   None
+  * @brief  Set IMR of specified IPC Channel interrupts.
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @param  IPC_Chs The Channels that want to be enable.
   */
 void IPC_IERSet(IPC_TypeDef *IPCx, u32 IPC_Chs)
 {
@@ -52,9 +138,9 @@ void IPC_IERSet(IPC_TypeDef *IPCx, u32 IPC_Chs)
 }
 
 /**
-  * @brief  get IMR of specified IPC Channel interrupts.
-  * @param  IPCx: where IPCx can be IPCNP_DEV for NP, IPCAP_DEV for CM4.
-  * @retval  The IMR status of specified IPC
+  * @brief  Get IMR of specified IPC Channel interrupts.
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @return The IMR status of specified IPC
   */
 u32 IPC_IERGet(IPC_TypeDef *IPCx)
 {
@@ -63,8 +149,11 @@ u32 IPC_IERGet(IPC_TypeDef *IPCx)
 
 /**
   * @brief  Request a core-to-core interrupt.
-  * @param  IPC_ChNum: 0 ~ 15.
-  * @retval   0/1
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @param  IPC_ChNum 0 ~ 15.
+  * @return The interrupt request result:
+  *         - 1: the interrupt request is sent
+  *         - 0: the channel is busy
   */
 u32 IPC_INTRequest(IPC_TypeDef *IPCx, u8 IPC_ChNum)
 {
@@ -81,8 +170,8 @@ u32 IPC_INTRequest(IPC_TypeDef *IPCx, u8 IPC_ChNum)
 
 /**
   * @brief  Get core-to-core interrupt status.
-  * @param  where IPCx can be IPCNP_DEV for NP, IPCAP_DEV for CM4.
-  * @retval  tx_empty or rx_full interrupt status
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @return Tx_empty or rx_full interrupt status
   */
 u32 IPC_INTGet(IPC_TypeDef *IPCx)
 {
@@ -91,9 +180,8 @@ u32 IPC_INTGet(IPC_TypeDef *IPCx)
 
 /**
   * @brief  Clear a core-to-core interrupt.
-  * @param  where IPCx can be IPCNP_DEV for NP, IPCAP_DEV for CM4.
-  * @param  IPC_Shiftbit: 0 ~ 31.
-  * @retval   None
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @param  IPC_Shiftbit 0 ~ 31.
   */
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit)
 {
@@ -102,8 +190,8 @@ void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit)
 
 /**
   * @brief  The common IPC interrupt handler
-  * @param  Data: the data pointer to IPCx
-  * @retval 0
+  * @param  Data The data pointer to IPCx
+  * @return 0
   */
 u32 IPC_INTHandler(void *Data)
 {
@@ -127,11 +215,10 @@ u32 IPC_INTHandler(void *Data)
 
 /**
   * @brief  To register a user interrupt handler for a specified IPC channel
-  * @param  where IPCx can be IPCNP_DEV for NP, IPCAP_DEV for CM4.
-  * @param  IPC_Shiftbit: 0 ~ 31.
-  * @param  IrqHandler: The IRQ handler to be assigned to the specified IPC channel
-  * @param  IrqData: The pointer will be pass the the IRQ handler
-  * @retval None
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @param  IPC_Shiftbit 0 ~ 31.
+  * @param  IrqHandler The IRQ handler to be assigned to the specified IPC channel
+  * @param  IrqData The pointer will be passed to the IRQ handler
   */
 void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, void *IrqHandler, void *IrqData)
 {
@@ -148,92 +235,6 @@ void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, void *IrqHandler, vo
 
 }
 
-/**
-  * @brief  Get IPC device.
-  * @param  IPC_Dir: Specifies core to core direction
-  *          This parameter can be one of the following values:
-  *		 		@arg IPC_NP_TO_AP: NP send request to AP
-  *		 		@arg IPC_AP_TO_NP: AP send request to NP
-  * @param  Is_Rx: 0: TX; 1: RX.
-  * @retval IPC device
-  */
-IPC_TypeDef *IPC_GetDev(u32 IPC_Dir, u32 Is_Rx)
-{
-	// Check if the direction is valid, return NULL for invalid direction
-	if ((IPC_Dir != IPC_AP_TO_NP) && (IPC_Dir != IPC_NP_TO_AP)) {
-		return NULL;
-	}
-
-	if (Is_Rx) {
-		// RX direction: NP receives if AP->NP, AP receives if NP->AP
-		return (IPC_Dir == IPC_AP_TO_NP) ? IPCNP_DEV : IPCAP_DEV;
-	} else {
-		// TX direction: AP transmits if AP->NP, NP transmits if NP->AP
-		return (IPC_Dir == IPC_AP_TO_NP) ? IPCAP_DEV : IPCNP_DEV;
-	}
-}
-
-/**
-  * @brief  Get IPC device.
-  * @param  cpuid:
-  *		 0: CPU_NP
-  *		 1: CPU_AP
-  * @retval IPC device
-  */
-IPC_TypeDef *IPC_GetDevById(u32 cpu_id)
-{
-	if (cpu_id == KM4TZ_CPU_ID) {
-		return IPCAP_DEV;
-	} else {
-		return IPCNP_DEV;
-	}
-}
-
-/**
-  * @brief  Set IPC share mode.
-  * @param  IPCx: where IPCx can be IPCNP_DEV for NP, IPCAP_DEV for AP.
-  * @param  share_mode:
-  *		 1: with share mem
-  *		 0: without share mem
-  * @retval none
-  */
-void IPC_SelectMode(IPC_TypeDef *IPCx, u32 share_mode)
-{
-	IPCx->IPC_MODE = share_mode;
-}
-
-
-/**
-  * @brief  Set IPC threshold for tx fifo.
-  * @param  IPCx: where IPCx can be IPCNP_DEV for NP, IPCAP_DEV for AP.
-  * @param  threshold: must >=1
-  * @retval none
-  */
-void IPC_SetTxThreshold(IPC_TypeDef *IPCx, u32 threshold)
-{
-	u32 Temp;
-
-	assert_param(IS_IPC_VALID_Threshold(threshold));
-
-	Temp = IPCx->IPC_TX_ST;
-	Temp &= ~IPC_MASK_TX0_FIFO_AF_LEVEL;
-	Temp |= IPC_TX0_FIFO_AF_LEVEL(threshold);
-	IPCx->IPC_TX_ST = Temp;
-
-}
-
-/**
-  * @brief  Set IPC Tx timeout.
-  * @param  IPCx: where IPCx can be IPCNP_DEV for NP, IPCAP_DEV for AP.
-  * @param  timeout: if the number of data in fifo is below the threshold for a period longer than that timeout, an interrupt will be triggered
-  * @retval none
-  */
-void IPC_SetTxtTimeout(IPC_TypeDef *IPCx, u32 timeout)
-{
-	u32 Temp;
-
-	Temp = IPCx->IPC_TX_ST;
-	Temp &= ~IPC_MASK_TX0_FIFO_TIMEOUT_TH;
-	Temp |= IPC_TX0_FIFO_TIMEOUT_TH(timeout);
-	IPCx->IPC_TX_ST = Temp;
-}
+/**@}*/
+/**@}*/
+/**@}*/

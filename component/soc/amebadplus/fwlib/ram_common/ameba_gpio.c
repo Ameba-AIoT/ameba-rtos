@@ -6,6 +6,41 @@
 
 #include "ameba_soc.h"
 
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup GPIO GPIO
+  * @{
+  */
+
+static GPIO_TypeDef *GPIO_PortAddrGet(u32 GPIO_Port)
+{
+	GPIO_TypeDef *GPIO = NULL;
+
+	assert_param(IS_GPIO_PORT_NUM(GPIO_Port));
+
+	if (TrustZone_IsSecure()) {
+		GPIO = GPIO_PORTx_S[GPIO_Port];
+	} else {
+		GPIO = GPIO_PORTx[GPIO_Port];
+	}
+
+	return GPIO;
+}
+
+/** @defgroup GPIO_Exported_Functions GPIO Exported Functions
+  * @{
+  */
+
+/**
+  * @brief  Initialize the GPIO registers according to the specified parameters
+  *         in GPIO_InitStruct.
+  * @param  GPIO_InitStruct Pointer to a GPIO_InitTypeDef structure that contains
+  *         the configuration information for the GPIO peripheral.
+  * @note   OpenDrain output: on drive + OUT + GPIO[gpio_bit] = 0, pin should have pull-up resistor
+  * @note   Input HighZ: no drive + IN, user can input high or low use this pin
+  */
 void GPIO_Init(GPIO_InitTypeDef  *GPIO_InitStruct)
 {
 	/* open gpio function and clock */
@@ -34,21 +69,11 @@ void GPIO_Init(GPIO_InitTypeDef  *GPIO_InitStruct)
 	}
 }
 
-static GPIO_TypeDef *GPIO_PortAddrGet(u32 GPIO_Port)
-{
-	GPIO_TypeDef *GPIO = NULL;
-
-	assert_param(IS_GPIO_PORT_NUM(GPIO_Port));
-
-	if (TrustZone_IsSecure()) {
-		GPIO = GPIO_PORTx_S[GPIO_Port];
-	} else {
-		GPIO = GPIO_PORTx[GPIO_Port];
-	}
-
-	return GPIO;
-}
-
+/**
+  * @brief  Get the interrupt status.
+  * @param  GPIO_Port Specifies port number, which can be any GPIO_PORT_X defined in GPIO_Port_Type.
+  * @return The interrupt status of the specified port pins
+  */
 u32 GPIO_INTStatusGet(u32 GPIO_Port)
 {
 	GPIO_TypeDef *GPIO = GPIO_PortAddrGet(GPIO_Port);
@@ -56,6 +81,10 @@ u32 GPIO_INTStatusGet(u32 GPIO_Port)
 	return GPIO->GPIO_INT_STATUS;
 }
 
+/**
+  * @brief  Clear the edge interrupt status.
+  * @param  GPIO_Port Specifies port number, which can be any GPIO_PORT_X defined in GPIO_Port_Type.
+  */
 void GPIO_INTStatusClearEdge(u32 GPIO_Port)
 {
 	GPIO_TypeDef *GPIO = NULL;
@@ -68,3 +97,9 @@ void GPIO_INTStatusClearEdge(u32 GPIO_Port)
 	/* Clear pending edge interrupt */
 	GPIO->GPIO_INT_EOI = IntStatus;
 }
+
+/** @} */
+
+/** @} */
+
+/** @} */
