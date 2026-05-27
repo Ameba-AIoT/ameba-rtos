@@ -54,6 +54,8 @@ u32 spi_dma_rx_irq(void *Data)
 	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 
+	SSI_SlaveErrRecovery(spi_obj->spi_dev);
+
 	/*  Call user RX complete callback */
 	SlaveRxDone = 1;
 

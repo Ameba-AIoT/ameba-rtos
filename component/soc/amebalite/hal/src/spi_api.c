@@ -172,9 +172,12 @@ static u32 ssi_interrupt(void *Adaptor)
 
 	SSI_SetIsrClean(ssi_adapter->spi_dev, InterruptStatus);
 
-	if (InterruptStatus & (SPI_BIT_TXOIS | SPI_BIT_RXUIS | SPI_BIT_RXOIS | SPI_BIT_MSTIS_FAEIS)) {
+	if (InterruptStatus & (SPI_BIT_TXOIS | SPI_BIT_RXUIS | SPI_BIT_RXOIS)) {
 		RTK_LOGW(TAG, "[INT] Tx/Rx Warning %lx \n", InterruptStatus);
 	}
+
+	/* In case sclk is interfered, causing slave data to be sampled incorrectly, a reset is required. Only effective for slave mode. */
+	SSI_SlaveErrRecovery(ssi_adapter->spi_dev);
 
 	if ((InterruptStatus & SPI_BIT_RXFIS)) {
 		u32 TransLen = 0;
@@ -311,6 +314,8 @@ static u32 ssi_dma_tx_irq(void *Data)
 	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 
+	SSI_SlaveErrRecovery(ssi_adapter->spi_dev);
+
 	/*  Call user TX complete callback */
 	if (NULL != ssi_adapter->TxCompCallback) {
 		ssi_adapter->TxCompCallback(ssi_adapter->TxCompCbPara);
@@ -339,6 +344,8 @@ static u32 ssi_dma_rx_irq(void *Data)
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 
 	DCache_Invalidate((u32) pRxData, Length);
+
+	SSI_SlaveErrRecovery(ssi_adapter->spi_dev);
 
 	/* Set SSI DMA Disable */
 	SSI_SetDmaEnable(ssi_adapter->spi_dev, DISABLE, SPI_BIT_RDMAE);
