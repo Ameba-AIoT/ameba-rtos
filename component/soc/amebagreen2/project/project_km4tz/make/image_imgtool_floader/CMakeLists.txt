@@ -15,6 +15,7 @@ ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
 target_sources(${c_CURRENT_IMAGE} PRIVATE
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_reset.c
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_tim.c
+    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_clk.c
     ${c_CMPT_FWLIB_DIR}/ram_km4tz/ameba_flashclk.c
     ${c_CMPT_USRCFG_DIR}/ameba_bootcfg.c
 

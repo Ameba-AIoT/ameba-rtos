@@ -30,7 +30,7 @@ struct sdn_client_ipc_rx {
 	uint8_t *msg_pool;
 	struct sdn_intf_task task;
 	struct sdn_data_buf ctrl;
-	uint8_t ctrl_msg[4];
+	uint8_t ctrl_msg[7];
 #ifdef CONFIG_BT_SDN
 	uint8_t num_bt_hci_cmd;
 	uint8_t num_bt_acl_data;
@@ -49,7 +49,7 @@ static struct sdn_client_ipc g_sdn_client_intf = {0};
 extern struct sdn_t g_sdn;
 
 #define SDN_CLIENT_RX_TASK_PRI          5
-#define SDN_CLIENT_RX_TASK_SIZE         768
+#define SDN_CLIENT_RX_TASK_SIZE         1024
 
 #define SDN_CLIENT_TX_TASK_PRI          4
 #define SDN_CLIENT_TX_TASK_SIZE         768
@@ -315,7 +315,7 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 		sdn_remove_protocol(pmsg->data[0]);
 		break;
 
-#if defined(CONFIG_MP_INCLUDED)
+#ifdef CONFIG_MP_INCLUDED
 	case SDN_INTF_CTRL_MP:
 		sdn_set_mp(pmsg->data[0]);
 		break;
@@ -328,6 +328,11 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 		sdn_bridge_close();
 		break;
 #endif
+
+	case SDN_INTF_CTRL_FIX_ADDR:
+		sdn_fix_bt_addr(pmsg->data);
+		break;
+
 	default:
 		return;
 		break;

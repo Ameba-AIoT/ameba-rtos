@@ -14,6 +14,7 @@ static void whc_host_recv_pkts(struct sk_buff *pskb)
 	u32 total_len;
 	struct net_device_stats *pstats = &global_idev.stats[wlan_idx];
 	u8 tmp;
+	u32 stat_len;
 
 #ifdef CONFIG_P2P
 	if (global_idev.p2p_global.pd_wlan_idx == 1) {
@@ -48,9 +49,11 @@ static void whc_host_recv_pkts(struct sk_buff *pskb)
 	pskb->protocol = eth_type_trans(pskb, global_idev.pndev[wlan_idx]);
 	pskb->ip_summed = CHECKSUM_NONE;
 
+	stat_len = pskb->len;
+
 	if (netif_rx(pskb) == NET_RX_SUCCESS) {
 		pstats->rx_packets++;
-		pstats->rx_bytes += pskb->len;
+		pstats->rx_bytes += stat_len;
 	} else {
 		pstats->rx_dropped++;
 	}

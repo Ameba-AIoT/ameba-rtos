@@ -949,6 +949,7 @@ void np_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqStat
 			return;
 		}
 	} else {
+		/* CA32 clear HSYS_BIT_CKE_AP itself to avoid use WFI, here LSYS_BIT_AP_RUNNING is actually CA32's status */
 		if (ap_clk_status_on() || (HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & LSYS_BIT_AP_RUNNING)) {
 			/* poll KM4 clock gate */
 			while (1) {

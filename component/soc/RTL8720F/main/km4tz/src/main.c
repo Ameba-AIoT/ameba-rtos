@@ -70,6 +70,12 @@ void app_mbedtls_rom_init(void)
 #if defined(CONFIG_MBEDTLS_THREADING)
 	mbedtls_threading_init();
 #endif
+	/* mbedtls calls into the HW crypto engine with interrupts disabled via the
+	 * IPC semaphore, so cache inconsistency cannot occur; suppress the
+	 * cache-misalignment warning log.
+	 */
+	extern u32 crypto_disable_cache_warning_tz;
+	crypto_disable_cache_warning_tz = 1;
 }
 
 void app_pmu_init(void)
@@ -77,7 +83,6 @@ void app_pmu_init(void)
 
 	SOCPS_SleepInit();
 	pmu_init_wakeup_timer();
-	pmu_set_sleep_type(SLEEP_PG);
 
 	/* only one core in fullmac mode */
 #if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))

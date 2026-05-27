@@ -36,6 +36,7 @@ config USBH_COMPOSITE_MENU
                 depends on SUPPORT_USBH_UAC
                 select USB_UAC if WHC_HOST || WHC_NONE
                 select USBH_COMPOSITE_HID_UAC if WHC_HOST || WHC_NONE
+                select AUDIO_FWK_MENU if SUPPORT_AUDIO_FOR_USB
                 choice
                     prompt "Select UAC Version"
                     depends on USBH_COMPOSITE_HID_UAC_MENU

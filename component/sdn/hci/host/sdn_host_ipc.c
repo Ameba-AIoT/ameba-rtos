@@ -266,29 +266,6 @@ fail:
 	return SDN_INTF_ERR_OPEN_FAIL;
 }
 
-static uint32_t sdn_host_ipc_tx_ctrl(uint8_t type, void *pdata, uint16_t len)
-{
-	IPC_MSG_STRUCT ipc_tx = {0};
-	struct sdn_intf_data_msg *pdata_msg = NULL;
-
-	ipc_tx.msg_type = IPC_USER_DATA;
-	ipc_tx.msg_len = 1 + sizeof(struct sdn_intf_data_msg);
-	pdata_msg = (struct sdn_intf_data_msg *)(&ipc_tx.msg);
-
-	pdata_msg->protocol = SDN_INTF_CTRL;
-	pdata_msg->type = type;
-	if (pdata) {
-		memcpy(pdata_msg->data, pdata, len);
-	}
-
-	if (IPC_SEND_SUCCESS == ipc_send_message(IPC_AP_TO_NP, IPC_A2N_BT_VIRTUAL_HCI, &ipc_tx)) {
-		rtos_sema_take(g_sdn_host_intf.tx.ctrl_sema, MUTEX_WAIT_TIMEOUT);
-		return SDN_INTF_ERR_OK;
-	}
-
-	return SDN_INTF_ERR_TX_CTRL_FAIL;
-}
-
 bool sdn_enable(void)
 {
 	if (SDN_INTF_ERR_OK != sdn_host_ipc_tx_init()) {
@@ -300,12 +277,12 @@ bool sdn_enable(void)
 		return false;
 	}
 
-	return (SDN_INTF_ERR_OK == sdn_host_ipc_tx_ctrl(SDN_INTF_CTRL_INTF_OPEN, NULL, 0));
+	return (SDN_INTF_ERR_OK == sdn_h2c(SDN_INTF_CTRL, SDN_INTF_CTRL_INTF_OPEN, NULL, 0));
 }
 
 void sdn_disable(void)
 {
-	sdn_host_ipc_tx_ctrl(SDN_INTF_CTRL_INTF_CLOSE, NULL, 0);
+	sdn_h2c(SDN_INTF_CTRL, SDN_INTF_CTRL_INTF_CLOSE, NULL, 0);
 
 	sdn_host_ipc_tx_deinit();
 	sdn_host_ipc_rx_deinit();
@@ -313,30 +290,35 @@ void sdn_disable(void)
 
 void sdn_add_protocol(uint8_t protocol)
 {
-	sdn_host_ipc_tx_ctrl(SDN_INTF_CTRL_PROTO_ADD, &protocol, sizeof(uint8_t));
+	sdn_h2c(SDN_INTF_CTRL, SDN_INTF_CTRL_PROTO_ADD, &protocol, sizeof(uint8_t));
 }
 
 void sdn_remove_protocol(uint8_t protocol)
 {
-	sdn_host_ipc_tx_ctrl(SDN_INTF_CTRL_PROTO_REMOVE, &protocol, sizeof(uint8_t));
+	sdn_h2c(SDN_INTF_CTRL, SDN_INTF_CTRL_PROTO_REMOVE, &protocol, sizeof(uint8_t));
 }
 
-#if defined(CONFIG_MP_INCLUDED)
+#ifdef CONFIG_MP_INCLUDED
 void sdn_set_mp(bool is_mp)
 {
-	sdn_host_ipc_tx_ctrl(SDN_INTF_CTRL_MP, &is_mp, sizeof(bool));
+	sdn_h2c(SDN_INTF_CTRL, SDN_INTF_CTRL_MP, &is_mp, sizeof(bool));
 }
 
 void sdn_bridge_open(bool to_loguart)
 {
-	sdn_host_ipc_tx_ctrl(SDN_INTF_CTRL_BRIDGE_OPEN, &to_loguart, sizeof(bool));
+	sdn_h2c(SDN_INTF_CTRL, SDN_INTF_CTRL_BRIDGE_OPEN, &to_loguart, sizeof(bool));
 }
 
 void sdn_bridge_close(void)
 {
-	sdn_host_ipc_tx_ctrl(SDN_INTF_CTRL_BRIDGE_CLOSE, NULL, 0);
+	sdn_h2c(SDN_INTF_CTRL, SDN_INTF_CTRL_BRIDGE_CLOSE, NULL, 0);
 }
 #endif
+
+void sdn_fix_bt_addr(uint8_t *bdaddr)
+{
+	sdn_h2c(SDN_INTF_CTRL, SDN_INTF_CTRL_FIX_ADDR, bdaddr, 6);
+}
 
 static void sdn_host_ipc_rx_int_hdl(void *data, uint32_t irq_status, uint32_t channel_num)
 {
@@ -352,26 +334,25 @@ static void sdn_host_ipc_rx_int_hdl(void *data, uint32_t irq_status, uint32_t ch
 		return;
 	}
 
-	if (p_ipc_rx_msg->msg_type == IPC_USER_POINT) {
-		if (p_ipc_rx_msg->msg_len >= sizeof(struct sdn_intf_data_msg)) {
-			DCache_Invalidate(p_ipc_rx_msg->msg, p_ipc_rx_msg->msg_len);
-			pdata_buf = sdn_host_ipc_rx_get_buf(((struct sdn_intf_data_msg *)(p_ipc_rx_msg->msg))->protocol);
-			if (pdata_buf != NULL) {
-				memcpy(pdata_buf->pmsg, (uint8_t *)p_ipc_rx_msg->msg, p_ipc_rx_msg->msg_len);
-				pdata_buf->len = p_ipc_rx_msg->msg_len;
+	if (p_ipc_rx_msg->msg_len) {
+		DCache_Invalidate(p_ipc_rx_msg->msg, p_ipc_rx_msg->msg_len);
+		pdata_buf = sdn_host_ipc_rx_get_buf(((struct sdn_intf_data_msg *)(p_ipc_rx_msg->msg))->protocol);
+		if (pdata_buf != NULL) {
+			memcpy(pdata_buf->pmsg, (uint8_t *)p_ipc_rx_msg->msg, p_ipc_rx_msg->msg_len);
+			pdata_buf->len = p_ipc_rx_msg->msg_len;
 
-				rtos_critical_enter(RTOS_CRITICAL_BT);
-				list_add_tail(&pdata_buf->list, &g_sdn_host_intf.rx.busy_list);
-				rtos_critical_exit(RTOS_CRITICAL_BT);
+			rtos_critical_enter(RTOS_CRITICAL_BT);
+			list_add_tail(&pdata_buf->list, &g_sdn_host_intf.rx.busy_list);
+			rtos_critical_exit(RTOS_CRITICAL_BT);
 
-				rtos_sema_give(g_sdn_host_intf.rx.task.sema);
-			}
+			rtos_sema_give(g_sdn_host_intf.rx.task.sema);
 		}
-	} else if (p_ipc_rx_msg->msg_type == IPC_USER_DATA) {
+	} else {
 		rtos_sema_give(g_sdn_host_intf.tx.ctrl_sema);
 	}
 }
 
+/* if protocol is SDN_INTF_CTRL, len couldn't exceed 6. */
 uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *pdata, uint16_t len)
 {
 	IPC_MSG_STRUCT ipc_tx = {0};
@@ -382,7 +363,6 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *pdata, uint16_t len)
 	pdata_msg->type = type;
 	memcpy(pdata_msg->data, pdata, len);
 
-	ipc_tx.msg_type = IPC_USER_POINT;
 	ipc_tx.msg_len = len + sizeof(struct sdn_intf_data_msg);
 	ipc_tx.msg = (uint32_t)pdata_msg;
 	DCache_Clean(ipc_tx.msg, ipc_tx.msg_len);
@@ -391,6 +371,10 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *pdata, uint16_t len)
 		return SDN_INTF_ERR_TX_CTRL_FAIL;
 	}
 
+	if (protocol == SDN_INTF_CTRL) {
+		/* client only has one memory buffer for ctrl message, so send ctrl msg one by one. */
+		rtos_sema_take(g_sdn_host_intf.tx.ctrl_sema, MUTEX_WAIT_TIMEOUT);
+	}
 	return SDN_INTF_ERR_OK;
 }
 

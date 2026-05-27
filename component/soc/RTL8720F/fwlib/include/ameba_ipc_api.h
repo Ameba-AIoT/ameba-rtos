@@ -15,10 +15,10 @@ extern "C" {
   * @{
   */
 
-/** @defgroup IPC
+/** @defgroup IPC IPC
   * @brief IPC driver modules
-* @{
-*/
+  * @{
+  */
 /* Exported types --------------------------------------------------------*/
 /** @addtogroup IPC_Exported_Types IPC Exported Types
   * @{
@@ -32,9 +32,6 @@ typedef struct ipc_msg_struct {
 	u32 msg_len;
 	u32 rsvd;
 } IPC_MSG_STRUCT, *PIPC_MSG_STRUCT, ipc_msg_struct_t;
-/**
-  * @}
-  */
 
 /**
  * @brief IPC Message Definition
@@ -52,7 +49,7 @@ typedef struct ipc_data_struct {
 /** @defgroup IPC_Exported_Constants IPC Exported Constants
   * @{
   */
-/** @defgroup IPC_RETURN_VALUE
+/** @defgroup IPC_RETURN_VALUE IPC Return Value
   * @{
   */
 #define IPC_RX_MALLOC_FAIL 6
@@ -68,7 +65,7 @@ typedef struct ipc_data_struct {
   * @}
   */
 
-/** @defgroup IPC_TX_Work_Mode
+/** @defgroup IPC_TX_Work_Mode IPC TX Work Mode
   * @{
   */
 #define IPC_UNSHARE_MODE				0x0
@@ -85,24 +82,28 @@ typedef struct ipc_data_struct {
   */
 
 
-/** @} */
 
-/** @} */
 
 /* Exported functions --------------------------------------------------------*/
-
+/** @defgroup IPC_Exported_Functions IPC Exported Functions
+  * @{
+  */
 void IPC_TXHandler(void *Data, u32 IrqStatus, u32 ChanNum);
 void ipc_table_init(IPC_TypeDef *IPCx);
 void IPC_SelectMode(IPC_TypeDef *IPCx, u32 share_mode);
 void IPC_SetTxThreshold(IPC_TypeDef *IPCx, u32 threshold);
 void IPC_SetTxtTimeout(IPC_TypeDef *IPCx, u32 timeout);
+u32 ipc_send_message(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg);
+PIPC_MSG_STRUCT ipc_get_message(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum);
+u32 ipc_send_message_unshare(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum, PIPC_DATA_STRUCT IPC_Data);
+u32 ipc_get_message_unshare(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum, PIPC_DATA_STRUCT IPC_Data);
+/** @} */
+
+/** @} */
+
+/** @} */
+
 extern IPC_IRQ_FUN IPC_IrqHandler[32];
-
-
-u32 ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg);
-PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum);
-u32 ipc_send_message_unshare(u32 IPC_Dir, u8 IPC_ChNum, PIPC_DATA_STRUCT IPC_Data);
-u32 ipc_get_message_unshare(u32 IPC_Dir, u8 IPC_ChNum, PIPC_DATA_STRUCT IPC_Data);
 
 #ifdef __cplusplus
 }

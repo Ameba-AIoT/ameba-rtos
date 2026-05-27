@@ -61,6 +61,7 @@ void SOCPS_WakeSourceSet(const struct WakeEvent_TypeDef *sleep_wevent_config);
 /*1.2 Power setting*/
 void SOCPS_ReguDelayAdjust(u8 delay_count);
 void SOCPS_PowerManage(u8 regu_state);
+void SOCPS_SleepVoltRaiseTo0P9(void);
 /*1.3 Clock setting: XTAL and OSC4M. */
 void SOCPS_ClockSourceConfig(u8 regu_state, u8 xtal_mode, u8 osc_option);
 /*1.4 Peripheral clock settings. */

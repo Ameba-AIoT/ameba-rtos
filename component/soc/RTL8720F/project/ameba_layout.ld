@@ -1,5 +1,5 @@
 #include "project_km4tz/platform_autoconf.h"
-#include "../../component/soc/RTL8720F/fwlib/include/hal_platform.h"
+#include "../fwlib/include/hal_platform.h"
 
 #undef KBYTES
 #undef SRAM_BASE

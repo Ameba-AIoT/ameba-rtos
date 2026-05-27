@@ -49,9 +49,8 @@ static const PinMap PinMap_ADC[] = {
 
 /**
   * @brief  Initialize the ADC device, including clock, function and ADC registers.
-  * @param  obj: ADC object defined in application software.
-  * @param  pin: ADC PinName according to pinmux spec.
-  * @retval none
+  * @param  obj ADC object defined in application software.
+  * @param  pin ADC PinName according to pinmux spec.
   */
 void analogin_init(analogin_t *obj, PinName pin)
 {
@@ -87,7 +86,7 @@ void analogin_init(analogin_t *obj, PinName pin)
 
 /**
   * @brief  Read data from the specified ADC channel FIFO.
-  * @param  obj: ADC object defined in application software.
+  * @param  obj ADC object defined in application software.
   * @return ADC channel data(float).
   */
 float analogin_read(analogin_t *obj)
@@ -116,7 +115,7 @@ float analogin_read(analogin_t *obj)
 
 /**
   * @brief  Read data from the specified ADC channel FIFO.
-  * @param  obj: ADC object defined in application software.
+  * @param  obj ADC object defined in application software.
   * @return 16b ADC channel data(int).
   */
 uint16_t analogin_read_u16(analogin_t *obj)
@@ -142,8 +141,7 @@ uint16_t analogin_read_u16(analogin_t *obj)
 
 /**
   * @brief  Deinitialize the ADC device, including clock, function and ADC registers.
-  * @param  obj: ADC object defined in application software.
-  * @retval none
+  * @param  obj ADC object defined in application software.
   */
 void  analogin_deinit(analogin_t *obj)
 {
@@ -158,9 +156,12 @@ void  analogin_deinit(analogin_t *obj)
 }
 
 /**
-  * @brief Get channel voltage in mV according to conversion data from normal channel(0-5 & 7-9).
-  * @param adc_data: ADC conversion data from normal channel.
+  * @brief Get channel voltage in mV according to conversion data from normal channel.
+  * @param adc_data ADC conversion data from normal channel.
   * @return Normal channel voltage in mV.
+  * @internal
+  * @note The normal channel is 0-5 & 7-9.
+  * @endinternal
   */
 uint32_t analogin_voltage_norm(uint32_t adc_data)
 {

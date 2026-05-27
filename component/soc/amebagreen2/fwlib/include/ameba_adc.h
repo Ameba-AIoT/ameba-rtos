@@ -64,11 +64,12 @@
   * @{
   */
 
-/** @defgroup ADC
+/** @defgroup ADC ADC
   * @brief ADC driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -557,6 +558,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -565,6 +567,43 @@ extern "C" {
 
 
 //Please add your defination here
+
+/* Non Exported types */
+/**
+  * @brief ADC Oversample Ratio
+  */
+typedef enum {
+	ADC_OSR_2   = 0x00, /*!< 2x */
+	ADC_OSR_4   = 0x01, /*!< 4x */
+	ADC_OSR_8   = 0x02, /*!< 8x */
+	ADC_OSR_16  = 0x03, /*!< 16x */
+	ADC_OSR_32  = 0x04, /*!< 32x */
+	ADC_OSR_64  = 0x05, /*!< 64x */
+	ADC_OSR_128 = 0x06, /*!< 128x */
+	ADC_OSR_256 = 0x07, /*!< 256x */
+} ADC_OS_Ratio;
+
+/**
+  * @brief ADC Oversample Right Shift
+  */
+typedef enum {
+	ADC_OSF_NONE = 0x00, /*!< No shift */
+	ADC_OSF_1    = 0x01, /*!< Right shift 1 bit */
+	ADC_OSF_2    = 0x02, /*!< Right shift 2 bits */
+	ADC_OSF_3    = 0x03, /*!< Right shift 3 bits */
+	ADC_OSF_4    = 0x04, /*!< Right shift 4 bits */
+	ADC_OSF_5    = 0x05, /*!< Right shift 5 bits */
+	ADC_OSF_6    = 0x06, /*!< Right shift 6 bits */
+	ADC_OSF_7    = 0x07, /*!< Right shift 7 bits */
+} ADC_OS_Shift;
+
+/**
+  * @brief ADC Oversample Mode
+  */
+typedef enum {
+	ADC_OS_STAGGERED = 0x00, /*!< All oversampling conversions done in staggered sequence */
+	ADC_OS_REGULAR   = 0x01, /*!< All oversampling conversions done in regular sequence */
+} ADC_OS_Mode;
 
 /* Exported types ------------------------------------------------------------*/
 /** @addtogroup ADC_Exported_Types ADC Exported Types
@@ -616,7 +655,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup ADC_Chn_Selection
+/** @defgroup ADC_Chn_Selection ADC Channel Selection
   * @{
   */
 #define ADC_CH0						((u8)0x00)
@@ -654,7 +693,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_Chn_Pad_Selection
+/** @defgroup ADC_Chn_Pad_Selection ADC Channel Pad Selection
   * @{
   */
 #define ADC_CH0_PIN					(_PA_20)
@@ -669,7 +708,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_Operation_Mode
+/** @defgroup ADC_Operation_Mode ADC Operation Mode
   * @{
   */
 #define ADC_SW_TRI_MODE				((u8)0x00)	// ADC software-trigger mode
@@ -683,7 +722,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_CH_Input_Type
+/** @defgroup ADC_CH_Input_Type ADC Channel Input Type
   * @{
   */
 #define ADC_DIFFERENTIAL_CH(x)			((u32)0x00000001 << (x))
@@ -691,7 +730,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_Compare_Control
+/** @defgroup ADC_Compare_Control ADC Compare Control
   * @{
   */
 #define ADC_COMP_SMALLER_THAN_THL			((u8)0x00)	// Vin < ADC_COMP_TH_L
@@ -706,7 +745,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_Compare_Threshold
+/** @defgroup ADC_Compare_Threshold ADC Compare Threshold
   * @{
   */
 #define IS_ADC_VALID_COMP_TH(x)				((x) < 0x10000)
@@ -714,7 +753,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_Valid_Timer
+/** @defgroup ADC_Valid_Timer ADC Valid Timer
   * @{
   */
 #define IS_ADC_VALID_TIM(idx)				((idx) < 8)
@@ -722,7 +761,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_Interrupt_Control
+/** @defgroup ADC_Interrupt_Control ADC Interrupt Control
   * @{
   */
 #define ADC_BIT_IT_ALL_EN				(ADC_BIT_IT_COMP_CH10_EN  |\
@@ -748,7 +787,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_Interrupt_Status
+/** @defgroup ADC_Interrupt_Status ADC Interrupt Status
   * @{
   */
 
@@ -777,7 +816,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_CHSW_List
+/** @defgroup ADC_CHSW_List ADC Channel Switch List
   * @{
   */
 #define ADC_SHIFT_CHSW0(x)						(4*x)
@@ -786,7 +825,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_Comparison_Setting
+/** @defgroup ADC_Comparison_Setting ADC Comparison Setting
   * @{
   */
 #define ADC_SHIFT_COMP_CTRL_CH(x)				(2*x)
@@ -804,7 +843,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_Data_Setting
+/** @defgroup ADC_Data_Setting ADC Data Setting
   * @{
   */
 #define ADC_ID_AND_DATA(x)						((u32)((x) & 0x000FFFFF))
@@ -813,38 +852,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup ADC_Over_Sample_Setting
-  * @{
-  */
-#define ADC_OSR_2						((u8)0x00)
-#define ADC_OSR_4						((u8)0x01)
-#define ADC_OSR_8						((u8)0x02)
-#define ADC_OSR_16						((u8)0x03)
-#define ADC_OSR_32						((u8)0x04)
-#define ADC_OSR_64						((u8)0x05)
-#define ADC_OSR_128						((u8)0x06)
-#define ADC_OSR_256						((u8)0x07)
-#define IS_ADC_OSR(x)					((x) < 0x08)
-
-#define ADC_OSF_NONE					((u8)0x00)
-#define ADC_OSF_1						((u8)0x01)
-#define ADC_OSF_2						((u8)0x02)
-#define ADC_OSF_3						((u8)0x03)
-#define ADC_OSF_4						((u8)0x04)
-#define ADC_OSF_5						((u8)0x05)
-#define ADC_OSF_6						((u8)0x06)
-#define ADC_OSF_7						((u8)0x07)
-#define IS_ADC_OSF(x)					((x) < 0x08)
-
-#define ADC_OS_STAGGERED				((u8)0x00)
-#define ADC_OS_REGULAR					((u8)0x01)
-#define IS_ADC_OS_MODE(x)				((x) < 0x10)
-
-/**
-  * @}
-  */
-
-/** @defgroup ADC_OTP_Address_Setting
+/** @defgroup ADC_OTP_Address_Setting ADC OTP Address Setting
   * @{
   */
 #define NORM_VOL_ADDR			0x7DA // OTP address for normal channel voltage calibration
@@ -867,6 +875,9 @@ typedef struct {
   */
 
 /* Exported functions --------------------------------------------------------*/
+/** @addtogroup ADC_Exported_Functions ADC Exported Functions
+  * @{
+  */
 _LONG_CALL_ void ADC_StructInit(ADC_InitTypeDef *ADC_InitStruct);
 _LONG_CALL_ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct);
 _LONG_CALL_ void ADC_Cmd(u32 NewState);
@@ -894,13 +905,17 @@ _LONG_CALL_ void ADC_SetDmaEnable(u32 newState);
 _LONG_CALL_ u32 ADC_RXGDMA_Init(GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc,
 								u8 *pDataBuf, u32 DataLen);
 _LONG_CALL_ void ADC_OverSampleCmd(u32 NewState);
-_LONG_CALL_ void ADC_SetOverSample(u8 OS_Shift, u8 OS_Ratio, u8 OS_Mode);
+_LONG_CALL_ void ADC_SetOverSample(ADC_OS_Shift OS_Shift, ADC_OS_Ratio OS_Ratio, ADC_OS_Mode OS_Mode);
 _LONG_CALL_ void ADC_SetDummyCycle(u32 DummyUs, u8 SettleUs);
 _LONG_CALL_ void ADC_KeepPowerCmd(u32 NewState);
 _LONG_CALL_ void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara);
 _LONG_CALL_ s32 ADC_GetVoltage(u32 chan_data);
 _LONG_CALL_ u32 ADC_GetInterR(void);
 _LONG_CALL_ u32 ADC_GetSampleValue(s32 VolMV);
+
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }

@@ -14,7 +14,7 @@ u8 vref_init_done = FALSE;
  * @{
  */
 
-/** @defgroup ADC
+/** @defgroup ADC ADC
  * @brief ADC driver modules
  * @{
  */
@@ -28,7 +28,6 @@ u8 vref_init_done = FALSE;
  * @brief Initialize the parameters in the ADC_InitStruct with default values.
  * @param ADC_InitStruct Pointer to a ADC_InitTypeDef structure that contains
  * 		the configuration information of the ADC peripheral.
- * @return None
  */
 void ADC_StructInit(ADC_InitTypeDef *ADC_InitStruct)
 {
@@ -49,7 +48,6 @@ void ADC_StructInit(ADC_InitTypeDef *ADC_InitStruct)
  * @brief Initialize ADC according to the specified parameters in ADC_InitStruct.
  * @param ADC_InitStruct Pointer to a ADC_InitTypeDef structure that contains
  * 		the configuration information of the ADC peripheral.
- * @return None
  */
 void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 {
@@ -139,7 +137,6 @@ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
  * @brief Enable or disable the ADC peripheral.
  * @param NewState New state of the ADC peripheral.
  * 		This parameter can be ENABLE or DISABLE.
- * @return None
  */
 void ADC_Cmd(u32 NewState)
 {
@@ -164,7 +161,6 @@ void ADC_Cmd(u32 NewState)
  * @param ADC_channel This parameter can be a value of @ref ADC_Chn_Selection.
  * @param PeriodUs ADC sample period in us.
  * 		This parameter can be set to 0x1~0x40F.
- * @return None
  */
 void ADC_SetChanClk(u8 ADC_channel, u16 PeriodUs)
 {
@@ -188,19 +184,9 @@ void ADC_SetChanClk(u8 ADC_channel, u16 PeriodUs)
 
 /**
  * @brief Enable or disable ADC interrupt(s).
- * @param ADC_IT ADC interrupt(s) to be configured.
- * 		This parameter can be one or combinations of the following parameters:
- * 		@arg ADC_BIT_IT_COMP_CHx_EN: ADC channel x compare interrupt, where x can be 0-10 corresponding to channelx.
- * 		@arg ADC_BIT_IT_ERR_EN: ADC error state interrupt
- * 		@arg ADC_BIT_IT_DAT_OVW_EN: ADC data overwritten interrupt
- * 		@arg ADC_BIT_IT_FIFO_EMPTY_EN: ADC FIFO empty interrupt
- * 		@arg ADC_BIT_IT_FIFO_OVER_EN: ADC FIFO overflow interrupt
- * 		@arg ADC_BIT_IT_FIFO_FULL_EN: ADC FIFO full interrupt
- * 		@arg ADC_BIT_IT_CHCV_END_EN: ADC particular channel conversion done interrupt
- * 		@arg ADC_BIT_IT_CV_END_EN: ADC conversion end interrupt
- * 		@arg ADC_BIT_IT_CVLIST_END_EN: ADC conversion list end interrupt
+ * @param ADC_IT ADC interrupt(s) to be enabled or disabled.
+ *        This parameter is a bitmask of the ADC_INTR_CTRL register bits.
  * @param NewState ENABLE or DISABLE.
- * @return None
  */
 void ADC_INTConfig(u32 ADC_IT, u32 NewState)
 {
@@ -219,8 +205,6 @@ void ADC_INTConfig(u32 ADC_IT, u32 NewState)
 
 /**
  * @brief Clear all the ADC interrupt pending bits.
- * @param None
- * @return None
  * @note This function can also be used to clear raw interrupt status.
  */
 void ADC_INTClear(void)
@@ -238,17 +222,7 @@ void ADC_INTClear(void)
 /**
  * @brief Clear specified ADC interrupt pending bits.
  * @param ADC_IT Pending bits to be cleared.
- * 		This parameter can be one or combinations of the following values:
- * 		@arg ADC_BIT_IT_COMP_CHx_STS, where x can be 0-10 corresponding to channelx
- * 		@arg ADC_BIT_IT_ERR_STS
- * 		@arg ADC_BIT_IT_DAT_OVW_STS
- * 		@arg ADC_BIT_IT_FIFO_EMPTY_STS
- * 		@arg ADC_BIT_IT_FIFO_OVER_STS
- * 		@arg ADC_BIT_IT_FIFO_FULL_STS
- * 		@arg ADC_BIT_IT_CHCV_END_STS
- * 		@arg ADC_BIT_IT_CV_END_STS
- * 		@arg ADC_BIT_IT_CVLIST_END_STS
- * @return None
+ *        This parameter is a bitmask of the ADC_INTR_STS register bits.
  */
 void ADC_INTClearPendingBits(u32 ADC_IT)
 {
@@ -263,7 +237,6 @@ void ADC_INTClearPendingBits(u32 ADC_IT)
 
 /**
  * @brief Get ADC interrupt status.
- * @param None
  * @return Current interrupt status.
  */
 u32 ADC_GetISR(void)
@@ -279,7 +252,6 @@ u32 ADC_GetISR(void)
 
 /**
  * @brief Get ADC raw interrupt status.
- * @param None
  * @return Current raw interrupt status.
  */
 u32 ADC_GetRawISR(void)
@@ -295,21 +267,8 @@ u32 ADC_GetRawISR(void)
 
 /**
  * @brief Set list length and channel ID of ADC channel switch list.
- * @param ChanIdBuf Pointer to ADC channel ID buffer, which contains value of @ref ADC_Chn_Selection as following:
- * 		@arg ADC_CH0
- * 		@arg ADC_CH1
- * 		@arg ADC_CH2
- * 		@arg ADC_CH3
- * 		@arg ADC_CH4
- * 		@arg ADC_CH5
- * 		@arg ADC_CH6
- * 		@arg ADC_CH7
- * 		@arg ADC_CH8
- * 		@arg ADC_CH9
- * 		@arg ADC_CH10
- * 		@arg ADC_DUMMY_CYCLE
+ * @param ChanIdBuf Pointer to ADC channel ID buffer, which contains value of @ref ADC_Chn_Selection.
  * @param ChanLen ADC channel list length, which can be 1 ~ 16.
- * @return None
  */
 void ADC_SetChList(u8 *ChanIdBuf, u8 ChanLen)
 {
@@ -347,7 +306,6 @@ void ADC_SetChList(u8 *ChanIdBuf, u8 ChanLen)
 
 /**
  * @brief Get the number of valid entries in ADC receive FIFO.
- * @param None.
  * @return The number of valid entries in receive FIFO.
  */
 u32 ADC_GetRxCount(void)
@@ -363,7 +321,6 @@ u32 ADC_GetRxCount(void)
 
 /**
  * @brief Get the last ADC used channel.
- * @param None.
  * @return The last ADC used channel index.
  */
 u32 ADC_GetLastChan(void)
@@ -401,7 +358,6 @@ u32 ADC_GetCompStatus(u8 ADC_Channel)
  * @param det_mode This parameter can be one of the following values:
  * 		@arg ADC_COMP_LEVEL_DETECT: Level detection mode.
  * 		@arg ADC_COMP_EDGE_DETECT: Edge detection mode.
- * @return None
  */
 void ADC_SetCompMode(u8 det_mode)
 {
@@ -422,13 +378,12 @@ void ADC_SetCompMode(u8 det_mode)
  * @brief Set ADC channel threshold and criteria for comparison.
  * @param ADC_channel This parameter can be a value of @ref ADC_Chn_Selection.
  * @param CompThresH Higher threshold of channel for ADC automatic comparison.
- * @param CompThresL lower threshold of channel for ADC automatic comparison.
- * @param CompCtrl This parameter can be a value of @ref ADC_Compare_Control_Definitions as following:
+ * @param CompThresL Lower threshold of channel for ADC automatic comparison.
+ * @param CompCtrl This parameter can be a value of @ref ADC_Compare_Control as following:
  * 		@arg ADC_COMP_SMALLER_THAN_THL: less than the lower threshold
- * 		@arg ADC_COMP_GREATER_THAN_THH: greater than the higher threshoLd
- * 		@arg ADC_COMP_WITHIN_THL_AND_THH: between the lower and higher threshoLd
- * 		@arg ADC_COMP_OUTSIDE_THL_AND_THH: out the range of the higher and lower threshoLd
- * @return None
+ * 		@arg ADC_COMP_GREATER_THAN_THH: greater than the higher threshold
+ * 		@arg ADC_COMP_WITHIN_THL_AND_THH: between the lower and higher threshold
+ * 		@arg ADC_COMP_OUTSIDE_THL_AND_THH: out the range of the higher and lower threshold
  */
 void ADC_SetComp(u8 ADC_channel, u16 CompThresH, u16 CompThresL, u8 CompCtrl)
 {
@@ -459,7 +414,6 @@ void ADC_SetComp(u8 ADC_channel, u16 CompThresH, u16 CompThresL, u8 CompCtrl)
 
 /**
  * @brief Determine ADC FIFO is readable or not.
- * @param None.
  * @return ADC FIFO is readable or not:
  * 		- 0: Not readable
  * 		- 1: Readable
@@ -474,7 +428,6 @@ u32 ADC_Readable(void)
 
 /**
  * @brief Read data from ADC receive FIFO .
- * @param None
  * @return The conversion data with the channel index that the data belongs to.
  */
 u32 ADC_Read(void)
@@ -488,7 +441,6 @@ u32 ADC_Read(void)
  * @brief Read data in auto mode continuously.
  * @param pBuf Pointer to buffer to keep sample data.
  * @param len Number of sample data to be read.
- * @return None
  */
 void ADC_ReceiveBuf(u32 *pBuf, u32 len)
 {
@@ -507,8 +459,6 @@ void ADC_ReceiveBuf(u32 *pBuf, u32 len)
 
 /**
  * @brief Clear ADC FIFO.
- * @param None
- * @return None
  */
 void ADC_ClearFIFO(void)
 {
@@ -525,7 +475,6 @@ void ADC_ClearFIFO(void)
 
 /**
  * @brief Get ADC status.
- * @param None
  * @return Current status.
  */
 u32 ADC_GetStatus(void)
@@ -544,11 +493,12 @@ u32 ADC_GetStatus(void)
  * @param NewState This parameter can be one of the following values:
  * 		@arg ENABLE: Enable the analog module and analog mux, then start a new channel conversion.
  * 		@arg DISABLE: Disable the analog module and analog mux.
- * @return None
  * @note Used in Software Trigger Mode.
  * @note Every time this bit is set to 1, ADC module would switch to a new channel and do one conversion.
  * 		Every time a conversion is done, software must clear this bit manually.
+ * @internal
  * @note Sync time: (6+2*hcnt)*adc_clk, hcnt_max = 255
+ * @endinternal
  */
 void ADC_SWTrigCmd(u32 NewState)
 {
@@ -578,11 +528,12 @@ void ADC_SWTrigCmd(u32 NewState)
  * @param NewState This parameter can be one of the following values:
  * 		@arg ENABLE: Enable the automatic channel switch.
  * 		@arg DISABLE: Disable the automatic channel switch.
- * @return None
  * @note Used in Automatic Mode
  * @note When setting this bit, an automatic channel switch starts from the first channel in the channel switch list.
  * 		If an automatic channel switch is in progress, writing 0 will terminate the automatic channel switch.
+ * @internal
  * @note Sync time: (6+2*hcnt)*adc_clk, hcnt_max = 255
+ * @endinternal
  */
 void ADC_AutoCSwCmd(u32 NewState)
 {
@@ -610,13 +561,12 @@ void ADC_AutoCSwCmd(u32 NewState)
 /**
  * @brief Initialize the trigger timer in ADC Timer-Trigger Mode.
  * @param Tim_Idx Index of a basic timer that would be used to trigger ADC conversion.
- * @note This parameter should be 0-7.
+ *        This parameter should be 0-7.
  * @param PeriodMs Period of trigger timer in ms, which can be 1ms-131071ms.
  * @param NewState This parameter can be one of the following values:
  * 		@arg ENABLE: Enable the ADC timer trigger mode.
  * 		@arg DISABLE: Disable the ADC timer trigger mode.
- * @return None
- * @note Used in Timer-Trigger Mode
+ * @note Used in Timer-Trigger Mode.
  */
 void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState)
 {
@@ -651,7 +601,6 @@ void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState)
  * @param NewState This parameter can be one of the following values:
  * 		@arg ENABLE: Enable ADC oversample.
  * 		@arg DISABLE: Disable ADC oversample.
- * @return None
  */
 void ADC_OverSampleCmd(u32 NewState)
 {
@@ -670,33 +619,11 @@ void ADC_OverSampleCmd(u32 NewState)
 
 /**
  * @brief Set ADC oversample parameters.
- * @param OS_Shift Oversample right shift bit.
- * 		This parameter can be one of the following parameters:
- * 		@arg ADC_OSF_NONE: No shift.
- * 		@arg ADC_OSF_1: Right shift 1bit.
- * 		@arg ADC_OSF_2: Right shift 2bit.
- * 		@arg ADC_OSF_3: Right shift 3bit.
- * 		@arg ADC_OSF_4: Right shift 4bit.
- * 		@arg ADC_OSF_5: Right shift 5bit.
- * 		@arg ADC_OSF_6: Right shift 6bit.
- * 		@arg ADC_OSF_7: Right shift 7bit.
- * @param OS_Ratio Oversample Ratio.
- * 		This parameter can be one of the following parameters:
- * 		@arg ADC_OSR_2: 2x.
- * 		@arg ADC_OSR_4: 4x.
- * 		@arg ADC_OSR_8: 8x.
- * 		@arg ADC_OSR_16: 16x.
- * 		@arg ADC_OSR_32: 32x.
- * 		@arg ADC_OSR_64: 64x.
- * 		@arg ADC_OSR_128: 128x.
- * 		@arg ADC_OSR_256: 256x.
- * @param OS_Mode Oversample Mode.
- * 		This parameter can be one of the following parameters:
- * 		@arg ADC_OS_STAGGERED: All oversampling conversions done in staggered sequence.
- * 		@arg ADC_OS_REGULAR: All oversampling conversions done in regular sequence.
- * @return None
+ * @param OS_Shift Oversample right shift bit. This parameter can be a value of @ref ADC_OS_Shift.
+ * @param OS_Ratio Oversample ratio. This parameter can be a value of @ref ADC_OS_Ratio.
+ * @param OS_Mode Oversample mode. This parameter can be a value of @ref ADC_OS_Mode.
  */
-void ADC_SetOverSample(u8 OS_Shift, u8 OS_Ratio, u8 OS_Mode)
+void ADC_SetOverSample(ADC_OS_Shift OS_Shift, ADC_OS_Ratio OS_Ratio, ADC_OS_Mode OS_Mode)
 {
 	ADC_TypeDef *adc = ADC;
 
@@ -705,10 +632,6 @@ void ADC_SetOverSample(u8 OS_Shift, u8 OS_Ratio, u8 OS_Mode)
 	}
 
 	u32 value;
-
-	assert_param(IS_ADC_OSF(OS_Shift));
-	assert_param(IS_ADC_OSR(OS_Ratio));
-	assert_param(IS_ADC_OS_MODE(OS_Mode));
 
 	value = adc->ADC_OVERSAMPLE;
 	value &= ~(ADC_MASK_OSF | ADC_MASK_OSR | ADC_BIT_OV_MODE);
@@ -725,7 +648,6 @@ void ADC_SetOverSample(u8 OS_Shift, u8 OS_Ratio, u8 OS_Mode)
  * @brief Set ADC dummy cycle time and related settle time.
  * @param DummyUs ADC dummy cycle time in us.
  * @param SettleUs Settle time for sample data from CapTouch to ADC in us.
- * @return None
  */
 void ADC_SetDummyCycle(u32 DummyUs, u8 SettleUs)
 {
@@ -757,7 +679,6 @@ void ADC_SetDummyCycle(u32 DummyUs, u8 SettleUs)
  * @param NewState This parameter can be one of the following values:
  * 		@arg ENABLE: Enable ADC oversample.
  * 		@arg DISABLE: Disable ADC oversample.
- * @return None
  */
 void ADC_KeepPowerCmd(u32 NewState)
 {
@@ -777,7 +698,6 @@ void ADC_KeepPowerCmd(u32 NewState)
 /**
  * @brief Initialize ADC calibration parameters according to EFuse.
  * @param CalPara Pointer to ADC calibration parameter structure.
- * @return None
  */
 void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara)
 {
@@ -842,7 +762,6 @@ s32 ADC_GetVoltage(u32 chan_data)
 
 /**
  * @brief Get internal R resistance of V33 channels(CH0~CH5) in divided mode.
- * @param none.
  * @return Internal R resistance value in Kohm.
  */
 u32 ADC_GetInterR(void)
@@ -856,7 +775,7 @@ u32 ADC_GetInterR(void)
 
 /**
   * @brief Get normal channel sample value according to voltage in mV.
-  * @param VolMV: ADC Voltage in mV, which can be 0-3300.
+  * @param VolMV ADC Voltage in mV.
   * @return ADC conversion data.
   */
 u32 ADC_GetSampleValue(s32 VolMV)

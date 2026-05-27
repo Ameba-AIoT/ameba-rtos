@@ -83,7 +83,7 @@ extern uint32_t SystemCoreClock;
 /* Constants that build features in or out. */
 #define configUSE_MUTEXES								1
 #define configUSE_APPLICATION_TASK_TAG					1
-#define configUSE_NEWLIB_REENTRANT						0
+#define configUSE_NEWLIB_REENTRANT						1
 #define configUSE_CO_ROUTINES							1 ///
 #define configMAX_CO_ROUTINE_PRIORITIES 				( 2 )
 #define configUSE_COUNTING_SEMAPHORES					1
@@ -189,11 +189,7 @@ standard names - or at least those used in the unmodified vector table. */
 #define configGENERATE_RUN_TIME_STATS					0
 #if configGENERATE_RUN_TIME_STATS
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS() 		//( ulHighFrequencyTimerTicks = 0UL )
-#ifdef RTL8720F_TODO
-#define portGET_RUN_TIME_COUNTER_VALUE() 				    (*((volatile uint32_t*)(0x40817000 + 0x4)))  /* Debug timer counter value*/
-#else
 #define portGET_RUN_TIME_COUNTER_VALUE() 				    (*((volatile uint32_t*)(DEBUGTIMER_REG_BASE + 0x4)))  /* Debug timer counter value*/
-#endif
 #undef	configUSE_TRACE_FACILITY
 #define configUSE_TRACE_FACILITY						1
 #define portCONFIGURE_STATS_PEROID_VALUE				1000 //unit Ticks

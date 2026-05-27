@@ -10,8 +10,8 @@
       REG_LSYS_BOOT_CFG: '0x026C',
     },
     BIN_MAP: [
-      ['km0_km4_app', 'FlashFileSize'],
-      ['km4_boot_all', 'XIPBootSize'],
+      ['app', 'FlashFileSize'],
+      ['boot', 'XIPBootSize'],
       ['km4_image3_all', 'Img3FileSize'],
     ],
     FLASH_PARAMS: {
@@ -35,8 +35,8 @@
       REG_LSYS_BOOT_CFG: '0x026C',
     },
     BIN_MAP: [
-      ['kr4_km4_app', 'FlashFileSize'],
-      ['km4_boot_all', 'XIPBootSize'],
+      ['app', 'FlashFileSize'],
+      ['boot', 'XIPBootSize'],
       ['km4_image3_all', 'Img3FileSize'],
       ['dsp', 'DSPFlashSize'],
     ],
@@ -63,8 +63,8 @@
       REG_LSYS_BOOT_CFG: '0x0268',
     },
     BIN_MAP: [
-      ['km0_km4_ca32_app', 'FlashFileSize'],
-      ['km4_boot_all', 'XIPBootSize'],
+      ['app', 'FlashFileSize'],
+      ['boot', 'XIPBootSize'],
     ],
     FLASH_PARAMS: {
       PC: '0x9900',
@@ -87,8 +87,8 @@
       REG_LSYS_BOOT_CFG: '0x026C',
     },
     BIN_MAP: [
-      ['amebagreen2_app', 'FlashFileSize'],
-      ['amebagreen2_boot', 'XIPBootSize'],
+      ['app', 'FlashFileSize'],
+      ['boot', 'XIPBootSize'],
       ['km4tz_image3_all', 'Img3FileSize'],
     ],
     FLASH_PARAMS: {
@@ -119,8 +119,8 @@
         ['./lib/RTL8720F_rom_acut/km4ns_rom.bin', '0x00020000'], // one file only
     },
     BIN_MAP: [
-      ['RTL8720F_app', 'FlashFileSize'],
-      ['RTL8720F_boot', 'XIPBootSize'],
+      ['app', 'FlashFileSize'],
+      ['boot', 'XIPBootSize'],
       ['km4tz_image3_all', 'Img3FileSize'],
     ],
     FLASH_PARAMS: {

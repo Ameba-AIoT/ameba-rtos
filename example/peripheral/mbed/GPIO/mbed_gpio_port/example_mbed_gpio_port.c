@@ -33,7 +33,7 @@ void mbed_gpio_port_demo(void)
 	while (1) {
 		for (i = 0; i < LED_PATTERN_NUM; i++) {
 			port_write(&port0, led_pattern[i]);
-			printf("[%d]set port: 0x%x\r\n", i, pin_mask & led_pattern[i]);
+			printf("[%d]set port: 0x%lx\r\n", i, pin_mask & led_pattern[i]);
 			wait_ms(1000);
 			printf("[%d]get port: 0x%x\r\n", i, port_read(&port0));
 		}

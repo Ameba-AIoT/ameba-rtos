@@ -393,6 +393,12 @@ class AmebaManager:
                 print(f"{YELLOW}The param '{flag}' will be ignored.{RESET}")
 
         img_dir = self.soc_workdir
+        if '--image-dir' in args:
+            idx = args.index('--image-dir')
+            if idx + 1 < len(args):
+                img_dir = args[idx + 1]
+            else:
+                print(f"{YELLOW}WARNING: '--image-dir' flag is provided but no directory is specified. Default to '{img_dir}'.{RESET}")
         if not img_dir or not os.path.exists(img_dir):
             print(f"{RED}ERROR: Please build before flash.{RESET}")
             return False

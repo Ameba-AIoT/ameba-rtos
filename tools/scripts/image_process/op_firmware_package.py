@@ -107,6 +107,8 @@ soc_configs:Dict[str, SocImageConfig] = {
     ),
 }
 
+soc_configs["amebag2"] = soc_configs["amebagreen2"]
+
 class FirmwarePackage(OperationBase):
     cmd_help_msg = 'Generate final firmware image'
     cmd_promote = "fw_pack"

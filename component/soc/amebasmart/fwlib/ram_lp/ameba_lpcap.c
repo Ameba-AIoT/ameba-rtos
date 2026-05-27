@@ -126,6 +126,10 @@ void ap_power_on(void)
 	}
 	pmu_acquire_wakelock(PMU_AP_RUN);
 
+	/* CA32 polling (LSYS_BIT_AP_RST_WAIT_DRAM == 0) in BL1 stage for warm reset */
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & (~ LSYS_BIT_AP_RST_WAIT_DRAM));
+
 	ap_power_on_ctrl();
 
 	RTK_LOGD(TAG, "APPW\n");
@@ -208,6 +212,10 @@ void ap_clock_on(void)
 void ap_resume(void)
 {
 	int cnt = 0;
+
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RUNNING);
+
 	/* check km4 state, km4 need be active when CA7 run*/
 	if (!np_status_on()) {
 		InterruptDis(NP_WAKE_IRQ);

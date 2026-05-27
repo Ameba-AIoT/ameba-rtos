@@ -318,7 +318,9 @@ void BOOT_WakeFromPG(void)
 	SCB_NS->VTOR = (u32)vector_table;
 
 	/* Add redefine secure fault handler to vector table* */
+#if !defined(__ZEPHYR__) && !defined(BL2)
 	Fault_Hanlder_Redirect(NULL);
+#endif
 
 	/* Enable FPU and Secure/Usage/Mem/Bus Fault */
 	BOOT_SCBConfig_HP();
@@ -489,7 +491,7 @@ bool BOOT_RRAM_InfoValid(void)
 }
 
 //3 Image 1
-void BOOT_Image1(void)
+__weak void BOOT_Image1(void)
 {
 	PRAM_START_FUNCTION Image2EntryFun = BOOT_SectionInit();
 	u32 *vector_table = NULL;
@@ -621,25 +623,13 @@ BOOT_EXPORT_SYMB_TABLE boot_export_symbol = {
 
 };
 
-#ifdef __ZEPHYR__
-extern void z_arm_reset(void);
-#endif
-
 IMAGE1_ENTRY_SECTION
 RAM_FUNCTION_START_TABLE RamStartTable = {
 	.RamStartFun = NULL,
-#ifdef __ZEPHYR__
-	.RamWakeupFun = NULL,
-#else
 	.RamWakeupFun = BOOT_WakeFromPG,
-#endif
 	.RamPatchFun0 = NULL,
 	.RamPatchFun1 = NULL,
 	.RamPatchFun2 = NULL,
-#ifdef __ZEPHYR__
-	.FlashStartFun = z_arm_reset,
-#else
 	.FlashStartFun = BOOT_Image1,
-#endif
 	.ExportTable = &boot_export_symbol
 };
