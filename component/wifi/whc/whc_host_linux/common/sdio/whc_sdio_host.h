@@ -25,9 +25,6 @@ struct whc_sdio;
 #define SDIO_BLOCK_SIZE		256
 #define ETH_ALEN	6 //ethernet address length
 
-#define SD_IO_TRY_CNT (8)
-#define MAX_CONTINUAL_IO_ERR SD_IO_TRY_CNT
-
 #define MAX_RX_AGG_NUM 6
 
 //#define SDIO_HOST_FAKE_SLEEP
@@ -54,7 +51,6 @@ struct whc_sdio {
 	u16			rxbd_num;
 	u16 		SdioTxBDFreeNum;
 	u32 		SdioTxMaxSZ; //The Size of Single Tx buf addressed by TX_BD
-	u8			SdioRxFIFOCnt;
 	u8	func_number;
 	u8	tx_block_mode;
 	u8	rx_block_mode;
@@ -65,11 +61,8 @@ struct whc_sdio {
 
 	void *sys_sdio_irq_thd;
 
-	atomic_t continual_io_error;
-
 	u8 dev_state;
 
-	int (*rx_process_func)(struct sk_buff *pskb);
 	void (*rx_recv_notify)(void);
 };
 

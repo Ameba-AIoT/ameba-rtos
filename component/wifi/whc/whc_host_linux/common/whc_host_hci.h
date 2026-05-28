@@ -108,7 +108,7 @@ struct netdev_work {
 
 struct hci_ops_t {
 	void (*send_data)(u8 *buf, u32 len, struct sk_buff *pskb);
-	void (*recv_data_process)(void *intf_priv);
+	void (*recv_data)(void *intf_priv);
 };
 
 struct whc_device {

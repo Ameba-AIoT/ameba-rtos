@@ -39,8 +39,6 @@ static int whc_sdio_host_probe(struct sdio_func *func, const struct sdio_device_
 	init_waitqueue_head(&priv->txbd_wq);
 
 	priv->func = func;
-	priv->rx_process_func = whc_host_recv_process;
-	atomic_set(&priv->continual_io_error, 0);
 
 	sdio_set_drvdata(func, (void *)priv);
 
@@ -288,7 +286,7 @@ int whc_sdio_host_resume(struct device *dev)
 
 	/* Enable interrupt */
 	himr = cpu_to_le32(priv->sdio_himr);
-	sdio_local_write(priv, SDIO_REG_HIMR, 4, (u8 *)&himr);
+	rtw_write32(priv, SDIO_REG_HIMR, himr);
 
 	/* Wakeup device */
 	if (whc_sdio_host_resume_common(priv)) {
@@ -408,7 +406,7 @@ module_init(whc_sdio_host_init_module);
 module_exit(whc_sdio_host_cleanup_module);
 
 MODULE_AUTHOR("Realtek");
-MODULE_DESCRIPTION("RealTek iNIC WHC");
+MODULE_DESCRIPTION("RealTek Ameba WHC");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("rtl8721da");
+MODULE_VERSION("1.0");
 

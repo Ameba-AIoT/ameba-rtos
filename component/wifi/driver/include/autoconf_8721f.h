@@ -36,7 +36,9 @@
 
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
-//#define CONFIG_NAN
+#ifdef CONFIG_WHC_DEV
+#define CONFIG_NAN
+#endif
 #define CONFIG_MCC_MODE
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_V2 1

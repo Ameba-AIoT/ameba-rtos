@@ -237,6 +237,25 @@ void SOCPS_ClockSourceConfig(u8 xtal_mode, u8 osc_option)
 	}
 }
 
+/**
+ * @brief Raise CLDO sleep voltage to 0.9V by overriding the 0.7V and 0.8V code slots.
+ *
+ * Writes the per-IC 0.9V code (read from CODE2) into CODE0 and CODE1, so the
+ * system sleeps at 0.9V regardless of the sleep_to_08V setting in sleepcfg.
+ */
+void SOCPS_SleepVoltRaiseTo0P9(void)
+{
+	LDO_TypeDef *LDO = LDO_BASE;
+	u32 reg_temp;
+	u8 code_0p9;
+
+	reg_temp = LDO->LDO_CLDO_VOLT_CTRL;
+	code_0p9 = (u8)LDO_GET_VOLT_CODE2_CLDO(reg_temp);
+	reg_temp &= ~(LDO_MASK_VOLT_CODE1_CLDO | LDO_MASK_VOLT_CODE0_CLDO);
+	reg_temp |= LDO_VOLT_CODE1_CLDO(code_0p9) | LDO_VOLT_CODE0_CLDO(code_0p9);
+	LDO->LDO_CLDO_VOLT_CTRL = reg_temp;
+}
+
 void SOCPS_PowerManage(void)
 {
 	u32 reg_temp = 0;

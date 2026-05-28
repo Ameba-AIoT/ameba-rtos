@@ -34,6 +34,22 @@
 extern "C" {
 #endif
 
+/** @addtogroup Ameba_Mbed_API
+  * @{
+  */
+
+/** @addtogroup MBED_GPIO
+ *  @brief      MBED_GPIO driver modules.
+ *  @{
+ */
+
+/* reserved region for storage enum and structure, used by Doxygen */
+
+
+/** @addtogroup MBED_GPIO_Exported_Functions MBED_GPIO Exported Functions
+  * @{
+  */
+
 void gpio_init(gpio_t *obj, PinName pin);
 uint32_t gpio_set(PinName pin);
 void gpio_mode(gpio_t *obj, PinMode mode);
@@ -45,6 +61,16 @@ void gpio_direct_write(gpio_t *obj, bool value) ;
 void gpio_pull_ctrl(gpio_t *obj, PinMode pull_type);
 void gpio_deinit(gpio_t *obj);
 void gpio_change_dir(gpio_t *obj, PinDirection direction);
+
+/**
+  * @}
+  */
+/**
+  * @}
+  */
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }

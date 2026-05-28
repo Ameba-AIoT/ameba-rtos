@@ -202,7 +202,7 @@ void whc_usb_host_rx_complete(struct urb *urb)
 	}
 }
 
-void whc_usb_host_recv_data_process(void *intf_priv)
+void whc_usb_host_recv_data(void *intf_priv)
 {
 	struct whc_usb *priv = (struct whc_usb *)intf_priv;
 	struct sk_buff *skb;
@@ -213,14 +213,14 @@ void whc_usb_host_recv_data_process(void *intf_priv)
 	spin_unlock_irqrestore(&priv->usb_rxskb_lock, flags);
 
 	if (skb) {
-		priv->rx_process_func(skb);
+		whc_host_recv_dispatch(skb);
 	}
 }
 
 
 struct hci_ops_t whc_usb_host_intf_ops = {
 	.send_data = whc_usb_host_send_data,
-	.recv_data_process = whc_usb_host_recv_data_process,
+	.recv_data = whc_usb_host_recv_data,
 };
 
 int whc_usb_host_send_event_check(u32 event_id)

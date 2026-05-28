@@ -181,7 +181,7 @@ static void bt_zephyr_disconnected_callback(struct bt_conn *conn, uint8_t reason
 	peer_addr = (BT_HCI_ROLE_PERIPHERAL == conn->role) ? &conn->le.init_addr : &conn->le.resp_addr;
 	if (!conn->le.dst_flag) {
 		p_disconn_ind->peer_addr.type = conn->le.dst.type;
-		if (memcmp(peer_addr, conn->le.dst.a.val, BT_ADDR_SIZE)) {
+		if (memcmp(peer_addr->a.val, conn->le.dst.a.val, BT_ADDR_SIZE)) {
 			p_disconn_ind->peer_addr.type |= 0x2;
 		}
 		memcpy(p_disconn_ind->peer_addr.addr_val, conn->le.dst.a.val, BT_ADDR_SIZE);

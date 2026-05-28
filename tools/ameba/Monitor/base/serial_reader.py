@@ -205,6 +205,20 @@ class SerialReader(StoppableThread):
             if not reset_success:
                 print_red("Failed to reset, please reset manually.")
                 self.data_buffer = b''
+            else:
+                # Flush data captured during the reset phase before entering the
+                # main loop. Fast-boot boards finish their entire boot sequence
+                # during the reset phase; the main loop only checks data_buffer
+                # after new data arrives, which never happens on an already-idle
+                # board, causing the complete log to be silently dropped.
+                if self.data_buffer:
+                    if self.target_keyword in self.data_buffer:
+                        index = self.data_buffer.find(self.target_keyword)
+                        self.event_queue.put((TAG_SERIAL, self.data_buffer[index:]), False)
+                    else:
+                        self.event_queue.put((TAG_SERIAL, self.data_buffer), False)
+                    self.data_buffer = b''
+                    self.start_output = True
 
         while self.running:
             try:

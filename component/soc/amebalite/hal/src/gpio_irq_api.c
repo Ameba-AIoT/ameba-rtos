@@ -35,10 +35,10 @@
 
 /**
   * @brief  Initialize the GPIO device's interrupt mode, including mode, trigger and polarity registers.
-  * @param  obj: GPIO irq object defined in application software.
-  * @param  pin: PinName according to pinmux spec.
-  * @param  handler: Interrupt handler to be assigned to the specified pin.
-  * @param  id: Handler parameter.
+  * @param  obj GPIO irq object defined in application software.
+  * @param  pin PinName according to pinmux spec.
+  * @param  handler Interrupt handler to be assigned to the specified pin.
+  * @param  id Handler parameter.
   * @return 0 if initialization is ok.
   */
 int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32_t id)
@@ -82,8 +82,7 @@ int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32
 
 /**
   * @brief  Deinitialize the GPIO device interrupt mode, including mode, trigger and polarity registers.
-  * @param  obj: GPIO irq object defined in application software.
-  * @retval none
+  * @param  obj GPIO irq object defined in application software.
   */
 void gpio_irq_free(gpio_irq_t *obj)
 {
@@ -92,18 +91,17 @@ void gpio_irq_free(gpio_irq_t *obj)
 
 /**
   * @brief  Configure GPIO interrupt as enabled or disabled.
-  * @param  obj: GPIO irq object defined in application software.
-  * @param  event: GPIO interrupt event, this parameter can be one of the following values:
+  * @param  obj GPIO irq object defined in application software.
+  * @param  event GPIO interrupt event, this parameter can be one of the following values:
   *		@arg IRQ_RISE: Rising edge interrupt event.
   *		@arg IRQ_FALL: Falling edge interrupt event.
   *		@arg IRQ_FALL_RISE: Both rising and falling edge interrupt event.
   *		@arg IRQ_LOW: Low level interrupt event.
   *		@arg IRQ_HIGH: High level interrupt event.
   *		@arg IRQ_NONE: No interrupt event.
-  * @param  enable: This parameter can be one of the following values:
+  * @param  enable This parameter can be one of the following values:
   *		@arg 0: Disable GPIO interrupt.
   *		@arg 1: Enable GPIO interrupt.
-  * @retval none
   */
 void gpio_irq_set(gpio_irq_t *obj, gpio_irq_event event, uint32_t enable)
 {
@@ -153,12 +151,11 @@ void gpio_irq_set(gpio_irq_t *obj, gpio_irq_event event, uint32_t enable)
 
 /**
   * @brief  Enable GPIO interrupt.
-  * @param  obj: GPIO irq object defined in application software.
-  * @retval none
+  * @param  obj GPIO irq object defined in application software.
   */
 void gpio_irq_enable(gpio_irq_t *obj)
 {
-	/* debounce is enabled by default, delay 2 dbclk is needed to avoid asserting intr unexpectly */
+	/* debounce is enabled by default, delay 2 dbclk is needed to avoid asserting intr unexpectedly */
 	wait_us(61);
 
 	GPIO_INTConfig(obj->pin, ENABLE);
@@ -166,8 +163,7 @@ void gpio_irq_enable(gpio_irq_t *obj)
 
 /**
   * @brief  Disable GPIO interrupt.
-  * @param  obj: GPIO irq object defined in application software.
-  * @retval none
+  * @param  obj GPIO irq object defined in application software.
   */
 void gpio_irq_disable(gpio_irq_t *obj)
 {
@@ -176,8 +172,7 @@ void gpio_irq_disable(gpio_irq_t *obj)
 
 /**
   * @brief  Deinitialize the GPIO device's interrupt mode, including mode, trigger and polarity registers.
-  * @param  obj: GPIO irq object defined in application software.
-  * @retval none
+  * @param  obj GPIO irq object defined in application software.
   * @note It is the same with function GPIO_DeInit();
   */
 void gpio_irq_deinit(gpio_irq_t *obj)
@@ -187,12 +182,11 @@ void gpio_irq_deinit(gpio_irq_t *obj)
 
 /**
   * @brief  Configure pull type of the selected interrupt pin.
-  * @param  obj: GPIO irq object defined in application software.
-  * @param  pull_type: This parameter can be one of the following values:
+  * @param  obj GPIO irq object defined in application software.
+  * @param  pull_type This parameter can be one of the following values:
   *		@arg  PullNone: HighZ, user can input high or low with this pin.
   *		@arg  PullDown: Pull down.
   *		@arg  PullUp: Pull up.
-  * @retval none
   * @note It is the same with function gpio_mode();
   */
 void gpio_irq_pull_ctrl(gpio_irq_t *obj, PinMode pull_type)
@@ -200,7 +194,7 @@ void gpio_irq_pull_ctrl(gpio_irq_t *obj, PinMode pull_type)
 	int GPIO_PuPd;
 
 	switch (pull_type) {
-	case PullNone:/* No driver -> Input & High Impendance */
+	case PullNone:/* No driver -> Input & High Impedance */
 		GPIO_PuPd = GPIO_PuPd_NOPULL;
 		break;
 
@@ -221,19 +215,15 @@ void gpio_irq_pull_ctrl(gpio_irq_t *obj, PinMode pull_type)
 }
 
 /**
-  * @brief  Configure GPIO interrupt as enabled or disabled.
-  * @param  obj: GPIO irq object defined in application software.
-  * @param  event: GPIO interrupt event, this parameter can be one of the following values:
+  * @brief  Configure GPIO interrupt as enabled.
+  * @param  obj GPIO irq object defined in application software.
+  * @param  event GPIO interrupt event, this parameter can be one of the following values:
   *		@arg  IRQ_RISE: Rising edge interrupt event.
   *		@arg  IRQ_FALL: Falling edge interrupt event.
   *		@arg  IRQ_FALL_RISE: Both rising and falling edge interrupt event.
   *		@arg  IRQ_LOW: Low level interrupt event.
   *		@arg  IRQ_HIGH: High level interrupt event.
   *		@arg  IRQ_NONE: No interrupt event.
-  * @param  enable: This parameter can be one of the following values:
-  *		@arg  0: Disable GPIO interrupt.
-  *		@arg  1: Enable GPIO interrupt.
-  * @retval none
   * @note It is the same with function gpio_irq_set();
   */
 void gpio_irq_set_event(gpio_irq_t *obj, gpio_irq_event event)

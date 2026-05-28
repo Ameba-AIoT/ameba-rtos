@@ -6,19 +6,88 @@
 
 #include "ameba_soc.h"
 
+#define IS_SEND_TO_KM4(MODE)		(((MODE) == IPC_KR4_TO_KM4) || \
+								((MODE) == IPC_DSP_TO_KM4))
+
+#define IS_SEND_TO_KR4(MODE)		(((MODE) == IPC_KM4_TO_KR4) || \
+								((MODE) == IPC_DSP_TO_KR4))
+
+#define IS_SEND_TO_DSP(MODE)		(((MODE) == IPC_KR4_TO_DSP) || \
+								((MODE) == IPC_KM4_TO_DSP))
+
 static const char *const TAG = "IPC";
 #ifdef CONFIG_KERNEL
 rtos_sema_t ipc_Semaphore[IPC_TX_CHANNEL_NUM];
 #endif
+
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup IPC IPC
+  * @brief  IPC driver modules
+  * @{
+  */
+
+u32 IPC_wait_idle_NonOS(IPC_TypeDef *IPCx, u32 IPC_ChNum)
+{
+	u32 timeout = 10000000;
+	while (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
+		timeout--;
+		if (timeout == 0) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Request Timeout\r\n");
+			return IPC_REQ_TIMEOUT;
+		}
+	}
+	return 0;
+}
+
 /**
-  * @brief  init ipc interrupt handler table.
-  * @param  where IPCx can be IPCKR4_DEV for KR4, IPCKM4_DEV for CM4, IPCDSP_DEV for DSP.
-  * @retval   None
+  * @brief  Processing functions when the IPC channel is occupied
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
+  * @param  IPC_ChNum IPC_ChNum
+  * @return IPC_REQ_TIMEOUT or IPC_SEMA_TIMEOUT or RTK_SUCCESS
+  */
+u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
+{
+	if (CPU_InInterrupt() || (IPC_IrqHandler[IPC_ChNum] == NULL)) {
+	} else {
+#ifdef CONFIG_KERNEL
+		/* Avoid muiti-task use same channel */
+		if (ipc_Semaphore[IPC_ChNum] == NULL) {
+			rtos_sema_create_binary(&ipc_Semaphore[IPC_ChNum]);
+		}
+
+		/* clear pending interrupt status */
+		IPC_INTClear(IPCx, IPC_ChNum);
+
+		/* if TX channel cleared during waiting then break waiting */
+		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
+			IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
+			while (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Get Semaphore Timeout\r\n");
+			}
+			IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
+		}
+#endif
+	}
+
+	return IPC_wait_idle_NonOS(IPCx, IPC_ChNum);
+}
+
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup IPC_Exported_Functions IPC Exported Functions
+  * @{
+  */
+
+/**
+  * @brief  Init ipc interrupt handler table.
+  * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
   */
 void ipc_table_init(IPC_TypeDef *IPCx)
 {
 	u32 i;
-	u32 IPC_Dir;
+	IPC_Direction_Mode IPC_Dir;
 	u32 IPC_ChNum;
 	u32 IPC_GroupShift;
 	u32 IPC_ChShift;
@@ -85,9 +154,9 @@ void ipc_table_init(IPC_TypeDef *IPCx)
 
 /**
   * @brief  The common IPC Tx interrupt handler
-  * @param  Data: the data pointer to IPCx
-  * @param  IrqStatus: Value of IPC_ISR
-  * @param  ChanNum: ChanNum
+  * @param  Data The data pointer to IPCx
+  * @param  IrqStatus Value of IPC_ISR
+  * @param  ChanNum ChanNum
   */
 void IPC_TXHandler(void *Data, u32 IrqStatus, u32 ChanNum)
 {
@@ -106,71 +175,17 @@ void IPC_TXHandler(void *Data, u32 IrqStatus, u32 ChanNum)
 #endif
 }
 
-u32 IPC_wait_idle_NonOS(IPC_TypeDef *IPCx, u32 IPC_ChNum)
-{
-	u32 timeout = 10000000;
-	while (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
-		timeout--;
-		if (timeout == 0) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Request Timeout\r\n");
-			return IPC_REQ_TIMEOUT;
-		}
-	}
-	return 0;
-}
-
 /**
-  * @brief  Processing functions when the IPC channel is occupied
-  * @param  IPCx: where IPCx can be IPCKM0_DEV for KM0, IPCKM4_DEV for CM4.
-  * @param  IPC_ChNum: IPC_ChNum
-  * @retval IPC_REQ_TIMEOUT or IPC_SEMA_TIMEOUT or RTK_SUCCESS
+  * @brief  Exchange messages between cores.
+  * @param  IPC_Dir Specifies core to core direction. This parameter can be a value of @ref IPC_Direction_Mode.
+  * @param  IPC_ChNum The IPC channel number.
+  * @param  IPC_Msg Pointer to the message to be exchanged,and should not be stored in stack.
+  * @return IPC_SEND_SUCCESS or IPC_SEND_TIMEOUT
   */
-u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
-{
-	if (CPU_InInterrupt() || (IPC_IrqHandler[IPC_ChNum] == NULL)) {
-	} else {
-#ifdef CONFIG_KERNEL
-		/* Avoid muiti-task use same channel */
-		if (ipc_Semaphore[IPC_ChNum] == NULL) {
-			rtos_sema_create_binary(&ipc_Semaphore[IPC_ChNum]);
-		}
-
-		/* clear pending interrupt status */
-		IPC_INTClear(IPCx, IPC_ChNum);
-
-		/* if TX channel cleared during waiting then break waiting */
-		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
-			IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
-			while (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != RTK_SUCCESS) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, " IPC Get Semaphore Timeout\r\n");
-			}
-			IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
-		}
-#endif
-	}
-
-	return IPC_wait_idle_NonOS(IPCx, IPC_ChNum);
-}
-
-/**
-  * @brief  exchange messages between KM0 and KM4.
-  * @param  IPC_Dir: Specifies core to core direction
-  *          This parameter can be one of the following values:
-  *		 		@arg IPC_KR4_TO_KM4: KR4 send request to KM4
-  *		 		@arg IPC_KR4_TO_DSP: KR4 send request to DSP
-  *		 		@arg IPC_KM4_TO_KR4: KM4 send request to KR4
-  *		 		@arg IPC_KM4_TO_DSP: KM4 send request to DSP
-  *		 		@arg IPC_DSP_TO_KR4: DSP send request to KR4
-  *		 		@arg IPC_DSP_TO_KM4: DSP send request to KM4
-  * @param  IPC_ChNum: the IPC channel number.
-  * @param  Message: pointer to the message to be exchanged,and should not stored in stack.
-  * @retval   None
-  */
-u32 ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
+u32 ipc_send_message(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
 {
 	u32 ipc_shift = 0;
 	/* Check the parameters */
-	assert_param(IS_IPC_DIR_MODE(IPC_Dir));
 	assert_param(IS_IPC_VALID_CHNUM(IPC_ChNum));
 
 	PIPC_MSG_STRUCT IPC_MSG = (PIPC_MSG_STRUCT)(void *)__kr4_ipc_memory_start__;
@@ -233,20 +248,13 @@ u32 ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
 }
 
 /**
-  * @brief  get ipc message.
-  * @param  IPC_Dir: Specifies core to core direction
-  *          This parameter can be one of the following values:
-  *		 		@arg IPC_KR4_TO_KM4: KR4 send request to KM4
-  *		 		@arg IPC_KR4_TO_DSP: KR4 send request to DSP
-  *		 		@arg IPC_KM4_TO_KR4: KM4 send request to KR4
-  *		 		@arg IPC_KM4_TO_DSP: KM4 send request to DSP
-  *		 		@arg IPC_DSP_TO_KR4: DSP send request to KR4
-  *		 		@arg IPC_DSP_TO_KM4: DSP send request to KM4
-  * @param  IPC_ChNum: the IPC channel number.
-  * @retval  : pointer to the message to be exchanged.
-  * @note for data massage, corresponding data cache should be invalidate before access.
+  * @brief  Get ipc message.
+  * @param  IPC_Dir Specifies core to core direction. This parameter can be a value of @ref IPC_Direction_Mode.
+  * @param  IPC_ChNum The IPC channel number.
+  * @return Pointer to the message to be exchanged.
+  * @note For data message, corresponding data cache should be invalidate before access.
   */
-PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum)
+PIPC_MSG_STRUCT ipc_get_message(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum)
 {
 	PIPC_MSG_STRUCT IPC_MSG = NULL;
 	u32 msg_idx = IPC_TX_CHANNEL_NUM * IPC_TX_CHANNEL_SWITCH(IPC_Dir) + IPC_TX0_CHANNEL_NUM * IPC_TX0_CHANNEL_SWITCH(IPC_Dir) + IPC_ChNum;
@@ -256,3 +264,7 @@ PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum)
 
 	return &IPC_MSG[msg_idx];
 }
+
+/**@}*/
+/**@}*/
+/**@}*/

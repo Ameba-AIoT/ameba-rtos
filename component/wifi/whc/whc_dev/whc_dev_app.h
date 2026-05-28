@@ -25,7 +25,7 @@
 /* for rtos host only */
 #define WHC_WIFI_TEST_SET_HOST_RTOS  0xFF
 
-#define WHC_RMESH_TEST 0xdda5a5a5
+#define WHC_RMESH_TEST 0x3
 #define WHC_RMESH_TEST_SOCK_INIT    0x1
 #define WHC_RMESH_TEST_SOCK_SEND    0x2
 

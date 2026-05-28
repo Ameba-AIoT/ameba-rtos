@@ -136,7 +136,7 @@ int whc_ipc_host_send_msg(u32 id, u32 *param_buf, u32 buf_len);
 
 #else
 void whc_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb);
-void whc_host_recv_data_process(void *intf_priv);
+void whc_host_recv_data(void *intf_priv);
 void whc_host_event_task(struct work_struct *data);
 int whc_host_xmit_entry(int idx, struct sk_buff *pskb);
 int whc_host_xmit_init(void);
@@ -144,7 +144,7 @@ int whc_host_xmit_deinit(void);
 int whc_host_xmit_pending_q_num(void);
 void whc_host_xmit_wakeup_thread(void);
 void whc_host_recv_notify(void);
-int whc_host_recv_process(struct sk_buff *pskb);
+int whc_host_recv_dispatch(struct sk_buff *pskb);
 void whc_host_recv_init(void);
 void whc_host_recv_deinit(void);
 int whc_host_event_init(struct whc_device *idev);

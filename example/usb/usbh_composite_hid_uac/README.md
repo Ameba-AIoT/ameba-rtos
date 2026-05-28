@@ -53,16 +53,24 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 2. Connect the USB port of Ameba board to USB UAC HID device (for example headphone) with USB cable.
 
-3. After the USB Audio driver is successfully loaded, Ameba will recognize the headphone.
+3. Once the USB audio driver enumerates successfully, Ameba recognizes the headset and brings up both audio pipelines.
 
-   ```
-	- When you put on the headphones, there will be sound output here, with a 1-second sound loop output of 30 times.
-   ```
+	- **Playback**: Put on the headset. A built-in 1-second PCM data plays back in a loop. Per-loop playback statistics are reported on the console:
+		```
+		[COMP-I] Play stats loop=11 err=0 busy=0
+		[COMP-I] Play stats loop=12 err=0 busy=0
+		```
+
+	- **Recording**: If the headset exposes a microphone, connect a speaker to the board's audio output, then speak into the headset microphone. The captured PCM is rendered through the speaker output, and per-batch recording statistics are reported on the console:
+		```
+		[COMP-I] Rec stats loop=1225 bytes=1058400 err=0
+		[COMP-I] Rec stats loop=1334 bytes=1152576 err=0
+		```
 
 4. If the headphones also have volume control buttons, when you press the button, you will receive the following print on the serial port
    	```
-	- Executing Volume Up
-	- Executing Volume Down
+	- Volume Up
+	- Volume Down
 	```
 
 5. Reset and check the log via LOGUART console, make sure there is no error reported

@@ -25,7 +25,7 @@ extern "C" {
   * @{
   */
 
-/** @defgroup IPC_NP_Tx_Channel
+/** @defgroup IPC_NP_Tx_Channel IPC NP TX Channel
   * @{
   */
 #define IPC_N2A_TICKLESS_INDICATION		0	/*!<  NP -->  AP Tickless indicate */
@@ -49,14 +49,14 @@ extern "C" {
   * @}
   */
 
-/** @defgroup IPC_AP_Tx_Channel
+/** @defgroup IPC_AP_Tx_Channel IPC AP TX Channel
   * @{
   */
 #define IPC_A2N_TICKLESS_INDICATION				0	/*!<  AP -->  NP Tickless indicate */
 #define IPC_A2N_WIFI_FW_INFO						1	/*!<  AP -->  NP FW Info*/
 #define IPC_A2N_WAKE_AP							2	/*!<  AP -->  NP Wakeup*/
 #define IPC_A2N_LOGUART_RX_SWITCH				3	/*!<  AP -->  NP Loguart Rx Switch*/
-#define IPC_A2N_FLASHPG_REQ						4	/*!<  AP -->  NP IFlash Program Request*/
+#define IPC_A2N_FLASHPG_REQ						4	/*!<  AP -->  NP Flash Program Request*/
 #define IPC_A2N_COEX_API_TRAN						5	/*!<  AP -->  NP COEX API Exchange */
 // #define IPC_A2N_BT_DATA_TRAN					5	/*!<  AP -->  NP BT DATA Exchange */
 #define IPC_A2N_WIFI_TRX_TRAN						6	/*!<  AP -->  NP WIFI Message Exchange */

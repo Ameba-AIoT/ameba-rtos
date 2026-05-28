@@ -37,10 +37,9 @@
  * @brief  Init composite class
  * @param[in] hid_cb: HID user callback
  * @param[in] uac_cb: UAC user callback
- * @param[in] frame_cnt: Configuration for ring buffer size (frame count).
  * @return 0 on success, non-zero on failure.
  */
-int usbh_composite_init(usbh_composite_hid_usr_cb_t *hid_cb, usbh_composite_uac_usr_cb_t *uac_cb, int frame_cnt);
+int usbh_composite_init(usbh_composite_hid_usr_cb_t *hid_cb, usbh_composite_uac_usr_cb_t *uac_cb);
 /**
  * @brief  DeInit composite class
  * @return None

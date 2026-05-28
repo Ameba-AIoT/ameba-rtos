@@ -33,6 +33,7 @@ enum sdn_intf_ctrl_op {
 	SDN_INTF_CTRL_MP,
 	SDN_INTF_CTRL_BRIDGE_OPEN,
 	SDN_INTF_CTRL_BRIDGE_CLOSE,
+	SDN_INTF_CTRL_FIX_ADDR,
 };
 
 #define SDN_MSG_PROTOCOL(msgtype)		(((msgtype) >> 5) & 0x7)
@@ -71,6 +72,7 @@ void sdn_remove_protocol(uint8_t protocol);
 void sdn_set_mp(bool is_mp);
 void sdn_bridge_open(bool to_loguart);
 void sdn_bridge_close(void);
+void sdn_fix_bt_addr(uint8_t *bdaddr);
 /*----------------------------------------------------------------------*/
 
 /* These functions can only be called in sdn_host_ipc.c or sdn_client.c */

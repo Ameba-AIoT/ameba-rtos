@@ -56,6 +56,7 @@
 
 //BLE Role
 #define BT_LL_LE_CENTRAL
+// #define BT_LL_LE_PSD_SCAN
 
 #ifdef BT_LL_FEATURE_BT50_LE_EXT_ADV
 #define BT_LL_LE_SCAN_SET_NUM                                       2

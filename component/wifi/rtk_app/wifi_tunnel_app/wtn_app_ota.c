@@ -662,23 +662,33 @@ static void rmesh_ota_firmware_send(struct rmesh_ota_upgrade_status *status, str
 
 void rmesh_ota_internal_send_task(void *param)
 {
-	(void) param;
-	struct rmesh_ota_info_to_flash ota_info = {0};
+	struct rmesh_ota_info_to_flash *p_ota_info = (struct rmesh_ota_info_to_flash *)param;
 	struct rmesh_ota_upgrade_status status;
 	struct rmesh_inter_ota_result result;
 	u32 firmware_size = 0;
+#if defined(CONFIG_WHC_INTF_IPC)
+	if (!p_ota_info) {
+		p_ota_info = rtos_mem_zmalloc(sizeof(struct rmesh_ota_info_to_flash));
+	}
+	rt_kv_get("rmesh_ota_info", (u8 *)p_ota_info, sizeof(struct rmesh_ota_info_to_flash));
+#else
+	if (!p_ota_info) {
+		RTK_LOGE(TAG, "%s, param is NULL, internal send abort\n", __func__);
+		rtos_task_delete(NULL);
+		return;
+	}
+#endif
 
 send_again:
 	memset(&status, 0, sizeof(struct rmesh_ota_upgrade_status));
 	memset(&result, 0, sizeof(struct rmesh_inter_ota_result));
-	rt_kv_get("rmesh_ota_info", (u8 *)&ota_info, sizeof(struct rmesh_ota_info_to_flash));
-	firmware_size = ota_info.ota_firmware_size;
+	firmware_size = p_ota_info->ota_firmware_size;
 
 	status.packet_num = (firmware_size + RMESH_OTA_PACKET_SIZE - 1) / RMESH_OTA_PACKET_SIZE;
 	status.total_size = firmware_size;
-	status.image_addr = ota_info.image_addr;
-	status.checksum = ota_info.checksum;
-	status.image_id = ota_info.image_id;
+	status.image_addr = p_ota_info->image_addr;
+	status.checksum = p_ota_info->checksum;
+	status.image_id = p_ota_info->image_id;
 
 	result.unfinished_num = g_rmesh_ota_priv->slave_num;
 
@@ -694,6 +704,7 @@ send_again:
 		rmesh_ota_wait_list_to_slave_list();
 		goto send_again;
 	}
+	rtos_mem_free(p_ota_info);
 	rtos_task_delete(NULL);
 }
 
@@ -846,8 +857,15 @@ response:
 #ifdef RMESH_INTERNAL_OTA_EN
 		/*send firmware to slave nodes*/
 		if (g_rmesh_ota_priv->slave_num) {
-			if (rtos_task_create(NULL, ((const char *)"rmesh_ota_internal_send_task"), rmesh_ota_internal_send_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-				RTK_LOGE(TAG, "Failed to create rmesh_ota_internal_send_task\n");
+			struct rmesh_ota_info_to_flash *send_info = (struct rmesh_ota_info_to_flash *)rtos_mem_malloc(sizeof(struct rmesh_ota_info_to_flash));
+			if (send_info) {
+				memcpy(send_info, &ota_info, sizeof(struct rmesh_ota_info_to_flash));
+				if (rtos_task_create(NULL, ((const char *)"rmesh_ota_internal_send_task"), rmesh_ota_internal_send_task, send_info, 1024 * 4, 1) != RTK_SUCCESS) {
+					RTK_LOGE(TAG, "Failed to create rmesh_ota_internal_send_task\n");
+					rtos_mem_free(send_info);
+				}
+			} else {
+				RTK_LOGE(TAG, "%s, malloc send_info failed\n", __func__);
 			}
 		}
 #endif
@@ -1236,8 +1254,15 @@ void rmesh_ota_http_ota_task(void *param)
 	/*check if need send firmware to other nodes*/
 	if (g_rmesh_ota_priv->slave_num) {
 		g_rmesh_ota_priv->http_ota_reset_delayed = 1;
-		if (rtos_task_create(NULL, ((const char *)"rmesh_ota_internal_send_task"), rmesh_ota_internal_send_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-			RTK_LOGE(TAG, "Failed to create rmesh_ota_internal_send_task\n");
+		struct rmesh_ota_info_to_flash *p_info = rtos_mem_malloc(sizeof(struct rmesh_ota_info_to_flash));
+		if (p_info) {
+			memcpy(p_info, &ota_info, sizeof(struct rmesh_ota_info_to_flash));
+			if (rtos_task_create(NULL, ((const char *)"rmesh_ota_internal_send_task"), rmesh_ota_internal_send_task, p_info, 1024 * 4, 1) != RTK_SUCCESS) {
+				RTK_LOGE(TAG, "Failed to create rmesh_ota_internal_send_task\n");
+				rtos_mem_free(p_info);
+			}
+		} else {
+			RTK_LOGE(TAG, "%s, malloc ota info failed\n", __func__);
 		}
 	} else
 #endif

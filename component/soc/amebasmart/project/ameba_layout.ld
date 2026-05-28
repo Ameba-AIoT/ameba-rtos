@@ -104,6 +104,9 @@ ASSERT(__ca32_fip_dram_start__ + KBYTES(2048) < PSRAM_END + SECURE_ADDR_OFFSET, 
 #endif
 __non_secure_psram_end__ = PSRAM_END;
 
+__km4_msp_ram_ns_limit__ = ORIGIN(KM4_MSP_RAM_NS);
+__km0_msp_ram_limit__ = ORIGIN(KM0_MSP_RAM);
+
 /* Region 0: KM4 IROM*/
 __rom_text_region0_start__ = ORIGIN(KM4_IROM);
 __rom_text_region0_end__   = ORIGIN(KM4_IROM_STDLIB_NS) + LENGTH(KM4_IROM_STDLIB_NS);

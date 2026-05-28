@@ -92,7 +92,6 @@ static int whc_spi_host_probe(struct spi_device *spi)
 	dev_info(&spi->dev, "%s\n", __func__);
 
 	priv->spi_dev = spi;
-	priv->rx_process_func = whc_host_recv_process;
 
 	mutex_init(&(priv->lock));
 	sema_init(&priv->dev_rdy_sema, 0);

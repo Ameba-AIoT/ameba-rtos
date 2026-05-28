@@ -75,6 +75,10 @@ extern u8 __km4tz_bd_ram_start__[];
 extern u8 __km4tz_bd_psram_start__[];
 extern u8 __non_secure_psram_end__[]; /* if psram is 8MB, than write 0x60800000 will write 0x60000000 */
 
+/* for mp shrink, used in floder */
+extern u8 __km4tz_bd_ram_mp_start__[];
+extern u8 __km4ns_bd_ram_mp_start__[];
+
 /* backtrace addr */
 extern u8 __rom_text_region0_start__[];
 extern u8 __rom_text_region0_end__[];

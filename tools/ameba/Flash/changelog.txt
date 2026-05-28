@@ -41,4 +41,5 @@ ChangeLog:
 				  (2) Optimize check device alive method
 				  (3) Optimize check serial_port status method
                   (4) Enable DTR/RTS function as default
-                  (5) Fixed version compatibility issues
+                  (5) Fix version compatibility issues
+20260525  v1.1.7  Fix NOR flash erase size error

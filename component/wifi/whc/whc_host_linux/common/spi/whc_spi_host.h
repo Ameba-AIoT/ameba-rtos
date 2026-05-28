@@ -65,8 +65,6 @@ struct whc_spi {
 
 	atomic_t dev_state;
 
-	int (*rx_process_func)(struct sk_buff *pskb);
-
 };
 
 extern struct whc_spi whc_spi_priv;

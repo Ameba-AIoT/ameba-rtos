@@ -52,7 +52,7 @@ extern "C" {
   */
 
 /**
-  * @brief enum gpio_irq_event
+  * @brief Enum gpio_irq_event
   */
 typedef enum {
 	IRQ_NONE,
@@ -70,8 +70,10 @@ typedef enum {
 /** @}*/
 
 /** @}*/
-/** @}*/
-/** @}*/
+
+/** @addtogroup MBED_GPIO_Exported_Functions MBED_GPIO Exported Functions
+  * @{
+  */
 
 /*
  * Note:
@@ -101,6 +103,16 @@ void gpio_irq_set_event(gpio_irq_t *obj, gpio_irq_event event);
 
 void gpio_irq_deinit(gpio_irq_t *obj);
 void gpio_irq_pull_ctrl(gpio_irq_t *obj, PinMode pull_type);
+
+/**
+  * @}
+  */
+/**
+  * @}
+  */
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }

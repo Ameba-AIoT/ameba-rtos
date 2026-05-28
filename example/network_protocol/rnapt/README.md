@@ -29,16 +29,21 @@ The example shows:
 
    Use menuconfig and select `CONFIG LWIP`->`Enable R-NAPT` to enable R-NAPT support.
 
-   For Ethernet and USB-ETH interfaces, enable them separately via menuconfig as needed.
+2. Enable Optional Interfaces:
 
-2. Disable Fast Reconnect:
+   - **Ethernet**: Select `CONFIG ETHERNET`->`PHY SOURCE CLK (external 25M)`
+   - **USB-ETH**: Enable one of the following USB ECM configurations:
+     - USB Device mode: `CONFIG USB`-> select `Device` mode -> `CDC ECM`
+     - USB Host mode: `CONFIG USB`-> select `Host` mode -> `CDC ECM`->`USB Ethernet`
+
+3. Disable Fast Reconnect:
 
    In `component/soc/usrcfg/amebaxxx/ameba_wificfg.c` :
    ```c
    wifi_user_config.fast_reconnect_en = 0;
    ```
 
-3. Interface Configuration:
+4. Interface Configuration:
 
    Each netif's configuration is defined in `example_rnapt.c`. Users can modify the global configuration variables to customize interface behavior:
 
@@ -126,7 +131,7 @@ The example shows:
    - **Ethernet**: Can be WAN (priority 103) or LAN (priority 0)
    - **USB-ETH**: Can be WAN (priority 101) or LAN (priority 0)
 
-4. User Callback Registration:
+5. User Callback Registration:
 
    Each netif supports a user-defined status callback that is triggered when the interface link state changes (link up/down):
 
@@ -148,7 +153,7 @@ The example shows:
    rnapt_netif_set_status_callback(netif, user_netif_status_cb, user_data);
    ```
 
-5. IP Configuration:
+6. IP Configuration:
 
    There are two ways to configure IP addresses by setting the `ip_info` field in the netif config structure:
 
@@ -200,7 +205,7 @@ The example shows:
    - AP uses user-specified IP (192.168.39.1, but will be auto-adjusted if conflict detected)
    - ETH uses auto-alloced IP (192.168.44.1)
 
-6. Build and Download:
+7. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
@@ -328,8 +333,8 @@ When Ethernet cable is plugged in:
 [R-NAPT-I] [ETH] LINK UP - ACTIVE
 [R-NAPT-APP-A] [USER-CB] ETH Link UP
 [R-NAPT-I] === ETH Link UP ===
-[R-NAPT-I] ETH Mode: DHCP Server
-[R-NAPT-I] ETH DHCP Server started: 192.168.44.1
+[R-NAPT-I] [ETH] DHCP Server
+[R-NAPT-I] [ETH] DHCP Server started: 192.168.44.1
 [$]assign client ip:"192.168.44.100",hwaddr:"00:e0:4c:b7:23:66"
 ```
 

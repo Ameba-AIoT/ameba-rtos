@@ -1220,9 +1220,18 @@ struct bt_hci_rp_vendor_get_eco_version {
 #define MODULE_ZIGBEE_MAC_RESET                     0x01
 #define MODULE_ZIGBEE_MP_TX                         0x02
 #define MODULE_ZIGBEE_MP_CONT_TX                    0x03
-#define MODULE_ZIGBEE_MP_TX_REPORT                  0x04
+#define MODULE_ZIGBEE_TX_REPORT                     0x04
 #define MODULE_ZIGBEE_MP_RX                         0x05
-#define MODULE_ZIGBEE_MP_RX_REPORT                  0x06
+#define MODULE_ZIGBEE_RX_REPORT                     0x06
+#define MODULE_ZIGBEE_LOOPBACK_TEST                 0x07
+#define MODULE_ZIGBEE_ED_GAIN_CAL                   0x08
+#define MODULE_ZIGBEE_REG_READ                      0x09
+#define MODULE_ZIGBEE_REG_WRITE                     0x0A
+#define MODULE_ZIGBEE_PHY_TX_01                     0x0B
+#define MODULE_ZIGBEE_PHY_RX_06                     0x0C
+#define MODULE_ZIGBEE_PHY_RX_08                     0x0D
+#define MODULE_ZIGBEE_PHY_RX_TO_TX                      0x0E
+#define MODULE_ZIGBEE_PHY_TX_TO_RX                      0x0F
 
 enum bt_hci_vendor_tx_power_index {
 	BT_HCI_VENDOR_TX_POWER_BR_1M,
@@ -1393,6 +1402,21 @@ struct bt_hci_rp_vendor_mp_sync_word_trans {
 	uint8_t sync_word[8];
 };
 
+struct bt_hci_rp_vendor_mp_zigbee_mp_tx {
+	uint8_t status;
+	uint8_t module_id;
+	uint8_t subcmd;
+	uint8_t tx_state;
+};
+
+struct bt_hci_rp_vendor_mp_zigbee_tx_report {
+	uint8_t status;
+	uint8_t module_id;
+	uint8_t subcmd;
+	uint8_t tx_state;
+	uint32_t tx_pkt_cnt;
+};
+
 struct bt_hci_rp_vendor_mp_zigbee_mp_rx {
 	uint8_t status;
 	uint8_t module_id;
@@ -1400,17 +1424,61 @@ struct bt_hci_rp_vendor_mp_zigbee_mp_rx {
 	uint8_t rx_state;
 };
 
-struct bt_hci_rp_vendor_mp_zigbee_mp_rx_report {
+struct bt_hci_rp_vendor_mp_zigbee_rx_report {
 	uint8_t status;
 	uint8_t module_id;
 	uint8_t subcmd;
 	uint8_t rx_state;
-	uint8_t rx_ok_cnt;
-	uint8_t rx_err_cnt;
-	uint8_t rssi;
+	uint32_t rx_ok_cnt;
+	uint32_t rx_err_cnt;
+	int8_t rssi;
 	uint8_t lqi;
 };
 
+struct bt_hci_rp_vendor_mp_zigbee_loopback_test {
+	uint8_t status;
+	uint8_t module_id;
+	uint8_t subcmd;
+	int8_t tx_gain_offset;
+};
+
+struct bt_hci_rp_vendor_mp_zigbee_ed_gain_cal {
+	uint8_t status;
+	uint8_t module_id;
+	uint8_t subcmd;
+	int8_t gain_offset;
+};
+
+struct bt_hci_rp_vendor_mp_zigbee_reg_read {
+	uint8_t status;
+	uint8_t module_id;
+	uint8_t subcmd;
+	uint8_t reg_value[0];
+};
+
+struct bt_hci_rp_vendor_mp_zigbee_phy_rx_06 {
+	uint8_t status;
+	uint8_t module_id;
+	uint8_t subcmd;
+	uint8_t ed_scan_state;
+	int8_t ed_value;
+};
+
+struct bt_hci_rp_vendor_mp_zigbee_phy_rx_08 {
+	uint8_t status;
+	uint8_t module_id;
+	uint8_t subcmd;
+	uint8_t cca_idle_count;
+	uint8_t cca_busy_count;
+};
+
+struct bt_hci_rp_vendor_mp_zigbee_phy_tx_to_rx {
+	uint8_t status;
+	uint8_t module_id;
+	uint8_t subcmd;
+	uint8_t tx_status;
+	uint8_t tx_retry_count;
+};
 
 #define BT_HCI_OP_VENDOR_READ_RADIO_REG_PI          BT_OP(BT_OGF_VENDOR, 0x14B) /*0xFD4B*/
 struct bt_hci_cp_vendor_read_radio_reg_pi {

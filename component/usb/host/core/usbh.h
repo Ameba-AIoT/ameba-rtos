@@ -687,7 +687,7 @@ void usbh_resume(void);
 /**
  * @brief Sets the USB to enter Clock Gating (CG) state with a specific wakeup event.
  * @details This function configures the USB host to enter a low-power clock gated state.
- *          The wakeup mechanism depends on the value of the @ref sleep_ms parameter.
+ *          The wakeup mechanism depends on the value of the \p sleep_ms parameter.
  * @param[in] sleep_ms:
  *          - 0: Wakeup is triggered by a USB event.
  *          - others: Wakeup is triggered by an Anon timer event after the specified time.

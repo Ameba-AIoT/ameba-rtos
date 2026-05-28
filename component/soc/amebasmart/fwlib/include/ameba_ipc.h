@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup IPC
+/** @defgroup IPC IPC
   * @brief IPC driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -150,6 +151,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -158,6 +160,20 @@ extern "C" {
 
 
 //Please add your defination here
+
+/* Non Exported types */
+/**
+  * @brief IPC direction mode definition.
+  */
+typedef enum {
+	IPC_LP_TO_NP = 0x00, /*!< LP send request to NP */
+	IPC_LP_TO_AP = 0x01, /*!< LP send request to AP */
+	IPC_NP_TO_LP = 0x10, /*!< NP send request to LP */
+	IPC_NP_TO_AP = 0x11, /*!< NP send request to AP */
+	IPC_AP_TO_LP = 0x20, /*!< AP send request to LP */
+	IPC_AP_TO_NP = 0x21, /*!< AP send request to NP */
+	IPC_DIR_MODE_MAX = 0xFFFFFFFF,
+} IPC_Direction_Mode;
 
 /* Exported types --------------------------------------------------------*/
 /** @addtogroup IPC_Exported_Types IPC Exported Types
@@ -186,7 +202,7 @@ typedef struct _IPC_INIT_TABLE_ {
 	void *RxIrqData;
 	void (*Txfunc)(void *Data, u32 IrqStatus, u32 ChanNum);
 	void *TxIrqData;
-	u32 IPC_Direction;	/* direction of ipc, this parameter is from @IPC_Direction_Mode*/
+	IPC_Direction_Mode IPC_Direction;	/* direction of ipc, this parameter is from @IPC_Direction_Mode*/
 	u32 IPC_Channel;	/* ipc channel, this parameter is from @IPC_LP_Tx_Channel or @IPC_NP_Tx_Channel or @IPC_AP_Tx_Channel*/
 } IPC_INIT_TABLE, *PIPC_INIT_TABLE;
 
@@ -211,7 +227,7 @@ typedef enum {
   * @{
   */
 
-/** @defgroup IPC_Peripheral_Definition
+/** @defgroup IPC_Peripheral_Definition IPC Peripheral Definition
   * @{
   */
 #define IS_IPC_ALL_PERIPH(PERIPH) (((PERIPH) == IPCLP_DEV) || \
@@ -219,33 +235,8 @@ typedef enum {
 										((PERIPH) == IPCAP_DEV))
 /** @} */
 
-/** @defgroup IPC_Direction_Mode
-  * @{
-  */
-#define IPC_LP_TO_NP			((u32)0x00000000)
-#define IPC_LP_TO_AP			((u32)0x00000001)
-#define IPC_NP_TO_LP			((u32)0x00000010)
-#define IPC_NP_TO_AP			((u32)0x00000011)
-#define IPC_AP_TO_LP			((u32)0x00000020)
-#define IPC_AP_TO_NP			((u32)0x00000021)
-#define IS_IPC_DIR_MODE(MODE) (((MODE) == IPC_LP_TO_NP) || \
-									((MODE) == IPC_LP_TO_AP) || \
-									((MODE) == IPC_NP_TO_LP) || \
-									((MODE) == IPC_NP_TO_AP) || \
-									((MODE) == IPC_AP_TO_LP) || \
-									((MODE) == IPC_AP_TO_NP))
 
-#define IS_SEND_TO_NP(MODE)		(((MODE) == IPC_LP_TO_NP) || \
-								((MODE) == IPC_AP_TO_NP))
-
-#define IS_SEND_TO_AP(MODE)		(((MODE) == IPC_LP_TO_AP) || \
-								((MODE) == IPC_NP_TO_AP))
-
-#define IS_SEND_TO_LP(MODE)		(((MODE) == IPC_NP_TO_LP) || \
-								((MODE) == IPC_AP_TO_LP))
-/** @} */
-
-/** @defgroup IPC_INTR_Mode
+/** @defgroup IPC_INTR_Mode IPC Interrupt Mode
   * @{
   */
 #define IPC_TX_EMPTY			((u32)0x00000001)
@@ -254,7 +245,7 @@ typedef enum {
                                    ((MODE) == IPC_RX_FULL))
 /** @} */
 
-/** @defgroup IPC_CHANNEL
+/** @defgroup IPC_CHANNEL IPC Channel
   * @{
   */
 #define IPC_TX_CHANNEL_NUM						16
@@ -265,26 +256,26 @@ typedef enum {
 #define IPC_CHANNEL_NUM 						32
 /** @} */
 
-/** @defgroup IPC_Valid_CHNUM
+/** @defgroup IPC_Valid_CHNUM IPC Valid Channel Number
   * @{
   */
 #define IS_IPC_VALID_CHNUM(NUM) ((NUM) < 8)
 /** @} */
 
-/** @defgroup IPC_Valid_SEMID
+/** @defgroup IPC_Valid_SEMID IPC Valid Semaphore ID
   * @{
   */
 #define IS_IPC_VALID_SEMID(SEM_ID) ((SEM_ID) < 16)
 /** @} */
 
 
-/** @defgroup IPC_Valid_CPUID
+/** @defgroup IPC_Valid_CPUID IPC Valid CPU ID
   * @{
   */
 #define IS_IPC_Valid_CPUID(cpuid)		((cpuid)<=2)
 /** @} */
 
-/** @defgroup IPC_LP_Tx_Channel
+/** @defgroup IPC_LP_Tx_Channel IPC LP TX Channel
  * @{
  */
 #define IPC_L2N_LOGUART_RX_SWITCH		0	/*!<  LP -->  NP Loguart Rx Switch*/
@@ -306,7 +297,7 @@ typedef enum {
 #define IPC_L2A_IMQ_TRX_TRAN					7	/*!<  LP -->  AP IMQ Message Exchange */
 /** @} */
 
-/** @defgroup IPC_NP_Tx_Channel
+/** @defgroup IPC_NP_Tx_Channel IPC NP TX Channel
  * @{
  */
 #define IPC_N2L_TICKLESS_INDICATION			0	/*!<  NP -->  LP Tickless indicate */
@@ -328,7 +319,7 @@ typedef enum {
 #define IPC_N2A_IMQ_TRX_TRAN					7	/*!<  NP -->  AP IMQ Message Exchange */
 /** @} */
 
-/** @defgroup IPC_AP_Tx_Channel
+/** @defgroup IPC_AP_Tx_Channel IPC AP TX Channel
  * @{
  */
 #define IPC_A2L_TICKLESS_INDICATION			0	/*!<  AP -->  LP Tickless Indicate */
@@ -361,6 +352,11 @@ typedef enum {
 
 /** @} */
 
+/* Non Exported functions */
+IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
+u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout);
+u32 IPC_SEMFree(u32 SEM_Idx);
+
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup IPC_Exported_Functions IPC Exported Functions
   * @{
@@ -369,14 +365,11 @@ typedef enum {
 void IPC_INTConfig(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, u32 NewState);
 void IPC_IERSet(IPC_TypeDef *IPCx, u32 IPC_Chs);
 u32 IPC_IERGet(IPC_TypeDef *IPCx);
-u32 IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum);
+u32 IPC_INTRequest(IPC_TypeDef *IPCx, IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum);
 u32 IPC_INTGet(IPC_TypeDef *IPCx);
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit);
 u32 IPC_INTHandler(void *Data);
 void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, void *IrqHandler, void *IrqData);
-IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
-u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout);
-u32 IPC_SEMFree(u32 SEM_Idx);
 void IPC_SEMDelayStub(void (*pfunc)(uint32_t));
 void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32));
 

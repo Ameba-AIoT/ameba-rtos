@@ -24,6 +24,8 @@
 #define EAP_UNBLK_API_SIZE	                      0
 #define WPS_UNBLK_API_SIZE	                      0
 #define MCC_LITTE_TASK_SIZE	                      0
+#define NAN_LITTE_TASK_SIZE                       0
+#define NAN_SINGLE_TASK_SIZE                      0
 #define WTN_SINGLE_TASK_SIZE                      0
 
 #if defined(CONFIG_WIFI_EAP_ENABLE)
@@ -39,6 +41,13 @@
 #define MCC_LITTE_TASK_SIZE                       432  /* enable MCC need 432 */
 #endif
 
+#if defined(CONFIG_WIFI_NAN_ENABLE)
+#undef  NAN_LITTE_TASK_SIZE
+#define NAN_LITTE_TASK_SIZE	                    720 /* enable NAN need 720 */
+#undef  NAN_SINGLE_TASK_SIZE
+#define NAN_SINGLE_TASK_SIZE	                  480 /* enable NAN need 480 */
+#endif
+
 #if defined(CONFIG_RMESH_EN)
 #undef  WTN_SINGLE_TASK_SIZE
 #define WTN_SINGLE_TASK_SIZE	                    480
@@ -47,13 +56,13 @@
 /**********************************************************************************************
  *                               Common task size
  *********************************************************************************************/
-#define WIFI_LITTLE_TASK_SIZE		                  ((376 + MCC_LITTE_TASK_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN) / 4)	/* rtw_if_wifi_create_task: size will *4 */
+#define WIFI_LITTLE_TASK_SIZE		                  ((376 + MCC_LITTE_TASK_SIZE + NAN_LITTE_TASK_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN) / 4)	/* rtw_if_wifi_create_task: size will *4 */
 
 #if defined (CONFIG_WHC_DEV)
 #if defined(CONFIG_WHC_INTF_IPC)
-#define WIFI_SINGLE_TASK_SIZE		                  ((1392 + WTN_SINGLE_TASK_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN) / 4)	/* max 1648 in lite, rtw_if_wifi_create_task: size will *4 */
+#define WIFI_SINGLE_TASK_SIZE		                  ((1392 + WTN_SINGLE_TASK_SIZE + NAN_SINGLE_TASK_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN) / 4)	/* max 1648 in lite, rtw_if_wifi_create_task: size will *4 */
 #else
-#define WIFI_SINGLE_TASK_SIZE		                  ((3056 + WTN_SINGLE_TASK_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN) / 4)	/* 1k: for sdio fullmac proxy */
+#define WIFI_SINGLE_TASK_SIZE		                  ((3056 + WTN_SINGLE_TASK_SIZE + NAN_SINGLE_TASK_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN) / 4)	/* 1k: for sdio fullmac proxy */
 #endif
 #else
 #define WIFI_SINGLE_TASK_SIZE		                  (1024 + WTN_SINGLE_TASK_SIZE)		/* considering single core */
@@ -78,7 +87,7 @@
 
 #if defined(CONFIG_MP_INCLUDED) || defined(CONFIG_PHYDM_CMD) /*halbb debug cmd need bigger stack size, for sscanf format float*/
 #define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (1024*4)
-#elif defined(CONFIG_NAN)
+#elif defined(CONFIG_WIFI_NAN_ENABLE)
 #define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (256*11)
 #elif defined(CONFIG_PLATFORM_ZEPHYR)
 #define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (1024*4)

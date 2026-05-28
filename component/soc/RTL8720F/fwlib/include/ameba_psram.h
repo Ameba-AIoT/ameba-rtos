@@ -396,7 +396,7 @@ typedef struct {
 /** @defgroup PSRAMP_Latency_Type
   * @{
   */
-#define PSRSAM_FIX_LATENCY			0x0	//0 for variable, 1 for fix
+#define PSRSAM_FIX_LATENCY			0x1	//0 for variable, 1 for fix
 
 /**
   * @}

@@ -34,7 +34,7 @@ extern void (*p_wifi_join_info_free)(u8 iface_type);
 struct netif xnetif[NET_IF_NUM]; /* network interface structure */
 struct netif *pnetif_sta = &xnetif[NETIF_WLAN_STA_INDEX];
 struct netif *pnetif_ap = &xnetif[NETIF_WLAN_AP_INDEX];
-#if defined(CONFIG_NAN)
+#if defined(CONFIG_WIFI_NAN_ENABLE)
 struct netif *pnetif_nan = &xnetif[NETIF_WLAN_NAN_INDEX];
 #endif
 #if defined(CONFIG_LWIP_ETHERNET)
@@ -674,7 +674,7 @@ int lwip_subnet_is_used(struct ip_addr *check_ip) // lwip_subnet_is_used
 		}
 
 		struct ip_addr *mask = &pnetif->netmask;
-		if (ip_addr_netcmp(check_ip, compared_ip, mask)) {
+		if (ip_addr_netcmp(check_ip, compared_ip, ip_2_ip4(mask))) {
 			return 1;
 		}
 	}
@@ -713,7 +713,7 @@ int lwip_alloc_ip(uint8_t idx)
 		} else {
 			struct ip_addr *current_ip = &pnetif->ip_addr;
 			if (!ip_addr_isany(current_ip) &&
-				ip_addr_netcmp(&new_ip, current_ip, &new_mask)) {
+				ip_addr_netcmp(&new_ip, current_ip, ip_2_ip4(&new_mask))) {
 				/* This subnet is used by ourselves, no need to re-alloc */
 				return 0;
 			}
@@ -754,7 +754,7 @@ int lwip_manage_subnet_conflict(uint8_t idx)
 			continue;
 		}
 
-		if (!ip_addr_netcmp(target_ip, existing_ip, mask)) {
+		if (!ip_addr_netcmp(target_ip, existing_ip, ip_2_ip4(mask))) {
 			continue;
 		}
 

@@ -22,6 +22,11 @@
 #define USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG       0
 #endif
 
+#define USBH_COMPOSITE_HID_THREAD_PRIORITY     3U      /**< HID processing thread priority */
+#define USBH_COMPOSITE_HID_THREAD_STACK_SIZE   768U    /**< HID msg parse thread stack size */
+#define USBH_COMPOSITE_HID_MST_COUNT           10U     /**< Maximum support touch count (if applicable) */
+#define USBH_COMPOSITE_HID_MSG_LENGTH          16U     /**< Message queue length */
+
 #define mem_sync()    __sync_synchronize()
 
 /* Private function prototypes -----------------------------------------------*/
@@ -511,6 +516,7 @@ static int usbh_composite_hid_parse_details(usbh_itf_data_t *itf_data)
 
 	hid->itf_idx = desc[2];
 	hid->itf_alt_idx = desc[3];
+	hid->alt_setting_count = 1; /* the first INTERFACE descriptor is alt #0 */
 
 	while (1) {
 		if (desc == NULL || itf_total_len >= itf_data->raw_data_len) {
@@ -527,6 +533,7 @@ static int usbh_composite_hid_parse_details(usbh_itf_data_t *itf_data)
 				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Hid intf new %d:old %d, return\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, hid->itf_idx);
 				return HAL_OK;
 			}
+			hid->alt_setting_count++;
 			break;
 		case USBH_HID_DESC:
 			hid_desc = (usbh_dev_hid_desc_t *)desc;
@@ -653,7 +660,11 @@ static int usbh_composite_hid_cb_attach(usb_host_t *host)
 
 	if (hid->ep_desc.bEndpointAddress) {
 		pipe = &(hid->pipe);
-		hid->report_desc_status = USBH_HID_REPORT_SET_ALT;
+		/* SET_INTERFACE is only required when more than one alt setting exists.
+		 * For the typical single-alt HID interface, skip it to avoid an unneeded
+		 * control transfer (and the 5 ms recovery on devices that STALL it). */
+		hid->report_desc_status = (hid->alt_setting_count > 1) ? USBH_HID_REPORT_SET_ALT
+								  : USBH_HID_REPORT_GET_DESC;
 
 		usbh_open_pipe(host, pipe, &(hid->ep_desc));
 	}

@@ -17,7 +17,11 @@ set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/ameba_layout.ld)
 set(c_IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all.ld)
-set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
+if(CONFIG_MP_SHRINK)
+    set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all_mp.ld)
+else()
+    set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
+endif()
 set(c_IMG3_LD ${c_SDK_LD_DIR}/ameba_img3_all.ld)
 
 # note!!! Keep the latest version at the top for release reason.
