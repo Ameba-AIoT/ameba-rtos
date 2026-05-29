@@ -1005,11 +1005,6 @@ static void iperf_test_handler(void *param)
 
 	rtos_mutex_take(g_tptest_mutex, MUTEX_WAIT_TIMEOUT);
 	free_stream_data(stream_data);
-	rtos_mutex_give(g_tptest_mutex);
-
-#if defined(INCLUDE_uxTaskGetStackHighWaterMark) && (INCLUDE_uxTaskGetStackHighWaterMark == 1)
-	tptest_res_log("Min available stack size of %s = %d * %d bytes\n\r", __FUNCTION__, uxTaskGetStackHighWaterMark(NULL), sizeof(portBASE_TYPE));
-#endif
 
 	//If all stream finish, deinit iperf
 	for (i = 0; i < MULTI_STREAM_NUM; i++) {
@@ -1018,6 +1013,13 @@ static void iperf_test_handler(void *param)
 			break;
 		}
 	}
+
+	rtos_mutex_give(g_tptest_mutex);
+
+#if defined(INCLUDE_uxTaskGetStackHighWaterMark) && (INCLUDE_uxTaskGetStackHighWaterMark == 1)
+	tptest_res_log("Min available stack size of %s = %d * %d bytes\n\r", __FUNCTION__, uxTaskGetStackHighWaterMark(NULL), sizeof(portBASE_TYPE));
+#endif
+
 	if (deinit_iperf) {
 		iperf_deinit();
 	}
