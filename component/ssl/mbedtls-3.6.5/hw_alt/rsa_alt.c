@@ -312,12 +312,12 @@ static int mbedtls_mpi_exp_mod_prime_n(mbedtls_mpi *X, const mbedtls_mpi *A,
 {
 	UNUSED(prec_RR);
 	size_t N_size = mbedtls_mpi_size(N);
-	uint8_t *X_mpi_le = malloc(N_size);
+	uint8_t *X_mpi_le = mbedtls_calloc(N_size, 1);
 
 	pke_rsa_exp_mod(X_mpi_le, N_size, (uint8_t *)A->p, mbedtls_mpi_size(A), (uint8_t *)E->p, mbedtls_mpi_size(E), (uint8_t *)N->p, N_size);
 	mbedtls_mpi_read_binary_le(X, X_mpi_le, N_size);
 
-	free(X_mpi_le);
+	mbedtls_free(X_mpi_le);
 	return RTK_SUCCESS;
 }
 
