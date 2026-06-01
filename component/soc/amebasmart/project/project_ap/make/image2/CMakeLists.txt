@@ -55,7 +55,7 @@ set_target_properties(atf PROPERTIES
         ${CMAKE_BINARY_DIR}/project_ap/make/atf
 )
 
-ameba_target_depend_if(CONFIG_MATTER_SECURE_EN atf lib_atf_mbedtls_secure.a)
+ameba_target_depend_if(CONFIG_MATTER_SECURE_EN atf matter_atf_secure)
 
 ameba_target_depend(${c_CURRENT_IMAGE} atf)
 
