@@ -609,7 +609,6 @@ int usbd_composite_scsi_process_cmd(usbd_composite_msc_dev_t *mdev, u8 *cmd)
 	case SCSI_MODE_SELECT6:
 	case SCSI_MODE_SELECT10:
 		mdev->data_length = 0U;
-		ret = 0;
 		break;
 
 	case SCSI_VERIFY10:
@@ -618,7 +617,7 @@ int usbd_composite_scsi_process_cmd(usbd_composite_msc_dev_t *mdev, u8 *cmd)
 
 	default:
 		usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
-		return -1;
+		ret = -1;
 	}
 	return ret;
 }

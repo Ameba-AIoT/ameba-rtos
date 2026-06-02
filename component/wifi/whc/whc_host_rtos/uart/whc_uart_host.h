@@ -45,13 +45,16 @@
 #endif
 
 struct whc_uart_host_priv_t {
+	struct whc_uart_hdr rx_hdr;
 	GDMA_InitTypeDef UARTTxGdmaInitStruct;
 	GDMA_InitTypeDef UARTRxGdmaInitStruct;
 	UART_InitTypeDef UART_InitStruct;
 
-	rtos_mutex_t tx_lock;
-	rtos_mutex_t rx_lock;
-	rtos_mutex_t host_send;
+	rtos_sema_t tx_lock;
+	rtos_sema_t rx_lock;
+	rtos_sema_t host_send;
+	rtos_sema_t hdr_reply;
+	rtos_sema_t session_lock;
 	rtos_sema_t rxirq_sema;
 	rtos_sema_t txirq_sema;
 	rtos_sema_t free_skb_sema;
@@ -59,14 +62,13 @@ struct whc_uart_host_priv_t {
 	struct whc_buf_info *txbuf_info;
 	u8 *rx_buf;
 
-	u32 dev_status;
 	u32 rx_size_done;
 	u32 rx_size_total;
+	u32 payload_len;
 	u32 checksum;
-	u8 rx_hdr[sizeof(struct whc_uart_hdr)];
-
 	u8 uart_idx;
 	u8 rx_state;
+	u8 tx_waiting_ack: 1;
 	u8 wait_for_skb: 1;
 	u8 txdma_initialized: 1;
 };
@@ -74,10 +76,11 @@ struct whc_uart_host_priv_t {
 #define WHC_UART_HOST_RX_DONE       0x0
 #define WHC_UART_HOST_RX_HEADER     0x1
 #define WHC_UART_HOST_RX_PAYLOAD    0x2
-#define WHC_UART_HOST_RX_END        0x3
+#define WHC_UART_HOST_HDR_ACK       0x3
+#define WHC_UART_HOST_RX_END        0x4
+#define WHC_UART_HOST_RX_DMA_EN     0x5
 
 void whc_uart_host_send_data(struct whc_buf_info *pbuf);
 void whc_uart_host_init(void);
 
 #endif
-

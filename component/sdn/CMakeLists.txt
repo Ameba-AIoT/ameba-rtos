@@ -98,6 +98,7 @@ ameba_list_append(private_sources
     bt/le/ble_ll_scan.c
     bt/le/ble_ll_central.c
     bt/le/ble_ll_security.c
+    bt/le/ble_psd.c
 )
 
 ameba_list_append(private_includes

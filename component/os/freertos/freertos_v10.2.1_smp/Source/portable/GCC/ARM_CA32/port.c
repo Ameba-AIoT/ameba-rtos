@@ -182,8 +182,6 @@ volatile uint32_t ulPortInterruptNesting[ configNUM_CORES ] = { pdFALSE };
 /* Used for smp  */
 spinlock_t task_lock;
 
-volatile uint32_t ulFlashPG_Flag = 0;
-
 /*-----------------------------------------------------------*/
 
 /* Flag to record if the scheduler has started and is set pdTRUE by core0.
@@ -514,21 +512,6 @@ void FreeRTOS_IPI_CPUHP_Handler(void)
 	ulPortYieldRequired[ xCoreID ] = pdTRUE;
 
 	//arm_gic_deactive_irq(IPI_CPUHP_IRQ);/*No Need For GICC_CTLR.EOImode is set to 0*/
-}
-
-SRAMDRAM_ONLY_TEXT_SECTION
-void FreeRTOS_IPI_FLASHPG_Handler(void)
-{
-	uint32_t PrevIrqStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-	/* The completion of a DSB that completes a TLB maintenance operation ensures that all accesses that used the old mapping have completed. */
-	MMU_InvalidateTLB();
-	L1C_InvalidateBTAC();
-
-	while (ulFlashPG_Flag) {
-		__WFE();
-	}
-
-	portCLEAR_INTERRUPT_MASK_FROM_ISR(PrevIrqStatus);
 }
 
 void vPortYieldOtherCore(uint32_t xCoreID)

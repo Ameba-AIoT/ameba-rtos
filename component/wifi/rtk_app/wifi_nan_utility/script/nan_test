@@ -1,0 +1,421 @@
+#!/bin/bash
+
+mac_to_ipv6 () {
+  mac=$1
+  ipv6_address=fe80::$(printf %02x $((0x${mac%%:*} ^ 2)))
+  mac=${mac#*:}
+  ipv6_address=$ipv6_address${mac%:*:*:*}ff:fe
+  mac=${mac#*:*:}
+  ipv6_address=$ipv6_address${mac%:*}${mac##*:}
+  echo $ipv6_address
+}
+
+GET_SCRIPT_DIR() {
+     SOURCE="${BASH_SOURCE[0]}"
+     while [ -h "$SOURCE" ]; do
+          DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+          SOURCE="$( readlink "$SOURCE" )"
+          [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+     done
+     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+     echo "$DIR"
+}
+
+SCRIPT_DIR=`GET_SCRIPT_DIR`
+SINGLE_WIPHY="1"
+SINGLE_WIPHY_NAN_INTF="nan0"
+SPEC_TEST="1"
+
+if [ "$MODULE_PATH" = "" ]; then
+	MODULE_PATH=/lib/modules/6.6.51+rpt-rpi-2712/whc_sdio.ko
+fi
+
+if [ "$NAN_VENDOR_WRAPPER" = "" ]; then
+	NAN_VENDOR_WRAPPER=/usr/bin/nan_vendor_wrapper
+fi
+
+if [ "$NAN_R3_BLE" = "" ]; then
+	NAN_R3_BLE=/usr/bin/nan-r3
+fi
+
+if [ "$SINGLE_WIPHY" = "1" ]; then
+	IF=$SINGLE_WIPHY_NAN_INTF
+elif [ "$IF1NAME" = "" ]; then
+	IF=wlan0
+else
+	IF=$IF1NAME
+fi
+
+if [ -f "/usr/bin/iw" ]; then
+	IW=/usr/bin/iw
+else
+	IW=iw
+fi
+IW=iw
+SERVICE_NAME=org.wifi.nan.test
+SERVICE_INFO=serviceinfo
+
+CHIPSET=whc_sdio
+MODULE_LOAD=`lsmod | grep $CHIPSET`
+IF_UP=`ifconfig | grep $IF`
+PHY=`$IW dev | grep phy# -m 1| awk '{print substr($1,5)}'`
+NAN_WDEV=`$IW dev | grep "type NAN" -B 3 | grep wdev | awk '{print $2}'`
+NAN_MAC=`$IW dev | grep "type NAN" -B 1 | grep addr | awk '{print $2}'`
+
+
+HELP()
+{
+     cat << HELP
+     nan_test -- Test script for NAN
+
+     USAGE :
+	nan_test -h
+	nan_test <status|init|deinit|start|stop>
+	nan_test add_func type <publish|subscribe|followup> [active] [solicited] [unsolicited] [bcast] [close_range] name <name> [info <info>] [flw_up_id <id> flw_up_req_id <id> flw_up_dest <mac>] [ttl <ttl>] [srf <include|exclude> <bf|list> [bf_idx] [bf_len] <mac1;mac2...>] [rx_filter <str1:str2...>] [tx_filter <str1:str2...>] [period <period>]	[event <\?\?\?>] [proximity] [data_path] [awake_dw_int <awake_dw_int>] [further_srvc_disc] [further_srvc_disc_func <followup|gas>] [data_path_type <ndp|\?\?\?>] [qos] [sec]
+	nan_test rm_func cookie
+	nan_test dump_func
+	nan_test event
+	nan_test data_req [rsp_nan_mac <mac>] [sec] [publish_id <id>] [min_duration <duration>] [max_latency <latency>]
+	nan_test data_rsp [ndl_rsp <auto|reject|accept|counter>] [publish_id <id>] [m4_rsp_type <accept|reject|badmic>] [initiator_data_address <mac>] [min_duration <duration>] [max_latency <latency>]
+	nan_test data_end [ndp_id <id>] [initiatorndi <mac>]
+	nan_test set_ipv6 <own_mac>
+	nan_test set_ip_6 <own_mac>
+	nan_test set_neigh <dst_mac>
+HELP
+	exit 0
+}
+
+[ $# -eq 0 ] && HELP && exit 0
+
+while [ -n "$1" ]; do
+	case $1 in
+	-h)
+		HELP
+		shift 1
+		;;
+	status)
+		[ "$MODULE_LOAD" = "" ] && echo "Module not loaded" || echo "Module loaded"
+		[ "$IF_UP" = "" ] && echo "Interface $IF down" || echo "Interface $IF up"
+		[ "$NAN_WDEV" = "" ] && echo "NAN interface not added" || echo "NAN interface added"
+
+		echo $NAN_MAC
+		if [ -n "$NAN_MAC" ] && [ "$SPEC_TEST" = "1" ]; then
+			echo "mac=$NAN_MAC" > ./wfa_nan.status
+		fi
+		shift 1
+		;;
+	init)
+		rfkill unblock all
+		if [ "$MODULE_LOAD" = "" ]; then
+			modprobe cfg80211
+			insmod $MODULE_PATH
+		fi
+
+		if [ "$SINGLE_WIPHY" = "" ]; then
+			[ "$IF_UP" = "" ] && ifconfig $IF up
+			[ "$NAN_WDEV" = "" ] && $IW $IF interface add nan0 type __nan
+		else
+			[ "$NAN_WDEV" = "" ] && $IW phy$PHY interface add nan0 type __nan
+			sleep 3
+			[ "$IF_UP" = "" ] && ifconfig $IF down
+		fi
+
+		shift 1
+		;;
+	deinit)
+		[ "$NAN_WDEV" = "" ] || $IW wdev $NAN_WDEV interface del
+		shift 1
+		;;
+	start)
+		shift 1
+		[ "$NAN_WDEV" = "" ] && echo "NAN_WDEV ($NAN_WDEV) !!" && return 0
+
+		START_NAN_CMD=($IW wdev $NAN_WDEV nan start)
+		if [ -n "$1" ] && [ "$1" = "pref" ]; then
+			START_NAN_CMD+=(pref "$2")
+			shift 2
+		else
+			START_NAN_CMD+=(pref 5)
+		fi
+		if [ -n "$1" ] && [ "$1" = "bands" ]; then
+			echo "==> set bands : ($1) / ($2) / ($3)"
+			if [ -n "$3" ]; then
+				START_NAN_CMD+=(bands "$2" "$3")
+				shift 3
+			else
+				START_NAN_CMD+=(bands "$2")
+				shift 2
+			fi
+		else
+			echo "==> default bands"
+			START_NAN_CMD+=(bands 2GHz 5GHz)
+		fi
+		shift 1
+
+		"${START_NAN_CMD[@]}"
+		[ "$IF_UP" = "" ] && ifconfig $IF up
+		;;
+	stop)
+		[ -n "$NAN_WDEV" ] && $IW wdev $NAN_WDEV nan stop
+		shift 1
+		;;
+	add_func)
+		shift 1
+		ADD_FUNC_CMD=($IW wdev $NAN_WDEV nan add_func)
+
+		# 依次识别和添加参数
+		while [ $# -gt 0 ]; do
+			case "$1" in
+				type)
+					ADD_FUNC_CMD+=(type "$2")
+					shift 2
+					;;
+				active|solicited|unsolicited|bcast|close_range)
+					ADD_FUNC_CMD+=("$1")
+					shift 1
+					;;
+				name)
+					LOWERCASE_NAME=$(echo "$2" | tr '[:upper:]' '[:lower:]')
+					echo "lower case service name = $LOWERCASE_NAME"
+					ADD_FUNC_CMD+=(name "$LOWERCASE_NAME")
+					shift 2
+					;;
+				info)
+					ADD_FUNC_CMD+=(info "$2")
+					shift 2
+					;;
+				flw_up_id)
+					ADD_FUNC_CMD+=(flw_up_id "$2")
+					shift 2
+					;;
+				flw_up_req_id)
+					ADD_FUNC_CMD+=(flw_up_req_id "$2")
+					shift 2
+					;;
+				flw_up_dest)
+					ADD_FUNC_CMD+=(flw_up_dest "$2")
+					shift 2
+					;;
+				ttl)
+					ADD_FUNC_CMD+=(ttl "$2")
+					shift 2
+					;;
+				srf)
+					ADD_FUNC_CMD+=(srf "$2")
+					shift 2
+					if [ -n "$1" ] && [ "$1" = "bf" ]; then
+						ADD_FUNC_CMD+=(bf "$2" "$3" "$4")
+						shift 4
+					elif [ -n "$1" ] && [ "$1" = "list" ]; then
+						shift 1
+						LIST_VAL=""
+						KEYWORDS="rx_filter tx_filter info flw_up_id flw_up_req_id flw_up_dest ttl srf bf"
+						while [ $# -gt 0 ]; do
+							FOUND_KEYWORD=0
+							for W in $KEYWORDS; do
+								if [ "$1" = "$W" ]; then
+									FOUND_KEYWORD=1
+									break
+								fi
+							done
+							[ $FOUND_KEYWORD -eq 1 ] && break
+							if [ -z "$LIST_VAL" ]; then
+								LIST_VAL="$1"
+							else
+								LIST_VAL="$LIST_VAL $1"
+							fi
+							shift 1
+						done
+						ADD_FUNC_CMD+=(list "$LIST_VAL")
+					fi
+					;;
+				rx_filter)
+					ADD_FUNC_CMD+=(rx_filter "$2")
+					shift 2
+					;;
+				tx_filter)
+					ADD_FUNC_CMD+=(tx_filter "$2")
+					shift 2
+					;;
+				*)
+					break
+					;;
+			esac
+		done
+
+		# 剩余参数处理为srvc_ext
+		if [ $# -gt 0 ]; then
+			SRVC_EXT_CMD=($NAN_VENDOR_WRAPPER ifname $IF type srvc_ext)
+			for arg in "$@"; do
+				SRVC_EXT_CMD+=("$arg")
+			done
+			"${SRVC_EXT_CMD[@]}"
+		fi
+
+		"${ADD_FUNC_CMD[@]}"
+		exit 0
+		;;
+	rm_func)
+		COOKIE=$2
+		$IW wdev $NAN_WDEV nan rm_func cookie $COOKIE
+		shift 2
+		;;
+	rm_func_sigma)
+		COOKIE=`cat /proc/net/rtl$CHIPSET/$IF/nan_func | grep -m 1 cookie | awk -F ' ' '{print $2}'`
+		echo "rm_func_sigma!!!  Cookie = $COOKIE"
+		$IW wdev $NAN_WDEV nan rm_func cookie $COOKIE
+		shift 1
+		;;
+	dump_func)
+		cat /proc/net/rtl$CHIPSET/wlan0/nan_func
+		shift 1
+		;;
+	event)
+		$IW event -t -f
+		shift 1
+		;;
+	event_start)
+		killall $IW
+		$IW event -t -f > ./nan_event.log &
+		ps -ax | grep "iw event"
+		shift 1
+		;;
+	event_stop)
+		killall $IW
+		rm ./nan_event.log
+		rm ./wfa_nan_event.log
+		ps -ax | grep "iw event"
+		shift 1
+		;;
+	event_get)
+		EVENT_NAME=`cat ./nan_event.log | grep -m 1 wdev | awk -F '=|,| ' '{print $8}'`
+		PEER_ID=`cat ./nan_event.log | grep -m 1 wdev | awk -F '=|,| ' '{print $11}'`
+		LOCAL_ID=`cat ./nan_event.log | grep -m 1 wdev | awk -F '=|,| ' '{print $14}'`
+		PEER_MAC=`cat ./nan_event.log | grep -m 1 wdev | awk -F '=|,| ' '{print $17}'`
+		INI_NDI=`cat ./nan_event.log | grep -m 1 00e04c:0 -A 1 | tail -n 1 | awk -F '=|,| ' '{print $8":"$9":"$10":"$11":"$12":"$13}'`
+		RSP_NDI=`cat ./nan_event.log | grep -m 1 00e04c:0 -A 1 | tail -n 1 | awk -F '=|,| ' '{print $14":"$15":"$16":"$17":"$18":"}'``cat ./nan_event.log | grep -m 1 00e04c:0 -A 2 | tail -n 1 | awk -F '=|,| ' '{print $3}'`
+
+		if [ "$SPEC_TEST" = "1" ]; then
+			echo "name=$EVENT_NAME" > ./wfa_nan_event.log
+			echo "pid=$PEER_ID"   >> ./wfa_nan_event.log
+			echo "lid=$LOCAL_ID"  >> ./wfa_nan_event.log
+			echo "pmac=$PEER_MAC" >> ./wfa_nan_event.log
+			echo "ini_ndi=$INI_NDI" >> ./wfa_nan_event.log
+			echo "rsp_ndi=$RSP_NDI" >> ./wfa_nan_event.log
+		else
+			echo "=============================="
+			echo "event name=$EVENT_NAME"
+			echo "peer id=$PEER_ID"
+			echo "local id=$LOCAL_ID"
+			echo "peer mac=$PEER_MAC"
+			echo "initiator_ndi=$INI_NDI"
+			echo "responder_ndi=$RSP_NDI"
+			echo "=============================="
+			killall $IW
+			rm ./nan_event.log
+		fi
+
+		ps -ax | grep "iw event"
+		shift 1
+		;;
+	srvc_ext)
+		shift 1
+		SRVC_EXT_CMD=($NAN_VENDOR_WRAPPER ifname $IF type srvc_ext)
+		for arg in "$@"; do
+			SRVC_EXT_CMD+=("$arg")
+		done
+		"${SRVC_EXT_CMD[@]}"
+		exit 0
+		;;
+	data_req)
+		shift 1
+		DATA_REQ_CMD=($NAN_VENDOR_WRAPPER ifname $IF type data_req)
+		for arg in "$@"; do
+			DATA_REQ_CMD+=("$arg")
+		done
+		"${DATA_REQ_CMD[@]}"
+		exit 0
+		;;
+	data_rsp)
+		shift 1
+		DATA_RSP_CMD=($NAN_VENDOR_WRAPPER ifname $IF type data_rsp)
+		for arg in "$@"; do
+			DATA_RSP_CMD+=("$arg")
+		done
+		"${DATA_RSP_CMD[@]}"
+		exit 0
+		;;
+	data_end)
+		shift 1
+		DATA_END_CMD=($NAN_VENDOR_WRAPPER ifname $IF type data_end)
+		for arg in "$@"; do
+			DATA_END_CMD+=("$arg")
+		done
+		"${DATA_END_CMD[@]}"
+		exit 0
+		;;
+	tx_followup)
+		shift 1
+		FOLLOW_UP_CMD=($NAN_VENDOR_WRAPPER ifname $IF type follow_up)
+		for arg in "$@"; do
+			FOLLOW_UP_CMD+=("$arg")
+		done
+		"${FOLLOW_UP_CMD[@]}"
+		exit 0
+		;;
+	set_ipv6)
+		shift 1
+		IPV6=`mac_to_ipv6 $NAN_MAC`
+		SET_IPV6_CMD=(ifconfig $IF inet6 add $IPV6/64)
+		"${SET_IPV6_CMD[@]}"
+		exit 0
+		;;
+	set_ip_6)
+		shift 1
+		IPV6=`mac_to_ipv6 $NAN_MAC`
+		SET_IPV6_CMD=(ip -6 address add $IPV6/64 dev $IF)
+		"${SET_IPV6_CMD[@]}"
+		SET_IPV6_ROUTE_CMD=(ip -6 route add $IPV6 dev $IF)
+		"${SET_IPV6_ROUTE_CMD[@]}"
+		exit 0
+		;;
+	set_neigh)
+		shift 1
+		IPV6=`mac_to_ipv6 $1`
+		SET_NEIGH_CMD=(ip -6 neigh add $IPV6 lladdr $1 dev $IF)
+		"${SET_NEIGH_CMD[@]}"
+		exit 0
+		;;
+	ble_start)
+		shift 1
+		$NAN_R3_BLE on $1 $2 > r3_ble.log &
+		PID=$!
+		echo "PID: $PID"
+		echo $PID > ble_pid_tmp
+		exit 0
+		;;
+	ble_stop)
+		shift 1
+		PID=`cat ./ble_pid_tmp`
+		echo "kill $PID"
+		kill -9 $PID
+		$NAN_R3_BLE off > r3_ble_off.log &
+		rm ./ble_pid_tmp
+		exit 0
+		;;
+	pasn_start)
+		shift 1
+		PASN_START_CMD=($NAN_VENDOR_WRAPPER ifname $IF type pasn_start)
+		for arg in "$@"; do
+			PASN_START_CMD+=("$arg")
+		done
+		echo "${PASN_START_CMD[@]}"
+		"${PASN_START_CMD[@]}"
+		exit 0
+		;;
+	*)
+		echo "Error: Unknown parameter"
+		exit 0
+		;;
+	esac
+done

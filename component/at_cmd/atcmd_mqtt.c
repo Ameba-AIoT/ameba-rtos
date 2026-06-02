@@ -16,7 +16,7 @@ static const char *TAG = "AT-MQTT";
 static void mqtt_message_arrived(MessageData *data, void *param);
 static MQTT_RESULT_ENUM mqtt_string_copy(char **dest, char *src, size_t sz);
 
-MQTT_CONTROL_BLOCK g_mqttCb[MQTT_MAX_CLIENT_NUM];
+static MQTT_CONTROL_BLOCK g_mqttCb[MQTT_MAX_CLIENT_NUM];
 MQTTPacket_connectData mqtt_default_conn_data = MQTTPacket_connectData_initializer;
 
 /* Process the received data.
@@ -314,8 +314,7 @@ void mqtt_main(void *param)
 end:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[mqtt_main] linkid: %d, stop mqtt task\r\n", mqttCb->linkId);
 	mqttCb->taskState = MQTT_TASK_NOT_CREATE;
-	mqttCb->taskHandle = NULL;
-	rtos_task_delete(mqttCb->taskHandle);
+	rtos_task_delete(NULL);
 }
 
 /* Corresponding to mqtt_init_client_buf( ). */
@@ -458,7 +457,7 @@ static MQTT_RESULT_ENUM mqtt_string_copy(char **dest, char *src, size_t sz)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "[mqtt_string_copy] malloc failed\r\n");
 		return MQTT_MALLOC_FAILED;
 	}
-	strcpy(*dest, src);
+	strncpy(*dest, src, sz);
 	(*dest)[sz] = '\0';
 
 	return MQTT_OK;
@@ -1001,7 +1000,6 @@ void at_mqttconn(u16 argc, char **argv)
 	MQTT_RESULT_ENUM resultNo = MQTT_OK;
 	MQTT_CONTROL_BLOCK *mqttCb = NULL;
 	int link_id = MQTT_MAX_CLIENT_NUM;
-	char TaskName[6];
 	u16 stacksize = 4096;
 	int conn_type = 0, cert_index = 0, port = 0;
 
@@ -1182,19 +1180,31 @@ void at_mqttconn(u16 argc, char **argv)
 	}
 
 	if (mqttCb->taskState == MQTT_TASK_NOT_CREATE) {
+		int task_ret;
 		/* Create the task. */
 		mqttCb->taskState = MQTT_TASK_START;
-		/* For each link ID, the task name should be unique. */
-		TaskName[0] = 'M';
-		TaskName[1] = 'Q';
-		TaskName[2] = 'T';
-		TaskName[3] = 'T';
-		TaskName[4] = '0' + link_id;
-		TaskName[5] = '\0';
 		if (mqttCb->network.use_ssl) {
 			stacksize = 6144;
 		}
-		if (RTK_SUCCESS != rtos_task_create(&mqttCb->taskHandle, TaskName, mqtt_main, (void *)mqttCb, stacksize, ATCMD_MQTT_TASK_PRIORITY)) {
+		/* For each link ID, the task name should be unique and a string literal. */
+		switch (link_id) {
+		case 0:
+			task_ret = rtos_task_create(NULL, "MQTT0", mqtt_main, (void *)mqttCb, stacksize, ATCMD_MQTT_TASK_PRIORITY);
+			break;
+		case 1:
+			task_ret = rtos_task_create(NULL, "MQTT1", mqtt_main, (void *)mqttCb, stacksize, ATCMD_MQTT_TASK_PRIORITY);
+			break;
+		case 2:
+			task_ret = rtos_task_create(NULL, "MQTT2", mqtt_main, (void *)mqttCb, stacksize, ATCMD_MQTT_TASK_PRIORITY);
+			break;
+		case 3:
+			task_ret = rtos_task_create(NULL, "MQTT3", mqtt_main, (void *)mqttCb, stacksize, ATCMD_MQTT_TASK_PRIORITY);
+			break;
+		default:
+			task_ret = RTK_FAIL;
+			break;
+		}
+		if (RTK_SUCCESS != task_ret) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "[+MQTTCONN] Create task failed\r\n");
 			mqttCb->taskState = MQTT_TASK_NOT_CREATE;
 			resultNo = MQTT_THREAD_CREATE_ERROR;

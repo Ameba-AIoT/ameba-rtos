@@ -96,7 +96,7 @@ UART_LOG_BUF tmp_log_buf = {
 	.UARTLogBufLen = CMD_BUFLEN,
 };//recv CPU Wr and Other CPU Rd
 
-#if defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)
+#if (defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_INTF_IPC)) || defined(CONFIG_WHC_NONE)
 #define WHC_HOST_CPU_ID		NP_CPU_ID
 #define WHC_DEV_CPU_ID		AP_CPU_ID
 #else

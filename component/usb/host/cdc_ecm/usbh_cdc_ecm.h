@@ -143,7 +143,7 @@ typedef struct {
 	u8  *dongle_ctrl_buf;                            /**< Buffer for control transfers (cache aligned) */
 	u32 eth_statistic_count;                         /**< Feature selector parameter: Statistic count */
 	u16 intr_check_tick;                             /**< ECM Intr check tick, used to reduce the cpu load */
-	u16 sub_status;                                  /**< ECM sub-status, see @ref usbh_cdc_ecm_at_set_state_t */
+	u16 sub_status;                                  /**< ECM sub-status, see usbh_cdc_ecm_at_set_state_t */
 	u16 feature_selector;                            /**< Feature selector parameter */
 	u16 packet_filter;                               /**< Packet filter configuration */
 	u16 muticast_filter_len;                         /**< Length of multicast filter parameters */
@@ -152,19 +152,15 @@ typedef struct {
 	u8 data_itf_id;                                  /**< Data Interface number */
 	u8 data_alt_set;                                 /**< Alternate Setting value for Data Interface */
 	u8 iMACAddressStringId;                          /**< Index of the MAC address string descriptor */
-	u8 state;                                        /**< Internal state machine status, see @ref usbh_cdc_ecm_state_t */
+	u8 state;                                        /**< Internal state machine status, see usbh_cdc_ecm_state_t */
 	u8 led_cnt;                                      /**< Number of LEDs */
 	u8 mac_valid;                                    /**< Flag indicating if MAC address is valid */
-	u8 mac_src_type;                                 /**< ECM dongle MAC source type, see @ref usbh_cdc_ecm_dongle_mac_type_t */
+	u8 mac_src_type;                                 /**< ECM dongle MAC source type, see usbh_cdc_ecm_dongle_mac_type_t */
 	__IO u8 bulk_tx_block;                           /**< Flag indicating BULK TX is blocked/busy */
 	__IO u8 eth_hw_connect;                          /**< Ethernet physical link status: 0=Disconnect, 1=Connect */
 } usbh_cdc_ecm_host_t;
 
 /* Exported functions --------------------------------------------------------*/
-
-/** @addtogroup USB_Host_API USB Host API
- *  @{
- */
 
 /** @addtogroup USB_Host_Functions USB Host Functions
  * @{
@@ -235,4 +231,4 @@ const u8 *usbh_cdc_ecm_process_mac_str(void);
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */
 
-#endif  /* USBD_CDC_ECM_H */
+#endif  /* USBH_CDC_ECM_H */

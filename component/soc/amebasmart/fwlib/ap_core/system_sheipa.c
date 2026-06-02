@@ -14,6 +14,8 @@
 
 extern uint32_t ulPortInterruptNesting[ configNUM_CORES ];
 
+volatile uint32_t ulFlashPG_Flag = 0;
+
 uint64_t GenericTimerFreq;
 #define pdTICKS_TO_CNT	(GenericTimerFreq/RTOS_TICK_RATE_HZ)
 
@@ -55,7 +57,7 @@ void vPortEnableOtherCore(void)
 	}
 #endif
 	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
-			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RUNNING);
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RST_WAIT_DRAM);
 }
 
 #if ( configNUM_CORES > 1 )
@@ -91,6 +93,22 @@ void vConfigureIPIInterrupt(void)
 	vRegisterIRQHandler(IPI_FLASHPG_IRQ, (ISRCallback_t)FreeRTOS_IPI_FLASHPG_Handler, NULL);
 	arm_gic_irq_set_priority(IPI_FLASHPG_IRQ, INT_PRI_MIDDLE, IRQ_TYPE_LEVEL);
 	arm_gic_irq_enable(IPI_FLASHPG_IRQ);
+}
+
+SRAMDRAM_ONLY_TEXT_SECTION
+void FreeRTOS_IPI_FLASHPG_Handler(void)
+{
+	uint32_t PrevIrqStatus = portSET_INTERRUPT_MASK_FROM_ISR();
+	/* The completion of a DSB that completes a TLB maintenance operation
+	   ensures that all accesses that used the old mapping have completed. */
+	MMU_InvalidateTLB();
+	L1C_InvalidateBTAC();
+
+	while (ulFlashPG_Flag) {
+		__WFE();
+	}
+
+	portCLEAR_INTERRUPT_MASK_FROM_ISR(PrevIrqStatus);
 }
 
 void vClearIPIInterrupt(void)
@@ -259,7 +277,7 @@ void vApplicationFPUSafeIRQHandler(void)
 			if (pxISR) {
 				pxISR(xInterruptTable[ ulInterruptID ].pvContext);
 			} else {
-				printf("ISR for interrupt id(%lu) is not registered!\n ", (unsigned long)ulInterruptID);
+				RTK_LOGE(NOTAG, "ISR for interrupt id(%lu) is not registered!\n ", (unsigned long)ulInterruptID);
 				for (;;);
 			}
 

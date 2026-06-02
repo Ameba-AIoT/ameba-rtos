@@ -9,7 +9,7 @@ void whc_host_pkt_rx_to_user(u8 *payload, u32 len);
 
 /* for test demo */
 /* type */
-#define WHC_WIFI_TEST = 0x1
+#define WHC_WIFI_TEST	0x1
 /* subtype */
 #define WHC_WIFI_TEST_GET_MAC_ADDR   0x1
 #define WHC_WIFI_TEST_GET_IP         0x2

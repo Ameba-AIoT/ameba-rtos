@@ -40,18 +40,14 @@ set(private_compile_options)         #private compile_options
 # You may use if-else condition to set these predefined variable
 
 ameba_list_append(private_sources
-    lwip_ip4nat.c
+    lwip_ip4napt.c
 )
 
-ameba_list_append(private_definitions
-    IP_FORWARD
-    IP_NAT
-)
 
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 
-ameba_add_internal_library(ipnat
+ameba_add_internal_library(ipnapt
     p_SOURCES
         ${private_sources}
     p_INCLUDES

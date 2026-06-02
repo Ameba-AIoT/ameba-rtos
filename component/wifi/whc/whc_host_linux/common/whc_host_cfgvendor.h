@@ -47,6 +47,8 @@ enum rtw_vendor_event {
 	NAN_EVENT_PASN_START,
 	NAN_EVENT_PASN_RX,
 	NAN_EVENT_PASN_UPD_PMKID,
+	NAN_EVENT_BSTRAP_RESULT,
+	NAN_EVENT_PASN_RESULT,
 };
 
 #ifdef NAN_CUSTOMER_NANDOW
@@ -60,4 +62,3 @@ void whc_host_cfgvendor_detach(struct wiphy *wiphy);
 void whc_host_cfgvendor_nan_event_indication(u8 event_id, void *event, int size);
 void whc_host_cfgvendor_send_cmd_reply(void  *data, int len);
 #endif
-

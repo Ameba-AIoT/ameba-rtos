@@ -333,8 +333,13 @@ int at_http_send_req_header(struct httpc_conn *conn_ptr, char *method, char *res
 	int error_no = 0;
 	int i = 0;
 
-	if (conn_ptr == NULL || method == NULL || resource == NULL || http_req_header == NULL) {
-		RTK_LOGW(AT_HTTP_TAG, "conn_ptr or method or resource or http_req_header is NULL\r\n");
+	if (conn_ptr == NULL || method == NULL || resource == NULL) {
+		RTK_LOGW(AT_HTTP_TAG, "conn_ptr or method or resource is NULL\r\n");
+		error_no = 1;
+		goto end;
+	}
+	if (header_cnt > 0 && http_req_header == NULL) {
+		RTK_LOGW(AT_HTTP_TAG, "http_req_header is NULL but header_cnt=%d\r\n", header_cnt);
 		error_no = 1;
 		goto end;
 	}
@@ -345,7 +350,10 @@ int at_http_send_req_header(struct httpc_conn *conn_ptr, char *method, char *res
 		goto end;
 	}
 
-	for (i = 1; i <= header_cnt; i++) {
+	for (i = 0; i < header_cnt; i++) {
+		if (http_req_header[i] == NULL) {
+			continue;
+		}
 		if (httpc_request_write_header_raw(conn_ptr, http_req_header[i]) != 0) {
 			RTK_LOGI(AT_HTTP_TAG, "httpc_request_write_header_raw() failed\r\n");
 			error_no = 4;
@@ -510,8 +518,8 @@ void at_httpget(u16 argc, char **argv)
 			error_no = 1;
 			goto end;
 		}
-		for (i = 1; i <= header_cnt; i++) {
-			find_result = strstr(argv[5 + i], ": ");
+		for (i = 0; i < header_cnt; i++) {
+			find_result = strstr(argv[6 + i], ": ");
 			if (!find_result) {
 				RTK_LOGE(AT_HTTP_TAG, "[at_httpget] The format of <req_header> is incorrect\r\n");
 				error_no = 1;
@@ -528,8 +536,11 @@ void at_httpget(u16 argc, char **argv)
 		goto end;
 	}
 
-	if ((error_no = at_http_send_req_header(conn_ptr, "GET", argv[2], NULL, 0, header_cnt, &argv[5])) != 0) {
-		goto end;
+	{
+		char **req_headers = (header_cnt > 0) ? &argv[6] : NULL;
+		if ((error_no = at_http_send_req_header(conn_ptr, "GET", argv[2], NULL, 0, header_cnt, req_headers)) != 0) {
+			goto end;
+		}
 	}
 
 	if ((error_no = at_http_read_resp_header(conn_ptr)) != 0) {
@@ -721,8 +732,8 @@ void at_httppost(u16 argc, char **argv)
 			error_no = 1;
 			goto end;
 		}
-		for (i = 1; i <= header_cnt; i++) {
-			find_result = strstr(argv[6 + i], ": ");
+		for (i = 0; i < header_cnt; i++) {
+			find_result = strstr(argv[7 + i], ": ");
 			if (!find_result) {
 				RTK_LOGE(AT_HTTP_TAG, "[at_httppost] The format of <req_header> is incorrect\r\n");
 				error_no = 1;
@@ -739,8 +750,11 @@ void at_httppost(u16 argc, char **argv)
 		goto end;
 	}
 
-	if ((error_no = at_http_send_req_header(conn_ptr, "POST", argv[2], NULL, (size_t)total_post_body_size, header_cnt, &argv[6])) != 0) {
-		goto end;
+	{
+		char **req_headers = (header_cnt > 0) ? &argv[7] : NULL;
+		if ((error_no = at_http_send_req_header(conn_ptr, "POST", argv[2], NULL, (size_t)total_post_body_size, header_cnt, req_headers)) != 0) {
+			goto end;
+		}
 	}
 
 	if ((error_no = at_http_send_req_body(total_post_body_size, conn_ptr)) != 0) {
@@ -878,8 +892,8 @@ void at_httpput(u16 argc, char **argv)
 			error_no = 1;
 			goto end;
 		}
-		for (i = 1; i <= header_cnt; i++) {
-			find_result = strstr(argv[6 + i], ": ");
+		for (i = 0; i < header_cnt; i++) {
+			find_result = strstr(argv[7 + i], ": ");
 			if (!find_result) {
 				RTK_LOGE(AT_HTTP_TAG, "[at_httpput] The format of <req_header> is incorrect\r\n");
 				error_no = 1;
@@ -896,8 +910,11 @@ void at_httpput(u16 argc, char **argv)
 		goto end;
 	}
 
-	if ((error_no = at_http_send_req_header(conn_ptr, "PUT", argv[2], NULL, (size_t)total_put_body_size, header_cnt, &argv[6])) != 0) {
-		goto end;
+	{
+		char **req_headers = (header_cnt > 0) ? &argv[7] : NULL;
+		if ((error_no = at_http_send_req_header(conn_ptr, "PUT", argv[2], NULL, (size_t)total_put_body_size, header_cnt, req_headers)) != 0) {
+			goto end;
+		}
 	}
 
 	if ((error_no = at_http_send_req_body(total_put_body_size, conn_ptr)) != 0) {
@@ -1022,8 +1039,8 @@ void at_httpdel(u16 argc, char **argv)
 			error_no = 1;
 			goto end;
 		}
-		for (i = 1; i <= header_cnt; i++) {
-			find_result = strstr(argv[5 + i], ": ");
+		for (i = 0; i < header_cnt; i++) {
+			find_result = strstr(argv[6 + i], ": ");
 			if (!find_result) {
 				RTK_LOGE(AT_HTTP_TAG, "[at_httpdel] The format of <req_header> is incorrect\r\n");
 				error_no = 1;
@@ -1040,8 +1057,11 @@ void at_httpdel(u16 argc, char **argv)
 		goto end;
 	}
 
-	if ((error_no = at_http_send_req_header(conn_ptr, "DELETE", argv[2], NULL, 0, header_cnt, &argv[5])) != 0) {
-		goto end;
+	{
+		char **req_headers = (header_cnt > 0) ? &argv[6] : NULL;
+		if ((error_no = at_http_send_req_header(conn_ptr, "DELETE", argv[2], NULL, 0, header_cnt, req_headers)) != 0) {
+			goto end;
+		}
 	}
 
 	if ((error_no = at_http_read_resp_header(conn_ptr)) != 0) {

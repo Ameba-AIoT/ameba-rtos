@@ -48,6 +48,7 @@ extern "C" {
 
 // Image 3 Entry Data
 #define IMAGE3_ENTRY_SECTION				SECTION(".image3.nsc_entry.text")
+#define IMAGE3_BOOT_SECTION					SECTION(".image3.entry.data")
 
 // Define Non-Cacheable region
 #define SRAM_NOCACHE_DATA_SECTION			SECTION(".nocache.data")

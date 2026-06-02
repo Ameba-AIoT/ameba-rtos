@@ -29,8 +29,8 @@ typedef struct {
 	uint8_t     count;
 } txt_userdata_t;
 
-txt_userdata_t *mdns_txt_record = NULL;
-unsigned char mdns_enable_state = 0;
+static txt_userdata_t *mdns_txt_record = NULL;
+static unsigned char mdns_enable_state = 0;
 
 enum mdns_state_enu {
 	MDNS_DEINIT = 0,

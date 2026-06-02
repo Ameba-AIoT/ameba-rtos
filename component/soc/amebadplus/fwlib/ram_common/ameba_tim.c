@@ -829,6 +829,35 @@ u32 RTIM_GetChannelCountx(RTIM_TypeDef *TIMx, u16 TIM_Channel)
 		}
 	}
 }
+
+/**
+  * @brief  Clears the TIMx's interrupt pending bits.
+  * @param  TIMx: where x can be 0-14 to select the TIM peripheral.
+  * @retval None
+  */
+void RTIM_INTClear(RTIM_TypeDef *TIMx)
+{
+	u32 CounterIndex = 0;
+	u32 Status = TIMx->SR;
+
+	/* Clear the all IT pending Bits */
+	TIMx->SR = Status;
+
+	/* make sure write ok, because bus delay */
+	while (1) {
+		CounterIndex++;
+		if (CounterIndex >= TIMER_POLLING_TIMES) {
+			break;
+		}
+
+		/* this action need sync to timer clk domain, costing about 3cycles,
+		for 32K timer, this action need about 100us;
+		bus clk is optional from 4M and 40M */
+		if (((TIMx->SR) & 0xFFFFFF) == 0) {
+			break;
+		}
+	}
+}
 /**
   * @}
   */

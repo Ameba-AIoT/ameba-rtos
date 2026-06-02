@@ -13,7 +13,6 @@
 static const char *const TAG = "APP";
 
 extern int main(void);
-void NS_ENTRY BOOT_IMG3(void);
 extern void newlib_locks_init(void);
 
 u32 app_mpu_nocache_check(u32 mem_addr)

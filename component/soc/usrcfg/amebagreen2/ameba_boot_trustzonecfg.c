@@ -14,11 +14,11 @@
  * entry3 must cover flash+SRAM between Secure XIP end and Secure SRAM start
  * so NS XIP code (0x02000000, 0x04000000) and NS stack (0x20001000–0x20005FFF)
  * remain NS-accessible. KM4TZ_IMG3_XIP ends at 0x01000000. */
-#define TZ_ENTRY_START		(u32)__image3_entry_func__
+#define TZ_S_START			(u32)__image3_entry_func__
 #define TZ_SRAM_START		(u32)__image3_ram_start__
 #define TZ_XIP_REGION_END	0x01000000U
 #else
-#define TZ_ENTRY_START		(u32)__image3_ram_start__
+#define TZ_S_START			(u32)__image3_ram_start__
 #define TZ_SRAM_START		(u32)__image3_ram_start__
 #define TZ_XIP_REGION_END	0U	/* unused in SRAM mode */
 #endif
@@ -29,7 +29,7 @@
 const SAU_CFG_TypeDef sau_config[SAU_ENTRY_NUM] = {
 //  Start				End						NSC
 	{0x0001F000,		0x00200000 - 1,			0},	/* entry0: Share ROM NS */
-	{0x00200000,		TZ_ENTRY_START - 1,		0},	/* entry1: flash/SRAM before Secure TZ area */
+	{0x00200000,		TZ_S_START - 1,			0},	/* entry1: flash/SRAM before Secure TZ area */
 	{TZ_NSC_START,		TZ_NSC_END - 1,			1},	/* entry2: NSC inside merged TZ area */
 #ifdef CONFIG_IMG3_FLASH
 	/* entry3: flash+SRAM between Secure XIP end and Secure SRAM (covers NS XIP code + NS stack) */

@@ -5,21 +5,24 @@
 
 #include "platform_autoconf.h"
 
-#if defined(CONFIG_RNAPT) && (CONFIG_RNAPT == 1)
+#if defined(CONFIG_RNAPT)
 
 #include "rnapt_netif.h"
 #include "ethernet.h"
 #include "ameba_soc.h"
 #include "dhcp/dhcps.h"
 #include "wifi_api.h"
-#include "lwip_ipnat.h"
+#include "lwip_ipnapt.h"
+#if defined(CONFIG_LWIP_USB_ETHERNET)
+#include "usb_ethernet.h"
+#endif
 
 #ifndef TAG
 #define TAG "R-NAPT"
 #endif
 
-extern void ip_nat_reinitialize(void);
-extern void ip_nat_sync_dns_serever_data(void);
+extern void ip_napt_reinitialize(void);
+extern void ip_napt_sync_dns_server_data(void);
 
 /* ======================================================================== */
 /*                           Global Variables                               */
@@ -180,10 +183,10 @@ static void rnapt_netif_ext_callback(struct netif *netif,
 					 rnapt_netif->if_desc);
 
 			/* Reinitialize NAPT tables */
-			ip_nat_reinitialize();
+			ip_napt_reinitialize();
 
 			/* Sync DNS server data from the new WAN interface */
-			ip_nat_sync_dns_serever_data();
+			ip_napt_sync_dns_server_data();
 
 			/* Update default gateway */
 			rnapt_update_default_gw();
@@ -266,7 +269,7 @@ rnapt_netif_t *rnapt_netif_create(uint8_t idx, const rnapt_netif_config_t *confi
 	netif->ip_method = config->ip_method;
 	netif->priority = config->priority;
 	netif->is_active = false;
-	netif->lwip_netif = &xnetif[idx];
+	netif->lwip_netif = lwip_idx_get_netif(idx);
 	netif->dhcps_instance = NULL;
 	netif->status_callback = config->status_callback;
 	netif->callback_user_data = config->callback_user_data;
@@ -284,11 +287,10 @@ rnapt_netif_t *rnapt_netif_create(uint8_t idx, const rnapt_netif_config_t *confi
 	if (config->role == RNAPT_ROLE_LAN && config->ip_method == RNAPT_IP_METHOD_DHCP_SERVER) {
 		/* For DHCP Server: Check subnet conflict and alloc non-conflicting IP */
 
-		/* Stop and deinit existing DHCP Server */
-		if (netif->dhcps_instance) {
+		/* Stop pre-existing DHCP server on this lwIP netif */
+		if (dhcps_get_from_netif(netif->lwip_netif) != NULL) {
 			dhcps_stop(netif->lwip_netif);
 			dhcps_deinit(netif->lwip_netif);
-			netif->dhcps_instance = NULL;
 		}
 
 		struct ip_addr check_ip;
@@ -372,9 +374,9 @@ int rnapt_netif_destroy(rnapt_netif_t *netif)
 		}
 	}
 
-	free(netif);
-
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] Destroyed\n", netif->if_desc);
+
+	free(netif);
 	return 0;
 }
 
@@ -529,78 +531,80 @@ static int rnapt_netif_start_ap(rnapt_netif_t *netif, void *arg)
 	return 0;
 }
 
-#if defined(CONFIG_LWIP_ETHERNET)
+#if defined(CONFIG_LWIP_ETHERNET) || defined(CONFIG_LWIP_USB_ETHERNET)
+
 /**
- * @brief ETH link up/down callback for R-NAPT
+ * @brief Common link up/down callback for ETH and USB
+ * @param rnapt_netif R-NAPT netif object
  * @param link_up 1=link up, 0=link down
  */
-static void rnapt_eth_link_callback(int link_up)
+static void rnapt_link_callback(rnapt_netif_t *rnapt_netif, int link_up)
 {
-	/* Get the corresponding rnapt_netif */
-	rnapt_netif_t *eth_netif = rnapt_netif_get(pnetif_eth);
-	if (!eth_netif) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cannot find ETH rnapt_netif\n");
+	if (!rnapt_netif) {
 		return;
 	}
 
 	if (link_up) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "=== ETH Link UP ===\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "=== %s Link UP ===\n", rnapt_netif->if_desc);
 
-		if (!netif_is_up(eth_netif->lwip_netif)) {
-			netifapi_netif_set_up(eth_netif->lwip_netif);
+		if (!netif_is_up(rnapt_netif->lwip_netif)) {
+			netifapi_netif_set_up(rnapt_netif->lwip_netif);
 		}
-		netifapi_netif_set_link_up(eth_netif->lwip_netif);
+		netifapi_netif_set_link_up(rnapt_netif->lwip_netif);
 
-		if (eth_netif->ip_method == RNAPT_IP_METHOD_DHCP_CLIENT) {
-			/* WAN mode: DHCP Client */
-			RTK_LOGS(TAG, RTK_LOG_INFO, "ETH Mode: DHCP Client\n");
+		if (rnapt_netif->ip_method == RNAPT_IP_METHOD_DHCP_CLIENT) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] DHCP Client\n", rnapt_netif->if_desc);
 
-			u32 dhcp_status = lwip_request_ip(NETIF_ETH_INDEX);
+			u32 dhcp_status = lwip_request_ip(rnapt_netif->idx);
 			if (dhcp_status == DHCP_ADDRESS_ASSIGNED) {
-				uint8_t *ip = lwip_get_ip(NETIF_ETH_INDEX);
-				RTK_LOGS(TAG, RTK_LOG_INFO, "ETH DHCP got IP: %d.%d.%d.%d\n",
-						 ip[0], ip[1], ip[2], ip[3]);
+				uint8_t *ip = lwip_get_ip(rnapt_netif->idx);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] DHCP got IP: %d.%d.%d.%d\n",
+						 rnapt_netif->if_desc, ip[0], ip[1], ip[2], ip[3]);
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_WARN, "ETH DHCP failed to get IP\n");
+				RTK_LOGS(TAG, RTK_LOG_WARN, "[%s] DHCP failed to get IP\n", rnapt_netif->if_desc);
 			}
-		} else if (eth_netif->ip_method == RNAPT_IP_METHOD_DHCP_SERVER) {
-			/* LAN mode: DHCP Server */
-			RTK_LOGS(TAG, RTK_LOG_INFO, "ETH Mode: DHCP Server\n");
+		} else if (rnapt_netif->ip_method == RNAPT_IP_METHOD_DHCP_SERVER) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] DHCP Server\n", rnapt_netif->if_desc);
 
-			/* Deinit DHCP server first */
-			dhcps_deinit(eth_netif->lwip_netif);
-			eth_netif->dhcps_instance = NULL;
-
-			/* Initialize and start DHCP Server */
-			eth_netif->dhcps_instance = dhcps_init(eth_netif->lwip_netif);
-			if (eth_netif->dhcps_instance) {
-				dhcps_start(eth_netif->lwip_netif);
-				RTK_LOGS(TAG, RTK_LOG_INFO, "ETH DHCP Server started: %d.%d.%d.%d\n",
-						 ip4_addr1(netif_ip4_addr(eth_netif->lwip_netif)),
-						 ip4_addr2(netif_ip4_addr(eth_netif->lwip_netif)),
-						 ip4_addr3(netif_ip4_addr(eth_netif->lwip_netif)),
-						 ip4_addr4(netif_ip4_addr(eth_netif->lwip_netif)));
+			dhcps_deinit(rnapt_netif->lwip_netif);
+			rnapt_netif->dhcps_instance = dhcps_init(rnapt_netif->lwip_netif);
+			if (rnapt_netif->dhcps_instance) {
+				dhcps_start(rnapt_netif->lwip_netif);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] DHCP Server started: %d.%d.%d.%d\n",
+						 rnapt_netif->if_desc,
+						 ip4_addr1(netif_ip4_addr(rnapt_netif->lwip_netif)),
+						 ip4_addr2(netif_ip4_addr(rnapt_netif->lwip_netif)),
+						 ip4_addr3(netif_ip4_addr(rnapt_netif->lwip_netif)),
+						 ip4_addr4(netif_ip4_addr(rnapt_netif->lwip_netif)));
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Failed to init ETH DHCP Server\n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "[%s] Failed to init DHCP Server\n", rnapt_netif->if_desc);
 			}
 		}
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "=== ETH Link DOWN ===\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "=== %s Link DOWN ===\n", rnapt_netif->if_desc);
 
-		if (eth_netif->ip_method == RNAPT_IP_METHOD_DHCP_CLIENT) {
-			netifapi_netif_set_link_down(eth_netif->lwip_netif);
-			lwip_clear_ip(NETIF_ETH_INDEX);
+		if (rnapt_netif->ip_method == RNAPT_IP_METHOD_DHCP_CLIENT) {
+			netifapi_netif_set_link_down(rnapt_netif->lwip_netif);
+			lwip_clear_ip(rnapt_netif->idx);
 
-			RTK_LOGS(TAG, RTK_LOG_INFO, "ETH IP released\n");
-		} else if (eth_netif->ip_method == RNAPT_IP_METHOD_DHCP_SERVER) {
-			dhcps_stop(eth_netif->lwip_netif);
-			dhcps_deinit(eth_netif->lwip_netif);
-			eth_netif->dhcps_instance = NULL;
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] IP released\n", rnapt_netif->if_desc);
+		} else if (rnapt_netif->ip_method == RNAPT_IP_METHOD_DHCP_SERVER) {
+			dhcps_stop(rnapt_netif->lwip_netif);
+			dhcps_deinit(rnapt_netif->lwip_netif);
+			rnapt_netif->dhcps_instance = NULL;
 
-			netifapi_netif_set_link_down(eth_netif->lwip_netif);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "ETH DHCP Server stopped\n");
+			netifapi_netif_set_link_down(rnapt_netif->lwip_netif);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] DHCP Server stopped\n", rnapt_netif->if_desc);
 		}
 	}
+}
+
+#endif /* CONFIG_LWIP_ETHERNET || CONFIG_LWIP_USB_ETHERNET */
+
+#if defined(CONFIG_LWIP_ETHERNET)
+static void rnapt_eth_link_callback(int link_up)
+{
+	rnapt_link_callback(g_netif_array[NETIF_ETH_INDEX], link_up);
 }
 
 /**
@@ -622,18 +626,24 @@ static int rnapt_netif_start_eth(rnapt_netif_t *netif)
 #endif
 
 #if defined(CONFIG_LWIP_USB_ETHERNET)
+static void rnapt_usb_eth_link_callback(int link_up)
+{
+	rnapt_link_callback(g_netif_array[NETIF_USB_ETH_INDEX], link_up);
+}
+
 /**
- * @brief  Start USB-ECM interface
+ * @brief  Start USB-ETH interface
  * @param  netif R-NAPT object to start
  * @return 0 on success, negative on failure
  */
 static int rnapt_netif_start_usb(rnapt_netif_t *netif)
 {
-	/* Check if USB has valid link and IP address (may already be connected) */
-	if (netif_is_up(netif->lwip_netif) && netif_is_link_up(netif->lwip_netif)) {
-		netif->is_active = true;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] Connected\n", netif->if_desc);
-	}
+	/* Register usb-eth link callback */
+	usb_eth_register_link_cb(rnapt_usb_eth_link_callback);
+
+	/* Initialize USB-ETH */
+	usb_eth_init();
+	RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] Initialized\n", netif->if_desc);
 
 	return 0;
 }
@@ -697,7 +707,9 @@ int rnapt_netif_stop(rnapt_netif_t *netif)
 	case NETIF_WLAN_AP_INDEX:
 		/* AP: Deinit DHCP server and stop AP */
 		if (netif->ip_method == RNAPT_IP_METHOD_DHCP_SERVER) {
+			dhcps_stop(netif->lwip_netif);
 			dhcps_deinit(netif->lwip_netif);
+			netif->dhcps_instance = NULL;
 		}
 		wifi_stop_ap();
 		RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] Stopped\n", netif->if_desc);

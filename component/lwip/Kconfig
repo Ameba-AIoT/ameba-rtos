@@ -3,9 +3,9 @@ menu "CONFIG LWIP"
         bool "Enable Fast DHCP"
         select FAST_DHCP if WHC_HOST || WHC_NONE
 
-    config IP_NAT_MENU
+    config IP_NAPT_MENU
         bool "Enable NAT REPEATER"
-        select IP_NAT if WHC_HOST || WHC_NONE
+        select IP_NAPT if WHC_HOST || WHC_NONE
 
     config RNAPT_MENU
         bool "Enable R-NAPT"
@@ -21,13 +21,20 @@ menu "CONFIG LWIP"
             Skip checksum for UDP RX packet
             Skipping it will provide higher throughput but reduce reliability.
 
+    config USB_ETHERNET_PROVIDER
+        bool
+    config USB_ETHERNET_BRIDGE_PROVIDER
+        bool
+
     config LWIP_USB_ETHERNET
-        depends on USBH_ECM_ETHERNET_MENU||USBH_ECM_ETHERNET_BRIDGE_MENU||USBH_ECM_MENU || USBH_COMPOSITE_ACM_ECM_MENU || USBD_CDC_ECM_MENU
         bool "Enable LWIP USB ETHERNET"
+        depends on USB_ETHERNET_PROVIDER
+        default y
 
     config LWIP_USB_ETHERNET_BRIDGE
-        depends on USBH_ECM_ETHERNET_BRIDGE_MENU
         bool "Enable LWIP USB ETHERNET BRIDGE"
+        depends on USB_ETHERNET_BRIDGE_PROVIDER
+        default y
 
     config LWIP_ETHERNET
         depends on ETHERNET
@@ -35,7 +42,7 @@ menu "CONFIG LWIP"
 
     config FAST_DHCP
         bool
-    config IP_NAT
+    config IP_NAPT
         bool
     config RNAPT
         bool
@@ -65,8 +72,8 @@ menu "CONFIG LWIP"
             bool "Enable SOCKETS DEBUG"
         config ICMP_DEBUG
             bool "Enable ICMP DEBUG"
-        config IPNAT_DEBUG
-            bool "Enable IPNAT DEBUG"
+        config IPNAPT_DEBUG
+            bool "Enable IPNAPT DEBUG"
         config IGMP_DEBUG
             bool "Enable IGMP DEBUG"
         config INET_DEBUG

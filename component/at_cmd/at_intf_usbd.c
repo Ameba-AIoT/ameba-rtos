@@ -84,13 +84,13 @@ static rtos_sema_t atcmd_usbd_tx_sema;
 
 static u8 atcmd_usbd_attach_status;
 
-rtos_sema_t atcmd_usbd_tx_done_sema;
-rtos_sema_t atcmd_usbd_rx_sema;
-rtos_sema_t atcmd_usbd_notify_sema;
+static rtos_sema_t atcmd_usbd_tx_done_sema;
+static rtos_sema_t atcmd_usbd_rx_sema;
+static rtos_sema_t atcmd_usbd_notify_sema;
 
-RingBuffer *at_usbd_rx_ring_buf = NULL;
-RingBuffer *at_usbd_tx_ring_buf = NULL;
-RingBuffer *at_usbd_notify_ring_buf = NULL;
+static RingBuffer *at_usbd_rx_ring_buf = NULL;
+static RingBuffer *at_usbd_tx_ring_buf = NULL;
+static RingBuffer *at_usbd_notify_ring_buf = NULL;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
@@ -270,7 +270,7 @@ static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf)
 		atcmd_usbd_ctrl_line_state = req->wValue;
 		if (atcmd_usbd_ctrl_line_state & 0x01) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 #endif
 		}

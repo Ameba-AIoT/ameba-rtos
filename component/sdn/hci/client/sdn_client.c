@@ -1,16 +1,10 @@
 #include <ameba.h>
 #include <os_wrapper.h>
 #include <sdn_intf.h>
-#include <sdn_watchdog.h>
 #include <sdn_user_conf_intf.h>
 #if defined(CONFIG_BT_COEXIST)
 #include "sdn_coex_intf.h"
-#include "sdn_coex_dbg.h"
 #endif
-
-extern void bt_hci_client_recv_data(uint8_t type, uint8_t *pdata);
-extern int rtk_wpan_vhdlc_receive(uint8_t *buf, uint32_t length);
-extern void sdn_coex_b2w_scbd_bt_on(uint8_t bt_on, uint8_t direct_send);
 
 struct sdn_client_ipc_tx {
 	struct list_head free_list;
@@ -30,7 +24,7 @@ struct sdn_client_ipc_rx {
 	uint8_t *msg_pool;
 	struct sdn_intf_task task;
 	struct sdn_data_buf ctrl;
-	uint8_t ctrl_msg[4];
+	uint8_t ctrl_msg[7];
 #ifdef CONFIG_BT_SDN
 	uint8_t num_bt_hci_cmd;
 	uint8_t num_bt_acl_data;
@@ -49,7 +43,7 @@ static struct sdn_client_ipc g_sdn_client_intf = {0};
 extern struct sdn_t g_sdn;
 
 #define SDN_CLIENT_RX_TASK_PRI          5
-#define SDN_CLIENT_RX_TASK_SIZE         768
+#define SDN_CLIENT_RX_TASK_SIZE         1024
 
 #define SDN_CLIENT_TX_TASK_PRI          4
 #define SDN_CLIENT_TX_TASK_SIZE         768
@@ -61,8 +55,31 @@ extern struct sdn_t g_sdn;
 #define BT_HCI_H4_EVT                                           0x04    /* HCI Event packet */
 #define BT_HCI_H4_ISO                                           0x05
 
+#if defined(CONFIG_BT_COEXIST)
+#define TAG_SDN_COEX    "SDN_COEX"
+#endif
 
-#if defined(CONFIG_MP_INCLUDED)
+extern void bt_hci_client_recv_data(uint8_t type, uint8_t *pdata);
+extern int rtk_wpan_vhdlc_receive(uint8_t *buf, uint32_t length);
+extern void sdn_coex_b2w_scbd_bt_on(uint8_t bt_on, uint8_t direct_send);
+extern void sdn_loguart_init(void);
+#ifdef CONFIG_SDN_HOST
+extern void sdn_host_init(void);
+#endif
+extern int rtk_ot_start(void);
+extern int rtk_ot_loop_exit(void);
+extern bool ble_ll_init(void);
+extern void ble_ll_deinit(void);
+extern void sdn_pwr_leave_suspend(void);
+extern void sdn_sche_init(void);
+extern void sdn_sche_deinit(void);
+extern void sdn_hal_init(void);
+extern void sdn_hal_deinit(void);
+extern void sdn_log_init(void);
+extern void sdn_log_deinit(void);
+extern void sdn_watchdog_init(void);
+extern void sdn_watchdog_deinit(void);
+#ifdef CONFIG_MP_INCLUDED
 bool sdn_uart_is_on(void);
 void sdn_uart_tx(struct sdn_data_buf *pdata_buf);
 #endif
@@ -315,7 +332,7 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 		sdn_remove_protocol(pmsg->data[0]);
 		break;
 
-#if defined(CONFIG_MP_INCLUDED)
+#ifdef CONFIG_MP_INCLUDED
 	case SDN_INTF_CTRL_MP:
 		sdn_set_mp(pmsg->data[0]);
 		break;
@@ -328,6 +345,11 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 		sdn_bridge_close();
 		break;
 #endif
+
+	case SDN_INTF_CTRL_FIX_ADDR:
+		sdn_fix_bt_addr(pmsg->data);
+		break;
+
 	default:
 		return;
 		break;
@@ -610,6 +632,7 @@ void sdn_client_intf_send(void *pdata_buf)
 
 uint8_t sdn_client_intf_get_free_rx_num(uint8_t type, uint8_t sub_type)
 {
+	(void)sub_type;
 	uint8_t free_rx_num = 0;
 	switch (type) {
 #ifdef CONFIG_BT_SDN
@@ -644,11 +667,9 @@ uint8_t sdn_client_intf_get_rx_bt_acl_max_len(void)
 	return (SDN_INTF_MAX_DATA_LEN - 1);
 }
 
-#ifdef CONFIG_SDN_HOST
-void sdn_host_init(void);
-#endif
 void sdn_client_init(void)
 {
+	sdn_loguart_init();
 #ifdef CONFIG_SDN_HOST
 	sdn_host_init();
 #else
@@ -656,51 +677,28 @@ void sdn_client_init(void)
 #endif
 }
 
-extern int rtk_ot_start(void);
-extern int rtk_ot_loop_exit(void);
-extern bool ble_ll_init(void);
-extern void ble_ll_deinit(void);
-extern uint32_t sdn_hal_irq_hdl_high(void *param);
-extern uint32_t sdn_hal_irq_hdl_low(void *param);
-extern void sdn_parse_efuse(void);
-extern void sdn_pwr_leave_suspend(void);
-extern void sdn_pwr_enter_lps(void);
-extern void sdn_log_init(void);
-extern void sdn_sche_init(void);
-extern void sdn_hal_power_on(void);
-extern void sdn_hal_mac_enable(IRQ_FUN bt_controller_irq_hdl_high, IRQ_FUN bt_controller_irq_hdl_low);
-extern void sdn_hal_phy_init(void);
-extern void sdn_pwr_suspend_init(void);
-extern void sdn_hal_mac_disable(void);
-extern void sdn_hal_power_off(void);
-extern void sdn_sche_deinit(void);
-
 bool sdn_enable(void)
 {
-	rtos_critical_enter(RTOS_CRITICAL_BT);
-	sdn_pwr_leave_suspend();
-	rtos_critical_exit(RTOS_CRITICAL_BT);
-
 	if (SDN_INTF_ERR_OK != sdn_client_intf_open()) {
 		return false;
 	}
+
+	rtos_critical_enter(RTOS_CRITICAL_BT);
+	sdn_pwr_leave_suspend();
+	rtos_critical_exit(RTOS_CRITICAL_BT);
 
 	sdn_log_init();
 
 	sdn_sche_init();
 
-	//HAL Enable
-	sdn_hal_power_on();
-	sdn_parse_efuse();
-	sdn_hal_mac_enable((IRQ_FUN)sdn_hal_irq_hdl_high, (IRQ_FUN)sdn_hal_irq_hdl_low);
-	sdn_hal_phy_init();
+	sdn_hal_init();
 
 	sdn_watchdog_init();
+
 #if defined(CONFIG_BT_COEXIST)
 	sdn_coex_b2w_scbd_bt_on(1, 0);
 #endif
 
-	sdn_pwr_suspend_init();
 	return true;
 }
 
@@ -746,11 +744,13 @@ void sdn_remove_protocol(uint8_t protocol)
 
 void sdn_disable(void)
 {
-	sdn_hal_mac_disable();
+	sdn_watchdog_deinit();
 
-	sdn_hal_power_off();
+	sdn_hal_deinit();
 
 	sdn_sche_deinit();
+
+	sdn_log_deinit();
 
 #ifdef CONFIG_SDN_HOST
 	sdn_client_intf_close();

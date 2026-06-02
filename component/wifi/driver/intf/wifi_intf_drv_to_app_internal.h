@@ -342,6 +342,17 @@ struct rtw_nan_func_t {
 	u8 instance_id;
 	u64 cookie;
 };
+
+/**
+ * @brief The enumeration lists the NAN cmd type.
+ */
+enum nan_cmd_type {
+	/* NAN cmd type */
+	NAN_CMD_TYPE_NONE 		= 0,
+	NAN_CMD_TYPE_NATIVE_IW 	= 1,
+	NAN_CMD_TYPE_NANDOW 	= 2
+};
+
 #endif
 
 /**

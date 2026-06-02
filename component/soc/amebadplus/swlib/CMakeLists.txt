@@ -42,6 +42,8 @@ ameba_list_append(private_sources
     log.c
     locks.c
     sscanf_minimal.c
+
+    libnosys/gettod.c
 )
 # Component private part, user config end
 #------------------------------#

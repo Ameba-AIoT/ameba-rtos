@@ -135,7 +135,6 @@
 #include "whc_host_promisc.h"
 
 #include "whc_host_event.h"
-#include "whc_host_drv_probe.h"
 #include "whc_host_netdev_ops.h"
 #include "whc_host_ethtool_ops.h"
 #include "whc_host_hci.h"

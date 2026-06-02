@@ -5,7 +5,8 @@
  */
 
 #include "ameba_soc.h"
-#include "FreeRTOS.h"
+#include "os_wrapper.h"
+#include "os_wrapper_specific.h"
 
 uint32_t PrevIrqStatus;
 
@@ -60,10 +61,11 @@ ALIGNMTO(CACHE_LINE_SIZE) u8 Flash_Sync_Flag[CACHE_LINE_ALIGNMENT(64)];
   * @retval none
   */
 SRAMDRAM_ONLY_TEXT_SECTION
+__weak
 void FLASH_Write_Lock(void)
 {
 	/* disable irq */
-	PrevIrqStatus = portSET_INTERRUPT_MASK_FROM_ISR();
+	PrevIrqStatus = irq_disable_save();
 
 	/* Add This Code For XIP when ca32 Program Flah */
 #ifdef CONFIG_ARM_CORE_CA32
@@ -101,6 +103,7 @@ void FLASH_Write_Lock(void)
   * @retval none
   */
 SRAMDRAM_ONLY_TEXT_SECTION
+__weak
 void FLASH_Write_Unlock(void)
 {
 #ifdef CONFIG_ARM_CORE_CA32
@@ -116,7 +119,7 @@ void FLASH_Write_Unlock(void)
 #endif
 
 	/* restore irq */
-	portCLEAR_INTERRUPT_MASK_FROM_ISR(PrevIrqStatus);
+	irq_enable_restore(PrevIrqStatus);
 }
 
 /**

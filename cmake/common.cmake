@@ -158,6 +158,15 @@ endmacro()
 
 # Top soc project create and init, name value maybe amebaxxx
 macro(ameba_soc_project_exit)
+    # 调用 Python 脚本合并 ROM JSON，方便 clangd 更好地解析和查看 ROM 源码
+    set(MERGE_SCRIPT "${c_BASEDIR}/tools/scripts/clangd_conf/merge_rom_json.py")
+    if(EXISTS ${MERGE_SCRIPT})
+        add_custom_target(
+            merge_rom_compile_commands ALL
+            COMMAND python ${MERGE_SCRIPT} ${CMAKE_BINARY_DIR}/compile_commands.json ${c_SOC_TYPE} ${c_BASEDIR}
+            COMMENT "Merging ROM compile_commands.json into build directory"
+        )
+    endif()
     add_custom_target(
         gen_submodule_info
         COMMENT "generate submodule_info.json"
@@ -216,8 +225,8 @@ macro(ameba_mcu_project_create name mcu_type)
     import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
 
     #NOTE: Determine whether build example for this mcu project
-    if(EXAMPLE) #By default, MCU as ap run example
-        if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
+    if(EXAMPLE) #By default, MCU as ap run example, but whc_dev boot from flash shall treat as iot
+        if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND CONFIG_WHC_DEV_FLASH_BOOT))
             set(c_ENABLE_EXAMPLE TRUE)
         else()
             set(c_ENABLE_EXAMPLE FALSE)

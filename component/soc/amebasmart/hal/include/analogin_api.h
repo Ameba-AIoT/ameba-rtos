@@ -48,16 +48,12 @@ extern "C" {
 
 /* reserved region for storage enum and structure, used by Doxygen */
 
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
 typedef struct analogin_s analogin_t;
+
+
+/** @addtogroup MBED_ADC_Exported_Functions MBED_ADC Exported Functions
+  * @{
+  */
 
 void analogin_init(analogin_t *obj, PinName pin);
 void analogin_deinit(analogin_t *obj);
@@ -65,6 +61,16 @@ float analogin_read(analogin_t *obj);
 uint16_t analogin_read_u16(analogin_t *obj);
 uint32_t analogin_voltage_norm(uint32_t adc_data);
 uint32_t analogin_voltage_vbat(uint32_t adc_data);
+
+/**
+  * @}
+  */
+/**
+  * @}
+  */
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }

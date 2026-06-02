@@ -234,7 +234,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		cdc_acm_ctrl_line_state = req->wValue;
 		if (cdc_acm_ctrl_line_state & 0x01) {
 			// RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 #endif
 		}

@@ -195,11 +195,11 @@ menu "CONFIG WHC INTF"
 
         choice
             prompt "Boot Source"
-            default WHC_DEV_SDIO_BOOT
+            default WHC_DEV_HCI_BOOT
             config WHC_DEV_FLASH_BOOT
                 bool "Boot From Flash"
-            config WHC_DEV_SDIO_BOOT
-                bool "Boot From SDIO"
+            config WHC_DEV_HCI_BOOT
+                bool "Boot From HCI"
         endchoice
     endif
 
@@ -333,17 +333,10 @@ menu "CONFIG WIFI"
         bool
 endmenu
 
-config VFS_MENU
-    bool
-    default y
+config VFS_ENABLED
+    def_bool y
     depends on !MP_SHRINK
-    select VFS_ENABLED_FOR_KM4NS if (WHC_HOST_FOR_KM4NS || WHC_NONE_FOR_KM4NS)
-    select VFS_ENABLED_FOR_KM4TZ if (WHC_HOST_FOR_KM4TZ || WHC_NONE_FOR_KM4TZ)
-
-config VFS_ENABLED_FOR_KM4NS
-    bool
-config VFS_ENABLED_FOR_KM4TZ
-    bool
+    depends on (WHC_HOST || WHC_NONE || (WHC_DEV && WHC_DEV_FLASH_BOOT))
 
 config SDN_FOR_KM4NS        # SDN lib is always on, always on NP
     def_bool y
@@ -397,15 +390,14 @@ menu "CONFIG ETHERNET"
         bool
 endmenu
 
-config SHELL_TASK_STACK_BASIC_SIZE_FOR_KM4TZ
-    int
-    default 4096 if (WHC_HOST || WHC_NONE)
-    default 2048
+config APPLICATION_SHELL_TASK_STACK_SIZE_MENU
+    int "Shell task stack size for HOST/NONE (bytes)"
+    range 256 8192
+    default 4096
 
-# Considering single-core mode
-config SHELL_TASK_STACK_BASIC_SIZE_FOR_KM4NS
+config SHELL_TASK_STACK_BASIC_SIZE
     int
-    default 4096 if (WHC_HOST || WHC_NONE)
+    default APPLICATION_SHELL_TASK_STACK_SIZE_MENU if (WHC_HOST || WHC_NONE)
     default 2048
 
 rsource "../../../lwip/Kconfig"

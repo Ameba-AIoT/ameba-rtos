@@ -100,5 +100,4 @@ int __wrap_printf(const char *__restrict fmt, ...)
 
 	return ret;
 }
-
 #endif

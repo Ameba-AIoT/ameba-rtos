@@ -40,7 +40,7 @@ void app_mbedtls_image3_init(void)
 	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
 }
 
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBADPLUS)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBADPLUS) || defined(CONFIG_RTL8720F)
 extern const SAU_CFG_TypeDef sau_config[];
 
 __NO_RETURN void IMG3_NsStart(u32 Addr)
@@ -54,19 +54,31 @@ __NO_RETURN void IMG3_NsStart(u32 Addr)
 
 void IMG3_WakeFromPG(void)
 {
+	FIH_DECLARE(fih_rc, FIH_FAILURE);
+	/* Re-apply SAU in case PG depth reset cleared core registers */
+	FIH_CALL(BOOT_CPU_TZCfg, fih_rc, sau_config);
+	if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
+		while (1);
+	}
+
 	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
 	IMG3_NsStart((u32)Image2EntryFun->RamWakeupFun);
 }
 
 void BOOT_IMG3(void)
 {
+	FIH_DECLARE(fih_rc, FIH_FAILURE);
 	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "BOOT_IMG3: BSS [%08x~%08x] SEC: %x \n", __image3_bss_start__, __image3_bss_end__,
 			 TrustZone_IsSecure());
 	/* reset img3 bss */
 	_memset((void *) __image3_bss_start__, 0, (__image3_bss_end__ - __image3_bss_start__));
 
-	BOOT_CPU_TZCfg(sau_config);
+	FIH_CALL(BOOT_CPU_TZCfg, fih_rc, sau_config);
+	if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
+		/* SAU programming failed; halt before entering NS world */
+		while (1);
+	}
 
 #ifdef CONFIG_TRUSTZONE_MBEDTLS
 	app_mbedtls_image3_init();
@@ -82,7 +94,7 @@ RAM_START_FUNCTION Img3EntryFun0 = {
 };
 
 #else
-/* amebadplus, amebalite, RTL8720F, amebasmart: Simple BOOT_IMG3 with NS_ENTRY */
+/* amebalite, amebasmart: Simple BOOT_IMG3 with NS_ENTRY */
 IMAGE3_ENTRY_SECTION
 void NS_ENTRY BOOT_IMG3(void)
 {

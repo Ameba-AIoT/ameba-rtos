@@ -934,6 +934,14 @@ static int whc_host_disconnect_ops(struct wiphy *wiphy, struct net_device *ndev,
 		dev_dbg(global_idev.pwhc_dev, "WHC host indicate 4-way end \n");
 	}
 
+	/* If the device already reported a disconnect event (e.g. AP-initiated deauth) before cfg80211 called this function,
+	RTW_JOINSTATUS_FAIL/RTW_JOINSTATUS_DISCONNECT EVT would not be reported by device, and wait_for_completion_interruptible()
+	will block. */
+	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_FAIL ||
+		global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_DISCONNECT) {
+		return 0;
+	}
+
 	/* KM4 will report RTW_EVENT_DISCONNECT event to linux, after disconnect done, and b_in_disconnect can prevent a deadlock caused by an early event. */
 	global_idev.mlme_priv.b_in_disconnect = true;
 #ifdef CONFIG_IEEE80211R

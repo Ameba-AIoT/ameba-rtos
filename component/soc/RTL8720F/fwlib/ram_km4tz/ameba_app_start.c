@@ -12,7 +12,6 @@ static const char *TAG = "APP";
 
 extern void newlib_locks_init(void);
 extern int main(void);
-extern void NS_ENTRY BOOT_IMG3(void);
 extern void SOCPS_WakeFromPG_AP(void);
 
 u32 app_mpu_nocache_check(u32 mem_addr)
@@ -86,11 +85,9 @@ u32 app_mpu_nocache_init(void)
 	return 0;
 }
 
-#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 #if defined (__GNUC__)
 /* Add This for C++ support to avoid compile error */
 void _init(void) {}
-#endif
 #endif
 
 void app_testmode_status(void)
@@ -145,15 +142,8 @@ void app_start(void)
 
 #ifdef CONFIG_TRUSTZONE
 	PutChar = (void (*)(char)) LOGUART_PutChar;
-
-	/* Locate vector table.*/
 	SCB->VTOR = (u32)RomVectorTable;
 	RomVectorTable[0] = (HAL_VECTOR_FUN)MSP_RAM_HP_NS;
-
-	BOOT_IMG3();
-
-	cmse_address_info_t cmse_address_info = cmse_TT((void *)app_start);
-	RTK_LOGI(TAG, "IMG2 SECURE STATE: %d\n", cmse_address_info.flags.secure);
 #endif
 
 	app_testmode_status();
@@ -174,12 +164,10 @@ void app_start(void)
 	SYSTIMER_Init();
 	/* low power pin dont need pinmap init again after wake from dslp */
 	pinmap_init(); /* 1.7ms */
-#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 #if defined (__GNUC__)
 	extern void __libc_init_array(void);
 	/* Add This for C++ support */
 	__libc_init_array();
-#endif
 #endif
 
 	newlib_locks_init();

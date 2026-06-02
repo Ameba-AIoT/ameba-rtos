@@ -19,21 +19,6 @@ static const char *const TAG = "BOOT";
 		}                                                  \
 	} while (0)
 
-__NO_RETURN void BOOT_NsStart(u32 Addr)
-{
-#ifndef CONFIG_TRUSTZONE
-	FuncPtr pFunc = (FuncPtr)Addr;
-	pFunc();
-#endif
-
-	/* jump to ns world */
-	nsfunc *fp = cmse_nsfptr_create(Addr);
-	fp();
-
-	/* avoid compiler to pop stack when exit BOOT_NsStart */
-	while (1);
-}
-
 __NO_RETURN void BOOT_ClearMSP_NsStart(u32 Addr)
 {
 	/* clear stack */
@@ -48,7 +33,11 @@ __NO_RETURN void BOOT_ClearMSP_NsStart(u32 Addr)
 
 	DCache_CleanInvalidate(MSPLIM_RAM_HP, MSP_RAM_HP - MSPLIM_RAM_HP);
 
-	BOOT_NsStart(Addr);
+	FuncPtr pFunc = (FuncPtr)Addr;
+	pFunc();
+
+	/* avoid compiler to pop stack */
+	while (1);
 }
 
 /* open some always on functions in this function */
@@ -68,9 +57,10 @@ void BOOT_RccConfig(void)
 int BOOT_Data_Flash_Init(void)
 {
 #if defined(CONFIG_SECOND_FLASH_NOR)
+	u8 mem_type = ChipInfo_MemoryType();
 
-	if (ChipInfo_MemoryType() == MCM_TYPE_PSRAM) {
-		RTK_LOGE(TAG, "Can't support second flash for chip with mem psram\r\n");
+	if ((mem_type != MCM_TYPE_NOR_FLASH) && (mem_type != MCM_TYPE_NAND_FLASH)) {
+		RTK_LOGE(TAG, "Can't support second flash for chip without mem flash\r\n");
 		return RTK_FAIL;
 	}
 
@@ -253,7 +243,11 @@ void BOOT_Config_PMC_Role(void)
 
 void BOOT_WakeFromPG(void)
 {
-	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
+#ifndef CONFIG_TRUSTZONE
+	PRAM_START_FUNCTION ImageEntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
+#else
+	PRAM_START_FUNCTION ImageEntryFun = (PRAM_START_FUNCTION)__image3_entry_func__;
+#endif
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
 
 	/* Config Non-Security World Registers Firstly in BOOT_WakeFromPG */
@@ -271,7 +265,7 @@ void BOOT_WakeFromPG(void)
 	/* Set PSPS Temp */
 	__set_PSP(MSP_RAM_HP_NS - 2048);
 
-	BOOT_NsStart((u32)Image2EntryFun->RamWakeupFun);
+	ImageEntryFun->RamWakeupFun();
 
 exit:
 	while (1);
@@ -451,7 +445,12 @@ void BOOT_Image1(void)
 	/* Set the depth of the stack to dump. */
 	crash_SetExStackDepth(MIN_DUMP_DEPTH);
 
+#ifndef CONFIG_TRUSTZONE
 	BOOT_ClearMSP_NsStart((u32)Image2EntryFun->RamStartFun);
+#else
+	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__image3_entry_func__;
+	BOOT_ClearMSP_NsStart((u32)Image3EntryFun->RamStartFun);
+#endif
 
 exit:
 	SBOOT_Validate_Fail_Stuck(FALSE);

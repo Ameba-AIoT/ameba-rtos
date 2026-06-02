@@ -69,6 +69,7 @@ typedef struct _node {
 	mbedtls_x509_crt *ca_crt;
 	mbedtls_x509_crt *cert_crt;
 	mbedtls_pk_context *private_key;
+	int *conf_refcnt;	// shared refcount for conf/ca_crt/cert_crt/private_key
 } node;
 
 

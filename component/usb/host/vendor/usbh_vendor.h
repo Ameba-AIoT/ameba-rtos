@@ -131,7 +131,7 @@ typedef struct {
 	u16 cur_frame;             /**< Current frame number (for ISOC synchronization) */
 	u8 xfer_cnt;               /**< Current transfer count (for test loops) */
 	u8 xfer_max_cnt;           /**< Target transfer count (for test loops) */
-	u8 test_mask;              /**< Single-bit mask identifying which endpoint this transfer belongs to (one of @ref USBH_VENDOR_MASK_XX) */
+	u8 test_mask;              /**< Single-bit mask identifying which endpoint this transfer belongs to (one of @ref USBH_VENDOR_MASK_BULK_IN etc.) */
 } usbh_vendor_xfer_t;
 
 /**

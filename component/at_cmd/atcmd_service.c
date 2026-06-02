@@ -68,7 +68,7 @@
 #endif
 
 //======================================================
-rtos_mutex_t at_printf_mutex = NULL;
+static rtos_mutex_t at_printf_mutex = NULL;
 
 static const char *const TAG = "AT";
 log_init_t log_init_table[] = {
@@ -102,7 +102,7 @@ char g_tt_mode_check_watermark = 0;
 char g_tt_mode_indicate_high_watermark = 0;
 char g_tt_mode_indicate_low_watermark = 1;
 char g_host_control_mode = AT_HOST_CONTROL_UART;
-char atcmd_usb_mode = 0;
+static char atcmd_usb_mode = 0;
 volatile char g_tt_mode_stop_flag = 0;
 volatile u8 g_tt_mode_stop_char_cnt = 0;
 rtos_timer_t xTimers_TT_Mode;
@@ -111,7 +111,7 @@ char global_buf[SMALL_BUF];
 /* Out callback function */
 at_write out_buffer;
 rtos_sema_t atcmd_tt_mode_sema;
-char at_config_file_exist = 0;
+static char at_config_file_exist = 0;
 extern int kv_init_done;
 extern s32 wifi_set_countrycode(u8 *cntcode);
 
@@ -258,6 +258,11 @@ int atcmd_tt_mode_start(u32 len)
 {
 	u32 ring_buf_size = len >= MAX_TT_HEAP_SIZE ? MAX_TT_HEAP_SIZE : len + 1;
 
+	if (atcmd_tt_mode_rx_ring_buf != NULL) {
+		RTK_LOGE(TAG, "tt mode is already started\n");
+		return -1;
+	}
+
 	if (rtos_mem_get_free_heap_size() < ring_buf_size) {
 		RTK_LOGE(TAG, "free heap size(%u) is not enough, exit tt mode\n", rtos_mem_get_free_heap_size());
 		return -1;
@@ -334,6 +339,7 @@ void atcmd_tt_mode_end(void)
 	g_tt_mode_stop_flag = 0;
 	g_tt_mode_check_watermark = 0;
 	RingBuffer_Destroy(atcmd_tt_mode_rx_ring_buf);
+	atcmd_tt_mode_rx_ring_buf = NULL;
 	RTK_LOGI(TAG, "exit tt mode\n");
 	// info HOST we exit tt mode now if needed
 	//at_printf(ATCMD_EXIT_TT_MODE_STR);
@@ -614,7 +620,7 @@ DEFAULT:
 	}
 
 	if (atcmd_ob) {
-		rtos_mem_free(atcmd_ob);
+		cJSON_Delete(atcmd_ob);
 	}
 
 	return ret;
@@ -914,6 +920,10 @@ int mp_command_handler(char *cmd)
 #if defined(CONFIG_WHC_HOST)
 		char *cmdbuf = NULL;
 		cmdbuf = rtos_mem_malloc(strlen(cmd + len) + 1);
+		if (cmdbuf == NULL) {
+			RTK_LOGE(TAG, "malloc fail\n");
+			return FALSE;
+		}
 		strcpy(cmdbuf, (const char *)(cmd + len));
 		whc_ipc_host_api_mp_command(cmdbuf, strlen(cmd + len) + 1, 1);
 		rtos_mem_free(cmdbuf);

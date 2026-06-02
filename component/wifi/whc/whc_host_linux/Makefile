@@ -38,8 +38,7 @@ ccflags-$(CONFIG_WHC_HCI_IPC) += -DCONFIG_WHC_HCI_IPC
 ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
 
 obj-$(CONFIG_WIFI_RTK_CFG80211_FULLMAC)	+= whc-ipc.o
-whc-ipc-objs			:= ./common/netdev/whc_host_drv_probe.o \
-					./common/whc_host_wiphy.o \
+whc-ipc-objs			:= ./common/whc_host_wiphy.o \
 					./common/whc_host_regd.o \
 					./common/netdev/whc_host_ethtool_ops.o \
 					./common/netdev/whc_host_netdev_ops.o \
@@ -54,6 +53,7 @@ whc-ipc-objs			:= ./common/netdev/whc_host_drv_probe.o \
 					./common/whc_host_acs.o \
 					./common/whc_host_promisc.o \
 					./common/whc_host_ft.o \
+					./common/ipc/whc_ipc_host_probe.o \
 					./common/ipc/whc_ipc_host_hci.o \
 					./common/ipc/whc_ipc_host_ops.o \
 					./common/ipc/whc_ipc_host_event.o \

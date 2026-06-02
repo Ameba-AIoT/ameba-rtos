@@ -8,17 +8,14 @@ import json
 import binascii
 import sys
 import os
+import hashlib
+import hmac
 
 from manifest_manager import ManifestImageConfig
 
 def check_python_lib(lib):
     print('%s Python library is not installed.'%(lib))
     sys.exit(-1)
-
-try:
-    import mbedtls
-except:
-    check_python_lib('mbedtls')
 
 try:
     import cryptography
@@ -40,10 +37,72 @@ try:
 except:
     check_python_lib('ecdsa')
 
-from mbedtls.pk import Curve
 from cryptography.hazmat.primitives.asymmetric import ed25519, ec
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
 from Crypto.Cipher import AES
+
+
+@unique
+class Curve(Enum):
+    SECP192R1 = 'secp192r1'
+    SECP224R1 = 'secp224r1'
+    SECP256R1 = 'secp256r1'
+    SECP384R1 = 'secp384r1'
+    SECP521R1 = 'secp521r1'
+    BRAINPOOLP256R1 = 'brainpoolP256r1'
+    BRAINPOOLP384R1 = 'brainpoolP384r1'
+    BRAINPOOLP512R1 = 'brainpoolP512r1'
+    SECP192K1 = 'secp192k1'
+    SECP224K1 = 'secp224k1'
+    SECP256K1 = 'secp256k1'
+    CURVE25519 = 'x25519'
+    CURVE448 = 'x448'
+
+
+_CRYPTO_CURVE_MAP = {
+    Curve.SECP192R1: ec.SECP192R1,
+    Curve.SECP224R1: ec.SECP224R1,
+    Curve.SECP256R1: ec.SECP256R1,
+    Curve.SECP384R1: ec.SECP384R1,
+    Curve.SECP521R1: ec.SECP521R1,
+    Curve.BRAINPOOLP256R1: ec.BrainpoolP256R1,
+    Curve.BRAINPOOLP384R1: ec.BrainpoolP384R1,
+    Curve.BRAINPOOLP512R1: ec.BrainpoolP512R1,
+    Curve.SECP256K1: ec.SECP256K1,
+}
+
+_SSLCRYPTO_CURVE_NAMES = {
+    Curve.SECP192K1: 'secp192k1',
+    Curve.SECP224K1: 'secp224k1',
+}
+
+
+def _hash_alg_for(name):
+    n = name.lower()
+    if n == 'sha256':
+        return hashes.SHA256()
+    if n == 'sha384':
+        return hashes.SHA384()
+    if n == 'sha512':
+        return hashes.SHA512()
+    raise ValueError('Unsupported hash algorithm: %s' % name)
+
+
+_SECP224K1_N = 0x10000000000000000000000000001DCE8D2EC6184CAF0A971769FB1F7
+_SECP224K1_P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFE56D
+_SECP224K1_GX = 0xA1455B334DF099DF30FC28A169A467E9E47075A90F7E650EB6B7A45C
+_SECP224K1_GY = 0x7E089FED7FBA344282CAFBD6F7E319F7C0B0BD59E2CA4BDB556D61A5
+
+
+def _build_secp224k1_ecdsa_curve():
+    from ecdsa.ellipticcurve import CurveFp, PointJacobi
+    from ecdsa import curves as _ecdsa_curves
+    crv = CurveFp(_SECP224K1_P, 0, 5)
+    g = PointJacobi(crv, _SECP224K1_GX, _SECP224K1_GY, 1, _SECP224K1_N, generator=False)
+    return _ecdsa_curves.Curve("secp224k1", crv, g, (1, 3, 132, 0, 32))
 
 ciL = 8
 biL = ciL << 3
@@ -321,7 +380,7 @@ class secure_boot():
             serialization.PublicFormat.Raw
         )
         # generate public key hash
-        hash = mbedtls.hashlib.sha256()
+        hash = hashlib.sha256()
         hash.update(pubkey_bytes)
         pubkey_hash = hash.hexdigest().upper()
         # print(pubkey_hash)
@@ -345,7 +404,7 @@ class secure_boot():
         public_key, secret_key = ml_dsa_65.generate_keypair()
 
         # generate public key hash
-        hash = mbedtls.hashlib.sha256()
+        hash = hashlib.sha256()
         hash.update(public_key)
         pubkey_hash = hash.hexdigest().upper()
 
@@ -426,7 +485,7 @@ class secure_boot():
             msg_bytes = string_at(addressof(msg), mlen)
             sig_bytes = privkey.sign(msg_bytes)
         # print(list_to_hex_str(sig_bytes))
-        memmove(addressof(sig), sig_bytes, ed25519._ED25519_SIG_SIZE)
+        memmove(addressof(sig), sig_bytes, 64)  # Ed25519 signature is fixed 64 bytes
         return 0
 
     def ecdsa_sign(self, id, privkey, pubkey, msg, mlen, sig):
@@ -465,14 +524,14 @@ class secure_boot():
             privkey_bytes = bytes.fromhex(privkey)
             key = sslcrypto.ecc.get_curve(curve)
             if self.IsHMAC == 0:
-                hash = mbedtls.hashlib.new(name=self.MdType)
+                hash = hashlib.new(self.MdType)
                 hash.update(msg_bytes)
                 msg_hash = hash.hexdigest().upper()
                 msg_hash_bytes = bytes.fromhex(msg_hash)
                 sig_bytes = key.sign(msg_hash_bytes, privkey_bytes, hash=None)
             else:
                 hmackey_bytes = bytes.fromhex(self.HmacKey)
-                hash = mbedtls.hmac.new(key=hmackey_bytes, digestmod=self.MdType)
+                hash = hmac.new(hmackey_bytes, digestmod=self.MdType)
                 hash.update(msg_bytes)
                 msg_hash = hash.hexdigest().upper()
                 msg_hash_bytes = bytes.fromhex(msg_hash)
@@ -481,34 +540,30 @@ class secure_boot():
             # print(list_to_hex_str(sig_bytes))
             memmove(addressof(sig), sig_bytes, csize * 2)
         elif id == Curve.SECP224K1:
-            # SECP224K1 public key is 224-bits, but signature is 225-bits
+            # SECP224K1 public key is 224-bits, but signature is 225-bits.
+            # cryptography lib does not support secp224k1; use the ecdsa library
+            # with a custom curve definition for both HMAC and non-HMAC paths.
+            from ecdsa import SigningKey as _EcdsaSignKey
             csize = (225 + 7) // 8
             msg_bytes = string_at(addressof(msg), mlen)
-            der = mbedtls_pk_binary_to_der(privkey, string_at(addressof(pubkey), csize * 2).hex())
-            key = mbedtls.pk.ECC.from_DER(der)
+            _SECP224K1 = _build_secp224k1_ecdsa_curve()
+            d_int = int(privkey, 16)
+            _ekey = _EcdsaSignKey.from_secret_exponent(d_int, curve=_SECP224K1)
             if self.IsHMAC:
                 hmackey_bytes = bytes.fromhex(self.HmacKey)
-                # mbedtls sign(digestmod=None) re-hashes with SHA256 — use ecdsa library
-                # with custom secp224k1 curve (225-bit order) for correct hash truncation
-                from ecdsa.ellipticcurve import CurveFp, PointJacobi
-                from ecdsa import curves as _ecdsa_curves, SigningKey as _EcdsaSignKey
-                _secp224k1_n = 0x10000000000000000000000000001DCE8D2EC6184CAF0A971769FB1F7
-                _secp224k1_p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFE56D
-                _secp224k1_Gx = 0xA1455B334DF099DF30FC28A169A467E9E47075A90F7E650EB6B7A45C
-                _secp224k1_Gy = 0x7E089FED7FBA344282CAFBD6F7E319F7C0B0BD59E2CA4BDB556D61A5
-                _crv224k1 = CurveFp(_secp224k1_p, 0, 5)
-                _G224k1 = PointJacobi(_crv224k1, _secp224k1_Gx, _secp224k1_Gy, 1, _secp224k1_n, generator=False)
-                _SECP224K1 = _ecdsa_curves.Curve("secp224k1", _crv224k1, _G224k1, (1, 3, 132, 0, 32))
-                d_int = int(privkey, 16)
-                _ekey = _EcdsaSignKey.from_secret_exponent(d_int, curve=_SECP224K1)
                 def _hmac_fn(data, _k=hmackey_bytes, _md=self.MdType):
-                    return mbedtls.hmac.new(key=_k, buffer=data, digestmod=_md)
+                    return hmac.new(_k, msg=data, digestmod=_md)
                 _raw_sig = _ekey.sign(msg_bytes, hashfunc=_hmac_fn)
-                r = int.from_bytes(_raw_sig[:csize], 'big')
-                s = int.from_bytes(_raw_sig[csize:], 'big')
             else:
-                sig_bytes = key.sign(msg_bytes, digestmod=self.MdType)
-                r,s = ecdsa.util.sigdecode_der(sig_bytes, 0)
+                def _hash_fn(data, _md=self.MdType):
+                    h = hashlib.new(_md)
+                    h.update(data)
+                    return h
+                _raw_sig = _ekey.sign(msg_bytes, hashfunc=_hash_fn)
+            # ecdsa.SigningKey.sign() default sigencode_string returns r||s
+            # big-endian, each padded to ceil(curve.order_bits / 8) = csize
+            r = int.from_bytes(_raw_sig[:csize], 'big')
+            s = int.from_bytes(_raw_sig[csize:], 'big')
             r_arr = point_to_bignum_arr(r, csize, 0)
             s_arr = point_to_bignum_arr(s, csize, 0)
 
@@ -527,27 +582,15 @@ class secure_boot():
             memmove(addressof(sig), bytes(sigs), csize * 2)
         else:
             csize = (curve.key_size + 7) // 8
-            new_pubkey = b'\x04' + string_at(addressof(pubkey), csize * 2)
-            pubkey = ec.EllipticCurvePublicKey.from_encoded_point(curve, new_pubkey)
-            pem = pubkey.public_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo)
-            privkey_bytes = bytes.fromhex(privkey)
-            d = mbedtls_mpi_read_binary(privkey, csize)
-            privkey = ec.derive_private_key(int(d), curve)
-            pem = privkey.private_bytes(encoding=serialization.Encoding.PEM,
-                                        format=serialization.PrivateFormat.PKCS8,
-                                        encryption_algorithm=serialization.NoEncryption())
-            # msg hash
+            d_int = int(privkey, 16)
+            priv_obj = ec.derive_private_key(d_int, curve)
             msg_bytes = string_at(addressof(msg), mlen)
             if self.IsHMAC == 0:
-                key = mbedtls.pk.ECC.from_PEM(pem.decode('utf-8'))
-                sig_bytes = key.sign(msg_bytes, digestmod=self.MdType)
-                r,s = ecdsa.util.sigdecode_der(sig_bytes, 0)
+                hash_alg = _hash_alg_for(self.MdType)
+                sig_der = priv_obj.sign(msg_bytes, ec.ECDSA(hash_alg))
+                r, s = decode_dss_signature(sig_der)
                 r_arr = point_to_bignum_arr(r, csize, 0)
-                # print('r_arr: ', r_arr)
                 s_arr = point_to_bignum_arr(s, csize, 0)
-                # print('s_arr: ', s_arr)
 
                 buf_x = init_list(csize)
                 mbedtls_mpi_write_binary(r_arr, buf_x, csize)
@@ -563,10 +606,14 @@ class secure_boot():
                 memmove(addressof(sig), bytes(sigs), csize * 2)
             else:
                 hmackey_bytes = bytes.fromhex(self.HmacKey)
-                # sign for msg hash
+                # ecdsa lib supports user-supplied hashfunc for HMAC-as-hash
+                pem = priv_obj.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption())
                 key = ecdsa.SigningKey.from_pem(pem.decode('utf-8'))
                 def hashfunc_user(data):
-                    return mbedtls.hmac.new(key=hmackey_bytes, buffer=data, digestmod=self.MdType)
+                    return hmac.new(hmackey_bytes, msg=data, digestmod=self.MdType)
                 sig_bytes = key.sign(msg_bytes, hashfunc=hashfunc_user)
 
                 # print(len(sig_bytes))
@@ -575,34 +622,39 @@ class secure_boot():
         return 0
 
     def ecdsa_genkey(self, id, keyinfo):
-        ecc = mbedtls.pk.ECC(id)
-        ecc.generate()
-        Q = ecc.export_public_key("POINT")
-        d = ecc.export_key("NUM")
+        # Generate raw X, Y, d big-endian bytes; csize is curve byte length.
+        if id in _CRYPTO_CURVE_MAP:
+            curve_cls = _CRYPTO_CURVE_MAP[id]
+            curve = curve_cls()
+            csize = (curve.key_size + 7) // 8
+            priv_obj = ec.generate_private_key(curve)
+            priv_numbers = priv_obj.private_numbers()
+            pub_numbers = priv_obj.public_key().public_numbers()
+            d_bytes = priv_numbers.private_value.to_bytes(csize, 'big')
+            x_bytes = pub_numbers.x.to_bytes(csize, 'big')
+            y_bytes = pub_numbers.y.to_bytes(csize, 'big')
+            pubkey_bytes = x_bytes + y_bytes
+            privkey_bytes = d_bytes
+        elif id in _SSLCRYPTO_CURVE_NAMES:
+            ssl_curve = sslcrypto.ecc.get_curve(_SSLCRYPTO_CURVE_NAMES[id])
+            privkey_bytes = ssl_curve.new_private_key()
+            full_pub = ssl_curve.private_to_public(privkey_bytes)
+            # sslcrypto returns 0x04 || X || Y for uncompressed pub keys
+            if len(full_pub) and full_pub[0] == 0x04:
+                pubkey_bytes = full_pub[1:]
+            else:
+                pubkey_bytes = full_pub
+            csize = len(privkey_bytes)
+        else:
+            print('Not supported curve for keygen!')
+            return -1
 
-        # print('Q: ',Q)
-        # print('d: ',d)
-
-        csize = ecc.key_size
-        # print('csize: ',csize)
-        buflen = csize * 2 + 1
-        pubkey = init_list(buflen)
-        privkey = init_list(buflen)
-        mbedtls_ecp_point_write_binary(Q.x, Q.y, pubkey, buflen, csize)
-        # print(pubkey[1:], len(pubkey[1:]))
-        d_arr = point_to_bignum_arr(d, csize, 0)
-        mbedtls_mpi_write_binary(d_arr, privkey, csize)
-        # print(privkey[0:csize], len(privkey[0:csize]))
-
-        pubkey_bytes = list_to_bytes(pubkey[1:])
-        hash = mbedtls.hashlib.sha256()
+        hash = hashlib.sha256()
         hash.update(pubkey_bytes)
         pubkey_hash = hash.hexdigest().upper()
 
-        pubkey_hex = list_to_hex_str(pubkey[1:])
-        privkey_hex = list_to_hex_str(privkey[0:csize])
-        # print(pubkey_hex)
-        # print(privkey_hex)
+        pubkey_hex = pubkey_bytes.hex().upper()
+        privkey_hex = privkey_bytes.hex().upper()
 
         keyinfo['sboot_private_key'] = privkey_hex
         keyinfo['sboot_public_key'] = pubkey_hex
@@ -613,14 +665,14 @@ class secure_boot():
         with open(filename, 'rb') as f:
             buf = f.read(1024)
             if self.IsHMAC == 0:
-                hash = mbedtls.hashlib.new(name=self.MdType)
+                hash = hashlib.new(self.MdType)
                 while buf:
                     hash.update(buf)
                     buf = f.read(1024)
                 hash_hex = hash.hexdigest().upper()
             else:
                 hmackey_bytes = bytes.fromhex(self.HmacKey)
-                hash = mbedtls.hmac.new(key=hmackey_bytes, digestmod=self.MdType)
+                hash = hmac.new(hmackey_bytes, digestmod=self.MdType)
                 while buf:
                     hash.update(buf)
                     buf = f.read(1024)
@@ -658,24 +710,24 @@ class secure_boot():
 
         nb = nb + rlen
         # hmac for label and seed
-        hmac = mbedtls.hmac.new(key=secret_bytes, digestmod='sha256')
+        hmac_obj = hmac.new(secret_bytes, digestmod='sha256')
         tmp_bytes = label_bytes + seed_bytes
-        hmac.update(tmp_bytes)
-        hash_bytes =  bytes.fromhex(hmac.hexdigest().upper())
+        hmac_obj.update(tmp_bytes)
+        hash_bytes =  bytes.fromhex(hmac_obj.hexdigest().upper())
 
         for i in range(0, md_len):
             tmp[i] = int(hash_bytes[i])
 
         for i in range(0, dlen, md_len):
-            hmac = mbedtls.hmac.new(key=secret_bytes, digestmod='sha256')
+            hmac_obj = hmac.new(secret_bytes, digestmod='sha256')
             tmp_bytes = bytes.fromhex(list_to_hex_str(tmp[0:md_len+nb]))
-            hmac.update(tmp_bytes)
-            h_i = bytes.fromhex(hmac.hexdigest().upper())
+            hmac_obj.update(tmp_bytes)
+            h_i = bytes.fromhex(hmac_obj.hexdigest().upper())
 
-            hmac = mbedtls.hmac.new(secret_bytes, digestmod='sha256')
+            hmac_obj = hmac.new(secret_bytes, digestmod='sha256')
             tmp_bytes = bytes.fromhex(list_to_hex_str(tmp[0:md_len]))
-            hmac.update(tmp_bytes)
-            hash_bytes = bytes.fromhex(hmac.hexdigest().upper())
+            hmac_obj.update(tmp_bytes)
+            hash_bytes = bytes.fromhex(hmac_obj.hexdigest().upper())
             hash_list = ['%02X' % int(j) for j in hash_bytes]
             for j in range(0, md_len):
                 tmp[j] = int(hash_list[j], 16)
@@ -842,16 +894,13 @@ class RDP():
         with open(self.input_file, 'rb') as f:
             buf = f.read()
             # while buf:
+            cipher = Cipher(algorithms.AES(key_bytes), modes.CBC(iv_bytes), backend=default_backend())
             if self.encrypt:
-                aes_cryptor = mbedtls.cipher.AES.new(key=key_bytes,
-                                                    mode=mbedtls.cipher.MODE_CBC,
-                                                    iv=iv_bytes)
-                enbuf = aes_cryptor.encrypt(buf)
+                aes_cryptor = cipher.encryptor()
+                enbuf = aes_cryptor.update(buf) + aes_cryptor.finalize()
             else:
-                aes_cryptor = mbedtls.cipher.AES.new(key=key_bytes,
-                            mode=mbedtls.cipher.MODE_CBC,
-                            iv=iv_bytes)
-                enbuf = aes_cryptor.decrypt(buf)
+                aes_cryptor = cipher.decryptor()
+                enbuf = aes_cryptor.update(buf) + aes_cryptor.finalize()
             fw.write(enbuf)
 
         fw.close()

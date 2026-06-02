@@ -28,6 +28,12 @@ void app_mbedtls_rom_init(void)
 #if defined(CONFIG_MBEDTLS_THREADING)
 	mbedtls_threading_init();
 #endif
+	/* mbedtls calls into the HW crypto engine with interrupts disabled via the
+	 * IPC semaphore, so cache inconsistency cannot occur; suppress the
+	 * cache-misalignment warning log.
+	 */
+	extern u32 crypto_disable_cache_warning_ns;
+	crypto_disable_cache_warning_ns = 1;
 }
 
 void app_pmu_init(void)

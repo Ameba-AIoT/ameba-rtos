@@ -1017,7 +1017,7 @@ static void dnss_receive_udp_packet_handler(
 			*(uint16_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 8) = PP_HTONS(1);
 			*(uint32_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 10) = PP_HTONL(0);
 			*(uint16_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 14) = PP_HTONS(4);
-			memcpy((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 16, (void *)&dhcps->dhcps_local_address, 4);
+			memcpy((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 16, (void *)&dhcps->local_address, 4);
 #else
 			memcpy((uint8_t *) rsp_hdr + sizeof(struct dns_hdr), dhcps->domain_name_buf, dhcps->domain_name_buf_len);
 			*(uint16_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + dhcps->domain_name_buf_len) = PP_HTONS(1);
@@ -1288,7 +1288,7 @@ err_t dhcps_start(struct netif *pnetif)
 	udp_bind(dhcps->dhcps_pcb, &pnetif->ip_addr, DHCP_SERVER_PORT);
 	udp_recv(dhcps->dhcps_pcb, (udp_recv_fn)dhcps_receive_udp_packet_handler, dhcps);
 
-#ifndef IP_NAT
+#ifndef IP_NAPT
 	// DNS server init
 	err_t result = dns_server_init(dhcps);
 	if (result != ERR_OK) {
@@ -1342,7 +1342,7 @@ void dhcps_stop(struct netif *pnetif)
 	}
 
 	// Close DNS server
-#ifndef IP_NAT
+#ifndef IP_NAPT
 	dns_server_deinit(dhcps);
 #endif
 

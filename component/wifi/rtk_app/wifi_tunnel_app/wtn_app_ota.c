@@ -380,6 +380,11 @@ static void rmesh_ota_firmware_download_end(u8 need_clear_sig)
 	if (wifi_user_config.wtn_connect_only_to_rnat) {
 		wifi_disconnect();/*disconnect to rnat before reset, otherwise rnat may still think this client is alive and can help num not updated*/
 	}
+
+#ifndef CONFIG_WHC_INTF_IPC
+	whc_dev_ota_close();
+#endif
+
 	rtos_time_delay_ms(500);
 	sys_reset();
 }
@@ -671,7 +676,11 @@ void rmesh_ota_internal_send_task(void *param)
 send_again:
 	memset(&status, 0, sizeof(struct rmesh_ota_upgrade_status));
 	memset(&result, 0, sizeof(struct rmesh_inter_ota_result));
-	rt_kv_get("rmesh_ota_info", (u8 *)&ota_info, sizeof(struct rmesh_ota_info_to_flash));
+	if (rt_kv_get("rmesh_ota_info", (u8 *)&ota_info, sizeof(struct rmesh_ota_info_to_flash)) != sizeof(struct rmesh_ota_info_to_flash)) {
+		RTK_LOGE(NOTAG, "rmesh_ota_info is NULL, internal send abort\n");
+		rtos_task_delete(NULL);
+		return;
+	}
 	firmware_size = ota_info.ota_firmware_size;
 
 	status.packet_num = (firmware_size + RMESH_OTA_PACKET_SIZE - 1) / RMESH_OTA_PACKET_SIZE;

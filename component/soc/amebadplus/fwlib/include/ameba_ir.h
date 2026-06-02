@@ -7,6 +7,7 @@
 #ifndef _AMEBA_IR_H_
 #define _AMEBA_IR_H_
 
+/// @cond
 /* AUTO_GEN_START */
 
 /** @addtogroup Ameba_Periph_Driver
@@ -225,6 +226,7 @@ typedef struct {
 } IR_TypeDef;
 /** @} */
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -241,32 +243,32 @@ extern "C" {
  * @brief IR Init Structure Definition
  */
 typedef struct {
-	u32 IR_Clock;			/*!< Specify the IR IP core Input clock. */
-	u32 IR_Freq;			/*!< Specify the clock frequency. This parameter is IR carrier freqency whose unit is Hz.
+	u32 IR_Clock;			/*!< Specifies the IR IP core Input clock. */
+	u32 IR_Freq;			/*!< Specifies the clock frequency. This parameter is IR carrier frequency whose unit is Hz.
 						This parameter can be a value of @ref IR_Carrier_Frequency */
-	u32 IR_DutyCycle;		/*!< Specify the IR duty cycle. */
-	u32 IR_Mode;			/*!< Specify the IR mode.
+	u32 IR_DutyCycle;		/*!< Specifies the IR duty cycle. */
+	u32 IR_Mode;			/*!< Specifies the IR mode.
 						This parameter can be a value of @ref IR_Mode */
-	u32 IR_TxIdleLevel;		/*!< Specify the IR output level in Tx mode
+	u32 IR_TxIdleLevel;		/*!< Specifies the IR output level in Tx mode
 						This parameter can be a value of @ref IR_Idle_Level */
-	u32 IR_TxInverse;		/*!< Specify inverse FIFO data or not in TX mode
+	u32 IR_TxInverse;		/*!< Specifies inverse FIFO data or not in TX mode
 						This parameter can be a value of @ref IR_Tx_Data_Level */
-	u32 IR_TxFIFOThrLevel;	/*!< Specify TX FIFO interrupt threshold in TX mode. When TX FIFO depth <= threshold value, trigger interrupt.
+	u32 IR_TxFIFOThrLevel;	/*!< Specifies TX FIFO interrupt threshold in TX mode. When TX FIFO depth <= threshold value, trigger interrupt.
 						This parameter can be a value of @ref IR_Tx_Threshold */
-	u32 IR_TxCOMP_CLK;		/*!< Specify TX compensation clk. This CLK used when @ref IR_Tx_DATA_TYPE = IR_TX_CLK_Self_Def.*/
-	u32 IR_RxStartMode;		/*!< Specify Start mode in RX mode
+	u32 IR_TxCOMP_CLK;		/*!< Specifies TX compensation clk. This CLK used when IR_Tx_DATA_TYPE = IR_TX_CLK_Self_Def.*/
+	u32 IR_RxStartMode;		/*!< Specifies Start mode in RX mode
 						This parameter can be a value of @ref IR_Rx_Start_Control */
-	u32 IR_RxFIFOThrLevel;	/*!< Specify RX FIFO interrupt threshold in RX mode. when RX FIFO depth > threshold value, trigger interrupt.
+	u32 IR_RxFIFOThrLevel;	/*!< Specifies RX FIFO interrupt threshold in RX mode. When RX FIFO depth > threshold value, trigger interrupt.
 						This parameter can be a value of @ref IR_Rx_Threshold */
-	u32 IR_RxFIFOFullCtrl;	/*!< Specify data discard mode in RX mode when RX FIFO is full and receiving new data
+	u32 IR_RxFIFOFullCtrl;	/*!< Specifies data discard mode in RX mode when RX FIFO is full and receiving new data
 						This parameter can be a value of @ref IR_Rx_FIFO_Discard */
-	u32 IR_RxTriggerMode;	/*!< Specify trigger in RX mode
+	u32 IR_RxTriggerMode;	/*!< Specifies trigger in RX mode
 						This parameter can be a value of @ref IR_Rx_Auto_Trigger_Type */
-	u32 IR_RxFilterTime;	/*!< Specify filter time in RX mode
+	u32 IR_RxFilterTime;	/*!< Specifies filter time in RX mode
 						This parameter can be a value of @ref IR_Rx_Filter_Time */
-	u32 IR_RxCntThrType;	/*!< Specify counter level type when trigger IR_INT_RX_CNT_THR interrupt in RX mode
+	u32 IR_RxCntThrType;	/*!< Specifies counter level type when trigger IR_INT_RX_CNT_THR interrupt in RX mode
 						This parameter can be a value of @ref IR_Rx_Count_Level */
-	u32 IR_RxCntThr;		/*!< Specify counter threshold value when trigger IR_INT_RX_CNT_THR interrupt in RX mode */
+	u32 IR_RxCntThr;		/*!< Specifies counter threshold value when trigger IR_INT_RX_CNT_THR interrupt in RX mode */
 } IR_InitTypeDef, *PIR_InitTypeDef;
 
 /**
@@ -278,7 +280,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup IR_Carrier_Frequency
+/** @defgroup IR_Carrier_Frequency IR Carrier Frequency
   * @{
   */
 #define IR_TX_FREQ_HZ_MIN			(25000)
@@ -287,7 +289,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Mode
+/** @defgroup IR_Mode IR Mode
   * @{
   */
 #define IR_MODE_TX					(0)
@@ -298,7 +300,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Tx_Threshold
+/** @defgroup IR_Tx_Threshold IR Tx Threshold
   * @{
   */
 #define IR_TX_FIFO_SIZE						(32)
@@ -306,7 +308,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Tx_Data_Level
+/** @defgroup IR_Tx_Data_Level IR Tx Data Level
   * @{
   */
 #define IR_TX_DATA_NORMAL_CARRIER_NORMAL					(0)
@@ -318,7 +320,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Idle_Level
+/** @defgroup IR_Idle_Level IR Idle Level
   * @{
   */
 #define IR_IDLE_OUTPUT_LOW					(0)
@@ -327,7 +329,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Tx_INT_Operation
+/** @defgroup IR_Tx_INT_Operation IR Tx INT Operation
   * @{
   */
 #define IR_TX_INT_ALL_MASK					((u32)0x0000002C)
@@ -340,7 +342,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Rx_Start_Control
+/** @defgroup IR_Rx_Start_Control IR Rx Start Control
   * @{
   */
 #define IR_RX_MANUAL_MODE					(0)
@@ -349,7 +351,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Rx_Filter_Time
+/** @defgroup IR_Rx_Filter_Time IR Rx Filter Time
   * @{
   */
 #define IR_RX_FILTER_TIME_20NS					(0)
@@ -364,7 +366,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Rx_FIFO_Discard
+/** @defgroup IR_Rx_FIFO_Discard IR Rx FIFO Discard
   * @{
   */
 #define IR_RX_FIFO_FULL_DISCARD_NEWEST			(1)
@@ -373,7 +375,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Rx_Threshold
+/** @defgroup IR_Rx_Threshold IR Rx Threshold
   * @{
   */
 #define IR_RX_FIFO_SIZE							(32)
@@ -381,7 +383,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Rx_INT_Operation
+/** @defgroup IR_Rx_INT_Operation IR Rx INT Operation
   * @{
   */
 #define IR_RX_INT_ALL_EN						((u32)0x0000003F)
@@ -394,7 +396,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Rx_Count_Level
+/** @defgroup IR_Rx_Count_Level IR Rx Count Level
   * @{
   */
 #define IR_RX_COUNT_LOW_LEVEL					(0)
@@ -403,7 +405,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup IR_Rx_Auto_Trigger_Type
+/** @defgroup IR_Rx_Auto_Trigger_Type IR Rx Auto Trigger Type
   * @{
   */
 #define IR_RX_FALL_EDGE							(0)
@@ -421,6 +423,7 @@ typedef struct {
   * @}
   */
 
+/// @cond
 /**
   * @}
   */
@@ -428,8 +431,13 @@ typedef struct {
 /**
   * @}
   */
+/// @endcond
 
 /* Exported functions --------------------------------------------------------*/
+/** @defgroup IR_Exported_Functions IR Exported Functions
+  * @{
+  */
+
 void IR_DeInit(void);
 void IR_Init(IR_TypeDef *IRx, IR_InitTypeDef *IR_InitStruct);
 void IR_StructInit(IR_InitTypeDef *IR_InitStruct);
@@ -452,6 +460,9 @@ void IR_StartManualRxTrigger(IR_TypeDef *IRx);
 u32 IR_ReceiveData(IR_TypeDef *IRx);
 void IR_ClearTxFIFO(IR_TypeDef *IRx);
 void IR_ClearRxFIFO(IR_TypeDef *IRx);
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }

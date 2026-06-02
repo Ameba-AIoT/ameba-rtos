@@ -11,10 +11,10 @@
   * @{
   */
 
-/** @defgroup IPC
+/** @defgroup IPC IPC
   * @brief IPC driver modules
-* @{
-*/
+  * @{
+  */
 /* Exported types --------------------------------------------------------*/
 /** @addtogroup IPC_Exported_Types IPC Exported Types
   * @{
@@ -36,7 +36,7 @@ typedef struct ipc_msg_struct {
 /** @defgroup IPC_Exported_Constants IPC Exported Constants
   * @{
   */
-/** @defgroup IPC_RETURN_VALUE
+/** @defgroup IPC_RETURN_VALUE IPC Return Value
   * @{
   */
 #define IPC_SEMA_TIMEOUT 3
@@ -52,16 +52,22 @@ typedef struct ipc_msg_struct {
   * @}
   */
 
-/** @} */
 
-/** @} */
 
 /* Exported functions --------------------------------------------------------*/
+/** @defgroup IPC_Exported_Functions IPC Exported Functions
+  * @{
+  */
 void ipc_table_init(IPC_TypeDef *IPCx);
-u32 ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg);
-PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum);
-
+u32 ipc_send_message(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg);
+PIPC_MSG_STRUCT ipc_get_message(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum);
 void IPC_TXHandler(void *Data, u32 IrqStatus, u32 ChanNum);
+/** @} */
+
+/** @} */
+
+/** @} */
+
 extern IPC_IRQ_FUN IPC_IrqHandler[IPC_CHANNEL_NUM];
 
 

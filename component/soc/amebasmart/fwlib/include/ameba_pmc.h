@@ -187,6 +187,7 @@ enum SLEEP_TYPE {
 
 extern u32 np_sleep_type;
 extern u32 np_sleep_timeout;
+extern SLEEP_ParamDef sleep_param;
 
 void SOCPS_SleepCG_RAM(void);
 void np_pm_init(void);

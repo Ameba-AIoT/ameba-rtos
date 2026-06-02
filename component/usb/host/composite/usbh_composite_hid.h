@@ -24,10 +24,6 @@
 /** @addtogroup Host_Composite_HID_Constants Host Composite HID Constants
  * @{
  */
-#define USBH_COMPOSITE_HID_THREAD_PRIORITY     3U      /**< HID processing thread priority */
-#define USBH_COMPOSITE_HID_THREAD_STACK_SIZE   512U    /**< HID msg parse thread stack size */
-#define USBH_COMPOSITE_HID_MST_COUNT           10U     /**< Maximum support touch count (if applicable) */
-#define USBH_COMPOSITE_HID_MSG_LENGTH          16U     /**< Message queue length */
 
 /* Audio Class Codes (Note: HID is 0x03, defined here for reference) */
 #define USBH_CLASS_HID                         0x03U   /**< USB HID Class Code */
@@ -203,6 +199,7 @@ typedef struct {
 	u8 report_desc_status;                    /**< Status of report descriptor retrieval */
 	u8 itf_idx;                               /**< Interface Index */
 	u8 itf_alt_idx;                           /**< Interface Alternate Setting Index */
+	u8 alt_setting_count;                     /**< Number of alternate settings on this HID interface */
 	u8 next_xfer;                             /**< Flag to trigger the next transfer */
 	__IO u8 parse_task_alive;                 /**< Flag to indicate parse task is alive */
 	__IO u8 parse_task_exit;                  /**< Flag to indicate signal parse task is exit */

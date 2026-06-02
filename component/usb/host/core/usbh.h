@@ -317,7 +317,7 @@ typedef struct {
 	u8 *xfer_buf;                     /**< Pointer to the transfer buffer. */
 	u32 xfer_len;                     /**< Total length of the data to transfer. */
 	u32 tick;                         /**< Host tick count at the start of the transfer (based on SOF or timestamp). */
-	u16 frame_num;                    /**< Frame number for the transfer (from HFNUM register, max 0x3FFF). */
+	__IO u16 frame_num;               /**< Frame number for the transfer (from HFNUM register, max 0x3FFF). */
 	u16 max_timeout_tick;             /**< Maximum wait timeout in ticks for this transfer. */
 	u16 ep_interval;                  /**< Endpoint polling interval in ticks. */
 
@@ -325,10 +325,10 @@ typedef struct {
 	u16 ep_mps;                       /**< Endpoint Maximum Packet Size in bytes.
 	                                     - FS: max 64 (CTRL/BULK/INTR), max 1023 (ISOC)
 	                                     - HS: max 64 (CTRL), max 512 (BULK), max 1024 (INTR/ISOC) */
+	__IO u8 xfer_state;               /**< Current transfer state. See @ref usbh_ep_xfer_state_t. */
 	u8 ep_addr;                       /**< Endpoint address (including direction bit). */
 
 	u8 pipe_num;                      /**< Host pipe/channel number assigned to this endpoint. */
-	u8 xfer_state;                    /**< Current transfer state. See @ref usbh_ep_xfer_state_t. */
 	u8 trx_zlp;                       /**< Flag to indicate if a Zero-Length Packet is required, only for BULK xfer with xfer_len is N*mps. */
 	u8 retry_cnt;                     /**< Current retry count for the transfer. */
 
@@ -687,7 +687,7 @@ void usbh_resume(void);
 /**
  * @brief Sets the USB to enter Clock Gating (CG) state with a specific wakeup event.
  * @details This function configures the USB host to enter a low-power clock gated state.
- *          The wakeup mechanism depends on the value of the @ref sleep_ms parameter.
+ *          The wakeup mechanism depends on the value of the \p sleep_ms parameter.
  * @param[in] sleep_ms:
  *          - 0: Wakeup is triggered by a USB event.
  *          - others: Wakeup is triggered by an Anon timer event after the specified time.

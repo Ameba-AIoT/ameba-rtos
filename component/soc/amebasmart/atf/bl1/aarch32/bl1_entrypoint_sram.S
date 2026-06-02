@@ -42,7 +42,7 @@ bl1_boot_sram:
     mov lr, #0
 
     mov_imm r1, BOOT_REASON_SW_REG
-    mov_imm r3, BIT_AP_RUNNING
+    mov_imm r3, BIT_AP_RST_WAIT_DRAM
     ldr     r4, [r1]
     tst     r4, r3
     /* Branch if Equal means branch if Z=1, Z=1 when (r4 & r3) == 0 */
@@ -74,7 +74,7 @@ bl1_boot_sram:
 
 poll_loop:
     mov_imm r1, BOOT_REASON_SW_REG
-    mov_imm r3, BIT_AP_RUNNING
+    mov_imm r3, BIT_AP_RST_WAIT_DRAM
     ldr     r4, [r1]
     dsb     sy
     tst     r4, r3

@@ -52,8 +52,11 @@ typedef void *pool_t;
 /* Create/destroy a memory pool. */
 tlsf_t tlsf_create(void *mem);
 tlsf_t tlsf_create_with_pool(void *mem, size_t bytes);
+tlsf_t tlsf_create_ex(void *mem, size_t max_alloc_size);
+tlsf_t tlsf_create_with_pool_ex(void *mem, size_t bytes, size_t max_alloc_size);
 void tlsf_destroy(tlsf_t tlsf);
 pool_t tlsf_get_pool(tlsf_t tlsf);
+pool_t tlsf_get_pool_ex(tlsf_t tlsf, size_t max_alloc_size);
 
 /* Add/remove memory pools. */
 pool_t tlsf_add_pool(tlsf_t tlsf, void *mem, size_t bytes);
@@ -70,6 +73,7 @@ size_t tlsf_block_size(void *ptr);
 
 /* Overheads/limits of internal structures. */
 size_t tlsf_size(void);
+size_t tlsf_size_ex(size_t max_alloc_size);
 size_t tlsf_align_size(void);
 size_t tlsf_block_size_min(void);
 size_t tlsf_block_size_max(void);

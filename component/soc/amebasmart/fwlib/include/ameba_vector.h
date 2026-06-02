@@ -97,11 +97,6 @@ extern HAL_VECTOR_FUN  NewVectorTable[];
 #define MAX_IRQ_PRIORITY_VALUE			3
 #endif
 
-#define MSP_RAM_LP			0x23001FFC
-#define MSPLIM_RAM_HP		0x30001000
-#define MSP_RAM_HP			0x30002FFC
-#define MSP_RAM_HP_NS		0x2001C000
-
 #define BIT_EXCRETURN_S			BIT(6)	/* Indicates whether a Secure or Non-secure stack is used to restore stack frame on exception return. 0: Non-secure, 1: Secure*/
 #define BIT_EXCRETURN_MODE		BIT(3)	/* Indicates the Mode that was stacked from. 0: Handler mode, 1: Thread mode */
 #define BIT_EXCRETURN_SPSEL		BIT(2)	/* Stack pointer selection. The value of this bit indicates the transitory value of the CONTROL.SPSEL bit

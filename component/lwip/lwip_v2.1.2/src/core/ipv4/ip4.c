@@ -107,9 +107,9 @@
 static u16_t ip_id;
 
 /* Added by Realtek start */
-#if defined(IP_NAT) && (IP_NAT == 1)
-extern err_t ip_nat_transfer(struct pbuf *p, struct netif *src, struct netif *target);
-extern err_t ip_nat_enqueue(struct pbuf *p, struct netif *inp);
+#if defined(IP_NAPT) && (IP_NAPT == 1)
+extern err_t ip_napt_transfer(struct pbuf *p, struct netif *src, struct netif *target);
+extern err_t ip_napt_enqueue(struct pbuf *p, struct netif *inp);
 #endif
 /* Added by Realtek end */
 
@@ -350,8 +350,8 @@ ip4_forward(struct pbuf *p, struct ip_hdr *iphdr, struct netif *inp)
   }
 
 /* Added by Realtek start */
-#if defined(IP_NAT) && (IP_NAT == 1)
-  if(ip_nat_transfer(p, inp, netif) != ERR_OK) {
+#if defined(IP_NAPT) && (IP_NAPT == 1)
+  if(ip_napt_transfer(p, inp, netif) != ERR_OK) {
     return;
   }
 #endif
@@ -546,12 +546,11 @@ ip4_input(struct pbuf *p, struct netif *inp)
 #endif
 
 /* Added by Realtek start */
-#if defined(IP_NAT) && (IP_NAT == 1)
-  if(ip_nat_enqueue(p, inp) != ERR_OK) {
+#if defined(IP_NAPT) && (IP_NAPT == 1)
+  if(ip_napt_enqueue(p, inp) != ERR_OK) {
     pbuf_free(p);
-    IP_STATS_INC(ip.chkerr);
     IP_STATS_INC(ip.drop);
-    MIB2_STATS_INC(mib2.ipinhdrerrors);
+    MIB2_STATS_INC(mib2.ipindiscards);
     return ERR_OK;
   }
 #endif

@@ -55,6 +55,7 @@
 #define SDIO_REG_FW_DL_CTRL					0xE4 // 1 bytes, SDIO firmware download control register
 
 //READ-ONLY for driver, Modify by FW
+// Note: should use CMD52 to access SPDIO control register!!! */
 #define SPDIO_REG_TXBD_NUM					0x1A4
 #define SPDIO_REG_TXBD_WPTR					0x1A8
 #define SPDIO_REG_TXBD_RPTR					0x1AC

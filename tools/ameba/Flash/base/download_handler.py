@@ -957,17 +957,17 @@ class Ameba(object):
             if not self.is_address_block_aligned(self.erase_info.start_address):
                 ret = ErrType.SYS_PARAMETER
                 self.logger.warning(
-                    f"Flash start address should be aligned to block size {self.device_info.flash_block_size()}KB")
+                    f"Flash start address should be aligned to block size {self.device_info.flash_block_size() // 1024}KB")
             if self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND and (
                     not self.is_address_block_aligned(self.erase_info.end_address)):
                 ret = ErrType.SYS_PARAMETER
                 self.logger.warning(
-                    f"Flash end address should be aligned to block size {self.device_info.flash_block_size()}KB")
+                    f"Flash end address should be aligned to block size {self.device_info.flash_block_size() // 1024}KB")
             if self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_NOR and (
                     not self.is_address_block_aligned(self.erase_info.size_in_byte())):
                 ret = ErrType.SYS_PARAMETER
                 self.logger.warning(
-                    f"Flash size should be aligned to block size {self.device_info.flash_block_size()}KB")
+                    f"Flash size should be aligned to block size {self.device_info.flash_block_size() // 1024}KB")
         return ret
 
     def calculate_checksum(self, image):
@@ -1413,7 +1413,7 @@ class Ameba(object):
                 ret = self.floader_handler.erase_flash(self.erase_info.memory_type,
                                                        self.erase_info.start_address,
                                                        self.erase_info.end_address,
-                                                       self.erase_info.size_in_kbyte,
+                                                       self.erase_info.size_in_byte(),
                                                        nor_erase_timeout_in_second(
                                                            divide_then_round_up(self.erase_info.size_in_byte(), 1024)),
                                                        sense=True)

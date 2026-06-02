@@ -24,7 +24,7 @@
   * @{
   */
 
-/** @defgroup MBED_WDG
+/** @defgroup MBED_WDG MBED WDG
  *  @brief    MBED_WDG driver modules.
  *  @{
  */
@@ -43,8 +43,7 @@ IRQn_Type WdgIrqNum = WDG4_IRQ;
 
 /**
  * @brief  Initialize the watchdog, including time and early interrupt settings.
- * @param  timeout_ms: Timeout value of watchdog timer in units of ms.
- * @retval none
+ * @param  timeout_ms Timeout value of watchdog timer in units of ms.
  * @note  By default, watchdog will reset the whole system once timeout occurs.
  */
 void watchdog_init(uint32_t timeout_ms)
@@ -62,8 +61,6 @@ void watchdog_init(uint32_t timeout_ms)
 
 /**
  * @brief  Enable the watchdog and it starts to count.
- * @param  none
- * @retval none
  */
 void watchdog_start(void)
 {
@@ -72,8 +69,6 @@ void watchdog_start(void)
 
 /**
  * @brief  Disable the watchdog and it stops counting.
- * @param  none
- * @retval none
  * @note  Once watchdog is enabled, it cannot be disabled by software.
  */
 void watchdog_stop(void)
@@ -84,8 +79,6 @@ void watchdog_stop(void)
 
 /**
  * @brief  Refresh count of the watchdog in avoidance of WDT timeout.
- * @param  none
- * @retval none
  */
 void watchdog_refresh(void)
 {
@@ -93,11 +86,10 @@ void watchdog_refresh(void)
 }
 
 /**
- * @brief  Enable eraly interrupt and register a watchdog timer timeout interrupt handler.
+ * @brief  Enable early interrupt and register a watchdog timer timeout interrupt handler.
  *        The interrupt handler will be called at a programmable time prior to watchdog timeout, for users to prepare for reset
- * @param  handler: WDT timeout interrupt callback function.
- * @param  id: WDT timeout interrupt callback parameter.
- * @retval none
+ * @param  handler WDT timeout interrupt callback function.
+ * @param  id WDT timeout interrupt callback parameter.
  */
 void watchdog_irq_init(wdt_irq_handler handler, uint32_t id)
 {

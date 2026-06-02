@@ -2,6 +2,9 @@
 #include "lwip/sys.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
+#include "kv.h"
+#include "wifi_api_wtn.h"
+#include "wtn_app_ota.h"
 
 struct whc_cmd_path_priv whc_cmdpath_data;
 
@@ -406,6 +409,15 @@ __weak void whc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start)
 	param[3] = (u32)rnat_ap_start;
 
 	whc_dev_api_send_to_host((u8 *)param, size, NULL, 0);
+
+#ifdef CONFIG_RMESH_OTA_EN
+	struct rmesh_ota_info_to_flash ota_info = {0};
+	int res;
+	res = rt_kv_get("rmesh_ota_info", (u8 *)&ota_info, sizeof(struct rmesh_ota_info_to_flash));
+	if (res == sizeof(struct rmesh_ota_info_to_flash) && ota_info.ota_ver_len > 0) {
+		wifi_rmesh_update_node_ota_ver((u8 *)ota_info.cur_ota_ver, ota_info.ota_ver_len, 0);
+	}
+#endif
 
 	rtos_mem_free((u8 *)param);
 }

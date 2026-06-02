@@ -24,13 +24,13 @@
  * @{
  */
 #ifdef CONFIG_ATCMD_HOST_CONTROL
-#define CONFIG_CDC_ACM_NOTIFY                     1     /**< Enable/Disable notification feature. */
+#define CONFIG_USBD_CDC_ACM_NOTIFY                     1     /**< Enable/Disable notification feature. */
 #else
-#define CONFIG_CDC_ACM_NOTIFY                     1     /**< Enable/Disable notification feature. */
+#define CONFIG_USBD_CDC_ACM_NOTIFY                     1     /**< Enable/Disable notification feature. */
 #endif
 
-#if CONFIG_CDC_ACM_NOTIFY
-#define CONFIG_CDC_ACM_NOTIFY_LOOP_TEST           0     /**< Enable notification loopback test mode. */
+#if CONFIG_USBD_CDC_ACM_NOTIFY
+#define CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST           0     /**< Enable notification loopback test mode. */
 #endif
 
 #define CONFIG_CDC_ACM_BULK_TX_SKIP_MEMCPY        1     /**< Skip memcpy BULK IN DATA from application in class */
@@ -75,7 +75,7 @@
  * @{
  */
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 /**
  * @brief Structure for CDC ACM notifications sent to the host.
  * @details This is a packed structure used for sending notifications like SERIAL_STATE
@@ -157,7 +157,7 @@ typedef struct {
 	usbd_ep_t ep_intr_in;       /**< INTERRUPT IN endpoint structure. */
 	usb_dev_t *dev;             /**< Pointer to the USB device instance. */
 	usbd_cdc_acm_cb_t *cb;      /**< Pointer to the user-defined callback structure. */
-#if defined(CONFIG_CDC_ACM_NOTIFY_LOOP_TEST) && (CONFIG_CDC_ACM_NOTIFY_LOOP_TEST == 1)
+#if defined(CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST) && (CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST == 1)
 	u16 intr_notify_idx;        /**< Index for managing interrupt notifications. */
 #endif
 } usbd_cdc_acm_dev_t;
@@ -199,7 +199,7 @@ int usbd_cdc_acm_deinit(void);
  */
 int usbd_cdc_acm_transmit(u8 *buf, u32 len);
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 /**
  * @brief Sets new line coding properties over the INTR IN endpoint.
  * @param[in] serial_state: New line coding properties.

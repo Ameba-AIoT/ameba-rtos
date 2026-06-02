@@ -586,6 +586,13 @@ typedef struct {
 
 #define CA32_FIP_MAX_SIZE				(0x00200000)  /* 2MB */
 
+#define MSP_RAM_LP			    0x23001FFC
+#define MSPLIM_RAM_LP			  (u32)__km0_msp_ram_limit__
+#define MSPLIM_RAM_HP		    0x30001000
+#define MSP_RAM_HP			    0x30002FFC
+#define MSP_RAM_HP_NS		    0x2001C000
+#define MSPLIM_RAM_HP_NS    (u32)__km4_msp_ram_ns_limit__
+
 /*BT share mem with system*/
 #define SHARE_MEM_BT_ADDRESS			 HP_SRAM_EXT_BASE /*Size: 272KB*/
 /*WiFi share mem with system */

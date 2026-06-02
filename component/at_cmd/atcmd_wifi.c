@@ -41,8 +41,8 @@ static struct rtw_softap_info ap = {0};
 static unsigned char password[129] = {0};
 static int security = -1;
 
-#if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
-extern void ipnat_dump(void);
+#if defined(CONFIG_IP_NAPT) && (CONFIG_IP_NAPT == 1)
+extern void ip_napt_dump(void);
 #endif
 #if defined(CONFIG_RNAPT)
 extern void rnapt_print_status(void);
@@ -62,8 +62,8 @@ extern struct netif *pnetif_usb_eth;
 #endif
 
 #ifdef CONFIG_WIFI_XMESH
-rtos_task_t xmesh_tx_task_hdl = NULL;
-int xmesh_tx_stop_req = 0;
+static rtos_task_t xmesh_tx_task_hdl = NULL;
+static int xmesh_tx_stop_req = 0;
 
 struct xmesh_tx_param {
 	int cnt;
@@ -1128,12 +1128,12 @@ void at_wlstate(u16 argc, char **argv)
 
 	rtos_mem_free((void *)p_wifi_setting);
 
-#if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
+#if defined(CONFIG_IP_NAPT) && (CONFIG_IP_NAPT == 1)
 #if defined(LWIP_IPV6) && (LWIP_IPV6 == 1)
 	print_rlocal_ipv6_addresses();
 	print_rlocal_nhb();
 #endif
-	ipnat_dump();
+	ip_napt_dump();
 #endif
 #if defined(CONFIG_RNAPT)
 	rnapt_print_status();

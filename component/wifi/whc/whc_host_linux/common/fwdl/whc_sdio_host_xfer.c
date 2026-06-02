@@ -118,7 +118,7 @@ static int whc_sdio_recv_timeout(struct whc_xfer_adapter_t *adapter, u8 *pbuf, i
 
 	rx_len = rtw_sdio_get_rx_len(priv);
 	if (rx_len > 0) {
-		ret = sdio_read_port(priv, SDIO_RX_FIFO_DOMAIN_ID, rx_len, adapter->rx_buf);
+		ret = rtw_read_port(priv, SDIO_RX_FIFO_DOMAIN_ID, rx_len, adapter->rx_buf);
 		ret = (ret == true) ? 0 : -1;
 	} else {
 		dev_err(&priv->func->dev, "rx_len is 0\n");
@@ -136,7 +136,7 @@ static int whc_sdio_recv_timeout(struct whc_xfer_adapter_t *adapter, u8 *pbuf, i
 
 	/* restore RX_REQ interrupt*/
 	himr = cpu_to_le32(priv->sdio_himr);
-	sdio_local_write(priv, SDIO_REG_HIMR, 4, (u8 *)&himr);
+	rtw_write32(priv, SDIO_REG_HIMR, himr);
 
 	return ret;
 }
@@ -176,7 +176,7 @@ static void whc_sdio_deinit(struct whc_xfer_adapter_t *adapter)
 	u32 himr = 0;
 
 	/* HIMR - turn all off */
-	sdio_local_write(priv, SDIO_REG_HIMR, 4, (u8 *)&himr);
+	rtw_write32(priv, SDIO_REG_HIMR, himr);
 
 	g_xfer_adapter = NULL;
 }

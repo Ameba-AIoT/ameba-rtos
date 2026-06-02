@@ -24,6 +24,7 @@ if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_INTF_IPC AND CONFIG_WHC_DE
     ameba_add_subdirectory(${c_CMPT_USRCFG_DIR} usrcfg)
     ameba_add_subdirectory(${c_CMPT_DIAGNOSE_DIR})
     ameba_add_subdirectory_if_exist(${c_CMPT_VERIFICATION_DIR})
+    ameba_add_subdirectory_if_exist(${c_CMPT_PYTEST_DIR})
     ameba_add_subdirectory_if_exist(${c_CMPT_APP_DIR}/benchmark)
     ameba_add_subdirectory(${c_CMPT_WIFI_DIR}/wifi_fw)
     ameba_add_subdirectory(${c_CMPT_WIFI_DIR})

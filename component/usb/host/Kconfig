@@ -14,13 +14,13 @@ config USBH_CDC_ECM_MENU
             config  USBH_ECM_ETHERNET_MENU
                 bool "USB Ethernet"
                 depends on SUPPORT_USBH_ECM
-                select LWIP_USB_ETHERNET if WHC_HOST || WHC_NONE
+                select USB_ETHERNET_PROVIDER
                 select USBH_ECM_ETHERNET if WHC_HOST || WHC_NONE
             config  USBH_ECM_ETHERNET_BRIDGE_MENU
                 bool "USB Ethernet Bridge"
                 depends on SUPPORT_USBH_ECM_BRIDGE
-                select LWIP_USB_ETHERNET if WHC_HOST || WHC_NONE
-                select LWIP_USB_ETHERNET_BRIDGE if WHC_HOST || WHC_NONE
+                select USB_ETHERNET_PROVIDER
+                select USB_ETHERNET_BRIDGE_PROVIDER
                 select USBH_ECM_ETHERNET_BRIDGE if WHC_HOST || WHC_NONE
         endchoice
     endif
@@ -36,6 +36,7 @@ config USBH_COMPOSITE_MENU
                 depends on SUPPORT_USBH_UAC
                 select USB_UAC if WHC_HOST || WHC_NONE
                 select USBH_COMPOSITE_HID_UAC if WHC_HOST || WHC_NONE
+                select AUDIO_FWK_MENU if SUPPORT_AUDIO_FOR_USB
                 choice
                     prompt "Select UAC Version"
                     depends on USBH_COMPOSITE_HID_UAC_MENU
@@ -46,7 +47,7 @@ config USBH_COMPOSITE_MENU
             config USBH_COMPOSITE_ACM_ECM_MENU
                 bool "ACM + ECM"
                 select USBH_COMPOSITE_ACM_ECM if WHC_HOST || WHC_NONE
-                select LWIP_USB_ETHERNET if WHC_HOST || WHC_NONE
+                select USB_ETHERNET_PROVIDER
                 select USBH_ECM_ETHERNET if WHC_HOST || WHC_NONE
         endchoice
     endif

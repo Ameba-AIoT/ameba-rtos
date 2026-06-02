@@ -62,7 +62,7 @@ void whc_spi_host_send_data(u8 *buf, u32 len, struct sk_buff *skb)
 	//print_hex_dump_bytes("whc_spi_host_send_data: ", DUMP_PREFIX_NONE, tr->tx_buf, tr->len);
 
 	/* process rx msg */
-	priv->rx_process_func(pskb);
+	whc_host_recv_dispatch(pskb);
 
 exit:
 	mutex_unlock(&priv->lock);
@@ -72,7 +72,7 @@ exit:
 	}
 }
 
-void whc_spi_host_recv_data_process(void *intf_priv)
+void whc_spi_host_recv_data(void *intf_priv)
 {
 	struct whc_spi *priv = &whc_spi_priv;
 	struct spi_device *spidev = priv->spi_dev;
@@ -132,7 +132,7 @@ void whc_spi_host_recv_data_process(void *intf_priv)
 			goto exit;
 		}
 
-		//print_hex_dump_bytes("whc_spi_host_recv_data_process: ", DUMP_PREFIX_NONE, tr->rx_buf, tr->len);
+		//print_hex_dump_bytes("whc_spi_host_recv_data: ", DUMP_PREFIX_NONE, tr->rx_buf, tr->len);
 
 		/* wake tx queue if need */
 		if (p_node != NULL) {
@@ -149,7 +149,7 @@ void whc_spi_host_recv_data_process(void *intf_priv)
 		}
 
 		/* process rx msg */
-		priv->rx_process_func(pskb);
+		whc_host_recv_dispatch(pskb);
 	}
 
 exit:
@@ -162,6 +162,6 @@ exit:
 
 struct hci_ops_t whc_spi_host_intf_ops = {
 	.send_data = whc_spi_host_send_data,
-	.recv_data_process = whc_spi_host_recv_data_process,
+	.recv_data = whc_spi_host_recv_data,
 };
 

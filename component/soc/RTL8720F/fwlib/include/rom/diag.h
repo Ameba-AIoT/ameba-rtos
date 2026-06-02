@@ -25,6 +25,10 @@ int DiagSnPrintf(char *buf, size_t size, const char *fmt, ...);
 int DiagPrintfNano(const char *fmt, ...);
 int DiagVprintfNano(const char *fmt, va_list ap);
 int DiagVSNprintfNano(char *buf, size_t maxlen, const char *fmt,  va_list ap);
+int DiagFVSNprintf(out_fct_type out, char *buffer, const size_t maxlen, const char *fmt, va_list args);
+int DiagFVSNprintfNano(out_fct_type out, char *buffer, const size_t maxlen, const char *fmt, va_list args);
+extern void (*DiagFunc)(char character, size_t idx);
+extern void (*PutChar)(char character);
 
 /** @brief Log Module Definition */
 typedef enum {

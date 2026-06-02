@@ -17,7 +17,11 @@ set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/ameba_layout.ld)
 set(c_IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all.ld)
-set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
+if(CONFIG_MP_SHRINK)
+    set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all_mp.ld)
+else()
+    set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
+endif()
 set(c_IMG3_LD ${c_SDK_LD_DIR}/ameba_img3_all.ld)
 
 # note!!! Keep the latest version at the top for release reason.
@@ -86,10 +90,13 @@ add_custom_target(
     COMMAND ${CMAKE_COMMAND} -E echo " ./build.py -debug for debugging with gdb"
 )
 
-add_custom_target(
-    gen_imgtool_floader
-    COMMAND ${CMAKE_COMMAND} -DFILEPATH=${c_SDK_FLOADER_BIN_DIR}/floader_${c_SOC_TYPE}.bin -P${c_CMAKE_FILES_DIR}/checkexists.cmake
-    COMMAND ${op_CUT} -i ${c_SDK_FLOADER_BIN_DIR}/floader_${c_SOC_TYPE}.bin -o ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin -l 4096 -B
-    COMMAND ${op_FW_PACKAGE} --imgtool-floader ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin -o ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin
-    COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin ${c_SDK_FLOADER_BIN_DIR}/floader_${c_SOC_TYPE}.bin
+execute_process(
+    COMMAND ${c_AXF2BIN_RUN} --post-build-dir ${c_SOC_PROJECT_DIR} helper query-manifest --key sboot_enable
+    OUTPUT_VARIABLE _sboot_enabled
+    OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+if(_sboot_enabled STREQUAL "ON" AND EXISTS ${c_SDK_FLOADER_BIN_DIR}/floader_${c_SOC_TYPE}.bin)
+    execute_process(COMMAND ${op_CUT} -i ${c_SDK_FLOADER_BIN_DIR}/floader_${c_SOC_TYPE}.bin -o ${CMAKE_CURRENT_BINARY_DIR}/ram_1_prepend.bin -l 4096 -B)
+    execute_process(COMMAND ${op_FW_PACKAGE} --imgtool-floader ${CMAKE_CURRENT_BINARY_DIR}/ram_1_prepend.bin -o ${CMAKE_CURRENT_BINARY_DIR}/imgtool_flashloader.bin)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/imgtool_flashloader.bin ${FINAL_IMAGE_DIR}/floader_${c_SOC_TYPE}.bin)
+endif()

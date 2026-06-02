@@ -30,6 +30,7 @@ ameba_add_subdirectory(${c_CMPT_USB_DIR})
 
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/cmsis-dsp)
 ameba_add_subdirectory_if_exist(${c_CMPT_SOC_DIR}/verification)
+ameba_add_subdirectory_if_exist(${c_CMPT_PYTEST_DIR})
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
 
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})

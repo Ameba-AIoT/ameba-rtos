@@ -14,11 +14,7 @@
 /* Exported defines ----------------------------------------------------------*/
 
 #if defined(CONFIG_USBH_COMPOSITE_HID_UAC)
-#define USBH_COMPOSITE_HID_UAC_DEBUG             0
-
-#if USBH_COMPOSITE_HID_UAC_DEBUG && (USBH_TP_TRACE_DEBUG == 0)
-#error "Please set USBH_TP_TRACE_DEBUG in usbh.h"
-#endif
+#define USBH_COMPOSITE_HID_UAC_DEBUG              0
 
 #define USBH_COMPOSITE_HID_UAC_EVENT              BIT0
 #define USBH_COMPOSITE_HID_EVENT                  BIT1

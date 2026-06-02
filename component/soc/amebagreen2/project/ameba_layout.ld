@@ -149,6 +149,12 @@ MEMORY
     KM4TZ_IMG2_XIP (rx) :                  ORIGIN = 0x04000020, LENGTH = 0x06000000 - 0x04000020    /* KM4NS IMG2 Virtual address: 32M */
     BTRACE (rx) :                          ORIGIN = 0xC8800000, LENGTH = 0xC9000000 - 0xC8800000    /* BT LOG Virtual address: 8192k */
     CTRACE (rx) :                          ORIGIN = 0xCA000000, LENGTH = 0xCA7FFFFF - 0xCA000000    /* COEX LOG Virtual address: 8192k */
+
+    /* dummy header for xip part */
+    KM4TZ_BD_RAM_MP (rwx) :                ORIGIN = 0x2000D000 + IMAGE_HEADER_LEN,   LENGTH = 0x20034F80 - 0x2000D040
+    KM4TZ_BD_RAM_MP_END(rwx) :             ORIGIN = 0x20034F80 - 32, LENGTH = 32
+    KM4NS_BD_RAM_MP (rwx) :                ORIGIN = 0x20035000 + IMAGE_HEADER_LEN + IMAGE_HEADER_LEN,   LENGTH = 0x2007FFA0 - 0x2003F040
+
 }
 
 __ipc_memory_start__ = ORIGIN(KM4NS_IPC_RAM);
@@ -173,6 +179,10 @@ __km4tz_bd_ram_start__ = ORIGIN(KM4TZ_BD_RAM) - IMAGE_HEADER_LEN;
 /*PSRAM Layout boundary*/
 __km4tz_bd_psram_start__ = ORIGIN(KM4TZ_BD_PSRAM) - IMAGE_HEADER_LEN;
 __non_secure_psram_end__ = PSRAM_END;
+
+/* here for km4tz entry addr for floader */
+__km4tz_bd_ram_mp_start__ = ORIGIN(KM4TZ_BD_RAM_MP) - IMAGE_HEADER_LEN - 1024 + IMAGE_HEADER_LEN;
+__km4ns_bd_ram_mp_start__ = ORIGIN(KM4NS_BD_RAM_MP);
 
 /* code analyse used */
 __rtk_fixed_addr__ = SRAM_BASE + KM4TZ_KM4NS_RAM_SIZE;

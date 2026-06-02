@@ -23,8 +23,8 @@
 #define NAT_AP_GW_ADDR3 1
 
 extern void dns_relay_service_init(void);
-extern void ip_nat_reinitialize(void);
-extern void ip_nat_sync_dns_serever_data(void);
+extern void ip_napt_reinitialize(void);
+extern void ip_napt_sync_dns_server_data(void);
 
 extern char *rptssid;
 extern int wifi_repeater_ap_config_complete;
@@ -231,8 +231,8 @@ static void poll_ip_changed_thread(void *param)
 
 		if (1 == wifi_repeater_ap_config_complete && oldip != newip) {
 			RTK_LOGI(TAG, "%s(%d)oldip=%x,newip=%x\n", __FUNCTION__, __LINE__, oldip, newip);
-			ip_nat_reinitialize();
-			ip_nat_sync_dns_serever_data();
+			ip_napt_reinitialize();
+			ip_napt_sync_dns_server_data();
 			ip_nat_avoid_confliction_ip();
 
 			oldip = newip;

@@ -80,8 +80,8 @@ PACK_STRUCT_END
 #endif
 
 /* Added by Realtek start */
-#if defined(IP_NAT) && (IP_NAT == 1)
-extern void ip_nat_initialize(void);
+#if defined(IP_NAPT) && (IP_NAPT == 1)
+extern void ip_napt_initialize(void);
 #endif
 /* Added by Realtek end */
 
@@ -388,8 +388,8 @@ lwip_init(void)
 #endif /* LWIP_TIMERS */
 
 /* Added by Realtek start */
-#if defined(IP_NAT) && (IP_NAT == 1)
-  ip_nat_initialize();
-#endif /* IP_NAT */
+#if defined(IP_NAPT) && (IP_NAPT == 1)
+  ip_napt_initialize();
+#endif /* IP_NAPT */
 }
 /* Added by Realtek end */
