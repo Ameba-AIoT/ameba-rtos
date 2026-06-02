@@ -31,8 +31,6 @@ struct whc_usb {
 
 	bool rx_pending;
 
-	int (*rx_process_func)(struct sk_buff *pskb);
-
 	unsigned int rx_pipe;
 	unsigned int tx_pipe[WIFI_OUT_EP_NUM_TOTAL];
 	unsigned int tx_mps;

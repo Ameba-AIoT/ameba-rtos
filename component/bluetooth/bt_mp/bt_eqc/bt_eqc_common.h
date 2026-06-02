@@ -4,12 +4,11 @@
  *******************************************************************************
  */
 
-#ifndef _HCI_IF_EQC_H_
-#define _HCI_IF_EQC_H_
+#ifndef _BT_EQC_COMMON_H_
+#define _BT_EQC_COMMON_H_
 
 #include <stdio.h>
 #include <stdbool.h>
-#include "hci_controller.h"
 
 typedef struct {
 	uint16_t len;

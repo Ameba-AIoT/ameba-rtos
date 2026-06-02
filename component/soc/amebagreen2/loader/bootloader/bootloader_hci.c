@@ -160,6 +160,7 @@ void Boot_Fullmac_ImgDownload(void)
 
 void Boot_Fullmac_LoadIMGAll(void)
 {
+#ifndef CONFIG_WHC_DEV_FLASH_BOOT
 	u8 mem_type = ChipInfo_MemoryType();
 
 	switch (mem_type) {
@@ -186,5 +187,6 @@ void Boot_Fullmac_LoadIMGAll(void)
 		Boot_Fullmac_Secure_Check(FALSE, FALSE);
 		break;
 	}
+#endif
 }
 #endif

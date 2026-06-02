@@ -13,7 +13,7 @@
 #define USB_BULK_OUT_MAX_TIMEOUT_TICK          8000 //sof
 #define USB_BULK_IN_MAX_TIMEOUT_TICK           100  //sof
 #define USB_INTR_MAX_TIMEOUT_TICK              1000
-
+#define USB_INTR_RETRY_MAX_CNT                 10
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -23,6 +23,10 @@
 static int usbh_cdc_acm_attach(usb_host_t *host);
 static int usbh_cdc_acm_detach(usb_host_t *host);
 static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event);
+#if CONFIG_USBH_CDC_ACM_NOTIFY
+static int usbh_cdc_acm_sof(usb_host_t *host);
+static int usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num);
+#endif
 static int usbh_cdc_acm_setup(usb_host_t *host);
 static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
 static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
@@ -52,6 +56,10 @@ static usbh_class_driver_t usbh_cdc_acm_driver = {
 	.detach = usbh_cdc_acm_detach,
 	.setup = usbh_cdc_acm_setup,
 	.process = usbh_cdc_acm_process,
+#if CONFIG_USBH_CDC_ACM_NOTIFY
+	.sof = usbh_cdc_acm_sof,
+	.completed = usbh_cdc_acm_completed,
+#endif
 };
 
 static usbh_cdc_acm_host_t usbh_cdc_acm_host;
@@ -68,14 +76,15 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	int status = HAL_ERR_UNKNOWN;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usbh_itf_data_t *itf_data;
-	usbh_itf_desc_t *comm_itf_desc;
 	usbh_itf_desc_t *data_itf_desc;
 	usbh_ep_desc_t *ep_desc;
 	usbh_pipe_t *bulk_out = &cdc->bulk_out;
 	usbh_pipe_t *bulk_in = &cdc->bulk_in;
-	usbh_pipe_t *intr_in = &cdc->intr_in;
 	usbh_dev_id_t dev_id = {0,};
 
+#if CONFIG_USBH_CDC_ACM_NOTIFY
+	usbh_pipe_t *intr_in = &cdc->intr_in;
+	usbh_itf_desc_t *comm_itf_desc;
 	/* Get Communication Interface */
 	dev_id.bInterfaceClass = USB_CDC_COMM_INTERFACE_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_CDC_SUBCLASS_ACM;
@@ -94,7 +103,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 			intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
 		}
 	}
-
+#endif
 	/* Get Data Interface */
 	dev_id.bInterfaceClass = USB_CDC_DATA_INTERFACE_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_CDC_SUBCLASS_RESERVED;
@@ -138,15 +147,16 @@ static int usbh_cdc_acm_detach(usb_host_t *host)
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usbh_pipe_t *bulk_out = &cdc->bulk_out;
 	usbh_pipe_t *bulk_in = &cdc->bulk_in;
-	usbh_pipe_t *intr_in = &cdc->intr_in;
 
 	if ((cdc->cb != NULL) && (cdc->cb->detach != NULL)) {
 		cdc->cb->detach();
 	}
-
+#if CONFIG_USBH_CDC_ACM_NOTIFY
+	usbh_pipe_t *intr_in = &cdc->intr_in;
 	if (intr_in->pipe_num) {
 		usbh_close_pipe(host, intr_in);
 	}
+#endif
 
 	if (bulk_in->pipe_num) {
 		usbh_close_pipe(host, bulk_in);
@@ -178,6 +188,75 @@ static int usbh_cdc_acm_setup(usb_host_t *host)
 	}
 	return status;
 }
+
+#if CONFIG_USBH_CDC_ACM_NOTIFY
+/**
+  * @brief  SOF callback for CDC ACM - handles interval check and retry
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  host: Host handle
+  * @retval Status
+  * @note   For INTR transfer:
+  *         - BUSY: check interval and retry if elapsed, retry count exceeded then error
+  */
+static int usbh_cdc_acm_sof(usb_host_t *host)
+{
+	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
+	usbh_pipe_t *intr_in = &cdc->intr_in;
+	usbh_urb_state_t urb_state;
+	u32 elapsed;
+
+	if (intr_in->pipe_num == 0) {
+		return HAL_OK;
+	}
+
+	elapsed = usbh_get_elapsed_frame_cnt(host, intr_in->frame_num);
+
+	if (intr_in->xfer_state == USBH_EP_XFER_BUSY) {
+		/* Check transfer status */
+		urb_state = usbh_get_urb_state(host, intr_in);
+		if ((urb_state == USBH_URB_BUSY) || (urb_state == USBH_URB_IDLE)) {
+			/* Check whether the next frame will be the xfer frame for retry */
+			if (elapsed + 1 >= intr_in->ep_interval) {
+				intr_in->retry_cnt++;
+				if (intr_in->retry_cnt <= USB_INTR_RETRY_MAX_CNT) {
+					intr_in->frame_num = usbh_get_current_frame_number(host);
+					intr_in->xfer_state = USBH_EP_XFER_START;
+					usbh_notify_class_state_change(host, intr_in->pipe_num);
+				} else {
+					/* Retry count exceeded, set error */
+					intr_in->retry_cnt = 0;
+					intr_in->xfer_state = USBH_EP_XFER_ERROR;
+					usbh_notify_class_state_change(host, intr_in->pipe_num);
+				}
+			}
+			/* If interval not elapsed, keep BUSY state */
+		}
+		/* If URB is DONE, wait for process_intr_rx to handle complete */
+	}
+	return HAL_OK;
+}
+
+/**
+  * @brief  Transfer completion callback: handle the end of an interrupt IN transfer,
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param[in] host: Pointer to the USB host handle.
+  * @param[in] pipe_num: Pipe number of the completed transfer.
+  * @return 0 on success, non-zero on failure.
+  */
+static int usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num)
+{
+	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
+	usbh_pipe_t *intr_in = &cdc->intr_in;
+
+	if (intr_in->pipe_num && (pipe_num == intr_in->pipe_num) && (intr_in->xfer_state == USBH_EP_XFER_BUSY)) {
+		usbh_notify_class_state_change(host, intr_in->pipe_num);
+	}
+
+	return HAL_OK;
+}
+#endif
 
 /**
 * @brief  State machine handling callback
@@ -338,6 +417,7 @@ static void usbh_cdc_acm_process_tx(usb_host_t *host)
 	} else if (bulk_out->xfer_state == USBH_EP_XFER_START) {
 		usbh_notify_class_state_change(host, bulk_out->pipe_num);
 	} else if (bulk_out->xfer_state == USBH_EP_XFER_ERROR) {
+		bulk_out->xfer_state = USBH_EP_XFER_IDLE;
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail: %d\n", usbh_get_urb_state(host, bulk_out));
 		if ((cdc->cb != NULL) && (cdc->cb->transmit != NULL)) {
 			cdc->cb->transmit(status);
@@ -371,6 +451,7 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
 		}
 		usbh_notify_class_state_change(host, bulk_in->pipe_num);
 	} else if (bulk_in->xfer_state == USBH_EP_XFER_ERROR) {
+		bulk_in->xfer_state = USBH_EP_XFER_IDLE;
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX fail: %d\n", usbh_get_urb_state(host, bulk_in));
 		if ((cdc->cb != NULL) && (cdc->cb->receive != NULL)) {
 			cdc->cb->receive(NULL, 0, status);
@@ -381,8 +462,7 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
 /**
   * @brief  Intr in function
   * @param  host: Host handle
-  * @retval Status
-*/
+  */
 static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
@@ -392,15 +472,17 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 	int status = usbh_transfer_process(host, intr_in);
 
 	if ((status == HAL_OK) && (intr_in->xfer_state == USBH_EP_XFER_IDLE)) {
+		/* Transfer completed successfully */
 		len = usbh_get_last_transfer_size(host, intr_in);
-		if ((cdc->cb != NULL) && (cdc->cb->receive != NULL)) {
+		if ((cdc->cb != NULL) && (cdc->cb->notify != NULL)) {
 			cdc->cb->notify(intr_in->xfer_buf, len, status);
 		}
-	} else if ((intr_in->xfer_state == USBH_EP_XFER_START)) {
+	} else if (intr_in->xfer_state == USBH_EP_XFER_START) {
 		usbh_notify_class_state_change(host, intr_in->pipe_num);
 	} else if (intr_in->xfer_state == USBH_EP_XFER_ERROR) {
+		intr_in->xfer_state = USBH_EP_XFER_IDLE;
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX fail: %d\n", usbh_get_urb_state(host, intr_in));
-		if ((cdc->cb != NULL) && (cdc->cb->receive != NULL)) {
+		if ((cdc->cb != NULL) && (cdc->cb->notify != NULL)) {
 			cdc->cb->notify(NULL, 0, status);
 		}
 	}
@@ -466,8 +548,9 @@ int usbh_cdc_acm_deinit(void)
 
 	if ((host != NULL) && (host->connect_state == USBH_STATE_SETUP)) {
 		cdc->state = USBH_CDC_ACM_STATE_IDLE;
-
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 		usbh_close_pipe(host, &cdc->intr_in);
+#endif
 		usbh_close_pipe(host, &cdc->bulk_in);
 		usbh_close_pipe(host, &cdc->bulk_out);
 	}
@@ -623,6 +706,7 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len)
 	return ret;
 }
 
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 /**
   * @brief  Start to receive notify data
   * @param  buf: Data buffer
@@ -637,23 +721,26 @@ int usbh_cdc_acm_notify_receive(u8 *buf, u32 len)
 	usbh_pipe_t *pipe = &cdc->intr_in;
 
 	if ((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER)) {
-		pipe->xfer_buf = buf;
-		pipe->xfer_len = pipe->ep_mps;
+		if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
+			pipe->xfer_buf = buf;
+			pipe->xfer_len = pipe->ep_mps;
 
-		/* The user buf len < MPS, update the xfer length */
-		if (len < pipe->ep_mps) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Pls inc inbuf len %d-%d\n", len, pipe->ep_mps);
-			pipe->xfer_len = len;
+			/* The user buf len < MPS, update the xfer length */
+			if (len < pipe->ep_mps) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Pls inc inbuf len %d-%d\n", len, pipe->ep_mps);
+				pipe->xfer_len = len;
+			}
+
+			cdc->state = USBH_CDC_ACM_STATE_TRANSFER;
+			pipe->xfer_state = USBH_EP_XFER_START;
+			usbh_notify_class_state_change(host, pipe->pipe_num);
+			ret = HAL_OK;
 		}
-
-		cdc->state = USBH_CDC_ACM_STATE_TRANSFER;
-		pipe->xfer_state = USBH_EP_XFER_START;
-		usbh_notify_class_state_change(host, pipe->pipe_num);
-		ret = HAL_OK;
 	}
 
 	return ret;
 }
+#endif
 
 /**
   * @brief  Get the BULK IN max packet size
@@ -664,4 +751,3 @@ u16 usbh_cdc_acm_get_bulk_ep_mps(void)
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	return cdc->bulk_in.ep_mps;
 }
-

@@ -293,7 +293,7 @@ static int cdc_acm_set_config(usb_dev_t *dev, u8 config)
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 #endif
 	usb_ep_info_t *info;
@@ -312,7 +312,7 @@ static int cdc_acm_set_config(usb_dev_t *dev, u8 config)
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USB_BULK_HS_MAX_MPS : USB_BULK_FS_MAX_MPS;
 	usbd_ep_init(dev, ep_bulk_out);
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 	/* Init INTR IN EP */
 	ep_intr_in->xfer_state = 0U;
 	info = &ep_intr_in->info;
@@ -347,7 +347,7 @@ static int cdc_acm_clear_config(usb_dev_t *dev, u8 config)
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 #endif
 
@@ -359,7 +359,7 @@ static int cdc_acm_clear_config(usb_dev_t *dev, u8 config)
 	/* DeInit BULK OUT EP */
 	usbd_ep_deinit(dev, ep_bulk_out);
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 	/* DeInit INTR IN EP */
 	usbd_ep_deinit(dev, ep_intr_in);
 #endif
@@ -455,7 +455,7 @@ static int cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 #endif
 
@@ -468,10 +468,10 @@ static int cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 				cdev->cb->transmitted(status);
 			}
 		}
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 		else if (ep_addr == USBD_CDC_ACM_INTR_IN_EP) {
 			ep_intr_in->xfer_state = 0U;
-#if CONFIG_CDC_ACM_NOTIFY_LOOP_TEST
+#if CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST
 			usbd_cdc_acm_notify_serial_state(cdev->intr_notify_idx++);
 #endif
 		}
@@ -484,10 +484,10 @@ static int cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 				cdev->cb->transmitted(status);
 			}
 		}
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 		else if (ep_addr == USBD_CDC_ACM_INTR_IN_EP) {
 			ep_intr_in->xfer_state = 0U;
-#if CONFIG_CDC_ACM_NOTIFY_LOOP_TEST
+#if CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST
 			usbd_cdc_acm_notify_serial_state(cdev->intr_notify_idx++);
 #endif
 		}
@@ -677,7 +677,7 @@ static void cdc_acm_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 	}
 }
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 /**
   * @brief  Transmit INTR IN packet
   * @param  type: notification type
@@ -749,7 +749,7 @@ int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, usbd_cdc_ac
 	usbd_cdc_acm_dev_t *cdc = &usbd_cdc_acm_dev;
 	usbd_ep_t *ep_bulk_in = &cdc->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdc->ep_bulk_out;
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 	usbd_ep_t *ep_intr_in = &cdc->ep_intr_in;
 #endif
 	usb_ep_info_t *info;
@@ -780,7 +780,7 @@ int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, usbd_cdc_ac
 		goto USBD_CDC_Init_clean_bulk_out_buf_exit;
 	}
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 	info = &ep_intr_in->info;
 	info->addr = USBD_CDC_ACM_INTR_IN_EP;
 	info->type = USB_CH_EP_TYPE_INTR;
@@ -805,7 +805,7 @@ int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, usbd_cdc_ac
 
 USBD_CDC_Init_clean_cb_init_exit:
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 	usb_os_mfree(ep_intr_in->xfer_buf);
 	ep_intr_in->xfer_buf = NULL;
 
@@ -834,11 +834,11 @@ int usbd_cdc_acm_deinit(void)
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 #endif
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 	while (ep_bulk_in->is_busy || ep_intr_in->is_busy) {
 #else
 	while (ep_bulk_in->is_busy) {
@@ -852,7 +852,7 @@ int usbd_cdc_acm_deinit(void)
 		cdev->cb->deinit();
 	}
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 	if (ep_intr_in->xfer_buf != NULL) {
 		usb_os_mfree(ep_intr_in->xfer_buf);
 		ep_intr_in->xfer_buf = NULL;
@@ -931,7 +931,7 @@ int usbd_cdc_acm_transmit(u8 *buf, u32 len)
 	return ret;
 }
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 int usbd_cdc_acm_notify_serial_state(u16 serial_state)
 {
 	int ret = 0;

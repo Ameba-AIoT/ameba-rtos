@@ -69,6 +69,11 @@ void app_mbedtls_rom_init(void)
 #if defined(CONFIG_MBEDTLS_THREADING)
 	mbedtls_threading_init();
 #endif
+	/* mbedtls calls into the HW crypto engine with interrupts disabled via the
+	 * IPC semaphore, so cache inconsistency cannot occur; suppress the
+	 * cache-misalignment warning log.
+	 */
+	rtk_log_level_set("CPYPTO", RTK_LOG_ERROR);
 }
 
 void app_pmu_init(void)
@@ -192,7 +197,7 @@ int main(void)
 	shell_init_rom(0, NULL);
 	shell_init_ram();
 
-#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
+#if !defined (CONFIG_WHC_INTF_IPC)
 	/* Register Log Uart Callback function */
 	InterruptRegister((IRQ_FUN) shell_uart_irq_rom, UART_LOG_IRQ, (u32)NULL, INT_PRI_LOWEST);
 	InterruptEn(UART_LOG_IRQ, INT_PRI_LOWEST);

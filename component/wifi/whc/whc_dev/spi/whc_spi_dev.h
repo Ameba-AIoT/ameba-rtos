@@ -7,8 +7,8 @@
 
 #ifdef CONFIG_AMEBAGREEN2  // need use QFN100
 #define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI0
-#define DEV_READY_PIN				_PA_18
-#define DEV_TX_REQ_PIN				_PA_19
+#define DEV_READY_PIN				_PA_22
+#define DEV_TX_REQ_PIN				_PA_24
 #define SPIS_MOSI                   _PA_30
 #define SPIS_MISO                   _PA_31
 #define SPIS_SCLK                   _PA_29

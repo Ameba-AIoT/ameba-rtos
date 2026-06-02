@@ -128,11 +128,6 @@ void BOR_ModeSet(u32 Option)
 		temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_BOR_CTRL);
 		temp |= AON_BIT_BOR_INTR_MODE;
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_BOR_CTRL, temp);
-
-		/* Please set wake event in sleep_wevent_config[] in ameba_sleepcfg.c */
-//		temp = HAL_READ32(PMC_BASE, WAK_MASK0_NP);
-//		temp |= PMC_WAK_NP_IMR_31_0(WAKE_SRC_BOR);
-//		HAL_WRITE32(PMC_BASE, WAK_MASK0_NP, temp);
 	} else {
 		temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_BOR_CTRL);
 		temp &= ~AON_BIT_BOR_INTR_MODE;

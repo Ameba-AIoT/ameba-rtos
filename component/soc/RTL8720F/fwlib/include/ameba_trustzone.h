@@ -8,6 +8,7 @@
 #define _AMEBA_TRUSTZONE_H_
 
 #include "ameba_rxi300.h"
+#include "rom/fault_injection_hardening.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -124,6 +125,8 @@ __STATIC_FORCEINLINE void TZ_ConfigSlaveSecurity(PPC_Id ppc_idx, u32 msk_bit, u3
 
 	As a result, these extended bits are only valid when executing in Secure state, and are UNDEFINED if used from Non-secure state.
 */
+fih_ret BOOT_CPU_TZCfg(const SAU_CFG_TypeDef *sau_config);
+
 __STATIC_FORCEINLINE u32 TrustZone_IsSecure(void)
 {
 #if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
@@ -133,6 +136,7 @@ __STATIC_FORCEINLINE u32 TrustZone_IsSecure(void)
 	return 0;
 #endif
 }
+
 #ifdef __cplusplus
 }
 #endif

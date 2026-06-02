@@ -126,7 +126,7 @@ menu "CONFIG Link Option"
     endif
 
     config PSRAM_ALL_FOR_AP_HEAP
-        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM
+        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM && !MP_SHRINK
         depends on !WIFI_HOST_CONTROL # WHC_DEV_MENU does not support PSRAM for now
         bool "ALL PSRAM USED FOR APPLICATION HEAP"
         default y
@@ -239,6 +239,15 @@ menu "CONFIG WHC INTF"
         config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4TZ
             bool "Support WHC DEV TCPIP KEEPALIVE"
         endmenu
+
+        choice
+            prompt "Boot Source"
+            default WHC_DEV_HCI_BOOT
+            config WHC_DEV_FLASH_BOOT
+                bool "Boot From Flash"
+            config WHC_DEV_HCI_BOOT
+                bool "Boot From HCI"
+        endchoice
     endif
 
     if WHC_HOST_MENU && !WHC_INTF_IPC_MENU
@@ -389,17 +398,10 @@ menu "CONFIG WIFI"
         bool
 endmenu
 
-config VFS_MENU
-    bool
-    default y
+config VFS_ENABLED
+    def_bool y
     depends on !MP_SHRINK
-    select VFS_ENABLED_FOR_KM4NS if (WHC_HOST_FOR_KM4NS || WHC_NONE_FOR_KM4NS || (WHC_DEV_FOR_KM4NS && WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4NS))
-    select VFS_ENABLED_FOR_KM4TZ if (WHC_HOST_FOR_KM4TZ || WHC_NONE_FOR_KM4TZ || (WHC_DEV_FOR_KM4TZ && WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ))
-
-config VFS_ENABLED_FOR_KM4NS
-    bool
-config VFS_ENABLED_FOR_KM4TZ
-    bool
+    depends on (WHC_HOST || WHC_NONE || (WHC_DEV && WHC_DEV_FLASH_BOOT))
 
 menu "CONFIG BT"
     config  BT_MENU
@@ -422,6 +424,9 @@ menu "CONFIG BT"
 
         config FTL_ENABLED
             bool
+
+        config BT_ENABLE_FAST_MP
+            def_bool MP_INCLUDED && !BT_INIC
 
     endif
 endmenu
@@ -451,10 +456,15 @@ menu "CONFIG ETHERNET"
 	endif
 endmenu
 
+config APPLICATION_SHELL_TASK_STACK_SIZE_MENU
+    int "Shell task stack size for HOST/NONE (bytes)"
+    range 256 8192
+    default 3664
+
 config SHELL_TASK_STACK_BASIC_SIZE
     int
-    default 1264 if WHC_HOST || WHC_NONE
-    default 688
+    default APPLICATION_SHELL_TASK_STACK_SIZE_MENU if WHC_HOST || WHC_NONE
+    default 1080
 
 rsource "../../../lwip/Kconfig"
 

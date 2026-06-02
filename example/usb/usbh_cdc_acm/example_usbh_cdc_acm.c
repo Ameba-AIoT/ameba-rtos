@@ -20,7 +20,15 @@
 
 #define CONFIG_USBH_CDC_ACM_SPEED_TEST    0      /* Tx Rx fast transfer test */
 
+/**
+* @brief Test the CDC ACM Notify(INTR IN transfer)
+* @note set CONFIG_USBH_CDC_ACM_NOTIFY=1 in usbh_cdc_acm.h to enable the host support the notify
+*       set CONFIG_USBD_CDC_ACM_NOTIFY=1 in usbd_cdc_acm.h to enable the device report the notify
+*       and set CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST=1 to enable the notify loop many times
+*/
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 #define USBH_CDC_ACM_NOTIFY_BUF_SIZE      256    /* Buffer size for notify test*/
+#endif
 #define USBH_CDC_ACM_LOOPBACK_BUF_SIZE    1024   /* Buffer size for loopback test, which should match with device loopback buffer size */
 #define USBH_CDC_ACM_LOOPBACK_CNT         100    /* Loopback test round */
 
@@ -38,29 +46,32 @@ static int cdc_acm_cb_detach(void);
 static int cdc_acm_cb_setup(void);
 static int cdc_acm_cb_transmit(u8 status);
 static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status);
-static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status);
 static int cdc_acm_cb_line_coding_changed(usb_cdc_line_coding_t *line_coding);
 static int cdc_acm_cb_process(usb_host_t *host, u8 msg);
+#if CONFIG_USBH_CDC_ACM_NOTIFY
+static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status);
 static void cdc_acm_notify_test(void);
-static void cdc_acm_request_test(void);
 static void cdc_acm_notify_test_thread(void *param);
+#endif
 #if CONFIG_USBH_CDC_ACM_SPEED_TEST
 static void cdc_acm_speed_loopback_test(void);
 #else
 static void cdc_acm_loopback_test(void);
 #endif
-
+static void cdc_acm_request_test(void);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "ACM";
 
 static u8 cdc_acm_loopback_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-
+static rtos_sema_t cdc_acm_notify_sema;
+u8 cdc_acm_notify_status;
+#endif
 static rtos_sema_t cdc_acm_detach_sema;
 static rtos_sema_t cdc_acm_attach_sema;
 static rtos_sema_t cdc_acm_receive_sema;
-static rtos_sema_t cdc_acm_notify_sema;
 static rtos_sema_t cdc_acm_send_sema;
 
 static __IO int cdc_acm_total_rx_len = 0;
@@ -68,7 +79,9 @@ static __IO int cdc_acm_is_ready = 0;
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 	.ext_intr_enable = USBH_SOF_INTR,
+#endif
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_stack_size = 768U,
 	.main_task_priority = 4U,
@@ -99,7 +112,9 @@ static usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
 	.setup  = cdc_acm_cb_setup,
 	.transmit = cdc_acm_cb_transmit,
 	.receive  = cdc_acm_cb_receive,
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 	.notify   = cdc_acm_cb_notify,
+#endif
 	.line_coding_changed = cdc_acm_cb_line_coding_changed
 };
 
@@ -144,18 +159,20 @@ static int cdc_acm_cb_setup(void)
 	return HAL_OK;
 }
 
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status)
 {
 	UNUSED(buf);
 	UNUSED(len);
 
-	if (status == HAL_OK) {
-		rtos_sema_give(cdc_acm_notify_sema);
-	} else {
+	if (status != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Notify fail: %d\n", status);
 	}
+	cdc_acm_notify_status = status;
+	rtos_sema_give(cdc_acm_notify_sema);
 	return HAL_OK;
 }
+#endif
 
 static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status)
 {
@@ -385,9 +402,11 @@ static void cdc_acm_loopback_test(void)
 }
 #endif
 
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 static void cdc_acm_notify_test_thread(void *param)
 {
 	UNUSED(param);
+	int ret = HAL_OK;
 
 	while (1) {
 		if (cdc_acm_is_ready) {
@@ -403,23 +422,24 @@ static void cdc_acm_notify_test_thread(void *param)
 	int i = 0;
 	for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT; i++) {
 		usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
-
 		if (rtos_sema_take(cdc_acm_notify_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Intr rx success(0x%02x 0x%02x)\n", cdc_acm_notify_rx_buf[9], cdc_acm_notify_rx_buf[8]);
+			ret |= cdc_acm_notify_status;
+			if (cdc_acm_notify_status == HAL_OK) {
+				/*Notify data received, for example, Serial State notification*/
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Intr rx success(0x%02x 0x%02x)\n", cdc_acm_notify_rx_buf[9], cdc_acm_notify_rx_buf[8]);
+			}
+		} else {
+			ret = HAL_ERR_UNKNOWN;
 		}
 	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Intr notify test PASS\n");
-
+	if (ret) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Intr notify test FAIL\n");
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Intr notify test PASS\n");
+	}
 	rtos_task_delete(NULL);
 }
 
-/*
-* this function used to test the CDC ACM Notify
-* it is the INTR USB IN transfer type
-* the function will send the INTR INTOKEN
-* set CONFIG_CDC_ACM_NOTIFY=1 in usbd_cdc_acm.h to enable the device report the notify
-* and set CONFIG_CDC_ACM_NOTIFY_LOOP_TEST=1 to enable the notify loop many times
-*/
 static void cdc_acm_notify_test(void)
 {
 	int status;
@@ -429,6 +449,7 @@ static void cdc_acm_notify_test(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create notify thread fail(%d)\n", status);
 	}
 }
+#endif
 
 static void cdc_acm_request_test(void)
 {
@@ -533,9 +554,10 @@ static void example_usbh_cdc_acm_thread(void *param)
 	rtos_sema_create(&cdc_acm_detach_sema, 0U, 1U);
 	rtos_sema_create(&cdc_acm_attach_sema, 0U, 1U);
 	rtos_sema_create(&cdc_acm_receive_sema, 0U, 1U);
-	rtos_sema_create(&cdc_acm_notify_sema, 0U, 1U);
 	rtos_sema_create(&cdc_acm_send_sema, 0U, 1U);
-
+#if CONFIG_USBH_CDC_ACM_NOTIFY
+	rtos_sema_create(&cdc_acm_notify_sema, 0U, 1U);
+#endif
 	status = usbh_init(&usbh_cfg, &usbh_usr_cb);
 	if (status != HAL_OK) {
 		goto error_exit;
@@ -563,7 +585,9 @@ static void example_usbh_cdc_acm_thread(void *param)
 #else
 		cdc_acm_loopback_test();
 #endif
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 		cdc_acm_notify_test();
+#endif
 	}
 
 	goto example_exit;
@@ -571,8 +595,10 @@ error_exit:
 	rtos_sema_delete(cdc_acm_detach_sema);
 	rtos_sema_delete(cdc_acm_attach_sema);
 	rtos_sema_delete(cdc_acm_receive_sema);
-	rtos_sema_delete(cdc_acm_notify_sema);
 	rtos_sema_delete(cdc_acm_send_sema);
+#if CONFIG_USBH_CDC_ACM_NOTIFY
+	rtos_sema_delete(cdc_acm_notify_sema);
+#endif
 example_exit:
 	rtos_task_delete(NULL);
 }

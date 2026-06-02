@@ -47,19 +47,19 @@ menu "CONFIG VFS"
 endmenu
 
 config LITTLEFS_SECOND_FLASH
-bool
+    bool
 
 config FATFS_SECOND_FLASH
-bool
+    bool
 
 config FATFS_SD_MODE
-bool
+    bool
 
 config FATFS_SD_SPI_MODE
-bool
+    bool
 
 config FATFS_USB_HOST
-bool
+    bool
 
 config FATFS_SD_HOTPLUG
-bool
+    bool

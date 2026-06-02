@@ -38,7 +38,7 @@ void SOCPS_SleepPG(void)
 	pmu_set_secondary_cpu_state(1, CPU1_WAKE_FROM_PG);
 #endif
 	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
-			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RUNNING);
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RST_WAIT_DRAM);
 	//pmu_acquire_wakelock(PMU_OS);
 }
 
@@ -61,9 +61,6 @@ void SOCPS_SleepCG(void)
 	SOCPS_SleepCG_LIB();
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "APCW\n");
-
-	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
-			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RUNNING);
 
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);

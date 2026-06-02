@@ -43,11 +43,6 @@ extern "C" {
  *  @{
  */
 
-/* reserved region for storage enum and structure, used by Doxygen */
-
-/** @} */
-/** @} */
-
 typedef u32(*wdt_irq_handler)(void *id);
 
 void watchdog_init(uint32_t timeout_ms);
@@ -55,6 +50,9 @@ void watchdog_start(void);
 void watchdog_stop(void);
 void watchdog_refresh(void);
 void watchdog_irq_init(wdt_irq_handler handler, uint32_t id);
+
+/** @} */
+/** @} */
 
 #ifdef __cplusplus
 }

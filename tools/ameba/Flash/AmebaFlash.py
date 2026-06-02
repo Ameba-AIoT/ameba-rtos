@@ -425,7 +425,7 @@ def main(argc, argv):
             memory_info.size_in_kbyte = size
 
             if end_address == 0:
-                end_address = start_address + size
+                end_address = start_address + size * 1024
             memory_info.end_address = end_address
 
     if not read_wifimac:

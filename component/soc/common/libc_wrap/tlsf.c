@@ -280,7 +280,7 @@ enum tlsf_public {
 	** values require more memory in the control structure. Values of
 	** 4 or 5 are typical.
 	*/
-	SL_INDEX_COUNT_LOG2 = 5,
+	SL_INDEX_COUNT_LOG2 = 3,  /* 8 sub-buckets per FL, saves ~4KB total control_t */
 };
 
 /* Private constants: do not modify. */
@@ -439,18 +439,63 @@ static const size_t block_size_min =
 static const size_t block_size_max = tlsf_cast(size_t, 1) << FL_INDEX_MAX;
 
 
-/* The TLSF control structure. */
+/* The TLSF control structure (variable-size).
+** sl_bitmap[] layout: sl_bitmap[fl_index_count] followed by
+**                     blocks[fl_index_count * SL_INDEX_COUNT].
+** sizeof(control_t) excludes sl_bitmap[] (C99 flexible array member).
+*/
 typedef struct control_t {
 	/* Empty lists point at this block to indicate they are free. */
 	block_header_t block_null;
 
 	/* Bitmaps for free lists. */
 	unsigned int fl_bitmap;
-	unsigned int sl_bitmap[FL_INDEX_COUNT];
 
-	/* Head of free lists. */
-	block_header_t *blocks[FL_INDEX_COUNT][SL_INDEX_COUNT];
+	/* Runtime FL index count; replaces compile-time FL_INDEX_COUNT. */
+	unsigned int fl_index_count;
+
+	/* Per-instance maximum allocation size. */
+	size_t max_block_size;
+
+	/* Variable-length section: sl_bitmap[fl_index_count] + blocks[fl_index_count * SL_INDEX_COUNT] */
+	unsigned int sl_bitmap[];
 } control_t;
+
+/* Helper macros for variable-size control_t access */
+#define ctrl_sl_bitmap(ctrl, fl) ((ctrl)->sl_bitmap[(fl)])
+#define ctrl_blocks(ctrl) ((block_header_t **)((ctrl)->sl_bitmap + (ctrl)->fl_index_count))
+#define ctrl_get_block(ctrl, fl, sl) (ctrl_blocks(ctrl)[(fl) * SL_INDEX_COUNT + (sl)])
+#define ctrl_set_block(ctrl, fl, sl, block) (ctrl_blocks(ctrl)[(fl) * SL_INDEX_COUNT + (sl)] = (block))
+
+/* Compute control_t allocation size for given fl_index_count. */
+static size_t ctrl_size(unsigned int fl_count)
+{
+	return sizeof(control_t)
+		   + fl_count * sizeof(unsigned int)
+		   + fl_count * SL_INDEX_COUNT * sizeof(block_header_t *);
+}
+
+/* Compute FL index count from max allocation size.
+ * +2 instead of +1 because mapping_search rounds up before mapping_insert,
+ * which can produce fl = fl_max - FL_INDEX_SHIFT + 1, requiring one extra level.
+ * max_alloc_size must be a power of two; non-power-of-two values may cause
+ * fl index overflow in the mapping_search round-up path. */
+static unsigned int compute_fl_index_count(size_t max_alloc_size)
+{
+	tlsf_assert((max_alloc_size & (max_alloc_size - 1)) == 0 && "max_alloc_size must be a power of two");
+	if (max_alloc_size < SMALL_BLOCK_SIZE) {
+		return 1;
+	}
+	int fl_max = tlsf_fls_sizet(max_alloc_size);
+	int fl_count = fl_max - FL_INDEX_SHIFT + 2;
+	if (fl_count < 1) {
+		fl_count = 1;
+	}
+	if (fl_count > FL_INDEX_COUNT) {
+		fl_count = FL_INDEX_COUNT;
+	}
+	return (unsigned int)fl_count;
+}
 
 /* A type used for casting when doing pointer arithmetic. */
 typedef ptrdiff_t tlsfptr_t;
@@ -626,14 +671,14 @@ static void *align_ptr(const void *ptr, size_t align)
 ** Adjust an allocation size to be aligned to word size, and no smaller
 ** than internal minimum.
 */
-static size_t adjust_request_size(size_t size, size_t align)
+static size_t adjust_request_size(size_t size, size_t align, size_t max_block_size)
 {
 	size_t adjust = 0;
 	if (size) {
 		const size_t aligned = align_up(size, align);
 
-		/* aligned sized must not exceed block_size_max or we'll go out of bounds on sl_bitmap */
-		if (aligned < block_size_max) {
+		/* aligned size must not exceed per-instance max or we'll go out of bounds on sl_bitmap */
+		if (aligned < max_block_size) {
 			adjust = tlsf_max(aligned, block_size_min);
 		}
 	}
@@ -680,7 +725,7 @@ static block_header_t *search_suitable_block(control_t *control, int *fli, int *
 	** First, search for a block in the list associated with the given
 	** fl/sl index.
 	*/
-	unsigned int sl_map = control->sl_bitmap[fl] & (~0U << sl);
+	unsigned int sl_map = ctrl_sl_bitmap(control, fl) & (~0U << sl);
 	if (!sl_map) {
 		/* No block exists. Search in the next largest first-level list. */
 		const unsigned int fl_map = control->fl_bitmap & (~0U << (fl + 1));
@@ -691,14 +736,14 @@ static block_header_t *search_suitable_block(control_t *control, int *fli, int *
 
 		fl = tlsf_ffs(fl_map);
 		*fli = fl;
-		sl_map = control->sl_bitmap[fl];
+		sl_map = ctrl_sl_bitmap(control, fl);
 	}
 	tlsf_assert(sl_map && "internal error - second level bitmap is null");
 	sl = tlsf_ffs(sl_map);
 	*sli = sl;
 
 	/* Return the first block in the free list. */
-	return control->blocks[fl][sl];
+	return ctrl_get_block(control, fl, sl);
 }
 
 /* Remove a free block from the free list.*/
@@ -712,15 +757,15 @@ static void remove_free_block(control_t *control, block_header_t *block, int fl,
 	tlsf_set_prev_free(next, prev);
 
 	/* If this block is the head of the free list, set new head. */
-	if (control->blocks[fl][sl] == block) {
-		control->blocks[fl][sl] = next;
+	if (ctrl_get_block(control, fl, sl) == block) {
+		ctrl_set_block(control, fl, sl, next);
 
 		/* If the new head is null, clear the bitmap. */
 		if (next == &control->block_null) {
-			control->sl_bitmap[fl] &= ~(1U << sl);
+			ctrl_sl_bitmap(control, fl) &= ~(1U << sl);
 
 			/* If the second bitmap is now empty, clear the fl bitmap. */
-			if (!control->sl_bitmap[fl]) {
+			if (!ctrl_sl_bitmap(control, fl)) {
 				control->fl_bitmap &= ~(1U << fl);
 			}
 		}
@@ -730,7 +775,7 @@ static void remove_free_block(control_t *control, block_header_t *block, int fl,
 /* Insert a free block into the free block list. */
 static void insert_free_block(control_t *control, block_header_t *block, int fl, int sl)
 {
-	block_header_t *current = control->blocks[fl][sl];
+	block_header_t *current = ctrl_get_block(control, fl, sl);
 	tlsf_assert(current && "free list cannot have a null entry");
 	tlsf_assert(block && "cannot insert a null entry into the free list");
 	tlsf_set_next_free(block, current);
@@ -742,9 +787,9 @@ static void insert_free_block(control_t *control, block_header_t *block, int fl,
 	** Insert the new block at the head of the list, and mark the first-
 	** and second-level bitmaps appropriately.
 	*/
-	control->blocks[fl][sl] = block;
+	ctrl_set_block(control, fl, sl, block);
 	control->fl_bitmap |= (1U << fl);
-	control->sl_bitmap[fl] |= (1U << sl);
+	ctrl_sl_bitmap(control, fl) |= (1U << sl);
 }
 
 /* Remove a given block from the free list. */
@@ -884,7 +929,7 @@ static block_header_t *block_locate_free(control_t *control, size_t size)
 		** So, we protect against that here, since this is the only callsite of mapping_search.
 		** Note that we don't need to check sl, since it comes from a modulo operation that guarantees it's always in range.
 		*/
-		if (fl < FL_INDEX_COUNT) {
+		if (fl < (int)control->fl_index_count) {
 			block = search_suitable_block(control, &fl, &sl);
 		}
 	}
@@ -913,15 +958,16 @@ static void *block_prepare_used(control_t *control, block_header_t *block, size_
 static void control_construct(control_t *control)
 {
 	int i, j;
+	unsigned int fl_count = control->fl_index_count;
 
 	control->block_null.next_free = &control->block_null;
 	control->block_null.prev_free = &control->block_null;
 
 	control->fl_bitmap = 0;
-	for (i = 0; i < FL_INDEX_COUNT; ++i) {
-		control->sl_bitmap[i] = 0;
+	for (i = 0; i < (int)fl_count; ++i) {
+		ctrl_sl_bitmap(control, i) = 0;
 		for (j = 0; j < SL_INDEX_COUNT; ++j) {
-			control->blocks[i][j] = &control->block_null;
+			ctrl_set_block(control, i, j, &control->block_null);
 		}
 	}
 }
@@ -960,14 +1006,15 @@ int tlsf_check(tlsf_t tlsf)
 
 	control_t *control = tlsf_cast(control_t *, tlsf);
 	int status = 0;
+	unsigned int fl_count = control->fl_index_count;
 
 	/* Check that the free lists and bitmaps are accurate. */
-	for (i = 0; i < FL_INDEX_COUNT; ++i) {
+	for (i = 0; i < (int)fl_count; ++i) {
 		for (j = 0; j < SL_INDEX_COUNT; ++j) {
 			const int fl_map = control->fl_bitmap & (1U << i);
-			const int sl_list = control->sl_bitmap[i];
+			const int sl_list = ctrl_sl_bitmap(control, i);
 			const int sl_map = sl_list & (1U << j);
-			const block_header_t *block = control->blocks[i][j];
+			const block_header_t *block = ctrl_get_block(control, i, j);
 
 			/* Check that first- and second-level lists agree. */
 			if (!fl_map) {
@@ -1059,7 +1106,15 @@ int tlsf_check_pool(pool_t pool)
 */
 size_t tlsf_size(void)
 {
-	return sizeof(control_t);
+	/* Return maximum size for backward compatibility */
+	return ctrl_size(FL_INDEX_COUNT);
+}
+
+/* Extended API: get TLSF size for specific max_alloc_size */
+size_t tlsf_size_ex(size_t max_alloc_size)
+{
+	unsigned int fl_count = compute_fl_index_count(max_alloc_size);
+	return ctrl_size(fl_count);
 }
 
 size_t tlsf_align_size(void)
@@ -1096,6 +1151,7 @@ pool_t tlsf_add_pool(tlsf_t tlsf, void *mem, size_t bytes)
 {
 	block_header_t *block;
 	block_header_t *next;
+	control_t *control = tlsf_cast(control_t *, tlsf);
 
 	const size_t pool_overhead = tlsf_pool_overhead();
 	const size_t pool_bytes = align_down(bytes - pool_overhead, ALIGN_SIZE);
@@ -1106,15 +1162,15 @@ pool_t tlsf_add_pool(tlsf_t tlsf, void *mem, size_t bytes)
 		return 0;
 	}
 
-	if (pool_bytes < block_size_min || pool_bytes > block_size_max) {
+	if (pool_bytes < block_size_min || pool_bytes > control->max_block_size) {
 #if defined (TLSF_64BIT)
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "tlsf_add_pool: Memory size must be between 0x%x and 0x%x00 bytes.\n",
 				 (unsigned int)(pool_overhead + block_size_min),
-				 (unsigned int)((pool_overhead + block_size_max) / 256));
+				 (unsigned int)((pool_overhead + control->max_block_size) / 256));
 #else
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "tlsf_add_pool: Memory size must be between %u and %u bytes.\n",
 				 (unsigned int)(pool_overhead + block_size_min),
-				 (unsigned int)(pool_overhead + block_size_max));
+				 (unsigned int)(pool_overhead + control->max_block_size));
 #endif
 		return 0;
 	}
@@ -1199,15 +1255,53 @@ tlsf_t tlsf_create(void *mem)
 		return 0;
 	}
 
-	control_construct(tlsf_cast(control_t *, mem));
+	/* Use default max size for backward compatibility */
+	control_t *control = tlsf_cast(control_t *, mem);
+	control->fl_index_count = FL_INDEX_COUNT;
+	control->max_block_size = block_size_max;
+	control_construct(control);
+
+	return tlsf_cast(tlsf_t, mem);
+}
+
+/* Extended API: create TLSF with specific max allocation size */
+tlsf_t tlsf_create_ex(void *mem, size_t max_alloc_size)
+{
+#if _DEBUG
+	if (test_ffs_fls()) {
+		return 0;
+	}
+#endif
+
+	if (((tlsfptr_t)mem % ALIGN_SIZE) != 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "tlsf_create_ex: Memory must be aligned to %u bytes.\n",
+				 (unsigned int)ALIGN_SIZE);
+		return 0;
+	}
+
+	control_t *control = tlsf_cast(control_t *, mem);
+	control->fl_index_count = compute_fl_index_count(max_alloc_size);
+	control->max_block_size = max_alloc_size;
+	control_construct(control);
 
 	return tlsf_cast(tlsf_t, mem);
 }
 
 tlsf_t tlsf_create_with_pool(void *mem, size_t bytes)
 {
-	tlsf_t tlsf = tlsf_create(mem);
-	tlsf_add_pool(tlsf, (char *)mem + tlsf_size(), bytes - tlsf_size());
+	/* Use default max size for backward compatibility */
+	return tlsf_create_with_pool_ex(mem, bytes, block_size_max);
+}
+
+/* Extended API: create TLSF with pool and specific max allocation size */
+tlsf_t tlsf_create_with_pool_ex(void *mem, size_t bytes, size_t max_alloc_size)
+{
+	tlsf_t tlsf = tlsf_create_ex(mem, max_alloc_size);
+	if (!tlsf) {
+		return 0;
+	}
+	size_t ctrl_sz = tlsf_size_ex(max_alloc_size);
+	tlsf_add_pool(tlsf, (char *)mem + ctrl_sz, bytes - ctrl_sz);
 	return tlsf;
 }
 
@@ -1217,15 +1311,23 @@ void tlsf_destroy(tlsf_t tlsf)
 	(void)tlsf;
 }
 
+/* Extended API: get pool with specific max_alloc_size */
+pool_t tlsf_get_pool_ex(tlsf_t tlsf, size_t max_alloc_size)
+{
+	size_t ctrl_sz = tlsf_size_ex(max_alloc_size);
+	return tlsf_cast(pool_t, (char *)tlsf + ctrl_sz);
+}
+
 pool_t tlsf_get_pool(tlsf_t tlsf)
 {
-	return tlsf_cast(pool_t, (char *)tlsf + tlsf_size());
+	control_t *control = tlsf_cast(control_t *, tlsf);
+	return tlsf_cast(pool_t, (char *)tlsf + ctrl_size(control->fl_index_count));
 }
 
 void *tlsf_malloc(tlsf_t tlsf, size_t size)
 {
 	control_t *control = tlsf_cast(control_t *, tlsf);
-	const size_t adjust = adjust_request_size(size, ALIGN_SIZE);
+	const size_t adjust = adjust_request_size(size, ALIGN_SIZE, control->max_block_size);
 	block_header_t *block = block_locate_free(control, adjust);
 	void *ptr = block_prepare_used(control, block, adjust);
 
@@ -1241,7 +1343,7 @@ void *tlsf_malloc(tlsf_t tlsf, size_t size)
 void *tlsf_memalign(tlsf_t tlsf, size_t align, size_t size)
 {
 	control_t *control = tlsf_cast(control_t *, tlsf);
-	const size_t adjust = adjust_request_size(size, ALIGN_SIZE);
+	const size_t adjust = adjust_request_size(size, ALIGN_SIZE, control->max_block_size);
 
 	/*
 	** We must allocate an additional minimum block size bytes so that if
@@ -1252,7 +1354,7 @@ void *tlsf_memalign(tlsf_t tlsf, size_t align, size_t size)
 	** the size of that block.
 	*/
 	const size_t gap_minimum = sizeof(block_header_t);
-	const size_t size_with_gap = adjust_request_size(adjust + align + gap_minimum, align);
+	const size_t size_with_gap = adjust_request_size(adjust + align + gap_minimum, align, control->max_block_size);
 
 	/*
 	** If alignment is less than or equals base alignment, we're done.
@@ -1340,7 +1442,7 @@ void *tlsf_realloc(tlsf_t tlsf, void *ptr, size_t size)
 
 		const size_t cursize = block_size(block);
 		const size_t combined = cursize + block_size(next) + block_header_overhead;
-		const size_t adjust = adjust_request_size(size, ALIGN_SIZE);
+		const size_t adjust = adjust_request_size(size, ALIGN_SIZE, control->max_block_size);
 
 		tlsf_assert(!block_is_free(block) && "block already marked as free");
 

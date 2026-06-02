@@ -73,19 +73,15 @@ extern u8 __retrieve_ap_buffer_start__[];
 extern u8 __retrieve_ap_buffer_size__[];
 
 /* for trustzone config */
-extern u8 __km4tz_tz_nsc_start__[];
-extern u8 __km4tz_tz_nsc_end__[];
-extern u8 __km4tz_tz_entry_start__[];
-extern u8 __km4tz_tz_entry_end__[];
+extern u8 __image3_entry_func__[];
+extern u8 __image3_ram_start__[];
+extern u8 __image3_ram_end__[];
+extern u8 __ram_image3_nsc_start__[];
+extern u8 __ram_image3_nsc_end__[];
 extern u8 __km4tz_bd_ram_start__[];
 extern u8 __km4tz_bd_ram_end__[];
 extern u8 __km4ns_bd_ram_end__[];
 
-
-extern u8 __km4tz_psram_tz_nsc_start__[];
-extern u8 __km4tz_psram_tz_nsc_end__[];
-extern u8 __km4tz_psram_tz_entry_start__[];
-extern u8 __km4tz_psram_tz_entry_end__[];
 extern u8 __km4tz_bd_psram_start__[];
 extern u8 __non_secure_psram_end__[]; /* if psram is 8MB, than write 0x60800000 will write 0x60000000 */
 

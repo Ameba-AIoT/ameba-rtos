@@ -135,7 +135,7 @@ static int usbh_composite_hid_uac_cb_setup(usb_host_t *host)
 	int ret = HAL_OK;
 
 	if (chost->uac != NULL) {
-		ret = usbh_composite_uac_get_volume_infor(host);
+		ret = usbh_composite_uac_get_volume_info(host);
 		if (ret != HAL_OK) {
 			return ret;
 		}
@@ -236,7 +236,7 @@ static int usbh_composite_hid_uac_cb_process(usb_host_t *host, usbh_event_t *eve
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_composite_init(usbh_composite_hid_usr_cb_t *hid_cb, usbh_composite_uac_usr_cb_t *uac_cb, int frame_cnt)
+int usbh_composite_init(usbh_composite_hid_usr_cb_t *hid_cb, usbh_composite_uac_usr_cb_t *uac_cb)
 {
 	int ret;
 	usbh_composite_host_t *chost = &usbh_composite_host;
@@ -254,7 +254,7 @@ int usbh_composite_init(usbh_composite_hid_usr_cb_t *hid_cb, usbh_composite_uac_
 	}
 	chost->hid = (usbh_class_driver_t *)&usbh_composite_hid_driver;
 
-	ret = usbh_composite_uac_init(chost, uac_cb, frame_cnt);
+	ret = usbh_composite_uac_init(chost, uac_cb);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init UAC itf fail: %d\n", ret);
 		usbh_composite_hid_deinit();

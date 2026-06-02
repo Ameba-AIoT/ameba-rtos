@@ -21,7 +21,7 @@
   *
 
   *****************************************************************************************
-  * How to use WGD
+  * How to use WDG
   *****************************************************************************************
   *      To use WDG peripheral, the following steps are mandatory:
   *
@@ -42,11 +42,12 @@
   * @{
   */
 
-/** @defgroup WDG
+/** @defgroup WDG WDG
   * @brief WDG driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -123,6 +124,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -130,7 +132,7 @@ extern "C" {
 #endif
 
 
-//Please add your defination here
+//Please add your definition here
 
 /* Exported types ------------------------------------------------------------*/
 /** @addtogroup WDG_Exported_Types WDG Exported Types
@@ -163,7 +165,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup WDG_Peripheral_Definitions
+/** @defgroup WDG_Peripheral_Definitions WDG Peripheral Definitions
   * @{
   */
 #define IS_SYETEM_WDG_PERIPH(PERIPH) (((PERIPH) == CPU1_WDG_DEV) || ((PERIPH) == CPU0_S_WDG_DEV) || ((PERIPH) == CPU0_NS_WDG_DEV))
@@ -174,7 +176,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup WDG_Magic_Key
+/** @defgroup WDG_Magic_Key WDG Magic Key
   * @{
   */
 #define WDG_ACCESS_EN                                   0x00006969
@@ -187,6 +189,10 @@ typedef struct {
 /**
   * @}
   */
+
+/* Non Exported function */
+_LONG_CALL_ void WDG_StructMemValueSet(WDG_InitTypeDef *WDG_InitStruct, u32 window, u32 timeout, u32 eicnt);
+_LONG_CALL_ void WDG_Cmd(WDG_TypeDef *WDG, u32 NewState);
 
 /* Exported functions ------------------------------------------------------------*/
 /** @defgroup WDG_Exported_Functions WDG Exported Functions
@@ -202,8 +208,6 @@ _LONG_CALL_ void WDG_Refresh(WDG_TypeDef *WDG);
 _LONG_CALL_ void WDG_INTConfig(WDG_TypeDef *WDG, u32 WDG_IT, u32 NewState);
 _LONG_CALL_ void WDG_ClearINT(WDG_TypeDef *WDG, u32 INTrBit);
 _LONG_CALL_ void IWDG_LP_Enable(WDG_TypeDef *WDG, u32 NewState);
-_LONG_CALL_ void WDG_StructMemValueSet(WDG_InitTypeDef *WDG_InitStruct, u32 window, u32 timeout, u32 eicnt);
-_LONG_CALL_ void WDG_Cmd(WDG_TypeDef *WDG, u32 NewState);
 /**
   * @}
   */

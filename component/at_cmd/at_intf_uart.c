@@ -32,16 +32,16 @@ signed char UART_CTS = -1;
 
 u32 UART_BAUD = 38400;
 
-GDMA_InitTypeDef GDMA_InitStruct;
-rtos_sema_t atcmd_uart_tx_sema;
-rtos_sema_t atcmd_uart_rx_sema;
+static GDMA_InitTypeDef GDMA_InitStruct;
+static rtos_sema_t atcmd_uart_tx_sema;
+static rtos_sema_t atcmd_uart_rx_sema;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
 
 #define UART_TT_BUF_LEN 1024
-u8 uart_tt_buf[UART_TT_BUF_LEN];
-u16 uart_tt_buf_len;
+static u8 uart_tt_buf[UART_TT_BUF_LEN];
+static u16 uart_tt_buf_len;
 extern char g_tt_mode;
 extern char g_tt_mode_check_watermark;
 extern char g_tt_mode_indicate_high_watermark;
@@ -262,8 +262,6 @@ recv_again:
 		//4 check UartLog buffer to prevent from incorrect access
 		if (shell_ctl.pTmpLogBuf != NULL) {
 			rtos_sema_give(atcmd_uart_rx_sema);
-		} else {
-			memset((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
 		}
 	}
 
@@ -290,7 +288,7 @@ void atcmd_uart_input_handler_task(void)
 			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\nunknown command '%s'", pCmdLogBuf->UARTLogBuf);
 			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n");
 		}
-		memset((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+		memset((u8 *)pCmdLogBuf->UARTLogBuf, '\0', CMD_BUFLEN);
 		pCmdLogBuf->BufCount = 0;
 	}
 }

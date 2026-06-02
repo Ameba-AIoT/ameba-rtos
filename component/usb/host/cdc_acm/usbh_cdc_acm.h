@@ -23,6 +23,7 @@
 /** @addtogroup Host_CDC_ACM_Constants Host CDC ACM Constants
  * @{
  */
+#define CONFIG_USBH_CDC_ACM_NOTIFY                  0   /**< Enable/Disable notification feature. */
 
 /** @} End of Host_CDC_ACM_Constants group*/
 /** @} End of USB_Host_Constants group*/
@@ -196,6 +197,7 @@ int usbh_cdc_acm_transmit(u8 *buf, u32 len);
  */
 int usbh_cdc_acm_receive(u8 *buf, u32 len);
 
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 /**
  * @brief Prepares to receive notification data (e.g. Serial State) over the INTERRUPT IN pipe.
  * @param[in] buf: Pointer to the buffer where notification data will be stored.
@@ -203,6 +205,7 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len);
  * @return 0 on success, non-zero on failure.
  */
 int usbh_cdc_acm_notify_receive(u8 *buf, u32 len);
+#endif
 
 /**
  * @brief Gets the Maximum Packet Size (MPS) of the BULK endpoint.

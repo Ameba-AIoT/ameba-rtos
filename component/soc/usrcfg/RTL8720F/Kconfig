@@ -1,4 +1,4 @@
-menu "User Config"
+menu "CONFIG User Config"
 
 menu "Flash Layout Configuration"
 
@@ -52,7 +52,7 @@ config FLASH_VFS1_SIZE
 # VFS region 2
 config FLASH_VFS2_OFFSET
     hex "VFS2 Offset"
-    default 0
+    default 0xFFFFFFFF
 
 config FLASH_VFS2_SIZE
     hex "VFS2 Size"
@@ -61,7 +61,7 @@ config FLASH_VFS2_SIZE
 # reserve for user
 config FLASH_USER_OFFSET
     hex "USER Offset"
-    default 0
+    default 0xFFFFFFFF
 
 config FLASH_USER_SIZE
     hex "USER Size"

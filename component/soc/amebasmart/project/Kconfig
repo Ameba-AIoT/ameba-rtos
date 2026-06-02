@@ -339,12 +339,16 @@ menu "CONFIG BT"
     endif
 endmenu
 
-config SHELL_TASK_STACK_BASIC_SIZE
-        int
-        default 1376 if (WHC_HOST || WHC_NONE)
-        default 456 if ARM_CORE_CM0_FOR_KM0
-        default 536 if (!WHC_HOST && !WHC_NONE)
+config APPLICATION_SHELL_TASK_STACK_SIZE_MENU
+    int "Shell task stack size for HOST/NONE (bytes)"
+    range 256 8192
+    default 3552
 
+config SHELL_TASK_STACK_BASIC_SIZE
+    int
+    default APPLICATION_SHELL_TASK_STACK_SIZE_MENU if (WHC_HOST || WHC_NONE)
+    default 456 if ARM_CORE_CM0_FOR_KM0
+    default 536
 
 rsource "../../../lwip/Kconfig"
 

@@ -56,31 +56,30 @@ static const char *const TAG = "ACM";
 static u8 cdc_acm_loopback_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
-u8 uart_show_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] = {0};
-char uart_format_buffer[FORMAT_LEN];
+static u8 uart_show_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] = {0};
+static char uart_format_buffer[FORMAT_LEN];
 
-rtos_sema_t cdc_acm_detach_sema;
-rtos_sema_t cdc_acm_attach_sema;
-rtos_sema_t cdc_acm_receive_sema;
-rtos_sema_t cdc_acm_send_sema;
+static rtos_sema_t cdc_acm_detach_sema;
+static rtos_sema_t cdc_acm_attach_sema;
+static rtos_sema_t cdc_acm_receive_sema;
+static rtos_sema_t cdc_acm_send_sema;
 
-rtos_sema_t atcmd_usbh_rx_sema;
-rtos_sema_t atcmd_usbh_tx_sema;
+static rtos_sema_t atcmd_usbh_rx_sema;
+static rtos_sema_t atcmd_usbh_tx_sema;
 
-rtos_sema_t tt_mode_tx_sema;
+static rtos_sema_t tt_mode_tx_sema;
 
-rtos_sema_t uart_irq_handle_sema;
-rtos_mutex_t usbh_rx_ringbuf_mutex = NULL;
+static rtos_mutex_t usbh_rx_ringbuf_mutex = NULL;
 
 static __IO u32 atcmd_usbh_rx_len = 0;
 static __IO u32 atcmd_cdc_acm_total_rx_len = 0;
-RingBuffer *at_usbh_rx_ring_buf = NULL;
-RingBuffer *at_usbh_tx_ring_buf = NULL;
+static RingBuffer *at_usbh_rx_ring_buf = NULL;
+static RingBuffer *at_usbh_tx_ring_buf = NULL;
 
 static __IO int cdc_acm_is_ready = 0;
 
-char uart_irq_buffer[MAX_CMD_LEN] = {0};
-u32 uart_irq_count = 0;
+static char uart_irq_buffer[MAX_CMD_LEN] = {0};
+static u32 uart_irq_count = 0;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
@@ -350,7 +349,7 @@ WAIT_CONNECT:
 				rtos_mutex_give(usbh_rx_ringbuf_mutex);
 				rtos_sema_give(atcmd_usbh_rx_sema);
 			} else {
-				RTK_LOGW(TAG, "at_usbd_rx_ring_buf is full, drop data\n");
+				RTK_LOGW(TAG, "at_usbh_rx_ring_buf is full, drop data\n");
 				ret = HAL_BUSY;
 			}
 		}
@@ -397,10 +396,10 @@ static void atcmd_usbh_cdc_acm_task(void *param)
 
 	UNUSED(param);
 
-	rtos_sema_create(&cdc_acm_detach_sema, 0, 1);
-	rtos_sema_create(&cdc_acm_attach_sema, 0, 1);
-	rtos_sema_create(&cdc_acm_receive_sema, 0, 1);
-	rtos_sema_create(&cdc_acm_send_sema, 0, 1);
+	rtos_sema_create(&cdc_acm_detach_sema, 0, 0xFFFF);
+	rtos_sema_create(&cdc_acm_attach_sema, 0, 0xFFFF);
+	rtos_sema_create(&cdc_acm_receive_sema, 0, 0xFFFF);
+	rtos_sema_create(&cdc_acm_send_sema, 0, 0xFFFF);
 
 	status = usbh_init(&usbh_cfg, &usbh_usr_cb);
 	if (status != HAL_OK) {
@@ -528,7 +527,6 @@ void atio_usbd_output(char *buf, int len)
 
 void atio_usbh_init(void)
 {
-	rtos_sema_create(&uart_irq_handle_sema, 0U, 1U);
 	rtos_sema_create(&tt_mode_tx_sema, 1U, 1U);
 	rtos_mutex_create(&usbh_rx_ringbuf_mutex);
 	rtos_sema_create(&atcmd_usbh_rx_sema, 0, 0xFFFF);

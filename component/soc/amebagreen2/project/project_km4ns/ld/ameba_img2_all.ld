@@ -104,7 +104,6 @@ SECTIONS
 		KEEP(*(.git.ver.data))
 		__git_ver_table_end__ = .;
 
-#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 		/* Add This for C++ support */
 		. = ALIGN(4);
 		__preinit_array_start = .;
@@ -123,7 +122,6 @@ SECTIONS
 
 		*(.gcc_except_table*)
 		/*-----------------*/
-#endif
 		__image2_backtrace_end__ = .;
 	} > IMG2_TEXT_LMA_REGION
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */

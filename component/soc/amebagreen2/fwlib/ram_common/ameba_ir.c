@@ -10,7 +10,7 @@
   * @{
   */
 
-/** @defgroup IR
+/** @defgroup IR IR
 * @brief IR driver modules
 * @{
 */
@@ -22,8 +22,6 @@
 
 /**
   * @brief  Deinitialize the IR peripheral registers to their default values.
-  * @param  None
-  * @retval None
   */
 void IR_DeInit(void)
 {
@@ -35,9 +33,9 @@ void IR_DeInit(void)
 /**
   * @brief Initialize the IR peripheral according to the specified
   *   parameters in the IR_InitStruct
-  * @param  IR_InitStruct: pointer to a IR_InitTypeDef structure that
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @param  IR_InitStruct Pointer to a IR_InitTypeDef structure that
   *   contains the configuration information for the specified IR peripheral
-  * @retval None
   */
 void IR_Init(IR_TypeDef *IRx, IR_InitTypeDef *IR_InitStruct)
 {
@@ -103,8 +101,7 @@ void IR_Init(IR_TypeDef *IRx, IR_InitTypeDef *IR_InitStruct)
 
 /**
   * @brief  Fill each IR_InitStruct member with its default value.
-  * @param  IR_InitStruct: pointer to an IR_InitTypeDef structure which will be initialized.
-  * @retval None
+  * @param  IR_InitStruct Pointer to an IR_InitTypeDef structure which will be initialized.
   */
 void IR_StructInit(IR_InitTypeDef *IR_InitStruct)
 {
@@ -127,13 +124,13 @@ void IR_StructInit(IR_InitTypeDef *IR_InitStruct)
 
 /**
   * @brief   Enable or disable the selected IR mode.
-  * @param  mode: selected IR operation mode.
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @param  mode Selected IR operation mode.
   *   This parameter can be the following values:
   *     @arg IR_MODE_TX: Transmission mode.
   *     @arg IR_MODE_RX: Receiving mode.
-  * @param  NewState: new state of the operation mode.
+  * @param  NewState New state of the operation mode.
   *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
   */
 void IR_Cmd(IR_TypeDef *IRx, u32 mode, u32 NewState)
 {
@@ -156,12 +153,12 @@ void IR_Cmd(IR_TypeDef *IRx, u32 mode, u32 NewState)
 
 /**
   * @brief   Configure counter threshold value in receiving mode.You can use it to stop receiving IR data.
-  * @param  IR_RxCntThrType:
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @param  IR_RxCntThrType
   *   This parameter can be the following values:
   *     @arg IR_RX_Count_Low_Level: Low level counter value >= IR_RxCntThr, trigger IR_INT_RX_CNT_THR interrupt.
   *     @arg IR_RX_Count_High_Level: High level counter value >= IR_RxCntThr, trigger IR_INT_RX_CNT_THR interrupt.
-  * @param  IR_RxCntThr: Configure IR Rx counter threshold value which can be 0 to 0x7fffffffUL.
-  * @retval None
+  * @param  IR_RxCntThr Configure IR Rx counter threshold value which can be 0 to 0x7fffffffUL.
   */
 void IR_SetRxCounterThreshold(IR_TypeDef *IRx, u32 IR_RxCntThrType, u32 IR_RxCntThr)
 {
@@ -171,13 +168,13 @@ void IR_SetRxCounterThreshold(IR_TypeDef *IRx, u32 IR_RxCntThrType, u32 IR_RxCnt
 
 /**
   * @brief  Send data.
-  * @param  buf: data buffer to send.
-  * @param  length: buffer length.
-  * @param IsLastPacket:
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @param  pBuf Data buffer to send.
+  * @param  len Buffer length.
+  * @param IsLastPacket
   *   This parameter can be the following values:
   *     @arg ENABLE: The last data in IR packet and there is no continous data.In other words, An infrared data transmission is completed.
   *     @arg DISABLE: There is data to be transmitted continuously.
-  * @retval None
   */
 void IR_SendBuf(IR_TypeDef *IRx, u32 *pBuf, u32 len, u32 IsLastPacket)
 {
@@ -200,9 +197,9 @@ void IR_SendBuf(IR_TypeDef *IRx, u32 *pBuf, u32 len, u32 IsLastPacket)
 
 /**
   * @brief  Read data From RX FIFO.
-  * @param  buf: buffer address to receive data.
-  * @param  length: read data length.
-  * @retval None
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @param  pBuf Buffer address to receive data.
+  * @param  len Read data length.
   */
 void IR_ReceiveBuf(IR_TypeDef *IRx, u32 *pBuf, u32 len)
 {
@@ -214,7 +211,8 @@ void IR_ReceiveBuf(IR_TypeDef *IRx, u32 *pBuf, u32 len)
 
 /**
   * @brief  Enable or disable the specified IR interrupts.
-  * @param  IR_INT: specifies the IR interrupts sources to be enabled or disabled.
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @param  IR_INT Specifies the IR interrupts sources to be enabled or disabled.
   *   This parameter can be the following values:
   *     @arg IR_TX_FIFO_EMPTY_INT_EN: TX FIFO empty interrupt.
   *     @arg IR_TX_FIFO_LEVEL_INT_EN: TX FIFO threshold interrupt.
@@ -225,9 +223,8 @@ void IR_ReceiveBuf(IR_TypeDef *IRx, u32 *pBuf, u32 len)
   *     @arg IR_RX_FIFO_OF_INT_EN: RX FIFO overflow interrupt.
   *     @arg IR_RX_CNT_THR_INT_EN: RX counter threshold interrupt.
   *     @arg IR_RX_FIFO_ERROR_INT_EN: RX FIFO error read interrupt. Trigger when RX FIFO empty and read RX FIFO.
-  * @param  NewState: new state of the specified IR interrupts.
+  * @param  newState New state of the specified IR interrupts.
   *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
   */
 void IR_INTConfig(IR_TypeDef *IRx, u32 IR_INT, u32 newState)
 {
@@ -252,7 +249,8 @@ void IR_INTConfig(IR_TypeDef *IRx, u32 IR_INT, u32 newState)
 
 /**
   * @brief  Mask or unmask the specified IR interrupts.
-  * @param  IR_INT: specifies the IR interrupts sources to be mask or unmask.
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @param  IR_INT Specifies the IR interrupts sources to be mask or unmask.
   *   This parameter can be the following values:
   *     @arg IR_TX_FIFO_EMPTY_INT_MASK: TX FIFO empty interrupt mask.
   *     @arg IR_TX_FIFO_LEVEL_INT_MASK: TX FIFO threshold interrupt mask.
@@ -263,9 +261,8 @@ void IR_INTConfig(IR_TypeDef *IRx, u32 IR_INT, u32 newState)
   *     @arg IR_RX_FIFO_OF_INT_Msk: RX FIFO overflow interrupt mask.
   *     @arg IR_RX_CNT_THR_INT_Msk: RX counter threshold interrupt mask.
   *     @arg IR_RX_FIFO_ERROR_INT_Msk: RX FIFO error read interrupt mask. Trigger when RX FIFO empty and read RX FIFO.
-  * @param  NewState: new state of the specified IR interrupts.
+  * @param  newState New state of the specified IR interrupts.
   *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
   */
 void IR_MaskINTConfig(IR_TypeDef *IRx, u32 IR_INT, u32 newState)
 {
@@ -291,6 +288,7 @@ void IR_MaskINTConfig(IR_TypeDef *IRx, u32 IR_INT, u32 newState)
 
 /**
   * @brief Get the specified IR interrupt status.
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
   * @return The new state of IR_INT (SET or RESET).
   */
 u32 IR_GetINTStatus(IR_TypeDef *IRx)
@@ -309,7 +307,8 @@ u32 IR_GetINTStatus(IR_TypeDef *IRx)
 
 /**
   * @brief Get the specified IR interrupt mask status.
-  * @return The new mask state of IR_INT (SET or RESET).
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @return The new mask state of IR_INT (MASKED or UNMASKED).
   */
 u32 IR_GetIMR(IR_TypeDef *IRx)
 {
@@ -327,9 +326,10 @@ u32 IR_GetIMR(IR_TypeDef *IRx)
 
 /**
   * @brief Get the specified IR FSM status.
-  * @return The current state of the FSM (IDLE or RUN).
-  *          @arg TRUE RUN
-  *          @arg FALSE IDLE
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @return The current state of the FSM:
+  *         - TRUE: RUN
+  *         - FALSE: IDLE
   */
 u32 IR_FSMRunning(IR_TypeDef *IRx)
 {
@@ -350,7 +350,8 @@ u32 IR_FSMRunning(IR_TypeDef *IRx)
 
 /**
   * @brief  Clear the IR interrupt pending bits.
-  * @param  IR_IT: specifies the interrupt pending bit to clear.
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @param  IR_CLEAR_INT Specifies the interrupt pending bit to clear.
   *   This parameter can be any combination of the following values:
   *     @arg IR_TX_FIFO_EMPTY_INT_CLR: Clear TX FIFO empty interrupt.
   *     @arg IR_TX_FIFO_LEVEL_INT_CLR: Clear TX FIFO threshold interrupt.
@@ -361,7 +362,6 @@ u32 IR_FSMRunning(IR_TypeDef *IRx)
   *     @arg IR_RX_FIFO_OF_INT_CLR: Clear RX FIFO overflow interrupt.
   *     @arg IR_RX_CNT_THR_INT_CLR: Clear RX counter threshold interrupt.
   *     @arg IR_RX_FIFO_ERROR_INT_CLR: Clear RX FIFO error read interrupt. Trigger when RX FIFO empty and read RX FIFO.
-  * @retval None
   */
 void IR_ClearINTPendingBit(IR_TypeDef *IRx, u32 IR_CLEAR_INT)
 {
@@ -377,8 +377,8 @@ void IR_ClearINTPendingBit(IR_TypeDef *IRx, u32 IR_CLEAR_INT)
 
 /**
   * @brief  Set Tx threshold. When TX FIFO depth <= threshold value, trigger interrupt
-  * @param  thd: Tx threshold.
-  * @retval None
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @param  thd Tx threshold.
   */
 void IR_SetTxThreshold(IR_TypeDef *IRx, uint8_t thd)
 {
@@ -393,8 +393,8 @@ void IR_SetTxThreshold(IR_TypeDef *IRx, uint8_t thd)
 
 /**
   * @brief  Set Rx threshold. When RX FIFO depth > threshold value, trigger interrupt
-  * @param  thd: Rx threshold.
-  * @retval None
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @param  thd Rx threshold.
   */
 void IR_SetRxThreshold(IR_TypeDef *IRx, uint8_t thd)
 {
@@ -409,8 +409,8 @@ void IR_SetRxThreshold(IR_TypeDef *IRx, uint8_t thd)
 
 /**
   * @brief  Get free size of TX FIFO.
-  * @param  None
-  * @return the free size of TX FIFO
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @return The free size of TX FIFO
   */
 u32 IR_GetTxFIFOFreeLen(IR_TypeDef *IRx)
 {
@@ -420,8 +420,8 @@ u32 IR_GetTxFIFOFreeLen(IR_TypeDef *IRx)
 
 /**
   * @brief  Get data size in RX FIFO.
-  * @param  None
-  * @return current data size in RX FIFO.
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @return Current data size in RX FIFO.
   */
 u32 IR_GetRxDataLen(IR_TypeDef *IRx)
 {
@@ -431,8 +431,8 @@ u32 IR_GetRxDataLen(IR_TypeDef *IRx)
 
 /**
   * @brief  Send one data.
-  * @param  data: send data.
-  * @retval None
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
+  * @param  data Send data.
   */
 void IR_SendData(IR_TypeDef *IRx, u32 data)
 {
@@ -442,8 +442,7 @@ void IR_SendData(IR_TypeDef *IRx, u32 data)
 
 /**
   * @brief   Start trigger only in manual receive mode.
-  * @param  None
-  * @retval None
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
   */
 void IR_StartManualRxTrigger(IR_TypeDef *IRx)
 {
@@ -454,7 +453,7 @@ void IR_StartManualRxTrigger(IR_TypeDef *IRx)
 
 /**
   * @brief Read one data.
-  * @param None
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
   * @return Data which is read from RX FIFO.
   */
 u32 IR_ReceiveData(IR_TypeDef *IRx)
@@ -464,8 +463,7 @@ u32 IR_ReceiveData(IR_TypeDef *IRx)
 
 /**
   * @brief  Clear IR TX FIFO.
-  * @param  None
-  * @retval None
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
   */
 void IR_ClearTxFIFO(IR_TypeDef *IRx)
 {
@@ -475,8 +473,7 @@ void IR_ClearTxFIFO(IR_TypeDef *IRx)
 
 /**
   * @brief  Clear IR RX FIFO.
-  * @param  None
-  * @retval None
+  * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
   */
 void IR_ClearRxFIFO(IR_TypeDef *IRx)
 {

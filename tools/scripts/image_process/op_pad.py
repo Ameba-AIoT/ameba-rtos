@@ -1,5 +1,5 @@
 import os
-import click
+import shutil
 
 from op_base import OperationBase
 from context import Context
@@ -56,6 +56,8 @@ class Pad(OperationBase):
                 pad_count = new_size - file_size
 
         if pad_count <= 0:
+            if output_file:
+                shutil.copy(input_file, output_file)
             return Error.success()
 
         pad_byte = bytes([value & 0xFF])
@@ -97,5 +99,3 @@ class Pad(OperationBase):
 
     def post_process(self) -> Error:
         return Error.success()
-
-

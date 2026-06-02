@@ -51,10 +51,6 @@
 #endif
 #endif
 
-#if defined(CONFIG_NAN)
-#include "rtw_nan_enum.h"
-#endif
-
 #if defined(CONFIG_WHC_INTF_SDIO)
 #include "ameba_inic.h"
 #include "spdio_api.h"

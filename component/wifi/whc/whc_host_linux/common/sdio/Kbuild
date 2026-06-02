@@ -23,7 +23,6 @@ whc_sdio-$(CONFIG_WHC_HCI_SDIO) := \
 		../sdio/whc_sdio_host_ops.o \
 		../sdio/whc_sdio_host_probe.o \
 		../sdio/whc_sdio_host_init.o	\
-		../netdev/whc_host_drv_probe.o \
 		../netdev/whc_host_ethtool_ops.o \
 		../netdev/whc_host_netdev_ops.o \
 		../whc_host_trx.o \

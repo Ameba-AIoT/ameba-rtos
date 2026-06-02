@@ -1,0 +1,1352 @@
+/**
+ * @file
+ * IPv4 NAPT implementation.
+ *
+ */
+
+/*
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+ * OF SUCH DAMAGE.
+ *
+ * This file is part of the lwIP TCP/IP stack.
+ *
+ * Author: Adam Dunkels <adam@sics.se>
+ *
+ */
+
+#include "lwip/opt.h"
+#include "log.h"
+
+#if LWIP_IPV4
+
+#include "lwip/ip.h"
+#include "lwip/def.h"
+#include "lwip/mem.h"
+#include "lwip/ip4_frag.h"
+#include "lwip/inet_chksum.h"
+#include "lwip/netif.h"
+#include "lwip/inet.h"
+#include "lwip/sockets.h"
+#include "lwip/icmp.h"
+#include "lwip/igmp.h"
+#include "lwip/raw.h"
+#include "lwip/udp.h"
+#include "lwip/priv/tcp_priv.h"
+#include "lwip/autoip.h"
+#include "lwip/stats.h"
+#include "lwip/timeouts.h"
+#include "lwip_ipnapt.h"
+#include "os_wrapper.h"
+
+#if defined(IP_FORWARD) && (IP_FORWARD == 1)
+
+#if defined(IP_NAPT) && (IP_NAPT == 1)
+
+void ip_napt_debug_print(void);
+static u16_t ip_napt_add_entry(u8_t proto, u32_t src, u16_t sport, u32_t dest, u16_t dport, u32_t app_use);
+static struct napt_table *ip_napt_entry_search(u8_t proto, u32_t addr, u16_t port, u16_t mport, u8_t dest, u8_t frag, u32_t daddr, u16_t dportmap);
+
+#define NON_INDEX (0xFFFF)
+
+/* NAPT session entry. */
+struct napt_table {
+	u32_t src;
+	u32_t dest;
+	u32_t ts;
+	u16_t sport;
+	u16_t dport;
+	u16_t mport;
+	u8_t proto;
+	u8_t fin_wait1 : 1;
+	u8_t fin_wait2 : 1;
+	u8_t fin_ack1 : 1;
+	u8_t fin_ack2 : 1;
+	u8_t syn_acked : 1;
+	u8_t rst : 1;
+	u16_t next, prev;
+	u32_t app_use;
+	u32_t pkt_count;
+};
+
+u16_t napt_entry_list = NON_INDEX;
+u16_t napt_entry_list_last = NON_INDEX;
+u16_t napt_entry_idle = 0;
+rtos_mutex_t napt_entry_lock = NULL;
+static struct napt_table *ip_napt_table = NULL;
+
+uint32_t filter_drop_threshold = 0;
+uint32_t tcp_entry_count = 0;
+uint32_t udp_entry_count = 0;
+uint32_t icmp_entry_count = 0;
+
+uint32_t ip_napt_tcp_max_timeout = IP_NAPT_TIMEOUT_MS_TCP;
+uint32_t ip_napt_udp_max_timeout = IP_NAPT_TIMEOUT_MS_UDP;
+
+static inline uint32_t GET_NAPT_TIME_ELAPSED(uint32_t now_ts, uint32_t e_ts)
+{
+	if (now_ts >= e_ts) {
+		return ((now_ts) - (e_ts));
+	} else {
+
+		return (((now_ts) + ((e_ts) ^ 0xFFFFFFFF) + 1));
+	}
+}
+
+static inline struct napt_table *GET_NAPT_ENTRY(u16_t en_idx)
+{
+	if (en_idx == NON_INDEX) {
+		return NULL;
+	} else {
+		return &ip_napt_table[en_idx];
+	}
+}
+
+/**
+ * @brief Flush all active NAPT sessions and reset the table to an empty state.
+ */
+void ip_napt_reinitialize(void)
+{
+	int i;
+
+	if (!ip_napt_table) {
+		RTK_LOGE(NOTAG, "NAPT table not initialized\n");
+		return;
+	}
+
+	rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+
+	memset(ip_napt_table, 0x00, sizeof(struct napt_table)*IP_NAPT_MAX);
+	for (i = 0; i < IP_NAPT_MAX - 1; i++) {
+		ip_napt_table[i].next = i + 1;
+	}
+	ip_napt_table[i].next = NON_INDEX;
+	napt_entry_idle = 0;
+	napt_entry_list = NON_INDEX;
+	napt_entry_list_last = NON_INDEX;
+
+	tcp_entry_count = 0;
+	udp_entry_count = 0;
+	icmp_entry_count = 0;
+
+	rtos_mutex_give(napt_entry_lock);
+}
+#if 0
+static void ipnapt_ageing_tmr(void *arg)
+{
+	int total_session = 0;
+	rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+	total_session = tcp_entry_count + udp_entry_count + icmp_entry_count;
+
+	if (total_session > 0 && total_session < 50) {
+		//ip_napt_debug_print();
+	} else {
+		//RTK_LOGI(NOTAG, "\n\r total :%d %d %d", tcp_entry_count, udp_entry_count, icmp_entry_count);
+	}
+	rtos_mutex_give(napt_entry_lock);
+	sys_timeout((30 * 1000), ipnapt_ageing_tmr, arg);
+}
+
+#endif
+
+/**
+ * @brief NAPT subsystem initialization.
+ */
+void ip_napt_initialize(void)
+{
+	int i;
+
+	if (ip_napt_table) {
+		RTK_LOGE(NOTAG, "NAPT already initialized\n");
+		return;
+	}
+
+	RTK_LOGI(NOTAG, "\n\r");
+	RTK_LOGI(NOTAG, "\n\r IP NAPT Initialize!!!!!");
+	RTK_LOGI(NOTAG, "\n\r");
+
+	ip_napt_table = (struct napt_table *)malloc(sizeof(struct napt_table) * IP_NAPT_MAX);
+	if (!ip_napt_table) {
+		RTK_LOGE(NOTAG, "Failed to allocate NAPT table");
+		return;
+	}
+
+	rtos_mutex_create(&napt_entry_lock);
+	filter_drop_threshold = (IP_NAPT_MAX * IP_NAPT_FILTER_THRESHOLD_PERCENT) / 100;
+
+	memset(ip_napt_table, 0x00, sizeof(struct napt_table)*IP_NAPT_MAX);
+	for (i = 0; i < IP_NAPT_MAX - 1; i++) {
+		ip_napt_table[i].next = i + 1;
+	}
+	ip_napt_table[i].next = NON_INDEX;
+	napt_entry_idle = 0;
+	tcp_entry_count = 0;
+	udp_entry_count = 0;
+	icmp_entry_count = 0;
+}
+
+/* ======================================================================== */
+/*                          Port Allocation                                 */
+/* ======================================================================== */
+
+/**
+ * @brief  Check whether a mapped port is already used by an active session.
+ * @param  proto IP protocol (IP_PROTO_TCP / IP_PROTO_UDP).
+ * @param  port Port to check, in network byte order.
+ * @return 1 if in use, 0 if free.
+ */
+static u8_t ip_napt_port_in_use(u8_t proto, u16_t port)
+{
+	u16_t i;
+	struct napt_table *entry;
+
+	for (i = napt_entry_list; i != NON_INDEX; i = entry->next) {
+		entry = GET_NAPT_ENTRY(i);
+		if (entry->proto == proto && entry->mport == port) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/**
+ * @brief  Check whether a port is bound by a local lwIP PCB on this router.
+ * @param  proto IP protocol (IP_PROTO_TCP / IP_PROTO_UDP).
+ * @param  port Port to check, in network byte order.
+ * @return 1 if bound, 0 if free.
+ */
+static u8_t ip_napt_port_listening(u8_t proto, u16_t port)
+{
+	u16_t host_port = PP_NTOHS(port);
+
+	#if LWIP_TCP
+	if (proto == IP_PROTO_TCP) {
+		struct tcp_pcb_listen *pcb;
+		for (pcb = tcp_listen_pcbs.listen_pcbs; pcb; pcb = pcb->next) {
+			if (pcb->local_port == host_port) {
+				return 1;
+			}
+		}
+	}
+#endif
+
+#if LWIP_UDP
+	if (proto == IP_PROTO_UDP) {
+		struct udp_pcb *pcb;
+		for (pcb = udp_pcbs; pcb; pcb = pcb->next) {
+			if (pcb->local_port == host_port) {
+				return 1;
+			}
+		}
+	}
+#endif
+
+	return 0;
+}
+
+/**
+ * @brief  Allocate a free mapped port for a new NAPT session (random selection).
+ * @param  proto IP protocol (IP_PROTO_TCP / IP_PROTO_UDP).
+ * @param  original_port Original port.
+ * @return Allocated port in network byte order, or 0 on failure.
+ */
+static u16_t ip_napt_allocate_port(u8_t proto, u16_t original_port)
+{
+	(void)original_port;
+
+	u16_t port;
+	u16_t attempts = 0;
+	const u16_t max_attempts = 100;
+
+	do {
+		port = PP_HTONS(IP_NAPT_PORT_RANGE_START +
+			   (LWIP_RAND() % (IP_NAPT_PORT_RANGE_END - IP_NAPT_PORT_RANGE_START + 1)));
+
+		attempts++;
+		if (attempts > max_attempts) {
+			RTK_LOGE(NOTAG, "Port allocation failed after %d attempts\n", attempts);
+			return 0;
+		}
+	} while (ip_napt_port_in_use(proto, port) || ip_napt_port_listening(proto, port));
+
+	return port;
+}
+
+/**
+ * @brief Insert an entry into the active session list.
+ * @param rule_entry Entry to activate.
+ */
+static void ip_napt_insert_new_rule(struct napt_table *rule_entry)
+{
+	u16_t ti = rule_entry - ip_napt_table;
+
+	if (ti != napt_entry_idle) {
+
+		//RTK_LOGI(NOTAG, "\n\r %s %d", __FUNCTION__, __LINE__);
+		//RTK_LOGI(NOTAG, "\n\r");
+	}
+	napt_entry_idle = rule_entry->next;
+	rule_entry->prev = NON_INDEX;
+	rule_entry->next = napt_entry_list;
+
+	if (napt_entry_list != NON_INDEX) {
+		GET_NAPT_ENTRY(napt_entry_list)->prev = ti;
+	}
+	napt_entry_list = ti;
+	if (napt_entry_list_last == NON_INDEX) {
+		napt_entry_list_last = ti;
+	}
+
+#if LWIP_TCP
+	if (rule_entry->proto == IP_PROTO_TCP) {
+		tcp_entry_count++;
+	}
+#endif
+#if LWIP_UDP
+	if (rule_entry->proto == IP_PROTO_UDP) {
+		udp_entry_count++;
+	}
+#endif
+#if LWIP_ICMP
+	if (rule_entry->proto == IP_PROTO_ICMP) {
+		icmp_entry_count++;
+	}
+#endif
+//RTK_LOGI(NOTAG, "\n\r");
+//RTK_LOGI(NOTAG, "\n\r INSERT %d %d TCP=%d UDP=%d ICMP=%d",__LINE__, rule_entry->proto, tcp_entry_count, udp_entry_count, icmp_entry_count);
+//RTK_LOGI(NOTAG, "\n\r");
+}
+
+/**
+ * @brief Remove an entry from the active session list and return it to the idle pool.
+ * @param t Entry to deactivate.
+ */
+static void ip_napt_set_entry_idle(struct napt_table *t)
+{
+	u16_t ti = t - ip_napt_table;
+	if (ti == napt_entry_list) {
+		napt_entry_list = t->next;
+	}
+	if (ti == napt_entry_list_last) {
+		napt_entry_list_last = t->prev;
+	}
+	if (t->next != NON_INDEX) {
+		GET_NAPT_ENTRY(t->next)->prev = t->prev;
+	}
+	if (t->prev != NON_INDEX) {
+		GET_NAPT_ENTRY(t->prev)->next = t->next;
+	}
+	t->prev = NON_INDEX;
+	t->next = napt_entry_idle;
+	napt_entry_idle = ti;
+
+#if LWIP_TCP
+	if (t->proto == IP_PROTO_TCP) {
+		tcp_entry_count--;
+	}
+#endif
+
+#if LWIP_UDP
+	if (t->proto == IP_PROTO_UDP) {
+		udp_entry_count--;
+	}
+#endif
+
+#if LWIP_ICMP
+	if (t->proto == IP_PROTO_ICMP) {
+		icmp_entry_count--;
+	}
+#endif
+
+}
+
+/**
+ * @brief  Search the active session table for a matching NAPT entry.
+ * @param  proto IP protocol.
+ * @param  addr Source (dest==0) or destination (dest==1) IP to match.
+ * @param  port Source (dest==0) or destination (dest==1) port to match.
+ * @param  mport Mapped (WAN-facing) port to match; 0 means don't match by mport.
+ * @param  dest 0 = searching TX (src) direction, 1 = searching RX (dest) direction.
+ * @param  frag 1 if this is a non-first IP fragment (skip port matching).
+ * @param  daddr Remote IP to additionally filter on; 0 to skip.
+ * @param  dportmap Remote port to additionally filter on; 0 to skip.
+ * @return Matching entry, or NULL if not found.
+ */
+static struct napt_table *ip_napt_entry_search(u8_t proto, u32_t addr, u16_t port, u16_t mport, u8_t dest, u8_t frag, u32_t daddr, u16_t dportmap)
+{
+	u16_t i, next;
+	struct napt_table *NEntry;
+
+	LWIP_DEBUGF(IPNAPT_DEBUG, ("ip_napt_entry_search\n"));
+
+	LWIP_DEBUGF(IPNAPT_DEBUG, ("searching in table %s: %"U16_F".%"U16_F".%"U16_F".%"U16_F", port: %d, mport: %d\n",
+							  (dest ? "dest" : "src"),
+							  ip4_addr1_16((ip4_addr_t *)&addr), ip4_addr2_16((ip4_addr_t *)&addr),
+							  ip4_addr3_16((ip4_addr_t *)&addr), ip4_addr4_16((ip4_addr_t *)&addr),
+							  PP_HTONS(port),
+							  PP_HTONS(mport)));
+
+	u32_t now = sys_now();
+	for (i = napt_entry_list; i != NON_INDEX; i = next) {
+		NEntry = GET_NAPT_ENTRY(i);
+		next = NEntry->next;
+#if LWIP_TCP
+		if (NEntry->proto == IP_PROTO_TCP &&
+			((((NEntry->fin_ack1 && NEntry->fin_ack2) || !NEntry->syn_acked) &&
+			 GET_NAPT_TIME_ELAPSED(now, NEntry->ts) > IP_NAPT_TIMEOUT_MS_TCP_DISCON) ||
+			 GET_NAPT_TIME_ELAPSED(now, NEntry->ts) > ip_napt_tcp_max_timeout)) {
+			if (!NEntry->syn_acked && (GET_NAPT_TIME_ELAPSED(now, NEntry->ts) > IP_NAPT_TIMEOUT_MS_TCP_DISCON)) {
+				ip_napt_set_entry_idle(NEntry);
+				continue;
+			}
+			if (NEntry->fin_ack1 && NEntry->fin_ack2 && GET_NAPT_TIME_ELAPSED(now, NEntry->ts) > IP_NAPT_TIMEOUT_MS_TCP_FIN_WAIT) {
+				ip_napt_set_entry_idle(NEntry);
+				continue;
+			}
+			if (GET_NAPT_TIME_ELAPSED(now, NEntry->ts) > ip_napt_tcp_max_timeout) {
+				ip_napt_set_entry_idle(NEntry);
+				continue;
+			}
+
+		}
+		if (NEntry->proto == IP_PROTO_TCP && NEntry->rst && (GET_NAPT_TIME_ELAPSED(now, NEntry->ts) > IP_NAPT_TIMEOUT_MS_TCP_RST_DISCON)) {
+			ip_napt_set_entry_idle(NEntry);
+			continue;
+		}
+#endif
+
+#if LWIP_UDP
+		if (NEntry->proto == IP_PROTO_UDP && GET_NAPT_TIME_ELAPSED(now, NEntry->ts) > ip_napt_udp_max_timeout) {
+			if (NEntry->app_use == 0) {
+				ip_napt_set_entry_idle(NEntry);
+				continue;
+			} else if (NEntry->app_use == 1 &&
+						GET_NAPT_TIME_ELAPSED(now, NEntry->ts) > IP_NAPT_TIMEOUT_MS_UDP_ALG) {
+				ip_napt_set_entry_idle(NEntry);
+				continue;
+			}
+		}
+#endif
+
+#if LWIP_ICMP
+		if (NEntry->proto == IP_PROTO_ICMP) {
+			if (GET_NAPT_TIME_ELAPSED(now, NEntry->ts) > IP_NAPT_TIMEOUT_MS_ICMP) {
+				ip_napt_set_entry_idle(NEntry);
+				continue;
+			}
+		}
+#endif
+
+		if (frag == 0 && dest == 0 && NEntry->proto == proto &&
+			NEntry->src == addr && NEntry->sport == port) {
+			NEntry->ts = now;
+			NEntry->pkt_count++;
+			return NEntry;
+		}
+
+		if (frag == 0 && dest == 0 && NEntry->proto == proto && NEntry->src == addr &&
+			daddr != 0x00 && NEntry->dest == daddr && dportmap != 0 && NEntry->dport == dportmap) {
+			NEntry->ts = now;
+			NEntry->pkt_count++;
+			return NEntry;
+		}
+
+		if (frag == 0 && dest == 1 && NEntry->proto == proto &&
+			NEntry->dest == addr && NEntry->dport == port) {
+			if (mport == 0 || NEntry->mport == mport || NEntry->sport == mport) {
+				NEntry->ts = now;
+				NEntry->pkt_count++;
+				return NEntry;
+			}
+		}
+
+		if (frag == 1 && dest == 0 && NEntry->proto == proto &&
+			NEntry->src == addr && NEntry->dest == daddr) {
+			NEntry->ts = now;
+			NEntry->pkt_count++;
+			return NEntry;
+		}
+
+		if (frag == 1 && dest == 1 && NEntry->proto == proto && NEntry->dest == addr) {
+			NEntry->ts = now;
+			NEntry->pkt_count++;
+			return NEntry;
+		}
+	}
+
+	LWIP_DEBUGF(IPNAPT_DEBUG, ("not found\n"));
+	return NULL;
+}
+
+/**
+ * @brief Evict sessions that have been idle longer than @p threshold_value ms.
+ * @param threshold_value Idle age threshold in milliseconds.
+ * @return Number of entries actually evicted.
+ */
+int ip_napt_filter_old_entry(unsigned int threshold_value)
+{
+	u16_t i, next;
+	int filter_count = 0;
+	struct napt_table *NEntry;
+	u32_t now = sys_now();
+
+	for (i = napt_entry_list; i != NON_INDEX; i = next) {
+		NEntry = GET_NAPT_ENTRY(i);
+		next = NEntry->next;
+		if (GET_NAPT_TIME_ELAPSED(now, NEntry->ts) > threshold_value) {
+#if LWIP_TCP
+			if (NEntry->proto == IP_PROTO_TCP) {
+				if ((NEntry->fin_ack1 == 1 && NEntry->fin_ack2) || NEntry->rst == 1 ||
+					GET_NAPT_TIME_ELAPSED(now, NEntry->ts) > ip_napt_tcp_max_timeout) {
+					ip_napt_set_entry_idle(NEntry);
+					filter_count++;
+				}
+			} else
+#endif
+			{
+				ip_napt_set_entry_idle(NEntry);
+				filter_count++;
+			}
+		}
+	}
+
+	return filter_count;
+}
+
+/**
+ * @brief  Create or refresh a NAPT session and return the assigned mapped port.
+ * @param  proto IP protocol.
+ * @param  src LAN-side source IP.
+ * @param  sport LAN-side source port (network byte order).
+ * @param  dest WAN-side destination IP.
+ * @param  dport WAN-side destination port (network byte order).
+ * @param  app_use Application hint passed through to the entry.
+ * @return Assigned mport in network byte order, or 0 on failure.
+ */
+static u16_t ip_napt_add_entry(u8_t proto, u32_t src, u16_t sport, u32_t dest, u16_t dport, u32_t app_use)
+{
+	struct napt_table *NEntry;
+	u16_t mport;
+
+	if ((tcp_entry_count + udp_entry_count + icmp_entry_count) > filter_drop_threshold) {
+		ip_napt_filter_old_entry(IP_NAPT_MAX_TIMEOUT_MS_FILTER_DROP);
+	}
+
+	NEntry = ip_napt_entry_search(proto, src, sport, 0, 0, 0, 0, 0);
+	if (NEntry) {
+		NEntry->ts = sys_now();
+		NEntry->dest = dest;
+		NEntry->dport = dport;
+		NEntry->app_use = app_use;
+#if LWIP_TCP
+		if (proto == IP_PROTO_TCP) {
+			NEntry->fin_wait1 = 0;
+			NEntry->fin_wait2 = 0;
+			NEntry->fin_ack1 = 0;
+			NEntry->fin_ack2 = 0;
+			NEntry->syn_acked = 0;
+			NEntry->rst = 0;
+		}
+#endif
+		ip_napt_set_entry_idle(NEntry);
+		ip_napt_insert_new_rule(NEntry);
+
+		return NEntry->mport;
+	}
+
+	NEntry = GET_NAPT_ENTRY(napt_entry_idle);
+	if (NEntry) {
+		/* ICMP uses the echo ID as the session key; no port rewrite is needed. */
+#if LWIP_ICMP
+		if (proto == IP_PROTO_ICMP) {
+			mport = sport;
+		} else
+#endif
+		{
+			mport = ip_napt_allocate_port(proto, sport);
+			if (mport == 0) {
+				RTK_LOGE(NOTAG, "Port allocation failed for proto=%d\n", proto);
+				return 0;
+			}
+		}
+
+		LWIP_DEBUGF(IPNAPT_DEBUG, ("ip_napt_add_entry: proto=%d, sport=0x%04X(%u), mport=0x%04X(%u)\n",
+					proto, PP_NTOHS(sport), PP_NTOHS(sport), PP_NTOHS(mport), PP_NTOHS(mport)));
+
+		NEntry->ts = sys_now();
+		NEntry->src = src;
+		NEntry->dest = dest;
+		NEntry->sport = sport;
+		NEntry->dport = dport;
+		NEntry->mport = mport;
+		NEntry->proto = proto;
+		NEntry->fin_wait1 = 0;
+		NEntry->fin_wait2 = 0;
+		NEntry->fin_ack1 = 0;
+		NEntry->fin_ack2 = 0;
+		NEntry->syn_acked = 0;
+		NEntry->rst = 0;
+		NEntry->app_use = app_use;
+		NEntry->pkt_count = 0;
+
+		ip_napt_insert_new_rule(NEntry);
+
+		LWIP_DEBUGF(IPNAPT_DEBUG, ("NAPT: %u.%u.%u.%u:%u -> %u.%u.%u.%u [mport=%u]\n",
+					ip4_addr1_16((ip4_addr_t*)&src), ip4_addr2_16((ip4_addr_t*)&src),
+					ip4_addr3_16((ip4_addr_t*)&src), ip4_addr4_16((ip4_addr_t*)&src),
+					PP_NTOHS(sport),
+					ip4_addr1_16((ip4_addr_t*)&dest), ip4_addr2_16((ip4_addr_t*)&dest),
+					ip4_addr3_16((ip4_addr_t*)&dest), ip4_addr4_16((ip4_addr_t*)&dest),
+					PP_NTOHS(mport)));
+
+		return mport;
+	}
+
+	ip_napt_filter_old_entry(IP_NAPT_MAX_TIMEOUT_MS_FILTER_DROP > 20000 ?
+							 IP_NAPT_MAX_TIMEOUT_MS_FILTER_DROP - 20000 : 0);
+	return 0;
+}
+
+#if LWIP_TCP
+/**
+ * @brief Override the default TCP session idle timeout.
+ * @param secs New timeout in seconds.
+ */
+void ip_napt_set_tcp_timeout(u32_t secs)
+{
+	ip_napt_tcp_max_timeout = secs * 1000;
+}
+
+/**
+ * @brief Rewrite a TCP port field and update the TCP checksum.
+ * @param tcphdr TCP header to modify.
+ * @param dest 0 = rewrite source port, 1 = rewrite destination port.
+ * @param newval New port value in network byte order.
+ */
+static void ip_napt_manipulate_port_tcp(struct tcp_hdr *tcphdr, u8_t dest, u16_t newval)
+{
+	u16_t local_csum = tcphdr->chksum;
+	u16_t oldval;
+	unsigned char *optr = (unsigned char *)&oldval;
+	unsigned char *nptr = (unsigned char *)&newval;
+
+	if (dest == 0) {
+		oldval = tcphdr->src;
+		tcphdr->src = newval;
+	} else {
+		oldval = tcphdr->dest;
+		tcphdr->dest = newval;
+	}
+
+	/* Checksum update: subtract old field, add new field. */
+	unsigned char *chksum = (unsigned char *)&local_csum;
+	long x, old, new;
+	x = chksum[0] * 256 + chksum[1];
+	x = ~x & 0xFFFF;
+
+	old = optr[0] * 256 + optr[1];
+	x -= old & 0xffff;
+	if (x <= 0) {
+		x--;
+		x &= 0xffff;
+	}
+
+	new = nptr[0] * 256 + nptr[1];
+	x += new & 0xffff;
+	if (x & 0x10000) {
+		x++;
+		x &= 0xffff;
+	}
+
+	x = ~x & 0xFFFF;
+	chksum[0] = x / 256;
+	chksum[1] = x & 0xff;
+	tcphdr->chksum = local_csum;
+}
+
+/**
+ * @brief Rewrite an IP address field referenced by the TCP header pseudo-header and update the TCP checksum.
+ * @param tcphdr TCP header whose checksum is updated.
+ * @param field Pointer to the IP address field (in the IP header) to rewrite.
+ * @param newval New IP address value in network byte order.
+ */
+void ip_napt_manipulate_address_tcp(struct tcp_hdr *tcphdr, ip4_addr_p_t *field, u32_t newval)
+{
+	u16_t local_csum = tcphdr->chksum;
+	u32_t local_target = field->addr;
+	u32_t new_target = newval;
+	unsigned char *optr = (unsigned char *)&local_target;
+	unsigned char *nptr = (unsigned char *)&new_target;
+	int olen = 4;
+	int nlen = 4;
+
+	unsigned char *chksum = (unsigned char *)&local_csum;
+	long x, old, new;
+	x = chksum[0] * 256 + chksum[1];
+	x = ~x & 0xFFFF;
+	while (olen) {
+		old = optr[0] * 256 + optr[1];
+		optr += 2;
+		x -= old & 0xffff;
+		if (x <= 0) {
+			x--;
+			x &= 0xffff;
+		}
+		olen -= 2;
+	}
+	while (nlen) {
+		new = nptr[0] * 256 + nptr[1];
+		nptr += 2;
+		x += new & 0xffff;
+		if (x & 0x10000) {
+			x++;
+			x &= 0xffff;
+		}
+		nlen -= 2;
+	}
+	x = ~x & 0xFFFF;
+	chksum[0] = x / 256;
+	chksum[1] = x & 0xff;
+	tcphdr->chksum = local_csum;
+
+}
+#endif // LWIP_TCP
+
+
+#if LWIP_UDP
+/**
+ * @brief Override the default UDP session idle timeout.
+ * @param secs New timeout in seconds.
+ */
+void ip_napt_set_udp_timeout(u32_t secs)
+{
+	ip_napt_udp_max_timeout = secs * 1000;
+}
+
+/**
+ * @brief Rewrite a UDP port field and update the UDP checksum.
+ * @param udphdr UDP header to modify.
+ * @param dest 0 = rewrite source port, 1 = rewrite destination port.
+ * @param newval New port value in network byte order.
+ */
+static void ip_napt_manipulate_port_udp(struct udp_hdr *udphdr, u8_t dest, u16_t newval)
+{
+	u16_t local_csum = udphdr->chksum;
+	u16_t oldval;
+	unsigned char *optr = (unsigned char *)&oldval;
+	unsigned char *nptr = (unsigned char *)&newval;
+
+	if (dest == 0) {
+		oldval = udphdr->src;
+		udphdr->src = newval;
+	} else {
+		oldval = udphdr->dest;
+		udphdr->dest = newval;
+	}
+
+	/* Checksum update: subtract old field, add new field. */
+	unsigned char *chksum = (unsigned char *)&local_csum;
+	long x, old, new;
+	x = chksum[0] * 256 + chksum[1];
+	x = ~x & 0xFFFF;
+
+	old = optr[0] * 256 + optr[1];
+	x -= old & 0xffff;
+	if (x <= 0) {
+		x--;
+		x &= 0xffff;
+	}
+
+	new = nptr[0] * 256 + nptr[1];
+	x += new & 0xffff;
+	if (x & 0x10000) {
+		x++;
+		x &= 0xffff;
+	}
+
+	x = ~x & 0xFFFF;
+	chksum[0] = x / 256;
+	chksum[1] = x & 0xff;
+	udphdr->chksum = local_csum;
+}
+
+/**
+ * @brief Rewrite an IP address field referenced by the UDP header pseudo-header and update the UDP checksum.
+ * @param udphdr UDP header whose checksum is updated.
+ * @param field Pointer to the IP address field (in the IP header) to rewrite.
+ * @param newval New IP address value in network byte order.
+ */
+void ip_napt_manipulate_address_udp(struct udp_hdr *udphdr, ip4_addr_p_t *field, u32_t newval)
+{
+	u16_t local_csum = udphdr->chksum;
+	u32_t local_target = field->addr;
+	u32_t new_target = newval;
+	unsigned char *optr = (unsigned char *)&local_target;
+	unsigned char *nptr = (unsigned char *)&new_target;
+	int olen = 4;
+	int nlen = 4;
+
+	unsigned char *chksum = (unsigned char *)&local_csum;
+	long x, old, new;
+	x = chksum[0] * 256 + chksum[1];
+	x = ~x & 0xFFFF;
+	while (olen) {
+		old = optr[0] * 256 + optr[1];
+		optr += 2;
+		x -= old & 0xffff;
+		if (x <= 0) {
+			x--;
+			x &= 0xffff;
+		}
+		olen -= 2;
+	}
+	while (nlen) {
+		new = nptr[0] * 256 + nptr[1];
+		nptr += 2;
+		x += new & 0xffff;
+		if (x & 0x10000) {
+			x++;
+			x &= 0xffff;
+		}
+		nlen -= 2;
+	}
+	x = ~x & 0xFFFF;
+	chksum[0] = x / 256;
+	chksum[1] = x & 0xff;
+	udphdr->chksum = local_csum;
+
+}
+#endif // LWIP_UDP
+
+/**
+ * @brief Rewrite an IP address field in the IP header and update the IP header checksum.
+ * @param iphdr IP header whose checksum is updated.
+ * @param field Pointer to the src or dst address field within iphdr to rewrite.
+ * @param newval New IP address value in network byte order.
+ */
+void ip_napt_manipulate_address(struct ip_hdr *iphdr, ip4_addr_p_t *field, u32_t newval)
+{
+	u16_t local_csum = IPH_CHKSUM(iphdr);
+	u32_t local_target = field->addr;
+	u32_t new_target = newval;
+	unsigned char *optr = (unsigned char *)&local_target;
+	unsigned char *nptr = (unsigned char *)&new_target;
+	int olen = 4;
+	int nlen = 4;
+	unsigned char *chksum = (unsigned char *)&local_csum;
+	long x, old, new;
+
+	x = chksum[0] * 256 + chksum[1];
+	x = ~x & 0xFFFF;
+	while (olen) {
+		old = optr[0] * 256 + optr[1];
+		optr += 2;
+		x -= old & 0xffff;
+		if (x <= 0) {
+			x--;
+			x &= 0xffff;
+		}
+		olen -= 2;
+	}
+	while (nlen) {
+		new = nptr[0] * 256 + nptr[1];
+		nptr += 2;
+		x += new & 0xffff;
+		if (x & 0x10000) {
+			x++;
+			x &= 0xffff;
+		}
+		nlen -= 2;
+	}
+	x = ~x & 0xFFFF;
+	chksum[0] = x / 256;
+	chksum[1] = x & 0xff;
+
+	IPH_CHKSUM(iphdr) = local_csum;
+	field->addr = newval;
+}
+
+/**
+ * @brief Process an inbound WAN packet destined for the router's WAN IP.
+ * @param p Packet buffer (payload starts at IP header).
+ * @param iphdr IP header pointer within p.
+ */
+static void ip_napt_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
+{
+
+	struct napt_table *NEntry;
+	u16_t frag_offset;
+
+#if LWIP_ICMP
+	if (IPH_PROTO(iphdr) == IP_PROTO_ICMP) {
+		frag_offset = lwip_ntohs(iphdr->_offset) & IP_OFFMASK;
+		struct icmp_echo_hdr *iecho = (struct icmp_echo_hdr *)((u8_t *)p->payload + IPH_HL(iphdr) * 4);
+		if (frag_offset == 0 && iecho->type == ICMP_ER) {
+
+			rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+			NEntry = ip_napt_entry_search(IP_PROTO_ICMP, iphdr->src.addr, iecho->id, iecho->id, 1, 0, 0, 0);
+			if (!NEntry) {
+				rtos_mutex_give(napt_entry_lock);
+				return;
+			}
+			ip_napt_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
+			rtos_mutex_give(napt_entry_lock);
+			return;
+		} else if ((IPH_OFFSET(iphdr) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
+
+			rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+			NEntry = ip_napt_entry_search(IP_PROTO_ICMP, iphdr->src.addr, 0, 0, 1, 1, 0, 0);
+
+			if (NEntry) {
+				ip_napt_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
+			} else {
+				//RTK_LOGI(NOTAG, "\n\r");
+				//RTK_LOGI(NOTAG, "\n\r ICMP ip_napt_rx_packet NOT found!!!");
+				//RTK_LOGI(NOTAG, "\n\r");
+			}
+			rtos_mutex_give(napt_entry_lock);
+		}
+
+		return;
+	}
+#endif // LWIP_ICMP
+
+#if LWIP_TCP
+	if (IPH_PROTO(iphdr) == IP_PROTO_TCP) {
+		struct tcp_hdr *tcphdr = (struct tcp_hdr *)((u8_t *)p->payload + IPH_HL(iphdr) * 4);
+
+		/* RX TCP: search by (server_src_ip, server_src_port, mapped_dst_port) */
+		rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+		NEntry = ip_napt_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, tcphdr->dest, 1, 0, 0, 0);
+		if (!NEntry) {
+			rtos_mutex_give(napt_entry_lock);
+			return;
+		}
+
+		if (NEntry->rst == 1) {
+			//RTK_LOGI(NOTAG, "\n\r CLEAN TCP RST!!!!");
+			NEntry->rst = 0;
+		}
+
+		/* Restore destination port (mport -> sport) and destination IP (WAN IP -> LAN IP). */
+		ip_napt_manipulate_port_tcp(tcphdr, 1, NEntry->sport);
+		ip_napt_manipulate_address_tcp(tcphdr, &iphdr->dest, NEntry->src);
+		ip_napt_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
+
+		if ((TCPH_FLAGS(tcphdr) & (TCP_SYN | TCP_ACK)) == (TCP_SYN | TCP_ACK)) {
+			NEntry->syn_acked = 1;
+		}
+
+		if ((TCPH_FLAGS(tcphdr) & TCP_FIN)) {
+			NEntry->fin_wait1 = 1;
+		}
+
+		if (NEntry->fin_wait2 && (TCPH_FLAGS(tcphdr) & TCP_ACK)) {
+			NEntry->fin_ack2 = 1;
+		}
+
+		if (TCPH_FLAGS(tcphdr) & TCP_RST) {
+			NEntry->rst = 1;
+		} else {
+			NEntry->rst = 0;
+		}
+
+		rtos_mutex_give(napt_entry_lock);
+		return;
+	}
+#endif // LWIP_TCP
+
+#if LWIP_UDP
+	if (IPH_PROTO(iphdr) == IP_PROTO_UDP) {
+		struct udp_hdr *udphdr = (struct udp_hdr *)((u8_t *)p->payload + IPH_HL(iphdr) * 4);
+		frag_offset = lwip_ntohs(iphdr->_offset) & IP_OFFMASK;
+
+		if (frag_offset == 0) {
+			rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+
+			NEntry = ip_napt_entry_search(IP_PROTO_UDP, iphdr->src.addr, udphdr->src, udphdr->dest, 1, 0, 0, 0);
+			if (!NEntry) {
+				rtos_mutex_give(napt_entry_lock);
+				return;
+			}
+
+			/* Restore destination port (mport -> sport) and destination IP (WAN IP -> LAN IP). */
+			ip_napt_manipulate_port_udp(udphdr, 1, NEntry->sport);
+			ip_napt_manipulate_address_udp(udphdr, &iphdr->dest, NEntry->src);
+			ip_napt_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
+			rtos_mutex_give(napt_entry_lock);
+
+			return;
+		} else if ((IPH_OFFSET(iphdr) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
+			rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+			NEntry = ip_napt_entry_search(IP_PROTO_UDP, iphdr->src.addr, 0, 0, 1, 1, 0, 0);
+			if (NEntry) {
+				ip_napt_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
+			} else {
+				//RTK_LOGI(NOTAG, "\n\r");
+				//RTK_LOGI(NOTAG, "\n\r %d UDP ip_napt_rx_packet NOT found!!!",__LINE__);
+				//RTK_LOGI(NOTAG, "\n\r");
+			}
+			rtos_mutex_give(napt_entry_lock);
+		}
+	}
+#endif // LWIP_UDP
+}
+
+/**
+ * @brief  Rewrite a LAN-originating packet before it leaves on the WAN interface.
+ * @param  p             Packet buffer (payload starts at IP header).
+ * @param  iphdr         IP header pointer within p.
+ * @param  input_iface   LAN interface the packet arrived on (unused, reserved).
+ * @param  output_iface  WAN interface the packet will be sent out on.
+ * @return ERR_OK on success, ERR_RTE if the packet must be dropped.
+ */
+err_t ip_napt_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *input_iface, struct netif *output_iface)
+{
+	(void) input_iface;
+	struct napt_table *NEntry;
+	struct napt_table *NEntry1;
+	u16_t frag_offset;
+
+#if LWIP_ICMP
+	if (IPH_PROTO(iphdr) == IP_PROTO_ICMP) {
+		frag_offset = lwip_ntohs(iphdr->_offset) & IP_OFFMASK;
+		struct icmp_echo_hdr *iecho = (struct icmp_echo_hdr *)((u8_t *)p->payload + IPH_HL(iphdr) * 4);
+
+		if (frag_offset == 0 && iecho->type == ICMP_ECHO) {
+			rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+			ip_napt_add_entry(IP_PROTO_ICMP, iphdr->src.addr, iecho->id, iphdr->dest.addr, iecho->id, 0);
+			rtos_mutex_give(napt_entry_lock);
+
+			ip_napt_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+		} else if ((IPH_OFFSET(iphdr) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
+			rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+			NEntry = ip_napt_entry_search(IP_PROTO_ICMP, iphdr->src.addr, 0, 0, 0, 1, iphdr->dest.addr, 0);
+
+			if (NEntry) {
+				ip_napt_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+			} else {
+				//RTK_LOGI(NOTAG, "\n\r");
+				//RTK_LOGI(NOTAG, "\n\r ICMP ip_napt_forward_packet NOT found!!!");
+				//RTK_LOGI(NOTAG, "\n\r");
+			}
+			rtos_mutex_give(napt_entry_lock);
+		} else {
+			//RTK_LOGI(NOTAG, "\n\r");
+			//RTK_LOGI(NOTAG, "\n\r ICMP type =%d ip_napt_forward_packet DO NOTthing!!", iecho->type);
+			//RTK_LOGI(NOTAG, "\n\r");
+		}
+
+		//ip4_debug_print(p);
+		return ERR_OK;
+	}
+#endif
+
+#if LWIP_TCP
+	if (IPH_PROTO(iphdr) == IP_PROTO_TCP) {
+		struct tcp_hdr *tcphdr = (struct tcp_hdr *)((u8_t *)p->payload + IPH_HL(iphdr) * 4);
+		u16_t mport;
+
+		if ((TCPH_FLAGS(tcphdr) & (TCP_SYN | TCP_ACK)) == TCP_SYN) {
+			rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+
+			mport = ip_napt_add_entry(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src,
+							 iphdr->dest.addr, tcphdr->dest, 0);
+			if (mport == 0) {
+				rtos_mutex_give(napt_entry_lock);
+#if LWIP_ICMP
+				icmp_dest_unreach(p, ICMP_DUR_PORT);
+#endif
+				return ERR_RTE;
+			}
+
+			rtos_mutex_give(napt_entry_lock);
+
+			/* Rewrite source port (sport -> mport) and source IP (LAN IP -> WAN IP). */
+			ip_napt_manipulate_port_tcp(tcphdr, 0, mport);  /* 0 = source port */
+			ip_napt_manipulate_address_tcp(tcphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+			ip_napt_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+		} else {
+			rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+
+			NEntry = ip_napt_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, 0, 0, 0, 0, 0);
+			if (!NEntry) {
+				NEntry = ip_napt_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, tcphdr->dest, 1, 0, 0, 0);
+				if (NEntry) {
+					//RTK_LOGI(NOTAG, "\n\r %s %d TCP NAT RX has update DNAT --Do Nothing %08X sport=%d ~~~%08X dport=%d",__FUNCTION__, __LINE__, iphdr->src.addr, lwip_ntohs(tcphdr->src), iphdr->dest.addr, lwip_ntohs(tcphdr->dest));
+					rtos_mutex_give(napt_entry_lock);
+				} else {
+					NEntry1 = ip_napt_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, 0, 0, 0, iphdr->dest.addr, tcphdr->dest);
+					if (NEntry1) {
+						ip_napt_set_entry_idle(NEntry1);
+						NEntry1->src = iphdr->src.addr;
+						NEntry1->sport = tcphdr->src;
+						NEntry1->ts = sys_now();
+						NEntry1->dest = iphdr->dest.addr;
+						NEntry1->dport = tcphdr->dest;
+						NEntry1->app_use = 0;
+						//RTK_LOGI(NOTAG, "\n\r Update E %08X %d %08X %d", NEntry1->src,lwip_ntohs(NEntry1->sport), NEntry1->dest, lwip_ntohs(NEntry1->dport));
+						ip_napt_insert_new_rule(NEntry1);
+						//RTK_LOGI(NOTAG, "\n\r %d ~~%08X %d %08X %d~~", __LINE__, NEntry1->src, lwip_ntohs(NEntry1->sport), NEntry1->dest, lwip_ntohs(NEntry1->dport));
+						//RTK_LOGI(NOTAG, "\n\r %d ~~%08X %d %08X %d~~", __LINE__, iphdr->src.addr, lwip_ntohs(tcphdr->src), iphdr->dest.addr, lwip_ntohs(tcphdr->dest));
+						rtos_mutex_give(napt_entry_lock);
+
+						ip_napt_manipulate_port_tcp(tcphdr, 0, NEntry1->mport);
+						ip_napt_manipulate_address_tcp(tcphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+						ip_napt_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+						return ERR_OK;
+					}
+					rtos_mutex_give(napt_entry_lock);
+#if LWIP_ICMP
+					icmp_dest_unreach(p, ICMP_DUR_PORT);
+#endif
+					return ERR_RTE; /* Drop unknown TCP session */
+				}
+			} else {
+				if (NEntry->dest != iphdr->dest.addr || NEntry->dport != tcphdr->dest) {
+					rtos_mutex_give(napt_entry_lock);
+#if LWIP_ICMP
+					icmp_dest_unreach(p, ICMP_DUR_PORT);
+#endif
+					return ERR_RTE;
+				}
+
+				if ((TCPH_FLAGS(tcphdr) & TCP_FIN)) {
+					NEntry->fin_wait2 = 1;
+				}
+
+				if (NEntry->fin_wait1 && (TCPH_FLAGS(tcphdr) & TCP_ACK)) {
+					NEntry->fin_ack1 = 1;
+				}
+
+				if (TCPH_FLAGS(tcphdr) & TCP_RST) {
+					NEntry->rst = 1;
+				} else {
+					NEntry->rst = 0;
+				}
+
+				mport = NEntry->mport;
+				rtos_mutex_give(napt_entry_lock);
+
+				/* Rewrite source port (sport -> mport) and source IP (LAN IP -> WAN IP). */
+				ip_napt_manipulate_port_tcp(tcphdr, 0, mport);
+				ip_napt_manipulate_address_tcp(tcphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+				ip_napt_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+			}
+			return ERR_OK;
+		}
+	}
+#endif
+
+#if LWIP_UDP
+	if (IPH_PROTO(iphdr) == IP_PROTO_UDP) {
+		struct udp_hdr *udphdr = (struct udp_hdr *)((u8_t *)p->payload + IPH_HL(iphdr) * 4);
+		struct napt_table *NEntry1;
+		u16_t mport;
+
+		frag_offset = lwip_ntohs(iphdr->_offset) & IP_OFFMASK;
+		if (frag_offset == 0) {
+			rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+
+			NEntry = ip_napt_entry_search(IP_PROTO_UDP, iphdr->src.addr, udphdr->src, 0, 0, 0, 0, 0);
+			if (!NEntry) {
+				NEntry1 = ip_napt_entry_search(IP_PROTO_UDP, iphdr->src.addr, udphdr->src, udphdr->dest, 1, 0, 0, 0);
+				if (NEntry1) {
+					if (NEntry1->src == iphdr->dest.addr) {
+						//RTK_LOGI(NOTAG, "\n\r %s %d NAT RX has update DNAT --Do Nothing ",__FUNCTION__, __LINE__);
+					} else {
+						RTK_LOGI(NOTAG, "\n\r %s %d NAT RX has NOT update forward update %X", __FUNCTION__, __LINE__, NEntry1->src);
+					}
+					rtos_mutex_give(napt_entry_lock);
+				} else {
+					mport = ip_napt_add_entry(IP_PROTO_UDP, iphdr->src.addr, udphdr->src,
+									 iphdr->dest.addr, udphdr->dest, 0);
+					if (mport == 0) {
+						rtos_mutex_give(napt_entry_lock);
+						return ERR_RTE;
+					}
+
+					rtos_mutex_give(napt_entry_lock);
+
+					/* Rewrite source port (sport -> mport) and source IP (LAN IP -> WAN IP). */
+					ip_napt_manipulate_port_udp(udphdr, 0, mport);
+					ip_napt_manipulate_address_udp(udphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+					ip_napt_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+				}
+			} else {
+				if (NEntry->dest != iphdr->dest.addr || NEntry->dport != udphdr->dest) {
+					if (NEntry->src == iphdr->src.addr && NEntry->sport == udphdr->src) {
+						ip_napt_set_entry_idle(NEntry);
+						NEntry->src = iphdr->src.addr;
+						NEntry->sport = udphdr->src;
+						NEntry->ts = sys_now();
+						NEntry->dest = iphdr->dest.addr;
+						NEntry->dport = udphdr->dest;
+						NEntry->app_use = 0;
+						//RTK_LOGI(NOTAG, "\n\r %s %d GO INSERT NEntry prev=%d next=%d", __FUNCTION__, __LINE__, NEntry->prev, NEntry->next);
+						ip_napt_insert_new_rule(NEntry);
+
+					} else {
+						rtos_mutex_give(napt_entry_lock);
+#if LWIP_ICMP
+						//RTK_LOGI(NOTAG, "\n\r%s %d icmp_dest_unreach", __FUNCTION__, __LINE__);
+						icmp_dest_unreach(p, ICMP_DUR_PORT);
+#endif
+						return ERR_RTE;
+					}
+				}
+
+				mport = NEntry->mport;
+				rtos_mutex_give(napt_entry_lock);
+
+				/* Rewrite source port (sport -> mport) and source IP (LAN IP -> WAN IP). */
+				ip_napt_manipulate_port_udp(udphdr, 0, mport);
+				ip_napt_manipulate_address_udp(udphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+				ip_napt_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+			}
+		} else if ((IPH_OFFSET(iphdr) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
+			rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+
+			NEntry = ip_napt_entry_search(IP_PROTO_UDP, iphdr->src.addr, 0, 0, 0, 1, iphdr->dest.addr, 0);
+			if (NEntry) {
+				ip_napt_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+			} else {
+				//RTK_LOGI(NOTAG, "\n\r");
+				//RTK_LOGI(NOTAG, "\n\r UDP frag ip_napt_forward_packet NOT found!!!");
+				//RTK_LOGI(NOTAG, "\n\r");
+			}
+			rtos_mutex_give(napt_entry_lock);
+		} else {
+		}
+		return ERR_OK;
+	}
+#endif
+
+	return ERR_OK;
+}
+
+/**
+ * @brief  Called by the IP layer to NAPT-translate a packet being forwarded from LAN (@p src) to WAN (@p target).
+ * @param  p Packet buffer.
+ * @param  src LAN (input) interface.
+ * @param  target WAN (output) interface.
+ * @return ERR_OK on success, ERR_RTE if the packet must be dropped.
+ */
+err_t ip_napt_transfer(struct pbuf *p, struct netif *src, struct netif *target)
+{
+	struct ip_hdr *iphdr;
+	err_t result = ERR_OK;
+
+	iphdr = (struct ip_hdr *)p->payload;
+
+	if ((iphdr->dest.addr & PP_HTONL(0xf0000000UL)) == PP_HTONL(0xe0000000UL)) {
+		//RTK_LOGI(NOTAG, "\n\r Skip Multicast ip address %08X", iphdr->dest.addr);
+		return ERR_OK;
+	}
+
+	result = ip_napt_forward_packet(p, iphdr, src, target);
+
+	return result;
+}
+
+/**
+ * @brief  Called by the IP layer when a packet arrives on the WAN interface (@p inp).
+ * @param  p Packet buffer.
+ * @param  inp WAN (input) interface.
+ * @return ERR_OK always (drops are handled silently by ip_napt_rx_packet).
+ */
+err_t ip_napt_enqueue(struct pbuf *p, struct netif *inp)
+{
+	struct ip_hdr *iphdr;
+
+	iphdr = (struct ip_hdr *)p->payload;
+
+	if ((iphdr->dest.addr & PP_HTONL(0xf0000000UL)) == PP_HTONL(0xe0000000UL)) {
+		//RTK_LOGI(NOTAG, "\n\r Skip Multicast ip address %08X", iphdr->dest.addr);
+		return ERR_OK;
+	}
+
+	if (ip4_addr_isbroadcast_u32(iphdr->dest.addr, inp)) {
+		//RTK_LOGI(NOTAG, "\n\r Skip broadcast ip address %08X", iphdr->dest.addr);
+		return ERR_OK;
+	}
+	if (ip4_addr_cmp(&iphdr->dest, ip_2_ip4(&(inp->ip_addr)))) {
+		ip_napt_rx_packet(p, iphdr);
+	}
+
+	return ERR_OK;
+}
+
+/**
+ * @brief Print a summary of active NAPT sessions.
+ */
+void ip_napt_dump(void)
+{
+	int total_session = 0;
+	rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
+	total_session = tcp_entry_count + udp_entry_count + icmp_entry_count;
+	if (total_session > 0) {
+		ip_napt_debug_print();
+	}
+	RTK_LOGI(NOTAG, "\n\r total %d :%lu %lu %lu", total_session, tcp_entry_count, udp_entry_count, icmp_entry_count);
+
+	rtos_mutex_give(napt_entry_lock);
+}
+
+/**
+ * @brief Dump all active NAPT sessions in a formatted table.
+ */
+void ip_napt_debug_print(void)
+{
+	int i, next;
+	u32_t now = sys_now();
+
+	RTK_LOGI(NOTAG, "NAPT session table:\n");
+	RTK_LOGI(NOTAG, " sa                      da                      sport   dport   proto    pkts    ts\n");
+	RTK_LOGI(NOTAG, "+-----------------------+-----------------------+-------+-------+-----+-------+---------+\n");
+	for (i = napt_entry_list; i != NON_INDEX; i = next) {
+		struct napt_table *Entry = &ip_napt_table[i];
+		next = Entry->next;
+
+		RTK_LOGI(NOTAG, "| %3"U16_F" | %3"U16_F" | %3"U16_F" | %3"U16_F" |",
+				 ip4_addr1_16(ip_2_ip4((ip_addr_t *)&Entry->src)),
+				 ip4_addr2_16(ip_2_ip4((ip_addr_t *)&Entry->src)),
+				 ip4_addr3_16(ip_2_ip4((ip_addr_t *)&Entry->src)),
+				 ip4_addr4_16(ip_2_ip4((ip_addr_t *)&Entry->src)));
+
+		RTK_LOGI(NOTAG, " %3"U16_F" | %3"U16_F" | %3"U16_F" | %3"U16_F" |",
+				 ip4_addr1_16(ip_2_ip4((ip_addr_t *)&Entry->dest)),
+				 ip4_addr2_16(ip_2_ip4((ip_addr_t *)&Entry->dest)),
+				 ip4_addr3_16(ip_2_ip4((ip_addr_t *)&Entry->dest)),
+				 ip4_addr4_16(ip_2_ip4((ip_addr_t *)&Entry->dest)));
+
+		RTK_LOGI(NOTAG, " %5u | %5u | %3u | %5u | %5lu\n",
+				 PP_HTONS(Entry->sport), PP_HTONS(Entry->dport),
+				 Entry->proto, Entry->pkt_count, GET_NAPT_TIME_ELAPSED(now, Entry->ts));
+	}
+}
+
+#endif /* IP_NAPT */
+#endif /* IP_FORWARD */
+#endif /* LWIP_IPV4 */

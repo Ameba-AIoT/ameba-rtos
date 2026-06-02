@@ -137,7 +137,6 @@ typedef struct MQTT_CONTROL_BLOCK_t {
 	Network         network;
 	MQTTClient  client;
 	MQTTPacket_connectData  connectData;
-	rtos_task_t         taskHandle;
 	MQTT_CLIENT_TASK    taskState;
 }
 MQTT_CONTROL_BLOCK;

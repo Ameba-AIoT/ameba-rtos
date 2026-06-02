@@ -1010,6 +1010,22 @@ void FLASH_TxData12BXIP(u32 StartAddr, u8 DataPhaseLen, u8 *pData);
 void FLASH_TxData256BXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData);
 void FLASH_EraseXIP(u32 EraseType, u32 Address);
 void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum);
+
+/* CA32 SMP / MMU helpers used inside FLASH_Write_Lock / FLASH_Write_Unlock
+ * to gate the other CA32 core and flip the flash region's MMU mapping
+ * during program / erase.  The HAL only declares them; the strong
+ * implementations live in the OS layer:
+ *   - FreeRTOS SDK : component/soc/amebasmart/fwlib/ap_core/smp.c
+ *                  + component/soc/amebasmart/fwlib/ap_core/ameba_xlat_table.c
+ *   - Zephyr (UP, DRAM image) : zephyr/soc/realtek/ameba/amebasmart/soc.c
+ *     supplies no-op stubs (no second CA32 core to gate, code not in flash XIP).
+ */
+#ifdef CONFIG_ARM_CORE_CA32
+extern void vPortGateOtherCore(void);
+extern void vPortWakeOtherCore(void);
+extern void xlat_flash_region_device(void);
+extern void xlat_flash_region_xip(void);
+#endif
 /**
   * @}
   */

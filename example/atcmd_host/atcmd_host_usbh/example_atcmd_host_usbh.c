@@ -489,11 +489,11 @@ static void atcmd_usbh_cdc_acm_task(void *param)
 
 	UNUSED(param);
 
-	cdc_acm_detach_sema = (void *)xSemaphoreCreateCounting(1, 0);
-	cdc_acm_attach_sema = (void *)xSemaphoreCreateCounting(1, 0);
-	cdc_acm_receive_sema = (void *)xSemaphoreCreateCounting(1, 0);
-	cdc_acm_send_sema = (void *)xSemaphoreCreateCounting(1, 0);
-	cdc_acm_notify_sema = (void *)xSemaphoreCreateCounting(1, 0);
+	cdc_acm_detach_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	cdc_acm_attach_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	cdc_acm_receive_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	cdc_acm_send_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	cdc_acm_notify_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 
 	status = usbh_init(&usbh_cfg, &usbh_usr_cb);
 	if (status != HAL_OK) {
@@ -585,7 +585,7 @@ void uart_format_string_output(const char *fmt, ...)
 
 void example_atcmd_host_usbh(void)
 {
-	uart_irq_handle_sema = (void *)xSemaphoreCreateCounting(1, 0);
+	uart_irq_handle_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	uart_show_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	tt_mode_tx_sema = (void *)xSemaphoreCreateCounting(1, 1);
 	usbh_rx_ringbuf_mutex = (void *)xSemaphoreCreateMutex();

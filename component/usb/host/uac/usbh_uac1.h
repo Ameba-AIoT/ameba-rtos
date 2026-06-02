@@ -15,6 +15,15 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/** @addtogroup USB_Host_API USB Host API
+ *  @{
+ */
+/** @addtogroup USB_Host_Constants USB Host Constants
+ * @{
+ */
+/** @addtogroup Host_UAC_Constants Host UAC Constants
+ * @{
+ */
 #define USBH_UAC_DEBUG                 0         /**< Enable/Disable UAC debug logging (1: Enable, 0: Disable) */
 
 #if USBH_UAC_DEBUG && (USBH_TP_TRACE_DEBUG == 0)
@@ -27,8 +36,17 @@
 
 #define USBH_UAC_ALT_SETTING_MAX       10        /**< Maximum number of Alternate Settings per interface */
 #define USBH_UAC_FREQ_FORMAT_MAX       6         /**< Maximum number of discrete sampling frequencies per format */
+/** @} End of Host_UAC_Constants group*/
+/** @} End of USB_Host_Constants group*/
 
 /* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Host_Types USB Host Types
+ * @{
+ */
+/** @addtogroup Host_UAC_Types Host UAC Types
+ * @{
+ */
 
 /* uac1.0 Audio Control   */
 /**
@@ -163,6 +181,9 @@ typedef struct {
 	u8 choose_freq_idx;                   /**< Index of the currently selected frequency */
 } usbh_uac_as_itf_info_t;
 
+/** @} End of Host_UAC_Types group*/
+/** @} End of USB_Host_Types group*/
+
 /**
   * @brief  Main UAC Host Class Driver Handle.
   */
@@ -209,6 +230,13 @@ typedef struct {
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
+/** @addtogroup USB_Host_Functions USB Host Functions
+ * @{
+ */
+/** @addtogroup Host_UAC_Functions Host UAC Functions
+ * @{
+ */
+
 /**
   * @brief  Initialize the UAC Class Driver.
   * @param  cb: Pointer to the user callback structure.
@@ -282,5 +310,9 @@ void usbh_uac_start_play(void);
   * @brief  Stop the audio playback process.
   */
 void usbh_uac_stop_play(void);
+
+/** @} End of Host_UAC_Functions group */
+/** @} End of USB_Host_Functions group */
+/** @} End of USB_Host_API group */
 
 #endif  /* USBH_UAC1_H */

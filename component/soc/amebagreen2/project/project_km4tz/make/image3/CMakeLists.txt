@@ -9,6 +9,7 @@ ameba_add_subdirectory(${c_CMPT_OS_DIR})
 ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_SOC_DIR}/verification)
+ameba_add_subdirectory_if_exist(${c_CMPT_PYTEST_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
 ameba_add_subdirectory(${c_CMPT_USRCFG_DIR})
 ameba_add_subdirectory_if(CONFIG_MATTER_SECURE_EN

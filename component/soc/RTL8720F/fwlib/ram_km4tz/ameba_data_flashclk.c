@@ -276,14 +276,17 @@ void data_flash_highspeed_setup(void)
 {
 	FLASH_InitTypeDef *FLASH_InitStruct = &data_flash_init_para;
 	u32 read_mode = flash_get_readmode(Data_Flash_ReadMode);
+	u8 mem_type = ChipInfo_MemoryType();
 
 #if !defined(CONFIG_SECOND_FLASH_NOR)
 	UNUSED(FLASH_InitStruct);
+	UNUSED(read_mode);
+	UNUSED(mem_type);
 	return;
 #endif
 
-	if (ChipInfo_MemoryType() == MCM_TYPE_PSRAM) {
-		RTK_LOGE(TAG, "Can't support second flash for chip with mem psram\r\n");
+	if ((mem_type != MCM_TYPE_NOR_FLASH) && (mem_type != MCM_TYPE_NAND_FLASH)) {
+		RTK_LOGE(TAG, "Can't support second flash for chip without mem flash\n");
 		return;
 	}
 

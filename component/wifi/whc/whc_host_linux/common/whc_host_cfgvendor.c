@@ -168,6 +168,8 @@ static const struct  nl80211_vendor_cmd_info whc_host_vendor_events[] = {
 	{ OUI_REALTEK, NAN_EVENT_PASN_START},
 	{ OUI_REALTEK, NAN_EVENT_PASN_RX},
 	{ OUI_REALTEK, NAN_EVENT_PASN_UPD_PMKID},
+	{ OUI_REALTEK, NAN_EVENT_BSTRAP_RESULT},
+	{ OUI_REALTEK, NAN_EVENT_PASN_RESULT},
 };
 
 
@@ -277,4 +279,3 @@ void whc_host_cfgvendor_detach(struct wiphy *wiphy)
 	wiphy->n_vendor_events  = 0;
 }
 #endif /* CONFIG_NAN */
-

@@ -1,6 +1,6 @@
 menu "CONFIG WIFI MODE"
 if WHC_DEV_MENU
-    config NAN
+    config WIFI_NAN_ENABLE
         bool "Enable NAN"
         default n
 endif
@@ -69,7 +69,7 @@ endif
 endif
 
 if LINUX_FW_EN
-    config NAN
+    config WIFI_NAN_ENABLE
         bool "Enable NAN"
         default n
     config WIFI_P2P_ENABLE

@@ -15,6 +15,7 @@
 #include "wifi_intf_drv_to_app_internal.h"
 extern int wifi_set_ips_internal(u8 enable);
 #endif
+extern void sdn_host_fix_bt_addr(uint8_t *addr);
 
 bool rtk_bt_pre_enable(void)
 {
@@ -35,5 +36,10 @@ void rtk_bt_post_enable(void)
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 	wifi_ps_en_by_bt_state(ENABLE);
 #endif
+}
+
+void hci_platform_cfg_bd_addr(uint8_t *bdaddr)
+{
+	sdn_host_fix_bt_addr(bdaddr);
 }
 

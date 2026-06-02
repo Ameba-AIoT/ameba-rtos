@@ -66,10 +66,10 @@ ameba_list_append(private_sources
     ameba_swr.c
     ameba_swr_calib.c
 
+    ameba_arch.c
 )
 
 ameba_list_append_ifnot(CONFIG_ARM_CORE_CA32 private_sources
-    ameba_arch.c
     ameba_mpu_ram.c
     ameba_fault_handle.c
 )

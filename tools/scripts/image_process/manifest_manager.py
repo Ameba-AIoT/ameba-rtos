@@ -957,3 +957,65 @@ class ManifestManager(ABC):
         with open(output_file, "wb") as f:
             f.write(pem_pkcs8)
         return Error.success()
+
+    def transform_to_pem(self, output_file:str, algorithm:str, image_type) -> Error:
+        supportted_alg = ['ed25519', 'secp256r1']
+        if algorithm not in supportted_alg:
+            self.context.logger.error(f"not support algorithm: {algorithm}, support: {supportted_alg}")
+            return Error(ErrorType.INVALID_ARGS, "not support algorithm")
+        image_config = self.get_image_config(image_type)
+        private_key = bytes.fromhex(image_config.sboot_private_key)
+        public_key = bytes.fromhex(image_config.sboot_public_key)
+        public_key_hash_hex = image_config.sboot_public_key_hash
+        final_priv = None
+        if algorithm == 'ed25519':
+            seed = private_key[:32]
+            expected_pk = public_key
+            priv = ed25519.Ed25519PrivateKey.from_private_bytes(seed)
+            pub = priv.public_key()
+            pub_raw = pub.public_bytes(
+                encoding=serialization.Encoding.Raw,
+                format=serialization.PublicFormat.Raw
+            )
+            if pub_raw == expected_pk:
+                final_priv = priv
+            calc_hash = hashlib.sha256(pub_raw).hexdigest().upper()
+            json_hash_upper = public_key_hash_hex.upper()
+            if calc_hash != json_hash_upper:
+                self.context.logger.warning(f"hash not match: {json_hash_upper} vs {calc_hash}")
+        elif algorithm == 'secp256r1':
+            private_value = int.from_bytes(private_key, byteorder='big')
+            final_priv = ec.derive_private_key(private_value, ec.SECP256R1())
+            pub = final_priv.public_key()
+            pub_raw = pub.public_bytes(
+                encoding=serialization.Encoding.X962,
+                format=serialization.PublicFormat.UncompressedPoint
+            )
+            expected_pk = public_key
+            pub_to_compare = pub_raw
+            if len(expected_pk) == 64 and len(pub_raw) == 65:
+                pub_to_compare = pub_raw[1:]
+
+            if pub_to_compare != expected_pk:
+                self.context.logger.warning(
+                    f"Public key mismatch! Config: {expected_pk.hex()[:10]}... Derived: {pub_to_compare.hex()[:10]}..."
+                )
+            calc_hash = hashlib.sha256(pub_raw).hexdigest().upper()
+            json_hash_upper = public_key_hash_hex.upper()
+
+            if calc_hash != json_hash_upper:
+                calc_hash_no_header = hashlib.sha256(pub_raw[1:]).hexdigest().upper()
+                if calc_hash_no_header == json_hash_upper:
+                    pass
+                else:
+                    self.context.logger.warning(f"hash not match: {json_hash_upper} vs {calc_hash}")
+
+        enc = serialization.NoEncryption()
+        pem_pkcs8 = final_priv.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=enc
+        )
+        with open(output_file, "wb") as f:
+            f.write(pem_pkcs8)
+        return Error.success()

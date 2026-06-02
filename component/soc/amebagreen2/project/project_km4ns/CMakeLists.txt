@@ -15,7 +15,12 @@ message ("DAILY_BUILD = " ${DAILY_BUILD})
 set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/ameba_layout.ld)
-set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
+if(CONFIG_MP_SHRINK)
+    set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all_mp.ld)
+else()
+    set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
+endif()
+
 # note!!! Keep the latest version at the top for release reason.
 if(CONFIG_AMEBAGREEN2_B_CUT)
     set(c_ROM_LIB_DIR  ${c_SDK_LIB_DIR}/amebagreen2_rom_bcut)

@@ -7,6 +7,7 @@
 #ifndef _AMEBA_IPC_H_
 #define _AMEBA_IPC_H_
 
+/// @cond
 /* AUTO_GEN_START */
 
 /** @addtogroup Ameba_Periph_Driver
@@ -164,14 +165,36 @@ typedef struct {
 } IPC_TypeDef;
 /** @} */
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @addtogroup IPC
+  * @{
+  */
 
 //Please add your defination here
+
+/* Non Exported types */
+/**
+  * @brief IPC direction mode definition.
+  */
+typedef enum {
+	IPC_KR4_TO_KM4 = 0x00, /*!< KR4 send request to KM4 */
+	IPC_KR4_TO_DSP = 0x01, /*!< KR4 send request to DSP */
+	IPC_KM4_TO_KR4 = 0x10, /*!< KM4 send request to KR4 */
+	IPC_KM4_TO_DSP = 0x11, /*!< KM4 send request to DSP */
+	IPC_DSP_TO_KR4 = 0x20, /*!< DSP send request to KR4 */
+	IPC_DSP_TO_KM4 = 0x21, /*!< DSP send request to KM4 */
+	IPC_DIR_MODE_MAX = 0xFFFFFFFF,
+} IPC_Direction_Mode;
 
 /* Exported types --------------------------------------------------------*/
 /** @addtogroup IPC_Exported_Types IPC Exported Types
@@ -200,7 +223,7 @@ typedef struct _IPC_INIT_TABLE_ {
 	void *RxIrqData;
 	void (*Txfunc)(void *Data, u32 IrqStatus, u32 ChanNum);
 	void *TxIrqData;
-	u32 IPC_Direction;	/* direction of ipc, this parameter is from @IPC_Direction_Mode*/
+	IPC_Direction_Mode IPC_Direction;	/* direction of ipc, this parameter is from @IPC_Direction_Mode*/
 	u32 IPC_Channel;	/* ipc channel, this parameter is from @IPC_KM4_Tx_Channel or @IPC_KR4_Tx_Channel or @IPC_DSP_Tx_Channel*/
 } IPC_INIT_TABLE, *PIPC_INIT_TABLE;
 
@@ -227,7 +250,7 @@ typedef enum {
   * @{
   */
 
-/** @defgroup IPC_Peripheral_Definition
+/** @defgroup IPC_Peripheral_Definition IPC Peripheral Definition
   * @{
   */
 #define IS_IPC_ALL_PERIPH(PERIPH) (((PERIPH) == IPCKR4_DEV) || \
@@ -237,35 +260,8 @@ typedef enum {
   * @}
   */
 
-/** @defgroup IPC_Direction_Mode
-  * @{
-  */
-#define IPC_KR4_TO_KM4			((u32)0x00000000)
-#define IPC_KR4_TO_DSP			((u32)0x00000001)
-#define IPC_KM4_TO_KR4			((u32)0x00000010)
-#define IPC_KM4_TO_DSP			((u32)0x00000011)
-#define IPC_DSP_TO_KR4			((u32)0x00000020)
-#define IPC_DSP_TO_KM4			((u32)0x00000021)
-#define IS_IPC_DIR_MODE(MODE) (((MODE) == IPC_KR4_TO_KM4) || \
-									((MODE) == IPC_KR4_TO_DSP) || \
-									((MODE) == IPC_KM4_TO_KR4) || \
-									((MODE) == IPC_KM4_TO_DSP) || \
-									((MODE) == IPC_DSP_TO_KR4) || \
-									((MODE) == IPC_DSP_TO_KM4))
 
-#define IS_SEND_TO_KM4(MODE)		(((MODE) == IPC_KR4_TO_KM4) || \
-								((MODE) == IPC_DSP_TO_KM4))
-
-#define IS_SEND_TO_KR4(MODE)		(((MODE) == IPC_KM4_TO_KR4) || \
-								((MODE) == IPC_DSP_TO_KR4))
-
-#define IS_SEND_TO_DSP(MODE)		(((MODE) == IPC_KR4_TO_DSP) || \
-								((MODE) == IPC_KM4_TO_DSP))
-/**
-  * @}
-  */
-
-/** @defgroup IPC_INTR_Mode
+/** @defgroup IPC_INTR_Mode IPC Interrupt Mode
   * @{
   */
 #define IPC_TX_EMPTY			((u32)0x00000001)
@@ -276,7 +272,7 @@ typedef enum {
   * @}
   */
 
-/** @defgroup IPC_Valid_PXID
+/** @defgroup IPC_Valid_PXID IPC Valid Process ID
   * @{
   */
 #define IS_IPC_VALID_PXID(PXID) ((PXID) > 0)
@@ -285,7 +281,7 @@ typedef enum {
   * @}
   */
 
-/** @defgroup IPC_Valid_CPUID
+/** @defgroup IPC_Valid_CPUID IPC Valid CPU ID
   * @{
   */
 
@@ -296,7 +292,7 @@ typedef enum {
   */
 
 
-/** @defgroup IPC_CHANNEL
+/** @defgroup IPC_CHANNEL IPC Channel
   * @{
   */
 #define IPC_TX_CHANNEL_NUM						16
@@ -310,7 +306,7 @@ typedef enum {
   * @}
   */
 
-/** @defgroup IPC_Valid_CHNUM
+/** @defgroup IPC_Valid_CHNUM IPC Valid Channel Number
   * @{
   */
 #define IS_IPC_VALID_CHNUM(NUM) ((NUM) < 8)
@@ -319,7 +315,7 @@ typedef enum {
   */
 
 
-/** @defgroup IPC_KR4_Tx_Channel
+/** @defgroup IPC_KR4_Tx_Channel IPC KR4 TX Channel
   * @{
   */
 #define IPC_R2M_TICKLESS_INDICATION		0	/*!<  KR4 -->  KM4 Tickless indicate */
@@ -347,7 +343,7 @@ typedef enum {
   * @}
   */
 
-/** @defgroup IPC_KM4_Tx_Channel
+/** @defgroup IPC_KM4_Tx_Channel IPC KM4 TX Channel
   * @{
   */
 #define IPC_M2R_TICKLESS_INDICATION				0	/*!<  KM4 -->  KR4 Tickless indicate */
@@ -375,7 +371,7 @@ typedef enum {
   * @}
   */
 
-/** @defgroup IPC_DSP_Tx_Channel
+/** @defgroup IPC_DSP_Tx_Channel IPC DSP TX Channel
   * @{
   */
 #define IPC_D2R_TICKLESS_INDICATION				0	/*!<  DSP -->  KR4 Tickless Indicate */
@@ -401,7 +397,7 @@ typedef enum {
   * @}
   */
 
-/** @defgroup IPC_SEM_PXID
+/** @defgroup IPC_SEM_PXID IPC Semaphore Process ID
   * @{
   */
 #define KM4_IPC_PXID BIT(0)
@@ -426,22 +422,29 @@ typedef enum {
   * @}
   */
 
-/** @} */
-/** @} */
+/* Non Exported Functions */
+IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
+u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout);
+u32 IPC_SEMFree(IPC_SEM_IDX SEM_Idx);
 
+/** @addtogroup IPC_Exported_Functions IPC Exported Functions
+  * @{
+  */
 void IPC_INTConfig(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, u32 NewState);
 void IPC_IERSet(IPC_TypeDef *IPCx, u32 IPC_Chs);
 u32 IPC_IERGet(IPC_TypeDef *IPCx);
-u32 IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum);
+u32 IPC_INTRequest(IPC_TypeDef *IPCx, IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum);
 u32 IPC_INTGet(IPC_TypeDef *IPCx);
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit);
 u32 IPC_INTHandler(void *Data);
 void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, void *IrqHandler, void *IrqData);
-u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 timeout);
-u32 IPC_SEMFree(IPC_SEM_IDX SEM_Idx);
 void IPC_SEMDelayStub(void (*pfunc)(uint32_t));
-IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
 void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32));
+/** @} */
+
+/** @} */
+
+/** @} */
 
 /* Other definitions --------------------------------------------------------*/
 

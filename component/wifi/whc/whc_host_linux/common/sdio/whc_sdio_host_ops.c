@@ -4,7 +4,6 @@
 static struct sk_buff *whc_sdio_host_read_rxfifo(struct whc_sdio *priv, u32 size)
 {
 	u32 allocsize, ret;
-	u32 retry = 0;
 	struct sk_buff *pskb = NULL;
 
 	allocsize = _RND(size, priv->func->cur_blksize);
@@ -16,18 +15,11 @@ static struct sk_buff *whc_sdio_host_read_rxfifo(struct whc_sdio *priv, u32 size
 		return NULL;
 	}
 
-	while (1) {
-		ret = sdio_read_port(priv, SDIO_RX_FIFO_DOMAIN_ID, size, pskb->data);
-		if (ret == true) {
-			break;
-		} else {
-			/* retry to reduce impact of bus err */
-			if (retry++ > 10) {
-				kfree_skb(pskb);
-				dev_err(&priv->func->dev, "%s: read port FAIL!\n", __FUNCTION__);
-				return NULL;
-			};
-		}
+	ret = rtw_read_port(priv, SDIO_RX_FIFO_DOMAIN_ID, size, pskb->data);
+	if (ret == false) {
+		kfree_skb(pskb);
+		dev_err(&priv->func->dev, "%s: read port FAIL!\n", __FUNCTION__);
+		return NULL;
 	}
 
 	//print_hex_dump_bytes("whc_sdio_host_read_rxfifo: ", DUMP_PREFIX_NONE, pskb->data, size);
@@ -37,7 +29,7 @@ static struct sk_buff *whc_sdio_host_read_rxfifo(struct whc_sdio *priv, u32 size
 
 void whc_sdio_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 {
-	u32 polling_num = 0, try_cnt = 0;
+	u32 polling_num = 0;
 	struct whc_sdio *priv = &whc_sdio_priv;
 	INIC_TX_DESC *ptxdesc;
 
@@ -57,17 +49,20 @@ void whc_sdio_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 
 	// check if hardware tx fifo page is enough
 	while (priv->SdioTxBDFreeNum < 1) {
-		/* set 0 after query num < 1 */
-		/* jira: https://jira.realtek.com/browse/RSWLANDIOT-11649 */
-		priv->tx_avail_int_triggered = 0;
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
-		if (try_cnt ++ > 0) {
-			if (!wait_event_timeout(priv->txbd_wq, priv->tx_avail_int_triggered == 1, msecs_to_jiffies(1000))) {
-				dev_err(&priv->func->dev, "%s: TXBD unavailable, TX FAIL\n", __FUNCTION__);
-				goto exit;
-			}
-		}
+		/* Reset flag before query so any ISR firing after this point is
+		 * guaranteed to be caught by wait_event_timeout's condition check.
+		 * Should clear tx_avail_int_triggered each loop: jira: https://jira.realtek.com/browse/RSWLANDIOT-11649,
+		 * but can't put it after rtw_sdio_query_txbd_status considering lost-wakeup race */
+		priv->tx_avail_int_triggered = 0;
 		rtw_sdio_query_txbd_status(priv);
+		if (priv->SdioTxBDFreeNum >= 1) {
+			break;
+		}
+		if (!wait_event_timeout(priv->txbd_wq, priv->tx_avail_int_triggered == 1, msecs_to_jiffies(100))) {
+			dev_err(&priv->func->dev, "%s: TXBD unavailable, TX FAIL\n", __FUNCTION__);
+			goto exit;
+		}
 #else
 		polling_num++;
 		if ((polling_num % 60) == 0) {
@@ -106,7 +101,7 @@ exit:
 	return;
 }
 
-static void whc_sdio_host_recv_data_process(void *intf_priv)
+static void whc_sdio_host_recv_data(void *intf_priv)
 {
 	struct whc_sdio *sdio_priv = (struct whc_sdio *)intf_priv;
 	struct sk_buff *pskb;
@@ -130,7 +125,7 @@ static void whc_sdio_host_recv_data_process(void *intf_priv)
 			pskb = whc_sdio_host_read_rxfifo(sdio_priv, SdioRxFIFOSize);
 			if (pskb) {
 				/* skip RX_DESC */
-				sdio_priv->rx_process_func(pskb);
+				whc_host_recv_dispatch(pskb);
 			} else {
 				break;
 			}
@@ -139,11 +134,11 @@ static void whc_sdio_host_recv_data_process(void *intf_priv)
 
 	/* restore RX_REQ interrupt*/
 	himr = cpu_to_le32(sdio_priv->sdio_himr);
-	sdio_local_write(sdio_priv, SDIO_REG_HIMR, 4, (u8 *)&himr);
+	rtw_write32(sdio_priv, SDIO_REG_HIMR, himr);
 }
 
 struct hci_ops_t whc_sdio_host_intf_ops = {
 	.send_data = whc_sdio_host_send_data,
-	.recv_data_process = whc_sdio_host_recv_data_process,
+	.recv_data = whc_sdio_host_recv_data,
 };
 

@@ -15,7 +15,7 @@ u8 vref_init_done = FALSE;
   * @{
   */
 
-/** @defgroup ADC
+/** @defgroup ADC ADC
 * @brief ADC driver modules
 * @{
 */
@@ -26,10 +26,9 @@ u8 vref_init_done = FALSE;
   */
 
 /**
-  * @brief	 Initializes the parameters in the ADC_InitStruct with default values.
-  * @param  ADC_InitStruct: pointer to a ADC_InitTypeDef structure that contains
-  *         the configuration information for the ADC peripheral.
-  * @retval  None
+  * @brief Initialize the parameters in the ADC_InitStruct with default values.
+  * @param ADC_InitStruct Pointer to a ADC_InitTypeDef structure that contains
+  *         the configuration information of the ADC peripheral.
   */
 void ADC_StructInit(ADC_InitTypeDef *ADC_InitStruct)
 {
@@ -50,9 +49,8 @@ void ADC_StructInit(ADC_InitTypeDef *ADC_InitStruct)
 
 /**
   * @brief Initialize ADC according to the specified parameters in ADC_InitStruct.
-  * @param ADC_InitStruct: pointer to a ADC_InitTypeDef structure that contains
+  * @param ADC_InitStruct Pointer to a ADC_InitTypeDef structure that contains
   *         the configuration information of the ADC peripheral.
-  * @retval None
   */
 void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 {
@@ -140,10 +138,9 @@ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 }
 
 /**
-  * @brief  Enable or Disable the ADC peripheral.
-  * @param  NewState: new state of the ADC peripheral.
-  *   			This parameter can be: ENABLE or DISABLE.
-  * @retval None
+  * @brief Enable or disable the ADC peripheral.
+  * @param NewState New state of the ADC peripheral.
+  *   			This parameter can be ENABLE or DISABLE.
   */
 void ADC_Cmd(u32 NewState)
 {
@@ -160,29 +157,10 @@ void ADC_Cmd(u32 NewState)
 }
 
 /**
-  * @brief	 ENABLE/DISABLE  the ADC interrupt bits.
-  * @param  ADC_IT: specifies the ADC interrupt to be setup.
-  *          This parameter can be one or combinations of the following values:
-  *            @arg ADC_BIT_IT_COMP_CH9_EN:	ADC channel 9 compare interrupt
-  *            @arg ADC_BIT_IT_COMP_CH8_EN:	ADC channel 8 compare interrupt
-  *            @arg ADC_BIT_IT_COMP_CH7_EN:	ADC channel 7 compare interrupt
-  *            @arg ADC_BIT_IT_COMP_CH6_EN:	ADC channel 6 compare interrupt
-  *            @arg ADC_BIT_IT_COMP_CH5_EN:	ADC channel 5 compare interrupt
-  *            @arg ADC_BIT_IT_COMP_CH4_EN:	ADC channel 4 compare interrupt
-  *            @arg ADC_BIT_IT_COMP_CH3_EN:	ADC channel 3 compare interrupt
-  *            @arg ADC_BIT_IT_COMP_CH2_EN:	ADC channel 2 compare interrupt
-  *            @arg ADC_BIT_IT_COMP_CH1_EN:	ADC channel 1 compare interrupt
-  *            @arg ADC_BIT_IT_COMP_CH0_EN:	ADC channel 0 compare interrupt
-  *            @arg ADC_BIT_IT_ERR_EN:			ADC error state interrupt
-  *            @arg ADC_BIT_IT_DAT_OVW_EN:	ADC data overwritten interrupt
-  *            @arg ADC_BIT_IT_FIFO_EMPTY_EN:	ADC FIFO empty interrupt
-  *            @arg ADC_BIT_IT_FIFO_OVER_EN:	ADC FIFO overflow interrupt
-  *            @arg ADC_BIT_IT_FIFO_FULL_EN:	ADC FIFO full interrupt
-  *            @arg ADC_BIT_IT_CHCV_END_EN:	ADC particular channel conversion done interrupt
-  *            @arg ADC_BIT_IT_CV_END_EN:		ADC conversion end interrupt
-  *            @arg ADC_BIT_IT_CVLIST_END_EN:	ADC conversion list end interrupt
-  * @param  NewState: ENABLE/DISABLE.
-  * @retval  None
+  * @brief  Enable or disable ADC interrupt(s).
+  * @param  ADC_IT ADC interrupt(s) to be enabled or disabled.
+  *         This parameter is a bitmask of the ADC_INTR_CTRL register bits.
+  * @param  NewState ENABLE or DISABLE.
   */
 void ADC_INTConfig(u32 ADC_IT, u32 NewState)
 {
@@ -196,10 +174,8 @@ void ADC_INTConfig(u32 ADC_IT, u32 NewState)
 }
 
 /**
-  * @brief	 Clears all the ADC interrupt pending bits.
-  * @param  None
-  * @retval  None
-  * @note  This function can also used to clear raw status.
+  * @brief Clear all the ADC interrupt pending bits.
+  * @note This function can also be used to clear raw interrupt status.
   */
 void ADC_INTClear(void)
 {
@@ -210,28 +186,9 @@ void ADC_INTClear(void)
 }
 
 /**
-  * @brief  Clears the ADC interrupt pending bits.
-  * @param  ADC_IT: specifies the pending bit to clear.
-  *   This parameter can be any combination of the following values:
-  *            @arg ADC_BIT_IT_COMP_CH9_STS
-  *            @arg ADC_BIT_IT_COMP_CH8_STS
-  *            @arg ADC_BIT_IT_COMP_CH7_STS
-  *            @arg ADC_BIT_IT_COMP_CH6_STS
-  *            @arg ADC_BIT_IT_COMP_CH5_STS
-  *            @arg ADC_BIT_IT_COMP_CH4_STS
-  *            @arg ADC_BIT_IT_COMP_CH3_STS
-  *            @arg ADC_BIT_IT_COMP_CH2_STS
-  *            @arg ADC_BIT_IT_COMP_CH1_STS
-  *            @arg ADC_BIT_IT_COMP_CH0_STS
-  *            @arg ADC_BIT_IT_ERR_STS
-  *            @arg ADC_BIT_IT_DAT_OVW_STS
-  *            @arg ADC_BIT_IT_FIFO_EMPTY_STS
-  *            @arg ADC_BIT_IT_FIFO_OVER_STS
-  *            @arg ADC_BIT_IT_FIFO_FULL_STS
-  *            @arg ADC_BIT_IT_CHCV_END_STS
-  *            @arg ADC_BIT_IT_CV_END_STS
-  *            @arg ADC_BIT_IT_CVLIST_END_STS
-  * @retval  None
+  * @brief  Clear specified ADC interrupt pending bits.
+  * @param  ADC_IT Pending bits to be cleared.
+  *         This parameter is a bitmask of the ADC_INTR_STS register bits.
   */
 void ADC_INTClearPendingBits(u32 ADC_IT)
 {
@@ -241,28 +198,8 @@ void ADC_INTClearPendingBits(u32 ADC_IT)
 }
 
 /**
-  * @brief	 Get ADC interrupt status.
-  * @param  None
-  * @retval  Current Interrupt Status, each bit of this value represents one
-  *		interrupt status which is as follows:
-  *            @arg ADC_BIT_IT_COMP_CH9_STS
-  *            @arg ADC_BIT_IT_COMP_CH8_STS
-  *            @arg ADC_BIT_IT_COMP_CH7_STS
-  *            @arg ADC_BIT_IT_COMP_CH6_STS
-  *            @arg ADC_BIT_IT_COMP_CH5_STS
-  *            @arg ADC_BIT_IT_COMP_CH4_STS
-  *            @arg ADC_BIT_IT_COMP_CH3_STS
-  *            @arg ADC_BIT_IT_COMP_CH2_STS
-  *            @arg ADC_BIT_IT_COMP_CH1_STS
-  *            @arg ADC_BIT_IT_COMP_CH0_STS
-  *            @arg ADC_BIT_IT_ERR_STS
-  *            @arg ADC_BIT_IT_DAT_OVW_STS
-  *            @arg ADC_BIT_IT_FIFO_EMPTY_STS
-  *            @arg ADC_BIT_IT_FIFO_OVER_STS
-  *            @arg ADC_BIT_IT_FIFO_FULL_STS
-  *            @arg ADC_BIT_IT_CHCV_END_STS
-  *            @arg ADC_BIT_IT_CV_END_STS
-  *            @arg ADC_BIT_IT_CVLIST_END_STS
+  * @brief Get ADC interrupt status.
+  * @return Current interrupt status.
   */
 u32 ADC_GetISR(void)
 {
@@ -272,28 +209,8 @@ u32 ADC_GetISR(void)
 }
 
 /**
-  * @brief  Get ADC raw interrupt status.
-  * @param  None
-  * @retval  Current Raw Interrupt Status, each bit of this value represents one
-  *		raw interrupt status which is as follows:
-  *            @arg ADC_BIT_IT_COMP_CH9_RAW_STS
-  *            @arg ADC_BIT_IT_COMP_CH8_RAW_STS
-  *            @arg ADC_BIT_IT_COMP_CH7_RAW_STS
-  *            @arg ADC_BIT_IT_COMP_CH6_RAW_STS
-  *            @arg ADC_BIT_IT_COMP_CH5_RAW_STS
-  *            @arg ADC_BIT_IT_COMP_CH4_RAW_STS
-  *            @arg ADC_BIT_IT_COMP_CH3_RAW_STS
-  *            @arg ADC_BIT_IT_COMP_CH2_RAW_STS
-  *            @arg ADC_BIT_IT_COMP_CH1_RAW_STS
-  *            @arg ADC_BIT_IT_COMP_CH0_RAW_STS
-  *            @arg ADC_BIT_IT_ERR_RAW_STS
-  *            @arg ADC_BIT_IT_DAT_OVW_RAW_STS
-  *            @arg ADC_BIT_IT_FIFO_EMPTY_RAW_STS
-  *            @arg ADC_BIT_IT_FIFO_OVER_RAW_STS
-  *            @arg ADC_BIT_IT_FIFO_FULL_RAW_STS
-  *            @arg ADC_BIT_IT_CHCV_END_RAW_STS
-  *            @arg ADC_BIT_IT_CV_END_RAW_STS
-  *            @arg ADC_BIT_IT_CVLIST_END_RAW_STS
+  * @brief Get ADC raw interrupt status.
+  * @return Current raw interrupt status.
   */
 u32 ADC_GetRawISR(void)
 {
@@ -304,8 +221,7 @@ u32 ADC_GetRawISR(void)
 
 /**
   * @brief  Get the number of valid entries in ADC receive FIFO.
-  * @param  None.
-  * @retval  The number of valid entries in receive FIFO.
+  * @return The number of valid entries in receive FIFO.
   */
 u32 ADC_GetRxCount(void)
 {
@@ -316,8 +232,7 @@ u32 ADC_GetRxCount(void)
 
 /**
   * @brief  Get the last ADC used channel.
-  * @param  None.
-  * @retval  The last ADC used channel index.
+  * @return The last ADC used channel index.
   */
 u32 ADC_GetLastChan(void)
 {
@@ -328,8 +243,8 @@ u32 ADC_GetLastChan(void)
 
 /**
   * @brief  Get comparison result of ADC channel.
-  * @param  ADC_Channel: The channel index
-  * @retval  The comparison result of specified ADC channel.
+  * @param ADC_Channel ADC channel index.
+  * @return The comparison result of specified ADC channel.
   */
 u32 ADC_GetCompStatus(u8 ADC_Channel)
 {
@@ -342,25 +257,14 @@ u32 ADC_GetCompStatus(u8 ADC_Channel)
 
 /**
   * @brief  Set ADC channel threshold and criteria for comparison.
-  * @param  ADC_channel: can be a value of @ref ADC_Chn_Selection as following:
-  *				@arg ADC_CH0
-  *				@arg ADC_CH1
-  *				@arg ADC_CH2
-  *				@arg ADC_CH3
-  *				@arg ADC_CH4
-  *				@arg ADC_CH5
-  *				@arg ADC_CH6
-  *				@arg ADC_CH7
-  *				@arg ADC_CH8
-  *				@arg ADC_CH9
-  * @param  CompThresH:  the higher threshold of channel for ADC automatic comparison
-  * @param  CompThresH:  the lower threshold of channel for ADC automatic comparison
-  * @param  CompCtrl:  This parameter can be a value of @ref ADC_Compare_Control_Definitions as following:
+  * @param ADC_channel This parameter can be a value of @ref ADC_Chn_Selection.
+  * @param CompThresH Higher threshold of channel for ADC automatic comparison.
+  * @param CompThresL Lower threshold of channel for ADC automatic comparison.
+  * @param CompCtrl This parameter can be a value of @ref ADC_Compare_Control as following:
   *		 		@arg ADC_COMP_SMALLER_THAN_THL: less than the lower threshold
-  *		 		@arg ADC_COMP_GREATER_THAN_THH: greater than the higher threshod
-  *		 		@arg ADC_COMP_WITHIN_THL_AND_THH: between the lower and higher threshod
-  *		 		@arg ADC_COMP_OUTSIDE_THL_AND_THH: out the range of the higher and lower threshod
-  * @retval None
+  *		 		@arg ADC_COMP_GREATER_THAN_THH: greater than the higher threshold
+  *		 		@arg ADC_COMP_WITHIN_THL_AND_THH: between the lower and higher threshold
+  *		 		@arg ADC_COMP_OUTSIDE_THL_AND_THH: out the range of the higher and lower threshold
   */
 void ADC_SetComp(u8 ADC_channel, u16 CompThresH, u16 CompThresL, u8 CompCtrl)
 {
@@ -388,8 +292,6 @@ void ADC_SetComp(u8 ADC_channel, u16 CompThresH, u16 CompThresL, u8 CompCtrl)
 
 /**
   * @brief  Reset the channel switch to default state.
-  * @param  None
-  * @retval  None
   */
 void ADC_ResetCSwList(void)
 {
@@ -400,11 +302,10 @@ void ADC_ResetCSwList(void)
 }
 
 /**
-  * @brief  Detemine ADC FIFO is empty or not.
-  * @param  None.
-  * @retval ADC FIFO is empty or not:
-  *        - 0: Not Empty
-  *        - 1: Empty
+  * @brief Determine ADC FIFO is readable or not.
+  * @return ADC FIFO is readable or not:
+  *        - 0: Not readable
+  *        - 1: Readable
   */
 u32 ADC_Readable(void)
 {
@@ -416,8 +317,7 @@ u32 ADC_Readable(void)
 
 /**
   * @brief  Read data from ADC receive FIFO .
-  * @param  None
-  * @retval The conversion data with the channel index that the data belongs to.
+  * @return The conversion data with the channel index that the data belongs to.
   */
 u32 ADC_Read(void)
 {
@@ -427,10 +327,9 @@ u32 ADC_Read(void)
 }
 
 /**
-  * @brief  Continuous Read data in auto mode.
-  * @param  pBuf: pointer to buffer to keep sample data
-  * @param  len: the number of sample data to be read
-  * @retval  None.
+  * @brief Read data in auto mode continuously.
+  * @param pBuf Pointer to buffer to keep sample data.
+  * @param len Number of sample data to be read.
   */
 void ADC_ReceiveBuf(u32 *pBuf, u32 len)
 {
@@ -449,8 +348,6 @@ void ADC_ReceiveBuf(u32 *pBuf, u32 len)
 
 /**
   * @brief  Clear ADC FIFO.
-  * @param  None
-  * @retval  None
   */
 void ADC_ClearFIFO(void)
 {
@@ -461,20 +358,7 @@ void ADC_ClearFIFO(void)
 
 /**
   * @brief Get ADC status.
-  * @param  None
-  * @retval  Current status,each bit of this value represents one status which is as follows:
-  *
-  *		bit 2 : ADC_BIT_FIFO_EMPTY  ADC FIFO Empty.
-  *			- 0: FIFO in ADC is not empty
-  *			- 1: FIFO in ADC is empty
-  *
-  *		bit 1 : ADC_BIT_FIFO_FULL_REAL  ADC FIFO real full flag.
-  *			- 0: FIFO in ADC is not full real
-  *			- 1: FIFO in ADC is full real
-  *
-  *		bit 0 : ADC_BIT_BUSY_STS  ADC busy Flag.
-  *			- 0: The ADC is ready
-  *			- 1: The ADC is busy
+  * @return Current status.
   */
 u32 ADC_GetStatus(void)
 {
@@ -484,15 +368,16 @@ u32 ADC_GetStatus(void)
 }
 
 /**
-  * @brief  Control the ADC module to do a conversion. Used as a start-convert event which is controlled by software.
-  * @param  NewState: can be one of the following value:
-  *			@arg ENABLE: Enable the analog module and analog mux. And then start a new channel conversion.
-  *			@arg DISABLE:  Disable the analog module and analog mux.
-  * @retval  None.
-  * @note  1. Every time this bit is set to 1, ADC module would switch to a new channel and do one conversion.
-  *			    Every time a conversion is done, software MUST clear this bit manually.
-  *		  2. Used in Sotfware Trigger Mode
-  *		  3. Sync time: 6 ~ 7*sample_clk
+  * @brief  Control the ADC module to do a conversion.
+  * @param NewState This parameter can be one of the following values:
+  *			@arg ENABLE: Enable the analog module and analog mux, then start a new channel conversion.
+  *			@arg DISABLE: Disable the analog module and analog mux.
+  * @note Used in Software Trigger Mode.
+  * @note Every time this bit is set to 1, ADC module would switch to a new channel and do one conversion.
+  *		Every time a conversion is done, software must clear this bit manually.
+  * @internal
+  * @note Sync time: 6 ~ 7*sample_clk.
+  * @endinternal
   */
 void ADC_SWTrigCmd(u32 NewState)
 {
@@ -516,15 +401,16 @@ void ADC_SWTrigCmd(u32 NewState)
 }
 
 /**
-  * @brief  Controls the automatic channel switch enabled or disabled.
-  * @param  NewState: can be one of the following value:
+  * @brief Enable or disable the automatic channel switch.
+  * @param NewState This parameter can be one of the following values:
   *		@arg ENABLE: Enable the automatic channel switch.
-  *			When setting this bit, an automatic channel switch starts from the first channel in the channel switch list.
-  *		@arg DISABLE:  Disable the automatic channel switch.
-  *			If an automatic channel switch is in progess, writing 0 will terminate the automatic channel switch.
-  * @retval  None.
-  * @note  Used in Automatic Mode
+  *		@arg DISABLE: Disable the automatic channel switch.
+  * @note Used in Automatic Mode
+  * @note When setting this bit, an automatic channel switch starts from the first channel in the channel switch list.
+  *		If an automatic channel switch is in progress, writing 0 will terminate the automatic channel switch.
+  * @internal
   * @note  Sync time: 6 ~ 7*sample_clk
+  * @endinternal
   */
 void ADC_AutoCSwCmd(u32 NewState)
 {
@@ -548,14 +434,14 @@ void ADC_AutoCSwCmd(u32 NewState)
 }
 
 /**
-  * @brief	Initialize the trigger timer when in ADC Timer-Trigger Mode.
-  * @param  Tim_Idx: The timer index would be used to make ADC module do a conversion.
-  * @param  PeriodMs: Indicate the period of trigger timer.
-  * @param  NewState: can be one of the following value:
+  * @brief Initialize the trigger timer in ADC Timer-Trigger Mode.
+  * @param Tim_Idx Index of a basic timer that would be used to trigger ADC conversion.
+  *        This parameter should be 0-7.
+  * @param PeriodMs Period of trigger timer in ms, which can be 1ms-131071ms.
+  * @param NewState This parameter can be one of the following values:
   *			@arg ENABLE: Enable the ADC timer trigger mode.
   *			@arg DISABLE: Disable the ADC timer trigger mode.
-  * @retval  None.
-  * @note  Used in Timer-Trigger Mode, period range: 1ms ~ 131071ms.
+  * @note Used in Timer-Trigger Mode.
   */
 void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState)
 {
@@ -581,12 +467,11 @@ void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState)
 
 /**
   * @brief Initialize the trigger timer when in ADC Timer-Trigger Mode, where Tim_Cnt is timer period counter.
-  * @param Tim_Idx: The timer index would be used to make ADC module do a conversion.
-  * @param Tim_Cnt: Indicate the period counter of trigger timer, which should not be less than 8.
-  * @param NewState: can be one of the following value:
+  * @param Tim_Idx The timer index would be used to make ADC module do a conversion.
+  * @param Tim_Cnt Indicate the period counter of trigger timer, which should not be less than 8.
+  * @param NewState Can be one of the following value:
   *			@arg ENABLE: Enable the ADC timer trigger mode.
   *			@arg DISABLE: Disable the ADC timer trigger mode.
-  * @retval None.
   * @note Used in Timer-Trigger Mode, Tim_Cnt range: 0x8(244us) ~ 0xFFFF_FFFF(36.4h)
   */
 void ADC_TimerTrigCntCmd(u8 Tim_Idx, u32 Tim_Cnt, u32 NewState)
@@ -613,12 +498,11 @@ void ADC_TimerTrigCntCmd(u8 Tim_Idx, u32 Tim_Cnt, u32 NewState)
 
 /**
   * @brief Initialize ADC calibration parameters according to EFuse.
-  * @param CalPara: Pointer to ADC calibration parameter structure.
-  * @param IsVBatChan: Calibration parameter belongs to vbat channel or normal channel.
+  * @param CalPara Pointer to ADC calibration parameter structure.
+  * @param IsVBatChan Calibration parameter belongs to vbat channel or normal channel.
   *   This parameter can be one of the following values:
   *        @arg TRUE: Calibration parameter belongs to vbat channel.
   *        @arg FALSE: Calibration parameter belongs to normal channel.
-  * @retval None.
   */
 void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, u8 IsVBatChan)
 {
@@ -677,9 +561,8 @@ void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, u8 IsVBatChan)
 
 /**
   * @brief  Get normal channel voltage value in mV.
-  * @param  chan_data: ADC conversion data.
-  * @retval ADC voltage value in mV.
-  * @note This function is for all the channels except channel6(VBAT).
+  * @param chan_data ADC conversion data.
+  * @return ADC voltage value in mV.
   */
 s32 ADC_GetVoltage(u32 chan_data)
 {
@@ -702,9 +585,12 @@ s32 ADC_GetVoltage(u32 chan_data)
 
 /**
   * @brief  Get VBAT voltage value in mV.
-  * @param  vbat_data: ADC conversion data from channel6(VBAT).
-  * @retval ADC voltage value in mV.
-  * @note This function is only for channel6(VBAT).
+  * @param  vbat_data ADC conversion data from VBAT channel.
+  * @return ADC voltage value in mV.
+  * @note This function is only for VBAT channel.
+  * @internal
+  * @note The VBAT channel is 6.
+  * @endinternal
   */
 s32 ADC_GetVBATVoltage(u32 vbat_data)
 {
@@ -728,8 +614,7 @@ s32 ADC_GetVBATVoltage(u32 vbat_data)
 
 /**
   * @brief  Get internal R resistance of V33 channels(CH0~CH5) in divided mode.
-  * @param  none.
-  * @retval Internal R resistance value in Kohm.
+  * @return Internal R resistance value in Kohm.
   */
 u32 ADC_GetInterR(void)
 {
@@ -742,8 +627,8 @@ u32 ADC_GetInterR(void)
 
 /**
   * @brief Get normal or vbat sample value according to voltage in mV.
-  * @param VolMV: ADC Voltage in mV, which can be 0-1800.
-  * @param IsVBatChan: Calibration parameter belongs to vbat channel or normal channel.
+  * @param VolMV ADC Voltage in mV.
+  * @param IsVBatChan Calibration parameter belongs to vbat channel or normal channel.
   *   This parameter can be one of the following values:
   *        @arg TRUE: Calibration parameter belongs to vbat channel.
   *        @arg FALSE: Calibration parameter belongs to normal channel.

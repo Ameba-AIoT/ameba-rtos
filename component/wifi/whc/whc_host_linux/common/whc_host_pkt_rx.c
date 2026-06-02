@@ -14,6 +14,7 @@ static void whc_host_recv_pkts(struct sk_buff *pskb)
 	u32 total_len;
 	struct net_device_stats *pstats = &global_idev.stats[wlan_idx];
 	u8 tmp;
+	u32 stat_len;
 
 #ifdef CONFIG_P2P
 	if (global_idev.p2p_global.pd_wlan_idx == 1) {
@@ -48,9 +49,11 @@ static void whc_host_recv_pkts(struct sk_buff *pskb)
 	pskb->protocol = eth_type_trans(pskb, global_idev.pndev[wlan_idx]);
 	pskb->ip_summed = CHECKSUM_NONE;
 
+	stat_len = pskb->len;
+
 	if (netif_rx(pskb) == NET_RX_SUCCESS) {
 		pstats->rx_packets++;
-		pstats->rx_bytes += pskb->len;
+		pstats->rx_bytes += stat_len;
 	} else {
 		pstats->rx_dropped++;
 	}
@@ -78,7 +81,7 @@ int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb)
 }
 #endif
 
-int whc_host_recv_process(struct sk_buff *pskb)
+int whc_host_recv_dispatch(struct sk_buff *pskb)
 {
 	int ret = 0;
 	u32 event = *(u32 *)(pskb->data + SIZE_RX_DESC);
@@ -149,7 +152,7 @@ static int whc_host_recv_thread(void *data)
 		/* wait for sema*/
 		ret = down_interruptible(&recv_priv->rx_sema);
 
-		whc_host_recv_data_process(global_idev.intf_priv);
+		whc_host_recv_data(global_idev.intf_priv);
 	}
 
 	return ret;

@@ -7,7 +7,6 @@ struct whc_sdio;
 #include "ameba_inic.h"
 #include "whc_sdio_host_reg.h"
 #include "whc_sdio_host_drvio.h"
-#include "whc_sdio_host_ops.h"
 
 #define CONFIG_SDIO_TX_ENABLE_AVAL_INT
 #define CONFIG_SDIO_TX_OVF_CTRL
@@ -16,6 +15,7 @@ struct whc_sdio;
 
 //#define CONFIG_POWER_SAVING
 //#define CONFIG_PS_DYNAMIC_CHK
+//#define SDIO_HOST_FAKE_SLEEP
 
 #define SIZE_RX_DESC	(sizeof(INIC_RX_DESC))
 #define SIZE_TX_DESC	(sizeof(INIC_TX_DESC))
@@ -25,12 +25,7 @@ struct whc_sdio;
 #define SDIO_BLOCK_SIZE		256
 #define ETH_ALEN	6 //ethernet address length
 
-#define SD_IO_TRY_CNT (8)
-#define MAX_CONTINUAL_IO_ERR SD_IO_TRY_CNT
-
 #define MAX_RX_AGG_NUM 6
-
-//#define SDIO_HOST_FAKE_SLEEP
 
 #define PWR_STATE_ACTIVE	0
 #define PWR_STATE_SLEEP		1
@@ -54,7 +49,6 @@ struct whc_sdio {
 	u16			rxbd_num;
 	u16 		SdioTxBDFreeNum;
 	u32 		SdioTxMaxSZ; //The Size of Single Tx buf addressed by TX_BD
-	u8			SdioRxFIFOCnt;
 	u8	func_number;
 	u8	tx_block_mode;
 	u8	rx_block_mode;
@@ -65,15 +59,21 @@ struct whc_sdio {
 
 	void *sys_sdio_irq_thd;
 
-	atomic_t continual_io_error;
-
 	u8 dev_state;
 
-	int (*rx_process_func)(struct sk_buff *pskb);
 	void (*rx_recv_notify)(void);
 };
 
 extern struct whc_sdio whc_sdio_priv;
 extern struct hci_ops_t whc_sdio_host_intf_ops;
+
+/* SDIO common functions */
+u32 rtw_sdio_init_common(struct whc_sdio *priv);
+u32 rtw_sdio_get_rx_len(struct whc_sdio *priv);
+
+void whc_sdio_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb);
+
+int whc_sdio_xfer_download(struct whc_sdio *priv);
+
 
 #endif  //_RTW_SDIO_H_

@@ -54,6 +54,7 @@ int vhci_host_open(void)
 
 	rtk_bt_pre_enable();
 
+	sdn_host_set_bt_cb(bt_hci_host_rx_pkt);
 	if (sdn_host_enable(SDN_INTF_BT)) {
 		return -1;
 	}

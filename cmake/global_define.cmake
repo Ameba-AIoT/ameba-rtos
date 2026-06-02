@@ -153,8 +153,8 @@ if(EXISTS ${c_BASEDIR}/tools/scripts/diagnose_format.py)
 endif()
 set(c_DIAG_FMT_RUN python   ${c_DIAG_FMT_SCRIPT})
 set(CODE_ANALYZE_PYTHON python ${c_BASEDIR}/utils/code_analyze/code_analyze.py)
-set(STATIC_ANALYZE_PYTHON python ${IMAGESCRIPTDIR}/internal/static_code_analyze.py)
-set(EXTRACT_CODE_SIZE_PYTHON python ${IMAGESCRIPTDIR}/internal/extract_code_size.py)
+set(STATIC_ANALYZE_PYTHON python ${c_BASEDIR}/utils/code_analyze/static_code_analyze.py)
+set(EXTRACT_CODE_SIZE_PYTHON python ${c_BASEDIR}/utils/code_analyze/extract_code_size.py)
 ############################################################
 
 macro(ameba_reset_global_define)

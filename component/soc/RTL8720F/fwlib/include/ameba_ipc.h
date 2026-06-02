@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup IPC
+/** @defgroup IPC IPC
   * @brief IPC driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -218,6 +219,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -227,7 +229,15 @@ extern "C" {
 
 //Please add your defination here
 
-
+/* Non Exported types */
+/**
+  * @brief IPC direction mode definition.
+  */
+typedef enum {
+	IPC_NP_TO_AP = 0, /*!< NP send request to AP */
+	IPC_AP_TO_NP = 1, /*!< AP send request to NP */
+	IPC_DIR_MODE_MAX = 0xFFFFFFFF,
+} IPC_Direction_Mode;
 
 /* Exported types --------------------------------------------------------*/
 /** @addtogroup IPC_Exported_Types IPC Exported Types
@@ -256,7 +266,7 @@ typedef struct _IPC_INIT_TABLE_ {
 	void *RxIrqData;
 	void (*Txfunc)(void *Data, u32 IrqStatus, u32 ChanNum);
 	void *TxIrqData;
-	u32 IPC_Direction;	/* direction of ipc, this parameter is from @IPC_Direction_Mode*/
+	IPC_Direction_Mode IPC_Direction;	/* direction of ipc, this parameter is from @IPC_Direction_Mode*/
 	u32 IPC_Channel;	/* ipc channel, this parameter is from @IPC_AP_Tx_Channel or @IPC_NP_Tx_Channel*/
 } IPC_INIT_TABLE, *PIPC_INIT_TABLE;
 
@@ -269,7 +279,7 @@ typedef struct _IPC_INIT_TABLE_ {
   * @{
   */
 
-/** @defgroup IPC_Peripheral_Definition
+/** @defgroup IPC_Peripheral_Definition IPC Peripheral Definition
   * @{
   */
 #define IS_IPC_ALL_PERIPH(PERIPH) (((PERIPH) == IPCNP_DEV) || \
@@ -278,18 +288,8 @@ typedef struct _IPC_INIT_TABLE_ {
   * @}
   */
 
-/** @defgroup IPC_Direction_Mode
-  * @{
-  */
-#define IPC_NP_TO_AP			((u32)0x00000000)
-#define IPC_AP_TO_NP			((u32)0x00000001)
-#define IS_IPC_DIR_MODE(MODE) (((MODE) == IPC_NP_TO_AP) || \
-									((MODE) == IPC_AP_TO_NP))
-/**
-  * @}
-  */
 
-/** @defgroup IPC_INTR_Mode
+/** @defgroup IPC_INTR_Mode IPC Interrupt Mode
   * @{
   */
 #define IPC_TX_EMPTY			((u32)0x00000001)
@@ -300,7 +300,7 @@ typedef struct _IPC_INIT_TABLE_ {
   * @}
   */
 
-/** @defgroup IPC_Valid_CHNUM
+/** @defgroup IPC_Valid_CHNUM IPC Valid Channel Number
   * @{
   */
 #define IS_IPC_VALID_CHNUM(NUM) ((NUM) < 16)
@@ -308,7 +308,7 @@ typedef struct _IPC_INIT_TABLE_ {
   * @}
   */
 
-/** @defgroup IPC_Valid_CHNUM
+/** @defgroup IPC_Valid_Threshold IPC Valid Threshold
  * @{
  */
 #define IS_IPC_VALID_Threshold(Ths) ((Ths) >= 1)
@@ -316,7 +316,7 @@ typedef struct _IPC_INIT_TABLE_ {
   * @}
   */
 
-/** @defgroup IPC_Valid_RX_CHANNEL
+/** @defgroup IPC_Valid_RX_CHANNEL IPC Valid RX Channel
   * @{
   */
 #define IS_IPC_RX_CHNUM(NUM) ((NUM) < 16)
@@ -325,7 +325,7 @@ typedef struct _IPC_INIT_TABLE_ {
   */
 
 
-/** @defgroup IPC_Valid_SEMID
+/** @defgroup IPC_Valid_SEMID IPC Valid Semaphore ID
   * @{
   */
 #define IPC_SEMA_NUM (64)
@@ -334,7 +334,7 @@ typedef struct _IPC_INIT_TABLE_ {
   * @}
   */
 
-/** @defgroup IPC_TX_CHANNEL_SHIFT
+/** @defgroup IPC_TX_CHANNEL_SHIFT IPC TX Channel Shift
   * @{
   */
 #define IPC_TX_CHANNEL_SHIFT 16
@@ -342,7 +342,7 @@ typedef struct _IPC_INIT_TABLE_ {
   * @}
   */
 
-/** @defgroup IPC_TX_CHANNEL_NUM
+/** @defgroup IPC_TX_CHANNEL_NUM IPC TX Channel Number
   * @{
   */
 #define IPC_TX_CHANNEL_NUM 16
@@ -350,7 +350,7 @@ typedef struct _IPC_INIT_TABLE_ {
   * @}
   */
 
-/** @defgroup IPC_TX_CHANNEL_SWITCH
+/** @defgroup IPC_TX_CHANNEL_SWITCH IPC TX Channel Switch
   * @{
   */
 #define IPC_TX_CHANNEL_SWITCH(x)				((u32)((x) & 0x0000000F))
@@ -358,8 +358,7 @@ typedef struct _IPC_INIT_TABLE_ {
   * @}
   */
 
-/** @defgroup IPC_CHANNEL_NUMBER
-
+/** @defgroup IPC_CHANNEL_NUMBER IPC Channel Number
   * @{
   */
 #define IPC_CHANNEL_NUM 32
@@ -371,8 +370,11 @@ typedef struct _IPC_INIT_TABLE_ {
 /**
   * @}
   */
-/** @} */
-/** @} */
+
+/* Non Exported functions */
+IPC_TypeDef *IPC_GetDev(IPC_Direction_Mode IPC_Dir, u32 Is_Rx);
+IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
+
 /* Exported functions --------------------------------------------------------*/
 /** @addtogroup IPC_Exported_Functions IPC Exported Functions
   * @{
@@ -385,12 +387,12 @@ u32 IPC_INTGet(IPC_TypeDef *IPCx);
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit);
 u32 IPC_INTHandler(void *Data);
 void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, void *IrqHandler, void *IrqData);
-IPC_TypeDef *IPC_GetDev(u32 IPC_Dir, u32 Is_Rx);
-IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
 /**
   * @}
   */
 
+/** @} */
+/** @} */
 /* Other definitions --------------------------------------------------------*/
 
 extern const IPC_INIT_TABLE  ipc_init_config[];

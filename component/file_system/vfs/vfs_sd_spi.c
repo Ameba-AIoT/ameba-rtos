@@ -296,11 +296,11 @@ SD_SPI_RESULT sd_spi_get_sector_count(uint32_t *sector_count)
 
 	/* SEND_CSD */
 	if (sd_spi_send_cmd(SD_SPI_CMD_SendCsd, 0) == 0 && sd_spi_recv_data((uint8_t *)csd, 16) == 0) {
-		printf("CSD:");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "CSD:");
 		for (uint32_t i = 0; i < 16; i++) {
-			printf("%x ", csd[i]);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "%x ", csd[i]);
 		}
-		printf("\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "\n");
 
 		csd_structure = (csd[0] & 0xC0) >> 6;
 		if (csd_structure == 1) { 					// CSD v2.0 (SDHC/SDXC)

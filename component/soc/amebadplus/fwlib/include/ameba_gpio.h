@@ -78,6 +78,7 @@
   * @endverbatim
   */
 
+/// @cond
 /* AUTO_GEN_START */
 
 /** @addtogroup Ameba_Periph_Driver
@@ -264,6 +265,7 @@ typedef struct {
 } GPIO_TypeDef;
 /** @} */
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -320,7 +322,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
   * @{
   */
 
-/** @defgroup GPIO_Mode
+/** @defgroup GPIO_Mode GPIO Mode
   * @{
   */
 #define GPIO_Mode_IN			0x0 /*!< GPIO Input Mode */
@@ -330,18 +332,18 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
   * @}
   */
 
-/** @defgroup GPIO_Pull_Type
+/** @defgroup GPIO_Pull_Type GPIO Pull Type
   * @{
   */
-#define GPIO_PuPd_NOPULL		0x0 /*!< GPIO Interrnal HIGHZ */
-#define GPIO_PuPd_DOWN			0x1 /*!< GPIO Interrnal Pull DOWN */
-#define GPIO_PuPd_UP			0x2 /*!< GPIO Interrnal Pull UP */
-#define GPIO_PuPd_SHUTDOWN		0x3 /*!< GPIO Interrnal PAD shutdown */
+#define GPIO_PuPd_NOPULL		0x0 /*!< GPIO Internal HIGHZ */
+#define GPIO_PuPd_DOWN			0x1 /*!< GPIO Internal Pull DOWN */
+#define GPIO_PuPd_UP			0x2 /*!< GPIO Internal Pull UP */
+#define GPIO_PuPd_SHUTDOWN		0x3 /*!< GPIO Internal PAD shutdown */
 /**
   * @}
   */
 
-/** @defgroup GPIO_INT_Trigger_Type
+/** @defgroup GPIO_INT_Trigger_Type GPIO Interrupt Trigger Type
   * @{
   */
 #define GPIO_INT_Trigger_LEVEL		0x0 /*!< This interrupt is level trigger */
@@ -355,7 +357,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
   * @}
   */
 
-/** @defgroup GPIO_INT_Polarity_Type
+/** @defgroup GPIO_INT_Polarity_Type GPIO Interrupt Polarity Type
   * @{
   */
 #define GPIO_INT_POLARITY_ACTIVE_LOW		0x0 /*!< Setting interrupt to low active: falling edge or low level */
@@ -367,7 +369,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
   * @}
   */
 
-/** @defgroup GPIO_INT_Debounce_Type
+/** @defgroup GPIO_INT_Debounce_Type GPIO Interrupt Debounce Type
   * @{
   */
 #define GPIO_INT_DEBOUNCE_DISABLE			0x0 /*!< Disable interrupt debounce */
@@ -379,7 +381,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
   * @}
   */
 
-/** @defgroup GPIO_Pin_State
+/** @defgroup GPIO_Pin_State GPIO Pin State
   * @{
   */
 #define GPIO_PIN_LOW			0x0 /*!< Pin state is low */
@@ -388,7 +390,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
   * @}
   */
 
-/** @defgroup GPIO_Port_Type
+/** @defgroup GPIO_Port_Type GPIO Port Type
   * @{
   */
 #define GPIO_PORT_A				0x0 /*!< Port number A */
@@ -400,7 +402,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
   * @}
   */
 
-/** @defgroup GPIO_IRQ_Event
+/** @defgroup GPIO_IRQ_Event GPIO IRQ Event
   * @{
   */
 #define HAL_IRQ_NONE			0x0 /*!< No interrupt event  */
@@ -414,14 +416,19 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
   * @}
   */
 
-
+/// @cond
 /** @} */
 
 /** @} */
+/// @endcond
+
 extern GPIO_TypeDef *GPIO_PORTx[2];
 extern GPIO_TypeDef *GPIO_PORTx_S[2];
 
-_LONG_CALL_ void GPIO_WriteBit(u32 GPIO_Pin, u32 BitVal);
+/** @addtogroup GPIO_Exported_Functions GPIO Exported Functions
+  * @{
+  */
+_LONG_CALL_ void GPIO_WriteBit(u32 GPIO_Pin, u32 Pin_State);
 _LONG_CALL_ u32 GPIO_ReadDataBit(u32 GPIO_Pin);
 _LONG_CALL_ void GPIO_DeInit(u32 GPIO_Pin);
 _LONG_CALL_ void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData);
@@ -439,6 +446,10 @@ _LONG_CALL_ void GPIO_DebounceClock(u32 GPIO_Port, u32 DivideCount);
 _LONG_CALL_ void GPIO_LevelSync(u32 GPIO_Port, u32 NewState);
 _LONG_CALL_ void GPIO_ODInit(u8 PinName, u32 PUInternal);
 _LONG_CALL_ void GPIO_ODWriteBit(u8 PinName, u32 PinState);
+
+/**
+  * @}
+  */
 
 
 #ifdef __cplusplus

@@ -68,7 +68,7 @@ ac_unset CONFIG_AMEBADPLUS
 ac_unset CONFIG_AMEBALITE
 ac_unset CONFIG_AMEBAGREEN2
 ac_unset CALCULATE_FREE_TXBD
-ac_unset GREEN2_WA
+ac_unset CLEAR_AVAIL_INT_BY_RD_TXBD
 
 echo "choose target IC:"
 case "$INTF" in
@@ -83,23 +83,23 @@ case "$INTF:$choice" in
 	# --- sdio ---
 	sdio:1)
 		echo "AMEBADPLUS select"
-		ac_set CONFIG_AMEBADPLUS; ac_set CALCULATE_FREE_TXBD
+		ac_set CONFIG_AMEBADPLUS; ac_set CALCULATE_FREE_TXBD; ac_set CLEAR_AVAIL_INT_BY_RD_TXBD
 		cp ../../../soc/amebadplus/fwlib/include/ameba_inic.h ./common/include
 		;;
 	sdio:2)
 		echo "AMEBAGREEN2 select"
-		ac_set CONFIG_AMEBAGREEN2; ac_set GREEN2_WA
+		ac_set CONFIG_AMEBAGREEN2; ac_set CALCULATE_FREE_TXBD
 		cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./common/include
 		;;
 	sdio:3)
 		echo "AMEBAGREEN2 with FW DOWNLOAD select"
-		ac_set CONFIG_AMEBAGREEN2; ac_set GREEN2_WA
+		ac_set CONFIG_AMEBAGREEN2; ac_set CALCULATE_FREE_TXBD
 		mf_set CONFIG_FW_DOWNLOAD
 		cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./common/include
 		;;
 	sdio:4)
 		echo "AMEBAX select"
-		ac_set CONFIG_AMEBAGREEN2; ac_set GREEN2_WA
+		ac_set CONFIG_AMEBAGREEN2; ac_set CALCULATE_FREE_TXBD
 		cp ../../../soc/RTL8720F/fwlib/include/ameba_inic.h ./common/include
 		;;
 	# --- spi ---

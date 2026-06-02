@@ -21,7 +21,7 @@
   *
 
   *****************************************************************************************
-  * How to use WGD
+  * How to use WDG
   *****************************************************************************************
   *      To use WDG peripheral, the following steps are mandatory:
   *
@@ -38,6 +38,7 @@
   * @endverbatim
   */
 
+/// @cond
 /* AUTO_GEN_START */
 
 /** @addtogroup Ameba_Periph_Driver
@@ -121,6 +122,7 @@ typedef struct {
 } WDG_TypeDef;
 /** @} */
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -128,7 +130,7 @@ extern "C" {
 #endif
 
 
-//Please add your defination here
+//Please add your definition here
 
 /* Exported types ------------------------------------------------------------*/
 /** @addtogroup WDG_Exported_Types WDG Exported Types
@@ -139,7 +141,7 @@ extern "C" {
   * @brief  WDG Init Structure Definition
   */
 typedef struct {
-	u16 Window; 		/*!< WDG parameter specifies window protection of WDG
+	u16 Window; 		/*!< WDG parameter specifies window protection of WDG, the value cannot be changed when WDG is Enabled
 								This parameter must be set to a value in the 0-65535 range */
 
 	u16 Timeout; 	/*!< WDG parameter specifies WDG timeout count in units of ms
@@ -161,7 +163,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup WDG_Peripheral_Definitions
+/** @defgroup WDG_Peripheral_Definitions WDG Peripheral Definitions
   * @{
   */
 #define IS_WDG_ALL_PERIPH(PERIPH) (((PERIPH) == IWDG_DEV) ||((PERIPH) == WDG1_DEV) \
@@ -173,7 +175,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup WDG_Magic_Key
+/** @defgroup WDG_Magic_Key WDG Magic Key
   * @{
   */
 #define WDG_ACCESS_EN                                 0x00006969
@@ -186,10 +188,10 @@ typedef struct {
 /**
   * @}
   */
-
-/** @} */
-
-/** @} */
+/* Exported functions ------------------------------------------------------------*/
+/** @defgroup WDG_Exported_Functions WDG Exported Functions
+  * @{
+  */
 
 _LONG_CALL_ void WDG_StructInit(WDG_InitTypeDef *WDG_InitStruct);
 _LONG_CALL_ void WDG_Init(WDG_TypeDef *WDG, WDG_InitTypeDef *WDG_InitStruct);
@@ -202,13 +204,22 @@ _LONG_CALL_ void IWDG_LP_Enable(WDG_TypeDef *WDG, u32 NewState);
 _LONG_CALL_ void WDG_Reset_Bypass(WDG_TypeDef *WDG, u32 NewState);
 _LONG_CALL_ void WDG_Reset_Timeout(u32 Timeout);
 _LONG_CALL_ void WDG_Reset_ClearINT(WDG_TypeDef *WDG);
-
+_LONG_CALL_ void WDG_Wait_Busy(WDG_TypeDef *WDG);
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }
 #endif
 
 /* MANUAL_GEN_END */
+
+/// @cond
+/** @} */
+
+/** @} */
+///@endcond
 
 #endif
 

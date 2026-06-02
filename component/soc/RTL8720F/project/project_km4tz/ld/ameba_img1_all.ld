@@ -3,7 +3,7 @@ ENTRY(Reset_Handler)
 #include "../../ameba_layout.ld"
 #include "project_km4tz/platform_autoconf.h"
 /* img1's layout of Floader or Fullmac is same */
-#if defined(GENERATE_FLOADER_LD) || defined (CONFIG_WHC_DEV_SDIO_BOOT)
+#if defined(GENERATE_FLOADER_LD) || defined (CONFIG_WHC_DEV_HCI_BOOT)
 	#define IMG1_LMA_REGION 			KM4TZ_FLOADER_RAM_S
 #else
 	#define	IMG1_LMA_REGION				KM4TZ_BOOTLOADER_RAM_S
@@ -11,7 +11,13 @@ ENTRY(Reset_Handler)
 
 #define IMG2_DATA_LMA_REGION		KM4TZ_BD_RAM
 
-#if defined(GENERATE_FLOADER_LD) || defined (CONFIG_WHC_DEV_SDIO_BOOT) || !defined(CONFIG_IMG1_FLASH)
+#if defined(CONFIG_IMG3_PSRAM)
+	#define IMG3_TZ_REGION		KM4TZ_BD_PSRAM_TZ
+#else
+	#define IMG3_TZ_REGION		KM4TZ_BD_RAM_TZ
+#endif
+
+#if defined(GENERATE_FLOADER_LD) || defined (CONFIG_WHC_DEV_HCI_BOOT) || !defined(CONFIG_IMG1_FLASH)
 	#define SRAM_INPUT_TEXT_SECTION *(.text*)
 	#define	SRAM_INPUT_NON_DRAM		*(.non.dram.text*)
 	#define SRAM_INPUT_BOOT_RODATA	*(.boot.rodata*)
@@ -85,4 +91,12 @@ SECTIONS
 	{
 		__image2_entry_func__ = .;
 	} > IMG2_DATA_LMA_REGION
+
+#if defined(CONFIG_TRUSTZONE_EN)
+	/* image3 TZ RAM: define entry symbol for image1->image3 jump */
+	.ram_image3.text :
+	{
+		__image3_entry_func__ = .;
+	} > IMG3_TZ_REGION
+#endif
 }

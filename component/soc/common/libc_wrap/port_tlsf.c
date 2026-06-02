@@ -56,6 +56,15 @@ typedef struct block_header_t {
 /* Per-type TLSF instance */
 #define MAX_POOLS_PER_TYPE    3
 
+/* Per-type maximum allocation size */
+#define TLSF_MAX_SIZE_TCM     ((size_t)64  * 1024)        /* 64KB  */
+#define TLSF_MAX_SIZE_SRAM    ((size_t)512 * 1024)        /* 512KB */
+#define TLSF_MAX_SIZE_DRAM    ((size_t)64  * 1024 * 1024) /* 64MB, largest PSRAM variant */
+
+#ifdef CONFIG_CA32_FREERTOS_V10_2_1_SMP
+#error "CA32 SMP is not supported in FreeRTOS v10.2.1, vTaskSuspendAll() shall replace by taskENTER_CRITICAL()"
+#endif
+
 typedef struct {
 	tlsf_t handle;
 	pool_t pools[MAX_POOLS_PER_TYPE];
@@ -65,6 +74,21 @@ typedef struct {
 } tlsf_inst_t;
 
 static tlsf_inst_t g_tlsf[TYPE_ALL];
+
+static size_t tlsf_max_size_for_type(MALLOC_TYPES type)
+{
+	switch (type) {
+	case TYPE_TCM:
+		return TLSF_MAX_SIZE_TCM;
+	case TYPE_SRAM:
+		return TLSF_MAX_SIZE_SRAM;
+	case TYPE_DRAM:
+		return TLSF_MAX_SIZE_DRAM;
+	default:
+		configASSERT(0 && "unknown MALLOC_TYPES");
+		return TLSF_MAX_SIZE_SRAM;
+	}
+}
 
 /* Global allocation/free counters */
 PRIVILEGED_DATA static size_t xNumberOfSuccessfulAllocations = (size_t) 0U;
@@ -712,6 +736,7 @@ void vPortDefineHeapRegions(const HeapRegion_t *pxHeapRegions)
 		uint32_t addr = (uint32_t)pxHeapRegions[ i ].pucStartAddress;
 		MALLOC_TYPES type = classify_addr(addr);
 		tlsf_inst_t *inst = &g_tlsf[type];
+		size_t max_size = tlsf_max_size_for_type(type);
 
 #if ( CONFIG_HEAP_PROTECTOR == 1 )
 		{
@@ -737,11 +762,11 @@ void vPortDefineHeapRegions(const HeapRegion_t *pxHeapRegions)
 #endif
 
 		if (inst->handle == NULL) {
-			inst->handle = tlsf_create_with_pool(pxHeapRegions[ i ].pucStartAddress, pxHeapRegions[ i ].xSizeInBytes);
+			inst->handle = tlsf_create_with_pool_ex(pxHeapRegions[ i ].pucStartAddress, pxHeapRegions[ i ].xSizeInBytes, max_size);
 			if (inst->handle != NULL) {
-				inst->pools[ inst->pool_count++ ] = tlsf_get_pool(inst->handle);
+				inst->pools[ inst->pool_count++ ] = tlsf_get_pool_ex(inst->handle, max_size);
 			} else {
-				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "tlsf_create_with_pool failed for type %d, addr 0x%x, size %d\n", type, addr, pxHeapRegions[ i ].xSizeInBytes);
+				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "tlsf_create_with_pool_ex failed for type %d, addr 0x%x, size %d\n", type, addr, pxHeapRegions[ i ].xSizeInBytes);
 			}
 		} else {
 			pool_t pool = tlsf_add_pool(inst->handle, pxHeapRegions[ i ].pucStartAddress, pxHeapRegions[ i ].xSizeInBytes);

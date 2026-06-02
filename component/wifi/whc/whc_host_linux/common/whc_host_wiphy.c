@@ -24,6 +24,31 @@ static const u32 rtw_cipher_suites[] = {
 	WIFI_CIPHER_SUITE_BIP_CMAC_256,
 };
 
+#ifdef CONFIG_IEEE80211R
+static const u32 rtw_akm_suites[] = {
+	WIFI_AKM_SUITE_IEEE8021X,
+	WIFI_AKM_SUITE_PSK,
+	WIFI_AKM_SUITE_FT_IEEE8021X,
+	WIFI_AKM_SUITE_FT_PSK,
+	WIFI_AKM_SUITE_IEEE8021X_SHA256,
+	WIFI_AKM_SUITE_PSK_SHA256,
+	WIFI_AKM_SUITE_SAE,
+	WIFI_AKM_SUITE_FT_SAE,
+	WIFI_AKM_SUITE_IEEE8021X_SUITE_B,
+	WIFI_AKM_SUITE_OWE,
+};
+#else
+static const u32 rtw_akm_suites[] = {
+	WIFI_AKM_SUITE_IEEE8021X,
+	WIFI_AKM_SUITE_PSK,
+	WIFI_AKM_SUITE_IEEE8021X_SHA256,
+	WIFI_AKM_SUITE_PSK_SHA256,
+	WIFI_AKM_SUITE_SAE,
+	WIFI_AKM_SUITE_IEEE8021X_SUITE_B,
+	WIFI_AKM_SUITE_OWE,
+};
+#endif
+
 const struct ieee80211_channel rtw_2ghz_channels[MAX_CHANNEL_NUM_2G] = {
 	CHAN2G(1, 2412, 0),
 	CHAN2G(2, 2417, 0),
@@ -241,6 +266,8 @@ int rtw_wiphy_init_params(struct wiphy *pwiphy)
 							  ;
 	pwiphy->cipher_suites = rtw_cipher_suites;
 	pwiphy->n_cipher_suites = sizeof(rtw_cipher_suites) / sizeof((rtw_cipher_suites)[0]);
+	pwiphy->akm_suites = rtw_akm_suites;
+	pwiphy->n_akm_suites = ARRAY_SIZE(rtw_akm_suites);
 	pwiphy->features |= NL80211_FEATURE_SAE;
 	pwiphy->support_mbssid = true;
 	pwiphy->support_only_he_mbssid = false;

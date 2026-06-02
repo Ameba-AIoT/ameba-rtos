@@ -11,8 +11,7 @@ u32 rtw_sdio_get_rx_len(struct whc_sdio *priv)
 		rx_len_rdy = rtw_read32(priv, SDIO_REG_RX0_REQ_LEN) & SDIO_RX_REQ_LEN_RDY;
 
 		if (rx_len_rdy) {
-			// Sometimes rx length will be zero. driver need to use cmd53 read again.
-			// sdio_local_read(priv, SDIO_REG_RX0_REQ_LEN, 4, tmp);
+			/* Sometimes rx length will be zero. driver need to use cmd53 read again. */
 			SdioRxFIFOSize = rtw_read32(priv, SDIO_REG_RX0_REQ_LEN) & SDIO_RX_REQ_LEN_MSK;
 
 			if ((SdioRxFIFOSize == 0) && (retry++ < 3)) {
@@ -28,28 +27,14 @@ u32 rtw_sdio_get_rx_len(struct whc_sdio *priv)
 	return SdioRxFIFOSize;
 }
 
-static u8 rtw_sdio_get_tx_max_size(struct whc_sdio *priv)
-{
-	u8 TxUnitCnt = 0;
-	TxUnitCnt = sdio_cmd52_read1byte_local(priv, SPDIO_REG_TXBUF_UNIT_SZ);
-	if (!TxUnitCnt) {
-		return false;
-	}
-
-	//num * unit_sz(64 bytes).
-	priv->SdioTxMaxSZ = TxUnitCnt * 64;
-	dev_dbg(&priv->func->dev, "%s: TX_UNIT_BUF_MAX_SIZE @ %d bytes\n", __FUNCTION__, priv->SdioTxMaxSZ);
-
-	return true;
-}
-
 u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 {
 #ifdef CALCULATE_FREE_TXBD
-	/* tx bd may overflow if host run too fast */
-	/* in 6955, wifi dma have higher priority than other dma channel,
+	/* [6955]: wifi dma have higher priority than other dma channel,
 	host wptr update when recvice ack from ahb bus, and maybe blocked
-	due to wifi DMA. keep wptr in host and only sync with hw when init */
+	due to wifi DMA. keep wptr in host and only sync with hw when init.
+	   [green2]: WA, SDIO_REG_FREE_TXBD_NUM show 0 but >0 actually, and no tx bd aval int at last.
+	JIRA: https://jira.realtek.com/browse/PRINTER-2628 */
 	u16 wptr = priv->txbd_wptr;
 	u16 rptr;
 
@@ -63,26 +48,7 @@ u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 
 	//dev_dbg(&priv->func->dev, "%s: Free page for TXBD(0x%x)\n", __FUNCTION__, priv->SdioTxBDFreeNum);
 #else
-#ifdef GREEN2_WA
-	/* WA GREEN2 Bug, SDIO_REG_FREE_TXBD_NUM show 0 but >0 actually, and no tx bd aval int at last.
-	   JIRA: https://jira.realtek.com/browse/PRINTER-2628 */
-	/* tx bd may overflow if host run too fast */
-	/* in 6955, wifi dma have higher priority than other dma channel,
-	host wptr update when recvice ack from ahb bus, and maybe blocked
-	due to wifi DMA. keep wptr in host and only sync with hw when init */
-	u16 wptr = priv->txbd_wptr;
-	u16 rptr;
-
-	rptr = rtw_read8(priv, SPDIO_REG_TXBD_RPTR);
-
-	if (wptr >= rptr) {
-		priv->SdioTxBDFreeNum = priv->txbd_size + rptr - wptr - 1;
-	} else {
-		priv->SdioTxBDFreeNum = rptr - wptr - 1;
-	}
-#else
 	priv->SdioTxBDFreeNum = rtw_read16(priv, SDIO_REG_FREE_TXBD_NUM);
-#endif
 #endif
 	return true;
 }
@@ -90,11 +56,11 @@ u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 static void rtw_sdio_interrupt_handler(struct sdio_func *func)
 {
 	struct whc_sdio *priv;
-	u8 data[4];
 	u32 value, himr;
-#ifdef CALCULATE_FREE_TXBD
+#ifdef CLEAR_AVAIL_INT_BY_RD_TXBD
 	u32 freepage;
 #endif
+
 	priv = (struct whc_sdio *) sdio_get_drvdata(func);
 
 	//dev_dbg(&priv->func->dev, "%s: IRQ arrived!\n", __FUNCTION__);
@@ -111,8 +77,7 @@ static void rtw_sdio_interrupt_handler(struct sdio_func *func)
 	priv->sys_sdio_irq_thd = current;
 
 	//read HISR
-	sdio_local_read(priv, SDIO_REG_HISR, 4, data);
-	priv->sdio_hisr = le32_to_cpu(*(u32 *)data);
+	priv->sdio_hisr = rtw_read32(priv, SDIO_REG_HISR);
 
 	if (priv->sdio_hisr & priv->sdio_himr) {
 		priv->sdio_hisr &= priv->sdio_himr;
@@ -121,18 +86,18 @@ static void rtw_sdio_interrupt_handler(struct sdio_func *func)
 		value = priv->sdio_hisr & MASK_SDIO_HISR_CLEAR;
 		if (value) {
 			value = cpu_to_le32(value);
-			sdio_local_write(priv, SDIO_REG_HISR, 4, (u8 *)&value);
+			rtw_write32(priv, SDIO_REG_HISR, value);
 		}
 
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
 		if (priv->sdio_hisr & SDIO_HISR_AVAL_INT) {
-#ifdef CALCULATE_FREE_TXBD
-			/* for DP bug, read txbd to clear aval int */
-			sdio_local_read(priv, SDIO_REG_FREE_TXBD_NUM, 4, (u8 *)&freepage);
+#ifdef CLEAR_AVAIL_INT_BY_RD_TXBD
+			/* for DP, read txbd to clear aval int */
+			freepage = rtw_read32(priv, SDIO_REG_FREE_TXBD_NUM);
 #else
-			/* option set in dev, read txbd will never clr aval int */
+			/* for green2 and later ICs, read txbd will never clr aval int (option set in dev) */
 			value = cpu_to_le32(SDIO_HISR_AVAL_INT);
-			sdio_local_write(priv, SDIO_REG_HISR, 4, (u8 *)&value);
+			rtw_write32(priv, SDIO_REG_HISR, value);
 #endif
 			/* wakeup tx task if waiting */
 			priv->tx_avail_int_triggered = 1;
@@ -144,11 +109,9 @@ static void rtw_sdio_interrupt_handler(struct sdio_func *func)
 
 			/* disable RX_REQ interrupt */
 			himr = priv->sdio_himr & (~SDIO_HIMR_RX_REQUEST_MSK);
-			sdio_local_write(priv, SDIO_REG_HIMR, 4, (u8 *)&himr);
+			rtw_write32(priv, SDIO_REG_HIMR, himr);
 
-			//schedule_work(&(priv->rx_work));
-			//up(&priv->sdio_rx_sema);
-			priv->rx_recv_notify(); // rx_recv_notify is whc_host_recv_notify
+			priv->rx_recv_notify();
 		}
 
 	} else {
@@ -188,7 +151,7 @@ void rtw_sdio_init_txavailbd_threshold(struct whc_sdio *priv)
 	u16 txBDTh_l;
 	u16 txBDTh_h;
 
-	freeBDNum = sdio_cmd53_read4byte_local(priv, SDIO_REG_FREE_TXBD_NUM);
+	freeBDNum = rtw_read32(priv, SDIO_REG_FREE_TXBD_NUM);
 
 #ifdef CONFIG_AMEBAGREEN2
 	/* The value of SDIO_REG_FREE_TXBD_NUM = actual FREE TXBD NUM-1.
@@ -267,7 +230,7 @@ static void rtw_sdio_init_interrupt(struct whc_sdio *priv)
 
 	// Enable interrupt
 	himr = cpu_to_le32(priv->sdio_himr);
-	sdio_local_write(priv, SDIO_REG_HIMR, 4, (u8 *)&himr);
+	rtw_write32(priv, SDIO_REG_HIMR, himr);
 
 }
 
@@ -323,9 +286,14 @@ u32 rtw_sdio_init_common(struct whc_sdio *priv)
 	priv->txbd_size = rtw_read16(priv, SPDIO_REG_TXBD_NUM);
 	rtw_sdio_query_txbd_status(priv);
 
-	if (rtw_sdio_get_tx_max_size(priv) == false) {
+	/* get max tx size: num * unit_sz(64 bytes)*/
+	value = rtw_read8(priv, SPDIO_REG_TXBUF_UNIT_SZ);
+	if (!value) {
+		dev_err(&priv->func->dev, "%s: get TX_UNIT_BUF_MAX_SIZE FAIL!\n", __func__);
 		return false;
 	}
+	priv->SdioTxMaxSZ = value * 64;
+
 	priv->bSurpriseRemoved = false;
 
 	rtw_sdio_init_interrupt(priv);
