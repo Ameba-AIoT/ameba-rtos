@@ -248,9 +248,6 @@ struct iperf_test {
 	char     *remote_congestion_used;		/* what the other side used */
 	char     *pidfile;				/* -P option */
 
-	char     *logfile;				/* --logfile option */
-	FILE     *outfile;
-
 	int       ctrl_sck;
 	int       listener;
 	int       prot_listener;
@@ -270,7 +267,6 @@ struct iperf_test {
 	int       debug;				/* -d option - enable debug */
 	int	      get_server_output;		/* --get-server-output */
 	int	      udp_counters_64bit;		/* --use-64-bit-udp-counters */
-	int       forceflush; /* --forceflush - flushing output at every interval */
 	int	      multisend;
 
 	char     *json_output_string; /* rendered JSON output if json_output is set */

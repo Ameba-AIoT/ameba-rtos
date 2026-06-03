@@ -55,12 +55,10 @@ struct iperf_stream;
 
 /* short option equivalents, used to support options that only have long form */
 #define OPT_SCTP 1
-#define OPT_LOGFILE 2
 #define OPT_GET_SERVER_OUTPUT 3
 #define OPT_UDP_COUNTERS_64BIT 4
 #define OPT_CLIENT_PORT 5
 #define OPT_NUMSTREAMS 6
-#define OPT_FORCEFLUSH 7
 #define OPT_NO_FQ_SOCKET_PACING 9 /* UNUSED */
 #define OPT_FQ_RATE 10
 #define OPT_DSCP 11
@@ -99,7 +97,6 @@ int	iperf_get_test_duration(struct iperf_test *ipt);
 char	iperf_get_test_role(struct iperf_test *ipt);
 int	iperf_get_test_reverse(struct iperf_test *ipt);
 int	iperf_get_test_blksize(struct iperf_test *ipt);
-FILE	*iperf_get_test_outfile(struct iperf_test *ipt);
 uint64_t iperf_get_test_rate(struct iperf_test *ipt);
 int     iperf_get_test_burst(struct iperf_test *ipt);
 int	iperf_get_test_socket_bufsize(struct iperf_test *ipt);
@@ -281,7 +278,6 @@ int iperf_clearaffinity(struct iperf_test *);
 
 /* Custom printf routine. */
 int iperf_printf(struct iperf_test *test, const char *format, ...) __attribute__((format(printf, 2, 3)));
-int iflush(struct iperf_test *test);
 
 /* Error routines. */
 void iperf_err(struct iperf_test *test, const char *format, ...) __attribute__((format(printf, 2, 3)));
@@ -308,7 +304,6 @@ enum {
 	IEFILE = 14,            // -F file couldn't be opened
 	IEBURST = 15,           // Invalid burst count. Maximum value = %dMAX_BURST
 	IEENDCONDITIONS = 16,   // Only one test end condition (-t, -n, -k) may be specified
-	IELOGFILE = 17,	    // Can't open log file
 	IENOSCTP = 18,	    // No SCTP support available
 	IEBIND = 19,			// Local port specified with no local bind option
 	IEUDPBLOCKSIZE = 20,    // Block size invalid

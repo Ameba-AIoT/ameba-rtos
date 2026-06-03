@@ -20,6 +20,7 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/halbtc
     ${CMAKE_CURRENT_SOURCE_DIR}/phl
     ${CMAKE_CURRENT_SOURCE_DIR}/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/whch
     ${CMAKE_CURRENT_SOURCE_DIR}/intf
     ${CMAKE_CURRENT_SOURCE_DIR}/core_rom
     ${CMAKE_CURRENT_SOURCE_DIR}/halcommon_rom

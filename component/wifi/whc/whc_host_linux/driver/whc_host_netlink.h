@@ -1,0 +1,98 @@
+#ifndef __WHC_HOST_NETLINK_H__
+#define __WHC_HOST_NETLINK_H__
+
+/* max GENL_NAMSIZ: 16 - 1 */
+#define WHC_CMD_GENL_NAME	"whc_demo"
+
+struct genl_info;
+typedef int (*netlink_cmd_handler_t)(struct genl_info *info);
+
+struct whc_host_netlink_command_entry {
+	char api_id;
+	netlink_cmd_handler_t handler;
+};
+
+struct whc_netlink {
+	int sockfd;
+	int family_id;
+};
+
+enum whc_cmd_api_id {
+	API_GET_MAC_ADDR,
+	API_GET_IP,
+	API_SET_HOST_STATE,
+	API_WIFI_SET_MAC,
+	API_WIFI_NETIF_ON,
+	API_WIFI_SEND_TO_DEV,
+	API_WIFI_INFO_INIT,
+	API_WIFI_CUSTOM_BASE,
+	API_WIFI_DO_SCAN,
+	API_WIFI_SCAN_RESULT,
+	API_WIFI_MP,
+	API_WIFI_DBG,
+	API_WIFI_GET_JOIN_EVENT,
+};
+
+enum whc_cmd_type {
+	WHC_CMD_UNSPEC,
+	WHC_CMD_REPLY,	/* kernel space -> user space*/
+	WHC_CMD_ECHO,	/* user space -> kernel space*/
+	WHC_CMD_EVENT,	/* kernel space notify user space about wifi events*/
+	WHC_CMD_CUSTOM_API,	/* Custom API */
+};
+
+enum whc_attr_type {
+	WHC_ATTR_UNSPEC,
+	WHC_ATTR_API_ID,
+	WHC_ATTR_WLAN_IDX,
+	WHC_ATTR_STRING,
+	WHC_ATTR_PAYLOAD,
+	WHC_ATTR_CHUNK_INDEX,
+	WHC_ATTR_LAST_CHUNK,
+	WHC_ATTR_AFTER_LAST,
+	NUM_WHC_ATTR = WHC_ATTR_AFTER_LAST,
+	WHC_ATTR_MAX = WHC_ATTR_AFTER_LAST - 1,
+};
+
+enum nl80211_multicast_groups {
+	WHC_MCGRP_EVENT,
+};
+
+/* for test demo */
+/* type */
+#define WHC_WIFI_TEST  0x1
+#define WHC_ATCMD_TEST 0x2
+#define WHC_RMESH_TEST 0x3
+
+/* subtype */
+#define WHC_WIFI_TEST_GET_MAC_ADDR   0x1
+#define WHC_WIFI_TEST_GET_IP         0x2
+#define WHC_WIFI_TEST_SET_READY      0x3
+#define WHC_WIFI_TEST_SET_UNREADY    0x4
+#define WHC_WIFI_TEST_SET_TICKPS_CMD 0x5
+#define WHC_WIFI_TEST_CONNECT        0x6
+#define WHC_WIFI_TEST_SCAN           0x7
+#define WHC_WIFI_TEST_DHCP           0x8
+#define WHC_WIFI_TEST_WIFION         0x9
+#define WHC_WIFI_TEST_SCAN_RESULT    0xA
+#define WHC_WIFI_TEST_MP             0xB
+#define WHC_WIFI_TEST_DBG            0xC
+#define WHC_WIFI_TEST_OTA            0x10
+/* used in fullhan now */
+#define WHC_WIFI_TEST_SOFTAP         0x11
+#define WHC_WIFI_TEST_CONN_STATUS    0x12
+#define WHC_WIFI_TEST_DISCONN        0x13
+#define WHC_WIFI_TEST_WIFIOFF        0x14
+
+/* for rtos host only */
+#define WHC_WIFI_TEST_SET_HOST_RTOS  0xFF
+
+#define WHC_RMESH_TEST_SOCK_INIT    0x1
+#define WHC_RMESH_TEST_SOCK_SEND    0x2
+
+// todo: need sync, default 4k, however max buf in sdio & spi < 1.5k
+#define WHC_WIFI_MP_MSG_BUF_SIZE (4096)
+
+extern struct genl_family whc_nl_family;
+
+#endif

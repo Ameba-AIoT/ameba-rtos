@@ -17,6 +17,7 @@ None
 
 2. For atcmd host:
    a. ATCMD Mode of menuconfig should be configured as `Manual Test Mode`.
+   b. `CONFIG_USBH_CDC_ACM_NOTIFY` to 1 in component/usb/host/cdc_acm/usbh_cdc_acm.h
 
 # Expect result
 

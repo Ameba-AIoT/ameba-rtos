@@ -498,7 +498,6 @@ iperf_run_client(struct iperf_test *test)
 		iperf_printf(test, "%s\n", version);
 		iperf_printf(test, "%s", "");
 		iperf_printf(test, "%s\n", get_system_info());
-		iflush(test);
 	}
 
 	/* Start the client and connect to the server */
@@ -617,7 +616,6 @@ iperf_run_client(struct iperf_test *test)
 		iperf_printf(test, "%s", report_done);
 	}
 
-	iflush(test);
 	return 0;
 
 cleanup_and_fail:
@@ -631,11 +629,9 @@ cleanup_and_fail:
 			free(err_buf);
 		}
 		iperf_json_finish(test);
-		iflush(test);
 		// Return 0 and not -1 since all terminating function were done here.
 		// Also prevents error message logging outside the already closed JSON output.
 		return 0;
 	}
-	iflush(test);
 	return -1;
 }

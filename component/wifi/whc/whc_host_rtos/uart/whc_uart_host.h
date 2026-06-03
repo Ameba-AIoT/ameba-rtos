@@ -8,6 +8,7 @@
 #define WHC_UART_RX_BURST_SIZE 16
 #define WHC_UART_TX_BURST_SIZE 8
 
+#define WHC_UART_RX_TASK_PRIO  7
 #define DEV_DMA_ALIGN	4
 
 #define UART_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32 for cache line
@@ -75,10 +76,11 @@ struct whc_uart_host_priv_t {
 
 #define WHC_UART_HOST_RX_DONE       0x0
 #define WHC_UART_HOST_RX_HEADER     0x1
-#define WHC_UART_HOST_RX_PAYLOAD    0x2
-#define WHC_UART_HOST_HDR_ACK       0x3
-#define WHC_UART_HOST_RX_END        0x4
-#define WHC_UART_HOST_RX_DMA_EN     0x5
+#define WHC_UART_HOST_RX_REQ        0x2
+#define WHC_UART_HOST_RX_PAYLOAD    0x3
+#define WHC_UART_HOST_HDR_ACK       0x4
+#define WHC_UART_HOST_RX_END        0x5
+#define WHC_UART_HOST_RX_DMA_EN     0x6
 
 void whc_uart_host_send_data(struct whc_buf_info *pbuf);
 void whc_uart_host_init(void);

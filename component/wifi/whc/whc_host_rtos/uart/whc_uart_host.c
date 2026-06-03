@@ -354,15 +354,16 @@ int whc_uart_host_recv_process(void)
 	return ret;
 }
 
-void whc_uart_host_rx_irq_task(void *pData)
+void whc_uart_host_rx_task(void *pData)
 {
 	(void)pData;
 	for (;;) {
 		/* Task blocked and wait the semaphore(events) here */
 		rtos_sema_take(uart_host_priv.rxirq_sema, RTOS_MAX_TIMEOUT);
 		switch (uart_host_priv.rx_state) {
-		case WHC_UART_HOST_RX_PAYLOAD:
+		case WHC_UART_HOST_RX_REQ:
 			whc_uart_host_send_ack();
+			uart_host_priv.rx_state = WHC_UART_HOST_RX_PAYLOAD;
 			break;
 		default: /* WHC_UART_HOST_RX_END */
 			whc_uart_host_recv_process();
@@ -385,11 +386,11 @@ u32 whc_uart_host_irq(void *param)
 
 	uart_irq = UART_LineStatusGet(WHC_UART_DEV);
 	if (uart_irq & RUART_BIT_TIMEOUT_INT) {
-		//UART_INT_Clear(WHC_UART_DEV, RUART_BIT_TOICF);
+		UART_INT_Clear(WHC_UART_DEV, RUART_BIT_TOICF);
 	}
 
 	if ((uart_irq & UART_ALL_RX_ERR)) {
-		//UART_INT_Clear(WHC_UART_DEV, RUART_BIT_RLSICF);
+		UART_INT_Clear(WHC_UART_DEV, RUART_BIT_RLSICF);
 	}
 
 	while (UART_Readable(WHC_UART_DEV)) {
@@ -410,13 +411,15 @@ u32 whc_uart_host_irq(void *param)
 				}
 
 				if (buf_hdr->subtype == WHC_UART_HDR_ACK_REQ) {
-					uart_host_priv.rx_state = WHC_UART_HOST_RX_PAYLOAD;
+					uart_host_priv.rx_state = WHC_UART_HOST_RX_REQ;
 					uart_host_priv.payload_len = buf_hdr->buf_size;
 					uart_host_priv.rx_size_done = 0;
 					uart_host_priv.checksum = buf_hdr->checksum;
 
 					whc_uart_irq_set(RxIrq, DISABLE);
 					rtos_sema_give(uart_host_priv.rxirq_sema);
+					goto exit;
+
 				} else if (buf_hdr->subtype == WHC_UART_HDR_ACK_REPLY) {
 					uart_host_priv.rx_size_done = 0;
 					uart_host_priv.rx_size_total = 0;
@@ -537,7 +540,7 @@ static void whc_uart_host_drv_init(void)
 	UART_RXDMACmd(WHC_UART_DEV, ENABLE);
 	UART_ClearRxFifo(WHC_UART_DEV);
 
-	if (rtos_task_create(NULL, "UART_RX_IRQ_TASK", whc_uart_host_rx_irq_task, (void *)whc_uart_priv, 1024 * 4, 3) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, "UART_HOST_RX_TASK", whc_uart_host_rx_task, (void *)whc_uart_priv, 1024 * 4, WHC_UART_RX_TASK_PRIO) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create UART_RXDMA_IRQ_TASK Err!!\n");
 		return;
 	}
@@ -590,11 +593,11 @@ void whc_uart_host_send_hdr(u16 size, u32 checksum)
 	txhdr.checksum	= checksum;
 
 retry:
-	while (uart_host_priv.rx_state == WHC_UART_HOST_RX_PAYLOAD) {
+	while ((uart_host_priv.rx_state == WHC_UART_HOST_RX_PAYLOAD) || (uart_host_priv.rx_state == WHC_UART_HOST_RX_REQ)) {
 		rtos_time_delay_ms(1);
 	}
 	rtos_sema_take(uart_host_priv.tx_lock, RTOS_MAX_TIMEOUT);
-	if (uart_host_priv.rx_state == WHC_UART_HOST_RX_PAYLOAD) {
+	if ((uart_host_priv.rx_state == WHC_UART_HOST_RX_PAYLOAD) || (uart_host_priv.rx_state == WHC_UART_HOST_RX_REQ)) {
 		rtos_sema_give(uart_host_priv.tx_lock);
 		goto retry;
 	}

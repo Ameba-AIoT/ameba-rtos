@@ -15,6 +15,7 @@
 #define WHC_OTA_READ		1
 #define WHC_OTA_WRITE		2
 #define WHC_OTA_END			3
+#define WHC_OTA_RMESH_INIT	4
 
 /* ota type */
 #define OTA_FOR_NORMAL		1

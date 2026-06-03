@@ -57,7 +57,9 @@ static const char *const TAG = "ACM";
 
 static u8 cdc_acm_loopback_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
 static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
+#endif
 
 static u8 uart_show_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] = {0};
 static char uart_format_buffer[FORMAT_LEN];
@@ -305,6 +307,7 @@ WAIT_CONNECT:
 	vTaskDelete(NULL);
 }
 
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 static void usbh_notify_task(void *param)
 {
 	UNUSED(param);
@@ -344,6 +347,7 @@ WAIT_CONNECT:
 		}
 	}
 }
+#endif
 
 static void usbh_rx_task(void *param)
 {
@@ -519,7 +523,9 @@ static void atcmd_usbh_cdc_acm_task(void *param)
 	if (xSemaphoreTake(cdc_acm_attach_sema, 0xFFFFFFFF) == pdPASS) {
 		xTaskCreate((void *)usbh_tx_task, ((const char *)"usbh_tx_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 3, NULL);
 		xTaskCreate((void *)usbh_rx_task, ((const char *)"usbh_rx_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 4, NULL);
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 		xTaskCreate((void *)usbh_notify_task, ((const char *)"usbh_notify_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 4, NULL);
+#endif
 		xTaskCreate((void *)uart_show_rx_data_task, ((const char *)"uart_show_rx_data_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 1, NULL);
 	}
 

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-mkdir -p ./common/include
+mkdir -p ./driver/include
 
 # --- Helper functions ---
-ac_set()   { sed -i "s/#undef $1/#define $1 1/g" ./common/autoconf.h; }
-ac_unset() { sed -i "s/#define $1 1/#undef $1/g" ./common/autoconf.h; }
+ac_set()   { sed -i "s/#undef $1/#define $1 1/g" ./driver/autoconf.h; }
+ac_unset() { sed -i "s/#define $1 1/#undef $1/g" ./driver/autoconf.h; }
 mf_set()   { sed -i "s/$1 = n/$1 = y/g" Makefile; }
 mf_unset() { sed -i "s/$1 = y/$1 = n/g" Makefile; }
 
@@ -52,11 +52,11 @@ for feat in "$@"; do
 		bt)
 			mf_set CONFIG_BT_INIC
 			if [ "$INTF" == "spi" ]; then
-				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.c ./common/spi
-				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.h ./common/spi
+				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.c ./driver/spi
+				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.h ./driver/spi
 			elif [ "$INTF" == "sdio" ]; then
-				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.c ./common/sdio
-				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.h ./common/sdio
+				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.c ./driver/sdio
+				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.h ./driver/sdio
 			fi
 			;;
 		rmesh) mf_set CONFIG_RMESH ;;
@@ -84,23 +84,23 @@ case "$INTF:$choice" in
 	sdio:1)
 		echo "AMEBADPLUS select"
 		ac_set CONFIG_AMEBADPLUS; ac_set CALCULATE_FREE_TXBD; ac_set CLEAR_AVAIL_INT_BY_RD_TXBD
-		cp ../../../soc/amebadplus/fwlib/include/ameba_inic.h ./common/include
+		cp ../../../soc/amebadplus/fwlib/include/ameba_inic.h ./driver/include
 		;;
 	sdio:2)
 		echo "AMEBAGREEN2 select"
 		ac_set CONFIG_AMEBAGREEN2; ac_set CALCULATE_FREE_TXBD
-		cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./common/include
+		cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./driver/include
 		;;
 	sdio:3)
 		echo "AMEBAGREEN2 with FW DOWNLOAD select"
 		ac_set CONFIG_AMEBAGREEN2; ac_set CALCULATE_FREE_TXBD
 		mf_set CONFIG_FW_DOWNLOAD
-		cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./common/include
+		cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./driver/include
 		;;
 	sdio:4)
 		echo "AMEBAX select"
 		ac_set CONFIG_AMEBAGREEN2; ac_set CALCULATE_FREE_TXBD
-		cp ../../../soc/RTL8720F/fwlib/include/ameba_inic.h ./common/include
+		cp ../../../soc/RTL8720F/fwlib/include/ameba_inic.h ./driver/include
 		;;
 	# --- spi ---
 	spi:1)
@@ -135,18 +135,18 @@ case "$INTF:$choice" in
 esac
 
 # --- Step 4: Copy common headers ---
-cp ../../common/rtw_wifi_common.h ./common/include
-cp ../../common/rtw_inic_common.h ./common/include
-cp ../whc_def.h ./common/include
-cp ../whc_dev/whc_dev.h ./common/include
-cp ../whc_dev/whc_dev_struct.h ./common/include
-cp ../whc_dev/whc_dev_protocal_offload.h ./common/include
-cp ../../api/wifi_api_types.h ./common/include
-cp ../../api/wifi_api_event.h ./common/include
-cp ../../driver/intf/wifi_intf_drv_to_app_internal.h ./common/include
-cp ../../../soc/usrcfg/common/ameba_wificfg_common.h ./common/include
-cp ../../../bluetooth/driver/bt_inic/bt_inic_defs.h ./common/include
-cp ../whc_dev/whc_dev_tcpip.h ./common/include
-cp ../whc_dev/whc_dev_powersave.h ./common/include
+cp ../../common/rtw_wifi_common.h ./driver/include
+cp ../../common/rtw_inic_common.h ./driver/include
+cp ../whc_def.h ./driver/include
+cp ../whc_dev/whc_dev.h ./driver/include
+cp ../whc_dev/whc_dev_struct.h ./driver/include
+cp ../whc_dev/whc_dev_protocal_offload.h ./driver/include
+cp ../../api/wifi_api_types.h ./driver/include
+cp ../../api/wifi_api_event.h ./driver/include
+cp ../../driver/intf/wifi_intf_drv_to_app_internal.h ./driver/include
+cp ../../../soc/usrcfg/common/ameba_wificfg_common.h ./driver/include
+cp ../../../bluetooth/driver/bt_inic/bt_inic_defs.h ./driver/include
+cp ../whc_dev/whc_dev_tcpip.h ./driver/include
+cp ../whc_dev/whc_dev_powersave.h ./driver/include
 
 echo "WHC setup complete"

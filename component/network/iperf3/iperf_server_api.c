@@ -535,7 +535,6 @@ iperf_run_server(struct iperf_test *test)
 		iperf_printf(test, "%s\n", version);
 		iperf_printf(test, "%s", "");
 		iperf_printf(test, "%s\n", get_system_info());
-		iflush(test);
 	}
 
 	// Open socket and listen
@@ -767,8 +766,6 @@ iperf_run_server(struct iperf_test *test)
 			return -1;
 		}
 	}
-
-	iflush(test);
 
 	if (test->server_affinity != -1)
 		if (iperf_clearaffinity(test) != 0) {

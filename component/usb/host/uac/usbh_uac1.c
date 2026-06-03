@@ -744,6 +744,9 @@ static int usbh_uac_parse_interface_desc(usb_host_t *host)
 		} else {
 			usbh_uac_find_best_ac();
 		}
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "No AC itf\n");
+		return HAL_ERR_PARA;
 	}
 
 	dev_id.bInterfaceClass = USB_UAC1_CLASS_CODE;

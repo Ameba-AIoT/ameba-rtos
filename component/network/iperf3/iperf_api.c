@@ -190,12 +190,6 @@ iperf_get_test_blksize(struct iperf_test *ipt)
 	return ipt->settings->blksize;
 }
 
-FILE *
-iperf_get_test_outfile(struct iperf_test *ipt)
-{
-	return ipt->outfile;
-}
-
 int
 iperf_get_test_socket_bufsize(struct iperf_test *ipt)
 {
@@ -714,8 +708,6 @@ static const struct option iperf_longopts[] = {
 	{"xbind", required_argument, NULL, 'X'},
 #endif
 	{"pidfile", required_argument, NULL, 'I'},
-	{"logfile", required_argument, NULL, OPT_LOGFILE},
-	{"forceflush", no_argument, NULL, OPT_FORCEFLUSH},
 	{"get-server-output", no_argument, NULL, OPT_GET_SERVER_OUTPUT},
 	{"udp-counters-64bit", no_argument, NULL, OPT_UDP_COUNTERS_64BIT},
 	{"no-fq-socket-pacing", no_argument, NULL, OPT_NO_FQ_SOCKET_PACING},
@@ -1072,12 +1064,6 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			test->pidfile = strdup(optarg);
 			server_flag = 1;
 			break;
-		case OPT_LOGFILE:
-			test->logfile = strdup(optarg);
-			break;
-		case OPT_FORCEFLUSH:
-			test->forceflush = 1;
-			break;
 		case OPT_GET_SERVER_OUTPUT:
 			test->get_server_output = 1;
 			client_flag = 1;
@@ -1132,15 +1118,6 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			goto exit;
 		default:
 			i_errno = IEPARAMFORMAT;
-			goto exit;
-		}
-	}
-
-	/* Set logging to a file if specified, otherwise use the default (stdout) */
-	if (test->logfile) {
-		test->outfile = fopen(test->logfile, "a+");
-		if (test->outfile == NULL) {
-			i_errno = IELOGFILE;
 			goto exit;
 		}
 	}
@@ -2198,9 +2175,6 @@ iperf_new_test()
 		return NULL;
 	}
 	memset(test->settings, 0, sizeof(struct iperf_settings));
-
-	/* By default all output goes to stdout */
-	test->outfile = stdout;
 
 	return test;
 }
@@ -3378,9 +3352,6 @@ print_interval_results(struct iperf_test *test, struct iperf_stream *sp, cJSON *
 		}
 	}
 
-	if (test->logfile || test->forceflush) {
-		iflush(test);
-	}
 }
 
 /**************************************************************************/
@@ -3820,8 +3791,7 @@ iperf_json_finish(struct iperf_test *test)
 		cJSON_Delete(test->json_top);
 		return -1;
 	}
-	fprintf(test->outfile, "%s\n", test->json_output_string);
-	iflush(test);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s\n", test->json_output_string);
 	cJSON_Delete(test->json_top);
 	test->json_top = test->json_start = test->json_connected = test->json_intervals = test->json_server_output = test->json_end = NULL;
 	return 0;
@@ -3907,6 +3877,7 @@ iperf_printf(struct iperf_test *test, const char *format, ...)
 {
 	va_list argp;
 	int r = -1;
+	char linebuffer[1024];
 
 	/*
 	 * There are roughly two use cases here.  If we're the client,
@@ -3921,35 +3892,20 @@ iperf_printf(struct iperf_test *test, const char *format, ...)
 	 * to be buffered up anyway.
 	 */
 
-	if (test->role == 'c') {
-		if (test->title) {
-			//fprintf(test->outfile, "%s:  ", test->title);
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", test->title);
-		}
-		va_start(argp, format);
-		r = vfprintf(test->outfile, format, argp);
-		va_end(argp);
-	} else if (test->role == 's') {
-		char linebuffer[1024];
-		va_start(argp, format);
-		r = vsnprintf(linebuffer, sizeof(linebuffer), format, argp);
-		va_end(argp);
-		//fprintf(test->outfile, "%s", linebuffer);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", linebuffer);
-		if (test->role == 's' && iperf_get_test_get_server_output(test)) {
-			struct iperf_textline *l = (struct iperf_textline *) malloc(sizeof(struct iperf_textline));
-			l->line = strdup(linebuffer);
-			TAILQ_INSERT_TAIL(&(test->server_output_list), l, textlineentries);
-		}
+	if (test->role == 'c' && test->title) {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", test->title);
 	}
-	return r;
-}
 
-int
-iflush(struct iperf_test *test)
-{
-	if (test->outfile != NULL) {
-		return fflush(test->outfile);
+	va_start(argp, format);
+	r = vsnprintf(linebuffer, sizeof(linebuffer), format, argp);
+	va_end(argp);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", linebuffer);
+
+	if (test->role == 's' && iperf_get_test_get_server_output(test)) {
+		struct iperf_textline *l = (struct iperf_textline *) malloc(sizeof(struct iperf_textline));
+		l->line = strdup(linebuffer);
+		TAILQ_INSERT_TAIL(&(test->server_output_list), l, textlineentries);
 	}
-	return 0;
+
+	return r;
 }
