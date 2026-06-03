@@ -181,6 +181,8 @@ int whc_spi_dev_set_dev_status(struct whc_spi_priv_t *whc_spi_priv, u32 ops, u32
 
 			/* check if idle */
 			if (whc_spi_priv->dev_status == DEV_STS_IDLE) {
+				/* In case sclk is interfered, causing slave data to be sampled incorrectly, a reset is required.*/
+				SSI_SlaveErrRecovery(WHC_SPI_DEV);
 
 				/* disable spi recover timer */
 				RTIM_Cmd(TIMx[WHC_RECOVER_TIM_IDX], DISABLE);
