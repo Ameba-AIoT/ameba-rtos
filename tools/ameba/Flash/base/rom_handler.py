@@ -223,14 +223,91 @@ class RomHandler(object):
 
         return ret
 
+    def normalize_log_bytes(self, data: bytes) -> str:
+        out = []
+        i = 0
+        while i < len(data):
+            b = data[i]
+            if b == 0x0D:  # CR
+                # 如果下一个是 LF，合并
+                if i + 1 < len(data) and data[i + 1] == 0x0A:
+                    i += 1
+                out.append('\n')
+            elif b == 0x0A:  # LF
+                out.append('\n')
+            elif b == 0x09:  # TAB
+                out.append('\t')
+            elif b == 0x07:  # BEL
+                out.append('\a')
+            elif 0x20 <= b <= 0x7E:  # 标准ASCII字符（可打印字符）
+                out.append(chr(b))
+            else:  # 控制字符或非ASCII字符
+                out.append(f'\\x{b:02x}')
+            i += 1
+        return ''.join(out)
+
     def check_alive(self):
-        ret, ch = self.ameba.read_bytes(DEFAULT_TIMEOUT)
-        if ret == ErrType.OK:
-            if ch[0] != NAK:
-                self.logger.debug(f"Check alive error,expect NAK, get 0x{ch.hex()}")
-                ret = ErrType.SYS_PROTO
+        all_data = bytearray()
+        start_time = time.monotonic()
+        found_nak = False
+
+        while time.monotonic() - start_time < 3:
+            ret, ch = self.ameba.read_bytes(0.05, 1)  # 探测是否有字节到达
+            if ret == ErrType.OK and ch:
+                all_data.extend(ch)
+                if ch[0] == NAK:
+                    found_nak = True
+                    break
+
+                # 进入加速吸收阶段：在一个短窗口内尽可能多读，避免漏掉硬故障长日志
+                absorb_until = time.monotonic() + 0.3
+                # 逐步尝试较大的 size，提高吞吐
+                while time.monotonic() < absorb_until:
+                    progressed = False
+                    for size in (256, 128, 64):
+                        ret2, chunk = self.ameba.read_bytes(0.02, size)
+                        if ret2 == ErrType.OK and chunk:
+                            all_data.extend(chunk)
+                            progressed = True
+                            # 快速检查 NAK（如果协议中 NAK 是单字节，可在大块内检查）
+                            if NAK in chunk:
+                                found_nak = True
+                                break
+                        elif ret2 != ErrType.DEV_TIMEOUT:
+                            self.logger.debug(f"Read error during absorb: {ret2}")
+                    if found_nak:
+                        break
+                    # 如果本轮没有进展，稍微歇一会再吸收，避免忙等
+                    if not progressed:
+                        time.sleep(0.005)
+                if found_nak:
+                    break
+
+            elif ret != ErrType.DEV_TIMEOUT:
+                self.logger.debug(f"Read error during check_alive: {ret}")
+            else:
+                time.sleep(0.002)
+
+            # 输出收集到的日志（既打印可读版本，也可选存原始）
+        if all_data:
+            readable = self.normalize_log_bytes(bytes(all_data))
+            self.logger.debug("Check alive collected bytes (readable):\n" + readable)
+            # 可选：将原始 bytes 写文件留存
+            # with open("device_crash_dump.bin", "wb") as f:
+            #     f.write(all_data)
+
+            # 返回协议结果
+        if found_nak:
+            ret = ErrType.OK
         else:
-            self.logger.debug(f"Check alive error: {ret}")
+            if all_data:
+                # 将错误日志中的十六进制数据改为打印可读的ASCII码
+                readable = self.normalize_log_bytes(bytes(all_data))
+                self.logger.debug(f"Check alive error, expect NAK, get:\n{readable}")
+                ret = ErrType.SYS_PROTO
+            else:
+                self.logger.debug("Check alive error, no data received")
+                ret = ErrType.SYS_PROTO
 
         return ret
 
