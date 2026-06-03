@@ -16,6 +16,7 @@ export CONFIG_WHC_ACTIVE_DETECT = n
 export CONFIG_RMESH = n
 export CONFIG_FW_DOWNLOAD = n
 export CONFIG_WHC_HAL_CHIP = rtl8721f
+export CONFIG_WHCH = n
 
 ifeq ($(CONFIG_WHC_HCI_IPC),y)
 
@@ -30,42 +31,42 @@ ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/driv
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/api
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/whc
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/whc/whc_dev
-ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/common/ipc
-ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/common
-ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/common/netdev
+ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/driver/ipc
+ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/driver
+ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/driver/netdev
 
 ccflags-$(CONFIG_WHC_HCI_IPC) += -DCONFIG_WHC_HCI_IPC
 ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
 
 obj-$(CONFIG_WIFI_RTK_CFG80211_FULLMAC)	+= whc-ipc.o
-whc-ipc-objs			:= ./common/whc_host_wiphy.o \
-					./common/whc_host_regd.o \
-					./common/netdev/whc_host_ethtool_ops.o \
-					./common/netdev/whc_host_netdev_ops.o \
-					./common/whc_host_netdev_ops_p2p.o \
-					./common/whc_host_cfgvendor.o \
-					./common/whc_host_proc.o \
-					./common/whc_host_ops.o \
-					./common/whc_host_ops_ap.o \
-					./common/whc_host_ops_key.o \
-					./common/whc_host_ops_nan.o \
-					./common/whc_host_ops_p2p.o \
-					./common/whc_host_acs.o \
-					./common/whc_host_promisc.o \
-					./common/whc_host_ft.o \
-					./common/ipc/whc_ipc_host_probe.o \
-					./common/ipc/whc_ipc_host_hci.o \
-					./common/ipc/whc_ipc_host_ops.o \
-					./common/ipc/whc_ipc_host_event.o \
-					./common/ipc/whc_ipc_host_recv.o \
-					./common/ipc/whc_ipc_host_xmit.o \
-					./common/ipc/whc_ipc_host_msg.o \
-					./common/ipc/whc_ipc_host_mem.o \
-					./common/ipc/ameba_wificfg.o
+whc-ipc-objs			:= ./driver/whc_host_wiphy.o \
+					./driver/whc_host_regd.o \
+					./driver/netdev/whc_host_ethtool_ops.o \
+					./driver/netdev/whc_host_netdev_ops.o \
+					./driver/whc_host_netdev_ops_p2p.o \
+					./driver/whc_host_cfgvendor.o \
+					./driver/whc_host_proc.o \
+					./driver/whc_host_ops.o \
+					./driver/whc_host_ops_ap.o \
+					./driver/whc_host_ops_key.o \
+					./driver/whc_host_ops_nan.o \
+					./driver/whc_host_ops_p2p.o \
+					./driver/whc_host_acs.o \
+					./driver/whc_host_promisc.o \
+					./driver/whc_host_ft.o \
+					./driver/ipc/whc_ipc_host_probe.o \
+					./driver/ipc/whc_ipc_host_hci.o \
+					./driver/ipc/whc_ipc_host_ops.o \
+					./driver/ipc/whc_ipc_host_event.o \
+					./driver/ipc/whc_ipc_host_recv.o \
+					./driver/ipc/whc_ipc_host_xmit.o \
+					./driver/ipc/whc_ipc_host_msg.o \
+					./driver/ipc/whc_ipc_host_mem.o \
+					./driver/ipc/ameba_wificfg.o
 
 ifeq ($(CONFIG_WHC_CMD_PATH),y)
 ccflags-$(CONFIG_WHC_CMD_PATH) += -DCONFIG_WHC_CMD_PATH
-whc-ipc-objs += ./common/whc_host_netlink.o
+whc-ipc-objs += ./driver/whc_host_netlink.o
 endif
 
 else
@@ -78,11 +79,11 @@ B := $(abspath $O/$M)
 
 #fullmac
 ifeq ($(CONFIG_WHC_HCI_SPI),y)
-SUB := common/spi
+SUB := driver/spi
 else ifeq ($(CONFIG_WHC_HCI_USB),y)
-SUB := common/usb
+SUB := driver/usb
 else ifeq ($(CONFIG_WHC_HCI_SDIO),y)
-SUB := common/sdio
+SUB := driver/sdio
 endif
 
 default:

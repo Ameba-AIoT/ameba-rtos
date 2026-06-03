@@ -203,16 +203,37 @@ typedef struct {
 } __PACKED usbh_itf_desc_t;
 
 /**
- * @brief A structure to hold information about all alternate settings for a single interface number.
- * @details This forms a linked list where each node represents a unique interface number.
- *          Inside each node, it points to another linked list (`itf_desc_array`) of all alternate settings for that interface.
+ * @brief Holds all parsed information for one unique bInterfaceNumber.
+ *
+ * @details The USB framework organises interfaces along two axes:
+ *
+ *   1. Same bInterfaceNumber, different bAlternateSetting
+ *      -> stored inside this node as itf_desc_array[0..alt_setting_cnt-1].
+ *      Example: CDC-ACM data interface has alt=0 (no endpoints, default) and alt=1 (BULK IN + BULK OUT, active).
+ *
+ *   2. Different bInterfaceNumber, same class/subclass/protocol
+ *      -> chained via the `next` pointer.
+ *      Example: a composite device with 3 CDC-ACM produces three separate nodes (one per ACM ctrl interface) linked as:
+ *        [itf1/ACM#1] -> [itf2/ACM#2] -> [itf3/ACM#3] -> NULL
+ *
+ *   usbh_get_interface_descriptor() returns the head of the matching chain.
+ *   The caller walks ->next to reach every interface of the same class.
  */
 typedef struct _usbh_itf_data_t {
-	struct _usbh_itf_data_t *next;       /**< Pointer to the next info structure for a different interface number but has the same class/subclass/protocol. */
-	usbh_itf_desc_t *itf_desc_array;     /**< Pointer to a linked list of all alternate settings for this interface number (bAlternateSetting 0, 1, 2...). */
-	u8 *raw_data;                        /**< Pointer to the start of the raw interface descriptor data for class-specific parsing. */
-	u16 raw_data_len;                    /**< The total length of the entire interface descriptor in bytes. */
-	u8 alt_setting_cnt;                  /**< Count of alternate settings for this interface number. */
+	struct _usbh_itf_data_t *next;   /**< Next node with a different bInterfaceNumber
+	                                      but identical class/subclass/protocol;
+	                                      NULL if this is the last in the chain. */
+	usbh_itf_desc_t *itf_desc_array; /**< Array of alt-setting descriptors for this
+	                                      interface number, indexed [0..alt_setting_cnt-1]
+	                                      by bAlternateSetting order. */
+	u8 *raw_data;                    /**< Start of the raw descriptor bytes for this interface;
+	                                      used by class drivers to parse class-specific (CS)
+	                                      descriptors that the generic framework does not decode. */
+	u16 raw_data_len;                /**< Byte length of the raw_data region
+	                                      (covers all alt settings and their
+	                                      CS/endpoint descriptors). */
+	u8 alt_setting_cnt;              /**< Number of alternate settings;
+	                                      equals the length of itf_desc_array. */
 } usbh_itf_data_t;
 
 /**

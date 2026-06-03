@@ -77,10 +77,11 @@ struct whc_uart_priv_t {
 
 #define WHC_UART_DEV_RX_DONE       0x0
 #define WHC_UART_DEV_RX_HEADER     0x1
-#define WHC_UART_DEV_RX_PAYLOAD    0x2
-#define WHC_UART_DEV_RX_DMA_EN     0x3
-#define WHC_UART_DEV_HDR_ACK       0x4
-#define WHC_UART_DEV_RX_END        0x5
+#define WHC_UART_DEV_RX_REQ        0x2
+#define WHC_UART_DEV_RX_PAYLOAD    0x3
+#define WHC_UART_DEV_RX_DMA_EN     0x4
+#define WHC_UART_DEV_HDR_ACK       0x5
+#define WHC_UART_DEV_RX_END        0x6
 
 void whc_uart_dev_init(void);
 void whc_uart_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb);

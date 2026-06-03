@@ -36,7 +36,8 @@
         !defined(LFS_NO_WARN) || \
         !defined(LFS_NO_ERROR) || \
         defined(LFS_YES_TRACE)
-#include <stdio.h>
+#include "log.h"
+#define LFS_LOG_TAG "LFS"
 #endif
 
 #ifdef __cplusplus
@@ -52,9 +53,8 @@ extern "C"
 // Logging functions
 #ifndef LFS_TRACE
 #ifdef LFS_YES_TRACE
-#define LFS_TRACE_(fmt, ...) \
-    printf("%s:%d:trace: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
-#define LFS_TRACE(...) LFS_TRACE_(__VA_ARGS__, "")
+#define LFS_TRACE(fmt, ...) \
+    RTK_LOGS(LFS_LOG_TAG, RTK_LOG_INFO, "%s:%d:trace: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #else
 #define LFS_TRACE(...)
 #endif
@@ -62,9 +62,8 @@ extern "C"
 
 #ifndef LFS_DEBUG
 #ifndef LFS_NO_DEBUG
-#define LFS_DEBUG_(fmt, ...) \
-    printf("%s:%d:debug: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
-#define LFS_DEBUG(...) LFS_DEBUG_(__VA_ARGS__, "")
+#define LFS_DEBUG(fmt, ...) \
+    RTK_LOGS(LFS_LOG_TAG, RTK_LOG_INFO, "%s:%d:debug: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #else
 #define LFS_DEBUG(...)
 #endif
@@ -72,9 +71,8 @@ extern "C"
 
 #ifndef LFS_WARN
 #ifndef LFS_NO_WARN
-#define LFS_WARN_(fmt, ...) \
-    printf("%s:%d:warn: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
-#define LFS_WARN(...) LFS_WARN_(__VA_ARGS__, "")
+#define LFS_WARN(fmt, ...) \
+    RTK_LOGS(LFS_LOG_TAG, RTK_LOG_WARN, "%s:%d:warn: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #else
 #define LFS_WARN(...)
 #endif
@@ -82,9 +80,8 @@ extern "C"
 
 #ifndef LFS_ERROR
 #ifndef LFS_NO_ERROR
-#define LFS_ERROR_(fmt, ...) \
-    printf("%s:%d:error: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
-#define LFS_ERROR(...) LFS_ERROR_(__VA_ARGS__, "")
+#define LFS_ERROR(fmt, ...) \
+    RTK_LOGS(LFS_LOG_TAG, RTK_LOG_ERROR, "%s:%d:error: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #else
 #define LFS_ERROR(...)
 #endif

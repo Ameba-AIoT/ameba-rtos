@@ -1,5 +1,5 @@
-#include <sdn.h>
-
+#include <ameba_soc.h>
+#include <sdn_intf.h>
 
 #define HCI_H4_HDR_MAX_SIZE    4
 #define HCI_H4_BODY_MAX_SIZE   256
@@ -144,7 +144,7 @@ void _uart0_init(IRQ_FUN func)
 
 	/* Enable Uart High Rate Rx Path */
 	UART_RxCmd(UART_DEV, ENABLE);
-	SDN_LOGA("SDN HCI UART Init OK!\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "SDN HCI UART Init OK!\r\n");
 }
 
 void _uart0_deinit(void)
@@ -345,7 +345,7 @@ void sdn_bridge_open(bool to_loguart)
 	} else {
 		sdn_uart_type = SDN_UART_UART0;
 		_uart0_init((IRQ_FUN)_uart0_irq);
-		SDN_LOGA("PA13 is sdn TX, PA14 is sdn RX.\r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "PA13 is sdn TX, PA14 is sdn RX.\r\n");
 	}
 }
 

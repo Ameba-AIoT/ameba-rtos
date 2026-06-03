@@ -221,14 +221,14 @@ u32 whc_uart_dev_irq(void *param)
 					RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "payload len err %d\r\n", uart_priv.rx_size_total);
 				}
 				if (buf_hdr->subtype == WHC_UART_HDR_ACK_REQ) {
-					uart_priv.rx_state = WHC_UART_DEV_RX_PAYLOAD;
+					uart_priv.rx_state = WHC_UART_DEV_RX_REQ;
 					uart_priv.checksum = buf_hdr->checksum;
 					uart_priv.payload_len = buf_hdr->buf_size;
 					uart_priv.rx_size_done = 0;
 					uart_priv.rx_size_total = 0;
 					whc_uart_irq_set(RxIrq, DISABLE);
 					rtos_sema_give(uart_priv.rxirq_sema);
-
+					goto exit;
 				} else if (buf_hdr->subtype == WHC_UART_HDR_ACK_REPLY) {
 					uart_priv.rx_size_done = 0;
 					uart_priv.rx_size_total = 0;
@@ -352,8 +352,9 @@ void whc_uart_dev_rx_irq_task(void *pData)
 		/* Task blocked and wait the semaphore(events) here */
 		rtos_sema_take(whc_uart_priv->rxirq_sema, RTOS_MAX_TIMEOUT);
 		switch (uart_priv.rx_state) {
-		case WHC_UART_DEV_RX_PAYLOAD:
+		case WHC_UART_DEV_RX_REQ:
 			whc_uart_dev_send_ack();
+			uart_priv.rx_state = WHC_UART_DEV_RX_PAYLOAD;
 			break;
 		default: /* WHC_UART_DEV_RX_END */
 			whc_uart_dev_rx_done_cb(whc_uart_priv);
@@ -504,11 +505,11 @@ void whc_uart_dev_send_hdr(u16 size, u32 checksum)
 
 	len = 0;
 retry:
-	while (uart_priv.rx_state == WHC_UART_DEV_RX_PAYLOAD) {
+	while ((uart_priv.rx_state == WHC_UART_DEV_RX_PAYLOAD) || (uart_priv.rx_state == WHC_UART_DEV_RX_REQ)) {
 		rtos_time_delay_ms(1);
 	}
 	rtos_sema_take(uart_priv.tx_lock, RTOS_MAX_TIMEOUT);
-	if (uart_priv.rx_state == WHC_UART_DEV_RX_PAYLOAD) {
+	if ((uart_priv.rx_state == WHC_UART_DEV_RX_PAYLOAD) || (uart_priv.rx_state == WHC_UART_DEV_RX_REQ)) {
 		rtos_sema_give(uart_priv.tx_lock);
 		goto retry;
 	}

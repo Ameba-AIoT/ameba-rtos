@@ -23,10 +23,16 @@
 
 #define USB_4G_DONGLE_SUPPORT                     1
 
-#define USB_EF_DONGLE_VID        0x2C7C
-#define EF_DONGLE_PID_EG915      0x0901
-#define EF_DONGLE_PID_EG91       0x0191
-#define USB_DEFAULT_VID          USB_VID
+/* Quectel CAT1 in ECM mode */
+#define USB_QUECTEL_DONGLE_VID        (0x2C7C)
+#define QUECTEL_DONGLE_PID_EG915      (0x0901)
+#define QUECTEL_DONGLE_PID_EG91       (0x0191)
+
+/* Fibocom LE271 CAT1 in ECM mode */
+#define USB_FIBOCOM_DONGLE_VID        (0x2CB7)
+#define FIBOCOM_DONGLE_PID_LE271      (0x0D01)
+
+#define USB_DEFAULT_VID          (USB_VID)
 
 #else
 #error "No composite class configured"

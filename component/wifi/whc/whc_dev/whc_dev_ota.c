@@ -127,6 +127,13 @@ void whc_dev_ota_process(u8 *buf)
 
 	case WHC_OTA_END:
 		break;
+
+	case WHC_OTA_RMESH_INIT:
+#ifdef CONFIG_RMESH_OTA_EN
+		rmesh_ota_init();
+#endif
+		break;
+
 	default:
 		break;
 	}

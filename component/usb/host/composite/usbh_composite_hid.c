@@ -571,6 +571,9 @@ static int usbh_composite_hid_parse_interface(usb_host_t *host)
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "AC parse fail\n");
 			return ret;
 		}
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get if fail\n");
+		return HAL_ERR_PARA;
 	}
 
 	return ret;

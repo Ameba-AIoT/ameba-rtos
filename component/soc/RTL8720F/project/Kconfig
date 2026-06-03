@@ -142,6 +142,11 @@ menu "CONFIG APPLICATION"
 
     rsource "../../../soc/common/diagnose/Kconfig"
 
+    config APPLICATION_SHELL_TASK_STACK_SIZE_MENU
+        int "Shell task stack size for application (bytes)"
+        range 256 8192
+        default 4096
+
 endmenu
 
 
@@ -389,11 +394,6 @@ menu "CONFIG ETHERNET"
     config ETHERNET_RMII
         bool
 endmenu
-
-config APPLICATION_SHELL_TASK_STACK_SIZE_MENU
-    int "Shell task stack size for HOST/NONE (bytes)"
-    range 256 8192
-    default 4096
 
 config SHELL_TASK_STACK_BASIC_SIZE
     int

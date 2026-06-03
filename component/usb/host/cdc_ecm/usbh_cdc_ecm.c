@@ -111,7 +111,6 @@ static int usbh_cdc_ecm_cb_intr_receive(u8 *buf, u32 length);
 static int usbh_cdc_ecm_cb_bulk_send(int state);
 static int usbh_cdc_ecm_intr_receive(void);
 static int usbh_cdc_ecm_parse_ctrl(usbh_itf_data_t *itf_data);
-static int usbh_cdc_ecm_parse_data(usbh_itf_data_t *itf_data);
 static int usbh_cdc_ecm_tx_status_check(void);
 static int usbh_cdc_ecm_bulk_send(u8 *buf, u32 len);
 static void usbh_cdc_ecm_deinit_all_pipe(void);
@@ -898,140 +897,51 @@ static int usbh_cdc_ecm_parse_ctrl(usbh_itf_data_t *itf_data)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	usbh_cdc_ecm_pipe_info_t *ctrl_ep = &(cdc->intr_rx);
-	usbh_ep_desc_t *ep_desc;
-	u16 itf_total_len = 0;
+	usb_cdc_ethernet_function_desc_t *eth_desc;
+	usbh_itf_desc_t *itf_desc;
 	u8 *desc;
+	u16 total;
 	u8 len;
 
-	if (itf_data == NULL) {
+	if (itf_data == NULL || itf_data->raw_data == NULL || itf_data->itf_desc_array == NULL) {
 		return HAL_ERR_PARA;
 	}
 
+	itf_desc = &itf_data->itf_desc_array[0];
+	if (itf_desc->bNumEndpoints != 1) {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Ctrl ep is %d, return\n", itf_desc->bNumEndpoints);
+		return HAL_ERR_PARA;
+	}
+
+	/* Get INTR endpoint from the parsed descriptor */
+	usb_os_memcpy(&ctrl_ep->ep_desc, &itf_desc->ep_desc_array[0], sizeof(usbh_ep_desc_t));
+	ctrl_ep->valid = 1;
+
+	/* Scan raw_data only for the ECM Ethernet Networking CS functional descriptor,
+	 * which carries iMACAddress and is not parsed by the generic framework. */
 	desc = itf_data->raw_data;
-	if (desc == NULL) {
-		return HAL_ERR_PARA;
-	}
-
-	if (((usbh_itf_desc_t *)desc)->bNumEndpoints != 1) {
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Ctrl ep is %d, return\n", ((usbh_itf_desc_t *)desc)->bNumEndpoints);
-		return HAL_ERR_PARA;
-	}
-
-	len = ((usbh_desc_header_t *) desc)->bLength;
-	desc += len;
-	itf_total_len += len;
-
-	while (1) {
-		if (desc == NULL || itf_total_len >= itf_data->raw_data_len) {
+	total = 0;
+	while (total < itf_data->raw_data_len) {
+		len = ((usbh_desc_header_t *)desc)->bLength;
+		if (len == 0) {
 			break;
 		}
-
-		switch (((usbh_desc_header_t *) desc)->bDescriptorType) {
-		case USB_DESC_TYPE_INTERFACE:
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Ctrl intf new %d, return\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber);
-			return HAL_OK;
-
-		case USB_CDC_CS_INTERFACE:
-			if ((((usb_cdc_ethernet_function_desc_t *) desc)->bDescriptorSubtype) == USB_CDC_FUNC_DESC_ETHERNET_NETWORKING) {
-				cdc->iMACAddressStringId = ((usb_cdc_ethernet_function_desc_t *)desc)->iMACAddress;
-				RTK_LOGS(TAG, RTK_LOG_INFO,  "Mac string id(%d)\n", cdc->iMACAddressStringId);
+		if (((usbh_desc_header_t *)desc)->bDescriptorType == USB_CDC_CS_INTERFACE) {
+			eth_desc = (usb_cdc_ethernet_function_desc_t *)desc;
+			if (eth_desc->bDescriptorSubtype == USB_CDC_FUNC_DESC_ETHERNET_NETWORKING) {
+				cdc->iMACAddressStringId = eth_desc->iMACAddress;
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Mac string id(%d)\n", cdc->iMACAddressStringId);
 				cdc->sub_status = CDC_ECM_STATE_GET_MAC_STR;
+				break;
 			}
-			len = ((usbh_desc_header_t *) desc)->bLength;
-			desc += len;
-			break;
-
-		case USB_DESC_TYPE_ENDPOINT:
-			ep_desc = (usbh_ep_desc_t *)desc;
-			usb_os_memcpy(&(ctrl_ep->ep_desc), ep_desc, sizeof(usbh_ep_desc_t));
-			ctrl_ep->valid = 1;
-
-			len = ((usbh_desc_header_t *) desc)->bLength;
-			desc += len;
-			break;
-
-		default:
-			len = ((usbh_desc_header_t *) desc)->bLength;
-			desc += len;
-			break;
 		}
-		itf_total_len += len;
+		desc += len;
+		total += len;
 	}
 
 	return HAL_OK;
 }
 
-/**
-  * @brief  Parse audio streaming interface
-  * @param  itf_data: interface descriptor buffer
-  * @retval Status
-  */
-static int usbh_cdc_ecm_parse_data(usbh_itf_data_t *itf_data)
-{
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-	usbh_ep_desc_t *ep_desc;
-	u16 itf_total_len = 0;
-	u8 itf_num;
-	u8 *desc;
-	u16 len;
-
-	if (itf_data == NULL) {
-		return HAL_ERR_PARA;
-	}
-
-	desc = itf_data->raw_data;
-	if (desc == NULL) {
-		return HAL_ERR_PARA;
-	}
-
-	itf_num = ((usbh_itf_desc_t *)desc)->bInterfaceNumber;
-	len = ((usbh_desc_header_t *) desc)->bLength;
-	desc += len;
-	itf_total_len += len;
-
-	while (1) {
-		if (desc == NULL || itf_total_len >= itf_data->raw_data_len) {
-			break;
-		}
-
-		switch (((usbh_desc_header_t *) desc)->bDescriptorType) {
-		case USB_DESC_TYPE_INTERFACE:
-			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != itf_num) {
-				RTK_LOGS(TAG, RTK_LOG_DEBUG, "AS intf new %d:old %d, return\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, itf_num);
-				return HAL_OK;
-			}
-
-			cdc->data_itf_id = desc[2];
-			cdc->data_alt_set = desc[3];
-			RTK_LOGS(TAG, RTK_LOG_INFO,  "Get ECM data if(%d)alt(%d)\n", cdc->data_itf_id, cdc->data_alt_set);
-			len = ((usbh_desc_header_t *) desc)->bLength;
-			desc += len;
-			break;
-
-		case USB_DESC_TYPE_ENDPOINT:
-			ep_desc = (usbh_ep_desc_t *)desc;
-			if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) { //in
-				usb_os_memcpy(&(cdc->bulk_rx.ep_desc), ep_desc, sizeof(usbh_ep_desc_t));
-				cdc->bulk_rx.valid = 1;
-			} else {  //out
-				usb_os_memcpy(&(cdc->bulk_tx.ep_desc), ep_desc, sizeof(usbh_ep_desc_t));
-				cdc->bulk_tx.valid = 1;
-			}
-
-			len = ((usbh_desc_header_t *) desc)->bLength;
-			desc += len;
-			break;
-
-		default:
-			len = ((usbh_desc_header_t *) desc)->bLength;
-			desc += len;
-			break;
-		}
-		itf_total_len += len;
-	}
-
-	return HAL_OK;
-}
 
 static int usbh_cdc_ecm_parse_interface_desc(usb_host_t *host)
 {
@@ -1039,6 +949,10 @@ static int usbh_cdc_ecm_parse_interface_desc(usb_host_t *host)
 	usbh_dev_id_t dev_id = {0,};
 	usbh_dev_desc_t *pdesc;
 	usbh_itf_data_t *itf_data;
+	usbh_itf_desc_t *data_itf_desc;
+	usbh_ep_desc_t *ep;
+	u8 alt_idx;
+	u8 i;
 	u8 ret = HAL_ERR_UNKNOWN;
 
 	pdesc = cdc->host->dev_desc;
@@ -1059,21 +973,43 @@ static int usbh_cdc_ecm_parse_interface_desc(usb_host_t *host)
 		}
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get if fail\n");
+		return HAL_ERR_PARA;
 	}
 
 	dev_id.bInterfaceClass = USB_CDC_DATA_INTERFACE_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_CDC_SUBCLASS_RESERVED;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
-	while (itf_data) {
-		if (itf_data->itf_desc_array[0].bAlternateSetting == 0) { //setting 0
-			ret = usbh_cdc_ecm_parse_data(itf_data);
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Data parse fail\n");
-				return ret;
+	data_itf_desc = NULL;
+	while (itf_data && data_itf_desc == NULL) {
+		for (alt_idx = 0; alt_idx < itf_data->alt_setting_cnt; alt_idx++) {
+			if (itf_data->itf_desc_array[alt_idx].bNumEndpoints > 0) {
+				data_itf_desc = &itf_data->itf_desc_array[alt_idx];
+				break;
 			}
 		}
-		itf_data = itf_data->next;
+		if (data_itf_desc == NULL) {
+			itf_data = itf_data->next;
+		}
+	}
+
+	if (data_itf_desc != NULL) {
+		cdc->data_itf_id = data_itf_desc->bInterfaceNumber;
+		cdc->data_alt_set = data_itf_desc->bAlternateSetting;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Get ECM data if(%d)alt(%d)\n", cdc->data_itf_id, cdc->data_alt_set);
+		for (i = 0; i < data_itf_desc->bNumEndpoints; i++) {
+			ep = &data_itf_desc->ep_desc_array[i];
+			if (USB_EP_IS_IN(ep->bEndpointAddress)) {
+				usb_os_memcpy(&cdc->bulk_rx.ep_desc, ep, sizeof(usbh_ep_desc_t));
+				cdc->bulk_rx.valid = 1;
+			} else {
+				usb_os_memcpy(&cdc->bulk_tx.ep_desc, ep, sizeof(usbh_ep_desc_t));
+				cdc->bulk_tx.valid = 1;
+			}
+		}
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Data itf parse fail\n");
+		return HAL_ERR_PARA;
 	}
 
 	return HAL_OK;

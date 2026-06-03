@@ -414,24 +414,11 @@ static int mp_ext2_gnt_bt(void **argv, int argc)
 
 	if (strcmp(argv[0], "wifi") == 0) {
 		MP_EXT2_PRINTF("Switch GNT_BT to WIFI.\n\r");
-#if defined(CONFIG_RTL8720F)
-		uint32_t value = 0;
-		value = HAL_READ32(0x40801250, 0);
-		value |= (0xF << 8);
-		HAL_WRITE32(0x40801250, 0, value);
-#endif
 #if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_pta(PTA_WIFI, PTA_HOST_BT, COMMON_ACTION);
 #endif
 	} else if (strcmp(argv[0], "bt") == 0) {
 		MP_EXT2_PRINTF("Switch GNT_BT to BT.\n\r");
-#if defined(CONFIG_RTL8720F)
-		uint32_t value = 0;
-		value = HAL_READ32(0x40801250, 0);
-		value &= ~(0xF << 8);
-		value |= (0x1 << 8);
-		HAL_WRITE32(0x40801250, 0, value);
-#endif
 #if defined(CONFIG_BT_COEXIST)
 		rtk_coex_btc_set_pta(PTA_BT, PTA_HOST_BT, COMMON_ACTION);
 #endif

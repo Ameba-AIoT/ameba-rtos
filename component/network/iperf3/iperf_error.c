@@ -45,8 +45,6 @@ iperf_err(struct iperf_test *test, const char *format, ...)
 	vsnprintf(str, sizeof(str), format, argp);
 	if (test != NULL && test->json_output && test->json_top != NULL) {
 		cJSON_AddStringToObject(test->json_top, "error", str);
-	} else if (test && test->outfile) {
-		fprintf(test->outfile, "iperf3: %s\n", str);
 	} else {
 		fprintf(stderr, "iperf3: %s\n", str);
 	}
@@ -67,8 +65,6 @@ iperf_errexit(struct iperf_test *test, const char *format, ...)
 	if (test != NULL && test->json_output && test->json_top != NULL) {
 		cJSON_AddStringToObject(test->json_top, "error", str);
 		iperf_json_finish(test);
-	} else if (test && test->outfile) {
-		fprintf(test->outfile, "iperf3: %s\n", str);
 	} else {
 		fprintf(stderr, "iperf3: %s\n", str);
 	}
@@ -147,10 +143,6 @@ iperf_strerror(int int_errno, char *buf, size_t buf_size)
 		break;
 	case IEENDCONDITIONS:
 		DiagSnPrintf(errstr, len, "only one test end condition (-t, -n, -k) may be specified");
-		break;
-	case IELOGFILE:
-		DiagSnPrintf(errstr, len, "unable to open log file");
-		perr = 1;
 		break;
 	case IENOSCTP:
 		DiagSnPrintf(errstr, len, "no SCTP support available");
