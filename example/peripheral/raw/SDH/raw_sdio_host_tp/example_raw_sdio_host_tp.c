@@ -587,7 +587,7 @@ exit:
 }
 
 /* ---------- Main entry ---------- */
-int example_sdio_host_tp(void)
+int example_raw_sdio_host_tp(void)
 {
 	sd_sema_init();
 	rtos_mutex_create(&sdio_lock);

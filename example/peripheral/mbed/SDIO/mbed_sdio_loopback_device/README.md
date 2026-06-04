@@ -60,5 +60,5 @@ Or it will echo:
 #  Supported IC
 
 RTL8721Dx
-
-
+RTL8721F
+RTL8720F
