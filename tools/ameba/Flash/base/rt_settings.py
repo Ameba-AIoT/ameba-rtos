@@ -28,8 +28,9 @@ class RtSettings():
         self.switch_baudrate_at_floader = kwargs.get("SwitchBaudrateAtFloader", 0)
         self.write_response_timeout_in_second = round(kwargs.get("WriteResponseTimeoutInMillisecond", 2000) / 1000, 2)
         self.floader_boot_delay_in_second = round(kwargs.get("FloaderBootDelayInMillisecond", 1000) / 1000, 2)
-        self.auto_switch_to_download_mode_with_dtr_rts = kwargs.get("AutoSwitchToDownloadModeWithDtrRts", 0)
-        self.auto_reset_device_with_dtr_rts = kwargs.get("AutoResetDeviceWithDtrRts", 0)
+        self.auto_switch_to_download_mode_with_dtr_rts = kwargs.get("AutoSwitchToDownloadModeWithDtrRts", 1)
+        self.auto_reset_device_with_dtr_rts = kwargs.get("AutoResetDeviceWithDtrRts", 1)
+        self.auto_switch_to_download_mode_with_dtr_rts_first = kwargs.get("AutoSwitchToDownloadModeWithDtrRtsFirst", 0)
         self.flash_protection_process = kwargs.get("FlashProtectionProcess", self.FLASH_PROTECTION_PROCESS_PROMPT)
         self.erase_by_block = kwargs.get("EraseByBlock", 0)
         self.program_config1 = kwargs.get("ProgramConfig1", 0)
@@ -58,6 +59,7 @@ class RtSettings():
             "WriteResponseTimeoutInMillisecond": int(self.write_response_timeout_in_second * 1000),
             "FloaderBootDelayInMillisecond": int(self.floader_boot_delay_in_second * 1000),
             "AutoSwitchToDownloadModeWithDtrRts": self.auto_switch_to_download_mode_with_dtr_rts,
+            "AutoSwitchToDownloadModeWithDtrRtsFirst": self.auto_switch_to_download_mode_with_dtr_rts_first,
             "AutoResetDeviceWithDtrRts": self.auto_reset_device_with_dtr_rts,
             "FlashProtectionProcess": self.flash_protection_process,
             "EraseByBlock": self.erase_by_block,
