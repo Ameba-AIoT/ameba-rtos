@@ -95,34 +95,33 @@
 #include "whc_ipc_host_msg.h"
 #include "whc_ipc_host_ops.h"
 #include "whc_ipc_host_mem.h"
-#elif defined(CONFIG_WHC_HCI_SDIO)
+#else
+/* non-ipc driver */
+#include "whc_def.h"
+#include "whc_host_ioctl.h"
+#include "whc_host_cust_evt.h"
+#include "whc_host_protocal_offload.h"
+#if defined(CONFIG_WHC_HCI_SDIO)
 #include <linux/mmc/sdio_func.h>
 #include <linux/mmc/sdio_ids.h>
-#include "whc_dev.h"
 #include "whc_sdio_host.h"
 #ifdef CONFIG_BT_INIC
 #include "rtb_sdio.h"
 #endif
 #elif defined(CONFIG_WHC_HCI_SPI)
 #include <linux/spi/spi.h>
-#include "whc_dev.h"
 #include "whc_spi_host.h"
 #ifdef CONFIG_BT_INIC
 #include "rtb_spi.h"
 #endif
 #elif defined(CONFIG_WHC_HCI_USB)
 #include <linux/usb.h>
-#include "whc_dev.h"
 #include "whc_usb_host.h"
+#endif
 #endif
 
 #ifdef NAN_CUSTOMER_NANDOW
 #include "WFPAL.h"
-#endif
-
-#if !defined(CONFIG_WHC_HCI_IPC)
-#include "whc_host_ioctl.h"
-#include "whc_host_cust_evt.h"
 #endif
 
 #include "whc_host_regd.h"

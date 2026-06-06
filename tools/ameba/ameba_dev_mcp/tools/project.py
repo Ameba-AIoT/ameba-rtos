@@ -16,8 +16,10 @@ import sys
 from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
-from ameba_dev_mcp._paths import SDK_ROOT
+from ameba_dev_mcp._paths import PROJECT_ROOT, SDK_ROOT
 
+# ameba.py always lives in the SDK; the build it drives is cwd-relative, so we
+# run it with cwd=PROJECT_ROOT (below) to build the active project in place.
 AMEBA_PY = os.path.join(SDK_ROOT, "ameba.py")
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[mK]")
@@ -68,7 +70,7 @@ def _postprocess(raw_output: str, log_path: str) -> str:
 
 
 def _read_current_soc() -> Optional[str]:
-    info_file = os.path.join(SDK_ROOT, "soc_info.json")
+    info_file = os.path.join(PROJECT_ROOT, "soc_info.json")
     if not os.path.exists(info_file):
         return None
     try:
@@ -103,7 +105,7 @@ def run_build_quiet(
             "soc": None,
         }
 
-    soc_workdir = os.path.join(SDK_ROOT, f"build_{effective_soc}")
+    soc_workdir = os.path.join(PROJECT_ROOT, f"build_{effective_soc}")
     log_path = os.path.join(soc_workdir, "build.log")
 
     # Base build command (no -q yet; added per sub-command below)
@@ -118,7 +120,7 @@ def run_build_quiet(
     def _run(cmd: list) -> Optional[subprocess.CompletedProcess]:
         return subprocess.run(
             cmd,
-            cwd=SDK_ROOT,
+            cwd=PROJECT_ROOT,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             stdin=subprocess.DEVNULL,
@@ -203,14 +205,17 @@ def _sync_project_info(soc: str) -> dict:
         return {"updated": False, "error": f"import failed: {ex}"}
 
     try:
-        parsed = parse_project(SDK_ROOT, soc)
+        # Layout/addresses from the SDK headers; build_dir + .config + bins
+        # from the project (PROJECT_ROOT). Must match the pre-flash parse in
+        # flash.py so the post-build sync and the pre-flash reconcile agree.
+        parsed = parse_project(SDK_ROOT, soc, build_base=PROJECT_ROOT)
     except FlashCfgParseError as ex:
         return {"updated": False, "soc": soc, "error": f"parse failed: {ex}"}
     except Exception as ex:
         return {"updated": False, "soc": soc, "error": str(ex)}
 
     try:
-        info = update_project_for_soc(SDK_ROOT, parsed)
+        info = update_project_for_soc(PROJECT_ROOT, parsed)
     except ConfigLoadError as ex:
         return {"updated": False, "soc": soc,
                 "error": "; ".join(f"[{e.code}] {e.message}" for e in ex.errors)}
@@ -218,16 +223,29 @@ def _sync_project_info(soc: str) -> dict:
         return {"updated": False, "soc": soc, "error": str(ex)}
 
     entry = info.projects.get(soc)
+    images = []
+    for img in (entry.images if entry else []):
+        try:
+            size = os.path.getsize(img.path)
+        except OSError:
+            size = None  # optional image (e.g. vfs.bin) not produced this build
+        images.append({
+            "name": os.path.basename(img.path),
+            "type": img.type,
+            "size_bytes": size,
+        })
     return {
         "updated": True,
         "soc": soc,
         "mode": entry.flash_layout_setting_mode if entry else None,
+        "build_dir": entry.build_dir if entry else None,
         "image_count": len(entry.images) if entry else 0,
+        "images": images,
     }
 
 
 def _write_soc_info(soc_name: str) -> None:
-    info_file = os.path.join(SDK_ROOT, "soc_info.json")
+    info_file = os.path.join(PROJECT_ROOT, "soc_info.json")
     with open(info_file, "w", encoding="utf-8") as f:
         json.dump({"soc": {"name": soc_name}}, f, indent=4)
 
@@ -241,7 +259,7 @@ def register_project_tools(mcp: FastMCP) -> None:
         switching targets. Subsequent build_firmware calls will use this target
         automatically without needing to pass any parameters.
 
-        Writes to a shared file (`<SDK_ROOT>/soc_info.json`); do not call
+        Writes to a shared file (`<PROJECT_ROOT>/soc_info.json`); do not call
         this tool (or build_firmware) concurrently with another set_target
         / build_firmware for a different SoC — they race on the same file.
 
@@ -265,6 +283,7 @@ def register_project_tools(mcp: FastMCP) -> None:
         pristine: bool = False,
         summary_only: bool = True,
         alias: Optional[str] = None,
+        config_files: Optional[list[str]] = None,
     ) -> dict:
         """Build firmware for the selected Ameba SoC using quiet mode.
 
@@ -303,6 +322,12 @@ def register_project_tools(mcp: FastMCP) -> None:
                           `set_target` for subsequent calls IS updated
                           (so a follow-up build without alias keeps
                           building the same SoC).
+            config_files: Optional. Config file(s) like a project's prj.conf to
+                          apply BEFORE building (same as kconfig_apply_file).
+                          The .config is REGENERATED from default.conf + these
+                          files, so prior kconfig_set tweaks are reset. Preferred
+                          over a separate kconfig_apply_file call since it rebuilds
+                          in the same step. For incremental tweaks use kconfig_set.
 
         Returns:
             success         Whether the build succeeded.
@@ -311,20 +336,27 @@ def register_project_tools(mcp: FastMCP) -> None:
                             summary_only=True).
             log_path        Absolute path to the full unstripped build log.
             soc             The SoC that was built.
+            project_info    On success: {updated, soc, mode, build_dir
+                            (absolute path to build_<SOC>/), image_count,
+                            images: [{name, type, size_bytes}, ...]}.
+                            size_bytes is null for an optional image that
+                            wasn't produced (e.g. vfs.bin).
             retargeted_from When `alias` triggered a SoC switch, the
                             previously-active SoC; otherwise omitted.
+            config_applied  When `config_files` was passed, the absolute paths
+                            of the config file(s) applied before the build.
         """
         retargeted_from = None
         if alias is not None:
             try:
-                from ameba_dev_mcp._paths import SDK_ROOT as _SDK_ROOT
+                from ameba_dev_mcp._paths import PROJECT_ROOT as _PROJECT_ROOT
                 from ameba_dev_mcp.config.loader import (
                     ConfigLoadError,
                     load_board_info,
                     resolve_alias_or_error,
                     resolve_board,
                 )
-                binfo = load_board_info(_SDK_ROOT)
+                binfo = load_board_info(_PROJECT_ROOT)
             except ConfigLoadError as ex:
                 return {
                     "success": False,
@@ -355,7 +387,24 @@ def register_project_tools(mcp: FastMCP) -> None:
                         "soc": current_soc,
                         "log_path": None,
                     }
+        if config_files:
+            from ameba_dev_mcp.tools.kconfig import _run_menuconfig
+            # Relative paths resolve against PROJECT_ROOT (project side of the
+            # SDK/project dual-root), not the build subprocess cwd.
+            resolved_cfgs = [f if os.path.isabs(f) else os.path.join(PROJECT_ROOT, f)
+                             for f in config_files]
+            applied = _run_menuconfig(["--apply-file"] + resolved_cfgs, None)
+            if not applied.get("success"):
+                return {
+                    "success": False,
+                    "summary": "config_files apply failed; build skipped",
+                    "config_result": applied,
+                    "soc": _read_current_soc(),
+                    "log_path": None,
+                }
         result = run_build_quiet(example=app, clean=clean, pristine=pristine)
+        if config_files:
+            result["config_applied"] = applied.get("applied_files", resolved_cfgs)
         if retargeted_from is not None:
             result["retargeted_from"] = retargeted_from
         if summary_only and result.get("success"):

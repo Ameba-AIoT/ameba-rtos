@@ -303,7 +303,7 @@ rnapt_netif_t *rnapt_netif_create(uint8_t idx, const rnapt_netif_config_t *confi
 					 ip4_addr3(&config->ip_info->ip), ip4_addr4(&config->ip_info->ip));
 
 			/* Check if custom IP subnet conflicts */
-			if (!lwip_subnet_is_used(&check_ip)) {
+			if (!lwip_subnet_is_used(&check_ip, netif->lwip_netif)) {
 				/* No conflict, use custom IP */
 				use_custom_ip = true;
 			} else {

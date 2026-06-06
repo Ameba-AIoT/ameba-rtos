@@ -31,6 +31,11 @@
 #define QUEUE_STOP_THRES	7
 #define QUEUE_WAKE_THRES	4
 
+struct whc_msg_node {
+	struct list_head	list;
+	void				*msg;
+};
+
 #ifndef CONFIG_WHC_HCI_IPC
 /* internal pkt rx: from dev to host kernel space */
 int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb);

@@ -239,7 +239,7 @@ menu "CONFIG WIFI"
             bool
             select WHC_WIFI_API_PATH
             select WLAN if WHC_HOST||WHC_DEV
-            select LWIP_LAYER if WHC_HOST && !MP_SHRINK
+            select LWIP_LAYER if WHC_HOST && !MP_SHRINK && !PLATFORM_ZEPHYR
             select ENABLE_WPS if WHC_HOST && WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 

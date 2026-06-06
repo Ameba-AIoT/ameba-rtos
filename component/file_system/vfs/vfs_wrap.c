@@ -61,11 +61,10 @@ FILE *__wrap_fopen(const char *filename, const char *mode)
 		return NULL;
 	}
 
-	vfs_file *finfo = (vfs_file *)malloc(sizeof(vfs_file));
+	vfs_file *finfo = (vfs_file *)rtos_mem_zmalloc(sizeof(vfs_file));
 	if (finfo == NULL) {
 		return NULL;
 	}
-	memset(finfo, 0x00, sizeof(vfs_file));
 	finfo->vfs_id = vfs_id;
 	finfo->user_id = user_id;
 
@@ -73,7 +72,7 @@ FILE *__wrap_fopen(const char *filename, const char *mode)
 
 	ret = vfs.drv[vfs_id]->open(vfs.user[user_id].fs, finfo->name, mode, finfo);
 	if (ret < 0) {
-		free(finfo);
+		rtos_mem_free(finfo);
 		finfo = NULL;
 	}
 	return (FILE *)finfo;
@@ -89,7 +88,7 @@ int __wrap_fclose(FILE *stream)
 	}
 
 	ret = vfs.drv[finfo->vfs_id]->close(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
-	free(finfo);
+	rtos_mem_free(finfo);
 	return ret;
 }
 
@@ -399,11 +398,10 @@ void *__wrap_opendir(const char *name)
 		return NULL;
 	}
 
-	vfs_file *finfo = (vfs_file *)malloc(sizeof(vfs_file));
+	vfs_file *finfo = (vfs_file *)rtos_mem_zmalloc(sizeof(vfs_file));
 	if (finfo == NULL) {
 		return NULL;
 	}
-	memset(finfo, 0x00, sizeof(vfs_file));
 	finfo->vfs_id = vfs_id;
 	finfo->user_id = user_id;
 
@@ -411,7 +409,7 @@ void *__wrap_opendir(const char *name)
 
 	ret = vfs.drv[vfs_id]->opendir(vfs.user[user_id].fs, finfo->name, finfo);
 	if (ret != 0) {
-		free(finfo);
+		rtos_mem_free(finfo);
 		finfo = NULL;
 	}
 	return (void *)finfo;
@@ -430,7 +428,7 @@ int __wrap_closedir(void *dirp)
 	int ret = 0;
 	vfs_file *finfo = (vfs_file *)dirp;
 	ret = vfs.drv[finfo->vfs_id]->closedir(vfs.user[finfo->user_id].fs, ((vfs_file *)dirp));
-	free(finfo);
+	rtos_mem_free(finfo);
 	return ret;
 }
 

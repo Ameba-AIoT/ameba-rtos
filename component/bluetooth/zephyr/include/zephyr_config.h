@@ -197,6 +197,7 @@ extern "C" {
 even if CONFIG_BT_EXT_ADV is enabled */
 #define CONFIG_BT_EXT_ADV_LEGACY_SUPPORT 1
 
+#if 0
 //periodic adv
 #define CONFIG_BT_PER_ADV 1
 
@@ -222,6 +223,7 @@ even if CONFIG_BT_EXT_ADV is enabled */
 
 //padv sync rsp
 #define CONFIG_BT_PER_ADV_SYNC_RSP   1
+#endif
 
 #ifdef __cplusplus
 }

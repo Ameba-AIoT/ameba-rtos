@@ -71,6 +71,13 @@ def main(argc, argv):
 
     args = parser.parse_args()
 
+    # In quiet mode, skip the postbuild "Image analyze" step (code-size /
+    # static analysis). This env var propagates down the whole process chain
+    # (cmake --build -> ninja -> cmake -P postbuild.cmake), where each
+    # postbuild.cmake gates the analyze block on `DEFINED ENV{...}`.
+    if args.quiet:
+        os.environ['AMEBA_SKIP_IMAGE_ANALYZE'] = '1'
+
     # Track start time and register quiet-mode summary (runs on any exit path).
     _build_start = time.monotonic()
     _build_state = {'success': False, 'final_image_dir': None, 'build_dir': None}

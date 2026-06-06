@@ -35,7 +35,7 @@ tools/ameba/ameba_dev_mcp/
 │   ├── serial.py                connect/disconnect/read/write/drain/expect — alias 驱动的串口 primitive
 │   ├── dev_loop.py              quick_test_tool 薄壳（build → flash → reset → wait → auto_close）
 │   ├── project.py               set_target / build_firmware（成功后自动同步 json5）
-│   └── kconfig.py               kconfig_get / kconfig_set / kconfig_search
+│   └── kconfig.py               kconfig_get / kconfig_set / kconfig_search / kconfig_apply_file
 ├── resources/
 │   ├── boards.py                board://list、board://{alias}
 │   ├── config.py                config://project_info、config://board_info
@@ -60,6 +60,7 @@ tools/ameba/ameba_dev_mcp/
 | `kconfig_get` | `(symbols: list[str], soc?: str)` | `tools/kconfig.py` | 查 Kconfig 当前值 |
 | `kconfig_set` | `(assignments: list[str], soc?: str)` | `tools/kconfig.py` | 设 Kconfig（依赖不满足整体拒绝） |
 | `kconfig_search` | `(pattern: str, soc?: str)` | `tools/kconfig.py` | 按正则搜符号 / prompt |
+| `kconfig_apply_file` | `(files: list[str], soc?: str)` | `tools/kconfig.py` | 应用 `prj.conf` 等配置档（从 `default.conf`+files **重生成** `.config`，会重置 `kconfig_set` 改动）；`build_firmware(config_files=...)` 可在构建前一次性应用 |
 | `flash_firmware_tool` | `(alias?: str)` | `tools/flash.py` | 烧录。**`alias` 单板时可省**；多板必传，未传返回 `ALIAS_REQUIRED` 列出可选 |
 | `list_serial_ports_tool` | `(alias?: str)` | `tools/flash.py` | 不传 alias → 本机串口；传 alias 且远程 → 远端枚举。返回里每个 port 含 `busy / held_by_self / held_by_self_alias / holder` 占用诊断字段 |
 | `env_pre_check_tool` | `(with_reset=False, soc_filter?: str)` | `tools/env_check.py` | **环境预检**：JSON 完整性 + 所有 alias 端口可见性 + 远端 TCP 可达性 + 可选 reset 烟测。失败结构化为 `BOARD_CONFIG_*` / `PORT_NOT_VISIBLE` / `REMOTE_UNREACHABLE` / `RESET_TEST_FAILED`，附带 `next_steps` 与 `debug://hardware` 指路 |

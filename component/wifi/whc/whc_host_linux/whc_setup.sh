@@ -138,15 +138,10 @@ esac
 cp ../../common/rtw_wifi_common.h ./driver/include
 cp ../../common/rtw_inic_common.h ./driver/include
 cp ../whc_def.h ./driver/include
-cp ../whc_dev/whc_dev.h ./driver/include
-cp ../whc_dev/whc_dev_struct.h ./driver/include
-cp ../whc_dev/whc_dev_protocal_offload.h ./driver/include
 cp ../../api/wifi_api_types.h ./driver/include
 cp ../../api/wifi_api_event.h ./driver/include
 cp ../../driver/intf/wifi_intf_drv_to_app_internal.h ./driver/include
 cp ../../../soc/usrcfg/common/ameba_wificfg_common.h ./driver/include
 cp ../../../bluetooth/driver/bt_inic/bt_inic_defs.h ./driver/include
-cp ../whc_dev/whc_dev_tcpip.h ./driver/include
-cp ../whc_dev/whc_dev_powersave.h ./driver/include
 
 echo "WHC setup complete"

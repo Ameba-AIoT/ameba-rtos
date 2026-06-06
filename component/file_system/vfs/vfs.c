@@ -17,7 +17,7 @@ extern u8 fatfs_flash_is_nand;
 extern u32 FLASH_APP_BASE;
 extern u8 SECTOR_NUM;
 extern u32 FLASH_SECTOR_COUNT;
-extern u32 SECTOR_SIZE_FLASH;;
+extern u32 SECTOR_SIZE_FLASH;
 extern u32 FLASH_BLOCK_SIZE;
 
 extern u32 SECOND_FLASH_SECTOR_COUNT;
@@ -306,7 +306,7 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 
 int vfs_register(const vfs_opt *drv)
 {
-	unsigned char drv_num = -1;
+	int drv_num = -1;
 	if (vfs.drv_num < VFS_FS_MAX) {
 		vfs.drv[vfs.drv_num] = drv;
 		drv_num = vfs.drv_num;
@@ -356,7 +356,7 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 		VFS_DBG(VFS_ERROR, "interface type not supported by littlefs");
 		goto EXIT;
 	} else {
-		if (!find_inf_number(prefix)) {
+		if (find_inf_number(prefix) >= 0) {
 			VFS_DBG(VFS_INFO, "It has been already registered");
 			ret = 0;
 		} else {

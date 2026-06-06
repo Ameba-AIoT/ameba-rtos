@@ -116,6 +116,23 @@ extern uint32_t offer_ip;
 extern uint32_t server_ip;
 
 #endif
+
+void lwip_clear_ip(uint8_t idx)
+{
+	struct ip_addr ipaddr;
+	struct ip_addr netmask;
+	struct ip_addr gw;
+	struct netif *pnetif = lwip_idx_get_netif(idx);
+	if (pnetif == NULL) {
+		return;
+	}
+
+	IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
+	IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+	IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+	netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
+}
+
 /**
   * @brief  LwIP_DHCP_Process_Handle
   * @param  None
@@ -123,9 +140,6 @@ extern uint32_t server_ip;
   */
 uint8_t lwip_dhcp(uint8_t idx, uint8_t dhcp_state)
 {
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
 	uint32_t IPaddress;
 	uint8_t iptab[4];
 	uint8_t DHCP_state;
@@ -210,10 +224,7 @@ uint8_t lwip_dhcp(uint8_t idx, uint8_t dhcp_state)
 			/* If DHCP stopped by wifi_disconn_hdl*/
 			if ((dhcp_state_enum_t)dhcp->state == DHCP_STATE_OFF) {
 				DHCP_state = DHCP_STOP;
-				IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-				IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-				IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-				netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
+				lwip_clear_ip(idx);
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rlwip_dhcp: dhcp stop.");
 				wifi_indication(RTW_EVENT_DHCP_STATUS, &DHCP_state, sizeof(uint8_t));
 				ret = DHCP_STOP;
@@ -309,27 +320,8 @@ exit:
 	return ret;
 }
 
-void lwip_clear_ip(uint8_t idx)
-{
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
-	struct netif *pnetif = lwip_idx_get_netif(idx);
-	if (pnetif == NULL) {
-		return;
-	}
-
-	IP4_ADDR(ip_2_ip4(&ipaddr), 0, 0, 0, 0);
-	IP4_ADDR(ip_2_ip4(&netmask), 255, 255, 255, 0);
-	IP4_ADDR(ip_2_ip4(&gw), 0, 0, 0, 0);
-	netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
-}
-
 void lwip_dhcp_stop(uint8_t idx)
 {
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
 	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return;
@@ -337,10 +329,7 @@ void lwip_dhcp_stop(uint8_t idx)
 
 	netifapi_dhcp_stop(pnetif);
 
-	IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-	IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-	IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
+	lwip_clear_ip(idx);
 }
 
 int lwip_netif_get_idx(struct netif *pnetif)
@@ -652,11 +641,12 @@ uint8_t lwip_request_ip(uint8_t idx)
 }
 
 /**
-  * @brief  Check if a subnet is already used by any netif
+  * @brief  Check if a subnet is already used by any netif except 'exclude'
   * @param  check_ip: The IP address to check
+  * @param  exclude: Netif to skip during the check, NULL to check all netifs
   * @retval 1: subnet is used; 0: subnet is not used
   */
-int lwip_subnet_is_used(struct ip_addr *check_ip) // lwip_subnet_is_used
+int lwip_subnet_is_used(struct ip_addr *check_ip, struct netif *exclude)
 {
 	if (check_ip == NULL || ip_addr_isany(check_ip)) {
 		return 0;
@@ -664,7 +654,7 @@ int lwip_subnet_is_used(struct ip_addr *check_ip) // lwip_subnet_is_used
 
 	for (int i = 0; i < NET_IF_NUM; i++) {
 		struct netif *pnetif = lwip_idx_get_netif(i);
-		if (pnetif == NULL) {
+		if (pnetif == NULL || pnetif == exclude) {
 			continue;
 		}
 
@@ -702,21 +692,14 @@ int lwip_alloc_ip(uint8_t idx)
 		IP4_ADDR(ip_2_ip4(&new_mask), 255, 255, 255, 0);
 		IP4_ADDR(ip_2_ip4(&new_gw), 192, 168, subnet, 1);
 
-		/* Check if this subnet conflicts */
-		if (!lwip_subnet_is_used(&new_ip)) {
+		/* Check if this subnet is used by any other netif (exclude self) */
+		if (!lwip_subnet_is_used(&new_ip, pnetif)) {
 			netifapi_netif_set_addr(pnetif, ip_2_ip4(&new_ip), ip_2_ip4(&new_mask), ip_2_ip4(&new_gw));
 
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Netif %c alloc IP: %d.%d.%d.%d\n", pnetif->name[1],
 					 ip4_addr1(ip_2_ip4(&new_ip)), ip4_addr2(ip_2_ip4(&new_ip)),
 					 ip4_addr3(ip_2_ip4(&new_ip)), ip4_addr4(ip_2_ip4(&new_ip)));
 			return 0;
-		} else {
-			struct ip_addr *current_ip = &pnetif->ip_addr;
-			if (!ip_addr_isany(current_ip) &&
-				ip_addr_netcmp(&new_ip, current_ip, ip_2_ip4(&new_mask))) {
-				/* This subnet is used by ourselves, no need to re-alloc */
-				return 0;
-			}
 		}
 	}
 
@@ -768,10 +751,6 @@ int lwip_manage_subnet_conflict(uint8_t idx)
 			dhcps_stop(existing_netif);
 
 			if (lwip_alloc_ip(i) == 0) {
-				RTK_LOGS(NOTAG, RTK_LOG_INFO, "Netif %c realloc IP: %d.%d.%d.%d\n", existing_netif->name[1],
-						 ip4_addr1(ip_2_ip4(&existing_netif->ip_addr)), ip4_addr2(ip_2_ip4(&existing_netif->ip_addr)),
-						 ip4_addr3(ip_2_ip4(&existing_netif->ip_addr)), ip4_addr4(ip_2_ip4(&existing_netif->ip_addr)));
-
 				/* Restart DHCP Server with new IP */
 				dhcps_start(existing_netif);
 			} else {

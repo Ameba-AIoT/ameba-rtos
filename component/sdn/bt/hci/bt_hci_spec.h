@@ -1390,6 +1390,7 @@ struct bt_hci_rp_vendor_mp_get_lbt {
 	uint8_t status;
 	uint8_t module_id;
 	uint8_t subcmd;
+	uint8_t lbt_enable;
 	uint8_t lbt_mode;
 	uint8_t lbt_threshold_ant_out;
 	uint8_t lbt_ant_gain;

@@ -223,6 +223,34 @@ class RemoteSpec(BaseModel):
     password: Optional[str] = Field(default=None, description="Remote password (or set AMEBA_REMOTE_PWD env var)")
 
 
+class SerialLogRecord(BaseModel):
+    """Per-board serial-log capture config.
+
+    When `enable` is true, opening the board's serial session via MCP
+    starts a background reader that captures the FULL serial stream
+    (timestamped, AAG-decoded) to a log file — independent of any
+    `drain_first` the agent-facing read tools perform.
+
+    `file_name` is auto-managed when it matches the generated pattern
+    `<alias>_<YYYYMMDD>_<HHMMSS>.log`: a new file is created per day and
+    the field is written back. A user-supplied custom name (not matching
+    the pattern) is left untouched and never rotated.
+    """
+    model_config = ConfigDict(extra="forbid")
+
+    enable: bool = Field(default=False, description="Capture serial output to a log file")
+    log_dir: Optional[str] = Field(
+        default=None,
+        description="Log directory. Relative paths resolve under PROJECT_ROOT; "
+                    "default is PROJECT_ROOT/mcp_serial_log.",
+    )
+    file_name: Optional[str] = Field(
+        default=None,
+        description="Log file name. Auto-generated/rotated when it matches "
+                    "<alias>_<YYYYMMDD>_<HHMMSS>.log; a custom name is kept as-is.",
+    )
+
+
 class BoardEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -234,6 +262,7 @@ class BoardEntry(BaseModel):
     chip_erase: Optional[bool] = Field(default=None)
     add_crlf: Optional[bool] = Field(default=None, description="Internal: serial_write trailing CRLF")
     remote: Optional[RemoteSpec] = Field(default=None)
+    serial_log_record: Optional[SerialLogRecord] = Field(default=None)
 
     @model_validator(mode="after")
     def _validate_remote(self):
@@ -291,6 +320,7 @@ class ResolvedBoard(BaseModel):
     chip_erase: bool
     add_crlf: bool
     remote: Optional[RemoteSpec] = None
+    serial_log_record: Optional[SerialLogRecord] = None
 
 
 class ConfigError(BaseModel):

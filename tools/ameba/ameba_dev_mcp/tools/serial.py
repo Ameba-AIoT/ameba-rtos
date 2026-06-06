@@ -15,7 +15,7 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
-from ameba_dev_mcp._paths import REMOTE_SERVICE_DIR, SDK_ROOT, TOOLS_ROOT
+from ameba_dev_mcp._paths import PROJECT_ROOT, REMOTE_SERVICE_DIR, TOOLS_ROOT
 
 for _p in (TOOLS_ROOT, REMOTE_SERVICE_DIR):
     if _p not in sys.path:
@@ -42,107 +42,13 @@ logger = logging.getLogger(__name__)
 
 
 # ===========================================================================
-# AAG (Aggregate log) protocol parser — unchanged from previous version
+# AAG (Aggregate log) protocol parser
 # ===========================================================================
+# The parser now lives in config/aag.py so it can be shared verbatim with
+# the background serial-log capture (config/serial_log.py). Re-exported here
+# to keep the historical `tools.serial.AAGParser` import path working.
 
-class AAGParser:
-    """Auto-detecting AAG frame parser; tags multi-core output with [HP]/[LP]/[AP]."""
-
-    _SRC_NAMES = {0x1: "HP", 0x2: "LP", 0x4: "AP"}
-    _VALID_SRC = (0x1, 0x2, 0x4)
-
-    def __init__(self):
-        self._buf = bytearray()
-        self._line_start: Dict[int, bool] = {}
-
-    def parse(self, data: bytes) -> str:
-        self._buf.extend(data)
-        events = self._extract_frames()
-        parts = []
-        for ev in events:
-            if ev[0] == "raw":
-                _, raw = ev
-                if raw:
-                    parts.append(self._decode(raw))
-            else:
-                _, src, payload = ev
-                if payload:
-                    text = self._decode(payload)
-                    name = self._SRC_NAMES.get(src, f"S{src}")
-                    parts.append(self._tag(text, src, name))
-        return "".join(parts)
-
-    def flush(self) -> str:
-        if not self._buf:
-            return ""
-        data = bytes(self._buf)
-        self._buf.clear()
-        return self._decode(data)
-
-    def reset(self) -> None:
-        """Drop partial-frame buffer AND per-core line-start state.
-
-        Use after a board reset / re-flash so that the next decoded
-        bytes are tagged from a clean line state — otherwise [HP]/[LP]/
-        [AP] prefixes can land mid-line because the parser still
-        thinks the previous boot was mid-line.
-        """
-        self._buf.clear()
-        self._line_start.clear()
-
-    @staticmethod
-    def _decode(raw: bytes) -> str:
-        try:
-            return raw.decode("utf-8")
-        except UnicodeDecodeError:
-            return raw.decode("utf-8", errors="replace")
-
-    def _tag(self, text: str, src: int, name: str) -> str:
-        at_start = self._line_start.get(src, True)
-        out = []
-        tag = f"[{name}] "
-        for ch in text:
-            if at_start:
-                out.append(tag)
-                at_start = False
-            out.append(ch)
-            if ch == "\n":
-                at_start = True
-        self._line_start[src] = at_start
-        return "".join(out)
-
-    def _extract_frames(self):
-        events = []
-        while self._buf:
-            try:
-                idx = self._buf.index(0xFF)
-            except ValueError:
-                events.append(("raw", bytes(self._buf)))
-                self._buf.clear()
-                break
-            if idx > 0:
-                events.append(("raw", bytes(self._buf[:idx])))
-                del self._buf[:idx]
-            if len(self._buf) < 2:
-                break
-            hdr = self._buf[1]
-            src = (hdr >> 5) & 0x07
-            length = ((hdr >> 2) & 0x07) + 1
-            csum = hdr & 0x03
-            if len(self._buf) < 2 + length:
-                break
-            frame = bytes(self._buf[: 2 + length])
-            del self._buf[: 2 + length]
-            high6 = hdr >> 2
-            parity = bin(high6).count("1") & 1
-            if (csum & 0x2) != 0 or (csum & 0x1) != parity:
-                events.append(("raw", frame))
-                continue
-            if src in self._VALID_SRC:
-                events.append(("frame", src, frame[2:]))
-            else:
-                events.append(("raw", frame))
-        return events
+from ameba_dev_mcp.config.aag import AAGParser  # noqa: E402,F401
 
 
 # ===========================================================================
@@ -167,13 +73,13 @@ def _resolve_or_error(alias: Optional[str]):
     """
     # Load (auto-create template on first miss)
     try:
-        info = load_board_info(SDK_ROOT)
+        info = load_board_info(PROJECT_ROOT)
     except ConfigLoadError as ex:
         missing = any(e.code == "BOARD_CONFIG_MISSING" for e in ex.errors)
         template_path = None
         if missing:
             try:
-                template_path = ensure_board_info_template(SDK_ROOT)
+                template_path = ensure_board_info_template(PROJECT_ROOT)
             except Exception:
                 pass
         env = _err_envelope(ex.errors, alias=alias)
@@ -191,7 +97,7 @@ def _resolve_or_error(alias: Optional[str]):
         env["available_local_ports"] = available_local_port_names()
         return None, env
 
-    val_errors = validate_board_config(SDK_ROOT, alias=resolved_alias)
+    val_errors = validate_board_config(PROJECT_ROOT, alias=resolved_alias)
     if val_errors:
         return None, _err_envelope(val_errors, alias=resolved_alias)
 
@@ -252,11 +158,29 @@ def _compile_patterns(patterns):
     return out, None
 
 
-def _drain_serial(sess, alias: str) -> int:
-    """Discard everything currently in the OS-side serial buffer AND reset
-    the AAG parser line-state. Returns bytes dropped (best-effort estimate).
+def _read_conn(sess):
+    """Return the object the read/drain path should pull RX bytes from.
+
+    When background serial-log capture is active, a LoggingReader is the
+    sole consumer of the real connection; the tools must read from its
+    re-buffered queue (so `drain_first` clears only that queue and never
+    the log). When logging is off — and for the fake sessions used in
+    tests, which have no `reader` attribute — this falls back to the raw
+    connection, preserving the original behaviour byte-for-byte.
+
+    WRITES and DTR/RTS reset always use `sess.connection` directly.
     """
-    conn = sess.connection
+    reader = getattr(sess, "reader", None)
+    return reader if reader is not None else sess.connection
+
+
+def _drain_serial(sess, alias: str) -> int:
+    """Discard everything currently buffered for the tools AND reset the
+    agent-facing AAG parser line-state. With logging on this clears only
+    the LoggingReader's tool buffer — the .log file is untouched. Returns
+    bytes dropped (best-effort estimate).
+    """
+    conn = _read_conn(sess)
     dropped = 0
     try:
         if hasattr(conn, "inWaiting"):
@@ -306,7 +230,7 @@ def _wait_loop(sess, alias: str, compiled_pairs, *,
     accum = ""
     raw_total = 0
     parser = _get_aag_parser(alias)
-    conn = sess.connection
+    conn = _read_conn(sess)
 
     while True:
         now = time.monotonic()
@@ -330,18 +254,26 @@ def _wait_loop(sess, alias: str, compiled_pairs, *,
 
                 # max_bytes wins over pattern only if we already overshot
                 if raw_total >= max_bytes:
+                    accum += parser.take_partial()
                     return _wait_result("max_bytes", None, accum, start, conn, alias)
 
+                # Match against complete lines PLUS any held partial line, so a
+                # pattern that lands before its terminating newline still fires
+                # (AGG de-interleaving holds a core's line until newline).
+                hay = accum + parser.peek_partial()
                 for cp, orig in compiled_pairs:
-                    m = cp.search(accum)
+                    m = cp.search(hay)
                     if m:
+                        accum += parser.take_partial()
                         return _wait_result("pattern", orig, accum, start, conn, alias,
                                             match_index=m.start())
 
         if elapsed >= timeout:
+            accum += parser.take_partial()
             return _wait_result("timeout", None, accum, start, conn, alias)
 
         if idle is not None and raw_total > 0 and (time.monotonic() - last_byte) >= idle:
+            accum += parser.take_partial()
             return _wait_result("idle", None, accum, start, conn, alias)
 
         time.sleep(_EXPECT_POLL_INTERVAL_S)
@@ -364,6 +296,20 @@ def _wait_result(reason: str, matched, data: str, start_mono: float,
         "elapsed_ms": int((time.monotonic() - start_mono) * 1000),
         "buffer_left": int(buffer_left or 0),
     }
+
+
+def _session_hint(alias: str, sess=None) -> str:
+    """Standard 'session open' hint. When serial-log recording is active for
+    this alias, also point at the .log file — it holds the COMPLETE session
+    output (including bytes dropped by `drain_first`), independent of what any
+    read returns."""
+    hint = f"Session open — call serial_disconnect_tool('{alias}') when done."
+    slog = getattr(sess, "serial_logger", None) if sess is not None else None
+    path = getattr(slog, "path", None)
+    if path:
+        hint += (f" Full session log (incl. drained bytes) is recorded to {path} "
+                 f"(serial_log_record in board_info.json5).")
+    return hint
 
 
 def serial_connect(alias: Optional[str] = None, *,
@@ -431,7 +377,7 @@ def serial_connect(alias: Optional[str] = None, *,
         "reset_applied": bool(reset),
         "dropped_bytes": dropped,
         "wait": wait,
-        "_hint": f"Session open — call serial_disconnect_tool('{alias}') when done.",
+        "_hint": _session_hint(alias, sess),
     }
 
 
@@ -456,7 +402,7 @@ def serial_disconnect(alias: Optional[str] = None) -> Dict[str, Any]:
     """
     if alias is None:
         try:
-            info = load_board_info(SDK_ROOT)
+            info = load_board_info(PROJECT_ROOT)
         except ConfigLoadError as ex:
             return _err_envelope(ex.errors, alias=None)
         resolved, alias_errs = resolve_alias_or_error(info, None)
@@ -527,7 +473,7 @@ def serial_write(alias: Optional[str] = None, data: str = "",
 
     return {"success": True, "alias": alias, "bytes_written": n,
             "expect": expect_result,
-            "_hint": f"Session open — call serial_disconnect_tool('{alias}') when done."}
+            "_hint": _session_hint(alias, sess)}
 
 
 def serial_read(alias: Optional[str] = None, size: int = 1024,
@@ -552,7 +498,7 @@ def serial_read(alias: Optional[str] = None, size: int = 1024,
         )], alias=alias)
 
     sess.touch()
-    conn = sess.connection
+    conn = _read_conn(sess)
     try:
         waiting = conn.inWaiting() if hasattr(conn, "inWaiting") else conn.in_waiting
     except Exception as ex:
@@ -565,7 +511,7 @@ def serial_read(alias: Optional[str] = None, size: int = 1024,
     if waiting == 0:
         return {"success": True, "alias": alias, "data": "", "bytes_read": 0,
                 "message": "No data available",
-                "_hint": f"Session open — call serial_disconnect_tool('{alias}') when done."}
+                "_hint": _session_hint(alias, sess)}
 
     n = min(size, waiting)
     try:
@@ -578,14 +524,16 @@ def serial_read(alias: Optional[str] = None, size: int = 1024,
         )], alias=alias)
 
     parser = _get_aag_parser(alias)
-    text = parser.parse(raw) if raw else ""
+    # parse() de-interleaves within this burst; take_partial() finalizes any
+    # trailing line so this non-blocking peek returns everything received.
+    text = (parser.parse(raw) if raw else "") + parser.take_partial()
     return {
         "success": True,
         "alias": alias,
         "data": text,
         "bytes_read": len(raw),
         "is_binary": False,
-        "_hint": f"Session open — call serial_disconnect_tool('{alias}') when done.",
+        "_hint": _session_hint(alias, sess),
     }
 
 
@@ -610,7 +558,7 @@ def serial_drain(alias: Optional[str] = None) -> Dict[str, Any]:
     sess.touch()
     dropped = _drain_serial(sess, alias)
     return {"success": True, "alias": alias, "dropped_bytes": dropped,
-            "_hint": f"Session open — call serial_disconnect_tool('{alias}') when done."}
+            "_hint": _session_hint(alias, sess)}
 
 
 def serial_command(alias: Optional[str] = None, data: str = "",
@@ -683,7 +631,7 @@ def serial_command(alias: Optional[str] = None, data: str = "",
     return {"success": True, "alias": alias,
             "dropped_bytes": dropped, "bytes_written": n,
             "expect": expect_result,
-            "_hint": f"Session open — call serial_disconnect_tool('{alias}') when done."}
+            "_hint": _session_hint(alias, sess)}
 
 
 def serial_expect(alias: Optional[str] = None, patterns=None,
@@ -732,7 +680,7 @@ def serial_expect(alias: Optional[str] = None, patterns=None,
     wait = _wait_loop(sess, alias, compiled,
                       timeout=timeout, idle=idle, max_bytes=max_bytes)
     return {"success": True, "alias": alias, **wait,
-            "_hint": f"Session open — call serial_disconnect_tool('{alias}') when done."}
+            "_hint": _session_hint(alias, sess)}
 
 
 
@@ -798,15 +746,10 @@ def register_serial_tools(mcp: FastMCP) -> None:
                           skip waiting. Invalid regex returns
                           INVALID_PATTERN.
 
-                          Common Ameba boot markers (use as wait_for to
-                          confirm boot is done — works regardless of
-                          which CPU is the AP and regardless of WiFi/BT
-                          config):
-                              [r"START SCHEDULER"]   # last main-thread
-                          Note: boards do NOT print a shell prompt by
-                          default — patterns like `\\$` or `^# ` will
-                          NOT match and you will fall through to the
-                          idle/timeout branch.
+                          Boot-done marker (any AP/WiFi/BT config):
+                          [r"START SCHEDULER"]. Boards print NO shell
+                          prompt, so `\\$` / `^# ` never match — match a
+                          response token instead.
             wait_timeout: Hard upper bound (seconds) on the wait. Only
                           used when wait_for is non-empty. Default 15.0.
                           Always finite — will not wait indefinitely.
@@ -849,7 +792,7 @@ def register_serial_tools(mcp: FastMCP) -> None:
             result["wait"] = _trim_wait_for_token_budget(
                 result["wait"], verbose,
             )
-        attach_selected_via_default(result, alias, SDK_ROOT)
+        attach_selected_via_default(result, alias, PROJECT_ROOT)
         return result
 
     @mcp.tool()
@@ -861,7 +804,7 @@ def register_serial_tools(mcp: FastMCP) -> None:
         ALIAS_REQUIRED is returned.
         """
         result = serial_disconnect(alias)
-        attach_selected_via_default(result, alias, SDK_ROOT)
+        attach_selected_via_default(result, alias, PROJECT_ROOT)
         return result
 
     @mcp.tool()
@@ -895,13 +838,9 @@ def register_serial_tools(mcp: FastMCP) -> None:
                          against post-write output. Empty/None → pure
                          write (no wait). Compiled with re.MULTILINE.
 
-                         Note: boards do not echo a shell prompt by
-                         default, so anchoring on a prompt char (`\\$`
-                         / `^# `) will NOT match. For monitor-style
-                         commands, prefer matching on a token from the
-                         expected response (e.g. for `?` use
-                         `[r"\\[MONITOR-I\\]"]`), or rely on the `idle`
-                         silence-stop with a small timeout.
+                         No shell prompt is echoed, so `\\$` / `^# `
+                         won't match — match a response token (for `?`
+                         use `[r"\\[MONITOR-I\\]"]`) or rely on `idle`.
             timeout:     Hard upper bound (seconds) for `expect`.
                          Default 5.0. Always finite.
             idle:        Seconds of silence that ALSO stops the wait.
@@ -923,7 +862,7 @@ def register_serial_tools(mcp: FastMCP) -> None:
             # the [MONITOR-I] tag to confirm the response landed instead
             # of waiting for a (non-existent) shell prompt.
             serial_command_tool(alias="...", data="?",
-                                expect=[r"\[MONITOR-I\]"],
+                                expect=[r"\\[MONITOR-I\\]"],
                                 timeout=5, idle=1)
 
         Returns:
@@ -942,7 +881,7 @@ def register_serial_tools(mcp: FastMCP) -> None:
             result["expect"] = _trim_wait_for_token_budget(
                 result["expect"], verbose,
             )
-        attach_selected_via_default(result, alias, SDK_ROOT)
+        attach_selected_via_default(result, alias, PROJECT_ROOT)
         return result
 
     @mcp.tool()
@@ -967,11 +906,8 @@ def register_serial_tools(mcp: FastMCP) -> None:
                        `idle` is set (which makes this a pure time-based
                        monitor).
 
-                       Common Ameba boot / runtime markers:
-                           [r"START SCHEDULER"]            # boot done
-                       Note: boards do not print a shell prompt by
-                       default, so anchoring on `\\$` / `^# ` will not
-                       match.
+                       Boot-done marker: [r"START SCHEDULER"]. No shell
+                       prompt is printed, so `\\$` / `^# ` won't match.
             timeout:   MANDATORY hard upper bound in seconds. Always
                        finite — will NOT wait indefinitely.
             idle:      Optional. Seconds of "no new bytes" that ALSO
@@ -993,7 +929,7 @@ def register_serial_tools(mcp: FastMCP) -> None:
         """
         result = serial_expect(alias, patterns, timeout=timeout,
                                idle=idle, max_bytes=max_bytes)
-        attach_selected_via_default(result, alias, SDK_ROOT)
+        attach_selected_via_default(result, alias, PROJECT_ROOT)
         return result
 
     @mcp.tool()
@@ -1015,5 +951,5 @@ def register_serial_tools(mcp: FastMCP) -> None:
             {success, alias, data, bytes_read, _hint}
         """
         result = serial_read(alias, size=size)
-        attach_selected_via_default(result, alias, SDK_ROOT)
+        attach_selected_via_default(result, alias, PROJECT_ROOT)
         return result

@@ -5,7 +5,7 @@ This example demonstrates bidirectional SDIO throughput testing using the SDIO D
 - **Phase 0 (Handshake):** Waits for a `"Hello Device"` greeting from the SDIO Host board. Upon receiving it, replies with `"Hello Host! I am Here"` to confirm the link.
 - **Phase 1 (TP Test):** Continuously sends 1000-byte packets to the host while receiving and verifying packets from the host. Each packet carries a CRC16-CCITT checksum. TX/RX statistics are printed every 1000 received packets.
 
-This example must be used together with the `sdio_host_tp` example running on a second board acting as the SDIO Host.
+This example must be used together with the `raw_sdio_host_tp` example running on a second board acting as the SDIO Host.
 
 # HW Configuration
 
@@ -27,7 +27,7 @@ Connect the SDIO signals between the Host board and the Device board as follows:
 
 # SW Configuration
 
-Test parameters are defined as macros at the top of `example_sdio_device_tp.c`:
+Test parameters are defined as macros at the top of `example_mbed_sdio_device_tp.c`:
 
 | Macro | Default | Description |
 |-------|---------|-------------|

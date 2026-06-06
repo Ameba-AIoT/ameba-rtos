@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <linux/genetlink.h>
 
-#include "whc_dev_powersave.h"
 #include "whc_host_app_api.h"
 #include "whc_host_netlink.h"
 #include "whc_host_app_ota.h"

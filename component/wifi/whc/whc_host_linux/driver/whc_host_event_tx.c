@@ -1251,12 +1251,12 @@ int whc_host_set_p2p_remain_on_ch(unsigned char wlan_idx, u8 enable)
 int whc_host_war_offload_ctrl(u8 offload_en, u32 offload_ctrl)
 {
 	int ret = 0;
-	struct H2C_WAROFFLOAD_PARM param;
+	struct whc_proto_offload_param param;
 
 	param.offload_en = offload_en;
 	param.offload_ctrl = offload_ctrl;
 
-	whc_host_send_event(WHC_API_WAR_OFFLOAD_CTRL, (u8 *)&param, sizeof(struct H2C_WAROFFLOAD_PARM), (u8 *)&ret, sizeof(int));
+	whc_host_send_event(WHC_API_WAR_OFFLOAD_CTRL, (u8 *)&param, sizeof(struct whc_proto_offload_param), (u8 *)&ret, sizeof(int));
 
 	return ret;
 }

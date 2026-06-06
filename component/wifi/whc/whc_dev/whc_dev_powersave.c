@@ -6,11 +6,11 @@
 #include "whc_dev.h"
 
 /**
- * @brief  handle whc_dev_ps_cmd from host
+ * @brief  handle whc_ps_cmd from host
  * @param  ps_cmd: pointer of tickps cmd from host
  * @return none.
  */
-void whc_dev_tickps_cmd(struct whc_dev_ps_cmd *ps_cmd)
+void whc_dev_tickps_cmd(struct whc_ps_cmd *ps_cmd)
 {
 	uint8_t subtype = ps_cmd->type;
 	whc_dev_ps_set_tickps_cmd(subtype);
@@ -20,7 +20,7 @@ void whc_dev_tickps_cmd(struct whc_dev_ps_cmd *ps_cmd)
 
 /**
  * @brief  tickps related
- * @param  subtype: tickps subtype, refer to enum whc_tickps_cmd_subtype
+ * @param  subtype: tickps subtype, refer to enum WHC_TICKPS_CMD_SUBTYPE
  * @return none.
  */
 void whc_dev_ps_set_tickps_cmd(uint8_t subtype)

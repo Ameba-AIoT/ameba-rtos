@@ -42,6 +42,23 @@ struct wlan_fast_reconnect {
 #endif
 };
 
+struct fast_conn_write_flash {
+	struct wlan_fast_reconnect     read_data;
+	struct wlan_fast_reconnect     wifi_data_to_flash;
+	struct rtw_wifi_setting        setting;
+	struct psk_info                PSK_info;
+	u32                            channel;
+};
+
+struct do_fast_conn {
+	struct wlan_fast_reconnect     fast_reconn_data;
+	struct rtw_network_info        wifi;
+	struct psk_info                PSK_INFO;
+	int                            wifi_retry_connect;
+	u32	                           channel;
+	u32                            security_type;
+	u8                             key_id;
+};
 //Function
 extern int (*p_wifi_do_fast_connect)(void);
 extern int (*p_store_fast_connect_info)(unsigned int data1, unsigned int data2);
