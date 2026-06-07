@@ -114,6 +114,7 @@ typedef struct _vfs_file {
 	unsigned char user_id;
 	void *file;
 	char name[VFS_PATH_MAX + 1];
+	struct dirent ent;
 } vfs_file;
 
 typedef struct {

@@ -9,7 +9,6 @@
 #include <sys/ioctl.h>
 #include <stdint.h>
 #include <linux/genetlink.h>
-#include "whc_dev_powersave.h"
 #include "whc_host_app_api.h"
 #include "whc_host_netlink.h"
 #include "whc_host_app_ota.h"
@@ -198,7 +197,7 @@ int whc_host_set_tickps_cmd(void)
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
 	ptr += 4;
 	buf_len += 4;
-	struct whc_dev_ps_cmd *pcmd;
+	struct whc_ps_cmd *pcmd;
 
 	if (whc_cmd_argc < 2) {
 		printf("err: tickps cmd needed to set subtype!\n");
@@ -209,7 +208,7 @@ int whc_host_set_tickps_cmd(void)
 	ptr += 1;
 	buf_len += 1;
 
-	pcmd = (struct whc_dev_ps_cmd *)ptr;
+	pcmd = (struct whc_ps_cmd *)ptr;
 	if (strcmp(whc_cmd_args[1], "r") == 0) {
 		pcmd->type = WHC_CMD_TICKPS_R;
 	} else if (strcmp(whc_cmd_args[1], "a") == 0) {
@@ -220,8 +219,8 @@ int whc_host_set_tickps_cmd(void)
 		pcmd->type = WHC_CMD_TICKPS_TYPE_PG;
 	}
 
-	ptr += sizeof(struct whc_dev_ps_cmd);
-	buf_len += sizeof(struct whc_dev_ps_cmd);
+	ptr += sizeof(struct whc_ps_cmd);
+	buf_len += sizeof(struct whc_ps_cmd);
 
 	ret = whc_host_api_send_nl_payload(buf, buf_len);
 	return ret;

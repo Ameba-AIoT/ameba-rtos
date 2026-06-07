@@ -12,14 +12,17 @@ import sys
 from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
-from ameba_dev_mcp._paths import SDK_ROOT
+from ameba_dev_mcp._paths import PROJECT_ROOT, SDK_ROOT
 
+# ameba.py lives in the SDK; menuconfig is cwd-relative and edits
+# <cwd>/build_<soc>/build/.config, so we read soc + run it under PROJECT_ROOT
+# to keep kconfig in sync with the project that build_firmware actually builds.
 AMEBA_PY = os.path.join(SDK_ROOT, "ameba.py")
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[mK]")
 
 
 def _read_current_soc() -> Optional[str]:
-    info_file = os.path.join(SDK_ROOT, "soc_info.json")
+    info_file = os.path.join(PROJECT_ROOT, "soc_info.json")
     if not os.path.exists(info_file):
         return None
     try:
@@ -42,7 +45,7 @@ def _run_menuconfig(extra_args: list, soc: Optional[str]) -> dict:
     try:
         proc = subprocess.run(
             cmd,
-            cwd=SDK_ROOT,
+            cwd=PROJECT_ROOT,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.DEVNULL,
@@ -137,6 +140,36 @@ def register_kconfig_tools(mcp: FastMCP) -> None:
                             f"Try {menu_name}=y — it's the user-facing toggle "
                             f"that selects CONFIG_{bare}."
                         )
+        return result
+
+    @mcp.tool()
+    async def kconfig_apply_file(files: list[str], soc: Optional[str] = None) -> dict:
+        """Apply Kconfig config file(s) such as a project's prj.conf (mirrors `menuconfig.py --apply-file`).
+
+        Reset + overlay: .config is REGENERATED from the SDK's default.conf plus
+        your file(s), so prior kconfig_set tweaks are wiped. Use kconfig_set for
+        incremental edits. NOTE: this updates the source .config only — the change
+        does NOT reach firmware until a rebuild (prefer build_firmware(config_files=[...])).
+
+        Args:
+            files: Paths to files of CONFIG_* lines (absolute, or relative to the
+                   project root). Later files override earlier ones.
+            soc:   SoC name (e.g. RTL8721F). Omit to use the currently selected SoC.
+
+        Returns:
+            success/applied_files/config_path, plus a `hint`; error/missing on failure.
+        """
+        if not files:
+            return {"success": False, "error": "files list must not be empty"}
+        # Resolve relative paths against PROJECT_ROOT (where the project's config
+        # lives) here in the server, not in the subprocess — its cwd is an
+        # implementation detail of the SDK/project dual-root split. Absolute
+        # paths (e.g. an external project's prj.conf) pass through untouched.
+        resolved = [f if os.path.isabs(f) else os.path.join(PROJECT_ROOT, f) for f in files]
+        result = _run_menuconfig(["--apply-file"] + resolved, soc)
+        if isinstance(result, dict) and result.get("success"):
+            result["hint"] = ("Source .config updated, NOT in firmware yet — run "
+                               "build_firmware to apply (rebuild required).")
         return result
 
     @mcp.tool()

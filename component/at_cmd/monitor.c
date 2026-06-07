@@ -274,7 +274,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 
 		for (u32 i = 0, index = Addr; index < Addr + Len; index++, i++) {
 			if (i % 16 == 0) {
-				RTK_LOGI(NOTAG, "\n\rEFUSE[%03lx]:", index);
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rEFUSE[%03x]:", index);
 			}
 			RTK_LOGI(NOTAG, " %02x", EfuseBuf[i]);
 		}
@@ -296,7 +296,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		Cnt = _strlen(DString);
 
 		if (Cnt % 2) {
-			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
+			RTK_LOGS(TAG, RTK_LOG_WARN, "string length(%u) should be odd \n", Cnt);
 			ret = FALSE;
 			goto exit;
 		} else {
@@ -307,7 +307,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
 			Len = (Cnt < Len) ? Cnt : Len;
 		}
-		RTK_LOGI(TAG, "efuse wmap write len:%lu, string len:%lu\n", Len, Cnt << 1);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "efuse wmap write len:%u, string len:%u\n", Len, Cnt << 1);
 
 		for (index = 0; index < Len; index++) {
 			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
@@ -340,7 +340,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 
 		for (u32 i = 0, index = Addr; index < Addr + Len; index ++, i++) {
 			if (i % 16 == 0) {
-				RTK_LOGI(NOTAG, "\n\rRawMap[%03lx]:", index);
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rRawMap[%03x]:", index);
 			}
 			RTK_LOGI(NOTAG, " %02x", EfuseBuf[index]);
 		}
@@ -363,7 +363,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		Cnt = _strlen(DString);
 
 		if (Cnt % 2) {
-			RTK_LOGW(TAG, "string length(%lu) should be odd \n", Cnt);
+			RTK_LOGS(TAG, RTK_LOG_WARN, "string length(%u) should be odd \n", Cnt);
 			ret = FALSE;
 			goto exit;
 		} else {
@@ -374,14 +374,14 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
 			Len = (Cnt < Len) ? Cnt : Len;
 		}
-		RTK_LOGI(TAG, "efuse wraw write len:%lu, string len:%lu\n", Len, Cnt << 1);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "efuse wraw write len:%u, string len:%u\n", Len, Cnt << 1);
 
 		for (index = 0; index < Len; index++) {
 			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
 		}
 
 		for (index = 0; index < Len; index++) {
-			RTK_LOGI(NOTAG, "wraw: %lx %x \n", Addr + index, EfuseBuf[index]);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "wraw: %x %x \n", Addr + index, EfuseBuf[index]);
 			if (OTP_Write8((Addr + index), EfuseBuf[index]) == RTK_FAIL) {
 				RTK_LOGE(TAG, "OTP_Write8 fail \n");
 				ret = FALSE;

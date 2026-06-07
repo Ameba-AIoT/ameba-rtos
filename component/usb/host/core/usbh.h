@@ -151,9 +151,10 @@ typedef struct {
 	u16 bcdUSB;                   /**< USB specification version number (e.g., 0x0200 for USB 2.0). */
 	u8 bDeviceClass;              /**< Class code (assigned by the USB-IF). */
 	u8 bDeviceSubClass;           /**< Subclass code (assigned by the USB-IF). */
-	u8 bDeviceProtocol;           /**< Protocol code (assigned by the USB-IF). If equal to 0, each interface specifies its own class
-                                     code if equal to 0xFF, the class code is vendor specified.
-                                     Otherwise field is valid class code.*/
+	u8 bDeviceProtocol;           /**< Protocol code (assigned by the USB-IF).
+                                     If 0, each interface specifies its own class code.
+                                     If 0xFF, the class code is vendor specified.
+                                     Otherwise, this field is a valid class code. */
 	u8 bMaxPacketSize;            /**< Maximum packet size for endpoint zero (only 8, 16, 32, or 64 are valid). */
 	u16 idVendor;                 /**< Vendor ID (assigned by the USB-IF). */
 	u16 idProduct;                /**< Product ID (assigned by the manufacturer). */
@@ -470,7 +471,7 @@ typedef struct _usb_host_t {
 	 * @{
 	 * @details These fields are used for debugging time-sensitive transfers (like isochronous for audio applications)
 	 *          by measuring the execution time of the interrupt handler.
-	 *          Enabled by USBD_TP_TRACE_DEBUG.
+	 *          Enabled by USBH_TP_TRACE_DEBUG.
 	 * 	     - if the isr_process_time is relatively large, check whether the callback of the class has taken a long time.
 	 * 	     - if the isr_enter_period is relatively large, check whether there is an operation to mask interrupts in the class.
 	 */
@@ -484,7 +485,7 @@ typedef struct _usb_host_t {
 	const usbh_dev_id_t *dev_id;        /**< Pointer to the active device ID. */
 	usbh_dev_desc_t *dev_desc;          /**< Pointer to the device's descriptor. */
 	usbh_user_cb_t *cb;                 /**< Pointer to the user-provided callbacks. */
-	void *core;                         /**< Pointer for USB host core. */
+	void *hcd;                          /**< Pointer to the HCD handle. */
 
 	u8 dev_addr;                        /**< The address of the attached device. */
 	u8 dev_speed;                       /**< The speed of the attached device. */
@@ -516,6 +517,34 @@ int usbh_init(usbh_config_t *cfg, usbh_user_cb_t *cb);
  * @return 0 on success, non-zero on failure.
  */
 int usbh_deinit(void);
+
+/* Usbh CTS test operations. */
+/**
+ * @brief  USB Host enter suspend.
+ */
+void usbh_suspend(void);
+
+/**
+ * @brief  USB Host exit suspend.
+ */
+void usbh_resume(void);
+
+/**
+ * @brief Sets the USB to enter Clock Gating (CG) state with a specific wakeup event.
+ * @details This function configures the USB host to enter a low-power clock gated state.
+ *          The wakeup mechanism depends on the value of the \p sleep_ms parameter.
+ * @param[in] sleep_ms:
+ *          - 0: Wakeup is triggered by a USB event.
+ *          - others: Wakeup is triggered by a timer event after the specified time.
+ */
+void usbh_enter_cg(u32 sleep_ms);
+
+/**
+ * @brief  USB Host Port Test Control.
+ * @param[in] mode: Test mode.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbh_select_test_mode(u8 mode);
 /** @} End of Host_Core_Functions_For_Applications group */
 
 /** @addtogroup Host_Core_Functions_For_Classes Host Core Functions For Classes
@@ -555,7 +584,7 @@ int usbh_close_pipe(usb_host_t *host, usbh_pipe_t *pipe);
 
 /* Config operations, choose the config index while bNumConfigurations > 1 */
 /**
- * @brief  Get the config idx by devicd id information.
+ * @brief  Get the config idx by device id information.
  * @param[in] host: Host Handle.
  * @param[in] id: Device id information.
  * @return config index
@@ -571,7 +600,7 @@ int usbh_set_configuration(usb_host_t *host, u8 cfg);
 
 /* Descriptor operations */
 /**
- * @brief  Get the interface descriptor by devicd id information.
+ * @brief  Get the interface descriptor by device id information.
  * @param[in] host: Host Handle.
  * @param[in] id: Device id information.
  * @return interface descriptor handler.
@@ -682,7 +711,7 @@ int usbh_transfer_data(usb_host_t *host, usbh_pipe_t *pipe);
  * @brief  Get the last transfer data size of specific pipe.
  * @param[in] host: Host Handle.
  * @param[in] pipe: Pipe struct handle.
- * @return None
+ * @return Last transfer data size in bytes
  */
 u32 usbh_get_last_transfer_size(usb_host_t *host, usbh_pipe_t *pipe);
 
@@ -693,34 +722,6 @@ u32 usbh_get_last_transfer_size(usb_host_t *host, usbh_pipe_t *pipe);
  * @return 0 on success, non-zero on failure.
  */
 int usbh_transfer_process(usb_host_t *host, usbh_pipe_t *pipe);
-
-/* Usbh CTS test operations. */
-/**
- * @brief  USB Host enter suspend.
- */
-void usbh_suspend(void);
-
-/**
- * @brief  USB Host exit suspend.
- */
-void usbh_resume(void);
-
-/**
- * @brief Sets the USB to enter Clock Gating (CG) state with a specific wakeup event.
- * @details This function configures the USB host to enter a low-power clock gated state.
- *          The wakeup mechanism depends on the value of the \p sleep_ms parameter.
- * @param[in] sleep_ms:
- *          - 0: Wakeup is triggered by a USB event.
- *          - others: Wakeup is triggered by an Anon timer event after the specified time.
- */
-void usbh_enter_cg(u32 sleep_ms);
-
-/**
- * @brief  USB Host Port Test Control.
- * @param[in] mode: Test mode.
- * @return 0 on success, non-zero on failure.
- */
-int usbh_select_test_mode(u8 mode);
 /** @} End of Host_Core_Functions_For_Classes group */
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */

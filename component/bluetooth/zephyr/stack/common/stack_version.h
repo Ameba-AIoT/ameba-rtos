@@ -1,1 +1,1 @@
-#define BTSTACK_GIT_VERSION "eaf3f105cf59ae11963aace653407d7afa177e16"
+#define BTSTACK_GIT_VERSION "6a610afb1ecbc5a6d38ba4b7fedddb348dae142e"

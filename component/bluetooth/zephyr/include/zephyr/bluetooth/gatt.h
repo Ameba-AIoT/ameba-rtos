@@ -1016,6 +1016,25 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CPF, BT_GATT_PERM_READ,		\
 			  bt_gatt_attr_read_cpf, NULL, (void *)_value)
 
+#if ZEPHYR_FIX_CODE
+ssize_t bt_gatt_attr_read_scc(struct bt_conn *conn,
+							const struct bt_gatt_attr *attr,
+							void *buf, uint16_t len, uint16_t offset);
+
+ssize_t bt_gatt_attr_write_scc(struct bt_conn *conn,
+							const struct bt_gatt_attr *attr, const void *buf,
+							uint16_t len, uint16_t offset, uint8_t flags);
+
+struct bt_gatt_caf {
+	uint16_t count;
+	uint16_t *handles;
+};
+
+ssize_t bt_gatt_attr_read_caf(struct bt_conn *conn,
+							const struct bt_gatt_attr *attr,
+							void *buf, uint16_t len, uint16_t offset);
+#endif
+
 /**
  *  @brief Descriptor Declaration Macro.
  *

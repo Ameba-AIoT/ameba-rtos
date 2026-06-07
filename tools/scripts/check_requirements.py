@@ -1,5 +1,6 @@
 import os
 import platform
+import re
 import subprocess
 import sys
 try:
@@ -32,6 +33,13 @@ CYAN = '\033[36m'
 WHITE = '\033[37m'
 RESET = '\033[0m'
 
+def canonical_name(name):
+    # PEP 503: distribution names are compared case-insensitively with runs of
+    # '-', '_' and '.' collapsed to a single '-'. The installed metadata may use
+    # underscores (e.g. 'pydantic_core') while requirements.txt uses hyphens
+    # ('pydantic-core'); without this they'd never match and would reinstall every run.
+    return re.sub(r"[-_.]+", "-", name).lower()
+
 def read_requirements(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         return [line.strip() for line in file if not line.startswith('#') and line.strip()]
@@ -44,14 +52,14 @@ def parse_requirement(requirement):
     return name, version
 
 def check_installed_packages(requirements):
-    installed_packages = {dist.metadata['Name'].lower(): dist.version for dist in distributions()}
+    installed_packages = {canonical_name(dist.metadata['Name']): dist.version for dist in distributions()}
     missing_or_unsatisfied = []
     packages_to_install = []
 
     for requirement_str in requirements:
         try:
             req = Requirement(requirement_str)
-            package_name = req.name.lower()
+            package_name = canonical_name(req.name)
 
             if not req.marker or req.marker.evaluate():
                 if package_name in installed_packages:

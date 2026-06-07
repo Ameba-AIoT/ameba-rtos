@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    inic_def.h
+  * @file    whc_def.h
   * @author
   * @version
   * @date
@@ -27,9 +27,13 @@
 #define PROXY_API_BASE						0x6000
 #define WTN_API_BASE						0x8000
 
+#ifndef WHC_BT_ID_BASE
+#define WHC_BT_ID_BASE						0xa5a5a5b0
+#endif
+
 #define WHC_API_PROCESS_DONE				0
 
-#define WHC_MP_MSG_BUF_SIZE				4096
+#define WHC_MP_MSG_BUF_SIZE					4096
 
 enum WHC_WIFI_C2H_API_ID {
 	/* 0x0001~0x1000 reserved for basic API */
@@ -191,7 +195,7 @@ enum WHC_WIFI_H2C_API_ID {
 
 };
 
-enum IPC_LWIP_INFO_TYPE {
+enum WHC_LWIP_INFO_TYPE {
 	WHC_WLAN_GET_IP = 0,
 	WHC_WLAN_GET_GW = 1,
 	WHC_WLAN_GET_GWMSK = 2,
@@ -199,5 +203,154 @@ enum IPC_LWIP_INFO_TYPE {
 	WHC_WLAN_IS_VALID_IP = 4,
 	WHC_WLAN_GET_IPV6_ENABLED = 5
 };
+
+enum WHC_WIFI_CTRL_TYPE {
+	WHC_WIFI_EVT_XIMT_PKTS = 0xa5a5a500,
+	WHC_WIFI_EVT_RECV_PKTS,
+	WHC_WIFI_EVT_API_CALL,
+	WHC_WIFI_EVT_API_RETURN,
+	WHC_WIFI_EVT_CMD,
+	WHC_WIFI_EVT_FLOWCTRL,
+	WHC_WIFI_EVT_MAX,
+	WHC_CUST_EVT, /* the ID to transmit data for the customer. */
+
+	WHC_BT_EVT_BASE = WHC_BT_ID_BASE,
+	WHC_BT_EVT_MAX = WHC_BT_ID_BASE + 0x1000000
+};
+
+enum WHC_PROTO_OFFLOAD_CTRL {
+	WAR_ARP_RSP_EN =			0x0000001,
+	WAR_ICMPV6_NS_RSP_EN =		0x00000002,
+	WAR_ICMPV4_ECHO_RSP_EN =	0x00000004,
+	WAR_ICMPV6_ECHO_RSP_EN =	0x00000008,
+	WAR_NETBIOS_RSP_EN =		0x00000010,
+	WAR_LLMNR_V4_RSP_EN =		0x00000020,
+	WAR_LLMNR_V6_RSP_EN =		0x00000040,
+	WAR_SNMP_V4_RSP_EN =		0x00000080,
+	WAR_SNMP_V6_RSP_EN =		0x00000100,
+	WAR_SNMP_V4_WAKEUP_EN =		0x00000200,
+	WAR_SNMP_V6_WAKEUP_EN =		0x00000400,
+	WAR_SSDP_V4_WAKEUP_EN =		0x00000800,
+	WAR_SSDP_V6_WAKEUP_EN =		0x00001000,
+	WAR_WSD_V4_WAKEUP_EN =		0x00002000,
+	WAR_WSD_V6_WAKEUP_EN =		0x00004000,
+	WAR_SLP_V4_WAKEUP_EN =		0x00008000,
+	WAR_SLP_V6_WAKEUP_EN =		0x00010000,
+	WAR_MDNS_V4_RSP_EN =		0x00020000,
+	WAR_MDNS_V6_RSP_EN =		0x00040000,
+	WAR_DESIGNATED_MAC_EN =		0x00080000,
+	WAR_LLTD_WAKEUP_EN =		0x00100000,
+	WAR_ARP_WAKEUP_EN =			0x00200000,
+	WAR_MAGIC_WAKEUP_EN =		0x00400000,
+	WAR_MDNS_V4_WAKEUP_EN =		0x000800000,
+	WAR_MDNS_V6_WAKEUP_EN =		0x001000000
+};
+
+enum WHC_TICKPS_CMD_SUBTYPE {
+	WHC_CMD_TICKPS_R = 0,
+	WHC_CMD_TICKPS_A = 1,
+	WHC_CMD_TICKPS_TYPE_CG = 2,
+	WHC_CMD_TICKPS_TYPE_PG = 3,
+};
+
+struct whc_msg_info {
+	uint32_t	event;
+	uint8_t		wlan_idx: 2;
+	uint8_t		flow_ctrl_en: 1;
+	uint8_t		rsvd1 : 5;
+	uint8_t		rsvd2[3];
+	uint32_t	data_len;
+	uint32_t	pad_len;
+};
+
+struct whc_api_info {
+	uint32_t	event;
+	uint32_t	api_id;
+};
+
+/* the header for customer to send or receive the data between host and device. */
+struct whc_cust_hdr {
+	uint32_t	event;
+	uint32_t	len;
+};
+
+struct whc_cmd_path_hdr {
+	uint32_t	event;
+	uint32_t	len;
+};
+
+struct whc_proto_offload_param {
+	uint8_t		offload_en;
+	uint32_t	offload_ctrl;
+};
+
+struct whc_ps_cmd {
+	uint8_t		type;	/* refer to WHC_TICKPS_CMD_SUBTYPE */
+	uint8_t		rsvd[3];
+};
+
+#define WAR_MDNS_EN	(WAR_MDNS_V4_RSP_EN |WAR_MDNS_V6_RSP_EN | WAR_MDNS_V4_WAKEUP_EN | WAR_MDNS_V6_WAKEUP_EN)
+
+/*-------------------------------------------------------------------------------
+	for cmd path demo defs
+--------------------------------------------------------------------------------*/
+/* type */
+#define WHC_WIFI_TEST						0x1
+#define WHC_ATCMD_TEST						0x2
+#define WHC_RMESH_TEST						0x3
+
+/* subtype */
+#define WHC_WIFI_TEST_GET_MAC_ADDR			0x1
+#define WHC_WIFI_TEST_GET_IP				0x2
+#define WHC_WIFI_TEST_SET_READY				0x3
+#define WHC_WIFI_TEST_SET_UNREADY			0x4
+#define WHC_WIFI_TEST_SET_TICKPS_CMD		0x5
+#define WHC_WIFI_TEST_CONNECT				0x6
+#define WHC_WIFI_TEST_SCAN					0x7
+#define WHC_WIFI_TEST_DHCP					0x8
+#define WHC_WIFI_TEST_WIFION				0x9
+#define WHC_WIFI_TEST_SCAN_RESULT			0xA
+#define WHC_WIFI_TEST_MP					0xB
+#define WHC_WIFI_TEST_DBG					0xC
+#define WHC_WIFI_TEST_OTA					0x10
+/* used in fullhan now */
+#define WHC_WIFI_TEST_SOFTAP				0x11
+#define WHC_WIFI_TEST_CONN_STATUS			0x12
+#define WHC_WIFI_TEST_DISCONN				0x13
+#define WHC_WIFI_TEST_WIFIOFF				0x14
+
+/* for rtos host only */
+#define WHC_WIFI_TEST_SET_HOST_RTOS			0xFF
+
+#define WHC_RMESH_TEST_SOCK_INIT			0x1
+#define WHC_RMESH_TEST_SOCK_SEND			0x2
+
+/*-------------------------------------------------------------------------------
+	for wpa_cli defs
+--------------------------------------------------------------------------------*/
+// For Utility
+#define WHC_WPA_OPS_UTIL					0xffa5a5a5
+#define WHC_WPA_OPS_UTIL_GET_MAC_ADDR		0x1
+#define WHC_WPA_OPS_UTIL_SET_NETWORK		0x2
+#define WHC_WPA_OPS_UTIL_LIST_NETWORK		0x3
+#define WHC_WPA_OPS_UTIL_SELECT_NETWORK		0x4
+#define WHC_WPA_OPS_UTIL_GET_STATUS			0x5
+#define WHC_WPA_OPS_UTIL_OFLD_RESULT		0x6
+
+// For Custom API
+#define WHC_WPA_OPS_CUSTOM_API					0xff112255
+#define WHC_WPA_OPS_CUSTOM_API_SCAN				0x1
+#define WHC_WPA_OPS_CUSTOM_API_INIT_WPAS_STD	0x2
+#define WHC_WPA_OPS_CUSTOM_API_WIFION			0x3
+
+// For CB
+#define WHC_WPA_OPS_SOC_CB					0xff112233
+#define WHC_WPA_OPS_SOC_CB_SCAN_RESULT		0x1
+
+// For Event
+#define WHC_WPA_OPS_EVENT					0xff000000
+#define WHC_WPA_OPS_EVENT_SCANING			0x1
+#define WHC_WPA_OPS_EVENT_SCAN_COMPLETE		0x2
+#define WHC_WPA_OPS_EVENT_JOIN_STATUS		0x3
 
 #endif

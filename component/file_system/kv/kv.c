@@ -148,6 +148,7 @@ int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t 
 		res = fseek(finfo, offset, SEEK_SET);
 		if (res < 0) {
 			VFS_DBG(VFS_ERROR, "fseek failed,err is %d!!", res);
+			fclose(finfo);
 			goto exit;
 		}
 	}
@@ -250,6 +251,7 @@ int32_t rt_kv_get_offset(const char *key, void *buffer, int32_t len, int32_t off
 		res = fseek(finfo, offset, SEEK_SET);
 		if (res < 0) {
 			VFS_DBG(VFS_ERROR, "fseek failed,err is %d!!", res);
+			fclose(finfo);
 			goto exit;
 		}
 	}
@@ -270,7 +272,7 @@ exit:
 
 int32_t rt_kv_size(const char *key)
 {
-	struct stat *stat_buf;
+	struct stat *stat_buf = NULL;
 	int res = -1;
 	char *path = NULL;
 

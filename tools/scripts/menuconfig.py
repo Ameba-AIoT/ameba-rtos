@@ -94,6 +94,19 @@ def main():
         help="search symbols by name/prompt, case-insensitive regex (JSON output)"
     )
 
+    parser.add_argument(
+        "--apply-file",
+        nargs='+',
+        metavar='FILE',
+        help="apply config file(s) like prj.conf (reset .config to default.conf + files, JSON output)"
+    )
+
+    parser.add_argument(
+        "--save-file",
+        metavar='FILE',
+        help="save current config to a prj.conf-style file (diff vs default.conf, JSON output)"
+    )
+
     args = parser.parse_args()
 
     project_dir = os.path.abspath(args.project_dir)
@@ -190,6 +203,38 @@ def main():
         manager.parse_general_config()
         manager.process_projects()
         print(json.dumps({"success": True, "applied": applied}))
+        return
+
+    if args.apply_file:
+        missing = [f for f in args.apply_file if not os.path.isfile(f)]
+        if missing:
+            print(json.dumps({"success": False, "error": "config file(s) not found", "missing": missing}))
+            sys.exit(1)
+        files = [os.path.abspath(f) for f in args.apply_file]
+        if manager.apply_files_config(files) != 0:
+            print(json.dumps({"success": False, "error": "apply config failed", "applied_files": files}))
+            sys.exit(1)
+        if manager.check_invalid_config():
+            print(json.dumps({"success": False, "error": "invalid config detected after apply"}))
+            sys.exit(1)
+        manager.parse_general_config()
+        manager.process_projects()
+        print(json.dumps({"success": True, "applied_files": files, "config_path": manager.config_in}))
+        return
+
+    if args.save_file:
+        if not os.path.exists(manager.config_in):
+            print(json.dumps({"success": False, "error": ".config not found — run menuconfig first"}))
+            sys.exit(1)
+        out_path = os.path.abspath(args.save_file)
+        parent = os.path.dirname(out_path)
+        if parent and not os.path.isdir(parent):
+            print(json.dumps({"success": False, "error": "output directory not found", "saved_file": out_path}))
+            sys.exit(1)
+        if manager.save_confs(out_path) != 0:
+            print(json.dumps({"success": False, "error": "save config failed", "saved_file": out_path}))
+            sys.exit(1)
+        print(json.dumps({"success": True, "saved_file": out_path}))
         return
 
     if args.clean:

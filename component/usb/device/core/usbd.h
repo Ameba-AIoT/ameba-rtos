@@ -131,7 +131,7 @@ typedef struct {
 	/**
 	 * @brief USB device speed mode. See @ref usb_speed_type_t.
 	 * - `USB_SPEED_HIGH`: USB 2.0 High-Speed PHY (for HS-capable SoCs).
-	 * - `USB_SPEED_HIGH_IN_FULL`: USB 2.0 PHY operating in Full-Speed mode (for HS-capable SoCs with low bandwidth applcations like UAC).
+	 * - `USB_SPEED_HIGH_IN_FULL`: USB 2.0 PHY operating in Full-Speed mode (for HS-capable SoCs with low bandwidth applications like UAC).
 	 * - `USB_SPEED_FULL`: USB 1.1 Full-Speed transceiver (for FS-only SoCs).
 	 */
 	u8 speed : 2;
@@ -183,7 +183,7 @@ typedef struct _usbd_class_driver_t {
 	 * @note
 	 *    This callback is called within an interrupt service routine (ISR) context;
 	 *     time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-	 *    The class driver must return the descriptor data buffer and length againt the `wValue` value of host setup request:
+	 *    The class driver must return the descriptor data buffer and length against the `wValue` value of host setup request:
 	 *     - `USB_DESC_TYPE_DEVICE`: Device Descriptor, mandatory.
 	 *     - `USB_DESC_TYPE_CONFIGURATION`: Configuration Descriptor, mandatory.
 	 *     - `USB_DESC_TYPE_DEVICE_QUALIFIER`: Device Qualifier Descriptor, required for dual-speed (FS/HS) devices                                                                                                     |
@@ -473,7 +473,7 @@ u16 usbd_get_str_desc(const char *str, u8 *desc);
  *          The wakeup mechanism depends on the value of the \p sleep_ms parameter.
  * @param[in] sleep_ms:
  *          - 0: Wakeup is triggered by a USB event.
- *          - others: Wakeup is triggered by an Anon timer event after the specified time.
+ *          - others: Wakeup is triggered by a timer event after the specified time.
  */
 void usbd_enter_cg(u32 sleep_ms);
 

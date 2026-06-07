@@ -65,6 +65,7 @@
 | `monitor_baudrate` | – | int | `defaults.monitor_baudrate` | 串口监视速率 |
 | `chip_erase` | – | bool | `defaults.chip_erase` | 烧录前是否全片擦除 |
 | `remote` | 见下 | object | – | `transport=remote` 时必填 |
+| `serial_log_record` | – | object | – | 串口日志落盘配置，见下文 |
 
 `remote` 子对象：
 
@@ -75,6 +76,46 @@
 | `password` | – | string | – | 可写入；建议用环境变量 `AMEBA_REMOTE_PWD` 覆盖 |
 
 > Pydantic schema 严格 `extra="forbid"`：未声明的字段一律拒绝。
+
+---
+
+## 3.1 `serial_log_record`：串口日志落盘
+
+配置后，**只要通过 MCP 打开该板的串口（任意 serial 工具触发的 open）就开始记录日志，关闭串口即停止**。
+日志捕获的是**完整串口流**——即使 agent 调用带 `drain_first` 的工具清掉了接收缓冲，**日志文件依然保留全部内容**。
+每行带 `HH:MM:SS.mmm` 时间戳；多核 AAG 输出复用与 serial 工具相同的解析逻辑（`[HP]/[LP]/[AP]` 标签）。
+
+| 字段 | 必填 | 类型 | 默认 | 说明 |
+|---|---|---|---|---|
+| `enable` | – | bool | `false` | 是否开启日志捕获。关闭时无任何后台线程，串口读路径与历史完全一致 |
+| `log_dir` | – | string | `PROJECT_ROOT/mcp_serial_log` | 日志目录。相对路径挂在 `PROJECT_ROOT` 下；目录自动创建 |
+| `file_name` | – | string | 自动生成 | 见下方命名/翻天规则 |
+
+**文件名与翻天规则**（生成模式 `<alias>_<YYYYMMDD>_<HHMMSS>.log`，如 `RTL8721F_COM23_20260605_141930.log`）：
+
+- `file_name` 为空 → 按当前系统时间生成，并**回写** `board_info.json5`。
+- `file_name` 命中生成模式且日期==今天 → **复用**该文件（追加），不回写。
+- `file_name` 命中生成模式但日期≠今天 → 生成新名并回写（保证**每天至少一个新日志**；长会话跨午夜也会自动滚动）。
+- `file_name` **不**命中生成模式（用户自定义名）→ **原样使用，永不翻天、永不回写**。
+
+> 注意：模式是**秒级**（`HHMMSS`，6 位）。形如 `..._1419.log`（分钟级 4 位）会被当成"用户自定义名"，不会按天滚动。
+>
+> 回写会按模板重渲染整个 `board_info.json5`（仅保留模板头注释，用户行内注释不被保留——与既有 `save_board_info` 行为一致）。
+
+示例：
+
+```json5
+"RTL8721F_COM23": {
+  "soc": "RTL8721F",
+  "transport": "remote",
+  "port": "COM23",
+  "remote": { "host": "127.0.0.1", "port": 58916 },
+  "serial_log_record": {
+    "enable": true
+    /* log_dir 省略 → PROJECT_ROOT/mcp_serial_log；file_name 省略 → 首次打开自动生成并回写 */
+  }
+}
+```
 
 ---
 

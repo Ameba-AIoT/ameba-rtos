@@ -70,6 +70,36 @@ claude mcp list     # 应出现 ameba-dev: ✓ Connected
 claude mcp remove ameba-dev
 ```
 
+### 2.1 外部工程（out-of-tree project）
+
+如果你的应用工程在 SDK 之外（例如 `~/ameba_claw_proj`，通过它自己的
+`env.sh` source SDK 后用 `ameba.py build` 编译），把工程根作为 `--project-root`
+传给 launcher 即可。server 会把 **build 产物、`build/.config`、`soc_info.json`、
+`board_info.json5`、`project_info.json5`** 全部定位到该工程根；而工具链、
+`ameba.py`、Flash 工具/profile、以及 flash layout 头文件
+（`component/soc/usrcfg/*/ameba_flashcfg.{c,h}`）仍取自 SDK。
+
+```bash
+# Linux / macOS / WSL2 —— 在外部工程的工作区里注册
+claude mcp add ameba-dev -- /home/miles_wang/mcu_sdk/tools/ameba/ameba_dev_mcp/launcher.sh --project-root /home/miles_wang/ameba_claw_proj
+# Windows
+claude mcp add ameba-dev -- <SDK_ROOT>\tools\ameba\ameba_dev_mcp\launcher.bat ^
+    --project-root C:\path\to\ameba_claw_proj
+```
+
+要点：
+
+- 注册按 **workspace 级**写入 `~/.claude.json`，所以 `~/mcu_sdk` 与
+  `~/ameba_claw_proj` 两个工作区可以**同名** `ameba-dev` 互不干扰：前者不带
+  `--project-root`（默认指向 SDK，行为不变），后者带上工程根。
+- `--project-root` 由 launcher **消费**并导出为 `AMEBA_PROJECT_ROOT`，不会透传
+  给 server（其 argparse 只认 `--transport/--port/--host/--debug`）。支持 `~`
+  展开,会被解析成绝对路径。
+- **layout 地址**来自 SDK 的 flashcfg，**`.config` 与 bin 路径**来自工程
+  `build_<soc>/`。`build_firmware` 编译后回填 `project_info.json5`、
+  `flash_firmware_tool` 烧录前再解析一次,两次用同一对 (SDK, 工程根),保证一致。
+- 不传 `--project-root` 时一切回退 SDK 根,等价于旧行为。
+
 > **launcher 做了什么**：定位 prebuilts 工具链、把 `cmake/ninja/make` 加进 PATH、激活 `.venv`，最后启动 venv 里的 `ameba-mcp`。这样无论 Claude Code 是从终端、桌面图标还是 IDE 插件启动，MCP server 都拿得到完整的工具链 + Python 依赖，不依赖系统级 `cmake` / `python` 是否齐备。
 >
 > launcher 依赖 `.venv` 已就绪（由 `source env.sh` / `env.bat` 时的 `pip install -e tools/ameba` 自动生成）；缺则会以 stderr 报错并退出。
@@ -91,6 +121,42 @@ AI 会引导用户进行开发版配置。并把 `board_info.json5` 写好并跑
   build 时由 build_firmware 自动回填**，无需手填
 
 之后板子有增减、换端口，重新跑一次 `/ameba-setup-boards` 即可，或者直接编辑 `board_info.json5` 里的 `boards` 节点。
+
+### 3.1 串口日志自动记录（可选，默认关闭）
+
+需要把每次串口会话完整存档时，可以为某块板开启**串口日志自动记录**：
+**通过 MCP 打开串口即开始记录，关闭串口即停止**，全程在后台进行，不影响
+agent 的正常 read/drain。`/ameba-setup-boards` 流程末尾会主动询问是否开启；
+也可随时手动在 `board_info.json5` 的对应板条目里加：
+
+```json5
+"serial_log_record": { "enable": true }
+```
+
+可选字段：
+
+- `log_dir`：日志目录，默认 `PROJECT_ROOT/mcp_serial_log/`；相对路径按
+  `PROJECT_ROOT` 解析，也可填绝对路径。
+- `file_name`：默认自动命名 `<alias>_<YYYYMMDD>_<HHMMSS>.log`（如
+  `RTL8721F_COM23_20260605_151150.log`），并**每天滚动一个新文件**、文件名
+  自动回写 `board_info.json5`；若你手填了一个**不符合该模式**的名字，则按
+  原样使用、永不滚动、不回写。
+
+日志内容特性：
+
+- **逐行时间戳**：每行行首带 `HH:MM:SS.mmm`（真实系统时间）。
+- **AAG 多核去交织 + 标签**：使能 `CONFIG_LOGUART_AGG_EN` 时，日志与 tools
+  返回值复用**同一套 AAG 解析**，按核重组整行并打 `[HP]/[LP]/[AP]` 标签，
+  双核并发输出不再逐字符乱码。
+- **drain 不影响日志**：agent 调用带 `drain_first` 的 read 只清工具侧缓冲，
+  **日志文件始终保留全部串口内容**。
+- **纯文本干净**：过滤上电瞬间的杂散控制字节（如 NUL），统一行尾（`\n\r`/
+  `\r\n` 折叠为单换行，孤立 `\r` 保留为换行),不产生多余空行；可被任意文本
+  编辑器正常打开。
+- 会话起止在日志里有 `==== serial log [...] opened/closed ... ====` 标记。
+
+> 该功能为**逐板 opt-in**，不开启时不启动任何后台线程，串口工具行为与原先
+> 完全一致。字段说明另见 `docs/board_info.md` §3.1。
 
 ## 4. 手动启动 / 冒烟测试
 

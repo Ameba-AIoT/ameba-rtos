@@ -12,11 +12,11 @@ set(private_definitions)
 set(private_compile_options)
 
 ameba_list_append(private_sources
-    example_sdio_device_tp.c
+    example_raw_sdio_host_tp.c
     app_example.c
 )
 
-ameba_add_internal_library(example_sdio_device_tp
+ameba_add_internal_library(example_raw_sdio_host_tp
     p_SOURCES
         ${private_sources}
     p_INCLUDES
