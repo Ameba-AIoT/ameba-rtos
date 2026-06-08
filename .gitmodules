@@ -1,27 +1,27 @@
 #
-# All submodules use GitHub absolute URLs.
+# All submodules use relative URLs.
 #
 
 [submodule "component/audio"]
 	path = component/audio
-	url = https://github.com/Ameba-AIoT/ameba-audio.git
+	url = ../ameba-audio.git
 	branch = master
 
 [submodule "component/ui"]
 	path = component/ui
-	url = https://github.com/Ameba-AIoT/ameba-ui.git
+	url = ../ameba-ui.git
 	branch = master
 
 [submodule "component/aivoice"]
 	path = component/aivoice
-	url = https://github.com/Ameba-AIoT/ameba-aivoice.git
+	url = ../ameba-aivoice.git
 	branch = main
 
 [submodule "component/tflite_micro"]
 	path = component/tflite_micro
-	url = https://github.com/Ameba-AIoT/ameba-tflite-micro.git
+	url = ../ameba-tflite-micro.git
 	branch = main
 [submodule "component/application/speechmind"]
 	path = component/application/speechmind
-	url = https://github.com/Ameba-AIoT/speechmind.git
+	url = ../speechmind.git
 	branch = master
