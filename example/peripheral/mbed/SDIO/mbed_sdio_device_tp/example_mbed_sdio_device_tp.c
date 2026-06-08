@@ -346,7 +346,7 @@ static void ex_spdio_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-int example_sdio_device_tp(void)
+int example_mbed_sdio_device_tp(void)
 {
 	/* SDIO device peripheral clock and pinmux are handled by spdio_init() */
 	if (rtos_task_create(NULL, ((const char *)"sdio_dev_tp"), ex_spdio_thread, NULL, EX_SPDIO_STACKSIZE * 4, 5) != RTK_SUCCESS) {

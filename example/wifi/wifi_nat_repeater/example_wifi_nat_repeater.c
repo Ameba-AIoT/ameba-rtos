@@ -26,12 +26,12 @@ extern void dns_relay_service_init(void);
 extern void ip_napt_reinitialize(void);
 extern void ip_napt_sync_dns_server_data(void);
 
-extern char *rptssid;
-extern int wifi_repeater_ap_config_complete;
 
+static int wifi_repeater_ap_config_complete = 0;
 static struct rtw_softap_info rptap = {0};
-char *rptpassword = "12345678";	// NULL for RTW_SECURITY_OPEN
-unsigned char rptchannel = 6;
+static const char *rptssid = "AmebaRPT";
+static const char *rptpassword = "12345678";	// NULL for RTW_SECURITY_OPEN
+static unsigned char rptchannel = 6;
 static const char *const TAG = "WIFI_NAT_REPEATER";
 
 static int ip_nat_wifi_restart_ap(struct rtw_softap_info *softAP_config)
@@ -271,13 +271,8 @@ static void example_wlan_repeater_thread(void *param)
 	*********************************************************************************/
 	RTK_LOGI(TAG, "\n\r[WLAN_REPEATER_EXAMPLE] Start AP\n");
 
-	if (rptssid == NULL) {
-		rptssid = (char *)rtos_mem_zmalloc(RTW_ESSID_MAX_SIZE + 1);
-	}
-	memcpy(rptssid, "AmebaRPT", strlen("AmebaRPT"));
-
 	rptap.ssid.len = strlen(rptssid);
-	strncpy((char *)rptap.ssid.val, (char *)rptssid, sizeof(rptap.ssid.val) - 1);
+	strncpy((char *)rptap.ssid.val, rptssid, sizeof(rptap.ssid.val) - 1);
 	rptap.password = (unsigned char *)rptpassword;
 	rptap.password_len = strlen(rptpassword);
 	rptap.channel = rptchannel;
@@ -343,6 +338,10 @@ void wifi_nat_repeater_init_thread(void *param)
 
 	while (wifi_is_running(STA_WLAN_INDEX) == FALSE) {
 		rtos_time_delay_ms(1000);
+	}
+
+	while (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+		rtos_time_delay_ms(2000);
 	}
 
 	wifi_repeater_ap_config_complete = 0;

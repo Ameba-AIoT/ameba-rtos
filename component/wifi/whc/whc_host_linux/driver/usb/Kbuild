@@ -36,6 +36,7 @@ whc_usb-$(CONFIG_WHC_HCI_USB) := \
 		../whc_host_proc.o \
 		../whc_host_event_tx.o \
 		../whc_host_event_rx.o \
+		../whc_host_event_hdl.o \
 		../whc_host_protocal_offload.o \
 		../whc_host_ioctl.o \
 		../whc_host_cust_evt.o \

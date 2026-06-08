@@ -33,16 +33,16 @@ SECTIONS
 		__ram_image3_text_start__ = .;
 		*(.text*)
 		*(.rodata*)
+		__ram_image3_text_end__ = .;
 	} > RAM_IMAGE3_TZ
 
-	.ram_image3.data :
+	. = . + IMAGE_HEADER_LEN;
+
+	.ram_image3.data : ALIGN(32)
 	{
-		. = ALIGN(32);
 		__ram_image3_data_start__ = .;
 		*(.data*)
 		__ram_image3_data_end__ = .;
-
-		__ram_image3_text_end__ = .;
 	} > RAM_IMAGE3_TZ
 
 	.ram_image3.bss (NOLOAD):

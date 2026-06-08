@@ -7,8 +7,6 @@
 #define __WHC_DEV_TX_H__
 
 /* -------------------------------- Defines --------------------------------- */
-#define WHC_MSG_QUEUE_WARNING_DEPTH (4)
-
 #define WHC_FLOWCTRL_LOW_THRESHOLD		(3 + 1)  // 3 skb reserved for wifi rx in driver
 #define WHC_FLOWCTRL_HIGH_THRESHOLD		(3 + 2)
 

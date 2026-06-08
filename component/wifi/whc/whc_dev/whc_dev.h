@@ -11,7 +11,7 @@
 #define __WHC_DEV_H__
 
 /* -------------------------------- Includes -------------------------------- */
-
+#include "basic_types.h"
 #include "whc_def.h"
 
 #ifndef CONFIG_FULLMAC
@@ -25,7 +25,6 @@
 #include "wifi_intf_drv_to_upper.h"
 
 #include "whc_dev_struct.h"
-
 #include "whc_dev_api_path.h"
 #include "whc_dev_trx.h"
 #include "whc_dev_msg_queue.h"

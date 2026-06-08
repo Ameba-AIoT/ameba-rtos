@@ -87,6 +87,8 @@ enum  {
 	RTW_EVENT_WPA_P2P_CHANNEL_RDY		= 124, /**< STA mode: inform host channel switch ready */
 	RTW_EVENT_WTN_ZRPP_GET_AP_INFO		= 125,
 
+	RTW_EVENT_ADDBA_NEGO				= 126,
+
 	RTW_EVENT_INTERNAL_MAX,
 };
 
@@ -301,6 +303,37 @@ struct _raw_data_desc_t {
 	unsigned short		buf_len;      /**< The length of raw data.*/
 	unsigned short		flags;        /**< Send options.*/
 };
+
+#ifdef CONFIG_WHCH
+struct rtw_stats_info_by_port {
+	u32	rx_bytes_in2s;				/*!< total bytes received         */
+	u32 rx_byte_uni_in2s;			/*halbb just print for debug*/
+	u32 rx_packets;					/*!< total packets received       */
+};
+
+struct rtw_stats_info_by_sta {
+	u8 macid;
+	u8 mac_addr[6];
+	u16 stainfo_rx_data_pkts_in2s;
+	u32 stainfo_rx_byte_uni_in2s;
+};
+
+struct rtw_stats_info {
+	u32 NumRxOkInPeriod;
+	u32 NumRxUnicastOkInPeriod;
+	u8 sta_num;
+	struct rtw_stats_info_by_port	port_stats_info[2];	/* consider sta & softap */
+	struct rtw_stats_info_by_sta	sta_stats_info[16];	// MACID_HW_MAX_NUM
+};
+
+struct rtw_event_addba_nego {
+	u8 iface_type;
+	u8 operation;	/* BIT0: setup(on addba_req), BIT1: del(on addba_del) */
+	u8 macid;
+	u8 mac_addr[ETH_ALEN];
+	u16 tid;
+};
+#endif
 
 #ifdef CONFIG_NAN
 #define MAX_MATCHING_FILTERS           (16)

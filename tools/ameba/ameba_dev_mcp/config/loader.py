@@ -496,6 +496,7 @@ def resolve_board(info: BoardInfo, alias: str) -> ResolvedBoard:
         chip_erase=entry.chip_erase if entry.chip_erase is not None else d.chip_erase,
         add_crlf=entry.add_crlf if entry.add_crlf is not None else d.add_crlf,
         remote=entry.remote,
+        serial_log_record=entry.serial_log_record,
     )
 
 

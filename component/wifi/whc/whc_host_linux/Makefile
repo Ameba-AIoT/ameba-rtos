@@ -47,6 +47,7 @@ whc-ipc-objs			:= ./driver/whc_host_wiphy.o \
 					./driver/whc_host_cfgvendor.o \
 					./driver/whc_host_proc.o \
 					./driver/whc_host_ops.o \
+					./driver/whc_host_event_hdl.o \
 					./driver/whc_host_ops_ap.o \
 					./driver/whc_host_ops_key.o \
 					./driver/whc_host_ops_nan.o \

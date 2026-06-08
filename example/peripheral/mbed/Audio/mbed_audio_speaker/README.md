@@ -1,10 +1,10 @@
 # Example Description
 
-This example describes how to play 1KHz sine wave. 
+This example describes how to play 1KHz sine wave.
 
 # HW Configuration
 
-    - The board is connected to the speaker according to the schematic diagram.
+    - Connect the speaker to the audio jack.
 
 # SW Configuration
 

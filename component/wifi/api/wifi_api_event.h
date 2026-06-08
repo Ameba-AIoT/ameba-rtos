@@ -90,6 +90,42 @@ struct rtw_event_hdl_func_t {
 	void (*handler)(u8 *evt_info);
 };
 
+#ifdef CONFIG_WHCH
+/**
+  * @brief  Report info for event @ref RTW_EVENT_ADDBA_INFO
+  */
+struct rtw_event_bcnupdate_info {
+	u8 erp_protection;
+	u8 bwmode;
+	u8 ch_offset;
+};
+
+struct rtw_event_security_priv {
+	u32 dot11_wpa_mode;
+	u32 dot11PrivacyAlgrthm;	// This specify the privacy for shared auth. algorithm.
+	u32 dot118021XGrpPrivacy;	// This specify the privacy algthm. used for Grp key
+	u8	b_sw_encrypt;
+};
+
+/**
+  * @brief  Report info for event @ref RTW_EVENT_STA_INFO
+  */
+struct rtw_event_sta_info {
+	struct rtw_event_bcnupdate_info bcnupd_info;
+
+	u8 stainfo_macid;
+	u8 tx_ampdu_density;
+	u8 htc_rx;
+
+	u8 sgi_20m;
+	u8 sgi_40m;
+	u8 ampdu_enable;
+	u8 ht_option;
+	u8 he_option;
+};
+
+#endif
+
 /**
   * @brief  Report info for event @ref RTW_EVENT_JOIN_STATUS
   */
@@ -123,6 +159,18 @@ struct rtw_event_join_status_info {
 	u8 channel;
 	u8 bssid[ETH_ALEN];
 	s8 rssi;
+
+#ifdef CONFIG_WHCH
+	/* trx used paras */
+	u32 qos_option;
+	u8 acm_mask;
+	u8 preamble_mode;
+	u8 HT_protection;
+	u8 user_tx_rate;
+	struct rtw_event_sta_info stainfo;
+	struct rtw_event_security_priv sec_priv;
+#endif
+
 	/* At the same time as reporting event info, frame content needs to be reported, which will be followed by event info. */
 	u32 frame_len;  /**< 0: there is no frame followed; larger than 0: there is frame_len bytes of frame followed*/
 	u8 frame[];  /**< if there is frame followed, point to head address */

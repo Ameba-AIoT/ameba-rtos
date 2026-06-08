@@ -68,7 +68,7 @@ void rtw_ethtool_ops_init(void);
 #ifdef CONFIG_NAN
 void whc_host_nan_init(void);
 void whc_host_nan_handle_sdf(u8 type, u8 inst_id, u8 peer_inst_id, u8 *addr, u32 info_len, u8 *info, u64 cookie);
-void whc_host_nan_func_free(u64 os_dep_data);
+u8 whc_host_nan_func_free(u32 *param_buf);
 int whc_host_init_nan(void);
 int whc_host_deinit_nan(void);
 int whc_host_start_nan(u8 master_pref, u8 band_support);

@@ -84,11 +84,27 @@ static const char *const TAG = "ECM";
 
 extern struct netif *pnetif_usb_eth;
 static u8 dhcp_server_started = 0;
-static u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+/*
+ * dongle_mac: MAC address reported to the USB host side of the CDC-ECM link.
+ * It is passed into ecm_priv and advertised through the ECM functional descriptor
+ * (iMACAddress string), so the host's virtual Ethernet adapter is assigned this MAC.
+ * In other words, it identifies the "host-facing" end of the USB Ethernet dongle.
+ */
+static u8 dongle_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
+/*
+ * dhcp_server_mac: MAC address used by the device's local lwIP netif (pnetif_usb_eth).
+ * It is copied into pnetif_usb_eth->hwaddr in ecm_link_change_thread() before the
+ * DHCP server is started, so it is the source MAC for frames the device sends to the
+ * host (DHCP offers, ARP replies, gateway traffic). This is the "device-facing" end.
+ *
+ * Note: dongle_mac and dhcp_server_mac must differ (here only the last byte: 0x55 vs
+ * 0x56) so the two ends of the point-to-point USB Ethernet link have distinct MACs.
+ */
+static u8 dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56};
 static __IO u8 cdc_ecm_link_disconnected = 0;
 
 static usbd_cdc_ecm_priv_data_t ecm_priv = {
-	mac_valid,
+	dongle_mac,
 };
 
 static usbd_cdc_ecm_cb_t cdc_ecm_cb = {
@@ -219,7 +235,6 @@ static void ecm_link_change_thread(void *param)
 {
 	eth_state_t ethernet_state = ETH_STATUS_IDLE;
 	u8 link_is_up = 0;
-	u8 *mac;
 
 	UNUSED(param);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task!\n");
@@ -233,17 +248,16 @@ static void ecm_link_change_thread(void *param)
 		}
 
 		if (1 == link_is_up && (ethernet_state < ETH_STATUS_INIT)) {
-			mac = (u8 *)usbd_cdc_ecm_get_mac_str();
-			if (mac == NULL || pnetif_usb_eth == NULL) {
+			if (pnetif_usb_eth == NULL) {
 				rtos_time_delay_ms(1000);
 			} else {
 				if (!dhcp_server_started) {
 					// RTK_LOGS(TAG, RTK_LOG_INFO, "Starting USB ECM DHCP Server...\n");
 
-					// 1. Deinit DHCP server
-					memcpy(pnetif_usb_eth->hwaddr, mac, 6);
+					// 1. Set netif MAC address
+					memcpy(pnetif_usb_eth->hwaddr, dhcp_server_mac, 6);
 					pnetif_usb_eth->hwaddr_len = ETHARP_HWADDR_LEN;
-					RTK_LOGS(TAG, RTK_LOG_INFO, "USB ECM MAC: " MAC_FMT "\n", MAC_ARG(pnetif_usb_eth->hwaddr));
+					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server MAC: " MAC_FMT "\n", MAC_ARG(pnetif_usb_eth->hwaddr));
 
 					// 2. Deinit DHCP server
 					dhcps_deinit(pnetif_usb_eth);
@@ -408,8 +422,8 @@ static void cdc_ecm_cb_status_changed(u8 old_status, u8 status)
 	*/
 
 #if CONFIG_USBD_CDC_ECM_HOTPLUG
-	cdc_ecm_attach_status = status;
 	cdc_ecm_attach_old_status = old_status;
+	cdc_ecm_attach_status = status;
 	if (cdc_ecm_attach_status_changed_sema != NULL) {
 		rtos_sema_give(cdc_ecm_attach_status_changed_sema);
 	}
@@ -442,7 +456,7 @@ static void cdc_ecm_hotplug_thread(void *param)
 			continue;
 		}
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Status change %d -> %d \n", cdc_ecm_attach_status, cdc_ecm_attach_old_status);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Status change %d -> %d \n", cdc_ecm_attach_old_status, cdc_ecm_attach_status);
 		current_status = cdc_ecm_attach_status;
 
 		if (current_status == USBD_ATTACH_STATUS_DETACHED) {

@@ -1,5 +1,15 @@
-#ifndef __RTW_LLHW_TRX_H__
-#define __RTW_LLHW_TRX_H__
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+* Realtek wireless local area network IC driver.
+*   This is an interface between cfg80211 and firmware in other core. The
+*   commnunication between driver and firmware is IPC（Inter Process
+*   Communication）bus.
+*
+* Copyright (C) 2023, Realtek Corporation. All rights reserved.
+*/
+
+#ifndef __WHC_HOST_TRX_H__
+#define __WHC_HOST_TRX_H__
 
 /*TX reserve size before 802.3 pkt*/
 #define WLAN_ETHHDR_LEN		14
@@ -27,13 +37,67 @@
 #define MAX_LENGTH_OF_TX_QUEUE	(200)
 #define MAX_TIMES_TO_TRY_TX	(5)
 
+#ifdef CONFIG_WHC_HCI_IPC
+/* for ipc intf */
+#define QUEUE_STOP_THRES	3
+#define QUEUE_WAKE_THRES	6
+
+struct skb_raw_para {
+	unsigned char rate;             /* tx rate of tx_raw packets */
+	unsigned char retry_limit;      /* the number of tx retry when tx fail for tx_raw packet */
+	unsigned char device_id;        /* index of peer device which as a rx role for receiving this pkt, and will be update when linked peer */
+	unsigned char ac_queue;         /* 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO */
+	unsigned char enable : 1;       /* indicate whether this packet is a tx_raw packet. set to 1 when tx_raw */
+	unsigned char sgi : 1;          /* 1 for enable data short */
+	unsigned char agg_en : 1;       /* aggregation of tx_raw frames. 1:enable; 0-disable */
+	unsigned char bw_40_en : 1;    	/* Bandwidth: 1 to 40M, 0 to 20M. */
+	unsigned char	rsvd[8];
+};
+
+struct dev_sk_buff {
+	struct list_head	list;
+	unsigned char		*buf;		/* Head of buffer */
+	/* list and buf cannot be changed after initialization */
+	unsigned char		*head;		/* Head of buffer */
+	unsigned char		*data;		/* Data head pointer */
+	unsigned char		*tail;		/* Tail pointer	*/
+	unsigned char		*end;		/* End pointer */
+	void	*dev;		/* Device we arrived on/are leaving by */
+	unsigned int 		len;		/* Length of actual data */
+
+	int 			dyalloc_flag;
+	unsigned char		busy;
+	unsigned char		no_free;
+	struct skb_raw_para		tx_raw;
+
+	atomic_t ref;
+} SKB_ALIGNMENT;
+
+static inline unsigned char *dev_skb_put(struct dev_sk_buff *skb, unsigned int len)
+{
+	unsigned char *tmp = skb->tail;
+	skb->tail += len;
+	skb->len += len;
+	if (unlikely(skb->tail > skb->end)) {
+		panic("%s: skb %p, len %d, data %p, end %p, %p.\n", __func__, skb, len, skb->data, skb->end, __builtin_return_address(0));
+	}
+	return tmp;
+}
+
+#else
+
+/* for non-ipc intf */
 #define PKT_DROP_THRES		10
 #define QUEUE_STOP_THRES	7
 #define QUEUE_WAKE_THRES	4
 
-#ifndef CONFIG_WHC_HCI_IPC
-/* internal pkt rx: from dev to host kernel space */
-int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb);
+struct whc_msg_node {
+	struct list_head	list;
+	void				*msg;
+};
 #endif
 
-#endif /* __RTW_LLHW_TRX_H__ */
+/* internal pkt rx: from dev to host kernel space */
+int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb);
+
+#endif /* __WHC_HOST_TRX_H__ */

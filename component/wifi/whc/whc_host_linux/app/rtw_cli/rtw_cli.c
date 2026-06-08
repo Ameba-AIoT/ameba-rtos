@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <errno.h>
 #include <unistd.h>
 #include <poll.h>
@@ -14,7 +15,7 @@
 #include <rtw_cli_api.h>
 #include <rtw_cli_wifi_types.h>
 #include <rtw_cli_netlink.h>
-
+#include <whc_def.h>
 #include <whc_host_rtw_cli_api.h>
 #include <whc_host_netlink.h>
 

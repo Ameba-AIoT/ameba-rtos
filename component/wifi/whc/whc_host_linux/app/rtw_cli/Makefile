@@ -4,7 +4,7 @@ PKG_CONFIG ?= pkg-config
 NL_CFLAGS := $(shell $(PKG_CONFIG) --cflags libnl-3.0 libnl-genl-3.0)
 NL_LDFLAGS := $(shell $(PKG_CONFIG) --libs libnl-3.0 libnl-genl-3.0)
 
-CFLAGS = -I. -I../../driver -I../../driver/whc_host_rtw_cli $(NL_CFLAGS)
+CFLAGS = -I. -I../../driver -I../../driver/include -I../../driver/whc_host_rtw_cli $(NL_CFLAGS)
 
 LDFLAGS = -lpthread $(NL_LDFLAGS)
 

@@ -14,10 +14,10 @@ extern "C" {
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr_config.h>
-//GATTS Definition
-//
-//
 
+#include <rtk_bt_gattc.h>
+
+// GATTS Definition
 #define BT_GATTS_MAX_INCL_SRV_NUM 32
 
 typedef struct {
@@ -34,9 +34,7 @@ typedef struct {
 	struct bt_gatt_indicate_params params;
 } zephyr_indicate_req_t;
 
-//GATTC Definition
-//
-//
+// GATTC Definition
 typedef enum {
 	BT_STACK_GATTC_DISC_REQ  = 1,
 	BT_STACK_GATTC_READ_REQ,

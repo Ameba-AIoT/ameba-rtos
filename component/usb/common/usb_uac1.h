@@ -9,6 +9,11 @@
 
 #define USB_UAC1_VERSION_01_10                      0x110U
 
+/* Audio interface bInterfaceProtocol values (standard interface descriptor).
+   Used to distinguish the Audio Class version: UAC1 = 0x00, UAC2 = 0x20. */
+#define USB_UAC_IP_VERSION_1                   0x00U
+#define USB_UAC_IP_VERSION_2                   0x20U
+
 /* Audio Class Codes */
 #define USB_UAC1_CLASS_CODE                         0x01U
 

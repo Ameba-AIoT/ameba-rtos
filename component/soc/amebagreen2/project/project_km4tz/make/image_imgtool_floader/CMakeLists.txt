@@ -17,7 +17,10 @@ target_sources(${c_CURRENT_IMAGE} PRIVATE
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_tim.c
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_clk.c
     ${c_CMPT_FWLIB_DIR}/ram_km4tz/ameba_flashclk.c
+    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_pll.c
+    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_ldo.c
     ${c_CMPT_USRCFG_DIR}/ameba_bootcfg.c
+    ${c_CMPT_BOOTLOADER_DIR}/bootloader_clk.c
 
     ${c_CMPT_USB_DIR}/hal/amebagreen2_usb.c
     ${c_CMPT_USB_DIR}/common/usb_os.c
