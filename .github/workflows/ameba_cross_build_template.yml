@@ -14,7 +14,7 @@ jobs:
   cross-platform-build:
     runs-on: ${{ matrix.os }}
     env:
-      SOC_MAP_JSON: '{"amebalite":"RTL8726E","amebasmart":"RTL8730E","amebadplus":"RTL8721Dx","amebagreen2":"RTL8721F"}'
+      SOC_MAP_JSON: '{"amebalite":"RTL8726E","amebasmart":"RTL8730E","amebadplus":"RTL8721Dx","amebagreen2":"RTL8721F", "RTL8720F":"RTL8720F"}'
 
     strategy:
       matrix:

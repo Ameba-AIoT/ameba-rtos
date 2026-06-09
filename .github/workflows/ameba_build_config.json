@@ -18,5 +18,10 @@
                         "B2":"confs_daily_build/usb.conf",
                         "B3":"confs_daily_build/atcmd.conf",
                         "B4":"confs_daily_build/bt_en.conf confs_daily_build/mp_expand.conf",
-                        "B5":"confs_daily_build/bt_en.conf confs_daily_build/mp_shrink.conf"}
+                        "B5":"confs_daily_build/bt_en.conf confs_daily_build/mp_shrink.conf"},
+          "RTL8720F":{"B1":"confs_daily_build/bt.conf",
+                        "B2":"confs_daily_build/default.conf",
+                        "B3":"confs_daily_build/default.conf",
+                        "B4":"confs_daily_build/mp_expand.conf",
+                        "B5":"confs_daily_build/mp_shrink.conf"}
 }
