@@ -23,7 +23,15 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 
 current_script_path = Path(__file__).resolve().parent
-remote_service_path = current_script_path.parent.parent / 'RemoteService'
+
+# Define possible target paths
+_possible_paths = [
+    current_script_path.parents[1] / 'RemoteService',
+    *(p / 'tools/ameba/RemoteService' for p in current_script_path.parents)
+]
+
+# Find the first existing path, default to the first one if none found
+remote_service_path = next((p for p in _possible_paths if p.exists()), _possible_paths[0])
 
 RemoteSerial = None
 
@@ -120,8 +128,12 @@ class Ameba(object):
                         self.serial_port.close(close_tcp=self.close_tcp_on_cleanup)
                     else:
                         self.serial_port.close()
-                while self.serial_port.is_open:
-                    pass
+                deadline = time.monotonic() + 3.0
+                while self.serial_port.is_open and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                if self.serial_port.is_open:
+                    self.logger.error(f"{self.serial_port.port} close timeout")
+                    return ErrType.SYS_IO
                 self.logger.info(f"{self.serial_port.port} closed.")
             except Exception as err:
                 self.logger.error(f"close error: {err}", exc_info=True)
@@ -204,8 +216,12 @@ class Ameba(object):
                         try:
                             if self.serial_port.is_open:
                                 self.serial_port.close()
-                            while self.serial_port.is_open:
-                                pass
+                            deadline = time.monotonic() + 3.0
+                            while self.serial_port.is_open and time.monotonic() < deadline:
+                                time.sleep(0.01)
+                            if self.serial_port.is_open:
+                                self.logger.error(f"{self.serial_port.port} close timeout")
+                                return ErrType.SYS_IO
                             ret = ErrType.OK
                             break
                         except:
@@ -308,8 +324,12 @@ class Ameba(object):
                     if self.serial_port.is_open:
                         self.serial_port.close()
 
-                    while self.serial_port.is_open:
-                        pass
+                    deadline = time.monotonic() + 3.0
+                    while self.serial_port.is_open and time.monotonic() < deadline:
+                        time.sleep(0.01)
+                    if self.serial_port.is_open:
+                        self.logger.error(f"{self.serial_port.port} close timeout")
+                        return ErrType.SYS_IO
                     ret = ErrType.OK
                 except:
                     ret = ErrType.SYS_IO
@@ -374,15 +394,16 @@ class Ameba(object):
                     self.serial_port.flushOutput()
 
                     self.write_bytes(CmdEsc)
-                    time.sleep(0.1)
+                    time.sleep(0.02)
 
                     if self.profile_info.is_amebad():
                         self.serial_port.flushOutput()
                         self.write_bytes(CmdSetBackupRegister)
-                        time.sleep(0.1)
+                        time.sleep(0.02)
 
                     self.serial_port.flushOutput()
                     self.write_bytes(CmdResetIntoDownloadMode)
+                    time.sleep(0.02)  # wait for cmd tx to device successfully when in lower baudrate
 
                     self.switch_baudrate(self.profile_info.handshake_baudrate, boot_delay, True)
                     self.serial_port.flushInput()
@@ -488,7 +509,10 @@ class Ameba(object):
                                                                (self.setting.switch_baudrate_at_floader == 1) else self.baudrate)
         boot_delay = self.setting.usb_floader_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.floader_boot_delay_in_second
 
-        if (not self.is_usb) and (self.setting.auto_switch_to_download_mode_with_dtr_rts != 0):
+        # default disable auto_switch_to_download_mode_with_dtr_rts_first
+        # if need to enter download mode with dtr/rts first, enable auto_switch_to_download_mode_with_dtr_rts_first
+        if (not self.is_usb) and (self.setting.auto_switch_to_download_mode_with_dtr_rts != 0) and \
+                (self.setting.auto_switch_to_download_mode_with_dtr_rts_first != 0):
             ret = self.auto_enter_download_mode()
             if ret != ErrType.OK:
                 self.logger.error(f"Enter download mode by DTR/RTS fail: {ret}")
@@ -496,8 +520,21 @@ class Ameba(object):
 
         ret, is_floader = self.check_download_mode()
         if ret != ErrType.OK:
-            self.logger.error(f"Enter download mode fail: {ret}")
-            return ret
+            # default enable dtr/rts
+            # if reboot uartburn not work, will try enter download mode with dtr/rts
+            if (not self.is_usb) and (self.setting.auto_switch_to_download_mode_with_dtr_rts != 0):
+                ret = self.auto_enter_download_mode()
+                if ret != ErrType.OK:
+                    self.logger.error(f"Enter download mode by DTR/RTS fail: {ret}")
+                    return ret
+                else:
+                    ret, is_floader = self.check_download_mode()
+                    if ret != ErrType.OK:
+                        self.logger.error(f"Enter download mode fail: {ret}")
+                        return ret
+            else:
+                self.logger.error(f"Enter download mode fail: {ret}")
+                return ret
 
         if not is_floader:
             # download flashloader to RAM
@@ -700,18 +737,19 @@ class Ameba(object):
             next_op = NextOpType.NONE
 
         if next_op != NextOpType.NONE:
-            if (next_op == NextOpType.RESET) and (not self.is_usb) and (self.setting.auto_reset_device_with_dtr_rts != 0):
-                self.logger.debug(f"Reset device with DTR/RTS...")
-                ret = self.auto_reset_device()
-                if ret != ErrType.OK:
-                    self.logger.warning(f"Reset device with DTR/RTS fail: {ret}")
-            else:
-                if next_op == NextOpType.RESET:
-                    self.logger.info(f"Reset device without DTR/RTS")
+            if next_op == NextOpType.RESET:
+                self.logger.debug(f"Reset device with WDG")
 
-                ret = self.floader_handler.next_operation(next_op, 0)
-                if ret != ErrType.OK:
-                    self.logger.warning(f"Next option {next_op} fail: {ret}")
+            ret = self.floader_handler.next_operation(next_op, 0)
+            if ret != ErrType.OK:
+                self.logger.warning(f"Next option {next_op} fail: {ret}")
+
+        # reset device with dtr/rts
+        if (next_op == NextOpType.RESET) and (not self.is_usb) and (self.setting.auto_reset_device_with_dtr_rts != 0):
+            self.logger.debug(f"Reset device with DTR/RTS...")
+            ret = self.auto_reset_device()
+            if ret != ErrType.OK:
+                self.logger.warning(f"Reset device with DTR/RTS fail: {ret}")
 
         return ret
 
@@ -918,17 +956,17 @@ class Ameba(object):
             if not self.is_address_block_aligned(self.erase_info.start_address):
                 ret = ErrType.SYS_PARAMETER
                 self.logger.warning(
-                    f"Flash start address should be aligned to block size {self.device_info.flash_block_size()}KB")
+                    f"Flash start address should be aligned to block size {self.device_info.flash_block_size() // 1024}KB")
             if self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND and (
                     not self.is_address_block_aligned(self.erase_info.end_address)):
                 ret = ErrType.SYS_PARAMETER
                 self.logger.warning(
-                    f"Flash end address should be aligned to block size {self.device_info.flash_block_size()}KB")
+                    f"Flash end address should be aligned to block size {self.device_info.flash_block_size() // 1024}KB")
             if self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_NOR and (
                     not self.is_address_block_aligned(self.erase_info.size_in_byte())):
                 ret = ErrType.SYS_PARAMETER
                 self.logger.warning(
-                    f"Flash size should be aligned to block size {self.device_info.flash_block_size()}KB")
+                    f"Flash size should be aligned to block size {self.device_info.flash_block_size() // 1024}KB")
         return ret
 
     def calculate_checksum(self, image):
@@ -1374,7 +1412,7 @@ class Ameba(object):
                 ret = self.floader_handler.erase_flash(self.erase_info.memory_type,
                                                        self.erase_info.start_address,
                                                        self.erase_info.end_address,
-                                                       self.erase_info.size_in_kbyte,
+                                                       self.erase_info.size_in_byte(),
                                                        nor_erase_timeout_in_second(
                                                            divide_then_round_up(self.erase_info.size_in_byte(), 1024)),
                                                        sense=True)
