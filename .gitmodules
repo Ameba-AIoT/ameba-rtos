@@ -4,24 +4,24 @@
 
 [submodule "component/audio"]
 	path = component/audio
-	url = ../ameba-audio.git
+	url = ../../Ameba-AIoT/ameba-audio.git
 	branch = release/v1.2
 
 [submodule "component/ui"]
 	path = component/ui
-	url = ../ameba-ui.git
+	url = ../../Ameba-AIoT/ameba-ui.git
 	branch = release/v1.2
 
 [submodule "component/aivoice"]
 	path = component/aivoice
-	url = ../ameba-aivoice.git
+	url = ../../Ameba-AIoT/ameba-aivoice.git
 	branch = release/v1.2
 
 [submodule "component/tflite_micro"]
 	path = component/tflite_micro
-	url = ../ameba-tflite-micro.git
+	url = ../../Ameba-AIoT/ameba-tflite-micro.git
 	branch = release/v1.2
 [submodule "component/application/speechmind"]
 	path = component/application/speechmind
-	url = ../speechmind.git
-	branch = master
+	url = ../../Ameba-AIoT/speechmind.git
+	branch = ameba-rtos-v1.2
