@@ -37,8 +37,6 @@ struct WakeEvent_TypeDef sleep_wevent_config[] = {
 	{WAKE_SRC_UART2,						WAKEUP_NULL},
 	{WAKE_SRC_UART1,						WAKEUP_NULL},
 	{WAKE_SRC_UART0,						WAKEUP_NULL},
-	{WAKE_SRC_pmc_timer1,					WAKEUP_NP},		/* internal usage, do not change it*/
-	{WAKE_SRC_pmc_timer0,					WAKEUP_AP},		/* internal usage, do not change it*/
 	{WAKE_SRC_Timer3,						WAKEUP_NULL},
 	{WAKE_SRC_Timer2,						WAKEUP_NULL},
 	{WAKE_SRC_Timer1,						WAKEUP_NULL},
