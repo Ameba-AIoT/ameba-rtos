@@ -195,6 +195,14 @@ def render_board_info(model: BoardInfo) -> str:
                 if rem.password is not None:
                     rline += f', "password": {json.dumps(rem.password)}'
                 kvs.append(f'"remote": {{ {rline} }}')
+            if entry.serial_log_record is not None:
+                rec = entry.serial_log_record
+                rparts = [f'"enable": {json.dumps(rec.enable)}']
+                if rec.log_dir is not None:
+                    rparts.append(f'"log_dir": {json.dumps(rec.log_dir)}')
+                if rec.file_name is not None:
+                    rparts.append(f'"file_name": {json.dumps(rec.file_name)}')
+                kvs.append(f'"serial_log_record": {{ {", ".join(rparts)} }}')
             body.append(f'{sub}{json.dumps(alias)}: {{')
             for j, kv in enumerate(kvs):
                 tail = "," if j + 1 < len(kvs) else ""

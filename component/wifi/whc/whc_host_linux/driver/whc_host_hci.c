@@ -8,9 +8,6 @@ struct whc_device global_idev;
 
 int whc_host_init(void)
 {
-#if defined(CONFIG_WHC_WIFI_API_PATH)
-	int ret = 0;
-#endif
 	struct whc_device *idev = &global_idev;
 	int i;
 
@@ -30,11 +27,7 @@ int whc_host_init(void)
 	whc_host_recv_init();
 
 #if defined(CONFIG_WHC_WIFI_API_PATH)
-	ret = whc_host_event_init(idev);
-	if (ret < 0) {
-		dev_err(idev->pwhc_dev, "whc_host_event_init error(%d).\n", ret);
-		goto exit;
-	}
+	whc_host_event_init(idev);
 #endif
 
 	whc_host_xmit_init();
@@ -49,18 +42,11 @@ int whc_host_init(void)
 	memset(&global_idev.wifi_user_config, 0, sizeof(struct wifi_user_conf));
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	whc_host_set_user_config(&global_idev.wifi_user_config);
-#endif
 
-#if defined(CONFIG_WHC_WIFI_API_PATH)
 	/* tell KM4 to open wifi */
 	whc_host_wifi_on();
 #endif
 	return 0;
-
-#if defined(CONFIG_WHC_WIFI_API_PATH)
-exit:
-	return ret;
-#endif
 }
 
 void whc_host_deinit(void)

@@ -89,9 +89,7 @@ void whc_event_nan_cfgvenfor(u32 api_id, u32 *param_buf);
 void whc_event_wtn_cmd(u32 api_id, u32 *param_buf);
 #endif
 
-#ifdef CONFIG_MP_INCLUDED
-void whc_event_mp_cmd(u32 api_id, u32 *param_buf);
-#endif
+
 #ifdef CONFIG_P2P
 void whc_event_p2p_role(u32 api_id, u32 *param_buf);
 void whc_event_p2p_remain_on_ch(u32 api_id, u32 *param_buf);
@@ -107,6 +105,9 @@ void whc_event_wifi_dhcp_success(u32 api_id, u32 *param_buf);
 void whc_event_get_traffic_stats(u32 api_id, u32 *param_buf);
 void whc_event_start_join_cmd(u32 api_id, u32 *param_buf);
 void whc_event_get_eap_phase(u32 api_id, u32 *param_buf);
+#ifdef CONFIG_IEEE80211R
+void whc_event_wifi_ft_status(u32 api_id, u32 *param_buf);
+#endif
 void whc_dev_update_regd_event_indicate(struct rtw_country_code_table *table);
 #endif
 

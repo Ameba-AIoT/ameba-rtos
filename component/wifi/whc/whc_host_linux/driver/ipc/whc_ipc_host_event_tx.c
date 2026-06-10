@@ -119,10 +119,9 @@ int whc_host_set_mac_addr(u32 wlan_idx, u8 *addr)
 	return ret;
 }
 
-int whc_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8 block)
+int whc_host_send_scan(struct rtw_scan_param *scan_param, u32 ssid_length)
 {
 	int ret = 0;
-	struct internal_block_param *block_param = NULL;
 	u32 param_buf[2];
 	u8 *buf_vir = NULL;
 	dma_addr_t buf_phy = 0;
@@ -130,22 +129,11 @@ int whc_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8 block)
 	size_t offset = 0;
 	struct rtw_scan_param *scan_param_tmp = NULL;
 
-	if (block) {
-		block_param = (struct internal_block_param *)kzalloc(sizeof(struct internal_block_param), GFP_KERNEL);
-		if (!block_param) {
-			ret = -ENOMEM;
-			goto error;
-		}
-		/* initialize scan_sema. */
-		init_completion(&block_param->sema);
-	}
-
 	buf_vir = rtw_malloc(size, &buf_phy);
 	size += (ssid_length + scan_param->channel_list_num);
 	if (!buf_vir) {
 		dev_dbg(global_idev.pwhc_dev, "%s: malloc failed.", __func__);
-		ret = -ENOMEM;
-		goto error;
+		return -ENOMEM;
 	}
 	memcpy(buf_vir, scan_param, size);
 
@@ -163,74 +151,19 @@ int whc_host_scan(struct rtw_scan_param *scan_param, u32 ssid_length, u8 block)
 	param_buf[1] = (u32)size;
 
 	ret = whc_ipc_host_send_msg(WHC_API_WIFI_SCAN_NETWROKS, param_buf, 2);
-
-	if (ret < 0) {
-		goto error;
-	}
-
-	if (block) {
-		global_idev.mlme_priv.scan_block_param = block_param;
-
-		if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_SCAN_TIMEOUT) == 0) {
-			dev_err(global_idev.pwhc_dev, "%s: Scan timeout!\n", __func__);
-			ret = -EINVAL;
-		}
-		global_idev.mlme_priv.scan_block_param = NULL;
-	}
-
-error:
-	if (block_param) {
-		complete_release(&block_param->sema);
-		kfree((u8 *)block_param);
-	}
-
-	if (buf_vir) {
-		rtw_mfree(size, buf_vir, buf_phy);
-	}
-	return ret;
-}
-
-int whc_host_scan_abort(void)
-{
-	int ret = 0;
-	struct internal_block_param *block_param = NULL;
-
-	block_param = (struct internal_block_param *)kzalloc(sizeof(struct internal_block_param), GFP_KERNEL);
-	if (!block_param) {
-		ret = -ENOMEM;
-		goto exit;
-	}
-	/* initialize scan_abort_sema. */
-	init_completion(&block_param->sema);
-
-	ret = whc_ipc_host_send_msg(WHC_API_WIFI_SCAN_ABORT, NULL, 0);
-
-	if (ret < 0) {
-		ret = 0;
-		goto exit;  /* there is no scan ongoing, just return SUCCESS*/
-	}
-
-	global_idev.mlme_priv.scan_abort_block_param = block_param;
-
-	if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_SCAN_ABORT_TIMEOUT) == 0) {
-		dev_err(global_idev.pwhc_dev, "%s: Scan abort wait timeout!\n", __func__);
-		ret = -EINVAL;
-	}
-	global_idev.mlme_priv.scan_abort_block_param = NULL;
-
-exit:
-	if (block_param) {
-		complete_release(&block_param->sema);
-		kfree((u8 *)block_param);
-	}
+	rtw_mfree(size, buf_vir, buf_phy);
 
 	return ret;
 }
 
-int whc_host_event_connect(struct rtw_network_info *connect_param, unsigned char block)
+int whc_host_send_scan_abort(void)
+{
+	return whc_ipc_host_send_msg(WHC_API_WIFI_SCAN_ABORT, NULL, 0);
+}
+
+int whc_host_send_connect(struct rtw_network_info *connect_param)
 {
 	int ret = 0;
-	struct internal_block_param *block_param = NULL;
 	u32 param_buf[2];
 	u8 *buf_vir = NULL;
 	dma_addr_t buf_phy = 0;
@@ -238,47 +171,11 @@ int whc_host_event_connect(struct rtw_network_info *connect_param, unsigned char
 	size_t offset = 0;
 	struct rtw_network_info *connect_param_tmp = NULL;
 
-#ifdef CONFIG_SUPPLICANT_SME
-	/* step1: check if auth is finished */
-	if ((global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_UNKNOWN)
-		&& (global_idev.mlme_priv.rtw_join_status < RTW_JOINSTATUS_SUCCESS)
-		&& (global_idev.mlme_priv.rtw_join_status != RTW_JOINSTATUS_AUTHENTICATED)) {
-		dev_err(global_idev.pwhc_dev, "[whc]: auth is not finished! rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
-		return -EBUSY;
-	}
-#else
-	/* step1: check if there's ongoing connect*/
-	if ((global_idev.mlme_priv.rtw_join_status > RTW_JOINSTATUS_UNKNOWN)
-		&& (global_idev.mlme_priv.rtw_join_status < RTW_JOINSTATUS_SUCCESS)) {
-		dev_err(global_idev.pwhc_dev, "[whc]: there is ongoing wifi connect!rtw_join_status=%d\n", global_idev.mlme_priv.rtw_join_status);
-		return -EBUSY;
-	}
-#endif
-
-	/*clear for last connect status */
-	global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_STARTING;
-	whc_host_connect_indicate(RTW_JOINSTATUS_STARTING, NULL);
-
-	/* step2: malloc and set synchronous connection related variables*/
-	if (block) {
-		block_param = (struct internal_block_param *)kzalloc(sizeof(struct internal_block_param), GFP_KERNEL);
-		if (!block_param) {
-			ret = -ENOMEM;
-			global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
-			goto error;
-		}
-		/* initialize join_sema. */
-		init_completion(&block_param->sema);
-	}
-
-	/* step3: set connect cmd to driver*/
 	size = sizeof(struct rtw_network_info) + connect_param->password_len;
 	buf_vir = rtw_malloc(size, &buf_phy);
 	if (!buf_vir) {
 		dev_err(global_idev.pwhc_dev, "%s: mapping dma error!\n", __func__);
-		global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
-		ret = -ENOMEM;
-		goto error;
+		return -ENOMEM;
 	}
 	memcpy(buf_vir, connect_param, size);
 	connect_param_tmp = (struct rtw_network_info *)buf_vir;
@@ -291,44 +188,8 @@ int whc_host_event_connect(struct rtw_network_info *connect_param, unsigned char
 	param_buf[1] = (u32)size;
 
 	ret = whc_ipc_host_send_msg(WHC_API_WIFI_CONNECT, param_buf, 2);
+	rtw_mfree(size, buf_vir, buf_phy);
 
-	if (ret != 0) {
-		ret = -EINVAL;
-		global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
-		goto error;
-	}
-
-	/* step4: wait connect finished for synchronous connection*/
-	if (block) {
-		global_idev.mlme_priv.join_block_param = block_param;
-
-		if (wait_for_completion_interruptible_timeout(&block_param->sema, RTW_JOIN_TIMEOUT) == 0) {
-			dev_err(global_idev.pwhc_dev, "%s: Join bss timeout!\n", __func__);
-			global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
-			ret = -EINVAL;
-			goto error;
-		} else {
-			if (whc_host_wifi_get_join_status() != RTW_JOINSTATUS_SUCCESS) {
-				ret = -EINVAL;
-				global_idev.mlme_priv.rtw_join_status = RTW_JOINSTATUS_FAIL;
-				goto error;
-			}
-		}
-	}
-
-error:
-	if (block_param) {
-		complete_release(&block_param->sema);
-		kfree((u8 *)block_param);
-		global_idev.mlme_priv.join_block_param = NULL;
-	}
-
-	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_FAIL) {
-		whc_host_connect_indicate(RTW_JOINSTATUS_FAIL, NULL);
-	}
-	if (buf_vir) {
-		rtw_mfree(size, buf_vir, buf_phy);
-	}
 	return ret;
 }
 
@@ -366,11 +227,6 @@ int whc_host_event_disconnect(u16 reason_code)
 	}
 
 	return ret;
-}
-
-int whc_host_wifi_get_join_status(void)
-{
-	return global_idev.mlme_priv.rtw_join_status;
 }
 
 int whc_host_set_channel(u32 wlan_idx, u8 ch)

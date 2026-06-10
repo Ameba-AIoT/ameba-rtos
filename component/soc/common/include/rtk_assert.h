@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
 void vAssertCalled(const char *pcFile, uint32_t ulLine);
+void rtk_assert_printf(const char *fmt, ...);
 
 #if defined(CONFIG_ASSERTION_DISABLE)
 #define rtk_assert(__e) ((void)(__e))

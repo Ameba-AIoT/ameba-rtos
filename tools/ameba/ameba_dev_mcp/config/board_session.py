@@ -25,6 +25,7 @@ import serial
 from serial.serialutil import SerialException
 
 from ameba_dev_mcp._paths import REMOTE_SERVICE_DIR, TOOLS_ROOT
+from ameba_dev_mcp.config import serial_log
 from ameba_dev_mcp.models.schemas import ConfigError, ResolvedBoard
 
 # RemoteService imports require both TOOLS_ROOT (so `ameba.*` resolves as a
@@ -57,6 +58,8 @@ class ActiveSession:
     connection: object              # serial.Serial or RemoteSerial
     is_remote: bool
     aag_parser: object = None       # populated lazily by serial_read tool
+    reader: object = None           # LoggingReader (sole RX consumer) when logging on
+    serial_logger: object = None    # SerialLogger (owns the .log file) when logging on
     created_at: float = field(default_factory=time.monotonic)
     last_used_at: float = field(default_factory=time.monotonic)
 
@@ -70,6 +73,18 @@ class ActiveSession:
         return False
 
     def close(self) -> None:
+        # Stop the background log pump FIRST so it stops reading before the
+        # underlying connection is torn down, then flush/close the log file.
+        if self.reader is not None:
+            try:
+                self.reader.stop()
+            except Exception as ex:
+                logger.warning("Error stopping log reader %s: %s", self.alias, ex)
+        if self.serial_logger is not None:
+            try:
+                self.serial_logger.close()
+            except Exception as ex:
+                logger.warning("Error closing serial log %s: %s", self.alias, ex)
         try:
             if self.is_remote:
                 self.connection.close(close_tcp=True)
@@ -163,6 +178,15 @@ class BoardSessionManager:
                 connection=conn,
                 is_remote=is_remote,
             )
+            # Attach background log capture if this board enabled it. The
+            # LoggingReader becomes the sole RX consumer; failure here is
+            # non-fatal — the tools fall back to reading `conn` directly.
+            try:
+                attached = serial_log.attach(conn, board)
+                if attached is not None:
+                    sess.reader, sess.serial_logger = attached
+            except Exception as ex:
+                logger.warning("serial-log attach failed for %s: %s", alias, ex)
             self._sessions[alias] = sess
             self._ensure_reaper()
             return sess

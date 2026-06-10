@@ -16,7 +16,7 @@ import colorama
 import serial
 from serial.tools import list_ports, miniterm
 from colorama.initialise import wrap_stream
-from typing import Union
+from typing import Any, Dict, List, Optional, Union
 
 from base import __version__
 from base.console_parser import ConsoleParser
@@ -26,11 +26,10 @@ from base.constants import CTRL_C, CTRL_H, EVENT_QUEUE_TIMEOUT, LAST_LINE_THREAD
     TAG_SERIAL_FLUSH, CMD_STOP
 from base.key_config import EXIT_KEY, EXIT_MENU_KEY, MENU_KEY
 from base.log_handler import LogHandler
+from base.chip_info import IC_LIST, normalize_chip_name as _normalize_chip_name
 from base.color_output import print_normal, print_yellow, print_red, set_diag_to_stderr
 from base.serial_handler import SerialHandler, SerialStopException
 from base.serial_reader import LinuxReader, SerialReader
-from typing import Optional, Dict, Any, List
-import os
 
 key_description = miniterm.key_description
 
@@ -70,6 +69,7 @@ class Monitor():
             log_dir: Optional[List[str]] = None,
             logAGG: Optional[List[str]] = None,
             no_console: bool = False,
+            chip: Optional[str] = None,
     ):
         self.event_queue = queue.Queue()
         self.cmd_queue = queue.Queue()
@@ -82,16 +82,20 @@ class Monitor():
         self.debug = debug
         self.no_console = no_console
         set_diag_to_stderr(no_console)
-        self.logAGG_enabled = True if logAGG else False
+        # Either flag enables AGG parsing. When both are supplied, --logAGG wins
+        # everywhere (tags + bitmask); --chip is only used when --logAGG is absent.
+        if chip and chip not in IC_LIST:
+            print_yellow(f"Warning: unknown chip '{chip}', falling back to Core0/Core1/Core2 tags.")
+        self.logAGG_enabled = True if (logAGG or chip) else False
         self.log_handler = LogHandler(self.elf_file, self.output_queue, timestamps, enable_address_decoding, toolchain_path,
-                                      log_enabled, log_dir, port, logAGG, rom_elf_file=rom_file)
+                                      log_enabled, log_dir, port, logAGG, rom_elf_file=rom_file, chip=chip)
 
-        if self.target_os == "freertos":
-            from base.coredump_freertos import CoreDump
+        if self.target_os == "freertos" and self.is_ca32:
+            from base.coredump_freertos_ca32 import CoreDump
             self.coredump = CoreDump(decode_coredumps, self.event_queue, self.log_handler, self.elf_file, self.rom_file,
                                      toolchain_path) if self.elf_exists else None
-        elif self.target_os == "freertos" and self.is_ca32:
-            from base.coredump_freertos_ca32 import CoreDump
+        elif self.target_os == "freertos":
+            from base.coredump_freertos import CoreDump
             self.coredump = CoreDump(decode_coredumps, self.event_queue, self.log_handler, self.elf_file, self.rom_file,
                                      toolchain_path) if self.elf_exists else None
         elif self.target_os == "zephyr":
@@ -215,7 +219,10 @@ class Monitor():
             # the coredump loader uses empty line as a sign for end-of-coredump
             # line is finalized only for non coredump data
         elif event_tag == TAG_SERIAL_FLUSH:
-            self.serial_handler.handle_serial_input(data, self.coredump, True)
+            # Finalize a trailing line that arrived without EOL. pathnum stays 0
+            # (the default-path buffer); the True must bind to finalize_line, not
+            # pathnum — passing it positionally here was the [logAGG] regression.
+            self.serial_handler.handle_serial_input(data, self.coredump, finalize_line=True)
         else:
             raise RuntimeError("Bad event data %r" % ((event_tag, data),))
 
@@ -348,7 +355,8 @@ def main():
                         log_enabled = args.log,
                         log_dir=args.log_dir,
                         logAGG = args.logAGG,
-                        no_console=args.no_console)
+                        no_console=args.no_console,
+                        chip=args.chip)
 
         print_yellow("--- Exit monitor: Ctrl+C ---")
 
@@ -389,6 +397,14 @@ def get_parser():
     parser.add_argument('--logAGG', nargs='+',
                          help='the logAGG enabled and source marked '
                         )
+    def _chip_arg(value):
+        return _normalize_chip_name(value) or value
+    parser.add_argument('--chip', type=_chip_arg, default=None,
+                        help='Optional IC chip name (case-insensitive). Enables AGG parsing '
+                             '(same as --logAGG) and remaps path tags; --logAGG wins when both '
+                             'are supplied. Pre AGG chips (RTL872xD, RTL8195X, RTL871XB) and unknown '
+                             'chips fall back to Core0/Core1/Core2 tags. '
+                             f'Valid choices: {", ".join(IC_LIST)}')
     parser.add_argument('--no-console', action='store_true',
                         help='Disable prompt toolkit TUI and read commands from stdin pipe')
 

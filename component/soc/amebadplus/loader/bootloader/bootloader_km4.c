@@ -24,7 +24,7 @@ PRAM_START_FUNCTION BOOT_SectionInit(void)
 	return (PRAM_START_FUNCTION)__image2_entry_func__;
 }
 
-void BOOT_NsStart(u32 Addr)
+__NO_RETURN void BOOT_NsStart(u32 Addr)
 {
 	/* clear stack */
 	u32 stack_mid = (MSPLIM_RAM_HP + MSP_RAM_HP + 4) / 2;
@@ -38,25 +38,8 @@ void BOOT_NsStart(u32 Addr)
 
 	DCache_CleanInvalidate(MSPLIM_RAM_HP, MSP_RAM_HP - MSPLIM_RAM_HP);
 
-#ifndef CONFIG_TRUSTZONE
 	FuncPtr pFunc = (FuncPtr)Addr;
 	pFunc();
-#endif
-
-#ifdef CONFIG_TRUSTZONE
-	UNUSED(Addr); // TFM get addr from VTOR_NS
-	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__ram_image3_start__;
-	if (HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG) & LSYS_BIT_BOOT_WAKE_FROM_PS_HS) {
-		Image3EntryFun->RamWakeupFun();
-	} else {
-		RTK_LOGI(TAG, "Start TFM @ 0x%lx ...\r\n", Image3EntryFun->RamStartFun);
-		Image3EntryFun->RamStartFun();
-	}
-#else
-	/* jump to ns world */
-	nsfunc *fp = (nsfunc *)cmse_nsfptr_create(Addr);
-	fp();
-#endif
 
 	/* avoid compiler to pop stack when exit BOOT_NsStart */
 	while (1);
@@ -305,7 +288,7 @@ void BOOT_Enable_KM0(void)
 
 void BOOT_WakeFromPG(void)
 {
-	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;;
+	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
 	u32 *vector_table = NULL;
 
 	BOOT_TRNG_ParaSet();
@@ -332,7 +315,12 @@ void BOOT_WakeFromPG(void)
 	__set_PSP(MSP_RAM_HP_NS - 2048);
 
 	/* Start non-secure state software application */
+#ifndef CONFIG_TRUSTZONE
 	BOOT_NsStart(vector_table[1]);
+#else
+	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__ram_image3_start__;
+	BOOT_NsStart((u32)Image3EntryFun->RamWakeupFun);
+#endif
 }
 
 void BOOT_SOC_ClkChk(const SocClk_Info_TypeDef *pSocClk_Info)
@@ -610,7 +598,13 @@ __weak void BOOT_Image1(void)
 	/* Start non-secure state software application */
 	RTK_LOGI(TAG, "Image2Entry @ 0x%lx ...\r\n", vector_table[1]);
 
+#ifndef CONFIG_TRUSTZONE
 	BOOT_NsStart(vector_table[1]);
+#else
+	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__ram_image3_start__;
+	RTK_LOGI(TAG, "Start TFM @ 0x%lx ...\r\n", (u32)Image3EntryFun->RamStartFun);
+	BOOT_NsStart((u32)Image3EntryFun->RamStartFun);
+#endif
 }
 
 IMAGE1_VALID_PATTEN_SECTION

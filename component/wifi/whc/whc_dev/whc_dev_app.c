@@ -202,6 +202,23 @@ end:
 
 }
 
+#ifdef CONFIG_MP_INCLUDED
+void whc_dev_mp_cmd(char *cmd, int show_msg)
+{
+	/* response layout: WHC_WIFI_TEST(4B) + WHC_WIFI_TEST_MP(1B) + outbuf */
+	u8 *resp = rtos_mem_malloc(5 + WHC_MP_MSG_BUF_SIZE);
+	if (resp) {
+		*(u32 *)resp = WHC_WIFI_TEST;
+		resp[4] = WHC_WIFI_TEST_MP;
+		wext_private_command(cmd, show_msg, (char *)(resp + 5));
+		whc_dev_api_send_to_host(resp, 5 + WHC_MP_MSG_BUF_SIZE, NULL, 0);
+		rtos_mem_free(resp);
+	} else {
+		RTK_LOGE(TAG_WLAN_INIC, "%s Malloc fail!\n", __func__);
+	}
+}
+#endif
+
 /* here in sdio rx done callback */
 __weak void whc_dev_cmd_rx_to_user(u8 *rxbuf)
 {
@@ -335,7 +352,7 @@ connect_fail:
 					whc_dev_api_set_host_state(WHC_HOST_UNREADY);
 #endif
 				} else if (*ptr == WHC_WIFI_TEST_SET_TICKPS_CMD) {
-					whc_dev_tickps_cmd((struct whc_dev_ps_cmd *)(ptr + 1));
+					whc_dev_tickps_cmd((struct whc_ps_cmd *)(ptr + 1));
 				} else if (*ptr == WHC_WIFI_TEST_WIFION) {
 #ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 					whc_dev_api_set_host_state(WHC_HOST_READY);
@@ -345,6 +362,11 @@ connect_fail:
 					wifi_user_config.cfg80211 = 0;
 				} else if (*ptr == WHC_WIFI_TEST_OTA) {
 					whc_dev_ota_process(ptr);
+				}
+#endif
+#ifdef CONFIG_MP_INCLUDED
+				else if (*ptr == WHC_WIFI_TEST_MP) {
+					whc_dev_mp_cmd((char *)(ptr + 2), *(ptr + 1));
 				}
 #endif
 			}

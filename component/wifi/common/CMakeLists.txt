@@ -13,6 +13,9 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 set(SEC_CODE_IN_ROM FALSE)
 set(release_target_name wifi_com_sec)
+if(CONFIG_PLATFORM_ZEPHYR)
+set(TARGET_LIB rtw_event)
+endif()
 
 if(CONFIG_AMEBAGREEN2)
     set(SEC_CODE_IN_ROM TRUE)
@@ -34,6 +37,11 @@ if(CONFIG_WLAN)
 ameba_list_append_if(CONFIG_WLAN public_libraries
     ${c_SDK_LIB_APPLICATION_DIR}/lib_${release_target_name}.a
 )
+if(CONFIG_PLATFORM_ZEPHYR)
+    ameba_list_append(public_libraries
+        ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a
+    )
+endif()
 endif()
 
 # Component public part, user config end
@@ -84,6 +92,19 @@ ameba_add_external_app_library(${release_target_name}
         ${private_compile_options}
 )
 
+if(CONFIG_PLATFORM_ZEPHYR)
+ameba_add_external_app_library(${TARGET_LIB}
+    p_SOURCES
+        rtw_event.c
+        rtw_task_size.c
+    p_INCLUDES
+        ${private_includes}
+    p_DEFINITIONS
+        ${private_definitions}
+    p_COMPILE_OPTIONS
+        ${private_compile_options}
+)
+else()
 ###NOTE: For open-source component, always build from source
 ameba_add_internal_library(rtw_event
     p_SOURCES
@@ -96,5 +117,7 @@ ameba_add_internal_library(rtw_event
     p_COMPILE_OPTIONS
         ${private_compile_options}
 )
+endif()
+
 endif()
 ##########################################################################################

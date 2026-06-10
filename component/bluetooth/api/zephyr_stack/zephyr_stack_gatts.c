@@ -7,13 +7,12 @@
 #include <string.h>
 #include <dlist.h>
 #include <osif.h>
-#include <bt_app_config.h>
 
+#include <bt_app_config.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
-
-#include <rtk_bt_gattc.h>
 #include <rtk_bt_gatts.h>
+
 #include <zephyr_stack_api.h>
 #include <zephyr_stack_gatt.h>
 #include <zephyr_stack_internal.h>
@@ -37,7 +36,6 @@ typedef struct {
 #define RECV_REQ_FLAG_DONE          BIT(0)
 #define RECV_REQ_FLAG_SUCCEESS      BIT(1)
 
-
 static struct list_head svc_list;
 
 /* request processing */
@@ -47,8 +45,6 @@ static void service_node_free(zephyr_svc_node *node);
 static zephyr_svc_node *service_node_alloc(struct rtk_bt_gatt_service *svc);
 
 void bt_zephyr_gatts_mtu_udpated(struct bt_conn *conn, uint16_t tx, uint16_t rx);
-
-
 static struct bt_gatt_cb bt_zephyr_gatts_cb = {
 	.att_mtu_updated = bt_zephyr_gatts_mtu_udpated
 };
@@ -112,10 +108,9 @@ static uint16_t bt_stack_gatts_evt_get_attr_index(const struct bt_gatt_attr *att
 
 static ssize_t bt_stack_gatts_read_cb_internal(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf, uint16_t len, uint16_t offset)
 {
-	uint16_t value_len = *((uint16_t *)attr->user_data);
-	void *value = (void *)((uint8_t *)attr->user_data + 2);
+	rtk_bt_gatt_attr_t *rtk_attr = attr->user_data;
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value, value_len);
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, rtk_attr->user_data, rtk_attr->len);
 }
 
 static void clear_received_req(zephyr_gatts_received_req_t *req)
@@ -425,150 +420,130 @@ void bt_stack_gatts_disconnect_clear(struct bt_conn *conn)
 	clear_received_req(&received_req[bt_conn_index(conn)]);
 }
 
-static uint16_t _duplicate_uuid(const struct bt_uuid *old, void **new)
+static uint16_t _duplicate_common_attrs(rtk_bt_gatt_attr_t *src, struct bt_gatt_attr *dst)
 {
-	int len;
-	struct bt_uuid *uuid;
-
-	if (old->type == BT_UUID_TYPE_16) {
-		len = sizeof(struct bt_uuid_16);
-	} else {
-		len = sizeof(struct bt_uuid_128);
+	if (RTK_BT_GATT_APP == src->flag) { // APP handles read/write in callback
+		dst->read = bt_stack_gatts_read_cb;
+		dst->write = bt_stack_gatts_write_cb;
+	} else { // stack internal handles read
+		dst->read = bt_stack_gatts_read_cb_internal;
+		dst->user_data = src;
 	}
-
-	uuid = (struct bt_uuid *)osif_mem_alloc(RAM_TYPE_DATA_ON, len);
-
-	if (!uuid) {
-		return RTK_BT_ERR_NO_MEMORY;
-	}
-
-	memcpy(uuid, old, len);
-	*((struct bt_uuid **)new) = uuid;
 
 	return 0;
 }
 
-static uint16_t _duplicate_attrs(const struct rtk_bt_gatt_service *svc, struct bt_gatt_attr **p_attrs)
+/* convert attributes from 'rtk_bt_gatt_attr_t' to 'struct bt_gatt_attr'
+ * 1. struct bt_gatt_attr is malloced;
+ * 2. struct bt_gatt_attr::uuid ptr is passed from upper layer;
+ * 3. struct bt_gatt_attr::user_data is passed from upper layer, except cccd attr whose user_data is malloced;
+ * 4. 2nd ptr in bt_gatt_attr::user_data is passed from upper layer.
+ */
+static uint16_t _duplicate_attrs(rtk_bt_gatt_attr_t *src, struct bt_gatt_attr *dst)
+{
+	dst->uuid = src->uuid;
+	dst->perm = src->perm;
+	/* If permission include writable, make it also prepare writable, compatible to rtk bt stack.
+	    And if you want remote device to prepare write to local, config CONFIG_BT_ATT_PREPARE_COUNT
+	    to big enough, or prepare write will fail */
+	if (src->perm & (BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_WRITE_AUTHEN)) {
+		dst->perm |= BT_GATT_PERM_PREPARE_WRITE;
+	}
+
+	if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_PRIMARY) ||
+		!bt_uuid_cmp(src->uuid, BT_UUID_GATT_SECONDARY)) {
+		dst->read = bt_gatt_attr_read_service;
+		dst->user_data = src->user_data; // user_data is struct bt_uuid_16 or bt_uuid_128
+
+	} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_INCLUDE)) {
+		zephyr_svc_node *node = NULL;
+		node = service_node_alloc((struct rtk_bt_gatt_service *)src->user_data);
+		if (!node) {
+			return RTK_BT_ERR_NO_MEMORY;
+		}
+
+		node->include_ref++;
+		dst->read = bt_gatt_attr_read_included;
+		dst->user_data = node->svc.attrs;
+
+	} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_CHRC)) {
+		dst->read = bt_gatt_attr_read_chrc;
+		dst->user_data = src->user_data; // user_data is from struct rtk_bt_gatt_chrc to struct bt_gatt_chrc
+
+	} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_CEP)) {
+		if (RTK_BT_GATT_APP == src->flag || RTK_BT_GATT_VOID == src->flag) {
+			return _duplicate_common_attrs(src, dst);
+		}
+		dst->read = bt_gatt_attr_read_cep;
+		dst->user_data = src->user_data; // user_data is from struct rtk_bt_gatt_cep to struct bt_gatt_cep
+
+	} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_CUD)) {
+		if (RTK_BT_GATT_APP == src->flag || RTK_BT_GATT_VOID == src->flag) {
+			return _duplicate_common_attrs(src, dst);
+		}
+		dst->read = bt_gatt_attr_read_cud;
+		dst->user_data = src->user_data; // user_data is cud string
+
+	}  else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_CCC)) {
+		if (RTK_BT_GATT_APP == src->flag || RTK_BT_GATT_VOID == src->flag) {
+			return _duplicate_common_attrs(src, dst);
+		}
+		struct _bt_gatt_ccc *p_ccc = (struct _bt_gatt_ccc *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct _bt_gatt_ccc));
+		if (!p_ccc) {
+			return RTK_BT_ERR_NO_MEMORY;
+		}
+
+		memset(p_ccc, 0, sizeof(struct _bt_gatt_ccc));
+		p_ccc->cfg_write = bt_stack_gatts_ccc_write_cb;
+		dst->read = bt_gatt_attr_read_ccc;
+		dst->write = bt_gatt_attr_write_ccc;
+		dst->user_data = p_ccc;  // user_data is struct _bt_gatt_ccc
+
+	} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_SCC)) {
+		if (RTK_BT_GATT_APP == src->flag || RTK_BT_GATT_VOID == src->flag) {
+			return _duplicate_common_attrs(src, dst);
+		}
+		dst->read = bt_gatt_attr_read_scc;
+		dst->write = bt_gatt_attr_write_scc;
+		dst->user_data = src->user_data; // user_data is from struct rtk_bt_gatt_scc to struct bt_gatt_scc
+
+	} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_CPF)) {
+		if (RTK_BT_GATT_APP == src->flag || RTK_BT_GATT_VOID == src->flag) {
+			return _duplicate_common_attrs(src, dst);
+		}
+		dst->read = bt_gatt_attr_read_cpf;
+		dst->user_data = src->user_data; // user_data is from struct rtk_bt_gatt_cpf to struct bt_gatt_cpf
+
+	} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_CAF)) {
+		if (RTK_BT_GATT_APP == src->flag || RTK_BT_GATT_VOID == src->flag) {
+			return _duplicate_common_attrs(src, dst);
+		}
+		dst->read = bt_gatt_attr_read_caf;
+		dst->user_data = src->user_data; // user_data is from struct rtk_bt_gatt_caf to struct bt_gatt_caf
+
+	} else {
+		return _duplicate_common_attrs(src, dst);
+	}
+
+	return 0;
+}
+
+static uint16_t _duplicate_service(const struct rtk_bt_gatt_service *svc, struct bt_gatt_attr **p_attrs)
 {
 	uint16_t i;
 	struct bt_gatt_attr *attrs;
 
 	attrs = (struct bt_gatt_attr *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_gatt_attr) * svc->attr_count);
-
 	if (!attrs) {
 		return RTK_BT_ERR_NO_MEMORY;
 	}
 
 	memset(attrs, 0, sizeof(struct bt_gatt_attr) * svc->attr_count);
-
 	*p_attrs = attrs;
 
 	for (i = 0; i < svc->attr_count; i++) {
-		rtk_bt_gatt_attr_t *src = svc->attrs + i;
-		struct bt_gatt_attr *dst = attrs + i;
-
-		dst->perm = src->perm;
-		/* If permission include writable, make it also prepare writable, compatible to rtk bt stack.
-		    And if you want remote device to prepare write to local, config CONFIG_BT_ATT_PREPARE_COUNT
-		    to big enough, or prepare write will fail */
-		if (src->perm & (BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_WRITE_AUTHEN)) {
-			dst->perm |= BT_GATT_PERM_PREPARE_WRITE;
-		}
-
-		if (_duplicate_uuid(src->uuid, (void **)&dst->uuid)) {
+		if (_duplicate_attrs(&svc->attrs[i], &attrs[i])) {
 			return RTK_BT_ERR_NO_MEMORY;
-		}
-
-		if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_PRIMARY) ||
-			!bt_uuid_cmp(src->uuid, BT_UUID_GATT_SECONDARY)) {
-			dst->read = bt_gatt_attr_read_service;
-			if (_duplicate_uuid((struct bt_uuid *)src->user_data, &dst->user_data)) {
-				return RTK_BT_ERR_NO_MEMORY;
-			}
-
-		} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_INCLUDE)) {
-			zephyr_svc_node *node = NULL;
-			node = service_node_alloc((struct rtk_bt_gatt_service *)src->user_data);
-			if (!node) {
-				return RTK_BT_ERR_NO_MEMORY;
-			}
-
-			node->include_ref++;
-			dst->read = bt_gatt_attr_read_included;
-			dst->user_data = node->svc.attrs;
-
-		} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_CHRC)) {
-			struct rtk_bt_gatt_chrc *rtk_chrc = (struct rtk_bt_gatt_chrc *)src->user_data;
-			struct bt_gatt_chrc *p_chrc = (struct bt_gatt_chrc *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_gatt_chrc));
-			if (!p_chrc) {
-				return RTK_BT_ERR_NO_MEMORY;
-			}
-			p_chrc->uuid = NULL;
-			dst->user_data = p_chrc;
-
-			if (_duplicate_uuid(rtk_chrc->uuid, (void **)(&p_chrc->uuid))) {
-				return RTK_BT_ERR_NO_MEMORY;
-			}
-
-			p_chrc->value_handle = rtk_chrc->value_handle;
-			p_chrc->properties = rtk_chrc->properties;
-			dst->read = bt_gatt_attr_read_chrc;
-
-		} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_CCC)) {
-			struct _bt_gatt_ccc *p_ccc = (struct _bt_gatt_ccc *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct _bt_gatt_ccc));
-			if (!p_ccc) {
-				return RTK_BT_ERR_NO_MEMORY;
-			}
-
-			memset(p_ccc, 0, sizeof(struct _bt_gatt_ccc));
-			p_ccc->cfg_write = bt_stack_gatts_ccc_write_cb;
-			dst->read = bt_gatt_attr_read_ccc;
-			dst->write = bt_gatt_attr_write_ccc;
-			dst->user_data = p_ccc;
-
-		} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_CEP)) {
-			dst->read = bt_gatt_attr_read_cep;
-			dst->user_data = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_gatt_cep));
-			if (!dst->user_data) {
-				return RTK_BT_ERR_NO_MEMORY;
-			}
-			((struct bt_gatt_cep *)dst->user_data)->properties = ((struct rtk_bt_gatt_cep *)src->user_data)->properties;
-
-		} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_CUD)) {
-			int cud_len = strlen(src->user_data) + 1;
-			dst->read = bt_gatt_attr_read_cud;
-			dst->user_data = osif_mem_alloc(RAM_TYPE_DATA_ON, cud_len);
-			if (!dst->user_data) {
-				return RTK_BT_ERR_NO_MEMORY;
-			}
-			memcpy(dst->user_data, src->user_data, cud_len);
-
-		} else if (!bt_uuid_cmp(src->uuid, BT_UUID_GATT_CPF)) {
-			dst->read = bt_gatt_attr_read_cpf;
-			dst->user_data = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct bt_gatt_cpf));
-			if (!dst->user_data) {
-				return RTK_BT_ERR_NO_MEMORY;
-			}
-			((struct bt_gatt_cpf *)dst->user_data)->format = ((struct rtk_bt_gatt_cpf *)src->user_data)->format;
-			((struct bt_gatt_cpf *)dst->user_data)->exponent = ((struct rtk_bt_gatt_cpf *)src->user_data)->exponent;
-			((struct bt_gatt_cpf *)dst->user_data)->unit = ((struct rtk_bt_gatt_cpf *)src->user_data)->unit;
-			((struct bt_gatt_cpf *)dst->user_data)->name_space = ((struct rtk_bt_gatt_cpf *)src->user_data)->name_space;
-			((struct bt_gatt_cpf *)dst->user_data)->description = ((struct rtk_bt_gatt_cpf *)src->user_data)->description;
-
-		} else {
-			if (src->flag == RTK_BT_GATT_INTERNAL) { /* stack covers read */
-				dst->read = bt_stack_gatts_read_cb_internal;
-				dst->user_data = osif_mem_alloc(RAM_TYPE_DATA_ON, src->len + sizeof(uint16_t));
-				if (!dst->user_data) {
-					return RTK_BT_ERR_NO_MEMORY;
-				}
-				*((uint16_t *)dst->user_data) = src->len;
-				memcpy(dst->user_data, &src->len, sizeof(uint16_t));
-				memcpy((uint8_t *)dst->user_data + sizeof(uint16_t), src->user_data, src->len);
-			} else { /* APP covers read */
-				dst->read = bt_stack_gatts_read_cb;
-				dst->write = bt_stack_gatts_write_cb;
-			}
 		}
 	}
 
@@ -587,7 +562,7 @@ static void service_node_free(zephyr_svc_node *node)
 		/* free memory in every attribute */
 		for (i = 0; i < node->svc.attr_count; i++) {
 			struct bt_gatt_attr *attr = node->svc.attrs + i;
-			if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_INCLUDE)) { /* free unregistered included service node */
+			if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_INCLUDE)) {
 				zephyr_svc_node *include_node = NULL, *tmp = NULL;
 				list_for_each_entry(tmp, &svc_list, list, zephyr_svc_node) {
 					if (tmp->svc.attrs == (struct bt_gatt_attr *)attr->user_data) {
@@ -598,22 +573,18 @@ static void service_node_free(zephyr_svc_node *node)
 				if (include_node) {
 					node->include_ref--;
 					if (!node->include_ref && !node->registered) {
+						/* Only unregistered included service node need to free here, the registered include service node
+						    will be freed in service_node_free() when this service is traversed */
 						service_node_free(node);
 					}
 				}
-			} else {/* user_data of include service uuid will be freed in service_node_free() */
-				if (attr->user_data) { /* free user data */
-					if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
-						struct bt_gatt_chrc *p_chrc = (struct bt_gatt_chrc *)attr->user_data;
-						if (p_chrc->uuid) {
-							osif_mem_free((void *)p_chrc->uuid);
-						}
-					}
-					osif_mem_free(attr->user_data);
-				}
+			} else if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) && attr->user_data) {
+				/* free user data in cccd attr */
+				osif_mem_free(attr->user_data);
 			}
-			osif_mem_free((void *)attr->uuid);
 		}
+
+		/* free attribute arrays memory */
 		osif_mem_free(node->svc.attrs);
 	}
 
@@ -638,7 +609,7 @@ static zephyr_svc_node *service_node_alloc(struct rtk_bt_gatt_service *svc)
 	memset(node, 0, sizeof(zephyr_svc_node));
 	list_add_tail(&node->list, &svc_list);
 
-	if (_duplicate_attrs(svc, &node->svc.attrs) == 0) {
+	if (_duplicate_service(svc, &node->svc.attrs) == 0) {
 		node->svc.attr_count = svc->attr_count;
 		node->app_id = svc->app_id;
 

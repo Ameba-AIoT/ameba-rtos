@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 This example will erase a security register, write security register in `USER mode` and verify result by comparing transmit data with receive data.

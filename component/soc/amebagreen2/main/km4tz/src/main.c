@@ -115,6 +115,16 @@ void app_filesystem_init(void)
 	}
 #endif
 
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+	/* read-only littlefs ROM image (blob embedded within app image), mounted at "rolfs:" */
+	ret = vfs_user_register(VFS_ROLFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_ROLFS, VFS_RO);
+	if (ret == 0) {
+		RTK_LOGI(TAG, "VFS-ROLFS Init Success \n");
+	} else {
+		RTK_LOGI(TAG, "VFS-ROLFS Init Fail \n");
+	}
+#endif
+
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
 	vfs_ftl_init();
 #endif

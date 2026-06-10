@@ -80,11 +80,6 @@ const struct net_device_ops whc_host_ndev_ops_p2p = {
 	.ndo_select_queue = rtw_ndev_select_queue,
 	.ndo_set_mac_address = rtw_ndev_set_mac_address,
 	.ndo_get_stats = rtw_ndev_get_stats,
-#if (KERNEL_VERSION(5, 15, 0) > LINUX_VERSION_CODE)
-	.ndo_do_ioctl = rtw_ndev_ioctl,
-#else
-	.ndo_siocdevprivate = rtw_ndev_ioctl,
-#endif
 };
 
 int whc_host_ndev_p2p_register(enum nl80211_iftype type, const char *name, u8 wlan_idx)

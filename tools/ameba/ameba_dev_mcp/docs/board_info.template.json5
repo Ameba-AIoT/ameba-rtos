@@ -36,6 +36,22 @@
    *     "port": "COM5",
    *     "remote": { "host": "192.168.1.100", "port": 58916, "password": "" }
    *   }
+   *
+   * Optional per-board serial-log capture (full stream, timestamped, AAG-decoded;
+   * survives drain_first). When enabled, opening the serial port starts logging
+   * and closing it stops. See docs/board_info.md section 3.1 for the naming /
+   * daily-rotation rules.
+   *
+   *   "RTL8721F_ttyUSB0": {
+   *     "soc": "RTL8721F",
+   *     "transport": "local",
+   *     "port": "/dev/ttyUSB0",
+   *     "serial_log_record": {
+   *       "enable": true
+   *       // log_dir omitted -> PROJECT_ROOT/mcp_serial_log
+   *       // file_name omitted -> auto <alias>_<YYYYMMDD>_<HHMMSS>.log, rotated daily
+   *     }
+   *   }
    */
   "boards": {
   }

@@ -191,7 +191,7 @@ int ota_storage_update_manifest(ota_hdr_manager_t *pOtaTgtHdr, u8 slotIdx, u8 hd
 	manifest = &pOtaTgtHdr->Manifest[hdrIdx];
 
 	RTK_LOGI(OTA_TAG, "update addr: 0x%08x\n", (unsigned int)addr);
-	RTK_LOGI(OTA_TAG, "update version major: %d, minor: %d\n", manifest->MajorKeyVer, manifest->MinorKeyVer);
+	RTK_LOGI(OTA_TAG, "update version major: %x, minor: %x\n", manifest->MajorKeyVer, manifest->MinorKeyVer);
 
 	/*write the manifest, write pattern finally*/
 	ota_storage_write(addr - SPI_FLASH_BASE + 8, (u8 *)manifest + 8, sizeof(ota_manifest_t) - 8);

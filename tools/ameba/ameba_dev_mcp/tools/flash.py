@@ -22,7 +22,7 @@ import sys
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from ameba_dev_mcp._paths import REMOTE_SERVICE_DIR, SDK_ROOT, TOOLS_ROOT
+from ameba_dev_mcp._paths import PROJECT_ROOT, REMOTE_SERVICE_DIR, SDK_ROOT, TOOLS_ROOT
 
 for _p in (TOOLS_ROOT, REMOTE_SERVICE_DIR):
     if _p not in sys.path:
@@ -208,9 +208,12 @@ def _resolve_images_for_flash(soc: str, entry, *, alias: str) -> Tuple[Optional[
     if entry.flash_layout_setting_mode == "manual":
         return _images_from_entry(entry), None, info_msgs
 
-    # auto mode → re-parse
+    # auto mode → re-parse. Same dual-root split as the post-build sync in
+    # project.py: layout/addresses from SDK headers, build_dir + .config + bins
+    # from PROJECT_ROOT. Keeping both parses on the same (sdk_root, build_base)
+    # pair is what guarantees the post-build and pre-flash layouts agree.
     try:
-        parsed = parse_project(SDK_ROOT, soc)
+        parsed = parse_project(SDK_ROOT, soc, build_base=PROJECT_ROOT)
     except FlashCfgParseError as ex:
         return None, _err_envelope([ConfigError(
             code="FLASH_CFG_PARSE_FAILED",
@@ -255,13 +258,13 @@ def flash_firmware(alias: Optional[str] = None) -> Dict[str, Any]:
     """
     # Step 1: load + resolve board
     try:
-        binfo = load_board_info(SDK_ROOT)
+        binfo = load_board_info(PROJECT_ROOT)
     except ConfigLoadError as ex:
         missing = any(e.code == "BOARD_CONFIG_MISSING" for e in ex.errors)
         env = _err_envelope(ex.errors, alias=alias)
         if missing:
             try:
-                env["template_path"] = ensure_board_info_template(SDK_ROOT)
+                env["template_path"] = ensure_board_info_template(PROJECT_ROOT)
                 env["docs_url"] = "docs/board_info.md"
                 env["resource_url"] = "debug://hardware"
             except Exception:
@@ -276,14 +279,14 @@ def flash_firmware(alias: Optional[str] = None) -> Dict[str, Any]:
         return env
     alias = resolved_alias
 
-    board_errs = validate_board_config(SDK_ROOT, alias=alias)
+    board_errs = validate_board_config(PROJECT_ROOT, alias=alias)
     if board_errs:
         return _err_envelope(board_errs, alias=alias)
     board = resolve_board(binfo, alias)
 
     # Step 2: load project entry for this SoC
     try:
-        pinfo = load_project_info(SDK_ROOT)
+        pinfo = load_project_info(PROJECT_ROOT)
     except ConfigLoadError as ex:
         return _err_envelope(ex.errors, alias=alias)
 
@@ -296,7 +299,7 @@ def flash_firmware(alias: Optional[str] = None) -> Dict[str, Any]:
             hint="Run build_firmware to auto-create an `auto` mode entry, or add manually.",
         )], alias=alias)
 
-    proj_errs = validate_project_config(SDK_ROOT, soc=board.soc)
+    proj_errs = validate_project_config(PROJECT_ROOT, soc=board.soc)
     # Allow AUTO_IMAGES_MISSING through if we can re-parse; report others.
     fatal = [e for e in proj_errs if e.code != "AUTO_IMAGES_MISSING"]
     if fatal:
@@ -645,12 +648,12 @@ def list_serial_ports(alias: Optional[str] = None) -> Dict[str, Any]:
         return {"success": True, "scope": "local", "ports": _list_local_ports()}
 
     try:
-        binfo = load_board_info(SDK_ROOT)
+        binfo = load_board_info(PROJECT_ROOT)
     except ConfigLoadError as ex:
         env = _err_envelope(ex.errors, alias=alias)
         if any(e.code == "BOARD_CONFIG_MISSING" for e in ex.errors):
             try:
-                env["template_path"] = ensure_board_info_template(SDK_ROOT)
+                env["template_path"] = ensure_board_info_template(PROJECT_ROOT)
                 env["docs_url"] = "docs/board_info.md"
                 env["resource_url"] = "debug://hardware"
             except Exception:
@@ -709,7 +712,7 @@ def register_flash_tools(mcp: FastMCP) -> None:
         PL2303 driver requirements.
         """
         result = flash_firmware(alias)
-        attach_selected_via_default(result, alias, SDK_ROOT)
+        attach_selected_via_default(result, alias, PROJECT_ROOT)
         return result
 
     @mcp.tool()

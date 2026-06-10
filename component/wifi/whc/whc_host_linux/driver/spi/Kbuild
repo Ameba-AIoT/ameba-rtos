@@ -8,7 +8,7 @@ ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
 ccflags-$(CONFIG_SUPPLICANT_SME) += -DCONFIG_SUPPLICANT_SME
 ccflags-$(CONFIG_RMESH) += -DCONFIG_RMESH
 
-ccflags-y += -DCONFIG_FULLMAC
+ccflags-y += -DCONFIG_WHC_HOST_LINUX
 ccflags-y += -I$(src)/../netdev
 ccflags-y += -I$(src)/../include -I$(src)/.. -I$(src)/../../common -I$(src)/../spi
 
@@ -22,21 +22,22 @@ whc_spi-$(CONFIG_WHC_HCI_SPI) := \
 		../whc_host_pkt_rx.o \
 		../whc_host_memory.o \
 		../whc_host_hci.o \
-		../whc_host_ops.o \
-		../whc_host_wiphy.o \
+		../netdev/whc_host_ops_sta.o \
+		../netdev/whc_host_wiphy.o \
 		../whc_host_regd.o \
 		../whc_host_ft.o \
-		../whc_host_ops_ap.o \
-		../whc_host_ops_key.o \
-		../whc_host_ops_nan.o \
-		../whc_host_ops_p2p.o \
-		../whc_host_netdev_ops_p2p.o \
+		../netdev/whc_host_ops_ap.o \
+		../netdev/whc_host_ops_key.o \
+		../netdev/whc_host_ops_nan.o \
+		../netdev/whc_host_ops_p2p.o \
+		../netdev/whc_host_netdev_ops_p2p.o \
 		../whc_host_cfgvendor.o \
 		../whc_host_proc.o \
-		../whc_host_event_tx.o \
+		../netdev/whc_host_ops.o \
+			../whc_host_event_tx.o \
 		../whc_host_event_rx.o \
+		../whc_host_event_hdl.o \
 		../whc_host_protocal_offload.o \
-		../whc_host_ioctl.o \
 		../whc_host_cust_evt.o \
 		../whc_host_acs.o
 

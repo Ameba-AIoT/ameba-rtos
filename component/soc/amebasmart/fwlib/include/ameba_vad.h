@@ -239,6 +239,18 @@ void BT_VAD_Buf_move_two(u32 codec_index_0, u32 codec_index_1, u32 block_index, 
 void BT_VAD_Buf_move_three(u32 codec_index_0, u32 codec_index_1, u32 codec_index_2, u32 block_index, u32 transfer_mode);
 void BT_VAD_Buf_move_four(u32 codec_index_0, u32 codec_index_1, u32 codec_index_2, u32 codec_index_3, u32 block_index, u32 transfer_mode);
 
+u32 get_current_addr(void);
+u32 get_byte_num(u32 time_period_ms);
+u8 get_block_index(u32 addr);
+u32 get_start_addr_block(u32 addr_ref, u8 channel_index);
+u32 get_data_stored_block(u32 addr1, u32 addr2);
+u32 get_hit_addr(void);
+u32 get_hit_channel(void);
+void vad_data_copy_block(u32 addr_start, u32 amount_byte, u8 *buf);
+u32 get_new_addr_block(u32 addr, u32 byte_num);
+void get_vad_data(u32 time_period_ms, u8 *buf);
+void vad_handler_reset(void);
+
 
 /**
   * @}

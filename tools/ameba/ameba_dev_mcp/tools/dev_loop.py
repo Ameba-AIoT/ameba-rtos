@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional
 
 from mcp.server.fastmcp import FastMCP
 
-from ameba_dev_mcp._paths import SDK_ROOT
+from ameba_dev_mcp._paths import PROJECT_ROOT
 from ameba_dev_mcp.config.loader import (
     ConfigLoadError,
     load_board_info,
@@ -51,7 +51,7 @@ def _resolve_alias_soc(alias):
     accepted only when board_info has exactly one board.
     """
     try:
-        binfo = load_board_info(SDK_ROOT)
+        binfo = load_board_info(PROJECT_ROOT)
     except ConfigLoadError as ex:
         env: Dict[str, Any] = {
             "success": False,
@@ -66,7 +66,7 @@ def _resolve_alias_soc(alias):
         if any(e.code == "BOARD_CONFIG_MISSING" for e in ex.errors):
             from ameba_dev_mcp.config.loader import ensure_board_info_template
             try:
-                env["template_path"] = ensure_board_info_template(SDK_ROOT)
+                env["template_path"] = ensure_board_info_template(PROJECT_ROOT)
                 env["docs_url"] = "docs/board_info.md"
                 env["resource_url"] = "debug://hardware"
             except Exception:
@@ -158,7 +158,7 @@ def quick_test(alias: Optional[str] = None, *,
                     "errors": [{"code": "SET_TARGET_FAILED",
                                 "field_path": "soc_info.json",
                                 "message": f"set_target({target_soc}) failed: {ex}",
-                                "hint": "Check that <SDK_ROOT> is writable."}],
+                                "hint": "Check that <PROJECT_ROOT> is writable."}],
                     "closed_after": False,
                 }
 

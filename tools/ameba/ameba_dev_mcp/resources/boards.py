@@ -14,7 +14,7 @@ from typing import Any, Dict
 
 from mcp.server.fastmcp import FastMCP
 
-from ameba_dev_mcp._paths import SDK_ROOT
+from ameba_dev_mcp._paths import PROJECT_ROOT
 from ameba_dev_mcp.config.loader import (
     ConfigLoadError,
     ensure_board_info_template,
@@ -30,12 +30,12 @@ _PASSWORD_MASK = "***"
 def _safe_load() -> Dict[str, Any]:
     """Load board_info.json5 or return a structured error envelope."""
     try:
-        info = load_board_info(SDK_ROOT)
+        info = load_board_info(PROJECT_ROOT)
     except ConfigLoadError as ex:
         # Side effect: ensure template exists so the user has somewhere
         # to start from on first read.
         try:
-            template_path = ensure_board_info_template(SDK_ROOT)
+            template_path = ensure_board_info_template(PROJECT_ROOT)
         except Exception:
             template_path = None
         return {

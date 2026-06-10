@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 1. This example describes how to use SPI GDMA multi-block continue RX Slave by RAW SPI API.

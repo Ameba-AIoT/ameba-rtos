@@ -9,7 +9,6 @@ static int whc_host_nl_send_buf_to_dev(struct genl_info *info);
 static int whc_host_nl_set_mac(struct genl_info *info);
 static int whc_host_nl_set_netifon(struct genl_info *info);
 #if defined(CONFIG_WHC_WIFI_API_PATH)
-static int whc_host_nl_mp(struct genl_info *info);
 static int whc_host_nl_dbg(struct genl_info *info);
 #endif
 static int whc_host_nl_init(struct genl_info *info);
@@ -20,7 +19,6 @@ static struct whc_host_netlink_command_entry netlink_cmd_table[] = {
 	{API_WIFI_SET_MAC, whc_host_nl_set_mac},
 	{API_WIFI_NETIF_ON, whc_host_nl_set_netifon},
 #if defined(CONFIG_WHC_WIFI_API_PATH)
-	{API_WIFI_MP, whc_host_nl_mp},
 	{API_WIFI_DBG, whc_host_nl_dbg},
 #endif
 	/* api end */
@@ -190,27 +188,6 @@ static int whc_host_nl_init(struct genl_info *info)
 }
 
 #if defined(CONFIG_WHC_WIFI_API_PATH)
-static int whc_host_nl_mp(struct genl_info *info)
-{
-	u8 *buf;
-	u32 buf_len;
-	char *user_buf;
-	u8 hdr_len = 2 * sizeof(uint32_t);
-
-	buf = (char *)nla_data(info->attrs[WHC_ATTR_STRING]);
-	buf_len = strlen(buf) + 1;
-	/* rsvd 8B for mp  result header */
-	user_buf = kzalloc(WHC_WIFI_MP_MSG_BUF_SIZE + hdr_len, GFP_KERNEL);
-	whc_host_mp_cmd((dma_addr_t)buf, buf_len, (dma_addr_t)(user_buf + hdr_len));
-	buf_len = strlen(user_buf + hdr_len);
-	user_buf[hdr_len + buf_len] = '\0';
-	whc_host_send_rxbuf_to_user(user_buf + hdr_len, buf_len + 1);
-
-	kfree(user_buf);
-
-	return 0;
-}
-
 static int whc_host_nl_dbg(struct genl_info *info)
 {
 	u8 *buf;

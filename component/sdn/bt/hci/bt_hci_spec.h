@@ -1390,6 +1390,7 @@ struct bt_hci_rp_vendor_mp_get_lbt {
 	uint8_t status;
 	uint8_t module_id;
 	uint8_t subcmd;
+	uint8_t lbt_enable;
 	uint8_t lbt_mode;
 	uint8_t lbt_threshold_ant_out;
 	uint8_t lbt_ant_gain;
@@ -1745,6 +1746,8 @@ struct bt_hci_evt_le_adv_set_terminated {
 #define BT_HCI_LE_ADV_EVT_PHY_2M                0x02
 #define BT_HCI_LE_ADV_EVT_PHY_CODED_S8          0x03
 #define BT_HCI_LE_ADV_EVT_PHY_CODED_S2          0x04
+
+#define BT_HCI_LE_ADV_TX_POWER_NO_PREF          0x7F
 
 struct bt_hci_evt_le_ext_advertising_info {
 	uint16_t     evt_type;

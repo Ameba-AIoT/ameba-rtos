@@ -10,6 +10,13 @@ lfs_t g_lfs;
 u32 LFS_FLASH_BASE_ADDR;
 u32 LFS_FLASH_SIZE;
 
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+/* read-only littlefs ROLFS image (blob embedded within app image, NOR flash). */
+lfs_t g_rolfs_lfs;
+u32 LFS_ROLFS_FLASH_BASE_ADDR;
+u32 LFS_ROLFS_FLASH_SIZE;
+#endif
+
 #ifdef CONFIG_SUPPORT_NAND_FLASH
 struct lfs_config g_nand_lfs_cfg = {
 	.read  = lfs_nand_read,
@@ -238,6 +245,62 @@ int lfs_nor_erase(const struct lfs_config *c, lfs_block_t block)
 }
 
 
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+/* ---- read-only ROLFS littlefs (blob within app image, always NOR) ---- */
+struct lfs_config g_nor_rolfs_lfs_cfg = {
+	.read  = lfs_nor_rolfs_read,
+	.prog  = lfs_nor_rolfs_prog,
+	.erase = lfs_nor_rolfs_erase,
+	.sync  = lfs_diskio_sync,
+
+#ifdef LFS_THREADSAFE
+	.lock = lfs_diskio_lock,
+	.unlock = lfs_diskio_unlock,
+#endif
+
+	.read_size = 1,
+	.prog_size = 1,
+	.block_size = 4096,
+	.lookahead_size = 8,
+	.cache_size = 256,
+	.block_cycles = 100,
+};
+
+int lfs_nor_rolfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
+{
+	if (size == 0) {
+		return LFS_ERR_OK;
+	}
+
+	flash_t flash;
+
+	flash_stream_read(&flash, LFS_ROLFS_FLASH_BASE_ADDR + c->block_size * block + off, size, (uint8_t *)buffer);
+
+	return LFS_ERR_OK;
+}
+
+int lfs_nor_rolfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size)
+{
+	(void) c;
+	(void) block;
+	(void) off;
+	(void) buffer;
+	(void) size;
+	/* read-only: writes are rejected so littlefs never mutates the ROLFS blob */
+	VFS_DBG(VFS_ERROR, "rolfs littlefs is read-only, prog rejected");
+	return LFS_ERR_INVAL;
+}
+
+int lfs_nor_rolfs_erase(const struct lfs_config *c, lfs_block_t block)
+{
+	(void) c;
+	(void) block;
+	/* read-only: erase is rejected so littlefs never mutates the ROLFS blob */
+	VFS_DBG(VFS_ERROR, "rolfs littlefs is read-only, erase rejected");
+	return LFS_ERR_INVAL;
+}
+#endif
+
 int lfs_diskio_sync(const struct lfs_config *c)
 {
 	(void) c;
@@ -272,6 +335,19 @@ int rt_lfs_init(lfs_t *lfs)
 	struct lfs_config *lfs_cfg;
 	int ret = 0;
 
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+	if (lfs == &g_rolfs_lfs) {
+		/* read-only ROLFS image: mount only, never format (prog/erase rejected) */
+		g_nor_rolfs_lfs_cfg.block_count = LFS_ROLFS_FLASH_SIZE / 4096;
+		VFS_DBG(VFS_INFO, "init rolfs (read-only) nor lfs cfg");
+		ret = lfs_mount(lfs, &g_nor_rolfs_lfs_cfg);
+		if (ret) {
+			VFS_DBG(VFS_ERROR, "rolfs lfs_mount fail %d", ret);
+		}
+		return ret;
+	}
+#endif
+
 	if (lfs == &g_lfs) {
 #ifdef CONFIG_SUPPORT_NAND_FLASH
 		if (SHOULD_USE_NAND()) {
@@ -296,7 +372,21 @@ int rt_lfs_init(lfs_t *lfs)
 #endif
 
 	ret = lfs_mount(lfs, lfs_cfg);
-	if (ret == LFS_ERR_NOTFMT) {
+	int need_reformat = (ret == LFS_ERR_NOTFMT);
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+	/* Reformat the writable region not only when it is blank (LFS_ERR_NOTFMT),
+	 * but also when an on-flash superblock is incompatible/corrupt:
+	 *   - LFS_ERR_INVAL  : the stored block_count/block_size no longer matches
+	 *     lfs_cfg (e.g. VFS1 grew from 512KB/128 blocks to 1MB/256 blocks across
+	 *     a flash-layout change). Without this, mount keeps failing with
+	 *     "Invalid block count" and the region never becomes usable.
+	 *   - LFS_ERR_CORRUPT: superblock damaged.
+	 * This is safe for a writable scratch/user region (data is recreated on demand)
+	 * but must NEVER apply to the read-only ROLFS image — that path returns above. */
+	need_reformat = need_reformat || (ret == LFS_ERR_INVAL) || (ret == LFS_ERR_CORRUPT);
+#endif
+	if (need_reformat) {
+		VFS_DBG(VFS_WARNING, "lfs_mount ret %d, reformatting region", ret);
 		ret = lfs_format(lfs, lfs_cfg);
 		if (ret) {
 			VFS_DBG(VFS_ERROR, "lfs_format fail %d", ret);

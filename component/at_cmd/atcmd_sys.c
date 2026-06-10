@@ -94,10 +94,10 @@ void at_otarecover(u16 argc, char **argv)
 
 static void at_test_help(void)
 {
-	RTK_LOGI(TAG, "\r\n");
-	RTK_LOGI(TAG, "AT+test=<mode>,<string/length>\r\n");
-	RTK_LOGI(TAG, "\t<mode>:\t0-echo, 1-tt mode test\r\n");
-	RTK_LOGI(TAG, "\t<string/length>:\tstring-mode 0 echo string, length-tt mode length\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "AT+test=<mode>,<string/length>\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<mode>:\t0-echo, 1-tt mode test\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<string/length>:\tstring-mode 0 echo string, length-tt mode length\r\n");
 }
 
 /****************************************************************
@@ -150,7 +150,7 @@ void at_test(u16 argc, char **argv)
 		while (remain_len > 0) {
 			get_len = atcmd_tt_mode_get(buffer_ptr, remain_len);
 			if (get_len == 0) {
-				RTK_LOGI(TAG, "host stops tt mode\r\n");
+				RTK_LOGS(TAG, RTK_LOG_INFO, "host stops tt mode\r\n");
 				break;
 			}
 			remain_len -= get_len;

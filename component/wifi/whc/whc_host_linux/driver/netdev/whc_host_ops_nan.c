@@ -255,14 +255,15 @@ void whc_host_nan_handle_sdf(u8 type, u8 inst_id, u8 peer_inst_id, u8 *addr, u32
 
 }
 
-void whc_host_nan_func_free(u64 os_dep_data)
+u8 whc_host_nan_func_free(u32 *param_buf)
 {
+	u64 os_dep_data = ((u64)param_buf[1] << 32) | param_buf[0];
 	struct wireless_dev *wdev = global_idev.pwdev_global[2];
 	gfp_t kflags;
 	struct cfg80211_nan_func *func = (struct cfg80211_nan_func *)os_dep_data;
 
 	if (wdev == NULL) {
-		return;
+		return 0;
 	}
 
 	printk("%s => os_dep_data=%llx\n", __func__, os_dep_data);
@@ -273,6 +274,7 @@ void whc_host_nan_func_free(u64 os_dep_data)
 		cfg80211_nan_func_terminated(wdev, func->instance_id, NL80211_NAN_FUNC_TERM_REASON_USER_REQUEST, func->cookie, kflags);
 		cfg80211_free_nan_func(func);
 	}
+	return 0;
 }
 
 void whc_host_nan_init(void)

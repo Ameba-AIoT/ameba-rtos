@@ -4,13 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_FULLMAC
-#include <rtw_cfg80211_fullmac.h>
-#else
 #include "platform_autoconf.h"
 #include <wifi_api.h>
 #include "rtw_skbuff.h"
-#endif
 
 struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
 
@@ -37,7 +33,7 @@ _WEAK void wifi_set_user_config(void)
 	skb_num_np_rsvd = 7; /*4 for rx_ring_buffer + 2 for mgnt trx + 1 for spi rx_dma_buffer */
 	wifi_user_config.skb_num_np = 14;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;
-	wifi_user_config.rx_ampdu_num = 0;
+	wifi_user_config.rx_ampdu_num = 1;
 #elif defined(CONFIG_WHC_INTF_UART)
 	skb_num_np_rsvd = 7; /*4 for rx_ring_buffer + 2 for mgnt trx + 1 for spi rx_dma_buffer */
 	wifi_user_config.skb_num_np = 14;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */

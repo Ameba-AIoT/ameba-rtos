@@ -27,10 +27,14 @@ static const char *const TAG = "COMP";
 
 static const usbh_dev_id_t composite_devs[] = {
 	{
-		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO,
+		/* Match UAC by class + subclass only, NOT bInterfaceProtocol: we also want
+		   to attach to UAC 2.0 devices (protocol 0x20, which can run at Full Speed)
+		   so usbh_composite_uac_parse_interface_desc() can reject them with a clear
+		   "UAC 2.0 not supported" message. Matching on protocol==0x00 here would
+		   make UAC2 devices match no driver and report a generic probe fail. */
+		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS,
 		.bInterfaceClass = USB_UAC1_CLASS_CODE,
 		.bInterfaceSubClass = USB_UAC1_SUBCLASS_AUDIOSTREAMING,
-		.bInterfaceProtocol = 0x00,
 	},
 	{
 	},

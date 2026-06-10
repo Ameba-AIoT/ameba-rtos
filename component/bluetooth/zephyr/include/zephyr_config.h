@@ -128,7 +128,7 @@ extern "C" {
 #define CONFIG_BT_GATT_CLIENT 1
 #define CONFIG_BT_GATT_AUTO_UPDATE_MTU 1
 
-#define CONFIG_BT_MAX_CONN  8
+#define CONFIG_BT_MAX_CONN  4
 
 #define CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT 5000
 #define CONFIG_BT_CREATE_CONN_TIMEOUT 60
@@ -159,7 +159,7 @@ extern "C" {
 
 #define CONFIG_BT_L2CAP_TX_FRAG_COUNT 0
 
-#define CONFIG_BT_ATT_PREPARE_COUNT 3
+#define CONFIG_BT_ATT_PREPARE_COUNT 4
 
 //assert
 #define CONFIG_BT_ASSERT_VERBOSE
@@ -197,6 +197,7 @@ extern "C" {
 even if CONFIG_BT_EXT_ADV is enabled */
 #define CONFIG_BT_EXT_ADV_LEGACY_SUPPORT 1
 
+#if 0
 //periodic adv
 #define CONFIG_BT_PER_ADV 1
 
@@ -222,6 +223,7 @@ even if CONFIG_BT_EXT_ADV is enabled */
 
 //padv sync rsp
 #define CONFIG_BT_PER_ADV_SYNC_RSP   1
+#endif
 
 #ifdef __cplusplus
 }

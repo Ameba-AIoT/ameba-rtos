@@ -21,9 +21,10 @@ class SerialHandler:
     def __init__(self, last_line_part, logger, target_os, elf_file):
         # type: (str,  LogHandler, str,   serial.Serial, str) -> None
         self._last_line_part = last_line_part
-        self._np_last_line_part = ""
-        self._lp_last_line_part = ""
-        self._ap_last_line_part = ""
+        # One trailing-line reassembly buffer per AGG path, keyed by path
+        # number. Replaces the old fixed _np/_lp/_ap attributes (paths 1/2/4)
+        # so any path the chip table marks as TEXT_LOG reassembles correctly.
+        self._agg_line_parts = {}
         self.log_handler = logger
         self.target = target_os
         self.elf_file = elf_file
@@ -34,7 +35,9 @@ class SerialHandler:
         """
         # if data is empty fallback to empty string for easier concatenation with last line
         sp = data.splitlines(keepends=True) or [""]
-        if pathnum == 0:        
+        if pathnum == 0:
+            # pathnum 0 keeps its own attribute because handle_serial_input's
+            # finalize_line flush operates on _last_line_part specifically.
             if self._last_line_part != "":
                 # add unprocessed part from previous "data" to the first line
                 sp[0] = self._last_line_part + sp[0]
@@ -42,34 +45,21 @@ class SerialHandler:
             if not sp[-1].endswith("\n"):
                 # last part is not a full line
                 self._last_line_part = sp.pop(-1)
-        elif pathnum == 0x01:
-            if self._np_last_line_part != "":
+        else:
+            # AGG text paths: same reassembly logic, one buffer per path number.
+            prev = self._agg_line_parts.get(pathnum, "")
+            if prev != "":
                 # add unprocessed part from previous "data" to the first line
-                sp[0] = self._np_last_line_part + sp[0]
-                self._np_last_line_part = ""
-            if not sp[-1].endswith("\n"):
+                sp[0] = prev + sp[0]
+            if sp[-1].endswith("\n"):
+                self._agg_line_parts[pathnum] = ""
+            else:
                 # last part is not a full line
-                self._np_last_line_part = sp.pop(-1)
-        elif pathnum == 0x02:
-            if self._lp_last_line_part != "":
-                # add unprocessed part from previous "data" to the first line
-                sp[0] = self._lp_last_line_part + sp[0]
-                self._lp_last_line_part = ""
-            if not sp[-1].endswith("\n"):
-                # last part is not a full line
-                self._lp_last_line_part = sp.pop(-1)
-        elif pathnum == 0x04:
-            if self._ap_last_line_part != "":
-                # add unprocessed part from previous "data" to the first line
-                sp[0] = self._ap_last_line_part + sp[0]
-                self._ap_last_line_part = ""
-            if not sp[-1].endswith("\n"):
-                # last part is not a full line
-                self._ap_last_line_part = sp.pop(-1)
+                self._agg_line_parts[pathnum] = sp.pop(-1)
         return sp
 
     def handle_serial_input(self, data, coredump, pathnum: int = 0, finalize_line=False):
-        
+
         sp = self.split_data(
             data, pathnum)  # confirm that sp is a list of entire lines and the left part will be stored in _last_line_part
         for line in sp:

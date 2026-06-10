@@ -166,9 +166,10 @@ int lwip_netif_get_idx(struct netif *pnetif);
 struct netif *lwip_idx_get_netif(uint8_t idx);
 int lwip_check_connectivity(uint8_t idx);
 uint8_t lwip_request_ip(uint8_t idx);
-int lwip_subnet_is_used(struct ip_addr *check_ip);
+int lwip_subnet_is_used(struct ip_addr *check_ip, struct netif *exclude);
 int lwip_alloc_ip(uint8_t idx);
 int lwip_manage_subnet_conflict(uint8_t idx);
+uint8_t lwip_get_ipv6_enabled(void);
 
 #ifdef __cplusplus
 }

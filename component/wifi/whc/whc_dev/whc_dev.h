@@ -11,10 +11,9 @@
 #define __WHC_DEV_H__
 
 /* -------------------------------- Includes -------------------------------- */
-
+#include "basic_types.h"
 #include "whc_def.h"
 
-#ifndef CONFIG_FULLMAC
 #include "platform_autoconf.h"
 #include "ameba_soc.h"
 #include "os_wrapper.h"
@@ -25,7 +24,6 @@
 #include "wifi_intf_drv_to_upper.h"
 
 #include "whc_dev_struct.h"
-
 #include "whc_dev_api_path.h"
 #include "whc_dev_trx.h"
 #include "whc_dev_msg_queue.h"
@@ -64,15 +62,15 @@
 #include "whc_uart_dev.h"
 #endif
 
-#else
-#include "whc_dev_struct.h"
-#endif
-
 #include "whc_dev_protocal_offload.h"
 #include "whc_dev_powersave.h"
 
 #if defined(CONFIG_WPA_STD)
 #include "wpas_std_wifi_intf.h"
+#endif
+
+#ifdef CONFIG_WHCH
+#include "whch_dev.h"
 #endif
 
 void whc_dev_init(void);

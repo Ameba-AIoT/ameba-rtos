@@ -112,7 +112,7 @@ if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
     message("========= linker fullmac image end =========")
 endif()
 
-if(NOT CONFIG_AMEBA_RLS)
+if((NOT CONFIG_AMEBA_RLS) AND (NOT DEFINED ENV{AMEBA_SKIP_IMAGE_ANALYZE}))
     message("========== Image analyze start ==========")
     ameba_execute_process(p_SHOW_OUTPUT
         COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD} ${CODE_ANALYZE_RETRY}

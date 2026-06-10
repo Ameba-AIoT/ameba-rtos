@@ -403,6 +403,7 @@ static void _indicate_scan_stop(uint8_t reason)
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_le_scan_stop_ind_t *p_scan_stop_ind = NULL;
 
+	zephyr_scan_state = ZEPHYR_SCAN_STATE_IDLE;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_SCAN_STOP_IND,
 								sizeof(rtk_bt_le_scan_stop_ind_t));
 	if (!p_evt) {
@@ -415,6 +416,7 @@ static void _indicate_scan_stop(uint8_t reason)
 	rtk_bt_evt_indicate(p_evt, NULL);
 }
 
+extern uint8_t get_adv_type(uint8_t evt_type);
 static void scan_cb_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
 {
 	rtk_bt_evt_t *p_evt = NULL;
@@ -428,6 +430,9 @@ static void scan_cb_recv(const struct bt_le_scan_recv_info *info, struct net_buf
 #endif
 	{
 		if (zephyr_scan_state == ZEPHYR_SCAN_STATE_LEGACY) {
+			if (info->is_ext && !(info->adv_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY)) {
+				return;
+			}
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP,
 										RTK_BT_LE_GAP_EVT_SCAN_RES_IND,
 										sizeof(rtk_bt_le_scan_res_ind_t));
@@ -437,15 +442,14 @@ static void scan_cb_recv(const struct bt_le_scan_recv_info *info, struct net_buf
 
 			scan_res = (rtk_bt_le_scan_res_ind_t *)p_evt->data;
 			scan_res->num_report = 1;
+			scan_res->adv_report.evt_type = (rtk_bt_le_adv_report_type_t)(info->is_ext ?
+																		  get_adv_type(info->adv_type) :
+																		  info->adv_type);
 			scan_res->adv_report.addr.type = (rtk_bt_le_addr_type_t)info->addr->type;
 			memcpy(scan_res->adv_report.addr.addr_val, info->addr->a.val, BT_ADDR_SIZE);
-
-			scan_res->adv_report.rssi = info->rssi;
-			scan_res->adv_report.evt_type = (rtk_bt_le_adv_report_type_t)info->adv_type;
-
 			scan_res->adv_report.len = buf->len;
-			memcpy(scan_res->adv_report.data, buf->data, buf->len);
-
+			memcpy(scan_res->adv_report.data, buf->data, MIN(buf->len, RTK_BT_LE_MAX_ADV_DATA_LEN));
+			scan_res->adv_report.rssi = info->rssi;
 		}
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 		else if (zephyr_scan_state == ZEPHYR_SCAN_STATE_EXT) {
@@ -457,16 +461,19 @@ static void scan_cb_recv(const struct bt_le_scan_recv_info *info, struct net_buf
 			}
 
 			ext_scan_res = (rtk_bt_le_ext_scan_res_ind_t *)p_evt->data;
-			ext_scan_res->evt_type = (rtk_bt_le_adv_report_type_t)info->adv_type;
-			ext_scan_res->rssi = info->rssi;
-			ext_scan_res->adv_sid = info->sid;
-			ext_scan_res->tx_power = info->tx_power;
-			ext_scan_res->primary_phy = info->primary_phy;
-			ext_scan_res->secondary_phy = info->secondary_phy;
-			ext_scan_res->peri_adv_interval = info->interval;
+			ext_scan_res->data = (uint8_t *)ext_scan_res + sizeof(rtk_bt_le_ext_scan_res_ind_t);
+			ext_scan_res->evt_type = info->adv_props & 0x1F ;
 			ext_scan_res->addr.type = (rtk_bt_le_addr_type_t)info->addr->type;
 			memcpy(ext_scan_res->addr.addr_val, info->addr->a.val, BT_ADDR_SIZE);
-			ext_scan_res->data = (uint8_t *)ext_scan_res + sizeof(rtk_bt_le_ext_scan_res_ind_t);
+			ext_scan_res->direct_addr.type = info->direct_addr->type;
+			memcpy(ext_scan_res->direct_addr.addr_val, info->direct_addr->a.val, BT_ADDR_SIZE);
+			ext_scan_res->rssi = info->rssi;
+			ext_scan_res->primary_phy = info->primary_phy;
+			ext_scan_res->secondary_phy = info->secondary_phy;
+			ext_scan_res->adv_sid = info->sid;
+			ext_scan_res->tx_power = info->tx_power;
+			ext_scan_res->peri_adv_interval = info->interval;
+			ext_scan_res->data_status = (info->adv_props >> 5) & 0x3;
 			ext_scan_res->len = buf->len;
 			memcpy(ext_scan_res->data, buf->data, buf->len);
 		}

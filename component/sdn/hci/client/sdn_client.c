@@ -591,18 +591,25 @@ uint8_t *sdn_client_intf_get_tx_buf(uint8_t protocol, uint8_t type, uint16_t len
 	return NULL;
 }
 #if defined(CONFIG_BT_COEXIST)
-uint8_t *sdn_client_intf_get_coex_buf(uint8_t type, uint16_t len, void **pbuf)
+#define RET_REASON_BUF_SUCC	(0)
+#define RET_REASON_BUF_FAIL	(1)
+#define RET_REASON_BT_STOP	(2)
+#define RET_REASON_LEN_LONG	(3)
+#define RET_REASON_NULL_PTR	(4)
+uint8_t sdn_client_intf_get_coex_buf(uint8_t type, uint16_t len, void **pbuf, uint8_t **pdata)
 {
 	struct sdn_data_buf *pdata_buf = NULL;
 
 	if (g_sdn_client_intf.tx.task.stop) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Failed to get tx buf\r\n");
-		return NULL;
+		return RET_REASON_BT_STOP;
 	}
 
 	if (len > COEX_SDN_BUF_SIZE - sizeof(struct sdn_intf_data_msg)) {
-		RTK_LOGS(TAG_SDN_COEX, RTK_LOG_ERROR, "Too Long len=%d(>%d)\r\n", len, COEX_SDN_BUF_SIZE - sizeof(struct sdn_intf_data_msg));
-		return NULL;
+		return RET_REASON_LEN_LONG;
+	}
+
+	if (pdata == NULL || pbuf == NULL) {
+		return RET_REASON_NULL_PTR;
 	}
 
 	rtos_critical_enter(RTOS_CRITICAL_BT);
@@ -618,10 +625,13 @@ uint8_t *sdn_client_intf_get_coex_buf(uint8_t type, uint16_t len, void **pbuf)
 		pdata_buf->pmsg->protocol = SDN_INTF_COEX;
 		pdata_buf->pmsg->type = type;
 		pdata_buf->len = len + sizeof(struct sdn_intf_data_msg);
-		return pdata_buf->pmsg->data;
+
+		*pdata = pdata_buf->pmsg->data;
+		return RET_REASON_BUF_SUCC;
+
 	}
 
-	return NULL;
+	return RET_REASON_BUF_FAIL;
 }
 #endif
 void sdn_client_intf_send(void *pdata_buf)

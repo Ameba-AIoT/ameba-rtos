@@ -44,9 +44,14 @@ SECTIONS
 		__ram_image3_text_end__ = .;
 	} > LMA_TZ_S_TEXT_RO
 
-	.ram_image3.data :
+  #if !defined(CONFIG_IMG3_FLASH)
+        /* Reserve space for the ram_3_s sub-image header that lands here
+         * when the monolithic image3_all.bin is copied to RAM as a single blob. */
+        . = . + IMAGE_HEADER_LEN;
+  #endif
+
+	.ram_image3.data : ALIGN(32)
 	{
-		. = ALIGN(32);
 		__ram_image3_data_start__ = .;
 		*(.data*)
 		__ram_image3_data_end__ = .;
@@ -70,5 +75,5 @@ SECTIONS
 }
 
 __image3_ram_start__ = ORIGIN(RAM_IMAGE3_TZ) - IMAGE_HEADER_LEN;
-__image3_ram_end__ = __image3_ram_start__ + LENGTH(RAM_IMAGE3_TZ);
+__image3_ram_end__ = __image3_ram_start__ + LENGTH(RAM_IMAGE3_TZ) + IMAGE_HEADER_LEN;
 __image3_heap_size__ = __image3_ram_end__ - __image3_heap_start__;

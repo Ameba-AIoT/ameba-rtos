@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 #  Example Description
 
 This example shows how to use SDIO device. It will receive data from SDIO host and loopback data to SDIO host each 1 second.
@@ -60,5 +62,5 @@ Or it will echo:
 #  Supported IC
 
 RTL8721Dx
-
-
+RTL8721F
+RTL8720F

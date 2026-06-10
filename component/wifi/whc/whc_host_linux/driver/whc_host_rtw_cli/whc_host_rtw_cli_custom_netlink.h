@@ -17,9 +17,9 @@ int whc_host_send_to_user_multi(u8 *buf, u16 size, u16 api_id, u32 chuck_index, 
 
 int whc_host_do_scan(struct sk_buff *skb, struct genl_info *info);
 int whc_host_scan_result(void);
+int whc_host_do_mp_cmd(struct sk_buff *skb, struct genl_info *info);
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 int whc_host_do_dbg_cmd(struct sk_buff *skb, struct genl_info *info);
-int whc_host_do_mp_cmd(struct sk_buff *skb, struct genl_info *info);
 #endif
 int pre_process_buf_data(u8 *buf, u16 size);
 int whc_host_get_join_status(struct sk_buff *skb, struct genl_info *info);

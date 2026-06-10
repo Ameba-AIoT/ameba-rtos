@@ -27,9 +27,7 @@
 #include "wtn_app_rnat.h"
 
 #ifdef CONFIG_RNAT_EN
-/*dnrd.c will use this*/
-extern char *rptssid;
-extern int wifi_repeater_ap_config_complete;
+static int wifi_repeater_ap_config_complete = 0;
 rtos_task_t rnat_ap_start_task_hdl = NULL;
 rtos_task_t rnat_poll_ip_task_hdl = NULL;
 
@@ -217,10 +215,6 @@ static void rnat_ap_start_thread(void *param)
 	softap_config.channel = wifi_setting.channel;
 	softap_config.ssid.len = strlen((char *)wifi_setting.ssid);
 	memcpy(softap_config.ssid.val, wifi_setting.ssid, softap_config.ssid.len);
-	if (rptssid == NULL) {
-		rptssid = (char *)rtos_mem_zmalloc(RTW_ESSID_MAX_SIZE + 1);
-	}
-	memcpy(rptssid, wifi_setting.ssid, softap_config.ssid.len);
 	if (wifi_start_ap(&softap_config) < 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r[RMESH NAT] ERROR: wifi_start_ap failed\n");
 		goto exit;

@@ -51,9 +51,10 @@ ameba_list_append(private_sources
     ../common/usb_os.c
     ../common/usb_ringbuf.c
     core/usbh.c
-    core/usbh_core.c
     core/usbh_hal.c
     core/usbh_hcd.c
+    core/usbh_hcd_xfer.c
+    core/usbh_hcd_isr.c
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../hal/hal.cmake)

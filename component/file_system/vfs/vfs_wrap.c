@@ -51,7 +51,7 @@ FILE *__wrap_fopen(const char *filename, const char *mode)
 		return NULL;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "fopen");
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "fopen");
 	if (ret) {
 		return NULL;
 	}
@@ -61,11 +61,10 @@ FILE *__wrap_fopen(const char *filename, const char *mode)
 		return NULL;
 	}
 
-	vfs_file *finfo = (vfs_file *)malloc(sizeof(vfs_file));
+	vfs_file *finfo = (vfs_file *)rtos_mem_zmalloc(sizeof(vfs_file));
 	if (finfo == NULL) {
 		return NULL;
 	}
-	memset(finfo, 0x00, sizeof(vfs_file));
 	finfo->vfs_id = vfs_id;
 	finfo->user_id = user_id;
 
@@ -73,7 +72,7 @@ FILE *__wrap_fopen(const char *filename, const char *mode)
 
 	ret = vfs.drv[vfs_id]->open(vfs.user[user_id].fs, finfo->name, mode, finfo);
 	if (ret < 0) {
-		free(finfo);
+		rtos_mem_free(finfo);
 		finfo = NULL;
 	}
 	return (FILE *)finfo;
@@ -89,7 +88,7 @@ int __wrap_fclose(FILE *stream)
 	}
 
 	ret = vfs.drv[finfo->vfs_id]->close(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
-	free(finfo);
+	rtos_mem_free(finfo);
 	return ret;
 }
 
@@ -243,7 +242,7 @@ int __wrap_remove(const char *filename)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "remove");
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "remove");
 	if (ret) {
 		return -1;
 	}
@@ -277,7 +276,7 @@ int __wrap_rename(const char *oldname, const char *newname)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "rename");
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "rename");
 	if (ret) {
 		return -1;
 	}
@@ -394,16 +393,15 @@ void *__wrap_opendir(const char *name)
 		return NULL;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "opendir");
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "opendir");
 	if (ret) {
 		return NULL;
 	}
 
-	vfs_file *finfo = (vfs_file *)malloc(sizeof(vfs_file));
+	vfs_file *finfo = (vfs_file *)rtos_mem_zmalloc(sizeof(vfs_file));
 	if (finfo == NULL) {
 		return NULL;
 	}
-	memset(finfo, 0x00, sizeof(vfs_file));
 	finfo->vfs_id = vfs_id;
 	finfo->user_id = user_id;
 
@@ -411,7 +409,7 @@ void *__wrap_opendir(const char *name)
 
 	ret = vfs.drv[vfs_id]->opendir(vfs.user[user_id].fs, finfo->name, finfo);
 	if (ret != 0) {
-		free(finfo);
+		rtos_mem_free(finfo);
 		finfo = NULL;
 	}
 	return (void *)finfo;
@@ -430,7 +428,7 @@ int __wrap_closedir(void *dirp)
 	int ret = 0;
 	vfs_file *finfo = (vfs_file *)dirp;
 	ret = vfs.drv[finfo->vfs_id]->closedir(vfs.user[finfo->user_id].fs, ((vfs_file *)dirp));
-	free(finfo);
+	rtos_mem_free(finfo);
 	return ret;
 }
 
@@ -456,7 +454,7 @@ int __wrap_rmdir(const char *path)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "rmdir");
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "rmdir");
 	if (ret) {
 		return -1;
 	}
@@ -491,7 +489,7 @@ int __wrap_mkdir(const char *pathname, mode_t mode)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "mkdir");
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "mkdir");
 	if (ret) {
 		return -1;
 	}
@@ -525,7 +523,7 @@ int __wrap_access(const char *pathname, int mode)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "access");
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "access");
 	if (ret) {
 		return -1;
 	}
@@ -554,7 +552,7 @@ int __wrap_stat(const char *path, struct stat *buf)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, "stat");
+	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "stat");
 	if (ret) {
 		return -1;
 	}

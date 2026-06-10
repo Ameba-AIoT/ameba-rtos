@@ -84,6 +84,20 @@ void BOOT_IMG3(void)
 	app_mbedtls_image3_init();
 #endif
 
+	/* Before entering NS world, clean and invalidate the D-cache.
+	 * Addresses in the range covered by SAU entry2 (e.g. 0x10000000~TZ_S_START-1,
+	 * including NewVectorTable at 0x20005xxx) were written by the Secure bootloader
+	 * before SAU was enabled, so their cache lines are tagged Secure. After SAU is
+	 * enabled by BOOT_CPU_TZCfg above, those same addresses become NS-attributed.
+	 * The tag-vs-SAU mismatch causes an imprecise BusFault (CFSR.IMPRECISERR) when
+	 * NS app_start calls Cache_Enable() -> SCB_EnableDCache() -> NS DCISW, because
+	 * NS cache maintenance is not permitted on Secure-tagged lines. With BFHFNMINS=1
+	 * the fault escalates to NS HardFault; the NS vector table is not yet initialized
+	 * at that point, resulting in a VECTTBL lockup. DCCISW (clean+invalidate) here
+	 * writes back all dirty lines and clears their tags before NS takes over the cache.
+	 */
+	SCB_CleanInvalidateDCache();
+
 	IMG3_NsStart((u32)Image2EntryFun->RamStartFun);
 }
 

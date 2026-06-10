@@ -559,7 +559,7 @@ class ParsedProject:
     app_image_name: str
 
 
-def parse_project(sdk_root: str, soc: str) -> ParsedProject:
+def parse_project(sdk_root: str, soc: str, build_base: Optional[str] = None) -> ParsedProject:
     """End-to-end: parse Flash_Layout, resolve macros, locate images,
     return a ParsedProject ready to drive flashing.
 
@@ -567,9 +567,24 @@ def parse_project(sdk_root: str, soc: str) -> ParsedProject:
     layout parsing + image-name resolution stages, **without** issuing
     any flash command.
 
-    `build_dir` resolves to <sdk_root>/build_<soc>/.
+    Two roots, deliberately distinct:
+      - `sdk_root`   owns the flash-layout *definition*: the Flash_Layout[]
+                     table (component/soc/usrcfg/<ic>/ameba_flashcfg.c), its
+                     address macros (.../include/ameba_flashcfg.h), the SoC→IC
+                     map, and the boot/app image *name* templates (CMakeLists /
+                     global_define.cmake). These live in the SDK regardless of
+                     which project is being built.
+      - `build_base` owns the per-project build *outputs*: build_<soc>/build/
+                     .config (the active CONFIG_X=y values that drive both the
+                     address-macro resolution AND the app_name branch) and the
+                     actual image binaries. Defaults to `sdk_root` for in-SDK
+                     builds; point it at an out-of-tree project root to flash a
+                     project built outside the SDK tree.
+
+    `build_dir` resolves to <build_base>/build_<soc>/.
     """
     sdk_root = os.path.abspath(sdk_root)
+    base = os.path.abspath(build_base) if build_base else sdk_root
     ic = _resolve_ic_for_soc(sdk_root, soc)
 
     flash_cfg_c = os.path.join(sdk_root, "component", "soc", "usrcfg", ic, "ameba_flashcfg.c")
@@ -581,7 +596,7 @@ def parse_project(sdk_root: str, soc: str) -> ParsedProject:
     parsed = parse_flash_layout(c_content, flash_cfg_c)
 
     h_content = _read_text(flash_cfg_h) or ""
-    build_dir = os.path.join(sdk_root, f"build_{soc}")
+    build_dir = os.path.join(base, f"build_{soc}")
     dot_config_path = os.path.join(build_dir, "build", ".config")
     dot_config = _read_text(dot_config_path) or ""
 

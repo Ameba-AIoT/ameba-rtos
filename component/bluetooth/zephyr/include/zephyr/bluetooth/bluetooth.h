@@ -2119,6 +2119,21 @@ struct bt_le_scan_recv_info {
 	/** Transmit power of the advertiser. */
 	int8_t tx_power;
 
+#if ZEPHYR_FIX_CODE
+	/* The scan info is from LE extend adv report event */
+	bool is_ext;
+
+	/* The target address in direct adv */
+	bt_addr_le_t *direct_addr;
+
+	union {
+		/* le adv report event type */
+		uint8_t adv_type;
+
+		/* le extended adv report event type */
+		uint16_t adv_props;
+	};
+#else
 	/**
 	 * @brief Advertising packet type.
 	 *
@@ -2138,6 +2153,7 @@ struct bt_le_scan_recv_info {
 	 *
 	 */
 	uint16_t adv_props;
+#endif
 
 	/**
 	 * @brief Periodic advertising interval (N * 1.25 ms).

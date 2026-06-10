@@ -8,6 +8,7 @@
 #define _AMEBA_TRUSTZONE_H_
 
 #include "ameba_rxi300.h"
+#include "fault_injection_hardening.h"
 
 typedef struct {
 	MPC_EntryTypeDef MPC_Entry[8];                        /*!< RXI300 IP have 8 ports,  Address offset: 0x200-0x23C */

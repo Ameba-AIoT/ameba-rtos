@@ -17,7 +17,7 @@ extern u8 fatfs_flash_is_nand;
 extern u32 FLASH_APP_BASE;
 extern u8 SECTOR_NUM;
 extern u32 FLASH_SECTOR_COUNT;
-extern u32 SECTOR_SIZE_FLASH;;
+extern u32 SECTOR_SIZE_FLASH;
 extern u32 FLASH_BLOCK_SIZE;
 
 extern u32 SECOND_FLASH_SECTOR_COUNT;
@@ -27,6 +27,31 @@ u32 VFS1_FLASH_BASE_ADDR = 0;
 u32 VFS1_FLASH_SIZE = 0;
 u32 VFS2_FLASH_BASE_ADDR = 0;
 u32 VFS2_FLASH_SIZE = 0;
+
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+/* read-only ROLFS littlefs (blob embedded within app image) */
+extern lfs_t g_rolfs_lfs;
+extern u32 LFS_ROLFS_FLASH_BASE_ADDR;
+extern u32 LFS_ROLFS_FLASH_SIZE;
+extern int littlefs_rolfs_mount(void);
+extern int littlefs_rolfs_unmount(void);
+
+/* Leading fields of the SDK Manifest_TypeDef (see ameba_secure_boot.h). Only Ver
+ * and ImgSize are needed to find the end of the app image, so we mirror just the
+ * header here instead of pulling in the secure-boot header (and its rom/bootutil
+ * dependency) into this shared file. Field offsets must match: Ver@16, ImgSize@24. */
+typedef struct {
+	u32 Pattern[2];
+	u8  Rsvd1[8];
+	u8  Ver;
+	u8  ImgID;
+	u8  AuthAlg;
+	u8  HashAlg;
+	u16 MajorImgVer;
+	u16 MinorImgVer;
+	u32 ImgSize;
+} rolfs_manifest_hdr_t;
+#endif
 
 void vfs_build_filename(int vfs_id, int user_id,
 						const char *filename, int prefix_len,
@@ -46,10 +71,22 @@ void vfs_build_filename(int vfs_id, int user_id,
 	}
 }
 
-int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char *operation)
+int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char region, char *operation)
 {
 	(void) operation;
 	volatile uint8_t *check_flag = NULL;
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+	/* read-only ROLFS littlefs has its own instance + mount flag */
+	if (vfs_type == VFS_LITTLEFS && region == VFS_REGION_ROLFS) {
+		if (lfs_rolfs_mount_flag != 1) {
+			VFS_DBG(VFS_ERROR, "vfs-littlefs rolfs mount fail, %s is not allowed", operation);
+			return -1;
+		}
+		return 0;
+	}
+#else
+	(void) region;
+#endif
 	switch (vfs_type) {
 #ifdef CONFIG_VFS_FATFS_INCLUDED
 	case VFS_FATFS:
@@ -238,6 +275,36 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 			} else if (region == VFS_REGION_2) {
 				LFS_FLASH_BASE_ADDR = VFS2_FLASH_BASE_ADDR;
 				LFS_FLASH_SIZE = VFS2_FLASH_SIZE;
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+			} else if (region == VFS_REGION_ROLFS) {
+				/* read-only littlefs blob appended right after the current OTA slot's
+				 * app image. The app image layout is [cert(4K)][manifest(4K or 8K)][sub-images],
+				 * and the blob is a 32B IMAGE_HEADER (PATTERN_ROLFS_*) followed by the littlefs
+				 * payload. The app size is recorded in its manifest, so jump straight to
+				 * the end instead of scanning:
+				 *     app_end = 4096 + ManifestSize + manifest.ImgSize   (32B-aligned pad)
+				 * cert is always 4K; ManifestSize is 4K normally or 8K when Manifest.Ver >= 2
+				 * (PQC) — same rule the bootloader uses, so this stays correct across SoCs. */
+				u8 ota_index = ota_get_cur_index(OTA_IMGID_APP);
+				u32 img2_start_addr, img2_end_addr;
+				flash_get_layout_info(ota_index == OTA_INDEX_1 ? IMG_APP_OTA1 : IMG_APP_OTA2, &img2_start_addr, &img2_end_addr);
+				LFS_ROLFS_FLASH_BASE_ADDR = 0;
+				LFS_ROLFS_FLASH_SIZE = 0;
+				/* cert is always 4K; manifest follows immediately after */
+				rolfs_manifest_hdr_t *manifest = (rolfs_manifest_hdr_t *)(img2_start_addr + 4096);
+				u32 manifest_size = (manifest->Ver >= 2) ? (8 * 1024) : (4 * 1024);
+				u32 app_end = img2_start_addr + 4096 + manifest_size + manifest->ImgSize;
+				app_end = (app_end + 31) & ~31U;  //blob header is 32B-aligned (pack-time pad)
+				IMAGE_HEADER *img_hdr = (IMAGE_HEADER *)app_end;
+				if ((app_end + sizeof(IMAGE_HEADER)) <= img2_end_addr
+					&& img_hdr->signature[0] == PATTERN_ROLFS_1 && img_hdr->signature[1] == PATTERN_ROLFS_2) {
+					LFS_ROLFS_FLASH_BASE_ADDR = app_end + sizeof(IMAGE_HEADER) - SPI_FLASH_BASE;  //payload follows the 32B header
+					LFS_ROLFS_FLASH_SIZE = img_hdr->image_size;
+					VFS_DBG(VFS_INFO, "find rolfs littlefs blob at 0x%x size 0x%x\r\n", LFS_ROLFS_FLASH_BASE_ADDR, LFS_ROLFS_FLASH_SIZE);
+				} else {
+					VFS_DBG(VFS_ERROR, "no rolfs littlefs blob found in app image\r\n");
+				}
+#endif
 			} else {
 				VFS_DBG(VFS_ERROR, "Interface(%d) with region(%d) is not supported by LITTLEFS\r\n", interface, region);
 			}
@@ -306,7 +373,7 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 
 int vfs_register(const vfs_opt *drv)
 {
-	unsigned char drv_num = -1;
+	int drv_num = -1;
 	if (vfs.drv_num < VFS_FS_MAX) {
 		vfs.drv[vfs.drv_num] = drv;
 		drv_num = vfs.drv_num;
@@ -356,7 +423,7 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 		VFS_DBG(VFS_ERROR, "interface type not supported by littlefs");
 		goto EXIT;
 	} else {
-		if (!find_inf_number(prefix)) {
+		if (find_inf_number(prefix) >= 0) {
 			VFS_DBG(VFS_INFO, "It has been already registered");
 			ret = 0;
 		} else {
@@ -393,7 +460,15 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 			}
 
 			vfs_assign_region(vfs_type, region, interface);
-			ret = vfs.drv[vfs_num]->mount(interface);
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+			if (vfs_type == VFS_LITTLEFS && region == VFS_REGION_ROLFS) {
+				/* read-only ROLFS blob uses its own lfs instance and a mount that never formats */
+				ret = littlefs_rolfs_mount();
+			} else
+#endif
+			{
+				ret = vfs.drv[vfs_num]->mount(interface);
+			}
 			if (ret) {
 				VFS_DBG(VFS_ERROR, "vfs mount fail");
 				goto EXIT;
@@ -405,9 +480,14 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 			vfs.user[user_num].vfs_type_id = vfs_num;
 			vfs.user[user_num].vfs_ro_flag = flag;
 			vfs.user[user_num].vfs_region = region;
-			if (interface == VFS_INF_FLASH) {
-				vfs.user[user_num].fs = &g_lfs;
-			}
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+			if (vfs_type == VFS_LITTLEFS && region == VFS_REGION_ROLFS) {
+				vfs.user[user_num].fs = &g_rolfs_lfs;
+			} else
+#endif
+				if (interface == VFS_INF_FLASH) {
+					vfs.user[user_num].fs = &g_lfs;
+				}
 #ifdef CONFIG_LITTLEFS_SECOND_FLASH
 			if (interface == VFS_INF_SECOND_FLASH) {
 				vfs.user[user_num].fs = &g_second_lfs;
@@ -422,7 +502,6 @@ EXIT:
 
 int vfs_user_unregister(const char *prefix, int vfs_type, int interface)
 {
-	(void) vfs_type;
 	int user_id = 0;
 	int vfs_id = 0;
 	int ret = -1;
@@ -430,8 +509,19 @@ int vfs_user_unregister(const char *prefix, int vfs_type, int interface)
 	user_id = find_inf_number(prefix);
 	if (user_id >= 0) {
 		vfs_id = vfs.user[user_id].vfs_type_id;
+		char region = vfs.user[user_id].vfs_region;
 		memset(&vfs.user[user_id], 0x00, sizeof(user_config));
-		ret = vfs.drv[vfs_id]->unmount(interface);
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+		if (vfs_type == VFS_LITTLEFS && region == VFS_REGION_ROLFS) {
+			ret = littlefs_rolfs_unmount();
+		} else
+#else
+		(void) vfs_type;
+		(void) region;
+#endif
+		{
+			ret = vfs.drv[vfs_id]->unmount(interface);
+		}
 		goto EXIT;
 	} else {
 		ret = -1;

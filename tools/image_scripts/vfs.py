@@ -4,9 +4,11 @@
 import os
 import argparse
 import math
+import struct
 from littlefs import LittleFS
-from pyfatfs.PyFat import PyFat
-from pyfatfs.PyFatFS import PyFatFS
+# NOTE: pyfatfs is imported lazily inside the FATFS code paths only, so that
+# LITTLEFS-only use (e.g. building the read-only "rolfs:" image) works in build
+# venvs that do not ship pyfatfs.
 
 def calculate_directory_stats(source_dir):
     total_size = 0
@@ -55,6 +57,53 @@ def create_littlefs_image(source_dir, output_image, block_size, block_count):
 
     with open(output_image, 'wb') as f:
         f.write(lfs.context.buffer)
+
+# Read-only "rolfs:" image header. The runtime VFS (component/file_system/vfs/vfs.c)
+# scans the app image for this signature and mounts the littlefs payload that
+# immediately follows the 32-byte header, read-only. Header matches the SDK
+# IMAGE_HEADER: u32 signature[2]; u32 image_size; u32 image_addr; u32 boot_index;
+# u32 reserved[3] (0x20 bytes). Only signature and image_size are meaningful here;
+# image_size is the littlefs payload length. No 4KB alignment: the header is packed
+# right after the app (32B aligned) and the payload right after the header.
+PATTERN_ROLFS_1 = 0x464c4f52   # "ROLF", must match vfs.h
+PATTERN_ROLFS_2 = 0x53464C53   # "SLFS", must match vfs.h
+ROLFS_IMAGE_HEADER_LEN = 0x20
+
+def create_littlefs_image_minfit(source_dir, output_image, block_size):
+    """Pack a directory into the SMALLEST littlefs image that holds it.
+
+    A read-only "rolfs:" image never grows, so the usual free-space safety margin
+    is pure waste of the (scarce) app-image slot. Start from a tight lower bound
+    and grow the block count by 1 until littlefs accepts all files, then keep
+    that minimum. Returns the chosen block_count.
+    """
+    total_size, dir_count, file_count = calculate_directory_stats(source_dir)
+    # lower bound: data blocks + a little metadata (superblocks + per-entry).
+    block_count = max(4, math.ceil(total_size / block_size) + dir_count + 2)
+    while True:
+        try:
+            create_littlefs_image(source_dir, output_image, block_size, block_count)
+            return block_count
+        except Exception:
+            block_count += 1
+            if block_count > math.ceil(total_size / block_size) + file_count + dir_count + 64:
+                raise  # something else is wrong; do not loop forever
+
+def wrap_rolfs_image_header(image_path):
+    """Prepend the 32-byte PATTERN_ROLFS header to an existing littlefs image."""
+    with open(image_path, 'rb') as f:
+        payload = f.read()
+    header = struct.pack(
+        "<8I",
+        PATTERN_ROLFS_1, PATTERN_ROLFS_2,
+        len(payload),     # image_size
+        0, 0, 0, 0, 0,    # image_addr / boot_index / reserved[3]
+    )
+    assert len(header) == ROLFS_IMAGE_HEADER_LEN
+    with open(image_path, 'wb') as f:
+        f.write(header)
+        f.write(payload)
+    return len(payload)
 
 class BlockDevice:
     """Block device wrapper for littlefs-python that supports slice operations"""
@@ -117,6 +166,8 @@ def unpack_littlefs_image(input_image, output_dir, block_size=None):
     print(f"Unpacked {input_image} -> {output_dir}")
 
 def create_fatfs_image(source_dir, output_image, sector_size, sector_count):
+    from pyfatfs.PyFat import PyFat
+    from pyfatfs.PyFatFS import PyFatFS
     total_bytes = sector_size * sector_count
     fat_type = 12 if total_bytes <= 32*1024*1024 else 16 if total_bytes <= 2*1024*1024*1024 else 32
 
@@ -141,6 +192,7 @@ def create_fatfs_image(source_dir, output_image, sector_size, sector_count):
     fat_fs.close()
 
 def unpack_fatfs_image(input_image, output_dir):
+    from pyfatfs.PyFatFS import PyFatFS
     fat_fs = PyFatFS(input_image)
 
     # Use walk to traverse all files and directories
@@ -213,6 +265,11 @@ def main():
     parser.add_argument("-u", "--unpack",
                         type=str,
                         help="Unpack image to specified directory")
+    parser.add_argument("--rolfs-header",
+                        action="store_true",
+                        help="Prepend a 32-byte PATTERN_ROLFS IMAGE_HEADER so the runtime "
+                             "VFS can locate this image inside the app image and mount "
+                             "it read-only at \"rolfs:\" (LITTLEFS only)")
 
     args = parser.parse_args()
 
@@ -252,39 +309,56 @@ def main():
         block_size = args.block_size or 512
         block_count = args.block_count or 256
 
-    # Calculate storage requirements
-    total_size, dir_count, file_count = calculate_directory_stats(args.source_directory)
-    avg_file_size_kb = total_size / file_count / 1024 if file_count > 0 else 0
+    # A read-only rolfs image is packed to the minimum below (no safety margin),
+    # so skip the free-space sizing estimate that the read/write images use.
+    rolfs_fit = args.rolfs_header and args.block_count is None
 
-    safety_factor = dynamic_safety_factor(args.type, avg_file_size_kb)
+    if not rolfs_fit:
+        # Calculate storage requirements
+        total_size, dir_count, file_count = calculate_directory_stats(args.source_directory)
+        avg_file_size_kb = total_size / file_count / 1024 if file_count > 0 else 0
 
-    # Metadata calculation
+        safety_factor = dynamic_safety_factor(args.type, avg_file_size_kb)
+
+        # Metadata calculation
+        if args.type == "LITTLEFS":
+            meta_per_file = block_size
+            meta_per_dir = block_size
+        else:
+            dir_entry_size = 32
+            entries_per_block = block_size // dir_entry_size
+            long_name_factor = 1.5  # for LFN
+            meta_per_file = (block_size / entries_per_block) * long_name_factor
+            meta_per_dir = block_size
+
+        meta_size = (file_count * meta_per_file + dir_count * meta_per_dir)
+        total_required = (total_size + meta_size) * safety_factor
+        required_blocks = math.ceil(total_required / block_size)
+
+        if required_blocks > block_count:
+            print(f"**********************************************")
+            print(f"Warning: Adjusting block count from {block_count} to {required_blocks}")
+            print(f"**********************************************")
+            block_count = required_blocks
+
+    if args.rolfs_header and args.type != "LITTLEFS":
+        print("Error: --rolfs-header is only supported for LITTLEFS.")
+        exit(1)
+
     if args.type == "LITTLEFS":
-        meta_per_file = block_size
-        meta_per_dir = block_size
-    else:
-        dir_entry_size = 32
-        entries_per_block = block_size // dir_entry_size
-        long_name_factor = 1.5  # for LFN
-        meta_per_file = (block_size / entries_per_block) * long_name_factor
-        meta_per_dir = block_size
-
-    meta_size = (file_count * meta_per_file + dir_count * meta_per_dir)
-    total_required = (total_size + meta_size) * safety_factor
-    required_blocks = math.ceil(total_required / block_size)
-
-    if required_blocks > block_count:
-        print(f"**********************************************")
-        print(f"Warning: Adjusting block count from {block_count} to {required_blocks}")
-        print(f"**********************************************")
-        block_count = required_blocks
-
-    if args.type == "LITTLEFS":
-        create_littlefs_image(args.source_directory, args.output_image,
-                       block_size, block_count)
+        if args.rolfs_header and args.block_count is None:
+            # read-only image: pack to the minimum, no free-space margin
+            block_count = create_littlefs_image_minfit(
+                args.source_directory, args.output_image, block_size)
+        else:
+            create_littlefs_image(args.source_directory, args.output_image,
+                           block_size, block_count)
     else:
         create_fatfs_image(args.source_directory, args.output_image,
                     block_size, block_count)
+
+    if args.rolfs_header:
+        wrap_rolfs_image_header(args.output_image)
 
     print(f"{args.output_image} has been successfully generated.")
     print("args:")
@@ -296,6 +370,8 @@ def main():
         print(f"├─ sector_size: {block_size}")
         print(f"├─ sector_count: {block_count}")
     print(f"├─ image_size: {block_size * block_count}")
+    if args.rolfs_header:
+        print(f"├─ rolfs_header: 32-byte PATTERN_ROLFS prepended")
     print(f"├─ source_directory: {args.source_directory}")
     print(f"└─ output_image: {args.output_image}")
 

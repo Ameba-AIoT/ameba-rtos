@@ -125,6 +125,8 @@ void SSI_Init(SPI_TypeDef *spi_dev, SSI_InitTypeDef *SSI_InitStruct)
 		spi_dev->SPI_CTRLR1 = SSI_InitStruct->SPI_DataFrameNumber;
 		SSI_SetSlaveEnable(spi_dev, SSI_InitStruct->SPI_SlaveSelectEnable);
 		spi_dev->SPI_BAUDR = SSI_InitStruct->SPI_ClockDivider;
+		/* Default RX sample delay to 1 cycle; improves timing margin at high speed with no impact at low speed */
+		SSI_SetSampleDelay(spi_dev, 1);
 	}
 
 	/* REG_DW_SSI_IMR */

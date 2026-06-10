@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../../README.md).
+
 # Example Description
 
 This example describes how to use PPE as a DMA, which means no other process, just carry origin data.
