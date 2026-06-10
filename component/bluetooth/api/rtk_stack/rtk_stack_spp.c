@@ -543,6 +543,7 @@ void bt_stack_spp_deinit(void)
 	/* SPP deinit */
 	BT_LOGA("spp_demo_deinit\r\n");
 	bt_spp_deinit();
+	memset(spp_chann_db, 0, sizeof(spp_chann_db));
 }
 
 #endif
