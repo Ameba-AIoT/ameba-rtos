@@ -41,14 +41,31 @@ extern "C" {
 #define VFS_REGION_2	0x01	//flash layout vfs2 region
 #define VFS_REGION_3	0x02	//fatfs with app image region
 #define VFS_REGION_4	0x03	//second flash , SD card or SPI-compatible SD NAND
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+#define VFS_REGION_ROLFS	0x04	//read-only littlefs blob embedded within app image
+#define VFS_USER_REGION_MAX 0x05		//number of supported file system regions
+#else
 #define VFS_USER_REGION_MAX 0x04		//number of supported file system regions
+#endif
 
 /* related to op_prepend_header.py */
 #define PATTERN_VFS_1 0x5f736676
 #define PATTERN_VFS_2 0x5f746166
 
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+/* read-only littlefs region (embedded in app image, scanned by IMAGE_HEADER).
+ * Custom signature, distinct from PATTERN_VFS_*. ASCII "ROLF"/"SLFS" — uppercase
+ * on purpose so it never collides with the lowercase "rolfs:" path strings that
+ * appear throughout the littlefs payload. */
+#define PATTERN_ROLFS_1 0x464c4f52
+#define PATTERN_ROLFS_2 0x53464c53
+#endif
+
 #define VFS_PREFIX "vfs"
 #define VFS_R3_PREFIX "fat1"
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+#define VFS_ROLFS_PREFIX "rolfs"
+#endif
 
 #define DT_DIR 0x04
 #define DT_REG 0x08
@@ -114,6 +131,7 @@ typedef struct _vfs_file {
 	unsigned char user_id;
 	void *file;
 	char name[VFS_PATH_MAX + 1];
+	struct dirent ent;
 } vfs_file;
 
 typedef struct {
@@ -175,6 +193,9 @@ extern const vfs_opt fatfs_drv;
 extern const vfs_opt littlefs_drv;
 extern volatile uint8_t lfs_mount_flag;
 extern volatile uint8_t lfs2_mount_flag;
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+extern volatile uint8_t lfs_rolfs_mount_flag;
+#endif
 extern volatile uint8_t fatfs_mount_flag;
 extern volatile uint8_t fatfs2_mount_flag;
 
@@ -190,7 +211,7 @@ int vfs_register(const vfs_opt *drv);
 int find_vfs_number(const char *name, int *prefix_len, int *user_id);
 int vfs_user_mount(const char *prefix);
 char *find_vfs_tag(char region);
-int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char *operation);
+int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char region, char *operation);
 void vfs_build_filename(int vfs_id, int user_id, const char *filename, int prefix_len, char *out_name, size_t out_size);
 
 void *opendir(const char *name);

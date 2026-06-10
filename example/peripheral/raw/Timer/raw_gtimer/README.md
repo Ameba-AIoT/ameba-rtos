@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 This example describes how to use general timer TIM2&TIM3 to generation periodic signal.
 

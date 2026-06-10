@@ -188,6 +188,10 @@ void rtw_nan_schdlr_sta_set(u8 iface_type, bool bconnect)
 	UNUSED(bconnect);
 }
 
+void rtw_nan_linked_status_chk(void)
+{
+}
+
 void wififw_inthdl_dwearly(void)
 {
 }

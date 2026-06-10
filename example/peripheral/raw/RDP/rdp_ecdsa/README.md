@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 This example demonstrates ECDSA signing and verification across TrustZone boundaries:
 - Secure world performs ECDSA signing

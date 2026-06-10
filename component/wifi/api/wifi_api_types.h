@@ -19,7 +19,7 @@
 #ifndef __WIFI_API_TYPES_H
 #define __WIFI_API_TYPES_H
 
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 #include "ameba.h"
 #include "rtw_wifi_common.h"
 #include "rtw_byteorder.h"
@@ -129,7 +129,6 @@ enum rtw_security_flag {
   *         reasons by the driver and application layers.
   */
 enum rtw_disconn_reason {
-#ifndef CONFIG_FULLMAC
 	/*802.11 spec reason codes, received after connection in AP's deauth or disassoc frame.*/
 	RTW_DISCONN_RSN_80211_UNSPECIFIED                         = 1,
 	RTW_DISCONN_RSN_80211_PREV_AUTH_NOT_VALID 			      = 2,
@@ -154,7 +153,7 @@ enum rtw_disconn_reason {
 	RTW_DISCONN_RSN_80211_INVALID_RSN_IE_CAPAB                = 22,
 	RTW_DISCONN_RSN_80211_IEEE_802_1X_AUTH_FAILED             = 23,
 	RTW_DISCONN_RSN_80211_CIPHER_SUITE_REJECTED               = 24,
-#endif
+
 	/*RTK defined: Driver-detected issues causing disconnection. */
 	RTW_DISCONN_RSN_DRV_BASE                            = 60000,
 	RTW_DISCONN_RSN_DRV_AP_LOSS                         = 60001, /**< <!-- DIAG: --> no rx for a long time*/
@@ -478,7 +477,6 @@ enum rtw_radar_mode {
 enum rtw_radar_type {
 	RTW_RADAR_TYPE_CFAR_AI_S_FAR = 0,      /**< cfar_and_ai_short_far. */
 	RTW_RADAR_TYPE_CFAR_AI_S_NEAR,         /**< cfar_and_ai_short_near */
-	RTW_RADAR_TYPE_AI_L_FAR,               /**< ai_long_far. */
 	RTW_RADAR_TYPE_AI_L_NEAR,              /**< ai_long_near. */
 	RTW_RADAR_TYPE_MAX,
 };
@@ -978,7 +976,7 @@ struct rtw_softap_info {
 	u8 					b_no_rsp_to_probereq : 1;       /**< Set 1 to not send probe response when receive probe request. */
 };
 
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 /**
   * @brief  Stores information about clients associated with the SoftAP.
   */

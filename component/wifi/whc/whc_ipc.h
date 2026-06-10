@@ -19,12 +19,12 @@
 #define __WHC_IPC_H__
 
 /* -------------------------------- Includes -------------------------------- */
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 #include "rtw_wifi_common.h"
 #include "platform_autoconf.h"
 #endif
 #include "whc_def.h"
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 #include "wifi_api.h"
@@ -56,7 +56,7 @@
 #define whc_dev_update_regd_event_indicate               whc_ipc_dev_update_regd_event_indicate
 #define whc_dev_api_init                                 whc_ipc_dev_api_init
 
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 #define whc_host_init                                    whc_ipc_host_init
 #define whc_host_api_message_send                        whc_ipc_host_api_message_send
 #define whc_host_init_skb                                whc_ipc_host_init_skb
@@ -126,7 +126,7 @@ struct ipc_msg_node {
 	u8	event_num			: 5;
 };
 
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 struct whc_ipc_host_unblk_api_q_priv {
 	struct list_head	host_unblk_api_queue;
 	rtos_sema_t			host_unblk_api_q_sema;
@@ -148,7 +148,7 @@ struct ipc_host_unblk_api_func_t {
 #endif
 
 /* -------------------------- Function declaration -------------------------- */
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 /*for ipc host*/
 void whc_ipc_host_init(void);
 void whc_ipc_host_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum);

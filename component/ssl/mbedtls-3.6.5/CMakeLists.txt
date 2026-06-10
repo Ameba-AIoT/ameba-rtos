@@ -176,13 +176,15 @@ ameba_list_append(private_sources
 # ========== Platforms with hardware acceleration (hw_alt) ==========
 # Both hw_alt and library sources are compiled. ALT macros in config headers control which implementation is used.
 if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2 OR CONFIG_RTL8720F)
-    if(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
+    # aes_alt.c is shared across amebagreen2/amebaL2/RTL8720F.
+    # RTL8720F uses CONFIG_RTL8720F guard inside it for the different ECB slave signature.
+    ameba_list_append(private_sources
+        hw_alt/aes_alt.c
+    )
+    if(CONFIG_RTL8720F)
         ameba_list_append(private_sources
-            hw_alt/aes_alt.c
-        )
-    else()
-        ameba_list_append(private_sources
-            hw_alt/aes_alt_rtl8720f.c
+            hw_alt/ccm_alt.c
+            hw_alt/gcm_alt.c
         )
     endif()
 

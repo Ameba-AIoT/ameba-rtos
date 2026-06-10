@@ -136,7 +136,7 @@ u32 get_start_addr_block(u32 addr_ref, u8 channel_index)
 	if ((addr_ref - PRE_READ_NUM_BLOCK) >= block_range[block_index][0]) {
 		return (addr_ref - PRE_READ_NUM_BLOCK);
 	} else {
-		return (block_range[block_index][1] + ONE_SAMPLE_BYTES - (PRE_READ_NUM_BLOCK - addr_ref + block_range[block_index][0]));
+		return (block_range[block_index][1] + 1 - (PRE_READ_NUM_BLOCK - addr_ref + block_range[block_index][0]));
 	}
 }
 
@@ -159,7 +159,7 @@ u32 get_data_stored_block(u32 addr1, u32 addr2)
 	if (addr2 >= addr1) {
 		return (addr2 - addr1);
 	} else {
-		return (block_range[block_index2][1] + ONE_SAMPLE_BYTES - addr1 + addr2 - block_range[block_index2][0]);
+		return (block_range[block_index2][1] + 1 - addr1 + addr2 - block_range[block_index2][0]);
 	}
 }
 
@@ -193,14 +193,15 @@ void vad_data_copy_block(u32 addr_start, u32 amount_byte, u8 *buf)
 {
 	u8 block_index = get_block_index(addr_start);
 
-	if ((block_range[block_index][1] - addr_start + ONE_SAMPLE_BYTES) >= amount_byte) {
+	if ((block_range[block_index][1] - addr_start + 1) >= amount_byte) {
 		_memcpy((void *)buf, (void *)addr_start, amount_byte);
 		DCache_CleanInvalidate((u32)buf, (u32)amount_byte);
 
 	} else {
-		_memcpy((void *)buf, (void *)addr_start, block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start);
-		_memcpy((void *)(buf + block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start), (void *)(block_range[block_index][0]),
-				amount_byte - (block_range[block_index][1]  + ONE_SAMPLE_BYTES - addr_start));
+		_memcpy((void *)buf, (void *)addr_start, block_range[block_index][1] + 1 - addr_start);
+		_memcpy((void *)(buf + block_range[block_index][1] + 1 - addr_start), (void *)(block_range[block_index][0]),
+				amount_byte - (block_range[block_index][1] + 1 - addr_start));
+		DCache_CleanInvalidate((u32)buf, (u32)amount_byte);
 	}
 }
 
@@ -215,10 +216,15 @@ void vad_data_copy_block(u32 addr_start, u32 amount_byte, u8 *buf)
 u32 get_new_addr_block(u32 addr, u32 byte_num)
 {
 	u8 block_index = get_block_index(addr);
-	if ((block_range[block_index][1] - addr + ONE_SAMPLE_BYTES) >= (byte_num)) {
+	u32 bytes_to_end = block_range[block_index][1] + 1 - addr;   /* count includes the last byte, mirror vad_data_copy_block */
+	if (bytes_to_end >= byte_num) {
 		return (addr + byte_num);
 	} else {
-		return (byte_num - (block_range[block_index][1] - addr + ONE_SAMPLE_BYTES) + block_range[block_index][0]);
+		/* Wrap to the block start. Must subtract exactly bytes_to_end; using
+		 * (hi - addr + ONE_SAMPLE_BYTES) here was off by one byte, which left
+		 * addr_ch0 on an odd address after every ring wrap and byte-swapped all
+		 * subsequent 16-bit samples (loud noise mid-utterance). */
+		return (block_range[block_index][0] + (byte_num - bytes_to_end));
 	}
 }
 
@@ -240,7 +246,7 @@ void get_vad_data(u32 time_period_ms, u8 *buf)
 	if (first_time_flag) {
 		addr_ref = get_hit_addr();
 		first_time_flag = 0;
-		//printf("hit addr is %lx\n", addr_ref);
+		RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "first get data: hit addr is %lx\n", addr_ref);
 		if (VAD_DEV -> VAD_BUF_CTRL0 & VAD_BIT_CH0_IN_VADBUF_EN) {
 			addr_ch0 = get_start_addr_block(addr_ref, 0);
 		}
@@ -267,14 +273,13 @@ void get_vad_data(u32 time_period_ms, u8 *buf)
 	u32 addr_curr = get_current_addr();
 	u32 data_stored = get_data_stored_block(addr_ref, addr_curr);
 
-	//printf("\r\naddr_ref %lx  addr_curr %lx  byte_num %lx  data_stored %lx\r\n", addr_ref, addr_curr, byte_num, data_stored);
-	//printf("\r\naddr_ch0  %lx  addr_ch1  %lx  addr_ch2  %lx  addr_ch3  %lx\r\n", addr_ch0, addr_ch1, addr_ch2, addr_ch3);
+	RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "addr_ref %lx  addr_curr %lx  byte_num %lx  data_stored %lx\r\n", addr_ref, addr_curr, byte_num, data_stored);
+	RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "addr_ch0  %lx  addr_ch1  %lx  addr_ch2  %lx  addr_ch3  %lx\r\n", addr_ch0, addr_ch1, addr_ch2, addr_ch3);
 
 	while (byte_num > data_stored) {
 		addr_curr = get_current_addr();
 		data_stored = get_data_stored_block(addr_ref, addr_curr);
 	}
-
 
 	if (addr_ch0) {
 		vad_data_copy_block(addr_ch0, byte_num, buf + used_bytes);
@@ -304,7 +309,17 @@ void get_vad_data(u32 time_period_ms, u8 *buf)
 		block_number = block_number + 1;
 	}
 
+	/* No channel was enabled: nothing to interleave */
+	if (used_bytes == 0) {
+		addr_ref = get_new_addr_block(addr_ref, byte_num);
+		return;
+	}
+
 	u8 *temp_buf = malloc(used_bytes);
+	if (!temp_buf) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "get_vad_data: malloc(%lu) failed\n", used_bytes);
+		return;
+	}
 	/* example:turn block0  block1  block2 into 0 1 2 0 1 2...(interleave)*/
 	u32 length = byte_num / 2;
 	u32 m = 0;
@@ -323,6 +338,26 @@ void get_vad_data(u32 time_period_ms, u8 *buf)
 }
 
 /**
+  * @brief  Reset all cross-wake bookkeeping owned by this driver:
+  *         `first_time_flag`, `addr_ref`, `addr_ch0..3`. Intended to be called
+  *         after a wake cycle is fully consumed (e.g. inside the HAL rearm
+  *         path) so that the next first-time branch in `get_vad_data` re-locks
+  *         every per-channel pointer from scratch — even for channels whose
+  *         enable bit got cleared between wakes (otherwise their stale address
+  *         would still be non-zero and the copy loop would treat them as live).
+  */
+void vad_handler_reset(void)
+{
+	RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "reset vad handler\n");
+	first_time_flag = 1;
+	addr_ref = 0;
+	addr_ch0 = 0;
+	addr_ch1 = 0;
+	addr_ch2 = 0;
+	addr_ch3 = 0;
+}
+
+/**
   * @}
   */
 
@@ -331,5 +366,3 @@ void get_vad_data(u32 time_period_ms, u8 *buf)
 /** @} */
 
 /** @} */
-
-

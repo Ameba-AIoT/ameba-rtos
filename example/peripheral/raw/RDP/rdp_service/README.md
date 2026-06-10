@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 This example demonstrates RDP (Runtime Data Protection) service:
 - Call secure entry function from non-secure world

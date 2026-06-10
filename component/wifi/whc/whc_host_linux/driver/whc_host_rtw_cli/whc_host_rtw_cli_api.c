@@ -22,34 +22,48 @@ int whc_host_get_join_status(struct sk_buff *skb, struct genl_info *info)
 	return 0;
 }
 
-#if defined(CONFIG_WHC_WIFI_API_PATH)
 int whc_host_do_mp_cmd(struct sk_buff *skb, struct genl_info *info)
 {
 	u8 *buf = NULL;
 	u8 *string_data = NULL;
 	u32 string_len = 0;
+	u32 buf_len;
+	u8 *ptr;
 
 	printk("%s %d\n", __FUNCTION__, __LINE__);
 
-	string_data = (char *)nla_data(info->attrs[WHC_ATTR_STRING]);
+	if (!info->attrs[WHC_ATTR_STRING]) {
+		printk("Missing required string in Netlink message\n");
+		return -EINVAL;
+	}
+
+	string_data = (u8 *)nla_data(info->attrs[WHC_ATTR_STRING]);
 	string_len = nla_len(info->attrs[WHC_ATTR_STRING]);
 
-	buf = kzalloc(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
+	/* payload: WHC_WIFI_TEST(4B) + WHC_WIFI_TEST_MP(1B) + show_msg(1B) + cmd_string */
+	buf_len = SIZE_TX_DESC + 6 + string_len;
+	buf = kzalloc(buf_len, GFP_KERNEL);
 	if (!buf) {
 		printk("Failed to allocate memory for buffer\n");
 		return -ENOMEM;
 	}
 
-	whc_host_mp_cmd((dma_addr_t)string_data, string_len,
-					(dma_addr_t)buf);
+	ptr = buf + SIZE_TX_DESC;
+	*(u32 *)ptr = WHC_WIFI_TEST;
+	ptr += 4;
+	*ptr = WHC_WIFI_TEST_MP;
+	ptr += 1;
+	*ptr = 1; /* show_msg */
+	ptr += 1;
+	memcpy(ptr, string_data, string_len);
 
-	whc_host_send_to_user(buf, NLMSG_DEFAULT_SIZE, 0);
-
+	whc_host_cmd_data_send_to_dev(buf, buf_len, 1);
 	kfree(buf);
 
 	return 0;
 }
 
+#if defined(CONFIG_WHC_WIFI_API_PATH)
 int whc_host_do_dbg_cmd(struct sk_buff *skb, struct genl_info *info)
 {
 	u8 *buf = NULL;

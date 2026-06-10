@@ -303,7 +303,7 @@ void VAD_ADC_Select(u32 codec_index, u32 adc_index)
   * @param  dmic_index
   *         This parameter can be one of the following values:
   *            @arg VAD_DMIC_ZERO: use DMIC0
-  *            @arg VAD_DMIC_ZERO: use DMIC1
+  *            @arg VAD_DMIC_ONE: use DMIC1
   *            @arg VAD_DMIC_TWO: use DMIC2
   *            @arg VAD_DMIC_THREE: use DMIC3
   *            @arg VAD_DMIC_FOUR: use DMIC4

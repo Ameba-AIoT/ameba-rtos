@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 This example will read a specific flash offset, erase block, write Flash in `USER mode` and re-read again.

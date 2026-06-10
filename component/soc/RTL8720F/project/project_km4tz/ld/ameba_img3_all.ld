@@ -33,16 +33,16 @@ SECTIONS
 		__ram_image3_text_start__ = .;
 		*(.text*)
 		*(.rodata*)
+		__ram_image3_text_end__ = .;
 	} > RAM_IMAGE3_TZ
 
-	.ram_image3.data :
+	. = . + IMAGE_HEADER_LEN;
+
+	.ram_image3.data : ALIGN(32)
 	{
-		. = ALIGN(32);
 		__ram_image3_data_start__ = .;
 		*(.data*)
 		__ram_image3_data_end__ = .;
-
-		__ram_image3_text_end__ = .;
 	} > RAM_IMAGE3_TZ
 
 	.ram_image3.bss (NOLOAD):
@@ -66,5 +66,5 @@ SECTIONS
 __image3_ram_start__ = ORIGIN(RAM_IMAGE3_TZ) - IMAGE_HEADER_LEN;
 /* ORIGIN(=NSC_START+header) + LENGTH(=total-header) = NSC_START + total = MSP_NS_START.
    This is the exact physical end of the Secure TZ region. */
-__image3_ram_end__ = ORIGIN(RAM_IMAGE3_TZ) + LENGTH(RAM_IMAGE3_TZ);
+__image3_ram_end__ = ORIGIN(RAM_IMAGE3_TZ) + LENGTH(RAM_IMAGE3_TZ) + IMAGE_HEADER_LEN;
 __image3_heap_size__ = __image3_ram_end__ - __image3_heap_start__;

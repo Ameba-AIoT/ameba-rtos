@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional
 
 from mcp.server.fastmcp import FastMCP
 
-from ameba_dev_mcp._paths import SDK_ROOT
+from ameba_dev_mcp._paths import PROJECT_ROOT
 from ameba_dev_mcp.config.board_session import (
     BoardSessionError,
     manager as session_manager,
@@ -58,8 +58,8 @@ def _config_section() -> Dict[str, Any]:
     """Probe both JSON config files; auto-create empty templates on miss
     (matches the existing flash/serial tool behavior so subsequent tool
     calls don't have to re-create them)."""
-    bpath = board_info_path(SDK_ROOT)
-    ppath = project_info_path(SDK_ROOT)
+    bpath = board_info_path(PROJECT_ROOT)
+    ppath = project_info_path(PROJECT_ROOT)
 
     out: Dict[str, Any] = {
         "board_info": {
@@ -82,7 +82,7 @@ def _config_section() -> Dict[str, Any]:
     # Auto-create templates so the first run leaves the user a starting point.
     if not out["board_info"]["present"]:
         try:
-            ensure_board_info_template(SDK_ROOT)
+            ensure_board_info_template(PROJECT_ROOT)
             out["board_info"]["template_created"] = True
         except Exception as ex:
             out["board_info"]["errors"].append({
@@ -91,7 +91,7 @@ def _config_section() -> Dict[str, Any]:
             })
     if not out["project_info"]["present"]:
         try:
-            ensure_project_info_template(SDK_ROOT)
+            ensure_project_info_template(PROJECT_ROOT)
             out["project_info"]["template_created"] = True
         except Exception as ex:
             out["project_info"]["errors"].append({
@@ -101,7 +101,7 @@ def _config_section() -> Dict[str, Any]:
 
     # Now (re-)load and validate.
     try:
-        binfo = load_board_info(SDK_ROOT)
+        binfo = load_board_info(PROJECT_ROOT)
         out["board_info"]["valid"] = True
         out["board_info"]["alias_count"] = len(binfo.boards)
     except ConfigLoadError as ex:
@@ -109,7 +109,7 @@ def _config_section() -> Dict[str, Any]:
         binfo = None
 
     try:
-        load_project_info(SDK_ROOT)
+        load_project_info(PROJECT_ROOT)
         out["project_info"]["valid"] = True
     except ConfigLoadError as ex:
         out["project_info"]["errors"].extend(e.model_dump() for e in ex.errors)
@@ -526,9 +526,9 @@ def apply_board_config(boards: List[Dict[str, Any]],
       - non-empty string → set as the new default_alias; must resolve to
         a surviving alias in the merged result
     """
-    ensure_board_info_template(SDK_ROOT)
+    ensure_board_info_template(PROJECT_ROOT)
     try:
-        existing = load_board_info(SDK_ROOT)
+        existing = load_board_info(PROJECT_ROOT)
     except ConfigLoadError as ex:
         return {"success": False, "errors": [e.model_dump() for e in ex.errors]}
 
@@ -602,7 +602,7 @@ def apply_board_config(boards: List[Dict[str, Any]],
                       defaults=existing.defaults,
                       default_alias=final_default,
                       boards=merged)
-    path = save_board_info(SDK_ROOT, final)
+    path = save_board_info(PROJECT_ROOT, final)
     return {
         "success": True,
         "path": path,
@@ -610,13 +610,13 @@ def apply_board_config(boards: List[Dict[str, Any]],
         "total_aliases": len(merged),
         "default_alias": final_default,
         "config_paths": {
-            "board_info": board_info_path(SDK_ROOT),
-            "project_info": project_info_path(SDK_ROOT),
+            "board_info": board_info_path(PROJECT_ROOT),
+            "project_info": project_info_path(PROJECT_ROOT),
         },
         "remind_user": (
             "Bench config saved. Two files own this state:\n"
-            f"  - {board_info_path(SDK_ROOT)}  (boards / ports / remote)\n"
-            f"  - {project_info_path(SDK_ROOT)}  (per-SoC flash images, auto-filled by build)\n"
+            f"  - {board_info_path(PROJECT_ROOT)}  (boards / ports / remote)\n"
+            f"  - {project_info_path(PROJECT_ROOT)}  (per-SoC flash images, auto-filled by build)\n"
             "When boards change later: either edit board_info.json5 directly "
             "(add/remove/rename entries under \"boards\"), or re-run the "
             "/ameba-setup-boards slash command to walk through the setup again. "

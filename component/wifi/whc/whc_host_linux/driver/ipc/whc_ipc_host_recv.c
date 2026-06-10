@@ -10,7 +10,7 @@
 
 #include <whc_host_linux.h>
 
-void whc_ipc_host_recv_task_from_msg_recv_pkts(int idx_wlan, struct dev_sk_buff *skb_phy)
+void whc_ipc_host_recv_pkts(int idx_wlan, struct dev_sk_buff *skb_phy)
 {
 	struct sk_buff *pskb = NULL;
 	struct whc_ipc_ex_msg ipc_msg = {0};
@@ -70,12 +70,12 @@ func_exit:
 	return;
 }
 
-void whc_ipc_host_recv_task_from_msg(u8 event_num, u32 msg_addr, u8 wlan_idx)
+void whc_ipc_host_recv_task_hdl(u8 event_num, u32 msg_addr, u8 wlan_idx)
 {
 	switch (event_num) {
 	/* receive the data from device */
 	case IPC_WIFI_EVT_RECV_PKTS:
-		whc_ipc_host_recv_task_from_msg_recv_pkts(wlan_idx, (struct dev_sk_buff *)(msg_addr));
+		whc_ipc_host_recv_pkts(wlan_idx, (struct dev_sk_buff *)(msg_addr));
 		break;
 	default:
 		dev_err(global_idev.pwhc_dev, "Host Unknown event(%d)!\n\r", event_num);

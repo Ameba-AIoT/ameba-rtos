@@ -11,6 +11,17 @@ extern lfs_t g_lfs;
 extern u32 LFS_FLASH_BASE_ADDR;
 extern u32 LFS_FLASH_SIZE;
 
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+/* read-only littlefs ROLFS image (blob embedded within app image). */
+extern lfs_t g_rolfs_lfs;
+extern u32 LFS_ROLFS_FLASH_BASE_ADDR;
+extern u32 LFS_ROLFS_FLASH_SIZE;
+extern struct lfs_config g_nor_rolfs_lfs_cfg;
+int lfs_nor_rolfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
+int lfs_nor_rolfs_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size);
+int lfs_nor_rolfs_erase(const struct lfs_config *c, lfs_block_t block);
+#endif
+
 #ifdef CONFIG_LITTLEFS_SECOND_FLASH
 extern lfs_t g_second_lfs;
 

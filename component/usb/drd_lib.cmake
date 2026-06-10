@@ -52,19 +52,25 @@ ameba_list_append(private_sources
     common/usb_os.c
     common/usb_ringbuf.c
     device/core/usbd.c
-    device/core/usbd_core.c
     device/core/usbd_hal.c
     device/core/usbd_pcd.c
+    device/core/usbd_pcd_xfer.c
+    device/core/usbd_pcd_isr.c
     host/core/usbh.c
-    host/core/usbh_core.c
     host/core/usbh_hal.c
     host/core/usbh_hcd.c
+    host/core/usbh_hcd_xfer.c
+    host/core/usbh_hcd_isr.c
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/hal/hal.cmake)
 
 ameba_list_append_ifnot(CONFIG_SUPPORT_USB_NO_PHY private_sources
     common/usb_phy.c
+)
+
+ameba_list_append_if(CONFIG_SUPPORT_USBH_UVC_HW_DEC private_sources
+    host/core/usbh_hw_uvc.c
 )
 
 # Component private part, user config end

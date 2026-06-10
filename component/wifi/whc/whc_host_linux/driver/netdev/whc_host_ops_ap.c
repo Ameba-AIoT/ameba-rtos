@@ -492,61 +492,6 @@ static int whc_host_stop_ap_ops(struct wiphy *wiphy, struct net_device *ndev
 	return ret;
 }
 
-static int whc_host_ap_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request)
-{
-	int ret = 0;
-	struct rtw_scan_param scan_param = {0};
-	struct cfg80211_scan_info info;
-	u8 is_mp = 0;
-
-	dev_dbg(global_idev.pwhc_dev, "whc_host_scan enter\n");
-
-	whc_host_dev_driver_is_mp(&is_mp);
-	if (is_mp == 1) {
-		return -EPERM;
-	}
-
-	memset(&scan_param, 0, sizeof(struct rtw_scan_param));
-
-	/* Add fake callback to inform rots give scan indicate when scan done. */
-	scan_param.scan_user_callback = (s32(*)(u32,  void *))0xffffffff;
-	if (request->wdev->iftype == NL80211_IFTYPE_AP) {
-		scan_param.scan_report_acs_user_callback = (s32(*)(struct rtw_acs_mntr_rpt *))0xffffffff;
-	}
-	scan_param.ssid = NULL;
-
-	if (global_idev.mlme_priv.b_in_scan) {
-		memset(&info, 0, sizeof(info));
-		info.aborted = 0;
-		cfg80211_scan_done(request, &info);
-		dev_dbg(global_idev.pwhc_dev, "%s: scan is in progress..", __FUNCTION__);
-	} else {
-		global_idev.mlme_priv.b_in_scan = true;
-
-		ret = whc_host_scan(&scan_param, 0, 0);
-		if (ret < 0) {
-			memset(&info, 0, sizeof(info));
-			info.aborted = 0;
-			cfg80211_scan_done(request, &info);
-			dev_dbg(global_idev.pwhc_dev, "%s: scan request(%p) fail.", __FUNCTION__, request);
-
-			global_idev.mlme_priv.b_in_scan = false;
-
-#ifndef CONFIG_WHC_HCI_IPC
-			/* wakeup xmit thread if there are pending packets */
-			if (whc_host_xmit_pending_q_num() > 0) {
-				whc_host_xmit_wakeup_thread();
-			}
-#endif
-		} else {
-			global_idev.mlme_priv.pscan_req_global = request;
-			dev_dbg(global_idev.pwhc_dev, "%s: scan request(%p) start.", __FUNCTION__, request);
-		}
-	}
-
-	return ret;
-}
-
 void whc_host_ops_ap_init(void)
 {
 	struct cfg80211_ops *ops = &global_idev.rtw_cfg80211_ops;

@@ -52,8 +52,12 @@ static void SD_CardDetectHdl(u32 id, u32 event)
 static void SDIOH_Pinmux(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct_CD;
+	u8 idx;
 	u8 port_num;
+	u8 pinmux_func = (SDH_Pin_Grp == 1) ? PINMUX_FUNCTION_SDIO_EXTRA : PINMUX_FUNCTION_SDIOH;
 
+	/* Be consistent with order of SDIO_PAD[][]. */
+	char *sdh_pin[] = {"CLK", "CMD", "D0", "D1", "D2", "D3"};
 	GPIO_TypeDef *GPIO_PORTx[3] = {
 		GPIOA_BASE,
 		GPIOB_BASE,
@@ -66,22 +70,25 @@ static void SDIOH_Pinmux(void)
 		GPIOC_IRQ
 	};
 
-	Pinmux_Config(_PB_27, PINMUX_FUNCTION_SDIOH);	/* CMD */
-	Pinmux_Config(_PB_28, PINMUX_FUNCTION_SDIOH);	/* CLK */
-	Pinmux_Config(_PB_29, PINMUX_FUNCTION_SDIOH); 	/* D0 */
+	if (SDH_Pin_Grp >= 2) {
+		RTK_LOGE(TAG, "Invalid SDH_Pin_Grp %d\n", SDH_Pin_Grp);
+		return;
+	}
 
-	PAD_PullCtrl(_PB_27, GPIO_PuPd_UP);
-	PAD_PullCtrl(_PB_28, GPIO_PuPd_UP);
-	PAD_PullCtrl(_PB_29, GPIO_PuPd_UP);
+	/* CLK & CMD & D0 & D1 */
+	for (idx = 0; idx < 4; idx++) {
+		Pinmux_Config(SDIO_PAD[SDH_Pin_Grp][idx], pinmux_func);
+		PAD_PullCtrl(SDIO_PAD[SDH_Pin_Grp][idx], GPIO_PuPd_UP);
+		RTK_LOGI(TAG, "SDH_%s --> P%c%d\n", sdh_pin[idx], 'A' + PORT_NUM(SDIO_PAD[SDH_Pin_Grp][idx]), PIN_NUM(SDIO_PAD[SDH_Pin_Grp][idx]));
+	}
 
+	/* D2 & D3 */
 	if (sdioh_config.sdioh_bus_width == SDIOH_BUS_WIDTH_4BIT) {
-		Pinmux_Config(_PB_25, PINMUX_FUNCTION_SDIOH);	/* D2 */
-		Pinmux_Config(_PB_26, PINMUX_FUNCTION_SDIOH);	/* D3 */
-		Pinmux_Config(_PB_30, PINMUX_FUNCTION_SDIOH);	/* D1 */
-
-		PAD_PullCtrl(_PB_25, GPIO_PuPd_UP);
-		PAD_PullCtrl(_PB_26, GPIO_PuPd_UP);
-		PAD_PullCtrl(_PB_30, GPIO_PuPd_UP);
+		for (idx = 4; idx < 6; idx++) {
+			Pinmux_Config(SDIO_PAD[SDH_Pin_Grp][idx], pinmux_func);
+			PAD_PullCtrl(SDIO_PAD[SDH_Pin_Grp][idx], GPIO_PuPd_UP);
+			RTK_LOGI(TAG, "SDH_%s --> P%c%d\n", sdh_pin[idx], 'A' + PORT_NUM(SDIO_PAD[SDH_Pin_Grp][idx]), PIN_NUM(SDIO_PAD[SDH_Pin_Grp][idx]));
+		}
 	}
 
 	if (sdioh_config.sdioh_cd_pin != _PNC) {			/* CD */

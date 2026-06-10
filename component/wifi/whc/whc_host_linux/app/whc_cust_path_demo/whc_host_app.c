@@ -9,7 +9,7 @@
 #include <sys/ioctl.h>
 #include <stdint.h>
 #include <linux/genetlink.h>
-#include "whc_dev_powersave.h"
+#include "whc_def.h"
 #include "whc_host_app_api.h"
 #include "whc_host_netlink.h"
 #include "whc_host_app_ota.h"
@@ -198,7 +198,7 @@ int whc_host_set_tickps_cmd(void)
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
 	ptr += 4;
 	buf_len += 4;
-	struct whc_dev_ps_cmd *pcmd;
+	struct whc_ps_cmd *pcmd;
 
 	if (whc_cmd_argc < 2) {
 		printf("err: tickps cmd needed to set subtype!\n");
@@ -209,7 +209,7 @@ int whc_host_set_tickps_cmd(void)
 	ptr += 1;
 	buf_len += 1;
 
-	pcmd = (struct whc_dev_ps_cmd *)ptr;
+	pcmd = (struct whc_ps_cmd *)ptr;
 	if (strcmp(whc_cmd_args[1], "r") == 0) {
 		pcmd->type = WHC_CMD_TICKPS_R;
 	} else if (strcmp(whc_cmd_args[1], "a") == 0) {
@@ -220,8 +220,8 @@ int whc_host_set_tickps_cmd(void)
 		pcmd->type = WHC_CMD_TICKPS_TYPE_PG;
 	}
 
-	ptr += sizeof(struct whc_dev_ps_cmd);
-	buf_len += sizeof(struct whc_dev_ps_cmd);
+	ptr += sizeof(struct whc_ps_cmd);
+	buf_len += sizeof(struct whc_ps_cmd);
 
 	ret = whc_host_api_send_nl_payload(buf, buf_len);
 	return ret;
@@ -296,30 +296,26 @@ int whc_host_set_mac(void)
 /* msg to kernel, call api for dbg and mp */
 int whc_host_wifi_mp(void)
 {
-	//rm header "iwpriv"
-	char *buf = whc_cmd_backup + strlen("iwpriv") + 1;
-
-	int nl_fd;
-	int nl_family_id = 0;
-	struct msgtemplate msg;
+	/* strip "iwpriv " prefix */
+	char *cmd = whc_cmd_backup + strlen("iwpriv") + 1;
+	uint16_t cmd_len = (uint16_t)(strlen(cmd) + 1);
+	/* payload: WHC_WIFI_TEST(4B) + WHC_WIFI_TEST_MP(1B) + show_msg(1B) + cmd_string */
+	uint32_t buf_len = 6 + cmd_len;
+	uint8_t *buf = malloc(buf_len);
 	int ret = 0;
-	unsigned char *ptr = msg.buf;
-	struct msgtemplate ans;
-	struct nlattr *na;
 
-	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
-	nla_put_u32(&ptr, WHC_ATTR_API_ID, API_WIFI_MP);
-	nla_put_string(&ptr, WHC_ATTR_STRING, buf);
-	msg.n.nlmsg_len += ptr - msg.buf;
-
-	ret = whc_host_api_send_nl_msg(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
-	if (ret < 0) {
-		printf("msg send fail\n");
+	if (!buf) {
+		printf("malloc failed\n");
+		return -1;
 	}
 
-	recv(whc_netlink_info.sockfd, &ans, sizeof(ans), 0);
-	na = (struct nlattr *)GENLMSG_DATA(&ans);
-	whc_host_mp_result((uint8_t *)NLA_DATA(na));
+	*(uint32_t *)buf = WHC_WIFI_TEST;
+	buf[4] = WHC_WIFI_TEST_MP;
+	buf[5] = 1; /* show_msg */
+	memcpy(buf + 6, cmd, cmd_len);
+
+	ret = whc_host_api_send_nl_payload(buf, buf_len);
+	free(buf);
 
 	return ret;
 }
@@ -676,7 +672,7 @@ void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 				whc_host_scan_result(pos);
 				break;
 			case WHC_WIFI_TEST_MP:
-				whc_host_mp_result(pos + sizeof(uint32_t));
+				whc_host_mp_result(pos + 1);
 				break;
 			case WHC_WIFI_TEST_OTA:
 				whc_host_ota_from_dev(pos);

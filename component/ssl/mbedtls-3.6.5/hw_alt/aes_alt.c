@@ -215,16 +215,21 @@ int mbedtls_aes_crypt_ecb( mbedtls_aes_context *ctx,
         key_id = KM_AES_KEY_S_SW1;
 	}
 
-    // A mutex is required to ensure that 
+    // A mutex is required to ensure that
     // the SW key will not be modified during the calculation process.
     IPC_SEMTake(IPC_SEM_CRYPTO_AES_SW_KEY, 0xffffffff);
+#if defined(CONFIG_RTL8720F)
+    // RTL8720F crypto_aes_ecb_slave takes key_addr inline; no separate set_sw_key call needed
+    ret = crypto_aes_ecb_slave(key_id, ctx->key_len_bits, ctx->key_val, mode, input, output);
+#else
     ret = crypto_aes_set_sw_key(key_id, ctx->key_len_bits, ctx->key_val);
     if(ret != 0)
         goto exit;
-    // ecb use lalu slave mode, no cache alignment requirements 
+    // ecb use lalu slave mode, no cache alignment requirements
     ret = crypto_aes_ecb_slave(key_id, ctx->key_len_bits, mode, input, output);
 
 exit:
+#endif
     IPC_SEMFree(IPC_SEM_CRYPTO_AES_SW_KEY);
     return ret;
 }

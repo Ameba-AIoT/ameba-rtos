@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <errno.h>
 #include <unistd.h>
 #include <poll.h>
@@ -14,7 +15,7 @@
 #include <rtw_cli_api.h>
 #include <rtw_cli_wifi_types.h>
 #include <rtw_cli_netlink.h>
-
+#include <whc_def.h>
 #include <whc_host_rtw_cli_api.h>
 #include <whc_host_netlink.h>
 
@@ -41,7 +42,7 @@ const struct cmd_func_t rtw_cli_cmd_handlers[] = {
 	{"join_event",      rtw_cli_cmd_get_join_status, API_WIFI_GET_JOIN_EVENT, 0, 0},
 	{"wpason",          rtw_cli_cmd_wpas_on, API_WIFI_SEND_TO_DEV, WHC_WPA_OPS_CUSTOM_API, WHC_WPA_OPS_CUSTOM_API_INIT_WPAS_STD},
 	{"wifion",          rtw_cli_cmd_wifi_on, API_WIFI_SEND_TO_DEV, WHC_WPA_OPS_CUSTOM_API, WHC_WPA_OPS_CUSTOM_API_WIFION},
-	{"mp",              rtw_cli_cmd_mp, API_WIFI_MP, 0, 0},
+	{"iwpriv",          rtw_cli_cmd_mp, API_WIFI_MP, 0, 0},
 	{"dbg",             rtw_cli_cmd_dbg, API_WIFI_DBG, 0, 0},
 	{NULL, NULL, 0, 0},
 };
@@ -177,6 +178,11 @@ void whc_cmd_handle_rx_payload(char *pos, int len, int api_id,
 					}
 				}
 			}
+		} else if (whc_event == WHC_WIFI_TEST) {
+			pos = pos + sizeof(uint32_t);
+			if (*pos == WHC_WIFI_TEST_MP) {
+				printf("%s\n", pos + 1);
+			}
 		} //End WHC_WPA_OPS_EVENT
 
 
@@ -284,4 +290,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-

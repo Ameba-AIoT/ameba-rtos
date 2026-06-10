@@ -10,6 +10,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbh.h"
 #include "usb_ch9.h"
+#include "usb_uac1.h"
 #include "usb_ringbuf.h"
 #include "usbh_composite_config.h"
 #include "os_wrapper.h"
@@ -38,7 +39,7 @@ typedef enum {
 	USBH_UAC_MODE_PLAYBACK_ONLY         = 1U,   /**< Playback (Speaker) only, no recording */
 	USBH_UAC_MODE_RECORD_ONLY           = 2U,   /**< Recording (Microphone) only, no playback */
 	USBH_UAC_MODE_PLAYBACK_AND_RECORD   = 3U    /**< Both Playback and Recording supported */
-} usbh_uac_mode_t;
+} usbh_composite_uac_mode_t;
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -52,38 +53,40 @@ typedef struct {
 	u8 terminal_id;    /**< ID of this Terminal */
 	u8 source_id;      /**< ID of the entity to which this Terminal is connected */
 	u8 is_input;       /**< Direction flag (1: Input Terminal, 0: Output Terminal) */
-} usbh_uac_term_info;
+} usbh_composite_uac_term_info_t;
 
 /**
   * @brief  UAC 1.0 Feature Unit (Volume Control) Information structure.
+  *         match to the bmaControls layout from UAC1 spec: index 0 is the
+  *         Master Channel (logical channel 0); indices 1..num_channels are
+  *         per-channel logical channels 1..N.
   */
 typedef struct {
-	u16 channel_support[USBH_UAC_MAX_CHANNEL]; /**< Bitmap of supported fu_controls for each logical channel (index 0 = channel 1) */
-	u16 master_support;    /**< Bitmap of supported fu_controls for the Master Channel (Channel 0) */
+	u16 bma_controls[1 + USBH_UAC_MAX_CHANNEL]; /**< Bitmap of supported fu_controls logical channels: [0]=master, [1..num_channels]=ch1..N */
 	u16 sink_type;         /**< Terminal Type of the sink connected to this Feature Unit (used to classify OUT/IN direction) */
 	u8 unit_id;            /**< ID of this Feature Unit */
 	u8 source_id;          /**< ID of the source entity connected to this Feature Unit */
 	u8 sink_id;            /**< ID of the sink Terminal connected to this Feature Unit */
-	u8 num_channels;       /**< Number of logical audio channels */
+	u8 num_channels;       /**< Number of logical audio channels (excludes master) */
 	u8 control_size;       /**< Size in bytes of each bmaControls field in the descriptor (1 or 2) */
-} usbh_uac_vol_ctrl_info;
+} usbh_composite_uac_fu_info_t;
 
 /**
   * @brief  Audio Control (AC) Interface Aggregated Information.
   *         Contains the topology of all Terminals and Feature Units within the AC interface.
   */
 typedef struct {
-	usbh_uac_vol_ctrl_info fu_controls[USBH_UAC_FU_MAX_CNT];  /**< Parsed Feature Units, indexed 0..volume_ctrl_count-1 */
-	usbh_uac_term_info terminals[USBH_UAC_TERM_MAX_CNT];   /**< Parsed Terminals, indexed 0..terminal_count-1 */
+	usbh_composite_uac_fu_info_t fu_controls[USBH_UAC_FU_MAX_CNT];  /**< Parsed Feature Units, indexed 0..volume_ctrl_count-1 */
+	usbh_composite_uac_term_info_t terminals[USBH_UAC_TERM_MAX_CNT];   /**< Parsed Terminals, indexed 0..terminal_count-1 */
 
 	u8 volume_ctrl_count; /**< Number of valid entries in fu_controls[] */
-	u8 terminal_count;    /**< Number of valid entries in fu_controls[] */
+	u8 terminal_count;    /**< Number of valid entries in terminals[] */
 
 	u8 in_best_idx;      /**< Index into fu_controls[] for the best IN/Record Feature Unit; (u8)-1 if none */
 	u8 out_best_idx;     /**< Index into fu_controls[] for the best OUT/Playback Feature Unit; (u8)-1 if none */
 
 	u8 ac_itf_idx;        /**< Interface number of the Audio Control interface (used as wIndex in control requests) */
-} usbh_uac_ac_itf_info_t;
+} usbh_composite_uac_ac_itf_info_t;
 
 /**
   * @brief  Audio Buffer and Transmission Control Block.
@@ -116,7 +119,7 @@ typedef struct {
 #endif
 
 	u8 frame_cnt;         /**< Ring buffer depth in frames; set from cb->isoc_out/in_frm_cnt before ep_buf_ctrl_init */
-} usbh_uac_buf_ctrl_t;
+} usbh_composite_uac_buf_ctrl_t;
 
 /**
   * @brief  Audio Volume Status Information.
@@ -126,7 +129,8 @@ typedef struct {
 	s16 vol_min;   /**< Minimum volume supported by the device */
 	s16 vol_max;   /**< Maximum volume supported by the device */
 	u8  mute;      /**< Current mute state (1: Muted, 0: Unmuted) */
-} usbh_uac_volume_info_t;
+	u8  range_valid; /**< 1 once vol_min/vol_max have been successfully read at attach */
+} usbh_composite_uac_volume_info_t;
 
 /**
   * @brief  Audio Format Configuration Descriptor Information.
@@ -154,7 +158,7 @@ typedef struct {
 	u32 sampling_freq;     /**< Sampling frequency in Hz */
 	u8 bit_width;          /**< Bit depth per sample */
 	u8 ch_cnt;             /**< Channel count */
-} usbh_audio_fmt_t;
+} usbh_composite_uac_audio_fmt_t;
 
 /**
   * @brief  Audio Streaming (AS) Interface Aggregated Information.
@@ -163,7 +167,7 @@ typedef struct {
 typedef struct {
 	usbh_composite_uac_as_itf_alt_info_t interface_array[USBH_UAC_ALT_SETTING_MAX]; /**< Valid alternate settings (Alt 0 skipped; index 0 = Alt 1) */
 	usbh_pipe_t pipe;                     /**< USB pipe for this AS interface */
-	usbh_audio_fmt_t *fmt_array;          /**< Flattened array of all supported audio formats (malloc'd in get_audio_format_info) */
+	usbh_composite_uac_audio_fmt_t *fmt_array;          /**< Flattened array of all supported audio formats (malloc'd in get_audio_format_info) */
 	u16 packet_size_small;                /**< Bytes per packet when the sample accumulator does not overflow */
 	u16 packet_size_large;                /**< Bytes per packet when the sample accumulator overflows (one extra sample) */
 
@@ -174,7 +178,7 @@ typedef struct {
 
 	u8 choose_alt_idx;                    /**< Index into interface_array[] for the currently active alternate setting */
 	u8 choose_freq_idx;                   /**< Index into format_info.freq[] for the currently active sampling frequency */
-} usbh_uac_as_itf_info_t;
+} usbh_composite_uac_as_itf_info_t;
 
 /** @addtogroup USB_Host_API USB Host API
  *  @{
@@ -202,27 +206,23 @@ typedef struct {
 } usbh_composite_uac_usr_cb_t;
 
 typedef struct {
-	usbh_uac_as_itf_info_t *as_itf;     /**< Pointer to the AS interface for this direction; NULL if not supported */
+	usbh_composite_uac_as_itf_info_t *as_itf;     /**< Pointer to the AS interface for this direction; NULL if not supported */
 
-	usbh_uac_volume_info_t volume_info[1 + USBH_UAC_MAX_CHANNEL]; /**< Volume info per channel: [0]=master, [1..N]=per-channel */
+	usbh_composite_uac_volume_info_t volume_info[1 + USBH_UAC_MAX_CHANNEL]; /**< Volume info per channel: [0]=master, [1..N]=per-channel */
 
-	usbh_uac_buf_ctrl_t buf_ctrl;        /**< Isochronous buffer and packet-size control */
+	usbh_composite_uac_buf_ctrl_t buf_ctrl;        /**< Isochronous buffer and packet-size control */
 	u8 *xfer_buf;                          /**< DMA-safe transfer buffer passed to usbh_transfer_data */
 
-	u8 pending_vol_valid;                /**< 1 when a set_volume call arrived while ctrl was busy */
-	u8 pending_vol_value;                /**< Volume percentage (0-100) to apply when ctrl becomes idle */
-	u8 pending_mute_valid;               /**< 1 when a set_mute call arrived while ctrl was busy */
-	u8 pending_mute_value;               /**< Mute state (0 or 1) to apply when ctrl becomes idle */
-} usbh_uac_channel_t;
+} usbh_composite_uac_channel_t;
 
 /**
   * @brief  Main UAC Host Class Driver Handle.
   */
 typedef struct {
-	usbh_uac_ac_itf_info_t ac_isoc_desc;  /**< Audio Control interface topology (Feature Units + Terminals) */
+	usbh_composite_uac_ac_itf_info_t ac_isoc_desc;  /**< Audio Control interface topology (Feature Units + Terminals) */
 
-	usbh_uac_channel_t isoc_out;          /**< OUT channel state (Playback/Speaker) */
-	usbh_uac_channel_t isoc_in;           /**< IN channel state (Record/Microphone) */
+	usbh_composite_uac_channel_t isoc_out;          /**< OUT channel state (Playback/Speaker) */
+	usbh_composite_uac_channel_t isoc_in;           /**< IN channel state (Record/Microphone) */
 
 	rtos_mutex_t alt_set_mutex;           /**< Serializes concurrent usbh_composite_uac_set_alt_setting calls */
 	rtos_sema_t  ctrl_done_sema;          /**< Signaled by ctrl_setting when SET_ALT + SET_FREQ sequence completes */
@@ -240,16 +240,23 @@ typedef struct {
 	u8 dump_status_task_exit;             /**< Set to 0 to signal the dump task to exit */
 #endif
 
-	__IO u8 xfer_state;        /**< Isochronous data transfer state (UAC_STATE_IDLE / UAC_STATE_TRANSFER) */
-	__IO u8 ctrl_state;        /**< USB control transfer state machine state (UAC_STATE_CTRL_IDLE, SET_ALT, SET_FREQ, ...) */
-	__IO u8 init_state;        /**< Initialization sequence state (UAC_INIT_OUT_GET_FU -> UAC_INIT_IN_GET_FU -> UAC_INIT_OUT_SET_ITF -> UAC_INIT_DONE) */
+	int ctrl_status;          /**< HAL status reported back to the current sync ctrl op (set/get) callers */
+	s16 get_volume_result;   /**< Volume word parsed by UAC_STATE_GET_VOLUME; consumed by get_volume() */
 
+	u8 get_ch;               /**< Channel argument for the active UAC_STATE_GET_* on-demand query */
+	u8 get_mute_result;      /**< Mute byte parsed by UAC_STATE_GET_MUTE; consumed by get_mute() */
 	u8 ch_idx;                 /**< Channel index driving the current iterative SET_VOLUME/SET_MUTE loop (0 = master) */
 	u8 mute_value;             /**< Mute state (1: Mute, 0: Unmute) dispatched to process_set_ch_mute */
 	u8 volume_value;           /**< Volume value dispatched to process_set_ch_volume */
-
 	u8 cur_dir;                    /**< Direction being operated on by the current ctrl_state sequence */
-	u8 ctrl_waiting;               /**< 1 when set_alt_setting is blocked on ctrl_done_sema */
+	u8 ctrl_waiting;               /**< 1 when a sync waiter is blocked on ctrl_done_sema.
+	                                  * Mutual exclusion among set_alt_setting/get_mute/get_volume is guaranteed
+	                                  * by alt_set_mutex held across the entire wait, so at most one waiter exists
+	                                  * at any time. ctrl_done_sema is drained before each take to absorb any stale
+	                                  * give left by the previous round's timeout/ctrl_finish race. */
+	__IO u8 xfer_state;        /**< Isochronous data transfer state (UAC_STATE_IDLE / UAC_STATE_TRANSFER) */
+	__IO u8 ctrl_state;        /**< USB control transfer state machine state (UAC_STATE_CTRL_IDLE, SET_ALT, SET_FREQ, ...) */
+	__IO u8 init_state;        /**< Initialization sequence state (UAC_INIT_OUT_GET_FU -> UAC_INIT_IN_GET_FU -> UAC_INIT_OUT_SET_ITF -> UAC_INIT_DONE) */
 } usbh_composite_uac_t;
 /** @} End of Host_Composite_UAC_Types group*/
 /** @} End of USB_Host_Types group*/
@@ -283,13 +290,13 @@ int usbh_composite_uac_deinit(void);
 
 /**
   * @brief  Get the current UAC mode (Playback only, Record only, or Both).
-  * @return usbh_uac_mode_t indicating the current mode:
+  * @return usbh_composite_uac_mode_t indicating the current mode:
   *         - USBH_UAC_MODE_NONE: No UAC interface detected
   *         - USBH_UAC_MODE_PLAYBACK_ONLY: Playback only (Speaker)
   *         - USBH_UAC_MODE_RECORD_ONLY: Record only (Microphone)
   *         - USBH_UAC_MODE_PLAYBACK_AND_RECORD: Both Playback and Record
   */
-usbh_uac_mode_t usbh_composite_uac_get_mode(void);
+usbh_composite_uac_mode_t usbh_composite_uac_get_mode(void);
 
 /**
   * @brief  Check if UAC supports playback (speaker output).
@@ -328,7 +335,7 @@ int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sa
   * @param  fmt_cnt: Pointer to store the number of formats found.
   * @return Pointer to the array of supported formats.
   */
-const usbh_audio_fmt_t *usbh_composite_uac_get_alt_setting(u8 dir, u8 *fmt_cnt);
+const usbh_composite_uac_audio_fmt_t *usbh_composite_uac_get_alt_setting(u8 dir, u8 *fmt_cnt);
 
 /**
   * @brief  Calculate the frame size (in bytes) based on current configuration.
@@ -352,6 +359,46 @@ int usbh_composite_uac_set_volume(u8 volume, u8 dir);
   * @return 0 on success, non-zero on failure.
   */
 int usbh_composite_uac_set_mute(u8 mute, u8 dir);
+
+/**
+  * @brief  Synchronously read the current mute state from the device.
+  *         Issues a UAC1 GET_CUR(MUTE) on the selected channel and blocks until
+  *         the response arrives or a 1 s timeout elapses.
+  * @param  dir:  Direction (USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR).
+  * @param  ch:   Channel index (0 = master, 1..N = individual channels).
+  * @param  mute: Output pointer that receives the device's mute state.
+  * @return 0 on success, non-zero on failure.
+  */
+int usbh_composite_uac_get_mute(u8 dir, u8 ch, u8 *mute);
+
+/**
+  * @brief  Synchronously read the current volume from the device.
+  *         Issues a UAC1 GET_CUR(VOLUME) on the selected channel and blocks until
+  *         the response arrives or a 1 s timeout elapses. The min/max range is
+  *         returned from the cache populated at attach time.
+  * @param  dir:     Direction (USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR).
+  * @param  ch:      Channel index (0 = master, 1..N = individual channels).
+  * @param  volume:  Output pointer that receives the current volume in raw dB units.
+  * @param  vol_min: Output pointer for minimum volume; may be NULL.
+  * @param  vol_max: Output pointer for maximum volume; may be NULL.
+  * @return 0 on success, non-zero on failure.
+  */
+int usbh_composite_uac_get_volume(u8 dir, u8 ch, s16 *volume, s16 *vol_min, s16 *vol_max);
+
+/**
+  * @brief  Get the parsed Feature Unit info for the active streaming
+  *         direction. The returned struct exposes bma_controls[0..num_channels]
+  *         (mirroring the UAC1 bmaControls layout: index 0 = master,
+  *         indices 1..num_channels = per-channel), so callers can iterate
+  *         uniformly and filter against any UAC1 control bit
+  *         (USB_UAC1_CONTROL_VOLUME, USB_UAC1_CONTROL_MUTE, ...).
+  *         set_volume() and set_mute() walk this same structure, so callers
+  *         can reuse the iteration pattern to verify exactly what was written.
+  * @param  dir: Direction (USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR).
+  * @return Pointer to the FU info, or NULL if the device has no Feature
+  *         Unit on this direction. Valid until the device is detached.
+  */
+const usbh_composite_uac_fu_info_t *usbh_composite_uac_get_volume_ctrl_info(u8 dir);
 
 /**
   * @brief  Start the audio playback process.

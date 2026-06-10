@@ -1,10 +1,8 @@
 CC := $(CROSS_COMPILE)gcc
 O := $(shell pwd)
 
-CFLAGS += -I. -I../../driver -I../driver/include
-CFLAGS += -I../../../whc_dev
+CFLAGS += -I. -I../../driver -I../../driver/include
 
-ccflags-y += -DCONFIG_FULLMAC
 CFLAGS += $(ccflags-y)
 
 LDFLAGS += -lpthread

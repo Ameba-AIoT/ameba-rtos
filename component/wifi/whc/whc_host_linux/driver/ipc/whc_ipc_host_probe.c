@@ -11,12 +11,12 @@
 #include <whc_host_linux.h>
 
 /* Match table for of_platform binding */
-static const struct of_device_id rtw_axi_of_match[] = {
+static const struct of_device_id whc_ipc_of_match[] = {
 	{ .compatible = "realtek,rtl8730e_nic", },
 	{},
 };
 
-MODULE_DEVICE_TABLE(of, rtw_axi_of_match);
+MODULE_DEVICE_TABLE(of, whc_ipc_of_match);
 
 static void platform_device_init(struct platform_device *pdev)
 {
@@ -89,7 +89,7 @@ static void platform_device_deinit(struct platform_device *pdev)
 	}
 }
 
-static int rtw_dev_probe(struct platform_device *pdev)
+static int whc_ipc_host_probe(struct platform_device *pdev)
 {
 	int err = 0;
 
@@ -104,9 +104,9 @@ static int rtw_dev_probe(struct platform_device *pdev)
 }
 
 #if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
-static void rtw_dev_remove(struct platform_device *pdev)
+static void whc_ipc_host_remove(struct platform_device *pdev)
 #else
-static int rtw_dev_remove(struct platform_device *pdev)
+static int whc_ipc_host_remove(struct platform_device *pdev)
 #endif
 {
 	rtw_netdev_remove(&pdev->dev);
@@ -119,13 +119,13 @@ static int rtw_dev_remove(struct platform_device *pdev)
 #endif
 }
 
-static void rtw_dev_shutdown(struct platform_device *pdev)
+static void whc_ipc_host_shutdown(struct platform_device *pdev)
 {
 	dev_dbg(global_idev.pwhc_dev, "%s", __func__);
-	rtw_dev_remove(pdev);
+	whc_ipc_host_remove(pdev);
 }
 
-static int rtw_dev_suspend(struct platform_device *pdev, pm_message_t state)
+static int whc_ipc_host_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	u32 ret = 0;
 
@@ -137,7 +137,7 @@ static int rtw_dev_suspend(struct platform_device *pdev, pm_message_t state)
 	}
 
 	/* staion mode */
-	if (whc_host_wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
+	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_SUCCESS) {
 		/* wowlan */
 		ret = whc_host_update_ip_addr();
 		if (ret == 0) {
@@ -153,7 +153,7 @@ static int rtw_dev_suspend(struct platform_device *pdev, pm_message_t state)
 	return ret;
 }
 
-static int rtw_dev_resume(struct platform_device *pdev)
+static int whc_ipc_host_resume(struct platform_device *pdev)
 {
 	dev_dbg(global_idev.pwhc_dev, "%s", __func__);
 
@@ -170,26 +170,26 @@ static int rtw_dev_resume(struct platform_device *pdev)
 	return 0;
 }
 
-static struct axi_drv_priv axi_drvpriv = {
-	.rtw_axi_drv.probe = rtw_dev_probe,
-	.rtw_axi_drv.remove = rtw_dev_remove,
-	.rtw_axi_drv.shutdown = rtw_dev_shutdown,
-	.rtw_axi_drv.suspend = rtw_dev_suspend,
-	.rtw_axi_drv.resume = rtw_dev_resume,
+static struct axi_drv_priv whc_ipc_host_driver = {
+	.rtw_axi_drv.probe = whc_ipc_host_probe,
+	.rtw_axi_drv.remove = whc_ipc_host_remove,
+	.rtw_axi_drv.shutdown = whc_ipc_host_shutdown,
+	.rtw_axi_drv.suspend = whc_ipc_host_suspend,
+	.rtw_axi_drv.resume = whc_ipc_host_resume,
 	.rtw_axi_drv.driver = {
 		.name = "fullmac-8730e",
 		.owner = THIS_MODULE,
-		.of_match_table = rtw_axi_of_match
+		.of_match_table = whc_ipc_of_match
 	},
 };
 
-int __init rtw_drv_entry(void)
+int __init whc_ipc_host_init_module(void)
 {
 	int ret = 0;
 
 	rtw_inetaddr_notifier_register();
 
-	ret = platform_driver_register(&axi_drvpriv.rtw_axi_drv);
+	ret = platform_driver_register(&whc_ipc_host_driver.rtw_axi_drv);
 
 	if (ret != 0) {
 		rtw_inetaddr_notifier_unregister();
@@ -201,15 +201,15 @@ exit:
 	return ret;
 }
 
-void __exit rtw_drv_halt(void)
+void __exit whc_ipc_host_cleanup_module(void)
 {
 	pr_info("WHC module exit start\n");
 	dev_dbg(global_idev.pwhc_dev, "%s", __func__);
-	platform_driver_unregister(&axi_drvpriv.rtw_axi_drv);
+	platform_driver_unregister(&whc_ipc_host_driver.rtw_axi_drv);
 	rtw_inetaddr_notifier_unregister();
 	pr_info("WHC module exit success\n");
 }
 
-module_init(rtw_drv_entry);
-module_exit(rtw_drv_halt);
+module_init(whc_ipc_host_init_module);
+module_exit(whc_ipc_host_cleanup_module);
 

@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../../README.md).
+
 # Example Description
 
 This example shows how to use SPI interface to driver ILI9341 LCD Module through PPE. PPE will carry data from SRAM to QSPI FIFO and then to LCD.

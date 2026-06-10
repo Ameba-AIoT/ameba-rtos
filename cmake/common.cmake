@@ -375,6 +375,12 @@ function(ameba_firmware_package output_app_name)
         ameba_list_append(custom_variables -D${var}=${${var}})
     endforeach()
 
+    # Forward the rolfs: image content dir if an application registered one via
+    get_property(rolfs_content_dir GLOBAL PROPERTY g_ROLFS_CONTENT_DIR)
+    if(rolfs_content_dir)
+        ameba_list_append(custom_variables -DROLFS_CONTENT_DIR=${rolfs_content_dir})
+    endif()
+
     # Merge image2/image3 to app.bin
     set(c_APP_BINARY_NAME ${output_app_name})
     ameba_get_image_output_dir(c_IMAGE_OUTPUT_DIR)

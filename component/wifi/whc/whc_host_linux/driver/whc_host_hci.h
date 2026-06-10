@@ -1,5 +1,15 @@
-#ifndef __WHC_LINUX_BASE_TYPE__
-#define __WHC_LINUX_BASE_TYPE__
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+* Realtek wireless local area network IC driver.
+*   This is an interface between cfg80211 and firmware in other core. The
+*   commnunication between driver and firmware is IPC（Inter Process
+*   Communication）bus.
+*
+* Copyright (C) 2023, Realtek Corporation. All rights reserved.
+*/
+
+#ifndef __WHC_HOST_HCI_H__
+#define __WHC_HOST_HCI_H__
 
 #ifdef CONFIG_NAN
 #define WHC_MAX_NET_PORT_NUM		(3)
@@ -9,15 +19,54 @@
 #define WHC_STA_PORT			(0)
 #define WHC_AP_PORT			(1)
 
-#define WHC_MSG_QUEUE_DEPTH		(50)
-#define WHC_MSG_QUEUE_WARNING_DEPTH	(4)
+#define MAX_NUM_WLAN_PORT		(2)
+#define IPC_USER_POINT			0
+#define IPC_MSG_QUEUE_DEPTH		(50)
+#define IPC_MSG_QUEUE_WARNING_DEPTH	(4)
 
 #define RTW_IP_ADDR_LEN 4
 #define RTW_IPv6_ADDR_LEN 16
 
-/* Layer 2 structs. */
+#ifdef CONFIG_WHC_HCI_IPC
+/* for ipc intf */
+struct event_priv_t {
+	struct work_struct		api_work; /* event_priv work to haddle event_priv msg */
+	struct workqueue_struct *api_workqueue; /* event_priv work queue to haddle event_priv msg */
+	ipc_msg_struct_t		api_ipc_msg; /* to store ipc msg for event_priv */
+	struct mutex			iiha_send_mutex; /* mutex to protect send host event_priv message */
+	struct whc_ipc_host_req_msg	*preq_msg;/* host event_priv message to send to device */
+	dma_addr_t			req_msg_phy_addr;/* host event_priv message to send to device */
+	uint32_t			*dev_req_network_info;
+	dma_addr_t			dev_req_network_info_phy;
+	ipc_msg_struct_t		recv_ipc_msg;
+};
 
-/* Layer 1 structs. */
+struct ipc_msg_q_priv {
+	struct list_head		queue_head; /* msg queue */
+	spinlock_t			lock; /* queue lock */
+	struct work_struct		msg_work; /* message task in linux */
+	struct mutex			msg_work_lock; /* tx lock lock */
+	void	(*task_hdl)(u8 event_num, u32 msg_addr, u8 wlan_idx);    /* the haddle function of task */
+	bool				b_queue_working; /* flag to notice the queue is working */
+	struct ipc_msg_node		ipc_msg_pool[IPC_MSG_QUEUE_DEPTH]; /* static pool for queue node */
+	int				queue_free; /* the free size of queue */
+	struct whc_ipc_ex_msg		*p_inic_ipc_msg;/* host inic ipc message to send to device */
+	dma_addr_t			ipc_msg_phy_addr;/* host inic message to send to device */
+	spinlock_t			ipc_send_msg_lock;
+};
+
+struct xmit_priv_t {
+	struct dev_sk_buff		*host_skb_buff;
+	dma_addr_t			host_skb_buff_phy;
+	dma_addr_t			host_skb_data_phy;
+	u32			skb_buf_max_size;
+	atomic_t				skb_free_num;
+	u32				skb_idx;
+	spinlock_t			skb_lock;
+};
+
+#else
+/* for non-ipc intf */
 struct event_priv_t {
 	struct work_struct			api_work; /* event_priv task to haddle event_priv msg */
 	struct mutex				send_mutex; /* mutex to protect send host event_priv message */
@@ -48,6 +97,12 @@ struct xmit_priv_t {
 	u8 				initialized: 1;
 	u8				flowctrl_en: 1;
 };
+
+struct hci_ops_t {
+	void (*send_data)(u8 *buf, u32 len, struct sk_buff *pskb);
+	void (*recv_data)(void *intf_priv);
+};
+#endif
 
 /* Scan and Join related parameters. */
 struct mlme_priv_t {
@@ -106,29 +161,33 @@ struct netdev_work {
 };
 #endif
 
-struct hci_ops_t {
-	void (*send_data)(u8 *buf, u32 len, struct sk_buff *pskb);
-	void (*recv_data)(void *intf_priv);
-};
-
 struct whc_device {
 	/* device register to upper layer. */
-	struct device				*pwhc_dev;
-	struct wiphy				*pwiphy_global;
-	struct net_device			*pndev[WHC_MAX_NET_PORT_NUM];
+	struct device			*pwhc_dev;
+	struct wiphy			*pwiphy_global;
+	struct net_device		*pndev[WHC_MAX_NET_PORT_NUM];
 	struct wireless_dev		*pwdev_global[WHC_MAX_NET_PORT_NUM];
 
 	/* ops for upper layer. */
 	struct cfg80211_ops		rtw_cfg80211_ops;
-	struct ethtool_ops			rtw_ethtool_ops;
+	struct ethtool_ops		rtw_ethtool_ops;
 
 	/* Interface related parameters. */
+#ifdef CONFIG_WHC_HCI_IPC
+	/* for ipc intf */
+	struct device			*ipc_dev;
+	aipc_ch_t			*data_ch;
+	aipc_ch_t			*event_ch;
+	struct ipc_msg_q_priv		msg_priv;
+#else
+	/* for non-ipc intf */
 	void					*intf_priv;
 	struct hci_ops_t		*intf_ops;
-
-	struct event_priv_t			event_priv;
 	struct recv_priv_t			recv_priv;
-	struct xmit_priv_t			xmit_priv;
+#endif
+
+	struct event_priv_t		event_priv;
+	struct xmit_priv_t		xmit_priv;
 
 	/* whc status management. */
 	struct mlme_priv_t			mlme_priv;
@@ -157,6 +216,4 @@ struct whc_device {
 
 extern struct whc_device global_idev;
 
-#define MAX_NUM_WLAN_PORT		(2)
-
-#endif /* __INIC_LINUX_BASE_TYPE__ */
+#endif /* __WHC_HOST_HCI_H__ */

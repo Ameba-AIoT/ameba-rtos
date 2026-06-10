@@ -14,7 +14,7 @@ set(TARGET_LIB wifi_api)
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
-if(NOT (CONFIG_WHC_BRIDGE AND CONFIG_WPA_STD))
+if(NOT (CONFIG_WPA_STD))
 ameba_list_append(public_includes
     ${c_CMPT_WIFI_DIR}/wpa_supplicant/src
 )
@@ -61,7 +61,7 @@ if(CONFIG_WHC_HOST)
         ${c_CMPT_WIFI_DIR}/wpa_supplicant/src/crypto/tls_polarssl.c
     )
 elseif(CONFIG_WHC_NONE)
-    if(NOT (CONFIG_WHC_BRIDGE AND CONFIG_WPA_STD))
+    if(NOT (CONFIG_WPA_STD))
         ameba_list_append(private_sources
             ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_eap_config.c
             ${c_CMPT_WIFI_DIR}/wpa_supplicant/wpa_supplicant/wifi_wps_config.c

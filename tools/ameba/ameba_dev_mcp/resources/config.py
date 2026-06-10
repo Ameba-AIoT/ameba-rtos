@@ -13,7 +13,7 @@ import json
 
 from mcp.server.fastmcp import FastMCP
 
-from ameba_dev_mcp._paths import SDK_ROOT
+from ameba_dev_mcp._paths import PROJECT_ROOT
 from ameba_dev_mcp.config.loader import (
     ConfigLoadError,
     load_board_info,
@@ -35,7 +35,7 @@ def register_config_resources(mcp: FastMCP) -> None:
     def get_project_info() -> str:
         """Full project_info.json5 contents, validated and merged."""
         try:
-            info = load_project_info(SDK_ROOT)
+            info = load_project_info(PROJECT_ROOT)
         except ConfigLoadError as ex:
             return _err_envelope(ex)
         return json.dumps(masked_project_info_dict(info), indent=2)
@@ -44,7 +44,7 @@ def register_config_resources(mcp: FastMCP) -> None:
     def get_board_info() -> str:
         """Full board_info.json5 contents (passwords masked as '***')."""
         try:
-            info = load_board_info(SDK_ROOT)
+            info = load_board_info(PROJECT_ROOT)
         except ConfigLoadError as ex:
             return _err_envelope(ex)
         return json.dumps(masked_board_info_dict(info), indent=2)

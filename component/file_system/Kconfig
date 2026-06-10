@@ -6,6 +6,15 @@ menu "CONFIG VFS"
         config LITTLEFS_SECOND_FLASH_MENU
             bool "Second FLASH"
             select LITTLEFS_SECOND_FLASH
+        config LITTLEFS_WITHIN_APP_IMG
+            bool "Read-only LITTLEFS within APP Image"
+            default n
+            help
+                Pack a read-only littlefs blob (with a PATTERN_ROLFS IMAGE_HEADER)
+                into the app image at post-build, and mount it read-only at the
+                "rolfs:" prefix at runtime. The blob is carried inside app.bin /
+                ota_all.bin, so it stays OTA-atomic with the firmware. Used by
+                ameba_claw to embed prebuilt Lua libraries and built-in skills.
     endif
     config VFS_FATFS_INCLUDED
         bool "Enable VFS FATFS"

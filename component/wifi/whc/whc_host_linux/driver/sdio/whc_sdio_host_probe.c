@@ -161,7 +161,7 @@ int whc_sdio_host_suspend_common(struct whc_sdio *priv)
 {
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	/* staion mode */
-	if (whc_host_wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
+	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_SUCCESS) {
 		/* update ip address success */
 		if (whc_host_update_ip_addr()) {
 			return -EPERM;

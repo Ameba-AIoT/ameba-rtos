@@ -154,9 +154,6 @@ void SOCPS_MemLdoSetInNormal(u8 pwr_sts)
  *
  * @param pwr_sts:
  * 				@arg STATE2_LDOSLP_08 = 0x2,
- * 				@arg STATE4_LDOSLP_09 = 0x4,
- * 				@arg STATE6_LDONORM_09 = 0x6,
- * 				@arg STATE6_LDONORM_10 = 0x7,
  */
 void SOCPS_PowerStateSetInSleep(u8 pwr_sts)
 {
@@ -171,9 +168,8 @@ void SOCPS_PowerStateSetInSleep(u8 pwr_sts)
  * @brief Set the power state of regu(swr + core ldo) during active,and take effect immediately
  *
  * @param pwr_sts Power state
- * 				@arg STATE4_LDOSLP_SWRPFM   = 0x4,
- * 				@arg STATE5_LDONORM_SWRPFM  = 0x5,
- * 				@arg STATE6_LDONORM_SWRPWM  = 0x6,
+ * 				@arg STATE6_LDONORM_09 = 0x6,
+ * 				@arg STATE6_LDONORM_10 = 0x7,
  */
 void SOCPS_PowerStateSetInNormal(u8 pwr_sts)
 {
@@ -185,6 +181,25 @@ void SOCPS_PowerStateSetInNormal(u8 pwr_sts)
 	HAL_WRITE32(PMC_BASE, AIP_TRIGGER, Rtemp);
 	/* polling status change finished */
 	while ((HAL_READ32(PMC_BASE, AIP_TRIGGER) & PMC_BIT_SYS_REGU_STS_RDY) == 0);
+}
+
+/**
+ * @brief Raise sleep voltage to 0.9V by overriding the 0.8V code slot.
+ *
+ * Writes the per-IC 0.9V code (read from CODE2) into CODE1, so the
+ * system sleeps at 0.9V regardless of the sleep_to_08V setting in sleepcfg.
+ */
+void SOCPS_SleepVoltRaiseTo0P9(void)
+{
+	LDO_TypeDef *LDO = LDO_BASE;
+	u32 reg_temp;
+	u8 code_0p9;
+
+	reg_temp = LDO->LDO_CLDO_VOLT_CTRL;
+	code_0p9 = (u8)LDO_GET_VOLT_CODE2_CLDO(reg_temp);
+	reg_temp &= ~LDO_MASK_VOLT_CODE1_CLDO;
+	reg_temp |= LDO_VOLT_CODE1_CLDO(code_0p9);
+	LDO->LDO_CLDO_VOLT_CTRL = reg_temp;
 }
 
 void SOCPS_ReguDelayAdjust(void)
@@ -228,32 +243,13 @@ void SOCPS_ClockSourceConfig(u8 xtal_mode, u8 osc_option)
 
 	/* 5. XTAL sleep status config */
 	if ((xtal_mode == XTAL_Normal) || (xtal_mode == XTAL_HP)) {
-		SOCPS_PowerStateSetInSleep(STATE4_LDOSLP_09);
+		SOCPS_SleepVoltRaiseTo0P9();
 		/* xtal clock gating can be set to 1 only when the sleep voltage is greater than or equal to 0.9V!*/
 		reg_temp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
 		reg_temp |= PMC_BIT_CKE_XTAL40M_SLEP;
 		HAL_WRITE32(PMC_BASE, SYSPMC_OPT, reg_temp);
 		RTK_LOGI(TAG, "The voltage of XTAL Normal/HP mode in sleep state is 0.9V\n");
 	}
-}
-
-/**
- * @brief Raise CLDO sleep voltage to 0.9V by overriding the 0.7V and 0.8V code slots.
- *
- * Writes the per-IC 0.9V code (read from CODE2) into CODE0 and CODE1, so the
- * system sleeps at 0.9V regardless of the sleep_to_08V setting in sleepcfg.
- */
-void SOCPS_SleepVoltRaiseTo0P9(void)
-{
-	LDO_TypeDef *LDO = LDO_BASE;
-	u32 reg_temp;
-	u8 code_0p9;
-
-	reg_temp = LDO->LDO_CLDO_VOLT_CTRL;
-	code_0p9 = (u8)LDO_GET_VOLT_CODE2_CLDO(reg_temp);
-	reg_temp &= ~(LDO_MASK_VOLT_CODE1_CLDO | LDO_MASK_VOLT_CODE0_CLDO);
-	reg_temp |= LDO_VOLT_CODE1_CLDO(code_0p9) | LDO_VOLT_CODE0_CLDO(code_0p9);
-	LDO->LDO_CLDO_VOLT_CTRL = reg_temp;
 }
 
 void SOCPS_PowerManage(void)
@@ -264,6 +260,9 @@ void SOCPS_PowerManage(void)
 	/* 1. regu (core LDO)sleep status configuuration. */
 	/* 1.1 Set REGU's state when sleep.*/
 	SOCPS_PowerStateSetInSleep(STATE2_LDOSLP_08);
+#if defined (CONFIG_WHC_DEV) && defined (CONFIG_WHC_INTF_SDIO)
+	SOCPS_SleepVoltRaiseTo0P9();
+#endif
 	/* 1.2 for simulation*/
 	SOCPS_ReguDelayAdjust();
 

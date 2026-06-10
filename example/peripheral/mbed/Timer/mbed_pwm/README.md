@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Description
 This example describes how to use pwm timer.
 Use the four channels of PWM to generate PWM signals and dynamically modify the PWM duty cycle.

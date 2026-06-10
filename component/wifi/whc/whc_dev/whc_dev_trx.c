@@ -131,6 +131,15 @@ void whc_dev_netif_rx(int idx)
 	whc_dev_send((u8 *)msg_info, sizeof(struct whc_msg_info) + pad_len + skb->len, skb, 1);
 }
 
+#ifdef CONFIG_WHCH
+void whch_dev_netif_rx(struct sk_buff *skb)
+{
+	rltk_wlan_info[0].skb = (void *)skb;
+
+	whc_dev_netif_rx(0);
+}
+#endif
+
 void whc_dev_flowctrl(u8 *status, u8 send_cmd)
 {
 	struct whc_msg_info *msg_info = NULL;
@@ -180,7 +189,11 @@ void whc_dev_dispatch_event_copy(const u8 *src, u32 size)
 void whc_dev_free_txbuf(struct whc_txbuf_info_t *buf_info)
 {
 	if (buf_info->is_skb) {
+#ifdef CONFIG_WHCH
+		rtw_recv_interface_dma_ok((struct sk_buff *)buf_info->ptr);
+#else
 		dev_kfree_skb_any((struct sk_buff *)buf_info->ptr);
+#endif
 	} else {
 		rtos_mem_free((u8 *)buf_info->ptr);
 	}

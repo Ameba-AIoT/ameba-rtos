@@ -4,7 +4,7 @@
 #define TAG_WLAN_PROXY  "PROXY"
 
 u8 *rtw_get_adapter_mac_addr(u8 iface_type);
-struct H2C_WAROFFLOAD_PARM WAROffloadParm = {0};
+struct whc_proto_offload_param WAROffloadParm = {0};
 struct MDNS_PARM MDNS = {0};
 struct IPV4_PARM IPv4Parm = {0};
 struct IPV6_PARM IPv6Parm = {0};
@@ -492,7 +492,7 @@ int rtw_war_offload_ctrl(u8 *param_buf)
 {
 	rtk_log_level_set(TAG_WLAN_PROXY, RTK_LOG_DEBUG);
 
-	memcpy(&WAROffloadParm, param_buf, sizeof(struct H2C_WAROFFLOAD_PARM));
+	memcpy(&WAROffloadParm, param_buf, sizeof(struct whc_proto_offload_param));
 
 	if (WAROffloadParm.offload_en) {
 		IPv4Parm.identifier = 1;

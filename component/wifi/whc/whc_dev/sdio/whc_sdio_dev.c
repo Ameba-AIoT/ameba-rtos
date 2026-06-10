@@ -74,9 +74,13 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 	if (event == WHC_WIFI_EVT_XIMT_PKTS) {
 		/* SPDIO receives XMIT_PKTS */
 		rx_skb = (struct sk_buff *)rx_buf->priv;
+		p_msg_info = (struct whc_msg_info *)(rx_skb->data + sizeof(INIC_TX_DESC));
 
 		/* reserved 3 skb for rx */
 		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 3) ||
+#ifdef CONFIG_WHCH
+			(rtw_xmit_check_txbd(p_msg_info->wlan_hw_queue) == FALSE) ||
+#endif
 			((new_skb = dev_alloc_skb(SPDIO_DEVICE_RX_BUFSZ, SPDIO_SKB_RSVD_LEN)) == NULL)) {
 			goto drop_pkt;
 		}
@@ -87,7 +91,6 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		rx_buf->priv = new_skb;
 
 		/* handle buf data */
-		p_msg_info = (struct whc_msg_info *)(rx_skb->data + sizeof(INIC_TX_DESC));
 		if (!wifi_is_running(p_msg_info->wlan_idx)) {
 			/*free skb and return*/
 			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Port %d is down, drop!\n", p_msg_info->wlan_idx);

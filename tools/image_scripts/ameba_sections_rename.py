@@ -300,7 +300,29 @@ def main() -> None:
                         default=min(os.cpu_count() or 4, 16),
                         metavar='N',
                         help='Parallel nm-scan threads (default: cpu_count, max 16)')
+    parser.add_argument('--remap',     action='append', default=None,
+                        metavar='OLD=NEW[,OLD=NEW...]',
+                        help='Profile remap: translate target section OLD to NEW for '
+                             'every placement after loading (repeatable, and each value '
+                             'may carry several comma-separated pairs). Lets one master '
+                             'config serve multiple link profiles. '
+                             'E.g. --remap .flash.only.text=.text,.sram.only.text=.text '
+                             'sends everything to PSRAM.')
     args = parser.parse_args()
+
+    # ── Parse --remap into {old_section → new_section} ────────────────────
+    remap: dict[str, str] = {}
+    for spec in (args.remap or []):
+        for pair in spec.split(','):
+            pair = pair.strip()
+            if not pair:
+                continue
+            if '=' not in pair:
+                sys.exit(f'Invalid --remap (expected OLD=NEW): {pair}')
+            old, new = pair.split('=', 1)
+            if not old or not new:
+                sys.exit(f'Invalid --remap (empty side): {pair}')
+            remap[old] = new
 
     # ── Toolchain ─────────────────────────────────────────────────────────
     cross = args.cross if args.cross else _find_toolchain_prefix()
@@ -340,6 +362,12 @@ def main() -> None:
         for func, s1, s2, path in conflicts:
             print(f'  {func}: "{s1}" vs "{s2}"  (in {path})', file=sys.stderr)
         sys.exit(1)
+
+    # ── Apply profile remap (e.g. send every class to .text for PSRAM) ────
+    if remap:
+        placements = {func: remap.get(sec, sec) for func, sec in placements.items()}
+        print('Section remap active: '
+              + ', '.join(f'{o}->{n}' for o, n in remap.items()))
 
     if not placements:
         print('No placements to apply'

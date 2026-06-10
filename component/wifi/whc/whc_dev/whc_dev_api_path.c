@@ -81,6 +81,9 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_GET_TRAFFIC_STATS, whc_event_get_traffic_stats},
 	{WHC_API_WIFI_START_JOIN_CMD, whc_event_start_join_cmd},
 	{WHC_API_WIFI_GET_EAP_PHASE, whc_event_get_eap_phase},
+#ifdef CONFIG_IEEE80211R
+	{WHC_API_WIFI_FT_STATUS, whc_event_wifi_ft_status},
+#endif
 #ifdef CONFIG_SUPPLICANT_SME
 	{WHC_API_WIFI_SME_AUTH, whc_event_sme_auth},
 	{WHC_API_WIFI_SME_SET_ASSOCREQ_IE, whc_event_sme_set_assocreq_ie},
@@ -92,9 +95,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_GET_COUNTRY_CODE,	whc_event_wifi_get_countrycode},
 	{WHC_API_WIFI_SET_USR_CFG, whc_event_wifi_set_usr_config},
 
-#ifdef CONFIG_MP_INCLUDED
-	{WHC_API_WIFI_MP_CMD,	whc_event_mp_cmd},
-#endif
 };
 
 void whc_send_api_ret_value(u32 api_id, u8 *pbuf, u32 len)
@@ -200,6 +200,16 @@ void whc_event_get_eap_phase(u32 api_id, u32 *param_buf)
 	ret = wifi_get_eap_phase(NULL);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
+
+#ifdef CONFIG_IEEE80211R
+void whc_event_wifi_ft_status(u32 api_id, u32 *param_buf)
+{
+	struct rtw_kvr_param_t *kvr_param = (struct rtw_kvr_param_t *)param_buf;
+	u16 status = *(u16 *)((u8 *)param_buf + sizeof(struct rtw_kvr_param_t));
+	int ret = wifi_ft_status_indicate(kvr_param, status);
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
+}
+#endif
 
 void whc_event_get_scan_res(u32 api_id, u32 *param_buf)
 {
@@ -846,23 +856,6 @@ void whc_event_wtn_cmd(u32 api_id, u32 *param_buf)
 }
 #endif
 
-#ifdef CONFIG_MP_INCLUDED
-void whc_event_mp_cmd(u32 api_id, u32 *param_buf)
-{
-	char *outbuf;
-	int show_msg = (int)param_buf[0], buf_size = WHC_MP_MSG_BUF_SIZE;
-	char *cmd = (char *)(param_buf + 2);
-
-	outbuf = (char *)rtos_mem_malloc(buf_size);
-	if (outbuf == NULL) {
-		RTK_LOGE(TAG_WLAN_INIC, "Fail to allocate outbuf!\n\r");
-	}
-
-	wext_private_command(cmd, show_msg, outbuf);
-	whc_send_api_ret_value(api_id, (u8 *)outbuf, buf_size);
-	rtos_mem_free(outbuf);
-}
-#endif
 
 #ifdef CONFIG_P2P
 void whc_event_p2p_role(u32 api_id, u32 *param_buf)

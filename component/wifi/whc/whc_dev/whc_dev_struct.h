@@ -7,52 +7,16 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 
-#ifndef __WHC_DEV_MEM_H__
-#define __WHC_DEV_MEM_H__
+#ifndef __WHC_DEV_STRUCT_H__
+#define __WHC_DEV_STRUCT_H__
 
 #if defined(CONFIG_WHC_INTF_SDIO)
 #include "spdio_api.h"
-#ifndef CONFIG_FULLMAC
 #include "ameba_inic.h"
 #endif
-#endif
+#include "whc_def.h"
+
 /* -------------------------------- Includes -------------------------------- */
-
-/* remove after rom freeze */
-#ifndef CONFIG_BUILD_ROM
-#include "bt_inic_defs.h"
-
-enum WHC_WIFI_CTRL_TYPE {
-	WHC_WIFI_EVT_XIMT_PKTS = 0xa5a5a500,
-	WHC_WIFI_EVT_RECV_PKTS,
-	WHC_WIFI_EVT_API_CALL,
-	WHC_WIFI_EVT_API_RETURN,
-	WHC_WIFI_EVT_CMD,
-	WHC_WIFI_EVT_FLOWCTRL,
-	WHC_WIFI_EVT_MAX,
-	WHC_CUST_EVT, /* the ID to transmit data for the customer. */
-
-	WHC_BT_EVT_BASE = WHC_BT_ID_BASE,
-	WHC_BT_EVT_MAX = WHC_BT_ID_BASE + 0x1000000
-};
-#endif
-
-struct whc_api_info {
-	u32	event;
-	u32	api_id;
-};
-
-/* the header for customer to send or receive the data between host and device. */
-struct whc_cust_hdr {
-	u32	event;
-	u32	len;
-};
-
-struct whc_cmd_path_hdr {
-	u32	event;
-	u32	len;
-};
-
 struct whc_buf_info {
 	u32 buf_allocated; //The spdio buffer allocated address
 	u16 size_allocated; //The actual allocated size
@@ -72,18 +36,8 @@ struct whc_txbuf_info_t {
 };
 
 struct whc_msg_node {
-	struct list_head		list;
-	void	*msg;
-};
-
-struct whc_msg_info {
-	u32	event;
-	u8	wlan_idx: 2;
-	u8	flow_ctrl_en: 1;
-	u8	rsvd1 : 5;
-	u8	rsvd2[3];
-	u32	data_len;
-	u32	pad_len;
+	struct list_head	list;
+	void				*msg;
 };
 
 #define SPI_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32
@@ -99,4 +53,5 @@ struct whc_msg_info {
 /* uart as flow controller when rx */
 #define UART_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), WHC_UART_RX_BURST_SIZE)
 
-#endif /* __INIC_SDIO_H__ */
+#endif /* __WHC_DEV_STRUCT_H__ */
+

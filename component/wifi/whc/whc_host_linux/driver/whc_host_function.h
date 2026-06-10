@@ -19,9 +19,8 @@ int whc_host_set_user_config(struct wifi_user_conf *pwifi_usrcfg);
 void whc_host_wifi_on(void);
 int whc_host_scan(struct rtw_scan_param *scan_param, u32 ssid_len, u8 block);
 int whc_host_scan_abort(void);
-int whc_host_event_connect(struct rtw_network_info *connect_param, unsigned char block);
+int whc_host_connect(struct rtw_network_info *connect_param, unsigned char block);
 int whc_host_event_disconnect(u16 reason_code);
-int whc_host_wifi_get_join_status(void);
 int whc_host_set_channel(u32 wlan_idx, u8 ch);
 int whc_host_init(void);
 void whc_host_deinit(void);
@@ -42,7 +41,6 @@ int whc_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_addr);
 int whc_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_phy_stats *stats);
 int whc_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_phy);
 int whc_host_set_lps_enable(u8 enable);
-int whc_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr);
 int whc_host_iwpriv_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf);
 int whc_host_set_mac_addr(u32 wlan_idx, u8 *addr);
 int rtw_ndev_alloc(void);
@@ -68,7 +66,7 @@ void rtw_ethtool_ops_init(void);
 #ifdef CONFIG_NAN
 void whc_host_nan_init(void);
 void whc_host_nan_handle_sdf(u8 type, u8 inst_id, u8 peer_inst_id, u8 *addr, u32 info_len, u8 *info, u64 cookie);
-void whc_host_nan_func_free(u64 os_dep_data);
+u8 whc_host_nan_func_free(u32 *param_buf);
 int whc_host_init_nan(void);
 int whc_host_deinit_nan(void);
 int whc_host_start_nan(u8 master_pref, u8 band_support);
@@ -117,22 +115,27 @@ int whc_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status);
 void *rtw_malloc(size_t size, dma_addr_t *paddr);
 void rtw_mfree(size_t size, void *vaddr, dma_addr_t paddr);
 
+int whc_host_send_scan_abort(void);
+int whc_host_send_scan(struct rtw_scan_param *scan_param, u32 ssid_length);
+int whc_host_send_connect(struct rtw_network_info *connect_param);
+
 /* trx, message related function */
 #ifdef CONFIG_WHC_HCI_IPC
 int whc_ipc_host_msg_q_init(struct device *pdev, void (*task_hdl)(u8 event_num, u32 msg_addr, u8 wlan_idx));
 int whc_ipc_host_msg_enqueue(struct whc_ipc_ex_msg *p_ipc_msg);
 void whc_ipc_host_msg_q_deinit(void);
 void whc_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg);
-void whc_ipc_host_recv_task_from_msg(u8 event_num, u32 msg_addr, u8 wlan_idx);
+void whc_ipc_host_recv_task_hdl(u8 event_num, u32 msg_addr, u8 wlan_idx);
 void whc_host_event_task(struct work_struct *data);
 int whc_host_xmit_init(void);
 void whc_host_xmit_deinit(void);
-void whc_ipc_host_recv_task_from_msg_recv_pkts(int idx_wlan, struct dev_sk_buff *skb);
+void whc_ipc_host_recv_pkts(int idx_wlan, struct dev_sk_buff *skb);
 int whc_host_xmit_entry(int idx, struct sk_buff *pskb);
 void whc_ipc_host_xmit_done(int idx_wlan);
 int whc_host_event_init(struct whc_device *idev);
 void whc_host_event_deinit(void);
 int whc_ipc_host_send_msg(u32 id, u32 *param_buf, u32 buf_len);
+int whc_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr);
 
 #else
 void whc_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb);

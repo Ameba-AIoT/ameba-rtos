@@ -39,6 +39,38 @@ else()
     )
 endif()
 
+# Read-only littlefs ROM image: build a blob = 32B PATTERN_ROLFS IMAGE_HEADER +
+# littlefs payload, and append it to the (already fw_pack'd) app image, BEFORE
+# compression / OTA prepend, so it is carried inside both app.bin and ota_all.bin
+# and lands within the app OTA slot. The blob is packed tightly right after the
+# app (32B aligned, no 4KB waste); the runtime VFS scans for the header in 32B
+# steps and mounts the payload that follows it read-only at "rolfs:".
+# The content directory is owned by the application, which registers it via
+# ameba_add_rolfs_content() (forwarded here as ROLFS_CONTENT_DIR). When set and it
+# exists, it is packed by the generic vfs.py image builder with --rolfs-header,
+# which appends the PATTERN_ROLFS IMAGE_HEADER the runtime scanner looks for.
+if(CONFIG_LITTLEFS_WITHIN_APP_IMG AND ROLFS_CONTENT_DIR AND EXISTS ${ROLFS_CONTENT_DIR})
+    set(rolfs_blob_path ${c_IMAGE_OUTPUT_DIR}/littlefs_rolfs.bin)
+    ameba_execute_process(
+        COMMAND python ${c_BASEDIR}/tools/image_scripts/vfs.py
+            -t LITTLEFS
+            --rolfs-header
+            -dir ${ROLFS_CONTENT_DIR}
+            -out ${rolfs_blob_path}
+    )
+    ameba_modify_file_path(${app_full_path} app_rolfs_tmp_full_path p_SUFFIX _rolfs_tmp)
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E rename ${app_full_path} ${app_rolfs_tmp_full_path}
+    )
+    ameba_axf2bin_pad(${app_rolfs_tmp_full_path} 32)  #32B-align the header, matches the runtime scan step
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E cat ${app_rolfs_tmp_full_path} ${rolfs_blob_path}
+        OUTPUT_FILE ${app_full_path}
+    )
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E remove ${app_rolfs_tmp_full_path})
+    message("========== ROLFS littlefs blob appended to app image ==========")
+endif()
+
 if(CONFIG_FATFS_WITHIN_APP_IMG)
     if(EXISTS ${c_SOC_PROJECT_DIR}/fatfs.bin)
         ameba_execute_process(

@@ -70,6 +70,8 @@ add_custom_command(
           --build-dir ${c_SDK_LIB_APPLICATION_DIR}
           --core ${c_MCU_PROJECT_NAME}
           --cross ${CROSS_COMPILE}
+          # IMG2 on PSRAM: remap every placement class to .text so it lands in PSRAM
+          "$<$<BOOL:${CONFIG_IMG2_PSRAM}>:--remap=.flash.only.text=.text,.sram.only.text=.text>"
   COMMENT "build img2 linkerscript + apply section placements"
 )
 

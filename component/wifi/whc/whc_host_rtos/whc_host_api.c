@@ -136,7 +136,7 @@ void whc_host_api_lwip_info_handler(u32 api_id, u32 *param_buf)
 		ret = lwip_is_valid_ip(index, input);
 		break;
 	case WHC_WLAN_GET_IPV6_ENABLED:
-		ret = LWIP_IPV6;
+		ret = lwip_get_ipv6_enabled();
 		break;
 	}
 	if (addr != 0) {

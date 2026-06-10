@@ -25,7 +25,7 @@ ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
 ccflags-$(CONFIG_IEEE80211R) += -DCONFIG_IEEE80211R
 ccflags-$(CONFIG_SUPPLICANT_SME) += -DCONFIG_SUPPLICANT_SME
-ccflags-$(CONFIG_WHC_HCI_IPC) += -DCONFIG_FULLMAC
+ccflags-$(CONFIG_WHC_HCI_IPC) += -DCONFIG_WHC_HOST_LINUX
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/driver/include
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/driver/intf
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/api
@@ -39,25 +39,27 @@ ccflags-$(CONFIG_WHC_HCI_IPC) += -DCONFIG_WHC_HCI_IPC
 ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
 
 obj-$(CONFIG_WIFI_RTK_CFG80211_FULLMAC)	+= whc-ipc.o
-whc-ipc-objs			:= ./driver/whc_host_wiphy.o \
+whc-ipc-objs			:= ./driver/netdev/whc_host_wiphy.o \
 					./driver/whc_host_regd.o \
 					./driver/netdev/whc_host_ethtool_ops.o \
 					./driver/netdev/whc_host_netdev_ops.o \
-					./driver/whc_host_netdev_ops_p2p.o \
+					./driver/netdev/whc_host_netdev_ops_p2p.o \
 					./driver/whc_host_cfgvendor.o \
 					./driver/whc_host_proc.o \
-					./driver/whc_host_ops.o \
-					./driver/whc_host_ops_ap.o \
-					./driver/whc_host_ops_key.o \
-					./driver/whc_host_ops_nan.o \
-					./driver/whc_host_ops_p2p.o \
+					./driver/netdev/whc_host_ops_sta.o \
+					./driver/whc_host_event_hdl.o \
+					./driver/netdev/whc_host_ops_ap.o \
+					./driver/netdev/whc_host_ops_key.o \
+					./driver/netdev/whc_host_ops_nan.o \
+					./driver/netdev/whc_host_ops_p2p.o \
 					./driver/whc_host_acs.o \
 					./driver/whc_host_promisc.o \
 					./driver/whc_host_ft.o \
 					./driver/ipc/whc_ipc_host_probe.o \
+					./driver/netdev/whc_host_ops.o \
 					./driver/ipc/whc_ipc_host_hci.o \
-					./driver/ipc/whc_ipc_host_ops.o \
-					./driver/ipc/whc_ipc_host_event.o \
+					./driver/ipc/whc_ipc_host_event_tx.o \
+					./driver/ipc/whc_ipc_host_event_rx.o \
 					./driver/ipc/whc_ipc_host_recv.o \
 					./driver/ipc/whc_ipc_host_xmit.o \
 					./driver/ipc/whc_ipc_host_msg.o \

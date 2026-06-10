@@ -194,7 +194,7 @@ static void shell_task_ram(void *Data)
 		shell_loguartRx_dispatch();
 
 		if (shell_ctl.ExecuteCmd) {
-#if ((defined CONFIG_SUPPORT_ATCMD) && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)) || (defined CONFIG_ARM_CORE_CM4)
+#if (defined CONFIG_SUPPORT_ATCMD) && ((defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE) || (defined CONFIG_ARM_CORE_CM4))
 			ret = atcmd_service((char *)pUartLogBuf->UARTLogBuf);
 
 #ifdef CONFIG_MP_INCLUDED

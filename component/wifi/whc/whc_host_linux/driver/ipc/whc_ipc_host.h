@@ -8,14 +8,15 @@
 * Copyright (C) 2023, Realtek Corporation. All rights reserved.
 */
 
-#ifndef __RTW_LLHW_EVENT_H__
-#define __RTW_LLHW_EVENT_H__
+#ifndef __RTW_LLHW_OPS_H__
+#define __RTW_LLHW_OPS_H__
 
-/**
- * @brief  The enumeration is join block param.
- */
-struct internal_block_param {
-	struct completion	sema;
+struct axi_drv_priv {
+	struct platform_driver rtw_axi_drv;
+	int drv_registered;
 };
 
-#endif //__RTW_LLHW_EVENT_H__
+#define SIZE_RX_DESC 0
+#define SIZE_TX_DESC 0
+
+#endif /* __RTW_LLHW_OPS_H__ */

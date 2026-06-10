@@ -70,5 +70,5 @@ SECTIONS
 
 /* Calculate remaining space for secure heap */
 __image3_ram_start__ = ORIGIN(RAM_IMAGE3_TZ) - IMAGE_HEADER_LEN;
-__image3_ram_end__ = __image3_ram_start__ + LENGTH(RAM_IMAGE3_TZ);
+__image3_ram_end__ = __image3_ram_start__ + LENGTH(RAM_IMAGE3_TZ) + IMAGE_HEADER_LEN;
 __image3_heap_size__ = __image3_ram_end__ - __image3_heap_start__;
