@@ -49,14 +49,11 @@ __attribute__((noinline)) void BOOT_NsStart(u32 Addr)
 	_memset((void *)stack_top, 0, stack_mid - stack_top);
 	DCache_CleanInvalidate(stack_top, stack_mid - stack_top);
 
-#ifndef CONFIG_TRUSTZONE
 	FuncPtr pFunc = (FuncPtr)Addr;
 	pFunc();
-#endif
 
-	/* jump to ns world */
-	nsfunc *fp = cmse_nsfptr_create(Addr);
-	fp();
+	/* avoid compiler to pop stack when exit BOOT_NsStart */
+	while (1);
 }
 
 /* open some always on functions in this function */
@@ -332,7 +329,12 @@ void BOOT_WakeFromPG(void)
 	/* Start non-secure state software application */
 	//RTK_LOGI(TAG, "Start NonSecure @ 0x%lx ...\r\n", NonSecure_ResetHandler);
 	//RTK_LOGI(TAG, "Cache Enable:%lx\r\n", DCache_IsEnabled());
+#ifndef CONFIG_TRUSTZONE
 	BOOT_NsStart(vector_table[1]);
+#else
+	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__ram_image3_start__;
+	BOOT_NsStart((u32)Image3EntryFun->RamWakeupFun);
+#endif
 
 	return;
 }
@@ -771,7 +773,13 @@ void BOOT_Image1(void)
 	/* Start non-secure state software application */
 	RTK_LOGI(TAG, "Start IMG2 @ 0x%lx ...\r\n", vector_table[1]);
 
+#ifndef CONFIG_TRUSTZONE
 	BOOT_NsStart(vector_table[1]);
+#else
+	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__ram_image3_start__;
+	RTK_LOGI(TAG, "Start TFM @ 0x%lx ...\r\n", (u32)Image3EntryFun->RamStartFun);
+	BOOT_NsStart((u32)Image3EntryFun->RamStartFun);
+#endif
 
 	return;
 }

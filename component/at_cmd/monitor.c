@@ -21,7 +21,7 @@ extern u8 __atcmd_table_end__[];
 
 void cmd_dump_help(void)
 {
-	RTK_LOGI(TAG, "DW <HexAddr> [Length] [b]\n"
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DW <HexAddr> [Length] [b]\n"
 			 "\t\t Dump memory/hardware register (Address in hex):\n"
 			 "\t\t DW <hex_addr>         : Dump one word (4 bytes)\n"
 			 "\t\t DW <hex_addr> <len>   : Dump <len> words\n"
@@ -31,7 +31,7 @@ void cmd_dump_help(void)
 
 void cmd_write_help(void)
 {
-	RTK_LOGI(TAG, "EW <HexAddr> <HexValue>\n"
+	RTK_LOGS(TAG, RTK_LOG_INFO, "EW <HexAddr> <HexValue>\n"
 			 "\t\t Write one dword to memory or hardware register\n"
 			 "\t\t Example: EW 60001000 AABB1122\n"
 			);
@@ -39,7 +39,7 @@ void cmd_write_help(void)
 
 void cmd_reboot_help(void)
 {
-	RTK_LOGI(TAG, "REBOOT \n"
+	RTK_LOGS(TAG, RTK_LOG_INFO, "REBOOT \n"
 			 "\t\t <item, string> : \n"
 			 "\t\t item: uartburn or N/A \n"
 			 "\t\t \n"
@@ -48,7 +48,7 @@ void cmd_reboot_help(void)
 
 void cmd_efuse_help(void)
 {
-	RTK_LOGI(TAG, "EFUSE \n"
+	RTK_LOGS(TAG, RTK_LOG_INFO, "EFUSE \n"
 			 "\t\t wmap addr(hex) len(hex) data(hex)\n"
 			 "\t\t rmap \n"
 			 "\t\t <wmap 0x00 0x2 8195> efuse[0]=0x81, efuse [1]=0x95\n"
@@ -58,7 +58,7 @@ void cmd_efuse_help(void)
 
 void cmd_tickps_help(void)
 {
-	RTK_LOGI(TAG, "TICKPS \n"
+	RTK_LOGS(TAG, RTK_LOG_INFO, "TICKPS \n"
 			 "\t\t r: release os wakelock \n"
 			 "\t\t a: acquire os wakelock \n"
 			);
@@ -267,7 +267,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		}
 
 		if (OTP_LogicalRead(EfuseBuf, Addr, Len) == RTK_FAIL) {
-			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "EFUSE_LogicalMap_Read fail \n");
 			ret = FALSE;
 			goto exit;
 		}
@@ -276,16 +276,16 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 			if (i % 16 == 0) {
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rEFUSE[%03x]:", index);
 			}
-			RTK_LOGI(NOTAG, " %02x", EfuseBuf[i]);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, " %02x", EfuseBuf[i]);
 		}
-		RTK_LOGI(NOTAG, "\n\r");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r");
 	}
 
 	/* efuse wmap 0x0 2 2187 */
 	/* efuse wmap 0x18 4 01020304 */
 	if (_strcmp((const char *)argv[0], "wmap") == 0) {
 		if (argc < 4) {
-			RTK_LOGE(TAG, "Invalid argc. \n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid argc. \n");
 			ret = FALSE;
 			goto exit;
 		}
@@ -304,7 +304,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		}
 
 		if (Cnt != Len) {
-			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Oops: write lenth not match input string lentg, choose smaller one\n");
 			Len = (Cnt < Len) ? Cnt : Len;
 		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "efuse wmap write len:%u, string len:%u\n", Len, Cnt << 1);
@@ -314,7 +314,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		}
 
 		if (OTP_LogicalWrite(Addr, Len, (u8 *)EfuseBuf) == RTK_FAIL) {
-			RTK_LOGE(TAG, "EFUSE_LogicalMap_Read fail \n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "EFUSE_LogicalMap_Read fail \n");
 			ret = FALSE;
 			goto exit;
 		}
@@ -332,7 +332,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 
 		for (index = Addr; index < Addr + Len; index++) {
 			if (OTP_Read8(index, EfuseBuf + index) == RTK_FAIL) {
-				RTK_LOGE(TAG, "OTP_Read8 fail \n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP_Read8 fail \n");
 				ret = FALSE;
 				goto exit;
 			}
@@ -342,9 +342,9 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 			if (i % 16 == 0) {
 				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rRawMap[%03x]:", index);
 			}
-			RTK_LOGI(NOTAG, " %02x", EfuseBuf[index]);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, " %02x", EfuseBuf[index]);
 		}
-		RTK_LOGI(NOTAG, "\n\r");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r");
 	}
 
 	/* efuse wraw 0xA0 1 aa */
@@ -352,7 +352,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 	/* efuse wraw 0xA0 4 aabbccdd */
 	if (_strcmp((const char *)argv[0], "wraw") == 0) {
 		if (argc < 4) {
-			RTK_LOGE(TAG, "Invalid argc. \n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid argc. \n");
 			ret = FALSE;
 			goto exit;
 		}
@@ -371,7 +371,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		}
 
 		if (Cnt != Len) {
-			RTK_LOGW(TAG, "Oops: write lenth not match input string lentg, choose smaller one\n");
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Oops: write lenth not match input string lentg, choose smaller one\n");
 			Len = (Cnt < Len) ? Cnt : Len;
 		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "efuse wraw write len:%u, string len:%u\n", Len, Cnt << 1);
@@ -383,7 +383,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		for (index = 0; index < Len; index++) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "wraw: %x %x \n", Addr + index, EfuseBuf[index]);
 			if (OTP_Write8((Addr + index), EfuseBuf[index]) == RTK_FAIL) {
-				RTK_LOGE(TAG, "OTP_Write8 fail \n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP_Write8 fail \n");
 				ret = FALSE;
 				goto exit;
 			}
@@ -399,7 +399,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		if (index == 0x8730) {
 			OTP_SetCRC();
 		} else {
-			RTK_LOGE(TAG, "Careful, Only 4 CRC entry. CMD is efuse SETCRC 0x8730\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Careful, Only 4 CRC entry. CMD is efuse SETCRC 0x8730\n");
 		}
 	}
 

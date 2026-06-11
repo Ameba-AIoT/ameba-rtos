@@ -9,7 +9,7 @@
 #include "os_wrapper_specific.h"
 
 static const char *const TAG = "FLASH";
-uint32_t PrevIrqStatus;
+static uint32_t PrevIrqStatus = 0;
 
 #define WRITE_SYNC_CLEAR   0
 #define WRITE_SYNC_LOCK    1
@@ -29,7 +29,6 @@ void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 	(void) IrqStatus;
 	(void) ChanNum;
 
-	__disable_irq();
 
 	PIPC_MSG_STRUCT ipc_msg = (PIPC_MSG_STRUCT)ipc_get_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ);
 	u8 *pflag = (u8 *)ipc_msg->msg;
@@ -69,7 +68,6 @@ void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 	}
 	DCache_Clean((u32)pflag, sizeof(pflag));
 
-	__enable_irq();
 }
 
 IPC_TABLE_DATA_SECTION
@@ -334,12 +332,12 @@ int FLASH_WriteStream(u32 address, u32 len, u8 *pbuf)
 	u32 size = addr_end - addr_begin;
 
 	if (len == 0) {
-		RTK_LOGW(NOTAG, "function %s, data length is invalid (0) \r\n", __func__);
+		RTK_LOGS(NOTAG, RTK_LOG_WARN, "function %s, data length is invalid (0) \r\n", __func__);
 		goto exit;
 	}
 
 	if (IS_FLASH_ADDR((u32)pbuf)) {
-		RTK_LOGE(NOTAG, "function %s, source address(%08x) can not be flash address\r\n", __func__, pbuf);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "function %s, source address(%08x) can not be flash address\r\n", __func__, pbuf);
 		assert_param(0);
 	}
 

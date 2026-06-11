@@ -104,14 +104,10 @@ void rtk_assert_printf(const char *fmt, ...)
 }
 
 __attribute__((optimize("O0")))
-void vAssertCalled(const char *pcFile, uint32_t ulLine)
+void vAssertCalled(const char *pcInfo, uint32_t ulLine)
 {
 	__rtos_critical_enter_os();
-#if defined(CONFIG_ASSERTION_ENABLE)
-	rtk_assert_printf("Assert Error! %s:%u\r\n", pcFile, ulLine);
-#elif defined(CONFIG_ASSERTION_SILENT) && CONFIG_ASSERTION_SILENT
-	rtk_assert_printf("Assert Error!\r\n");
-#endif
+	rtk_assert_printf("Assert Error! %s:%u\r\n", pcInfo, ulLine);
 
 #if (defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)) && defined(CONFIG_UNITY_TEST)
 	__rtos_critical_exit_os();

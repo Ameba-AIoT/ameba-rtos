@@ -333,8 +333,7 @@ void AUDIO_CODEC_EnableDACFifo(u32 newstate)
 static u32 AUDIO_CODEC_GetAdFifoEnBitForCh(u32 ad_chn)
 {
 	u32 en_bit = 0;
-	switch (ad_chn)
-	{
+	switch (ad_chn) {
 	case ADCHN1:
 		en_bit = AUD_BIT_AD_0_FIFO_EN;
 		break;
@@ -552,8 +551,7 @@ void AUDIO_CODEC_SetLDOMode(u32 powermode)
 static u32 AUDIO_CODEC_GetAdEnBitForCh(u32 ad_chn)
 {
 	u32 en_bit = 0;
-	switch (ad_chn)
-	{
+	switch (ad_chn) {
 	case ADCHN1:
 		en_bit = AUD_BIT_AD_0_EN;
 		break;
@@ -1057,7 +1055,7 @@ void AUDIO_CODEC_SetMicBstChnMute(u32 amic_sel, u32 type, u32 newstate)
 		} else {
 			AUD->AUD_MICBST_CTL1 &= ~AUD_BIT_MICBST3_MUTE;
 			if (type == LINEIN) {
-				RTK_LOGW(TAG, "AMIC3 NOT SUPPORT LINEIN MODE\n");
+				RTK_LOGS(TAG, RTK_LOG_WARN, "AMIC3 NOT SUPPORT LINEIN MODE\n");
 				return;
 			}
 		}

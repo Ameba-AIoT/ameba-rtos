@@ -11,6 +11,7 @@
 #include "log.h"
 
 int DiagPrintf(const char *fmt, ...);
+int DiagPrintfNano(const char *fmt, ...);
 
 /*
  * The log output macros print output to the console. These macros produce
@@ -18,9 +19,11 @@ int DiagPrintf(const char *fmt, ...);
  * make command line) is greater or equal than the level required for that
  * type of log output.
  *
- * The format expected is the same as for DiagPrintf(). For example:
- * INFO("Info %s.\n", "message")    -> INFO:    Info message.
- * WARN("Warning %s.\n", "message") -> WARNING: Warning message.
+ * The format expected is the same as for DiagPrintfNano(). Note that only
+ * a subset of format specifiers is supported: %d/%i, %u, %x, %s, %c.
+ * Specifiers %lx, %llx, %zu etc. are NOT supported. For example:
+ * INFO("Info %s.\r\n", "message")    -> INFO:    Info message.
+ * WARN("Warning %s.\r\n", "message") -> WARNING: Warning message.
  */
 
 #define LOG_LEVEL_NONE			U(0)
@@ -58,36 +61,36 @@ int DiagPrintf(const char *fmt, ...);
 #define no_tf_log(fmt, ...)				\
 	do {						\
 		if (false) {				\
-			DiagPrintf(fmt, ##__VA_ARGS__);	\
+			DiagPrintfNano(fmt, ##__VA_ARGS__);	\
 		}					\
 	} while (false)
 
 #if LOG_LEVEL >= LOG_LEVEL_ERROR
-# define ERROR(...)	DiagPrintf(LOG_MARKER_ERROR __VA_ARGS__)
+# define ERROR(...)	DiagPrintfNano(LOG_MARKER_ERROR __VA_ARGS__)
 #else
 # define ERROR(...)	no_tf_log(LOG_MARKER_ERROR __VA_ARGS__)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_NOTICE
-# define NOTICE(...)	DiagPrintf(LOG_MARKER_NOTICE __VA_ARGS__)
+# define NOTICE(...)	DiagPrintfNano(LOG_MARKER_NOTICE __VA_ARGS__)
 #else
 # define NOTICE(...)	no_tf_log(LOG_MARKER_NOTICE __VA_ARGS__)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_WARNING
-# define WARN(...)	DiagPrintf(LOG_MARKER_WARNING __VA_ARGS__)
+# define WARN(...)	DiagPrintfNano(LOG_MARKER_WARNING __VA_ARGS__)
 #else
 # define WARN(...)	no_tf_log(LOG_MARKER_WARNING __VA_ARGS__)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_INFO
-# define INFO(...)	DiagPrintf(LOG_MARKER_INFO __VA_ARGS__)
+# define INFO(...)	DiagPrintfNano(LOG_MARKER_INFO __VA_ARGS__)
 #else
 # define INFO(...)	no_tf_log(LOG_MARKER_INFO __VA_ARGS__)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_VERBOSE
-# define VERBOSE(...)	DiagPrintf(LOG_MARKER_VERBOSE __VA_ARGS__)
+# define VERBOSE(...)	DiagPrintfNano(LOG_MARKER_VERBOSE __VA_ARGS__)
 #else
 # define VERBOSE(...)	no_tf_log(LOG_MARKER_VERBOSE __VA_ARGS__)
 #endif
@@ -99,7 +102,7 @@ int DiagPrintf(const char *fmt, ...);
 
 
 #define assert(e)	if((e) == 0) { \
-					DiagPrintf("assert err! file: %s, line: %d\n", __FILE__, __LINE__); \
+					DiagPrintfNano("assert err! file: %s, line: %d\r\n", __FILE__, __LINE__); \
 					while(1);	\
 				}
 

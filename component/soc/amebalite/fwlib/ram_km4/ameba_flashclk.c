@@ -292,6 +292,7 @@ int flash_rx_mode_switch(u8 read_mode)
 
 void flash_highspeed_setup(void)
 {
+	uint32_t irq_status;
 	u8 read_mode, flash_speed;
 	u8 spic_ckd;
 	u32 pllm_clk = PLL_ClkGet(CLK_CPU_MPLL);
@@ -305,7 +306,7 @@ void flash_highspeed_setup(void)
 	RTK_LOGI(TAG, "FLASH CLK: %d Hz\n", pllm_clk / (2 * (flash_speed + 1)));
 
 
-	__disable_irq();
+	irq_status = irq_disable_save();
 
 	/* SPIC stay in BUSY state when there are more than 0x1_0000 cycles between two input data.
 	 * Disable DREIR to avoid that interrupt hanler time is lager than 0x1_0000 SPIC cycles.
@@ -337,6 +338,5 @@ void flash_highspeed_setup(void)
 		flash_handshake_highspeed(flash_speed);
 	}
 
-	__enable_irq();
+	irq_enable_restore(irq_status);
 }
-

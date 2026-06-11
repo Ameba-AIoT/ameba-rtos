@@ -543,7 +543,7 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 		whc_host_set_gen_ie(wlan_idx, (u8 *)target_ptr, ((u16)target_ptr->datalen + 2), P2PWPS_ASSOC_REQ_IE);
 	}
 #endif
-
+	global_idev.mlme_priv.b_in_linking = true;
 	ret = whc_host_connect(connect_param, 0);
 	if (ret < 0) {
 		/* KM4 connect failed */

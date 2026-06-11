@@ -76,3 +76,9 @@ void PMC_ENTRY SOCPS_MPUReFillEntry(struct CPU_BackUp_TypeDef *bk, MPU_Type *mpu
 {
 	SOCPS_MPUReFill(bk, mpu);
 }
+
+PMC_ENTRY_SECTION
+void PMC_ENTRY SOCPS_PeriRestoreEntry(void)
+{
+	SOCPS_PeriRestore();
+}
