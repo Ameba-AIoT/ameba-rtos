@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 1. In this case, AES ECB will be used to calculate the encryption and decryption of 32 bytes plaintext.

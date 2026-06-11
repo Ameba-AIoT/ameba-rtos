@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../README.md).
+
 # CA32 Trustzone Example Description
 
 This example demonstrates how to invoke secure world services from the non-secure world on the CA32 (ARM Cortex-A32) processor.
