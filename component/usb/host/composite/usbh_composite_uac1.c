@@ -2234,7 +2234,7 @@ int usbh_composite_uac_init(usbh_composite_host_t *driver, usbh_composite_uac_us
 	}
 
 #if USBH_COMPOSITE_HID_UAC_DEBUG
-	if (rtos_task_create(&(uac->dump_status_task), ((const char *)"usbh_uac_status_dump_thread"), usbh_composite_uac_status_dump_thread, NULL, 768,
+	if (rtos_task_create(&(uac->dump_status_task), ((const char *)"usbh_composite_uac_status_dump_thread"), usbh_composite_uac_status_dump_thread, NULL, 768,
 						 1) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dump task create fail\n");
 	}

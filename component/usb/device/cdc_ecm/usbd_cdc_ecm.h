@@ -43,8 +43,8 @@
 /* Number of ping-pong RX buffers used to decouple USB OUT from upper-layer RX. */
 #define USBD_CDC_ECM_RX_BUF_NUM                       2U
 
-/** @} End of Device_CDC_ECM_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_CDC_ECM_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -151,8 +151,8 @@ typedef struct {
 	__IO u8 rx_thread_running;  /**< RX thread loop guard; cleared to 0 to request exit. */
 } usbd_cdc_ecm_dev_t;
 
-/** @} End of Device_CDC_ECM_Types group*/
-/** @} End of USB_Device_Types group*/
+/** @} End of Device_CDC_ECM_Types group */
+/** @} End of USB_Device_Types group */
 
 /* Exported variables --------------------------------------------------------*/
 

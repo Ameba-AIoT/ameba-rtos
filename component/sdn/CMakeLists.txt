@@ -81,6 +81,7 @@ ameba_list_append(private_sources
     bt/le/ble_ll_addr.c
     bt/le/ble_ll_adv.c
     bt/le/ble_ll_ext_adv.c
+    bt/le/ble_ll_periodic_adv.c
     bt/le/ble_ll_phy.c
     bt/le/ble_ll_conn.c
     bt/le/ble_ll_peripheral.c

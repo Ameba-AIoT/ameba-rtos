@@ -195,7 +195,7 @@ static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
 	return HAL_OK;
 }
 
-static void usbh_uac_isoc_test(void *param)
+static void example_usbh_uac_isoc_test(void *param)
 {
 	const unsigned char *usbh_uac_audio_data_handle = usbh_uac_audio_data;
 	const usbh_audio_fmt_t *fmt_info = NULL;
@@ -280,7 +280,7 @@ static void usbh_uac_isoc_test(void *param)
 }
 
 #if USBH_UAC_HOT_PLUG_TEST
-static void usbh_uac_hotplug_thread(void *param)
+static void example_usbh_uac_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -336,14 +336,14 @@ static void example_usbh_uac_thread(void *param)
 	}
 
 #if USBH_UAC_HOT_PLUG_TEST
-	status = rtos_task_create(&hotplug_task, "usbh_uac_hotplug_thread", usbh_uac_hotplug_thread, NULL, 1024U * 2, USBH_UAC_HOTPLUG_THREAD_PRIORITY);
+	status = rtos_task_create(&hotplug_task, "example_usbh_uac_hotplug_thread", example_usbh_uac_hotplug_thread, NULL, 1024U * 2, USBH_UAC_HOTPLUG_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		goto usbh_uac_deinit_exit;
 	}
 #endif
 
 	if (rtos_sema_take(usbh_uac_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-		status = rtos_task_create(&isoc_task, "usbh_uac_isoc_test", usbh_uac_isoc_test, NULL, 1024U * 2, USBH_UAC_ISOC_TEST_THREAD_PRIORITY);
+		status = rtos_task_create(&isoc_task, "example_usbh_uac_isoc_test", example_usbh_uac_isoc_test, NULL, 1024U * 2, USBH_UAC_ISOC_TEST_THREAD_PRIORITY);
 		if (status != RTK_SUCCESS) {
 			goto delete_hotplug_task_exit;
 		}

@@ -26,8 +26,8 @@
  * @{
  */
 
-/** @} End of Host_Composite_Constants group*/
-/** @} End of USB_Host_Constants group*/
+/** @} End of Host_Composite_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 

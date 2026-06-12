@@ -224,7 +224,7 @@
 #define USB_PORT_STAT_C_OVERCURRENT        0x0008 /**< Over-current status has changed. */
 #define USB_PORT_STAT_C_RESET              0x0010 /**< Reset completion has occurred. */
 /** @} */
-/** @} */ // End of Hub_Defs
+/** @} */
 /** @} End of USB_Common_Constants group */
 
 /* Exported macros -----------------------------------------------------------*/

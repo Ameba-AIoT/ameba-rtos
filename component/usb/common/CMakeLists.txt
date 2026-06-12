@@ -47,6 +47,7 @@ ameba_list_append(private_includes
 
 ameba_list_append(private_sources
     usb_hal.c
+    usb_diag.c
     usb_os.c
 )
 

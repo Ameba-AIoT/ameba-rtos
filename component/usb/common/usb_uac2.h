@@ -48,12 +48,12 @@
 #define USB_UAC2_IF_IDX_AS_HEADSET_HEADPHONES       0x01U  /**<UAC Audio Streaming Headphone Interface Index. */
 #define USB_UAC2_IF_IDX_AS_HEADSET_MICROPHONE       0x02U  /**<UAC Audio Streaming Microphone Interface Index. */
 
-// Audio Function Category Codes (UAC2.0 Spec Appendix A.7)
+/* Audio Function Category Codes (UAC2.0 Spec Appendix A.7) */
 #define USB_UAC2_FUNC_CATEGORY_CODE_DESKTOP_UNDEFINED              0x00U  /**<UAC Audio Function Undefined type. */
 #define USB_UAC2_FUNC_CATEGORY_CODE_DESKTOP_SPEAKER                0x01U  /**<UAC Audio Function Speaker. */
 #define USB_UAC2_FUNC_CATEGORY_CODE_DESKTOP_HEADSET                0x04U  /**<UAC Audio Function Headset. */
 
-// Audio Class-Specific Audio Control Interface Descriptor Subtype Codes (UAC2.0 Spec Appendix A.9)
+/* Audio Class-Specific Audio Control Interface Descriptor Subtype Codes (UAC2.0 Spec Appendix A.9) */
 #define USB_UAC2_AC_IF_DESC_SUBTYPE_UNDEFINED                      0x00U  /**<UAC Audio Function Headset. */
 #define USB_UAC2_AC_IF_DESC_SUBTYPE_HEADER                         0x01U  /**<UAC Audio Function Headset. */
 #define USB_UAC2_AC_IF_DESC_SUBTYPE_INPUT_TERMINAL                 0x02U  /**<UAC Audio Function Headset. */
@@ -132,4 +132,4 @@ typedef struct {
 	usb_uac2_freq_t usb_uac2_sub_ranges[];
 } __PACKED usb_uac2_sampling_freq_ctrl_range_t;
 
-#endif // USB_UAC2_H
+#endif /* USB_UAC2_H */

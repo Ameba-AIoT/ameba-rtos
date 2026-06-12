@@ -19,6 +19,12 @@
 #define DEBUG 1
 
 #ifdef CONFIG_NAN
+#define WHC_MAX_NET_PORT_NUM		(3)
+#else
+#define WHC_MAX_NET_PORT_NUM		(2)
+#endif
+
+#ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
 // #define NAN_CUSTOMER_NANDOW
 #endif
@@ -86,6 +92,15 @@
 #include "wifi_api_event.h"
 #include "wifi_intf_drv_to_app_internal.h"
 #include "whc_host_trx.h"
+#ifdef CONFIG_WHCH
+#include "whch_host_80211spec_macro.h"
+#include "whch_host_trx_structs.h"
+#include "whch_host_security.h"
+#include "whch_host_sta_mgt.h"
+#include "whch_host_trx.h"
+#include "whch_host_hal.h"
+#include "whch_host_adapter.h"
+#endif
 #include "ameba_wificfg_common.h"
 
 #ifdef CONFIG_WHC_HCI_IPC
@@ -163,6 +178,24 @@ struct rtw_ieee80211_hdr_3addr {
 	u16				seq_ctl;
 } __attribute__((packed));
 
+struct rtw_ieee80211_hdr {
+	u16				frame_ctl;
+	u16				duration_id;
+	u8				addr1[ETH_ALEN];
+	u8				addr2[ETH_ALEN];
+	u8				addr3[ETH_ALEN];
+	u16				seq_ctl;
+	u8				addr4[ETH_ALEN];
+} __attribute__((packed));
+
+struct ieee80211_snap_hdr {
+	u8    dsap;   /* always 0xAA */
+	u8    ssap;   /* always 0xAA */
+	u8    ctrl;   /* always 0x03 */
+	u8    oui[3];    /* organizational universal id */
+
+} __attribute__((packed));
+
 struct wps_str {
 	u8 wps_probe_ie[258];
 	u16 wps_probe_ielen;
@@ -182,6 +215,12 @@ struct wps_str {
 #define RTW_GET_LE16(a) ((u16) (((a)[1] << 8) | (a)[0]))
 #define RSN_HEADER_LEN 4
 #define RSN_SELECTOR_LEN 4
+
+#define WLAN_HDR_A3_QOS_HTC_LEN	30
+#define WLAN_HDR_A3_QOS_LEN		26
+#define WLAN_HDR_A4_QOS_LEN		32
+#define SNAP_PROTOCOL_ID_SIZE	2
+#define LLC_HEADER_SIZE			6		//!< LLC Header Length
 
 #define MFPR_BIT BIT(0)
 #define MFPC_BIT BIT(1)
@@ -431,5 +470,13 @@ static inline u8 rtw_80211_cipher_suite_to_driver(const u32 _80211_suite)
 	return _NO_PRIVACY_;
 }
 
+static inline int IS_MCAST(unsigned char *da)
+{
+	if ((*da) & 0x01) {
+		return true;
+	} else {
+		return false;
+	}
+}
 
 #endif // _RTW_TOP_HEADER_

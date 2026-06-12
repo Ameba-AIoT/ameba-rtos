@@ -51,4 +51,4 @@ void usbd_composite_deinit(void);
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
 
-#endif // USBD_COMPOSITE_CDC_ACM_MSC_H
+#endif /* USBD_COMPOSITE_CDC_ACM_MSC_H */

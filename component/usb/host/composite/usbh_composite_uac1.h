@@ -258,8 +258,8 @@ typedef struct {
 	__IO u8 ctrl_state;        /**< USB control transfer state machine state (UAC_STATE_CTRL_IDLE, SET_ALT, SET_FREQ, ...) */
 	__IO u8 init_state;        /**< Initialization sequence state (UAC_INIT_OUT_GET_FU -> UAC_INIT_IN_GET_FU -> UAC_INIT_OUT_SET_ITF -> UAC_INIT_DONE) */
 } usbh_composite_uac_t;
-/** @} End of Host_Composite_UAC_Types group*/
-/** @} End of USB_Host_Types group*/
+/** @} End of Host_Composite_UAC_Types group */
+/** @} End of USB_Host_Types group */
 
 /* Exported macros -----------------------------------------------------------*/
 

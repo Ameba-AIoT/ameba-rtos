@@ -74,14 +74,14 @@
 typedef union {
 	u8 bitmap;
 	struct {
-		u8 fid: 1; //FrameID
-		u8 eof: 1; //End of Frame
-		u8 pts: 1; //Presentation Time
-		u8 scr: 1; //Source Clock Reference
-		u8 res: 1; //Payload specific bit
-		u8 sti: 1; //Still Image
-		u8 err: 1; //Error
-		u8 eoh: 1; //End of header
+		u8 fid: 1; /* FrameID */
+		u8 eof: 1; /* End of Frame */
+		u8 pts: 1; /* Presentation Time */
+		u8 scr: 1; /* Source Clock Reference */
+		u8 res: 1; /* Payload specific bit */
+		u8 sti: 1; /* Still Image */
+		u8 err: 1; /* Error */
+		u8 eoh: 1; /* End of header */
 	} b;
 } usbh_uvc_header_bitmap_t;
 

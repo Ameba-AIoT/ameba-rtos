@@ -33,10 +33,10 @@
 #define COMP_HID_ITF_DESC_ITEM_LENGTH_OFFSET		16
 
 /* Mouse buttons */
-#define COMP_HID_MOUSE_BUTTON_LEFT					0x01	// left button. 0: release, 1: press
-#define COMP_HID_MOUSE_BUTTON_RIGHT					0x02	// right button. 0: release, 1: press
-#define COMP_HID_MOUSE_BUTTON_MIDDLE				0x04	// wheel button. 0: release, 1: press
-#define COMP_HID_MOUSE_BUTTON_RESERVED				0xF8	// reserved. all bit should set to 1.
+#define COMP_HID_MOUSE_BUTTON_LEFT					0x01	/* left button. 0: release, 1: press */
+#define COMP_HID_MOUSE_BUTTON_RIGHT					0x02	/* right button. 0: release, 1: press */
+#define COMP_HID_MOUSE_BUTTON_MIDDLE				0x04	/* wheel button. 0: release, 1: press */
+#define COMP_HID_MOUSE_BUTTON_RESERVED				0xF8	/* reserved. all bit should set to 1. */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -86,4 +86,4 @@ int usbd_composite_hid_deinit(void);
  */
 int usbd_composite_hid_send_data(u8 *data, u16 len);
 
-#endif // USBD_COMPOSITE_HID_H
+#endif /* USBD_COMPOSITE_HID_H */

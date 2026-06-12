@@ -540,7 +540,10 @@ extern "C" {
 #define MSP_RAM_LP					0x20005000						/* rom used, can not change, RISC-V kept 16-byte aligned */
 #define MSPLIM_RAM_HP				0x30000600						/* rom used, can not change */
 #define MSP_RAM_HP					0x30001000						/* rom used, can not change */
-#define MSP_RAM_HP_NS				0x20003000
+#define MSPLIM_RAM_HP_NS		(u32)__km4tz_msp_ram_ns_limit__
+#define MSP_RAM_HP_NS			  (u32)__km4tz_msp_ram_ns__
+#define MSPLIM_RAM_NS			  (u32)__km4ns_msp_ram_limit__
+#define MSP_RAM_NS				  (u32)__km4ns_msp_ram__
 
 #define BOOT_LOADER_START			0x30005000						/* rom used, can not change */
 #define BOOT_LOADER_LIMIT			0x30080000						/* rom used, can not change */

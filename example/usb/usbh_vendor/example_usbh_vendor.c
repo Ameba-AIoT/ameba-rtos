@@ -357,7 +357,7 @@ static int vendor_cb_process(usb_host_t *host, u8 msg)
 }
 
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
-static void vendor_hotplug_thread(void *param)
+static void example_usbh_vendor_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -392,14 +392,14 @@ static void vendor_hotplug_thread(void *param)
 }
 #endif
 
-static void vendor_bulk_test_task(void *param)
+static void example_usbh_vendor_bulk_test(void *param)
 {
 	UNUSED(param);
 	vendor_bulk_loopback_test();
 	rtos_task_delete(NULL);
 }
 
-static void vendor_intr_test_task(void *param)
+static void example_usbh_vendor_intr_test(void *param)
 {
 	UNUSED(param);
 	vendor_intr_loopback_test();
@@ -435,7 +435,7 @@ void example_usbh_vendor_thread(void *param)
 	}
 
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
-	status = rtos_task_create(&task, "vendor_hotplug_thread", vendor_hotplug_thread, NULL, 1024U * 2, 6U);
+	status = rtos_task_create(&task, "example_usbh_vendor_hotplug_thread", example_usbh_vendor_hotplug_thread, NULL, 1024U * 2, 6U);
 	if (status != RTK_SUCCESS) {
 		usbh_vendor_deinit();
 		usbh_deinit();
@@ -446,11 +446,11 @@ void example_usbh_vendor_thread(void *param)
 	if (rtos_sema_take(vendor_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 		vendor_isoc_test();
 
-		if (rtos_task_create(&task, "vendor_bulk_test", vendor_bulk_test_task, NULL, 1024U * 2, 5U) != RTK_SUCCESS) {
+		if (rtos_task_create(&task, "example_usbh_vendor_bulk_test", example_usbh_vendor_bulk_test, NULL, 1024U * 2, 5U) != RTK_SUCCESS) {
 			goto error_exit;
 		}
 
-		if (rtos_task_create(&task, "vendor_intr_test", vendor_intr_test_task, NULL, 1024U * 2, 5U) != RTK_SUCCESS) {
+		if (rtos_task_create(&task, "example_usbh_vendor_intr_test", example_usbh_vendor_intr_test, NULL, 1024U * 2, 5U) != RTK_SUCCESS) {
 			goto error_exit;
 		}
 	}

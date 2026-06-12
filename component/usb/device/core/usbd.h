@@ -11,6 +11,7 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
+#include "usb_diag.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -46,8 +47,8 @@
  */
 #define USBD_SOF_INTR                   (BIT0) /**< Start of (micro)Frame Interrupt (GINTSTS.Sof). */
 /** @} */
-/** @} End of Device_Core_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_Core_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -79,7 +80,7 @@ typedef enum {
 	USBD_ATTACH_STATUS_DETACHED = 2U,          /**< Device is detached from the host. */
 } usbd_attach_status_t;
 
-// Forward declarations to resolve circular dependencies.
+/* Forward declarations to resolve circular dependencies. */
 struct _usbd_class_driver_t;
 
 /**
@@ -127,6 +128,8 @@ typedef struct {
 	 * - `USBD_SOF_INTR`: For SOF-based timing synchronization.
 	 */
 	u16 ext_intr_enable;
+	u16 diag_depth;                           /**< Diag ring buffer depth in entries; 0 uses @ref USB_DIAG_DEFAULT_DEPTH. Requires `diag_enable`. */
+	u16 diag_poll_ms;                         /**< Diag task polling interval in ms; 0 uses @ref USB_DIAG_DEFAULT_POLL_MS. Requires `diag_enable`. */
 	u8 isr_priority;                          /**< Priority of the USB interrupt. */
 	/**
 	 * @brief USB device speed mode. See @ref usb_speed_type_t.
@@ -139,6 +142,9 @@ typedef struct {
 #ifdef CONFIG_SUPPORT_USB_SHARED_DFIFO
 	u8 intr_use_ptx_fifo : 1;                     /**< Use Periodic TxFIFO for Interrupt IN transfers (Shared TxFIFO mode only). */
 #endif
+	u8 diag_enable : 1;                           /**< Enable USB diag ring buffer and polling task (0: Disable, 1: Enable).
+                                                      When disabled, error diagnostic information is silently lost.
+                                                      Enable this to capture USB error events for debugging. */
 } usbd_config_t;
 
 /**
@@ -316,8 +322,8 @@ typedef struct _usbd_class_driver_t {
 	 */
 	void (*status_changed)(usb_dev_t *dev, u8 old_status, u8 status);
 } usbd_class_driver_t;
-/** @} End of Device_Core_Types group*/
-/** @} End of USB_Device_Types group*/
+/** @} End of Device_Core_Types group */
+/** @} End of USB_Device_Types group */
 
 /* Exported variables --------------------------------------------------------*/
 
@@ -352,9 +358,9 @@ int usbd_get_status(void);
  * @brief Get USB device bus status.
  * @param[out] status: Return 0 on success, with the status parameter containing USB bus status
  *        represented as a bitwise combination of enumeration values:
- *          - `USB_DEV_BUS_STATUS_DN` = BIT0,       // D- line status bit.
- *          - `USB_DEV_BUS_STATUS_DP` = BIT1,       // D+ line status bit.
- *          - `USB_DEV_BUS_STATUS_SUSPEND` = BIT2,  //Suspend indication bit.
+ *          - `USB_DEV_BUS_STATUS_DN` = BIT0,        D- line status bit.
+ *          - `USB_DEV_BUS_STATUS_DP` = BIT1,        D+ line status bit.
+ *          - `USB_DEV_BUS_STATUS_SUSPEND` = BIT2,  Suspend indication bit.
  * @return 0 on success, non-zero on failure.
  */
 int usbd_get_bus_status(u32 *status);

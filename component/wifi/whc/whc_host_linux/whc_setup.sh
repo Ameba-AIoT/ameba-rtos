@@ -52,8 +52,8 @@ for feat in "$@"; do
 		bt)
 			mf_set CONFIG_BT_INIC
 			if [ "$INTF" == "spi" ]; then
-				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.c ./driver/spi
-				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.h ./driver/spi
+				cp ../../../bluetooth/example/bt_host/linux_driver/spi/rtb_spi.c ./driver/spi
+				cp ../../../bluetooth/example/bt_host/linux_driver/spi/rtb_spi.h ./driver/spi
 			elif [ "$INTF" == "sdio" ]; then
 				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.c ./driver/sdio
 				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.h ./driver/sdio

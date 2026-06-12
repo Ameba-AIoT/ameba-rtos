@@ -46,7 +46,7 @@ extern struct sdn_t g_sdn;
 #define SDN_CLIENT_RX_TASK_SIZE         1024
 
 #define SDN_CLIENT_TX_TASK_PRI          4
-#define SDN_CLIENT_TX_TASK_SIZE         768
+#define SDN_CLIENT_TX_TASK_SIZE         1024
 
 #define BT_HCI_H4_NONE                                          0x00    /* None of the known packet types */
 #define BT_HCI_H4_CMD                                           0x01    /* HCI Command packet */

@@ -135,10 +135,9 @@ void app_start(void)
 	cmse_address_info_t cmse_address_info = cmse_TT((void *)app_start);
 	RTK_LOGI(TAG, "IMG2 SECURE STATE: %d\n", cmse_address_info.flags.secure);
 
-#if defined (CONFIG_TRUSTZONE_EN) && (CONFIG_TRUSTZONE_EN == 1U)
-	/* 6. Load secure image */
-	BOOT_IMG3();
-#endif
+	/* 6. image3 (secure) is now booted from image1 -> image3 -> NS,
+	 *    its bss/SAU/mbedtls init runs in the secure boot stage (BOOT_IMG3),
+	 *    so no NS_ENTRY call is needed here anymore. */
 
 	/* 7.Update CPU clk */
 	SystemCoreClockUpdate();

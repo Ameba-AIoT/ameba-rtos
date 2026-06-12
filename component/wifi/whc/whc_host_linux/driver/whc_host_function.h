@@ -139,6 +139,7 @@ int whc_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_a
 
 #else
 void whc_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb);
+void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len);
 void whc_host_recv_data(void *intf_priv);
 void whc_host_event_task(struct work_struct *data);
 int whc_host_xmit_entry(int idx, struct sk_buff *pskb);

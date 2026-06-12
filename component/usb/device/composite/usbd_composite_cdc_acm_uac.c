@@ -209,7 +209,7 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		} else if (usbd_composite_is_uac_class_request(entityId, req)) {
 			ret = cdev->uac->setup(dev, req);
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid class req\n");
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 0);
 		}
 		break;
 	default:
@@ -401,7 +401,7 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 			break;
 		/* Add customer string here */
 		default:
-			//RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", USB_LOW_BYTE(req->wValue));
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 			break;
 		}
 		break;

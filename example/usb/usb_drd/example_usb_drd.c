@@ -216,7 +216,7 @@ end:
 	}
 }
 
-void usbh_msc_trx_test(void *param)
+void example_usb_drd_msc_trx_test(void *param)
 {
 	FATFS fs;
 	FIL f;
@@ -462,7 +462,7 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "USB host MSC R&W test started\n");
 
-		ret = rtos_task_create(&task, "usbh_msc_rw_test", usbh_msc_trx_test, NULL, USBH_MSC_THREAD_STACK_SIZE, USBH_MSC_RW_THREAD_PRIORITY);
+		ret = rtos_task_create(&task, "example_usb_drd_msc_trx_test", example_usb_drd_msc_trx_test, NULL, USBH_MSC_THREAD_STACK_SIZE, USBH_MSC_RW_THREAD_PRIORITY);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USB host MSC R&W test thread\n");
 		}

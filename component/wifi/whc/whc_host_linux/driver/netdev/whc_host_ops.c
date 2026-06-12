@@ -170,6 +170,12 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 
 	mlme_priv->rtw_join_status = join_status;
 
+	if (join_status >= RTW_JOINSTATUS_ASSOCIATED) {
+		if (global_idev.mlme_priv.b_in_linking) {
+			global_idev.mlme_priv.b_in_linking = false;
+		}
+	}
+
 	/* Merge from wifi_join_status_indicate. */
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 		/* if Synchronous connection, up sema when connect success */
@@ -235,6 +241,18 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 										WLAN_STATUS_SUCCESS, GFP_ATOMIC);
 #endif
 			}
+#ifdef CONFIG_WHCH
+			/* assign some parameters trx use */
+			global_idev.whchpriv.qospriv[wlan_idx].qos_option = join_status_info->qos_option;
+			global_idev.whchpriv.mlmepriv.acm_mask = join_status_info->acm_mask;
+			global_idev.whchpriv.mlmepriv.user_tx_rate = join_status_info->user_tx_rate;
+			global_idev.whchpriv.mlmeinfo[wlan_idx].cur_channel = join_status_info->channel;
+			global_idev.whchpriv.mlmeinfo[wlan_idx].b_preamble_mode = join_status_info->preamble_mode;
+			global_idev.whchpriv.htpriv[wlan_idx].HT_protection = join_status_info->HT_protection;
+			/* update stainfo for trx use */
+			whc_host_sta_update_stainfo(wlan_idx, join_status_info->bssid, &join_status_info->stainfo, &join_status_info->sec_priv);
+#endif
+
 			netif_carrier_on(global_idev.pndev[wlan_idx]);
 			if (wlan_idx == WHC_STA_PORT) {
 				mgmt = (struct ieee80211_mgmt *)mlme_priv->assoc_rsp_ie;
@@ -290,6 +308,9 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 		}
 		if ((wlan_idx == WHC_STA_PORT) && !netif_dormant(global_idev.pndev[wlan_idx])) {
 			netif_dormant_on(global_idev.pndev[wlan_idx]);
+#ifdef CONFIG_WHCH
+			whc_host_sta_free_resource(wlan_idx);
+#endif
 		}
 		netif_carrier_off(global_idev.pndev[wlan_idx]);
 		return;

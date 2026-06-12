@@ -61,8 +61,8 @@
 #define USBH_HID_CONSUMER_MUTE                 0xE2 /**< Mute */
 #define USBH_HID_CONSUMER_PLAY_PAUSE           0xCD /**< Play/Pause */
 #define USBH_HID_CONSUMER_STOP                 0xB7 /**< Stop */
-/** @} End of Host_Composite_HID_Constants group*/
-/** @} End of USB_Host_Constants group*/
+/** @} End of Host_Composite_HID_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 /** @addtogroup USB_Host_Types USB Host Types
@@ -205,8 +205,8 @@ typedef struct {
 	__IO u8 parse_task_exit;                  /**< Flag to indicate signal parse task is exit */
 	__IO u8 hid_ctrl;                         /**< HID control state */
 } usbh_composite_hid_t;
-/** @} End of Host_Composite_HID_Types group*/
-/** @} End of USB_Host_Types group*/
+/** @} End of Host_Composite_HID_Types group */
+/** @} End of USB_Host_Types group */
 
 /* Exported variables --------------------------------------------------------*/
 extern const usbh_class_driver_t usbh_composite_hid_driver;
@@ -241,4 +241,4 @@ int usbh_composite_hid_handle_report_desc(usb_host_t *host);
 /** @} End of Host_Composite_HID_Functions group */
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */
-#endif // USBH_COMPOSITE_HID_H
+#endif /* USBH_COMPOSITE_HID_H */

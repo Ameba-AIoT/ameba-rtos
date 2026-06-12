@@ -72,6 +72,12 @@ extern u8 __retrieve_ap_buffer_size__[];
 /* for trustzone config */
 extern u8 __km4tz_bd_ram_start__[];
 
+extern u32 __km4tz_msp_ram_ns_limit__[];
+extern u32 __km4tz_msp_ram_ns__[];
+
+extern u32 __km4ns_msp_ram_limit__[];
+extern u32 __km4ns_msp_ram__[];
+
 extern u8 __km4tz_bd_psram_start__[];
 extern u8 __non_secure_psram_end__[]; /* if psram is 8MB, than write 0x60800000 will write 0x60000000 */
 
