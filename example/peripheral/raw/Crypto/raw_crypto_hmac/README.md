@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 1. In this case, sha256 hmac will be used to calculate the digital of the message. 

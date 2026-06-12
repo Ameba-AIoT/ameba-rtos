@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 1. This example describes how to use SPI GDMA multi-block continue RX Slave by RAW SPI API.
@@ -44,6 +46,10 @@
 3. We offer another example named "`raw_spi_dma_mblk_tx_mstr`", it can be used as SPI master device to communicate data with this example.
 Refer the README of example `raw_spi_dma_mblk_tx_mstr` to build master image and download into another EVB board.
 4. Reset Slave device first and then Master device.
+
+> **Attention**
+> - For the selected pins, please refer to *ameba_pinmux_rtlxxx.xlsx* to confirm that the corresponding package has these pins available.
+> - If using an Ameba EVB to run this demo, please refer to the *Hardware EVB User Guide* and *Hardware Schematic* to confirm the signals are successfully connected to the EVB pin headers.
 
 # SW configuration
 

@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 1. This example describes how to use SPI read/write by RAW SPI API.
@@ -36,6 +38,10 @@ For example:
   - Connect `SPI0_MISO (_PA_31)` to `SPI1_MISO (_PB_9)`
   - Connect `SPI0_SCLK (_PA_29)` to `SPI1_SCLK (_PB_7)`
   - Connect `SPI0_CS (_PB_0)` to `SPI1_CS (_PB_10)`
+
+> **Attention**
+> - For the selected pins, please refer to *ameba_pinmux_rtlxxx.xlsx* to confirm that the corresponding package has these pins available.
+> - If using an Ameba EVB to run this demo, please refer to the *Hardware EVB User Guide* and *Hardware Schematic* to confirm the signals are successfully connected to the EVB pin headers.
 
 # SW configuration
 
