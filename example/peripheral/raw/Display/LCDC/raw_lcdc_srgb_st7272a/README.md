@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../../README.md).
+
 #  Example Description
 
 This example shows how to use LCDC to drive LCD ST7272A of 8-bit RGB888 mode.

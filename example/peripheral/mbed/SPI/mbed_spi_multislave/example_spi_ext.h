@@ -14,8 +14,8 @@
 #define SPI_IS_AS_MASTER	1
 
 #if defined (CONFIG_AMEBASMART)
-#define SPI_GPIO_CS0 _PA_0
-#define SPI_GPIO_CS1 _PA_1
+#define SPI_GPIO_CS0 _PA_9
+#define SPI_GPIO_CS1 _PA_10
 #if SPI_IS_AS_MASTER
 // SPI1
 #define SPI1_MOSI  _PA_5

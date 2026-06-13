@@ -71,6 +71,9 @@ int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32
 	} else if (port_num == GPIO_PORT_B) {
 		InterruptRegister(GPIO_INTHandler, GPIOB_IRQ, (u32)GPIOB_BASE, 5);
 		InterruptEn(GPIOB_IRQ, 5);
+	} else if (port_num == GPIO_PORT_C) {
+		InterruptRegister(GPIO_INTHandler, GPIOC_IRQ, (u32)GPIOC_BASE, 5);
+		InterruptEn(GPIOC_IRQ, 5);
 	}
 
 	GPIO_UserRegIrq(GPIO_InitStruct.GPIO_Pin, (void *) handler, (void *) id);

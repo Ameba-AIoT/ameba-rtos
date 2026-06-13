@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 This example describes how to use JPEG decoder to decode a JPEG file to YCbCr data in `slice mode` under JPEG decoder standalone mode.

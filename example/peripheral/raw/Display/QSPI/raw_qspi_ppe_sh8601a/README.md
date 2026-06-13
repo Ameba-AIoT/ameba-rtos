@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../../README.md).
+
 #  Example Description
 
 This example shows how to use QSPI to driver LCD SH8601A. It use PPE to write data to LCD.
