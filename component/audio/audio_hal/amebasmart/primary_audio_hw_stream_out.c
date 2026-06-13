@@ -233,8 +233,8 @@ static uint32_t PrimaryGetStreamOutLatency(const struct AudioHwStreamOut *stream
 		// something error happens, using buffer + codec latency.
 		return dma_buf_add_codec_latency_ms;
 	} else if (sport_out_frames == 0) {
-		// not start playing, using codec latency.
-		return (uint32_t)((float)36 * (float)1000 / (float)out->config.rate + 0.5);
+		// not start playing, using buffer + codec latency.
+		return dma_buf_add_codec_latency_ms;
 	} else {
 		// normal play latency.
 		return latency_ms;
