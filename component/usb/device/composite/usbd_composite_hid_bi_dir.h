@@ -80,7 +80,7 @@ typedef struct {
 	u8 *hid_buf;
 
 	u16 buf_array_cnt;
-	u16 hid_mps; //mps
+	u16 hid_mps; /* mps */
 
 	u8 hid_sema_valid;
 	__IO u8 read_wait_sema;
@@ -156,4 +156,4 @@ u32 usbd_composite_hid_get_read_buf_cnt(void);
   * @retval 1 if the ring buf is full, else 0
  */
 u32 usbd_composite_hid_ring_buf_is_full(void);
-#endif // USBD_COMPOSITE_HID_BI_DIR_H
+#endif /* USBD_COMPOSITE_HID_BI_DIR_H */

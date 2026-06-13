@@ -325,7 +325,7 @@ static void hid_send_device_data(void *pdata)
 }
 
 #if CONFIG_USBD_HID_HOTPLUG
-static void hid_hotplug_thread(void *param)
+static void example_usbd_hid_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -398,7 +398,7 @@ static void example_usbd_hid_thread(void *param)
 	}
 
 #if CONFIG_USBD_HID_HOTPLUG
-	ret = rtos_task_create(&task, "hid_hotplug_thread", hid_hotplug_thread, NULL, 1024U, CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_hid_hotplug_thread", example_usbd_hid_hotplug_thread, NULL, 1024U, CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		usbd_hid_deinit();
 		usbd_deinit();

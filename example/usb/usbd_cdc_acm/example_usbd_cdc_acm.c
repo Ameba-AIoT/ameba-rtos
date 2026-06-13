@@ -233,7 +233,8 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		*/
 		cdc_acm_ctrl_line_state = req->wValue;
 		if (cdc_acm_ctrl_line_state & 0x01) {
-			// RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
+			/* VCOM port activate */
+			USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
 #if CONFIG_USBD_CDC_ACM_NOTIFY
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 #endif
@@ -281,7 +282,7 @@ static void cdc_acm_cb_status_changed(u8 old_status, u8 status)
 }
 
 #if CONFIG_USBD_CDC_ACM_HOTPLUG
-static void cdc_acm_hotplug_thread(void *param)
+static void example_usbd_cdc_acm_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -319,7 +320,7 @@ static void cdc_acm_hotplug_thread(void *param)
 #endif // CONFIG_USBD_MSC_CHECK_USB_STATUS
 
 #if CONFIG_USBD_CDC_ACM_ASYNC_XFER
-static void cdc_acm_xfer_thread(void *param)
+static void example_usbd_cdc_acm_xfer_thread(void *param)
 {
 	int ret;
 	u8 *xfer_buf;
@@ -396,7 +397,8 @@ static void example_usbd_cdc_acm_thread(void *param)
 	}
 
 #if CONFIG_USBD_CDC_ACM_HOTPLUG
-	ret = rtos_task_create(&check_task, "cdc_acm_hotplug_thread", cdc_acm_hotplug_thread, NULL, 1024, CONFIG_CDC_ACM_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&check_task, "example_usbd_cdc_acm_hotplug_thread", example_usbd_cdc_acm_hotplug_thread, NULL, 1024,
+						   CONFIG_CDC_ACM_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_check_task_fail;
 	}
@@ -404,7 +406,7 @@ static void example_usbd_cdc_acm_thread(void *param)
 
 #if CONFIG_USBD_CDC_ACM_ASYNC_XFER
 	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&xfer_task, "cdc_acm_xfer_thread", cdc_acm_xfer_thread, NULL, 1024, CONFIG_CDC_ACM_XFER_THREAD_PRIORITY);
+	ret = rtos_task_create(&xfer_task, "example_usbd_cdc_acm_xfer_thread", example_usbd_cdc_acm_xfer_thread, NULL, 1024, CONFIG_CDC_ACM_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_xfer_task_fail;
 	}

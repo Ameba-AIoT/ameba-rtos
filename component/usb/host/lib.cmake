@@ -49,6 +49,7 @@ ameba_list_append(private_includes
 ameba_list_append(private_sources
     ../common/usb_hal.c
     ../common/usb_os.c
+    ../common/usb_diag.c
     ../common/usb_ringbuf.c
     core/usbh.c
     core/usbh_hal.c

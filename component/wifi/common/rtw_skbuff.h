@@ -36,6 +36,16 @@
 #define MAX_SKB_BUF_SIZE	MAX_SKB_BUF_SIZE_NORMAL
 #endif
 
+#ifdef CONFIG_WHCH
+#include "whc_def.h"
+#define WHCH_RX_SKB_RSVD_LEN	N_BYTE_ALIGMENT(8 + sizeof(struct whc_msg_info), SKB_CACHE_SZ)	//RX_buffer_desc(8bytes)
+#undef MAX_SKB_BUF_SIZE
+#define MAX_SKB_BUF_SIZE		(MAX_SKB_BUF_SIZE_NORMAL + WHCH_RX_SKB_RSVD_LEN)
+#else
+#define WHCH_RX_SKB_RSVD_LEN	0
+#endif
+
+
 /*TX reserve size before 802.3 pkt*/
 #define WLAN_ETHHDR_LEN	14
 #define SKB_WLAN_TX_EXTRA_LEN	(TXDESC_SIZE+WLAN_HDR_A4_QOS_HTC_LEN+WLAN_MAX_IV_LEN+WLAN_SNAP_HEADER-WLAN_ETHHDR_LEN)
@@ -130,7 +140,7 @@ __inline static unsigned char *skb_put(struct sk_buff *skb, unsigned int len)
 	return tmp;
 }
 
-
+unsigned char *skb_push(struct sk_buff *skb, unsigned int len);
 void skb_reserve(struct sk_buff *skb, unsigned int len);
 void skb_assign_buf(struct sk_buff *skb, unsigned char *buf, unsigned int len);
 unsigned char *skb_tail_pointer(const struct sk_buff *skb);

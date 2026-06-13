@@ -32,6 +32,12 @@ int whc_host_init(void)
 
 	whc_host_xmit_init();
 
+#ifdef CONFIG_WHCH
+	whc_host_xmit_priv_init();
+	whc_host_recv_priv_init();
+	whc_host_mlme_priv_init();
+#endif
+
 	global_idev.host_init_done = 1;
 
 	for (i = 0; i < WHC_MAX_NET_PORT_NUM; i++) {
@@ -52,6 +58,12 @@ int whc_host_init(void)
 void whc_host_deinit(void)
 {
 	whc_host_xmit_deinit();
+
+#ifdef CONFIG_WHCH
+	whc_host_xmit_priv_free();
+	whc_host_recv_priv_free();
+	whc_host_mlme_priv_deinit();
+#endif
 
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	whc_host_event_deinit();

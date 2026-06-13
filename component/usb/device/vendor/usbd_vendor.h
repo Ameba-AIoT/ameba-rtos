@@ -80,8 +80,8 @@
 #define USBD_VENDOR_HS_ISOC_OUT_INTERVAL				1U    /**< High speed ISOC OUT interval */
 #define USBD_VENDOR_FS_ISOC_IN_INTERVAL					2U    /**< Full speed ISOC IN interval */
 #define USBD_VENDOR_FS_ISOC_OUT_INTERVAL				2U    /**< Full speed ISOC OUT interval */
-/** @} End of Device_Vendor_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_Vendor_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -206,8 +206,8 @@ typedef struct {
 	usbd_vendor_cb_t *cb;		/**< Pointer to the user-defined callback structure */
 	u8 alt_setting;				/**< Alternate setting number of the current interface */
 } usbd_vendor_dev_t;
-/** @} End of Device_Vendor_Types group*/
-/** @} End of USB_Device_Types group*/
+/** @} End of Device_Vendor_Types group */
+/** @} End of USB_Device_Types group */
 
 /* Exported macros -----------------------------------------------------------*/
 

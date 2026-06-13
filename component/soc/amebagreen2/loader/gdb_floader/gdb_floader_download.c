@@ -45,7 +45,7 @@ void Gdb_Floader_Program(void)
 	int FlashWriteResult;
 	int boot_from_nor = SYSCFG_OTP_BootFromNor();
 
-	__disable_irq();
+	uint32_t irq_status = irq_disable_save();
 	DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
 
 	WDG_Refresh(IWDG_DEV);
@@ -110,7 +110,6 @@ void Gdb_Floader_Program(void)
 	}
 
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "Flash download done\n");
-	__enable_irq();
+	irq_enable_restore(irq_status);
 	Gdb_Floader_Program_End();
 }
-

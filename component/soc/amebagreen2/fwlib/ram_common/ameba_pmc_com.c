@@ -431,3 +431,12 @@ void SOCPS_HWSleepFilter_NP(u32 enable)
 	}
 	HAL_WRITE32(PMC_BASE, SYSPMC_OPT, Rtemp);
 }
+
+/**
+  *  @brief  restore peripherals after power gating sleep
+  *  @retval None
+  */
+void SOCPS_PeriRestore(void)
+{
+	CRYPTO_Init();
+}

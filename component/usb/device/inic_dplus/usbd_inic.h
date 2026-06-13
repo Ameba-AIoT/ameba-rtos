@@ -36,11 +36,11 @@
 
 typedef struct {
 	usbd_ep_t ep;
-	void *userdata; // userdata for each ep
+	void *userdata; /* userdata for each ep */
 } usbd_inic_ep_t;
 
 typedef struct {
-	// Common callbacks
+	/* Common callbacks */
 	/**
 	 * @brief Called during class driver initialization for application resource setup.
 	 * @return 0 on success, non-zero on failure.

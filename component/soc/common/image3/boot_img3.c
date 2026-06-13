@@ -40,7 +40,6 @@ void app_mbedtls_image3_init(void)
 	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
 }
 
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBADPLUS) || defined(CONFIG_RTL8720F)
 extern const SAU_CFG_TypeDef sau_config[];
 
 __NO_RETURN void IMG3_NsStart(u32 Addr)
@@ -106,20 +105,3 @@ RAM_START_FUNCTION Img3EntryFun0 = {
 	.RamStartFun = BOOT_IMG3,
 	.RamWakeupFun = IMG3_WakeFromPG,
 };
-
-#else
-/* amebalite, amebasmart: Simple BOOT_IMG3 with NS_ENTRY */
-IMAGE3_ENTRY_SECTION
-void NS_ENTRY BOOT_IMG3(void)
-{
-	RTK_LOGI(TAG, "BOOT_IMG3: BSS [%08x~%08x] SEC: %x \n", __image3_bss_start__, __image3_bss_end__,
-			 TrustZone_IsSecure());
-
-	/* reset img3 bss */
-	_memset((void *) __image3_bss_start__, 0, (__image3_bss_end__ - __image3_bss_start__));
-
-#ifdef CONFIG_TRUSTZONE_MBEDTLS
-	app_mbedtls_image3_init();
-#endif
-}
-#endif

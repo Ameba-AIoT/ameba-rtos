@@ -21,6 +21,14 @@
 #define RTK_BLE_5_0_AE_SCAN_SUPPORT                         1
 #endif
 
+#ifndef RTK_BLE_5_0_PA_ADV_SUPPORT
+#define RTK_BLE_5_0_PA_ADV_SUPPORT                          0
+#endif
+
+#ifndef RTK_BLE_5_0_PA_SYNC_SUPPORT
+#define RTK_BLE_5_0_PA_SYNC_SUPPORT                         0
+#endif
+
 #ifndef RTK_BLE_GAP_MAX_LINKS
 #define RTK_BLE_GAP_MAX_LINKS                               8
 #endif
@@ -33,6 +41,14 @@
 
 #if (RTK_BLE_5_0_SET_PHYS_SUPPORT == 1)
 #define CONFIG_BLE_LL_SET_PHY_ENABLE
+#endif
+
+#if (RTK_BLE_5_0_PA_ADV_SUPPORT == 1)
+#define CONFIG_BLE_LL_PA_ADV_ENABLE
+#endif
+
+#if (RTK_BLE_5_0_PA_SYNC_SUPPORT == 1)
+#define CONFIG_BLE_LL_PA_SYNC_ENABLE
 #endif
 
 #if (RTK_BLE_5_0_AE_ADV_SUPPORT == 1) || (RTK_BLE_5_0_AE_SCAN_SUPPORT == 1)

@@ -69,8 +69,8 @@ typedef struct {
 	usbh_composite_cb_t *cb;      /**< Pointer to the user-defined callback structure. */
 	usb_host_t *host;             /**< Pointer to the host structure. */
 } usbh_composite_host_t;
-/** @} End of Host_Composite_Types group*/
-/** @} End of USB_Host_Types group*/
+/** @} End of Host_Composite_Types group */
+/** @} End of USB_Host_Types group */
 /** @} End of USB_Host_API group */
 /* Exported macros -----------------------------------------------------------*/
 
@@ -78,4 +78,4 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
-#endif // USBH_COMPOSITE_CONFIG_H
+#endif /* USBH_COMPOSITE_CONFIG_H */

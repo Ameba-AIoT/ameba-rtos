@@ -11,13 +11,9 @@
 #ifndef __WHC_HOST_HCI_H__
 #define __WHC_HOST_HCI_H__
 
-#ifdef CONFIG_NAN
-#define WHC_MAX_NET_PORT_NUM		(3)
-#else
-#define WHC_MAX_NET_PORT_NUM		(2)
-#endif
 #define WHC_STA_PORT			(0)
 #define WHC_AP_PORT			(1)
+#define WHC_NAN_PORT			(2)
 
 #define MAX_NUM_WLAN_PORT		(2)
 #define IPC_USER_POINT			0
@@ -125,6 +121,7 @@ struct mlme_priv_t {
 
 	u8					b_in_scan: 1;
 	u8					b_in_disconnect: 1;
+	u8					b_in_linking: 1;	// 1: represent sta_linking
 };
 
 #ifdef CONFIG_SUPPLICANT_SME
@@ -210,6 +207,11 @@ struct whc_device {
 #ifdef CONFIG_SUPPLICANT_SME
 	struct sme_priv_t		sme_priv;
 #endif
+
+#ifdef CONFIG_WHCH
+	struct whch_priv_t		whchpriv;
+#endif
+
 	u8 host_init_done: 1;
 	u8 ipv6_addr_updated: 1;
 };

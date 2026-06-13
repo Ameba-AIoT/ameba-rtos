@@ -418,7 +418,7 @@ static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 	return ERR_OK;
 }
 
-static void ecm_example_monitor_link_change_thread(void *param)
+static void example_usbh_wifi_bridge_monitor_thread(void *param)
 {
 	UNUSED(param);
 
@@ -449,7 +449,7 @@ static void ecm_example_monitor_link_change_thread(void *param)
 	}
 }
 
-static void ecm_example_bridge_thread(void *param)
+static void example_usbh_wifi_bridge_bridge_thread(void *param)
 {
 	UNUSED(param);
 
@@ -468,7 +468,7 @@ static void ecm_example_bridge_thread(void *param)
 }
 
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
-static void ecm_hotplug_thread(void *param)
+static void example_usbh_ecm_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -518,18 +518,18 @@ void example_usbh_wifi_bridge(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USB host usbh_wifi_bridge demo started\n");
 
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
-	status = rtos_task_create(&hotplug_task, "usbh_ecm_hotplug_thread", ecm_hotplug_thread, NULL, 1024U, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
+	status = rtos_task_create(&hotplug_task, "example_usbh_ecm_hotplug_thread", example_usbh_ecm_hotplug_thread, NULL, 1024U, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
 	}
 #endif
 
-	status = rtos_task_create(&monitor_task, "ecm_example_link_change_thread", ecm_example_monitor_link_change_thread, NULL, 1024U * 2, 3U);
+	status = rtos_task_create(&monitor_task, "example_usbh_wifi_bridge_monitor_thread", example_usbh_wifi_bridge_monitor_thread, NULL, 1024U * 2, 3U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USB host monitor_link_change thread: %d\n", status);
 	}
 
-	status = rtos_task_create(&bridge_task, "cdc_ecm_bridge_task", ecm_example_bridge_thread, NULL, 1024U * 2, 2U);
+	status = rtos_task_create(&bridge_task, "example_usbh_wifi_bridge_bridge_thread", example_usbh_wifi_bridge_bridge_thread, NULL, 1024U * 2, 2U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USBH cdc_ecm_bridge_task thread\n");
 	}

@@ -88,6 +88,9 @@ uint8_t bt_hci_ogf_le_ocf_set_ext_scan_param(void *phci_cmd_param, uint8_t *rsp)
 uint8_t bt_hci_ogf_le_ocf_set_ext_scan_enable(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_ext_create_connection(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_ext_create_connection_v2(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_adv_param_v1(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_adv_data(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_adv_enable(void *phci_cmd_param, uint8_t *rsp);
 
 //OGF:BT_OGF_VENDOR
 uint8_t bt_hci_cmd_ogf_vendor_ocf_read_rtk_chip_id(void *phci_cmd_param, uint8_t *rsp);

@@ -176,6 +176,12 @@ __rom_text_region1_end__    = ORIGIN(DELAY_ROM) + LENGTH(DELAY_ROM);           /
 /*SRAM Layout boundary*/
 __km4tz_bd_ram_start__ = ORIGIN(KM4TZ_BD_RAM) - IMAGE_HEADER_LEN;
 
+__km4tz_msp_ram_ns_limit__ = ORIGIN(KM4TZ_MSP_RAM_NS);
+__km4tz_msp_ram_ns__ = ORIGIN(KM4TZ_MSP_RAM_NS) + LENGTH(KM4TZ_MSP_RAM_NS);
+
+__km4ns_msp_ram_limit__ = ORIGIN(KM4NS_MSP_RAM);
+__km4ns_msp_ram__ = ORIGIN(KM4NS_MSP_RAM) + LENGTH(KM4NS_MSP_RAM);
+
 /*PSRAM Layout boundary*/
 __km4tz_bd_psram_start__ = ORIGIN(KM4TZ_BD_PSRAM) - IMAGE_HEADER_LEN;
 __non_secure_psram_end__ = PSRAM_END;

@@ -145,7 +145,7 @@ menu "CONFIG APPLICATION"
     config APPLICATION_SHELL_TASK_STACK_SIZE_MENU
         int "Shell task stack size for application (bytes)"
         range 256 8192
-        default 4096
+        default 2096
 
 endmenu
 
@@ -398,7 +398,7 @@ endmenu
 config SHELL_TASK_STACK_BASIC_SIZE
     int
     default APPLICATION_SHELL_TASK_STACK_SIZE_MENU if (WHC_HOST || WHC_NONE)
-    default 2048
+    default 536
 
 rsource "../../../lwip/Kconfig"
 

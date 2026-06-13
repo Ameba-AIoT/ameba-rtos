@@ -25,8 +25,8 @@
  */
 #define CONFIG_USBH_CDC_ACM_NOTIFY                  0   /**< Enable/Disable notification feature. */
 
-/** @} End of Host_CDC_ACM_Constants group*/
-/** @} End of USB_Host_Constants group*/
+/** @} End of Host_CDC_ACM_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -132,8 +132,8 @@ typedef struct {
 	u8 state;                                   /**< Current state of the CDC ACM host driver, @ref usbh_cdc_acm_state_t. */
 } usbh_cdc_acm_host_t;
 
-/** @} End of Host_CDC_ACM_Types group*/
-/** @} End of USB_Host_Types group*/
+/** @} End of Host_CDC_ACM_Types group */
+/** @} End of USB_Host_Types group */
 
 /* Exported macros -----------------------------------------------------------*/
 

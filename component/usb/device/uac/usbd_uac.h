@@ -66,8 +66,8 @@
 #define USBD_UAC_SAMPLING_FREQ_96K                  96000U  /**< Audio 96000 sample frequency. */
 #define USBD_UAC_SAMPLING_FREQ_192K                 192000U /**< Audio 192000 sample frequency. */
 
-/** @} End of Device_UAC_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_UAC_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -187,8 +187,8 @@ typedef struct {
 	__IO u8 next_xfer;         /**< Audio transfer continue flag. */
 } usbd_uac_buf_ctrl_t;
 
-/** @} End of Device_UAC_Types group*/
-/** @} End of USB_Device_Types group*/
+/** @} End of Device_UAC_Types group */
+/** @} End of USB_Device_Types group */
 
 /**
  * @brief Structure representing the UAC device instance.

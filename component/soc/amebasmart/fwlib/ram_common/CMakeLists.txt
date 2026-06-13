@@ -65,7 +65,6 @@ ameba_list_append(private_sources
 
     ameba_swr.c
     ameba_swr_calib.c
-
     ameba_arch.c
 )
 

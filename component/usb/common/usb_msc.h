@@ -74,4 +74,4 @@ typedef struct {
 	u8 ascq;                         /**< Additional Sense Code Qualifier. */
 } usb_msc_scsi_sense_data_t;
 
-#endif // USB_MSC_H
+#endif /* USB_MSC_H */

@@ -322,7 +322,7 @@ static void usbh_uvc_img_prepare(usbh_uvc_frame_t *frame)
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
 
 #if (CONFIG_USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_MJPEG)
-static void uvc_vfs_thread(void *param)
+static void example_usbh_uvc_vfs_thread(void *param)
 {
 	char path[128] = {0};
 	char *prefix;
@@ -387,7 +387,7 @@ exit:
 
 #else
 
-static void uvc_vfs_thread(void *param)
+static void example_usbh_uvc_vfs_thread(void *param)
 {
 	char path[128] = {0};
 	char *prefix;
@@ -456,7 +456,7 @@ static int uvc_vfs_start(void)
 
 	uvc_rb = RingBuffer_Create(uvc_buf, CONFIG_USBH_UVC_FRAME_BUF_SIZE, LOCAL_RINGBUFF, 0);
 
-	ret = rtos_task_create(&task, "uvc_vfs_thread", uvc_vfs_thread, NULL, 3584U, 1U);
+	ret = rtos_task_create(&task, "example_usbh_uvc_vfs_thread", example_usbh_uvc_vfs_thread, NULL, 3584U, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create vfs thread fail\n");
 		ret = 1;
@@ -494,7 +494,7 @@ char body_end[] =
 	"\r\n--rtkBoundaryXX--\r\n";
 */
 
-static void uvc_httpc_thread(void *param)
+static void example_usbh_uvc_httpc_thread(void *param)
 {
 	int ret;
 	char img_file[32];
@@ -586,7 +586,7 @@ static void uvc_httpc_thread(void *param)
 	"\r\n--rtkBoundaryXX--\r\n";
 */
 
-static void uvc_httpc_thread(void *param)
+static void example_usbh_uvc_httpc_thread(void *param)
 {
 	int ret;
 	char img_file[32];
@@ -679,7 +679,7 @@ static int uvc_httpc_start(void)
 
 	rtos_sema_create(&uvc_httpc_save_img_sema, 0, 1);
 
-	ret = rtos_task_create(&task, "uvc_httpc_thread", uvc_httpc_thread, NULL, 5888U, 2);
+	ret = rtos_task_create(&task, "example_usbh_uvc_httpc_thread", example_usbh_uvc_httpc_thread, NULL, 5888U, 2);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create %s client thread fail\n", USBH_UVC_HTTP_TAG);
 		rtos_sema_delete(&uvc_httpc_save_img_sema);
@@ -695,12 +695,12 @@ static int uvc_httpc_start(void)
  * Hotplug handling:
  * 1) usbh_uvc_stream_off(): stop internal UVC data stream and prepare for resource free.
  * 2) After this, UVC data consumers must stop getting frames
- *   (e.g. exit loop or delete uvc_test task).
+ *   (e.g. exit loop or delete example_usbh_uvc_test task).
  * 3) On next attach, consumers can resume or be re-created after UVC re-init.
  * 4) Thread priority: The hotplug handling thread MUST have higher priority than the UVC
  *   get-frame thread to ensure stream stop and cleanup run first on detach.
 */
-static void uvc_hotplug_thread(void *param)
+static void example_usbh_uvc_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -711,7 +711,7 @@ static void uvc_hotplug_thread(void *param)
 
 			usbh_uvc_stream_off(CONFIG_USBH_UVC_IF_NUM_0);
 			if (uvc_task) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug: delete uvc_test task\n");
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug: delete example_usbh_uvc_test task\n");
 				rtos_task_delete(uvc_task);
 				uvc_task = NULL;
 			}
@@ -741,7 +741,7 @@ static void uvc_hotplug_thread(void *param)
 }
 #endif
 
-static void uvc_test(void *param)
+static void example_usbh_uvc_test(void *param)
 {
 	usbh_uvc_frame_t *buf;
 	const char *fmt_name = NULL;
@@ -877,7 +877,7 @@ exit:
 	uvc_task = NULL;
 }
 
-static void example_usbh_uvc_task(void *param)
+static void example_usbh_uvc_thread(void *param)
 {
 #if CONFIG_USBH_UVC_HOT_PLUG
 	rtos_task_t hotplug_task;
@@ -904,7 +904,7 @@ static void example_usbh_uvc_task(void *param)
 	}
 
 #if CONFIG_USBH_UVC_HOT_PLUG
-	ret = rtos_task_create(&hotplug_task, "uvc_hotplug_thread", uvc_hotplug_thread, NULL, 768U, CONFIG_USBH_UVC_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&hotplug_task, "example_usbh_uvc_hotplug_thread", example_usbh_uvc_hotplug_thread, NULL, 768U, CONFIG_USBH_UVC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto usbh_uvc_deinit_exit;
 	}
@@ -913,7 +913,7 @@ static void example_usbh_uvc_task(void *param)
 	while (1) {
 		if (rtos_sema_take(uvc_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (uvc_task == NULL) {
-				ret = rtos_task_create(&uvc_task, "uvc_test", uvc_test, NULL,
+				ret = rtos_task_create(&uvc_task, "example_usbh_uvc_test", example_usbh_uvc_test, NULL,
 									   768U, CONFIG_USBH_UVC_TEST_THREAD_PRIORITY);
 				if (ret != RTK_SUCCESS) {
 					goto delete_hotplug_task_exit;
@@ -956,7 +956,7 @@ void example_usbh_uvc(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UVC demo start\n");
 
-	status = rtos_task_create(&task, "example_usbh_uvc_thread", example_usbh_uvc_task, NULL, 768U, 1U);
+	status = rtos_task_create(&task, "example_usbh_uvc_thread", example_usbh_uvc_thread, NULL, 768U, 1U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}

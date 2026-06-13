@@ -70,7 +70,7 @@
 #ifndef USB_HIGH_BYTE
 #define USB_HIGH_BYTE(x)	((u8)(((x) >> 8) & 0x00FFU))
 #endif
-/** @} End of USB_Common_Constants group*/
+/** @} End of USB_Common_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -88,7 +88,7 @@ typedef rtos_queue_t usb_os_queue_t;  /**< Abstracted type for a message queue. 
 typedef rtos_task_t usb_os_task_t;    /**< Abstracted type for a task handle. */
 #endif
 /** @} */
-/** @} End of USB_Common_Types group*/
+/** @} End of USB_Common_Types group */
 
 /* Exported variables --------------------------------------------------------*/
 

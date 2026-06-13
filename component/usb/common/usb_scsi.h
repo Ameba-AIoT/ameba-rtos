@@ -88,4 +88,4 @@
 #define SCSI_ASCQ_INITIALIZING_COMMAND_REQUIRED     0x02
 #define SCSI_ASCQ_OPERATION_IN_PROGRESS             0x07
 
-#endif // USB_SCSI_H
+#endif /* USB_SCSI_H */

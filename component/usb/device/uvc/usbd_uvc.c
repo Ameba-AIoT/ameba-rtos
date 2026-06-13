@@ -858,7 +858,7 @@ int usbd_uvc_init(void)
 	// Mark as initialized before creating tasks, so tasks can run properly
 	usbd_uvc_dev.init_done = 1;
 
-	ret = rtos_task_create(NULL, "usbd_uvcd_cmd_handler", usbd_uvc_cmd_handler, NULL, 1024U, 5);
+	ret = rtos_task_create(NULL, "usbd_uvc_cmd_handler", usbd_uvc_cmd_handler, NULL, 1024U, 5);
 	if (ret != SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Create USBD USBD_UVC CMD thread fail\n", __FUNCTION__);
 		ret = -1;

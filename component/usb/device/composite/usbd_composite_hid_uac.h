@@ -29,5 +29,5 @@ int usbd_composite_init(usbd_composite_hid_usr_cb_t *hid_cb, usbd_composite_uac_
 
 void usbd_composite_deinit(void);
 
-#endif // USBD_COMPOSITE_HID_UAC_H
+#endif /* USBD_COMPOSITE_HID_UAC_H */
 

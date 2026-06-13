@@ -42,8 +42,8 @@
 #define CDC_ECM_CTRL_REG_BUF_LEN                                (4)      /**< Length of the ECM dongle control register buffer. */
 #define CDC_ECM_MUTICAST_FILTER_STR_LEN                         (20)     /**< Length of the ECM multicast filter control buffer. */
 
-/** @} End of Host_CDC_ECM_Constants group*/
-/** @} End of USB_Host_Constants group*/
+/** @} End of Host_CDC_ECM_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -118,8 +118,8 @@ typedef struct {
 	u8 valid;                                 /**< Validity flag for this pipe info. */
 } usbh_cdc_ecm_pipe_info_t;
 
-/** @} End of Host_CDC_ECM_Types group*/
-/** @} End of USB_Host_Types group*/
+/** @} End of Host_CDC_ECM_Types group */
+/** @} End of USB_Host_Types group */
 
 /**
  * @brief Structure representing the CDC ECM host instance.

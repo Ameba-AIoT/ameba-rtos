@@ -404,12 +404,12 @@ endmenu
 
 config SHELL_TASK_STACK_BASIC_SIZE_FOR_KM4
     int
-    default 3316 if WHC_HOST || WHC_NONE
+    default 2196 if WHC_HOST || WHC_NONE
     default 620
 
 config SHELL_TASK_STACK_BASIC_SIZE_FOR_KR4
     int
-    default 1504 if WHC_HOST
+    default 944 if WHC_HOST
     default 2496 if WHC_NONE
     default 720
 

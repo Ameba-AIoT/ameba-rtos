@@ -110,7 +110,7 @@ static const char *const TAG = "COMP";
  * @brief Common channel state shared by playback and record.
  *
  * Both the play and record pipes track their own thread handle, error
- * counts, audio loop counters, and volume ¡ª this type avoids duplicating
+ * counts, audio loop counters, and volume ï¿½ï¿½ this type avoids duplicating
  * the field list.
  */
 typedef struct {
@@ -124,8 +124,8 @@ typedef struct {
 /**
  * @brief Application-level context structure for USB host composite HID + UAC demo.
  *
- * Groups all module state ¡ª synchronization primitives, thread handles, status
- * flags, statistical counters, audio control state ¡ª into a single object so
+ * Groups all module state ï¿½ï¿½ synchronization primitives, thread handles, status
+ * flags, statistical counters, audio control state ï¿½ï¿½ into a single object so
  * that the code is easier to read, reset, and (in future) instantiate.
  */
 typedef struct {
@@ -432,7 +432,7 @@ static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
   * @param  param: Unused.
   * @retval None
   */
-static void usbh_uac_play_thread(void *param)
+static void example_usbh_comp_hid_uac_play_thread(void *param)
 {
 	const unsigned char *usbh_uac_audio_data_2ch_handle = usbh_uac_audio_data_2ch;
 	const usbh_composite_uac_audio_fmt_t *fmt_info = NULL;
@@ -639,7 +639,7 @@ play_stop:
   * @param  param: Unused.
   * @retval None
   */
-static void usbh_uac_record_thread(void *param)
+static void example_usbh_comp_hid_uac_record_thread(void *param)
 {
 	const usbh_composite_uac_audio_fmt_t *fmt_info = NULL;
 	const usbh_composite_uac_audio_fmt_t *audio_fmt = NULL;
@@ -864,7 +864,7 @@ record_stop:
   * @param  param: Unused.
   * @retval None
   */
-static void usbh_uac_hotplug_thread(void *param)
+static void example_usbh_comp_hid_uac_hotplug_thread(void *param)
 {
 	int ret = 0;
 	u32 hotplug_count = 0;
@@ -928,7 +928,7 @@ static void usbh_uac_hotplug_thread(void *param)
   * @param  param: Unused.
   * @retval None
   */
-static void example_usbh_uac_thread(void *param)
+static void example_usbh_comp_hid_uac_init_thread(void *param)
 {
 	int status;
 
@@ -953,7 +953,7 @@ static void example_usbh_uac_thread(void *param)
 	}
 
 	/* Create resident playback thread */
-	status = rtos_task_create(&g_uac_host.play.task, "usbh_uac_play", usbh_uac_play_thread,
+	status = rtos_task_create(&g_uac_host.play.task, "example_usbh_comp_hid_uac_play_thread", example_usbh_comp_hid_uac_play_thread,
 							  NULL, 1024, USBH_COMPOSITE_UAC_HID_PLAY_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create play thread fail\n");
@@ -961,7 +961,7 @@ static void example_usbh_uac_thread(void *param)
 	}
 
 	/* Create resident record thread */
-	status = rtos_task_create(&g_uac_host.record.task, "usbh_uac_record", usbh_uac_record_thread,
+	status = rtos_task_create(&g_uac_host.record.task, "example_usbh_comp_hid_uac_record_thread", example_usbh_comp_hid_uac_record_thread,
 							  NULL, 1536, USBH_COMPOSITE_UAC_HID_RECORD_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create record thread fail\n");
@@ -986,7 +986,7 @@ static void example_usbh_uac_thread(void *param)
 
 	/* Create hot-plug monitor thread */
 #if CONFIG_USBH_COMPOSITE_UAC_HID_HOTPLUG
-	status = rtos_task_create(&g_uac_host.hotplug_task, "usbh_uac_hotplug", usbh_uac_hotplug_thread,
+	status = rtos_task_create(&g_uac_host.hotplug_task, "example_usbh_comp_hid_uac_hotplug_thread", example_usbh_comp_hid_uac_hotplug_thread,
 							  NULL, 768, USBH_COMPOSITE_UAC_HID_HOTPLUG_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
@@ -1339,7 +1339,7 @@ void example_usbh_composite_hid_uac(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UAC&HID composite demo start\n");
 
-	status = rtos_task_create(&task, "usbh_uac_main", example_usbh_uac_thread, NULL, 1024U * 2, 2U);
+	status = rtos_task_create(&task, "example_usbh_comp_hid_uac_init_thread", example_usbh_comp_hid_uac_init_thread, NULL, 1024U * 2, 2U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Failed to create main thread\n");
 	}

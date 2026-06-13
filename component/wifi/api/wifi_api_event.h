@@ -241,7 +241,7 @@ struct rtw_event_csi_report_info {
  * @brief  Layout of Radar report info.
  */
 struct rtw_event_radar_report_info {
-	u8 rpt_type : 2;               /**< Radar report type (see @ref rtw_radar_type) */
+	u8 rpt_type : 3;               /**< Radar report type (see @ref rtw_radar_type) */
 	u8 rpt_seg_start : 1;          /**< Instructions for segmented reporting, invalid after integration. */
 	u8 rpt_seg_end : 1;            /**< Instructions for segmented reporting, invalid after integration. */
 	u8 bw_idx : 2;                 /**< Operating bandwidth (0: 70MHz, 1: 40MHz, 2: 20M). */
@@ -258,7 +258,7 @@ struct rtw_event_radar_report_info {
 	u16 doppler_sample_num;
 	float aagc_gain;
 	float dagc_gain_normal_mode[4];
-	u8 rsvd[6];                   /**< Ensure the total sizes of struct is 4-byte alignment */
+	u8 rsvd[5];                   /**< Ensure the total sizes of struct is 4-byte alignment */
 	u32 radar_data_length;        /**< radar raw data length, unit: byte. [segments report raw data len or complete repoprt raw data len] */
 	u8 radar_data[];              /**< radar raw data head address */
 };
