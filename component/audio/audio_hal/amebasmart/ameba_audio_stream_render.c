@@ -1152,12 +1152,14 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 		if (rstream->stream.state == STATE_INITED) {
 			if (ameba_audio_stream_buffer_get_remain_size(rstream->stream.rbuffer) > MAX(dma_len, FIFO_BYTES)) {
 				tx_addr = (uint32_t)(rstream->stream.rbuffer->raw_data + ameba_audio_stream_buffer_get_tx_readptr(rstream->stream.rbuffer));
+				DCache_CleanInvalidate(tx_addr, dma_len);
 				GDMA_Cmd(sp_txgdma_initstruct->GDMA_Index, sp_txgdma_initstruct->GDMA_ChNum, ENABLE);
 				rstream->stream.gdma_cnt++;
 				HAL_AUDIO_INFO("gdma start: index:%d, chNum:%d, tx_addr:0x%lx, dma_len:%lu",
 							   sp_txgdma_initstruct->GDMA_Index, sp_txgdma_initstruct->GDMA_ChNum, tx_addr, dma_len);
 
 				if (has_extra_dma) {
+					DCache_CleanInvalidate((uint32_t)extra_tx_addr, extra_dma_len);
 					GDMA_Cmd(extra_sp_txgdma_initstruct->GDMA_Index, extra_sp_txgdma_initstruct->GDMA_ChNum, ENABLE);
 					rstream->stream.extra_gdma_cnt++;
 					HAL_AUDIO_INFO("gdma extra init: index:%d, chNum:%d, tx_addr:0x%lx, extra_dma_len:%lu",
