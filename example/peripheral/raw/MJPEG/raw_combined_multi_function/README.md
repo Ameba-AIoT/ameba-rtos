@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 This example describes how to use JPEG decoder to decode a JPEG file to RGB32 data with post-processor function cropping, pip, scaling, etc.

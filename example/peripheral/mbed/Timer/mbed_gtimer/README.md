@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Description
 This example describes how to use general timer TIM2&TIM3 to generate periodic signal by mbed api.
 

@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 1. This example shows master sends data to multiple slaves by MBED SPI API.
@@ -44,6 +46,10 @@ For example:
   - master's `SCLK (_PB_7)` connect to slave1's `SCLK (_PA_29)`& slave0's `SCLK (_PA_29)`
   - master's `SPI_GPIO_CS0 (_PA_26)` connect to slave0's `CS (_PB_0)`
   - master's `SPI_GPIO_CS1 (_PA_25)` connect to slave1's `CS (_PB_0)`
+
+> **Attention**
+> - For the selected pins, please refer to *ameba_pinmux_rtlxxx.xlsx* to confirm that the corresponding package has these pins available.
+> - If using an Ameba EVB to run this demo, please refer to the *Hardware EVB User Guide* and *Hardware Schematic* to confirm the signals are successfully connected to the EVB pin headers.
 
 # SW configuration
 

@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 This example demonstrates how to configure the status register of Winbond to protect all blocks by MBED API. Note that the status register should be reset if users want to reload code.

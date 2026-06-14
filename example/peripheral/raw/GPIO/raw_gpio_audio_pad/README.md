@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 This example describes how to switch audio pad pin between digital path and analog path by RAW GPIO API.

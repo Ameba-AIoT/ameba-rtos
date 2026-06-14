@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../../README.md).
+
 #  Example Description
 
 This example show how to use PPE linklist function. User should create link list item structure, and then fill these link list items for each frame. For this example, it creates 5 link list item, which describe 5 frames. PPE will blend all frames configured by link list items. 
