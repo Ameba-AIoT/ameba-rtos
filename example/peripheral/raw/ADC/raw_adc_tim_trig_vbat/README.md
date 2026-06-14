@@ -1,3 +1,5 @@
+> **Before selecting pins**, refer to the [Peripheral Pin Usage Guide](../../../README.md).
+
 # Example Description
 
 This example describes how to get ADC sample data in `vbat channel` `under timer-trigger mode`.
