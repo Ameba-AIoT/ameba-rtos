@@ -380,7 +380,7 @@ static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	UNUSED(dev);
 
 	if (status != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 	}
 
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
@@ -473,7 +473,7 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 			/*Not support*/
 			break;
 		default:
-			//RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", USB_LOW_BYTE(req->wValue));
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 			break;
 		}
 		break;

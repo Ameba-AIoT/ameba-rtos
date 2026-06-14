@@ -203,9 +203,10 @@ void ap_clock_on(void);
 
 void ap_tickless_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum);
 void SOCPS_NPWAP_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum);
-
+u32 NPWAP_INTHandler(void *Data);
 /*If trustzone is enabled, the service entry is as follows*/
 void SOCPS_SleepInitEntry(struct PSCFG_TypeDef *ps_config);
+void SOCPS_PeriRestoreEntry(void);
 u32 SOCPS_CPURoleGetEntry(void);
 void SOCPS_HWSleepFilter(u32 enable);
 void SOCPS_NVICBackupEntry(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC_Type *nvic, SCB_Type *scb);

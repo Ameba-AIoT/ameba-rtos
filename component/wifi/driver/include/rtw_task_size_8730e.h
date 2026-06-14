@@ -56,7 +56,7 @@
 /**********************************************************************************************
  *                               Common task size
  *********************************************************************************************/
-#define WIFI_LITTLE_TASK_SIZE		                  ((500 + MCC_LITTE_TASK_SIZE + NAN_LITTE_TASK_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN) / 4)	/* rtw_if_wifi_create_task: size will *4 */
+#define WIFI_LITTLE_TASK_SIZE		                  ((400 + MCC_LITTE_TASK_SIZE + NAN_LITTE_TASK_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN) / 4)	/* rtw_if_wifi_create_task: size will *4 */
 
 #if defined (CONFIG_WHC_DEV)
 #if defined(CONFIG_WHC_INTF_IPC)
@@ -72,10 +72,10 @@
  *                               IPC mode task size
  *********************************************************************************************/
 #define COEX_IPC_HST_API_BASIC_SIZE               376
-#define COEX_IPC_DEV_API_BASIC_SIZE               664
+#define COEX_IPC_DEV_API_BASIC_SIZE               560
 
 #define WIFI_WHC_IPC_HST_API_TASK_SIZE            (440 + CONTEXT_SAVE_SIZE_WITH_MARGIN)	// for psp overflow when update group key: jira: https://jira.realtek.com/browse/RSWLANQC-1027
-#define WIFI_WHC_IPC_HST_EVT_API_TASK_SIZE        (4192 + EAP_UNBLK_API_SIZE + WPS_UNBLK_API_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN)
+#define WIFI_WHC_IPC_HST_EVT_API_TASK_SIZE        (2272 + EAP_UNBLK_API_SIZE + WPS_UNBLK_API_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN)
 
 #if defined(CONFIG_WHC_HOST)
 #define WIFI_WHC_IPC_MSG_Q_TASK_SIZE              (576 + CONTEXT_SAVE_SIZE_WITH_MARGIN)
@@ -90,7 +90,7 @@
 #elif defined(CONFIG_PLATFORM_ZEPHYR)
 #define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (1024*4)
 #else
-#define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (1536 + CONTEXT_SAVE_SIZE_WITH_MARGIN)	/* max 1536 in lite */
+#define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (1272 + CONTEXT_SAVE_SIZE_WITH_MARGIN)	/* max 1536 in lite */
 #endif
 
 /**********************************************************************************************

@@ -93,7 +93,7 @@ static u8 dhcp_server_started = 0;
 static u8 dongle_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
 /*
  * dhcp_server_mac: MAC address used by the device's local lwIP netif (pnetif_usb_eth).
- * It is copied into pnetif_usb_eth->hwaddr in ecm_link_change_thread() before the
+ * It is copied into pnetif_usb_eth->hwaddr in example_usbd_ecm_link_change_thread() before the
  * DHCP server is started, so it is the source MAC for frames the device sends to the
  * host (DHCP offers, ARP replies, gateway traffic). This is the "device-facing" end.
  *
@@ -231,7 +231,7 @@ static __IO u8 cdc_ecm_hotplug_thread_running = 0;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
-static void ecm_link_change_thread(void *param)
+static void example_usbd_ecm_link_change_thread(void *param)
 {
 	eth_state_t ethernet_state = ETH_STATUS_IDLE;
 	u8 link_is_up = 0;
@@ -442,7 +442,7 @@ static void cdc_ecm_cb_status_changed(u8 old_status, u8 status)
   * @brief  USB hotplug detection and handling thread
   * @param  param: Thread parameter (unused)
   */
-static void cdc_ecm_hotplug_thread(void *param)
+static void example_usbd_ecm_hotplug_thread(void *param)
 {
 	int ret = 0;
 	u8 current_status;
@@ -549,8 +549,8 @@ static void example_usbd_cdc_ecm_thread(void *param)
 #if CONFIG_USBD_CDC_ECM_HOTPLUG
 	// Create hotplug detection thread
 	ret = rtos_task_create(&hotplug_task,
-						   "cdc_ecm_hotplug",
-						   cdc_ecm_hotplug_thread,
+						   "example_usbd_ecm_hotplug_thread",
+						   example_usbd_ecm_hotplug_thread,
 						   NULL,
 						   CONFIG_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE,
 						   CONFIG_CDC_ECM_HOTPLUG_THREAD_PRIORITY);
@@ -604,7 +604,7 @@ void example_usbd_cdc_ecm(void)
 	rtos_task_t monitor_task = NULL;
 
 	ret = rtos_task_create(&init_task,
-						   "cdc_ecm_init",
+						   "example_usbd_cdc_ecm_thread",
 						   example_usbd_cdc_ecm_thread,
 						   NULL,
 						   CONFIG_CDC_ECM_INIT_THREAD_STACK_SIZE,
@@ -615,8 +615,8 @@ void example_usbd_cdc_ecm(void)
 	}
 
 	ret = rtos_task_create(&monitor_task,
-						   "usbd_ecm_link_thread",
-						   ecm_link_change_thread,
+						   "example_usbd_ecm_link_change_thread",
+						   example_usbd_ecm_link_change_thread,
 						   NULL,
 						   CONFIG_CDC_ECM_LINK_STATE_THREAD_STACK_SIZE,
 						   CONFIG_CDC_ECM_LINK_STATE_THREAD_PRIORITY);

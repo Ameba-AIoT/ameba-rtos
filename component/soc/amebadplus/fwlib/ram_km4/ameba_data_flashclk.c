@@ -663,9 +663,6 @@ void data_flash_highspeed_setup(void)
 
 	spic_ckd = CLKDIV_ROUND_UP(pll_clk, SPIC_CLK_LIMIT) - 1;
 	flash_speed = MAX(flash_speed, spic_ckd);
-
-	__disable_irq();
-
 	if (flash_speed == spic_ckd) {
 		/* CS setup time changed to 2 SPIC Clk for greater than tSLCH if SPIC is 200MHz */
 		SPIC_COMBO->TPR1 = (SPIC_COMBO->TPR1 & ~MASK_CR_ACTIVE_SETUP) | CR_ACTIVE_SETUP(2);
@@ -689,7 +686,4 @@ void data_flash_highspeed_setup(void)
 		//data_flash_calibration_highspeed(flash_speed);
 		data_flash_handshake_highspeed(flash_speed);
 	}
-
-	__enable_irq();
 }
-

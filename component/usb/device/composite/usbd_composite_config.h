@@ -33,8 +33,8 @@
 #define USBD_COMP_MFG_STRING              "Realtek"    /**< Manufacturer string. */
 #define USBD_COMP_PROD_STRING             "Realtek Composite Device"/**< Product string. */
 #define USBD_COMP_SN_STRING               "1234567890" /**< Serial number string. */
-/** @} End of Device_Composite_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_Composite_Constants group */
+/** @} End of USB_Device_Constants group */
 
 #if defined(CONFIG_USBD_COMPOSITE_CDC_ACM_HID)
 /* Interfaces */
@@ -70,7 +70,7 @@
 #define USBD_COMP_HID_HS_ITF_STRING       "Realtek HS HID Device"
 #define USBD_COMP_HID_FS_ITF_STRING       "Realtek FS HID Device"
 
-#elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC)  //acm+uac
+#elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC)  /* acm+uac */
 /* Interfaces */
 /*
 	audio control
@@ -120,7 +120,7 @@
 #define USBD_COMP_UAC_HS_ITF_STRING            "Realtek HS UAC Device"
 #define USBD_COMP_UAC_FS_ITF_STRING            "Realtek FS UAC Device"
 
-#elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_MSC) //acm + msc
+#elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_MSC) /* acm + msc */
 /* Interfaces */
 #define USBD_COMP_CDC_COM_ITF                  0x00
 #define USBD_COMP_CDC_DAT_ITF                  0x01
@@ -148,7 +148,7 @@
 #define USBD_COMP_MSC_HS_ITF_STRING            "Realtek HS MSC Device"
 #define USBD_COMP_MSC_FS_ITF_STRING            "Realtek FS MSC Device"
 
-#elif defined(CONFIG_USBD_COMPOSITE_HID_UAC)  //hid+uac
+#elif defined(CONFIG_USBD_COMPOSITE_HID_UAC)  /* hid+uac */
 
 #define USBD_COMP_UAC_PID                      (USBD_COMP_PID)
 
@@ -271,8 +271,8 @@ typedef struct {
 	usbd_composite_cb_t *cb;      /**< Composite user callback */
 	usb_dev_t *dev;               /**< USB device instance */
 } usbd_composite_dev_t;
-/** @} End of Device_Composite_Types group*/
-/** @} End of USB_Device_Types group*/
+/** @} End of Device_Composite_Types group */
+/** @} End of USB_Device_Types group */
 /** @} End of USB_Device_API group */
 
 /* Exported macros -----------------------------------------------------------*/
@@ -281,4 +281,4 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
-#endif // USBD_COMPOSITE_CONFIG_H
+#endif /* USBD_COMPOSITE_CONFIG_H */

@@ -35,8 +35,8 @@
 #define COMP_CDC_ACM_HS_INTR_IN_INTERVAL                 8U  /**< High-speed Interrupt IN endpoint polling interval. */
 #define COMP_CDC_ACM_FS_INTR_IN_INTERVAL                 8U  /**< Full-speed Interrupt IN endpoint polling interval. */
 
-/** @} End of Device_Composite_CDC_ACM_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_Composite_CDC_ACM_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -104,8 +104,8 @@ typedef struct {
 #endif
 } usbd_composite_cdc_acm_dev_t;
 
-/** @} End of Device_Composite_CDC_ACM_Types group*/
-/** @} End of USB_Device_Types group*/
+/** @} End of Device_Composite_CDC_ACM_Types group */
+/** @} End of USB_Device_Types group */
 
 /* Exported macros -----------------------------------------------------------*/
 

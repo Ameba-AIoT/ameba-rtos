@@ -81,8 +81,8 @@
 
 #define USBD_MSC_SENSE_LIST_DEPTH                   4U          /**< Depth of the SCSI sense data list. */
 
-/** @} End of Device_MSC_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_MSC_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -140,8 +140,8 @@ typedef struct {
 	 */
 	void (*status_changed)(u8 old_status, u8 status);
 } usbd_msc_cb_t;
-/** @} End of Device_MSC_Types group*/
-/** @} End of USB_Device_Types group*/
+/** @} End of Device_MSC_Types group */
+/** @} End of USB_Device_Types group */
 
 /**
  * @brief Main structure for the MSC device class.
@@ -212,4 +212,4 @@ int usbd_msc_disk_deinit(void);
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
 
-#endif // USBD_MSC_H
+#endif /* USBD_MSC_H */

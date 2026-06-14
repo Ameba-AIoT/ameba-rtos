@@ -63,8 +63,8 @@
 
 /* Sense */
 #define COMP_MSC_SENSE_LIST_DEPTH               4U             /**< Depth of the SCSI sense data list. */
-/** @} End of Device_Composite_MSC_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_Composite_MSC_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -112,7 +112,7 @@ typedef struct {
 	rtos_task_t tx_task;
 	rtos_sema_t tx_sema;
 	u32 num_sectors;
-	u32 lba; // logic block address
+	u32 lba; /* logic block address */
 	u32 blkbits; /* bits of logical block size of bound block device */
 	u32 blksize;
 	u32 blklen;
@@ -166,4 +166,4 @@ int usbd_composite_msc_disk_deinit(void);
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
 
-#endif // USBD_COMPOSITE_MSC_H
+#endif /* USBD_COMPOSITE_MSC_H */

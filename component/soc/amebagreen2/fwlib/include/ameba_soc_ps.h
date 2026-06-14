@@ -50,8 +50,17 @@ struct CPU_BackUp_TypeDef {
 	u8 NVICIPbackup_HP[MAX_PERIPHERAL_IRQ_NUM];
 };
 
-extern struct CPU_BackUp_TypeDef PMC_BK;
 extern u32 WakeEventFlag;
+
+#if defined(CONFIG_ARM_CORE_CM4_KM4TZ)
+/* Secure core (KM4TZ/AP): NS register backup in KM4TZ's NS MSP area */
+#define PMC_BK          ((struct CPU_BackUp_TypeDef *)MSPLIM_RAM_HP_NS)
+/* Secure core (KM4TZ/AP): S register backup in KM4TZ's S MSP area */
+#define PMC_BK_S        ((struct CPU_BackUp_TypeDef *)MSPLIM_RAM_HP)
+#else
+/* Non-secure core (KM4NS/NP): backup in KM4NS's own MSP area */
+#define PMC_BK          ((struct CPU_BackUp_TypeDef *)MSPLIM_RAM_NS)
+#endif
 /*1. Sleep init*/
 void SOCPS_SleepInit(void);
 /*1.1 wake source settings.*/
@@ -76,6 +85,7 @@ void SOCPS_SleepCG(void);
 void SOCPS_SleepPG_RAM_FOR_WFE(struct CPU_BackUp_TypeDef *bk);
 void SOCPS_SleepPG_RAM_FOR_WFI(struct CPU_BackUp_TypeDef *bk);
 void SOCPS_SleepCG_RAM(void);
+void SOCPS_PeriRestore(void);
 /*4. Reg backup/restore*/
 void SOCPS_NVICBackup(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC_Type *nvic, SCB_Type *scb);
 void SOCPS_NVICReFill(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC_Type *nvic, SCB_Type *scb);

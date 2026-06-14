@@ -34,8 +34,8 @@
 #define USBH_VENDOR_MASK_INTR_OUT    (BIT3)  /**< Mask for Interrupt OUT transfer */
 #define USBH_VENDOR_MASK_ISOC_IN     (BIT4)  /**< Mask for Isochronous IN transfer */
 #define USBH_VENDOR_MASK_ISOC_OUT    (BIT5)  /**< Mask for Isochronous OUT transfer */
-/** @} End of Host_Vendor_Constants group*/
-/** @} End of USB_Host_Constants group*/
+/** @} End of Host_Vendor_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -150,8 +150,8 @@ typedef struct {
 	u8 ep_mask;                         /**< Active endpoint mask */
 	u8 state;                           /**< Current class state machine state, @ref usbh_vendor_state_t. */
 } usbh_vendor_host_t;
-/** @} End of Host_Vendor_Types group*/
-/** @} End of USB_Host_Types group*/
+/** @} End of Host_Vendor_Types group */
+/** @} End of USB_Host_Types group */
 
 /* Exported macros -----------------------------------------------------------*/
 

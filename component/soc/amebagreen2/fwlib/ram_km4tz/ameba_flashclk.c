@@ -286,11 +286,12 @@ static void nand_get_vendor(void)
 SRAMDRAM_ONLY_TEXT_SECTION
 void flash_highspeed_setup(void)
 {
+	uint32_t irq_status;
 	u32 read_mode, Temp;
 	u8 nand_reg;
 	read_mode = flash_get_readmode(Flash_ReadMode);
 
-	__disable_irq();
+	irq_status = irq_disable_save();
 
 	/* SPIC stay in BUSY state when there are more than 0x1_0000 cycles between two input data.
 	 * Disable DREIR to avoid that interrupt hanler time is lager than 0x1_0000 SPIC cycles.
@@ -339,7 +340,7 @@ void flash_highspeed_setup(void)
 		flash_handshake_highspeed();
 	}
 
-	__enable_irq();
+	irq_enable_restore(irq_status);
 }
 
 /* init psramc for flash r/w if needed */

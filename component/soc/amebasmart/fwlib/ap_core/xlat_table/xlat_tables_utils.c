@@ -219,15 +219,15 @@ void xlat_tables_print(xlat_ctx_t *ctx)
 		assert(ctx->xlat_regime == EL3_REGIME);
 		xlat_regime_str = "3";
 	}
-	VERBOSE("Translation tables state:\n");
-	VERBOSE("  Xlat regime:     EL%s\n", xlat_regime_str);
-	VERBOSE("  Max allowed PA:  0x%llx\n", ctx->pa_max_address);
-	VERBOSE("  Max allowed VA:  0x%lx\n", ctx->va_max_address);
-	VERBOSE("  Max mapped PA:   0x%llx\n", ctx->max_pa);
-	VERBOSE("  Max mapped VA:   0x%lx\n", ctx->max_va);
+	VERBOSE("Translation tables state:\r\n");
+	VERBOSE("  Xlat regime:     EL%s\r\n", xlat_regime_str);
+	VERBOSE("  Max allowed PA:  0x%x\r\n", (uint32_t)ctx->pa_max_address);
+	VERBOSE("  Max allowed VA:  0x%x\r\n", (uint32_t)ctx->va_max_address);
+	VERBOSE("  Max mapped PA:   0x%x\r\n", (uint32_t)ctx->max_pa);
+	VERBOSE("  Max mapped VA:   0x%x\r\n", (uint32_t)ctx->max_va);
 
-	VERBOSE("  Initial lookup level: %u\n", ctx->base_level);
-	VERBOSE("  Entries @initial lookup level: %u\n",
+	VERBOSE("  Initial lookup level: %u\r\n", ctx->base_level);
+	VERBOSE("  Entries @initial lookup level: %u\r\n",
 		ctx->base_table_entries);
 
 #if PLAT_XLAT_TABLES_DYNAMIC
@@ -239,7 +239,7 @@ void xlat_tables_print(xlat_ctx_t *ctx)
 #else
 	used_page_tables = ctx->next_table;
 #endif
-	VERBOSE("  Used %d sub-tables out of %d (spare: %d)\n",
+	VERBOSE("  Used %d sub-tables out of %d (spare: %d)\r\n",
 		used_page_tables, ctx->tables_num,
 		ctx->tables_num - used_page_tables);
 
@@ -287,8 +287,8 @@ static uint64_t *find_xlat_table_entry(uintptr_t virtual_addr,
 
 		idx = XLAT_TABLE_IDX(virtual_addr, level);
 		if (idx >= entries) {
-			WARN("Missing xlat table entry at address 0x%lx\n",
-			     virtual_addr);
+			WARN("Missing xlat table entry at address 0x%x\r\n",
+			     (uint32_t)virtual_addr);
 			return NULL;
 		}
 
@@ -296,7 +296,7 @@ static uint64_t *find_xlat_table_entry(uintptr_t virtual_addr,
 		desc_type = desc & DESC_MASK;
 
 		if (desc_type == INVALID_DESC) {
-			VERBOSE("Invalid entry (memory not mapped)\n");
+			VERBOSE("Invalid entry (memory not mapped)\r\n");
 			return NULL;
 		}
 
@@ -357,7 +357,7 @@ static int xlat_get_mem_attributes_internal(const xlat_ctx_t *ctx,
 				virt_addr_space_size,
 				&level);
 	if (entry == NULL) {
-		WARN("Address 0x%lx is not mapped.\n", base_va);
+		WARN("Address 0x%x is not mapped.\r\n", (uint32_t)base_va);
 		return -EINVAL;
 	}
 
@@ -445,32 +445,32 @@ int xlat_change_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 	assert(virt_addr_space_size > 0U);
 
 	if (!IS_PAGE_ALIGNED(base_va)) {
-		WARN("%s: Address 0x%lx is not aligned on a page boundary.\n",
-		     __func__, base_va);
+		WARN("%s: Address 0x%x is not aligned on a page boundary.\r\n",
+		     __func__, (uint32_t)base_va);
 		return -EINVAL;
 	}
 
 	if (size == 0U) {
-		WARN("%s: Size is 0.\n", __func__);
+		WARN("%s: Size is 0.\r\n", __func__);
 		return -EINVAL;
 	}
 
 	if ((size % PAGE_SIZE) != 0U) {
-		WARN("%s: Size 0x%x is not a multiple of a page size.\n",
+		WARN("%s: Size 0x%x is not a multiple of a page size.\r\n",
 		     __func__, size);
 		return -EINVAL;
 	}
 
 	if (((attr & MT_EXECUTE_NEVER) == 0U) && ((attr & MT_RW) != 0U)) {
-		WARN("%s: Mapping memory as read-write and executable not allowed.\n",
+		WARN("%s: Mapping memory as read-write and executable not allowed.\r\n",
 		     __func__);
 		return -EINVAL;
 	}
 
 	size_t pages_count = size / PAGE_SIZE;
 
-	VERBOSE("Changing memory attributes of %zu pages starting from address 0x%lx...\n",
-		pages_count, base_va);
+	VERBOSE("Changing memory attributes of %u pages starting from address 0x%x...\r\n",
+		(uint32_t)pages_count, (uint32_t)base_va);
 
 	uintptr_t base_va_original = base_va;
 
@@ -488,7 +488,7 @@ int xlat_change_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 					      virt_addr_space_size,
 					      &level);
 		if (entry == NULL) {
-			WARN("Address 0x%lx is not mapped.\n", base_va);
+			WARN("Address 0x%x is not mapped.\r\n", (uint32_t)base_va);
 			return -EINVAL;
 		}
 
@@ -500,10 +500,10 @@ int xlat_change_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 		 */
 		if (((desc & DESC_MASK) != PAGE_DESC) ||
 			(level != XLAT_TABLE_LEVEL_MAX)) {
-			WARN("Address 0x%lx is not mapped at the right granularity.\n",
-			     base_va);
-			WARN("Granularity is 0x%llx, should be 0x%x.\n",
-			     (unsigned long long)XLAT_BLOCK_SIZE(level), PAGE_SIZE);
+			WARN("Address 0x%x is not mapped at the right granularity.\r\n",
+			     (uint32_t)base_va);
+			WARN("Granularity is 0x%x, should be 0x%x.\r\n",
+			     (uint32_t)XLAT_BLOCK_SIZE(level), PAGE_SIZE);
 			return -EINVAL;
 		}
 
@@ -513,8 +513,8 @@ int xlat_change_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 		attr_index = (desc >> ATTR_INDEX_SHIFT) & ATTR_INDEX_MASK;
 		if (attr_index == ATTR_DEVICE_INDEX) {
 			if ((attr & MT_EXECUTE_NEVER) == 0U) {
-				WARN("Setting device memory as executable at address 0x%lx.",
-				     base_va);
+				WARN("Setting device memory as executable at address 0x%x.",
+				     (uint32_t)base_va);
 				return -EINVAL;
 			}
 		}
@@ -591,23 +591,23 @@ int xlat_update_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 	assert(virt_addr_space_size > 0U);
 
 	if (!IS_PAGE_ALIGNED(base_va)) {
-		WARN("%s: Address 0x%lx is not aligned on a page boundary.\n", __func__, base_va);
+		WARN("%s: Address 0x%x is not aligned on a page boundary.\r\n", __func__, (uint32_t)base_va);
 		return -EINVAL;
 	}
 
 	if ((size == 0U) || ((size % PAGE_SIZE) != 0U)) {
-		WARN("%s: Size 0x%x is not a multiple of a page size.\n", __func__, size);
+		WARN("%s: Size 0x%x is not a multiple of a page size.\r\n", __func__, size);
 		return -EINVAL;
 	}
 
 	if (((attr & MT_EXECUTE_NEVER) == 0U) && ((attr & MT_RW) != 0U)) {
-		WARN("%s: Mapping memory as read-write and executable not allowed.\n", __func__);
+		WARN("%s: Mapping memory as read-write and executable not allowed.\r\n", __func__);
 		return -EINVAL;
 	}
 
 	uintptr_t end_va = base_va + size;
 	uintptr_t base_va_original = base_va;
-	VERBOSE("Changing memory attributes from 0x%lx to 0x%lx...\n", base_va, end_va);
+	VERBOSE("Changing memory attributes from 0x%x to 0x%x...\r\n", (uint32_t)base_va, (uint32_t)end_va);
 
 	/*
 	 * Sanity checks.
@@ -624,7 +624,7 @@ int xlat_update_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 					      virt_addr_space_size,
 					      &level);
 		if (entry == NULL) {
-			WARN("Address 0x%lx is not mapped.\n", base_va);
+			WARN("Address 0x%x is not mapped.\r\n", (uint32_t)base_va);
 			return -EINVAL;
 		}
 
@@ -632,13 +632,13 @@ int xlat_update_mem_attributes_ctx(const xlat_ctx_t *ctx, uintptr_t base_va,
 		block_size = XLAT_BLOCK_SIZE(level);
 
 		if (((desc & DESC_MASK) != BLOCK_DESC) && ((desc & DESC_MASK) != PAGE_DESC)) {
-			WARN("Unsupported descriptor type at 0x%lx\n", base_va);
+			WARN("Unsupported descriptor type at 0x%x\r\n", (uint32_t)base_va);
 			return -EINVAL;
 		}
 
 		if (base_va + block_size > end_va) {
-			WARN("Region crosses granularity boundary at 0x%lx (block_size=0x%zx)\n",
-				base_va, block_size);
+			WARN("Region crosses granularity boundary at 0x%x (block_size=0x%x)\r\n",
+				(uint32_t)base_va, (uint32_t)block_size);
 			return -EINVAL;
 		}
 

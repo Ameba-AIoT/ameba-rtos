@@ -370,7 +370,7 @@ static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status)
 	}
 }
 
-static void inic_wifi_bulk_in_thread(void *param)
+static void example_usbd_inic_wifi_bulk_in_thread(void *param)
 {
 	UNUSED(param);
 	usbd_inic_app_t *iapp = &usbd_inic_app;
@@ -409,7 +409,7 @@ static void inic_cb_status_changed(u8 old_status, u8 status)
 #endif
 }
 
-static void inic_reset_thread(void *param)
+static void example_usbd_inic_reset_thread(void *param)
 {
 	UNUSED(param);
 
@@ -422,7 +422,7 @@ static void inic_reset_thread(void *param)
 }
 
 #if CONFIG_USBD_INIC_HOTPLUG
-static void inic_hotplug_thread(void *param)
+static void example_usbd_inic_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -484,18 +484,20 @@ static void example_usbd_inic_thread(void *param)
 		goto clear_usb_driver_exit;
 	}
 
-	ret = rtos_task_create(&wifi_bulk_in_task, "inic_wifi_bulk_in_thread", inic_wifi_bulk_in_thread, NULL, 1024, CONFIG_USBD_INIC_XFER_THREAD_PRIORITY);
+	ret = rtos_task_create(&wifi_bulk_in_task, "example_usbd_inic_wifi_bulk_in_thread", example_usbd_inic_wifi_bulk_in_thread, NULL, 1024,
+						   CONFIG_USBD_INIC_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_class_exit;
 	}
 
-	ret = rtos_task_create(&reset_task, "inic_reset_thread", inic_reset_thread, NULL, 1024, CONFIG_USBD_INIC_RESET_THREAD_PRIORITY);
+	ret = rtos_task_create(&reset_task, "example_usbd_inic_reset_thread", example_usbd_inic_reset_thread, NULL, 1024, CONFIG_USBD_INIC_RESET_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_wifi_bulk_in_task;
 	}
 
 #if CONFIG_USBD_INIC_HOTPLUG
-	ret = rtos_task_create(&hotplug_task, "inic_hotplug_thread", inic_hotplug_thread, NULL, 1024, CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&hotplug_task, "example_usbd_inic_hotplug_thread", example_usbd_inic_hotplug_thread, NULL, 1024,
+						   CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_reset_task;
 	}

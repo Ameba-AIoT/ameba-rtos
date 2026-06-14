@@ -1536,7 +1536,8 @@ void usbh_composite_cdc_ecm_debug_task_init(void)
 		return;
 	}
 
-	status = rtos_task_create(&(usbh_composite_cdc_ecm_trace_task), "Ecm_debug", usbh_composite_cdc_ecm_state_check_task, NULL, 1024U * 2, 1U);
+	status = rtos_task_create(&(usbh_composite_cdc_ecm_trace_task), "usbh_composite_cdc_ecm_state_check_task", usbh_composite_cdc_ecm_state_check_task, NULL,
+							  1024U * 2, 1U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create dump task fail\n");
 	}

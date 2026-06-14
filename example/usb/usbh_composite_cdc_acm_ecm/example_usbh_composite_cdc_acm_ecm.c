@@ -839,7 +839,7 @@ static u8 dongle_fibocom_diag_ctrl(void)
 				(void)fibocom_send_at_wait((const char *)pdata3, &dongle_ctx.fibocom.at_ok, 3000);
 				dongle_ctx.fibocom.at_ok = 0;
 				(void)fibocom_send_at_wait((const char *)pdata4, &dongle_ctx.fibocom.at_ok, 3000);
-				/* USB will detach; let composite_dev_hotplug_thread re-init and re-enter this flow. */
+				/* USB will detach; let example_usbh_comp_acm_ecm_hotplug_thread re-init and re-enter this flow. */
 				rtos_time_delay_ms(1000);
 				return 0;
 			}
@@ -1093,7 +1093,7 @@ static int composite_ecm_cb_detach(void)
 static void composite_dev_do_init(void)
 {
 	/* Clear all dongle state from the previous session before re-init so that
-	 * stale flags (ip_ready, cereg_ready, mac_ready, at_ok, ¡­) cannot be seen
+	 * stale flags (ip_ready, cereg_ready, mac_ready, at_ok, ï¿½ï¿½) cannot be seen
 	 * by the new session's state machines or the RX callback. */
 	memset(&dongle_ctx, 0, sizeof(dongle_ctx));
 
@@ -1123,7 +1123,7 @@ static void composite_dev_do_init(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Example Pid 0x%x/Vid 0x%x\n", dongle_ctx.pid, dongle_ctx.vid);
 }
 
-static void composite_eth_link_change_thread(void *param)
+static void example_usbh_comp_acm_ecm_link_change_thread(void *param)
 {
 	u8 *mac;
 	u32 dhcp_status = 0;
@@ -1284,7 +1284,7 @@ static void composite_cdc_ecm_write_data_to_flash(void)
 #endif
 }
 
-static void composite_cdc_ecm_download_thread(void *param)
+static void example_usbh_comp_acm_ecm_download_thread(void *param)
 {
 	int server_fd = -1;
 	u8 heart_beat = 0;
@@ -1434,7 +1434,7 @@ exit:
 }
 #endif
 
-static void composite_dev_doinit_task(void *param)
+static void example_usbh_comp_acm_ecm_init_task(void *param)
 {
 	UNUSED(param);
 	composite_dev_do_init();
@@ -1449,12 +1449,13 @@ static void composite_dev_doinit_task(void *param)
 static void composite_dev_init(void)
 {
 	int status;
-	status = rtos_task_create(&eth_link_status_check_task, "usbh_ecm_link_thread", composite_eth_link_change_thread, NULL, 1024U * 2, 3U);
+	status = rtos_task_create(&eth_link_status_check_task, "example_usbh_comp_acm_ecm_link_change_thread", example_usbh_comp_acm_ecm_link_change_thread, NULL,
+							  1024U * 2, 3U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
 
-	status = rtos_task_create(&ecm_init_task, "ecm_init_task", composite_dev_doinit_task, NULL, 1024U * 2, 5U);
+	status = rtos_task_create(&ecm_init_task, "example_usbh_comp_acm_ecm_init_task", example_usbh_comp_acm_ecm_init_task, NULL, 1024U * 2, 5U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
@@ -1465,7 +1466,7 @@ static void composite_dev_init(void)
 #if CONFIG_USBH_COMPOSITE_MEM_CHECK
 // extern void vPortGetTaskHeapInfo(void);
 // extern void mmeory_array_dump(void);
-static void composite_dev_mem_check_thread(void *param)
+static void example_usbh_comp_acm_ecm_mem_check_thread(void *param)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[test]ecm_link_toggle_thread \n");
 	int loop = 0;
@@ -1495,7 +1496,7 @@ static void composite_dev_mem_check_thread(void *param)
 #endif
 
 #if CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
-static void composite_dev_hotplug_thread(void *param)
+static void example_usbh_comp_acm_ecm_hotplug_thread(void *param)
 {
 	UNUSED(param);
 
@@ -1531,7 +1532,7 @@ void example_usbh_composite_cdc_acm_ecm(void)
 
 #if CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
 	rtos_task_t hot_plug_task;
-	int status = rtos_task_create(&hot_plug_task, "usb_hotplug_thread", composite_dev_hotplug_thread, NULL, 1024U, 3U);
+	int status = rtos_task_create(&hot_plug_task, "example_usbh_comp_acm_ecm_hotplug_thread", example_usbh_comp_acm_ecm_hotplug_thread, NULL, 1024U, 3U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hoptplag thread fail\n");
 	}
@@ -1539,7 +1540,7 @@ void example_usbh_composite_cdc_acm_ecm(void)
 
 #if CONFIG_USBH_COMPOSITE_MEM_CHECK
 	rtos_task_t memory_monitor_task;
-	int ret = rtos_task_create(&memory_monitor_task, "mem_check_thread", composite_dev_mem_check_thread, NULL, 1024U * 2, 3U);
+	int ret = rtos_task_create(&memory_monitor_task, "example_usbh_comp_acm_ecm_mem_check_thread", example_usbh_comp_acm_ecm_mem_check_thread, NULL, 1024U * 2, 3U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
@@ -1549,7 +1550,7 @@ void example_usbh_composite_cdc_acm_ecm(void)
 
 #if ENABLE_REMOTE_FILE_DOWNLOAD
 	rtos_task_t download_task;
-	status = rtos_task_create(&download_task, "usbh_ecm_download_thread", composite_cdc_ecm_download_thread, NULL, 10 * 512U, 2U);
+	status = rtos_task_create(&download_task, "example_usbh_comp_acm_ecm_download_thread", example_usbh_comp_acm_ecm_download_thread, NULL, 10 * 512U, 2U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create download thread fail\n");
 	}

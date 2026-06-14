@@ -61,8 +61,8 @@
 
 #define USBD_CDC_ACM_CTRL_BUF_SIZE                    512U   /**< Control transfer buffer size. */
 
-/** @} End of Device_CDC_ACM_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_CDC_ACM_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -162,8 +162,8 @@ typedef struct {
 #endif
 } usbd_cdc_acm_dev_t;
 
-/** @} End of Device_CDC_ACM_Types group*/
-/** @} End of USB_Device_Types group*/
+/** @} End of Device_CDC_ACM_Types group */
+/** @} End of USB_Device_Types group */
 
 /* Exported variables --------------------------------------------------------*/
 

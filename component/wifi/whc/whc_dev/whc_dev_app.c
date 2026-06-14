@@ -205,17 +205,30 @@ end:
 #ifdef CONFIG_MP_INCLUDED
 void whc_dev_mp_cmd(char *cmd, int show_msg)
 {
-	/* response layout: WHC_WIFI_TEST(4B) + WHC_WIFI_TEST_MP(1B) + outbuf */
-	u8 *resp = rtos_mem_malloc(5 + WHC_MP_MSG_BUF_SIZE);
-	if (resp) {
+	/* response layout per fragment: WHC_WIFI_TEST(4B) + WHC_WIFI_TEST_MP(1B) + frag_idx(1B) + data(WHC_MP_FRAG_SIZE) */
+	u8 *outbuf = rtos_mem_zmalloc(WHC_MP_FRAG_NUM * WHC_MP_FRAG_SIZE);
+	u8 *resp = rtos_mem_malloc(6 + WHC_MP_FRAG_SIZE);
+	u8 i;
+
+	if (!outbuf || !resp) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s Malloc fail!\n", __func__);
+		rtos_mem_free(outbuf);
+		rtos_mem_free(resp);
+		return;
+	}
+
+	wext_private_command(cmd, show_msg, (char *)outbuf);
+
+	for (i = 0; i < WHC_MP_FRAG_NUM; i++) {
 		*(u32 *)resp = WHC_WIFI_TEST;
 		resp[4] = WHC_WIFI_TEST_MP;
-		wext_private_command(cmd, show_msg, (char *)(resp + 5));
-		whc_dev_api_send_to_host(resp, 5 + WHC_MP_MSG_BUF_SIZE, NULL, 0);
-		rtos_mem_free(resp);
-	} else {
-		RTK_LOGE(TAG_WLAN_INIC, "%s Malloc fail!\n", __func__);
+		resp[5] = i; //frag_idx
+		memcpy(resp + 6, outbuf + i * WHC_MP_FRAG_SIZE, WHC_MP_FRAG_SIZE);
+		whc_dev_api_send_to_host(resp, 6 + WHC_MP_FRAG_SIZE, NULL, 0);
 	}
+
+	rtos_mem_free(outbuf);
+	rtos_mem_free(resp);
 }
 #endif
 

@@ -524,7 +524,7 @@ static int cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 		if (USB_IS_MEM_DMA_ALIGNED(ep_bulk_out->xfer_buf)) {
 			DCache_Clean((u32)ep_bulk_out->xfer_buf, ep_bulk_out->xfer_len);
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "RX buf align err\n");
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, USBD_CDC_ACM_BULK_OUT_EP);
 			return HAL_ERR_MEM;
 		}
 	}
@@ -645,7 +645,7 @@ static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 			break;
 		/* Add customer string here */
 		default:
-			//RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", USB_LOW_BYTE(req->wValue));
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 			break;
 		}
 		break;

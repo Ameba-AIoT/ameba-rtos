@@ -208,6 +208,8 @@ void flash_pad_low_drv_strength(u32 PinLocation)
 
 void flash_highspeed_setup(void)
 {
+	uint32_t irq_status;
+
 	u8 read_mode, flash_speed;
 	u32 Temp, spic_ckd;
 	u32 pll_clk = PLL_ClkGet();
@@ -220,7 +222,7 @@ void flash_highspeed_setup(void)
 
 	RTK_LOGI(TAG, "FLASH CLK: %d Hz\n", pll_clk / (2 * (flash_speed + 1)));
 
-	__disable_irq();
+	irq_status = irq_disable_save();
 
 	/* SPIC stay in BUSY state when there are more than 0x1_0000 cycles between two input data.
 	 * Disable DREIR to avoid that interrupt hanler time is lager than 0x1_0000 SPIC cycles.
@@ -258,7 +260,7 @@ void flash_highspeed_setup(void)
 		flash_handshake_highspeed(flash_speed);
 	}
 
-	__enable_irq();
+	irq_enable_restore(irq_status);
 }
 
 /* init psramc for flash r/w if needed */

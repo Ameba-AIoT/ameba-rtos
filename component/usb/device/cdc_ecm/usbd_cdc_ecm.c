@@ -807,7 +807,7 @@ static int cdc_ecm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
  *          then sets rx_buf_free so the USB OUT path can hand off again.
  *          Decouples upper-layer (lwIP) processing from USB completion context.
  */
-static void cdc_ecm_rx_thread(void *param)
+static void usbd_cdc_ecm_rx_thread(void *param)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	UNUSED(param);
@@ -1152,7 +1152,7 @@ int usbd_cdc_ecm_init(usbd_cdc_ecm_cb_t *cb)
 
 	/* Start RX delivery thread */
 	ecm->rx_thread_running = 1;
-	ret = rtos_task_create(&ecm->rx_task, "usbd_cdc_ecm_rx", cdc_ecm_rx_thread, NULL,
+	ret = rtos_task_create(&ecm->rx_task, "usbd_cdc_ecm_rx_thread", usbd_cdc_ecm_rx_thread, NULL,
 						   USBD_CDC_ECM_RX_THREAD_STACK_SIZE, USBD_CDC_ECM_RX_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX thread fail\n");

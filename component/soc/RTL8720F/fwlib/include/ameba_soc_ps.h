@@ -74,6 +74,7 @@ void SOCPS_SleepCG(void);
 void SOCPS_SleepPG_RAM_FOR_WFE(struct CPU_BackUp_TypeDef *bk);
 void SOCPS_SleepPG_RAM_FOR_WFI(struct CPU_BackUp_TypeDef *bk);
 void SOCPS_SleepCG_RAM(void);
+void SOCPS_PeriRestore(void);
 /*4. Reg backup/restore*/
 void SOCPS_NVICBackup(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC_Type *nvic, SCB_Type *scb);
 void SOCPS_NVICReFill(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC_Type *nvic, SCB_Type *scb);

@@ -44,6 +44,32 @@ typedef struct {
 	u32 MEM_LS;
 } MEMMode_TypeDef;
 
+typedef struct {
+	u32 CTRL;
+	u32 MAIR0;
+	u32 MAIR1;
+	u32 RBAR[MPU_MAX_REGION];
+	u32 RLAR[MPU_MAX_REGION];
+} MPU_BackUp_TypeDef;
+
+#if defined (CONFIG_ARM_CORE_CM4)
+typedef struct {
+	u32 CPURegbackup_HP[25];
+	u32 CPUPSP_HP;
+	u32 PortSVC_Backup_HP;
+	u32 NVICbackup_HP[6];
+	u32 SYSTICKbackup_HP[4];
+	u32 SCBbackup_HP[4];
+	u32 IPCbackup_HP;
+	u32 BASEPRI_backup_HP;
+	u32 PRIMASK_backup_HP;
+	u8 NVICIPbackup_HP[MAX_PERIPHERAL_IRQ_NUM];
+	MPU_BackUp_TypeDef MPU_BK;
+} CPU_BackUp_TypeDef;
+
+#define PMC_BK		((CPU_BackUp_TypeDef *)(MSPLIM_RAM_HP_NS))
+#endif
+
 extern void SOCPS_SleepPG(void);
 extern void SOCPS_SleepCG(void);
 

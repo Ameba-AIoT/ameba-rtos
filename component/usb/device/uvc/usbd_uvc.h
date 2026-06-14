@@ -60,7 +60,7 @@
 
 #define USBD_UVC_STATUS_MAX_PACKET_SIZE		64	/* 16 bytes status */
 
-#define USBD_UVC_IN_BUF_SIZE 1024//1000//768//512//256
+#define USBD_UVC_IN_BUF_SIZE                 1024       /* 1000/768/512/256 */
 
 #define USBD_UVC_ISO_IN_EP                       0x83U
 /* Exported macros -----------------------------------------------------------*/
@@ -109,13 +109,13 @@ typedef  struct {
  * (e.g. brightness, contrast, saturation).
  */
 typedef  struct {
-	int cur;//0X81
-	int min;//0X82
-	int max;//0X83
-	int res;//0X84
-	int len;//0X85
-	int info;//0X86
-	int def;//0X87
+	int cur;/* 0X81 */
+	int min;/* 0X82 */
+	int max;/* 0X83 */
+	int res;/* 0X84 */
+	int len;/* 0X85 */
+	int info;/* 0X86 */
+	int def;/* 0X87 */
 } usbd_uvc_process_unit_t;
 
 /**
@@ -129,8 +129,8 @@ typedef  struct {
 	u8 length;
 	u16 param;
 	u16 addr;
-	u8 buf[0x40];//The maximum buffer size
-	u32 offset;//to recode the index for read and write
+	u8 buf[0x40];/* The maximum buffer size */
+	u32 offset;/* to recode the index for read and write */
 } usbd_uvc_isp_usbd_cmd_data_t;
 
 /**
@@ -193,13 +193,13 @@ typedef  struct {
 	u32 payload_size;
 	u32 max_payload_size;
 
-	//struct uvc_video_queue queue;
+	/* struct uvc_video_queue queue; */
 	u32 fid;
 	u32 format;
 	u32 buf_used;
 	u32 end_flag;
 
-	// payload list
+	/* payload list */
 	struct list_head input_queue;
 	struct list_head output_queue;
 	usb_os_lock_t input_lock;
@@ -226,9 +226,9 @@ typedef  struct {
 	/* Events */
 	u32 event_length;
 	u32 event_setup_out : 1;
-	int control;		   //control selector
-	int command_interface; //Interface and entiny 0x00 control 0x01 streaming &0xff
-	int command_entity;	   //0x02 process unit 0x03 extension unit >>8&0xff
+	int control;		   /* control selector */
+	int command_interface; /* Interface and entiny 0x00 control 0x01 streaming &0xff */
+	int command_entity;	   /* 0x02 process unit 0x03 extension unit >>8&0xff */
 	u8 result[64];
 	/**
 	 * @brief Called when UVC streaming parameters are committed/changed by the host.
@@ -245,7 +245,7 @@ typedef  struct {
 	struct list_head	bod_list;
 	usb_os_lock_t lock;
 	u32 running;
-	u32 init_done;    // 0: not initialized, 1: fully initialized
+	u32 init_done;    /* 0: not initialized, 1: fully initialized */
 	usbd_ep_t ep_isoc_in;
 	rtos_queue_t uvc_cmd_queue;
 	u32 frame_done;
