@@ -51,7 +51,7 @@ static int cdc_acm_cb_process(usb_host_t *host, u8 msg);
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status);
 static void cdc_acm_notify_test(void);
-static void cdc_acm_notify_test_thread(void *param);
+static void example_usbh_cdc_acm_notify_thread(void *param);
 #endif
 #if CONFIG_USBH_CDC_ACM_SPEED_TEST
 static void cdc_acm_speed_loopback_test(void);
@@ -240,7 +240,7 @@ static u32 cdc_acm_loopback_tx_idx = 0;
 static volatile u64 tx_loop_cnt = 0, tx_loop_sub_cnt = 0;
 static volatile u64 rx_loop_cnt = 0, rx_loop_sub_cnt = 0;
 #define TASK_DUMP_CNT  1
-static void bulk_tx_thread(void *param)
+static void example_usbh_bulk_tx_thread(void *param)
 {
 	u32 i;
 	int ret;
@@ -280,7 +280,7 @@ static void bulk_tx_thread(void *param)
 
 	rtos_task_delete(NULL);
 }
-static void bulk_rx_thread(void *param)
+static void example_usbh_bulk_rx_thread(void *param)
 {
 	u32 i;
 	int ret;
@@ -334,12 +334,12 @@ static void cdc_acm_speed_loopback_test(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Bulk loopback test start, times:%d, size: %d\n", USBH_CDC_ACM_LOOPBACK_CNT, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 
-	ret = rtos_task_create(&rx_task, "rx_task", bulk_rx_thread, NULL, 1024U * 2, 3U);
+	ret = rtos_task_create(&rx_task, "example_usbh_bulk_rx_thread", example_usbh_bulk_rx_thread, NULL, 1024U * 2, 3U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create rx_task fail\n");
 	}
 	//start two task, one for tx, one for rx
-	ret = rtos_task_create(&tx_task, "tx_task", bulk_tx_thread, NULL, 1024U * 2, 3U);
+	ret = rtos_task_create(&tx_task, "example_usbh_bulk_tx_thread", example_usbh_bulk_tx_thread, NULL, 1024U * 2, 3U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create tx_task fail\n");
 	}
@@ -403,7 +403,7 @@ static void cdc_acm_loopback_test(void)
 #endif
 
 #if CONFIG_USBH_CDC_ACM_NOTIFY
-static void cdc_acm_notify_test_thread(void *param)
+static void example_usbh_cdc_acm_notify_thread(void *param)
 {
 	UNUSED(param);
 	int ret = HAL_OK;
@@ -444,7 +444,7 @@ static void cdc_acm_notify_test(void)
 {
 	int status;
 	rtos_task_t task;
-	status = rtos_task_create(&task, "notify_task", cdc_acm_notify_test_thread, NULL, 1024U, 2U);
+	status = rtos_task_create(&task, "example_usbh_cdc_acm_notify_thread", example_usbh_cdc_acm_notify_thread, NULL, 1024U, 2U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create notify thread fail(%d)\n", status);
 	}
@@ -509,7 +509,7 @@ static void cdc_acm_request_test(void)
 }
 
 #if CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST
-static void cdc_acm_hotplug_thread(void *param)
+static void example_usbh_cdc_acm_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -570,7 +570,7 @@ static void example_usbh_cdc_acm_thread(void *param)
 	}
 
 #if CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST
-	status = rtos_task_create(&task, "cdc_acm_hotplug_thread", cdc_acm_hotplug_thread, NULL, 1024U, 3U);
+	status = rtos_task_create(&task, "example_usbh_cdc_acm_hotplug_thread", example_usbh_cdc_acm_hotplug_thread, NULL, 1024U, 3U);
 	if (status != RTK_SUCCESS) {
 		usbh_cdc_acm_deinit();
 		usbh_deinit();

@@ -34,8 +34,8 @@
 #define USBH_BOT_DATA_LENGTH                      64U         /**< Generic data buffer length for small transfers. */
 
 #define USBH_MSC_MAX_LUN                          1U          /**< Maximum number of logical units (LUNs) supported. */
-/** @} End of Host_MSC_Constants group*/
-/** @} End of USB_Host_Constants group*/
+/** @} End of Host_MSC_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -171,8 +171,8 @@ typedef struct {
 	 */
 	int (*setup)(void);
 } usbh_msc_cb_t;
-/** @} End of Host_MSC_Types group*/
-/** @} End of USB_Host_Types group*/
+/** @} End of Host_MSC_Types group */
+/** @} End of USB_Host_Types group */
 
 /**
  * @brief MSC host structure.

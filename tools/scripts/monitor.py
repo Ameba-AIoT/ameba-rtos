@@ -65,7 +65,11 @@ def main():
     parser.add_argument("--ca32", action="store_true", help="If core is ca32, should set this.")
     parser.add_argument('--no-console', action='store_true',
                         help='Disable prompt toolkit TUI and read commands from stdin pipe')
-
+    parser.add_argument('--chip', default=None,
+                        help='Optional chip name (case-insensitive), example value: RTL8730E, rtl8730e. Enables AGG parsing '
+                             'and remaps path tags; --logAGG takes higher priority when both '
+                             'are supplied. Chips without AGG and unknown '
+                             'chips fall back to Core0/Core1/Core2 tags.')
     args = parser.parse_args()
 
     port = args.port
@@ -123,7 +127,9 @@ def main():
         cmds.append("--ca32")
     if args.no_console:
         cmds.append("--no-console")
-
+    if args.chip:
+        cmds.append("--chip")
+        cmds.append(args.chip)
     run_monitor(cmds)
 
 if __name__ == "__main__":

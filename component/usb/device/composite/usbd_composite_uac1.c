@@ -977,7 +977,7 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_in->xfer_len = 1U;
 						usbd_ep_transmit(dev, ep0_in);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "SETUP: bRequest err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 0);
 						ret = HAL_ERR_PARA;
 					}
 				} else if (controlSelector == USB_UAC1_CTRL_FU_VOLUME_CONTROL_SELECTOR) {
@@ -1001,11 +1001,11 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_in->xfer_len = 2U;
 						usbd_ep_transmit(dev, ep0_in);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "SETUP: bRequest err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 1);
 						ret = HAL_ERR_PARA;
 					}
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "SETUP: wValue err %d-%d\n", entityId, controlSelector);
+					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 2);
 					ret = HAL_ERR_PARA;
 				}
 			} else if ((req->bmRequestType & 0x1FU) == USB_REQ_RECIPIENT_ENDPOINT) {
@@ -1016,13 +1016,12 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_in->xfer_len = 3U;
 						usbd_ep_transmit(dev, ep0_in);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "SETUP: bRequest err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 3);
 						ret = HAL_ERR_PARA;
 					}
 				}
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Request not handle 0x%02x 0x%02x %x %x 0x%04x\n",
-						 req->bmRequestType, req->bRequest, req->wValue, req->wIndex, req->wLength);
+				USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 4);
 			}
 
 		} else {
@@ -1034,11 +1033,11 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_out->xfer_len = req->wLength;
 						usbd_ep_receive(dev, ep0_out);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "Set freq err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 5);
 						ret = HAL_ERR_PARA;
 					}
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Set freq ctrl err %d-%d\n", entityId, controlSelector);
+					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 6);
 					ret = HAL_ERR_PARA;
 				}
 			}
@@ -1050,7 +1049,7 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_out->xfer_len = req->wLength;
 						usbd_ep_receive(dev, ep0_out);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "Set cur mute err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 7);
 						ret = HAL_ERR_PARA;
 					}
 				} else if (controlSelector == USB_UAC1_CTRL_FU_VOLUME_CONTROL_SELECTOR) { //volume
@@ -1059,11 +1058,11 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_out->xfer_len = req->wLength;
 						usbd_ep_receive(dev, ep0_out);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "Set cur volume range err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 8);
 						ret = HAL_ERR_HW;
 					}
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Set fu err %d-%d\n", entityId, controlSelector);
+					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 9);
 					ret = HAL_ERR_HW;
 				}
 			}
@@ -1089,7 +1088,7 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;
 
 	default:
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "ReqType err %d\n", req->bmRequestType);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 10);
 		ret = HAL_ERR_HW;
 		break;
 	}

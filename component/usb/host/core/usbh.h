@@ -11,6 +11,7 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
+#include "usb_diag.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -129,7 +130,7 @@ typedef enum {
 	USBH_TICK_ERROR,              /**< Error state for tick source. */
 } usbh_tick_source_t;
 
-// Forward declarations to resolve circular dependencies.
+/* Forward declarations to resolve circular dependencies. */
 struct _usbh_itf_data_t;
 struct _usb_host_t;
 
@@ -314,12 +315,14 @@ typedef struct {
 	                                     Min value 16 and max value restricted by SoC hardware. */
 #endif
 	u16 main_task_stack_size;         /**< USB main task stack size. */
+	u16 diag_depth;                   /**< Diag ring buffer depth in entries; 0 uses @ref USB_DIAG_DEFAULT_DEPTH. Requires `diag_enable`. */
+	u16 diag_poll_ms;                 /**< Diag task polling interval in ms; 0 uses @ref USB_DIAG_DEFAULT_POLL_MS. Requires `diag_enable`. */
 	u8 main_task_priority;            /**< USB main task priority, the main task processes the USB host messages. */
 	u8 isr_priority;                  /**< USB ISR priority. */
 
 	u8 xfer_retry_max_cnt;            /**< Maximum number of retries for a failed transfer. */
 
-	u8 tick_source : 4;               /**< Tick source for getting the usb host tick of USB host core driver, see @ref usbh_tick_source_t.
+	u8 tick_source : 3;               /**< Tick source for getting the usb host tick of USB host core driver, see @ref usbh_tick_source_t.
 	                                     Which is used to trigger periodic transfers based on the endpoint interval and to detect transfer timeouts.*/
 	/**
 	 * @brief USB speed mode. See @ref usb_speed_type_t.
@@ -330,6 +333,9 @@ typedef struct {
 	u8 speed : 2;
 	u8 isr_in_critical : 1;               /**< Flag to process USB ISR within a critical section (0: Disable, 1: Enable). */
 	u8 hub_support : 1;                   /**< Support 1-level HUB (0: Disable, 1: Enable). */
+	u8 diag_enable : 1;                   /**< Enable USB diag ring buffer and polling task (0: Disable, 1: Enable).
+                                              When disabled, error diagnostic information is silently lost.
+                                              Enable this to capture USB error events for debugging. */
 } usbh_config_t;
 
 /**

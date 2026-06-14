@@ -1148,6 +1148,47 @@ struct bt_hci_cp_le_remove_adv_set {
 	uint8_t  handle;
 } __attribute__((packed));
 
+/* LE Periodic Advertising HCI Commands (BT 5.0) */
+#define BT_HCI_OP_LE_SET_PERIODIC_ADV_PARAM_V1  BT_OP(BT_OGF_LE, 0x003E) /* 0x203E */
+struct bt_hci_cp_le_set_periodic_adv_param_v1 {
+	uint8_t  handle;
+	uint16_t min_interval;
+	uint16_t max_interval;
+	uint16_t props;
+} __attribute__((packed));
+
+#define BT_HCI_OP_LE_SET_PERIODIC_ADV_DATA      BT_OP(BT_OGF_LE, 0x003F) /* 0x203F */
+struct bt_hci_cp_le_set_periodic_adv_data {
+	uint8_t  handle;
+	uint8_t  op;
+	uint8_t  len;
+	uint8_t  data[0];
+} __attribute__((packed));
+
+#define BT_HCI_OP_LE_SET_PERIODIC_ADV_ENABLE    BT_OP(BT_OGF_LE, 0x0040) /* 0x2040 */
+struct bt_hci_cp_le_set_periodic_adv_enable {
+	uint8_t  enable;
+	uint8_t  handle;
+} __attribute__((packed));
+
+#define BT_HCI_OP_LE_PERIODIC_ADV_CREATE_SYNC   BT_OP(BT_OGF_LE, 0x0044) /* 0x2044 */
+struct bt_hci_cp_le_periodic_adv_create_sync {
+	uint8_t  options;
+	uint8_t  sid;
+	uint8_t  adv_addr_type;
+	uint8_t  adv_addr[BT_ADDR_SIZE];
+	uint16_t skip;
+	uint16_t sync_timeout;
+	uint8_t  sync_cte_type;
+} __attribute__((packed));
+
+#define BT_HCI_OP_LE_PERIODIC_ADV_CREATE_SYNC_CANCEL  BT_OP(BT_OGF_LE, 0x0045) /* 0x2045 */
+
+#define BT_HCI_OP_LE_PERIODIC_ADV_TERMINATE_SYNC  BT_OP(BT_OGF_LE, 0x0046) /* 0x2046 */
+struct bt_hci_cp_le_periodic_adv_terminate_sync {
+	uint16_t sync_handle;
+} __attribute__((packed));
+
 #define BT_HCI_LE_PRIVACY_MODE_NETWORK          0x00
 #define BT_HCI_LE_PRIVACY_MODE_DEVICE           0x01
 
@@ -1157,6 +1198,40 @@ struct bt_hci_cp_le_set_privacy_mode {
 	uint8_t  id_addr[BT_ADDR_SIZE];
 	uint8_t mode;
 } __attribute__((packed));
+
+/* LE Periodic Advertising HCI Events */
+#define BT_HCI_EVT_LE_PA_SYNC_ESTABLISHED       0x0E
+struct bt_hci_evt_le_pa_sync_established {
+	uint8_t  subevent;
+	uint8_t  status;
+	uint16_t sync_handle;
+	uint8_t  sid;
+	struct bt_le_addr_t adv_addr;
+	uint8_t  adv_phy;
+	uint16_t pa_interval;
+	uint8_t  adv_clk_accuracy;
+} __attribute__((packed));
+
+#define BT_HCI_EVT_LE_PA_REPORT                 0x0F
+struct bt_hci_evt_le_pa_report {
+	uint8_t  subevent;
+	uint16_t sync_handle;
+	uint8_t  tx_power;
+	int8_t   rssi;
+	uint8_t  cte_type;
+	uint8_t  data_status;
+	uint8_t  data_len;
+	uint8_t  data[0];
+} __attribute__((packed));
+
+#define BT_HCI_EVT_LE_PA_SYNC_LOST              0x10
+struct bt_hci_evt_le_pa_sync_lost {
+	uint8_t  subevent;
+	uint16_t sync_handle;
+} __attribute__((packed));
+
+/* Periodic Advertising props */
+#define BT_HCI_LE_PA_PROP_TX_POWER              BIT(6)
 
 //Vendor HCI Command
 #define BT_HCI_OP_VENDOR_READ_VENDOR_REG        BT_OP(BT_OGF_VENDOR, 0x0061) /*0xFC61*/

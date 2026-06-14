@@ -29,5 +29,5 @@ int usbd_composite_init(u32 cdc_bulk_out_xfer_size, u32 cdc_bulk_in_xfer_size, u
 
 void usbd_composite_deinit(void);
 
-#endif // USBD_COMPOSITE_CDC_ACM_UAC_H
+#endif /* USBD_COMPOSITE_CDC_ACM_UAC_H */
 

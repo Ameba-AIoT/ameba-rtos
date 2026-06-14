@@ -21,4 +21,4 @@ int usbd_composite_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u32 len);
 int usbd_composite_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u32 len);
 void usbd_composite_msc_send_csw(usb_dev_t *dev, u8 status);
 
-#endif // USBD_COMPOSITE_SCSI_H
+#endif /* USBD_COMPOSITE_SCSI_H */

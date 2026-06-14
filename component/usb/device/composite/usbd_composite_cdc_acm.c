@@ -333,7 +333,7 @@ static int composite_cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		}
 		break;
 	default:
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid bRequest 0x%02x\n", req->bRequest);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 0);
 		ret = HAL_ERR_HW;
 		break;
 	}
@@ -373,7 +373,7 @@ static int composite_cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 st
 		}
 #endif
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX fail: %d\n", ep_addr, status);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 		if (ep_addr == USBD_COMP_CDC_BULK_IN_EP) {
 			ep_bulk_in->xfer_state = 0U;
 			if (cdc->cb->transmitted) {

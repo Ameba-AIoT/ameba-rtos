@@ -51,6 +51,8 @@ uint8_t rmesh_ap_gw[4];
 void whc_host_rx_buf_hdl(struct msgtemplate *msg);
 void whc_host_mp_result(uint8_t *buf);
 
+static uint8_t mpfrag_buf[WHC_MP_FRAG_NUM * WHC_MP_FRAG_SIZE];
+static int mpfrag_received = 0;
 static char *whc_cmd_args[MAX_ARG_COUNT] = {0};
 char whc_cmd_backup[MAX_INPUT_SIZE] = {0};
 static uint32_t whc_cmd_argc;
@@ -308,6 +310,9 @@ int whc_host_wifi_mp(void)
 		printf("malloc failed\n");
 		return -1;
 	}
+
+	mpfrag_received = 0;
+	memset(mpfrag_buf, 0, sizeof(mpfrag_buf));
 
 	*(uint32_t *)buf = WHC_WIFI_TEST;
 	buf[4] = WHC_WIFI_TEST_MP;
@@ -571,14 +576,21 @@ int whc_host_set_mac_internal(uint8_t idx, char *mac)
 
 void whc_host_mp_result(uint8_t *buf)
 {
-	uint8_t size = strlen(buf);
-	if (size > 1600) {
-		printf("mp result error \r\n");
+	uint8_t frag_idx = buf[0];
+
+	if (frag_idx >= WHC_MP_FRAG_NUM) {
+		printf("mp result: invalid frag_idx %d\r\n", frag_idx);
 		return;
 	}
 
-	printf("%s \r\n", buf);
-	return;
+	memcpy(mpfrag_buf + frag_idx * WHC_MP_FRAG_SIZE, buf + 1, WHC_MP_FRAG_SIZE);
+	mpfrag_received++;
+
+	if (mpfrag_received >= WHC_MP_FRAG_NUM) {
+		printf("%s \r\n", (char *)mpfrag_buf);
+		mpfrag_received = 0;
+		memset(mpfrag_buf, 0, sizeof(mpfrag_buf));
+	}
 }
 
 #ifdef CONFIG_RMESH

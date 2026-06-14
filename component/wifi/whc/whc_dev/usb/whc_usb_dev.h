@@ -9,8 +9,13 @@
 
 #define DEV_DMA_ALIGN			CACHE_LINE_SIZE
 #define USB_DMA_ALIGN(x)	(((x + CACHE_LINE_SIZE - 1) / CACHE_LINE_SIZE) * CACHE_LINE_SIZE)
+#ifdef CONFIG_WHCH
+#define USB_BUFSZ		(USB_DMA_ALIGN(TXDESC_SIZE + WLAN_MAX_PROTOCOL_OVERHEAD + MAXIMUM_ETHERNET_PACKET_SIZE  + sizeof(struct whc_msg_info)))
+#define USB_SKB_RSVD_LEN	0
+#else
 #define USB_BUFSZ		(USB_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
 #define USB_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), 4)
+#endif
 
 #define WIFI_WHC_USB_STATUS_ACTIVE                       0
 #define WIFI_WHC_USB_STATUS_SUSPEND                      1

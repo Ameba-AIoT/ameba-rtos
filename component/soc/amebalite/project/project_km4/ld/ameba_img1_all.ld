@@ -29,6 +29,14 @@ ENTRY(Reset_Handler)
 		#define FLASH_INPUT_RODATA
 	#endif
 #endif
+
+/* define trustzone load memory address */
+#ifdef CONFIG_IMG3_SRAM
+	#define LMA_TZ_REGION KM4_BD_RAM_TZ
+#else
+	#define LMA_TZ_REGION KM4_BD_PSRAM_TZ
+#endif
+
 SECTIONS
 {
 	/* image1: boot image start */
@@ -84,6 +92,13 @@ SECTIONS
 		__image2_entry_func__ = .;
 
 	} > KM4_BOOT_RAM
+
+	/* image3 (TFM/secure) entry table address, image1 jumps here directly */
+	.ram_image3.text :
+	{
+		__ram_image3_start__ = .;
+		__ram_image3_end__ = __ram_image3_start__ + LENGTH(LMA_TZ_REGION);
+	} > LMA_TZ_REGION
 }
 
 __dsp_psram_addr__ = ORIGIN(DSP_BD_PSRAM);

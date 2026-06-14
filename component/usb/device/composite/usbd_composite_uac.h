@@ -72,8 +72,8 @@
 
 
 
-/** @} End of Device_Composite_UAC_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_Composite_UAC_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 /** @addtogroup USB_Device_Types USB Device Types
@@ -166,8 +166,8 @@ typedef struct {
 	 */
 	int(* sof)(void);
 } usbd_composite_uac_usr_cb_t;
-/** @} End of Device_Composite_UAC_Types group*/
-/** @} End of USB_Device_Types group*/
+/** @} End of Device_Composite_UAC_Types group */
+/** @} End of USB_Device_Types group */
 
 typedef struct {
 	usbd_audio_cfg_t audio_config;  /* Audio config */
@@ -322,4 +322,4 @@ u32 usbd_composite_uac_write(u8 *buffer, u32 size, u32 timeout_ms);
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
 
-#endif // USBD_COMPOSITE_UAC_H
+#endif /* USBD_COMPOSITE_UAC_H */

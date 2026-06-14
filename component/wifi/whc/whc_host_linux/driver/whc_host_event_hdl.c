@@ -292,6 +292,12 @@ void whc_host_join_status_hdl(u32 event, char *evt_info)
 								  global_idev.p2p_global.roch_duration, GFP_KERNEL);
 	}
 #endif
+
+#ifdef CONFIG_WHCH
+	if (event == RTW_EVENT_ADDBA_NEGO) {
+		whc_host_on_action_block_ack((struct rtw_event_addba_nego *)evt_info);
+	}
+#endif
 }
 
 void whc_host_acs_info_hdl(struct rtw_acs_mntr_rpt *acs_rpt)

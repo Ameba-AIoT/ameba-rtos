@@ -197,6 +197,7 @@ enum PMC_AP_WAKE_STATUS {
 
 extern u32 psp_temp;
 extern u32 psplim_temp;
+extern SLEEP_ParamDef sleep_param;
 
 void SOCPS_SleepCG_RAM(void);
 void np_pm_init(void);

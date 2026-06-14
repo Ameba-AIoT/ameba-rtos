@@ -581,7 +581,7 @@ static void usbd_msc_tx_process(void)
 			break;
 		}
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX err: %d\n", cdev->tx_status);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, USBD_MSC_BULK_IN_EP);
 	}
 
 	usb_os_unlock(usbd_msc_sd_lock);
@@ -764,7 +764,7 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 			break;
 		/* Add customer string here */
 		default:
-			//RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", USB_LOW_BYTE(req->wValue));
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 			break;
 		}
 		break;

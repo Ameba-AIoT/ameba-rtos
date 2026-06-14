@@ -519,6 +519,12 @@ extern "C" {
 
 /** @} End of group AmebaD_Peripheral_Declaration */
 
+#define MSP_RAM_LP			    0x20001FFC
+#define MSPLIM_RAM_HP		    0x30008000
+#define MSP_RAM_HP			    0x30009FFC
+#define MSP_RAM_HP_NS		    0x20004000
+#define MSPLIM_RAM_HP_NS    (u32)__km4_msp_ram_ns_limit__
+
 #define HS_SRAM_S_ADDR_START		HP_SRAM0_BASE_S 				/* rom used, can not change */
 #define HS_SRAM_S_ADDR_END			(HP_SRAM0_BASE_S + 0x00FFFFFF)	/* rom used, can not change */
 

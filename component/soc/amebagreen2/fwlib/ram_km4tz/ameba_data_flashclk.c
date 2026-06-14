@@ -289,9 +289,6 @@ void data_flash_highspeed_setup(void)
 		RTK_LOGE(TAG, "Can't support second flash for chip with mem psram or single die\r\n");
 		return;
 	}
-
-	__disable_irq();
-
 #if defined(CONFIG_SECOND_FLASH_NOR)
 	DATA_FLASH_StructInit(FLASH_InitStruct);
 	FLASH_InitStruct->FLASH_baud_rate = 1;
@@ -342,5 +339,4 @@ void data_flash_highspeed_setup(void)
 	if (SYSCFG_CHIPType_Get() != CHIP_TYPE_FPGA) {
 		data_flash_handshake_highspeed();
 	}
-	__enable_irq();
 }

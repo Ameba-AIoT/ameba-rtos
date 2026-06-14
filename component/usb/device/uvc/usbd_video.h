@@ -228,11 +228,11 @@ typedef  struct {
 	u32 format;
 	u32 fps;
 	u32 state;
-	u32 isp_format;//1:YUV420 2:YUV422 3:Bayer
-	u32 ldc;//0:Disable 1:Enable
+	u32 isp_format;/* 1:YUV420 2:YUV422 3:Bayer */
+	u32 ldc;/* 0:Disable 1:Enable */
 	u32 bayer_type;
 	usb_os_sema_t uvcd_change_sema;
-	u32 init;//It only support whether the uvc is first init 0:Not initialized 1: Initialized
+	u32 init;/* It only support whether the uvc is first init 0:Not initialized 1: Initialized */
 } usbd_uvc_format_t;
 
 /* Exported variables --------------------------------------------------------*/

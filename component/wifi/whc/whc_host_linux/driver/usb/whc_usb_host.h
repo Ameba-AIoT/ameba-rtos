@@ -13,7 +13,11 @@
 #else
 #define WIFI_OUT_EP_NUM_TOTAL	3
 #endif
+#ifdef CONFIG_WHCH
+#define RTW_USB_MAX_SKB_SIZE				1800
+#else
 #define RTW_USB_MAX_SKB_SIZE				1600
+#endif
 
 #define CONFIG_INIC_USB_ASYNC_SEND
 

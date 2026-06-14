@@ -66,7 +66,9 @@ static void _spi_rx_thread(void *pData)
 
 		if (buf) {
 			hdr = (struct bt_inic_spi_hdr *)buf;
-			bt_inic_recv_from_host(hdr->type, buf + sizeof(struct bt_inic_spi_hdr), hdr->len - sizeof(struct bt_inic_spi_hdr));
+			if (hdr->len >= sizeof(struct bt_inic_spi_hdr)) {
+				bt_inic_recv_from_host(hdr->type, buf + sizeof(struct bt_inic_spi_hdr), hdr->len - sizeof(struct bt_inic_spi_hdr));
+			}
 			osif_mem_free(buf);
 		}
 	}
@@ -76,7 +78,10 @@ static void _spi_rx_thread(void *pData)
 
 static bool _spi_rx_queue_init(void)
 {
-	osif_msg_queue_create(&spi_priv.rx_queue, 32, sizeof(u8 *));
+	if (!osif_msg_queue_create(&spi_priv.rx_queue, 32, sizeof(u8 *))) {
+		BT_LOGE("Create SPI RX queue failed\n");
+		return FALSE;
+	}
 
 	spi_priv.rx_req_flag = SPI_RUNNING;
 	if (!osif_task_create(NULL, "SPI_BT_RX_THREAD", _spi_rx_thread, (void *)(&spi_priv), 1024 * 4, 7)) {
@@ -104,7 +109,7 @@ static void _spi_rx_queue_deinit(void)
 
 #if defined(CONFIG_WHC_INTF_SPI) && CONFIG_WHC_INTF_SPI
 
-void whc_spi_dev_send(u8 *buf, u16 len, u8 *buf_alloc, u8 is_skb);
+void whc_spi_dev_send_to_host(u8 *buf, u8 *buf_alloc, u16 len);
 extern void (*bt_inic_spi_recv_ptr)(uint8_t *buffer, uint16_t len);
 void bt_inic_spi_recv_from_host(u8 *buf, uint16_t len);
 void bt_inic_spi_init(void)
@@ -138,8 +143,8 @@ void bt_inic_send_to_host(u8 type, u8 *pbuf, u32 len)
 	memcpy((void *)(hdr + 1), pbuf, len);
 
 	BT_LOGD("BT dev send type %d len %d\n", type, spilen);
-	BT_DUMPA("Share TX:\r\n", buf, spilen);
-	whc_spi_dev_send((u8 *)hdr, spilen, buf, 0);
+	BT_DUMPA("Share TX:\r\n", (u8 *)hdr, spilen);
+	whc_spi_dev_send_to_host((u8 *)hdr, buf, spilen);
 
 	return;
 }
@@ -211,20 +216,44 @@ void bt_inic_spi_recv_from_host(u8 *buf, uint16_t len)
 #define SPI0_MISO   _PB_25
 #define SPI0_SCLK   _PB_23
 #define SPI0_CS     _PB_26
+
+#elif defined(CONFIG_AMEBAGREEN2)
+#define SPI0_MOSI                   _PA_5
+#define SPI0_MISO                   _PA_18
+#define SPI0_SCLK                   _PA_4
+#define SPI0_CS                     _PA_19
 #endif
 
+#if defined(CONFIG_AMEBAGREEN2)
+#define PINMUX_FUNCTION_SPIS        PINMUX_FUNCTION_SPI0
+#else
+#define PINMUX_FUNCTION_SPIS        PINMUX_FUNCTION_SPI
+#endif
+
+#if defined(CONFIG_AMEBAGREEN2)
+#define DEV_READY_PIN               _PA_21
+#else
 #define DEV_READY_PIN               _PB_9
+#endif
 #define DEV_READY                   1
 #define DEV_BUSY                    0
 
+#if defined(CONFIG_AMEBAGREEN2)
+#define RX_REQ_PIN                  _PA_20
+#else
 #define RX_REQ_PIN                  _PB_8
+#endif
 #define DEV_RX_REQ                  1
 #define DEV_RX_IDLE                 0
 
 #define INIC_SPI_DEV                SPI0_DEV
 
 #define INIC_SPI_CLK_MHZ            20
+#if defined(CONFIG_AMEBAGREEN2)
 #define INIC_RECOVER_TIM_IDX        0
+#else
+#define INIC_RECOVER_TIM_IDX        10
+#endif
 #define INIC_RECOVER_TO_US          1000
 
 #define SIZE_RX_DESC    0
@@ -349,10 +378,13 @@ u32 inic_spi_txdma_irq_handler(void *pData)
 
 int inic_spi_set_dev_status(struct bt_inic_priv *inic_spi_priv, u32 ops, u32 sts)
 {
+	u32 flags = 0;
+	bool need_give_spi_done_sema;
+
 	do {
-		if (!osif_mutex_take(inic_spi_priv->dev_sts_lock, BT_TIMEOUT_FOREVER)) {
-			return RTK_FAIL;
-		}
+		need_give_spi_done_sema = false;
+
+		flags = osif_lock();
 
 		if ((ops == DISABLE) && (inic_spi_priv->dev_status & sts)) {
 
@@ -374,7 +406,8 @@ int inic_spi_set_dev_status(struct bt_inic_priv *inic_spi_priv, u32 ops, u32 sts
 					set_dev_rdy_pin(DEV_READY);
 				}
 
-				osif_sem_give(inic_spi_priv->spi_transfer_done_sema);
+				need_give_spi_done_sema = true;
+
 			}
 
 		} else if (ops == ENABLE) {
@@ -392,7 +425,11 @@ int inic_spi_set_dev_status(struct bt_inic_priv *inic_spi_priv, u32 ops, u32 sts
 			RTIM_Cmd(TIMx[INIC_RECOVER_TIM_IDX], ENABLE);
 		}
 
-		osif_mutex_give(inic_spi_priv->dev_sts_lock);
+		osif_unlock(flags);
+
+		if (need_give_spi_done_sema) {
+			osif_sem_give(inic_spi_priv->spi_transfer_done_sema);
+		}
 
 		if (inic_spi_priv->ssris_pending) {
 			inic_spi_priv->ssris_pending = FALSE;
@@ -419,7 +456,7 @@ u32 inic_spi_recover(void *Data)
 {
 	struct bt_inic_priv *inic_spi_priv = (struct bt_inic_priv *) Data;
 
-	RTIM_INTClear(TIM0);
+	RTIM_INTClear(TIMx[INIC_RECOVER_TIM_IDX]);
 
 	/* check if error occurs or SPI transfer is still ongoing */
 	if (SSI_Busy(INIC_SPI_DEV)) {
@@ -516,23 +553,33 @@ void bt_inic_spi_init(void)
 #endif
 
 	/* Initialize Timer*/
-	RCC_PeriphClockCmd(APBPeriph_LTIM0, APBPeriph_LTIM0_CLOCK, ENABLE);
+#ifdef CONFIG_AMEBAGREEN2
+	/* Switch clock source to 40M (default is 32768), default frequency division is 40, so acquire 1M timer (Dplus APBPeriph_HTIM0 is 1M).
+	   Can use RCC_PeriphClockDividerSet(XTAL_LTIM0, 4) to set div4, acquire 10M timer. */
+	RCC_PeriphClockSourceSet(LTIM0, XTAL);
+#endif
+	RCC_PeriphClockCmd(APBPeriph_TIMx[INIC_RECOVER_TIM_IDX], APBPeriph_TIMx_CLOCK[INIC_RECOVER_TIM_IDX], ENABLE);
 	RTIM_TimeBaseStructInit(&TIM_InitStruct);
 	TIM_InitStruct.TIM_Idx = INIC_RECOVER_TIM_IDX;
-	TIM_InitStruct.TIM_Period = INIC_RECOVER_TO_US / (1000000 / 32768);
+	TIM_InitStruct.TIM_Period = INIC_RECOVER_TO_US;
 
 	RTIM_TimeBaseInit(TIMx[INIC_RECOVER_TIM_IDX], &TIM_InitStruct, TIMx_irq[INIC_RECOVER_TIM_IDX], (IRQ_FUN)inic_spi_recover, (u32)inic_spi_priv);
 	RTIM_INTConfig(TIMx[INIC_RECOVER_TIM_IDX], TIM_IT_Update, ENABLE);
 
 	/* Initialize SPI */
-	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
-	Pinmux_Config(SPI0_MOSI, PINMUX_FUNCTION_SPI); /* MOSI */
-	Pinmux_Config(SPI0_MISO, PINMUX_FUNCTION_SPI); /* MISO */
-	Pinmux_Config(SPI0_SCLK, PINMUX_FUNCTION_SPI); /* SCLK */
-	Pinmux_Config(SPI0_CS, PINMUX_FUNCTION_SPI); /* CS */
+	if (INIC_SPI_DEV == SPI0_DEV) {
+		RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
+	} else {
+		RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
+	}
+
+	Pinmux_Config(SPI0_MOSI, PINMUX_FUNCTION_SPIS); /* MOSI */
+	Pinmux_Config(SPI0_MISO, PINMUX_FUNCTION_SPIS); /* MISO */
+	Pinmux_Config(SPI0_SCLK, PINMUX_FUNCTION_SPIS); /* SCLK */
+	Pinmux_Config(SPI0_CS, PINMUX_FUNCTION_SPIS); /* CS */
 	PAD_PullCtrl(SPI0_CS, GPIO_PuPd_UP); /* CS Default Active low */
 	PAD_PullCtrl((u32)SPI0_SCLK, GPIO_PuPd_DOWN);
-
+	//BT_LOGA("%s: PIN:%x %x %x %x of %x:%x %x\n", __func__,SPI0_MOSI,SPI0_MISO,SPI0_SCLK,SPI0_CS,PINMUX_FUNCTION_SPIS,RX_REQ_PIN,DEV_READY_PIN);
 	SSI_SetRole(INIC_SPI_DEV, SSI_SLAVE);
 	SSI_StructInit(&SSI_InitStructSlave);
 	SSI_InitStructSlave.SPI_SclkPhase = SCPH_TOGGLES_IN_MIDDLE;
@@ -556,11 +603,12 @@ void bt_inic_spi_init(void)
 	inic_spi_priv->rx_buf = (void *)rx_buf;
 
 	/* Configure RX DMA */
-	SSI_SetDmaEnable(INIC_SPI_DEV, ENABLE, SPI_BIT_RDMAE);
+	DCache_Invalidate((u32)rx_buf, BT_INIC_SPI_BUFSZ);
 	SSI_RXGDMA_Init(index, &inic_spi_priv->SSIRxGdmaInitStruct, NULL, inic_spi_rxdma_irq_handler, rx_buf, BT_INIC_SPI_BUFSZ);
+	SSI_SetDmaEnable(INIC_SPI_DEV, ENABLE, SPI_BIT_RDMAE);
 
-	SSI_SetDmaEnable(INIC_SPI_DEV, ENABLE, SPI_BIT_TDMAE);
 	inic_spi_txdma_init(index, &spi_priv.SSITxGdmaInitStruct, inic_spi_txdma_irq_handler, BT_INIC_SPI_BUFSZ);
+	SSI_SetDmaEnable(INIC_SPI_DEV, ENABLE, SPI_BIT_TDMAE);
 
 	if (_spi_rx_queue_init() != TRUE) {
 		return;
@@ -747,3 +795,4 @@ void bt_inic_spi_deinit(void)
 }
 
 #endif /* #if defined(CONFIG_WHC_INTF_SPI) && CONFIG_WHC_INTF_SPI */
+

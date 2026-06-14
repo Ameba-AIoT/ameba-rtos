@@ -186,12 +186,11 @@ static void composite_cb_status_changed(u8 old_status, u8 status)
   */
 static int composite_cb_set_config(void)
 {
-	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB Set Cfg\n");
 	return HAL_OK;
 }
 
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
-static void composite_hotplug_thread(void *param)
+static void example_usbd_comp_acm_uac_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -337,9 +336,6 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		composite_cdc_acm_ctrl_line_state = req->wValue;
 		UNUSED(composite_cdc_acm_ctrl_line_state);
 
-		//if (composite_cdc_acm_ctrl_line_state & 0x01) {
-		//	RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
-		//}
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
@@ -347,7 +343,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	default:
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid CDC bRequest 0x%02x\n", req->bRequest);
+		USB_DIAG(USB_LAYER_APP, USB_EVT_ERR_SETUP, 0);
 		ret = HAL_ERR_PARA;
 		break;
 	}
@@ -402,7 +398,6 @@ static int composite_uac_cb_deinit(void)
   */
 static int composite_uac_cb_set_config(void)
 {
-	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "UAC set config\n");
 	return HAL_OK;
 }
 
@@ -607,7 +602,7 @@ static void example_audio_track_play(void)
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Audio track demo stop\n\n\n");
 }
 
-static void example_audio_track_thread(void *param)
+static void example_usbd_comp_acm_uac_audio_track_thread(void *param)
 {
 	UNUSED(param);
 
@@ -625,7 +620,7 @@ static void example_audio_track_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-static void example_usbd_composite_thread(void *param)
+static void example_usbd_comp_acm_uac_init_thread(void *param)
 {
 	UNUSED(param);
 	int ret = 0;
@@ -650,7 +645,7 @@ static void example_usbd_composite_thread(void *param)
 	}
 
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
-	ret = rtos_task_create(&task, "composite_hotplug_thread", composite_hotplug_thread, NULL,
+	ret = rtos_task_create(&task, "example_usbd_comp_acm_uac_hotplug_thread", example_usbd_comp_acm_uac_hotplug_thread, NULL,
 						   1024, CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_check_task_fail;
@@ -694,12 +689,13 @@ void example_usbd_composite(void)
 	rtos_task_t task;
 
 	rtos_sema_create(&uac_ready_sema, 0U, 1U);
-	ret = rtos_task_create(&task, "example_usbd_composite_thread", example_usbd_composite_thread, NULL, 1024, CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_comp_acm_uac_init_thread", example_usbd_comp_acm_uac_init_thread, NULL, 1024,
+						   CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD COMP thread fail\n");
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"example_audio_track_thread"), example_audio_track_thread, NULL, 1024 * 16,
+	if (rtos_task_create(NULL, ((const char *)"example_usbd_comp_acm_uac_audio_track_thread"), example_usbd_comp_acm_uac_audio_track_thread, NULL, 1024 * 16,
 						 CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create audio track fail\n");
 	}

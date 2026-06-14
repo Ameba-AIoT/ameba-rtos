@@ -101,6 +101,12 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_EXT_CREATE_CONN_V2, bt_hci_cmd_ogf_le_ocf_ext_create_connection_v2},
 #endif
 
+#ifdef CONFIG_BLE_LL_PA_ADV_ENABLE
+	{BT_HCI_OP_LE_SET_PERIODIC_ADV_PARAM_V1, bt_hci_cmd_ogf_le_ocf_set_periodic_adv_param_v1},
+	{BT_HCI_OP_LE_SET_PERIODIC_ADV_DATA, bt_hci_cmd_ogf_le_ocf_set_periodic_adv_data},
+	{BT_HCI_OP_LE_SET_PERIODIC_ADV_ENABLE, bt_hci_cmd_ogf_le_ocf_set_periodic_adv_enable},
+#endif
+
 	//BT_OGF_VENDOR
 	{BT_HCI_OP_VENDOR_READ_RTK_CHIP_ID,  bt_hci_cmd_ogf_vendor_ocf_read_rtk_chip_id},
 	{BT_HCI_OP_VENDOR_READ_VENDOR_REG, bt_hci_cmd_ogf_vendor_ocf_read_vendor_reg},
@@ -202,6 +208,12 @@ void bt_hci_get_supported_hci_command(uint8_t *pcommands)
 					  COMMAND_37_HCI_LE_SET_EXTENDED_SCAN_PARAMETERS | COMMAND_37_HCI_LE_SET_EXTENDED_SCAN_ENABLE |
 					  COMMAND_37_HCI_LE_EXTENDED_CREATE_CONNECTION_V1);
 #endif
+
+#ifdef CONFIG_BLE_LL_PA_ADV_ENABLE
+	pcommands[37] |= (COMMAND_37_HCI_LE_SET_PERIODIC_ADVERTISING_PARAMETER_V1 |
+					  COMMAND_37_HCI_LE_SET_PERIODIC_ADVERTISING_DATA |
+					  COMMAND_37_HCI_LE_SET_PERIODIC_ADVERTISING_ENABLE);
+#endif
 }
 
 void ble_ll_init_feature(uint64_t *pfeature)
@@ -235,7 +247,7 @@ void ble_ll_init_feature(uint64_t *pfeature)
 	*pfeature |= BT_LL_LE_FEATURE_LE_EXTENDED_ADV;
 #endif
 
-#if (BT_LL_FEATURE_BT50_LE_PERIODIC_ADV == 1)
+#if (defined(CONFIG_BLE_LL_PA_ADV_ENABLE) || defined(CONFIG_BLE_LL_PA_SYNC_ENABLE))
 	*pfeature |= BT_LL_LE_FEATURE_LE_PERIODIC_ADV;
 #endif
 

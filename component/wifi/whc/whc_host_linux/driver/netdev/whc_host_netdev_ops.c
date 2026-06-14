@@ -136,6 +136,12 @@ u16 rtw_ndev_select_queue(struct net_device *pnetdev, struct sk_buff *skb, struc
 int rtw_ndev_init(struct net_device *pnetdev)
 {
 	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+#ifdef CONFIG_WHCH
+	whc_host_sta_init(rtw_netdev_idx(pnetdev));
+	whc_host_hal_pending_q_init(rtw_netdev_idx(pnetdev));
+	whc_host_init_default_value(rtw_netdev_idx(pnetdev));
+	sema_init(&global_idev.whchpriv.netif_rx_sema[rtw_netdev_idx(pnetdev)], 1);
+#endif
 	return 0;
 }
 
@@ -524,6 +530,7 @@ int rtw_ndev_alloc(void)
 	}
 	global_idev.mlme_priv.b_in_scan = false;
 	global_idev.mlme_priv.b_in_disconnect = false;
+	global_idev.mlme_priv.b_in_linking = false;
 
 	init_completion(&global_idev.mlme_priv.disconnect_done_sema);
 

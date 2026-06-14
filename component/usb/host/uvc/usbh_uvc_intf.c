@@ -260,7 +260,7 @@ int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb)
 	rtos_sema_create(&uvc->hw_dump_sema, 0, 1);
 	uvc->hw_dump_task_exit = 0;
 	if (rtos_task_create(&(uvc->hw_dump_task),
-						 ((const char *)"uvc_hw_mon"),
+						 ((const char *)"usbh_uvc_hw_status_dump_thread"),
 						 usbh_uvc_hw_status_dump_thread,
 						 NULL,
 						 512U,
@@ -273,7 +273,7 @@ int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb)
 	uvc->max_hold_frame_ts = 0;
 	uvc->sw_dump_task_exit = 0;
 	if (rtos_task_create(&(uvc->sw_dump_task),
-						 ((const char *)"uvc_sw_mon"),
+						 ((const char *)"usbh_uvc_sw_status_dump_thread"),
 						 usbh_uvc_sw_status_dump_thread,
 						 NULL,
 						 768U,

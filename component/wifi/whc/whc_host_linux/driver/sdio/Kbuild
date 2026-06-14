@@ -51,6 +51,7 @@ ifeq ($(CONFIG_WHCH), y)
 		../whch/whch_host_pkt_rx_proc.o \
 		../whch/whch_host_sta_mgt.o \
 		../whch/whch_host_security.o \
+		../whch/whch_host_arc4.o \
 		../whch/whch_host_mlme.o \
 		../whch/whch_host_addba.o \
 		../whch/hal/whch_host_hal_xmit_com.o \

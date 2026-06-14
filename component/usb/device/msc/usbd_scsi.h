@@ -21,4 +21,4 @@ int usbd_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u32 len);
 int usbd_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u32 len);
 void usbd_msc_send_csw(usb_dev_t *dev, u8 status);
 
-#endif // USBD_SCSI_H
+#endif /* USBD_SCSI_H */

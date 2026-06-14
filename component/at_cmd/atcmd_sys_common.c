@@ -94,7 +94,7 @@ static int update_status(void)
 	}
 
 	if (uxTaskGetNumberOfTasks() > TASK_CNT) {
-		RTK_LOGW(NOTAG, "number of tasks : %d(exceed TASK_CNT)! Please enlarge TASK_CNT\r\n", uxTaskGetNumberOfTasks());
+		RTK_LOGS(NOTAG, RTK_LOG_WARN, "number of tasks : %d(exceed TASK_CNT)! Please enlarge TASK_CNT\r\n", uxTaskGetNumberOfTasks());
 		return -1;
 	}
 
@@ -202,11 +202,11 @@ end:
 #if (configGENERATE_RUN_TIME_STATS == 1)
 static void at_cpuload_help(void)
 {
-	RTK_LOGI(TAG, "\r\n");
-	RTK_LOGI(TAG, "AT+CPULOAD=<mode>[,<time_intval>,<counter>]\r\n");
-	RTK_LOGI(TAG, "\t<mode>:\t[0,2]\r\n");
-	RTK_LOGI(TAG, "\t<time_intval>:\tIn sec\r\n");
-	RTK_LOGI(TAG, "\t<counter>\t0 means infinit\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "AT+CPULOAD=<mode>[,<time_intval>,<counter>]\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<mode>:\t[0,2]\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<time_intval>:\tIn sec\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<counter>\t0 means infinit\r\n");
 }
 
 /****************************************************************
@@ -244,7 +244,7 @@ void at_cpuload(u16 argc, char **argv)
 	if (NULL == task_status) {
 		task_status = (task_status_t *)rtos_mem_malloc(sizeof(task_status_t));
 		if (NULL == task_status) {
-			RTK_LOGI(NOTAG, "Memory failure for task_status\r\n");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Memory failure for task_status\r\n");
 			error_no = 2;
 			goto end;
 		}
@@ -321,13 +321,13 @@ void at_rreg(u16 argc, char **argv)
 	int error_no = 0;
 
 	if (argc == 1) {
-		RTK_LOGW(NOTAG, "[RREG] Error parameters\r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_WARN, "[RREG] Error parameters\r\n");
 		error_no = 1;
 		goto end;
 	}
 
 	if (argc < 2 || argc > 4) {
-		RTK_LOGW(NOTAG, "[RREG] Error parameters\r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_WARN, "[RREG] Error parameters\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -353,7 +353,7 @@ void at_wreg(u16 argc, char **argv)
 	int error_no = 0;
 
 	if (argc != 3) {
-		RTK_LOGW(NOTAG, "[WREG] Error parameters\r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_WARN, "[WREG] Error parameters\r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -384,11 +384,11 @@ void at_rst(u16 argc, char **argv)
 
 static void at_log_help(void)
 {
-	RTK_LOGI(TAG, "\r\n");
-	RTK_LOGI(TAG, "AT+LOG=<get_set>,<module>[,<log_level>]\r\n");
-	RTK_LOGI(TAG, "\t<get_set>:\t0-get, 1-set, 2-print all, 3-clear all\r\n");
-	RTK_LOGI(TAG, "\t<module>:\t*-each module, others-specific module\r\n");
-	RTK_LOGI(TAG, "\t<log_level>:\t[0,5], only applicable for set mode\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "AT+LOG=<get_set>,<module>[,<log_level>]\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<get_set>:\t0-get, 1-set, 2-print all, 3-clear all\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<module>:\t*-each module, others-specific module\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<log_level>:\t[0,5], only applicable for set mode\r\n");
 }
 
 /****************************************************************
@@ -404,7 +404,7 @@ void at_log(u16 argc, char **argv)
 	rtk_log_level_t log_level;
 
 	if (argc < 2) {
-		RTK_LOGA(NOTAG, "[LOG] ERROR arg: \r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[LOG] ERROR arg: \r\n");
 		error_no = 1;
 		goto end;
 	}
@@ -417,7 +417,7 @@ void at_log(u16 argc, char **argv)
 	/* Get. */
 	case atcmd_log_type_get:
 		if ((argc != 3) || (strlen(argv[2]) == 0)) {
-			RTK_LOGA(NOTAG, "[LOG] Invalid get parameters.\r\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[LOG] Invalid get parameters.\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -428,14 +428,14 @@ void at_log(u16 argc, char **argv)
 	/* Set. */
 	case atcmd_log_type_set:
 		if ((argc != 4) || (strlen(argv[2]) == 0) || (strlen(argv[3]) == 0)) {
-			RTK_LOGA(NOTAG, "[LOG] Invalid set parameters.\r\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[LOG] Invalid set parameters.\r\n");
 			error_no = 1;
 			goto end;
 		}
 		log_level = (rtk_log_level_t)atoi(argv[3]);
 		ret = rtk_log_level_set(argv[2], log_level);
 		if (ret != RTK_SUCCESS) {
-			RTK_LOGA(NOTAG, "[LOG] Failed when set.\r\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[LOG] Failed when set.\r\n");
 			error_no = 2;
 			goto end;
 		}
@@ -444,7 +444,7 @@ void at_log(u16 argc, char **argv)
 	/* Print all. */
 	case atcmd_log_type_print_all:
 		if (argc != 2) {
-			RTK_LOGA(NOTAG, "[LOG] Invalid parameter number.\r\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[LOG] Invalid parameter number.\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -454,7 +454,7 @@ void at_log(u16 argc, char **argv)
 	/* Clean all. */
 	case atcmd_log_type_clear_all:
 		if (argc != 2) {
-			RTK_LOGA(NOTAG, "[LOG] Invalid parameter number.\r\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[LOG] Invalid parameter number.\r\n");
 			error_no = 1;
 			goto end;
 		}
@@ -463,17 +463,17 @@ void at_log(u16 argc, char **argv)
 
 	/* Invalid. */
 	default:
-		RTK_LOGA(NOTAG, "[LOG] Invalid mode %d.\r\n", mode);
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[LOG] Invalid mode %d.\r\n", mode);
 		error_no = 1;
 		goto end;
 	}
 
-	RTK_LOGA(NOTAG, "[LOG] Test always level\r\n");
-	RTK_LOGE(NOTAG, "[LOG] Test error level\r\n");
-	RTK_LOGW(NOTAG, "[LOG] Test warning level\r\n");
-	RTK_LOGI(NOTAG, "[LOG] Test info level\r\n");
-	RTK_LOGD(NOTAG, "[LOG] Test debug level\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[LOG] Test LOG_ITEMS\r\n");
+//	RTK_LOGA(NOTAG, "[LOG] Test always level\r\n");
+//	RTK_LOGE(NOTAG, "[LOG] Test error level\r\n");
+//	RTK_LOGW(NOTAG, "[LOG] Test warning level\r\n");
+//	RTK_LOGI(NOTAG, "[LOG] Test info level\r\n");
+//	RTK_LOGD(NOTAG, "[LOG] Test debug level\r\n");
+//	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[LOG] Test LOG_ITEMS\r\n");
 
 end:
 	if (error_no == 0) {
@@ -486,8 +486,8 @@ end:
 
 static void at_tickps_help(void)
 {
-	RTK_LOGW(NOTAG, "\n");
-	RTK_LOGI(TAG, "AT+TICKPS=<type>[,<parameters>]\r\n"
+	RTK_LOGS(NOTAG, RTK_LOG_WARN, "\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "AT+TICKPS=<type>[,<parameters>]\r\n"
 			 "\tTypes:\r\n"
 			 "\t\t<type1>: R, A, GET\r\n"
 			 "\t\t\tParameters: (none)\r\n"
@@ -518,7 +518,7 @@ void at_tickps(u16 argc, char **argv)
 	int err = RTK_SUCCESS;
 
 	if (argc < 2) {
-		RTK_LOGW(NOTAG, "[TICKPS] Error parameters\r\n");
+		RTK_LOGS(NOTAG, RTK_LOG_WARN, "[TICKPS] Error parameters\r\n");
 		err = RTK_FAIL;
 		goto exit;
 	}
@@ -551,7 +551,7 @@ void at_tickps(u16 argc, char **argv)
 
 	if (_strcmp((const char *)argv[1], "TYPE") == 0) {
 		if (argc < 3) {
-			RTK_LOGW(NOTAG, "[TICKPS] Error parameters\r\n");
+			RTK_LOGS(NOTAG, RTK_LOG_WARN, "[TICKPS] Error parameters\r\n");
 			err = RTK_FAIL;
 			goto exit;
 		}
@@ -686,7 +686,7 @@ void at_gmr(u16 argc, char **argv)
 #ifndef CONFIG_AMEBAD
 	u8 image_id = at_get_ota_version();
 	u32 version = (u32)(ver[image_id] & 0xFFFFFFFF);
-	at_printf("IMAGE VERSION: %d.%d\r\n", ((version >> 16) & 0xFFFF), (version & 0xFFFF));
+	at_printf("IMAGE VERSION: %x.%x\r\n", ((version >> 16) & 0xFFFF), (version & 0xFFFF));
 #endif
 
 	chip_info = ChipInfo_GetSocName_ToBuf();

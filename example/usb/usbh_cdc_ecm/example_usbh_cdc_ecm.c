@@ -261,7 +261,7 @@ static int cdc_ecm_do_init(void)
 	return 1;
 }
 
-static void ecm_link_change_thread(void *param)
+static void example_usbh_ecm_link_change_thread(void *param)
 {
 	u8 *mac;
 	u32 dhcp_status = 0;
@@ -359,7 +359,7 @@ static void write_data_to_flash(void)
 #endif
 }
 
-static void ecm_download_thread(void *param)
+static void example_usbh_ecm_download_thread(void *param)
 {
 	int server_fd = -1;
 	u8 heart_beat = 0;
@@ -510,7 +510,7 @@ exit:
 #endif
 
 #if ENABLE_ECM_MEM_CHECK
-static void usbh_ecm_mem_check_thread(void *param)
+static void example_usbh_ecm_mem_check_thread(void *param)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[test]ecm_link_toggle_thread \n");
 	rtos_task_t monitor_task;
@@ -520,7 +520,7 @@ static void usbh_ecm_mem_check_thread(void *param)
 	UNUSED(param);
 
 	while (1) {
-		status = rtos_task_create(&monitor_task, "usbh_ecm_link_thread", ecm_link_change_thread, NULL, 1024U * 2, 3U);
+		status = rtos_task_create(&monitor_task, "example_usbh_ecm_link_change_thread", example_usbh_ecm_link_change_thread, NULL, 1024U * 2, 3U);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop create %d: all_free:0x%08x\r\n", loop, usb_os_get_free_heap_size());
 		rtos_time_delay_ms(5000);
 
@@ -541,7 +541,7 @@ static void usbh_ecm_mem_check_thread(void *param)
 #endif
 
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
-static void ecm_hotplug_thread(void *param)
+static void example_usbh_ecm_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -592,26 +592,26 @@ void example_usbh_cdc_ecm(void)
 	rltk_usb_eth_init();
 
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
-	status = rtos_task_create(&hotplug_task, "usbh_ecm_hotplug_thread", ecm_hotplug_thread, NULL, 1024U, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
+	status = rtos_task_create(&hotplug_task, "example_usbh_ecm_hotplug_thread", example_usbh_ecm_hotplug_thread, NULL, 1024U, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
 	}
 #endif
 
 #if ENABLE_ECM_MEM_CHECK
-	status = rtos_task_create(&monitor_task, "usbh_ecm_mem_check_thread", usbh_ecm_mem_check_thread, NULL, 1024U * 2, 3U);
+	status = rtos_task_create(&monitor_task, "example_usbh_ecm_mem_check_thread", example_usbh_ecm_mem_check_thread, NULL, 1024U * 2, 3U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
 #else
-	status = rtos_task_create(&monitor_task, "usbh_ecm_link_thread", ecm_link_change_thread, NULL, 1024U * 2, 3U);
+	status = rtos_task_create(&monitor_task, "example_usbh_ecm_link_change_thread", example_usbh_ecm_link_change_thread, NULL, 1024U * 2, 3U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
 
 #if ENABLE_REMOTE_FILE_DOWNLOAD
 	rtos_task_t download_task;
-	status = rtos_task_create(&download_task, "usbh_ecm_download_thread", ecm_download_thread, NULL, 10 * 512U, 2U);
+	status = rtos_task_create(&download_task, "example_usbh_ecm_download_thread", example_usbh_ecm_download_thread, NULL, 10 * 512U, 2U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create download thread fail\n");
 	}

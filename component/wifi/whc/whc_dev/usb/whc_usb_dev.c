@@ -77,12 +77,15 @@ static void whc_usb_dev_irq_task(void)
 				whc_dev_dispatch_event_copy(skb_rcv->data, len);
 				new_skb = skb_rcv;  // not need to malloc new skb
 			} else {
+				msg_info = (struct whc_msg_info *)skb_rcv->data;
 				if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 3) ||
+#ifdef CONFIG_WHCH
+					(rtw_xmit_check_txbd(msg_info->wlan_hw_queue) == FALSE) ||
+#endif
 					((new_skb = dev_alloc_skb(USB_BUFSZ, USB_SKB_RSVD_LEN)) == NULL)) {
 					new_skb = skb_rcv;
 					goto drop_pkt;
 				}
-				msg_info = (struct whc_msg_info *)skb_rcv->data;
 				skb_reserve(skb_rcv, sizeof(struct whc_msg_info));
 
 				skb_put(skb_rcv, msg_info->data_len);

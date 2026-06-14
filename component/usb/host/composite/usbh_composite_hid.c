@@ -822,7 +822,7 @@ int usbh_composite_hid_init(usbh_composite_host_t *driver, usbh_composite_hid_us
 
 	usb_ringbuf_manager_init(&(hid->report_msg), USBH_COMPOSITE_HID_MST_COUNT, USBH_COMPOSITE_HID_MSG_LENGTH, 0);
 
-	if (rtos_task_create(&(hid->msg_parse_task), ((const char *)"usbh_composite_hid_msg_parse"), usbh_composite_hid_msg_parse_thread,
+	if (rtos_task_create(&(hid->msg_parse_task), ((const char *)"usbh_composite_hid_msg_parse_thread"), usbh_composite_hid_msg_parse_thread,
 						 NULL, USBH_COMPOSITE_HID_THREAD_STACK_SIZE, USBH_COMPOSITE_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hid parse task fail\n");
 	}

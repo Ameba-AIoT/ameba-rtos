@@ -499,11 +499,12 @@ int crypto_sym_ccm_update_ad(crypto_sym_ccm_context *ctx,
 		/* Try to initialize B0 in case both starts() and set_lengths() are called but not yet processed */
 		ret = crypto_sym_ccm_try_init_b0_and_ctr0(ctx);
 		if (ret != RTK_SUCCESS) {
-			return ret;
+			goto exit;
 		}
 		/* If still not ready, that means one of starts() or set_lengths() hasn't been called yet */
 		if (!(ctx->state & CCM_STATE_B0_DONE)) {
-			return _ERRNO_CRYPTO_MODE_ERR;  /* Reuse appropriate error code */
+			ret = _ERRNO_CRYPTO_MODE_ERR;
+			goto exit;
 		}
 	}
 
@@ -770,11 +771,12 @@ int crypto_sym_ccm_update(crypto_sym_ccm_context *ctx,
 		/* Try to initialize B0 in case both starts() and set_lengths() are called but not yet processed */
 		ret = crypto_sym_ccm_try_init_b0_and_ctr0(ctx);
 		if (ret != RTK_SUCCESS) {
-			return ret;
+			goto exit;
 		}
 		/* If still not ready, that means one of starts() or set_lengths() hasn't been called yet */
 		if (!(ctx->state & CCM_STATE_B0_DONE)) {
-			return _ERRNO_CRYPTO_MODE_ERR;  /* Reuse appropriate error code */
+			ret = _ERRNO_CRYPTO_MODE_ERR;
+			goto exit;
 		}
 	}
 
@@ -925,11 +927,12 @@ int crypto_sym_ccm_finish(crypto_sym_ccm_context *ctx,
 		/* Try to initialize B0 in case both starts() and set_lengths() are called but not yet processed */
 		ret = crypto_sym_ccm_try_init_b0_and_ctr0(ctx);
 		if (ret != RTK_SUCCESS) {
-			return ret;
+			goto exit;
 		}
 		/* If still not ready, that means one of starts() or set_lengths() hasn't been called yet */
 		if (!(ctx->state & CCM_STATE_B0_DONE)) {
-			return _ERRNO_CRYPTO_MODE_ERR;  /* Reuse appropriate error code */
+			ret = _ERRNO_CRYPTO_MODE_ERR;
+			goto exit;
 		}
 	}
 
@@ -972,6 +975,25 @@ int crypto_sym_ccm_finish(crypto_sym_ccm_context *ctx,
 		tag[i] = tag_byte[i];
 	}
 
+	/* Reset streaming state on success path, mirroring crypto_sym_gcm_finish().
+	 * Key material (key/key_id/key_len_bits/engine_mode) and inited are
+	 * preserved so the context can be reused with starts() directly. */
+	ctx->state = 0;
+	ctx->aad_total_len = 0;
+	ctx->msg_total_len = 0;
+	ctx->tag_len = 0;
+	ctx->q = 0;
+	ctx->ccm_mode = 0;
+	ctx->aad_processed_flag = 0;
+	ctx->aad_buffer_len = 0;
+	ctx->msg_buffer_len = 0;
+	_memset(ctx->aad_buffer, 0, sizeof(ctx->aad_buffer));
+	_memset(ctx->msg_buffer, 0, sizeof(ctx->msg_buffer));
+	_memset(ctx->tag, 0, sizeof(ctx->tag));
+	_memset(ctx->iv, 0, sizeof(ctx->iv));
+	_memset(ctx->nonce, 0, sizeof(ctx->nonce));
+	ctx->nonce_len = 0;
+
 	ret = RTK_SUCCESS;
 
 exit:
@@ -979,5 +1001,6 @@ exit:
 	AES->AES_CONFIG &= ~AES_BIT_AEAD_LAST;
 	AES->AES_CHN0_AES_INT_CLEAR &= AES_BIT_INT_CLEAR;
 	AES_unlock_mutex();
+
 	return ret;
 }

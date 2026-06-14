@@ -119,7 +119,7 @@ static void msc_cb_status_changed(u8 old_status, u8 status)
 }
 
 #if CONFIG_USBD_MSC_USB_HOTPLUG
-static void msc_usb_hotplug_thread(void *param)
+static void example_usbd_msc_usb_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -161,7 +161,7 @@ static void msc_usb_hotplug_thread(void *param)
 #endif // CONFIG_USBD_MSC_USB_HOTPLUG
 
 #if CONFIG_USBD_MSC_SD_HOTPLUG
-static void msc_sd_hotplug_thread(void *param)
+static void example_usbd_msc_sd_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -253,7 +253,8 @@ static void example_usbd_msc_thread(void *param)
 	}
 
 #if CONFIG_USBD_MSC_USB_HOTPLUG
-	status = rtos_task_create(&usb_task, "msc_usb_hotplug_thread", msc_usb_hotplug_thread, NULL, CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_STACK_SIZE,
+	status = rtos_task_create(&usb_task, "example_usbd_msc_usb_hotplug_thread", example_usbd_msc_usb_hotplug_thread, NULL,
+							  CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_STACK_SIZE,
 							  CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
@@ -263,7 +264,8 @@ static void example_usbd_msc_thread(void *param)
 
 #if CONFIG_USBD_MSC_SD_HOTPLUG
 	SD_SetCdCallback(sd_intr_cb);
-	status = rtos_task_create(&sd_task, "msc_sd_hotplug_thread", msc_sd_hotplug_thread, NULL, CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_STACK_SIZE,
+	status = rtos_task_create(&sd_task, "example_usbd_msc_sd_hotplug_thread", example_usbd_msc_sd_hotplug_thread, NULL,
+							  CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_STACK_SIZE,
 							  CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create SD card hotplug thread fail\n");

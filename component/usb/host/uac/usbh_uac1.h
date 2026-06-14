@@ -36,8 +36,8 @@
 
 #define USBH_UAC_ALT_SETTING_MAX       10        /**< Maximum number of Alternate Settings per interface */
 #define USBH_UAC_FREQ_FORMAT_MAX       6         /**< Maximum number of discrete sampling frequencies per format */
-/** @} End of Host_UAC_Constants group*/
-/** @} End of USB_Host_Constants group*/
+/** @} End of Host_UAC_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -181,8 +181,8 @@ typedef struct {
 	u8 choose_freq_idx;                   /**< Index of the currently selected frequency */
 } usbh_uac_as_itf_info_t;
 
-/** @} End of Host_UAC_Types group*/
-/** @} End of USB_Host_Types group*/
+/** @} End of Host_UAC_Types group */
+/** @} End of USB_Host_Types group */
 
 /**
   * @brief  Main UAC Host Class Driver Handle.
