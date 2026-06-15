@@ -64,7 +64,7 @@ int example_raw_ecdsa_test(void)
 		RTK_LOGI(TAG, "Cannot create ecdsa_test demo task\n\r");
 	}
 
-	rtos_sched_start();
+	// rtos_sched_start();
 	return 0;
 }
 

@@ -72,8 +72,8 @@ int example_mbed_watchdog(void)
 		DelayMs(50);
 		printf("reset by watchdog barks\r\n");
 		printf("watchdog mbed example exec succeed!\n");
-		rtos_sched_start();
-		while (1);
+		// rtos_sched_start();
+		// while (1);
 	}
 
 	if (RTK_SUCCESS != rtos_task_create(NULL, "watchdog_task", (rtos_task_t)watchdog_task, (void *)NULL, (512 * 6), (1))) {

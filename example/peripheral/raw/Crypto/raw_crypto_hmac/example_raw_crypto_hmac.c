@@ -114,7 +114,7 @@ int example_raw_crypto_hmac(void)
 		printf("Cannot create sha256_hmac task\n\r");
 	}
 
-	rtos_sched_start();
+	// rtos_sched_start();
 	return 0;
 }
 

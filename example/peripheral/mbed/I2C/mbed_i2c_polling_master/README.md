@@ -39,8 +39,10 @@ master's GND connect to slave's GND
 # SW Configuration
 
 1. In this example, we use config I2C_RESTART_DEMO to decide if the master will generate a restart condition.
-	If `I2C_RESTART_DEMO` is 1, then master will write ->restart->write -> stop ->write -> restart -> read -> stop.
-	If `I2C_RESTART_DEMO` is 0, then master will write ->stop->read -> stop.
+	- If `I2C_RESTART_DEMO` is 1, then master will write with `stop = 0` to generate write -> restart -> write -> stop -> write -> restart -> read -> stop.
+	- If `I2C_RESTART_DEMO` is 0, then master will write -> stop -> read -> stop.
+	- For register-read style I2C sensors, use `i2c_write(..., stop = 0)` followed by `i2c_read(..., stop = 1)` to generate write -> restart -> read -> stop. The RESTART function is enabled automatically by `i2c_write()` when `stop = 0`.
+	- Users need to include `i2c_ex_api.h` when explicitly calling `i2c_restart_enable()` or `i2c_restart_disable()`.
 
 2. In this example, we use config master_addr_retry in component/soc/amebaxxx/hal/src/i2c_api.c to decide if the master will retry sending addr.
 
@@ -55,7 +57,7 @@ master's GND connect to slave's GND
 
 # Expected Result
 
-i2c_master_rx_Check will check if the received data is correct, and if it is consistent with src, it will print
+i2c_master_rx_check will check if the received data is correct, and if it is consistent with src, it will print
 	`"Master receive: Result is Success"`
 
 # Note

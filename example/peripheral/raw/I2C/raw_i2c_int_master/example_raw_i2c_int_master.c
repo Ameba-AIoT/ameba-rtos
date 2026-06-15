@@ -148,7 +148,7 @@ int example_raw_i2c_int_master(void)
 		RTK_LOGI(TAG, "Cannot create i2c_int_task demo task\n\r");
 	}
 
-	rtos_sched_start();
+	// rtos_sched_start();
 	return 0;
 }
 

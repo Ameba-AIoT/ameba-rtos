@@ -143,15 +143,13 @@ void whc_host_join_status_hdl(u32 event, char *evt_info)
 					wdev = global_idev.p2p_global.pd_pwdev; /*DA match P2P_DEV intf*/
 				}
 			} else if (rtw_p2p_frame_is_registered(P2P_ROLE_CLIENT, IEEE80211_STYPE_ACTION)) {
-				wdev = global_idev.pwdev_global[1];
+				wdev = global_idev.pwdev_global[0]; /* GC is on port0 */
 			}
 		} else {
 			if (global_idev.p2p_global.pd_pwdev && memcmp((rx_mgnt_info->frame + 4), global_idev.p2p_global.pd_pwdev->address, 6) == 0) {
 				wdev = global_idev.p2p_global.pd_pwdev;
-			} else if (global_idev.p2p_global.p2p_role == P2P_ROLE_CLIENT) { /* port0 is used by GC */
-				wdev = global_idev.pwdev_global[1];
 			} else {
-				wdev = global_idev.pwdev_global[0]; /* port0 is used by STA */
+				wdev = global_idev.pwdev_global[0]; /* GC and STA uses pndev[0]/pwdev_global[0] */
 			}
 		}
 #endif
@@ -197,11 +195,8 @@ void whc_host_join_status_hdl(u32 event, char *evt_info)
 
 #ifdef CONFIG_SUPPLICANT_SME
 #ifdef CONFIG_P2P
-	if (global_idev.p2p_global.p2p_role == P2P_ROLE_CLIENT) {
-		pndev = global_idev.pndev[1];	/* GC connect using SME */
-	} else {
-		pndev = global_idev.pndev[0];	/* STA connect using SME */
-	}
+	/* GC and STA both use pndev[0] (GC replaces STA at port0) */
+	pndev = global_idev.pndev[0];
 #endif
 	if (event == RTW_EVENT_SME_AUTH_TIMEOUT) {
 		dev_dbg(global_idev.pwhc_dev, "%s: RTW_EVENT_SME_AUTH_TIMEOUT \n", __func__);
@@ -321,12 +316,6 @@ u8 whc_host_get_network_info_hdl(uint32_t type, int idx, void *out_buf, uint32_t
 {
 	struct in_ifaddr *ifa = NULL;
 
-#ifdef CONFIG_P2P
-	if (global_idev.p2p_global.pd_wlan_idx == 1) {
-		idx = idx ^ 1;    /*GC intf is up, linux netdev idx is oppsite to driver wlan_idx*/
-	}
-#endif
-
 	*rsp_len = 0;
 
 	switch (type) {
@@ -407,15 +396,9 @@ void whc_host_set_netif_info_hdl(int idx, unsigned char *dev_addr)
 		return;
 	}
 
-#ifdef CONFIG_P2P
-	if (global_idev.p2p_global.pd_wlan_idx == 1) {
-		idx = idx ^ 1; /*GC intf is up, linux netdev idx is oppsite to driver wlan_idx*/
-	}
 	if (!global_idev.pndev[idx]) {
-		/*when GC netdev close, need revert mac address in driver, but netdev0 may already be closed*/
 		return;
 	}
-#endif
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
 	memcpy((void *)global_idev.pndev[idx]->dev_addr, dev_addr, ETH_ALEN);
@@ -423,24 +406,9 @@ void whc_host_set_netif_info_hdl(int idx, unsigned char *dev_addr)
 	eth_hw_addr_set(global_idev.pndev[idx], dev_addr);
 #endif
 
-	dev_dbg(global_idev.pwhc_dev, "MAC ADDR [%02x:%02x:%02x:%02x:%02x:%02x]", *global_idev.pndev[idx]->dev_addr,
-			*(global_idev.pndev[idx]->dev_addr + 1), *(global_idev.pndev[idx]->dev_addr + 2),
-			*(global_idev.pndev[idx]->dev_addr + 3), *(global_idev.pndev[idx]->dev_addr + 4),
-			*(global_idev.pndev[idx]->dev_addr + 5));
-
-	if (global_idev.pndev[0]) {
-		/*set ap port mac address*/
-		memcpy(softap_mac, global_idev.pndev[0]->dev_addr, ETH_ALEN);
-		if (softap_addr_offset_idx == 0) {
-			softap_mac[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + (1 << 1);
-		} else {
-			softap_mac[softap_addr_offset_idx] = global_idev.pndev[0]->dev_addr[softap_addr_offset_idx] + 1;
-		}
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
-		memcpy((void *)global_idev.pndev[1]->dev_addr, softap_mac, ETH_ALEN);
-#else
-		eth_hw_addr_set(global_idev.pndev[1], softap_mac);
-#endif
-	}
+	dev_dbg(global_idev.pwhc_dev, "pndev idx:%d, MAC ADDR [%02x:%02x:%02x:%02x:%02x:%02x]", idx,
+			*global_idev.pndev[idx]->dev_addr, *(global_idev.pndev[idx]->dev_addr + 1),
+			*(global_idev.pndev[idx]->dev_addr + 2), *(global_idev.pndev[idx]->dev_addr + 3),
+			*(global_idev.pndev[idx]->dev_addr + 4), *(global_idev.pndev[idx]->dev_addr + 5));
 }
 

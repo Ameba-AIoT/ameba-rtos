@@ -6,7 +6,7 @@
 #include "rtw_nan_cmd_api.h"
 #include "rtw_nan_cmd.h"
 #include "nan_event.h"
-#include "WFPAL.h"
+#include "rtw_nan_vendor_def.h"
 
 #define MAX_NANDOW_PARA_LEN 2600
 #define MAX_NANDOW_REPLY_LEN 512
@@ -33,31 +33,31 @@ enum rtw_nan_vendor_subcmd {
 };
 
 union nandow_para {
-	struct wfpal_nan_device_capability dev_cap;
-	struct wfpal_wifi_driver_capabilities drv_cap;
-	struct wfpal_nan_enable nan_enabled;
-	struct wfpal_nan_cluster_id cluster_id;
-	struct wfpal_nan_master_indication_master_preference master_pref;
-	struct wfpal_nan_master_indication_random_factor random_factor;
-	struct wfpal_nan_discovery_window_awake_period dw_awake_period;
-	struct wfpal_nan_primary_master_channel pri_master_ch;
-	struct wfpal_nan_secondary_master_channel second_master_ch;
-	struct wfpal_nan_discovery_beacon_period disc_bcn_period;
-	struct wfpal_nan_forced_discovery_beacon_transmission forced_disc_bcn;
-	struct wfpal_nan_publish_data publish_srv;
-	struct wfpal_nan_cancel_publish_data cancel_publish_srv;
-	struct wfpal_nan_subscribe_data subscribe_srv;
-	struct wfpal_nan_cancel_subscribe_data cancel_sub_srv;
-	struct wfpal_nan_follow_up_transmit_data followup_srv;
-	struct wfpal_nan_datapath_request datapath_req;
-	struct wfpal_nan_datapath_end datapath_end;
-	struct wfpal_nan_datapath_response datapath_rsp;
-	struct wfpal_nan_datapath_confirm datapath_confirm;
-	struct wfpal_nan_committed_availability avail_cmt;
-	struct wfpal_nan_potential_availability avail_pot;
-	struct wfpal_nan_data_cluster_availability avail_ndc;
-	struct wfpal_set_scan_control set_scan_ctl;
-	struct wfpal_country_code_data country_code;
+	struct rtw_nan_device_capability dev_cap;
+	struct rtw_nan_driver_capabilities drv_cap;
+	struct rtw_nan_enable nan_enabled;
+	struct rtw_nan_cluster_id cluster_id;
+	struct rtw_nan_master_preference master_pref;
+	struct rtw_nan_random_factor random_factor;
+	struct rtw_nan_discovery_window_awake_period dw_awake_period;
+	struct rtw_nan_primary_master_channel pri_master_ch;
+	struct rtw_nan_secondary_master_channel second_master_ch;
+	struct rtw_nan_discovery_beacon_period disc_bcn_period;
+	struct rtw_nan_forced_discovery_beacon_transmission forced_disc_bcn;
+	struct rtw_nan_publish_data publish_srv;
+	struct rtw_nan_cancel_publish_data cancel_publish_srv;
+	struct rtw_nan_subscribe_data subscribe_srv;
+	struct rtw_nan_cancel_subscribe_data cancel_sub_srv;
+	struct rtw_nan_follow_up_transmit_data followup_srv;
+	struct rtw_nan_datapath_request datapath_req;
+	struct rtw_nan_datapath_end datapath_end;
+	struct rtw_nan_datapath_response datapath_rsp;
+	struct rtw_nan_datapath_confirm datapath_confirm;
+	struct rtw_nan_committed_availability avail_cmt;
+	struct rtw_nan_potential_availability avail_pot;
+	struct rtw_nan_data_cluster_availability avail_ndc;
+	struct rtw_nan_set_scan_control set_scan_ctl;
+	struct rtw_nan_country_code_data country_code;
 };
 
 struct nan_customer_nandow {
@@ -122,74 +122,74 @@ int strhex_2_realhex(char *input, char *pattern, int pattern_len, char token)
 void nandow_pre_actions(struct nan_customer_nandow *nandow_test)
 {
 	switch (nandow_test->cmd_id) {
-	case WFPAL_NAN_INIT:
-		nandow_test->para_len = sizeof(struct wfpal_nan_device_capability);
+	case RTW_NAN_CMD_INIT:
+		nandow_test->para_len = sizeof(struct rtw_nan_device_capability);
 		break;
-	case WFPAL_WIFI_DRIVER_CAPABILITIES:
-		nandow_test->para_len = sizeof(struct wfpal_wifi_driver_capabilities);
+	case RTW_NAN_CMD_WIFI_DRV_CAP:
+		nandow_test->para_len = sizeof(struct rtw_nan_driver_capabilities);
 		break;
-	case WFPAL_NAN_ENABLED:
-		nandow_test->para_len = sizeof(struct wfpal_nan_enable);
+	case RTW_NAN_CMD_NAN_ENABLE:
+		nandow_test->para_len = sizeof(struct rtw_nan_enable);
 		break;
-	case WFPAL_NAN_CLUSTER_ID:
-		nandow_test->para_len = sizeof(struct wfpal_nan_cluster_id);
+	case RTW_NAN_CMD_CLUSTER_ID:
+		nandow_test->para_len = sizeof(struct rtw_nan_cluster_id);
 		break;
-	case WFPAL_NAN_MASTER_INDICATION_MASTER_PREFERENCE:
-		nandow_test->para_len = sizeof(struct wfpal_nan_master_indication_master_preference);
+	case RTW_NAN_CMD_MASTER_PREF:
+		nandow_test->para_len = sizeof(struct rtw_nan_master_preference);
 		break;
-	case WFPAL_NAN_MASTER_INDICATION_RANDOM_FACTOR:
-		nandow_test->para_len = sizeof(struct wfpal_nan_master_indication_random_factor);
+	case RTW_NAN_CMD_RANDOM_FACTOR:
+		nandow_test->para_len = sizeof(struct rtw_nan_random_factor);
 		break;
-	case WFPAL_NAN_DISCOVERY_WINDOW_AWAKE_PERIOD:
-		nandow_test->para_len = sizeof(struct wfpal_nan_discovery_window_awake_period);
+	case RTW_NAN_CMD_DW_AWAKE_PERIOD:
+		nandow_test->para_len = sizeof(struct rtw_nan_discovery_window_awake_period);
 		break;
-	case WFPAL_NAN_PRIMARY_MASTER_CHANNEL:
-		nandow_test->para_len = sizeof(struct wfpal_nan_primary_master_channel);
+	case RTW_NAN_CMD_PRI_MASTER_CH:
+		nandow_test->para_len = sizeof(struct rtw_nan_primary_master_channel);
 		break;
-	case WFPAL_NAN_SECONDARY_MASTER_CHANNEL:
-		nandow_test->para_len = sizeof(struct wfpal_nan_secondary_master_channel);
+	case RTW_NAN_CMD_SEC_MASTER_CH:
+		nandow_test->para_len = sizeof(struct rtw_nan_secondary_master_channel);
 		break;
-	case WFPAL_NAN_DISCOVERY_BEACON_PERIOD:
-		nandow_test->para_len = sizeof(struct wfpal_nan_discovery_beacon_period);
+	case RTW_NAN_CMD_DISC_BCN_PERIOD:
+		nandow_test->para_len = sizeof(struct rtw_nan_discovery_beacon_period);
 		break;
-	case WFPAL_NAN_FORCED_BEACON_TRANSMISSION:
-		nandow_test->para_len = sizeof(struct wfpal_nan_forced_discovery_beacon_transmission);
+	case RTW_NAN_CMD_FORCED_DISC_BCN:
+		nandow_test->para_len = sizeof(struct rtw_nan_forced_discovery_beacon_transmission);
 		break;
-	case WFPAL_NAN_SUBSCRIBE:
-		nandow_test->para_len = sizeof(struct wfpal_nan_subscribe_data);
+	case RTW_NAN_CMD_SUBSCRIBE:
+		nandow_test->para_len = sizeof(struct rtw_nan_subscribe_data);
 		break;
-	case WFPAL_NAN_PUBLISH:
-		nandow_test->para_len = sizeof(struct wfpal_nan_publish_data);
+	case RTW_NAN_CMD_PUBLISH:
+		nandow_test->para_len = sizeof(struct rtw_nan_publish_data);
 		break;
-	case WFPAL_NAN_CANCEL_SUBSCRIBE:
-		nandow_test->para_len = sizeof(struct wfpal_nan_cancel_subscribe_data);
+	case RTW_NAN_CMD_CANCEL_SUBSCRIBE:
+		nandow_test->para_len = sizeof(struct rtw_nan_cancel_subscribe_data);
 		break;
-	case WFPAL_NAN_CANCEL_PUBLISH:
-		nandow_test->para_len = sizeof(struct wfpal_nan_cancel_publish_data);
+	case RTW_NAN_CMD_CANCEL_PUBLISH:
+		nandow_test->para_len = sizeof(struct rtw_nan_cancel_publish_data);
 		break;
-	case WFPAL_NAN_FOLLOW_UP_TRANSMIT:
-		nandow_test->para_len = sizeof(struct wfpal_nan_follow_up_transmit_data);
+	case RTW_NAN_CMD_FOLLOWUP_TX:
+		nandow_test->para_len = sizeof(struct rtw_nan_follow_up_transmit_data);
 		break;
-	case WFPAL_NAN_DATAPATH_REQUEST:
-		nandow_test->para_len = sizeof(struct wfpal_nan_datapath_request);
+	case RTW_NAN_CMD_DATAPATH_REQ:
+		nandow_test->para_len = sizeof(struct rtw_nan_datapath_request);
 		break;
-	case WFPAL_NAN_DATAPATH_RESPONSE:
-		nandow_test->para_len = sizeof(struct wfpal_nan_datapath_response);
+	case RTW_NAN_CMD_DATAPATH_RSP:
+		nandow_test->para_len = sizeof(struct rtw_nan_datapath_response);
 		break;
-	case WFPAL_NAN_DATAPATH_CONFIRM:
-		nandow_test->para_len = sizeof(struct wfpal_nan_datapath_confirm);
+	case RTW_NAN_CMD_DATAPATH_CONFIRM:
+		nandow_test->para_len = sizeof(struct rtw_nan_datapath_confirm);
 		break;
-	case WFPAL_NAN_DATAPATH_END:
-		nandow_test->para_len = sizeof(struct wfpal_nan_datapath_end);
+	case RTW_NAN_CMD_DATAPATH_END:
+		nandow_test->para_len = sizeof(struct rtw_nan_datapath_end);
 		break;
-	case WFPAL_NAN_DATA_CLUSTER_AVAILABILITY:
-		nandow_test->para_len = sizeof(struct wfpal_nan_data_cluster_availability);
+	case RTW_NAN_CMD_NDC_AVAIL:
+		nandow_test->para_len = sizeof(struct rtw_nan_data_cluster_availability);
 		break;
-	case WFPAL_SCAN_CONTROL:
-		nandow_test->para_len = sizeof(struct wfpal_set_scan_control);
+	case RTW_NAN_CMD_SCAN_CONTROL:
+		nandow_test->para_len = sizeof(struct rtw_nan_set_scan_control);
 		break;
-	case WFPAL_COUNTRY_CODE:
-		nandow_test->para_len = sizeof(struct wfpal_country_code_data);
+	case RTW_NAN_CMD_COUNTRY_CODE:
+		nandow_test->para_len = sizeof(struct rtw_nan_country_code_data);
 		break;
 	default:
 		break;
@@ -435,7 +435,7 @@ bool _nan_check_phy(uint32_t phy_num)
 RTW_RET_STATUS rtw_nan_api_get_capability(char *intf, uint16_t *nan_cap)
 {
 	struct nan_customer_nandow nandow_cmd = {0};
-	struct wfpal_wifi_driver_capabilities *drv_cap;;
+	struct rtw_nan_driver_capabilities *drv_cap;;
 	uint32_t input_len = 0;
 	void *input = NULL;
 
@@ -445,7 +445,7 @@ RTW_RET_STATUS rtw_nan_api_get_capability(char *intf, uint16_t *nan_cap)
 	}
 
 	memset(&nandow_cmd, 0, sizeof(struct nan_customer_nandow));
-	nandow_cmd.cmd_id = WFPAL_WIFI_DRIVER_CAPABILITIES;
+	nandow_cmd.cmd_id = RTW_NAN_CMD_WIFI_DRV_CAP;
 	nandow_cmd.cmd_type = NANDOW_CMD_TYPE_GET;
 	nandow_pre_actions(&nandow_cmd);
 
@@ -533,7 +533,7 @@ RTW_RET_STATUS rtw_nan_api_deinit(uint16_t phy_num)
 RTW_RET_STATUS rtw_nan_api_start_nan(char *intf)
 {
 	struct nan_customer_nandow nandow_cmd;
-	struct wfpal_nan_enable *nan_enabled;;
+	struct rtw_nan_enable *nan_enabled;;
 	uint32_t input_len = 0;
 	void *input = NULL;
 
@@ -544,7 +544,7 @@ RTW_RET_STATUS rtw_nan_api_start_nan(char *intf)
 	}
 
 	memset(&nandow_cmd, 0, sizeof(struct nan_customer_nandow));
-	nandow_cmd.cmd_id = WFPAL_NAN_ENABLED;
+	nandow_cmd.cmd_id = RTW_NAN_CMD_NAN_ENABLE;
 	nandow_cmd.cmd_type = NANDOW_CMD_TYPE_SET;
 	nandow_pre_actions(&nandow_cmd);
 
@@ -562,7 +562,7 @@ RTW_RET_STATUS rtw_nan_api_start_nan(char *intf)
 RTW_RET_STATUS rtw_nan_api_stop_nan(char *intf)
 {
 	struct nan_customer_nandow nandow_cmd;
-	struct wfpal_nan_enable *nan_enabled;;
+	struct rtw_nan_enable *nan_enabled;;
 	uint32_t input_len = 0;
 	void *input = NULL;
 
@@ -573,7 +573,7 @@ RTW_RET_STATUS rtw_nan_api_stop_nan(char *intf)
 	}
 
 	memset(&nandow_cmd, 0, sizeof(struct nan_customer_nandow));
-	nandow_cmd.cmd_id = WFPAL_NAN_ENABLED;
+	nandow_cmd.cmd_id = RTW_NAN_CMD_NAN_ENABLE;
 	nandow_cmd.cmd_type = NANDOW_CMD_TYPE_SET;
 	nandow_pre_actions(&nandow_cmd);
 
@@ -717,7 +717,7 @@ uint16_t _append_gen_sub_attr(uint8_t attr_id, uint8_t *pbuf, void *pdata, uint8
 uint16_t _construct_sdea_gen_srvc_info(struct srvc_info *info, uint8_t *gen_srv_info)
 {
 	uint16_t len = 0;
-	uint8_t temp_srv_info[WFPAL_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
+	uint8_t temp_srv_info[RTW_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
 	uint16_t idx = 0, total_len = 0;
 	int i = 0;
 
@@ -756,7 +756,7 @@ uint16_t _construct_sdea_gen_srvc_info(struct srvc_info *info, uint8_t *gen_srv_
 	}
 
 	total_len = idx;
-	if (total_len > WFPAL_NAN_SERVICE_INFO_MAX_LENGTH) {
+	if (total_len > RTW_NAN_SERVICE_INFO_MAX_LENGTH) {
 		INFO_PRINT("[rtw_cmd] service info length(%d) is out of limit\n", total_len);
 		return 0;
 	}
@@ -779,7 +779,7 @@ uint16_t _construct_ndpe_gen_srvc_info(struct datapath_info *info, uint8_t *gen_
 {
 	uint8_t type = 0;
 	uint16_t len = 0;
-	uint8_t temp_srv_info[WFPAL_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
+	uint8_t temp_srv_info[RTW_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
 	uint16_t idx = 0, total_len = 0;
 	int i = 0;
 
@@ -824,7 +824,7 @@ uint16_t _construct_ndpe_gen_srvc_info(struct datapath_info *info, uint8_t *gen_
 		return 0;
 	}
 
-	if (total_len > WFPAL_NAN_SERVICE_INFO_MAX_LENGTH) {
+	if (total_len > RTW_NAN_SERVICE_INFO_MAX_LENGTH) {
 		INFO_PRINT("[rtw_cmd]service info length is out of limit %d \n", total_len);
 		return 0;
 	}
@@ -847,12 +847,12 @@ uint16_t _construct_ndpe_gen_srvc_info(struct datapath_info *info, uint8_t *gen_
 RTW_RET_STATUS rtw_nan_api_publish(char *intf, struct srvc_info *info)
 {
 	struct nan_customer_nandow nandow_cmd = {0};
-	struct wfpal_nan_publish_data *publish_srv;
+	struct rtw_nan_publish_data *publish_srv;
 	uint32_t input_len = 0;
 	void *input = NULL;
-	uint8_t srv_name_hash[WFPAL_NAN_SERVICE_NAME_HASH_SIZE] = {0};
+	uint8_t srv_name_hash[RTW_NAN_SERVICE_NAME_HASH_SIZE] = {0};
 	char tmp_arry[512] = {0};
-	uint8_t gen_srv_info[WFPAL_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
+	uint8_t gen_srv_info[RTW_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
 	uint16_t gen_srv_info_len = 0;
 
 	if (!intf || !info || _nan_check_intf(intf) == false) {
@@ -861,19 +861,19 @@ RTW_RET_STATUS rtw_nan_api_publish(char *intf, struct srvc_info *info)
 	}
 
 	memset(&nandow_cmd, 0, sizeof(struct nan_customer_nandow));
-	nandow_cmd.cmd_id = WFPAL_NAN_PUBLISH;
+	nandow_cmd.cmd_id = RTW_NAN_CMD_PUBLISH;
 	nandow_cmd.cmd_type = NANDOW_CMD_TYPE_SET;
 	nandow_pre_actions(&nandow_cmd);
 
 	/* initialize parameters */
 	publish_srv = &nandow_cmd.para.publish_srv;
 
-	publish_srv->publish_type = WFPAL_NAN_SERVICE_PUBLISH_TYPE_SOLICITED;
+	publish_srv->publish_type = RTW_NAN_PUBLISH_TYPE_SOLICITED;
 
 	_compute_service_id((const unsigned char *)info->service_name,
 						strlen(info->service_name),
 						srv_name_hash);
-	memcpy(publish_srv->service_hash, srv_name_hash, WFPAL_NAN_SERVICE_NAME_HASH_SIZE);
+	memcpy(publish_srv->service_hash, srv_name_hash, RTW_NAN_SERVICE_NAME_HASH_SIZE);
 
 	publish_srv->matching_filter_rx_count = 1;
 	sprintf(tmp_arry, "%s", "bytes used for matching");
@@ -884,33 +884,33 @@ RTW_RET_STATUS rtw_nan_api_publish(char *intf, struct srvc_info *info)
 	publish_srv->publish_id = info->publish_id;
 	publish_srv->awake_discovery_window_interval = 1;
 	publish_srv->ttl = 1024;
-	publish_srv->flags = WFPAL_NAN_PUBLISH_FLAG_ADD_DEVICE_CAPABILITY_ATTRIBUTE;
+	publish_srv->flags = RTW_NAN_PUBLISH_FLAG_ADD_DEVICE_CAPABILITY_ATTRIBUTE;
 
 	if (info->sec_type == NAN_PMK_SET_BY_USER_PMK) {
 		INFO_PRINT("[rtw_cmd] Security type of publish is PMK!\n");
 		publish_srv->control =
-			(WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_REQUEST_REQUIRED |
-			 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_TYPE |
-			 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_SECURITY_REQUIRED);
-		publish_srv->cipher_suite_id |= BIT(WFPAL_NAN_CIPHER_SUITE_ID_NCS_SK_128);
+			(RTW_NAN_SDE_CTL_DATAPATH_REQ_REQUIRED |
+			 RTW_NAN_SDE_CTL_DATAPATH_TYPE |
+			 RTW_NAN_SDE_CTL_SECURITY_REQUIRED);
+		publish_srv->cipher_suite_id |= BIT(RTW_NAN_CIPHER_ID_NCS_SK_128);
 		memcpy(publish_srv->key, info->pmk, NAN_PMK_SIZE);
 	} else if (info->sec_type == NAN_PMK_SET_BY_PAIRING) {
 		publish_srv->pairing_enable = true;
 		INFO_PRINT("[rtw_cmd] Security type of publish is Pairing!\n");
 		publish_srv->control =
-			(WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_REQUEST_REQUIRED |
-			 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_TYPE |
-			 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_SECURITY_REQUIRED);
+			(RTW_NAN_SDE_CTL_DATAPATH_REQ_REQUIRED |
+			 RTW_NAN_SDE_CTL_DATAPATH_TYPE |
+			 RTW_NAN_SDE_CTL_SECURITY_REQUIRED);
 		publish_srv->bstrap_method = info->pairing_info.bstrap_method;
 		publish_srv->npk_nik = info->pairing_info.nik_caching;
-		publish_srv->cipher_suite_id = (BIT(WFPAL_NAN_CIPHER_SUITE_ID_NCS_SK_128) |
-										BIT(WFPAL_NAN_CIPHER_SUITE_ID_PK_PASN_128));
+		publish_srv->cipher_suite_id = (BIT(RTW_NAN_CIPHER_ID_NCS_SK_128) |
+										BIT(RTW_NAN_CIPHER_ID_PASN_128));
 	} else {
 		/* Secruity type = OPEN */
 		INFO_PRINT("[rtw_cmd] Security type of publish is open!\n");
 		publish_srv->control =
-			(WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_REQUEST_REQUIRED |
-			 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_TYPE);
+			(RTW_NAN_SDE_CTL_DATAPATH_REQ_REQUIRED |
+			 RTW_NAN_SDE_CTL_DATAPATH_TYPE);
 	}
 
 	/* SDEA Gerenic Service Info */
@@ -923,7 +923,7 @@ RTW_RET_STATUS rtw_nan_api_publish(char *intf, struct srvc_info *info)
 	publish_srv->qos.low_latency_required = 1;
 
 	/* Group key */
-	if ((publish_srv->control & WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_SECURITY_REQUIRED) &&
+	if ((publish_srv->control & RTW_NAN_SDE_CTL_SECURITY_REQUIRED) &&
 		(info->gtk_enable)) {
 		publish_srv->gtk = true;
 	}
@@ -952,10 +952,10 @@ RTW_RET_STATUS rtw_nan_api_publish(char *intf, struct srvc_info *info)
 RTW_RET_STATUS rtw_nan_api_publish_update(struct srvc_info *info)
 {
 	struct nan_customer_nandow nandow_cmd = {0};
-	struct wfpal_nan_publish_data *publish_srv;
+	struct rtw_nan_publish_data *publish_srv;
 	uint32_t input_len = 0;
 	void *input = NULL;
-	uint8_t gen_srv_info[WFPAL_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
+	uint8_t gen_srv_info[RTW_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
 	uint16_t gen_srv_info_len = 0;
 
 	if (!info) {
@@ -968,13 +968,13 @@ RTW_RET_STATUS rtw_nan_api_publish_update(struct srvc_info *info)
 	INFO_PRINT("[rtw_cmd] service_instance = %s\n", info->service_instance);
 
 	memset(&nandow_cmd, 0, sizeof(struct nan_customer_nandow));
-	nandow_cmd.cmd_id = WFPAL_NAN_PUBLISH;
+	nandow_cmd.cmd_id = RTW_NAN_CMD_PUBLISH;
 	nandow_cmd.cmd_type = NANDOW_CMD_TYPE_SET;
 	nandow_pre_actions(&nandow_cmd);
 
 	/* initialize parameters */
 	publish_srv = &nandow_cmd.para.publish_srv;
-	publish_srv->publish_type = WFPAL_NAN_SERVICE_PUBLISH_TYPE_SOLICITED;
+	publish_srv->publish_type = RTW_NAN_PUBLISH_TYPE_SOLICITED;
 	publish_srv->service_update_indicator = 1;
 
 	publish_srv->publish_id = info->publish_id;
@@ -997,12 +997,12 @@ RTW_RET_STATUS rtw_nan_api_publish_update(struct srvc_info *info)
 RTW_RET_STATUS rtw_nan_api_subscribe(char *intf, struct srvc_info *info)
 {
 	struct nan_customer_nandow nandow_cmd;
-	struct wfpal_nan_subscribe_data *subscribe_srv;
+	struct rtw_nan_subscribe_data *subscribe_srv;
 	uint32_t input_len = 0;
 	void *input = NULL;
-	uint8_t srv_name_hash[WFPAL_NAN_SERVICE_NAME_HASH_SIZE] = {0};
+	uint8_t srv_name_hash[RTW_NAN_SERVICE_NAME_HASH_SIZE] = {0};
 	char tmp_arry[512] = {0};
-	uint8_t gen_srv_info[WFPAL_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
+	uint8_t gen_srv_info[RTW_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
 	uint16_t gen_srv_info_len = 0;
 
 	if (!intf || !info || _nan_check_intf(intf) == false) {
@@ -1011,19 +1011,19 @@ RTW_RET_STATUS rtw_nan_api_subscribe(char *intf, struct srvc_info *info)
 	}
 
 	memset(&nandow_cmd, 0, sizeof(struct nan_customer_nandow));
-	nandow_cmd.cmd_id = WFPAL_NAN_SUBSCRIBE;
+	nandow_cmd.cmd_id = RTW_NAN_CMD_SUBSCRIBE;
 	nandow_cmd.cmd_type = NANDOW_CMD_TYPE_SET;
 	nandow_pre_actions(&nandow_cmd);
 
 	/* initialize parameters */
 	subscribe_srv = &nandow_cmd.para.subscribe_srv;
 
-	subscribe_srv->subscribe_type = WFPAL_NAN_SUBSCRIBE_TYPE_ACTIVE;
+	subscribe_srv->subscribe_type = RTW_NAN_SUBSCRIBE_TYPE_ACTIVE;
 
 	_compute_service_id((const unsigned char *)info->service_name,
 						strlen(info->service_name),
 						srv_name_hash);
-	memcpy(subscribe_srv->service_hash, srv_name_hash, WFPAL_NAN_SERVICE_NAME_HASH_SIZE);
+	memcpy(subscribe_srv->service_hash, srv_name_hash, RTW_NAN_SERVICE_NAME_HASH_SIZE);
 
 	subscribe_srv->matching_filter_tx_count = 1;
 	sprintf(tmp_arry, "%s", "bytes used for matching");
@@ -1034,29 +1034,29 @@ RTW_RET_STATUS rtw_nan_api_subscribe(char *intf, struct srvc_info *info)
 	subscribe_srv->subscribe_id = info->subscribe_id;
 	subscribe_srv->awake_discovery_window_interval = 1;
 	subscribe_srv->ttl = 1024;
-	subscribe_srv->flags = WFPAL_NAN_PUBLISH_FLAG_ADD_DEVICE_CAPABILITY_ATTRIBUTE;
+	subscribe_srv->flags = RTW_NAN_PUBLISH_FLAG_ADD_DEVICE_CAPABILITY_ATTRIBUTE;
 
 	if (info->sec_type == NAN_PMK_SET_BY_USER_PMK) {
 		INFO_PRINT("[rtw_cmd] Security type of subscribe is PMK!\n");
 		subscribe_srv->control =
-			(WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_REQUEST_REQUIRED |
-			 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_TYPE |
-			 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_SECURITY_REQUIRED);
+			(RTW_NAN_SDE_CTL_DATAPATH_REQ_REQUIRED |
+			 RTW_NAN_SDE_CTL_DATAPATH_TYPE |
+			 RTW_NAN_SDE_CTL_SECURITY_REQUIRED);
 	} else if (info->sec_type == NAN_PMK_SET_BY_PAIRING) {
 		INFO_PRINT("[rtw_cmd] Security type of subscribe is Pairing!\n");
 		subscribe_srv->pairing_enable = true;
 		subscribe_srv->control =
-			(WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_REQUEST_REQUIRED |
-			 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_TYPE |
-			 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_SECURITY_REQUIRED);
+			(RTW_NAN_SDE_CTL_DATAPATH_REQ_REQUIRED |
+			 RTW_NAN_SDE_CTL_DATAPATH_TYPE |
+			 RTW_NAN_SDE_CTL_SECURITY_REQUIRED);
 		subscribe_srv->bstrap_method = info->pairing_info.bstrap_method;
 		subscribe_srv->npk_nik = info->pairing_info.nik_caching;
 	} else {
 		/* Secruity type = OPEN */
 		INFO_PRINT("[rtw_cmd] Security type of subscribe is open!\n");
 		subscribe_srv->control =
-			(WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_REQUEST_REQUIRED |
-			 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_TYPE);
+			(RTW_NAN_SDE_CTL_DATAPATH_REQ_REQUIRED |
+			 RTW_NAN_SDE_CTL_DATAPATH_TYPE);
 	}
 
 	/* SDEA Generic Service Info */
@@ -1086,12 +1086,12 @@ RTW_RET_STATUS rtw_nan_api_subscribe(char *intf, struct srvc_info *info)
 RTW_RET_STATUS rtw_nan_api_send_datapath_req(struct datapath_info *info)
 {
 	struct nan_customer_nandow nandow_cmd = {0};
-	struct wfpal_nan_datapath_request *dp_req = NULL;
+	struct rtw_nan_datapath_request *dp_req = NULL;
 	struct pairing_info *pairing_data = &info->service->pairing_info;
 	uint32_t input_len = 0, i = 0;
 	unsigned int cmd_id, no_input = 0xff;
 	void *input = NULL;
-	uint8_t gen_srv_info[WFPAL_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
+	uint8_t gen_srv_info[RTW_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
 	uint16_t gen_srv_info_len = 0;
 	char tmp_arry[NAN_PMK_SIZE] = {0};
 
@@ -1102,7 +1102,7 @@ RTW_RET_STATUS rtw_nan_api_send_datapath_req(struct datapath_info *info)
 
 	INFO_PRINT("[rtw_cmd] %s \n", __func__);
 
-	nandow_cmd.cmd_id = WFPAL_NAN_DATAPATH_REQUEST;
+	nandow_cmd.cmd_id = RTW_NAN_CMD_DATAPATH_REQ;
 	nandow_cmd.cmd_type = NANDOW_CMD_TYPE_SET;
 	nandow_pre_actions(&nandow_cmd);
 
@@ -1125,12 +1125,12 @@ RTW_RET_STATUS rtw_nan_api_send_datapath_req(struct datapath_info *info)
 			INFO_PRINT("[rtw_cmd] send datapath req fail! PMK is empty.\n");
 			return RTW_RET_STATUS_INVALID_INPUT;
 		}
-		dp_req->cipher_suite_id = WFPAL_NAN_CIPHER_SUITE_ID_NCS_SK_128;
+		dp_req->cipher_suite_id = RTW_NAN_CIPHER_ID_NCS_SK_128;
 		memcpy(dp_req->key, info->pmk, NAN_PMK_SIZE);
 	} else if (dp_req->sec_type == NAN_PMK_SET_BY_PAIRING) {
-		dp_req->cipher_suite_id = WFPAL_NAN_CIPHER_SUITE_ID_PK_PASN_128;
+		dp_req->cipher_suite_id = RTW_NAN_CIPHER_ID_PASN_128;
 	} else {
-		dp_req->cipher_suite_id = WFPAL_NAN_CIPHER_SUITE_ID_OPEN;
+		dp_req->cipher_suite_id = RTW_NAN_CIPHER_ID_OPEN;
 	}
 
 	/* Qos */
@@ -1165,11 +1165,11 @@ RTW_RET_STATUS rtw_nan_api_send_datapath_req(struct datapath_info *info)
 RTW_RET_STATUS rtw_nan_api_send_datapath_rsp(struct datapath_info *info)
 {
 	struct nan_customer_nandow nandow_cmd;
-	struct wfpal_nan_datapath_response *dp_rsp;
+	struct rtw_nan_datapath_response *dp_rsp;
 	uint32_t input_len = 0, i = 0;
 	unsigned int cmd_id, no_input = 0xff;
 	void *input = NULL;
-	uint8_t gen_srv_info[WFPAL_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
+	uint8_t gen_srv_info[RTW_NAN_SERVICE_INFO_MAX_LENGTH] = {0};
 	uint16_t gen_srv_info_len = 0;
 
 	if (!info) {
@@ -1180,15 +1180,15 @@ RTW_RET_STATUS rtw_nan_api_send_datapath_rsp(struct datapath_info *info)
 	INFO_PRINT("[rtw_cmd] %s \n", __func__);
 
 	memset(&nandow_cmd, 0, sizeof(struct nan_customer_nandow));
-	nandow_cmd.cmd_id = WFPAL_NAN_DATAPATH_RESPONSE;
+	nandow_cmd.cmd_id = RTW_NAN_CMD_DATAPATH_RSP;
 	nandow_cmd.cmd_type = NANDOW_CMD_TYPE_SET;
 	nandow_pre_actions(&nandow_cmd);
 
 	/* start initialize parameters here */
 	dp_rsp = &nandow_cmd.para.datapath_rsp;
 	dp_rsp->datapath_id = info->ndp_id;
-	dp_rsp->publishId = info->service->publish_id;
-	dp_rsp->status = WFPAL_NAN_DATAPATH_ACCEPTED;
+	dp_rsp->publish_id = info->service->publish_id;
+	dp_rsp->status = RTW_NAN_DATAPATH_ACCEPTED;
 	memcpy(dp_rsp->initiator_data_address.ether_addr_octet, info->initiator_ndi, ETH_ALEN);
 	memcpy(dp_rsp->initiator_management_address.ether_addr_octet, info->initiator_ndi, ETH_ALEN);
 	gen_srv_info_len = _construct_ndpe_gen_srvc_info(info, gen_srv_info);
@@ -1199,12 +1199,12 @@ RTW_RET_STATUS rtw_nan_api_send_datapath_rsp(struct datapath_info *info)
 
 	/* sec_type */
 	if (NAN_PMK_SET_BY_USER_PMK == info->sec_type) {
-		dp_rsp->cipher_suite_id = WFPAL_NAN_CIPHER_SUITE_ID_NCS_SK_128;
+		dp_rsp->cipher_suite_id = RTW_NAN_CIPHER_ID_NCS_SK_128;
 		memcpy(dp_rsp->key, info->pmk, NAN_PMK_SIZE);
 	} else if (NAN_PMK_SET_BY_PAIRING == info->sec_type) {
-		dp_rsp->cipher_suite_id = WFPAL_NAN_CIPHER_SUITE_ID_PK_PASN_128;
+		dp_rsp->cipher_suite_id = RTW_NAN_CIPHER_ID_PASN_128;
 	} else {
-		dp_rsp->cipher_suite_id = WFPAL_NAN_CIPHER_SUITE_ID_OPEN;
+		dp_rsp->cipher_suite_id = RTW_NAN_CIPHER_ID_OPEN;
 	}
 
 	/* send nandow command */
@@ -1215,7 +1215,7 @@ RTW_RET_STATUS rtw_nan_api_send_datapath_rsp(struct datapath_info *info)
 
 	INFO_PRINT("[rtw_cmd] send data path response complete:\n");
 	INFO_PRINT("[rtw_cmd] datapath_id = %d\n", dp_rsp->datapath_id);
-	INFO_PRINT("[rtw_cmd] publishId = %d\n", dp_rsp->publishId);
+	INFO_PRINT("[rtw_cmd] publishId = %d\n", dp_rsp->publish_id);
 	INFO_PRINT("[rtw_cmd] status = %d\n", dp_rsp->status);
 	PRINT_MAC_ADDR("[rtw_cmd] initiator_data_address", dp_rsp->initiator_data_address.ether_addr_octet);
 	PRINT_MAC_ADDR("[rtw_cmd] initiator_management_address", dp_rsp->initiator_management_address.ether_addr_octet);
@@ -1236,22 +1236,22 @@ RTW_RET_STATUS rtw_nan_api_send_datapath_end(uint8_t datapath_id)
 {
 
 	struct nan_customer_nandow nandow_cmd;
-	struct wfpal_nan_datapath_end *ndp_end;
+	struct rtw_nan_datapath_end *ndp_end;
 	uint32_t input_len = 0;
 	unsigned int cmd_id, no_input = 0xff;
 	void *input = NULL;
 
 	INFO_PRINT("[rtw_cmd] %s \n", __func__);
 
-	memset(&nandow_cmd, 0, sizeof(struct wfpal_nan_datapath_end));
-	nandow_cmd.cmd_id = WFPAL_NAN_DATAPATH_END;
+	memset(&nandow_cmd, 0, sizeof(struct rtw_nan_datapath_end));
+	nandow_cmd.cmd_id = RTW_NAN_CMD_DATAPATH_END;
 	nandow_cmd.cmd_type = NANDOW_CMD_TYPE_SET;
 	nandow_pre_actions(&nandow_cmd);
 
 	/* start initialize parameters here */
 	ndp_end = &nandow_cmd.para.datapath_end;
 	ndp_end->datapath_id = datapath_id;
-	ndp_end->reason_code = WFPAL_NAN_DATAPATH_END_REASON_USER_INITIATED;
+	ndp_end->reason_code = RTW_NAN_DATAPATH_END_REASON_USER_INITIATED;
 
 	/* send nandow command */
 	input = &nandow_cmd;

@@ -16,13 +16,6 @@ static void whc_host_recv_pkts(struct sk_buff *pskb)
 	u8 tmp;
 	u32 stat_len;
 
-#ifdef CONFIG_P2P
-	if (global_idev.p2p_global.pd_wlan_idx == 1) {
-		wlan_idx = wlan_idx ^ 1; /*GC intf is up, linux netdev idx is oppsite to driver wlan_idx*/
-		pstats = &global_idev.stats[wlan_idx];
-	}
-#endif
-
 	tmp = global_idev.xmit_priv.flowctrl_en;
 	global_idev.xmit_priv.flowctrl_en = msg->flow_ctrl_en;
 
