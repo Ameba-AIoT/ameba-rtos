@@ -11,6 +11,42 @@
 #include <whc_host_linux.h>
 
 #ifdef CONFIG_P2P
+
+/*
+ * whc_p2p_ndev_unregister - safely tear down a netdev/wdev pair while
+ * wiphy_mutex is already held (from add_virtual_intf / del_virtual_intf).
+ *
+ * cfg80211_unregister_netdevice cannot be used here: it ultimately calls
+ * unregister_netdevice which fires the NETDEV_GOING_DOWN notifier; the
+ * cfg80211 notifier handler tries to re-acquire wiphy_mutex → deadlock.
+ *
+ * Safe sequence:
+ *  1. Sever both ndev↔wdev links BEFORE any kernel call.
+ *  2. cfg80211_unregister_wdev(): with wdev->netdev == NULL it takes the
+ *     "no-netdev" code path (same as P2P_DEVICE/NAN), removing the wdev
+ *     from the wiphy list without invoking unregister_netdevice.
+ *  3. kfree(wdev): now safe because it is no longer on any list.
+ *  4. unregister_netdevice(ndev): the cfg80211 notifier checks
+ *     ndev->ieee80211_ptr first; NULL → NOTIFY_DONE, wiphy_mutex never
+ *     touched.
+ *  5. free_netdev(ndev).
+ */
+static void whc_p2p_ndev_unregister(struct net_device *ndev,
+									struct wireless_dev *wdev)
+{
+	/* Step 1: sever both links so neither direction can reach the other */
+	wdev->netdev = NULL;
+	ndev->ieee80211_ptr = NULL;
+
+	/* Step 2+3: remove from wiphy list (non-netdev path) and free */
+	cfg80211_unregister_wdev(wdev);
+	kfree((u8 *)wdev);
+
+	/* Step 4+5: unregister and free the orphaned netdev */
+	unregister_netdevice(ndev);
+	free_netdev(ndev);
+}
+
 static int whc_host_p2p_ndev_open(struct net_device *pnetdev)
 {
 	struct wireless_dev *wdev;
@@ -56,7 +92,7 @@ static int whc_host_p2p_ndev_close(struct net_device *pnetdev)
 
 	wdev = ndev_to_wdev(pnetdev);
 	if (wdev->iftype == NL80211_IFTYPE_P2P_CLIENT) {
-		if (global_idev.p2p_global.pd_wlan_idx == 1) {//GC is up and use netdev1 with port0
+		if (global_idev.p2p_global.pd_wlan_idx == 1) {//GC is active; P2P Device is on port1
 			whc_host_p2p_gc_intf_revert(1);
 		}
 	} else if (wdev->iftype == NL80211_IFTYPE_P2P_GO) {
@@ -94,7 +130,7 @@ int whc_host_ndev_p2p_register(enum nl80211_iftype type, const char *name, u8 wl
 	if (!ndev) {
 		goto dev_fail;
 	}
-	rtw_netdev_idx(ndev) = (type == NL80211_IFTYPE_P2P_GO) ? 1 : 0;
+	rtw_netdev_idx(ndev) = wlan_idx;
 	ndev->netdev_ops = &whc_host_ndev_ops_p2p;
 	ndev->watchdog_timeo = HZ * 3; /* 3 second timeout */
 #ifndef CONFIG_WHC_HCI_IPC
@@ -116,18 +152,21 @@ int whc_host_ndev_p2p_register(enum nl80211_iftype type, const char *name, u8 wl
 
 	/* step3: special setting for netdev */
 	if (type == NL80211_IFTYPE_P2P_GO) {
-		/* set p2p mac address, otherwise the intend interface addr in GO neg will be zero*/
-		memcpy(dev_addr, global_idev.pndev[0]->dev_addr, ETH_ALEN);
-		dev_addr[1] = global_idev.pndev[0]->dev_addr[1] + 1;
+		/* set p2p mac address, otherwise the intend interface addr in GO neg will be zero. */
+		memcpy(dev_addr, global_idev.p2p_global.pd_pwdev->address, ETH_ALEN);
+		dev_addr[1] = global_idev.p2p_global.pd_pwdev->address[1] + 1;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
 		memcpy((void *)global_idev.pndev[wlan_idx]->dev_addr, dev_addr, ETH_ALEN);
 #else
 		eth_hw_addr_set(global_idev.pndev[wlan_idx], dev_addr);
 #endif
 	} else if (type == NL80211_IFTYPE_P2P_CLIENT) {
+		/* init ap to prepare softap adapter in device, otherwise configure mac for port 1 below will fail. */
 		whc_host_init_ap();
 		global_idev.p2p_global.pd_wlan_idx = 1;
-		whc_host_p2p_driver_macaddr_switch();//switch port0 and port1 MAC
+
+		/* switch port0 and port1 mac address: port0 mac = efuse_mac+1, port1 mac = efuse_mac */
+		whc_host_p2p_driver_macaddr_switch();
 	}
 
 	/* step4: register netdev */
@@ -175,50 +214,39 @@ dev_fail:
 
 }
 
+/*
+            net_device      wireless_dev	   MAC	        port
+GO          pndev[1]        pwdev[1]	       mac+1        Port1, wlan_idx = 1
+P2P DEV     -               pd_pwdev           mac          Port0, pd_wlan_idx = 0
+
+GC          pndev[0]        pwdev[0]           mac+1        Port0,  wlan_idx = 0
+P2P DEV	    -               pd_pwdev           mac          Port1, pd_wlan_idx= 1
+*/
 int whc_host_p2p_iface_alloc(struct wiphy *wiphy, const char *name,
 							 struct wireless_dev **p2p_wdev, enum nl80211_iftype type)
 {
 	struct wireless_dev *wdev = NULL;
 	int ret = 0;
-	u8 wlan_idx = 0;
-	struct wireless_dev *old_wdev = NULL;
 
-	if (type == NL80211_IFTYPE_P2P_GO || type == NL80211_IFTYPE_P2P_CLIENT) {
-		wlan_idx = 1;
-		old_wdev = global_idev.pwdev_global[wlan_idx];
-	} else if (type == NL80211_IFTYPE_P2P_DEVICE) {
+	if (type == NL80211_IFTYPE_P2P_DEVICE) {
 		memset(&(global_idev.p2p_global), 0, sizeof(struct p2p_priv_t));
-		/*step0: unregister original softap netdev and wdev for later P2P GO usage*/
+
+		/* check whether old wdev exits(normally already freed in del intf)*/
+		if (global_idev.p2p_global.pd_pwdev) {
+			dev_info(global_idev.pwhc_dev, "%s: wdev already exists", __func__);
+			ret = -EBUSY;
+			return ret;
+		}
+
+		/* Release softap ndev (pndev[1]/wlan1) to make room for future P2P GO.
+		 * Use whc_p2p_ndev_unregister() to avoid re-acquiring wiphy_mutex. */
 		if (global_idev.pwdev_global[1]) {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
-			cfg80211_unregister_netdevice(global_idev.pndev[1]);
-#else
-			unregister_netdevice(global_idev.pndev[1]);
-#endif
-			kfree((u8 *)global_idev.pwdev_global[1]);
+			whc_p2p_ndev_unregister(global_idev.pndev[1], global_idev.pwdev_global[1]);
 			global_idev.pwdev_global[1] = NULL;
-			/* remove wireless_dev in ndev. */
-			global_idev.pndev[1]->ieee80211_ptr = NULL;
-		}
-		old_wdev = global_idev.p2p_global.pd_pwdev;
-	}
-
-	if (old_wdev) {/*step1: check whether old wdev exits(normally already freed in del intf)*/
-		dev_info(global_idev.pwhc_dev, "%s: wdev already exists", __func__);
-		ret = -EBUSY;
-		return ret;
-	}
-
-	if (type == NL80211_IFTYPE_P2P_GO || type == NL80211_IFTYPE_P2P_CLIENT) {
-		if (global_idev.pndev[wlan_idx]) {/*step2: free old netdev*/
-			free_netdev(global_idev.pndev[wlan_idx]);
-			global_idev.pndev[wlan_idx] = NULL;
+			global_idev.pndev[1] = NULL;
 		}
 
-		whc_host_ndev_p2p_register(type, name, wlan_idx); /*step3: alloc/register new netdev and wdev*/
-
-		*p2p_wdev = global_idev.pwdev_global[wlan_idx];
-	} else if (type == NL80211_IFTYPE_P2P_DEVICE) {/* P2P DEVICE has no netdev*/
+		/* P2P DEVICE has no netdev*/
 		wdev = (struct wireless_dev *)kzalloc(sizeof(struct wireless_dev), in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
 		if (!wdev) {
 			ret = -ENOMEM;
@@ -231,8 +259,26 @@ int whc_host_p2p_iface_alloc(struct wiphy *wiphy, const char *name,
 		global_idev.p2p_global.pd_pwdev = wdev;
 		global_idev.p2p_global.pd_wlan_idx = 0;
 		*p2p_wdev = wdev;
-	}
 
+	} else if (type == NL80211_IFTYPE_P2P_GO) {
+		/* pndev[1] was already released in the P2P_DEVICE step above;
+		 * register the new GO ndev directly at slot 1. */
+		whc_host_ndev_p2p_register(type, name, 1);
+		*p2p_wdev = global_idev.pwdev_global[1];
+
+	} else if (type == NL80211_IFTYPE_P2P_CLIENT) {
+		/* GC will occupy slot 0 of pndev and pwdev.  As pndev[0] is the active STA ndev (wlan0)
+		 * which is RUNNING (P2P discovery scan), so move wlan0 ndev and wdev to slot 1, then
+		 * alloc net ndev and wdev for GC to slot 0. */
+		global_idev.pndev[1] = global_idev.pndev[0];
+		global_idev.pwdev_global[1] = global_idev.pwdev_global[0];
+		global_idev.pndev[0] = NULL;
+		global_idev.pwdev_global[0] = NULL;
+		rtw_netdev_idx(global_idev.pndev[1]) = 1;
+
+		whc_host_ndev_p2p_register(type, name, 0);
+		*p2p_wdev = global_idev.pwdev_global[0];
+	}
 	return ret;
 }
 
@@ -242,19 +288,31 @@ void whc_host_p2p_iface_free(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	if (iftype == NL80211_IFTYPE_P2P_DEVICE) {
 		whc_host_p2p_pdwdev_free();
-	} else if (iftype == NL80211_IFTYPE_P2P_CLIENT || iftype == NL80211_IFTYPE_P2P_GO) {
-		if (iftype == NL80211_IFTYPE_P2P_CLIENT) {
-			whc_host_p2p_gc_intf_revert(1); /* switch back port0 and port1's mac addr*/
+	} else if (iftype == NL80211_IFTYPE_P2P_CLIENT) {
+		/* Restore port0 and port1 mac address: port0 mac = efuse_mac, port1 mac = efuse_mac+1 */
+		whc_host_p2p_gc_intf_revert(1);
+
+		/* Tear down the GC ndev at slot 0 */
+		if (global_idev.pndev[0]) {
+			whc_p2p_ndev_unregister(global_idev.pndev[0], global_idev.pwdev_global[0]);
+			global_idev.pwdev_global[0] = NULL;
+			global_idev.pndev[0] = NULL;
 		}
 
+		/* Move the STA ndev back from slot 1 to slot 0 */
 		if (global_idev.pndev[1]) {
-			unregister_netdevice(global_idev.pndev[1]);
-			if (global_idev.pwdev_global[1]) { //wdev
-				kfree((u8 *)global_idev.pwdev_global[1]);
-				global_idev.pwdev_global[1] = NULL;
-				/* remove wireless_dev in ndev. */
-				global_idev.pndev[1]->ieee80211_ptr = NULL;
-			}
+			global_idev.pndev[0] = global_idev.pndev[1];
+			global_idev.pwdev_global[0] = global_idev.pwdev_global[1];
+			global_idev.pndev[1] = NULL;
+			global_idev.pwdev_global[1] = NULL;
+			rtw_netdev_idx(global_idev.pndev[0]) = 0;
+		}
+	} else if (iftype == NL80211_IFTYPE_P2P_GO) {
+		/* Tear down the GO ndev at slot 1. */
+		if (global_idev.pndev[1]) {
+			whc_p2p_ndev_unregister(global_idev.pndev[1], global_idev.pwdev_global[1]);
+			global_idev.pwdev_global[1] = NULL;
+			global_idev.pndev[1] = NULL;
 		}
 	}
 
@@ -264,43 +322,54 @@ void whc_host_p2p_iface_free(struct wiphy *wiphy, struct wireless_dev *wdev)
 	return;
 }
 
-/*netdev0: driver_wlanidx_1, port1_MAC=efuse_mac
-  netdev1: driver_wlanidx_0, port0_MAC=efuse_mac+1 */
+/* GC (pndev[0], port0) gets efuse_mac+1; P2P Device moves to port1 with efuse_mac */
 void whc_host_p2p_driver_macaddr_switch(void)
 {
-	whc_host_set_mac_addr(1, global_idev.pndev[0]->dev_addr);
-	whc_host_set_mac_addr(0, global_idev.pndev[1]->dev_addr);
-	rtw_netdev_idx(global_idev.pndev[0]) = 1;
-	rtw_netdev_idx(global_idev.pndev[1]) = 0;
+	int softap_addr_offset_idx = global_idev.wifi_user_config.softap_addr_offset_idx;
+	unsigned char gc_mac[ETH_ALEN];
+
+	/* Derive GC MAC from P2P Device MAC (efuse_mac) using the same offset as AP MAC */
+	memcpy(gc_mac, global_idev.p2p_global.pd_pwdev->address, ETH_ALEN);
+	if (softap_addr_offset_idx == 0) {
+		gc_mac[softap_addr_offset_idx] += (1 << 1);
+	} else {
+		gc_mac[softap_addr_offset_idx] += 1;
+	}
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
+	memcpy((void *)global_idev.pndev[0]->dev_addr, gc_mac, ETH_ALEN);
+#else
+	eth_hw_addr_set(global_idev.pndev[0], gc_mac);
+#endif
+	whc_host_set_mac_addr(0, gc_mac);
+	whc_host_set_mac_addr(1, global_idev.p2p_global.pd_pwdev->address);
 }
 
 void whc_host_p2p_gc_intf_revert(u8 need_if2_deinit)
 {
 	int softap_addr_offset_idx = global_idev.wifi_user_config.softap_addr_offset_idx;
-	unsigned char port0_macaddr[6];
-	unsigned char last;
+	unsigned char ap_mac[ETH_ALEN];
 
-	if (global_idev.p2p_global.pd_wlan_idx) {
-		global_idev.p2p_global.pd_wlan_idx = 0;
+	if (!global_idev.p2p_global.pd_wlan_idx) {
+		return;
+	}
 
-		memcpy((void *)port0_macaddr, global_idev.pndev[1]->dev_addr, ETH_ALEN);
+	global_idev.p2p_global.pd_wlan_idx = 0;
 
-		if (softap_addr_offset_idx == 0) {
-			last = global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] - (1 << 1);
-		} else {
-			last = global_idev.pndev[1]->dev_addr[softap_addr_offset_idx] - 1;
-		}
+	/* Restore driver port0 to efuse_mac (P2P Device MAC) */
+	whc_host_set_mac_addr(0, global_idev.p2p_global.pd_pwdev->address);
 
-		memcpy((void *)&port0_macaddr[softap_addr_offset_idx], &last, 1);
-		whc_host_set_mac_addr(0, port0_macaddr);
-		whc_host_set_mac_addr(1, global_idev.pndev[1]->dev_addr);
-		if (global_idev.pndev[0]) {
-			rtw_netdev_idx(global_idev.pndev[0]) = 0;
-		}
-		rtw_netdev_idx(global_idev.pndev[1]) = 1;
-		if (need_if2_deinit) {
-			whc_host_deinit_ap();
-		}
+	/* Restore driver port1 to efuse_mac+1 (AP MAC) */
+	memcpy(ap_mac, global_idev.p2p_global.pd_pwdev->address, ETH_ALEN);
+	if (softap_addr_offset_idx == 0) {
+		ap_mac[softap_addr_offset_idx] += (1 << 1);
+	} else {
+		ap_mac[softap_addr_offset_idx] += 1;
+	}
+	whc_host_set_mac_addr(1, ap_mac);
+
+	if (need_if2_deinit) {
+		whc_host_deinit_ap();
 	}
 }
 
@@ -311,8 +380,10 @@ int whc_host_p2p_get_wdex_idx(struct wireless_dev *wdev)
 
 	if (wdev->iftype == NL80211_IFTYPE_P2P_DEVICE) {
 		idx = 2; /* used idx=2 to specialize p2p device, since it cannot refered as global_idev.pwdev_global[x]*/
-	} else if (wdev->iftype == NL80211_IFTYPE_P2P_CLIENT || wdev->iftype == NL80211_IFTYPE_P2P_GO) {
-		idx = 1; /* GC and GO both refered as global_idev.pwdev_global[1] */
+	} else if (wdev->iftype == NL80211_IFTYPE_P2P_CLIENT) {
+		idx = 0; /* GC uses pndev[0]/pwdev_global[0] */
+	} else if (wdev->iftype == NL80211_IFTYPE_P2P_GO) {
+		idx = 1; /* GO uses pndev[1]/pwdev_global[1] */
 	} else { /* other non P2P cases*/
 		pnetdev = wdev_to_ndev(wdev);
 		if (pnetdev) {

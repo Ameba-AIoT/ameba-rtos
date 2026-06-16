@@ -668,6 +668,10 @@ static uint16_t bt_stack_gatts_notify(void *p_param)
 		return RTK_BT_ERR_NO_ENTRY;
 	}
 
+	if (param->index >= node->svc.attr_count) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
 	conn = bt_conn_lookup_handle(param->conn_handle, BT_CONN_TYPE_LE);
 	if (!conn) {
 		return RTK_BT_ERR_NO_CONNECTION;
@@ -705,6 +709,10 @@ static uint16_t bt_stack_gatts_indicate(void *p_param)
 	node = bt_stack_gatts_find_register_srv(param->app_id);
 	if (!node) {
 		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	if (param->index >= node->svc.attr_count) {
+		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
 	req = (zephyr_indicate_req_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(zephyr_indicate_req_t) + param->len);

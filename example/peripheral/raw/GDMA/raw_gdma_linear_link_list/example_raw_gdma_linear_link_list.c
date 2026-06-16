@@ -134,6 +134,6 @@ int example_raw_gdma_linear_link_list(void)
 		printf("Cannot create dma_multiblock_transfer_task demo task\n\r");
 	}
 
-	rtos_sched_start();
+	// rtos_sched_start();
 	return 0;
 }

@@ -40,7 +40,7 @@
   *****************************************************************************************
   *      To use the normal i2c mode, the following steps are mandatory:
   *
-  *      1. Enable peripheral clock using the follwoing functions.(it is enabled by default)
+  *      1. Enable peripheral clock using the following functions.(it is enabled by default)
   *			RCC_PeriphClockCmd(APBPeriph_I2Cx, APBPeriph_I2Cx_CLOCK, ENABLE);
   *
   *      2. configure the I2C pinmux.
@@ -787,7 +787,7 @@ typedef struct {
 /** @defgroup I2C_Clock I2C Clock
   * @{
   */
-#define I2C0_1_IPCLK			40000000
+#define I2C0_1_IPCLK			XTAL_ClkGet() /* default: 40M */
 /**
   * @}
   */
@@ -848,6 +848,11 @@ typedef struct {
 /** @} */
 /// @endcond
 
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup I2C_Exported_Functions I2C Exported Functions
+  * @{
+  */
+
 /* I2C_Exported_Normal_Functions I2C Exported Normal Functions */
 _LONG_CALL_ void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct);
 _LONG_CALL_ void I2C_Cmd(I2C_TypeDef *I2Cx, u8 NewState);
@@ -890,6 +895,9 @@ _LONG_CALL_ void I2C_DmaMode2Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_D
 _LONG_CALL_ bool I2C_TXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pTxBuf, int TxCount);
 _LONG_CALL_ bool I2C_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pRxBuf, int RxCount);
 
+/**
+  * @}
+  */
 
 /* Other Definitions --------------------------------------------------------*/
 #if 1

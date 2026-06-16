@@ -40,7 +40,7 @@
   *****************************************************************************************
   *      To use the normal i2c mode, the following steps are mandatory:
   *
-  *      1. Enable peripheral clock using the follwoing functions.(it is enabled by default)
+  *      1. Enable peripheral clock using the following functions.(it is enabled by default)
   *			RCC_PeriphClockCmd(APBPeriph_I2Cx, APBPeriph_I2Cx_CLOCK, ENABLE);
   *
   *      2. configure the I2C pinmux.

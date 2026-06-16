@@ -297,7 +297,7 @@ static void vendor_bulk_loopback_test(void)
 			for (j = 0; j < USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE; j++) {
 				if (vendor_bulk_loopback_rx_buf[j] != i) {
 					vendor_bulk_rx_errcnt++;
-					RTK_LOGS(TAG, RTK_LOG_INFO, TAG, RTK_LOG_INFO, "BULK Loopback test FAIL: %d, %d, errcnt %d", i, vendor_bulk_loopback_rx_buf[j], vendor_bulk_rx_errcnt);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "BULK Loopback test FAIL: %d, %d, errcnt %d", i, vendor_bulk_loopback_rx_buf[j], vendor_bulk_rx_errcnt);
 				}
 			}
 		}

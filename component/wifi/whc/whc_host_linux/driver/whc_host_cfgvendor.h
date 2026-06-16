@@ -11,6 +11,38 @@
 #ifdef CONFIG_NAN
 #define OUI_REALTEK 0x00E04C
 
+#ifdef NAN_CUSTOMER_NANDOW
+/* NAN event IDs */
+enum rtw_nan_event_id {
+	RTW_NAN_EVT_NAN_CLUSTER_CHANGED                = 1,   // NAN cluster changed
+	RTW_NAN_EVT_DISC_RESULT                        = 2,   // Discovery result received
+	RTW_NAN_EVT_PUBLISH_REPLIED                    = 3,   // Publish replied by subscriber
+	RTW_NAN_EVT_DATAPATH_REQ_RECV                  = 4,   // Datapath request received
+	RTW_NAN_EVT_DATAPATH_RSP_RECV                  = 5,   // Datapath response received
+	RTW_NAN_EVT_DATAPATH_CONFIRM_RECV              = 6,   // Datapath confirm received
+	RTW_NAN_EVT_DATAPATH_ESTABLISHED               = 7,   // Datapath established
+	RTW_NAN_EVT_DATAPATH_END                       = 8,   // Datapath ended
+	RTW_NAN_EVT_DATAPATH_HOST_ASSIST               = 9,   // Host assist request
+	RTW_NAN_EVT_SUBSCRIBE_TERMINATED               = 10,  // Subscribe terminated
+	RTW_NAN_EVT_PUBLISH_TERMINATED                 = 11,  // Publish terminated
+	RTW_NAN_EVT_FOLLOWUP_RECV                      = 12,  // Follow-up received
+	RTW_NAN_EVT_FOLLOWUP_TX_COMPLETE               = 13,  // Follow-up tx complete
+	RTW_NAN_EVT_BEACON                             = 14,  // Beacon received
+	RTW_NAN_EVT_OOB_AF_TX_STATUS                   = 15,  // Transmit an out of bound action frame (OOB AF)
+	RTW_NAN_EVT_OOB_AF_RX                          = 16,  // Receive an out of bound action frame (OOB AF)
+	RTW_NAN_EVT_RESET_INTERFACE                    = 17,  // Chip reset
+	RTW_NAN_EVT_COUNTRY_CODE_CHANGED               = 18,  // Country code changed
+	RTW_NAN_EVT_INFRA_ASSOC_START                  = 19,  // Infra assoc start
+	RTW_NAN_EVT_ASSOC_DONE                         = 20,  // Association done
+	RTW_NAN_EVT_ASSOC_READY                        = 21,  // Association ready
+	RTW_NAN_EVT_AUTH                               = 22,  // Authentication
+	RTW_NAN_EVT_ASSOC                              = 23,  // Association
+	RTW_NAN_EVT_INFRA_SCAN_START                   = 24,  // Infra scan start
+	RTW_NAN_EVT_INFRA_SCAN_COMPLETE                = 25,  // Infra scan complete
+	RTW_NAN_EVT_SET_INFRA_CHANNEL                  = 26,  // Set infra channel
+};
+#endif
+
 enum ANDROID_VENDOR_SUB_COMMAND {
 	/* don't use 0 as a valid subcommand */
 	VENDOR_NL80211_SUBCMD_UNSPECIFIED,
@@ -40,7 +72,7 @@ enum rtw_vendor_subcmd {
 enum rtw_vendor_event {
 	NAN_EVENT_DATA_COMFIRM,
 #ifdef NAN_CUSTOMER_NANDOW
-	NAN_EVENT_NANDOW_MAX    =   WFPAL_M_SET_INFRA_CHANNEL,
+	NAN_EVENT_NANDOW_MAX    =   RTW_NAN_EVT_SET_INFRA_CHANNEL,
 #endif
 	NAN_EVENT_DATA_TERMINATION,
 	NAN_EVENT_DATA_INDICATION,

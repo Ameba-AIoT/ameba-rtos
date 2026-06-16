@@ -11,10 +11,10 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_ARM_CORE_CM4_KM4TZ)
 typedef enum {
-	PMU_OS				= 0,
+	PMU_OS              = 0,
 	PMU_WLAN_DEVICE,
-	PMU_CPU0_RUN,
 	PMU_CPU1_RUN,
 	PMU_WLAN_FW_DEVICE,
 	PMU_BT_CONTROLLER,
@@ -22,9 +22,22 @@ typedef enum {
 	PMU_WHC_WIFI,
 	PMU_DHCP_PROCESS,
 	PMU_LWIP_STACK,
-	PMU_DEV_USER_BASE,
-	PMU_MAX
+	PMU_DEV_USER_BASE,     /* reserved for customer use */
+	PMU_MAX,
 } PMU_DEVICE;
+#else /* CONFIG_ARM_CORE_CM4_KM4NS */
+typedef enum {
+	PMU_OS              = 0,
+	PMU_WLAN_DEVICE,
+	PMU_CPU0_RUN,
+	PMU_WLAN_FW_DEVICE,
+	PMU_BT_CONTROLLER,
+	PMU_BT_HOST,
+	PMU_WHC_WIFI,
+	PMU_DEV_USER_BASE,     /* reserved for customer use */
+	PMU_MAX,
+} PMU_DEVICE;
+#endif
 
 // default locked by OS and not to sleep until OS release wakelock in somewhere
 #define DEFAULT_WAKELOCK		(BIT(PMU_OS))

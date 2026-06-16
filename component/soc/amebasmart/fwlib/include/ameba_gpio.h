@@ -368,6 +368,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 #define GPIO_INT_Trigger_EDGE		0x1 /*!< This interrupt is edge trigger */
 #define GPIO_INT_Trigger_BOTHEDGE	0x2 /*!< This interrupt is both-edge trigger */
 
+/** @brief Check if GPIO interrupt trigger type is valid. */
 #define IS_GPIOIT_LEVEL_TYPE(TYPE)		(((TYPE) == GPIO_INT_Trigger_LEVEL) || \
 										((TYPE) == GPIO_INT_Trigger_EDGE) || \
 										((TYPE) == GPIO_INT_Trigger_BOTHEDGE))
@@ -381,6 +382,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 #define GPIO_INT_POLARITY_ACTIVE_LOW		0x0 /*!< Setting interrupt to low active: falling edge or low level */
 #define GPIO_INT_POLARITY_ACTIVE_HIGH		0x1 /*!< Setting interrupt to high active: rising edge or high level */
 
+/** @brief Check if GPIO interrupt polarity type is valid. */
 #define IS_GPIOIT_POLARITY_TYPE(TYPE)		(((TYPE) == GPIO_INT_POLARITY_ACTIVE_LOW) || \
 											((TYPE) == GPIO_INT_POLARITY_ACTIVE_HIGH))
 /**
@@ -393,6 +395,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 #define GPIO_INT_DEBOUNCE_DISABLE			0x0 /*!< Disable interrupt debounce */
 #define GPIO_INT_DEBOUNCE_ENABLE			0x1 /*!< Enable interrupt debounce */
 
+/** @brief Check if GPIO interrupt debounce type is valid. */
 #define IS_GPIOIT_DEBOUNCE_TYPE(TYPE)		(((TYPE) == GPIO_INT_DEBOUNCE_DISABLE) || \
 											((TYPE) == GPIO_INT_DEBOUNCE_ENABLE))
 /**
@@ -415,6 +418,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 #define GPIO_PORT_B				0x1 /*!< Port number B */
 #define GPIO_PORT_C				0x2 /*!< Port number C */
 
+/** @brief Check if GPIO port number is valid. */
 #define IS_GPIO_PORT_NUM(PORT)	((PORT) == GPIO_PORT_A || \
 								(PORT) == GPIO_PORT_B || \
 								(PORT) == GPIO_PORT_C)
@@ -455,6 +459,35 @@ _LONG_CALL_ void GPIO_PortWrite(u32 GPIO_Port, u32 GPIO_Mask, u32 Port_State);
 _LONG_CALL_ void GPIO_PortDirection(u32 GPIO_Port, u32 GPIO_Mask, u32 data_direction);
 _LONG_CALL_ void GPIO_DebounceClock(u32 GPIO_Port, u32 DivideCount);
 _LONG_CALL_ void GPIO_LevelSync(u32 GPIO_Port, u32 NewState);
+
+/**
+  * @brief  Get the interrupt status.
+  * @param  GPIO_Port Specifies port number, which can be any GPIO_PORT_X defined in GPIO_Port_Type.
+  * @return The interrupt status of the specified port pins
+  */
+_LONG_CALL_ u32 GPIO_INTStatusGet(u32 GPIO_Port);
+
+/**
+  * @brief  Clear the edge interrupt status.
+  * @param  GPIO_Port Specifies port number, which can be any GPIO_PORT_X defined in GPIO_Port_Type.
+  */
+_LONG_CALL_ void GPIO_INTStatusClearEdge(u32 GPIO_Port);
+
+/**
+  * @brief Initialize specified GPIO pin output in Open Drain mode.
+  * @param PinName Value of PINMUX_Pin_Name_definitions.
+  * @param PUInternal Which can ENABLE or DISABLE.
+  */
+_LONG_CALL_ void GPIO_ODInit(u8 PinName, u32 PUInternal);
+
+/**
+  * @brief Write a specified output port pin in Open Drain mode.
+  * @param PinName Value of PINMUX_Pin_Name_definitions.
+  * @param PinState This parameter can be one of the following values:
+  * 		@arg GPIO_PIN_LOW: Pin state set to low
+  * 		@arg GPIO_PIN_HIGH: Pin state set to high
+  */
+_LONG_CALL_ void GPIO_ODWriteBit(u8 PinName, u32 PinState);
 
 /**
   * @}

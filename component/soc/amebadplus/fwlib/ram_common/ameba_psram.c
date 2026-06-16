@@ -105,11 +105,11 @@ void ChipInfo_InitPsramInfoFromMemInfo(const MCM_MemTypeDef *meminfo, PSRAMINFO_
   */
 void PSRAM_CLK_Update(void)
 {
-	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
-	ChipInfo_InitPsramInfoFromMemInfo(&meminfo, &PsramInfo);
-
 	u32 PsramClk = 0;
 	u32 PLLCLk, Div;
+	u32 psram_actual_end;
+	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
+	ChipInfo_InitPsramInfoFromMemInfo(&meminfo, &PsramInfo);
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0);
 	u32 ClkSel = LSYS_GET_CKSL_PSRAM(Temp);
 
@@ -173,7 +173,15 @@ void PSRAM_CLK_Update(void)
 		}
 	}
 
-	// RTK_LOGI(TAG, "PSRAM Ctrl CLK: %lu Hz \n", PsramClk);
+	RTK_LOGI(TAG, "PSRAM CLK: %luMHz, Size: %luMB\n",
+			 PsramClk / 1000000,
+			 PsramInfo.Psram_Size / 1024 / 1024);
+
+	psram_actual_end = PSRAM_BASE + PsramInfo.Psram_Size;
+	if ((u32)__non_secure_psram_end__ != psram_actual_end) {
+		RTK_LOGW(TAG, "PSRAM_END mismatch: layout=0x%08x, actual=0x%08x, please update ameba_layout.ld\n",
+				 (u32)__non_secure_psram_end__, psram_actual_end);
+	}
 }
 
 /**

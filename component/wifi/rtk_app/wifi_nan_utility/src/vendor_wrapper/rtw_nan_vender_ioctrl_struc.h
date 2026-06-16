@@ -31,7 +31,7 @@
 /* the following variables are defined in non-nan headers in driver */
 #include "rtw_nan_vender_osdep.h"
 #include "phl_nan_def_ioctl.h"
-//#define NAN_CUSTOMER_NANDOW
+#define NAN_CUSTOMER_NANDOW
 
 #define MAX_SRVC_NAME_LEN 256
 #define MAX_SRVC_INST_LEN 64
@@ -163,7 +163,7 @@ struct nan_pairing_start {
 #define MAX_NANDOW_PARA_LEN 2600
 #define MAX_NANDOW_REPLY_LEN 512
 
-#include "WFPAL.h"
+#include "rtw_nan_vendor_def.h"
 
 typedef enum nan_customer_nandow_cmd_type {
 	NANDOW_CMD_TYPE_GET     = (1 << 0),
@@ -171,31 +171,31 @@ typedef enum nan_customer_nandow_cmd_type {
 } nan_customer_nandow_cmd_type_t;
 
 union nandow_para {
-	struct wfpal_nan_device_capability dev_cap;
-	struct wfpal_wifi_driver_capabilities drv_cap;
-	struct wfpal_nan_enable nan_enabled;
-	struct wfpal_nan_cluster_id cluster_id;
-	struct wfpal_nan_master_indication_master_preference master_pref;
-	struct wfpal_nan_master_indication_random_factor random_factor;
-	struct wfpal_nan_discovery_window_awake_period dw_awake_period;
-	struct wfpal_nan_primary_master_channel pri_master_ch;
-	struct wfpal_nan_secondary_master_channel second_master_ch;
-	struct wfpal_nan_discovery_beacon_period disc_bcn_period;
-	struct wfpal_nan_publish_data publish_srv;
-	struct wfpal_nan_cancel_publish_data cancel_publish_srv;
-	struct wfpal_nan_subscribe_data subscribe_srv;
-	struct wfpal_nan_cancel_subscribe_data cancel_sub_srv;
-	struct wfpal_nan_follow_up_transmit_data followup_srv;
-	struct wfpal_nan_datapath_request datapath_req;
-	struct wfpal_nan_datapath_end datapath_end;
-	struct wfpal_nan_datapath_response datapath_rsp;
-	struct wfpal_nan_datapath_confirm datapath_confirm;
-	struct wfpal_nan_committed_availability avail_cmt;
-	struct wfpal_nan_potential_availability avail_pot;
-	struct wfpal_nan_data_cluster_availability avail_ndc;
-	struct wfpal_nan_forced_discovery_beacon_transmission forced_disc_bcn;
-	struct wfpal_set_scan_control scan_ctl;
-	struct wfpal_country_code_data country_code;
+	struct rtw_nan_device_capability dev_cap;
+	struct rtw_nan_driver_capabilities drv_cap;
+	struct rtw_nan_enable nan_enabled;
+	struct rtw_nan_cluster_id cluster_id;
+	struct rtw_nan_master_preference master_pref;
+	struct rtw_nan_random_factor random_factor;
+	struct rtw_nan_discovery_window_awake_period dw_awake_period;
+	struct rtw_nan_primary_master_channel pri_master_ch;
+	struct rtw_nan_secondary_master_channel second_master_ch;
+	struct rtw_nan_discovery_beacon_period disc_bcn_period;
+	struct rtw_nan_publish_data publish_srv;
+	struct rtw_nan_cancel_publish_data cancel_publish_srv;
+	struct rtw_nan_subscribe_data subscribe_srv;
+	struct rtw_nan_cancel_subscribe_data cancel_sub_srv;
+	struct rtw_nan_follow_up_transmit_data followup_srv;
+	struct rtw_nan_datapath_request datapath_req;
+	struct rtw_nan_datapath_end datapath_end;
+	struct rtw_nan_datapath_response datapath_rsp;
+	struct rtw_nan_datapath_confirm datapath_confirm;
+	struct rtw_nan_committed_availability avail_cmt;
+	struct rtw_nan_potential_availability avail_pot;
+	struct rtw_nan_data_cluster_availability avail_ndc;
+	struct rtw_nan_forced_discovery_beacon_transmission forced_disc_bcn;
+	struct rtw_nan_set_scan_control scan_ctl;
+	struct rtw_nan_country_code_data country_code;
 };
 
 struct nan_customer_nandow {

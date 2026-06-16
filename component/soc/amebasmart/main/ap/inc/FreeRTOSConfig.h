@@ -25,30 +25,6 @@
  * See http://www.freertos.org/a00110.html
  *----------------------------------------------------------*/
 
-/*
- * The FreeRTOS Cortex-A port implements a full interrupt nesting model.
- *
- * Interrupts that are assigned a priority at or below
- * configMAX_API_CALL_INTERRUPT_PRIORITY (which counter-intuitively in the ARM
- * generic interrupt controller [GIC] means a priority that has a numerical
- * value above configMAX_API_CALL_INTERRUPT_PRIORITY) can call FreeRTOS safe API
- * functions and will nest.
- *
- * Interrupts that are assigned a priority above
- * configMAX_API_CALL_INTERRUPT_PRIORITY (which in the GIC means a numerical
- * value below configMAX_API_CALL_INTERRUPT_PRIORITY) cannot call any FreeRTOS
- * API functions, will nest, and will not be masked by FreeRTOS critical
- * sections (although it is necessary for interrupts to be globally disabled
- * extremely briefly as the interrupt mask is updated in the GIC).
- *
- * FreeRTOS functions that can be called from an interrupt are those that end in
- * "FromISR".  FreeRTOS maintains a separate interrupt safe API to enable
- * interrupt entry to be shorter, faster, simpler and smaller.
- *
- * The Sheipa implements 0x20 unique interrupt priorities.  For the purpose of
- * setting configMAX_API_CALL_INTERRUPT_PRIORITY 0xFF represents the lowest
- * priority.
- */
 #include "platform_autoconf.h"
 
 /* Realtek Heap Integrity Check configuration. */
@@ -57,7 +33,15 @@ extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
 #define traceTASK_SWITCHED_OUT ulPortCheckHeapIntegrity
 #endif
 
-#define configMAX_API_CALL_INTERRUPT_PRIORITY	0x11
+/* Set to 0 so that ALL interrupt priorities are allowed to call FreeRTOS
+ * ISR-safe API functions (those ending in "FromISR").
+ *
+ * This port (ARM_CA32) does NOT use the GIC priority-mask register (ICCPMR)
+ * to implement critical sections; it uses a simple global interrupt
+ * disable/enable (CPSID I / CPSIE I) instead.  Therefore this macro has no
+ * effect at runtime — every interrupt is equally masked during a critical
+ * section regardless of its GIC priority. */
+#define configMAX_API_CALL_INTERRUPT_PRIORITY	0x0
 
 #define configNUM_CORES							CONFIG_CPUS_NUM  /* Do not modify core number here but in menuconfig*/
 

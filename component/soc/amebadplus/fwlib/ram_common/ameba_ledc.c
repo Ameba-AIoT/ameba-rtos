@@ -10,10 +10,10 @@
   * @{
   */
 
-/** @defgroup LEDC
-* @brief LEDC driver modules
-* @{
-*/
+/** @defgroup LEDC LEDC
+  * @brief LEDC driver modules
+  * @{
+  */
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup LEDC_Exported_Functions LEDC Exported Functions
@@ -22,9 +22,8 @@
 
 
 /**
-  * @brief  Fills each LEDC_InitStruct member with its default value.
-  * @param  LEDC_InitStruct: pointer to an LEDC_InitTypeDef structure which will be initialized.
-  * @retval None
+  * @brief  Fill each LEDC_InitStruct member with its default value.
+  * @param  LEDC_InitStruct Pointer to an LEDC_InitTypeDef structure which will be initialized.
   */
 void LEDC_StructInit(LEDC_InitTypeDef *LEDC_InitStruct)
 {
@@ -47,12 +46,11 @@ void LEDC_StructInit(LEDC_InitTypeDef *LEDC_InitStruct)
 }
 
 /**
-  * @brief  Initializes the LEDC peripheral according to the specified
+  * @brief  Initialize the LEDC peripheral according to the specified
   *   parameters in the LEDC_InitStruct
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  LEDC_InitStruct: pointer to a LEDC_InitTypeDef structure that
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  LEDC_InitStruct Pointer to a LEDC_InitTypeDef structure that
   *   contains the configuration information for the specified LEDC peripheral
-  * @retval None
   */
 void LEDC_Init(LEDC_TypeDef *LEDCx, LEDC_InitTypeDef *LEDC_InitStruct)
 {
@@ -78,10 +76,9 @@ void LEDC_Init(LEDC_TypeDef *LEDCx, LEDC_InitTypeDef *LEDC_InitStruct)
 
 /**
   * @brief  Enable or disable LEDC peripheral.
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  NewState: new state of the operation mode.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  NewState New state of the operation mode.
   *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
   */
 void LEDC_Cmd(LEDC_TypeDef *LEDCx, u8 NewState)
 {
@@ -96,18 +93,17 @@ void LEDC_Cmd(LEDC_TypeDef *LEDCx, u8 NewState)
 
 /**
   * @brief  ENABLE/DISABLE LEDC's interrupt bits.
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  LEDC_IT: specifies the LEDCx interrupt sources to be enabled or disabled.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  LEDC_IT Specifies the LEDCx interrupt sources to be enabled or disabled.
   *   This parameter can be one or combinations of the following values:
   *            @arg BIT_LEDC_FIFO_OVERFLOW_INT_EN: LEDC FIFO Overflow Interrupt
   *            @arg BIT_LEDC_WAITDATA_TIMEOUT_INT_EN: LEDC Wait Data Timeout Interrupt
-  *            @arg BIT_LEDC_CPUREQ_FIFO_INT_EN: LEDC CPU Requset Interrupt
-  *            @arg BIT_LEDC_TRANS_FINISH_INT_EN: LEDC Transfer Finishi Interrupt
-  * @param  NewState: specifies the state of the interrupt.
+  *            @arg BIT_LEDC_CPUREQ_FIFO_INT_EN: LEDC CPU Request Interrupt
+  *            @arg BIT_LEDC_TRANS_FINISH_INT_EN: LEDC Transfer Finish Interrupt
+  * @param  NewState Specifies the state of the interrupt.
   *   This parameter can be one of the following values:
   *            @arg ENABLE
   *            @arg DISABLE
-  * @retval None
   */
 void LEDC_INTConfig(LEDC_TypeDef *LEDCx, u32 LEDC_IT, u32 NewState)
 {
@@ -125,14 +121,13 @@ void LEDC_INTConfig(LEDC_TypeDef *LEDCx, u32 LEDC_IT, u32 NewState)
 
 /**
   * @brief  Clear the LEDC's interrupt bits.
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  LEDC_IT: specifies the LEDCx interrupt sources to be enabled or disabled.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  LEDC_IT Specifies the LEDCx interrupt sources to be cleared.
   *   This parameter can be one or combinations of the following values:
   *            @arg BIT_LEDC_FIFO_OVERFLOW_INT_EN: LEDC FIFO Overflow Interrupt
   *            @arg BIT_LEDC_WAITDATA_TIMEOUT_INT_EN: LEDC Wait Data Timeout Interrupt
-  *            @arg BIT_LEDC_CPUREQ_FIFO_INT_EN: LEDC CPU Requset Interrupt
-  *            @arg BIT_LEDC_TRANS_FINISH_INT_EN: LEDC Transfer Finishi Interrupt
-  * @retval None
+  *            @arg BIT_LEDC_CPUREQ_FIFO_INT_EN: LEDC CPU Request Interrupt
+  *            @arg BIT_LEDC_TRANS_FINISH_INT_EN: LEDC Transfer Finish Interrupt
   */
 void LEDC_ClearINT(LEDC_TypeDef *LEDCx, u32 LEDC_IT)
 {
@@ -147,15 +142,21 @@ void LEDC_ClearINT(LEDC_TypeDef *LEDCx, u32 LEDC_IT)
 
 /**
   * @brief  Get LEDC's interrupt status.
-  * @param  LEDCx: selected LEDC peripheral.
-  * @retval LEDC interrupt status.
-  *   each bit of the interrupt status shows as follows:
-  *            - bit 17 : FIFO empty status
-  *            - bit 16 : FIFO full status
-  *            - bit 3 : FIFO overflow interrupt happens when FIFO overflow
-  *            - bit 2 : Wait data timeout interrupt happens when FIFO is empty after LEDC_WAIT_DATA_TIME
-  *            - bit 1 : CPU Request interrupt happens when FIFO left less than FIFO threshold
-  *            - bit 0 : Transfer done interrupt happens when transfer complete.
+  * @details
+  *   bit 17: FIFO empty status.
+  *
+  *   bit 16: FIFO full status.
+  *
+  *   bit 3: FIFO overflow interrupt happens when FIFO overflow.
+  *
+  *   bit 2: Wait data timeout interrupt happens when FIFO is empty after LEDC_WAIT_DATA_TIME.
+  *
+  *   bit 1: CPU Request interrupt happens when FIFO left less than FIFO threshold.
+  *
+  *   bit 0: Transfer done interrupt happens when transfer complete.
+  *
+  * @param  LEDCx Selected LEDC peripheral.
+  * @return LEDC interrupt status, each bit of this value represents one interrupt status.
   */
 u32 LEDC_GetINT(LEDC_TypeDef *LEDCx)
 {
@@ -164,11 +165,10 @@ u32 LEDC_GetINT(LEDC_TypeDef *LEDCx)
 
 /**
   * @brief  Set LEDC transfer mode
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  mode:This parameter can be one of the following values:
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  mode This parameter can be one of the following values:
   *            @arg LEDC_CPU_MODE
   *            @arg LEDC_DMA_MODE
-  * @retval None
   */
 void LEDC_SetTransferMode(LEDC_TypeDef *LEDCx, u32 mode)
 {
@@ -185,11 +185,10 @@ void LEDC_SetTransferMode(LEDC_TypeDef *LEDCx, u32 mode)
 
 /**
   * @brief  Get LEDC transfer mode
-  * @param  LEDCx: selected LEDC peripheral.
-  * @retval LEDC transfer mode.
-  *   the result can be one of the folling values:
-  *            - LEDC_DMA_MODE
-  *            - LEDC_CPU_MODE
+  * @param  LEDCx Selected LEDC peripheral.
+  * @return LEDC transfer mode:
+  *         - LEDC_DMA_MODE
+  *         - LEDC_CPU_MODE
   */
 u32 LEDC_GetTransferMode(LEDC_TypeDef *LEDCx)
 {
@@ -202,13 +201,12 @@ u32 LEDC_GetTransferMode(LEDC_TypeDef *LEDCx)
 
 /**
   * @brief  Set LEDC's FIFO Level
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  FifoLevel: LEDCx FIFO level. Value range: 0 to 31.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  FifoLevel LEDCx FIFO level. Value range: 0 to 31.
   *   When the number of transmit FIFO entries is greater or equal to this value,
   *         DMA request or BIT_LEDC_CPUREQ_FIFO_INT_EN happens.
-  *         This parameter is recommaned to 7 or 15.
+  *         This parameter is recommended to 7 or 15.
   *
-  * @retval None
   */
 void LEDC_SetFIFOLevel(LEDC_TypeDef *LEDCx, u8 FifoLevel)
 {
@@ -222,8 +220,8 @@ void LEDC_SetFIFOLevel(LEDC_TypeDef *LEDCx, u8 FifoLevel)
 
 /**
   * @brief  Get LEDC FIFO Level
-  * @param  LEDCx: selected LEDC peripheral.
-  * @retval LEDC FIFO level
+  * @param  LEDCx Selected LEDC peripheral.
+  * @return LEDC FIFO level
   */
 u32 LEDC_GetFIFOLevel(LEDC_TypeDef *LEDCx)
 {
@@ -232,14 +230,16 @@ u32 LEDC_GetFIFOLevel(LEDC_TypeDef *LEDCx)
 
 /**
   * @brief  Init and Enable LEDC TX GDMA.
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  GDMA_InitStruct Pointer to a GDMA_InitTypeDef structure that contains
   *   the configuration information for the GDMA peripheral.
-  * @param  CallbackData: GDMA callback data.
-  * @param  CallbackFunc: GDMA callback function.
-  * @param  pTxData: Tx Buffer.
-  * @param  Length: Tx Count.
-  * @retval   TRUE/FLASE
+  * @param  CallbackData GDMA callback data.
+  * @param  CallbackFunc GDMA callback function.
+  * @param  pTxData Tx Buffer.
+  * @param  Length Tx Count.
+  * @return Init status:
+  *         - TRUE: Init success
+  *         - FALSE: Init fail
   */
 bool LEDC_TXGDMA_Init(
 	LEDC_TypeDef *LEDCx,
@@ -299,8 +299,7 @@ bool LEDC_TXGDMA_Init(
 
 /**
   * @brief  Set LEDC soft reset, Force LEDC Enters IDLE State
-  * @param  LEDCx: selected LEDC peripheral.
-  * @retval None
+  * @param  LEDCx Selected LEDC peripheral.
   *
   * @note LEDC soft reset will clear to 0 after set 1; after LEDC soft reset, LEDC enters idle state, which
   *   brings all interrupt status cleared, FIFO read write pointer cleared, finished data count is 0 and LEDC_EN bit is
@@ -313,11 +312,9 @@ void LEDC_SoftReset(LEDC_TypeDef *LEDCx)
 
 /**
   * @brief  Set LEDC Total Data Length
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  len: LEDCx data len. Value range: 0 to 8023.
-  *   When the number of transmit FIFO entries is greater or equal to this value, MA request or
-  *   BIT_LEDC_CPUREQ_FIFO_INT_EN happens. This parameter is recommaned to 7 or 15.
-  * @retval None
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  TotalData LEDCx data length. Value range: 1 to 8192.
+  *   This specifies total amount of 32-bit data words to transfer.
   */
 void LEDC_SetTotalLength(LEDC_TypeDef *LEDCx, u32 TotalData)
 {
@@ -333,9 +330,8 @@ void LEDC_SetTotalLength(LEDC_TypeDef *LEDCx, u32 TotalData)
 
 /**
   * @brief  Set LEDC LED Number
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  Num: LEDCx LED number. Value range: 0 to 1023.
-  * @retval None
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  Num LEDCx LED number. Value range: 1 to 1024.
   */
 void LEDC_SetLEDNum(LEDC_TypeDef *LEDCx, u32 Num)
 {
@@ -351,12 +347,11 @@ void LEDC_SetLEDNum(LEDC_TypeDef *LEDCx, u32 Num)
 
 /**
   * @brief  Set LEDC Idle Output Level
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  Pol: LEDCx Output level.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  Pol LEDCx Output level.
   *   This parameter can be one of the following values:
   *            @arg LEDC_IDLE_POLARITY_HIGH: LEDC Idle output High Level
   *            @arg LEDC_IDLE_POLARITY_LOW: LEDC Idle output Low Level
-  * @retval None
   */
 void LEDC_SetPolarity(LEDC_TypeDef *LEDCx, u32 Pol)
 {
@@ -374,8 +369,8 @@ void LEDC_SetPolarity(LEDC_TypeDef *LEDCx, u32 Pol)
 
 /**
   * @brief  Set LEDC Output RGB Mode
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  mode: LEDCx Output mode with input GBR mode order.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  mode LEDCx Output mode with input GBR mode order.
   *   This parameter can be one of the following values:
   *            @arg LEDC_OUTPUT_GRB: LEDC Output in order of GRB
   *            @arg LEDC_OUTPUT_GBR: LEDC Output in order of GBR
@@ -383,7 +378,6 @@ void LEDC_SetPolarity(LEDC_TypeDef *LEDCx, u32 Pol)
   *            @arg LEDC_OUTPUT_BGR: LEDC Output in order of BGR
   *            @arg LEDC_OUTPUT_RBG: LEDC Output in order of RBG
   *            @arg LEDC_OUTPUT_BRG: LEDC Output in order of BRG
-  * @retval None
   */
 void LEDC_SetOutputMode(LEDC_TypeDef *LEDCx, u32 mode)
 {
@@ -398,12 +392,11 @@ void LEDC_SetOutputMode(LEDC_TypeDef *LEDCx, u32 mode)
 }
 
 /**
-  * @brief  Set LEDC Input data with MSB or LSB order
-  * @param  LEDCx: selected LEDC peripheral.
-  *   This parameter can be one of the following values:
+  * @brief  Set LEDC Output data with MSB or LSB order
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  order Specifies the output order, can be one of the following values:
   *            @arg LEDC_INPUT_LSB: LEDC input data in order of GRB
   *            @arg LEDC_INPUT_MSB: LEDC input data in order of GBR
-  * @retval None
   */
 void LEDC_SetOutputOrder(LEDC_TypeDef *LEDCx, u8 order)
 {
@@ -417,10 +410,10 @@ void LEDC_SetOutputOrder(LEDC_TypeDef *LEDCx, u8 order)
 
 /**
   * @brief  Set LEDC Input MSB or LSB order
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  order: LEDCx input order with BYTE2:BYTE1:BYTE0.
-  *   Value Range is 0 to 7. 1b`0 is LSB; 1b`1 is MSB.
-  * @retval None
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  order This parameter can be one of the following values:
+  *            @arg LEDC_INPUT_LSB: LSB first
+  *            @arg LEDC_INPUT_MSB: MSB first
   */
 void LEDC_SetInputMode(LEDC_TypeDef *LEDCx, u8 order)
 {
@@ -439,9 +432,8 @@ void LEDC_SetInputMode(LEDC_TypeDef *LEDCx, u8 order)
 }
 
 /**
-  * @brief  Set LEDC Send LED refresh sinal
-  * @param  LEDCx: selected LEDC peripheral.
-  * @retval None
+  * @brief  Set LEDC Send LED refresh signal
+  * @param  LEDCx Selected LEDC peripheral.
   */
 void LEDC_LEDReset(LEDC_TypeDef *LEDCx)
 {
@@ -450,9 +442,8 @@ void LEDC_LEDReset(LEDC_TypeDef *LEDCx)
 
 /**
   * @brief  Write Data to LEDC FIFO
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  data: LEDCx input data, only the lower 24bits valid.
-  * @retval None
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  data LEDCx input data, only the lower 24bits valid.
   */
 void LEDC_WriteData(LEDC_TypeDef *LEDCx, u32 data)
 {
@@ -461,10 +452,10 @@ void LEDC_WriteData(LEDC_TypeDef *LEDCx, u32 data)
 
 /**
   * @brief  Send Specific Data to LEDC FIFO
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  data: LEDCx input source data, only the lower 24bits valid.
-  * @param  Len: data length to send.
-  * @retval None
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  data LEDCx input source data, only the lower 24bits valid.
+  * @param  Len Data length to send.
+  * @return Number of data items actually sent to LEDC FIFO.
   */
 u32 LEDC_SendData(LEDC_TypeDef *LEDCx, void *data, u32 Len)
 {
@@ -497,13 +488,14 @@ u32 LEDC_SendData(LEDC_TypeDef *LEDCx, void *data, u32 Len)
 
 /**
   * @brief  Set LEDC Reset Time Value
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  RstVal: LEDC reset time Value. Value Range is 1 to 0x3FFF
-  * @retval None
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  RstVal LEDC reset time Value. Value range is LEDC_MIN_RESET_CNT to LEDC_MAX_RESET_CNT.
   */
 void LEDC_SetReset_val(LEDC_TypeDef *LEDCx, u32 RstVal)
 {
 	u32 reg_val;
+
+	assert_param(IS_LEDC_RESET_VAL(RstVal));
 
 	reg_val = LEDCx->LEDC_LED_RESET_TIMING_CTRL_REG;
 	reg_val &= ~LEDC_MASK_RESET_TIME;
@@ -512,10 +504,9 @@ void LEDC_SetReset_val(LEDC_TypeDef *LEDCx, u32 RstVal)
 }
 
 /**
-  * @brief  Set LEDC Reset Time Value
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  T1hVal: LEDC logic 1 high level time. Value Range is 0 to 0x7F.
-  * @retval None
+  * @brief  Set LEDC logic 1 high level time.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  T1hVal LEDC logic 1 high level time. Value Range is 0 to 0x7F.
   */
 void LEDC_SetT1H_val(LEDC_TypeDef *LEDCx, u32 T1hVal)
 {
@@ -528,10 +519,9 @@ void LEDC_SetT1H_val(LEDC_TypeDef *LEDCx, u32 T1hVal)
 }
 
 /**
-  * @brief  Set LEDC Reset Time Value
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  T1lVal: LEDC logic 1 low level time. Value Range is 0 to 0x7F.
-  * @retval None
+  * @brief  Set LEDC logic 1 low level time.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  T1lVal LEDC logic 1 low level time. Value Range is 0 to 0x7F.
   */
 void LEDC_SetT1L_val(LEDC_TypeDef *LEDCx, u32 T1lVal)
 {
@@ -544,10 +534,9 @@ void LEDC_SetT1L_val(LEDC_TypeDef *LEDCx, u32 T1lVal)
 }
 
 /**
-  * @brief  Set LEDC Reset Time Value
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  T0hVal: LEDC logic 0 high level time. Value Range is 0 to 0x7F.
-  * @retval None
+  * @brief  Set LEDC logic 0 high level time.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  T0hVal LEDC logic 0 high level time. Value Range is 0 to 0x7F.
   */
 void LEDC_SetT0H_val(LEDC_TypeDef *LEDCx, u32 T0hVal)
 {
@@ -560,10 +549,9 @@ void LEDC_SetT0H_val(LEDC_TypeDef *LEDCx, u32 T0hVal)
 }
 
 /**
-  * @brief  Set LEDC Reset Time Value
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  T0lVal: LEDC logic 0 low level time. Value Range is 0 to 0x7F.
-  * @retval None
+  * @brief  Set LEDC logic 0 low level time.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  T0lVal LEDC logic 0 low level time. Value Range is 0 to 0x7F.
   */
 void LEDC_SetT0L_val(LEDC_TypeDef *LEDCx, u32 T0lVal)
 {
@@ -577,13 +565,14 @@ void LEDC_SetT0L_val(LEDC_TypeDef *LEDCx, u32 T0lVal)
 
 /**
   * @brief  Set LEDC Wait data Time Value
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  WaitDataVal: LEDC wait data. Value Range is 0 to 0x7FFF.
-  * @retval None
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  WaitDataVal LEDC wait data. Value range is LEDC_MIN_WAIT_DATA_TIME_CNT to LEDC_MAX_WAIT_DATA_TIME_CNT.
   */
 void LEDC_SetWaitDataTime_val(LEDC_TypeDef *LEDCx, u32 WaitDataVal)
 {
 	u32 reg_val;
+
+	assert_param(IS_LEDC_WAIT_DATA_TIME_VAL(WaitDataVal));
 
 	reg_val = LEDCx->LEDC_DATA_FINISH_CNT_REG;
 	reg_val &= ~LEDC_MASK_LED_WAIT_DATA_TIME;
@@ -593,17 +582,18 @@ void LEDC_SetWaitDataTime_val(LEDC_TypeDef *LEDCx, u32 WaitDataVal)
 
 /**
   * @brief  Set LEDC Wait between Two Packages Time0 Value
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  WaitTime0: LEDC wait time0. Value Range is 0 to 0x1FF.
-  * @param  NewState: enable or disable wait time between tow packages.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  WaitTime0 LEDC wait time0. Value range is LEDC_MIN_WAIT_TIME0_CNT to LEDC_MAX_WAIT_TIME0_CNT.
+  * @param  NewState Enable or disable wait time between two packages.
   *   This parameter can be one of the following values:
   *            @arg ENABLE
   *            @arg DISABLE
-  * @retval None
   */
 void LEDC_SetWaitTime0_val(LEDC_TypeDef *LEDCx, u32 WaitTime0, u8 NewState)
 {
 	u32 reg_val = 0;
+
+	assert_param(IS_LEDC_WAIT_TIME0_VAL(WaitTime0));
 
 	if (NewState == ENABLE) {
 		reg_val = LEDC_BIT_WAIT_TIME0_EN | LEDC_TOTAL_WAIT_TIME0(WaitTime0);
@@ -616,17 +606,18 @@ void LEDC_SetWaitTime0_val(LEDC_TypeDef *LEDCx, u32 WaitTime0, u8 NewState)
 
 /**
   * @brief  Set LEDC Wait between Two Frames Time1 Value
-  * @param  LEDCx: selected LEDC peripheral.
-  * @param  WaitTime1: LEDC wait time1. Value Range is 0 to 0x7FFFFFFF.
-  * @param  NewState: enable or disable wait time between tow frames.
+  * @param  LEDCx Selected LEDC peripheral.
+  * @param  WaitTime1 LEDC wait time1. Value range is LEDC_MIN_WAIT_TIME1_CNT to LEDC_MAX_WAIT_TIME1_CNT.
+  * @param  NewState Enable or disable wait time between two frames.
   *   This parameter can be one of the following values:
   *            @arg ENABLE
   *            @arg DISABLE
-  * @retval None
   */
 void LEDC_SetWaitTime1_val(LEDC_TypeDef *LEDCx, u32 WaitTime1, u8 NewState)
 {
 	u32 reg_val = 0;
+
+	assert_param(IS_LEDC_WAIT_TIME1_VAL(WaitTime1));
 
 	if (NewState == ENABLE) {
 		reg_val = LEDC_BIT_WAIT_TIME1_EN | LEDC_TOTAL_WAIT_TIME1(WaitTime1);

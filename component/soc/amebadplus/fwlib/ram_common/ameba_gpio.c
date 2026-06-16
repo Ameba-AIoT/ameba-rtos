@@ -38,8 +38,9 @@ static GPIO_TypeDef *GPIO_PortAddrGet(u32 GPIO_Port)
   *         in GPIO_InitStruct.
   * @param  GPIO_InitStruct Pointer to a GPIO_InitTypeDef structure that contains
   *         the configuration information for the GPIO peripheral.
-  * @note   OpenDrain output: on drive + OUT + GPIO[gpio_bit] = 0, pin should have pull-up resistor
-  * @note   Input HighZ: no drive + IN, user can input high or low use this pin
+  * @note
+  *         - OpenDrain output: on drive + OUT + GPIO[gpio_bit] = 0, pin should have pull-up resistor.
+  *         - Input HighZ: no drive + IN, user can input high or low use this pin.
   */
 void GPIO_Init(GPIO_InitTypeDef  *GPIO_InitStruct)
 {

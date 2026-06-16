@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include "nan_event.h"
 #include "rtw_nan_cmd_api.h"
-#include "WFPAL.h"
+#include "rtw_nan_vendor_def.h"
 
 #define LOG_FILE_NAME "nan_event.log"
 #define OUI_REALTEK_STR "00e04c"
@@ -54,7 +54,7 @@ void _print_data_confirm_evt(struct vendor_evt_data_confirm_info *evt_data)
 	DEBUG_PRINT("[rtw_event] srvc_info (%d):", evt_data->srvc_info_len);
 	_print_data(evt_data->srvc_info, evt_data->srvc_info_len);
 }
-void _print_disc_result_evt(struct wfpal_nan_discovery_result_received_event_data *evt_data)
+void _print_disc_result_evt(struct rtw_nan_discovery_result_received_event_data *evt_data)
 {
 	DEBUG_PRINT("[rtw_event] %s:\n", __func__);
 	DEBUG_PRINT("[rtw_event] subscribe_id:%d, publisher_id:%d, publish_rssi:%d\n",
@@ -69,7 +69,7 @@ void _print_disc_result_evt(struct wfpal_nan_discovery_result_received_event_dat
 				evt_data->publish_attribute_list_length);
 	_print_data(evt_data->publish_attribute_list, evt_data->publish_attribute_list_length);
 }
-void _print_datapath_req_recv_evt(struct wfpal_nan_datapath_request_received_event_data *evt_data)
+void _print_datapath_req_recv_evt(struct rtw_nan_datapath_request_received_event_data *evt_data)
 {
 	DEBUG_PRINT("[rtw_event] %s:\n", __func__);
 	DEBUG_PRINT("[rtw_event] datapath_id:%d, publish_id:%d, security:%d\n",
@@ -81,7 +81,7 @@ void _print_datapath_req_recv_evt(struct wfpal_nan_datapath_request_received_eve
 	DEBUG_PRINT("[rtw_event] attribute_list (%d):", evt_data->attribute_list_length);
 	_print_data(evt_data->attribute_list, evt_data->attribute_list_length);
 }
-void _print_datapath_rsp_recv_evt(struct wfpal_nan_datapath_response_received_event_data *evt_data)
+void _print_datapath_rsp_recv_evt(struct rtw_nan_datapath_response_received_event_data *evt_data)
 {
 	DEBUG_PRINT("[rtw_event] %s:\n", __func__);
 	DEBUG_PRINT("[rtw_event] datapath_id:%d, publish_id:%d\n",
@@ -95,7 +95,7 @@ void _print_datapath_rsp_recv_evt(struct wfpal_nan_datapath_response_received_ev
 	DEBUG_PRINT("[rtw_event] attribute_list (%d):", evt_data->attribute_list_length);
 	_print_data(evt_data->attribute_list, evt_data->attribute_list_length);
 }
-void _print_datapath_established_evt(struct wfpal_nan_datapath_established_event_data *evt_data)
+void _print_datapath_established_evt(struct rtw_nan_datapath_established_event_data *evt_data)
 {
 	DEBUG_PRINT("[rtw_event] %s:\n", __func__);
 	DEBUG_PRINT("[rtw_event] type:%d, datapath_id:%d, pub_id:%d\n",
@@ -121,7 +121,7 @@ void _print_datapath_established_evt(struct wfpal_nan_datapath_established_event
 	DEBUG_PRINT("[rtw_event] service_specific_info(%d):", evt_data->service_specific_info.length);
 	_print_data(evt_data->service_specific_info.info, evt_data->service_specific_info.length);
 }
-void _print_datapath_end_evt(struct wfpal_nan_datapath_end_event_data *evt_data)
+void _print_datapath_end_evt(struct rtw_nan_datapath_end_event_data *evt_data)
 {
 	DEBUG_PRINT("[rtw_event] %s:\n", __func__);
 	DEBUG_PRINT("[rtw_event] datapath_id:%d, publish_id:%d, reason:%d\n",
@@ -133,7 +133,7 @@ void _print_datapath_end_evt(struct wfpal_nan_datapath_end_event_data *evt_data)
 	PRINT_DBG_ADDR("[rtw_event] peer_management_address",
 				   evt_data->peer_management_address.ether_addr_octet);
 }
-void _print_datapth_follow_up_recv_evt(struct wfpal_nan_follow_up_received_event_data *evt_data)
+void _print_datapth_follow_up_recv_evt(struct rtw_nan_follow_up_received_event_data *evt_data)
 {
 	DEBUG_PRINT("[rtw_event] %s:\n", __func__);
 	DEBUG_PRINT("[rtw_event] local_service_id:%d, peer_service_id:%d\n",
@@ -594,8 +594,8 @@ void _evt_handler(int evt_id)
 	}
 	break;
 	case RTW_VENDOR_EVT_NAN_CLUSTER_CHANGED: {
-		struct wfpal_nan_cluster_changed_event_data evt_data = {0};
-		size_t size = sizeof(struct wfpal_nan_cluster_changed_event_data);
+		struct rtw_nan_cluster_changed_event_data evt_data = {0};
+		size_t size = sizeof(struct rtw_nan_cluster_changed_event_data);
 		struct nan_evt_cluster_changed_info cluster_info = {0};
 
 		_parse_evt_data((char *)(&evt_data), sizeof(evt_data));
@@ -608,18 +608,18 @@ void _evt_handler(int evt_id)
 	}
 	break;
 	case RTW_VENDOR_EVT_NAN_DISC_RESULT_RECEIVED: {
-		struct wfpal_nan_discovery_result_received_event_data *p_evt_data = NULL;
-		size_t size = sizeof(struct wfpal_nan_discovery_result_received_event_data);
+		struct rtw_nan_discovery_result_received_event_data *p_evt_data = NULL;
+		size_t size = sizeof(struct rtw_nan_discovery_result_received_event_data);
 		struct nan_evt_disc_result_info disc_result = {0};
 
 		/* note: free the memory at the end of case */
-		p_evt_data = (struct wfpal_nan_discovery_result_received_event_data *)calloc(1, size);
+		p_evt_data = (struct rtw_nan_discovery_result_received_event_data *)calloc(1, size);
 
 		/* get the attr len */
 		_parse_evt_data((char *)p_evt_data, size);
 		/* realloc memory for attr list */
 		if (p_evt_data->publish_attribute_list_length) {
-			size = offsetof(struct wfpal_nan_discovery_result_received_event_data, publish_attribute_list[0]) +
+			size = offsetof(struct rtw_nan_discovery_result_received_event_data, publish_attribute_list[0]) +
 				   p_evt_data->publish_attribute_list_length;
 			fsetpos(g_evt_log_file, &evt_data_pos);
 			tmp_data = realloc(p_evt_data, size);
@@ -628,7 +628,7 @@ void _evt_handler(int evt_id)
 				p_evt_data = NULL;
 				break;
 			}
-			p_evt_data = (struct wfpal_nan_discovery_result_received_event_data *)tmp_data;
+			p_evt_data = (struct rtw_nan_discovery_result_received_event_data *)tmp_data;
 			memset(p_evt_data, 0, size);
 			_parse_evt_data((char *)p_evt_data, size);
 		}
@@ -663,17 +663,17 @@ void _evt_handler(int evt_id)
 	}
 	break;
 	case RTW_VENDOR_EVT_NAN_DATAPATH_REQ_RECEIVED: {
-		struct wfpal_nan_datapath_request_received_event_data *p_evt_data = NULL;
-		size_t size = sizeof(struct wfpal_nan_datapath_request_received_event_data);
+		struct rtw_nan_datapath_request_received_event_data *p_evt_data = NULL;
+		size_t size = sizeof(struct rtw_nan_datapath_request_received_event_data);
 
 		/* note: free the memory at the end of case */
-		p_evt_data = (struct wfpal_nan_datapath_request_received_event_data *)calloc(1, size);
+		p_evt_data = (struct rtw_nan_datapath_request_received_event_data *)calloc(1, size);
 
 		/* get the attr len */
 		_parse_evt_data((char *)p_evt_data, size);
 		/* realloc memory for attr list */
 		if (p_evt_data->attribute_list_length) {
-			size = offsetof(struct wfpal_nan_datapath_request_received_event_data, attribute_list[0]) +
+			size = offsetof(struct rtw_nan_datapath_request_received_event_data, attribute_list[0]) +
 				   p_evt_data->attribute_list_length;
 			fsetpos(g_evt_log_file, &evt_data_pos);
 			tmp_data = realloc(p_evt_data, size);
@@ -682,7 +682,7 @@ void _evt_handler(int evt_id)
 				p_evt_data = NULL;
 				break;
 			}
-			p_evt_data = (struct wfpal_nan_datapath_request_received_event_data *)tmp_data;
+			p_evt_data = (struct rtw_nan_datapath_request_received_event_data *)tmp_data;
 			memset(p_evt_data, 0, size);
 			_parse_evt_data((char *)p_evt_data, size);
 		}
@@ -697,17 +697,17 @@ void _evt_handler(int evt_id)
 	}
 	break;
 	case RTW_VENDOR_EVT_NAN_DATAPATH_RSP_RECEIVED: {
-		struct wfpal_nan_datapath_response_received_event_data *p_evt_data = NULL;
-		size_t size = sizeof(struct wfpal_nan_datapath_response_received_event_data);
+		struct rtw_nan_datapath_response_received_event_data *p_evt_data = NULL;
+		size_t size = sizeof(struct rtw_nan_datapath_response_received_event_data);
 
 		/* note: free the memory at the end of case */
-		p_evt_data = (struct wfpal_nan_datapath_response_received_event_data *)calloc(1, size);
+		p_evt_data = (struct rtw_nan_datapath_response_received_event_data *)calloc(1, size);
 
 		/* get the attr len */
 		_parse_evt_data((char *)p_evt_data, size);
 		/* realloc memory for attr list */
 		if (p_evt_data->attribute_list_length) {
-			size = offsetof(struct wfpal_nan_datapath_response_received_event_data, attribute_list[0]) +
+			size = offsetof(struct rtw_nan_datapath_response_received_event_data, attribute_list[0]) +
 				   p_evt_data->attribute_list_length;
 			fsetpos(g_evt_log_file, &evt_data_pos);
 			tmp_data = realloc(p_evt_data, size);
@@ -716,7 +716,7 @@ void _evt_handler(int evt_id)
 				p_evt_data = NULL;
 				break;
 			}
-			p_evt_data = (struct wfpal_nan_datapath_response_received_event_data *)tmp_data;
+			p_evt_data = (struct rtw_nan_datapath_response_received_event_data *)tmp_data;
 			memset(p_evt_data, 0, size);
 			_parse_evt_data((char *)p_evt_data, size);
 		}
@@ -731,7 +731,7 @@ void _evt_handler(int evt_id)
 	}
 	break;
 	case RTW_VENDOR_EVT_NAN_DATAPATH_ESTABLISHED: {
-		struct wfpal_nan_datapath_established_event_data evt_data = {0};
+		struct rtw_nan_datapath_established_event_data evt_data = {0};
 		struct nan_evt_data_established_info info = {0};
 
 		_parse_evt_data((char *)(&evt_data), sizeof(evt_data));
@@ -748,7 +748,7 @@ void _evt_handler(int evt_id)
 	}
 	break;
 	case RTW_VENDOR_EVT_NAN_DATAPATH_END: {
-		struct wfpal_nan_datapath_end_event_data evt_data = {0};
+		struct rtw_nan_datapath_end_event_data evt_data = {0};
 		struct nan_evt_data_end_info info = {0};
 
 		_parse_evt_data((char *)(&evt_data), sizeof(evt_data));
@@ -763,17 +763,17 @@ void _evt_handler(int evt_id)
 	}
 	break;
 	case RTW_VENDOR_EVT_NAN_FOLLOW_UP_RECEIVED: {
-		struct wfpal_nan_follow_up_received_event_data *p_evt_data = NULL;
-		size_t size = sizeof(struct wfpal_nan_follow_up_received_event_data);
+		struct rtw_nan_follow_up_received_event_data *p_evt_data = NULL;
+		size_t size = sizeof(struct rtw_nan_follow_up_received_event_data);
 
 		/* note: free the memory at the end of case */
-		p_evt_data = (struct wfpal_nan_follow_up_received_event_data *)calloc(1, size);
+		p_evt_data = (struct rtw_nan_follow_up_received_event_data *)calloc(1, size);
 
 		/* get the attr len */
 		_parse_evt_data((char *)p_evt_data, size);
 		/* realloc memory for attr list */
 		if (p_evt_data->attribute_list_length) {
-			size = offsetof(struct wfpal_nan_follow_up_received_event_data, attribute_list[0]) +
+			size = offsetof(struct rtw_nan_follow_up_received_event_data, attribute_list[0]) +
 				   p_evt_data->attribute_list_length;
 			fsetpos(g_evt_log_file, &evt_data_pos);
 			tmp_data = realloc(p_evt_data, size);
@@ -782,7 +782,7 @@ void _evt_handler(int evt_id)
 				p_evt_data = NULL;
 				break;
 			}
-			p_evt_data = (struct wfpal_nan_follow_up_received_event_data *)tmp_data;
+			p_evt_data = (struct rtw_nan_follow_up_received_event_data *)tmp_data;
 			memset(p_evt_data, 0, size);
 			_parse_evt_data((char *)p_evt_data, size);
 		}

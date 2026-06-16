@@ -131,6 +131,7 @@ void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData)
 
 /**
   * @brief  Unregister a user interrupt handler for a specified pin
+  * @param  GPIO_Pin GPIO pin num from PinName.
   */
 void GPIO_UserUnRegIrq(u32 GPIO_Pin)
 {

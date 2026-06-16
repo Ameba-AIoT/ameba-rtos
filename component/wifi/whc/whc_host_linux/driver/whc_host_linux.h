@@ -26,7 +26,7 @@
 
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
-// #define NAN_CUSTOMER_NANDOW
+#define NAN_CUSTOMER_NANDOW
 #endif
 
 /******************************************************************/
@@ -132,10 +132,6 @@
 #include <linux/usb.h>
 #include "whc_usb_host.h"
 #endif
-#endif
-
-#ifdef NAN_CUSTOMER_NANDOW
-#include "WFPAL.h"
 #endif
 
 #include "whc_host_regd.h"

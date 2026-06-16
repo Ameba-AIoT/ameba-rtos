@@ -272,6 +272,13 @@ _LONG_CALL_ void Pinmux_Swdoff(void);
 #define PAD_DRV_ABILITITY_HIGH			(1)
 /** @} */
 
+/** @defgroup PINMUX_PAD_SlewRate_definitions
+  * @{
+  */
+#define PAD_SlewRate_Fast				(0)
+#define PAD_SlewRate_Slow				(1)
+/** @} */
+
 /** @defgroup PINMUX_Special_Pad_definitions
   * @{
   */
@@ -304,6 +311,27 @@ _LONG_CALL_ void Pinmux_Swdoff(void);
   */
 _LONG_CALL_ void PAD_CMD(u8 PinName, u8 NewStatus);
 _LONG_CALL_ void PAD_DrvStrength(u8 PinName, u32 DrvStrength);
+
+
+/**
+  *  @brief Set the PAD slew rate control status.
+  *  @param PinName: Specifies the target pin. This parameter must be one of the values
+  *                  defined in @ref PINMUX_Pin_Name_definitions.
+  *  @param NewState: Specifies the slew rate control status. Refer to the datasheet for detail informations.
+  *                   This parameter can be one of the following values:
+  *           @arg PAD_SlewRate_Slow
+  *           @arg PAD_SlewRate_Fast
+  */
+_LONG_CALL_ void PAD_SlewRateCtrl(u8 PinName, u32 NewState);
+
+/**
+  *  @brief Set the PAD Schmit control status.
+  *  @param PinName: Value of @ref PINMUX_Pin_Name_definitions.
+  *  @param NewState: Specifies the control status. Refer to the datasheet for detail informations.
+  *                   This parameter can be: ENABLE or DISABLE.
+  */
+_LONG_CALL_ void PAD_SchmitCtrl(u8 PinName, u32 NewState);
+
 _LONG_CALL_ void PAD_PullCtrl(u8 PinName, u8 PullType);
 _LONG_CALL_ void PAD_SleepPullCtrl(u8 PinName, u8 PullType);
 _LONG_CALL_ void PAD_SpicCtrl(u32  PinLocation);

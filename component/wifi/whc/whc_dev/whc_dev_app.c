@@ -261,6 +261,9 @@ __weak void whc_dev_cmd_rx_to_user_task(void)
 	(void)password;
 	(void)idx;
 	(void)ret;
+	(void)buf;
+	(void)dst;
+	(void)wifi;
 
 	while (1) {
 		rtos_sema_take(whc_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);

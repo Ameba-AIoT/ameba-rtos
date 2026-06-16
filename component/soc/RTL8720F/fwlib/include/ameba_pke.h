@@ -437,6 +437,7 @@ typedef struct pke_ecp_point {
 /* PKE common API */
 _LONG_CALL_ PKE_TypeDef *pke_get_pke_addr(void);
 _LONG_CALL_ void pke_engine_init(void);
+void pke_engine_init_sleep(void);
 _LONG_CALL_ void pke_lock_mutex(void);
 _LONG_CALL_ void pke_unlock_mutex(void);
 _LONG_CALL_ int pke_engine_not_zero_check(const uint8_t *byteBuffer, size_t size);

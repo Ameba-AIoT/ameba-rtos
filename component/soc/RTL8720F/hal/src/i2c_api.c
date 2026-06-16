@@ -28,7 +28,7 @@
   */
 
 /* Exported constants ------------------------------------------------------------*/
-/** @defgroup MBED_I2C_Exported_Constants MBED_I2C Exported Contants
+/** @defgroup MBED_I2C_Exported_Constants MBED_I2C Exported Constants
   * @{
   */
 
@@ -57,7 +57,7 @@ static uint32_t master_addr_retry = 1;
 
 /**
   * @brief  Check whether the pin has I2C SDA functionality.
-  * @param  sda: SDA PinName according to pinmux spec.
+  * @param  sda SDA PinName according to pinmux spec.
   * @return 0 if the pin is available for I2C SDA function or asserted if not.
   */
 static uint32_t i2c_index_get(PinName sda)
@@ -71,9 +71,9 @@ static uint32_t i2c_index_get(PinName sda)
 
 /**
   * @brief  Initialize the I2C device, including clock, function and I2C registers.
-  * @param  obj: I2C object defined in application software.
-  * @param  sda: SDA PinName according to pinmux spec.
-  * @param  scl: SCL PinName according to pinmux spec.
+  * @param  obj I2C object defined in application software.
+  * @param  sda SDA PinName according to pinmux spec.
+  * @param  scl SCL PinName according to pinmux spec.
   */
 void i2c_init(i2c_t *obj, PinName sda, PinName scl)
 {
@@ -133,8 +133,8 @@ void i2c_init(i2c_t *obj, PinName sda, PinName scl)
 
 /**
   * @brief  Set I2C frequency.
-  * @param  obj: I2C object defined in application software.
-  * @param  hz: I2C clock frequency in units of Hz.
+  * @param  obj I2C object defined in application software.
+  * @param  hz I2C clock frequency in units of Hz.
   */
 void i2c_frequency(i2c_t *obj, int hz)
 {
@@ -164,8 +164,8 @@ void i2c_frequency(i2c_t *obj, int hz)
 }
 
 /**
-  * @brief  Start I2C device.
-  * @param  obj: I2C object defined in application software.
+  * @brief  Reserved.
+  * @param  obj Reserved.
   * @return 0
   */
 inline int i2c_start(i2c_t *obj)
@@ -177,8 +177,8 @@ inline int i2c_start(i2c_t *obj)
 }
 
 /**
-  * @brief  Stop I2C device.
-  * @param  obj: I2C object defined in application software.
+  * @brief  Reserved.
+  * @param  obj Reserved.
   * @return 0
   */
 inline int i2c_stop(i2c_t *obj)
@@ -189,13 +189,59 @@ inline int i2c_stop(i2c_t *obj)
 }
 
 /**
+  * @brief  Enable I2C master RESTART function.
+  * @param  obj I2C object defined in application software.
+  * @note  Include i2c_ex_api.h to explicitly call this function.
+  */
+void i2c_restart_enable(i2c_t *obj)
+{
+	uint32_t i2cen = 0;
+
+	if (obj->I2Cx->IC_ENABLE & I2C_BIT_ENABLE) {
+		I2C_Cmd(obj->I2Cx, DISABLE);
+		i2cen = 1;
+	}
+
+	obj->I2Cx->IC_CON |= I2C_BIT_IC_RESTATRT_EN;
+
+	if (i2cen) {
+		I2C_Cmd(obj->I2Cx, ENABLE);
+	}
+
+	restart_enable = 1;
+}
+
+/**
+  * @brief  Disable I2C Master RESTART function.
+  * @param  obj I2C object defined in application software.
+  * @note  Include i2c_ex_api.h to explicitly call this function.
+  */
+void i2c_restart_disable(i2c_t *obj)
+{
+	uint32_t i2cen = 0;
+
+	if (obj->I2Cx->IC_ENABLE & I2C_BIT_ENABLE) {
+		I2C_Cmd(obj->I2Cx, DISABLE);
+		i2cen = 1;
+	}
+
+	obj->I2Cx->IC_CON &= ~I2C_BIT_IC_RESTATRT_EN;
+
+	if (i2cen) {
+		I2C_Cmd(obj->I2Cx, ENABLE);
+	}
+
+	restart_enable = 0;
+}
+
+/**
   * @brief  I2C master read in poll mode.
-  * @param  obj: I2C object defined in application software.
-  * @param  address: Slave address which will be transmitted.
-  * @param  data: Pointer to the buffer to hold the received data.
-  * @param  length: Length of data that to be received.
-  * @param  stop: Specify whether a STOP is issued after all the bytes are received.
-  * @param  timeout_ms: Specify timeout time in units of ms.
+  * @param  obj I2C object defined in application software.
+  * @param  address Slave address which will be transmitted.
+  * @param  data Pointer to the buffer to hold the received data.
+  * @param  length Length of data that to be received.
+  * @param  stop Reserved.
+  * @param  timeout_ms Specify timeout time in units of ms.
   * @return Length of actually received data.
   * @note If actual data length is less than expected data length, this transfer fails.
   */
@@ -239,13 +285,13 @@ int i2c_read_timeout(i2c_t *obj, int address, char *data, int length, int stop, 
 
 /**
   * @brief  I2C master write in poll mode.
-  * @param  obj: I2C object defined in application software.
-  * @param  address: Slave address which will be transmitted.
-  * @param  data: Pointer to the buffer to hold the received data.
-  * @param  length: Length of data that to be received.
+  * @param  obj I2C object defined in application software.
+  * @param  address Slave address which will be transmitted.
+  * @param  data Pointer to the buffer to hold the received data.
+  * @param  length Length of data that to be received.
   * @note If the length is 0, function I2C_MasterSendNullData_TimeOut() will be called.
-  * @param  stop: Specify whether a STOP is issued after all the bytes are written.
-  * @param  timeout_ms: Specify timeout time in units of ms.
+  * @param  stop Reserved.
+  * @param  timeout_ms Specify timeout time in units of ms.
   * @return Length of written data.
   * @note If actual data length is less than expected data length, this transfer fails.
   */
@@ -276,11 +322,11 @@ int i2c_write_timeout(i2c_t *obj, int address, char *data, int length, int stop,
 
 /**
   * @brief  I2C master read in poll mode.
-  * @param  obj: I2C object defined in application software.
-  * @param  address: Slave address which will be transmitted.
-  * @param  data: Pointer to the buffer to hold the received data.
-  * @param  length: Length of data that to be received.
-  * @param  stop: Specify whether a STOP is issued after all the bytes are received.
+  * @param  obj I2C object defined in application software.
+  * @param  address Slave address which will be transmitted.
+  * @param  data Pointer to the buffer to hold the received data.
+  * @param  length Length of data that to be received.
+  * @param  stop Reserved.
   * @return Length of received data.
   */
 int i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
@@ -327,11 +373,11 @@ int i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
 
 /**
   * @brief  I2C master write in poll mode.
-  * @param  obj: I2C object defined in application software.
-  * @param  address: Slave address which will be transmitted.
-  * @param  data: Pointer to the data to be sent.
-  * @param  length: Length of data that to be sent.
-  * @param  stop: Specify whether a STOP is issued after all the bytes are sent.
+  * @param  obj I2C object defined in application software.
+  * @param  address Slave address which will be transmitted.
+  * @param  data Pointer to the data to be sent.
+  * @param  length Length of data that to be sent.
+  * @param  stop Specify whether a STOP is issued after all the bytes are sent.
   * @return Length of sent data.
   */
 int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop)
@@ -347,24 +393,29 @@ int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop)
 		/* Init I2C now */
 		I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
 		I2C_Cmd(obj->I2Cx, ENABLE);
+
+		restart_enable = 0;
 	}
 
-	if ((!restart_enable) | (1 == stop)) {
+	if (1 == stop) {
 		return I2C_MasterWrite(obj->I2Cx, (unsigned char *)data, length);
-	} else {
-		return i2c_send_restart(obj->I2Cx, (unsigned char *)data, length, 1);
 	}
+
+	if (restart_enable == 0) {
+		i2c_restart_enable(obj);
+	}
+	return i2c_send_restart(obj->I2Cx, (unsigned char *)data, length, 1);
 
 }
 
 /**
   * @brief  I2C master send data and read data in poll mode.
-  * @param  obj: I2C object defined in application software.
-  * @param  address: Slave address which will be transmitted.
-  * @param  pWriteBuf: Pointer to the data to be sent.
-  * @param  Writelen: Length of data that to be sent.
-  * @param  pReadBuf: Pointer to the buffer to hold the received data.
-  * @param  Readlen: Length of data that to be received.
+  * @param  obj I2C object defined in application software.
+  * @param  address Slave address which will be transmitted.
+  * @param  pWriteBuf Pointer to the data to be sent.
+  * @param  Writelen Length of data that to be sent.
+  * @param  pReadBuf Pointer to the buffer to hold the received data.
+  * @param  Readlen Length of data that to be received.
   * @return Length of received data.
   */
 int i2c_repeatread(i2c_t *obj, int address, u8 *pWriteBuf, int Writelen, u8 *pReadBuf, int Readlen)
@@ -388,10 +439,10 @@ int i2c_repeatread(i2c_t *obj, int address, u8 *pWriteBuf, int Writelen, u8 *pRe
 
 /**
   * @brief  I2C master restart after all bytes are sent.
-  * @param  I2Cx: Where I2Cx can be I2C0_DEV to select the I2C peripheral.
-  * @param  pBuf: Pointer to the data to be sent.
-  * @param  len: Length of data that to be sent.
-  * @param  restart: Specify whether a RESTART is issued after all the bytes are sent.
+  * @param  I2Cx Where I2Cx can be I2C0_DEV to select the I2C peripheral.
+  * @param  pBuf Pointer to the data to be sent.
+  * @param  len Length of data that to be sent.
+  * @param  restart Specify whether a RESTART is issued after all the bytes are sent.
   * @return Length of sent data.
   */
 int i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
@@ -421,8 +472,8 @@ int i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart)
 
 /**
   * @brief  I2C master receive single byte.
-  * @param  obj: I2C object defined in application software.
-  * @param  last: Hold the received data.
+  * @param  obj I2C object defined in application software.
+  * @param  last Reserved.
   * @return Received data.
   */
 int i2c_byte_read(i2c_t *obj, int last)
@@ -439,8 +490,8 @@ int i2c_byte_read(i2c_t *obj, int last)
 
 /**
   * @brief  I2C master send single byte.
-  * @param  obj: I2C object defined in application software.
-  * @param  data: Data to be sent.
+  * @param  obj I2C object defined in application software.
+  * @param  data Data to be sent.
   * @return Write result.
   */
 int i2c_byte_write(i2c_t *obj, int data)
@@ -454,7 +505,7 @@ int i2c_byte_write(i2c_t *obj, int data)
 
 /**
   * @brief  Deinitialize the I2C device.
-  * @param  obj: I2C object defined in application software.
+  * @param  obj I2C object defined in application software.
   */
 void i2c_reset(i2c_t *obj)
 {
@@ -466,53 +517,9 @@ void i2c_reset(i2c_t *obj)
 }
 
 /**
-  * @brief  Enable I2C master RESTART function.
-  * @param  obj: I2C object defined in application software.
-  */
-void i2c_restart_enable(i2c_t *obj)
-{
-	uint32_t i2cen = 0;
-
-	if (obj->I2Cx->IC_ENABLE & I2C_BIT_ENABLE) {
-		I2C_Cmd(obj->I2Cx, DISABLE);
-		i2cen = 1;
-	}
-
-	obj->I2Cx->IC_CON |= I2C_BIT_IC_RESTATRT_EN;
-
-	if (i2cen) {
-		I2C_Cmd(obj->I2Cx, ENABLE);
-	}
-
-	restart_enable = 1;
-}
-
-/**
-  * @brief  Disable I2C Master RESTART function.
-  * @param  obj: I2C object defined in application software.
-  */
-void i2c_restart_disable(i2c_t *obj)
-{
-	uint32_t i2cen = 0;
-
-	if (obj->I2Cx->IC_ENABLE & I2C_BIT_ENABLE) {
-		I2C_Cmd(obj->I2Cx, DISABLE);
-		i2cen = 1;
-	}
-
-	obj->I2Cx->IC_CON &= ~I2C_BIT_IC_RESTATRT_EN;
-
-	if (i2cen) {
-		I2C_Cmd(obj->I2Cx, ENABLE);
-	}
-
-	restart_enable = 0;
-}
-
-/**
   * @brief  Enable or Disable I2C Device.
-  * @param  obj: I2C object defined in application software.
-  * @param  enable: This parameter can be one of the following values:
+  * @param  obj I2C object defined in application software.
+  * @param  enable This parameter can be one of the following values:
   *		@arg 0: Disable I2C Device.
   *		@arg 1: Enable I2C Device.
   * @return 0
@@ -530,11 +537,10 @@ int i2c_enable_control(i2c_t *obj, int enable)
 //#if DEVICE_I2CSLAVE
 /**
   * @brief  Set I2C slave address.
-  * @param  obj: I2C object defined in application software.
-  * @param  idx: I2C index, this parameter can be :
-  *		@arg 0: I2C0 Device
-  * @param  address: Slave address.
-  * @param  mask: Mask of address.
+  * @param  obj I2C object defined in application software.
+  * @param  idx Reserved.
+  * @param  address Slave address.
+  * @param  mask Reserved.
   */
 void i2c_slave_address(i2c_t *obj, int idx, uint32_t address, uint32_t mask)
 {
@@ -560,8 +566,8 @@ void i2c_slave_address(i2c_t *obj, int idx, uint32_t address, uint32_t mask)
 
 /**
   * @brief  Set I2C device to be slave.
-  * @param  obj: I2C object defined in application software.
-  * @param  enable_slave: Enable slave function, this parameter can be one of the following values:
+  * @param  obj I2C object defined in application software.
+  * @param  enable_slave Enable slave function, this parameter can be one of the following values:
   *		@arg 1: Set I2C device to be slave.
   *		@arg 0: No action.
   */
@@ -583,7 +589,7 @@ void i2c_slave_mode(i2c_t *obj, int enable_slave)
 
 /**
   * @brief  Get I2C slave state.
-  * @param  obj: I2C object defined in application software.
+  * @param  obj I2C object defined in application software.
   * @return State of I2C slave.
   */
 int i2c_slave_receive(i2c_t *obj)
@@ -604,9 +610,9 @@ int i2c_slave_receive(i2c_t *obj)
 
 /**
   * @brief  I2C slave read in poll mode.
-  * @param  obj: I2C object defined in application software.
-  * @param  data: Pointer to the buffer to hold the received data.
-  * @param  length: Length of data that to be received.
+  * @param  obj I2C object defined in application software.
+  * @param  data Pointer to the buffer to hold the received data.
+  * @param  length Length of data that to be received.
   * @return Length of received data.
   */
 int i2c_slave_read(i2c_t *obj, char *data, int length)
@@ -616,9 +622,9 @@ int i2c_slave_read(i2c_t *obj, char *data, int length)
 
 /**
   * @brief  I2C slave write in poll mode.
-  * @param  obj: I2C object defined in application software.
-  * @param  data: Pointer to the data to be sent.
-  * @param  length: Length of data that to be sent.
+  * @param  obj I2C object defined in application software.
+  * @param  data Pointer to the data to be sent.
+  * @param  length Length of data that to be sent.
   * @return Length of sent data.
   */
 int i2c_slave_write(i2c_t *obj, const char *data, int length)
@@ -628,8 +634,8 @@ int i2c_slave_write(i2c_t *obj, const char *data, int length)
 
 /**
   * @brief  Set/clear I2C slave RD_REQ interrupt mask.
-  * @param  obj: I2C object defined in application software.
-  * @param  set: Set or clear for read request.
+  * @param  obj I2C object defined in application software.
+  * @param  set Set or clear for read request.
   * @return Result:
   *         - 1: Success.
   *         - Others: Error.
@@ -647,8 +653,8 @@ int i2c_slave_set_for_rd_req(i2c_t *obj, int set)
 
 /**
   * @brief  Set/clear I2C slave NAK or ACK data part in transfer.
-  * @param  obj: I2C object defined in application software.
-  * @param  set_nak: Set or clear for data NAK.
+  * @param  obj I2C object defined in application software.
+  * @param  set_nak Set or clear for data NAK.
   * @return 0.
   */
 int i2c_slave_set_for_data_nak(i2c_t *obj, int set_nak)

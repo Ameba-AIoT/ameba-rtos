@@ -15,7 +15,7 @@ message ("DAILY_BUILD = " ${DAILY_BUILD})
 set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/ameba_layout.ld)
-if(CONFIG_MP_SHRINK)
+if(CONFIG_MP_SHRINK AND CONFIG_WHC_INTF_IPC)
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all_mp.ld)
 else()
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)

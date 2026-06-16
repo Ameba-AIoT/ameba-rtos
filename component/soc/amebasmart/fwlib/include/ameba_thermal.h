@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup THERMAL
+/** @defgroup THERMAL THERMAL
   * @brief THERMAL driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -193,6 +194,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -246,7 +248,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup TM_Down_Sample_Rate
+/** @defgroup TM_Down_Sample_Rate TM Down Sample Rate
   * @{
   */
 #define TM_DSR_128						((u8)0x00)
@@ -262,7 +264,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup TM_ADC_CLK_Divider
+/** @defgroup TM_ADC_CLK_Divider TM ADC CLK Divider
   * @{
   */
 #define TM_ADC_CLK_DIV_256			((u8)0x00)
@@ -274,7 +276,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup TM_DECIMAL_OUT
+/** @defgroup TM_DECIMAL_OUT TM Decimal Out
   * @{
   */
 #define TEMP_DECIMAL_OUT(x)		((u32)((x) & 0x000003FF))
@@ -283,7 +285,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup TM_TEMP_DEFINE
+/** @defgroup TM_TEMP_DEFINE TM Temp Define
   * @{
   */
 #define TM_POSITIVE_MIN      ((u32)0x00000)  // positive min value
@@ -335,8 +337,12 @@ _LONG_CALL_ float TM_GetFdegree(u32 Data);
 
 /* MANUAL_GEN_END */
 
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
 #endif
-
-/** @} */
-
-/** @} */

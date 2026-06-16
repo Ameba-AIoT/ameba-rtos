@@ -52,6 +52,12 @@
 #define USBH_UVC_GET_FRAME_TIMEOUT                    1000   /**< Timeout for getting a frame in ms. */
 #define USBH_UVC_VIDEO_FRAME_NUMS                     3      /**< Number of video frame buffers. Fixed to 3 if using HW decoder. */
 
+/* Max retries for SET_INTERFACE(intf, alt) when STATUS IN is NAKed. */
+#define USBH_UVC_SET_ALT_RETRY_MAX                    5      /**< Max retries for SET_ALT (SET_INTERFACE) failures. */
+
+/* Max retries for clear_feature in UVC_STATE_ERROR before forcing IDLE. */
+#define USBH_UVC_ERROR_CLEAR_RETRY_MAX                3      /**< Max retries for clear_feature before forcing IDLE. */
+
 #if (USBH_UVC_USE_HW == 0)
 /* USB Urb Block Configuration */
 #define USBH_UVC_URB_NUMS                             4      /**< Number of URBs used for streaming. */
@@ -153,10 +159,12 @@ typedef struct {
 	int(* setup)(void);
 
 	/**
-	 * @brief Callback invoked when parameters need to be set/negotiated.
+	 * @brief Callback invoked when the UVC parameter-setting sequence
+	 *        (Probe/Commit/SET_INTERFACE) completes; status is HAL_OK
+	 *        on success or HAL_ERR_HW on failure.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* setparam)(void);
+	int(* set_param)(int status);  // status: HAL_OK on success, HAL_ERR_HW on failure
 } usbh_uvc_cb_t;
 
 /**
@@ -250,10 +258,19 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num);
 /**
  * @brief  Returns a processed frame back to the driver's free pool.
  *         Must be called after the application finishes using the frame.
- * @param[in] frame: Pointer to the frame to be released.
- * @param[in] itf_num: Interface number.
+ * @param[in] frame    Pointer to the frame to be released. Must be obtained via usbh_uvc_get_frame().
+ * @param[in] itf_num  Interface number.
+ * @return 0 on success; negative value on failure.
  */
-void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num);
+int usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num);
+
+/**
+ * @brief  Dumps UVC device information for debugging purposes.
+ *         Prints descriptors, interfaces, supported formats/frames, and current stream settings to the log.
+ * @return None.
+ */
+void usbh_uvc_dump_dev_info(void);
+
 #ifdef __cplusplus
 }
 #endif

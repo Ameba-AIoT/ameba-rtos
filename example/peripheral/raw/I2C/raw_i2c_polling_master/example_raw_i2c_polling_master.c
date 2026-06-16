@@ -382,7 +382,7 @@ int example_raw_i2c_polling_master(void)
 		RTK_LOGI(TAG, "Cannot create i2c_dual_master_task demo task\n\r");
 	}
 
-	rtos_sched_start();
+	// rtos_sched_start();
 
 	return 0;
 }
