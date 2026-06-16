@@ -113,6 +113,9 @@ void whc_event_wifi_dhcp_success(u32 api_id, u32 *param_buf);
 void whc_event_get_traffic_stats(u32 api_id, u32 *param_buf);
 void whc_event_start_join_cmd(u32 api_id, u32 *param_buf);
 void whc_event_get_eap_phase(u32 api_id, u32 *param_buf);
+#ifdef CONFIG_IEEE80211R
+void whc_event_wifi_ft_status(u32 api_id, u32 *param_buf);
+#endif
 void whc_dev_update_regd_event_indicate(struct rtw_country_code_table *table);
 #endif
 

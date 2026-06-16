@@ -81,6 +81,9 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_GET_TRAFFIC_STATS, whc_event_get_traffic_stats},
 	{WHC_API_WIFI_START_JOIN_CMD, whc_event_start_join_cmd},
 	{WHC_API_WIFI_GET_EAP_PHASE, whc_event_get_eap_phase},
+#ifdef CONFIG_IEEE80211R
+	{WHC_API_WIFI_FT_STATUS, whc_event_wifi_ft_status},
+#endif
 #ifdef CONFIG_SUPPLICANT_SME
 	{WHC_API_WIFI_SME_AUTH, whc_event_sme_auth},
 	{WHC_API_WIFI_SME_SET_ASSOCREQ_IE, whc_event_sme_set_assocreq_ie},
@@ -216,6 +219,16 @@ void whc_event_get_eap_phase(u32 api_id, u32 *param_buf)
 	ret = wifi_get_eap_phase(NULL);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
+
+#ifdef CONFIG_IEEE80211R
+void whc_event_wifi_ft_status(u32 api_id, u32 *param_buf)
+{
+	struct rtw_kvr_param_t *kvr_param = (struct rtw_kvr_param_t *)param_buf;
+	u16 status = *(u16 *)((u8 *)param_buf + sizeof(struct rtw_kvr_param_t));
+	int ret = wifi_ft_status_indicate(kvr_param, status);
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
+}
+#endif
 
 void whc_event_get_scan_res(u32 api_id, u32 *param_buf)
 {

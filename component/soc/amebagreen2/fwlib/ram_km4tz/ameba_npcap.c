@@ -65,7 +65,11 @@ u32 NPWAP_INTHandler(UNUSED_WARN_DIS void *Data)
 
 	InterruptDis(AP_WAKE_IRQ);
 
+#if !defined(CONFIG_WHC_INTF_USB)
+	/* Normal scenario: KM4TZ is AP, KM4NS is NP. Open the AP clock. */
 	ap_resume();
+#endif
+
 	return TRUE;
 }
 

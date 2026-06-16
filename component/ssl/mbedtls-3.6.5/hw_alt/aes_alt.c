@@ -265,10 +265,9 @@ int mbedtls_aes_crypt_cbc( mbedtls_aes_context *ctx,
         if(ret != 0)
             goto exit;
         ret = crypto_aes_cbc(key_id, ctx->key_len_bits, mode, input, length, iv, output);
-    }
-
 exit:
-    IPC_SEMFree(IPC_SEM_CRYPTO_AES_SW_KEY);
+        IPC_SEMFree(IPC_SEM_CRYPTO_AES_SW_KEY);
+    }
     return ret;
 }
 #endif /* MBEDTLS_CIPHER_MODE_CBC */
@@ -328,7 +327,7 @@ int mbedtls_aes_crypt_xts( mbedtls_aes_xts_context *ctx,
 
 exit:
     IPC_SEMFree(IPC_SEM_CRYPTO_AES_SW_KEY);
-    return( 0 );
+    return( ret );
 }
 #endif /* MBEDTLS_CIPHER_MODE_XTS */
 
