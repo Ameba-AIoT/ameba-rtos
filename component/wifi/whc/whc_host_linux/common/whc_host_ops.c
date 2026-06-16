@@ -751,7 +751,11 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 		connect_param->security_type |= AES_CMAC_ENABLED;
 	}
 
-	if (sme->want_1x || (sme->auth_type == NL80211_AUTHTYPE_NETWORK_EAP)) {
+	if (sme->want_1x || (sme->auth_type == NL80211_AUTHTYPE_NETWORK_EAP) ||
+		(sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_IEEE8021X) ||
+		(sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_FT_IEEE8021X) ||
+		(sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_IEEE8021X_SHA256) ||
+		(sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_IEEE8021X_SUITE_B)) {
 		connect_param->security_type |= ENTERPRISE_ENABLED;
 	}
 

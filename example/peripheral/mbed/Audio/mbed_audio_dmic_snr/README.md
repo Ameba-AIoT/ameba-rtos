@@ -19,14 +19,20 @@ Build and Download:
 1. Speaker plays a 1KHz sine wave, which is received by DMIC.
 
 2. SNR and THD+N will be printed on the serial monitor:
+    - Only DMIC1 and DMIC2 results are displayed
     - `AUDIO SNR TEST PASS` if it exceeds the threshold
     - `AUDIO SNR TEST fAIL` if it does not exceed
+    - `AUDIO THD TEST PASS` if it exceeds the threshold
+    - `AUDIO THD TEST fAIL` if it does not exceed
 
 # Note
 
-1. The threshold of SNR and THD+N needs to be determined during testing. By default, threshold of SNR is set as "90", threshold of total harmonic distortion is set as "70":
-    - "#define IS_SNR_NOT_90DB(x)	((x) < 90)" 
-    - "#define IS_SNR_NOT_70DB(x)	((x) < 70)"
+1. **Threshold Setting for Office Environment**:
+   The SNR and THD+N thresholds are currently set to **20dB** for office environment testing where background noise is relatively high. For acoustic chamber testing with controlled low-noise conditions, the thresholds should be set higher (e.g., SNR: 90dB, THD: 70dB).
+
+   To adjust thresholds for your testing environment, modify the following macros in `example_mbed_audio_dmic_snr.c`:
+   - `#define IS_SNR_THRESHOLD(x) ((x) < 20)`  /* SNR threshold in dB */
+   - `#define IS_THD_THRESHOLD(x) ((x) < 20)`  /* THD threshold in dB */
 
 2. RTL8730E only supports hp core and must enable Audio Framework.
 

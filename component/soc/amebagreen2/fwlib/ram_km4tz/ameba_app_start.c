@@ -145,7 +145,6 @@ u32 rtc_irq_init(void *Data)
 	SDM32K_Enable();
 	SYSTIMER_Init(); /* 0.2ms */
 	RCC_PeriphClockCmd(NULL, APBPeriph_RTC_CLOCK, ENABLE);
-	RTC_ClkSource_Select(SDM32K);
 
 	if ((Get_OSC131_STATE() & RTC_BIT_FIRST_PON) == 0) {
 		app_rtc_init();
@@ -158,6 +157,9 @@ u32 rtc_irq_init(void *Data)
 			OSC131K_Calibration(30000); /* PPM=30000=3% *//* 7.5ms */
 		}
 	}
+
+	/* NOTE: SDM32K clock source switching must be performed after rtc_fen is enabled. */
+	RTC_ClkSource_Select(SDM32K);
 
 	return 0;
 }

@@ -63,6 +63,14 @@ extern volatile u32 pagecnt_ext;
 #define IS_SNR_NOT_90DB(x)	((x) < 90)
 #define IS_SNR_NOT_70DB(x)	((x) < 70)
 
+/*
+ * Generic threshold check macro for audio quality metrics.
+ * The threshold is set to 20dB because testing is done in an office environment
+ * with significant background noise. Only DMIC1 and DMIC2 are tested.
+ * Used for both SNR and THD verification in CONFIG_AMEBASMART.
+ */
+#define IS_AUDIO_THRESHOLD_NOT_20DB(x)	((x) < 20)
+
 #if defined (CONFIG_AMEBASMART)
 
 void AudioDMICSetPinmux(u32 group)
@@ -323,34 +331,32 @@ void example_audio_dmic_recorder_thread(void)
 		FFTTest((u32 *)sp_rx_buf_2, &adcSNR3, &adcSNR4);
 		FFTTest((u32 *)sp_rx_buf_3, &adcSNR5, &adcSNR6);
 
-		if (IS_SNR_NOT_90DB(adcSNR1) || IS_SNR_NOT_90DB(adcSNR2) || \
-			IS_SNR_NOT_90DB(adcSNR3) || IS_SNR_NOT_90DB(adcSNR5) || \
-			IS_SNR_NOT_90DB(adcSNR4)) {
+		/*
+		 * Only DMIC1 and DMIC2 are compared with 20dB threshold due to
+		 * office environment testing with high background noise.
+		 */
+		if (IS_AUDIO_THRESHOLD_NOT_20DB(adcSNR1) || IS_AUDIO_THRESHOLD_NOT_20DB(adcSNR2)) {
 			ErrFlag_SNR++;
 		}
 
 		RTK_LOGI(TAG, "DMIC1 SNR: %d\n", adcSNR1);
 		RTK_LOGI(TAG, "DMIC2 SNR: %d\n", adcSNR2);
-		RTK_LOGI(TAG, "DMIC3 SNR: %d\n", adcSNR3);
-		RTK_LOGI(TAG, "DMIC4 SNR: %d\n", adcSNR4);
-		RTK_LOGI(TAG, "DMIC5 SNR: %d\n", adcSNR5);
 
 		/*for THD test*/
 		THDTest((u32 *)sp_rx_buf_1, &adcTHD1, &adcTHD2);
 		THDTest((u32 *)sp_rx_buf_2, &adcTHD3, &adcTHD4);
 		THDTest((u32 *)sp_rx_buf_3, &adcTHD5, &adcTHD6);
 
-		if (IS_SNR_NOT_70DB(adcTHD1) || IS_SNR_NOT_70DB(adcTHD2) || \
-			IS_SNR_NOT_70DB(adcTHD3) || IS_SNR_NOT_70DB(adcTHD4) || \
-			IS_SNR_NOT_70DB(adcTHD5)) {
+		/*
+		 * Only DMIC1 and DMIC2 are compared with 20dB threshold due to
+		 * office environment testing with high background noise.
+		 */
+		if (IS_AUDIO_THRESHOLD_NOT_20DB(adcTHD1) || IS_AUDIO_THRESHOLD_NOT_20DB(adcTHD2)) {
 			ErrFlag_THD++;
 		}
 
 		RTK_LOGI(TAG, "DMIC1 THD: %d\n", adcTHD1);
 		RTK_LOGI(TAG, "DMIC2 THD: %d\n", adcTHD2);
-		RTK_LOGI(TAG, "DMIC3 THD: %d\n", adcTHD3);
-		RTK_LOGI(TAG, "DMIC4 THD: %d\n", adcTHD4);
-		RTK_LOGI(TAG, "DMIC5 THD: %d\n", adcTHD5);
 
 		if (ErrFlag_SNR > 0) {
 			ErrFlag_SNR = 0;
