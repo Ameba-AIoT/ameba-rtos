@@ -28,7 +28,7 @@ service network-manager stop
 #   -t 	 timeout value
 #################################################################################
 
-sudo env LD_LIBRARY_PATH=./ ./rtw_aware -r publish -f aware.conf
+sudo env LD_LIBRARY_PATH=./ ./rtw_aware -r publish -n 1 -f aware.conf
 #sudo env LD_LIBRARY_PATH=./ ./rtw_aware -r subscribe -f aware.conf
 echo "=========================="
 echo "     stop log capture     "
@@ -42,4 +42,3 @@ if [ ! -d log_folder ]; then
 fi
 mv -f *.log log_folder/
 chmod 777 -R log_folder
-

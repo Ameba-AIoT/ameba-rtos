@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup THERMAL
+/** @defgroup THERMAL THERMAL
   * @brief THERMAL driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -195,6 +196,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -258,7 +260,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup TM_CALIB_VAL
+/** @defgroup TM_CALIB_VAL TM Calibration Value
   * @{
   */
 #define TM_CALIB_GAIN		((u32)0x834D000)
@@ -268,7 +270,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup TM_Programme_Password
+/** @defgroup TM_Programme_Password TM Programme Password
   * @{
   */
 #define TM_PROG_PWR					(0x69)
@@ -276,7 +278,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup TM_Down_Sample_Rate
+/** @defgroup TM_Down_Sample_Rate TM Down Sample Rate
   * @{
   */
 #define TM_DSR_128						((u8)0x00)
@@ -292,7 +294,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup TM_ADC_CLK_Divider
+/** @defgroup TM_ADC_CLK_Divider TM ADC CLK Divider
   * @{
   */
 #define TM_ADC_CLK_DIV_256			((u8)0x00)
@@ -305,7 +307,7 @@ typedef struct {
   */
 
 
-/** @defgroup TM_DECIMAL_OUT
+/** @defgroup TM_DECIMAL_OUT TM Decimal Out
   * @{
   */
 #define TEMP_DECIMAL_OUT(x)		((u32)((x) & 0x000003FF))
@@ -314,7 +316,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup TM_TEMP_DEFINE
+/** @defgroup TM_TEMP_DEFINE TM Temp Define
   * @{
   */
 #define TM_POSITIVE_MIN      ((u32)0x00000)  // positive min value
@@ -336,10 +338,11 @@ typedef struct {
   * @}
   */
 
-/** @} */
 
-/** @} */
-
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup THERMAL_Exported_Functions THERMAL Exported Functions
+  * @{
+  */
 
 _LONG_CALL_ void TM_StructInit(TM_InitTypeDef *TM_InitStruct);
 _LONG_CALL_ void TM_Init(TM_InitTypeDef *TM_InitStruct);
@@ -361,8 +364,18 @@ _LONG_CALL_ void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState);
 _LONG_CALL_ void TM_LowWtConfig(u16 TM_LowWtThre, u32 NewState);
 _LONG_CALL_ float TM_GetCdegree(u32 Data);
 _LONG_CALL_ float TM_GetFdegree(u32 Data);
+/**
+  * @}
+  */
 
 /* MANUAL_GEN_END */
 
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
 
 #endif

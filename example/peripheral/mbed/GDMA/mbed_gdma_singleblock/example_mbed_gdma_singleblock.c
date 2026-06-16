@@ -76,6 +76,6 @@ int example_mbed_gdma_singleblock(void)
 		printf("Cannot create dma_singleblock_task demo task\n\r");
 	}
 
-	rtos_sched_start();
+	// rtos_sched_start();
 	return 0;
 }

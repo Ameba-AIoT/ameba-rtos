@@ -6,11 +6,25 @@
 
 #include "ameba_soc.h"
 
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup THERMAL THERMAL
+  *
+  * @brief  THERMAL driver modules
+  * @{
+  */
+
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup THERMAL_Exported_Functions THERMAL Exported Functions
+  * @{
+  */
+
 /**
-  * @brief  Initializes the parameters in the TM_InitStruct with default values.
-  * @param  TM_InitStruct: pointer to a TM_InitTypeDef structure that contains
+  * @brief  Initialize the parameters in the TM_InitStruct with default values.
+  * @param  TM_InitStruct Pointer to a TM_InitTypeDef structure that contains
   *         the configuration information for the thermal peripheral.
-  * @retval  None
   */
 void TM_StructInit(TM_InitTypeDef *TM_InitStruct)
 {
@@ -23,10 +37,9 @@ void TM_StructInit(TM_InitTypeDef *TM_InitStruct)
 }
 
 /**
-  * @brief  Initializes the thermal according to the specified parameters in TM_InitStruct.
-  * @param  TM_InitStruct: pointer to a TM_InitTypeDef structure that contains
+  * @brief  Initialize the thermal according to the specified parameters in TM_InitStruct.
+  * @param  TM_InitStruct Pointer to a TM_InitTypeDef structure that contains
   *         the configuration information for the thermal peripheral.
-  * @retval  None
   */
 void TM_Init(TM_InitTypeDef *TM_InitStruct)
 {
@@ -75,10 +88,9 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
 }
 
 /**
-  * @brief  Enable or Disable the thermal peripheral.
-  * @param  NewState: new state of the thermal peripheral.
+  * @brief  Enable or disable the thermal peripheral.
+  * @param  NewState New state of the thermal peripheral.
   *   			This parameter can be: ENABLE or DISABLE.
-  * @retval None
   */
 void TM_Cmd(u32 NewState)
 {
@@ -95,10 +107,12 @@ void TM_Cmd(u32 NewState)
 	}
 }
 /**
- * @brief confirm whether thermal data is valid
- *
- * @return RTK_SUCCESS/RTK_FAIL
- */
+  * @brief  Confirm whether thermal data is valid.
+  *
+  * @return Thermal data valid status:
+  *         - RTK_SUCCESS: thermal data is valid
+  *         - RTK_FAIL: thermal data is invalid
+  */
 int TM_PollDataValid(void)
 {
 	THERMAL_TypeDef *thermal = THERMAL;
@@ -114,13 +128,12 @@ int TM_PollDataValid(void)
 	return RTK_SUCCESS;
 }
 /**
-  * @brief  ENABLE/DISABLE  the thermal interrupt bits.
-  * @param  TM_IT: specifies the thermal interrupt to be setup.
+  * @brief  Enable or disable the thermal interrupt bits.
+  * @param  TM_IT Specifies the thermal interrupt to be setup.
   *          This parameter can be one or combinations of the following values:
   *            @arg TM_BIT_IMR_TM_LOW_WT:	thermal low temperature warning interrupt
   *            @arg TM_BIT_IMR_TM_HIGH_WT:	thermal high temperature warning interrupt
-  * @param  NewState: ENABLE/DISABLE.
-  * @retval  None
+  * @param  NewState ENABLE or DISABLE.
   */
 void TM_INTConfig(u32 TM_IT, u32 NewState)
 {
@@ -134,9 +147,7 @@ void TM_INTConfig(u32 TM_IT, u32 NewState)
 }
 
 /**
-  * @brief	 Clears all the thermal interrupt pending bits.
-  * @param  None
-  * @retval  None
+  * @brief	 Clear all the thermal interrupt pending bits.
   */
 void TM_INTClear(void)
 {
@@ -147,12 +158,11 @@ void TM_INTClear(void)
 }
 
 /**
-  * @brief  Clears the thermal interrupt pending bits.
-  * @param  TM_IT: specifies the pending bit to clear.
+  * @brief  Clear the thermal interrupt pending bits.
+  * @param  TM_IT Specifies the pending bit to clear.
   *   This parameter can be any combination of the following values:
   *            @arg TM_BIT_ISR_TM_LOW_WT
   *            @arg TM_BIT_ISR_TM_HIGH_WT
-  * @retval  None
   */
 void TM_INTClearPendingBits(u32 TM_IT)
 {
@@ -163,11 +173,10 @@ void TM_INTClearPendingBits(u32 TM_IT)
 
 /**
   * @brief  Get thermal interrupt status.
-  * @param  None
-  * @retval  Current Interrupt Status, each bit of this value represents one
-  *		interrupt status which is as follows:
-  *            @arg TM_BIT_ISR_TM_LOW_WT
-  *            @arg TM_BIT_ISR_TM_HIGH_WT
+  * @return Current Interrupt Status, each bit of this value represents one
+  *		interrupt status:
+  *         - TM_BIT_ISR_TM_LOW_WT
+  *         - TM_BIT_ISR_TM_HIGH_WT
   */
 u32 TM_GetISR(void)
 {
@@ -178,8 +187,9 @@ u32 TM_GetISR(void)
 
 /**
   * @brief  Get thermal temperature result.
-  * @param  None.
-  * @retval TM_INVALID_VALUE, invalid value;[0, TM_INVALID_VALUE), The measured temperature.
+  * @return The measured temperature:
+  *         - TM_INVALID_VALUE: invalid value
+  *         - [0, TM_INVALID_VALUE): measured temperature
   */
 u32 TM_GetTempResult(void)
 {
@@ -194,8 +204,9 @@ u32 TM_GetTempResult(void)
 
 /**
   * @brief  Get thermal power on temperature result.
-  * @param  None.
-  * @retval TM_INVALID_VALUE, invalid value;[0, TM_INVALID_VALUE), The measured power on temperature.
+  * @return The measured power on temperature:
+  *         - TM_INVALID_VALUE: invalid value
+  *         - [0, TM_INVALID_VALUE): measured power on temperature
   */
 u32 TM_GetPowOnTemp(void)
 {
@@ -210,8 +221,9 @@ u32 TM_GetPowOnTemp(void)
 
 /**
   * @brief  Get thermal max temperature result.
-  * @param  None.
-  * @retval TM_INVALID_VALUE, invalid value;[0, TM_INVALID_VALUE), the measured max temperature.
+  * @return The measured max temperature:
+  *         - TM_INVALID_VALUE: invalid value
+  *         - [0, TM_INVALID_VALUE): measured max temperature
   */
 u32 TM_GetMaxTemp(void)
 {
@@ -226,8 +238,9 @@ u32 TM_GetMaxTemp(void)
 
 /**
   * @brief  Get thermal min temperature result.
-  * @param  None.
-  * @retval TM_INVALID_VALUE, invalid value;[0, TM_INVALID_VALUE), the measured min temperature.
+  * @return The measured min temperature:
+  *         - TM_INVALID_VALUE: invalid value
+  *         - [0, TM_INVALID_VALUE): measured min temperature
   */
 u32 TM_GetMinTemp(void)
 {
@@ -244,7 +257,6 @@ u32 TM_GetMinTemp(void)
   * @brief  Clear the max temperature recorded by thermal.
   * @note tm_max_clr bit sets to 1, the record max temperature is cleared;
   *         tm_max_clr bit sets to 0, thermal start to record the max temperature.
-  * @retval None
   */
 void TM_MaxTempClr(void)
 {
@@ -258,7 +270,6 @@ void TM_MaxTempClr(void)
   * @brief  Clear the min temperature recorded by thermal.
   * @note tm_min_clr bit sets to 1, the record min temperature is cleared;
   *         tm_min_clr bit sets to 0, thermal start to record the min temperature.
-  * @retval None
   */
 void TM_MinTempClr(void)
 {
@@ -269,10 +280,9 @@ void TM_MinTempClr(void)
 }
 
 /**
-  * @brief  Enable or Disable high temperature protect function.
-  * @param  NewState: new state of the thermal lathigh temperature protect functionch.
+  * @brief  Enable or disable high temperature protect function.
+  * @param  NewState New state of the thermal high temperature protect function.
   *   			This parameter can be: ENABLE or DISABLE.
-  * @retval None
   */
 void TM_SetHighPT(u32 NewState)
 {
@@ -287,11 +297,11 @@ void TM_SetHighPT(u32 NewState)
 
 /**
   * @brief  Get Celsius Degree
-  * @param  Data: TM_RESULT(Binary complement form)
-  * @retval Temperature value of float type
-  * 		[0, 0x3FFFF] == > [0, 255.999], Positive temperature range.
-  * 		[0x40000, 0x7FFFF] == > [-256, -0.00097], Negative temperature range
-  * 		0x80000 ==> 256, invalid value.
+  * @param  Data TM_RESULT(Binary complement form)
+  * @return Temperature value of float type:
+  *         - [0, 0x3FFFF] ==> [0, 255.999], positive temperature range.
+  *         - [0x40000, 0x7FFFF] ==> [-256, -0.00097], negative temperature range.
+  *         - 0x80000 ==> 256, invalid value.
   */
 float TM_GetCdegree(u32 Data)
 {
@@ -316,11 +326,11 @@ float TM_GetCdegree(u32 Data)
 
 /**
   * @brief  Get Fahrenheit Degree
-  * @param  Data: TM_RESULT(Binary complement form)
-  * @retval Temperature value of float type
-  * 		[0, 0x3FFFF] == > [32, 492.798], Positive temperature range.
-  * 		[0x40000, 0x7FFFF] == > [-492.8, 31.998], Negative temperature range
-  * 		0x80000 ==> 492.8, invalid degree.
+  * @param  Data TM_RESULT(Binary complement form)
+  * @return Temperature value of float type:
+  *         - [0, 0x3FFFF] ==> [32, 492.798], positive temperature range.
+  *         - [0x40000, 0x7FFFF] ==> [-492.8, 31.998], negative temperature range.
+  *         - 0x80000 ==> 492.8, invalid degree.
   */
 float TM_GetFdegree(u32 Data)
 {
@@ -330,4 +340,8 @@ float TM_GetFdegree(u32 Data)
 
 	return Fdegree;
 }
+/** @} */
 
+/** @} */
+
+/** @} */

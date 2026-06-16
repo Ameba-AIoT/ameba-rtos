@@ -156,6 +156,6 @@ int example_mbed_audio_speaker(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "\n xTaskCreate(example_audio_spk_thread) failed\n");
 	}
 
-	rtos_sched_start();
+	// rtos_sched_start();
 	return 0;
 }

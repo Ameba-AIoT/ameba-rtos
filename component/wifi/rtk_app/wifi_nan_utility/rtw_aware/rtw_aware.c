@@ -145,7 +145,7 @@ char *rtw_nan_r3;
 char *nan_intf = "nan0";
 volatile sig_atomic_t sig_flag = 0;
 timer_t timerid;
-static unsigned int g_num_service = 2;
+static unsigned int g_num_service = 1;
 struct nan_service_mgnt g_nan_service_mgnt[MAX_SERVICE_NUM] = {0};
 static unsigned int g_test_cnt = 0;
 

@@ -208,11 +208,7 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 			memcpy(mlme_priv->assoc_rsp_ie, (u8 *)(join_status_info->frame), join_status_info->frame_len);
 			mlme_priv->assoc_rsp_ie_len = join_status_info->frame_len;
 			dev_dbg(global_idev.pwhc_dev, "[whc] --- %s --- %s success.", __func__, (*(u8 *)mlme_priv->assoc_req_ie == 0 ? "association" : "re-association"));
-#ifdef CONFIG_P2P
-			if ((global_idev.p2p_global.pd_wlan_idx == 1) && (memcmp(mlme_priv->assoc_rsp_ie + 4, global_idev.pndev[1]->dev_addr, 6) == 0)) {
-				wlan_idx = 1; //address match GC, then use GC's netdev
-			}
-#endif
+
 #ifdef CONFIG_IEEE80211R
 			if (global_idev.b_in_roaming) {
 
@@ -277,11 +273,7 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 	}
 
 	if (join_status == RTW_JOINSTATUS_FAIL) {
-#ifdef CONFIG_P2P
-		if (global_idev.p2p_global.pd_wlan_idx == 1) {
-			wlan_idx = 1;// GC intf is up, then use GC's netdev
-		}
-#endif
+		/* GC uses pndev[0] (port0), wlan_idx=0 is already the default */
 		dev_dbg(global_idev.pwhc_dev, "[whc] --- %s --- join failed up sema.", __func__);
 		/* merge from wifi_join_status_indicate if synchronous connection, up sema when connect fail*/
 		if (mlme_priv->join_block_param) {
@@ -319,13 +311,8 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 
 void whc_host_disconnect_indicate(u16 reason, u8 locally_generated, u8 *bssid)
 {
-	u8 wlan_idx = 0;
+	u8 wlan_idx = 0; /* GC uses pndev[0] (port0), same as STA */
 	struct rtw_wpa_4way_status	rpt_4way = {0};
-#ifdef CONFIG_P2P
-	if (global_idev.p2p_global.p2p_role == P2P_ROLE_CLIENT) {
-		wlan_idx = 1;// GC intf is up, then use GC's netdev
-	}
-#endif
 
 #ifdef CONFIG_SUPPLICANT_SME
 	struct sme_priv_t *sme_priv = &global_idev.sme_priv;

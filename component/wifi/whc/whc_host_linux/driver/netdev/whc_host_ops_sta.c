@@ -84,6 +84,8 @@ static int whc_host_ops_change_iface(struct wiphy *wiphy, struct net_device *nde
 {
 	u32 widx = rtw_netdev_idx(ndev);
 
+	dev_info(global_idev.pwhc_dev, "%s: change from type %d to type %d.", __func__, ndev_to_wdev(ndev)->iftype, type);
+
 	/* The port0 workes as sation only in whc firmware and port1 workes
 	 * as AP mode only. So to add this conditon to stop to change the mode
 	 * of interface. */
@@ -104,14 +106,44 @@ static int whc_host_ops_change_iface(struct wiphy *wiphy, struct net_device *nde
 #endif
 #ifdef CONFIG_P2P
 	if (type == NL80211_IFTYPE_P2P_GO) {
-		if (ndev_to_wdev(ndev)->iftype == NL80211_IFTYPE_P2P_CLIENT) { /*change from GC to GO*/
+		/*change from GC to GO*/
+		if (ndev_to_wdev(ndev)->iftype == NL80211_IFTYPE_P2P_CLIENT) {
+			struct net_device *go_ndev = global_idev.pndev[0];
+			struct wireless_dev *go_wdev = global_idev.pwdev_global[0];
+
+			/* swap slot 0 and 1 of ndev and wdev:
+			 * before: pndev[0]=GC, pndev[1]=STA.
+			 * after:  pndev[0]=STA, pndev[1]=GO. */
+			global_idev.pndev[0] = global_idev.pndev[1];
+			global_idev.pwdev_global[0] = global_idev.pwdev_global[1];
+			rtw_netdev_idx(global_idev.pndev[0]) = 0;
+
+			global_idev.pndev[1] = go_ndev;
+			global_idev.pwdev_global[1] = go_wdev;
+			rtw_netdev_idx(global_idev.pndev[1]) = 1;
+
+			/* Restore MAC addresses (pd_wlan_idx==1 so gc_intf_revert runs). */
 			whc_host_p2p_gc_intf_revert(0);
 		}
 		global_idev.p2p_global.p2p_role = P2P_ROLE_GO;
 		whc_host_set_p2p_role(P2P_ROLE_GO);
 	} else if (type == NL80211_IFTYPE_P2P_CLIENT) {
+		/*change from GO to GC*/
 		if (ndev_to_wdev(ndev)->iftype == NL80211_IFTYPE_P2P_GO) {
-			/*change from GO to GC: below setting not suitable when STA port connected)*/
+			struct net_device *gc_ndev = global_idev.pndev[1];
+			struct wireless_dev *gc_wdev = global_idev.pwdev_global[1];
+
+			/* swap slot 0 and 1 of ndev and wdev:
+			 * before: pndev[0]=STA, pndev[1]=GO.
+			 * after:  pndev[0]=GC, pndev[1]=STA. */
+			global_idev.pndev[1] = global_idev.pndev[0];
+			global_idev.pwdev_global[1] = global_idev.pwdev_global[0];
+			rtw_netdev_idx(global_idev.pndev[1]) = 1;
+
+			global_idev.pndev[0] = gc_ndev;
+			global_idev.pwdev_global[0] = gc_wdev;
+			rtw_netdev_idx(global_idev.pndev[0]) = 0;
+
 			global_idev.p2p_global.pd_wlan_idx = 1;
 			whc_host_p2p_driver_macaddr_switch();
 		}

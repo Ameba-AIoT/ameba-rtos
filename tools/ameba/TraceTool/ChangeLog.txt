@@ -79,3 +79,6 @@ ChangeLog:
                   (3) Fine tune GUI
 20260212  v2.1.40 Fix crash issue on unplug or replug
 20260528  v2.1.41 Enhance Log AGG feature to support more chips
+20260615  v2.1.42 (1) Support UTF-8 as default
+                  (2) Fine tune GUI
+                  (3) Enhance serial port operation for driver compatibility

@@ -189,6 +189,52 @@ inline int i2c_stop(i2c_t *obj)
 }
 
 /**
+  * @brief  Enable I2C master RESTART function.
+  * @param  obj: I2C object defined in application software.
+  * @note  Include i2c_ex_api.h to explicitly call this function.
+  */
+void i2c_restart_enable(i2c_t *obj)
+{
+	uint32_t i2cen = 0;
+
+	if (obj->I2Cx->IC_ENABLE & I2C_BIT_ENABLE) {
+		I2C_Cmd(obj->I2Cx, DISABLE);
+		i2cen = 1;
+	}
+
+	obj->I2Cx->IC_CON |= I2C_BIT_IC_RESTATRT_EN;
+
+	if (i2cen) {
+		I2C_Cmd(obj->I2Cx, ENABLE);
+	}
+
+	restart_enable = 1;
+}
+
+/**
+  * @brief  Disable I2C Master RESTART function.
+  * @param  obj: I2C object defined in application software.
+  * @note  Include i2c_ex_api.h to explicitly call this function.
+  */
+void i2c_restart_disable(i2c_t *obj)
+{
+	uint32_t i2cen = 0;
+
+	if (obj->I2Cx->IC_ENABLE & I2C_BIT_ENABLE) {
+		I2C_Cmd(obj->I2Cx, DISABLE);
+		i2cen = 1;
+	}
+
+	obj->I2Cx->IC_CON &= ~I2C_BIT_IC_RESTATRT_EN;
+
+	if (i2cen) {
+		I2C_Cmd(obj->I2Cx, ENABLE);
+	}
+
+	restart_enable = 0;
+}
+
+/**
   * @brief  I2C master read in poll mode.
   * @param  obj: I2C object defined in application software.
   * @param  address: Slave address which will be transmitted.
@@ -347,13 +393,18 @@ int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop)
 		/* Init I2C now */
 		I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
 		I2C_Cmd(obj->I2Cx, ENABLE);
+
+		restart_enable = 0;
 	}
 
-	if ((!restart_enable) | (1 == stop)) {
+	if (1 == stop) {
 		return I2C_MasterWrite(obj->I2Cx, (unsigned char *)data, length);
-	} else {
-		return i2c_send_restart(obj->I2Cx, (unsigned char *)data, length, 1);
 	}
+
+	if (restart_enable == 0) {
+		i2c_restart_enable(obj);
+	}
+	return i2c_send_restart(obj->I2Cx, (unsigned char *)data, length, 1);
 
 }
 
@@ -463,50 +514,6 @@ void i2c_reset(i2c_t *obj)
 	/* Deinit I2C directly */
 	/* I2C HAL DeInitialization */
 	I2C_Cmd(obj->I2Cx, DISABLE);
-}
-
-/**
-  * @brief  Enable I2C master RESTART function.
-  * @param  obj: I2C object defined in application software.
-  */
-void i2c_restart_enable(i2c_t *obj)
-{
-	uint32_t i2cen = 0;
-
-	if (obj->I2Cx->IC_ENABLE & I2C_BIT_ENABLE) {
-		I2C_Cmd(obj->I2Cx, DISABLE);
-		i2cen = 1;
-	}
-
-	obj->I2Cx->IC_CON |= I2C_BIT_IC_RESTATRT_EN;
-
-	if (i2cen) {
-		I2C_Cmd(obj->I2Cx, ENABLE);
-	}
-
-	restart_enable = 1;
-}
-
-/**
-  * @brief  Disable I2C Master RESTART function.
-  * @param  obj: I2C object defined in application software.
-  */
-void i2c_restart_disable(i2c_t *obj)
-{
-	uint32_t i2cen = 0;
-
-	if (obj->I2Cx->IC_ENABLE & I2C_BIT_ENABLE) {
-		I2C_Cmd(obj->I2Cx, DISABLE);
-		i2cen = 1;
-	}
-
-	obj->I2Cx->IC_CON &= ~I2C_BIT_IC_RESTATRT_EN;
-
-	if (i2cen) {
-		I2C_Cmd(obj->I2Cx, ENABLE);
-	}
-
-	restart_enable = 0;
 }
 
 /**
