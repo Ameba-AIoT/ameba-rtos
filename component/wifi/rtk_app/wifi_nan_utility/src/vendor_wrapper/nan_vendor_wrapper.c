@@ -150,7 +150,6 @@ For type data_end:\n\
 
 #ifdef NAN_CUSTOMER_NANDOW
 
-#include "WFPAL.h"
 
 void nandow_load_test_data(struct nan_customer_nandow *, char **argv, int argc);
 void nandow_send_cmd(struct nan_customer_nandow *nandoow_cmd, void *input,
@@ -1465,7 +1464,7 @@ void nandow_dump_test_country_code(struct nan_customer_nandow *nandow_test);
 
 /* main function definition */
 
-void _dump_service_info(struct   wfpal_nan_service_info *srv_info)
+void _dump_service_info(struct rtw_nan_service_info *srv_info)
 {
 
 	printf("\t service_specific_info.len = %d \n", srv_info->length);
@@ -1492,73 +1491,73 @@ void nandow_load_test_data(struct nan_customer_nandow *nandow_test, char **argv,
 {
 
 	switch (nandow_test->cmd_id) {
-	case WFPAL_NAN_INIT:
+	case RTW_NAN_CMD_INIT:
 		nandow_load_test_data_nan_init(nandow_test);
 		break;
-	case WFPAL_WIFI_DRIVER_CAPABILITIES:
+	case RTW_NAN_CMD_WIFI_DRV_CAP:
 		nandow_load_test_data_get_drv_cap(nandow_test);
 		break;
-	case WFPAL_NAN_ENABLED:
+	case RTW_NAN_CMD_NAN_ENABLE:
 		nandow_load_test_data_nan_enabled(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_CLUSTER_ID:
+	case RTW_NAN_CMD_CLUSTER_ID:
 		nandow_load_data_cluster_id(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_DISCOVERY_BEACON_PERIOD:
+	case RTW_NAN_CMD_DISC_BCN_PERIOD:
 		nandow_load_data_disc_period(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_FORCED_BEACON_TRANSMISSION:
+	case RTW_NAN_CMD_FORCED_DISC_BCN:
 		nandow_load_forced_bcn_trans(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_MASTER_INDICATION_MASTER_PREFERENCE:
+	case RTW_NAN_CMD_MASTER_PREF:
 		nandow_load_data_master_pref(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_MASTER_INDICATION_RANDOM_FACTOR:
+	case RTW_NAN_CMD_RANDOM_FACTOR:
 		nandow_load_data_random_factor(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_DISCOVERY_WINDOW_AWAKE_PERIOD:
+	case RTW_NAN_CMD_DW_AWAKE_PERIOD:
 		nandow_load_data_dw_awake_period(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_PRIMARY_MASTER_CHANNEL:
+	case RTW_NAN_CMD_PRI_MASTER_CH:
 		nandow_load_data_primary_master_channel(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_SECONDARY_MASTER_CHANNEL:
+	case RTW_NAN_CMD_SEC_MASTER_CH:
 		nandow_load_data_secondary_master_channel(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_SUBSCRIBE:
+	case RTW_NAN_CMD_SUBSCRIBE:
 		nandow_load_test_data_subscribe(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_PUBLISH:
+	case RTW_NAN_CMD_PUBLISH:
 		nandow_load_test_data_publish(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_CANCEL_SUBSCRIBE:
+	case RTW_NAN_CMD_CANCEL_SUBSCRIBE:
 		nandow_load_test_data_cancel_subscribe(nandow_test);
 		break;
-	case WFPAL_NAN_CANCEL_PUBLISH:
+	case RTW_NAN_CMD_CANCEL_PUBLISH:
 		nandow_load_test_data_cancel_publish(nandow_test);
 		break;
-	case WFPAL_NAN_FOLLOW_UP_TRANSMIT:
+	case RTW_NAN_CMD_FOLLOWUP_TX:
 		nandow_load_test_data_follow_up_transmit(nandow_test);
 		break;
-	case WFPAL_NAN_DATAPATH_REQUEST:
+	case RTW_NAN_CMD_DATAPATH_REQ:
 		nandow_load_test_data_req(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_DATAPATH_RESPONSE:
+	case RTW_NAN_CMD_DATAPATH_RSP:
 		nandow_load_test_data_rsp(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_DATAPATH_CONFIRM:
+	case RTW_NAN_CMD_DATAPATH_CONFIRM:
 		nandow_load_test_data_confirm(nandow_test, argv, argc);
 		break;
-	case WFPAL_NAN_DATAPATH_END:
+	case RTW_NAN_CMD_DATAPATH_END:
 		nandow_load_test_data_end(nandow_test);
 		break;
-	case WFPAL_NAN_DATA_CLUSTER_AVAILABILITY:
+	case RTW_NAN_CMD_NDC_AVAIL:
 		nandow_load_test_ndc_avail(nandow_test, argv, argc);
 		break;
-	case WFPAL_SCAN_CONTROL:
+	case RTW_NAN_CMD_SCAN_CONTROL:
 		nandow_load_test_set_scan_control(nandow_test);
 		break;
-	case WFPAL_COUNTRY_CODE:
+	case RTW_NAN_CMD_COUNTRY_CODE:
 		nandow_load_test_country_code(nandow_test);
 		break;
 	default:
@@ -1569,74 +1568,74 @@ void nandow_load_test_data(struct nan_customer_nandow *nandow_test, char **argv,
 void nandow_pre_actions(struct nan_customer_nandow *nandow_test)
 {
 	switch (nandow_test->cmd_id) {
-	case WFPAL_NAN_INIT:
-		nandow_test->para_len = sizeof(struct wfpal_nan_device_capability);
+	case RTW_NAN_CMD_INIT:
+		nandow_test->para_len = sizeof(struct rtw_nan_device_capability);
 		break;
-	case WFPAL_WIFI_DRIVER_CAPABILITIES:
-		nandow_test->para_len = sizeof(struct wfpal_wifi_driver_capabilities);
+	case RTW_NAN_CMD_WIFI_DRV_CAP:
+		nandow_test->para_len = sizeof(struct rtw_nan_driver_capabilities);
 		break;
-	case WFPAL_NAN_ENABLED:
-		nandow_test->para_len = sizeof(struct wfpal_nan_enable);
+	case RTW_NAN_CMD_NAN_ENABLE:
+		nandow_test->para_len = sizeof(struct rtw_nan_enable);
 		break;
-	case WFPAL_NAN_CLUSTER_ID:
-		nandow_test->para_len = sizeof(struct wfpal_nan_cluster_id);
+	case RTW_NAN_CMD_CLUSTER_ID:
+		nandow_test->para_len = sizeof(struct rtw_nan_cluster_id);
 		break;
-	case WFPAL_NAN_MASTER_INDICATION_MASTER_PREFERENCE:
-		nandow_test->para_len = sizeof(struct wfpal_nan_master_indication_master_preference);
+	case RTW_NAN_CMD_MASTER_PREF:
+		nandow_test->para_len = sizeof(struct rtw_nan_master_preference);
 		break;
-	case WFPAL_NAN_MASTER_INDICATION_RANDOM_FACTOR:
-		nandow_test->para_len = sizeof(struct wfpal_nan_master_indication_random_factor);
+	case RTW_NAN_CMD_RANDOM_FACTOR:
+		nandow_test->para_len = sizeof(struct rtw_nan_random_factor);
 		break;
-	case WFPAL_NAN_DISCOVERY_WINDOW_AWAKE_PERIOD:
-		nandow_test->para_len = sizeof(struct wfpal_nan_discovery_window_awake_period);
+	case RTW_NAN_CMD_DW_AWAKE_PERIOD:
+		nandow_test->para_len = sizeof(struct rtw_nan_discovery_window_awake_period);
 		break;
-	case WFPAL_NAN_PRIMARY_MASTER_CHANNEL:
-		nandow_test->para_len = sizeof(struct wfpal_nan_primary_master_channel);
+	case RTW_NAN_CMD_PRI_MASTER_CH:
+		nandow_test->para_len = sizeof(struct rtw_nan_primary_master_channel);
 		break;
-	case WFPAL_NAN_SECONDARY_MASTER_CHANNEL:
-		nandow_test->para_len = sizeof(struct wfpal_nan_secondary_master_channel);
+	case RTW_NAN_CMD_SEC_MASTER_CH:
+		nandow_test->para_len = sizeof(struct rtw_nan_secondary_master_channel);
 		break;
-	case WFPAL_NAN_DISCOVERY_BEACON_PERIOD:
-		nandow_test->para_len = sizeof(struct wfpal_nan_discovery_beacon_period);
+	case RTW_NAN_CMD_DISC_BCN_PERIOD:
+		nandow_test->para_len = sizeof(struct rtw_nan_discovery_beacon_period);
 		break;
-	case WFPAL_NAN_FORCED_BEACON_TRANSMISSION:
-		nandow_test->para_len = sizeof(struct wfpal_nan_forced_discovery_beacon_transmission);
+	case RTW_NAN_CMD_FORCED_DISC_BCN:
+		nandow_test->para_len = sizeof(struct rtw_nan_forced_discovery_beacon_transmission);
 		break;
-	case WFPAL_NAN_SUBSCRIBE:
-		nandow_test->para_len = sizeof(struct wfpal_nan_subscribe_data);
+	case RTW_NAN_CMD_SUBSCRIBE:
+		nandow_test->para_len = sizeof(struct rtw_nan_subscribe_data);
 		break;
-	case WFPAL_NAN_PUBLISH:
-		nandow_test->para_len = sizeof(struct wfpal_nan_publish_data);
+	case RTW_NAN_CMD_PUBLISH:
+		nandow_test->para_len = sizeof(struct rtw_nan_publish_data);
 		break;
-	case WFPAL_NAN_CANCEL_SUBSCRIBE:
-		nandow_test->para_len = sizeof(struct wfpal_nan_cancel_subscribe_data);
+	case RTW_NAN_CMD_CANCEL_SUBSCRIBE:
+		nandow_test->para_len = sizeof(struct rtw_nan_cancel_subscribe_data);
 		break;
-	case WFPAL_NAN_CANCEL_PUBLISH:
-		nandow_test->para_len = sizeof(struct wfpal_nan_cancel_publish_data);
+	case RTW_NAN_CMD_CANCEL_PUBLISH:
+		nandow_test->para_len = sizeof(struct rtw_nan_cancel_publish_data);
 		break;
-	case WFPAL_NAN_FOLLOW_UP_TRANSMIT:
-		nandow_test->para_len = sizeof(struct wfpal_nan_follow_up_transmit_data);
+	case RTW_NAN_CMD_FOLLOWUP_TX:
+		nandow_test->para_len = sizeof(struct rtw_nan_follow_up_transmit_data);
 		break;
-	case WFPAL_NAN_DATAPATH_REQUEST:
-		nandow_test->para_len = sizeof(struct wfpal_nan_datapath_request);
+	case RTW_NAN_CMD_DATAPATH_REQ:
+		nandow_test->para_len = sizeof(struct rtw_nan_datapath_request);
 		break;
-	case WFPAL_NAN_DATAPATH_RESPONSE:
-		nandow_test->para_len = sizeof(struct wfpal_nan_datapath_response);
+	case RTW_NAN_CMD_DATAPATH_RSP:
+		nandow_test->para_len = sizeof(struct rtw_nan_datapath_response);
 		break;
-	case WFPAL_NAN_DATAPATH_CONFIRM:
-		nandow_test->para_len = sizeof(struct wfpal_nan_datapath_confirm);
+	case RTW_NAN_CMD_DATAPATH_CONFIRM:
+		nandow_test->para_len = sizeof(struct rtw_nan_datapath_confirm);
 		break;
-	case WFPAL_NAN_DATAPATH_END:
-		nandow_test->para_len = sizeof(struct wfpal_nan_datapath_end);
+	case RTW_NAN_CMD_DATAPATH_END:
+		nandow_test->para_len = sizeof(struct rtw_nan_datapath_end);
 		break;
-	case WFPAL_NAN_DATA_CLUSTER_AVAILABILITY:
-		nandow_test->para_len = sizeof(struct wfpal_nan_data_cluster_availability);
+	case RTW_NAN_CMD_NDC_AVAIL:
+		nandow_test->para_len = sizeof(struct rtw_nan_data_cluster_availability);
 		break;
-	case WFPAL_SCAN_CONTROL:
-		nandow_test->para_len = sizeof(struct wfpal_set_scan_control);
+	case RTW_NAN_CMD_SCAN_CONTROL:
+		nandow_test->para_len = sizeof(struct rtw_nan_set_scan_control);
 		break;
-	case WFPAL_COUNTRY_CODE:
-		nandow_test->para_len = sizeof(struct wfpal_country_code_data);
+	case RTW_NAN_CMD_COUNTRY_CODE:
+		nandow_test->para_len = sizeof(struct rtw_nan_country_code_data);
 		break;
 	default:
 		break;
@@ -1650,14 +1649,14 @@ void nandow_pre_actions(struct nan_customer_nandow *nandow_test)
 
 void nandow_post_actions(struct nan_customer_nandow *nandow_test)
 {
-	/* 	if (nandow_test->cmd_id == WFPAL_NAN_INIT) {
-		} else if(nandow_test->cmd_id == WFPAL_WIFI_DRIVER_CAPABILITIES) {
-		} else if(nandow_test->cmd_id == WFPAL_NAN_ENABLED) {
-		} else if(nandow_test->cmd_id == WFPAL_NAN_CLUSTER_ID) {
-		} else if(nandow_test->cmd_id == WFPAL_NAN_MASTER_INDICATION_MASTER_PREFERENCE) {
-		} else if(nandow_test->cmd_id == WFPAL_NAN_MASTER_INDICATION_RANDOM_FACTOR) {
-		} else if(nandow_test->cmd_id == WFPAL_NAN_PUBLISH) {
-		} else if(nandow_test->cmd_id == WFPAL_NAN_CANCEL_PUBLISH) {
+	/* 	if (nandow_test->cmd_id == RTW_NAN_CMD_INIT) {
+		} else if(nandow_test->cmd_id == RTW_NAN_CMD_WIFI_DRV_CAP) {
+		} else if(nandow_test->cmd_id == RTW_NAN_CMD_NAN_ENABLE) {
+		} else if(nandow_test->cmd_id == RTW_NAN_CMD_CLUSTER_ID) {
+		} else if(nandow_test->cmd_id == RTW_NAN_CMD_MASTER_PREF) {
+		} else if(nandow_test->cmd_id == RTW_NAN_CMD_RANDOM_FACTOR) {
+		} else if(nandow_test->cmd_id == RTW_NAN_CMD_PUBLISH) {
+		} else if(nandow_test->cmd_id == RTW_NAN_CMD_CANCEL_PUBLISH) {
 		} */
 }
 
@@ -1717,72 +1716,72 @@ void nandow_send_cmd(
 void nandow_dump_test_data(struct nan_customer_nandow *nandow_test)
 {
 	switch (nandow_test->cmd_id) {
-	case WFPAL_NAN_INIT:
+	case RTW_NAN_CMD_INIT:
 		nandow_dump_test_data_nan_init(nandow_test);
 		break;
-	case WFPAL_WIFI_DRIVER_CAPABILITIES:
+	case RTW_NAN_CMD_WIFI_DRV_CAP:
 		nandow_dump_test_data_get_drv_cap(nandow_test);
-	case WFPAL_NAN_ENABLED:
+	case RTW_NAN_CMD_NAN_ENABLE:
 		nandow_dump_test_data_nan_enabled(nandow_test);
 		break;
-	case WFPAL_NAN_CLUSTER_ID:
+	case RTW_NAN_CMD_CLUSTER_ID:
 		nandow_dump_data_cluster_id(nandow_test);
 		break;
-	case WFPAL_NAN_MASTER_INDICATION_MASTER_PREFERENCE:
+	case RTW_NAN_CMD_MASTER_PREF:
 		nandow_dump_data_master_pref(nandow_test);
 		break;
-	case WFPAL_NAN_MASTER_INDICATION_RANDOM_FACTOR:
+	case RTW_NAN_CMD_RANDOM_FACTOR:
 		nandow_dump_data_random_factor(nandow_test);
 		break;
-	case WFPAL_NAN_DISCOVERY_WINDOW_AWAKE_PERIOD:
+	case RTW_NAN_CMD_DW_AWAKE_PERIOD:
 		nandow_dump_data_dw_awake_period(nandow_test);
 		break;
-	case WFPAL_NAN_PRIMARY_MASTER_CHANNEL:
+	case RTW_NAN_CMD_PRI_MASTER_CH:
 		nandow_dump_data_primary_master_channel(nandow_test);
 		break;
-	case WFPAL_NAN_SECONDARY_MASTER_CHANNEL:
+	case RTW_NAN_CMD_SEC_MASTER_CH:
 		nandow_dump_data_secondary_master_channel(nandow_test);
 		break;
-	case WFPAL_NAN_DISCOVERY_BEACON_PERIOD:
+	case RTW_NAN_CMD_DISC_BCN_PERIOD:
 		nandow_dump_data_disc_period(nandow_test);
 		break;
-	case WFPAL_NAN_FORCED_BEACON_TRANSMISSION:
+	case RTW_NAN_CMD_FORCED_DISC_BCN:
 		nandow_dump_data_forced_bcn_trans(nandow_test);
 		break;
-	case WFPAL_NAN_SUBSCRIBE:
+	case RTW_NAN_CMD_SUBSCRIBE:
 		nandow_dump_test_data_subscribe(nandow_test);
 		break;
-	case WFPAL_NAN_PUBLISH:
+	case RTW_NAN_CMD_PUBLISH:
 		nandow_dump_test_data_publish(nandow_test);
 		break;
-	case WFPAL_NAN_CANCEL_PUBLISH:
+	case RTW_NAN_CMD_CANCEL_PUBLISH:
 		nandow_dump_test_data_cancel_publish(nandow_test);
 		break;
-	case WFPAL_NAN_CANCEL_SUBSCRIBE:
+	case RTW_NAN_CMD_CANCEL_SUBSCRIBE:
 		nandow_dump_test_data_cancel_subscribe(nandow_test);
 		break;
-	case WFPAL_NAN_FOLLOW_UP_TRANSMIT:
+	case RTW_NAN_CMD_FOLLOWUP_TX:
 		nandow_dump_test_data_follow_up_transmit(nandow_test);
 		break;
-	case WFPAL_NAN_DATAPATH_REQUEST:
+	case RTW_NAN_CMD_DATAPATH_REQ:
 		nandow_dump_test_data_req(nandow_test);
 		break;
-	case WFPAL_NAN_DATAPATH_RESPONSE:
+	case RTW_NAN_CMD_DATAPATH_RSP:
 		nandow_dump_test_data_rsp(nandow_test);
 		break;
-	case WFPAL_NAN_DATAPATH_CONFIRM:
+	case RTW_NAN_CMD_DATAPATH_CONFIRM:
 		nandow_dump_test_data_confirm(nandow_test);
 		break;
-	case WFPAL_NAN_DATAPATH_END:
+	case RTW_NAN_CMD_DATAPATH_END:
 		nandow_dump_test_data_end(nandow_test);
 		break;
-	case WFPAL_NAN_DATA_CLUSTER_AVAILABILITY:
+	case RTW_NAN_CMD_NDC_AVAIL:
 		nandow_dump_test_ndc_avail(nandow_test);
 		break;
-	case WFPAL_SCAN_CONTROL:
+	case RTW_NAN_CMD_SCAN_CONTROL:
 		nandow_dump_test_set_scan_control(nandow_test);
 		break;
-	case WFPAL_COUNTRY_CODE:
+	case RTW_NAN_CMD_COUNTRY_CODE:
 		nandow_dump_test_country_code(nandow_test);
 		break;
 	default:
@@ -1826,20 +1825,20 @@ void nandow_parse_cmd_reply(struct nan_customer_nandow *nandow_test, char *cmdre
 
 /* sub function definition */
 
-// WFPAL_NAN_INIT
+// RTW_NAN_CMD_INIT
 void nandow_load_test_data_nan_init(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_device_capability dev_cap;
+	struct rtw_nan_device_capability dev_cap;
 
-	/* printf("nandow cmd WFPAL_NAN_INIT(%x)\n", WFPAL_NAN_INIT); */
+	/* printf("nandow cmd RTW_NAN_CMD_INIT(%x)\n", RTW_NAN_CMD_INIT); */
 	/* no set op, skip this step */
 }
 
 void nandow_dump_test_data_nan_init(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_device_capability *dev_cap = &nandow_test->para.dev_cap;
+	struct rtw_nan_device_capability *dev_cap = &nandow_test->para.dev_cap;
 
-	printf("\nwfpal_nan_device_capability(%x), type(%s)\n", WFPAL_NAN_INIT,
+	printf("\nrtw_nan_dev_cap(%x), type(%s)\n", RTW_NAN_CMD_INIT,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\tsupported_bands(%x)\n", dev_cap->supported_bands);
 	printf("\tsupported_cipher_suites(%x)\n", dev_cap->supported_cipher_suites);
@@ -1855,28 +1854,28 @@ void nandow_dump_test_data_nan_init(struct nan_customer_nandow *nandow_test)
 	printf("\tunicast_insecure_datapath_restore_supported(%x)\n", dev_cap->unicast_insecure_datapath_restore_supported);
 }
 
-// WFPAL_WIFI_DRIVER_CAPABILITIES
+// RTW_NAN_CMD_WIFI_DRV_CAP
 void nandow_load_test_data_get_drv_cap(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_wifi_driver_capabilities drv_cap;
+	struct rtw_nan_driver_capabilities drv_cap;
 
-	/* printf("nandow cmd WFPAL_WIFI_DRIVER_CAPABILITIES(%x)\n", WFPAL_WIFI_DRIVER_CAPABILITIES); */
+	/* printf("nandow cmd RTW_NAN_CMD_WIFI_DRV_CAP(%x)\n", RTW_NAN_CMD_WIFI_DRV_CAP); */
 	/* no set op, do nothing */
 }
 
 void nandow_dump_test_data_get_drv_cap(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_wifi_driver_capabilities *drv_cap = &nandow_test->para.drv_cap;
+	struct rtw_nan_driver_capabilities *drv_cap = &nandow_test->para.drv_cap;
 
-	printf("\nwfpal_wifi_driver_capabilities(%x), type(%s)\n", WFPAL_WIFI_DRIVER_CAPABILITIES,
+	printf("\nrtw_nan_drv_cap(%x), type(%s)\n", RTW_NAN_CMD_WIFI_DRV_CAP,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\tcapabilities(%x)\n", drv_cap->capabilities);
 }
 
-// WFPAL_NAN_ENABLED
+// RTW_NAN_CMD_NAN_ENABLE
 void nandow_load_test_data_nan_enabled(struct nan_customer_nandow *nandow_test, char **argv, int argc)
 {
-	struct wfpal_nan_enable *nan_enabled = &nandow_test->para.nan_enabled;
+	struct rtw_nan_enable *nan_enabled = &nandow_test->para.nan_enabled;
 
 	if (argv == NULL || argc == 0) {
 		printf("Error to load nan_enabled\n");
@@ -1894,16 +1893,16 @@ void nandow_load_test_data_nan_enabled(struct nan_customer_nandow *nandow_test, 
 
 void nandow_dump_test_data_nan_enabled(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_enable *nan_enabled = &nandow_test->para.nan_enabled;
+	struct rtw_nan_enable *nan_enabled = &nandow_test->para.nan_enabled;
 
-	printf("\nwfpal_nan_enable(%x), type(%s)\n", WFPAL_NAN_ENABLED,
+	printf("\nrtw_nan_enable(%x), type(%s)\n", RTW_NAN_CMD_NAN_ENABLE,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\tenable(%x)\n", nan_enabled->enable);
 }
-// WFPAL_NAN_CLUSTER_ID
+// RTW_NAN_CMD_CLUSTER_ID
 void nandow_load_data_cluster_id(struct nan_customer_nandow *nandow_test, char **argv, int argc)
 {
-	struct wfpal_nan_cluster_id *cluster_id = &nandow_test->para.cluster_id;
+	struct rtw_nan_cluster_id *cluster_id = &nandow_test->para.cluster_id;
 
 	if (argv == NULL || argc == 0) {
 		printf("Error to load master_pref\n");
@@ -1923,9 +1922,9 @@ void nandow_load_data_cluster_id(struct nan_customer_nandow *nandow_test, char *
 
 void nandow_dump_data_cluster_id(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_cluster_id *drv_cluster_id = &nandow_test->para.cluster_id;
+	struct rtw_nan_cluster_id *drv_cluster_id = &nandow_test->para.cluster_id;
 
-	printf("\nwfpal_wifi_driver_cluster_id(%x), type(%s)\n", WFPAL_NAN_CLUSTER_ID,
+	printf("\nrtw_nan_cluster_id(%x), type(%s)\n", RTW_NAN_CMD_CLUSTER_ID,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	for (int i = 0 ; i < ETH_ALEN ; i++) {
 		printf("\t cluster_id[%d]= %x\n", i, drv_cluster_id->cluster_id.ether_addr_octet[i]);
@@ -1936,13 +1935,13 @@ void nandow_load_data_disc_period(struct nan_customer_nandow *nandow_test,
 								  char **argv,
 								  int argc)
 {
-	struct wfpal_nan_discovery_beacon_period *disc_bcn = &nandow_test->para.disc_bcn_period;
+	struct rtw_nan_discovery_beacon_period *disc_bcn = &nandow_test->para.disc_bcn_period;
 
 	if (argv == NULL || argc == 0) {
 		printf("Error to load disc_bcn_period\n");
 	}
 
-	memset(disc_bcn, 0, sizeof(struct wfpal_nan_discovery_beacon_period));
+	memset(disc_bcn, 0, sizeof(struct rtw_nan_discovery_beacon_period));
 	if (argc > 0 && strcmp(argv[0], "period") == 0) {
 		argv ++;
 		argc --;
@@ -1953,10 +1952,10 @@ void nandow_load_data_disc_period(struct nan_customer_nandow *nandow_test,
 }
 void nandow_dump_data_disc_period(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_discovery_beacon_period *disc_bcn = &nandow_test->para.disc_bcn_period;
+	struct rtw_nan_discovery_beacon_period *disc_bcn = &nandow_test->para.disc_bcn_period;
 
-	printf("\nwfpal_nan_discovery_beacon_period((%x), type(%s)\n",
-		   WFPAL_NAN_DISCOVERY_BEACON_PERIOD,
+	printf("\nrtw_nan_disc_bcn_period((%x), type(%s)\n",
+		   RTW_NAN_CMD_DISC_BCN_PERIOD,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\tperiod(%d)\n", disc_bcn->period);
 }
@@ -1965,7 +1964,7 @@ void nandow_load_forced_bcn_trans(struct nan_customer_nandow *nandow_test,
 								  char **argv,
 								  int argc)
 {
-	struct wfpal_nan_forced_discovery_beacon_transmission *forced_bcn =
+	struct rtw_nan_forced_discovery_beacon_transmission *forced_bcn =
 			&nandow_test->para.forced_disc_bcn;
 	u8 test_pattern = 0;
 
@@ -1974,13 +1973,13 @@ void nandow_load_forced_bcn_trans(struct nan_customer_nandow *nandow_test,
 	}
 
 
-	memset(forced_bcn, 0, sizeof(struct wfpal_nan_forced_discovery_beacon_transmission));
+	memset(forced_bcn, 0, sizeof(struct rtw_nan_forced_discovery_beacon_transmission));
 	if (argc > 0 && strcmp(argv[0], "interval") == 0) {
 		argv ++;
 		argc --;
 		forced_bcn->enable = 1;
 		forced_bcn->beacon_interval = atoi(argv[0]);
-		forced_bcn->reason = WFPAL_NAN_FORCED_DISCOVERY_BEACON_TX_REASON_DEBUG;
+		forced_bcn->reason = 0;
 		printf("\tload forced disc bcn: intvl(%d) length(%d)\n",
 			   forced_bcn->beacon_interval,
 			   nandow_test->para_len);
@@ -1996,8 +1995,8 @@ void nandow_load_forced_bcn_trans(struct nan_customer_nandow *nandow_test,
 		if (test_pattern == 1) {
 			forced_bcn->availability.slots[0].map_id = 0;
 			forced_bcn->availability.slots[0].time_bitmap.offset = 0;
-			forced_bcn->availability.slots[0].time_bitmap.period = WFPAL_NAN_CHANNEL_SEARCH_PERIOD_512_TUS;
-			forced_bcn->availability.slots[0].time_bitmap.bitDuration = 0;
+			forced_bcn->availability.slots[0].time_bitmap.period = 3;
+			forced_bcn->availability.slots[0].time_bitmap.bit_duration = 0;
 			forced_bcn->availability.slots[0].time_bitmap.time_bitmap_length = 4;
 			forced_bcn->availability.slots[0].time_bitmap.time_bitmap[0] = 0x14;
 			forced_bcn->availability.slots[0].time_bitmap.time_bitmap[1] = 0x40;
@@ -2006,20 +2005,20 @@ void nandow_load_forced_bcn_trans(struct nan_customer_nandow *nandow_test,
 		} else if (test_pattern == 2) {
 			forced_bcn->availability.slots[0].map_id = 0;
 			forced_bcn->availability.slots[0].time_bitmap.offset = 16;
-			forced_bcn->availability.slots[0].time_bitmap.period = WFPAL_NAN_CHANNEL_SEARCH_PERIOD_256_TUS;
-			forced_bcn->availability.slots[0].time_bitmap.bitDuration = 0;
+			forced_bcn->availability.slots[0].time_bitmap.period = 2;
+			forced_bcn->availability.slots[0].time_bitmap.bit_duration = 0;
 			forced_bcn->availability.slots[0].time_bitmap.time_bitmap_length = 1;
 			forced_bcn->availability.slots[0].time_bitmap.time_bitmap[0] = 0x14;
 		} else {
 			forced_bcn->availability.slots[0].map_id = 0;
 			forced_bcn->availability.slots[0].time_bitmap.offset = 0;
-			forced_bcn->availability.slots[0].time_bitmap.period = WFPAL_NAN_CHANNEL_SEARCH_PERIOD_256_TUS;
-			forced_bcn->availability.slots[0].time_bitmap.bitDuration = 2;
+			forced_bcn->availability.slots[0].time_bitmap.period = 2;
+			forced_bcn->availability.slots[0].time_bitmap.bit_duration = 2;
 			forced_bcn->availability.slots[0].time_bitmap.time_bitmap_length = 1;
 			forced_bcn->availability.slots[0].time_bitmap.time_bitmap[0] = 0xA;
 		}
 
-		forced_bcn->reason = WFPAL_NAN_FORCED_DISCOVERY_BEACON_TX_REASON_DEBUG;
+		forced_bcn->reason = 0;
 
 		printf("\tload forced disc bcn: avail, length(%d)\n",
 			   nandow_test->para_len);
@@ -2027,7 +2026,7 @@ void nandow_load_forced_bcn_trans(struct nan_customer_nandow *nandow_test,
 		// argv ++;
 		argc --;
 		forced_bcn->enable = 0;
-		forced_bcn->reason = WFPAL_NAN_FORCED_DISCOVERY_BEACON_TX_REASON_DEBUG;
+		forced_bcn->reason = 0;
 
 		printf("\tload forced disc bcn: enable(%d) length(%d)\n",
 			   forced_bcn->enable,
@@ -2036,13 +2035,13 @@ void nandow_load_forced_bcn_trans(struct nan_customer_nandow *nandow_test,
 }
 void nandow_dump_data_forced_bcn_trans(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_forced_discovery_beacon_transmission *forced_bcn =
+	struct rtw_nan_forced_discovery_beacon_transmission *forced_bcn =
 			&nandow_test->para.forced_disc_bcn;
 	u8 i = 0;
 	u8 j = 0;
 
-	printf("\nwfpal_nan_forced_discovery_beacon_transmission((%x), type(%s)\n",
-		   WFPAL_NAN_FORCED_BEACON_TRANSMISSION,
+	printf("\nrtw_nan_forced_disc_bcn((%x), type(%s)\n",
+		   RTW_NAN_CMD_FORCED_DISC_BCN,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 
 	if (!forced_bcn->enable) {
@@ -2062,7 +2061,7 @@ void nandow_dump_data_forced_bcn_trans(struct nan_customer_nandow *nandow_test)
 			printf("\time_bitmap: offset(%d)period(%d)bitDuration(%d)length(%d)\n",
 				   forced_bcn->availability.slots[i].time_bitmap.offset,
 				   forced_bcn->availability.slots[i].time_bitmap.period,
-				   forced_bcn->availability.slots[i].time_bitmap.bitDuration,
+				   forced_bcn->availability.slots[i].time_bitmap.bit_duration,
 				   forced_bcn->availability.slots[i].time_bitmap.time_bitmap_length);
 			for (j = 0; j < forced_bcn->availability.slots[i].time_bitmap.time_bitmap_length; j++) {
 				printf("\ttime_bitmap: 0x%x\n",
@@ -2072,10 +2071,10 @@ void nandow_dump_data_forced_bcn_trans(struct nan_customer_nandow *nandow_test)
 	}
 }
 
-// WFPAL_NAN_MASTER_INDICATION_MASTER_PREFERENCE
+// RTW_NAN_CMD_MASTER_PREF
 void nandow_load_data_master_pref(struct nan_customer_nandow *nandow_test, char **argv, int argc)
 {
-	struct wfpal_nan_master_indication_master_preference *master_pref
+	struct rtw_nan_master_preference *master_pref
 			= &nandow_test->para.master_pref;
 
 	if (argv == NULL || argc == 0) {
@@ -2096,18 +2095,18 @@ void nandow_load_data_master_pref(struct nan_customer_nandow *nandow_test, char 
 
 void nandow_dump_data_master_pref(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_master_indication_master_preference *master_pref = &nandow_test->para.master_pref;
+	struct rtw_nan_master_preference *master_pref = &nandow_test->para.master_pref;
 
-	printf("\nwfpal_wifi_driver_master_pref((%x), type(%s)\n",
-		   WFPAL_NAN_MASTER_INDICATION_MASTER_PREFERENCE,
+	printf("\nrtw_nan_master_pref((%x), type(%s)\n",
+		   RTW_NAN_CMD_MASTER_PREF,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\tmaster_pref(%d)\n", master_pref->master_preference);
 }
 
-// WFPAL_NAN_MASTER_INDICATION_RANDOM_FACTOR
+// RTW_NAN_CMD_RANDOM_FACTOR
 void nandow_load_data_random_factor(struct nan_customer_nandow *nandow_test, char **argv, int argc)
 {
-	struct wfpal_nan_master_indication_random_factor *random_factor
+	struct rtw_nan_random_factor *random_factor
 			= &nandow_test->para.random_factor;
 
 	if (argv == NULL || argc == 0) {
@@ -2127,10 +2126,10 @@ void nandow_load_data_random_factor(struct nan_customer_nandow *nandow_test, cha
 
 void nandow_dump_data_random_factor(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_master_indication_random_factor *drv_random_factor =
+	struct rtw_nan_random_factor *drv_random_factor =
 			&nandow_test->para.random_factor;
 
-	printf("\nwfpal_wifi_driver_random_factor(%x), type(%s)\n", WFPAL_NAN_MASTER_INDICATION_RANDOM_FACTOR,
+	printf("\nrtw_nan_random_factor(%x), type(%s)\n", RTW_NAN_CMD_RANDOM_FACTOR,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\trandom_factor(%d)\n", drv_random_factor->random_factor);
 }
@@ -2139,49 +2138,49 @@ void nandow_load_data_dw_awake_period(struct nan_customer_nandow *nandow_test,
 									  char **argv,
 									  int argc)
 {
-	struct wfpal_nan_discovery_window_awake_period *dw_awake = &nandow_test->para.dw_awake_period;
+	struct rtw_nan_discovery_window_awake_period *dw_awake = &nandow_test->para.dw_awake_period;
 
 	if (argv == NULL || argc < 2) {
 		printf("Error to load dw_awake_period\n");
 	}
 
 	/* Avail value for period: 0 (not avail for 24G DW), 1, 2, 4 */
-	memset(dw_awake, 0, sizeof(struct wfpal_nan_discovery_window_awake_period));
+	memset(dw_awake, 0, sizeof(struct rtw_nan_discovery_window_awake_period));
 	if (argc > 1) {
-		dw_awake->period_2_4G = atoi(argv[0]);
-		dw_awake->period_5G = atoi(argv[1]);
+		dw_awake->period_2_4g = atoi(argv[0]);
+		dw_awake->period_5g = atoi(argv[1]);
 		// argv += 2;
 		argc -= 2;
 	}
 
 	printf("\tload dw_awake 24G(%d)5G(%d) length(%d)\n",
-		   dw_awake->period_2_4G,
-		   dw_awake->period_5G,
+		   dw_awake->period_2_4g,
+		   dw_awake->period_5g,
 		   nandow_test->para_len);
 	printf("\tNote for avail val: 0 (not avail for 2g), 1, 2, 4\n");
 }
 
 void nandow_dump_data_dw_awake_period(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_discovery_window_awake_period *dw_awake = &nandow_test->para.dw_awake_period;
+	struct rtw_nan_discovery_window_awake_period *dw_awake = &nandow_test->para.dw_awake_period;
 
-	printf("\nwfpal_nan_discovery_window_awake_period((%x), type(%s)\n",
-		   WFPAL_NAN_DISCOVERY_WINDOW_AWAKE_PERIOD,
+	printf("\nrtw_nan_dw_awake_period((%x), type(%s)\n",
+		   RTW_NAN_CMD_DW_AWAKE_PERIOD,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
-	printf("\t24g(%d)5g(%d)\n", dw_awake->period_2_4G, dw_awake->period_5G);
+	printf("\t24g(%d)5g(%d)\n", dw_awake->period_2_4g, dw_awake->period_5g);
 }
 
 void nandow_load_data_primary_master_channel(struct nan_customer_nandow *nandow_test,
 		char **argv,
 		int argc)
 {
-	struct wfpal_nan_primary_master_channel *pri_ch = &nandow_test->para.pri_master_ch;
+	struct rtw_nan_primary_master_channel *pri_ch = &nandow_test->para.pri_master_ch;
 
 	if (argv == NULL || argc < 1) {
 		printf("Error to load primary_master_channel\n");
 	}
 
-	memset(pri_ch, 0, sizeof(struct wfpal_nan_primary_master_channel));
+	memset(pri_ch, 0, sizeof(struct rtw_nan_primary_master_channel));
 
 	pri_ch->channel = atoi(argv[0]);
 
@@ -2192,10 +2191,10 @@ void nandow_load_data_primary_master_channel(struct nan_customer_nandow *nandow_
 
 void nandow_dump_data_primary_master_channel(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_primary_master_channel *pri_ch = &nandow_test->para.pri_master_ch;
+	struct rtw_nan_primary_master_channel *pri_ch = &nandow_test->para.pri_master_ch;
 
-	printf("\nwfpal_nan_primary_master_channel((%x), type(%s)\n",
-		   WFPAL_NAN_PRIMARY_MASTER_CHANNEL,
+	printf("\nrtw_nan_pri_master_ch((%x), type(%s)\n",
+		   RTW_NAN_CMD_PRI_MASTER_CH,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\t primary channel (%d)\n", pri_ch->channel);
 }
@@ -2204,13 +2203,13 @@ void nandow_load_data_secondary_master_channel(struct nan_customer_nandow *nando
 		char **argv,
 		int argc)
 {
-	struct wfpal_nan_secondary_master_channel *second_ch = &nandow_test->para.second_master_ch;
+	struct rtw_nan_secondary_master_channel *second_ch = &nandow_test->para.second_master_ch;
 
 	if (argv == NULL || argc < 1) {
 		printf("Error to load secondmary_master_channel\n");
 	}
 
-	memset(second_ch, 0, sizeof(struct wfpal_nan_secondary_master_channel));
+	memset(second_ch, 0, sizeof(struct rtw_nan_secondary_master_channel));
 
 	second_ch->channel = atoi(argv[0]);
 
@@ -2221,23 +2220,23 @@ void nandow_load_data_secondary_master_channel(struct nan_customer_nandow *nando
 
 void nandow_dump_data_secondary_master_channel(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_secondary_master_channel *second_ch = &nandow_test->para.second_master_ch;
+	struct rtw_nan_secondary_master_channel *second_ch = &nandow_test->para.second_master_ch;
 
-	printf("\nwfpal_nan_primary_master_channel((%x), type(%s)\n",
-		   WFPAL_NAN_SECONDARY_MASTER_CHANNEL,
+	printf("\nrtw_nan_pri_master_ch((%x), type(%s)\n",
+		   RTW_NAN_CMD_SEC_MASTER_CH,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\t secondary channel (%d)\n", second_ch->channel);
 }
 
 
 
-// WFPAL_NAN_PUBLISH : wfpal_nan_subscribe_data_t
+// RTW_NAN_CMD_PUBLISH : rtw_nan_subscribe_data_t
 void nandow_load_test_data_subscribe(
 	struct nan_customer_nandow *nandow_test,
 	char **argv,
 	int argc)
 {
-	struct wfpal_nan_subscribe_data *subscribe_srv
+	struct rtw_nan_subscribe_data *subscribe_srv
 			= &nandow_test->para.subscribe_srv;
 	char tmp_arry[512] = {0};
 	u8 gen_srv_info[] = {0x50, 0x6f, 0x9a, 0x02, //WFA_OUI,Type
@@ -2246,7 +2245,7 @@ void nandow_load_test_data_subscribe(
 						};
 	//0x02: Service Name
 	u16 gen_srv_info_len = sizeof(gen_srv_info) / sizeof(gen_srv_info[0]);
-	u8 srv_hash[WFPAL_NAN_SERVICE_NAME_HASH_SIZE] = {0xb4, 0x26, 0x6b, 0xab, 0x05, 0x07};
+	u8 srv_hash[RTW_NAN_SERVICE_NAME_HASH_SIZE] = {0xb4, 0x26, 0x6b, 0xab, 0x05, 0x07};
 	//printf("nandow cmd WFPAL_NAN_SUBSRCIBE(%x)\n", WFPAL_NAN_SUBSRCIBE);
 
 	if (argv == NULL || argc == 0) {
@@ -2257,7 +2256,7 @@ void nandow_load_test_data_subscribe(
 		argv ++;
 		argc --;
 		subscribe_srv->subscribe_type =
-			WFPAL_NAN_SUBSCRIBE_TYPE_ACTIVE;
+			RTW_NAN_SUBSCRIBE_TYPE_ACTIVE;
 
 		subscribe_srv->matching_filter_tx_count = 1;
 		sprintf(tmp_arry, "%s", "bytes used for matching");
@@ -2267,7 +2266,7 @@ void nandow_load_test_data_subscribe(
 		// argv ++;
 		argc --;
 		subscribe_srv->subscribe_type =
-			WFPAL_NAN_SUBSCRIBE_TYPE_PASSIVE;
+			RTW_NAN_SUBSCRIBE_TYPE_PASSIVE;
 
 		subscribe_srv->matching_filter_rx_count = 1;
 		sprintf(tmp_arry, "%s", "bytes used for matching");
@@ -2276,7 +2275,7 @@ void nandow_load_test_data_subscribe(
 	}
 
 	/* start initialize parameters here */
-	memcpy(subscribe_srv->service_hash, srv_hash, WFPAL_NAN_SERVICE_NAME_HASH_SIZE);
+	memcpy(subscribe_srv->service_hash, srv_hash, RTW_NAN_SERVICE_NAME_HASH_SIZE);
 
 	sprintf(tmp_arry, "%s", "realtek");
 	memcpy(subscribe_srv->name.name, tmp_arry, sizeof("realtek"));
@@ -2284,12 +2283,12 @@ void nandow_load_test_data_subscribe(
 	subscribe_srv->subscribe_id = 1;
 	subscribe_srv->awake_discovery_window_interval = 1;
 	subscribe_srv->ttl = 1024;
-	subscribe_srv->flags = WFPAL_NAN_SUBSCRIBE_FLAG_ADD_DEVICE_CAPABILITY_ATTRIBUTE;
+	subscribe_srv->flags = RTW_NAN_PUBLISH_FLAG_ADD_DEVICE_CAPABILITY_ATTRIBUTE;
 	subscribe_srv->control =
-		(WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_REQUEST_REQUIRED ||
-		 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_TYPE ||
-		 /* WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_SECURITY_REQUIRED || */
-		 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_SERVICE_INFO_PRESENT);
+		(RTW_NAN_SDE_CTL_DATAPATH_REQ_REQUIRED ||
+		 RTW_NAN_SDE_CTL_DATAPATH_TYPE ||
+		 /* RTW_NAN_SDE_CTL_SECURITY_REQUIRED || */
+		 RTW_NAN_SDE_CTL_SERVICE_INFO_PRESENT);
 
 	memcpy(subscribe_srv->service_specific_info.info, gen_srv_info,
 		   gen_srv_info_len);
@@ -2306,10 +2305,10 @@ void nandow_load_test_data_subscribe(
 
 void nandow_dump_test_data_subscribe(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_subscribe_data *subscribe_srv
+	struct rtw_nan_subscribe_data *subscribe_srv
 			= &nandow_test->para.subscribe_srv;
 
-	printf("\nwfpal_nan_subscribe_data(%x), type(%s)\n", WFPAL_NAN_SUBSCRIBE,
+	printf("\nrtw_nan_subscribe_data(%x), type(%s)\n", RTW_NAN_CMD_SUBSCRIBE,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\t subscribe_type(%x)\n", subscribe_srv->subscribe_type);
 	printf("\t subscribe_id(%x)\n", subscribe_srv->subscribe_id);
@@ -2317,12 +2316,12 @@ void nandow_dump_test_data_subscribe(struct nan_customer_nandow *nandow_test)
 	_dump_service_info(&subscribe_srv->service_specific_info);
 }
 
-// WFPAL_NAN_PUBLISH : wfpal_nan_publish_data_t
+// RTW_NAN_CMD_PUBLISH : rtw_nan_publish_data_t
 void nandow_load_test_data_publish(struct nan_customer_nandow *nandow_test,
 								   char **argv,
 								   int argc)
 {
-	struct wfpal_nan_publish_data *publish_srv
+	struct rtw_nan_publish_data *publish_srv
 			= &nandow_test->para.publish_srv;
 	char tmp_arry[512] = {0};
 	u8 gen_srv_info[] = {0x50, 0x6f, 0x9a, 0x02, //WFA_OUI,Type
@@ -2331,9 +2330,9 @@ void nandow_load_test_data_publish(struct nan_customer_nandow *nandow_test,
 						};
 	//0x02: Service Name
 	u16 gen_srv_info_len = sizeof(gen_srv_info) / sizeof(gen_srv_info[0]);
-	u8 srv_hash[WFPAL_NAN_SERVICE_NAME_HASH_SIZE] = {0xb4, 0x26, 0x6b, 0xab, 0x05, 0x07};
+	u8 srv_hash[RTW_NAN_SERVICE_NAME_HASH_SIZE] = {0xb4, 0x26, 0x6b, 0xab, 0x05, 0x07};
 
-	//printf("nandow cmd WFPAL_NAN_PUBLISH(%x)\n", WFPAL_NAN_PUBLISH);
+	//printf("nandow cmd RTW_NAN_CMD_PUBLISH(%x)\n", RTW_NAN_CMD_PUBLISH);
 
 	if (argv == NULL || argc == 0) {
 		printf("Error to load publish\n");
@@ -2343,7 +2342,7 @@ void nandow_load_test_data_publish(struct nan_customer_nandow *nandow_test,
 		argv ++;
 		argc --;
 		publish_srv->publish_type =
-			WFPAL_NAN_SERVICE_PUBLISH_TYPE_UNSOLICITED;
+			RTW_NAN_PUBLISH_TYPE_UNSOLICITED;
 
 		publish_srv->matching_filter_tx_count = 1;
 		sprintf(tmp_arry, "%s", "bytes used for matching");
@@ -2353,7 +2352,7 @@ void nandow_load_test_data_publish(struct nan_customer_nandow *nandow_test,
 		// argv ++;
 		argc --;
 		publish_srv->publish_type =
-			WFPAL_NAN_SERVICE_PUBLISH_TYPE_SOLICITED;
+			RTW_NAN_PUBLISH_TYPE_SOLICITED;
 
 		publish_srv->matching_filter_rx_count = 1;
 		sprintf(tmp_arry, "%s", "bytes used for matching");
@@ -2362,19 +2361,19 @@ void nandow_load_test_data_publish(struct nan_customer_nandow *nandow_test,
 	}
 
 	/* start initialize parameters here */
-	memcpy(publish_srv->service_hash, srv_hash, WFPAL_NAN_SERVICE_NAME_HASH_SIZE);
+	memcpy(publish_srv->service_hash, srv_hash, RTW_NAN_SERVICE_NAME_HASH_SIZE);
 
 	sprintf(tmp_arry, "%s", "realtek");
 	memcpy(publish_srv->name.name, tmp_arry, sizeof("realtek"));
 	publish_srv->publish_id = 1;
 	publish_srv->awake_discovery_window_interval = 1;
 	publish_srv->ttl = 1024;
-	publish_srv->flags = WFPAL_NAN_PUBLISH_FLAG_ADD_DEVICE_CAPABILITY_ATTRIBUTE;
+	publish_srv->flags = RTW_NAN_PUBLISH_FLAG_ADD_DEVICE_CAPABILITY_ATTRIBUTE;
 	publish_srv->control =
-		(WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_REQUEST_REQUIRED ||
-		 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_DATAPATH_TYPE ||
-		 /* WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_SECURITY_REQUIRED || */
-		 WFPAL_NAN_SD_SERVICE_EXTENSION_CONTROL_SERVICE_INFO_PRESENT);
+		(RTW_NAN_SDE_CTL_DATAPATH_REQ_REQUIRED ||
+		 RTW_NAN_SDE_CTL_DATAPATH_TYPE ||
+		 /* RTW_NAN_SDE_CTL_SECURITY_REQUIRED || */
+		 RTW_NAN_SDE_CTL_SERVICE_INFO_PRESENT);
 
 
 	memcpy(publish_srv->service_specific_info.info, gen_srv_info,
@@ -2389,18 +2388,18 @@ void nandow_load_test_data_publish(struct nan_customer_nandow *nandow_test,
 		sizeof("Extra bytes in the publisher discovery")-1;
 	*/
 
-	//publish_srv->cipher_suite_id = WFPAL_NAN_CIPHER_SUITE_ID_NCS_SK_128;
+	//publish_srv->cipher_suite_id = RTW_NAN_CIPHER_ID_NCS_SK_128;
 
 	//sprintf(tmp_arry, "%s", "123456789abcdef0123456789abcdef0");
-	//memcpy(publish_srv->key, tmp_arry, WFPAL_NAN_PMK_SIZE);
+	//memcpy(publish_srv->key, tmp_arry, RTW_NAN_PMK_SIZE);
 }
 
 void nandow_dump_test_data_publish(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_publish_data *publish_srv
+	struct rtw_nan_publish_data *publish_srv
 			= &nandow_test->para.publish_srv;
 
-	printf("\nwfpal_nan_publish_data(%x), type(%s)\n", WFPAL_NAN_PUBLISH,
+	printf("\nrtw_nan_publish_data(%x), type(%s)\n", RTW_NAN_CMD_PUBLISH,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\t publish_id(%x)\n", publish_srv->publish_id);
 	printf("\t name(%s)\n", publish_srv->name.name);
@@ -2408,10 +2407,10 @@ void nandow_dump_test_data_publish(struct nan_customer_nandow *nandow_test)
 
 }
 
-// WFPAL_NAN_CANCEL_PUBLISH : wfpal_nan_cancel_publish_data_t
+// RTW_NAN_CMD_CANCEL_PUBLISH : rtw_nan_cancel_publish_data_t
 void nandow_load_test_data_cancel_publish(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_cancel_publish_data *cancel_publish_srv
+	struct rtw_nan_cancel_publish_data *cancel_publish_srv
 			= &nandow_test->para.cancel_publish_srv;
 
 	/* start initialize parameters here */
@@ -2420,18 +2419,18 @@ void nandow_load_test_data_cancel_publish(struct nan_customer_nandow *nandow_tes
 
 void nandow_dump_test_data_cancel_publish(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_cancel_publish_data *cancel_publish_srv
+	struct rtw_nan_cancel_publish_data *cancel_publish_srv
 			= &nandow_test->para.cancel_publish_srv;
 
-	printf("\nwfpal_nan_cancel_publish_data(%x), type(%s)\n", WFPAL_NAN_CANCEL_PUBLISH,
+	printf("\nrtw_nan_cancel_publish_data(%x), type(%s)\n", RTW_NAN_CMD_CANCEL_PUBLISH,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\t publish_id(%x)\n", cancel_publish_srv->publish_id);
 }
 
-// WFPAL_NAN_CANCEL_PUBLISH : wfpal_nan_cancel_subscribe_data_t
+// RTW_NAN_CMD_CANCEL_PUBLISH : rtw_nan_cancel_subscribe_data_t
 void nandow_load_test_data_cancel_subscribe(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_cancel_subscribe_data *cancel_subscribe_srv
+	struct rtw_nan_cancel_subscribe_data *cancel_subscribe_srv
 			= &nandow_test->para.cancel_sub_srv;
 
 	/* start initialize parameters here */
@@ -2440,18 +2439,18 @@ void nandow_load_test_data_cancel_subscribe(struct nan_customer_nandow *nandow_t
 
 void nandow_dump_test_data_cancel_subscribe(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_cancel_subscribe_data *cancel_subscribe_srv
+	struct rtw_nan_cancel_subscribe_data *cancel_subscribe_srv
 			= &nandow_test->para.cancel_sub_srv;
 
-	printf("\nwfpal_nan_cancel_subscribe_data(%x), type(%s)\n", WFPAL_NAN_CANCEL_SUBSCRIBE,
+	printf("\nrtw_nan_cancel_subscribe_data(%x), type(%s)\n", RTW_NAN_CMD_CANCEL_SUBSCRIBE,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 	printf("\t subscribe_id(%x)\n", cancel_subscribe_srv->subscribe_id);
 }
 
-// WFPAL_NAN_FOLLOW_UP_TRANSMITT_DATA : wfpal_nan_follow_up_transmit_data_t
+// RTW_NAN_CMD_FOLLOWUP_TXT_DATA : rtw_nan_followup_tx_data_t
 void nandow_load_test_data_follow_up_transmit(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_follow_up_transmit_data *followup_data
+	struct rtw_nan_follow_up_transmit_data *followup_data
 			= &nandow_test->para.followup_srv;
 #if(1)
 	u8 srvc_info[7] = {0x12, 0x34, 0x56, 0x78, 0xab, 0xcd, 0xef};
@@ -2473,11 +2472,11 @@ void nandow_load_test_data_follow_up_transmit(struct nan_customer_nandow *nandow
 
 void nandow_dump_test_data_follow_up_transmit(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_follow_up_transmit_data *followup_data
+	struct rtw_nan_follow_up_transmit_data *followup_data
 			= &nandow_test->para.followup_srv;
 	int i = 0;
 
-	printf("\nwfpal_nan_follow_up_transmit_data(%x)\n", WFPAL_NAN_FOLLOW_UP_TRANSMIT);
+	printf("\nrtw_nan_followup_tx_data(%x)\n", RTW_NAN_CMD_FOLLOWUP_TX);
 	printf("\t local_service_id(%x)\n", followup_data->local_service_id);
 	printf("\t requestor_instance_id(%x)\n", followup_data->requestor_instance_id);
 	for (int i = 0 ; i < ETH_ALEN ; i++) {
@@ -2491,7 +2490,7 @@ void nandow_load_test_data_req(struct nan_customer_nandow *nandow_test,
 							   char **argv,
 							   int argc)
 {
-	struct wfpal_nan_datapath_request *datapath_req_para
+	struct rtw_nan_datapath_request *datapath_req_para
 			= &nandow_test->para.datapath_req;
 	u8 gen_srv_info[] = {0x50, 0x6f, 0x9a, 0x02, //WFA_OUI,Type
 						 0x01, 0x01, 0x00, 0x06, //0x01: Transport Protocol(TCP 0X06)
@@ -2511,9 +2510,9 @@ void nandow_load_test_data_req(struct nan_customer_nandow *nandow_test,
 
 void nandow_dump_test_data_req(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_datapath_request *datapath_req_para
+	struct rtw_nan_datapath_request *datapath_req_para
 			= &nandow_test->para.datapath_req;
-	printf("\nwfpal_nan_datapath_request(%x)\n", WFPAL_NAN_DATAPATH_REQUEST);
+	printf("\nrtw_nan_datapath_req(%x)\n", RTW_NAN_CMD_DATAPATH_REQ);
 	printf("\t datapath_id(%x)\n", datapath_req_para->datapath_id);
 	printf("\t responder_publish_id(%x)\n", datapath_req_para->responder_publish_id);
 	for (int i = 0 ; i < ETH_ALEN ; i++)
@@ -2526,7 +2525,7 @@ void nandow_load_test_data_rsp(struct nan_customer_nandow *nandow_test,
 							   char **argv,
 							   int argc)
 {
-	struct wfpal_nan_datapath_response *datapath_rsp_para
+	struct rtw_nan_datapath_response *datapath_rsp_para
 			= &nandow_test->para.datapath_rsp;
 	u8 gen_srv_info[] = {0x50, 0x6f, 0x9a, 0x02, //WFA_OUI,Type
 						 0x01, 0x01, 0x00, 0x06, //0x01: Transport Protocol(TCP 0X06)
@@ -2536,8 +2535,8 @@ void nandow_load_test_data_rsp(struct nan_customer_nandow *nandow_test,
 	u16 gen_srv_info_len = sizeof(gen_srv_info) / sizeof(gen_srv_info[0]);
 
 	datapath_rsp_para->datapath_id = 1;
-	datapath_rsp_para->publishId = 1;
-	datapath_rsp_para->status = WFPAL_NAN_DATAPATH_ACCEPTED;
+	datapath_rsp_para->publish_id = 1;
+	datapath_rsp_para->status = RTW_NAN_DATAPATH_ACCEPTED;
 	memcpy(datapath_rsp_para->initiator_management_address.ether_addr_octet, dst_addr, ETH_ALEN);
 	memcpy(datapath_rsp_para->service_specific_info.info, gen_srv_info,
 		   gen_srv_info_len);
@@ -2547,11 +2546,11 @@ void nandow_load_test_data_rsp(struct nan_customer_nandow *nandow_test,
 
 void nandow_dump_test_data_rsp(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_datapath_response *datapath_rsp_para
+	struct rtw_nan_datapath_response *datapath_rsp_para
 			= &nandow_test->para.datapath_rsp;
-	printf("\nwfpal_nan_datapath_response(%x)\n", WFPAL_NAN_DATAPATH_RESPONSE);
+	printf("\nrtw_nan_datapath_rsp(%x)\n", RTW_NAN_CMD_DATAPATH_RSP);
 	printf("\t datapath_id(%x)\n", datapath_rsp_para->datapath_id);
-	printf("\t publishId(%x)\n", datapath_rsp_para->publishId);
+	printf("\t publishId(%x)\n", datapath_rsp_para->publish_id);
 	printf("\t status(%x)\n", datapath_rsp_para->status);
 	for (int i = 0 ; i < ETH_ALEN ; i++)
 		printf("\t initiator_management_address[%d]= %x\n", i,
@@ -2564,7 +2563,7 @@ void nandow_load_test_data_confirm(struct nan_customer_nandow *nandow_test,
 								   char **argv,
 								   int argc)
 {
-	struct wfpal_nan_datapath_confirm *datapath_confirm_para
+	struct rtw_nan_datapath_confirm *datapath_confirm_para
 			= &nandow_test->para.datapath_confirm;
 	datapath_confirm_para->datapath_id = 1;
 	datapath_confirm_para->status = 0;
@@ -2574,9 +2573,9 @@ void nandow_load_test_data_confirm(struct nan_customer_nandow *nandow_test,
 
 void nandow_dump_test_data_confirm(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_datapath_confirm *datapath_confirm_para
+	struct rtw_nan_datapath_confirm *datapath_confirm_para
 			= &nandow_test->para.datapath_confirm;
-	printf("\nwfpal_nan_datapath_confirm(%x)\n", WFPAL_NAN_DATAPATH_CONFIRM);
+	printf("\nrtw_nan_datapath_confirm(%x)\n", RTW_NAN_CMD_DATAPATH_CONFIRM);
 	printf("\t datapath_id(%x)\n", datapath_confirm_para->datapath_id);
 	printf("\t status(%x)\n", datapath_confirm_para->status);
 	for (int i = 0 ; i < ETH_ALEN ; i++)
@@ -2584,23 +2583,23 @@ void nandow_dump_test_data_confirm(struct nan_customer_nandow *nandow_test)
 			   datapath_confirm_para->initiator_data_address.ether_addr_octet[i]);
 }
 
-// WFPAL_M_NAN_DATAPATH_END
+// RTW_NAN_EVT_DATAPATH_END
 void nandow_load_test_data_end(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_datapath_end *ndp_end
+	struct rtw_nan_datapath_end *ndp_end
 			= &nandow_test->para.datapath_end;
 
 	/* start initialize parameters here */
 	ndp_end->datapath_id = 1;
-	ndp_end->reason_code = WFPAL_NAN_DATAPATH_END_REASON_USER_INITIATED;
+	ndp_end->reason_code = RTW_NAN_DATAPATH_END_REASON_USER_INITIATED;
 }
 
 void nandow_dump_test_data_end(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_datapath_end *ndp_end
+	struct rtw_nan_datapath_end *ndp_end
 			= &nandow_test->para.datapath_end;
 
-	printf("\twfpal_nan_datapath_end(%x), type(%s)\n", WFPAL_M_NAN_DATAPATH_END,
+	printf("\trtw_nan_datapath_end(%x), type(%s)\n", RTW_NAN_EVT_DATAPATH_END,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 
 	printf("\t datapath_id(%d)\n", ndp_end->datapath_id);
@@ -2626,7 +2625,7 @@ void nandow_load_test_ndc_avail(struct nan_customer_nandow *nandow_test,
 								char **argv,
 								int argc)
 {
-	struct wfpal_nan_data_cluster_availability *ndc_avail_para = &nandow_test->para.avail_ndc;
+	struct rtw_nan_data_cluster_availability *ndc_avail_para = &nandow_test->para.avail_ndc;
 	u8 ndc[4] = {0x00, 0x03, 0x00, 0x00};
 
 	ndc_avail_para->num_maps_ids = 1;
@@ -2634,8 +2633,8 @@ void nandow_load_test_ndc_avail(struct nan_customer_nandow *nandow_test,
 	ndc_avail_para->availability_params[0].map_id = 0;
 	ndc_avail_para->availability_params[0].selected = 1;
 	ndc_avail_para->availability_params[0].time_bitmap.offset = 0;
-	ndc_avail_para->availability_params[0].time_bitmap.period = WFPAL_NAN_CHANNEL_SEARCH_PERIOD_512_TUS;
-	ndc_avail_para->availability_params[0].time_bitmap.bitDuration = 0;
+	ndc_avail_para->availability_params[0].time_bitmap.period = 3;
+	ndc_avail_para->availability_params[0].time_bitmap.bit_duration = 0;
 	ndc_avail_para->availability_params[0].time_bitmap.time_bitmap_length = 4;
 	memcpy(ndc_avail_para->availability_params[0].time_bitmap.time_bitmap, ndc, 4);
 
@@ -2643,15 +2642,15 @@ void nandow_load_test_ndc_avail(struct nan_customer_nandow *nandow_test,
 
 void nandow_dump_test_ndc_avail(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_nan_data_cluster_availability *ndc_avail_para = &nandow_test->para.avail_ndc;
+	struct rtw_nan_data_cluster_availability *ndc_avail_para = &nandow_test->para.avail_ndc;
 
-	printf("\nwfpal_nan_data_cluster_availability(%x)\n", WFPAL_NAN_DATA_CLUSTER_AVAILABILITY);
+	printf("\nrtw_nan_ndc_avail(%x)\n", RTW_NAN_CMD_NDC_AVAIL);
 }
 
-// WFPAL_M_NAN_SCAN_CONTROL
+// RTW_NAN_CMD_SCAN_CONTROL
 void nandow_load_test_set_scan_control(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_set_scan_control *scan_ctl
+	struct rtw_nan_set_scan_control *scan_ctl
 			= &nandow_test->para.scan_ctl;
 
 	/* start initialize parameters here */
@@ -2661,10 +2660,10 @@ void nandow_load_test_set_scan_control(struct nan_customer_nandow *nandow_test)
 
 void nandow_dump_test_set_scan_control(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_set_scan_control *scan_ctl
+	struct rtw_nan_set_scan_control *scan_ctl
 			= &nandow_test->para.scan_ctl;
 
-	printf("\twfpal_set_scan_control(%x), type(%s)\n", WFPAL_SCAN_CONTROL,
+	printf("\trtw_nan_set_scan_control(%x), type(%s)\n", RTW_NAN_CMD_SCAN_CONTROL,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 
 	printf("\t client(%d)\n", scan_ctl->client);
@@ -2676,10 +2675,10 @@ void nandow_dump_test_set_scan_control(struct nan_customer_nandow *nandow_test)
 
 }
 
-// WFPAL_M_NAN_COUNTRY_CODE
+// RTW_NAN_CMD_COUNTRY_CODE
 void nandow_load_test_country_code(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_country_code_data *country_code
+	struct rtw_nan_country_code_data *country_code
 			= &nandow_test->para.country_code;
 
 	/* start initialize parameters here */
@@ -2688,10 +2687,10 @@ void nandow_load_test_country_code(struct nan_customer_nandow *nandow_test)
 
 void nandow_dump_test_country_code(struct nan_customer_nandow *nandow_test)
 {
-	struct wfpal_country_code_data *country_code
+	struct rtw_nan_country_code_data *country_code
 			= &nandow_test->para.country_code;
 
-	printf("\twfpal_set_country_code(%x), type(%s)\n", WFPAL_COUNTRY_CODE,
+	printf("\trtw_nan_country_code(%x), type(%s)\n", RTW_NAN_CMD_COUNTRY_CODE,
 		   (nandow_test->cmd_type == NANDOW_CMD_TYPE_GET) ? "get" : "set");
 
 }

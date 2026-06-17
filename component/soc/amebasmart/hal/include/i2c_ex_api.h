@@ -52,7 +52,7 @@ extern "C" {
   */
 
 /**
-  * @brief enum I2CCallback
+  * @brief Enum I2CCallback
   */
 
 typedef enum {

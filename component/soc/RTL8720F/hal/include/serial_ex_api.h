@@ -55,10 +55,10 @@ extern "C" {
 * @brief Define RX FIFO Level: RX interrupt trigger, RTS de-assert trigger
 */
 typedef enum {
-	FifoLv1Byte = 0,
-	FifoLvQuarter = 1,
-	FifoLvHalf = 2,
-	FifoLvFull = 3
+	FifoLv1Byte = 0, /*!< RX FIFO trigger level at 1 byte. */
+	FifoLvQuarter = 1, /*!< RX FIFO trigger level at quarter full. */
+	FifoLvHalf = 2, /*!< RX FIFO trigger level at half full. */
+	FifoLvFull = 3 /*!< RX FIFO trigger level at nearly full. */
 } SerialFifoLevel;
 /** @}*/
 

@@ -145,6 +145,7 @@ void ChipInfo_InitPsramInfoFromMemInfo(const MCM_MemTypeDef *meminfo, PSRAMINFO_
 void PSRAM_CLK_Update(void)
 {
 	u32 PsramClk = 0;
+	u32 psram_actual_end;
 
 	MCM_MemTypeDef meminfo = ChipInfo_MCMInfo();
 	ChipInfo_InitPsramInfoFromMemInfo(&meminfo, &PsramInfo);
@@ -242,6 +243,12 @@ void PSRAM_CLK_Update(void)
 			 PsramClk / 1000000, \
 			 PsramInfo.Psram_DQ16 == MCM_PSRAM_DQ16 ? 16 : 8, \
 			 PsramInfo.Psram_Size / 1024 / 1024);
+
+	psram_actual_end = PSRAM_BASE + PsramInfo.Psram_Size;
+	if ((u32)__non_secure_psram_end__ != psram_actual_end) {
+		RTK_LOGW(TAG, "PSRAM_END mismatch: layout=0x%08x, actual=0x%08x, please update ameba_layout.ld\n",
+				 (u32)__non_secure_psram_end__, psram_actual_end);
+	}
 }
 
 

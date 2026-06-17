@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup UART
+/** @defgroup UART UART
   * @brief UART driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -392,6 +393,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -425,8 +427,8 @@ typedef struct {
 	u32 ParityType;		/*!< Specifies the UART parity type.
 							This parameter can be a value of @ref UART_Parity_Type. */
 
-	u32 StickParity;	/*!< Specifies the UART stick parity.
-							This parameter can be a value of @ref UART_Stick_Parity_Type. */
+	u32 StickParity;	/*!< Specifies the UART sticky parity.
+							This parameter can be a value of @ref UART_Sticky_Parity_Type. */
 
 	u32 FlowControl;	/*!< Specifies the UART auto flow control.
 							This parameter can be ENABLE or DISABLE. */
@@ -506,105 +508,99 @@ typedef struct {
   * @{
   */
 
-/** @defgroup UART_IRDA_Pulse_Shift
+/** @defgroup UART_IRDA_Pulse_Shift UART IRDA Pulse Shift
   * @{
   */
-#define UART_IRDA_PULSE_LEFT_SHIFT	((u32)0x00000000)
-#define UART_IRDA_PULSE_RIGHT_SHIFT	((u32)0x00000001)
+#define UART_IRDA_PULSE_LEFT_SHIFT	((u32)0x00000000)  /*!< IrDA TX pulse shift left direction. */
+#define UART_IRDA_PULSE_RIGHT_SHIFT	((u32)0x00000001)  /*!< IrDA TX pulse shift right direction. */
+/** @brief Check if IrDA pulse shift value is valid. */
 #define IS_IRDA_PUL_SHIFT(SHIFT)	(((SHIFT) == UART_IRDA_PULSE_LEFT_SHIFT) || \
 									((SHIFT) == UART_IRDA_PULSE_RIGHT_SHIFT))
 /**
   * @}
   */
 
-/** @defgroup UART_Rx_FIFO_Trigger_Level
+/** @defgroup UART_Rx_FIFO_Trigger_Level UART Rx FIFO Trigger Level
   * @{
   */
-#define UART_RX_FIFOTRIG_LEVEL_1BYTES		((u32)0x00000000)
-#define UART_RX_FIFOTRIG_LEVEL_QUARTER	((u32)0x00000001) // UART0-1: 16; UART2: 8
-#define UART_RX_FIFOTRIG_LEVEL_HALF			((u32)0x00000002) // UART0-1: 32; UART2: 16
-#define UART_RX_FIFOTRIG_LEVEL_MINUS2		((u32)0x00000003) // UART0-1: 62; UART2: 30
+#define UART_RX_FIFOTRIG_LEVEL_1BYTES		((u32)0x00000000)  /*!< Rx FIFO trigger level: 1 byte. */
+#define UART_RX_FIFOTRIG_LEVEL_QUARTER	((u32)0x00000001)  /*!< Rx FIFO trigger level: quarter full. */
+#define UART_RX_FIFOTRIG_LEVEL_HALF			((u32)0x00000002)  /*!< Rx FIFO trigger level: half full. */
+#define UART_RX_FIFOTRIG_LEVEL_MINUS2		((u32)0x00000003)  /*!< Rx FIFO trigger level: depth minus 2. */
 /**
   * @}
   */
 
-/** @defgroup UART_Word_Length
+/** @defgroup UART_Word_Length UART Word Length
   * @{
   */
 
-#define RUART_WLS_7BITS		((u32)0x00000000)
-#define RUART_WLS_8BITS		((u32)0x00000001)
+#define RUART_WLS_7BITS		((u32)0x00000000)  /*!< UART word length: 7 bits. */
+#define RUART_WLS_8BITS		((u32)0x00000001)  /*!< UART word length: 8 bits. */
 
+/** @brief Check if UART word length value is valid. */
 #define IS_UART_WLS(VAL)	(((VAL) == RUART_WLS_7BITS) || \
 							((VAL) == RUART_WLS_8BITS))
 /**
   * @}
   */
 
-/** @defgroup UART_Stop_Bit
+/** @defgroup UART_Stop_Bit UART Stop Bit
   * @{
   */
-#define RUART_STOP_BIT_1		((u32)0x00000000)
-#define RUART_STOP_BIT_2		((u32)0x00000001)
+#define RUART_STOP_BIT_1		((u32)0x00000000)  /*!< UART stop bit: 1 stop bit. */
+#define RUART_STOP_BIT_2		((u32)0x00000001)  /*!< UART stop bit: 2 stop bits. */
 
+/** @brief Check if UART stop bit value is valid. */
 #define IS_UART_STOP_BIT(VAL)	(((VAL) == RUART_STOP_BIT_1) || \
 								((VAL) == RUART_STOP_BIT_2))
 /**
   * @}
   */
 
-/** @defgroup UART_Parity_Enable
+/** @defgroup UART_Parity_Enable UART Parity Enable
   * @{
   */
-#define RUART_PARITY_DISABLE		((u32)0x00000000)
-#define RUART_PARITY_ENABLE			((u32)0x00000001)
+#define RUART_PARITY_DISABLE		((u32)0x00000000)  /*!< UART parity disabled. */
+#define RUART_PARITY_ENABLE			((u32)0x00000001)  /*!< UART parity enabled. */
 
+/** @brief Check if UART parity enable value is valid. */
 #define IS_UART_PARITY_ENABLE(VAL)	(((VAL) == RUART_PARITY_DISABLE) || \
 									((VAL) == RUART_PARITY_ENABLE))
 /**
   * @}
   */
 
-/** @defgroup UART_Parity_Type
+/** @defgroup UART_Parity_Type UART Parity Type
   * @{
   */
-#define RUART_ODD_PARITY			((u32)0x00000000)
-#define RUART_EVEN_PARITY			((u32)0x00000001)
+#define RUART_ODD_PARITY			((u32)0x00000000)  /*!< UART parity type: odd. */
+#define RUART_EVEN_PARITY			((u32)0x00000001)  /*!< UART parity type: even. */
 
+/** @brief Check if UART parity type value is valid. */
 #define IS_UART_PARITY_TYPE(VAL)	(((VAL) == RUART_ODD_PARITY) || \
 									((VAL) == RUART_EVEN_PARITY))
 /**
   * @}
   */
 
-/** @defgroup UART_Stick_Parity_Type
+/** @defgroup UART_Sticky_Parity_Type UART Sticky Parity Type
   * @{
   */
-#define RUART_STICK_PARITY_DISABLE			((u32)0x00000000)
-#define RUART_STICK_PARITY_ENABLE			((u32)0x00000001)
+#define RUART_STICK_PARITY_DISABLE			((u32)0x00000000)  /*!< UART sticky parity disabled. */
+#define RUART_STICK_PARITY_ENABLE			((u32)0x00000001)  /*!< UART sticky parity enabled. */
 
+/** @brief Check if UART sticky parity enable value is valid. */
 #define IS_UART_STICK_PARITY_ENABLE(VAL)	(((VAL) == RUART_STICK_PARITY_DISABLE) || \
 											((VAL) == RUART_STICK_PARITY_ENABLE))
 /**
   * @}
   */
 
-/** @defgroup UART_Interrupt_ID
+/** @defgroup UART_Rx_Err_Type UART Rx Error Type
   * @{
   */
-#define RUART_MODEM_STATUS					((u32)0x00000000)
-#define RUART_TX_FIFO_EMPTY					((u32)0x00000001)
-#define RUART_RECEIVER_DATA_AVAILABLE		((u32)0x00000002)
-#define RUART_RECEIVE_LINE_STATUS			((u32)0x00000003)
-#define RUART_LP_RX_MONITOR_DONE			((u32)0x00000004)
-#define RUART_TIME_OUT_INDICATION			((u32)0x00000006)
-/**
-  * @}
-  */
-
-/** @defgroup UART_Rx_Err_Type
-  * @{
-  */
+/** @brief Bitmask of all Rx error flags. */
 #define UART_ALL_RX_ERR		(RUART_BIT_RXFIFO_ERR | \
 							RUART_BIT_BREAK_INT | \
 							RUART_BIT_FRM_ERR | \
@@ -615,54 +611,37 @@ typedef struct {
   * @}
   */
 
-/** @defgroup UART_Rx_Err_Report
+/** @defgroup UART_Rx_Err_Report UART Rx Error Report
   * @{
   */
-#define UART_RX_ERROR_REPORT_DISABLE		((u32)0x00000000)
-#define UART_RX_ERROR_REPORT_ENABLE			((u32)0x00000001)
+#define UART_RX_ERROR_REPORT_DISABLE		((u32)0x00000000)  /*!< UART Rx error report disabled. */
+#define UART_RX_ERROR_REPORT_ENABLE			((u32)0x00000001)  /*!< UART Rx error report enabled. */
 
+/** @brief Check if UART Rx error report value is valid. */
 #define IS_UART_RX_ERROR_REPORT(REPORT)		(((REPORT) == UART_RX_ERROR_REPORT_DISABLE) || \
-											((REPORT) == UART_RX_ERROR_REPORT_ENABLE) )
+											((REPORT) == UART_RX_ERROR_REPORT_ENABLE))
 /**
   * @}
   */
 
-/** @defgroup UART_SoftWare_Status
+/** @defgroup UART_SoftWare_Status UART Software Status
   * @{
   */
-#define STATETX_DMA			1
-#define STATETX_INT			2
-#define STATETX_POLL		3
-#define STATERX_DMA			1
-#define STATERX_INT			2
-#define STATERX_POLL		3
-/**
-  * @}
-  */
-
-/** @defgroup UART_FIFO_Size_UART01
-  * @{
-  */
-#define UART_TX_FIFO_SIZE	16
-#define UART_RX_FIFO_SIZE	64
-/**
-  * @}
-  */
-
-/** @defgroup UART_FIFO_Size_UART2
-  * @{
-  */
-#define UART2_BT_TX_FIFO_SIZE	32
-#define UART2_BT_RX_FIFO_SIZE	32
+#define STATETX_DMA			1  /*!< TX state: DMA transfer in progress. */
+#define STATETX_INT			2  /*!< TX state: interrupt-driven transfer in progress. */
+#define STATETX_POLL		3  /*!< TX state: polling transfer in progress. */
+#define STATERX_DMA			1  /*!< RX state: DMA receive in progress. */
+#define STATERX_INT			2  /*!< RX state: interrupt-driven receive in progress. */
+#define STATERX_POLL		3  /*!< RX state: polling receive in progress. */
 /**
   * @}
   */
 
 /**
- * @defgroup UART_MAUTO_FLOW_CONTROL_define
+ * @defgroup UART_MAUTO_FLOW_CONTROL_define UART MAUTO FLOW CONTROL define
  * @{
   */
-#define RUART_MCL_FLOW_ENABLE		((u32)(RUART_BIT_AFE | RUART_BIT_RTS)) // BIT[1],BIT[5],Uart auto flow control enable bit
+#define RUART_MCL_FLOW_ENABLE		((u32)(RUART_BIT_AFE | RUART_BIT_RTS))  /*!< Enable UART auto flow control via AFE and RTS bits. */
 /**
   * @}
   */
@@ -678,8 +657,15 @@ typedef struct {
 /**
   * @}
   */
+
+_LONG_CALL_ void UART_RxDMADummyDataConfig(UART_TypeDef *UARTx, u8 Byte);
+_LONG_CALL_ u32 UART_GetRxDMADummyFlag(UART_TypeDef *UARTx);
+_LONG_CALL_ void UART_RxClearDMADummyFlag(UART_TypeDef *UARTx);
 
 /* Exported functions --------------------------------------------------------*/
+/** @addtogroup UART_Exported_Functions UART Exported Functions
+  * @{
+  */
 _LONG_CALL_ void UART_DeInit(UART_TypeDef *UARTx);
 _LONG_CALL_ void UART_StructInit(UART_InitTypeDef *UART_InitStruct);
 _LONG_CALL_ void UART_Init(UART_TypeDef *UARTx, UART_InitTypeDef *UART_InitStruct);
@@ -726,14 +712,15 @@ _LONG_CALL_ void UART_IrDAInit(UART_TypeDef *UARTx, IrDA_InitTypeDef *IrDA_InitS
 _LONG_CALL_ void UART_IrDACmd(UART_TypeDef *UARTx, u32 NewState);
 _LONG_CALL_ void UART_RxDebounceConfig(UART_TypeDef *UARTx, u32 RxDebounceCycle);
 _LONG_CALL_ void UART_RxDebounceCmd(UART_TypeDef *UARTx, u32 NewState);
-_LONG_CALL_ void UART_RxDMADummyDataConfig(UART_TypeDef *UARTx, u8 Byte);
-_LONG_CALL_ u32 UART_GetRxDMADummyFlag(UART_TypeDef *UARTx);
-_LONG_CALL_ void UART_RxClearDMADummyFlag(UART_TypeDef *UARTx);
 _LONG_CALL_ void UART_RxToThreConfig(UART_TypeDef *UARTx, u32 RxTimeout);
 _LONG_CALL_ void UART_RxMaxLenConfig(UART_TypeDef *UARTx, u32 RxMaxLen);
 
+/**
+  * @}
+  */
+
 /* Other Definitions --------------------------------------------------------*/
-#define MAX_UART_INDEX			(3)
+#define MAX_UART_INDEX			(3)  /*!< Maximum number of UART instances. */
 
 extern const UART_DevTable UART_DEV_TABLE[MAX_UART_INDEX];
 extern const u32 APBPeriph_UARTx[MAX_UART_INDEX];

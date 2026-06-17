@@ -53,7 +53,7 @@ extern "C" {
   */
 
 /**
-  * @brief enum I2C_ERR_REASON
+  * @brief Enum I2C_ERR_REASON
   */
 typedef enum {
 	I2C_ERROR_NO_SLAVE = -1,
@@ -99,11 +99,14 @@ int i2c_slave_receive(i2c_t *obj);
 void i2c_slave_address(i2c_t *obj, int idx, uint32_t address, uint32_t mask);
 int i2c_read(i2c_t *obj, int address, char *data, int length, int stop);
 int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop);
+int i2c_read_timeout(i2c_t *obj, int address, char *data, int length, int stop, int timeout_ms);
+int i2c_write_timeout(i2c_t *obj, int address, char *data, int length, int stop, int timeout_ms);
 int i2c_slave_read(i2c_t *obj, char *data, int length);
 int i2c_slave_write(i2c_t *obj, const char *data, int length);
 int i2c_slave_set_for_rd_req(i2c_t *obj, int set);
 int i2c_slave_set_for_data_nak(i2c_t *obj, int set_nak);
 int i2c_repeatread(i2c_t *obj, int address, u8 *pWriteBuf, int Writelen, u8 *pReadBuf, int Readlen);
+int i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart);
 
 
 #ifdef __cplusplus

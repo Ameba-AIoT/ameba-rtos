@@ -20,13 +20,6 @@ void whc_ipc_host_recv_pkts(int idx_wlan, struct dev_sk_buff *skb_phy)
 	u8 *data_addr = NULL;
 	struct net_device_stats *pstats = &global_idev.stats[idx_wlan];
 
-#ifdef CONFIG_P2P
-	if (global_idev.p2p_global.pd_wlan_idx == 1) {
-		idx_wlan = idx_wlan ^ 1; /*GC intf is up, linux netdev idx is oppsite to driver wlan_idx*/
-		pstats = &global_idev.stats[idx_wlan];
-	}
-#endif
-
 	/* get the rx queue. */
 	if (!pdev) {
 		dev_err(global_idev.pwhc_dev, "%s: device or inic device is NULL!\n", __func__);

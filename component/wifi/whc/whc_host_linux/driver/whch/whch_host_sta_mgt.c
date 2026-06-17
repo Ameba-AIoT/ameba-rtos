@@ -5,7 +5,7 @@ struct sta_info bcmc_stainfo; /* for primary padapter */
 
 void whc_host_sta_init(u8 iface_type)
 {
-	struct sta_priv	*pstapriv = &global_idev.stapriv[iface_type];
+	struct whch_sta_priv	*pstapriv = &global_idev.whchpriv.stapriv[iface_type];
 
 	dev_dbg(global_idev.pwhc_dev, "[whc] %s iface_type=%d.", __func__, iface_type);
 
@@ -41,7 +41,7 @@ struct pending_sta_t *whc_host_sta_get_sta_pending(struct sta_xmit_priv *psta_xm
 
 struct sta_info *whc_host_sta_get_stainfo(u8 iface_type, u8 *hwaddr)
 {
-	struct sta_priv     *pstapriv = &global_idev.stapriv[iface_type];
+	struct whch_sta_priv     *pstapriv = &global_idev.whchpriv.stapriv[iface_type];
 	struct list_head    *plist, *phead;
 	struct sta_info     *psta = NULL;
 	u8 *addr;
@@ -88,6 +88,8 @@ void _whc_host_sta_init_stainfo(struct sta_info *psta)
 {
 	struct sta_xmit_priv *psta_xmitpriv = &psta->sta_xmitpriv;
 	struct sta_recv_priv *psta_recvpriv = &psta->sta_recvpriv;
+	struct sta_security_priv *psta_security = &psta->sta_security;
+
 	int i = 0;
 	u16 wRxSeqInitialValue = 0xffff;
 
@@ -111,14 +113,16 @@ void _whc_host_sta_init_stainfo(struct sta_info *psta)
 
 	//for A-MPDU Rx reordering buffer control
 	for (i = 0; i < MAXTID; i++) {
-		psta_recvpriv->recvreorder_ctrl[i] = NULL;
+		whc_host_recv_reorder_init(&psta_recvpriv->recvreorder_ctrl[i]);
 	}
+
+	psta_security->b_pairwise_key_installed = false;
 }
 
 struct sta_info *whc_host_sta_alloc_stainfo(u8 iface_type, u8 *hwaddr)
 {
-	struct mlme_info	*pmlmeinfo = &global_idev.mlmeinfo[iface_type];
-	struct sta_priv		*pstapriv = &global_idev.stapriv[iface_type];
+	struct whch_mlme_info	*pmlmeinfo = &global_idev.whchpriv.mlmeinfo[iface_type];
+	struct whch_sta_priv		*pstapriv = &global_idev.whchpriv.stapriv[iface_type];
 	struct sta_info		*psta = NULL;
 	struct sta_mlme_priv *psta_mlmepriv = NULL;
 	u8 is_bcmc = 0;
@@ -154,9 +158,9 @@ exit:
 
 int whc_host_sta_free_stainfo(u8 iface_type, u8 *hwaddr)
 {
-	struct whch_xmit_priv	*pxmitpriv = &global_idev.xmitpriv;
-	struct mlme_info	*pmlmeinfo = &global_idev.mlmeinfo[iface_type];
-	struct sta_priv		*pstapriv = &global_idev.stapriv[iface_type];
+	struct whch_xmit_priv	*pxmitpriv = &global_idev.whchpriv.xmitpriv;
+	struct whch_mlme_info	*pmlmeinfo = &global_idev.whchpriv.mlmeinfo[iface_type];
+	struct whch_sta_priv		*pstapriv = &global_idev.whchpriv.stapriv[iface_type];
 	struct sta_info		*psta = NULL;
 	//struct sta_xmit_priv	*psta_xmitpriv = NULL;
 	int				ret = 0;
@@ -194,7 +198,7 @@ int whc_host_sta_free_stainfo(u8 iface_type, u8 *hwaddr)
 	}
 #endif
 
-	/* softap TODO */
+	/* TODO_softap */
 	if (iface_type == WHC_AP_PORT) {
 		//g_apmlmepriv.sta_dz_bitmap &= ~BIT(psta_mlmepriv->stainfo_aid);
 		//g_apmlmepriv.tim_bitmap &= ~BIT(psta_mlmepriv->stainfo_aid);
@@ -208,13 +212,14 @@ exit:
 	return ret;
 }
 
-void whc_host_sta_update_stainfo(u8 iface_type, u8 *hwaddr, struct rtw_event_sta_info *pstainfo)
+void whc_host_sta_update_stainfo(u8 iface_type, u8 *hwaddr, struct rtw_event_sta_info *pstainfo, struct rtw_event_security_priv *psecinfo)
 {
 	struct sta_info     *psta = NULL;
 	struct sta_mlme_priv *psta_mlmepriv = NULL;
-	struct sta_security_priv *psta_securitypriv = NULL;
+	struct sta_security_priv *psta_security = NULL;
 	struct sta_xmit_priv *psta_xmitpriv = NULL;
 	struct sta_ht_priv *psta_htpriv = NULL;
+	struct whch_security_priv *psecuritypriv = &global_idev.whchpriv.securitypriv[iface_type];
 
 	dev_dbg(global_idev.pwhc_dev, "[whc] %s.", __func__);
 
@@ -226,7 +231,7 @@ void whc_host_sta_update_stainfo(u8 iface_type, u8 *hwaddr, struct rtw_event_sta
 
 	if (psta) {		/* update stainfo */
 		psta_mlmepriv = &psta->sta_mlmepriv;
-		psta_securitypriv = &psta->sta_security;
+		psta_security = &psta->sta_security;
 		psta_xmitpriv = &psta->sta_xmitpriv;
 		psta_htpriv = &psta->sta_htpriv;
 
@@ -243,6 +248,28 @@ void whc_host_sta_update_stainfo(u8 iface_type, u8 *hwaddr, struct rtw_event_sta
 		psta_htpriv->addba_success_bitmap = 0;
 		psta_htpriv->ht_option = pstainfo->ht_option;
 		psta_htpriv->he_option = pstainfo->he_option;
+
+		//security related
+		psecuritypriv->dot11_wpa_mode = psecinfo->dot11_wpa_mode;
+
+		if (psecuritypriv->dot11_wpa_mode) {
+			psecuritypriv->b_installGrpkey = false;
+			psecuritypriv->b_usetkipkey = false;
+			psecuritypriv->b_sw_encrypt = psecinfo->b_sw_encrypt;
+			psecuritypriv->dot118021XGrpPrivacy = psecinfo->dot118021XGrpPrivacy;
+			psecuritypriv->dot11PrivacyAlgrthm = psecinfo->dot11PrivacyAlgrthm;
+
+			psta_security->dot11_security_privacy = psecuritypriv->dot11PrivacyAlgrthm;
+			psta_security->b_ieee8021x_blocked = true;
+			psta_security->b_pairwise_key_installed = false;
+
+			memset((u8 *)&psta_security->dot118021x_UncstKey, 0, sizeof(union Keytype_32));
+			memset((u8 *)&psta_security->dot11tkiprxmickey, 0, sizeof(union Keytype));
+			memset((u8 *)&psta_security->dot11tkiptxmickey, 0, sizeof(union Keytype));
+
+			memset((u8 *)&psta_security->dot11txpn, 0, sizeof(union pn48));
+			psta_security->dot11txpn._byte_.TSC0 = 1;	//Set IV to 1 to avoid pkt being dropping by some specific AP
+		}
 	}
 }
 

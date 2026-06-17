@@ -261,6 +261,9 @@ __weak void whc_dev_cmd_rx_to_user_task(void)
 	(void)password;
 	(void)idx;
 	(void)ret;
+	(void)buf;
+	(void)dst;
+	(void)wifi;
 
 	while (1) {
 		rtos_sema_take(whc_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);
@@ -378,7 +381,7 @@ connect_fail:
 				}
 #endif
 #ifdef CONFIG_MP_INCLUDED
-				else if (*ptr == WHC_WIFI_TEST_MP) {
+				if (*ptr == WHC_WIFI_TEST_MP) {
 					whc_dev_mp_cmd((char *)(ptr + 2), *(ptr + 1));
 				}
 #endif

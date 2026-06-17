@@ -27,105 +27,82 @@ usbh_uvc_host_t uvc_host;
 
 /**
   * @brief  Find suitable format and frame index
-  * @param context: user configuration
-  * @param format_index: pointer to format index
-  * @param frame_index: pointer to frame index
+  * @param  stream: uvc stream interface
+  * @param  context: user configuration (width/height/fmt_type)
+  * @param  format_index: pointer to format index (output)
+  * @param  frame_index: pointer to frame index (output)
   * @retval Status
   */
 static int usbh_uvc_find_format_frame(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *context,
 									  u32 *format_index, u32 *frame_index)
 {
-	usbh_uvc_vs_t *vs;
 	usbh_uvc_vs_format_t *format;
-	usbh_uvc_vs_frame_t *frame;
-	u32 type, h, w, nformat, nframe, tmp1, tmp2;
-	int i;
-	int found = 0;
+	usbh_uvc_vs_frame_t  *frame;
+	usbh_uvc_vs_frame_t  *best;
+	usbh_uvc_vs_t *vs;
+	u32 w;
+	u32 h;
+	u32 i;
+	u32 dist;
+	u32 best_dist;
+	u32 dw;
+	u32 dh;
 
 	if (!stream || !context || !format_index || !frame_index) {
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Err args %p-%p\n", stream, context);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Err args %x-%x\n", (u32)stream, (u32)context);
 		return HAL_ERR_PARA;
 	}
 
 	vs = stream->vs_intf;
-	if (!vs) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Vs_intf is NULL\n");
+	if (!vs || !vs->format) {
 		return HAL_ERR_PARA;
 	}
 
-	format = vs->format;
-	nformat = vs->nformat;
-	if (!format || nformat == 0) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Invalid fmt list, f=%x, nf=%u\n", format, nformat);
-		return HAL_ERR_PARA;
-	}
-
-	type = context->fmt_type;
-	h = context->height;
 	w = context->width;
+	h = context->height;
 
-	for (i = 0; i < (int) nformat; i ++) {
-		if ((format + i)->type == type) {
-			format += i;
-			*format_index = format->index;
-			found = 1;
+	/* Step 1: locate format by subtype. */
+	format = NULL;
+	for (i = 0U; i < vs->nformat; i++) {
+		if (vs->format[i].type == context->fmt_type) {
+			format = &vs->format[i];
 			break;
 		}
 	}
-
-	if (found == 0) {
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Fail to find fmt\n");
+	if ((format == NULL) || (format->frame == NULL)) {
 		return HAL_ERR_PARA;
 	}
 
-	nframe = format->nframes;
-	frame = format->frame;
-	if (!frame || nframe == 0) {
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Invalid frm %x-%u\n",
-				 frame, nframe);
-		return HAL_ERR_PARA;
-	}
+	/* Step 2: sync Linux UVC, pick frame minimizing |Δw| + |Δh|. */
+	best = NULL;
+	best_dist = (u32) - 1;
 
-	found = 0;
-	for (i = 0; i < (int) nframe; i ++) {
-		if (((frame + i)->wWidth == w) && ((frame + i)->wHeight == h)) {
-			frame += i;
-			*frame_index = frame->bFrameIndex;
-			found = 1;
-			break;
-		}
-	}
+	for (i = 0u; i < format->nframes; i++) {
+		frame = &format->frame[i];
 
-	/* Fallback policy:
-		- When exact w x h is not supported, pick the "closest not exceeding" frame by area.
-		- Measure closeness using area (width * height).
-		- Select the largest area that is <= target area (w * h).
-		To do:
-		- Aspect ratio differences are not considered.
-	*/
+		dw = (frame->wWidth > w) ? (frame->wWidth - w) : (w - frame->wWidth);
+		dh = (frame->wHeight > h) ? (frame->wHeight - h) : (h - frame->wHeight);
+		dist = dw + dh;
 
-	if (found == 0) {
-		int best_idx = 0;
-		tmp1 = 0;
-
-		for (i = 0; i < (int) nframe; i ++) {
-			tmp2 = (frame + i)->wWidth * (frame + i)->wHeight;
-
-			if ((tmp2 < h * w) && (tmp2 > tmp1)) {
-				tmp1 = tmp2;
-				best_idx = i;
+		if (dist < best_dist) {
+			best_dist = dist;
+			best = frame;
+			if (dist == 0u) {
+				break;/* exact match */
 			}
 		}
-
-		frame += best_idx;
-
-		*frame_index = frame->bFrameIndex;
-		context->height = frame->wHeight;
-		context->width = frame->wWidth;
-
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Use closest @%d*%d\n", frame->wWidth, frame->wHeight);
-
 	}
+
+	if (best == NULL) {
+		return HAL_ERR_PARA;
+	}
+
+	*format_index = format->index;
+	*frame_index = best->bFrameIndex;
+
+	/* Write negotiated values back so the caller learns what was actually selected */
+	context->width  = best->wWidth;
+	context->height = best->wHeight;
 
 	return HAL_OK;
 }
@@ -141,80 +118,92 @@ static int usbh_uvc_find_format_frame(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_
 static int usbh_uvc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *context,
 									u32 *intv, u32 *format_index, u32 *frame_index)
 {
-	usbh_uvc_vs_t *vs;
 	usbh_uvc_vs_format_t *format;
-	usbh_uvc_vs_frame_t *frame;
-	u32 fps;   //unit: us
-	int i;
-	u32 best = UINT_MAX;
-	u32 min, max, step, dist;
+	usbh_uvc_vs_frame_t  *frame;
+	u32 i;
+	u32 fps;
+	u32 cur;
+	u32 dist;
+	u32 best;
+	u32 min_intv;
+	u32 max_intv;
+	u32 step;
 
-	if (!stream || !context || !intv || !format_index || !frame_index) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "find_frame_rate: invalid args\n");
+	if ((stream == NULL) || (context == NULL) || (intv == NULL) ||
+		(format_index == NULL) || (frame_index == NULL)) {
+		return HAL_ERR_PARA;
+	}
+	if (context->frame_rate == 0u) {
 		return HAL_ERR_PARA;
 	}
 
-	if (context->frame_rate == 0) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "find_frame_rate: invalid frame_rate=0\n");
+	/* Guard against NULL vs_intf (e.g. called before attach or after detach). */
+	if (stream->vs_intf == NULL || stream->vs_intf->format == NULL) {
 		return HAL_ERR_PARA;
 	}
 
-	fps = 10000000 / context->frame_rate;
-	vs = stream->vs_intf;
-	if (!vs) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "find_frame_rate: vs_intf is NULL\n");
+	/* Locate format. */
+	format = NULL;
+	for (i = 0u; i < stream->vs_intf->nformat; i++) {
+		if (stream->vs_intf->format[i].index == *format_index) {
+			format = &stream->vs_intf->format[i];
+			break;
+		}
+	}
+	if (format == NULL) {
 		return HAL_ERR_PARA;
 	}
 
-	if ((*format_index < 1) || (*frame_index < 1)) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG,
-		//		 "find_frame_rate: invalid format_index=%u, nformat=%u\n",
-		//		 *format_index, *frame_index);
+	/* Locate frame. */
+	frame = NULL;
+	for (i = 0u; i < format->nframes; i++) {
+		if (format->frame[i].bFrameIndex == *frame_index) {
+			frame = &format->frame[i];
+			break;
+		}
+	}
+	if (frame == NULL) {
 		return HAL_ERR_PARA;
 	}
 
-	format = vs->format + *format_index - 1;
-	if (!format) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "No fmt\n");
-		return HAL_ERR_PARA;
-	}
+	fps = USBH_UVC_FRAME_INTERVAL_UNIT_NS / context->frame_rate;
 
-	frame = format->frame + *frame_index - 1;
-	if (!frame) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "No frm\n");
-		return HAL_ERR_PARA;
-	}
-
-	if (frame->bFrameIntervalType) {
-		/*discrete frame interval*/
-		for (i = 0; i < frame->bFrameIntervalType; ++i) {
-			dist = fps > frame->dwFrameInterval[i]
-				   ? fps - frame->dwFrameInterval[i]
-				   : frame->dwFrameInterval[i] - fps;
+	if (frame->bFrameIntervalType != 0u) {
+		/* Discrete: dwFrameInterval[] sorted ascending. */
+		best = (u32) - 1;
+		for (i = 0u; i < frame->bFrameIntervalType; i++) {
+			cur  = frame->dwFrameInterval[i];
+			dist = (fps > cur) ? (fps - cur) : (cur - fps);
 
 			if (dist > best) {
 				break;
 			}
-
 			best = dist;
 		}
-
-		fps = frame->dwFrameInterval[i - 1];
+		/* Guard i == 0 (single-entry list / immediate-break edge). */
+		fps = frame->dwFrameInterval[(i == 0u) ? 0u : (i - 1U)];
 	} else {
-		/*continuous frame interval*/
-		min = frame->dwFrameInterval[0];
-		max = frame->dwFrameInterval[1];
+		/* Continuous: { min, max, step }. */
+		min_intv = frame->dwFrameInterval[0];
+		max_intv = frame->dwFrameInterval[1];
 		step = frame->dwFrameInterval[2];
-		fps = min + (fps - min + step / 2) / step * step;
 
-		if (fps > max) {
-			fps = max;
+		if (fps < min_intv) {
+			fps = min_intv;
+		} else if (fps > max_intv) {
+			fps = max_intv;
+		} else if (step == 0u) {
+			fps = min_intv;
+		} else {
+			fps = min_intv + (fps - min_intv + step / 2U) / step * step;
+			if (fps > max_intv) {
+				fps = max_intv;
+			}
 		}
 	}
 
-	context->frame_rate = 10000000 / fps;
 	*intv = fps;
-
+	context->frame_rate = USBH_UVC_FRAME_INTERVAL_UNIT_NS / fps;
 	return HAL_OK;
 }
 
@@ -227,7 +216,8 @@ static int usbh_uvc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t 
   */
 int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb)
 {
-	int i, ret = HAL_OK;
+	int i;
+	int ret = HAL_OK;
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = NULL;
 
@@ -237,7 +227,7 @@ int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb)
 	}
 
 	usb_os_memset(uvc, 0x00, sizeof(usbh_uvc_host_t));
-	uvc->request_buf = (u8 *)usb_os_malloc(UBSH_UVC_REQUEST_BUF_LEN);
+	uvc->request_buf = (u8 *)usb_os_malloc(USBH_UVC_REQUEST_BUF_LEN);
 	if (uvc->request_buf == NULL) {
 		return HAL_ERR_MEM;
 	}
@@ -257,7 +247,7 @@ int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb)
 	usbh_uvc_class_init();
 
 #if USBH_UVC_USE_HW && USBH_UVC_DEBUG
-	rtos_sema_create(&uvc->hw_dump_sema, 0, 1);
+	usb_os_sema_create(&uvc->hw_dump_sema);
 	uvc->hw_dump_task_exit = 0;
 	if (rtos_task_create(&(uvc->hw_dump_task),
 						 ((const char *)"usbh_uvc_hw_status_dump_thread"),
@@ -321,7 +311,7 @@ void usbh_uvc_deinit(void)
 		uvc->hw_dump_task_exit  = 1;
 
 		if (uvc->hw_dump_sema) {
-			rtos_sema_give(uvc->hw_dump_sema);
+			usb_os_sema_give(uvc->hw_dump_sema);
 			//thread will detete it
 		}
 
@@ -337,7 +327,7 @@ void usbh_uvc_deinit(void)
 	}
 
 	if (uvc->hw_dump_sema) {
-		rtos_sema_delete(uvc->hw_dump_sema);
+		usb_os_sema_delete(uvc->hw_dump_sema);
 		uvc->hw_dump_sema = NULL;
 	}
 #endif
@@ -356,6 +346,8 @@ void usbh_uvc_deinit(void)
 		}
 	}
 #endif
+
+	uvc->uvc_desc.vs_num = 0;
 
 	if ((uvc->cb != NULL) && (uvc->cb->deinit != NULL)) {
 		uvc->cb->deinit();
@@ -422,9 +414,6 @@ int usbh_uvc_stream_off(u32 itf_num)
 	}
 
 	stream = &uvc->stream[itf_num];
-	if (stream == NULL) {
-		return HAL_ERR_PARA;
-	}
 
 	usbh_uvc_stream_stop(stream);
 	usbh_uvc_stream_deinit(stream);
@@ -445,8 +434,11 @@ int usbh_uvc_set_param(usbh_uvc_s_ctx_t *para, u32 itf_num)
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = NULL;
 	usbh_uvc_stream_control_t *ctrl = NULL;
-	u32 format_index, frame_index;
+	u32 format_index = 0;
+	u32 frame_index = 0;
 	u32 frame_intv = 0;
+	u32 max_frame_size = 0;
+	u32 max_xfer_size = 0;
 
 	if (!para) {
 		return HAL_ERR_PARA;
@@ -462,10 +454,7 @@ int usbh_uvc_set_param(usbh_uvc_s_ctx_t *para, u32 itf_num)
 	}
 
 	stream = &uvc->stream[itf_num];
-	if (!stream) {
-		return HAL_ERR_PARA;
-	}
-
+	uvc->stream_ctrl_idx = stream->stream_idx;
 	/*Find format and closest resolution*/
 	ret = usbh_uvc_find_format_frame(stream, para, &format_index, &frame_index);
 	if (ret) {
@@ -481,17 +470,22 @@ int usbh_uvc_set_param(usbh_uvc_s_ctx_t *para, u32 itf_num)
 	}
 
 	ctrl = &stream->stream_ctrl;
+	max_frame_size = ctrl->dwMaxVideoFrameSize;
+	max_xfer_size = ctrl->dwMaxPayloadTransferSize;
 	usb_os_memset(ctrl, 0, sizeof(usbh_uvc_stream_control_t));
 	ctrl->bmHint = 1;  /* dwFrameInterval */
 	ctrl->bFormatIndex = format_index;
 	ctrl->bFrameIndex = frame_index;
 	ctrl->dwFrameInterval = frame_intv;
-	ctrl->dwMaxVideoFrameSize = stream->stream_ctrl.dwMaxVideoFrameSize;
+	/* Restore values negotiated in previous PROBE round for cameras that validate these fields */
+	ctrl->dwMaxVideoFrameSize = max_frame_size;
+	ctrl->dwMaxPayloadTransferSize = max_xfer_size;
 
 	uvc->state = UVC_STATE_CTRL;
 	stream->state = STREAM_STATE_SET_PARA;
-	uvc->stream_in_ctrl = stream->stream_idx;
-	usbh_notify_class_state_change(uvc->host, 0);
+	if (uvc->host != NULL) {
+		usbh_notify_class_state_change(uvc->host, 0);
+	}
 
 	return HAL_OK;
 }
@@ -508,13 +502,11 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num)
 	usbh_uvc_stream_t *stream = NULL;
 
 	if (itf_num >= USBH_UVC_VS_DESC_MAX_NUM) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Intf num ovfl\n");
 		return NULL;
 	}
 
 	stream = &uvc->stream[itf_num];
-	if (!stream) {
-		return NULL;
-	}
 
 	if (!stream->get_valid) {
 		stream->get_valid = 1;
@@ -531,7 +523,7 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num)
 		goto exit;
 	}
 
-	if (rtos_sema_take(stream->frame_sema, USBH_UVC_GET_FRAME_TIMEOUT) == HAL_OK) {
+	if (usb_os_sema_take(frame_sema, USBH_UVC_GET_FRAME_TIMEOUT) == HAL_OK) {
 
 		usb_os_lock(frame_mutex);
 
@@ -570,19 +562,23 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num)
 		goto exit;
 	}
 
-	if (rtos_sema_take(dec_sema, USBH_UVC_GET_FRAME_TIMEOUT) == HAL_OK) {
+	if (usb_os_sema_take(dec_sema, USBH_UVC_GET_FRAME_TIMEOUT) == HAL_OK) {
 		if ((stream->stream_state != STREAMING_ON) || !uvc_dec) {
 			goto exit;
 		}
 
 		uvc_dec = stream->uvc_dec;
-		u32 frame_done_num  = uvc_dec->frame_done_num;
+		u32 frame_done_cnt  = uvc_dec->frame_done_cnt;
 		u32 frame_done_size = uvc_dec->frame_done_size;
-		frame = &stream->frame_buffer[frame_done_num];
+		/* dec_sema take (xQueueSemaphoreTake) + give (xQueueGiveFromISR) share the
+		 * same task_lock spinlock internally, providing a happens-before barrier
+		 * that makes the ISR writes of frame_done_cnt/size visible here. */
+
+		frame = &stream->frame_buffer[frame_done_cnt];
 		frame->byteused = frame_done_size;
 
-		/* cache invalidate */
-		DCache_Invalidate((u32)frame->buf, (u32)frame->byteused);
+		/* cache invalidate — HW decoder writes to PSRAM, CPU cache stale */
+		DCache_Invalidate((u32)frame->buf, CACHE_LINE_ALIGNMENT(frame->byteused));
 		return frame;
 	} else {
 		goto exit;
@@ -591,7 +587,7 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num)
 
 exit:
 	stream->get_valid = 0;
-	if ((stream->stream_state != STREAMING_ON) && stream) {
+	if (stream->stream_state != STREAMING_ON) {
 		stream->get_exit = 1;
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Get fail\n");
@@ -600,19 +596,20 @@ exit:
 }
 
 /**
-  * @brief	Put frame buffer to video streaming
+  * @brief	Put frame buffer back to video streaming empty list
   * @param	frame: uvc frame buffer to put
   * @param	itf_num: Interface number
-  * @retval None
+  * @retval HAL_OK on success, HAL_ERR_PARA on invalid parameters
   */
-void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num)
+int usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num)
 {
 #if (USBH_UVC_USE_HW == 0)
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = NULL;
 
-	if ((!frame) && (itf_num >= USBH_UVC_VS_DESC_MAX_NUM)) {
-		return;
+	if ((!frame) || (itf_num >= USBH_UVC_VS_DESC_MAX_NUM)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Intf num ovfl\n");
+		return HAL_ERR_PARA;
 	}
 
 	stream = &uvc->stream[itf_num];
@@ -650,9 +647,58 @@ void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num)
 
 		usb_os_unlock(stream->frame_mutex);
 	}
+	return HAL_OK;
 #else
 	UNUSED(frame);
 	UNUSED(itf_num);
+	return HAL_OK;
 #endif
 }
 
+/**
+  * @brief  Dump dev capability info (format, frame, resolution, fps).
+  * @retval None.
+  */
+void usbh_uvc_dump_dev_info(void)
+{
+	usbh_uvc_host_t *uvc = &uvc_host;
+	usbh_uvc_stream_t *stream = NULL;
+	usbh_uvc_vs_t *vs = NULL;
+	usbh_uvc_vs_format_t *fmt = NULL;
+	usbh_uvc_vs_frame_t *frm = NULL;
+	const char *fmt_name = NULL;
+	u32 si = 0;
+	u32 i = 0;
+	u32 j = 0;
+
+	for (si = 0; si < USBH_UVC_VS_DESC_MAX_NUM; si++) {
+		stream = &uvc->stream[si];
+		vs = stream->vs_intf;
+		if (vs == NULL) {
+			continue;
+		}
+
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Intf %d:\n", si);
+		for (i = 0; i < vs->nformat; i++) {
+			fmt = &vs->format[i];
+			if (fmt->type == 4) {
+				fmt_name = "UNCOMPRESSED";
+			} else if (fmt->type == 6) {
+				fmt_name = "MJPEG";
+			} else if (fmt->type == 0x10) {
+				fmt_name = "H264";
+			} else {
+				fmt_name = "UNKNOWN";
+			}
+
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Format %d: %s (%d frame%s)\n",
+					 (u32)i, fmt_name, fmt->nframes,
+					 (fmt->nframes > 1) ? "s" : "");
+
+			for (j = 0; j < fmt->nframes; j++) {
+				frm = &fmt->frame[j];
+				RTK_LOGS(TAG, RTK_LOG_INFO, "  %d x %d @ %d fps\n", frm->wWidth, frm->wHeight, USBH_UVC_FRAME_INTERVAL_UNIT_NS / frm->dwFrameInterval[0]);
+			}
+		}
+	}
+}

@@ -375,64 +375,65 @@ class Ameba(object):
         boot_delay = self.setting.usb_rom_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.rom_boot_delay_in_second
 
         self.logger.debug(f"Check download mode with baudrate {self.serial_port.baudrate}")
-        retry = 0
-        while retry < 3:
-            retry += 1
-            try:
-                self.logger.debug(f"Check whether in rom download mode")
-                ret = self.rom_handler.handshake()
-                if ret == ErrType.OK:
-                    self.logger.debug(f"Handshake ok, device in rom download mode")
-                    break
+        try:
+            self.logger.debug(f"Check whether in rom download mode")
+            ret = self.rom_handler.handshake()
+            if ret == ErrType.OK:
+                self.logger.debug(f"Handshake ok, device in rom download mode")
+            elif not self.is_usb:
+                self.logger.debug(
+                    f'Assume in application or ROM normal mode with baudrate {self.profile_info.log_baudrate}')
+                self.switch_baudrate(self.profile_info.log_baudrate, self.setting.baudrate_switch_delay_in_second)
 
-                if not self.is_usb:
-                    self.logger.debug(
-                        f'Assume in application or ROM normal mode with baudrate {self.profile_info.log_baudrate}')
-                    self.switch_baudrate(self.profile_info.log_baudrate, self.setting.baudrate_switch_delay_in_second)
+                self.logger.debug("Try to reset device...")
 
-                    self.logger.debug("Try to reset device...")
+                self.serial_port.flushOutput()
 
+                self.write_bytes(CmdEsc)
+                time.sleep(0.02)
+
+                if self.profile_info.is_amebad():
                     self.serial_port.flushOutput()
-
-                    self.write_bytes(CmdEsc)
+                    self.write_bytes(CmdSetBackupRegister)
                     time.sleep(0.02)
 
-                    if self.profile_info.is_amebad():
-                        self.serial_port.flushOutput()
-                        self.write_bytes(CmdSetBackupRegister)
-                        time.sleep(0.02)
+                self.serial_port.flushOutput()
+                self.write_bytes(CmdResetIntoDownloadMode)
+                time.sleep(0.02)  # wait for cmd tx to device successfully when in lower baudrate
 
-                    self.serial_port.flushOutput()
-                    self.write_bytes(CmdResetIntoDownloadMode)
-                    time.sleep(0.02)  # wait for cmd tx to device successfully when in lower baudrate
+                self.switch_baudrate(self.profile_info.handshake_baudrate, boot_delay, True)
+                self.serial_port.flushInput()
+                time.sleep(0.05)
 
-                    self.switch_baudrate(self.profile_info.handshake_baudrate, boot_delay, True)
-                    self.serial_port.flushInput()
-                    time.sleep(0.05)
+                self.logger.debug(
+                    f'Check whether reset in ROM download mode with baudrate {self.profile_info.handshake_baudrate}')
 
-                    self.logger.debug(
-                        f'Check whether reset in ROM download mode with baudrate {self.profile_info.handshake_baudrate}')
-
-                    ret = self.rom_handler.handshake()
-                    if ret == ErrType.OK:
-                        self.logger.debug("Handshake ok, device in ROM download mode")
-                        break
-                    else:
-                        self.logger.debug("Handshake fail, cannot enter UART download mode")
+                ret = self.rom_handler.handshake()
+                if ret == ErrType.OK:
+                    self.logger.debug("Handshake ok, device in ROM download mode")
+                else:
+                    self.logger.debug("Handshake fail, cannot enter UART download mode")
 
                     self.switch_baudrate(self.baudrate, self.setting.baudrate_switch_delay_in_second, True)
 
+                    self.logger.debug(f"Check whether in floader with baudrate {self.baudrate}")
+                    ret, status = self.floader_handler.sense(self.setting.sync_response_timeout_in_second)
+                    if ret == ErrType.OK:
+                        is_floader = True
+                        self.logger.debug("Floader handshake ok")
+                    else:
+                        self.logger.debug(f"Floader handshake fail: {ret}")
+            else:
+                # USB: check floader directly
                 self.logger.debug(f"Check whether in floader with baudrate {self.baudrate}")
                 ret, status = self.floader_handler.sense(self.setting.sync_response_timeout_in_second)
                 if ret == ErrType.OK:
-                    # do not reset floader
                     is_floader = True
                     self.logger.debug("Floader handshake ok")
-                    break
                 else:
                     self.logger.debug(f"Floader handshake fail: {ret}")
-            except Exception as err:
-                self.logger.error(f"Check download mode exception: {err}")
+        except Exception as err:
+            self.logger.error(f"Check download mode exception: {err}")
 
         return ret, is_floader
 

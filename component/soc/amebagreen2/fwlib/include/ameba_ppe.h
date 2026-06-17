@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup PPE
+/** @defgroup PPE PPE
   * @brief PPE driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -531,6 +532,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -633,7 +635,7 @@ typedef enum {
 } PPE_KEY_MODE;
 
 /**
-  * @brief  PPE Color Key Mode Definition
+  * @brief  PPE Background Source Definition
   */
 typedef enum {
 	PPE_BACKGROUND_SOURCE_CONST_BG,
@@ -782,6 +784,7 @@ typedef struct {
 	u32 blk_height;
 	u32 xor_en;
 } PPE_ResultLayer_InitTypeDef;
+
 /** @} */
 
 /* Exported constants --------------------------------------------------------*/
@@ -802,12 +805,17 @@ typedef struct {
 #define PPE_INPUT_LAYER2_BIT                          ((u32)0x1 << PPE_INPUT_LAYER2_INDEX)
 #define PPE_INPUT_LAYER3_BIT                          ((u32)0x1 << PPE_INPUT_LAYER3_INDEX)
 
-#define PPE_STATE_DISABLE                          0
-#define PPE_STATE_RUNNING                          1
-#define PPE_STATE_INACTIVE                         2
-#define PPE_STATE_SUSPEND                          3
 /** @} */
 
+/**
+  * @brief  PPE Global State Definition
+  */
+typedef enum {
+	PPE_STATE_DISABLE  = 0, /* PPE is disabled */
+	PPE_STATE_RUNNING  = 1, /* PPE is running */
+	PPE_STATE_INACTIVE = 2, /* PPE is inactive */
+	PPE_STATE_SUSPEND  = 3, /* PPE is suspended */
+} PPE_GLOBAL_STATE;
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup PPE_Exported_Functions PPE Exported Functions
@@ -837,7 +845,7 @@ void PPE_InitInputLayer(u8 id, PPE_InputLayer_InitTypeDef *layer_init_struct);
 void PPE_InitResultLayer(PPE_ResultLayer_InitTypeDef *layer_init_struct);
 void PPE_XOR_init(void);
 void PPE_XOR_process(u32 src1, u32 src2, u32 src3, u32 dst);
-void PPE_XOR_Int_handler(void (*pfunc)(void));
+void PPE_XOR_Int_handler(void (*xor_cb)(void));
 /** @} */
 #ifdef __cplusplus
 }

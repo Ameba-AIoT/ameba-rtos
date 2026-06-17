@@ -20,14 +20,20 @@
 
 #define USBH_HW_UVC_FRAME_BUF_START_ADDR               0x20060000U
 
-#define USBH_HW_UVC_CH0_BUF0_OVERSIZE   (1 << 0)
-#define USBH_HW_UVC_CH0_BUF1_OVERSIZE   (1 << 1)
-#define USBH_HW_UVC_CH0_BUF0_HEADER     (1 << 2)
-#define USBH_HW_UVC_CH0_BUF1_HEADER     (1 << 3)
-#define USBH_HW_UVC_CH1_BUF0_OVERSIZE   (1 << 4)
-#define USBH_HW_UVC_CH1_BUF1_OVERSIZE   (1 << 5)
-#define USBH_HW_UVC_CH1_BUF0_HEADER     (1 << 6)
-#define USBH_HW_UVC_CH1_BUF1_HEADER     (1 << 7)
+#define USBH_HW_UVC_CH0_BUF0_OVERSIZE   BIT0
+#define USBH_HW_UVC_CH0_BUF1_OVERSIZE   BIT1
+#define USBH_HW_UVC_CH0_BUF0_HEADER     BIT2
+#define USBH_HW_UVC_CH0_BUF1_HEADER     BIT3
+#define USBH_HW_UVC_CH1_BUF0_OVERSIZE   BIT4
+#define USBH_HW_UVC_CH1_BUF1_OVERSIZE   BIT5
+#define USBH_HW_UVC_CH1_BUF0_HEADER     BIT6
+#define USBH_HW_UVC_CH1_BUF1_HEADER     BIT7
+
+#define USBH_HW_UVC_CH_IDX_STREAM0             (0U)      /**< Channel index for stream 0. */
+#define USBH_HW_UVC_CH_IDX_STREAM1             (1U)      /**< Channel index for stream 1. */
+#define USBH_HW_UVC_CH_INVALID                 (0xFU)    /**< Invalid channel return value. */
+#define USBH_HW_UVC_BUF_INVALID                (0xEU)    /**< Invalid buf addr return value. */
+#define USBH_HW_UVC_STOP_DELAY_MS              (1U)      /**< Delay before disabling concat after stop. */
 /* Exported types ------------------------------------------------------------*/
 
 /**
@@ -58,8 +64,8 @@ typedef struct {
 	 */
 	void (*err_cb)(usbh_hw_uvc_err_status_t err);
 
-	u32 frame_done_num;
-	u32 frame_done_size;
+	__IO u32 frame_done_cnt;
+	__IO u32 frame_done_size;
 	u32 free_buf_cnt;
 
 	/* cmd reg related */

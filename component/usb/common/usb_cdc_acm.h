@@ -103,7 +103,7 @@ typedef union {
 		u8  bParityType; /**< Parity Type, see @ref usb_cdc_acm_line_coding_parity_t */
 		u8  bDataBits;   /**< Data Bits (usually 5, 6, 7, 8, or 16) */
 	} b;                 /**< Structured member access */
-} usb_cdc_line_coding_t;
+} __PACKED usb_cdc_line_coding_t;
 /** @} End of USB_Common_Types group */
 /** @} End of USB_Common_API group */
 

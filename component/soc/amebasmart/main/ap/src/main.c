@@ -130,7 +130,7 @@ void app_pmu_init(void)
 	app_uart_rx_pin_wake_init();
 }
 
-#ifdef CONFIG_CA32_FREERTOS_V11_1_0
+#if defined(configUSE_CORE_AFFINITY) && (configUSE_CORE_AFFINITY == 1)
 void app_affinity_idle_task(void *param)
 {
 	UNUSED(param);
@@ -201,7 +201,7 @@ int main(void)
 
 	vPortEnableOtherCore();
 
-#ifdef CONFIG_CA32_FREERTOS_V11_1_0
+#if defined(configUSE_CORE_AFFINITY) && (configUSE_CORE_AFFINITY == 1)
 	/* bind idle task to core0 and passive idle task to core1. */
 	rtos_task_create(NULL, NULL, (rtos_task_function_t) app_affinity_idle_task, NULL, 1024, 9);
 #endif

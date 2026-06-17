@@ -57,11 +57,11 @@ extern "C" {
 * used by serial_format
 */
 typedef enum {
-	ParityNone = 0,		/*!<parity disable */
-	ParityOdd = 1,		/*!<odd parity enable */
-	ParityEven = 2,		/*!<even paroty enable */
-	ParityForced1 = 3,	/*!<same action with ParityOdd */
-	ParityForced0 = 4	/*!<same action with ParityEven */
+	ParityNone = 0,		/*!< Parity disable. */
+	ParityOdd = 1,		/*!< Odd parity enable. */
+	ParityEven = 2,		/*!< Even parity enable. */
+	ParityForced1 = 3,	/*!< Sticky parity 1 enable. */
+	ParityForced0 = 4	/*!< Sticky parity 0 enable. */
 } SerialParity;
 
 /**
@@ -69,8 +69,8 @@ typedef enum {
  * used by serial_irq_set
  */
 typedef enum {
-	RxIrq,		/*!<RX IRQ enable/disable */
-	TxIrq		/*!<TX IRQ enable/disable */
+	RxIrq,		/*!< RX IRQ enable/disable. */
+	TxIrq		/*!< TX IRQ enable/disable. */
 } SerialIrq;
 
 /**
@@ -78,31 +78,40 @@ typedef enum {
  * used by serial_set_flow_control
  */
 typedef enum {
-	FlowControlNone,	/*!<none RTS/CTS */
-	FlowControlRTS,		/*!<RTS enable */
-	FlowControlCTS,		/*!<CTS enable */
-	FlowControlRTSCTS	/*!<RTS/CTS enable */
+	FlowControlNone,	/*!< No RTS/CTS. */
+	FlowControlRTS,		/*!< RTS enable. */
+	FlowControlCTS,		/*!< CTS enable. */
+	FlowControlRTSCTS	/*!< RTS/CTS enable. */
 } FlowControl;
 
 /**
   * @}
   */
 
-/**
-  * @}
+/** @defgroup MBED_UART_Structure_Type Structure Type
+  * @{
   */
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-typedef void (*uart_irq_handler)(uint32_t id, SerialIrq event);
 
 typedef struct serial_s serial_t;
+
+/** @brief Typedef function pointer to point UART interrupt handler */
+typedef void (*uart_irq_handler)(uint32_t id, SerialIrq event);
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
 
 void serial_init(serial_t *obj, PinName tx, PinName rx);
 void serial_free(serial_t *obj);

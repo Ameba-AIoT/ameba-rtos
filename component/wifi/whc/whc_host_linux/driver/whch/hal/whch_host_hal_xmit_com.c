@@ -3,7 +3,7 @@
 #ifdef CONFIG_WHCH
 void whc_host_hal_pending_q_init(u8 iface_type)
 {
-	struct hw_xmit *ppending_q = global_idev.pending_queue[iface_type].hwxmits;
+	struct hw_xmit *ppending_q = global_idev.whchpriv.pending_queue[iface_type].hwxmits;
 	int i = 0;
 
 	for (i = 0; i < 4; i++) {
@@ -23,7 +23,7 @@ int whc_host_hal_pending_q_check(struct hw_xmit *ppending_q)
 
 int whc_host_hal_pending_q_status(u8 iface_type)
 {
-	struct hw_xmit *ppending_q = global_idev.pending_queue[iface_type].hwxmits;
+	struct hw_xmit *ppending_q = global_idev.whchpriv.pending_queue[iface_type].hwxmits;
 	int val = 0, i = 0;
 
 	for (i = 0; i < 4; i++) {
@@ -49,7 +49,7 @@ void whc_host_hal_pending_q_enqueue(struct hw_xmit *pending_top, struct sta_xmit
 
 void whc_host_hal_pending_q_dequeue(int iface_type)
 {
-	struct whch_xmit_priv 	*pxmitpriv = &global_idev.xmitpriv;
+	struct whch_xmit_priv 	*pxmitpriv = &global_idev.whchpriv.xmitpriv;
 	struct hw_xmit			*pending_top = NULL;
 	struct pending_sta_t	*pending_sta = NULL;
 	struct sk_buff 			*pskb = NULL;
@@ -60,7 +60,7 @@ void whc_host_hal_pending_q_dequeue(int iface_type)
 	spin_lock(&pxmitpriv->mutex);
 	/* 0(VO), 1(VI), 2(BE), 3(BK) */
 	for (idx = 0; idx < 4; idx++) {
-		pending_top = &global_idev.pending_queue[iface_type].hwxmits[idx];
+		pending_top = &global_idev.whchpriv.pending_queue[iface_type].hwxmits[idx];
 		sta_phead = &pending_top->sta_queue;
 		sta_plist = sta_phead->next;
 		while (sta_plist != sta_phead) {
@@ -142,7 +142,7 @@ void whc_host_hal_pending_q_free(int iface_type, struct sta_xmit_priv *psta_xmit
 			list_del_init(plist);
 			dev_dbg(global_idev.pwhc_dev, "[whc] %s hw_queue=%d skb=%x.", __func__, hw_queue, skb);
 			ptxdesc = (struct txdesc_priv *)skb->data;
-			pending_top = &global_idev.pending_queue[iface_type].hwxmits[hw_queue];
+			pending_top = &global_idev.whchpriv.pending_queue[iface_type].hwxmits[hw_queue];
 			atomic_dec(&pending_sta->qcnt);
 			atomic_dec(&pending_top->accnt);
 			dev_kfree_skb_any(skb);
@@ -154,7 +154,7 @@ void whc_host_hal_pending_q_free(int iface_type, struct sta_xmit_priv *psta_xmit
 
 int whc_host_hal_xmitframe_coalesce(u8 iface_type, struct sk_buff *pkt, struct xmit_frame *pxmitframe, u8 force_cts2self)
 {
-	struct security_priv *psecuritypriv = &global_idev.securitypriv[iface_type];
+	struct whch_security_priv *psecuritypriv = &global_idev.whchpriv.securitypriv[iface_type];
 	struct pkt_file pktfile;
 	s32 llc_sz;
 	u8 *pframe, *mem_start;
@@ -257,7 +257,6 @@ int whc_host_hal_xmitframe_coalesce(u8 iface_type, struct sk_buff *pkt, struct x
 		pattrib->last_txcmdsz += pattrib->icv_len;
 	}
 
-	/* TODO */
 	whc_host_xmit_enc_software(iface_type, psecuritypriv, pxmitframe);
 
 	if (bmcst == false) {
@@ -276,7 +275,7 @@ exit:
 
 int whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe, u8 *wlan_hw_queue)
 {
-	struct whch_xmit_priv *pxmitpriv = &global_idev.xmitpriv;
+	struct whch_xmit_priv *pxmitpriv = &global_idev.whchpriv.xmitpriv;
 	struct pkt_attrib *pattrib = &pxmitframe->attrib;
 	struct sta_info *psta = NULL;
 	struct sta_mlme_priv *psta_mlmepriv = NULL;
@@ -310,7 +309,7 @@ int whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe, u8
 	}
 
 	hw_queue = whc_host_hal_hwqueue_get(pattrib->qsel);
-	ppending_q = &global_idev.pending_queue[iface_type].hwxmits[hw_queue];
+	ppending_q = &global_idev.whchpriv.pending_queue[iface_type].hwxmits[hw_queue];
 	*wlan_hw_queue = hw_queue;
 	/*step1: set txdesc*/
 	if (pxmitframe->pkt == NULL) {
@@ -324,11 +323,11 @@ int whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe, u8
 	//ptxdesc -= offset;	//force ptxdesc 4-bytes aligned
 	whc_host_hal_txdesc_fill(pxmitframe, ptxdesc);
 	pxmitframe->pkt->len = pattrib->last_txcmdsz + TXDESC_SIZE + offset;
-	dev_dbg(global_idev.pwhc_dev, "[whc] %s len=%d.", __func__, pxmitframe->pkt->len);
+	//dev_dbg(global_idev.pwhc_dev, "[whc] %s len=%d.", __func__, pxmitframe->pkt->len);
 
 	/*step2: check enqueue*/
 	/*step2.1: check if need move to sleep_q*/
-	/* ap mode TODO */
+	/* TODO_softap */
 #if 0
 	if ((iface_type == WHC_AP_PORT) && rtw_ap_enqueue_for_sleeping_sta(psta_mlmepriv, pxmitframe->pkt) == true) {
 		enqueued = 1;
@@ -339,7 +338,7 @@ int whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe, u8
 		spin_lock(&pxmitpriv->mutex);
 		if ((whc_host_hal_pending_q_check(ppending_q) > 0) ||
 			(whc_host_hal_txbd_enough_check() == 0) ||	//TODO: maybe check usb/sdio resource?
-			global_idev.mlme_priv.b_in_scan || global_idev.mlme_priv.b_in_connect) {
+			global_idev.mlme_priv.b_in_scan || global_idev.mlme_priv.b_in_linking) {
 			if (psta_xmitpriv) {
 				//dev_dbg(global_idev.pwhc_dev, "[whc] %s %d enqueue.", __func__, __LINE__);
 				whc_host_hal_pending_q_enqueue(ppending_q, psta_xmitpriv, pxmitframe->pkt, hw_queue);
@@ -362,6 +361,7 @@ int whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe, u8
 	return RTK_TX_DIRECT;
 
 drop_pkt:
+	pxmitframe->pkt = NULL;/*not free skb*/
 	whc_host_xmitframe_free(pxmitframe);
 	return RTK_TX_DROP;
 }
@@ -398,6 +398,7 @@ int whc_host_hal_xmit(u8 iface_type, struct xmit_frame *pxmitframe, u8 *wlan_hw_
 		whc_host_hal_xmit_check_eapol4(iface_type, pxmitframe);
 		ret = whc_host_hal_xmitframe_dump(iface_type, pxmitframe, wlan_hw_queue);
 	} else {
+		pxmitframe->pkt = NULL;
 		whc_host_xmitframe_free(pxmitframe);
 	}
 	return ret;
@@ -405,7 +406,7 @@ int whc_host_hal_xmit(u8 iface_type, struct xmit_frame *pxmitframe, u8 *wlan_hw_
 
 int whc_host_hal_xmit_thread(void *data)
 {
-	struct whch_xmit_priv *pxmitpriv = &global_idev.xmitpriv;
+	struct whch_xmit_priv *pxmitpriv = &global_idev.whchpriv.xmitpriv;
 	int ret = 0;
 
 	while (!kthread_should_stop()) {

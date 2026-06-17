@@ -1097,11 +1097,11 @@ struct GDMA_CH_LLI {
 /** @defgroup GDMA_Index_Channel_Definition GDMA Index Channel Definition
   * @{
   */
-#define MAX_GDMA_INDX		              (0)
-#define MAX_GDMA_CHNL		              (7)
+#define MAX_GDMA_INDX		              (0) /*!< Maximum GDMA index value. */
+#define MAX_GDMA_CHNL		              (7) /*!< Maximum GDMA channel number. */
 
-#define IS_GDMA_ChannelNum(NUM)       ((NUM) <= MAX_GDMA_CHNL)
-#define IS_GDMA_Index(NUM)            ((NUM) <= MAX_GDMA_INDX)
+#define IS_GDMA_ChannelNum(NUM)       ((NUM) <= MAX_GDMA_CHNL) /*!< Check if GDMA channel number is valid. */
+#define IS_GDMA_Index(NUM)            ((NUM) <= MAX_GDMA_INDX) /*!< Check if GDMA index value is valid. */
 /**
   * @}
   */
@@ -1109,15 +1109,16 @@ struct GDMA_CH_LLI {
 /** @defgroup GDMA_Data_Transfer_Direction GDMA Data Transfer Direction
   * @{
   */
-#define TTFCMemToMem						      ((u32)0x00000000)
-#define TTFCMemToPeri						      ((u32)0x00000001)
-#define TTFCPeriToMem						      ((u32)0x00000002)
-#define TTFCPeriToPeri						    ((u32)0x00000003)
-#define TTFCPeriToMem_PerCtrl			    ((u32)0x00000004)
-#define TTFCPeriToPeri_SrcPerCtrl			((u32)0x00000005)
-#define TTFCMemToPeri_PerCtrl				  ((u32)0x00000006)
-#define TTFCPeriToPeri_DstPerCtrl			((u32)0x00000007)
+#define TTFCMemToMem						      ((u32)0x00000000) /*!< Memory to memory transfer. */
+#define TTFCMemToPeri						      ((u32)0x00000001) /*!< Memory to peripheral transfer. */
+#define TTFCPeriToMem						      ((u32)0x00000002) /*!< Peripheral to memory transfer. */
+#define TTFCPeriToPeri						    ((u32)0x00000003) /*!< Peripheral to peripheral transfer. */
+#define TTFCPeriToMem_PerCtrl			    ((u32)0x00000004) /*!< Peripheral to memory, peripheral as flow controller. */
+#define TTFCPeriToPeri_SrcPerCtrl			((u32)0x00000005) /*!< Peripheral to peripheral, source peripheral as flow controller. */
+#define TTFCMemToPeri_PerCtrl				  ((u32)0x00000006) /*!< Memory to peripheral, peripheral as flow controller. */
+#define TTFCPeriToPeri_DstPerCtrl			((u32)0x00000007) /*!< Peripheral to peripheral, destination peripheral as flow controller. */
 
+/** @brief Check if GDMA transfer direction value is valid. */
 #define IS_GDMA_DIR(DIR)              (((DIR) == TTFCMemToMem) || \
                                        ((DIR) == TTFCMemToPeri) || \
                                        ((DIR) == TTFCPeriToMem) ||\
@@ -1133,10 +1134,10 @@ struct GDMA_CH_LLI {
 /** @defgroup GDMA_Data_Size GDMA Data Size
   * @{
   */
-#define TrWidthOneByte						    ((u32)0x00000000)
-#define TrWidthTwoBytes						    ((u32)0x00000001)
-#define TrWidthFourBytes						  ((u32)0x00000002)
-#define TrWidthEightBytes             ((u32)0x00000003)//not support
+#define TrWidthOneByte						    ((u32)0x00000000) /*!< Transfer width of one byte. */
+#define TrWidthTwoBytes						    ((u32)0x00000001) /*!< Transfer width of two bytes. */
+#define TrWidthFourBytes						  ((u32)0x00000002) /*!< Transfer width of four bytes. */
+/** @brief Check if GDMA data size value is valid. */
 #define IS_GDMA_DATA_SIZE(SIZE)       (((SIZE) == TrWidthOneByte) || \
                                        ((SIZE) == TrWidthTwoBytes) || \
                                        ((SIZE) == TrWidthFourBytes))
@@ -1147,19 +1148,24 @@ struct GDMA_CH_LLI {
 /** @defgroup GDMA_Msize GDMA Msize
   * @{
   */
-#define MsizeOne							        ((u32)0x00000000)
-#define MsizeFour							        ((u32)0x00000001)
-#define MsizeEight							      ((u32)0x00000002)
-#define MsizeSixteen						      ((u32)0x00000003)
-#define Msize32								        ((u32)0x00000004)
-#define Msize64								        ((u32)0x00000005)
-#define Msize128							        ((u32)0x00000006)
-#define Msize256							        ((u32)0x00000007)
+#define MsizeOne							        ((u32)0x00000000) /*!< Burst transaction length of 1 item. */
+#define MsizeFour							        ((u32)0x00000001) /*!< Burst transaction length of 4 items. */
+#define MsizeEight							      ((u32)0x00000002) /*!< Burst transaction length of 8 items. */
+#define MsizeSixteen						      ((u32)0x00000003) /*!< Burst transaction length of 16 items. */
+#define Msize32								        ((u32)0x00000004) /*!< Burst transaction length of 32 items. */
+#define Msize64								        ((u32)0x00000005) /*!< Burst transaction length of 64 items. */
+#define Msize128							        ((u32)0x00000006) /*!< Burst transaction length of 128 items. */
+#define Msize256							        ((u32)0x00000007) /*!< Burst transaction length of 256 items. */
 
+/** @brief Check if GDMA Msize value is valid. */
 #define IS_GDMA_MSIZE(SIZE)           (((SIZE) == MsizeOne) || \
                                        ((SIZE) == MsizeFour) || \
-                                       ((SIZE) == MsizeEight)||\
-                                       ((SIZE) == MsizeSixteen))
+                                       ((SIZE) == MsizeEight)|| \
+                                       ((SIZE) == MsizeSixteen) || \
+                                       ((SIZE) == Msize32) || \
+                                       ((SIZE) == Msize64) || \
+                                       ((SIZE) == Msize128) || \
+                                       ((SIZE) == Msize256))
 /**
   * @}
   */
@@ -1167,10 +1173,11 @@ struct GDMA_CH_LLI {
 /** @defgroup GDMA_Increment_Mode GDMA Increment Mode
   * @{
   */
-#define IncType								        ((u32)0x00000000)
-#define DecType								        ((u32)0x00000001)
-#define NoChange							        ((u32)0x00000002)
+#define IncType								        ((u32)0x00000000) /*!< Increment address after each transfer. */
+#define DecType								        ((u32)0x00000001) /*!< Decrement address after each transfer. */
+#define NoChange							        ((u32)0x00000002) /*!< Keep address unchanged after each transfer. */
 
+/** @brief Check if GDMA increment mode value is valid. */
 #define IS_GDMA_IncMode(STATE)        (((STATE) == IncType) || \
                                        ((STATE) == DecType) || \
                                        ((STATE) == NoChange))
@@ -1181,13 +1188,11 @@ struct GDMA_CH_LLI {
 /** @defgroup GDMA_Interrupt_Type GDMA Interrupt Type
   * @{
   */
-#define TransferType							    ((u32)0x00000001)
-#define BlockType							        ((u32)0x00000002)
-#define SrcTransferType						    ((u32)0x00000004)
-#define DstTransferType						    ((u32)0x00000008)
-#define ErrType								        ((u32)0x000000010)
+#define TransferType							    ((u32)0x00000001) /*!< DMA transfer complete interrupt type. */
+#define BlockType							        ((u32)0x00000002) /*!< DMA block transfer complete interrupt type. */
+#define ErrType								        ((u32)0x000000010) /*!< DMA transfer error interrupt type. */
 
-#define IS_GDMA_CONFIG_IT(IT)         ((((IT) & 0xFFFFFFE0) == 0x00) && ((IT) != 0x00))
+#define IS_GDMA_CONFIG_IT(IT)         ((((IT) & 0xFFFFFFE0) == 0x00) && ((IT) != 0x00)) /*!< Check if GDMA interrupt type configuration is valid. */
 /**
   * @}
   */
@@ -1195,9 +1200,9 @@ struct GDMA_CH_LLI {
 /** @defgroup GDMA_Reload_Definition GDMA Reload Definition
   * @{
   */
-#define CLEAN_RELOAD_SRC					    ((u32)0x00000001)
-#define CLEAN_RELOAD_DST					    ((u32)0x00000002)
-#define CLEAN_RELOAD_SRC_DST				  ((u32)0x00000003)
+#define CLEAN_RELOAD_SRC					    ((u32)0x00000001) /*!< Clean auto-reload on source side. */
+#define CLEAN_RELOAD_DST					    ((u32)0x00000002) /*!< Clean auto-reload on destination side. */
+#define CLEAN_RELOAD_SRC_DST				  ((u32)0x00000003) /*!< Clean auto-reload on both source and destination. */
 /**
   * @}
   */
@@ -1205,11 +1210,11 @@ struct GDMA_CH_LLI {
 /** @defgroup GDMA_Interrupt_Status GDMA Interrupt Status
   * @{
   */
-#define GDMA_INT_GET(reg, channel)          ((reg) & BIT(channel))
-#define GDMA_INT_SET(reg, channel)          ((reg) = (BIT(channel) | BIT(channel + 8)))
-#define GDMA_INT_MASK(reg, channel)         ((reg) = (BIT(channel + 8)))
+#define GDMA_INT_GET(reg, channel)          ((reg) & BIT(channel)) /*!< Get interrupt status bit for a channel. */
+#define GDMA_INT_SET(reg, channel)          ((reg) = (BIT(channel) | BIT(channel + 8))) /*!< Set interrupt enable bit for a channel. */
+#define GDMA_INT_MASK(reg, channel)         ((reg) = (BIT(channel + 8))) /*!< Mask interrupt for a channel. */
 
-#define GDMA_INT_STATUS(raw_reg, reg, channel)    (GDMA_INT_GET(raw_reg, channel) && GDMA_INT_GET(reg, channel))
+#define GDMA_INT_STATUS(raw_reg, reg, channel)    (GDMA_INT_GET(raw_reg, channel) && GDMA_INT_GET(reg, channel)) /*!< Check if channel interrupt is active. */
 
 /**
   * @}
@@ -1218,7 +1223,7 @@ struct GDMA_CH_LLI {
 /** @defgroup GDMA_Channel_Status GDMA Channel Status
   * @{
   */
-#define GDMA_GET_CH_STATUS(cfg_reg)		(((cfg_reg) & (GDMA_BIT_CFGx_L_DST_PCTL_OVER | GDMA_BIT_CFGx_L_SRC_PCTL_OVER | GDMA_BIT_CFGx_L_INACTIVE)))
+#define GDMA_GET_CH_STATUS(cfg_reg)		(((cfg_reg) & (GDMA_BIT_CFGx_L_DST_PCTL_OVER | GDMA_BIT_CFGx_L_SRC_PCTL_OVER | GDMA_BIT_CFGx_L_INACTIVE))) /*!< Get GDMA channel inactive and protocol finish status. */
 /**
   * @}
   */
@@ -1226,48 +1231,48 @@ struct GDMA_CH_LLI {
 /** @defgroup GDMA0_HS_HandShake_Interface GDMA0 HS HandShake Interface
   * @{
   */
-#define GDMA_HANDSHAKE_INTERFACE_UART0_TX		  (0)
-#define GDMA_HANDSHAKE_INTERFACE_UART0_RX		  (1)
-#define GDMA_HANDSHAKE_INTERFACE_UART1_TX		  (2)
-#define GDMA_HANDSHAKE_INTERFACE_UART1_RX		  (3)
-#define GDMA_HANDSHAKE_INTERFACE_UART2_TX		  (4)
-#define GDMA_HANDSHAKE_INTERFACE_UART2_RX		  (5)
+#define GDMA_HANDSHAKE_INTERFACE_UART0_TX		  (0) /*!< Handshake interface index for UART0 TX. */
+#define GDMA_HANDSHAKE_INTERFACE_UART0_RX		  (1) /*!< Handshake interface index for UART0 RX. */
+#define GDMA_HANDSHAKE_INTERFACE_UART1_TX		  (2) /*!< Handshake interface index for UART1 TX. */
+#define GDMA_HANDSHAKE_INTERFACE_UART1_RX		  (3) /*!< Handshake interface index for UART1 RX. */
+#define GDMA_HANDSHAKE_INTERFACE_UART2_TX		  (4) /*!< Handshake interface index for UART2 TX. */
+#define GDMA_HANDSHAKE_INTERFACE_UART2_RX		  (5) /*!< Handshake interface index for UART2 RX. */
 
-#define GDMA_HANDSHAKE_INTERFACE_SPI0_TX		  (6)
-#define GDMA_HANDSHAKE_INTERFACE_SPI0_RX		  (7)
-#define GDMA_HANDSHAKE_INTERFACE_SPI1_TX		  (8)
-#define GDMA_HANDSHAKE_INTERFACE_SPI1_RX		  (9)
+#define GDMA_HANDSHAKE_INTERFACE_SPI0_TX		  (6) /*!< Handshake interface index for SPI0 TX. */
+#define GDMA_HANDSHAKE_INTERFACE_SPI0_RX		  (7) /*!< Handshake interface index for SPI0 RX. */
+#define GDMA_HANDSHAKE_INTERFACE_SPI1_TX		  (8) /*!< Handshake interface index for SPI1 TX. */
+#define GDMA_HANDSHAKE_INTERFACE_SPI1_RX		  (9) /*!< Handshake interface index for SPI1 RX. */
 
-#define GDMA_HANDSHAKE_INTERFACE_SPIC_TX		  (10)
-#define GDMA_HANDSHAKE_INTERFACE_SPIC_RX		  (11)
+#define GDMA_HANDSHAKE_INTERFACE_SPIC_TX		  (10) /*!< Handshake interface index for SPIC TX. */
+#define GDMA_HANDSHAKE_INTERFACE_SPIC_RX		  (11) /*!< Handshake interface index for SPIC RX. */
 
-#define GDMA_HANDSHAKE_INTERFACE_SPORT0F0_TX	(12)
-#define GDMA_HANDSHAKE_INTERFACE_SPORT0F1_TX	(13)
-#define GDMA_HANDSHAKE_INTERFACE_SPORT0F0_RX	(14)
-#define GDMA_HANDSHAKE_INTERFACE_SPORT0F1_RX	(15)
+#define GDMA_HANDSHAKE_INTERFACE_SPORT0F0_TX	(12) /*!< Handshake interface index for SPORT0 FIFO0 TX. */
+#define GDMA_HANDSHAKE_INTERFACE_SPORT0F1_TX	(13) /*!< Handshake interface index for SPORT0 FIFO1 TX. */
+#define GDMA_HANDSHAKE_INTERFACE_SPORT0F0_RX	(14) /*!< Handshake interface index for SPORT0 FIFO0 RX. */
+#define GDMA_HANDSHAKE_INTERFACE_SPORT0F1_RX	(15) /*!< Handshake interface index for SPORT0 FIFO1 RX. */
 
-#define GDMA_HANDSHAKE_INTERFACE_I2C0_TX		  (16)
-#define GDMA_HANDSHAKE_INTERFACE_I2C0_RX		  (17)
-#define GDMA_HANDSHAKE_INTERFACE_I2C1_TX		  (18)
-#define GDMA_HANDSHAKE_INTERFACE_I2C1_RX		  (19)
+#define GDMA_HANDSHAKE_INTERFACE_I2C0_TX		  (16) /*!< Handshake interface index for I2C0 TX. */
+#define GDMA_HANDSHAKE_INTERFACE_I2C0_RX		  (17) /*!< Handshake interface index for I2C0 RX. */
+#define GDMA_HANDSHAKE_INTERFACE_I2C1_TX		  (18) /*!< Handshake interface index for I2C1 TX. */
+#define GDMA_HANDSHAKE_INTERFACE_I2C1_RX		  (19) /*!< Handshake interface index for I2C1 RX. */
 
-#define GDMA_HANDSHAKE_INTERFACE_CAN0_RX      (20)
-#define GDMA_HANDSHAKE_INTERFACE_CAN1_RX      (21)
+#define GDMA_HANDSHAKE_INTERFACE_CAN0_RX      (20) /*!< Handshake interface index for CAN0 RX. */
+#define GDMA_HANDSHAKE_INTERFACE_CAN1_RX      (21) /*!< Handshake interface index for CAN1 RX. */
 
-#define GDMA_HANDSHAKE_INTERFACE_UART_LOG_RX	(22)
-#define GDMA_HANDSHAKE_INTERFACE_UART_LOG_TX	(23)
+#define GDMA_HANDSHAKE_INTERFACE_UART_LOG_RX	(22) /*!< Handshake interface index for UART_LOG RX. */
+#define GDMA_HANDSHAKE_INTERFACE_UART_LOG_TX	(23) /*!< Handshake interface index for UART_LOG TX. */
 
-#define GDMA_HANDSHAKE_INTERFACE_UART3_TX		  (24)
-#define GDMA_HANDSHAKE_INTERFACE_UART3_RX		  (25)
+#define GDMA_HANDSHAKE_INTERFACE_UART3_TX		  (24) /*!< Handshake interface index for UART3 TX. */
+#define GDMA_HANDSHAKE_INTERFACE_UART3_RX		  (25) /*!< Handshake interface index for UART3 RX. */
 
-#define GDMA_HANDSHAKE_INTERFACE_PSRAMC_RX		(26)
+#define GDMA_HANDSHAKE_INTERFACE_PSRAMC_RX		(26) /*!< Handshake interface index for PSRAMC RX. */
 
-#define GDMA_HANDSHAKE_INTERFACE_CTC_RX			(27)
+#define GDMA_HANDSHAKE_INTERFACE_CTC_RX			(27) /*!< Handshake interface index for CTC RX. */
 
-#define GDMA_HANDSHAKE_INTERFACE_Zigbee_TX		(NULL)
-#define GDMA_HANDSHAKE_INTERFACE_Zigbee_RX		(NULL)
-#define GDMA_HANDSHAKE_INTERFACE_AUDIO_TX		  (NULL)
-#define GDMA_HANDSHAKE_INTERFACE_AUDIO_RX		  (NULL)
+#define GDMA_HANDSHAKE_INTERFACE_Zigbee_TX		(NULL) /*!< Handshake interface index for Zigbee TX. */
+#define GDMA_HANDSHAKE_INTERFACE_Zigbee_RX		(NULL) /*!< Handshake interface index for Zigbee RX. */
+#define GDMA_HANDSHAKE_INTERFACE_AUDIO_TX		  (NULL) /*!< Handshake interface index for Audio TX. */
+#define GDMA_HANDSHAKE_INTERFACE_AUDIO_RX		  (NULL) /*!< Handshake interface index for Audio RX. */
 /**
   * @}
   */

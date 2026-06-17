@@ -207,7 +207,5 @@ int example_raw_ctc_press_release(void) {
 		RTK_LOGE(NOTAG, "Cannot create CTC_TOUCH_RELEASE_DEMO\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

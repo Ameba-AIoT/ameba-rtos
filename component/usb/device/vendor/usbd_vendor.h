@@ -34,7 +34,7 @@
 #define USBD_VENDOR_SELF_POWERED						1U						/**< Device is self-powered */
 #define USBD_VENDOR_REMOTE_WAKEUP_EN					1U						/**< Remote wakeup is enabled */
 #define USBD_VENDOR_CONFIG_DESC_SIZE					83U						/**< Total size (bytes) of the configuration descriptor */
-#define USBD_VENDOR_LANGID_STRING						0x0409U					/**< Language ID for string descriptors (0x0409 = English */
+#define USBD_VENDOR_LANGID_STRING						0x0409U					/**< Language ID for string descriptors (0x0409 = English) */
 #define USBD_VENDOR_MFG_STRING							"Realtek"				/**< Manufacturer string */
 #define USBD_VENDOR_PROD_HS_STRING						"Realtek Vendor (HS)"	/**< Product string for High-Speed mode */
 #define USBD_VENDOR_PROD_FS_STRING						"Realtek Vendor (FS)"	/**< Product string for Full-Speed mode */

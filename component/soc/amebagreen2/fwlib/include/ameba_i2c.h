@@ -40,7 +40,7 @@
   *****************************************************************************************
   *      To use the normal i2c mode, the following steps are mandatory:
   *
-  *      1. Enable peripheral clock using the follwoing functions.(it is enabled by default)
+  *      1. Enable peripheral clock using the following functions.(it is enabled by default)
   *			RCC_PeriphClockCmd(APBPeriph_I2Cx, APBPeriph_I2Cx_CLOCK, ENABLE);
   *
   *      2. configure the I2C pinmux.
@@ -748,55 +748,12 @@ typedef struct {
 } I2C_DevTable;
 
 /**
-  * @brief  I2C Backup Structure Definition
-  */
-typedef struct {
-	uint32_t IC_CON;
-	uint32_t IC_TAR;
-	uint32_t IC_SAR;
-	uint32_t IC_HS_MAR;
-	uint32_t IC_SS_SCL_HCNT;
-	uint32_t IC_SS_SCL_LCNT;
-	uint32_t IC_FS_SCL_HCNT;
-	uint32_t IC_FS_SCL_LCNT;
-	uint32_t IC_HS_SCL_HCNT;
-	uint32_t IC_HS_SCL_LCNT;
-	uint32_t IC_INTR_MASK;
-	uint32_t IC_RX_TL;
-	uint32_t IC_TX_TL;
-	uint32_t IC_SDA_HOLD;
-	uint32_t IC_SLV_DATA_NACK_ONLY;
-	uint32_t IC_DMA_TDLR;
-	uint32_t IC_DMA_RDLR;
-	uint32_t IC_SDA_SETUP;
-	uint32_t IC_ACK_GENERAL_CALL;
-	uint32_t IC_OUT_SMP_DLY;
-	uint32_t IC_FILTER;
-	uint32_t IC_SAR2;
-} I2C_Backup;
-
-/**
   * @}
   */
 
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup I2C_Exported_Constants I2C Exported Constants
   * @{
-  */
-
-/** @defgroup I2C_Controller IDs
-  * @{
-  */
-
-typedef enum {
-	I2C_ID_0,
-	I2C_ID_1,
-	I2C_MAX_NUM
-} I2C_ID_Type;
-#define IS_I2C_ID(ID) (((ID) == I2C_ID_0) || \
-									   ((ID) == I2C_ID_1))
-/**
-  * @}
   */
 
 /** @defgroup I2C_Addr_Mode I2C Address Mode
@@ -835,7 +792,7 @@ typedef enum {
 /** @defgroup I2C_Clock I2C Clock
   * @{
   */
-#define I2C0_1_IPCLK			40000000
+#define I2C0_1_IPCLK			XTAL_ClkGet() /* XTAL_40M */
 /**
   * @}
   */
@@ -893,6 +850,11 @@ typedef enum {
 /** @} */
 /** @} */
 
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup I2C_Exported_Functions I2C Exported Functions
+  * @{
+  */
+
 /*I2C_Exported_Normal_Functions I2C Exported Normal Functions*/
 _LONG_CALL_ void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct);
 _LONG_CALL_ void I2C_Cmd(I2C_TypeDef *I2Cx, u8 NewState);
@@ -935,12 +897,9 @@ _LONG_CALL_ void I2C_DmaMode2Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_D
 _LONG_CALL_ bool I2C_TXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pTxBuf, int TxCount);
 _LONG_CALL_ bool I2C_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pRxBuf, int RxCount);
 
-/*I2C_Backup_Functions I2C Backup Functions*/
-_LONG_CALL_ bool I2C_Config_BackupBuf(u32 i2c_id, I2C_Backup *I2C_BackupStruct);
-_LONG_CALL_ bool I2C_Suspend(u32 i2c_id);
-_LONG_CALL_ bool I2C_Resume(u32 i2c_id);
-_LONG_CALL_ void I2C_SuspendAll(void);
-_LONG_CALL_ void I2C_ResumeAll(void);
+/**
+  * @}
+  */
 
 /* Other Definitions --------------------------------------------------------*/
 #if 1

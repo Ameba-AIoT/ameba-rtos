@@ -670,15 +670,23 @@ int crypto_sym_gcm_finish(crypto_sym_gcm_context *ctx, u8 *output, u32 output_si
 
 		/* Copy final output data to user buffer if needed */
 		if (output != NULL && ctx->msg_buffer_len > 0) {
+			u8 hw_out[16];
+
 			actual_output_len = ctx->msg_buffer_len;
 			if (actual_output_len > output_size) {
 				ret = _ERRNO_CRYPTO_MESSAGE_LEN_ERR;
 				goto exit;
 			}
 
+			/* Read the full 16-byte HW output into a local buffer first,
+			 * then copy only the valid trailing bytes to the caller.
+			 * Writing directly through a u32 pointer would overflow the
+			 * caller's buffer whenever the last block is shorter than 16 B.
+			 */
 			for (u8 i = 0; i < 4; i++) {
-				((u32 *)output)[i] = AES->AES_CPU_DATAOUT_x[i];
+				((u32 *)hw_out)[i] = AES->AES_CPU_DATAOUT_x[i];
 			}
+			_memcpy(output, hw_out, actual_output_len);
 		}
 
 		/* Clear msg_buffer */

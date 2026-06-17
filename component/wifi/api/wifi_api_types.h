@@ -475,12 +475,12 @@ enum rtw_radar_mode {
   * @brief Radar type for reporting info (size: u8).
   */
 enum rtw_radar_type {
-	RTW_RADAR_TYPE_CFAR_AI_S_FAR = 0,      /**< cfar_and_ai_short_far. */
-	RTW_RADAR_TYPE_CFAR_AI_S_NEAR,         /**< cfar_and_ai_short_near */
-	RTW_RADAR_TYPE_AI_L_NEAR,              /**< ai_long_near. */
-	RTW_RADAR_TYPE_STATIC_REMOVE_FAR,      /**< static_remove_far. */
+	RTW_RADAR_TYPE_STATIC_REMOVE_FAR = 0,      /**< static_remove_far. */
+	RTW_RADAR_TYPE_CFAR_AI_S_FAR,      /**< cfar_and_ai_short_far. */
 	RTW_RADAR_TYPE_STATIC_REMOVE_NEAR,      /**< static_remove_near. */
+	RTW_RADAR_TYPE_CFAR_AI_S_NEAR,         /**< cfar_and_ai_short_near */
 	RTW_RADAR_TYPE_STATIC_REMOVE_L_NEAR,      /**< static_remove_long_near. */
+	RTW_RADAR_TYPE_AI_L_NEAR,              /**< ai_long_near. */
 	RTW_RADAR_TYPE_MAX,
 };
 

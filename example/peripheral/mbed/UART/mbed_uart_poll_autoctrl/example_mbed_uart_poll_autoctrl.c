@@ -112,7 +112,5 @@ int example_mbed_uart_polling_auto_flow_ctrl(void)
 		RTK_LOGE(NOTAG, "%s rtos_task_create(uart_auto_flow_ctrl_demo) failed\n", __FUNCTION__);
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

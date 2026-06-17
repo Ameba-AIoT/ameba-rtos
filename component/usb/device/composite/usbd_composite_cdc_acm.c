@@ -597,7 +597,8 @@ int usbd_composite_cdc_acm_init(usbd_composite_dev_t *cdev, u16 bulk_out_xfer_si
 	info = &ep_intr_in->info;
 	info->addr = USBD_COMP_CDC_INTR_IN_EP;
 	info->type = USB_CH_EP_TYPE_INTR;
-	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(sizeof(usbd_composite_cdc_acm_ntf_t));
+	ep_intr_in->xfer_buf_len = sizeof(usbd_composite_cdc_acm_ntf_t);
+	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(ep_intr_in->xfer_buf_len);
 	if (ep_intr_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto usbd_composite_cdc_acm_init_clean_bulk_in_buf_exit;

@@ -34,10 +34,10 @@
 #define USBD_HID_PID							USB_PID  /**< Product ID. */
 
 /* HID strings */
-#define USBD_HID_LANGID_STRING					0x0409U             /**< Language ID for string descriptors (0x0409 = English */
+#define USBD_HID_LANGID_STRING					0x0409U             /**< Language ID for string descriptors (0x0409 = English) */
 #define USBD_HID_MFG_STRING						"Realtek"           /**< Manufacturer string. */
 #define USBD_HID_PROD_HS_STRING					"Realtek HID (HS)"  /**< Product string for High-Speed mode. */
-#define USBD_HID_PROD_FS_STRING					"Realtek HID (FS)"  /**< Product string for High-Speed mode. */
+#define USBD_HID_PROD_FS_STRING					"Realtek HID (FS)"  /**< Product string for Full-Speed mode. */
 #define USBD_HID_SN_STRING						"1234567890"        /**< Serial number string. */
 #define USBD_HID_SELF_POWERED					1U      /**< Device is self-powered. */
 

@@ -523,8 +523,8 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 		case USBD_HID_GET_REPORT:
 			/* send an empty report */
-			memset(ep0_in->xfer_buf, 0x0, req->wLength);
-			ep0_in->xfer_len = req->wLength;
+			ep0_in->xfer_len = MIN(req->wLength, ep0_in->xfer_buf_len);
+			usb_os_memset(ep0_in->xfer_buf, 0x0, ep0_in->xfer_len);
 			usbd_ep_transmit(dev, ep0_in);
 			break;
 		case USBD_HID_SET_REPORT:

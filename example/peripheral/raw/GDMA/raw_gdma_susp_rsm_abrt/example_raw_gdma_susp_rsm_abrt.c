@@ -136,6 +136,5 @@ int example_raw_gdma_suspend_resume_abort(void)
 		printf("Cannot create dma_multiblock_transfer_task demo task\n\r");
 	}
 
-	rtos_sched_start();
 	return 0;
 }

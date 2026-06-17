@@ -152,6 +152,5 @@ int example_raw_ir_tx_nec_polling(void)
 		printf("creat IR TX thread error\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }

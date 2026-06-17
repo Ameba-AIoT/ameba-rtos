@@ -44,13 +44,7 @@ static const char *const TAG = "SERIAL";
  *  @{
  */
 
-/** @addtogroup MBED_UART_Exported_Types
- * @{
- */
-
-/** @defgroup MBED_UART_Structure_Type Structure Type
- * @{
- */
+typedef void (*UARTCB_FUN)(void *);
 
 /**
  * @brief struct MBED_UART_ADAPTER
@@ -76,7 +70,6 @@ typedef struct {
 	void *TxCompCbPara; // the pointer argument for TxCompCbPara
 	void *RxCompCbPara; // the pointer argument for RxCompCallback
 } MBED_UART_ADAPTER, *PMBED_UART_ADAPTER;
-/** @}*/
 
 static uint32_t serial_irq_ids[UART_NUM] = {0};
 
@@ -109,10 +102,6 @@ static const u32 PinMap_UART_RX[UART_NUM] = {
 	PINMUX_FUNCTION_UART1_RXD,
 	PINMUX_FUNCTION_UART2_RXD
 };
-
-/**
- * @}
- */
 
 /** @defgroup MBED_UART_Exported_Functions MBED_UART Exported Functions
  * @{
@@ -360,7 +349,6 @@ static u32 uart_irqhandler(void *Data)
  * @param obj UART object defined in application software.
  * @param tx Tx PinName according to pinmux spec.
  * @param rx Rx PinName according to pinmux spec.
- * @return None
  */
 void serial_init(serial_t *obj, PinName tx, PinName rx)
 {
@@ -405,7 +393,6 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
  * @brief Deinitialize the UART device, including clock, function, interrupt and
  * UART registers.
  * @param obj UART object defined in application software.
- * @return None
  */
 void serial_free(serial_t *obj)
 {
@@ -445,8 +432,7 @@ void serial_free(serial_t *obj)
 /**
  * @brief Set UART device baudrate.
  * @param obj UART object defined in application software.
- * @param baudrate Desired baudrate in bps.
- * @return None
+ * @param baudrate Baud Rate in units of bps, e.g. 115200.
  */
 void serial_baud(serial_t *obj, int baudrate)
 {
@@ -503,7 +489,6 @@ void serial_baud(serial_t *obj, int baudrate)
  * @param stop_bits Stop bit, this parameter can be one of the following values:
  *		@arg 2
  *		@arg 1
- * @return None
  */
 void serial_format(serial_t *obj, int data_bits, SerialParity parity, int stop_bits)
 {
@@ -564,7 +549,6 @@ void serial_format(serial_t *obj, int data_bits, SerialParity parity, int stop_b
  * @param obj UART object defined in application software.
  * @param handler UART interrupt callback function.
  * @param id UART interrupt callback parameter.
- * @return None
  */
 void serial_irq_handler(serial_t *obj, uart_irq_handler handler, uint32_t id)
 {
@@ -585,10 +569,9 @@ void serial_irq_handler(serial_t *obj, uart_irq_handler handler, uint32_t id)
  * @param irq Tx or Rx interrupt, this parameter can be one of the following values:
  *		@arg RxIrq
  *		@arg TxIrq
- * @param enable: This parameter can be one of the following values:
+ * @param enable This parameter can be one of the following values:
  *		@arg 0: Disable specified irq handler.
  *		@arg 1: Enable specified irq handler.
- * @return None
  */
 void serial_irq_set(serial_t *obj, SerialIrq irq, uint32_t enable)
 {
@@ -621,7 +604,7 @@ void serial_irq_set(serial_t *obj, SerialIrq irq, uint32_t enable)
  * @brief Get one byte data through UART.
  * @param obj UART object defined in application software.
  * @return Received character.
- * @note This function is asynchronous API.
+ * @note This function is a synchronous, blocking API.
  */
 int serial_getc(serial_t *obj)
 {
@@ -638,8 +621,7 @@ int serial_getc(serial_t *obj)
  * @brief Send one byte data through UART.
  * @param obj UART object defined in application software.
  * @param c Data to be transmitted.
- * @return None
- * @note This function is asynchronous API.
+ * @note This function is a synchronous, blocking API.
  */
 void serial_putc(serial_t *obj, int c)
 {
@@ -693,7 +675,6 @@ int serial_writable(serial_t *obj)
 /**
  * @brief Clear UART Rx FIFO.
  * @param obj UART object defined in application software.
- * @return None
  */
 void serial_clear(serial_t *obj)
 {
@@ -707,7 +688,6 @@ void serial_clear(serial_t *obj)
 /**
  * @brief Enable UART break control function.
  * @param obj UART object defined in application software.
- * @return None
  */
 void serial_break_set(serial_t *obj)
 {
@@ -719,7 +699,6 @@ void serial_break_set(serial_t *obj)
 /**
  * @brief Disable UART break control function.
  * @param obj UART object defined in application software.
- * @return None
  */
 void serial_break_clear(serial_t *obj)
 {
@@ -733,7 +712,6 @@ void serial_break_clear(serial_t *obj)
  * @param obj UART object defined in application software.
  * @param handler UART Tx complete callback function.
  * @param id UART Tx complete callback parameter.
- * @return None
  * @note This function is called when asynchronous API is used.
  */
 void serial_send_comp_handler(serial_t *obj, void *handler, uint32_t id)
@@ -750,7 +728,6 @@ void serial_send_comp_handler(serial_t *obj, void *handler, uint32_t id)
  * @param obj UART object defined in application software.
  * @param handler UART Rx complete callback function.
  * @param id UART Rx complete callback parameter.
- * @return None
  * @note This function is called when asynchronous API is used.
  */
 void serial_recv_comp_handler(serial_t *obj, void *handler, uint32_t id)
@@ -811,10 +788,10 @@ int32_t serial_recv_stream(serial_t *obj, char *prxbuf, uint32_t len)
 /**
  * @brief Send data of target length under interrupt mode.
  * @param obj UART object defined in application software.
- * @param ptxbuf: Pointer to the buffer that saves data to be written to Tx FIFO.
- * @param len: Number of data to be sent.
+ * @param ptxbuf Pointer to the buffer that saves data to be written to Tx FIFO.
+ * @param len Number of data to be sent.
  * @return HAL status, which can be a value of the followings:
- * 		- 0: Success.
+ * 		- HAL_OK(0): Success.
  * 		- HAL_BUSY(1): Error.
  * @note This function is asynchronous API.
  */
@@ -858,8 +835,8 @@ int32_t serial_send_stream(serial_t *obj, char *ptxbuf, uint32_t len)
 /**
  * @brief Receive data of target length under DMA mode.
  * @param obj UART object defined in application software.
- * @param prxbuf: Pointer to the buffer that saves data read from UART FIFO.
- * @param len: Number of data to be read.
+ * @param prxbuf Pointer to the buffer that saves data read from UART FIFO.
+ * @param len Number of data to be read.
  * @return HAL status, which can be a value of the followings:
  * 		- HAL_OK(0): Success.
  * 		- HAL_BUSY(1): Error.
@@ -912,8 +889,8 @@ int32_t serial_recv_stream_dma(serial_t *obj, char *prxbuf, uint32_t len)
 /**
  * @brief Send data of target length under DMA mode.
  * @param obj UART object defined in application software.
- * @param ptxbuf: Pointer to the buffer that saves data to be written to Tx FIFO.
- * @param len: Number of data to be sent.
+ * @param ptxbuf Pointer to the buffer that saves data to be written to Tx FIFO.
+ * @param len Number of data to be sent.
  * @return HAL status, which can be a value of the followings:
  * 		- HAL_OK(0): Success.
  * 		- HAL_BUSY(1): Error.
@@ -1065,7 +1042,6 @@ int32_t serial_recv_stream_abort(serial_t *obj)
 /**
  * @brief Clear UART Tx FIFO.
  * @param obj UART object defined in application software.
- * @return None
  */
 void serial_clear_tx(serial_t *obj)
 {
@@ -1077,7 +1053,6 @@ void serial_clear_tx(serial_t *obj)
 /**
  * @brief Clear UART Rx FIFO.
  * @param obj UART object defined in application software.
- * @return None
  */
 void serial_clear_rx(serial_t *obj)
 {
@@ -1091,7 +1066,7 @@ void serial_clear_rx(serial_t *obj)
  * @param obj UART object defined in application software.
  * @param prxbuf Pointer to the buffer that saves data read from UART FIFO.
  * @param len Number of data to be received.
- * @param timeout_ms Polling time before timeout in unit of ms.
+ * @param timeout_ms Polling time before timeout in units of ms.
  * @return Bytes of received data.
  * @note This function is synchronous API.
  */
@@ -1159,7 +1134,6 @@ int32_t serial_send_blocked(serial_t *obj, char *ptxbuf, uint32_t len, uint32_t 
 /**
  * @brief Disable UART clock and function.
  * @param obj UART object defined in application software.
- * @return None
  */
 void serial_disable(serial_t *obj)
 {
@@ -1187,7 +1161,6 @@ void serial_disable(serial_t *obj)
 /**
  * @brief Enable UART clock and function.
  * @param obj UART object defined in application software.
- * @return None
  */
 void serial_enable(serial_t *obj)
 {
@@ -1219,8 +1192,8 @@ void serial_enable(serial_t *obj)
  * @param len Number of data to be received.
  * @param timeout_ms Polling time before timeout.
  * @param force_cs Forcing context switch function.
- * @return Bytes of data received before timeout if sussess or -1 if error happens.
- * @note This function is asynchronous API.
+ * @return Bytes of data received before timeout if success or -1 if error happens.
+ * @note This function is a synchronous, blocking API.
  */
 int32_t serial_recv_stream_timeout(serial_t *obj,
 								   char *prxbuf,
@@ -1292,7 +1265,8 @@ int32_t serial_recv_stream_timeout(serial_t *obj,
  * @brief Receive data under DMA mode before hardware timeout and UART is flow controller.
  * @param obj UART object defined in application software.
  * @param prxbuf Pointer to the buffer that saves data read from UART FIFO.
- * @param len Maximum received data length before timeout.
+ * @param len Maximum received data length before timeout, or unused on platforms
+ *        where data reception length is determined by hardware timeout only.
  * @param timeout_ms Hardware timeout in ms for Rx.
  * @param force_cs Not used, reserved for compatibility.
  * @return HAL status, which can be a value of the followings:
@@ -1331,7 +1305,6 @@ int32_t serial_recv_stream_dma_timeout(serial_t *obj,
  * @brief Set UART Rx FIFO trigger level.
  * @param obj UART object defined in application software.
  * @param FifoLv FIFO level enum index.
- * @return None
  */
 void serial_rx_fifo_level(serial_t *obj, SerialFifoLevel FifoLv)
 {
@@ -1366,7 +1339,6 @@ void serial_rx_fifo_level(serial_t *obj, SerialFifoLevel FifoLv)
  * @param type Auto flow control type.
  * @param rxflow RTS pin.
  * @param txflow CTS pin.
- * @return None
  */
 void serial_set_flow_control(serial_t *obj, FlowControl type, PinName rxflow, PinName txflow)
 {

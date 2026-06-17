@@ -94,7 +94,7 @@ static void cdc_ecm_set_mac(u8 *mac);
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "ECM";
-static u8 ecm_mac[6] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};  /**< MAC address */
+static const u8 ecm_mac[6] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};  /**< MAC address */
 
 /* USB Standard Device Descriptor */
 static const u8 usbd_cdc_ecm_dev_desc[USB_LEN_DEV_DESC] = {

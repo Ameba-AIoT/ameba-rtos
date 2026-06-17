@@ -66,7 +66,6 @@ int example_mbed_rtc(void)
 		printf("Create MBED_RTC_DEMO_TASK Err!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
 

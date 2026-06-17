@@ -19,10 +19,6 @@ const I2C_DevTable I2C_DEV_TABLE[2] = {
 };
 
 u32 I2C_SLAVEWRITE_PATCH;
-// Backup buffer pointer array, one for each I2C controller
-static I2C_Backup *backup_buffers[I2C_MAX_NUM] = {NULL};
-
-
 /*below parameters are used for I2C speed fine-tune*/
 u32 IC_SS_SCL_HCNT_TRIM = 0;
 u32 IC_SS_SCL_LCNT_TRIM = 0;
@@ -42,8 +38,8 @@ u32 IC_HS_SCL_LCNT_TRIM = 0;
 
 /**
   * @brief  Master transmits the address format byte to select the slave device.
-  * @param  I2Cx: I2Cx device.
-  * @param  NewAddrFormat: specifies the address mode, can be I2C_ADDR_7BIT or I2C_ADDR_10BIT.
+  * @param  I2Cx I2Cx device.
+  * @param  NewAddrFormat Specifies the address mode, can be I2C_ADDR_7BIT or I2C_ADDR_10BIT.
   */
 void I2C_SetSlaveAddressFormat(I2C_TypeDef *I2Cx, u32 NewAddrFormat)
 {
@@ -63,10 +59,10 @@ void I2C_SetSlaveAddressFormat(I2C_TypeDef *I2Cx, u32 NewAddrFormat)
 
 /**
   * @brief  Read data with special length in slave mode through the I2Cx peripheral.
-  * @param  I2Cx: I2Cx device.
-  * @param  pBuf: point to the buffer to hold the received data.
-  * @param  len: the length of data that to be received.
-  * @param  ms: specifies timeout time, unit is ms.
+  * @param  I2Cx I2Cx device.
+  * @param  pBuf Point to the buffer to hold the received data.
+  * @param  len The length of data that to be received.
+  * @param  ms Specifies timeout time, unit is ms.
   * @return The length of data that have received from rx fifo.
   */
 u32 I2C_SlaveReadTimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
@@ -91,8 +87,8 @@ u32 I2C_SlaveReadTimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
   */
 
 /**
-  * @brief  Fills each I2C_InitStruct member with its default value.
-  * @param  I2C_InitStruct: pointer to an I2C_InitTypeDef structure which will be initialized.
+  * @brief  Fill each I2C_InitStruct member with its default value.
+  * @param  I2C_InitStruct Pointer to an I2C_InitTypeDef structure which will be initialized.
   */
 void I2C_StructInit(I2C_InitTypeDef *I2C_InitStruct)
 {
@@ -118,10 +114,10 @@ void I2C_StructInit(I2C_InitTypeDef *I2C_InitStruct)
 }
 
 /**
-  * @brief  Initializes the I2Cx peripheral according to the specified
+  * @brief  Initialize the I2Cx peripheral according to the specified
   *			parameters in the I2C_InitStruct.
-  * @param  I2Cx: I2Cx device.
-  * @param  I2C_InitStruct: pointer to a I2C_InitTypeDef structure that contains
+  * @param  I2Cx I2Cx device.
+  * @param  I2C_InitStruct Pointer to a I2C_InitTypeDef structure that contains
   * 		the configuration information for the specified I2C peripheral.
   */
 void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct)
@@ -212,20 +208,20 @@ void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct)
 
 /**
   * @brief  Master sets I2C Speed Mode.
-  * @param  I2Cx: I2Cx device.
-  * @param  SpdMd: I2C Speed Mode.
+  * @param  I2Cx I2Cx device.
+  * @param  SpdMd I2C Speed Mode.
   *   This parameter can be one of the following values:
   *     @arg I2C_SS_MODE:
   *     @arg I2C_FS_MODE:
   *     @arg I2C_HS_MODE:(not support for I2C0)
-  * @param  I2Clk: I2C Bus Clock, unit is KHz.
+  * @param  I2Clk I2C Bus Clock, unit is KHz.
   *   This parameter can be one of the following values:
   *     @arg 50:
   *     @arg 100:
   *     @arg 400:
   *     @arg 1000:
   *     @arg 3000: or others
-  * @param  I2CIPClk: I2C IP Clock, unit is Hz.
+  * @param  I2CIPClk I2C IP Clock, unit is Hz.
   */
 void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk)
 {
@@ -306,8 +302,8 @@ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk)
 
 /**
   * @brief  Master transmits the address byte to select the slave device.
-  * @param  I2Cx: I2Cx device.
-  * @param  Address: specifies the slave address which will be transmitted
+  * @param  I2Cx I2Cx device.
+  * @param  Address Specifies the slave address which will be transmitted
   */
 void I2C_SetSlaveAddress(I2C_TypeDef *I2Cx, u16 Address)
 {
@@ -320,9 +316,9 @@ void I2C_SetSlaveAddress(I2C_TypeDef *I2Cx, u16 Address)
 }
 
 /**
-  * @brief  Checks whether the specified I2C flag is set or not.
-  * @param  I2Cx: I2Cx device.
-  * @param  I2C_FLAG: specifies the flag to check.
+  * @brief  Check whether the specified I2C flag is set or not.
+  * @param  I2Cx I2Cx device.
+  * @param  I2C_FLAG Specifies the flag to check.
   *   This parameter can be one of the following values:
   *     @arg I2C_BIT_SLV_ACTIVITY:
   *     @arg I2C_BIT_MST_ACTIVITY:
@@ -350,8 +346,8 @@ u8 I2C_CheckFlagState(I2C_TypeDef *I2Cx, u32 I2C_FLAG)
 
 /**
   * @brief  ENABLE/DISABLE  the I2C's interrupt bits..
-  * @param  I2Cx: I2Cx device.
-  * @param  I2C_IT: specifies the I2Cx interrupt sources to be enabled or disabled.
+  * @param  I2Cx I2Cx device.
+  * @param  I2C_IT Specifies the I2Cx interrupt sources to be enabled or disabled.
   *          This parameter can be one or combinations of the following values:
   *            @arg I2C_BIT_M_LP_WAKE_2: I2C slave1 Address Match Interrupt
   *            @arg I2C_BIT_M_LP_WAKE_1: I2C slave0 Address Match Interrupt
@@ -367,7 +363,7 @@ u8 I2C_CheckFlagState(I2C_TypeDef *I2Cx, u32 I2C_FLAG)
   *            @arg I2C_BIT_M_RX_FULL: Receive FIFO Full Interrupt
   *            @arg I2C_BIT_M_RX_OVER: Receive FIFO Over Interrupt
   *            @arg I2C_BIT_M_RX_UNDER: Receive FIFO Under Interrupt
-  * @param  NewState: specifies the state of the interrupt.
+  * @param  NewState Specifies the state of the interrupt.
   *   This parameter can be: ENABLE or DISABLE.
   */
 void I2C_INTConfig(I2C_TypeDef *I2Cx, u32 I2C_IT, u32 NewState)
@@ -384,9 +380,9 @@ void I2C_INTConfig(I2C_TypeDef *I2Cx, u32 I2C_IT, u32 NewState)
 }
 
 /**
-  * @brief  Clears the specified I2C interrupt pending bit.
-  * @param  I2Cx: I2Cx device.
-  * @param  INTrBit: specifies the interrupt to be cleared.
+  * @brief  Clear the specified I2C interrupt pending bit.
+  * @param  I2Cx I2Cx device.
+  * @param  INTrBit Specifies the interrupt to be cleared.
   *          This parameter can be one of the following values:
   *            @arg I2C_BIT_R_LP_WAKE_2: I2C slave1 Address Match Interrupt
   *            @arg I2C_BIT_R_LP_WAKE_1: I2C slave0 Address Match Interrupt
@@ -406,7 +402,7 @@ void I2C_INTConfig(I2C_TypeDef *I2Cx, u32 I2C_IT, u32 NewState)
   *         level goes above the I2CTXTL threshold.
   *         I2C_BIT_R_RX_FULL is automatically cleared by hardware when the buffer
   *         level goes below the I2CRXTL threshold.
-  * @return cleared interrupt status
+  * @return Cleared interrupt status
   */
 u32 I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrBit)
 {
@@ -459,9 +455,9 @@ u32 I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrBit)
 }
 
 /**
-  * @brief  Clears all of the I2C interrupt pending bit.
-  * @param  I2Cx: I2Cx device.
-  * @return cleared interrupt status
+  * @brief  Clear all of the I2C interrupt pending bit.
+  * @param  I2Cx I2Cx device.
+  * @return Cleared interrupt status
   */
 u32 I2C_ClearAllINT(I2C_TypeDef *I2Cx)
 {
@@ -470,8 +466,8 @@ u32 I2C_ClearAllINT(I2C_TypeDef *I2Cx)
 
 /**
   * @brief  Get I2C Raw Interrupt Status.
-  * @param  I2Cx: I2Cx device.
-  * @return raw interrupt status
+  * @param  I2Cx I2Cx device.
+  * @return Raw interrupt status
   */
 u32 I2C_GetRawINT(I2C_TypeDef *I2Cx)
 {
@@ -480,8 +476,8 @@ u32 I2C_GetRawINT(I2C_TypeDef *I2Cx)
 
 /**
   * @brief  Get I2C interrupt status.
-  * @param  I2Cx: I2Cx device.
-  * @return interrupt status
+  * @param  I2Cx I2Cx device.
+  * @return Interrupt status
   */
 u32 I2C_GetINT(I2C_TypeDef *I2Cx)
 {
@@ -490,11 +486,11 @@ u32 I2C_GetINT(I2C_TypeDef *I2Cx)
 
 /**
   * @brief  Poll the specified I2C flag and/or RawINT to be set.
-  * @param  I2Cx: I2Cx device.
-  * @param  I2C_FLAG: specifies the status flag to check.
-  * @param  I2C_RawINT: specifies the raw interrupt status to check.
-  * @param  timeout_ms: specifies timeout time, unit is ms.
-  * @param  txflr_out: points to a backup of IC_TXFLR in case TXFIFO flush.
+  * @param  I2Cx I2Cx device.
+  * @param  I2C_FLAG Specifies the status flag to check.
+  * @param  I2C_RawINT Specifies the raw interrupt status to check.
+  * @param  timeout_ms Specifies timeout time, unit is ms.
+  * @param  txflr_out Points to a backup of IC_TXFLR in case TXFIFO flush.
   *
   * @return Operation status:
   *         - RTK_SUCCESS: pass
@@ -535,11 +531,11 @@ s32 I2C_PollFlagRawINT(I2C_TypeDef *I2Cx, u32 I2C_FLAG, u32 I2C_RawINT, u32 time
 
 /**
   * @brief  Master sends single byte through the I2Cx peripheral according to the set of the upper layer.
-  * @param  I2Cx: I2Cx device.
-  * @param  pBuf: point to the data that to be write.
-  * @param  I2CCmd: specifies whether a read from FIFO or a write to FIFO is performed.
-  * @param  I2CStop: specifies whether a STOP is issued after the byte is sent or received.
-  * @param  I2CReSTR: specifies whether a RESTART is issued after the byte is sent or received.
+  * @param  I2Cx I2Cx device.
+  * @param  pBuf Point to the data that to be write.
+  * @param  I2CCmd Specifies whether a read from FIFO or a write to FIFO is performed.
+  * @param  I2CStop Specifies whether a STOP is issued after the byte is sent or received.
+  * @param  I2CReSTR Specifies whether a RESTART is issued after the byte is sent or received.
   */
 void I2C_MasterSendNullData(I2C_TypeDef *I2Cx, u8 *pBuf, u8  I2CCmd, u8  I2CStop, u8  I2CReSTR)
 {
@@ -552,11 +548,11 @@ void I2C_MasterSendNullData(I2C_TypeDef *I2Cx, u8 *pBuf, u8  I2CCmd, u8  I2CStop
 
 /**
   * @brief  Master sends single byte through the I2Cx peripheral according to the set of the upper layer.
-  * @param  I2Cx: I2Cx device.
-  * @param  pBuf: point to the data that to be write.
-  * @param  I2CCmd: specifies whether a read from FIFO or a write to FIFO is performed.
-  * @param  I2CStop: specifies whether a STOP is issued after the byte is sent or received.
-  * @param  I2CReSTR: specifies whether a RESTART is issued after the byte is sent or received.
+  * @param  I2Cx I2Cx device.
+  * @param  pBuf Point to the data that to be write.
+  * @param  I2CCmd Specifies whether a read from FIFO or a write to FIFO is performed.
+  * @param  I2CStop Specifies whether a STOP is issued after the byte is sent or received.
+  * @param  I2CReSTR Specifies whether a RESTART is issued after the byte is sent or received.
   */
 void I2C_MasterSend(I2C_TypeDef *I2Cx, u8 *pBuf, u8  I2CCmd, u8  I2CStop, u8  I2CReSTR)
 {
@@ -568,8 +564,8 @@ void I2C_MasterSend(I2C_TypeDef *I2Cx, u8 *pBuf, u8  I2CCmd, u8  I2CStop, u8  I2
 
 /**
   * @brief  Slave sends single byte through the I2Cx peripheral after receiving read request of Master.
-  * @param  I2Cx: I2Cx device.
-  * @param  Data: data to be transmitted.
+  * @param  I2Cx I2Cx device.
+  * @param  Data Data to be transmitted.
   */
 void I2C_SlaveSend(I2C_TypeDef *I2Cx, u8 Data)
 {
@@ -577,8 +573,8 @@ void I2C_SlaveSend(I2C_TypeDef *I2Cx, u8 Data)
 }
 
 /**
-  * @brief  Returns the most recent received data by the I2Cx peripheral.
-  * @param  I2Cx: I2Cx device.
+  * @brief  Return the most recent received data by the I2Cx peripheral.
+  * @param  I2Cx I2Cx device.
   * @return The value of the received data.
   */
 u8 I2C_ReceiveData(I2C_TypeDef *I2Cx)
@@ -589,9 +585,9 @@ u8 I2C_ReceiveData(I2C_TypeDef *I2Cx)
 
 /**
   * @brief  Send data with special length in master mode through the I2Cx peripheral.
-  * @param  I2Cx: I2Cx device.
-  * @param  pBuf: point to the data to be transmitted.
-  * @param  len: the length of data that to be transmitted.
+  * @param  I2Cx I2Cx device.
+  * @param  pBuf Point to the data to be transmitted.
+  * @param  len The length of data that to be transmitted.
   * @return The length of data that have sent to the bus.
   */
 u32 I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
@@ -631,9 +627,9 @@ u32 I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
   * 		step 5: master rx full interrupt receive first data and ack second data and request third data.
   * 		loop step 4 and step 5.
   * 		so last slave data have no ack, this is permitted by the spec.
-  * @param  I2Cx: I2Cx device.
-  * @param  pBuf: point to the buffer to hold the received data.
-  * @param  len: the length of data that to be received.
+  * @param  I2Cx I2Cx device.
+  * @param  pBuf Point to the buffer to hold the received data.
+  * @param  len The length of data that to be received.
   * @return The length of data that have received from rx fifo.
   */
 u32 I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
@@ -670,9 +666,9 @@ u32 I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 
 /**
   * @brief  Read data with special length in master mode through the I2Cx peripheral under in-house IP.
-  * @param  I2Cx: I2Cx device.
-  * @param  pBuf: point to the buffer to hold the received data.
-  * @param  len: the length of data that to be received.
+  * @param  I2Cx I2Cx device.
+  * @param  pBuf Point to the buffer to hold the received data.
+  * @param  len The length of data that to be received.
   * @return The length of data that have received from rx fifo.
   */
 u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
@@ -706,9 +702,9 @@ u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 
 /**
   * @brief  Send data with special length in slave mode through the I2Cx peripheral.
-  * @param  I2Cx: I2Cx device.
-  * @param  pBuf: point to the data to be transmitted.
-  * @param  len: the length of data that to be transmitted.
+  * @param  I2Cx I2Cx device.
+  * @param  pBuf Point to the data to be transmitted.
+  * @param  len The length of data that to be transmitted.
   * @return The length of data that have sent to the bus.
   */
 u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
@@ -748,9 +744,9 @@ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 
 /**
   * @brief  Read data with special length in slave mode through the I2Cx peripheral.
-  * @param  I2Cx: I2Cx device.
-  * @param  pBuf: point to the buffer to hold the received data.
-  * @param  len: the length of data that to be received.
+  * @param  I2Cx I2Cx device.
+  * @param  pBuf Point to the buffer to hold the received data.
+  * @param  len The length of data that to be received.
   * @return The length of data that have received from rx fifo.
   */
 u32 I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
@@ -769,12 +765,12 @@ u32 I2C_SlaveRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 	return cnt;
 }
 /**
-  * @brief  Sends data and read data in master mode through the I2Cx peripheral.
-  * @param  I2Cx: I2Cx device.
-  * @param  pWriteBuf: Byte to be transmitted.
-  * @param  Writelen: Byte number to be transmitted.
-  * @param  pReadBuf: Byte to be received.
-  * @param  Readlen: Byte number to be received.
+  * @brief  Send data and read data in master mode through the I2Cx peripheral.
+  * @param  I2Cx I2Cx device.
+  * @param  pWriteBuf Byte to be transmitted.
+  * @param  Writelen Byte number to be transmitted.
+  * @param  pReadBuf Byte to be received.
+  * @param  Readlen Byte number to be received.
   * @return The length of data that have received from rx fifo.
   */
 u32 I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Writelen, u8 *pReadBuf, u32 Readlen)
@@ -805,9 +801,9 @@ u32 I2C_MasterRepeatRead(I2C_TypeDef *I2Cx, u8 *pWriteBuf, u32 Writelen, u8 *pRe
 }
 
 /**
-  * @brief  Enables or disables the specified I2C peripheral, this is one bit register.
-  * @param  I2Cx: I2Cx device.
-  * @param  NewState: new state of the I2Cx peripheral.
+  * @brief  Enable or disable the specified I2C peripheral, this is one bit register.
+  * @param  I2Cx I2Cx device.
+  * @param  NewState New state of the I2Cx peripheral.
   *   This parameter can be: ENABLE or DISABLE.
   */
 void I2C_Cmd(I2C_TypeDef *I2Cx, u8 NewState)
@@ -823,10 +819,10 @@ void I2C_Cmd(I2C_TypeDef *I2Cx, u8 NewState)
 
 /**
   * @brief  Read data with special length in master mode through the I2Cx peripheral under in-house IP.
-  * @param  I2Cx: I2Cx device.
-  * @param  pBuf: point to the buffer to hold the received data.
-  * @param  len: the length of data that to be received.
-  * @param  ms: specifies timeout time, unit is ms.
+  * @param  I2Cx I2Cx device.
+  * @param  pBuf Point to the buffer to hold the received data.
+  * @param  len The length of data that to be received.
+  * @param  ms Specifies timeout time, unit is ms.
   * @return The length of data that have received from rx fifo.
   */
 u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
@@ -855,10 +851,10 @@ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
 
 /**
   * @brief  Write data with special length in master mode through the I2Cx peripheral under in-house IP.
-  * @param  I2Cx: I2Cx device.
-  * @param  pBuf: point to the data to be transmitted.
-  * @param  len: the length of data that to be received.
-  * @param  ms: specifies timeout time, unit is ms.
+  * @param  I2Cx I2Cx device.
+  * @param  pBuf Point to the data to be transmitted.
+  * @param  len The length of data that to be received.
+  * @param  ms Specifies timeout time, unit is ms.
   * @return The length of data that have sent to the bus.
   */
 u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
@@ -889,9 +885,9 @@ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 ms)
 
 /**
   * @brief  Master sends single byte through the I2Cx peripheral to detect slave device.
-  * @param  I2Cx: I2Cx device.
-  * @param  address: the address of slave that to be detected.
-  * @param  timeout_ms: specifies timeout time, unit is ms.
+  * @param  I2Cx I2Cx device.
+  * @param  address The address of slave that to be detected.
+  * @param  timeout_ms Specifies timeout time, unit is ms.
   * @return Slave ack condition:
   *          - 0: Slave available
   *          - 1: Slave not available
@@ -918,12 +914,12 @@ s32 I2C_MasterSendNullData_TimeOut(I2C_TypeDef *I2Cx, int address, u32 timeout_m
 
 /**
   * @brief  Enable I2C Tx or Rx DMA.
-  * @param  I2Cx: I2Cx device.
-  * @param  DmaCtrl: control Transmit DMA Enable or Receive DMA Enable
+  * @param  I2Cx I2Cx device.
+  * @param  DmaCtrl Control Transmit DMA Enable or Receive DMA Enable
   *   This parameter can be one of the following values:
   *     @arg I2C_BIT_TDMAE:
   *     @arg I2C_BIT_RDMAE:
-  * @param  NewState: the new state of the DMA function.
+  * @param  NewState The new state of the DMA function.
   *   This parameter can be: ENABLE or DISABLE.
   */
 void I2C_DMAControl(I2C_TypeDef *I2Cx, u32 DmaCtrl, u8 NewState)
@@ -940,16 +936,16 @@ void I2C_DMAControl(I2C_TypeDef *I2Cx, u32 DmaCtrl, u8 NewState)
 }
 
 /**
-  * @brief  Initializes the I2Cx Control Register DMA mode.
-  * @param  I2Cx: I2Cx device.
-  * @param  I2C_DmaCmd: Command to control the read or write operation and
+  * @brief  Initialize the I2Cx Control Register DMA mode.
+  * @param  I2Cx I2Cx device.
+  * @param  I2C_DmaCmd Command to control the read or write operation and
   *         the action after the last data transferred.
   *          This parameter can be one or combinations of the following values:
   *            @arg I2C_BIT_DMODE_RESTART
   *            @arg I2C_BIT_DMODE_STOP
   *            @arg I2C_BIT_DMODE_CMD
   *            @arg I2C_BIT_DMODE_ENABLE
-  * @param  I2C_DmaBLen: length of data.
+  * @param  I2C_DmaBLen Length of data.
   * 		This parameter must be set to a value in the 0-0xFFFF range.
   */
 void I2C_DmaMode1Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_DmaBLen)
@@ -964,10 +960,10 @@ void I2C_DmaMode1Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_DmaBLen)
 }
 
 /**
-  * @brief  Initializes the I2C Discripter DMA mode.
-  * @param  I2Cx: I2Cx device.
-  * @param  I2C_DmaCmd: set BIT[0] of IC_DMA_CMD to enable DMA mode.
-  * @param  I2C_DmaBLen: length of data.
+  * @brief  Initialize the I2C Descriptor DMA mode.
+  * @param  I2Cx I2Cx device.
+  * @param  I2C_DmaCmd Set BIT[0] of IC_DMA_CMD to enable DMA mode.
+  * @param  I2C_DmaBLen Length of data.
   * 		This parameter must be set to a value in the 0-0xFF range.
   */
 void I2C_DmaMode2Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_DmaBLen)
@@ -981,17 +977,17 @@ void I2C_DmaMode2Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_DmaBLen)
 
 /**
   * @brief    Init and Enable I2C TX GDMA.
-  * @param  Index: I2C index.
-  * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
+  * @param  Index I2C index.
+  * @param  GDMA_InitStruct Pointer to a GDMA_InitTypeDef structure that contains
   *         the configuration information for the GDMA peripheral.
-  * @param  CallbackData: GDMA callback data.
-  * @param  CallbackFunc: GDMA callback function.
-  * @param  pTxBuf: Tx Buffer.
-  * @param  TxCount: Tx Count.
+  * @param  CallbackData GDMA callback data.
+  * @param  CallbackFunc GDMA callback function.
+  * @param  pTxBuf Tx Buffer.
+  * @param  TxCount Tx Count.
   * @return  Operation status:
   *          - TRUE: initialization successful
   *          - FALSE: initialization failed (no available DMA channel)
-  * @note can not support legacy DMA mode
+  * @note Can not support legacy DMA mode
   */
 bool I2C_TXGDMA_Init(
 	u8 Index,
@@ -1056,17 +1052,17 @@ bool I2C_TXGDMA_Init(
 
 /**
   * @brief    Init and Enable I2C RX GDMA.
-  * @param  Index: I2C index.
-  * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
+  * @param  Index I2C index.
+  * @param  GDMA_InitStruct Pointer to a GDMA_InitTypeDef structure that contains
   *         the configuration information for the GDMA peripheral.
-  * @param  CallbackData: GDMA callback data.
-  * @param  CallbackFunc: GDMA callback function.
-  * @param  pRxBuf: Rx Buffer.
-  * @param  RxCount: Rx Count.
+  * @param  CallbackData GDMA callback data.
+  * @param  CallbackFunc GDMA callback function.
+  * @param  pRxBuf Rx Buffer.
+  * @param  RxCount Rx Count.
   * @return  Operation status:
   *          - TRUE: initialization successful
   *          - FALSE: initialization failed (no available DMA channel)
-  * @note support Master or Slave RXDMA
+  * @note Support Master or Slave RXDMA
   */
 bool I2C_RXGDMA_Init(
 	u8 Index,
@@ -1132,7 +1128,7 @@ bool I2C_RXGDMA_Init(
 
 /**
   * @brief  I2C TX/RX interrupt handler.
-  * @param  I2C_SemStruct: structure containing the function of acquiring and releasing semaphores.
+  * @param  I2C_SemStruct Structure containing the function of acquiring and releasing semaphores.
   * @return Status value (0 in this implementation).
   * @note This function has been defined as weak in the SDK, and users can redefine it according to their needs.
   */
@@ -1164,10 +1160,10 @@ __weak u32 I2C_ISRHandle(I2C_IntModeCtrl *I2C_SemStruct)
 
 /**
   * @brief  Master sends data in interrupt mode.
-  * @param  I2Cx: I2Cx device.
-  * @param  I2C_SemStruct: structure containing the function of acquiring and releasing semaphores.
-  * @param  pBuf: point to the data to be transmitted.
-  * @param  len: the length of data that to be transmitted.
+  * @param  I2Cx I2Cx device.
+  * @param  I2C_SemStruct Structure containing the function of acquiring and releasing semaphores.
+  * @param  pBuf Point to the data to be transmitted.
+  * @param  len The length of data that to be transmitted.
   * @return Remaining to be transferred count.
   */
 u32 I2C_MasterWriteInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len)
@@ -1201,10 +1197,10 @@ u32 I2C_MasterWriteInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pB
 
 /**
   * @brief  Master receives data in interrupt mode.
-  * @param  I2Cx: I2Cx device.
-  * @param  I2C_SemStruct: structure containing the function of acquiring and releasing semaphores.
-  * @param  pBuf:  point to the buffer to hold the received data.
-  * @param  len: the length of data that to be received.
+  * @param  I2Cx I2Cx device.
+  * @param  I2C_SemStruct Structure containing the function of acquiring and releasing semaphores.
+  * @param  pBuf  Point to the buffer to hold the received data.
+  * @param  len The length of data that to be received.
   * @return Received count.
   */
 u32 I2C_MasterReadInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len)
@@ -1251,171 +1247,6 @@ u32 I2C_MasterReadInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBu
 		}
 	}
 	return rcvd;
-}
-
-/**
-  * @brief  Configure backup buffer for specified I2C controller.
-  * @param  i2c_id: I2C controller ID (I2C_ID_0 or I2C_ID_1).
-  * @param  I2C_BackupStruct: Pointer to the struct defined by user.
-  * @return 1: success, 0: fail.
-  */
-bool I2C_Config_BackupBuf(u32 i2c_id, I2C_Backup *I2C_BackupStruct)
-{
-	assert_param(IS_I2C_ID(i2c_id));
-	backup_buffers[i2c_id] = I2C_BackupStruct;
-	return TRUE;
-}
-
-/**
-  * @brief  Save register state of specified I2C controller.
-  * @param  i2c_id: I2C controller ID (I2C_ID_0 or I2C_ID_1).
-  * @return 1: success, 0: fail.
-  */
-bool I2C_Suspend(u32 i2c_id)
-{
-	assert_param(IS_I2C_ID(i2c_id));
-	assert_param(backup_buffers[i2c_id] != NULL);
-
-	I2C_TypeDef *I2Cx = NULL;
-	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
-	switch (i2c_id) {
-	case I2C_ID_0:
-		if (!(Temp & APBPeriph_I2C0_CLOCK)) {
-			RTK_LOGI(TAG, "Suspend Fail: I2C_0 Disabled\n");
-			return FALSE;
-		}
-		I2Cx = (I2C_TypeDef *)I2C0_REG_BASE;
-		break;
-	case I2C_ID_1:
-		if (!(Temp & APBPeriph_I2C1_CLOCK)) {
-			RTK_LOGI(TAG, "Suspend Fail: I2C_1 Disabled\n");
-			return FALSE;
-		}
-		I2Cx = (I2C_TypeDef *)I2C1_REG_BASE;
-		break;
-	default:
-		break;
-	}
-
-	if (I2Cx == NULL) {
-		return FALSE;
-	}
-	I2C_Backup *buf = backup_buffers[i2c_id];
-
-	buf->IC_CON = I2Cx->IC_CON;
-	buf->IC_TAR = I2Cx->IC_TAR;
-	buf->IC_SAR = I2Cx->IC_SAR;
-	buf->IC_HS_MAR = I2Cx->IC_HS_MAR;
-	buf->IC_SS_SCL_HCNT = I2Cx->IC_SS_SCL_HCNT;
-	buf->IC_SS_SCL_LCNT = I2Cx->IC_SS_SCL_LCNT;
-	buf->IC_FS_SCL_HCNT = I2Cx->IC_FS_SCL_HCNT;
-	buf->IC_FS_SCL_LCNT = I2Cx->IC_FS_SCL_LCNT;
-	buf->IC_HS_SCL_HCNT = I2Cx->IC_HS_SCL_HCNT;
-	buf->IC_HS_SCL_LCNT = I2Cx->IC_HS_SCL_LCNT;
-	buf->IC_INTR_MASK = I2Cx->IC_INTR_MASK;
-	buf->IC_RX_TL = I2Cx->IC_RX_TL;
-	buf->IC_TX_TL = I2Cx->IC_TX_TL;
-	buf->IC_SDA_HOLD = I2Cx->IC_SDA_HOLD;
-	buf->IC_SLV_DATA_NACK_ONLY = I2Cx->IC_SLV_DATA_NACK_ONLY;
-	buf->IC_DMA_TDLR = I2Cx->IC_DMA_TDLR;
-	buf->IC_DMA_RDLR = I2Cx->IC_DMA_RDLR;
-	buf->IC_SDA_SETUP = I2Cx->IC_SDA_SETUP;
-	buf->IC_ACK_GENERAL_CALL = I2Cx->IC_ACK_GENERAL_CALL;
-	buf->IC_OUT_SMP_DLY = I2Cx->IC_OUT_SMP_DLY;
-	buf->IC_FILTER = I2Cx->IC_FILTER;
-	buf->IC_SAR2 = I2Cx->IC_SAR2;
-
-	I2Cx->IC_ENABLE &= ~I2C_BIT_ENABLE;
-
-	return TRUE;
-}
-
-/**
-  * @brief  Restore register state for specified I2C controller.
-  * @param  i2c_id: I2C controller ID (I2C_ID_0 or I2C_ID_1).
-  * @return 1: success, 0: fail.
-  */
-bool I2C_Resume(u32 i2c_id)
-{
-	assert_param(IS_I2C_ID(i2c_id));
-	assert_param(backup_buffers[i2c_id] != NULL);
-
-	I2C_TypeDef *I2Cx = NULL;
-	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
-	switch (i2c_id) {
-	case I2C_ID_0:
-		if (!(Temp & APBPeriph_I2C0_CLOCK)) {
-			RTK_LOGI(TAG, "Resume Fail: I2C_0 Disabled\n");
-			return FALSE;
-		}
-		I2Cx = (I2C_TypeDef *)I2C0_REG_BASE;
-		break;
-	case I2C_ID_1:
-		if (!(Temp & APBPeriph_I2C1_CLOCK)) {
-			RTK_LOGI(TAG, "Resume Fail: I2C_1 Disabled\n");
-			return FALSE;
-		}
-		I2Cx = (I2C_TypeDef *)I2C1_REG_BASE;
-		break;
-	default:
-		break;
-	}
-
-	if (I2Cx == NULL) {
-		return FALSE;
-	}
-
-	I2C_Backup *buf = backup_buffers[i2c_id];
-
-	/* Disable the I2C first */
-	I2Cx->IC_ENABLE &= ~I2C_BIT_ENABLE;
-
-	I2Cx->IC_CON = buf->IC_CON;
-	I2Cx->IC_TAR = buf->IC_TAR;
-	I2Cx->IC_SAR = buf->IC_SAR;
-	I2Cx->IC_HS_MAR = buf->IC_HS_MAR;
-	I2Cx->IC_SS_SCL_HCNT = buf->IC_SS_SCL_HCNT;
-	I2Cx->IC_SS_SCL_LCNT = buf->IC_SS_SCL_LCNT;
-	I2Cx->IC_FS_SCL_HCNT = buf->IC_FS_SCL_HCNT;
-	I2Cx->IC_FS_SCL_LCNT = buf->IC_FS_SCL_LCNT;
-	I2Cx->IC_HS_SCL_HCNT = buf->IC_HS_SCL_HCNT;
-	I2Cx->IC_HS_SCL_LCNT = buf->IC_HS_SCL_LCNT;
-	I2Cx->IC_INTR_MASK = buf->IC_INTR_MASK;
-	I2Cx->IC_RX_TL = buf->IC_RX_TL;
-	I2Cx->IC_TX_TL = buf->IC_TX_TL;
-	I2Cx->IC_SDA_HOLD = buf->IC_SDA_HOLD;
-	I2Cx->IC_SLV_DATA_NACK_ONLY = buf->IC_SLV_DATA_NACK_ONLY;
-	I2Cx->IC_DMA_TDLR = buf->IC_DMA_TDLR;
-	I2Cx->IC_DMA_RDLR = buf->IC_DMA_RDLR;
-	I2Cx->IC_SDA_SETUP = buf->IC_SDA_SETUP;
-	I2Cx->IC_ACK_GENERAL_CALL = buf->IC_ACK_GENERAL_CALL;
-	I2Cx->IC_OUT_SMP_DLY = buf->IC_OUT_SMP_DLY;
-	I2Cx->IC_FILTER = buf->IC_FILTER;
-	I2Cx->IC_SAR2 = buf->IC_SAR2;
-
-	I2Cx->IC_ENABLE |= I2C_BIT_ENABLE;
-
-	return TRUE;
-}
-
-/**
-  * @brief  Save register state of all I2C controllers.
-  */
-void I2C_SuspendAll(void)
-{
-	for (int i = 0; i < I2C_MAX_NUM; i++) {
-		I2C_Suspend(i);
-	}
-}
-
-/**
-  * @brief  Restore register state for all I2C controllers.
-  */
-void I2C_ResumeAll(void)
-{
-	for (int i = 0; i < I2C_MAX_NUM; i++) {
-		I2C_Resume(i);
-	}
 }
 
 /**

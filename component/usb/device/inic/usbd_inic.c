@@ -1130,7 +1130,7 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					break;
 				}
 				if (ret == HAL_OK) {
-					ep0_in->xfer_buf[0] = 0U;
+					ep0_in->xfer_buf[0] = alt;
 					ep0_in->xfer_len = 1U;
 					usbd_ep_transmit(dev, ep0_in);
 				}
@@ -1491,13 +1491,13 @@ static int usbd_inic_bt_init(void)
 	ep = &idev->in_ep[ep_num].ep;
 	info = &ep->info;
 	info->addr = USBD_INIC_BT_EP2_BULK_IN;
-	info->type = USB_CH_EP_TYPE_INTR;
+	info->type = USB_CH_EP_TYPE_BULK;
 
 	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
 	info = &ep->info;
 	info->addr = USBD_INIC_BT_EP2_BULK_OUT;
-	info->type = USB_CH_EP_TYPE_INTR;
+	info->type = USB_CH_EP_TYPE_BULK;
 
 	return ret;
 }

@@ -97,6 +97,12 @@ struct whc_msg_node {
 };
 #endif
 
+#define RTK_TX_ENQUEUE		2
+#define RTK_TX_DIRECT		1
+#define RTK_TX_DROP			0
+
+int whc_host_xmit_entry_posthandle(int idx, struct sk_buff *pskb, u8 wlan_hw_queue);
+
 /* internal pkt rx: from dev to host kernel space */
 int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb);
 

@@ -78,7 +78,5 @@ int example_raw_adc_auto(void)
 		RTK_LOGE(NOTAG, "Cannot create RAW_ADC_AUTO_TASK\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

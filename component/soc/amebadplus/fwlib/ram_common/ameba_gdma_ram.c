@@ -218,7 +218,7 @@ void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_
   * @brief  Clear the specidied Pending Interrupt status.
   * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @param  GDMA_IT: specifies the UARTx interrupt sources whose interrupt status will be cleared.
+  * @param  GDMA_IT: specifies the GDMA interrupt sources whose interrupt status will be cleared.
   *          This parameter can be one or combinations of the following values:
   *            @arg TransferType
   *            @arg BlockType

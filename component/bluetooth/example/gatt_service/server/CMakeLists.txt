@@ -48,6 +48,8 @@ ameba_list_append(private_sources
 	rtk_scan_param_srv.c
 	rtk_hids_gamepad.c
 	rtk_hids_iso.c
+	rtk_tps.c
+	rtk_lls.c
 )
 
 ameba_list_append(private_includes

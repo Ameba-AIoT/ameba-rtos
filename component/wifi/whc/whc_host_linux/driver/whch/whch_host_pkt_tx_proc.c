@@ -4,7 +4,7 @@
 int	whc_host_xmit_priv_init(void)
 {
 	struct xmit_frame *pxframe;
-	struct whch_xmit_priv *pxmitpriv = &global_idev.xmitpriv;
+	struct whch_xmit_priv *pxmitpriv = &global_idev.whchpriv.xmitpriv;
 	u32 i;
 	int	res = 0;
 
@@ -51,7 +51,7 @@ exit:
 
 void whc_host_xmit_priv_free(void)
 {
-	struct whch_xmit_priv *pxmitpriv = &global_idev.xmitpriv;
+	struct whch_xmit_priv *pxmitpriv = &global_idev.whchpriv.xmitpriv;
 	struct xmit_frame	*pxmitframe = (struct xmit_frame *)pxmitpriv->pxmit_frame_buf;
 	int i;
 
@@ -89,7 +89,7 @@ out:
 struct xmit_frame *whc_host_xmitframe_alloc(u8 iface_type)
 {
 	struct xmit_frame *pxframe = NULL;
-	struct whch_xmit_priv *pxmitpriv = &global_idev.xmitpriv;
+	struct whch_xmit_priv *pxmitpriv = &global_idev.whchpriv.xmitpriv;
 	struct list_head *plist, *phead;
 
 	spin_lock_bh(&(pxmitpriv->free_xmit_lock));
@@ -119,7 +119,7 @@ struct xmit_frame *whc_host_xmitframe_alloc(u8 iface_type)
 int whc_host_xmitframe_free(struct xmit_frame *pxmitframe)
 {
 	struct sk_buff *pndis_pkt = NULL;
-	struct whch_xmit_priv *pxmitpriv = &global_idev.xmitpriv;
+	struct whch_xmit_priv *pxmitpriv = &global_idev.whchpriv.xmitpriv;
 
 	if (pxmitframe == NULL) {
 		goto exit;
@@ -170,7 +170,7 @@ u32 whc_host_xmit_read_pktfile(struct pkt_file *pfile, u8 *rmem, u32 rlen)
 
 int whc_host_xmit_make_wlanhdr(u8 iface_type, u8 *hdr, struct pkt_attrib *pattrib)
 {
-	struct qos_priv *pqospriv = &global_idev.qospriv[iface_type];
+	struct whch_qos_priv *pqospriv = &global_idev.whchpriv.qospriv[iface_type];
 	struct rtw_ieee80211_hdr_3addr	*pwlanhdr = (struct rtw_ieee80211_hdr_3addr *)hdr;
 	struct sta_info *psta = NULL;
 	struct sta_mlme_priv *psta_mlmepriv = NULL;
@@ -197,7 +197,7 @@ int whc_host_xmit_make_wlanhdr(u8 iface_type, u8 *hdr, struct pkt_attrib *pattri
 	}
 
 	/* For wifi cast */
-	if (pattrib->b_tx_raw == true) { /* TODO */
+	if (pattrib->b_tx_raw == true) { /* TODO_raw */
 		if (pqospriv->qos_option) {
 			qos_option = true;
 		}
@@ -210,7 +210,7 @@ int whc_host_xmit_make_wlanhdr(u8 iface_type, u8 *hdr, struct pkt_attrib *pattri
 	}
 #ifdef CONFIG_NAN
 	if (pattrib->nan_pkt_type == NAN_PKT_TYPE_DATA) {
-		rtw_xmit_make_wlanhdr_nanaddr(pwlanhdr, pattrib); //TODO
+		rtw_xmit_make_wlanhdr_nanaddr(pwlanhdr, pattrib); //TODO_NAN
 	} else
 #endif
 	{
@@ -265,7 +265,7 @@ skip_wlanhdr:
 #ifdef CONFIG_80211AX_HE
 			/* fill ht control filed */
 			htc = (u8 *)(void *)(hdr + pattrib->hdrlen - 4 * htc_option);
-			rtw_he_fill_htc(htc); /* TODO */
+			rtw_he_fill_htc(htc); /* TODO_AX */
 #endif
 		}
 		qc = (unsigned short *)(void *)(hdr + pattrib->hdrlen - 4 * htc_option - 2);
@@ -345,7 +345,7 @@ s32 whc_host_xmit_put_snap(u8 *data, u16 h_proto)
 	return sizeof(struct ieee80211_snap_hdr) + SNAP_PROTOCOL_ID_SIZE;
 }
 
-int whc_host_xmit_tkip_addmic(struct security_priv *psecuritypriv, struct sk_buff *pkt, struct sta_security_priv *psta_security, u16 pkt_len)
+int whc_host_xmit_tkip_addmic(struct whch_security_priv *psecuritypriv, struct sk_buff *pkt, struct sta_security_priv *psta_security, u16 pkt_len)
 {
 	u8 *pframe, *payload, mic[8];
 	struct mic_data micdata;
@@ -413,7 +413,7 @@ int whc_host_xmit_tkip_addmic(struct security_priv *psecuritypriv, struct sk_buf
 	return 0;
 }
 
-int whc_host_xmit_enc_software(u8 iface_type, struct security_priv *psecuritypriv, struct xmit_frame *pxmitframe)
+int whc_host_xmit_enc_software(u8 iface_type, struct whch_security_priv *psecuritypriv, struct xmit_frame *pxmitframe)
 {
 	struct pkt_attrib	*pattrib = &((struct xmit_frame *)pxmitframe)->attrib;
 	struct sta_info *psta = NULL;
@@ -438,7 +438,6 @@ int whc_host_xmit_enc_software(u8 iface_type, struct security_priv *psecuritypri
 		}
 
 		switch (pattrib->encrypt) {
-#ifdef SW_ENCRYPT
 		case _WEP40_:
 		case _WEP104_:
 			wep_80211_encrypt(
@@ -480,7 +479,6 @@ int whc_host_xmit_enc_software(u8 iface_type, struct security_priv *psecuritypri
 				(pattrib->encrypt == _GCMP_256_) ? 32 : 16
 			);
 			break;
-#endif
 		default:
 			dev_err(global_idev.pwhc_dev, "SW ENC: NOT SUPPORTED ALG %x \r\n", pattrib->encrypt);
 			break;
@@ -493,7 +491,7 @@ int whc_host_xmit_enc_software(u8 iface_type, struct security_priv *psecuritypri
 void whc_host_xmit_update_attrib_vcs_info(u8 iface_type, struct xmit_frame *pxmitframe, struct sta_mlme_priv *psta_mlmepriv, u8 f_cts2self)
 {
 	struct pkt_attrib	*pattrib = &pxmitframe->attrib;
-	struct ht_priv *phtpriv = &global_idev.htpriv[iface_type];
+	struct whch_ht_priv *phtpriv = &global_idev.whchpriv.htpriv[iface_type];
 
 	/* RTS/CTS is determined by HW by default, except for the following situations
 	  1. Force sending RTS/CTS if need ERP protection since the presence of 11b STAs
@@ -579,7 +577,7 @@ u8	whc_host_xmit_update_attrib_qos_acm(u8 acm_mask, u8 priority)
 	return change_priority;
 }
 
-int whc_host_xmit_update_attrib_sec_info(struct security_priv *psecuritypriv, struct pkt_attrib *pattrib, struct sta_security_priv *psta_security)
+int whc_host_xmit_update_attrib_sec_info(struct whch_security_priv *psecuritypriv, struct pkt_attrib *pattrib, struct sta_security_priv *psta_security)
 {
 	int res = 0;
 	signed int bmcast = IS_MCAST(pattrib->ra);
@@ -644,7 +642,7 @@ int whc_host_xmit_update_attrib_sec_info(struct security_priv *psecuritypriv, st
 		pattrib->iv_len = 8;
 		pattrib->icv_len = 16;
 		break;
-	case _CCMP_256_:			/* TODO: check if this is correct */
+	case _CCMP_256_:
 		pattrib->iv_len = 8;
 		pattrib->icv_len = 16;
 		break;
@@ -681,7 +679,7 @@ void whc_host_xmit_update_attrib_phy_info(struct pkt_attrib *pattrib, struct sta
 		pattrib->ch_offset = psta_htpriv->ch_offset;
 		pattrib->b_tx_sgi = (pattrib->bwmode == CHANNEL_WIDTH_40) ? psta_htpriv->sgi_40m : psta_htpriv->sgi_20m;
 	} else if (bw_40_en) {
-		// for no link tx TODO, check whether need
+		// for no link tx TODO_raw, check whether need
 		pattrib->b_ht_en = 1;
 		pattrib->bwmode = CHANNEL_WIDTH_40;
 	}
@@ -689,8 +687,8 @@ void whc_host_xmit_update_attrib_phy_info(struct pkt_attrib *pattrib, struct sta
 
 int whc_host_xmit_update_attrib(u8 iface_type, struct sk_buff *pkt, struct pkt_attrib *pattrib)
 {
-	struct security_priv *psecuritypriv = &global_idev.securitypriv[iface_type];
-	struct qos_priv *pqospriv = &global_idev.qospriv[iface_type];
+	struct whch_security_priv *psecuritypriv = &global_idev.whchpriv.securitypriv[iface_type];
+	struct whch_qos_priv *pqospriv = &global_idev.whchpriv.qospriv[iface_type];
 	struct pkt_file	pktfile;
 	struct sta_info *psta = NULL;
 	struct sta_mlme_priv *psta_mlmepriv = NULL;
@@ -701,7 +699,7 @@ int whc_host_xmit_update_attrib(u8 iface_type, struct sk_buff *pkt, struct pkt_a
 	int			res = 0;
 	u8			*mybssid = global_idev.bssid;
 	u8			arp_type = 0;
-#ifdef CONFIG_NAN /* TODO */
+#ifdef CONFIG_NAN /* TODO_NAN */
 	struct nan_peer_info_t *ppeer_info = NULL;
 	u8 is_nan_bcmc = 0;
 #endif
@@ -709,9 +707,9 @@ int whc_host_xmit_update_attrib(u8 iface_type, struct sk_buff *pkt, struct pkt_a
 	whc_host_xmit_open_pktfile(pkt, &pktfile);
 	whc_host_xmit_read_pktfile(&pktfile, (u8 *)&etherhdr, ETH_HLEN);
 
-	pattrib->ether_type = htons(etherhdr.h_proto); // TODO, big/small endian
+	pattrib->ether_type = htons(etherhdr.h_proto);
 
-	dev_dbg(global_idev.pwhc_dev, "[whc]: %s ether_type=%x %x", __func__, etherhdr.h_proto, pattrib->ether_type);
+	//dev_dbg(global_idev.pwhc_dev, "[whc]: %s ether_type=%x %x", __func__, etherhdr.h_proto, pattrib->ether_type);
 
 	memcpy(pattrib->dst, &etherhdr.h_dest, ETH_ALEN);
 	memcpy(pattrib->src, &etherhdr.h_source, ETH_ALEN);
@@ -751,7 +749,7 @@ int whc_host_xmit_update_attrib(u8 iface_type, struct sk_buff *pkt, struct pkt_a
 		pattrib->pkt_type = PACKET_EAPOL;
 	}
 
-#ifdef CONFIG_NAN  /* TODO */
+#ifdef CONFIG_NAN  /* TODO_NAN */
 	/* Get dst IP address from IPv6 header to decide is NAN frame or not */
 	if ((iface_type == NAN_PORT) && rtw_check_nan_enabled()) {
 		ppeer_info = rtw_nan_peer_info_get_by_ndi(pattrib->dst);
@@ -831,8 +829,8 @@ int whc_host_xmit_update_attrib(u8 iface_type, struct sk_buff *pkt, struct pkt_a
 		if (pqospriv->qos_option) {
 			whc_host_xmit_update_attrib_set_qos(&pktfile, pattrib);
 
-			if (global_idev.mlmepriv.acm_mask != 0) {
-				pattrib->priority = whc_host_xmit_update_attrib_qos_acm(global_idev.mlmepriv.acm_mask, pattrib->priority);
+			if (global_idev.whchpriv.mlmepriv.acm_mask != 0) {
+				pattrib->priority = whc_host_xmit_update_attrib_qos_acm(global_idev.whchpriv.mlmepriv.acm_mask, pattrib->priority);
 			}
 
 #ifdef WIFI_LOGO_CERTIFICATION //wifi logo require tb ppdu with uph
@@ -891,9 +889,7 @@ int whc_host_xmit_entry_prehandle(int idx, struct sk_buff *pskb, u8 *wlan_hw_que
 		goto drop_packet;
 	}
 
-	pattrib = &pxmitframe->attrib;
-	ret = whc_host_xmit_update_attrib(idx, pskb, pattrib);
-	if (ret == -1) {
+	if (whc_host_xmit_update_attrib(idx, pskb, &pxmitframe->attrib) == -1) {
 		whc_host_xmitframe_free(pxmitframe);
 		goto drop_packet;
 	}
