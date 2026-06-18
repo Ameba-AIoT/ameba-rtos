@@ -111,9 +111,5 @@ int example_raw_tim_capture_pulse_number_32k(void)
 		printf("Cannot create tim capture pulse num demo task\n\r");
 	}
 
-	// rtos_sched_start();
-
 	return 0;
 }
-
-

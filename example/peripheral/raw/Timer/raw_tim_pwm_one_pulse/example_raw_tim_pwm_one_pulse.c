@@ -117,8 +117,5 @@ int example_raw_tim_pwm_one_pulse(void)
 		printf("Cannot create tim pwm one pulse mode demo task\n\r");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
-
-

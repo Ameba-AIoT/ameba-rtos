@@ -128,7 +128,6 @@ void example_audio_spk_thread(void)
 	/* for 8726e */
 #if EXTERNAL_INPUT
 	AUDIO_CODEC_SetDACVolume(DAC_L, 0X86);
-	/*GPIO À­¸ß */
 	GPIO_WriteBit(_PA_12, 0);
 	GPIO_InitTypeDef GPIO_InitStruct_Temp;
 	GPIO_InitStruct_Temp.GPIO_Pin = _PA_12;
@@ -156,6 +155,5 @@ int example_mbed_audio_speaker(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "\n xTaskCreate(example_audio_spk_thread) failed\n");
 	}
 
-	rtos_sched_start();
 	return 0;
 }

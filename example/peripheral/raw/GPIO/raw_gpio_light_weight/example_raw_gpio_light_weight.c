@@ -58,7 +58,6 @@ int example_raw_gpio_light_weight(void)
 		printf("Create RAW_GPIO_DEMO_TASK Err!!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
 

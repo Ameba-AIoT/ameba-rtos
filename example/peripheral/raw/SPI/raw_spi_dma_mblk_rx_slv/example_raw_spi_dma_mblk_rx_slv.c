@@ -322,7 +322,6 @@ int example_raw_spi_multi_dma_rx_slave(void)
 		printf("\r\n%s rtos_task_create(spi_multiblock_task) failed\r\n", __FUNCTION__);
 	}
 
-	// rtos_sched_start();
 	return 0;
 #endif
 }

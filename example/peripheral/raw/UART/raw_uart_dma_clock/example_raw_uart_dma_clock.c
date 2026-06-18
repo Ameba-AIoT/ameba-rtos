@@ -145,7 +145,5 @@ int example_raw_uart_dma_clock(void)
 		RTK_LOGE(NOTAG, "%s rtos_task_create(uart_clock_demo) failed\n", __FUNCTION__);
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }
