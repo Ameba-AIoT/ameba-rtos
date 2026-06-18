@@ -5,13 +5,13 @@
  */
 
 #include "osif.h"
-#include "hci_if_eqc.h"
 #include "hci_transport.h"
 #include "hci_uart.h"
 #include "hci_platform.h"
 #include "bt_debug.h"
 #include "dlist.h"
 #include "hci_controller.h"
+#include <bt_eqc_common.h>
 
 #define IS_ALIGNED(ptr, align) (((uintptr_t)(ptr)) % (align) == 0)
 
@@ -38,7 +38,8 @@ static void eqc_recv(struct hci_rx_packet_t *pkt)
 		goto failed;
 	}
 
-	if (HCI_EVT == HCI_EVT && (BT_HCI_EVT_CMD_COMPLETE == (*(pkt->buf)) || BT_HCI_EVT_CMD_STATUS == (*(pkt->buf)))) {  //command complete && command status event
+	if (HCI_EVT == pkt->type && (BT_HCI_EVT_CMD_COMPLETE == (*(pkt->buf)) ||
+								 BT_HCI_EVT_CMD_STATUS == (*(pkt->buf)))) {  /* command complete && command status event */
 		memcpy(hci_eqc_buf, pkt->buf, pkt->len);
 		osif_sem_give(eqc_recv_sem);
 	} else {
@@ -54,7 +55,7 @@ static void eqc_recv(struct hci_rx_packet_t *pkt)
 			event_msg.len = pkt->len;
 
 			if (false == osif_msg_send(eqc_evt_queue_handle, &event_msg, 0)) {
-				BT_LOGE("send event queue fail!\n\r", __FUNCTION__);
+				BT_LOGE("send event queue fail!\n\r");
 				osif_mem_free(pbuf);
 			}
 		} else {
