@@ -219,8 +219,6 @@ int example_mbed_spi_trx_dma(void)
 		printf("\n\r%s rtos_task_create(spi_dma_task) failed", __FUNCTION__);
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
-
 

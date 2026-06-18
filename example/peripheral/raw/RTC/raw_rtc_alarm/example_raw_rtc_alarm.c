@@ -71,7 +71,6 @@ int example_raw_rtc_alarm(void)
 		printf("Create RAW_RTC_ALARM_TASK Err!!\n\r");
 	}
 
-	// rtos_sched_start();
 	return 0;
 
 }

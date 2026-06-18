@@ -238,6 +238,5 @@ int example_raw_ir_rx_nec_interrupt(void)
 		printf("create IR RX thread error\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }

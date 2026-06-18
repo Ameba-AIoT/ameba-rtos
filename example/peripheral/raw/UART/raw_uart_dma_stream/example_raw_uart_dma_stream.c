@@ -308,7 +308,5 @@ int example_raw_uart_dma_stream(void)
 		RTK_LOGE(NOTAG, "Create uart_dma_demo Err!!\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

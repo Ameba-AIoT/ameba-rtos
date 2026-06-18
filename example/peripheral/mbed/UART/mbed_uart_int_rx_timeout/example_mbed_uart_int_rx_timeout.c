@@ -96,7 +96,5 @@ int example_mbed_uart_int_rx_timeout(void)
 		RTK_LOGE(NOTAG, "Cannot create uart_rx_timeout_demo test demo task\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

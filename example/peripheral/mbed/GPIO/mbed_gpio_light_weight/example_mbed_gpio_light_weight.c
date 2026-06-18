@@ -83,7 +83,6 @@ int example_mbed_gpio_light_weight(void)
 		printf("Create MBED_GPIO_LIGHT_TASK Err!!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
 

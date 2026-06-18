@@ -203,7 +203,5 @@ int example_raw_uart_int_stream(void)
 		RTK_LOGE(NOTAG, "Create uart_stream_irq_task Err!!\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

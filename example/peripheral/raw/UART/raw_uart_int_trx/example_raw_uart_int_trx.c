@@ -159,7 +159,5 @@ int example_raw_uart_int_trx(void)
 		RTK_LOGE(NOTAG, "%s rtos_task_create(uart_irq_demo) failed\n", __FUNCTION__);
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

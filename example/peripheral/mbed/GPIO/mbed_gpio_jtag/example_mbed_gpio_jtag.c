@@ -65,7 +65,6 @@ int example_mbed_gpio_jtag(void)
 		printf("Create MBED_GPIO_JTAG_TASK Err!!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
 

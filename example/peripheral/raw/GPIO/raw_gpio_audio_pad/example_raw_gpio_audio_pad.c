@@ -208,7 +208,5 @@ int example_raw_gpio_audio_pad(void)
 		printf("Create AUDIO_PAD_DIGITAL_TASK Err!!\n");
 	}
 
-	// rtos_sched_start();
-
 	return 0;
 }

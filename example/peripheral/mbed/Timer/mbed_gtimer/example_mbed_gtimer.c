@@ -69,7 +69,6 @@ int example_mbed_gtimer(void)
 		printf("Create MBED_GTIMER_DEMO_TASK Err!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
 

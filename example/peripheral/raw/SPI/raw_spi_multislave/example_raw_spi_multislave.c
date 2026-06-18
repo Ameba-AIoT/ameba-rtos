@@ -424,6 +424,5 @@ int example_raw_spi_multislave(void)
 		printf("\n\r%s rtos_task_create(spi_multislave_task) failed", __FUNCTION__);
 	}
 
-	// rtos_sched_start();
 	return 0;
 }

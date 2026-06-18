@@ -170,6 +170,5 @@ int example_raw_watchdog(void)
 		printf("Create watchdog_task Err!!\r\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }

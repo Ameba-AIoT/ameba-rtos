@@ -77,6 +77,5 @@ int example_mbed_gpio_port(void)
 		printf("Create MBED_GPIO_PORT_TASK Err!!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
