@@ -126,7 +126,6 @@ void SOCPS_SetMemMode(u32 module, u32 mem_mode)
  * @param pwr_sts:
  * 				@arg STATE1_LDOPC_SWRPFM_07 = 0x1,
  * 				@arg STATE2_LDOPC_SWRPFM_08 = 0x2,
- * 				@arg STATE3_LDOPC_SWRPFM_09 = 0x3,
  */
 void SOCPS_PowerStateSetInSleep(u8 pwr_sts)
 {
@@ -155,6 +154,25 @@ void SOCPS_PowerStateSetInNormal(u8 pwr_sts)
 	HAL_WRITE32(PMC_BASE, AIP_TRIGGER, Rtemp);
 	/* polling status change finished */
 	while ((HAL_READ32(PMC_BASE, AIP_TRIGGER) & PMC_BIT_SYS_REGU_STS_RDY) == 0);
+}
+
+/**
+ * @brief Raise sleep voltage to 0.9V by overriding the 0.7V and 0.8V code slots.
+ *
+ * Writes the per-IC 0.9V code (read from CODE2) into CODE0 and CODE1, so the
+ * system sleeps at 0.9V regardless of the sleep_to_08V setting in sleepcfg.
+ */
+void SOCPS_SleepVoltRaiseTo0P9(void)
+{
+	LDO_TypeDef *LDO = LDO_BASE;
+	u32 reg_temp;
+	u8 code_0p9;
+
+	reg_temp = LDO->LDO_PFM_VOLT_CTRL;
+	code_0p9 = (u8)LDO_GET_VOLT_CODE2_PFM(reg_temp);
+	reg_temp &= ~(LDO_MASK_VOLT_CODE1_PFM | LDO_MASK_VOLT_CODE0_PFM);
+	reg_temp |= LDO_VOLT_CODE1_PFM(code_0p9) | LDO_VOLT_CODE0_PFM(code_0p9);
+	LDO->LDO_PFM_VOLT_CTRL = reg_temp;
 }
 
 void SOCPS_ReguDelayAdjust(u8 delay_count)
@@ -197,7 +215,7 @@ void SOCPS_ClockSourceConfig(u8 regu_state, u8 xtal_mode, u8 osc_option)
 {
 	UNUSED(regu_state);
 	u32 reg_temp = 0;
-	LDO_TypeDef *LDO = LDO_BASE;
+
 	/* 1. OSC4M config */
 	reg_temp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
 	if (osc_option == TRUE) {
@@ -226,12 +244,7 @@ void SOCPS_ClockSourceConfig(u8 regu_state, u8 xtal_mode, u8 osc_option)
 		SOCPS_PowerStateSetInSleep(STATE2_LDOPC_SWRPFM_08);
 		RTK_LOGI(TAG, "The voltage of XTAL LPS/LPS with 40M mode in sleep state is 0.8V\n");
 	} else if ((xtal_mode == XTAL_Normal) || (xtal_mode == XTAL_HP)) {
-		SOCPS_PowerStateSetInSleep(STATE2_LDOPC_SWRPFM_08);
-		/*Adjust voltage code of SWR to 0.9v*/
-		reg_temp = LDO->LDO_PFM_VOLT_CTRL;
-		reg_temp &= ~ LDO_MASK_VOLT_CODE1_PFM;
-		reg_temp |= LDO_VOLT_CODE1_PFM(0x6);
-		LDO->LDO_PFM_VOLT_CTRL = reg_temp;
+		SOCPS_SleepVoltRaiseTo0P9();
 		/* xtal clock gating can be set to 1 only when the sleep voltage is greater than or equal to 0.9V!*/
 		reg_temp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
 		reg_temp |= PMC_BIT_CKE_XTAL40M_SLEP;
@@ -253,7 +266,9 @@ void SOCPS_PowerManage(u8 regu_state)
 	} else {
 		SOCPS_PowerStateSetInSleep(STATE1_LDOPC_SWRPFM_07);
 	}
-
+#if defined (CONFIG_WHC_DEV) && defined (CONFIG_WHC_INTF_SDIO)
+	SOCPS_SleepVoltRaiseTo0P9();
+#endif
 	/* 2. regu (SWR and core LDO) normal status configuration: default settings,state6: SWR-PFM, LDO-NORM.*/
 
 	/* change wait SOC power-cut stable time from 1024us to 40us to shrink wakeup time */

@@ -12,7 +12,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <rtk_bt_le_gap.h>
-#include "hci_if_eqc.h"
 
 #ifdef __cplusplus
 extern "C"

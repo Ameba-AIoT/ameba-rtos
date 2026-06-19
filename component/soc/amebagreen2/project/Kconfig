@@ -406,6 +406,9 @@ menu "CONFIG BT"
         config FTL_ENABLED
             bool
 
+        config BT_ENABLE_FAST_MP
+            def_bool MP_INCLUDED && !BT_INIC
+
     endif
 endmenu
 
