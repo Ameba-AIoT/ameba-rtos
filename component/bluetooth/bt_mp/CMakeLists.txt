@@ -47,7 +47,7 @@ ameba_list_append(private_sources
 ameba_list_append_if(CONFIG_AMEBADPLUS private_sources
 	bt_fast_mp/bt_fast_mp_api.c
 	bt_fast_mp/bt_fast_mp_common.c
-	bt_fast_mp/bt_fast_mp_dplus.c
+	bt_fast_mp/bt_fast_mp_amebadplus.c
 	bt_fast_mp/hci_if_dtm.c
 )
 
@@ -56,6 +56,10 @@ ameba_list_append_if(CONFIG_AMEBAGREEN2 private_sources
 	bt_eqc/bt_eqc_common.c
 	bt_eqc/bt_eqc_amebagreen2.c
 	bt_eqc/hci_if_eqc.c
+	bt_fast_mp/bt_fast_mp_api.c
+	bt_fast_mp/bt_fast_mp_common.c
+	bt_fast_mp/bt_fast_mp_amebagreen2.c
+	bt_fast_mp/hci_if_dtm.c
 )
 
 ameba_list_append(private_includes
@@ -69,6 +73,7 @@ ameba_list_append_if(CONFIG_AMEBADPLUS private_includes
 
 ameba_list_append_if(CONFIG_AMEBAGREEN2 private_includes
 	bt_eqc
+	bt_fast_mp
 )
 
 # Component private part, user config end
