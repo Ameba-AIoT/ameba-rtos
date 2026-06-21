@@ -28,6 +28,7 @@ bool osif_task_context_check(void);
 void osif_delay(uint32_t ms);
 void osif_delay_us(uint32_t us);
 uint32_t osif_sys_time_get(void);
+uint64_t osif_sys_time_get_ns(void);
 bool osif_sched_start(void);
 bool osif_sched_stop(void);
 bool osif_sched_suspend(void);

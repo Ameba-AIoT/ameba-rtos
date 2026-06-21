@@ -1,0 +1,205 @@
+## A2DP sink and HFP HandFree and LE Audio PBP source demo
+
+---
+
+### Test Configuration
+
+LE Audio Config:
+
+1. BIS num 1 + Sample rate 16kHz + 2-channel + ISO interval 20 ms
+
+   **Config the following Macros in rtk_bt_le_audio_def.h**
+
+   > change `RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG` to `RTK_BT_ISO_INTERVAL_20_MS`
+
+   > change `RTK_BT_LE_AUDIO_COMPO_DEMO_AUDIO_STREAM_SAMPLE_RATE` to `RTK_BT_LE_SAMPLING_FREQUENCY_CFG_16K`
+
+   > change `RTK_BT_LE_AUDIO_COMPO_DEMO_DEFAULT_BIS_CODEC_CFG` to `RTK_BT_LE_CODEC_CFG_ITEM_16_2`
+
+2. BIS num 1 + Sample rate 48kHz + 1-channel + ISO interval 20 ms
+
+   **Config the following Macros in rtk_bt_le_audio_def.h**
+
+   > change `RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG` to `RTK_BT_ISO_INTERVAL_20_MS`
+
+   > change `RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE` to `0`
+
+3. BIS num 1 + Sample rate 48kHz + 2-channel + ISO interval 30 ms
+
+   **Config the following Macros in rtk_bt_le_audio_def.h**
+
+   > change `RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG` to `RTK_BT_ISO_INTERVAL_30_MS`
+
+4. BIS num 2 + Sample rate 48kHz + 2-channel + ISO interval 30 ms
+
+   **Config the following Macros in rtk_bt_le_audio_def.h**
+
+   > change `RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM` to `2`
+
+   > change `RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG` to `RTK_BT_ISO_INTERVAL_30_MS`
+
+---
+
+### GCC menuconfig
+
+1. BT Related:
+   Enter the SDK root directory, execute in order:
+   ```bash
+   source env.sh
+   ./ameba.py soc RTL8730E
+   ./ameba.py menuconfig
+   ```
+   Navigate: `CONFIG BT` --> `BT Example Demo` --> `BT A2DP HFP and LE Audio PBP`
+
+   (optional) Navigate: `BT Example Demo` --> `BLE Audio` --> `BLE Audio Public Broadcast Profile`
+
+2. Audio Related:
+   Navigate: `./ameba.py menuconfig` --> `CONFIG Application` --> `Audio Config` --> `Select Audio Interfaces (Mixer)`
+   Navigate: `Audio Config` --> `Third Party Libraries` --> `speexdsp`
+
+3. GCC: use CMD `./ameba.py build` to compile example
+
+---
+
+### Test ATCMD
+
+If user want to open audio local play function, must change the following Macros before test:
+
+   > 1. change `RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT` to `1` in `rtk_bt_le_audio_def.h`
+
+   > 2. change `RTK_BT_LE_AUDIO_ISO_TX_SYNC_SUPPORT` to `1` in `rtk_bt_le_audio_def.h`
+
+   > 3. change `VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT` to `1` in `bt_vendor_config.h`
+
+   > 4. change `RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT` to `1` in `bt_api_config.h`
+
+   > 5. change `kPrimaryAudioConfig` in `ameba_audio_mixer_usrcfg.cpp`:
+
+```c
+// change from:
+kPrimaryAudioConfig = {1024, 4, AUDIO_OUT_MIN_FRAMES_STAGE1};
+// to:
+kPrimaryAudioConfig = {240, 4, AUDIO_OUT_MIN_FRAMES_STAGE2};
+```
+
+   > 6. unmask the following code in `bt_audio_track_api.c`:
+
+```c
+// change from:
+//track_buf_size = 22608;
+// to:
+track_buf_size = 22608;
+```
+
+1. A2DP sink + AVRCP + HFP handfree + PBAP + Auracast demo
+
+   1.1 enable  `AT+BTDEMO=a2dp_hfp_pbp,1`
+
+   1.2 disable  `AT+BTDEMO=a2dp_hfp_pbp,0`
+
+   1.3 use Phone to connect to the device named "A2DP HFP Auracast"
+
+   1.4 start LE Audio PBP broadcast  `AT+BLEBAP=broadcast_start`
+
+   1.5 stop LE Audio PBP broadcast  `AT+BLEBAP=broadcast_stop`
+
+   **Role switch test, idle state --> broadcast source(BMS) --> broadcast sink(BMR):**
+
+   1.6 start LE Audio PBP broadcast  `AT+BLEBAP=broadcast_start`
+
+   1.7 stop LE Audio PBP broadcast  `AT+BLEBAP=broadcast_stop`
+
+   > **Note:** must stop broadcast! otherwise will caused insufficient bandwidth!
+
+   1.8 start scan  `AT+BLEBAP=escan,1`
+
+   1.9 stop scan  `AT+BLEBAP=escan,0`
+
+   1.10 create PA sync and BIG sync to the PBP broadcast  `AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>`
+
+   > e.g. `AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc`
+
+   **Role switch test, idle state --> broadcast sink(BMR) --> broadcast source(BMS):**
+
+   1.11 start scan for the PBP broadcast  `AT+BLEBAP=escan,1`
+
+   1.12 stop scan  `AT+BLEBAP=escan,0`
+
+   1.13 create PA sync and BIG sync to the PBP broadcast  `AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>`
+
+   > e.g. `AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc`
+
+   1.14 terminate BIG sync to the PBP broadcast  `AT+BLEBAP=big_sync_remove,<bd_addr type>,<bd_addr>`
+
+   > **Note:** must terminate BIG sync before start broadcast!
+
+   1.15 start LE Audio PBP broadcast  `AT+BLEBAP=broadcast_start`
+
+   **For HFP HF part:**
+
+   1.16 HFP HF call answer  `AT+BTHFP=call_answer,<peer_phone_bd_addr>`
+
+   1.17 HFP HF call terminate  `AT+BTHFP=call_terminate,<peer_phone_bd_addr>`
+
+   **For AVRCP part:**
+
+   1.18 get album information, artist name, etc:
+
+   ```
+   AT+BTAVRCP=element_attr,<bd_addr>,1
+   AT+BTAVRCP=element_attr,<bd_addr>,2
+   AT+BTAVRCP=element_attr,<bd_addr>,3
+   AT+BTAVRCP=element_attr,<bd_addr>,4
+   AT+BTAVRCP=element_attr,<bd_addr>,5
+   AT+BTAVRCP=element_attr,<bd_addr>,6
+   AT+BTAVRCP=element_attr,<bd_addr>,7
+   ```
+
+   get cover art:
+
+   ```
+   AT+BTAVRCP=cover_art_conn,<bd_addr>
+   AT+BTAVRCP=element_attr,<bd_addr>,8
+   ```
+
+   **For PBAP part:**
+
+   1.19 connect  `AT+BTPBAP=conn,<bd_addr>`
+
+   1.20 disconnect  `AT+BTPBAP=disconn,<bd_addr>`
+
+   1.21 get phone book object  `AT+BTPBAP=get_pb_size,<bd_addr>,<repository>,<phone_book_object>`
+
+   > `<repository>` refer to `rtk_bt_pbap_repository`
+
+   > `<phone_book_object>` refer to `RTK_BT_PBAP_PROPERTY_MASK`
+
+   > For example, get local repository Main book object: `AT+BTPBAP=get_pb_size,fc5b8c1aedd8,1,0`
+
+   1.22 get phone book detailed information  `AT+BTPBAP=pull_pb,<bt_mac>,<repository>,<phone_book_object>,<offset>,<size>,<mask>`
+
+   > For example: `AT+BTPBAP=pull_pb,fc5b8c1aedd8,1,0,0,128,0x82`
+
+2. PBP sink demo (peer device)
+
+   2.1 enable  `AT+BTDEMO=pbp,sink,1,<sound channel>`
+
+   > sound_channel: {left, right, stereo}
+
+   2.2 stop ext adv before ext scan  `AT+BLEGAP=eadv,0,0`
+
+   2.3 scan for the PBP broadcast  `AT+BLEBAP=escan,1`
+
+   2.4 create PA sync to the PBP broadcast  `AT+BLEBAP=pa_sync_create,<bd_addr type>,<bd_addr>,<adv_sid>,<broadcast_id>`
+
+   > e.g. `AT+BLEBAP=pa_sync_create,0,00e04c8002eb,0xe,123abc`
+
+   2.5 create BIG sync to the PBP broadcast  `AT+BLEBAP=big_sync_create,<bd_addr type>,<bd_addr>`
+
+3. Phone
+
+   3.1 Use Phone to connect to the device "A2DP HFP Auracast"
+
+   3.2 Play music on the Phone
+
+   3.3 Receive Phone call by HFP HF

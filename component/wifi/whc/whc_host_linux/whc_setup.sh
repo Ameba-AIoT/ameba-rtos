@@ -50,8 +50,8 @@ if [ "$#" -ge 2 ]; then
 		elif [ "$j" == "bt" ]; then
 			sed -i 's/CONFIG_BT_INIC = n/CONFIG_BT_INIC = y/g' Makefile
 			if [ "$1" == "spi" ]; then
-				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.c ./common/spi
-				cp ../../bluetooth/example/bt_host/linux_driver/rtb_spi.h ./common/spi
+				cp ../../../bluetooth/example/bt_host/linux_driver/spi/rtb_spi.c ./common/spi
+				cp ../../../bluetooth/example/bt_host/linux_driver/spi/rtb_spi.h ./common/spi
 			elif [ "$1" == "sdio" ]; then
 				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.c ./common/sdio
 				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.h ./common/sdio

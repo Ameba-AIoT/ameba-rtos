@@ -37,7 +37,7 @@
 #include <dlist.h>
 #include "bt_audio_resample.h"
 #include <bt_utils.h>
-#include <app_queue_mgr.h>
+#include <ringbuffer.h>
 #include <app_audio_data.h>
 #include <rtk_bt_vendor.h>
 
@@ -262,14 +262,8 @@ static uint32_t app_queue_threshhold = APP_BT_PCM_DATA_QUEUE_WATER_LEVEL;
     2.Send it to pbp convert task when reach a suitable water level.
 */
 static short pcm_data_buf[APP_BT_PBP_SOURCE_PCM_DATA_MAX_LEN] = {0};
-static app_bt_queue_t app_pcm_data_mgr_queue = {
-	.q_write = 0,
-	.q_read = 0,
-	.mtx = NULL,
-	.queue = NULL,
-	.queue_size = 0,
-	.queue_max_len = 0,
-};
+static RingBuffer *app_pcm_data_mgr_queue = NULL;
+static void *app_pcm_data_mgr_queue_mtx = NULL;
 static rtk_bt_le_audio_cfg_codec_t lea_codec_t = {0};
 static int8_t dequeue_buf[APP_DEQUEUE_BUF_MAX_LEN] = {0};
 /* used to drop packet in pcm data fifo for balance A2DP rx and BIS tx */
@@ -1387,9 +1381,14 @@ static void app_bt_handle_packet_discarding(uint32_t dequeue_bytes)
 
 	i = pkt_drop_num;
 	for (j = 0; j < i; ++j) {
-		osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
-		ret = app_queue_mgr_dequeue(&app_pcm_data_mgr_queue, drop_buf, dequeue_bytes);
-		osif_mutex_give(app_pcm_data_mgr_queue.mtx);
+		osif_mutex_take(app_pcm_data_mgr_queue_mtx, BT_TIMEOUT_FOREVER);
+		if (RingBuffer_Available(app_pcm_data_mgr_queue) >= dequeue_bytes &&
+			RingBuffer_Read(app_pcm_data_mgr_queue, (uint8_t *)drop_buf, dequeue_bytes) == 0) {
+			ret = RTK_BT_OK;
+		} else {
+			ret = RTK_BT_FAIL;
+		}
+		osif_mutex_give(app_pcm_data_mgr_queue_mtx);
 		if (RTK_BT_OK != ret) {
 			break;
 		}
@@ -1495,31 +1494,32 @@ static uint16_t rtk_bt_audio_decode_pcm_data_callback(void *p_pcm_data, uint16_t
 #endif
 	/* 2. enqueue */
 	{
-		if (app_pcm_data_mgr_queue.mtx == NULL) {
+		if (app_pcm_data_mgr_queue_mtx == NULL) {
 			BT_LOGE("[APP] %s p_enqueue_mtx is NULL\r\n", __func__);
 			goto exit;
 		}
 		BT_LOGD("[APP] %s enqueue_size\r\n", __func__, enqueue_size);
-		osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
-		if (RTK_BT_OK != app_queue_mgr_enqueue(&app_pcm_data_mgr_queue, out_frame_buf, enqueue_size)) {
+		osif_mutex_take(app_pcm_data_mgr_queue_mtx, BT_TIMEOUT_FOREVER);
+		if (RingBuffer_Space(app_pcm_data_mgr_queue) < enqueue_size ||
+			RingBuffer_Write(app_pcm_data_mgr_queue, (uint8_t *)out_frame_buf, enqueue_size) != 0) {
 			/* queue is full , flush queue*/
-			app_queue_mgr_flush_queue(&app_pcm_data_mgr_queue);
+			RingBuffer_Reset(app_pcm_data_mgr_queue);
 			pbp_broadcast_dequeue_flag = false;
 			BT_LOGE("[APP] %s: flush queue\r\n", __func__);
-			osif_mutex_give(app_pcm_data_mgr_queue.mtx);
+			osif_mutex_give(app_pcm_data_mgr_queue_mtx);
 			goto exit;
 		}
-		if (app_pcm_data_mgr_queue.queue_size >= app_queue_threshhold) {
+		if (RingBuffer_Available(app_pcm_data_mgr_queue) >= app_queue_threshhold) {
 			pbp_broadcast_dequeue_flag = true;
 		}
-		osif_mutex_give(app_pcm_data_mgr_queue.mtx);
+		osif_mutex_give(app_pcm_data_mgr_queue_mtx);
 	}
 	/* flush queue if BIS broadcast stop */
 	if (!lea_broadcast_start) {
-		osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
-		app_queue_mgr_flush_queue(&app_pcm_data_mgr_queue);
+		osif_mutex_take(app_pcm_data_mgr_queue_mtx, BT_TIMEOUT_FOREVER);
+		RingBuffer_Reset(app_pcm_data_mgr_queue);
 		pbp_broadcast_dequeue_flag = false;
-		osif_mutex_give(app_pcm_data_mgr_queue.mtx);
+		osif_mutex_give(app_pcm_data_mgr_queue_mtx);
 	}
 
 exit:
@@ -2409,26 +2409,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 
 	return 0;
 }
-#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
-static void app_bt_le_audio_iso_data_path_tx_track_pause(void)
-{
-	rtk_bt_audio_track_t *p_track = NULL;
-	for (uint16_t i = 0; i < APP_LE_AUDIO_DEMO_DATA_PATH_NUM; i ++) {
-		if (app_le_audio_data_path[i].used && (app_le_audio_data_path[i].path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX)) {
-			if (!app_le_audio_data_path[i].p_track_hdl) {
-				BT_LOGA("%s: p_track_hdl is NULL \r\n", __func__);
-				return;
-			}
-			p_track = (rtk_bt_audio_track_t *)app_le_audio_data_path[i].p_track_hdl;
-			if (p_track->audio_sync_flag) {
-				rtk_bt_audio_track_pause(p_track->audio_track_hdl);
-				BT_LOGA("%s: rtk_bt_audio_track_pause\r\n", __func__);
-			}
-		}
-	}
-	return ;
-}
-#endif
+
 static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, uint32_t len)
 {
 	(void)len;
@@ -2480,10 +2461,10 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 		}
 		/* flush pcm data queue */
 		{
-			osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
-			app_queue_mgr_flush_queue(&app_pcm_data_mgr_queue);
+			osif_mutex_take(app_pcm_data_mgr_queue_mtx, BT_TIMEOUT_FOREVER);
+			RingBuffer_Reset(app_pcm_data_mgr_queue);
 			pbp_broadcast_dequeue_flag = false;
-			osif_mutex_give(app_pcm_data_mgr_queue.mtx);
+			osif_mutex_give(app_pcm_data_mgr_queue_mtx);
 		}
 		a2dp_audio_track_hdl = NULL;
 		a2dp_codec_entity = NULL;
@@ -2582,9 +2563,6 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 		pbp_broadcast_dequeue_flag = false;
 		/* pkt drop flag reset*/
 		app_bt_handle_packet_drop_reset();
-#if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
-		app_bt_le_audio_iso_data_path_tx_track_pause();
-#endif
 		if (a2dp_audio_track_hdl) {
 			rtk_bt_audio_track_pause(a2dp_audio_track_hdl->audio_track_hdl);
 		}
@@ -3007,10 +2985,11 @@ static void app_bt_le_audio_pbp_bsrc_send_timer_deinit(void)
 static bool app_bt_le_audio_queue_water_level_is_enough(void)
 {
 	static bool flag = false;
-	if (app_pcm_data_mgr_queue.queue_size <= app_queue_threshhold / 10) {
+	uint32_t queue_size = RingBuffer_Available(app_pcm_data_mgr_queue);
+	if (queue_size <= app_queue_threshhold / 10) {
 		flag = false;
-		BT_LOGA("[APP] %s: cur_water_level: %d \r\n", __func__, app_pcm_data_mgr_queue.queue_size / 192);
-	} else if (app_pcm_data_mgr_queue.queue_size >= app_queue_threshhold) {
+		BT_LOGA("[APP] %s: cur_water_level: %d \r\n", __func__, queue_size / 192);
+	} else if (queue_size >= app_queue_threshhold) {
 		flag = true;
 	}
 	return flag;
@@ -3079,13 +3058,18 @@ static uint16_t app_bt_le_audio_pcm_data_dequeue(int8_t *output_data, uint32_t d
 	uint8_t ret = RTK_BT_OK;
 
 	/* dequeue from pcm data queue */
-	if (NULL == app_pcm_data_mgr_queue.mtx) {
+	if (NULL == app_pcm_data_mgr_queue_mtx) {
 		BT_LOGE("[APP] %s: mtx is NULL\r\n", __func__);
 		return RTK_BT_FAIL;
 	}
-	osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
-	ret = app_queue_mgr_dequeue(&app_pcm_data_mgr_queue, output_data, dequeue_len);
-	osif_mutex_give(app_pcm_data_mgr_queue.mtx);
+	osif_mutex_take(app_pcm_data_mgr_queue_mtx, BT_TIMEOUT_FOREVER);
+	if (RingBuffer_Available(app_pcm_data_mgr_queue) >= dequeue_len &&
+		RingBuffer_Read(app_pcm_data_mgr_queue, (uint8_t *)output_data, dequeue_len) == 0) {
+		ret = RTK_BT_OK;
+	} else {
+		ret = RTK_BT_FAIL;
+	}
+	osif_mutex_give(app_pcm_data_mgr_queue_mtx);
 
 	return ret;
 }
@@ -3755,10 +3739,10 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		memset((void *)&lea_codec_t, 0, sizeof(rtk_bt_le_audio_cfg_codec_t));
 		/* flush pcm data queue */
 		{
-			osif_mutex_take(app_pcm_data_mgr_queue.mtx, BT_TIMEOUT_FOREVER);
-			app_queue_mgr_flush_queue(&app_pcm_data_mgr_queue);
+			osif_mutex_take(app_pcm_data_mgr_queue_mtx, BT_TIMEOUT_FOREVER);
+			RingBuffer_Reset(app_pcm_data_mgr_queue);
 			pbp_broadcast_dequeue_flag = false;
-			osif_mutex_give(app_pcm_data_mgr_queue.mtx);
+			osif_mutex_give(app_pcm_data_mgr_queue_mtx);
 		}
 		if (0 == app_bt_le_audio_data_path_statistics(RTK_BLE_AUDIO_ISO_DATA_PATH_TX)) {
 			/* wait for all BIS track release, a2dp local play resume*/
@@ -4959,7 +4943,14 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 		}
 		/* App audio pcm data queue init */
 		{
-			BT_APP_PROCESS(app_queue_mgr_init(&app_pcm_data_mgr_queue, pcm_data_buf, sizeof(pcm_data_buf) / 2));
+			if (app_pcm_data_mgr_queue_mtx == NULL) {
+				osif_mutex_create(&app_pcm_data_mgr_queue_mtx);
+			}
+			app_pcm_data_mgr_queue = RingBuffer_Create((void *)pcm_data_buf, sizeof(pcm_data_buf), LOCAL_RINGBUFF, 0);
+			if (app_pcm_data_mgr_queue == NULL) {
+				BT_LOGE("[APP] %s: RingBuffer_Create failed\r\n", __func__);
+				return RTK_BT_FAIL;
+			}
 		}
 		/* pkt drop mtx init*/
 		if (pkt_drop_mtx == NULL) {
@@ -5068,7 +5059,14 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 		/* APP Audio deinit */
 		rtk_bt_audio_deinit();
 		/* APP pcm data queue deinit */
-		app_queue_mgr_deinit(&app_pcm_data_mgr_queue);
+		if (app_pcm_data_mgr_queue != NULL) {
+			RingBuffer_Destroy(app_pcm_data_mgr_queue);
+			app_pcm_data_mgr_queue = NULL;
+		}
+		if (app_pcm_data_mgr_queue_mtx != NULL) {
+			osif_mutex_delete(app_pcm_data_mgr_queue_mtx);
+			app_pcm_data_mgr_queue_mtx = NULL;
+		}
 		/* Audio resample deinit */
 		if (g_audio_resample_t) {
 			BT_APP_PROCESS(app_bt_pcm_data_resample_engine_destroy(&g_audio_resample_t));

@@ -80,7 +80,7 @@ void *rtk_bt_audio_track_init(uint32_t channels,
 #if defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
 		/* set audio play start buffer size to match play latency and play fluency */
 		if (duration) {
-			int32_t thresholdBytes = (duration * ((rate / 1000) * channels * (bits / 8)) / 1000) * 3;
+			int32_t thresholdBytes = (duration * ((rate / 1000) * channels * (bits / 8)) / 1000);
 			AudioTrack_SetStartThresholdBytes(audio_track, thresholdBytes);
 		} else {
 			AudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
