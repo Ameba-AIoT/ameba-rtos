@@ -97,6 +97,28 @@ struct p2p_scan_report_node {
 	u8							role;
 };
 
+struct p2p_auto_go_params {
+	struct rtw_ssid ssid;
+	u8 *password;
+	u8 password_len;
+	char *dev_name;
+	char *manufacturer;
+	char *model_name;
+	char *model_number;
+	char *serial_number;
+	u8 *pri_dev_type;
+	u8 channel;
+};
+
+struct p2p_connect_params {
+	u8 *dest;
+	enum p2p_wps_method config_method;
+	char *pin;
+	int go_intent;
+	u32 timeout_sec;
+	u8 join;
+};
+
 struct p2p_cmd_priv {
 	struct	list_head	queue;
 	rtos_mutex_t		lock;
@@ -150,7 +172,7 @@ int wifi_cmd_p2p_listen(unsigned int timeout);
 void wifi_cmd_p2p_find(u32 timeout);
 void wifi_cmd_p2p_peers(void);
 void wifi_cmd_p2p_state(void);
-int wifi_cmd_p2p_connect(u8 *dest, enum p2p_wps_method config_method, char *pin, int go_intent, u32 timeout_sec);
+void wifi_cmd_p2p_connect(struct p2p_connect_params *params);
 void wifi_cmd_p2p_disconnect(void);
 
 int wifi_p2p_init(u8 *dev_addr, u8 listen_ch, u8 op_ch);
@@ -162,16 +184,15 @@ void wifi_p2p_set_model_number(const char *model_number);
 void wifi_p2p_set_serial_number(const char *serial_number);
 void wifi_p2p_set_pri_dev_type(const u8 *pri_dev_type);
 void wifi_p2p_set_ssid(const char *ssid_in);
-void wifi_p2p_set_config_methods(u16 config_methods);
 void wifi_p2p_init_auto_go_params(void *res, u8 *passphrase, u8 channel);
-
+void wifi_p2p_init_auto_gc_params(void *nego_res, u8 *ssid, u32 ssid_len, u8 *dev_addr, u8 *intf_addr, u32 channel);
 void wifi_p2p_set_role(u32 role);
 u8 wifi_p2p_check_go(void);
 int wifi_p2p_set_remain_on_ch(unsigned char wlan_idx, u8 enable);
 void wifi_p2p_join_status_hdl(u8 *evt_info);
 void wifi_p2p_channel_switch_ready(u8 *evt_info);
 int wifi_p2p_start_go(char *ssid, char *passphrase, u8 channel);
-int wifi_p2p_start_auto_go(u8 channel);
+int wifi_p2p_start_auto_go(struct p2p_auto_go_params *param);
 
 #endif //_WIFI_P2P_SUPPLICANT_H_
 

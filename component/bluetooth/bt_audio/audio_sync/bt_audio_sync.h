@@ -72,6 +72,39 @@ uint16_t rtk_bt_audio_handle_xrun(rtk_bt_audio_track_t *track, uint8_t *data, ui
 uint16_t rtk_bt_audio_presentation_compensation(rtk_bt_audio_track_t *track, uint8_t packet_index, uint32_t ts_us, uint8_t **ppdata, uint32_t *pdata_size);
 
 /**
+ * @brief     do audio track sync struct add.
+ * @param[in] track: pointer of audio track struct
+ * @return
+ *            - 0: success
+ *            - 1: fail
+ */
+uint16_t bt_audio_sync_track_add(rtk_bt_audio_track_t *track);
+
+/**
+ * @brief     delete audio track sync.
+ * @param[in] track: pointer of audio track struct
+ * @return
+ *            - 0: success
+ *            - 1: fail
+ */
+void bt_audio_sync_track_del(rtk_bt_audio_track_t *track);
+
+/**
+ * @brief     init bt audio sync component.
+ * @return
+ *            - 0: success
+ *            - 1: fail
+ */
+uint16_t bt_audio_sync_init(void);
+
+/**
+ * @brief     deinit bt audio sync component.
+ * @return
+ *            - 0: success
+ *            - 1: fail
+ */
+void bt_audio_sync_deinit(void);
+/**
  * @}
  */
 

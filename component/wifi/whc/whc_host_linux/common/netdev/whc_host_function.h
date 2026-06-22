@@ -42,7 +42,6 @@ int whc_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_addr);
 int whc_host_get_phy_stats(u8 wlan_idx, const u8 *mac_addr, union rtw_phy_stats *stats);
 int whc_host_get_setting(unsigned char wlan_idx, dma_addr_t setting_phy);
 int whc_host_set_lps_enable(u8 enable);
-int whc_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr);
 int whc_host_iwpriv_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf);
 int whc_host_set_mac_addr(u32 wlan_idx, u8 *addr);
 int rtw_ndev_alloc(void);
@@ -133,6 +132,7 @@ void whc_ipc_host_xmit_done(int idx_wlan);
 int whc_host_event_init(struct whc_device *idev);
 void whc_host_event_deinit(void);
 int whc_ipc_host_send_msg(u32 id, u32 *param_buf, u32 buf_len);
+int whc_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr);
 
 #else
 void whc_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb);
