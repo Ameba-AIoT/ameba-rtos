@@ -10,11 +10,9 @@
 #include <osif.h>
 #include <basic_types.h>
 #include "bt_debug.h"
-#include "hci_controller.h"
-#include "hci_transport.h"
-#include "hci_uart.h"
 #include "bt_eqc_api.h"
-#include "hci_transport.h"
+#include "bt_eqc_common.h"
+#include "hci_common.h"
 
 void rtk_bt_eqc_power_on(void)
 {

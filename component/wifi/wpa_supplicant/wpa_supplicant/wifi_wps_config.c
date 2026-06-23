@@ -68,192 +68,113 @@ struct _internal_wps_scan_handler_arg {
 
 #define 	SCAN_BUFFER_LENGTH	(4096)
 
-#ifdef CONFIG_WIFI_P2P_ENABLE
-extern void _wifi_p2p_wps_success(const u8 *peer_addr, int registrar);
-extern void _wifi_p2p_wps_failed(void);
-#endif
 #ifdef CONFIG_WPS_P2PGO
 static rtos_task_t ap_wps_task = NULL;
-extern void _wpas_wsc_ap_send_eap_reqidentity(void *priv, u8 *rx_buf);
-extern void _wpas_wsc_ap_check_eap_rspidentity(void *priv, u8 *rx_buf);
-extern void _wpas_wsc_registrar_send_eap_fail(void *priv);
-extern void _wpas_wsc_registrar_handle_recvd(void *priv, u8 *rx_buf);
-extern void *_eap_wsc_server_process_hdl(void *priv, void *req, u8 id);
-extern void _eap_wsc_server_reset(void *priv);
 #endif
-extern void wpas_wsc_sta_wps_start_hdl(u8 *evt_info);
-extern void wpas_wsc_wps_finish_hdl(u8 *evt_info);
-extern void wpas_wsc_server_wps_finish_hdl(u8 *buf, s32 buf_len);
-extern void wpas_wsc_eapol_recvd_hdl(u8 *buf, s32 buf_len);
 
-void wifi_p2p_wps_success(const u8 *peer_addr, int registrar)
+__weak void wifi_p2p_wps_success(const u8 *peer_addr, int registrar)
 {
-#ifdef CONFIG_WIFI_P2P_ENABLE
-	_wifi_p2p_wps_success(peer_addr, registrar);
-#else
 	(void) peer_addr;
 	(void) registrar;
-#endif
 }
 
-void wifi_p2p_wps_failed(void)
+__weak void wifi_p2p_wps_failed(void)
 {
-#ifdef CONFIG_WIFI_P2P_ENABLE
-	_wifi_p2p_wps_failed();
-#endif
+	return;
 }
 
-void *wps_registrar_init(void *priv, void *pcfg)
+__weak void *wps_registrar_init(void *priv, void *pcfg)
 {
-#ifdef CONFIG_WPS_P2PGO
-	return _wps_registrar_init(priv, pcfg);
-#else
 	(void) priv;
 	(void) pcfg;
 	return NULL;
-#endif
 }
 
-void wps_registrar_deinit(void *priv)
+__weak void wps_registrar_deinit(void *priv)
 {
-#ifdef CONFIG_WPS_P2PGO
-	_wps_registrar_deinit(priv);
-#else
 	(void) priv;
-#endif
 }
 
-void *wps_registrar_alloc(void)
+__weak void *wps_registrar_alloc(void)
 {
-#ifdef CONFIG_WPS_P2PGO
-	return _wps_registrar_alloc();
-#else
 	return NULL;
-#endif
 }
 
-u32 wps_registrar_process_msg(void *priv, enum wsc_op_code op_code, const void *pmsg)
+__weak u32 wps_registrar_process_msg(void *priv, u32 op_code, const void *pmsg)
 {
-#ifdef CONFIG_WPS_P2PGO
-	return _wps_registrar_process_msg(priv, op_code, pmsg);
-#else
 	(void) priv;
 	(void) op_code;
 	(void) pmsg;
 	return 0;
-#endif
 }
 
-void *wps_registrar_get_msg(void *priv, enum wsc_op_code *op_code)
+__weak void *wps_registrar_get_msg(void *priv, enum wsc_op_code *op_code)
 {
-#ifdef CONFIG_WPS_P2PGO
-	return _wps_registrar_get_msg(priv, (u8 *)op_code);
-#else
 	(void) priv;
 	(void) op_code;
 	return NULL;
-#endif
 }
 
-int wps_registrar_add_pin(void *priv, const u8 *addr,
-						  const u8 *uuid, const u8 *pin, size_t pin_len,
-						  int timeout)
+__weak int wps_registrar_add_pin(void *priv, const u8 *addr,
+								 const u8 *uuid, const u8 *pin, size_t pin_len,
+								 int timeout)
 {
 	(void) addr;
 	(void) uuid;
 	(void) timeout;
-
-#ifdef CONFIG_WPS_P2PGO
-	return _wps_registrar_add_pin(priv, NULL, NULL, pin, pin_len, 0);
-#else
 	(void) priv;
 	(void) pin;
 	(void) pin_len;
 	return 0;
-#endif
 }
 
-int wps_registrar_button_pushed(void *priv,
-								const u8 *p2p_dev_addr)
+__weak int wps_registrar_button_pushed(void *priv, const u8 *p2p_dev_addr)
 {
-#ifdef CONFIG_WPS_P2PGO
-	return _wps_registrar_button_pushed(priv, p2p_dev_addr);
-#else
 	(void) priv;
 	(void) p2p_dev_addr;
 	return 0;
-#endif
 }
 
-int wps_registrar_wps_cancel(void *priv)
+__weak int wps_registrar_wps_cancel(void *priv)
 {
-#ifdef CONFIG_WPS_P2PGO
-	return _wps_registrar_wps_cancel(priv);
-#else
 	(void) priv;
 	return 0;
-#endif
-
 }
 
-void wpas_wsc_ap_send_eap_reqidentity(void *priv, u8 *rx_buf)
+__weak void wpas_wsc_ap_send_eap_reqidentity(void *priv, u8 *rx_buf)
 {
-#ifdef CONFIG_WPS_P2PGO
-	_wpas_wsc_ap_send_eap_reqidentity(priv, rx_buf);
-#else
 	(void) priv;
 	(void) rx_buf;
-#endif
 }
 
-void wpas_wsc_ap_check_eap_rspidentity(void *priv, u8 *rx_buf)
+__weak void wpas_wsc_ap_check_eap_rspidentity(void *priv, u8 *rx_buf)
 {
-#ifdef CONFIG_WPS_P2PGO
-	_wpas_wsc_ap_check_eap_rspidentity(priv, rx_buf);
-#else
 	(void) priv;
 	(void) rx_buf;
-#endif
 }
 
-void wpas_wsc_registrar_send_eap_fail(void *priv)
+__weak void wpas_wsc_registrar_send_eap_fail(void *priv)
 {
-#ifdef CONFIG_WPS_P2PGO
-	_wpas_wsc_registrar_send_eap_fail(priv);
-#else
 	(void) priv;
-#endif
 }
 
-void wpas_wsc_registrar_handle_recvd(void *priv, u8 *rx_buf)
+__weak void wpas_wsc_registrar_handle_recvd(void *priv, u8 *rx_buf)
 {
-#ifdef CONFIG_WPS_P2PGO
-	_wpas_wsc_registrar_handle_recvd(priv, rx_buf);
-#else
 	(void) priv;
 	(void) rx_buf;
-#endif
 }
 
-void *eap_wsc_server_process_hdl(void *priv, void *req, u8 id)
+__weak void *eap_wsc_server_process_hdl(void *priv, void *req, u8 id)
 {
-#ifdef CONFIG_WPS_P2PGO
-	return _eap_wsc_server_process_hdl(priv, req, id);
-#else
 	(void) priv;
 	(void) req;
 	(void) id;
 	return NULL;
-#endif
 }
 
-void eap_wsc_server_reset(void *priv)
+__weak void eap_wsc_server_reset(void *priv)
 {
-#ifdef CONFIG_WPS_P2PGO
-	_eap_wsc_server_reset(priv);
-#else
 	(void) priv;
-#endif
 }
 
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS

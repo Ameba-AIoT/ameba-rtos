@@ -13,7 +13,7 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
-
+#include <whc_def.h>
 #include <whc_host_app_api.h>
 #include <whc_host_netlink.h>
 #include <whc_host_app_ota.h>
@@ -55,6 +55,8 @@ uint8_t rmesh_ap_gw[4];
 void whc_host_rx_buf_hdl(struct msgtemplate *msg);
 void whc_host_mp_result(uint8_t *buf);
 
+static uint8_t mpfrag_buf[WHC_MP_FRAG_NUM * WHC_MP_FRAG_SIZE];
+static int mpfrag_received = 0;
 static char *whc_cmd_args[MAX_ARG_COUNT] = {0};
 char whc_cmd_backup[MAX_INPUT_SIZE] = {0};
 static uint32_t whc_cmd_argc;
@@ -292,29 +294,29 @@ int whc_host_set_mac(void)
 /* msg to kernel, call api for dbg and mp */
 int whc_host_wifi_mp(void)
 {
-	//rm header "iwpriv"
-	char *buf = whc_cmd_backup + strlen("iwpriv") + 1;
-
-	int nl_fd;
-	int nl_family_id = 0;
-	struct msgtemplate msg;
+	/* strip "iwpriv " prefix */
+	char *cmd = whc_cmd_backup + strlen("iwpriv") + 1;
+	uint16_t cmd_len = (uint16_t)(strlen(cmd) + 1);
+	/* payload: WHC_WIFI_TEST(4B) + WHC_WIFI_TEST_MP(1B) + show_msg(1B) + cmd_string */
+	uint32_t buf_len = 6 + cmd_len;
+	uint8_t *buf = malloc(buf_len);
 	int ret = 0;
-	unsigned char *ptr = msg.buf;
-	struct msgtemplate ans;
 
-	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
-	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_MP);
-	nla_put_string(&ptr, WHC_ATTR_STRING, buf);
-	msg.n.nlmsg_len += ptr - msg.buf;
-
-	ret = whc_host_api_send_to_kernel(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
-	if (ret < 0) {
-		printf("msg send fail\n");
+	if (!buf) {
+		printf("malloc failed\n");
+		return -1;
 	}
 
-	recv(whc_netlink_info.sockfd, &ans, sizeof(ans), 0);
-	struct nlattr *na = (struct nlattr *)GENLMSG_DATA(&ans);
-	whc_host_mp_result((uint8_t *)NLA_DATA(na));
+	mpfrag_received = 0;
+	memset(mpfrag_buf, 0, sizeof(mpfrag_buf));
+
+	*(uint32_t *)buf = WHC_WIFI_TEST;
+	buf[4] = WHC_WIFI_TEST_MP;
+	buf[5] = 1; /* show_msg */
+	memcpy(buf + 6, cmd, cmd_len);
+
+	ret = whc_host_api_send_nl_data(buf, buf_len);
+	free(buf);
 
 	return ret;
 }
@@ -570,14 +572,21 @@ int whc_host_set_mac_internal(uint8_t idx, char *mac)
 
 void whc_host_mp_result(uint8_t *buf)
 {
-	uint8_t size = strlen(buf);
-	if (size > 1600) {
-		printf("mp result error \r\n");
+	uint8_t frag_idx = buf[0];
+
+	if (frag_idx >= WHC_MP_FRAG_NUM) {
+		printf("mp result: invalid frag_idx %d\r\n", frag_idx);
 		return;
 	}
 
-	printf("%s \r\n", buf);
-	return;
+	memcpy(mpfrag_buf + frag_idx * WHC_MP_FRAG_SIZE, buf + 1, WHC_MP_FRAG_SIZE);
+	mpfrag_received++;
+
+	if (mpfrag_received >= WHC_MP_FRAG_NUM) {
+		printf("%s \r\n", (char *)mpfrag_buf);
+		mpfrag_received = 0;
+		memset(mpfrag_buf, 0, sizeof(mpfrag_buf));
+	}
 }
 
 #ifdef CONFIG_RMESH
@@ -671,7 +680,7 @@ void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 				whc_host_scan_result(pos);
 				break;
 			case WHC_WIFI_TEST_MP:
-				whc_host_mp_result(pos + sizeof(uint32_t));
+				whc_host_mp_result(pos + 1);
 				break;
 			case WHC_WIFI_TEST_OTA:
 				whc_host_ota_from_dev(pos);

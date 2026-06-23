@@ -1466,17 +1466,88 @@ void at_wlp2p_stop(u16 argc, char **argv)
 void at_wlp2p_autogo(u16 argc, char **argv)
 {
 	int error_no = RTW_AT_OK;
-	u8 channel = 6; // 1, 6, 11
-
-	if (argc > 2 && os_strcmp(argv[1], "ch") == 0) {
-		/* listen channel: ch1,6,11 for 2.4G. ch36,40,44,48 for 5G */
-		channel = atoi(argv[2]);
-	}
+	char *dev_name = "Ameba1234";	// max strlen 32
+	char *manufacturer = "by customer";	// max strlen 64
+	char *model_name = "customer";	// max strlen 32
+	char *model_number = "v2.0";	// max strlen 32
+	char *serial_number = "9";	// max strlen 32
+	u8 pri_dev_type[8] = {0x00, 0x0A, 0x00, 0x50, 0xF2, 0x04, 0x00, 0x01};	// category ID:0x00,0x0A; sub category ID:0x00,0x01
+	struct p2p_auto_go_params *param = NULL;
+	int i = 0, j = 0;
 
 	RTK_LOGI(NOTAG, "[+WLP2PGO]: _AT_P2P_AUTO_GO_START_\n\r");
 
-	if (wifi_p2p_start_auto_go(channel) < 0) {
+	if (argc == 1) {
+		RTK_LOGW(NOTAG, "[+WLP2PGO] The parameters can not be ignored\r\n");
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
+		goto end;
+	}
+
+	if ((argc < 2) || (argc > 7)) {
+		RTK_LOGW(NOTAG, "[+WLP2PGO] command format error\r\n");
+		error_no = RTW_AT_ERR_PARAM_NUM_ERR;
+		goto end;
+	}
+
+	param = rtos_mem_zmalloc(sizeof(struct p2p_auto_go_params));
+	param->channel = 6;
+
+	for (i = 1; argc > i; i += 2) {
+		j = i + 1;  /* next i. */
+		/* SSID */
+		if (0 == strcmp("ssid", argv[i])) {
+			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) > RTW_ESSID_MAX_SIZE)) {
+				RTK_LOGW(NOTAG, "[+WLP2PGO] Invalid SSID length\r\n");
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
+			if (strncmp(argv[j], P2P_WILDCARD_SSID, P2P_WILDCARD_SSID_LEN)) {
+				RTK_LOGW(NOTAG, "[+WLP2PGO] Invalid SSID, should be prefixed with \"DIRECT-\"\r\n");
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
+			param->ssid.len = strlen(argv[j]);
+			strncpy((char *)param->ssid.val, argv[j], param->ssid.len);
+		}
+		/* password */
+		else if (0 == strcmp("pw", argv[i])) {
+			if ((argc <= j) || (0 == strlen(argv[j])) || (128 < strlen(argv[j]))) {
+				RTK_LOGW(NOTAG, "[+WLP2PGO] Invalid password\r\n");
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
+
+			param->password_len = strlen(argv[j]);
+			strncpy((char *)password, argv[j], sizeof(password) - 1);
+			param->password = password;
+		}
+		/* channel */
+		else if (0 == strcmp("ch", argv[i])) {
+			if ((argc > j) && (0 != strlen(argv[j]))) {
+				/* listen channel: ch1,6,11 for 2.4G. ch36,40,44,48 for 5G */
+				param->channel = atoi(argv[j]);
+			}
+		} else {
+			RTK_LOGW(NOTAG, "[+WLP2PGO] Invalid parameter type\r\n");
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+			goto end;
+		}
+	}
+
+	param->dev_name = dev_name;
+	param->manufacturer = manufacturer;
+	param->model_name = model_name;
+	param->model_number = model_number;
+	param->serial_number = serial_number;
+	param->pri_dev_type = pri_dev_type;
+
+	if (wifi_p2p_start_auto_go(param) < 0) {
 		RTK_LOGI(NOTAG, "\r\n[+WLP2PGO]: start p2p go fail.\n\r");
+	}
+
+end:
+	if (param) {
+		rtos_mem_free(param);
 	}
 
 	if (error_no == RTW_AT_OK) {
@@ -1490,7 +1561,7 @@ void at_wlp2p_connect(u16 argc, char **argv)
 {
 	int error_no = RTW_AT_OK;
 	enum p2p_wps_method config_method = WPS_PBC;
-	char *pin = NULL;
+	struct p2p_connect_params params = {0};
 	u8 dest[ETH_ALEN];
 	int go_intent = -1;
 	int i = 0;
@@ -1521,7 +1592,7 @@ void at_wlp2p_connect(u16 argc, char **argv)
 				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
-			pin = argv[i + 1];
+			params.pin = argv[i + 1];
 			i += 2;
 		} else if (os_strcmp(argv[i], "pin_display") == 0) {
 			config_method = WPS_PIN_DISPLAY;
@@ -1533,6 +1604,9 @@ void at_wlp2p_connect(u16 argc, char **argv)
 			}
 			go_intent = atoi(argv[i + 1]) % 16;
 			i += 2;
+		} else if (os_strcmp(argv[i], "join") == 0) {
+			params.join = TRUE;
+			i++;
 		} else {
 			RTK_LOGA(NOTAG, "Unknown parameters!\n");
 			return;
@@ -1543,7 +1617,12 @@ void at_wlp2p_connect(u16 argc, char **argv)
 		go_intent = _rand() % 16; /*0-15*/
 	}
 
-	wifi_cmd_p2p_connect(dest, config_method, pin, go_intent, 30);
+	params.dest = dest;
+	params.config_method = config_method;
+	params.go_intent = go_intent;
+	params.timeout_sec = 30;
+
+	wifi_cmd_p2p_connect(&params);
 
 end:
 	if (error_no == RTW_AT_OK) {
@@ -1564,7 +1643,7 @@ void at_wlp2p_disconnect(u16 argc, char **argv)
 	UNUSED(argv);
 
 	RTK_LOGI(NOTAG, "[+WLP2PDISCONN]: _AT_P2P_DISCONNECT_\n\r");
-	wifi_cmd_p2p_disconnect();
+	wifi_p2p_disconnect();
 
 	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);

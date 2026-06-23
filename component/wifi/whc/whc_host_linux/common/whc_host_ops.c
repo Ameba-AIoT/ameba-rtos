@@ -1032,7 +1032,7 @@ static int whc_host_set_monitor_channel(struct wiphy *wiphy, struct cfg80211_cha
 
 static int whc_host_get_channel_ops(struct wiphy *wiphy,
 									struct wireless_dev *wdev,
-#if (KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE)
+#if (KERNEL_VERSION(5, 19, 2) <= LINUX_VERSION_CODE)
 									unsigned int link_id,
 #endif
 									struct cfg80211_chan_def *chandef)

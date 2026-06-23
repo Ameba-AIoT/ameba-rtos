@@ -557,9 +557,6 @@ struct p2p_data {
 	/* Override option for preferred operating channel in GO Negotiation */
 	u8 override_pref_op_class;
 	u8 override_pref_channel;
-	bool p2p_6ghz_capable;
-	bool include_6ghz;
-	bool allow_6ghz;
 };
 
 /**
@@ -669,7 +666,6 @@ struct p2p_message {
 
 struct p2p_context {
 	u32 role;
-	u32 state;
 	struct p2p_data *p2p;
 	char p2p_pin[10];
 	//TODO auto GO
@@ -712,6 +708,8 @@ struct p2p_context {
 	rtos_mutex_t scan_report_lock;
 
 	xqueue_handle_t queue_for_p2p_nego;
+
+	struct p2p_connect_params *connect_param;
 };
 
 enum p2p_role {
@@ -743,6 +741,30 @@ enum wpa_vendor_elem_frame {
 
 
 #define P2P_MAX_GROUP_ENTRIES 50
+
+struct p2p_group_member {
+	struct p2p_group_member *next;
+	u8 addr[ETH_ALEN]; /* P2P Interface Address */
+	u8 dev_addr[ETH_ALEN]; /* P2P Device Address */
+	struct wpabuf *p2p_ie;
+	struct wpabuf *wfd_ie;
+	struct wpabuf *client_info;
+	u8 dev_capab;
+};
+
+/**
+ * struct p2p_group - Internal P2P module per-group data
+ */
+struct p2p_group {
+	struct p2p_data *p2p;
+	struct p2p_group_config *cfg;
+	struct p2p_group_member *members;
+	unsigned int num_members;
+	int group_formation;
+	int beacon_update;
+	struct wpabuf *noa;
+	struct wpabuf *wfd_ie;
+};
 
 struct p2p_group_info {
 	unsigned int num_clients;
@@ -784,8 +806,7 @@ int p2p_channel_random_social(struct p2p_channels *chans, u8 *op_class,
 							  u8 *op_channel,
 							  struct wpa_freq_range_list *avoid_list,
 							  struct wpa_freq_range_list *disallow_list);
-void p2p_copy_channels(struct p2p_channels *dst, const struct p2p_channels *src,
-					   bool allow_6ghz);
+void p2p_copy_channels(struct p2p_channels *dst, const struct p2p_channels *src);
 
 /* p2p_parse.c */
 void p2p_copy_filter_devname(char *dst, size_t dst_len,
