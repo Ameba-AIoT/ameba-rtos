@@ -161,7 +161,7 @@ class Ameba(object):
                 if self.remote_password:
                     self.logger.debug("Remote server: password set, will send validate command")
                     self.serial_port.validate(self.remote_password)
-                    self.serial_port.query_version()
+                self.serial_port.query_version()
                 self.serial_port.open()
             else:
                 # initialize local serial port
