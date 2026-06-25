@@ -36,11 +36,6 @@ ameba-rtos is the official IoT development framework for Realtek Ameba series So
 ameba-rtos/
 ├── component/                  # SDK middleware and drivers
 │   ├── soc/                    #   SoC-specific HAL and peripheral drivers
-│   │   ├── amebadplus/         #     AmebaDplus (RTL8721Dx)
-│   │   ├── amebalite/          #     AmebaLite  (RTL8720E / RTL8710E)
-│   │   ├── amebagreen2/        #     AmebaGreen2 (RTL8721F)
-│   │   ├── amebasmart/         #     AmebaSmart (RTL8730E / RTL8726E)
-│   │   └── RTL8720F/           #     RTL8720F
 │   ├── wifi/                   #   Wi-Fi driver and API (STA / AP / monitor)
 │   ├── bluetooth/              #   BLE / Classic BT stack and examples
 │   ├── lwip/                   #   lwIP TCP/IP stack

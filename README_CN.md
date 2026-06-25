@@ -36,11 +36,6 @@ ameba-rtos 是瑞昱官方推出的物联网开发框架，基于 FreeRTOS，同
 ameba-rtos/
 ├── component/                  # SDK 中间件与驱动
 │   ├── soc/                    #   各芯片 HAL 及外设驱动
-│   │   ├── amebadplus/         #     AmebaDplus (RTL8721Dx)
-│   │   ├── amebalite/          #     AmebaLite  (RTL8720E / RTL8710E)
-│   │   ├── amebagreen2/        #     AmebaGreen2 (RTL8721F)
-│   │   ├── amebasmart/         #     AmebaSmart (RTL8730E / RTL8726E)
-│   │   └── RTL8720F/           #     RTL8720F
 │   ├── wifi/                   #   Wi-Fi 驱动与 API（STA / AP / 监听模式）
 │   ├── bluetooth/              #   BLE / 经典蓝牙协议栈及示例
 │   ├── lwip/                   #   lwIP TCP/IP 协议栈
