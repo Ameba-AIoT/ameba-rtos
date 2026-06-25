@@ -1,12 +1,19 @@
 <div align="center">
 
+<img src="ameba-rtos.png" alt="Ameba-RTOS" width="800">
+
 # ameba-rtos
 
 **瑞昱 Ameba 系列芯片官方物联网开发框架，同时支持 Linux 和 Windows 操作系统。**
 
-[![SDK](https://img.shields.io/badge/SDK-FreeRTOS-blue.svg)](https://aiot.realmcu.com/zh/latest/rtos/index.html)
-[![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](LICENSE)
-[![Issues](https://img.shields.io/github/issues/Ameba-AIoT/ameba-rtos)](https://github.com/Ameba-AIoT/ameba-rtos/issues)
+[![SDK](https://badgen.net/badge/SDK/FreeRTOS/blue)](https://aiot.realmcu.com/zh/latest/rtos/index.html)
+[![Release](https://badgen.net/github/release/Ameba-AIoT/ameba-rtos)](https://github.com/Ameba-AIoT/ameba-rtos/releases)
+[![Language](https://badgen.net/badge/language/C/blue)](https://github.com/Ameba-AIoT/ameba-rtos/search?l=c)
+[![License](https://badgen.net/badge/License/Apache%202.0/lightgrey)](LICENSE)
+[![Last Commit](https://badgen.net/github/last-commit/Ameba-AIoT/ameba-rtos/master?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/commits/master)<br>
+[![CI Linux](https://badgen.net/badge/Linux/success/green?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/actions/workflows/ameba_build_system.yml?query=branch%3Amaster)
+[![CI Windows](https://badgen.net/badge/Windows/success/green?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/actions/workflows/ameba_build_system.yml?query=branch%3Amaster)
+[![Gitee Mirror](https://badgen.net/badge/mirror/Gitee/c71d23?icon=git)](https://gitee.com/ameba-aiot/ameba-rtos)
 
 [English](README.md) · [中文版](README_CN.md) · [文档](https://aiot.realmcu.com/zh/latest/rtos/index.html) · [产品介绍](https://aiot.realmcu.com/zh/product/index.html)
 
