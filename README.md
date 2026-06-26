@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="ameba-rtos.png" alt="Ameba-RTOS" width="800">
+<img src=".github/assets/image.png" alt="ameba-rtos IoT SDK" width="800">
 
 # ameba-rtos
 
