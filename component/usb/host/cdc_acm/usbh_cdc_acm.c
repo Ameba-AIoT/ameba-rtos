@@ -26,6 +26,7 @@ static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event);
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 static int usbh_cdc_acm_sof(usb_host_t *host);
 static int usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num);
+static void usbh_cdc_acm_process_intr_rx(usb_host_t *host);
 #endif
 static int usbh_cdc_acm_setup(usb_host_t *host);
 static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
@@ -33,7 +34,6 @@ static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_line_c
 static int usbh_cdc_acm_process_set_control_line_state(usb_host_t *host);
 static void usbh_cdc_acm_process_tx(usb_host_t *host);
 static void usbh_cdc_acm_process_rx(usb_host_t *host);
-static void usbh_cdc_acm_process_intr_rx(usb_host_t *host);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -97,10 +97,15 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	} else 	{
 		comm_itf_desc = itf_data->itf_desc_array;
 		/* Set notification endpoint */
-		ep_desc = &comm_itf_desc->ep_desc_array[0];
-		if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
-			usbh_open_pipe(host, intr_in, ep_desc);
-			intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
+		if (comm_itf_desc->bNumEndpoints >= 1) {
+			ep_desc = &comm_itf_desc->ep_desc_array[0];
+			if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
+				if (usbh_open_pipe(host, intr_in, ep_desc) == HAL_OK) {
+					intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Open intr pipe fail\n");
+				}
+			}
 		}
 	}
 #endif
@@ -116,15 +121,27 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	} else {
 		data_itf_desc = itf_data->itf_desc_array;
 		/* Set data in/out endpoints */
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < data_itf_desc->bNumEndpoints && i < 2; i++) {
 			ep_desc = &data_itf_desc->ep_desc_array[i];
 			if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
-				usbh_open_pipe(host, bulk_in, ep_desc);
+				if (usbh_open_pipe(host, bulk_in, ep_desc) != HAL_OK) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk in pipe fail\n");
+					goto open_fail;
+				}
 				bulk_in->max_timeout_tick = USB_BULK_IN_MAX_TIMEOUT_TICK;
 			} else {
-				usbh_open_pipe(host, bulk_out, ep_desc);
+				if (usbh_open_pipe(host, bulk_out, ep_desc) != HAL_OK) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk out pipe fail\n");
+					goto open_fail;
+				}
 				bulk_out->max_timeout_tick = USB_BULK_OUT_MAX_TIMEOUT_TICK;
 			}
+		}
+
+		/* Both bulk pipes are mandatory for CDC ACM data transfer */
+		if ((bulk_in->pipe_num == 0) || (bulk_out->pipe_num == 0)) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Missing bulk pipe\n");
+			goto open_fail;
 		}
 	}
 	cdc->host = host;
@@ -135,6 +152,21 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	}
 
 	return HAL_OK;
+
+open_fail:
+	/* Roll back any pipe already opened (guard with pipe_num: only close open pipes) */
+#if CONFIG_USBH_CDC_ACM_NOTIFY
+	if (intr_in->pipe_num) {
+		usbh_close_pipe(host, intr_in);
+	}
+#endif
+	if (bulk_in->pipe_num) {
+		usbh_close_pipe(host, bulk_in);
+	}
+	if (bulk_out->pipe_num) {
+		usbh_close_pipe(host, bulk_out);
+	}
+	return status;
 }
 
 /**
@@ -165,6 +197,11 @@ static int usbh_cdc_acm_detach(usb_host_t *host)
 	if (bulk_out->pipe_num) {
 		usbh_close_pipe(host, bulk_out);
 	}
+
+	/* Device gone: drop the stale host handle and reset state so post-detach
+	   transmit/receive calls are rejected by their host/connect_state checks. */
+	cdc->host = NULL;
+	cdc->state = USBH_CDC_ACM_STATE_IDLE;
 
 	return HAL_OK;
 }
@@ -322,8 +359,10 @@ static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 				usbh_cdc_acm_process_tx(host);
 			} else if (event->pipe_num == cdc->bulk_in.pipe_num) {
 				usbh_cdc_acm_process_rx(host);
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 			} else if (event->pipe_num == cdc->intr_in.pipe_num) {
 				usbh_cdc_acm_process_intr_rx(host);
+#endif
 			}
 		}
 		break;
@@ -463,6 +502,7 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
   * @brief  Intr in function
   * @param  host: Host handle
   */
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
@@ -487,6 +527,7 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 		}
 	}
 }
+#endif
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -505,7 +546,6 @@ int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb)
 		return HAL_ERR_PARA;
 	}
 
-	cdc->cb = cb;
 	if (cb->init != NULL) {
 		ret = cb->init();
 		if (ret != HAL_OK) {
@@ -527,7 +567,17 @@ int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb)
 		return HAL_ERR_MEM;
 	}
 
-	usbh_register_class(&usbh_cdc_acm_driver);
+	ret = usbh_register_class(&usbh_cdc_acm_driver);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
+		usb_os_mfree(cdc->line_coding);
+		cdc->line_coding = NULL;
+		usb_os_mfree(cdc->user_line_coding);
+		cdc->user_line_coding = NULL;
+		return ret;
+	}
+
+	cdc->cb = cb;
 
 	return ret;
 }
@@ -549,10 +599,18 @@ int usbh_cdc_acm_deinit(void)
 	if ((host != NULL) && (host->connect_state == USBH_STATE_SETUP)) {
 		cdc->state = USBH_CDC_ACM_STATE_IDLE;
 #if CONFIG_USBH_CDC_ACM_NOTIFY
-		usbh_close_pipe(host, &cdc->intr_in);
+		/* Guard with pipe_num: an unopened pipe has pipe_num == 0, and
+		   usbh_close_pipe() would otherwise halt/free the control pipe (pipe 0). */
+		if (cdc->intr_in.pipe_num) {
+			usbh_close_pipe(host, &cdc->intr_in);
+		}
 #endif
-		usbh_close_pipe(host, &cdc->bulk_in);
-		usbh_close_pipe(host, &cdc->bulk_out);
+		if (cdc->bulk_in.pipe_num) {
+			usbh_close_pipe(host, &cdc->bulk_in);
+		}
+		if (cdc->bulk_out.pipe_num) {
+			usbh_close_pipe(host, &cdc->bulk_out);
+		}
 	}
 
 	if (cdc->line_coding != NULL) {
@@ -563,6 +621,11 @@ int usbh_cdc_acm_deinit(void)
 		usb_os_mfree(cdc->user_line_coding);
 		cdc->user_line_coding = NULL;
 	}
+
+	/* Cover the deinit-while-connected path (no detach ran): drop the host
+	   handle so post-deinit transmit/receive calls are rejected. The detach
+	   path already cleared it. */
+	cdc->host = NULL;
 
 	usbh_unregister_class(&usbh_cdc_acm_driver);
 
@@ -577,6 +640,11 @@ int usbh_cdc_acm_set_control_line_state(void)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
+
+	if (host == NULL) {
+		return HAL_ERR_UNKNOWN;
+	}
+
 	int ret = HAL_ERR_UNKNOWN;
 
 	if (host->connect_state == USBH_STATE_SETUP) {
@@ -597,6 +665,11 @@ int usbh_cdc_acm_set_line_coding(usb_cdc_line_coding_t *line_coding)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
+
+	if (host == NULL) {
+		return HAL_ERR_UNKNOWN;
+	}
+
 	int ret = HAL_ERR_UNKNOWN;
 
 	if (host->connect_state == USBH_STATE_SETUP) {
@@ -623,6 +696,11 @@ int usbh_cdc_acm_get_line_coding(usb_cdc_line_coding_t *line_coding)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
+
+	if (host == NULL) {
+		return HAL_ERR_UNKNOWN;
+	}
+
 	int ret = HAL_ERR_UNKNOWN;
 
 	if ((host->connect_state == USBH_STATE_SETUP) || (host->connect_state == USBH_STATE_ATTACH)) {
@@ -649,9 +727,15 @@ int usbh_cdc_acm_transmit(u8 *buf, u32 len)
 	int ret = HAL_BUSY;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
+
+	if (host == NULL) {
+		return HAL_ERR_UNKNOWN;
+	}
+
 	usbh_pipe_t *pipe = &cdc->bulk_out;
 
-	if ((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER)) {
+	if ((host->connect_state == USBH_STATE_SETUP) &&
+		((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER))) {
 		if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
 			pipe->xfer_buf = buf;
 			pipe->xfer_len = len;
@@ -683,9 +767,15 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len)
 	int ret = HAL_BUSY;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
+
+	if (host == NULL) {
+		return HAL_BUSY;
+	}
+
 	usbh_pipe_t *pipe = &cdc->bulk_in;
 
-	if ((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER)) {
+	if ((host->connect_state == USBH_STATE_SETUP) &&
+		((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER))) {
 		if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
 			pipe->xfer_buf = buf;
 			pipe->xfer_len = len;
@@ -718,9 +808,15 @@ int usbh_cdc_acm_notify_receive(u8 *buf, u32 len)
 	int ret = HAL_BUSY;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
+
+	if (host == NULL) {
+		return HAL_BUSY;
+	}
+
 	usbh_pipe_t *pipe = &cdc->intr_in;
 
-	if ((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER)) {
+	if ((host->connect_state == USBH_STATE_SETUP) &&
+		((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER))) {
 		if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
 			pipe->xfer_buf = buf;
 			pipe->xfer_len = pipe->ep_mps;

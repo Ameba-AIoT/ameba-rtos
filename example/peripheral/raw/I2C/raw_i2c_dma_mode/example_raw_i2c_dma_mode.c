@@ -579,8 +579,5 @@ int example_raw_i2c_dma_mode(void)
 		printf("Cannot create i2c_dma_test demo task\n\r");
 	}
 
-	rtos_sched_start();
 	return 0;
 }
-
-

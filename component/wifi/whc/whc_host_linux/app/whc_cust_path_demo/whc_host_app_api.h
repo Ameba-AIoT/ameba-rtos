@@ -120,6 +120,8 @@ int whc_host_api_create_nl_socket(int protocol, int pid);
 int whc_host_api_send_nl_msg(int fd, char *buf, int buflen);
 int whc_host_api_get_family_id(int fd, char *family_name);
 
+int whc_host_log_enable(void);
+int whc_host_log_disable(void);
 int whc_host_get_mac(void);
 int whc_host_get_ip(void);
 int whc_host_set_state(void);

@@ -588,7 +588,7 @@ SECTIONS
     PROVIDE(LOGUART_RxMonitorSatusGet = 0x2f643);
     PROVIDE(LOGUART_DiagInit = 0x2f647);
     PROVIDE(SDIO_StructInit = 0x2f6d5);
-    PROVIDE(SDIO_Init = 0x2f6f1);
+    PROVIDE(_SDIO_Init = 0x2f6f1);
     PROVIDE(SDIO_INTClear = 0x2f799);
     PROVIDE(SDIO_INTClearAll = 0x2f79f);
     PROVIDE(SDIO_INTConfig = 0x2f7ab);

@@ -38,8 +38,9 @@ static GPIO_TypeDef *GPIO_PortAddrGet(u32 GPIO_Port)
   *         in GPIO_InitStruct.
   * @param  GPIO_InitStruct Pointer to a GPIO_InitTypeDef structure that contains
   *         the configuration information for the GPIO peripheral.
-  * @note   OpenDrain output: on drive + OUT + GPIO[gpio_bit] = 0, pin should have pull-up resistor
-  * @note   Input HighZ: no drive + IN, user can input high or low use this pin
+  * @note
+  *         - OpenDrain output: on drive + OUT + GPIO[gpio_bit] = 0, pin should have pull-up resistor.
+  *         - Input HighZ: no drive + IN, user can input high or low use this pin.
   */
 void GPIO_Init(GPIO_InitTypeDef  *GPIO_InitStruct)
 {
@@ -71,7 +72,7 @@ void GPIO_Init(GPIO_InitTypeDef  *GPIO_InitStruct)
 
 /**
   * @brief  Get the interrupt status.
-  * @param  GPIO_Port Specifies port number, which can be any GPIO_PORT_X defined in GPIO_Port_Type.
+  * @param  GPIO_Port Specifies port number, which can be any GPIO_PORT_X defined in @ref GPIO_Port_Type.
   * @return The interrupt status of the specified port pins
   */
 u32 GPIO_INTStatusGet(u32 GPIO_Port)
@@ -83,7 +84,7 @@ u32 GPIO_INTStatusGet(u32 GPIO_Port)
 
 /**
   * @brief  Clear the edge interrupt status.
-  * @param  GPIO_Port Specifies port number, which can be any GPIO_PORT_X defined in GPIO_Port_Type.
+  * @param  GPIO_Port Specifies port number, which can be any GPIO_PORT_X defined in @ref GPIO_Port_Type.
   */
 void GPIO_INTStatusClearEdge(u32 GPIO_Port)
 {

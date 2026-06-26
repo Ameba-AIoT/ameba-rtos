@@ -490,7 +490,7 @@ extern "C" {
  * @endinternal
  */
 typedef struct {
-	uint8_t  SJW;           /*!< Spec: 1 to 4. Synchronisation jump width. */
+	uint8_t  SJW;           /*!< Spec: 1 to 4. Synchronization jump width. */
 	uint8_t  PropSeg;       /*!< Spec: 1 to 8. Propagation segment. */
 	uint8_t  PhaseSeg1;     /*!< Spec: 1 to 8. Phase segment 1. */
 	uint8_t  PhaseSeg2;     /*!< Spec: 2 to 8. Phase segment 2. */
@@ -500,31 +500,28 @@ typedef struct {
   * @brief  CAN Mode Initialization structure definition
   */
 typedef struct {
-	u32	CAN_TimStampEn; 		/*!< Specifies the CAN stamp timer enable or disable.
+	u32	CAN_TimStampEn; 		/*!< Specifies the CAN timestamp timer enable or disable.
                                       				This parameter can be ENABLE or DISABLE. */
 
-	u32	CAN_TimStampDiv;		/*!< Specifies the CAN stamp timer divider.
+	u32	CAN_TimStampDiv;		/*!< Specifies the CAN timestamp timer divider.
                                       					This parameter can be a number between 0x01 and 0xff. */
 
 	u32	CAN_AutoReTxEn;        		/*!< Specifies the message auto re-transmission configuration.
-                                      				This parameter can be a ENABLE or DISABLE. */
+                                      				This parameter can be ENABLE or DISABLE. */
 
-	u32	CAN_TriSampleEn;			/*!< Specifies the tripple sampling configuration.
+	u32	CAN_TriSampleEn;			/*!< Specifies the triple sampling configuration.
                                       				This parameter can be ENABLE or DISABLE. */
 
 	u32	CAN_WorkMode;        		/*!< Specifies the CAN work mode.
-                                      				This parameter can be of @ref CAN_WORK_MODE. */
+                                      				This parameter can be a value of @ref CAN_WORK_MODE. */
 
-	u32	CAN_FDCrcMode;        		/*!< Specifies the CAN FD CRC mode.
-                                      				This parameter can be of @ref CAN_FD_CRC_MODE. */
-
-	u32	CAN_ErrCntThreshold;        	/*!< Specifies the message length.
+	u32	CAN_ErrCntThreshold;        	/*!< Specifies the error counter warning threshold.
                                       				This parameter can be a number between 0x000 and 0x1ff*/
 
 	u32	CAN_RxFifoEn;      			/*!< Specifies the CAN FIFO mode configure register.
                                       				This parameter can be ENABLE or DISABLE. */
-	CAN_BitTimingTypeDef CAN_Timing; /*!< Specifies the CAN BIT_TIMING register.
-  	                                    This parameter can be of @ref CAN_BitTimingTypeDef. */
+	CAN_BitTimingTypeDef CAN_Timing; /*!< Specifies the CAN bit timing configuration.
+  	                                    See @ref CAN_BitTimingTypeDef. */
 
 } CAN_InitTypeDef;
 
@@ -544,7 +541,7 @@ typedef struct {
 	u32 ExtId;  /*!< Specifies the extended identifier.
                         This parameter can be a value between 0 to 0x1FFFFFFF. */
 
-	u32 MsgBufferIdx;     /*!< Specifies the extended identifier.
+	u32 MsgBufferIdx;     /*!< Specifies the message buffer index.
                         This parameter can be a value between 0 to 0xf. */
 
 	u32 IDE;     /*!< Specifies the type of identifier for the message that
@@ -572,7 +569,7 @@ typedef struct {
   */
 typedef struct {
 	u32 ProtocolType;	/*!< Specifies the protocol type of frame for the message that will
-                        	be transmitted. This parameter can be a value of
+                        	be received. This parameter can be a value of
                         	@ref CAN_PROTOCOL_TYPE */
 
 	u32 StdId;  /*!< Specifies the standard identifier.
@@ -581,19 +578,19 @@ typedef struct {
 	u32 ExtId;  /*!< Specifies the extended identifier.
                         This parameter can be a value between 0 to 0x1FFFFFFF */
 
-	u32 MsgBufferIdx;     /*!< Specifies the extended identifier.
+	u32 MsgBufferIdx;     /*!< Specifies the message buffer index.
                         This parameter can be a value between 0 to 0xf */
 
 	u32 IDE;     /*!< Specifies the type of identifier for the message that
-                        will be transmitted. This parameter can be a value
+                        will be received. This parameter can be a value
                         of @ref CAN_ID_TYPE */
 
 	u32 RTR;     /*!< Specifies the type of frame for the message that will
-                        be transmitted. This parameter can be a value of
+                        be received. This parameter can be a value of
                         @ref CAN_FRAME_TYPE */
 
 	u32 DLC;     /*!< Specifies the length of the frame that will be
-                        transmitted. This parameter can be a value between
+                        received. This parameter can be a value between
                         0 to 8 */
 	union {
 		/** Payload data accessed as unsigned 8 bit values. */
@@ -604,9 +601,9 @@ typedef struct {
 
 	u32 ID_MASK;     /*!< Specifies the ID MASK */
 
-	u32 RTR_Mask;     /*!< Specifies the RTR MASK, refer to CAN_RTR_MASK_TYPE */
+	u32 RTR_Mask;     /*!< Specifies the RTR MASK, refer to @ref CAN_RTR_MASK_TYPE */
 
-	u32 IDE_Mask;     /*!< Specifies the IDE MASK, refer to CAN_IDE_MASK_TYPE */
+	u32 IDE_Mask;     /*!< Specifies the IDE MASK, refer to @ref CAN_IDE_MASK_TYPE */
 
 	u32 RxTimStamp;      /*!< Specifies the rx time stamp */
 
@@ -636,10 +633,11 @@ struct CAN_DevTable {
 /** @defgroup CAN_WORK_MODE CAN Work Mode
   * @{
   */
-#define CAN_NORMAL_MODE					          ((u32)0x00000000)
-#define CAN_SILENCE_MODE					        ((u32)0x00000000)
-#define CAN_EXT_LOOPBACK_MODE					    ((u32)0x00000001)
-#define CAN_INT_LOOPBACK_MODE             ((u32)0x00000002)
+#define CAN_NORMAL_MODE					          ((u32)0x00000000)  /*!< Normal bus communication mode. */
+#define CAN_SILENCE_MODE					        ((u32)0x00000000)  /*!< Silent (listen-only) mode, no transmission. */
+#define CAN_EXT_LOOPBACK_MODE					    ((u32)0x00000001)  /*!< External loopback test mode. */
+#define CAN_INT_LOOPBACK_MODE             ((u32)0x00000002)  /*!< Internal loopback test mode. */
+/** @brief Check if CAN work mode value is valid. */
 #define IS_CAN_WORK_MODE(MODE) (((MODE) == CAN_NORMAL_MODE) || \
 									((MODE) == CAN_SILENCE_MODE) || \
 									((MODE) == CAN_EXT_LOOPBACK_MODE) || \
@@ -652,10 +650,9 @@ struct CAN_DevTable {
 /** @defgroup CAN_PROTOCOL_TYPE CAN Protocol Type
   * @{
   */
-#define CAN_CAN20_PROTOCOL_FRAME			((u32)0x00000000)
-#define CAN_FD_PROTOCOL_FRAME				((u32)0x00000001)
-#define IS_CAN_PROTOCOL_TYPE(TYPE) (((TYPE) == CAN_CAN20_PROTOCOL_FRAME) || \
-									((TYPE) == CAN_FD_PROTOCOL_FRAME))
+#define CAN_CAN20_PROTOCOL_FRAME			((u32)0x00000000)  /*!< CAN 2.0 classic protocol frame type. */
+/** @brief Check if CAN protocol type value is valid. */
+#define IS_CAN_PROTOCOL_TYPE(TYPE) ((TYPE) == CAN_CAN20_PROTOCOL_FRAME)
 
 /**
   * @}
@@ -664,57 +661,11 @@ struct CAN_DevTable {
 /** @defgroup CAN_ID_TYPE CAN ID Type
   * @{
   */
-#define CAN_STANDARD_FRAME				((u32)0x00000000)
-#define CAN_EXTEND_FRAME					((u32)0x20000000)
+#define CAN_STANDARD_FRAME				((u32)0x00000000)  /*!< Standard 11-bit identifier frame. */
+#define CAN_EXTEND_FRAME					((u32)0x20000000)  /*!< Extended 29-bit identifier frame. */
+/** @brief Check if CAN ID type value is valid. */
 #define IS_CAN_ID_TYPE(TYPE) (((TYPE) == CAN_STANDARD_FRAME) || \
 									((TYPE) == CAN_EXTEND_FRAME))
-
-/**
-  * @}
-  */
-
-/** @defgroup CAN_FD_CRC_MODE CAN FD CRC Mode
-  * @{
-  */
-#define CAN_ISO_CRC						((u32)0x00000000)
-#define CAN_NON_ISO_CRC					((u32)0x00000100)
-#define IS_CAN_CRC_TYPE(TYPE) (((TYPE) == CAN_ISO_CRC) || \
-									((TYPE) == CAN_NON_ISO_CRC))
-
-/**
-  * @}
-  */
-
-/** @defgroup CAN_FD_BIT_TIMING_SWITCH_TYPE CAN FD Bit Timing Switch Type
-  * @{
-  */
-#define CAN_FD_SWITCH_BIT_TIMING			((u32)0x00000200)
-#define CAN_FD_NOT_SWITCH_BIT_TIMING		((u32)0x00000000)
-#define IS_CAN_FD_BIT_RATE_SWITCH_TYPE(TYPE) (((TYPE) == CAN_FD_NOT_SWITCH_BIT_TIMING) || \
-									((TYPE) == CAN_FD_SWITCH_BIT_TIMING))
-
-/**
-  * @}
-  */
-
-/** @defgroup CAN_FD_ER_STS_INDICATOR_TYPE CAN FD Error Status Indicator Type
-  * @{
-  */
-#define CAN_FD_ERROR_ACTIVE_NODE		((u32)0x00000000)
-#define CAN_FD_ERROR_PASSIVE_NODE		((u32)0x00000400)
-#define IS_CAN_FD_ER_NODE_TYPE(TYPE) (((TYPE) == CAN_FD_ERROR_ACTIVE_NODE) || \
-									((TYPE) == CAN_FD_ERROR_PASSIVE_NODE))
-/**
-  * @}
-  */
-
-/** @defgroup CAN_PROTOCOL_FRAME_TYPE CAN Protocol Frame Type
-  * @{
-  */
-#define CAN_FD_FRAME_TYPE					((u32)0x00000100)
-#define CAN_NOT_FD_FRAME_TYPE				((u32)0x00000000)
-#define IS_CAN_PRO_FRAEME_TYPE(TYPE) (((TYPE) == CAN_FD_FRAME_TYPE) || \
-									((TYPE) == CAN_NOT_FD_FRAME_TYPE))
 
 /**
   * @}
@@ -723,8 +674,9 @@ struct CAN_DevTable {
 /** @defgroup CAN_FRAME_TYPE CAN Frame Type
   * @{
   */
-#define CAN_REMOTE_FRAME				((u32)0x40000000)
-#define CAN_DATA_FRAME					((u32)0x00000000)
+#define CAN_REMOTE_FRAME				((u32)0x40000000) /*!< Remote (RTR) frame type. */
+#define CAN_DATA_FRAME					((u32)0x00000000) /*!< Data frame type. */
+/** @brief Check if CAN frame type value is valid. */
 #define IS_CAN_FRAME_TYPE(TYPE) (((TYPE) == CAN_REMOTE_FRAME) || \
 									((TYPE) == CAN_DATA_FRAME))
 
@@ -735,10 +687,11 @@ struct CAN_DevTable {
 /** @defgroup CAN_RTR_MASK_TYPE CAN RTR Mask Type
   * @{
   */
-#define CAN_RTR_BIT_MASK				((u32)0x40000000)
-#define CAN_RTR_NIT_NOT_MASK			((u32)0x00000000)
+#define CAN_RTR_BIT_MASK				((u32)0x40000000) /*!< RTR bit is included in filter mask. */
+#define CAN_RTR_BIT_NOT_MASK			((u32)0x00000000) /*!< RTR bit is excluded from filter mask. */
+/** @brief Check if CAN RTR bit mask type is valid. */
 #define IS_CAN_RTR_BIT_MASK_TYPE(TYPE) (((TYPE) == CAN_RTR_BIT_MASK) || \
-									((TYPE) == CAN_RTR_NIT_NOTE_MASK))
+									((TYPE) == CAN_RTR_BIT_NOT_MASK))
 
 /**
   * @}
@@ -747,10 +700,11 @@ struct CAN_DevTable {
 /** @defgroup CAN_IDE_MASK_TYPE CAN IDE Mask Type
   * @{
   */
-#define CAN_IDE_BIT_MASK				((u32)0x20000000)
-#define CAN_IDE_NIT_NOT_MASK			((u32)0x00000000)
+#define CAN_IDE_BIT_MASK				((u32)0x20000000) /*!< IDE bit is included in filter mask. */
+#define CAN_IDE_BIT_NOT_MASK			((u32)0x00000000) /*!< IDE bit is excluded from filter mask. */
+/** @brief Check if CAN IDE bit mask type is valid. */
 #define IS_CAN_IDE_BIT_MASK_TYPE(TYPE) (((TYPE) == CAN_IDE_BIT_MASK) || \
-									((TYPE) == CAN_IDE_NIT_NOT_MASK))
+									((TYPE) == CAN_IDE_BIT_NOT_MASK))
 
 /**
   * @}
@@ -759,6 +713,7 @@ struct CAN_DevTable {
 /** @defgroup CAN_RAM_ACC_DATA_MASK CAN RAM Access Data Mask
   * @{
   */
+/** @brief Combined mask of all RAM data access bits. */
 #define CAN_BIT_RAM_ACC_DATA_MASK  (CAN_BIT_RAM_ACC_DATA15 | CAN_BIT_RAM_ACC_DATA14 | CAN_BIT_RAM_ACC_DATA13 | CAN_BIT_RAM_ACC_DATA12 | \
                                     CAN_BIT_RAM_ACC_DATA11 | CAN_BIT_RAM_ACC_DATA10 | CAN_BIT_RAM_ACC_DATA9 | CAN_BIT_RAM_ACC_DATA8 | \
                                     CAN_BIT_RAM_ACC_DATA7 | CAN_BIT_RAM_ACC_DATA6 | CAN_BIT_RAM_ACC_DATA5 | CAN_BIT_RAM_ACC_DATA4 | \
@@ -771,16 +726,17 @@ struct CAN_DevTable {
 /** @defgroup CAN_MESSAGE_BUFFER_STATUS CAN Message Buffer Status
   * @{
   */
-#define CAN_FRAME_PENDING_TX			((u32)0x00000001)
-#define CAN_FRAME_FINISAH_TX			((u32)0x00000002)
-#define CAN_FRAME_OVWRITR_SEND_TX	((u32)0x00000003)
-#define CAN_FRAME_PENDING_RX			((u32)0x00000004)
-#define CAN_FRAME_FINISH_RX			((u32)0x0000000C)
+#define CAN_FRAME_PENDING_TX			((u32)0x00000001) /*!< TX frame is pending transmission. */
+#define CAN_FRAME_FINISH_TX			((u32)0x00000002) /*!< TX frame transmission completed. */
+#define CAN_FRAME_OVERWRITE_SEND_TX	((u32)0x00000003) /*!< TX frame overwrite and resend. */
+#define CAN_FRAME_PENDING_RX			((u32)0x00000004) /*!< RX frame is pending reception. */
+#define CAN_FRAME_FINISH_RX			((u32)0x0000000C) /*!< RX frame reception completed. */
 
+/** @brief Check if CAN message status type is valid. */
 #define IS_CAN_MSG_STS_TYPE(TYPE) (((TYPE) == CAN_FRAME_PENDING_TX) || \
-									((TYPE) == CAN_FRAME_FINISAH_TX) || \
-									((TYPE) == CAN_FRAME_OVWRITR_SEND_TX) || \
-									((TYPE) == CAN_SILENCE_MODE) || \
+									((TYPE) == CAN_FRAME_FINISH_TX) || \
+									((TYPE) == CAN_FRAME_OVERWRITE_SEND_TX) || \
+									((TYPE) == CAN_FRAME_FINISH_RX) || \
 									((TYPE) == CAN_FRAME_PENDING_RX))
 
 /**
@@ -790,12 +746,13 @@ struct CAN_DevTable {
 /** @defgroup CAN_INTERRUPTS CAN Interrupts
   * @{
   */
-#define CAN_TX_INT					((u32)0x00000001)
-#define CAN_RX_INT					((u32)0x00000002)
-#define CAN_ERR_INT				((u32)0x00000004)
-#define CAN_WKUP_INT				((u32)0x00000008)
-#define CAN_BUSOFF_INT				((u32)0x00000010)
-#define CAN_RAM_MOVE_DONE_INT		((u32)0x00000020)
+#define CAN_TX_INT					((u32)0x00000001) /*!< TX complete interrupt. */
+#define CAN_RX_INT					((u32)0x00000002) /*!< RX complete interrupt. */
+#define CAN_ERR_INT				((u32)0x00000004) /*!< Error interrupt. */
+#define CAN_WKUP_INT				((u32)0x00000008) /*!< Wakeup interrupt. */
+#define CAN_BUSOFF_INT				((u32)0x00000010) /*!< Bus-off interrupt. */
+#define CAN_RAM_MOVE_DONE_INT		((u32)0x00000020) /*!< RAM move done interrupt. */
+/** @brief Check if CAN interrupt configuration value is valid. */
 #define IS_CAN_CONFIG_IT(IT) (((IT) == CAN_TX_INT) || \
 								((IT) == CAN_RX_INT) || \
 									((IT) == CAN_ERR_INT)|| \
@@ -803,7 +760,7 @@ struct CAN_DevTable {
 									((IT) == CAN_RAM_MOVE_DONE_INT)|| \
 									((IT) == CAN_BUSOFF_INT))
 
-#define IS_CAN_CLEAR_IT(IT) ((((IT) & (u32)0xFFFFFFC0) == 0x00) && ((IT) != 0x00))
+#define IS_CAN_CLEAR_IT(IT) ((((IT) & (u32)0xFFFFFFC0) == 0x00) && ((IT) != 0x00)) /*!< Check if CAN interrupt clear value is valid. */
 
 /**
   * @}
@@ -812,6 +769,7 @@ struct CAN_DevTable {
 /** @defgroup CAN_TYPE CAN Type
   * @{
   */
+/** @brief Check if CAN peripheral pointer is valid. */
 #define IS_CAN_ALL_PERIPH(PERIPH)   (((PERIPH) == CAN0) || \
 									  ((PERIPH) == CAN1) || \
 									  ((PERIPH) == CAN0_S) || \
@@ -823,29 +781,31 @@ struct CAN_DevTable {
 /** @defgroup CAN_BIT_Timing CAN Bit Timing
   * @{
   */
-#define CAN_TIMING_MIN                                                                 \
-	{                                                                                    \
-		.SJW = 1,                                                                          \
-		.PropSeg= 2,                                                                     \
-		.PhaseSeg1 = 2,                                                                   \
-		.PhaseSeg2 = 2,                                                                   \
-		.Prescaler = 1,                                                                    \
+/** @brief Minimum CAN bit timing parameter set. */
+#define CAN_TIMING_MIN                     \
+	{                                      \
+		.SJW = 1,                          \
+		.PropSeg= 2,                       \
+		.PhaseSeg1 = 2,                    \
+		.PhaseSeg2 = 2,                    \
+		.Prescaler = 1,                    \
 	}
 
-#define CAN_TIMING_MAX                                                                 \
-	{                                                                                    \
-		.SJW = 4,                                                                          \
-		.PropSeg = 6,                                                                     \
-		.PhaseSeg1 = 8,                                                                   \
-		.PhaseSeg2 = 8,                                                                   \
-		.Prescaler = 32,                                                                   \
+/** @brief Maximum CAN bit timing parameter set. */
+#define CAN_TIMING_MAX                     \
+	{                                      \
+		.SJW = 4,                          \
+		.PropSeg = 6,                      \
+		.PhaseSeg1 = 8,                    \
+		.PhaseSeg2 = 8,                    \
+		.Prescaler = 32,                   \
 	}
 
-#define CAN_SYNC_SEG  1
+#define CAN_SYNC_SEG  1 /*!< Synchronization segment length in time quanta. */
 
-#define CAN_CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high))
+#define CAN_CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high)) /*!< Clamp val between low and high bounds. */
 
-#define CAN_SAMPLE_POINT_MARGIN  50
+#define CAN_SAMPLE_POINT_MARGIN  50 /*!< Allowed sample point deviation margin in permille. */
 /**
   * @}
   */
@@ -853,7 +813,7 @@ struct CAN_DevTable {
 /** @defgroup CAN_INDEX_LIMIT CAN Index Limit
   * @{
   */
-#define MAX_CAN_INDEX			(2)
+#define MAX_CAN_INDEX			(2) /*!< Maximum number of CAN controller instances. */
 /**
   * @}
   */
@@ -861,10 +821,10 @@ struct CAN_DevTable {
 /** @defgroup CAN_MESSAGE_BUFFER_FIFO CAN Message Buffer and FIFO
   * @{
   */
-#define CAN_MESSAGE_BUFFER_LEN	            (5)
-#define CAN_MESSAGE_BUFFER_SIZE	        (16)
-#define CAN_MESSAGE_FIFO_SIZE		        (4)
-#define CAN_RX_FIFO_READ_MSG_IDX	        (12)
+#define CAN_MESSAGE_BUFFER_LEN	            (5) /*!< CAN message buffer entry length in words. */
+#define CAN_MESSAGE_BUFFER_SIZE	        (16) /*!< Total number of CAN message buffers. */
+#define CAN_MESSAGE_FIFO_SIZE		        (4) /*!< CAN RX FIFO depth in messages. */
+#define CAN_RX_FIFO_READ_MSG_IDX	        (12) /*!< Message buffer index for RX FIFO read. */
 /**
   * @}
   */

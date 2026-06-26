@@ -119,7 +119,7 @@ extern matter_blemgr_callback matter_blemgr_callback_func;
 extern void *matter_blemgr_callback_data;
 
 /*============================================================================*
- *					   Helper Functions
+ *                     Helper Functions
  *============================================================================*/
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 static void ble_matter_set_adv_state(uint8_t adv_handle, bool is_start)
@@ -161,7 +161,7 @@ static int ble_matter_config_adv(uint8_t adv_type, MATTER_ADV_PARAM *adv_param)
 {
 	uint8_t adv_handle = 0;
 	BT_LOGD("[MATTER] adv_type: %d\r\n", adv_type);
-	if (BLE_MATTER_ADV == adv_type) {	   /* Matter used Random address */
+	if (BLE_MATTER_ADV == adv_type) {      /* Matter used Random address */
 		ext_adv_param.own_addr.type = RTK_BT_LE_ADDR_TYPE_RANDOM;
 		memcpy(ext_adv_param.own_addr.addr_val, ble_matter_addr, sizeof(ble_matter_addr));
 	} else {
@@ -283,7 +283,7 @@ static int ble_matter_connected_chk(uint8_t adv_type)
 #endif // CONFIG_BLE_MATTER_MULTI_ADV_ON
 
 /*============================================================================*
- *							  Functions
+ *                            Functions
  *============================================================================*/
 void ble_matter_adapter_app_handle_callback_msg(T_MATTER_CB_MSG callback_msg);
 bool ble_matter_adapter_send_callback_msg(uint16_t msg_type, uint16_t cb_type, void *arg);
@@ -310,11 +310,11 @@ void ble_matter_adapter_callback_main_task(void *p_param)
 void ble_matter_adapter_callback_task_init(void)
 {
 	osif_task_create(&ble_matter_adapter_callback_task_handle,
-					"ble_matter_adapter_callback",
-					ble_matter_adapter_callback_main_task,
-					0,
-					BLE_MATTER_ADAPTER_CALLBACK_TASK_STACK_SIZE,
-					BLE_MATTER_ADAPTER_CALLBACK_TASK_PRIORITY);
+					 "ble_matter_adapter_callback",
+					 ble_matter_adapter_callback_main_task,
+					 0,
+					 BLE_MATTER_ADAPTER_CALLBACK_TASK_STACK_SIZE,
+					 BLE_MATTER_ADAPTER_CALLBACK_TASK_PRIORITY);
 }
 
 void ble_matter_adapter_callback_task_deinit(void)
@@ -525,8 +525,8 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		rtk_bt_le_addr_to_str(&(disconn_ind->peer_addr), le_addr, sizeof(le_addr));
 		role = disconn_ind->role ? "slave" : "master";
 		BT_LOGA("[APP] disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n",
-					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
-		
+				disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
+
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 		if (ble_matter_connection_chk(disconn_ind->conn_handle)) {
 #endif
@@ -567,11 +567,11 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 			}
 #endif
 			BT_LOGA("[APP] conn param is updated, conn_handle: %d, conn_interval: 0x%x, " \
-						"conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
-						conn_update_ind->conn_handle,
-						conn_update_ind->conn_interval,
-						conn_update_ind->conn_latency,
-						conn_update_ind->supv_timeout);
+					"conn_latency: 0x%x, supervision_timeout: 0x%x\r\n",
+					conn_update_ind->conn_handle,
+					conn_update_ind->conn_interval,
+					conn_update_ind->conn_latency,
+					conn_update_ind->supv_timeout);
 		}
 		break;
 	}
@@ -586,30 +586,33 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		}
 #endif
 		BT_LOGA("[APP] remote device request a change in conn param, conn_handle: %d, "\
-					"conn_interval_max: 0x%x, conn_interval_min: 0x%x, conn_latency: 0x%x, "\
-					"timeout: 0x%x. The host stack accept it.\r\n",
-					rmt_update_req->conn_handle,
-					rmt_update_req->conn_interval_max,
-					rmt_update_req->conn_interval_min,
-					rmt_update_req->conn_latency,
-					rmt_update_req->supv_timeout);
+				"conn_interval_max: 0x%x, conn_interval_min: 0x%x, conn_latency: 0x%x, "\
+				"timeout: 0x%x. The host stack accept it.\r\n",
+				rmt_update_req->conn_handle,
+				rmt_update_req->conn_interval_max,
+				rmt_update_req->conn_interval_min,
+				rmt_update_req->conn_latency,
+				rmt_update_req->supv_timeout);
 		return RTK_BT_EVT_CB_ACCEPT;
 		break;
 	}
 
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	case RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND: {
 		rtk_bt_le_data_len_change_ind_t *data_len_change = (rtk_bt_le_data_len_change_ind_t *)param;
 		BT_LOGA("[APP] data len is updated, conn_handle: %d, " \
-					"max_tx_octets: 0x%x, max_tx_time: 0x%x, "  \
-					"max_rx_octets: 0x%x, max_rx_time: 0x%x\r\n",
-					data_len_change->conn_handle,
-					data_len_change->max_tx_octets,
-					data_len_change->max_tx_time,
-					data_len_change->max_rx_octets,
-					data_len_change->max_rx_time);
+				"max_tx_octets: 0x%x, max_tx_time: 0x%x, "  \
+				"max_rx_octets: 0x%x, max_rx_time: 0x%x\r\n",
+				data_len_change->conn_handle,
+				data_len_change->max_tx_octets,
+				data_len_change->max_tx_time,
+				data_len_change->max_rx_octets,
+				data_len_change->max_rx_time);
 		break;
 	}
+#endif
 
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	case RTK_BT_LE_GAP_EVT_PHY_UPDATE_IND: {
 		rtk_bt_le_phy_update_ind_t *phy_update_ind = (rtk_bt_le_phy_update_ind_t *)param;
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
@@ -625,24 +628,25 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 					phy_update_ind->err);
 		} else {
 			BT_LOGA("[APP] phy is updated, conn_handle: %d, tx_phy: %d, rx_phy: %d\r\n",
-						phy_update_ind->conn_handle,
-						phy_update_ind->tx_phy,
-						phy_update_ind->rx_phy);
+					phy_update_ind->conn_handle,
+					phy_update_ind->tx_phy,
+					phy_update_ind->rx_phy);
 		}
 		break;
 	}
+#endif
 
 	case RTK_BT_LE_GAP_EVT_AUTH_PAIRING_CONFIRM_IND: {
 		rtk_bt_le_auth_pair_cfm_ind_t *pair_cfm_ind = (rtk_bt_le_auth_pair_cfm_ind_t *)param;
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 		if (ble_matter_connection_chk(pair_cfm_ind->conn_handle)) {
 			/* Matter Connection */
-		} else {			
+		} else {
 			/* Non-Matter Connection */
 		}
 #endif
 		BT_LOGA("[APP] just work pairing need user to confirm, conn_handle: %d!\r\n",
-					pair_cfm_ind->conn_handle);
+				pair_cfm_ind->conn_handle);
 		rtk_bt_le_pair_cfm_t pair_cfm_param = {0};
 		uint16_t ret = 0;
 		pair_cfm_param.conn_handle = pair_cfm_ind->conn_handle;
@@ -659,13 +663,13 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 		if (ble_matter_connection_chk(key_dis_ind->conn_handle)) {
 			/* Matter Connection */
-		} else {			
+		} else {
 			/* Non-Matter Connection */
 		}
 #endif
 		BT_LOGA("[APP] auth passkey display: %ld, conn_handle:%d\r\n",
-					key_dis_ind->passkey,
-					key_dis_ind->conn_handle);
+				key_dis_ind->passkey,
+				key_dis_ind->conn_handle);
 		break;
 	}
 
@@ -674,12 +678,12 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 		if (ble_matter_connection_chk(key_input_ind->conn_handle)) {
 			/* Matter Connection */
-		} else {			
+		} else {
 			/* Non-Matter Connection */
 		}
 #endif
 		BT_LOGA("[APP] please input the auth passkey get from remote, conn_handle: %d\r\n",
-					key_input_ind->conn_handle);
+				key_input_ind->conn_handle);
 		break;
 	}
 
@@ -688,14 +692,14 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 		if (ble_matter_connection_chk(key_cfm_ind->conn_handle)) {
 			/* Matter Connection */
-		} else {			
+		} else {
 			/* Non-Matter Connection */
 		}
 #endif
 		BT_LOGA("[APP] auth passkey confirm: %ld, conn_handle: %d. "  \
-					"Please comfirm if the passkeys are equal!\r\n",
-					key_cfm_ind->passkey,
-					key_cfm_ind->conn_handle);
+				"Please comfirm if the passkeys are equal!\r\n",
+				key_cfm_ind->passkey,
+				key_cfm_ind->conn_handle);
 		break;
 	}
 
@@ -704,12 +708,12 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 		if (ble_matter_connection_chk(oob_input_ind->conn_handle)) {
 			/* Matter Connection */
-		} else {			
+		} else {
 			/* Non-Matter Connection */
 		}
 #endif
 		BT_LOGA("[APP] bond use oob key, conn_handle: %d. Please input the oob tk \r\n",
-					oob_input_ind->conn_handle);
+				oob_input_ind->conn_handle);
 		break;
 	}
 
@@ -718,13 +722,13 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 		if (ble_matter_connection_chk(auth_cplt_ind->conn_handle)) {
 			/* Matter Connection */
-		} else {			
+		} else {
 			/* Non-Matter Connection */
 		}
 #endif
 		if (auth_cplt_ind->err) {
 			BT_LOGE("[APP] pairing failed(err: 0x%x), conn_handle: %d\r\n",
-						auth_cplt_ind->err, auth_cplt_ind->conn_handle);
+					auth_cplt_ind->err, auth_cplt_ind->conn_handle);
 		} else {
 			BT_LOGA("[APP] pairing success, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
 			BT_LOGA("[APP] long term key is 0x");
@@ -742,7 +746,7 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gap_app_callback(uint8_t evt_code, voi
 		rtk_bt_le_addr_to_str(&(bond_mdf_ind->remote_addr), le_addr, sizeof(le_addr));
 		rtk_bt_le_addr_to_str(&(bond_mdf_ind->ident_addr), ident_addr, sizeof(ident_addr));
 		BT_LOGA("[APP] bond info modified, op: %d, addr: %s, ident_addr: %s\r\n",
-					bond_mdf_ind->op, le_addr, ident_addr);
+				bond_mdf_ind->op, le_addr, ident_addr);
 
 		break;
 	}
@@ -803,13 +807,13 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gatts_app_callback(uint8_t event, void
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 		if (ble_matter_connection_chk(p_gatt_mtu_ind->conn_handle)) {
 			/* Matter Connection */
-		} else {			
+		} else {
 			/* Non-Matter Connection */
 		}
 #endif
 		if (p_gatt_mtu_ind->result == RTK_BT_OK) {
 			BT_LOGA("[APP] gatts mtu exchange successfully, mtu_size: %d, conn_handle: %d\r\n",
-						p_gatt_mtu_ind->mtu_size, p_gatt_mtu_ind->conn_handle);
+					p_gatt_mtu_ind->mtu_size, p_gatt_mtu_ind->conn_handle);
 		} else {
 			BT_LOGE("[APP] gatts mtu exchange fail \r\n");
 		}
@@ -821,13 +825,13 @@ static rtk_bt_evt_cb_ret_t ble_peripheral_gatts_app_callback(uint8_t event, void
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 		if (ble_matter_connection_chk(p_ind->conn_handle)) {
 			/* Matter Connection */
-		} else {			
+		} else {
 			/* Non-Matter Connection */
 		}
 #endif
 		if (p_ind->features & RTK_BT_GATTS_CLIENT_SUPPORTED_FEATURES_EATT_BEARER_BIT) {
 			BT_LOGA("[APP] client Supported features is writed: conn_handle %d, features 0x%02X. Remote client supports EATT\r\n",
-						p_ind->conn_handle, p_ind->features);
+					p_ind->conn_handle, p_ind->features);
 		}
 		return RTK_BT_EVT_CB_OK;
 	}
@@ -857,11 +861,15 @@ int ble_matter_adapter_peripheral_main(uint8_t enable)
 		bt_app_conf.mtu_size = 180;
 		bt_app_conf.master_init_mtu_req = true;
 		bt_app_conf.slave_init_mtu_req = false;
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 		bt_app_conf.prefer_all_phy = 0;
 		bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 		bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
+#endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
+#endif
 		bt_app_conf.user_def_service = false;
 		bt_app_conf.cccd_not_check = false;
 
@@ -884,13 +892,13 @@ int ble_matter_adapter_peripheral_main(uint8_t enable)
 			BT_LOGE("[MATTER] gap set random address failed! err: 0x%x\r\n", ret);
 		}
 		BT_LOGA("[MATTER] ble random addr: %x:%x:%x:%x:%x:%x\r\n",
-					ble_matter_addr[0], ble_matter_addr[1], ble_matter_addr[2],
-					ble_matter_addr[3], ble_matter_addr[4], ble_matter_addr[5]);
+				ble_matter_addr[0], ble_matter_addr[1], ble_matter_addr[2],
+				ble_matter_addr[3], ble_matter_addr[4], ble_matter_addr[5]);
 
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTS, ble_peripheral_gatts_app_callback));
 		BT_APP_PROCESS(ble_matter_adapter_srv_add());
 		ble_matter_adapter_callback_task_init();
-		
+
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 		ble_customer_adv_setup();
 #endif
@@ -1086,9 +1094,10 @@ int ble_matter_adapter_disconnect(uint16_t conn_handle)
 }
 #if CONFIG_BLE_MATTER_MULTI_ADV_ON
 /*============================================================================*
- *					   Customer Adv Functions
+ *                     Customer Adv Functions
  *============================================================================*/
-int ble_customer_config_adv(uint16_t adv_int_min, uint16_t adv_int_max, uint8_t *padv_data, uint8_t padv_data_length, uint8_t *pscanrsp_data, uint8_t pcanrsp_datalen)
+int ble_customer_config_adv(uint16_t adv_int_min, uint16_t adv_int_max, uint8_t *padv_data, uint8_t padv_data_length, uint8_t *pscanrsp_data,
+							uint8_t pcanrsp_datalen)
 {
 	MATTER_ADV_PARAM adv_param = {0};
 	while (ble_matter_adv_info.customer_adv_start) {
@@ -1108,7 +1117,7 @@ int ble_customer_config_adv(uint16_t adv_int_min, uint16_t adv_int_max, uint8_t 
 	adv_param.scanrsp_datalen = pcanrsp_datalen;
 	adv_param.adv_int_min = adv_int_min;
 	adv_param.adv_int_max = adv_int_max;
-	ble_matter_config_adv(BLE_CUSTOMER_ADV, &adv_param);		/* Create new Matter Adv handle and set adv data */
+	ble_matter_config_adv(BLE_CUSTOMER_ADV, &adv_param);        /* Create new Matter Adv handle and set adv data */
 	return 0;
 }
 

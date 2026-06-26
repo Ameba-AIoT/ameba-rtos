@@ -321,6 +321,17 @@ typedef struct _usbd_class_driver_t {
 	 * @param[in] status: Current status of USB device.
 	 */
 	void (*status_changed)(usb_dev_t *dev, u8 old_status, u8 status);
+
+	/**
+	 * @brief Callback invoked when the device resumes from USB suspend (wakeup).
+	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @details Called upon resume from suspend (WKUINT or SOF detection),
+	 *          indicating that the USB bus is active and the upper layer can resume normal TRX.
+	 * @param[in] dev: USB device.
+	 */
+	void (*wakeup)(usb_dev_t *dev);
 } usbd_class_driver_t;
 /** @} End of Device_Core_Types group */
 /** @} End of USB_Device_Types group */
@@ -364,6 +375,21 @@ int usbd_get_status(void);
  * @return 0 on success, non-zero on failure.
  */
 int usbd_get_bus_status(u32 *status);
+
+/**
+ * @brief Register the sleep callbacks for USB device Clock Gating (CG).
+ * @details Registers the PMU sleep callbacks so the USB device can be suspended/resumed
+ *          when the AP enters/exits the low-power clock gated state.
+ *          Wakelock operations and wake event configuration are handled by the caller,
+ *          not inside this function.
+ */
+void usbd_cg_register(void);
+
+/**
+ * @brief Unregister the sleep callbacks for USB device Clock Gating (CG).
+ * @note  Wakelock operations are handled by the caller, not inside this function.
+ */
+void usbd_cg_unregister(void);
 
 /**
  * @brief Sends a remote wakeup signal to the USB host to resume communication.
@@ -472,17 +498,6 @@ int usbd_ep_is_stall(usb_dev_t *dev, usbd_ep_t *ep);
  * @return The total length of the generated descriptor in bytes.
  */
 u16 usbd_get_str_desc(const char *str, u8 *desc);
-
-/**
- * @brief Sets the USB to enter Clock Gating (CG) state with a specific wakeup event.
- * @details This function configures the USB device to enter a low-power clock gated state.
- *          The wakeup mechanism depends on the value of the \p sleep_ms parameter.
- * @param[in] sleep_ms:
- *          - 0: Wakeup is triggered by a USB event.
- *          - others: Wakeup is triggered by a timer event after the specified time.
- */
-void usbd_enter_cg(u32 sleep_ms);
-
 /** @} End of Device_Core_Functions_For_Classes group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */

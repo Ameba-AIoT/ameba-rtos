@@ -72,7 +72,5 @@ int example_raw_adc_tim_trig_vbat(void)
 		RTK_LOGI(NOTAG, "Cannot create RAW_ADC_VBAT_TASK\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

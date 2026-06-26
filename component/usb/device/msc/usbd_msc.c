@@ -417,9 +417,6 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
-	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
-	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
-	usb_ep_info_t *info;
 	int ret = HAL_OK;
 
 	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
@@ -456,31 +453,6 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			break;
 
-		case USB_REQ_CLEAR_FEATURE:
-
-			info = &ep_bulk_in->info;
-			info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
-			info = &ep_bulk_out->info;
-			info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
-
-			if ((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) {
-				usbd_ep_deinit(dev, ep_bulk_in);
-				usbd_ep_init(dev, ep_bulk_in);
-			} else {
-				usbd_ep_deinit(dev, ep_bulk_out);
-				usbd_ep_init(dev, ep_bulk_out);
-			}
-
-			/* Handle BOT error */
-			if (cdev->bot_status == USBD_MSC_STATUS_ERROR) { /* Bad CBW Signature */
-				usbd_ep_set_stall(dev, ep_bulk_in);
-				cdev->bot_status = USBD_MSC_STATUS_NORMAL;
-			} else if (((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) && (cdev->bot_status != USBD_MSC_STATUS_RECOVERY)) {
-				usbd_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
-			} else {
-				// Do nothing
-			}
-			break;
 
 		default:
 			ret = HAL_ERR_PARA;
@@ -650,7 +622,7 @@ static void usbd_msc_rx_process(void)
 					 (cdev->bot_state != USBD_MSC_DATA_OUT) &&
 					 (cdev->bot_state != USBD_MSC_LAST_DATA_IN)) {
 				if (cdev->data_length > 0U) {
-					u16 length = (u16)MIN(cbw->field.dCBWDataTransferLength, cdev->data_length);
+					u32 length = MIN(cbw->field.dCBWDataTransferLength, cdev->data_length);
 					csw->field.dCSWDataResidue -= cdev->data_length;
 					csw->field.bCSWStatus = BOT_CSW_CMD_PASSED;
 					cdev->bot_state = USBD_MSC_SEND_DATA;
@@ -882,7 +854,11 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 	ops->disk_write = usbd_msc_sd_writeblocks;
 #endif
 
-	usb_os_lock_create(&usbd_msc_sd_lock);
+	ret = usb_os_lock_create(&usbd_msc_sd_lock);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create lock fail\n");
+		return ret;
+	}
 
 	cdev->data = (u8 *)usb_os_malloc(USBD_MSC_BUFLEN);
 	if (cdev->data == NULL) {
@@ -902,8 +878,17 @@ int usbd_msc_init(usbd_msc_cb_t *cb)
 		goto csw_fail;
 	}
 
-	rtos_sema_create(&cdev->rx_sema, 0U, 1U);
-	rtos_sema_create(&cdev->tx_sema, 0U, 1U);
+	ret = rtos_sema_create(&cdev->rx_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX sema fail\n");
+		goto create_rx_sema_fail;
+	}
+
+	ret = rtos_sema_create(&cdev->tx_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX sema fail\n");
+		goto create_tx_sema_fail;
+	}
 
 	ret = rtos_task_create(&cdev->rx_task, "usbd_msc_rx_thread", usbd_msc_rx_thread, NULL, USBD_MSC_TRX_THREAD_STACK_SIZE, USBD_MSC_RX_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -935,7 +920,13 @@ create_tx_thread_fail:
 
 create_rx_thread_fail:
 	rtos_sema_delete(cdev->tx_sema);
+
+create_tx_sema_fail:
 	rtos_sema_delete(cdev->rx_sema);
+
+create_rx_sema_fail:
+	usb_os_mfree(cdev->csw);
+	cdev->csw = NULL;
 
 csw_fail:
 	usb_os_mfree(cdev->cbw);

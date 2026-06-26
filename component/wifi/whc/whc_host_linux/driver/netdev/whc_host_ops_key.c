@@ -113,6 +113,12 @@ static int whc_host_add_key_ops(struct wiphy *wiphy, struct net_device *ndev
 #endif
 
 	ret = whc_host_add_key(crypt);
+#ifdef CONFIG_WHCH
+	if (ret == 0) {
+		whc_host_set_key(crypt);
+	}
+#endif
+
 	if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && (ret == 0) && netif_dormant(ndev)) {
 		netif_dormant_off(ndev);
 	}

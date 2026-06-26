@@ -38,34 +38,43 @@ extern "C" {
   * @{
   */
 
-/** @addtogroup MBED_SPI
- *  @brief      MBED_SPI driver modules
+/** @defgroup MBED_SPI MBED SPI
+ *  @brief      MBED_SPI driver modules.
  *  @{
  */
 
-/** @addtogroup MBED_SPI_Exported_Types
+/** @defgroup MBED_SPI_Exported_Types MBED_SPI Exported Types
   * @{
   */
 
-/** @addtogroup MBED_SPI_Enumeration_Type Enumeration Type
+/** @defgroup MBED_SPI_Enumeration_Type Enumeration Type
   * @{
   */
 
 /**
-  * @brief enum MBED_SPI_IDX
+  * @brief SPI device index enumeration.
   */
 typedef enum {
-	MBED_SPI0 = 0xF0,	/*!< means SPI0 */
-	MBED_SPI1 = 0xF1,	/*!< means SPI1 */
+	MBED_SPI0 = 0xF0,	/*!< SPI0 peripheral index. */
+	MBED_SPI1 = 0xF1,	/*!< SPI1 peripheral index. */
 } MBED_SPI_IDX;
+/** @}*/
+
+/** @defgroup MBED_SPI_Structure_Type Structure Type
+  * @{
+  */
+
+/** @brief SPI object type, defined as struct spi_s. */
+typedef struct spi_s spi_t;
 /** @}*/
 
 /** @} */
 /** @} */
 /** @} */
 
-typedef struct spi_s spi_t;
-
+/** @defgroup MBED_SPI_Exported_Functions MBED_SPI Exported Functions
+  * @{
+  */
 
 void spi_init(spi_t *obj, PinName mosi, PinName miso, PinName sclk, PinName ssel);
 void spi_free(spi_t *obj);
@@ -79,6 +88,8 @@ int  spi_busy(spi_t *obj);
 void spi_flush_rx_fifo(spi_t *obj);
 void spi_enable(spi_t *obj);
 void spi_disable(spi_t *obj);
+
+/** @} */
 
 
 #ifdef __cplusplus

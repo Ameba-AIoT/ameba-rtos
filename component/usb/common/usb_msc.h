@@ -49,7 +49,7 @@ typedef union {
 		u8 CBWCB[16];                 /**< The SCSI command block to be executed by the device. */
 	} field;
 	u8 data[31];                      /**< Byte array access to the entire CBW structure. */
-} usb_msc_bot_cbw_t;
+} __PACKED usb_msc_bot_cbw_t;
 
 /**
  * @brief Bulk-Only Transport (BOT) Command Status Wrapper (CSW) structure.
@@ -62,7 +62,7 @@ typedef union {
 		u8 bCSWStatus;                /**< The status of the command execution (0=Pass, 1=Fail, 2=Phase Error), see `USBD_MSC_CSW_XX`. */
 	} field;
 	u8 data[13];                      /**< Byte array access to the entire CSW structure. */
-} usb_msc_bot_csw_t;
+} __PACKED usb_msc_bot_csw_t;
 
 /**
  * @brief SCSI Sense Data structure.

@@ -43,6 +43,12 @@ extern u8 __rom_bss_start_s__[];
 extern u8 __rom_bss_end_s__[];
 extern u8 __rom_bss_start_ns__[];
 extern u8 __rom_bss_end_ns__[];
+/* sym for merged TZ region (defined in img3 linker script) */
+extern u8 __image3_ram_start__[];
+extern u8 __image3_ram_end__[];
+extern u8 __ram_image3_nsc_start__[];
+extern u8 __ram_image3_nsc_end__[];
+
 extern u8 __ram_image3_start__[];
 extern u8 __ram_image3_end__[];
 extern u8 __psram_image3_start__[];

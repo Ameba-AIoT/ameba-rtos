@@ -18,7 +18,7 @@ else()
 	if (EXISTS ${TOOLCHAINDIR}/${TOOLCHAINNAME})
 		message("${TOOLCHAINNAME} Had Existed, Verifying integrity ......")
 		message("Please waiting...")
-		if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
+		if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux OR ${CMAKE_HOST_SYSTEM_NAME} STREQUAL Darwin)
 			execute_process(
 				COMMAND tar -jtf ${TOOLCHAINDIR}/${TOOLCHAINNAME}
 				OUTPUT_QUIET
@@ -56,7 +56,7 @@ else()
 
 	message("Unzip ${TOOLCHAINNAME} ...")
 
-	if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
+	if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux OR ${CMAKE_HOST_SYSTEM_NAME} STREQUAL Darwin)
 		execute_process(
 			COMMAND tar -jxf ${TOOLCHAINDIR}/${TOOLCHAINNAME} -C ${TOOLCHAINDIR}
 			RESULT_VARIABLE ret

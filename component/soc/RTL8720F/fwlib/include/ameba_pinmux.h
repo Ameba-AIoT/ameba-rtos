@@ -24,7 +24,7 @@
 *		-[31:18]		reserved
 *		-[17]			pull down resistor enable when system is in sleep
 *		-[16]			pull up resistor enable when system is in sleep
-*		-[13]			srew rate control
+*		-[13]			slew rate control
 *		-[12]			schmitt trigger enable
 *		-[11]			pad driving strength
 *		-[10]			pull resistor selection
@@ -36,10 +36,10 @@
 *****************************************************************************************
 * How to use Pinmux
 *****************************************************************************************
-*		1. Set the Internal pad function type for  each pin using the follwoing function:
+*		1. Set the Internal pad function type for  each pin using the following function:
 *			Pinmux_Config(u8 PinName, u32 PinFunc)
 *
-*		2. Set the Internal pad pull type for each pin using the follwoing function:
+*		2. Set the Internal pad pull type for each pin using the following function:
 *			PAD_PullCtrl(u8 PinName, u8 PullType)
 *			PAD_SleepPullCtrl(u8 PinName, u8 PullType);
 *
@@ -47,21 +47,22 @@
 * @endverbatim
 */
 
-/** @defgroup PIN
+/** @defgroup PIN PIN
  * @brief PIN driver modules
  * @{
  */
 
 
-/** @defgroup PINMUX
+/** @defgroup PINMUX PINMUX
  * @brief PINMUX driver modules
  * @{
  */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
-/** @defgroup PINMUX_Pin_Name_definitions
+/** @defgroup PINMUX_Pin_Name_definitions PINMUX Pin Name Definitions
   * @note: Pin_Name = (((port)<<5)|(pin))
   * @{
   */
@@ -108,7 +109,7 @@
 #define PIN_TOTAL_NUM  (0x25)
 /** @} */
 
-/** @defgroup PINMUX_Function_definitions
+/** @defgroup PINMUX_Function_definitions PINMUX Function Definitions
   * @{
   */
 #define PINMUX_FUNCTION_GPIO                0
@@ -205,6 +206,7 @@
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -212,76 +214,78 @@ extern "C" {
 #endif
 
 
-//Please add your defination here
+//Please add your definition here
 
-#define PSRAM_PIN_CLK                 _PA_25
-#define PSRAM_PIN_DQ4                 _PA_26
-#define PSRAM_PIN_DQ5                 _PA_27
-#define PSRAM_PIN_DQ6                 _PA_28
-#define PSRAM_PIN_DQ7                 _PA_29
-#define PSRAM_PIN_RWDS                _PA_30
-#define PSRAM_PIN_RESETN              _PA_31
-#define PSRAM_PIN_DQ0                 _PB_0
-#define PSRAM_PIN_DQ1                 _PB_1
-#define PSRAM_PIN_DQ2                 _PB_2
-#define PSRAM_PIN_DQ3                 _PB_3
-#define PSRAM_PIN_CSN                 _PB_4
+#define PSRAM_PIN_CLK                 _PA_25   /*!< PSRAM clock pin assignment. */
+#define PSRAM_PIN_DQ4                 _PA_26   /*!< PSRAM data pin DQ4 assignment. */
+#define PSRAM_PIN_DQ5                 _PA_27   /*!< PSRAM data pin DQ5 assignment. */
+#define PSRAM_PIN_DQ6                 _PA_28   /*!< PSRAM data pin DQ6 assignment. */
+#define PSRAM_PIN_DQ7                 _PA_29   /*!< PSRAM data pin DQ7 assignment. */
+#define PSRAM_PIN_RWDS                _PA_30   /*!< PSRAM read/write data strobe pin assignment. */
+#define PSRAM_PIN_RESETN              _PA_31   /*!< PSRAM reset pin assignment. */
+#define PSRAM_PIN_DQ0                 _PB_0    /*!< PSRAM data pin DQ0 assignment. */
+#define PSRAM_PIN_DQ1                 _PB_1    /*!< PSRAM data pin DQ1 assignment. */
+#define PSRAM_PIN_DQ2                 _PB_2    /*!< PSRAM data pin DQ2 assignment. */
+#define PSRAM_PIN_DQ3                 _PB_3    /*!< PSRAM data pin DQ3 assignment. */
+#define PSRAM_PIN_CSN                 _PB_4    /*!< PSRAM chip select pin assignment. */
 
-#define XDEBUG_GPIO                         _PA_21  /* rom used, can not change */
+#define XDEBUG_GPIO                         _PA_21  /*!< Debug GPIO pin used by ROM; do not change. */
 
 /* Exported Types --------------------------------------------------------*/
 
-/** @defgroup PINMUX_Port_and_Pin_definitions
+/** @defgroup PINMUX_Port_and_Pin_definitions PINMUX Port and Pin Definitions
  * @{
  */
-#define PORT_NUM(pin)		((pin>>5) & 0x03)
-#define PIN_NUM(pin)		(pin & 0x1f)
+#define PORT_NUM(pin)		((pin>>5) & 0x03)   /*!< Extract port number from pin name. */
+#define PIN_NUM(pin)		(pin & 0x1f)   /*!< Extract pin number from pin name. */
 /** @} */
 
-/** @defgroup PINMUX_PinName_definition
+/// @cond
+/** @defgroup PINMUX_PinName_definition PINMUX Pin Name Definition
  * @{
  */
 #define PinName(port, pin)		(((port) & 0x3) << 5 | ((pin) & 0x1f) << 0)
 /** @} */
+/// @endcond
 
-/** @defgroup PINMUX_Peripheral_Location_definitions
- * @note just used by function PINMUX_Ctrl
+/** @defgroup PINMUX_Peripheral_Location_definitions PINMUX Peripheral Location Definitions
+ * @note Just used by function PINMUX_Ctrl
  * @{
  */
-#define PINMUX_S0		(0)
-#define PINMUX_S1		(1)
-#define PINMUX_S2		(2)
-#define PINMUX_S3		(3)
-#define PINMUX_S4		(4)
-#define PINMUX_S5		(5)
+#define PINMUX_S0		(0)   /*!< Peripheral pinmux location selection 0. */
+#define PINMUX_S1		(1)   /*!< Peripheral pinmux location selection 1. */
+#define PINMUX_S2		(2)   /*!< Peripheral pinmux location selection 2. */
+#define PINMUX_S3		(3)   /*!< Peripheral pinmux location selection 3. */
+#define PINMUX_S4		(4)   /*!< Peripheral pinmux location selection 4. */
+#define PINMUX_S5		(5)   /*!< Peripheral pinmux location selection 5. */
 /** @} */
 
-/** @defgroup Flash_Pad_Location_definitions
- * @note just used by function Pinmux_BootSpicCtrl / Pinmux_ComboSpicCtrl
+/** @defgroup Flash_Pad_Location_definitions Flash Pad Location Definitions
+ * @note Just used by function Pinmux_BootSpicCtrl / Pinmux_ComboSpicCtrl
  * @{
  */
-#define PINMUX_EXTERNAL		(0)
-#define PINMUX_INTERNAL		(1)
+#define PINMUX_EXTERNAL		(0)   /*!< Use external flash pad location. */
+#define PINMUX_INTERNAL		(1)   /*!< Use internal flash pad location. */
 /** @} */
 
 /** @} */
+
+_LONG_CALL_ void Pinmux_UartLogCtrl(UNUSED_WARN_DIS u32  PinLocation, bool   Operation);
+_LONG_CALL_ void Pinmux_BootSpicCtrl(u32  PinLocation, bool Operation);
+_LONG_CALL_ void Pinmux_ComboSpicCtrl(u32  PinLocation, bool Operation);
 
 /** @defgroup PINMUX_Exported_Functions PINMUX Exported Functions
  * @{
  */
 _LONG_CALL_ void Pinmux_Config(u8 PinName, u32 PinFunc);
 _LONG_CALL_ u32 Pinmux_ConfigGet(u8 PinName);
-_LONG_CALL_ void Pinmux_UartLogCtrl(UNUSED_WARN_DIS u32  PinLocation, bool   Operation);
-_LONG_CALL_ void Pinmux_BootSpicCtrl(u32  PinLocation, bool Operation);
-_LONG_CALL_ void Pinmux_ComboSpicCtrl(u32  PinLocation, bool Operation);
 _LONG_CALL_ void Pinmux_Swdoff(void);
 /** @} */
 
-/**************************************************************************//**
- * @defgroup RTL8720F_PINMUX
+/** @defgroup PINMUX_Register_Declaration PINMUX Register Declaration
+ * @brief PINMUX register structure declaration
  * @{
- * @brief RTL8720F_PINMUX Register Declaration
- *****************************************************************************/
+ */
 typedef struct {
 	__IO uint32_t REG_GPIOx[PIN_TOTAL_NUM];			/*!< Pad control register */
 } PINMUX_TypeDef;
@@ -290,7 +294,7 @@ typedef struct {
 /** @} */
 
 
-/** @defgroup PAD
+/** @defgroup PAD PAD
  * @brief PAD driver modules
  * @{
  */
@@ -299,29 +303,33 @@ typedef struct {
  * @{
  */
 
-/** @defgroup PAD_Pull_Resistor_definitions
+/** @defgroup PAD_Pull_Resistor_definitions PAD Pull Resistor Definitions
  * @{
  */
-#define PAD_Resistor_LARGE		0x00 /*!< PAD Resistor LARGE */
-#define PAD_Resistor_SMALL		0x01 /*!< PAD Resistor SMALL */
+#define PAD_Resistor_LARGE		0x00 /*!< PAD large pull resistor. */
+#define PAD_Resistor_SMALL		0x01 /*!< PAD small pull resistor. */
 /** @} */
 
 
-/** @defgroup PINMUX_PAD_DrvStrength_definitions
+/** @defgroup PINMUX_PAD_DrvStrength_definitions PINMUX PAD Drive Strength Definitions
  * @{
  */
-#define PAD_DRV_ABILITITY_LOW			(0)
-#define PAD_DRV_ABILITITY_HIGH			(1)
+#define PAD_DRV_ABILITITY_LOW			(0)   /*!< PAD drive strength lowest level. */
+#define PAD_DRV_ABILITITY_MID_LOW		(1)   /*!< PAD drive strength mid-low level. */
+#define PAD_DRV_ABILITITY_MID_HIGH		(2)   /*!< PAD drive strength mid-high level. */
+#define PAD_DRV_ABILITITY_HIGH			(3)   /*!< PAD drive strength highest level. */
 /** @} */
 
-/** @defgroup PINMUX_PAD_SlewRate_definitions
+/** @defgroup PINMUX_PAD_SlewRate_definitions PINMUX PAD Slew Rate Definitions
  * @{
  */
-#define PAD_SlewRate_Fast				(0)
-#define PAD_SlewRate_Slow				(1)
+#define PAD_SlewRate_Fast				(0)   /*!< PAD output slew rate fast. */
+#define PAD_SlewRate_Slow				(1)   /*!< PAD output slew rate slow. */
 /** @} */
 
 /** @} */
+
+_LONG_CALL_ void PAD_SpicCtrl(u32  PinLocation);
 
 /** @defgroup PAD_Exported_Functions PAD Exported Functions
  * @{
@@ -332,7 +340,6 @@ _LONG_CALL_ void PAD_SchmitCtrl(u8 PinName, u32 NewState);
 _LONG_CALL_ void PAD_SlewRateCtrl(u8 PinName, u32 NewState);
 _LONG_CALL_ void PAD_PullCtrl(u8 PinName, u8 PullType);
 _LONG_CALL_ void PAD_SleepPullCtrl(u8 PinName, u8 PullType);
-_LONG_CALL_ void PAD_SpicCtrl(u32  PinLocation);
 _LONG_CALL_ void PAD_ResistorCtrl(u8 PinName, u8 RType);
 _LONG_CALL_ void PAD_InputCtrl(u8 PinName, u32 NewState);
 /** @} */
@@ -341,14 +348,16 @@ _LONG_CALL_ void PAD_InputCtrl(u8 PinName, u32 NewState);
 
 /** @} */
 
+/// @cond
 /** @} */
+/// @endcond
 
 
 /* PINMUX_TESTID_TRAP_ICFG_definitions */
-#define TESTID_MCM_FLASH_PG1B_ICFG			3
-#define TESTID_FORCE_USE_EXTERNAL_PAD_ICFG		  	4
-#define TESTID_FLASH_PROBE_EXTERNAL_PAD_ICFG			8
-#define TESTID_FLASH_PROBE_INTERNAL_PAD_ICFG			9
+#define TESTID_MCM_FLASH_PG1B_ICFG			3   /*!< Test ID for MCM flash PG1B ICFG trap. */
+#define TESTID_FORCE_USE_EXTERNAL_PAD_ICFG		  	4   /*!< Test ID to force use of external pad ICFG trap. */
+#define TESTID_FLASH_PROBE_EXTERNAL_PAD_ICFG			8   /*!< Test ID for flash probe on external pad ICFG trap. */
+#define TESTID_FLASH_PROBE_INTERNAL_PAD_ICFG			9   /*!< Test ID for flash probe on internal pad ICFG trap. */
 
 #ifdef __cplusplus
 }

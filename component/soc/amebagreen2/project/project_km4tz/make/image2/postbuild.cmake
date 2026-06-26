@@ -41,14 +41,14 @@ if(CONFIG_BT_COEXIST AND CONFIG_COEXIST_DEV)
     ameba_execute_process(COMMAND ${CMAKE_OBJCOPY} -j .coex_trace.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/COEX.trace)
 endif()
 
-if(CONFIG_MP_SHRINK)
+if(CONFIG_MP_SHRINK AND CONFIG_WHC_INTF_IPC)
     ameba_execute_process(COMMAND ${CMAKE_OBJCOPY} -j .sram_image2.entry -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/entry.bin)
 endif()
 message( "========== Image manipulating start ==========")
 
 ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/xip_image2.bin 32)
 ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/psram_2.bin 32)
-if(CONFIG_MP_SHRINK)
+if(CONFIG_MP_SHRINK AND CONFIG_WHC_INTF_IPC)
 ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/entry.bin 992)
 ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/sram_2.bin 163776)
 ameba_axf2bin_prepend_head(
@@ -80,7 +80,7 @@ ameba_axf2bin_prepend_head(
     ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
 )
 
-if(CONFIG_MP_SHRINK)
+if(CONFIG_MP_SHRINK AND CONFIG_WHC_INTF_IPC)
 ameba_execute_process(
     COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/entry_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/sram_2_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/psram_2_prepend.bin
     OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image2_all.bin

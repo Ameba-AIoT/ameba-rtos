@@ -201,7 +201,7 @@ u32 RTC_BypassShadowCmd(u32 NewState)
 
 /**
   * @brief  Fill each RTC_InitStruct member with its default value.
-  * @param  RTC_InitStruct Pointer to a RTC_InitTypeDef structure which will be
+  * @param  RTC_InitStruct Pointer to a @ref RTC_InitTypeDef structure which will be
   *         initialized.
   */
 void RTC_StructInit(RTC_InitTypeDef *RTC_InitStruct)
@@ -222,7 +222,7 @@ void RTC_StructInit(RTC_InitTypeDef *RTC_InitStruct)
 /**
   * @brief  Initialize the RTC registers according to the specified parameters
   *         in RTC_InitStruct.
-  * @param  RTC_InitStruct Pointer to a RTC_InitTypeDef structure that contains
+  * @param  RTC_InitStruct Pointer to a @ref RTC_InitTypeDef structure that contains
   *         the configuration information for the RTC peripheral.
   * @note   The RTC Prescaler register is write protected and can be written in
   *         initialization mode only.
@@ -282,7 +282,7 @@ u32 RTC_Init(RTC_InitTypeDef *RTC_InitStruct)
 /**
   * @brief  Fill each RTC_TimeStruct member with its default value
   *         (Time = 00d:00h:00min:00sec).
-  * @param  RTC_TimeStruct Pointer to a RTC_TimeTypeDef structure which will be
+  * @param  RTC_TimeStruct Pointer to a @ref RTC_TimeTypeDef structure which will be
   *         initialized.
   */
 void RTC_TimeStructInit(RTC_TimeTypeDef *RTC_TimeStruct)
@@ -302,7 +302,7 @@ void RTC_TimeStructInit(RTC_TimeTypeDef *RTC_TimeStruct)
   *          This parameter can be  one of the following values:
   *            @arg RTC_Format_BIN:  Binary data format
   *            @arg RTC_Format_BCD:  BCD data format
-  * @param  RTC_TimeStruct Pointer to a RTC_TimeTypeDef structure that contains
+  * @param  RTC_TimeStruct Pointer to a @ref RTC_TimeTypeDef structure that contains
   *                        the time configuration information for the RTC.
   * @return Status value:
   *          - 1: RTC Time register is configured
@@ -393,7 +393,7 @@ u32 RTC_SetTime(u32 RTC_Format, RTC_TimeTypeDef *RTC_TimeStruct)
   *          This parameter can be  one of the following values:
   *            @arg RTC_Format_BIN:  Binary data format
   *            @arg RTC_Format_BCD:  BCD data format
-  * @param  RTC_TimeStruct Pointer to a RTC_TimeTypeDef structure that will
+  * @param  RTC_TimeStruct Pointer to a @ref RTC_TimeTypeDef structure that will
   *                        contain the returned current time configuration.
   */
 void RTC_GetTime(u32 RTC_Format, RTC_TimeTypeDef *RTC_TimeStruct)
@@ -616,12 +616,12 @@ u32 RTC_DayThresGet(void)
 /**
   * @brief  Set the specified RTC Alarm.
   * @note   The Alarm register can only be written when the corresponding Alarm
-  *         is disabled (Use the RTC_AlarmCmd(DISABLE)).
+  *         is disabled (Use @ref RTC_AlarmCmd (DISABLE)).
   * @param  RTC_Format Specifies the format of the returned parameters.
   *          This parameter can be one of the following values:
   *            @arg RTC_Format_BIN: Binary data format
   *            @arg RTC_Format_BCD: BCD data format
-  * @param  RTC_AlarmStruct Pointer to a RTC_AlarmTypeDef structure that
+  * @param  RTC_AlarmStruct Pointer to a @ref RTC_AlarmTypeDef structure that
   *                          contains the alarm configuration parameters.
   * @return Status value:
   *          - 1: RTC Time Alarm is configured
@@ -748,7 +748,7 @@ void RTC_AlarmStructInit(RTC_AlarmTypeDef *RTC_AlarmStruct)
   *          This parameter can be one of the following values:
   *            @arg RTC_Format_BIN: Binary data format
   *            @arg RTC_Format_BCD: BCD data format
-  * @param  RTC_AlarmStruct Pointer to a RTC_AlarmTypeDef structure that will
+  * @param  RTC_AlarmStruct Pointer to a @ref RTC_AlarmTypeDef structure that will
   *                          contains the output alarm configuration values.
   */
 void RTC_GetAlarm(u32 RTC_Format, RTC_AlarmTypeDef *RTC_AlarmStruct)
@@ -908,7 +908,7 @@ u32 RTC_WaitForWUTSynchro(void)
 /**
   * @brief  Set the specified RTC Wakeup Timer.
   * @note   The Wakeup Timer register can only be written when the WakeupTimer
-  *         is disabled (Use the RTC_WakeupTimerCmd(DISABLE)).
+  *         is disabled (Use @ref RTC_WakeupTimerCmd (DISABLE)).
   * @param  RTC_WakeupRange Wakeup time to be configured.
   *	This parameter can be a value from 0x1 to 0x1FF.
   * @return Status value:
@@ -970,8 +970,8 @@ u32 RTC_GetWakeup(void)
 }
 
 /**
-  * @brief  Enable or disable the specified RTC Alarm.
-  * @param  NewState New state of the specified alarm.
+  * @brief  Enable or disable the specified RTC Wakeup Timer.
+  * @param  NewState New state of the specified wakeup timer.
   *          This parameter can be: ENABLE or DISABLE.
   * @note Wakeup timer starts down counting after 3 to 4 seconds
   */

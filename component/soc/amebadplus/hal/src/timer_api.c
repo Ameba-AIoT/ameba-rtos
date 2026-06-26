@@ -58,22 +58,11 @@ static u32 gtimer_timeout_handler(void *data)
 
 /**
   * @brief  Initialize the timer device, including timer registers and interrupt.
-  * @param  obj: Timer object defined in application software.
-  * @param  tid: General timer ID, which can be one of the following parameters:
-  *     @arg TIMER0
-  *     @arg TIMER1
-  *     @arg TIMER2
-  *     @arg TIMER3
-  *     @arg TIMER4
-  *     @arg TIMER5
-  *     @arg TIMER6
-  *     @arg TIMER7
-  *     @arg TIMER8
-  *     @arg TIMER9
-  *     @arg TIMER10
-  *     @arg TIMER11
+  * @param  obj Timer object defined in application software.
+  * @param  tid General timer ID, which can be a value of TIMER_ID enumeration.
+  * @internal
   * @note KM4 TIMER0/1/2/3/4/5/6/7/8/9/10/11 are recommended.
-  * @retval none
+  * @endinternal
   */
 void gtimer_init(gtimer_t *obj, uint32_t tid)
 {
@@ -96,8 +85,7 @@ void gtimer_init(gtimer_t *obj, uint32_t tid)
 
 /**
   * @brief  Deinitialize the timer device, including interrupt and timer registers.
-  * @param  obj: Timer object defined in application software.
-  * @retval none
+  * @param  obj Timer object defined in application software.
   */
 void gtimer_deinit(gtimer_t *obj)
 {
@@ -110,7 +98,7 @@ void gtimer_deinit(gtimer_t *obj)
 
 /**
   * @brief  Get counter value of the specified timer.
-  * @param  obj: Timer object defined in application software.
+  * @param  obj Timer object defined in application software.
   * @return Counter value.
   */
 uint32_t gtimer_read_tick(gtimer_t *obj)
@@ -124,7 +112,7 @@ uint32_t gtimer_read_tick(gtimer_t *obj)
 
 /**
   * @brief  Read current timer tick in microsecond.
-  * @param  obj: Timer object defined in application software.
+  * @param  obj Timer object defined in application software.
   * @return 64b tick time in microsecond(us).
   */
 uint64_t gtimer_read_us(gtimer_t *obj)   //need to be test in IAR(64bit computing)
@@ -143,9 +131,8 @@ uint64_t gtimer_read_us(gtimer_t *obj)   //need to be test in IAR(64bit computin
 
 /**
   * @brief  Change period of the specified timer.
-  * @param  obj: Timer object defined in application software.
-  * @param  duration_us: Period to be set in microseconds.
-  * @retval none
+  * @param  obj Timer object defined in application software.
+  * @param  duration_us Period to be set in microseconds.
   */
 void gtimer_reload(gtimer_t *obj, uint32_t duration_us)
 {
@@ -163,8 +150,7 @@ void gtimer_reload(gtimer_t *obj, uint32_t duration_us)
 
 /**
   * @brief  Start the specified timer and enable update interrupt.
-  * @param  obj: Timer object defined in application software.
-  * @retval none
+  * @param  obj Timer object defined in application software.
   */
 void gtimer_start(gtimer_t *obj)
 {
@@ -177,12 +163,11 @@ void gtimer_start(gtimer_t *obj)
 }
 
 /**
-  * @brief Start the specified timer in one-shot mode with specified period and interrupt handler.
-  * @param  obj: Timer object defined in application software.
-  * @param  duration_us: Period to be set in microseconds.
-  * @param  handler: User-defined IRQ callback function.
-  * @param  hid: User-defined IRQ callback parameter.
-  * @retval none
+  * @brief  Start the specified timer in one-shot mode with specified period and interrupt handler.
+  * @param  obj Timer object defined in application software.
+  * @param  duration_us Period to be set in microseconds.
+  * @param  handler User-defined IRQ callback function.
+  * @param  hid User-defined IRQ callback parameter.
   * @note In one-shot mode, timer will stop counting the first time counter overflows.
   */
 void gtimer_start_one_shout(gtimer_t *obj, uint32_t duration_us, void *handler, uint32_t hid)
@@ -198,12 +183,11 @@ void gtimer_start_one_shout(gtimer_t *obj, uint32_t duration_us, void *handler, 
 }
 
 /**
-  * @brief Start the specified timer in periodical mode with specified period and interrupt handler.
-  * @param  obj: Timer object defined in application software.
-  * @param  duration_us: Period to be set in microseconds.
-  * @param  handler: User-defined IRQ callback function.
-  * @param  hid: User-defined IRQ callback parameter.
-  * @retval none
+  * @brief  Start the specified timer in periodical mode with specified period and interrupt handler.
+  * @param  obj Timer object defined in application software.
+  * @param  duration_us Period to be set in microseconds.
+  * @param  handler User-defined IRQ callback function.
+  * @param  hid User-defined IRQ callback parameter.
   * @note In periodical mode, timer will restart from 0 each time the counter overflows.
   */
 void gtimer_start_periodical(gtimer_t *obj, uint32_t duration_us, void *handler, uint32_t hid)
@@ -220,8 +204,7 @@ void gtimer_start_periodical(gtimer_t *obj, uint32_t duration_us, void *handler,
 
 /**
   * @brief  Disable the specified timer peripheral.
-  * @param  obj: Timer object defined in application software.
-  * @retval none
+  * @param  obj Timer object defined in application software.
   */
 void gtimer_stop(gtimer_t *obj)
 {

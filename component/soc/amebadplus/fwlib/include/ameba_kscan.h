@@ -305,34 +305,34 @@ extern "C" {
   * @brief  KSCAN Init structure definition
   */
 typedef struct {
-	u32 KS_ClkDiv;			/*!< Specifies Keyscan clock divider. Scan_clk = Bus clock/(KS_ClkDiv+1).
+	u32 KS_ClkDiv;			/*!< Specifies KeyScan clock divider. Scan_clk = Bus clock/(KS_ClkDiv+1).
 					This parameter must be set to a value in the 0x0-0xfff range. */
 
-	u32 KS_WorkMode;		/*!< Specifies Keyscan work mode.
+	u32 KS_WorkMode;		/*!< Specifies the KeyScan operating mode.
 					This parameter can be a value of @ref KSCAN_Work_Mode_definitions */
 
-	u32 KS_RowSel;			/*!< Specifies which row(s) is used.
+	u32 KS_RowSel;			/*!< Specifies which rows are active.
 					This parameter must be set to a value in the 0x1-0xff range. */
 
-	u32 KS_ColSel;			/*!< Specifies which column(s) is used.
+	u32 KS_ColSel;			/*!< Specifies which columns are active.
 					This parameter must be set to a value in the 0x1-0xff range. */
 
-	u32 KS_DebounceCnt;		/*!< Specifies Keyscan Debounce Timer. Debounce Timer = (KS_DebounceCnt +1)* Scan_clk.
+	u32 KS_DebounceCnt;		/*!< Specifies the debounce counter value. Debounce timer = (KS_DebounceCnt + 1) * Scan_clk.
 					This parameter must be set to a value in the 0x0-0xfff range. */
 
-	u32 KS_IntervalCnt;		/*!< Specifies Keyscan Scan Interval Timer. Interval Timer = (KS_IntervalCnt +1)* Scan_clk.
+	u32 KS_IntervalCnt;		/*!< Specifies the scan interval counter value. Interval timer = (KS_IntervalCnt + 1) * Scan_clk.
 					This parameter must be set to a value in the 0x0-0xfff range. */
 
-	u32 KS_ReleaseCnt;		/*!< Specifies Keyscan All Release Timer. Release Timer = (KS_ReleaseCnt+1) * Scan_clk.
+	u32 KS_ReleaseCnt;		/*!< Specifies the all-release counter value. Release timer = (KS_ReleaseCnt + 1) * Scan_clk.
 					This parameter must be set to a value in the 0x0-0xfff range. */
 
-	u32 KS_LimitLevel;		/*!< Specifies the max allowable key number be pressed at a time
+	u32 KS_LimitLevel;		/*!< Specifies the maximum number of keys that can be pressed simultaneously.
 					This parameter can be a value of @ref KSCAN_FIFO_LimitLevel_Control */
 
-	u32 KS_ThreholdLevel;	/*!< Specifies Keyscan FIFO threshold to trigger KS_FIFO_FULL
-					This parameter can be a value of @ref KSCAN_FIFO_ThreholdLevel_Control */
+	u32 KS_ThreholdLevel;	/*!< Specifies the KeyScan FIFO threshold level for the KS_FIFO_FULL interrupt.
+					This parameter can be a value of @ref KSCAN_FIFO_ThresholdLevel_Control */
 
-	u32 KS_OverCtrl;		/*!< Specifies Keyscan FIFO over control.
+	u32 KS_OverCtrl;		/*!< Specifies KeyScan FIFO over control.
 					This parameter can be a value of @ref KSCAN_FIFO_Overflow_Control */
 } KeyScan_InitTypeDef;
 /**
@@ -347,7 +347,7 @@ typedef struct {
 /** @defgroup KSCAN_Peripheral_definitions KSCAN Peripheral Definitions
   * @{
   */
-#define IS_KEYSCAN_ALL_PERIPH(PERIPH) ((PERIPH) == KEYSCAN_DEV || (PERIPH) == KEYSCAN_DEV_S)
+#define IS_KEYSCAN_ALL_PERIPH(PERIPH) ((PERIPH) == KEYSCAN_DEV || (PERIPH) == KEYSCAN_DEV_S)  /*!< Check if KSCAN peripheral is valid. */
 /**
   * @}
   */
@@ -355,8 +355,9 @@ typedef struct {
 /** @defgroup KSCAN_Work_Mode_definitions KSCAN Work Mode Definitions
   * @{
   */
-#define KS_REGULAR_SCAN_MODE			((u32)0x00000000)
-#define KS_EVENT_TRIGGER_MODE			((u32)0x00000001)
+#define KS_REGULAR_SCAN_MODE			((u32)0x00000000)  /*!< Regular scan mode selection. */
+#define KS_EVENT_TRIGGER_MODE			((u32)0x00000001)  /*!< Event trigger mode selection. */
+/** @brief Check if KSCAN work mode is valid. */
 #define IS_KS_WORK_MODE(MODE)			(((MODE) == KS_REGULAR_SCAN_MODE) || \
                                ((MODE) == KS_EVENT_TRIGGER_MODE))
 /**
@@ -366,8 +367,9 @@ typedef struct {
 /** @defgroup KSCAN_FIFO_Overflow_Control KSCAN FIFO Overflow Control
   * @{
   */
-#define KS_FIFO_OVER_CTRL_DIS_NEW		((u32)0x00000000)
-#define KS_FIFO_OVER_CTRL_DIS_LAST		((u32)0x00000001)
+#define KS_FIFO_OVER_CTRL_DIS_NEW		((u32)0x00000000)  /*!< Reject new data when FIFO full. */
+#define KS_FIFO_OVER_CTRL_DIS_LAST		((u32)0x00000001)  /*!< Discard oldest data when FIFO full. */
+/** @brief Check if FIFO overflow control value is valid. */
 #define IS_KS_FIFO_OVER_CTRL(CTRL)		(((CTRL) == KS_FIFO_OVER_CTRL_DIS_NEW) || \
 				((CTRL) == KS_FIFO_OVER_CTRL_DIS_LAST))
 /**
@@ -377,6 +379,7 @@ typedef struct {
 /** @defgroup KSCAN_All_Interrupt_Mask KSCAN All Interrupt Mask
   * @{
   */
+/** @brief Mask bits for all KSCAN interrupts. */
 #define KS_BIT_ALL_INT_MSK				(KS_BIT_ALL_DEFAULT_INT_MASK | \
 										KS_BIT_STUCK_EVENT_INT_MASK | \
 										KS_BIT_SCAN_EVENT_INT_MASK | \
@@ -393,6 +396,7 @@ typedef struct {
 /** @defgroup KSCAN_All_Interrupt_Clear KSCAN All Interrupt Clear
   * @{
   */
+/** @brief Clear bits for all KSCAN interrupts. */
 #define KS_BIT_ALL_INT_CLR				(KS_BIT_ALL_DEFAULT_INT_CLR | \
 										KS_BIT_STUCK_INT_CLR | \
 										KS_BIT_FIFO_LIMIT_INT_CLR | \
@@ -406,15 +410,15 @@ typedef struct {
 /** @defgroup KSCAN_FIFO_LimitLevel_Control KSCAN FIFO Limit Level Control
   * @{
   */
-#define IS_KS_FIFO_LIMIT_LEVEL(DATA_NUM)	((DATA_NUM) <= 6)
+#define IS_KS_FIFO_LIMIT_LEVEL(DATA_NUM)	((DATA_NUM) <= 6)  /*!< Check if FIFO limit level value is valid. */
 /**
   * @}
   */
 
-/** @defgroup KSCAN_FIFO_ThreholdLevel_Control KSCAN FIFO Threshold Level Control
+/** @defgroup KSCAN_FIFO_ThresholdLevel_Control KSCAN FIFO Threshold Level Control
   * @{
   */
-#define IS_KS_FIFO_TH_LEVEL(DATA_NUM)		(((DATA_NUM) > 0) && ((DATA_NUM) < 16))
+#define IS_KS_FIFO_TH_LEVEL(DATA_NUM)		(((DATA_NUM) > 0) && ((DATA_NUM) < 16))  /*!< Check if FIFO threshold level value is valid. */
 /**
   * @}
   */

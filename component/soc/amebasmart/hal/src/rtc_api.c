@@ -40,7 +40,7 @@ static const u8 dim[12] = {
 /* end of the group */
 
 /**
-  * @brief  Register RTC alarm interrupt handler.
+  * @brief  Handle RTC alarm interrupt.
   * @param  data RTC IRQ callback data.
   * @return 0.
   */

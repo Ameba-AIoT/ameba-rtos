@@ -1,8 +1,25 @@
-## LE Audio Generic demo
+# BLE Audio Examples
 
-### Compile config
+> **Note:** The BLE Audio examples in this directory are supported on **RTL8730E** only.
 
-1. Configure the following Macros in bt_api_config.h
+---
+
+## Compile Config
+
+### Common (All Demos)
+
+Change `kPrimaryAudioConfig` in `component/audio/configs/ameba_audio_mixer_usrcfg.cpp`:
+
+```c
+// change from:
+kPrimaryAudioConfig = {1024, 4, AUDIO_OUT_MIN_FRAMES_STAGE1};
+// to:
+kPrimaryAudioConfig = {240, 4, AUDIO_OUT_MIN_FRAMES_STAGE2};
+```
+
+### LE Audio Generic
+
+Configure the following Macros in `bt_api_config.h`:
 
 ```c
 RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT         to                1
@@ -17,45 +34,171 @@ RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT          to                1
 RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT               to                1
 ```
 
-2. change `kPrimaryAudioConfig` in `ameba_audio_mixer_usrcfg.cpp`:
+### TMAP
+
+Configure the following Macros in `bt_api_config.h`:
 
 ```c
-// change from:
-kPrimaryAudioConfig = {1024, 4, AUDIO_OUT_MIN_FRAMES_STAGE1};
-// to:
-kPrimaryAudioConfig = {240, 4, AUDIO_OUT_MIN_FRAMES_STAGE2};
+RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT         to                1
+RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT           to                1
+RTK_BLE_AUDIO_VOCS_SUPPORT                          to                1
+RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT      to                1
+RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT      to                1
+RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT          to                1
+RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT               to                1
 ```
 
-### GCC menuconfig
+---
 
-1. BT Related:
-   Enter the SDK root directory, execute in order:
+## GCC menuconfig
 
-```bash
-source env.sh
-./ameba.py soc RTL8730E
-```
+### LE Audio Generic
 
-   `./ameba.py menuconfig` --> CONFIG BT --> BT Example Demo --> BLE Audio --> BLE Audio Generic Demo
+#### Manual (TUI)
 
-2. Audio Related:
-   `./ameba.py` --> CONFIG Application --> Audio Config --> Select Audio Interfaces (Mixer)
+1. BT: `./ameba.py menuconfig` --> CONFIG BT --> Enable BT --> BT Mode Selection (DUAL_MODE or BLE_ONLY) --> BT Example Demo --> BLE Audio --> BLE Audio Generic Demo
 
-3. GCC : use CMD `./ameba.py build` to compile example
+2. Audio: `./ameba.py menuconfig` --> CONFIG Application --> Audio Config --> Enable Audio Framework --> Select Audio Interfaces (Mixer)
 
-4. To Config Media Source (component/bluetooth/api/include/rtk_bt_le_audio_def.h)
+#### CLI / MCP (menuconfig --set)
 
-   4.1 Config `RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT` to 1 for enabling birds thing audio stream
+> **CLI:** `./ameba.py menuconfig --set SYMBOL=VALUE [...]`  
+> **MCP (ameba-dev):** call `kconfig_set` tool with symbols below as `assignments` list
 
-   4.2 Config `RTK_BLE_AUDIO_RECORD_SUPPORT` to 1 for enabling microphone audio stream
+| # | Symbol | Value | Note |
+|---|--------|-------|------|
+| 1 | `CONFIG_BT_MENU` | `y` | |
+| 2 | `CONFIG_BT_DUAL_MODE` | `y` | or `CONFIG_BT_BLE_ONLY`; RTL8730E defaults to DUAL_MODE |
+| 3 | `CONFIG_BT_EXAMPLE_DEMO_MENU` | `y` | |
+| 4 | `CONFIG_BT_LE_AUDIO_MENU` | `y` | |
+| 5 | `CONFIG_BT_LE_AUDIO_GENERIC_DEMO_MENU` | `y` | |
+| 6 | `CONFIG_AUDIO_FWK_MENU` | `y` | |
+| 7 | `CONFIG_AUDIO_MIXER_MENU` | `y` | Select Audio Interface: Mixer (choice, only one interface can be active) |
+
+### PBP
+
+#### Manual (TUI)
+
+1. BT: `./ameba.py menuconfig` --> CONFIG BT --> Enable BT --> BT Mode Selection (DUAL_MODE or BLE_ONLY) --> BT Example Demo --> BLE Audio --> BLE Audio Public Broadcast Profile
+
+2. Audio: `./ameba.py menuconfig` --> CONFIG Application --> Audio Config --> Enable Audio Framework --> Select Audio Interfaces (Mixer)
+
+#### CLI / MCP (menuconfig --set)
+
+> **CLI:** `./ameba.py menuconfig --set SYMBOL=VALUE [...]`  
+> **MCP (ameba-dev):** call `kconfig_set` tool with symbols below as `assignments` list
+
+| # | Symbol | Value | Note |
+|---|--------|-------|------|
+| 1 | `CONFIG_BT_MENU` | `y` | |
+| 2 | `CONFIG_BT_DUAL_MODE` | `y` | or `CONFIG_BT_BLE_ONLY`; RTL8730E defaults to DUAL_MODE |
+| 3 | `CONFIG_BT_EXAMPLE_DEMO_MENU` | `y` | |
+| 4 | `CONFIG_BT_LE_AUDIO_MENU` | `y` | |
+| 5 | `CONFIG_BT_PBP_MENU` | `y` | |
+| 6 | `CONFIG_AUDIO_FWK_MENU` | `y` | |
+| 7 | `CONFIG_AUDIO_MIXER_MENU` | `y` | Select Audio Interface: Mixer (choice, only one interface can be active) |
+
+### TMAP
+
+#### Manual (TUI)
+
+1. BT: `./ameba.py menuconfig` --> CONFIG BT --> Enable BT --> BT Mode Selection (DUAL_MODE or BLE_ONLY) --> BT Example Demo --> BLE Audio --> BLE Audio Telephony and Media Audio Profile
+
+2. Audio: `./ameba.py menuconfig` --> CONFIG Application --> Audio Config --> Enable Audio Framework --> Select Audio Interfaces (Mixer)
+
+#### CLI / MCP (menuconfig --set)
+
+> **CLI:** `./ameba.py menuconfig --set SYMBOL=VALUE [...]`  
+> **MCP (ameba-dev):** call `kconfig_set` tool with symbols below as `assignments` list
+
+| # | Symbol | Value | Note |
+|---|--------|-------|------|
+| 1 | `CONFIG_BT_MENU` | `y` | |
+| 2 | `CONFIG_BT_DUAL_MODE` | `y` | or `CONFIG_BT_BLE_ONLY`; RTL8730E defaults to DUAL_MODE |
+| 3 | `CONFIG_BT_EXAMPLE_DEMO_MENU` | `y` | |
+| 4 | `CONFIG_BT_LE_AUDIO_MENU` | `y` | |
+| 5 | `CONFIG_BT_TMAP_MENU` | `y` | |
+| 6 | `CONFIG_AUDIO_FWK_MENU` | `y` | |
+| 7 | `CONFIG_AUDIO_MIXER_MENU` | `y` | Select Audio Interface: Mixer (choice, only one interface can be active) |
+
+### GMAP
+
+#### Manual (TUI)
+
+1. BT: `./ameba.py menuconfig` --> CONFIG BT --> Enable BT --> BT Mode Selection (DUAL_MODE or BLE_ONLY) --> BT Example Demo --> BLE Audio --> BLE Audio Gaming Audio Profile
+
+2. Audio: `./ameba.py menuconfig` --> CONFIG Application --> Audio Config --> Enable Audio Framework --> Select Audio Interfaces (Mixer)
+
+#### CLI / MCP (menuconfig --set)
+
+> **CLI:** `./ameba.py menuconfig --set SYMBOL=VALUE [...]`  
+> **MCP (ameba-dev):** call `kconfig_set` tool with symbols below as `assignments` list
+
+| # | Symbol | Value | Note |
+|---|--------|-------|------|
+| 1 | `CONFIG_BT_MENU` | `y` | |
+| 2 | `CONFIG_BT_DUAL_MODE` | `y` | or `CONFIG_BT_BLE_ONLY`; RTL8730E defaults to DUAL_MODE |
+| 3 | `CONFIG_BT_EXAMPLE_DEMO_MENU` | `y` | |
+| 4 | `CONFIG_BT_LE_AUDIO_MENU` | `y` | |
+| 5 | `CONFIG_BT_GMAP_MENU` | `y` | |
+| 6 | `CONFIG_AUDIO_FWK_MENU` | `y` | |
+| 7 | `CONFIG_AUDIO_MIXER_MENU` | `y` | Select Audio Interface: Mixer (choice, only one interface can be active) |
+
+---
+
+## Optional: Media Source Config
+
+File: `component/bluetooth/api/include/rtk_bt_le_audio_def.h`
+
+1. Config `RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT` to 1 for enabling birds sing audio stream
+
+2. Config `RTK_BLE_AUDIO_RECORD_SUPPORT` to 1 for enabling microphone audio stream
    > **Note:** `RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT` and `RTK_BLE_AUDIO_RECORD_SUPPORT` should not be enabled both
 
-   4.3 Config `RTK_BT_LE_AUDIO_BIRDS_SING_SAMPLING_RATE` to change birds thing audio stream frequency
+3. Config `RTK_BT_LE_AUDIO_BIRDS_SING_SAMPLING_RATE` to change birds sing audio stream frequency
 
-   4.4 Config `RTK_BT_LE_MEDIA_CODEC_CFG_PREFER` to change le audio codec config, this parameter should be related to `RTK_BT_LE_AUDIO_BIRDS_SING_SAMPLING_RATE` (Frequency should be equal to Audio Source Frequency)
+4. Config `RTK_BT_LE_MEDIA_CODEC_CFG_PREFER` to change le audio codec config, this parameter should be related to `RTK_BT_LE_AUDIO_BIRDS_SING_SAMPLING_RATE` (Frequency should be equal to Audio Source Frequency)
 
-   4.5 Config `RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER` to change le audio config type (Default is `RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT` for single channel and `RTK_BT_LE_UNICAST_AUDIO_CFG_6_II_BIT` for two channels)
-   > **Note:** default is 16k birdsthing audio source for 10ms duration (------->>), two channels example.
+5. Config `RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER` to change le audio config type (Default is `RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT` for single channel and `RTK_BT_LE_UNICAST_AUDIO_CFG_6_II_BIT` for two channels)
+   > **Note:** default is 16k birds sing audio source for 10ms duration, two channels example.
+
+---
+
+## Build
+
+#### Manual
+
+```bash
+./ameba.py build
+```
+
+#### CLI
+
+```bash
+./ameba.py build -q
+```
+
+#### MCP (ameba-dev)
+
+Use `build_firmware` tool; SoC must be selected beforehand via `set_target`.
+
+---
+
+## Flash
+
+#### Manual / CLI
+
+```bash
+./ameba.py flash
+```
+
+#### MCP (ameba-dev)
+
+Use `flash_firmware` tool; SoC and image directory are resolved from `set_target`.
+
+---
+
+## ATCMD Reference
 
 ### LE Audio Generic demo ATCMD
 
@@ -159,8 +302,6 @@ source env.sh
 
 ---
 
-## PBP demo
-
 ### PBP demo ATCMD
 
 1. PBP Broadcast Source
@@ -219,32 +360,6 @@ source env.sh
 
 ---
 
-## TMAP demo
-
-Configure the following Macros in bt_api_config.h
-
-```c
-RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT         to                1
-RTK_BLE_AUDIO_VCP_VOLUME_RENDERER_SUPPORT           to                1
-RTK_BLE_AUDIO_VOCS_SUPPORT                          to                1
-RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT      to                1
-RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT      to                1
-RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT          to                1
-RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT               to                1
-```
-
-### GCC menuconfig
-
-1. BT Related:
-   `./menuconfig.py` --> CONFIG BT --> BT Example Demo --> BLE Audio --> BLE Audio Telephony and Media Audio Profile
-
-2. Audio Related:
-   `./menuconfig.py` --> MENUCONFIG FOR CA32 CONFIG --> Audio Config --> Select Audio Interfaces (Mixer)
-   or
-   `./menuconfig.py` --> MENUCONFIG FOR KM4 CONFIG --> Audio Config --> Select Audio Interfaces (Mixer)
-
-3. GCC : use CMD `./build.py` to compile example
-
 ### TMAP demo ATCMD
 
 1. TMAP unicast media sender
@@ -292,15 +407,15 @@ RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT               to                1
 
    1.21 vocs client write opcode by group: Set Volume Offset  `AT+BLECAP=commander,vocs,gwrite,<group_index>,<srv instance id>,<cp_op>,<volume_offset>`
 
-   1.22 mcs server send data：MEDIA_PLAYER_NAME  `AT+BLECAP=initiator,mcp,send,0x2B93,{<name>}  e.g. AT+BLECAP=initiator,mcp,send,0x2B93,rtk_player`
+   1.22 mcs server send data: MEDIA_PLAYER_NAME  `AT+BLECAP=initiator,mcp,send,0x2B93,{<name>}  e.g. AT+BLECAP=initiator,mcp,send,0x2B93,rtk_player`
 
-   1.23 mcs server send data：TRACK_TITLE  `AT+BLECAP=initiator,mcp,send,0x2B97,{<title>}  e.g. AT+BLECAP=initiator,mcp,send,0x2B97,rtk_title`
+   1.23 mcs server send data: TRACK_TITLE  `AT+BLECAP=initiator,mcp,send,0x2B97,{<title>}  e.g. AT+BLECAP=initiator,mcp,send,0x2B97,rtk_title`
 
-   1.24 mcs server send data：TRACK_DURATION  `AT+BLECAP=initiator,mcp,send,0x2B98,<value>`
+   1.24 mcs server send data: TRACK_DURATION  `AT+BLECAP=initiator,mcp,send,0x2B98,<value>`
 
-   1.25 mcs server send data：TRACK_POSITION  `AT+BLECAP=initiator,mcp,send,0x2B99,<value>`
+   1.25 mcs server send data: TRACK_POSITION  `AT+BLECAP=initiator,mcp,send,0x2B99,<value>`
 
-   1.26 mcs server send data：TRACK_CHANGED  `AT+BLECAP=initiator,mcp,send,0x2B96`
+   1.26 mcs server send data: TRACK_CHANGED  `AT+BLECAP=initiator,mcp,send,0x2B96`
 
 2. TMAP unicast media receiver
 
@@ -412,8 +527,6 @@ RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT               to                1
 
 ---
 
-## GMAP demo
-
 ### GMAP demo ATCMD
 
 1. GMAP unicast game gateway
@@ -424,7 +537,7 @@ RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT               to                1
 
    1.3 start ext scan  `AT+BLEBAP=escan,1`
 
-   1.4 start ext scan  `AT+BLEBAP=escan,0`
+   1.4 stop ext scan  `AT+BLEBAP=escan,0`
 
    1.5 connect  `AT+BLEGAP=conn,<peer_addr_type>,<peer_addr>`
 

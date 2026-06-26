@@ -51,6 +51,8 @@ menu "CONFIG FUNCTION TEST"
             config RSIP_VERIFY
                 bool "RSIP_Verify_Mode"
         endif
+        config LALU_SECURE_PERFORMANCE
+            bool "Lalu_Secure_Performance"
         config TIMER_VERIFY
         bool "Timer_Verify_Mode"
         config AUDIO_VERIFY
@@ -251,5 +253,3 @@ menu "CONFIG SECURE TEST"
 endmenu
 
 endif
-
-rsource "../Kconfig"

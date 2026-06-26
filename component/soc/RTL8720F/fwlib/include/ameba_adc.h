@@ -582,7 +582,55 @@ extern "C" {
 
 //Please add your defination here
 
-/* Non Exported types */
+/* Exported types ------------------------------------------------------------*/
+/** @addtogroup ADC_Exported_Types ADC Exported Types
+  * @{
+  */
+
+/**
+  * @brief  ADC Channel Init Structure Definition
+  */
+struct ADC_CHInitTypeDef {
+	u8 ADC_InputSwing;		/*!< Specifies ADC input swing selection. */
+	u16 ADC_SamplePeriodUs;	/*!< Specifies ADC sample period in microseconds. This parameter can be set to 0x1~0x400 (xtal4m clock) or 0x1~0x800 (osc2m clock). */
+};
+
+/**
+  * @brief  ADC Init Structure Definition
+  */
+typedef struct {
+	u8 ADC_OpMode;				/*!< Specifies ADC operation mode.
+									This parameter can be a value of @ref ADC_Operation_Mode */
+
+	u8 ADC_CvlistLen;				/*!< The number of valid items in the ADC conversion channel list is (ADC_CvlistLen + 1).
+									This parameter can be set to 0~15 */
+
+	u8 ADC_Cvlist[16];				/*!< Specifies the ADC channel conversion order. Each member should be
+									a value of @ref ADC_Chn_Selection */
+
+	u8 ADC_RxThresholdLevel;		/*!< Specifies the receive FIFO threshold level.
+							    		When the number of rx FIFO entries is greater than or equal to this
+							     		value +1, the receive FIFO full interrupt is triggered. */
+
+	u8  ADC_SpecialCh;			/*!< Specifies ADC particular channel. This parameter defines that ADC module
+									should send interrupt signal to system when a conversion which of channel
+									number is the same as this parameter. Default 0xFF means there is no need
+									to set particular channel. */
+
+	struct ADC_CHInitTypeDef ADC_Chan[8];			/*!< Specifies the initialization parameters for each channel */
+
+} ADC_InitTypeDef;
+
+/**
+  * @brief ADC Calibration Parameter Structure Definition
+  */
+typedef struct {
+	s32 cal_a;			/*!< Calibration coefficient A. */
+	s32 cal_b;			/*!< Calibration coefficient B. */
+	s32 cal_c;			/*!< Calibration coefficient C. */
+	u8 init_done;			/*!< Calibration parameter initialization done flag. */
+} ADC_CalParaTypeDef;
+
 /**
   * @brief ADC Oversample Ratio
   */
@@ -620,55 +668,6 @@ typedef enum {
 	ADC_OS_REGULAR   = 0x01, /*!< All oversampling conversions done in regular sequence */
 } ADC_OS_Mode;
 
-/* Exported types ------------------------------------------------------------*/
-/** @addtogroup ADC_Exported_Types ADC Exported Types
-  * @{
-  */
-
-/**
-  * @brief  ADC Channel Init Structure Definition
-  */
-struct ADC_CHInitTypeDef {
-	u8 ADC_InputSwing; // @ref ADC_Input_Swing_Selection
-	u16 ADC_SamplePeriodUs; // 0x1-0x400 when adc clk is xtal4m or 0x1-0x800 when adc clk is osc2m
-};
-
-/**
-  * @brief  ADC Init Structure Definition
-  */
-typedef struct {
-	u8 ADC_OpMode;				/*!< Specifies ADC operation mode.
-									This parameter can be a value of @ref ADC_Operation_Mode */
-
-	u8 ADC_CvlistLen;				/*!< The number of valid items in the ADC conversion channel list is (ADC_CvlistLen + 1).
-									This parameter can be set to 0~15 */
-
-	u8 ADC_Cvlist[16];				/*!< Specifies the ADC channel conversion order. Each member should be
-									the channel index */
-
-	u8 ADC_RxThresholdLevel;		/*!< Specifies the receive FIFO threshold level.
-							    		When the number of rx FIFO entries is greater than or equal to this
-							     		value +1, the receive FIFO full interrupt is triggered. */
-
-	u8  ADC_SpecialCh;			/*!< Specifies ADC particular channel. This parameter defines that ADC module
-									should send interrupt signal to system when a conversion which of channel
-									number is the same as this parameter. Default 0xFF means there is no need
-									to set particular channel. */
-
-	struct ADC_CHInitTypeDef ADC_Chan[8];			/*!< Specifies the initialization parameters for each channel */
-
-} ADC_InitTypeDef;
-
-/**
-  * @brief ADC Calibration Parameter Structure Definition
-  */
-typedef struct {
-	s32 cal_a;
-	s32 cal_b;
-	s32 cal_c;
-	u8 init_done; /* calibration parameter init done */
-} ADC_CalParaTypeDef;
-
 /**
   * @}
   */
@@ -681,22 +680,26 @@ typedef struct {
 /** @defgroup ADC_Chn_Selection ADC Channel Selection
   * @{
   */
-#define ADC_CH0						((u8)0x00)
-#define ADC_CH1						((u8)0x01)
-#define ADC_CH2						((u8)0x02)
-#define ADC_CH3						((u8)0x03)
-#define ADC_CH4						((u8)0x04)
-#define ADC_CH5						((u8)0x05)
-#define ADC_CH6						((u8)0x06)	// ADC internal channel
-#define ADC_CH7						((u8)0x07)	// ADC internal channel
-#define ADC_CH8						((u8)0x08)	// ADC internal channel
-#define ADC_CH9						((u8)0x09)	// ADC isolation channel
-#define ADC_DUMMY_CYCLE				((u8)0x0F)	// ADC dummy cycle
+#define ADC_CH0						((u8)0x00)  /*!< ADC channel 0 index. */
+#define ADC_CH1						((u8)0x01)  /*!< ADC channel 1 index. */
+#define ADC_CH2						((u8)0x02)  /*!< ADC channel 2 index. */
+#define ADC_CH3						((u8)0x03)  /*!< ADC channel 3 index. */
+#define ADC_CH4						((u8)0x04)  /*!< ADC channel 4 index. */
+#define ADC_CH5						((u8)0x05)  /*!< ADC channel 5 index. */
+/* Internal channels (CH6-CH8). */
+#define ADC_CH6						((u8)0x06)  /*!< ADC channel 6 index. */
+#define ADC_CH7						((u8)0x07)  /*!< ADC channel 7 index. */
+#define ADC_CH8						((u8)0x08)  /*!< ADC channel 8 index. */
+/* Isolation channel. */
+#define ADC_CH9						((u8)0x09)  /*!< ADC channel 9 index. */
+#define ADC_DUMMY_CYCLE				((u8)0x0F)  /*!< ADC dummy cycle channel. */
 
-#define ADC_CH_NUM					(9) // 6+3
-#define ADC_EXT_CH_NUM			(6)
-#define ADC_GLOBAL					((u8)0xFF)
+/* 6 external + 3 internal channels. */
+#define ADC_CH_NUM					(9)  /*!< Total number of ADC channels. */
+#define ADC_EXT_CH_NUM			(6)  /*!< Number of external ADC channels. */
+#define ADC_GLOBAL					((u8)0xFF)  /*!< Global ADC channel identifier. */
 
+/** @brief Check if ADC channel selection is valid. */
 #define IS_ADC_CHN_SEL(SEL)			(((SEL) == ADC_CH0) || \
 									((SEL) == ADC_CH1) || \
 									((SEL) == ADC_CH2) || \
@@ -715,12 +718,12 @@ typedef struct {
 /** @defgroup ADC_Chn_Pad_Selection ADC Channel Pad Selection
   * @{
   */
-#define ADC_CH0_PIN					(_PA_13)
-#define ADC_CH1_PIN					(_PA_14)
-#define ADC_CH2_PIN					(_PA_15)
-#define ADC_CH3_PIN					(_PA_16)
-#define ADC_CH4_PIN					(_PA_17)
-#define ADC_CH5_PIN					(_PA_18)
+#define ADC_CH0_PIN					(_PA_13)  /*!< Pin mapping for ADC channel 0. */
+#define ADC_CH1_PIN					(_PA_14)  /*!< Pin mapping for ADC channel 1. */
+#define ADC_CH2_PIN					(_PA_15)  /*!< Pin mapping for ADC channel 2. */
+#define ADC_CH3_PIN					(_PA_16)  /*!< Pin mapping for ADC channel 3. */
+#define ADC_CH4_PIN					(_PA_17)  /*!< Pin mapping for ADC channel 4. */
+#define ADC_CH5_PIN					(_PA_18)  /*!< Pin mapping for ADC channel 5. */
 /**
   * @}
   */
@@ -728,10 +731,11 @@ typedef struct {
 /** @defgroup ADC_Operation_Mode ADC Operation Mode
   * @{
   */
-#define ADC_SW_TRI_MODE				((u8)0x00)	// ADC software-trigger mode
-#define ADC_AUTO_MODE				((u8)0x01)	// ADC automatic mode
-#define ADC_TIM_TRI_MODE			((u8)0x02)	// ADC timer-trigger mode
+#define ADC_SW_TRI_MODE				((u8)0x00) /*!< ADC software-trigger operation mode. */
+#define ADC_AUTO_MODE				((u8)0x01) /*!< ADC automatic operation mode. */
+#define ADC_TIM_TRI_MODE			((u8)0x02) /*!< ADC timer-trigger operation mode. */
 
+/** @brief Check if ADC operation mode is valid. */
 #define IS_ADC_MODE(mode)		(((mode) == ADC_SW_TRI_MODE) || \
 								((mode) == ADC_AUTO_MODE) || \
 								((mode) == ADC_TIM_TRI_MODE))
@@ -742,7 +746,7 @@ typedef struct {
 /** @defgroup ADC_CH_Input_Type ADC Channel Input Type
   * @{
   */
-#define ADC_DIFFERENTIAL_CH(x)			((u32)0x00000001 << (x))
+#define ADC_DIFFERENTIAL_CH(x)			((u32)0x00000001 << (x))  /*!< Set channel x to differential input mode. */
 /**
   * @}
   */
@@ -750,10 +754,11 @@ typedef struct {
 /** @defgroup ADC_Compare_Control ADC Compare Control
   * @{
   */
-#define ADC_COMP_SMALLER_THAN_THL			((u8)0x00)	// Vin < ADC_COMP_TH_L
-#define ADC_COMP_GREATER_THAN_THH			((u8)0x01)	// Vin > ADC_COMP_TH_H
-#define ADC_COMP_WITHIN_THL_AND_THH			((u8)0x02)	// Vin >= ADC_COMP_TH_L &&  Vin <= ADC_COMP_TH_H
-#define ADC_COMP_OUTSIDE_THL_AND_THH		((u8)0x03)	// Vin < ADC_COMP_TH_L  || Vin > ADC_COMP_TH_H
+#define ADC_COMP_SMALLER_THAN_THL			((u8)0x00) /*!< Compare criterion: Vin below lower threshold. */
+#define ADC_COMP_GREATER_THAN_THH			((u8)0x01) /*!< Compare criterion: Vin above upper threshold. */
+#define ADC_COMP_WITHIN_THL_AND_THH			((u8)0x02) /*!< Compare criterion: Vin within lower and upper thresholds. */
+#define ADC_COMP_OUTSIDE_THL_AND_THH		((u8)0x03) /*!< Compare criterion: Vin outside lower and upper thresholds. */
+/** @brief Check if ADC comparison criteria is valid. */
 #define IS_ADC_COMP_CRITERIA(rule)			(((rule) == ADC_COMP_SMALLER_THAN_THL) || \
 											((rule) == ADC_COMP_GREATER_THAN_THH) || \
 											((rule) == ADC_COMP_WITHIN_THL_AND_THH) || \
@@ -765,7 +770,7 @@ typedef struct {
 /** @defgroup ADC_Compare_Threshold ADC Compare Threshold
   * @{
   */
-#define IS_ADC_VALID_COMP_TH(x)				((x) < 0x10000)
+#define IS_ADC_VALID_COMP_TH(x)				((x) < 0x10000)  /*!< Check if ADC comparison threshold value is valid. */
 /**
   * @}
   */
@@ -773,7 +778,7 @@ typedef struct {
 /** @defgroup ADC_Valid_Timer ADC Valid Timer
   * @{
   */
-#define IS_ADC_VALID_TIM(idx)				((idx) < 8)
+#define IS_ADC_VALID_TIM(idx)				((idx) < 8)  /*!< Check if ADC timer index value is valid. */
 /**
   * @}
   */
@@ -781,6 +786,7 @@ typedef struct {
 /** @defgroup ADC_Interrupt_Control ADC Interrupt Control
   * @{
   */
+/** @brief Bitmask enabling all ADC interrupts. */
 #define ADC_BIT_IT_ALL_EN				(ADC_BIT_IT_COMP_CH7_EN   |\
 										ADC_BIT_IT_COMP_CH6_EN   |\
 										ADC_BIT_IT_COMP_CH5_EN   |\
@@ -804,6 +810,7 @@ typedef struct {
   * @{
   */
 
+/** @brief Bitmask of all channel comparison interrupt status bits. */
 #define ADC_BIT_IT_COMP_ALL_STS				(ADC_BIT_IT_COMP_CH0_STS | \
 											ADC_BIT_IT_COMP_CH1_STS | \
 											ADC_BIT_IT_COMP_CH2_STS | \
@@ -813,6 +820,7 @@ typedef struct {
 											ADC_BIT_IT_COMP_CH6_STS | \
 											ADC_BIT_IT_COMP_CH7_STS)
 
+/** @brief Bitmask of all ADC interrupt status bits. */
 #define ADC_BIT_IT_ALL_STS					(ADC_BIT_IT_COMP_ALL_STS | \
 											ADC_BIT_IT_DAT_OVW_STS |\
 											ADC_BIT_IT_FIFO_EMPTY_STS |\
@@ -828,8 +836,8 @@ typedef struct {
 /** @defgroup ADC_CHSW_List ADC Channel Switch List
   * @{
   */
-#define ADC_SHIFT_CHSW0(x)						(4*(x))
-#define ADC_SHIFT_CHSW1(x)						(4*((x) - 8))
+#define ADC_SHIFT_CHSW0(x)						(4*(x))  /*!< Bit shift for channel switch list 0 entry x. */
+#define ADC_SHIFT_CHSW1(x)						(4*((x) - 8))  /*!< Bit shift for channel switch list 1 entry x. */
 /**
   * @}
   */
@@ -837,16 +845,16 @@ typedef struct {
 /** @defgroup ADC_Comparison_Setting ADC Comparison Setting
   * @{
   */
-#define ADC_SHIFT_COMP_CTRL_CH(x)				(2*x)
-#define ADC_MASK_COMP_CTRL_CH(x)				(u32)(0x00000003 << ADC_SHIFT_COMP_CTRL_CH(x))
+#define ADC_SHIFT_COMP_CTRL_CH(x)				(2*x)  /*!< Bit shift for comparison control of channel x. */
+#define ADC_MASK_COMP_CTRL_CH(x)				(u32)(0x00000003 << ADC_SHIFT_COMP_CTRL_CH(x))  /*!< Bitmask for comparison control of channel x. */
 
-#define ADC_SHIFT_COMP_STS_CH(x)				(2*x)
-#define ADC_MASK_COMP_STS_CH(x)					(u32)(0x00000003 << ADC_SHIFT_COMP_STS_CH(x))
+#define ADC_SHIFT_COMP_STS_CH(x)				(2*x)  /*!< Bit shift for comparison status of channel x. */
+#define ADC_MASK_COMP_STS_CH(x)					(u32)(0x00000003 << ADC_SHIFT_COMP_STS_CH(x)) /*!< Bitmask for comparison status of channel x. */
 
-#define ADC_IT_COMP_CH_EN(x)					((u32)0x00000001 << ((8+x)))
+#define ADC_IT_COMP_CH_EN(x)					((u32)0x00000001 << ((8+x))) /*!< Comparison interrupt enable bit for channel x. */
 
-#define ADC_COMP_LEVEL_DETECT					(0x0)
-#define ADC_COMP_EDGE_DETECT					(0x1)
+#define ADC_COMP_LEVEL_DETECT					(0x0) /*!< Comparison interrupt detection mode: level. */
+#define ADC_COMP_EDGE_DETECT					(0x1) /*!< Comparison interrupt detection mode: edge. */
 
 /**
   * @}
@@ -855,7 +863,7 @@ typedef struct {
 /** @defgroup ADC_Data_Setting ADC Data Setting
   * @{
   */
-#define ADC_ID_AND_DATA(x)						((u32)((x) & 0x000FFFFF))
+#define ADC_ID_AND_DATA(x)						((u32)((x) & 0x000FFFFF)) /*!< Extract channel ID and conversion data from ADC register value. */
 
 /**
   * @}
@@ -864,22 +872,22 @@ typedef struct {
 /** @defgroup ADC_Vref_Selection ADC Vref Selection
   * @{
   */
-#define ADC_VREF_1P45						((u8)0x00)
-#define ADC_VREF_1P5						((u8)0x01)
-#define ADC_VREF_1P55						((u8)0x02)
-#define ADC_VREF_1P6						((u8)0x03)
-#define ADC_VREF_1P65						((u8)0x04)
-#define ADC_VREF_1P7						((u8)0x05)
-#define ADC_VREF_1P75						((u8)0x06)
-#define ADC_VREF_1P8						((u8)0x07)
-#define ADC_VREF_1P85						((u8)0x08)
-#define ADC_VREF_1P875					((u8)0x09)
-#define ADC_VREF_1P9						((u8)0x0A)
-#define ADC_VREF_1P95						((u8)0x0B)
-#define ADC_VREF_2P0						((u8)0x0C)
-#define ADC_VREF_2P05						((u8)0x0D)
-#define ADC_VREF_2P1						((u8)0x0E)
-#define ADC_VREF_2P15						((u8)0x0F)
+#define ADC_VREF_1P45						((u8)0x00) /*!< ADC reference voltage 1.45 V. */
+#define ADC_VREF_1P5						((u8)0x01) /*!< ADC reference voltage 1.50 V. */
+#define ADC_VREF_1P55						((u8)0x02) /*!< ADC reference voltage 1.55 V. */
+#define ADC_VREF_1P6						((u8)0x03) /*!< ADC reference voltage 1.60 V. */
+#define ADC_VREF_1P65						((u8)0x04) /*!< ADC reference voltage 1.65 V. */
+#define ADC_VREF_1P7						((u8)0x05) /*!< ADC reference voltage 1.70 V. */
+#define ADC_VREF_1P75						((u8)0x06) /*!< ADC reference voltage 1.75 V. */
+#define ADC_VREF_1P8						((u8)0x07) /*!< ADC reference voltage 1.80 V. */
+#define ADC_VREF_1P85						((u8)0x08) /*!< ADC reference voltage 1.85 V. */
+#define ADC_VREF_1P875						((u8)0x09) /*!< ADC reference voltage 1.875 V. */
+#define ADC_VREF_1P9						((u8)0x0A) /*!< ADC reference voltage 1.90 V. */
+#define ADC_VREF_1P95						((u8)0x0B) /*!< ADC reference voltage 1.95 V. */
+#define ADC_VREF_2P0						((u8)0x0C) /*!< ADC reference voltage 2.00 V. */
+#define ADC_VREF_2P05						((u8)0x0D) /*!< ADC reference voltage 2.05 V. */
+#define ADC_VREF_2P1						((u8)0x0E) /*!< ADC reference voltage 2.10 V. */
+#define ADC_VREF_2P15						((u8)0x0F) /*!< ADC reference voltage 2.15 V. */
 /**
   * @}
   */
@@ -887,9 +895,9 @@ typedef struct {
 /** @defgroup ADC_OTP_Address_Setting ADC OTP Address Setting
   * @{
   */
-#define NORM_VOL_ADDR			0x7DA // OTP address for normal channel voltage calibration
-#define INTER_R_ADDR			0x7EC // OTP address for internal resistance
-#define VREF_SEL_ADDR			0x7E4 // OTP address for vref selection
+#define NORM_VOL_ADDR			0x7DA /*!< OTP address for normal channel voltage calibration. */
+#define INTER_R_ADDR			0x7EC /*!< OTP address for internal resistance calibration. */
+#define VREF_SEL_ADDR			0x7E4 /*!< OTP address for voltage reference selection. */
 /**
   * @}
   */
@@ -934,9 +942,6 @@ _LONG_CALL_ u32 ADC_GetStatus(void);
 _LONG_CALL_ void ADC_SWTrigCmd(u32 NewState);
 _LONG_CALL_ void ADC_AutoCSwCmd(u32 NewState);
 _LONG_CALL_ void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState);
-_LONG_CALL_ void ADC_SetDmaEnable(u32 newState);
-_LONG_CALL_ u32 ADC_RXGDMA_Init(GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc,
-								u8 *pDataBuf, u32 DataLen);
 _LONG_CALL_ void ADC_SetOverSample(ADC_OS_Shift OS_Shift, ADC_OS_Ratio OS_Ratio, ADC_OS_Mode OS_Mode);
 _LONG_CALL_ void ADC_SetBreakTO(u16 TimeOutCnt);
 _LONG_CALL_ void ADC_KeepPowerCmd(u32 NewState);

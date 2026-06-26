@@ -23,7 +23,7 @@ struct WakeEvent_TypeDef {
 };
 
 struct PSCFG_TypeDef {
-	u8 keep_osc2p5m_on;			/* keep OSC2.5M on or off for sleep and dslp*/
+	u8 keep_osc2m_on;			/* keep OSC2M on or off for sleep and dslp*/
 	u8 xtal_mode_in_sleep;		/* set xtal mode during sleep mode*/
 };
 

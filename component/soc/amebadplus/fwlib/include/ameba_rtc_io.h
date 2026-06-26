@@ -40,23 +40,24 @@ extern "C" {
   * @brief RTC_IO work mode
   * @{
   */
-#define MODE_SHIFT_DISABLE						(0)
-#define MODE_SHIFT_ENABLE						(1)
-#define MODE_RTC_START							(2)
+#define MODE_SHIFT_DISABLE						(0) /*!< Shift mode disabled. */
+#define MODE_SHIFT_ENABLE						(1) /*!< Shift mode enabled. */
+#define MODE_RTC_START							(2) /*!< RTC start mode. */
 /** @} */
 
 /** @defgroup RTC_IO_RECV_RVAL RTC IO RECV RVAL
   * @brief RTC_IO recv new Rval or Reset value
   * @{
   */
-#define RTCIO_RECV_RVAL_RST						TRUE
-#define RTCIO_RECV_RVAL_CAL						FALSE
+#define RTCIO_RECV_RVAL_RST						TRUE /*!< Receive new reset value. */
+#define RTCIO_RECV_RVAL_CAL						FALSE /*!< Receive calibrated value. */
 /** @} */
 
 /** @defgroup RTC_IO_Time_Convert RTC IO Time Convert
   * @brief Time Convert from TIME_PRE to TIME_POST
   * @{
   */
+/** @brief Step time value with carry propagation. */
 #define TIME_STEP(TIME_PRE, TIME_STEP_CNT, MOD_NUM, TIME_POST) do {\
 		TIME_POST = (TIME_PRE + TIME_STEP_CNT) % MOD_NUM; \
 		TIME_STEP_CNT = (TIME_PRE + TIME_STEP_CNT) / MOD_NUM; \
@@ -74,14 +75,14 @@ extern "C" {
   * @brief RTCIO_TimeInfo Structure Definition
   */
 typedef struct {//Take Care!!! member's Order and Size are forbidden change
-	u32 Bkup_Seconds;
-	u32 Bkup_Minutes;
-	u32 Bkup_Hours;
-	u32 Bkup_Days;
-	u32 Bkup_Year;//time stored before power down; fmt: 24H
+	u32 Bkup_Seconds; /*!< Backed-up seconds before power down (0-59). */
+	u32 Bkup_Minutes; /*!< Backed-up minutes before power down (0-59). */
+	u32 Bkup_Hours;   /*!< Backed-up hours before power down, 24-hour format (0-23). */
+	u32 Bkup_Days;    /*!< Backed-up days before power down. */
+	u32 Bkup_Year;    /*!< Backed-up year before power down, 24-hour format. */
 	//u8 padding; //align RTC_TimeTypeDef
 
-	u32 Pwd_Counter;//counter in power off; unit: second
+	u32 Pwd_Counter;  /*!< Counter elapsed during power-off period, unit: second. */
 } RTCIO_TimeInfo;
 /** @} */
 
@@ -90,6 +91,7 @@ typedef struct {//Take Care!!! member's Order and Size are forbidden change
 /** @} */
 /// @endcond
 
+/// @cond
 /* following shouldn't be placed into ebook -------------------------------*/
 
 /* start defgroup RTC_IO_test_din */
@@ -155,7 +157,7 @@ typedef struct {//Take Care!!! member's Order and Size are forbidden change
 
 #define RTC_HOUR_FMT_NOTIFY_24H_AM				(0)										/* Notify: AM or 24-hour */
 #define RTC_HOUR_FMT_NOTIFY_PM					(1)										/* Notify: PM*/
-
+/// @endcond
 
 _LONG_CALL_ void RTCIO_SetWorkMode(u32 Mode);
 _LONG_CALL_ u32 RTCIO_GetWorkMode(void);

@@ -11,11 +11,12 @@
  * @{
  */
 
-/** @defgroup LCDC
+/** @defgroup LCDC LCDC
  * @brief LCDC driver modules
  * @{
  */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -570,6 +571,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -580,13 +582,17 @@ extern "C" {
 //Please add your definition here
 /* Exported Types --------------------------------------------------------*/
 
+/** @addtogroup LCDC_Exported_Types
+ * @{
+ */
+
 typedef struct {
 	u32	IfWidth;					/*!< Specifies the LCDC MCU Interface Mode.
 											This parameter can be a value of @ref LCDC_MCU_IF_WIDTH_DEFINE in MCU I/F MODE,
 											This parameter can be a value of @ref LCDC_RGB_IF_WIDTH_DEFINE in RGB I/F MODE */
-	u32	ImgHeight;				/*!< Specifies the height of the LCDC PlANE SIZE.
+	u32	ImgHeight;				/*!< Specifies the height of the LCDC plane size.
 											This parameter can be a number between 0x000 and 0xfff. */
-	u32	ImgWidth;					/*!< Specifies the width of the LCDC PlANE SIZE.
+	u32	ImgWidth;					/*!< Specifies the width of the LCDC plane size.
 											This parameter can be a number between 0x000 and 0xfff. */
 	u32	InputFormat;				/*!< Specifies the input format.
 											This parameter can be a value @ref LCDC_INPUT_FORMAT_DEFINE. */
@@ -601,20 +607,20 @@ typedef struct {
 											This parameter can be a number between 0x1 and 0x10. Unit: line*/
 	u32 RgbVbp;					/*!< Specifies the back porch line number.
 											This parameter can be a number between 0x1 and 0x10. Unit: line*/
-	u32 RgbVsw;					/*!< Specifies the vertical signal width.
+	u32 RgbVsw;					/*!< Specifies the vertical sync signal width.
 											This parameter can be a number between 0x1 and 0x10. Unit: line*/
-	u32 RgbHfp;					/*!< Specifies the Horizontal front porch Unit: DCLK.
+	u32 RgbHfp;					/*!< Specifies the horizontal front porch.
 											This parameter can be a number between 0x01 and 0x100. Unit: DCLK*/
-	u32 RgbHbp;					/*!< Specifies the Horizontal back porch Unit: DCLK.
+	u32 RgbHbp;					/*!< Specifies the horizontal back porch.
 											This parameter can be a number between 0x01 and 0x100. Unit: DCLK*/
-	u32 RgbHsw;					/*!< Specifies the Horizontal sync signal width.
+	u32 RgbHsw;					/*!< Specifies the horizontal sync signal width.
 											This parameter can be a number between 0x01 and 0x100. Unit: DCLK*/
-	struct {
-		u8 RgbEnPolar;			/*!< Specifies the RGB ENABLE pulse polariy.
+	struct Panel_RgbSignalPolarityDef {
+		u8 RgbEnPolar;			/*!< Specifies the RGB ENABLE pulse polarity.
 											This parameter can be  a value of @ref LCDC_RGB_ENABLE_PUL_POLARITY_DEFINE */
-		u8 RgbHsPolar;			/*!< Specifies the RGB HSYNC pulse polariy.
+		u8 RgbHsPolar;			/*!< Specifies the RGB HSYNC pulse polarity.
 											This parameter can be  a value of @ref LCDC_RGB_HSYNC_PUL_POLARITY_DEFINE */
-		u8 RgbVsPolar;			/*!< Specifies the RGB VSYNC pulse polariy.
+		u8 RgbVsPolar;			/*!< Specifies the RGB VSYNC pulse polarity.
 											This parameter can be  a value of @ref LCDC_RGB_VSYNC_PUL_POLARITY_DEFINE */
 		u8 RgbDclkActvEdge;		/*!< Specifies the RGB DCLK active edge.
 											This parameter can be  a value of @ref LCDC_RGB_DCLK_ACTIVE_EDGE_DEFINE */
@@ -639,21 +645,17 @@ typedef struct {
 } Panel_McuTimingDef;
 
 typedef struct {
-	u16 TriggerDma;//1: trigger, 0: auto
-
-	u16 TeMode;//1: te mode, 0: not te_mode
-	u32 TeDelay;
+	u16 TriggerDma; /*!< Specifies the DMA trigger mode. 1: one-shot trigger mode, 0: auto-refresh mode. */
+	u16 TeMode;     /*!< Specifies whether TE synchronization is enabled. 1: TE mode enabled, 0: TE mode disabled. */
+	u32 TeDelay;    /*!< Specifies the delay from the TE signal to frame transfer start. Unit: WR pulse width. Must be >= 5. */
 } Lcdc_McuDmaCfgDef;
 
 /**
  * @brief  LCDC MCU I/F Mode Initialization structure definition
  */
 typedef struct {
-	/* config panel info */
-	Panel_InitDef Panel_Init;
-
-	/* config signal timing info */
-	Panel_McuTimingDef Panel_McuTiming;
+	Panel_InitDef Panel_Init;               /*!< Specifies the panel configuration, including interface width, image size, and color format. */
+	Panel_McuTimingDef Panel_McuTiming;     /*!< Specifies the MCU signal timing configuration, including pulse polarity settings. */
 } LCDC_MCUInitTypeDef;
 
 
@@ -661,11 +663,8 @@ typedef struct {
  * @brief LCDC RGB I/F Mode Initialization structure definition
  */
 typedef struct {
-	/* config panel info */
-	Panel_InitDef Panel_Init;
-
-	/* config signal timing info */
-	Panel_RgbTimingDef Panel_RgbTiming;
+	Panel_InitDef Panel_Init;               /*!< Specifies the panel configuration, including interface width, image size, and color format. */
+	Panel_RgbTimingDef Panel_RgbTiming;     /*!< Specifies the RGB signal timing configuration, including HSYNC/VSYNC parameters and signal polarities. */
 } LCDC_RGBInitTypeDef;
 
 /** @} */
@@ -676,15 +675,18 @@ typedef struct {
  * @{
  */
 
-/** @defgroup LCDC_MCU_IF_WIDTH_DEFINE
+/** @defgroup LCDC_MCU_IF_WIDTH_DEFINE LCDC MCU IF Width Define
  * @{
  */
-#define LCDC_MCU_IF_8_BIT						(0x0)		/* support RGB565/RG888 */
-#define LCDC_MCU_IF_16_BIT						(0x1)		/* support RGB565 */
-#define LCDC_MCU_IF_9_BIT						(0x2)		/* support RGB666 */
-#define LCDC_MCU_IF_18_BIT						(0x3)		/* support RGB666 */
-#define LCDC_MCU_IF_24_BIT						(0x4)		/* support RGB888 */
+#define LCDC_MCU_IF_8_BIT						(0x0)		/*!< MCU 8-bit interface mode, supports RGB565/RGB888 */
+#define LCDC_MCU_IF_16_BIT						(0x1)		/*!< MCU 16-bit interface mode, supports RGB565 */
+/// @cond
+#define LCDC_MCU_IF_9_BIT						(0x2)		/*!< MCU 9-bit interface mode, supports RGB666 */
+#define LCDC_MCU_IF_18_BIT						(0x3)		/*!< MCU 18-bit interface mode, supports RGB666 */
+/// @endcond
+#define LCDC_MCU_IF_24_BIT						(0x4)		/*!< MCU 24-bit interface mode, supports RGB888 */
 
+/** @brief Check whether the parameter is a valid LCDC MCU interface width mode. */
 #define IS_LCDC_MCU_IF_MODE(MODE)				(((MODE) == LCDC_MCU_IF_8_BIT) || \
 												((MODE) == LCDC_MCU_IF_16_BIT) || \
 												((MODE) == LCDC_MCU_IF_9_BIT) || \
@@ -694,15 +696,18 @@ typedef struct {
 /** @} */
 
 
-/** @defgroup LCDC_RGB_IF_WIDTH_DEFINE
+/** @defgroup LCDC_RGB_IF_WIDTH_DEFINE LCDC RGB IF Width Define
  * @{
  */
-#define LCDC_RGB_IF_6_BIT						(0x8)		/* support RGB565/RGB666 */
-#define LCDC_RGB_IF_16_BIT						(0x9)		/* support RGB565 */
-#define LCDC_RGB_IF_18_BIT						(0xa)		/* support RGB666 */
-#define LCDC_RGB_IF_8_BIT						(0xb)		/* support RGB888 */
-#define LCDC_RGB_IF_24_BIT						(0xc)		/* support RGB888 */
+#define LCDC_RGB_IF_6_BIT						(0x8)		/*!< RGB 6-bit parallel interface mode, supports RGB565/RGB666 */
+#define LCDC_RGB_IF_16_BIT						(0x9)		/*!< RGB 16-bit parallel interface mode, supports RGB565 */
+/// @cond
+#define LCDC_RGB_IF_18_BIT						(0xa)		/*!< RGB 18-bit parallel interface mode, supports RGB666 */
+/// @endcond
+#define LCDC_RGB_IF_8_BIT						(0xb)		/*!< RGB 8-bit parallel interface mode, supports RGB888 */
+#define LCDC_RGB_IF_24_BIT						(0xc)		/*!< RGB 24-bit parallel interface mode, supports RGB888 */
 
+/** @brief Check whether the parameter is a valid LCDC RGB interface width mode. */
 #define IS_LCDC_RGB_IF_MODE(MODE)				(((MODE) == LCDC_RGB_IF_6_BIT) || \
 												((MODE) == LCDC_RGB_IF_16_BIT) || \
 												((MODE) == LCDC_RGB_IF_18_BIT) || \
@@ -712,24 +717,26 @@ typedef struct {
 /** @} */
 
 
-/** @defgroup LCDC_DMA_UNDERFLOW_MODE_DEFINE
+/** @defgroup LCDC_DMA_UNDERFLOW_MODE_DEFINE LCDC DMA Underflow Mode Define
  * @{
  */
-#define LCDC_DMA_UNDFLW_OUTPUT_LASTDATA			(0x0)
-#define LCDC_DMA_UNDFLW_OUTPUT_ERRORDATA		(0x1)
+#define LCDC_DMA_UNDFLW_OUTPUT_LASTDATA			(0x0)   /*!< DMA underflow outputs last valid data */
+#define LCDC_DMA_UNDFLW_OUTPUT_ERRORDATA		(0x1)   /*!< DMA underflow outputs configured error data */
+/** @brief Check if LCDC DMA underflow output mode is valid. */
 #define IS_LCDC_DMA_UNDFLOW_MODE(MODE)		(((MODE) == LCDC_DMA_UNDFLW_OUTPUT_LASTDATA) || \
 												((MODE) == LCDC_DMA_UNDFLW_OUTPUT_ERRORDATA))
 
 /** @} */
 
-/** @defgroup LCDC_DMA_UNDERFLOW_OPTION_DEFINE
+/** @defgroup LCDC_DMA_UNDERFLOW_OPTION_DEFINE LCDC DMA Underflow Option Define
  * @{
  */
-#define LCDC_DMA_UNDFLOW_INSTANT_ERRDATA_CURFRAME		(0x0)
-#define LCDC_DMA_UNDFLOW_PAUSE_ERRDATA_CURFRAME			(0x1)
-#define LCDC_DMA_UNDFLOW_INSTANT_DROP_LINE				(0x2)
-#define LCDC_DMA_UNDFLOW_PAUSE_DROP_LINE				(0x3)
+#define LCDC_DMA_UNDFLOW_INSTANT_ERRDATA_CURFRAME		(0x0)   /*!< Instantly output error data on current frame at underflow */
+#define LCDC_DMA_UNDFLOW_PAUSE_ERRDATA_CURFRAME			(0x1)   /*!< Pause then output error data on current frame at underflow */
+#define LCDC_DMA_UNDFLOW_INSTANT_DROP_LINE				(0x2)   /*!< Instantly enter drop mode at underflow */
+#define LCDC_DMA_UNDFLOW_PAUSE_DROP_LINE				(0x3)   /*!< Pause then enter drop mode at underflow */
 
+/** @brief Check if LCDC DMA underflow option is valid. */
 #define IS_LCDC_DMA_UNDFLOW_OPTION(OPT)					(((OPT) == LCDC_DMA_UNDFLOW_INSTANT_ERRDATA_CURFRAME) || \
 														((OPT) == LCDC_DMA_UNDFLOW_PAUSE_ERRDATA_CURFRAME) || \
 														((OPT) == LCDC_DMA_UNDFLOW_INSTANT_DROP_LINE) || \
@@ -737,24 +744,26 @@ typedef struct {
 
 /** @} */
 
-/** @defgroup LCDC_DMA_MODE_DEFINE
+/** @defgroup LCDC_DMA_MODE_DEFINE LCDC DMA Mode Define
  * @{
  */
-#define LCDC_AUTO_DMA_MODE						(0x0)
-#define LCDC_TRIGGER_DMA_MODE					(0x1)
+#define LCDC_AUTO_DMA_MODE						(0x0)   /*!< DMA auto-refresh mode */
+#define LCDC_TRIGGER_DMA_MODE					(0x1)   /*!< DMA manual trigger mode */
 
+/** @brief Check if LCDC DMA mode is valid. */
 #define IS_LCDC_DMA_MODE(MODE)					(((MODE) == LCDC_AUTO_DMA_MODE) || \
 												((MODE) == LCDC_TRIGGER_DMA_MODE))
 
 /** @} */
 
-/** @defgroup LCDC_DMA_BURST_SIZE
+/** @defgroup LCDC_DMA_BURST_SIZE LCDC DMA Burst Size
  * @{
  */
-#define LCDC_DMA_BURSTSIZE_1X64BYTES			(0x0)
-#define LCDC_DMA_BURSTSIZE_2X64BYTES			(0x1)
-#define LCDC_DMA_BURSTSIZE_4X64BYTES			(0x2)
+#define LCDC_DMA_BURSTSIZE_1X64BYTES			(0x0)   /*!< DMA burst size: 1x64 bytes (AXI 64-byte burst). */
+#define LCDC_DMA_BURSTSIZE_2X64BYTES			(0x1)   /*!< DMA burst size: 2x64 bytes (AXI 128-byte burst). */
+#define LCDC_DMA_BURSTSIZE_4X64BYTES			(0x2)   /*!< DMA burst size: 4x64 bytes (AXI 256-byte burst). */
 
+/** @brief Check if LCDC DMA burst size is valid. */
 #define IS_LCDC_DMA_BURSTSIZE(x)				(((x) == LCDC_DMA_BURSTSIZE_1X64BYTES) || \
 												((x) == LCDC_DMA_BURSTSIZE_2X64BYTES) || \
 												((x) == LCDC_DMA_BURSTSIZE_4X64BYTES) )
@@ -763,9 +772,10 @@ typedef struct {
 
 
 
-/** @defgroup LCDC_INTR_TYPE_DEFINE
+/** @defgroup LCDC_INTR_TYPE_DEFINE LCDC INTR Type Define
  * @{
  */
+/** @brief Bitmask of all valid LCDC interrupt type bits */
 #define LCDC_INTR_TYPE_MASK						(LCDC_BIT_FRM_START_INTEN | \
 												LCDC_BIT_IO_TIMEOUT_INTEN | \
 												LCDC_BIT_LCD_LIN_INTEN | \
@@ -773,14 +783,16 @@ typedef struct {
 												LCDC_BIT_PANEL_TE_INTEN | \
 												LCDC_BIT_DMA_UN_INTEN)
 
+/** @brief Check if LCDC interrupt type bitmask is valid. */
 #define IS_LCDC_INTR_TYPE(TYPE)					(((TYPE) & (~LCDC_INTR_TYPE_MASK)) == 0)
 
 /** @} */
 
 
-/** @defgroup LCDC_INTR_STATUS_DEFINE
+/** @defgroup LCDC_INTR_STATUS_DEFINE LCDC INTR Status Define
  * @{
  */
+/** @brief Bitmask of all LCDC interrupt status bits */
 #define LCDC_INTR_STATUS_ALL_BITS			(LCDC_BIT_FRM_START_INTS | \
 											LCDC_BIT_IO_TIMEOUT_INTS | \
 											LCDC_BIT_LCD_LIN_INTS | \
@@ -788,234 +800,259 @@ typedef struct {
 											LCDC_BIT_PANEL_TE_INTS | \
 											LCDC_BIT_DMA_UN_INTS)
 
+/** @brief Check if LCDC interrupt status bitmask is valid. */
 #define IS_LCDC_INTR_STATUS(TYPE)			(((TYPE) & ~LCDC_INTR_STATUS_ALL_BITS) == 0)
 
 /** @} */
 
 
-/** @defgroup LCDC_RGB_SYNC_MODE_DEFINE
+/** @defgroup LCDC_RGB_SYNC_MODE_DEFINE LCDC RGB Sync Mode Define
  * @{
  */
-#define LCDC_RGB_DE_MODE						(0)
-#define LCDC_RGB_HV_MODE						(1)
-#define LCDC_RGB_TE_MODE						(2)
+#define LCDC_RGB_DE_MODE						(0)   /*!< RGB DE (data enable) synchronization mode. */
+#define LCDC_RGB_HV_MODE						(1)   /*!< RGB HV (HSYNC/VSYNC) synchronization mode. */
+#define LCDC_RGB_TE_MODE						(2)   /*!< RGB TE (tearing effect) synchronization mode. */
 
+/** @brief Check if LCDC RGB synchronization mode is valid. */
 #define IS_LCDC_RGB_SYNC_MODE(MODE)				(((MODE) == LCDC_RGB_DE_MODE) || \
 												((MODE) == LCDC_RGB_HV_MODE) || \
 												((MODE) == LCDC_RGB_TE_MODE))
 
 /** @} */
 
-/** @defgroup LCDC_RGB_DMA_MODE_DEFINE
+/** @defgroup LCDC_RGB_DMA_MODE_DEFINE LCDC RGB DMA Mode Define
  * @{
  */
-#define LCDC_RGB_DMA_AUTO_MODE					(0)
-#define LCDC_RGB_DMA_TRIGGER_MODE				(1)
+#define LCDC_RGB_DMA_AUTO_MODE					(0)   /*!< RGB DMA auto-refresh mode. */
+#define LCDC_RGB_DMA_TRIGGER_MODE				(1)   /*!< RGB DMA manual trigger mode. */
 
+/** @brief Check if LCDC RGB DMA mode is valid. */
 #define IS_LCDC_RGB_DMA_MODE(MODE)				(((MODE) == LCDC_RGB_DMA_AUTO_MODE) || \
 												((MODE) == LCDC_RGB_DMA_TRIGGER_MODE) )
 
 /** @} */
 
-/** @defgroup LCDC_RGB_DATA_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_RGB_DATA_PUL_POLARITY_DEFINE LCDC RGB Data Pulse Polarity Define
  * @{
  */
-#define LCDC_RGB_DAT_PUL_NORMAL					(0)
-#define LCDC_RGB_DAT_PUL_INVERT					(1)
+#define LCDC_RGB_DAT_PUL_NORMAL					(0)   /*!< RGB data pulse polarity: normal. */
+#define LCDC_RGB_DAT_PUL_INVERT					(1)   /*!< RGB data pulse polarity: inverted. */
+/** @brief Check if LCDC RGB data pulse polarity is valid. */
 #define IS_LCDC_RGB_DAT_PUL_POLARITY(POLARITY)	(((POLARITY) == LCDC_RGB_DAT_PUL_NORMAL) || \
 												((POLARITY) == LCDC_RGB_DAT_PUL_INVERT))
 
 /** @} */
 
 
-/** @defgroup LCDC_RGB_ENABLE_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_RGB_ENABLE_PUL_POLARITY_DEFINE LCDC RGB Enable Pulse Polarity Define
  * @{
  */
-#define LCDC_RGB_EN_PUL_LOW_LEV_ACTIVE			(0)
-#define LCDC_RGB_EN_PUL_HIGH_LEV_ACTIVE			(1)
+#define LCDC_RGB_EN_PUL_LOW_LEV_ACTIVE			(0)   /*!< RGB ENABLE pulse: low level active. */
+#define LCDC_RGB_EN_PUL_HIGH_LEV_ACTIVE			(1)   /*!< RGB ENABLE pulse: high level active. */
 
+/** @brief Check if LCDC RGB enable pulse polarity is valid. */
 #define IS_LCDC_RGB_EN_PUL_POLARITY(POLARITY)	(((POLARITY) == LCDC_RGB_EN_PUL_LOW_LEV_ACTIVE) || \
 												((POLARITY) == LCDC_RGB_EN_PUL_HIGH_LEV_ACTIVE))
 
 /** @} */
 
 
-/** @defgroup LCDC_RGB_HSYNC_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_RGB_HSYNC_PUL_POLARITY_DEFINE LCDC RGB HSYNC Pulse Polarity Define
  * @{
  */
-#define LCDC_RGB_HS_PUL_LOW_LEV_SYNC			(0)
-#define LCDC_RGB_HS_PUL_HIGH_LEV_SYNC			(1)
+#define LCDC_RGB_HS_PUL_LOW_LEV_SYNC			(0)   /*!< RGB HSYNC pulse: low level synchronization. */
+#define LCDC_RGB_HS_PUL_HIGH_LEV_SYNC			(1)   /*!< RGB HSYNC pulse: high level synchronization. */
+/** @brief Check if LCDC RGB HSYNC pulse polarity is valid. */
 #define IS_LCDC_RGB_HS_PUL_POLARITY(POLARITY)	(((POLARITY) == LCDC_RGB_HS_PUL_LOW_LEV_SYNC) || \
 												((POLARITY) == LCDC_RGB_HS_PUL_HIGH_LEV_SYNC))
 
 /** @} */
 
-/** @defgroup LCDC_RGB_VSYNC_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_RGB_VSYNC_PUL_POLARITY_DEFINE LCDC RGB VSYNC Pulse Polarity Define
  * @{
  */
-#define LCDC_RGB_VS_PUL_LOW_LEV_SYNC			(0)
-#define LCDC_RGB_VS_PUL_HIGH_LEV_SYNC			(1)
+#define LCDC_RGB_VS_PUL_LOW_LEV_SYNC			(0)   /*!< RGB VSYNC pulse: low level synchronization. */
+#define LCDC_RGB_VS_PUL_HIGH_LEV_SYNC			(1)   /*!< RGB VSYNC pulse: high level synchronization. */
+/** @brief Check if LCDC RGB VSYNC pulse polarity is valid. */
 #define IS_LCDC_RGB_VS_PUL_POLARITY(POLARITY)	(((POLARITY) == LCDC_RGB_VS_PUL_LOW_LEV_SYNC) || \
 												((POLARITY) == LCDC_RGB_VS_PUL_HIGH_LEV_SYNC))
 
 /** @} */
 
-/** @defgroup LCDC_RGB_DCLK_ACTIVE_EDGE_DEFINE
+/** @defgroup LCDC_RGB_DCLK_ACTIVE_EDGE_DEFINE LCDC RGB DCLK Active Edge Define
  * @{
  */
-#define LCDC_RGB_DCLK_RISING_EDGE_FETCH			(0)
-#define LCDC_RGB_DCLK_FALLING_EDGE_FETCH		(1)
+#define LCDC_RGB_DCLK_RISING_EDGE_FETCH			(0)   /*!< RGB DCLK: data fetched at rising edge. */
+#define LCDC_RGB_DCLK_FALLING_EDGE_FETCH		(1)   /*!< RGB DCLK: data fetched at falling edge. */
+/** @brief Check if LCDC RGB DCLK edge selection is valid. */
 #define IS_LCDC_RGB_DCLK_EDGE(EDGE)				(((EDGE) == LCDC_RGB_DCLK_RISING_EDGE_FETCH) || \
 												((EDGE) == LCDC_RGB_DCLK_FALLING_EDGE_FETCH))
 
 /** @} */
 
-/** @defgroup LCDC_RGB_TE_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_RGB_TE_PUL_POLARITY_DEFINE LCDC RGB TE Pulse Polarity Define
  * @{
  */
-#define LCDC_RGB_TE_PUL_LOW_LEV_SYNC			(0)
-#define LCDC_RGB_TE_PUL_HIGH_LEV_SYNC			(1)
+#define LCDC_RGB_TE_PUL_LOW_LEV_SYNC			(0)   /*!< RGB TE pulse: low level active. */
+#define LCDC_RGB_TE_PUL_HIGH_LEV_SYNC			(1)   /*!< RGB TE pulse: high level active. */
+/** @brief Check if LCDC RGB TE pulse polarity is valid. */
 #define IS_LCDC_RGB_TE_PUL_POLARITY(POLARITY)	(((POLARITY) == LCDC_RGB_TE_PUL_LOW_LEV_SYNC) || \
 												((POLARITY) == LCDC_RGB_TE_PUL_HIGH_LEV_SYNC))
 
 /** @} */
 
-/** @defgroup LCDC_MCU_SWAP_DEFINE
+/** @defgroup LCDC_MCU_SWAP_DEFINE LCDC MCU Swap Define
  * @{
  */
-#define LCDC_MCU_SWAP_DISABLE					(0)
-#define LCDC_MCU_SWAP_ENABLE					(1)
+#define LCDC_MCU_SWAP_DISABLE					(0)   /*!< MCU data byte swap disabled. */
+#define LCDC_MCU_SWAP_ENABLE					(1)   /*!< MCU data byte swap enabled. */
 
+/** @brief Check if LCDC MCU byte swap mode is valid. */
 #define IS_LCDC_MCU_SWAP_MODE(MODE)				(((MODE) == LCDC_MCU_SWAP_DISABLE) || \
 												((MODE) == LCDC_MCU_SWAP_ENABLE))
 
 /** @} */
 
-/** @defgroup LCDC_MCU_MODE_DEFINE
+/** @defgroup LCDC_MCU_MODE_DEFINE LCDC MCU Mode Define
  * @{
  */
-#define LCDC_MCU_DMA_MODE						(0)
-#define LCDC_MCU_IO_MODE						(1)
+#define LCDC_MCU_DMA_MODE						(0)   /*!< MCU DMA transfer mode. */
+#define LCDC_MCU_IO_MODE						(1)   /*!< MCU I/O direct access mode. */
 
+/** @brief Check if LCDC MCU transfer mode is valid. */
 #define IS_LCDC_MCU_MODE(MODE)					(((MODE) == LCDC_MCU_IO_MODE) || \
 												((MODE) == LCDC_MCU_DMA_MODE))
 
 /** @} */
 
 
-/** @defgroup LCDC_MCU_SYNC_MODE_DEFINE
+/** @defgroup LCDC_MCU_SYNC_MODE_DEFINE LCDC MCU Sync Mode Define
  * @{
  */
-#define LCDC_MCU_SYNC_WITH_INTERNAL_CLK			(0)
-#define LCDC_MCU_SYNC_WITH_VSYNC				(1)
-#define LCDC_MCU_SYNC_WITH_TE					(2)
+#define LCDC_MCU_SYNC_WITH_INTERNAL_CLK			(0)   /*!< MCU synchronized with internal clock. */
+#define LCDC_MCU_SYNC_WITH_VSYNC				(1)   /*!< MCU synchronized with VSYNC input. */
+#define LCDC_MCU_SYNC_WITH_TE					(2)   /*!< MCU synchronized with tearing effect (TE) signal. */
 
+/** @brief Check if LCDC MCU synchronization mode is valid. */
 #define IS_LCDC_MCU_SYNC_MODE(MODE)				(((MODE) == LCDC_MCU_SYNC_WITH_INTERNAL_CLK) || \
 												((MODE) == LCDC_MCU_SYNC_WITH_VSYNC) || \
 												((MODE) == LCDC_MCU_SYNC_WITH_TE))
 
 /** @} */
 
-/** @defgroup LCDC_MCU_VSYNC_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_MCU_VSYNC_PUL_POLARITY_DEFINE LCDC MCU VSYNC Pulse Polarity Define
  * @{
  */
-#define LCDC_MCU_VSYNC_PUL_LOW_LEV_ACTIVE		(0)
-#define LCDC_MCU_VSYNC_PUL_HIGH_LEV_ACTIVE		(1)
+#define LCDC_MCU_VSYNC_PUL_LOW_LEV_ACTIVE		(0)   /*!< MCU VSYNC pulse: low level active. */
+#define LCDC_MCU_VSYNC_PUL_HIGH_LEV_ACTIVE		(1)   /*!< MCU VSYNC pulse: high level active. */
+/** @brief Check if LCDC MCU VSYNC pulse polarity is valid. */
 #define IS_LCDC_MCU_VSYNC_PUL_POLARITY(POL)		(((POL) == LCDC_MCU_VSYNC_PUL_LOW_LEV_ACTIVE) || \
 												((POL) == LCDC_MCU_VSYNC_PUL_HIGH_LEV_ACTIVE))
 
 /** @} */
 
-/** @defgroup LCDC_MCU_TE_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_MCU_TE_PUL_POLARITY_DEFINE LCDC MCU TE Pulse Polarity Define
  * @{
  */
-#define LCDC_MCU_TE_PUL_LOW_LEV_ACTIVE			(0)
-#define LCDC_MCU_TE_PUL_HIGH_LEV_ACTIVE			(1)
+#define LCDC_MCU_TE_PUL_LOW_LEV_ACTIVE			(0)   /*!< MCU TE pulse: low level active. */
+#define LCDC_MCU_TE_PUL_HIGH_LEV_ACTIVE			(1)   /*!< MCU TE pulse: high level active. */
+/** @brief Check if LCDC MCU TE pulse polarity is valid. */
 #define IS_LCDC_MCU_TE_PUL_POLARITY(POL) 		(((POL) == LCDC_MCU_TE_PUL_LOW_LEV_ACTIVE) || \
 												((POL) == LCDC_MCU_TE_PUL_HIGH_LEV_ACTIVE))
 
 /** @} */
 
-/** @defgroup LCDC_MCU_DATA_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_MCU_DATA_PUL_POLARITY_DEFINE LCDC MCU Data Pulse Polarity Define
  * @{
  */
-#define LCDC_MCU_DAT_PUL_NORMAL					(0)
-#define LCDC_MCU_DAT_PUL_INVERT					(1)
+#define LCDC_MCU_DAT_PUL_NORMAL					(0)   /*!< MCU data pulse polarity: normal. */
+#define LCDC_MCU_DAT_PUL_INVERT					(1)   /*!< MCU data pulse polarity: inverted. */
+/** @brief Check if LCDC MCU data pulse polarity is valid. */
 #define IS_LCDC_MCU_DAT_PUL_POLARITY(POLARITY)	(((POLARITY) == LCDC_MCU_DAT_PUL_NORMAL) || \
 												((POLARITY) == LCDC_MCU_DAT_PUL_INVERT))
 
 /** @} */
 
-/** @defgroup LCDC_MCU_READ_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_MCU_READ_PUL_POLARITY_DEFINE LCDC MCU Read Pulse Polarity Define
  * @{
  */
-#define LCDC_MCU_RD_PUL_RISING_EDGE_FETCH		(0)
-#define LCDC_MCU_RD_PUL_FALLING_EDGE_FETCH		(1)
+#define LCDC_MCU_RD_PUL_RISING_EDGE_FETCH		(0)   /*!< MCU RD pulse: data fetched at rising edge. */
+#define LCDC_MCU_RD_PUL_FALLING_EDGE_FETCH		(1)   /*!< MCU RD pulse: data fetched at falling edge. */
+/** @brief Check if LCDC MCU read pulse polarity is valid. */
 #define IS_LCDC_MCU_RD_PUL_POLARITY(POLARITY)	(((POLARITY) == LCDC_MCU_RD_PUL_RISING_EDGE_FETCH) || \
 												((POLARITY) == LCDC_MCU_RD_PUL_FALLING_EDGE_FETCH))
 
 /** @} */
 
-/** @defgroup LCDC_MCU_WRITE_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_MCU_WRITE_PUL_POLARITY_DEFINE LCDC MCU Write Pulse Polarity Define
  * @{
  */
-#define LCDC_MCU_WR_PUL_RISING_EDGE_FETCH		(0)
-#define LCDC_MCU_WR_PUL_FALLING_EDGE_FETCH		(1)
+#define LCDC_MCU_WR_PUL_RISING_EDGE_FETCH		(0)   /*!< MCU WR pulse: data fetched at rising edge. */
+#define LCDC_MCU_WR_PUL_FALLING_EDGE_FETCH		(1)   /*!< MCU WR pulse: data fetched at falling edge. */
+/** @brief Check if LCDC MCU write pulse polarity is valid. */
 #define IS_LCDC_MCU_WR_PUL_POLARITY(POLARITY)	(((POLARITY) == LCDC_MCU_WR_PUL_RISING_EDGE_FETCH) || \
 												((POLARITY) == LCDC_MCU_WR_PUL_FALLING_EDGE_FETCH))
 
 /** @} */
 
-/** @defgroup LCDC_MCU_RS_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_MCU_RS_PUL_POLARITY_DEFINE LCDC MCU RS Pulse Polarity Define
  * @{
  */
-#define LCDC_MCU_RS_PUL_LOW_LEV_CMD_ADDR		(0)
-#define LCDC_MCU_RS_PUL_HIGH_LEV_CMD_ADDR		(1)
+#define LCDC_MCU_RS_PUL_LOW_LEV_CMD_ADDR		(0)   /*!< MCU RS pulse: low level for command address. */
+#define LCDC_MCU_RS_PUL_HIGH_LEV_CMD_ADDR		(1)   /*!< MCU RS pulse: high level for data (parameter). */
+/** @brief Check if LCDC MCU RS pulse polarity is valid. */
 #define IS_LCDC_MCU_RS_PUL_POLARITY(POLARITY)	(((POLARITY) == LCDC_MCU_RS_PUL_LOW_LEV_CMD_ADDR) || \
 												((POLARITY) == LCDC_MCU_RS_PUL_HIGH_LEV_CMD_ADDR))
 
 /** @} */
 
-/** @defgroup LCDC_MCU_CS_PUL_POLARITY_DEFINE
+/** @defgroup LCDC_MCU_CS_PUL_POLARITY_DEFINE LCDC MCU CS Pulse Polarity Define
  * @{
  */
-#define LCDC_MCU_CS_PUL_LOW_LEV_ACTIVE			(0)
-#define LCDC_MCU_CS_PUL_HIGH_LEV_ACTIVE			(1)
+#define LCDC_MCU_CS_PUL_LOW_LEV_ACTIVE			(0)   /*!< MCU CS pulse: low level active. */
+#define LCDC_MCU_CS_PUL_HIGH_LEV_ACTIVE			(1)   /*!< MCU CS pulse: high level active. */
+/** @brief Check if LCDC MCU CS pulse polarity is valid. */
 #define IS_LCDC_MCU_CS_PUL_POLARITY(POLARITY)	(((POLARITY) == LCDC_MCU_CS_PUL_LOW_LEV_ACTIVE) || \
 												((POLARITY) == LCDC_MCU_CS_PUL_HIGH_LEV_ACTIVE))
 
 /** @} */
 
 
-/** @defgroup LCDC_INPUT_FORMAT_DEFINE
+/** @defgroup LCDC_INPUT_FORMAT_DEFINE LCDC Input Format Define
  * @{
  */
-#define LCDC_INPUT_FORMAT_ARGB8888				(0x0)
-#define LCDC_INPUT_FORMAT_RGB888				(0x1)
-#define LCDC_INPUT_FORMAT_RGB565				(0x2)
-#define LCDC_INPUT_FORMAT_ARGB1555				(0x3)
-#define LCDC_INPUT_FORMAT_ARGB4444				(0x4)
-#define LCDC_INPUT_FORMAT_RGB666				(0x5)
-#define LCDC_INPUT_FORMAT_ARGB8666				(0x6)
-
-#define LCDC_INPUT_FORMAT_ABGR8888				(0x8)
-#define LCDC_INPUT_FORMAT_BGR888				(0x9)
-#define LCDC_INPUT_FORMAT_BGR565				(0xa)
+#define LCDC_INPUT_FORMAT_ARGB8888				(0x0)   /*!< Input image format: ARGB8888. */
+#define LCDC_INPUT_FORMAT_RGB888				(0x1)   /*!< Input image format: RGB888. */
+#define LCDC_INPUT_FORMAT_RGB565				(0x2)   /*!< Input image format: RGB565. */
+/// @cond
+#define LCDC_INPUT_FORMAT_ARGB1555				(0x3)   /*!< Input image format: ARGB1555. */
+#define LCDC_INPUT_FORMAT_ARGB4444				(0x4)   /*!< Input image format: ARGB4444. */
+#define LCDC_INPUT_FORMAT_RGB666				(0x5)   /*!< Input image format: RGB666. */
+#define LCDC_INPUT_FORMAT_ARGB8666				(0x6)   /*!< Input image format: ARGB8666. */
+/// @endcond
+#define LCDC_INPUT_FORMAT_ABGR8888				(0x8)   /*!< Input image format: ABGR8888. */
+#define LCDC_INPUT_FORMAT_BGR888				(0x9)   /*!< Input image format: BGR888. */
+#define LCDC_INPUT_FORMAT_BGR565				(0xa)   /*!< Input image format: BGR565. */
+/** @brief Check if LCDC input image format is valid. */
 #define IS_LCDC_INPUT_FORMAT(MODE)				(((MODE) <= LCDC_INPUT_FORMAT_BGR565) && ((MODE) != 0x7))
 
 /** @} */
 
-/** @defgroup LCDC_OUTPUT_FORMAT_DEFINE
+/** @defgroup LCDC_OUTPUT_FORMAT_DEFINE LCDC Output Format Define
  * @{
  */
-#define LCDC_OUTPUT_FORMAT_RGB888				(0x0)
-#define LCDC_OUTPUT_FORMAT_RGB565				(0x1)
-#define LCDC_OUTPUT_FORMAT_RGB666				(0x2)
+#define LCDC_OUTPUT_FORMAT_RGB888				(0x0)   /*!< Output panel format: RGB888. */
+#define LCDC_OUTPUT_FORMAT_RGB565				(0x1)   /*!< Output panel format: RGB565. */
+/// @cond
+#define LCDC_OUTPUT_FORMAT_RGB666				(0x2)   /*!< Output panel format: RGB666. */
+/// @endcond
+#define LCDC_OUTPUT_FORMAT_BGR888				(0x8)   /*!< Output panel format: BGR888. */
+#define LCDC_OUTPUT_FORMAT_BGR565				(0x9)   /*!< Output panel format: BGR565. */
+/// @cond
+#define LCDC_OUTPUT_FORMAT_BGR666				(0xa)   /*!< Output panel format: BGR666. */
+/// @endcond
 
-#define LCDC_OUTPUT_FORMAT_BGR888				(0x8)//(0x4)
-#define LCDC_OUTPUT_FORMAT_BGR565				(0x9)
-#define LCDC_OUTPUT_FORMAT_BGR666				(0xa)
-
+/** @brief Check if LCDC output image format is valid. */
 #define IS_LCDC_OUTPUT_FORMAT(MODE)				(((MODE) == LCDC_OUTPUT_FORMAT_RGB888) || \
 												((MODE) == LCDC_OUTPUT_FORMAT_RGB565) || \
 												((MODE) == LCDC_OUTPUT_FORMAT_RGB666) || \
@@ -1025,28 +1062,28 @@ typedef struct {
 
 /** @} */
 
-/** @defgroup LCDC_PRECMD_DEFINE
+/** @defgroup LCDC_PRECMD_DEFINE LCDC Pre-Command Define
  * @{
  */
-#define LCDC_CMD_DWORD_MAX				4
-#define LCDC_MCU_PRECMD_MAX_NUM			16
-#define LCDC_CMD_GROUP_INITIAL_VAL		0x00000000		//4Byte in one group
+#define LCDC_CMD_DWORD_MAX				4   /*!< Maximum number of pre-command DWORDs. */
+#define LCDC_MCU_PRECMD_MAX_NUM			16   /*!< Maximum number of MCU pre-command bytes. */
+#define LCDC_CMD_GROUP_INITIAL_VAL		0x00000000	/*!< Initial value for one 4-byte command group. */
 
-#define LCDC_MASK_MCU_CMD_BYTE			((u8)0x000000FF << 0)
-#define LCDC_MCU_CMD_BYTE(x)			((u8)((x) & 0x000000FF) << 0)
+#define LCDC_MASK_MCU_CMD_BYTE			((u8)0x000000FF << 0)   /*!< Bitmask for one MCU command byte. */
+#define LCDC_MCU_CMD_BYTE(x)			((u8)((x) & 0x000000FF) << 0)   /*!< Set one MCU command byte value. */
 /** @} */
 
-/** @defgroup LCDC_SHIFT_OFST_DEFINE
+/** @defgroup LCDC_SHIFT_OFST_DEFINE LCDC Shift Offset Define
  * @{
  */
-#define LCDC_SHIFT_OFST_INVALID			0x0
+#define LCDC_SHIFT_OFST_INVALID			0x0   /*!< Invalid shift offset value (shift function disabled). */
 /** @} */
 
-/** @defgroup LCDC_RW_PARAMETER
+/** @defgroup LCDC_RW_PARAMETER LCDC RW Parameter
  * @{
  */
-#define LCDC_WRITE_CYCLE_PERIOD_NS		(60)
-#define LCDC_READ_CYCLE_PERIOD_NS		(800)
+#define LCDC_WRITE_CYCLE_PERIOD_NS		(60)   /*!< MCU write cycle period in nanoseconds. */
+#define LCDC_READ_CYCLE_PERIOD_NS		(800)   /*!< MCU read cycle period in nanoseconds. */
 /** @} */
 
 /** @} */
@@ -1061,8 +1098,8 @@ typedef struct {
  * @brief  LCDC Run Mode Definition
  */
 enum LCDC_MCU_RUN_MODE {
-	LCDC_MCU_RUN_DMA_MODE = 0,
-	LCDC_MCU_RUN_IO_MODE,
+	LCDC_MCU_RUN_DMA_MODE = 0, /*!< DMA transfer mode. */
+	LCDC_MCU_RUN_IO_MODE,      /*!< Direct I/O access mode. */
 };
 
 /**
@@ -1070,53 +1107,51 @@ enum LCDC_MCU_RUN_MODE {
  */
 enum LCDC_ShiftDir {
 	/* Disable shift function */
-	LCDC_SHIFT_DISABLE = 0,
+	LCDC_SHIFT_DISABLE = 0, /*!< Shift function disabled. */
 
 	/* Left to right */
-	LCDC_SHIFT_DIR_L2R,
-	LCDC_SHIFT_DIR_R2L,
+	LCDC_SHIFT_DIR_L2R,     /*!< Shift direction: left to right. */
+	LCDC_SHIFT_DIR_R2L,     /*!< Shift direction: right to left. */
 
 	/* Top to bottom */
-	LCDC_SHIFT_DIR_T2B,
-	LCDC_SHIFT_DIR_B2T,
+	LCDC_SHIFT_DIR_T2B,     /*!< Shift direction: top to bottom. */
+	LCDC_SHIFT_DIR_B2T,     /*!< Shift direction: bottom to top. */
 };
 
 /**
  * @brief  LCDC Shift CfgInfo Definition
  */
 typedef struct {
-	u32 ImgAddrA;
-	u32 ImgAddrB;
-	u32 ImgOfstDotX;
-	u32 ImgOfstLineY;
+	u32 ImgAddrA;       /*!< Specifies the base address of image A. DMA skips pixels based on ImgOfstDotX/ImgOfstLineY and then fetches from this address. */
+	u32 ImgAddrB;       /*!< Specifies the base address of image B. DMA fetches from the initial position with a length of ImgOfstDotX/ImgOfstLineY. */
+	u32 ImgOfstDotX;    /*!< Specifies the horizontal pixel offset for image slide. Must be a multiple of 4. Cannot be non-zero simultaneously with ImgOfstLineY. */
+	u32 ImgOfstLineY;   /*!< Specifies the vertical line offset for image slide. Cannot be non-zero simultaneously with ImgOfstDotX. */
 	// u32 ShiftFlag;//1-enable, 0-disable
 } LCDC_DMAImgAdvanceDef;
-
-/** @} */
 
 /**
  * @brief  LCDC Shift BkupInfo Definition
  */
 typedef struct {
-	u32	Direction;
-
-	u32 SliceTotal;
-	u32 SliceIdx;
-
-	u32 SlotX;
-	u32 SlotY;
-
-	u32 ImgW;
-	u32 ImgH;
-
+	u32 Direction;   /*!< Specifies the shift direction. This parameter can be a value of @ref LCDC_ShiftDir. */
+	u32 SliceTotal;  /*!< Specifies the total number of shift slices. */
+	u32 SliceIdx;    /*!< Specifies the current slice index. */
+	u32 SlotX;       /*!< Specifies the horizontal slot size in pixels. */
+	u32 SlotY;       /*!< Specifies the vertical slot size in pixels. */
+	u32 ImgW;        /*!< Specifies the image width in pixels. */
+	u32 ImgH;        /*!< Specifies the image height in pixels. */
 } LCDC_ShiftInfoDef;
 
-
-/** @} */
 /** @} */
 
 /* Exported functions --------------------------------------------------------*/
-u32 LCDC_RccEnable(void);
+/** @defgroup LCDC_Exported_Functions LCDC Exported Functions
+  * @{
+  */
+
+/** @defgroup LCDC_MCU_Interface_functions LCDC MCU Interface Functions
+  * @{
+  */
 void LCDC_MCUStructInit(LCDC_MCUInitTypeDef *LCDC_MCUInitStruct);
 void LCDC_MCUInit(LCDC_TypeDef *LCDCx, LCDC_MCUInitTypeDef *LCDC_MCUInitStruct);
 void LCDC_MCUDMATrigger(LCDC_TypeDef *LCDCx);
@@ -1129,37 +1164,74 @@ void LCDC_MCUSetPreCmd(LCDC_TypeDef *LCDCx, const u8 *const Cmd, u8 CmdNum);
 void LCDC_MCUResetPreCmd(LCDC_TypeDef *LCDCx);
 void LCDC_MCUDmaMode(LCDC_TypeDef *LCDCx, Lcdc_McuDmaCfgDef *DmaCfg);
 void LCDC_MCUCtrlSwap(LCDC_TypeDef *LCDCx, u8 Status);
+/** @} */
+
+/** @defgroup LCDC_RGB_Interface_functions LCDC RGB Interface Functions
+  * @{
+  */
 void LCDC_RGBStructInit(LCDC_RGBInitTypeDef   *LCDC_RGBInitStruct);
 void LCDC_RGBInit(LCDC_TypeDef *LCDCx, const LCDC_RGBInitTypeDef *LCDC_RGBInitStruct);
 void LCDC_RGBGetSyncStatus(LCDC_TypeDef *LCDCx, u32 *pHSStatus, u32 *pVSStatus);
+/** @} */
+
+/** @defgroup LCDC_DMA_Configure_functions LCDC DMA Configure Functions
+  * @{
+  */
 void LCDC_DMABurstSizeConfig(LCDC_TypeDef *LCDCx, u32 BurstSize);
 void LCDC_DMAUnderFlowOutdata(LCDC_TypeDef *LCDCx, u32 DmaUnFlwOutMode, u32 ErrorData);
 void LCDC_DMAUnderFlowOpt(LCDC_TypeDef *LCDCx, u32 DmaUnFlwOpt, u32 Threshold);
 void LCDC_DMAImageShiftConfig(LCDC_TypeDef *LCDCx, u32 ImgbufCurrent, u32 ImgbufTarget, enum LCDC_ShiftDir Direction);
 void LCDC_DMAImgCfg(LCDC_TypeDef *LCDCx, u32 ImgBaseAddrA);
-void LCDC_DMAImageOfstConfig(LCDC_TypeDef *LCDCx, u32 HsOfst, u32 VsOfst);
+void LCDC_DMAImgCfgAdvance(LCDC_TypeDef *LCDCx, const LCDC_DMAImgAdvanceDef *DmaImgInfo);
+void LCDC_GetImgOffset(LCDC_TypeDef *LCDCx, u32 *pImgHs, u32 *pImgVs);
+void LCDC_GetImgAddr(LCDC_TypeDef *LCDCx, u32 *pImgA, u32 *pImgB);
+/** @} */
+
+/** @defgroup LCDC_Interrupt_functions LCDC Interrupt Functions
+  * @{
+  */
 void LCDC_INTConfig(LCDC_TypeDef *LCDCx, u32 LCDC_IT, u32 NewState);
 void LCDC_LineINTPosConfig(LCDC_TypeDef *LCDCx, u32 LineNum);
-void LCDC_PanelSizeConfig(LCDC_TypeDef *LCDCx, uint32_t width, uint32_t height);
 u32 LCDC_GetINTStatus(LCDC_TypeDef *LCDCx);
 u32 LCDC_GetRawINTStatus(LCDC_TypeDef *LCDCx);
 void LCDC_ClearAllINT(LCDC_TypeDef *LCDCx);
 void LCDC_ClearINT(LCDC_TypeDef *LCDCx, u32 LCDC_IT);
+/** @} */
+
+/** @defgroup LCDC_global_functions LCDC Global Functions
+  * @{
+  */
+u32 LCDC_RccEnable(void);
+void LCDC_PanelSizeConfig(LCDC_TypeDef *LCDCx, uint32_t width, uint32_t height);
 void LCDC_ColorFomatInputConfig(LCDC_TypeDef *LCDCx, u32 CorlorFmtIn);
 void LCDC_ColorFomatOutputConfig(LCDC_TypeDef *LCDCx, u32 CorlorFmtOut);
-void LCDC_GetImgOffset(LCDC_TypeDef *LCDCx, u32 *pImgHs, u32 *pImgVs);
-void LCDC_GetImgAddr(LCDC_TypeDef *LCDCx, u32 *pImgA, u32 *pImgB);
 void LCDC_GetCurPosStatus(LCDC_TypeDef *LCDCx, u32 *pCurPosX, u32 *pCurPosY);
 void LCDC_Cmd(LCDC_TypeDef *LCDCx, u32 NewState);
 void LCDC_DeInit(LCDC_TypeDef *LCDCx);
 void LCDC_ShadowReloadConfig(LCDC_TypeDef *LCDCx);
+/** @} */
+
+/**
+  * @}
+  */
 
 extern u32 LCDC_SYS_CLK;// = 400000000;
 
+/** @addtogroup LCDC_Exported_Constants
+  * @{
+  */
+
+/** @defgroup LCDC_Peripheral_Definitions LCDC Peripheral Definitions
+  * @{
+  */
+/** @brief Check whether the peripheral is the LCDC instance. */
 #define IS_LCDC_ALL_PERIPH(PERIPH)				(PERIPH == LCDC)
+/** @} */
+
+/** @} */
 
 // #define LCDC_FPGA_RTLSIM 				0//1 sim
-#define LCDC_FRAME_BUF_PSRAM 			1//0 sim
+#define LCDC_FRAME_BUF_PSRAM 			1//0 sim   /*!< Frame buffer located in PSRAM (1) or simulated memory (0). */
 
 // #define LCDC_VO_SHPERI_USE_USB_PLL		1
 // // #define LCDC_ACLK_USE_SYS_PLL			1
@@ -1169,6 +1241,10 @@ extern u32 LCDC_SYS_CLK;// = 400000000;
 #endif
 
 /* MANUAL_GEN_END */
+
+/** @} */
+
+/** @} */
 
 
 #endif

@@ -369,6 +369,9 @@ typedef struct {
   * @{
   */
 
+/* SPDIO_RXBD_C2H_RPTR bit definition */
+#define TXBD_UPD_OPT_BIT					(BIT7) // 0xB8[23]=>0xBA[7], option to fix txbd unstable when updating
+
 /* SPDIO_CRPWM2 bit definition */
 #define RPWM2_ACT_BIT					(BIT0)	// Active
 #define RPWM2_CG_BIT					(BIT1)	// Clock Gated
@@ -392,6 +395,7 @@ typedef struct {
 
 /* SDIO_WIFI Exported functions --------------------------------------------------------*/
 void SDIO_StructInit(SDIO_InitTypeDef *SDIO_InitStruct);
+void _SDIO_Init(SDIO_TypeDef *SDIO, SDIO_InitTypeDef *SDIOInit_Struct);
 void SDIO_Init(SDIO_TypeDef *SDIO, SDIO_InitTypeDef *SDIOInit_Struct);
 void SDIO_INTClear(SDIO_TypeDef *SDIO, u16 SDIO_INT);
 void SDIO_INTClearAll(SDIO_TypeDef *SDIO);

@@ -21,18 +21,18 @@
 #define USBH_COMPOSITE_UAC_EVENT                  BIT2
 #elif defined(CONFIG_USBH_COMPOSITE_ACM_ECM)
 
-#define USB_4G_DONGLE_SUPPORT                     1
+#define USBH_COMPOSITE_4G_DONGLE_SUPPORT          1
 
 /* Quectel CAT1 in ECM mode */
-#define USB_QUECTEL_DONGLE_VID        (0x2C7C)
-#define QUECTEL_DONGLE_PID_EG915      (0x0901)
-#define QUECTEL_DONGLE_PID_EG91       (0x0191)
+#define USBH_COMPOSITE_QUECTEL_DONGLE_VID         (0x2C7C)
+#define USBH_COMPOSITE_QUECTEL_DONGLE_EG915_PID   (0x0901)
+#define USBH_COMPOSITE_QUECTEL_DONGLE_EG91_PID    (0x0191)
 
 /* Fibocom LE271 CAT1 in ECM mode */
-#define USB_FIBOCOM_DONGLE_VID        (0x2CB7)
-#define FIBOCOM_DONGLE_PID_LE271      (0x0D01)
+#define USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_VID   (0x2CB7)
+#define USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_PID   (0x0D01)
 
-#define USB_DEFAULT_VID          (USB_VID)
+#define USBH_COMPOSITE_DEVICE_VID                 (USB_VID)
 
 #else
 #error "No composite class configured"
@@ -51,11 +51,11 @@
  */
 typedef struct {
 	/**
-	 * @brief Called when USB attach status changes for application to support hot-plug events.
-	 * @param[in] old_status: The previous attach status.
-	 * @param[in] status: The new attach status.
+	 * @brief Callback invoked when a device is detached.
+	 *        Used to report the disconnection status to the application.
+	 * @return 0 on success, non-zero on failure.
 	 */
-	void (*status_changed)(u8 old_status, u8 status);
+	int(* detach)(void);
 } usbh_composite_cb_t;
 
 typedef struct {

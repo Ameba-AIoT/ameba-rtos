@@ -94,15 +94,15 @@ static void cdc_ecm_set_mac(u8 *mac);
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "ECM";
-static u8 ecm_mac[6] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};  /**< MAC address */
+static const u8 ecm_mac[6] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};  /**< MAC address */
 
 /* USB Standard Device Descriptor */
 static const u8 usbd_cdc_ecm_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_LEN_DEV_DESC,                               /* bLength */
 	USB_DESC_TYPE_DEVICE,                           /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB: 2.0 */
-	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bDeviceClass: CDC */
-	USB_CDC_SUBCLASS_ECM,                           /* bDeviceSubClass: ECM */
+	USB_CDC_ECM_COMM_INTERFACE_CLASS_CODE,              /* bDeviceClass: CDC */
+	USB_CDC_ECM_SUBCLASS_ECM,                           /* bDeviceSubClass: ECM */
 	0x00,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
 	USB_LOW_BYTE(USBD_CDC_ECM_VID),                 /* idVendor */
@@ -160,28 +160,28 @@ static const u8 usbd_cdc_ecm_hs_config_desc[] = {
 	USBD_CDC_ECM_COMM_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x01,                                           /* bNumEndpoints */
-	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bInterfaceClass: CDC */
-	USB_CDC_SUBCLASS_ECM,                           /* bInterfaceSubClass: ECM */
+	USB_CDC_ECM_COMM_INTERFACE_CLASS_CODE,              /* bInterfaceClass: CDC */
+	USB_CDC_ECM_SUBCLASS_ECM,                           /* bInterfaceSubClass: ECM */
 	0x00,                                           /* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
 	/* CDC Header Functional Descriptor */
 	0x05,                                           /* bFunctionLength */
-	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_FUNC_DESC_HEADER,                       /* bDescriptorSubtype */
+	USB_CDC_ECM_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_ECM_FUNC_DESC_HEADER,                       /* bDescriptorSubtype */
 	0x10, 0x01,                                     /* bcdCDC: 1.10 */
 
 	/* CDC Union Functional Descriptor */
 	0x05,                                           /* bFunctionLength */
-	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_FUNC_DESC_UNION,                        /* bDescriptorSubtype */
+	USB_CDC_ECM_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_ECM_FUNC_DESC_UNION,                        /* bDescriptorSubtype */
 	USBD_CDC_ECM_COMM_INTERFACE_NUM,                /* bControlInterface */
 	USBD_CDC_ECM_DATA_INTERFACE_NUM,                /* bSubordinateInterface0 */
 
 	/* CDC Ethernet Networking Functional Descriptor */
 	USB_CDC_ECM_ETHERNET_FUNC_DESC_SIZE,            /* bFunctionLength */
-	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
+	USB_CDC_ECM_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_ECM_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
 	USBD_CDC_ECM_MAC_STRING_INDEX,                  /* iMACAddress */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_ECM_MAX_SEGMENT_SIZE),     /* wMaxSegmentSize */
@@ -204,7 +204,7 @@ static const u8 usbd_cdc_ecm_hs_config_desc[] = {
 	USBD_CDC_ECM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x00,                                           /* bNumEndpoints */
-	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
+	USB_CDC_ECM_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
 	0x00,                                           /* bInterfaceSubClass */
 	0x00,                                           /* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
@@ -215,7 +215,7 @@ static const u8 usbd_cdc_ecm_hs_config_desc[] = {
 	USBD_CDC_ECM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x01,                                           /* bAlternateSetting */
 	0x02,                                           /* bNumEndpoints */
-	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
+	USB_CDC_ECM_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
 	0x00,                                           /* bInterfaceSubClass */
 	0x00,                                           /* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
@@ -262,28 +262,28 @@ static const u8 usbd_cdc_ecm_fs_config_desc[] = {
 	USBD_CDC_ECM_COMM_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x01,                                           /* bNumEndpoints */
-	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bInterfaceClass: CDC */
-	USB_CDC_SUBCLASS_ECM,                           /* bInterfaceSubClass: ECM */
+	USB_CDC_ECM_COMM_INTERFACE_CLASS_CODE,              /* bInterfaceClass: CDC */
+	USB_CDC_ECM_SUBCLASS_ECM,                           /* bInterfaceSubClass: ECM */
 	0x00,                                           /* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
 	/* CDC Header Functional Descriptor */
 	0x05,                                           /* bFunctionLength */
-	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_FUNC_DESC_HEADER,                       /* bDescriptorSubtype */
+	USB_CDC_ECM_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_ECM_FUNC_DESC_HEADER,                       /* bDescriptorSubtype */
 	0x10, 0x01,                                     /* bcdCDC: 1.10 */
 
 	/* CDC Union Functional Descriptor */
 	0x05,                                           /* bFunctionLength */
-	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_FUNC_DESC_UNION,                        /* bDescriptorSubtype */
+	USB_CDC_ECM_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_ECM_FUNC_DESC_UNION,                        /* bDescriptorSubtype */
 	USBD_CDC_ECM_COMM_INTERFACE_NUM,                /* bControlInterface */
 	USBD_CDC_ECM_DATA_INTERFACE_NUM,                /* bSubordinateInterface0 */
 
 	/* CDC Ethernet Networking Functional Descriptor */
 	USB_CDC_ECM_ETHERNET_FUNC_DESC_SIZE,            /* bFunctionLength */
-	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
+	USB_CDC_ECM_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_ECM_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
 	USBD_CDC_ECM_MAC_STRING_INDEX,                  /* iMACAddress */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_ECM_MAX_SEGMENT_SIZE),     /* wMaxSegmentSize */
@@ -306,7 +306,7 @@ static const u8 usbd_cdc_ecm_fs_config_desc[] = {
 	USBD_CDC_ECM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x00,                                           /* bNumEndpoints */
-	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
+	USB_CDC_ECM_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
 	0x00,                                           /* bInterfaceSubClass */
 	0x00,                                           /* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
@@ -317,7 +317,7 @@ static const u8 usbd_cdc_ecm_fs_config_desc[] = {
 	USBD_CDC_ECM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x01,                                           /* bAlternateSetting */
 	0x02,                                           /* bNumEndpoints */
-	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
+	USB_CDC_ECM_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
 	0x00,                                           /* bInterfaceSubClass */
 	0x00,                                           /* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
@@ -408,7 +408,7 @@ static void cdc_ecm_set_mac(u8 *mac)
 		return;
 	}
 
-	memcpy((void *) & (ecm->mac[0]), (void *)mac, CDC_ECM_MAC_STR_LEN);
+	memcpy((void *) & (ecm->mac[0]), (void *)mac, USBD_CDC_ECM_MAC_STR_LEN);
 	ecm->mac_src_type = CDC_ECM_MAC_UPPER_LAYER_SET;
 
 	ecm->mac_valid = 1;

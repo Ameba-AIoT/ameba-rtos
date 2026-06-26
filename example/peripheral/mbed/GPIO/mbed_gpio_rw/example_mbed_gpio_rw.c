@@ -49,6 +49,5 @@ int example_mbed_gpio_rw(void)
 		printf("Create MBED_GPIO_TASK Err!!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }

@@ -27,6 +27,8 @@ extern "C"  {
 #define BLE_OTA_SRV_ID                      13
 #define BT_BLE_SERVICE_HID_ISO              14
 #define SCAN_PARAM_SRV_ID                   15
+#define TX_POWER_SRV_ID                     16
+#define LINK_LOSS_SRV_ID                    17
 
 #define TRANSFER_MODULE_SRV_ID_BASE         0x80
 

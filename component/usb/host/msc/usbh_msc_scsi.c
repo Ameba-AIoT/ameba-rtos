@@ -35,7 +35,7 @@ int usbh_scsi_test_unit_ready(usbh_msc_host_t *msc, u8 lun)
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
-		/*Prepare the CBW and relevent field*/
+		/*Prepare the CBW and relevant field*/
 		cbw->field.dCBWDataTransferLength = TEST_UNIT_READY_LEN;
 		cbw->field.bmCBWFlags = USB_H2D;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
@@ -75,7 +75,7 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
-		/*Prepare the CBW and relevent field*/
+		/*Prepare the CBW and relevant field*/
 		cbw->field.dCBWDataTransferLength = READ_CAPACITY10_DATA_LEN;
 		cbw->field.bmCBWFlags = USB_D2H;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
@@ -126,7 +126,7 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
-		/*Prepare the CBW and relevent field*/
+		/*Prepare the CBW and relevant field*/
 		cbw->field.dCBWDataTransferLength = INQUIRY_DATA_LEN;
 		cbw->field.bmCBWFlags = USB_D2H;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
@@ -190,7 +190,7 @@ int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_dat
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
-		/*Prepare the CBW and relevent field*/
+		/*Prepare the CBW and relevant field*/
 		cbw->field.dCBWDataTransferLength = REQUEST_SENSE_DATA_LEN;
 		cbw->field.bmCBWFlags = USB_D2H;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
@@ -245,7 +245,7 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 len
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
-		/*Prepare the CBW and relevent field*/
+		/*Prepare the CBW and relevant field*/
 		cbw->field.dCBWDataTransferLength = length * msc->unit[0].capacity.block_size;
 		cbw->field.bmCBWFlags = USB_H2D;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
@@ -263,19 +263,20 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 len
 		cbw->field.CBWCB[7] = (((u8 *)(void *)&length)[1]);
 		cbw->field.CBWCB[8] = (((u8 *)(void *)&length)[0]);
 
-		msc->hbot.state = BOT_SEND_CBW;
-		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
-		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.origin_tx_pbuf = pbuf;
 		msc->hbot.origin_tx_pbuf_len = cbw->field.dCBWDataTransferLength;
 		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
 			usb_os_mfree(msc->hbot.pbuf);
 		}
 		msc->hbot.pbuf = (u8 *)usb_os_malloc(cbw->field.dCBWDataTransferLength);
-		if (msc->hbot.pbuf != NULL) {
-			usb_os_memcpy(msc->hbot.pbuf, pbuf, cbw->field.dCBWDataTransferLength);
-			status = HAL_BUSY;
+		if (msc->hbot.pbuf == NULL) {
+			return HAL_ERR_MEM;
 		}
+		usb_os_memcpy(msc->hbot.pbuf, pbuf, cbw->field.dCBWDataTransferLength);
+		msc->hbot.state = BOT_SEND_CBW;
+		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+		msc->hbot.cmd_state = BOT_CMD_BUSY;
+		status = HAL_BUSY;
 		break;
 
 	case BOT_CMD_BUSY:
@@ -310,7 +311,7 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
-		/*Prepare the CBW and relevent field*/
+		/*Prepare the CBW and relevant field*/
 		cbw->field.dCBWDataTransferLength = length * msc->unit[0].capacity.block_size;
 		cbw->field.bmCBWFlags = USB_D2H;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
@@ -328,18 +329,19 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 		cbw->field.CBWCB[7] = (((u8 *)(void *)&length)[1]);
 		cbw->field.CBWCB[8] = (((u8 *)(void *)&length)[0]);
 
-		msc->hbot.state = BOT_SEND_CBW;
-		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
-		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.origin_rx_pbuf = pbuf;
 		msc->hbot.origin_rx_pbuf_len = cbw->field.dCBWDataTransferLength;
 		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
 			usb_os_mfree(msc->hbot.pbuf);
 		}
 		msc->hbot.pbuf = (u8 *)usb_os_malloc(cbw->field.dCBWDataTransferLength);
-		if (msc->hbot.pbuf != NULL) {
-			status = HAL_BUSY;
+		if (msc->hbot.pbuf == NULL) {
+			return HAL_ERR_MEM;
 		}
+		msc->hbot.state = BOT_SEND_CBW;
+		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+		msc->hbot.cmd_state = BOT_CMD_BUSY;
+		status = HAL_BUSY;
 		break;
 
 	case BOT_CMD_BUSY:

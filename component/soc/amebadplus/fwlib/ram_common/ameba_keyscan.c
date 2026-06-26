@@ -21,8 +21,8 @@
   */
 
 /**
-  * @brief  Fills each KeyScan_InitStruct member with its default value.
-  * @param  KeyScan_InitStruct: pointer to an KeyScan_InitTypeDef structure which will be initialized.
+  * @brief  Fill each KeyScan_InitStruct member with its default value.
+  * @param  KeyScan_InitStruct: pointer to an @ref KeyScan_InitTypeDef structure which will be initialized.
   */
 void KeyScan_StructInit(KeyScan_InitTypeDef *KeyScan_InitStruct)
 {
@@ -43,10 +43,10 @@ void KeyScan_StructInit(KeyScan_InitTypeDef *KeyScan_InitStruct)
 }
 
 /**
-  * @brief  Initializes the KeyScan peripheral according to the specified
+  * @brief  Initialize the KeyScan peripheral according to the specified
   *			parameters in the KeyScan_InitStruct.
   * @param  KeyScan: selected KeyScan peripheral.
-  * @param  KeyScan_InitStruct: pointer to a KeyScan_InitTypeDef structure that contains
+  * @param  KeyScan_InitStruct: pointer to a @ref KeyScan_InitTypeDef structure that contains
   * 		the configuration information for the specified KeyScan peripheral.
   */
 void KeyScan_Init(KSCAN_TypeDef *KeyScan, KeyScan_InitTypeDef *KeyScan_InitStruct)
@@ -67,7 +67,7 @@ void KeyScan_Init(KSCAN_TypeDef *KeyScan, KeyScan_InitTypeDef *KeyScan_InitStruc
 	/* Disable the IC first */
 	KeyScan->KS_CTRL &= (~KS_BIT_RUN_ENABLE);
 
-	/* Mask all keyscan interrupt */
+	/* Mask all KeyScan interrupt */
 	KeyScan->KS_IMR &= (~KS_BIT_ALL_INT_MSK);
 
 	/* clock divider config */
@@ -105,12 +105,11 @@ void KeyScan_Init(KSCAN_TypeDef *KeyScan, KeyScan_InitTypeDef *KeyScan_InitStruc
 }
 
 /**
-  * @brief  Enables or disables the specified KeyScan interrupts mask.
+  * @brief  Enable or disable the specified KeyScan interrupt sources.
   * @param  KeyScan: selected KeyScan peripheral.
   * @param  KeyScan_IT: specifies the KeyScan interrupt sources to be enabled or masked.
   *          This parameter can be one or combinations of the following values:
   *            @arg KS_BIT_ALL_DEFAULT_INT_MASK: Unmask all default interrupt
-  *            @arg KS_BIT_FALSE_ALARM_INT_MASK: Unmask false alarm interrupt
   *            @arg KS_BIT_STUCK_EVENT_INT_MASK: Unmask Stuck event interrupt
   *            @arg KS_BIT_SCAN_EVENT_INT_MASK: Unmask Scan event interrupt
   *            @arg KS_BIT_FIFO_LIMIT_INT_MASK: Unmask FIFO limit interrupt
@@ -119,7 +118,7 @@ void KeyScan_Init(KSCAN_TypeDef *KeyScan, KeyScan_InitTypeDef *KeyScan_InitStruc
   *            @arg KS_BIT_SCAN_FINISH_INT_MASK: Unmask scan finish interrupt
   *            @arg KS_BIT_FIFO_NOTEMPTY_INT_MASK: Unmask FIFO nonempty interrupt
   *            @arg KS_BIT_ALL_RELEASE_INT_MASK: Unmask All Release interrupt
-  * @param  newState: new state of the specified KeyScan interrupts mask.
+  * @param  newState: new state of the specified KeyScan interrupt sources.
   *   This parameter can be: ENABLE or DISABLE.
   */
 void KeyScan_INTConfig(KSCAN_TypeDef *KeyScan, u32 KeyScan_IT, u8 newState)
@@ -137,21 +136,20 @@ void KeyScan_INTConfig(KSCAN_TypeDef *KeyScan, u32 KeyScan_IT, u8 newState)
 }
 
 /**
-  * @brief  Clears the specified KeyScan interrupt pending bit.
+  * @brief  Clear the specified KeyScan interrupt pending bits.
   * @param  KeyScan: selected KeyScan peripheral.
   * @param  KeyScan_IT: specifies the KeyScan interrupt to be cleared.
   *          This parameter can be one or combinations of the following values:
   *            @arg KS_BIT_ALL_DEFAULT_INT_CLR: all default flag
-  *            @arg KS_BIT_FALSE_ALARM_INT_CLR: false alarm flag
   *            @arg KS_BIT_STUCK_INT_CLR: Stuck event interrupt flag
   *            @arg KS_BIT_FIFO_LIMIT_INT_CLR: FIFO limit interrupt flag
   *            @arg KS_BIT_FIFO_OV_INT_CLR: FIFO overflow interrupt flag
   *            @arg KS_BIT_SCAN_FINISH_INT_CLR: Scan finish interrupt flag
   *            @arg KS_BIT_ALL_RELEASE_INT_CLR: All Release interrupt flag
-  * @note   KS_BIT_SCAN_EVENT_INT_STATUS is automatically cleared by hardware when the data is read.
-  *             KS_BIT_FIFO_FULL_INT_STATUS is automatically cleared by hardware when the buffer level
-  *        goes below the KS_FIFO_TH_LEVEL threshold.
-  *             KS_BIT_FIFO_NOTEMPTY_INT_STATUS is automatically cleared by hardware when the FIFO is empty.
+  * @note
+  *         - KS_BIT_SCAN_EVENT_INT_STATUS is automatically cleared by hardware when the data is read.
+  *         - KS_BIT_FIFO_FULL_INT_STATUS is automatically cleared by hardware when the buffer level goes below the KS_FIFO_TH_LEVEL threshold.
+  *         - KS_BIT_FIFO_NOTEMPTY_INT_STATUS is automatically cleared by hardware when the FIFO is empty.
   */
 void KeyScan_ClearINT(KSCAN_TypeDef *KeyScan, u32 KeyScan_IT)
 {
@@ -188,9 +186,9 @@ u32 KeyScan_GetINT(KSCAN_TypeDef *KeyScan)
 }
 
 /**
-  * @brief  Get data number of keyscan FIFO.
+  * @brief  Get the number of entries in the KeyScan FIFO.
   * @param  KeyScan: selected KeyScan peripheral.
-  * @return Data number of keyscan FIFO.
+  * @return Number of entries currently in the KeyScan FIFO.
   */
 u8 KeyScan_GetDataNum(KSCAN_TypeDef *KeyScan)
 {
@@ -201,7 +199,7 @@ u8 KeyScan_GetDataNum(KSCAN_TypeDef *KeyScan)
 }
 
 /**
-  * @brief  Clears the FIFO data.
+  * @brief  Clear the FIFO data.
   * @param  KeyScan: selected KeyScan peripheral.
   */
 void KeyScan_ClearFIFOData(KSCAN_TypeDef *KeyScan)
@@ -213,7 +211,7 @@ void KeyScan_ClearFIFOData(KSCAN_TypeDef *KeyScan)
 }
 
 /**
-  * @brief  Get status of keyscan FIFO.
+  * @brief  Get the status of the KeyScan FIFO.
   * @param  KeyScan: selected KeyScan peripheral.
   * @param  KeyScan_Flag: specifies the flag to check.
   *   This parameter can be one of the following values:
@@ -236,10 +234,10 @@ bool KeyScan_GetFIFOState(KSCAN_TypeDef *KeyScan, u32 KeyScan_Flag)
 }
 
 /**
-  * @brief  Read data from keyscan FIFO.
+  * @brief  Read data from KeyScan FIFO.
   * @param  KeyScan: selected KeyScan peripheral.
   * @param  outBuf: buffer to save data read from KeyScan FIFO.
-  * @param  count: number of data to be read.
+  * @param  count: number of entries to read.
   */
 void KeyScan_Read(KSCAN_TypeDef *KeyScan, u32 *outBuf, u8 count)
 {
@@ -254,7 +252,7 @@ void KeyScan_Read(KSCAN_TypeDef *KeyScan, u32 *outBuf, u8 count)
 }
 
 /**
-  * @brief  Enables or disables the specified KeyScan peripheral.
+  * @brief  Enable or disable the specified KeyScan peripheral.
   * @param  KeyScan: selected KeyScan peripheral.
   * @param  NewState: new state of the KeyScan peripheral.
   *   This parameter can be: ENABLE or DISABLE.
@@ -274,11 +272,11 @@ void KeyScan_Cmd(KSCAN_TypeDef *KeyScan, u8 NewState)
 }
 
 /**
-  * @brief  Set Keyscan Column and Row that used.
+  * @brief  Set the active columns and rows for KeyScan.
   * @param  KeyScan: selected KeyScan peripheral.
-  * @param  column_sel: Specifies which column(s) is used.
+  * @param  column_sel: Specifies which columns are active.
   *   This parameter must be set to a value in the 0x1-0xff range.
-  * @param  row_sel: Specifies which row(s) is used.
+  * @param  row_sel: Specifies which rows are active.
   *   This parameter must be set to a value in the 0x1-0xff range.
   */
 void KeyScan_SetColRow(KSCAN_TypeDef *KeyScan, u32 column_sel, u32 row_sel)
@@ -294,7 +292,7 @@ void KeyScan_SetColRow(KSCAN_TypeDef *KeyScan, u32 column_sel, u32 row_sel)
 }
 
 /**
-  * @brief  Enables or disables KeyScan stuck auto check function.
+  * @brief  Enable or disable the KeyScan stuck auto check function.
   * @param  KeyScan: selected KeyScan peripheral.
   * @param  NewState: new state of the KeyScan stuck auto check function.
   *   This parameter can be: ENABLE or DISABLE.
@@ -314,9 +312,9 @@ void KeyScan_StuckAutoCmd(KSCAN_TypeDef *KeyScan, u8 NewState)
 }
 
 /**
-  * @brief  Set stuck time threshold.
+  * @brief  Set the stuck key detection time threshold.
   * @param  KeyScan: selected KeyScan peripheral.
-  * @param  ThresholdMs: stuck time threshold convert to ms.
+  * @param  ThresholdMs: stuck key detection time threshold in milliseconds.
   *   ThresholdMs = (Threshold +1)* Scan_clk(ms).
   *   Threshold must be set to a value in the 0x0-0x7fffffff range.
   */
@@ -334,14 +332,14 @@ void KeyScan_SetStuckThreshold(KSCAN_TypeDef *KeyScan, u32 ThresholdMs)
 
 
 /**
-  * @brief  Set stuckrow detect periodical no pull time.
+  * @brief  Set the stuck-row periodic detection timing.
   * @param  KeyScan: selected KeyScan peripheral.
-  * @param  PullUpUs: stuckrow detect pullup time convert to us.
+  * @param  PullUpUs: stuck-row detection pull-up time in microseconds.
   *   PullUpUs = (PullUpCnt +1)* clk_131k(us), max value is 15625us.
   *   PullUpCnt must be set to a value in the 0x0-0x7ff range.
-  * @param  NoPullUs: stuckrow detect no pull time convert to us.
-  *   When NoPullUs is 0, disable stuckrow detect function.
-  *   When NoPullUs is not 0, NoPullUs = (NoPullCnt +1)* clk_131k(us), max value is 31259us.
+  * @param  NoPullUs: stuck-row detection no-pull time in microseconds.
+  *   When NoPullUs is 0, disable stuck-row detection.
+  *   When NoPullUs is not 0, NoPullUs = (NoPullCnt +1)* clk_131k(us), max value is 31250us.
   *   NoPullUs can be set to a value in the 0x0-0xfff range.
   */
 void KeyScan_StuckPeriodicalPull(KSCAN_TypeDef *KeyScan, u32 PullUpUs, u32 NoPullUs)
@@ -367,11 +365,11 @@ void KeyScan_StuckPeriodicalPull(KSCAN_TypeDef *KeyScan, u32 PullUpUs, u32 NoPul
 }
 
 /**
-  * @brief  Get stuckrow default status.
+  * @brief  Get the stuck-row default status.
   * @param  KeyScan: selected KeyScan peripheral.
-  * @return Row0 ~ row7 default status:
-  *         - 1: row stucked
-  *         - 0: row unstucked
+  * @return Default status of row0 to row7:
+  *         - 1: row stuck
+  *         - 0: row not stuck
   */
 u32 KeyScan_GetStuckRow(KSCAN_TypeDef *KeyScan)
 {
@@ -382,12 +380,12 @@ u32 KeyScan_GetStuckRow(KSCAN_TypeDef *KeyScan)
 }
 
 /**
-  * @brief  Set stuckrow default status.
+  * @brief  Set the stuck-row default status.
   * @param  KeyScan: selected KeyScan peripheral.
   * @param  Status: row default status.
   *   one bit one row, bit 0 means row0, bit 7 means row7.
-  *   1: row stucked
-  *   0: row unstucked
+  *   1: row stuck
+  *   0: row not stuck
   */
 void KeyScan_SetStuckRow(KSCAN_TypeDef *KeyScan, u32 Status)
 {

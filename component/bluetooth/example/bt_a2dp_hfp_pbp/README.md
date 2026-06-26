@@ -1,14 +1,27 @@
-## A2DP sink and HFP HandFree and LE Audio PBP source demo
+# A2DP Sink + HFP HandsFree + LE Audio PBP Source Demo
+
+> **Note:** This example is supported on **RTL8730E** only.
 
 ---
 
-### Test Configuration
+## Compile Config
 
-LE Audio Config:
+### Common Config
+
+Change `kPrimaryAudioConfig` in `component/audio/configs/ameba_audio_mixer_usrcfg.cpp`:
+
+```c
+// change from:
+kPrimaryAudioConfig = {1024, 4, AUDIO_OUT_MIN_FRAMES_STAGE1};
+// to:
+kPrimaryAudioConfig = {240, 4, AUDIO_OUT_MIN_FRAMES_STAGE2};
+```
+
+### LE Audio Stream Config
+
+Select **one** of the following configurations and change the corresponding macros in `rtk_bt_le_audio_def.h`:
 
 1. BIS num 1 + Sample rate 16kHz + 2-channel + ISO interval 20 ms
-
-   **Config the following Macros in rtk_bt_le_audio_def.h**
 
    > change `RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG` to `RTK_BT_ISO_INTERVAL_20_MS`
 
@@ -18,71 +31,44 @@ LE Audio Config:
 
 2. BIS num 1 + Sample rate 48kHz + 1-channel + ISO interval 20 ms
 
-   **Config the following Macros in rtk_bt_le_audio_def.h**
-
    > change `RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG` to `RTK_BT_ISO_INTERVAL_20_MS`
 
    > change `RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE` to `0`
 
 3. BIS num 1 + Sample rate 48kHz + 2-channel + ISO interval 30 ms
 
-   **Config the following Macros in rtk_bt_le_audio_def.h**
-
    > change `RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG` to `RTK_BT_ISO_INTERVAL_30_MS`
 
 4. BIS num 2 + Sample rate 48kHz + 2-channel + ISO interval 30 ms
-
-   **Config the following Macros in rtk_bt_le_audio_def.h**
 
    > change `RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM` to `2`
 
    > change `RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG` to `RTK_BT_ISO_INTERVAL_30_MS`
 
----
+### Optional: Local Play Config
 
-### GCC menuconfig
+To enable audio local playback, change the following macros before testing:
 
-1. BT Related:
-   Enter the SDK root directory, execute in order:
-   ```bash
-   source env.sh
-   ./ameba.py soc RTL8730E
-   ./ameba.py menuconfig
-   ```
-   Navigate: `CONFIG BT` --> `BT Example Demo` --> `BT A2DP HFP and LE Audio PBP`
-
-   (optional) Navigate: `BT Example Demo` --> `BLE Audio` --> `BLE Audio Public Broadcast Profile`
-
-2. Audio Related:
-   Navigate: `./ameba.py menuconfig` --> `CONFIG Application` --> `Audio Config` --> `Select Audio Interfaces (Mixer)`
-   Navigate: `Audio Config` --> `Third Party Libraries` --> `speexdsp`
-
-3. GCC: use CMD `./ameba.py build` to compile example
-
----
-
-### Test ATCMD
-
-If user want to open audio local play function, must change the following Macros before test:
-
-   > 1. change `RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT` to `1` in `rtk_bt_le_audio_def.h`
-
-   > 2. change `RTK_BT_LE_AUDIO_ISO_TX_SYNC_SUPPORT` to `1` in `rtk_bt_le_audio_def.h`
-
-   > 3. change `VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT` to `1` in `bt_vendor_config.h`
-
-   > 4. change `RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT` to `1` in `bt_api_config.h`
-
-   > 5. change `kPrimaryAudioConfig` in `ameba_audio_mixer_usrcfg.cpp`:
+Change in `rtk_bt_le_audio_def.h`:
 
 ```c
-// change from:
-kPrimaryAudioConfig = {1024, 4, AUDIO_OUT_MIN_FRAMES_STAGE1};
-// to:
-kPrimaryAudioConfig = {240, 4, AUDIO_OUT_MIN_FRAMES_STAGE2};
+RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT   to   1
+RTK_BT_LE_AUDIO_ISO_TX_SYNC_SUPPORT          to   1
 ```
 
-   > 6. unmask the following code in `bt_audio_track_api.c`:
+Change in `bt_vendor_config.h`:
+
+```c
+VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT   to   1
+```
+
+Change in `bt_api_config.h`:
+
+```c
+RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT   to   1
+```
+
+Unmask the following code in `bt_audio_track_api.c`:
 
 ```c
 // change from:
@@ -90,6 +76,73 @@ kPrimaryAudioConfig = {240, 4, AUDIO_OUT_MIN_FRAMES_STAGE2};
 // to:
 track_buf_size = 22608;
 ```
+
+---
+
+## GCC menuconfig
+
+#### Manual (TUI)
+
+1. BT: `./ameba.py menuconfig` --> `CONFIG BT` --> `Enable BT` --> `BT Mode Selection (DUAL_MODE)` --> `BT Example Demo` --> `BT A2DP HFP and LE Audio PBP`
+
+2. (Optional, for PBP sink peer device) BT: `./ameba.py menuconfig` --> `BT Example Demo` --> `BLE Audio` --> `BLE Audio Public Broadcast Profile`
+
+3. Audio: `./ameba.py menuconfig` --> `CONFIG Application` --> `Audio Config` --> `Enable Audio Framework` --> `Select Audio Interfaces (Mixer)`
+
+4. Audio: `./ameba.py menuconfig` --> `Audio Config` --> `Third Party Libraries` --> `speexdsp`
+
+#### CLI / MCP (menuconfig --set)
+
+> **CLI:** `./ameba.py menuconfig --set SYMBOL=VALUE [...]`  
+> **MCP (ameba-dev):** call `kconfig_set` tool with symbols below as `assignments` list
+
+| # | Symbol | Value | Note |
+|---|--------|-------|------|
+| 1 | `CONFIG_BT_MENU` | `y` | |
+| 2 | `CONFIG_BT_DUAL_MODE` | `y` | RTL8730E defaults to DUAL_MODE |
+| 3 | `CONFIG_BT_EXAMPLE_DEMO_MENU` | `y` | |
+| 4 | `CONFIG_BT_A2DP_HFP_PBP_MENU` | `y` | |
+| 5 | `CONFIG_AUDIO_FWK_MENU` | `y` | |
+| 6 | `CONFIG_AUDIO_MIXER_MENU` | `y` | Select Audio Interface: Mixer |
+| 7 | `CONFIG_THIRD_PARTY_SPEEXDSP_MENU` | `y` | Required for HFP echo cancellation |
+
+---
+
+## Build
+
+#### Manual
+
+```bash
+./ameba.py build
+```
+
+#### CLI
+
+```bash
+./ameba.py build -q
+```
+
+#### MCP (ameba-dev)
+
+Use `build_firmware` tool; SoC must be selected beforehand via `set_target`.
+
+---
+
+## Flash
+
+#### Manual / CLI
+
+```bash
+./ameba.py flash
+```
+
+#### MCP (ameba-dev)
+
+Use `flash_firmware` tool; SoC and image directory are resolved from `set_target`.
+
+---
+
+## ATCMD Reference
 
 1. A2DP sink + AVRCP + HFP handfree + PBAP + Auracast demo
 
@@ -109,7 +162,7 @@ track_buf_size = 22608;
 
    1.7 stop LE Audio PBP broadcast  `AT+BLEBAP=broadcast_stop`
 
-   > **Note:** must stop broadcast! otherwise will caused insufficient bandwidth!
+   > **Note:** must stop broadcast! otherwise will cause insufficient bandwidth!
 
    1.8 start scan  `AT+BLEBAP=escan,1`
 

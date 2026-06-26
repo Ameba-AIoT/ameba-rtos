@@ -168,8 +168,12 @@ typedef struct {
 /** @defgroup WDG_Peripheral_Definitions WDG Peripheral Definitions
   * @{
   */
-#define IS_SYETEM_WDG_PERIPH(PERIPH) (((PERIPH) == CPU1_WDG_DEV) || ((PERIPH) == CPU0_S_WDG_DEV) || ((PERIPH) == CPU0_NS_WDG_DEV))
+/** @brief Check if system WDG peripheral is valid. */
+#define IS_SYETEM_WDG_PERIPH(PERIPH) (((PERIPH) == CPU1_WDG_DEV) || ((PERIPH) == CPU0_S_WDG_DEV) \
+									  || ((PERIPH) == CPU0_NS_WDG_DEV))
+/** @brief Check if IWDG peripheral is valid. */
 #define IS_IWDG_PERIPH(PERIPH) ((PERIPH) == IWDG_DEV)
+/** @brief Check if WDG peripheral is valid. */
 #define IS_WDG_ALL_PERIPH(PERIPH) (IS_IWDG_PERIPH(PERIPH) || IS_SYETEM_WDG_PERIPH(PERIPH))
 
 /**
@@ -179,9 +183,9 @@ typedef struct {
 /** @defgroup WDG_Magic_Key WDG Magic Key
   * @{
   */
-#define WDG_ACCESS_EN                                   0x00006969
-#define WDG_FUNC_EN                                     0x00003C3C
-#define WDG_REFRESH                                     0x00005A5A
+#define WDG_ACCESS_EN                                   0x00006969  /*!< Magic key to enable register access. */
+#define WDG_FUNC_EN                                     0x00003C3C  /*!< Magic key to enable WDG function. */
+#define WDG_REFRESH                                     0x00005A5A  /*!< Magic key to reload WDG counter. */
 /**
   * @}
   */

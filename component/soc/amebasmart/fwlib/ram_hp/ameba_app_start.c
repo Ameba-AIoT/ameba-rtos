@@ -17,7 +17,6 @@ static const char *const TAG = "APP";
 extern void newlib_locks_init(void);
 extern int main(void);
 extern u32 GlobalDebugEnable;
-void NS_ENTRY BOOT_IMG3(void);
 void app_init_psram(void);
 
 u32 app_mpu_nocache_check(u32 mem_addr)
@@ -170,10 +169,7 @@ void app_start(void)
 	/* 5. Confirm CPU secure state*/
 	cmse_address_info_t cmse_address_info = cmse_TT((void *)app_start);
 	RTK_LOGI(TAG, "IMG2 SECURE STATE: %d\n", cmse_address_info.flags.secure);
-	/* 6. Load secure image*/
-#if defined (CONFIG_TRUSTZONE_EN) && (CONFIG_TRUSTZONE_EN == 1U)
-	BOOT_IMG3();
-#endif
+	/* 6. image3 is booted from image1 before image2; no NS_ENTRY call needed here */
 
 	/* 7.For reference only, users can modify the function if need */
 	/* Attention, the handler is needed to clear NVIC pending int and ip int in dslp flow */

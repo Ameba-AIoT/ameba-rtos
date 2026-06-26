@@ -36,11 +36,9 @@
 
 #define USBH_CDC_ECM_STATE_TRACE_ENABLE                         0        /**< Enable or disable CDC ECM state trace logging. */
 
-#define USB_DEFAULT_VID                                         USB_VID  /**< Default Vendor ID. */
-
-#define CDC_ECM_MAC_STR_LEN                                     (6)      /**< Length of the MAC address in bytes. */
-#define CDC_ECM_CTRL_REG_BUF_LEN                                (4)      /**< Length of the ECM dongle control register buffer. */
-#define CDC_ECM_MUTICAST_FILTER_STR_LEN                         (20)     /**< Length of the ECM multicast filter control buffer. */
+#define USBH_CDC_ECM_MAC_STR_LEN                                     (6)      /**< Length of the MAC address in bytes. */
+#define USBH_CDC_ECM_CTRL_REG_BUF_LEN                                (4)      /**< Length of the ECM dongle control register buffer. */
+#define USBH_CDC_ECM_MULTICAST_FILTER_STR_LEN                        (20)     /**< Length of the ECM multicast filter control buffer. */
 
 /** @} End of Host_CDC_ECM_Constants group */
 /** @} End of USB_Host_Constants group */
@@ -125,11 +123,11 @@ typedef struct {
  * @brief Structure representing the CDC ECM host instance.
  */
 typedef struct {
-	u8 muticast_filter[CDC_ECM_MUTICAST_FILTER_STR_LEN]; /**< Buffer for multicast filer control */
-	u8 mac[CDC_ECM_MAC_STR_LEN];                     /**< Buffer for saving MAC string */
-	u8 mac_ctrl_lock[CDC_ECM_CTRL_REG_BUF_LEN];      /**< Buffer for RTL8152 MAC change control */
-	u8 flow_ctrl[CDC_ECM_CTRL_REG_BUF_LEN];          /**< Buffer for RTL8152 flow control */
-	u8 rcr[CDC_ECM_CTRL_REG_BUF_LEN];                /**< Buffer for RTL8156 RCR register */
+	u8 multicast_filter[USBH_CDC_ECM_MULTICAST_FILTER_STR_LEN]; /**< Buffer for multicast filer control */
+	u8 mac[USBH_CDC_ECM_MAC_STR_LEN];                     /**< Buffer for saving MAC string */
+	u8 mac_ctrl_lock[USBH_CDC_ECM_CTRL_REG_BUF_LEN];      /**< Buffer for RTL8152 MAC change control */
+	u8 flow_ctrl[USBH_CDC_ECM_CTRL_REG_BUF_LEN];          /**< Buffer for RTL8152 flow control */
+	u8 rcr[USBH_CDC_ECM_CTRL_REG_BUF_LEN];                /**< Buffer for RTL8156 RCR register */
 
 	usbh_cdc_ecm_pipe_info_t intr_rx;                /**< Intr IN Endpoint Info */
 	usbh_cdc_ecm_pipe_info_t bulk_tx;                /**< Bulk OUT Endpoint Info */
@@ -146,7 +144,7 @@ typedef struct {
 	u16 sub_status;                                  /**< ECM sub-status, see usbh_cdc_ecm_at_set_state_t */
 	u16 feature_selector;                            /**< Feature selector parameter */
 	u16 packet_filter;                               /**< Packet filter configuration */
-	u16 muticast_filter_len;                         /**< Length of multicast filter parameters */
+	u16 multicast_filter_len;                         /**< Length of multicast filter parameters */
 	u16 vid;                                         /**< Vendor ID */
 	u16 pid;                                         /**< Product ID */
 	u8 data_itf_id;                                  /**< Data Interface number */

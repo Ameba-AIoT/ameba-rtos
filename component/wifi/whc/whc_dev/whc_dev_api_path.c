@@ -88,6 +88,9 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SME_AUTH, whc_event_sme_auth},
 	{WHC_API_WIFI_SME_SET_ASSOCREQ_IE, whc_event_sme_set_assocreq_ie},
 #endif
+#ifdef CONFIG_WHCH
+	{WHC_API_WIFI_WHCH_STATES_SYNC, whc_event_wifi_stats_update},
+#endif
 #endif
 	{WHC_API_WIFI_ON,	whc_event_wifi_on},
 	{WHC_API_WIFI_DRIVE_IS_MP,	whc_event_wifi_driver_is_mp},
@@ -688,6 +691,19 @@ void whc_event_wifi_ip_update(u32 api_id, u32 *param_buf)
 
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
+
+#ifdef CONFIG_WHCH
+void rtw_recv_rx_stats_count_update(struct rtw_stats_info *pstats_info);
+void whc_event_wifi_stats_update(u32 api_id, u32 *param_buf)
+{
+	int ret = 0;
+	struct rtw_stats_info *pstats = (struct rtw_stats_info *)param_buf;
+
+	rtw_recv_rx_stats_count_update(pstats);
+
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
+}
+#endif
 
 #ifdef CONFIG_NAN
 void whc_event_nan_init(u32 api_id, u32 *param_buf)

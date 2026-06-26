@@ -112,7 +112,5 @@ int example_raw_gtimer(void)
 		printf("Create RAW_GTIMER_DEMO_TASK Err!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
-

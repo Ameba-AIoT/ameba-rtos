@@ -172,6 +172,7 @@ extern "C" {
 #endif
 
 #define CONFIG_LOG 1
+#define CONFIG_BT_LOG_SNIFFER_INFO  1
 
 #define CONFIG_BT_GATT_SERVICE_CHANGED 1
 #define CONFIG_BT_GATT_DYNAMIC_DB 1

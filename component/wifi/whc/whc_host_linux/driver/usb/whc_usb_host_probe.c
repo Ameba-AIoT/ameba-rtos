@@ -300,11 +300,23 @@ static int whc_usb_host_suspend(struct usb_interface *intf, pm_message_t message
 	struct whc_usb *priv = &whc_usb_host_priv;
 	struct rtw_usbreq *req, *next;
 
+#if defined(CONFIG_WHC_WIFI_API_PATH)
+	/* staion mode */
+	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_SUCCESS) {
+		/* update ip address success */
+		if (whc_host_update_ip_addr()) {
+			return -EPERM;
+		}
+	}
+#endif
+
+	/* set wowlan_state, stop schedule rx/tx work */
+	global_idev.wowlan_state = 1;
 	netif_tx_stop_all_queues(global_idev.pndev[0]);
 	if (atomic_read(&priv->tx_inflight)) {
 		netif_tx_start_all_queues(global_idev.pndev[0]);
 		netif_tx_wake_all_queues(global_idev.pndev[0]);
-		return -1;
+		goto FAIL;
 	}
 
 	req = NULL;
@@ -317,6 +329,12 @@ static int whc_usb_host_suspend(struct usb_interface *intf, pm_message_t message
 	}
 
 	return 0;
+
+FAIL:
+	netif_tx_start_all_queues(global_idev.pndev[0]);
+	netif_tx_wake_all_queues(global_idev.pndev[0]);
+	global_idev.wowlan_state = 0;
+	return -1;
 }
 
 static int whc_usb_host_resume(struct usb_interface *intf)
@@ -343,6 +361,8 @@ static int whc_usb_host_resume(struct usb_interface *intf)
 
 	netif_tx_start_all_queues(global_idev.pndev[0]);
 	netif_tx_wake_all_queues(global_idev.pndev[0]);
+
+	global_idev.wowlan_state = 0;
 
 	return 0;
 }

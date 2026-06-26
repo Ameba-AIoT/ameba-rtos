@@ -110,7 +110,5 @@ int example_raw_adc_comp_assist(void)
 		RTK_LOGE(NOTAG, "Cannot create RAW_ADC_COMP_TASK\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

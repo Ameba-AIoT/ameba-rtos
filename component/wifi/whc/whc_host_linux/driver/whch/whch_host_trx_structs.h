@@ -20,7 +20,6 @@
 #define SN_LESS(a, b)	(((a-b)&0x800)!=0)
 #define SN_EQUAL(a, b)	(a == b)
 
-/* TODO, maybe not need */
 #define NULL_FRAMETAG		(0x0)
 #define DATA_FRAMETAG		0x01
 #define MGNT_FRAMETAG		0x03
@@ -251,7 +250,7 @@ struct whch_hw_xmit {
 	struct hw_xmit		hwxmits[4];	/* 0(VO), 1(VI), 2(BE), 3(BK) */
 };
 
-struct qos_priv	{
+struct whch_qos_priv	{
 	u32					qos_option;			/* bit mask option: u-apsd, s-apsd, ts, block ack... */
 };
 

@@ -52,13 +52,13 @@ extern "C" {
   */
 
 /**
-  * @brief enum I2CCallback
+  * @brief I2C callback event type.
   */
 typedef enum {
-	I2C_TX_COMPLETE     = 0,
-	I2C_RX_COMPLETE     = 1,
-	I2C_RD_REQ_COMMAND  = 2,
-	I2C_ERR_OCCURRED    = 3,
+	I2C_TX_COMPLETE     = 0, /*!< Transmission complete event. */
+	I2C_RX_COMPLETE     = 1, /*!< Reception complete event. */
+	I2C_RD_REQ_COMMAND  = 2, /*!< Slave read request event. */
+	I2C_ERR_OCCURRED    = 3, /*!< Error occurred event. */
 } I2CCallback;
 /** @}*/
 

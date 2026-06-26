@@ -27,7 +27,7 @@ u8 vref_init_done = FALSE;
 
 /**
   * @brief Initialize the parameters in the ADC_InitStruct with default values.
-  * @param ADC_InitStruct Pointer to a ADC_InitTypeDef structure that contains
+  * @param ADC_InitStruct Pointer to an ADC_InitTypeDef structure that contains
   *         the configuration information of the ADC peripheral.
   */
 void ADC_StructInit(ADC_InitTypeDef *ADC_InitStruct)
@@ -49,7 +49,7 @@ void ADC_StructInit(ADC_InitTypeDef *ADC_InitStruct)
 
 /**
   * @brief Initialize ADC according to the specified parameters in ADC_InitStruct.
-  * @param ADC_InitStruct Pointer to a ADC_InitTypeDef structure that contains
+  * @param ADC_InitStruct Pointer to an ADC_InitTypeDef structure that contains
   *         the configuration information of the ADC peripheral.
   */
 void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
@@ -372,9 +372,10 @@ u32 ADC_GetStatus(void)
   * @param NewState This parameter can be one of the following values:
   *			@arg ENABLE: Enable the analog module and analog mux, then start a new channel conversion.
   *			@arg DISABLE: Disable the analog module and analog mux.
-  * @note Used in Software Trigger Mode.
-  * @note Every time this bit is set to 1, ADC module would switch to a new channel and do one conversion.
-  *		Every time a conversion is done, software must clear this bit manually.
+  * @note
+  *         - Used in Software Trigger Mode.
+  *         - Every time this bit is set to 1, ADC module would switch to a new channel and do one conversion.
+  *         - Every time a conversion is done, software must clear this bit manually.
   * @internal
   * @note Sync time: 6 ~ 7*sample_clk.
   * @endinternal
@@ -405,9 +406,10 @@ void ADC_SWTrigCmd(u32 NewState)
   * @param NewState This parameter can be one of the following values:
   *		@arg ENABLE: Enable the automatic channel switch.
   *		@arg DISABLE: Disable the automatic channel switch.
-  * @note Used in Automatic Mode
-  * @note When setting this bit, an automatic channel switch starts from the first channel in the channel switch list.
-  *		If an automatic channel switch is in progress, writing 0 will terminate the automatic channel switch.
+  * @note
+  *         - Used in Automatic Mode.
+  *         - When setting this bit, an automatic channel switch starts from the first channel in the channel switch list.
+  *         - If an automatic channel switch is in progress, writing 0 will terminate the automatic channel switch.
   * @internal
   * @note  Sync time: 6 ~ 7*sample_clk
   * @endinternal

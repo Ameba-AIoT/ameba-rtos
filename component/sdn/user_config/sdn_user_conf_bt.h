@@ -66,6 +66,14 @@
 #define CONFIG_BLE_LL_DTM_ENABLE
 #endif
 
+#if defined(CONFIG_BLE_LL_PA_SYNC_ENABLE)
+#define BLE_LL_MAX_PA_SYNC_SET_NUM                          1
+#define BLE_LL_MAX_PA_SYNC_CHAIN_NUM                        7
+#else
+#define BLE_LL_MAX_PA_SYNC_SET_NUM                          0
+#define BLE_LL_MAX_PA_SYNC_CHAIN_NUM                        0
+#endif
+
 #define BT_LL_LE_MAX_CONN_NUM                               RTK_BLE_GAP_MAX_LINKS
 
 #define BLE_LL_RX_DATA_NUM_PER_LINK                         5

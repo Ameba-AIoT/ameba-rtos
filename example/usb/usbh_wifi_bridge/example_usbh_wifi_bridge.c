@@ -21,7 +21,6 @@ extern void rltk_usb_eth_init(void);
 
 #define ECMBDEBUG  0
 
-#define BOOTP_PORT		(68)
 #define ETH_ILEN		(6)
 
 struct eth_addr host_mac = {{0x00}}; // mac of device connected to usb
@@ -29,9 +28,17 @@ struct eth_addr host_mac = {{0x00}}; // mac of device connected to usb
 static const char *const TAG = "ECMB";
 
 /* Private types -------------------------------------------------------------*/
+// Thread priorities
 #define USBH_ECM_MAIN_THREAD_PRIORITY           5
 #define USBH_ECM_HOTPLUG_THREAD_PRIORITY        6
-#define USBH_ECM_ISR_PRIORITY                   INT_PRI_MIDDLE
+#define USBH_ECM_MONITOR_THREAD_PRIORITY        3
+#define USBH_ECM_BRIDGE_THREAD_PRIORITY         2
+// Thread stack sizes
+#define USBH_ECM_HOTPLUG_THREAD_STACK_SIZE        1024U
+#define USBH_ECM_MONITOR_THREAD_STACK_SIZE        (1024U * 2)
+#define USBH_ECM_BRIDGE_THREAD_STACK_SIZE         (1024U * 2)
+
+#define USBH_ECM_MAIN_TASK_STACK_SIZE      1280U
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -60,8 +67,8 @@ static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
 static usbh_config_t usbh_ecm_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = 0, //USBH_SOF_INTR
-	.isr_priority = USBH_ECM_ISR_PRIORITY,
-	.main_task_stack_size = 1280U,
+	.isr_priority = INT_PRI_MIDDLE,
+	.main_task_stack_size = USBH_ECM_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = USBH_ECM_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.hub_support = 1U,
@@ -339,7 +346,6 @@ static u32_t send_to_usb(pkt_attrib_t *pattrib, struct pbuf *p)
 	return 0;
 }
 
-
 static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
 {
 	pkt_attrib_t *pattrib;
@@ -508,7 +514,7 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 
 void example_usbh_wifi_bridge(void)
 {
-	int status;
+	int ret;
 	rtos_task_t monitor_task;
 	rtos_task_t bridge_task;
 
@@ -518,19 +524,25 @@ void example_usbh_wifi_bridge(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USB host usbh_wifi_bridge demo started\n");
 
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
-	status = rtos_task_create(&hotplug_task, "example_usbh_ecm_hotplug_thread", example_usbh_ecm_hotplug_thread, NULL, 1024U, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&hotplug_task, "example_usbh_ecm_hotplug_thread",
+						   example_usbh_ecm_hotplug_thread, NULL,
+						   USBH_ECM_HOTPLUG_THREAD_STACK_SIZE, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
 	}
 #endif
 
-	status = rtos_task_create(&monitor_task, "example_usbh_wifi_bridge_monitor_thread", example_usbh_wifi_bridge_monitor_thread, NULL, 1024U * 2, 3U);
-	if (status != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USB host monitor_link_change thread: %d\n", status);
+	ret = rtos_task_create(&monitor_task, "example_usbh_wifi_bridge_monitor_thread",
+						   example_usbh_wifi_bridge_monitor_thread, NULL,
+						   USBH_ECM_MONITOR_THREAD_STACK_SIZE, USBH_ECM_MONITOR_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USB host monitor_link_change thread: %d\n", ret);
 	}
 
-	status = rtos_task_create(&bridge_task, "example_usbh_wifi_bridge_bridge_thread", example_usbh_wifi_bridge_bridge_thread, NULL, 1024U * 2, 2U);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&bridge_task, "example_usbh_wifi_bridge_bridge_thread",
+						   example_usbh_wifi_bridge_bridge_thread, NULL,
+						   USBH_ECM_BRIDGE_THREAD_STACK_SIZE, USBH_ECM_BRIDGE_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USBH cdc_ecm_bridge_task thread\n");
 	}
 }

@@ -11,7 +11,7 @@ int whc_host_recv_priv_init(void)
 	int	res = 0;
 	union recv_frame	*precvframe;
 	u8					*precv_frame_buf = NULL;
-	struct whch_recv_priv 	*precvpriv = &global_idev.recvpriv;
+	struct whch_recv_priv 	*precvpriv = &global_idev.whchpriv.recvpriv;
 
 	INIT_LIST_HEAD(&precvpriv->free_recv_queue);
 	spin_lock_init(&precvpriv->free_recv_lock);
@@ -20,7 +20,7 @@ int whc_host_recv_priv_init(void)
 
 	precvpriv->amsdu_priv = NULL;
 
-	precvpriv->pallocated_frame_buf = kmalloc(precvpriv->free_recvframe_cnt * sizeof(union recv_frame) + RXFRAME_ALIGN_SZ, GFP_ATOMIC);
+	precvpriv->pallocated_frame_buf = kmalloc(precvpriv->free_recvframe_cnt * sizeof(union recv_frame) + RXFRAME_ALIGN_SZ, GFP_KERNEL);
 	if (precvpriv->pallocated_frame_buf == NULL) {
 		res = -1;
 		goto exit;
@@ -43,14 +43,14 @@ exit:
 
 void whc_host_recv_priv_free(void)
 {
-	if (global_idev.recvpriv.pallocated_frame_buf) {
-		kfree(global_idev.recvpriv.pallocated_frame_buf);
+	if (global_idev.whchpriv.recvpriv.pallocated_frame_buf) {
+		kfree(global_idev.whchpriv.recvpriv.pallocated_frame_buf);
 	}
 }
 
 union recv_frame *whc_host_recv_alloc_frame(void)
 {
-	struct whch_recv_priv 	*precvpriv = &global_idev.recvpriv;
+	struct whch_recv_priv 	*precvpriv = &global_idev.whchpriv.recvpriv;
 	struct list_head    *plist, *phead;
 	union recv_frame	*precvframe;
 
@@ -73,7 +73,7 @@ union recv_frame *whc_host_recv_alloc_frame(void)
 
 int whc_host_recv_free_frame(union recv_frame *precvframe)
 {
-	struct whch_recv_priv 	*precvpriv = &global_idev.recvpriv;
+	struct whch_recv_priv 	*precvpriv = &global_idev.whchpriv.recvpriv;
 
 	if (precvframe == NULL) {
 		return 0;
@@ -163,7 +163,7 @@ u8 *whc_host_recv_recvframe_pull_tail(union recv_frame *precvframe, signed int s
 
 void whc_host_recv_count_rx_stats(struct whch_rx_stats *pstats, union recv_frame *prframe, struct sta_mlme_priv *psta_mlmepriv)
 {
-	struct mlme_priv	*pmlmepriv = &global_idev.mlmepriv;
+	struct whch_mlme_priv	*pmlmepriv = &global_idev.whchpriv.mlmepriv;
 	struct rx_pkt_attrib *pattrib = &prframe->u.hdr.attrib;
 	u8 is_ra_bmc = IS_MCAST(pattrib->ra);
 	int	sz;
@@ -259,7 +259,7 @@ struct sta_info *whc_host_recv_ap2sta_data_frame(u8 iface_type, union recv_frame
 		goto exit;
 	}
 
-	if (whc_host_check_sta_associated_to_ap() || (mlme_priv->b_in_connect == 1)) {//check underlinking or already associated
+	if (whc_host_check_sta_associated_to_ap() || (mlme_priv->b_in_linking == 1)) {//check underlinking or already associated
 		subtype = GetFrameSubType(ptr);
 		// if NULL-frame, drop packet
 		if (subtype == RTW_DATA_NULL) {
@@ -315,7 +315,7 @@ exit:
 struct sta_info *whc_host_recv_sta2ap_data_frame(u8 iface_type, union recv_frame *precv_frame)
 {
 	struct sta_info *psta = NULL;
-	struct whch_rx_stats *pstats = &global_idev.rx_stats[iface_type];
+	struct whch_rx_stats *pstats = &global_idev.whchpriv.rx_stats[iface_type];
 	u8 *ptr = precv_frame->u.hdr.rx_data;
 	struct rx_pkt_attrib *pattrib = &precv_frame->u.hdr.attrib;
 	unsigned char *mybssid  = global_idev.pndev[iface_type]->dev_addr;
@@ -329,9 +329,9 @@ struct sta_info *whc_host_recv_sta2ap_data_frame(u8 iface_type, union recv_frame
 			goto exit;
 		}
 		psta = whc_host_sta_get_stainfo(iface_type, pattrib->src);
-#if 0   /* softap TODO */
+#if 0   /* TODO_softap */
 		if (psta == NULL) {
-			/* TODO */
+			/* TODO_softap */
 			rtw_issue_deauth(iface_type, pattrib->src, RTW_DISCONN_RSN_80211_CLASS3_FRAME_FROM_NONASSOC_STA);
 			ret = -1;
 			goto exit;
@@ -374,13 +374,42 @@ exit:
 	return (ret == -1) ? NULL : psta;
 }
 
+int whc_host_recv_pn_check(u8 iface_type, union recv_frame *precv_frame)
+{
+	struct rx_pkt_attrib *pattrib = &precv_frame->u.hdr.attrib;
+	struct sta_info *sta = precv_frame->u.hdr.psta;
+	struct whch_security_priv *psecuritypriv = &global_idev.whchpriv.securitypriv[iface_type];
+	int tid = precv_frame->u.hdr.attrib.priority;
+	u8 *ptr = precv_frame->u.hdr.rx_data;
+	u64 tmp_iv_hdr = 0;
+	u64 curr_pn = 0, pkt_pn = 0;
+	u8 key_id;
+
+	if (iface_type == WHC_STA_PORT) {
+		tmp_iv_hdr = le64_to_cpu(*(u64 *)(ptr + pattrib->hdrlen));
+		key_id = CCMPH_2_KEYID(tmp_iv_hdr);
+		pkt_pn = CCMPH_2_PN(tmp_iv_hdr);
+
+		curr_pn = le64_to_cpu(*(u64 *)psecuritypriv->iv_seq[key_id]);
+		curr_pn &= 0x0000ffffffffffff;
+
+		if (!VALID_PN_CHK(pkt_pn, curr_pn)) {
+			return -1;
+		}
+
+		*(u64 *)psecuritypriv->iv_seq[key_id] = cpu_to_le64(pkt_pn);
+	}
+
+	return 0;
+}
+
 int whc_host_recv_validate_data_frame(u8 iface_type, union recv_frame *precv_frame)
 {
-	struct security_priv *psecuritypriv = &global_idev.securitypriv[iface_type];
+	struct whch_security_priv *psecuritypriv = &global_idev.whchpriv.securitypriv[iface_type];
 	struct sta_info *psta = NULL;
 	struct sta_mlme_priv *psta_mlmepriv = NULL;
 	struct rx_pkt_attrib	*pattrib = &precv_frame->u.hdr.attrib;
-	struct whch_rx_stats *pstats = &global_idev.rx_stats[iface_type];
+	struct whch_rx_stats *pstats = &global_idev.whchpriv.rx_stats[iface_type];
 	u8	*psa, *pda, *pbssid;
 	u8	*ptr = precv_frame->u.hdr.rx_data;
 	int	ret = 0;
@@ -500,6 +529,13 @@ int whc_host_recv_validate_data_frame(u8 iface_type, union recv_frame *precv_fra
 		pattrib->iv_len = pattrib->icv_len = 0;
 	}
 
+	if ((pattrib->encrypt == _AES_ || pattrib->encrypt == _GCMP_256_) && IS_MCAST(pattrib->ra)) {
+		if (whc_host_recv_pn_check(iface_type, precv_frame) == -1) {
+			dev_warn(global_idev.pwhc_dev, "broadcast pn check fail!\n");
+			ret = -1;
+			goto exit;
+		}
+	}
 exit:
 	return ret;
 }
@@ -563,14 +599,14 @@ void whc_host_defrag_ctrl_init(struct recv_defrag_ctrl	*pdefrag_ctrl)
 		memset(pdefrag_ctrl->pfragbuf, 0, MAX_SKB_BUF_SIZE);
 	} else {
 		/* Total fragments size is expected to not exceed a skb size */
-		pdefrag_ctrl->pfragbuf = kmalloc(MAX_SKB_BUF_SIZE, GFP_ATOMIC);
+		pdefrag_ctrl->pfragbuf = kmalloc(MAX_SKB_BUF_SIZE, GFP_KERNEL);
 		if (pdefrag_ctrl->pfragbuf == NULL) {
 			return;
 		}
 	}
 	pdefrag_ctrl->latest_frag_num = 0;
 	pdefrag_ctrl->len = 0;
-	mod_timer(&pdefrag_ctrl->defrag_timer, DEFRAG_TO);
+	mod_timer(&pdefrag_ctrl->defrag_timer, jiffies + msecs_to_jiffies(DEFRAG_TO));
 }
 
 void whc_host_defrag_ctrl_deinit(struct recv_defrag_ctrl	*pdefrag_ctrl)
@@ -662,8 +698,7 @@ int whc_host_recv_reorder(void *preorder_per_tid)
 		/*still has pkts in queue*/
 		if (!preorder_ctrl->bReorderWaiting) {
 			preorder_ctrl->bReorderWaiting = true;
-			mod_timer(&preorder_ctrl->reordering_ctrl_timer, REORDER_WAIT_TIME);
-			//wifi_rom_pmu_set_sysactive_time(REORDER_WAIT_TIME + 5);
+			mod_timer(&preorder_ctrl->reordering_ctrl_timer, jiffies + msecs_to_jiffies(REORDER_WAIT_TIME));
 		}
 	} else {
 		/*queue empty*/
@@ -679,7 +714,8 @@ int whc_host_recv_reorder(void *preorder_per_tid)
 _err_exit:
 	/*enqueue fail*/
 	dev_kfree_skb_any(preorder_ctrl->new_node->skb);
-	kfree((u8 *)preorder_ctrl->new_node);
+	INIT_LIST_HEAD(&(preorder_ctrl->new_node->list));
+	list_add_tail(&(preorder_ctrl->new_node->list), &preorder_ctrl->node_free_list);
 	preorder_ctrl->new_node = NULL;
 	spin_unlock_bh(&preorder_ctrl->pending_recvframe_lock);
 	return -1;
@@ -712,7 +748,9 @@ int whc_host_recv_reorder_dequeue(struct recv_reorder_ctrl *preorder_ctrl, int b
 			}
 			//indicate this recv_frame
 			whc_host_if_netif_rx(cur_node->skb, NULL);
-			kfree((u8 *)cur_node);
+			cur_node->skb = NULL;
+			INIT_LIST_HEAD(&(cur_node->list));
+			list_add_tail(&cur_node->list, &preorder_ctrl->node_free_list);
 			//Update local variables.
 			bPktInBuf = false;
 		} else {
@@ -727,7 +765,7 @@ void whc_host_recv_reorder_timer_hdl(struct timer_list *t)
 {
 	int ret;
 	struct recv_reorder_ctrl *preorder_ctrl = from_timer(preorder_ctrl, t, reordering_ctrl_timer);
-	struct mlme_info *pmlmeinfo = &global_idev.mlmeinfo[preorder_ctrl->iface_type];
+	struct whch_mlme_info *pmlmeinfo = &global_idev.whchpriv.mlmeinfo[preorder_ctrl->iface_type];
 
 	spin_lock_bh(&preorder_ctrl->pending_recvframe_lock);
 	ret = whc_host_recv_reorder_dequeue(preorder_ctrl, true);
@@ -736,27 +774,37 @@ void whc_host_recv_reorder_timer_hdl(struct timer_list *t)
 		&& (preorder_ctrl->bReorderWaiting & BIT(7))) {
 		preorder_ctrl->bReorderWaiting &= ~BIT(7);
 		preorder_ctrl->indicate_seq = 0xffff;
-		preorder_ctrl->enable = (pmlmeinfo->b_accept_addba_req == true) ? true : false;
+		preorder_ctrl->enable = true;
 	}
 
 	preorder_ctrl->bReorderWaiting = false;
 	if (ret == true) {
 		preorder_ctrl->bReorderWaiting = true;
-		mod_timer(&preorder_ctrl->reordering_ctrl_timer, REORDER_WAIT_TIME);
-		//wifi_rom_pmu_set_sysactive_time(REORDER_WAIT_TIME + 5);
+		mod_timer(&preorder_ctrl->reordering_ctrl_timer, jiffies + msecs_to_jiffies(REORDER_WAIT_TIME));
 	}
 
 	spin_unlock_bh(&preorder_ctrl->pending_recvframe_lock);
 }
 
-struct recv_reorder_ctrl *whc_host_recv_reorder_alloc(u8 ap_compatibilty, u8 iface_type)
+void whc_host_recv_reorder_init(struct recv_reorder_ctrl *preorder_ctrl)
 {
-	struct recv_reorder_ctrl *preorder_ctrl;
+	memset(preorder_ctrl, 0, sizeof(*preorder_ctrl));
+	preorder_ctrl->enable = false;
+	preorder_ctrl->indicate_seq = 0xffff;
+	preorder_ctrl->wend_b = 0xffff;
+	preorder_ctrl->wsize_b = 64;
+	INIT_LIST_HEAD(&preorder_ctrl->pending_recvframe_queue);
+	spin_lock_init(&preorder_ctrl->pending_recvframe_lock);
+	timer_setup(&preorder_ctrl->reordering_ctrl_timer, whc_host_recv_reorder_timer_hdl, 0);
+	INIT_LIST_HEAD(&preorder_ctrl->node_free_list);
+	preorder_ctrl->node_pool = NULL;
+	preorder_ctrl->pool_size = 0;
+}
 
-	preorder_ctrl = kmalloc(sizeof(struct recv_reorder_ctrl), GFP_ATOMIC);
-	if (preorder_ctrl == NULL) {
-		return NULL;
-	}
+void whc_host_recv_reorder_setup(struct recv_reorder_ctrl *preorder_ctrl, u8 ap_compatibilty, u8 iface_type)
+{
+	u16 pool_sz = preorder_ctrl->wsize_b;
+	int i;
 
 	preorder_ctrl->iface_type = iface_type;
 	preorder_ctrl->enable = false;
@@ -764,19 +812,31 @@ struct recv_reorder_ctrl *whc_host_recv_reorder_alloc(u8 ap_compatibilty, u8 ifa
 	preorder_ctrl->wend_b = 0xffff;
 	preorder_ctrl->wsize_b = 64;
 	preorder_ctrl->ap_compatibilty_enabled = ap_compatibilty;
-	INIT_LIST_HEAD(&preorder_ctrl->pending_recvframe_queue);
-	spin_lock_init(&preorder_ctrl->pending_recvframe_lock);
-	timer_setup(&preorder_ctrl->reordering_ctrl_timer, whc_host_recv_reorder_timer_hdl, 0);
-	return preorder_ctrl;
+
+	if (preorder_ctrl->node_pool == NULL || preorder_ctrl->pool_size < pool_sz) {
+		if (preorder_ctrl->node_pool) {
+			kfree(preorder_ctrl->node_pool);
+		}
+		preorder_ctrl->node_pool = (struct reorder_node *)kmalloc_array(pool_sz, sizeof(struct reorder_node), GFP_KERNEL);
+		if (preorder_ctrl->node_pool == NULL) {
+			dev_err(global_idev.pwhc_dev, "[whc] reorder node_pool alloc fail (sz=%d)\n", pool_sz);
+			preorder_ctrl->pool_size = 0;
+			return;
+		}
+		preorder_ctrl->pool_size = pool_sz;
+	}
+
+	INIT_LIST_HEAD(&preorder_ctrl->node_free_list);
+	for (i = 0; i < preorder_ctrl->pool_size; i++) {
+		INIT_LIST_HEAD(&preorder_ctrl->node_pool[i].list);
+		list_add_tail(&preorder_ctrl->node_pool[i].list, &preorder_ctrl->node_free_list);
+	}
 }
 
-void whc_host_recv_reorder_free(struct recv_reorder_ctrl **ppreorder_ctrl)
+void whc_host_recv_reorder_free(struct recv_reorder_ctrl *preorder_ctrl)
 {
-	struct recv_reorder_ctrl *preorder_ctrl;
 	struct reorder_node *cur_node;
 	struct list_head	*phead, *plist;
-
-	preorder_ctrl = *ppreorder_ctrl;
 
 	if (preorder_ctrl == NULL) {
 		return;
@@ -795,96 +855,115 @@ void whc_host_recv_reorder_free(struct recv_reorder_ctrl **ppreorder_ctrl)
 		if (cur_node->skb) {
 			dev_kfree_skb_any(cur_node->skb);
 		}
-		kfree((u8 *)cur_node);
 	}
 
 	if (preorder_ctrl->new_node) {
 		if (preorder_ctrl->new_node->skb) {
 			dev_kfree_skb_any(preorder_ctrl->new_node->skb);
 		}
-		kfree((u8 *)preorder_ctrl->new_node);
+		preorder_ctrl->new_node = NULL;
 	}
 
+	preorder_ctrl->bReorderWaiting = 0;
+	preorder_ctrl->enable = false;
 	spin_unlock_bh(&preorder_ctrl->pending_recvframe_lock);
-	kfree((u8 *)preorder_ctrl);
-	*ppreorder_ctrl = NULL;
+
+	if (preorder_ctrl->node_pool) {
+		kfree(preorder_ctrl->node_pool);
+		preorder_ctrl->node_pool = NULL;
+		preorder_ctrl->pool_size = 0;
+	}
 }
 
-signed int whc_host_recv_check_pn(u8 fragnum, union pn48 *rxPN, union pn48 *pCurRxPN)
+int whc_host_recv_frame_chkmic(u8 iface_type,  struct whch_security_priv *psecuritypriv, union recv_frame *precvframe)
 {
-	signed int	res = true;
-	u8 fragnum_diff = 0;
-	static u8 last_fragnum;
-	union pn48 pn_diff;
+	int	i, res = 0;
+	u32	datalen;
+	u8	miccode[8];
+	u8	bmic_err = false;
+	u8	*pframe, *payload, *pframemic;
+	u8	*mickey;
+	struct sta_info *psta = NULL;
+	struct sta_security_priv *psta_security = NULL;
+	struct	rx_pkt_attrib	*prxattrib = &precvframe->u.hdr.attrib;
 
-	if (fragnum != 0) {
-		if (fragnum >= last_fragnum) {
-			fragnum_diff = fragnum - last_fragnum;
+	psta = precvframe->u.hdr.psta;
+	psta_security = psta ? &psta->sta_security : NULL;
+
+	if (prxattrib->encrypt == _TKIP_) {
+		//calculate mic code
+		if (psta_security != NULL) {
+			if (IS_MCAST(prxattrib->ra)) {
+				mickey = &psecuritypriv->dot11_tkip_grpmickey_rx[0].skey[0];
+				if (psecuritypriv->b_installGrpkey == false) {
+					res = -1;
+					dev_warn(global_idev.pwhc_dev, "chkmic: no group key install!\n");
+					goto exit;
+				}
+			} else {
+				mickey = &psta_security->dot11tkiprxmickey.skey[0];
+			}
+
+			datalen = precvframe->u.hdr.len - prxattrib->hdrlen - prxattrib->iv_len - prxattrib->icv_len - 8; //icv_len included the mic code
+			pframe = precvframe->u.hdr.rx_data;
+			payload = pframe + prxattrib->hdrlen + prxattrib->iv_len;
+			whc_host_seccalctkipmic(mickey, pframe, payload, datalen, &miccode[0], (unsigned char)prxattrib->priority); //care the length of the data
+			pframemic = payload + datalen;
+			bmic_err = false;
+
+			for (i = 0; i < 8; i++) {
+				if (miccode[i] != *(pframemic + i)) {
+					bmic_err = true;
+				}
+			}
+
+			if (bmic_err == true) {
+				dev_warn(global_idev.pwhc_dev, " mic err, %d\n", prxattrib->b_decrypted);
+				res = -1;
+			}
+
 		} else {
-			fragnum_diff = last_fragnum - fragnum;
+			dev_warn(global_idev.pwhc_dev, "chkmic: NULL stainfo!\n");
 		}
 
-		if (rxPN->val >= pCurRxPN->val) {
-			pn_diff.val = rxPN->val - pCurRxPN->val;
-		} else {
-			pn_diff.val = pCurRxPN->val - rxPN->val;
-		}
-
-		if ((u8)pn_diff.val != fragnum_diff) {
-			res = false;
-			goto exit;
-		} else {
-			pCurRxPN->val = rxPN->val;
-			last_fragnum = fragnum;
-		}
-	} else {
-		pCurRxPN->val = rxPN->val;
-		last_fragnum = fragnum;
+		whc_host_recv_recvframe_pull_tail(precvframe, 8);
 	}
+
 exit:
 	return res;
 }
 
-int whc_host_recv_frame_check_frag_pn(struct security_priv *psecuritypriv, union recv_frame *precvframe, u8 fragnum)
+int whc_host_recv_frame_check_frag_pn(struct recv_defrag_ctrl *pdefrag_ctrl, union recv_frame *precvframe, u8 fragcase)
 {
-	int	res = 0;
-	u8 *pframe;
-	int keyID;
-	union pn48 rxPN;
-	union pn48 *pCurRxPN;
 	struct rx_pkt_attrib	*prxattrib = &precvframe->u.hdr.attrib;
+	u8 *pframe;
 	u8 idx;
+	u64 tmp_iv_hdr, cur_pn;
 
 	if (prxattrib->encrypt == _AES_ || prxattrib->encrypt == _GCMP_256_) {
-		pframe = precvframe->u.hdr.rx_data;
-		rxPN.val = 0;
-		rxPN._byte_.TSC0 = pframe[prxattrib->hdrlen];
-		rxPN._byte_.TSC1 = pframe[prxattrib->hdrlen + 1];
-		rxPN._byte_.TSC2 = pframe[prxattrib->hdrlen + 4];
-		rxPN._byte_.TSC3 = pframe[prxattrib->hdrlen + 5];
-		rxPN._byte_.TSC4 = pframe[prxattrib->hdrlen + 6];
-		rxPN._byte_.TSC5 = pframe[prxattrib->hdrlen + 7];
-
-		keyID = (((pframe[prxattrib->hdrlen + 3]) >> 6) & 0x3);
-		if (psecuritypriv->dot11_wpa_grpkey_index == keyID) {
-			idx = psecuritypriv->b_grpkey_rxpn_cur_index;
-		} else {
-			idx = (psecuritypriv->b_grpkey_rxpn_cur_index + 1) % 2;
-		}
-
-		pCurRxPN = &psecuritypriv->dot11_wpa_grpkey_rxpn[idx];
-
-		if (whc_host_recv_check_pn(fragnum, &rxPN, pCurRxPN) == true) {
-			res = 0;
-		} else {
-			res = -1;
+		/*only check be: https://jira.realtek.com/browse/RSWLANDIOT-11204*/
+		if (prxattrib->priority == 0 || prxattrib->priority == 3) {
+			pframe = precvframe->u.hdr.rx_data;
+			tmp_iv_hdr = le64_to_cpu(*(u64 *)(pframe + prxattrib->hdrlen));
+			/* get the first frame's PN. */
+			cur_pn = CCMPH_2_PN(tmp_iv_hdr);
+			if (fragcase == 0) {	/* get the first frame's PN. */
+				pdefrag_ctrl->latest_pn = cur_pn;
+			} else if (fragcase == 1) {	/* 1~ n-1 frag */
+				if (cur_pn != pdefrag_ctrl->latest_pn + 1) {
+					dev_dbg(global_idev.pwhc_dev, "%s non-consective PN! old:%llu, new:%llu\n", __func__, pdefrag_ctrl->latest_pn, cur_pn);
+					/* PN must be consecutive */
+					return -1;
+				} else {
+					pdefrag_ctrl->latest_pn = cur_pn;
+				}
+			}
 		}
 	}
-
-	return res;
+	return 0;
 }
 
-union recv_frame *whc_host_recv_frame_check_defrag(u8 iface_type, struct security_priv *psecuritypriv, union recv_frame *precv_frame)
+union recv_frame *whc_host_recv_frame_check_defrag(u8 iface_type, struct whch_security_priv *psecuritypriv, union recv_frame *precv_frame)
 {
 	struct recv_frame_hdr	*pfhdr = &precv_frame->u.hdr;
 	struct sta_info *psta = NULL;
@@ -901,14 +980,6 @@ union recv_frame *whc_host_recv_frame_check_defrag(u8 iface_type, struct securit
 		return precv_frame;     //isn't a fragment frame
 	}
 
-	if (pfhdr->attrib.b_privacy) {  /* TODO PN check */
-		/*only check be: https://jira.realtek.com/browse/RSWLANDIOT-11204*/
-		if (pfhdr->attrib.priority == 0 || pfhdr->attrib.priority == 3) {
-			if (whc_host_recv_frame_check_frag_pn(psecuritypriv, precv_frame, fragnum) == -1) {
-				goto exit;
-			}
-		}
-	}
 	psta = whc_host_sta_get_stainfo(iface_type, GetAddr2Ptr(pfhdr->rx_data));
 	if (psta == NULL) {
 		goto exit;
@@ -919,8 +990,13 @@ union recv_frame *whc_host_recv_frame_check_defrag(u8 iface_type, struct securit
 	if (ismfrag == 1) {  //0~(n-1) fragment frame
 		if (fragnum == 0) {
 			whc_host_defrag_ctrl_init(pdefrag_ctrl);
+			whc_host_recv_frame_check_frag_pn(pdefrag_ctrl, precv_frame, 0);
 		} else {
 			if ((pdefrag_ctrl->pfragbuf == NULL) || (pdefrag_ctrl->latest_frag_num + 1 != fragnum)) {
+				goto exit;
+			}
+			if (whc_host_recv_frame_check_frag_pn(pdefrag_ctrl, precv_frame, 1) == -1) {
+				whc_host_defrag_ctrl_deinit(pdefrag_ctrl);
 				goto exit;
 			}
 		}
@@ -948,6 +1024,12 @@ union recv_frame *whc_host_recv_frame_check_defrag(u8 iface_type, struct securit
 			whc_host_defrag_ctrl_deinit(pdefrag_ctrl);
 			goto exit;
 		}
+
+		if (whc_host_recv_frame_check_frag_pn(pdefrag_ctrl, precv_frame, 1) == -1) {
+			whc_host_defrag_ctrl_deinit(pdefrag_ctrl);
+			goto exit;
+		}
+
 		/* Insert previous fragments before the data of the last fragment */
 		datalen = pfhdr->len - pfhdr->attrib.hdrlen - pfhdr->attrib.iv_len;
 		payload = pfhdr->rx_data + pfhdr->attrib.hdrlen + pfhdr->attrib.iv_len;
@@ -967,15 +1049,13 @@ exit:
 	return NULL;
 }
 
-/* TODO */
-union recv_frame *whc_host_recv_decryptor(u8 iface_type, struct security_priv *psecuritypriv, union recv_frame *precv_frame)
+union recv_frame *whc_host_recv_decryptor(u8 iface_type, struct whch_security_priv *psecuritypriv, union recv_frame *precv_frame)
 {
 	struct rx_pkt_attrib	*prxattrib = &precv_frame->u.hdr.attrib;
 	union recv_frame	*return_packet = precv_frame;
-	struct sta_security_priv *psta_security;
-//#ifdef SW_WEP_TKIP
+	struct sta_info *psta = NULL;
+	struct sta_security_priv *psta_security = NULL;
 	union u_crc		crc = {0};
-//#endif
 	int			res = 0;
 	u8			*pframe, *prwskey = NULL;
 	int			payload_len;
@@ -1013,8 +1093,8 @@ union recv_frame *whc_host_recv_decryptor(u8 iface_type, struct security_priv *p
 		pframe = (unsigned char *)((union recv_frame *)precv_frame)->u.hdr.rx_data;
 		payload_len = ((union recv_frame *)precv_frame)->u.hdr.len - prxattrib->hdrlen - prxattrib->iv_len;
 		if ((prxattrib->encrypt == _TKIP_) || (prxattrib->encrypt == _AES_) || (prxattrib->encrypt == _GCMP_256_)) {
-			struct sta_info *_ps = whc_host_sta_get_stainfo(iface_type, &prxattrib->ta[0]);
-			psta_security = _ps ? &_ps->sta_security : NULL;
+			psta = precv_frame->u.hdr.psta;
+			psta_security = psta ? &psta->sta_security : NULL;
 			if (psta_security == NULL) {
 				res = -1;
 				goto exit;
@@ -1039,7 +1119,6 @@ union recv_frame *whc_host_recv_decryptor(u8 iface_type, struct security_priv *p
 		}
 
 		switch (prxattrib->encrypt) {
-//#ifdef SW_WEP_TKIP
 		case _WEP40_:
 		case _WEP104_:
 			decrypted = wep_80211_decrypt(
@@ -1070,7 +1149,6 @@ union recv_frame *whc_host_recv_decryptor(u8 iface_type, struct security_priv *p
 						);
 			res = (decrypted == true) ? 0 : -1;
 			break;
-//#endif
 		case _AES_:
 			decrypted = aes_80211_decrypt(
 							pframe,  // Frame offset. Early mode and USB aggregation is not considered
@@ -1179,7 +1257,6 @@ void whc_host_recv_wlanhdr_to_ethhdr(union recv_frame *precvframe)
 void whc_host_if_netif_rx(struct sk_buff *skb, void *preorder_ctrl)
 {
 	int idx = 0;
-	int ret = 0;
 
 	if (preorder_ctrl != NULL) {
 		whc_host_recv_reorder(preorder_ctrl);
@@ -1202,20 +1279,14 @@ void whc_host_if_netif_rx(struct sk_buff *skb, void *preorder_ctrl)
 		return;
 	}
 
-	ret = down_interruptible(&global_idev.netif_rx_sema[idx]);
-	if (ret == -EINTR) {
-		dev_err(global_idev.pwhc_dev, "[whc] netifrx down sema fail\n");
-		return;
-	}
 	whc_host_netif_rx(skb, idx);
-	up(&global_idev.netif_rx_sema[idx]);
 }
 
 int whc_host_recv_indicatepkt(u8 iface_type, union recv_frame *precv_frame)
 {
-	struct security_priv *psecuritypriv = &global_idev.securitypriv[iface_type];
+	struct whch_security_priv *psecuritypriv = &global_idev.whchpriv.securitypriv[iface_type];
 	struct sk_buff *skb;
-	struct mlme_info *pmlmeinfo = (&global_idev.mlmeinfo[iface_type]);
+	struct whch_mlme_info *pmlmeinfo = (&global_idev.whchpriv.mlmeinfo[iface_type]);
 	struct rx_pkt_attrib *pattrib;
 	struct sta_info *psta = NULL;
 	struct sta_mlme_priv *psta_mlmepriv = NULL;
@@ -1239,7 +1310,7 @@ int whc_host_recv_indicatepkt(u8 iface_type, union recv_frame *precv_frame)
 	skb_set_tail_pointer(skb, precv_frame->u.hdr.len);
 	skb->len = precv_frame->u.hdr.len;
 
-#if 0 /* softap TODO */
+#if 0 /* TODO_softap */
 	if (iface_type == WHC_AP_PORT) {
 		struct sk_buff *pskb2 = NULL;
 
@@ -1268,7 +1339,7 @@ int whc_host_recv_indicatepkt(u8 iface_type, union recv_frame *precv_frame)
 				//1208 iphone5 connection issue, need to check psta exist first
 				if (psta) {
 					//skb  rx->tx,reserve tx desc
-					pskb2 = skb_copy(skb, GFP_ATOMIC, SKB_WLAN_TX_EXTRA_LEN);
+					pskb2 = skb_copy(skb, GFP_KERNEL, SKB_WLAN_TX_EXTRA_LEN);
 					if (pskb2 != NULL) {	//only pskb2 is not null, transmit pskb2 to rtw_xmit_entry
 						pskb2->dev = global_idev.pndev[iface_type];
 						rtw_xmit_entry(pskb2, pskb2->dev);//tx pskb2
@@ -1279,7 +1350,7 @@ int whc_host_recv_indicatepkt(u8 iface_type, union recv_frame *precv_frame)
 				psta = whc_host_sta_get_stainfo(iface_type, pattrib->dst);
 				if (psta) {
 					//skb  rx->tx,reserve tx desc
-					pskb2 = skb_copy(skb, GFP_ATOMIC, SKB_WLAN_TX_EXTRA_LEN);
+					pskb2 = skb_copy(skb, GFP_KERNEL, SKB_WLAN_TX_EXTRA_LEN);
 					dev_kfree_skb_any(skb);//free skb as it is not used anymore
 
 					if (pskb2 != NULL) {	//only pskb2 is not null, transmit pskb2 to rtw_xmit_entry
@@ -1301,8 +1372,8 @@ bypass_forwarding:
 	/*reorder is needed if addba of this STA's TID has been setup */
 	psta = whc_host_sta_get_stainfo(iface_type, pattrib->ta);
 	if (pattrib->b_qos && psta && (!IS_MCAST(pattrib->ra)) && (!pattrib->b_amsdu)) {
-		preorder_ctrl = psta->sta_recvpriv.recvreorder_ctrl[pattrib->priority & 0x0F];
-		if (preorder_ctrl) { /*addba has setted*/
+		preorder_ctrl = &psta->sta_recvpriv.recvreorder_ctrl[pattrib->priority & 0x0F];
+		if (preorder_ctrl->enable) { /*addba has setted*/
 			if ((preorder_ctrl->indicate_seq == 0xffff) && (preorder_ctrl->iface_type == WHC_STA_PORT)) {
 				start_seq = le16_to_cpu(pmlmeinfo->paddba_req.BA_starting_seqctrl) >> 4;
 				if (((preorder_ctrl->ap_compatibilty_enabled & 0xF) < 10) &&
@@ -1315,9 +1386,14 @@ bypass_forwarding:
 			}
 
 			if (preorder_ctrl) {
-				preorder_ctrl->new_node = (struct reorder_node *)kmalloc(sizeof(struct reorder_node), GFP_ATOMIC);
+				if (list_empty(&preorder_ctrl->node_free_list)) {
+					dev_err(global_idev.pwhc_dev, "[whc]: %s reorder node pool empty!\n", __func__);
+					goto _recv_indicatepkt_drop;
+				}
+				preorder_ctrl->new_node = list_first_entry(&preorder_ctrl->node_free_list, struct reorder_node, list);
+				list_del_init(&preorder_ctrl->new_node->list);
 				if (preorder_ctrl->new_node == NULL) {
-					dev_err(global_idev.pwhc_dev, "[whc]: %s kmalloc reorder_node fail!\n", __func__);
+					dev_err(global_idev.pwhc_dev, "[whc]: %s get reorder_node fail!\n", __func__);
 					goto _recv_indicatepkt_drop;
 				}
 				preorder_ctrl->new_node->skb = skb;
@@ -1356,9 +1432,9 @@ int whc_host_recv_process_indicatepkts(u8 iface_type, union recv_frame *prframe)
 int whc_host_recv_func_posthandle(u8 iface_type, union recv_frame *prframe)
 {
 	struct rx_pkt_attrib    *pattrib = &prframe->u.hdr.attrib;
-	struct security_priv    *psecuritypriv = &global_idev.securitypriv[iface_type];
+	struct whch_security_priv    *psecuritypriv = &global_idev.whchpriv.securitypriv[iface_type];
 	struct sta_info         *psta;
-	struct whch_rx_stats 	*pstats = &global_idev.rx_stats[iface_type];
+	struct whch_rx_stats 	*pstats = &global_idev.whchpriv.rx_stats[iface_type];
 	u8 *ptr = prframe->u.hdr.rx_data;
 	u16 ether_type = 0;
 	int ret = 0;
@@ -1371,42 +1447,27 @@ int whc_host_recv_func_posthandle(u8 iface_type, union recv_frame *prframe)
 		goto _recv_data_drop;
 	}
 
-	/* security TODO */
 	prframe = whc_host_recv_decryptor(iface_type, psecuritypriv, prframe);
-
 	if (prframe == NULL) {
 		ret = -1;
 		goto _recv_data_drop;
 	}
 
 	prframe = whc_host_recv_frame_check_defrag(iface_type, psecuritypriv, prframe);
-
 	if (prframe == NULL) {
+		ret = -1;
 		goto _recv_data_drop;
 	}
 
-#if 0   /* security TODO */
 	if (prframe->u.hdr.attrib.b_privacy) {
 		//check tkip mic code
-		if (rtw_recv_frame_chkmic(iface_type, psecuritypriv, prframe) == -1) {
+		if (whc_host_recv_frame_chkmic(iface_type, psecuritypriv, prframe) == -1) {
 			whc_host_recv_free_frame(prframe);
 			prframe = NULL;
 			ret = -1;
 			goto _recv_data_drop;
 		}
-
-		/*only check be: https://jira.realtek.com/browse/RSWLANDIOT-11204*/
-		if (pattrib->priority == 0 || pattrib->priority == 3) {
-			//check ccmp pn (packet number)
-			if (rtw_recv_frame_chkpn(psecuritypriv, prframe) == -1) {
-				whc_host_recv_free_frame(prframe);
-				prframe = NULL;
-				ret = -1;
-				goto _recv_data_drop;
-			}
-		}
 	}
-#endif
 
 	psta = prframe->u.hdr.psta;
 	ptr += pattrib->hdrlen + pattrib->iv_len + LLC_HEADER_SIZE;
@@ -1438,10 +1499,10 @@ int  whc_host_recv_entry(union recv_frame *precvframe)
 	int			ret = 0;
 	u8 iface_type = precvframe->u.hdr.iface_type;
 	struct rx_pkt_attrib *pattrib = &precvframe->u.hdr.attrib;
-	struct whch_rx_stats *pstats = &global_idev.rx_stats[iface_type];
-	struct security_priv *psecuritypriv = &global_idev.securitypriv[iface_type];
+	struct whch_rx_stats *pstats = &global_idev.whchpriv.rx_stats[iface_type];
+	struct whch_security_priv *psecuritypriv = &global_idev.whchpriv.securitypriv[iface_type];
 
-#if 0   /* softap todo */
+#if 0   /* TODO_softap */
 	if (iface_type == WHC_AP_PORT) {
 		rtos_mutex_take(g_apmlmepriv.expire_mutex, MUTEX_WAIT_TIMEOUT);
 	}
@@ -1468,7 +1529,7 @@ int  whc_host_recv_entry(union recv_frame *precvframe)
 	if (ret == 0) {
 		ret = whc_host_recv_func_posthandle(iface_type, precvframe);
 	}
-#if 0   /* softap todo */
+#if 0   /* TODO_softap */
 	if (iface_type == WHC_AP_PORT) {
 		rtos_mutex_give(g_apmlmepriv.expire_mutex);
 	}

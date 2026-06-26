@@ -77,10 +77,5 @@ int example_raw_nand_flash_read_write(void)
 		RTK_LOGI(NOTAG, "\n\r%s rtos_task_create(flash_test_task) failed", __FUNCTION__);
 	}
 
-	rtos_sched_start();
-	while (1) {
-		rtos_time_delay_ms(1000);
-	}
-
 	return 0;
 }

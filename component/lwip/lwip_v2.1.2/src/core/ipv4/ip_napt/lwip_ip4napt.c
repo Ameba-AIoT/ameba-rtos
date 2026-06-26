@@ -1304,12 +1304,29 @@ err_t ip_napt_enqueue(struct pbuf *p, struct netif *inp)
 void ip_napt_dump(void)
 {
 	int total_session = 0;
+
+	if (!ip_napt_table) {
+		RTK_LOGI(NOTAG, "NAPT not initialized\n");
+		return;
+	}
+
 	rtos_mutex_take(napt_entry_lock, MUTEX_WAIT_TIMEOUT);
 	total_session = tcp_entry_count + udp_entry_count + icmp_entry_count;
+
+	RTK_LOGI(NOTAG, "NAPT session table:\n");
+	RTK_LOGI(NOTAG, "======================================\n");
+	RTK_LOGI(NOTAG, " %-15s  %-5s  %-5s  %-15s  %-5s  %-5s  %-5s  %s\n",
+			 "src", "sport", "mport", "dst", "dport", "proto", "pkts", "age");
+	RTK_LOGI(NOTAG, "------------------------------------------------------------------------\n");
+
 	if (total_session > 0) {
 		ip_napt_debug_print();
 	}
-	RTK_LOGI(NOTAG, "\n\r total %d :%lu %lu %lu", total_session, tcp_entry_count, udp_entry_count, icmp_entry_count);
+
+	RTK_LOGI(NOTAG, "------------------------------------------------------------------------\n");
+	RTK_LOGI(NOTAG, " Total: %d (TCP:%lu UDP:%lu ICMP:%lu)\n",
+			 total_session, tcp_entry_count, udp_entry_count, icmp_entry_count);
+	RTK_LOGI(NOTAG, "======================================\n");
 
 	rtos_mutex_give(napt_entry_lock);
 }
@@ -1322,28 +1339,20 @@ void ip_napt_debug_print(void)
 	int i, next;
 	u32_t now = sys_now();
 
-	RTK_LOGI(NOTAG, "NAPT session table:\n");
-	RTK_LOGI(NOTAG, " sa                      da                      sport   dport   proto    pkts    ts\n");
-	RTK_LOGI(NOTAG, "+-----------------------+-----------------------+-------+-------+-----+-------+---------+\n");
 	for (i = napt_entry_list; i != NON_INDEX; i = next) {
 		struct napt_table *Entry = &ip_napt_table[i];
 		next = Entry->next;
 
-		RTK_LOGI(NOTAG, "| %3"U16_F" | %3"U16_F" | %3"U16_F" | %3"U16_F" |",
-				 ip4_addr1_16(ip_2_ip4((ip_addr_t *)&Entry->src)),
-				 ip4_addr2_16(ip_2_ip4((ip_addr_t *)&Entry->src)),
-				 ip4_addr3_16(ip_2_ip4((ip_addr_t *)&Entry->src)),
-				 ip4_addr4_16(ip_2_ip4((ip_addr_t *)&Entry->src)));
-
-		RTK_LOGI(NOTAG, " %3"U16_F" | %3"U16_F" | %3"U16_F" | %3"U16_F" |",
-				 ip4_addr1_16(ip_2_ip4((ip_addr_t *)&Entry->dest)),
-				 ip4_addr2_16(ip_2_ip4((ip_addr_t *)&Entry->dest)),
-				 ip4_addr3_16(ip_2_ip4((ip_addr_t *)&Entry->dest)),
-				 ip4_addr4_16(ip_2_ip4((ip_addr_t *)&Entry->dest)));
-
-		RTK_LOGI(NOTAG, " %5u | %5u | %3u | %5u | %5lu\n",
-				 PP_HTONS(Entry->sport), PP_HTONS(Entry->dport),
-				 Entry->proto, Entry->pkt_count, GET_NAPT_TIME_ELAPSED(now, Entry->ts));
+		RTK_LOGI(NOTAG, " %-15s  ", ipaddr_ntoa((ip_addr_t *)&Entry->src));
+		RTK_LOGI(NOTAG, "%-5u  %-5u  ", PP_HTONS(Entry->sport), PP_HTONS(Entry->mport));
+		RTK_LOGI(NOTAG, "%-15s  ", ipaddr_ntoa((ip_addr_t *)&Entry->dest));
+		RTK_LOGI(NOTAG, "%-5u  %-5s  %-5u  %lus\n",
+				 PP_HTONS(Entry->dport),
+				 (Entry->proto == IP_PROTO_TCP)  ? "TCP"  :
+				 (Entry->proto == IP_PROTO_UDP)  ? "UDP"  :
+				 (Entry->proto == IP_PROTO_ICMP) ? "ICMP" : "?",
+				 Entry->pkt_count,
+				 (GET_NAPT_TIME_ELAPSED(now, Entry->ts) / 1000));
 	}
 }
 

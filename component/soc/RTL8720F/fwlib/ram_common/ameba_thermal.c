@@ -367,8 +367,6 @@ u32 TM_GetMinTemp(void)
 
 /**
  * @brief Clear the max temperature recorded by thermal.
- * @note tm_max_clr bit sets to 1, the record max temperature is cleared;
- *     tm_max_clr bit sets to 0, thermal start to record the max temperature.
  * @retval None
  */
 void TM_MaxTempClr(void)
@@ -385,8 +383,6 @@ void TM_MaxTempClr(void)
 
 /**
  * @brief Clear the min temperature recorded by thermal.
- * @note tm_min_clr bit sets to 1, the record min temperature is cleared;
- *     tm_min_clr bit sets to 0, thermal start to record the min temperature.
  * @retval None
  */
 void TM_MinTempClr(void)

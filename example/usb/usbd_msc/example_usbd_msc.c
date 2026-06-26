@@ -20,8 +20,8 @@
 static const char *const TAG = "MSC";
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
-#define CONFIG_USBD_MSC_USB_HOTPLUG					1
-#define CONFIG_USBD_MSC_SD_HOTPLUG					0
+#define CONFIG_USBD_MSC_USB_HOTPLUG        1
+#define CONFIG_USBD_MSC_SD_HOTPLUG         0
 
 #if !defined(CONFIG_USBD_MSC_SD_MODE) && (CONFIG_USBD_MSC_SD_HOTPLUG == 1)
 #error "Only SD card (SD mode) support SD hotplug"
@@ -39,10 +39,14 @@ static const char *const TAG = "MSC";
 #endif
 
 // Thread priorities
-#define CONFIG_USBD_MSC_INIT_THREAD_PRIORITY                5U
-#define CONFIG_USBD_MSC_INIT_THREAD_STACK_SIZE              (256*4)
-#define CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_PRIORITY         8U               // Should be higher than CONFIG_USBD_MSC_ISR_THREAD_PRIORITY
-#define CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_STACK_SIZE       (256*4)
+#define CONFIG_USBD_MSC_INIT_THREAD_PRIORITY               5
+#define CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_PRIORITY        8
+#define CONFIG_USBD_MSC_SD_HOTPLUG_THREAD_PRIORITY         8
+/* Thread stack sizes */
+#define CONFIG_USBD_MSC_INIT_THREAD_STACK_SIZE               1024
+#define CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_STACK_SIZE        1024
+#define CONFIG_USBD_MSC_SD_HOTPLUG_THREAD_STACK_SIZE         1024
+
 
 /* Private types -------------------------------------------------------------*/
 typedef enum {
@@ -212,7 +216,7 @@ static void sd_intr_cb(SD_RESULT res)
 
 static void example_usbd_msc_thread(void *param)
 {
-	int status = 0;
+	int ret = 0;
 #if CONFIG_USBD_MSC_USB_HOTPLUG
 	rtos_task_t usb_task;
 #endif
@@ -234,29 +238,29 @@ static void example_usbd_msc_thread(void *param)
 	second_flash_get_id();
 #endif
 
-	status = usbd_msc_disk_init();
-	if (status != HAL_OK) {
+	ret = usbd_msc_disk_init();
+	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init disk fail\n");
 		goto exit_usbd_msc_disk_init_fail;
 	}
 
-	status = usbd_init(&msc_cfg);
-	if (status != HAL_OK) {
+	ret = usbd_init(&msc_cfg);
+	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBD fail\n");
 		goto exit_usbd_init_fail;
 	}
 
-	status = usbd_msc_init(&msc_cb);
-	if (status != HAL_OK) {
+	ret = usbd_msc_init(&msc_cb);
+	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init MSC class fail\n");
 		goto exit_usbd_msc_init_fail;
 	}
 
 #if CONFIG_USBD_MSC_USB_HOTPLUG
-	status = rtos_task_create(&usb_task, "example_usbd_msc_usb_hotplug_thread", example_usbd_msc_usb_hotplug_thread, NULL,
-							  CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_STACK_SIZE,
-							  CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_PRIORITY);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&usb_task, "example_usbd_msc_usb_hotplug_thread", example_usbd_msc_usb_hotplug_thread, NULL,
+						   CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_STACK_SIZE,
+						   CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
 		goto exit_create_hotplug_fail;
 	}
@@ -264,10 +268,10 @@ static void example_usbd_msc_thread(void *param)
 
 #if CONFIG_USBD_MSC_SD_HOTPLUG
 	SD_SetCdCallback(sd_intr_cb);
-	status = rtos_task_create(&sd_task, "example_usbd_msc_sd_hotplug_thread", example_usbd_msc_sd_hotplug_thread, NULL,
-							  CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_STACK_SIZE,
-							  CONFIG_USBD_MSC_USB_HOTPLUG_THREAD_PRIORITY);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&sd_task, "example_usbd_msc_sd_hotplug_thread", example_usbd_msc_sd_hotplug_thread, NULL,
+						   CONFIG_USBD_MSC_SD_HOTPLUG_THREAD_STACK_SIZE,
+						   CONFIG_USBD_MSC_SD_HOTPLUG_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create SD card hotplug thread fail\n");
 		goto exit_create_msc_sd_hotplug_fail;
 	}
@@ -315,8 +319,8 @@ void example_usbd_msc(void)
 	int ret;
 	rtos_task_t task;
 
-	ret = rtos_task_create(&task, "example_usbd_msc_thread", example_usbd_msc_thread, NULL, CONFIG_USBD_MSC_INIT_THREAD_STACK_SIZE,
-						   CONFIG_USBD_MSC_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_msc_thread", example_usbd_msc_thread, NULL,
+						   CONFIG_USBD_MSC_INIT_THREAD_STACK_SIZE, CONFIG_USBD_MSC_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD MSC thread fail\n");
 	}
