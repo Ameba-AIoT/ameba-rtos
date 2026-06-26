@@ -63,6 +63,13 @@ void *__wrap__calloc_r(void *reent, size_t xWantedCnt, size_t xWantedSize)
 extern u32 CPU_InInterrupt(void);
 extern int vprintf(const char *fmt, va_list ap);
 
+__weak int rtk_printf_hook(const char *fmt, va_list ap)
+{
+	(void)fmt;
+	(void)ap;
+	return -1;
+}
+
 int __wrap_printf(const char *__restrict fmt, ...)
 {
 	int ret;
@@ -77,18 +84,22 @@ int __wrap_printf(const char *__restrict fmt, ...)
 #endif
 
 	va_start(ap, fmt);
+	ret = rtk_printf_hook(fmt, ap);
+	if (ret < 0) {
+		/* hook not installed or declined; fall back to UART / libc */
 #ifdef CONFIG_ARM_CORE_CA32
-	if (in_isr) {
-		ret = DiagVprintf(fmt, ap);
-	}
+		if (in_isr) {
+			ret = DiagVprintf(fmt, ap);
+		}
 #else
-	if (CPU_InInterrupt() || rtos_sched_get_state() != RTOS_SCHED_RUNNING || rtos_get_critical_state() > 0) {
-		ret = DiagVprintf(fmt, ap);
-	}
+		if (CPU_InInterrupt() || rtos_sched_get_state() != RTOS_SCHED_RUNNING || rtos_get_critical_state() > 0) {
+			ret = DiagVprintf(fmt, ap);
+		}
 #endif
-	else {
-		ret = vprintf(fmt, ap);
-		fflush(stdout);
+		else {
+			ret = vprintf(fmt, ap);
+			fflush(stdout);
+		}
 	}
 	va_end(ap);
 

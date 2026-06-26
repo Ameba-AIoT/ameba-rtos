@@ -31,9 +31,11 @@
 #include "crypto_aes_ccm.h"
 #include "ameba_key_management.h"
 
+#include "mbedtls_alt_helper.h"
+
 /**
  * @brief  Resolve the SW key slot based on TrustZone security state.
- *         Non-secure world → KM_KEY_NS_SW1, Secure world → KM_KEY_S_SW1.
+ *         Non-secure world -> KM_KEY_NS_SW1, Secure world -> KM_KEY_S_SW1.
  */
 static inline u8 ccm_alt_get_key_id(void)
 {
@@ -72,7 +74,7 @@ int mbedtls_ccm_setkey(mbedtls_ccm_context *ctx,
 
 	u8 key_id = ccm_alt_get_key_id();
 
-	return crypto_aes_ccm_setkey(ctx, key_id, keybits, (u8 *)key);
+	return map_hw_to_mbedtls_error(crypto_aes_ccm_setkey(ctx, key_id, keybits, (u8 *)key), MBEDTLS_ALT_ALGO_CCM);
 }
 
 void mbedtls_ccm_free(mbedtls_ccm_context *ctx)
@@ -102,15 +104,15 @@ int mbedtls_ccm_starts(mbedtls_ccm_context *ctx,
 	}
 
 	/* Map mbedtls mode constants to HAL CCM mode constants.
-	 * MBEDTLS_CCM_ENCRYPT       = 1  → CCM_MODE_ENCRYPT       = 1
-	 * MBEDTLS_CCM_DECRYPT       = 0  → CCM_MODE_DECRYPT       = 0
-	 * MBEDTLS_CCM_STAR_ENCRYPT  = 3  → CCM_MODE_STAR_ENCRYPT  = 3
-	 * MBEDTLS_CCM_STAR_DECRYPT  = 2  → CCM_MODE_STAR_DECRYPT  = 2
+	 * MBEDTLS_CCM_ENCRYPT       = 1  -> CCM_MODE_ENCRYPT       = 1
+	 * MBEDTLS_CCM_DECRYPT       = 0  -> CCM_MODE_DECRYPT       = 0
+	 * MBEDTLS_CCM_STAR_ENCRYPT  = 3  -> CCM_MODE_STAR_ENCRYPT  = 3
+	 * MBEDTLS_CCM_STAR_DECRYPT  = 2  -> CCM_MODE_STAR_DECRYPT  = 2
 	 * The numeric values happen to be identical, so cast directly.
 	 */
 	u8 hw_mode = (u8)mode;
 
-	return crypto_aes_ccm_starts(ctx, hw_mode, iv, iv_len);
+	return map_hw_to_mbedtls_error(crypto_aes_ccm_starts(ctx, hw_mode, iv, iv_len), MBEDTLS_ALT_ALGO_CCM);
 }
 
 int mbedtls_ccm_set_lengths(mbedtls_ccm_context *ctx,
@@ -122,7 +124,7 @@ int mbedtls_ccm_set_lengths(mbedtls_ccm_context *ctx,
 		return MBEDTLS_ERR_CCM_BAD_INPUT;
 	}
 
-	return crypto_aes_ccm_set_lengths(ctx, total_ad_len, plaintext_len, tag_len);
+	return map_hw_to_mbedtls_error(crypto_aes_ccm_set_lengths(ctx, total_ad_len, plaintext_len, tag_len), MBEDTLS_ALT_ALGO_CCM);
 }
 
 int mbedtls_ccm_update_ad(mbedtls_ccm_context *ctx,
@@ -141,7 +143,7 @@ int mbedtls_ccm_update_ad(mbedtls_ccm_context *ctx,
 		return MBEDTLS_ERR_CCM_BAD_INPUT;
 	}
 
-	return crypto_aes_ccm_update_ad(ctx, ad, ad_len);
+	return map_hw_to_mbedtls_error(crypto_aes_ccm_update_ad(ctx, ad, ad_len), MBEDTLS_ALT_ALGO_CCM);
 }
 
 int mbedtls_ccm_update(mbedtls_ccm_context *ctx,
@@ -167,7 +169,7 @@ int mbedtls_ccm_update(mbedtls_ccm_context *ctx,
 		return MBEDTLS_ERR_CCM_BAD_INPUT;
 	}
 
-	return crypto_aes_ccm_update(ctx, input, input_length, output, output_size, output_length);
+	return map_hw_to_mbedtls_error(crypto_aes_ccm_update(ctx, input, input_length, output, output_size, output_length), MBEDTLS_ALT_ALGO_CCM);
 }
 
 int mbedtls_ccm_finish(mbedtls_ccm_context *ctx,
@@ -178,7 +180,7 @@ int mbedtls_ccm_finish(mbedtls_ccm_context *ctx,
 		return MBEDTLS_ERR_CCM_BAD_INPUT;
 	}
 
-	return crypto_aes_ccm_finish(ctx, tag, tag_len);
+	return map_hw_to_mbedtls_error(crypto_aes_ccm_finish(ctx, tag, tag_len), MBEDTLS_ALT_ALGO_CCM);
 }
 
 /* -------------------------------------------------------------------------

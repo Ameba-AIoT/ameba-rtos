@@ -39,7 +39,8 @@ uint8_t bt_hci_cmd_ogf_le_ocf_set_adv_enable(void *phci_cmd_param, uint8_t *rsp)
 uint8_t bt_hci_cmd_ogf_le_ocf_set_scan_param(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_set_scan_enable(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_create_connection(void *phci_cmd_param, uint8_t *rsp);
-uint8_t bt_hci_cmd_ogf_le_ocf_create_connection_cancel(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_ext_create_connection_cancel(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_legacy_create_connection_cancel(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_read_local_rpa(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_add_dev_to_fal(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_remove_dev_from_fal(void *phci_cmd_param, uint8_t *rsp);
@@ -79,8 +80,8 @@ uint8_t bt_hci_ogf_le_ocf_read_max_adv_data_len(void *phci_cmd_param, uint8_t *r
 uint8_t bt_hci_ogf_le_ocf_read_max_adv_set(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_ogf_le_ocf_set_ext_adv_random_addr(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_set_ext_adv_param_v1(void *phci_cmd_param, uint8_t *rsp);
-uint8_t bt_hci_cmd_ogf_le_ocf_ext_adv_set_aux_data(void *phci_cmd_param, uint8_t *rsp);
-uint8_t bt_hci_cmd_ogf_le_ocf_ext_adv_set_aux_scan_rsp_data(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_ext_adv_data(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_ext_scan_rsp_data(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_ext_set_enable(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_ext_set_remove(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_ext_set_clear(void *phci_cmd_param, uint8_t *rsp);
@@ -91,7 +92,13 @@ uint8_t bt_hci_cmd_ogf_le_ocf_ext_create_connection_v2(void *phci_cmd_param, uin
 uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_adv_param_v1(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_adv_data(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_adv_enable(void *phci_cmd_param, uint8_t *rsp);
-
+uint8_t bt_hci_cmd_ogf_le_ocf_pa_create_sync(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_pa_create_sync_cancel(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_pa_terminate_sync(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_add_pa_list(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_remove_pa_list(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_clear_pa_list(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_read_pa_list_size(void *phci_cmd_param, uint8_t *rsp);
 //OGF:BT_OGF_VENDOR
 uint8_t bt_hci_cmd_ogf_vendor_ocf_read_rtk_chip_id(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_vendor_ocf_read_vendor_reg(void *phci_cmd_param, uint8_t *rsp);
@@ -145,4 +152,13 @@ void bt_hci_evt_le_adv_set_terminated(uint8_t status, uint8_t adv_handle, uint16
 
 uint8_t bt_hci_check_le_connhandle(uint16_t handle);
 
+void bt_hci_evt_le_pa_sync_established(uint8_t status, uint16_t sync_handle, uint8_t sid,
+									   uint8_t adv_addr_type, uint8_t *adv_addr, uint8_t adv_phy,
+									   uint16_t pa_interval, uint8_t adv_clk_accuracy);
+
+void bt_hci_evt_le_pa_report(uint16_t sync_handle, uint8_t tx_power, int8_t rssi,
+							 uint8_t cte_type, uint8_t data_status, uint8_t data_len,
+							 uint8_t *pdata);
+
+void bt_hci_evt_le_pa_sync_lost(uint16_t sync_handle);
 #endif

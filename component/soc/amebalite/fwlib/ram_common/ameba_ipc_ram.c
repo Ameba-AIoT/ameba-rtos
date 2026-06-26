@@ -27,7 +27,7 @@ void (*ipc_exit_func)(u32);
 
 /**
   * @brief  Get core-to-core hardware semaphore.
-  * @param  SEM_Idx 0~4.
+  * @param  SEM_Idx 0~3.
   * @param  timeout Timeout to wait. 0 means never wait, 0xffffffff means waiting permanently.
   * @return The semaphore operation result:
   *         - TRUE: success
@@ -99,7 +99,7 @@ fail:
 
 /**
   * @brief  Free core-to-core hardware semaphore.
-  * @param  SEM_Idx 0~4.
+  * @param  SEM_Idx 0~3.
   * @return The semaphore operation result:
   *         - TRUE: success
   *         - FALSE: failure
@@ -128,6 +128,26 @@ u32 IPC_SEMFree(IPC_SEM_IDX SEM_Idx)
 	}
 
 	return TRUE;
+}
+
+/**
+  * @brief  Set enter and exit critical functions for ipc sema.
+  * @param  pfunc1 Enter critical function.
+  * @param  pfunc2 Exit critical function.
+  */
+void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32))
+{
+	ipc_enter_func = pfunc1;
+	ipc_exit_func = pfunc2;
+}
+
+/**
+  * @brief  Set delay stub function for ipc sema.
+  * @param  pfunc Delay function.
+  */
+void IPC_SEMDelayStub(void (*pfunc)(uint32_t))
+{
+	ipc_delay_func = pfunc;
 }
 
 /**
@@ -292,26 +312,6 @@ void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, void *IrqHandler, vo
 	if (IS_IPC_RX_CHNUM(IPC_Shiftbit)) {
 		IPC_INTConfig(IPCx, IPC_Shiftbit, ENABLE);
 	}
-}
-
-/**
-  * @brief  Set delay function for ipc sema.
-  * @param  pfunc1 Enter critical function.
-  * @param  pfunc2 Exit critical function.
-  */
-void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32))
-{
-	ipc_enter_func = pfunc1;
-	ipc_exit_func = pfunc2;
-}
-
-/**
-  * @brief  Set delay stub function for ipc sema.
-  * @param  pfunc Delay function.
-  */
-void IPC_SEMDelayStub(void (*pfunc)(uint32_t))
-{
-	ipc_delay_func = pfunc;
 }
 
 /** @} */

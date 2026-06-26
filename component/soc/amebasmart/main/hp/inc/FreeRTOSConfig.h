@@ -66,12 +66,13 @@ extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
 #define configENABLE_FPU								1
 
 /* Configure secure image(RDP) exists or not. Set configENABLE_TRUSTZONE to 1 if enable RDP. */
-#if defined(CONFIG_TRUSTZONE_EN) && (CONFIG_TRUSTZONE_EN == 1)
+#ifdef CONFIG_TRUSTZONE
+#define configRUN_FREERTOS_SECURE_ONLY					0
 #define configENABLE_TRUSTZONE							1
 #else
+#define configRUN_FREERTOS_SECURE_ONLY					1
 #define configENABLE_TRUSTZONE							0
 #endif
-#define configRUN_FREERTOS_SECURE_ONLY					0
 
 #define configSUPPORT_STATIC_ALLOCATION					1
 

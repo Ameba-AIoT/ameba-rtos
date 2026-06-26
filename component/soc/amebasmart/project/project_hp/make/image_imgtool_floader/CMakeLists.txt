@@ -68,7 +68,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_loader.axf ${c_SDK_IMAGE_TARGET_DIR}/target_pure_loader.axf
     COMMAND ${CMAKE_STRIP} ${c_SDK_IMAGE_TARGET_DIR}/target_pure_loader.axf
 
-    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km4_boot_all.bin"
+    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      floader_${c_SOC_TYPE}.bin"
 
     COMMAND ${CMAKE_COMMAND}
         # common variables

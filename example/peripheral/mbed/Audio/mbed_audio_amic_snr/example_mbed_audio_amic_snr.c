@@ -342,6 +342,5 @@ int example_mbed_audio_amic_snr(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "\n xTaskCreate(example_audio_amic_recorder_thread) failed\n");
 	}
 
-	rtos_sched_start();
 	return 0;
 }

@@ -21,9 +21,13 @@
   * @{
   */
 
-/** @defgroup IPC_KM0_Tx_Channel IPC KM0 TX Channel
+/** @defgroup IPC_Tx_Channel IPC TX Channel
   * @{
   */
+
+/*
+ * IPC_KM0_Tx_Channel
+ */
 #define IPC_N2A_TICKLESS_INDICATION		0	/*!<  NP -->  AP Tickless indicate */
 #define IPC_N2A_WAKE_AP					1	/*!<  NP -->  AP Wakeup*/
 #define IPC_N2A_WIFI_FW_INFO				2	/*!<  NP -->  AP FW Info*/
@@ -41,13 +45,11 @@
 //#define IPC_N2A_Channel13				13
 //#define IPC_N2A_Channel14				14
 //#define IPC_N2A_Channel15				15
-/**
-  * @}
-  */
 
-/** @defgroup IPC_KM4_Tx_Channel IPC KM4 TX Channel
-  * @{
-  */
+
+/*
+ * IPC_KM4_Tx_Channel
+ */
 #define IPC_A2N_TICKLESS_INDICATION				0	/*!<  AP -->  NP Tickless indicate */
 #define IPC_A2N_WIFI_FW_INFO						1	/*!<  AP -->  NP FW Info*/
 #define IPC_A2N_WAKE_AP							2	/*!<  AP -->  NP Wakeup*/

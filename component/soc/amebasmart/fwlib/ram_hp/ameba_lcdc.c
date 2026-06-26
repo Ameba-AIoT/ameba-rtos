@@ -6,17 +6,34 @@
 
 #include "ameba_soc.h"
 
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup LCDC LCDC
+  *
+  * @brief  LCDC driver modules
+  * @{
+  */
+
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup LCDC_Exported_Functions LCDC Exported Functions
+  * @{
+  */
+
 /*-----------------------------------------------DMA functions------------------------------------------------*/
 
 /**
-* @brief  Configure LCDC DMA burst size .
-* @param  LCDCx: where LCDCx can be LCDC.
-* @param  BurstSize: DMA burst size; Unit 64 Bytes.
-*                @arg LCDC_LAYER_BURSTSIZE_1X64BYTES:  Burst Trasnstions = 1;
-*                @arg LCDC_LAYER_BURSTSIZE_2X64BYTES:  Burst Trasnstions = 2;
-* @note     If BurstSize=1, the actual burstsize = 1x64 Bytes; if the BurstSize=2, the actual burstsize = 2x64 Bytes....
-*                  The parameter "BurstSize" is not more than 2.
-* @retval   None
+* @brief  Configure LCDC DMA burst size.
+* @param  LCDCx Where LCDCx can be LCDC.
+* @param  BurstSize DMA burst size; Unit 64 Bytes.
+*                @arg LCDC_LAYER_BURSTSIZE_1X64BYTES:  Burst Transactions = 1;
+*                @arg LCDC_LAYER_BURSTSIZE_2X64BYTES:  Burst Transactions = 2;
+*                @arg LCDC_LAYER_BURSTSIZE_3X64BYTES:  Burst Transactions = 3;
+*                @arg LCDC_LAYER_BURSTSIZE_4X64BYTES:  Burst Transactions = 4;
+* @note
+*         - If the BurstSize=1, the actual burstsize = 1x64 Bytes; If the BurstSize=2, the actual burstsize = 2x64 = 128 Bytes; etc.
+*         - The parameter "BurstSize" value range: 1 to 4.
 */
 void LCDC_DMAModeConfig(LCDC_TypeDef *LCDCx, u32 BurstSize)
 {
@@ -29,18 +46,17 @@ void LCDC_DMAModeConfig(LCDC_TypeDef *LCDCx, u32 BurstSize)
 }
 
 /**
-* @brief  Configure LCDC DMA under flow mode and under flow error data .
-* @param  LCDCx: where LCDCx can be LCDC.
-* @param  DmaUnFlwMode: DMA under flow mode, this parameter can be one of the following values:
+* @brief  Configure LCDC DMA underflow mode and underflow error data.
+* @param  LCDCx Where LCDCx can be LCDC.
+* @param  DmaUnFlwMode DMA underflow mode, this parameter can be one of the following values:
 *                @arg LCDC_DMAUNFW_OUTPUT_LASTDATA:  output last data
 *                @arg LCDC_DMAUNFW_OUTPUT_ERRORDATA:  output error data
-* @param  ErrorData: the output data when  DMA FIFO underflow occurred. When under flow mode is configured as
+* @param  ErrorData The output data when DMA FIFO underflow occurred. When underflow mode is configured as
 *                LCDC_DMAUNFW_OUTPUT_ERRORDATA, this parameter is needed, and otherwise it can be ignored.
-* @retval   None
 */
 void LCDC_DMAUnderFlowConfig(LCDC_TypeDef *LCDCx, u32 DmaUnFlwMode, u32 ErrorData)
 {
-	/*read registers for configurartion*/
+	/*read registers for configuration*/
 	u32 Value32 = LCDCx->LCDC_UNDFLW_CFG;
 
 	Value32 &= ~LCDC_BIT_DMA_UN_MODE;
@@ -58,14 +74,13 @@ void LCDC_DMAUnderFlowConfig(LCDC_TypeDef *LCDCx, u32 DmaUnFlwMode, u32 ErrorDat
 }
 
 /**
-* @brief  Configure LCDC DMA under flow mode and under flow error data .
-* @param  LCDCx: where LCDCx can be LCDC.
-* @param  DmaWriteBack: Secondary RGB output port enabled, the blended data of entire image will be written back to memory.
+* @brief  Configure LCDC DMA debug write back function.
+* @param  LCDCx Where LCDCx can be LCDC.
+* @param  DmaWriteBack Secondary RGB output port enabled, the blended data of entire image will be written back to memory.
 *         this parameter can be one of the following values:
-*                @arg LCDC_DMA_OUT_ENABLE:  enable the debug function
-*                @arg LCDC_DMA_OUT_DISABLE:  disable the debug function
-* @param  ImgDestAddr: Image DMA destination address. (for debug)
-* @retval   None
+*                @arg LCDC_DMA_OUT_ENABLE: Enable the debug function
+*                @arg LCDC_DMA_OUT_DISABLE: Disable the debug function
+* @param  ImgDestAddr Image DMA destination address. (for debug)
 */
 void LCDC_DMADebugConfig(LCDC_TypeDef *LCDCx, u32 DmaWriteBack, u32 ImgDestAddr)
 {
@@ -83,17 +98,16 @@ void LCDC_DMADebugConfig(LCDC_TypeDef *LCDCx, u32 DmaWriteBack, u32 ImgDestAddr)
 /*---------------------------------------Interrupt functions--------------------------------------------*/
 
 /**
-  * @brief  Enables or disables the specified LCDC interrupts.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @param  LCDC_IT: specifies the LCDC interrupts sources to be enabled or disabled.
+  * @brief  Enable or disable the specified LCDC interrupts.
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @param  LCDC_IT Specifies the LCDC interrupts sources to be enabled or disabled.
   *   This parameter can be any combination of the following values:
+  *     @arg LCDC_BIT_FRM_START_INTEN: DMA frame start interrupt
+  *     @arg LCDC_BIT_LCD_LIN_INTEN: Line interrupt
+  *     @arg LCDC_BIT_LCD_FRD_INTEN: LCD refresh frame done interrupt
   *     @arg LCDC_BIT_DMA_UN_INTEN: DMA FIFO underflow interrupt
-  *     @arg LCDC_BIT_LCD_FRD_INTEN: LCD refresh done interrupt
-  *     @arg LCDC_BIT_LCD_LIN_INTEN: line interrupt
-  *     @arg LCDC_BIT_FRM_START_INTEN: Frame Start interrupt
-  * @param  NewState: new state of the specified LCDC interrupts.
-  *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
+  * @param  NewState New state of the specified LCDC interrupts.
+  *         This parameter can be: ENABLE or DISABLE.
   */
 void LCDC_INTConfig(LCDC_TypeDef *LCDCx, u32 LCDC_IT, u32 NewState)
 {
@@ -108,9 +122,8 @@ void LCDC_INTConfig(LCDC_TypeDef *LCDCx, u32 LCDC_IT, u32 NewState)
 
 /**
   * @brief  Configure line interrupt position.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @param  LineNum: the line number.
-  * @retval None
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @param  LineNum The specific line number at which the line interrupt is triggered.
   */
 void LCDC_LineINTPosConfig(LCDC_TypeDef *LCDCx, u32 LineNum)
 {
@@ -120,9 +133,13 @@ void LCDC_LineINTPosConfig(LCDC_TypeDef *LCDCx, u32 LineNum)
 }
 
 /**
-  * @brief  Get lcdc interrupt status.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @retval interrupt status
+  * @brief  Get LCDC interrupt status.
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @return The interrupt status register value. Each bit indicates an interrupt source:
+  *         - LCDC_BIT_FRM_START_INTS: DMA frame start interrupt status
+  *         - LCDC_BIT_LCD_LIN_INTS: Line interrupt status
+  *         - LCDC_BIT_LCD_FRD_INTS: LCD refresh frame done interrupt status
+  *         - LCDC_BIT_DMA_UN_INTS: DMA FIFO underflow interrupt status
   */
 u32 LCDC_GetINTStatus(LCDC_TypeDef *LCDCx)
 {
@@ -131,8 +148,12 @@ u32 LCDC_GetINTStatus(LCDC_TypeDef *LCDCx)
 
 /**
   * @brief  Get LCDC Raw Interrupt Status.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @retval raw interrupt status
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @return The raw interrupt status register value. Each bit indicates an interrupt source:
+  *         - LCDC_BIT_FRM_START_INTRS: DMA frame start raw interrupt status
+  *         - LCDC_BIT_LCD_LIN_INTRS: Line raw interrupt status
+  *         - LCDC_BIT_LCD_FRD_INTRS: LCD refresh frame done raw interrupt status
+  *         - LCDC_BIT_DMA_UN_INTRS: DMA FIFO underflow raw interrupt status
   */
 u32 LCDC_GetRawINTStatus(LCDC_TypeDef *LCDCx)
 {
@@ -140,9 +161,8 @@ u32 LCDC_GetRawINTStatus(LCDC_TypeDef *LCDCx)
 }
 
 /**
-  * @brief  Clears all of the LCDC interrupt pending bit.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @retval None
+  * @brief  Clear all of the LCDC interrupt pending bits.
+  * @param  LCDCx Where LCDCx can be LCDC.
   */
 void LCDC_ClearAllINT(LCDC_TypeDef *LCDCx)
 {
@@ -151,15 +171,14 @@ void LCDC_ClearAllINT(LCDC_TypeDef *LCDCx)
 }
 
 /**
-  * @brief  Clears the LCDC's interrupt pending bits.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @param  LCDC_IT: specifies the interrupt to be cleared.
+  * @brief  Clear the LCDC's interrupt pending bits.
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @param  LCDC_IT Specifies the interrupt to be cleared.
   *   This parameter can be any combination of the following values:
-  *     @arg LCDC_BIT_DMA_UN_INTS: DMA FIFO under flow interrupt
-  *     @arg LCDC_BIT_LCD_FRD_INTS: refresh frame done interrupt
-  *     @arg LCDC_BIT_LCD_LIN_INTS:line interrupt
-  *     @arg LCDC_BIT_FRM_START_INTS: Frame Start interrupt
-  * @retval None
+  *     @arg LCDC_BIT_FRM_START_INTS: DMA frame start interrupt
+  *     @arg LCDC_BIT_LCD_LIN_INTS: Line interrupt
+  *     @arg LCDC_BIT_LCD_FRD_INTS: LCD refresh frame done interrupt
+  *     @arg LCDC_BIT_DMA_UN_INTS: DMA FIFO underflow interrupt
   */
 void LCDC_ClearINT(LCDC_TypeDef *LCDCx, u32 LCDC_IT)
 {
@@ -172,10 +191,9 @@ void LCDC_ClearINT(LCDC_TypeDef *LCDCx, u32 LCDC_IT)
 
 /**
   * @brief  Get the current position.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @param  pCurPosX: the current X position pointer.
-  * @param  pCurPosY: the current Y position pointer.
-  * @retval None
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @param  pCurPosX The current X position pointer.
+  * @param  pCurPosY The current Y position pointer.
   */
 void LCDC_GetCurPosStatus(LCDC_TypeDef *LCDCx, u32 *pCurPosX, u32 *pCurPosY)
 {
@@ -187,40 +205,40 @@ void LCDC_GetCurPosStatus(LCDC_TypeDef *LCDCx, u32 *pCurPosX, u32 *pCurPosY)
 }
 
 /**
-  * @brief  Get the DMA FIFO under flow interrupt count.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @param  DmaUnIntCnt: the DMA under flow interrupt count pointer.
-  * @retval None
+  * @brief  Get the DMA FIFO underflow interrupt count.
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @param  DmaUnIntCnt The DMA underflow interrupt count pointer.
   */
 void LCDC_GetDmaUnINTCnt(LCDC_TypeDef *LCDCx, u32 *DmaUnIntCnt)
 {
-	/*get the DMA under flow interrupt count*/
+	/*get the DMA underflow interrupt count*/
 	*DmaUnIntCnt = (LCDCx->LCDC_STATUS & LCDC_MASK_DMA_UNINT_CNT);
 }
 
 /*------------------------------------------------Global  APIs------------------------------------------------*/
 
 /**
-  * @brief  Enables or disables the LCDC.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @param  NewState: new state of the LCDC. This parameter can be: ENABLE or DISABLE.
-  * @note   Disable LCDC instantly. HW will reset LCDC internal states and disable LCDC
-  *              then clear both this bit and LCDCEN.
-  * @retval None
+  * @brief  Enable or disable the LCDC.
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @param  NewState New state of the LCDC.
+  *                   This parameter can be: ENABLE or DISABLE.
+  * @note
+  *         - When NewState is DISABLE, the disable action will be performed instantly.
+  *         - HW will reset LCDC internal states and disable LCDC, then clear both the disable bit and the enable bit (LCDCEN).
   */
 void LCDC_Cmd(LCDC_TypeDef *LCDCx, u32 NewState)
 {
 	u32 TempCtrl = LCDCx->LCDC_CTRL;
 
 	if (NewState != DISABLE) {
-		/* clear DISABLE bits, or it leads to enable LCDC unsuccessfully*/
+		/* clear the disable bit, otherwise LCDC cannot be enabled successfully */
 		TempCtrl &= ~LCDC_BIT_DIS;
 
-		/*set ENBALE bit*/
+		/*set ENABLE bit*/
 		TempCtrl |= LCDC_BIT_EN;
 	} else {
 		/*set DISABLE bit*/
-		/*Note: LCDC just clear LCDC_BIT_EN, LCDC_BIT_DIS, and stop DMA Module*/
+		/*Note: HW will clear LCDC_BIT_EN, LCDC_BIT_DIS, and stop the DMA module*/
 		TempCtrl |= LCDC_BIT_DIS;
 	}
 
@@ -228,10 +246,9 @@ void LCDC_Cmd(LCDC_TypeDef *LCDCx, u32 NewState)
 }
 
 /**
-  * @brief  Deinitializes the LCDC.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @note   Disable LCDC instantly, clear and disable all interrupts. which means LCDC_Cmd() does not clear interrupts
-  * @retval None
+  * @brief  Deinitialize the LCDC.
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @note   Disable LCDC instantly, clear and disable all interrupts.
   */
 void LCDC_DeInit(LCDC_TypeDef *LCDCx)
 {
@@ -246,9 +263,11 @@ void LCDC_DeInit(LCDC_TypeDef *LCDCx)
 }
 
 /**
-  * @brief  Check LCDC is ready to work with VO interface after LCDC is enable.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @retval status: Ready:1 or Not Ready: Others.
+  * @brief  Check LCDC is ready to work with VO interface after LCDC is enabled.
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @return Status:
+  *         - TRUE: Ready
+  *         - FALSE: Not ready
   */
 u8 LCDC_CheckLCDCReady(LCDC_TypeDef *LCDCx)
 {
@@ -261,15 +280,14 @@ u8 LCDC_CheckLCDCReady(LCDC_TypeDef *LCDCx)
 }
 
 /**
-  * @brief  Get the LCDC Plane Size
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @param  ImageWidth: The width of image (X-channel based), which means pixel number per line.
-  * @param  ImageHeight: The height of image (Y-channel based)
-  * @retval None
+  * @brief  Set the LCDC Plane Size
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @param  ImageWidth The width of image (X-channel based), which means pixel number per line.
+  * @param  ImageHeight The height of image (Y-channel based)
   */
 void LCDC_SetPlaneSize(LCDC_TypeDef *LCDCx, u32 ImageWidth, u32 ImageHeight)
 {
-	/*read registers for configurartion*/
+	/*read registers for configuration*/
 	u32 Value32 = LCDCx->LCDC_PLANE_SIZE;
 
 	/*configure LCDC Plane Size*/
@@ -284,13 +302,14 @@ void LCDC_SetPlaneSize(LCDC_TypeDef *LCDCx, u32 ImageWidth, u32 ImageHeight)
 
 /**
   * @brief  Set the LCDC background color
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @param  RGBData: in the format of RGB888
-  * @retval None
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @param  red_color Red component of background color.
+  * @param  green_color Green component of background color.
+  * @param  blue_color Blue component of background color.
   */
 void LCDC_SetBkgColor(LCDC_TypeDef *LCDCx, u8 red_color, u8 green_color, u8 blue_color)
 {
-	/*read registers for configurartion*/
+	/*read registers for configuration*/
 	u32 Value32 = LCDCx->LCDC_BKG_COLOR;
 
 	/*configure LCDC BackGround Color*/
@@ -304,10 +323,9 @@ void LCDC_SetBkgColor(LCDC_TypeDef *LCDCx, u8 red_color, u8 green_color, u8 blue
 }
 
 /**
-  * @brief  Triger Layer's shadow register reload to apply new configuration
-  * @param  LCDCx: where LCDCx can be LCDC.
+  * @brief  Trigger Layer's shadow register reload to apply new configuration
+  * @param  LCDCx Where LCDCx can be LCDC.
   * @note   The shadow registers read back the active values. Until the reload has been done, the 'old' value is read.
-  * @retval None
   */
 void LCDC_TrigerSHWReload(LCDC_TypeDef *LCDCx)
 {
@@ -315,11 +333,11 @@ void LCDC_TrigerSHWReload(LCDC_TypeDef *LCDCx)
 }
 
 /**
-  * @brief    Initializes the LCDC Layer according to the specified parameters in the EachLayer.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @param  EachLayer: pointer to a LCDC_EachLayerInitTypeDef structure that contains
+  * @brief    Initialize the LCDC Layer according to the specified parameters in the EachLayer.
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @param  LayerId Specifies the LCDC layer to configure.
+  * @param  EachLayer Pointer to a @ref LCDC_LayerConfigTypeDef structure that contains
   *              the configuration information for the specified LCDC layer.
-  * @retval None
   */
 void LCDC_LayerConfig(LCDC_TypeDef *LCDCx, u8 LayerId, LCDC_LayerConfigTypeDef *EachLayer)
 {
@@ -342,7 +360,7 @@ void LCDC_LayerConfig(LCDC_TypeDef *LCDCx, u8 LayerId, LCDC_LayerConfigTypeDef *
 		return;
 	}
 
-	/*read registers for configurartion*/
+	/*read registers for configuration*/
 	Ctrl = LCDC_Layerx->LCDC_LAYERx_CTRL;
 	BaseAddr = LCDC_Layerx->LCDC_LAYERx_BASE_ADDR;
 	WinXpos = LCDC_Layerx->LCDC_LAYERx_WIN_XPOS;
@@ -366,7 +384,7 @@ void LCDC_LayerConfig(LCDC_TypeDef *LCDCx, u8 LayerId, LCDC_LayerConfigTypeDef *
 	WinXpos |= LCDC_LAYERx_WIN_X_START(EachLayer->LCDC_LayerHorizontalStart);/*1-based*/
 	WinXpos |= LCDC_LAYERx_WIN_X_STOP(EachLayer->LCDC_LayerHorizontalStop);
 
-	/*configure layer windows x position ctrl*/
+	/*configure layer windows y position ctrl*/
 	WinYpos &= ~(LCDC_MASK_LAYERx_WIN_Y_START | LCDC_MASK_LAYERx_WIN_Y_STOP);
 	WinYpos |= LCDC_LAYERx_WIN_Y_START(EachLayer->LCDC_LayerVerticalStart);/*1-based*/
 	WinYpos |= LCDC_LAYERx_WIN_Y_STOP(EachLayer->LCDC_LayerVerticalStop);
@@ -390,9 +408,8 @@ void LCDC_LayerConfig(LCDC_TypeDef *LCDCx, u8 LayerId, LCDC_LayerConfigTypeDef *
 }
 
 /**
-  * @brief  Fills each LCDC_LayerConfigTypeDef member with its default value.
-  * @param  LayerInit: pointer to an LCDC_LayerConfigTypeDef structure which will be initialized.
-  * @retval   None
+  * @brief  Fill each LCDC_InitTypeDef member with its default value.
+  * @param  LCDC_InitStruct Pointer to an @ref LCDC_InitTypeDef structure which will be initialized.
   */
 void LCDC_StructInit(LCDC_InitTypeDef *LCDC_InitStruct)
 {
@@ -419,11 +436,10 @@ void LCDC_StructInit(LCDC_InitTypeDef *LCDC_InitStruct)
 }
 
 /**
-  * @brief    Initializes the LCDC Layer according to the specified parameters in the LayerInit.
-  * @param  LCDCx: where LCDCx can be LCDC.
-  * @param  LayerInit: pointer to a LCDC_LayerConfigTypeDef structure that contains
-  *              the configuration information for all LCDC layer.
-  * @retval None
+  * @brief  Initialize the LCDC according to the specified parameters in the LCDC_InitStruct.
+  * @param  LCDCx Where LCDCx can be LCDC.
+  * @param  LCDC_InitStruct Pointer to a @ref LCDC_InitTypeDef structure that contains
+  *              the configuration information for all LCDC layers.
   */
 void LCDC_Init(LCDC_TypeDef *LCDCx, LCDC_InitTypeDef *LCDC_InitStruct)
 {
@@ -438,4 +454,8 @@ void LCDC_Init(LCDC_TypeDef *LCDCx, LCDC_InitTypeDef *LCDC_InitStruct)
 
 	LCDC_TrigerSHWReload(LCDCx);
 }
+/** @} */
 
+/** @} */
+
+/** @} */

@@ -38,83 +38,90 @@ extern "C" {
   * @{
   */
 
-/** @addtogroup MBED_SPI
+/** @addtogroup MBED_SPI MBED SPI
  *  @brief    MBED_SPI driver modules.
  *  @{
  */
 
 /**
-  * @brief enum SPI_CS_TOGGLE_MODE
-  * SPI Master mode: for continuous transfer, how the CS toggle
+  * @brief SPI chip select toggle mode for continuous transfer in master mode.
   */
 typedef enum {
-	SPI_CS_TOGGLE_EVERY_FRAME = 0,     // let SCPH=0 then the CS toggle every frame
-	SPI_CS_TOGGLE_START_STOP = 1       // let SCPH=1 the CS toggle at start and stop
+	SPI_CS_TOGGLE_EVERY_FRAME = 0,     /*!< CS toggles every frame (SCPH=0). */
+	SPI_CS_TOGGLE_START_STOP = 1       /*!< CS toggles at transfer start and stop (SCPH=1). */
 } SPI_CS_TOGGLE_MODE;
 
 /** @defgroup MBED_SPI_Exported_Constants MBED_SPI Exported Constants
   * @{
   */
-#define SPI_DMA_RX_EN			(1<<0)
-#define SPI_DMA_TX_EN			(1<<1)
-#define SPI_STATE_READY			0x00
-#define SPI_STATE_RX_BUSY		(1<<1)
-#define SPI_STATE_TX_BUSY		(1<<2)
+#define SPI_DMA_RX_EN			(1<<0)   /*!< Enable SPI DMA RX channel. */
+#define SPI_DMA_TX_EN			(1<<1)   /*!< Enable SPI DMA TX channel. */
+#define SPI_STATE_READY			0x00   /*!< SPI state: idle and ready. */
+#define SPI_STATE_RX_BUSY		(1<<1)   /*!< SPI state: receive operation in progress. */
+#define SPI_STATE_TX_BUSY		(1<<2)   /*!< SPI state: transmit operation in progress. */
 /** @} */
 
 /** @addtogroup MBED_SPI_Exported_Types MBED_SPI Exported Types
   * @{
   */
 
-/** @defgroup MBED_SPI_Enumeration_Type Enumeration Type
+/** @addtogroup MBED_SPI_Enumeration_Type Enumeration Type
   * @{
   */
 
 /**
-  * @brief enum SPI_SCLK_IDLE_LEVEL
+  * @brief SPI serial clock idle level.
   */
 typedef enum {
-	SPI_SCLK_IDLE_LOW = 0,      // the SCLK is Low when SPI is inactive
-	SPI_SCLK_IDLE_HIGH = 2      // the SCLK is High when SPI is inactive
+	SPI_SCLK_IDLE_LOW = 0,      /*!< SCLK is low when SPI is inactive. */
+	SPI_SCLK_IDLE_HIGH = 2      /*!< SCLK is high when SPI is inactive. */
 } SPI_SCLK_IDLE_LEVEL;
 
 /**
-  * @brief enum SPI_SCLK_TOGGLE_MODE
+  * @brief SPI serial clock toggle mode.
   */
 typedef enum {
-	SPI_SCLK_TOGGLE_MIDDLE = 0,    // Serial Clk toggle at middle of 1st data bit and latch data at 1st Clk edge
-	SPI_SCLK_TOGGLE_START = 1      // Serial Clk toggle at start of 1st data bit and latch data at 2nd Clk edge
+	SPI_SCLK_TOGGLE_MIDDLE = 0,    /*!< SCLK toggles at middle of first data bit. */
+	SPI_SCLK_TOGGLE_START = 1      /*!< SCLK toggles at start of first data bit. */
 } SPI_SCLK_TOGGLE_MODE;
 
 /**
-  * @brief enum ChipSelect
+  * @brief SPI chip select index.
   */
 typedef enum {
-	CS_0 = 0,
-	CS_1 = 1,
-	CS_2 = 2,
-	CS_3 = 3,
-	CS_4 = 4,
-	CS_5 = 5,
-	CS_6 = 6,
-	CS_7 = 7
+	CS_0 = 0, /*!< Chip select 0. */
+	CS_1 = 1, /*!< Chip select 1. */
+	CS_2 = 2, /*!< Chip select 2. */
+	CS_3 = 3, /*!< Chip select 3. */
+	CS_4 = 4, /*!< Chip select 4. */
+	CS_5 = 5, /*!< Chip select 5. */
+	CS_6 = 6, /*!< Chip select 6. */
+	CS_7 = 7  /*!< Chip select 7. */
 } ChipSelect;
 
 /**
-  * @brief enum SpiIrq
+  * @brief SPI interrupt event type.
   */
 typedef enum {
-	SpiRxIrq,
-	SpiTxIrq
+	SpiRxIrq, /*!< SPI receive interrupt. */
+	SpiTxIrq  /*!< SPI transmit interrupt. */
 } SpiIrq;
 /** @}*/
 
-/** @} */
-/** @} */
-/** @} */
+/** @addtogroup MBED_SPI_Structure_Type Structure Type
+  * @{
+  */
 
-
+/** @brief Typedef function pointer to point SPI interrupt handler */
 typedef void (*spi_irq_handler)(uint32_t id, SpiIrq event);
+
+/** @}*/
+
+/** @} */
+
+/** @}*/
+
+/** @} */
 
 void spi_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id);
 void spi_bus_tx_done_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id);
@@ -140,20 +147,21 @@ int32_t spi_slave_read_stream_dma_terminate(spi_t *obj, char *rx_buffer, uint32_
 
 /*
   * @brief  Close SPI device clock.
-  * @param  obj: spi object define in application software.
-  * @param  rx_delay: sample rx delay cycle, 1T = 20ns.
+  * @param  obj Spi object define in application software.
+  * @param  rx_delay Sample rx delay cycle, 1T = 20ns.
   * @retval none
   */
 //void spi_set_master_rxdelay(spi_t *obj, u32 rx_delay);
 
 /*
-  * @brief  slave recv target undetermined length data use interrupt mode for one time.
-  * @param  obj: spi slave object define in application software.
-  * @param  rx_buffer: buffer to save data read from SPI FIFO.
-  * @param  length: number of data bytes to be read, slave could terminate the transfer even if the length is not reached.
-  * @retval  : number of bytes read already
+  * @brief  Slave recv target undetermined length data use interrupt mode for one time.
+  * @param  obj Spi slave object define in application software.
+  * @param  rx_buffer Buffer to save data read from SPI FIFO.
+  * @param  length Number of data bytes to be read, slave could terminate the transfer even if the length is not reached.
+  * @retval  : Number of bytes read already
   */
 //int32_t spi_slave_read_stream_unfix_size(spi_t *obj, char *rx_buffer, uint32_t length);
+
 #ifdef __cplusplus
 }
 #endif

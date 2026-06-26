@@ -139,8 +139,5 @@ int example_mbed_sdio_loopback_device(void)
 		RTK_LOGE(NOTAG, "rtos_task_create(ex_spdio_thread) failed\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }
-

@@ -3,7 +3,7 @@
   * @file    timer_api.h
   * @author
   * @version V1.0.0
-  * @brief   This file provides following mbed I2C API
+  * @brief   This file provides following mbed timer API
   ******************************************************************************
   * @attention
   *
@@ -49,23 +49,23 @@ extern "C" {
   */
 
 /**
-  * @brief enum TIMER_ID
+  * @brief Enumeration of general timer IDs.
   */
 typedef enum {
-	TIMER0 = 0,
-	TIMER1 = 1,
-	TIMER2 = 2,
-	TIMER3 = 3,
-	TIMER4 = 4,
-	TIMER5 = 5,
-	TIMER6 = 6,
-	TIMER7 = 7,
-	TIMER8 = 8,
-	TIMER9 = 9,
-	TIMER10 = 10,
-	TIMER11 = 11,
+	TIMER0 = 0,   /*!< General timer 0. */
+	TIMER1 = 1,   /*!< General timer 1. */
+	TIMER2 = 2,   /*!< General timer 2. */
+	TIMER3 = 3,   /*!< General timer 3. */
+	TIMER4 = 4,   /*!< General timer 4. */
+	TIMER5 = 5,   /*!< General timer 5. */
+	TIMER6 = 6,   /*!< General timer 6. */
+	TIMER7 = 7,   /*!< General timer 7. */
+	TIMER8 = 8,   /*!< General timer 8. */
+	TIMER9 = 9,   /*!< General timer 9. */
+	TIMER10 = 10, /*!< General timer 10. */
+	TIMER11 = 11, /*!< General timer 11. */
 
-	GTIMER_MAX = 12
+	GTIMER_MAX = 12  /*!< Total number of general timers. */
 } TIMER_ID;
 /** @} */
 
@@ -73,19 +73,20 @@ typedef enum {
   * @{
   */
 /**
-  * @brief typedef struct gtimer_s to gtimer_t
+  * @brief Typedef of struct gtimer_s as gtimer_t.
   */
 typedef struct gtimer_s gtimer_t;
-/** @} */
-
-/** @} */
-/** @} */
-/** @} */
-
 /**
-  * @brief typedef function pointer to point interrupt handler
+  * @brief Typedef of interrupt handler function pointer.
   */
 typedef void (*gtimer_irq_handler)(uint32_t id);
+/** @} */
+
+/** @} */
+
+/** @defgroup MBED_TIMER_Exported_Functions MBED_TIMER Exported Functions
+  * @{
+  */
 
 void gtimer_init(gtimer_t *obj, uint32_t tid);
 void gtimer_deinit(gtimer_t *obj);
@@ -96,6 +97,11 @@ void gtimer_start(gtimer_t *obj);
 void gtimer_start_one_shout(gtimer_t *obj, uint32_t duration_us, void *handler, uint32_t hid);
 void gtimer_start_periodical(gtimer_t *obj, uint32_t duration_us, void *handler, uint32_t hid);
 void gtimer_stop(gtimer_t *obj);
+
+/** @} */
+
+/** @} */
+/** @} */
 
 #ifdef __cplusplus
 }

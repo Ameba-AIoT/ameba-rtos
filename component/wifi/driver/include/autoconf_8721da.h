@@ -86,6 +86,7 @@
 //#define CONFIG_TWT
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
+#define NAN_CUSTOMER_NANDOW
 #undef CONFIG_ADDRESS_CAM
 #endif
 

@@ -114,6 +114,5 @@ int example_raw_kscan_stuck(void)
 		printf("Cannot create keyscan_stuck demo task\n\r");
 	}
 
-	rtos_sched_start();
 	return 0;
 }

@@ -62,7 +62,6 @@ int example_mbed_gpio_edge_irq(void)
 		printf("Create MBED_GPIO_EDGE_IRQ_TASK Err!!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
 

@@ -90,7 +90,14 @@ extern "C"
 // Runtime assertions
 #ifndef LFS_ASSERT
 #ifndef LFS_NO_ASSERT
-#define LFS_ASSERT(test) assert(test)
+#include "platform_autoconf.h"
+#include "rtk_assert.h"
+#define LFS_ASSERT(test) \
+	 do { \
+		  if (!(test)) { \
+				rtk_assert(test, "lfs"); \
+		  } \
+	 } while (0)
 #else
 #define LFS_ASSERT(test)
 #endif

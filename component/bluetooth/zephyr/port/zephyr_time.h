@@ -31,6 +31,7 @@ struct _timeout {
 	uint64_t to_ticks;
 };
 
+#define USEC_PER_MSEC 1000U
 #define MSEC_PER_SEC 1000U
 
 #define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { .ticks = (t) })

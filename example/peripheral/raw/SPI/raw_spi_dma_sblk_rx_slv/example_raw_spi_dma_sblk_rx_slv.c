@@ -185,7 +185,6 @@ int example_raw_spi_single_dma_rx_slave(void)
 		printf("\r\n%s rtos_task_create(spi_singleblock_task) failed\r\n", __FUNCTION__);
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
 

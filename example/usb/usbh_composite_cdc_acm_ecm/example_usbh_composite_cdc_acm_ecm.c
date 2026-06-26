@@ -21,24 +21,47 @@ static const char *const TAG = "Eth";
 extern void rltk_usb_eth_init(void);
 extern void rltk_usb_eth_deinit(void);
 
-static int composite_ecm_cb_detach(void);
+static int composite_cb_detach(void);
 static int composite_ecm_cb_rxdata(u8 *buf, u32 len);
 static int composite_acm_cb_rxdata(u8 *buf, u32 len);
 
+// Thread priorities
+#define CONFIG_USBH_COMP_ACM_ECM_INIT_THREAD_PRIORITY             5U
+#define CONFIG_USBH_COMP_ACM_ECM_HOTPLUG_THREAD_PRIORITY          3U
+#define CONFIG_USBH_COMP_ACM_ECM_LINK_THREAD_PRIORITY             3U
+#define CONFIG_USBH_COMP_ACM_ECM_MEM_CHECK_THREAD_PRIORITY        3U
+#define CONFIG_USBH_COMP_ACM_ECM_DOWNLOAD_THREAD_PRIORITY         2U
+
+// Thread stack sizes
+#define CONFIG_USBH_COMP_ACM_ECM_INIT_THREAD_STACK_SIZE             (1024U * 2)
+#define CONFIG_USBH_COMP_ACM_ECM_HOTPLUG_THREAD_STACK_SIZE          1024U
+#define CONFIG_USBH_COMP_ACM_ECM_LINK_THREAD_STACK_SIZE             (1024U * 2)
+#define CONFIG_USBH_COMP_ACM_ECM_MEM_CHECK_THREAD_STACK_SIZE        (1024U * 2)
+#define CONFIG_USBH_COMP_ACM_ECM_DOWNLOAD_THREAD_STACK_SIZE         (1024U * 5)
+
 /*enable this used to check ecm init/deinit memory leakage*/
-#define CONFIG_USBH_COMPOSITE_MEM_CHECK         0
+#define CONFIG_USBH_COMPOSITE_MEM_CHECK    0
 #define CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST     1     /* Hot plug test */
 #define ENABLE_DUMP_FILE                        0
-#define ENABLE_REMOTE_FILE_DOWNLOAD             0
+#define ENABLE_REMOTE_FILE_DOWNLOAD        0
 #define ENABLE_USER_SET_DONGLE_MAC              0
 
 #define PBUF_MAX_LEN                            (128)
 #define NETWORK_INFO_MAX_STR                    (128)
 
+/**
+ * @brief Enable GPIO-driven power control for the attached USB device
+ * When enabled, a GPIO pin (USB_DEV_PWR_CTRL_GPIO) is wired to the device's power switch
+ * so firmware can power-cycle the device to physically trigger a hot-plug.
+ * This is distinct from CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST, which only re-initializes the
+ * host stack in software after a detach event.
+ */
+#define USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL            0
+
 /* while do mem check, disable download & hotplug */
 #if CONFIG_USBH_COMPOSITE_MEM_CHECK
 #undef  ENABLE_REMOTE_FILE_DOWNLOAD
-#define ENABLE_REMOTE_FILE_DOWNLOAD             0
+#define ENABLE_REMOTE_FILE_DOWNLOAD        0
 #undef  CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
 #define CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST     0
 #endif
@@ -117,9 +140,9 @@ typedef struct {
 static u8 acm_rx_busy = 0;
 
 static usbh_composite_cdc_acm_param_t dongle_array[] = {
-	{USB_QUECTEL_DONGLE_VID, QUECTEL_DONGLE_PID_EG915, 2},
-	{USB_QUECTEL_DONGLE_VID, QUECTEL_DONGLE_PID_EG91,  2},
-	{USB_FIBOCOM_DONGLE_VID, FIBOCOM_DONGLE_PID_LE271, 2},
+	{USBH_COMPOSITE_QUECTEL_DONGLE_VID, USBH_COMPOSITE_QUECTEL_DONGLE_EG915_PID, 2},
+	{USBH_COMPOSITE_QUECTEL_DONGLE_VID, USBH_COMPOSITE_QUECTEL_DONGLE_EG91_PID,  2},
+	{USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_VID, USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_PID, 2},
 	{0, 0, 0},
 };
 
@@ -159,9 +182,10 @@ typedef struct {
 	};
 	u16 vid;
 	u16 pid;
+	volatile u8 in_detach;
 } dongle_ctx_t;
 
-static dongle_ctx_t dongle_ctx;
+static dongle_ctx_t usbh_dongle_ctx;
 
 static usbh_composite_cdc_ecm_priv_data_t ecm_priv = {
 #if ENABLE_USER_SET_DONGLE_MAC
@@ -175,6 +199,10 @@ static usbh_composite_cdc_ecm_priv_data_t ecm_priv = {
 #endif
 };
 
+static usbh_composite_cb_t composite_cb = {
+	.detach = composite_cb_detach,
+};
+
 static usbh_composite_cdc_acm_usr_cb_t usbh_acm_cfg = {
 	.bulk_received = composite_acm_cb_rxdata,
 	.priv = dongle_array,
@@ -182,7 +210,6 @@ static usbh_composite_cdc_acm_usr_cb_t usbh_acm_cfg = {
 
 static usbh_composite_cdc_ecm_usr_cb_t usbh_ecm_cfg = {
 	.bulk_received = composite_ecm_cb_rxdata,
-	.detach = composite_ecm_cb_detach,
 	.priv = &ecm_priv,
 };
 
@@ -208,13 +235,13 @@ static void composite_dev_dongle_set_netinfo(u8 *pbuf, u8 *name)
 
 	//whether support netinfo
 	if (_strcmp(pname, "gw") == 0) {
-		memcpy(dongle_ctx.quectel.network.gw, pbuf, len);
+		memcpy(usbh_dongle_ctx.quectel.network.gw, pbuf, len);
 	} else if (_strcmp(pname, "ip") == 0) {
-		memcpy(dongle_ctx.quectel.network.ip, pbuf, len);
+		memcpy(usbh_dongle_ctx.quectel.network.ip, pbuf, len);
 	} else if (_strcmp(pname, "mask") == 0) {
-		memcpy(dongle_ctx.quectel.network.mask, pbuf, len);
+		memcpy(usbh_dongle_ctx.quectel.network.mask, pbuf, len);
 	} else if (_strcmp(pname, "dns") == 0) {
-		memcpy(dongle_ctx.quectel.network.dns, pbuf, len);
+		memcpy(usbh_dongle_ctx.quectel.network.dns, pbuf, len);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Unknown name(%s)\n", name);
 	}
@@ -225,18 +252,31 @@ static u8 *composite_dev_dongle_get_netinfo(u8 *name)
 
 	//whether support netinfo
 	if (_strcmp(pname, "gw") == 0) {
-		return dongle_ctx.quectel.network.gw;
+		return usbh_dongle_ctx.quectel.network.gw;
 	} else if (_strcmp(pname, "ip") == 0) {
-		return dongle_ctx.quectel.network.ip;
+		return usbh_dongle_ctx.quectel.network.ip;
 	} else if (_strcmp(pname, "mask") == 0) {
-		return dongle_ctx.quectel.network.mask;
+		return usbh_dongle_ctx.quectel.network.mask;
 	} else if (_strcmp(pname, "dns") == 0) {
-		return dongle_ctx.quectel.network.dns;
+		return usbh_dongle_ctx.quectel.network.dns;
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Unknown name(%s)\n", name);
 	}
 
 	return NULL;
+}
+
+/**
+  * @brief  Composite detach callback
+  * @retval Status
+  */
+static int composite_cb_detach(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
+#if CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
+	rtos_sema_give(usb_detach_sema);
+#endif
+	return HAL_OK;
 }
 
 /**
@@ -248,7 +288,7 @@ static u8 *composite_dev_dongle_get_netinfo(u8 *name)
 static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer type
 {
 	u32 i;
-	u16 vid = dongle_ctx.vid;
+	u16 vid = usbh_dongle_ctx.vid;
 	acm_rx_busy = 1;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ACM data received len(%d) \n", len);
@@ -268,7 +308,7 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 		}
 	}
 
-	if (USB_QUECTEL_DONGLE_VID == vid) {
+	if (USBH_COMPOSITE_QUECTEL_DONGLE_VID == vid) {
 		/* EG91 */
 		if (strstr((char *)pbuf, "+CEREG")) { ///parse to get the network information
 			char *buff = (char *)pbuf;
@@ -276,7 +316,7 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 			p = strsep(&buff, ",");
 			p = strsep(&buff, ",");
 			if (p && ((*p == '1' || *p == '5'))) {
-				dongle_ctx.quectel.cereg_ready = 1;
+				usbh_dongle_ctx.quectel.cereg_ready = 1;
 			}
 		}
 		if (strstr((char *)pbuf, "+WWANINFO")) {
@@ -299,7 +339,7 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 			composite_dev_dongle_set_netinfo((u8 *)p, (u8 *)"dns");
 			p = strsep(&buff, ",");
 
-			dongle_ctx.quectel.ip_ready = 1;
+			usbh_dongle_ctx.quectel.ip_ready = 1;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "IP Ready\n");
 		}
 		if (strstr((char *)pbuf, "+QNETIFMAC")) { ///parse to get the mac info
@@ -311,11 +351,12 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 			p = strsep(&buff, "\"");
 			if (p) {
 				for (i = 0; i < 6; i++) {
-					dongle_ctx.quectel.mac[i] = usbh_composite_cdc_ecm_hex_to_char(p[3 * i + 0]) * 16 + usbh_composite_cdc_ecm_hex_to_char(p[3 * i + 1]) ;
+					usbh_dongle_ctx.quectel.mac[i] = usbh_composite_cdc_ecm_hex_to_char(p[3 * i + 0]) * 16 + usbh_composite_cdc_ecm_hex_to_char(p[3 * i + 1]) ;
 				}
-				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC:%02x:%02x:%02x:%02x:%02x:%02x\n", dongle_ctx.quectel.mac[0], dongle_ctx.quectel.mac[1], dongle_ctx.quectel.mac[2],
-						 dongle_ctx.quectel.mac[3], dongle_ctx.quectel.mac[4], dongle_ctx.quectel.mac[5]);
-				dongle_ctx.quectel.mac_ready = 1;
+				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC:%02x:%02x:%02x:%02x:%02x:%02x\n", usbh_dongle_ctx.quectel.mac[0], usbh_dongle_ctx.quectel.mac[1],
+						 usbh_dongle_ctx.quectel.mac[2],
+						 usbh_dongle_ctx.quectel.mac[3], usbh_dongle_ctx.quectel.mac[4], usbh_dongle_ctx.quectel.mac[5]);
+				usbh_dongle_ctx.quectel.mac_ready = 1;
 			}
 		}
 
@@ -356,10 +397,10 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 			composite_dev_dongle_set_netinfo((u8 *)p, (u8 *)"dns");
 			p = strsep(&buff, ",");
 
-			dongle_ctx.quectel.ip_ready = 1;
+			usbh_dongle_ctx.quectel.ip_ready = 1;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "IP Ready\n");
 		}
-	} else if (USB_FIBOCOM_DONGLE_VID == vid) {
+	} else if (USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_VID == vid) {
 		/* LE271 (Fibocom) - parse the responses listed in the LE271 ECM dial flow.
 		   Responses arrive line-by-line; we set per-marker flags consumed by dongle_fibocom_diag_ctrl(). */
 		if (strstr((char *)pbuf, "+GTUSBMODE:")) {
@@ -367,14 +408,14 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 			while (*p == ' ') {
 				p++;
 			}
-			dongle_ctx.fibocom.usbmode_is_ecm = (atoi(p) == 32) ? 1 : 0;
-			dongle_ctx.fibocom.usbmode_seen = 1;
+			usbh_dongle_ctx.fibocom.usbmode_is_ecm = (atoi(p) == 32) ? 1 : 0;
+			usbh_dongle_ctx.fibocom.usbmode_seen = 1;
 		}
 		if (strstr((char *)pbuf, "+CGSN:")) {
-			dongle_ctx.fibocom.cgsn_ok = 1;
+			usbh_dongle_ctx.fibocom.cgsn_ok = 1;
 		}
 		if (strstr((char *)pbuf, "+CFSN:")) {
-			dongle_ctx.fibocom.cfsn_ok = 1;
+			usbh_dongle_ctx.fibocom.cfsn_ok = 1;
 		}
 		/* AT+CFUN? returns "+CFUN: 1" / "+CFUN: 4" etc.; PDF expects functional state 1. */
 		if (strstr((char *)pbuf, "+CFUN:")) {
@@ -383,27 +424,27 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 				p++;
 			}
 			if (*p == '1') {
-				dongle_ctx.fibocom.cfun_ok = 1;
+				usbh_dongle_ctx.fibocom.cfun_ok = 1;
 			}
 		}
 		if (strstr((char *)pbuf, "+CGMR:")) {
-			dongle_ctx.fibocom.cgmr_ok = 1;
+			usbh_dongle_ctx.fibocom.cgmr_ok = 1;
 		}
 		if (strstr((char *)pbuf, "+CPIN: READY")) {
-			dongle_ctx.fibocom.cpin_ready = 1;
+			usbh_dongle_ctx.fibocom.cpin_ready = 1;
 		}
 		if (strstr((char *)pbuf, "+CSQ:")) {
 			char *p = strstr((char *)pbuf, "+CSQ:") + sizeof("+CSQ:") - 1;
 			while (*p == ' ') {
 				p++;
 			}
-			dongle_ctx.fibocom.csq_has_signal = (atoi(p) == 99) ? 0 : 1;
-			dongle_ctx.fibocom.csq_seen = 1;
+			usbh_dongle_ctx.fibocom.csq_has_signal = (atoi(p) == 99) ? 0 : 1;
+			usbh_dongle_ctx.fibocom.csq_seen = 1;
 		}
 		/* CIMI returns the IMSI digits followed by OK; treat any "460" prefix as success.
 		   Generic OK (set below) also unblocks Step10 for non-CHN MNC. */
 		if (strstr((char *)pbuf, "460")) {
-			dongle_ctx.fibocom.cimi_ok = 1;
+			usbh_dongle_ctx.fibocom.cimi_ok = 1;
 		}
 		if (strstr((char *)pbuf, "+CGREG:")) {
 			/* +CGREG: <n>,<stat>[,...]  - stat==1 (home) or stat==5 (roaming) means PS attached. */
@@ -416,10 +457,10 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 					p++;
 				}
 				if (*p == '1' || *p == '5') {
-					dongle_ctx.fibocom.ps_registered = 1;
+					usbh_dongle_ctx.fibocom.ps_registered = 1;
 				}
 			}
-			dongle_ctx.fibocom.cgreg_seen = 1;
+			usbh_dongle_ctx.fibocom.cgreg_seen = 1;
 		}
 		if (strstr((char *)pbuf, "+GTRNDIS:")) {
 			char *p = strstr((char *)pbuf, "+GTRNDIS:") + sizeof("+GTRNDIS:") - 1;
@@ -428,16 +469,16 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 			}
 			/* Empty-state form "+GTRNDIS: 0" => no IPv4 yet; otherwise the response carries an IP. */
 			if (*p == '0' && (*(p + 1) == '\r' || *(p + 1) == '\n' || *(p + 1) == 0)) {
-				dongle_ctx.fibocom.gtrndis_has_ip = 0;
+				usbh_dongle_ctx.fibocom.gtrndis_has_ip = 0;
 			} else {
-				dongle_ctx.fibocom.gtrndis_has_ip = 1;
+				usbh_dongle_ctx.fibocom.gtrndis_has_ip = 1;
 			}
-			dongle_ctx.fibocom.gtrndis_seen = 1;
+			usbh_dongle_ctx.fibocom.gtrndis_seen = 1;
 		}
 		/* Generic OK - covers Step1/Step2/Step10/Step13 acks. Place last so it does not pre-empt
 		   marker matches above for "<marker>...OK" multi-line replies. */
 		if (strstr((char *)pbuf, "OK")) {
-			dongle_ctx.fibocom.at_ok = 1;
+			usbh_dongle_ctx.fibocom.at_ok = 1;
 		}
 	}
 
@@ -450,6 +491,7 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 static u32 composite_acm_cmd_test(u16 argc, u8 *argv[])
 {
 	u8 *cmd;
+	u8 try_cnt = 10;
 
 	if (argc == 0) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Invalid argument\n");
@@ -459,17 +501,20 @@ static u32 composite_acm_cmd_test(u16 argc, u8 *argv[])
 	cmd = (u8 *)argv[0];
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "At cmd(%s)\n", cmd);
-	if (USB_QUECTEL_DONGLE_VID == dongle_ctx.vid) {
+	if (USBH_COMPOSITE_QUECTEL_DONGLE_VID == usbh_dongle_ctx.vid ||
+		USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_VID == usbh_dongle_ctx.vid) {
 		memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
 		memcpy(acm_ctrl_buf, cmd, composite_dev_strlen(cmd));
 		acm_ctrl_buf[composite_dev_strlen(cmd) + 0] = 0x0D;
 		acm_ctrl_buf[composite_dev_strlen(cmd) + 1] = 0x0A;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Pre AtCmd\n");
-		while (1) {
-			if (HAL_OK != usbh_composite_cdc_acm_transmit(acm_ctrl_buf, composite_dev_strlen(acm_ctrl_buf))) {
+		while (try_cnt >  0) {
+			if (HAL_OK == usbh_composite_cdc_acm_transmit(acm_ctrl_buf, composite_dev_strlen(acm_ctrl_buf))) {
 				break;
 			}
 			rtos_time_delay_ms(1000);
+
+			try_cnt --;
 		}
 	} else {
 	}
@@ -494,10 +539,16 @@ static u8 dongle_quectel_eg915_diag_ctrl(void)
 		if (heart_beat++ % 10 == 0) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "\n\nEnter state(%d)--------------------------------------------\n", state);
 		}
+		if (usbh_dongle_ctx.in_detach) {
+			return 1;
+		}
 		switch (state) {
 		case QUECTEL_DONGLE_STATUS_IDLE: //for debug issue
-			while (acm_rx_busy == 0) {
+			while (acm_rx_busy == 0 && usbh_dongle_ctx.in_detach == 0) {
 				rtos_time_delay_ms(10);
+			}
+			if (usbh_dongle_ctx.in_detach) {
+				return 1;
 			}
 			memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
 			memcpy(acm_ctrl_buf, pdata0, composite_dev_strlen(pdata0));
@@ -543,12 +594,17 @@ static u8 dongle_quectel_eg915_diag_ctrl(void)
 				acm_ctrl_buf[composite_dev_strlen(pdata4) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata4) + 1] = 0x0A;
 				usbh_composite_cdc_acm_transmit(acm_ctrl_buf, composite_dev_strlen(acm_ctrl_buf));
-				rtos_time_delay_ms(15 * 1000);
+				for (idx = 0; idx < 150 && usbh_dongle_ctx.in_detach == 0; idx++) {
+					rtos_time_delay_ms(100);
+				}
+				if (usbh_dongle_ctx.in_detach) {
+					return 1;
+				}
 			}
 			state ++;
 			break;
 		case QUECTEL_DONGLE_STATUS_DIAG_STATUS:
-			if (0 == dongle_ctx.quectel.ip_ready) {
+			if (0 == usbh_dongle_ctx.quectel.ip_ready) {
 				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata5, composite_dev_strlen(pdata5));
 				acm_ctrl_buf[composite_dev_strlen(pdata5) + 0] = 0x0D;
@@ -557,14 +613,17 @@ static u8 dongle_quectel_eg915_diag_ctrl(void)
 			}
 			idx = 0;
 			do {
-				idx ++;
-				if (dongle_ctx.quectel.ip_ready) {
+				idx++;
+				if (usbh_dongle_ctx.quectel.ip_ready || usbh_dongle_ctx.in_detach) {
 					break;
 				}
 				rtos_time_delay_ms(1000);
 			} while (idx < 10);
-			if (dongle_ctx.quectel.ip_ready) {
-				state = QUECTEL_DONGLE_STATUS_MAX; ///maybe should add a check for AT RX msg,and allow to switch to next stage
+			if (usbh_dongle_ctx.in_detach) {
+				return 1;
+			}
+			if (usbh_dongle_ctx.quectel.ip_ready) {
+				state = QUECTEL_DONGLE_STATUS_MAX;
 			}
 			break;
 		case QUECTEL_DONGLE_STATUS_MAX:
@@ -597,10 +656,16 @@ static u8 dongle_quectel_eg91_diag_ctrl(void)
 		if (heart_beat++ % 10 == 0) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "\n\nEnter state(%d)--------------------------------------------\n", state);
 		}
+		if (usbh_dongle_ctx.in_detach) {
+			return 1;
+		}
 		switch (state) {
 		case QUECTEL_DONGLE_STATUS_IDLE: //for debug issue
-			while (acm_rx_busy == 0) {
+			while (acm_rx_busy == 0 && usbh_dongle_ctx.in_detach == 0) {
 				rtos_time_delay_ms(10);
+			}
+			if (usbh_dongle_ctx.in_detach) {
+				return 1;
 			}
 			memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
 			memcpy(acm_ctrl_buf, pdata0, composite_dev_strlen(pdata0));
@@ -659,20 +724,28 @@ static u8 dongle_quectel_eg91_diag_ctrl(void)
 			}
 			idx = 0;
 			do {
-				idx ++;
-				if (dongle_ctx.quectel.cereg_ready) {
+				idx++;
+				if (usbh_dongle_ctx.quectel.cereg_ready || usbh_dongle_ctx.in_detach) {
 					break;
 				}
 				rtos_time_delay_ms(1000);
 			} while (idx < 10);
-			if (dongle_ctx.quectel.cereg_ready) {
+			if (usbh_dongle_ctx.in_detach) {
+				return 1;
+			}
+			if (usbh_dongle_ctx.quectel.cereg_ready) {
 				//EG 91 use DHCP to get mac
 				state = QUECTEL_DONGLE_STATUS_GET_MAC;
 			}
 			break;
 		case QUECTEL_DONGLE_STATUS_DIAG_STATUS:
 			if (1) {
-				rtos_time_delay_ms(15 * 1000);
+				for (idx = 0; idx < 150 && usbh_dongle_ctx.in_detach == 0; idx++) {
+					rtos_time_delay_ms(100);
+				}
+				if (usbh_dongle_ctx.in_detach) {
+					return 1;
+				}
 				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata5, composite_dev_strlen(pdata5));
 				acm_ctrl_buf[composite_dev_strlen(pdata5) + 0] = 0x0D;
@@ -683,14 +756,17 @@ static u8 dongle_quectel_eg91_diag_ctrl(void)
 			}
 			idx = 0;
 			do {
-				idx ++;
-				if (dongle_ctx.quectel.ip_ready) {
+				idx++;
+				if (usbh_dongle_ctx.quectel.ip_ready || usbh_dongle_ctx.in_detach) {
 					break;
 				}
 				rtos_time_delay_ms(1000);
 			} while (idx < 10);
-			if (dongle_ctx.quectel.ip_ready) {
-				state = QUECTEL_DONGLE_STATUS_GET_MAC; ///maybe should add a check for AT RX msg,and allow to switch to next stage
+			if (usbh_dongle_ctx.in_detach) {
+				return 1;
+			}
+			if (usbh_dongle_ctx.quectel.ip_ready) {
+				state = QUECTEL_DONGLE_STATUS_GET_MAC;
 			}
 			break;
 		case QUECTEL_DONGLE_STATUS_GET_MAC:
@@ -705,13 +781,16 @@ static u8 dongle_quectel_eg91_diag_ctrl(void)
 			}
 			idx = 0;
 			do {
-				idx ++;
-				if (dongle_ctx.quectel.mac_ready) {
+				idx++;
+				if (usbh_dongle_ctx.quectel.mac_ready || usbh_dongle_ctx.in_detach) {
 					break;
 				}
 				rtos_time_delay_ms(1000);
 			} while (idx < 10);
-			if (dongle_ctx.quectel.mac_ready) {
+			if (usbh_dongle_ctx.in_detach) {
+				return 1;
+			}
+			if (usbh_dongle_ctx.quectel.mac_ready) {
 				state = QUECTEL_DONGLE_STATUS_MAX;
 			}
 			break;
@@ -751,6 +830,9 @@ static int fibocom_send_at_wait(const char *cmd, volatile u8 *ready_flag, u32 ti
 	}
 
 	while (elapsed < timeout_ms) {
+		if (usbh_dongle_ctx.in_detach) {
+			return -1;
+		}
 		if (ready_flag == NULL || *ready_flag) {
 			return 0;
 		}
@@ -798,16 +880,16 @@ static u8 dongle_fibocom_diag_ctrl(void)
 		case FIBOCOM_DONGLE_STATUS_AT_PROBE:
 			/* Step1: probe the module with bare AT, retry every 2s, give up after ~60s. */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step1: AT probe\n");
-			for (retry = 0; retry < 30; retry++) {
-				dongle_ctx.fibocom.at_ok = 0;
-				if (fibocom_send_at_wait((const char *)pdata0, &dongle_ctx.fibocom.at_ok, 1000) == 0) {
+			for (retry = 0; (retry < 30) && (usbh_dongle_ctx.in_detach == 0); retry++) {
+				usbh_dongle_ctx.fibocom.at_ok = 0;
+				if (fibocom_send_at_wait((const char *)pdata0, &usbh_dongle_ctx.fibocom.at_ok, 1000) == 0) {
 					break;
 				}
 				RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 AT no reply, retry %d\n", retry + 1);
 				rtos_time_delay_ms(2000);
 			}
-			if (retry >= 30) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "LE271 Step1 timeout\n");
+			if (retry >= 30 || usbh_dongle_ctx.in_detach) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "LE271 Step1 timeout or detached\n");
 				return 1;
 			}
 			state ++;
@@ -815,8 +897,8 @@ static u8 dongle_fibocom_diag_ctrl(void)
 		case FIBOCOM_DONGLE_STATUS_ATE0:
 			/* Step2: disable AT echo. */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step2: ATE0\n");
-			dongle_ctx.fibocom.at_ok = 0;
-			if (fibocom_send_at_wait((const char *)pdata1, &dongle_ctx.fibocom.at_ok, 2000) != 0) {
+			usbh_dongle_ctx.fibocom.at_ok = 0;
+			if (fibocom_send_at_wait((const char *)pdata1, &usbh_dongle_ctx.fibocom.at_ok, 2000) != 0) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "LE271 ATE0 failed\n");
 				return 1;
 			}
@@ -827,64 +909,67 @@ static u8 dongle_fibocom_diag_ctrl(void)
 			   If the value is not 32, set it then issue AT+CFUN=15 to soft-reset and let the
 			   hot-plug path re-enumerate the device in ECM mode. */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step3: query USB mode\n");
-			dongle_ctx.fibocom.usbmode_seen = 0;
-			dongle_ctx.fibocom.usbmode_is_ecm = 0;
-			if (fibocom_send_at_wait((const char *)pdata2, &dongle_ctx.fibocom.usbmode_seen, 3000) != 0) {
+			usbh_dongle_ctx.fibocom.usbmode_seen = 0;
+			usbh_dongle_ctx.fibocom.usbmode_is_ecm = 0;
+			if (fibocom_send_at_wait((const char *)pdata2, &usbh_dongle_ctx.fibocom.usbmode_seen, 3000) != 0) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "LE271 GTUSBMODE? no reply\n");
 				return 1;
 			}
-			if (!dongle_ctx.fibocom.usbmode_is_ecm) {
+			if (!usbh_dongle_ctx.fibocom.usbmode_is_ecm) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 not in ECM mode, switch and reboot\n");
-				dongle_ctx.fibocom.at_ok = 0;
-				(void)fibocom_send_at_wait((const char *)pdata3, &dongle_ctx.fibocom.at_ok, 3000);
-				dongle_ctx.fibocom.at_ok = 0;
-				(void)fibocom_send_at_wait((const char *)pdata4, &dongle_ctx.fibocom.at_ok, 3000);
-				/* USB will detach; let example_usbh_comp_acm_ecm_hotplug_thread re-init and re-enter this flow. */
+				usbh_dongle_ctx.fibocom.at_ok = 0;
+				(void)fibocom_send_at_wait((const char *)pdata3, &usbh_dongle_ctx.fibocom.at_ok, 3000);
+				usbh_dongle_ctx.fibocom.at_ok = 0;
+				(void)fibocom_send_at_wait((const char *)pdata4, &usbh_dongle_ctx.fibocom.at_ok, 3000);
+				/* USB will detach; let example_usbh_comp_hotplug_thread re-init and re-enter this flow. */
 				rtos_time_delay_ms(1000);
-				return 0;
+				return 1;
 			}
 			state ++;
 			break;
 		case FIBOCOM_DONGLE_STATUS_QUERY_IMEI:
 			/* Step4: IMEI - non-fatal, continue even on timeout (info-only step). */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step4: AT+CGSN?\n");
-			dongle_ctx.fibocom.cgsn_ok = 0;
-			(void)fibocom_send_at_wait((const char *)pdata5, &dongle_ctx.fibocom.cgsn_ok, 3000);
+			usbh_dongle_ctx.fibocom.cgsn_ok = 0;
+			(void)fibocom_send_at_wait((const char *)pdata5, &usbh_dongle_ctx.fibocom.cgsn_ok, 3000);
 			state ++;
 			break;
 		case FIBOCOM_DONGLE_STATUS_QUERY_SN:
 			/* Step5: device serial number (informational). */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step5: AT+CFSN?\n");
-			dongle_ctx.fibocom.cfsn_ok = 0;
-			(void)fibocom_send_at_wait((const char *)pdata6, &dongle_ctx.fibocom.cfsn_ok, 3000);
+			usbh_dongle_ctx.fibocom.cfsn_ok = 0;
+			(void)fibocom_send_at_wait((const char *)pdata6, &usbh_dongle_ctx.fibocom.cfsn_ok, 3000);
 			state ++;
 			break;
 		case FIBOCOM_DONGLE_STATUS_QUERY_CFUN:
 			/* Step6: functional state (informational, expect +CFUN: 1). */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step6: AT+CFUN?\n");
-			dongle_ctx.fibocom.cfun_ok = 0;
-			(void)fibocom_send_at_wait((const char *)pdata7, &dongle_ctx.fibocom.cfun_ok, 3000);
+			usbh_dongle_ctx.fibocom.cfun_ok = 0;
+			(void)fibocom_send_at_wait((const char *)pdata7, &usbh_dongle_ctx.fibocom.cfun_ok, 3000);
 			state ++;
 			break;
 		case FIBOCOM_DONGLE_STATUS_QUERY_CGMR:
 			/* Step7: firmware version (informational). */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step7: AT+CGMR?\n");
-			dongle_ctx.fibocom.cgmr_ok = 0;
-			(void)fibocom_send_at_wait((const char *)pdata8, &dongle_ctx.fibocom.cgmr_ok, 3000);
+			usbh_dongle_ctx.fibocom.cgmr_ok = 0;
+			(void)fibocom_send_at_wait((const char *)pdata8, &usbh_dongle_ctx.fibocom.cgmr_ok, 3000);
 			state ++;
 			break;
 		case FIBOCOM_DONGLE_STATUS_WAIT_SIM:
 			/* Step8: SIM detection - poll until +CPIN: READY (cap at ~30s to avoid hangs). */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step8: AT+CPIN? (wait SIM)\n");
-			for (retry = 0; retry < 15; retry++) {
-				dongle_ctx.fibocom.cpin_ready = 0;
-				(void)fibocom_send_at_wait((const char *)pdata9, &dongle_ctx.fibocom.cpin_ready, 2000);
-				if (dongle_ctx.fibocom.cpin_ready) {
+			for (retry = 0; retry < 15 && (usbh_dongle_ctx.in_detach == 0); retry++) {
+				usbh_dongle_ctx.fibocom.cpin_ready = 0;
+				(void)fibocom_send_at_wait((const char *)pdata9, &usbh_dongle_ctx.fibocom.cpin_ready, 2000);
+				if (usbh_dongle_ctx.fibocom.cpin_ready) {
 					break;
 				}
-				rtos_time_delay_ms(2000);
+				/* inter-retry gap: 20 * 100 ms = 2 s total; exits early on detach */
+				for (int d = 0; d < 20 && usbh_dongle_ctx.in_detach == 0; d++) {
+					rtos_time_delay_ms(100);
+				}
 			}
-			if (!dongle_ctx.fibocom.cpin_ready) {
+			if ((!usbh_dongle_ctx.fibocom.cpin_ready) || (usbh_dongle_ctx.in_detach == 1)) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "LE271 SIM not ready\n");
 				return 1;
 			}
@@ -893,16 +978,19 @@ static u8 dongle_fibocom_diag_ctrl(void)
 		case FIBOCOM_DONGLE_STATUS_WAIT_SIGNAL:
 			/* Step9: signal strength - retry while CSQ==99 (no signal), cap at ~60s. */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step9: AT+CSQ? (wait signal)\n");
-			for (retry = 0; retry < 30; retry++) {
-				dongle_ctx.fibocom.csq_seen = 0;
-				dongle_ctx.fibocom.csq_has_signal = 0;
-				(void)fibocom_send_at_wait((const char *)pdata10, &dongle_ctx.fibocom.csq_seen, 2000);
-				if (dongle_ctx.fibocom.csq_has_signal) {
+			for (retry = 0; retry < 30 && (usbh_dongle_ctx.in_detach == 0); retry++) {
+				usbh_dongle_ctx.fibocom.csq_seen = 0;
+				usbh_dongle_ctx.fibocom.csq_has_signal = 0;
+				(void)fibocom_send_at_wait((const char *)pdata10, &usbh_dongle_ctx.fibocom.csq_seen, 2000);
+				if (usbh_dongle_ctx.fibocom.csq_has_signal) {
 					break;
 				}
-				rtos_time_delay_ms(2000);
+				/* inter-retry gap: 20 * 100 ms = 2 s total; exits early on detach */
+				for (int d = 0; d < 20 && usbh_dongle_ctx.in_detach == 0; d++) {
+					rtos_time_delay_ms(100);
+				}
 			}
-			if (!dongle_ctx.fibocom.csq_has_signal) {
+			if ((!usbh_dongle_ctx.fibocom.csq_has_signal) || (usbh_dongle_ctx.in_detach == 1)) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "LE271 no signal\n");
 				return 1;
 			}
@@ -912,51 +1000,58 @@ static u8 dongle_fibocom_diag_ctrl(void)
 			/* Step10: read CIMI (IMSI) - operator-aware logic could pick APN here; we keep it
 			   informational and rely on the module's default APN as the PDF's APN setup is operator-specific. */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step10: AT+CIMI\n");
-			dongle_ctx.fibocom.at_ok = 0;
-			dongle_ctx.fibocom.cimi_ok = 0;
-			(void)fibocom_send_at_wait((const char *)pdata11, &dongle_ctx.fibocom.at_ok, 3000);
+			usbh_dongle_ctx.fibocom.at_ok = 0;
+			usbh_dongle_ctx.fibocom.cimi_ok = 0;
+			(void)fibocom_send_at_wait((const char *)pdata11, &usbh_dongle_ctx.fibocom.at_ok, 3000);
 			state ++;
 			break;
 		case FIBOCOM_DONGLE_STATUS_WAIT_PS_REG:
 			/* Step11: PS-domain registration via +CGREG. PDF: continuous query timeout 90s -> reset module. */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step11: AT+CGREG? (wait PS attach)\n");
 			reg_elapsed_ms = 0;
-			while (reg_elapsed_ms < 90000) {
-				dongle_ctx.fibocom.cgreg_seen = 0;
-				dongle_ctx.fibocom.ps_registered = 0;
-				(void)fibocom_send_at_wait((const char *)pdata12, &dongle_ctx.fibocom.cgreg_seen, 2000);
-				if (dongle_ctx.fibocom.ps_registered) {
+			while (reg_elapsed_ms < 90000 && (usbh_dongle_ctx.in_detach == 0)) {
+				usbh_dongle_ctx.fibocom.cgreg_seen = 0;
+				usbh_dongle_ctx.fibocom.ps_registered = 0;
+				(void)fibocom_send_at_wait((const char *)pdata12, &usbh_dongle_ctx.fibocom.cgreg_seen, 2000);
+				if (usbh_dongle_ctx.fibocom.ps_registered) {
 					break;
 				}
-				rtos_time_delay_ms(2000);
+				/* inter-query gap: 20 * 100 ms = 2 s total; exits early on detach */
+				for (int d = 0; d < 20 && usbh_dongle_ctx.in_detach == 0; d++) {
+					rtos_time_delay_ms(100);
+				}
 				reg_elapsed_ms += 4000;
 			}
-			if (!dongle_ctx.fibocom.ps_registered) {
+			if ((!usbh_dongle_ctx.fibocom.ps_registered) || (usbh_dongle_ctx.in_detach == 1)) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "LE271 PS attach timeout, reset module\n");
-				dongle_ctx.fibocom.at_ok = 0;
-				(void)fibocom_send_at_wait((const char *)pdata4, &dongle_ctx.fibocom.at_ok, 3000);
-				rtos_time_delay_ms(1000);
-				return 0;  /* let hot-plug re-init */
+				if (!usbh_dongle_ctx.in_detach) {
+					/* Device still attached: issue soft-reset and wait 1 s for it to
+					 * begin detaching before returning (1 s total guard delay). */
+					usbh_dongle_ctx.fibocom.at_ok = 0;
+					(void)fibocom_send_at_wait((const char *)pdata4, &usbh_dongle_ctx.fibocom.at_ok, 3000);
+					rtos_time_delay_ms(1000);
+				}
+				return 1;
 			}
 			state ++;
 			break;
 		case FIBOCOM_DONGLE_STATUS_DIAL_LOOP:
 			/* Step12 + Step13: check IP, dial if missing, loop until IPv4 is allocated. Cap loops to 30. */
-			for (retry = 0; retry < 30; retry++) {
+			for (retry = 0; (retry < 30) && (usbh_dongle_ctx.in_detach == 0); retry++) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step12: AT+GTRNDIS? (check IP)\n");
-				dongle_ctx.fibocom.gtrndis_seen = 0;
-				dongle_ctx.fibocom.gtrndis_has_ip = 0;
-				(void)fibocom_send_at_wait((const char *)pdata13, &dongle_ctx.fibocom.gtrndis_seen, 3000);
-				if (dongle_ctx.fibocom.gtrndis_has_ip) {
+				usbh_dongle_ctx.fibocom.gtrndis_seen = 0;
+				usbh_dongle_ctx.fibocom.gtrndis_has_ip = 0;
+				(void)fibocom_send_at_wait((const char *)pdata13, &usbh_dongle_ctx.fibocom.gtrndis_seen, 3000);
+				if (usbh_dongle_ctx.fibocom.gtrndis_has_ip) {
 					state = FIBOCOM_DONGLE_STATUS_DONE;
 					break;
 				}
 				RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 Step13: AT+GTRNDIS=1,1 (dial)\n");
-				dongle_ctx.fibocom.at_ok = 0;
-				(void)fibocom_send_at_wait((const char *)pdata14, &dongle_ctx.fibocom.at_ok, 5000);
+				usbh_dongle_ctx.fibocom.at_ok = 0;
+				(void)fibocom_send_at_wait((const char *)pdata14, &usbh_dongle_ctx.fibocom.at_ok, 5000);
 				rtos_time_delay_ms(1000);
 			}
-			if (state != FIBOCOM_DONGLE_STATUS_DONE) {
+			if ((state != FIBOCOM_DONGLE_STATUS_DONE) || (usbh_dongle_ctx.in_detach == 1)) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "LE271 dial loop exhausted\n");
 				return 1;
 			}
@@ -1043,21 +1138,21 @@ static int composite_dev_dongle_netif_init(void)
 */
 static int composite_dev_dongle_diag_cmd(void)
 {
-	u16 pid = dongle_ctx.pid;
-	u16 vid = dongle_ctx.vid;
+	u16 pid = usbh_dongle_ctx.pid;
+	u16 vid = usbh_dongle_ctx.vid;
 
-	if (USB_DEFAULT_VID == vid) {
+	if (USBH_COMPOSITE_DEVICE_VID == vid) {
 		return 0;
-	} else if (USB_QUECTEL_DONGLE_VID == vid) {
+	} else if (USBH_COMPOSITE_QUECTEL_DONGLE_VID == vid) {
 		//should check the status finish
-		if (pid == QUECTEL_DONGLE_PID_EG915) {
+		if (pid == USBH_COMPOSITE_QUECTEL_DONGLE_EG915_PID) {
 			return dongle_quectel_eg915_diag_ctrl();
-		} else if (pid == QUECTEL_DONGLE_PID_EG91) {
+		} else if (pid == USBH_COMPOSITE_QUECTEL_DONGLE_EG91_PID) {
 			return dongle_quectel_eg91_diag_ctrl();
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Error happen, check the pid(%d)\n", pid);
 		}
-	} else if ((USB_FIBOCOM_DONGLE_VID == vid) && (pid == FIBOCOM_DONGLE_PID_LE271)) {
+	} else if ((USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_VID == vid) && (pid == USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_PID)) {
 		return dongle_fibocom_diag_ctrl();
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Error happen, check the vid(%d)\n", vid);
@@ -1077,27 +1172,84 @@ static int composite_ecm_cb_rxdata(u8 *buf, u32 len)
 	return HAL_OK;
 }
 
+#if USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL
+#define USB_DEV_PWR_CTRL_GPIO  _PA_3
+
 /**
-  * @brief  Composite ECM detach callback
-  * @retval Status
+  * @brief  Configure the device power-control GPIO as a push-pull output.
+  * @param  GPIO_Pin: Pin wired to the USB device power switch (USB_DEV_PWR_CTRL_GPIO).
+  * @retval None
   */
-static int composite_ecm_cb_detach(void)
+static void gpio_power_init(uint32_t GPIO_Pin)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
-#if CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
-	rtos_sema_give(usb_detach_sema);
+	GPIO_InitTypeDef gpio_initstruct_temp;
+	gpio_initstruct_temp.GPIO_Pin = GPIO_Pin;
+	gpio_initstruct_temp.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_Init(&gpio_initstruct_temp);
+}
+
+/**
+  * @brief  Drive the device power-control GPIO. Only the LSB is used:
+  *         0 cuts power to the device, 1 restores it.
+  * @param  level: Output level to write; masked to BIT0 (0 = off, 1 = on).
+  * @retval None
+  */
+static void gpio_power_trigger(u8 level)
+{
+	level = level & BIT0;
+	GPIO_WriteBit(USB_DEV_PWR_CTRL_GPIO, level);
+}
+
+/**
+  * @brief  One-time init of the power-control GPIO. Configures the pin, then
+  *         power-cycles the device once (off -> settle -> on) so it always
+  *         starts from a known powered state. Guarded by a static flag so
+  *         repeated calls are no-ops.
+  * @retval None
+  */
+static void gpio_init(void)
+{
+	static int init_ok = 0;
+	if (init_ok == 0) {
+		init_ok = 1;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "[USB] gpio init\n");
+		gpio_power_init(USB_DEV_PWR_CTRL_GPIO);
+
+		gpio_power_trigger(0);      /* power off */
+		usb_os_sleep_ms(20);        /* let the power rail discharge */
+		gpio_power_trigger(1);      /* power on */
+	}
+}
 #endif
+
+/**
+  * @brief  Physically power-cycle the attached USB device via the power-control
+  *         GPIO: drop power for 500 ms, then restore it. This forces a real
+  *         detach/attach so the hot-plug re-enumeration path can be exercised.
+  *         Only available when USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL is enabled.
+  * @retval HAL_OK
+  */
+static u32 usbh_hotplug_test(void)
+{
+#if USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL
+	gpio_power_trigger(0);
+	rtos_time_delay_ms(500);
+	gpio_power_trigger(1);
+#else
+	RTK_LOGS(TAG, RTK_LOG_WARN, "Not support\n");
+#endif
+
 	return HAL_OK;
 }
 
 static void composite_dev_do_init(void)
 {
 	/* Clear all dongle state from the previous session before re-init so that
-	 * stale flags (ip_ready, cereg_ready, mac_ready, at_ok, ��) cannot be seen
+	 * stale flags (ip_ready, cereg_ready, mac_ready, at_ok, ) cannot be seen
 	 * by the new session's state machines or the RX callback. */
-	memset(&dongle_ctx, 0, sizeof(dongle_ctx));
+	memset(&usbh_dongle_ctx, 0, sizeof(usbh_dongle_ctx));
 
-	usbh_composite_acm_ecm_init(&usbh_acm_cfg, &usbh_ecm_cfg);
+	usbh_composite_acm_ecm_init(&usbh_acm_cfg, &usbh_ecm_cfg, &composite_cb);
 
 	do {
 		if (usbh_composite_acm_ecm_is_ready() == HAL_OK) {
@@ -1106,29 +1258,33 @@ static void composite_dev_do_init(void)
 		rtos_time_delay_ms(1000);
 	} while (1); //wait usb init success
 
-	/* Cache vid/pid before diag so the RX callback can use dongle_ctx.vid
+	/* Cache vid/pid before diag so the RX callback can use usbh_dongle_ctx.vid
 	 * without calling the getter on every received packet. */
-	dongle_ctx.vid = usbh_composite_acm_ecm_get_device_vid();
-	dongle_ctx.pid = usbh_composite_acm_ecm_get_device_pid();
+	usbh_dongle_ctx.vid = usbh_composite_acm_ecm_get_device_vid();
+	usbh_dongle_ctx.pid = usbh_composite_acm_ecm_get_device_pid();
 
 	/*
 		pprepare for ecm transfer:
 		4G dongle, send AT cmd to the dongle before the network is ready
 		other dongle, parepare for the ecm transfer
 	*/
-	composite_dev_dongle_diag_cmd();
+	if (composite_dev_dongle_diag_cmd() == 0) {
+		/* Only call prepare_done() on clean success (return 0 = ECM ready with IP).
+		 * Any non-zero return - whether a reboot was triggered (DONGLE_DIAG_RET_REBOOT_PENDING)
+		 * or a fatal AT error - means ECM is not ready; skip prepare_done(). */
+		usbh_composite_cdc_ecm_prepare_done();
 
-	usbh_composite_cdc_ecm_prepare_done();
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Example Pid 0x%x/Vid 0x%x\n", dongle_ctx.pid, dongle_ctx.vid);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Example Pid 0x%x/Vid 0x%x\n", usbh_dongle_ctx.pid, usbh_dongle_ctx.vid);
+	}
 }
 
-static void example_usbh_comp_acm_ecm_link_change_thread(void *param)
+static void example_usbh_comp_link_change_thread(void *param)
 {
 	u8 *mac;
 	u32 dhcp_status = 0;
 	u8 link_is_up = 0;
 	u16 vid, pid;
+	u32 link_down_log_cnt = 0;
 	eth_state_t ethernet_unplug = ETH_STATUS_IDLE;
 
 	UNUSED(param);
@@ -1141,14 +1297,13 @@ static void example_usbh_comp_acm_ecm_link_change_thread(void *param)
 		rtos_time_delay_ms(1000);
 	} while (1); //wait usb init success
 
-
-	pid = usbh_composite_acm_ecm_get_device_pid();
-	vid = usbh_composite_acm_ecm_get_device_vid();
-
 	while (1) {
+		pid = usbh_composite_acm_ecm_get_device_pid();
+		vid = usbh_composite_acm_ecm_get_device_vid();
+
 		link_is_up = usbh_composite_cdc_ecm_get_connect_status();
 
-		if (USB_DEFAULT_VID == vid) { //rtk
+		if (USBH_COMPOSITE_DEVICE_VID == vid) { //rtk
 			if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {  // unlink -> link
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				mac = (u8 *)usbh_composite_cdc_ecm_process_mac_str();
@@ -1170,13 +1325,16 @@ static void example_usbh_comp_acm_ecm_link_change_thread(void *param)
 				netif_set_default(pnetif_sta);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Swicth to unlink\n");
 			} else {
+				if ((link_is_up == 0) && (++link_down_log_cnt % 10 == 1)) {
+					RTK_LOGS(TAG, RTK_LOG_INFO, "ECM link is down (%u)\n", link_down_log_cnt);
+				}
 				rtos_time_delay_ms(1000);
 			}
-		} else if ((USB_QUECTEL_DONGLE_VID == vid) && (pid == QUECTEL_DONGLE_PID_EG91)) {
+		} else if ((USBH_COMPOSITE_QUECTEL_DONGLE_VID == vid) && (pid == USBH_COMPOSITE_QUECTEL_DONGLE_EG91_PID)) {
 			if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {	// unlink -> link
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				ethernet_unplug = ETH_STATUS_INIT;
-				mac = dongle_ctx.quectel.mac;
+				mac = usbh_dongle_ctx.quectel.mac;
 				memcpy(pnetif_usb_eth->hwaddr, mac, 6);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netif_set_link_up(pnetif_usb_eth);
@@ -1194,7 +1352,7 @@ static void example_usbh_comp_acm_ecm_link_change_thread(void *param)
 			} else {
 				rtos_time_delay_ms(1000);
 			}
-		} else if ((USB_QUECTEL_DONGLE_VID == vid) && (pid == QUECTEL_DONGLE_PID_EG915)) { //EG915
+		} else if ((USBH_COMPOSITE_QUECTEL_DONGLE_VID == vid) && (pid == USBH_COMPOSITE_QUECTEL_DONGLE_EG915_PID)) { //EG915
 			if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Pid 0x%x/Vid 0x%x, EG915 mac\n", vid, pid);
 				mac = (u8 *)usbh_composite_cdc_ecm_process_mac_str();
@@ -1215,7 +1373,7 @@ static void example_usbh_comp_acm_ecm_link_change_thread(void *param)
 			} else {
 				rtos_time_delay_ms(1000);
 			}
-		} else if ((USB_FIBOCOM_DONGLE_VID == vid) && (pid == FIBOCOM_DONGLE_PID_LE271)) {
+		} else if ((USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_VID == vid) && (pid == USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_PID)) {
 			/* LE271: cellular dial done in dongle_fibocom_diag_ctrl(); ECM brings up the link
 			   and the host obtains IPv4 via DHCP - same path as EG91. */
 			if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {
@@ -1241,8 +1399,13 @@ static void example_usbh_comp_acm_ecm_link_change_thread(void *param)
 				rtos_time_delay_ms(1000);
 			}
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Error, the Pid 0x%x/Vid 0x%x can not match! \n", vid, pid);
-			rtos_time_delay_ms(5000);
+			if ((link_is_up == 0) && (++link_down_log_cnt % 10 == 1)) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "ECM link is down (%u)\n", link_down_log_cnt);
+			}
+			if (link_is_up) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Error, the Pid 0x%x/Vid 0x%x can not match! \n", vid, pid);
+			}
+			rtos_time_delay_ms(1000);
 		}
 	}
 
@@ -1284,7 +1447,7 @@ static void composite_cdc_ecm_write_data_to_flash(void)
 #endif
 }
 
-static void example_usbh_comp_acm_ecm_download_thread(void *param)
+static void example_usbh_comp_download_thread(void *param)
 {
 	int server_fd = -1;
 	u8 heart_beat = 0;
@@ -1339,7 +1502,7 @@ static void example_usbh_comp_acm_ecm_download_thread(void *param)
 		pos = 0, read_size = 0, resource_size = 0, content_len = 0, header_removed = 0;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Connect success\n");
 		sprintf((char *)dl_buf, "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", RESOURCE, SERVER_HOST);
-		u32 max = composite_dev_strlen((char const *)dl_buf);
+		u32 max = composite_dev_strlen((u8 *)dl_buf);
 
 		if (0) {
 			u32 index = 0;
@@ -1350,7 +1513,7 @@ static void example_usbh_comp_acm_ecm_download_thread(void *param)
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\n\n");
 		}
 
-		write(server_fd, (char const *)dl_buf, composite_dev_strlen((char const *)dl_buf));
+		write(server_fd, (char const *)dl_buf, composite_dev_strlen((u8 *)dl_buf));
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Will call read\n");
 		mbedtls_md5_init(&ctx);
 		mbedtls_md5_starts(&ctx);
@@ -1367,7 +1530,7 @@ static void example_usbh_comp_acm_ecm_download_thread(void *param)
 				if (header) {
 					char *body, *content_len_pos;
 
-					body = header + composite_dev_strlen("\r\n\r\n");
+					body = header + composite_dev_strlen((u8 *)"\r\n\r\n");
 					*(body - 2) = 0;
 					header_removed = 1;
 					RTK_LOGS(TAG, RTK_LOG_INFO, "HTTP Header: %s\n", dl_buf);
@@ -1379,14 +1542,14 @@ static void example_usbh_comp_acm_ecm_download_thread(void *param)
 					pos = 0;
 					content_len_pos = strstr((char const *)dl_buf, "Content-Length: ");
 					if (content_len_pos) {
-						content_len_pos += composite_dev_strlen("Content-Length: ");
+						content_len_pos += composite_dev_strlen((u8 *)"Content-Length: ");
 						*(char *)(strstr(content_len_pos, "\r\n")) = 0;
 						content_len = atoi(content_len_pos);
 						RTK_LOGS(TAG, RTK_LOG_INFO, "Content len: %d\n", content_len);
 					}
 				} else {
 					if (pos >= BUFFER_SIZE) {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "HTTP header\n");
+						RTK_LOGS(TAG, RTK_LOG_ERROR, "HTTP header pos=%d-%s\n", pos, dl_buf);
 						goto exit;
 					}
 					continue;
@@ -1434,14 +1597,10 @@ exit:
 }
 #endif
 
-static void example_usbh_comp_acm_ecm_init_task(void *param)
+static void example_usbh_comp_init_task(void *param)
 {
 	UNUSED(param);
 	composite_dev_do_init();
-
-	do {
-		rtos_time_delay_ms(1000);
-	} while (1); //wait usb init success
 
 	rtos_task_delete(NULL);
 }
@@ -1449,13 +1608,17 @@ static void example_usbh_comp_acm_ecm_init_task(void *param)
 static void composite_dev_init(void)
 {
 	int status;
-	status = rtos_task_create(&eth_link_status_check_task, "example_usbh_comp_acm_ecm_link_change_thread", example_usbh_comp_acm_ecm_link_change_thread, NULL,
-							  1024U * 2, 3U);
+	status = rtos_task_create(&eth_link_status_check_task,
+							  "example_usbh_comp_link_change_thread",
+							  example_usbh_comp_link_change_thread, NULL,
+							  CONFIG_USBH_COMP_ACM_ECM_LINK_THREAD_STACK_SIZE, CONFIG_USBH_COMP_ACM_ECM_LINK_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
 
-	status = rtos_task_create(&ecm_init_task, "example_usbh_comp_acm_ecm_init_task", example_usbh_comp_acm_ecm_init_task, NULL, 1024U * 2, 5U);
+	status = rtos_task_create(&ecm_init_task, "example_usbh_comp_init_task",
+							  example_usbh_comp_init_task, NULL,
+							  CONFIG_USBH_COMP_ACM_ECM_INIT_THREAD_STACK_SIZE, CONFIG_USBH_COMP_ACM_ECM_INIT_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
@@ -1466,7 +1629,7 @@ static void composite_dev_init(void)
 #if CONFIG_USBH_COMPOSITE_MEM_CHECK
 // extern void vPortGetTaskHeapInfo(void);
 // extern void mmeory_array_dump(void);
-static void example_usbh_comp_acm_ecm_mem_check_thread(void *param)
+static void example_usbh_comp_mem_check_thread(void *param)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[test]ecm_link_toggle_thread \n");
 	int loop = 0;
@@ -1482,7 +1645,6 @@ static void example_usbh_comp_acm_ecm_mem_check_thread(void *param)
 
 		usbh_composite_acm_ecm_deinit();
 		rtos_task_delete(eth_link_status_check_task);
-		rtos_task_delete(ecm_init_task);
 
 		rtos_time_delay_ms(3000);
 		// mmeory_array_dump();
@@ -1496,15 +1658,18 @@ static void example_usbh_comp_acm_ecm_mem_check_thread(void *param)
 #endif
 
 #if CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
-static void example_usbh_comp_acm_ecm_hotplug_thread(void *param)
+static void example_usbh_comp_hotplug_thread(void *param)
 {
 	UNUSED(param);
 
 	for (;;) {
 		if (rtos_sema_take(usb_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			usbh_dongle_ctx.in_detach = 1;
 			usbh_composite_acm_ecm_deinit();
 			rtos_time_delay_ms(100);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
+
+			usbh_dongle_ctx.in_detach = 0;
 
 			//init
 			composite_dev_do_init();
@@ -1525,22 +1690,32 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 
 void example_usbh_composite_cdc_acm_ecm(void)
 {
+	int ret;
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH Composite ECM demo start\n");
 
 	rltk_usb_eth_init();
 	rtos_sema_create(&usb_detach_sema, 0U, 1U);
 
+#if USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL
+	gpio_init();
+#endif
+
 #if CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
 	rtos_task_t hot_plug_task;
-	int status = rtos_task_create(&hot_plug_task, "example_usbh_comp_acm_ecm_hotplug_thread", example_usbh_comp_acm_ecm_hotplug_thread, NULL, 1024U, 3U);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&hot_plug_task, "example_usbh_comp_hotplug_thread",
+						   example_usbh_comp_hotplug_thread, NULL,
+						   CONFIG_USBH_COMP_ACM_ECM_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_COMP_ACM_ECM_HOTPLUG_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hoptplag thread fail\n");
 	}
 #endif
 
 #if CONFIG_USBH_COMPOSITE_MEM_CHECK
 	rtos_task_t memory_monitor_task;
-	int ret = rtos_task_create(&memory_monitor_task, "example_usbh_comp_acm_ecm_mem_check_thread", example_usbh_comp_acm_ecm_mem_check_thread, NULL, 1024U * 2, 3U);
+	ret = rtos_task_create(&memory_monitor_task, "example_usbh_comp_mem_check_thread",
+						   example_usbh_comp_mem_check_thread, NULL,
+						   CONFIG_USBH_COMP_ACM_ECM_MEM_CHECK_THREAD_STACK_SIZE, CONFIG_USBH_COMP_ACM_ECM_MEM_CHECK_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
@@ -1550,8 +1725,10 @@ void example_usbh_composite_cdc_acm_ecm(void)
 
 #if ENABLE_REMOTE_FILE_DOWNLOAD
 	rtos_task_t download_task;
-	status = rtos_task_create(&download_task, "example_usbh_comp_acm_ecm_download_thread", example_usbh_comp_acm_ecm_download_thread, NULL, 10 * 512U, 2U);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&download_task, "example_usbh_comp_download_thread",
+						   example_usbh_comp_download_thread, NULL,
+						   CONFIG_USBH_COMP_ACM_ECM_DOWNLOAD_THREAD_STACK_SIZE, CONFIG_USBH_COMP_ACM_ECM_DOWNLOAD_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create download thread fail\n");
 	}
 #endif
@@ -1559,9 +1736,24 @@ void example_usbh_composite_cdc_acm_ecm(void)
 #endif
 }
 
+/**
+  * @brief  Shell command: trigger a physical hot-plug by power-cycling the
+  *         USB device via GPIO. Requires USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL.
+  * @param  argc: Argument count (unused).
+  * @param  argv: Argument vector (unused).
+  * @retval HAL_OK
+  */
+static u32 composite_ecm_hotplug_cmd(u16 argc, u8 *argv[])
+{
+	UNUSED(argc);
+	UNUSED(argv);
+	return usbh_hotplug_test();
+}
+
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usbh_composite_dongle_atcmd[] = {
 	{"ecm_cmd", composite_acm_cmd_test},
+	{"ecm_hotplug", composite_ecm_hotplug_cmd},
 };
 
 #else

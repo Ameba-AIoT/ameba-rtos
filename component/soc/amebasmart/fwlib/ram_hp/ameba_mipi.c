@@ -580,6 +580,34 @@ void MIPI_BG_CMD(u32 NewStatus)
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1, Temp);
 }
 
+void MIPI_CLK_Set(MIPI_InitTypeDef *MIPI_InitStruct)
+{
+	//MIPI(<=66.7M), LCDC(<=NPPLL/4), LCDC : MIPI >= 3 : 1
+	u32 totaly = MIPI_InitStruct->MIPI_VSA + MIPI_InitStruct->MIPI_VBP + MIPI_InitStruct->MIPI_VFP + MIPI_InitStruct->MIPI_VACT;
+	u32 totalx = MIPI_InitStruct->MIPI_HSA + MIPI_InitStruct->MIPI_HBP + MIPI_InitStruct->MIPI_HFP + MIPI_InitStruct->MIPI_HACT;
+	u32 vo_freq = totaly * totalx * MIPI_InitStruct->MIPI_FrameRate / 1000000 + 1;
+	assert_param(vo_freq < 67);
+
+	u32 PLLDiv = PLL_GET_NPLL_DIVN_SDM(PLL_BASE->PLL_NPPLL_CTRL1) + 2;
+	u32 PLL_CLK = XTAL_ClkGet() / 1000000 * PLLDiv;
+	u32 mipi_ckd = PLL_CLK / vo_freq - 1;
+	mipi_ckd = (mipi_ckd > 0x3F) ? 0x3F : mipi_ckd;
+
+	vo_freq = PLL_CLK / (mipi_ckd + 1);
+	RTK_LOGI(TAG, "vo_freq: %u\n", vo_freq);
+
+	if (MIPI_InitStruct->MIPI_VideDataLaneFreq * 2 / 24 >= vo_freq) {
+		RTK_LOGE(TAG, "%lx %lx\n", (uint32_t)MIPI_InitStruct->MIPI_VideDataLaneFreq * 2 / 24, vo_freq);
+		RTK_LOGE(TAG, "!!ERROR!!, VO CLK too slow!\n");
+	}
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0) & ~LSYS_MASK_CKD_MIPI) | LSYS_CKD_MIPI(mipi_ckd));
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0) & ~LSYS_MASK_CKD_HPERI) | LSYS_CKD_HPERI(3));
+
+	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_HPERI_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_LCDC, APBPeriph_LCDCMIPI_CLOCK, ENABLE);
+}
+
 /**
   * @brief  Initializes the MIPIx DPHY and DSI module according to the specified parameters in the MIPI_InitStruct.
   * @param  MIPIx: where MIPIx can be MIPI.
@@ -591,6 +619,7 @@ void MIPI_Init(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruct)
 {
 	/* Enable BG */
 	MIPI_BG_CMD(ENABLE);
+	MIPI_CLK_Set(MIPI_InitStruct);
 
 	MIPI_DPHY_init(MIPIx, MIPI_InitStruct);
 	MIPI_DSI_init(MIPIx, MIPI_InitStruct);

@@ -151,7 +151,6 @@ int example_spi_dma_single_block_tx_master(void)
 		printf("\n\r%s rtos_task_create(spi_singleblock_task) failed", __FUNCTION__);
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
 

@@ -184,8 +184,12 @@ void __rtos_critical_exit_os(void)
 uint32_t rtos_get_critical_state(void)
 {
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* avoid wrong status when switching core right after getting core id */
+	uint32_t flags = portSET_INTERRUPT_MASK_FROM_ISR();
 	uint32_t xCoreID = portGET_CORE_ID();
-	return GetComponentCriticalNesting(xCoreID) || GetOSCriticalNesting(xCoreID);
+	uint32_t ret = GetComponentCriticalNesting(xCoreID) || GetOSCriticalNesting(xCoreID);
+	portCLEAR_INTERRUPT_MASK_FROM_ISR(flags);
+	return ret;
 #else
 	return xPortGetCriticalState();
 #endif

@@ -51,4 +51,13 @@ SECTIONS
 		__image2_entry_func__ = .;
 
 	} > KM4_BD_DRAM
+
+#ifdef CONFIG_TRUSTZONE
+	/* image3 (TFM/secure) entry table address, image1 jumps here directly */
+	.ram_image3.text :
+	{
+		__ram_image3_start__ = .;
+		__ram_image3_end__ = __ram_image3_start__ + LENGTH(KM4_BD_DRAM_TZ);
+	} > KM4_BD_DRAM_TZ
+#endif
 }

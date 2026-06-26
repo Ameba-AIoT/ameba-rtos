@@ -23,7 +23,7 @@
 #define USBH_UVC_VC_SELECTOR_UNIT                            0x04
 #define USBH_UVC_VC_PROCESSING_UNIT                          0x05
 #define USBH_UVC_VC_EXTENSION_UNIT                           0x06
-#define USBH_UVC_VC_ENCODING_UNIT                            0X07
+#define USBH_UVC_VC_ENCODING_UNIT                            0x07
 
 /* A.6. Video Class-Specific VS Interface Descriptor Subtypes */
 #define USBH_UVC_VS_UNDEFINED                                0x00
@@ -86,6 +86,11 @@ typedef union {
 } usbh_uvc_header_bitmap_t;
 
 
+/**
+  * @brief	UVC Probe and Commit Control (UVC spec Table 4-75)
+  * @note	Covers UVC 1.0 (26 bytes) and UVC 1.1 (34 bytes, up to bMaxVersion).
+  *		UVC 1.5 adds 14 bytes at offset 34 (bUsage..bmLayoutPerStream); not supported.
+  */
 typedef  struct {
 	u16 bmHint;
 	u8 bFormatIndex;
@@ -100,7 +105,7 @@ typedef  struct {
 	u32 dwMaxPayloadTransferSize;
 	u32 dwClockFrequency;
 	u8 bmFramingInfo;
-	u8 bPreferedVersion;
+	u8 bPreferredVersion;
 	u8 bMinVersion;
 	u8 bMaxVersion;
 } __PACKED usbh_uvc_stream_control_t;

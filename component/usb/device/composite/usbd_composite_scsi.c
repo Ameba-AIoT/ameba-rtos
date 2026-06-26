@@ -245,8 +245,6 @@ static int usbd_composite_scsi_request_sense(usbd_composite_msc_dev_t *mdev, u8 
 {
 	usb_msc_scsi_sense_data_t *data;
 
-	UNUSED(params);
-
 	usb_os_memset((void *)mdev->data, 0U, REQUEST_SENSE_DATA_LEN);
 
 	mdev->data[0]	= 0x70U;
@@ -450,12 +448,23 @@ static int usbd_composite_scsi_write(usbd_composite_msc_dev_t *mdev, u8 *params)
 */
 static int usbd_composite_scsi_verify10(usbd_composite_msc_dev_t *mdev, u8 *params)
 {
+	u32 verify_lba;
+	u32 verify_blklen;
+
 	if ((params[1] & 0x02U) == 0x02U) {
 		usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
 		return -1; /* Error, Verify Mode Not supported*/
 	}
 
-	if (usbd_composite_scsi_check_address_range(mdev, mdev->lba, mdev->blklen) < 0) {
+	verify_lba = ((u32)params[2] << 24) | ((u32)params[3] << 16) | ((u32)params[4] << 8) | (u32)params[5];
+	verify_blklen = ((u32)params[7] << 8) | (u32)params[8];
+
+	if (verify_blklen == 0) {
+		mdev->data_length = 0U;
+		return 0; /* No-op: verification length of 0 means verify nothing */
+	}
+
+	if (usbd_composite_scsi_check_address_range(mdev, verify_lba, verify_blklen) < 0) {
 		return -1; /* error */
 	}
 	mdev->data_length = 0U;
@@ -634,7 +643,7 @@ void usbd_composite_scsi_sense_code(usbd_composite_msc_dev_t *mdev, u8 key, u8 a
 {
 	usb_msc_scsi_sense_data_t *data = &mdev->scsi_sense_data[mdev->scsi_sense_tail];
 	data->key  = key;
-	data->asc = asc << 8;
+	data->asc = asc;
 	mdev->scsi_sense_tail++;
 	if (mdev->scsi_sense_tail == COMP_MSC_SENSE_LIST_DEPTH) {
 		mdev->scsi_sense_tail = 0U;

@@ -237,7 +237,7 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 	cur_device_id = pmu_exec_sleep_hook_funs();
 
 	if (cur_device_id != PMU_MAX) {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "Sleep blocked because Dev %x  busy\n", cur_device_id);
+		RTK_LOGD(NOTAG, "Sleep blocked because Dev %x  busy\n", cur_device_id);
 		return;
 	}
 

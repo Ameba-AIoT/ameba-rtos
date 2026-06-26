@@ -251,7 +251,7 @@ class RomHandler(object):
         start_time = time.monotonic()
         found_nak = False
 
-        while time.monotonic() - start_time < 3:
+        while time.monotonic() - start_time < self.setting.rom_check_alive_timeout_in_second:
             ret, ch = self.ameba.read_bytes(0.05, 1)  # 探测是否有字节到达
             if ret == ErrType.OK and ch:
                 all_data.extend(ch)

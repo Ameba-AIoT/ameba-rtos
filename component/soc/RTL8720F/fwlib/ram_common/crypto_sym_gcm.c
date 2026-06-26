@@ -38,7 +38,7 @@ void crypto_sym_gcm_free(crypto_sym_gcm_context *ctx)
 
 int crypto_sym_gcm_setkey(crypto_sym_gcm_context *ctx, u8 key_id, u8 *key_addr, u32 key_len_bits)
 {
-	if (ctx == NULL || key_addr == NULL) {
+	if (ctx == NULL) {
 		return _ERRNO_CRYPTO_NULL_POINTER;
 	}
 
@@ -47,10 +47,23 @@ int crypto_sym_gcm_setkey(crypto_sym_gcm_context *ctx, u8 key_id, u8 *key_addr, 
 		return _ERRNO_CRYPTO_KEY_LENGTH_ERR;
 	}
 
+	/* Validate key ID */
+	if (!KM_IS_KEY_SEL_NUMBER(key_id)) {
+		return _ERRNO_CRYPTO_KEY_OutRange;
+	}
+
 	/* Only store key information in context, don't call crypto_km_set_sw_key */
 	ctx->key_id = key_id;
 	ctx->key_len_bits = key_len_bits;
-	_memcpy(ctx->key, key_addr, key_len_bits / 8);
+
+	/* For software keys, key material must be provided by the caller.
+	 * Hardware keys (e.g. OTP) reside in the engine; key_addr is not needed. */
+	if (KM_IS_SW_KEY_NUM(key_id)) {
+		if (key_addr == NULL) {
+			return _ERRNO_CRYPTO_NULL_POINTER;
+		}
+		_memcpy(ctx->key, key_addr, key_len_bits / 8);
+	}
 
 	return RTK_SUCCESS;
 }
@@ -75,6 +88,20 @@ int crypto_sym_gcm_starts(crypto_sym_gcm_context *ctx, u8 enc_mode, u8 *iv_addr,
 	if (iv_len == 0) {
 		return _ERRNO_CRYPTO_IV_OutRange;
 	}
+
+	/* Reset per-record accumulated state so this context can be reused
+	 * across multiple GCM operations (e.g. consecutive TLS records).
+	 * total_aad_len, total_msg_len and ctx->tag (the GHASH accumulator
+	 * initial value) must all start at zero for each new operation;
+	 * leaving stale values causes wrong length fields and a non-zero
+	 * GHASH starting point, which produces a bad authentication tag. */
+	ctx->total_aad_len  = 0;
+	ctx->total_msg_len  = 0;
+	_memset(ctx->tag,        0, sizeof(ctx->tag));
+	ctx->aad_buffer_len = 0;
+	ctx->msg_buffer_len = 0;
+	_memset(ctx->aad_buffer, 0, AES_BLOCK_SIZE);
+	_memset(ctx->msg_buffer, 0, AES_BLOCK_SIZE);
 
 	/* Store encryption mode in context */
 	ctx->enc_mode = enc_mode;
@@ -165,7 +192,7 @@ int crypto_sym_gcm_starts(crypto_sym_gcm_context *ctx, u8 enc_mode, u8 *iv_addr,
 		/* polling end flag */
 		loopWait = AES_SLAVE_TIMEOUT;
 		WAIT_FOR_AES_SLAVE_CIPHER_COMPLETION();
-		AES->AES_CHN0_AES_INT_CLEAR = 0x1;
+		AES->AES_CHN0_AES_INT_CLEAR = AES_BIT_INT_CLEAR;
 		for (u8 i = 0; i < 4; i++) {
 			ctx->ghash_key[i] = AES->AES_CPU_DATAOUT_x[i];
 		}
@@ -632,6 +659,17 @@ int crypto_sym_gcm_finish(crypto_sym_gcm_context *ctx, u8 *output, u32 output_si
 		}
 	}
 
+	/* Precondition: if there is a partial block to output, the caller's buffer
+	 * must be large enough.  Checked here (before AES slave runs) so that an
+	 * invalid output_size does not advance hardware IV/TAG state or mutate
+	 * ctx->total_msg_len.
+	 * Note: output==NULL is not an error — the caller simply discards the
+	 * partial block output, which is a valid use case. */
+	if (ctx->msg_buffer_len > 0 && ctx->msg_buffer_len > output_size) {
+		ret = _ERRNO_CRYPTO_BUFFER_TOO_SMALL;
+		goto exit;
+	}
+
 	/* Process any remaining message data */
 	if (ctx->msg_buffer_len > 0) {
 		/* Update total message length */
@@ -670,15 +708,23 @@ int crypto_sym_gcm_finish(crypto_sym_gcm_context *ctx, u8 *output, u32 output_si
 
 		/* Copy final output data to user buffer if needed */
 		if (output != NULL && ctx->msg_buffer_len > 0) {
+			u8 hw_out[16];
+
 			actual_output_len = ctx->msg_buffer_len;
 			if (actual_output_len > output_size) {
 				ret = _ERRNO_CRYPTO_MESSAGE_LEN_ERR;
 				goto exit;
 			}
 
+			/* Read the full 16-byte HW output into a local buffer first,
+			 * then copy only the valid trailing bytes to the caller.
+			 * Writing directly through a u32 pointer would overflow the
+			 * caller's buffer whenever the last block is shorter than 16 B.
+			 */
 			for (u8 i = 0; i < 4; i++) {
-				((u32 *)output)[i] = AES->AES_CPU_DATAOUT_x[i];
+				((u32 *)hw_out)[i] = AES->AES_CPU_DATAOUT_x[i];
 			}
+			_memcpy(output, hw_out, actual_output_len);
 		}
 
 		/* Clear msg_buffer */
@@ -728,12 +774,12 @@ int crypto_sym_gcm_finish(crypto_sym_gcm_context *ctx, u8 *output, u32 output_si
 	/* Return actual output length */
 	*output_length = actual_output_len;
 
-	/* Reset context state */
+	/* Mark this operation as finished; all per-operation state
+	 * (total_aad_len, total_msg_len, tag, buffers) will be reset
+	 * by the next call to crypto_sym_gcm_starts(), following the
+	 * same convention as mbedtls software gcm.c where finish()
+	 * produces the tag and starts() resets all running state. */
 	ctx->started = 0;
-	ctx->aad_buffer_len = 0;
-	ctx->msg_buffer_len = 0;
-	_memset(ctx->aad_buffer, 0, 16);
-	_memset(ctx->msg_buffer, 0, 16);
 
 	ret = RTK_SUCCESS;
 

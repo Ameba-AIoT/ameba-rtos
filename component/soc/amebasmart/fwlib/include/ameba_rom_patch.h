@@ -96,6 +96,8 @@ long __real_strtol(const char *nptr, char **endptr, int base);
   * @}
   */
 
+extern GPIO_TypeDef *GPIO_PORTx[3];
+
 #ifdef __cplusplus
 }
 #endif

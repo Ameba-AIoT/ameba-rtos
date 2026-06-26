@@ -18,24 +18,22 @@
 *
 *   2. Configure LCM parameters through R-BUS in MIPI DSI Command Mode.
 *
-*   3. Configure the LCDC plane size throuth LCDC_SetPlaneSize().
+*   3. Configure the LCDC plane size through LCDC_SetPlaneSize().
 *
 *   4. Configure the LCDC DMA parameters: set burst size using the function LCDC_DMAModeConfig(),
-*      set DMA FIFO under flow mode and error data using the functions LCDC_DMAUnderFlowModeConfig(),
+*      set DMA FIFO underflow mode and error data using the function LCDC_DMAUnderFlowModeConfig(),
 *      Set Background color which is used outside the defined layer window or when a layer is disabled using LCDC_SetBkgColor(),
 *
 *   5. Enable the specified LCDC interrupt if needed using the functions LCDC_INTConfig() and LCDC_LineINTPosConfig().
 *
 *   6. Configure the LCDC_LayerConfigTypeDef parameter in a layer; change other parameters if needed, such as layer enable bit,
 *      layer window position, and malloc image buffer and arrange image base address etc.
-*          LCDC_LayerStructInit(LCDC_LayerConfigTypeDef* LCDC_LayerInitStruct)
-*          LCDC_RGBInitStruct->LCDC_LyaerEn = ENABLE;
-*          LCDC_LayerInitStruct.LCDC_LayerImgBaseAddr = XXXX;
+*          LCDC_LayerConfigTypeDef EachLayer = { xxxx };
 *
-*   7. Initialize the hardware use step 6 parameters.
-*          LCDC_LayerxInit(LCDC_TypeDef* LCDCx, LCDC_RGBInitTypeDef* LCDC_RGBInitStruct)
+*   7. Initialize the hardware using the step 6 parameters.
+*          LCDC_LayerConfig(LCDCx, LayerId, &EachLayer);
 *
-*   8. If LCDC is running, using LCDC_TrigerSHWReload() to triger layer's config to reload.
+*   8. If LCDC is running, use LCDC_TrigerSHWReload() to trigger the layer configuration to reload.
 *
 *   9. Enable the LCDC using the function LCDC_Cmd().
 *
@@ -45,6 +43,7 @@
   * @endverbatim
   */
 
+/// @cond
 /* AUTO_GEN_START */
 
 /** @addtogroup Ameba_Periph_Driver
@@ -319,6 +318,7 @@ typedef struct {
 } LCDC_TypeDef;
 /** @} */
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -326,7 +326,7 @@ extern "C" {
 #endif
 
 
-//Please add your defination here
+//Please add your definition here
 
 /* Exported types --------------------------------------------------------*/
 /** @addtogroup LCDC_Exported_Types LCDC Exported Types
@@ -337,29 +337,29 @@ extern "C" {
  * @brief LCDC Layer Init Structure Definition
  */
 typedef struct {
-	u8 LCDC_LayerEn;				/*!< Specifies layer enable or not
+	u8 LCDC_LayerEn;				/*!< Specifies layer enable or not.
                                       This parameter can be a value of ENABLE or DISABLE*/
 	u8 LCDC_LayerImgFormat;			/*!< Specifies the layer image data format.
                                       This parameter can be a value of @ref LCDC_Layer_IMG_Format */
-	u8 LCDC_LayerColorKeyingEn;	  	/*!< Specifies the layer's color keying enbale or not
+	u8 LCDC_LayerColorKeyingEn;	  	/*!< Specifies the layer's color keying enable or not.
                                       This parameter can be a value of ENABLE or DISABLE*/
 	u32 LCDC_LayerImgBaseAddr;		/*!< Specifies the image base address.
                                       This parameter can be a number between 0x0 and 0xffffffff. */
-	u16 LCDC_LayerHorizontalStart;	/*!< Specifies the first pixel of a line of the layer window
+	u16 LCDC_LayerHorizontalStart;	/*!< Specifies the first pixel of a line of the layer window.
                                       This parameter can be a number between 0x0 and 0xfff. */
-	u16 LCDC_LayerHorizontalStop;	/*!< Specifies the last pixel of a line of the layer window
+	u16 LCDC_LayerHorizontalStop;	/*!< Specifies the last pixel of a line of the layer window.
                                       This parameter can be a number between 0x0 and 0xfff. */
-	u16 LCDC_LayerVerticalStart;  	/*!< Specifies the first pixel of a line of the layer window
+	u16 LCDC_LayerVerticalStart;  	/*!< Specifies the first line of the layer window.
                                       This parameter can be a number between 0x0 and 0xfff. */
-	u16 LCDC_LayerVerticalStop;   	/*!< Specifies the last pixel of a line of the layer window
+	u16 LCDC_LayerVerticalStop;   	/*!< Specifies the last line of the layer window.
                                       This parameter can be a number between 0x0 and 0xfff. */
-	u32 LCDC_LayerColorKeyingVal;	/*!< Specifies the color key value (RGB), which is used by the Color Keying
+	u32 LCDC_LayerColorKeyingVal;	/*!< Specifies the color key value (RGB), which is used by the Color Keying.
                                       This parameter can be a number between 0x0 and 0xffffff. */
-	u8 LCDC_LayerBlendConfig;		/*!< Specifies the blending Factor 1
-                                      This parameter can be a value of 0(const alpha) or 1 (pixel alpha x constant alpha)*/
-	u8 LCDC_LayerConstAlpha;		/*!< Specifies the Constant Alpha used for blending
-                                      This parameter can be a number between 0x00 and 0xff,
-                                      The Constant Alpha is divided by 256 by hardware. when Constant Alpha is 0xFF, it is identified as 1.. */
+	u8 LCDC_LayerBlendConfig;		/*!< Specifies the blending factor.
+                                      This parameter can be a value of 0 (const alpha) or 1 (pixel alpha x constant alpha)*/
+	u8 LCDC_LayerConstAlpha;		/*!< Specifies the Constant Alpha used for blending.
+                                      This parameter can be a number between 0x00 and 0xff.
+                                      Hardware divides the Constant Alpha value by 256. When Constant Alpha is 0xFF, it is identified as 1. */
 } LCDC_LayerConfigTypeDef;
 
 /**
@@ -371,58 +371,64 @@ typedef struct {
   * @{
   */
 
-/** @defgroup LCDC_IT_Clear
+/** @defgroup LCDC_IT_Clear LCDC IT Clear
   * @{
   */
+/** @brief Validates that IT is a legal LCDC interrupt clear bitmask. */
 #define IS_LCDC_CLEAR_IT(IT)			((((IT) & (u32)0xFFFFFFD2) == 0x00) && ((IT) != 0x00))
 /** @} */
 
-/** @defgroup LCDC_DMA_Underflow_Mode
+/** @defgroup LCDC_DMA_Underflow_Mode LCDC DMA Underflow Mode
   * @{
   */
-#define LCDC_DMAUNFW_OUTPUT_LASTDATA			(0)
-#define LCDC_DMAUNFW_OUTPUT_ERRORDATA			(LCDC_BIT_DMA_UN_MODE)
+#define LCDC_DMAUNFW_OUTPUT_LASTDATA			(0)   /*!< DMA underflow outputs last valid data. */
+#define LCDC_DMAUNFW_OUTPUT_ERRORDATA			(LCDC_BIT_DMA_UN_MODE)   /*!< DMA underflow outputs configured error data. */
+/** @brief Validates that MODE is a legal DMA underflow output mode. */
 #define IS_LCDC_DMA_DMA_UNDERFLOW_MODE(MODE)	(((MODE) == LCDC_DMAUNFW_OUTPUT_LASTDATA) || ((MODE) == LCDC_DMAUNFW_OUTPUT_ERRORDATA))
 /** @} */
 
-/** @defgroup LCDC_DMA_Debug_Out
+/** @defgroup LCDC_DMA_Debug_Out LCDC DMA Debug Out
   * @{
   */
-#define LCDC_DMA_OUT_ENABLE					LCDC_BIT_LCD_DMA_OUT
-#define LCDC_DMA_OUT_DISABLE 				(0)
+#define LCDC_DMA_OUT_ENABLE					LCDC_BIT_LCD_DMA_OUT   /*!< Enable secondary DMA write-back debug output. */
+#define LCDC_DMA_OUT_DISABLE 				(0)   /*!< Disable secondary DMA write-back debug output. */
+/** @brief Validates that MODE is a legal DMA debug output mode. */
 #define IS_LCDC_DMA_DEBUG_OUT_MODE(MODE)	(((MODE) == LCDC_DMA_OUT_ENABLE) || ((MODE) == LCDC_DMA_OUT_DISABLE))
 /** @} */
 
-/** @defgroup LCDC_Layer_Burst_Size
+/** @defgroup LCDC_Layer_Burst_Size LCDC Layer Burst Size
   * @{
   */
-#define LCDC_LAYER_BURSTSIZE_1X64BYTES		(0x1)
-#define LCDC_LAYER_BURSTSIZE_2X64BYTES		(0x2)
-#define LCDC_LAYER_BURSTSIZE_3X64BYTES		(0x3)
-#define LCDC_LAYER_BURSTSIZE_4X64BYTES		(0x4)
+#define LCDC_LAYER_BURSTSIZE_1X64BYTES		(0x1)   /*!< DMA burst size: 1 x 64 bytes per burst. */
+#define LCDC_LAYER_BURSTSIZE_2X64BYTES		(0x2)   /*!< DMA burst size: 2 x 64 bytes per burst. */
+#define LCDC_LAYER_BURSTSIZE_3X64BYTES		(0x3)   /*!< DMA burst size: 3 x 64 bytes per burst. */
+#define LCDC_LAYER_BURSTSIZE_4X64BYTES		(0x4)   /*!< DMA burst size: 4 x 64 bytes per burst. */
+/** @brief Validates that x is a legal layer DMA burst size. */
 #define IS_LCDC_LAYER_BURSTSIZE(x)			(((u32)(x) - 1) < LCDC_LAYER_BURSTSIZE_4X64BYTES)
 /** @} */
 
-/** @defgroup LCDC_Layer_IMG_Format
+/** @defgroup LCDC_Layer_IMG_Format LCDC Layer IMG Format
   * @{
   */
-#define LCDC_LAYER_IMG_FORMAT_ARGB8888		(0x0)
-#define LCDC_LAYER_IMG_FORMAT_RGB888		(0x1)
-#define LCDC_LAYER_IMG_FORMAT_RGB565		(0x2)
-#define LCDC_LAYER_IMG_FORMAT_ARGB1555		(0x3)
-#define LCDC_LAYER_IMG_FORMAT_ARGB4444		(0x4)
-#define LCDC_LAYER_IMG_FORMAT_RGB666		(0x5)
-#define LCDC_LAYER_IMG_FORMAT_ARGB8666		(0x6)
+#define LCDC_LAYER_IMG_FORMAT_ARGB8888		(0x0)   /*!< Layer image format: ARGB8888 (32-bit). */
+#define LCDC_LAYER_IMG_FORMAT_RGB888		(0x1)   /*!< Layer image format: RGB888 (24-bit). */
+#define LCDC_LAYER_IMG_FORMAT_RGB565		(0x2)   /*!< Layer image format: RGB565 (16-bit). */
+#define LCDC_LAYER_IMG_FORMAT_ARGB1555		(0x3)   /*!< Layer image format: ARGB1555 (16-bit with 1-bit alpha). */
+#define LCDC_LAYER_IMG_FORMAT_ARGB4444		(0x4)   /*!< Layer image format: ARGB4444 (16-bit with 4-bit alpha). */
+#define LCDC_LAYER_IMG_FORMAT_RGB666		(0x5)   /*!< Layer image format: RGB666 (18-bit). */
+#define LCDC_LAYER_IMG_FORMAT_ARGB8666		(0x6)   /*!< Layer image format: ARGB8666 (32-bit with 8-bit alpha). */
+/** @brief Validates that MODE is a legal layer image format. */
 #define IS_LCDC_LAYER_IMG_FORMAT(MODE)		((u32)(MODE) <= LCDC_LAYER_IMG_FORMAT_ARGB8666)
 /** @} */
 
-/** @defgroup LCDC_Layer_ID
+/** @defgroup LCDC_Layer_ID LCDC Layer ID
   * @{
   */
-#define LCDC_LAYER_LAYER1					(0x0)
-#define LCDC_LAYER_LAYER2					(0x1)
-#define LCDC_LAYER_LAYER3					(0x2)
-#define LCDC_LAYER_MAX_NUM					(0x3)
+#define LCDC_LAYER_LAYER1					(0x0)   /*!< LCDC layer index: layer 1 (first layer). */
+#define LCDC_LAYER_LAYER2					(0x1)   /*!< LCDC layer index: layer 2 (second layer). */
+#define LCDC_LAYER_LAYER3					(0x2)   /*!< LCDC layer index: layer 3 (third layer). */
+#define LCDC_LAYER_MAX_NUM					(0x3)   /*!< Total number of available LCDC layers. */
+/** @brief Validates that LayerID is a legal LCDC layer index. */
 #define IS_LCDC_A_VALID_LAYER(LayerID) 		((u32)(LayerID) <= LCDC_LAYER_LAYER3)
 /** @} */
 
@@ -439,12 +445,12 @@ typedef struct {
  * @brief LCDC Init Structure Definition
  */
 typedef struct {
-	u16 LCDC_ImageWidth;
-	u16 LCDC_ImageHeight;
-	u8 LCDC_BgColorRed;
-	u8 LCDC_BgColorGreen;
-	u8 LCDC_BgColorBlue;
-	LCDC_LayerConfigTypeDef layerx[LCDC_LAYER_MAX_NUM];
+	u16 LCDC_ImageWidth;                                    /*!< Specifies the width of the display image in pixels. */
+	u16 LCDC_ImageHeight;                                   /*!< Specifies the height of the display image in pixels. */
+	u8 LCDC_BgColorRed;                                     /*!< Specifies the red component of the background color. Value range: 0x00 to 0xFF. */
+	u8 LCDC_BgColorGreen;                                   /*!< Specifies the green component of the background color. Value range: 0x00 to 0xFF. */
+	u8 LCDC_BgColorBlue;                                    /*!< Specifies the blue component of the background color. Value range: 0x00 to 0xFF. */
+	LCDC_LayerConfigTypeDef layerx[LCDC_LAYER_MAX_NUM];     /*!< Specifies the configuration for each display layer. */
 } LCDC_InitTypeDef;
 
 /**
@@ -473,7 +479,6 @@ _LONG_CALL_ u32 LCDC_GetINTStatus(LCDC_TypeDef *LCDCx);
 _LONG_CALL_ u32 LCDC_GetRawINTStatus(LCDC_TypeDef *LCDCx);
 _LONG_CALL_ void LCDC_ClearAllINT(LCDC_TypeDef *LCDCx);
 _LONG_CALL_ void LCDC_ClearINT(LCDC_TypeDef *LCDCx, u32 LCDC_IT);
-_LONG_CALL_ void LCDC_GetCurPosStatus(LCDC_TypeDef *LCDCx, u32 *pCurPosX, u32 *pCurPosY);
 _LONG_CALL_ void LCDC_GetDmaUnINTCnt(LCDC_TypeDef *LCDCx, u32 *DmaUnIntCnt);
 /** @} */
 
@@ -483,6 +488,7 @@ _LONG_CALL_ void LCDC_GetDmaUnINTCnt(LCDC_TypeDef *LCDCx, u32 *DmaUnIntCnt);
 _LONG_CALL_ void LCDC_Cmd(LCDC_TypeDef *LCDCx, u32 NewState);
 _LONG_CALL_ void LCDC_DeInit(LCDC_TypeDef *LCDCx);
 _LONG_CALL_ u8 LCDC_CheckLCDCReady(LCDC_TypeDef *LCDCx);
+_LONG_CALL_ void LCDC_GetCurPosStatus(LCDC_TypeDef *LCDCx, u32 *pCurPosX, u32 *pCurPosY);
 _LONG_CALL_ void LCDC_SetPlaneSize(LCDC_TypeDef *LCDCx, u32 ImageWidth, u32 ImageHeight);
 _LONG_CALL_ void LCDC_SetBkgColor(LCDC_TypeDef *LCDCx, u8 red_color, u8 green_color, u8 blue_color);
 _LONG_CALL_ void LCDC_TrigerSHWReload(LCDC_TypeDef *LCDCx);
@@ -503,6 +509,8 @@ _LONG_CALL_ void LCDC_Init(LCDC_TypeDef *LCDCx, LCDC_InitTypeDef *LCDC_InitStruc
 
 #endif
 
+/// @cond
 /** @} */
 
 /** @} */
+/// @endcond

@@ -94,6 +94,8 @@ enum WHC_WIFI_H2C_API_ID {
 	WHC_API_WIFI_SME_AUTH							= BASIC_API_BASE + 17,
 	WHC_API_WIFI_SME_SET_ASSOCREQ_IE				= BASIC_API_BASE + 18,
 
+	WHC_API_WIFI_WHCH_STATES_SYNC					= BASIC_API_BASE + 19,
+
 	/* 0x1001~0x2000 reserved for ext API */
 	WHC_API_WIFI_SET_MAC_ADDR					= EXT_API_BASE + 1,
 	WHC_API_WIFI_GET_MAC_ADDR					= EXT_API_BASE + 2,
@@ -261,7 +263,8 @@ struct whc_msg_info {
 	uint32_t	event;
 	uint8_t		wlan_idx: 2;
 	uint8_t		flow_ctrl_en: 1;
-	uint8_t		rsvd1 : 5;
+	uint8_t		wlan_hw_queue : 2;
+	uint8_t		rsvd1 : 3;
 	uint8_t		rsvd2[3];
 	uint32_t	data_len;
 	uint32_t	pad_len;
@@ -302,6 +305,7 @@ struct whc_ps_cmd {
 #define WHC_WIFI_TEST						0x1
 #define WHC_ATCMD_TEST						0x2
 #define WHC_RMESH_TEST						0x3
+#define WHC_LOG_EVENT						0x4
 
 /* subtype */
 #define WHC_WIFI_TEST_GET_MAC_ADDR			0x1
@@ -322,6 +326,9 @@ struct whc_ps_cmd {
 #define WHC_WIFI_TEST_CONN_STATUS			0x12
 #define WHC_WIFI_TEST_DISCONN				0x13
 #define WHC_WIFI_TEST_WIFIOFF				0x14
+
+#define WHC_WIFI_TEST_LOG_ENABLE			0x15
+#define WHC_WIFI_TEST_LOG_DISABLE			0x16
 
 /* for rtos host only */
 #define WHC_WIFI_TEST_SET_HOST_RTOS			0xFF

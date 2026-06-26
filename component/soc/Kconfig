@@ -5,3 +5,9 @@
 config RSIP_SINGLE_KEY
 	bool
 	default y if AMEBADPLUS || AMEBALITE || AMEBASMART
+
+# GPIO IRQ table size
+config GPIO_IRQ_TABLE_MAX_NUM
+	int "GPIO IRQ table maximum number"
+	depends on !AMEBADPLUS && !AMEBALITE && !AMEBASMART
+	default 4

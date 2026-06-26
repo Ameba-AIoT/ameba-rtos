@@ -73,7 +73,7 @@
   *			-InterruptEn(): Enable the NVIC interrupt and set irq priority
   *
   *
-  *      @note in SPI_Exported_Functions group, these functions below are about Interrupts
+  *      @note In SPI_Exported_Functions group, these functions below are about Interrupts
   *			and flags management:
   *			-SSI_GetIsr()
   *			-SSI_GetRawIsr()
@@ -110,7 +110,7 @@
   *
   *      7. Active the SPI  DMA TX/RX using SSI_SetDmaEnable() function.
   *
-  *      @note in SPI_Exported_Functions group, these functions below are about DMA:
+  *      @note In SPI_Exported_Functions group, these functions below are about DMA:
   *			-SSI_SetDmaEnable()
   *			-SSI_SetDmaLevel()
   *
@@ -444,29 +444,21 @@ extern "C" {
 typedef struct {
 	u32  SPI_DmaRxDataLevel;     /*!< Specifies the DMA receive data level.
 							     The dma_rx_req is generated when the number of valid data entries in the
-							     receive FIFO  is equal to or above this field value+1,and RDMAE=1.
-							     @note For Amebaz, the value range of this parameter should be 0 to 63,because
-							     the depth of Rx FIFO is 64. */
+							     receive FIFO  is equal to or above this field value+1,and RDMAE=1. */
 
 	u32  SPI_DmaTxDataLevel;    /*!< Specifies the DMA transmit data level.
 							     The dma_tx_req is generated when the number of valid data entries in the
-							     transmit FIFO is equal to or below this field value,and TDMAE=1.
-							     @note For Amebaz, the value range of this parameter should be 0 to 63,because
-							     the depth of Rx FIFO is 64. */
+							     transmit FIFO is equal to or below this field value,and TDMAE=1. */
 
 	u32  SPI_RxThresholdLevel;   /*!< Specifies the receive FIFO threshold level.
 							     This Parameter controls the level of entries(or above) at which the receive FIFO controller
 							     triggers an interrupt.When the number of receive FIFO entries is greater than or equal to this
-							     value +1,the receive FIFO full interrupt is triggered.
-							      @note For Amebaz, the value range of this parameter should be 0 to 63,because the depth
-							      of Rx FIFO is 64. */
+							     value +1,the receive FIFO full interrupt is triggered. */
 
 	u32  SPI_TxThresholdLevel;     /*!< Specifies the transmit FIFO threshold level.
 							     This Parameter controls the level of entries (or below) at which the transmit FIFO controller
 							     triggers an interrupt.When the number of transmit FIFO entries is less than or equal to this
-							     value,the transmit FIFO empty interrupt is triggered.
-							      @note For Amebaz, the value range of this parameter should be 0 to 63,because of the depth
-							      of Rx FIFO is 64. */
+							     value,the transmit FIFO empty interrupt is triggered. */
 
 	u32  SPI_SlaveSelectEnable;     /*!< Set the slave select enable flag.
 							     This Parameter controls which slave to be selected by master,each bit in SER register
@@ -521,10 +513,10 @@ typedef struct {
   * @brief  SPI Dev table Structure Definition
   */
 typedef struct {
-	SPI_TypeDef *SPIx;
-	u32 Tx_HandshakeInterface;
-	u32 Rx_HandshakeInterface;
-	IRQn_Type IrqNum;
+	SPI_TypeDef *SPIx;             /*!< SPI peripheral base address */
+	u32 Tx_HandshakeInterface;     /*!< GDMA TX handshake interface number */
+	u32 Rx_HandshakeInterface;     /*!< GDMA RX handshake interface number */
+	IRQn_Type IrqNum;              /*!< SPI interrupt request number */
 } SPI_DevTable;
 
 /**
@@ -539,9 +531,9 @@ typedef struct {
 /** @defgroup SPI_TMOD SPI Transfer Mode
   * @{
   */
-#define TMOD_TR				(0)
-#define TMOD_TO				(1)
-#define TMOD_RO				(2)
+#define TMOD_TR				(0)  /*!< Transmit and receive mode. */
+#define TMOD_TO				(1)  /*!< Transmit only mode. */
+#define TMOD_RO				(2)  /*!< Receive only mode. */
 /**
   * @}
   */
@@ -549,8 +541,8 @@ typedef struct {
 /** @defgroup SPI_SC_Polarity SPI Clock Polarity
   * @{
   */
-#define SCPOL_INACTIVE_IS_LOW		(0)
-#define SCPOL_INACTIVE_IS_HIGH		(1)
+#define SCPOL_INACTIVE_IS_LOW		(0)  /*!< Inactive serial clock polarity is low. */
+#define SCPOL_INACTIVE_IS_HIGH		(1)  /*!< Inactive serial clock polarity is high. */
 /**
   * @}
   */
@@ -558,8 +550,8 @@ typedef struct {
 /** @defgroup SPI_SC_Phase SPI Clock Phase
   * @{
   */
-#define SCPH_TOGGLES_IN_MIDDLE		(0)
-#define SCPH_TOGGLES_AT_START		(1)
+#define SCPH_TOGGLES_IN_MIDDLE		(0)  /*!< Clock toggles in middle of first data bit. */
+#define SCPH_TOGGLES_AT_START		(1)  /*!< Clock toggles at start of first data bit. */
 /**
   * @}
   */
@@ -567,19 +559,19 @@ typedef struct {
 /** @defgroup SPI_Data_Frame_Size SPI Data Frame Size
   * @{
   */
-#define DFS_4_BITS				(3)
-#define DFS_5_BITS				(4)
-#define DFS_6_BITS				(5)
-#define DFS_7_BITS				(6)
-#define DFS_8_BITS				(7)
-#define DFS_9_BITS				(8)
-#define DFS_10_BITS				(9)
-#define DFS_11_BITS				(10)
-#define DFS_12_BITS				(11)
-#define DFS_13_BITS				(12)
-#define DFS_14_BITS				(13)
-#define DFS_15_BITS				(14)
-#define DFS_16_BITS				(15)
+#define DFS_4_BITS				(3)  /*!< 4-bit data frame size. */
+#define DFS_5_BITS				(4)  /*!< 5-bit data frame size. */
+#define DFS_6_BITS				(5)  /*!< 6-bit data frame size. */
+#define DFS_7_BITS				(6)  /*!< 7-bit data frame size. */
+#define DFS_8_BITS				(7)  /*!< 8-bit data frame size. */
+#define DFS_9_BITS				(8)  /*!< 9-bit data frame size. */
+#define DFS_10_BITS				(9)  /*!< 10-bit data frame size. */
+#define DFS_11_BITS				(10)  /*!< 11-bit data frame size. */
+#define DFS_12_BITS				(11)  /*!< 12-bit data frame size. */
+#define DFS_13_BITS				(12)  /*!< 13-bit data frame size. */
+#define DFS_14_BITS				(13)  /*!< 14-bit data frame size. */
+#define DFS_15_BITS				(14)  /*!< 15-bit data frame size. */
+#define DFS_16_BITS				(15)  /*!< 16-bit data frame size. */
 /**
   * @}
   */
@@ -587,8 +579,8 @@ typedef struct {
 /** @defgroup SPI_SS_Toggle_Phase SPI Slave Select Toggle Phase
   * @{
   */
-#define SPI_SS_NOT_TOGGLE		(0)
-#define SPI_SS_TOGGLE		(1)
+#define SPI_SS_NOT_TOGGLE		(0)  /*!< Slave select does not toggle between frames. */
+#define SPI_SS_TOGGLE		(1)  /*!< Slave select toggles between successive frames. */
 /**
   * @}
   */
@@ -596,8 +588,8 @@ typedef struct {
 /** @defgroup SPI_Role SPI Role
   * @{
   */
-#define SSI_SLAVE				(0)
-#define SSI_MASTER				(1)
+#define SSI_SLAVE				(0)  /*!< SPI operates as slave device. */
+#define SSI_MASTER				(1)  /*!< SPI operates as master device. */
 /**
   * @}
   */
@@ -605,7 +597,7 @@ typedef struct {
 /** @defgroup SPI_Frame_Format SPI Frame Format
   * @{
   */
-#define FRF_MOTOROLA_SPI		(0)
+#define FRF_MOTOROLA_SPI		(0)  /*!< Motorola SPI frame format. */
 /**
   * @}
   */
@@ -613,10 +605,10 @@ typedef struct {
 /** @defgroup SPI_DMA_Control SPI DMA Control
   * @{
   */
-#define SSI_NODMA				(0)
-#define SSI_RXDMA_ENABLE		(1)
-#define SSI_TXDMA_ENABLE		(2)
-#define SSI_TRDMA_ENABLE		(3)
+#define SSI_NODMA				(0)  /*!< DMA disabled for SPI. */
+#define SSI_RXDMA_ENABLE		(1)  /*!< RX DMA channel enabled. */
+#define SSI_TXDMA_ENABLE		(2)  /*!< TX DMA channel enabled. */
+#define SSI_TRDMA_ENABLE		(3)  /*!< Both TX and RX DMA enabled. */
 /**
   * @}
   */
@@ -624,8 +616,8 @@ typedef struct {
 /** @defgroup SPI_FIFO_Depth SPI FIFO Depth
   * @{
   */
-#define SSI_TX_FIFO_DEPTH				(64)
-#define SSI_RX_FIFO_DEPTH				(64)
+#define SSI_TX_FIFO_DEPTH				(64)  /*!< SPI transmit FIFO depth in entries. */
+#define SSI_RX_FIFO_DEPTH				(64)  /*!< SPI receive FIFO depth in entries. */
 /**
   * @}
   */
@@ -638,7 +630,9 @@ typedef struct {
 
 /** @} */
 
-/// @cond
+/** @addtogroup SPI_Exported_Functions SPI Exported Functions
+  * @{
+  */
 _LONG_CALL_ void SSI_Cmd(SPI_TypeDef *spi_dev, u32 NewStaus);
 _LONG_CALL_ void SSI_SetSclkPolarity(SPI_TypeDef *spi_dev, u32 SclkPolarity);
 _LONG_CALL_ void SSI_SetSclkPhase(SPI_TypeDef *spi_dev, u32 SclkPhase);
@@ -684,7 +678,9 @@ _LONG_CALL_ bool SSI_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, vo
 								 IRQ_FUN CallbackFunc, u8  *pRxData, u32 Length);
 _LONG_CALL_ void SSI_SetDmaEnable(SPI_TypeDef *spi_dev, u32 newState, u32 Mask);
 _LONG_CALL_ void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLeve, u32 RxLevel);
-/// @endcond
+/**
+  * @}
+  */
 
 
 /* Other Definitions --------------------------------------------------------*/

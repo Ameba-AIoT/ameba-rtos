@@ -229,16 +229,6 @@ extern "C" {
 
 //Please add your defination here
 
-/* Non Exported types */
-/**
-  * @brief IPC direction mode definition.
-  */
-typedef enum {
-	IPC_NP_TO_AP = 0, /*!< NP send request to AP */
-	IPC_AP_TO_NP = 1, /*!< AP send request to NP */
-	IPC_DIR_MODE_MAX = 0xFFFFFFFF,
-} IPC_Direction_Mode;
-
 /* Exported types --------------------------------------------------------*/
 /** @addtogroup IPC_Exported_Types IPC Exported Types
   * @{
@@ -253,21 +243,30 @@ typedef void (*IPC_IRQ_FUN)(void *Data, u32 IrqStatus, u32 ChanNum);
   * @brief IPC User Message Type Definition
   */
 typedef enum {
-	IPC_USER_POINT = 0,
-	IPC_USER_DATA	= 1
+	IPC_USER_POINT = 0, /*!< Message payload is a pointer. */
+	IPC_USER_DATA	= 1 /*!< Message payload is inline data. */
 } USER_MSG_TYP_DEF;
+
+/**
+  * @brief IPC direction mode definition.
+  */
+typedef enum {
+	IPC_NP_TO_AP = 0, /*!< NP send request to AP */
+	IPC_AP_TO_NP = 1, /*!< AP send request to NP */
+	IPC_DIR_MODE_MAX = 0xFFFFFFFF, /*!< Maximum sentinel value for direction mode. */
+} IPC_Direction_Mode;
 
 /**
   * @brief IPC Init Table Definition
   */
 typedef struct _IPC_INIT_TABLE_ {
-	u32 USER_MSG_TYPE;
-	void (*Rxfunc)(void *Data, u32 IrqStatus, u32 ChanNum);
-	void *RxIrqData;
-	void (*Txfunc)(void *Data, u32 IrqStatus, u32 ChanNum);
-	void *TxIrqData;
-	IPC_Direction_Mode IPC_Direction;	/* direction of ipc, this parameter is from @IPC_Direction_Mode*/
-	u32 IPC_Channel;	/* ipc channel, this parameter is from @IPC_AP_Tx_Channel or @IPC_NP_Tx_Channel*/
+	u32 USER_MSG_TYPE;					/*!< User-defined message type. */
+	void (*Rxfunc)(void *Data, u32 IrqStatus, u32 ChanNum);	/*!< Pointer to the RX interrupt callback function. */
+	void *RxIrqData;					/*!< Data passed to the RX callback. */
+	void (*Txfunc)(void *Data, u32 IrqStatus, u32 ChanNum);	/*!< Pointer to the TX interrupt callback function. */
+	void *TxIrqData;					/*!< Data passed to the TX callback. */
+	IPC_Direction_Mode IPC_Direction;	/*!< IPC transfer direction, this parameter can be a value of @ref IPC_Direction_Mode. */
+	u32 IPC_Channel;	/*!< IPC TX channel, this parameter can be a value of @ref IPC_Tx_Channel. */
 } IPC_INIT_TABLE, *PIPC_INIT_TABLE;
 
 /**
@@ -282,6 +281,7 @@ typedef struct _IPC_INIT_TABLE_ {
 /** @defgroup IPC_Peripheral_Definition IPC Peripheral Definition
   * @{
   */
+/** @brief Check if IPC peripheral pointer is valid. */
 #define IS_IPC_ALL_PERIPH(PERIPH) (((PERIPH) == IPCNP_DEV) || \
 										((PERIPH) == IPCAP_DEV))
 /**
@@ -292,8 +292,9 @@ typedef struct _IPC_INIT_TABLE_ {
 /** @defgroup IPC_INTR_Mode IPC Interrupt Mode
   * @{
   */
-#define IPC_TX_EMPTY			((u32)0x00000001)
-#define IPC_RX_FULL 			((u32)0x00000002)
+#define IPC_TX_EMPTY			((u32)0x00000001)  /*!< IPC TX channel empty interrupt mode. */
+#define IPC_RX_FULL 			((u32)0x00000002)  /*!< IPC RX channel full interrupt mode. */
+/** @brief Check if IPC interrupt mode value is valid. */
 #define IS_IPC_INTR_MODE(MODE) (((MODE) == IPC_TX_EMPTY) || \
                                    ((MODE) == IPC_RX_FULL))
 /**
@@ -303,7 +304,7 @@ typedef struct _IPC_INIT_TABLE_ {
 /** @defgroup IPC_Valid_CHNUM IPC Valid Channel Number
   * @{
   */
-#define IS_IPC_VALID_CHNUM(NUM) ((NUM) < 16)
+#define IS_IPC_VALID_CHNUM(NUM) ((NUM) < 16)  /*!< Check if IPC channel number is valid. */
 /**
   * @}
   */
@@ -311,7 +312,7 @@ typedef struct _IPC_INIT_TABLE_ {
 /** @defgroup IPC_Valid_Threshold IPC Valid Threshold
  * @{
  */
-#define IS_IPC_VALID_Threshold(Ths) ((Ths) >= 1)
+#define IS_IPC_VALID_Threshold(Ths) ((Ths) >= 1)  /*!< Check if IPC FIFO threshold value is valid. */
 /**
   * @}
   */
@@ -319,7 +320,7 @@ typedef struct _IPC_INIT_TABLE_ {
 /** @defgroup IPC_Valid_RX_CHANNEL IPC Valid RX Channel
   * @{
   */
-#define IS_IPC_RX_CHNUM(NUM) ((NUM) < 16)
+#define IS_IPC_RX_CHNUM(NUM) ((NUM) < 16)  /*!< Check if IPC RX channel number is valid. */
 /**
   * @}
   */
@@ -328,8 +329,8 @@ typedef struct _IPC_INIT_TABLE_ {
 /** @defgroup IPC_Valid_SEMID IPC Valid Semaphore ID
   * @{
   */
-#define IPC_SEMA_NUM (64)
-#define IS_IPC_VALID_SEMID(SEM_ID) ((SEM_ID) < IPC_SEMA_NUM)
+#define IPC_SEMA_NUM (64)  /*!< Total number of IPC semaphores. */
+#define IS_IPC_VALID_SEMID(SEM_ID) ((SEM_ID) < IPC_SEMA_NUM)  /*!< Check if IPC semaphore ID is valid. */
 /**
   * @}
   */
@@ -337,7 +338,7 @@ typedef struct _IPC_INIT_TABLE_ {
 /** @defgroup IPC_TX_CHANNEL_SHIFT IPC TX Channel Shift
   * @{
   */
-#define IPC_TX_CHANNEL_SHIFT 16
+#define IPC_TX_CHANNEL_SHIFT 16  /*!< Bit shift for IPC TX channel index. */
 /**
   * @}
   */
@@ -345,7 +346,7 @@ typedef struct _IPC_INIT_TABLE_ {
 /** @defgroup IPC_TX_CHANNEL_NUM IPC TX Channel Number
   * @{
   */
-#define IPC_TX_CHANNEL_NUM 16
+#define IPC_TX_CHANNEL_NUM 16  /*!< Total number of IPC TX channels. */
 /**
   * @}
   */
@@ -353,7 +354,7 @@ typedef struct _IPC_INIT_TABLE_ {
 /** @defgroup IPC_TX_CHANNEL_SWITCH IPC TX Channel Switch
   * @{
   */
-#define IPC_TX_CHANNEL_SWITCH(x)				((u32)((x) & 0x0000000F))
+#define IPC_TX_CHANNEL_SWITCH(x)				((u32)((x) & 0x0000000F))  /*!< Extract TX channel index from channel value. */
 /**
   * @}
   */
@@ -361,7 +362,7 @@ typedef struct _IPC_INIT_TABLE_ {
 /** @defgroup IPC_CHANNEL_NUMBER IPC Channel Number
   * @{
   */
-#define IPC_CHANNEL_NUM 32
+#define IPC_CHANNEL_NUM 32  /*!< Total number of IPC channels (TX + RX). */
 /**
   * @}
   */
@@ -371,7 +372,6 @@ typedef struct _IPC_INIT_TABLE_ {
   * @}
   */
 
-/* Non Exported functions */
 IPC_TypeDef *IPC_GetDev(IPC_Direction_Mode IPC_Dir, u32 Is_Rx);
 IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
 

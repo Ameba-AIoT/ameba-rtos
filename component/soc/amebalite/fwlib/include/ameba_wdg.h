@@ -144,10 +144,10 @@ typedef struct {
 	u16 Window; 		/*!< WDG parameter specifies window protection of WDG, the value cannot be changed when WDG is Enabled
 								This parameter must be set to a value in the 0-65535 range */
 
-	u16 Timeout; 	/*!< WDG parameter specifies WDG timeout count in units of ms
+	u16 Timeout; 		/*!< WDG parameter specifies WDG timeout count in units of ms
 								This parameter must be set to a value in the 1-65535 range */
 
-	u16 EICNT; 	/*!< WDG parameter specifies WDG early interrupt trigger threshold
+	u16 EICNT; 			/*!< WDG parameter specifies WDG early interrupt trigger threshold
 								This parameter must be set to a value in the 1-65535 range */
 
 	u16 EIMOD;		/*!< WDG parameter, Specifies WDG early interrupt enable or not
@@ -166,10 +166,13 @@ typedef struct {
 /** @defgroup WDG_Peripheral_Definitions WDG Peripheral Definitions
   * @{
   */
-#define IS_WDG_ALL_PERIPH(PERIPH) (((PERIPH) == IWDG_DEV) ||((PERIPH) == WDG1_DEV) \
-    ||((PERIPH) == WDG2_DEV) ||((PERIPH) == WDG3_DEV) ||((PERIPH) == WDG4_DEV))
+/** @brief Check if WDG peripheral is valid. */
+#define IS_WDG_ALL_PERIPH(PERIPH) (((PERIPH) == IWDG_DEV) || ((PERIPH) == WDG1_DEV) \
+    || ((PERIPH) == WDG2_DEV) || ((PERIPH) == WDG3_DEV) || ((PERIPH) == WDG4_DEV))
+/** @brief Check if system WDG peripheral is valid. */
 #define IS_SYETEM_WDG_PERIPH(PERIPH) (((PERIPH) == WDG1_DEV) || ((PERIPH) == WDG2_DEV) \
-	||((PERIPH) == WDG3_DEV) ||((PERIPH) == WDG4_DEV))
+	|| ((PERIPH) == WDG3_DEV) || ((PERIPH) == WDG4_DEV))
+/** @brief Check if IWDG peripheral is valid. */
 #define IS_IWDG_PERIPH(PERIPH) ((PERIPH) == IWDG_DEV)
 /**
   * @}
@@ -178,9 +181,9 @@ typedef struct {
 /** @defgroup WDG_Magic_Key WDG Magic Key
   * @{
   */
-#define WDG_ACCESS_EN                                 0x00006969
-#define WDG_FUNC_EN                                     0x00003C3C
-#define WDG_REFRESH                                      0x00005A5A
+#define WDG_ACCESS_EN                                 0x00006969 /*!< Magic key to enable register access. */
+#define WDG_FUNC_EN                                     0x00003C3C /*!< Magic key to enable WDG function. */
+#define WDG_REFRESH                                      0x00005A5A /*!< Magic key to reload WDG counter. */
 /**
   * @}
   */
@@ -188,6 +191,11 @@ typedef struct {
 /**
   * @}
   */
+
+_LONG_CALL_ void WDG_Reset_Bypass(WDG_TypeDef *WDG, u32 NewState);
+_LONG_CALL_ void WDG_Reset_Timeout(u32 Timeout);
+_LONG_CALL_ void WDG_Reset_ClearINT(WDG_TypeDef *WDG);
+
 /* Exported functions ------------------------------------------------------------*/
 /** @defgroup WDG_Exported_Functions WDG Exported Functions
   * @{
@@ -201,9 +209,6 @@ _LONG_CALL_ void WDG_Refresh(WDG_TypeDef *WDG);
 _LONG_CALL_ void WDG_INTConfig(WDG_TypeDef *WDG, u32 WDG_IT, u32 NewState);
 _LONG_CALL_ void WDG_ClearINT(WDG_TypeDef *WDG, u32 INTrBit);
 _LONG_CALL_ void IWDG_LP_Enable(WDG_TypeDef *WDG, u32 NewState);
-_LONG_CALL_ void WDG_Reset_Bypass(WDG_TypeDef *WDG, u32 NewState);
-_LONG_CALL_ void WDG_Reset_Timeout(u32 Timeout);
-_LONG_CALL_ void WDG_Reset_ClearINT(WDG_TypeDef *WDG);
 _LONG_CALL_ void WDG_Wait_Busy(WDG_TypeDef *WDG);
 /**
   * @}

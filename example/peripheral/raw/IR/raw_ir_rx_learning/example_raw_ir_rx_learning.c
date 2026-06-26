@@ -478,6 +478,5 @@ int example_raw_ir_rx_learning(void)
 		IR_learn_sema = NULL;
 	}
 
-	// rtos_sched_start();
 	return 0;
 }

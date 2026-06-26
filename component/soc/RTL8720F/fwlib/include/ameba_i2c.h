@@ -40,7 +40,7 @@
   *****************************************************************************************
   *      To use the normal i2c mode, the following steps are mandatory:
   *
-  *      1. Enable peripheral clock using the follwoing functions.(it is enabled by default)
+  *      1. Enable peripheral clock using the following functions.(it is enabled by default)
   *			RCC_PeriphClockCmd(APBPeriph_I2Cx, APBPeriph_I2Cx_CLOCK, ENABLE);
   *
   *      2. configure the I2C pinmux.
@@ -715,7 +715,7 @@ typedef struct {
 				This parameter must be set to a value in the 0-255 range. A value of 0 sets
 				the threshold for 1 entry, and a value of 255 sets the threshold for 256 entry*/
 
-	u32	I2CTXTL;        /*!< Specifies the I2C TX FIFO Threshold.It controls the level of
+	u32	I2CTXTL;        /*!< Specifies the I2C TX FIFO Threshold. It controls the level of
 				entries(or below) that triggers the TX_EMPTY interrupt.
 				This parameter must be set to a value in the 0-255 range. A value of 0 sets
 				the threshold for 0 entry, and a value of 255 sets the threshold for 255 entry*/
@@ -735,7 +735,7 @@ typedef struct {
 				is selected or 0-1023 range if the I2C_ADDR_10BIT is selected. */
 
 	u32	I2CSlvSetup;       /*!< Specifies the I2C SDA Setup Time. It controls the amount of time delay
-				introduced in the rising edge of SCL—relative to SDA changing—by holding SCL low
+				introduced in the rising edge of SCL relative to SDA changing by holding SCL low
 				when I2C Device operating as a slave transmitter, in units of ic_clk period.
 				This parameter must be set to a value in the 0-255 range. It must be set larger than I2CSdaHd */
 
@@ -750,7 +750,7 @@ typedef struct {
 
 	u32	I2CFilter;      /*!< Specifies the I2C SCL/SDA Spike Filter. */
 
-	u32	I2CTxDMARqLv;   /*!< Specifies the I2C TX DMA Empty Level. dma_tx_req signal is generated when				the number of valid data entries in the transmit FIFO is equal to or below the DMA
+	u32	I2CTxDMARqLv;   /*!< Specifies the I2C TX DMA Empty Level. dma_tx_req signal is generated when the number of valid data entries in the transmit FIFO is equal to or below the DMA
 				Transmit Data Level Register. The value of DMA Transmit Data Level Register is equal
 				to this value. This parameter must be set to a value in the 0-31 range. */
 
@@ -771,17 +771,17 @@ typedef struct {
 typedef struct {
 	void (*I2CSendSem)(u32 IsWrite);    /*!< Interface for releasing semaphores */
 	void (*I2CWaitSem)(u32 IsWrite);    /*!< Interface for acquiring semaphores */
-	I2C_TypeDef *I2Cx;
+	I2C_TypeDef *I2Cx; /*!< Pointer to I2C peripheral registers */
 } I2C_IntModeCtrl;
 
 /**
   * @brief  I2C dev Table Definition
   */
 typedef struct {
-	I2C_TypeDef *I2Cx;
-	IRQn_Type IrqNum;
-	u32 Tx_HandshakeInterface;
-	u32 Rx_HandshakeInterface;
+	I2C_TypeDef *I2Cx; /*!< Pointer to I2C peripheral registers */
+	IRQn_Type IrqNum; /*!< I2C interrupt request number */
+	u32 Tx_HandshakeInterface; /*!< GDMA handshake interface for TX DMA */
+	u32 Rx_HandshakeInterface; /*!< GDMA handshake interface for RX DMA */
 } I2C_DevTable;
 
 /**
@@ -796,8 +796,9 @@ typedef struct {
 /** @defgroup I2C_Addr_Mode I2C Address Mode
   * @{
   */
-#define I2C_ADDR_7BIT			((u32)0x00000000)
-#define I2C_ADDR_10BIT			((u32)0x00000001)
+#define I2C_ADDR_7BIT			((u32)0x00000000)  /*!< 7-bit addressing mode. */
+#define I2C_ADDR_10BIT			((u32)0x00000001)  /*!< 10-bit addressing mode. */
+/** @brief Check if I2C address mode value is valid. */
 #define IS_I2C_ADDR_MODE(MODE) (((MODE) == I2C_ADDR_7BIT) || \
 									   ((MODE) == I2C_ADDR_10BIT))
 /**
@@ -807,9 +808,10 @@ typedef struct {
 /** @defgroup I2C_Speed_Mode I2C Speed Mode
   * @{
   */
-#define I2C_SS_MODE				((u32)0x00000001)
-#define I2C_FS_MODE				((u32)0x00000002)
-#define I2C_HS_MODE				((u32)0x00000003)
+#define I2C_SS_MODE				((u32)0x00000001)  /*!< Standard speed mode (up to 100 kHz). */
+#define I2C_FS_MODE				((u32)0x00000002)  /*!< Fast speed mode (up to 400 kHz). */
+#define I2C_HS_MODE				((u32)0x00000003)  /*!< High speed mode (up to 3.4 Mbps). */
+/** @brief Check if I2C speed mode value is valid. */
 #define IS_I2C_SPEED_MODE(MODE) (((MODE) == I2C_SS_MODE) || \
 									   ((MODE) == I2C_FS_MODE) || \
 									   ((MODE) == I2C_HS_MODE))
@@ -820,8 +822,8 @@ typedef struct {
 /** @defgroup I2C_Role_Mode I2C Role Mode
   * @{
   */
-#define I2C_SLAVE_MODE			((u32)0x00000000)
-#define I2C_MASTER_MODE		((u32)0x00000001)
+#define I2C_SLAVE_MODE			((u32)0x00000000)  /*!< I2C operates in slave mode. */
+#define I2C_MASTER_MODE		((u32)0x00000001)  /*!< I2C operates in master mode. */
 /**
   * @}
   */
@@ -829,16 +831,18 @@ typedef struct {
 /** @defgroup I2C_Clock I2C Clock
   * @{
   */
-#define I2C0_1_IPCLK			HPERI_ClkGet()  /* 120M@1.0V, 100M@0.9V */
+/* 120M@1.0V, 100M@0.9V */
+#define I2C0_1_IPCLK			HPERI_ClkGet()    /*!< I2C0/I2C1 IP clock frequency in Hz. */
 /**
   * @}
   */
 /** @defgroup I2C_DMA_Mode_definitions I2C DMA Mode
   * @{
   */
-#define I2C_DMA_LEGACY			((u32)0x00000000)
-#define I2C_DMA_REGISTER		((u32)0x00000001)
-#define I2C_DMA_DESCRIPTOR		((u32)0x00000002)
+#define I2C_DMA_LEGACY			((u32)0x00000000)  /*!< DWC DMA legacy mode. */
+#define I2C_DMA_REGISTER		((u32)0x00000001)  /*!< DMA mode with control register. */
+#define I2C_DMA_DESCRIPTOR		((u32)0x00000002)  /*!< DMA mode with transfer descriptor. */
+/** @brief Check if I2C DMA mode value is valid. */
 #define IS_I2C_DMA_MODE(MODE) (((MODE) == I2C_DMA_LEGACY) || \
                                    ((MODE) == I2C_DMA_REGISTER) || \
                                    ((MODE) == I2C_DMA_DESCRIPTOR))
@@ -848,7 +852,7 @@ typedef struct {
 /** @defgroup I2C_DMA_DATA_LENGTH I2C DMA Data Length
   * @{
   */
-#define IS_I2C_DMA_DATA_LEN(LENGTH)   ((LENGTH) <= 0xFFFF)
+#define IS_I2C_DMA_DATA_LEN(LENGTH)   ((LENGTH) <= 0xFFFF)  /*!< Check if I2C DMA data length is valid. */
 /**
   * @}
   */
@@ -856,17 +860,17 @@ typedef struct {
 /** @defgroup I2C_Timing_Mode I2C Timing Mode
   * @{
   */
-#define I2C_SS_MIN_SCL_HTIME		4600    //the unit is ns.
-#define I2C_SS_MIN_SCL_LTIME		5400    //the unit is ns.
+#define I2C_SS_MIN_SCL_HTIME		4600    /*!< Standard speed minimum SCL high time in ns. */
+#define I2C_SS_MIN_SCL_LTIME		5400    /*!< Standard speed minimum SCL low time in ns. */
 
-#define I2C_FS_MIN_SCL_HTIME		800     //the unit is ns.
-#define I2C_FS_MIN_SCL_LTIME		1700    //the unit is ns.
+#define I2C_FS_MIN_SCL_HTIME		800     /*!< Fast speed minimum SCL high time in ns. */
+#define I2C_FS_MIN_SCL_LTIME		1700    /*!< Fast speed minimum SCL low time in ns. */
 
-#define I2C_HS_MIN_SCL_HTIME_100    100      //the unit is ns, with bus loading = 100pf, Maximum supported speed=3.4M
-#define I2C_HS_MIN_SCL_LTIME_100    194     //the unit is ns., with bus loading = 100pf, Maximum supported speed=3.4M
+#define I2C_HS_MIN_SCL_HTIME_100    100     /*!< High speed minimum SCL high time, 100pF loading, in ns. Maximum supported speed: 3.4 MHz. */
+#define I2C_HS_MIN_SCL_LTIME_100    194     /*!< High speed minimum SCL low time, 100pF loading, in ns. Maximum supported speed: 3.4 MHz. */
 
-#define I2C_HS_MIN_SCL_HTIME_400    200     //the unit is ns, with bus loading = 400pf, Maximum supported speed=1.7M
-#define I2C_HS_MIN_SCL_LTIME_400    388     //the unit is ns, with bus loading = 400pf, Maximum supported speed=1.7M
+#define I2C_HS_MIN_SCL_HTIME_400    200     /*!< High speed minimum SCL high time, 400pF loading, in ns. Maximum supported speed: 1.7 MHz. */
+#define I2C_HS_MIN_SCL_LTIME_400    388     /*!< High speed minimum SCL low time, 400pF loading, in ns. Maximum supported speed: 1.7 MHz. */
 /**
   * @}
   */
@@ -875,7 +879,7 @@ typedef struct {
   * @{
   */
 
-#define I2C_TRX_BUFFER_DEPTH 16
+#define I2C_TRX_BUFFER_DEPTH 16  /*!< I2C TX/RX FIFO buffer depth in entries. */
 /**
   * @}
   */
@@ -886,6 +890,11 @@ typedef struct {
 
 /** @} */
 /** @} */
+
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup I2C_Exported_Functions I2C Exported Functions
+  * @{
+  */
 
 /*I2C_Exported_Normal_Functions I2C Exported Normal Functions*/
 _LONG_CALL_ void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct);
@@ -929,6 +938,9 @@ _LONG_CALL_ void I2C_DmaMode2Config(I2C_TypeDef *I2Cx, u32 I2C_DmaCmd, u32 I2C_D
 _LONG_CALL_ bool I2C_TXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pTxBuf, int TxCount);
 _LONG_CALL_ bool I2C_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pRxBuf, int RxCount);
 
+/**
+  * @}
+  */
 
 /* Other Definitions --------------------------------------------------------*/
 #if 1
@@ -936,9 +948,9 @@ extern const I2C_DevTable I2C_DEV_TABLE[2];
 extern u32 I2C_SLAVEWRITE_PATCH;
 extern u32 IC_FS_SCL_HCNT_TRIM;
 extern u32 IC_FS_SCL_LCNT_TRIM;
-#define I2C_EARLY_RX_DONE 			-1
-#define I2C_POLL_TIMEOUT_MS  1000
-#define I2C_POLL_DELAY_US    2
+#define I2C_EARLY_RX_DONE 			-1  /*!< Return value indicating early RX completion. */
+#define I2C_POLL_TIMEOUT_MS  1000  /*!< Default polling timeout in milliseconds. */
+#define I2C_POLL_DELAY_US    2  /*!< Delay between poll iterations in microseconds. */
 
 #endif
 

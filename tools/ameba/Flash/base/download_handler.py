@@ -162,7 +162,7 @@ class Ameba(object):
                 if self.remote_password:
                     self.logger.debug("Remote server: password set, will send validate command")
                     self.serial_port.validate(self.remote_password)
-                    self.serial_port.query_version()
+                self.serial_port.query_version()
                 self.serial_port.open()
             else:
                 # initialize local serial port
@@ -375,64 +375,65 @@ class Ameba(object):
         boot_delay = self.setting.usb_rom_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.rom_boot_delay_in_second
 
         self.logger.debug(f"Check download mode with baudrate {self.serial_port.baudrate}")
-        retry = 0
-        while retry < 3:
-            retry += 1
-            try:
-                self.logger.debug(f"Check whether in rom download mode")
-                ret = self.rom_handler.handshake()
-                if ret == ErrType.OK:
-                    self.logger.debug(f"Handshake ok, device in rom download mode")
-                    break
+        try:
+            self.logger.debug(f"Check whether in rom download mode")
+            ret = self.rom_handler.handshake()
+            if ret == ErrType.OK:
+                self.logger.debug(f"Handshake ok, device in rom download mode")
+            elif not self.is_usb:
+                self.logger.debug(
+                    f'Assume in application or ROM normal mode with baudrate {self.profile_info.log_baudrate}')
+                self.switch_baudrate(self.profile_info.log_baudrate, self.setting.baudrate_switch_delay_in_second)
 
-                if not self.is_usb:
-                    self.logger.debug(
-                        f'Assume in application or ROM normal mode with baudrate {self.profile_info.log_baudrate}')
-                    self.switch_baudrate(self.profile_info.log_baudrate, self.setting.baudrate_switch_delay_in_second)
+                self.logger.debug("Try to reset device...")
 
-                    self.logger.debug("Try to reset device...")
+                self.serial_port.flushOutput()
 
+                self.write_bytes(CmdEsc)
+                time.sleep(0.02)
+
+                if self.profile_info.is_amebad():
                     self.serial_port.flushOutput()
-
-                    self.write_bytes(CmdEsc)
+                    self.write_bytes(CmdSetBackupRegister)
                     time.sleep(0.02)
 
-                    if self.profile_info.is_amebad():
-                        self.serial_port.flushOutput()
-                        self.write_bytes(CmdSetBackupRegister)
-                        time.sleep(0.02)
+                self.serial_port.flushOutput()
+                self.write_bytes(CmdResetIntoDownloadMode)
+                time.sleep(0.02)  # wait for cmd tx to device successfully when in lower baudrate
 
-                    self.serial_port.flushOutput()
-                    self.write_bytes(CmdResetIntoDownloadMode)
-                    time.sleep(0.02)  # wait for cmd tx to device successfully when in lower baudrate
+                self.switch_baudrate(self.profile_info.handshake_baudrate, boot_delay, True)
+                self.serial_port.flushInput()
+                time.sleep(0.05)
 
-                    self.switch_baudrate(self.profile_info.handshake_baudrate, boot_delay, True)
-                    self.serial_port.flushInput()
-                    time.sleep(0.05)
+                self.logger.debug(
+                    f'Check whether reset in ROM download mode with baudrate {self.profile_info.handshake_baudrate}')
 
-                    self.logger.debug(
-                        f'Check whether reset in ROM download mode with baudrate {self.profile_info.handshake_baudrate}')
-
-                    ret = self.rom_handler.handshake()
-                    if ret == ErrType.OK:
-                        self.logger.debug("Handshake ok, device in ROM download mode")
-                        break
-                    else:
-                        self.logger.debug("Handshake fail, cannot enter UART download mode")
+                ret = self.rom_handler.handshake()
+                if ret == ErrType.OK:
+                    self.logger.debug("Handshake ok, device in ROM download mode")
+                else:
+                    self.logger.debug("Handshake fail, cannot enter UART download mode")
 
                     self.switch_baudrate(self.baudrate, self.setting.baudrate_switch_delay_in_second, True)
 
+                    self.logger.debug(f"Check whether in floader with baudrate {self.baudrate}")
+                    ret, status = self.floader_handler.sense(self.setting.sync_response_timeout_in_second)
+                    if ret == ErrType.OK:
+                        is_floader = True
+                        self.logger.debug("Floader handshake ok")
+                    else:
+                        self.logger.debug(f"Floader handshake fail: {ret}")
+            else:
+                # USB: check floader directly
                 self.logger.debug(f"Check whether in floader with baudrate {self.baudrate}")
                 ret, status = self.floader_handler.sense(self.setting.sync_response_timeout_in_second)
                 if ret == ErrType.OK:
-                    # do not reset floader
                     is_floader = True
                     self.logger.debug("Floader handshake ok")
-                    break
                 else:
                     self.logger.debug(f"Floader handshake fail: {ret}")
-            except Exception as err:
-                self.logger.error(f"Check download mode exception: {err}")
+        except Exception as err:
+            self.logger.error(f"Check download mode exception: {err}")
 
         return ret, is_floader
 
@@ -874,8 +875,7 @@ class Ameba(object):
                     ret = ErrType.SYS_OVERRANGE
                     break
                 if (self.device_info.is_boot_from_nand() and
-                        (((image_info.start_address % self.device_info.flash_block_size()) != 0) or
-                         ((image_info.end_address % self.device_info.flash_block_size()) != 0))):
+                        (image_info.start_address % self.device_info.flash_block_size()) != 0):
                     self.logger.error(f"{image_info.image_name} address range not aligned")
                     ret = ErrType.SYS_PARAMETER
                     break
@@ -990,12 +990,44 @@ class Ameba(object):
         chksum = chksum & 0xffffffff
         return chksum
 
+    def _erase_flash_chip_nand(self):
+        block_size = self.device_info.flash_block_size()
+        total_capacity = self.device_info.flash_capacity
+        addr = 0  # NAND physical addresses start at 0
+        while addr < total_capacity:
+            ret = self.floader_handler.erase_flash(
+                MemoryInfo.MEMORY_TYPE_NAND,
+                addr,
+                addr + block_size,
+                block_size,
+                nand_erase_timeout_in_second(block_size, block_size),
+                sense=True,
+            )
+            if ret == ErrType.OK:
+                self.logger.debug(f"NAND chip erase: {hex(addr)} OK")
+            elif ret == ErrType.DEV_NAND_BAD_BLOCK:
+                self.logger.warning(f"NAND chip erase: {hex(addr)} skipped (bad block)")
+                ret = ErrType.OK
+            elif ret == ErrType.DEV_NAND_WORN_BLOCK:
+                self.logger.warning(f"NAND chip erase: {hex(addr)} skipped (worn block)")
+                ret = ErrType.OK
+            else:
+                self.logger.error(f"NAND chip erase: {hex(addr)} failed: {ret}")
+                break
+            addr += block_size
+        if ret == ErrType.OK:
+            self.logger.info("NAND chip erase done")
+        return ret
+
     def erase_flash_chip(self):
         self.logger.info(f"Chip erase start")  # customized, do not modify
-        ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NOR, RtkDeviceProfile.DEFAULT_FLASH_START_ADDR,
-                                               0, 0xFFFFFFFF,
-                                               nor_erase_timeout_in_second(0xFFFFFFFF),
-                                               sense=True, force=False)
+        if self.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+            ret = self._erase_flash_chip_nand()
+        else:
+            ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NOR, RtkDeviceProfile.DEFAULT_FLASH_START_ADDR,
+                                                   0, 0xFFFFFFFF,
+                                                   nor_erase_timeout_in_second(0xFFFFFFFF),
+                                                   sense=True, force=False)
         self.logger.info(f"Chip erase end")
         return ret
 
@@ -1003,7 +1035,7 @@ class Ameba(object):
         ret = ErrType.OK
 
         # support chip erase
-        if self.chip_erase and (self.memory_type == MemoryInfo.MEMORY_TYPE_NOR):
+        if self.chip_erase and (self.memory_type in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND)):
             ret = self.erase_flash_chip()
             if ret != ErrType.OK:
                 self.logger.error(f"Chip erase fail")

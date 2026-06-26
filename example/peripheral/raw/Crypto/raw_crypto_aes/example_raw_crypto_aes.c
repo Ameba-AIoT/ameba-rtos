@@ -156,8 +156,5 @@ int example_raw_crypto_aes(void)
 		RTK_LOGI(NOTAG, "Cannot create aes_md5_test demo task\n\r");
 	}
 
-	rtos_sched_start();
 	return 0;
 }
-
-

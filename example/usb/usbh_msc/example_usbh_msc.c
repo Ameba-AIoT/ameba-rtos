@@ -16,7 +16,14 @@
 
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "MSC";
-#define USBH_MSC_THREAD_STACK_SIZE  (256*46)
+// Thread priorities
+#define USBH_MSC_INIT_THREAD_PRIORITY      2
+
+#define USBH_MSC_MAIN_TASK_PRIORITY        3U
+// Thread stack sizes
+#define USBH_MSC_INIT_THREAD_STACK_SIZE    (1024 * 11 + 512)
+
+#define USBH_MSC_MAIN_TASK_STACK_SIZE      768U
 #define USBH_MSC_TEST_BUF_SIZE      4096
 #define USBH_MSC_TEST_ROUNDS        20
 #define USBH_MSC_CHECK_DATA          0
@@ -42,8 +49,8 @@ static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
-	.main_task_stack_size = 768U,
-	.main_task_priority = 3U,
+	.main_task_stack_size = USBH_MSC_MAIN_TASK_STACK_SIZE,
+	.main_task_priority = USBH_MSC_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
@@ -314,7 +321,8 @@ void example_usbh_msc(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH MSC demo start\n");
 
-	ret = rtos_task_create(&task, "example_usbh_msc_thread", example_usbh_msc_thread, NULL, USBH_MSC_THREAD_STACK_SIZE, 2);
+	ret = rtos_task_create(&task, "example_usbh_msc_thread", example_usbh_msc_thread, NULL,
+						   USBH_MSC_INIT_THREAD_STACK_SIZE, USBH_MSC_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}

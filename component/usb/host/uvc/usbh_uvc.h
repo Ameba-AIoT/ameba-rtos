@@ -23,26 +23,38 @@
 #define USBH_UVC_ENCODING_UNIT_MAX_NUM          2
 #define USBH_UVC_SELECTOR_UNIT_MAX_NUM          2
 
-#define UBSH_UVC_REQUEST_BUF_LEN                32/**< Length of the UVC control request buffer. */
+#define USBH_UVC_REQUEST_BUF_LEN                48 /**< Length of the UVC control request buffer. */
 
+#define USBH_UVC_FRAME_INTERVAL_UNIT_NS              (10000000U) /**< UVC frame interval base unit: 100ns (10^7 * 100ns = 1s). */
+#define USBH_UVC_PAYLOAD_HEADER_MIN_LEN              (2U)   /**< Minimum valid UVC payload header length in bytes. */
+
+
+
+#define USBH_UVC_BCD_UVC_1_1                   (0x0110U)  /**< UVC 1.1 release number. */
+#define USBH_UVC_BCD_UVC_1_5                   (0x0150U)  /**< UVC 1.5 release number. */
+
+#define USBH_UVC_PROBE_SIZE_UVC10              (26U)      /**< Probe/Commit control size for UVC 1.0. */
+#define USBH_UVC_PROBE_SIZE_UVC11              (34U)      /**< Probe/Commit control size for UVC 1.1. */
+#define USBH_UVC_PROBE_SIZE_UVC15              (48U)      /**< Probe/Commit control size for UVC 1.5. */
 /* Exported types ------------------------------------------------------------*/
 typedef enum {
 	UVC_STATE_IDLE = 0,
 	UVC_STATE_CTRL,
 	UVC_STATE_TRANSFER,
+	UVC_STATE_STOP,
 	UVC_STATE_ERROR
 } usbh_uvc_state_t;
 
 typedef enum {
 	STREAM_STATE_CTRL_IDLE = 0,
-	STREAM_STATE_SET_PARA,        /* Set Param: Probe - Commit - Set alt */
-	STREAM_STATE_PROBE_NEGOTIATE, /* Set Video (Probe1) */
-	STREAM_STATE_PROBE_UPDATE,    /* Get Video (Probe2) */
-	STREAM_STATE_PROBE_FINAL,     /* Set Video (Probe3) */
-	STREAM_STATE_COMMIT,          /* Set Video (Commit) */
-	STREAM_STATE_FIND_ALT,        /* Find Interface/Altsetting for transfer */
-	STREAM_STATE_SET_ALT,         /* Set Interface/Altsetting for transfer */
-	STREAM_STATE_SET_CTRL,        /* Set Interface/0 for ctrl */
+	STREAM_STATE_SET_PARA,        // Set Param: Probe - Commit - Set alt
+	STREAM_STATE_RESET_ALT,       // Set Interface/0
+	STREAM_STATE_PROBE_NEGOTIATE, // Set Video (Probe1)
+	STREAM_STATE_PROBE_UPDATE,    // Get Video (Probe2)
+	STREAM_STATE_PROBE_FINAL,     // Set Video (Probe3)
+	STREAM_STATE_COMMIT,          // Set Video (Commit)
+	STREAM_STATE_FIND_ALT,        // Find Interface/Altsetting for transfer
+	STREAM_STATE_SET_ALT,         // Set Interface/Altsetting for transfer
 	STREAM_STATE_ERROR
 } usbh_stream_state_t;
 
@@ -202,20 +214,21 @@ typedef struct {
 	u32 next_no_buf_cnt;                    /* Counters of total failed attempts to acquire a free buffer */
 #endif
 
-	u16 urb_buffer_size;                    /* Size of one URB buffer */
-	u8 cur_urb;                             /* Index of the URB currently being filled by combine_urb */
-	u8 cur_packet;                          /* Index of the packet within the current URB */
-	u8 last_fid;                            /* Last Frame ID (toggled bit in UVC payloadheader) */
-	__IO u8 complete_flag;                  /* Flag for ISR Gate: 1=Allow pushing to queue, 0=Drop (protects queue access) */
-	__IO u8 complete_on;                    /* Flag for Thread Loop: 1=Run, 0=Exit (controls combine task lifecycle) */
-	__IO u8 next_xfer;                      /* Flag for next xfer: 0 (Stop), 1 (Start). */
-#endif/* USBH_UVC_USE_HW == 0 */
-	__IO u8 stream_state;                   /* Stream state, @ref usbh_uvc_streaming_state_t */
-	__IO u8 state;                          /* State for state machine, @ref usbh_stream_state_t */
-	__IO u8 get_valid;                      /* Flag indicating get_frame is in use. Set to 1 when entering get_frame, cleared to 0 when exiting. */
-	__IO u8 get_exit;                       /* Flag to signal get_frame to exit safely. Set to 1 before detaching to ensure get_frame has exited. */
-	u8 stream_idx;                          /* Stream Index (0 or 1 for dual stream support) */
-	u8 set_alt;                             /* Flag used in ctrl process machine: 0 (Unset), 1 (Set). */
+	u16 urb_buffer_size;                    // Size of one URB buffer
+	u8 cur_urb;                             // Index of the URB currently being filled by combine_urb
+	u8 cur_packet;                          // Index of the packet within the current URB
+	u8 last_fid;                            // Last Frame ID (toggled bit in UVC payloadheader)
+	__IO u8 complete_flag;                  // Flag for ISR Gate: 1=Allow pushing to queue, 0=Drop (protects queue access)
+	__IO u8 complete_on;                    // Flag for Thread Loop: 1=Run, 0=Exit (controls combine task lifecycle)
+	__IO u8 next_xfer;                      // Flag for next xfer: 0 (Stop), 1 (Start).
+#endif// USBH_UVC_USE_HW == 0
+	__IO u8 stream_state;                   // Stream state, @ref usbh_uvc_streaming_state_t
+	__IO u8 state;                          // State for state machine, @ref usbh_stream_state_t
+	__IO u8 get_valid;                      // Flag indicating get_frame is in use. Set to 1 when entering get_frame, cleared to 0 when exiting.
+	__IO u8 get_exit;                       // Flag to signal get_frame to exit safely. Set to 1 before detaching to ensure get_frame has exited.
+	u8 stream_idx;                          // Stream Index (0 or 1 for dual stream support)
+	u8 set_alt;                             // Flag used in ctrl process machine: 0 (Unset), 1 (Set).
+	u8 set_alt_retry;                       // Retry counter for SET_ALT (SET_INTERFACE) failures.
 } usbh_uvc_stream_t;
 
 typedef struct {
@@ -267,8 +280,9 @@ typedef struct {
 	__IO u8 sw_dump_task_exit;
 #endif
 
-	__IO u8 state; /* @ref usbh_uvc_state_t */
-	__IO u8 stream_in_ctrl;/* record stream idx for ctrl process */
+	__IO u8 state; // @ref usbh_uvc_state_t
+	__IO u8 stream_ctrl_idx; // record stream idx for ctrl process
+	u8 err_retry_cnt; // Retry counter for clear_feature in UVC_STATE_ERROR
 } usbh_uvc_host_t;
 
 /* Exported variables --------------------------------------------------------*/
@@ -289,6 +303,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host);
 int usbh_uvc_stream_stop(usbh_uvc_stream_t *stream);
 int usbh_uvc_desc_init(void);
 void usbh_uvc_desc_deinit(void);
+u16 usbh_uvc_get_ctrl_len_by_version(u16 bcdUVC);
 
 #if (USBH_UVC_USE_HW == 0)
 void usbh_uvc_process_sof(usb_host_t *host);

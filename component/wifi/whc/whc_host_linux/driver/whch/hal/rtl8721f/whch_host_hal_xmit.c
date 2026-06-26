@@ -161,8 +161,8 @@ void whc_host_hal_txdesc_fill_vcs(struct txdesc_priv *ptxdesc, u8 vcs_mode, u8 c
 
 void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 {
-	struct mlme_info *pmlmeinfo = &global_idev.mlmeinfo[pxmitframe->iface_type];
-	struct security_priv *psecuritypriv = &global_idev.securitypriv[pxmitframe->iface_type];
+	struct whch_mlme_info *pmlmeinfo = &global_idev.whchpriv.mlmeinfo[pxmitframe->iface_type];
+	struct whch_security_priv *psecuritypriv = &global_idev.whchpriv.securitypriv[pxmitframe->iface_type];
 	struct pkt_attrib *pattrib;
 	struct txdesc_priv *ptxdesc;
 	s32 bmcst;
@@ -210,8 +210,8 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 		whc_host_hal_txdesc_fill_vcs(ptxdesc, pattrib->vcs_mode, pmlmeinfo->cur_channel, pmlmeinfo->b_preamble_mode);
 
 		if (pattrib->b_ht_en) {
-			ptxdesc->rts_sc = whc_host_hal_txdesc_sc_mapping(pattrib->bwmode, global_idev.cur_chandef.bw,
-							  global_idev.cur_chandef.chan, global_idev.cur_chandef.center_ch);
+			ptxdesc->rts_sc = whc_host_hal_txdesc_sc_mapping(pattrib->bwmode, global_idev.whchpriv.cur_chandef.bw,
+							  global_idev.whchpriv.cur_chandef.chan, global_idev.whchpriv.cur_chandef.center_ch);
 		}
 
 		if ((pattrib->ether_type != ETH_P_PAE) &&
@@ -220,9 +220,9 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 			(pattrib->pkt_type != PACKET_DHCP)
 		   ) {
 			if (pattrib->b_ht_en) {
-				ptxdesc->data_bw = whc_host_hal_txdesc_bw_mapping(pattrib->bwmode, global_idev.cur_chandef.bw);
-				ptxdesc->data_sc = whc_host_hal_txdesc_sc_mapping(pattrib->bwmode, global_idev.cur_chandef.bw,
-								   global_idev.cur_chandef.chan, global_idev.cur_chandef.center_ch);
+				ptxdesc->data_bw = whc_host_hal_txdesc_bw_mapping(pattrib->bwmode, global_idev.whchpriv.cur_chandef.bw);
+				ptxdesc->data_sc = whc_host_hal_txdesc_sc_mapping(pattrib->bwmode, global_idev.whchpriv.cur_chandef.bw,
+								   global_idev.whchpriv.cur_chandef.chan, global_idev.whchpriv.cur_chandef.center_ch);
 			}
 
 			if (!bmcst) {
@@ -237,7 +237,7 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 				/* Avoid indexing wrong rate according to macid 31 from encrypted broadcast data frames
 				https://jira.realtek.com/browse/RSWLANDIOT-8185 */
 				ptxdesc->userate = 1;
-				ptxdesc->datarate = whc_host_hal_mrate_to_hwrate(global_idev.mlmepriv.user_tx_rate);
+				ptxdesc->datarate = whc_host_hal_mrate_to_hwrate(global_idev.whchpriv.mlmepriv.user_tx_rate);
 			}
 #if 0
 			if (pmlmeinfo->fix_rate != 0xFF) {
@@ -270,7 +270,7 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 				ptxdesc->data_gi = 1;	// DATA_SHORT
 			}
 
-			ptxdesc->datarate = whc_host_hal_mrate_to_hwrate(global_idev.mlmepriv.user_tx_rate);
+			ptxdesc->datarate = whc_host_hal_mrate_to_hwrate(global_idev.whchpriv.mlmepriv.user_tx_rate);
 			ptxdesc->retry_limit = 48;
 
 			/*https://jira.realtek.com/browse/RSWLANDIOT-12164*/
@@ -280,66 +280,14 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 
 		}
 	} else if (pxmitframe->frame_tag == MGNT_FRAMETAG) {
-		/* TODO: check whether need mgnt flow */
-#ifdef CONFIG_PMF_USE_HW_CRYPTO
-		struct sta_security_priv *psta_security = wifi_rom_rtw_sta_get_secpriv(iface_type, pattrib->ra);
-#endif
-		//softAP encrypted bcmc using EN_DESC_ID and CAMID. When EN_DESC_ID is set, no CAM search is done.
-		if ((iface_type == WHC_AP_PORT) && (pattrib->encrypt && bmcst)) {
-			ptxdesc->en_desc_id = 1;
-			ptxdesc->macid = 30;			//CAM_ID
-		} else {
-			ptxdesc->macid = pattrib->mac_id;	 // CAM_ID(MAC_ID)
-		}
-
-		ptxdesc->qsel = pattrib->qsel;
-		ptxdesc->seq = pattrib->seqnum;
-		ptxdesc->userate = 1; // driver uses rate, 1M
-
-		ptxdesc->rty_use_des = 1;
-
-		ptxdesc->retry_limit = 12;
-
-#ifdef CONFIG_PMF_USE_HW_CRYPTO
-		/* when enable 802.11w, need enc mgnt frame: please ensure correct settings for pattrib->encrypt and pattrib->b_swenc */
-		if ((psecuritypriv->ieee80211w != NO_MGMT_FRAME_PROTECTION)
-			&& (psecuritypriv->b_installBIPkey == true)
-			&& (psta_security && psta_security->b_pairwise_key_installed == true)) {
-			ptxdesc->sectype = whc_host_hal_txdesc_fill_sectype(pattrib->encrypt, pattrib->b_swenc);
-		}
-#endif
-
-		/* enlarge retry limit for sae confirm-auth(auth seq=2) */
-		if (pattrib->type_subtype == RTW_AUTH) {
-			auth_seq_num = *(u8 *)(pxmitframe->pkt->data + pattrib->hdrlen + 2);
-			if (auth_seq_num == 2) {
-				ptxdesc->retry_limit = 24;
-			}
-		}
-
-		/* if user config retry limit, overwrite with user config's value*/
-		if (pattrib->retry_limit_by_user) {
-			ptxdesc->retry_limit = pattrib->retry_limit_by_user;
-		}
-
-		if (pattrib->rate) {
-			ptxdesc->datarate = whc_host_hal_mrate_to_hwrate(pattrib->rate);
-		} else
-
-		{
-			ptxdesc->datarate = whc_host_hal_mrate_to_hwrate(global_idev.mlmepriv.user_tx_rate);
-		}
-
-		if (pattrib->b_tx_navusehdr) {
-			ptxdesc->navusehdr = 1;
-		}
+		/* host not tx mgnt */
 	} else {
 		//softAP encrypted bcmc using EN_DESC_ID and CAMID. When EN_DESC_ID is set, no CAM search is done.
 		ptxdesc->macid = pattrib->mac_id;	 // CAM_ID(MAC_ID)
 		ptxdesc->qsel = pattrib->qsel;
 		ptxdesc->seq = pattrib->seqnum;
 		ptxdesc->userate = 1; // driver uses rate
-		ptxdesc->datarate = whc_host_hal_mrate_to_hwrate(global_idev.mlmepriv.user_tx_rate);
+		ptxdesc->datarate = whc_host_hal_mrate_to_hwrate(global_idev.whchpriv.mlmepriv.user_tx_rate);
 	}
 
 	ptxdesc->pktlen = pattrib->last_txcmdsz;
@@ -384,7 +332,7 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 #endif
 
 	/*don't use cck rate in 5G*/
-	if ((global_idev.cur_chandef.chan > 14) && ptxdesc->userate && ptxdesc->datarate < DESC_RATE6M) {
+	if ((global_idev.whchpriv.cur_chandef.chan > 14) && ptxdesc->userate && ptxdesc->datarate < DESC_RATE6M) {
 		ptxdesc->datarate = DESC_RATE6M;
 	}
 

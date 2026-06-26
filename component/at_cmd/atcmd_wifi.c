@@ -46,6 +46,10 @@ extern void ip_napt_dump(void);
 #endif
 #if defined(CONFIG_RNAPT)
 extern void rnapt_print_status(void);
+extern void ip_napt_dump(void);
+extern void dns_proxy_print_status(void);
+extern void dns_proxy_dump_cache(void);
+extern void dns_proxy_dump_transactions(void);
 #endif
 
 extern int wifi_set_ips_internal(u8 enable);
@@ -1137,6 +1141,10 @@ void at_wlstate(u16 argc, char **argv)
 #endif
 #if defined(CONFIG_RNAPT)
 	rnapt_print_status();
+	ip_napt_dump();
+	dns_proxy_print_status();
+	dns_proxy_dump_cache();
+	dns_proxy_dump_transactions();
 #endif
 
 	at_printf(ATCMD_OK_END_STR);

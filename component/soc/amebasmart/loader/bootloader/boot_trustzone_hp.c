@@ -129,11 +129,12 @@ static void BOOT_SecureChip_PPCCfg(void)
 }
 
 /**
-  *  @brief Config all SAU & IDAU based on tz_config table.
+  *  @brief Config SAU based on sau_config table, and route NVIC/BusFault to Non-Secure.
+  *         Called from image3 (secure world) after the TZ region is loaded.
   *  @retval None
   */
 BOOT_RAM_TEXT_SECTION
-static void BOOT_CPU_TZCfg(const TZ_CFG_TypeDef *sau_config)
+void BOOT_CPU_TZCfg(const SAU_CFG_TypeDef *sau_config)
 {
 	int idex = 0;
 	/* Configure SAU */
@@ -151,25 +152,15 @@ static void BOOT_CPU_TZCfg(const TZ_CFG_TypeDef *sau_config)
 					ENABLE << SAU_RLAR_ENABLE_Pos;
 	}
 
-	for (idex = 0; idex < SAU_ENTRY_NUM; idex++) {
-		//SAU->RNR = idex;
-		//DiagPrintf("SAU_BAR%d:[%08x:%08x]\n", idex, SAU->RBAR, SAU->RLAR);
-	}
-
 	SAU->CTRL = ((SAU_INIT_CTRL_ENABLE << SAU_CTRL_ENABLE_Pos) & SAU_CTRL_ENABLE_Msk) |
 				((SAU_INIT_CTRL_ALLNS  << SAU_CTRL_ALLNS_Pos)  & SAU_CTRL_ALLNS_Msk)   ;
 
-	/* DCache is Disabled by default when PG wakup, ICache does not have NS Bit in Cache Line */
-	if ((HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_CFG) & LSYS_BIT_BOOT_WAKE_FROM_PS_HS) == 0) {
-		/* Clean and invalidate DCache before SAU configurations, because secure cache line hit
-			by non-secure transaction would cause CPU hang. */
-		SCB_CleanInvalidateDCache();
-	}
+	//RTK_LOGD(TAG, "SAU_CTRL:%lx\n", SAU->CTRL);
 
-	//RTK_LOGD(TAG, "SAU_CTRL:%x\n", SAU->CTRL);
-
-	SCB->SCR   = (SCB->SCR   & ~(SCB_SCR_SLEEPDEEPS_Msk)) |
-				 ((SCB_CSR_DEEPSLEEPS_VAL     << SCB_SCR_SLEEPDEEPS_Pos)     & SCB_SCR_SLEEPDEEPS_Msk);
+	/* <0=> Secure state <1=> Non-Secure state */
+	NVIC->ITNS[0] = 0xFFFFFFFF; /* IRQ 0~31: Non-Secure state */
+	NVIC->ITNS[1] = 0xFFBFFFFF; /* IRQ 32~63: Non-Secure state except for IRQ54(TRNG)*/
+	NVIC->ITNS[2] = 0xFFFFFF3F; /* IRQ 64~95: Non-Secure state, except for IRQ70/71(AES_S/SHA_S)*/
 
 	SCB->AIRCR = (SCB->AIRCR &
 				  ~(SCB_AIRCR_VECTKEY_Msk   | SCB_AIRCR_SYSRESETREQS_Msk | SCB_AIRCR_BFHFNMINS_Msk |  SCB_AIRCR_PRIS_Msk)) |
@@ -177,11 +168,20 @@ static void BOOT_CPU_TZCfg(const TZ_CFG_TypeDef *sau_config)
 				 //((SCB_AIRCR_SYSRESETREQS_VAL << SCB_AIRCR_SYSRESETREQS_Pos) & SCB_AIRCR_SYSRESETREQS_Msk) | /* reset both secure and non-secure */
 				 ((SCB_AIRCR_PRIS_VAL         << SCB_AIRCR_PRIS_Pos)         & SCB_AIRCR_PRIS_Msk)         |
 				 ((SCB_AIRCR_BFHFNMINS_VAL    << SCB_AIRCR_BFHFNMINS_Pos)    & SCB_AIRCR_BFHFNMINS_Msk);
+}
 
-	/* <0=> Secure state <1=> Non-Secure state */
-	NVIC->ITNS[0] = 0xFFFFFFFF; /* IRQ 0~31: Non-Secure state */
-	NVIC->ITNS[1] = 0xFFBFFFFF; /* IRQ 32~63: Non-Secure state except for IRQ54(TRNG)*/
-	NVIC->ITNS[2] = 0xFFFFFF3F; /* IRQ 64~95: Non-Secure state, except for IRQ70/71(AES_S/SHA_S)*/
+BOOT_RAM_TEXT_SECTION
+static void BOOT_CPU_Cfg(void)
+{
+	/* DCache is Disabled by default when PG wakup, ICache does not have NS Bit in Cache Line */
+	if ((HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_CFG) & LSYS_BIT_BOOT_WAKE_FROM_PS_HS) == 0) {
+		/* Clean and invalidate DCache before SAU configurations, because secure cache line hit
+			by non-secure transaction would cause CPU hang. */
+		SCB_CleanInvalidateDCache();
+	}
+
+	SCB->SCR   = (SCB->SCR   & ~(SCB_SCR_SLEEPDEEPS_Msk)) |
+				 ((SCB_CSR_DEEPSLEEPS_VAL     << SCB_SCR_SLEEPDEEPS_Pos)     & SCB_SCR_SLEEPDEEPS_Msk);
 }
 
 BOOT_RAM_TEXT_SECTION
@@ -199,11 +199,12 @@ static void BOOT_SecureChip_TZCfg(void)
 	BOOT_SecureChip_MPCCfg();
 	BOOT_SecureChip_PPCCfg();
 	BOOT_SecureChip_PeriCfg();
-	BOOT_CPU_TZCfg(sau_config);
+	/* SAU is configured in image3 */
 }
 
 BOOT_RAM_TEXT_SECTION
 void BOOT_RAM_TZCfg(void)
 {
 	BOOT_SecureChip_TZCfg();
+	BOOT_CPU_Cfg();
 }

@@ -15,16 +15,16 @@ s32  whc_host_xmit_put_snap(u8 *data, u16 h_proto);
 void whc_host_xmit_update_attrib_vcs_info(u8 iface_type, struct xmit_frame *pxmitframe, struct sta_mlme_priv *psta_mlmepriv, u8 f_cts2self);
 void whc_host_xmit_update_attrib_set_qos(struct pkt_file *ppktfile, struct pkt_attrib *pattrib);
 u8   whc_host_xmit_update_attrib_qos_acm(u8 acm_mask, u8 priority);
-int  whc_host_xmit_update_attrib_sec_info(struct security_priv *psecuritypriv, struct pkt_attrib *pattrib, struct sta_security_priv *psta_security);
+int  whc_host_xmit_update_attrib_sec_info(struct whch_security_priv *psecuritypriv, struct pkt_attrib *pattrib, struct sta_security_priv *psta_security);
 void whc_host_xmit_update_attrib_phy_info(struct pkt_attrib *pattrib, struct sta_mlme_priv *psta_mlmepriv, struct sta_ht_priv *psta_htpriv, u8 bw_40_en);
 int  whc_host_xmit_update_attrib(u8 iface_type, struct sk_buff *pkt, struct pkt_attrib *pattrib);
 
 /* TX encryption */
-int  whc_host_xmit_tkip_addmic(struct security_priv *psecuritypriv, struct sk_buff *pkt, struct sta_security_priv *psta_security, u16 pkt_len);
-int  whc_host_xmit_enc_software(u8 iface_type, struct security_priv *psecuritypriv, struct xmit_frame *pxmitframe);
+int  whc_host_xmit_tkip_addmic(struct whch_security_priv *psecuritypriv, struct sk_buff *pkt, struct sta_security_priv *psta_security, u16 pkt_len);
+int  whc_host_xmit_enc_software(u8 iface_type, struct whch_security_priv *psecuritypriv, struct xmit_frame *pxmitframe);
 
 /* TX entry */
-int  whc_host_xmit_entry_prehandle(int idx, struct sk_buff *pskb, u8 *wlan_hw_queue);
+int  whc_host_xmit_prehandle(int idx, struct sk_buff *pskb, u8 *wlan_hw_queue);
 
 /* MLME priv init / deinit */
 void whc_host_mlme_priv_init(void);
@@ -57,29 +57,31 @@ int  whc_host_recv_entry(union recv_frame *precvframe);
 void whc_host_defrag_ctrl_init(struct recv_defrag_ctrl *pdefrag_ctrl);
 void whc_host_defrag_ctrl_deinit(struct recv_defrag_ctrl *pdefrag_ctrl);
 void whc_host_defrag_timer_handler(struct timer_list *t);
-union recv_frame *whc_host_recv_frame_check_defrag(u8 iface_type, struct security_priv *psecuritypriv, union recv_frame *precv_frame);
+union recv_frame *whc_host_recv_frame_check_defrag(u8 iface_type, struct whch_security_priv *psecuritypriv, union recv_frame *precv_frame);
 
 /* RX reorder */
 int  whc_host_recv_check_indicate_seq(u16 *indicate_seq, u16 wsize, u16 wend, u16 seq_num);
 int  whc_host_recv_reorder(void *preorder_per_tid);
 int  whc_host_recv_reorder_dequeue(struct recv_reorder_ctrl *preorder_ctrl, int bforced);
 void whc_host_recv_reorder_timer_hdl(struct timer_list *t);
-struct recv_reorder_ctrl *whc_host_recv_reorder_alloc(u8 ap_compatibilty, u8 iface_type);
-void whc_host_recv_reorder_free(struct recv_reorder_ctrl **ppreorder_ctrl);
+void whc_host_recv_reorder_init(struct recv_reorder_ctrl *preorder_ctrl);
+void whc_host_recv_reorder_setup(struct recv_reorder_ctrl *preorder_ctrl, u8 ap_compatibilty, u8 iface_type);
+void whc_host_recv_reorder_free(struct recv_reorder_ctrl *preorder_ctrl);
 
 /* RX security */
 signed int whc_host_recv_check_pn(u8 fragnum, union pn48 *rxPN, union pn48 *pCurRxPN);
-int  whc_host_recv_frame_check_frag_pn(struct security_priv *psecuritypriv, union recv_frame *precvframe, u8 fragnum);
-union recv_frame *whc_host_recv_decryptor(u8 iface_type, struct security_priv *psecuritypriv, union recv_frame *precv_frame);
+int  whc_host_recv_frame_check_frag_pn(struct recv_defrag_ctrl *pdefrag_ctrl, union recv_frame *precvframe, u8 fragcase);
+union recv_frame *whc_host_recv_decryptor(u8 iface_type, struct whch_security_priv *psecuritypriv, union recv_frame *precv_frame);
 
 /* RX indication */
 void whc_host_recv_wlanhdr_to_ethhdr(union recv_frame *precvframe);
 void whc_host_if_netif_rx(struct sk_buff *skb, void *preorder_ctrl);
 int  whc_host_recv_indicatepkt(u8 iface_type, union recv_frame *precv_frame);
 int  whc_host_recv_process_indicatepkts(u8 iface_type, union recv_frame *prframe);
-void whc_host_netif_rx(struct sk_buff *pskb, u8 wlan_idx);
 
 /* ADDBA / block-ack */
 int  whc_host_on_action_block_ack(struct rtw_event_addba_nego *nego_info);
+
+void whc_host_set_key(struct rtw_crypt_info *crypt);
 
 #endif /* __WHCH_HOST_TRX_H__ */

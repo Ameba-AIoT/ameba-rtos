@@ -56,10 +56,10 @@ extern "C" {
   * @brief Struct alarm_s
   */
 typedef struct alarm_s {
-	uint32_t yday;//which day of the year
-	uint32_t hour;
-	uint32_t min;
-	uint32_t sec;
+	uint32_t yday; /*!< Day of year (1-365/366). */
+	uint32_t hour; /*!< Hour (0-23). */
+	uint32_t min;  /*!< Minute (0-59). */
+	uint32_t sec;  /*!< Second (0-59). */
 } alarm_t;
 
 /**

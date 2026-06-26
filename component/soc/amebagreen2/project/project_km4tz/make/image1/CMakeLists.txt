@@ -1,4 +1,4 @@
-ameba_add_image(target_loader p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_boot_all.bin)
+ameba_add_image(target_loader p_IMAGE_ALL ${c_BOOT_BINARY_NAME})
 # Use variable c_CURRENT_IMAGE to represent full image target name
 
 ###############################  ADD COMPONENT  ###################################
@@ -78,7 +78,7 @@ add_custom_command(OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/fullmac_ram_1_prepend.bin
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_loader.axf ${c_SDK_IMAGE_TARGET_DIR}/target_pure_loader.axf
     COMMAND ${CMAKE_STRIP} ${c_SDK_IMAGE_TARGET_DIR}/target_pure_loader.axf
 
-    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_MCU_PROJECT_NAME}_boot_all.bin"
+    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_BOOT_BINARY_NAME}"
 
     COMMAND ${CMAKE_COMMAND}
         # common variables
@@ -140,5 +140,5 @@ set_target_properties(${c_CURRENT_IMAGE} PROPERTIES
 add_custom_target(
     boot
     COMMENT "build bootloader only"
-    DEPENDS ${c_CURRENT_IMAGE}_postbuild
+    DEPENDS ${c_MCU_PROJECT_NAME}_fullmac_img1_postbuild
 )

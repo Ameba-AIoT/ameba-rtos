@@ -14,3 +14,11 @@ uint8_t g_ble_ll_max_rl_num = CONFIG_BLE_LL_RESOLVE_LIST_SIZE;
 #else
 uint8_t g_ble_ll_max_rl_num = 0;
 #endif
+
+#ifdef CONFIG_BLE_LL_PA_SYNC_ENABLE
+uint8_t g_ble_ll_max_pa_sync_set_num = BLE_LL_MAX_PA_SYNC_SET_NUM;
+uint8_t g_ble_ll_pa_sync_chain_num = BLE_LL_MAX_PA_SYNC_CHAIN_NUM;
+#else
+uint8_t g_ble_ll_max_pa_sync_set_num = 0;
+uint8_t g_ble_ll_pa_sync_chain_num = 0;
+#endif

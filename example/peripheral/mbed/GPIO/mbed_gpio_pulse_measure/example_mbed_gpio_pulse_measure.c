@@ -72,7 +72,6 @@ int example_mbed_gpio_pulse_measure(void)
 		printf("Create MBED_GPIO_PULSE_MEASURE_TASK Err!!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
 

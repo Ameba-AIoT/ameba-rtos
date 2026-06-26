@@ -17,7 +17,7 @@ set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/ameba_layout.ld)
 set(c_IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all.ld)
-if(CONFIG_MP_SHRINK)
+if(CONFIG_MP_SHRINK AND CONFIG_WHC_INTF_IPC)
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all_mp.ld)
 else()
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
@@ -100,3 +100,10 @@ if(_sboot_enabled STREQUAL "ON" AND EXISTS ${c_SDK_FLOADER_BIN_DIR}/floader_${c_
     execute_process(COMMAND ${op_FW_PACKAGE} --imgtool-floader ${CMAKE_CURRENT_BINARY_DIR}/ram_1_prepend.bin -o ${CMAKE_CURRENT_BINARY_DIR}/imgtool_flashloader.bin)
     execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/imgtool_flashloader.bin ${FINAL_IMAGE_DIR}/floader_${c_SOC_TYPE}.bin)
 endif()
+
+add_custom_target(
+    ${c_MCU_PROJECT_NAME}
+    COMMENT "build ${c_MCU_PROJECT_NAME} only"
+    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image1>
+            $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image2>_postbuild
+)

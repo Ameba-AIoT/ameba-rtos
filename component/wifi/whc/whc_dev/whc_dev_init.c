@@ -1,4 +1,20 @@
 #include "whc_dev.h"
+#ifdef CONFIG_LOG_FWD
+#include "log_forward.h"
+
+static void whc_log_output(const u8 *buf, u32 len)
+{
+	u8 *pkt = rtos_mem_malloc(sizeof(u32) + len);
+	if (!pkt) {
+		return;
+	}
+
+	*(u32 *)pkt = WHC_LOG_EVENT;
+	memcpy(pkt + sizeof(u32), buf, len);
+	whc_dev_api_send_to_host(pkt, sizeof(u32) + len, NULL, 0);
+	rtos_mem_free(pkt);
+}
+#endif /* CONFIG_LOG_FWD */
 
 /**
  * @brief  to initialize the whc device (non-IPC).
@@ -29,5 +45,9 @@ void whc_dev_init(void)
 
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	whc_dev_api_init();
+#endif
+
+#ifdef CONFIG_LOG_FWD
+	rtk_log_forward_init(whc_log_output);
 #endif
 }

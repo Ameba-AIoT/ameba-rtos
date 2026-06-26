@@ -105,7 +105,6 @@ u32 ST7701S_Send_cmd_g = 1;
 u32 MIPI_HACT_g = LCDC_TEST_IMG_BUF_X;
 u32 MIPI_VACT_g = LCDC_TEST_IMG_BUF_Y;
 u32 UnderFlowCnt = 0;
-u32 vo_freq;
 u32 LCDC_Show_Idx;
 
 int First_Flag_g = 1;
@@ -271,11 +270,6 @@ void MIPI_InitStruct_Config(MIPI_InitTypeDef *MIPI_InitStruct)
 
 	if (MIPI_InitStruct->MIPI_LineTime * MIPI_InitStruct->MIPI_LaneNum < total_bits / 8) {
 		RTK_LOGE(TAG, "!!ERROR!!, LINE TIME TOO SHORT!\n");
-	}
-
-	if (MIPI_InitStruct->MIPI_VideDataLaneFreq * 2 / 24 >= vo_freq) {
-		RTK_LOGE(TAG, "%lx %lx\n", (uint32_t)MIPI_InitStruct->MIPI_VideDataLaneFreq * 2 / 24, vo_freq);
-		RTK_LOGE(TAG, "!!ERROR!!, VO CLK too slow!\n");
 	}
 
 	RTK_LOGI(TAG, "DataLaneFreq: %d, LineTime: %d\n", MIPI_InitStruct->MIPI_VideDataLaneFreq, MIPI_InitStruct->MIPI_LineTime);
@@ -760,9 +754,6 @@ void MIPIDemoShow_task(void)
 		LcdImgBuffer1 = (u8 *)(BackupLcdImgBuffer + LCDC_IMG_BUF_SIZE);
 	}
 
-	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_HPERI_CLOCK, ENABLE);
-	RCC_PeriphClockCmd(APBPeriph_LCDC, APBPeriph_LCDCMIPI_CLOCK, ENABLE);
-
 	MipiDsi_ST7701S_lcm_init();
 	LcdcRgbDisplayTest();
 
@@ -771,18 +762,5 @@ void MIPIDemoShow_task(void)
 
 void MIPIDemoShow(void)
 {
-	//MIPI(<=66.7M), LCDC(<=NPPLL/4), LCDC : MIPI >= 3 : 1
-	u32 totaly = MIPI_DSI_VSA + MIPI_DSI_VBP + MIPI_DSI_VFP + LCDC_TEST_IMG_BUF_Y;
-	u32 totalx = MIPI_DSI_HSA + MIPI_DSI_HBP + MIPI_DSI_HFP + LCDC_TEST_IMG_BUF_X;
-	vo_freq = totaly * totalx * MIPI_FRAME_RATE / Mhz + 4;
-	RTK_LOGI(TAG, "vo_freq: %lu\n", vo_freq);
-	assert_param(vo_freq < 67);
-
-	u32 PLLDiv = PLL_GET_NPLL_DIVN_SDM(PLL_BASE->PLL_NPPLL_CTRL1) + 2;
-	u32 PLL_CLK = XTAL_ClkGet() * PLLDiv;
-	u32 mipi_ckd = PLL_CLK / vo_freq - 1;
-	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0) & ~LSYS_MASK_CKD_MIPI) | LSYS_CKD_MIPI(mipi_ckd));
-	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0) & ~LSYS_MASK_CKD_HPERI) | LSYS_CKD_HPERI(3));
-
 	rtos_task_create(NULL, (const char *)"MIPIDemoShow_task", (rtos_task_t)MIPIDemoShow_task, NULL, 2048, 1);
 }
