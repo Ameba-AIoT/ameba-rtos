@@ -18,7 +18,7 @@ const struct WakeEvent_TypeDef sleep_wevent_config[] = {
 };
 
 struct PSCFG_TypeDef ps_config = {
-	.keep_osc2p5m_on = FALSE,					/* keep OSC2.5M off or on during sleep */
+	.keep_osc2m_on = FALSE,					/* keep OSC2M off or on during sleep */
 	.xtal_mode_in_sleep = XTAL_OFF,				/* set xtal mode during sleep mode, see enum xtal_mode_sleep for detail */
 };
 

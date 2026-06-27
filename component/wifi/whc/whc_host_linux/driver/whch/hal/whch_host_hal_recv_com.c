@@ -12,7 +12,7 @@ void whc_host_hal_normal_rx_process(union recv_frame *precvframe, u8 *pphy_info)
 		goto skip_if2_recv;
 	}
 
-#ifdef CONFIG_NAN	/* TODO */
+#ifdef CONFIG_NAN	/* TODO_NAN */
 	if (rtw_is_adapter_up(NAN_WLAN_INDEX) && rtw_is_nan_frame(precvframe)) {
 		skb->dev = rtw_get_netdev(NAN_WLAN_INDEX);
 		precvframe->u.hdr.iface_type = IFACE_PORT2;
@@ -20,7 +20,7 @@ void whc_host_hal_normal_rx_process(union recv_frame *precvframe, u8 *pphy_info)
 	}
 #endif
 
-#if 0	/* TODO, softap */
+#if 0	/* TODO_softap */
 	paddr1 = GetAddr1Ptr(precvframe->u.hdr.rx_data);
 	if (IS_MCAST(paddr1) == FALSE) {	//unicast packets
 		if (rtw_is_adapter_up(IFACE_PORT1) && !memcmp(paddr1, rtw_get_adapter_mac_addr(IFACE_PORT1), ETH_ALEN)) {
@@ -52,10 +52,8 @@ void whc_host_hal_normal_rx_process(union recv_frame *precvframe, u8 *pphy_info)
 #endif
 
 skip_if2_recv:
-	// wifi_hal_normal_rx_phystatus_query(precvframe, pphy_info); /* TODO */
 
 	whc_host_recv_entry(precvframe);
 }
-
 
 #endif

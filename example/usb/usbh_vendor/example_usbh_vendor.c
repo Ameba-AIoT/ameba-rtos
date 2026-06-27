@@ -14,10 +14,7 @@
 /* Private defines -----------------------------------------------------------*/
 #define CONFIG_USBH_VENDOR_HOT_PLUG_TEST           1/* Hot plug / memory leak test */
 
-/* Private types -------------------------------------------------------------*/
-
-/* Private macros ------------------------------------------------------------*/
-#define UBSH_VENDOR_TEST_TASK_CNT                  3
+#define USBH_VENDOR_TEST_TASK_CNT                  3
 #define USBH_VENDOR_BULK_LOOPBACK_CNT              100
 #define USBH_VENDOR_INTR_LOOPBACK_CNT              100
 #define USBH_VENDOR_ISOC_TEST_CNT                  100
@@ -25,6 +22,21 @@
 #define USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE         512
 #define USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE         1024
 #define USBH_VENDOR_ISOC_TEST_BUF_SIZE             1024
+
+// Thread priorities
+#define CONFIG_USBH_VENDOR_INIT_THREAD_PRIORITY           1U
+#define CONFIG_USBH_VENDOR_MAIN_TASK_PRIORITY             3U
+#define CONFIG_USBH_VENDOR_HOTPLUG_THREAD_PRIORITY        6U
+#define CONFIG_USBH_VENDOR_TEST_THREAD_PRIORITY           5U
+// Thread stack sizes
+#define CONFIG_USBH_VENDOR_INIT_THREAD_STACK_SIZE           (1024U * 2)
+#define CONFIG_USBH_VENDOR_MAIN_TASK_STACK_SIZE             768
+#define CONFIG_USBH_VENDOR_HOTPLUG_THREAD_STACK_SIZE        (1024U * 2)
+#define CONFIG_USBH_VENDOR_TEST_THREAD_STACK_SIZE           (1024U * 2)
+/* Private types -------------------------------------------------------------*/
+
+/* Private macros ------------------------------------------------------------*/
+
 /* Private function prototypes -----------------------------------------------*/
 
 static int vendor_cb_attach(void);
@@ -61,8 +73,8 @@ static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
-	.main_task_stack_size = 768,
-	.main_task_priority = 3U,
+	.main_task_stack_size = CONFIG_USBH_VENDOR_MAIN_TASK_STACK_SIZE,
+	.main_task_priority = CONFIG_USBH_VENDOR_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
@@ -297,7 +309,7 @@ static void vendor_bulk_loopback_test(void)
 			for (j = 0; j < USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE; j++) {
 				if (vendor_bulk_loopback_rx_buf[j] != i) {
 					vendor_bulk_rx_errcnt++;
-					RTK_LOGS(TAG, RTK_LOG_INFO, TAG, RTK_LOG_INFO, "BULK Loopback test FAIL: %d, %d, errcnt %d", i, vendor_bulk_loopback_rx_buf[j], vendor_bulk_rx_errcnt);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "BULK Loopback test FAIL: %d, %d, errcnt %d", i, vendor_bulk_loopback_rx_buf[j], vendor_bulk_rx_errcnt);
 				}
 			}
 		}
@@ -408,7 +420,7 @@ static void example_usbh_vendor_intr_test(void *param)
 
 void example_usbh_vendor_thread(void *param)
 {
-	int status;
+	int ret;
 	rtos_task_t task;
 
 	UNUSED(param);
@@ -423,20 +435,22 @@ void example_usbh_vendor_thread(void *param)
 	rtos_sema_create(&vendor_isoc_rxdone_sema, 0U, 1U);
 	rtos_sema_create(&vendor_done_sema, 0U, 3U);
 
-	status = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (status != HAL_OK) {
+	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
+	if (ret != HAL_OK) {
 		goto error_exit;
 	}
 
-	status = usbh_vendor_init(&vendor_usr_cb);
-	if (status < 0) {
+	ret = usbh_vendor_init(&vendor_usr_cb);
+	if (ret < 0) {
 		usbh_deinit();
 		goto error_exit;
 	}
 
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
-	status = rtos_task_create(&task, "example_usbh_vendor_hotplug_thread", example_usbh_vendor_hotplug_thread, NULL, 1024U * 2, 6U);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&task, "example_usbh_vendor_hotplug_thread",
+						   example_usbh_vendor_hotplug_thread, NULL,
+						   CONFIG_USBH_VENDOR_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_HOTPLUG_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		usbh_vendor_deinit();
 		usbh_deinit();
 		goto error_exit;
@@ -446,16 +460,18 @@ void example_usbh_vendor_thread(void *param)
 	if (rtos_sema_take(vendor_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 		vendor_isoc_test();
 
-		if (rtos_task_create(&task, "example_usbh_vendor_bulk_test", example_usbh_vendor_bulk_test, NULL, 1024U * 2, 5U) != RTK_SUCCESS) {
+		if (rtos_task_create(&task, "example_usbh_vendor_bulk_test", example_usbh_vendor_bulk_test, NULL,
+							 CONFIG_USBH_VENDOR_TEST_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_TEST_THREAD_PRIORITY) != RTK_SUCCESS) {
 			goto error_exit;
 		}
 
-		if (rtos_task_create(&task, "example_usbh_vendor_intr_test", example_usbh_vendor_intr_test, NULL, 1024U * 2, 5U) != RTK_SUCCESS) {
+		if (rtos_task_create(&task, "example_usbh_vendor_intr_test", example_usbh_vendor_intr_test, NULL,
+							 CONFIG_USBH_VENDOR_TEST_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_TEST_THREAD_PRIORITY) != RTK_SUCCESS) {
 			goto error_exit;
 		}
 	}
 
-	for (int i = 0; i < UBSH_VENDOR_TEST_TASK_CNT; i++) {
+	for (int i = 0; i < USBH_VENDOR_TEST_TASK_CNT; i++) {
 		rtos_sema_take(vendor_done_sema, RTOS_SEMA_MAX_COUNT);
 	}
 
@@ -480,12 +496,13 @@ example_exit:
 
 void example_usbh_vendor(void)
 {
-	int status;
+	int ret;
 	rtos_task_t task;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH vendor demo start\n");
-	status = rtos_task_create(&task, "example_usbh_vendor_thread", example_usbh_vendor_thread, NULL, 1024U * 2, 1U);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&task, "example_usbh_vendor_thread", example_usbh_vendor_thread, NULL,
+						   CONFIG_USBH_VENDOR_INIT_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_INIT_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }

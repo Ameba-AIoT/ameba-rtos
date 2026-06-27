@@ -75,6 +75,5 @@ int example_raw_pwm(void)
 		printf("Create RAW_PWM_DEMO_TASK Err!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }

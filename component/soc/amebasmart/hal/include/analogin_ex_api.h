@@ -46,10 +46,10 @@ extern "C" {
   */
 
 /**
-  * @brief enum AnalogInCallback
+  * @brief Analog input (ADC) callback event types.
   */
 typedef enum {
-	ANALOGIN_RX_DMA_COMPLETE     = 0,
+	ANALOGIN_RX_DMA_COMPLETE     = 0, /*!< DMA RX transfer complete event. */
 } AnalogInCallback;
 
 /**

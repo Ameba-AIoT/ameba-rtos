@@ -127,7 +127,7 @@ static void rtc_calculate_wday(int year, int mon, int mday, int *wday)
 
 
 /**
-  * @brief  Register RTC alarm interrupt handler.
+  * @brief  Handle RTC alarm interrupt.
   * @param  data RTC IRQ callback data.
   * @return 0.
   */

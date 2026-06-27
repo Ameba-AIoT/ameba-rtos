@@ -30,22 +30,8 @@ static const char *const TAG = "SPI";
  *  @{
  */
 
-/* Exported constants --------------------------------------------------------*/
-/** @defgroup MBED_SPI_Exported_Constants MBED_SPI Exported Constants
-  * @{
-  */
-
 #define USE_DMA_WRITE_MASTER_READ	1
 
-/** @} */
-
-/** @defgroup MBED_SPI_Exported_Types MBED_SPI Exported Types
-  * @{
-  */
-
-/** @defgroup MBED_SPI_Structure_Type MBED_SPI Structure Type
-  * @{
-  */
 typedef struct {
 	GDMA_InitTypeDef SSITxGdmaInitStruct;
 	GDMA_InitTypeDef SSIRxGdmaInitStruct;
@@ -70,27 +56,14 @@ typedef struct {
 	/* mbed var */
 	u32 dma_en;
 } HAL_SSI_ADAPTOR, *PHAL_SSI_ADAPTOR;
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-/** @defgroup MBED_SPI_Exported_Constants MBED_SPI Exported Constants
-  * @{
-  */
 
 HAL_SSI_ADAPTOR ssi_adapter_g[2];
 
-/** @} */
-
 /**
-  * @brief  Enable or disable slave.
+  * @brief  Enable slave select.
   * @note  Valid only when the device is configured as a master.
-  * @param  obj: SPI master object defined in application software.
-  * @param  slaveindex: the index of slave to be selected.
+  * @param  obj SPI master object defined in application software.
+  * @param  slaveindex The index of slave to be selected.
   */
 void spi_slave_select(spi_t *obj, ChipSelect slaveindex)
 {
@@ -150,9 +123,9 @@ static void spi_bus_tx_done_callback(void *spi_obj)
 
 /**
   * @brief  Register SPI bus Tx done interrupt handler if needed.
-  * @param  obj: SPI object defined in application software.
-  * @param  handler: Interrupt bus Tx done callback function.
-  * @param  id: Interrupt bus Tx done callback parameter.
+  * @param  obj SPI object defined in application software.
+  * @param  handler Interrupt bus Tx done callback function.
+  * @param  id Interrupt bus Tx done callback parameter.
   */
 void spi_bus_tx_done_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id)
 {
@@ -432,7 +405,7 @@ static u32 spi_stop_recv(spi_t *obj)
 		/* Clear Pending ISR */
 		GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_SRC_DST);
-		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		/* note: Disabling GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
 		GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		DMAStopAddr = GDMA_GetDstAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
@@ -463,11 +436,11 @@ static u32 spi_stop_recv(spi_t *obj)
 
 /**
   * @brief  Initialize the SPI device, including clock, function, interrupt and SPI registers.
-  * @param  obj: SPI object defined in application software.
-  * @param  mosi: MOSI PinName according to pinmux spec.
-  * @param  miso: MISO PinName according to pinmux spec.
-  * @param  sclk: SCLK PinName according to pinmux spec.
-  * @param  ssel: CS PinName according to pinmux spec.
+  * @param  obj SPI object defined in application software.
+  * @param  mosi MOSI PinName according to pinmux spec.
+  * @param  miso MISO PinName according to pinmux spec.
+  * @param  sclk SCLK PinName according to pinmux spec.
+  * @param  ssel CS PinName according to pinmux spec.
   * @attention Remember to set obj->spi_index to MBED_SPI0 or MBED_SPI1 before calling spi_init.
   */
 void spi_init(spi_t *obj, PinName mosi, PinName miso, PinName sclk, PinName ssel)
@@ -522,8 +495,8 @@ void spi_init(spi_t *obj, PinName mosi, PinName miso, PinName sclk, PinName ssel
 }
 
 /**
-  * @brief  Deinitialize and Disable the SPI device, include interrupt/DMA/DISABLE SPI.
-  * @param  obj: SPI object defined in application software.
+  * @brief  Deinitialize the SPI device, including interrupt, DMA, and SPI peripheral.
+  * @param  obj SPI object defined in application software.
   */
 void spi_free(spi_t *obj)
 {
@@ -544,7 +517,7 @@ void spi_free(spi_t *obj)
 		/* Clear Pending ISR */
 		GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_SRC_DST);
-		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		/* note: Disabling GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
 		GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		ssi_adapter->dma_en &= ~SPI_DMA_RX_EN;
@@ -559,7 +532,7 @@ void spi_free(spi_t *obj)
 		/* Clear Pending ISR */
 		GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_SRC_DST);
-		/* note: Disabing GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
+		/* note: Disabling GDMA chan may fail by calling GDMA_Cmd() while GDMA chan is still working. */
 		GDMA_Abort(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		ssi_adapter->dma_en &= ~SPI_DMA_TX_EN;
@@ -572,14 +545,14 @@ void spi_free(spi_t *obj)
 
 /**
   * @brief  Set SPI format, including DFS, Phase, Polarity and Role.
-  * @param  obj: SPI object defined in application software.
-  * @param  bits: Data frame size, which can be 4~16.
-  * @param  mode: This parameter can be one of the following values:
+  * @param  obj SPI object defined in application software.
+  * @param  bits Data frame size, which can be 4~16.
+  * @param  mode This parameter can be one of the following values:
   *		@arg 0: [Polarity,Phase]=[0,0].
   *		@arg 1: [Polarity,Phase]=[0,1].
   *		@arg 2: [Polarity,Phase]=[1,0].
   *		@arg 3: [Polarity,Phase]=[1,1].
-  * @param  slave: This parameter can be one of the following values:
+  * @param  slave This parameter can be one of the following values:
   *		@arg 0: Configure SPI as the master.
   *		@arg 1: Configure SPI as the slave.
   */
@@ -657,7 +630,7 @@ void spi_format(spi_t *obj, int bits, int mode, int slave)
 
 /**
   * @brief  Acquire SPI bus clock.
-  * @return  ipclk, units Hz.
+  * @return  Ipclk, units Hz.
   */
 static u32 spi_get_ipclk(void)
 {
@@ -683,8 +656,8 @@ static u32 spi_get_ipclk(void)
 
 /**
   * @brief  Set SPI baudrate.
-  * @param  obj: SPI master object defined in application software.
-  * @param  hz: Baudrate for SPI bus in units of Hz.
+  * @param  obj SPI master object defined in application software.
+  * @param  hz Baudrate for SPI bus in units of Hz.
   * @attention Baudrate to be set should be less than or equal to half of the SPI IpClk.
   */
 void spi_frequency(spi_t *obj, int hz)
@@ -704,7 +677,7 @@ void spi_frequency(spi_t *obj, int hz)
 	}
 
 	if (ClockDivider >= 0xFFFF) {
-		/* devider is 16 bits */
+		/* divider is 16 bits */
 		ClockDivider = 0xFFFE;
 	}
 
@@ -735,8 +708,8 @@ static inline int ssi_read(spi_t *obj)
 
 /**
   * @brief  Master SPI sends one frame.
-  * @param  obj: SPI master object defined in application software.
-  * @param  value: Data to be transmitted.
+  * @param  obj SPI master object defined in application software.
+  * @param  value Data to be transmitted.
   * @return Data received from slave SPI.
   */
 int spi_master_write(spi_t *obj, int value)
@@ -746,9 +719,11 @@ int spi_master_write(spi_t *obj, int value)
 }
 
 /**
-  * @brief  Get readable state and busy state of slave SPI.
-  * @param  obj: SPI slave object defined in application software.
-  * @return Readable and busy state of slave SPI.
+  * @brief  Check if slave SPI is readable and not busy.
+  * @param  obj SPI slave object defined in application software.
+  * @return Receive-ready state of slave SPI:
+  *         - 1: Readable and not busy
+  *         - 0: Not ready
   */
 int spi_slave_receive(spi_t *obj)
 {
@@ -764,7 +739,7 @@ int spi_slave_receive(spi_t *obj)
 
 /**
   * @brief  Slave SPI receives one frame.
-  * @param  obj: SPI slave object defined in application software.
+  * @param  obj SPI slave object defined in application software.
   * @return Data received from master SPI.
   */
 int spi_slave_read(spi_t *obj)
@@ -774,8 +749,8 @@ int spi_slave_read(spi_t *obj)
 
 /**
   * @brief  Slave SPI sends one frame.
-  * @param  obj: SPI slave object defined in application software.
-  * @param  value: Data to be transmitted.
+  * @param  obj SPI slave object defined in application software.
+  * @param  value Data to be transmitted.
   */
 void spi_slave_write(spi_t *obj, int value)
 {
@@ -784,7 +759,7 @@ void spi_slave_write(spi_t *obj, int value)
 
 /**
   * @brief  Get SPI busy state.
-  * @param  obj: SPI object defined in application software.
+  * @param  obj SPI object defined in application software.
   * @return Current busy state.
   */
 int spi_busy(spi_t *obj)
@@ -797,7 +772,7 @@ int spi_busy(spi_t *obj)
 
 /**
   * @brief  SPI device to flush Rx FIFO.
-  * @param  obj: SPI object defined in application software.
+  * @param  obj SPI object defined in application software.
   */
 void spi_flush_rx_fifo(spi_t *obj)
 {
@@ -816,9 +791,9 @@ void spi_flush_rx_fifo(spi_t *obj)
 
 /**
   * @brief  Slave SPI receives data of target length under interrupt mode.
-  * @param  obj: SPI slave object defined in application software.
-  * @param  rx_buffer: Buffer to save data read from SPI FIFO.
-  * @param  length: Number of data bytes to be read.
+  * @param  obj SPI slave object defined in application software.
+  * @param  rx_buffer Buffer to save data read from SPI FIFO.
+  * @param  length Number of data bytes to be read.
   * @return Operation status:
   *         - HAL_OK: Success.
   *         - HAL_BUSY: Error.
@@ -846,9 +821,9 @@ int32_t spi_slave_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
 
 /**
   * @brief  Slave SPI sends data of target length under interrupt mode.
-  * @param  obj: SPI slave object defined in application software.
-  * @param  tx_buffer: Buffer to be written to Tx FIFO.
-  * @param  length: Number of data bytes to be sent.
+  * @param  obj SPI slave object defined in application software.
+  * @param  tx_buffer Buffer to be written to Tx FIFO.
+  * @param  length Number of data bytes to be sent.
   * @return Operation status:
   *         - HAL_OK: Success.
   *         - HAL_BUSY: Error.
@@ -874,9 +849,9 @@ int32_t spi_slave_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
 
 /**
   * @brief  Master SPI receives data of target length under interrupt mode.
-  * @param  obj: SPI master object defined in application software.
-  * @param  rx_buffer: Buffer to save data read from SPI FIFO.
-  * @param  length: Number of data bytes to be read.
+  * @param  obj SPI master object defined in application software.
+  * @param  rx_buffer Buffer to save data read from SPI FIFO.
+  * @param  length Number of data bytes to be read.
   * @return Operation status:
   *         - HAL_OK: Success.
   *         - HAL_BUSY: Error.
@@ -914,9 +889,9 @@ int32_t spi_master_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
 
 /**
   * @brief  Master SPI sends data of target length under interrupt mode.
-  * @param  obj: SPI master object defined in application software.
-  * @param  tx_buffer: Buffer to be written to Tx FIFO.
-  * @param  length: Number of data bytes to be sent.
+  * @param  obj SPI master object defined in application software.
+  * @param  tx_buffer Buffer to be written to Tx FIFO.
+  * @param  length Number of data bytes to be sent.
   * @return Operation status:
   *         - HAL_OK: Success.
   *         - HAL_BUSY: Error.
@@ -934,7 +909,7 @@ int32_t spi_master_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
 	}
 
 	obj->state |= SPI_STATE_TX_BUSY;
-	/* as Master mode, sending data will receive data at sametime, so we need to
+	/* as Master mode, sending data will receive data at the same time, so we need to
 	drop those received dummy data */
 	if ((ret = ssi_int_write(ssi_adapter, (u8 *) tx_buffer, length)) != TRUE) {
 		obj->state &= ~SPI_STATE_TX_BUSY;
@@ -944,10 +919,10 @@ int32_t spi_master_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
 
 /**
   * @brief  Master SPI sends and receives data of target length under interrupt mode.
-  * @param  obj: SPI master object defined in application software.
-  * @param  tx_buffer: Buffer to be written to Tx FIFO.
-  * @param  rx_buffer: Buffer to save data read from SPI FIFO.
-  * @param  length: Number of data bytes to be sent and receive.
+  * @param  obj SPI master object defined in application software.
+  * @param  tx_buffer Buffer to be written to Tx FIFO.
+  * @param  rx_buffer Buffer to save data read from SPI FIFO.
+  * @param  length Number of data bytes to be sent and receive.
   * @return Operation status:
   *         - HAL_OK: Success.
   *         - HAL_BUSY: Error.
@@ -969,7 +944,7 @@ int32_t spi_master_write_read_stream(spi_t *obj, char *tx_buffer,
 	while (SSI_Busy(ssi_adapter->spi_dev));
 
 	obj->state |= SPI_STATE_RX_BUSY;
-	/* as Master mode, sending data will receive data at sametime */
+	/* as Master mode, sending data will receive data at the same time */
 	if ((ret = ssi_int_read(ssi_adapter, rx_buffer, length)) == TRUE) {
 		obj->state |= SPI_STATE_TX_BUSY;
 		if ((ret = ssi_int_write(ssi_adapter, (u8 *) tx_buffer, length)) != TRUE) {
@@ -986,9 +961,9 @@ int32_t spi_master_write_read_stream(spi_t *obj, char *tx_buffer,
 
 /**
   * @brief  Register SPI interrupt handler if needed.
-  * @param  obj: SPI object defined in application software.
-  * @param  handler: SPI Interrupt callback function.
-  * @param  id: SPI Interrupt callback parameter.
+  * @param  obj SPI object defined in application software.
+  * @param  handler SPI Interrupt callback function.
+  * @param  id SPI Interrupt callback parameter.
   */
 void spi_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id)
 {
@@ -998,9 +973,9 @@ void spi_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id)
 
 /**
   * @brief  Slave SPI receives data of target length under DMA mode.
-  * @param  obj: SPI slave object defined in application software.
-  * @param  rx_buffer: Buffer to save data read from SPI FIFO.
-  * @param  length: Number of data bytes to be read.
+  * @param  obj SPI slave object defined in application software.
+  * @param  rx_buffer Buffer to save data read from SPI FIFO.
+  * @param  length Number of data bytes to be read.
   * @return Operation status:
   *         - HAL_OK: Success.
   *         - HAL_BUSY: Error.
@@ -1027,9 +1002,9 @@ int32_t spi_slave_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
 
 /**
   * @brief  Slave SPI sends data of target length under DMA mode.
-  * @param  obj: SPI slave object defined in application software.
-  * @param  tx_buffer: Buffer to be written to Tx FIFO.
-  * @param  length: Number of data bytes to be send.
+  * @param  obj SPI slave object defined in application software.
+  * @param  tx_buffer Buffer to be written to Tx FIFO.
+  * @param  length Number of data bytes to be send.
   * @return Operation status:
   *         - HAL_OK: Success.
   *         - HAL_BUSY: Error.
@@ -1056,9 +1031,9 @@ int32_t spi_slave_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length)
 
 /**
   * @brief  Master SPI receives data of target length under DMA mode.
-  * @param  obj: SPI master object defined in application software.
-  * @param  rx_buffer: Buffer to save data read from SPI FIFO.
-  * @param  length: Number of data bytes to be read.
+  * @param  obj SPI master object defined in application software.
+  * @param  rx_buffer Buffer to save data read from SPI FIFO.
+  * @param  length Number of data bytes to be read.
   * @return Operation status:
   *         - HAL_OK: Success.
   *         - HAL_BUSY: Error.
@@ -1102,9 +1077,9 @@ int32_t spi_master_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
 
 /**
   * @brief  Master SPI sends data of target length under DMA mode.
-  * @param  obj: SPI master object defined in application software.
-  * @param  tx_buffer: Buffer to be written to Tx FIFO.
-  * @param  length: Number of data bytes to be sent.
+  * @param  obj SPI master object defined in application software.
+  * @param  tx_buffer Buffer to be written to Tx FIFO.
+  * @param  length Number of data bytes to be sent.
   * @return Operation status:
   *         - HAL_OK: Success.
   *         - HAL_BUSY: Error.
@@ -1132,10 +1107,10 @@ int32_t spi_master_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length
 
 /**
   * @brief  Master SPI sends and receives data of target length under DMA mode.
-  * @param  obj: SPI master object defined in application software.
-  * @param  tx_buffer: Buffer to be written to Tx FIFO.
-  * @param  rx_buffer: Buffer to save data read from SPI FIFO.
-  * @param  length: Number of data bytes to be sent and received.
+  * @param  obj SPI master object defined in application software.
+  * @param  tx_buffer Buffer to be written to Tx FIFO.
+  * @param  rx_buffer Buffer to save data read from SPI FIFO.
+  * @param  length Number of data bytes to be sent and received.
   * @return Operation status:
   *         - HAL_OK: Success.
   *         - HAL_BUSY: Error.
@@ -1171,10 +1146,10 @@ int32_t spi_master_write_read_stream_dma(spi_t *obj, char *tx_buffer,
 
 /**
   * @brief  Slave SPI receives data of target length under DMA mode before timeout.
-  * @param  obj: SPI slave object defined in application software.
-  * @param  rx_buffer: Buffer to save data read from SPI FIFO.
-  * @param  length: Number of data bytes to be read.
-  * @param  timeout_ms: Timeout waiting time in units of ms.
+  * @param  obj SPI slave object defined in application software.
+  * @param  rx_buffer Buffer to save data read from SPI FIFO.
+  * @param  length Number of data bytes to be read.
+  * @param  timeout_ms Timeout waiting time in units of ms.
   * @return Number of already read bytes.
   */
 int32_t spi_slave_read_stream_dma_timeout(spi_t *obj, char *rx_buffer, uint32_t length, uint32_t timeout_ms)
@@ -1230,9 +1205,9 @@ int32_t spi_slave_read_stream_dma_timeout(spi_t *obj, char *rx_buffer, uint32_t 
 
 /**
   * @brief  Slave SPI receives data of target length under DMA mode and stops if SPI bus is idle.
-  * @param  obj: SPI slave object defined in application software.
-  * @param  rx_buffer: Buffer to save data read from SPI FIFO.
-  * @param  length: Number of data bytes to be read.
+  * @param  obj SPI slave object defined in application software.
+  * @param  rx_buffer Buffer to save data read from SPI FIFO.
+  * @param  length Number of data bytes to be read.
   * @return Number of already read bytes.
   */
 int32_t spi_slave_read_stream_dma_terminate(spi_t *obj, char *rx_buffer, uint32_t length)
@@ -1274,9 +1249,8 @@ EndOfDMACS:
 }
 
 /**
-  * @brief  Slave device to flush Tx FIFO.
-  * @param  obj: SPI slave object defined in application software.
-  * @note  All data will be discarded both in Tx FIFO  and Rx FIFO.
+  * @brief  Discard all data in SPI slave Tx and Rx FIFOs.
+  * @param  obj SPI slave object defined in application software.
   */
 void spi_slave_flush_fifo(spi_t *obj)
 {
@@ -1291,10 +1265,10 @@ void spi_slave_flush_fifo(spi_t *obj)
 
 /**
   * @brief  Slave SPI receives data of target length under interrupt mode monitored before timeout.
-  * @param  obj: SPI slave object defined in application software.
-  * @param  rx_buffer: Buffer to save data read from SPI FIFO.
-  * @param  length: Number of data bytes to be read.
-  * @param  timeout_ms: Timeout waiting time in units of ms.
+  * @param  obj SPI slave object defined in application software.
+  * @param  rx_buffer Buffer to save data read from SPI FIFO.
+  * @param  length Number of data bytes to be read.
+  * @param  timeout_ms Timeout waiting time in units of ms.
   * @return Number of already read bytes.
   */
 int32_t spi_slave_read_stream_timeout(spi_t *obj, char *rx_buffer, uint32_t length, uint32_t timeout_ms)
@@ -1349,9 +1323,9 @@ int32_t spi_slave_read_stream_timeout(spi_t *obj, char *rx_buffer, uint32_t leng
 
 /**
   * @brief  Slave SPI receives data of target length under interrupt mode and stops if SPI bus is idle.
-  * @param  obj: SPI slave object defined in application software.
-  * @param  rx_buffer: Buffer to save data read from SPI FIFO.
-  * @param  length: Number of data bytes to be read.
+  * @param  obj SPI slave object defined in application software.
+  * @param  rx_buffer Buffer to save data read from SPI FIFO.
+  * @param  length Number of data bytes to be read.
   * @return Number of data bytes already read if success or -HAL_BUSY if error happens.
   */
 int32_t spi_slave_read_stream_terminate(spi_t *obj, char *rx_buffer, uint32_t length)
@@ -1392,7 +1366,7 @@ EndOfCS:
 
 /**
   * @brief  Enable SPI device clock.
-  * @param  obj: SPI object defined in application software.
+  * @param  obj SPI object defined in application software.
   */
 void spi_enable(spi_t *obj)
 {
@@ -1407,7 +1381,7 @@ void spi_enable(spi_t *obj)
 
 /**
   * @brief  Disable SPI device clock.
-  * @param  obj: SPI object defined in application software.
+  * @param  obj SPI object defined in application software.
   */
 void spi_disable(spi_t *obj)
 {

@@ -55,10 +55,13 @@ __attribute__((noinline)) void BOOT_NsStart(u32 Addr)
 	_memset((void *)stack_top, 0, stack_mid - stack_top);
 	DCache_CleanInvalidate(stack_top, stack_mid - stack_top);
 
-	/* jump to ns world */
-	nsfunc *fp = (nsfunc *)cmse_nsfptr_create(Addr);
-	fp();
+	/* TZ-ON: image1 jumps to image3 (S->S).
+	 * TZ-OFF: image2 runs in Secure state (configRUN_FREERTOS_SECURE_ONLY=1), direct call correct. */
+	FuncPtr pFunc = (FuncPtr)Addr;
+	pFunc();
 
+	/* avoid compiler to pop stack when exit BOOT_NsStart */
+	while (1);
 }
 
 /* open some always on functions in this function */
@@ -688,6 +691,10 @@ void BOOT_WakeFromPG(void)
 	vector_table = (u32 *)Image2EntryFun->VectorNS;
 	vector_table[1] = (u32)Image2EntryFun->RamWakeupFun;
 	SCB_NS->VTOR = (u32)vector_table;
+#ifndef CONFIG_TRUSTZONE
+	/* TZ-off: image2 wake handler runs in Secure state. Need to config SCB->VTOR */
+	SCB->VTOR = (u32)vector_table;
+#endif
 
 	/* Add redefine secure fault handler to vector table* */
 	Fault_Hanlder_Redirect(NULL);
@@ -704,7 +711,12 @@ void BOOT_WakeFromPG(void)
 	/* Start non-secure state software application */
 	//RTK_LOGD(TAG, "Start NonSecure @ 0x%x ...\r\n", NonSecure_ResetHandler);
 	//RTK_LOGD(TAG, "Cache Enable:%x\r\n", DCache_IsEnabled());
+#ifndef CONFIG_TRUSTZONE
 	BOOT_NsStart(vector_table[1]);
+#else
+	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__ram_image3_start__;
+	BOOT_NsStart((u32)Image3EntryFun->RamWakeupFun);
+#endif
 
 	return;
 }
@@ -1000,7 +1012,13 @@ void BOOT_Image1(void)
 	/* Start non-secure state software application */
 	RTK_LOGI(TAG, "Start NonSecure @ 0x%x ...\r\n", vector_table[1]);
 
+#ifndef CONFIG_TRUSTZONE
 	BOOT_NsStart(vector_table[1]);
+#else
+	PRAM_START_FUNCTION Image3EntryFun = (PRAM_START_FUNCTION)__ram_image3_start__;
+	RTK_LOGI(TAG, "Start IMG3 @ 0x%x ...\r\n", (u32)Image3EntryFun->RamStartFun);
+	BOOT_NsStart((u32)Image3EntryFun->RamStartFun);
+#endif
 
 	return;
 

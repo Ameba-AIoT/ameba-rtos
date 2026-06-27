@@ -39,6 +39,8 @@ typedef enum {
 	IPC_SEM_DIAGNOSE,
 	IPC_SEM_SYSON,
 	IPC_SEM_DATA_FLASH,
+	IPC_SEM_LOG_FWD_RING,	/* log_forward: ring buffer write atomicity */
+	IPC_SEM_LOG_FWD_SLOT,	/* log_forward: line-slot owner assignment */
 
 	IPC_SEM_USER = 32,	/* number 32 ~ 63 is reserved for customer use*/
 

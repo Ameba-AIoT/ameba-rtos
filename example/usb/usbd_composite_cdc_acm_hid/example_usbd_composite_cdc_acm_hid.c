@@ -28,8 +28,11 @@ static const char *const TAG = "COMP";
 #define CONFIG_USBD_COMPOSITE_HID_HID_INTR_IN_XFER_SIZE			512U
 
 // Thread priorities
-#define CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY				5U
-#define CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY			8U
+#define CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY           5U
+#define CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY        8U
+// Thread stack sizes
+#define CONFIG_USBD_COMPOSITE_INIT_THREAD_STACK_SIZE           1024U
+#define CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_STACK_SIZE        1024U
 
 /* Private types -------------------------------------------------------------*/
 
@@ -448,8 +451,9 @@ static void example_usbd_comp_acm_hid_init_thread(void *param)
 	}
 
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
-	ret = rtos_task_create(&task, "example_usbd_comp_acm_hid_hotplug_thread", example_usbd_comp_acm_hid_hotplug_thread, NULL,
-						   1024, CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_comp_acm_hid_hotplug_thread",
+						   example_usbd_comp_acm_hid_hotplug_thread, NULL,
+						   CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_check_task_fail;
 	}
@@ -491,8 +495,9 @@ void example_usbd_composite(void)
 	int ret;
 	rtos_task_t task;
 
-	ret = rtos_task_create(&task, "example_usbd_comp_acm_hid_init_thread", example_usbd_comp_acm_hid_init_thread, NULL, 1024,
-						   CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_comp_acm_hid_init_thread",
+						   example_usbd_comp_acm_hid_init_thread, NULL,
+						   CONFIG_USBD_COMPOSITE_INIT_THREAD_STACK_SIZE, CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD COMP thread fail\n");
 	}

@@ -17,7 +17,7 @@
   */
 
 /**
- * @brief  Fills the EEE_Config structure with default IEEE 802.3az values.
+ * @brief  Fill the EEE_Config structure with default IEEE 802.3az values.
  *         Use this to ensure safe defaults before tweaking specific parameters.
  * @param  EEE_Config Pointer to the EEE configuration structure.
  */
@@ -56,7 +56,7 @@ void Ethernet_EEE_StructInit(ETH_EEE_InitTypeDef *EEE_Config)
 	EEE_Config->WakePolicy = ETH_EEE_WAKE_ANY_DATA;
 }
 /**
-  * @brief  Initializes the EEE (Energy Efficient Ethernet) functionality according to the 6-step procedure.
+  * @brief  Initialize the EEE (Energy Efficient Ethernet) functionality according to the 6-step procedure.
   * @param  ETHx Pointer to ETH register base address.
   * @param  EEE_Config Pointer to the configuration structure.
   */
@@ -213,7 +213,7 @@ void Ethernet_ClearAllINT(void)
 /**
  * @brief  Get currently pending and enabled interrupt events.
  *         Converts hardware register bits to logical software events.
- * @return Bitmask of pending events (enum eth_link_event).
+ * @return Bitmask of pending events (@ref eth_link_event).
  */
 u32 Ethernet_GetPendingINT(void)
 {
@@ -294,9 +294,9 @@ void Ethernet_ClearINT(uint32_t int_events)
 }
 
 /**
- *  @brief To set the start address of Tx/Rx descriptor ring.
+ *  @brief  Set the start address of the TX/RX descriptor ring.
  *
- *  @param[in]  ETH_InitStruct The pointer to ETH_InitTypeDef.
+ *  @param  ETH_InitStruct The pointer to @ref ETH_InitTypeDef.
  */
 void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct)
 {
@@ -319,9 +319,9 @@ void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct)
 }
 
 /**
- *  @brief To set the ethernet MAC address.
+ *  @brief  Set the Ethernet MAC address.
  *
- *  @param[in]  ETH_MacAddr The MAC address pointer.
+ *  @param  ETH_MacAddr The MAC address pointer.
  */
 void Ethernet_SetMacAddr(u8 *ETH_MacAddr)
 {
@@ -338,8 +338,8 @@ void Ethernet_SetMacAddr(u8 *ETH_MacAddr)
 }
 
 /**
-  * @brief  To set the ethernet refclk mode.
-  * @param  refclk_mode 0 ETH_REFCLK_PHY2MAC   1 ETH_REFCLK_MAC2PHY
+  * @brief  Set the Ethernet RMII reference clock direction.
+  * @param  refclk_mode Reference clock direction. See @ref eth_refclk_dir.
   */
 void Ethernet_SetRefclkDirec(u32 refclk_mode)
 {
@@ -380,11 +380,11 @@ void Ethernet_AutoPolling(u32 opt)
 }
 
 /**
- *  @brief Get current tx pkt buf address
+ *  @brief  Get the TX packet buffer address of the current TX descriptor.
  *
- *  @param[in]  ETH_InitStruct The pointer to ETH_InitTypeDef.
+ *  @param  ETH_InitStruct The pointer to @ref ETH_InitTypeDef.
  *
- *  @returns    The tx pkt buf address, or NULL if descriptor not available.
+ *  @return The TX packet buffer address, or NULL if no descriptor is available.
  */
 u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct)
 {
@@ -428,12 +428,11 @@ u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct)
 }
 
 /**
- *  @brief  Update TX descriptor and send packet using Meta Data.
+ *  @brief  Update the TX descriptor with metadata and trigger packet transmission.
  *
- *  @param[in]  ETH_InitStruct Pointer to Ethernet initialization structure.
- *  @param[in]  meta           Pointer to packet metadata (Length, VLAN, etc.).
+ *  @param  ETH_InitStruct Pointer to Ethernet initialization structure.
+ *  @param  meta           Pointer to packet metadata (Length, VLAN, etc.).
  *
- *  @returns    None.
  */
 void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta)
 {
@@ -500,11 +499,11 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDe
 
 
 /**
- * @brief  Get current RX packet buffer address and extract Meta Data.
+ * @brief  Get the current RX packet buffer address and extract packet metadata.
  *
- * @param[in]  ETH_InitStruct Pointer to Ethernet initialization structure
+ * @param  ETH_InitStruct Pointer to Ethernet initialization structure
  *                            containing the RX descriptor ring and current index.
- * @param[out] meta           Pointer to Meta Data to be filled by driver.
+ * @param meta           Pointer to metadata structure to be populated by the driver.
  * @return Packet buffer address, or NULL if no complete frame is available.
  */
 u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta)
@@ -597,11 +596,10 @@ u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta)
 }
 
 /**
- *  @brief Update rxdesc and return to DMA (Supports Jumbo Frames)
+ *  @brief  Return the current RX descriptor to DMA (supports jumbo frames).
  *
- *  @param[in]  ETH_InitStruct The pointer to ETH_InitTypeDef.
+ *  @param  ETH_InitStruct The pointer to @ref ETH_InitTypeDef.
  *
- *  @returns    None.
  */
 void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct)
 {
@@ -658,9 +656,9 @@ void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct)
 }
 
 /**
- *  @brief To get the link status.
+ *  @brief  Get the Ethernet link status.
  *
- *  @returns    1 for link up, 0 for link down.
+ *  @return    1 for link up, 0 for link down.
  */
 u32 Ethernet_GetLinkStatus(void)
 {
@@ -687,7 +685,7 @@ void Ethernet_GetSpeedDuplex(void)
 }
 
 /**
- * @brief Waits for the PHY MDIO bus to become idle.
+ * @brief Wait for the PHY MDIO bus to become idle.
  *        This function polls the MDIO busy flag until it is cleared or a timeout occurs.
  * @param ETHx         Pointer to the Ethernet MAC register structure.
  * @param timeout_us   Timeout threshold in microseconds.
@@ -709,11 +707,10 @@ static inline int Ethernet_WaitPhyIdle(ETHERNET_TypeDef *ETHx, uint32_t timeout_
 /**
  * @brief      Read data from MDIO bus (Clause 22).
  *
- * Replaces the legacy Ethernet_ReadPhyReg function.
- *
- * @param[in]  phy_addr  PHY address (0-31).
- * @param[in]  reg_addr  Register address (0-31).
- * @param[out] data      Pointer to store the read value.
+
+ * @param  phy_addr  PHY address (0-31).
+ * @param  reg_addr  Register address (0-31).
+ * @param data      Pointer to store the read value.
  *
  * @return     RTK_SUCCESS on success, negative error code on failure.
  */
@@ -750,11 +747,10 @@ int Ethernet_ReadPhyReg(uint8_t phy_addr, uint8_t reg_addr, uint16_t *data)
 /**
  * @brief      Write data to MDIO bus (Clause 22).
  *
- * Replaces the legacy Ethernet_WritePhyReg function.
- *
- * @param[in]  phy_addr  PHY address (0-31).
- * @param[in]  reg_addr  Register address (0-31).
- * @param[in]  data      Data to write.
+
+ * @param  phy_addr  PHY address (0-31).
+ * @param  reg_addr  Register address (0-31).
+ * @param  data      Data to write.
  *
  * @return     RTK_SUCCESS on success, negative error code on failure.
  */
@@ -780,9 +776,9 @@ int Ethernet_WritePhyReg(uint8_t phy_addr, uint8_t reg_addr, uint16_t data)
 }
 
 /**
-  * @brief  Initialize ETH_InitTypeDef.
-  * @param  ETH_InitStruct The pointer to ETH_InitTypeDef.
-  * @param  PHY_Dev The pointer to eth_phy_dev.
+  * @brief  Initialize @ref ETH_InitTypeDef.
+  * @param  ETH_InitStruct The pointer to @ref ETH_InitTypeDef.
+  * @param  PHY_Dev The pointer to @ref eth_phy_dev.
   */
 void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PHY_Dev)
 {
@@ -802,8 +798,7 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 	ETH_InitStruct->MacConfig.Bits.RefClkDir       = ETH_REFCLK_MAC2PHY;    /* Output Ref Clk to PHY */
 	ETH_InitStruct->MacConfig.Bits.RefClkPhase     = ETH_SAMPLED_ON_RISING_EDGE;
 	ETH_InitStruct->MacConfig.Bits.RxJumbo         = ETH_RX_JUMBO_DISABLE;
-	/* Default to Promiscuous for debug. Change to UNICAST for production. */
-	ETH_InitStruct->MacConfig.Bits.PktFilterConfig = ETH_FILTER_PROMISCUOUS;
+	ETH_InitStruct->MacConfig.Bits.PktFilterConfig = ETH_FILTER_DEFAULT_UNICAST; /* Accept unicast + broadcast */
 	ETH_InitStruct->MacConfig.Bits.EEEEnable       = DISABLE;               /* Disable EEE */
 	ETH_InitStruct->MacConfig.Bits.AutoNego        = ETH_NWAY_ENABLE;       /* Enable Auto-Negotiation */
 
@@ -837,7 +832,7 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 
 /**
   * @brief  Initialize Ethernet MAC, PHY, and DMA descriptors.
-  * @param  ETH_InitStruct Pointer to ETH_InitTypeDef containing the full Ethernet configuration.
+  * @param  ETH_InitStruct Pointer to @ref ETH_InitTypeDef containing the full Ethernet configuration.
   * @return RTK_SUCCESS on success, or a negative error code:
   *         - -RTK_ERR_BADARG if ETH_InitStruct, phy_dev, or phy_dev->ops is NULL.
   *         - -RTK_ERR_TIMEOUT if MAC reset or auto-negotiation timed out.
@@ -1002,7 +997,7 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 		Ethernet_EEE_Init(ETHx, ETH_InitStruct->EEE_Config);
 		phy->ops->cfg_eee(phy, ENABLE);
 	}
-	/* Packet filer*/
+	/* Packet filter */
 	filter_mode = ETH_InitStruct->MacConfig.Bits.PktFilterConfig;
 	/* 3. Set bits according to the selected mode */
 	switch (filter_mode) {

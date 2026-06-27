@@ -163,6 +163,14 @@ typedef struct {
 	 * @param[in] status: The new USB device status.
 	 */
 	void (*status_changed)(u8 old_status, u8 status);
+
+	/**
+	 * @brief Called when the USB device resumes from suspend (wakeup).
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @details Indicates that the USB bus is active again and the upper layer can resume normal TRX.
+	 */
+	void (*wakeup)(void);
 } usbd_inic_cb_t;
 
 typedef struct {

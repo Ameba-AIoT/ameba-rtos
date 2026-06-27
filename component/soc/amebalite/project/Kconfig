@@ -50,6 +50,8 @@ endmenu
 
 rsource "../../../soc/common/image3/Kconfig.trustzone"
 
+rsource "../../../soc/Kconfig"
+
 menu "CONFIG Link Option"
     choice
         prompt "IMG1(Bootloader) running on FLASH or SRAM?"

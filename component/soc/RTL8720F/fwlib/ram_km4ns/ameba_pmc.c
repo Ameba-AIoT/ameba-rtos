@@ -15,7 +15,7 @@
 void SOCPS_SleepInitEntry(struct PSCFG_TypeDef *ps_config)
 {
 	/*2. Clock configuration*/
-	SOCPS_ClockSourceConfig(ps_config->xtal_mode_in_sleep, ps_config->keep_osc2p5m_on);
+	SOCPS_ClockSourceConfig(ps_config->xtal_mode_in_sleep, ps_config->keep_osc2m_on);
 
 	/*3. Power settings*/
 	SOCPS_PowerManage();

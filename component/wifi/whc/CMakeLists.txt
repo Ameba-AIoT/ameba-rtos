@@ -189,6 +189,14 @@ elseif(CONFIG_WHC_HOST)
             whc_host_rtos/ipc/whc_ipc_host_api_ext.c
             whc_ipc_msg_queue.c
         )
+        if(CONFIG_WIFI_NAN_HOST_APP)
+            ameba_list_append(private_sources
+                whc_host_rtos/ipc/whc_ipc_host_nan.c
+            )
+            ameba_list_append(private_definitions
+                CONFIG_WIFI_NAN_HOST_APP
+            )
+        endif()
         if(CONFIG_PLATFORM_ZEPHYR)
             ameba_list_append(private_sources
                 whc_host_rtos/ipc/whc_ipc_host_zephyr.c

@@ -22,9 +22,8 @@
 #define NAT_AP_GW_ADDR2 43
 #define NAT_AP_GW_ADDR3 1
 
-extern void dns_relay_service_init(void);
+#include "dns_proxy.h"
 extern void ip_napt_reinitialize(void);
-extern void ip_napt_sync_dns_server_data(void);
 
 
 static int wifi_repeater_ap_config_complete = 0;
@@ -232,7 +231,7 @@ static void poll_ip_changed_thread(void *param)
 		if (1 == wifi_repeater_ap_config_complete && oldip != newip) {
 			RTK_LOGI(TAG, "%s(%d)oldip=%x,newip=%x\n", __FUNCTION__, __LINE__, oldip, newip);
 			ip_napt_reinitialize();
-			ip_napt_sync_dns_server_data();
+			dns_proxy_update_upstream_servers();
 			ip_nat_avoid_confliction_ip();
 
 			oldip = newip;
@@ -355,7 +354,8 @@ void wifi_nat_repeater_init_thread(void *param)
 		goto exit;
 	}
 
-	dns_relay_service_init();
+	dns_proxy_init(DNS_PROXY_CACHE_MAX_ENTRIES, DNS_PROXY_TX_MAX_PENDING);
+	dns_proxy_start(DNS_PROXY_LISTEN_PORT);
 
 exit:
 	rtos_task_delete(NULL);

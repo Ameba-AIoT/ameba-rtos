@@ -126,12 +126,10 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 {
 	BaseType_t ret;
 
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
-	if (uxPortSchedulerStart[portPrimaryCoreID] == pdFALSE) {
+	/* Can't take mutex if shedular is not started */
+	if (rtos_sched_get_state() == RTOS_SCHED_NOT_STARTED) {
 		return RTK_FAIL;
 	}
-#endif
 
 	/*
 	 * NOTE: xSemaphoreTakeFromISR() is NOT designed for mutex!
@@ -165,12 +163,10 @@ int rtos_mutex_give(rtos_mutex_t p_handle)
 {
 	BaseType_t ret;
 
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
-	if (uxPortSchedulerStart[portPrimaryCoreID] == pdFALSE) {
+	/* Can't give mutex if shedular is not started */
+	if (rtos_sched_get_state() == RTOS_SCHED_NOT_STARTED) {
 		return RTK_FAIL;
 	}
-#endif
 
 	/*
 	 * NOTE: xSemaphoreGiveFromISR() is NOT designed for mutex!

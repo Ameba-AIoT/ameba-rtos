@@ -70,9 +70,11 @@
 /* Max 4KB sector erase time: typical 70ms for GD25Q256D, max 400ms for GD25Q256D */
 #define WHC_XFER_FLASH_ERASE_4KB_TIMEOUT		600
 
-/* Max page program time: typical 0.5ms for GD25Q128E, max 3ms for W25Q256JV */
-/* Take 0.5ms * 10 = 5ms */
-#define WHC_XFER_PAGE_WRITE_TIMEOUT			5
+/* Per 1KB XFER page = 4 flash 256B pages.  W25Q256JV max page-program is 3ms,
+ * so worst-case 4 * 3 = 12ms.  Add ~100% margin for host scheduling jitter
+ * (observed on Raspberry Pi: random pages timing out at 5ms / 10ms).
+ * Underestimating here causes random -ETIMEDOUT during application download. */
+#define WHC_XFER_PAGE_WRITE_TIMEOUT			25
 
 /* Read flash with 1IO@10MHz(10Mbps), ~0.8ms/KB */
 /* Take 2ms/KB */

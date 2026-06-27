@@ -88,7 +88,7 @@
 #if defined(CONFIG_MP_INCLUDED) || defined(CONFIG_PHYDM_CMD) /*halbb debug cmd need bigger stack size, for sscanf format float*/
 #define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (1024*4)
 #elif defined(CONFIG_WIFI_NAN_ENABLE)
-#define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (256*11)
+#define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (1024*4)	/* NANDOW path is deep */
 #elif defined(CONFIG_PLATFORM_ZEPHYR)
 #define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (1024*4)
 #else

@@ -131,6 +131,5 @@ int example_raw_kscan_regular_scan(void)
 		printf("Cannot create keyscan_regular_scan demo task\n\r");
 	}
 
-	rtos_sched_start();
 	return 0;
 }

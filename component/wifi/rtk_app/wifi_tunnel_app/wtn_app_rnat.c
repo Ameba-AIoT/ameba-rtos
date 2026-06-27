@@ -25,15 +25,14 @@
 #include "wifi_api.h"
 #include "dhcp/dhcps.h"
 #include "wtn_app_rnat.h"
+#include "dns_proxy.h"
 
 #ifdef CONFIG_RNAT_EN
 static int wifi_repeater_ap_config_complete = 0;
 rtos_task_t rnat_ap_start_task_hdl = NULL;
 rtos_task_t rnat_poll_ip_task_hdl = NULL;
 
-extern void dns_relay_service_init(void);
 extern void ip_napt_reinitialize(void);
-extern void ip_napt_sync_dns_server_data(void);
 
 static void rnat_wifi_stop_ap(void)
 {
@@ -168,7 +167,7 @@ static void rnat_poll_ip_changed_thread(void *param)
 		if (1 == wifi_repeater_ap_config_complete && oldip != newip) {
 			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s(%d)oldip=%x,newip=%x\n", __FUNCTION__, __LINE__, oldip, newip);
 			ip_napt_reinitialize();
-			ip_napt_sync_dns_server_data();
+			dns_proxy_update_upstream_servers();
 			rnat_avoid_confliction_ip();
 			oldip = newip;
 		}
@@ -276,7 +275,8 @@ void wtn_rnat_ap_init(u8 enable)
 			if (rtos_task_create(&rnat_poll_ip_task_hdl, ((const char *)"rnat_poll_ip_changed_thread"), rnat_poll_ip_changed_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
 			}
-			dns_relay_service_init();
+			dns_proxy_init(DNS_PROXY_CACHE_MAX_ENTRIES, DNS_PROXY_TX_MAX_PENDING);
+			dns_proxy_start(DNS_PROXY_LISTEN_PORT);
 		}
 	} else {
 		wifi_repeater_ap_config_complete = 0;

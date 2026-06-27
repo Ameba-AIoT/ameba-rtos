@@ -115,7 +115,5 @@ int example_raw_thermal(void)
 		printf("Cannot create thermal task\n\r");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

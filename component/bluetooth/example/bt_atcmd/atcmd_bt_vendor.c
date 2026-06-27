@@ -76,8 +76,10 @@ rtk_bt_app_conf_t app_conf = {
 	.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED,
 	.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED,
 #endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	.max_tx_octets = 0x40,
 	.max_tx_time = 0x200,
+#endif
 };
 
 int atcmd_bt_enable(int argc, char *argv[])

@@ -8,8 +8,7 @@
 
 static const char *const TAG = "GPIO";
 
-#define GPIO_IRQ_TABLE_MAX_NUM		0x4 /*!< GPIO_IRQ_TABLE_MAX_NUM */
-struct GPIO_IrqContext GPIO_IrqTable[GPIO_IRQ_TABLE_MAX_NUM] = {0};
+struct GPIO_IrqContext GPIO_IrqTable[CONFIG_GPIO_IRQ_TABLE_MAX_NUM] = {0};
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -64,7 +63,7 @@ u32 GPIO_INTHandler(void *pData)
 		if (IsrMapPin & BIT(i)) {
 			pin_name = PinName(port_num, i);
 
-			for (idx = 0; idx < GPIO_IRQ_TABLE_MAX_NUM; idx++) {
+			for (idx = 0; idx < CONFIG_GPIO_IRQ_TABLE_MAX_NUM; idx++) {
 				/* Search UsrIrqHandler which match the IrqPinName in IrqTable */
 				if (pin_name == GPIO_IrqTable[idx].IrqPinName) {
 					if ((GPIO_IrqTable[idx].IrqIdleEntryFlag) == GPIO_IRQ_ENTRY_USED_MAGIC_NUMBER) {/* fix for entry PinName initial value is 0x0 */
@@ -100,7 +99,7 @@ void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData)
 	u32 idx;
 
 	/* step1: check whether the GPIO_Pin has owned one entry */
-	for (idx = 0; idx < GPIO_IRQ_TABLE_MAX_NUM; idx++) {
+	for (idx = 0; idx < CONFIG_GPIO_IRQ_TABLE_MAX_NUM; idx++) {
 		if ((GPIO_Pin == (u32)(GPIO_IrqTable[idx].IrqPinName)) && (GPIO_IRQ_ENTRY_USED_MAGIC_NUMBER == (GPIO_IrqTable[idx].IrqIdleEntryFlag))) {
 			/* found and reuse this entry */
 			break;
@@ -108,8 +107,8 @@ void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData)
 	}
 
 	/* step2: find an idle entry when the GPIO_Pin hasn't owned one entry */
-	if (idx == GPIO_IRQ_TABLE_MAX_NUM) {
-		for (idx = 0; idx < GPIO_IRQ_TABLE_MAX_NUM; idx++) {
+	if (idx == CONFIG_GPIO_IRQ_TABLE_MAX_NUM) {
+		for (idx = 0; idx < CONFIG_GPIO_IRQ_TABLE_MAX_NUM; idx++) {
 			if ((GPIO_IrqTable[idx].IrqIdleEntryFlag) != GPIO_IRQ_ENTRY_USED_MAGIC_NUMBER) {
 				/* found an idle entry */
 				break;
@@ -118,19 +117,20 @@ void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData)
 	}
 
 	/* step3: register info to IrqTable for idle or reused entry */
-	if (idx != GPIO_IRQ_TABLE_MAX_NUM) {
+	if (idx != CONFIG_GPIO_IRQ_TABLE_MAX_NUM) {
 		GPIO_IrqTable[idx].IrqPinName = (u16)GPIO_Pin;
 		GPIO_IrqTable[idx].UsrIrqHandler = (GPIO_IRQ_FUN)IrqHandler;
 		GPIO_IrqTable[idx].UsrIrqData = IrqData;
 
 		GPIO_IrqTable[idx].IrqIdleEntryFlag = GPIO_IRQ_ENTRY_USED_MAGIC_NUMBER;
 	} else {
-		RTK_LOGE(TAG, "No idle entry in GPIO_IrqTable, please enlarge GPIO_IRQ_TABLE_MAX_NUM !!! \r\n");
+		RTK_LOGE(TAG, "No idle entry in GPIO_IrqTable, please enlarge CONFIG_GPIO_IRQ_TABLE_MAX_NUM !!! \r\n");
 	}
 }
 
 /**
   * @brief  Unregister a user interrupt handler for a specified pin
+  * @param  GPIO_Pin GPIO pin num from PinName.
   */
 void GPIO_UserUnRegIrq(u32 GPIO_Pin)
 {
@@ -156,7 +156,7 @@ void GPIO_UserUnRegIrq(u32 GPIO_Pin)
 	GPIO->GPIO_INT_EOI = (1 << pin_num);
 
 	/* step3: UnRegister IrqTable */
-	for (idx = 0; idx < GPIO_IRQ_TABLE_MAX_NUM; idx++) {
+	for (idx = 0; idx < CONFIG_GPIO_IRQ_TABLE_MAX_NUM; idx++) {
 		if (GPIO_Pin == (u32)(GPIO_IrqTable[idx].IrqPinName)) {
 			GPIO_IrqTable[idx].IrqPinName = 0x0;
 			GPIO_IrqTable[idx].UsrIrqHandler = (GPIO_IRQ_FUN)NULL;

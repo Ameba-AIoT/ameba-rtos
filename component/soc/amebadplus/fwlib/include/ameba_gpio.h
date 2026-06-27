@@ -309,7 +309,7 @@ typedef struct {
 typedef void (*GPIO_IRQ_FUN)(void *Data, u32 Id);
 
 /**
-  * @brief  GPIO USER IRQ Function Definition
+  * @brief  GPIO User IRQ Function Definition
   */
 typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 
@@ -350,6 +350,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 #define GPIO_INT_Trigger_EDGE		0x1 /*!< This interrupt is edge trigger */
 #define GPIO_INT_Trigger_BOTHEDGE	0x2 /*!< This interrupt is both-edge trigger */
 
+/** @brief Check if GPIO interrupt trigger type is valid. */
 #define IS_GPIOIT_LEVEL_TYPE(TYPE)		(((TYPE) == GPIO_INT_Trigger_LEVEL) || \
 										((TYPE) == GPIO_INT_Trigger_EDGE) || \
 										((TYPE) == GPIO_INT_Trigger_BOTHEDGE))
@@ -363,6 +364,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 #define GPIO_INT_POLARITY_ACTIVE_LOW		0x0 /*!< Setting interrupt to low active: falling edge or low level */
 #define GPIO_INT_POLARITY_ACTIVE_HIGH		0x1 /*!< Setting interrupt to high active: rising edge or high level */
 
+/** @brief Check if GPIO interrupt polarity type is valid. */
 #define IS_GPIOIT_POLARITY_TYPE(TYPE)		(((TYPE) == GPIO_INT_POLARITY_ACTIVE_LOW) || \
 											((TYPE) == GPIO_INT_POLARITY_ACTIVE_HIGH))
 /**
@@ -375,6 +377,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 #define GPIO_INT_DEBOUNCE_DISABLE			0x0 /*!< Disable interrupt debounce */
 #define GPIO_INT_DEBOUNCE_ENABLE			0x1 /*!< Enable interrupt debounce */
 
+/** @brief Check if GPIO interrupt debounce type is valid. */
 #define IS_GPIOIT_DEBOUNCE_TYPE(TYPE)		(((TYPE) == GPIO_INT_DEBOUNCE_DISABLE) || \
 											((TYPE) == GPIO_INT_DEBOUNCE_ENABLE))
 /**
@@ -396,6 +399,7 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 #define GPIO_PORT_A				0x0 /*!< Port number A */
 #define GPIO_PORT_B				0x1 /*!< Port number B */
 
+/** @brief Check if GPIO port number is valid. */
 #define IS_GPIO_PORT_NUM(PORT)	((PORT) == GPIO_PORT_A || \
 								(PORT) == GPIO_PORT_B)
 /**

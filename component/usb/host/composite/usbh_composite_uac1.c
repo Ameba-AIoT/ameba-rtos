@@ -447,7 +447,7 @@ static u32 usbh_composite_uac_get_audio_format_info(void)
 static void usbh_composite_uac_deinit_pipe(u8 dir)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	usb_host_t *host = uac->driver->host;
+	usb_host_t *host = (uac->driver != NULL) ? uac->driver->host : NULL;
 	usbh_composite_uac_as_itf_info_t *as_itf;
 	usbh_pipe_t *pipe = NULL;
 
@@ -457,7 +457,7 @@ static void usbh_composite_uac_deinit_pipe(u8 dir)
 	}
 
 	pipe = &(as_itf->pipe);
-	if (pipe->pipe_num) {
+	if (pipe->pipe_num && host != NULL) {
 		usbh_close_pipe(host, pipe);
 		pipe->pipe_num = 0U;
 	}
@@ -1429,7 +1429,7 @@ static int usbh_composite_uac_attach(usb_host_t *host)
 	 * isochronous timing model in this driver. Print a warning but allow
 	 * the attach to proceed-some devices may still work. */
 	if (host->dev_speed == USB_SPEED_HIGH) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Not support USB 2.0(High Speed), please use USB 1.1(Full Speed)\n");
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Device at HS attach, UAC1 designed for FS\n");
 	}
 
 	int status = HAL_ERR_UNKNOWN;
@@ -1613,7 +1613,13 @@ static int usbh_composite_uac_sof(usb_host_t *host)
 		}
 	}
 
-	if (uac->ctrl_state != UAC_STATE_CTRL_IDLE) {
+	/* Trigger ctrl_setting() from SOF only after enumeration is complete.
+	 * During the init scan (get_volume_info polled by setup()), ctrl_state is
+	 * set to SCAN_* states which are not handled by ctrl_setting() and would
+	 * be killed by the default case. Guarding with connect_state ensures the
+	 * SCAN sequence is never hijacked by a SOF-triggered ctrl_setting(). */
+	if ((uac->ctrl_state != UAC_STATE_CTRL_IDLE) &&
+		(host->connect_state >= USBH_STATE_SETUP)) {
 		usbh_notify_composite_class_state_change(host, 0x00, USBH_COMPOSITE_UAC_EVENT);
 	}
 	return HAL_OK;
@@ -1849,10 +1855,14 @@ static int usbh_composite_uac_ctrl_setting(usb_host_t *host, u32 msg)
 static int usbh_composite_uac_process(usb_host_t *host, usbh_event_t *event)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
-	int ret = HAL_OK;
+	/* Default HAL_BUSY: only claim (return HAL_OK) events that hit our own pipe,
+	   so a composite peer (e.g. HID) still gets events that are not ours. */
+	int ret = HAL_BUSY;
 
 	switch (uac->xfer_state) {
 	case UAC_STATE_TRANSFER:
+		/* UAC only drives the control endpoint (pipe 0) here; ISOC pipes are
+		   serviced in the completed callback. Foreign pipes stay HAL_BUSY. */
 		if ((event) && (event->pipe_num == 0x00)) {
 			ret = usbh_composite_uac_ctrl_setting(host, 0);
 		}
@@ -2112,10 +2122,15 @@ static int usbh_composite_uac_ep_buf_ctrl_init(usbh_composite_uac_buf_ctrl_t *bu
 		return ret;
 	}
 
-	usb_ringbuf_manager_init(&(buf_ctrl->buf_manager), buf_list_cnt, buf_ctrl->mps, 1);
+	ret = usb_ringbuf_manager_init(&(buf_ctrl->buf_manager), buf_list_cnt, buf_ctrl->mps, 1);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ringbuf init fail\n");
+		return ret;
+	}
 
 	if (usb_os_sema_create(&(buf_ctrl->isoc_sema)) != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "isoc sema create fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ISOC sema create fail\n");
+		usb_ringbuf_manager_deinit(&(buf_ctrl->buf_manager));
 		buf_ctrl->isoc_sema = NULL;
 		buf_ctrl->sema_valid = 0;
 		return HAL_ERR_MEM;
@@ -2204,12 +2219,12 @@ int usbh_composite_uac_init(usbh_composite_host_t *driver, usbh_composite_uac_us
 	}
 
 	if (usb_os_lock_create(&uac->alt_set_mutex) != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "alt_set_mutex create fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Mutex create fail\n");
 		uac->alt_set_mutex = NULL;
 		goto cb_init_fail;
 	}
 	if (usb_os_sema_create(&uac->ctrl_done_sema) != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "ctrl_done_sema create fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ctrl sema create fail\n");
 		uac->ctrl_done_sema = NULL;
 		goto cb_init_fail;
 	}
@@ -2392,7 +2407,7 @@ int usbh_composite_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sa
 
 		/* full speed*/
 		if (ep_desc->bInterval == 0) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid bInterval=0\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "FS interval is zero\n");
 			usb_os_unlock(uac->alt_set_mutex);
 			return HAL_ERR_PARA;
 		}

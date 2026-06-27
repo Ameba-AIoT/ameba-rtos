@@ -314,6 +314,7 @@ static void bt_stack_mgr_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 		if (p_link) {
 			app_free_br_link(p_link);
 		}
+		gap_br_set_radio_mode(GAP_RADIO_MODE_VISIBLE_CONNECTABLE, false, 0);
 		{
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_GAP, RTK_BT_BR_GAP_ACL_CONN_FAIL, sizeof(rtk_bt_br_acl_conn_fail_t));
 			if (!p_evt) {

@@ -12,12 +12,16 @@
  * See tools/ameba/ameba_dev_mcp/docs/board_info.md for full schema.
  */
 {
-  "schema_version": 1,
+  "schema_version": 1.1,
 
   "defaults": {
     /* Both flash and serial monitor default to 1.5 Mbps. */
     "baudrate": 1500000,
     "monitor_baudrate": 1500000,
+    /* Flash type of the board: "nor" / "nand" / "ram". A given project
+     * may be flashable to either nor or nand depending on the board, so
+     * this is bound to the board, not the project. */
+    "memory_type": "nor",
     /* Erase entire flash chip before each flash. */
     "chip_erase": false
   },
@@ -34,6 +38,7 @@
    *     "soc": "RTL8730E",
    *     "transport": "remote",
    *     "port": "COM5",
+   *     "memory_type": "nand",          // overrides defaults.memory_type
    *     "remote": { "host": "192.168.1.100", "port": 58916, "password": "" }
    *   }
    *

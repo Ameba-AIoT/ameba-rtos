@@ -194,8 +194,8 @@ typedef struct {
 #endif
 	usbh_composite_host_t *driver;            /**< Parent composite driver handle */
 	usbh_composite_hid_usr_cb_t *cb;          /**< User callback pointers */
-	u8 *report_desc;                          /**< Raw Report Descriptor buffer */
-	u8 *hid_ctrl_buf;                         /**< Buffer for control transfers */
+	u8 *report_desc;                          /**< Alias pointer into hid_ctrl_buf (zero-copy). */
+	u8 *hid_ctrl_buf;                         /**< General-purpose control transfer buffer (512 B); also backs report_desc.*/
 	u8 report_desc_status;                    /**< Status of report descriptor retrieval */
 	u8 itf_idx;                               /**< Interface Index */
 	u8 itf_alt_idx;                           /**< Interface Alternate Setting Index */

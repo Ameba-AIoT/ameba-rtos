@@ -11,6 +11,15 @@
 
 /* Private defines -----------------------------------------------------------*/
 
+/* UVC descriptor fixed-length fields */
+#define USBH_UVC_PARSE_SU_FIXED_LEN              (5U)
+#define USBH_UVC_PARSE_XU_FIXED_LEN              (22U)
+#define USBH_UVC_PARSE_FRAME_DESC_HEADER_LEN     (26U)
+#define USBH_UVC_PARSE_FRAME_BASED_FMT_MIN_LEN   (21U)
+#define USBH_UVC_PARSE_INTERVAL_ENTRY_SIZE       (4U)
+#define USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT     (3U)
+#define USBH_UVC_PARSE_4BYTE_ALIGN_MASK          (3U)
+
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -57,7 +66,7 @@ static void usbh_uvc_entity_t_free(usbh_uvc_entity_t *entity)
   * @param	desc: given descriptor buffer
   * @retval Status
   */
-static u8 usbh_uvc_parse_entity(u8 *desc)
+static int usbh_uvc_parse_entity(u8 *desc)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_vc_t *vc_intf = &uvc->uvc_desc.vc_intf;
@@ -71,15 +80,22 @@ static u8 usbh_uvc_parse_entity(u8 *desc)
 	case USBH_UVC_VC_INPUT_TERMINAL:
 		vc_intf->entity_num ++;
 		entity = usbh_uvc_entity_t_alloc(0);
+		if (entity == NULL) {
+			return HAL_ERR_MEM;
+		}
 		entity->p = desc;
 		entity->id = desc[3];
 		entity->source[0] = 0;
 		entity->type = USBH_UVC_VC_INPUT_TERMINAL;
+
 		break;
 
 	case USBH_UVC_VC_OUTPUT_TERMINAL:
 		vc_intf->entity_num ++;
 		entity = usbh_uvc_entity_t_alloc(0);
+		if (entity == NULL) {
+			return HAL_ERR_MEM;
+		}
 		entity->p = desc;
 		entity->id = desc[3];
 		entity->source[0] = desc[7];
@@ -89,6 +105,9 @@ static u8 usbh_uvc_parse_entity(u8 *desc)
 	case USBH_UVC_VC_SELECTOR_UNIT:
 		vc_intf->entity_num ++;
 		entity = usbh_uvc_entity_t_alloc(desc[4]);
+		if (entity == NULL) {
+			return HAL_ERR_MEM;
+		}
 		entity->p = desc;
 		entity->id = desc[3];
 		usb_os_memcpy(entity->source, &desc[5], desc[4]);
@@ -98,6 +117,9 @@ static u8 usbh_uvc_parse_entity(u8 *desc)
 	case USBH_UVC_VC_PROCESSING_UNIT:
 		vc_intf->entity_num ++;
 		entity = usbh_uvc_entity_t_alloc(0);
+		if (entity == NULL) {
+			return HAL_ERR_MEM;
+		}
 		entity->p = desc;
 		entity->id = desc[3];
 		entity->source[0] = desc[4];
@@ -107,6 +129,9 @@ static u8 usbh_uvc_parse_entity(u8 *desc)
 	case USBH_UVC_VC_EXTENSION_UNIT:
 		vc_intf->entity_num ++;
 		entity = usbh_uvc_entity_t_alloc(desc[21]);
+		if (entity == NULL) {
+			return HAL_ERR_MEM;
+		}
 		entity->p = desc;
 		entity->id = desc[3];
 		usb_os_memcpy(entity->source, &desc[22], desc[21]);
@@ -116,6 +141,9 @@ static u8 usbh_uvc_parse_entity(u8 *desc)
 	case USBH_UVC_VC_ENCODING_UNIT:
 		vc_intf->entity_num ++;
 		entity = usbh_uvc_entity_t_alloc(0);
+		if (entity == NULL) {
+			return HAL_ERR_MEM;
+		}
 		entity->p = desc;
 		entity->id = desc[3];
 		entity->source[0] = desc[4];
@@ -139,15 +167,17 @@ static u8 usbh_uvc_parse_entity(u8 *desc)
   * @param	itf_data: interface array buffer
   * @retval Status
   */
-static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
+static int usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
+	usbh_uvc_vc_t *vc_intf = NULL;
 	u8 *desc;
+	int ret;
+	u16 itf_total_len = 0;
 	u8 type;
 	u8 len;
-	int ret;
-	usbh_uvc_vc_t *vc_intf = &uvc->uvc_desc.vc_intf;
-	u16 itf_total_len = 0;
+
+	vc_intf = &uvc->uvc_desc.vc_intf;
 
 	desc = itf_data->raw_data;
 	//save the first interface number
@@ -208,18 +238,26 @@ static u8 usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
   * @param  ength: lenghth of given buffer
   * @retval Status
   */
-static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
+static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 {
 	usbh_uvc_vs_frame_t *frame = NULL;
 	usbh_uvc_vs_frame_t *tmp_frame = NULL;
 	u8 *desc = pbuf;
 	u32 nformat = 0;
-	u32 nframe_mjepg = 0, nframe_uncomp = 0, nframe_framebased = 0;
-	u32 index = -1;
-	u32 parsed_frame_num = 0;
+	u32 nframe_mjepg = 0;
+	u32 nframe_uncomp = 0;
+	u32 nframe_framebased = 0;
+	u32 ninterval_total = 0;
+	int index = -1;
+	u32 parsed_frame_num = 0, nintv = 0;
+	u32 nframe_total = 0;
+	u32 frame_array_size = 0;
+	u32 alloc_size = 0;
+	u32 *interval_store = NULL;
 	u16 real_len = 0;
 	u16 len = 0;
 	u16 totallen = 0;
+
 
 	if (desc[2] != USBH_UVC_VS_INPUT_HEADER) {
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Header is no vs input\n");
@@ -232,14 +270,19 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	}
 
 	vs_intf->InputHeader = (usbh_uvc_vs_input_header_desc_t *) desc;
-	totallen = (u16)desc[4] | (u16)((u16)desc[5] << 8);
+	totallen = (u16)(desc[4] | (desc[5] << 8));
 
 	/*first scan to get total number of format and frame*/
 	while (1) {
-		if ((u32)desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
+		if (desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
 			break;
 		}
-		switch ((u32)desc[2]) {
+		if (desc[0] == 0) {
+			/* Zero-length descriptor: malformed; stop to avoid an infinite loop
+			 * (real_len would never advance). Mirrors the guard in parse_vs. */
+			break;
+		}
+		switch (desc[2]) {
 		case USBH_UVC_VS_INPUT_HEADER:
 		case USBH_UVC_VS_STILL_IMAGE_FRAME:
 		case USBH_UVC_VS_COLORFORMAT:
@@ -281,14 +324,19 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 
 		case USBH_UVC_VS_FRAME_MJPEG:
 			nframe_mjepg ++;
+			/* bFrameIntervalType == 0 means continuous (3 entries); else discrete */
+			ninterval_total += (desc[25] == 0) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[25];
 			break;
 
 		case USBH_UVC_VS_FRAME_UNCOMPRESSED:
 			nframe_uncomp ++;
+			ninterval_total += (desc[25] == 0) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[25];
 			break;
 
 		case USBH_UVC_VS_FRAME_FRAME_BASED:
 			nframe_framebased ++;
+			/* frame-based: bFrameIntervalType at offset 21 */
+			ninterval_total += (desc[21] == 0) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[21];
 			break;
 
 		default:
@@ -296,7 +344,7 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			break;
 		}
 		/*find next descripter*/
-		real_len += (u16)desc[0];
+		real_len += desc[0];
 		desc = pbuf + real_len;
 	}
 
@@ -304,16 +352,29 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	len = 0;
 
 	vs_intf->nformat = nformat;
-	vs_intf->format = (usbh_uvc_vs_format_t *) usb_os_malloc(nformat * sizeof(usbh_uvc_vs_format_t) + \
-					  (nframe_mjepg + nframe_uncomp + nframe_framebased) * sizeof(usbh_uvc_vs_frame_t));
+	nframe_total = nframe_mjepg + nframe_uncomp + nframe_framebased;
+	/* usbh_uvc_vs_frame_t is __PACKED (31 bytes), so nframe_total*31 may not be
+	 * 4-byte aligned. Round up to avoid misaligned u32 access in interval_store. */
+	frame_array_size = (nframe_total * sizeof(usbh_uvc_vs_frame_t) + USBH_UVC_PARSE_4BYTE_ALIGN_MASK) & ~USBH_UVC_PARSE_4BYTE_ALIGN_MASK;
+	alloc_size = nformat * sizeof(usbh_uvc_vs_format_t) + \
+				 frame_array_size + \
+				 ninterval_total * sizeof(u32);
+	vs_intf->format = (usbh_uvc_vs_format_t *) usb_os_malloc(alloc_size);
 	if (vs_intf->format == NULL) {
 		return HAL_ERR_MEM;
 	}
-
+	usb_os_memset(vs_intf->format, 0, alloc_size);
 	tmp_frame = (usbh_uvc_vs_frame_t *)((u8 *)vs_intf->format + nformat * sizeof(usbh_uvc_vs_format_t));
+	interval_store = (u32 *)((u8 *)tmp_frame + frame_array_size);
 
 	while (len < real_len) {
-		switch ((u32)desc[2]) {
+		if (desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
+			len += desc[0];
+			desc = pbuf + len;
+			continue;
+		}
+
+		switch (desc[2]) {
 		case USBH_UVC_VS_INPUT_HEADER:
 			break;
 
@@ -321,6 +382,9 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 		case USBH_UVC_VS_FORMAT_UNCOMPRESSED:
 		case USBH_UVC_VS_FORMAT_FRAME_BASED:
 			index ++;
+			if (index < 0) {
+				break;
+			}
 			vs_intf->format[index].frame = (usbh_uvc_vs_frame_t *)((u8 *)vs_intf->format + \
 										   nformat * sizeof(usbh_uvc_vs_format_t) + \
 										   parsed_frame_num * sizeof(usbh_uvc_vs_frame_t));
@@ -331,34 +395,46 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 
 		case USBH_UVC_VS_FRAME_UNCOMPRESSED:
 		case USBH_UVC_VS_FRAME_MJPEG:
+			if (index < 0) {
+				break;
+			}
 			vs_intf->format[index].nframes ++;
 			frame = (usbh_uvc_vs_frame_t *)((u8 *)tmp_frame + parsed_frame_num * sizeof(usbh_uvc_vs_frame_t));
 			frame->bFrameIndex = desc[3];
 			frame->bmCapabilities = desc[4];
-			frame->wWidth = *(u16 *)(desc + 5);
-			frame->wHeight = *(u16 *)(desc + 7);
-			frame->dwMinBitRate = *(u32 *)(desc + 9);
-			frame->dwMaxBitRate = *(u32 *)(desc + 13);
-			frame->dwMaxVideoFrameBufferSize = *(u32 *)(desc + 17);
-			frame->dwDefaultFrameInterval = *(u32 *)(desc + 21);
+			frame->wWidth = ReadEF2Byte(desc + 5);
+			frame->wHeight = ReadEF2Byte(desc + 7);
+			frame->dwMinBitRate = ReadEF4Byte(desc + 9);
+			frame->dwMaxBitRate = ReadEF4Byte(desc + 13);
+			frame->dwMaxVideoFrameBufferSize = ReadEF4Byte(desc + 17);
+			frame->dwDefaultFrameInterval = ReadEF4Byte(desc + 21);
 			frame->bFrameIntervalType = desc[25];
-			frame->dwFrameInterval = (u32 *)&desc[26];
+			nintv = (desc[25] == 0u) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[25];
+			frame->dwFrameInterval = interval_store;
+			usb_os_memcpy(interval_store, &desc[26], nintv * sizeof(u32));
+			interval_store += nintv;
 			parsed_frame_num ++;
 			break;
 
 		case USBH_UVC_VS_FRAME_FRAME_BASED:
+			if (index < 0) {
+				break;
+			}
 			vs_intf->format[index].nframes ++;
 			frame = (usbh_uvc_vs_frame_t *)((u8 *)tmp_frame + parsed_frame_num * sizeof(usbh_uvc_vs_frame_t));
 			frame->bFrameIndex = desc[3];
 			frame->bmCapabilities = desc[4];
-			frame->wWidth = *(u16 *)(desc + 5);
-			frame->wHeight = *(u16 *)(desc + 7);
-			frame->dwMinBitRate = *(u32 *)(desc + 9);
-			frame->dwMaxBitRate = *(u32 *)(desc + 13);
-			frame->dwDefaultFrameInterval = *(u32 *)(desc + 17);
+			frame->wWidth = ReadEF2Byte(desc + 5);
+			frame->wHeight = ReadEF2Byte(desc + 7);
+			frame->dwMinBitRate = ReadEF4Byte(desc + 9);
+			frame->dwMaxBitRate = ReadEF4Byte(desc + 13);
+			frame->dwDefaultFrameInterval = ReadEF4Byte(desc + 17);
 			frame->bFrameIntervalType = desc[21];
-			frame->dwBytesPerLine = *(u32 *)(desc + 22);
-			frame->dwFrameInterval = (u32 *)&desc[26];
+			frame->dwBytesPerLine = ReadEF4Byte(desc + 22);
+			nintv = (desc[21] == 0u) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[21];
+			frame->dwFrameInterval = interval_store;
+			usb_os_memcpy(interval_store, &desc[26], nintv * sizeof(u32));
+			interval_store += nintv;
 			parsed_frame_num ++;
 			break;
 
@@ -375,7 +451,7 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 		}
 
 		/*find next descripter*/
-		len += (u16)desc[0];
+		len += desc[0];
 		desc = pbuf + len;
 	}
 
@@ -394,24 +470,36 @@ static u8 usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
   * @param	itf_data: interface array buffer
   * @retval Status
   */
-static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
+static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
-	usbh_uvc_vs_t *vs_intf = &uvc->uvc_desc.vs_intf[uvc->uvc_desc.vs_num];
+	usbh_uvc_vs_t *vs_intf = NULL;
 	u8 *desc = NULL;
 	u8 *next_desc = NULL;
+	int ret;
 	u16 len;
 	u16 itf_total_len = 0;
 	u8 bAlternateSetting;
 	u8 type;
+	u8 vs_num = uvc->uvc_desc.vs_num;
 
-	uvc->stream[uvc->uvc_desc.vs_num].vs_intf = vs_intf;
-	uvc->uvc_desc.vs_num++;
 
-	if (uvc->uvc_desc.vs_num > USBH_UVC_VS_DESC_MAX_NUM) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Ovrl VS num %d>%d\n", uvc->uvc_desc.vs_num, USBH_UVC_VS_DESC_MAX_NUM);
+	if (vs_num >= USBH_UVC_VS_DESC_MAX_NUM) {
+		/* Already at max VS capacity — skip this extra VS interface.
+		 * The first VS interface will still work normally. */
+		if (vs_num == USBH_UVC_VS_DESC_MAX_NUM) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Ovrl vs %d>%d, using 1st vs\n",
+					 vs_num + 1, USBH_UVC_VS_DESC_MAX_NUM);
+		}
 		return HAL_OK;
 	}
+
+	vs_intf = &uvc->uvc_desc.vs_intf[vs_num];
+
+	usb_os_memset(vs_intf, 0, sizeof(usbh_uvc_vs_t));
+	uvc->stream[vs_num].vs_intf = vs_intf;
+	vs_num++;
+	uvc->uvc_desc.vs_num = vs_num;
 
 	desc = itf_data->raw_data;
 	/* save the first interface number (Alt 0) */
@@ -438,7 +526,11 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 
 		switch (type) {
 		case USBH_UVC_DESC_TYPE_CS_INTERFACE:
-			usbh_uvc_parse_format(vs_intf, desc, &len);
+			ret = usbh_uvc_parse_format(vs_intf, desc, &len);
+			if (ret != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse format err: %d\n", ret);
+				return ret;
+			}
 			desc += len;
 			break;
 
@@ -460,7 +552,8 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 						}
 					}
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_WARN, "Ovrl alt %d>%d\n", bAlternateSetting, USBH_UVC_VS_ALTS_MAX_NUM);
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Ovrl alt %d>%d\n",
+							 bAlternateSetting, USBH_UVC_VS_ALTS_MAX_NUM);
 				}
 			} else {
 				return HAL_OK;
@@ -485,7 +578,7 @@ static u8 usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 {
 	usbh_itf_data_t *itf_data;
-	int ret = HAL_ERR_UNKNOWN;
+	int ret = HAL_ERR_PARA;
 	usbh_dev_id_t dev_id = {0,};
 
 	dev_id.bInterfaceClass = USBH_UVC_CLASS_CODE;
@@ -510,7 +603,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 
 	if (itf_data == NULL) {
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "No VS itf\n");
-		return HAL_ERR_UNKNOWN;
+		return HAL_ERR_PARA;
 	}
 
 	while (itf_data) {
@@ -535,6 +628,8 @@ int usbh_uvc_desc_init(void)
 	usbh_uvc_host_t *uvc = &uvc_host;
 
 	INIT_LIST_HEAD(&uvc->entity_list);
+
+	uvc->uvc_desc.vc_intf.entity_num = 0;
 	return HAL_OK;
 }
 
@@ -546,7 +641,8 @@ int usbh_uvc_desc_init(void)
 void usbh_uvc_desc_deinit(void)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
-	struct list_head *p, *n;
+	struct list_head *p;
+	struct list_head *n;
 	usbh_uvc_entity_t *ent;
 
 	list_for_each_safe(p, n, &uvc->entity_list) {

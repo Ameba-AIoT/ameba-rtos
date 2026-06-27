@@ -516,7 +516,7 @@ def apply_board_config(boards: List[Dict[str, Any]],
     """Atomic write of board entries to board_info.json5.
 
     Each item: {alias?, soc, port, transport?, remote?{host,port?,password?},
-                baudrate?, monitor_baudrate?, chip_erase?}.
+                memory_type?, baudrate?, monitor_baudrate?, chip_erase?}.
     Alias defaults to "<SOC>_<PORT>" (sanitized).
 
     `default_alias` semantics:
@@ -553,7 +553,7 @@ def apply_board_config(boards: List[Dict[str, Any]],
                 port=r.get("port", 58916),
                 password=r.get("password") or None,
             )
-        for k in ("baudrate", "monitor_baudrate", "chip_erase", "add_crlf"):
+        for k in ("memory_type", "baudrate", "monitor_baudrate", "chip_erase", "add_crlf"):
             if raw.get(k) is not None:
                 entry_kwargs[k] = raw[k]
         try:
@@ -642,7 +642,8 @@ def register_env_check_tools(mcp: FastMCP) -> None:
                                ("local"/"remote"; auto = "remote" iff
                                `remote` provided), remote
                                {host=127.0.0.1, port=58916, password=""},
-                               baudrate, monitor_baudrate, chip_erase.
+                               memory_type ("nor"/"nand"/"ram"), baudrate,
+                               monitor_baudrate, chip_erase.
             merge:             True (default) keeps existing aliases;
                                same-alias entries are updated in place.
                                False replaces the entire boards list.

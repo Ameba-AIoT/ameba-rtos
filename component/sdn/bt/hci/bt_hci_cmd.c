@@ -42,7 +42,6 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_SET_SCAN_PARAM, bt_hci_cmd_ogf_le_ocf_set_scan_param},
 	{BT_HCI_OP_LE_SET_SCAN_ENABLE, bt_hci_cmd_ogf_le_ocf_set_scan_enable},
 	{BT_HCI_OP_LE_CREATE_CONN, bt_hci_cmd_ogf_le_ocf_create_connection},
-	{BT_HCI_OP_LE_CREATE_CONN_CANCEL, bt_hci_cmd_ogf_le_ocf_create_connection_cancel},
 	{BT_HCI_OP_LE_ADD_DEV_TO_FAL, bt_hci_cmd_ogf_le_ocf_add_dev_to_fal},
 	{BT_HCI_OP_LE_REM_DEV_FROM_FAL, bt_hci_cmd_ogf_le_ocf_remove_dev_from_fal},
 	{BT_HCI_OP_LE_CLEAR_ALL_FAL, bt_hci_cmd_ogf_le_ocf_clear_all_fal},
@@ -90,8 +89,8 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_READ_NUM_ADV_SETS, bt_hci_ogf_le_ocf_read_max_adv_set},
 	{BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR, bt_hci_ogf_le_ocf_set_ext_adv_random_addr},
 	{BT_HCI_OP_LE_SET_EXT_ADV_PARAM_V1, bt_hci_cmd_ogf_le_ocf_set_ext_adv_param_v1},
-	{BT_HCI_OP_LE_SET_EXT_ADV_DATA, bt_hci_cmd_ogf_le_ocf_ext_adv_set_aux_data},
-	{BT_HCI_OP_LE_SET_EXT_SCAN_RSP_DATA, bt_hci_cmd_ogf_le_ocf_ext_adv_set_aux_scan_rsp_data},
+	{BT_HCI_OP_LE_SET_EXT_ADV_DATA, bt_hci_cmd_ogf_le_ocf_set_ext_adv_data},
+	{BT_HCI_OP_LE_SET_EXT_SCAN_RSP_DATA, bt_hci_cmd_ogf_le_ocf_set_ext_scan_rsp_data},
 	{BT_HCI_OP_LE_SET_EXT_ADV_ENABLE, bt_hci_cmd_ogf_le_ocf_ext_set_enable},
 	{BT_HCI_OP_LE_REMOVE_ADV_SET, bt_hci_cmd_ogf_le_ocf_ext_set_remove},
 	{BT_HCI_OP_CLEAR_ADV_SETS, bt_hci_cmd_ogf_le_ocf_ext_set_clear},
@@ -99,12 +98,25 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, bt_hci_ogf_le_ocf_set_ext_scan_enable},
 	{BT_HCI_OP_LE_EXT_CREATE_CONN, bt_hci_cmd_ogf_le_ocf_ext_create_connection},
 	{BT_HCI_OP_LE_EXT_CREATE_CONN_V2, bt_hci_cmd_ogf_le_ocf_ext_create_connection_v2},
+	{BT_HCI_OP_LE_CREATE_CONN_CANCEL, bt_hci_cmd_ogf_le_ocf_ext_create_connection_cancel},
+#else
+	{BT_HCI_OP_LE_CREATE_CONN_CANCEL, bt_hci_cmd_ogf_le_ocf_legacy_create_connection_cancel}, /* for coding size */
 #endif
 
 #ifdef CONFIG_BLE_LL_PA_ADV_ENABLE
 	{BT_HCI_OP_LE_SET_PERIODIC_ADV_PARAM_V1, bt_hci_cmd_ogf_le_ocf_set_periodic_adv_param_v1},
 	{BT_HCI_OP_LE_SET_PERIODIC_ADV_DATA, bt_hci_cmd_ogf_le_ocf_set_periodic_adv_data},
 	{BT_HCI_OP_LE_SET_PERIODIC_ADV_ENABLE, bt_hci_cmd_ogf_le_ocf_set_periodic_adv_enable},
+#endif
+
+#ifdef CONFIG_BLE_LL_PA_SYNC_ENABLE
+	{BT_HCI_OP_LE_PERIODIC_ADV_CREATE_SYNC, bt_hci_cmd_ogf_le_ocf_pa_create_sync},
+	{BT_HCI_OP_LE_PERIODIC_ADV_CREATE_SYNC_CANCEL, bt_hci_cmd_ogf_le_ocf_pa_create_sync_cancel},
+	{BT_HCI_OP_LE_PERIODIC_ADV_TERMINATE_SYNC, bt_hci_cmd_ogf_le_ocf_pa_terminate_sync},
+	{BT_HCI_OP_LE_ADD_PERIODIC_ADV_LIST, bt_hci_cmd_ogf_le_ocf_add_pa_list},
+	{BT_HCI_OP_LE_REMOVE_PERIODIC_ADV_LIST, bt_hci_cmd_ogf_le_ocf_remove_pa_list},
+	{BT_HCI_OP_LE_CLEAR_PERIODIC_ADV_LIST, bt_hci_cmd_ogf_le_ocf_clear_pa_list},
+	{BT_HCI_OP_LE_READ_PERIODIC_ADV_LIST_SIZE, bt_hci_cmd_ogf_le_ocf_read_pa_list_size},
 #endif
 
 	//BT_OGF_VENDOR
@@ -257,23 +269,16 @@ void ble_ll_init_feature(uint64_t *pfeature)
 void bt_hci_cmd_handler(uint8_t *pbuf)
 {
 	struct bt_hci_cmd_pkt *phci_cmd_pkt = (struct bt_hci_cmd_pkt *)pbuf;
-	bool bfind = false;
-	uint8_t len;
-	uint8_t rsp[BT_HCI_EVT_RSP_MAX_LEN] = {0};
+	uint8_t len = sizeof(struct bt_hci_evt_cc_status);;
+	uint8_t rsp[BT_HCI_EVT_RSP_MAX_LEN] = {BT_HCI_ERROR_UNKNOWN_COMMAND};
 	uint32_t i = 0;
 
 	for (i = 0; i < (sizeof(g_bt_hci_cmd_func_tbl) / sizeof(struct bt_hci_cmd_func_hdl)); i++) {
 		if (phci_cmd_pkt->opcode == g_bt_hci_cmd_func_tbl[i].opcode) {
 			rsp[0] = BT_HCI_ERROR_CMD_DISALLOWED;
 			len = g_bt_hci_cmd_func_tbl[i].hdl(phci_cmd_pkt->param, rsp);
-			bfind = true;
 			break;
 		}
-	}
-
-	if (!bfind) {
-		rsp[0] = BT_HCI_ERROR_UNKNOWN_COMMAND;
-		len = sizeof(struct bt_hci_evt_cc_status);
 	}
 
 	if (len) {

@@ -7,6 +7,7 @@
 #ifndef _AMEBA_PMCTIMER_H_
 #define _AMEBA_PMCTIMER_H_
 
+/// @cond
 /* AUTO_GEN_START */
 
 /** @addtogroup Ameba_Periph_Driver
@@ -113,6 +114,7 @@ typedef struct {
 } PMCTIMER_TpyeDef;
 /** @} */
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -127,29 +129,29 @@ extern "C" {
   * @{
   */
 
-/** @defgroup PMCTIMER_Index
+/** @defgroup PMCTIMER_Index PMCTIMER Index
   * @{
   */
-#define PMC_SLEEP_TIMER		0 /* sys active time for sleep */
-#define PMC_DSLP_TIMER		1 /* sys active time for deepsleep */
-#define PMC_WAKEUP_TIMER	2 /* set wakeup time for sleep */
-#define PMC_RSVD_TIMER		3
+#define PMC_SLEEP_TIMER		0   /*!< PMC timer index for system active time during sleep. */
+#define PMC_DSLP_TIMER		1   /*!< PMC timer index for system active time during deep sleep. */
+#define PMC_WAKEUP_TIMER	2   /*!< PMC timer index for setting wakeup time during sleep. */
+#define PMC_RSVD_TIMER		3   /*!< Reserved PMC timer index. */
 /**
   * @}
   */
 
-/** @defgroup PMCTIMER_Valid_Check
+/** @defgroup PMCTIMER_Valid_Check PMCTIMER Valid Check
   * @{
   */
-#define PMCT_BIT_TIM_VALIDx(x) ((u32)(0x00000001 << (8 + x)))
+#define PMCT_BIT_TIM_VALIDx(x) ((u32)(0x00000001 << (8 + x)))   /*!< Bit mask for timer x configuration valid status. */
 /**
   * @}
   */
 
-/** @defgroup PMCTIMER_Reset
+/** @defgroup PMCTIMER_Reset PMCTIMER Reset
   * @{
   */
-#define PMCTRESET_BIT_TIMERx(x) ((u32)(0x00000001 << (28 + x)))
+#define PMCTRESET_BIT_TIMERx(x) ((u32)(0x00000001 << (28 + x)))   /*!< Bit mask to pulse reset timer x. */
 /**
   * @}
   */
@@ -165,14 +167,13 @@ extern "C" {
   */
 
 /**
-  * @brief  Enables or disables the pmc timer counter
+  * @brief  Enable or disable the pmc timer counter
   *   The pmc timer group contains 4 timers for each group, all runs at 32k.
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  NewState: new state of the Debug timer peripheral.
-  *   This parameter can be: ENABLE or DISABLE.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @retval None
+  * @param  NewState New state of the PMC timer counter.
+  *   This parameter can be: ENABLE or DISABLE.
   */
 __STATIC_INLINE void PMCTimer_Cmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, bool NewState)
 {
@@ -185,10 +186,12 @@ __STATIC_INLINE void PMCTimer_Cmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, bo
 
 /**
   * @brief  Check pmctimer current state.
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @retval valid or not
+  * @return The validation result:
+  *         - TRUE: valid
+  *         - FALSE: not valid
   */
 __STATIC_INLINE u32 PMCTimer_Valid_Check(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 {
@@ -201,10 +204,10 @@ __STATIC_INLINE u32 PMCTimer_Valid_Check(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_
 
 /**
   * @brief  Get the pmc timer current Counter value.
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @retval current counter
+  * @return Current counter value.
   */
 __STATIC_INLINE u32 PMCTimerCnt_Get(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 {
@@ -213,11 +216,10 @@ __STATIC_INLINE u32 PMCTimerCnt_Get(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 
 /**
   * @brief  Set the pmc timer count down value.
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @param  NewVaule: new counter.
-  * @retval current counter
+  * @param  NewVaule New counter.
   */
 __STATIC_INLINE void PMCTimerCnt_Set(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewVaule)
 {
@@ -225,11 +227,10 @@ __STATIC_INLINE void PMCTimerCnt_Set(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx,
 }
 
 /**
-  * @brief  reset the pmc timer count down value.
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @brief  Reset the pmc timer count down value.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @retval None
   */
 __STATIC_INLINE void PMCTimerCnt_Reset(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 {
@@ -237,12 +238,11 @@ __STATIC_INLINE void PMCTimerCnt_Reset(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Id
 }
 
 /**
-  * @brief  ENABLE/DISABLE  the pmc timer's interrupt bits..
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @brief  ENABLE/DISABLE the pmc timer's interrupt bits.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @param  NewState: NABLE or DISABLE.
-  * @retval None
+  * @param  NewState ENABLE or DISABLE.
   */
 __STATIC_INLINE void PMCTimer_INTConfig(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewState)
 {
@@ -256,15 +256,14 @@ __STATIC_INLINE void PMCTimer_INTConfig(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_I
 }
 
 /**
-  * @brief  Clear  the pmc timer's interrupt bits..
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @brief  Clear the pmc timer's interrupt bits.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @retval None
   */
 __STATIC_INLINE void PMCTimer_INTClear(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 {
-	/* Enable the Interrupt sources */
+	/* Clear the interrupt pending status */
 	PMC_TIMER->PMCTTIM_ISR |= BIT(Timer_Idx);
 }
 /** @} */
@@ -275,8 +274,10 @@ __STATIC_INLINE void PMCTimer_INTClear(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Id
 
 /* MANUAL_GEN_END */
 
+/// @cond
 /** @} */
 
 /** @} */
+/// @endcond
 
 #endif

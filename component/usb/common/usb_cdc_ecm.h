@@ -20,30 +20,30 @@
  */
 
 /* CDC Class Codes */
-#define USB_CDC_CLASS_CODE                              0x02U /**< USB Communication Device Class (CDC) Code */
-#define USB_CDC_COMM_INTERFACE_CLASS_CODE               0x02U /**< CDC Communication Interface Class Code */
-#define USB_CDC_DATA_INTERFACE_CLASS_CODE               0x0AU /**< CDC Data Interface Class Code */
+#define USB_CDC_ECM_CLASS_CODE                              0x02U /**< USB Communication Device Class (CDC) Code */
+#define USB_CDC_ECM_COMM_INTERFACE_CLASS_CODE               0x02U /**< CDC Communication Interface Class Code */
+#define USB_CDC_ECM_DATA_INTERFACE_CLASS_CODE               0x0AU /**< CDC Data Interface Class Code */
 
 /* CDC Communication Subclass Codes */
-#define USB_CDC_SUBCLASS_RESERVED                       0x00U /**< CDC Subclass Code: Reserved */
-#define USB_CDC_SUBCLASS_ECM                            0x06U /**< CDC Subclass Code: Ethernet Control Model (ECM) */
+#define USB_CDC_ECM_SUBCLASS_RESERVED                       0x00U /**< CDC Subclass Code: Reserved */
+#define USB_CDC_ECM_SUBCLASS_ECM                            0x06U /**< CDC Subclass Code: Ethernet Control Model (ECM) */
 
 /* Communication Interface Class Control Protocol Codes */
-#define USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC         0x00U  /**< CDC Protocol Code: No class specific protocol */
-#define USB_CDC_CTRL_PROTOCOL_VENDOR_SPECIFIC           0xFFU  /**< CDC Protocol Code: Vendor specific */
+#define USB_CDC_ECM_CTRL_PROTOCOL_NO_CLASS_SPECIFIC         0x00U  /**< CDC Protocol Code: No class specific protocol */
+#define USB_CDC_ECM_CTRL_PROTOCOL_VENDOR_SPECIFIC           0xFFU  /**< CDC Protocol Code: Vendor specific */
 
 /* Data Interface Class Protocol Codes */
-#define USB_CDC_DATA_PROTOCOL_NO_CLASS_SPECIFIC         0x00U  /**< CDC Data Protocol: No class specific protocol */
-#define USB_CDC_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK    0x01U  /**< CDC Data Protocol: Network Transfer Block */
+#define USB_CDC_ECM_DATA_PROTOCOL_NO_CLASS_SPECIFIC         0x00U  /**< CDC Data Protocol: No class specific protocol */
+#define USB_CDC_ECM_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK    0x01U  /**< CDC Data Protocol: Network Transfer Block */
 
 /* CDC Functional Descriptor Types */
-#define USB_CDC_CS_INTERFACE                            0x24U /**< Class-Specific Interface Descriptor Type */
-#define USB_CDC_CS_ENDPOINT                             0x25U /**< Class-Specific Endpoint Descriptor Type */
+#define USB_CDC_ECM_CS_INTERFACE                            0x24U /**< Class-Specific Interface Descriptor Type */
+#define USB_CDC_ECM_CS_ENDPOINT                             0x25U /**< Class-Specific Endpoint Descriptor Type */
 
 /* CDC Functional Descriptor Subtypes */
-#define USB_CDC_FUNC_DESC_HEADER                        0x00U /**< Header Functional Descriptor */
-#define USB_CDC_FUNC_DESC_UNION                         0x06U /**< Union Functional Descriptor */
-#define USB_CDC_FUNC_DESC_ETHERNET_NETWORKING           0x0FU /**< Ethernet Networking Functional Descriptor */
+#define USB_CDC_ECM_FUNC_DESC_HEADER                        0x00U /**< Header Functional Descriptor */
+#define USB_CDC_ECM_FUNC_DESC_UNION                         0x06U /**< Union Functional Descriptor */
+#define USB_CDC_ECM_FUNC_DESC_ETHERNET_NETWORKING           0x0FU /**< Ethernet Networking Functional Descriptor */
 
 /* CDC ECM Class-Specific Request Codes */
 #define USB_CDC_ECM_SET_ETHERNET_MULTICAST_FILTERS      0x40U /**< Set Ethernet multicast address filters */
@@ -125,7 +125,7 @@ typedef struct {
 	u16 wMaxSegmentSize;        /**< Maximum segment size device can support */
 	u16 wNumberMCFilters;       /**< Number of multicast filters that can be configured */
 	u8  bNumberPowerFilters;    /**< Number of pattern filters available for wake-up */
-} __PACKED usb_cdc_ethernet_function_desc_t;
+} __PACKED usb_cdc_ecm_ethernet_function_desc_t;
 
 /**
  * @brief Connection Speed Change Notification Data

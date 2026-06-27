@@ -15,12 +15,12 @@
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
-static int usbh_composite_hid_uac_cb_attach(usb_host_t *host);
-static int usbh_composite_hid_uac_cb_detach(usb_host_t *host);
-static int usbh_composite_hid_uac_cb_process(usb_host_t *host, usbh_event_t *event);
-static int usbh_composite_hid_uac_cb_setup(usb_host_t *host);
-static int usbh_composite_hid_uac_cb_sof(usb_host_t *host);
-static int usbh_composite_hid_uac_cb_completed(usb_host_t *host, u8 pipe_num);
+static int usbh_composite_hid_uac_attach(usb_host_t *host);
+static int usbh_composite_hid_uac_detach(usb_host_t *host);
+static int usbh_composite_hid_uac_process(usb_host_t *host, usbh_event_t *event);
+static int usbh_composite_hid_uac_setup(usb_host_t *host);
+static int usbh_composite_hid_uac_sof(usb_host_t *host);
+static int usbh_composite_hid_uac_completed(usb_host_t *host, u8 pipe_num);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "COMP";
@@ -43,12 +43,12 @@ static const usbh_dev_id_t composite_devs[] = {
 /* USB Class driver */
 static usbh_class_driver_t usbh_composite_driver = {
 	.id_table = composite_devs,
-	.attach = usbh_composite_hid_uac_cb_attach,
-	.detach = usbh_composite_hid_uac_cb_detach,
-	.setup = usbh_composite_hid_uac_cb_setup,
-	.process = usbh_composite_hid_uac_cb_process,
-	.sof = usbh_composite_hid_uac_cb_sof,
-	.completed = usbh_composite_hid_uac_cb_completed,
+	.attach = usbh_composite_hid_uac_attach,
+	.detach = usbh_composite_hid_uac_detach,
+	.setup = usbh_composite_hid_uac_setup,
+	.process = usbh_composite_hid_uac_process,
+	.sof = usbh_composite_hid_uac_sof,
+	.completed = usbh_composite_hid_uac_completed,
 };
 
 static usbh_composite_host_t usbh_composite_host;
@@ -82,7 +82,7 @@ static int usbh_composite_deinit_hid_class(void)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_hid_uac_cb_attach(usb_host_t *host)
+static int usbh_composite_hid_uac_attach(usb_host_t *host)
 {
 	int ret;
 	usbh_composite_host_t *chost = &usbh_composite_host;
@@ -97,7 +97,7 @@ static int usbh_composite_hid_uac_cb_attach(usb_host_t *host)
 		}
 	}
 
-	if ((chost->uac != NULL) && (chost->uac->attach)) {
+	if ((chost->uac != NULL) && (chost->uac->attach != NULL)) {
 		ret = chost->uac->attach(host);
 		if (ret != HAL_OK) {
 			usbh_composite_deinit_uac_class();
@@ -113,7 +113,7 @@ static int usbh_composite_hid_uac_cb_attach(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_hid_uac_cb_detach(usb_host_t *host)
+static int usbh_composite_hid_uac_detach(usb_host_t *host)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 
@@ -121,7 +121,7 @@ static int usbh_composite_hid_uac_cb_detach(usb_host_t *host)
 		chost->hid->detach(host);
 	}
 
-	if ((chost->uac != NULL) && (chost->uac->detach)) {
+	if ((chost->uac != NULL) && (chost->uac->detach != NULL)) {
 		chost->uac->detach(host);
 	}
 
@@ -133,7 +133,7 @@ static int usbh_composite_hid_uac_cb_detach(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_hid_uac_cb_setup(usb_host_t *host)
+static int usbh_composite_hid_uac_setup(usb_host_t *host)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	int ret = HAL_OK;
@@ -145,7 +145,7 @@ static int usbh_composite_hid_uac_cb_setup(usb_host_t *host)
 		}
 	}
 
-	if (chost->hid != NULL) { //maybe not support hid while do attch check
+	if (chost->hid != NULL) {  /* maybe not support hid while do attach check */
 		ret = usbh_composite_hid_handle_report_desc(host);
 		if (ret != HAL_OK) {
 			return ret;
@@ -156,7 +156,7 @@ static int usbh_composite_hid_uac_cb_setup(usb_host_t *host)
 		chost->hid->setup(host);
 	}
 
-	if ((chost->uac != NULL) && (chost->uac->setup)) {
+	if ((chost->uac != NULL) && (chost->uac->setup != NULL)) {
 		chost->uac->setup(host);
 	}
 
@@ -170,7 +170,7 @@ static int usbh_composite_hid_uac_cb_setup(usb_host_t *host)
   * @param[in] host: USB host handle.
   * @return 0 on success, non-zero on failure.
   */
-static int usbh_composite_hid_uac_cb_sof(usb_host_t *host)
+static int usbh_composite_hid_uac_sof(usb_host_t *host)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 
@@ -178,7 +178,7 @@ static int usbh_composite_hid_uac_cb_sof(usb_host_t *host)
 		chost->hid->sof(host);
 	}
 
-	if ((chost->uac != NULL) && (chost->uac->sof)) {
+	if ((chost->uac != NULL) && (chost->uac->sof != NULL)) {
 		chost->uac->sof(host);
 	}
 
@@ -193,7 +193,7 @@ static int usbh_composite_hid_uac_cb_sof(usb_host_t *host)
   * @param[in] pipe_num: Pipe number of the completed transfer.
   * @return 0 on success, non-zero on failure.
   */
-static int usbh_composite_hid_uac_cb_completed(usb_host_t *host, u8 pipe_num)
+static int usbh_composite_hid_uac_completed(usb_host_t *host, u8 pipe_num)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	int ret = HAL_BUSY;
@@ -202,7 +202,7 @@ static int usbh_composite_hid_uac_cb_completed(usb_host_t *host, u8 pipe_num)
 		ret = chost->hid->completed(host, pipe_num);
 	}
 
-	if ((ret != HAL_OK) && (chost->uac != NULL) && (chost->uac->completed)) {
+	if ((ret != HAL_OK) && (chost->uac != NULL) && (chost->uac->completed != NULL)) {
 		ret = chost->uac->completed(host, pipe_num);
 	}
 
@@ -214,14 +214,14 @@ static int usbh_composite_hid_uac_cb_completed(usb_host_t *host, u8 pipe_num)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_hid_uac_cb_process(usb_host_t *host, usbh_event_t *event)
+static int usbh_composite_hid_uac_process(usb_host_t *host, usbh_event_t *event)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	int ret = HAL_BUSY;
 
 	/*
-		if the pocess has handle the msg, it return HAL_OK, else return HAL_BUSY
-	*/
+	 * If the process has handled the msg, it returns HAL_OK, else returns HAL_BUSY.
+	 */
 	if ((chost->hid != NULL) && (chost->hid->process != NULL)) {
 		ret = chost->hid->process(host, event);
 	}

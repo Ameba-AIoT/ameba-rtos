@@ -24,7 +24,6 @@
 "RTL8721F": {
   "flash_layout_setting_mode": "manual",
   "build_dir": "/home/me/sdk/build_RTL8721F",
-  "memory_type": "nor",
   "images": [
     {
       "path": "/home/me/sdk/build_RTL8721F/boot.bin",
@@ -52,8 +51,9 @@
 |---|---|---|
 | `flash_layout_setting_mode` | ✓ | 固定为 `"manual"` |
 | `build_dir` | ✓ | 绝对路径，指向 `build_<SOC>/` 目录 |
-| `memory_type` | – | `"nor"` / `"nand"` / `"ram"`，缺省继承 `defaults.memory_type` |
 | `images[].path` | ✓ | `.bin` 文件绝对路径 |
+
+> `memory_type` 不再属于 project 条目，已移到 `board_info.json5` 的 board 配置（schema 1.1）。
 | `images[].start_addr` | ✓ | Flash 起始地址，格式 `0x...` |
 | `images[].end_addr` | – | 结束地址（含）；省略时按文件大小推算，仅用于重叠校验 |
 | `images[].optional` | – | `true` 时文件缺失只警告不报错（适合 VFS 等可选 image） |

@@ -103,6 +103,5 @@ int example_raw_gpio_level_irq(void)
 		printf("Create RAW_GPIO_LEVEL_IRQ_TASK Err!!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }

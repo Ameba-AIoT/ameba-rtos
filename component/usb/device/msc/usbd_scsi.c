@@ -449,12 +449,23 @@ static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 */
 static int usbd_scsi_verify10(usbd_msc_dev_t *cdev, u8 *params)
 {
+	u32 verify_lba;
+	u32 verify_blklen;
+
 	if ((params[1] & 0x02U) == 0x02U) {
 		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
 		return -1; /* Error, Verify Mode Not supported*/
 	}
 
-	if (usbd_scsi_check_address_range(cdev, cdev->lba, cdev->blklen) < 0) {
+	verify_lba = ((u32)params[2] << 24) | ((u32)params[3] << 16) | ((u32)params[4] << 8) | (u32)params[5];
+	verify_blklen = ((u32)params[7] << 8) | (u32)params[8];
+
+	if (verify_blklen == 0) {
+		cdev->data_length = 0U;
+		return 0; /* No-op: verification length of 0 means verify nothing */
+	}
+
+	if (usbd_scsi_check_address_range(cdev, verify_lba, verify_blklen) < 0) {
 		return -1; /* error */
 	}
 	cdev->data_length = 0U;
@@ -634,7 +645,7 @@ void usbd_scsi_sense_code(usbd_msc_dev_t *cdev, u8 key, u8 asc)
 {
 	usb_msc_scsi_sense_data_t *data = &cdev->scsi_sense_data[cdev->scsi_sense_tail];
 	data->key  = key;
-	data->asc = asc << 8;
+	data->asc = asc;
 	cdev->scsi_sense_tail++;
 	if (cdev->scsi_sense_tail == USBD_MSC_SENSE_LIST_DEPTH) {
 		cdev->scsi_sense_tail = 0U;

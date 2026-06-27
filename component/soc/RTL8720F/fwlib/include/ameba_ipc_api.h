@@ -27,19 +27,19 @@ extern "C" {
   * @brief IPC Message Definition
  */
 typedef struct ipc_msg_struct {
-	u32 msg_type;
-	u32 msg;
-	u32 msg_len;
-	u32 rsvd;
+	u32 msg_type; /*!< Message type identifier. */
+	u32 msg;      /*!< Message payload or address. */
+	u32 msg_len;  /*!< Length of the message payload. */
+	u32 rsvd;     /*!< Reserved. */
 } IPC_MSG_STRUCT, *PIPC_MSG_STRUCT, ipc_msg_struct_t;
 
 /**
- * @brief IPC Message Definition
+ * @brief IPC Data Structure Definition
 */
 typedef struct ipc_data_struct {
-	u32 *data;
-	u32 data_len;
-	u32 rsvd[2];
+	u32 *data;       /*!< Pointer to the data buffer. */
+	u32 data_len;    /*!< Length of the data buffer in bytes. */
+	u32 rsvd[2];     /*!< Reserved. */
 } IPC_DATA_STRUCT, *PIPC_DATA_STRUCT, ipc_data_struct_t;
 /**
   * @}
@@ -52,15 +52,15 @@ typedef struct ipc_data_struct {
 /** @defgroup IPC_RETURN_VALUE IPC Return Value
   * @{
   */
-#define IPC_RX_MALLOC_FAIL 6
-#define IPC_RX_CH_ERROE   5
-#define IPC_RX_FIFO_EMPTY 4
-#define IPC_SEMA_TIMEOUT 3
-#define IPC_REQ_TIMEOUT  2
-#define IPC_SEND_SUCCESS 0
-#define IPC_RECEIVE_SUCCESS 0
-#define IPC_SEND_TIMEOUT 1
-#define IPC_SEMA_MAX_DELAY 0x10000 // 65536ms
+#define IPC_RX_MALLOC_FAIL 6  /*!< RX memory allocation failure. */
+#define IPC_RX_CH_ERROE   5  /*!< RX channel error. */
+#define IPC_RX_FIFO_EMPTY 4  /*!< RX FIFO is empty. */
+#define IPC_SEMA_TIMEOUT 3  /*!< IPC semaphore timeout error code. */
+#define IPC_REQ_TIMEOUT  2  /*!< IPC request timeout error code. */
+#define IPC_SEND_SUCCESS 0  /*!< IPC message sent successfully. */
+#define IPC_RECEIVE_SUCCESS 0  /*!< Message received successfully. */
+#define IPC_SEND_TIMEOUT 1  /*!< IPC send timeout error code. */
+#define IPC_SEMA_MAX_DELAY 0x10000 /*!< IPC semaphore maximum delay in ms (65536ms). */
 /**
   * @}
   */
@@ -68,15 +68,15 @@ typedef struct ipc_data_struct {
 /** @defgroup IPC_TX_Work_Mode IPC TX Work Mode
   * @{
   */
-#define IPC_UNSHARE_MODE				0x0
-#define IPC_SHARE_MODE				  0x1
+#define IPC_UNSHARE_MODE				0x0  /*!< IPC TX unshared (dedicated) mode. */
+#define IPC_SHARE_MODE				  0x1  /*!< IPC TX shared mode. */
 /**
   * @}
   */
 
-#define IPC_RX_DATA_LEN_MAX  16
-#define IPC_TX_LEVEVL  15
-#define IPC_TX_TIMEOUT 0x9c40
+#define IPC_RX_DATA_LEN_MAX  16  /*!< Maximum RX data length in bytes. */
+#define IPC_TX_LEVEVL  15  /*!< IPC TX FIFO level threshold. */
+#define IPC_TX_TIMEOUT 0x9c40  /*!< IPC TX operation timeout value. */
 /**
   * @}
   */

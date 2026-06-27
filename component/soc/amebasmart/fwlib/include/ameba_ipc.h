@@ -161,19 +161,19 @@ extern "C" {
 
 //Please add your defination here
 
-/* Non Exported types */
 /**
-  * @brief IPC direction mode definition.
+  * @brief IPC SEM IDX
   */
 typedef enum {
-	IPC_LP_TO_NP = 0x00, /*!< LP send request to NP */
-	IPC_LP_TO_AP = 0x01, /*!< LP send request to AP */
-	IPC_NP_TO_LP = 0x10, /*!< NP send request to LP */
-	IPC_NP_TO_AP = 0x11, /*!< NP send request to AP */
-	IPC_AP_TO_LP = 0x20, /*!< AP send request to LP */
-	IPC_AP_TO_NP = 0x21, /*!< AP send request to NP */
-	IPC_DIR_MODE_MAX = 0xFFFFFFFF,
-} IPC_Direction_Mode;
+	IPC_SEM_IMQ = 0, /*!< Semaphore index for IMQ. */
+	IPC_SEM_FLASH, /*!< Semaphore index for Flash access. */
+	IPC_SEM_OTP, /*!< Semaphore index for OTP access. */
+	IPC_SEM_CRYPTO, /*!< Semaphore index for Crypto engine. */
+	IPC_SEM_DIAGNOSE, /*!< Semaphore index for Diagnose module. */
+	IPC_SEM_SYSON, /*!< Semaphore index for System-On control. */
+	IPC_SEM_GDMA, /*!< Semaphore index for GDMA. */
+	IPC_SEM_MAX = 16, /*!< Maximum semaphore index sentinel value. */
+} IPC_SEM_IDX;
 
 /* Exported types --------------------------------------------------------*/
 /** @addtogroup IPC_Exported_Types IPC Exported Types
@@ -189,37 +189,36 @@ typedef void (*IPC_IRQ_FUN)(void *Data, u32 IrqStatus, u32 ChanNum);
   * @brief IPC User Message Type Definition
   */
 typedef enum {
-	IPC_USER_POINT = 0,
-	IPC_USER_DATA	= 1
+	IPC_USER_POINT = 0, /*!< Message payload is a pointer. */
+	IPC_USER_DATA	= 1 /*!< Message payload is inline data. */
 } USER_MSG_TYP_DEF;
+
+/**
+  * @brief IPC direction mode definition.
+  */
+typedef enum {
+	IPC_LP_TO_NP = 0x00, /*!< LP send request to NP */
+	IPC_LP_TO_AP = 0x01, /*!< LP send request to AP */
+	IPC_NP_TO_LP = 0x10, /*!< NP send request to LP */
+	IPC_NP_TO_AP = 0x11, /*!< NP send request to AP */
+	IPC_AP_TO_LP = 0x20, /*!< AP send request to LP */
+	IPC_AP_TO_NP = 0x21, /*!< AP send request to NP */
+	IPC_DIR_MODE_MAX = 0xFFFFFFFF, /*!< Maximum sentinel value for direction mode. */
+} IPC_Direction_Mode;
 
 /**
   * @brief IPC Init Table Definition
  */
 typedef struct _IPC_INIT_TABLE_ {
-	u32 USER_MSG_TYPE;
-	void (*Rxfunc)(void *Data, u32 IrqStatus, u32 ChanNum);
-	void *RxIrqData;
-	void (*Txfunc)(void *Data, u32 IrqStatus, u32 ChanNum);
-	void *TxIrqData;
-	IPC_Direction_Mode IPC_Direction;	/* direction of ipc, this parameter is from @IPC_Direction_Mode*/
-	u32 IPC_Channel;	/* ipc channel, this parameter is from @IPC_LP_Tx_Channel or @IPC_NP_Tx_Channel or @IPC_AP_Tx_Channel*/
+	u32 USER_MSG_TYPE;					/*!< User-defined message type. */
+	void (*Rxfunc)(void *Data, u32 IrqStatus, u32 ChanNum);	/*!< Pointer to the RX interrupt callback function. */
+	void *RxIrqData;					/*!< Data passed to the RX callback. */
+	void (*Txfunc)(void *Data, u32 IrqStatus, u32 ChanNum);	/*!< Pointer to the TX interrupt callback function. */
+	void *TxIrqData;					/*!< Data passed to the TX callback. */
+	IPC_Direction_Mode IPC_Direction;	/*!< IPC transfer direction, this parameter can be a value of @ref IPC_Direction_Mode. */
+	u32 IPC_Channel;	/*!< IPC TX channel, this parameter can be a value of @ref IPC_Tx_Channel. */
 } IPC_INIT_TABLE, *PIPC_INIT_TABLE;
 
-
-/**
-  * @brief IPC SEM IDX
-  */
-typedef enum {
-	IPC_SEM_IMQ = 0,
-	IPC_SEM_FLASH,
-	IPC_SEM_OTP,
-	IPC_SEM_CRYPTO,
-	IPC_SEM_DIAGNOSE,
-	IPC_SEM_SYSON,
-	IPC_SEM_GDMA,
-	IPC_SEM_MAX = 16,			/* can't be this value, total 16 ipc semaphores*/
-} IPC_SEM_IDX;
 /** @} */
 
 /* Exported constants --------------------------------------------------------*/
@@ -230,6 +229,7 @@ typedef enum {
 /** @defgroup IPC_Peripheral_Definition IPC Peripheral Definition
   * @{
   */
+/** @brief Check if IPC peripheral pointer is valid. */
 #define IS_IPC_ALL_PERIPH(PERIPH) (((PERIPH) == IPCLP_DEV) || \
 										((PERIPH) == IPCNP_DEV)) || \
 										((PERIPH) == IPCAP_DEV))
@@ -239,8 +239,9 @@ typedef enum {
 /** @defgroup IPC_INTR_Mode IPC Interrupt Mode
   * @{
   */
-#define IPC_TX_EMPTY			((u32)0x00000001)
-#define IPC_RX_FULL 			((u32)0x00000002)
+#define IPC_TX_EMPTY			((u32)0x00000001) /*!< IPC TX channel empty interrupt mode. */
+#define IPC_RX_FULL 			((u32)0x00000002) /*!< IPC RX channel full interrupt mode. */
+/** @brief Check if IPC interrupt mode value is valid. */
 #define IS_IPC_INTR_MODE(MODE) (((MODE) == IPC_TX_EMPTY) || \
                                    ((MODE) == IPC_RX_FULL))
 /** @} */
@@ -248,38 +249,42 @@ typedef enum {
 /** @defgroup IPC_CHANNEL IPC Channel
   * @{
   */
-#define IPC_TX_CHANNEL_NUM						16
-#define IPC_TX_CHANNEL_SWITCH(x)				((u32)(((x >> 4) & 0x0000000F)))
-#define IPC_TX0_CHANNEL_NUM						8
-#define IPC_TX0_CHANNEL_SWITCH(x)				((u32)((x) & 0x0000000F))
-#define IS_IPC_RX_CHNUM(NUM) 					((NUM) >= 16)
-#define IPC_CHANNEL_NUM 						32
+#define IPC_TX_CHANNEL_NUM						16 /*!< Total number of IPC TX channels. */
+#define IPC_TX_CHANNEL_SWITCH(x)				((u32)(((x >> 4) & 0x0000000F))) /*!< Extract TX channel index from channel value. */
+#define IPC_TX0_CHANNEL_NUM						8 /*!< Total number of IPC TX0 channels. */
+#define IPC_TX0_CHANNEL_SWITCH(x)				((u32)((x) & 0x0000000F)) /*!< Extract TX0 channel index from channel value. */
+#define IS_IPC_RX_CHNUM(NUM) 					((NUM) >= 16) /*!< Check if IPC RX channel number is valid. */
+#define IPC_CHANNEL_NUM 						32 /*!< Total number of IPC channels (TX + RX). */
 /** @} */
 
 /** @defgroup IPC_Valid_CHNUM IPC Valid Channel Number
   * @{
   */
-#define IS_IPC_VALID_CHNUM(NUM) ((NUM) < 8)
+#define IS_IPC_VALID_CHNUM(NUM) ((NUM) < 8) /*!< Check if IPC channel number is valid. */
 /** @} */
 
 /** @defgroup IPC_Valid_SEMID IPC Valid Semaphore ID
   * @{
   */
-#define IS_IPC_VALID_SEMID(SEM_ID) ((SEM_ID) < 16)
+#define IS_IPC_VALID_SEMID(SEM_ID) ((SEM_ID) < 16) /*!< Check if IPC semaphore ID is valid. */
 /** @} */
 
 
 /** @defgroup IPC_Valid_CPUID IPC Valid CPU ID
   * @{
   */
-#define IS_IPC_Valid_CPUID(cpuid)		((cpuid)<=2)
+#define IS_IPC_Valid_CPUID(cpuid)		((cpuid)<=2) /*!< Check if IPC CPU ID is valid. */
 /** @} */
 
-/** @defgroup IPC_LP_Tx_Channel IPC LP TX Channel
+/** @defgroup IPC_Tx_Channel IPC TX Channel
  * @{
  */
+
+/*
+ * IPC_LP_Tx_Channel
+ */
 #define IPC_L2N_LOGUART_RX_SWITCH		0	/*!<  LP -->  NP Loguart Rx Switch*/
-#define IPC_L2N_WAKE_NP					1
+#define IPC_L2N_WAKE_NP					1 /*!< LP wakes up NP channel. */
 #define IPC_L2N_FLASHPG_REQ				2	/*!<  LP -->  NP Flash Program REQUEST*/
 //#define IPC_L2N_Channel3				3
 //#define IPC_L2N_Channel4				4
@@ -288,22 +293,21 @@ typedef enum {
 #define IPC_L2N_IMQ_TRX_TRAN					7	/*!<  LP -->  NP IMQ Message Exchange */
 
 #define IPC_L2A_LOGUART_RX_SWITCH				0	/*!<  LP -->  AP Loguart Rx Switch*/
-#define IPC_L2A_Channel1				1
+#define IPC_L2A_Channel1				1 /*!< LP to AP channel 1. */
 //#define IPC_L2A_Channel2				2
 //#define IPC_L2A_Channel3				3
 //#define IPC_L2A_Channel4				4
 //#define IPC_L2A_Channel5				5
 //#define IPC_L2A_Channel6				6
 #define IPC_L2A_IMQ_TRX_TRAN					7	/*!<  LP -->  AP IMQ Message Exchange */
-/** @} */
 
-/** @defgroup IPC_NP_Tx_Channel IPC NP TX Channel
- * @{
+/*
+ * IPC_NP_Tx_Channel
  */
 #define IPC_N2L_TICKLESS_INDICATION			0	/*!<  NP -->  LP Tickless indicate */
 #define IPC_N2L_WIFI_FW_INFO					1	/*!<  NP -->  LP FW Info*/
 #define IPC_N2L_FLASHPG_REQ					2	/*!<  NP -->  LP Flash Program Request*/
-#define IPC_N2L_UARTBRIDGE						3
+#define IPC_N2L_UARTBRIDGE						3 /*!< NP to LP UART bridge channel. */
 //#define IPC_N2L_Channel4						4
 //#define IPC_N2L_Channel5						5
 //#define IPC_N2L_Channel6						6
@@ -314,17 +318,16 @@ typedef enum {
 //#define IPC_N2A_Channel2						2	/*!<  NP -->  AP */
 #define IPC_N2A_COEX_API_TRAN					3	/*!<  NP -->  AP COEX API Exchange */
 #define IPC_N2A_BT_DRC_TRAN						4	/*!<  NP -->  AP BT DATA Message Exchange */
-#define IPC_N2A_802154_TRAN						5
-#define IPC_N2A_OTP_TX_TRAN						6
+#define IPC_N2A_802154_TRAN						5 /*!< NP to AP 802.15.4 data transfer channel. */
+#define IPC_N2A_OTP_TX_TRAN						6 /*!< NP to AP OTP TX transfer channel. */
 #define IPC_N2A_IMQ_TRX_TRAN					7	/*!<  NP -->  AP IMQ Message Exchange */
-/** @} */
 
-/** @defgroup IPC_AP_Tx_Channel IPC AP TX Channel
- * @{
+/*
+ * IPC_AP_Tx_Channel
  */
 #define IPC_A2L_TICKLESS_INDICATION			0	/*!<  AP -->  LP Tickless Indicate */
 //#define IPC_A2L_Channel1						1
-#define IPC_A2L_UARTBRIDGE						2
+#define IPC_A2L_UARTBRIDGE						2 /*!< AP to LP UART bridge channel. */
 //#define IPC_A2L_Channel3						3
 //#define IPC_A2L_Channel4						4
 //#define IPC_A2L_Channel5						5
@@ -339,23 +342,24 @@ typedef enum {
 //#define IPC_A2N_Channel5						5
 // #define IPC_A2N_BT_DRC_TRAN						4	/*!<  Recycled: AP -->  NP BT DATA Message Exchange */
 // #define IPC_A2N_802154_TRAN						5 /*!<  Recycled */
-#define IPC_A2N_OTP_RX_TRAN						6
+#define IPC_A2N_OTP_RX_TRAN						6 /*!< AP to NP OTP RX transfer channel. */
 #define IPC_A2N_LOGUART_RX_SWITCH				7	/*!<  AP -->  NP Loguart Message Exchange for Linux*/
 #define IPC_A2N_IMQ_TRX_TRAN					7	/*!<  AP -->  NP IMQ Message Exchange for RTOS*/
 
 #if (defined(CONFIG_ARM_CORE_CM0))
-#define IPC_CH_WIFI_FW_CTRL			1
-#define IPC_FW_CA2LP_CHNUM			17
-#define IPC_FW_KM2LP_CHNUM			25
+#define IPC_CH_WIFI_FW_CTRL			1 /*!< WiFi firmware control IPC channel number (CM0 only). */
+#define IPC_FW_CA2LP_CHNUM			17 /*!< CA to LP firmware IPC channel number (CM0 only). */
+#define IPC_FW_KM2LP_CHNUM			25 /*!< KM to LP firmware IPC channel number (CM0 only). */
 #endif
 /** @} */
 
 /** @} */
 
-/* Non Exported functions */
 IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
 u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout);
 u32 IPC_SEMFree(u32 SEM_Idx);
+void IPC_SEMDelayStub(void (*pfunc)(uint32_t));
+void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32));
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup IPC_Exported_Functions IPC Exported Functions
@@ -370,8 +374,6 @@ u32 IPC_INTGet(IPC_TypeDef *IPCx);
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit);
 u32 IPC_INTHandler(void *Data);
 void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, void *IrqHandler, void *IrqData);
-void IPC_SEMDelayStub(void (*pfunc)(uint32_t));
-void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32));
 
 /** @} */
 

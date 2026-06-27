@@ -347,8 +347,9 @@ def flash_firmware(alias: Optional[str] = None) -> Dict[str, Any]:
             f"{[os.path.basename(p) for p in skipped_optional]}"
         )
 
-    # Step 5: locate device profile
-    memory_type = (entry.memory_type or pinfo.defaults.memory_type or "nor")
+    # Step 5: locate device profile. memory_type is a board property
+    # (the same project may be flashed to nor or nand on different boards).
+    memory_type = board.memory_type
     profile_path = _find_profile(board.soc, memory_type)
     if profile_path is None:
         return _err_envelope([ConfigError(
@@ -374,6 +375,7 @@ def flash_firmware(alias: Optional[str] = None) -> Dict[str, Any]:
     mem_code = _MEM_TYPE_CODE.get(memory_type, 1)
     partition = []
     flashed: List[str] = []
+    _NAND_FLASH_BASE = 0x08000000
     for img in flashable:
         # AmebaFlash needs end_addr; for manual entries that omit it we
         # synthesise from filesize.
@@ -382,6 +384,14 @@ def flash_firmware(alias: Optional[str] = None) -> Dict[str, Any]:
             end = int(img["end_addr"], 16)
         else:
             end = start + max(os.path.getsize(img["path"]) - 1, 0)
+        # NAND floader uses 0-based physical offsets. project_info stores
+        # CPU-space addresses (0x08000000 base). Subtract the base only when
+        # the address still carries it; guard against already-converted values.
+        if memory_type == "nand":
+            if start >= _NAND_FLASH_BASE:
+                start -= _NAND_FLASH_BASE
+            if end >= _NAND_FLASH_BASE:
+                end -= _NAND_FLASH_BASE
         partition.append({
             "ImageName": img["path"],
             "StartAddress": start,
@@ -445,6 +455,100 @@ def flash_firmware(alias: Optional[str] = None) -> Dict[str, Any]:
         "images_flashed": flashed,
         "log_path": DEBUG_LOG_FILE,
         "info": info_msgs,
+        "message": res["message"],
+    }
+
+
+# ---------------------------------------------------------------------------
+# full_erase_flash
+# ---------------------------------------------------------------------------
+
+def full_erase_flash(alias: Optional[str] = None) -> Dict[str, Any]:
+    """Chip-erase the entire flash on the board identified by `alias`."""
+    # Step 1: load + resolve board
+    try:
+        binfo = load_board_info(PROJECT_ROOT)
+    except ConfigLoadError as ex:
+        return _err_envelope(ex.errors, alias=alias)
+
+    resolved_alias, alias_errors = resolve_alias_or_error(binfo, alias)
+    if alias_errors is not None:
+        env = _err_envelope(alias_errors, alias=alias)
+        env["configured_aliases"] = _alias_summary(binfo)
+        env["available_local_ports"] = available_local_port_names()
+        return env
+    alias = resolved_alias
+
+    board_errs = validate_board_config(PROJECT_ROOT, alias=alias)
+    if board_errs:
+        return _err_envelope(board_errs, alias=alias)
+    board = resolve_board(binfo, alias)
+
+    # Step 2: memory_type is a board property (board_info.json5).
+    memory_type = board.memory_type
+
+    # Step 3: locate device profile
+    profile_path = _find_profile(board.soc, memory_type)
+    if profile_path is None:
+        return _err_envelope([ConfigError(
+            code="PROFILE_NOT_FOUND",
+            field_path=f"projects.{board.soc}",
+            message=f"No .rdev profile for device '{board.soc}' (memory={memory_type})",
+            hint=f"Expected one of {board.soc}.rdev / {board.soc}_{memory_type.upper()}.rdev under {PROFILE_DIR}",
+        )], alias=alias)
+
+    # Step 4: release any open monitor session
+    if session_manager.get(alias) is not None:
+        logger.info("Releasing monitor session on '%s' before erase", alias)
+        session_manager.disconnect(alias)
+    try:
+        from ameba_dev_mcp.tools.serial import _drop_aag_parser
+        _drop_aag_parser(alias)
+    except Exception:
+        pass
+
+    # Step 5: build CLI args — chip-erase only, no download
+    args = [
+        "--chip-erase", "--profile", profile_path,
+        "--port", board.port,
+        "--baudrate", str(board.baudrate),
+        "--memory-type", memory_type,
+        "--log-level", "info",
+    ]
+    if board.transport == "remote" and board.remote is not None:
+        args += ["--remote-server", board.remote.host]
+        password = board.remote.password or os.environ.get("AMEBA_REMOTE_PWD")
+        if password:
+            args += ["--remote-password", password]
+
+    res = _run_flash_subprocess(args)
+
+    if not res["success"]:
+        return {
+            "success": False,
+            "alias": alias,
+            "soc": board.soc,
+            "transport": board.transport,
+            "errors": [ConfigError(
+                code="FLASH_HW_ERROR",
+                field_path=f"boards.{alias}",
+                message=res["message"],
+                hint=(
+                    "Check USB cable / board power / boot mode; verify "
+                    f"boards.{alias}.port matches the actual device. "
+                    f"Full log at {DEBUG_LOG_FILE}."
+                ),
+            ).model_dump()],
+            "log_path": DEBUG_LOG_FILE,
+        }
+
+    return {
+        "success": True,
+        "alias": alias,
+        "soc": board.soc,
+        "transport": board.transport,
+        "memory_type": memory_type,
+        "log_path": DEBUG_LOG_FILE,
         "message": res["message"],
     }
 
@@ -712,6 +816,31 @@ def register_flash_tools(mcp: FastMCP) -> None:
         PL2303 driver requirements.
         """
         result = flash_firmware(alias)
+        attach_selected_via_default(result, alias, PROJECT_ROOT)
+        return result
+
+    @mcp.tool()
+    async def full_erase_flash_tool(alias: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Chip-erase the entire flash on the board identified by `alias`.
+
+        All connection parameters — including memory type (NOR/NAND) —
+        come from board_info.json5.
+
+        Args:
+            alias: Board alias from board_info.json5 (e.g. "RTL8721F_ttyUSB0").
+                   May be omitted ONLY when board_info.json5 has exactly one
+                   board configured.
+
+        Returns:
+            On success: {success: true, alias, soc, memory_type, ...}
+            On failure: {success: false, alias, errors: [{code, message, hint}, ...]}
+
+        IMPORTANT: This erases ALL data on the flash. Do NOT retry automatically
+        on failure. After a successful erase the board will not boot until
+        firmware is flashed again.
+        """
+        result = full_erase_flash(alias)
         attach_selected_via_default(result, alias, PROJECT_ROOT)
         return result
 

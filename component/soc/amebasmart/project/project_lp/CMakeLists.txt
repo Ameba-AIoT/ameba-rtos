@@ -34,5 +34,5 @@ ameba_add_subdirectory(make/image2)
 add_custom_target(
     ${c_MCU_PROJECT_NAME}
     COMMENT "build ${c_MCU_PROJECT_NAME} only"
-    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image_list>
+    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image_list>_postbuild
 )
