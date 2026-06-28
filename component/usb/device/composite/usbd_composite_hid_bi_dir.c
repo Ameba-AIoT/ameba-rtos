@@ -847,8 +847,8 @@ int usbd_composite_hid_init(usbd_composite_dev_t *cdev, usbd_composite_hid_usr_c
 
 usbd_composite_hid_clean_all_exit:
 	if (ep_hid_in->xfer_buf) {
-		usb_os_mfree(ep_hid_priv_in->xfer_buf);
-		ep_hid_priv_in->xfer_buf = NULL;
+		usb_os_mfree(ep_hid_in->xfer_buf);
+		ep_hid_in->xfer_buf = NULL;
 	}
 
 usbd_composite_hid_clean_priv_exit:

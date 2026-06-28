@@ -33,7 +33,7 @@ DRESULT USB_disk_ioctl(BYTE cmd, void *buff);
 
 static const char *const TAG = "MSC";
 
-/* USB Disk Deiver */
+/* USB Disk Driver */
 ll_diskio_drv USB_disk_Driver = {
 	.disk_initialize = USB_disk_initialize,
 	.disk_deinitialize = USB_disk_deinitialize,
@@ -79,7 +79,7 @@ DSTATUS USB_disk_deinitialize(void)
 DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
 {
 	DRESULT res = RES_ERROR;
-	usbh_msc_lun_t info;
+	usbh_msc_lun_t info = {0};
 	int status = HAL_OK;
 
 #if CONFIG_USBH_MSC_RETRY
@@ -139,7 +139,7 @@ DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
 DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
 {
 	DRESULT res = RES_ERROR;
-	usbh_msc_lun_t info;
+	usbh_msc_lun_t info = {0};
 	int status = HAL_OK;
 
 #if CONFIG_USBH_MSC_RETRY
@@ -207,7 +207,7 @@ DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
 DRESULT USB_disk_ioctl(BYTE cmd, void *buff)
 {
 	DRESULT res = RES_ERROR;
-	usbh_msc_lun_t info;
+	usbh_msc_lun_t info = {0};
 
 	switch (cmd) {
 	/* Make sure that no pending write process */

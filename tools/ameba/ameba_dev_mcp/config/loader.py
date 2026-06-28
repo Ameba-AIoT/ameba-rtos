@@ -37,7 +37,6 @@ from ameba_dev_mcp.models.schemas import (
     ProjectEntry,
     ProjectImageEntry,
     ProjectInfo,
-    ProjectInfoDefaults,
     RemoteSpec,
     ResolvedBoard,
 )
@@ -216,7 +215,6 @@ def update_project_for_soc(sdk_root: str, parsed: ParsedProject) -> ProjectInfo:
         info.projects[parsed.soc] = ProjectEntry(
             flash_layout_setting_mode="auto",
             build_dir=parsed.build_dir,
-            memory_type=(existing.memory_type if existing else None),
             images=images,
         )
     # manual: leave as is
@@ -491,6 +489,7 @@ def resolve_board(info: BoardInfo, alias: str) -> ResolvedBoard:
         soc=entry.soc,
         transport=entry.transport,
         port=entry.port,
+        memory_type=entry.memory_type if entry.memory_type is not None else d.memory_type,
         baudrate=entry.baudrate if entry.baudrate is not None else d.baudrate,
         monitor_baudrate=entry.monitor_baudrate if entry.monitor_baudrate is not None else d.monitor_baudrate,
         chip_erase=entry.chip_erase if entry.chip_erase is not None else d.chip_erase,

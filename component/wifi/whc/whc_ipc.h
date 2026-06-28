@@ -97,24 +97,24 @@ enum IPC_WIFI_CTRL_TYPE {
 };
 
 struct whc_ipc_dev_req_msg {
-	u32	enevt_id;
-	u32	param_buf[DEV_MSG_PARAM_NUM];
 	int	ret;
+	u32	param_buf[DEV_MSG_PARAM_NUM];
+	u32	enevt_id; /*Placed last to ensure it is flushed last. https://jira.realtek.com/browse/RSWLANDIOT-15582*/
 	u8	dummy[DEV_MSG_DUMY_NUM]; /* add for 64B size alignment */
 };
 
 struct whc_ipc_host_req_msg {
-	u32	api_id;
-	u32	param_buf[HOST_MSG_PARAM_NUM];
 	int	ret;
+	u32	param_buf[HOST_MSG_PARAM_NUM];
+	u32	api_id; /*Placed last to ensure it is flushed last */
 	u8 dummy[HOST_MSG_DUMY_NUM];//add for 64B size alignment
 };
 
 struct whc_ipc_ex_msg {
-	u32	event_num;
 	u32	msg_addr;
 	u32 msg_queue_status;
 	u32	wlan_idx;
+	u32	event_num; /*Placed last to ensure it is flushed last */
 	u32 rsvd[12]; /* keep total size 64B aligned */
 };
 

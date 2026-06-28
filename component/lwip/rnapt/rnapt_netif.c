@@ -13,6 +13,7 @@
 #include "dhcp/dhcps.h"
 #include "wifi_api.h"
 #include "lwip_ipnapt.h"
+#include "dns_proxy.h"
 #if defined(CONFIG_LWIP_USB_ETHERNET)
 #include "usb_ethernet.h"
 #endif
@@ -20,9 +21,6 @@
 #ifndef TAG
 #define TAG "R-NAPT"
 #endif
-
-extern void ip_napt_reinitialize(void);
-extern void ip_napt_sync_dns_server_data(void);
 
 /* ======================================================================== */
 /*                           Global Variables                               */
@@ -185,8 +183,8 @@ static void rnapt_netif_ext_callback(struct netif *netif,
 			/* Reinitialize NAPT tables */
 			ip_napt_reinitialize();
 
-			/* Sync DNS server data from the new WAN interface */
-			ip_napt_sync_dns_server_data();
+			/* Notify DNS Proxy to update upstream servers from LwIP */
+			dns_proxy_update_upstream_servers();
 
 			/* Update default gateway */
 			rnapt_update_default_gw();
@@ -787,7 +785,7 @@ rnapt_netif_t *rnapt_get_default_gw(void)
  */
 void rnapt_print_status(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_ALWAYS, "========== R-NAPT Status ==========\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "========== R-NAPT Status ==========\n");
 
 	for (int i = 0; i < NET_IF_NUM; i++) {
 		rnapt_netif_t *current = g_netif_array[i];
@@ -801,7 +799,7 @@ void rnapt_print_status(void)
 		const char *is_gw = (current == g_default_gw) ? " [DEFAULT GW]" : "";
 
 		if (netif_is_up(current->lwip_netif)) {
-			RTK_LOGS(TAG, RTK_LOG_ALWAYS,
+			RTK_LOGS(NOTAG, RTK_LOG_INFO,
 					 "[%s] %s: IP=%d.%d.%d.%d GW=%d.%d.%d.%d Role=%s Method=%s Prio=%d%s\n",
 					 current->if_desc, status,
 					 ip4_addr1(netif_ip4_addr(current->lwip_netif)),
@@ -814,13 +812,13 @@ void rnapt_print_status(void)
 					 ip4_addr4(netif_ip4_gw(current->lwip_netif)),
 					 role_str, method_str, current->priority, is_gw);
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_ALWAYS,
+			RTK_LOGS(NOTAG, RTK_LOG_INFO,
 					 "[%s] %s: IP=0.0.0.0 GW=0.0.0.0 Role=%s Method=%s Prio=%d%s\n",
 					 current->if_desc, status, role_str, method_str, current->priority, is_gw);
 		}
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_ALWAYS, "====================================\n\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "====================================\n\n");
 }
 
 #endif /* CONFIG_RNAPT */

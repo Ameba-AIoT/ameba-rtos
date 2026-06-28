@@ -125,7 +125,6 @@ int example_raw_rtc(void)
 		printf("Create RAW_RTC_DEMO_TASK Err!!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }
 

@@ -65,6 +65,8 @@ static struct whc_host_command_entry cmd_table[] = {
 	{"setmac", whc_host_set_mac},
 	{"netifon", whc_host_set_netif_on},
 	{"init", whc_host_nl_init},
+	{"logon", whc_host_log_enable},
+	{"logoff", whc_host_log_disable},
 	{"wifion", whc_host_set_wifi_on},
 	{"scan", whc_host_wifi_scan},
 	{"dhcp", whc_host_wifi_dhcp},
@@ -465,9 +467,34 @@ int whc_host_nl_init(void)
 	ret = whc_host_api_send_nl_msg(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
 	if (ret < 0) {
 		printf("msg send fail\n");
+		return ret;
 	}
 
+	ret = whc_host_log_enable();
+
 	return ret;
+}
+
+int whc_host_log_enable(void)
+{
+	uint8_t buf[5] = {0};
+	uint8_t *ptr = buf;
+
+	*(uint32_t *)ptr = WHC_WIFI_TEST;
+	ptr += 4;
+	*ptr = WHC_WIFI_TEST_LOG_ENABLE;
+	return whc_host_api_send_nl_payload(buf, sizeof(buf));
+}
+
+int whc_host_log_disable(void)
+{
+	uint8_t buf[5] = {0};
+	uint8_t *ptr = buf;
+
+	*(uint32_t *)ptr = WHC_WIFI_TEST;
+	ptr += 4;
+	*ptr = WHC_WIFI_TEST_LOG_DISABLE;
+	return whc_host_api_send_nl_payload(buf, sizeof(buf));
 }
 
 void whc_host_cmd_hdl(char *input)
@@ -587,7 +614,7 @@ void whc_host_mp_result(uint8_t *buf)
 	mpfrag_received++;
 
 	if (mpfrag_received >= WHC_MP_FRAG_NUM) {
-		printf("%s \r\n", (char *)mpfrag_buf);
+		printf("Private Message: %s\r\n#\r\n", (char *)mpfrag_buf);
 		mpfrag_received = 0;
 		memset(mpfrag_buf, 0, sizeof(mpfrag_buf));
 	}

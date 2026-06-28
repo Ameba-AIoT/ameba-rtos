@@ -35,6 +35,9 @@
 
 #define CCMPH_2_PN(ch)	(((ch) & 0x000000000000ffff) \
 			| (((ch) & 0xffffffff00000000) >> 16))
+#define PN_LESS_CHK(a, b)	(((a-b) & 0x800000000000) != 0)
+#define VALID_PN_CHK(new, old)	(((old) == 0) || PN_LESS_CHK(old, new))
+#define CCMPH_2_KEYID(ch)	(((ch) & 0x00000000c0000000) >> 30)
 
 struct mic_data {
 	u32  K0, K1;         // Key
@@ -68,9 +71,10 @@ u32 crc32_get(u8 *buf, int len);
 void rt_arc4_init(struct arc4context *parc4ctx, u8 *key, u32 key_len);
 void rt_arc4_crypt(struct arc4context *parc4ctx, u8 *dest, u8 *src, u32 len);
 
-struct security_priv {
+struct whch_security_priv {
 	union Keytype_32	dot11_wpa_grpkey[1];	// 802.1x Group Key, for inx0 and inx1
 	union Keytype	dot11_tkip_grpmickey_tx[1];
+	union Keytype	dot11_tkip_grpmickey_rx[1];
 
 	u32             dot11_wpa_mode;	// NDIS_802_11_AUTHENTICATION_MODE
 	u32             dot11PrivacyAlgrthm;	// This specify the privacy for shared auth. algorithm.
@@ -83,21 +87,16 @@ struct security_priv {
 	u8              b_sw_encrypt: 1;
 	u8              b_installGrpkey: 1;
 	u8              b_hw_decrypted: 1;
-	u8              b_grpkey_rxpn_cur_index;
-	union pn48      dot11_wpa_grpkey_rxpn[2];
 	union Keytype   dot11_wep_key[4];
 	u8              dot11_wep_keylen[4];
 
 	u8				iv_seq[4][8];
-#ifdef CONFIG_PMF_USE_HW_CRYPTO
-	u32             ieee80211w;
-	u8              b_installBIPkey: 1;
-#endif
 };
 
 void whc_host_secmicsetkey(struct mic_data *pmicdata, u8 *key);
 void whc_host_secmicappend(struct mic_data *pmicdata, u8 *src, u32 nbytes);
 void whc_host_secgetmic(struct mic_data *pmicdata, u8 *dst);
+void whc_host_seccalctkipmic(u8 *key, u8 *header, u8 *data, u32 data_len, u8 *mic_code, u8 pri);
 
 u8 wep_80211_decrypt(u8 *pframe, u32 wlan_hdr_len, u32 iv_len, u32 payload_len,
 					 u8 *key, u32 key_len, union u_crc *pcrc);
@@ -106,4 +105,8 @@ u8 tkip_80211_decrypt(u8 *pframe, u32 wlan_hdr_len, u32 iv_len, u32 payload_len,
 u32 aes_80211_decrypt(u8 *pframe, u32 wlan_hdr_len, u32 payload_len, u8 *key, u32 frame_type);
 u32 gcmp_80211_decrypt(u8 *pframe, u32 wlan_hdr_len, u32 frame_len, u8 *key, u32 key_len);
 
+void wep_80211_encrypt(u8 *pframe, u32 wlan_hdr_len, u32 iv_len, u32 payload_len, u8 *key, u32 key_len);
+void tkip_80211_encrypt(u8 *pframe, u32 wlan_hdr_len, u32 iv_len, u32 payload_len, u8 *key, u32 key_len, u8 *ta);
+u32 aes_80211_encrypt(u8 *pframe, u32 wlan_hdr_len, u32 payload_len, u8 *key, u32 frame_type);
+u32 gcmp_80211_encrypt(u8 *pframe, u32 wlan_hdr_len, u32 payload_len, u8 *key, u32 key_len);
 #endif /* __WHC_HOST_SECURITY_H__ */

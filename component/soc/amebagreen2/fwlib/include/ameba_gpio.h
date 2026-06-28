@@ -321,7 +321,7 @@ typedef struct {
 typedef void (*GPIO_IRQ_FUN)(void *Data, u32 Id);
 
 /**
-  * @brief  GPIO USER IRQ Function Definition
+  * @brief  GPIO User IRQ Function Definition
   */
 typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 
@@ -329,10 +329,10 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
   * @brief GPIO_IrqContext Definition
   */
 struct GPIO_IrqContext {
-	u16 IrqPinName;
-	u16 IrqIdleEntryFlag;
-	GPIO_IRQ_FUN UsrIrqHandler;
-	void *UsrIrqData;
+	u16 IrqPinName;          /*!< GPIO pin name for this IRQ entry. */
+	u16 IrqIdleEntryFlag;    /*!< Magic number flag indicating whether this entry is in use; set to @ref GPIO_IRQ_ENTRY_USED_MAGIC_NUMBER when occupied. */
+	GPIO_IRQ_FUN UsrIrqHandler; /*!< User-registered IRQ callback function. */
+	void *UsrIrqData;        /*!< User data pointer passed to UsrIrqHandler. */
 };
 // typedef struct GPIO_IrqContext GPIO_IrqContext_t;
 
@@ -374,6 +374,7 @@ struct GPIO_IrqContext {
 #define GPIO_INT_Trigger_EDGE		0x1 /*!< This interrupt is edge trigger */
 #define GPIO_INT_Trigger_BOTHEDGE	0x2 /*!< This interrupt is both-edge trigger */
 
+/** @brief Check if GPIO interrupt trigger type is valid. */
 #define IS_GPIOIT_LEVEL_TYPE(TYPE)		(((TYPE) == GPIO_INT_Trigger_LEVEL) || \
 										((TYPE) == GPIO_INT_Trigger_EDGE) || \
 										((TYPE) == GPIO_INT_Trigger_BOTHEDGE))
@@ -387,6 +388,7 @@ struct GPIO_IrqContext {
 #define GPIO_INT_POLARITY_ACTIVE_LOW		0x0 /*!< Setting interrupt to low active: falling edge or low level */
 #define GPIO_INT_POLARITY_ACTIVE_HIGH		0x1 /*!< Setting interrupt to high active: rising edge or high level */
 
+/** @brief Check if GPIO interrupt polarity type is valid. */
 #define IS_GPIOIT_POLARITY_TYPE(TYPE)		(((TYPE) == GPIO_INT_POLARITY_ACTIVE_LOW) || \
 											((TYPE) == GPIO_INT_POLARITY_ACTIVE_HIGH))
 /**
@@ -399,6 +401,7 @@ struct GPIO_IrqContext {
 #define GPIO_INT_DEBOUNCE_DISABLE			0x0 /*!< Disable interrupt debounce */
 #define GPIO_INT_DEBOUNCE_ENABLE			0x1 /*!< Enable interrupt debounce */
 
+/** @brief Check if GPIO interrupt debounce type is valid. */
 #define IS_GPIOIT_DEBOUNCE_TYPE(TYPE)		(((TYPE) == GPIO_INT_DEBOUNCE_DISABLE) || \
 											((TYPE) == GPIO_INT_DEBOUNCE_ENABLE))
 /**
@@ -420,6 +423,7 @@ struct GPIO_IrqContext {
 #define GPIO_PORT_A				0x0 /*!< Port number A */
 #define GPIO_PORT_B				0x1 /*!< Port number B */
 #define GPIO_PORT_C				0x2 /*!< Port number C */
+/** @brief Check if GPIO port number is valid. */
 #define IS_GPIO_PORT_NUM(PORT)	((PORT) == GPIO_PORT_A || \
 								(PORT) == GPIO_PORT_B || \
 								(PORT) == GPIO_PORT_C)
@@ -441,6 +445,15 @@ struct GPIO_IrqContext {
   * @{
   */
 #define GPIO_IRQ_ENTRY_USED_MAGIC_NUMBER    0x69A5 /*!< Set IrqIdleEntryFlag to this value when table entry is occupied  */
+/**
+  * @}
+  */
+
+/** @defgroup GPIO_DR_DDR_Func_Select GPIO DR DDR Function Select
+  * @{
+  */
+#define GPIO_DR_DDR_FUNC_DW			0x0  /*!< Select direct register access for DR/DDR. */
+#define GPIO_DR_DDR_FUNC_WRAP		0x1  /*!< Select wrapper access for DR/DDR. */
 /**
   * @}
   */
@@ -485,9 +498,6 @@ _LONG_CALL_ u32 GPIO_GetDWWrapper(void);
 
 extern GPIO_TypeDef *GPIO_PORTx[3];
 extern GPIO_TypeDef *GPIO_PORTx_S[3];
-
-#define GPIO_DR_DDR_FUNC_DW			0x0
-#define GPIO_DR_DDR_FUNC_WRAP		0x1
 
 #ifdef __cplusplus
 }

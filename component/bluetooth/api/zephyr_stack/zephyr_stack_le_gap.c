@@ -56,8 +56,12 @@ enum {
 };
 
 static uint16_t bt_stack_le_conn_handle[CONFIG_BT_MAX_CONN] = {0};
+#if defined(CONFIG_BT_USER_PHY_UPDATE) && defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 static bt_zephyr_gap_phy_setting phy_setting;
+#endif
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE) && defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 static bt_zephyr_gap_data_len_setting data_len_setting;
+#endif
 static uint8_t legacy_ad_buf[BT_ZEPHYR_LEGACY_ADV_MAX_LEN];
 static uint8_t legacy_sd_buf[BT_ZEPHYR_LEGACY_ADV_MAX_LEN];
 static bt_zephyr_adv_data legacy_ad;
@@ -235,6 +239,7 @@ void bt_zephyr_le_security_changed(struct bt_conn *conn, bt_security_t level, en
 	pair_result_indicate(conn, err);
 }
 
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE) && defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 void bt_zephyr_data_len_updated_callback(struct bt_conn *conn, struct bt_conn_le_data_len_info *info)
 {
 	rtk_bt_evt_t *p_evt = NULL;
@@ -261,7 +266,9 @@ void bt_zephyr_data_len_updated_callback(struct bt_conn *conn, struct bt_conn_le
 
 	rtk_bt_evt_indicate(p_evt, NULL);
 }
+#endif
 
+#if defined(CONFIG_BT_USER_PHY_UPDATE) && defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 void bt_zephyr_phy_updated_callback(struct bt_conn *conn, struct bt_conn_le_phy_info *param)
 {
 	rtk_bt_evt_t *p_evt = NULL;
@@ -287,6 +294,7 @@ void bt_zephyr_phy_updated_callback(struct bt_conn *conn, struct bt_conn_le_phy_
 
 	rtk_bt_evt_indicate(p_evt, NULL);
 }
+#endif
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RX) && defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 static void bt_zephyr_conn_cte_report(struct bt_conn *conn, const struct bt_df_conn_iq_samples_report *iq_report)
@@ -369,10 +377,10 @@ static struct bt_conn_cb bt_zephyr_conn_cb = {
 #if defined(CONFIG_BT_SMP)
 	.security_changed = bt_zephyr_le_security_changed,
 #endif
-#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE) && defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	.le_data_len_updated = bt_zephyr_data_len_updated_callback,
 #endif
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
+#if defined(CONFIG_BT_USER_PHY_UPDATE) && defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	.le_phy_updated = bt_zephyr_phy_updated_callback,
 #endif
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RX) && defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
@@ -873,19 +881,25 @@ int bt_stack_le_gap_init(void *app_config)
 	rtk_bt_app_conf_t *papp_conf = (rtk_bt_app_conf_t *)app_config;
 
 	if (papp_conf != NULL) {
+#if defined(CONFIG_BT_USER_PHY_UPDATE) && defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 		phy_setting.all_phys = papp_conf->prefer_all_phy;
 		phy_setting.tx_phy = papp_conf->prefer_tx_phy;
 		phy_setting.rx_phy = papp_conf->prefer_rx_phy;
-
+#endif
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE) && defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 		data_len_setting.tx_octets = papp_conf->max_tx_octets;
 		data_len_setting.tx_time = papp_conf->max_tx_time;
+#endif
 	} else {
+#if defined(CONFIG_BT_USER_PHY_UPDATE) && defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 		phy_setting.all_phys = 0;
 		phy_setting.tx_phy = BIT0 | BIT1 | BIT2;
 		phy_setting.rx_phy = BIT0 | BIT1 | BIT2;
-
+#endif
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE) && defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 		data_len_setting.tx_octets = 0x40;
 		data_len_setting.tx_time = 0x200;
+#endif
 	}
 
 	if (is_stack_never_enabled()) {
@@ -2279,7 +2293,7 @@ static uint16_t bt_stack_le_gap_get_conn_info(void *param)
 	info->latency = conn_info.le.latency;
 	info->supv_timeout = conn_info.le.timeout;
 
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
+#if defined(CONFIG_BT_USER_PHY_UPDATE) && defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	info->tx_phy = conn_info.le.phy->tx_phy;
 	info->rx_phy = conn_info.le.phy->rx_phy;
 #endif
@@ -2488,7 +2502,7 @@ static uint16_t bt_stack_le_gap_get_conn_handle_by_addr(void *param)
 	return RTK_BT_ERR_NO_CONNECTION;
 }
 
-#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE) && defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 static uint16_t bt_stack_le_gap_set_data_len(void *param)
 {
 	rtk_bt_le_set_datalen_param_t *set_datalen = (rtk_bt_le_set_datalen_param_t *)param;
@@ -2512,7 +2526,7 @@ static uint16_t bt_stack_le_gap_set_data_len(void *param)
 }
 #endif
 
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
+#if defined(CONFIG_BT_USER_PHY_UPDATE) && defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 static uint16_t bt_stack_le_gap_set_phy(void *param)
 {
 	rtk_bt_le_set_phy_param_t *set_phy = (rtk_bt_le_set_phy_param_t *)param;
@@ -2768,7 +2782,10 @@ static uint16_t bt_stack_le_sm_set_security_param(void *p_param)
 	}
 
 	if (param->mitm_flag) { /* may support numerical comparison or passkey entry */
+		bt_set_mitm_flag(true);
 		security_level = BT_SECURITY_L3;
+	} else {
+		bt_set_mitm_flag(false);
 	}
 
 	if (param->oob_data_flag) {
@@ -3675,13 +3692,14 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_LE_GAP_ACT_SET_CHANNELS:
 		ret = bt_stack_le_gap_set_channels(p_cmd->param);
 		break;
-#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE) && defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	case RTK_BT_LE_GAP_ACT_SET_DATA_LEN:
 		ret = bt_stack_le_gap_set_data_len(p_cmd->param);
 		break;
 #endif
 
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
+#if defined(CONFIG_BT_USER_PHY_UPDATE) && defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	case RTK_BT_LE_GAP_ACT_SET_PHY:
 		ret = bt_stack_le_gap_set_phy(p_cmd->param);
 		break;

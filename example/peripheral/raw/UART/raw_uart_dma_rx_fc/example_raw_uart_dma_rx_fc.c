@@ -192,7 +192,5 @@ int example_raw_uart_dma_rx_fc(void)
 		RTK_LOGE(NOTAG, "Create uart_stream_rx_dma_flow_ctrl_demo Err!!\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

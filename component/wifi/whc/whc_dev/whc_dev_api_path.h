@@ -116,6 +116,10 @@ void whc_event_sme_auth(u32 api_id, u32 *param_buf);
 void whc_event_sme_set_assocreq_ie(u32 api_id, u32 *param_buf);
 #endif
 
+#ifdef CONFIG_WHCH
+void whc_event_wifi_stats_update(u32 api_id, u32 *param_buf);
+#endif
+
 /* ---------------------------- Public Functions ---------------------------- */
 int wext_private_command(char *cmd, int show_msg, char *user_buf);
 int wifi_set_ips_internal(u8 enable);

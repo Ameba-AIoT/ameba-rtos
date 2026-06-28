@@ -81,7 +81,5 @@ int example_raw_adc_sw_trig(void)
 		RTK_LOGI(NOTAG, "Cannot create RAW_ADC_SW_TRIG_TASK\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

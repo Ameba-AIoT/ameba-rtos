@@ -24,7 +24,7 @@
  * @{
  */
 
-#define CDC_ECM_MAC_STR_LEN                           (6)      /**< Length of the MAC address in bytes. */
+#define USBD_CDC_ECM_MAC_STR_LEN                           (6)      /**< Length of the MAC address in bytes. */
 
 /* Defines endpoint addresses for BULK and INTERRUPT transfers. */
 #if defined (CONFIG_AMEBAGREEN2)
@@ -137,7 +137,7 @@ typedef struct {
 	u32 rx_msg_len;             /**< Frame length handed to the RX thread. */
 	__IO u32 rx_pending_len;    /**< Deferred frame length waiting in rx_buf[rx_xfer_idx]. */
 
-	u8 mac[CDC_ECM_MAC_STR_LEN];          /**< Device MAC address (6 bytes). */
+	u8 mac[USBD_CDC_ECM_MAC_STR_LEN];          /**< Device MAC address (6 bytes). */
 
 	u8 connect_status;          /**< Current network connection state (1=connected, 0=disconnected). */
 	u8 notify_state;            /**< Active notification type, see usbd_cdc_ecm_notify_state. */

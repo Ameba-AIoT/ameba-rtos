@@ -370,9 +370,7 @@ int mbedtls_rsa_private(mbedtls_rsa_context *ctx, int (*f_rng)(void *, unsigned 
 
 	int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
 	size_t olen;
-
-	/* Temporary holding the result */
-	mbedtls_mpi T;
+	mbedtls_mpi T, T1, T2, R;
 
 #if defined(MBEDTLS_THREADING_C)
 	if ((ret = mbedtls_mutex_lock(&ctx->mutex)) != 0) {
@@ -380,9 +378,10 @@ int mbedtls_rsa_private(mbedtls_rsa_context *ctx, int (*f_rng)(void *, unsigned 
 	}
 #endif
 
-	/* MPI Initialization */
 	mbedtls_mpi_init(&T);
-	/* End of MPI initialization */
+	mbedtls_mpi_init(&T1);
+	mbedtls_mpi_init(&T2);
+	mbedtls_mpi_init(&R);
 
 	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&T, input, ctx->len));
 	if (mbedtls_mpi_cmp_mpi(&T, &ctx->N) >= 0) {
@@ -390,13 +389,33 @@ int mbedtls_rsa_private(mbedtls_rsa_context *ctx, int (*f_rng)(void *, unsigned 
 		goto cleanup;
 	}
 
+#if !defined(MBEDTLS_RSA_NO_CRT)
+	/* CRT: two half-size PKE exponentiations + SW Garner recombination */
+	MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&T1, &T, &ctx->P));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod_prime_n(&T1, &T1, &ctx->DP, &ctx->P, NULL));
+
+	MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&T2, &T, &ctx->Q));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod_prime_n(&T2, &T2, &ctx->DQ, &ctx->Q, NULL));
+
+	/* T = T2 + Q * (QP * (T1 - T2) mod P) */
+	MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(&R, &T1, &T2));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&R, &R, &ctx->QP));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&R, &R, &ctx->P));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&R, &R, &ctx->Q));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(&T, &T2, &R));
+#else
+	/* Full exponentiation T = T^D mod N */
 	MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod_prime_n(&T, &T, &ctx->D, &ctx->N, &ctx->RN));
+#endif
 
 	olen = ctx->len;
 	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&T, output, olen));
 
 cleanup:
 	mbedtls_mpi_free(&T);
+	mbedtls_mpi_free(&T1);
+	mbedtls_mpi_free(&T2);
+	mbedtls_mpi_free(&R);
 
 #if defined(MBEDTLS_THREADING_C)
 	if (mbedtls_mutex_unlock(&ctx->mutex) != 0) {

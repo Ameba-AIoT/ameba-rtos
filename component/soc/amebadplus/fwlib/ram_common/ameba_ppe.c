@@ -9,10 +9,10 @@
   * @{
   */
 
-/** @defgroup PPE
-* @brief PPE driver modules
-* @{
-*/
+/** @defgroup PPE PPE
+  * @brief PPE driver modules
+  * @{
+  */
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup PPE_Exported_Functions PPE Exported Functions
@@ -21,10 +21,9 @@
 
 
 /**
-  * @brief  Enable PPE.
-  * @param  state: the state of PPE.
-  *              This parameter can only be ENABLE.
-  * @retval None.
+  * @brief  Enable or disable PPE.
+  * @param  state The state of PPE. This parameter can be ENABLE or DISABLE.
+  * @note   DISABLE may have no effect on some platforms.
   */
 void PPE_Cmd(int state)
 {
@@ -35,8 +34,7 @@ void PPE_Cmd(int state)
 
 /**
   * @brief  Get PPE global state.
-  * @param  None.
-  * @retval Global state. 0 means PPE is not working, 1 means PPE is working.
+  * @return One of @ref PPE_GLOBAL_STATE.
   */
 u32 PPE_GetGlobalState(void)
 {
@@ -45,8 +43,6 @@ u32 PPE_GetGlobalState(void)
 
 /**
   * @brief  Suspend PPE.
-  * @param  None.
-  * @retval None.
   */
 void PPE_Suspend(void)
 {
@@ -55,8 +51,6 @@ void PPE_Suspend(void)
 
 /**
   * @brief  Resume PPE from suspend state.
-  * @param  None.
-  * @retval None.
   */
 void PPE_Resume(void)
 {
@@ -64,9 +58,7 @@ void PPE_Resume(void)
 }
 
 /**
-  * @brief  PPE abort.
-  * @param  None.
-  * @retval None.
+  * @brief  Abort PPE.
   */
 void PPE_Abort(void)
 {
@@ -79,8 +71,10 @@ void PPE_Abort(void)
 
 /**
   * @brief  Check if a layer is inactive.
-  * @param  chn_id: the layer number to be checked.
-  * @retval Status.
+  * @param  chn_id The layer number to be checked.
+  * @return Layer inactive status:
+  *         - 0: the layer is active
+  *         - 1: the layer is inactive
   */
 int PPE_ChannelInactiveCheck(u8 chn_id)
 {
@@ -93,10 +87,9 @@ int PPE_ChannelInactiveCheck(u8 chn_id)
 }
 
 /**
-  * @brief  Set ration of scale function.
-  * @param  scale_x: ration of scale in X diretion. No smaller than 1/16.
-  *         scale_y: ration of scale in Y diretion. No smaller than 1/16.
-  * @retval None.
+  * @brief  Set the scale ratio.
+  * @param  scale_x Scale ratio in the X direction. No smaller than 1/16.
+  * @param  scale_y Scale ratio in the Y direction. No smaller than 1/16.
   */
 void PPE_SetScaleRation(float scale_x, float scale_y)
 {
@@ -121,8 +114,7 @@ void PPE_SetScaleRation(float scale_x, float scale_y)
 
 /**
   * @brief  Get all interrupt status.
-  * @param  None.
-  * @retval Status.
+  * @return Current PPE interrupt status.
   */
 u32 PPE_GetAllIntStatus(void)
 {
@@ -131,14 +123,8 @@ u32 PPE_GetAllIntStatus(void)
 
 /**
   * @brief  Clear specific interrupt status.
-  * @param  PPE_INT: specifies the PPE interrupt type.
-  *          This parameter can be one or combinations of the following values:
-  *            @arg PPE_ALL_OVER_INT: All frames blend or scale over.
-  *            @arg PPE_FR_OVER_INT: One frame blend or scale over.
-  *            @arg PPE_LOAD_OVER_INT: layers register be loaded to internal register over.
-  *            @arg PPE_LINE_WL_INT: Specific line blend/scale over.
-  *            @arg PPE_SUSP_INAC_INT: All channels come to inactive after suspend.
-  * @retval None.
+  * @param  PPE_INT Specifies the PPE interrupt type.
+  *         This parameter can be one or combinations of PPE_INTR_ST.
   */
 void PPE_ClearINTPendingBit(u32 PPE_INT)
 {
@@ -146,17 +132,11 @@ void PPE_ClearINTPendingBit(u32 PPE_INT)
 }
 
 /**
-  * @brief  Enable/disable specific interrupt.
-  * @param  PPE_INT_MSK: specifies the PPE interrupt type.
-  *          This parameter can be one or combinations of the following values:
-  *            @arg PPE_ALL_OVER_INT: All frames blend or scale over.
-  *            @arg PPE_FR_OVER_INT: One frame blend or scale over.
-  *            @arg PPE_LOAD_OVER_INT: layers register be loaded to internal register over.
-  *            @arg PPE_LINE_WL_INT: Specific line blend/scale over.
-  *            @arg PPE_SUSP_INAC_INT: All channels come to inactive after suspend.
-  *         NewState: the new state.
+  * @brief  Enable or disable the specified interrupt.
+  * @param  PPE_INT_MSK Specifies the PPE interrupt type.
+  *         This parameter can be one or combinations of PPE_INTR_ST.
+  * @param  NewState The new state.
   *              This parameter can be: ENABLE or DISABLE.
-  * @retval None.
   */
 void PPE_MaskINTConfig(u32 PPE_INT_MSK, int NewState)
 {
@@ -169,8 +149,6 @@ void PPE_MaskINTConfig(u32 PPE_INT_MSK, int NewState)
 
 /**
   * @brief  Mask all interrupt.
-  * @param  None.
-  * @retval None.
   */
 void PPE_MaskAllInt(void)
 {
@@ -179,13 +157,12 @@ void PPE_MaskAllInt(void)
 
 /**
   * @brief  Configure auto reload layers.
-  * @param  layers: auto reload layers.
+  * @param  layers Auto reload layers.
   *          This parameter can be one or combinations of the following values:
   *            @arg PPE_RESULT_LAYER_BIT: result layer.
   *            @arg PPE_INPUT_LAYER1_BIT: input layer1.
   *            @arg PPE_INPUT_LAYER2_BIT: input layer2.
   *            @arg PPE_INPUT_LAYER3_BIT: input layer3.
-  * @retval None.
   */
 void PPE_AutoReloadSetLayer(u32 layers)
 {
@@ -197,10 +174,7 @@ void PPE_AutoReloadSetLayer(u32 layers)
 }
 
 /**
-  * @brief  Enable/disable Auto reload function.
-  * @param  NewState: the new state.
-  *              This parameter can be: ENABLE or DISABLE.
-  * @retval None.
+  * @brief  Clear all auto reload layers.
   */
 void PPE_AutoReloadClrLayerAll(void)
 {
@@ -208,10 +182,9 @@ void PPE_AutoReloadClrLayerAll(void)
 }
 
 /**
-  * @brief  Enable/disable auto cleared after loading.
-  * @param  NewState:the new state.
+  * @brief  Enable or disable auto clear after loading.
+  * @param  NewState The new state.
   *              This parameter can be: ENABLE or DISABLE.
-  * @retval None.
   */
 void PPE_AutoClearCmd(int NewState)
 {
@@ -223,9 +196,7 @@ void PPE_AutoClearCmd(int NewState)
 }
 
 /**
-  * @brief  Tell PPE setting is vaild for auto reload function.
-  * @param  None
-  * @retval None.
+  * @brief  Tell PPE the settings are valid for the auto reload function.
   */
 void PPE_SetValid(void)
 {
@@ -233,9 +204,10 @@ void PPE_SetValid(void)
 }
 
 /**
-  * @brief  Get setting valid value to polling.
-  * @param  None.
-  * @retval Set valid bit value. 0 means user can use to PPE_SetValid tell PPE setting is valid.
+  * @brief  Get the setting valid value for polling.
+  * @return Set valid bit status:
+  *         - 0: User can call PPE_SetValid() to tell PPE the settings are valid
+  *         - 1: Settings valid bit is set
   */
 u32 PPE_GetValid(void)
 {
@@ -243,9 +215,8 @@ u32 PPE_GetValid(void)
 }
 
 /**
-  * @brief  Set LLP value to the pointer of first linklist item.
-  * @param  lli: pointer to first listlist item. Must align to 4Byte.
-  * @retval None.
+  * @brief  Set the LLP value to the pointer of the first linked list item.
+  * @param  lli Pointer to the first linked list item. Must align to 4 bytes.
   */
 void PPE_SetLLP(u32      lli)
 {
@@ -253,14 +224,13 @@ void PPE_SetLLP(u32      lli)
 }
 
 /**
-  * @brief  Set layer used by first linklist item.
-  * @param  layers: linklist layers.
+  * @brief  Set layers used by the first linked list item.
+  * @param  layers Linked list layers.
   *          This parameter can be one or combinations of the following values:
   *            @arg PPE_RESULT_LAYER_BIT: result layer.
   *            @arg PPE_INPUT_LAYER1_BIT: input layer1.
   *            @arg PPE_INPUT_LAYER2_BIT: input layer2.
   *            @arg PPE_INPUT_LAYER3_BIT: input layer3.
-  * @retval None.
   */
 void PPE_LLSetLayer(u32 layers)
 {
@@ -274,8 +244,7 @@ void PPE_LLSetLayer(u32 layers)
 
 /**
   * @brief  Set line index for line over interrupt.
-  * @param  line: the link index.
-  * @retval None.
+  * @param  line The line index.
   */
 void PPE_SetLine(u32 line)
 {
@@ -284,9 +253,8 @@ void PPE_SetLine(u32 line)
 
 
 /**
-  * @brief  Fills each PPE_init_struct member with its default value.
-  * @param  PPE_init_struct: pointer to an PPE_InitTypeDef structure which will be initialized.
-  * @retval None
+  * @brief  Fill each PPE_init_struct member with its default value.
+  * @param  PPE_init_struct Pointer to a PPE_InitTypeDef structure which will be initialized.
   */
 void PPE_StructInit(PPE_InitTypeDef *PPE_init_struct)
 {
@@ -297,9 +265,8 @@ void PPE_StructInit(PPE_InitTypeDef *PPE_init_struct)
 }
 
 /**
-  * @brief  Fills each layer_init_struct member with its default value.
-  * @param  layer_init_struct: pointer to an PPE_InputLayer_InitTypeDef structure which will be initialized.
-  * @retval None
+  * @brief  Fill each layer_init_struct member with its default value.
+  * @param  layer_init_struct Pointer to a PPE_InputLayer_InitTypeDef structure which will be initialized.
   */
 void PPE_InputLayer_StructInit(PPE_InputLayer_InitTypeDef *layer_init_struct)
 {
@@ -317,9 +284,8 @@ void PPE_InputLayer_StructInit(PPE_InputLayer_InitTypeDef *layer_init_struct)
 }
 
 /**
-  * @brief  Fills each layer_init_struct member with its default value.
-  * @param  layer_init_struct: pointer to an PPE_ResultLayer_InitTypeDef structure which will be initialized.
-  * @retval None
+  * @brief  Fill each layer_init_struct member with its default value.
+  * @param  layer_init_struct Pointer to a PPE_ResultLayer_InitTypeDef structure which will be initialized.
   */
 void PPE_ResultLayer_StructInit(PPE_ResultLayer_InitTypeDef *layer_init_struct)
 {
@@ -332,11 +298,9 @@ void PPE_ResultLayer_StructInit(PPE_ResultLayer_InitTypeDef *layer_init_struct)
 }
 
 /**
-  * @brief  Initializes the PPE peripheral according to the specified
-  *              parameters in the PPE_init_struct.
-  * @param  PPE_init_struct: pointer to a PPE_InitTypeDef structure that contains
-  *              the configuration information for the specified PPE peripheral.
-  * @retval None
+  * @brief  Initialize the PPE peripheral according to the specified parameters in the PPE_init_struct.
+  * @param  PPE_init_struct Pointer to a PPE_InitTypeDef structure that contains
+  *                         the configuration information for the specified PPE peripheral.
   */
 void PPE_Init(PPE_InitTypeDef *PPE_init_struct)
 {
@@ -362,10 +326,9 @@ void PPE_Init(PPE_InitTypeDef *PPE_init_struct)
 
 /**
   * @brief  Initialize specific input layer.
-  * @param  id: Input layer number. Can be 1/2/3.
-  *         layer_init_struct: pointer to a PPE_InputLayer_InitTypeDef structure that contains
-  *              the configuration information for the specified input layer.
-  * @retval None
+  * @param  id Input layer number. Can be PPE_INPUT_LAYER1_INDEX or PPE_INPUT_LAYER2_INDEX or PPE_INPUT_LAYER3_INDEX.
+  * @param  layer_init_struct Pointer to a PPE_InputLayer_InitTypeDef structure that contains
+  *                           the configuration information for the specified input layer.
   */
 void PPE_InitInputLayer(u8 id, PPE_InputLayer_InitTypeDef *layer_init_struct)
 {
@@ -406,9 +369,8 @@ void PPE_InitInputLayer(u8 id, PPE_InputLayer_InitTypeDef *layer_init_struct)
 
 /**
   * @brief  Initialize result layer.
-  * @param  layer_init_struct: pointer to a PPE_ResultLayer_InitTypeDef structure that contains
-  *              the configuration information for the result layer.
-  * @retval None
+  * @param  layer_init_struct Pointer to a PPE_ResultLayer_InitTypeDef structure that contains
+  *                           the configuration information for the result layer.
   */
 void PPE_InitResultLayer(PPE_ResultLayer_InitTypeDef *layer_init_struct)
 {

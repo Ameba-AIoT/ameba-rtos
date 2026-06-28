@@ -178,3 +178,6 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf);
 
 /** Generate IRK from Identity Root (IR) */
 int bt_smp_irk_get(uint8_t *ir, uint8_t *irk);
+#if ZEPHYR_FIX_CODE
+void bt_set_mitm_flag(bool enable);
+#endif

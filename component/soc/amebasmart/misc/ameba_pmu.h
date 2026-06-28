@@ -11,21 +11,39 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_ARM_CORE_CA32)
 typedef enum {
-	PMU_OS					= 0,
-	PMU_WLAN_DEVICE		= 1,
-	PMU_KM4_RUN			= 2,
-	PMU_AP_RUN	= 3,
-	PMU_WLAN_FW_DEVICE		= 4,
-	PMU_BT_CONTROLLER	= 5,
-	PMU_BT_HOST	= 6,
-	PMU_VAD_DEVICE	= 7,
-	PMU_DHCP_PROCESS,
+	PMU_OS               = 0,
+	PMU_WLAN_DEVICE,
+	PMU_BT_CONTROLLER,     /* CA32 and KM4 (HP) only */
+	PMU_BT_HOST,
+	PMU_VAD_DEVICE,
+	PMU_DHCP_PROCESS,      /* network stack runs on CA32 */
 	PMU_LWIP_STACK,
-	PMU_DEV_USER_BASE, /* reserved for customer use */
+	PMU_DEV_USER_BASE,     /* reserved for customer use */
 	PMU_MAX,
 } PMU_DEVICE;
-
+#elif defined(CONFIG_ARM_CORE_CM4)
+typedef enum {
+	PMU_OS               = 0,
+	PMU_WLAN_DEVICE,
+	PMU_BT_CONTROLLER,     /* CA32 and KM4 (HP) only */
+	PMU_BT_HOST,
+	PMU_VAD_DEVICE,
+	PMU_DHCP_PROCESS,
+	PMU_MAX,
+} PMU_DEVICE;
+#else
+typedef enum {
+	PMU_OS               = 0,
+	PMU_WLAN_DEVICE,
+	/* LP (KM0) manages KM4/AP power; HP (KM4) holds its own run locks */
+	PMU_KM4_RUN,
+	PMU_AP_RUN,
+	PMU_WLAN_FW_DEVICE,    /* WLAN firmware runs on LP core only */
+	PMU_MAX,
+} PMU_DEVICE;
+#endif
 enum CPU1_STATE {
 	CPU1_RUNNING		= 0,		/* CPU1 is in task schedular or boot from reset */
 	CPU1_HOTPLUG		= 1,		/* CPU1 is offline */

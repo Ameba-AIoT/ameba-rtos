@@ -6,15 +6,28 @@
 
 #include "ameba_soc.h"
 
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup PMCTIMER PMCTIMER
+  * @brief PMCTIMER driver modules
+  * @{
+  */
+
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup PMCTIMER_Exported_Functions PMCTIMER Exported Functions
+  * @{
+  */
+
 /**
-  * @brief  Enables or disables the pmc timer counter
+  * @brief  Enable or disable the pmc timer counter
   *   The pmc timer group contains 4 timers for each group, all runs at 32k.
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  NewState: new state of the Debug timer peripheral.
-  *   This parameter can be: ENABLE or DISABLE.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @retval None
+  * @param  NewState New state of the PMC timer counter.
+  *   This parameter can be: ENABLE or DISABLE.
   */
 void PMCTimer_Cmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, bool NewState)
 {
@@ -27,10 +40,12 @@ void PMCTimer_Cmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, bool NewState)
 
 /**
   * @brief  Check pmctimer current state.
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @retval valid or not
+  * @return The validation result:
+  *         - TRUE: valid
+  *         - FALSE: not valid
   */
 u32 PMCTimer_Valid_Check(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 {
@@ -43,10 +58,10 @@ u32 PMCTimer_Valid_Check(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 
 /**
   * @brief  Get the pmc timer current Counter value.
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @retval current counter
+  * @return Current counter value.
   */
 u32 PMCTimerCnt_Get(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 {
@@ -55,11 +70,10 @@ u32 PMCTimerCnt_Get(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 
 /**
   * @brief  Set the pmc timer count down value.
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @param  NewVaule: new counter.
-  * @retval current counter
+  * @param  NewVaule New counter.
   */
 void PMCTimerCnt_Set(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewVaule)
 {
@@ -67,11 +81,10 @@ void PMCTimerCnt_Set(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewVaule)
 }
 
 /**
-  * @brief  reset the pmc timer count down value.
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @brief  Reset the pmc timer count down value.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @retval None
   */
 void PMCTimerCnt_Reset(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 {
@@ -79,12 +92,11 @@ void PMCTimerCnt_Reset(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 }
 
 /**
-  * @brief  ENABLE/DISABLE  the pmc timer's interrupt bits..
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @brief  ENABLE/DISABLE the pmc timer's interrupt bits.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @param  NewState: NABLE or DISABLE.
-  * @retval None
+  * @param  NewState ENABLE or DISABLE.
   */
 void PMCTimer_INTConfig(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewState)
 {
@@ -98,25 +110,23 @@ void PMCTimer_INTConfig(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewState
 }
 
 /**
-  * @brief  Clear  the pmc timer's interrupt bits..
-  * @param  PMC_TIMER: the pointer of PMC TIMER DEV.
-  * @param  Timer_Idx: timer index in PMC TIMER DEV.
+  * @brief  Clear the pmc timer's interrupt bits.
+  * @param  PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @retval None
   */
 void PMCTimer_INTClear(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
 {
-	/* Enable the Interrupt sources */
+	/* Clear the interrupt pending status */
 	PMC_TIMER->PMCT_TIM_ISR |= BIT(Timer_Idx);
 }
 /**
- * @brief Enable the comparison function of pmctimer
- *
- * @param PMC_TIMER: the pointer of PMC TIMER DEV.
- * @param Timer_Idx: timer index in PMC TIMER DEV.
- * @param NewState: this parameter can be: ENABLE or DISABLE.
- * @retval None
- */
+  * @brief Enable or disable the comparison function of pmctimer
+  *
+  * @param PMC_TIMER The pointer of PMC TIMER DEV.
+  * @param Timer_Idx Timer index in PMC TIMER DEV.
+  * @param NewState This parameter can be: ENABLE or DISABLE.
+  */
 void PMCTimer_CompCmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewState)
 {
 	if (NewState) {
@@ -126,6 +136,11 @@ void PMCTimer_CompCmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewState)
 	}
 }
 
+/**
+  * @brief  PMC timer interrupt handler for wakeup timer.
+  * @param  Data Unused.
+  * @return Always returns TRUE.
+  */
 u32 PMCTimer_INT_Hdl(UNUSED_WARN_DIS void *Data)
 {
 	UNUSED(Data);
@@ -136,6 +151,9 @@ u32 PMCTimer_INT_Hdl(UNUSED_WARN_DIS void *Data)
 	return TRUE;
 }
 
+/**
+  * @brief  Initialize PMC timer: register interrupt and enable wakeup timer.
+  */
 void PMCTimer_Init(void)
 {
 	InterruptRegister(PMCTimer_INT_Hdl, PMC_TIMER_IRQ, NULL, PMC_TIMER_INT_PRIO);
@@ -143,6 +161,9 @@ void PMCTimer_Init(void)
 	PMCTimer_INTConfig(PMC_TIMER_DEV, PMC_WAKEUP_TIMER, ENABLE);
 }
 
+/**
+  * @brief  Reset the PMC wakeup timer counter.
+  */
 void PMCTimer_Reset(void)
 {
 
@@ -151,4 +172,10 @@ void PMCTimer_Reset(void)
 	PMCTimerCnt_Reset(PMC_TIMER, PMC_WAKEUP_TIMER);
 
 }
+
+/** @} */
+
+/** @} */
+
+/** @} */
 

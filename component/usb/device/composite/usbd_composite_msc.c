@@ -348,41 +348,13 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
-	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
-	usbd_ep_t *ep_bulk_in = &mdev->ep_bulk_in;
 
 	int ret = HAL_OK;
-	u8 ep_addr;
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	/* Standard request */
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
-		case USB_REQ_CLEAR_FEATURE:
-			/* DeInit EP */
-			ep_addr = (u8)req->wIndex & 0xFF;
-			if (ep_addr == ep_bulk_out->info.addr) {
-				usbd_ep_deinit(dev, ep_bulk_out);
-			} else if (ep_addr == ep_bulk_in->info.addr) {
-				usbd_ep_deinit(dev, ep_bulk_in);
-			}
-
-			if ((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) {
-				usbd_ep_init(dev, ep_bulk_in);
-			} else {
-				usbd_ep_init(dev, ep_bulk_out);
-			}
-
-			/* Handle BOT error */
-			if (mdev->bot_status == COMP_MSC_STATUS_ERROR) { /* Bad CBW Signature */
-				usbd_ep_set_stall(dev, ep_bulk_in);
-				mdev->bot_status = COMP_MSC_STATUS_NORMAL;
-			} else if (((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) && (mdev->bot_status != COMP_MSC_STATUS_RECOVERY)) {
-				usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
-			} else {
-				// Do nothing
-			}
-			break;
 		default:
 			ret = HAL_ERR_PARA;
 			break;
@@ -551,7 +523,7 @@ static void usbd_composite_msc_rx_process(void)
 					 (mdev->bot_state != COMP_MSC_DATA_OUT) &&
 					 (mdev->bot_state != COMP_MSC_LAST_DATA_IN)) {
 				if (mdev->data_length > 0U) {
-					u16 length = (u16)MIN(cbw->field.dCBWDataTransferLength, mdev->data_length);
+					u32 length = MIN(cbw->field.dCBWDataTransferLength, mdev->data_length);
 					csw->field.dCSWDataResidue -= mdev->data_length;
 					csw->field.bCSWStatus = BOT_CSW_CMD_PASSED;
 					mdev->bot_state = COMP_MSC_SEND_DATA;
@@ -722,7 +694,11 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 #endif
 #endif
 
-	usb_os_lock_create(&usbd_composite_msc_sd_lock);
+	ret = usb_os_lock_create(&usbd_composite_msc_sd_lock);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create lock fail\n");
+		return ret;
+	}
 
 	mdev->data = (u8 *)usb_os_malloc(COMP_MSC_BUFLEN);
 	if (mdev->data == NULL) {
@@ -742,8 +718,17 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 		goto csw_fail;
 	}
 
-	rtos_sema_create(&mdev->rx_sema, 0U, 1U);
-	rtos_sema_create(&mdev->tx_sema, 0U, 1U);
+	ret = rtos_sema_create(&mdev->rx_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX sema fail\n");
+		goto create_rx_sema_fail;
+	}
+
+	ret = rtos_sema_create(&mdev->tx_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX sema fail\n");
+		goto create_tx_sema_fail;
+	}
 
 	ret = rtos_task_create(&mdev->rx_task, "usbd_composite_msc_rx_thread", usbd_composite_msc_rx_thread, NULL, COMP_MSC_TRX_THREAD_STACK_SIZE,
 						   COMP_MSC_RX_THREAD_PRIORITY);
@@ -780,7 +765,13 @@ create_tx_thread_fail:
 
 create_rx_thread_fail:
 	rtos_sema_delete(mdev->tx_sema);
+
+create_tx_sema_fail:
 	rtos_sema_delete(mdev->rx_sema);
+
+create_rx_sema_fail:
+	usb_os_mfree(mdev->csw);
+	mdev->csw = NULL;
 
 csw_fail:
 	usb_os_mfree(mdev->cbw);

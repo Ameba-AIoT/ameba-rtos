@@ -36,7 +36,5 @@ int example_mbed_adc_vbat_vol(void)
 		RTK_LOGE(NOTAG, "Cannot create MBED_ADC_VBAT_TASK\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

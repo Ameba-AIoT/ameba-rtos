@@ -19,9 +19,6 @@
 // RESTART verification
 //#define I2C_RESTART_DEMO
 
-#ifdef I2C_RESTART_DEMO
-#include "i2c_ex_api.h"
-#endif
 
 #define MBED_I2C_SLAVE_ADDR0    0x23
 #define MBED_I2C_BUS_CLK        100000  //hz
@@ -76,9 +73,6 @@ void i2c_dual_master_task(void)
 	i2cmaster.i2c_idx = I2C_0;
 	i2c_init(&i2cmaster, MBED_I2C_MTR_SDA, MBED_I2C_MTR_SCL);
 	i2c_frequency(&i2cmaster, MBED_I2C_BUS_CLK);
-#ifdef I2C_RESTART_DEMO
-	i2c_restart_enable(&i2cmaster);
-#endif
 
 	// Master write - Slave read
 	RTK_LOGI(TAG, "\r\nMaster write>>>\n");
@@ -107,7 +101,5 @@ int example_mbed_i2c_polling_master(void)
 		RTK_LOGI(TAG, "Cannot create i2c_dual_master_task demo task\n\r");
 	}
 
-	rtos_sched_start();
 	return 0;
 }
-

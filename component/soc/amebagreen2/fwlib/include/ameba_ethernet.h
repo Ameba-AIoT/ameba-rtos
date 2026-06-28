@@ -2262,31 +2262,32 @@ struct eth_mdio_ops;
 /* ========================================================================== */
 /*                       2. Packet & Frame Constants                          */
 /* ========================================================================== */
-#define ETH_MAC_ADDR_LEN            (6)
-#define ETH_HEADER_LEN              (14) /* Dest(6) + Src(6) + Type(2) */
-#define ETH_VLAN_TAG_LEN            (4)
-#define ETH_CRC_LEN                 (4)
+#define ETH_MAC_ADDR_LEN            (6) /*!< Ethernet MAC address length in bytes. */
+#define ETH_HEADER_LEN              (14) /*!< Ethernet frame header length in bytes. Dest(6) + Src(6) + Type(2) */
+#define ETH_VLAN_TAG_LEN            (4) /*!< IEEE 802.1Q VLAN tag length in bytes. */
+#define ETH_CRC_LEN                 (4) /*!< CRC field length in bytes. */
 
 /* Payload sizes */
-#define ETH_PAYLOAD_MIN_LEN         (46)
-#define ETH_PAYLOAD_MAX_LEN         (1500)
-#define ETH_JUMBO_FRAME_PAYLOAD_LEN (16 * 1024)
+#define ETH_PAYLOAD_MIN_LEN         (46) /*!< Minimum Ethernet payload length in bytes. */
+#define ETH_PAYLOAD_MAX_LEN         (1500) /*!< Maximum standard Ethernet payload length in bytes. */
+#define ETH_JUMBO_FRAME_PAYLOAD_LEN (16 * 1024) /*!< Maximum jumbo frame payload length in bytes. */
 
 /* Total Frame sizes */
-#define ETH_PKT_MAX_SIZE            (ETH_HEADER_LEN + ETH_VLAN_TAG_LEN + ETH_PAYLOAD_MAX_LEN + ETH_CRC_LEN)
+#define ETH_PKT_MAX_SIZE            (ETH_HEADER_LEN + ETH_VLAN_TAG_LEN + ETH_PAYLOAD_MAX_LEN + ETH_CRC_LEN) /*!< Maximum total Ethernet frame size including header, VLAN, payload, and CRC. */
 
-#define ETH_MAX_BUF_SIZE            ((ETH_PKT_MAX_SIZE + CACHE_LINE_SIZE) & ~(CACHE_LINE_SIZE - 1))
+#define ETH_MAX_BUF_SIZE            ((ETH_PKT_MAX_SIZE + CACHE_LINE_SIZE) & ~(CACHE_LINE_SIZE - 1)) /*!< Maximum aligned buffer size for one Ethernet frame. */
 /* VLAN Headers */
-#define ETH_C_VLAN_HDR              0x8100279F
-#define ETH_S_VLAN_HDR              0x88A8279F
+#define ETH_C_VLAN_HDR              0x8100279F /*!< C-VLAN (802.1Q) header template value with TPID 0x8100. */
+#define ETH_S_VLAN_HDR              0x88A8279F /*!< S-VLAN (QinQ) header template value. */
 
 /* ========================================================================== */
 /*                       3. DMA Descriptors (FEMAC)                           */
 /* ========================================================================== */
 /* Descriptor Sizes */
-#define ETH_TX_DESC_SIZE            20  // Bytes (5 Words: 0x00, 0x04, 0x08, 0x0C, 0x10)
-#define ETH_RX_DESC_SIZE            16  // Bytes (4 Words: 0x00, 0x04, 0x08, 0x0C)
+#define ETH_TX_DESC_SIZE            20 /*!< TX DMA descriptor size in bytes (5 words). */
+#define ETH_RX_DESC_SIZE            16 /*!< RX DMA descriptor size in bytes (4 words). */
 
+/// @cond
 /* ========================================================================== */
 /*                       TX Descriptor Bit Definitions                        */
 /* ========================================================================== */
@@ -2544,6 +2545,8 @@ struct eth_mdio_ops;
 #define FEMAC_RX_W3_SHIFT_EXT_TTL   5
 #define FEMAC_RX_W3_MASK_EXT_TTL    ((u32)0x1F << FEMAC_RX_W3_SHIFT_EXT_TTL)
 
+/// @endcond
+
 /** @}
   */
 
@@ -2555,21 +2558,21 @@ struct eth_mdio_ops;
  * @brief Tx Descriptor Structure
  */
 typedef struct {
-	uint32_t dw1;    /* Status & Command */
-	uint32_t addr;   /* Buffer Address */
-	uint32_t dw2;    /* VLAN / Timestamp (Optional) */
-	uint32_t dw3;    /* Reserved */
-	uint32_t dw4;    /* Reserved */
+	uint32_t dw1;    /*!< Word 0: status and command flags. */
+	uint32_t addr;   /*!< Word 1: buffer address. */
+	uint32_t dw2;    /*!< Word 2: VLAN tag and timestamp info. */
+	uint32_t dw3;    /*!< Word 3: destination port info. */
+	uint32_t dw4;    /*!< Word 4: large send (LSO) configuration. */
 } ETH_TxDescTypeDef;
 
 /**
  * @brief Rx Descriptor Structure
  */
 typedef struct {
-	uint32_t dw1;    /* Status & Length */
-	uint32_t addr;   /* Buffer Address */
-	uint32_t dw2;    /* Extended Status */
-	uint32_t dw3;    /* Reserved */
+	uint32_t dw1;    /*!< Word 0: receive status and frame length. */
+	uint32_t addr;   /*!< Word 1: buffer address. */
+	uint32_t dw2;    /*!< Word 2: extended receive status (VLAN, PON). */
+	uint32_t dw3;    /*!< Word 3: source/destination port and reason code. */
 } ETH_RxDescTypeDef;
 
 /** @}
@@ -2582,14 +2585,14 @@ typedef struct {
 /* ========================================================================== */
 /*                       4. Hardware & Timing Constants                       */
 /* ========================================================================== */
-#define ETH_OWN_BIT_UPDATE_PERIOD   10        /* Delay when polling own bit */
-#define ETH_TIMEOUT_CNT_MAX         1000000   /* Max timeout loop count */
-#define MDIO_WAIT_TIME              64        /* MDIO Wait Time(us) */
+#define ETH_OWN_BIT_UPDATE_PERIOD   10 /*!< Polling interval in microseconds when checking descriptor own bit. */
+#define ETH_TIMEOUT_CNT_MAX         1000000 /*!< Maximum loop count before a hardware operation times out. */
+#define MDIO_WAIT_TIME              64 /*!< MDIO bus operation wait time in microseconds. */
 
 /* Wait Types */
-#define WAIT_SMI_WRITE_DONE         0
-#define WAIT_SMI_READ_DONE          1
-#define WAIT_RMII_LINKUP            2
+#define WAIT_SMI_WRITE_DONE         0 /*!< Wait condition: SMI write operation completed. */
+#define WAIT_SMI_READ_DONE          1 /*!< Wait condition: SMI read operation completed. */
+#define WAIT_RMII_LINKUP            2 /*!< Wait condition: RMII link up detected. */
 
 /** @}
   */
@@ -2603,186 +2606,233 @@ typedef struct {
 /* ========================================================================== */
 
 /* --- Interrupt & Events --- */
+/**
+ * @brief Ethernet event flags indicating link and data-path status.
+ */
 enum eth_link_event {
-	ETH_EVT_NO_EVENT     = 0,
+	ETH_EVT_NO_EVENT     = 0,          /*!< No event pending. */
 	/* Standard Events */
-	ETH_EVT_RX_DONE      = (1 << 0),  /* Packet received successfully */
-	ETH_EVT_TX_DONE      = (1 << 1),  /* Packet transmitted successfully */
-	ETH_EVT_LINK_CHG     = (1 << 2),  /* Link status changed */
-	ETH_EVT_RX_ERROR     = (1 << 3),  /* RX Overflow or Runt error */
-	ETH_EVT_TX_ERROR     = (1 << 4),  /* TX Error */
+	ETH_EVT_RX_DONE      = (1 << 0),  /*!< Packet received successfully. */
+	ETH_EVT_TX_DONE      = (1 << 1),  /*!< Packet transmitted successfully. */
+	ETH_EVT_LINK_CHG     = (1 << 2),  /*!< Link status changed. */
+	ETH_EVT_RX_ERROR     = (1 << 3),  /*!< RX overflow or runt error occurred. */
+	ETH_EVT_TX_ERROR     = (1 << 4),  /*!< TX error occurred. */
 
 	/* RX Descriptor Unavailable (RDU) Events for specific Rings */
-	ETH_EVT_RDU_RING1    = (1 << 5),
-	ETH_EVT_RDU_RING2    = (1 << 6),
-	ETH_EVT_RDU_RING3    = (1 << 7),
-	ETH_EVT_RDU_RING4    = (1 << 8),
-	ETH_EVT_RDU_RING5    = (1 << 9),
-	ETH_EVT_RDU_RING6    = (1 << 10),
+	ETH_EVT_RDU_RING1    = (1 << 5),  /*!< RX descriptor unavailable for Ring1. */
+	ETH_EVT_RDU_RING2    = (1 << 6),  /*!< RX descriptor unavailable for Ring2. */
+	ETH_EVT_RDU_RING3    = (1 << 7),  /*!< RX descriptor unavailable for Ring3. */
+	ETH_EVT_RDU_RING4    = (1 << 8),  /*!< RX descriptor unavailable for Ring4. */
+	ETH_EVT_RDU_RING5    = (1 << 9),  /*!< RX descriptor unavailable for Ring5. */
+	ETH_EVT_RDU_RING6    = (1 << 10), /*!< RX descriptor unavailable for Ring6. */
 
 	/* Alias for backward compatibility (Ring 1 default) */
-	ETH_EVT_RX_NO_DESC   = ETH_EVT_RDU_RING1
+	ETH_EVT_RX_NO_DESC   = ETH_EVT_RDU_RING1 /*!< Alias for Ring1 RDU event. */
 };
 
 /* --- Link & Speed --- */
+/**
+ * @brief Ethernet link speed.
+ */
 enum eth_speed {
-	ETH_SPEED_100M       = 0,
-	ETH_SPEED_10M        = 1,
+	ETH_SPEED_100M       = 0, /*!< 100 Mbps link speed. */
+	ETH_SPEED_10M        = 1, /*!< 10 Mbps link speed. */
 };
 
+/**
+ * @brief Ethernet link duplex mode.
+ */
 enum eth_duplex {
-	ETH_HALF_DUPLEX     = 0,
-	ETH_FULL_DUPLEX     = 1,
+	ETH_HALF_DUPLEX     = 0, /*!< Half-duplex mode. */
+	ETH_FULL_DUPLEX     = 1, /*!< Full-duplex mode. */
 };
 
 
 /* --- Hardware Tuning (Timing/Thresholds) --- */
-/* Duplicate enum for compatibility (prefer merging if possible) */
+/**
+ * @brief Inter-frame gap (IFG) time between consecutive transmissions.
+ */
 enum eth_ifg_time {
-	ETH_IFG_0 = 0,
-	ETH_IFG_1 = 1,
-	ETH_IFG_2 = 2,
-	ETH_IFG_3 = 3,// 9.6 us for 10 Mbps, 960 ns for 100 Mbps
-	ETH_IFG_4 = 4,
-	ETH_IFG_5 = 5,
-	ETH_IFG_6 = 6,
-	ETH_IFG_7 = 7,
+	ETH_IFG_0 = 0, /*!< IFG setting 0: minimum inter-frame gap. */
+	ETH_IFG_1 = 1, /*!< IFG setting 1. */
+	ETH_IFG_2 = 2, /*!< IFG setting 2. */
+	ETH_IFG_3 = 3, /*!< IFG setting 3: standard (9.6 us for 10 Mbps, 960 ns for 100 Mbps). */
+	ETH_IFG_4 = 4, /*!< IFG setting 4. */
+	ETH_IFG_5 = 5, /*!< IFG setting 5. */
+	ETH_IFG_6 = 6, /*!< IFG setting 6. */
+	ETH_IFG_7 = 7, /*!< IFG setting 7: maximum inter-frame gap. */
 };
 
+/**
+ * @brief TX FIFO start-of-transmission threshold.
+ */
 enum eth_tx_threshold {
-	ETH_TX_THRESHOLD_128B = 0,
-	ETH_TX_THRESHOLD_256B = 1,
-	ETH_TX_THRESHOLD_512B = 2,
-	ETH_TX_THRESHOLD_1024B = 3,
+	ETH_TX_THRESHOLD_128B  = 0, /*!< TX FIFO threshold: 128 bytes. */
+	ETH_TX_THRESHOLD_256B  = 1, /*!< TX FIFO threshold: 256 bytes. */
+	ETH_TX_THRESHOLD_512B  = 2, /*!< TX FIFO threshold: 512 bytes. */
+	ETH_TX_THRESHOLD_1024B = 3, /*!< TX FIFO threshold: 1024 bytes. */
 };
 
+/**
+ * @brief RX FIFO almost-full threshold.
+ */
 enum eth_rx_threshold {
-	ETH_RX_THRESHOLD_1024B = 0,
-	ETH_RX_THRESHOLD_128B = 1,
-	ETH_RX_THRESHOLD_256B = 2,
-	ETH_RX_THRESHOLD_512B = 3,
+	ETH_RX_THRESHOLD_1024B = 0, /*!< RX FIFO threshold: 1024 bytes. */
+	ETH_RX_THRESHOLD_128B  = 1, /*!< RX FIFO threshold: 128 bytes. */
+	ETH_RX_THRESHOLD_256B  = 2, /*!< RX FIFO threshold: 256 bytes. */
+	ETH_RX_THRESHOLD_512B  = 3, /*!< RX FIFO threshold: 512 bytes. */
 };
 
 
+/**
+ * @brief Number of packets to accumulate before raising an interrupt.
+ */
 enum eth_trigger_level {
-	ETH_TRIGGER_LEVEL_1_PKT = 0,
-	ETH_TRIGGER_LEVEL_4_PKTS = 1,
-	ETH_TRIGGER_LEVEL_8_PKTS = 2,
-	ETH_TRIGGER_LEVEL_12_PKTS = 3,
-	ETH_TRIGGER_LEVEL_16_PKTS = 4,
-	ETH_TRIGGER_LEVEL_20_PKTS = 5,
-	ETH_TRIGGER_LEVEL_24_PKTS = 6,
-	ETH_TRIGGER_LEVEL_28_PKTS = 7,
+	ETH_TRIGGER_LEVEL_1_PKT   = 0, /*!< Interrupt after 1 packet. */
+	ETH_TRIGGER_LEVEL_4_PKTS  = 1, /*!< Interrupt after 4 packets. */
+	ETH_TRIGGER_LEVEL_8_PKTS  = 2, /*!< Interrupt after 8 packets. */
+	ETH_TRIGGER_LEVEL_12_PKTS = 3, /*!< Interrupt after 12 packets. */
+	ETH_TRIGGER_LEVEL_16_PKTS = 4, /*!< Interrupt after 16 packets. */
+	ETH_TRIGGER_LEVEL_20_PKTS = 5, /*!< Interrupt after 20 packets. */
+	ETH_TRIGGER_LEVEL_24_PKTS = 6, /*!< Interrupt after 24 packets. */
+	ETH_TRIGGER_LEVEL_28_PKTS = 7, /*!< Interrupt after 28 packets. */
 };
 
 /* --- PHY Specific Setup --- */
+/**
+ * @brief PHY TX data setup time relative to the clock edge.
+ */
 enum eth_phy_tx_setup {
-	ETH_PHY_TX_SETUP_TIME_6NS  = 0x6,
-	ETH_PHY_TX_SETUP_TIME_8NS  = 0x5,
-	ETH_PHY_TX_SETUP_TIME_10NS = 0x4, // Default
-	ETH_PHY_TX_SETUP_TIME_12NS = 0x3,
-	ETH_PHY_TX_SETUP_TIME_14NS = 0x2,
-	ETH_PHY_TX_SETUP_TIME_16NS = 0x1,
-	ETH_PHY_TX_SETUP_TIME_18NS = 0x0,
+	ETH_PHY_TX_SETUP_TIME_6NS  = 0x6, /*!< PHY TX setup time: 6 ns. */
+	ETH_PHY_TX_SETUP_TIME_8NS  = 0x5, /*!< PHY TX setup time: 8 ns. */
+	ETH_PHY_TX_SETUP_TIME_10NS = 0x4, /*!< PHY TX setup time: 10 ns (default). */
+	ETH_PHY_TX_SETUP_TIME_12NS = 0x3, /*!< PHY TX setup time: 12 ns. */
+	ETH_PHY_TX_SETUP_TIME_14NS = 0x2, /*!< PHY TX setup time: 14 ns. */
+	ETH_PHY_TX_SETUP_TIME_16NS = 0x1, /*!< PHY TX setup time: 16 ns. */
+	ETH_PHY_TX_SETUP_TIME_18NS = 0x0, /*!< PHY TX setup time: 18 ns. */
 };
 
+/**
+ * @brief PHY RX data setup time relative to the clock edge.
+ */
 enum eth_phy_rx_setup {
-	ETH_PHY_RX_SETUP_TIME_8NS  = 0x8,
-	ETH_PHY_RX_SETUP_TIME_10NS = 0x9, // Default
-	ETH_PHY_RX_SETUP_TIME_12NS = 0x6,
-	ETH_PHY_RX_SETUP_TIME_14NS = 0x7,
-	ETH_PHY_RX_SETUP_TIME_16NS = 0x4,
-	ETH_PHY_RX_SETUP_TIME_18NS = 0x5,
+	ETH_PHY_RX_SETUP_TIME_8NS  = 0x8, /*!< PHY RX setup time: 8 ns. */
+	ETH_PHY_RX_SETUP_TIME_10NS = 0x9, /*!< PHY RX setup time: 10 ns (default). */
+	ETH_PHY_RX_SETUP_TIME_12NS = 0x6, /*!< PHY RX setup time: 12 ns. */
+	ETH_PHY_RX_SETUP_TIME_14NS = 0x7, /*!< PHY RX setup time: 14 ns. */
+	ETH_PHY_RX_SETUP_TIME_16NS = 0x4, /*!< PHY RX setup time: 16 ns. */
+	ETH_PHY_RX_SETUP_TIME_18NS = 0x5, /*!< PHY RX setup time: 18 ns. */
 };
 
 /* --- Modes & Features --- */
 
 /**
- * \brief  Supported PHY Transceivers.
+ * @brief  Supported PHY Transceivers.
  */
 enum eth_phy_type {
-	ETH_PHY_RTL8201  = 0,
-	ETH_PHY_RTL8211  = 1,
-	ETH_PHY_RTL8721F = 2,
-	ETH_PHY_RTL8721G = 3,
-	ETH_PHY_LAN8720  = 4,
-	ETH_PHY_KSZ8081  = 5,
-	ETH_PHY_GENERIC  = 6,
-};
-
-enum eth_mode {
-	ETH_MAC_MODE,
-	ETH_PHY_MODE,
-};
-
-enum eth_refclk_phase {
-	ETH_SAMPLED_ON_RISING_EDGE  = 0x00,
-	ETH_SAMPLED_ON_FALLING_EDGE = 0x01,
-};
-
-enum eth_refclk_dir {
-	ETH_REFCLK_PHY2MAC  = 0x00,
-	ETH_REFCLK_MAC2PHY  = 0x01,
+	ETH_PHY_RTL8201  = 0, /*!< Realtek RTL8201 PHY. */
+	ETH_PHY_RTL8211  = 1, /*!< Realtek RTL8211 PHY. */
+	ETH_PHY_RTL8721F = 2, /*!< Realtek RTL8721F integrated PHY. */
+	ETH_PHY_RTL8721G = 3, /*!< Realtek RTL8721G integrated PHY. */
+	ETH_PHY_LAN8720  = 4, /*!< Microchip LAN8720 PHY. */
+	ETH_PHY_KSZ8081  = 5, /*!< Microchip KSZ8081 PHY. */
+	ETH_PHY_GENERIC  = 6, /*!< Generic IEEE 802.3 compliant PHY. */
 };
 
 /**
- * \brief  Loopback Modes for debugging.
+ * @brief Ethernet operating mode.
+ */
+enum eth_mode {
+	ETH_MAC_MODE, /*!< Operates as MAC connected to external PHY (MDIO master). */
+	ETH_PHY_MODE, /*!< Operates as PHY connected to external MAC (MDIO slave). */
+};
+
+/**
+ * @brief RMII reference clock sampling edge.
+ */
+enum eth_refclk_phase {
+	ETH_SAMPLED_ON_RISING_EDGE  = 0x00, /*!< Data sampled on REF_CLK rising edge. */
+	ETH_SAMPLED_ON_FALLING_EDGE = 0x01, /*!< Data sampled on REF_CLK falling edge. */
+};
+
+/**
+ * @brief RMII reference clock direction.
+ */
+enum eth_refclk_dir {
+	ETH_REFCLK_PHY2MAC  = 0x00, /*!< REF_CLK driven by PHY to MAC. */
+	ETH_REFCLK_MAC2PHY  = 0x01, /*!< REF_CLK driven by MAC to PHY. */
+};
+
+/**
+ * @brief  Loopback Modes for debugging.
  */
 enum eth_loopback_mode {
-	ETH_LPB_NONE     = 0x0,  /* 00: Normal Operation */
-	ETH_LPB_R2T_EXT  = 0x1,  /* 01: Rx->Tx (External Echo/Line Loopback) */
+	ETH_LPB_NONE     = 0x0,  /*!< Normal operation, no loopback. */
+	ETH_LPB_R2T_EXT  = 0x1,  /*!< External line loopback: RX data echoed to TX. */
 	/* 0x2 is Reserved */
-	ETH_LPB_T2R_INT  = 0x3,  /* 11: Tx->Rx (Internal/Local Loopback) */
+	ETH_LPB_T2R_INT  = 0x3,  /*!< Internal loopback: TX data fed back to RX. */
 };
 
+/**
+ * @brief Auto-negotiation (NWay) enable/disable.
+ */
 enum eth_auto_nego {
-	ETH_NWAY_DISABLE   = 0,  /* 0: Disable NWay/Auto-Negotiation */
-	ETH_NWAY_ENABLE    = 1,  /* 1: Enable NWay/Auto-Negotiation */
+	ETH_NWAY_DISABLE   = 0,  /*!< Disable auto-negotiation; use forced mode. */
+	ETH_NWAY_ENABLE    = 1,  /*!< Enable auto-negotiation (NWay). */
 };
 
+/**
+ * @brief Ethernet flow control mode.
+ */
 enum eth_flow_ctrl_mode {
-	ETH_FLOW_OFF      = 0,  /* 00: Disable Flow Control */
-	ETH_FLOW_TX_ONLY  = 1,  /* 01: Enable Tx Flow Control only (Send PAUSE) - Bit 29 */
-	ETH_FLOW_RX_ONLY  = 2,  /* 10: Enable Rx Flow Control only (Respect PAUSE) - Bit 30 */
-	ETH_FLOW_FULL     = 3,  /* 11: Enable Both (Full Duplex Flow Control) */
+	ETH_FLOW_OFF      = 0,  /*!< Flow control disabled. */
+	ETH_FLOW_TX_ONLY  = 1,  /*!< TX flow control only: send PAUSE frames. */
+	ETH_FLOW_RX_ONLY  = 2,  /*!< RX flow control only: respect received PAUSE frames. */
+	ETH_FLOW_FULL     = 3,  /*!< Full flow control: both TX and RX enabled. */
 };
 
+/**
+ * @brief Flow control force mode, used when auto-negotiation is disabled.
+ */
 /* Set this when NWay/Auto-Negotiation is disabled */
 enum eth_flow_force {
-	ETH_FLOW_AUTO     = 0,  /* 0: Rely on NWay/Auto-Negotiation result */
-	ETH_FLOW_FORCE    = 1,  /* 1: Force Enable (Use settings even if NWay is disabled) */
+	ETH_FLOW_AUTO     = 0,  /*!< Flow control from auto-negotiation result. */
+	ETH_FLOW_FORCE    = 1,  /*!< Force flow control settings regardless of NWay. */
 };
 
+/**
+ * @brief RX jumbo frame reception enable.
+ */
 enum eth_rx_jumbo_cfg {
-	ETH_RX_JUMBO_DISABLE = 0x0,
-	ETH_RX_JUMBO_ENABLE  = 0x1,
+	ETH_RX_JUMBO_DISABLE = 0x0, /*!< Jumbo frame reception disabled. */
+	ETH_RX_JUMBO_ENABLE  = 0x1, /*!< Jumbo frame reception enabled (max 16384 bytes). */
 };
 /**
- * \brief  VLAN Tag Type Definition for Transmit (Tx).
+ * @brief  VLAN Tag Type Definition for Transmit (Tx).
  *         Controls BIT_TDSC_VLAN_TYPE (Bit 15).
  */
 enum eth_vlan_type {
-	ETH_VLAN_TYPE_CTAG = 0, /* 0: C-TAG (Customer Tag, TPID 0x8100). Standard VLAN. */
-	ETH_VLAN_TYPE_STAG = 1, /* 1: S-TAG (Service Tag/QinQ). TPID defined by STagPID. */
+	ETH_VLAN_TYPE_CTAG = 0, /*!< C-TAG: customer tag with TPID 0x8100. */
+	ETH_VLAN_TYPE_STAG = 1, /*!< S-TAG: service tag (QinQ) with configurable TPID. */
 };
 
 /**
- * \brief  Rx VLAN De-tagging (Stripping) Control.
+ * @brief  Rx VLAN Stripping Control.
  *         Controls BIT_RXVLAN (Bit 2).
  */
 enum eth_vlan_strip {
-	ETH_VLAN_STRIP_DISABLE = 0, /* 0: Tag is preserved in payload. RxStatus.TAVA = 0. */
-	ETH_VLAN_STRIP_ENABLE  = 1, /* 1: Tag is removed by HW. RxStatus.TAVA = 1. */
+	ETH_VLAN_STRIP_DISABLE = 0, /*!< VLAN tag preserved in received payload. */
+	ETH_VLAN_STRIP_ENABLE  = 1, /*!< VLAN tag stripped by hardware on reception. */
 };
 
 /**
- * \brief  Defines Tx Descriptor VLAN action.
+ * @brief  Defines Tx Descriptor VLAN action.
  */
 enum eth_vlan_action {
-	ETH_VLAN_HDR_INTACT     = 0,
-	ETH_VLAN_HDR_INSERT     = 1,
-	ETH_VLAN_HDR_REMOVE     = 2,
-	ETH_VLAN_HDR_REMARK_VID = 3,
+	ETH_VLAN_HDR_INTACT     = 0, /*!< No VLAN header modification. */
+	ETH_VLAN_HDR_INSERT     = 1, /*!< Insert VLAN tag into the frame. */
+	ETH_VLAN_HDR_REMOVE     = 2, /*!< Remove VLAN tag from the frame. */
+	ETH_VLAN_HDR_REMARK_VID = 3, /*!< Remark VLAN ID in the existing tag. */
 };
 
 /**
@@ -2796,7 +2846,7 @@ typedef enum {
 	ETH_EEE_SLEEP_ON_PAUSE      = BIT_EEE_REQ_SET2,     /*!< Enter LPI when Flow Control Pause frame is received */
 
 	/* Internal mask for validation */
-	ETH_EEE_SLEEP_ALL_MASK      = (BIT_EEE_REQ_SET0 | BIT_EEE_REQ_SET1 | BIT_EEE_REQ_SET2)
+	ETH_EEE_SLEEP_ALL_MASK      = (BIT_EEE_REQ_SET0 | BIT_EEE_REQ_SET1 | BIT_EEE_REQ_SET2) /*!< Mask of all sleep policy bits. */
 } ETH_EEE_SleepPolicy;
 
 /**
@@ -2809,7 +2859,7 @@ typedef enum {
 	ETH_EEE_WAKE_HIGH_PRIO      = BIT_EEE_WAKE_SET1,    /*!< Wake up only on high priority data */
 
 	/* Internal mask for validation */
-	ETH_EEE_WAKE_ALL_MASK       = (BIT_EEE_WAKE_SET0 | BIT_EEE_WAKE_SET1)
+	ETH_EEE_WAKE_ALL_MASK       = (BIT_EEE_WAKE_SET0 | BIT_EEE_WAKE_SET1) /*!< Mask of all wake policy bits. */
 } ETH_EEE_WakePolicy;
 
 
@@ -2822,10 +2872,10 @@ typedef struct {
 	u32 EnableRx;               /*!< RX LPI Enable: 1=Enable MAC to respond to PHY LPI, 0=Disable */
 
 	/* --- 2. Protocol Timers (For 100M mode) --- */
-	u8  Tw_WakeTime;            /*!< T_wq: Wake-up time (Unit: 1us). Must be >= PHY spec (Typ: 30us) */
-	u8  Tr_LpiInterval;         /*!< T_tr: LPI transmission interval (Unit: 1us). Min duration for LPI signal */
-	u8  Td_TxDelay;             /*!< T_delay: Decision delay (Unit: 8us). Idle time before entering LPI */
-	u8  Tp_PauseTime;           /*!< T_p: Pause time (Unit: 1us). Default: 10us */
+	u8  Tw_WakeTime;            /*!< Tw: Wake-up time (Unit: 1us). Must be >= PHY spec (Typ: 30us) */
+	u8  Tr_LpiInterval;         /*!< Tr: LPI refresh time (Unit: 1us). Minimum duration for LPI signal */
+	u8  Td_TxDelay;             /*!< Td: Decision delay (Unit: 8us). Idle time before entering LPI */
+	u8  Tp_PauseTime;           /*!< Tp: Pause time (Unit: 1us). Default: 10us */
 
 	/* --- 3. Decision Thresholds --- */
 	u16 TxTrafficThresh;        /*!< TX Traffic Threshold (Bytes).
@@ -2833,63 +2883,51 @@ typedef struct {
                                      For 100Mbps: Set 0x7D (125 Bytes) */
 
 	/* --- 4. Policies (Using Enums) --- */
-	ETH_EEE_SleepPolicy SleepPolicy;   /*!< Auto-sleep policy selection */
-	ETH_EEE_WakePolicy  WakePolicy;    /*!< Auto-wake policy selection */
+	ETH_EEE_SleepPolicy SleepPolicy;   /*!< Auto-sleep policy selection. */
+	ETH_EEE_WakePolicy  WakePolicy;    /*!< Auto-wake policy selection. */
 
 } ETH_EEE_InitTypeDef;
 
 /**
- * \brief  Defines the type of ethernet packet.
+ * @brief  Defines the type of ethernet packet.
  */
 enum eth_packet_type {
-	ETH_PKT_ETHERNET        = 0,
-	ETH_PKT_IPV4            = 1,
-	ETH_PKT_IPV4_PPTP       = 2,
-	ETH_PKT_IPV4_ICMP       = 3,
-	ETH_PKT_IPV4_IGMP       = 4,
-	ETH_PKT_IPV4_TCP        = 5,
-	ETH_PKT_IPV4_UDP        = 6,
-	ETH_PKT_IPV6            = 7,
-	ETH_PKT_ICMPV6          = 8,
-	ETH_PKT_IPV6_TCP        = 9,
-	ETH_PKT_IPV6_UDP        = 10,
+	ETH_PKT_ETHERNET        = 0,  /*!< Pure Ethernet frame (non-IP). */
+	ETH_PKT_IPV4            = 1,  /*!< IPv4 packet. */
+	ETH_PKT_IPV4_PPTP       = 2,  /*!< IPv4 over PPTP. */
+	ETH_PKT_IPV4_ICMP       = 3,  /*!< IPv4 with ICMP payload. */
+	ETH_PKT_IPV4_IGMP       = 4,  /*!< IPv4 with IGMP payload. */
+	ETH_PKT_IPV4_TCP        = 5,  /*!< IPv4 with TCP payload. */
+	ETH_PKT_IPV4_UDP        = 6,  /*!< IPv4 with UDP payload. */
+	ETH_PKT_IPV6            = 7,  /*!< IPv6 packet. */
+	ETH_PKT_ICMPV6          = 8,  /*!< IPv6 with ICMPv6 payload. */
+	ETH_PKT_IPV6_TCP        = 9,  /*!< IPv6 with TCP payload. */
+	ETH_PKT_IPV6_UDP        = 10, /*!< IPv6 with UDP payload. */
 };
 
+/**
+ * @brief Ethernet packet reception filter mode.
+ */
 enum eth_packet_filter_mode {
 	/* --- Basic Operational Modes --- */
-
-	/* 1. Default: Accept Unicast (physical match) and Broadcast packets.
-	 *    This is the standard setting for most applications. */
-	ETH_FILTER_DEFAULT_UNICAST = 0,
-
-	/* 2. Multicast: Default mode + Multicast packets.
-	 *    Required for IPv6, PTP (Precision Time Protocol), or video streaming. */
-	ETH_FILTER_WITH_MULTICAST,
-
-	/* 3. Strict Unicast: Only accept packets destined for this specific MAC.
-	 *    Broadcast packets are ignored. Used in strict security scenarios. */
-	ETH_FILTER_STRICT_UNICAST,
-
+	ETH_FILTER_DEFAULT_UNICAST = 0, /*!< Accept unicast (physical match) and broadcast. Standard mode for most applications. */
+	ETH_FILTER_WITH_MULTICAST,      /*!< Accept unicast, broadcast, and multicast. Required for IPv6, PTP, or video streaming. */
+	ETH_FILTER_STRICT_UNICAST,      /*!< Accept only packets matching this MAC address, ignoring broadcast. Used in strict security scenarios. */
 
 	/* --- Monitoring & Diagnostic Modes --- */
-
-	/* 4. Promiscuous: Accept ALL valid packets regardless of destination MAC.
-	 *    Used for packet sniffing (Wireshark) or software bridging. */
-	ETH_FILTER_PROMISCUOUS,
-
-	/* 5. Diagnostic: Promiscuous mode + Accept Error/Runt packets.
-	 *    Used for hardware debugging to analyze line noise or collisions.
-	 *    WARNING: High CPU load. */
-	ETH_FILTER_DIAGNOSTIC_ALL
-
+	ETH_FILTER_PROMISCUOUS,         /*!< Accept all valid packets regardless of destination MAC. Used for packet sniffing or software bridging. */
+	ETH_FILTER_DIAGNOSTIC_ALL       /*!< Accept all packets including error/runt frames. For hardware debugging; WARNING: High CPU load. */
 };
+/**
+ * @brief Ethernet system-level hardware power and clock control targets.
+ */
 enum eth_sys_hw_ctrl_e {
-	ETH_SYS_HW_FEPHY_IP,
-	ETH_SYS_HW_FEMAC_IP,
-	ETH_SYS_HW_UABG_EN,
-	ETH_SYS_HW_UAHV_EN,
-	ETH_SYS_HW_FEPHY_EN,
-	ETH_SYS_HW_LX_EN,
+	ETH_SYS_HW_FEPHY_IP, /*!< FE PHY IP power control. */
+	ETH_SYS_HW_FEMAC_IP, /*!< FE MAC IP power control. */
+	ETH_SYS_HW_UABG_EN,  /*!< UABG analog block enable. */
+	ETH_SYS_HW_UAHV_EN,  /*!< UAHV analog block enable. */
+	ETH_SYS_HW_FEPHY_EN,  /*!< FE PHY enable. */
+	ETH_SYS_HW_LX_EN,    /*!< Lexra bus clock enable. */
 };
 
 /** @}
@@ -2977,35 +3015,35 @@ struct eth_mdio_ops {
  * @brief PHY Link Speed
  */
 typedef enum {
-	PHY_SPEED_10M   = 10,
-	PHY_SPEED_100M  = 100,
-	PHY_SPEED_1000M = 1000
+	PHY_SPEED_10M   = 10,   /*!< PHY link speed 10 Mbps. */
+	PHY_SPEED_100M  = 100,  /*!< PHY link speed 100 Mbps. */
+	PHY_SPEED_1000M = 1000  /*!< PHY link speed 1000 Mbps. */
 } phy_speed_t;
 
 /**
  * @brief PHY Duplex Mode
  */
 typedef enum {
-	PHY_DUPLEX_HALF = 0,
-	PHY_DUPLEX_FULL = 1
+	PHY_DUPLEX_HALF = 0, /*!< PHY half-duplex mode. */
+	PHY_DUPLEX_FULL = 1  /*!< PHY full-duplex mode. */
 } phy_duplex_t;
 
 /**
  * @brief PHY Clock Source (Platform Specific)
  */
 typedef enum {
-	PHY_CLK_XTAL = 0,       /**< Uses external crystal */
-	PHY_CLK_OSC_25M,        /**< Uses 25MHz Oscillator */
-	PHY_CLK_OSC_50M,        /**< Uses 50MHz Oscillator (RMII Ref Clk) */
+	PHY_CLK_XTAL = 0,       /*!< Uses external crystal oscillator. */
+	PHY_CLK_OSC_25M,        /*!< Uses 25 MHz oscillator. */
+	PHY_CLK_OSC_50M,        /*!< Uses 50 MHz oscillator as RMII reference clock. */
 } phy_clock_source_t;
 
 /**
  * @brief EEE (Energy Efficient Ethernet) Modes
  */
 typedef enum {
-	PHY_EEE_DISABLE = 0,
-	PHY_EEE_ENABLE_AN,      /**< Enable EEE via Auto-Negotiation */
-	PHY_EEE_ENABLE_LPI,     /**< Enable LPI (Low Power Idle) only */
+	PHY_EEE_DISABLE = 0,    /*!< EEE disabled. */
+	PHY_EEE_ENABLE_AN,      /*!< Enable EEE via auto-negotiation. */
+	PHY_EEE_ENABLE_LPI,     /*!< Enable LPI (low power idle) signaling only. */
 } phy_eee_mode_t;
 
 /**
@@ -3105,8 +3143,8 @@ struct eth_phy_dev {
 	uint8_t addr;                   /**< PHY Address (0-31) */
 
 	/* Internal State for Callback management */
-	phy_link_cb_t link_cb;
-	void *cb_user_data;
+	phy_link_cb_t link_cb;       /**< Registered link state change callback, NULL if not set. */
+	void *cb_user_data;          /**< User-supplied context pointer passed to link_cb. */
 };
 
 /* ========================================================================== */
@@ -3114,7 +3152,9 @@ struct eth_phy_dev {
 /* ========================================================================== */
 
 /* Callback types */
+/** @brief Function pointer type for the ETH event callback. */
 typedef void (*eth_callback_t)(u32 event, u32 data);
+/** @brief Function pointer type for the ETH task yield handler. */
 typedef void (*eth_task_yield)(void);
 
 /**
@@ -3122,132 +3162,135 @@ typedef void (*eth_task_yield)(void);
  *         Contains configuration for both MAC and PHY, plus runtime buffers.
  */
 typedef struct {
-	struct eth_phy_dev  *phy_dev;  /* Now this works because eth_phy_dev is defined above */
+	struct eth_phy_dev  *phy_dev;  /*!< Pointer to the associated PHY device instance. */
 	/* MAC Core & Flow Control */
 	union eth_mac_config_u {
-		uint32_t Raw;
+		uint32_t Raw;              /*!< Raw 32-bit value for MAC configuration register. */
 		struct eth_mac_config_bits {
 			/* Basic Config */
-			uint32_t MacMode        : 1; /* enum eth_mode          (1 bits) */
-			uint32_t Loopback       : 2; /* enum eth_loopback_mode (2 bits) */
-			uint32_t IFGTime        : 3; /* enum eth_ifg_time      (3 bits) */
-			uint32_t RefClkDir      : 1; /* enum eth_refclk_dir    (1 bit)  */
-			uint32_t RefClkPhase    : 1; /* enum eth_refclk_phase  (1 bit)  */
-			uint32_t RxJumbo        : 1; /* enum eth_rx_jumbo_cfg  (1 bit)  */
-			uint32_t PktFilterConfig: 3; /* enum eth_packet_filter_mode (3 bit) */
+			uint32_t MacMode        : 1; /*!< Operating mode (see @ref eth_mode). */
+			uint32_t Loopback       : 2; /*!< Loopback mode (see @ref eth_loopback_mode). */
+			uint32_t IFGTime        : 3; /*!< Inter-frame gap setting (see @ref eth_ifg_time). */
+			uint32_t RefClkDir      : 1; /*!< Reference clock direction (see @ref eth_refclk_dir). */
+			uint32_t RefClkPhase    : 1; /*!< Reference clock sampling phase (see @ref eth_refclk_phase). */
+			uint32_t RxJumbo        : 1; /*!< Jumbo frame RX enable (see @ref eth_rx_jumbo_cfg). */
+			uint32_t PktFilterConfig: 3; /*!< Packet filter mode (see @ref eth_packet_filter_mode). */
 			/* Flow Control / Auto-Negotiation-NWay */
-			uint32_t AutoNego       : 1; /* enum eth_auto_nego     (1 bit)  */
-			uint32_t Speed          : 1; /* enum eth_speed         (1 bit)  */
-			uint32_t Duplex         : 1; /* enum eth_duplex        (1 bit)  */
-			uint32_t FlowCtrl       : 2; /* enum eth_flow_ctrl_mode(2 bits) */
-			uint32_t FlowForce      : 1; /* enum eth_flow_force    (1 bit)  */
-			uint32_t EEEEnable      : 1; /* (1 bit)  */
-			uint32_t Reserved       : 13;/* Reserved */
-		} Bits;
-	} MacConfig;
+			uint32_t AutoNego       : 1; /*!< Auto-negotiation enable (see @ref eth_auto_nego). */
+			uint32_t Speed          : 1; /*!< Forced link speed when AutoNego=0 (see @ref eth_speed). */
+			uint32_t Duplex         : 1; /*!< Forced duplex mode when AutoNego=0 (see @ref eth_duplex). */
+			uint32_t FlowCtrl       : 2; /*!< Flow control mode (see @ref eth_flow_ctrl_mode). */
+			uint32_t FlowForce      : 1; /*!< Force flow control settings (see @ref eth_flow_force). */
+			uint32_t EEEEnable      : 1; /*!< 1 = enable Energy Efficient Ethernet (EEE). */
+			uint32_t Reserved       : 13;/*!< Reserved. */
+		} Bits;                    /*!< Named bitfield access for MAC configuration. */
+	} MacConfig;                   /*!< MAC core and flow control configuration. */
 	/* VLAN Config */
 	union eth_vlan_config_u {
-		uint32_t Raw;
+		uint32_t Raw;              /*!< Raw 32-bit value for VLAN configuration register. */
 		struct eth_vlan_config_bits {
 			/* Hardware Action */
-			uint32_t RxStrip        : 1; /* enum eth_vlan_strip     (1 bit)  */
-			uint32_t TxTagType      : 1; /* enum eth_vlan_type      (1 bit)  */
-			uint32_t STagPID        : 16; /* Service Tag PID (for QinQ) */
-			uint32_t Reserved       : 14; /* Reserved */
-		} Bits;
-	} VlanConfig;
+			uint32_t RxStrip        : 1; /*!< RX VLAN tag stripping enable (see @ref eth_vlan_strip). */
+			uint32_t TxTagType      : 1; /*!< TX VLAN tag type: 0=C-TAG, 1=S-TAG (see @ref eth_vlan_type). */
+			uint32_t STagPID        : 16; /*!< S-TAG Protocol ID for QinQ frames (default 0x88A8). */
+			uint32_t Reserved       : 14; /*!< Reserved. */
+		} Bits;                    /*!< Named bitfield access for VLAN configuration. */
+	} VlanConfig;                  /*!< VLAN tag handling configuration. */
 	/* EEE Configuration --- */
-	ETH_EEE_InitTypeDef *EEE_Config;
+	ETH_EEE_InitTypeDef *EEE_Config; /*!< Pointer to EEE configuration structure, NULL to disable EEE. */
 	/* Packet Filter */
-	uint32_t PktFilter;
+	uint32_t PktFilter;            /*!< Additional packet filter control word. */
 	/* DMA Thresholds & Tuning */
-	uint8_t DMA_TxThreshold;          /* enum eth_tx_threshold   (2 bits) */
-	uint8_t DMA_RxThreshold;          /* enum eth_rx_threshold   (2 bits) */
-	uint8_t DMA_TxTriggerLevel;       /* enum eth_trigger_level  (4 bits) */
-	uint8_t DMA_RxTriggerLevel;       /* enum eth_trigger_level  (4 bits) */
+	uint8_t DMA_TxThreshold;       /*!< TX FIFO start-of-transmission threshold (see @ref eth_tx_threshold). */
+	uint8_t DMA_RxThreshold;       /*!< RX FIFO almost-full threshold (see @ref eth_rx_threshold). */
+	uint8_t DMA_TxTriggerLevel;    /*!< TX interrupt trigger packet count (see @ref eth_trigger_level). */
+	uint8_t DMA_RxTriggerLevel;    /*!< RX interrupt trigger packet count (see @ref eth_trigger_level). */
 	/* Hardware Resources */
-	uint32_t ETH_IntMaskAndStatus;
-	uint8_t  ETH_MacAddr[6];
+	uint32_t ETH_IntMaskAndStatus; /*!< Interrupt mask and status register value. */
+	uint8_t  ETH_MacAddr[6];       /*!< Local MAC address (6 bytes). */
 
 	/* Descriptor */
-	uint8_t             *ETH_TxPktBuf;
-	uint8_t             *ETH_RxPktBuf;
-	volatile ETH_TxDescTypeDef   *ETH_TxDesc;
-	volatile ETH_RxDescTypeDef   *ETH_RxDesc;
-	uint16_t ETH_TxDescNum;                 /* Tx Descriptor Number 1~4096 */
-	uint16_t ETH_RxDescNum;                 /* Rx Descriptor Number 1~4096 */
+	uint8_t             *ETH_TxPktBuf;              /*!< Pointer to TX packet buffer memory. */
+	uint8_t             *ETH_RxPktBuf;              /*!< Pointer to RX packet buffer memory. */
+	volatile ETH_TxDescTypeDef   *ETH_TxDesc;       /*!< Pointer to TX descriptor ring. */
+	volatile ETH_RxDescTypeDef   *ETH_RxDesc;       /*!< Pointer to RX descriptor ring. */
+	uint16_t ETH_TxDescNum;                         /*!< Number of TX descriptors (1-4096). */
+	uint16_t ETH_RxDescNum;                         /*!< Number of RX descriptors (1-4096). */
 
-	uint8_t  ETH_TxDescCurrentNum;
-	uint8_t  ETH_RxDescCurrentNum;
-	uint8_t  ETH_RxFrameStartDescIdx;
-	u32     ETH_RxFrameLen;
-	u32     ETH_TxFrameLen;
-	u32     ETH_RxSegmentCount;
-	u16     ETH_TxBufSize;
-	u16     ETH_RxBufSize;
+	uint8_t  ETH_TxDescCurrentNum;       /*!< Index of the TX descriptor currently in use. */
+	uint8_t  ETH_RxDescCurrentNum;       /*!< Index of the RX descriptor currently in use. */
+	uint8_t  ETH_RxFrameStartDescIdx;    /*!< Descriptor index of the first segment of the current RX frame. */
+	u32     ETH_RxFrameLen;              /*!< Total length of the current received frame in bytes. */
+	u32     ETH_TxFrameLen;              /*!< Length of the last transmitted frame in bytes. */
+	u32     ETH_RxSegmentCount;          /*!< Number of descriptors used by the current received frame. */
+	u16     ETH_TxBufSize;               /*!< Size of each TX buffer in bytes. */
+	u16     ETH_RxBufSize;               /*!< Size of each RX buffer in bytes. */
 } ETH_InitTypeDef, *PETH_InitTypeDef;
 
 /**
- * @brief Ethernet Packet Metadata (Covers ALL Apollo TX/RX Descriptor Features)
+ * @brief  Ethernet packet metadata structure covering all TX/RX descriptor features.
  * @note  Strictly 4-byte aligned to prevent compiler padding and optimize cache.
  *        Currently only length and VLAN features are implemented in TX/RX functions.
  */
 typedef struct {
 	/* --- Word 0 --- */
-	u32 pkt_len;         /* TX/RX: Packet length (4 bytes) */
+	u32 pkt_len;         /*!< TX/RX: Packet length in bytes. */
 
 	/* --- Word 1 --- */
-	u8  tx_keep;         /* TX: Skip switch lookup (1 byte) */
-	u8  tx_blu;          /* TX: L2 lookup only (1 byte) */
-	u8  tx_dislrn;       /* TX: Disable source MAC learning (1 byte) */
-	u8  tx_lgsen;        /* TX: Enable Large Send (1 byte) */
+	u8  tx_keep;         /*!< TX: 1 = skip switch lookup, transmit directly. */
+	u8  tx_blu;          /*!< TX: 1 = L2 bridging lookup only (when tx_keep=0). */
+	u8  tx_dislrn;       /*!< TX: 1 = disable source MAC address learning. */
+	u8  tx_lgsen;        /*!< TX: 1 = enable large send offload (TSO/LSO). */
 
 	/* --- Word 2 --- */
-	u16 tx_lgmss;        /* TX: Large Send MSS (2 bytes, natural 2-byte aligned) */
-	u8  csum_ip;         /* TX/RX: IP Checksum control/status (1 byte) */
-	u8  csum_l4;         /* TX/RX: L4 Checksum control/status (1 byte) */
+	u16 tx_lgmss;        /*!< TX: Maximum segment size for large send offload. */
+	u8  csum_ip;         /*!< TX/RX: IP checksum offload control (TX) or error status (RX). */
+	u8  csum_l4;         /*!< TX/RX: L4 (TCP/UDP) checksum offload control (TX) or error status (RX). */
 
 	/* --- Word 3 --- */
-	u8  cpu_tag_en;      /* TX/RX: CPU Tag enable/status (1 byte) */
-	u8  cputag_psel;     /* TX: CPU Tag port selection (1 byte) */
-	u8  cputag_pri;      /* TX: CPU Priority (1 byte) */
-	u8  vlan_valid;      /* TX/RX: VLAN valid flag (1 byte) */
+	u8  cpu_tag_en;      /*!< TX/RX: 1 = CPU tag present or to be inserted. */
+	u8  cputag_psel;     /*!< TX: CPU tag port selection. */
+	u8  cputag_pri;      /*!< TX: CPU tag priority value (0-7). */
+	u8  vlan_valid;      /*!< TX/RX: 1 = VLAN info in this descriptor is valid. */
 
 	/* --- Word 4 --- */
-	u16 vlan_tci;        /* TX/RX: VLAN TCI (2 bytes, natural 2-byte aligned) */
-	u8  vlan_act;        /* TX: VLAN action (1 byte) */
-	u8  pppoe_valid;     /* TX/RX: PPPoE valid flag (1 byte) */
+	u16 vlan_tci;        /*!< TX/RX: VLAN tag control information (PCP, DEI, VID). */
+	u8  vlan_act;        /*!< TX: VLAN egress action (see @ref eth_vlan_action). */
+	u8  pppoe_valid;     /*!< TX/RX: 1 = PPPoE info in this descriptor is valid. */
 
 	/* --- Word 5 --- */
-	u8  pppoe_act;       /* TX: PPPoE action (1 byte) */
-	u8  pppoe_idx;       /* TX: PPPoE table index (1 byte) */
-	u8  src_ext_port;    /* TX/RX: Source extension port (1 byte) */
-	u8  dst_port_mask;   /* TX/RX: Destination port mask (1 byte) */
+	u8  pppoe_act;       /*!< TX: PPPoE egress action. */
+	u8  pppoe_idx;       /*!< TX: PPPoE session table index. */
+	u8  src_ext_port;    /*!< TX/RX: Source extension port number. */
+	u8  dst_port_mask;   /*!< TX/RX: Destination port mask for multicast/forwarding. */
 
 	/* --- Word 6 --- */
-	u8  strm_id;         /* TX/RX: PON Stream ID (1 byte) */
-	u8  rx_pkt_type;     /* RX: Packet type (1 byte) */
-	u8  rx_reason;       /* RX: Trap/Drop reason (1 byte) */
-	u8  rx_int_prio;     /* RX: Internal priority (1 byte) */
+	u8  strm_id;         /*!< TX/RX: PON stream ID. */
+	u8  rx_pkt_type;     /*!< RX: Received packet type (see @ref eth_packet_type). */
+	u8  rx_reason;       /*!< RX: Trap or drop reason code. */
+	u8  rx_int_prio;     /*!< RX: Internal priority assigned by the switch. */
 
 	/* --- Word 7 --- */
-	u8  rx_crc_err;      /* RX: CRC Error flag (1 byte) */
-	u8  reserved[3];     /* Padding to ensure exact 4-byte total size alignment (3 bytes) */
+	u8  rx_crc_err;      /*!< RX: 1 = CRC error detected in received frame. */
+	u8  reserved[3];     /*!< Padding for 4-byte alignment. */
 
 } __attribute__((aligned(4))) ETH_PktMetaDef;
 
 
 
+/**
+ * @brief Ethernet hardware loopback test control and status.
+ */
 struct ETH_LoopBackTest {
-	uint32_t DataPattern    : 8;  /* Bit 0-7:  data */
-	uint32_t DisableTxCRC   : 1;  /* Bit 8:    Disable CRC */
-	uint32_t PktNumSel      : 2;  /* Bit 9-10: Pkt number (0:100, 1:1, 2:5) */
-	uint32_t PktLenSel      : 1;  /* Bit 11:   Pkt legnth (0: random, 1:64B) */
-	uint32_t Status_Fail    : 1;  /* Bit 12:   Fail */
-	uint32_t Status_Done    : 1;  /* Bit 13:   Finish */
-	uint32_t DataPatSel     : 1;  /* Bit 14:   0:random, 1: fix */
-	uint32_t Enable         : 1;  /* Bit 15:   Function Enale */
-	uint32_t Reserved       : 16;
+	uint32_t DataPattern    : 8;  /*!< Test data pattern byte value. */
+	uint32_t DisableTxCRC   : 1;  /*!< 1 = disable CRC insertion on TX. */
+	uint32_t PktNumSel      : 2;  /*!< Packet count select: 0=100 packets, 1=1 packet, 2=5 packets. */
+	uint32_t PktLenSel      : 1;  /*!< Packet length select: 0=random, 1=64B fixed. */
+	uint32_t Status_Fail    : 1;  /*!< Test status: 1 = failure detected. */
+	uint32_t Status_Done    : 1;  /*!< Test status: 1 = test finished. */
+	uint32_t DataPatSel     : 1;  /*!< Data pattern source: 0=random, 1=fixed. */
+	uint32_t Enable         : 1;  /*!< 1 = enable loopback test function. */
+	uint32_t Reserved       : 16; /*!< Reserved. */
 };
 
 /** @}

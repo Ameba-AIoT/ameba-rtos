@@ -72,8 +72,6 @@ def _fmt_project_entry(soc: str, entry: ProjectEntry, indent: str = "    ") -> s
     lines.append(f'{indent}{json.dumps(soc)}: {{')
     lines.append(f'{sub}"flash_layout_setting_mode": {json.dumps(entry.flash_layout_setting_mode)},')
     lines.append(f'{sub}"build_dir": {json.dumps(entry.build_dir)},')
-    if entry.memory_type:
-        lines.append(f'{sub}"memory_type": {json.dumps(entry.memory_type)},')
 
     if entry.flash_layout_setting_mode == "auto":
         lines.append("")
@@ -108,12 +106,6 @@ def render_project_info(model: ProjectInfo) -> str:
     body: List[str] = []
     body.append("{")
     body.append(f'  "schema_version": {model.schema_version},')
-    body.append("")
-    body.append("  /* Global defaults; each project may override. */")
-    body.append('  "defaults": {')
-    body.append(f'    "memory_type": {json.dumps(model.defaults.memory_type)},')
-    body.append(f'    "chip_erase": {json.dumps(model.defaults.chip_erase)}')
-    body.append("  },")
     body.append("")
     body.append("  /* Keyed by SoC name (matches build_<SOC>/). */")
     if not model.projects:
@@ -159,6 +151,7 @@ def render_board_info(model: BoardInfo) -> str:
     d = model.defaults
     body.append(f'    "baudrate": {d.baudrate},')
     body.append(f'    "monitor_baudrate": {d.monitor_baudrate},')
+    body.append(f'    "memory_type": {json.dumps(d.memory_type)},')
     body.append(f'    "chip_erase": {json.dumps(d.chip_erase)}')
     body.append("  },")
     body.append("")
@@ -181,6 +174,8 @@ def render_board_info(model: BoardInfo) -> str:
             kvs.append(f'"soc": {json.dumps(entry.soc)}')
             kvs.append(f'"transport": {json.dumps(entry.transport)}')
             kvs.append(f'"port": {json.dumps(entry.port)}')
+            if entry.memory_type is not None:
+                kvs.append(f'"memory_type": {json.dumps(entry.memory_type)}')
             if entry.baudrate is not None:
                 kvs.append(f'"baudrate": {entry.baudrate}')
             if entry.monitor_baudrate is not None:

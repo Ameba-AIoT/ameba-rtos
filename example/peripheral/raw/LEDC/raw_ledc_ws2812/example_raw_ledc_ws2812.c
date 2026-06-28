@@ -318,7 +318,5 @@ int example_raw_ledc_ws2812(void)
 		printf("Create LEDC_WS2812_DEMO error!!\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

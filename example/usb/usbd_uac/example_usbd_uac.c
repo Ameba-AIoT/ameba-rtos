@@ -53,9 +53,14 @@ static const char *const TAG = "UAC";
 #endif
 
 /* Thread priorities */
-#define CONFIG_USBD_UAC_PLAYER_THREAD_PRIORITY  6U
-#define CONFIG_USBD_UAC_INIT_THREAD_PRIORITY    6U
-#define CONFIG_USBD_UAC_HOTPLUG_THREAD_PRIORITY 8U
+#define CONFIG_USBD_UAC_INIT_THREAD_PRIORITY           6U
+#define CONFIG_USBD_UAC_HOTPLUG_THREAD_PRIORITY        8U
+#define CONFIG_USBD_UAC_PLAYER_THREAD_PRIORITY         6U
+
+/* Thread stack sizes */
+#define CONFIG_USBD_UAC_INIT_THREAD_STACK_SIZE           1024U
+#define CONFIG_USBD_UAC_HOTPLUG_THREAD_STACK_SIZE        1024U
+#define CONFIG_USBD_UAC_PLAYER_THREAD_STACK_SIZE         (1024U * 16)
 
 #define AUDIO_BYTE_WIDTH_SIZE                   0x02U
 #define AUDIO_SAMPLING_FREQ                     USBD_UAC_SAMPLING_FREQ_48K
@@ -273,8 +278,9 @@ static void example_usbd_uac_thread(void *param)
 	}
 
 #if CONFIG_USBD_UAC_HOTPLUG
-	ret = rtos_task_create(&check_status_task, "example_usbd_uac_hotplug_thread", example_usbd_uac_hotplug_thread, NULL, 1024U,
-						   CONFIG_USBD_UAC_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&check_status_task, "example_usbd_uac_hotplug_thread",
+						   example_usbd_uac_hotplug_thread, NULL,
+						   CONFIG_USBD_UAC_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBD_UAC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_usb_class_exit;
 	}
@@ -517,17 +523,19 @@ static void example_usbd_uac_audio_track_thread(void *param)
 
 void example_usbd_uac(void)
 {
-	int status;
+	int ret;
 	rtos_task_t task;
 
 	rtos_sema_create(&uac_ready_sema, 0U, 1U);
-	status = rtos_task_create(&task, "example_usbd_uac_thread", example_usbd_uac_thread, NULL, 1024U, CONFIG_USBD_UAC_INIT_THREAD_PRIORITY);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&task, "example_usbd_uac_thread", example_usbd_uac_thread, NULL,
+						   CONFIG_USBD_UAC_INIT_THREAD_STACK_SIZE, CONFIG_USBD_UAC_INIT_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD UAC thread fail\n");
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"example_usbd_uac_audio_track_thread"), example_usbd_uac_audio_track_thread, NULL, 1024 * 16,
-						 CONFIG_USBD_UAC_PLAYER_THREAD_PRIORITY) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_usbd_uac_audio_track_thread"),
+						 example_usbd_uac_audio_track_thread, NULL,
+						 CONFIG_USBD_UAC_PLAYER_THREAD_STACK_SIZE, CONFIG_USBD_UAC_PLAYER_THREAD_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create audio track fail\n");
 	}
 }

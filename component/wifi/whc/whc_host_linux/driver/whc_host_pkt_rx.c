@@ -6,6 +6,23 @@ void whc_host_recv_notify(void)
 	up(&global_idev.recv_priv.rx_sema);
 }
 
+void whc_host_netif_rx(struct sk_buff *pskb, u8 wlan_idx)
+{
+	struct net_device_stats *pstats = &global_idev.stats[wlan_idx];
+
+	pskb->dev = global_idev.pndev[wlan_idx];
+	pskb->protocol = eth_type_trans(pskb, global_idev.pndev[wlan_idx]);
+	pskb->ip_summed = CHECKSUM_NONE;
+
+	if (netif_rx(pskb) == NET_RX_SUCCESS) {
+		pstats->rx_packets++;
+		pstats->rx_bytes += pskb->len;
+	} else {
+		pstats->rx_dropped++;
+	}
+	return;
+}
+
 static void whc_host_recv_pkts(struct sk_buff *pskb)
 {
 	struct whc_msg_info *msg = (struct whc_msg_info *)(pskb->data + SIZE_RX_DESC);
@@ -14,14 +31,6 @@ static void whc_host_recv_pkts(struct sk_buff *pskb)
 	u32 total_len;
 	struct net_device_stats *pstats = &global_idev.stats[wlan_idx];
 	u8 tmp;
-	u32 stat_len;
-
-#ifdef CONFIG_P2P
-	if (global_idev.p2p_global.pd_wlan_idx == 1) {
-		wlan_idx = wlan_idx ^ 1; /*GC intf is up, linux netdev idx is oppsite to driver wlan_idx*/
-		pstats = &global_idev.stats[wlan_idx];
-	}
-#endif
 
 	tmp = global_idev.xmit_priv.flowctrl_en;
 	global_idev.xmit_priv.flowctrl_en = msg->flow_ctrl_en;
@@ -45,34 +54,45 @@ static void whc_host_recv_pkts(struct sk_buff *pskb)
 	skb_reserve(pskb, SIZE_RX_DESC + sizeof(struct whc_msg_info) + msg->pad_len);
 	skb_put(pskb, pkt_len);
 
-	pskb->dev = global_idev.pndev[wlan_idx];
-	pskb->protocol = eth_type_trans(pskb, global_idev.pndev[wlan_idx]);
-	pskb->ip_summed = CHECKSUM_NONE;
-
-	stat_len = pskb->len;
-
-	if (netif_rx(pskb) == NET_RX_SUCCESS) {
-		pstats->rx_packets++;
-		pstats->rx_bytes += stat_len;
-	} else {
-		pstats->rx_dropped++;
-	}
-
+#ifdef CONFIG_WHCH
+	/*
+	1. RXBD desegment
+	2. defrag
+	3. amsdu to msdu
+	4. machdr to ethhdr
+	5. reorder
+	*/
+	whc_host_hal_rx_mpdu(pskb);
+#else
+	whc_host_netif_rx(pskb, msg->wlan_idx);
+#endif
 	return;
 }
 
 #ifdef CONFIG_WHC_CMD_PATH
-int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb)
+int whc_host_cmd_data_process(struct sk_buff *pskb)
 {
 	u32 event = *(u32 *)(pskb->data + SIZE_RX_DESC);
 	struct whc_cmd_path_hdr *hdr = NULL;
 	u8 *rxbuf = NULL;
+	int log_len;
+	const char *log_buf;
 
 	switch (event) {
 	case WHC_WIFI_EVT_CMD:
 		hdr = (struct whc_cmd_path_hdr *)(pskb->data + SIZE_RX_DESC);
 		rxbuf = (u8 *)pskb->data + SIZE_RX_DESC + sizeof(struct whc_cmd_path_hdr);
-		whc_host_send_rxbuf_to_user(rxbuf, hdr->len);
+		if (hdr->len >= sizeof(u32) && *(u32 *)rxbuf == WHC_LOG_EVENT) {
+			log_len = (int)(hdr->len - sizeof(u32));
+			log_buf = (const char *)(rxbuf + sizeof(u32));
+			if (log_len > 0 && log_buf[log_len - 1] == '\n') {
+				pr_info("[FW] %.*s", log_len, log_buf);
+			} else {
+				pr_info("%.*s", log_len, log_buf);
+			}
+		} else {
+			whc_host_send_rxbuf_to_user(rxbuf, hdr->len);
+		}
 		break;
 	default:
 		break;
@@ -130,7 +150,7 @@ int whc_host_recv_dispatch(struct sk_buff *pskb)
 #endif
 	default:
 #if defined(CONFIG_WHC_CMD_PATH)
-		whc_host_cmd_data_rx_to_user(pskb);
+		whc_host_cmd_data_process(pskb);
 #elif !defined(CONFIG_WHC_HCI_SPI)
 		dev_err(global_idev.pwhc_dev, "%s: unknown event:%d\n", __func__, event);
 #endif

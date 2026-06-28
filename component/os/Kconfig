@@ -25,6 +25,8 @@ menu "CONFIG OS"
                 bool "v10.2.1_smp"
             config CA32_FREERTOS_V11_1_0_FOR_CA32
                 bool "v11.1.0"
+            config CA32_FREERTOS_V11_3_0_FOR_CA32
+                bool "v11.3.0"
         endchoice
     endif
 
@@ -37,7 +39,7 @@ menu "CONFIG OS"
             This defines the maximum depth of back trace. The value must be at least 4.
 
     # freertos v11 not support heap protect currently. Other versions all supprot.
-    if !CA32_FREERTOS_V11_1_0_FOR_CA32 && !PLATFORM_ZEPHYR
+    if !CA32_FREERTOS_V11_1_0_FOR_CA32 && !CA32_FREERTOS_V11_3_0_FOR_CA32 && !PLATFORM_ZEPHYR
         config HEAP_PROTECTOR
             bool "Enable Heap Protector"
             default n

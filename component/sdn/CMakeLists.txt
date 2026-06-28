@@ -97,9 +97,11 @@ ameba_list_append(private_sources
     bt/le/ble_ll_privacy.c
     bt/le/ble_ll_filter.c
     bt/le/ble_ll_scan.c
+    bt/le/ble_ll_ext_scan.c
     bt/le/ble_ll_central.c
     bt/le/ble_ll_security.c
     bt/le/ble_psd.c
+    bt/le/ble_ll_pa_sync.c
 )
 
 ameba_list_append(private_includes

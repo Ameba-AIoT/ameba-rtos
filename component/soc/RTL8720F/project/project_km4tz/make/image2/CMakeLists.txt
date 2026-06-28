@@ -2,7 +2,6 @@ ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin)
 # Use variable c_CURRENT_IMAGE to represent full image target name
 
 ###############################  ADD COMPONENT  ###################################
-
 ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
 ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
 ameba_add_subdirectory(${c_COMPONENT_DIR}/sdn)
@@ -22,8 +21,10 @@ ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_UI_DIR})
+ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
 ameba_add_subdirectory(${c_CMPT_USRCFG_DIR} usrcfg)
 ameba_add_subdirectory(${c_CMPT_DIAGNOSE_DIR})
+ameba_add_subdirectory_if_exist(${c_CMPT_TFLITE_DIR}/cmake)
 ameba_add_subdirectory_if_exist(${c_CMPT_VERIFICATION_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_PYTEST_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_APP_DIR}/benchmark)

@@ -15,7 +15,7 @@ message ("DAILY_BUILD = " ${DAILY_BUILD})
 set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/ameba_layout.ld)
-if(CONFIG_MP_SHRINK)
+if(CONFIG_MP_SHRINK AND CONFIG_WHC_INTF_IPC)
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all_mp.ld)
 else()
     set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
@@ -56,5 +56,5 @@ ameba_add_subdirectory(make/image2)
 add_custom_target(
     ${c_MCU_PROJECT_NAME}
     COMMENT "build ${c_MCU_PROJECT_NAME} only"
-    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image_list>
+    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image_list>_postbuild
 )

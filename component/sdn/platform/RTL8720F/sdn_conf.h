@@ -50,8 +50,12 @@
 #define BT_LL_FEATURE_BT50_LE_CHNL_SEL_ALGO_2                       1
 #endif
 
-#ifndef BT_LL_FEATURE_BT50_LE_PERIODIC_ADV
-#define BT_LL_FEATURE_BT50_LE_PERIODIC_ADV                          0
+#ifndef BT_LL_FEATURE_BT50_LE_PA_ADV
+#define BT_LL_FEATURE_BT50_LE_PA_ADV                                0
+#endif
+
+#ifndef BT_LL_FEATURE_BT50_LE_PA_SYNC
+#define BT_LL_FEATURE_BT50_LE_PA_SYNC                               0
 #endif
 
 //BLE Role
@@ -78,6 +82,13 @@
 #define BT_LL_LE_RESOLVING_LIST_SIZE                                8
 #endif
 
+#ifndef BT_LL_LE_MAX_PA_SYNC_LIST_SIZE
+#define BT_LL_LE_MAX_PA_SYNC_LIST_SIZE                              8
+#endif
+
+#ifndef BT_LL_LE_PA_SYNC_LIST_SIZE
+#define BT_LL_LE_PA_SYNC_LIST_SIZE                                  8
+#endif
 
 #define BT_LL_SCAN_AND_INITIATE_IN_PARALLEL                         1
 #endif

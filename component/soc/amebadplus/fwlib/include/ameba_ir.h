@@ -283,8 +283,8 @@ typedef struct {
 /** @defgroup IR_Carrier_Frequency IR Carrier Frequency
   * @{
   */
-#define IR_TX_FREQ_HZ_MIN			(25000)
-#define IS_IR_FREQUENCY(F)			((F) >= IR_TX_FREQ_HZ_MIN)
+#define IR_TX_FREQ_HZ_MIN			(25000)  /*!< Minimum IR carrier frequency in Hz. */
+#define IS_IR_FREQUENCY(F)			((F) >= IR_TX_FREQ_HZ_MIN)  /*!< Check if IR carrier frequency is valid. */
 /**
   * @}
   */
@@ -292,10 +292,10 @@ typedef struct {
 /** @defgroup IR_Mode IR Mode
   * @{
   */
-#define IR_MODE_TX					(0)
-#define IR_MODE_RX					(1)
+#define IR_MODE_TX					(0)  /*!< IR transmit mode. */
+#define IR_MODE_RX					(1)  /*!< IR receive mode. */
 
-#define IR_MODE(MODE)				((MODE) & IR_BIT_MODE_SEL)
+#define IR_MODE(MODE)				((MODE) & IR_BIT_MODE_SEL)  /*!< Set IR mode field. */
 /**
   * @}
   */
@@ -303,7 +303,7 @@ typedef struct {
 /** @defgroup IR_Tx_Threshold IR Tx Threshold
   * @{
   */
-#define IR_TX_FIFO_SIZE						(32)
+#define IR_TX_FIFO_SIZE						(32)  /*!< IR TX FIFO depth in entries. */
 /**
   * @}
   */
@@ -311,11 +311,11 @@ typedef struct {
 /** @defgroup IR_Tx_Data_Level IR Tx Data Level
   * @{
   */
-#define IR_TX_DATA_NORMAL_CARRIER_NORMAL					(0)
-#define IR_TX_DATA_NORMAL_CARRIER_INVERSE					(1)
-#define IR_TX_DATA_INVERSE_CARRIER_NORMAL					(2)
-#define IR_TX_DATA_INVERSE_CARRIER_INVERSE					(3)
-#define IR_TX_DATA_TYPE_SET(x)				((u32)(((x) << 13) & (IR_BIT_TX_OUTPUT_INVERSE | IR_BIT_TX_DE_INVERSE)))
+#define IR_TX_DATA_NORMAL_CARRIER_NORMAL					(0)  /*!< Normal data, normal carrier output. */
+#define IR_TX_DATA_NORMAL_CARRIER_INVERSE					(1)  /*!< Normal data, inverted carrier output. */
+#define IR_TX_DATA_INVERSE_CARRIER_NORMAL					(2)  /*!< Inverted data, normal carrier output. */
+#define IR_TX_DATA_INVERSE_CARRIER_INVERSE					(3)  /*!< Inverted data, inverted carrier output. */
+#define IR_TX_DATA_TYPE_SET(x)				((u32)(((x) << 13) & (IR_BIT_TX_OUTPUT_INVERSE | IR_BIT_TX_DE_INVERSE)))  /*!< Set TX data type and carrier inversion bits. */
 /**
   * @}
   */
@@ -323,8 +323,8 @@ typedef struct {
 /** @defgroup IR_Idle_Level IR Idle Level
   * @{
   */
-#define IR_IDLE_OUTPUT_LOW					(0)
-#define IR_IDLE_OUTPUT_HIGH					(1)
+#define IR_IDLE_OUTPUT_LOW					(0)  /*!< TX idle output level is low. */
+#define IR_IDLE_OUTPUT_HIGH					(1)  /*!< TX idle output level is high. */
 /**
   * @}
   */
@@ -332,12 +332,12 @@ typedef struct {
 /** @defgroup IR_Tx_INT_Operation IR Tx INT Operation
   * @{
   */
-#define IR_TX_INT_ALL_MASK					((u32)0x0000002C)
-#define IR_TX_INT_ALL_EN					((u32)0x00000013)
-#define IR_TX_INT_ALL_CLR					((u32)0x0000000E)
-#define IS_TX_INT_MASK(MASK)				(((MASK) & (~IR_TX_INT_ALL_MASK)) == 0)
-#define IS_TX_INT(MASK)						(((MASK) & (~IR_TX_INT_ALL_EN)) == 0)
-#define IS_TX_INT_CLR(MASK)					(((MASK) & (~IR_TX_INT_ALL_CLR)) == 0)
+#define IR_TX_INT_ALL_MASK					((u32)0x0000002C)  /*!< Mask bits for all TX interrupts. */
+#define IR_TX_INT_ALL_EN					((u32)0x00000013)  /*!< Enable bits for all TX interrupts. */
+#define IR_TX_INT_ALL_CLR					((u32)0x0000000E)  /*!< Clear bits for all TX interrupts. */
+#define IS_TX_INT_MASK(MASK)				(((MASK) & (~IR_TX_INT_ALL_MASK)) == 0)  /*!< Check if TX interrupt mask value is valid. */
+#define IS_TX_INT(MASK)						(((MASK) & (~IR_TX_INT_ALL_EN)) == 0)  /*!< Check if TX interrupt enable value is valid. */
+#define IS_TX_INT_CLR(MASK)					(((MASK) & (~IR_TX_INT_ALL_CLR)) == 0)  /*!< Check if TX interrupt clear value is valid. */
 /**
   * @}
   */
@@ -345,8 +345,8 @@ typedef struct {
 /** @defgroup IR_Rx_Start_Control IR Rx Start Control
   * @{
   */
-#define IR_RX_MANUAL_MODE					(0)
-#define IR_RX_AUTO_MODE						(1)
+#define IR_RX_MANUAL_MODE					(0)  /*!< RX manual start mode. */
+#define IR_RX_AUTO_MODE						(1)  /*!< RX auto trigger start mode. */
 /**
   * @}
   */
@@ -354,14 +354,14 @@ typedef struct {
 /** @defgroup IR_Rx_Filter_Time IR Rx Filter Time
   * @{
   */
-#define IR_RX_FILTER_TIME_20NS					(0)
-#define IR_RX_FILTER_TIME_30NS					(1)
-#define IR_RX_FILTER_TIME_40NS					(2)
-#define IR_RX_FILTER_TIME_50NS					(3)
-#define IR_RX_FILTER_TIME_60NS					(4)
-#define IR_RX_FILTER_TIME_70NS					(5)
-#define IR_RX_FILTER_TIME_80NS					(6)
-#define IR_RX_FILTER_TIME_90NS					(7)
+#define IR_RX_FILTER_TIME_50NS					(0) /*!< RX glitch filter time 50 ns. */
+#define IR_RX_FILTER_TIME_75NS					(1) /*!< RX glitch filter time 75 ns. */
+#define IR_RX_FILTER_TIME_100NS					(2) /*!< RX glitch filter time 100 ns. */
+#define IR_RX_FILTER_TIME_125NS					(3) /*!< RX glitch filter time 125 ns. */
+#define IR_RX_FILTER_TIME_150NS					(4) /*!< RX glitch filter time 150 ns. */
+#define IR_RX_FILTER_TIME_175NS					(5) /*!< RX glitch filter time 175 ns. */
+#define IR_RX_FILTER_TIME_200NS					(6) /*!< RX glitch filter time 200 ns. */
+#define IR_RX_FILTER_TIME_225NS					(7) /*!< RX glitch filter time 225 ns. */
 /**
   * @}
   */
@@ -369,8 +369,8 @@ typedef struct {
 /** @defgroup IR_Rx_FIFO_Discard IR Rx FIFO Discard
   * @{
   */
-#define IR_RX_FIFO_FULL_DISCARD_NEWEST			(1)
-#define IR_RX_FIFO_FULL_DISCARD_OLDEST			(0)
+#define IR_RX_FIFO_FULL_DISCARD_NEWEST			(1) /*!< Discard newest data when RX FIFO full. */
+#define IR_RX_FIFO_FULL_DISCARD_OLDEST			(0) /*!< Discard oldest data when RX FIFO full. */
 /**
   * @}
   */
@@ -378,7 +378,7 @@ typedef struct {
 /** @defgroup IR_Rx_Threshold IR Rx Threshold
   * @{
   */
-#define IR_RX_FIFO_SIZE							(32)
+#define IR_RX_FIFO_SIZE							(32) /*!< IR RX FIFO depth in entries. */
 /**
   * @}
   */
@@ -386,12 +386,12 @@ typedef struct {
 /** @defgroup IR_Rx_INT_Operation IR Rx INT Operation
   * @{
   */
-#define IR_RX_INT_ALL_EN						((u32)0x0000003F)
-#define IR_RX_INT_ALL_CLR						((u32)0x0000003F)
-#define IR_RX_INT_ALL_MASK						((u32)0x000FC000)
-#define IS_RX_INT_MASK(MASK)					(((MASK) & (~IR_RX_INT_ALL_MASK)) == 0)
-#define IS_RX_INT(MASK)							(((MASK) & (~IR_RX_INT_ALL_EN)) == 0)
-#define IS_RX_INT_CLR(MASK)						(((MASK) & (~IR_RX_INT_ALL_CLR)) == 0)
+#define IR_RX_INT_ALL_EN						((u32)0x0000003F) /*!< Enable bits for all RX interrupts. */
+#define IR_RX_INT_ALL_CLR						((u32)0x0000003F) /*!< Clear bits for all RX interrupts. */
+#define IR_RX_INT_ALL_MASK						((u32)0x000FC000) /*!< Mask bits for all RX interrupts. */
+#define IS_RX_INT_MASK(MASK)					(((MASK) & (~IR_RX_INT_ALL_MASK)) == 0) /*!< Check if RX interrupt mask value is valid. */
+#define IS_RX_INT(MASK)							(((MASK) & (~IR_RX_INT_ALL_EN)) == 0) /*!< Check if RX interrupt enable value is valid. */
+#define IS_RX_INT_CLR(MASK)						(((MASK) & (~IR_RX_INT_ALL_CLR)) == 0) /*!< Check if RX interrupt clear value is valid. */
 /**
   * @}
   */
@@ -399,8 +399,8 @@ typedef struct {
 /** @defgroup IR_Rx_Count_Level IR Rx Count Level
   * @{
   */
-#define IR_RX_COUNT_LOW_LEVEL					(0)
-#define IR_RX_COUNT_HIGH_LEVEL					(1)
+#define IR_RX_COUNT_LOW_LEVEL					(0) /*!< Count threshold triggered on low level. */
+#define IR_RX_COUNT_HIGH_LEVEL					(1) /*!< Count threshold triggered on high level. */
 /**
   * @}
   */
@@ -408,10 +408,11 @@ typedef struct {
 /** @defgroup IR_Rx_Auto_Trigger_Type IR Rx Auto Trigger Type
   * @{
   */
-#define IR_RX_FALL_EDGE							(0)
-#define IR_RX_RISING_EDGE						(1)
-#define IR_RX_DOUBLE_EDGE						(2)
+#define IR_RX_FALL_EDGE							(0) /*!< RX triggered on falling edge. */
+#define IR_RX_RISING_EDGE						(1) /*!< RX triggered on rising edge. */
+#define IR_RX_DOUBLE_EDGE						(2) /*!< RX triggered on both edges. */
 
+/** @brief Check if IR Rx trigger edge value is valid. */
 #define IS_IR_RX_TRIGGER_EDGE(TRIGGER)			(((TRIGGER) == IR_RX_FALL_EDGE) || \
 												((TRIGGER) == IR_RX_RISING_EDGE) || \
 												((TRIGGER) == IR_RX_DOUBLE_EDGE))

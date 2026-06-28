@@ -7,7 +7,6 @@ soc_to_drv_file = {
     'amebadplus':     'autoconf_8721da.h',
     'amebad':         'autoconf_8721d.h',
     'amebalite':      'autoconf_8720e.h',
-    'amebasmartplus': 'autoconf_8730e.h',
     'amebasmart':     'autoconf_8730e.h',
     'amebagreen2':    'autoconf_8721f.h',
     'amebaL2':        'autoconf_amebax.h',
@@ -178,4 +177,3 @@ def main():
 if __name__ == '__main__':
 
     main()
-

@@ -196,22 +196,15 @@ class ProjectEntry(BaseModel):
 
     flash_layout_setting_mode: Literal["auto", "manual"] = Field(...)
     build_dir: str = Field(..., description="Absolute path to build_<SOC>/")
-    memory_type: Optional[Literal["nor", "nand", "ram"]] = Field(default=None)
     images: List[ProjectImageEntry] = Field(default_factory=list)
-
-
-class ProjectInfoDefaults(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    memory_type: Literal["nor", "nand", "ram"] = "nor"
-    chip_erase: bool = False
 
 
 class ProjectInfo(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: int = 1
-    defaults: ProjectInfoDefaults = Field(default_factory=ProjectInfoDefaults)
+    # schema 1.1: memory_type / chip_erase moved to board_info.json5 (they
+    # describe the physical flash on the board, not the project's images).
+    schema_version: float = 1.1
     projects: Dict[str, ProjectEntry] = Field(default_factory=dict)
 
 
@@ -257,6 +250,12 @@ class BoardEntry(BaseModel):
     soc: str = Field(..., description="SoC name, e.g. RTL8721F")
     transport: Literal["local", "remote"] = "local"
     port: str = Field(..., description="Serial port, e.g. /dev/ttyUSB0 or COM5")
+    memory_type: Optional[Literal["nor", "nand", "ram"]] = Field(
+        default=None,
+        description="Flash type on this board; overrides defaults.memory_type. "
+                    "A given project may be flashable to either nor or nand, "
+                    "so this is bound to the board, not the project.",
+    )
     baudrate: Optional[int] = Field(default=None, description="Override default flash/connect baudrate")
     monitor_baudrate: Optional[int] = Field(default=None)
     chip_erase: Optional[bool] = Field(default=None)
@@ -278,6 +277,7 @@ class BoardInfoDefaults(BaseModel):
 
     baudrate: int = 1500000
     monitor_baudrate: int = 1500000
+    memory_type: Literal["nor", "nand", "ram"] = "nor"
     chip_erase: bool = False
     add_crlf: bool = True
 
@@ -285,7 +285,9 @@ class BoardInfoDefaults(BaseModel):
 class BoardInfo(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: int = 1
+    # schema 1.1: gained defaults.memory_type + per-board memory_type
+    # (moved here from project_info.json5).
+    schema_version: float = 1.1
     defaults: BoardInfoDefaults = Field(default_factory=BoardInfoDefaults)
     default_alias: Optional[str] = Field(
         default=None,
@@ -315,6 +317,7 @@ class ResolvedBoard(BaseModel):
     soc: str
     transport: Literal["local", "remote"]
     port: str
+    memory_type: Literal["nor", "nand", "ram"]
     baudrate: int
     monitor_baudrate: int
     chip_erase: bool

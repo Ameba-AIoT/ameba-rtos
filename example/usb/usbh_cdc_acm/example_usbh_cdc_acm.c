@@ -32,6 +32,19 @@
 #define USBH_CDC_ACM_LOOPBACK_BUF_SIZE    1024   /* Buffer size for loopback test, which should match with device loopback buffer size */
 #define USBH_CDC_ACM_LOOPBACK_CNT         100    /* Loopback test round */
 
+// Thread Priorities
+#define CONFIG_USBH_CDC_ACM_INIT_THREAD_PRIORITY             1U
+#define CONFIG_USBH_CDC_ACM_MAIN_TASK_PRIORITY               4U
+#define CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_PRIORITY          3U
+#define CONFIG_USBH_CDC_ACM_BULK_XFER_THREAD_PRIORITY        3U
+#define CONFIG_USBH_CDC_ACM_NOTIFY_THREAD_PRIORITY           2U
+
+// Thread Stack Sizes
+#define CONFIG_USBH_CDC_ACM_INIT_THREAD_STACK_SIZE             1024U
+#define CONFIG_USBH_CDC_ACM_MAIN_TASK_STACK_SIZE               768U
+#define CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_STACK_SIZE          1024U
+#define CONFIG_USBH_CDC_ACM_BULK_XFER_THREAD_STACK_SIZE        (1024U * 2)
+#define CONFIG_USBH_CDC_ACM_NOTIFY_THREAD_STACK_SIZE           1024U
 
 /* Private types -------------------------------------------------------------*/
 
@@ -67,7 +80,7 @@ static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__(
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 static rtos_sema_t cdc_acm_notify_sema;
-u8 cdc_acm_notify_status;
+static u8 cdc_acm_notify_status;
 #endif
 static rtos_sema_t cdc_acm_detach_sema;
 static rtos_sema_t cdc_acm_attach_sema;
@@ -83,8 +96,8 @@ static usbh_config_t usbh_cfg = {
 	.ext_intr_enable = USBH_SOF_INTR,
 #endif
 	.isr_priority = INT_PRI_MIDDLE,
-	.main_task_stack_size = 768U,
-	.main_task_priority = 4U,
+	.main_task_stack_size = CONFIG_USBH_CDC_ACM_MAIN_TASK_STACK_SIZE,
+	.main_task_priority = CONFIG_USBH_CDC_ACM_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
@@ -334,12 +347,14 @@ static void cdc_acm_speed_loopback_test(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Bulk loopback test start, times:%d, size: %d\n", USBH_CDC_ACM_LOOPBACK_CNT, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 
-	ret = rtos_task_create(&rx_task, "example_usbh_bulk_rx_thread", example_usbh_bulk_rx_thread, NULL, 1024U * 2, 3U);
+	ret = rtos_task_create(&rx_task, "example_usbh_bulk_rx_thread", example_usbh_bulk_rx_thread, NULL,
+						   CONFIG_USBH_CDC_ACM_BULK_XFER_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ACM_BULK_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create rx_task fail\n");
 	}
 	//start two task, one for tx, one for rx
-	ret = rtos_task_create(&tx_task, "example_usbh_bulk_tx_thread", example_usbh_bulk_tx_thread, NULL, 1024U * 2, 3U);
+	ret = rtos_task_create(&tx_task, "example_usbh_bulk_tx_thread", example_usbh_bulk_tx_thread, NULL,
+						   CONFIG_USBH_CDC_ACM_BULK_XFER_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ACM_BULK_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create tx_task fail\n");
 	}
@@ -444,7 +459,9 @@ static void cdc_acm_notify_test(void)
 {
 	int status;
 	rtos_task_t task;
-	status = rtos_task_create(&task, "example_usbh_cdc_acm_notify_thread", example_usbh_cdc_acm_notify_thread, NULL, 1024U, 2U);
+	status = rtos_task_create(&task, "example_usbh_cdc_acm_notify_thread",
+							  example_usbh_cdc_acm_notify_thread, NULL,
+							  CONFIG_USBH_CDC_ACM_NOTIFY_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ACM_NOTIFY_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create notify thread fail(%d)\n", status);
 	}
@@ -544,7 +561,7 @@ static void example_usbh_cdc_acm_hotplug_thread(void *param)
 
 static void example_usbh_cdc_acm_thread(void *param)
 {
-	int status;
+	int ret;
 #if CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST
 	rtos_task_t task;
 #endif
@@ -558,20 +575,22 @@ static void example_usbh_cdc_acm_thread(void *param)
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 	rtos_sema_create(&cdc_acm_notify_sema, 0U, 1U);
 #endif
-	status = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (status != HAL_OK) {
+	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
+	if (ret != HAL_OK) {
 		goto error_exit;
 	}
 
-	status = usbh_cdc_acm_init(&cdc_acm_usr_cb);  /*0 means use default transfer size, and it can not exceed 65536*/
-	if (status != HAL_OK) {
+	ret = usbh_cdc_acm_init(&cdc_acm_usr_cb);  /*0 means use default transfer size, and it can not exceed 65536*/
+	if (ret != HAL_OK) {
 		usbh_deinit();
 		goto error_exit;
 	}
 
 #if CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST
-	status = rtos_task_create(&task, "example_usbh_cdc_acm_hotplug_thread", example_usbh_cdc_acm_hotplug_thread, NULL, 1024U, 3U);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&task, "example_usbh_cdc_acm_hotplug_thread",
+						   example_usbh_cdc_acm_hotplug_thread, NULL,
+						   CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		usbh_cdc_acm_deinit();
 		usbh_deinit();
 		goto error_exit;
@@ -607,13 +626,14 @@ example_exit:
 
 void example_usbh_cdc_acm(void)
 {
-	int status;
+	int ret;
 	rtos_task_t task;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH CDC ACM demo start\n");
 
-	status = rtos_task_create(&task, "example_usbh_cdc_acm_thread", example_usbh_cdc_acm_thread, NULL, 1024U, 1U);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&task, "example_usbh_cdc_acm_thread", example_usbh_cdc_acm_thread, NULL,
+						   CONFIG_USBH_CDC_ACM_INIT_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ACM_INIT_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }

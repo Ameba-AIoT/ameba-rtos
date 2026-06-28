@@ -36,6 +36,10 @@ endif()
 
 ameba_list_append_if(need_external_lib public_libraries ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a)
 
+# NAN host control app is shipped closed-source: link the prebuilt lib_nan.a
+# (built from source before release by ameba_add_external_app_library below).
+ameba_list_append_if(CONFIG_WIFI_NAN_HOST_APP public_libraries ${c_SDK_LIB_APPLICATION_DIR}/lib_nan.a)
+
 # Component public part, user config end
 #----------------------------------------#
 
@@ -70,6 +74,12 @@ if(NOT CONFIG_MP_SHRINK)
     if(CONFIG_WHC_NONE OR CONFIG_WHC_HOST)
         ameba_list_append(private_sources wifi_acs/wifi_acs.c)
         ameba_list_append(private_sources wifi_radar/wifi_radar.c)
+        if (CONFIG_TFLITE_MICRO_EN)
+            ameba_list_append(private_sources wifi_radar/nn_interface.cc)
+            ameba_list_append(private_sources wifi_radar/models/radar_float.c)
+            ameba_list_append(private_definitions TF_LITE_STATIC_MEMORY)
+            ameba_list_append(private_compile_options -Wno-unused-parameter -Wno-undef)
+        endif()
     endif()
     if(NOT CONFIG_PLATFORM_ZEPHYR)
         ameba_list_append_if(CONFIG_WHC_HOST private_sources wifi_cast/wifi_intf_drv_to_app_cast.c)
@@ -122,6 +132,34 @@ ameba_add_internal_library(${TARGET_LIB_OPEN}
     p_COMPILE_OPTIONS
         ${private_compile_options_open}
 )
+
+# NAN host control app (km4_tz). Built as a CLOSED-SOURCE prebuilt lib (lib_nan.a)
+# so this ported code is not shipped as source: ameba_add_external_app_library
+# compiles it before release into lib/application and the public section links
+# the prebuilt .a (on release the source is dropped). The warning policy for this
+# ported-from-Linux code stays isolated here; the -Wno-error relaxations cover
+# legacy style only (unused vars, K&R prototypes, char/uint8 signedness,
+# debug-print formats); revisit for a cleanup pass.
+if(CONFIG_WIFI_NAN_HOST_APP)
+    ameba_add_external_app_library(nan
+        p_SOURCES
+            wifi_nan_utility/rtw_nan_cmd.c
+            wifi_nan_utility/nan_event.c
+            wifi_nan_utility/sha256.c
+            wifi_nan_utility/nan_app.c
+        p_INCLUDES
+            ${CMAKE_CURRENT_SOURCE_DIR}/wifi_nan_utility
+        p_DEFINITIONS
+            CONFIG_WIFI_NAN_HOST_APP
+        p_COMPILE_OPTIONS
+            -Wno-error=unused-variable
+            -Wno-error=unused-parameter
+            -Wno-error=strict-prototypes
+            -Wno-error=pointer-sign
+            -Wno-error=format
+            -Wno-error=address
+    )
+endif()
 ##########################################################################################
 
 if(NOT CONFIG_PLATFORM_ZEPHYR AND NOT CONFIG_MP_SHRINK)

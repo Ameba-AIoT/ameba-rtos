@@ -132,6 +132,5 @@ int example_raw_kscan_event_trigger(void)
 		printf("Cannot create keyscan_event_trigger demo task\n\r");
 	}
 
-	rtos_sched_start();
 	return 0;
 }

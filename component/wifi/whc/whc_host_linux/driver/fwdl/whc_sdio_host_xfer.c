@@ -101,9 +101,6 @@ static int whc_sdio_recv_timeout(struct whc_xfer_adapter_t *adapter, u8 *pbuf, i
 	u32 himr;
 	u32 rx_len;
 
-	/* Clear RX ready flag before waiting */
-	adapter->sdio_rx_ready = false;
-
 	/* Wait for RX ready interrupt */
 	ret = wait_event_timeout(adapter->sdio_rx_wq,
 							 adapter->sdio_rx_ready == true,
@@ -111,6 +108,9 @@ static int whc_sdio_recv_timeout(struct whc_xfer_adapter_t *adapter, u8 *pbuf, i
 
 	if (ret == 0) {
 		dev_err(&priv->func->dev, "RX timeout\n");
+		/* Restore RX_REQ interrupt so retries can receive a response. */
+		himr = cpu_to_le32(priv->sdio_himr);
+		rtw_write32(priv, SDIO_REG_HIMR, himr);
 		return -ETIMEDOUT;
 	}
 
@@ -246,6 +246,9 @@ static int whc_sdio_handshake(struct whc_xfer_adapter_t *adapter, u8 *request, i
 	int retry = 0;
 
 	while (retry++ < WHC_SDIO_REQ_RETRY_TIMES) {
+		/* Clear flag before send so a fast interrupt cannot set it before
+		 * wait_event_timeout() starts, causing a lost-wakeup race. */
+		adapter->sdio_rx_ready = false;
 		ret = whc_sdio_send(adapter, request, request_size);
 		if (ret == 0) {
 			ret = whc_sdio_recv_timeout(adapter, response, &actual_length, timeout_ms);

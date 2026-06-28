@@ -55,24 +55,16 @@ extern "C" {
   * @brief Enum gpio_irq_event
   */
 typedef enum {
-	IRQ_NONE,
-	/* for edge trigger irq */
-	IRQ_RISE,
-	IRQ_FALL,
-
-	/* for level trigger irq */
-	IRQ_LOW = 3,
-	IRQ_HIGH = 4,
-
-	/* for dual-edge trigger irq */
-	IRQ_FALL_RISE = 5
-
+	IRQ_NONE, /*!< No IRQ event */
+	IRQ_RISE, /*!< Rising edge trigger */
+	IRQ_FALL, /*!< Falling edge trigger */
+	IRQ_LOW = 3, /*!< Low level trigger */
+	IRQ_HIGH = 4, /*!< High level trigger */
+	IRQ_FALL_RISE = 5 /*!< Dual-edge (falling and rising) trigger */
 } gpio_irq_event;
 /** @}*/
 
-/** @}*/
-
-/** @addtogroup MBED_GPIO_Exported_Functions MBED_GPIO Exported Functions
+/** @defgroup MBED_GPIO_Structure_Type Structure Type
   * @{
   */
 
@@ -93,7 +85,16 @@ typedef enum {
  *
  * uint32_t unused         : 9;  // Bits [31:23] - Unused
  */
+/** @brief Typedef function pointer for GPIO IRQ callback handler */
 typedef void (*gpio_irq_handler)(uint32_t id, uint32_t event);
+
+/** @}*/
+
+/** @}*/
+
+/** @addtogroup MBED_GPIO_Exported_Functions MBED_GPIO Exported Functions
+  * @{
+  */
 
 int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32_t id);
 void gpio_irq_free(gpio_irq_t *obj);

@@ -90,8 +90,12 @@ int crypto_sym_ccm_setkey(crypto_sym_ccm_context *ctx,
 	ctx->key_id = key_id;
 	ctx->key_len_bits = key_len_bits;
 
-	/* For software keys, copy the key to context */
-	if (KM_IS_SW_KEY_NUM(key_id) && key_addr != NULL) {
+	/* For software keys, key material must be provided by the caller.
+	 * Hardware keys (e.g. OTP) reside in the engine; key_addr is not needed. */
+	if (KM_IS_SW_KEY_NUM(key_id)) {
+		if (key_addr == NULL) {
+			return _ERRNO_CRYPTO_NULL_POINTER;
+		}
 		size_t key_len_bytes = key_len_bits / 8;
 		_memcpy(ctx->key, key_addr, key_len_bytes);
 	}
@@ -253,7 +257,7 @@ static int crypto_sym_ccm_try_init_b0_and_ctr0(crypto_sym_ccm_context *ctx)
 
 exit:
 	/* Clear interrupt flag */
-	AES->AES_CHN0_AES_INT_CLEAR &= AES_BIT_INT_CLEAR;
+	AES->AES_CHN0_AES_INT_CLEAR = AES_BIT_INT_CLEAR;
 	AES_unlock_mutex();
 	return ret;
 }
@@ -461,7 +465,7 @@ static int crypto_sym_ccm_update_ad_final(crypto_sym_ccm_context *ctx)
 	ret = RTK_SUCCESS;
 
 exit:
-	AES->AES_CHN0_AES_INT_CLEAR &= AES_BIT_INT_CLEAR;
+	AES->AES_CHN0_AES_INT_CLEAR = AES_BIT_INT_CLEAR;
 	return ret;
 }
 
@@ -606,7 +610,7 @@ int crypto_sym_ccm_update_ad(crypto_sym_ccm_context *ctx,
 	ret = RTK_SUCCESS;
 
 exit:
-	AES->AES_CHN0_AES_INT_CLEAR &= AES_BIT_INT_CLEAR;
+	AES->AES_CHN0_AES_INT_CLEAR = AES_BIT_INT_CLEAR;
 	AES_unlock_mutex();
 	return ret;
 }
@@ -646,9 +650,6 @@ static int crypto_sym_ccm_update_final(crypto_sym_ccm_context *ctx)
 	}
 	AES->AES_CONFIG = temp;
 
-	/* Set cipher length for this final block */
-	AES->AES_CIPHER_LEN = AES_BLOCK_SIZE_BIT;
-
 	/* Input the padded message block for final MAC calculation */
 	for (i = 0; i < 4; i++) {
 		AES->AES_CPU_DATAIN_x[i] = padded_word[i];
@@ -664,7 +665,7 @@ static int crypto_sym_ccm_update_final(crypto_sym_ccm_context *ctx)
 	ret = RTK_SUCCESS;
 
 exit:
-	AES->AES_CHN0_AES_INT_CLEAR &= AES_BIT_INT_CLEAR;
+	AES->AES_CHN0_AES_INT_CLEAR = AES_BIT_INT_CLEAR;
 	return ret;
 }
 
@@ -795,16 +796,25 @@ int crypto_sym_ccm_update(crypto_sym_ccm_context *ctx,
 		ctx->msg_buffer_len += copy_len;
 		processed += copy_len;
 
-		/* Only ctr crypto, no iv / tag update */
-		CRYPTO_CHK(crypto_sym_ccm_ctr_crypto(ctx, output, copy_len), ret);
-		output += copy_len;
-
 		/* If buffer is full, update TAG */
 		if (ctx->msg_buffer_len == 16) {
-			/* config AES engine, set to slave mode */
-			AES->AES_CIPHER_LEN = AES_BLOCK_SIZE_BIT;
+			u8 full_pt_block[16]; /* full 16-byte plaintext block for CBC-MAC input */
+
+			/* CTR decrypt the complete msg_buffer into full_pt_block.
+			 * Using a local buffer avoids the previous 'output - AES_BLOCK_SIZE'
+			 * pointer arithmetic which would underflow when output was only
+			 * advanced by copy_len (< 16) bytes. */
+			CRYPTO_CHK(crypto_sym_ccm_ctr_crypto(ctx, full_pt_block, AES_BLOCK_SIZE), ret);
+
+			/* Copy the user-visible portion: the last copy_len bytes of full_pt_block.
+			 * offset_val mirrors the offset computed inside ctr_crypto:
+			 *   offset = msg_buffer_len(16) - output_size(copy_len) */
+			u8 offset_val = AES_BLOCK_SIZE - copy_len;
+			_memcpy(output, full_pt_block + offset_val, copy_len);
+			output += copy_len;
 
 			/* Configure AES engine for CBC-MAC slave mode */
+			AES->AES_CIPHER_LEN = AES_BLOCK_SIZE_BIT;
 			temp = 0;
 			temp |= AES_CIPHER_MODE(CIPHER_MODE_CBC_MAC);
 			temp |= AES_BIT_EN_DE;
@@ -816,11 +826,13 @@ int crypto_sym_ccm_update(crypto_sym_ccm_context *ctx,
 			}
 			AES->AES_CONFIG = temp;
 
-			/* Input the complete message block */
+			/* CBC-MAC input:
+			 *   encrypt: plaintext is msg_buffer (input before CTR)
+			 *   decrypt: plaintext is full_pt_block (just decrypted, safe local buffer) */
 			if (ctx->ccm_mode == CCM_MODE_ENCRYPT || ctx->ccm_mode == CCM_MODE_STAR_ENCRYPT) {
 				block_word = (u32 *)ctx->msg_buffer;
 			} else {
-				block_word = (u32 *)(output - AES_BLOCK_SIZE);
+				block_word = (u32 *)full_pt_block;
 			}
 
 			for (i = 0; i < 4; i++) {
@@ -833,6 +845,10 @@ int crypto_sym_ccm_update(crypto_sym_ccm_context *ctx,
 			/* Clear message buffer */
 			ctx->msg_buffer_len = 0;
 			_memset(ctx->msg_buffer, 0, sizeof(ctx->msg_buffer));
+		} else {
+			/* Buffer not yet full: CTR crypto only, no CBC-MAC yet */
+			CRYPTO_CHK(crypto_sym_ccm_ctr_crypto(ctx, output, copy_len), ret);
+			output += copy_len;
 		}
 	}
 
@@ -889,7 +905,7 @@ int crypto_sym_ccm_update(crypto_sym_ccm_context *ctx,
 	ret = RTK_SUCCESS;
 
 exit:
-	AES->AES_CHN0_AES_INT_CLEAR &= AES_BIT_INT_CLEAR;
+	AES->AES_CHN0_AES_INT_CLEAR = AES_BIT_INT_CLEAR;
 	AES_unlock_mutex();
 	return ret;
 }
@@ -999,7 +1015,7 @@ int crypto_sym_ccm_finish(crypto_sym_ccm_context *ctx,
 exit:
 	/* Clear interrupt flag and clean up */
 	AES->AES_CONFIG &= ~AES_BIT_AEAD_LAST;
-	AES->AES_CHN0_AES_INT_CLEAR &= AES_BIT_INT_CLEAR;
+	AES->AES_CHN0_AES_INT_CLEAR = AES_BIT_INT_CLEAR;
 	AES_unlock_mutex();
 
 	return ret;

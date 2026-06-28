@@ -127,15 +127,22 @@ function(ameba_example_register example_dir)
 endfunction()
 
 # Register a directory whose contents are packed into the read-only "rolfs:"
-# littlefs image (requires CONFIG_LITTLEFS_WITHIN_APP_IMG). Call from an application's
-# CMakeLists.txt; the application owns the path and the directory name. The path
-# is published via a GLOBAL property (reset every configure, so no stale value
-# when switching applications) and consumed generically by ameba_firmware_package.
+# littlefs image (requires CONFIG_LITTLEFS_WITHIN_APP_IMG). Call from an
+# application's CMakeLists.txt; the application owns the path.
+#
+# Optional second argument: a CMake target name that produces the staging dir
+# (e.g. a custom_target driven by add_custom_command with a stamp file).
+# When provided it is stored in g_ROLFS_STAGING_TARGET so that
+# ameba_firmware_package can call add_dependencies(firmware_package <target>)
+# at the SOC-project level where both targets are visible to CMake.
 function(ameba_add_rolfs_content content_dir)
     if(NOT IS_ABSOLUTE "${content_dir}")
         file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${content_dir}" content_dir)
     endif()
     set_property(GLOBAL PROPERTY g_ROLFS_CONTENT_DIR "${content_dir}")
+    if(ARGC GREATER 1)
+        set_property(GLOBAL PROPERTY g_ROLFS_STAGING_TARGET "${ARGV1}")
+    endif()
 endfunction()
 
 function(ameba_add_empty_object)

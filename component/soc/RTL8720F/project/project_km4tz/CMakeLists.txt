@@ -79,3 +79,10 @@ if(_sboot_enabled STREQUAL "ON" AND EXISTS ${c_SDK_FLOADER_BIN_DIR}/floader_${c_
     execute_process(COMMAND ${op_FW_PACKAGE} --imgtool-floader ${CMAKE_CURRENT_BINARY_DIR}/ram_1_prepend.bin -o ${CMAKE_CURRENT_BINARY_DIR}/imgtool_flashloader.bin)
     execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/imgtool_flashloader.bin ${FINAL_IMAGE_DIR}/floader_${c_SOC_TYPE}.bin)
 endif()
+
+add_custom_target(
+    ${c_MCU_PROJECT_NAME}
+    COMMENT "build ${c_MCU_PROJECT_NAME} only"
+    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image1>
+            $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image2>_postbuild
+)

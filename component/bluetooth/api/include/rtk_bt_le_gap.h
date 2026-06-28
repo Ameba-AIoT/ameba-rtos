@@ -181,7 +181,6 @@ typedef struct {
 	uint8_t *p_conn_id;             /*!< LE connection id */
 } rtk_bt_le_get_conn_id_t;
 
-#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 /**
  * @typedef   rtk_bt_le_phy_type_t
  * @brief     Bluetooth LE PHY type.
@@ -200,37 +199,6 @@ typedef enum {
 	RTK_BT_LE_PHYS_PRIM_ADV_1M      = 1, /**<  Primary advertisement PHY is LE 1M */
 	RTK_BT_LE_PHYS_PRIM_ADV_CODED   = 3  /**<  Primary advertisement PHY is LE Coded */
 } rtk_bt_le_phy_prim_adv_t;
-
-/**
- * @typedef   rtk_bt_le_all_phy_prefer_t
- * @brief     Bluetooth LE ALL_PHYs prefer bit field.
- */
-typedef enum {
-	RTK_BT_LE_PHYS_PREFER_ALL    = 0,
-	RTK_BT_LE_PHYS_NO_PREFER_TX  = (1 << 0), /**< The Host has no preference among the transmitter PHYs supported by the Controller */
-	RTK_BT_LE_PHYS_NO_PREFER_RX  = (1 << 1), /**< The Host has no preference among the receiver PHYs supported by the Controller */
-} rtk_bt_le_all_phy_prefer_t;
-
-/**
- * @typedef   rtk_bt_le_trx_phy_prefer_t
- * @brief     Bluetooth LE TX_PHYs or RX_PHYs prefer bit field.
- */
-typedef enum {
-	RTK_BT_LE_PHYS_PREFER_1M     = (1 << 0), /**< The Host prefers to use the LE 1M transmitter PHY (possibly among others) */
-	RTK_BT_LE_PHYS_PREFER_2M     = (1 << 1), /**< The Host prefers to use the LE 2M transmitter PHY (possibly among others) */
-	RTK_BT_LE_PHYS_PREFER_CODED  = (1 << 2), /**< The Host prefers to use the LE Coded transmitter PHY (possibly among others) */
-} rtk_bt_le_trx_phy_prefer_t;
-
-/**
- * @typedef   rtk_bt_le_phy_option_t
- * @brief     Bluetooth LE PHY options.
- */
-typedef enum {
-	RTK_BT_LE_PHYS_OPTIONS_CODED_PREFER_NO = 0x0, /**< Host has no preferred coding when transmitting on the LE Coded PHY */
-	RTK_BT_LE_PHYS_OPTIONS_CODED_PREFER_S2 = 0x1, /**< Host prefers that S=2 coding be used when transmitting on the LE Coded PHY */
-	RTK_BT_LE_PHYS_OPTIONS_CODED_PREFER_S8 = 0x2, /**< Host prefers that S=8 coding be used when transmitting on the LE Coded PHY */
-} rtk_bt_le_phy_option_t;
-#endif
 
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 /**
@@ -1090,6 +1058,7 @@ typedef struct {
 	uint16_t conn_num;
 } rtk_bt_le_get_active_conn_t;
 
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 /**
  * @struct    rtk_bt_le_set_datalen_param_t
  * @brief     Bluetooth LE GAP set connection data length parameters definition.
@@ -1099,6 +1068,38 @@ typedef struct {
 	uint16_t max_tx_octets;         /*!< Maximum tx octects */
 	uint16_t max_tx_time;           /*!< Maximum tx time */
 } rtk_bt_le_set_datalen_param_t;
+#endif
+
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
+/**
+ * @typedef   rtk_bt_le_all_phy_prefer_t
+ * @brief     Bluetooth LE ALL_PHYs prefer bit field.
+ */
+typedef enum {
+	RTK_BT_LE_PHYS_PREFER_ALL    = 0,
+	RTK_BT_LE_PHYS_NO_PREFER_TX  = (1 << 0), /**< The Host has no preference among the transmitter PHYs supported by the Controller */
+	RTK_BT_LE_PHYS_NO_PREFER_RX  = (1 << 1), /**< The Host has no preference among the receiver PHYs supported by the Controller */
+} rtk_bt_le_all_phy_prefer_t;
+
+/**
+ * @typedef   rtk_bt_le_trx_phy_prefer_t
+ * @brief     Bluetooth LE TX_PHYs or RX_PHYs prefer bit field.
+ */
+typedef enum {
+	RTK_BT_LE_PHYS_PREFER_1M     = (1 << 0), /**< The Host prefers to use the LE 1M transmitter PHY (possibly among others) */
+	RTK_BT_LE_PHYS_PREFER_2M     = (1 << 1), /**< The Host prefers to use the LE 2M transmitter PHY (possibly among others) */
+	RTK_BT_LE_PHYS_PREFER_CODED  = (1 << 2), /**< The Host prefers to use the LE Coded transmitter PHY (possibly among others) */
+} rtk_bt_le_trx_phy_prefer_t;
+
+/**
+ * @typedef   rtk_bt_le_phy_option_t
+ * @brief     Bluetooth LE PHY options.
+ */
+typedef enum {
+	RTK_BT_LE_PHYS_OPTIONS_CODED_PREFER_NO = 0x0, /**< Host has no preferred coding when transmitting on the LE Coded PHY */
+	RTK_BT_LE_PHYS_OPTIONS_CODED_PREFER_S2 = 0x1, /**< Host prefers that S=2 coding be used when transmitting on the LE Coded PHY */
+	RTK_BT_LE_PHYS_OPTIONS_CODED_PREFER_S8 = 0x2, /**< Host prefers that S=8 coding be used when transmitting on the LE Coded PHY */
+} rtk_bt_le_phy_option_t;
 
 /**
  * @struct    rtk_bt_le_set_phy_param_t
@@ -1111,6 +1112,7 @@ typedef struct {
 	uint8_t rx_phys;            /*!< preferred rx phys, @ref rtk_bt_le_trx_phy_prefer_t */
 	uint16_t phy_options;       /*!< preferred phy options, @ref rtk_bt_le_phy_option_t */
 } rtk_bt_le_set_phy_param_t;
+#endif
 
 /**
  * @typedef   rtk_bt_le_pairing_mode_t
@@ -1755,6 +1757,7 @@ typedef struct {
 	rtk_bt_le_sec_level_t sec_level;        /*!< Security level */
 } rtk_bt_le_auth_complete_ind_t;
 
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 /**
  * @struct    rtk_bt_le_data_len_change_ind_t
  * @brief     Bluetooth LE data length changed event msg.
@@ -1766,7 +1769,9 @@ typedef struct {
 	uint16_t max_rx_octets;                 /*!< Maximum rx octets */
 	uint16_t max_rx_time;                   /*!< Maximum rx time */
 } rtk_bt_le_data_len_change_ind_t;
+#endif
 
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 /**
  * @struct    rtk_bt_le_phy_update_ind_t
  * @brief     Bluetooth LE PHY updated event msg.
@@ -1777,6 +1782,7 @@ typedef struct {
 	uint8_t tx_phy;                         /*!< TX PHY */
 	uint8_t rx_phy;                         /*!< RX PHY */
 } rtk_bt_le_phy_update_ind_t;
+#endif
 
 /**
  * @struct    rtk_bt_le_read_remote_version_ind_t

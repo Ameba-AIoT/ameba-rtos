@@ -24,7 +24,7 @@
 *		-[31:18]		reserved
 *		-[17]			pull down resistor enable when system is in sleep
 *		-[16]			pull up resistor enable when system is in sleep
-*		-[13]			srew rate control
+*		-[13]			slew rate control
 *		-[12]			schmitt trigger enable
 *		-[11]			pad driving strength
 *		-[10]			pull resistor selection
@@ -36,10 +36,10 @@
 *****************************************************************************************
 * How to use Pinmux
 *****************************************************************************************
-*		1. Set the Internal pad function type for  each pin using the follwoing function:
+*		1. Set the Internal pad function type for  each pin using the following function:
 *			Pinmux_Config(u8 PinName, u32 PinFunc)
 *
-*		2. Set the Internal pad pull type for each pin using the follwoing function:
+*		2. Set the Internal pad pull type for each pin using the following function:
 *			PAD_PullCtrl(u8 PinName, u8 PullType)
 *			PAD_SleepPullCtrl(u8 PinName, u8 PullType);
 *
@@ -47,13 +47,13 @@
 * @endverbatim
 */
 
-/** @defgroup PIN
+/** @defgroup PIN PIN
  * @brief PIN driver modules
  * @{
  */
 
 
-/** @defgroup PINMUX
+/** @defgroup PINMUX PINMUX
  * @brief PINMUX driver modules
  * @{
  */
@@ -64,10 +64,11 @@
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
-/** @defgroup PINMUX_Pin_Name_definitions
+/** @defgroup PINMUX_Pin_Name_definitions PINMUX Pin Name Definitions
   * @note: Pin_Name = (((port)<<5)|(pin))
   * @{
   */
@@ -150,7 +151,7 @@
 #define _PNC           (0xFFFF)
 /** @} */
 
-/** @defgroup PINMUX_Function_definitions
+/** @defgroup PINMUX_Function_definitions PINMUX Function Definitions
   * @{
   */
 #define PINMUX_FUNCTION_GPIO			(0)
@@ -204,6 +205,7 @@
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -211,29 +213,29 @@ extern "C" {
 #endif
 
 
-//Please add your defination here
+//Please add your definition here
 /* Exported Types --------------------------------------------------------*/
 
-/** @defgroup PINMUX_Port_and_Pin_definitions
+/** @defgroup PINMUX_Port_and_Pin_definitions PINMUX Port and Pin Definitions
  * @{
  */
-#define PORT_NUM(pin)		((pin>>5) & 0x03)
-#define PIN_NUM(pin)		(pin & 0x1f)
+#define PORT_NUM(pin)		((pin>>5) & 0x03)   /*!< Extract port number from pin name. */
+#define PIN_NUM(pin)		(pin & 0x1f)   /*!< Extract pin number from pin name. */
 /** @} */
 
-/** @defgroup PINMUX_Peripheral_Location_definitions
- * @note just used by function PINMUX_Ctrl
+/** @defgroup PINMUX_Peripheral_Location_definitions PINMUX Peripheral Location Definitions
+ * @note Just used by function PINMUX_Ctrl
  * @{
  */
-#define PINMUX_S0		(0)
-#define PINMUX_S1		(1)
-#define PINMUX_S2		(2)
-#define PINMUX_S3		(3)
-#define PINMUX_S4		(4)
-#define PINMUX_S5		(5)
+#define PINMUX_S0		(0)   /*!< Peripheral pinmux location selection 0. */
+#define PINMUX_S1		(1)   /*!< Peripheral pinmux location selection 1. */
+#define PINMUX_S2		(2)   /*!< Peripheral pinmux location selection 2. */
+#define PINMUX_S3		(3)   /*!< Peripheral pinmux location selection 3. */
+#define PINMUX_S4		(4)   /*!< Peripheral pinmux location selection 4. */
+#define PINMUX_S5		(5)   /*!< Peripheral pinmux location selection 5. */
 /** @} */
 
-/** @defgroup PINMUX_EXTEND_FUNCTION_definitions
+/** @defgroup PINMUX_EXTEND_FUNCTION_definitions PINMUX Extend Function Definitions
  * @{
  */
 typedef struct {
@@ -245,21 +247,22 @@ typedef struct {
 
 /** @} */
 
+_LONG_CALL_ void Pinmux_UartLogCtrl(u32  PinLocation, bool   Operation);
+_LONG_CALL_ void Pinmux_SpicCtrl(u32  PinLocation, bool Operation);
+_LONG_CALL_ void Pinmux_ConfigEXT(u8 PinName, u32 PinFunc, u8 NewStatus);
+
 /** @defgroup PINMUX_Exported_Functions PINMUX Exported Functions
   * @{
   */
 _LONG_CALL_ void _Pinmux_Config(u8 PinName, u32 PinFunc);
-_LONG_CALL_ void Pinmux_ConfigEXT(u8 PinName, u32 PinFunc, u8 NewStatus);
 _LONG_CALL_ u32 Pinmux_ConfigGet(u8 PinName);
-_LONG_CALL_ void Pinmux_UartLogCtrl(u32  PinLocation, bool   Operation);
-_LONG_CALL_ void Pinmux_SpicCtrl(u32  PinLocation, bool Operation);
 _LONG_CALL_ void Pinmux_Swdoff(void);
 /** @} */
 
 /** @} */
 
 
-/** @defgroup PAD
+/** @defgroup PAD PAD
  * @brief PAD driver modules
  * @{
  */
@@ -268,66 +271,98 @@ _LONG_CALL_ void Pinmux_Swdoff(void);
  * @{
  */
 
-/** @defgroup PAD_Pull_Resistor_definitions
+/** @defgroup PAD_Pull_Resistor_definitions PAD Pull Resistor Definitions
  * @{
  */
-#define PAD_Resistor_LARGE		0x00 /*!< PAD Resistor LARGE */
-#define PAD_Resistor_SMALL		0x01 /*!< PAD Resistor SMALL */
+#define PAD_Resistor_LARGE		0x00 /*!< PAD large pull resistor. */
+#define PAD_Resistor_SMALL		0x01 /*!< PAD small pull resistor. */
 /** @} */
 
 
-/** @defgroup PINMUX_PAD_DrvStrength_definitions
+/** @defgroup PINMUX_PAD_DrvStrength_definitions PINMUX PAD Drive Strength Definitions
  * @{
  */
-#define PAD_DRV_ABILITITY_LOW			(0)
-#define PAD_DRV_ABILITITY_HIGH			(1)
+#define PAD_DRV_ABILITITY_LOW			(0)   /*!< PAD drive strength lowest level. */
+#define PAD_DRV_ABILITITY_MID_LOW		(1)   /*!< PAD drive strength mid-low level. */
+#define PAD_DRV_ABILITITY_MID_HIGH		(2)   /*!< PAD drive strength mid-high level. */
+#define PAD_DRV_ABILITITY_HIGH			(3)   /*!< PAD drive strength highest level. */
 /** @} */
 
+/** @defgroup PINMUX_PAD_SlewRate_definitions PINMUX PAD Slew Rate Definitions
+  * @{
+  */
+#define PAD_SlewRate_Fast				(0)   /*!< PAD output slew rate fast. */
+#define PAD_SlewRate_Slow				(1)   /*!< PAD output slew rate slow. */
+/** @} */
 
-/** @defgroup PINMUX_Special_Pad_definitions
+/** @defgroup PINMUX_Special_Pad_definitions PINMUX Special Pad Definitions
  * @{
  */
-#define APAD_NAME_START				_PA_18	/* PA18 & PA19 no pin output in all pkgs */
-#define APAD_NAME_END				_PB_6
+#define APAD_NAME_START				_PA_18   /*!< First pin of audio shared PAD range. */
 
-#define APAD_MIC_PAD__START			_PA_20
-#define APAD_MIC_PAD_END			_PA_29
+#define APAD_NAME_END				_PB_6   /*!< Last pin of audio shared PAD range. */
 
-#define APAD_MIC_BIAS_PAD_START		_PA_30
-#define APAD_MIC_BIAS_PAD_END		_PB_2
+#define APAD_MIC_PAD_START			_PA_20   /*!< First pin of audio microphone input PAD range. */
+#define APAD_MIC_PAD_END			_PA_29   /*!< Last pin of audio microphone input PAD range. */
 
-#define APAD_OUT_PAD_START			_PB_3
-#define APAD_OUT_PAD_END			_PB_6
+#define APAD_MIC_BIAS_PAD_START		_PA_30   /*!< First pin of audio microphone bias PAD range. */
+#define APAD_MIC_BIAS_PAD_END		_PB_2   /*!< Last pin of audio microphone bias PAD range. */
 
-#define UART_LOG_RXD      			_PB_23
-#define UART_LOG_TXD     		    _PB_24
+#define APAD_OUT_PAD_START			_PB_3   /*!< First pin of audio output PAD range. */
+#define APAD_OUT_PAD_END			_PB_6   /*!< Last pin of audio output PAD range. */
 
-#define SWD_DATA					_PA_13
-#define	SWD_CLK						_PA_14
+#define UART_LOG_RXD      			_PB_23   /*!< Default pin for UART log RXD. */
+#define UART_LOG_TXD     		    _PB_24   /*!< Default pin for UART log TXD. */
+
+#define SWD_DATA					_PA_13   /*!< Default pin for SWD data signal. */
+#define	SWD_CLK						_PA_14   /*!< Default pin for SWD clock signal. */
 /** @} */
 
 /** @} */
 
+_LONG_CALL_ void PAD_SpicCtrl(u32  PinLocation);
 
 /** @defgroup PAD_Exported_Functions PAD Exported Functions
  * @{
  */
 _LONG_CALL_ void PAD_CMD(u8 PinName, u8 NewStatus);
 _LONG_CALL_ void PAD_DrvStrength(u8 PinName, u32 DrvStrength);
+
+
+/**
+  *  @brief Set the PAD slew rate control status.
+  *  @param PinName: Specify the target pin. This parameter must be one of the values
+  *                  defined in @ref PINMUX_Pin_Name_definitions.
+  *  @param NewState: Specify the slew rate control status. Refer to the datasheet for detail informations.
+  *                   This parameter can be one of the following values:
+  *           @arg PAD_SlewRate_Slow
+  *           @arg PAD_SlewRate_Fast
+  */
+_LONG_CALL_ void PAD_SlewRateCtrl(u8 PinName, u32 NewState);
+
+/**
+  *  @brief Set the PAD Schmitt trigger control status.
+  *  @param PinName Specify the target pin. This parameter must be one of the values
+  *                 defined in @ref PINMUX_Pin_Name_definitions.
+  *  @param NewState Specify the control status. Refer to the datasheet for detail informations.
+  *                  This parameter can be: ENABLE or DISABLE.
+  */
+_LONG_CALL_ void PAD_SchmitCtrl(u8 PinName, u32 NewState);
+
 _LONG_CALL_ void PAD_PullCtrl(u8 PinName, u8 PullType);
 _LONG_CALL_ void PAD_SleepPullCtrl(u8 PinName, u8 PullType);
-_LONG_CALL_ void PAD_SpicCtrl(u32  PinLocation);
 _LONG_CALL_ void PAD_ResistorCtrl(u8 PinName, u8 RType);
 
 
 /**
- *  @brief Control digital path input for ADC and CTC pad.
- *  @param PinName: Pin for ADC module or CTC module.
- *  @param NewState: Digital path input status.
+ *  @brief Control digital path input.
+ *  @param PinName Value of @ref PINMUX_Pin_Name_definitions.
+ *  @param NewState Digital path input status.
  *    @arg ENABLE: Enable digital path input.
  *    @arg DISABLE: Disable digital path input.
- *  @retval None
- *  @note only valid for ADC and CTC pads
+ *  @internal
+ *  @note Only valid for ADC and CTC pads
+ *  @endinternal
  */
 __STATIC_INLINE
 void PAD_InputCtrl(u8 PinName, u32 NewState)
@@ -353,13 +388,13 @@ void PAD_InputCtrl(u8 PinName, u32 NewState)
 
 /**
  *  @brief Control digital path input for Audio share PAD.
- *  @param PinName: Pin of Audio share PAD or 0xFF.
- *  @param NewState: Digital path input status.
+ *  @param PinName Pin of Audio share PAD or 0xFF.
+ *  @param NewState Digital path input status.
  *    @arg ENABLE: Enable digital path input.
  *    @arg DISABLE: Disable digital path input.
- *  @retval None
- *  @note Only valid for Audio share PADs.
- *  @note If PinName is 0xFF, all the pins of Audio share PAD will be controlled.
+ *  @note
+ *        - Only valid for Audio share PADs.
+ *        - If PinName is 0xFF, all the pins of Audio share PAD will be controlled.
  */
 __STATIC_INLINE
 void APAD_InputCtrl(u8 PinName, u32 NewState)

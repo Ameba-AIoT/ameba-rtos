@@ -80,6 +80,8 @@ config SUPPORT_AUDIO_CMD_PLAYER
 
 rsource "../../../soc/common/image3/Kconfig.trustzone"
 
+rsource "../../../soc/Kconfig"
+
 menu "CONFIG Memory Arch"
     config SECOND_FLASH_NOR
         bool "Second flash NOR"

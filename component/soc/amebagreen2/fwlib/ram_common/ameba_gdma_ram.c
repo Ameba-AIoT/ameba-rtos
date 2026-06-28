@@ -219,7 +219,7 @@ void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_
   * @brief  Clear the specidied Pending Interrupt status.
   * @param  GDMA_Index: Always 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @param  GDMA_IT: specifies the UARTx interrupt sources whose interrupt status will be cleared.
+  * @param  GDMA_IT: specifies the GDMA interrupt sources whose interrupt status will be cleared.
   *          This parameter can be one or combinations of the following values:
   *            @arg TransferType
   *            @arg BlockType
@@ -875,9 +875,10 @@ GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum)
   * @param  Src_GatherCount: Source continuous transfer count between consecutive gather boundaries,
   * 						  align to src data width.
   * @param  Src_GatherInterval: Source gather interval, align to src data width.
-  * @note   1.Must be used after GDMA_Init.
-  * @note   2.Only available when the CTLx_L.SINC bit indicates an incrementing address control and
-  * 	    SARx should be aligned with SRC_TR_WIDTH
+  * @note
+  *         - Must be used after GDMA_Init.
+  *         - Only available when the CTLx_L.SINC bit indicates an incrementing address control and
+  *           SARx should be aligned with SRC_TR_WIDTH.
   */
 __weak
 void GDMA_SourceGather(u8 GDMA_Index, u8 GDMA_ChNum, u32 Src_GatherCount, u32 Src_GatherInterval)
@@ -901,9 +902,10 @@ void GDMA_SourceGather(u8 GDMA_Index, u8 GDMA_ChNum, u32 Src_GatherCount, u32 Sr
   * @param  Dst_ScatterCount: Destination contiguous transfer count between successive scatter boundaries,
   * 						   align to dest data width.
   * @param  Dst_ScatterInterval: Destination scatter interval, align to dest data width.
-  * @note   1.Must be used after GDMA_Init.
-  * @note 	2.Only available when CTLx_L.DINC bit indicates an incrementing address control and
-  *         DARx should be aligned with DST_TR_WIDTH.
+  * @note
+  *         - Must be used after GDMA_Init.
+  *         - Only available when CTLx_L.DINC bit indicates an incrementing address control and
+  *           DARx should be aligned with DST_TR_WIDTH.
   */
 __weak
 void GDMA_DestinationScatter(u8 GDMA_Index, u8 GDMA_ChNum, u32 Dst_ScatterCount, u32 Dst_ScatterInterval)

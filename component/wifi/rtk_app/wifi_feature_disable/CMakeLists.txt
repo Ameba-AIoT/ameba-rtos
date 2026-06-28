@@ -74,12 +74,26 @@ ameba_list_append(private_sources wifi_feature_dis_wtn.c)
 if(CONFIG_WHC_DEV AND CONFIG_WHC_INTF_IPC)
     if(NOT CONFIG_AMEBALITE)
         if(NOT CONFIG_PLATFORM_ZEPHYR)
-            if(TARGET target_wifi_nouse)
+            if(DEFINED ENV{AMEBA_AP_ASM})
+                # For external AP builds (e.g., NuttX) using AMEBA_AP_ASM env var:
+                # - Generates 'noused' stubs directly from the provided disassembly.
+                # - Keeps only the NP WiFi APIs referenced by the external AP.
+                # - Avoids building the SDK's internal KM4 image (target_wifi_nouse).
+                set(_ap_asm $ENV{AMEBA_AP_ASM})
+                set(_ap_depends ${_ap_asm})
+            elseif(TARGET target_wifi_nouse)
+                set(_ap_asm ${c_SDK_IMAGE_TARGET_DIR}/target_img2_otrcore.asm)
+                set(_ap_depends target_wifi_nouse ${_ap_asm})
+            endif()
+
+            if(_ap_asm)
                 add_custom_command(
                     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
-                    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/gen_noused_c.py -a ${c_SDK_IMAGE_TARGET_DIR}/target_img2_otrcore.asm -c ${CMAKE_CURRENT_SOURCE_DIR}/wifi_intf_drv_to_app_ext_strong.c -r ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
-                    # COMMAND ${CMAKE_COMMAND} -E remove ${c_SDK_IMAGE_TARGET_DIR}/target_img2_otrcore.asm
-                    DEPENDS target_wifi_nouse ${c_SDK_IMAGE_TARGET_DIR}/target_img2_otrcore.asm
+                    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/gen_noused_c.py
+                        -a ${_ap_asm}
+                        -c ${CMAKE_CURRENT_SOURCE_DIR}/wifi_intf_drv_to_app_ext_strong.c
+                        -r ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c
+                    DEPENDS ${_ap_depends}
                 )
                 ameba_list_append(private_sources
                     ${CMAKE_CURRENT_BINARY_DIR}/wifi_intf_drv_to_app_ext_noused.c

@@ -66,14 +66,6 @@ struct whc_xfer_adapter_t *whc_xfer_adapter_alloc(void *interface, const struct 
 	}
 
 	/* Initialize from HAL configuration */
-#ifdef CONFIG_WHC_HCI_SDIO
-	adapter->hash_size = hal_config->hash_size + sizeof(INIC_RX_DESC);
-	adapter->xfer_page_size = hal_config->xfer_page_size + sizeof(INIC_TX_DESC);
-#else
-	adapter->hash_size = hal_config->hash_size;
-	adapter->xfer_page_size = hal_config->xfer_page_size;
-#endif
-
 	adapter->hash_size = hal_config->hash_size;
 	adapter->xfer_page_size = hal_config->xfer_page_size;
 	adapter->read_buf_size = hal_config->read_buf_size;
@@ -86,20 +78,28 @@ struct whc_xfer_adapter_t *whc_xfer_adapter_alloc(void *interface, const struct 
 	adapter->image_dir = (char *)hal_config->image_dir;
 
 	/* Allocate TX buffer (DESC + page_size for firmware write data) */
+	/* SDIO: extra INIC_TX_DESC space needed by whc_sdio_send (memmove prepends it) */
+#ifdef CONFIG_WHC_HCI_SDIO
+	buf = (u8 *)kzalloc(WHC_XFER_DESC_SIZE + adapter->xfer_page_size + sizeof(INIC_TX_DESC) + WHC_XFER_DMA_ALIGNMENT, GFP_KERNEL);
+#else
 	buf = (u8 *)kzalloc(WHC_XFER_DESC_SIZE + adapter->xfer_page_size + WHC_XFER_DMA_ALIGNMENT, GFP_KERNEL);
+#endif
 	if (buf == NULL) {
 		goto exit_tx_buf_malloc;
 	}
-
 	adapter->tx_raw_buf = buf;
 	adapter->tx_buf = (u8 *)(((unsigned long)buf + WHC_XFER_DMA_ALIGNMENT - 1) & ~(WHC_XFER_DMA_ALIGNMENT - 1));
 
 	/* Allocate RX buffer (DESC + hash_size for hash/device_info response) */
+	/* SDIO: extra INIC_RX_DESC space needed by whc_sdio_recv_timeout (stripped before returning) */
+#ifdef CONFIG_WHC_HCI_SDIO
+	buf = (u8 *)kzalloc(WHC_XFER_DESC_SIZE + adapter->hash_size + sizeof(INIC_RX_DESC) + WHC_XFER_DMA_ALIGNMENT, GFP_KERNEL);
+#else
 	buf = (u8 *)kzalloc(WHC_XFER_DESC_SIZE + adapter->hash_size + WHC_XFER_DMA_ALIGNMENT, GFP_KERNEL);
+#endif
 	if (buf == NULL) {
 		goto exit_rx_buf_malloc;
 	}
-
 	adapter->rx_raw_buf = buf;
 	adapter->rx_buf = (u8 *)(((unsigned long)buf + WHC_XFER_DMA_ALIGNMENT - 1) & ~(WHC_XFER_DMA_ALIGNMENT - 1));
 
@@ -108,8 +108,8 @@ struct whc_xfer_adapter_t *whc_xfer_adapter_alloc(void *interface, const struct 
 	if (buf == NULL) {
 		goto exit_read_buf_malloc;
 	}
-
 	adapter->read_buf = buf;
+
 	adapter->interface = interface;
 	adapter->ops = (struct whc_xfer_ops_t *)ops;
 
