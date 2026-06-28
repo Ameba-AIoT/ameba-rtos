@@ -11,7 +11,6 @@
 #include "basic_types.h"
 #include "usbd_hid.h"
 #include "os_wrapper.h"
-#include "example_usbd_hid.h"
 
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "HID";
@@ -26,10 +25,6 @@ static const char *const TAG = "HID";
 #define CONFIG_USBD_HID_SPEED						USB_SPEED_HIGH
 #endif
 
-// Thread priorities
-#define CONFIG_USBD_HID_INIT_THREAD_PRIORITY		5U
-#define CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY		8U // Should be higher than CONFIG_USBD_HID_ISR_THREAD_PRIORITY
-
 // Send mouse data through monitor.
 #define CONFIG_USBD_HID_MOUSE_CMD					1
 
@@ -37,6 +32,12 @@ static const char *const TAG = "HID";
 #define CONFIG_USBD_HID_CONSTANT_DATA				1
 #define CONFIG_USBD_HID_CONSTANT_LOOP				10
 
+// Thread priorities
+#define CONFIG_USBD_HID_INIT_THREAD_PRIORITY           5U
+#define CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY        8U
+// Thread stack sizes
+#define CONFIG_USBD_HID_INIT_THREAD_STACK_SIZE           1024U
+#define CONFIG_USBD_HID_HOTPLUG_THREAD_STACK_SIZE        1024U
 /* Private types -------------------------------------------------------------*/
 
 typedef struct {
@@ -398,7 +399,9 @@ static void example_usbd_hid_thread(void *param)
 	}
 
 #if CONFIG_USBD_HID_HOTPLUG
-	ret = rtos_task_create(&task, "example_usbd_hid_hotplug_thread", example_usbd_hid_hotplug_thread, NULL, 1024U, CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_hid_hotplug_thread",
+						   example_usbd_hid_hotplug_thread, NULL,
+						   CONFIG_USBD_HID_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		usbd_hid_deinit();
 		usbd_deinit();
@@ -458,7 +461,8 @@ void example_usbd_hid(void)
 	int ret;
 	rtos_task_t task;
 
-	ret = rtos_task_create(&task, "example_usbd_hid_thread", example_usbd_hid_thread, NULL, 1024, CONFIG_USBD_HID_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_hid_thread", example_usbd_hid_thread, NULL,
+						   CONFIG_USBD_HID_INIT_THREAD_STACK_SIZE, CONFIG_USBD_HID_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD HID thread fail\n");
 	}

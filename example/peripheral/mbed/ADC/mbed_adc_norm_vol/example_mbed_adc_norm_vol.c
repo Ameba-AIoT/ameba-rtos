@@ -46,7 +46,5 @@ int example_mbed_adc_norm_vol(void)
 		RTK_LOGE(NOTAG, "Cannot create MBED_ADC_VOLTAGE_TASK\n");
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

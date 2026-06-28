@@ -51,9 +51,13 @@ static const char *const TAG = "COMP";
 #endif
 
 // Thread priorities
-#define CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY               4U
-#define CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY				5U
-#define CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY			8U
+#define CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY           5U
+#define CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY        8U
+#define CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY            4U
+// Thread stack sizes
+#define CONFIG_USBD_COMPOSITE_INIT_THREAD_STACK_SIZE           1024U
+#define CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_STACK_SIZE        1024U
+#define CONFIG_USBD_COMPOSITE_UAC_THREAD_STACK_SIZE            (1024U * 16)
 
 #define CONFIG_USBD_COMPOSITE_UAC_ACM_BULK_IN_XFER_SIZE		2048U
 #define CONFIG_USBD_COMPOSITE_UAC_ACM_BULK_OUT_XFER_SIZE	2048U
@@ -645,8 +649,9 @@ static void example_usbd_comp_acm_uac_init_thread(void *param)
 	}
 
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
-	ret = rtos_task_create(&task, "example_usbd_comp_acm_uac_hotplug_thread", example_usbd_comp_acm_uac_hotplug_thread, NULL,
-						   1024, CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_comp_acm_uac_hotplug_thread",
+						   example_usbd_comp_acm_uac_hotplug_thread, NULL,
+						   CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_check_task_fail;
 	}
@@ -689,14 +694,16 @@ void example_usbd_composite(void)
 	rtos_task_t task;
 
 	rtos_sema_create(&uac_ready_sema, 0U, 1U);
-	ret = rtos_task_create(&task, "example_usbd_comp_acm_uac_init_thread", example_usbd_comp_acm_uac_init_thread, NULL, 1024,
-						   CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_comp_acm_uac_init_thread",
+						   example_usbd_comp_acm_uac_init_thread, NULL,
+						   CONFIG_USBD_COMPOSITE_INIT_THREAD_STACK_SIZE, CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD COMP thread fail\n");
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"example_usbd_comp_acm_uac_audio_track_thread"), example_usbd_comp_acm_uac_audio_track_thread, NULL, 1024 * 16,
-						 CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_usbd_comp_acm_uac_audio_track_thread"),
+						 example_usbd_comp_acm_uac_audio_track_thread, NULL,
+						 CONFIG_USBD_COMPOSITE_UAC_THREAD_STACK_SIZE, CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create audio track fail\n");
 	}
 }

@@ -374,4 +374,5 @@ void SOCPS_HWSleepFilter_NP(u32 enable)
 void SOCPS_PeriRestore(void)
 {
 	CRYPTO_Init();
+	pke_engine_init_sleep();
 }

@@ -42,6 +42,14 @@ int rtos_sched_get_state(void)
 {
 	int status = RTK_FAIL;
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
+	if (uxPortSchedulerStart[portPrimaryCoreID] == pdFALSE) {
+		/* Scheduler not start */
+		return RTOS_SCHED_NOT_STARTED;
+	}
+#endif
+
 	if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
 		status = RTOS_SCHED_NOT_STARTED;
 	} else if (xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED) {
@@ -165,7 +173,7 @@ void *rtos_task_get_thread_local_storage_pointer(rtos_task_t p_handle,  uint16_t
 #endif
 
 
-#ifdef CONFIG_CA32_FREERTOS_V11_1_0
+#if defined(configUSE_CORE_AFFINITY) && (configUSE_CORE_AFFINITY == 1)
 rtos_task_t rtos_task_handle_get_idle(uint32_t coreID)
 {
 	return (rtos_task_t) xTaskGetIdleTaskHandleForCore(coreID);

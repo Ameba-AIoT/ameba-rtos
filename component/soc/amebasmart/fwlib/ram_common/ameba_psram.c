@@ -98,6 +98,7 @@ void PSRAM_INFO_Update(void)
 {
 	u32 PsramClk = 0;
 	u32 Div;
+	u32 psram_actual_end;
 
 	Div = LSYS_GET_CKD_PSRAM(HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0));
 	Div += 1;
@@ -159,6 +160,12 @@ void PSRAM_INFO_Update(void)
 	/* backup latency code for KM0 for sleep */
 	RRAM->PSRAM_LATENCY = PsramInfo.Psram_Latency_Set;
 	RTK_LOGI(TAG, "PSRAM CLK %lu MHz \n", PsramClk / 1000000);
+
+	psram_actual_end = PSRAM_BASE + PsramInfo.Psram_Size;
+	if ((u32)__non_secure_psram_end__ != psram_actual_end) {
+		RTK_LOGW(TAG, "PSRAM_END mismatch: layout=0x%08x, actual=0x%08x, please update ameba_layout.ld\n",
+				 (u32)__non_secure_psram_end__, psram_actual_end);
+	}
 }
 
 void PSRAM_APM_DEVIC_Init(void)

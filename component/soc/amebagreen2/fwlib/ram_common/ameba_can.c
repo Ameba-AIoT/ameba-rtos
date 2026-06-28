@@ -39,8 +39,8 @@ u32 CAN_SleepStatusGet(CAN_TypeDef *CANx)
 }
 
 /**
-  * @brief    Write frame to dma message ram buffer.
-  * @param  CANx Where CANx can be CAN.
+  * @brief    Write frame to DMA message RAM buffer.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  TxMsg Tx message pointer.
   */
 void CAN_FillTXDmaBuffer(CAN_TypeDef *CANx, CAN_TxMsgTypeDef *TxMsg)
@@ -108,7 +108,7 @@ void CAN_FillTXDmaBuffer(CAN_TypeDef *CANx, CAN_TxMsgTypeDef *TxMsg)
 
 /**
   * @brief  Fills each CAN_InitStruct member with its default value.
-  * @param  CAN_InitStruct Pointer to an CAN_InitTypeDef structure which will be initialized.
+  * @param  CAN_InitStruct Pointer to a @ref CAN_InitTypeDef structure which will be initialized.
   */
 void CAN_StructInit(CAN_InitTypeDef *CAN_InitStruct)
 {
@@ -129,8 +129,8 @@ void CAN_StructInit(CAN_InitTypeDef *CAN_InitStruct)
 /**
   * @brief    Initializes the CAN peripheral according to the specified
   *               parameters in the CAN_InitStruct.
-  * @param  CANx Where CANx can be CAN.
-  * @param  CAN_InitStruct Pointer to a CAN_InitTypeDef structure that contains
+  * @param  CANx Where CANx can be CAN0 or CAN1.
+  * @param  CAN_InitStruct Pointer to a @ref CAN_InitTypeDef structure that contains
   *              the configuration information for the specified CAN peripheral.
   */
 void CAN_Init(CAN_TypeDef *CANx, CAN_InitTypeDef *CAN_InitStruct)
@@ -206,7 +206,7 @@ void CAN_Init(CAN_TypeDef *CANx, CAN_InitTypeDef *CAN_InitStruct)
 
 /**
   * @brief  Low power filter configuration
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  FltNum Filter threshold.
   */
 void CAN_LpFilterConfig(CAN_TypeDef *CANx, u32 FltNum)
@@ -218,8 +218,8 @@ void CAN_LpFilterConfig(CAN_TypeDef *CANx, u32 FltNum)
 }
 /**
   * @brief    Low power filter ENABLE or DISABLE.
-  * @param  CANx Where CANx can be CAN.
-  * @param  NewState Where CANx can be ENABLE or DISABLE.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
+  * @param  NewState New state of the low power filter. This parameter can be: ENABLE or DISABLE.
   */
 void CAN_LpFilterCmd(CAN_TypeDef *CANx, u32 NewState)
 {
@@ -235,8 +235,8 @@ void CAN_LpFilterCmd(CAN_TypeDef *CANx, u32 NewState)
 
 /**
   * @brief    Bus request ENABLE or DISABLE.
-  * @param  CANx Where CANx can be CAN.
-  * @param  NewState Where CANx can be ENABLE or DISABLE.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
+  * @param  NewState New state of the bus request. This parameter can be: ENABLE or DISABLE.
   */
 void CAN_BusCmd(CAN_TypeDef *CANx, u32 NewState)
 {
@@ -250,8 +250,8 @@ void CAN_BusCmd(CAN_TypeDef *CANx, u32 NewState)
 }
 /**
   * @brief    CAN ENABLE or DISABLE.
-  * @param  CANx Where CANx can be CAN.
-  * @param  NewState Where CANx can be ENABLE or DISABLE.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
+  * @param  NewState New state of the CAN peripheral. This parameter can be: ENABLE or DISABLE.
   */
 void CAN_Cmd(CAN_TypeDef *CANx, u32 NewState)
 {
@@ -266,7 +266,7 @@ void CAN_Cmd(CAN_TypeDef *CANx, u32 NewState)
 
 /**
   * @brief    Get CAN bus status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @return Bus status:
   *         - 1: on
   *         - 0: off
@@ -279,12 +279,12 @@ u32 CAN_BusStatusGet(CAN_TypeDef *CANx)
 }
 
 /**
-  * @brief    Get CAN fifo status.
-  * @param  CANx Where CANx can be CAN.
-  * @return Fifo status, this value can be:
-  *         - CAN_FIFO_MSG_FULL
-  *         - CAN_FIFO_MSG_EMTY
-  *         - CAN_FIFO_MSG_OVERFLW
+  * @brief    Get CAN FIFO status.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
+  * @return FIFO status, this value can be:
+  *         - CAN_BIT_FIFO_MSG_FULL
+  *         - CAN_BIT_FIFO_MSG_EMPTY
+  *         - CAN_BIT_FIFO_MSG_OVERFLOW
   */
 u32 CAN_FifoStatusGet(CAN_TypeDef *CANx)
 {
@@ -294,8 +294,8 @@ u32 CAN_FifoStatusGet(CAN_TypeDef *CANx)
 }
 
 /**
-  * @brief    Get CAN fifo level.
-  * @param  CANx Where CANx can be CAN.
+  * @brief    Get CAN FIFO level.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @return Rx FIFO level
   */
 u32 CAN_FifoLvlGet(CAN_TypeDef *CANx)
@@ -307,7 +307,7 @@ u32 CAN_FifoLvlGet(CAN_TypeDef *CANx)
 
 /**
   * @brief    Read Rx message from FIFO.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  RxMsg Rx message pointer.
   */
 void CAN_ReadRxMsgFromFifo(CAN_TypeDef *CANx, CAN_RxMsgTypeDef *RxMsg)
@@ -318,9 +318,9 @@ void CAN_ReadRxMsgFromFifo(CAN_TypeDef *CANx, CAN_RxMsgTypeDef *RxMsg)
 }
 
 /**
-  * @brief    Get CAN tx error counter.
-  * @param  CANx Where CANx can be CAN.
-  * @return Tx error counter
+  * @brief    Get CAN TX error counter.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
+  * @return TX error counter
   */
 u32 CAN_TXErrCntGet(CAN_TypeDef *CANx)
 {
@@ -330,9 +330,9 @@ u32 CAN_TXErrCntGet(CAN_TypeDef *CANx)
 }
 
 /**
-  * @brief    Get CAN rx error counter.
-  * @param  CANx Where CANx can be CAN.
-  * @return Rx error counter
+  * @brief    Get CAN RX error counter.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
+  * @return RX error counter
   */
 u32 CAN_RXErrCntGet(CAN_TypeDef *CANx)
 {
@@ -342,8 +342,8 @@ u32 CAN_RXErrCntGet(CAN_TypeDef *CANx)
 }
 
 /**
-  * @brief    CAN tx error counter clear.
-  * @param  CANx Where CANx can be CAN.
+  * @brief    CAN TX error counter clear.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   */
 void CAN_TXErrCntClear(CAN_TypeDef *CANx)
 {
@@ -353,8 +353,8 @@ void CAN_TXErrCntClear(CAN_TypeDef *CANx)
 }
 
 /**
-  * @brief    CAN rx error counter clear.
-  * @param  CANx Where CANx can be CAN.
+  * @brief    CAN RX error counter clear.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   */
 void CAN_RXErrCntClear(CAN_TypeDef *CANx)
 {
@@ -364,8 +364,8 @@ void CAN_RXErrCntClear(CAN_TypeDef *CANx)
 }
 
 /**
-  * @brief    CAN rx error counter clear.
-  * @param  CANx Where CANx can be CAN.
+  * @brief    Get CAN error counter status.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @return Error counter status:
   *         - CAN_TX_ERR_PASSIVE
   *         - CAN_TX_ERR_BUSOFF
@@ -380,7 +380,7 @@ u32 CAN_RXErrCntSTS(CAN_TypeDef *CANx)
 
 /**
   * @brief  Write frame to message ram buffer.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  TxMsg Tx message pointer.
   */
 void CAN_WriteMsg(CAN_TypeDef *CANx, CAN_TxMsgTypeDef *TxMsg)
@@ -436,7 +436,7 @@ void CAN_WriteMsg(CAN_TypeDef *CANx, CAN_TxMsgTypeDef *TxMsg)
 
 /**
   * @brief    Set rx message ram buffer.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  RxMsg Rx message pointer.
   */
 void CAN_SetRxMsgBuf(CAN_TypeDef *CANx, CAN_RxMsgTypeDef *RxMsg)
@@ -491,7 +491,7 @@ void CAN_SetRxMsgBuf(CAN_TypeDef *CANx, CAN_RxMsgTypeDef *RxMsg)
 
 /**
   * @brief    Read frame from message ram buffer.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  RxMsg Rx message pointer.
   */
 void CAN_ReadMsg(CAN_TypeDef *CANx, CAN_RxMsgTypeDef *RxMsg)
@@ -558,7 +558,7 @@ void CAN_ReadMsg(CAN_TypeDef *CANx, CAN_RxMsgTypeDef *RxMsg)
 
 /**
   * @brief    Send auto reply message.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  TxMsg Tx message pointer.
   */
 void CAN_TxAutoReply(CAN_TypeDef *CANx, CAN_TxMsgTypeDef *TxMsg)
@@ -618,7 +618,7 @@ void CAN_TxAutoReply(CAN_TypeDef *CANx, CAN_TxMsgTypeDef *TxMsg)
 
 /**
   * @brief    Receive auto reply message.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  RxMsg Rx message pointer.
   */
 void CAN_RxAutoReply(CAN_TypeDef *CANx, CAN_RxMsgTypeDef *RxMsg)
@@ -691,7 +691,7 @@ void CAN_RxAutoReply(CAN_TypeDef *CANx, CAN_RxMsgTypeDef *RxMsg)
 
 /**
   * @brief  Enables or disables the specified CAN interrupts.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  CAN_IT Specifies the CAN interrupts sources to be enabled or disabled.
   *   This parameter can be any combination of the following values:
   *     @arg CAN_TX_INT
@@ -718,7 +718,7 @@ void CAN_INTConfig(CAN_TypeDef *CANx, u32 CAN_IT, u32 NewState)
 
 /**
   * @brief  Get CAN interrupt status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @return Interrupt status
   */
 u32 CAN_GetINTStatus(CAN_TypeDef *CANx)
@@ -731,7 +731,7 @@ u32 CAN_GetINTStatus(CAN_TypeDef *CANx)
 
 /**
   * @brief  Clears the CAN interrupt pending bits.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  CAN_IT Specifies the interrupt to be cleared.
   */
 void CAN_ClearINT(CAN_TypeDef *CANx, u32 CAN_IT)
@@ -744,8 +744,8 @@ void CAN_ClearINT(CAN_TypeDef *CANx, u32 CAN_IT)
 }
 
 /**
-  * @brief  Clears the CAN interrupt pending bits.
-  * @param  CANx Where CANx can be CAN.
+  * @brief  Clears all CAN interrupt pending bits.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   */
 void CAN_ClearAllINT(CAN_TypeDef *CANx)
 {
@@ -756,7 +756,7 @@ void CAN_ClearAllINT(CAN_TypeDef *CANx)
 
 /**
   * @brief  Get the CAN error status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @return Error status
   */
 u32 CAN_GetErrStatus(CAN_TypeDef *CANx)
@@ -768,7 +768,7 @@ u32 CAN_GetErrStatus(CAN_TypeDef *CANx)
 
 /**
   * @brief  Clears the CAN error pending bits.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  ERR_STS Specifies the error status to be cleared.
   */
 void CAN_ClearErrStatus(CAN_TypeDef *CANx, u32 ERR_STS)
@@ -781,7 +781,7 @@ void CAN_ClearErrStatus(CAN_TypeDef *CANx, u32 ERR_STS)
 
 /**
   * @brief  Enables or disables the specified CAN Rx message buffer interrupts.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  BUF_IT Specifies the CAN interrupts sources to be enabled or disabled.
    * @param  NewState New state of the specified CAN interrupts.
   *   This parameter can be: ENABLE or DISABLE.
@@ -802,7 +802,7 @@ void CAN_RxMsgBufINTConfig(CAN_TypeDef *CANx, u32 BUF_IT, u32 NewState)
 
 /**
   * @brief  Enables or disables the specified CAN Tx message buffer interrupts.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  BUF_IT Specifies the CAN interrupts sources to be enabled or disabled.
    * @param  NewState New state of the specified CAN interrupts.
   *   This parameter can be: ENABLE or DISABLE.
@@ -823,7 +823,7 @@ void CAN_TxMsgBufINTConfig(CAN_TypeDef *CANx, u32 BUF_IT, u32 NewState)
 
 /**
   * @brief  Get tx message buffer error status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @return Tx message error status
   */
 u32 CAN_TxMsgBufErrGet(CAN_TypeDef *CANx)
@@ -836,7 +836,7 @@ u32 CAN_TxMsgBufErrGet(CAN_TypeDef *CANx)
 
 /**
   * @brief  Clear tx message buffer error status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  ERR_FLAG The specified error flag.
   */
 void CAN_TxMsgBufErrClear(CAN_TypeDef *CANx, u32 ERR_FLAG)
@@ -849,7 +849,7 @@ void CAN_TxMsgBufErrClear(CAN_TypeDef *CANx, u32 ERR_FLAG)
 
 /**
   * @brief  Get message buffer status register value.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  MsgBufIdx Message buffer index.
   * @return Register value
   */
@@ -862,13 +862,13 @@ u32 CAN_MsgBufStatusRegGet(CAN_TypeDef *CANx, u32 MsgBufIdx)
 }
 
 /**
-  * @brief  Get message buffer status register value.
-  * @param  CANx Where CANx can be CAN.
+  * @brief  Get message buffer status code.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  MsgBufIdx Message buffer index.
   * @return Status, can be the following values:
   *         - CAN_FRAME_PENDING_TX
-  *         - CAN_FRAME_FINISAH_TX
-  *         - CAN_FRAME_OVWRITR_SEND_TX
+  *         - CAN_FRAME_FINISH_TX
+  *         - CAN_FRAME_OVERWRITE_SEND_TX
   *         - CAN_FRAME_PENDING_RX
   *         - CAN_FRAME_FINISH_RX
   */
@@ -882,7 +882,7 @@ u32 CAN_MsgBufStatusGet(CAN_TypeDef *CANx, u32 MsgBufIdx)
 
 /**
   * @brief  Check message buffer available or not.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  MsgBufIdx Message buffer index.
   * @return Status, can be the following values:
   *         - 1: available
@@ -905,7 +905,7 @@ u32 CAN_CheckMsgBufAvailable(CAN_TypeDef *CANx, u32 MsgBufIdx)
 
 /**
   * @brief  Get CAN tx done status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @return CAN TX done status bitmask, each bit represents one message buffer TX completion status.
   */
 u32 CAN_TxDoneStatusGet(CAN_TypeDef *CANx)
@@ -917,7 +917,7 @@ u32 CAN_TxDoneStatusGet(CAN_TypeDef *CANx)
 
 /**
   * @brief  Get message buffer tx done status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  MsgBufIdx Message buffer index.
   * @return Status, can be the following values:
   *         - 1: tx complete
@@ -936,7 +936,7 @@ u32 CAN_MsgBufTxDoneStatusGet(CAN_TypeDef *CANx, u32 MsgBufIdx)
 
 /**
   * @brief  Get CAN rx done status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @return CAN RX done status bitmask, each bit represents one message buffer RX completion status.
   */
 u32 CAN_RxDoneStatusGet(CAN_TypeDef *CANx)
@@ -946,8 +946,8 @@ u32 CAN_RxDoneStatusGet(CAN_TypeDef *CANx)
 	return (CANx->CAN_RX_DONE);
 }
 /**
-  * @brief  Wait message buffer rx done.
-  * @param  CANx Where CANx can be CAN.
+  * @brief  Get message buffer rx done status.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  MsgBufIdx Message buffer index.
   * @return Status, can be the following values:
   *         - 1: rx complete
@@ -966,7 +966,7 @@ u32 CAN_MsgBufRxDoneStatusGet(CAN_TypeDef *CANx, u32 MsgBufIdx)
 
 /**
   * @brief  Clear CAN tx done status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  Status Clear status.
   */
 void CAN_TxDoneStatusClear(CAN_TypeDef *CANx, u32 Status)
@@ -979,7 +979,7 @@ void CAN_TxDoneStatusClear(CAN_TypeDef *CANx, u32 Status)
 
 /**
   * @brief  Clear CAN tx done message buffer status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  MsgBufIdx Message buffer index.
   */
 void CAN_MsgBufTxDoneStatusClear(CAN_TypeDef *CANx, u32 MsgBufIdx)
@@ -992,35 +992,35 @@ void CAN_MsgBufTxDoneStatusClear(CAN_TypeDef *CANx, u32 MsgBufIdx)
 
 /**
   * @brief  Clear CAN rx done status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  Status Clear status.
   */
 void CAN_RxDoneStatusClear(CAN_TypeDef *CANx, u32 Status)
 {
 	assert_param(IS_CAN_ALL_PERIPH(CANx));
 
-	/*clear the specified msg buffer tx done status*/
+	/*clear the specified msg buffer rx done status*/
 	CANx->CAN_RX_DONE = Status;
 }
 
 /**
   * @brief  Clear CAN rx done message buffer status.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  MsgBufIdx Message buffer index.
   */
 void CAN_MsgBufRxDoneStatusClear(CAN_TypeDef *CANx, u32 MsgBufIdx)
 {
 	assert_param(IS_CAN_ALL_PERIPH(CANx));
 
-	/*clear the specified msg buffer tx done status*/
+	/*clear the specified msg buffer rx done status*/
 	CANx->CAN_RX_DONE = BIT(MsgBufIdx);
 }
 
 
 /**
   * @brief    CAN TX message trigger ENABLE or DISABLE.
-  * @param  CANx Where CANx can be CAN.
-  * @param  State Where CANx can be ENABLE or DISABLE.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
+  * @param  State New state of the TX trigger. This parameter can be: ENABLE or DISABLE.
   */
 void CAN_TxMsgTriggerCmd(CAN_TypeDef *CANx, u32 State)
 {
@@ -1033,7 +1033,7 @@ void CAN_TxMsgTriggerCmd(CAN_TypeDef *CANx, u32 State)
 
 /**
   * @brief    CAN TX message trigger configure.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  CloseOffset Close offset.
   * @param  Begin Trigger begin.
   */
@@ -1052,7 +1052,7 @@ void CAN_TxMsgTriggerConfig(CAN_TypeDef *CANx, u32 CloseOffset, u32 Begin)
 
 /**
   * @brief    CAN control register configure.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  MsgIdx Message buffer index.
   * @param  RxDmaEn RX DMA enable.
   * @param  DmaOffset DMA offset.
@@ -1076,8 +1076,8 @@ void CAN_MsgCtrlRegConfig(CAN_TypeDef *CANx, u32 MsgIdx, u32 RxDmaEn, u32 DmaOff
 }
 
 /**
-  * @brief    CAN control register configure.
-  * @param  CANx Where CANx can be CAN.
+  * @brief  Configure CAN message buffer base address.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  MsgIdx Message buffer index.
   * @param  BaseAddr Message buffer base address.
   */
@@ -1096,7 +1096,7 @@ void CAN_MsgBaseAddrConfig(CAN_TypeDef *CANx, u32 MsgIdx, u32 BaseAddr)
 
 /**
   * @brief    CAN message buffer end address.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  EndAddr Message buffer end address.
   */
 void CAN_MsgBaseAddrEndReg(CAN_TypeDef *CANx, u32 EndAddr)
@@ -1173,7 +1173,7 @@ bool CAN_RXGDMA_Init(
 
 /**
   * @brief    CAN DMA destination base address configure.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  Addr Base address.
   */
 void CAN_RxDmaDestBaseAddrConfig(CAN_TypeDef *CANx, u32 Addr)
@@ -1183,7 +1183,7 @@ void CAN_RxDmaDestBaseAddrConfig(CAN_TypeDef *CANx, u32 Addr)
 
 /**
   * @brief    CAN get RX DMA data.
-  * @param  CANx Where CANx can be CAN.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
   * @return DMA data
   */
 u32 CAN_GetRxDmaData(CAN_TypeDef *CANx)

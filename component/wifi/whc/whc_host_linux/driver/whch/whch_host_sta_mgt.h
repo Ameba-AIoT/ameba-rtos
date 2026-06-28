@@ -26,6 +26,7 @@ struct sta_mlme_priv {
 
 struct sta_security_priv {
 	union Keytype	dot11tkiptxmickey;
+	union Keytype	dot11tkiprxmickey;
 	union Keytype_32		dot118021x_UncstKey;
 	union pn48		dot11txpn;			/* PN48 used for Unicast xmit. */
 
@@ -78,6 +79,10 @@ struct recv_reorder_ctrl {
 	spinlock_t			pending_recvframe_lock;
 
 	struct timer_list reordering_ctrl_timer;
+
+	struct reorder_node *node_pool;		/* array of pool_size elements */
+	struct list_head	node_free_list;	/* free nodes ready for reuse */
+	u16				pool_size;		/* = wsize_b when pool is allocated */
 	struct reorder_node *new_node;
 
 	u16 indicate_seq;//=wstart_b, init_value=0xffff
@@ -95,12 +100,15 @@ struct recv_defrag_ctrl {
 	u8 *pfragbuf;
 	u32 len;
 	u8 latest_frag_num;
+	u64 latest_pn;
 };
 
 struct sta_recv_priv {
-	struct recv_reorder_ctrl	*recvreorder_ctrl[MAXTID];	/* for A-MPDU Rx reordering buffer control */
+	struct recv_reorder_ctrl	recvreorder_ctrl[MAXTID];	/* for A-MPDU Rx reordering buffer control */
+	struct recv_defrag_ctrl		defrag_ctrl;
+
 	u16 tid_rxseq[16];
-	struct recv_defrag_ctrl		defrag_ctrl;	/* Maintain 32 bytes for original ROM code */
+	u8 iv[16][8];
 };
 
 
@@ -114,7 +122,7 @@ struct sta_info {
 	struct sta_recv_priv		sta_recvpriv;
 };
 
-struct sta_priv {
+struct whch_sta_priv {
 	struct list_head  	sta_list;
 	spinlock_t		    sta_list_mutex;
 };
@@ -132,7 +140,7 @@ struct rtw_chan_def {
 void whc_host_sta_init(u8 iface_type);
 void _whc_host_sta_init_stainfo(struct sta_info *psta);
 struct sta_info *whc_host_sta_alloc_stainfo(u8 iface_type, u8 *hwaddr);
-void whc_host_sta_update_stainfo(u8 iface_type, u8 *hwaddr, struct rtw_event_sta_info *pstainfo);
+void whc_host_sta_update_stainfo(u8 iface_type, u8 *hwaddr, struct rtw_event_sta_info *pstainfo, struct rtw_event_security_priv *psecinfo);
 int  whc_host_sta_free_stainfo(u8 iface_type, u8 *hwaddr);
 void whc_host_sta_free_resource(u8 wlan_idx);
 
@@ -143,6 +151,6 @@ struct pending_sta_t *whc_host_sta_get_sta_pending(struct sta_xmit_priv *psta_xm
 /* STA state / MLME */
 int  whc_host_state_check_ap_client_assoc_success(struct sta_mlme_priv *psta_mlmepriv);
 int  whc_host_check_sta_associated_to_ap(void);
-int  whc_host_mlme_init(u8 iface_type);
+int  whc_host_init_default_value(u8 iface_type);
 
 #endif /* __WHC_HOST_STAINFO_H__ */

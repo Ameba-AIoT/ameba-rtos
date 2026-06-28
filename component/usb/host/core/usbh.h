@@ -112,6 +112,7 @@ typedef enum {
 	USBH_MSG_USER_SET_CONFIG = 0U,/**< Message to request user to set the configuration. */
 	USBH_MSG_CONNECTED,           /**< Message indicating a device has been successfully connected and configured. */
 	USBH_MSG_DISCONNECTED,        /**< Message indicating a device has been disconnected. */
+	USBH_MSG_WAKEUP,              /**< Message indicating the host has been woken from suspend by a device-initiated remote wakeup. */
 	USBH_MSG_PROBE_FAIL,          /**< Message indicating that device probing failed due to mismatched device properties. */
 	USBH_MSG_ATTACH_FAIL,         /**< Message indicating device attachment failed. */
 	USBH_MSG_ERROR,               /**< Message indicating a general error occurred. */
@@ -536,14 +537,19 @@ void usbh_suspend(void);
 void usbh_resume(void);
 
 /**
- * @brief Sets the USB to enter Clock Gating (CG) state with a specific wakeup event.
- * @details This function configures the USB host to enter a low-power clock gated state.
- *          The wakeup mechanism depends on the value of the \p sleep_ms parameter.
- * @param[in] sleep_ms:
- *          - 0: Wakeup is triggered by a USB event.
- *          - others: Wakeup is triggered by a timer event after the specified time.
+ * @brief Register the sleep callbacks for USB host Clock Gating (CG).
+ * @details Registers the PMU sleep callbacks so the USB host can be suspended/resumed
+ *          when the AP enters/exits the low-power clock gated state.
+ *          Wakelock operations and wake event configuration are handled by the caller,
+ *          not inside this function.
  */
-void usbh_enter_cg(u32 sleep_ms);
+void usbh_cg_register(void);
+
+/**
+ * @brief Unregister the sleep callbacks for USB host Clock Gating (CG).
+ * @note  Wakelock operations are handled by the caller, not inside this function.
+ */
+void usbh_cg_unregister(void);
 
 /**
  * @brief  USB Host Port Test Control.

@@ -370,8 +370,5 @@ int example_raw_i2c_int_slave(void)
 		RTK_LOGI(TAG, "Cannot create i2c_interrupt_mode_task demo task\n\r");
 	}
 
-	rtos_sched_start();
-
 	return 0;
 }
-

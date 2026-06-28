@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup PMCTIMER
+/** @defgroup PMCTIMER PMCTIMER
   * @brief PMCTIMER driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -112,6 +113,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -126,45 +128,45 @@ extern "C" {
   * @{
   */
 
-/** @defgroup PMCTIMER_Device_Config
+/** @defgroup PMCTIMER_Device_Config PMCTIMER Device Config
   * @{
   */
-#ifdef CONFIG_ARM_CORE_CM4_KM4NS
-#define PMC_TIMER_DEV PMCTIMER_DEV0
-#define PMC_TIMER_IRQ PMC_TIMER0_IRQ
-#define PMC_TIMER_INT_PRIO INT_PRI6
+#if defined(CONFIG_ARM_CORE_CM4_KM4NS)
+#define PMC_TIMER_DEV PMCTIMER_DEV0   /*!< PMC timer device instance for CM4/KM4NS core. */
+#define PMC_TIMER_IRQ PMC_TIMER0_IRQ   /*!< PMC timer IRQ number for CM4/KM4NS core. */
+#define PMC_TIMER_INT_PRIO INT_PRI6   /*!< PMC timer interrupt priority for CM4/KM4NS core. */
 #else
-#define PMC_TIMER_DEV PMCTIMER_DEV1
-#define PMC_TIMER_IRQ PMC_TIMER1_IRQ
-#define PMC_TIMER_INT_PRIO INT_PRI_LOWEST
+#define PMC_TIMER_DEV PMCTIMER_DEV1   /*!< PMC timer device instance for CM4/KM4TZ core. */
+#define PMC_TIMER_IRQ PMC_TIMER1_IRQ   /*!< PMC timer IRQ number for CM4/KM4TZ core. */
+#define PMC_TIMER_INT_PRIO INT_PRI_LOWEST   /*!< PMC timer interrupt priority for CM4/KM4TZ core. */
 #endif
 /**
   * @}
   */
 
-/** @defgroup PMCTIMER_Index
+/** @defgroup PMCTIMER_Index PMCTIMER Index
   * @{
   */
-#define PMC_SLEEP_TIMER		0 /* sys active time for sleep */
-#define PMC_DSLP_TIMER		1 /* sys active time for deepsleep */
-#define PMC_WAKEUP_TIMER	2 /* set wakeup time for sleep */
-#define PMC_RSVD_TIMER		3
+#define PMC_SLEEP_TIMER		0   /*!< PMC timer index for system active time during sleep. */
+#define PMC_DSLP_TIMER		1   /*!< PMC timer index for system active time during deep sleep. */
+#define PMC_WAKEUP_TIMER	2   /*!< PMC timer index for setting wakeup time during sleep. */
+#define PMC_RSVD_TIMER		3   /*!< Reserved PMC timer index. */
 /**
   * @}
   */
 
-/** @defgroup PMCTIMER_Valid_Check
+/** @defgroup PMCTIMER_Valid_Check PMCTIMER Valid Check
   * @{
   */
-#define PMCT_BIT_TIM_VALIDx(x) ((u32)(0x00000001 << (8 + x)))
+#define PMCT_BIT_TIM_VALIDx(x) ((u32)(0x00000001 << (8 + x)))   /*!< Bit mask for timer x configuration valid status. */
 /**
   * @}
   */
 
-/** @defgroup PMCTIMER_Reset
+/** @defgroup PMCTIMER_Reset PMCTIMER Reset
   * @{
   */
-#define PMCTRESET_BIT_TIMERx(x) ((u32)(0x00000001 << (28 + x)))
+#define PMCTRESET_BIT_TIMERx(x) ((u32)(0x00000001 << (28 + x)))   /*!< Bit mask to pulse reset timer x. */
 /**
   * @}
   */
@@ -173,13 +175,10 @@ extern "C" {
   * @}
   */
 
-/** @} */
-
-/** @} */
-
-/* group: PMCTIMER_Exported_Functions */
-/* Since all the members in the group are __STATIC_INLINE which will not be extracted to the doxygen doc,
-  original comment has been deleted to avoid there is nothing displayed under the group. */
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup PMCTIMER_Exported_Functions PMCTIMER Exported Functions
+  * @{
+  */
 void PMCTimer_Cmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, bool NewState);
 u32 PMCTimer_Valid_Check(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx);
 u32 PMCTimerCnt_Get(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx);
@@ -190,6 +189,12 @@ void PMCTimer_INTClear(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx);
 void PMCTimer_CompCmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewState);
 void PMCTimer_Init(void);
 void PMCTimer_Reset(void);
+
+/** @} */
+
+/** @} */
+
+/** @} */
 
 #ifdef __cplusplus
 }

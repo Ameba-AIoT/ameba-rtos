@@ -59,7 +59,7 @@ void whc_host_hal_rxdesc_query(struct rx_pkt_attrib	*pattrib, u8 *pdesc)
 
 }
 
-#if 0	/* AMSDU TODO */
+#if 0	/* TODO_AMSDU */
 void whc_host_hal_amsdu_priv_reset(struct amsdu_priv_t *pamsdu)
 {
 	if (pamsdu->pending_skb) {
@@ -71,7 +71,7 @@ void whc_host_hal_amsdu_priv_reset(struct amsdu_priv_t *pamsdu)
 int whc_host_hal_rx_amsdu_check(u8 *rxbd, u8 *pdata, u8 *first_seg, u8 *last_seg)
 {
 	u8 *pframe = NULL;
-	struct amsdu_priv_t	*pamsdu = global_idev.recvpriv.amsdu_priv;
+	struct amsdu_priv_t	*pamsdu = global_idev.whchpriv.recvpriv.amsdu_priv;
 	*first_seg = (u8)GET_RX_BUFFER_DESC_FS_92E(rxbd);
 	*last_seg = (u8)GET_RX_BUFFER_DESC_LS_92E(rxbd);
 
@@ -101,10 +101,10 @@ int whc_host_hal_rx_amsdu_check(u8 *rxbd, u8 *pdata, u8 *first_seg, u8 *last_seg
 
 int whc_host_hal_rx_amsdu(u8 *rxbd, struct sk_buff *skb, u8 *pdata, void *dev_addr)
 {
-	struct __queue *pfree_recv_queue = &global_idev.recvpriv.free_recv_queue;
+	struct __queue *pfree_recv_queue = &global_idev.whchpriv.recvpriv.free_recv_queue;
 	union recv_frame *precvframe = NULL;
 	struct sk_buff *skb_new = NULL, *pkt_copy = NULL;
-	struct amsdu_priv_t	*pamsdu = global_idev.recvpriv.amsdu_priv;
+	struct amsdu_priv_t	*pamsdu = global_idev.whchpriv.recvpriv.amsdu_priv;
 	struct rx_pkt_attrib *pattrib = NULL;
 	u8 first_seg = 0;
 	u8 last_seg = 0;
@@ -128,12 +128,12 @@ int whc_host_hal_rx_amsdu(u8 *rxbd, struct sk_buff *skb, u8 *pdata, void *dev_ad
 	case 2: // Case 2: A-MSDU seg none/first.
 		if (!pamsdu) {
 			dev_dbg(global_idev.pwhc_dev, "[whc]: amsdu appear\n");
-			global_idev.recvpriv.amsdu_priv = (struct amsdu_priv_t *)wifi_rom_zmalloc(sizeof(struct amsdu_priv_t));
-			if (!global_idev.recvpriv.amsdu_priv) {
+			global_idev.whchpriv.recvpriv.amsdu_priv = (struct amsdu_priv_t *)wifi_rom_zmalloc(sizeof(struct amsdu_priv_t));
+			if (!global_idev.whchpriv.recvpriv.amsdu_priv) {
 				dev_err(global_idev.pwhc_dev, "[whc]: No memeory for amsdu_priv.\n");
 				return RTK_FAIL;
 			}
-			pamsdu = global_idev.recvpriv.amsdu_priv;
+			pamsdu = global_idev.whchpriv.recvpriv.amsdu_priv;
 		}
 		pattrib = &pamsdu->attrib;
 
@@ -307,7 +307,7 @@ process_current_seg:
 	if (skb) {
 		pkt_copy = wifi_rom_dev_alloc_skb(skbpriv.skb_buf_max_size, 0);
 		if (pkt_copy) {
-			global_idev.recvpriv.rx_ring[0].rx_buf[global_idev.recvpriv.rx_ring[0].idx] = pkt_copy;
+			global_idev.whchpriv.recvpriv.rx_ring[0].rx_buf[global_idev.whchpriv.recvpriv.rx_ring[0].idx] = pkt_copy;
 			SET_RX_BUFFER_PHYSICAL_LOW_92E(rxbd, (u32)pkt_copy->data);
 			/*In case of cache auto write back when cache entry full*/
 			DCache_Invalidate((u32)(pkt_copy->data), skbpriv.skb_buf_max_size);
@@ -344,7 +344,7 @@ int whc_host_hal_rx_mpdu(struct sk_buff *pskb)
 	/* pskb->data pointer to rxbd */
 	rxbd = pskb->data;
 	rx_desc = pskb->data + RX_BUFFER_DESC_SIZE;
-	//whc_host_hal_rx_amsdu(rxbd, pskb, rx_desc);	/* AMSDU TODO */
+	//whc_host_hal_rx_amsdu(rxbd, pskb, rx_desc);	/* TODO_AMSDU */
 
 	/* adjust skb pointers to rxdesc */
 	skb_pull(pskb, RX_BUFFER_DESC_SIZE);
@@ -373,7 +373,7 @@ int whc_host_hal_rx_mpdu(struct sk_buff *pskb)
 	skb_len = pattrib->pkt_len;
 
 	/* adjust skb pointers */
-	pskb->dev = global_idev.pndev[0];	// TODO
+	pskb->dev = global_idev.pndev[0];
 	precvframe->u.hdr.pkt = pskb;
 	skb_pull(pskb, RXDESC_SIZE + pattrib->drvinfo_sz + pattrib->shift_sz);
 	pskb->len = skb_len;
@@ -384,14 +384,14 @@ int whc_host_hal_rx_mpdu(struct sk_buff *pskb)
 	whc_host_recv_recvframe_put(precvframe, skb_len);
 	switch (pattrib->pkt_rpt_type) {
 	case NORMAL_RX: {
-#if 0	/* promisc TODO */
+#if 0	/* TODO_promisc */
 		promisc_ret = wifi_hal_rx_promisc(precvframe, pphy_info);
 		if (g_promiscpriv.promisc_enabled && (promisc_ret == RTW_PROMISC_BYPASS_DRV_HDL)) {
 			goto done;
 		} else
 #endif
 		{
-#if 0	/* MP TODO */
+#if 0	/* TODO_mp */
 			if (rtw_halphy_shareinfo.phl_drv_mode == RTW_DRV_MODE_MP) {
 				wifi_hal_mp_rx_process(precvframe, pphy_info);
 			} else
@@ -401,10 +401,6 @@ int whc_host_hal_rx_mpdu(struct sk_buff *pskb)
 				not_free_recvframe = 1;/*may handle fragment frame and not free recvframe*/
 			}
 		}
-		break;
-	}
-	case PPDU_STATUS: { /* physts TODO */
-		//wifi_hal_rxdesc_phystatus_query(&precvframe->u.hdr.attrib, precvframe->u.hdr.rx_data);
 		break;
 	}
 	default:
@@ -419,7 +415,7 @@ done:
 }
 
 
-/* TODO */
+/* TODO_deseg */
 int whc_host_hal_rx_mpdu_deseg(u8 *rxbd, struct sk_buff *skb, u8 *pdata)
 {
 	u8 first_seg = (u8)GET_RX_BUFFER_DESC_FS_92E(rxbd);

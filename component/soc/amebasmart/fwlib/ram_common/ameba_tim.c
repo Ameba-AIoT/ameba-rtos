@@ -9,15 +9,11 @@
   * @{
   */
 
-/** @defgroup PWMTIMER
+/** @defgroup PWMTIMER PWMTIMER
 * @brief PWMTIMER driver modules
 * @{
 */
 
-/* Exported constants --------------------------------------------------------*/
-/** @defgroup PWMTIMER_Exported_Constants PWMTIMER Exported Constants
-  * @{
-  */
 /**
   * @brief  Timer interrupt number
   * @note 	KM0 does not support interrupts for timers 0/1/8/9
@@ -121,11 +117,6 @@ u32 TIM_IT_CCx[PWM_CHAN_MAX] = {
 	TIM_IT_CC5,
 };
 
-/**
-  * @}
-  */
-
-
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup PWMTIMER_Exported_Functions PWMTIMER Exported Functions
@@ -137,15 +128,14 @@ u32 TIM_IT_CCx[PWM_CHAN_MAX] = {
 */
 
 /**
-  * @brief  Enables or Disables the TIMx Update event(UEV).
-  * @param  TIMx: where x can be 0-9 to select the TIM peripheral.
-  * @param  NewState: new state of the TIMx UDIS bit
+  * @brief  Enable or Disable the TIMx Update event(UEV).
+  * @param  TIMx The TIM peripheral, an element of TIMx[] array.
+  * @param  NewState New state of the TIMx UDIS bit
   *          This parameter can be:ENABLE or DISABLE
   * @note
   *		- If NewState is ENABLE, Update Disable Bit is set, UEV disable and shadow registers keep their value.
   *		- If NewState is DISABLE, Update Disable Bit is clear, UEV enable and buffered registers are loaded with
   *		their preload values when UEV happen.
-  * @retval None
   */
 void RTIM_UpdateDisableConfig(RTIM_TypeDef *TIMx, u32 NewState)
 {
@@ -162,14 +152,13 @@ void RTIM_UpdateDisableConfig(RTIM_TypeDef *TIMx, u32 NewState)
 }
 
 /**
-  * @brief  Enables or disables TIMx peripheral Preload register on ARR.
-  * @param  TIMx: where x can be 0-9 to select the TIM peripheral.
-  * @param  NewState: new state of the TIMx peripheral Preload register
+  * @brief  Enable or disable TIMx peripheral Preload register on ARR.
+  * @param  TIMx The TIM peripheral, an element of TIMx[] array.
+  * @param  NewState New state of the TIMx peripheral Preload register
   *          This parameter can be: ENABLE or DISABLE.
   * @note
   *		- DISABLE: TIMx_ARR register is not buffered, and shadow register will update immediately
   *		- ENABLE: TIMx_ARR register is buffered, and shadow register will update after overflow
-  * @retval None
   */
 void RTIM_ARRPreloadConfig(RTIM_TypeDef *TIMx, u32 NewState)
 {
@@ -186,14 +175,13 @@ void RTIM_ARRPreloadConfig(RTIM_TypeDef *TIMx, u32 NewState)
 }
 
 /**
-  * @brief  Configures the TIMx Update Request Interrupt source.
-  * @param  TIMx: where x can be 0-9 to select the TIM peripheral.
-  * @param  TIM_UpdateSource: specifies the Update source.
+  * @brief  Configure the TIMx Update Request Interrupt source.
+  * @param  TIMx The TIM peripheral, an element of TIMx[] array.
+  * @param  TIM_UpdateSource Specifies the Update source.
   *          This parameter can be one of the following values:
   *            @arg TIM_UpdateSource_Global: Source of update is the counter
   *                 overflow or the setting of UG bit.
   *            @arg TIM_UpdateSource_Overflow: Source of update is counter overflow.
-  * @retval None
   */
 void RTIM_UpdateRequestConfig(RTIM_TypeDef *TIMx, u32 TIM_UpdateSource)
 {
@@ -211,19 +199,18 @@ void RTIM_UpdateRequestConfig(RTIM_TypeDef *TIMx, u32 TIM_UpdateSource)
 }
 
 /**
-  * @brief  Configures the TIMx Prescaler.
-  * @param  TIMx: where x can be  8 or 9 to select the TIM peripheral.
-  * @param  Prescaler: specifies the Prescaler Register value,which can be a number in 0~0xFF range for TIM9 and 0~0xFFFF range for TIM8.
-  * @param  TIM_PSCReloadMode: specifies the TIM Prescaler Reload mode
+  * @brief  Configure the TIMx Prescaler.
+  * @param  TIMx The TIM peripheral with CCM capability. See IS_TIM_CCM_TIM macro.
+  * @param  Prescaler Specifies the Prescaler Register value, which can be a number in 0~0xFFFF range.
+  * @param  TIM_PSCReloadMode Specifies the TIM Prescaler Reload mode
   *          This parameter can be one of the following values:
   *            @arg TIM_PSCReloadMode_Update: The Prescaler is loaded at the update event.
-  *            @arg TIM_PSCReloadMode_Immediate: The Prescaler is loaded immediatly.
-  * @retval None
+  *            @arg TIM_PSCReloadMode_Immediate: The Prescaler is loaded immediately.
   */
 void RTIM_PrescalerConfig(RTIM_TypeDef *TIMx, u32 Prescaler, u32 TIM_PSCReloadMode)
 {
 	/* Check the parameters */
-	assert_param(IS_TIM_40M_TIM(TIMx));
+	assert_param(IS_TIM_CCM_TIM(TIMx));
 	assert_param(IS_TIM_PSC(Prescaler));
 	assert_param(IS_TIM_PRESCALER_RELOAD(TIM_PSCReloadMode));
 
@@ -234,15 +221,16 @@ void RTIM_PrescalerConfig(RTIM_TypeDef *TIMx, u32 Prescaler, u32 TIM_PSCReloadMo
 }
 
 /**
-  * @brief  Configures the TIMx event to be generate by software.
-  * @param  TIMx: where x can be 0-9 to select the TIM peripheral.
-  * @param  TIM_EventSource: specifies the event source.
-  *          This parameter can be one or more of the following values @ref TIMx_Event_Generation_definitons
+  * @brief  Configure the TIMx event to be generated by software.
+  * @param  TIMx The TIM peripheral, an element of TIMx[] array.
+  * @param  TIM_EventSource Specifies the event source.
+  *          This parameter can be one or more of the following values @ref TIM_Event_Source
+  * @internal
   * @note
   *		- TIM0~9 have Timer update Event source TIM_EventSource_Update
   *		- TIM9 have Timer Capture Compare 1 Event source TIM_EventSource_CC0
   *		- TIM8 has 6 Timer Capture Compare x Event source TIM_EventSource_CC0-5.
-  * @retval None
+  * @endinternal
   */
 void RTIM_GenerateEvent(RTIM_TypeDef *TIMx, u32 TIM_EventSource)
 {
@@ -255,12 +243,12 @@ void RTIM_GenerateEvent(RTIM_TypeDef *TIMx, u32 TIM_EventSource)
 }
 
 /**
-  * @brief  Sets the TIMx Autoreload Register(TIMx_ARR) value to change period
-  * @param  TIMx: where x can be 0-9 to select the TIM peripheral.
-  * @param  Autoreload: specifies the Autoreload register new value.
-  *			To TIM0~7 this value can be a number in 0~0xFFFFFFFF range.
-  *			To TIM8~9 this value can be a number in 0~0xFFFF range.
-  * @retval None
+  * @brief  Set the TIMx Autoreload Register(TIMx_ARR) value to change period
+  * @param  TIMx The TIM peripheral, an element of TIMx[] array.
+  * @param  Autoreload Specifies the Autoreload register new value.
+  *         The valid range depends on the TIM type:
+  *         - Basic timers (non-CCM): 0 ~ 0xFFFFFFFF
+  *         - CCM timers (PWM/Capture): 0 ~ 0xFFFF
   */
 void RTIM_ChangePeriodImmediate(RTIM_TypeDef *TIMx, u32 Autoreload)
 {
@@ -304,12 +292,12 @@ void RTIM_ChangePeriodImmediate(RTIM_TypeDef *TIMx, u32 Autoreload)
 }
 
 /**
-  * @brief  Sets the TIMx Autoreload Register(TIMx_ARR) value to change period with protection
-  * @param  TIMx: where x can be 0-9 to select the TIM peripheral.
-  * @param  Autoreload: specifies the Autoreload register new value.
-  *			To TIM0~7 this value can be a number in 0~0xFFFFFFFF range.
-  *			To TIM8~9 this value can be a number in 0~0xFFFF range.
-  * @retval None
+  * @brief  Set the TIMx Autoreload Register(TIMx_ARR) value to change period with protection
+  * @param  TIMx The TIM peripheral, an element of TIMx[] array.
+  * @param  Autoreload Specifies the Autoreload register new value.
+  *         The valid range depends on the TIM type:
+  *         - Basic timers (non-CCM): 0 ~ 0xFFFFFFFF
+  *         - CCM timers (PWM/Capture): 0 ~ 0xFFFF
   */
 void RTIM_ChangePeriod(RTIM_TypeDef *TIMx, u32 Autoreload)
 {
@@ -336,8 +324,7 @@ void RTIM_ChangePeriod(RTIM_TypeDef *TIMx, u32 Autoreload)
 
 /**
   * @brief  Reset timer, counter will start from 0
-  * @param  TIMx: where x can be 0-9 to select the TIM peripheral.
-  * @retval None
+  * @param  TIMx The TIM peripheral, an element of TIMx[] array.
   */
 void RTIM_Reset(RTIM_TypeDef *TIMx)
 {
@@ -369,10 +356,9 @@ void RTIM_Reset(RTIM_TypeDef *TIMx)
 */
 
 /**
-  * @brief  Fills each TIM_CCInitStruct member with its default value.
-  * @param  TIM_CCInitStruct: pointer to a TIM_CCInitTypeDef structure which will
+  * @brief  Fill each TIM_CCInitStruct member with its default value.
+  * @param  TIM_CCInitStruct Pointer to a @ref TIM_CCInitTypeDef structure which will
   *         be initialized.
-  * @retval None
   */
 void RTIM_CCStructInit(TIM_CCInitTypeDef *TIM_CCInitStruct)
 {
@@ -384,17 +370,18 @@ void RTIM_CCStructInit(TIM_CCInitTypeDef *TIM_CCInitStruct)
 }
 
 /**
-  * @brief  Initializes the TIMx Channel 0-5 according to the specified parameters in
+  * @brief  Initialize the TIMx Channel  according to the specified parameters in
   *         the TIM_CCInitStruct.
-  * @param  TIMx: where x can be 8/9, to select the TIM peripheral.
-  * @param  TIM_CCInitStruct: pointer to a TIM_CCInitTypeDef structure that contains
+  * @param  TIMx The TIM peripheral with CCM capability. See IS_TIM_CCM_TIM macro.
+  * @param  TIM_CCInitStruct Pointer to a @ref TIM_CCInitTypeDef structure that contains
   *         the configuration information for the specified TIM peripheral.
-  * @param  TIM_Channel: the channel need to be initialized,
-  *		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @param  TIM_Channel The channel need to be initialized,
+  *		which can be one of the following parameters @ref TIM_Channel
+  * @internal
   * @note
   *		- TIM9 only has 1 channel: TIM_Channel_0
   *		- TIM8 has 6 channels:  TIM_Channel_0-5.
-  * @retval None
+  * @endinternal
   */
 void RTIM_CCxInit(RTIM_TypeDef *TIMx, TIM_CCInitTypeDef *TIM_CCInitStruct, u16 TIM_Channel)
 {
@@ -440,17 +427,18 @@ void RTIM_CCxInit(RTIM_TypeDef *TIMx, TIM_CCInitTypeDef *TIM_CCInitStruct, u16 T
 }
 
 /**
-  * @brief  Initializes the TIMx Channel 0-5 CCmode.
-  * @param  TIMx: where x can be 8, to select the TIM peripheral.
-  * @param  TIM_Channel: the channel need to be set mode,
-  *		which can be one of the following parameters @ref TIM_Channel_definitions.
-  * @param  TIM_CCMode: CCx working mode which can be one of the following parameters:
+  * @brief  Initialize the TIMx Channel  CCmode.
+  * @param  TIMx The TIM peripheral with PWM output capability. See IS_TIM_PWM_TIM macro.
+  * @param  TIM_Channel The channel need to be set mode,
+  *		which can be one of the following parameters @ref TIM_Channel.
+  * @param  TIM_CCMode CCx working mode which can be one of the following parameters:
   *		@arg TIM_CCMode_PWM
   *		@arg TIM_CCMode_Inputcapture
+  * @internal
   * @note
   *		- TIM9 only has 1 channel: TIM_Channel_0
   *		- TIM8 has 6 channels:  TIM_Channel_0-5.
-  * @retval None
+  * @endinternal
   */
 void RTIM_CCRxMode(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_CCMode)
 {
@@ -468,17 +456,18 @@ void RTIM_CCRxMode(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_CCMode)
 }
 
 /**
-  * @brief  Sets the TIMx Capture Compare X register value
-  * @param  TIMx: where x can be 8, to select the TIM peripheral.
-  * @param  Compare: the value specifies pulsewidth, which is in the 0x00~0xFFFF range.
+  * @brief  Set the TIMx Capture Compare X register value
+  * @param  TIMx The TIM peripheral with PWM output capability. See IS_TIM_PWM_TIM macro.
+  * @param  Compare The value specifies pulsewidth, which is in the 0x00~0xFFFF range.
   *					Duty cycle = Compare / (ARR+1).
-  * @param  TIM_Channel: the channel to be set,
-  *		which can be one of the following parameters @ref TIM_Channel_definitions.
-  * @retval None
+  * @param  TIM_Channel The channel to be set,
+  *		which can be one of the following parameters @ref TIM_Channel.
   * @note
   *		- CCRx=0 will give 0% cycle pwm pulse.
   *		- CCRx>=TIM_Period there will be 100% pwm pulse.
+  * @internal
   *		- TIM8 has 6 channels:  TIM_Channel_0-5.
+  * @endinternal
   */
 void RTIM_CCRxSet(RTIM_TypeDef *TIMx, u32 Compare, u16 TIM_Channel)
 {
@@ -506,15 +495,17 @@ void RTIM_CCRxSet(RTIM_TypeDef *TIMx, u32 Compare, u16 TIM_Channel)
 }
 
 /**
-  * @brief  Gets the TIMx Capture Compare X register value.
-  * @param  TIMx: where x can be 8/9, to select the TIM peripheral.
-  * @param  TIM_Channel: the channel to be read,
-  *		which can be one of the following parameters @ref TIM_Channel_definitions.
-  * @retval  Capture Compare x Register value.
+  * @brief  Get the TIMx Capture Compare X register value.
+  * @param  TIMx The TIM peripheral with CCM capability. See IS_TIM_CCM_TIM macro.
+  * @param  TIM_Channel The channel to be read,
+  *		which can be one of the following parameters @ref TIM_Channel.
+  * @return  Capture Compare x Register value.
   * @note	If you want to get pulse width of PWM, remember to plus 1 to
-  *			the retval of this function.
+  *			the return value of this function.
+  * @internal
   *		- TIM9 only has 1 channel:  TIM_Channel_0
   *		- TIM8 has 6 channels:  TIM_Channel_0-5.
+  * @endinternal
   */
 u32 RTIM_CCRxGet(RTIM_TypeDef *TIMx, u16 TIM_Channel)
 {
@@ -527,17 +518,18 @@ u32 RTIM_CCRxGet(RTIM_TypeDef *TIMx, u16 TIM_Channel)
 }
 
 /**
-  * @brief  Enables or disables the TIMx peripheral Preload register on CCRx.
-  * @param  TIMx: where x can be 8, to select the TIM peripheral.
-  * @param  TIM_OCProtection: new state of the TIMx peripheral Preload register
+  * @brief  Enable or disable the TIMx peripheral Preload register on CCRx.
+  * @param  TIMx The TIM peripheral with PWM output capability. See IS_TIM_PWM_TIM macro.
+  * @param  TIM_OCProtection New state of the TIMx peripheral Preload register
   *          This parameter can be one of the following values:
   *            @arg TIM_OCPreload_Enable: value is loaded in the active register at each update event.
   *            @arg TIM_OCPreload_Disable: new value is taken in account immediately
-  * @param  TIM_Channel: the channel need to be set,
-  *		which can be one of the following parameters @ref TIM_Channel_definitions
+  * @param  TIM_Channel The channel need to be set,
+  *		which can be one of the following parameters @ref TIM_Channel
+  * @internal
   * @note
   *		- TIM8 has 6 channels:  TIM_Channel_0-5.
-  * @retval None
+  * @endinternal
   */
 void RTIM_OCxPreloadConfig(RTIM_TypeDef *TIMx, u32 TIM_OCProtection, u16 TIM_Channel)
 {
@@ -561,24 +553,27 @@ void RTIM_OCxPreloadConfig(RTIM_TypeDef *TIMx, u32 TIM_OCProtection, u16 TIM_Cha
 }
 
 /**
-  * @brief  Configures the TIMx channel x polarity.
-  * @param  TIMx: where x can be 8, to select the TIM peripheral.
-  * @param  TIM_OCPolarity: specifies the OCx Polarity
+  * @brief  Configure the TIMx channel x polarity.
+  * @param  TIMx The TIM peripheral with CCM capability. See IS_TIM_CCM_TIM macro.
+  * @param  TIM_OCPolarity Specifies the OCx Polarity
   *          This parameter can be one of the following values:
   *            @arg TIM_CCPolarity_High: Output Compare active high
   *            @arg TIM_CCPolarity_Low: Output Compare active low
-  * @retval None
+  * @param  TIM_Channel Specifies the TIM Channel
+  *          This parameter can be one of the following values @ref TIM_Channel
+  * @internal
   * @note
   *		-TIM8 has CCR0-5
   *		-TIM9 has CCR0
   *		-TIM0-7 dont have CCMR
+  * @endinternal
   */
 void RTIM_CCxPolarityConfig(RTIM_TypeDef *TIMx, u32 TIM_OCPolarity, u16 TIM_Channel)
 {
 	u32 tmpccmr = 0;
 
 	/* Check the parameters */
-	assert_param(IS_TIM_PWM_TIM(TIMx));
+	assert_param(IS_TIM_CCM_TIM(TIMx));
 	assert_param(IS_TIM_CC_POLARITY(TIM_OCPolarity));
 	assert_param(IS_TIM_CHANNEL(TIM_Channel));
 
@@ -593,17 +588,18 @@ void RTIM_CCxPolarityConfig(RTIM_TypeDef *TIMx, u32 TIM_OCPolarity, u16 TIM_Chan
 }
 
 /**
-  * @brief  Enables or disables the TIM Capture Compare Channel x.
-  * @param  TIMx: where x can be 8/9, to select the TIM peripheral.
-  * @param  TIM_Channel: specifies the TIM Channel
-  *          This parameter can be one of the following values @ref TIM_Channel_definitions
-  * @param  TIM_CCx: specifies the TIM Channel CCxE bit new state.
+  * @brief  Enable or disable the TIM Capture Compare Channel x.
+  * @param  TIMx The TIM peripheral with CCM capability. See IS_TIM_CCM_TIM macro.
+  * @param  TIM_Channel Specifies the TIM Channel
+  *          This parameter can be one of the following values @ref TIM_Channel
+  * @param  TIM_CCx Specifies the TIM Channel CCxE bit new state.
   *          This parameter can be one of the following values:
   *		@arg TIM_CCx_Enable
   *		@arg TIM_CCx_Disable
+  * @internal
   * @note
   *		- TIM8 has 6 channels:  TIM_Channel_0-5.
-  * @retval None
+  * @endinternal
   */
 void RTIM_CCxCmd(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_CCx)
 {
@@ -623,46 +619,46 @@ void RTIM_CCxCmd(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_CCx)
 
 /**
   * @brief  Set the TIMx's One Pulse Mode (output one pulse PWM mode).
-  * @param  TIMx: where x can be 8 to select the TIM peripheral.
-  * @param  TIM_OPMode: specifies the OPM Mode to be used.
+  * @param  TIMx The TIM peripheral with PWM output capability. See IS_TIM_PWM_TIM macro.
+  * @param  TIM_OPMode Specifies the OPM Mode to be used.
   *          This parameter can be one of the following values:
   *            @arg TIM_OPMode_Single
   *            @arg TIM_OPMode_Repetitive
-  * @param  TrigerPolarity: specifies the OPM Mode Triger Polarity.
+  * @param  TriggerPolarity Specifies the OPM Mode Trigger Polarity.
   *          This parameter can be one of the following values:
   *            @arg TIM_OPMode_ETP_positive
   *            @arg TIM_OPMode_ETP_negative
   *            @arg TIM_OPMode_ETP_bothedge
-  * @note  You must select  TIM_OPMode_Single if you want to set One Pluse Mode,
+  * @note  You must select  TIM_OPMode_Single if you want to set One Pulse Mode,
   *		which makes the counter stop automatically at the next UEV.
-  * @retval None
   */
-void RTIM_SetOnePulseOutputMode(RTIM_TypeDef *TIMx, u32 TIM_OPMode, u32 TrigerPolarity)
+void RTIM_SetOnePulseOutputMode(RTIM_TypeDef *TIMx, u32 TIM_OPMode, u32 TriggerPolarity)
 {
 	/* Check the parameters */
 	assert_param(IS_TIM_ONE_PULSE_TIM(TIMx));
 	assert_param(IS_TIM_OPM_MODE(TIM_OPMode));
-	assert_param(IS_TIM_OPM_ETP_MODE(TrigerPolarity));
+	assert_param(IS_TIM_OPM_ETP_MODE(TriggerPolarity));
 
 	/* Reset the OPM & ETP Bit */
 	TIMx->CR &= (u32)~(TIM_BIT_OPM | TIM_MASK_ETP);
 
 	/* Configure the OPM Mode */
-	TIMx->CR |= TIM_OPMode | TrigerPolarity;
+	TIMx->CR |= TIM_OPMode | TriggerPolarity;
 }
 
 /**
-  * @brief  Set the TIMx's One Pulse Mode (output one pulse PWM mode).
-  * @param  TIMx: where x can be 8 to select the TIM peripheral.
-  * @param  TIM_Channel: the channel to be set,
-  *		which can be one of the following parameters @ref TIM_Channel_definitions.
-  * @param  DefaultLevel: specifies the OPM Mode Default Level.
+  * @brief  Set the TIMx's default level in one pulse mode.
+  * @param  TIMx The TIM peripheral with PWM output capability. See IS_TIM_PWM_TIM macro.
+  * @param  TIM_Channel The channel to be set,
+  *		which can be one of the following parameters @ref TIM_Channel.
+  * @param  DefaultLevel Specifies the OPM Mode Default Level.
   *          This parameter can be one of the following values:
   *            @arg TIMPWM_DefaultLevel_High
   *            @arg TIMPWM_DefaultLevel_Low
-  * @note  You must select  TIM_OPMode_Single if you want to set One Pluse Mode,
+  * @note
+  *		- Takes effect only in PWM output mode's One-Pulse-Mode.
+  *		- You must select TIM_OPMode_Single if you want to set One Pulse Mode,
   *		which makes the counter stop automatically at the next UEV.
-  * @retval None
   */
 void RTIM_SetOnePulseDefaultLevel(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 DefaultLevel)
 {
@@ -688,12 +684,11 @@ void RTIM_SetOnePulseDefaultLevel(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 Defau
 
 
 /**
-  * @brief  Sets the TIMx Phase Sync X value
-  * @param  TIMx: where x can be 8, to select the TIM peripheral.
-  * @param  TIM_Channel: the channel to be set,
-  *		which can be one of the following parameters @ref TIM_Channel_definitions.
-  * @param  TIM_SyncPhase: the phase sync value compared to CNT
-  * @retval None
+  * @brief  Set the TIMx Phase Sync X value
+  * @param  TIMx The TIM peripheral with PWM output capability. See IS_TIM_PWM_TIM macro.
+  * @param  TIM_Channel The channel to be set,
+  *		which can be one of the following parameters @ref TIM_Channel.
+  * @param  TIM_SyncPhase The phase sync value compared to CNT in TIM_CNT
   * @note
   *		- TIM_SyncPhase should always smaller than ARR value
   */
@@ -719,11 +714,11 @@ void RTIM_PSyncxSet(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_SyncPhase)
 }
 
 /**
-  * @brief  Gets the TIMx Phase Sync X value
-  * @param  TIMx: where x can be 8, to select the TIM peripheral.
-  * @param  TIM_Channel: the channel to be read,
-  *		which can be one of the following parameters @ref TIM_Channel_definitions.
-  * @retval  TIMx Phase Sync X value
+  * @brief  Get the TIMx Phase Sync X value
+  * @param  TIMx The TIM peripheral with PWM output capability. See IS_TIM_PWM_TIM macro.
+  * @param  TIM_Channel The channel to be read,
+  *		which can be one of the following parameters @ref TIM_Channel.
+  * @return  TIMx Phase Sync X value.
   */
 u32 RTIM_PSyncxGet(RTIM_TypeDef *TIMx, u16 TIM_Channel)
 {
@@ -735,12 +730,11 @@ u32 RTIM_PSyncxGet(RTIM_TypeDef *TIMx, u16 TIM_Channel)
 }
 
 /**
-  * @brief  Sets the TIMx Phase Sync X direction
-  * @param  TIMx: where x can be 8, to select the TIM peripheral.
-  * @param  TIM_Channel: the channel to be set,
-  *		which can be one of the following parameters @ref TIM_Channel_definitions.
-  * @param  TIM_SyncDir: TIMPWM_PSync_Delay/TIMPWM_PSync_Ahead
-  * @retval None
+  * @brief  Set the TIMx Phase Sync X direction
+  * @param  TIMx The TIM peripheral with PWM output capability. See IS_TIM_PWM_TIM macro.
+  * @param  TIM_Channel The channel to be set,
+  *		which can be one of the following parameters @ref TIM_Channel.
+  * @param  TIM_SyncDir TIMPWM_PSync_Delay/TIMPWM_PSync_Ahead
   */
 void RTIM_PSyncxDir(RTIM_TypeDef *TIMx, u16 TIM_Channel, u8 TIM_SyncDir)
 {
@@ -763,14 +757,13 @@ void RTIM_PSyncxDir(RTIM_TypeDef *TIMx, u16 TIM_Channel, u8 TIM_SyncDir)
 }
 
 /**
-  * @brief  Enables or disables the preload function of TIMx phase sync register.
-  * @param  TIMx: where x can be 8, to select the TIM peripheral.
-  * @param  TIM_Channel: the channel need to be set,
-  *		which can be one of the following parameters @ref TIM_Channel_definitions
-  * @param  TIM_OCProtection: TIMPWM_PSyncPreload_Enable/TIMPWM_PSyncPreload_Disable
+  * @brief  Enable or disable the preload function of TIMx phase sync register.
+  * @param  TIMx The TIM peripheral with PWM output capability. See IS_TIM_PWM_TIM macro.
+  * @param  TIM_Channel The channel need to be set,
+  *		which can be one of the following parameters @ref TIM_Channel
+  * @param  TIM_PSyncProtection TIMPWM_PSyncPreload_Enable/TIMPWM_PSyncPreload_Disable
   *            @arg TIMPWM_PSyncPreload_Enable: value is loaded in the active register at each update event.
   *            @arg TIMPWM_PSyncPreload_Disable: new value is taken in account immediately
-  * @retval None
   */
 void RTIM_PSyncxPreloadConfig(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_PSyncProtection)
 {
@@ -794,12 +787,11 @@ void RTIM_PSyncxPreloadConfig(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_PSync
 }
 
 /**
-  * @brief  Enables or disables the TIM8 Phase Sync function.
-  * @param  TIMx: where x can be 8, to select the TIM peripheral.
-  * @param  TIM_Channel: specifies the TIM Channel
-  *          This parameter can be one of the following values @ref TIM_Channel_definitions
-  * @param  NewState: ENABLE/DISABLE.
-  * @retval None
+  * @brief  Enable or disable the TIMx Phase Sync function.
+  * @param  TIMx The TIM peripheral with PWM output capability. See IS_TIM_PWM_TIM macro.
+  * @param  TIM_Channel Specifies the TIM Channel
+  *          This parameter can be one of the following values @ref TIM_Channel
+  * @param  NewState ENABLE/DISABLE.
   */
 void RTIM_PSyncxCmd(RTIM_TypeDef *TIMx, u16 TIM_Channel, u8 NewState)
 {
@@ -821,11 +813,11 @@ void RTIM_PSyncxCmd(RTIM_TypeDef *TIMx, u16 TIM_Channel, u8 NewState)
 }
 
 /**
-  * @brief  Gets the TIMx Channel Counter value.
-  * @param  TIMx: where x can be 8 to select the TIM peripheral.
-  * @param  TIM_Channel: specifies the TIM Channel
-  *          This parameter can be one of the following values @ref TIM_Channel_definitions
-  * @retval Counter Register value
+  * @brief  Get the TIMx Channel Counter value.
+  * @param  TIMx The TIM peripheral with PWM output capability. See IS_TIM_PWM_TIM macro.
+  * @param  TIM_Channel Specifies the TIM Channel
+  *          This parameter can be one of the following values @ref TIM_Channel
+  * @return Counter Register value.
   */
 u32 RTIM_GetChannelCountx(RTIM_TypeDef *TIMx, u16 TIM_Channel)
 {

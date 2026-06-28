@@ -31,6 +31,7 @@ static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_inic_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
+static void usbd_inic_wakeup(usb_dev_t *dev);
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "INIC";
@@ -818,6 +819,7 @@ static const usbd_class_driver_t usbd_inic_driver = {
 	.ep_data_in = usbd_inic_handle_ep_data_in,
 	.ep_data_out = usbd_inic_handle_ep_data_out,
 	.status_changed = usbd_inic_status_changed,
+	.wakeup = usbd_inic_wakeup,
 };
 
 /* INIC Device */
@@ -1130,7 +1132,7 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					break;
 				}
 				if (ret == HAL_OK) {
-					ep0_in->xfer_buf[0] = 0U;
+					ep0_in->xfer_buf[0] = alt;
 					ep0_in->xfer_len = 1U;
 					usbd_ep_transmit(dev, ep0_in);
 				}
@@ -1491,13 +1493,13 @@ static int usbd_inic_bt_init(void)
 	ep = &idev->in_ep[ep_num].ep;
 	info = &ep->info;
 	info->addr = USBD_INIC_BT_EP2_BULK_IN;
-	info->type = USB_CH_EP_TYPE_INTR;
+	info->type = USB_CH_EP_TYPE_BULK;
 
 	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
 	info = &ep->info;
 	info->addr = USBD_INIC_BT_EP2_BULK_OUT;
-	info->type = USB_CH_EP_TYPE_INTR;
+	info->type = USB_CH_EP_TYPE_BULK;
 
 	return ret;
 }
@@ -1519,6 +1521,22 @@ static void usbd_inic_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 
 	if (idev->cb->status_changed) {
 		idev->cb->status_changed(old_status, status);
+	}
+}
+
+/**
+  * @brief  Wakeup callback, called when the device resumes from suspend.
+  * @param  dev: USB device instance
+  * @retval void
+  */
+static void usbd_inic_wakeup(usb_dev_t *dev)
+{
+	usbd_inic_dev_t *idev = &usbd_inic_dev;
+
+	UNUSED(dev);
+
+	if (idev->cb->wakeup) {
+		idev->cb->wakeup();
 	}
 }
 

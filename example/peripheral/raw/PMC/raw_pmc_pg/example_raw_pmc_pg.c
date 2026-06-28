@@ -10,8 +10,8 @@ static u32 app_peripheral_suspend(u32 expected_idle_time, void *param)
 	(void) param;
 
 	// For peripherals that need turned off before sleep, call disable or deinit peripheral here
-	printf("\nAP start enter sleep mode ============>\n");
-	printf("app_peripheral_suspend\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nAP start enter sleep mode ============>\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "app_peripheral_suspend\n");
 
 	return TRUE;
 }
@@ -22,12 +22,12 @@ static u32 app_peripheral_resume(u32 expected_idle_time, void *param)
 	(void) param;
 
 	// For peripherals that are turned off before sleep, call enable or init peripheral here
-	printf("app_peripheral_resume\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "app_peripheral_resume\n");
 
 #if defined(CONFIG_AMEBADPLUS)
-	printf("wake status - %lx\n", HAL_READ32(PMC_BASE, WAK_STATUS0));
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "wake status - %lx\n", HAL_READ32(PMC_BASE, WAK_STATUS0));
 #else
-	printf("wake status - %lx %lx\n", HAL_READ32(PMC_BASE, WAK_STATUS0), HAL_READ32(PMC_BASE, WAK_STATUS1));
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "wake status - %lx %lx\n", HAL_READ32(PMC_BASE, WAK_STATUS0), HAL_READ32(PMC_BASE, WAK_STATUS1));
 #endif
 	/*set AP active time*/
 	pmu_set_sysactive_time(5000);
@@ -38,13 +38,13 @@ u32 pmu_aontimer_int(void *Data)
 {
 	(void)Data;
 
-	printf("aontimer handler 1: %x\n", SOCPS_AONWakeReason());
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "aontimer handler 1: %x\n", SOCPS_AONWakeReason());
 	AONTimer_ClearINT();
 
-	printf("aontimer handler 2: %x\n", SOCPS_AONWakeReason());
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "aontimer handler 2: %x\n", SOCPS_AONWakeReason());
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
 
-	printf("PG wakeup test pass!!!!!!!!!!!!\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "PG wakeup test pass!!!!!!!!!!!!\n");
 
 	pmu_acquire_wakelock(PMU_OS);
 
@@ -75,7 +75,7 @@ void pmu_aontimer_wakeup_task(void)
 	/*6. Release wakelock, to make CPU enter sleep mode */
 	pmu_release_wakelock(PMU_OS);
 
-	printf("lockbit:%lx \n", pmu_get_wakelock_status());
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "lockbit:%lx \n", pmu_get_wakelock_status());
 
 	rtos_task_delete(NULL);
 }
@@ -88,7 +88,7 @@ void pmu_aontimer_wakeup_task(void)
 int example_raw_pmc_pg(void)
 {
 	if (rtos_task_create(NULL, "PMU PERIPHERAL WAKEUP DEMO", (rtos_task_t)pmu_aontimer_wakeup_task, NULL, 3072, (1)) != RTK_SUCCESS) {
-		printf("Cannot create pmu_aontimer_wakeup_task demo task\n\r");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Cannot create pmu_aontimer_wakeup_task demo task\n\r");
 	}
 
 	return 0;

@@ -12,15 +12,17 @@
   * @{
   */
 
-/** @defgroup PPE
+/** @defgroup PPE PPE
 * @brief PPE driver modules
 * @{
 */
 
+/// @cond
 /* AUTO_GEN_START */
 
 
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -33,6 +35,7 @@ extern "C" {
   * @{
   */
 
+/// @cond
 /**
   * @brief  PPE Global Register Structure Definition
   */
@@ -94,6 +97,7 @@ typedef struct {
 	PPE_RESULT_LAYER_TypeDef RESULT_LAYER;
 	PPE_INPUT_LAYER_TypeDef INPUT_LAYER[15];
 } PPE_LAYER_TypeDef;
+/// @endcond
 
 /**
   * @brief  PPE Result Layer Address Type
@@ -304,8 +308,10 @@ typedef struct {
 	PPE_PIXEL_FORMAT format;
 	PPE_ADDR_TYPE type;
 } PPE_ResultLayer_InitTypeDef;
+
 /** @} */
 
+/// @cond
 /* Registers Definitions --------------------------------------------------------*/
 
 /** @defgroup PPE_Register_Definitions PPE Register Definitions
@@ -421,127 +427,127 @@ typedef struct {
  * @brief Interrupt Status
  * @{
  **/
-#define PPE_INT_CHN_BUS_ERR_POS                              (15)
-#define PPE_INT_CHN_BUS_ERR_MSK                              (0x1FFFF << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_INT_CHN_BUS_ERR_CLR                              (~PPE_INT_CHN_BUS_ERR_MSK)
-#define PPE_INT_SET_ERR_POS                              (6)
-#define PPE_INT_SET_ERR_MSK                              (0x1 << PPE_INT_SET_ERR_POS)
-#define PPE_INT_SET_ERR_CLR                              (~PPE_INT_SET_ERR_MSK)
-#define PPE_INT_SECURE_ERR_POS                              (5)
-#define PPE_INT_SECURE_ERR_MSK                              (0x1 << PPE_INT_SECURE_ERR_POS)
-#define PPE_INT_SECURE_ERR_CLR                              (~PPE_INT_SECURE_ERR_MSK)
-#define PPE_INT_SUSP_INAC_POS                              (4)
-#define PPE_INT_SUSP_INAC_MSK                              (0x1 << PPE_INT_SUSP_INAC_POS)
-#define PPE_INT_SUSP_INAC_CLR                              (~PPE_INT_SUSP_INAC_MSK)
-#define PPE_INT_LINE_WL_POS                              (3)
-#define PPE_INT_LINE_WL_MSK                              (0x1 << PPE_INT_LINE_WL_POS)
-#define PPE_INT_LINE_WL_CLR                              (~PPE_INT_LINE_WL_MSK)
-#define PPE_INT_LOAD_OVER_POS                              (2)
-#define PPE_INT_LOAD_OVER_MSK                              (0x1 << PPE_INT_LOAD_OVER_POS)
-#define PPE_INT_LOAD_OVER_CLR                              (~PPE_INT_LOAD_OVER_MSK)
-#define PPE_INT_FR_OVER_POS                              (1)
-#define PPE_INT_FR_OVER_MSK                              (0x1 << PPE_INT_FR_OVER_POS)
-#define PPE_INT_FR_OVER_CLR                              (~PPE_INT_FR_OVER_MSK)
-#define PPE_INT_ALL_OVER_POS                              (0)
-#define PPE_INT_ALL_OVER_MSK                              (0x1 << PPE_INT_ALL_OVER_POS)
-#define PPE_INT_ALL_OVER_CLR                              (~PPE_INT_ALL_OVER_MSK)
+#define PPE_INTR_STATUS_CHN_BUS_ERR_POS                              (15)
+#define PPE_INTR_STATUS_CHN_BUS_ERR_MSK                              (0x1FFFF << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_INTR_STATUS_CHN_BUS_ERR_CLR                              (~PPE_INTR_STATUS_CHN_BUS_ERR_MSK)
+#define PPE_INTR_STATUS_SET_ERR_POS                              (6)
+#define PPE_INTR_STATUS_SET_ERR_MSK                              (0x1 << PPE_INTR_STATUS_SET_ERR_POS)
+#define PPE_INTR_STATUS_SET_ERR_CLR                              (~PPE_INTR_STATUS_SET_ERR_MSK)
+#define PPE_INTR_STATUS_SECURE_ERR_POS                              (5)
+#define PPE_INTR_STATUS_SECURE_ERR_MSK                              (0x1 << PPE_INTR_STATUS_SECURE_ERR_POS)
+#define PPE_INTR_STATUS_SECURE_ERR_CLR                              (~PPE_INTR_STATUS_SECURE_ERR_MSK)
+#define PPE_INTR_STATUS_SUSP_INAC_POS                              (4)
+#define PPE_INTR_STATUS_SUSP_INAC_MSK                              (0x1 << PPE_INTR_STATUS_SUSP_INAC_POS)
+#define PPE_INTR_STATUS_SUSP_INAC_CLR                              (~PPE_INTR_STATUS_SUSP_INAC_MSK)
+#define PPE_INTR_STATUS_LINE_WL_POS                              (3)
+#define PPE_INTR_STATUS_LINE_WL_MSK                              (0x1 << PPE_INTR_STATUS_LINE_WL_POS)
+#define PPE_INTR_STATUS_LINE_WL_CLR                              (~PPE_INTR_STATUS_LINE_WL_MSK)
+#define PPE_INTR_STATUS_LOAD_OVER_POS                              (2)
+#define PPE_INTR_STATUS_LOAD_OVER_MSK                              (0x1 << PPE_INTR_STATUS_LOAD_OVER_POS)
+#define PPE_INTR_STATUS_LOAD_OVER_CLR                              (~PPE_INTR_STATUS_LOAD_OVER_MSK)
+#define PPE_INTR_STATUS_FR_OVER_POS                              (1)
+#define PPE_INTR_STATUS_FR_OVER_MSK                              (0x1 << PPE_INTR_STATUS_FR_OVER_POS)
+#define PPE_INTR_STATUS_FR_OVER_CLR                              (~PPE_INTR_STATUS_FR_OVER_MSK)
+#define PPE_INTR_STATUS_ALL_OVER_POS                              (0)
+#define PPE_INTR_STATUS_ALL_OVER_MSK                              (0x1 << PPE_INTR_STATUS_ALL_OVER_POS)
+#define PPE_INTR_STATUS_ALL_OVER_CLR                              (~PPE_INTR_STATUS_ALL_OVER_MSK)
 /** @} */
 
 /** @defgroup INTR_RAW
  * @brief Interrupt Raw Status
  * @{
  **/
-#define PPE_INT_CHN_BUS_ERR_POS                              (15)
-#define PPE_INT_CHN_BUS_ERR_MSK                              (0x1FFFF << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_INT_CHN_BUS_ERR_CLR                              (~PPE_INT_CHN_BUS_ERR_MSK)
-#define PPE_INT_SET_ERR_POS                              (6)
-#define PPE_INT_SET_ERR_MSK                              (0x1 << PPE_INT_SET_ERR_POS)
-#define PPE_INT_SET_ERR_CLR                              (~PPE_INT_SET_ERR_MSK)
-#define PPE_INT_SECURE_ERR_POS                              (5)
-#define PPE_INT_SECURE_ERR_MSK                              (0x1 << PPE_INT_SECURE_ERR_POS)
-#define PPE_INT_SECURE_ERR_CLR                              (~PPE_INT_SECURE_ERR_MSK)
-#define PPE_INT_SUSP_INAC_POS                              (4)
-#define PPE_INT_SUSP_INAC_MSK                              (0x1 << PPE_INT_SUSP_INAC_POS)
-#define PPE_INT_SUSP_INAC_CLR                              (~PPE_INT_SUSP_INAC_MSK)
-#define PPE_INT_LINE_WL_POS                              (3)
-#define PPE_INT_LINE_WL_MSK                              (0x1 << PPE_INT_LINE_WL_POS)
-#define PPE_INT_LINE_WL_CLR                              (~PPE_INT_LINE_WL_MSK)
-#define PPE_INT_LOAD_OVER_POS                              (2)
-#define PPE_INT_LOAD_OVER_MSK                              (0x1 << PPE_INT_LOAD_OVER_POS)
-#define PPE_INT_LOAD_OVER_CLR                              (~PPE_INT_LOAD_OVER_MSK)
-#define PPE_INT_FR_OVER_POS                              (1)
-#define PPE_INT_FR_OVER_MSK                              (0x1 << PPE_INT_FR_OVER_POS)
-#define PPE_INT_FR_OVER_CLR                              (~PPE_INT_FR_OVER_MSK)
-#define PPE_INT_ALL_OVER_POS                              (0)
-#define PPE_INT_ALL_OVER_MSK                              (0x1 << PPE_INT_ALL_OVER_POS)
-#define PPE_INT_ALL_OVER_CLR                              (~PPE_INT_ALL_OVER_MSK)
+#define PPE_INTR_RAW_CHN_BUS_ERR_POS                              (15)
+#define PPE_INTR_RAW_CHN_BUS_ERR_MSK                              (0x1FFFF << PPE_INTR_RAW_CHN_BUS_ERR_POS)
+#define PPE_INTR_RAW_CHN_BUS_ERR_CLR                              (~PPE_INTR_RAW_CHN_BUS_ERR_MSK)
+#define PPE_INTR_RAW_SET_ERR_POS                              (6)
+#define PPE_INTR_RAW_SET_ERR_MSK                              (0x1 << PPE_INTR_RAW_SET_ERR_POS)
+#define PPE_INTR_RAW_SET_ERR_CLR                              (~PPE_INTR_RAW_SET_ERR_MSK)
+#define PPE_INTR_RAW_SECURE_ERR_POS                              (5)
+#define PPE_INTR_RAW_SECURE_ERR_MSK                              (0x1 << PPE_INTR_RAW_SECURE_ERR_POS)
+#define PPE_INTR_RAW_SECURE_ERR_CLR                              (~PPE_INTR_RAW_SECURE_ERR_MSK)
+#define PPE_INTR_RAW_SUSP_INAC_POS                              (4)
+#define PPE_INTR_RAW_SUSP_INAC_MSK                              (0x1 << PPE_INTR_RAW_SUSP_INAC_POS)
+#define PPE_INTR_RAW_SUSP_INAC_CLR                              (~PPE_INTR_RAW_SUSP_INAC_MSK)
+#define PPE_INTR_RAW_LINE_WL_POS                              (3)
+#define PPE_INTR_RAW_LINE_WL_MSK                              (0x1 << PPE_INTR_RAW_LINE_WL_POS)
+#define PPE_INTR_RAW_LINE_WL_CLR                              (~PPE_INTR_RAW_LINE_WL_MSK)
+#define PPE_INTR_RAW_LOAD_OVER_POS                              (2)
+#define PPE_INTR_RAW_LOAD_OVER_MSK                              (0x1 << PPE_INTR_RAW_LOAD_OVER_POS)
+#define PPE_INTR_RAW_LOAD_OVER_CLR                              (~PPE_INTR_RAW_LOAD_OVER_MSK)
+#define PPE_INTR_RAW_FR_OVER_POS                              (1)
+#define PPE_INTR_RAW_FR_OVER_MSK                              (0x1 << PPE_INTR_RAW_FR_OVER_POS)
+#define PPE_INTR_RAW_FR_OVER_CLR                              (~PPE_INTR_RAW_FR_OVER_MSK)
+#define PPE_INTR_RAW_ALL_OVER_POS                              (0)
+#define PPE_INTR_RAW_ALL_OVER_MSK                              (0x1 << PPE_INTR_RAW_ALL_OVER_POS)
+#define PPE_INTR_RAW_ALL_OVER_CLR                              (~PPE_INTR_RAW_ALL_OVER_MSK)
 /** @} */
 
 /** @defgroup INTR_CLR
  * @brief Interrupt Clear
  * @{
  **/
-#define PPE_INT_CHN_BUS_ERR_POS                              (15)
-#define PPE_INT_CHN_BUS_ERR_MSK                              (0x1FFFF << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_INT_CHN_BUS_ERR_CLR                              (~PPE_INT_CHN_BUS_ERR_MSK)
-#define PPE_INT_SET_ERR_POS                              (6)
-#define PPE_INT_SET_ERR_MSK                              (0x1 << PPE_INT_SET_ERR_POS)
-#define PPE_INT_SET_ERR_CLR                              (~PPE_INT_SET_ERR_MSK)
-#define PPE_INT_SECURE_ERR_POS                              (5)
-#define PPE_INT_SECURE_ERR_MSK                              (0x1 << PPE_INT_SECURE_ERR_POS)
-#define PPE_INT_SECURE_ERR_CLR                              (~PPE_INT_SECURE_ERR_MSK)
-#define PPE_INT_SUSP_INAC_POS                              (4)
-#define PPE_INT_SUSP_INAC_MSK                              (0x1 << PPE_INT_SUSP_INAC_POS)
-#define PPE_INT_SUSP_INAC_CLR                              (~PPE_INT_SUSP_INAC_MSK)
-#define PPE_INT_LINE_WL_POS                              (3)
-#define PPE_INT_LINE_WL_MSK                              (0x1 << PPE_INT_LINE_WL_POS)
-#define PPE_INT_LINE_WL_CLR                              (~PPE_INT_LINE_WL_MSK)
-#define PPE_INT_LOAD_OVER_POS                              (2)
-#define PPE_INT_LOAD_OVER_MSK                              (0x1 << PPE_INT_LOAD_OVER_POS)
-#define PPE_INT_LOAD_OVER_CLR                              (~PPE_INT_LOAD_OVER_MSK)
-#define PPE_INT_FR_OVER_POS                              (1)
-#define PPE_INT_FR_OVER_MSK                              (0x1 << PPE_INT_FR_OVER_POS)
-#define PPE_INT_FR_OVER_CLR                              (~PPE_INT_FR_OVER_MSK)
-#define PPE_INT_ALL_OVER_POS                              (0)
-#define PPE_INT_ALL_OVER_MSK                              (0x1 << PPE_INT_ALL_OVER_POS)
-#define PPE_INT_ALL_OVER_CLR                              (~PPE_INT_ALL_OVER_MSK)
+#define PPE_INTR_CLR_CHN_BUS_ERR_POS                              (15)
+#define PPE_INTR_CLR_CHN_BUS_ERR_MSK                              (0x1FFFF << PPE_INTR_CLR_CHN_BUS_ERR_POS)
+#define PPE_INTR_CLR_CHN_BUS_ERR_CLR                              (~PPE_INTR_CLR_CHN_BUS_ERR_MSK)
+#define PPE_INTR_CLR_SET_ERR_POS                              (6)
+#define PPE_INTR_CLR_SET_ERR_MSK                              (0x1 << PPE_INTR_CLR_SET_ERR_POS)
+#define PPE_INTR_CLR_SET_ERR_CLR                              (~PPE_INTR_CLR_SET_ERR_MSK)
+#define PPE_INTR_CLR_SECURE_ERR_POS                              (5)
+#define PPE_INTR_CLR_SECURE_ERR_MSK                              (0x1 << PPE_INTR_CLR_SECURE_ERR_POS)
+#define PPE_INTR_CLR_SECURE_ERR_CLR                              (~PPE_INTR_CLR_SECURE_ERR_MSK)
+#define PPE_INTR_CLR_SUSP_INAC_POS                              (4)
+#define PPE_INTR_CLR_SUSP_INAC_MSK                              (0x1 << PPE_INTR_CLR_SUSP_INAC_POS)
+#define PPE_INTR_CLR_SUSP_INAC_CLR                              (~PPE_INTR_CLR_SUSP_INAC_MSK)
+#define PPE_INTR_CLR_LINE_WL_POS                              (3)
+#define PPE_INTR_CLR_LINE_WL_MSK                              (0x1 << PPE_INTR_CLR_LINE_WL_POS)
+#define PPE_INTR_CLR_LINE_WL_CLR                              (~PPE_INTR_CLR_LINE_WL_MSK)
+#define PPE_INTR_CLR_LOAD_OVER_POS                              (2)
+#define PPE_INTR_CLR_LOAD_OVER_MSK                              (0x1 << PPE_INTR_CLR_LOAD_OVER_POS)
+#define PPE_INTR_CLR_LOAD_OVER_CLR                              (~PPE_INTR_CLR_LOAD_OVER_MSK)
+#define PPE_INTR_CLR_FR_OVER_POS                              (1)
+#define PPE_INTR_CLR_FR_OVER_MSK                              (0x1 << PPE_INTR_CLR_FR_OVER_POS)
+#define PPE_INTR_CLR_FR_OVER_CLR                              (~PPE_INTR_CLR_FR_OVER_MSK)
+#define PPE_INTR_CLR_ALL_OVER_POS                              (0)
+#define PPE_INTR_CLR_ALL_OVER_MSK                              (0x1 << PPE_INTR_CLR_ALL_OVER_POS)
+#define PPE_INTR_CLR_ALL_OVER_CLR                              (~PPE_INTR_CLR_ALL_OVER_MSK)
 /** @} */
 
 /** @defgroup INTR_MASK
  * @brief Interrupt Mask
  * @{
  **/
-#define PPE_INT_CHN_BUS_ERR_POS                              (15)
-#define PPE_INT_CHN_BUS_ERR_MSK                              (0x1FFFF << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_INT_CHN_BUS_ERR_CLR                              (~PPE_INT_CHN_BUS_ERR_MSK)
+#define PPE_INTR_MASK_CHN_BUS_ERR_POS                              (15)
+#define PPE_INTR_MASK_CHN_BUS_ERR_MSK                              (0x1FFFF << PPE_INTR_MASK_CHN_BUS_ERR_POS)
+#define PPE_INTR_MASK_CHN_BUS_ERR_CLR                              (~PPE_INTR_MASK_CHN_BUS_ERR_MSK)
 /* INTR_MASK[6]: SET_ERR, settings error */
-#define PPE_INT_SET_ERR_POS                              (6)
-#define PPE_INT_SET_ERR_MSK                              (0x1 << PPE_INT_SET_ERR_POS)
-#define PPE_INT_SET_ERR_CLR                              (~PPE_INT_SET_ERR_MSK)
+#define PPE_INTR_MASK_SET_ERR_POS                              (6)
+#define PPE_INTR_MASK_SET_ERR_MSK                              (0x1 << PPE_INTR_MASK_SET_ERR_POS)
+#define PPE_INTR_MASK_SET_ERR_CLR                              (~PPE_INTR_MASK_SET_ERR_MSK)
 /* INTR_MASK[5]: SECURE_ERR, secure error */
-#define PPE_INT_SECURE_ERR_POS                              (5)
-#define PPE_INT_SECURE_ERR_MSK                              (0x1 << PPE_INT_SECURE_ERR_POS)
-#define PPE_INT_SECURE_ERR_CLR                              (~PPE_INT_SECURE_ERR_MSK)
+#define PPE_INTR_MASK_SECURE_ERR_POS                              (5)
+#define PPE_INTR_MASK_SECURE_ERR_MSK                              (0x1 << PPE_INTR_MASK_SECURE_ERR_POS)
+#define PPE_INTR_MASK_SECURE_ERR_CLR                              (~PPE_INTR_MASK_SECURE_ERR_MSK)
 /* INTR_MASK[4]: SUSP_INAC, suspend inactive */
-#define PPE_INT_SUSP_INAC_POS                              (4)
-#define PPE_INT_SUSP_INAC_MSK                              (0x1 << PPE_INT_SUSP_INAC_POS)
-#define PPE_INT_SUSP_INAC_CLR                              (~PPE_INT_SUSP_INAC_MSK)
+#define PPE_INTR_MASK_SUSP_INAC_POS                              (4)
+#define PPE_INTR_MASK_SUSP_INAC_MSK                              (0x1 << PPE_INTR_MASK_SUSP_INAC_POS)
+#define PPE_INTR_MASK_SUSP_INAC_CLR                              (~PPE_INTR_MASK_SUSP_INAC_MSK)
 /* INTR_MASK[3]: LINE_WL,  */
-#define PPE_INT_LINE_WL_POS                              (3)
-#define PPE_INT_LINE_WL_MSK                              (0x1 << PPE_INT_LINE_WL_POS)
-#define PPE_INT_LINE_WL_CLR                              (~PPE_INT_LINE_WL_MSK)
+#define PPE_INTR_MASK_LINE_WL_POS                              (3)
+#define PPE_INTR_MASK_LINE_WL_MSK                              (0x1 << PPE_INTR_MASK_LINE_WL_POS)
+#define PPE_INTR_MASK_LINE_WL_CLR                              (~PPE_INTR_MASK_LINE_WL_MSK)
 /* INTR_MASK[2]: LOAD_OVER,  */
-#define PPE_INT_LOAD_OVER_POS                              (2)
-#define PPE_INT_LOAD_OVER_MSK                              (0x1 << PPE_INT_LOAD_OVER_POS)
-#define PPE_INT_LOAD_OVER_CLR                              (~PPE_INT_LOAD_OVER_MSK)
-/* INTR_MASKINTR_MASK[1]: FR_OVER,  */
-#define PPE_INT_FR_OVER_POS                              (1)
-#define PPE_INT_FR_OVER_MSK                              (0x1 << PPE_INT_FR_OVER_POS)
-#define PPE_INT_FR_OVER_CLR                              (~PPE_INT_FR_OVER_MSK)
+#define PPE_INTR_MASK_LOAD_OVER_POS                              (2)
+#define PPE_INTR_MASK_LOAD_OVER_MSK                              (0x1 << PPE_INTR_MASK_LOAD_OVER_POS)
+#define PPE_INTR_MASK_LOAD_OVER_CLR                              (~PPE_INTR_MASK_LOAD_OVER_MSK)
+/* INTR_MASK[1]: FR_OVER,  */
+#define PPE_INTR_MASK_FR_OVER_POS                              (1)
+#define PPE_INTR_MASK_FR_OVER_MSK                              (0x1 << PPE_INTR_MASK_FR_OVER_POS)
+#define PPE_INTR_MASK_FR_OVER_CLR                              (~PPE_INTR_MASK_FR_OVER_MSK)
 /* INTR_MASK[0]: ALL_OVER,  */
-#define PPE_INT_ALL_OVER_POS                              (0)
-#define PPE_INT_ALL_OVER_MSK                              (0x1 << PPE_INT_ALL_OVER_POS)
-#define PPE_INT_ALL_OVER_CLR                              (~PPE_INT_ALL_OVER_MSK)
+#define PPE_INTR_MASK_ALL_OVER_POS                              (0)
+#define PPE_INTR_MASK_ALL_OVER_MSK                              (0x1 << PPE_INTR_MASK_ALL_OVER_POS)
+#define PPE_INTR_MASK_ALL_OVER_CLR                              (~PPE_INTR_MASK_ALL_OVER_MSK)
 /** @} */
 
 
@@ -748,41 +754,51 @@ typedef struct {
 #define INPUT_LAYER_HW_HS_CLR                              (~INPUT_LAYER_HW_HS_MSK)
 /** @} */
 
+/** @defgroup PPE_INTR_ST PPE Interrupt Status Bits
+  * @brief Interrupt status bits for PPE_ClearINTPendingBit and PPE_MaskINTConfig.
+  * @{
+  */
+#define PPE_ALL_OVER_INT                                ((u32)0x1 << PPE_INTR_STATUS_ALL_OVER_POS)
+#define PPE_FR_OVER_INT                                 ((u32)0x1 << PPE_INTR_STATUS_FR_OVER_POS)
+#define PPE_LOAD_OVER_INT                               ((u32)0x1 << PPE_INTR_STATUS_LOAD_OVER_POS)
+#define PPE_LINE_WL_INT                                 ((u32)0x1 << PPE_INTR_STATUS_LINE_WL_POS)
+#define PPE_SUSP_INAC_INT                               ((u32)0x1 << PPE_INTR_STATUS_SUSP_INAC_POS)
+/** @} */
+
+/** @defgroup PPE_INTR_ERR PPE Interrupt Error Bits
+  * @brief Interrupt error bits for internal use.
+  * @{
+  */
+#define PPE_SECURE_ERR_INT                              ((u32)0x1 << PPE_INTR_STATUS_SECURE_ERR_POS)
+#define PPE_SET_ERR_INT                                 ((u32)0x1 << PPE_INTR_STATUS_SET_ERR_POS)
+#define PPE_BUS1_ERR_INT                                ((u32)0x1 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS2_ERR_INT                                ((u32)0x2 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS3_ERR_INT                                ((u32)0x4 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS4_ERR_INT                                ((u32)0x8 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS5_ERR_INT                                ((u32)0x10 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS6_ERR_INT                                ((u32)0x20 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS7_ERR_INT                                ((u32)0x40 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS8_ERR_INT                                ((u32)0x80 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS9_ERR_INT                                ((u32)0x100 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS10_ERR_INT                               ((u32)0x200 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS11_ERR_INT                               ((u32)0x400 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS12_ERR_INT                               ((u32)0x800 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS13_ERR_INT                               ((u32)0x1000 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS14_ERR_INT                               ((u32)0x2000 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS15_ERR_INT                               ((u32)0x4000 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS16_ERR_INT                               ((u32)0x8000 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+#define PPE_BUS17_ERR_INT                               ((u32)0x10000 << PPE_INTR_STATUS_CHN_BUS_ERR_POS)
+/** @} */
+
 /**
   * @}
   */
-
+/// @endcond
 
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup PPE_Exported_Definitions PPE Exported Constants
   * @{
   */
-
-#define PPE_ALL_OVER_INT                                ((u32)0x1 << PPE_INT_ALL_OVER_POS)
-#define PPE_FR_OVER_INT                                 ((u32)0x1 << PPE_INT_FR_OVER_POS)
-#define PPE_LOAD_OVER_INT                               ((u32)0x1 << PPE_INT_LOAD_OVER_POS)
-#define PPE_LINE_WL_INT                                 ((u32)0x1 << PPE_INT_LINE_WL_POS)
-#define PPE_SUSP_INAC_INT                               ((u32)0x1 << PPE_INT_SUSP_INAC_POS)
-#define PPE_SECURE_ERR_INT                              ((u32)0x1 << PPE_INT_SECURE_ERR_POS)
-#define PPE_SET_ERR_INT                                 ((u32)0x1 << PPE_INT_SET_ERR_POS)
-#define PPE_BUS1_ERR_INT                                ((u32)0x1 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS2_ERR_INT                                ((u32)0x2 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS3_ERR_INT                                ((u32)0x4 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS4_ERR_INT                                ((u32)0x8 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS5_ERR_INT                                ((u32)0x10 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS6_ERR_INT                                ((u32)0x20 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS7_ERR_INT                                ((u32)0x40 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS8_ERR_INT                                ((u32)0x80 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS9_ERR_INT                                ((u32)0x100 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS10_ERR_INT                               ((u32)0x200 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS11_ERR_INT                               ((u32)0x400 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS12_ERR_INT                               ((u32)0x800 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS13_ERR_INT                               ((u32)0x1000 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS14_ERR_INT                               ((u32)0x2000 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS15_ERR_INT                               ((u32)0x4000 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS16_ERR_INT                               ((u32)0x8000 << PPE_INT_CHN_BUS_ERR_POS)
-#define PPE_BUS17_ERR_INT                               ((u32)0x10000 << PPE_INT_CHN_BUS_ERR_POS)
-
 
 #define IS_PPE_CHN_INDEX(chn)                               (((chn) < 17) && ((chn) >= 0))
 
@@ -804,9 +820,18 @@ typedef struct {
 
 /** @} */
 
-/** @} */
+/**
+  * @brief  PPE Global State Definition
+  */
+typedef enum {
+	PPE_STATE_DISABLE  = 0, /* PPE is disabled */
+	PPE_STATE_RUNNING  = 1, /* PPE is running */
+} PPE_GLOBAL_STATE;
 
-/** @} */
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup PPE_Exported_Functions PPE Exported Functions
+  * @{
+  */
 
 void PPE_Cmd(int state);
 u32 PPE_GetGlobalState(void);
@@ -832,6 +857,10 @@ void PPE_ResultLayer_StructInit(PPE_ResultLayer_InitTypeDef *layer_init_struct);
 void PPE_Init(PPE_InitTypeDef *PPE_init_struct);
 void PPE_InitInputLayer(uint8_t id, PPE_InputLayer_InitTypeDef *layer_init_struct);
 void PPE_InitResultLayer(PPE_ResultLayer_InitTypeDef *layer_init_struct);
+void PPE_SetLine(u32 line);
+/**
+  * @}
+  */
 
 
 #ifdef __cplusplus
@@ -839,5 +868,13 @@ void PPE_InitResultLayer(PPE_ResultLayer_InitTypeDef *layer_init_struct);
 #endif
 
 /* MANUAL_GEN_END */
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
 
 #endif

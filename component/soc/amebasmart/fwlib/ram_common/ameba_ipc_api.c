@@ -71,6 +71,26 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 	return 0;
 }
 
+/**
+  * @brief  Set enter and exit critical functions for ipc sema.
+  * @param  pfunc1 Enter critical function.
+  * @param  pfunc2 Exit critical function.
+  */
+void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32))
+{
+	ipc_enter_func = pfunc1;
+	ipc_exit_func = pfunc2;
+}
+
+/**
+  * @brief  Set delay stub function for ipc sema.
+  * @param  pfunc Delay function.
+  */
+void IPC_SEMDelayStub(void (*pfunc)(uint32_t))
+{
+	ipc_delay_func = pfunc;
+}
+
 /** @defgroup IPC_Exported_Functions IPC Exported Functions
   * @{
   */
@@ -246,25 +266,6 @@ PIPC_MSG_STRUCT ipc_get_message(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum)
 	return &IPC_MSG[msg_idx];
 }
 
-/**
-  * @brief  Set delay function for ipc sema.
-  * @param  pfunc1 Enter critical function.
-  * @param  pfunc2 Exit critical function.
-  */
-void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32))
-{
-	ipc_enter_func = pfunc1;
-	ipc_exit_func = pfunc2;
-}
-
-/**
-  * @brief  Set delay stub function for ipc sema.
-  * @param  pfunc Delay function.
-  */
-void IPC_SEMDelayStub(void (*pfunc)(uint32_t))
-{
-	ipc_delay_func = pfunc;
-}
 /**@}*/
 
 /**
@@ -365,5 +366,6 @@ u32 IPC_SEMFree(u32 SEM_Idx)
 
 	return TRUE;
 }
+
 /**@}*/
 /**@}*/

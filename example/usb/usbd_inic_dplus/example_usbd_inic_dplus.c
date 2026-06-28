@@ -19,19 +19,24 @@
 #define USBD_INIC_BULK_BUF_SIZE							64U
 
 // Thread priorities
-#define CONFIG_USBD_INIC_INIT_THREAD_PRIORITY		5
-#define CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY	8
-#define CONFIG_USBD_INIC_XFER_THREAD_PRIORITY		6
-#define CONFIG_USBD_INIC_RESET_THREAD_PRIORITY		6
+#define CONFIG_USBD_INIC_INIT_THREAD_PRIORITY           5
+#define CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY        8
+#define CONFIG_USBD_INIC_XFER_THREAD_PRIORITY           6
+#define CONFIG_USBD_INIC_RESET_THREAD_PRIORITY          6
+
+// Thread stack sizes
+#define CONFIG_USBD_INIC_INIT_THREAD_STACK_SIZE           1024U
+#define CONFIG_USBD_INIC_HOTPLUG_THREAD_STACK_SIZE        1024U
+#define CONFIG_USBD_INIC_XFER_THREAD_STACK_SIZE           1024U
+#define CONFIG_USBD_INIC_RESET_THREAD_STACK_SIZE          1024U
 
 // Vendor requests
-#define USBD_INIC_VENDOR_REQ_FW_DOWNLOAD			0xF0U
+#define USBD_INIC_VENDOR_REQ_FW_DOWNLOAD    0xF0U
 #define USBD_INIC_VENDOR_QUERY_CMD					0x01U
 #define USBD_INIC_VENDOR_QUERY_ACK					0x81U
 #define USBD_INIC_VENDOR_RESET_CMD					0x06U
 #define USBD_INIC_VENDOR_RESET_ACK					0x86U
 
-#define USBD_INIC_FW_TYPE_ROM						0xF0U
 #define USBD_INIC_FW_TYPE_RAM						0xF1U
 
 /* Private types -------------------------------------------------------------*/
@@ -484,20 +489,24 @@ static void example_usbd_inic_thread(void *param)
 		goto clear_usb_driver_exit;
 	}
 
-	ret = rtos_task_create(&wifi_bulk_in_task, "example_usbd_inic_wifi_bulk_in_thread", example_usbd_inic_wifi_bulk_in_thread, NULL, 1024,
-						   CONFIG_USBD_INIC_XFER_THREAD_PRIORITY);
+	ret = rtos_task_create(&wifi_bulk_in_task, "example_usbd_inic_wifi_bulk_in_thread",
+						   example_usbd_inic_wifi_bulk_in_thread, NULL,
+						   CONFIG_USBD_INIC_XFER_THREAD_STACK_SIZE, CONFIG_USBD_INIC_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_class_exit;
 	}
 
-	ret = rtos_task_create(&reset_task, "example_usbd_inic_reset_thread", example_usbd_inic_reset_thread, NULL, 1024, CONFIG_USBD_INIC_RESET_THREAD_PRIORITY);
+	ret = rtos_task_create(&reset_task, "example_usbd_inic_reset_thread",
+						   example_usbd_inic_reset_thread, NULL,
+						   CONFIG_USBD_INIC_RESET_THREAD_STACK_SIZE, CONFIG_USBD_INIC_RESET_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_wifi_bulk_in_task;
 	}
 
 #if CONFIG_USBD_INIC_HOTPLUG
-	ret = rtos_task_create(&hotplug_task, "example_usbd_inic_hotplug_thread", example_usbd_inic_hotplug_thread, NULL, 1024,
-						   CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&hotplug_task, "example_usbd_inic_hotplug_thread",
+						   example_usbd_inic_hotplug_thread, NULL,
+						   CONFIG_USBD_INIC_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_reset_task;
 	}
@@ -538,11 +547,12 @@ exit:
 
 void example_usbd_inic_dplus(void)
 {
-	int status;
+	int ret;
 	rtos_task_t task;
 
-	status = rtos_task_create(&task, "example_usbd_inic_thread", example_usbd_inic_thread, NULL, 1024, CONFIG_USBD_INIC_INIT_THREAD_PRIORITY);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&task, "example_usbd_inic_thread", example_usbd_inic_thread, NULL,
+						   CONFIG_USBD_INIC_INIT_THREAD_STACK_SIZE, CONFIG_USBD_INIC_INIT_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD INIC thread fail\n");
 	}
 }

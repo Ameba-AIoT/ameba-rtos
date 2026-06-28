@@ -249,10 +249,13 @@ void hrs_write_hdl(void *data)
 		BT_AT_PRINT("+BLEGATTS:write,%u,%u,%u,%u,%u,%u\r\n",
 					p_write_ind->app_id, p_write_ind->conn_handle, p_write_ind->index,
 					p_write_ind->len, p_write_ind->type, hrs_ctrl_point_val);
-		if (hrs_ctrl_point_val) {
-			heart_rate_measurement_val.energy_expended = 0;
-			energy_expended_reset_time = osif_sys_time_get();
+		if (hrs_ctrl_point_val != 0x1) {
+			write_resp.err_code = RTK_BT_ATT_ERR_INVALID_VALUE;
+			goto send_rsp;
 		}
+
+		heart_rate_measurement_val.energy_expended = 0;
+		energy_expended_reset_time = osif_sys_time_get();
 	} else {
 		BT_LOGE("[APP] HRS write event unknown index: %d\r\n", p_write_ind->index);
 		write_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;

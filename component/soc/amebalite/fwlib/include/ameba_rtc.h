@@ -321,9 +321,9 @@ typedef struct {
 /** @defgroup RTC_Input_Parameter_Format RTC Input Parameter Format
   * @{
   */
-#define RTC_Format_BIN			((u32)0x000000000)
-#define RTC_Format_BCD			((u32)0x000000001)
-#define IS_RTC_FORMAT(FORMAT)	(((FORMAT) == RTC_Format_BIN) || ((FORMAT) == RTC_Format_BCD))
+#define RTC_Format_BIN			((u32)0x000000000) /*!< Binary input parameter format. */
+#define RTC_Format_BCD			((u32)0x000000001) /*!< BCD input parameter format. */
+#define IS_RTC_FORMAT(FORMAT)	(((FORMAT) == RTC_Format_BIN) || ((FORMAT) == RTC_Format_BCD)) /*!< Check if RTC format value is valid. */
 /**
   * @}
   */
@@ -331,11 +331,12 @@ typedef struct {
 /** @defgroup RTC_Hour_Format RTC Hour Format
   * @{
   */
-#define RTC_HourFormat_24					((u32)0x00000000)
-#define RTC_HourFormat_12					((u32)0x00000080)
+#define RTC_HourFormat_24					((u32)0x00000000) /*!< 24-hour clock format. */
+#define RTC_HourFormat_12					((u32)0x00000080) /*!< 12-hour AM/PM clock format. */
+/** @brief Check if RTC hour format value is valid. */
 #define IS_RTC_HOUR_FORMAT(FORMAT)			(((FORMAT) == RTC_HourFormat_12) || \
 											((FORMAT) == RTC_HourFormat_24))
-#define IS_RTC_TIME_DAY_THRES(TIME_DAYS)	((TIME_DAYS) <= 0x1FF)
+#define IS_RTC_TIME_DAY_THRES(TIME_DAYS)	((TIME_DAYS) <= 0x1FF) /*!< Check if RTC time day threshold value is valid. */
 
 /**
   * @}
@@ -344,7 +345,7 @@ typedef struct {
 /** @defgroup RTC_Asynchronous_Predivider RTC Asynchronous Predivider
   * @{
   */
-#define IS_RTC_ASYNCH_PREDIV(PREDIV)	((PREDIV) <= 0x1FF)
+#define IS_RTC_ASYNCH_PREDIV(PREDIV)	((PREDIV) <= 0x1FF) /*!< Check if RTC asynchronous predivider value is valid. */
 /**
   * @}
   */
@@ -352,7 +353,7 @@ typedef struct {
 /** @defgroup RTC_Synchronous_Predivider RTC Synchronous Predivider
   * @{
   */
-#define IS_RTC_SYNCH_PREDIV(PREDIV)		((PREDIV) <= 0x1FF)
+#define IS_RTC_SYNCH_PREDIV(PREDIV)		((PREDIV) <= 0x1FF) /*!< Check if RTC synchronous predivider value is valid. */
 /**
   * @}
   */
@@ -360,8 +361,8 @@ typedef struct {
 /** @defgroup RTC_Day_Threshold RTC Day Threshold
   * @{
   */
-#define RTC_DAYTHRES_MSK			((u32)0xFF800000)
-#define IS_RTC_DAY_THRES(DAYS)		((DAYS) <= 0x1FF)
+#define RTC_DAYTHRES_MSK			((u32)0xFF800000) /*!< Mask for RTC day threshold field. */
+#define IS_RTC_DAY_THRES(DAYS)		((DAYS) <= 0x1FF) /*!< Check if RTC day threshold value is valid. */
 /**
   * @}
   */
@@ -369,7 +370,7 @@ typedef struct {
 /** @defgroup RTC_Base_Year RTC Base Year
   * @{
   */
-#define RTC_BASE_YEAR		((u16)1900)
+#define RTC_BASE_YEAR		((u16)1900) /*!< RTC base year for year calculations. */
 /**
   * @}
   */
@@ -377,6 +378,7 @@ typedef struct {
 /** @defgroup RTC_Year_Threshold RTC Year Threshold
   * @{
   */
+/** @brief Check if RTC year threshold value is valid. */
 #define IS_RTC_YEAR_THRES(YEAR)		((YEAR >= RTC_BASE_YEAR) && \
 									((YEAR - RTC_BASE_YEAR) <= 0xFF))
 /**
@@ -386,10 +388,10 @@ typedef struct {
 /** @defgroup RTC_Time_Definitions RTC Time Definitions
   * @{
   */
-#define IS_RTC_HOUR12(HOUR)		(((HOUR) > 0) && ((HOUR) <= 12))
-#define IS_RTC_HOUR24(HOUR)		((HOUR) <= 23)
-#define IS_RTC_MINUTES(MINUTES)	((MINUTES) <= 59)
-#define IS_RTC_SECONDS(SECONDS)	((SECONDS) <= 59)
+#define IS_RTC_HOUR12(HOUR)		(((HOUR) > 0) && ((HOUR) <= 12)) /*!< Check if RTC 12-hour value is valid. */
+#define IS_RTC_HOUR24(HOUR)		((HOUR) <= 23) /*!< Check if RTC 24-hour value is valid. */
+#define IS_RTC_MINUTES(MINUTES)	((MINUTES) <= 59) /*!< Check if RTC minutes value is valid. */
+#define IS_RTC_SECONDS(SECONDS)	((SECONDS) <= 59) /*!< Check if RTC seconds value is valid. */
 /**
   * @}
   */
@@ -397,9 +399,9 @@ typedef struct {
 /** @defgroup RTC_AM_PM RTC AM PM
   * @{
   */
-#define RTC_H12_AM				((u8)0x00) //AM or 24-hour format
-#define RTC_H12_PM				((u8)0x01) //PM
-#define IS_RTC_H12_AMPM(PM)		(((PM) == RTC_H12_AM) || ((PM) == RTC_H12_PM))
+#define RTC_H12_AM				((u8)0x00) /*!< AM or 24-hour format indicator. */
+#define RTC_H12_PM				((u8)0x01) /*!< PM hour format indicator. */
+#define IS_RTC_H12_AMPM(PM)		(((PM) == RTC_H12_AM) || ((PM) == RTC_H12_PM)) /*!< Check if RTC AM/PM value is valid. */
 /**
   * @}
   */
@@ -407,12 +409,12 @@ typedef struct {
 /** @defgroup RTC_AlarmMask1 RTC Alarm Mask 1
   * @{
   */
-#define RTC_AlarmMask_None		((u32)0x00000000)
-#define RTC_AlarmMask_Hours		((u32)0x00800000)
-#define RTC_AlarmMask_Minutes	((u32)0x00008000)
-#define RTC_AlarmMask_Seconds	((u32)0x00000080)
-#define RTC_AlarmMask_All		((u32)0x00808080)
-#define IS_ALARM_MASK(MASK)		(((MASK) & 0x7F7F7F) == 0)
+#define RTC_AlarmMask_None		((u32)0x00000000) /*!< No alarm fields are masked. */
+#define RTC_AlarmMask_Hours		((u32)0x00800000) /*!< Alarm hours field is masked. */
+#define RTC_AlarmMask_Minutes	((u32)0x00008000) /*!< Alarm minutes field is masked. */
+#define RTC_AlarmMask_Seconds	((u32)0x00000080) /*!< Alarm seconds field is masked. */
+#define RTC_AlarmMask_All		((u32)0x00808080) /*!< All alarm time fields are masked. */
+#define IS_ALARM_MASK(MASK)		(((MASK) & 0x7F7F7F) == 0) /*!< Check if alarm mask value is valid. */
 /**
   * @}
   */
@@ -420,9 +422,9 @@ typedef struct {
 /** @defgroup RTC_AlarmMask2 RTC Alarm Mask 2
   * @{
   */
-#define RTC_Alarm2Mask_None		((u32)0x00000000)
-#define RTC_Alarm2Mask_Days		((u32)0x00000200)
-#define IS_ALARM2_MASK(MASK)	(((MASK) & ~RTC_Alarm2Mask_Days) == 0)
+#define RTC_Alarm2Mask_None		((u32)0x00000000) /*!< No alarm2 day field is masked. */
+#define RTC_Alarm2Mask_Days		((u32)0x00000200) /*!< Alarm2 day field is masked. */
+#define IS_ALARM2_MASK(MASK)	(((MASK) & ~RTC_Alarm2Mask_Days) == 0) /*!< Check if alarm2 mask value is valid. */
 /**
   * @}
   */
@@ -430,13 +432,15 @@ typedef struct {
 /** @defgroup RTC_DayLightSaving_Control RTC DayLight Saving Control
   * @{
   */
-#define RTC_DayLightSaving_SUB1H		((u32)0x00000002)
-#define RTC_DayLightSaving_ADD1H		((u32)0x00000001)
+#define RTC_DayLightSaving_SUB1H		((u32)0x00000002) /*!< Subtract one hour for winter time change. */
+#define RTC_DayLightSaving_ADD1H		((u32)0x00000001) /*!< Add one hour for summer time change. */
+/** @brief Check if RTC daylight saving value is valid. */
 #define IS_RTC_DAYLIGHT_SAVING(SAVE)	(((SAVE) == RTC_DayLightSaving_SUB1H) || \
 										((SAVE) == RTC_DayLightSaving_ADD1H))
 
-#define RTC_StoreOperation_Reset			((u32)0x00000000)
-#define RTC_StoreOperation_Set				((u32)0x00000004)
+#define RTC_StoreOperation_Reset			((u32)0x00000000) /*!< Reset the daylight saving backup bit. */
+#define RTC_StoreOperation_Set				((u32)0x00000004) /*!< Set the daylight saving backup bit. */
+/** @brief Check if RTC store operation value is valid. */
 #define IS_RTC_STORE_OPERATION(OPERATION)	(((OPERATION) == RTC_StoreOperation_Reset) || \
 											((OPERATION) == RTC_StoreOperation_Set))
 /**
@@ -446,11 +450,12 @@ typedef struct {
 /** @defgroup RTC_Output_Control RTC Output Control
   * @{
   */
-#define RTC_Output_Disable		((u32)0x00000000)
-#define RTC_Output_Alarm		((u32)0x00000020) ////wakeup
-#define RTC_Output_clkspre		((u32)0x00000040) ////1Hz
-#define RTC_Output_clkapre		((u32)0x00000060) ////256Hz
+#define RTC_Output_Disable		((u32)0x00000000) /*!< Disable RTC output. */
+#define RTC_Output_Alarm		((u32)0x00000020) /*!< Output alarm wakeup signal. */
+#define RTC_Output_clkspre		((u32)0x00000040) /*!< Output 1 Hz synchronous clock (clk_spre). */
+#define RTC_Output_clkapre		((u32)0x00000060) /*!< Output 256 Hz asynchronous clock (clk_apre). */
 
+/** @brief Check if RTC output value is valid. */
 #define IS_RTC_OUTPUT(OUTPUT)	(((OUTPUT) == RTC_Output_Disable) || \
 								((OUTPUT) == RTC_Output_Alarm) || \
 								((OUTPUT) == RTC_Output_clkspre) || \
@@ -462,15 +467,16 @@ typedef struct {
 /** @defgroup RTC_Smooth_Calibration_Control RTC Smooth Calibration Control
   * @{
   */
-#define RTC_CalibPeriod_1MIN		((u32)0x00000000)
-#define RTC_CalibPeriod_2MIN		((u32)0x00010000)
-#define RTC_CalibPeriod_3MIN		((u32)0x00020000)
-#define RTC_CalibPeriod_4MIN		((u32)0x00030000)
-#define RTC_CalibPeriod_5MIN		((u32)0x00040000)
-#define RTC_CalibPeriod_6MIN		((u32)0x00050000)
-#define RTC_CalibPeriod_7MIN		((u32)0x00060000)
-#define RTC_CalibPeriod_8MIN		((u32)0x00070000)
+#define RTC_CalibPeriod_1MIN		((u32)0x00000000) /*!< Calibration period of 1 minute. */
+#define RTC_CalibPeriod_2MIN		((u32)0x00010000) /*!< Calibration period of 2 minutes. */
+#define RTC_CalibPeriod_3MIN		((u32)0x00020000) /*!< Calibration period of 3 minutes. */
+#define RTC_CalibPeriod_4MIN		((u32)0x00030000) /*!< Calibration period of 4 minutes. */
+#define RTC_CalibPeriod_5MIN		((u32)0x00040000) /*!< Calibration period of 5 minutes. */
+#define RTC_CalibPeriod_6MIN		((u32)0x00050000) /*!< Calibration period of 6 minutes. */
+#define RTC_CalibPeriod_7MIN		((u32)0x00060000) /*!< Calibration period of 7 minutes. */
+#define RTC_CalibPeriod_8MIN		((u32)0x00070000) /*!< Calibration period of 8 minutes. */
 
+/** @brief Check if RTC calibration period value is valid. */
 #define IS_RTC_CALIB_PERIOD(DCP)	(((DCP) == RTC_CalibPeriod_1MIN) || \
 									((DCP) == RTC_CalibPeriod_2MIN) || \
 									((DCP) == RTC_CalibPeriod_3MIN) || \
@@ -480,19 +486,21 @@ typedef struct {
 									((DCP) == RTC_CalibPeriod_7MIN) || \
 									((DCP) == RTC_CalibPeriod_8MIN))
 
-#define RTC_Calib_Disable			((u32)0x00000000)
-#define RTC_Calib_Enable			((u32)0x00008000)
+#define RTC_Calib_Disable			((u32)0x00000000) /*!< Disable digital calibration. */
+#define RTC_Calib_Enable			((u32)0x00008000) /*!< Enable digital calibration. */
 
+/** @brief Check if RTC calibration enable value is valid. */
 #define IS_RTC_CALIB_ENABLE(DCE)	(((DCE) == RTC_Calib_Disable) || \
 									((DCE) == RTC_Calib_Enable))
 
-#define RTC_CalibSign_Positive		((u32)0x00000000)
-#define RTC_CalibSign_Negative		((u32)0x00004000)
+#define RTC_CalibSign_Positive		((u32)0x00000000) /*!< Positive calibration sign (increase frequency). */
+#define RTC_CalibSign_Negative		((u32)0x00004000) /*!< Negative calibration sign (decrease frequency). */
 
+/** @brief Check if RTC calibration sign value is valid. */
 #define IS_RTC_CALIB_SIGN(SIGN)		(((SIGN) == RTC_CalibSign_Positive) || \
 									((SIGN) == RTC_CalibSign_Negative))
 
-#define IS_RTC_CALIB_VALUE(VALUE)	((VALUE) <= 0x7F)
+#define IS_RTC_CALIB_VALUE(VALUE)	((VALUE) <= 0x7F) /*!< Check if RTC calibration value is valid. */
 /**
   * @}
   */
@@ -500,7 +508,7 @@ typedef struct {
 /** @defgroup RTC_TR_Mask RTC TR Mask
   * @{
   */
-#define RTC_TR_RESERVED_MASK	((u32)0xFFFF7F7F)
+#define RTC_TR_RESERVED_MASK	((u32)0xFFFF7F7F) /*!< Reserved bits mask for RTC_TR register. */
 /**
   * @}
   */
@@ -508,11 +516,11 @@ typedef struct {
 /** @defgroup RTC_Timeout_Control RTC Timeout Control
   * @{
   */
-#define INITMODE_TIMEOUT	((u32) 0x00010000)
-#define SYNCHRO_TIMEOUT		((u32) 0x00020000)
-#define RECALPF_TIMEOUT		((u32) 0x00020000)
-#define ALARMDIS_TIMEOUT	((u32) 0x00020000)
-#define WUTDIS_TIMEOUT		((u32) 0x00020000)
+#define INITMODE_TIMEOUT	((u32) 0x00010000) /*!< Timeout for RTC initialization mode. */
+#define SYNCHRO_TIMEOUT		((u32) 0x00020000) /*!< Timeout for RTC synchronization. */
+#define RECALPF_TIMEOUT		((u32) 0x00020000) /*!< Timeout for recalibration pending flag. */
+#define ALARMDIS_TIMEOUT	((u32) 0x00020000) /*!< Timeout for alarm disable operation. */
+#define WUTDIS_TIMEOUT		((u32) 0x00020000) /*!< Timeout for wakeup timer disable. */
 /**
   * @}
   */
@@ -520,15 +528,20 @@ typedef struct {
 /** @defgroup RTC_Shift_Control RTC Shift Control
   * @{
   */
-#define RTC_SHIFT_ALR_HU	16
-#define RTC_SHIFT_ALR_MNU	8
-#define RTC_SHIFT_ALR_PM	22
-#define RTC_SHIFT_HU		16
-#define RTC_SHIFT_MNU		8
-#define RTC_SHIFT_PM		22
+#define RTC_SHIFT_ALR_HU	16 /*!< Bit shift for alarm hour units field. */
+#define RTC_SHIFT_ALR_MNU	8 /*!< Bit shift for alarm minute units field. */
+#define RTC_SHIFT_ALR_PM	22 /*!< Bit shift for alarm AM/PM field. */
+#define RTC_SHIFT_HU		16 /*!< Bit shift for time hour units field. */
+#define RTC_SHIFT_MNU		8 /*!< Bit shift for time minute units field. */
+#define RTC_SHIFT_PM		22 /*!< Bit shift for time AM/PM field. */
 /**
   * @}
   */
+
+/**
+  * @}
+  */
+
 
 /**
   * @}

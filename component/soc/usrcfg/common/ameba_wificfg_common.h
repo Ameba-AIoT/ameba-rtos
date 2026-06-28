@@ -88,14 +88,15 @@ struct wifi_user_conf {
 		0: Disable legacy power save, 1: Enable. */
 	u8 lps_enable;
 
-	/*!	In LPS, the sta wakes up every lps_listen_interval * 102.4ms to receive beacon.*/
+	/*!	In LPS, the sta wakes up every lps_listen_interval * 102.4ms to receive beacon.\n
+		Default: 0, sta wakes up every TBTT to receive beacon. */
 	u8 lps_listen_interval;
 
 	/*! Enable or disable rx broadcast in tickless wowlan mode,
 		1 means disable rx broadcast in tickless wowlan mode, 0 means enable(default) rx broadcast in tickless wowlan mode.*/
 	u8 wowlan_rx_bcmc_dis;
 
-	/* set rx unicast packet timeout in LPS, unit:ms*/
+	/*! set rx unicast packet timeout in LPS, unit:ms*/
 	u8 lps_rx_unicast_pkt_timeout;
 
 	/*!	U-APSD WMM power save mode. After connection, with low traffic, part of WIFI can be powered off and woken up upon packet interaction.\n

@@ -166,6 +166,41 @@ void whc_host_secgetmic(struct mic_data *pmicdata, u8 *dst)
 	tkip_micclear(pmicdata);
 }
 
+/* API for receive frame MIC check */
+void whc_host_seccalctkipmic(u8 *key, u8 *header, u8 *data, u32 data_len, u8 *mic_code, u8 pri)
+{
+
+	struct mic_data	micdata;
+	u8 priority[4] = {0x0, 0x0, 0x0, 0x0};
+
+	whc_host_secmicsetkey(&micdata, key);
+	priority[0] = pri;
+
+	/* Michael MIC pseudo header: DA, SA, 3 x 0, Priority */
+	if (header[1] & 1) { //ToDS==1
+		whc_host_secmicappend(&micdata, &header[16], 6);  //DA
+		if (header[1] & 2) { //From Ds==1
+			whc_host_secmicappend(&micdata, &header[24], 6);
+		} else {
+			whc_host_secmicappend(&micdata, &header[10], 6);
+		}
+	} else {	//ToDS==0
+		whc_host_secmicappend(&micdata, &header[4], 6);   //DA
+		if (header[1] & 2) { //From Ds==1
+			whc_host_secmicappend(&micdata, &header[16], 6);
+		} else {
+			whc_host_secmicappend(&micdata, &header[10], 6);
+		}
+
+	}
+	whc_host_secmicappend(&micdata, &priority[0], 4);
+
+
+	whc_host_secmicappend(&micdata, data, data_len);
+
+	whc_host_secgetmic(&micdata, mic_code);
+
+}
 
 // ------------------------------
 // Part 2: TKIP encryption/decryption
@@ -1439,7 +1474,7 @@ d##3 = TE0(s##3) ^ TE1(s##0) ^ TE2(s##1) ^ TE3(s##2) ^ rk[4 * i + 3]
 	PUTU32(ct + 12, s3);
 }
 
-static void *rtk_aes_encrypt_init(const u8 *key, size_t len)
+static void *aes_encrypt_init(const u8 *key, size_t len)
 {
 	u32 *rk;
 	int res;
@@ -1457,14 +1492,14 @@ static void *rtk_aes_encrypt_init(const u8 *key, size_t len)
 	return rk;
 }
 
-static int rtk_aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
+static int aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
 {
 	u32 *rk = ctx;
 	rijndaelEncrypt(ctx, rk[AES_PRIV_NR_POS], plain, crypt);
 	return 0;
 }
 
-static void rtk_aes_encrypt_deinit(void *ctx)
+static void aes_encrypt_deinit(void *ctx)
 {
 	_memset(ctx, 0, AES_PRIV_SIZE);
 	kfree(ctx);
@@ -1609,7 +1644,7 @@ static void aes_gctr(void *aes, const u8 *icb, const u8 *x, size_t xlen, u8 *y)
 
 	/* Full blocks */
 	for (i = 0; i < n; i++) {
-		rtk_aes_encrypt(aes, cb, ypos);
+		aes_encrypt(aes, cb, ypos);
 		xor_block(ypos, xpos);
 		xpos += AES_BLOCK_SIZE;
 		ypos += AES_BLOCK_SIZE;
@@ -1621,7 +1656,7 @@ static void aes_gctr(void *aes, const u8 *icb, const u8 *x, size_t xlen, u8 *y)
 
 	if (last) {
 		/* Last, partial block */
-		rtk_aes_encrypt(aes, cb, tmp);
+		aes_encrypt(aes, cb, tmp);
 		for (i = 0; i < last; i++) {
 			*ypos++ = *xpos++ ^ tmp[i];
 		}
@@ -1632,14 +1667,14 @@ static void *aes_gcm_init_hash_subkey(const u8 *key, size_t key_len, u8 *H)
 {
 	void *aes;
 
-	aes = rtk_aes_encrypt_init(key, key_len);
+	aes = aes_encrypt_init(key, key_len);
 	if (aes == NULL) {
 		return NULL;
 	}
 
 	/* Generate hash subkey H = AES_K(0^128) */
 	_memset(H, 0, AES_BLOCK_SIZE);
-	rtk_aes_encrypt(aes, H, H);
+	aes_encrypt(aes, H, H);
 
 	return aes;
 }
@@ -1727,7 +1762,7 @@ static int aes_gcm_ae(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len
 	aes_gctr(aes, J0, S, sizeof(S), tag);
 
 	/* Return (C, T) */
-	rtk_aes_encrypt_deinit(aes);
+	aes_encrypt_deinit(aes);
 
 	return 0;
 }
@@ -1759,7 +1794,7 @@ static int aes_gcm_ad(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len
 	/* T' = MSB_t(GCTR_K(J_0, S)) */
 	aes_gctr(aes, J0, S, sizeof(S), T);
 
-	rtk_aes_encrypt_deinit(aes);
+	aes_encrypt_deinit(aes);
 
 	if (os_memcmp_const(tag, T, 16) != 0) {
 		dev_err(global_idev.pwhc_dev, "GCM: Tag mismatch\n");

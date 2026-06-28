@@ -571,8 +571,8 @@ static usbd_uac_dev_t usbd_uac_dev;
 
 /* UAC volume data from windows10 PC*/
 /* Different OS transmit the same vol level, but the corresponding driver vol values are different. */
-static u8 usbd_uac_pc_vol_lvl[] = {0, 5, 10, 20, 30, 40, 50, 60, 65, 75, 80, 85, 90, 95, 100};
-static s16 usbd_uac_drv_vol[] = {-190, -170, -151, -112, -74, -37, 0, 37, 56, 93, 112, 132, 151, 170, 190};
+static const u8 usbd_uac_pc_vol_lvl[] = {0, 5, 10, 20, 30, 40, 50, 60, 65, 75, 80, 85, 90, 95, 100};
+static const s16 usbd_uac_drv_vol[] = {-190, -170, -151, -112, -74, -37, 0, 37, 56, 93, 112, 132, 151, 170, 190};
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -815,7 +815,7 @@ static bool usbd_uac_is_valid_sample_rate(u32 freq, u8 speed)
   * @param  target_y: The volume level from the UAC driver to be interpolated
   * @retval The intended volume level on the Windows PC corresponding to the UAC driver value
   */
-static u8 usbd_uac_volume_linear_interpolation(u8 x_points[], s16 y_points[], u8 num_points, s16 target_y)
+static u8 usbd_uac_volume_linear_interpolation(const u8 x_points[], const s16 y_points[], u8 num_points, s16 target_y)
 {
 	u8 i;
 	u8 x0;

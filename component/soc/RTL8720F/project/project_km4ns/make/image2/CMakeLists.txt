@@ -22,6 +22,7 @@ endif()
 
 ###############################  ADD COMPONENT  ###################################
 if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_INTF_IPC AND CONFIG_WHC_DEV))
+    ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
     ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
     ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
     ameba_add_subdirectory(${c_COMPONENT_DIR}/sdn)

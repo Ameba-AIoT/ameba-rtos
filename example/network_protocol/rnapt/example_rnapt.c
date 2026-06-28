@@ -5,12 +5,11 @@
 
 #include "example_rnapt.h"
 #include "rnapt_netif.h"
+#include "dns_proxy.h"
 
 #ifndef TAG
 #define TAG "R-NAPT-APP"
 #endif
-
-extern void dns_relay_service_init(void);
 
 /* ======================================================================== */
 /*                      User Netif Status Callback                          */
@@ -174,6 +173,7 @@ void example_rnapt(void)
 		return;
 	}
 
-	/* Initialize DNS Relay service for LAN clients */
-	dns_relay_service_init();
+	/* Initialize and start DNS Proxy */
+	dns_proxy_init(DNS_PROXY_CACHE_MAX_ENTRIES, DNS_PROXY_TX_MAX_PENDING);
+	dns_proxy_start(DNS_PROXY_LISTEN_PORT);
 }

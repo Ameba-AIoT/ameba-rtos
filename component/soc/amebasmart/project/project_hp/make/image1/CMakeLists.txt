@@ -1,4 +1,4 @@
-ameba_add_image(target_loader p_IMAGE_ALL km4_boot_all.bin)
+ameba_add_image(target_loader p_IMAGE_ALL ${c_BOOT_BINARY_NAME})
 # Use variable c_CURRENT_IMAGE to represent full image target name
 
 ###############################  ADD COMPONENT  ###################################
@@ -52,7 +52,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_loader.axf ${c_SDK_IMAGE_TARGET_DIR}/target_pure_loader.axf
     COMMAND ${CMAKE_STRIP} ${c_SDK_IMAGE_TARGET_DIR}/target_pure_loader.axf
 
-    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      km4_boot_all.bin"
+    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_BOOT_BINARY_NAME}"
 
     COMMAND ${CMAKE_COMMAND}
         # common variables

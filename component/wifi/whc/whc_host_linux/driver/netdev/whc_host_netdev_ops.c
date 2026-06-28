@@ -446,6 +446,10 @@ void rtw_nan_iface_free(struct wiphy *wiphy)
 {
 	bool rtnl_lock_need = !rtnl_is_locked();
 
+	if (!global_idev.pwdev_global[2] && !global_idev.pndev[2]) {
+		return;
+	}
+
 	if (global_idev.pwdev_global[2]) {
 		if (rtnl_lock_need) {
 			rtnl_lock();

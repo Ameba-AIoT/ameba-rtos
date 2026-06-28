@@ -153,7 +153,7 @@ void RTCIO_ModeRTCStart(void)
   * @brief Shift out time info:
   *         1.time stored from RTC before power off
   *         2.counter in power off period
-  * @param  pDataOut: Pointer to RTCIO_TimeInfo structure to store time information.
+  * @param  pDataOut: Pointer to @ref RTCIO_TimeInfo structure to store time information.
   */
 static void RTCIO_ShiftOutTimeInfo(RTCIO_TimeInfo *pDataOut)
 {
@@ -191,7 +191,7 @@ static void RTCIO_ShiftOutTimeInfo(RTCIO_TimeInfo *pDataOut)
 
 /**
   * @brief Output time info after setting work mode to MODE_SHIFT_ENABLE
-  * @param  pDataOut: Pointer to RTCIO_TimeInfo structure to store time information.
+  * @param  pDataOut: Pointer to @ref RTCIO_TimeInfo structure to store time information.
   */
 void RTCIO_GetTimeInfo(RTCIO_TimeInfo *pDataOut)
 {

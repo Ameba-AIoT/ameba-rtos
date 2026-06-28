@@ -323,11 +323,7 @@ void pmu_acquire_wakelock(uint32_t nDeviceId)
 #ifndef CONFIG_ARM_CORE_CA32
 	PrevStatus = ulSetInterruptMaskFromISR();
 #else
-#ifdef CONFIG_CA32_FREERTOS_V11_1_0
-	PrevStatus = portSET_INTERRUPT_MASK();
-#else
-	PrevStatus = portDISABLE_INTERRUPTS();
-#endif
+	PrevStatus = portSET_INTERRUPT_MASK_FROM_ISR();
 #endif
 
 	wakelock |= BIT(nDeviceId);
@@ -345,11 +341,7 @@ void pmu_release_wakelock(uint32_t nDeviceId)
 #ifndef CONFIG_ARM_CORE_CA32
 	PrevStatus = ulSetInterruptMaskFromISR();
 #else
-#ifdef CONFIG_CA32_FREERTOS_V11_1_0
-	PrevStatus = portSET_INTERRUPT_MASK();
-#else
-	PrevStatus = portDISABLE_INTERRUPTS();
-#endif
+	PrevStatus = portSET_INTERRUPT_MASK_FROM_ISR();
 #endif
 
 	wakelock &= ~BIT(nDeviceId);

@@ -24,7 +24,7 @@ static int cdc_acm_handle_ep0_data_out(usb_dev_t *dev);
 static int cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void cdc_acm_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
-
+static void cdc_acm_wakeup(usb_dev_t *dev);
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "ACM";
@@ -273,6 +273,7 @@ static const usbd_class_driver_t usbd_cdc_driver = {
 	.ep_data_in = cdc_acm_handle_ep_data_in,
 	.ep_data_out = cdc_acm_handle_ep_data_out,
 	.status_changed = cdc_acm_status_changed,
+	.wakeup = cdc_acm_wakeup,
 };
 
 /* CDC ACM Device */
@@ -677,6 +678,22 @@ static void cdc_acm_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 	}
 }
 
+/**
+  * @brief  Wakeup callback, called when the device resumes from suspend.
+  * @param  dev: USB device instance
+  * @retval void
+  */
+static void cdc_acm_wakeup(usb_dev_t *dev)
+{
+	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
+
+	UNUSED(dev);
+
+	if (cdev->cb->wakeup) {
+		cdev->cb->wakeup();
+	}
+}
+
 #if CONFIG_USBD_CDC_ACM_NOTIFY
 /**
   * @brief  Transmit INTR IN packet
@@ -784,7 +801,8 @@ int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, usbd_cdc_ac
 	info = &ep_intr_in->info;
 	info->addr = USBD_CDC_ACM_INTR_IN_EP;
 	info->type = USB_CH_EP_TYPE_INTR;
-	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(sizeof(usbd_cdc_acm_ntf_t));
+	ep_intr_in->xfer_buf_len = sizeof(usbd_cdc_acm_ntf_t);
+	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(ep_intr_in->xfer_buf_len);
 	if (ep_intr_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto USBD_CDC_Init_clean_bulk_in_buf_exit;

@@ -87,7 +87,5 @@ int example_mbed_uart_int_stream(void)
 		RTK_LOGE(NOTAG, "%s rtos_task_create(uart_stream_irq_demo) failed\n", __FUNCTION__);
 	}
 
-	//rtos_sched_start();
-
 	return 0;
 }

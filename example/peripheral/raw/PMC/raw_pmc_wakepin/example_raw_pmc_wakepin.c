@@ -16,7 +16,7 @@ static void wakepin_dslp_handler(void)
 	 */
 	DelayUs(50);
 
-	printf("dslp wake from wakepin\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "dslp wake from wakepin\n");
 }
 
 int example_raw_pmc_wakepin(void)
@@ -26,7 +26,7 @@ int example_raw_pmc_wakepin(void)
 	/*for one round test, will keep active after wake from dslp */
 	if ((BOOT_Reason() & AON_BIT_RSTF_DSLP) == 0) {
 		/* config wakepin */
-		printf("set aon wakepin to wakeup\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "set aon wakepin to wakeup\n");
 		Wakepin_Debounce_Setting(100, ENABLE);
 		Wakepin_Setting(WAKEPIN_0, HIGH_LEVEL_WAKEUP);
 
@@ -37,15 +37,15 @@ int example_raw_pmc_wakepin(void)
 		/* check whether some wake lock bit is still set*/
 		Temp = pmu_get_wakelock_status();
 		if (Temp) {
-			printf("Sleep Fail Because wake lock bit:%lx\n", Temp);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Sleep Fail Because wake lock bit:%lx\n", Temp);
 		}
 		Temp = pmu_get_deepwakelock_status();
 		if (Temp) {
-			printf("Sleep Fail Because deepsleep wake lock bit:%lx\n", Temp);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Sleep Fail Because deepsleep wake lock bit:%lx\n", Temp);
 		}
 
 		pmu_set_sysactive_time(5000);
-		printf("enter deepsleep mode after 5S ============>\n");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "enter deepsleep mode after 5S ============>\n");
 	}
 
 	/*interrupt should be registed every time*/

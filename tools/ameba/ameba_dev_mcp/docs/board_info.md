@@ -18,11 +18,12 @@
  * board_info.json5 — test-bench config: which SoC is on which serial port.
  */
 {
-  "schema_version": 1,
+  "schema_version": 1.1,
 
   "defaults": {
     "baudrate": 1500000,
     "monitor_baudrate": 1500000,
+    "memory_type": "nor",
     "chip_erase": false
   },
 
@@ -35,11 +36,15 @@
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| `schema_version` | int | 当前 `1` |
+| `schema_version` | number | 当前 `1.1` |
 | `defaults.baudrate` | int | 烧录与开端口默认速率（1.5 Mbps） |
 | `defaults.monitor_baudrate` | int | 串口监视默认速率 |
+| `defaults.memory_type` | `"nor"` / `"nand"` / `"ram"` | 默认 flash 类型 |
 | `defaults.chip_erase` | bool | 默认是否全片擦除 |
 | `boards` | dict | key 即 alias，每个 board 一个条目 |
+
+> **schema 1.1 变更**：`memory_type` 从 `project_info.json5` 移到这里。同一个 project
+> 可能烧到 nor 或 nand（取决于板子上的 flash），所以 flash 类型绑定到 **board** 而非 project。
 
 ---
 
@@ -61,6 +66,7 @@
 | `soc` | ✓ | string | – | SoC 名（如 `RTL8721F`），用来在 `project_info.json5` 找烧录布局 |
 | `transport` | – | `"local"` / `"remote"` | `"local"` | 本机串口 vs 远程 AmebaRemoteService |
 | `port` | ✓ | string | – | `/dev/ttyUSB0` / `COM5` 等。**远程板填的是远端机器上看到的端口名** |
+| `memory_type` | – | `"nor"` / `"nand"` / `"ram"` | `defaults.memory_type` | 板上 flash 类型；同型号 SoC 不同板可不同（nor/nand） |
 | `baudrate` | – | int | `defaults.baudrate` | 烧录与连接速率 |
 | `monitor_baudrate` | – | int | `defaults.monitor_baudrate` | 串口监视速率 |
 | `chip_erase` | – | bool | `defaults.chip_erase` | 烧录前是否全片擦除 |
@@ -173,6 +179,15 @@
 
 ---
 
+## 6.1 `memory_type` 用法
+
+- 取值 `"nor"` / `"nand"` / `"ram"`，决定烧录时选用哪个 `.rdev` profile（`<SOC>_NAND.rdev` 等）与 `--memory-type`。
+- 同一个 SoC 工程可以烧到不同 flash：例如某 RTL8730E project 既能烧 nor 也能烧 nand，所以 flash 类型按**板**配置。
+- 优先级：`boards.<alias>.memory_type` > `defaults.memory_type`（缺省 `"nor"`）。
+- 例：一块 nand 板写 `"memory_type": "nand"`，nor 板省略即可继承默认。
+
+---
+
 ## 7. `chip_erase` 用法
 
 - 默认 `false`：只擦写本次烧录涉及的扇区。
@@ -252,11 +267,12 @@
  * board_info.json5 — test-bench config.
  */
 {
-  "schema_version": 1,
+  "schema_version": 1.1,
 
   "defaults": {
     "baudrate": 1500000,
     "monitor_baudrate": 1500000,
+    "memory_type": "nor",
     "chip_erase": false
   },
 
@@ -266,13 +282,14 @@
       "transport": "local",
       "port": "/dev/ttyUSB0"
     },
-    "RTL8730E_ttyUSB1": {
+    "RTL8730E_nand_ttyUSB1": {
       "soc": "RTL8730E",
       "transport": "local",
       "port": "/dev/ttyUSB1",
+      "memory_type": "nand",
       "chip_erase": true
     },
-    "RTL8730E_ttyUSB2": {
+    "RTL8730E_nor_ttyUSB2": {
       "soc": "RTL8730E",
       "transport": "local",
       "port": "/dev/ttyUSB2"
@@ -281,6 +298,7 @@
       "soc": "RTL8730E",
       "transport": "remote",
       "port": "COM5",
+      "memory_type": "nand",
       "remote": {
         "host": "192.168.1.100",
         "port": 58916

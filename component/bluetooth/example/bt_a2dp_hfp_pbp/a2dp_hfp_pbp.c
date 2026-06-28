@@ -3815,6 +3815,8 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		break;
 	}
 #endif
+
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	case RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND: {
 		rtk_bt_le_data_len_change_ind_t *data_len_change =
 			(rtk_bt_le_data_len_change_ind_t *)param;
@@ -3834,6 +3836,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 					data_len_change->max_rx_time);
 		break;
 	}
+#endif
+
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	case RTK_BT_LE_GAP_EVT_PHY_UPDATE_IND: {
 		rtk_bt_le_phy_update_ind_t *phy_update_ind =
 			(rtk_bt_le_phy_update_ind_t *)param;
@@ -3854,6 +3859,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		}
 		break;
 	}
+#endif
 
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_DISPLAY_IND: {
 		rtk_bt_le_auth_key_display_ind_t *key_dis_ind =
@@ -4847,11 +4853,15 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 											  RTK_BT_PROFILE_CAP;
 			bt_app_conf.mtu_size = 180;
 			bt_app_conf.master_init_mtu_req = true;
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 			bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
 			bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 			bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+#endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 			bt_app_conf.max_tx_octets = 0x40;
 			bt_app_conf.max_tx_time = 0x200;
+#endif
 			bt_app_conf.a2dp_role = RTK_BT_A2DP_ROLE_SNK;
 			bt_app_conf.hfp_role = RTK_BT_AUDIO_HFP_ROLE_HF;
 			memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));

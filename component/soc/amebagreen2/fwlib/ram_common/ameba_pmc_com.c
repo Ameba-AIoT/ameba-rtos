@@ -439,4 +439,5 @@ void SOCPS_HWSleepFilter_NP(u32 enable)
 void SOCPS_PeriRestore(void)
 {
 	CRYPTO_Init();
+	RCC_PeriphClockCmd(APBPeriph_PKE, APBPeriph_PKE_CLOCK, ENABLE);
 }

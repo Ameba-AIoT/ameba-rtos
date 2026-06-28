@@ -191,10 +191,7 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			break;
 
 		default:
-			if (req->wIndex == USBD_COMP_MSC_ITF) {
-				// MSC CLEAR_FEATURE
-				ret = cdev->msc->setup(dev, req);
-			}
+			ret = HAL_ERR_PARA;
 			break;
 		}
 		break;

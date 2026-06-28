@@ -17,8 +17,6 @@ struct whch_mlme_info {
 	u8					cur_channel;
 	u8					b_preamble_mode;
 	u8					total_sta_count_by_port;	/* softap need use */
-
-	u8					b_accept_addba_req;
 };
 
 struct whch_ht_priv {

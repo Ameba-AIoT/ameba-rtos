@@ -98,6 +98,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 		break;
 	}
+
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	case RTK_BT_LE_GAP_EVT_PHY_UPDATE_IND: {
 		rtk_bt_le_phy_update_ind_t *phy_update_ind = (rtk_bt_le_phy_update_ind_t *)param;
 		if (phy_update_ind->err) {
@@ -114,6 +116,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 		}
 		break;
 	}
+#endif
+
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	case RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND: {
 		rtk_bt_le_data_len_change_ind_t *data_len_change =
 			(rtk_bt_le_data_len_change_ind_t *)param;
@@ -133,6 +138,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 					data_len_change->max_rx_time);
 		break;
 	}
+#endif
+
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_ADV_IND: {
 		rtk_bt_le_ext_adv_ind_t *ext_adv_ind = (rtk_bt_le_ext_adv_ind_t *)param;
@@ -2913,11 +2920,15 @@ int ble_mesh_provisioner_main(uint8_t enable)
 		bt_app_conf.bt_mesh_app_conf.bt_mesh_role = RTK_BT_MESH_ROLE_PROVISIONER;
 		bt_app_conf.mtu_size = 180;
 		bt_app_conf.master_init_mtu_req = true;
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 		bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
 		bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_CODED;
 		bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_CODED;
+#endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
+#endif
 
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_STACK, ble_mesh_stack_app_callback));
 		/* Enable BT */

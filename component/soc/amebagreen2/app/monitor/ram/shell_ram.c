@@ -235,7 +235,13 @@ void shell_init_ram(void)
 	/* Create a Semaphone */
 	rtos_sema_create_binary(&shell_sema);
 
-	if (RTK_SUCCESS != rtos_task_create(NULL, "shell_task", shell_task_ram, NULL, SHELL_TASK_FUNC_STACK_SIZE, 2)) {
+#if defined(CONFIG_WIFI_NAN_HOST_APP)
+	/* NAN AT-cmd path stacks a ~2.5 KB nandow struct; default shell_task stack overflows. */
+	u32 shell_task_stack = SHELL_TASK_FUNC_STACK_SIZE + 8 * 1024;
+#else
+	u32 shell_task_stack = SHELL_TASK_FUNC_STACK_SIZE;
+#endif
+	if (RTK_SUCCESS != rtos_task_create(NULL, "shell_task", shell_task_ram, NULL, shell_task_stack, 2)) {
 		DiagPrintf("Create Log UART Task Err!!\n");
 	}
 	//CONSOLE_AMEBA();

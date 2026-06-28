@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup THERMAL
+/** @defgroup THERMAL THERMAL
   * @brief THERMAL driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -193,6 +194,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -246,14 +248,23 @@ typedef struct {
   * @{
   */
 
-/** @defgroup TM_Down_Sample_Rate
+/** @defgroup TM_Programme_Password TM Programme Password
   * @{
   */
-#define TM_DSR_128						((u8)0x00)
-#define TM_DSR_256						((u8)0x01)
-#define TM_DSR_512						((u8)0x02)
-#define TM_DSR_1024					((u8)0x03)
+#define TM_PROG_PWR					(0x69)   /*!< Password value required to program thermal meter registers. */
+/**
+  * @}
+  */
 
+/** @defgroup TM_Down_Sample_Rate TM Down Sample Rate
+  * @{
+  */
+#define TM_DSR_128						((u8)0x00)   /*!< Down sample rate: 128 (decimation filter OSR = 128). */
+#define TM_DSR_256						((u8)0x01)   /*!< Down sample rate: 256 (decimation filter OSR = 256). */
+#define TM_DSR_512						((u8)0x02)   /*!< Down sample rate: 512 (decimation filter OSR = 512). */
+#define TM_DSR_1024					((u8)0x03)   /*!< Down sample rate: 1024 (decimation filter OSR = 1024). */
+
+/** @brief Checks if parameter is a valid down sample rate. */
 #define IS_TM_DOWN_SAMPLE_RATE(sel)     (((sel) == TM_DSR_128) || \
 										((sel) == TM_DSR_256) || \
 										((sel) == TM_DSR_512) || \
@@ -262,40 +273,41 @@ typedef struct {
   * @}
   */
 
-/** @defgroup TM_ADC_CLK_Divider
+/** @defgroup TM_ADC_CLK_Divider TM ADC CLK Divider
   * @{
   */
-#define TM_ADC_CLK_DIV_256			((u8)0x00)
-#define TM_ADC_CLK_DIV_128			((u8)0x01)
+#define TM_ADC_CLK_DIV_256			((u8)0x00)   /*!< ADC clock divider: divide source clock by 256. */
+#define TM_ADC_CLK_DIV_128			((u8)0x01)   /*!< ADC clock divider: divide source clock by 128. */
 
+/** @brief Checks if parameter is a valid ADC clock divider. */
 #define IS_TM_ADC_CLK_DIV(div)     (((div) == TM_ADC_CLK_DIV_256) || \
 									((div) == TM_ADC_CLK_DIV_128))
 /**
   * @}
   */
 
-/** @defgroup TM_DECIMAL_OUT
+/** @defgroup TM_DECIMAL_OUT TM Decimal Out
   * @{
   */
-#define TEMP_DECIMAL_OUT(x)		((u32)((x) & 0x000003FF))
+#define TEMP_DECIMAL_OUT(x)		((u32)((x) & 0x000003FF))   /*!< Extracts decimal part (bits[9:0]) from raw temperature output. */
 
 /**
   * @}
   */
 
-/** @defgroup TM_TEMP_DEFINE
+/** @defgroup TM_TEMP_DEFINE TM Temp Define
   * @{
   */
-#define TM_POSITIVE_MIN      ((u32)0x00000)  // positive min value
-#define TM_POSITIVE_MAX      ((u32)0x3FFFF)  // positive max value
+#define TM_POSITIVE_MIN      ((u32)0x00000)   /*!< Minimum encoded value for a positive temperature reading. */
+#define TM_POSITIVE_MAX      ((u32)0x3FFFF)   /*!< Maximum encoded value for a positive temperature reading. */
 
-#define TM_NEGATIVE_MIN      ((u32)0x40000)   // negative min value
-#define TM_NEGATIVE_MAX      ((u32)0x7FFFF)   // negative max value
+#define TM_NEGATIVE_MIN      ((u32)0x40000)   /*!< Minimum encoded value for a negative temperature reading. */
+#define TM_NEGATIVE_MAX      ((u32)0x7FFFF)   /*!< Maximum encoded value for a negative temperature reading. */
 
-#define TM_INVALID_VALUE     ((u32)0x80000)  // unavailable value
+#define TM_INVALID_VALUE     ((u32)0x80000)   /*!< Encoded value indicating an invalid/unavailable temperature result. */
 
-#define TM_IS_POSITIVE(x)    (((x) >= TM_POSITIVE_MIN) && ((x) <= TM_POSITIVE_MAX))
-#define TM_IS_NEGATIVE(x)    (((x) >= TM_NEGATIVE_MIN) && ((x) <= TM_NEGATIVE_MAX))
+#define TM_IS_POSITIVE(x)    (((x) >= TM_POSITIVE_MIN) && ((x) <= TM_POSITIVE_MAX))   /*!< Checks if raw temperature value represents a positive temperature. */
+#define TM_IS_NEGATIVE(x)    (((x) >= TM_NEGATIVE_MIN) && ((x) <= TM_NEGATIVE_MAX))   /*!< Checks if raw temperature value represents a negative temperature. */
 /**
   * @}
   */
@@ -322,7 +334,9 @@ _LONG_CALL_ u32 TM_GetMaxTemp(void);
 _LONG_CALL_ u32 TM_GetMinTemp(void);
 _LONG_CALL_ void TM_MaxTempClr(void);
 _LONG_CALL_ void TM_MinTempClr(void);
-_LONG_CALL_ void TM_SetHighPT(u32 NewState);
+_LONG_CALL_ void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState);
+_LONG_CALL_ void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState);
+_LONG_CALL_ void TM_LowWtConfig(u16 TM_LowWtThre, u32 NewState);
 _LONG_CALL_ float TM_GetCdegree(u32 Data);
 _LONG_CALL_ float TM_GetFdegree(u32 Data);
 
@@ -335,8 +349,12 @@ _LONG_CALL_ float TM_GetFdegree(u32 Data);
 
 /* MANUAL_GEN_END */
 
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
 #endif
-
-/** @} */
-
-/** @} */

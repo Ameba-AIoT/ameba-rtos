@@ -47,6 +47,10 @@ void Boot_SDIO_Pinmux_init(void)
 	 * If done too late, it may cause host side SDIO card recognition timeout, resulting in sdio power supply failure. */
 	if (boot_src != BOOT_FROM_SDIO) {
 		_Init_SDIO_By_PinGrp();
+	} else {
+		/* boot from sdio, which means sdio fen&cke are both set already */
+		/* sw wa: revert SDIO ECO design */
+		SDIO_WIFI->SPDIO_HCI_RX_REQ |= TXBD_UPD_OPT_BIT;
 	}
 }
 

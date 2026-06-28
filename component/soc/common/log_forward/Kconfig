@@ -1,0 +1,7 @@
+config LOG_FWD
+    bool
+    default y
+    help
+      When enabled, intercepts all console output via the ROM DiagFunc
+      character sink and forwards it to the Linux host over the WHC/SDIO
+      command path, allowing log visibility without a UART connection.

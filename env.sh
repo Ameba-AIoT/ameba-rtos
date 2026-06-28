@@ -1,17 +1,24 @@
 PREBUILTS_VERSION=1.0.3
 PREBUILTS_WIN_URL='https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.3/prebuilts-win-1.0.3.zip'
 PREBUILTS_LINUX_URL='https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.3/prebuilts-linux-1.0.3.tar.gz'
+PREBUILTS_DARWIN_URL='https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/prebuilts-v1.0.3/prebuilts-darwin-1.0.3.tar.gz'
 PREBUILTS_WIN_URL_ALIYUN='https://aiot.realmcu.com/download/prebuilts/prebuilts-win-1.0.3.zip'
 PREBUILTS_LINUX_URL_ALIYUN='https://aiot.realmcu.com/download/prebuilts/prebuilts-linux-1.0.3.tar.gz'
+PREBUILTS_DARWIN_URL_ALIYUN='https://aiot.realmcu.com/download/prebuilts/prebuilts-darwin-1.0.3.tar.gz'
 
 case $(uname) in
     Linux)  RTK_TOOLCHAIN_DIR_LINUX="$HOME/rtk-toolchain" ;;
+    Darwin) RTK_TOOLCHAIN_DIR_DARWIN="$HOME/rtk-toolchain" ;;
     *_NT*)  RTK_TOOLCHAIN_DIR_NT=/c/rtk-toolchain ;;
 esac
 
 function get_script_dir
 {
-    SCRIPT_NAME="$(readlink -f "${SELF_PATH}")"
+    if [ "$(uname)" = "Darwin" ]; then
+        SCRIPT_NAME="$(realpath "${SELF_PATH}")"
+    else
+        SCRIPT_NAME="$(readlink -f "${SELF_PATH}")"
+    fi
     SCRIPT_DIR="$(dirname "${SCRIPT_NAME}")"
 
     if [ "$SCRIPT_DIR" = '.' ]
@@ -51,6 +58,31 @@ Linux)
     PREBUILTS_ZIP_FILE=$PREBUILTS_DIR.tar.gz
     DOWNLOAD_URL=$PREBUILTS_LINUX_URL_ALIYUN
     DOWNLOAD_URL_SECOND_SOURCE=$PREBUILTS_LINUX_URL
+    alias menuconfig.py='python menuconfig.py'
+	alias build.py='python build.py'
+	alias flash.py='python flash.py'
+	alias monitor.py='python monitor.py'
+    alias ameba.py='python $BASE_DIR/ameba.py'
+    ;;
+Darwin)
+
+    if [ -n "$RTK_TOOLCHAIN_DIR" ]; then
+        RTK_TOOLCHAIN_DIR="$RTK_TOOLCHAIN_DIR"
+        if [[ "${RTK_TOOLCHAIN_DIR:0:1}" == "~" ]]; then
+            RTK_TOOLCHAIN_DIR="$HOME${RTK_TOOLCHAIN_DIR:1}"
+        fi
+    else
+        RTK_TOOLCHAIN_DIR=$RTK_TOOLCHAIN_DIR_DARWIN
+    fi
+
+    export AMEBA_SDK="$BASE_DIR"
+
+	VENV_CMD="python3 -m venv $BASE_DIR/.venv"
+    ACTIVE_CMD="source $BASE_DIR/.venv/bin/activate"
+    PREBUILTS_DIR=$RTK_TOOLCHAIN_DIR/prebuilts-darwin-$PREBUILTS_VERSION
+    PREBUILTS_ZIP_FILE=$PREBUILTS_DIR.tar.gz
+    DOWNLOAD_URL=$PREBUILTS_DARWIN_URL_ALIYUN
+    DOWNLOAD_URL_SECOND_SOURCE=$PREBUILTS_DARWIN_URL
     alias menuconfig.py='python menuconfig.py'
 	alias build.py='python build.py'
 	alias flash.py='python flash.py'
@@ -104,8 +136,9 @@ complete -F _ameba_py_completion ameba.py
 function download_update_prebuilts
 {
     case $(uname) in
-        Linux)   local pattern='prebuilts-linux*' ;;
-        *_NT*)   local pattern='prebuilts-win*'   ;;
+        Linux)   local pattern='prebuilts-linux*'  ;;
+        Darwin)  local pattern='prebuilts-darwin*' ;;
+        *_NT*)   local pattern='prebuilts-win*'    ;;
     esac
     mkdir -p "$RTK_TOOLCHAIN_DIR"
     local last_matched_folder=$(find "$RTK_TOOLCHAIN_DIR" -type d -name "$pattern" 2>/dev/null | sort | tail -n 1)
@@ -123,7 +156,7 @@ function download_update_prebuilts
 
     if [ -f "$PREBUILTS_ZIP_FILE" ]; then
         case $(uname) in
-            Linux)  tar -tf "$PREBUILTS_ZIP_FILE" >/dev/null 2>&1 ;;
+            Linux|Darwin)  tar -tf "$PREBUILTS_ZIP_FILE" >/dev/null 2>&1 ;;
             *_NT*)  unzip -t "$PREBUILTS_ZIP_FILE" >/dev/null 2>&1 ;;
         esac
         if [ $? -ne 0 ]; then
@@ -152,7 +185,7 @@ function download_update_prebuilts
     rm -rf "$PREBUILTS_DIR"
     echo "unzip ... "
     case $(uname) in
-        Linux)
+        Linux|Darwin)
             tar -xf "$PREBUILTS_ZIP_FILE" -C "$RTK_TOOLCHAIN_DIR"
             ;;
         *_NT*)
@@ -213,7 +246,10 @@ unset _AMEBA_MCP_PYPROJECT _AMEBA_MCP_BIN
 
 python $BASE_DIR/tools/scripts/check_requirements.py
 
-if [ "$(uname)" = "Linux" ]; then
+if [ "$(uname)" = "Linux" ] || [ "$(uname)" = "Darwin" ]; then
+    # macOS doesn't have nproc; use sysctl as fallback
+    NPROC=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+
     # 1. Build list of directories to scan
     SCAN_DIRS=()
     # Add ./tools directory if it exists
@@ -231,7 +267,7 @@ if [ "$(uname)" = "Linux" ]; then
             find "$base" -maxdepth 5 -type f -name "$pattern" -print0
         done
     done \
-    | xargs -0 -r -P "$(nproc)" -I{} bash -c '
+    | xargs -0 -r -P "$NPROC" -I{} bash -c '
         file="$1"
         if [ ! -x "$file" ]; then
             chmod +x "{}" 2>/dev/null
@@ -243,7 +279,7 @@ if [ "$(uname)" = "Linux" ]; then
     # 4. Fix execute permission for binaries without extensions under PREBUILTS_DIR
     if [ -d "$PREBUILTS_DIR" ]; then
         find "$PREBUILTS_DIR" -type f ! -name "*.*" -print0 \
-        | xargs -0 -r -P "$(nproc)" bash -c '
+        | xargs -0 -r -P "$NPROC" bash -c '
             file="$1"
             if file "$file" | grep -q 'executable'; then
                 if [ ! -x "$file" ]; then

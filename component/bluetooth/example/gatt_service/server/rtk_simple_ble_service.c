@@ -93,14 +93,17 @@ void simple_ble_service_callback(uint8_t event, void *data)
 		rtk_bt_gatts_read_ind_t *p_read_ind = (rtk_bt_gatts_read_ind_t *)data;
 		rtk_bt_gatts_read_resp_param_t read_resp = {0};
 		uint16_t offset = p_read_ind->offset;
-		uint16_t actual_len = SIMPLE_BLE_READ_MAX_LEN - p_read_ind->offset;
 		read_resp.app_id = p_read_ind->app_id;
 		read_resp.conn_handle = p_read_ind->conn_handle;
 		read_resp.cid = p_read_ind->cid;
 		read_resp.index = p_read_ind->index;
 		if (SIMPLE_BLE_READ_INDEX == p_read_ind->index) {
-			read_resp.data = &simple_ble_read_val[offset];
-			read_resp.len = actual_len;
+			if (offset >= SIMPLE_BLE_READ_MAX_LEN) {
+				read_resp.err_code = RTK_BT_ATT_ERR_INVALID_OFFSET;
+			} else {
+				read_resp.data = &simple_ble_read_val[offset];
+				read_resp.len = SIMPLE_BLE_READ_MAX_LEN - offset;
+			}
 		} else {
 			BT_LOGE("[APP] Simple BLE read event unknown index: %d\r\n", p_read_ind->index);
 			read_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;

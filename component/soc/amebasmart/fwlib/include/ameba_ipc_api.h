@@ -28,10 +28,10 @@ extern "C" {
   * @brief IPC Message Definition
  */
 typedef struct ipc_msg_struct {
-	u32 msg_type;
-	u32 msg;
-	u32 msg_len;
-	u32 rsvd;
+	u32 msg_type; /*!< Message type identifier. */
+	u32 msg;      /*!< Message payload or address. */
+	u32 msg_len;  /*!< Length of the message payload. */
+	u32 rsvd;     /*!< Reserved. */
 } IPC_MSG_STRUCT, *PIPC_MSG_STRUCT, ipc_msg_struct_t;
 /** @} */
 
@@ -44,12 +44,11 @@ typedef struct ipc_msg_struct {
 /** @defgroup IPC_RETURN_VALUE IPC Return Value
   * @{
   */
-#define IPC_SEMA_TIMEOUT 3
-
-#define IPC_REQ_TIMEOUT  2
-#define IPC_SEND_SUCCESS 0
-#define IPC_SEND_TIMEOUT 1
-#define IPC_SEMA_MAX_DELAY 0x10000 // 65536ms
+#define IPC_SEMA_TIMEOUT 3 /*!< IPC semaphore timeout error code. */
+#define IPC_REQ_TIMEOUT  2 /*!< IPC request timeout error code. */
+#define IPC_SEND_SUCCESS 0 /*!< IPC message sent successfully. */
+#define IPC_SEND_TIMEOUT 1 /*!< IPC send timeout error code. */
+#define IPC_SEMA_MAX_DELAY 0x10000 /*!< IPC semaphore maximum delay in ms (65536ms). */
 /** @} */
 
 /** @} */

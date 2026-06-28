@@ -79,6 +79,5 @@ int example_raw_gpio_port(void)
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "Create RAW_GPIO_PORT_TASK Err!!!\n");
 	}
 
-	// rtos_sched_start();
 	return 0;
 }

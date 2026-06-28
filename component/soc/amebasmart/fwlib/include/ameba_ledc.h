@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup LEDC
+/** @defgroup LEDC LEDC
   * @brief LEDC driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -194,6 +195,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -201,7 +203,7 @@ extern "C" {
 #endif
 
 
-//Please add your defination here
+//Please add your definition here
 
 /* Exported types ------------------------------------------------------------*/
 /** @addtogroup LEDC_Exported_Types LEDC Exported Types
@@ -212,22 +214,44 @@ extern "C" {
   * @brief  LEDC Init Structure Definition
   */
 typedef struct {
-	u32 led_count;
-	u32 data_length;
-	u32 t1h_ns;
-	u32 t1l_ns;
-	u32 t0h_ns;
-	u32 t0l_ns;
-	u32 reset_ns;
-	u32 wait_data_time_ns;
-	u32 wait_time0_en;
-	u32 wait_time1_en;
-	u32 wait_time0_ns;
-	u32 wait_time1_ns;
-	u32 output_RGB_mode;
-	u32 ledc_polarity;
-	u32 ledc_trans_mode;
-	u32 ledc_fifo_level;
+	u32 led_count;				/*!< Number of external LED lamps connected. This parameter can be a value of @ref LEDC_LED_Number. */
+
+	u32 data_length;			/*!< Total transfer data length in 32-bit units. This parameter can be a value of @ref LEDC_Data_Length. */
+
+	u32 t1h_ns;				/*!< Logical "1" high level cycle count. */
+
+	u32 t1l_ns;				/*!< Logical "1" low level cycle count. */
+
+	u32 t0h_ns;				/*!< Logical "0" high level cycle count. */
+
+	u32 t0l_ns;				/*!< Logical "0" low level cycle count. */
+
+	u32 reset_ns;				/*!< LED reset signal cycle count N. This parameter can be a value of @ref LEDC_Reset_Cnt. */
+
+	u32 wait_data_time_ns;		/*!< FIFO data wait timeout cycle count N. This parameter can be a value of @ref LEDC_Wait_Data_Time_Cnt. */
+
+	u32 wait_time0_en;			/*!< Enable or disable wait time0 insertion between two LED data packets.
+									This parameter can be: ENABLE or DISABLE. */
+
+	u32 wait_time1_en;			/*!< Enable or disable wait time1 insertion between two LED frame data.
+									This parameter can be: ENABLE or DISABLE. */
+
+	u32 wait_time0_ns;			/*!< Wait time0 between two LED data packets, cycle count N. This parameter can be a value of @ref LEDC_Wait_Time0_Cnt. */
+
+	u32 wait_time1_ns;			/*!< Wait time1 between two LED frame data, cycle count N. This parameter can be a value of @ref LEDC_Wait_Time1_Cnt. */
+
+	u32 output_RGB_mode;		/*!< RGB byte output order.
+									This parameter can be a value of @ref LEDC_RGB_Mode. */
+
+	u32 ledc_polarity;			/*!< Output signal idle level.
+									This parameter can be a value of @ref LEDC_Idle_Level. */
+
+	u32 ledc_trans_mode;		/*!< Data transfer mode (CPU or DMA).
+									This parameter can be a value of @ref LEDC_Transfer_Mode. */
+
+	u32 ledc_fifo_level;		/*!< FIFO trigger level threshold (0 to 31). A DMA or CPU request is generated
+									when the remaining FIFO space exceeds this value.
+									This parameter can be a value of @ref LEDC_FIFO_Level. */
 } LEDC_InitTypeDef;
 
 /**
@@ -239,45 +263,47 @@ typedef struct {
   * @{
   */
 
-/** @defgroup LEDC_Transfer_Mode
+/** @defgroup LEDC_Transfer_Mode LEDC Transfer Mode
   * @{
   */
-#define LEDC_CPU_MODE				(0)
-#define LEDC_DMA_MODE				(1)
+#define LEDC_CPU_MODE				(0)   /*!< LEDC CPU transfer mode. */
+#define LEDC_DMA_MODE				(1)   /*!< LEDC DMA transfer mode. */
+/** @brief Checks if the transfer mode parameter is valid. */
 #define IS_LEDC_TRANS_MODE(MODE)	(((MODE) == LEDC_CPU_MODE ||\
 									(MODE) == LEDC_DMA_MODE))
 /**
   * @}
   */
 
-/** @defgroup LEDC_FIFO_Level
+/** @defgroup LEDC_FIFO_Level LEDC FIFO Level
   * @{
   */
-#define LEDC_FIFO_DEPTH					(32)
-#define LEDC_DEFAULT_FIFO_TRIG_LEVEL	(15)
+#define LEDC_FIFO_DEPTH					(32)   /*!< LEDC internal FIFO total depth (32 entries). */
+#define LEDC_DEFAULT_FIFO_TRIG_LEVEL	(15)   /*!< Default LEDC FIFO trigger level for DMA/CPU requests. */
 /**
   * @}
   */
 
-/** @defgroup LEDC_Idle_Level
+/** @defgroup LEDC_Idle_Level LEDC Idle Level
   * @{
   */
-#define LEDC_IDLE_POLARITY_LOW			(0)
-#define LEDC_IDLE_POLARITY_HIGH			(1)
+#define LEDC_IDLE_POLARITY_LOW			(0)   /*!< LEDC output idle level is low. */
+#define LEDC_IDLE_POLARITY_HIGH			(1)   /*!< LEDC output idle level is high. */
 /**
   * @}
   */
 
-/** @defgroup LEDC_RGB_Mode
+/** @defgroup LEDC_RGB_Mode LEDC RGB Mode
   * @{
   */
-#define LEDC_OUTPUT_GRB				(0)
-#define LEDC_OUTPUT_GBR				(1)
-#define LEDC_OUTPUT_RGB				(2)
-#define LEDC_OUTPUT_BGR				(3)
-#define LEDC_OUTPUT_RBG				(4)
-#define LEDC_OUTPUT_BRG				(5)
+#define LEDC_OUTPUT_GRB				(0)   /*!< LEDC RGB output order: GRB. */
+#define LEDC_OUTPUT_GBR				(1)   /*!< LEDC RGB output order: GBR. */
+#define LEDC_OUTPUT_RGB				(2)   /*!< LEDC RGB output order: RGB. */
+#define LEDC_OUTPUT_BGR				(3)   /*!< LEDC RGB output order: BGR. */
+#define LEDC_OUTPUT_RBG				(4)   /*!< LEDC RGB output order: RBG. */
+#define LEDC_OUTPUT_BRG				(5)   /*!< LEDC RGB output order: BRG. */
 
+/** @brief Checks if the RGB output mode parameter is valid. */
 #define IS_LEDC_OUTPUT_MODE(MODE)	((MODE) == LEDC_OUTPUT_GRB || \
 									(MODE) == LEDC_OUTPUT_GBR || \
 									(MODE) == LEDC_OUTPUT_RGB || \
@@ -288,62 +314,102 @@ typedef struct {
   * @}
   */
 
-/** @defgroup LEDC_Input_Order
+/** @defgroup LEDC_Input_Order LEDC Input Order
   * @{
   */
-#define LEDC_INPUT_LSB				(0)
-#define LEDC_INPUT_MSB				(1)
+#define LEDC_INPUT_LSB				(0)   /*!< LEDC input data bit order: LSB first. */
+#define LEDC_INPUT_MSB				(1)   /*!< LEDC input data bit order: MSB first. */
+/** @brief Checks if the input bit order parameter is valid. */
 #define IS_LEDC_INPUT_ORDER(ORDER)	((ORDER) == LEDC_INPUT_LSB || \
 									(ORDER) == LEDC_INPUT_MSB)
 /**
   * @}
   */
 
-/** @defgroup LEDC_Output_Order
+/** @defgroup LEDC_Output_Order LEDC Output Order
   * @{
   */
-#define LEDC_OUTPUT_ORDER_MASK		((u32)0x0000001C)
-#define LEDC_OUTPUT_ORDER(x)		((u32)((x) & 0x00000007) << 2)
+#define LEDC_OUTPUT_ORDER_MASK		((u32)0x0000001C)   /*!< Bitmask for the LEDC output byte order field. */
+#define LEDC_OUTPUT_ORDER(x)		((u32)((x) & 0x00000007) << 2)   /*!< Sets the LEDC output byte order field value. */
 /**
   * @}
   */
 
-/** @defgroup LEDC_Interrupt
+/** @defgroup LEDC_Interrupt LEDC Interrupt
   * @{
   */
-#define LEDC_INT_ALL			((u32)0x0000001F)
-#define LEDC_INT_EXT_EN			((u32)0x0000001D)
+#define LEDC_INT_ALL			((u32)0x0000001F)   /*!< Bitmask for all LEDC interrupt sources. */
+#define LEDC_INT_EXT_EN			((u32)0x0000001D)   /*!< Bitmask for all externally-enabled LEDC interrupt sources. */
 
+/** @brief Checks if the interrupt parameter is within valid range. */
 #define IS_LEDC_INTERRUPT(INT)	((INT) <= LEDC_INT_ALL)
 /**
   * @}
   */
 
-/** @defgroup LEDC_Data_Length
+/** @defgroup LEDC_Data_Length LEDC Data Length
   * @{
   */
-#define LEDC_MAX_DATA_LENGTH			(0x2000)
+#define LEDC_MAX_DATA_LENGTH			(0x2000)   /*!< Maximum LEDC transfer data length (8192 entries). */
 
+/** @brief Checks if the data length parameter is within valid range. */
 #define IS_LEDC_DATA_LENGTH(LENGTH)		((LENGTH > 0) && ((LENGTH) <= LEDC_MAX_DATA_LENGTH))
 /**
   * @}
   */
 
-/** @defgroup LEDC_LED_Number
+/** @defgroup LEDC_LED_Number LEDC LED Number
   * @{
   */
-#define LEDC_DEFAULT_LED_NUM	(32)
-#define LEDC_MAX_LED_NUM		(1024)
+#define LEDC_DEFAULT_LED_NUM	(32)   /*!< Default number of LEDs connected to LEDC. */
+#define LEDC_MAX_LED_NUM		(1024)   /*!< Maximum number of LEDs supported by LEDC (1024). */
 
+/** @brief Checks if the LED number parameter is within valid range. */
 #define IS_LEDC_LED_NUM(NUM)	((NUM > 0) && (NUM <= LEDC_MAX_LED_NUM))
 /**
   * @}
   */
 
+/** @defgroup LEDC_Reset_Cnt LEDC Reset Count
+  * @{
+  */
+#define LEDC_MIN_RESET_CNT				((u32)0)   /*!< Minimum LEDC LED reset count value (0). */
+#define LEDC_MAX_RESET_CNT				((u32)0x3FFF)   /*!< Maximum LEDC LED reset count value (0x3FFF). */
+/** @brief Checks if the reset count value is within valid range. */
+#define IS_LEDC_RESET_VAL(NUM)			((NUM) <= LEDC_MAX_RESET_CNT)
 /**
   * @}
   */
 
+/** @defgroup LEDC_Wait_Data_Time_Cnt LEDC Wait Data Time Count
+  * @{
+  */
+#define LEDC_MIN_WAIT_DATA_TIME_CNT		((u32)0)   /*!< Minimum LEDC wait-data timeout count value (0). */
+#define LEDC_MAX_WAIT_DATA_TIME_CNT		((u32)0x7FFF)   /*!< Maximum LEDC wait-data timeout count value (0x7FFF). */
+/** @brief Checks if the wait-data time count is within valid range. */
+#define IS_LEDC_WAIT_DATA_TIME_VAL(NUM)	((NUM) <= LEDC_MAX_WAIT_DATA_TIME_CNT)
+/**
+  * @}
+  */
+
+/** @defgroup LEDC_Wait_Time0_Cnt LEDC Wait Time0 Count
+  * @{
+  */
+#define LEDC_MIN_WAIT_TIME0_CNT			((u32)0)   /*!< Minimum LEDC wait time0 count value (0). */
+#define LEDC_MAX_WAIT_TIME0_CNT			((u32)0x1FF)   /*!< Maximum LEDC wait time0 count value (0x1FF). */
+/** @brief Checks if the wait time0 count is within valid range. */
+#define IS_LEDC_WAIT_TIME0_VAL(NUM)		((NUM) <= LEDC_MAX_WAIT_TIME0_CNT)
+/**
+  * @}
+  */
+
+/** @defgroup LEDC_Wait_Time1_Cnt LEDC Wait Time1 Count
+  * @{
+  */
+#define LEDC_MIN_WAIT_TIME1_CNT			((u32)0)   /*!< Minimum LEDC wait time1 count value (0). */
+#define LEDC_MAX_WAIT_TIME1_CNT			((u32)0x7FFFFFFF)   /*!< Maximum LEDC wait time1 count value (0x7FFFFFFF). */
+/** @brief Checks if the wait time1 count is within valid range. */
+#define IS_LEDC_WAIT_TIME1_VAL(NUM)		((NUM) <= LEDC_MAX_WAIT_TIME1_CNT)
 /**
   * @}
   */
@@ -353,6 +419,10 @@ typedef struct {
   */
 
 /* Exported functions --------------------------------------------------------*/
+/** @defgroup LEDC_Exported_Functions LEDC Exported Functions
+  * @{
+  */
+
 _LONG_CALL_ void LEDC_StructInit(LEDC_InitTypeDef *LEDC_InitStruct);
 _LONG_CALL_ void LEDC_Init(LEDC_TypeDef *LEDCx, LEDC_InitTypeDef *LEDC_InitStruct);
 _LONG_CALL_ void LEDC_Cmd(LEDC_TypeDef *LEDCx, u8 NewState);
@@ -385,11 +455,21 @@ _LONG_CALL_ void LEDC_SetInputMode(LEDC_TypeDef *LEDCx, u8 order);
 _LONG_CALL_ void LEDC_LEDReset(LEDC_TypeDef *LEDCx);
 _LONG_CALL_ u32 LEDC_GetTransferMode(LEDC_TypeDef *LEDCx);
 _LONG_CALL_ u32 LEDC_GetFIFOLevel(LEDC_TypeDef *LEDCx);
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }
 #endif
 
 /* MANUAL_GEN_END */
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
 
 #endif

@@ -43,13 +43,32 @@ extern "C" {
  *  @{
  */
 
+/** @addtogroup MBED_WDG_Exported_Types MBED_WDG Exported Types
+  * @{
+  */
+
+/** @defgroup MBED_WDG_Structure_Type Structure Type
+  * @{
+  */
+
+/** @brief Typedef function pointer for WDG IRQ callback handler */
 typedef u32(*wdt_irq_handler)(void *id);
+
+/** @}*/
+
+/** @}*/
+
+/** @addtogroup MBED_WDG_Exported_Functions MBED_WDG Exported Functions
+  * @{
+  */
+
 void watchdog_init(uint32_t timeout_ms);
 void watchdog_start(void);
 void watchdog_stop(void);
 void watchdog_refresh(void);
 void watchdog_irq_init(wdt_irq_handler handler, uint32_t id);
 
+/** @} */
 /** @} */
 /** @} */
 

@@ -105,7 +105,7 @@ void IR_Init(IR_TypeDef *IRx, IR_InitTypeDef *IR_InitStruct)
   */
 void IR_StructInit(IR_InitTypeDef *IR_InitStruct)
 {
-	IR_InitStruct->IR_Clock				= 100000000; /*100MHz*/
+	IR_InitStruct->IR_Clock				= 40000000; /*40MHz*/
 	IR_InitStruct->IR_Freq				= 38000;
 	IR_InitStruct->IR_DutyCycle			= 3;
 	IR_InitStruct->IR_Mode				= IR_MODE_TX;
@@ -156,8 +156,8 @@ void IR_Cmd(IR_TypeDef *IRx, u32 mode, u32 NewState)
   * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
   * @param  IR_RxCntThrType
   *   This parameter can be the following values:
-  *     @arg IR_RX_Count_Low_Level: Low level counter value >= IR_RxCntThr, trigger IR_INT_RX_CNT_THR interrupt.
-  *     @arg IR_RX_Count_High_Level: High level counter value >= IR_RxCntThr, trigger IR_INT_RX_CNT_THR interrupt.
+  *     @arg IR_RX_COUNT_LOW_LEVEL: Low level counter value >= IR_RxCntThr, trigger IR_INT_RX_CNT_THR interrupt.
+  *     @arg IR_RX_COUNT_HIGH_LEVEL: High level counter value >= IR_RxCntThr, trigger IR_INT_RX_CNT_THR interrupt.
   * @param  IR_RxCntThr Configure IR Rx counter threshold value which can be 0 to 0x7fffffffUL.
   */
 void IR_SetRxCounterThreshold(IR_TypeDef *IRx, u32 IR_RxCntThrType, u32 IR_RxCntThr)
@@ -252,15 +252,15 @@ void IR_INTConfig(IR_TypeDef *IRx, u32 IR_INT, u32 newState)
   * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
   * @param  IR_INT Specifies the IR interrupts sources to be mask or unmask.
   *   This parameter can be the following values:
-  *     @arg IR_TX_FIFO_EMPTY_INT_MASK: TX FIFO empty interrupt mask.
-  *     @arg IR_TX_FIFO_LEVEL_INT_MASK: TX FIFO threshold interrupt mask.
-  *     @arg IR_TX_FIFO_OVER_INT_MASK: TX FIFO overflow interrupt mask.
-  *     @arg IR_RX_FIFO_FULL_INT_Msk: RX FIFO  full interrupt mask.
-  *     @arg IR_RX_FIFO_LEVEL_INT_Msk: RX FIFO threshold interrupt mask.
-  *     @arg IR_RX_CNT_OF_INT_Msk: RX counter overflow interrupt mask.
-  *     @arg IR_RX_FIFO_OF_INT_Msk: RX FIFO overflow interrupt mask.
-  *     @arg IR_RX_CNT_THR_INT_Msk: RX counter threshold interrupt mask.
-  *     @arg IR_RX_FIFO_ERROR_INT_Msk: RX FIFO error read interrupt mask. Trigger when RX FIFO empty and read RX FIFO.
+  *     @arg IR_BIT_TX_FIFO_EMPTY_INT_MASK: TX FIFO empty interrupt mask.
+  *     @arg IR_BIT_TX_FIFO_LEVEL_INT_MASK: TX FIFO threshold interrupt mask.
+  *     @arg IR_BIT_TX_FIFO_OVER_INT_MASK: TX FIFO overflow interrupt mask.
+  *     @arg IR_BIT_RX_FIFO_FULL_INT_MASK: RX FIFO full interrupt mask.
+  *     @arg IR_BIT_RX_FIFO_LEVEL_INT_MASK: RX FIFO threshold interrupt mask.
+  *     @arg IR_BIT_RX_CNT_OF_INT_MASK: RX counter overflow interrupt mask.
+  *     @arg IR_BIT_RX_FIFO_OF_INT_MASK: RX FIFO overflow interrupt mask.
+  *     @arg IR_BIT_RX_CNT_THR_INT_MASK: RX counter threshold interrupt mask.
+  *     @arg IR_BIT_RX_FIFO_ERROR_INT_MASK: RX FIFO error read interrupt mask. Trigger when RX FIFO empty and read RX FIFO.
   * @param  newState New state of the specified IR interrupts.
   *   This parameter can be: ENABLE or DISABLE.
   */
@@ -287,9 +287,9 @@ void IR_MaskINTConfig(IR_TypeDef *IRx, u32 IR_INT, u32 newState)
 }
 
 /**
-  * @brief Get the specified IR interrupt status.
+  * @brief  Get the IR interrupt status.
   * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
-  * @return The new state of IR_INT (SET or RESET).
+  * @return The interrupt status register value.
   */
 u32 IR_GetINTStatus(IR_TypeDef *IRx)
 {
@@ -306,9 +306,9 @@ u32 IR_GetINTStatus(IR_TypeDef *IRx)
 }
 
 /**
-  * @brief Get the specified IR interrupt mask status.
+  * @brief  Get the IR interrupt mask status.
   * @param  IRx Pointer to an IR peripheral instance, can be IR_DEV
-  * @return The new mask state of IR_INT (MASKED or UNMASKED).
+  * @return The interrupt mask register value.
   */
 u32 IR_GetIMR(IR_TypeDef *IRx)
 {

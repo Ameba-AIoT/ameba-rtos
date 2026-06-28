@@ -40,7 +40,7 @@
 #define USBD_CDC_ACM_PID                              USB_PID               /**< Product ID. */
 #define USBD_CDC_ACM_SELF_POWERED                     1U                    /**< Device is self-powered. */
 #define USBD_CDC_ACM_REMOTE_WAKEUP_EN                 1U                    /**< Remote wakeup is enabled. */
-#define USBD_CDC_ACM_LANGID_STRING                    0x0409U               /**< Language ID for string descriptors (0x0409 = English */
+#define USBD_CDC_ACM_LANGID_STRING                    0x0409U               /**< Language ID for string descriptors (0x0409 = English) */
 #define USBD_CDC_ACM_MFG_STRING                       "Realtek"             /**< Manufacturer string. */
 #define USBD_CDC_ACM_PROD_HS_STRING                   "Realtek CDC ACM (HS)"/**< Product string for High-Speed mode. */
 #define USBD_CDC_ACM_PROD_FS_STRING                   "Realtek CDC ACM (FS)"/**< Product string for Full-Speed mode. */
@@ -145,6 +145,14 @@ typedef struct {
 	 * @param[in] status: The new attach status.
 	 */
 	void (*status_changed)(u8 old_status, u8 status);
+
+	/**
+	 * @brief Called when the USB device resumes from suspend (wakeup).
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @details Indicates that the USB bus is active again and the upper layer can resume normal TRX.
+	 */
+	void (*wakeup)(void);
 } usbd_cdc_acm_cb_t;
 
 /**

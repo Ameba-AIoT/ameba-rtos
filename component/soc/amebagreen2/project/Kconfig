@@ -70,6 +70,8 @@ config SUPPORT_AUDIO_CMD_PLAYER
 
 rsource "../../../soc/common/image3/Kconfig.trustzone"
 
+rsource "../../../soc/Kconfig"
+
 menu "CONFIG Memory Arch"
     config SECOND_FLASH_NOR
         bool "Second flash NOR"
@@ -253,6 +255,10 @@ menu "CONFIG WHC INTF"
             config WHC_DEV_HCI_BOOT
                 bool "Boot From HCI"
         endchoice
+
+        if WHC_DEV_HCI_BOOT
+        rsource "../../../soc/common/log_forward/Kconfig"
+        endif
     endif
 
     if WHC_HOST_MENU && !WHC_INTF_IPC_MENU
@@ -452,11 +458,11 @@ menu "CONFIG ETHERNET"
 			prompt "PHY SOURCE CLK"
 			default MAC_OUTPUT_50M
 			config MAC_OUTPUT_50M
-				bool "external 50M"
+				bool "50M from Ameba"
 			config MAC_OUTPUT_25M
-				bool "external 25M"
+				bool "25M from Ameba"
 			config PHY_INT_XTAL
-				bool "internal xtal"
+				bool "PHY xtal"
 		endchoice
 	endif
 endmenu

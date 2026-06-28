@@ -1,4 +1,7 @@
 #include "whc_dev.h"
+#ifdef CONFIG_LOG_FWD
+#include "log_forward.h"
+#endif
 #include "lwip/sys.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
@@ -261,6 +264,9 @@ __weak void whc_dev_cmd_rx_to_user_task(void)
 	(void)password;
 	(void)idx;
 	(void)ret;
+	(void)buf;
+	(void)dst;
+	(void)wifi;
 
 	while (1) {
 		rtos_sema_take(whc_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);
@@ -375,10 +381,16 @@ connect_fail:
 					wifi_user_config.cfg80211 = 0;
 				} else if (*ptr == WHC_WIFI_TEST_OTA) {
 					whc_dev_ota_process(ptr);
+#ifdef CONFIG_LOG_FWD
+				} else if (*ptr == WHC_WIFI_TEST_LOG_ENABLE) {
+					rtk_log_forward_enable();
+				} else if (*ptr == WHC_WIFI_TEST_LOG_DISABLE) {
+					rtk_log_forward_disable();
+#endif
 				}
 #endif
 #ifdef CONFIG_MP_INCLUDED
-				else if (*ptr == WHC_WIFI_TEST_MP) {
+				if (*ptr == WHC_WIFI_TEST_MP) {
 					whc_dev_mp_cmd((char *)(ptr + 2), *(ptr + 1));
 				}
 #endif

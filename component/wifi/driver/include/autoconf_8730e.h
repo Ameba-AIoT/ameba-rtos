@@ -39,6 +39,7 @@
 
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
+#define NAN_CUSTOMER_NANDOW
 #define CONFIG_TWT
 #endif
 
