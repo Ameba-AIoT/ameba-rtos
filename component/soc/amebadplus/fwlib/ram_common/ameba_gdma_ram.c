@@ -860,6 +860,29 @@ GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum)
 	return TRUE;
 }
 
+/**
+  * @brief Check if the channel is active.
+  * @param GDMA_Index: 0.
+  * @param GDMA_ChNum: 0 ~ 7.
+  * @retval TRUE/FALSE
+  */
+__weak
+u8 GDMA_ChannelIsActive(u8 GDMA_Index, u8 GDMA_ChNum)
+{
+	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *) GDMA_BASE);
+	if (TrustZone_IsSecure()) {
+		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
+	}
+	/* Check the parameters */
+	assert_param(IS_GDMA_Index(GDMA_Index));
+	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
+
+	if ((GDMA->ChEnReg & BIT(GDMA_ChNum)) &&
+		((GDMA->CH[GDMA_ChNum].CFG_LOW & BIT_CFGx_L_INACTIVE) == 0)) {
+		return TRUE;
+	}
+	return FALSE;
+}
 
 /**
   * @}

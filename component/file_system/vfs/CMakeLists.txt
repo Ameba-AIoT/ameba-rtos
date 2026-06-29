@@ -52,6 +52,7 @@ ameba_list_append(private_sources
 ameba_list_append_if(CONFIG_SUPPORT_NAND_FLASH private_sources
     vfs_nand_ftl.c
     vfs_nand_ftl_mfg.c
+    lbm_core.c
 )
 
 if(CONFIG_FATFS_SECOND_FLASH OR CONFIG_LITTLEFS_SECOND_FLASH)
