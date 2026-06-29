@@ -27,3 +27,8 @@ ameba_list_append(c_GLOBAL_MCU_COMPILE_CPP_OPTIONS
     ${c_GLOBAL_MCU_COMPILE_C_OPTIONS}
 )
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
+# Inject Kconfig-derived defines into compiler flags
+if(CONFIG_PLATFORM_ZEPHYR)
+    ameba_list_append(c_GLOBAL_MCU_COMPILE_DEFINES CONFIG_PLATFORM_ZEPHYR)
+endif()

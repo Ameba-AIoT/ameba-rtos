@@ -31,31 +31,30 @@
 #endif
 
 // Thread priorities
-#define CONFIG_CDC_ECM_INIT_THREAD_PRIORITY           5
-#define CONFIG_CDC_ECM_HOTPLUG_THREAD_PRIORITY        8
-
-#define CONFIG_CDC_ECM_LINK_STATE_THREAD_PRIORITY    4
+#define CONFIG_USBD_CDC_ECM_INIT_THREAD_PRIORITY         5
+#define CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_PRIORITY   4
+#define CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_PRIORITY      8
 
 // Thread stack sizes
-#define CONFIG_CDC_ECM_INIT_THREAD_STACK_SIZE              (1024U * 2)
-#define CONFIG_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE           (1024U * 2)
-#define CONFIG_CDC_ECM_LINK_STATE_THREAD_STACK_SIZE        (1024U * 2)
+#define CONFIG_USBD_CDC_ECM_INIT_THREAD_STACK_SIZE         2048U
+#define CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE      2048U
+#define CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_STACK_SIZE   2048U
 
 // USB ECM Device IP Configuration
-#define USB_ECM_IP_ADDR0   192
-#define USB_ECM_IP_ADDR1   168
-#define USB_ECM_IP_ADDR2   45
-#define USB_ECM_IP_ADDR3   1
+#define CONFIG_USBD_CDC_ECM_IP_ADDR0   192
+#define CONFIG_USBD_CDC_ECM_IP_ADDR1   168
+#define CONFIG_USBD_CDC_ECM_IP_ADDR2   45
+#define CONFIG_USBD_CDC_ECM_IP_ADDR3   1
 
-#define USB_ECM_NETMASK_ADDR0   255
-#define USB_ECM_NETMASK_ADDR1   255
-#define USB_ECM_NETMASK_ADDR2   255
-#define USB_ECM_NETMASK_ADDR3   0
+#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR0   255
+#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR1   255
+#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR2   255
+#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR3   0
 
-#define USB_ECM_GW_ADDR0   192
-#define USB_ECM_GW_ADDR1   168
-#define USB_ECM_GW_ADDR2   45
-#define USB_ECM_GW_ADDR3   1
+#define CONFIG_USBD_CDC_ECM_GW_ADDR0   192
+#define CONFIG_USBD_CDC_ECM_GW_ADDR1   168
+#define CONFIG_USBD_CDC_ECM_GW_ADDR2   45
+#define CONFIG_USBD_CDC_ECM_GW_ADDR3   1
 
 /* Private types -------------------------------------------------------------*/
 typedef enum {
@@ -263,12 +262,14 @@ static void example_usbd_ecm_link_change_thread(void *param)
 					dhcps_deinit(pnetif_usb_eth);
 
 					// 3. Set Device IP address
-					u32 ip_addr = CONCAT_TO_UINT32(USB_ECM_IP_ADDR0, USB_ECM_IP_ADDR1, USB_ECM_IP_ADDR2, USB_ECM_IP_ADDR3);
-					u32 netmask = CONCAT_TO_UINT32(USB_ECM_NETMASK_ADDR0, USB_ECM_NETMASK_ADDR1, USB_ECM_NETMASK_ADDR2, USB_ECM_NETMASK_ADDR3);
-					u32 gw = CONCAT_TO_UINT32(USB_ECM_GW_ADDR0, USB_ECM_GW_ADDR1, USB_ECM_GW_ADDR2, USB_ECM_GW_ADDR3);
+					u32 ip_addr = CONCAT_TO_UINT32(CONFIG_USBD_CDC_ECM_IP_ADDR0, CONFIG_USBD_CDC_ECM_IP_ADDR1, CONFIG_USBD_CDC_ECM_IP_ADDR2, CONFIG_USBD_CDC_ECM_IP_ADDR3);
+					u32 netmask = CONCAT_TO_UINT32(CONFIG_USBD_CDC_ECM_NETMASK_ADDR0, CONFIG_USBD_CDC_ECM_NETMASK_ADDR1, CONFIG_USBD_CDC_ECM_NETMASK_ADDR2,
+												   CONFIG_USBD_CDC_ECM_NETMASK_ADDR3);
+					u32 gw = CONCAT_TO_UINT32(CONFIG_USBD_CDC_ECM_GW_ADDR0, CONFIG_USBD_CDC_ECM_GW_ADDR1, CONFIG_USBD_CDC_ECM_GW_ADDR2, CONFIG_USBD_CDC_ECM_GW_ADDR3);
 					lwip_set_ip(NETIF_USB_ETH_INDEX, ip_addr, netmask, gw);
 
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Device IP: %d.%d.%d.%d\n", USB_ECM_IP_ADDR0, USB_ECM_IP_ADDR1, USB_ECM_IP_ADDR2, USB_ECM_IP_ADDR3);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Device IP: %d.%d.%d.%d\n", CONFIG_USBD_CDC_ECM_IP_ADDR0, CONFIG_USBD_CDC_ECM_IP_ADDR1, CONFIG_USBD_CDC_ECM_IP_ADDR2,
+							 CONFIG_USBD_CDC_ECM_IP_ADDR3);
 
 					// 4. Activate network interface link
 					netifapi_netif_set_link_up(pnetif_usb_eth);
@@ -552,8 +553,8 @@ static void example_usbd_cdc_ecm_thread(void *param)
 						   "example_usbd_ecm_hotplug_thread",
 						   example_usbd_ecm_hotplug_thread,
 						   NULL,
-						   CONFIG_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE,
-						   CONFIG_CDC_ECM_HOTPLUG_THREAD_PRIORITY);
+						   CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE,
+						   CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_hotplug_task_fail;
 	}
@@ -607,8 +608,8 @@ void example_usbd_cdc_ecm(void)
 						   "example_usbd_cdc_ecm_thread",
 						   example_usbd_cdc_ecm_thread,
 						   NULL,
-						   CONFIG_CDC_ECM_INIT_THREAD_STACK_SIZE,
-						   CONFIG_CDC_ECM_INIT_THREAD_PRIORITY);
+						   CONFIG_USBD_CDC_ECM_INIT_THREAD_STACK_SIZE,
+						   CONFIG_USBD_CDC_ECM_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 		return;
@@ -618,9 +619,49 @@ void example_usbd_cdc_ecm(void)
 						   "example_usbd_ecm_link_change_thread",
 						   example_usbd_ecm_link_change_thread,
 						   NULL,
-						   CONFIG_CDC_ECM_LINK_STATE_THREAD_STACK_SIZE,
-						   CONFIG_CDC_ECM_LINK_STATE_THREAD_PRIORITY);
+						   CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_STACK_SIZE,
+						   CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
 }
+
+/**
+ * @brief  CLI command: report uplink (e.g. Wi-Fi / cellular) link state to host.
+ *
+ * Usage: ecm_link <0|1>
+ *   1: notify host that the upper-layer network link is UP
+ *   0: notify host that the upper-layer network link is DOWN
+ *
+ * Wraps usbd_cdc_ecm_set_link_status(), which is edge-triggered: calling
+ * with the same value twice is a no-op. This is the call site documented
+ * in usbd_cdc_ecm.h as belonging to the layer that owns the real uplink.
+ * Exposing it as a shell command lets you manually exercise the
+ * NETWORK_CONNECTION notification path on the USB host side (Linux/Windows
+ * virtual NIC carrier up/down) without waiting for a real link event.
+ *
+ * Note: this does NOT touch the example's internal DHCP/lwIP teardown
+ * path (cdc_ecm_link_disconnected); it only sends the USB-level
+ * notification. Add a second command if you want to drive both at once.
+ */
+static u32 cmd_ecm_link(u16 argc, u8 *argv[])
+{
+	u8 link_up;
+
+	if (argc == 0 || argv[0] == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: ecm_link <0|1>\n");
+		return HAL_ERR_PARA;
+	}
+
+	link_up = (u8)(_strtoul((const char *)argv[0], (char **)NULL, 10) ? 1U : 0U);
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Set ECM link status -> %s\n",
+			 link_up ? "UP" : "DOWN");
+
+	return (u32)usbd_cdc_ecm_set_link_status(link_up);
+}
+
+CMD_TABLE_DATA_SECTION
+const COMMAND_TABLE usbd_cdc_ecm_cmd_table[] = {
+	{"usbd_ecm_link", cmd_ecm_link},
+};

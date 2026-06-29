@@ -35,6 +35,8 @@ extern u8 __image3_heap_start__[];
 extern u8 __image3_heap_size__[];
 extern u8 __image3_ram_start__[];
 extern u8 __image3_ram_end__[];
+extern u8 __image3_psram_ram_start__[];
+extern u8 __image3_psram_ram_end__[];
 extern u8 __image3_entry_func__[];
 extern u8 __ram_image3_nsc_start__[];
 extern u8 __ram_image3_nsc_end__[];

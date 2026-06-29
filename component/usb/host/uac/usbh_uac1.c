@@ -14,7 +14,7 @@
 
 /* Private macros ------------------------------------------------------------*/
 #define USBH_UAC_WAIT_SLICE_MS              5
-#define USB_OTG_HFNUM_FRNUM_MAX             (0x3FFFUL)       /* Frame number max value */
+#define USBH_HFNUM_FRNUM_MAX                (0x3FFFUL)       /* Frame number max value */
 
 #define USBH_UAC_AUDIO_CTRL_BUF_MAX_LEN     512U
 #define USBH_UAC_ISOC_BUF_LENGTH            1024U
@@ -203,19 +203,19 @@ static inline u32 usbh_uac_frame_num_dec(u32 new, u32 start)
 	if (new >= start) {
 		return new - start;
 	} else {
-		return (USB_OTG_HFNUM_FRNUM_MAX - start + 1 + new);
+		return (USBH_HFNUM_FRNUM_MAX - start + 1 + new);
 	}
 }
 
 /*
  * Increments frame by the amount specified by inc. The addition is done
- * modulo USB_OTG_HFNUM_FRNUM_MAX. Returns the incremented value.
+ * modulo USBH_HFNUM_FRNUM_MAX. Returns the incremented value.
  *
  * send the token in next frame
  */
 static inline u32 usbh_uac_frame_num_inc(u32 frame, u32 inc)
 {
-	return (frame + inc) & USB_OTG_HFNUM_FRNUM_MAX;
+	return (frame + inc) & USBH_HFNUM_FRNUM_MAX;
 }
 
 static u16 usbh_uac_volume_to_db(usbh_uac_volume_info_t *uac_dev, u8 percent)

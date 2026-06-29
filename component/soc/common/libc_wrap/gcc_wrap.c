@@ -78,7 +78,7 @@ int __wrap_printf(const char *__restrict fmt, ...)
 #ifdef CONFIG_ARM_CORE_CA32
 	extern rtos_mutex_t log_mutex;
 	u32 in_isr = CPU_InInterrupt();
-	if ((!in_isr) && (log_mutex != NULL)) {
+	if ((!in_isr) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (log_mutex != NULL)) {
 		rtos_mutex_take(log_mutex, RTOS_MAX_DELAY);
 	}
 #endif
@@ -104,7 +104,7 @@ int __wrap_printf(const char *__restrict fmt, ...)
 	va_end(ap);
 
 #ifdef CONFIG_ARM_CORE_CA32
-	if ((!in_isr) && (log_mutex != NULL)) {
+	if ((!in_isr) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (log_mutex != NULL)) {
 		rtos_mutex_give(log_mutex);
 	}
 #endif
