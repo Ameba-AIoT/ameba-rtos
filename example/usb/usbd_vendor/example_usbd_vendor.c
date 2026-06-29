@@ -7,7 +7,6 @@
 /* Includes ------------------------------------------------------------------ */
 
 #include <platform_autoconf.h>
-#include "usbd.h"
 #include "usbd_vendor.h"
 #include "os_wrapper.h"
 
@@ -34,9 +33,14 @@ static const char *const TAG = "VND";
 #define CONFIG_USBD_VENDOR_BULK_ASYNC_XFER				0
 
 // Thread priorities
-#define CONFIG_USBD_VENDOR_INIT_THREAD_PRIORITY			5U
-#define CONFIG_USBD_VENDOR_HOTPLUG_THREAD_PRIORITY		8U // Should be higher than CONFIG_USBD_VENDOR_ISR_THREAD_PRIORITY
-#define CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY			6U // Should be lower than CONFIG_USBD_VENDOR_ISR_THREAD_PRIORITY
+#define CONFIG_USBD_VENDOR_INIT_THREAD_PRIORITY           5U
+#define CONFIG_USBD_VENDOR_HOTPLUG_THREAD_PRIORITY        8U
+#define CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY           6U
+
+// Thread stack sizes
+#define CONFIG_USBD_VENDOR_INIT_THREAD_STACK_SIZE           1024U
+#define CONFIG_USBD_VENDOR_HOTPLUG_THREAD_STACK_SIZE        1024U
+#define CONFIG_USBD_VENDOR_XFER_THREAD_STACK_SIZE           1024U
 
 /* Private types -------------------------------------------------------------*/
 
@@ -60,15 +64,12 @@ static usbd_config_t vendor_cfg = {
 	.speed = CONFIG_USBD_VENDOR_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
-	/* EOPF for ISOC OUT */
-	.ext_intr_enable = USBD_EPMIS_INTR | USBD_EOPF_INTR,
 	.nptx_max_epmis_cnt = 100U,
-	/*DFIFO total 1024 DWORD, resv 8 DWORD for DMA addr*/
+	.intr_use_ptx_fifo = 0U,
 #elif defined (CONFIG_AMEBAGREEN2)
 	/*DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 292U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
-	.ext_intr_enable = USBD_EOPF_INTR,//for ISOC OUT
 #elif defined (CONFIG_AMEBAL2)
 	/*DFIFO total 1024 DWORD, resv 11 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 405U,
@@ -78,7 +79,6 @@ static usbd_config_t vendor_cfg = {
 	.rx_fifo_depth = 1424U,
 	.ptx_fifo_depth = {256U, 256U, 32U},
 #endif
-	.intr_use_ptx_fifo = 0U,
 };
 
 static usbd_vendor_cb_t vendor_cb = {
@@ -119,6 +119,8 @@ static rtos_sema_t vendor_attach_status_changed_sema;
 
 /**
   * @brief  Handle the vendor class control requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  cmd: Command code
   * @param  buf: Buffer containing command data (request parameters)
   * @param  len: Number of data to be sent (in bytes)
@@ -160,6 +162,8 @@ static int vendor_cb_deinit(void)
 
 /**
   * @brief  Set config callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  None
   * @retval Status
   */
@@ -170,6 +174,8 @@ static int vendor_cb_set_config(void)
 
 /**
   * @brief  Data received over USB INTR OUT endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  buf: RX buffer
   * @param  len: RX data length (in bytes)
   * @retval Status
@@ -186,7 +192,7 @@ static int vendor_cb_intr_received(u8 *buf, u32 len)
 }
 
 #if CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
-static void vendor_intr_xfer_thread(void *param)
+static void example_usbd_vendor_intr_xfer_thread(void *param)
 {
 	UNUSED(param);
 
@@ -204,6 +210,8 @@ static void vendor_intr_xfer_thread(void *param)
 
 /**
   * @brief  Data received over USB ISOC OUT endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  buf: RX buffer
   * @param  len: RX data length (in bytes)
   * @retval Status
@@ -220,7 +228,7 @@ static int vendor_cb_isoc_received(u8 *buf, u32 len)
 }
 
 #if CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
-static void vendor_isoc_xfer_thread(void *param)
+static void example_usbd_vendor_isoc_xfer_thread(void *param)
 {
 	UNUSED(param);
 
@@ -237,6 +245,8 @@ static void vendor_isoc_xfer_thread(void *param)
 
 /**
   * @brief  Data received over USB BULK OUT endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  buf: RX buffer
   * @param  len: RX data length (in bytes)
   * @retval Status
@@ -253,7 +263,7 @@ static int vendor_cb_bulk_received(u8 *buf, u32 len)
 }
 
 #if CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
-static void vendor_bulk_xfer_thread(void *param)
+static void example_usbd_vendor_bulk_xfer_thread(void *param)
 {
 	UNUSED(param);
 
@@ -268,17 +278,28 @@ static void vendor_bulk_xfer_thread(void *param)
 }
 #endif // CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
 
+/**
+  * @brief  Handle vendor class attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void vendor_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_VENDOR_HOTPLUG
 	vendor_attach_status = status;
 	rtos_sema_give(vendor_attach_status_changed_sema);
+#else
+	UNUSED(status);
 #endif
 }
 
 #if CONFIG_USBD_VENDOR_HOTPLUG
-static void vendor_hotplug_thread(void *param)
+static void example_usbd_vendor_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -364,28 +385,36 @@ static void example_usbd_vendor_thread(void *param)
 	}
 
 #if CONFIG_USBD_VENDOR_HOTPLUG
-	ret = rtos_task_create(&check_status_task, "vendor_hotplug_thread", vendor_hotplug_thread, NULL, 1024U, CONFIG_USBD_VENDOR_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&check_status_task, "example_usbd_vendor_hotplug_thread",
+						   example_usbd_vendor_hotplug_thread, NULL,
+						   CONFIG_USBD_VENDOR_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBD_VENDOR_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_usb_class_exit;
 	}
 #endif // CONFIG_USBD_VENDOR_HOTPLUG
 #if CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
 	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&intr_async_xfer_task, "vendor_intr_xfer_thread", vendor_intr_xfer_thread, NULL, 1024U, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
+	ret = rtos_task_create(&intr_async_xfer_task, "example_usbd_vendor_intr_xfer_thread",
+						   example_usbd_vendor_intr_xfer_thread, NULL,
+						   CONFIG_USBD_VENDOR_XFER_THREAD_STACK_SIZE, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_check_status_task;
 	}
 #endif // CONFIG_USBD_VENDOR_INTR_ASYNC_XFER
 #if CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
 	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&isoc_async_xfer_task, "vendor_isoc_xfer_thread", vendor_isoc_xfer_thread, NULL, 1024U, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
+	ret = rtos_task_create(&isoc_async_xfer_task, "example_usbd_vendor_isoc_xfer_thread",
+						   example_usbd_vendor_isoc_xfer_thread, NULL,
+						   CONFIG_USBD_VENDOR_XFER_THREAD_STACK_SIZE, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_intr_async_task;
 	}
 #endif // CONFIG_USBD_VENDOR_ISOC_ASYNC_XFER
 #if CONFIG_USBD_VENDOR_BULK_ASYNC_XFER
 	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&bulk_async_xfer_task, "vendor_bulk_xfer_thread", vendor_bulk_xfer_thread, NULL, 1024U, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
+	ret = rtos_task_create(&bulk_async_xfer_task, "example_usbd_vendor_bulk_xfer_thread",
+						   example_usbd_vendor_bulk_xfer_thread, NULL,
+						   CONFIG_USBD_VENDOR_XFER_THREAD_STACK_SIZE, CONFIG_USBD_VENDOR_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_isoc_async_task;
 	}
@@ -444,12 +473,12 @@ exit:
 
 void example_usbd_vendor(void)
 {
-	int status;
+	int ret;
 	rtos_task_t task;
 
-	status = rtos_task_create(&task, "example_usbd_vendor_thread", example_usbd_vendor_thread, NULL, 1024U, CONFIG_USBD_VENDOR_INIT_THREAD_PRIORITY);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&task, "example_usbd_vendor_thread", example_usbd_vendor_thread, NULL,
+						   CONFIG_USBD_VENDOR_INIT_THREAD_STACK_SIZE, CONFIG_USBD_VENDOR_INIT_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD vendor thread fail\n");
 	}
 }
-

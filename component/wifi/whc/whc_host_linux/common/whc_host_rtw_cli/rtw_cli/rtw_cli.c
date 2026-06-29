@@ -14,7 +14,7 @@
 #include <rtw_cli_api.h>
 #include <rtw_cli_wifi_types.h>
 #include <rtw_cli_netlink.h>
-
+#include <whc_def.h>
 #include <whc_host_rtw_cli_api.h>
 #include <whc_host_netlink.h>
 
@@ -22,6 +22,9 @@ int num_of_ap = 0;
 int num_of_ap_index = 0;
 struct rtw_scan_result *scan_results = NULL;
 int direct_cli_cmd = 0;
+
+static uint8_t mpfrag_buf[WHC_MP_FRAG_NUM * WHC_MP_FRAG_SIZE];
+static int mpfrag_received = 0;
 
 struct rtw_cli_netlink_global *global = NULL;
 
@@ -41,7 +44,7 @@ const struct cmd_func_t rtw_cli_cmd_handlers[] = {
 	{"join_event",      rtw_cli_cmd_get_join_status, CMD_WIFI_GET_JOIN_EVENT, 0, 0},
 	{"wpason",          rtw_cli_cmd_wpas_on, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_CUSTOM_API, WHC_WPA_OPS_CUSTOM_API_INIT_WPAS_STD},
 	{"wifion",          rtw_cli_cmd_wifi_on, CMD_WIFI_SEND_BUF, WHC_WPA_OPS_CUSTOM_API, WHC_WPA_OPS_CUSTOM_API_WIFION},
-	{"mp",              rtw_cli_cmd_mp, CMD_WIFI_MP, 0, 0},
+	{"iwpriv",          rtw_cli_cmd_mp, CMD_WIFI_MP, 0, 0},
 	{"dbg",             rtw_cli_cmd_dbg, CMD_WIFI_DBG, 0, 0},
 	{NULL, NULL, 0, 0},
 };
@@ -136,6 +139,7 @@ void whc_cmd_handle_rx_payload(char *pos, int len, int api_id,
 {
 	uint32_t whc_event;
 	int idx = 0;
+	uint8_t mpfrag_idx;
 
 	if (api_id == CMD_WIFI_SCAN_RESULT) {
 		whc_cmd_handle_rx_print_scan_result(pos, chunk_index, last_chunk);
@@ -173,6 +177,20 @@ void whc_cmd_handle_rx_payload(char *pos, int len, int api_id,
 
 					if (rtw_cli_event_handlers[idx].handler) {
 						rtw_cli_event_handlers[idx].handler(pos + 1);
+					}
+				}
+			}
+		} else if (whc_event == WHC_WIFI_TEST) {
+			pos = pos + sizeof(uint32_t);
+			if (*pos == WHC_WIFI_TEST_MP) {
+				mpfrag_idx = *(uint8_t *)(pos + 1);
+				if (mpfrag_idx >= WHC_MP_FRAG_NUM) {
+					printf("mp result: invalid mpfrag_idx %d\n", mpfrag_idx);
+				} else {
+					memcpy(mpfrag_buf + mpfrag_idx * WHC_MP_FRAG_SIZE, pos + 2, WHC_MP_FRAG_SIZE);
+					mpfrag_received++;
+					if (mpfrag_received >= WHC_MP_FRAG_NUM) {
+						printf("%s\n", (char *)mpfrag_buf);
 					}
 				}
 			}
@@ -233,12 +251,33 @@ int main(int argc, char *argv[])
 		}
 		direct_cli_cmd = 1;
 
+		if (strncmp(input_buf, "iwpriv", 6) == 0) {
+			mpfrag_received = 0;
+			memset(mpfrag_buf, 0, sizeof(mpfrag_buf));
+		}
+
 		printf("CLI: %s\n", input_buf);
 		rtw_cli_host_cmd_hdl(input_buf);
 
-		if (poll(fds, 1, 500) > 0) {
-			if (fds[0].revents & POLLIN) {
-				rtw_cli_nl_recv(global);
+
+		/* iwpriv (mp cmd) loops until all fragments received; other cmds use a single poll with no extra delay. */
+		if (strncmp(input_buf, "iwpriv", 6) == 0) {
+			while (mpfrag_received < WHC_MP_FRAG_NUM) {
+				if (poll(fds, 1, 500) > 0) {
+					if (fds[0].revents & POLLIN) {
+						rtw_cli_nl_recv(global);
+					}
+				} else {
+					break;
+				}
+			}
+			mpfrag_received = 0;
+			memset(mpfrag_buf, 0, sizeof(mpfrag_buf));
+		} else {
+			if (poll(fds, 1, 500) > 0) {
+				if (fds[0].revents & POLLIN) {
+					rtw_cli_nl_recv(global);
+				}
 			}
 		}
 
@@ -266,6 +305,10 @@ int main(int argc, char *argv[])
 					if (strcmp(input_buf, "exit") == 0) {
 						break;
 					}
+					if (strncmp(input_buf, "iwpriv", 6) == 0) {
+						mpfrag_received = 0;
+						memset(mpfrag_buf, 0, sizeof(mpfrag_buf));
+					}
 					rtw_cli_host_cmd_hdl(input_buf);
 					printf("> ");
 					fflush(stdout);
@@ -283,4 +326,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-

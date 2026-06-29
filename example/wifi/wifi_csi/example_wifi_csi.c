@@ -200,7 +200,7 @@ NEXT:
 			goto NEXT;
 
 		}
-		if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
+		if (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
 			rtos_time_delay_ms(2000);  /* 2s */
 			RTK_LOGA(NOTAG, "### STA Break ###\r\n");
 			break;

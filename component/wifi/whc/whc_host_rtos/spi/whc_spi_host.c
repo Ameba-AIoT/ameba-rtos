@@ -120,7 +120,7 @@ void whc_spi_host_rx_handler(u8 *buf)
 	}
 
 	if (p_buf != NULL) {
-		LwIP_ethernetif_recv_inic(msg_info->wlan_idx, p_buf);
+		netif_adapter_wifi_recv_whc(msg_info->wlan_idx, p_buf);
 	}
 }
 

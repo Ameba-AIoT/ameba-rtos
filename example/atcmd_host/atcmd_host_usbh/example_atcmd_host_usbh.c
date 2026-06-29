@@ -20,6 +20,7 @@
 #include "semphr.h"
 #include "queue.h"
 #include "atcmd_service.h"
+#include "stdlib.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -48,18 +49,20 @@ static int cdc_acm_cb_notify(u8 *pbuf, u32 Len, u8 status);
 static int cdc_acm_cb_line_coding_changed(usb_cdc_line_coding_t *line_coding);
 static int cdc_acm_cb_process(usb_host_t *host, u8 id);
 
-void uart_send_string(serial_t *sobj, char *pstr, u32 len);
-void uart_format_string_output(const char *fmt, ...);
+static void uart_send_string(serial_t *sobj, char *pstr, u32 len);
+static void uart_format_string_output(const char *fmt, ...);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "ACM";
 
 static u8 cdc_acm_loopback_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+#endif
 
-u8 uart_show_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] = {0};
-char uart_format_buffer[FORMAT_LEN];
+static u8 uart_show_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] = {0};
+static char uart_format_buffer[FORMAT_LEN];
 
 static void *cdc_acm_detach_sema;
 static void *cdc_acm_attach_sema;
@@ -76,15 +79,15 @@ static void *usbh_rx_ringbuf_mutex = NULL;
 static __IO int atcmd_usbh_notify_len = 0;
 static __IO int atcmd_usbh_rx_len = 0;
 static __IO int atcmd_cdc_acm_total_rx_len = 0;
-RingBuffer *at_usbh_rx_ring_buf = NULL;
+static RingBuffer *at_usbh_rx_ring_buf = NULL;
 static u8 tt_mode_task_start = 0;
 
 static __IO int cdc_acm_is_ready = 0;
+static u32 tt_len = 10 * 1024 * 1024;
 
-
-serial_t sobj;
-char uart_irq_buffer[MAX_CMD_LEN] = {0};
-u32 uart_irq_count = 0;
+static serial_t sobj;
+static char uart_irq_buffer[MAX_CMD_LEN] = {0};
+static u32 uart_irq_count = 0;
 
 static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
@@ -138,21 +141,17 @@ static int cdc_acm_cb_deinit(void)
 
 static int cdc_acm_cb_attach(void)
 {
-	BaseType_t task_woken = pdFALSE;
-
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
-	xSemaphoreGiveFromISR(cdc_acm_attach_sema, &task_woken);
-	portEND_SWITCHING_ISR(task_woken);
+	xSemaphoreGive(cdc_acm_attach_sema);
+
 	return HAL_OK;
 }
 
 static int cdc_acm_cb_detach(void)
 {
-	BaseType_t task_woken = pdFALSE;
-
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
-	xSemaphoreGiveFromISR(cdc_acm_detach_sema, &task_woken);
-	portEND_SWITCHING_ISR(task_woken);
+	xSemaphoreGive(cdc_acm_detach_sema);
+
 	return HAL_OK;
 }
 
@@ -166,7 +165,6 @@ static int cdc_acm_cb_setup(void)
 static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status)
 {
 	UNUSED(buf);
-	BaseType_t task_woken = pdFALSE;
 
 	if (status == HAL_OK) {
 		u16 cdc_acm_bulk_in_mps = usbh_cdc_acm_get_bulk_ep_mps();
@@ -177,8 +175,7 @@ static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status)
 			|| (atcmd_cdc_acm_total_rx_len > USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) {
 			atcmd_usbh_rx_len = atcmd_cdc_acm_total_rx_len;
 			atcmd_cdc_acm_total_rx_len = 0;
-			xSemaphoreGiveFromISR(cdc_acm_receive_sema, &task_woken);
-			portEND_SWITCHING_ISR(task_woken);
+			xSemaphoreGive(cdc_acm_receive_sema);
 		}
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "RX fail: %d\n", status);
@@ -189,12 +186,9 @@ static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status)
 
 static int cdc_acm_cb_transmit(u8 state)
 {
-	BaseType_t task_woken = pdFALSE;
-
 	if (state == HAL_OK) {
 		/*TX done*/
-		xSemaphoreGiveFromISR(cdc_acm_send_sema, &task_woken);
-		portEND_SWITCHING_ISR(task_woken);
+		xSemaphoreGive(cdc_acm_send_sema);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", state);
 	}
@@ -204,13 +198,13 @@ static int cdc_acm_cb_transmit(u8 state)
 static int cdc_acm_cb_notify(u8 *buf, u32 length, u8 status)
 {
 	UNUSED(buf);
-	BaseType_t task_woken = pdFALSE;
 
 	if (status == HAL_OK) {
 		atcmd_usbh_notify_len = length > USBH_CDC_ACM_NOTIFY_BUF_SIZE ? USBH_CDC_ACM_NOTIFY_BUF_SIZE : length;
-		xSemaphoreGiveFromISR(cdc_acm_notify_sema, &task_woken);
-		portEND_SWITCHING_ISR(task_woken);
+		xSemaphoreGive(cdc_acm_notify_sema);
 	} else {
+		atcmd_usbh_notify_len = 0;
+		xSemaphoreGive(cdc_acm_notify_sema);
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "cdc_acm_cb_notify fail: %d\n", status);
 	}
 
@@ -246,21 +240,21 @@ static int cdc_acm_cb_process(usb_host_t *host, u8 id)
 static void tt_mode_test_task(void *param)
 {
 	UNUSED(param);
-	u32 tt_len = 10 * 1024 * 1024;
+	u32 tt_len_tmp = tt_len;
 	u32 send_len;
 	u8 *tt_tx_buf = pvPortMalloc(USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 	int ret;
 
-	while (tt_len > 0) {
+	while (tt_len_tmp > 0) {
 		xSemaphoreTake(tt_mode_tx_sema, 0xFFFFFFFF);
-		send_len = tt_len > (USBH_CDC_ACM_LOOPBACK_BUF_SIZE) ? (USBH_CDC_ACM_LOOPBACK_BUF_SIZE) : tt_len;
+		send_len = tt_len_tmp > (USBH_CDC_ACM_LOOPBACK_BUF_SIZE) ? (USBH_CDC_ACM_LOOPBACK_BUF_SIZE) : tt_len_tmp;
 		ret = usbh_cdc_acm_transmit(tt_tx_buf, send_len);
 		while (ret != HAL_OK) {
 			vTaskDelay(1);
 			ret = usbh_cdc_acm_transmit(tt_tx_buf, send_len);
 		}
 		xSemaphoreTake(cdc_acm_send_sema, 0xFFFFFFFF);
-		tt_len -= send_len;
+		tt_len_tmp -= send_len;
 		xSemaphoreGive(tt_mode_tx_sema);
 	}
 
@@ -288,6 +282,9 @@ WAIT_CONNECT:
 
 	while (1) {
 		xSemaphoreTake(uart_irq_handle_sema, 0xFFFFFFFF);
+		if (strstr((char *)uart_irq_buffer, "\r\n") && strstr((char *)uart_irq_buffer, "AT+TEST=1,")) {
+			tt_len = atoi((char *)&uart_irq_buffer[10]);
+		}
 		memcpy(cdc_acm_loopback_tx_buf, uart_irq_buffer, uart_irq_count);
 		memset(uart_irq_buffer, 0, 2000);
 		send_len = uart_irq_count;
@@ -310,6 +307,7 @@ WAIT_CONNECT:
 	vTaskDelete(NULL);
 }
 
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 static void usbh_notify_task(void *param)
 {
 	UNUSED(param);
@@ -349,6 +347,7 @@ WAIT_CONNECT:
 		}
 	}
 }
+#endif
 
 static void usbh_rx_task(void *param)
 {
@@ -494,11 +493,11 @@ static void atcmd_usbh_cdc_acm_task(void *param)
 
 	UNUSED(param);
 
-	cdc_acm_detach_sema = (void *)xSemaphoreCreateCounting(1, 0);
-	cdc_acm_attach_sema = (void *)xSemaphoreCreateCounting(1, 0);
-	cdc_acm_receive_sema = (void *)xSemaphoreCreateCounting(1, 0);
-	cdc_acm_send_sema = (void *)xSemaphoreCreateCounting(1, 0);
-	cdc_acm_notify_sema = (void *)xSemaphoreCreateCounting(1, 0);
+	cdc_acm_detach_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	cdc_acm_attach_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	cdc_acm_receive_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	cdc_acm_send_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
+	cdc_acm_notify_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 
 	status = usbh_init(&usbh_cfg, &usbh_usr_cb);
 	if (status != HAL_OK) {
@@ -524,7 +523,9 @@ static void atcmd_usbh_cdc_acm_task(void *param)
 	if (xSemaphoreTake(cdc_acm_attach_sema, 0xFFFFFFFF) == pdPASS) {
 		xTaskCreate((void *)usbh_tx_task, ((const char *)"usbh_tx_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 3, NULL);
 		xTaskCreate((void *)usbh_rx_task, ((const char *)"usbh_rx_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 4, NULL);
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 		xTaskCreate((void *)usbh_notify_task, ((const char *)"usbh_notify_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 4, NULL);
+#endif
 		xTaskCreate((void *)uart_show_rx_data_task, ((const char *)"uart_show_rx_data_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 1, NULL);
 	}
 
@@ -590,7 +591,7 @@ void uart_format_string_output(const char *fmt, ...)
 
 void example_atcmd_host_usbh(void)
 {
-	uart_irq_handle_sema = (void *)xSemaphoreCreateCounting(1, 0);
+	uart_irq_handle_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	uart_show_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	tt_mode_tx_sema = (void *)xSemaphoreCreateCounting(1, 1);
 	usbh_rx_ringbuf_mutex = (void *)xSemaphoreCreateMutex();

@@ -1082,6 +1082,9 @@ int eap_peer_select_phase2_methods(struct eap_peer_config *config,
 		if (vendor == EAP_VENDOR_IETF && method == EAP_TYPE_NONE) {
 			wpa_printf(MSG_ERROR, "TLS: Unsupported Phase2 EAP "
 					   "method '%s'", start);
+			os_free(methods, 0);
+			os_free(buf, 0);
+			return -1;
 		} else {
 			num_methods++;
 			_methods = os_realloc_array(methods, num_methods,

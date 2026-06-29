@@ -61,9 +61,86 @@ static void init_node_pool(void)
 }
 
 
+/* Initialize the shared TLS resource refcount on the owner (server / client) node. */
+static int tls_shared_init(struct _node *owner)
+{
+	owner->conf_refcnt = (int *)rtos_mem_zmalloc(sizeof(int));
+	if (owner->conf_refcnt == NULL) {
+		return -1;
+	}
+	*owner->conf_refcnt = 1;
+	return 0;
+}
+
+/* Seed accepts a shared reference to owner's conf/ca/cert/key. */
+static void tls_shared_acquire(struct _node *seed, struct _node *owner)
+{
+	SYS_ARCH_DECL_PROTECT(lev);
+	SYS_ARCH_PROTECT(lev);
+	seed->conf         = owner->conf;
+	seed->ca_crt       = owner->ca_crt;
+	seed->cert_crt     = owner->cert_crt;
+	seed->private_key  = owner->private_key;
+	seed->conf_refcnt  = owner->conf_refcnt;
+	if (seed->conf_refcnt) {
+		(*seed->conf_refcnt)++;
+	}
+	SYS_ARCH_UNPROTECT(lev);
+}
+
+/* Decrement refcount; only the last holder frees the shared mbedtls resources.
+ * If conf_refcnt is NULL the node is treated as sole owner (e.g. partial-init
+ * rollback path) and resources are freed unconditionally. */
+static void tls_shared_release(struct _node *n)
+{
+	int free_now = 0;
+	SYS_ARCH_DECL_PROTECT(lev);
+	SYS_ARCH_PROTECT(lev);
+	if (n->conf_refcnt) {
+		if (--(*n->conf_refcnt) == 0) {
+			free_now = 1;
+		}
+	} else if (n->conf || n->ca_crt || n->cert_crt || n->private_key) {
+		free_now = 1;
+	}
+	SYS_ARCH_UNPROTECT(lev);
+
+	if (free_now) {
+		if (n->ca_crt) {
+			mbedtls_x509_crt_free(n->ca_crt);
+			rtos_mem_free(n->ca_crt);
+		}
+		if (n->cert_crt) {
+			mbedtls_x509_crt_free(n->cert_crt);
+			rtos_mem_free(n->cert_crt);
+		}
+		if (n->private_key) {
+			mbedtls_pk_free(n->private_key);
+			rtos_mem_free(n->private_key);
+		}
+		if (n->conf) {
+			mbedtls_ssl_config_free(n->conf);
+			rtos_mem_free(n->conf);
+		}
+		if (n->conf_refcnt) {
+			rtos_mem_free(n->conf_refcnt);
+		}
+	}
+	n->ca_crt = NULL;
+	n->cert_crt = NULL;
+	n->private_key = NULL;
+	n->conf = NULL;
+	n->conf_refcnt = NULL;
+}
+
+
 static void init_single_node(struct _node *socket_node)
 {
 	SYS_ARCH_DECL_PROTECT(lev);
+
+	/* drop any shared TLS resource reference before zeroing the node */
+	tls_shared_release(socket_node);
+
 	SYS_ARCH_PROTECT(lev);
 	memset(socket_node, 0, sizeof(struct _node));
 	socket_node->link_id = INVALID_LINK_ID;
@@ -105,7 +182,6 @@ void delete_seednode(struct _node *main_node, struct _node *seed_node)
 {
 	struct _node *n = main_node;
 	SYS_ARCH_DECL_PROTECT(lev);
-	SYS_ARCH_PROTECT(lev);
 
 	if (seed_node->ssl) {
 		mbedtls_ssl_free(seed_node->ssl);
@@ -117,6 +193,10 @@ void delete_seednode(struct _node *main_node, struct _node *seed_node)
 		rtos_mem_free(seed_node->ssl);
 	}
 
+	/* drop the shared conf/ca/cert/key reference held by this seed */
+	tls_shared_release(seed_node);
+
+	SYS_ARCH_PROTECT(lev);
 	while (n->nextseed != seed_node) {
 		n = n->nextseed;
 	}
@@ -784,12 +864,12 @@ void socket_server_tls_auto_rcv_client_and_data(void *param)
 			node_pool[index].dst_ip = client_addr.sin_addr.s_addr;
 			node_pool[index].dst_port = ntohs(client_addr.sin_port);
 			node_pool[index].ssl = ssl;
-			node_pool[index].conf = current_node->conf;
-			node_pool[index].ca_crt = current_node->ca_crt;
-			node_pool[index].cert_crt = current_node->cert_crt;
-			node_pool[index].private_key = current_node->private_key;
-			mbedtls_ssl_set_bio(node_pool[index].ssl, &node_pool[index].sockfd, mbedtls_net_send, mbedtls_net_recv, NULL);
 			SYS_ARCH_UNPROTECT(lev);
+
+			/* +1 reference on shared conf/ca/cert/key */
+			tls_shared_acquire(&node_pool[index], current_node);
+
+			mbedtls_ssl_set_bio(node_pool[index].ssl, &node_pool[index].sockfd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
 			RTK_LOGI(AT_SOCKET_TAG, "[socket_server_tls_auto_rcv_client_and_data] Performing the SSL/TLS handshake...\r\n");
 
@@ -1016,6 +1096,13 @@ int create_socket_server_tls(struct _node *current_node)
 	mbedtls_debug_set_threshold(0);
 #endif
 
+	/* publish conf/ca/cert/key as a refcounted shared bundle (refcnt=1) */
+	if (tls_shared_init(current_node) < 0) {
+		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_server_tls] tls_shared_init() failed\r\n");
+		error_no = 7;
+		goto end;
+	}
+
 	//Create socket and bind socket to local port
 	DiagSnPrintf(src_port_str, sizeof(src_port_str), "%d", current_node->src_port);
 	mbedtls_net_init(&tls_server_fd);
@@ -1057,29 +1144,6 @@ end:
 
 	if (error_no != 0) {
 		mbedtls_net_free(&tls_server_fd);
-
-		if (current_node->ca_crt) {
-			mbedtls_x509_crt_free(current_node->ca_crt);
-			rtos_mem_free(current_node->ca_crt);
-			current_node->ca_crt = NULL;
-		}
-		if (current_node->cert_crt) {
-			mbedtls_x509_crt_free(current_node->cert_crt);
-			rtos_mem_free(current_node->cert_crt);
-			current_node->cert_crt = NULL;
-		}
-		if (current_node->private_key) {
-			mbedtls_pk_free(current_node->private_key);
-			rtos_mem_free(current_node->private_key);
-			current_node->private_key = NULL;
-		}
-
-		if (current_node->conf) {
-			mbedtls_ssl_config_free(current_node->conf);
-			rtos_mem_free(current_node->conf);
-			current_node->conf = NULL;
-		}
-
 		init_single_node(current_node);
 	}
 	return error_no;
@@ -1187,7 +1251,7 @@ void at_sktserver(u16 argc, char **argv)
 	node_pool[link_id].auto_rcv = auto_rcv;
 	node_pool[link_id].protocol = conn_type;
 	node_pool[link_id].src_port = src_port;
-	local_ip = LwIP_GetIP(NETIF_WLAN_STA_INDEX);
+	local_ip = lwip_get_ip(NETIF_WLAN_STA_INDEX);
 	node_pool[link_id].src_ip = *((u32_t *)local_ip);
 
 	error_no = create_socket_server(&node_pool[link_id]);
@@ -1468,6 +1532,7 @@ void socket_client_tls_auto_rcv(void *param)
 	fd_set read_fds;
 	int ret = 0;
 	int actual_bytes_received = 0;
+	int graceful_close = 0;
 	struct _node *current_node = (struct _node *)param;
 	mbedtls_net_context tls_client_fd;
 
@@ -1484,6 +1549,7 @@ void socket_client_tls_auto_rcv(void *param)
 
 	while (1) {
 		if (TRUE == current_node->stop_task) {
+			graceful_close = 1;
 			break;
 		}
 		FD_ZERO(&read_fds);
@@ -1524,36 +1590,20 @@ end:
 	rtos_mem_free(read_buf);
 	read_buf = NULL;
 
-	mbedtls_ssl_close_notify(current_node->ssl);
+	if (graceful_close) {
+		mbedtls_ssl_close_notify(current_node->ssl);
+	}
 	tls_client_fd.fd = current_node->sockfd;
 	mbedtls_net_free(&tls_client_fd);
 	current_node->sockfd = INVALID_SOCKET_ID;
 
-	if (current_node->ca_crt) {
-		mbedtls_x509_crt_free(current_node->ca_crt);
-		rtos_mem_free(current_node->ca_crt);
-		current_node->ca_crt = NULL;
-	}
-	if (current_node->cert_crt) {
-		mbedtls_x509_crt_free(current_node->cert_crt);
-		rtos_mem_free(current_node->cert_crt);
-		current_node->cert_crt = NULL;
-	}
-	if (current_node->private_key) {
-		mbedtls_pk_free(current_node->private_key);
-		rtos_mem_free(current_node->private_key);
-		current_node->private_key = NULL;
-	}
 	if (current_node->ssl) {
 		mbedtls_ssl_free(current_node->ssl);
 		rtos_mem_free(current_node->ssl);
 		current_node->ssl = NULL;
 	}
-	if (current_node->conf) {
-		mbedtls_ssl_config_free(current_node->conf);
-		rtos_mem_free(current_node->conf);
-		current_node->conf = NULL;
-	}
+
+	tls_shared_release(current_node);
 
 	RTK_LOGI(AT_SOCKET_TAG, "rtos_task_delete(socket_client_tls_auto_rcv)\r\n");
 	rtos_sema_give(current_node->del_task_sema);
@@ -1727,6 +1777,13 @@ int create_socket_client_tls(struct _node *current_node)
 	mbedtls_debug_set_threshold(0);
 #endif
 
+	/* publish conf/ca/cert/key as a refcounted shared bundle (refcnt=1) */
+	if (tls_shared_init(current_node) < 0) {
+		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tls] tls_shared_init() failed\r\n");
+		error_no = 7;
+		goto end;
+	}
+
 	if ((ret = mbedtls_ssl_setup(current_node->ssl, current_node->conf)) != 0) {
 		RTK_LOGI(AT_SOCKET_TAG, "[create_socket_client_tls] mbedtls_ssl_setup() failed ret = -0x%04x\r\n", -ret);
 		error_no = 11;
@@ -1794,31 +1851,10 @@ end:
 		}
 		mbedtls_net_free(&tls_client_fd);
 
-		if (current_node->ca_crt) {
-			mbedtls_x509_crt_free(current_node->ca_crt);
-			rtos_mem_free(current_node->ca_crt);
-			current_node->ca_crt = NULL;
-		}
-		if (current_node->cert_crt) {
-			mbedtls_x509_crt_free(current_node->cert_crt);
-			rtos_mem_free(current_node->cert_crt);
-			current_node->cert_crt = NULL;
-		}
-		if (current_node->private_key) {
-			mbedtls_pk_free(current_node->private_key);
-			rtos_mem_free(current_node->private_key);
-			current_node->private_key = NULL;
-		}
-
 		if (current_node->ssl) {
 			mbedtls_ssl_free(current_node->ssl);
 			rtos_mem_free(current_node->ssl);
 			current_node->ssl = NULL;
-		}
-		if (current_node->conf) {
-			mbedtls_ssl_config_free(current_node->conf);
-			rtos_mem_free(current_node->conf);
-			current_node->conf = NULL;
 		}
 
 		init_single_node(current_node);
@@ -2529,34 +2565,13 @@ void close_and_free_tls_resource(struct _node *current_node)
 	mbedtls_net_free(&tls_fd);
 	current_node->sockfd = INVALID_SOCKET_ID;
 
-	if (current_node->role != NODE_ROLE_SEED) {
-		if (current_node->ca_crt) {
-			mbedtls_x509_crt_free(current_node->ca_crt);
-			rtos_mem_free(current_node->ca_crt);
-			current_node->ca_crt = NULL;
-		}
-		if (current_node->cert_crt) {
-			mbedtls_x509_crt_free(current_node->cert_crt);
-			rtos_mem_free(current_node->cert_crt);
-			current_node->cert_crt = NULL;
-		}
-		if (current_node->private_key) {
-			mbedtls_pk_free(current_node->private_key);
-			rtos_mem_free(current_node->private_key);
-			current_node->private_key = NULL;
-		}
-		if (current_node->conf) {
-			mbedtls_ssl_config_free(current_node->conf);
-			rtos_mem_free(current_node->conf);
-			current_node->conf = NULL;
-		}
-	}
-
 	if (current_node->ssl) {
 		mbedtls_ssl_free(current_node->ssl);
 		rtos_mem_free(current_node->ssl);
 		current_node->ssl = NULL;
 	}
+
+	tls_shared_release(current_node);
 
 	return;
 }

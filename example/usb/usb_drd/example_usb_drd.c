@@ -8,8 +8,6 @@
 
 #include <platform_autoconf.h>
 #include "os_wrapper.h"
-#include "usbd.h"
-#include "usbh.h"
 #include "usbd_msc.h"
 #include "usbh_msc.h"
 #include "vfs_fatfs.h"
@@ -27,8 +25,10 @@ static const char *const TAG = "DRD";
 #define USB_DRD_SPEED							USB_SPEED_HIGH
 
 // Thread priorities
-#define USBH_MSC_RW_THREAD_PRIORITY				5U
-#define USBH_MSC_THREAD_STACK_SIZE				(256*46)
+#define USBH_MSC_RW_THREAD_PRIORITY        5U
+
+#define USBH_DRD_MAIN_TASK_PRIORITY        3U
+#define USBH_MSC_THREAD_STACK_SIZE         (1024 * 11 + 512)
 
 #define USBH_MSC_TEST_BUF_SIZE					4096
 #define USBH_MSC_TEST_ROUNDS					20
@@ -77,7 +77,7 @@ static usbh_config_t usbh_cfg = {
 	.speed = USB_DRD_SPEED,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
-	.main_task_priority = 3U,
+	.main_task_priority = USBH_DRD_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
@@ -107,10 +107,18 @@ static usbh_user_cb_t usbh_usr_cb = {
 };
 
 /* Private functions ---------------------------------------------------------*/
-
+/**
+  * @brief  Handle attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void usbd_msc_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Device status change: %d->%d\n", old_status, status);
+	UNUSED(old_status);
+	UNUSED(status);
 }
 
 static int usbh_msc_cb_attach(void)
@@ -146,10 +154,10 @@ static int usbh_msc_cb_process(usb_host_t *host, u8 msg)
 
 static void usbd_msc_help(void)
 {
-	RTK_LOGI(NOTAG, "\r\n");
-	RTK_LOGI(NOTAG, "AT+USBDMSC=<command>\r\n");
-	RTK_LOGI(NOTAG, "\t<command>:\tinit: init device msc driver\r\n");
-	RTK_LOGI(NOTAG, "\t<command>:\tdeinit: deinit device msc driver\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+USBDMSC=<command>\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tinit: init device msc driver\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tdeinit: deinit device msc driver\r\n");
 
 }
 
@@ -210,7 +218,7 @@ end:
 	}
 }
 
-void usbh_msc_trx_test(void *param)
+void example_usb_drd_msc_trx_test(void *param)
 {
 	FATFS fs;
 	FIL f;
@@ -219,7 +227,7 @@ void usbh_msc_trx_test(void *param)
 	char logical_drv[4];
 	char path[64] = {'0'};
 	int ret = 0;
-	u32 filenum = 0;
+	int filenum = 0;
 	u32 br;
 	u32 bw;
 	u32 round = 0;
@@ -288,7 +296,7 @@ void usbh_msc_trx_test(void *param)
 		}
 
 next_file:
-		sprintf(&path[3], "TEST%ld.DAT", filenum);
+		sprintf(&path[3], "TEST%d.DAT", filenum);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Open file: %s\n", path);
 		/* Open test file */
 		res = f_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
@@ -400,12 +408,12 @@ exit:
 
 static void usbh_msc_help(void)
 {
-	RTK_LOGI(NOTAG, "\r\n");
-	RTK_LOGI(NOTAG, "AT+USBHMSC=<command>[,<file_cnt>]\r\n");
-	RTK_LOGI(NOTAG, "\t<command>:\tinit: init host msc driver\r\n");
-	RTK_LOGI(NOTAG, "\t<command>:\tdeinit: deinit host msc driver\r\n");
-	RTK_LOGI(NOTAG, "\t<command>:\trw_test: file read and write test\r\n");
-	RTK_LOGI(NOTAG, "\t<file_cnt>:\trw test file cnt, default: 5\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+USBHMSC=<command>[,<file_cnt>]\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tinit: init host msc driver\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tdeinit: deinit host msc driver\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\trw_test: file read and write test\r\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<file_cnt>:\trw test file cnt, default: 5\r\n");
 }
 
 static void usbh_msc_cmd_test(u16 argc, char **argv)
@@ -456,7 +464,8 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "USB host MSC R&W test started\n");
 
-		ret = rtos_task_create(&task, "usbh_msc_rw_test", usbh_msc_trx_test, NULL, USBH_MSC_THREAD_STACK_SIZE, USBH_MSC_RW_THREAD_PRIORITY);
+		ret = rtos_task_create(&task, "example_usb_drd_msc_trx_test", example_usb_drd_msc_trx_test, NULL,
+							   USBH_MSC_THREAD_STACK_SIZE, USBH_MSC_RW_THREAD_PRIORITY);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USB host MSC R&W test thread\n");
 		}
@@ -489,4 +498,3 @@ void example_usb_drd(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USB DRD demo start\n");
 }
-

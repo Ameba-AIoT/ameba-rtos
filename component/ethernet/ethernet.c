@@ -219,7 +219,7 @@ void eth_rx_thread(void *param)
 				if (eth_rx_preprocess_cb) {
 					ret = eth_rx_preprocess_cb(&p, buf, len);
 					if (ret == UPLOAD_TO_LWIP && p != NULL) {
-						ethernetif_rmii_netif_recv(p);
+						netif_adapter_eth_recv(p);
 					} else if (p != NULL) {
 						pbuf_free(p);
 						p = NULL;
@@ -227,9 +227,9 @@ void eth_rx_thread(void *param)
 				} else {
 					/* Standard Path: Copy to pbuf and send to LwIP */
 					/* Note: len-2 excludes CRC usually, depending on HW setting */
-					p = ethernetif_rmii_buf_copy(len - 2, buf);
+					p = netif_adapter_eth_buf_copy(len - 2, buf);
 					if (p != NULL) {
-						ethernetif_rmii_netif_recv(p);
+						netif_adapter_eth_recv(p);
 					}
 				}
 
@@ -288,7 +288,7 @@ static void eth_link_monitor_thread(void *param)
 					netifapi_netif_set_up(pnetif_eth);
 				}
 
-				LwIP_SetIP(NETIF_ETH_INDEX, ip, netmask, gw);
+				lwip_set_ip(NETIF_ETH_INDEX, ip, netmask, gw);
 				netif_set_default(pnetif_eth);
 
 				/* Debug Print */
@@ -302,7 +302,7 @@ static void eth_link_monitor_thread(void *param)
 				/* DHCP Mode */
 				if (eth_dhcp_mode) {
 					/* This might block, better to be in state machine, but OK for now */
-					dhcp_status = LwIP_IP_Address_Request(NETIF_ETH_INDEX);
+					dhcp_status = lwip_request_ip(NETIF_ETH_INDEX);
 				}
 
 				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
@@ -315,7 +315,7 @@ static void eth_link_monitor_thread(void *param)
 
 			netif_set_link_down(pnetif_eth);
 
-			LwIP_ReleaseIP(NETIF_ETH_INDEX);
+			lwip_clear_ip(NETIF_ETH_INDEX);
 		}
 
 		/* 3. Execute User Callback */
@@ -363,7 +363,7 @@ static void eth_init_thread(void *param)
 	/* Initialize LwIP Stack (One-time) */
 #ifndef CONFIG_RMII_VERIFY
 	if (!lwip_init_done) {
-		LwIP_Init();
+		lwip_module_init();
 	}
 #endif
 

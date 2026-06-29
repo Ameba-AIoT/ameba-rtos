@@ -285,15 +285,9 @@ uint32_t vfs_ftl_init(void)
 
 	fclose(finfo);
 
-	printf("init ftl lfs file success\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "init ftl lfs file success\r\n");
 
 	rtos_mutex_create(&ftl_op_mux);
 
 	return 0;
 }
-
-
-
-
-
-

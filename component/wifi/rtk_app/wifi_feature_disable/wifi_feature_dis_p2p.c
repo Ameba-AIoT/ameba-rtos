@@ -46,6 +46,20 @@ u8 *rtw_p2p_set_probereq_p2p_ie(u8 *pframe, u32 *pktlen)
 	return pframe;
 }
 
+u8 *rtw_p2p_set_bcn_p2p_ie(u8 *pframe, u32 *pktlen)
+{
+	UNUSED(pframe);
+	UNUSED(pktlen);
+	return pframe;
+}
+
+u8 *rtw_p2p_set_probersp_p2p_ie(u8 *pframe, u32 *pktlen)
+{
+	UNUSED(pframe);
+	UNUSED(pktlen);
+	return pframe;
+}
+
 u8 *rtw_get_p2p_ie(u8 *in_ie, u32 in_len, u8 *p2p_ie, u32 *p2p_ielen)
 {
 	UNUSED(in_ie);
@@ -86,11 +100,12 @@ void rtw_p2p_set_supported_rates(u8 *supported_rateset, u8 bssrate_len)
 	UNUSED(bssrate_len);
 }
 
-int rtw_p2p_probereq_indicate(u8 *pframe, u32 len, u8 iface_type)
+int rtw_p2p_probereq_indicate(u8 *pframe, u32 len, u8 iface_type, u8 *is_valid_p2p_probereq)
 {
 	UNUSED(pframe);
 	UNUSED(len);
 	UNUSED(iface_type);
+	UNUSED(is_valid_p2p_probereq);
 	return RTK_FAIL;
 }
 

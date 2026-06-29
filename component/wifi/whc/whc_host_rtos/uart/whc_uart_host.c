@@ -9,10 +9,10 @@ extern struct event_priv_t event_priv;
 #ifdef WHC_UART_DEBUG
 static void dump_buf(char *info, uint8_t *buf, uint32_t len)
 {
-	printf("%s", info);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s", info);
 	for (uint32_t i = 0; i < len; i++) {
-		printf("%s0x%02X%s", i % 16 == 0 ? "\n     " : ",",
-			   buf[i], i == len - 1 ? "\n" : "");
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s0x%02x%s", i % 16 == 0 ? "\n     " : ",",
+				 buf[i], i == len - 1 ? "\n" : "");
 	}
 }
 #endif
@@ -261,7 +261,7 @@ void whc_uart_host_rx_handler(u8 *buf)
 		temp_buf = temp_buf->next;
 	}
 
-	LwIP_ethernetif_recv_inic(msg_info->wlan_idx, p_buf);
+	netif_adapter_wifi_recv_whc(msg_info->wlan_idx, p_buf);
 }
 
 int whc_uart_host_recv_process(void)
@@ -452,7 +452,6 @@ u32 whc_uart_host_irq(void *param)
 			break;
 #endif
 		default:
-			DiagPrintf("do nothing %d \r\n", uart_host_priv.rx_state);
 			/* do nothing  wait rx done */
 			break;
 		}

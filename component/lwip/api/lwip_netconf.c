@@ -13,7 +13,6 @@
 #define UNUSED(x) ((void)(x))
 #endif
 
-
 /*Static IP ADDRESS FOR ETHERNET*/
 #ifndef ETH_IP_ADDR0
 #define ETH_IP_ADDR0 192
@@ -76,7 +75,7 @@ struct netif *pnetif_usb_eth = &xnetif[NETIF_USB_ETH_INDEX];
 
 int lwip_init_done = 0;
 
-void LwIP_Init(void)
+void lwip_module_init(void)
 {
 	struct ip_addr ipaddr;
 	struct ip_addr netmask;
@@ -133,7 +132,7 @@ void LwIP_Init(void)
 		xnetif[idx].name[0] = 'r';
 		xnetif[idx].name[1] = '0' + idx;
 
-		netifapi_netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &ethernetif_init, &tcpip_input);
+		netifapi_netif_add(&xnetif[idx], ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw), NULL, &netif_adapter_init, &tcpip_input);
 
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "interface %d is initialized\n", idx);
 
@@ -162,22 +161,36 @@ extern uint32_t offer_ip;
 extern uint32_t server_ip;
 
 #endif
+
+void lwip_clear_ip(uint8_t idx)
+{
+	struct ip_addr ipaddr;
+	struct ip_addr netmask;
+	struct ip_addr gw;
+	struct netif *pnetif = lwip_idx_get_netif(idx);
+	if (pnetif == NULL) {
+		return;
+	}
+
+	IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
+	IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+	IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+	netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
+}
+
 /**
   * @brief  LwIP_DHCP_Process_Handle
   * @param  None
   * @retval None
   */
-uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
+uint8_t lwip_dhcp(uint8_t idx, uint8_t dhcp_state)
 {
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
 	uint32_t IPaddress;
 	uint8_t iptab[4];
 	uint8_t DHCP_state;
 	struct dhcp *dhcp = NULL;
 	uint8_t ret = 0;
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return 0;
 	}
@@ -191,7 +204,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 
 	extern struct static_ip_config user_static_ip;
 	if (user_static_ip.use_static_ip) {
-		LwIP_SetIP(NETIF_WLAN_STA_INDEX, user_static_ip.addr, user_static_ip.netmask, user_static_ip.gw);
+		lwip_set_ip(NETIF_WLAN_STA_INDEX, user_static_ip.addr, user_static_ip.netmask, user_static_ip.gw);
 		iptab[3] = (uint8_t)(user_static_ip.addr >> 24);
 		iptab[2] = (uint8_t)(user_static_ip.addr >> 16);
 		iptab[1] = (uint8_t)(user_static_ip.addr >> 8);
@@ -256,11 +269,8 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 			/* If DHCP stopped by wifi_disconn_hdl*/
 			if ((dhcp_state_enum_t)dhcp->state == DHCP_STATE_OFF) {
 				DHCP_state = DHCP_STOP;
-				IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-				IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-				IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-				netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
-				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rLwIP_DHCP: dhcp stop.");
+				lwip_clear_ip(idx);
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rlwip_dhcp: dhcp stop.");
 				wifi_indication(RTW_EVENT_DHCP_STATUS, &DHCP_state, sizeof(uint8_t));
 				ret = DHCP_STOP;
 				goto exit;
@@ -327,17 +337,17 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 		}
 		break;
 		case DHCP_RELEASE_IP:
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rLwIP_DHCP: Release ip");
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rlwip_dhcp: Release ip");
 			netifapi_dhcp_release(pnetif);
 			ret = DHCP_RELEASE_IP;
 			goto exit;
 		case DHCP_STOP:
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rLwIP_DHCP: dhcp stop.");
-			LwIP_DHCP_stop(idx);
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\rlwip_dhcp: dhcp stop.");
+			lwip_dhcp_stop(idx);
 			ret = DHCP_STOP;
 			goto exit;
 		default:
-			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\rLwIP_DHCP: invalid dhcp state\n");
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\n\rlwip_dhcp: invalid dhcp state\n");
 			ret = DHCP_STOP;
 			goto exit;
 		}
@@ -352,41 +362,19 @@ exit:
 	return ret;
 }
 
-void LwIP_ReleaseIP(uint8_t idx)
+void lwip_dhcp_stop(uint8_t idx)
 {
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
-	if (pnetif == NULL) {
-		return;
-	}
-
-	IP4_ADDR(ip_2_ip4(&ipaddr), 0, 0, 0, 0);
-	IP4_ADDR(ip_2_ip4(&netmask), 255, 255, 255, 0);
-	IP4_ADDR(ip_2_ip4(&gw), 0, 0, 0, 0);
-	netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
-}
-
-void LwIP_DHCP_stop(uint8_t idx)
-{
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return;
 	}
 
 	netifapi_dhcp_stop(pnetif);
 
-	IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-	IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-	IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	netifapi_netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
+	lwip_clear_ip(idx);
 }
 
-int LwIP_netif_get_idx(struct netif *pnetif)
+int lwip_netif_get_idx(struct netif *pnetif)
 {
 #if defined(CONFIG_LWIP_LAYER) && (CONFIG_LWIP_LAYER == 1)
 	int idx = pnetif - xnetif;
@@ -397,7 +385,7 @@ int LwIP_netif_get_idx(struct netif *pnetif)
 #endif
 }
 
-struct netif *LwIP_idx_get_netif(uint8_t idx)
+struct netif *lwip_idx_get_netif(uint8_t idx)
 {
 #if defined(CONFIG_LWIP_LAYER) && (CONFIG_LWIP_LAYER == 1)
 	if (idx < NET_IF_NUM) {
@@ -412,27 +400,27 @@ struct netif *LwIP_idx_get_netif(uint8_t idx)
 #endif
 }
 
-void LwIP_netif_set_up(uint8_t idx)
+void lwip_netif_set_up(uint8_t idx)
 {
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return;
 	}
 	netifapi_netif_set_up(pnetif);
 }
 
-void LwIP_netif_set_down(uint8_t idx)
+void lwip_netif_set_down(uint8_t idx)
 {
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return;
 	}
 	netifapi_netif_set_down(pnetif);
 }
 
-void LwIP_netif_set_link_up(uint8_t idx)
+void lwip_netif_set_link_up(uint8_t idx)
 {
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return;
 	}
@@ -445,7 +433,7 @@ void LwIP_netif_set_link_up(uint8_t idx)
 	}
 }
 
-void LwIP_netif_set_link_down(uint8_t idx)
+void lwip_netif_set_link_down(uint8_t idx)
 {
 	struct netif *pnetif;
 	if (idx < NET_IF_NUM) {
@@ -461,43 +449,43 @@ void LwIP_netif_set_link_down(uint8_t idx)
 	}
 }
 
-uint8_t *LwIP_GetMAC(uint8_t idx)
+uint8_t *lwip_get_mac(uint8_t idx)
 {
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return NULL;
 	}
 	return (uint8_t *)(pnetif->hwaddr);
 }
 
-uint8_t *LwIP_GetIP(uint8_t idx)
+uint8_t *lwip_get_ip(uint8_t idx)
 {
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return NULL;
 	}
 	return (uint8_t *) & (pnetif->ip_addr);
 }
 
-uint8_t *LwIP_GetGW(uint8_t idx)
+uint8_t *lwip_get_gw(uint8_t idx)
 {
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return NULL;
 	}
 	return (uint8_t *) & (pnetif->gw);
 }
 
-uint8_t *LwIP_GetMASK(uint8_t idx)
+uint8_t *lwip_get_mask(uint8_t idx)
 {
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return NULL;
 	}
 	return (uint8_t *) & (pnetif->netmask);
 }
 
-void LwIP_wlan_set_netif_info(uint8_t idx, void *dev, unsigned char *dev_addr)
+void lwip_wlan_set_netif_info(uint8_t idx, void *dev, unsigned char *dev_addr)
 {
 	struct netif *pnetif;
 	if (idx < NET_IF_NUM) {
@@ -509,34 +497,10 @@ void LwIP_wlan_set_netif_info(uint8_t idx, void *dev, unsigned char *dev_addr)
 	pnetif->state = dev;
 }
 
-void LwIP_ethernetif_recv(uint8_t idx, int total_len)
-{
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
-	if (pnetif == NULL) {
-		return;
-	}
-	ethernetif_recv(pnetif, total_len);
-}
-
-SRAM_WLAN_CRITICAL_CODE_SECTION
-void LwIP_ethernetif_recv_inic(uint8_t idx, struct pbuf *p_buf)
-{
-	err_enum_t error = ERR_OK;
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
-	if (pnetif == NULL) {
-		return;
-	}
-	error = pnetif->input(p_buf, pnetif);
-	if (error != ERR_OK) {
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "lwip input err (%d)\n", error);
-		pbuf_free(p_buf);
-	}
-}
-
-int LwIP_netif_is_valid_IP(uint8_t idx, unsigned char *ip_dest)
+int lwip_is_valid_ip(uint8_t idx, unsigned char *ip_dest)
 {
 #if defined(CONFIG_LWIP_LAYER) && (CONFIG_LWIP_LAYER == 1)
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return 0;
 	}
@@ -571,24 +535,24 @@ int LwIP_netif_is_valid_IP(uint8_t idx, unsigned char *ip_dest)
 }
 
 #if LWIP_DNS
-void LwIP_GetDNS(struct ip_addr *dns)
+void lwip_get_dns(struct ip_addr *dns)
 {
 	struct ip_addr *tmp = (struct ip_addr *)dns_getserver(0);
 	*dns = *tmp;
 }
 
-void LwIP_SetDNS(struct ip_addr *dns)
+void lwip_set_dns(struct ip_addr *dns)
 {
 	dns_setserver(0, dns);
 }
 #endif
 
-void LwIP_SetIP(uint8_t idx, u32_t addr, u32_t netmask_addr, u32_t gw_addr)
+void lwip_set_ip(uint8_t idx, u32_t addr, u32_t netmask_addr, u32_t gw_addr)
 {
 	struct ip_addr ipaddr;
 	struct ip_addr netmask;
 	struct ip_addr gw;
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return;
 	}
@@ -605,11 +569,11 @@ void LwIP_SetIP(uint8_t idx, u32_t addr, u32_t netmask_addr, u32_t gw_addr)
 #include <lwip/autoip.h>
 #include <lwip/prot/autoip.h>
 
-void LwIP_AUTOIP(uint8_t idx)
+void lwip_autoip(uint8_t idx)
 {
-	uint8_t *ip = LwIP_GetIP(idx);
+	uint8_t *ip = lwip_get_ip(idx);
 	struct autoip *autoip = NULL;
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return;
 	}
@@ -645,9 +609,9 @@ void LwIP_AUTOIP(uint8_t idx)
 	}
 }
 
-void LwIP_AUTOIP_STOP(uint8_t idx)
+void lwip_autoip_stop(uint8_t idx)
 {
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return;
 	}
@@ -656,9 +620,9 @@ void LwIP_AUTOIP_STOP(uint8_t idx)
 #endif
 #if LWIP_IPV6
 /* Get IPv6 address with lwip 1.5.0 */
-void LwIP_AUTOIP_IPv6(uint8_t idx)
+void lwip_autoip_ipv6(uint8_t idx)
 {
-	struct netif *pnetif = LwIP_idx_get_netif(idx);
+	struct netif *pnetif = lwip_idx_get_netif(idx);
 	if (pnetif == NULL) {
 		return;
 	}
@@ -669,7 +633,7 @@ void LwIP_AUTOIP_IPv6(uint8_t idx)
 #endif
 
 //To check successful WiFi connection and obtain of an IP address
-int LwIP_Check_Connectivity(uint8_t idx)
+int lwip_check_connectivity(uint8_t idx)
 {
 	if (idx == NETIF_WLAN_STA_INDEX) {
 		u8 join_status = RTW_JOINSTATUS_UNKNOWN;
@@ -679,7 +643,7 @@ int LwIP_Check_Connectivity(uint8_t idx)
 			 )) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Wait for WiFi Connect Success...\n");
 #else
-			  &&(*(u32 *)LwIP_GetIP(NETIF_WLAN_STA_INDEX) != IP_ADDR_INVALID))) {
+			  &&(*(u32 *)lwip_get_ip(NETIF_WLAN_STA_INDEX) != IP_ADDR_INVALID))) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Wait for WiFi and DHCP Connect Success...\n");
 #endif
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Please use AT+WLCONN to connect AP first time\n");
@@ -706,14 +670,14 @@ int LwIP_Check_Connectivity(uint8_t idx)
   * @retval -1 for failed
   */
 
-uint8_t LwIP_IP_Address_Request(uint8_t idx)
+uint8_t lwip_request_ip(uint8_t idx)
 {
 	uint8_t ret = -1;
 #if LWIP_IPV6
-	LwIP_AUTOIP_IPv6(idx);
+	lwip_autoip_ipv6(idx);
 #endif
 #if LWIP_IPV4
-	ret = LwIP_DHCP(idx, DHCP_START);
+	ret = lwip_dhcp(idx, DHCP_START);
 #endif
 	return ret;
 }

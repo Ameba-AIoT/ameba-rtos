@@ -12,7 +12,7 @@ ameba_execute_process(
     COMMAND ${CMAKE_OBJCOPY} -j .xip_image2.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/xip_image2.bin
     COMMAND ${CMAKE_OBJCOPY} -j .psram_image2.text.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/psram_2.bin
     COMMAND ${CMAKE_OBJCOPY} -j .sram_image2.text.data -j .ram_image2_fill -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/sram_2.bin
-    COMMAND ${CMAKE_OBJCOPY} -j .boot.entry -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/boot.bin
+    COMMAND ${CMAKE_OBJCOPY} -j .boot.entry -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/boot_2.bin
     COMMAND ${CMAKE_OBJCOPY} -j .sram_only.text.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/sram_only.bin
     COMMAND ${CMAKE_OBJCOPY} -j .ram_retention.text -j .ram_retention.entry -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img2.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_retention.bin
 )
@@ -29,7 +29,7 @@ endif()
 
 message( "========== Image manipulating start ==========")
 
-ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/boot.bin 32)
+ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/boot_2.bin 32)
 ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/sram_only.bin 32)
 ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/sram_2.bin 32)
 ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/psram_2.bin 32)
@@ -37,7 +37,7 @@ ameba_axf2bin_pad(${c_SDK_IMAGE_TARGET_DIR}/xip_image2.bin 32)
 
 ameba_axf2bin_prepend_head(
     ${c_SDK_IMAGE_TARGET_DIR}/boot_prepend.bin
-    ${c_SDK_IMAGE_TARGET_DIR}/boot.bin
+    ${c_SDK_IMAGE_TARGET_DIR}/boot_2.bin
     __boot_text_start__
     ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
 )

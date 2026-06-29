@@ -14,37 +14,39 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/** @addtogroup USB_Device_API USB Device API
+ *  @{
+ */
+/** @addtogroup USB_Device_Constants USB Device Constants
+ * @{
+ */
+/** @addtogroup Device_CDC_ACM_Constants Device CDC ACM Constants
+ * @{
+ */
 #ifdef CONFIG_ATCMD_HOST_CONTROL
-#define CONFIG_CDC_ACM_NOTIFY                     1     /**< Enable/Disable notification feature. */
+#define CONFIG_USBD_CDC_ACM_NOTIFY                     1     /**< Enable/Disable notification feature. */
 #else
-#define CONFIG_CDC_ACM_NOTIFY                     1     /**< Enable/Disable notification feature. */
+#define CONFIG_USBD_CDC_ACM_NOTIFY                     1     /**< Enable/Disable notification feature. */
 #endif
 
-#define CONFIG_CDC_ACM_NOTIFY_LOOP_TEST           0     /**< Enable notification loopback test mode. */
+#if CONFIG_USBD_CDC_ACM_NOTIFY
+#define CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST           0     /**< Enable notification loopback test mode. */
+#endif
 
 #define CONFIG_CDC_ACM_BULK_TX_SKIP_MEMCPY        1     /**< Skip memcpy BULK IN DATA from application in class */
 
-/** @} */
-
-/**
- * @brief Defines basic device parameters like VID, PID, and string descriptors.
- * @{
- */
+/* Defines basic device parameters like VID, PID, and string descriptors. */
 #define USBD_CDC_ACM_VID                              USB_VID               /**< Vendor ID. */
 #define USBD_CDC_ACM_PID                              USB_PID               /**< Product ID. */
 #define USBD_CDC_ACM_SELF_POWERED                     1U                    /**< Device is self-powered. */
 #define USBD_CDC_ACM_REMOTE_WAKEUP_EN                 1U                    /**< Remote wakeup is enabled. */
-#define USBD_CDC_ACM_LANGID_STRING                    0x0409U               /**< Language ID for string descriptors (0x0409 = English */
+#define USBD_CDC_ACM_LANGID_STRING                    0x0409U               /**< Language ID for string descriptors (0x0409 = English) */
 #define USBD_CDC_ACM_MFG_STRING                       "Realtek"             /**< Manufacturer string. */
 #define USBD_CDC_ACM_PROD_HS_STRING                   "Realtek CDC ACM (HS)"/**< Product string for High-Speed mode. */
 #define USBD_CDC_ACM_PROD_FS_STRING                   "Realtek CDC ACM (FS)"/**< Product string for Full-Speed mode. */
 #define USBD_CDC_ACM_SN_STRING                        "1234567890"          /**< Serial number string. */
-/** @} */
 
-/**
- * @brief Defines endpoint addresses for BULK and INTERRUPT transfers.
- * @{
- */
+/* Defines endpoint addresses for BULK and INTERRUPT transfers. */
 #if defined (CONFIG_AMEBAGREEN2)
 #define USBD_CDC_ACM_BULK_IN_EP                       0x82U
 #define USBD_CDC_ACM_BULK_OUT_EP                      0x02U
@@ -53,18 +55,27 @@
 #define USBD_CDC_ACM_BULK_OUT_EP                      0x02U
 #endif
 #define USBD_CDC_ACM_INTR_IN_EP                       0x83U
-/** @} */
 
 #define USBD_CDC_ACM_HS_INTR_IN_INTERVAL              8U     /**< High speed INTR IN interval */
 #define USBD_CDC_ACM_FS_INTR_IN_INTERVAL              8U     /**< Full speed INTR IN interval */
 
 #define USBD_CDC_ACM_CTRL_BUF_SIZE                    512U   /**< Control transfer buffer size. */
 
+/** @} End of Device_CDC_ACM_Constants group */
+/** @} End of USB_Device_Constants group */
+
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
 
-#if CONFIG_CDC_ACM_NOTIFY
+/** @addtogroup USB_Device_Types USB Device Types
+ * @{
+ */
+/** @addtogroup Device_CDC_ACM_Types Device CDC ACM Types
+ * @{
+ */
+
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 /**
  * @brief Structure for CDC ACM notifications sent to the host.
  * @details This is a packed structure used for sending notifications like SERIAL_STATE
@@ -100,6 +111,8 @@ typedef struct {
 
 	/**
 	 * @brief Called to handle class-specific SETUP requests.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] req: Pointer to the setup request packet.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
@@ -108,6 +121,8 @@ typedef struct {
 
 	/**
 	 * @brief Called when new data is received from the host on the BULK OUT endpoint.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] buf: Pointer to the received data buffer.
 	 * @param[in] len: Length of the received data in bytes.
 	 * @return 0 on success, non-zero on failure.
@@ -116,16 +131,28 @@ typedef struct {
 
 	/**
 	 * @brief Called when a data transmission to the host on the BULK IN endpoint is complete.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] status: The status of the transmission.
 	 */
 	void(* transmitted)(u8 status);
 
 	/**
 	 * @brief Called when USB attach status changes for application to support hot-plug events.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] old_status: The previous attach status.
 	 * @param[in] status: The new attach status.
 	 */
 	void (*status_changed)(u8 old_status, u8 status);
+
+	/**
+	 * @brief Called when the USB device resumes from suspend (wakeup).
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @details Indicates that the USB bus is active again and the upper layer can resume normal TRX.
+	 */
+	void (*wakeup)(void);
 } usbd_cdc_acm_cb_t;
 
 /**
@@ -138,14 +165,24 @@ typedef struct {
 	usbd_ep_t ep_intr_in;       /**< INTERRUPT IN endpoint structure. */
 	usb_dev_t *dev;             /**< Pointer to the USB device instance. */
 	usbd_cdc_acm_cb_t *cb;      /**< Pointer to the user-defined callback structure. */
-#if CONFIG_CDC_ACM_NOTIFY
+#if defined(CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST) && (CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST == 1)
 	u16 intr_notify_idx;        /**< Index for managing interrupt notifications. */
 #endif
 } usbd_cdc_acm_dev_t;
 
+/** @} End of Device_CDC_ACM_Types group */
+/** @} End of USB_Device_Types group */
+
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
+
+/** @addtogroup USB_Device_Functions USB Device Functions
+ * @{
+ */
+/** @addtogroup Device_CDC_ACM_Functions Device CDC ACM Functions
+ * @{
+ */
 
 /**
  * @brief Initializes class driver with application callback handler.
@@ -170,7 +207,7 @@ int usbd_cdc_acm_deinit(void);
  */
 int usbd_cdc_acm_transmit(u8 *buf, u32 len);
 
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 /**
  * @brief Sets new line coding properties over the INTR IN endpoint.
  * @param[in] serial_state: New line coding properties.
@@ -178,5 +215,8 @@ int usbd_cdc_acm_transmit(u8 *buf, u32 len);
  */
 int usbd_cdc_acm_notify_serial_state(u16 serial_state);
 #endif
-#endif  /* USBD_CDC_ACM_H */
+/** @} End of Device_CDC_ACM_Functions group */
+/** @} End of USB_Device_Functions group */
+/** @} End of USB_Device_API group */
 
+#endif  /* USBD_CDC_ACM_H */

@@ -29,14 +29,14 @@ struct eap_wsc_data {
 #endif
 
 
-void *_eap_wsc_server_process_hdl(void *priv, void *req, u8 id)
+void *eap_wsc_server_process_hdl(void *priv, void *req, u8 id)
 {
 	struct wpabuf *reqData = (struct wpabuf *)req;
 	wsc_server_eap.process(priv, reqData);
 	return wsc_server_eap.buildReq(priv, id);
 }
 
-void _eap_wsc_server_reset(void *priv)
+void eap_wsc_server_reset(void *priv)
 {
 	struct eap_wsc_data *data = (struct eap_wsc_data *)priv;
 	if (data && wsc_server_eap.reset) {

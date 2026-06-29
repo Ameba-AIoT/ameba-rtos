@@ -16,9 +16,10 @@
 static const char *const AT_WEBSOCKET_TAG = "AT_WEBSOCKET";
 
 /* for websocket client */
-struct websocket_config ws_config[MAX_WEBSOCKET_LINK_NUM];
+static struct websocket_config ws_config[MAX_WEBSOCKET_LINK_NUM];
 
-struct list_head ping_time_list[MAX_WEBSOCKET_LINK_NUM];
+static struct list_head ping_time_list[MAX_WEBSOCKET_LINK_NUM];
+static rtos_mutex_t ping_time_mutex[MAX_WEBSOCKET_LINK_NUM];
 
 struct pingtime_item {
 	uint32_t ping_send_time;    //ms
@@ -118,6 +119,8 @@ void at_wscfg(u16 argc, char **argv)
 			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc failed\r\n");
 			error_no = 2;
 			goto end;
+		} else {
+			memcpy(ws_config[link_id].protocol, protocol, strlen(protocol));
 		}
 	}
 
@@ -131,6 +134,8 @@ void at_wscfg(u16 argc, char **argv)
 			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "malloc failed\r\n");
 			error_no = 2;
 			goto end;
+		} else {
+			memcpy(ws_config[link_id].version, version, strlen(version));
 		}
 	}
 
@@ -464,9 +469,13 @@ static void at_ws_handler_pong(wsclient_context **wsclient)
 
 	if (res > 0) {
 		at_printf_indicate("[WS][EVENT]:linkid:%d, pong\r\n", link_id);
-		struct pingtime_item *item = list_first_entry(&ping_time_list[link_id], struct pingtime_item, node);
-		list_del(&item->node);
-		ws_free(item);
+		rtos_mutex_take(ping_time_mutex[link_id], MUTEX_WAIT_TIMEOUT);
+		if (!list_empty(&ping_time_list[link_id])) {
+			struct pingtime_item *item = list_first_entry(&ping_time_list[link_id], struct pingtime_item, node);
+			list_del(&item->node);
+			ws_free(item);
+		}
+		rtos_mutex_give(ping_time_mutex[link_id]);
 	}
 }
 
@@ -483,6 +492,13 @@ static void at_ws_handler_disconnect(wsclient_context *wsclient)
 	}
 
 	if (res > 0) {
+		struct pingtime_item *item, *tmp;
+		rtos_mutex_take(ping_time_mutex[link_id], MUTEX_WAIT_TIMEOUT);
+		list_for_each_entry_safe(item, tmp, &ping_time_list[link_id], node, struct pingtime_item) {
+			list_del(&item->node);
+			ws_free(item);
+		}
+		rtos_mutex_give(ping_time_mutex[link_id]);
 		ws_config[link_id].ws_client = NULL;
 		at_printf_indicate("[WS][EVENT]:linkid:%d, disconnect\r\n", link_id);
 	}
@@ -491,18 +507,24 @@ static void at_ws_handler_disconnect(wsclient_context *wsclient)
 static void wsclient_conn_thread(void *param)
 {
 	wsclient_context *wsclient;
-	int link_id = *(int *)param;
+	int link_id = (int)(uintptr_t)param;
 
 	wsclient = ws_config[link_id].ws_client;
 
 	while (wsclient && wsclient->readyState != WSC_CLOSED) {
 		/* check ping timeout */
-		struct pingtime_item *item = list_first_entry(&ping_time_list[link_id], struct pingtime_item, node);
+		uint32_t send_time = 0;
+		int has_inflight = 0;
+		rtos_mutex_take(ping_time_mutex[link_id], MUTEX_WAIT_TIMEOUT);
 		if (!list_empty(&ping_time_list[link_id])) {
-			if (rtos_time_get_current_system_time_ms() >= item->ping_send_time + ws_config[link_id].ping_timeout * 1000) {
-				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "linkid %d ping timeout, not receive pong for %d seconds\n", link_id, ws_config[link_id].ping_timeout);
-				ws_close(&(ws_config[link_id].ws_client));
-			}
+			struct pingtime_item *item = list_first_entry(&ping_time_list[link_id], struct pingtime_item, node);
+			send_time = item->ping_send_time;
+			has_inflight = 1;
+		}
+		rtos_mutex_give(ping_time_mutex[link_id]);
+		if (has_inflight && rtos_time_get_current_system_time_ms() >= send_time + ws_config[link_id].ping_timeout * 1000) {
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "linkid %d ping timeout, not receive pong for %d seconds\n", link_id, ws_config[link_id].ping_timeout);
+			ws_close(&(ws_config[link_id].ws_client));
 		}
 
 		/* send ping */
@@ -517,7 +539,9 @@ static void wsclient_conn_thread(void *param)
 				ws_close(&(ws_config[link_id].ws_client));
 			}
 			new_item->ping_send_time = rtos_time_get_current_system_time_ms();
+			rtos_mutex_take(ping_time_mutex[link_id], MUTEX_WAIT_TIMEOUT);
 			list_add_tail(&new_item->node, &ping_time_list[link_id]);
+			rtos_mutex_give(ping_time_mutex[link_id]);
 
 			ws_sendPing(1, wsclient);
 			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_DEBUG, "linkid %d send ping\n", link_id);
@@ -734,13 +758,9 @@ void at_wsconn(u16 argc, char **argv)
 			ws_pong(at_ws_handler_pong);
 			ws_dispatch_close(at_ws_handler_disconnect);
 
-			for (i = 0; i < MAX_WEBSOCKET_LINK_NUM; i++) {
-				INIT_LIST_HEAD(&ping_time_list[i]);
-			}
-
 			at_printf_indicate("[WS][EVENT]:linkid:%d, connected\r\n", link_id);
 
-			if (rtos_task_create(NULL, ((const char *)"wsclient_conn_thread"), wsclient_conn_thread, &link_id, 1024 * 4, 1) != RTK_SUCCESS) {
+			if (rtos_task_create(NULL, ((const char *)"wsclient_conn_thread"), wsclient_conn_thread, (void *)(uintptr_t)link_id, 1024 * 4, 1) != RTK_SUCCESS) {
 				RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "\n\r%s rtos_task_create(wsclient_conn_thread) failed", __FUNCTION__);
 				error_no = 6;
 				goto free_resource_end;
@@ -1216,13 +1236,13 @@ end:
 }
 
 /* for websocket server */
-int wssrv_is_running = 0;
-uint16_t wssrvcfg_port = 0;
-uint8_t wssrvcfg_max_conn = DEFAULT_SERVER_CONN;
-uint32_t wssrvcfg_ping_interval = DEFAULT_SERVER_PING_INTERVAL;
-uint32_t wssrvcfg_idle_timeout = DEFAULT_SERVER_IDLE_TIMEOUT;
-size_t wssrvcfg_tx_size = DEFAULT_SERVER_TX_SIZE;
-size_t wssrvcfg_rx_size = DEFAULT_SERVER_RX_SIZE;
+static int wssrv_is_running = 0;
+static uint16_t wssrvcfg_port = 0;
+static uint8_t wssrvcfg_max_conn = DEFAULT_SERVER_CONN;
+static uint32_t wssrvcfg_ping_interval = DEFAULT_SERVER_PING_INTERVAL;
+static uint32_t wssrvcfg_idle_timeout = DEFAULT_SERVER_IDLE_TIMEOUT;
+static size_t wssrvcfg_tx_size = DEFAULT_SERVER_TX_SIZE;
+static size_t wssrvcfg_rx_size = DEFAULT_SERVER_RX_SIZE;
 
 void at_wssrvcfg_help(void)
 {
@@ -1954,6 +1974,8 @@ void init_websocket_struct(void)
 	int i, j;
 
 	for (i = 0; i < MAX_WEBSOCKET_LINK_NUM; i++) {
+		INIT_LIST_HEAD(&ping_time_list[i]);
+		rtos_mutex_create(&ping_time_mutex[i]);
 		ws_config[i].ping_interval      = DEFAULT_PING_INTERVAL;
 		ws_config[i].ping_timeout       = DEFAULT_PING_TIMEOUT;
 		ws_config[i].tx_buffer_size     = DEFAULT_BUFFER_SIZE;

@@ -28,7 +28,7 @@ void osif_delay(uint32_t ms)
 }
 
 /****************************************************************************/
-/* Delay current task in a given microseconds                                */
+/* Delay current task in a given microseconds                               */
 /****************************************************************************/
 void osif_delay_us(uint32_t us)
 {
@@ -41,6 +41,14 @@ void osif_delay_us(uint32_t us)
 uint32_t osif_sys_time_get(void)
 {
 	return rtos_time_get_current_system_time_ms();
+}
+
+/****************************************************************************/
+/* Get system time in ns                                                    */
+/****************************************************************************/
+uint64_t osif_sys_time_get_ns(void)
+{
+	return rtos_time_get_current_system_time_ns();
 }
 
 /****************************************************************************/
@@ -319,7 +327,7 @@ bool osif_mutex_give(void *p_handle)
 }
 
 /****************************************************************************/
-/* Create recursive mutex                                                    */
+/* Create recursive mutex                                                   */
 /****************************************************************************/
 bool osif_recursive_mutex_create(void **pp_handle)
 {
@@ -327,7 +335,7 @@ bool osif_recursive_mutex_create(void **pp_handle)
 }
 
 /****************************************************************************/
-/* Delete recursive mutex                                                             */
+/* Delete recursive mutex                                                   */
 /****************************************************************************/
 bool osif_recursive_mutex_delete(void *p_handle)
 {
@@ -335,7 +343,7 @@ bool osif_recursive_mutex_delete(void *p_handle)
 }
 
 /****************************************************************************/
-/* Take recursive mutex                                                               */
+/* Take recursive mutex                                                     */
 /****************************************************************************/
 bool osif_recursive_mutex_take(void *p_handle, uint32_t wait_ms)
 {
@@ -343,7 +351,7 @@ bool osif_recursive_mutex_take(void *p_handle, uint32_t wait_ms)
 }
 
 /****************************************************************************/
-/* Give recursive mutex                                                               */
+/* Give recursive mutex                                                     */
 /****************************************************************************/
 bool osif_recursive_mutex_give(void *p_handle)
 {

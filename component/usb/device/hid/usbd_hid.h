@@ -23,21 +23,21 @@
  * @{
  */
 
-// HID usage configuration
+/* HID usage configuration */
 #define USBD_HID_MOUSE_DEVICE					1   /**< HID device type, act as a mouse. */
 #define USBD_HID_KEYBOARD_DEVICE				2   /**< HID device type, act as a keyboard. */
 
 #define USBD_HID_DEVICE_TYPE					USBD_HID_MOUSE_DEVICE   /**< HID device type. */
 
-// HID PID/VID
+/* HID PID/VID */
 #define USBD_HID_VID							USB_VID  /**< Vendor ID. */
 #define USBD_HID_PID							USB_PID  /**< Product ID. */
 
-// HID strings
-#define USBD_HID_LANGID_STRING					0x0409U             /**< Language ID for string descriptors (0x0409 = English */
+/* HID strings */
+#define USBD_HID_LANGID_STRING					0x0409U             /**< Language ID for string descriptors (0x0409 = English) */
 #define USBD_HID_MFG_STRING						"Realtek"           /**< Manufacturer string. */
 #define USBD_HID_PROD_HS_STRING					"Realtek HID (HS)"  /**< Product string for High-Speed mode. */
-#define USBD_HID_PROD_FS_STRING					"Realtek HID (FS)"  /**< Product string for High-Speed mode. */
+#define USBD_HID_PROD_FS_STRING					"Realtek HID (FS)"  /**< Product string for Full-Speed mode. */
 #define USBD_HID_SN_STRING						"1234567890"        /**< Serial number string. */
 #define USBD_HID_SELF_POWERED					1U      /**< Device is self-powered. */
 
@@ -45,13 +45,13 @@
 #define USBD_HID_INTR_IN_BUF_SIZE				512U    /**< INTR IN maximum buffer size */
 #define USBD_HID_INTR_OUT_BUF_SIZE				1024U   /**< INTR OUT maximum buffer size */
 
-// String index
+/* String index */
 #define USBD_HID_STRING_MANUFACTURER			1 /**< Manufacture string index. */
 #define USBD_HID_STRING_PRODUCT					2 /**< Product string index. */
 #define USBD_HID_STRING_SERIALNUMBER			3 /**< Serial number string index. */
 #define USBD_HID_STRING_STRING_INTERFACE		4 /**< String interface string index. */
 
-// Endpoint address
+/* Endpoint address */
 #if defined (CONFIG_AMEBAGREEN2)
 #define USBD_HID_INTERRUPT_OUT_EP_ADDRESS		0x02  /**< EP for INTR OUT */
 #define USBD_HID_INTERRUPT_IN_EP_ADDRESS		0x82  /**< EP for INTR IN */
@@ -73,8 +73,8 @@
 #define USBD_HID_MOUSE_BUTTON_MIDDLE			0x04    /**< Mouse Wheel button. 0: release, 1: press. */
 #define USBD_HID_MOUSE_BUTTON_RESERVED			0xf8    /**< Mouse Reserved. all bit should set to 1. */
 
-/** @} End of Device_HID_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_HID_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -103,11 +103,15 @@ typedef struct {
 
 	/**
 	 * @brief Called to handle class-specific SETUP requests.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 */
 	void(* setup)(void);
 
 	/**
 	 * @brief Called when a data transmission to the host on the BULK IN endpoint is complete.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] status The status of the transmission.
 	 */
 	void(* transmitted)(u8 status);
@@ -115,23 +119,26 @@ typedef struct {
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	/**
 	 * @brief Called when new data is received from the host on the INTR IN endpoint, used for keyboard.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] buf Pointer to the received data buffer.
 	 * @param[in] len Length of the received data in bytes.
-	 * @return 0 on success, non-zero on failure.
 	 */
 	void(* received)(u8 *buf, u32 len);
 #endif
 
 	/**
 	 * @brief Called when USB attach status changes for application to support hot-plug events.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] old_status The previous attach status.
 	 * @param[in] status The new attach status.
 	 */
 	void (*status_changed)(u8 old_status, u8 status);
 } usbd_hid_usr_cb_t;
 
-/** @} End of Device_HID_Types group*/
-/** @} End of USB_Device_Types group*/
+/** @} End of Device_HID_Types group */
+/** @} End of USB_Device_Types group */
 
 /**
  * @brief Structure representing the HID device instance.
@@ -183,4 +190,4 @@ int usbd_hid_send_data(u8 *buf, u32 len);
 /** @} End of Device_HID_Functions group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
-#endif // USBD_HID_H
+#endif /* USBD_HID_H */

@@ -280,7 +280,7 @@ WIFI_RETRY_LOOP:
 
 #ifdef CONFIG_LWIP_LAYER
 		if (ret == RTK_SUCCESS) {
-			LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
+			lwip_request_ip(NETIF_WLAN_STA_INDEX);
 		}
 #endif
 		free(data);

@@ -93,3 +93,10 @@ add_custom_target(
     COMMAND ${op_FW_PACKAGE} --imgtool-floader ${c_SDK_IMAGE_TARGET_DIR}/ram_1_prepend.bin -o ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/imgtool_flashloader.bin ${c_SDK_FLOADER_BIN_DIR}/floader_${c_SOC_TYPE}.bin
 )
+
+add_custom_target(
+    ${c_MCU_PROJECT_NAME}
+    COMMENT "build ${c_MCU_PROJECT_NAME} only"
+    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image1>
+            $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image2>_postbuild
+)

@@ -15,6 +15,15 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/** @addtogroup USB_Host_API USB Host API
+ *  @{
+ */
+/** @addtogroup USB_Host_Constants USB Host Constants
+ * @{
+ */
+/** @addtogroup Host_UAC_Constants Host UAC Constants
+ * @{
+ */
 #define USBH_UAC_DEBUG                 0         /**< Enable/Disable UAC debug logging (1: Enable, 0: Disable) */
 
 #if USBH_UAC_DEBUG && (USBH_TP_TRACE_DEBUG == 0)
@@ -27,8 +36,17 @@
 
 #define USBH_UAC_ALT_SETTING_MAX       10        /**< Maximum number of Alternate Settings per interface */
 #define USBH_UAC_FREQ_FORMAT_MAX       6         /**< Maximum number of discrete sampling frequencies per format */
+/** @} End of Host_UAC_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Host_Types USB Host Types
+ * @{
+ */
+/** @addtogroup Host_UAC_Types Host UAC Types
+ * @{
+ */
 
 /* uac1.0 Audio Control   */
 /**
@@ -65,8 +83,8 @@ typedef struct {
 	usbh_uac_vol_ctrl_info controls[USBH_UAC_FU_MAX_CNT];  /**< Array of Feature Units found */
 	usbh_uac_term_info terminals[USBH_UAC_TERM_MAX_CNT];   /**< Array of Terminals found */
 
-	u32 volume_ctrl_count; /**< Count of valid Feature Units */
-	u32 terminal_count;    /**< Count of valid Terminals */
+	u8 volume_ctrl_count;  /**< Count of valid Feature Units (max: USBH_UAC_FU_MAX_CNT=8) */
+	u8 terminal_count;     /**< Count of valid Terminals (max: USBH_UAC_TERM_MAX_CNT=8) */
 	u8 best_match_idx;     /**< Index of the best matching Feature Unit (for main volume control) */
 	u8 ac_itf_idx;         /**< Interface index of the Audio Control interface */
 } usbh_uac_ac_itf_info_t;
@@ -84,15 +102,14 @@ typedef struct {
 	u32 sample_rem;        /**< Remainder when dividing frequency by packets/sec (for fractional sample rates) */
 	u32 sample_accum;      /**< Accumulator for fractional sample rate calculation */
 	u32 last_sample_accum; /**< Previous accumulator value */
-	u32 pkt_per_second;    /**< Number of USB packets per second (e.g., 1000 for Full Speed) */
-
-	u16 frame_cnt;         /**< Number of frames configured for the buffer */
+	u16 packet_rate;       /**< Number of USB packets per second (max: 8000 for HS ISOC) */
 
 	__IO u16 written;        /**< Length of data already written to the current packet buffer */
 	__IO u16 mps;            /**< Endpoint Maximum Packet Size */
 	__IO u8 sema_valid;      /**< Flag indicating if the semaphore is valid */
 	__IO u8 write_wait_sema; /**< Flag indicating if a write operation is waiting for the semaphore */
 	__IO u8 next_xfer;       /**< Flag to trigger the next transfer */
+	u8 frame_cnt;         /**< Number of frames configured for the buffer */
 } usbh_uac_buf_ctrl_t;
 
 /**
@@ -164,6 +181,9 @@ typedef struct {
 	u8 choose_freq_idx;                   /**< Index of the currently selected frequency */
 } usbh_uac_as_itf_info_t;
 
+/** @} End of Host_UAC_Types group */
+/** @} End of USB_Host_Types group */
+
 /**
   * @brief  Main UAC Host Class Driver Handle.
   */
@@ -189,14 +209,16 @@ typedef struct {
 	__IO u32 isoc_xfer_buf_empty_cnt; /**< Buffer underrun counter */
 	__IO u32 isoc_xfer_buf_err_cnt;   /**< Transfer error counter */
 	__IO u32 isoc_xfer_interval_cnt;  /**< Interval mismatch counter */
+#endif
+	u16 volume_db;             /**< Current volume in dB representation */
 
+#if USBH_UAC_DEBUG
 	__IO u8 dump_status_task_alive;
 	__IO u8 dump_status_task_exit;
 #endif
 
 	__IO u8 xfer_state;        /**< Current data transfer state (IDLE/BUSY/WAIT_SOF) */
 	__IO u8 ctrl_state;        /**< Current control transfer state */
-	u16 volume_db;             /**< Current volume in dB representation */
 	u8 ch_idx;                 /**< Current channel index being operated on */
 	u8 mute_value;             /**< Global mute state (1: Mute, 0: Unmute) */
 	u8 next_xfer;              /**< Flag to trigger next transfer */
@@ -208,13 +230,20 @@ typedef struct {
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
+/** @addtogroup USB_Host_Functions USB Host Functions
+ * @{
+ */
+/** @addtogroup Host_UAC_Functions Host UAC Functions
+ * @{
+ */
+
 /**
   * @brief  Initialize the UAC Class Driver.
   * @param  cb: Pointer to the user callback structure.
   * @param  frame_cnt: Configuration for ring buffer size (frame count).
   * @retval Status (0: Success, <0: Failure)
   */
-int usbh_uac_init(usbh_uac_cb_t *cb, int frame_cnt);
+int usbh_uac_init(usbh_uac_cb_t *cb, u8 frame_cnt);
 
 /**
   * @brief  De-initialize the UAC Class Driver and release resources.
@@ -281,5 +310,9 @@ void usbh_uac_start_play(void);
   * @brief  Stop the audio playback process.
   */
 void usbh_uac_stop_play(void);
+
+/** @} End of Host_UAC_Functions group */
+/** @} End of USB_Host_Functions group */
+/** @} End of USB_Host_API group */
 
 #endif  /* USBH_UAC1_H */

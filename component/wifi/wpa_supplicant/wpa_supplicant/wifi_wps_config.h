@@ -57,4 +57,5 @@ extern unsigned int wps_pin_valid(unsigned int pin);
 
 void wifi_start_ap_wps_thread(u16 config_methods, char *pin);
 
+
 /*\@}*/

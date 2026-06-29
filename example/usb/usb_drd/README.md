@@ -4,8 +4,27 @@ In this application, Ameba is designed as an USB DRD (dual role device) which wi
 
 # HW Configuration
 
-Some Ameba boards need to be reworked to support USB host, refer to AN for details.
-Taking RTL8730EA/QFN100 boards for example, the register R20 shall be parted on with 0Ohm register or just shorted to provide power for USB device via VBUS.
+Some Ameba boards require hardware rework to support USB Host mode.
+Populate the designated resistor footprint with a **0Ohm resistor** (or apply a solder bridge)
+to enable VBUS power supply to the USB device.
+Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9) for details.
+
+## Board Rework Reference
+
+### RTL8730E
+
+| Board Variant      | Resistor | Rework Action                                  |
+|--------------------|----------|------------------------------------------------|
+| RTL8730EA / QFN100 | R20      | Populate with 0Ohm resistor or solder bridge     |
+| RTL8730EL / QFN144 | R166     | Populate with 0Ohm resistor, or use an OTG cable |
+
+### RTL8721F
+
+| Board Variant    | Resistor | Rework Action                              |
+|------------------|----------|--------------------------------------------|
+| RTL8721FC0-R00   | R52      | Populate with 0Ohm resistor                 |
+| RTL8721FA0-3V0   | R52      | Populate with 0Ohm resistor                 |
+| RTL8721FL0-2V0   | R2       | Populate with 0Ohm resistor *(pre-reworked by default)* |
 
 # SW configuration
 

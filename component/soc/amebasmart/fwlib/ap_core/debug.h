@@ -15,8 +15,10 @@
 extern "C" {
 #endif
 
+uint32_t DiagPrintf(const char *fmt, ...);
+
 #ifdef DEBUG
-#define debug_printf(fmt, ...)	printf(fmt, ##__VA_ARGS__)
+#define debug_printf(fmt, ...)	DiagPrintf(fmt, ##__VA_ARGS__)
 #else
 #define debug_printf(fmt, ...)
 #endif

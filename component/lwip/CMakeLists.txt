@@ -73,7 +73,7 @@ ameba_list_append(private_sources
     lwip_${v_LWIP_VER}/src/api/api_msg.c
     lwip_${v_LWIP_VER}/src/api/netbuf.c
     lwip_${v_LWIP_VER}/port/realtek/freertos/sys_arch.c
-    lwip_${v_LWIP_VER}/port/realtek/freertos/ethernetif.c
+    lwip_${v_LWIP_VER}/port/realtek/freertos/netif_adapter.c
     lwip_${v_LWIP_VER}/src/core/timeouts.c
     lwip_${v_LWIP_VER}/src/core/raw.c
     lwip_${v_LWIP_VER}/src/core/mem.c

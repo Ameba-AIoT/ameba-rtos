@@ -73,6 +73,7 @@ static const u8 usbd_hid_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
 	USB_HIGH_BYTE(USBD_HID_LANGID_STRING),
 };
 
+#ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_hid_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
@@ -86,6 +87,7 @@ static const u8 usbd_hid_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	0x01,                                           /* bNumConfigurations */
 	0x00,                                           /* Reserved */
 };
+#endif
 
 /* USB HID device FS Configuration Descriptor */
 static const u8 usbd_hid_fs_config_desc[] = {
@@ -151,6 +153,7 @@ static const u8 usbd_hid_fs_config_desc[] = {
 #endif
 };
 
+#ifndef CONFIG_USB_FS
 /* USB HID device HS Configuration Descriptor */
 static const u8 usbd_hid_hs_config_desc[] = {
 	/* USB Standard Configuration Descriptor */
@@ -214,6 +217,7 @@ static const u8 usbd_hid_hs_config_desc[] = {
 	0xA,											/*bInterval*/
 #endif
 };
+#endif
 
 /* USB HID Descriptor */
 static const u8 usbd_hid_desc[USBD_HID_DESC_SIZE] = {
@@ -372,6 +376,13 @@ static int usbd_hid_receive(void)
 	return usbd_ep_receive(hid->dev, &hid->ep_intr_out);
 }
 
+/**
+  * @brief  Handle EP0 Rx Ready event
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @retval Status
+  */
 static int hid_handle_ep0_data_out(usb_dev_t *dev)
 {
 	int ret = HAL_ERR_HW;
@@ -387,6 +398,15 @@ static int hid_handle_ep0_data_out(usb_dev_t *dev)
 	return ret;
 }
 
+/**
+  * @brief  Data received on non-control Out endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  ep_addr: endpoint address
+  * @param  len: received data length
+  * @retval Status
+  */
 static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_hid_t *hid = &hid_device;
@@ -406,6 +426,14 @@ static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 #endif // USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 
+/**
+  * @brief  Handle HID specific CTRL requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  req: USB CTRL requests
+  * @retval Status
+  */
 static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	usbd_hid_t *hid = &hid_device;
@@ -495,8 +523,8 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 		case USBD_HID_GET_REPORT:
 			/* send an empty report */
-			memset(ep0_in->xfer_buf, 0x0, req->wLength);
-			ep0_in->xfer_len = req->wLength;
+			ep0_in->xfer_len = MIN(req->wLength, ep0_in->xfer_buf_len);
+			usb_os_memset(ep0_in->xfer_buf, 0x0, ep0_in->xfer_len);
 			usbd_ep_transmit(dev, ep0_in);
 			break;
 		case USBD_HID_SET_REPORT:
@@ -529,6 +557,14 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	return ret;
 }
 
+/**
+  * @brief  Set HID class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  config: USB configuration index
+  * @retval Status
+  */
 static int hid_set_config(usb_dev_t *dev, u8 config)
 {
 	int ret = HAL_OK;
@@ -537,20 +573,23 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
 #endif
+	usb_ep_info_t *info;
 
 	UNUSED(config);
 
 	hid->dev = dev;
 
 	/* Init INTR IN EP */
+	info = &ep_intr_in->info;
 	ep_intr_in->xfer_state = 0;
 	ep_intr_in->is_busy = 0U;
-	ep_intr_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_intr_in);
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	/* Init INTR OUT EP */
-	ep_intr_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
+	info = &ep_intr_out->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_intr_out);
 	/* Prepare to receive next INTR OUT packet */
 	usbd_hid_receive();
@@ -559,6 +598,14 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 	return ret;
 }
 
+/**
+  * @brief  Clear HID class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  config: USB configuration index
+  * @retval Status
+  */
 static int hid_clear_config(usb_dev_t *dev, u8 config)
 {
 	int ret = HAL_OK;
@@ -579,17 +626,27 @@ static int hid_clear_config(usb_dev_t *dev, u8 config)
 	return ret;
 }
 
+/**
+  * @brief  Data sent on non-control IN endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  ep_addr: endpoint address
+  * @param  status: transfer status
+  * @retval Status
+  */
 static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_hid_t *hid = &hid_device;
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
 
 	UNUSED(dev);
+	UNUSED(ep_addr);
 
 	if (status == HAL_OK) {
 		/*TX done*/
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 	}
 
 	hid->cb->transmitted(status);
@@ -600,6 +657,8 @@ static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 
 /**
   * @brief  Get descriptor callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
   * @param  buf: Poniter to Buffer
@@ -629,10 +688,13 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
 			desc = (u8 *)usbd_hid_hs_config_desc;
 			len = sizeof(usbd_hid_hs_config_desc);
-		} else {
+		} else
+#endif
+		{
 			desc = (u8 *)usbd_hid_fs_config_desc;
 			len = sizeof(usbd_hid_fs_config_desc);
 		}
@@ -643,6 +705,7 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_hid_device_qualifier_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_hid_device_qualifier_desc, len);
@@ -663,6 +726,7 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
 		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
@@ -687,7 +751,7 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 			break;
 		/* Add customer string here */
 		default:
-			//RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", USB_LOW_BYTE(req->wValue));
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 			break;
 		}
 		break;
@@ -701,6 +765,8 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 
 /**
   * @brief  USB attach status change
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  old_status: USB old attach status
   * @param  status: USB USB attach status
@@ -724,11 +790,18 @@ int usbd_hid_init(u32 tx_buf_len, usbd_hid_usr_cb_t *cb)
 	int ret = HAL_OK;
 	usbd_hid_t *hid = &hid_device;
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
+	usb_ep_info_t *info;
+
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
-	ep_intr_out->addr = USBD_HID_INTERRUPT_OUT_EP_ADDRESS;
-	ep_intr_out->type = USB_CH_EP_TYPE_INTR;
+	info = &ep_intr_out->info;
+	info->addr = USBD_HID_INTERRUPT_OUT_EP_ADDRESS;
+	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_out->xfer_buf_len = USBD_HID_INTR_OUT_BUF_SIZE;
 	ep_intr_out->xfer_buf = (u8 *)usb_os_malloc(ep_intr_out->xfer_buf_len);
 	ep_intr_out->xfer_len = ep_intr_out->xfer_buf_len;
@@ -742,8 +815,9 @@ int usbd_hid_init(u32 tx_buf_len, usbd_hid_usr_cb_t *cb)
 		tx_buf_len = USBD_HID_INTR_IN_BUF_SIZE;
 	}
 
-	ep_intr_in->addr = USBD_HID_INTERRUPT_IN_EP_ADDRESS;
-	ep_intr_in->type = USB_CH_EP_TYPE_INTR;
+	info = &ep_intr_in->info;
+	info->addr = USBD_HID_INTERRUPT_IN_EP_ADDRESS;
+	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_in->xfer_buf_len = tx_buf_len;
 	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(tx_buf_len);
 	if (ep_intr_in->xfer_buf == NULL) {
@@ -751,11 +825,9 @@ int usbd_hid_init(u32 tx_buf_len, usbd_hid_usr_cb_t *cb)
 		goto usbd_hid_init_clean_intr_out_buf_exit;
 	}
 
-	if (cb != NULL) {
-		hid->cb = cb;
-		if (cb->init != NULL) {
-			cb->init();
-		}
+	hid->cb = cb;
+	if (cb->init != NULL) {
+		cb->init();
 	}
 
 	usbd_register_class(&usbd_hid_driver);
@@ -814,7 +886,7 @@ int usbd_hid_send_data(u8 *data, u32 len)
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
 
 	if (!dev->is_ready) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX %d not ready\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS, len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", USBD_HID_INTERRUPT_IN_EP_ADDRESS);
 		return ret;
 	}
 
@@ -844,4 +916,3 @@ int usbd_hid_send_data(u8 *data, u32 len)
 
 	return ret;
 }
-

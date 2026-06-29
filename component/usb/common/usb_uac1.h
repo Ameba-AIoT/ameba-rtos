@@ -9,6 +9,11 @@
 
 #define USB_UAC1_VERSION_01_10                      0x110U
 
+/* Audio interface bInterfaceProtocol values (standard interface descriptor).
+   Used to distinguish the Audio Class version: UAC1 = 0x00, UAC2 = 0x20. */
+#define USB_UAC_IP_VERSION_1                   0x00U
+#define USB_UAC_IP_VERSION_2                   0x20U
+
 /* Audio Class Codes */
 #define USB_UAC1_CLASS_CODE                         0x01U
 
@@ -26,10 +31,10 @@
 #define USB_UAC1_AUDIO_INTERFACE_DESC_TYPE          0x24U
 #define USB_UAC1_AUDIO_EP_DESCRIPTOR                0x25U
 
-// Audio Class-Specific Audio Streaming Interface Descriptor Subtype Codes (UAC2.0 Spec Appendix A.10)
+/* Audio Class-Specific Audio Streaming Interface Descriptor Subtype Codes (UAC2.0 Spec Appendix A.10) */
 #define USB_UAC1_AS_IF_DESC_SUBTYPE_AS_GENERAL              0x01
 #define USB_UAC1_AS_IF_DESC_SUBTYPE_FORMAT_TYPE             0x02
-// Audio Class-Specific Audio Streaming Endpoint Descriptor Subtype Codes (UAC2.0 Spec Appendix A.13)
+/* Audio Class-Specific Audio Streaming Endpoint Descriptor Subtype Codes (UAC2.0 Spec Appendix A.13) */
 #define USB_UAC1_AS_EP_DESC_SUBTYPE_EP_GENERAL              0x01
 
 #define USB_UAC1_IF_IDX_AC_HEADSET                          0x00U
@@ -180,4 +185,4 @@ typedef struct {
 	uint8_t tSamFreq[3][3];
 } __PACKED usb_uac1_format_type_i_discrete_descriptor;
 
-#endif // USB_UAC1_H
+#endif /* USB_UAC1_H */

@@ -39,12 +39,11 @@ typedef struct {
 typedef struct {
 	usb_ringbuf_t *list_node;   /**< Array of metadata nodes. Size equals 'capacity'. */
 	u8 *buffer;                 /**< Base address of the contiguous memory pool. Total size = capacity * node_size. */
-
-	__IO u16 head;              /**< Read index (Consumer). Points to the next node to be dequeued. */
-	__IO u16 tail;              /**< Write index (Producer). Points to the next slot for enqueuing. */
-
-	__IO u16 capacity;          /**< Maximum number of nodes (blocks) the buffer can hold. */
 	u16 node_size;              /**< Maximum data size (in bytes) for a single node. */
+
+	__IO u8 head;               /**< Read index (Consumer). Points to the next node to be dequeued. */
+	__IO u8 tail;               /**< Write index (Producer). Points to the next slot for enqueuing. */
+	__IO u8 capacity;           /**< Maximum number of nodes (blocks) the buffer can hold. */
 } usb_ringbuf_manager_t;
 
 /* Exported macros -----------------------------------------------------------*/
@@ -67,7 +66,7 @@ typedef struct {
  *   - 0: Success.
  *   - Non-zero: Error (e.g., memory allocation failed).
  */
-int usb_ringbuf_manager_init(usb_ringbuf_manager_t *handle, u16 count, u16 size, u8 cache_align);
+int usb_ringbuf_manager_init(usb_ringbuf_manager_t *handle, u8 count, u16 size, u8 cache_align);
 
 /**
  * @brief  De-initializes the ring buffer manager.
@@ -96,7 +95,7 @@ int usb_ringbuf_reset(usb_ringbuf_manager_t *handle);
  * @param[in] handle  Pointer to the manager structure.
  * @return The count of occupied nodes waiting to be read.
  */
-u32 usb_ringbuf_get_count(usb_ringbuf_manager_t *handle);
+u8 usb_ringbuf_get_count(usb_ringbuf_manager_t *handle);
 
 /**
  * @brief  Checks if the ring buffer is empty.

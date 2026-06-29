@@ -10,6 +10,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbh.h"
+#include "usb_cdc_ecm.h"
 #include "usbh_composite_config.h"
 
 /*
@@ -34,26 +35,15 @@
  * @{
  */
 
-/* CDC ECM data report interface */
-typedef void (*usb_report_data)(u8 *buf, u32 len);
-
-#define ECM_STATE_DEBUG_ENABLE                                  0      /**< Enable or disable CDC ECM state trace logging. */
+#define USBH_COMP_ECM_STATE_DEBUG_ENABLE                              0      /**< Enable or disable CDC ECM state trace logging. */
 
 /* Macro defines -----------------------------------------------------------*/
+#define USBH_COMP_ECM_MAC_STR_LEN                                     (6)    /**< Length of the MAC address in bytes. */
+#define USBH_COMP_ECM_CTRL_REG_BUF_LEN                                (4)    /**< Length of the ECM dongle control register buffer. */
+#define USBH_COMP_ECM_MUTICAST_FILTER_STR_LEN                         (20)   /**< Length of the ECM multicast filter control buffer. */
 
-
-#define CDC_ECM_MAC_STR_LEN                                     (6)    /**< Length of the MAC address in bytes. */
-#define CDC_ECM_MAC_CTRL_REG_LEN                                (4)    /**< Length of the ECM dongle control register buffer. */
-#define CDC_ECM_MUTICAST_FILTER_STR_LEN                         (20)   /**< Length of the ECM multicast filter control buffer. */
-
-/* CDC Class&Subclass Codes */
-#define CDC_IF_CDC_CTRL_CODE                                    0x02U /**< CDC interface control code. */
-#define CDC_IF_CDC_CTRL_SUB_CLASS_ECM_CODE                      0x06U /**< CDC interface control sub class code. */
-#define CDC_IF_CDC_DATA_CODE                                    0x0AU /**< CDC interface data code. */
-#define CDC_IF_CDC_DATA_SUB_CLASS_DATA_CODE                     0x00U /**< CDC interface data sub class code. */
-
-/** @} End of Host_Composite_Constants group*/
-/** @} End of USB_Host_Constants group*/
+/** @} End of Host_Composite_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -65,7 +55,7 @@ typedef void (*usb_report_data)(u8 *buf, u32 len);
  */
 
 /**
- * @brief USB CDC ACM ECM Composite Host Private Data Structure.
+ * @brief USB CDC ECM Composite Host Private Data Structure.
  */
 typedef struct {
 	u16 *led_array;    /**< Pointer to the LED status array; each u16 element represents the state or brightness of an LED. */
@@ -124,60 +114,55 @@ typedef struct {
 typedef struct {
 	usbh_ep_desc_t ep_desc;                   /**< Endpoint descriptor. */
 	usbh_pipe_t pipe;                         /**< USB Host pipe handle. */
-	u8 *buf;                                  /**< Malloc buffer for RX data. */
-	u32 buf_len;                              /**< Length of the RX buffer. */
-	u32 busy_tick;                            /**< Timestamp for busy detection. */
-#if ECM_STATE_DEBUG_ENABLE
+#if USBH_COMP_ECM_STATE_DEBUG_ENABLE
 	u32 trigger_cnt;                          /**< Debug trigger counter. */
 #endif
 	u8 valid;                                 /**< Validity flag for this pipe info. */
 } usbh_composite_cdc_ecm_pipe_info_t;
 
-/** @} End of Host_Composite_Types group*/
-/** @} End of USB_Host_Types group*/
+/** @} End of Host_Composite_Types group */
+/** @} End of USB_Host_Types group */
 
 /**
  * @brief Structure representing the CDC ECM host instance.
  */
 typedef struct {
-	u8                            muticast_filter[CDC_ECM_MUTICAST_FILTER_STR_LEN]; /**< Buffer for multicast filer control */
-	u8                            mac[CDC_ECM_MAC_STR_LEN];                     /**< Buffer for saving MAC string */
-	u8                            mac_ctrl_lock[CDC_ECM_MAC_CTRL_REG_LEN];      /**< Buffer for RTL8152 MAC change control */
-	u8                            flow_ctrl[CDC_ECM_MAC_CTRL_REG_LEN];          /**< Buffer for RTL8152 flow control */
-	u8                            rcr[CDC_ECM_MAC_CTRL_REG_LEN];                /**< Buffer for RTL8156 RCR register */
+	u8                                      muticast_filter[USBH_COMP_ECM_MUTICAST_FILTER_STR_LEN]; /**< Buffer for multicast filer control */
+	u8                                      mac[USBH_COMP_ECM_MAC_STR_LEN];                     /**< Buffer for saving MAC string */
+	u8                                      mac_ctrl_lock[USBH_COMP_ECM_CTRL_REG_BUF_LEN];      /**< Buffer for RTL8152 MAC change control */
+	u8                                      flow_ctrl[USBH_COMP_ECM_CTRL_REG_BUF_LEN];          /**< Buffer for RTL8152 flow control */
+	u8                                      rcr[USBH_COMP_ECM_CTRL_REG_BUF_LEN];                /**< Buffer for RTL8156 RCR register */
 
-	usbh_composite_cdc_ecm_pipe_info_t      ecm_ctrl_ep;            /* Control Endpoint Info */
-	usbh_composite_cdc_ecm_pipe_info_t      ecm_tx_ep;              /* Bulk OUT Endpoint Info */
-	usbh_composite_cdc_ecm_pipe_info_t      ecm_rx_ep;              /* Bulk IN Endpoint Info */
+	usbh_composite_cdc_ecm_pipe_info_t      intr_rx;            /**< Intr IN Endpoint Info */
+	usbh_composite_cdc_ecm_pipe_info_t      bulk_tx;            /**< Bulk OUT Endpoint Info */
+	usbh_composite_cdc_ecm_pipe_info_t      bulk_rx;            /**< Bulk IN Endpoint Info */
 
-	usb_os_sema_t                           cdc_ecm_tx_sema;    /**<  Semaphore for USB TX synchronization */
-	usb_report_data                         report_data;        /**< usb rx callback function */
+	usb_os_sema_t                           bulk_tx_sema;       /**<  Semaphore for BULK TX synchronization */
 	usbh_composite_cdc_ecm_usr_cb_t         *cb;                /**< User callback structure */
 	usbh_composite_host_t                   *driver;            /**< Composite driver handle */
-	u16                                     sub_status;         /**< ECM sub-status, see @ref usbh_cdc_ecm_at_set_state_t */
 	u16                                     *led_array;         /**< Pointer to LED array */
 	u8                                      *dongle_ctrl_buf;   /**< Buffer for control transfers (cache aligned)*/
+	u8                                      *intr_rx_buf;       /**< Pre-allocated INTR IN receive buffer */
+	u8                                      *bulk_rx_buf;       /**< Pre-allocated BULK IN receive buffer */
 
-	u32 eth_statistic_count;                         /**< Feature selector parameter: Statistic count */
-	u16 feature_selector;                            /**< Feature selector parameter */
-	u16 packet_filter;                               /**< Packet filter configuration */
-	u16 muticast_filter_len;                         /**< Length of multicast filter parameters */
-	u16 vid;                                         /**< Vendor ID */
-	u16 pid;                                         /**< Product ID */
-
-	volatile u8                   cdc_ecm_tx_block;  /**< Ecm tx status */
-	volatile u8                   usb_setup;         /**< Ecm setup status */
-	volatile u8                   eth_hw_connect;    /**< Ecm ethernet connect status:0 disconnect,1 connect */
-	volatile u8                   ready_to_xfer;     /**< Dongle need some prepare before transfer ethernet packets */
-
-	u8                            if_num;            /**< Interface number */
-	u8                            alt_set;           /**< Value used to select alternative setting */
-	u8                            mac_str_id;        /**< MAC string id get from descriptor */
-	u8                            state;             /**< Process status : usbh_composite_cdc_ecm_state_t*/
-	u8                            next_xfer;         /**< Send next events */
-	u8                            led_cnt;           /**< Led count */
-	u8                            mac_valid;         /**< Has get a valid MAC */
-	u8                            mac_src_type;      /**< ecm dongle mac source type : usbh_composite_cdc_ecm_dongle_mac_type_t */
+	u32                                     eth_statistic_count;/**< Feature selector parameter: Statistic count */
+	u16                                     intr_check_tick;    /**< ECM Intr check tick, used to reduce the cpu load */
+	u16                                     sub_status;         /**< ECM sub-status, see @ref usbh_cdc_ecm_at_set_state_t */
+	u16                                     feature_selector;   /**< Feature selector parameter */
+	u16                                     packet_filter;      /**< Packet filter configuration */
+	u16                                     muticast_filter_len;/**< Length of multicast filter parameters */
+	u16                                     vid;                /**< Vendor ID */
+	u16                                     pid;                /**< Product ID */
+	__IO u8                                 eth_hw_connect;     /**< Ethernet physical link status: 0=Disconnect, 1=Connect */
+	u8                                      if_num;             /**< Interface number */
+	u8                                      alt_set;            /**< Value used to select alternative setting */
+	u8                                      mac_str_id;         /**< MAC string id get from descriptor */
+	u8                                      state;              /**< Process status : usbh_composite_cdc_ecm_state_t*/
+	u8                                      led_cnt;            /**< Led count */
+	u8                                      mac_src_type;       /**< ecm dongle mac source type : usbh_composite_cdc_ecm_dongle_mac_type_t */
+	u8                                      mac_valid;          /**< Has get a valid MAC */
+	u8                                      ready_to_xfer;      /**< Dongle need some prepare before transfer ethernet packets */
+	u8                                      bulk_tx_block;      /**< Flag indicating BULK TX is blocked/busy */
 } usbh_composite_cdc_ecm_host_t;
 
 /* Exported macros -----------------------------------------------------------*/
@@ -237,9 +222,10 @@ int usbh_composite_cdc_ecm_check_config_desc(usb_host_t *host, u8 cfg_max);
  * @brief  Transmits an Ethernet packet to the device via the Bulk OUT endpoint.
  * @param[in] buf: Pointer to the data buffer (Ethernet frame) to be transmitted.
  * @param[in] len: Length of the data in bytes.
+ * @param[in] block: Blocking mode flag (e.g., 0 for non-blocking, else for blocking).
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
-int usbh_cdc_ecm_send_data(u8 *buf, u32 len);
+int usbh_composite_cdc_ecm_send_data(u8 *buf, u32 len, u8 block);
 
 /**
  * @brief  Gets the Ethernet physical link status.
@@ -272,4 +258,4 @@ u8 usbh_composite_cdc_ecm_prepare_done(void);
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */
 
-#endif  /* USBD_CDC_ECM_H */
+#endif  /* USBH_COMPOSITE_CDC_ECM_H */

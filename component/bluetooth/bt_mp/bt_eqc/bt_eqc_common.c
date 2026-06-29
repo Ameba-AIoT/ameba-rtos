@@ -9,6 +9,7 @@
 #else
 //#error "Please Enable Coexist!!!"
 #endif
+#include <bt_eqc_common.h>
 
 uint8_t eqc_role = 0xFF;
 uint8_t dut_address[6] = {0};
@@ -589,7 +590,7 @@ bool bt_eqc_client_deinit(uint8_t deinit_flag)
 	eqc_le_wait_bt_status(deinit_flag);
 
 	memset(dut_address, 0, sizeof(dut_address));
-	memset(eut_address, 0, sizeof(dut_address));
+	memset(eut_address, 0, sizeof(eut_address));
 
 	if (EQC_DEINIT != EQC_FLAG) {
 		BT_LOGE("device deinit fail[%d]\n\r", EQC_FLAG);

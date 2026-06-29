@@ -10,15 +10,11 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_vendor.h"
-#include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
 #define CONFIG_USBH_VENDOR_HOT_PLUG_TEST           1/* Hot plug / memory leak test */
 
-/* Private types -------------------------------------------------------------*/
-
-/* Private macros ------------------------------------------------------------*/
-#define UBSH_VENDOR_TEST_TASK_CNT                  3
+#define USBH_VENDOR_TEST_TASK_CNT                  3
 #define USBH_VENDOR_BULK_LOOPBACK_CNT              100
 #define USBH_VENDOR_INTR_LOOPBACK_CNT              100
 #define USBH_VENDOR_ISOC_TEST_CNT                  100
@@ -26,6 +22,21 @@
 #define USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE         512
 #define USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE         1024
 #define USBH_VENDOR_ISOC_TEST_BUF_SIZE             1024
+
+// Thread priorities
+#define CONFIG_USBH_VENDOR_INIT_THREAD_PRIORITY           1U
+#define CONFIG_USBH_VENDOR_MAIN_TASK_PRIORITY             3U
+#define CONFIG_USBH_VENDOR_HOTPLUG_THREAD_PRIORITY        6U
+#define CONFIG_USBH_VENDOR_TEST_THREAD_PRIORITY           5U
+// Thread stack sizes
+#define CONFIG_USBH_VENDOR_INIT_THREAD_STACK_SIZE           (1024U * 2)
+#define CONFIG_USBH_VENDOR_MAIN_TASK_STACK_SIZE             768
+#define CONFIG_USBH_VENDOR_HOTPLUG_THREAD_STACK_SIZE        (1024U * 2)
+#define CONFIG_USBH_VENDOR_TEST_THREAD_STACK_SIZE           (1024U * 2)
+/* Private types -------------------------------------------------------------*/
+
+/* Private macros ------------------------------------------------------------*/
+
 /* Private function prototypes -----------------------------------------------*/
 
 static int vendor_cb_attach(void);
@@ -33,7 +44,7 @@ static int vendor_cb_detach(void);
 static int vendor_cb_setup(void);
 static int vendor_cb_process(usb_host_t *host, u8 msg);
 static int vendor_cb_transmit(u8 ep_type);
-static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, u8 status);
+static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "VND";
 
@@ -62,7 +73,8 @@ static usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
-	.main_task_priority = 3U,
+	.main_task_stack_size = CONFIG_USBH_VENDOR_MAIN_TASK_STACK_SIZE,
+	.main_task_priority = CONFIG_USBH_VENDOR_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
@@ -96,6 +108,10 @@ static usbh_user_cb_t usbh_usr_cb = {
 
 /* Private functions ---------------------------------------------------------*/
 
+/**
+  * @brief  Vendor attach callback
+  * @retval Status
+  */
 static int vendor_cb_attach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
@@ -103,6 +119,10 @@ static int vendor_cb_attach(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Vendor detach callback
+  * @retval Status
+  */
 static int vendor_cb_detach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
@@ -112,6 +132,10 @@ static int vendor_cb_detach(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Vendor setup callback
+  * @retval Status
+  */
 static int vendor_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
@@ -119,8 +143,19 @@ static int vendor_cb_setup(void)
 	return HAL_OK;
 }
 
-static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, u8 status)
+/**
+  * @brief  Vendor receive callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  ep_type: Endpoint type
+  * @param  buf: RX buffer
+  * @param  len: RX data length (in bytes)
+  * @param  status: Transfer status
+  * @retval Status
+  */
+static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status)
 {
+	UNUSED(buf);
 	u16 vendor_bulk_in_mps = usbh_vendor_get_bulk_ep_mps();
 	u16 vendor_intr_in_mps = usbh_vendor_get_intr_ep_mps();
 
@@ -129,7 +164,7 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, u8 status)
 		if (status == HAL_OK) {
 			//limited the copy len
 			if ((len > 0) && ((vendor_bulk_total_rx_len + len) <= USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE)) {
-				memcpy(vendor_bulk_loopback_rx_buf + vendor_bulk_total_rx_len, buf, len);
+				//memcpy(vendor_bulk_loopback_rx_buf + vendor_bulk_total_rx_len, buf, len);
 			}
 			vendor_bulk_total_rx_len += len;
 			//ZLP or short packet
@@ -139,22 +174,23 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, u8 status)
 				vendor_bulk_total_rx_len = 0;
 				rtos_sema_give(vendor_bulk_receive_sema);
 			}
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "%d RX fail: %d\n", ep_type, status);
 		}
+		//else {
+		//	RTK_LOGS(TAG, RTK_LOG_ERROR, "%d RX fail: %d\n", ep_type, status);
+		//}
 
 		break;
 	case USB_CH_EP_TYPE_INTR:
 		if (status == HAL_OK) {
 			//limited the copy len
 			if ((len > 0) && ((vendor_intr_total_rx_len + len) <= USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) {
-				memcpy(vendor_intr_loopback_rx_buf + vendor_intr_total_rx_len, buf, len);
+				//memcpy(vendor_intr_loopback_rx_buf + vendor_intr_total_rx_len, buf, len);
 			}
 			vendor_intr_total_rx_len += len;
 
 			//transaction size > 0 and short packet
-			if ((len == 0) || ((len < vendor_intr_in_mps) && (vendor_intr_total_rx_len > 0))
-				|| (vendor_intr_total_rx_len > USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) { //
+			if (((len < vendor_intr_in_mps) && (vendor_intr_total_rx_len > 0))
+				|| (vendor_intr_total_rx_len >= USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) { //
 				vendor_intr_total_rx_len = 0;
 				rtos_sema_give(vendor_intr_receive_sema);
 			}
@@ -172,6 +208,13 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, u8 status)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Vendor transmit complete callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  ep_type: Endpoint type
+  * @retval Status
+  */
 static int vendor_cb_transmit(u8 ep_type)
 {
 	switch (ep_type) {
@@ -266,7 +309,7 @@ static void vendor_bulk_loopback_test(void)
 			for (j = 0; j < USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE; j++) {
 				if (vendor_bulk_loopback_rx_buf[j] != i) {
 					vendor_bulk_rx_errcnt++;
-					RTK_LOGS(TAG, RTK_LOG_INFO, TAG, RTK_LOG_INFO, "BULK Loopback test FAIL: %d, %d, errcnt %d", i, vendor_bulk_loopback_rx_buf[j], vendor_bulk_rx_errcnt);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "BULK Loopback test FAIL: %d, %d, errcnt %d", i, vendor_bulk_loopback_rx_buf[j], vendor_bulk_rx_errcnt);
 				}
 			}
 		}
@@ -326,7 +369,7 @@ static int vendor_cb_process(usb_host_t *host, u8 msg)
 }
 
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
-static void vendor_hotplug_thread(void *param)
+static void example_usbh_vendor_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -361,14 +404,14 @@ static void vendor_hotplug_thread(void *param)
 }
 #endif
 
-static void vendor_bulk_test_task(void *param)
+static void example_usbh_vendor_bulk_test(void *param)
 {
 	UNUSED(param);
 	vendor_bulk_loopback_test();
 	rtos_task_delete(NULL);
 }
 
-static void vendor_intr_test_task(void *param)
+static void example_usbh_vendor_intr_test(void *param)
 {
 	UNUSED(param);
 	vendor_intr_loopback_test();
@@ -377,7 +420,7 @@ static void vendor_intr_test_task(void *param)
 
 void example_usbh_vendor_thread(void *param)
 {
-	int status;
+	int ret;
 	rtos_task_t task;
 
 	UNUSED(param);
@@ -392,20 +435,22 @@ void example_usbh_vendor_thread(void *param)
 	rtos_sema_create(&vendor_isoc_rxdone_sema, 0U, 1U);
 	rtos_sema_create(&vendor_done_sema, 0U, 3U);
 
-	status = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (status != HAL_OK) {
+	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
+	if (ret != HAL_OK) {
 		goto error_exit;
 	}
 
-	status = usbh_vendor_init(&vendor_usr_cb);
-	if (status < 0) {
+	ret = usbh_vendor_init(&vendor_usr_cb);
+	if (ret < 0) {
 		usbh_deinit();
 		goto error_exit;
 	}
 
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
-	status = rtos_task_create(&task, "vendor_hotplug_thread", vendor_hotplug_thread, NULL, 1024U * 2, 6U);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&task, "example_usbh_vendor_hotplug_thread",
+						   example_usbh_vendor_hotplug_thread, NULL,
+						   CONFIG_USBH_VENDOR_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_HOTPLUG_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		usbh_vendor_deinit();
 		usbh_deinit();
 		goto error_exit;
@@ -415,16 +460,18 @@ void example_usbh_vendor_thread(void *param)
 	if (rtos_sema_take(vendor_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 		vendor_isoc_test();
 
-		if (rtos_task_create(&task, "vendor_bulk_test", vendor_bulk_test_task, NULL, 1024U * 2, 5U) != RTK_SUCCESS) {
+		if (rtos_task_create(&task, "example_usbh_vendor_bulk_test", example_usbh_vendor_bulk_test, NULL,
+							 CONFIG_USBH_VENDOR_TEST_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_TEST_THREAD_PRIORITY) != RTK_SUCCESS) {
 			goto error_exit;
 		}
 
-		if (rtos_task_create(&task, "vendor_intr_test", vendor_intr_test_task, NULL, 1024U * 2, 5U) != RTK_SUCCESS) {
+		if (rtos_task_create(&task, "example_usbh_vendor_intr_test", example_usbh_vendor_intr_test, NULL,
+							 CONFIG_USBH_VENDOR_TEST_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_TEST_THREAD_PRIORITY) != RTK_SUCCESS) {
 			goto error_exit;
 		}
 	}
 
-	for (int i = 0; i < UBSH_VENDOR_TEST_TASK_CNT; i++) {
+	for (int i = 0; i < USBH_VENDOR_TEST_TASK_CNT; i++) {
 		rtos_sema_take(vendor_done_sema, RTOS_SEMA_MAX_COUNT);
 	}
 
@@ -449,13 +496,13 @@ example_exit:
 
 void example_usbh_vendor(void)
 {
-	int status;
+	int ret;
 	rtos_task_t task;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH vendor demo start\n");
-	status = rtos_task_create(&task, "example_usbh_vendor_thread", example_usbh_vendor_thread, NULL, 1024U * 2, 1U);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&task, "example_usbh_vendor_thread", example_usbh_vendor_thread, NULL,
+						   CONFIG_USBH_VENDOR_INIT_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_INIT_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}
 }
-

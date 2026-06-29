@@ -14,7 +14,28 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/** @addtogroup USB_Host_API USB Host API
+ *  @{
+ */
+/** @addtogroup USB_Host_Constants USB Host Constants
+ * @{
+ */
+/** @addtogroup Host_CDC_ACM_Constants Host CDC ACM Constants
+ * @{
+ */
+#define CONFIG_USBH_CDC_ACM_NOTIFY                  0   /**< Enable/Disable notification feature. */
+
+/** @} End of Host_CDC_ACM_Constants group */
+/** @} End of USB_Host_Constants group */
+
 /* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Host_Types USB Host Types
+ * @{
+ */
+/** @addtogroup Host_CDC_ACM_Types Host CDC ACM Types
+ * @{
+ */
 
 /**
  * @brief CDC ACM state machine.
@@ -108,14 +129,24 @@ typedef struct {
 	usbh_cdc_acm_cb_t *cb;                      /**< Pointer to the user-defined callback structure. */
 	usb_cdc_line_coding_t *line_coding;    /**< Current line coding of the device. */
 	usb_cdc_line_coding_t *user_line_coding; /**< User requested line coding. */
-	usbh_cdc_acm_state_t state;                 /**< Current state of the CDC ACM host driver. */
+	u8 state;                                   /**< Current state of the CDC ACM host driver, @ref usbh_cdc_acm_state_t. */
 } usbh_cdc_acm_host_t;
+
+/** @} End of Host_CDC_ACM_Types group */
+/** @} End of USB_Host_Types group */
 
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
+
+/** @addtogroup USB_Host_Functions USB Host Functions
+ * @{
+ */
+/** @addtogroup Host_CDC_ACM_Functions Host CDC ACM Functions
+ * @{
+ */
 
 /**
  * @brief Initializes the CDC ACM host class driver.
@@ -166,6 +197,7 @@ int usbh_cdc_acm_transmit(u8 *buf, u32 len);
  */
 int usbh_cdc_acm_receive(u8 *buf, u32 len);
 
+#if CONFIG_USBH_CDC_ACM_NOTIFY
 /**
  * @brief Prepares to receive notification data (e.g. Serial State) over the INTERRUPT IN pipe.
  * @param[in] buf: Pointer to the buffer where notification data will be stored.
@@ -173,11 +205,16 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len);
  * @return 0 on success, non-zero on failure.
  */
 int usbh_cdc_acm_notify_receive(u8 *buf, u32 len);
+#endif
 
 /**
  * @brief Gets the Maximum Packet Size (MPS) of the BULK endpoint.
  * @return The MPS in bytes.
  */
 u16 usbh_cdc_acm_get_bulk_ep_mps(void);
+
+/** @} End of Host_CDC_ACM_Functions group */
+/** @} End of USB_Host_Functions group */
+/** @} End of USB_Host_API group */
 
 #endif  /* USBH_CDC_ACM_H */

@@ -22,7 +22,7 @@
  */
 
 #include "ameba.h"
-
+#include "rtw_coex_api_struct.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -174,30 +174,7 @@ struct rtk_coex_vendor_info {
 //////////////////////////////////////////////////////////
 ///////// for BT Variables
 //////////////////////////////////////////////////////////
-/**
- * @brief  The enumeration lists pta request module type.
- */
-enum pta_host_role {
-	PTA_HOST_WIFI			= 0,
-	PTA_HOST_BT				= 1
-};
-/**
- * @brief  The enumeration lists action for pta running.
- */
-enum pta_process_action {
-	COMMON_ACTION			= 0,
-	CALIBRATION_START		= 1,
-	CALIBRATION_STOP		= 2
-};
-/**
- * @brief  The enumeration lists pta winner module type.
- */
-enum pta_type {
-	PTA_AUTO            = 0,
-	PTA_WIFI			= 1,
-	PTA_BT				= 2,
-	PTA_DISABLE		    = 0xFF,
-};
+
 /**
  * @brief  The enumeration lists bt rfk type.
  */

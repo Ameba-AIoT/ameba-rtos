@@ -425,6 +425,35 @@ struct p2p_channel {
 	u8 chan;
 };
 
+struct p2p_context {
+	struct p2p_data *p2p;
+	struct p2p_group *group;
+
+	struct timer_list group_formation_timer;
+
+	u8 role;
+	u8 go_dev_addr[ETH_ALEN];
+
+	int persistent_reconnect;
+
+	u8 roch_onging;
+	rtos_sema_t roc_ready_sema;
+
+	struct list_head p2p_scan_report_list;
+	rtos_mutex_t scan_report_lock;
+
+	xqueue_handle_t queue_for_p2p_nego;
+
+	struct p2p_connect_params *connect_param;
+};
+
+enum p2p_role {
+	P2P_R_DISABLE = 0,
+	P2P_R_DEVICE = 1,
+	P2P_R_CLIENT = 2,
+	P2P_R_GO = 3
+};
+
 /**
  * struct p2p_config - P2P configuration
  *
@@ -500,11 +529,6 @@ struct p2p_config {
 	 * pref_chan - Preferred channels for GO Negotiation
 	 */
 	struct p2p_channel *pref_chan;
-
-	/**
-	 * p2p_6ghz_disable - Disable 6GHz for P2P operations
-	 */
-	bool p2p_6ghz_disable;
 
 	/**
 	 * pri_dev_type - Primary Device Type (see WPS)
@@ -803,8 +827,6 @@ struct p2p_config {
 	 * within 15 seconds.
 	 */
 	void (*go_neg_completed)(void *ctx, struct p2p_go_neg_results *res);
-
-	void (*set_idle_state)(void *ctx, u8 state);
 
 	/**
 	 * sd_request - Callback on Service Discovery Request
@@ -1251,15 +1273,13 @@ enum p2p_discovery_type {
  *	P2P_FIND_START_WITH_FULL behavior. 0 = Use normal full scan.
  *	If p2p_find is already in progress, this parameter is ignored and full
  *	scan will be executed.
- * @include_6ghz: Include 6 GHz channels in P2P find
  * Returns: 0 on success, -1 on failure
  */
 int p2p_find(struct p2p_data *p2p, unsigned int timeout,
 			 enum p2p_discovery_type type,
 			 unsigned int num_req_dev_types, const u8 *req_dev_types,
 			 const u8 *dev_id, unsigned int search_delay,
-			 u8 seek_count, const char **seek_string, int freq,
-			 bool include_6ghz);
+			 u8 seek_count, const char **seek_string, int freq);
 
 /**
  * p2p_notify_scan_trigger_status - Indicate scan trigger status
@@ -2115,8 +2135,6 @@ void p2p_update_channel_list(struct p2p_data *p2p,
 							 const struct p2p_channels *chan,
 							 const struct p2p_channels *cli_chan);
 
-bool is_p2p_6ghz_disabled(struct p2p_data *p2p);
-
 /**
  * p2p_set_best_channels - Update best channel information
  * @p2p: P2P module context from p2p_init()
@@ -2404,8 +2422,6 @@ void p2p_expire_peers(struct p2p_data *p2p);
 void p2p_set_own_pref_freq_list(struct p2p_data *p2p,
 								const unsigned int *pref_freq_list,
 								unsigned int size);
-void p2p_set_override_pref_op_chan(struct p2p_data *p2p, u8 op_class,
-								   u8 chan);
 
 /**
  * p2p_group_get_common_freqs - Get the group common frequencies
@@ -2422,9 +2438,5 @@ struct wpabuf *p2p_build_probe_resp_template(struct p2p_data *p2p,
 
 bool p2p_peer_wfd_enabled(struct p2p_data *p2p, const u8 *peer_addr);
 bool p2p_wfd_enabled(struct p2p_data *p2p);
-bool is_p2p_allow_6ghz(struct p2p_data *p2p);
-void set_p2p_allow_6ghz(struct p2p_data *p2p, bool value);
-int p2p_remove_6ghz_channels(unsigned int *pref_freq_list, int size);
-void p2p_group_info_dump(struct p2p_group *group);
 
 #endif /* P2P_H */
