@@ -48,6 +48,7 @@ ameba_list_append(private_sources
     ameba_pinmapcfg.c
     ameba_intfcfg.c
     ameba_audio_hw_usrcfg.c
+    ameba_xtal_trackingcfg.c
 )
 
 # Component private part, user config end(DO NOT remove this line)

@@ -28,7 +28,6 @@
 #endif
 
 #ifdef CONFIG_WLAN
-extern struct table  ip_table;
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
 extern int cmd_wps(int argc, char **argv);
 #endif
@@ -59,6 +58,16 @@ extern struct netif *pnetif_eth;
 extern struct netif *pnetif_usb_eth;
 #endif
 
+#ifdef CONFIG_WIFI_XMESH
+static rtos_task_t xmesh_tx_task_hdl = NULL;
+static int xmesh_tx_stop_req = 0;
+
+struct xmesh_tx_param {
+	int cnt;
+	int interval;
+};
+#endif
+
 static void init_wifi_struct(void)
 {
 	memset(wifi.ssid.val, 0, sizeof(wifi.ssid.val));
@@ -85,20 +94,38 @@ static void init_wifi_struct(void)
 static void print_wifi_setting(unsigned char wlan_idx, struct rtw_wifi_setting *pSetting)
 {
 #ifndef CONFIG_INIC_NO_FLASH
+	char *mode;
 
 	at_printf("WLAN%d Setting:\r\n", wlan_idx);
 	at_printf("==============================\r\n");
 
 	switch (pSetting->mode) {
 	case RTW_MODE_AP:
-		at_printf("      MODE => AP\r\n");
+#ifdef CONFIG_WIFI_P2P_ENABLE
+		if (wifi_p2p_check_role(P2P_R_GO)) {
+			mode = "P2P GO";
+		} else
+#endif
+		{
+			mode = "AP";
+		}
 		break;
 	case RTW_MODE_STA:
-		at_printf("      MODE => STATION\r\n");
+#ifdef CONFIG_WIFI_P2P_ENABLE
+		if (wifi_p2p_check_role(P2P_R_CLIENT)) {
+			mode = "P2P GC";
+		} else if (wifi_p2p_check_role(P2P_R_DEVICE)) {
+			mode = "P2P DEVICE";
+		} else
+#endif
+		{
+			mode = "STATION";
+		}
 		break;
 	default:
-		at_printf("      MODE => UNKNOWN\r\n");
+		mode = "UNKNOWN";
 	}
+	at_printf("      MODE => %s\r\n", mode);
 	at_printf("      SSID => %s\r\n", pSetting->ssid);
 	at_printf("     BSSID => %02x:%02x:%02x:%02x:%02x:%02x\r\n", pSetting->bssid[0], pSetting->bssid[1], pSetting->bssid[2], pSetting->bssid[3],
 			  pSetting->bssid[4], pSetting->bssid[5]);
@@ -364,7 +391,7 @@ void at_wlconn(u16 argc, char **argv)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	ret = LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
+	ret = lwip_request_ip(NETIF_WLAN_STA_INDEX);
 	tick3 = rtos_time_get_current_system_time_ms();
 	if (DHCP_ADDRESS_ASSIGNED == ret) {
 		RTK_LOGI(NOTAG, "\r\n[+WLCONN] Got IP after %d ms.\r\n", (unsigned int)(tick3 - tick1));
@@ -448,7 +475,7 @@ void at_wldisconn(u16 argc, char **argv)
 end:
 #ifdef CONFIG_LWIP_LAYER
 	user_static_ip.use_static_ip = 0;
-	LwIP_ReleaseIP(NETIF_WLAN_STA_INDEX);
+	lwip_clear_ip(NETIF_WLAN_STA_INDEX);
 #endif
 	init_wifi_struct();
 	if (error_no == RTW_AT_OK) {
@@ -701,6 +728,7 @@ void at_wlstartap(u16 argc, char **argv)
 #ifdef CONFIG_LWIP_LAYER
 	u32 ip_addr, netmask, gw;
 	struct ip_addr start_ip, end_ip;
+	int pool_specified = 0;
 #endif
 	int timeout = 20;
 	struct rtw_wifi_setting *setting = NULL;
@@ -814,7 +842,7 @@ void at_wlstartap(u16 argc, char **argv)
 				goto end;
 			}
 
-			dhcps_set_addr_pool(1, &start_ip, &end_ip);
+			pool_specified = 1;
 			i += 1;
 		} else if (0 == strcmp("gw", argv[i])) {
 			if (argv[j] != NULL && inet_addr(argv[j]) != IPADDR_NONE) {
@@ -893,11 +921,8 @@ void at_wlstartap(u16 argc, char **argv)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	dhcps_deinit();
-	ip_addr = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	netmask = CONCAT_TO_UINT32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-	gw = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
+	dhcps_deinit(pnetif_ap);
+	lwip_clear_ip(SOFTAP_WLAN_INDEX);
 #endif
 
 	if (ap.channel == 0) {
@@ -947,8 +972,12 @@ void at_wlstartap(u16 argc, char **argv)
 	ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 	netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
+	lwip_set_ip(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
 	dhcps_init(pnetif_ap);
+	if (pool_specified) {
+		dhcps_set_addr_pool(pnetif_ap, 1, &start_ip, &end_ip);
+	}
+	dhcps_start(pnetif_ap);
 #endif
 
 end:
@@ -957,6 +986,10 @@ end:
 	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
+#ifdef CONFIG_LWIP_LAYER
+		dhcps_deinit(pnetif_ap);
+#endif
+		wifi_stop_ap();
 		if (error_no >= RTW_AT_ERR_REQUIRED_PARAM_MISS && error_no <= RTW_AT_ERR_PARAM_NUM_ERR) {
 			at_wlstartap_help();
 		}
@@ -977,6 +1010,9 @@ void at_wlstopap(u16 argc, char **argv)
 	UNUSED(argc);
 	UNUSED(argv);
 
+#ifdef CONFIG_LWIP_LAYER
+	dhcps_deinit(pnetif_ap);
+#endif
 	wifi_stop_ap();
 	at_printf(ATCMD_OK_END_STR);
 }
@@ -992,10 +1028,10 @@ void at_wlstate(u16 argc, char **argv)
 {
 	int i = 0;
 #ifdef CONFIG_LWIP_LAYER
-	u8 *mac = LwIP_GetMAC(NETIF_WLAN_STA_INDEX);
-	u8 *ip = LwIP_GetIP(NETIF_WLAN_STA_INDEX);
-	u8 *gw = LwIP_GetGW(NETIF_WLAN_STA_INDEX);
-	u8 *msk = LwIP_GetMASK(NETIF_WLAN_STA_INDEX);
+	u8 *mac = lwip_get_mac(NETIF_WLAN_STA_INDEX);
+	u8 *ip = lwip_get_ip(NETIF_WLAN_STA_INDEX);
+	u8 *gw = lwip_get_gw(NETIF_WLAN_STA_INDEX);
+	u8 *msk = lwip_get_mask(NETIF_WLAN_STA_INDEX);
 #endif
 	struct rtw_wifi_setting *p_wifi_setting = NULL;
 
@@ -1013,10 +1049,10 @@ void at_wlstate(u16 argc, char **argv)
 	for (i = 0; i < NET_IF_NUM; i++) {
 		if (wifi_is_running(i)) {
 #ifdef CONFIG_LWIP_LAYER
-			mac = LwIP_GetMAC(i);
-			ip = LwIP_GetIP(i);
-			gw = LwIP_GetGW(i);
-			msk = LwIP_GetMASK(i);
+			mac = lwip_get_mac(i);
+			ip = lwip_get_ip(i);
+			gw = lwip_get_gw(i);
+			msk = lwip_get_mask(i);
 #endif
 			at_printf("WLAN%d Status: Running\r\n",  i);
 			at_printf("==============================\r\n");
@@ -1048,7 +1084,7 @@ void at_wlstate(u16 argc, char **argv)
 					for (client_number = 0; client_number < client_info.count; client_number++) {
 						at_printf("Client %d:\r\n", client_number + 1);
 						u8 *mac = client_info.mac_list[client_number].octet;
-						u8 ip_addr4 = dhcps_search_client_ip(mac);
+						u8 ip_addr4 = dhcps_search_client_ip(pnetif_ap, mac);
 						if (ip_addr4) {
 							at_printf("IPv4 address: %d.%d.%d.%d, ", gw[0], gw[1], gw[2], ip_addr4);
 							at_printf("MAC address: %02x:%02x:%02x:%02x:%02x:%02x, ", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
@@ -1413,17 +1449,35 @@ void at_wlp2p_start(u16 argc, char **argv)
 	int op_ch = 0;
 	u32 r = 0;
 	int i;
+	u8 band_type;
+	char *ssid_postfix = "-REALTEKDEV";
 
 	RTK_LOGI(NOTAG, "[+WLP2PSTART]: _AT_P2P_START_\n\r");
 
 	for (i = 1; i < argc; i += 2) {
 		if (os_strcmp(argv[i], "listen_ch") == 0) {
-			/* listen channel: ch1,6,11 for 2.4G. ch36,40,44,48 for 5G */
 			listen_ch = atoi(argv[i + 1]);
+
+			/* listen channel: ch1,6,11 for 2.4G */
+			if (listen_ch != 1 && listen_ch != 6 && listen_ch != 11) {
+				RTK_LOGA(NOTAG, "[+WLP2PSTART] Invalid listen ch,should be 1,6,11\r\n\n");
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
 		} else if (os_strcmp(argv[i], "op_ch") == 0) {
 			op_ch = atoi(argv[i + 1]);
+
+			wifi_get_band_type(&band_type);
+			if (op_ch >= 36 && (band_type & RTW_SUPPORT_BAND_5G) == 0) {
+				RTK_LOGE(NOTAG, "[+WLP2PSTART] Invalid operating ch, not support 5g!\n");
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
+		} else if (os_strcmp(argv[i], "ssid_postfix") == 0) {
+			ssid_postfix = argv[i + 1];
 		} else {
-			RTK_LOGA(NOTAG, "Unknown parameters!\n");
+			RTK_LOGA(NOTAG, "[+WLP2PSTART] Unknown parameters!\n");
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 			return;
 		}
 	}
@@ -1437,8 +1491,9 @@ void at_wlp2p_start(u16 argc, char **argv)
 		op_ch = 1 + (r % 3) * 5;
 	}
 
-	wifi_p2p_init(LwIP_GetMAC(0), listen_ch, op_ch);
+	wifi_p2p_init(lwip_get_mac(0), listen_ch, op_ch, ssid_postfix);
 
+end:
 	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
@@ -1466,17 +1521,87 @@ void at_wlp2p_stop(u16 argc, char **argv)
 void at_wlp2p_autogo(u16 argc, char **argv)
 {
 	int error_no = RTW_AT_OK;
-	u8 channel = 6; // 1, 6, 11
-
-	if (argc > 2 && os_strcmp(argv[1], "ch") == 0) {
-		/* listen channel: ch1,6,11 for 2.4G. ch36,40,44,48 for 5G */
-		channel = atoi(argv[2]);
-	}
+	char *dev_name = "Ameba1234";	// max strlen 32
+	char *manufacturer = "by customer";	// max strlen 64
+	char *model_name = "customer";	// max strlen 32
+	char *model_number = "v2.0";	// max strlen 32
+	char *serial_number = "9";	// max strlen 32
+	u8 pri_dev_type[8] = {0x00, 0x0A, 0x00, 0x50, 0xF2, 0x04, 0x00, 0x01};	// category ID:0x00,0x0A; sub category ID:0x00,0x01
+	struct p2p_auto_go_params *param = NULL;
+	int i = 0, j = 0;
 
 	RTK_LOGI(NOTAG, "[+WLP2PGO]: _AT_P2P_AUTO_GO_START_\n\r");
 
-	if (wifi_p2p_start_auto_go(channel) < 0) {
+	if (argc == 1) {
+		RTK_LOGW(NOTAG, "[+WLP2PGO] The parameters can not be ignored\r\n");
+		error_no = RTW_AT_ERR_REQUIRED_PARAM_MISS;
+		goto end;
+	}
+
+	if ((argc < 2) || (argc > 7)) {
+		RTK_LOGW(NOTAG, "[+WLP2PGO] command format error\r\n");
+		error_no = RTW_AT_ERR_PARAM_NUM_ERR;
+		goto end;
+	}
+
+	param = rtos_mem_zmalloc(sizeof(struct p2p_auto_go_params));
+	param->channel = 6;
+
+	for (i = 1; argc > i; i += 2) {
+		j = i + 1;  /* next i. */
+		/* SSID */
+		if (0 == strcmp("ssid", argv[i])) {
+			if ((argc <= j) || (strlen(argv[j]) == 0) || (strlen(argv[j]) > RTW_ESSID_MAX_SIZE)) {
+				RTK_LOGW(NOTAG, "[+WLP2PGO] Invalid SSID length\r\n");
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
+			if (strncmp(argv[j], P2P_WILDCARD_SSID, P2P_WILDCARD_SSID_LEN)) {
+				RTK_LOGW(NOTAG, "[+WLP2PGO] Invalid SSID, should be prefixed with \"DIRECT-\"\r\n");
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
+			param->ssid.len = strlen(argv[j]);
+			strncpy((char *)param->ssid.val, argv[j], param->ssid.len);
+		}
+		/* password */
+		else if (0 == strcmp("pw", argv[i])) {
+			if ((argc <= j) || (0 == strlen(argv[j])) || (128 < strlen(argv[j]))) {
+				RTK_LOGW(NOTAG, "[+WLP2PGO] Invalid password\r\n");
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
+
+			param->password_len = strlen(argv[j]);
+			strncpy((char *)password, argv[j], sizeof(password) - 1);
+			param->password = password;
+		}
+		/* channel */
+		else if (0 == strcmp("ch", argv[i])) {
+			if ((argc > j) && (0 != strlen(argv[j]))) {
+				param->channel = atoi(argv[j]);
+			}
+		} else {
+			RTK_LOGW(NOTAG, "[+WLP2PGO] Invalid parameter type\r\n");
+			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+			goto end;
+		}
+	}
+
+	param->dev_name = dev_name;
+	param->manufacturer = manufacturer;
+	param->model_name = model_name;
+	param->model_number = model_number;
+	param->serial_number = serial_number;
+	param->pri_dev_type = pri_dev_type;
+
+	if (wifi_p2p_start_auto_go(param) < 0) {
 		RTK_LOGI(NOTAG, "\r\n[+WLP2PGO]: start p2p go fail.\n\r");
+	}
+
+end:
+	if (param) {
+		rtos_mem_free(param);
 	}
 
 	if (error_no == RTW_AT_OK) {
@@ -1490,7 +1615,7 @@ void at_wlp2p_connect(u16 argc, char **argv)
 {
 	int error_no = RTW_AT_OK;
 	enum p2p_wps_method config_method = WPS_PBC;
-	char *pin = NULL;
+	struct p2p_connect_params params = {0};
 	u8 dest[ETH_ALEN];
 	int go_intent = -1;
 	int i = 0;
@@ -1521,7 +1646,7 @@ void at_wlp2p_connect(u16 argc, char **argv)
 				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 				goto end;
 			}
-			pin = argv[i + 1];
+			params.pin = argv[i + 1];
 			i += 2;
 		} else if (os_strcmp(argv[i], "pin_display") == 0) {
 			config_method = WPS_PIN_DISPLAY;
@@ -1533,6 +1658,9 @@ void at_wlp2p_connect(u16 argc, char **argv)
 			}
 			go_intent = atoi(argv[i + 1]) % 16;
 			i += 2;
+		} else if (os_strcmp(argv[i], "join") == 0) {
+			params.join = TRUE;
+			i++;
 		} else {
 			RTK_LOGA(NOTAG, "Unknown parameters!\n");
 			return;
@@ -1543,7 +1671,13 @@ void at_wlp2p_connect(u16 argc, char **argv)
 		go_intent = _rand() % 16; /*0-15*/
 	}
 
-	wifi_cmd_p2p_connect(dest, config_method, pin, go_intent, 30);
+	params.dest = dest;
+	params.config_method = config_method;
+	params.go_intent = go_intent;
+	params.timeout_sec = 30;
+	params.pd_before_go_neg = 0;
+
+	wifi_cmd_p2p_connect(&params);
 
 end:
 	if (error_no == RTW_AT_OK) {
@@ -1564,7 +1698,7 @@ void at_wlp2p_disconnect(u16 argc, char **argv)
 	UNUSED(argv);
 
 	RTK_LOGI(NOTAG, "[+WLP2PDISCONN]: _AT_P2P_DISCONNECT_\n\r");
-	wifi_cmd_p2p_disconnect();
+	wifi_p2p_disconnect();
 
 	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
@@ -1572,22 +1706,7 @@ void at_wlp2p_disconnect(u16 argc, char **argv)
 		at_printf(ATCMD_ERROR_END_STR, error_no);
 	}
 }
-void at_wlp2p_state(u16 argc, char **argv)
-{
-	int error_no = RTW_AT_OK;
 
-	UNUSED(argc);
-	UNUSED(argv);
-
-	RTK_LOGI(NOTAG, "[+WLP2PSTATE]: _AT_P2P_STATE_\n\r");
-	wifi_cmd_p2p_state();
-
-	if (error_no == RTW_AT_OK) {
-		at_printf(ATCMD_OK_END_STR);
-	} else {
-		at_printf(ATCMD_ERROR_END_STR, error_no);
-	}
-}
 void at_wlp2p_find(u16 argc, char **argv)
 {
 	int error_no = RTW_AT_OK;
@@ -1729,7 +1848,7 @@ void at_wlstaticip(u16 argc, char **argv)
 		goto end;
 	}
 
-	/* Static IP will be set in LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX). */
+	/* Static IP will be set in lwip_request_ip(NETIF_WLAN_STA_INDEX). */
 	user_static_ip.use_static_ip = 1;
 	user_static_ip.addr = PP_HTONL(inet_addr(argv[1]));
 	if (argc == 4) {
@@ -1977,7 +2096,6 @@ const log_item_t at_wifi_items[ ] = {
 	{"+WLP2PGO", at_wlp2p_autogo},
 	{"+WLP2PCONN", at_wlp2p_connect},
 	{"+WLP2PDISCONN", at_wlp2p_disconnect},
-	{"+WLP2PSTATE", at_wlp2p_state},
 	{"+WLP2PFIND", at_wlp2p_find},
 	{"+WLP2PPEERS", at_wlp2p_peers},
 #endif

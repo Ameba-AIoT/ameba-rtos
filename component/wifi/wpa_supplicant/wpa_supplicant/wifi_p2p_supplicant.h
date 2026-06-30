@@ -3,34 +3,6 @@
 
 #include <p2p/p2p.h>
 
-enum rtw_p2p_state {
-	P2P_STATE_NONE = 0,							//	P2P disable
-	P2P_STATE_IDLE = 1,								//	P2P had enabled and do nothing
-	P2P_STATE_LISTEN = 2,							//	In pure listen state
-	P2P_STATE_SCAN = 3,							//	In scan phase
-	P2P_STATE_FIND_PHASE_LISTEN = 4,				//	In the listen state of find phase
-	P2P_STATE_FIND_PHASE_SEARCH = 5,				//	In the search state of find phase
-	P2P_STATE_TX_PROVISION_DIS_REQ = 6,			//	In P2P provisioning discovery
-	P2P_STATE_RX_PROVISION_DIS_RSP = 7,
-	P2P_STATE_RX_PROVISION_DIS_REQ = 8,
-	P2P_STATE_GONEGO_ING = 9,						//	Doing the group owner negoitation handshake
-	P2P_STATE_GONEGO_OK = 10,						//	finish the group negoitation handshake with success
-	P2P_STATE_GONEGO_FAIL = 11,					//	finish the group negoitation handshake with failure
-	P2P_STATE_RECV_INVITE_REQ_MATCH = 12,		//	receiving the P2P Inviation request and match with the profile.
-	P2P_STATE_PROVISIONING_ING = 13,				//	Doing the P2P WPS
-	P2P_STATE_PROVISIONING_DONE = 14,			//	Finish the P2P WPS
-	P2P_STATE_TX_INVITE_REQ = 15,					//	Transmit the P2P Invitation request
-	P2P_STATE_RX_INVITE_RESP = 16,				//	Receiving the P2P Invitation response
-	P2P_STATE_RECV_INVITE_REQ_DISMATCH = 17,	//	receiving the P2P Inviation request and dismatch with the profile.
-	P2P_STATE_RECV_INVITE_REQ_GO = 18,			//	receiving the P2P Inviation request and this wifi is GO.
-	P2P_STATE_RECV_INVITE_REQ_JOIN = 19,			//	receiving the P2P Inviation request to join an existing P2P Group.
-	P2P_STATE_FORMATION_COMPLETE = 20,
-	P2P_STATE_CONNECTED = 21,
-	P2P_STATE_DISCONNECT = 22,
-	P2P_STATE_FOUND = 23,
-	P2P_STATE_WSC_EXCHAGE_START = 24,
-};
-
 enum p2p_group_removal_reason {
 	P2P_GROUP_REMOVAL_UNKNOWN,
 	P2P_GROUP_REMOVAL_SILENT,
@@ -97,6 +69,29 @@ struct p2p_scan_report_node {
 	u8							role;
 };
 
+struct p2p_auto_go_params {
+	struct rtw_ssid ssid;
+	u8 *password;
+	u8 password_len;
+	char *dev_name;
+	char *manufacturer;
+	char *model_name;
+	char *model_number;
+	char *serial_number;
+	u8 *pri_dev_type;
+	u8 channel;
+};
+
+struct p2p_connect_params {
+	u8 *dest;
+	enum p2p_wps_method config_method;
+	char *pin;
+	int go_intent;
+	u32 timeout_sec;
+	u8 join: 1;
+	u8 pd_before_go_neg: 1;
+};
+
 struct p2p_cmd_priv {
 	struct	list_head	queue;
 	rtos_mutex_t		lock;
@@ -138,22 +133,18 @@ struct p2p_cmd_obj {
 
 void wifi_p2p_rx_mgnt(u8 *evt_info);
 int wifi_p2p_connect(const u8 *peer_addr,
-					 const char *pin, enum p2p_wps_method wps_method,
+					 enum p2p_wps_method wps_method,
 					 int persistent_group, int auto_join, int join, int auth,
-					 int go_intent, int freq, int persistent_id, int pd);
-int wifi_p2p_start_wps(void *res);
-void wifi_p2p_set_state(u8 p2p_state);
+					 int go_intent, int freq, int persistent_id, u8 pd);
+int wifi_p2p_start_wps(void *res, char *pin);
 int wifi_p2p_group_notify_assoc(u8 *buf, u16 buf_len);
 int wifi_p2p_group_notify_disassoc(u8 *addr);
 
-int wifi_cmd_p2p_listen(unsigned int timeout);
 void wifi_cmd_p2p_find(u32 timeout);
 void wifi_cmd_p2p_peers(void);
-void wifi_cmd_p2p_state(void);
-int wifi_cmd_p2p_connect(u8 *dest, enum p2p_wps_method config_method, char *pin, int go_intent, u32 timeout_sec);
-void wifi_cmd_p2p_disconnect(void);
+void wifi_cmd_p2p_connect(struct p2p_connect_params *params);
 
-int wifi_p2p_init(u8 *dev_addr, u8 listen_ch, u8 op_ch);
+int wifi_p2p_init(u8 *dev_addr, u8 listen_ch, u8 op_ch, char *ssid_postfix);
 void wifi_p2p_deinit(void);
 void wifi_p2p_set_dev_name(const char *dev_name);
 void wifi_p2p_set_manufacturer(const char *manufacturer);
@@ -162,16 +153,16 @@ void wifi_p2p_set_model_number(const char *model_number);
 void wifi_p2p_set_serial_number(const char *serial_number);
 void wifi_p2p_set_pri_dev_type(const u8 *pri_dev_type);
 void wifi_p2p_set_ssid(const char *ssid_in);
-void wifi_p2p_set_config_methods(u16 config_methods);
 void wifi_p2p_init_auto_go_params(void *res, u8 *passphrase, u8 channel);
-
+void wifi_p2p_init_auto_gc_params(void *nego_res, u8 *dev_addr, struct rtw_scan_result *scanned_peer_info);
 void wifi_p2p_set_role(u32 role);
-u8 wifi_p2p_check_go(void);
+u8 wifi_p2p_check_role(u8 role);
 int wifi_p2p_set_remain_on_ch(unsigned char wlan_idx, u8 enable);
 void wifi_p2p_join_status_hdl(u8 *evt_info);
 void wifi_p2p_channel_switch_ready(u8 *evt_info);
 int wifi_p2p_start_go(char *ssid, char *passphrase, u8 channel);
-int wifi_p2p_start_auto_go(u8 channel);
+int wifi_p2p_start_auto_go(struct p2p_auto_go_params *param);
+int wifi_p2p_disconnect(void);
 
 #endif //_WIFI_P2P_SUPPLICANT_H_
 

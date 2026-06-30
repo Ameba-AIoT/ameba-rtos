@@ -148,7 +148,7 @@ static void usbd_composite_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 
 static void usbd_composite_uac_status_dump_thread(void *param);
 static inline void usbd_composite_uac_get_audio_data_cnt(u32 audio_len);
 #endif
-static inline u16 usbd_composite_uac_get_ring_buf_cnt(u8 speed);
+static inline u8 usbd_composite_uac_get_ring_buf_cnt(u8 speed);
 static u16 usbd_composite_uac_get_mps(usbd_audio_cfg_t *params, u8 speed);
 static inline u8 usbd_composite_uac_ep_enable(usbd_audio_cfg_t *ep);
 static int usbd_composite_uac_is_valid_sample_rate(u32 sampling_freq, u8 speed);
@@ -579,7 +579,7 @@ static void usbd_composite_uac_append_data(void)
   * @param  speed: USB connection speed
   * @retval Number of buffer segments for audio data
   */
-static u16 usbd_composite_uac_get_ring_buf_cnt(u8 speed)
+static u8 usbd_composite_uac_get_ring_buf_cnt(u8 speed)
 {
 	UNUSED(speed);
 	return USBD_UAC_RX_BUF_MAX_CNT / USBD_UAC_POW2(USBD_UAC_FS_DEFAULT_BINTERVAL - 1);
@@ -596,14 +596,14 @@ static u16 usbd_composite_uac_get_mps(usbd_audio_cfg_t *params, u8 speed)
 	u16 mps_value;
 	UNUSED(speed);
 	if (NULL == params) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Param err\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "No Param\n");
 		return 0;
 	}
 
 	/* for 44.1khz or the host clk is bigger than the device */
 	mps_value = USBD_UAC_CALC_FS_MPS(params->ch_cnt, params->byte_width, params->sampling_freq);
 	if ((mps_value == 0) || (mps_value > USBD_UAC_FS_ISOC_MPS)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "MPS %d zero or exceed limited %d\n", mps_value, USBD_UAC_FS_ISOC_MPS);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid FS MPS %d-%d\n", mps_value, USBD_UAC_FS_ISOC_MPS);
 		return 0;
 	}
 
@@ -679,7 +679,7 @@ static int usbd_composite_uac_ep_update_mps(usbd_composite_uac_buf_ctrl_t *buf_c
   */
 static int usbd_composite_uac_ep_buf_ctrl_init(usbd_composite_uac_buf_ctrl_t *buf_ctrl, usbd_audio_cfg_t *params)
 {
-	u16 buf_list_cnt;
+	u8 buf_list_cnt;
 
 	if (usbd_composite_uac_ep_enable(params)) {
 		buf_ctrl->mps = usbd_composite_uac_get_mps(params, USB_SPEED_FULL);
@@ -720,6 +720,8 @@ static inline u8 usbd_composite_uac_ep_enable(usbd_audio_cfg_t *ep)
 
 /**
   * @brief  Set UAC class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -733,16 +735,18 @@ static int usbd_composite_uac_set_config(usb_dev_t *dev, u8 config)
 	usbd_composite_uac_buf_ctrl_t *buf_ctrl;
 	usb_speed_type_t speed = cdev->dev->dev_speed;
 	usbd_ep_t *ep;
+	usb_ep_info_t *info;
 
 	uac->alt_setting = 0U;
 
 	/* Init ISOC OUT EP */
 	buf_ctrl = &(uac->isoc_out);
 	ep = &(buf_ctrl->ep);
-	ep->binterval = USBD_UAC_FS_DEFAULT_BINTERVAL;
+	info = &(ep->info);
+	info->binterval = USBD_UAC_FS_DEFAULT_BINTERVAL;
 	usbd_composite_uac_ep_update_mps(buf_ctrl, (usbd_audio_cfg_t *) & (buf_ctrl->audio_config), speed);
 
-	ep->mps = buf_ctrl->mps;
+	info->mps = buf_ctrl->mps;
 	usbd_ep_init(cdev->dev, ep);
 	ep->xfer_buf = usbd_composite_uac_rx_buf;
 	ep->xfer_len = buf_ctrl->mps;
@@ -757,6 +761,8 @@ static int usbd_composite_uac_set_config(usb_dev_t *dev, u8 config)
 
 /**
   * @brief  Clear UAC configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -850,6 +856,8 @@ static u8 usbd_composite_uac_volume_linear_interpolation(const u8 x_points[], co
 
 /**
   * @brief  Handle UAC specific CTRL requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: USB CTRL requests
   * @retval Status
@@ -969,7 +977,7 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_in->xfer_len = 1U;
 						usbd_ep_transmit(dev, ep0_in);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "SETUP: bRequest err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 0);
 						ret = HAL_ERR_PARA;
 					}
 				} else if (controlSelector == USB_UAC1_CTRL_FU_VOLUME_CONTROL_SELECTOR) {
@@ -993,11 +1001,11 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_in->xfer_len = 2U;
 						usbd_ep_transmit(dev, ep0_in);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "SETUP: bRequest err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 1);
 						ret = HAL_ERR_PARA;
 					}
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "SETUP: 0x13 wValue err %d-%d\n", entityId, controlSelector);
+					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 2);
 					ret = HAL_ERR_PARA;
 				}
 			} else if ((req->bmRequestType & 0x1FU) == USB_REQ_RECIPIENT_ENDPOINT) {
@@ -1008,13 +1016,12 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_in->xfer_len = 3U;
 						usbd_ep_transmit(dev, ep0_in);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "SETUP: bRequest err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 3);
 						ret = HAL_ERR_PARA;
 					}
 				}
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Request not handle 0x%02x 0x%02x %x %x 0x%04x\n",
-						 req->bmRequestType, req->bRequest, req->wValue, req->wIndex, req->wLength);
+				USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 4);
 			}
 
 		} else {
@@ -1026,11 +1033,11 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_out->xfer_len = req->wLength;
 						usbd_ep_receive(dev, ep0_out);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "Set freq err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 5);
 						ret = HAL_ERR_PARA;
 					}
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Set freq ctrl err %d-%d\n", entityId, controlSelector);
+					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 6);
 					ret = HAL_ERR_PARA;
 				}
 			}
@@ -1042,7 +1049,7 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_out->xfer_len = req->wLength;
 						usbd_ep_receive(dev, ep0_out);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "Set cur mute err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 7);
 						ret = HAL_ERR_PARA;
 					}
 				} else if (controlSelector == USB_UAC1_CTRL_FU_VOLUME_CONTROL_SELECTOR) { //volume
@@ -1051,11 +1058,11 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_out->xfer_len = req->wLength;
 						usbd_ep_receive(dev, ep0_out);
 					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "Set cur volume range err %d-%d\n", entityId, req->bRequest);
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 8);
 						ret = HAL_ERR_HW;
 					}
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Set fu err %d-%d\n", entityId, controlSelector);
+					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 9);
 					ret = HAL_ERR_HW;
 				}
 			}
@@ -1081,7 +1088,7 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;
 
 	default:
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "ReqType err %d\n", req->bmRequestType);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 10);
 		ret = HAL_ERR_HW;
 		break;
 	}
@@ -1091,6 +1098,8 @@ static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 /**
   * @brief  Data sent on non-control IN endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -1106,6 +1115,8 @@ static int usbd_composite_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 s
 
 /**
   * @brief  uac_handle_ep0_data_out
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   *         Handle EP0 Rx Ready event
   * @param  dev: USB device instance
   * @retval Status
@@ -1173,6 +1184,13 @@ static int usbd_composite_uac_handle_ep0_data_out(usb_dev_t *dev)
 	return ret;
 }
 
+/**
+  * @brief  Handle SOF event for UAC
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @retval Status
+  */
 static int usbd_composite_uac_sof(usb_dev_t *dev)
 {
 	UNUSED(dev);
@@ -1200,6 +1218,8 @@ static int usbd_composite_uac_sof(usb_dev_t *dev)
 
 /**
   * @brief  Data received on non-control Out endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -1270,6 +1290,8 @@ static int usbd_composite_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32
 
 /**
   * @brief  Get descriptor callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
   * @param  buf: Poniter to Buffer
@@ -1308,6 +1330,8 @@ static u16 usbd_composite_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *re
 
 /**
   * @brief  USB attach status change
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  old_status: USB old attach status
   * @param  status: USB attach status
@@ -1463,6 +1487,12 @@ int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_c
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usbd_ep_t *ep_out = &(uac->isoc_out.ep);
 	usbd_ep_t *ep_in = &(uac->isoc_in.ep);
+	usb_ep_info_t *info;
+
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
 
 	usb_os_memset(uac, 0x00, sizeof(usbd_composite_uac_device_t));
 
@@ -1475,30 +1505,27 @@ int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_c
 	usbd_composite_uac_ep_buf_ctrl_deinit(&(uac->isoc_in));
 	usbd_composite_uac_ep_buf_ctrl_deinit(&(uac->isoc_out));
 
-	ep_out->addr = USBD_COMP_UAC_ISOC_OUT_EP;
-	ep_out->type = USB_CH_EP_TYPE_ISOC;
+	info = &(ep_out->info);
+	info->addr = USBD_COMP_UAC_ISOC_OUT_EP;
+	info->type = USB_CH_EP_TYPE_ISOC;
 
-	ep_in->addr = USBD_COMP_UAC_ISOC_IN_EP;
-	ep_in->type = USB_CH_EP_TYPE_ISOC;
+	info = &(ep_in->info);
+	info->addr = USBD_COMP_UAC_ISOC_IN_EP;
+	info->type = USB_CH_EP_TYPE_ISOC;
 
-	if (cb != NULL) {
-		if ((cb->in.enable == 0) && (cb->out.enable == 0)) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Pls cfg UAC EP\n");
-			return HAL_ERR_PARA;
-		}
-
-		uac->cb = cb;
-
-		usb_os_memcpy(&(uac->isoc_in.audio_config), &(cb->in), sizeof(usbd_audio_cfg_t));
-		usb_os_memcpy(&(uac->isoc_out.audio_config), &(cb->out), sizeof(usbd_audio_cfg_t));
-
-		uac->isoc_out.audio_config.ch_cnt = USBD_UAC_OUT_DEFAULT_CH_CNT;//init the default value
-		uac->isoc_out.audio_config.sampling_freq = USBD_UAC_SAMPLING_FREQ_48K;
-		uac->isoc_out.audio_config.byte_width = USBD_UAC_OUT_DEFAULT_BYTE_WIDTH;
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cb is NULL\n");
+	if ((cb->in.enable == 0) && (cb->out.enable == 0)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Pls cfg UAC EP\n");
 		return HAL_ERR_PARA;
 	}
+
+	uac->cb = cb;
+
+	usb_os_memcpy(&(uac->isoc_in.audio_config), &(cb->in), sizeof(usbd_audio_cfg_t));
+	usb_os_memcpy(&(uac->isoc_out.audio_config), &(cb->out), sizeof(usbd_audio_cfg_t));
+
+	uac->isoc_out.audio_config.ch_cnt = USBD_UAC_OUT_DEFAULT_CH_CNT;//init the default value
+	uac->isoc_out.audio_config.sampling_freq = USBD_UAC_SAMPLING_FREQ_48K;
+	uac->isoc_out.audio_config.byte_width = USBD_UAC_OUT_DEFAULT_BYTE_WIDTH;
 
 	if (cb->init != NULL) {
 		ret = cb->init();
@@ -1622,7 +1649,7 @@ u32 usbd_composite_uac_start_play(void)
 	int ret = HAL_OK;
 
 #if USBD_COMPOSITE_UAC_DEBUG
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC play start\n");
 
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usbd_composite_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
@@ -1644,7 +1671,7 @@ void usbd_composite_uac_stop_play(void)
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 
 #if USBD_COMPOSITE_UAC_DEBUG
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC stop\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC play stop\n");
 #endif
 
 	uac->isoc_out.xfer_continue = 0;
@@ -1708,7 +1735,7 @@ u32 usbd_composite_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt
   * @param  void
   * @retval read frame cnt
   */
-u32 usbd_composite_uac_get_read_frame_cnt(void)
+u8 usbd_composite_uac_get_read_frame_cnt(void)
 {
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usbd_composite_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
@@ -1721,7 +1748,7 @@ u32 usbd_composite_uac_get_read_frame_cnt(void)
   * @param  void
   * @retval return the time duration for the avail packet in us
   */
-u32 usbd_composite_uac_get_read_frame_time_in_us(void)
+u8 usbd_composite_uac_get_read_frame_time_in_us(void)
 {
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
 	usbd_composite_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);

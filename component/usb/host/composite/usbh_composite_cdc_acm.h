@@ -26,8 +26,8 @@
  * @{
  */
 
-/** @} End of Host_Composite_Constants group*/
-/** @} End of USB_Host_Constants group*/
+/** @} End of Host_Composite_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -124,6 +124,8 @@ typedef struct {
 
 	u8                                      state;             /**< Process status, ref usbh_composite_cdc_acm_state_t */
 	u8                                      sub_status;        /**< ACM sub-status, ref usbh_composite_cdc_acm_ctrl_state_t */
+	u8                                      data_itf_num;      /**< Data interface number for SET_INTERFACE */
+	u8                                      data_itf_alt;      /**< Data interface alternate setting with BULK endpoints */
 } usbh_composite_cdc_acm_host_t;
 
 /* Exported variables --------------------------------------------------------*/

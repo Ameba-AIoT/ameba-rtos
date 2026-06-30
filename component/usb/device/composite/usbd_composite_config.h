@@ -13,6 +13,15 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/** @addtogroup USB_Device_API USB Device API
+ *  @{
+ */
+/** @addtogroup USB_Device_Constants USB Device Constants
+ * @{
+ */
+/** @addtogroup Device_Composite_Constants Device Composite Constants
+ * @{
+ */
 /* Defines configuration constants like VID/PID, USB strings, and power settings. */
 #define USBD_COMP_VID                     USB_VID      /**< Vendor ID. */
 #define USBD_COMP_PID                     USB_PID      /**< Product ID. */
@@ -24,6 +33,8 @@
 #define USBD_COMP_MFG_STRING              "Realtek"    /**< Manufacturer string. */
 #define USBD_COMP_PROD_STRING             "Realtek Composite Device"/**< Product string. */
 #define USBD_COMP_SN_STRING               "1234567890" /**< Serial number string. */
+/** @} End of Device_Composite_Constants group */
+/** @} End of USB_Device_Constants group */
 
 #if defined(CONFIG_USBD_COMPOSITE_CDC_ACM_HID)
 /* Interfaces */
@@ -59,7 +70,7 @@
 #define USBD_COMP_HID_HS_ITF_STRING       "Realtek HS HID Device"
 #define USBD_COMP_HID_FS_ITF_STRING       "Realtek FS HID Device"
 
-#elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC)  //acm+uac
+#elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC)  /* acm+uac */
 /* Interfaces */
 /*
 	audio control
@@ -109,7 +120,7 @@
 #define USBD_COMP_UAC_HS_ITF_STRING            "Realtek HS UAC Device"
 #define USBD_COMP_UAC_FS_ITF_STRING            "Realtek FS UAC Device"
 
-#elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_MSC) //acm + msc
+#elif defined(CONFIG_USBD_COMPOSITE_CDC_ACM_MSC) /* acm + msc */
 /* Interfaces */
 #define USBD_COMP_CDC_COM_ITF                  0x00
 #define USBD_COMP_CDC_DAT_ITF                  0x01
@@ -137,7 +148,7 @@
 #define USBD_COMP_MSC_HS_ITF_STRING            "Realtek HS MSC Device"
 #define USBD_COMP_MSC_FS_ITF_STRING            "Realtek FS MSC Device"
 
-#elif defined(CONFIG_USBD_COMPOSITE_HID_UAC)  //hid+uac
+#elif defined(CONFIG_USBD_COMPOSITE_HID_UAC)  /* hid+uac */
 
 #define USBD_COMP_UAC_PID                      (USBD_COMP_PID)
 
@@ -209,20 +220,29 @@
 
 /* Exported types ------------------------------------------------------------*/
 
+/** @addtogroup USB_Device_Types USB Device Types
+ * @{
+ */
+/** @addtogroup Device_Composite_Types Device Composite Types
+ * @{
+ */
 /**
  * @brief Composite user callback structure.
  */
 typedef struct {
 	/**
 	 * @brief Callback invoked when USB status change. See @ref usbd_attach_status_t.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @details Called upon connection state changed for hot-plug support (e.g. do reinitialization on host disconnection)
 	 * @param[in] old_status: Previous status of USB device.
 	 * @param[in] status: Current status of USB device.
-	 * @return None
 	 */
 	void (*status_changed)(u8 old_status, u8 status);    /**< Called upon USB attach status changes for application to support hot-plug events. */
 	/**
 	 * @brief Called in the `set_config` callback of @ref usbd_class_driver_t to notifies application layer that the class driver becomes operational.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @return None
 	 */
 	int (* set_config)(void);
@@ -251,6 +271,9 @@ typedef struct {
 	usbd_composite_cb_t *cb;      /**< Composite user callback */
 	usb_dev_t *dev;               /**< USB device instance */
 } usbd_composite_dev_t;
+/** @} End of Device_Composite_Types group */
+/** @} End of USB_Device_Types group */
+/** @} End of USB_Device_API group */
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -258,4 +281,4 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
-#endif // USBD_COMPOSITE_CONFIG_H
+#endif /* USBD_COMPOSITE_CONFIG_H */

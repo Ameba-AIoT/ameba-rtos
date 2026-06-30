@@ -68,10 +68,8 @@ static u16 atcmd_usbd_ctrl_line_state;
 static usbd_config_t atcmd_usbd_cfg = {
 	.speed = CONFIG_USBD_CDC_ACM_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
-	.intr_use_ptx_fifo  = 0U,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
-	.ext_intr_enable        = USBD_EPMIS_INTR,
 #elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 644U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
@@ -86,13 +84,13 @@ static rtos_sema_t atcmd_usbd_tx_sema;
 
 static u8 atcmd_usbd_attach_status;
 
-rtos_sema_t atcmd_usbd_tx_done_sema;
-rtos_sema_t atcmd_usbd_rx_sema;
-rtos_sema_t atcmd_usbd_notify_sema;
+static rtos_sema_t atcmd_usbd_tx_done_sema;
+static rtos_sema_t atcmd_usbd_rx_sema;
+static rtos_sema_t atcmd_usbd_notify_sema;
 
-RingBuffer *at_usbd_rx_ring_buf = NULL;
-RingBuffer *at_usbd_tx_ring_buf = NULL;
-RingBuffer *at_usbd_notify_ring_buf = NULL;
+static RingBuffer *at_usbd_rx_ring_buf = NULL;
+static RingBuffer *at_usbd_tx_ring_buf = NULL;
+static RingBuffer *at_usbd_notify_ring_buf = NULL;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
@@ -272,7 +270,7 @@ static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf)
 		atcmd_usbd_ctrl_line_state = req->wValue;
 		if (atcmd_usbd_ctrl_line_state & 0x01) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
-#if CONFIG_CDC_ACM_NOTIFY
+#if CONFIG_USBD_CDC_ACM_NOTIFY
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 #endif
 		}
@@ -445,11 +443,11 @@ recv_again:
 					RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n");
 				}
 
-				memset((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+				memset((u8 *)pCmdLogBuf->UARTLogBuf, '\0', CMD_BUFLEN);
 				pCmdLogBuf->BufCount = 0;
 				continue;
 			} else {
-				memset((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+				memset((u8 *)shell_ctl.pTmpLogBuf->UARTLogBuf, '\0', CMD_BUFLEN);
 			}
 		}
 

@@ -3,6 +3,7 @@
 #include <linux/of_gpio.h>
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>
+#include "whc_usb_host.h"
 
 
 #define RTK_USB_VID							0x0BDA
@@ -202,6 +203,9 @@ static int whc_usb_host_probe(struct usb_interface *intf, const struct usb_devic
 
 	memset(priv, 0, sizeof(struct whc_usb));
 	mutex_init(&(priv->lock));
+	INIT_LIST_HEAD(&priv->tx_freeq);
+	INIT_LIST_HEAD(&priv->rx_freeq);
+	skb_queue_head_init(&priv->rxnode_list);
 
 	priv->usb_dev = usb;
 	priv->dev = &usb->dev;
@@ -215,6 +219,22 @@ static int whc_usb_host_probe(struct usb_interface *intf, const struct usb_devic
 		dev_err(priv->dev, "%s: initialize usb Failed!\n", __FUNCTION__);
 		goto exit;
 	}
+
+#ifdef CONFIG_FW_DOWNLOAD
+	/* Try firmware download first, without submitting any RX URBs */
+	status = whc_usb_xfer_download(priv);
+	if (status == 0) {
+		/* Image downloaded, device will reset and re-enumerate */
+		dev_info(priv->dev, "Firmware downloaded, waiting for re-enumeration\n");
+		whc_usb_host_deinit(priv);
+		usb_set_intfdata(intf, NULL);
+		return 0;
+	} else if (status < 0) {
+		dev_err(priv->dev, "%s: fw download fail\n", __FUNCTION__);
+		goto exit;
+	}
+	/* status == 1: firmware ready, continue to normal init */
+#endif
 
 	status = whc_usb_host_init_phase2(priv);
 	if (status != true) {
@@ -281,11 +301,23 @@ static int whc_usb_host_suspend(struct usb_interface *intf, pm_message_t message
 	struct whc_usb *priv = &whc_usb_host_priv;
 	struct rtw_usbreq *req, *next;
 
+#if defined(CONFIG_WHC_WIFI_API_PATH)
+	/* staion mode */
+	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_SUCCESS) {
+		/* update ip address success */
+		if (whc_host_update_ip_addr()) {
+			return -EPERM;
+		}
+	}
+#endif
+
+	/* set wowlan_state, stop schedule rx/tx work */
+	global_idev.wowlan_state = 1;
 	netif_tx_stop_all_queues(global_idev.pndev[0]);
 	if (atomic_read(&priv->tx_inflight)) {
 		netif_tx_start_all_queues(global_idev.pndev[0]);
 		netif_tx_wake_all_queues(global_idev.pndev[0]);
-		return -1;
+		goto FAIL;
 	}
 
 	req = NULL;
@@ -298,12 +330,18 @@ static int whc_usb_host_suspend(struct usb_interface *intf, pm_message_t message
 	}
 
 	return 0;
+
+FAIL:
+	netif_tx_start_all_queues(global_idev.pndev[0]);
+	netif_tx_wake_all_queues(global_idev.pndev[0]);
+	global_idev.wowlan_state = 0;
+	return -1;
 }
 
 static int whc_usb_host_resume(struct usb_interface *intf)
 {
 	struct whc_usb *priv = &whc_usb_host_priv;
-	struct rtw_usbreq *req, *next;
+	struct rtw_usbreq *req = NULL, *next;
 	struct sk_buff	*skb;
 	int ret = 0;
 
@@ -324,6 +362,8 @@ static int whc_usb_host_resume(struct usb_interface *intf)
 
 	netif_tx_start_all_queues(global_idev.pndev[0]);
 	netif_tx_wake_all_queues(global_idev.pndev[0]);
+
+	global_idev.wowlan_state = 0;
 
 	return 0;
 }

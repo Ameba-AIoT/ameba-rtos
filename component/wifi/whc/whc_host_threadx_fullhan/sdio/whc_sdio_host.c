@@ -58,7 +58,7 @@ retry:
 	}
 
 	if (p_buf != NULL) {
-		LwIP_ethernetif_recv_inic(msg_info->wlan_idx, p_buf);
+		netif_adapter_wifi_recv_whc(msg_info->wlan_idx, p_buf);
 	}
 
 	rt_free(buf);
@@ -276,7 +276,7 @@ void whc_host_init(void)
 	/* init sdio */
 	whc_sdio_host_init_drv();
 
-	LwIP_Init();
+	lwip_module_init();
 
 	whc_host_init_done = 1;
 

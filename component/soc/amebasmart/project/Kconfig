@@ -105,6 +105,8 @@ endmenu
 
 rsource "../../../soc/common/image3/Kconfig.trustzone"
 
+rsource "../../../soc/Kconfig"
+
 menu "CONFIG Mass Production"
     config MP_INCLUDED
         bool "Enable MP"

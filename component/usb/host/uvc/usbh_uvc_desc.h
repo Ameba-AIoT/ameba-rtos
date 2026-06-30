@@ -23,7 +23,7 @@
 #define USBH_UVC_VC_SELECTOR_UNIT                            0x04
 #define USBH_UVC_VC_PROCESSING_UNIT                          0x05
 #define USBH_UVC_VC_EXTENSION_UNIT                           0x06
-#define USBH_UVC_VC_ENCODING_UNIT                            0X07
+#define USBH_UVC_VC_ENCODING_UNIT                            0x07
 
 /* A.6. Video Class-Specific VS Interface Descriptor Subtypes */
 #define USBH_UVC_VS_UNDEFINED                                0x00
@@ -74,18 +74,23 @@
 typedef union {
 	u8 bitmap;
 	struct {
-		u8 fid: 1; //FrameID
-		u8 eof: 1; //End of Frame
-		u8 pts: 1; //Presentation Time
-		u8 scr: 1; //Source Clock Reference
-		u8 res: 1; //Payload specific bit
-		u8 sti: 1; //Still Image
-		u8 err: 1; //Error
-		u8 eoh: 1; //End of header
+		u8 fid: 1; /* FrameID */
+		u8 eof: 1; /* End of Frame */
+		u8 pts: 1; /* Presentation Time */
+		u8 scr: 1; /* Source Clock Reference */
+		u8 res: 1; /* Payload specific bit */
+		u8 sti: 1; /* Still Image */
+		u8 err: 1; /* Error */
+		u8 eoh: 1; /* End of header */
 	} b;
 } usbh_uvc_header_bitmap_t;
 
 
+/**
+  * @brief	UVC Probe and Commit Control (UVC spec Table 4-75)
+  * @note	Covers UVC 1.0 (26 bytes) and UVC 1.1 (34 bytes, up to bMaxVersion).
+  *		UVC 1.5 adds 14 bytes at offset 34 (bUsage..bmLayoutPerStream); not supported.
+  */
 typedef  struct {
 	u16 bmHint;
 	u8 bFormatIndex;
@@ -100,7 +105,7 @@ typedef  struct {
 	u32 dwMaxPayloadTransferSize;
 	u32 dwClockFrequency;
 	u8 bmFramingInfo;
-	u8 bPreferedVersion;
+	u8 bPreferredVersion;
 	u8 bMinVersion;
 	u8 bMaxVersion;
 } __PACKED usbh_uvc_stream_control_t;

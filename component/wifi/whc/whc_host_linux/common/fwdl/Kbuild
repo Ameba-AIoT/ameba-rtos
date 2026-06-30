@@ -1,0 +1,33 @@
+# Kbuild for WHC firmware download module (COMMON LIBRARY)
+
+ifeq ($(CONFIG_FW_DOWNLOAD), y)
+# Include paths
+ccflags-y += -I$(src)/.. -I$(src)/../include
+
+# Common XFER files
+FWDL_OBJS := \
+	whc_host_xfer.o \
+	whc_host_xfer_dl.o
+
+# SDIO interface specific files
+FWDL_OBJS-$(CONFIG_WHC_HCI_SDIO) += \
+	whc_sdio_host_rom.o \
+	whc_sdio_host_xfer.o \
+	whc_sdio_host_fwdl.o
+
+# USB interface specific files
+FWDL_OBJS-$(CONFIG_WHC_HCI_USB) += \
+	whc_usb_host_xfer.o \
+	whc_usb_host_fwdl.o
+
+# HAL chip selection
+CONFIG_WHC_HAL_CHIP ?= rtl8721f
+
+ifeq ($(CONFIG_WHC_HAL_CHIP), rtl8721f)
+FWDL_OBJS += whc_hal_rtl8721f.o
+else
+$(error Unknown HAL chip: $(CONFIG_WHC_HAL_CHIP))
+endif
+
+FWDL_OBJS += $(FWDL_OBJS-y)
+endif

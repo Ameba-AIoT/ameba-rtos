@@ -706,27 +706,6 @@ int whc_host_set_lps_enable(u8 enable)
 	return ret;
 }
 
-int whc_host_mp_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, dma_addr_t user_addr)
-{
-	int ret = 0;
-	u32 size;
-	u32 *param;
-
-	size = 2 * sizeof(u32) + cmd_len;
-	param = (u32 *)kzalloc(size, GFP_KERNEL);
-
-	param[0] = 1;	/* show_msg*/
-	param[1] = cmd_len;
-	memcpy((void *)(param + 2), (void *)cmd_addr, cmd_len);
-
-	whc_host_send_event(WHC_API_WIFI_MP_CMD, (u8 *)param, size, (u8 *)user_addr, WIFI_MP_MSG_BUF_SIZE);
-
-	/* free buffer */
-	kfree((void *)param);
-
-	return ret;
-}
-
 int whc_host_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, unsigned char *cmd, unsigned char *user_buf)
 {
 	int ret = 0;

@@ -70,7 +70,6 @@ typedef struct {
 	uint32_t last_decode_offset;
 	struct enc_codec_buffer *p_enc_codec_buffer_t;
 	uint32_t encode_byte;
-	uint32_t rx_valid_cnt;
 } app_bt_le_audio_data_path_t;
 
 typedef struct {
@@ -1246,13 +1245,6 @@ static uint16_t app_bt_le_audio_data_received(uint16_t iso_handle, uint8_t path_
 	if (!p_app_bt_le_audio_data_path->is_ready) {
 		BT_LOGD("[APP] %s: iso_handle: 0x%x, not ready \r\n", __func__, iso_handle);
 		return 1;
-	}
-	/* set mute in a few valid data of start to optimize rx sync music zz */
-	if ((p_app_bt_le_audio_data_path->rx_valid_cnt++) <= APP_BT_AUDIO_RX_SYNC_VALID_DATA_SHRESHOLD) {
-		if (data) {
-			memset((void *)data, 0, data_len);
-			BT_LOGA("[APP] %s: iso_handle: 0x%x, set mute \r\n", __func__, iso_handle);
-		}
 	}
 	/* do audio data received flow */
 	if (rtk_bt_audio_recvd_data_in(RTK_BT_AUDIO_CODEC_LC3,
@@ -3333,6 +3325,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		break;
 	}
 
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	case RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND: {
 		rtk_bt_le_data_len_change_ind_t *data_len_change =
 			(rtk_bt_le_data_len_change_ind_t *)param;
@@ -3352,7 +3345,9 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 					data_len_change->max_rx_time);
 		break;
 	}
+#endif
 
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	case RTK_BT_LE_GAP_EVT_PHY_UPDATE_IND: {
 		rtk_bt_le_phy_update_ind_t *phy_update_ind =
 			(rtk_bt_le_phy_update_ind_t *)param;
@@ -3373,6 +3368,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_gap_app_callback(uint8_t evt_code, vo
 		}
 		break;
 	}
+#endif
 
 	case RTK_BT_LE_GAP_EVT_AUTH_PAIRING_CONFIRM_IND: {
 		rtk_bt_le_auth_pair_cfm_ind_t *pair_cfm_ind =
@@ -3675,11 +3671,15 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTC | RTK_BT_PROFILE_LEAUDIO | RTK_BT_PROFILE_BAP | RTK_BT_PROFILE_CAP | RTK_BT_PROFILE_TMAP;
 				bt_app_conf.mtu_size = 180;
 				bt_app_conf.master_init_mtu_req = true;
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 				bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
 				bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 				bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+#endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 				bt_app_conf.max_tx_octets = 0x40;
 				bt_app_conf.max_tx_time = 0x200;
+#endif
 				memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));
 			}
 			/* Enable BT */
@@ -3787,11 +3787,15 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 				bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTS | RTK_BT_PROFILE_LEAUDIO | RTK_BT_PROFILE_BAP | RTK_BT_PROFILE_CAP | RTK_BT_PROFILE_TMAP;
 				bt_app_conf.mtu_size = 180;
 				bt_app_conf.master_init_mtu_req = true;
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 				bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
 				bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 				bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+#endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 				bt_app_conf.max_tx_octets = 0x40;
 				bt_app_conf.max_tx_time = 0x200;
+#endif
 				memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));
 			}
 			/* Enable BT */
@@ -3859,11 +3863,15 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 												  RTK_BT_PROFILE_TMAP;
 				bt_app_conf.mtu_size = 180;
 				bt_app_conf.master_init_mtu_req = true;
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 				bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
 				bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 				bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+#endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 				bt_app_conf.max_tx_octets = 0x40;
 				bt_app_conf.max_tx_time = 0x200;
+#endif
 				memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));
 			}
 			/* Enable BT */
@@ -3961,11 +3969,15 @@ int bt_tmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 												  RTK_BT_PROFILE_TMAP;
 				bt_app_conf.mtu_size = 180;
 				bt_app_conf.master_init_mtu_req = true;
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 				bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
 				bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 				bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+#endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 				bt_app_conf.max_tx_octets = 0x40;
 				bt_app_conf.max_tx_time = 0x200;
+#endif
 				memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));
 			}
 			/* Enable BT */

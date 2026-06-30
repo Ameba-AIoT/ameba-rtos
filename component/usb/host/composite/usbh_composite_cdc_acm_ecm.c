@@ -16,12 +16,12 @@
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
-static int usbh_composite_acm_ecm_cb_attach(usb_host_t *host);
-static int usbh_composite_acm_ecm_cb_detach(usb_host_t *host);
-static int usbh_composite_acm_ecm_cb_process(usb_host_t *host, u32 msg);
-static int usbh_composite_acm_ecm_cb_setup(usb_host_t *host);
-static int usbh_composite_acm_ecm_cb_sof(usb_host_t *host);
-static int usbh_composite_acm_ecm_cb_completed(usb_host_t *host, u8 pipe_num);
+static int usbh_composite_acm_ecm_attach(usb_host_t *host);
+static int usbh_composite_acm_ecm_detach(usb_host_t *host);
+static int usbh_composite_acm_ecm_process(usb_host_t *host, usbh_event_t *event);
+static int usbh_composite_acm_ecm_setup(usb_host_t *host);
+static int usbh_composite_acm_ecm_sof(usb_host_t *host);
+static int usbh_composite_acm_ecm_completed(usb_host_t *host, u8 pipe_num);
 
 static int usbh_composite_acm_ecm_user_process(usb_host_t *host, u8 id);
 static int usbh_composite_acm_ecm_user_device_check(usb_host_t *host, u8 cfg_max);
@@ -32,6 +32,7 @@ static const char *const TAG = "COMP";
 static usbh_config_t usbh_composite_acm_ecm_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.isr_priority = USBH_COMPOSITE_ISR_PRIORITY,
+	.main_task_stack_size = 1792U,
 	.main_task_priority = USBH_COMPOSITE_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -54,24 +55,22 @@ static usbh_user_cb_t usbh_composite_acm_ecm_usr_cb = {
 
 static const usbh_dev_id_t usbh_composite_acm_ecm_devs[] = {
 	{
-		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO,
-		.bInterfaceClass = CDC_IF_CDC_CTRL_CODE,
-		.bInterfaceSubClass = CDC_IF_CDC_CTRL_SUB_CLASS_ECM_CODE,
-		.bInterfaceProtocol = 0x00,
+		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS,
+		.bInterfaceClass = USB_CDC_CLASS_CODE,
 	},
 	{
 	},
 };
 
-/* USB Standard Device Descriptor */
+/* USB Class Driver */
 static usbh_class_driver_t usbh_composite_driver = {
 	.id_table = usbh_composite_acm_ecm_devs,
-	.attach = usbh_composite_acm_ecm_cb_attach,
-	.detach = usbh_composite_acm_ecm_cb_detach,
-	.setup = usbh_composite_acm_ecm_cb_setup,
-	.process = usbh_composite_acm_ecm_cb_process,
-	.sof = usbh_composite_acm_ecm_cb_sof,
-	.completed = usbh_composite_acm_ecm_cb_completed,
+	.attach = usbh_composite_acm_ecm_attach,
+	.detach = usbh_composite_acm_ecm_detach,
+	.setup = usbh_composite_acm_ecm_setup,
+	.process = usbh_composite_acm_ecm_process,
+	.sof = usbh_composite_acm_ecm_sof,
+	.completed = usbh_composite_acm_ecm_completed,
 };
 
 static usbh_composite_host_t usbh_composite_host;
@@ -108,7 +107,7 @@ static int usbh_composite_acm_ecm_user_process(usb_host_t *host, u8 id)
 		usbh_composite_cdc_ecm_choose_config(host);
 		break;
 	case USBH_MSG_DISCONNECTED:
-		// usbh_cdc_ecm_host_user.cdc_ecm_is_ready = 0;
+		/* usbh_cdc_ecm_host_user.cdc_ecm_is_ready = 0; */
 		break;
 
 	case USBH_MSG_CONNECTED:
@@ -131,7 +130,7 @@ static int usbh_composite_acm_ecm_user_device_check(usb_host_t *host, u8 cfg_max
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_acm_ecm_cb_attach(usb_host_t *host)
+static int usbh_composite_acm_ecm_attach(usb_host_t *host)
 {
 	int ret;
 	usbh_composite_host_t *chost = &usbh_composite_host;
@@ -142,19 +141,17 @@ static int usbh_composite_acm_ecm_cb_attach(usb_host_t *host)
 		ret = chost->acm->attach(host);
 		if (ret != HAL_OK) {
 			usbh_composite_deinit_acm_class();
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Can not support acm\n");
+			RTK_LOGS(TAG, RTK_LOG_WARN, "No acm\n");
 		}
 	}
 
-	if ((chost->ecm != NULL) && (chost->ecm->attach)) {
+	if ((chost->ecm != NULL) && (chost->ecm->attach != NULL)) {
 		ret = chost->ecm->attach(host);
 		if (ret != HAL_OK) {
 			usbh_composite_deinit_ecm_class();
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Can not support ecm\n");
+			RTK_LOGS(TAG, RTK_LOG_WARN, "No ecm\n");
 		}
 	}
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Attach\n");
 
 	return HAL_OK;
 }
@@ -164,19 +161,21 @@ static int usbh_composite_acm_ecm_cb_attach(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_acm_ecm_cb_detach(usb_host_t *host)
+static int usbh_composite_acm_ecm_detach(usb_host_t *host)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	UNUSED(host);
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Detach\n");
 
 	if ((chost->acm != NULL) && (chost->acm->detach != NULL)) {
 		chost->acm->detach(host);
 	}
 
-	if ((chost->ecm != NULL) && (chost->ecm->detach)) {
+	if ((chost->ecm != NULL) && (chost->ecm->detach != NULL)) {
 		chost->ecm->detach(host);
+	}
+
+	if ((chost->cb != NULL) && (chost->cb->detach != NULL)) {
+		chost->cb->detach();
 	}
 
 	return HAL_OK;
@@ -187,40 +186,44 @@ static int usbh_composite_acm_ecm_cb_detach(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_acm_ecm_cb_setup(usb_host_t *host)
+static int usbh_composite_acm_ecm_setup(usb_host_t *host)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	int status = HAL_ERR_UNKNOWN;
 
-	status = usbh_composite_cdc_acm_ctrl_setting(host);
-	if (status != HAL_OK) {
-		return status;
+	if (chost->acm != NULL) {
+		status = usbh_composite_cdc_acm_ctrl_setting(host);
+		if (status != HAL_OK) {
+			return status;
+		}
 	}
 
-	status = usbh_composite_cdc_ecm_ctrl_setting(host);
-	if (status != HAL_OK) {
-		return status;
+	if (chost->ecm != NULL) {
+		status = usbh_composite_cdc_ecm_ctrl_setting(host);
+		if (status != HAL_OK) {
+			return status;
+		}
 	}
 
 	if ((chost->acm != NULL) && (chost->acm->setup != NULL)) {
 		chost->acm->setup(host);
 	}
 
-	if ((chost->ecm != NULL) && (chost->ecm->setup)) {
+	if ((chost->ecm != NULL) && (chost->ecm->setup != NULL)) {
 		chost->ecm->setup(host);
 	}
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Setup\n");
 
 	return HAL_OK;
 }
 
 /**
-  * @brief  Sof callback
-  * @param  host: Host handle
-  * @retval Status
+  * @brief  SOF callback for class-specific timing process.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param[in] host: USB host handle.
+  * @return 0 on success, non-zero on failure.
   */
-static int usbh_composite_acm_ecm_cb_sof(usb_host_t *host)
+static int usbh_composite_acm_ecm_sof(usb_host_t *host)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 
@@ -228,7 +231,7 @@ static int usbh_composite_acm_ecm_cb_sof(usb_host_t *host)
 		chost->acm->sof(host);
 	}
 
-	if ((chost->ecm != NULL) && (chost->ecm->sof)) {
+	if ((chost->ecm != NULL) && (chost->ecm->sof != NULL)) {
 		chost->ecm->sof(host);
 	}
 
@@ -236,12 +239,14 @@ static int usbh_composite_acm_ecm_cb_sof(usb_host_t *host)
 }
 
 /**
-  * @brief  Complete callback
-  * @param  host: Host handle
-  * @param  pipe_num: pipe index
-  * @retval Status
+  * @brief  Transfer completion callback.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param[in] host: USB host handle.
+  * @param[in] pipe_num: Pipe number of the completed transfer.
+  * @return 0 on success, non-zero on failure.
   */
-static int usbh_composite_acm_ecm_cb_completed(usb_host_t *host, u8 pipe_num)
+static int usbh_composite_acm_ecm_completed(usb_host_t *host, u8 pipe_num)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	int ret = HAL_BUSY;
@@ -250,7 +255,7 @@ static int usbh_composite_acm_ecm_cb_completed(usb_host_t *host, u8 pipe_num)
 		ret = chost->acm->completed(host, pipe_num);
 	}
 
-	if ((ret != HAL_OK) && (chost->ecm != NULL) && (chost->ecm->completed)) {
+	if ((ret != HAL_OK) && (chost->ecm != NULL) && (chost->ecm->completed != NULL)) {
 		ret = chost->ecm->completed(host, pipe_num);
 	}
 
@@ -262,20 +267,20 @@ static int usbh_composite_acm_ecm_cb_completed(usb_host_t *host, u8 pipe_num)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_acm_ecm_cb_process(usb_host_t *host, u32 msg)
+static int usbh_composite_acm_ecm_process(usb_host_t *host, usbh_event_t *event)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	int ret = HAL_BUSY;
 
 	/*
-		if the pocess has handle the msg, it return HAL_OK, else return HAL_BUSY
-	*/
+	 * If the process has handled the msg, it returns HAL_OK, else returns HAL_BUSY.
+	 */
 	if ((chost->acm != NULL) && (chost->acm->process != NULL)) {
-		ret = chost->acm->process(host, msg);
+		ret = chost->acm->process(host, event);
 	}
 
 	if ((ret != HAL_OK) && (chost->ecm != NULL) && (chost->ecm->process != NULL)) {
-		ret = chost->ecm->process(host, msg);
+		ret = chost->ecm->process(host, event);
 	}
 
 	return ret;
@@ -288,39 +293,42 @@ static int usbh_composite_acm_ecm_cb_process(usb_host_t *host, u32 msg)
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_composite_acm_ecm_init(usbh_composite_cdc_acm_usr_cb_t *acm_cb, usbh_composite_cdc_ecm_usr_cb_t *uac_cb)
+int usbh_composite_acm_ecm_init(usbh_composite_cdc_acm_usr_cb_t *acm_cb, usbh_composite_cdc_ecm_usr_cb_t *ecm_cb, usbh_composite_cb_t *cb)
 {
 	int ret;
 	usbh_composite_host_t *chost = &usbh_composite_host;
 	usb_os_memset(chost, 0x00, sizeof(usbh_composite_host_t));
 
-	if ((acm_cb == NULL) || (uac_cb == NULL)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+	if ((acm_cb == NULL) || (ecm_cb == NULL)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "NULL CB\n");
 		return HAL_ERR_PARA;
 	}
 
 	ret = usbh_init(&usbh_composite_acm_ecm_cfg, &usbh_composite_acm_ecm_usr_cb);
 	if (ret != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Host init fail %d\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail\n");
 		return HAL_ERR_UNKNOWN;
 	}
 
 	ret = usbh_composite_cdc_acm_init(chost, acm_cb);
 	if (ret != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init HID itf fail: %d\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Acm init fail\n");
+		usbh_deinit();
 		return ret;
 	}
 	chost->acm = (usbh_class_driver_t *)&usbh_composite_cdc_acm_driver;
 
-	ret = usbh_composite_cdc_ecm_init(chost, uac_cb);
+	ret = usbh_composite_cdc_ecm_init(chost, ecm_cb);
 	if (ret != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init UAC itf fail: %d\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ecm init fail\n");
 		usbh_composite_cdc_acm_deinit();
+		usbh_deinit();
 		return ret;
 	}
 	chost->ecm = (usbh_class_driver_t *)&usbh_composite_cdc_ecm_driver;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
+	chost->cb = cb;
+
 	usbh_register_class(&usbh_composite_driver);
 
 	return HAL_OK;
@@ -333,7 +341,6 @@ int usbh_composite_acm_ecm_init(usbh_composite_cdc_acm_usr_cb_t *acm_cb, usbh_co
 int usbh_composite_acm_ecm_deinit(void)
 {
 	usbh_composite_host_t *chost = &usbh_composite_host;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
 
 	usbh_unregister_class(&usbh_composite_driver);
 

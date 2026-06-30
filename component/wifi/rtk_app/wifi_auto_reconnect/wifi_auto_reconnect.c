@@ -23,7 +23,6 @@
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #include <dhcp/dhcps.h>
-#include "ethernetif.h"
 #endif
 #include "ameba_soc.h"
 #ifdef CONFIG_PLATFORM_ZEPHYR
@@ -130,7 +129,7 @@ void rtw_reconn_task_hdl(void *param)
 
 #ifdef CONFIG_LWIP_LAYER
 	if (ret == RTK_SUCCESS) {
-		LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
+		lwip_request_ip(NETIF_WLAN_STA_INDEX);
 	}
 #endif
 

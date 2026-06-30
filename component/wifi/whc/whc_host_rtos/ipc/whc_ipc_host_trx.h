@@ -23,7 +23,6 @@
 #include "os_wrapper.h"
 #include "rtw_skbuff.h"
 #ifndef ZEPHYR_WIFI
-#include "ethernetif.h"
 #include "lwip_netconf.h"
 #endif
 #include "rtw_queue.h"

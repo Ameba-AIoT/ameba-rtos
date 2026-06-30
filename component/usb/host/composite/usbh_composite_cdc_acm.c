@@ -10,10 +10,10 @@
 #include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
-
-#define USB_BULK_OUT_MAX_TIMEOUT_TICK          8000 //sof
-#define USB_BULK_IN_MAX_TIMEOUT_TICK           100  //sof
-#define USB_INTR_MAX_TIMEOUT_TICK              1000
+#define USBH_CDC_ACM_DEBUG                     0
+#define USBH_BULK_OUT_MAX_TIMEOUT_TICK         8000 //sof
+#define USBH_BULK_IN_MAX_TIMEOUT_TICK          100  //sof
+#define USBH_INTR_MAX_TIMEOUT_TICK             1000
 #define USBH_CDC_ACM_NOTIFY_BUF_SIZE           256
 #define USBH_CDC_ACM_LOOPBACK_BUF_SIZE         1024
 
@@ -28,6 +28,7 @@ typedef enum {
 	CDC_ACM_STATE_CTRL_IDLE  = 0U,
 	CDC_ACM_STATE_SET_LINE_CODING,
 	CDC_ACM_STATE_GET_LINE_CODING,
+	CDC_ACM_STATE_CTRL_ALT_SETTING,
 	CDC_ACM_STATE_CTRL_SETTING_MAX,
 } usbh_composite_cdc_acm_ctrl_state_t;
 
@@ -40,11 +41,11 @@ static u8 usbh_composite_cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] __a
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_composite_cdc_acm_attach(usb_host_t *host);
 static int usbh_composite_cdc_acm_detach(usb_host_t *host);
-static int usbh_composite_cdc_acm_process(usb_host_t *host, u32 msg);
+static int usbh_composite_cdc_acm_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_composite_cdc_acm_sof(usb_host_t *host);
 static int usbh_composite_cdc_acm_setup(usb_host_t *host);
-static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
-static int usbh_composite_cdc_acm_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
+static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *line_coding);
+static int usbh_composite_cdc_acm_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *line_coding);
 static int usbh_composite_cdc_acm_process_tx(usb_host_t *host);
 static int usbh_composite_cdc_acm_process_rx(usb_host_t *host);
 static int usbh_composite_cdc_acm_process_intr_rx(usb_host_t *host);
@@ -52,7 +53,7 @@ static int usbh_composite_cdc_acm_process_intr_rx(usb_host_t *host);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "ACM";
 
-/* USB Standard Device Descriptor */
+/* USB Class Driver */
 const usbh_class_driver_t usbh_composite_cdc_acm_driver = {
 	.attach = usbh_composite_cdc_acm_attach,
 	.detach = usbh_composite_cdc_acm_detach,
@@ -64,19 +65,29 @@ const usbh_class_driver_t usbh_composite_cdc_acm_driver = {
 static usbh_composite_cdc_acm_host_t usbh_composite_cdc_acm_host;
 
 /* Private functions ---------------------------------------------------------*/
+
+/**
+ * @brief  Dump endpoint descriptor information for debugging purposes.
+ *
+ *         Logs the pipe number and endpoint interval for the INTR input,
+ *         BULK output, and BULK input pipes of the CDC ACM device.
+ *         This function is a no-op when USBH_CDC_ACM_DEBUG is disabled.
+ *
+ * @note   Debug-only; guarded by @ref USBH_CDC_ACM_DEBUG.
+ */
 static void usbh_composite_cdc_acm_dump_desc(void)
 {
-#if 1
+#if USBH_CDC_ACM_DEBUG
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
 	usbh_pipe_t *pipe_info;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "--------------------Dump Descriptor Start------------------\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "--------------------ACM Dump Descriptor Start------------------\n");
 
-	//dump cdc control
+	// Dump CDC control pipe info
 	pipe_info = &(cdc->intr_in);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INTR pipe(%d)interval(%d)\n", pipe_info->pipe_num, pipe_info->ep_interval);
 
-	//dump ac, data
+	// Dump ACM data pipe info
 	pipe_info = &(cdc->bulk_out);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "BULK out:pipe(%d)interval(%d)\n", pipe_info->pipe_num, pipe_info->ep_interval);
 
@@ -88,6 +99,22 @@ static void usbh_composite_cdc_acm_dump_desc(void)
 }
 
 /**
+  * @brief  check USB device enum status
+  * @retval return HAL_OK if enum success, else return HAL_BUSY
+  */
+static int usbh_composite_cdc_acm_check_enum_status(void)
+{
+	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
+
+	if ((cdc->driver != NULL) && (cdc->driver->host != NULL) && (cdc->driver->host->connect_state >= USBH_STATE_SETUP)) {
+		return HAL_OK;
+	}
+
+	return HAL_BUSY;
+}
+
+
+/**
   * @brief  Start to receive data
   * @param  buf: Data buffer
   * @param  len: Data length
@@ -97,8 +124,12 @@ static int usbh_composite_cdc_acm_receive(u8 *buf, u32 len)
 {
 	int ret = HAL_BUSY;
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
-	usb_host_t *host = cdc->driver->host;
+	usb_host_t *host = (cdc->driver != NULL) ? cdc->driver->host : NULL;
 	usbh_pipe_t *pipe = &cdc->bulk_in;
+
+	if (usbh_composite_cdc_acm_check_enum_status() != HAL_OK) {
+		return ret;
+	}
 
 	if ((cdc->state == CDC_ACM_STATE_IDLE) || (cdc->state == CDC_ACM_STATE_TRANSFER)) {
 		if (pipe->xfer_state == USBH_EP_XFER_IDLE || pipe->xfer_state == USBH_EP_XFER_ERROR) {
@@ -131,8 +162,12 @@ static int usbh_composite_cdc_acm_notify_receive(u8 *buf, u32 len)
 {
 	int ret = HAL_BUSY;
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
-	usb_host_t *host = cdc->driver->host;
+	usb_host_t *host = (cdc->driver != NULL) ? cdc->driver->host : NULL;
 	usbh_pipe_t *pipe = &cdc->intr_in;
+
+	if (usbh_composite_cdc_acm_check_enum_status() != HAL_OK) {
+		return ret;
+	}
 
 	if ((cdc->state == CDC_ACM_STATE_IDLE) || (cdc->state == CDC_ACM_STATE_TRANSFER)) {
 		pipe->xfer_buf = buf;
@@ -160,134 +195,293 @@ static int usbh_composite_cdc_acm_notify_receive(u8 *buf, u32 len)
 }
 
 /**
+  * @brief  Open BULK in/out pipes from a CDC data interface descriptor.
+  */
+static void usbh_composite_cdc_acm_open_data_eps(usb_host_t *host, usbh_composite_cdc_acm_host_t *cdc, usbh_itf_desc_t *itf_desc)
+{
+	usbh_pipe_t *bulk_out = &cdc->bulk_out;
+	usbh_pipe_t *bulk_in = &cdc->bulk_in;
+
+	for (u8 i = 0; i < itf_desc->bNumEndpoints; i++) {
+		usbh_ep_desc_t *ep_desc = &itf_desc->ep_desc_array[i];
+		if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
+			usbh_open_pipe(host, bulk_in, ep_desc);
+			bulk_in->max_timeout_tick = USBH_BULK_IN_MAX_TIMEOUT_TICK;
+		} else {
+			usbh_open_pipe(host, bulk_out, ep_desc);
+			bulk_out->max_timeout_tick = USBH_BULK_OUT_MAX_TIMEOUT_TICK;
+		}
+	}
+}
+
+#if USBH_COMPOSITE_4G_DONGLE_SUPPORT
+/**
+  * @brief  Look up the dongle parameter entry that matches the device VID/PID.
+  */
+static usbh_composite_cdc_acm_param_t *usbh_composite_cdc_acm_find_param(usbh_composite_cdc_acm_param_t *list, u16 vid, u16 pid)
+{
+	while ((list != NULL) && (list->vid != 0)) {
+		if ((list->vid == vid) && (list->pid == pid)) {
+			return list;
+		}
+		list++;
+	}
+	return NULL;
+}
+
+/**
+  * @brief  Find an interface descriptor by interface number and alternate setting,
+  *         walking the same-class chain returned by usbh_get_interface_descriptor.
+  *
+  *         All alternate settings of one interface number share the same
+  *         bInterfaceNumber but differ in bAlternateSetting, so the alt index
+  *         must be iterated within each itf_data rather than checked only on
+  *         itf_desc_array[0].
+  */
+static usbh_itf_desc_t *usbh_composite_cdc_acm_find_itf(usbh_itf_data_t *itf_data, u8 itf_num, u8 alt_setting)
+{
+	usbh_itf_desc_t *itf_desc;
+	u8 alt_idx;
+
+	while (itf_data != NULL) {
+		if ((itf_data->itf_desc_array != NULL) && (itf_data->alt_setting_cnt > 0) &&
+			(itf_data->itf_desc_array[0].bInterfaceNumber == itf_num)) {
+			for (alt_idx = 0; alt_idx < itf_data->alt_setting_cnt; alt_idx++) {
+				itf_desc = &itf_data->itf_desc_array[alt_idx];
+				if (itf_desc->bAlternateSetting == alt_setting) {
+					return itf_desc;
+				}
+			}
+		}
+		itf_data = itf_data->next;
+	}
+	return NULL;
+}
+
+/**
+  * @brief  Open all endpoints (BULK in/out + INTR in) carried by a Quectel-style
+  *         vendor-specific interface.
+  */
+static void usbh_composite_cdc_acm_open_quectel_eps(usb_host_t *host, usbh_composite_cdc_acm_host_t *cdc, usbh_itf_desc_t *itf_desc)
+{
+	usbh_pipe_t *bulk_out = &cdc->bulk_out;
+	usbh_pipe_t *bulk_in = &cdc->bulk_in;
+	usbh_pipe_t *intr_in = &cdc->intr_in;
+
+	for (u8 i = 0; i < itf_desc->bNumEndpoints; i++) {
+		usbh_ep_desc_t *ep_desc = &itf_desc->ep_desc_array[i];
+
+		if (ep_desc->bmAttributes == USB_CH_EP_TYPE_BULK) {
+			if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
+				usbh_open_pipe(host, bulk_in, ep_desc);
+				bulk_in->max_timeout_tick = USBH_BULK_IN_MAX_TIMEOUT_TICK;
+			} else {
+				usbh_open_pipe(host, bulk_out, ep_desc);
+				bulk_out->max_timeout_tick = USBH_BULK_OUT_MAX_TIMEOUT_TICK;
+			}
+		} else if (ep_desc->bmAttributes == USB_CH_EP_TYPE_INTR) {
+			usbh_open_pipe(host, intr_in, ep_desc);
+			intr_in->max_timeout_tick = USBH_INTR_MAX_TIMEOUT_TICK;
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Unknown xfer type(%d)\n", ep_desc->bmAttributes);
+		}
+	}
+}
+
+/**
+  * @brief  Attach handler for the standard CDC-ACM topology:
+  *         comm interface carries the INTR endpoint, the next data interface
+  *         carries BULK in/out.
+  */
+static int usbh_composite_cdc_acm_attach_acm(usb_host_t *host, usbh_composite_cdc_acm_host_t *cdc)
+{
+	usbh_pipe_t *intr_in = &cdc->intr_in;
+	usbh_itf_data_t *itf_data;
+	usbh_itf_desc_t *itf_desc;
+	usbh_ep_desc_t *ep_desc;
+	usbh_dev_id_t dev_id_info = {0,};
+	u8 comm_itf_num = cdc->param_item->at_line_idx;
+
+	/* Communication interface (one INTR endpoint) */
+	dev_id_info.bInterfaceClass = USB_CDC_COMM_INTERFACE_CLASS_CODE;
+	dev_id_info.bInterfaceSubClass = USB_CDC_SUBCLASS_ACM;
+	dev_id_info.bInterfaceProtocol = USB_CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND;
+	dev_id_info.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
+
+	itf_data = usbh_get_interface_descriptor(host, &dev_id_info);
+	if (itf_data == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get comm itf fail\n");
+		return HAL_ERR_UNKNOWN;
+	}
+
+	itf_desc = usbh_composite_cdc_acm_find_itf(itf_data, comm_itf_num, 0);
+	if (itf_desc == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "No comm itf %d\n", comm_itf_num);
+		return HAL_ERR_UNKNOWN;
+	}
+	if (itf_desc->bNumEndpoints != 1) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP err\n");
+		return HAL_ERR_UNKNOWN;
+	}
+
+	ep_desc = &itf_desc->ep_desc_array[0];
+	if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
+		usbh_open_pipe(host, intr_in, ep_desc);
+		intr_in->max_timeout_tick = USBH_INTR_MAX_TIMEOUT_TICK;
+	}
+
+	/* Data interface (BULK in/out) lives at comm_itf_num + 1 */
+	dev_id_info.bInterfaceClass = USB_CDC_DATA_INTERFACE_CLASS_CODE;
+	dev_id_info.bInterfaceSubClass = USB_CDC_SUBCLASS_RESERVED;
+	dev_id_info.bInterfaceProtocol = USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC;
+	dev_id_info.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
+
+	itf_data = usbh_get_interface_descriptor(host, &dev_id_info);
+	if (itf_data == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get data itf fail\n");
+		return HAL_ERR_UNKNOWN;
+	}
+
+	itf_desc = usbh_composite_cdc_acm_find_itf(itf_data, comm_itf_num + 1, 1);
+	if (itf_desc == NULL) {
+		itf_desc = usbh_composite_cdc_acm_find_itf(itf_data, comm_itf_num + 1, 0);
+	}
+	if (itf_desc == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "No data itf with BULK EP\n");
+		return HAL_ERR_UNKNOWN;
+	}
+	cdc->data_itf_num = itf_desc->bInterfaceNumber;
+	cdc->data_itf_alt = itf_desc->bAlternateSetting;
+
+	usbh_composite_cdc_acm_open_data_eps(host, cdc, itf_desc);
+	return HAL_OK;
+}
+
+/**
+  * @brief  Attach handler for Quectel dongles: a single vendor-specific
+  *         interface carries INTR + BULK in + BULK out.
+  */
+static int usbh_composite_cdc_acm_attach_quectel(usb_host_t *host, usbh_composite_cdc_acm_host_t *cdc)
+{
+	usbh_itf_data_t *itf_data;
+	usbh_itf_desc_t *itf_desc;
+	usbh_dev_id_t dev_id_info = {0,};
+
+	dev_id_info.bInterfaceClass = 0xFF;
+	dev_id_info.bInterfaceSubClass = 0x00;
+	dev_id_info.bInterfaceProtocol = 0x00;
+	dev_id_info.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
+
+	itf_data = usbh_get_interface_descriptor(host, &dev_id_info);
+	if (itf_data == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get comm itf fail\n");
+		return HAL_ERR_UNKNOWN;
+	}
+
+	itf_desc = usbh_composite_cdc_acm_find_itf(itf_data, cdc->param_item->at_line_idx, 0);
+	if (itf_desc == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "No itf %d\n", cdc->param_item->at_line_idx);
+		return HAL_ERR_UNKNOWN;
+	}
+	if (itf_desc->bNumEndpoints != 3) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP count(%d) err\n", itf_desc->bNumEndpoints);
+		return HAL_ERR_UNKNOWN;
+	}
+	cdc->data_itf_num = itf_desc->bInterfaceNumber;
+	cdc->data_itf_alt = itf_desc->bAlternateSetting;
+
+	usbh_composite_cdc_acm_open_quectel_eps(host, cdc, itf_desc);
+	return HAL_OK;
+}
+#endif
+
+/**
   * @brief  Attach callback.
   * @param  host: Host handle
   * @retval Status
   */
 static int usbh_composite_cdc_acm_attach(usb_host_t *host)
 {
-	int status = HAL_ERR_UNKNOWN;
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
-	usbh_itf_data_t *itf_data;
-	usbh_itf_desc_t *comm_if_desc;
-	usbh_ep_desc_t *ep_desc;
-	usbh_pipe_t *bulk_out = &cdc->bulk_out;
-	usbh_pipe_t *bulk_in = &cdc->bulk_in;
-	usbh_pipe_t *intr_in = &cdc->intr_in;
-	usbh_dev_id_t dev_id_info = {0,};
 
-	/*
-		Get Communication Interface
-
-	*/
-#if USB_4G_DONGLE_SUPPORT
-	usbh_composite_cdc_acm_param_t *data = cdc->priv_param;
+#if USBH_COMPOSITE_4G_DONGLE_SUPPORT
 	u16 vid = host->dev_desc->idVendor;
 	u16 pid = host->dev_desc->idProduct;
-	u8 ep_id;
+	int ret;
 
-	cdc->param_item = NULL;
-	while (data->vid != 0) {
-		if ((data->vid == vid) && (data->pid == pid)) { /*rtk dongle*/
-			cdc->param_item = data;
-			break;
-		}
-		data++;
-	}
-
+	cdc->param_item = usbh_composite_cdc_acm_find_param(cdc->priv_param, vid, pid);
 	if (cdc->param_item == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Can not find acm cfg\n");
-		return status;
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Find cfg err for VID=0x%04x PID=0x%04x\n", vid, pid);
+		return HAL_ERR_UNKNOWN;
 	}
 
-	dev_id_info.bInterfaceClass = 0xFF;
-	dev_id_info.bInterfaceSubClass = 0x00;
-	dev_id_info.bInterfaceProtocol = 0x00;
-	dev_id_info.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
-	itf_data = usbh_get_interface_descriptor(host, &dev_id_info);
-	if (itf_data == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get comm itf fail\n");
-		return status;
-	} else 	{
-		while (itf_data) {
-			comm_if_desc = itf_data->itf_desc_array;
-			if ((comm_if_desc->bInterfaceNumber == cdc->param_item->at_line_idx) && (comm_if_desc->bAlternateSetting == 0)) {
-				if (comm_if_desc->bNumEndpoints != 3) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "EP err\n");
-				}
-
-				for (ep_id = 0 ; ep_id < comm_if_desc->bNumEndpoints ; ep_id++) {
-					ep_desc = &comm_if_desc->ep_desc_array[ep_id];
-
-					if (ep_desc->bmAttributes == USB_CH_EP_TYPE_BULK) {
-						if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
-							usbh_open_pipe(host, bulk_in, ep_desc);
-							bulk_in->max_timeout_tick = USB_BULK_IN_MAX_TIMEOUT_TICK;
-						} else {
-							usbh_open_pipe(host, bulk_out, ep_desc);
-							bulk_out->max_timeout_tick = USB_BULK_IN_MAX_TIMEOUT_TICK;
-						}
-					} else if (ep_desc->bmAttributes == USB_CH_EP_TYPE_INTR) {
-						usbh_open_pipe(host, intr_in, ep_desc);
-						intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
-					} else {
-						RTK_LOGS(TAG, RTK_LOG_INFO,  "Unknown support transfer type(%d)\n", ep_desc->bmAttributes);
-					}
-				}
-
-			}
-			itf_data = itf_data->next;
-		}
+	if (vid == USBH_COMPOSITE_QUECTEL_DONGLE_VID) {
+		ret = usbh_composite_cdc_acm_attach_quectel(host, cdc);
+	} else {
+		ret = usbh_composite_cdc_acm_attach_acm(host, cdc);
+	}
+	if (ret != HAL_OK) {
+		return ret;
 	}
 #else
-	usbh_itf_desc_t *data_if_desc;
-	dev_id_info.bInterfaceClass = CDC_COMM_INTERFACE_CLASS_CODE;
-	dev_id_info.bInterfaceSubClass = CDC_ABSTRACT_CONTROL_MODEL;
-	dev_id_info.bInterfaceProtocol = CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND;
+	usbh_pipe_t *intr_in = &cdc->intr_in;
+	usbh_itf_data_t *itf_data;
+	usbh_itf_desc_t *itf_desc;
+	usbh_ep_desc_t *ep_desc;
+	usbh_dev_id_t dev_id_info = {0,};
+	u8 comm_if_num;
+
+	dev_id_info.bInterfaceClass = USB_CDC_COMM_INTERFACE_CLASS_CODE;
+	dev_id_info.bInterfaceSubClass = USB_CDC_SUBCLASS_ACM;
+	dev_id_info.bInterfaceProtocol = USB_CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND;
 	dev_id_info.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 
 	itf_data = usbh_get_interface_descriptor(host, &dev_id_info);
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get comm itf fail\n");
-		return status;
-	} else 	{
-		comm_if_desc = itf_data->alt_set_all;
-		/* Set notification endpoint */
-		ep_desc = &comm_if_desc->ep_desc_all[0];
+		return HAL_ERR_UNKNOWN;
+	}
+
+	itf_desc = itf_data->itf_desc_array;
+	comm_if_num = itf_desc->bInterfaceNumber;
+
+	/* The comm interface may legally carry 0 endpoints (no notify INTR EP) */
+	if (itf_desc->bNumEndpoints >= 1) {
+		ep_desc = &itf_desc->ep_desc_array[0];
 		if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
 			usbh_open_pipe(host, intr_in, ep_desc);
-			intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
+			intr_in->max_timeout_tick = USBH_INTR_MAX_TIMEOUT_TICK;
 		}
 	}
 
-	/* Get Data Interface */
-	dev_id_info.bInterfaceClass = CDC_DATA_INTERFACE_CLASS_CODE;
-	dev_id_info.bInterfaceSubClass = CDC_RESERVED;
-	dev_id_info.bInterfaceProtocol = CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC;
+	dev_id_info.bInterfaceClass = USB_CDC_DATA_INTERFACE_CLASS_CODE;
+	dev_id_info.bInterfaceSubClass = USB_CDC_SUBCLASS_RESERVED;
+	dev_id_info.bInterfaceProtocol = USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC;
 	dev_id_info.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
+
 	itf_data = usbh_get_interface_descriptor(host, &dev_id_info);
-	if (itf == NULL) {
+	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get data itf fail\n");
-		return status;
-	} else {
-		data_if_desc = itf_data->alt_set_all;
-		/* Set data in/out endpoints */
-		for (int i = 0; i < 2; i++) {
-			ep_desc = &data_if_desc->ep_desc_all[i];
-			if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
-				usbh_open_pipe(host, bulk_in, ep_desc);
-				bulk_in->max_timeout_tick = USB_BULK_IN_MAX_TIMEOUT_TICK;
-			} else {
-				usbh_open_pipe(host, bulk_out, ep_desc);
-				bulk_out->max_timeout_tick = USB_BULK_OUT_MAX_TIMEOUT_TICK;
-			}
-		}
+		return HAL_ERR_UNKNOWN;
 	}
+
+	itf_desc = usbh_composite_cdc_acm_find_itf(itf_data, comm_if_num + 1, 1);
+	if (itf_desc == NULL) {
+		itf_desc = usbh_composite_cdc_acm_find_itf(itf_data, comm_if_num + 1, 0);
+	}
+	if (itf_desc == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "No data itf found(%d)\n", comm_if_num + 1);
+		return HAL_ERR_UNKNOWN;
+	}
+	cdc->data_itf_num = itf_desc->bInterfaceNumber;
+	cdc->data_itf_alt = itf_desc->bAlternateSetting;
+
+	usbh_composite_cdc_acm_open_data_eps(host, cdc, itf_desc);
 #endif
 
 	usbh_composite_cdc_acm_dump_desc();
 	cdc->state = CDC_ACM_STATE_IDLE;
-	cdc->sub_status = CDC_ACM_STATE_SET_LINE_CODING;
+	cdc->sub_status = CDC_ACM_STATE_CTRL_ALT_SETTING;
 
 	if ((cdc->cb != NULL) && (cdc->cb->attach != NULL)) {
 		cdc->cb->attach();
@@ -351,27 +545,33 @@ static int usbh_composite_cdc_acm_setup(usb_host_t *host)
 * @param  host:Host handle
 * @retval Status
 */
-static int usbh_composite_cdc_acm_process(usb_host_t *host, u32 msg)
+static int usbh_composite_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 {
 	int status = HAL_BUSY;
 	u8 req_status = HAL_OK;
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
-	usbh_event_t event;
-	event.d32 = msg;
 
 	switch (cdc->state) {
 
 	case CDC_ACM_STATE_IDLE:
-		status = HAL_OK;
+		/* Idle: no event consumed, leave status = HAL_BUSY so a composite
+		   peer class (e.g. ECM) still gets a chance to handle the event. */
 		break;
 
 	case CDC_ACM_STATE_TRANSFER:
-		if (event.msg.pipe_num == cdc->bulk_out.pipe_num) {
-			usbh_composite_cdc_acm_process_tx(host);
-		} else if (event.msg.pipe_num == cdc->bulk_in.pipe_num) {
-			usbh_composite_cdc_acm_process_rx(host);
-		} else if (event.msg.pipe_num == cdc->intr_in.pipe_num) {
-			usbh_composite_cdc_acm_process_intr_rx(host);
+		if (event) {
+			/* Only claim the event (HAL_OK) when it targets one of our pipes,
+			   otherwise keep HAL_BUSY to pass it on to the next class. */
+			if (event->pipe_num == cdc->bulk_out.pipe_num) {
+				usbh_composite_cdc_acm_process_tx(host);
+				status = HAL_OK;
+			} else if (event->pipe_num == cdc->bulk_in.pipe_num) {
+				usbh_composite_cdc_acm_process_rx(host);
+				status = HAL_OK;
+			} else if (event->pipe_num == cdc->intr_in.pipe_num) {
+				usbh_composite_cdc_acm_process_intr_rx(host);
+				status = HAL_OK;
+			}
 		}
 		break;
 
@@ -390,15 +590,26 @@ static int usbh_composite_cdc_acm_process(usb_host_t *host, u32 msg)
 	return status;
 }
 
+/**
+  * @brief  SOF callback for class-specific timing process.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param[in] host: USB host handle.
+  * @return 0 on success, non-zero on failure.
+  */
 static int usbh_composite_cdc_acm_sof(usb_host_t *host)
 {
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
 	usbh_pipe_t *pipe = &(cdc->intr_in);
 
 	/*
-		if cur_frame - last frame_num  >= interval, means we should trigger a xfer asap
+		If cur_frame - last_frame_num >= interval, trigger a transfer ASAP.
+		Skip when the INTR pipe was never opened (pipe_num == 0, e.g. a comm
+		interface with 0 endpoints) to avoid a divide-by-zero on ep_mps and
+		dispatching to an invalid pipe.
 	*/
-	if (usbh_get_elapsed_frame_cnt(host, pipe->frame_num) >= pipe->ep_interval) {
+	if ((pipe->pipe_num != 0) &&
+		(usbh_get_elapsed_frame_cnt(host, pipe->frame_num) >= pipe->ep_interval)) {
 		usbh_composite_cdc_acm_notify_receive(usbh_composite_cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
 	}
 
@@ -413,14 +624,14 @@ static int usbh_composite_cdc_acm_sof(usb_host_t *host)
 /**
   * @brief  Get line coding
   * @param  host: Host handle
-  * @param  linecoding: Line coding data pointer
+  * @param  line_coding: Line coding data pointer
   * @retval Status
   */
-static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding)
+static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *line_coding)
 {
 	usbh_setup_req_t setup;
 	u16 windex = 0;
-#if USB_4G_DONGLE_SUPPORT
+#if USBH_COMPOSITE_4G_DONGLE_SUPPORT
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
 	if (cdc->param_item) {
 		windex = cdc->param_item->at_line_idx;
@@ -433,20 +644,20 @@ static int usbh_composite_cdc_acm_get_line_coding(usb_host_t *host, usb_cdc_line
 	setup.req.wIndex = windex;
 	setup.req.wLength = USB_CDC_ACM_LINE_CODING_SIZE;
 
-	return usbh_ctrl_request(host, &setup, linecoding->d8);
+	return usbh_ctrl_request(host, &setup, line_coding->d8);
 }
 
 /**
   * @brief  Set line coding
   * @param  host: Host handle
-  * @param  linecoding: Line coding data pointer
+  * @param  line_coding: Line coding data pointer
   * @retval Status
   */
-static int usbh_composite_cdc_acm_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding)
+static int usbh_composite_cdc_acm_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *line_coding)
 {
 	usbh_setup_req_t setup;
 	u16 windex = 0;
-#if USB_4G_DONGLE_SUPPORT
+#if USBH_COMPOSITE_4G_DONGLE_SUPPORT
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
 	if (cdc->param_item) {
 		windex = cdc->param_item->at_line_idx;
@@ -459,7 +670,7 @@ static int usbh_composite_cdc_acm_set_line_coding(usb_host_t *host, usb_cdc_line
 	setup.req.wIndex = windex;
 	setup.req.wLength = USB_CDC_ACM_LINE_CODING_SIZE;
 
-	return usbh_ctrl_request(host, &setup, linecoding->d8);
+	return usbh_ctrl_request(host, &setup, line_coding->d8);
 }
 
 /**
@@ -481,7 +692,7 @@ static int usbh_composite_cdc_acm_process_tx(usb_host_t *host)
 	} else if (bulk_out->xfer_state == USBH_EP_XFER_START) {
 		usbh_notify_class_state_change(host, bulk_out->pipe_num);
 	} else if (bulk_out->xfer_state == USBH_EP_XFER_ERROR) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail: %d\n", usbh_get_urb_state(host, bulk_out));
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail %d\n", usbh_get_urb_state(host, bulk_out));
 		if ((cdc->cb != NULL) && (cdc->cb->bulk_send != NULL)) {
 			cdc->cb->bulk_send(status);
 		}
@@ -509,7 +720,7 @@ static int usbh_composite_cdc_acm_process_rx(usb_host_t *host)
 	} else if (bulk_in->xfer_state == USBH_EP_XFER_START) {
 		usbh_notify_class_state_change(host, bulk_in->pipe_num);
 	} else if (bulk_in->xfer_state == USBH_EP_XFER_ERROR) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX fail: %d\n", usbh_get_urb_state(host, bulk_in));
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX fail %d\n", usbh_get_urb_state(host, bulk_in));
 		if ((cdc->cb != NULL) && (cdc->cb->bulk_received != NULL)) {
 			cdc->cb->bulk_received(bulk_in->xfer_buf, rx_len);
 		}
@@ -537,7 +748,7 @@ static int usbh_composite_cdc_acm_process_intr_rx(usb_host_t *host)
 	} else if ((intr_in->xfer_state == USBH_EP_XFER_START)) {
 		usbh_notify_class_state_change(host, intr_in->pipe_num);
 	} else if (intr_in->xfer_state == USBH_EP_XFER_ERROR) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX fail: %d\n", usbh_get_urb_state(host, intr_in));
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX fail %d\n", usbh_get_urb_state(host, intr_in));
 		if ((cdc->cb != NULL) && (cdc->cb->intr_received != NULL)) {
 			cdc->cb->intr_received(intr_in->xfer_buf, rx_len);
 		}
@@ -557,25 +768,29 @@ int usbh_composite_cdc_acm_init(usbh_composite_host_t *driver, usbh_composite_cd
 {
 	int ret = HAL_OK;
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
+
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
 	usb_os_memset(cdc, 0x00, sizeof(usbh_composite_cdc_acm_host_t));
 
 	cdc->priv_param = cb->priv;
 	cdc->driver = driver;
 
-#if USB_4G_DONGLE_SUPPORT
+#if USBH_COMPOSITE_4G_DONGLE_SUPPORT
 	if (NULL == cdc->priv_param) {
 		return HAL_ERR_PARA;
 	}
 #endif
 
-	if (cb != NULL) {
-		cdc->cb = cb;
-		if (cb->init != NULL) {
-			ret = cb->init();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "User init err %d\n", ret);
-				return ret;
-			}
+	cdc->cb = cb;
+	if (cb->init != NULL) {
+		ret = cb->init();
+		if (ret != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "User init err %d\n", ret);
+			return ret;
 		}
 	}
 
@@ -593,10 +808,11 @@ int usbh_composite_cdc_acm_init(usbh_composite_host_t *driver, usbh_composite_cd
 	}
 
 	/* set acm line coding */
-	cdc->user_line_coding->b.dwDteRate = 115200;
-	cdc->user_line_coding->b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
-	cdc->user_line_coding->b.bParityType = LINE_CODING_PARITY_NO;
-	cdc->user_line_coding->b.bDataBits = 8;
+	usb_cdc_line_coding_t *ulc = cdc->user_line_coding;
+	ulc->b.dwDteRate = 115200;
+	ulc->b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
+	ulc->b.bParityType = LINE_CODING_PARITY_NO;
+	ulc->b.bDataBits = 8;
 
 	return ret;
 }
@@ -609,7 +825,7 @@ int usbh_composite_cdc_acm_deinit(void)
 {
 	int ret = HAL_OK;
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
-	usb_host_t *host = cdc->driver->host;
+	usb_host_t *host = (cdc->driver != NULL) ? cdc->driver->host : NULL;
 
 	if ((cdc->cb != NULL) && (cdc->cb->deinit != NULL)) {
 		cdc->cb->deinit();
@@ -635,6 +851,24 @@ int usbh_composite_cdc_acm_deinit(void)
 	return ret;
 }
 
+/**
+ * @brief  Run the CDC ACM control request state machine.
+ *
+ *         This function drives the control sub-state machine for configuring
+ *         the CDC ACM communication parameters. The sequence is:
+ *
+ *         State transitions:
+ *          - CDC_ACM_STATE_CTRL_ALT_SETTING  -> CDC_ACM_STATE_SET_LINE_CODING (on success)
+ *          - CDC_ACM_STATE_SET_LINE_CODING   -> CDC_ACM_STATE_GET_LINE_CODING (on success)
+ *          - CDC_ACM_STATE_GET_LINE_CODING   -> CDC_ACM_STATE_CTRL_IDLE      (on success)
+ *          - Any error returns to CDC_ACM_STATE_CTRL_IDLE.
+ *
+ * @param[in] host  Pointer to the USB host instance.
+ *
+ * @retval HAL_OK           The control setting sequence has completed.
+ * @retval HAL_BUSY         A control request is still in progress.
+ * @retval HAL_ERR_UNKNOWN  An unexpected error occurred.
+ */
 int usbh_composite_cdc_acm_ctrl_setting(usb_host_t *host)
 {
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
@@ -645,6 +879,17 @@ int usbh_composite_cdc_acm_ctrl_setting(usb_host_t *host)
 	case CDC_ACM_STATE_CTRL_IDLE:
 		ret_state = HAL_OK;
 		break;
+
+	case CDC_ACM_STATE_CTRL_ALT_SETTING:
+		state = usbh_ctrl_set_interface(host, cdc->data_itf_num, cdc->data_itf_alt);
+		if (state == HAL_OK) {
+			cdc->sub_status = CDC_ACM_STATE_SET_LINE_CODING;
+		} else if (state != HAL_BUSY) {
+			cdc->sub_status = CDC_ACM_STATE_CTRL_IDLE;
+		}
+		usbh_notify_class_state_change(host, 0);
+		break;
+
 	case CDC_ACM_STATE_SET_LINE_CODING:
 		state = usbh_composite_cdc_acm_set_line_coding(host, cdc->user_line_coding);
 		if (state == HAL_OK) {
@@ -659,10 +904,12 @@ int usbh_composite_cdc_acm_ctrl_setting(usb_host_t *host)
 		state = usbh_composite_cdc_acm_get_line_coding(host, cdc->line_coding);
 		if (state == HAL_OK) {
 			cdc->sub_status = CDC_ACM_STATE_CTRL_IDLE;
-			if ((cdc->line_coding->b.bCharFormat == cdc->user_line_coding->b.bCharFormat) &&
-				(cdc->line_coding->b.bDataBits == cdc->user_line_coding->b.bDataBits) &&
-				(cdc->line_coding->b.bParityType == cdc->user_line_coding->b.bParityType) &&
-				(cdc->line_coding->b.dwDteRate == cdc->user_line_coding->b.dwDteRate)) {
+			usb_cdc_line_coding_t *lc = cdc->line_coding;
+			usb_cdc_line_coding_t *ulc = cdc->user_line_coding;
+			if ((lc->b.bCharFormat == ulc->b.bCharFormat) &&
+				(lc->b.bDataBits == ulc->b.bDataBits) &&
+				(lc->b.bParityType == ulc->b.bParityType) &&
+				(lc->b.dwDteRate == ulc->b.dwDteRate)) {
 				if ((cdc->cb != NULL) && (cdc->cb->line_coding_changed != NULL)) {
 					cdc->cb->line_coding_changed(cdc->line_coding);
 				}
@@ -691,9 +938,14 @@ int usbh_composite_cdc_acm_transmit(u8 *buf, u32 len)
 {
 	int ret = HAL_BUSY;
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
-	usb_host_t *host = cdc->driver->host;
 	usbh_pipe_t *pipe = &cdc->bulk_out;
+	usb_host_t *host;
 
+	if (usbh_composite_cdc_acm_check_enum_status() != HAL_OK) {
+		return ret;
+	}
+
+	host = cdc->driver->host;
 	if ((cdc->state == CDC_ACM_STATE_IDLE) || (cdc->state == CDC_ACM_STATE_TRANSFER)) {
 		if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
 			pipe->xfer_buf = buf;

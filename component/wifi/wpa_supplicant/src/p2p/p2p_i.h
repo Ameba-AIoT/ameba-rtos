@@ -29,6 +29,28 @@ enum p2p_role_indication;
 #define MAX_SVC_ADV_LEN	600
 #define MAX_SVC_ADV_IE_LEN (9 + MAX_SVC_ADV_LEN + (5 * (MAX_SVC_ADV_LEN / 240)))
 
+#define P2P_DEV_PROBE_REQ_ONLY BIT(0)
+#define P2P_DEV_REPORTED BIT(1)
+#define P2P_DEV_NOT_YET_READY BIT(2)
+#define P2P_DEV_PD_PEER_DISPLAY BIT(5)
+#define P2P_DEV_PD_PEER_KEYPAD BIT(6)
+#define P2P_DEV_USER_REJECTED BIT(7)
+#define P2P_DEV_PEER_WAITING_RESPONSE BIT(8)
+#define P2P_DEV_PREFER_PERSISTENT_GROUP BIT(9)
+#define P2P_DEV_WAIT_GO_NEG_RESPONSE BIT(10)
+#define P2P_DEV_WAIT_GO_NEG_CONFIRM BIT(11)
+#define P2P_DEV_GROUP_CLIENT_ONLY BIT(12)
+#define P2P_DEV_FORCE_FREQ BIT(13)
+#define P2P_DEV_PD_FOR_JOIN BIT(14)
+#define P2P_DEV_REPORTED_ONCE BIT(15)
+#define P2P_DEV_PREFER_PERSISTENT_RECONN BIT(16)
+#define P2P_DEV_PD_BEFORE_GO_NEG BIT(17)
+#define P2P_DEV_NO_PREF_CHAN BIT(18)
+#define P2P_DEV_WAIT_INV_REQ_ACK BIT(19)
+#define P2P_DEV_P2PS_REPORTED BIT(20)
+#define P2P_DEV_PD_PEER_P2PS BIT(21)
+#define P2P_DEV_LAST_SEEN_AS_GROUP_CLIENT BIT(22)
+
 enum p2p_go_state {
 	UNKNOWN_GO,
 	LOCAL_GO,
@@ -96,28 +118,6 @@ struct p2p_device {
 	 */
 	u16 wps_prov_info;
 
-#define P2P_DEV_PROBE_REQ_ONLY BIT(0)
-#define P2P_DEV_REPORTED BIT(1)
-#define P2P_DEV_NOT_YET_READY BIT(2)
-#define P2P_DEV_PD_PEER_DISPLAY BIT(5)
-#define P2P_DEV_PD_PEER_KEYPAD BIT(6)
-#define P2P_DEV_USER_REJECTED BIT(7)
-#define P2P_DEV_PEER_WAITING_RESPONSE BIT(8)
-#define P2P_DEV_PREFER_PERSISTENT_GROUP BIT(9)
-#define P2P_DEV_WAIT_GO_NEG_RESPONSE BIT(10)
-#define P2P_DEV_WAIT_GO_NEG_CONFIRM BIT(11)
-#define P2P_DEV_GROUP_CLIENT_ONLY BIT(12)
-#define P2P_DEV_FORCE_FREQ BIT(13)
-#define P2P_DEV_PD_FOR_JOIN BIT(14)
-#define P2P_DEV_REPORTED_ONCE BIT(15)
-#define P2P_DEV_PREFER_PERSISTENT_RECONN BIT(16)
-#define P2P_DEV_PD_BEFORE_GO_NEG BIT(17)
-#define P2P_DEV_NO_PREF_CHAN BIT(18)
-#define P2P_DEV_WAIT_INV_REQ_ACK BIT(19)
-#define P2P_DEV_P2PS_REPORTED BIT(20)
-#define P2P_DEV_PD_PEER_P2PS BIT(21)
-#define P2P_DEV_LAST_SEEN_AS_GROUP_CLIENT BIT(22)
-
 	unsigned int flags;
 
 	int status; /* enum p2p_status_code */
@@ -158,6 +158,96 @@ struct p2p_sd_query {
 	struct wpabuf *tlvs;
 };
 
+enum p2p_state {
+	/**
+	 * P2P_IDLE - Idle
+	 */
+	P2P_IDLE,
+
+	/**
+	 * P2P_SEARCH - Search (Device Discovery)
+	 */
+	P2P_SEARCH,
+
+	/**
+	 * P2P_CONNECT - Trying to start GO Negotiation
+	 */
+	P2P_CONNECT,
+
+	/**
+	 * P2P_CONNECT_LISTEN - Listen during GO Negotiation start
+	 */
+	P2P_CONNECT_LISTEN,
+
+	/**
+	 * P2P_GO_NEG - In GO Negotiation
+	 */
+	P2P_GO_NEG,
+
+	/**
+	 * P2P_LISTEN_ONLY - Listen only
+	 */
+	P2P_LISTEN_ONLY,
+
+	/**
+	 * P2P_WAIT_PEER_CONNECT - Waiting peer in List for GO Neg
+	 */
+	P2P_WAIT_PEER_CONNECT,
+
+	/**
+	 * P2P_WAIT_PEER_IDLE - Waiting peer idle for GO Neg
+	 */
+	P2P_WAIT_PEER_IDLE,
+
+	/**
+	 * P2P_SD_DURING_FIND - Service Discovery during find
+	 */
+	P2P_SD_DURING_FIND,
+
+	/**
+	 * P2P_PROVISIONING - Provisioning (during group formation)
+	 */
+	P2P_PROVISIONING,
+
+	/**
+	 * P2P_PD_DURING_FIND - Provision Discovery during find
+	 */
+	P2P_PD_DURING_FIND,
+
+	/**
+	 * P2P_INVITE - Trying to start Invite
+	 */
+	P2P_INVITE,
+
+	/**
+	 * P2P_INVITE_LISTEN - Listen during Invite
+	 */
+	P2P_INVITE_LISTEN,
+} ;
+
+enum p2p_pending_action_state {
+	P2P_NO_PENDING_ACTION,
+	P2P_PENDING_GO_NEG_REQUEST,
+	P2P_PENDING_GO_NEG_RESPONSE,
+	P2P_PENDING_GO_NEG_RESPONSE_FAILURE,
+	P2P_PENDING_GO_NEG_CONFIRM,
+	P2P_PENDING_SD,
+	P2P_PENDING_PD,
+	P2P_PENDING_PD_RESPONSE,
+	P2P_PENDING_INVITATION_REQUEST,
+	P2P_PENDING_INVITATION_RESPONSE,
+	P2P_PENDING_DEV_DISC_REQUEST,
+	P2P_PENDING_DEV_DISC_RESPONSE,
+	P2P_PENDING_GO_DISC_REQ
+};
+
+enum p2p_after_scan {
+	P2P_AFTER_SCAN_NOTHING,
+	P2P_AFTER_SCAN_LISTEN,
+	P2P_AFTER_SCAN_CONNECT
+};
+
+
 /**
  * struct p2p_data - P2P module data (internal to P2P module)
  */
@@ -173,72 +263,7 @@ struct p2p_data {
 	/**
 	 * state - The current P2P state
 	 */
-	enum p2p_state {
-		/**
-		 * P2P_IDLE - Idle
-		 */
-		P2P_IDLE,
-
-		/**
-		 * P2P_SEARCH - Search (Device Discovery)
-		 */
-		P2P_SEARCH,
-
-		/**
-		 * P2P_CONNECT - Trying to start GO Negotiation
-		 */
-		P2P_CONNECT,
-
-		/**
-		 * P2P_CONNECT_LISTEN - Listen during GO Negotiation start
-		 */
-		P2P_CONNECT_LISTEN,
-
-		/**
-		 * P2P_GO_NEG - In GO Negotiation
-		 */
-		P2P_GO_NEG,
-
-		/**
-		 * P2P_LISTEN_ONLY - Listen only
-		 */
-		P2P_LISTEN_ONLY,
-
-		/**
-		 * P2P_WAIT_PEER_CONNECT - Waiting peer in List for GO Neg
-		 */
-		P2P_WAIT_PEER_CONNECT,
-
-		/**
-		 * P2P_WAIT_PEER_IDLE - Waiting peer idle for GO Neg
-		 */
-		P2P_WAIT_PEER_IDLE,
-
-		/**
-		 * P2P_SD_DURING_FIND - Service Discovery during find
-		 */
-		P2P_SD_DURING_FIND,
-
-		/**
-		 * P2P_PROVISIONING - Provisioning (during group formation)
-		 */
-		P2P_PROVISIONING,
-
-		/**
-		 * P2P_PD_DURING_FIND - Provision Discovery during find
-		 */
-		P2P_PD_DURING_FIND,
-
-		/**
-		 * P2P_INVITE - Trying to start Invite
-		 */
-		P2P_INVITE,
-
-		/**
-		 * P2P_INVITE_LISTEN - Listen during Invite
-		 */
-		P2P_INVITE_LISTEN,
-	} state;
+	enum p2p_state state;
 
 	/**
 	 * min_disc_int - minDiscoverableInterval
@@ -368,21 +393,7 @@ struct p2p_data {
 
 	struct wpa_freq_range_list no_go_freq;
 
-	enum p2p_pending_action_state {
-		P2P_NO_PENDING_ACTION,
-		P2P_PENDING_GO_NEG_REQUEST,
-		P2P_PENDING_GO_NEG_RESPONSE,
-		P2P_PENDING_GO_NEG_RESPONSE_FAILURE,
-		P2P_PENDING_GO_NEG_CONFIRM,
-		P2P_PENDING_SD,
-		P2P_PENDING_PD,
-		P2P_PENDING_PD_RESPONSE,
-		P2P_PENDING_INVITATION_REQUEST,
-		P2P_PENDING_INVITATION_RESPONSE,
-		P2P_PENDING_DEV_DISC_REQUEST,
-		P2P_PENDING_DEV_DISC_RESPONSE,
-		P2P_PENDING_GO_DISC_REQ
-	} pending_action_state;
+	enum p2p_pending_action_state pending_action_state;
 
 	unsigned int pending_listen_freq;
 	unsigned int pending_listen_sec;
@@ -397,11 +408,14 @@ struct p2p_data {
 	struct timer_list scan_timer;
 	struct timer_list find_timer;
 	struct timer_list watch_state_timer;
+#ifdef CONFIG_P2P_INVITE
 	struct timer_list invite_timer;
+#endif
 	struct timer_list ext_listen_timer;
 	struct timer_list neg_timer;
 	struct timer_list neg_wait_timer;
 
+#ifdef CONFIG_P2P_SD
 	/**
 	 * sd_queries - Pending service discovery queries
 	 */
@@ -420,7 +434,8 @@ struct p2p_data {
 
 	struct wpabuf *sd_rx_resp; /* Reassembled SD response */
 	u16 sd_rx_update_indic;
-
+#endif
+#ifdef CONFIG_P2P_INVITE
 	/* P2P Invitation data */
 	enum p2p_invite_role inv_role;
 	u8 inv_bssid[ETH_ALEN];
@@ -434,7 +449,7 @@ struct p2p_data {
 	u8 inv_status;
 	int inv_op_freq;
 	int inv_persistent;
-
+#endif
 	enum p2p_discovery_type find_type;
 	int find_specified_freq;
 	unsigned int last_p2p_find_timeout;
@@ -442,11 +457,7 @@ struct p2p_data {
 	u8 last_prog_scan_chan;
 	unsigned int find_pending_full: 1;
 	int p2p_scan_running;
-	enum p2p_after_scan {
-		P2P_AFTER_SCAN_NOTHING,
-		P2P_AFTER_SCAN_LISTEN,
-		P2P_AFTER_SCAN_CONNECT
-	} start_after_scan;
+	enum p2p_after_scan start_after_scan;
 	u8 after_scan_peer[ETH_ALEN];
 	unsigned int send_action_in_progress: 1;
 
@@ -461,12 +472,14 @@ struct p2p_data {
 	struct p2p_group **groups;
 	size_t num_groups;
 
+#ifdef CONFIG_P2P_DEV_DISC
 	struct p2p_device *pending_client_disc_go;
 	u8 pending_client_disc_addr[ETH_ALEN];
 	u8 pending_dev_disc_dialog_token;
 	u8 pending_dev_disc_addr[ETH_ALEN];
 	int pending_dev_disc_freq;
 	unsigned int pending_client_disc_freq;
+#endif
 
 	int ext_listen_only;
 	unsigned int ext_listen_period;
@@ -553,13 +566,6 @@ struct p2p_data {
 
 	unsigned int pref_freq_list[P2P_MAX_PREF_CHANNELS];
 	unsigned int num_pref_freq;
-
-	/* Override option for preferred operating channel in GO Negotiation */
-	u8 override_pref_op_class;
-	u8 override_pref_channel;
-	bool p2p_6ghz_capable;
-	bool include_6ghz;
-	bool allow_6ghz;
 };
 
 /**
@@ -667,60 +673,6 @@ struct p2p_message {
 	size_t pref_freq_list_len;
 };
 
-struct p2p_context {
-	u32 role;
-	u32 state;
-	struct p2p_data *p2p;
-	char p2p_pin[10];
-	//TODO auto GO
-	//struct p2p_go_neg_results *go_params;
-	struct timer_list group_formation_timer;
-	struct timer_list long_listen_timer;
-	struct timer_list group_idle_timer;
-	struct p2p_group *group;
-	u8 oper_chnl;
-	char group_ssid[33];
-	u8 go_dev_addr[ETH_ALEN];
-	char passphrase[64];
-	u8 persistent;
-	u32 p2p_long_listen;
-	u8 p2p_pd_before_go_neg;
-	/**
-	 * p2p_group_idle - Maximum idle time in seconds for P2P group
-	 *
-	 * This value controls how long a P2P group is maintained after there
-	 * is no other members in the group. As a GO, this means no associated
-	 * stations in the group. As a P2P client, this means no GO seen in
-	 * scan results. The maximum idle time is specified in seconds with 0
-	 * indicating no time limit, i.e., the P2P group remains in active
-	 * state indefinitely until explicitly removed. As a P2P client, the
-	 * maximum idle time of P2P_MAX_CLIENT_IDLE seconds is enforced, i.e.,
-	 * this parameter is mainly meant for GO use and for P2P client, it can
-	 * only be used to reduce the default timeout to smaller value. A
-	 * special value -1 can be used to configure immediate removal of the
-	 * group for P2P client role on any disconnection after the data
-	 * connection has been established.
-	 */
-	int p2p_group_idle;
-	int persistent_reconnect;
-	int max_num_sta;
-
-	u8 roch_onging;
-	rtos_sema_t roc_ready_sema;
-
-	struct list_head p2p_scan_report_list;
-	rtos_mutex_t scan_report_lock;
-
-	xqueue_handle_t queue_for_p2p_nego;
-};
-
-enum p2p_role {
-	P2P_R_DISABLE = 0,
-	P2P_R_DEVICE = 1,
-	P2P_R_CLIENT = 2,
-	P2P_R_GO = 3
-};
-
 /* VENDOR_ELEM_* frame id values */
 enum wpa_vendor_elem_frame {
 	VENDOR_ELEM_PROBE_REQ_P2P = 0,
@@ -743,6 +695,30 @@ enum wpa_vendor_elem_frame {
 
 
 #define P2P_MAX_GROUP_ENTRIES 50
+
+struct p2p_group_member {
+	struct p2p_group_member *next;
+	u8 addr[ETH_ALEN]; /* P2P Interface Address */
+	u8 dev_addr[ETH_ALEN]; /* P2P Device Address */
+	struct wpabuf *p2p_ie;
+	struct wpabuf *wfd_ie;
+	struct wpabuf *client_info;
+	u8 dev_capab;
+};
+
+/**
+ * struct p2p_group - Internal P2P module per-group data
+ */
+struct p2p_group {
+	struct p2p_data *p2p;
+	struct p2p_group_config *cfg;
+	struct p2p_group_member *members;
+	unsigned int num_members;
+	int group_formation;
+	int beacon_update;
+	struct wpabuf *noa;
+	struct wpabuf *wfd_ie;
+};
 
 struct p2p_group_info {
 	unsigned int num_clients;
@@ -784,8 +760,7 @@ int p2p_channel_random_social(struct p2p_channels *chans, u8 *op_class,
 							  u8 *op_channel,
 							  struct wpa_freq_range_list *avoid_list,
 							  struct wpa_freq_range_list *disallow_list);
-void p2p_copy_channels(struct p2p_channels *dst, const struct p2p_channels *src,
-					   bool allow_6ghz);
+void p2p_copy_channels(struct p2p_channels *dst, const struct p2p_channels *src);
 
 /* p2p_parse.c */
 void p2p_copy_filter_devname(char *dst, size_t dst_len,

@@ -20,7 +20,7 @@
 
 static int usbh_msc_attach(usb_host_t *host);
 static int usbh_msc_detach(usb_host_t *host);
-static int usbh_msc_process(usb_host_t *host, u32 msg);
+static int usbh_msc_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_msc_setup(usb_host_t *host);
 static int usbh_msc_process_rw(usb_host_t *host, u8 lun);
 /* Private variables ---------------------------------------------------------*/
@@ -61,7 +61,7 @@ static int usbh_msc_attach(usb_host_t *host)
 	usbh_itf_data_t *itf_data;
 	usbh_ep_desc_t *ep_desc;
 	usbh_msc_host_t *msc = &usbh_msc_host;
-	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
+	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
 	usbh_itf_desc_t *msc_itf_desc;
 	usbh_pipe_t *bulk_out = &msc->bulk_out;
 	usbh_pipe_t *bulk_in = &msc->bulk_in;
@@ -79,16 +79,29 @@ static int usbh_msc_attach(usb_host_t *host)
 		msc_itf_desc = itf_data->itf_desc_array;
 		msc->host = host;
 
-		/* Set data in/out endpoints */
-		for (int i = 0; i < 2; i++) {
+		/* Set data in/out endpoints. ep_desc_array holds exactly bNumEndpoints
+		   entries, so bound the loop by bNumEndpoints to avoid an out-of-bounds read. */
+		for (int i = 0; i < msc_itf_desc->bNumEndpoints && i < 2; i++) {
 			ep_desc = &msc_itf_desc->ep_desc_array[i];
 			if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
-				usbh_open_pipe(host, bulk_in, ep_desc);
+				if (usbh_open_pipe(host, bulk_in, ep_desc) != HAL_OK) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk in pipe fail\n");
+					goto open_fail;
+				}
 				bulk_in->max_timeout_tick = MSC_XFER_MAX_TIMEOUT_TICK;
 			} else {
-				usbh_open_pipe(host, bulk_out, ep_desc);
+				if (usbh_open_pipe(host, bulk_out, ep_desc) != HAL_OK) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk out pipe fail\n");
+					goto open_fail;
+				}
 				bulk_out->max_timeout_tick = MSC_XFER_MAX_TIMEOUT_TICK;
 			}
+		}
+
+		/* BOT mandates both a bulk-in and a bulk-out endpoint */
+		if ((bulk_in->pipe_num == 0) || (bulk_out->pipe_num == 0)) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Missing bulk pipe\n");
+			goto open_fail;
 		}
 
 		msc->current_lun = 0U;
@@ -96,8 +109,8 @@ static int usbh_msc_attach(usb_host_t *host)
 		msc->error = MSC_OK;
 		msc->req_state = MSC_REQ_IDLE;
 
-		cbw->field.Signature = USBH_BOT_CBW_SIGNATURE;
-		cbw->field.Tag = USBH_BOT_CBW_TAG;
+		cbw->field.dCBWSignature = USB_MSC_CBW_SIGN;
+		cbw->field.dCBWTag = USB_BOT_CBW_TAG;
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_SEND;
@@ -110,6 +123,16 @@ static int usbh_msc_attach(usb_host_t *host)
 		}
 
 		status = HAL_OK;
+	}
+	return status;
+
+open_fail:
+	/* Roll back any pipe already opened (guard with pipe_num: only close open pipes) */
+	if (bulk_in->pipe_num) {
+		usbh_close_pipe(host, bulk_in);
+	}
+	if (bulk_out->pipe_num) {
+		usbh_close_pipe(host, bulk_out);
 	}
 	return status;
 }
@@ -158,13 +181,13 @@ static int usbh_msc_setup(usb_host_t *host)
 		/* Issue GetMaxLUN request */
 		setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS
 								  | USB_REQ_RECIPIENT_INTERFACE;
-		setup.req.bRequest = USBH_MSC_GET_MAX_LUN;
+		setup.req.bRequest = USB_MSC_REQUEST_GET_MAX_LUN;
 		setup.req.wValue = 0U;
 		setup.req.wIndex = 0U;
 		setup.req.wLength = 1U;
-		status = usbh_ctrl_request(host, &setup, (u8 *)(void *)msc->max_lun_buf);
+		status = usbh_ctrl_request(host, &setup, msc->max_lun_buf);
 		/* When devices do not support the GetMaxLun request, this should
-		   be considred as only one logical unit is supported */
+		   be considered as only one logical unit is supported */
 		if (status == HAL_ERR_PARA) {
 			msc->max_lun = 0U;
 			status = HAL_OK;
@@ -172,7 +195,11 @@ static int usbh_msc_setup(usb_host_t *host)
 
 		if (status == HAL_OK) {
 			msc->max_lun = *(msc->max_lun_buf);
-			msc->max_lun = (msc->max_lun > USBH_MSC_MAX_LUN) ? USBH_MSC_MAX_LUN : (msc->max_lun + 1U);
+			/* GetMaxLUN returns the highest 0-based LUN index, so the LUN count is
+			   bMaxLUN + 1. Clamp the count to the unit[] capacity. Using >= is
+			   required: at bMaxLUN == USBH_MSC_MAX_LUN, bMaxLUN + 1 would overflow
+			   the array. This evaluates to min(bMaxLUN + 1, USBH_MSC_MAX_LUN). */
+			msc->max_lun = (msc->max_lun >= USBH_MSC_MAX_LUN) ? USBH_MSC_MAX_LUN : (msc->max_lun + 1U);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Max lun %d\n", msc->max_lun);
 
 			for (i = 0U; i < msc->max_lun; i++) {
@@ -184,7 +211,7 @@ static int usbh_msc_setup(usb_host_t *host)
 
 	case MSC_REQ_ERROR :
 		/* a Clear Feature should be issued here */
-		if (usbh_ctrl_clear_feature(host, 0x00U) == HAL_OK) {
+		if (usbh_ctrl_clear_feature(host, 0x00U) != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "TX clear feature fail\n");
 		}
 		break;
@@ -199,15 +226,15 @@ static int usbh_msc_setup(usb_host_t *host)
 /**
   * @brief  State machine handling callback
   * @param  host: Host handle
-  * @param  msg: Message data
+  * @param  event: USB host event
   * @retval Status
   */
-static int usbh_msc_process(usb_host_t *host, u32 msg)
+static int usbh_msc_process(usb_host_t *host, usbh_event_t *event)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	int status = HAL_BUSY;
 	int scsi_status = HAL_BUSY;
-	UNUSED(msg);
+	UNUSED(event);
 
 	switch (msc->state) {
 	case MSC_INIT:
@@ -386,6 +413,12 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 			status = HAL_OK;
 		} else if (scsi_status == HAL_ERR_UNKNOWN) {
 			msc->unit[lun].state = MSC_REQUEST_SENSE;
+		} else if (scsi_status == HAL_ERR_MEM) {
+			/* Bounce-buffer alloc failed: the BOT transfer never started, so abort
+			   this operation (no BOT reset needed) and fail fast instead of spinning. */
+			msc->unit[lun].state = MSC_IDLE;
+			msc->unit[lun].error = MSC_ERROR;
+			status = HAL_ERR_UNKNOWN;
 		} else {
 			if (scsi_status == HAL_ERR_HW) {
 				msc->unit[lun].state = MSC_UNRECOVERED_ERROR;
@@ -404,6 +437,12 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 			status = HAL_OK;
 		} else if (scsi_status == HAL_ERR_UNKNOWN) {
 			msc->unit[lun].state = MSC_REQUEST_SENSE;
+		} else if (scsi_status == HAL_ERR_MEM) {
+			/* Bounce-buffer alloc failed: the BOT transfer never started, so abort
+			   this operation (no BOT reset needed) and fail fast instead of spinning. */
+			msc->unit[lun].state = MSC_IDLE;
+			msc->unit[lun].error = MSC_ERROR;
+			status = HAL_ERR_UNKNOWN;
 		} else {
 			if (scsi_status == HAL_ERR_HW) {
 				msc->unit[lun].state = MSC_UNRECOVERED_ERROR;
@@ -461,15 +500,15 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
   *     3. dCSWTag matches the dCBWTag from the corresponding CBW.
   */
 
-static usbh_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
+static usb_msc_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
-	usbh_bot_csw_t *csw = msc->hbot.csw;
-	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
-	usbh_bot_csw_state_t status = BOT_CSW_CMD_FAILED;
+	usb_msc_bot_csw_t *csw = msc->hbot.csw;
+	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
+	usb_msc_bot_csw_state_t status = BOT_CSW_CMD_FAILED;
 
 	/*Checking if the transfer length is different than 13*/
-	if (usbh_get_last_transfer_size(host, &msc->bulk_in) != USBH_BOT_CSW_LENGTH) {
+	if (usbh_get_last_transfer_size(host, &msc->bulk_in) != USB_MSC_CSW_LEN) {
 		/*(4) Hi > Dn (Host expects to receive data from the device,
 		Device intends to transfer no data)
 		(5) Hi > Di (Host expects to receive data from the device,
@@ -485,14 +524,14 @@ static usbh_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
 		/* CSW length is Correct */
 
 		/* Check validity of the CSW Signature and CSWStatus */
-		if (csw->field.Signature == USBH_BOT_CSW_SIGNATURE) {
+		if (csw->field.dCSWSignature == USB_MSC_CSW_SIGN) {
 			/* Check Condition 1. dCSWSignature is equal to 53425355h */
 
-			if (csw->field.Tag == cbw->field.Tag) {
+			if (csw->field.dCSWTag == cbw->field.dCBWTag) {
 				/* Check Condition 3. dCSWTag matches the dCBWTag from the
 				corresponding CBW */
 
-				if (csw->field.Status == 0U) {
+				if (csw->field.bCSWStatus == 0U) {
 					/* Refer to USB Mass-Storage Class : BOT (www.usb.org)
 
 					Hn Host expects no data transfers
@@ -514,11 +553,11 @@ static usbh_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
 					*/
 
 					status = BOT_CSW_CMD_PASSED;
-				} else if (csw->field.Status == 1U) {
+				} else if (csw->field.bCSWStatus == 1U) {
 					status = BOT_CSW_CMD_FAILED;
 				}
 
-				else if (csw->field.Status == 2U) {
+				else if (csw->field.bCSWStatus == 2U) {
 					/* Refer to USB Mass-Storage Class : BOT (www.usb.org)
 					Section 6.7
 					(2) Hn < Di ( Host expects no data transfers,
@@ -541,7 +580,7 @@ static usbh_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
 			} /* CSW Tag Matching is Checked  */
 		} /* CSW Signature Correct Checking */
 		else {
-			/* If the CSW Signature is not valid, We sall return the Phase Error to
+			/* If the CSW Signature is not valid, We shall return the Phase Error to
 			Upper Layers for Reset Recovery */
 
 			status = BOT_CSW_PHASE_ERROR;
@@ -562,11 +601,11 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 {
 	int status = HAL_BUSY;
 	int error  = HAL_BUSY;
-	usbh_bot_csw_state_t CSW_Status = BOT_CSW_CMD_FAILED;
+	usb_msc_bot_csw_state_t CSW_Status = BOT_CSW_CMD_FAILED;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usbh_setup_req_t setup;
-	usbh_bot_csw_t *csw = msc->hbot.csw;
-	usbh_bot_cbw_t *cbw = msc->hbot.cbw;
+	usb_msc_bot_csw_t *csw = msc->hbot.csw;
+	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
 	usbh_pipe_t *bulk_out = &msc->bulk_out;
 	usbh_pipe_t *bulk_in = &msc->bulk_in;
 	int ret;
@@ -575,17 +614,17 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 	case BOT_SEND_CBW:
 
 		if (bulk_out->xfer_state == USBH_EP_XFER_START) {
-			cbw->field.LUN = lun;
+			cbw->field.bCBWLUN = lun;
 			bulk_out->xfer_buf = cbw->data;
-			bulk_out->xfer_len = USBH_BOT_CBW_LENGTH;
+			bulk_out->xfer_len = USB_MSC_CBW_LEN;
 			usbh_transfer_process(host, bulk_out);
 		} else {
 			ret = usbh_transfer_process(host, bulk_out);
 
 			if ((ret == HAL_OK) && (bulk_out->xfer_state == USBH_EP_XFER_IDLE)) {
-				if (cbw->field.DataTransferLength != 0U) {
+				if (cbw->field.dCBWDataTransferLength != 0U) {
 					/* If there is Data Transfer Stage */
-					if (((cbw->field.Flags) & USB_REQ_DIR_MASK) == USB_D2H) {
+					if (((cbw->field.bmCBWFlags) & USB_REQ_DIR_MASK) == USB_D2H) {
 						/* Data Direction is IN */
 						msc->hbot.state = BOT_DATA_IN;
 						bulk_in->xfer_state = USBH_EP_XFER_START;
@@ -611,7 +650,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 		if (bulk_in->xfer_state == USBH_EP_XFER_START) {
 			bulk_in->xfer_buf = msc->hbot.pbuf;
-			bulk_in->xfer_len = cbw->field.DataTransferLength;
+			bulk_in->xfer_len = cbw->field.dCBWDataTransferLength;
 			usbh_transfer_process(host, bulk_in);
 		} else {
 			ret = usbh_transfer_process(host, bulk_in);
@@ -632,7 +671,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 		if (bulk_out->xfer_state == USBH_EP_XFER_START) {
 			msc->tick = usbh_get_tick(host);
 			bulk_out->xfer_buf = msc->hbot.pbuf;
-			bulk_out->xfer_len = cbw->field.DataTransferLength;
+			bulk_out->xfer_len = cbw->field.dCBWDataTransferLength;
 			usbh_transfer_process(host, bulk_out);
 		} else {
 			ret = usbh_transfer_process(host, bulk_out);
@@ -652,7 +691,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 		if (bulk_in->xfer_state == USBH_EP_XFER_START) {
 			bulk_in->xfer_buf = csw->data;
-			bulk_in->xfer_len = USBH_BOT_CSW_LENGTH;
+			bulk_in->xfer_len = USB_MSC_CSW_LEN;
 			ret = usbh_transfer_process(host, bulk_in);
 		} else {
 			/* Decode CSW */
@@ -702,7 +741,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 	case BOT_UNRECOVERED_ERROR:
 		setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-		setup.req.bRequest = USBH_MSC_BOT_RESET;
+		setup.req.bRequest = USB_MSC_REQUEST_BOT_RESET;
 		setup.req.wValue = 0U;
 		setup.req.wIndex = 0U;
 		setup.req.wLength = 0U;
@@ -730,6 +769,10 @@ int usbh_msc_is_ready(void)
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	int res;
 
+	if (msc->host == NULL) {
+		return 0;
+	}
+
 	if ((msc->host->connect_state == USBH_STATE_SETUP) && (msc->state == MSC_IDLE)) {
 		res = 1;
 	} else {
@@ -747,6 +790,10 @@ u32 usbh_msc_get_max_lun(void)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 
+	if (msc->host == NULL) {
+		return 0;
+	}
+
 	if ((msc->host->connect_state == USBH_STATE_SETUP) && (msc->state == MSC_IDLE)) {
 		return msc->max_lun;
 	}
@@ -763,6 +810,14 @@ int usbh_msc_unit_is_ready(u8 lun)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	int res;
+
+	if (lun >= USBH_MSC_MAX_LUN) {
+		return 0;
+	}
+
+	if (msc->host == NULL) {
+		return 0;
+	}
 
 	if ((msc->host->connect_state == USBH_STATE_SETUP) && (msc->unit[lun].error == MSC_OK)) {
 		res = 1;
@@ -782,6 +837,10 @@ int usbh_msc_unit_is_ready(u8 lun)
 int usbh_msc_get_lun_info(u8 lun, usbh_msc_lun_t *info)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
+
+	if (msc->host == NULL) {
+		return HAL_ERR_UNKNOWN;
+	}
 
 	if ((msc->host->connect_state == USBH_STATE_SETUP) && (USBH_MSC_MAX_LUN > lun)) {
 		usb_os_memcpy(info, &msc->unit[lun], sizeof(usbh_msc_lun_t));
@@ -805,6 +864,14 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usb_host_t *host = msc->host;
 
+	if (lun >= USBH_MSC_MAX_LUN) {
+		return HAL_ERR_PARA;
+	}
+
+	if (host == NULL) {
+		return HAL_ERR_UNKNOWN;
+	}
+
 	if (((host->connect_state != USBH_STATE_ATTACH) &&
 		 (host->connect_state != USBH_STATE_SETUP)) ||
 		(msc->unit[lun].state != MSC_IDLE)) {
@@ -814,7 +881,15 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 	msc->state = MSC_READ;
 	msc->unit[lun].state = MSC_READ;
 
-	usbh_scsi_read(msc, lun, address, pbuf, length);
+	/* Kick off the transfer; the bounce buffer is allocated here. Catch an
+	   allocation failure now and fail fast (avoid entering the loop with the
+	   command stuck in BOT_CMD_SEND and a length=0 retry). */
+	if (usbh_scsi_read(msc, lun, address, pbuf, length) == HAL_ERR_MEM) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Read buf alloc fail\n");
+		msc->unit[lun].state = MSC_IDLE;
+		msc->state = MSC_IDLE;
+		return HAL_ERR_MEM;
+	}
 
 	timeout = usbh_get_tick(msc->host);
 
@@ -823,7 +898,7 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 		//FIXME, remove this in AP
 		usb_os_delay_us(200);
 #endif
-		if ((usbh_get_elapsed_ticks(msc->host, timeout) > (10000U * length)) || (host->connect_state < USBH_STATE_ATTACH)) {
+		if ((usbh_get_elapsed_ticks(msc->host, timeout) > ((u64)10000U * length)) || (host->connect_state < USBH_STATE_ATTACH)) {
 			msc->state = MSC_IDLE;
 			return HAL_ERR_UNKNOWN;
 		}
@@ -846,6 +921,14 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usb_host_t *host = msc->host;
 
+	if (lun >= USBH_MSC_MAX_LUN) {
+		return HAL_ERR_PARA;
+	}
+
+	if (host == NULL) {
+		return HAL_ERR_UNKNOWN;
+	}
+
 	if (((host->connect_state != USBH_STATE_ATTACH) &&
 		 (host->connect_state != USBH_STATE_SETUP)) ||
 		(msc->unit[lun].state != MSC_IDLE)) {
@@ -855,7 +938,15 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 	msc->state = MSC_WRITE;
 	msc->unit[lun].state = MSC_WRITE;
 
-	usbh_scsi_write(msc, lun, address, pbuf, length);
+	/* Kick off the transfer; the bounce buffer is allocated here. Catch an
+	   allocation failure now and fail fast (avoid entering the loop with the
+	   command stuck in BOT_CMD_SEND and a length=0 retry). */
+	if (usbh_scsi_write(msc, lun, address, pbuf, length) == HAL_ERR_MEM) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Write buf alloc fail\n");
+		msc->unit[lun].state = MSC_IDLE;
+		msc->state = MSC_IDLE;
+		return HAL_ERR_MEM;
+	}
 
 	timeout = usbh_get_tick(msc->host);
 	while (usbh_msc_process_rw(msc->host, lun) == HAL_BUSY) {
@@ -863,7 +954,7 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 		//FIXME, remove this in AP
 		usb_os_delay_us(200);
 #endif
-		if ((usbh_get_elapsed_ticks(msc->host, timeout) > (10000U * length)) || (host->connect_state < USBH_STATE_ATTACH)) {
+		if ((usbh_get_elapsed_ticks(msc->host, timeout) > ((u64)10000U * length)) || (host->connect_state < USBH_STATE_ATTACH)) {
 			msc->state = MSC_IDLE;
 			return HAL_ERR_UNKNOWN;
 		}
@@ -882,16 +973,19 @@ int usbh_msc_init(usbh_msc_cb_t *cb)
 	int ret = HAL_OK;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 
-	if (cb != NULL) {
-		msc->cb = cb;
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
 	}
 
-	msc->hbot.cbw = usb_os_malloc(USBH_BOT_CSW_LENGTH);
+	msc->cb = cb;
+
+	msc->hbot.cbw = usb_os_malloc(USB_MSC_CBW_LEN);
 	if (msc->hbot.cbw == NULL) {
 		return HAL_ERR_MEM;
 	}
 
-	msc->hbot.csw = usb_os_malloc(USBH_BOT_CBW_LENGTH);
+	msc->hbot.csw = usb_os_malloc(USB_MSC_CSW_LEN);
 	if (msc->hbot.csw == NULL) {
 		ret = HAL_ERR_MEM;
 		goto exit_free;
@@ -957,6 +1051,14 @@ int usbh_msc_deinit(void)
 		msc->max_lun_buf = NULL;
 	}
 
+	/* A read/write that errored out can leave an allocated transfer buffer.
+	   hbot.pbuf may alias hbot.data, so only free it when it is a separate
+	   allocation (mirrors the guard in usbh_scsi_read/write). */
+	if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
+		usb_os_mfree(msc->hbot.pbuf);
+	}
+	msc->hbot.pbuf = NULL;
+
 	if (msc->hbot.data != NULL) {
 		usb_os_mfree(msc->hbot.data);
 		msc->hbot.data = NULL;
@@ -976,4 +1078,3 @@ int usbh_msc_deinit(void)
 
 	return ret;
 }
-

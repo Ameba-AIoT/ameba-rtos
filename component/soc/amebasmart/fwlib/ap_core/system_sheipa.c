@@ -259,7 +259,7 @@ void vApplicationFPUSafeIRQHandler(void)
 			if (pxISR) {
 				pxISR(xInterruptTable[ ulInterruptID ].pvContext);
 			} else {
-				printf("ISR for interrupt id(%lu) is not registered!\n ", (unsigned long)ulInterruptID);
+				RTK_LOGE(NOTAG, "ISR for interrupt id(%lu) is not registered!\n ", (unsigned long)ulInterruptID);
 				for (;;);
 			}
 

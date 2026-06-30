@@ -58,8 +58,8 @@ macro(ameba_soc_project_create name)
     '/opt/rtk-toolchain' in linux and 'C:/rtk-toolchain' in windows.")
 
     #NOTICE: Cache variable FINAL_IMAGE_DIR will be deleted at the end.
-    set(FINAL_IMAGE_DIR ${FINAL_IMAGE_DIR} CACHE PATH "Final images path, i.e., xxx_boot_all.bin, ota_all.bin \
-    and xxx_app.bin final path. If FINAL_IMAGE_DIR is specified by user, final images will be copied to \
+    set(FINAL_IMAGE_DIR ${FINAL_IMAGE_DIR} CACHE PATH "Final images path, i.e., boot.bin, ota_all.bin \
+    and app.bin final path. If FINAL_IMAGE_DIR is specified by user, final images will be copied to \
     <FINAL_IMAGE_DIR> after building. Default final image directory is project root path, \
     where the current CMakeLists.txt is located.")
     ###############################################################################
@@ -216,8 +216,8 @@ macro(ameba_mcu_project_create name mcu_type)
     import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
 
     #NOTE: Determine whether build example for this mcu project
-    if(EXAMPLE) #By default, MCU as ap run example
-        if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
+    if(EXAMPLE) #By default, MCU as ap run example, but whc_dev boot from flash shall treat as iot
+        if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND CONFIG_WHC_DEV_FLASH_BOOT))
             set(c_ENABLE_EXAMPLE TRUE)
         else()
             set(c_ENABLE_EXAMPLE FALSE)

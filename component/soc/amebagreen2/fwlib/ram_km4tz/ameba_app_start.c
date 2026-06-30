@@ -78,11 +78,9 @@ u32 app_mpu_nocache_init(void)
 	return 0;
 }
 
-#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 #if defined (__GNUC__)
 /* Add This for C++ support to avoid compile error */
 void _init(void) {}
-#endif
 #endif
 
 void app_testmode_status(void)
@@ -215,12 +213,10 @@ void app_start(void)
 	/* low power pin dont need pinmap init again after wake from dslp */
 	pinmap_init(); /* 1.7ms */
 
-#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 #if defined (__GNUC__)
 	extern void __libc_init_array(void);
 	/* Add This for C++ support */
 	__libc_init_array();
-#endif
 #endif
 
 	newlib_locks_init();

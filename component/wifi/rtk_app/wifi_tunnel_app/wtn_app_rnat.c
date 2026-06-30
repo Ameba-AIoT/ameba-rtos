@@ -30,7 +30,6 @@
 /*dnrd.c will use this*/
 extern char *rptssid;
 extern int wifi_repeater_ap_config_complete;
-extern struct table ip_table; /*for rnat search client ip*/
 rtos_task_t rnat_ap_start_task_hdl = NULL;
 rtos_task_t rnat_poll_ip_task_hdl = NULL;
 
@@ -45,11 +44,11 @@ static void rnat_wifi_stop_ap(void)
 	u32 gw;
 
 	// stop dhcp server
-	dhcps_deinit();
+	dhcps_deinit(pnetif_ap);
 	addr = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	netmask = CONCAT_TO_UINT32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	LwIP_SetIP(NETIF_WLAN_AP_INDEX, addr, netmask, gw);
+	lwip_set_ip(NETIF_WLAN_AP_INDEX, addr, netmask, gw);
 
 	wifi_stop_ap();
 }
@@ -100,11 +99,12 @@ static int rnat_wifi_restart_ap(struct rtw_softap_info *softAP_config, u32 softa
 	iptab[3] = (uint8_t)(softap_netmask >> 24);
 	netmask = CONCAT_TO_UINT32(iptab[0], iptab[1], iptab[2], iptab[3]);
 
-	LwIP_SetIP(NETIF_WLAN_AP_INDEX, addr, netmask, gw);
+	lwip_set_ip(NETIF_WLAN_AP_INDEX, addr, netmask, gw);
 	// start dhcp server
 	dhcps_init(pnetif_ap);
+	dhcps_start(pnetif_ap);
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
-	LwIP_AUTOIP_IPv6(NETIF_WLAN_AP_INDEX);
+	lwip_autoip_ipv6(NETIF_WLAN_AP_INDEX);
 #endif
 	return 0;
 }
@@ -117,11 +117,11 @@ static int rnat_avoid_confliction_ip(void)
 	u32 bitmask = 0;
 	int i = 0;
 
-	wlan0_ip = *((unsigned int *)(LwIP_GetIP(NETIF_WLAN_STA_INDEX)));
-	wlan0_mask = *((unsigned int *)(LwIP_GetMASK(NETIF_WLAN_STA_INDEX)));
+	wlan0_ip = *((unsigned int *)(lwip_get_ip(NETIF_WLAN_STA_INDEX)));
+	wlan0_mask = *((unsigned int *)(lwip_get_mask(NETIF_WLAN_STA_INDEX)));
 
-	wlan1_ip = *((unsigned int *)(LwIP_GetIP(NETIF_WLAN_AP_INDEX)));
-	wlan1_mask = *((unsigned int *)(LwIP_GetMASK(NETIF_WLAN_AP_INDEX)));
+	wlan1_ip = *((unsigned int *)(lwip_get_ip(NETIF_WLAN_AP_INDEX)));
+	wlan1_mask = *((unsigned int *)(lwip_get_mask(NETIF_WLAN_AP_INDEX)));
 
 	memcpy(&maskVal, wlan1_mask > wlan0_mask ? &wlan0_mask : &wlan1_mask, 4);
 
@@ -159,10 +159,10 @@ static void rnat_poll_ip_changed_thread(void *param)
 {
 	(void) param;
 	unsigned int oldip, newip;
-	memcpy(&oldip, LwIP_GetIP(NETIF_WLAN_STA_INDEX), 4);
+	memcpy(&oldip, lwip_get_ip(NETIF_WLAN_STA_INDEX), 4);
 
 	while (1) {
-		memcpy(&newip, LwIP_GetIP(NETIF_WLAN_STA_INDEX), 4);
+		memcpy(&newip, lwip_get_ip(NETIF_WLAN_STA_INDEX), 4);
 		if (0x0 == newip) {
 			goto nextcheck;
 		}
@@ -195,7 +195,7 @@ static void rnat_ap_start_thread(void *param)
 
 	/*step1: check if STA port connected to AP successfully*/
 	while (1) {
-		if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
+		if (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
 			break;
 		}
 		rtos_time_delay_ms(200);
@@ -243,13 +243,14 @@ static void rnat_ap_start_thread(void *param)
 	ip_addr = CONCAT_TO_UINT32(NAT_AP_IP_ADDR0, NAT_AP_IP_ADDR1, NAT_AP_IP_ADDR2, NAT_AP_IP_ADDR3);
 	netmask = CONCAT_TO_UINT32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(NAT_AP_GW_ADDR0, NAT_AP_GW_ADDR1, NAT_AP_GW_ADDR2, NAT_AP_GW_ADDR3);
-	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
+	lwip_set_ip(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
 
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r[RMESH NAT] Start DHCP server\n");
 	dhcps_init(pnetif_ap);
+	dhcps_start(pnetif_ap);
 
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
-	LwIP_AUTOIP_IPv6(NETIF_WLAN_AP_INDEX);
+	lwip_autoip_ipv6(NETIF_WLAN_AP_INDEX);
 #endif
 	rtos_time_delay_ms(1000);
 
@@ -261,7 +262,7 @@ exit:
 
 u8 wtn_rnat_search_client_ip(u8 *src_mac)
 {
-	return dhcps_search_client_ip(src_mac);
+	return dhcps_search_client_ip(pnetif_ap, src_mac);
 }
 #endif
 

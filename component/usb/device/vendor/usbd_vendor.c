@@ -58,6 +58,7 @@ static const u8 usbd_vendor_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
 	USB_HIGH_BYTE(USBD_VENDOR_LANGID_STRING),
 };  /* usbd_vendor_lang_id_desc */
 
+#ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_vendor_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
@@ -154,6 +155,7 @@ static const u8 usbd_vendor_hs_config_desc[] = {
 	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
 	USBD_VENDOR_HS_ISOC_IN_INTERVAL,				/* bInterval */
 };  /* usbd_vendor_hs_config_desc */
+#endif
 
 /* USB Vendor Device Full Speed Configuration Descriptor */
 static const u8 usbd_vendor_fs_config_desc[] = {
@@ -256,6 +258,8 @@ static usbd_vendor_dev_t usbd_vendor_dev;
 
 /**
   * @brief  Set Vendor class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -271,20 +275,23 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 	usbd_ep_t *ep_intr_out = &cdev->ep_intr_out;
 	u8 speed = dev->dev_speed;
+	usb_ep_info_t *info;
 
 	UNUSED(config);
 
 	cdev->dev = dev;
 	cdev->alt_setting = 0U;
 	/* Init INTR IN EP */
-	ep_intr_in->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
-	ep_intr_in->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_IN_INTERVAL : USBD_VENDOR_FS_INTR_IN_INTERVAL;
+	info = &ep_intr_in->info;
+	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
+	info->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_IN_INTERVAL : USBD_VENDOR_FS_INTR_IN_INTERVAL;
 	usbd_ep_init(dev, ep_intr_in);
 	ep_intr_in->xfer_state = 0;
 
 	/* Init INTR OUT EP */
-	ep_intr_out->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
-	ep_intr_out->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_OUT_INTERVAL : USBD_VENDOR_FS_INTR_OUT_INTERVAL;
+	info = &ep_intr_out->info;
+	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
+	info->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_OUT_INTERVAL : USBD_VENDOR_FS_INTR_OUT_INTERVAL;
 	usbd_ep_init(dev, ep_intr_out);
 	ret = usbd_ep_receive(dev, ep_intr_out);
 	if (ret != HAL_OK) {
@@ -292,12 +299,14 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	/* Init BULK IN EP */
-	ep_bulk_in->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
+	info = &ep_bulk_in->info;
+	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
 	usbd_ep_init(dev, ep_bulk_in);
 	ep_bulk_in->xfer_state = 0;
 
 	/* Init BULK OUT EP */
-	ep_bulk_out->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
+	info = &ep_bulk_out->info;
+	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
 	usbd_ep_init(dev, ep_bulk_out);
 	ret = usbd_ep_receive(dev, ep_bulk_out);
 	if (ret != HAL_OK) {
@@ -305,13 +314,15 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	/* Init ISO IN EP */
-	ep_isoc_in->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
-	ep_isoc_in->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_IN_INTERVAL : USBD_VENDOR_FS_ISOC_IN_INTERVAL;
+	info = &ep_isoc_in->info;
+	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
+	info->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_IN_INTERVAL : USBD_VENDOR_FS_ISOC_IN_INTERVAL;
 	usbd_ep_init(dev, ep_isoc_in);
 
 	/* Init ISO OUT EP */
-	ep_isoc_out->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
-	ep_isoc_out->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_OUT_INTERVAL : USBD_VENDOR_FS_ISOC_OUT_INTERVAL;
+	info = &ep_isoc_out->info;
+	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
+	info->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_OUT_INTERVAL : USBD_VENDOR_FS_ISOC_OUT_INTERVAL;
 	usbd_ep_init(dev, ep_isoc_out);
 	ret = usbd_ep_receive(dev, ep_isoc_out);
 	if (ret != HAL_OK) {
@@ -327,6 +338,8 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 
 /**
   * @brief  Clear Vendor configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -367,6 +380,8 @@ static int usbd_vendor_clear_config(usb_dev_t *dev, u8 config)
 
 /**
   * @brief  Handle Vendor specific CTRL requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: USB CTRL requests
   * @retval Status
@@ -378,7 +393,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 
-	//RTK_LOGD(TAG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
+	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
 	//	 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
@@ -447,6 +462,8 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 /**
   * @brief  Data sent on non-control IN endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -459,13 +476,12 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	UNUSED(dev);
 
+	if (status != HAL_OK) {
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
+	}
+
 	if (ep_addr == USBD_VENDOR_INTR_IN_EP) {
 		ep_intr_in->xfer_state = 0U;
-		if (status == HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR TX done\n");
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR TX err: %d\n", status);
-		}
 		if (cb->intr_transmitted != NULL) {
 			cb->intr_transmitted(status);
 		}
@@ -473,22 +489,12 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 
 	if (ep_addr == USBD_VENDOR_BULK_IN_EP) {
 		ep_bulk_in->xfer_state = 0U;
-		if (status == HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX done\n");
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX err: %d\n", status);
-		}
 		if (cb->bulk_transmitted != NULL) {
 			cb->bulk_transmitted(status);
 		}
 	}
 
 	if (ep_addr == USBD_VENDOR_ISOC_IN_EP) {
-		if (status == HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC TX done\n");
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC TX err: %d\n", status);
-		}
 		if (cb->isoc_transmitted != NULL) {
 			cb->isoc_transmitted(status);
 		}
@@ -499,6 +505,8 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 
 /**
   * @brief  Data received on non-control Out endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -547,6 +555,8 @@ static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 /**
   * @brief  Get descriptor callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
   * @param  buf: Poniter to Buffer
@@ -568,10 +578,13 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
 			desc = (u8 *)usbd_vendor_hs_config_desc;
 			len = sizeof(usbd_vendor_hs_config_desc);
-		} else {
+		} else
+#endif
+		{
 			desc = (u8 *)usbd_vendor_fs_config_desc;
 			len = sizeof(usbd_vendor_fs_config_desc);
 		}
@@ -580,6 +593,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		break;
 
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_vendor_device_qualifier_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_vendor_device_qualifier_desc, len);
@@ -598,6 +612,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
@@ -623,7 +638,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 			break;
 		/* Add customer string here */
 		default:
-			//RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", USB_LOW_BYTE(req->wValue));
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 			break;
 		}
 		break;
@@ -637,6 +652,8 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 
 /**
   * @brief  USB attach status change
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  old_status: USB old attach status
   * @param  status: USB USB attach status
@@ -669,69 +686,85 @@ int usbd_vendor_init(usbd_vendor_cb_t *cb)
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 	usbd_ep_t *ep_intr_out = &cdev->ep_intr_out;
+	usb_ep_info_t *info;
 
-	ep_bulk_out->addr = USBD_VENDOR_BULK_OUT_EP;
-	ep_bulk_out->type = USB_CH_EP_TYPE_BULK;
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
+	info = &ep_bulk_out->info;
+	info->addr = USBD_VENDOR_BULK_OUT_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_out->xfer_len = USBD_VENDOR_HS_BULK_MPS;
-	ep_bulk_out->xfer_buf = (u8 *)usb_os_malloc(USBD_VENDOR_HS_BULK_MPS);
+	ep_bulk_out->xfer_buf_len = USBD_VENDOR_HS_BULK_MPS;
+	ep_bulk_out->xfer_buf = (u8 *)usb_os_malloc(ep_bulk_out->xfer_buf_len);
 	if (ep_bulk_out->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto init_exit;
 	}
 
-	ep_bulk_in->addr = USBD_VENDOR_BULK_IN_EP;
-	ep_bulk_in->type = USB_CH_EP_TYPE_BULK;
-	ep_bulk_in->xfer_buf = (u8 *)usb_os_malloc(USBD_VENDOR_HS_BULK_MPS);
+	info = &ep_bulk_in->info;
+	info->addr = USBD_VENDOR_BULK_IN_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
+	ep_bulk_in->xfer_buf_len = USBD_VENDOR_HS_BULK_MPS;
+	ep_bulk_in->xfer_buf = (u8 *)usb_os_malloc(ep_bulk_in->xfer_buf_len);
 	if (ep_bulk_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto init_clean_bulk_out_buf_exit;
 	}
 
-	ep_intr_out->addr = USBD_VENDOR_INTR_OUT_EP;
-	ep_intr_out->type = USB_CH_EP_TYPE_INTR;
+	info = &ep_intr_out->info;
+	info->addr = USBD_VENDOR_INTR_OUT_EP;
+	info->type = USB_CH_EP_TYPE_INTR;
+	info->binterval = 1U;
 	ep_intr_out->xfer_len = USBD_VENDOR_HS_INTR_MPS;
-	ep_intr_out->xfer_buf = (u8 *)usb_os_malloc(USBD_VENDOR_HS_INTR_MPS);
-	ep_intr_out->binterval = 1U;
+	ep_intr_out->xfer_buf_len = USBD_VENDOR_HS_INTR_MPS;
+	ep_intr_out->xfer_buf = (u8 *)usb_os_malloc(ep_intr_out->xfer_buf_len);
 	if (ep_intr_out->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto init_clean_bulk_in_buf_exit;
 	}
 
-	ep_intr_in->addr = USBD_VENDOR_INTR_IN_EP;
-	ep_intr_in->type = USB_CH_EP_TYPE_INTR;
-	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(USBD_VENDOR_HS_INTR_MPS);
-	ep_intr_in->binterval = 1U;
+	info = &ep_intr_in->info;
+	info->addr = USBD_VENDOR_INTR_IN_EP;
+	info->type = USB_CH_EP_TYPE_INTR;
+	info->binterval = 1U;
+	ep_intr_in->xfer_buf_len = USBD_VENDOR_HS_INTR_MPS;
+	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(ep_intr_in->xfer_buf_len);
 	if (ep_intr_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto init_clean_intr_out_buf_exit;
 	}
 
-	ep_isoc_out->addr = USBD_VENDOR_ISOC_OUT_EP;
-	ep_isoc_out->type = USB_CH_EP_TYPE_ISOC;
+	info = &ep_isoc_out->info;
+	info->addr = USBD_VENDOR_ISOC_OUT_EP;
+	info->type = USB_CH_EP_TYPE_ISOC;
+	info->binterval = 1U;
 	ep_isoc_out->xfer_len = USBD_VENDOR_HS_ISOC_MPS;
-	ep_isoc_out->xfer_buf = (u8 *)usb_os_malloc(USBD_VENDOR_HS_ISOC_MPS);
-	ep_isoc_out->binterval = 1U;
+	ep_isoc_out->xfer_buf_len = USBD_VENDOR_HS_ISOC_MPS;
+	ep_isoc_out->xfer_buf = (u8 *)usb_os_malloc(ep_isoc_out->xfer_buf_len);
 	if (ep_isoc_out->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto init_clean_intr_in_buf_exit;
 	}
 
-	ep_isoc_in->addr = USBD_VENDOR_ISOC_IN_EP;
-	ep_isoc_in->type = USB_CH_EP_TYPE_ISOC;
-	ep_isoc_in->xfer_buf = (u8 *)usb_os_malloc(USBD_VENDOR_HS_ISOC_MPS);
-	ep_isoc_in->binterval = 1U;
+	info = &ep_isoc_in->info;
+	info->addr = USBD_VENDOR_ISOC_IN_EP;
+	info->type = USB_CH_EP_TYPE_ISOC;
+	info->binterval = 1U;
+	ep_isoc_in->xfer_buf_len = USBD_VENDOR_HS_ISOC_MPS;
+	ep_isoc_in->xfer_buf = (u8 *)usb_os_malloc(ep_isoc_in->xfer_buf_len);
 	if (ep_isoc_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto init_clean_isoc_out_buf_exit;
 	}
 
-	if (cb != NULL) {
-		cdev->cb = cb;
-		if (cb->init != NULL) {
-			ret = cb->init();
-			if (ret != HAL_OK) {
-				goto init_clean_isoc_in_buf_exit;
-			}
+	cdev->cb = cb;
+	if (cb->init != NULL) {
+		ret = cb->init();
+		if (ret != HAL_OK) {
+			goto init_clean_isoc_in_buf_exit;
 		}
 	}
 
@@ -782,9 +815,7 @@ int usbd_vendor_deinit(void)
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 	usbd_ep_t *ep_intr_out = &cdev->ep_intr_out;
 
-	u8 is_busy = ep_intr_in->is_busy;
-
-	while (is_busy) {
+	while (ep_intr_in->is_busy) {
 		usb_os_delay_us(100);
 	}
 
@@ -841,12 +872,11 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len)
 		return HAL_ERR_HW;
 	}
 
-	if (len > ep_bulk_in->mps) {
-		len = ep_bulk_in->mps;
+	if (len > ep_bulk_in->xfer_buf_len) {
+		len = ep_bulk_in->xfer_buf_len;
 	}
 
 	if (ep_bulk_in->xfer_state == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "BULK TX len %d data %d \n", len, buf[0]);
 		ep_bulk_in->xfer_state = 1U;
 		usb_os_memcpy((void *)ep_bulk_in->xfer_buf, (void *)buf, len);
 		ep_bulk_in->xfer_len = len;
@@ -869,12 +899,11 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u32 len)
 		return HAL_ERR_HW;
 	}
 
-	if (len > ep_intr_in->mps) {
-		len = ep_intr_in->mps;
+	if (len > ep_intr_in->xfer_buf_len) {
+		len = ep_intr_in->xfer_buf_len;
 	}
 
 	if (ep_intr_in->xfer_state == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "INTR TX len %d data %d \n", len, buf[0]);
 		ep_intr_in->xfer_state = 1U;
 		usb_os_memcpy((void *)ep_intr_in->xfer_buf, (void *)buf, len);
 		ep_intr_in->xfer_len = len;
@@ -896,10 +925,9 @@ int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len)
 		return HAL_ERR_HW;
 	}
 
-	if (len > ep_isoc_in->mps) {
-		len = ep_isoc_in->mps;
+	if (len > ep_isoc_in->xfer_buf_len) {
+		len = ep_isoc_in->xfer_buf_len;
 	}
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "ISOC TX len %d data %d \n", len, buf[0]);
 
 	usb_os_memcpy(ep_isoc_in->xfer_buf, buf, len);
 	ep_isoc_in->xfer_len = len;

@@ -2,7 +2,7 @@
 
 Use 802.1X EAP methods to connect to AP and authenticate with backend radius server.
 
-Current supported methods are EAP-TLS, PEAPv0/EAP-MSCHAPv2, and EAP-TTLS/MSCHAPv2.
+Current supported methods are EAP-TLS, PEAPv0/EAP-MSCHAPv2, EAP-TTLS/MSCHAPv2, and EAP-FAST/MSCHAPv2(prov=2).
 
 # HW Configuration
 
@@ -22,6 +22,7 @@ None
 		example_eap("tls");
 		//example_eap("peap");
 		//example_eap("ttls");
+		//example_eap("fast");
 	}
 	```
 
