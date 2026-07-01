@@ -31,6 +31,7 @@ static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_inic_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
+static void usbd_inic_wakeup(usb_dev_t *dev);
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "INIC";
@@ -818,6 +819,7 @@ static const usbd_class_driver_t usbd_inic_driver = {
 	.ep_data_in = usbd_inic_handle_ep_data_in,
 	.ep_data_out = usbd_inic_handle_ep_data_out,
 	.status_changed = usbd_inic_status_changed,
+	.wakeup = usbd_inic_wakeup,
 };
 
 /* INIC Device */
@@ -835,30 +837,35 @@ static int usbd_inic_set_wifi_config(usb_dev_t *dev, u8 config)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_ep_t *ep;
+	usb_ep_info_t *info;
 
 	UNUSED(config);
 
 	/* Init BULK IN EP4 */
 	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_IN)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP5 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP5_BULK_OUT)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP6 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP6_BULK_OUT)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP7 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP7_BULK_OUT)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
@@ -875,24 +882,28 @@ static int usbd_inic_set_bt_config(usb_dev_t *dev, u8 config)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_ep_t *ep;
+	usb_ep_info_t *info;
 
 	UNUSED(config);
 
 	/* Init INTR IN EP1 */
 	ep = &idev->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_INTR_MPS : USBD_INIC_FS_INTR_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_INTR_MPS : USBD_INIC_FS_INTR_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK IN EP2 */
 	ep = &idev->in_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP2 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)].ep;
-	ep->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
 	usbd_ep_init(dev, ep);
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
@@ -901,6 +912,8 @@ static int usbd_inic_set_bt_config(usb_dev_t *dev, u8 config)
 
 /**
   * @brief  Set class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -994,6 +1007,8 @@ static int usbd_inic_clear_bt_config(usb_dev_t *dev, u8 config)
 
 /**
   * @brief  Clear class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -1063,6 +1078,8 @@ static int usbd_inic_handle_setup(usb_setup_req_t *req, u8 *buf)
 
 /**
   * @brief  Handle INIC specific CTRL requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: USB CTRL requests
   * @retval Status
@@ -1115,7 +1132,7 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					break;
 				}
 				if (ret == HAL_OK) {
-					ep0_in->xfer_buf[0] = 0U;
+					ep0_in->xfer_buf[0] = alt;
 					ep0_in->xfer_len = 1U;
 					usbd_ep_transmit(dev, ep0_in);
 				}
@@ -1171,6 +1188,8 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 /**
   * @brief  Handle EP0 Rx Ready event
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @retval Status
   */
@@ -1191,6 +1210,8 @@ static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev)
 
 /**
   * @brief  Data sent on non-control IN endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -1205,7 +1226,7 @@ static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	UNUSED(dev);
 
 	if (status != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 	}
 
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
@@ -1219,6 +1240,8 @@ static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 
 /**
   * @brief  Data received on non-control Out endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint number
   * @retval Status
@@ -1251,6 +1274,8 @@ static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 /**
   * @brief  Get descriptor callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
   * @param  len: Descriptor length
@@ -1394,7 +1419,7 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 			/*Not support*/
 			break;
 		default:
-			//RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid str idx %d\n", USB_LOW_BYTE(req->wValue));
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 			break;
 		}
 		break;
@@ -1411,33 +1436,38 @@ static int usbd_inic_wifi_init(void)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_ep_t *ep;
+	usb_ep_info_t *info;
 	u8 ep_num;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_IN);
 	ep = &idev->in_ep[ep_num].ep;
-	ep->addr = USBD_WHC_WIFI_EP4_BULK_IN;
-	ep->type = USB_CH_EP_TYPE_BULK;
+	info = &ep->info;
+	info->addr = USBD_WHC_WIFI_EP4_BULK_IN;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep->skip_dcache_pre_clean = 0;
 	ep->skip_dcache_post_invalidate = 0;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP5_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
-	ep->addr = USBD_WHC_WIFI_EP5_BULK_OUT;
-	ep->type = USB_CH_EP_TYPE_BULK;
+	info = &ep->info;
+	info->addr = USBD_WHC_WIFI_EP5_BULK_OUT;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep->skip_dcache_pre_clean = 0;
 	ep->skip_dcache_post_invalidate = 0;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP6_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
-	ep->addr = USBD_WHC_WIFI_EP6_BULK_OUT;
-	ep->type = USB_CH_EP_TYPE_BULK;
+	info = &ep->info;
+	info->addr = USBD_WHC_WIFI_EP6_BULK_OUT;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep->skip_dcache_pre_clean = 0;
 	ep->skip_dcache_post_invalidate = 0;
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP7_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
-	ep->addr = USBD_WHC_WIFI_EP7_BULK_OUT;
-	ep->type = USB_CH_EP_TYPE_BULK;
+	info = &ep->info;
+	info->addr = USBD_WHC_WIFI_EP7_BULK_OUT;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep->skip_dcache_pre_clean = 0;
 	ep->skip_dcache_post_invalidate = 0;
 
@@ -1450,28 +1480,34 @@ static int usbd_inic_bt_init(void)
 	int ret = HAL_OK;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_ep_t *ep;
+	usb_ep_info_t *info;
 	u8 ep_num;
 
 	ep_num = USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN);
 	ep = &idev->in_ep[ep_num].ep;
-	ep->addr = USBD_INIT_BT_EP1_INTR_IN;
-	ep->type = USB_CH_EP_TYPE_INTR;
+	info = &ep->info;
+	info->addr = USBD_INIT_BT_EP1_INTR_IN;
+	info->type = USB_CH_EP_TYPE_INTR;
 
 	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN);
 	ep = &idev->in_ep[ep_num].ep;
-	ep->addr = USBD_INIC_BT_EP2_BULK_IN;
-	ep->type = USB_CH_EP_TYPE_INTR;
+	info = &ep->info;
+	info->addr = USBD_INIC_BT_EP2_BULK_IN;
+	info->type = USB_CH_EP_TYPE_BULK;
 
 	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT);
 	ep = &idev->out_ep[ep_num].ep;
-	ep->addr = USBD_INIC_BT_EP2_BULK_OUT;
-	ep->type = USB_CH_EP_TYPE_INTR;
+	info = &ep->info;
+	info->addr = USBD_INIC_BT_EP2_BULK_OUT;
+	info->type = USB_CH_EP_TYPE_BULK;
 
 	return ret;
 }
 
 /**
   * @brief  USB attach status change
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  old_status: USB old attach status
   * @param  status: USB USB attach status
@@ -1485,6 +1521,22 @@ static void usbd_inic_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 
 	if (idev->cb->status_changed) {
 		idev->cb->status_changed(old_status, status);
+	}
+}
+
+/**
+  * @brief  Wakeup callback, called when the device resumes from suspend.
+  * @param  dev: USB device instance
+  * @retval void
+  */
+static void usbd_inic_wakeup(usb_dev_t *dev)
+{
+	usbd_inic_dev_t *idev = &usbd_inic_dev;
+
+	UNUSED(dev);
+
+	if (idev->cb->wakeup) {
+		idev->cb->wakeup();
 	}
 }
 
@@ -1514,6 +1566,11 @@ int usbd_inic_init(usbd_inic_cb_t *cb)
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_otp_t *otp = &idev->otp;
 
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
 	if (usbd_otp_init(otp) != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Fail to load OTP para\n");
 	}
@@ -1524,19 +1581,18 @@ int usbd_inic_init(usbd_inic_cb_t *cb)
 		usbd_inic_bt_init();
 	}
 
-	if (cb != NULL) {
-		idev->cb = cb;
-		if (cb->init != NULL) {
-			ret = cb->init();
-			if (ret != HAL_OK) {
-				goto init_exit;
-			}
+	idev->cb = cb;
+	if (cb->init != NULL) {
+		ret = cb->init();
+		if (ret != HAL_OK) {
+			goto init_exit;
 		}
 	}
 
 	rtos_sema_create(&idev->reset_sema, 0, 1);
 
-	ret = rtos_task_create(&idev->reset_task, "usbd_inic_reset_thread", usbd_inic_reset_thread, NULL, 1024, USBD_INIC_RESET_THREAD_PRIORITY);
+	ret = rtos_task_create(&idev->reset_task, "usbd_inic_reset_thread", usbd_inic_reset_thread, NULL, USBD_INIC_RESET_THREAD_STACK_SIZE,
+						   USBD_INIC_RESET_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto init_clean_all;
 	}
@@ -1601,7 +1657,6 @@ int usbd_inic_transmit_ctrl_data(u8 *buf, u16 len)
 	if (len > ep0_in->xfer_buf_len) {
 		len = ep0_in->xfer_buf_len;
 	}
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "CTRL TX len=%d\n", len);
 	usb_os_memcpy((void *)ep0_in->xfer_buf, (void *)buf, len);
 	ep0_in->xfer_len = len;
 	usbd_ep_transmit(dev, ep0_in);
@@ -1618,7 +1673,7 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 	usbd_ep_t *ep;
 
 	if (USB_EP_IS_OUT(ep_addr) || (num >= USB_MAX_ENDPOINTS)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid IN EP num: 0x%02x\n", ep_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP 0x%02x\n", ep_addr);
 		return HAL_ERR_PARA;
 	}
 
@@ -1629,7 +1684,6 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 	ep = &idev->in_ep[num].ep;
 
 	if (ep->xfer_state == USBD_INIC_EP_STATE_IDLE) {
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "EP%02x TX len=%d data=%d\n", num, len, buf[0]);
 		ep->xfer_state = USBD_INIC_EP_STATE_BUSY;
 		idev->in_ep[num].userdata = userdata;
 		ep->xfer_buf = buf;/*Application should free this txbuf only afer TX DONE*/
@@ -1644,7 +1698,7 @@ int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 		}
 		ret = usbd_ep_transmit(idev->dev, ep);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX len=%d data=%d: BUSY\n", num, len, buf[0]);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX BUSY\n", ep_addr);
 		ret = HAL_BUSY;
 	}
 
@@ -1659,7 +1713,7 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 	usbd_ep_t *ep;
 
 	if (USB_EP_IS_IN(ep_addr) || (num >= USB_MAX_ENDPOINTS)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid OUT EP num: 0x%02x\n", ep_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP 0x%02x\n", ep_addr);
 		return HAL_ERR_PARA;
 	}
 

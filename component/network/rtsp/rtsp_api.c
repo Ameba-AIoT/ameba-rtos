@@ -3,7 +3,7 @@
 #include "rtsp/rtsp_api.h"
 
 #include "wifi_api.h"// for _htons
-#include "lwip_netconf.h"	// for LwIP_GetMAC
+#include "lwip_netconf.h"	// for lwip_get_mac
 
 #define RTSP_CTX_ID_BASE	0
 static uint32_t rtsp_ctx_id_bitmap = 0;
@@ -186,7 +186,7 @@ int rtsp_parse_stream_media_type(struct codec_info *codec)
 int rtsp_connect_ctx_init(struct rtsp_context *rtsp_ctx)
 {
 	struct connect_context *connect_ctx = &rtsp_ctx->connect_ctx;
-	connect_ctx->server_ip = LwIP_GetIP(rtsp_ctx->interface);
+	connect_ctx->server_ip = lwip_get_ip(rtsp_ctx->interface);
 	connect_ctx->socket_id = socket(AF_INET, SOCK_STREAM, 0);
 	if (connect_ctx->socket_id < 0) {
 		RTSP_DBG_ERROR("rtsp server socket create failed!");
@@ -1345,7 +1345,7 @@ Redo:
 			if (wifi_is_running(0) == TRUE) {
 				wifi_get_setting(STA_WLAN_INDEX, &setting);
 				mode = setting.mode;
-				if ((LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) && (mode == RTW_MODE_STA)) {
+				if ((lwip_check_connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) && (mode == RTW_MODE_STA)) {
 					printf("connect successful sta mode\r\n");
 					break;
 				}
@@ -1357,7 +1357,7 @@ Redo:
 		} else {
 			//Check the dhcp wifi connection
 			unsigned char *ip;
-			ip = LwIP_GetIP(rtsp_ctx->interface);
+			ip = lwip_get_ip(rtsp_ctx->interface);
 			if (ip[0] == 0 && ip[1] == 0 && ip[2] == 0 && ip[3] == 0) {
 				continue;
 			} else if (ip[0] == 192 && ip[1] == 168 && ip[2] == 1 && ip[3] == 80) {
@@ -1376,7 +1376,7 @@ Redo:
 		return;
 	}
 
-	uint8_t *mac = (uint8_t *) LwIP_GetMAC(rtsp_ctx->interface);
+	uint8_t *mac = (uint8_t *) lwip_get_mac(rtsp_ctx->interface);
 	memset(AmebaCam_device_name, 0, 256);
 	sprintf(AmebaCam_device_name, "Ameba_%02x%02x%02x", mac[3], mac[4], mac[5]);
 
@@ -1747,7 +1747,7 @@ Redo:
 				}
 				if (rtsp_ctx->interface <= 1) {
 					if (mode == RTW_MODE_STA) {
-						if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID)) {
+						if (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 							goto out;
 						}
 					} else if (mode == RTW_MODE_AP) {
@@ -1783,7 +1783,7 @@ out:
 
 		if (rtsp_ctx->interface <= 1) {
 			if (mode == RTW_MODE_STA) {
-				if (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+				if (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 					RTSP_DBG_ERROR("wifi Tx/Rx broke! rtsp service cannot stream");
 					close(rtsp_ctx->connect_ctx.socket_id);
 					RTSP_DBG_ERROR("RTSP Reconnect!");

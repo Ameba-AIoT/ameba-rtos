@@ -49,7 +49,7 @@ void __retarget_lock_init(_LOCK_T *lock_ptr)
 	*lock_ptr = (_LOCK_T)xSemaphoreCreateMutex();
 
 	if (*lock_ptr == NULL) {
-		rtk_assert(*lock_ptr);
+		rtk_assert(*lock_ptr, "locks");
 	}
 }
 
@@ -64,7 +64,7 @@ void __retarget_lock_init_recursive(_LOCK_T *lock_ptr)
 	*lock_ptr = (_LOCK_T)xSemaphoreCreateRecursiveMutex();
 
 	if (*lock_ptr == NULL) {
-		rtk_assert(*lock_ptr);
+		rtk_assert(*lock_ptr, "locks");
 	}
 }
 
@@ -78,7 +78,7 @@ void __retarget_lock_close(_LOCK_T lock)
 void __retarget_lock_close_recursive(_LOCK_T lock)
 {
 	if (lock) {
-		rtk_assert(xSemaphoreGetMutexHolder((QueueHandle_t)lock) == NULL);
+		rtk_assert(xSemaphoreGetMutexHolder((QueueHandle_t)lock) == NULL, "locks");
 		vSemaphoreDelete(lock);
 	}
 }
@@ -92,12 +92,12 @@ void __retarget_lock_acquire(_LOCK_T lock)
 		return;
 	}
 
-	rtk_assert(lock);
+	rtk_assert(lock, "locks");
 
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreTakeFromISR(lock, &task_woken);
 		if (ret != pdTRUE) {
-			rtk_assert(0);
+			rtk_assert(0, "locks");
 		}
 		portEND_SWITCHING_ISR(task_woken);
 	} else {
@@ -116,10 +116,10 @@ void __retarget_lock_acquire_recursive(_LOCK_T lock)
 		return;
 	}
 
-	rtk_assert(lock);
+	rtk_assert(lock, "locks");
 
 	if (rtos_critical_is_in_interrupt()) {
-		rtk_assert(0);
+		rtk_assert(0, "locks");
 	}
 
 	ret = xSemaphoreTakeRecursive((QueueHandle_t)lock, portMAX_DELAY);
@@ -137,7 +137,7 @@ int __retarget_lock_try_acquire(_LOCK_T lock)
 		return 0;
 	}
 
-	rtk_assert(lock);
+	rtk_assert(lock, "locks");
 
 	if (rtos_critical_is_in_interrupt()) {
 		ret = xSemaphoreTakeFromISR(lock, &task_woken);
@@ -162,10 +162,10 @@ int __retarget_lock_try_acquire_recursive(_LOCK_T lock)
 		return 0;
 	}
 
-	rtk_assert(lock);
+	rtk_assert(lock, "locks");
 
 	if (rtos_critical_is_in_interrupt()) {
-		rtk_assert(0);
+		rtk_assert(0, "locks");
 	}
 
 	ret = xSemaphoreTakeRecursive((QueueHandle_t)lock, 0);
@@ -206,7 +206,7 @@ void __retarget_lock_release_recursive(_LOCK_T lock)
 	}
 
 	if (rtos_critical_is_in_interrupt()) {
-		rtk_assert(0);
+		rtk_assert(0, "locks");
 	}
 
 	ret = xSemaphoreGiveRecursive((QueueHandle_t)lock);

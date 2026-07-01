@@ -55,7 +55,7 @@ void vPortEnableOtherCore(void)
 	}
 #endif
 	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
-			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RUNNING);
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RST_WAIT_DRAM);
 }
 
 #if ( configNUM_CORES > 1 )
@@ -259,7 +259,7 @@ void vApplicationFPUSafeIRQHandler(void)
 			if (pxISR) {
 				pxISR(xInterruptTable[ ulInterruptID ].pvContext);
 			} else {
-				printf("ISR for interrupt id(%lu) is not registered!\n ", (unsigned long)ulInterruptID);
+				RTK_LOGE(NOTAG, "ISR for interrupt id(%lu) is not registered!\n ", (unsigned long)ulInterruptID);
 				for (;;);
 			}
 

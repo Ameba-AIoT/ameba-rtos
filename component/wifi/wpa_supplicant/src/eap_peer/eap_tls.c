@@ -230,10 +230,6 @@ static struct wpabuf *eap_tls_process(struct eap_sm *sm, void *priv,
 	struct eap_tls_data *data = priv;
 	struct wpabuf msg;
 
-	if (ret == NULL) {
-		ret = (struct eap_method_ret *)os_zalloc(sizeof(struct eap_method_ret));
-	}
-
 	pos = eap_peer_tls_process_init(sm, &data->ssl, (enum EapType)data->eap_type, ret,
 									reqData, &left, &flags);
 	if (pos == NULL) {
@@ -263,10 +259,6 @@ static struct wpabuf *eap_tls_process(struct eap_sm *sm, void *priv,
 	if (res == 1) {
 		wpabuf_free(resp);
 		return eap_peer_tls_build_ack(id, (enum EapType)data->eap_type, 0);
-	}
-
-	if (ret) {
-		os_free(ret, 0);
 	}
 
 	return resp;

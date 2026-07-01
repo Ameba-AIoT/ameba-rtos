@@ -245,12 +245,12 @@ static int usbd_composite_msc_sd_writeblocks(u32 sector, const u8 *data, u32 cou
 static void usbd_composite_msc_abort(usb_dev_t *dev)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
-	usbd_composite_msc_cbw_t *cbw = mdev->cbw;
+	usb_msc_bot_cbw_t *cbw = mdev->cbw;
 	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
 	usbd_ep_t *ep_bulk_in = &mdev->ep_bulk_in;
 
-	if ((cbw->bmCBWFlags == 0U) &&
-		(cbw->dCBWDataTransferLength != 0U) &&
+	if ((cbw->field.bmCBWFlags == 0U) &&
+		(cbw->field.dCBWDataTransferLength != 0U) &&
 		(mdev->bot_status == COMP_MSC_STATUS_NORMAL)) {
 		usbd_ep_set_stall(dev, ep_bulk_out);
 	}
@@ -258,12 +258,14 @@ static void usbd_composite_msc_abort(usb_dev_t *dev)
 	usbd_ep_set_stall(dev, ep_bulk_in);
 
 	if (mdev->bot_status == COMP_MSC_STATUS_ERROR) {
-		usbd_composite_msc_bulk_receive(dev, (u8 *)cbw, COMP_MSC_CB_WRAP_LEN);
+		usbd_composite_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN);
 	}
 }
 
 /**
   * @brief  Set MSC class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -274,17 +276,20 @@ static int usbd_composite_msc_set_config(usb_dev_t *dev, u8 config)
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
 	usbd_ep_t *ep_bulk_in = &mdev->ep_bulk_in;
+	usb_ep_info_t *info;
 
 	UNUSED(config);
 
 	mdev->dev = dev;
 
 	/* Init BULK IN EP */
-	ep_bulk_in->mps = (dev->dev_speed == USB_SPEED_HIGH) ? COMP_MSC_HS_MAX_PACKET_SIZE : COMP_MSC_FS_MAX_PACKET_SIZE;
+	info = &ep_bulk_in->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? COMP_MSC_HS_MAX_PACKET_SIZE : COMP_MSC_FS_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_bulk_in);
 
 	/* Init BULK OUT EP */
-	ep_bulk_out->mps = (dev->dev_speed == USB_SPEED_HIGH) ? COMP_MSC_HS_MAX_PACKET_SIZE : COMP_MSC_FS_MAX_PACKET_SIZE;
+	info = &ep_bulk_out->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? COMP_MSC_HS_MAX_PACKET_SIZE : COMP_MSC_FS_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_bulk_out);
 
 	mdev->bot_state = COMP_MSC_IDLE;
@@ -296,13 +301,15 @@ static int usbd_composite_msc_set_config(usb_dev_t *dev, u8 config)
 	mdev->phase_error = 0;
 
 	/* Prepare to receive next BULK OUT packet */
-	usbd_composite_msc_bulk_receive(dev, (u8 *)mdev->cbw, COMP_MSC_CB_WRAP_LEN);
+	usbd_composite_msc_bulk_receive(dev, (u8 *)mdev->cbw, USB_MSC_CBW_LEN);
 
 	return ret;
 }
 
 /**
   * @brief  Clear MSC configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
   * @retval Status
@@ -331,6 +338,8 @@ static int usbd_composite_msc_clear_config(usb_dev_t *dev, u8 config)
 
 /**
   * @brief  Handle MSC specific CTRL requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: USB CTRL requests
   * @retval Status
@@ -339,40 +348,13 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
-	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
-	usbd_ep_t *ep_bulk_in = &mdev->ep_bulk_in;
+
 	int ret = HAL_OK;
-	u8 ep_addr;
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	/* Standard request */
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
-		case USB_REQ_CLEAR_FEATURE:
-			/* DeInit EP */
-			ep_addr = (u8)req->wIndex & 0xFF;
-			if (ep_addr == ep_bulk_out->addr) {
-				usbd_ep_deinit(dev, ep_bulk_out);
-			} else if (ep_addr == ep_bulk_in->addr) {
-				usbd_ep_deinit(dev, ep_bulk_in);
-			}
-
-			if ((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) {
-				usbd_ep_init(dev, ep_bulk_in);
-			} else {
-				usbd_ep_init(dev, ep_bulk_out);
-			}
-
-			/* Handle BOT error */
-			if (mdev->bot_status == COMP_MSC_STATUS_ERROR) { /* Bad CBW Signature */
-				usbd_ep_set_stall(dev, ep_bulk_in);
-				mdev->bot_status = COMP_MSC_STATUS_NORMAL;
-			} else if (((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) && (mdev->bot_status != COMP_MSC_STATUS_RECOVERY)) {
-				usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_FAILED);
-			} else {
-				// Do nothing
-			}
-			break;
 		default:
 			ret = HAL_ERR_PARA;
 			break;
@@ -381,7 +363,7 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	/* Class request */
 	case USB_REQ_TYPE_CLASS:
 		switch (req->bRequest) {
-		case COMP_MSC_REQUEST_GET_MAX_LUN:
+		case USB_MSC_REQUEST_GET_MAX_LUN:
 			if ((req->wValue  == 0U) && (req->wLength == 1U) &&
 				((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H)) {
 				ep0_in->xfer_buf[0] = 0U;
@@ -392,13 +374,13 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			break;
 
-		case COMP_MSC_REQUEST_RESET:
+		case USB_MSC_REQUEST_BOT_RESET:
 			if ((req->wValue  == 0U) && (req->wLength == 0U) &&
 				((req->bmRequestType & USB_REQ_DIR_MASK) != USB_D2H)) {
 				mdev->bot_state  = COMP_MSC_IDLE;
 				mdev->bot_status = COMP_MSC_STATUS_RECOVERY;
 				/* Prepare to receive BOT cmd */
-				usbd_composite_msc_bulk_receive(dev, (u8 *)mdev->cbw, COMP_MSC_CB_WRAP_LEN);
+				usbd_composite_msc_bulk_receive(dev, (u8 *)mdev->cbw, USB_MSC_CBW_LEN);
 			} else {
 				ret = HAL_ERR_PARA;
 			}
@@ -420,6 +402,8 @@ static int usbd_composite_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 /**
   * @brief  Data sent on non-control IN endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -451,18 +435,18 @@ static void usbd_composite_msc_tx_process(void)
 	if (mdev->tx_status == HAL_OK) {
 		switch (mdev->bot_state) {
 		case COMP_MSC_DATA_IN:
-			if (usbd_composite_scsi_process_cmd(mdev, &mdev->cbw->CBWCB[0]) < 0) {
-				usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_FAILED);
+			if (usbd_composite_scsi_process_cmd(mdev, &mdev->cbw->field.CBWCB[0]) < 0) {
+				usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
 			}
 			break;
 
 		case COMP_MSC_SEND_DATA:
 		case COMP_MSC_LAST_DATA_IN:
 			if (mdev->phase_error == 1) {
-				usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_PHASE_ERROR);
+				usbd_composite_msc_send_csw(dev, BOT_CSW_PHASE_ERROR);
 				mdev->phase_error = 0;
 			} else {
-				usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_PASSED);
+				usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_PASSED);
 			}
 			break;
 
@@ -478,6 +462,8 @@ static void usbd_composite_msc_tx_process(void)
 
 /**
   * @brief  Data received on non-control Out endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  ep_addr: endpoint address
   * @retval Status
@@ -502,8 +488,8 @@ static int usbd_composite_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32
 static void usbd_composite_msc_rx_process(void)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
-	usbd_composite_msc_cbw_t *cbw = mdev->cbw;
-	usbd_composite_msc_csw_t *csw = mdev->csw;
+	usb_msc_bot_cbw_t *cbw = mdev->cbw;
+	usb_msc_bot_csw_t *csw = mdev->csw;
 	usb_dev_t *dev = mdev->dev;
 
 	usb_os_lock(usbd_composite_msc_sd_lock);
@@ -511,23 +497,23 @@ static void usbd_composite_msc_rx_process(void)
 	switch (mdev->bot_state) {
 	case COMP_MSC_IDLE:
 		/* Decode the CBW command */
-		csw->dCSWTag = cbw->dCBWTag;
-		csw->dCSWDataResidue = cbw->dCBWDataTransferLength;
+		csw->field.dCSWTag = cbw->field.dCBWTag;
+		csw->field.dCSWDataResidue = cbw->field.dCBWDataTransferLength;
 
-		if ((mdev->rx_data_length != COMP_MSC_CB_WRAP_LEN) ||
-			(cbw->dCBWSignature != COMP_MSC_CB_SIGN) ||
-			(cbw->bCBWLUN > 1U) ||
-			(cbw->bCBWCBLength < 1U) || (cbw->bCBWCBLength > 16U)) {
-			usbd_composite_scsi_sense_code(mdev, ILLEGAL_REQUEST, INVALID_CDB);
+		if ((mdev->rx_data_length != USB_MSC_CBW_LEN) ||
+			(cbw->field.dCBWSignature != USB_MSC_CBW_SIGN) ||
+			(cbw->field.bCBWLUN > 1U) ||
+			(cbw->field.bCBWCBLength < 1U) || (cbw->field.bCBWCBLength > 16U)) {
+			usbd_composite_scsi_sense_code(mdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			mdev->bot_status = COMP_MSC_STATUS_ERROR;
 			usbd_composite_msc_abort(dev);
 		} else {
-			if (usbd_composite_scsi_process_cmd(mdev, &cbw->CBWCB[0]) < 0) {
+			if (usbd_composite_scsi_process_cmd(mdev, &cbw->field.CBWCB[0]) < 0) {
 				if (mdev->phase_error == 1) {
-					usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_PHASE_ERROR);
+					usbd_composite_msc_send_csw(dev, BOT_CSW_PHASE_ERROR);
 					mdev->phase_error = 0;
 				} else if (mdev->bot_state == COMP_MSC_NO_DATA) {
-					usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_FAILED);
+					usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
 				} else {
 					usbd_composite_msc_abort(dev);
 				}
@@ -537,14 +523,14 @@ static void usbd_composite_msc_rx_process(void)
 					 (mdev->bot_state != COMP_MSC_DATA_OUT) &&
 					 (mdev->bot_state != COMP_MSC_LAST_DATA_IN)) {
 				if (mdev->data_length > 0U) {
-					u16 length = (u16)MIN(cbw->dCBWDataTransferLength, mdev->data_length);
-					csw->dCSWDataResidue -= mdev->data_length;
-					csw->bCSWStatus = COMP_MSC_CSW_CMD_PASSED;
+					u32 length = MIN(cbw->field.dCBWDataTransferLength, mdev->data_length);
+					csw->field.dCSWDataResidue -= mdev->data_length;
+					csw->field.bCSWStatus = BOT_CSW_CMD_PASSED;
 					mdev->bot_state = COMP_MSC_SEND_DATA;
 
 					usbd_composite_msc_bulk_transmit(dev, mdev->data, length);
 				} else if (mdev->data_length == 0U) {
-					usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_PASSED);
+					usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_PASSED);
 				} else {
 					usbd_composite_msc_abort(dev);
 				}
@@ -553,8 +539,8 @@ static void usbd_composite_msc_rx_process(void)
 		break;
 
 	case COMP_MSC_DATA_OUT:
-		if (usbd_composite_scsi_process_cmd(mdev, &cbw->CBWCB[0]) < 0) {
-			usbd_composite_msc_send_csw(dev, COMP_MSC_CSW_CMD_FAILED);
+		if (usbd_composite_scsi_process_cmd(mdev, &cbw->field.CBWCB[0]) < 0) {
+			usbd_composite_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
 		}
 
 		break;
@@ -568,6 +554,8 @@ static void usbd_composite_msc_rx_process(void)
 
 /**
   * @brief  Get descriptor callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
   * @param  buf: Poniter to Buffer
@@ -590,6 +578,8 @@ static u16 usbd_composite_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *re
 		}
 		usb_os_memcpy((void *)buf, (void *)desc, len);
 		break;
+
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (speed == USB_SPEED_HIGH) {
 			desc = (u8 *)usbd_composite_msc_fs_itf_desc;
@@ -600,6 +590,8 @@ static u16 usbd_composite_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *re
 		}
 		usb_os_memcpy((void *)buf, (void *)desc, len);
 		break;
+#endif
+
 	default:
 		break;
 	}
@@ -679,6 +671,7 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 	usbd_composite_msc_disk_ops_t *ops = &mdev->disk_ops;
 	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
 	usbd_ep_t *ep_bulk_in = &mdev->ep_bulk_in;
+	usb_ep_info_t *info;
 	int ret = HAL_OK;
 
 	RTK_LOGS(TAG,  RTK_LOG_INFO, "Init\n");
@@ -701,7 +694,11 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 #endif
 #endif
 
-	usb_os_lock_create(&usbd_composite_msc_sd_lock);
+	ret = usb_os_lock_create(&usbd_composite_msc_sd_lock);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create lock fail\n");
+		return ret;
+	}
 
 	mdev->data = (u8 *)usb_os_malloc(COMP_MSC_BUFLEN);
 	if (mdev->data == NULL) {
@@ -709,28 +706,39 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 		goto data_buf_fail;
 	}
 
-	mdev->cbw = (usbd_composite_msc_cbw_t *)usb_os_malloc(COMP_MSC_CB_WRAP_LEN);
+	mdev->cbw = (usb_msc_bot_cbw_t *)usb_os_malloc(USB_MSC_CBW_LEN);
 	if (mdev->cbw == NULL) {
 		ret = HAL_ERR_MEM;
 		goto cbw_fail;
 	}
 
-	mdev->csw = (usbd_composite_msc_csw_t *)usb_os_malloc(COMP_MSC_CS_WRAP_LEN);
+	mdev->csw = (usb_msc_bot_csw_t *)usb_os_malloc(USB_MSC_CSW_LEN);
 	if (mdev->csw == NULL) {
 		ret = HAL_ERR_MEM;
 		goto csw_fail;
 	}
 
-	rtos_sema_create(&mdev->rx_sema, 0U, 1U);
-	rtos_sema_create(&mdev->tx_sema, 0U, 1U);
+	ret = rtos_sema_create(&mdev->rx_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX sema fail\n");
+		goto create_rx_sema_fail;
+	}
 
-	ret = rtos_task_create(&mdev->rx_task, "usbd_composite_msc_rx_thread", usbd_composite_msc_rx_thread, NULL, 1024U, COMP_MSC_RX_THREAD_PRIORITY);
+	ret = rtos_sema_create(&mdev->tx_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX sema fail\n");
+		goto create_tx_sema_fail;
+	}
+
+	ret = rtos_task_create(&mdev->rx_task, "usbd_composite_msc_rx_thread", usbd_composite_msc_rx_thread, NULL, COMP_MSC_TRX_THREAD_STACK_SIZE,
+						   COMP_MSC_RX_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX thread fail\n");
 		goto create_rx_thread_fail;
 	}
 
-	ret = rtos_task_create(&mdev->tx_task, "usbd_composite_msc_tx_thread", usbd_composite_msc_tx_thread, NULL, 1024U, COMP_MSC_TX_THREAD_PRIORITY);
+	ret = rtos_task_create(&mdev->tx_task, "usbd_composite_msc_tx_thread", usbd_composite_msc_tx_thread, NULL, COMP_MSC_TRX_THREAD_STACK_SIZE,
+						   COMP_MSC_TX_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX thread fail\n");
 		goto create_tx_thread_fail;
@@ -739,11 +747,13 @@ int usbd_composite_msc_init(usbd_composite_dev_t *cdev)
 	mdev->blkbits = COMP_MSC_BLK_BITS;
 	mdev->blksize = COMP_MSC_BLK_SIZE;
 
-	ep_bulk_out->addr = USBD_COMP_MSC_BULK_OUT_EP;
-	ep_bulk_out->type = USB_CH_EP_TYPE_BULK;
+	info = &ep_bulk_out->info;
+	info->addr = USBD_COMP_MSC_BULK_OUT_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
 
-	ep_bulk_in->addr = USBD_COMP_MSC_BULK_IN_EP;
-	ep_bulk_in->type = USB_CH_EP_TYPE_BULK;
+	info = &ep_bulk_in->info;
+	info->addr = USBD_COMP_MSC_BULK_IN_EP;
+	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_in->dis_zlp = 1;
 
 	usbd_register_class(&usbd_composite_msc_driver);
@@ -755,7 +765,13 @@ create_tx_thread_fail:
 
 create_rx_thread_fail:
 	rtos_sema_delete(mdev->tx_sema);
+
+create_tx_sema_fail:
 	rtos_sema_delete(mdev->rx_sema);
+
+create_rx_sema_fail:
+	usb_os_mfree(mdev->csw);
+	mdev->csw = NULL;
 
 csw_fail:
 	usb_os_mfree(mdev->cbw);
@@ -861,17 +877,17 @@ int usbd_composite_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u32 len)
 void usbd_composite_msc_send_csw(usb_dev_t *dev, u8 status)
 {
 	usbd_composite_msc_dev_t *mdev = &usbd_composite_msc_dev;
-	usbd_composite_msc_cbw_t *cbw = mdev->cbw;
-	usbd_composite_msc_csw_t *csw = mdev->csw;
+	usb_msc_bot_cbw_t *cbw = mdev->cbw;
+	usb_msc_bot_csw_t *csw = mdev->csw;
 #if COMP_MSC_FIX_CV_TEST_ISSUE
 	usbd_ep_t *ep_bulk_out = &mdev->ep_bulk_out;
 #endif
 
-	csw->dCSWSignature = COMP_MSC_CS_SIGN;
-	csw->bCSWStatus = status;
+	csw->field.dCSWSignature = USB_MSC_CSW_SIGN;
+	csw->field.bCSWStatus = status;
 	mdev->bot_state = COMP_MSC_IDLE;
 
-	usbd_composite_msc_bulk_transmit(dev, (u8 *)csw, COMP_MSC_CS_WRAP_LEN);
+	usbd_composite_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN);
 
 #if COMP_MSC_FIX_CV_TEST_ISSUE
 	/* Fix CV test failure */
@@ -882,6 +898,5 @@ void usbd_composite_msc_send_csw(usb_dev_t *dev, u8 status)
 #endif
 
 	/* Prepare EP to Receive next Cmd */
-	usbd_composite_msc_bulk_receive(dev, (u8 *)cbw, COMP_MSC_CB_WRAP_LEN);
+	usbd_composite_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN);
 }
-

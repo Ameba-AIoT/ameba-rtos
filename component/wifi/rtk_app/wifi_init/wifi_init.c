@@ -63,7 +63,7 @@ void wifi_init_thread(void *param)
 {
 	UNUSED(param);
 #ifdef CONFIG_LWIP_LAYER
-	LwIP_Init();
+	lwip_module_init();
 #endif
 
 	whc_host_init();
@@ -86,7 +86,7 @@ void wifi_init_thread(void *param)
 	UNUSED(param);
 
 #if defined(CONFIG_LWIP_LAYER) && defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
-	LwIP_Init();
+	lwip_module_init();
 #endif
 
 #ifdef CONFIG_WHC_CMD_PATH
@@ -108,7 +108,7 @@ void wifi_init_thread(void *param)
 #endif
 
 #ifdef CONFIG_LWIP_LAYER
-	LwIP_Init();
+	lwip_module_init();
 #endif
 
 	wifi_on(RTW_MODE_STA);

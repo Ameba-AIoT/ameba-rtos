@@ -37,7 +37,6 @@ set(private_compile_options)         #private compile_options
 
 ameba_list_append(private_sources
     a2dp_hfp_pbp.c
-    app_queue_mgr.c
 )
 
 ameba_list_append(private_includes

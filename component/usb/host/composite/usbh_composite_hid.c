@@ -12,9 +12,9 @@
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
-#define UBSH_COMPOSITE_HID_CTRL_BUF_LEN        512U
-#define UBSH_COMPOSITE_HID_IDLE_MAX_CNT        10U
-#define UBSH_COMPOSITE_HID_TRIGGER_MAX_CNT     50U
+#define USBH_COMPOSITE_HID_CTRL_BUF_LEN        512U
+#define USBH_COMPOSITE_HID_IDLE_MAX_CNT        10U
+#define USBH_COMPOSITE_HID_TRIGGER_MAX_CNT     50U
 
 #if USBH_COMPOSITE_HID_UAC_DEBUG
 #define USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG       0
@@ -22,7 +22,10 @@
 #define USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG       0
 #endif
 
-#define mem_sync()    __sync_synchronize()
+#define USBH_COMPOSITE_HID_THREAD_PRIORITY     3U      /**< HID processing thread priority */
+#define USBH_COMPOSITE_HID_THREAD_STACK_SIZE   768U    /**< HID msg parse thread stack size */
+#define USBH_COMPOSITE_HID_MST_COUNT           10U     /**< Maximum support touch count (if applicable) */
+#define USBH_COMPOSITE_HID_MSG_LENGTH          16U     /**< Message queue length */
 
 /* Private function prototypes -----------------------------------------------*/
 #if USBH_COMPOSITE_HID_REPORT_DESC_PARSE_DEBUG
@@ -36,30 +39,30 @@ static void usbh_composite_hid_process_global_item(usbh_composite_hid_parse_stat
 static void usbh_composite_hid_process_usage(usbh_composite_hid_parse_state *state, u32 usage);
 static void usbh_composite_hid_process_local_item(usbh_composite_hid_parse_state *state, const usbh_composite_hid_item_t *item);
 static void usbh_composite_hid_process_main_item(usbh_composite_hid_parse_state *state, const usbh_composite_hid_item_t *item);
-static void usbh_composite_hid_parse_hid_report_descriptor(const u8 *data, u8 length, usbh_composite_hid_ctrl_caps_t *device_info);
+static void usbh_composite_hid_parse_hid_report_descriptor(const u8 *data, u16 length, usbh_composite_hid_ctrl_caps_t *device_info);
 static int usbh_composite_hid_parse_hid_report(const u8 *report_data, u8 report_len, const usbh_composite_hid_ctrl_caps_t *device_info);
-static int usbh_composite_hid_parse_hid_report_desc(u8 *pbuf, u32 buf_length);
+static int usbh_composite_hid_parse_hid_report_desc(u8 *pbuf, u16 buf_length);
 static void usbh_composite_hid_parse_hid_msg(const u8 *report, u8 len);
 static int usbh_composite_hid_parse_details(usbh_itf_data_t *itf_data);
 static int usbh_composite_hid_parse_interface(usb_host_t *host);
 static int usbh_composite_hid_process_get_hid_report_desc(usb_host_t *host);
 static void usbh_composite_hid_in_process(usb_host_t *host);
-static int usbh_composite_hid_cb_attach(usb_host_t *host);
-static int usbh_composite_hid_cb_detach(usb_host_t *host);
-static int usbh_composite_hid_cb_setup(usb_host_t *host);
-static int usbh_composite_hid_cb_process(usb_host_t *host, u32 msg);
-static int usbh_composite_hid_cb_sof(usb_host_t *host);
+static int usbh_composite_hid_attach(usb_host_t *host);
+static int usbh_composite_hid_detach(usb_host_t *host);
+static int usbh_composite_hid_setup(usb_host_t *host);
+static int usbh_composite_hid_process(usb_host_t *host, usbh_event_t *event);
+static int usbh_composite_hid_sof(usb_host_t *host);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "HID";
 
-/* USB Standard Device Descriptor */
+/* USB Class Driver */
 const usbh_class_driver_t usbh_composite_hid_driver = {
-	.attach = usbh_composite_hid_cb_attach,
-	.detach = usbh_composite_hid_cb_detach,
-	.setup = usbh_composite_hid_cb_setup,
-	.process = usbh_composite_hid_cb_process,
-	.sof = usbh_composite_hid_cb_sof,
+	.attach = usbh_composite_hid_attach,
+	.detach = usbh_composite_hid_detach,
+	.setup = usbh_composite_hid_setup,
+	.process = usbh_composite_hid_process,
+	.sof = usbh_composite_hid_sof,
 };
 
 static usbh_composite_hid_t usbh_composite_hid;
@@ -256,7 +259,7 @@ static void usbh_composite_hid_process_local_item(usbh_composite_hid_parse_state
 		break;
 
 	default:
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Unknown Local(0x%x)\n", item->tag);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Unknown Local(0x%x)\n", item->tag);
 		break;
 	}
 }
@@ -303,7 +306,7 @@ static void usbh_composite_hid_process_main_item(usbh_composite_hid_parse_state 
 	}
 }
 
-static void usbh_composite_hid_parse_hid_report_descriptor(const u8 *data, u8 length, usbh_composite_hid_ctrl_caps_t *device_info)
+static void usbh_composite_hid_parse_hid_report_descriptor(const u8 *data, u16 length, usbh_composite_hid_ctrl_caps_t *device_info)
 {
 	usbh_composite_hid_parse_state state = {0};
 	usbh_composite_hid_item_t item;
@@ -333,7 +336,7 @@ static void usbh_composite_hid_parse_hid_report_descriptor(const u8 *data, u8 le
 			usbh_composite_hid_process_main_item(&state, &item);
 			break;
 		default:
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Reserved Item Type\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Unknown item type %d\n", item.type);
 			break;
 		}
 	}
@@ -373,7 +376,7 @@ static int usbh_composite_hid_parse_hid_report(const u8 *report_data, u8 report_
 	event->is_press = 0;
 
 	if (report_len == 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Warning: Invalid report length: %d\n", report_len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Report len is zero\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -435,7 +438,7 @@ static int usbh_composite_hid_parse_hid_report(const u8 *report_data, u8 report_
 	return HAL_OK;
 }
 
-static int usbh_composite_hid_parse_hid_report_desc(u8 *pbuf, u32 buf_length)
+static int usbh_composite_hid_parse_hid_report_desc(u8 *pbuf, u16 buf_length)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 
@@ -511,6 +514,7 @@ static int usbh_composite_hid_parse_details(usbh_itf_data_t *itf_data)
 
 	hid->itf_idx = desc[2];
 	hid->itf_alt_idx = desc[3];
+	hid->alt_setting_count = 1; /* the first INTERFACE descriptor is alt #0 */
 
 	while (1) {
 		if (desc == NULL || itf_total_len >= itf_data->raw_data_len) {
@@ -527,6 +531,7 @@ static int usbh_composite_hid_parse_details(usbh_itf_data_t *itf_data)
 				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Hid intf new %d:old %d, return\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, hid->itf_idx);
 				return HAL_OK;
 			}
+			hid->alt_setting_count++;
 			break;
 		case USBH_HID_DESC:
 			hid_desc = (usbh_dev_hid_desc_t *)desc;
@@ -564,6 +569,9 @@ static int usbh_composite_hid_parse_interface(usb_host_t *host)
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "AC parse fail\n");
 			return ret;
 		}
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get if fail\n");
+		return HAL_ERR_PARA;
 	}
 
 	return ret;
@@ -621,7 +629,7 @@ static void usbh_composite_hid_in_process(usb_host_t *host)
 		} else if (urb_state == USBH_URB_ERROR) {
 			pipe->xfer_state = USBH_EP_XFER_START;
 		} else if (urb_state == USBH_URB_IDLE) {
-			if (usbh_get_elapsed_ticks(host, pipe->tick) > (UBSH_COMPOSITE_HID_IDLE_MAX_CNT)*pipe->ep_interval) {
+			if (usbh_get_elapsed_ticks(host, pipe->tick) > (USBH_COMPOSITE_HID_IDLE_MAX_CNT)*pipe->ep_interval) {
 				pipe->xfer_state = USBH_EP_XFER_START;
 				hid->next_xfer = 1;
 			}
@@ -638,7 +646,7 @@ static void usbh_composite_hid_in_process(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_hid_cb_attach(usb_host_t *host)
+static int usbh_composite_hid_attach(usb_host_t *host)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	usbh_pipe_t *pipe = NULL;
@@ -653,7 +661,11 @@ static int usbh_composite_hid_cb_attach(usb_host_t *host)
 
 	if (hid->ep_desc.bEndpointAddress) {
 		pipe = &(hid->pipe);
-		hid->report_desc_status = USBH_HID_REPORT_SET_ALT;
+		/* SET_INTERFACE is only required when more than one alt setting exists.
+		 * For the typical single-alt HID interface, skip it to avoid an unneeded
+		 * control transfer (and the 5 ms recovery on devices that STALL it). */
+		hid->report_desc_status = (hid->alt_setting_count > 1) ? USBH_HID_REPORT_SET_ALT
+								  : USBH_HID_REPORT_GET_DESC;
 
 		usbh_open_pipe(host, pipe, &(hid->ep_desc));
 	}
@@ -670,10 +682,13 @@ static int usbh_composite_hid_cb_attach(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_hid_cb_detach(usb_host_t *host)
+static int usbh_composite_hid_detach(usb_host_t *host)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
-	UNUSED(host);
+
+	if (hid->pipe.pipe_num) {
+		usbh_close_pipe(host, &(hid->pipe));
+	}
 
 	if ((hid->cb != NULL) && (hid->cb->detach != NULL)) {
 		hid->cb->detach();
@@ -687,7 +702,7 @@ static int usbh_composite_hid_cb_detach(usb_host_t *host)
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_hid_cb_setup(usb_host_t *host)
+static int usbh_composite_hid_setup(usb_host_t *host)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	usbh_pipe_t *pipe = &(hid->pipe);
@@ -706,17 +721,15 @@ static int usbh_composite_hid_cb_setup(usb_host_t *host)
 /**
   * @brief  State machine handling callback
   * @param  host: Host handle
-  * @param  msg: event message
+  * @param  event: USB host event
   * @retval Status
   */
-static int usbh_composite_hid_cb_process(usb_host_t *host, u32 msg)
+static int usbh_composite_hid_process(usb_host_t *host, usbh_event_t *event)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	usbh_pipe_t *pipe = &(hid->pipe);
-	usbh_event_t event;
-	event.d32 = msg;
 
-	if ((hid->hid_ctrl_buf) && (event.msg.pipe_num == pipe->pipe_num)) {
+	if (event && (hid->hid_ctrl_buf) && (event->pipe_num == pipe->pipe_num)) {
 		hid->next_xfer = 0;
 		usbh_composite_hid_in_process(host);
 		if (hid->next_xfer) {
@@ -731,15 +744,18 @@ static int usbh_composite_hid_cb_process(usb_host_t *host, u32 msg)
 
 /**
   * @brief  Sof callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_composite_hid_cb_sof(usb_host_t *host)
+static int usbh_composite_hid_sof(usb_host_t *host)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	usbh_pipe_t *pipe = &(hid->pipe);
 
-	if (usbh_get_elapsed_ticks(host, pipe->tick) > UBSH_COMPOSITE_HID_TRIGGER_MAX_CNT) {
+	if ((pipe->pipe_num != 0) &&
+		(usbh_get_elapsed_ticks(host, pipe->tick) > USBH_COMPOSITE_HID_TRIGGER_MAX_CNT)) {
 		usbh_notify_composite_class_state_change(host, pipe->pipe_num, USBH_COMPOSITE_HID_EVENT);
 	}
 
@@ -752,7 +768,7 @@ static void usbh_composite_hid_msg_parse_thread(void *param)
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	usb_ringbuf_manager_t *handle = &(hid->report_msg);
 	u8 report_msg[10];
-	u32 read_cnt;
+	u8 read_cnt;
 
 	hid->parse_task_alive = 1;
 	hid->parse_task_exit = 0;
@@ -784,31 +800,45 @@ int usbh_composite_hid_init(usbh_composite_host_t *driver, usbh_composite_hid_us
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	int ret;
 
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
 	usb_os_memset(hid, 0x00, sizeof(usbh_composite_hid_t));
 	hid->driver = driver;
 
-	hid->hid_ctrl_buf = (u8 *)usb_os_malloc(UBSH_COMPOSITE_HID_CTRL_BUF_LEN);
+	hid->hid_ctrl_buf = (u8 *)usb_os_malloc(USBH_COMPOSITE_HID_CTRL_BUF_LEN);
 	if (NULL == hid->hid_ctrl_buf) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc mem %d fail\n", UBSH_COMPOSITE_HID_CTRL_BUF_LEN);
 		return HAL_ERR_MEM;
 	}
 
-	if (cb != NULL) {
-		hid->cb = cb;
-		if (cb->init != NULL) {
-			ret = cb->init();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init fail\n");
-				return ret;
-			}
+	hid->cb = cb;
+	if (cb->init != NULL) {
+		ret = cb->init();
+		if (ret != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "CB init fail\n");
+			usb_os_mfree(hid->hid_ctrl_buf);
+			hid->hid_ctrl_buf = NULL;
+			return ret;
 		}
 	}
 
-	usb_ringbuf_manager_init(&(hid->report_msg), USBH_COMPOSITE_HID_MST_COUNT, USBH_COMPOSITE_HID_MSG_LENGTH, 0);
+	ret = usb_ringbuf_manager_init(&(hid->report_msg), USBH_COMPOSITE_HID_MST_COUNT, USBH_COMPOSITE_HID_MSG_LENGTH, 0);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ringbuffer init fail\n");
+		usb_os_mfree(hid->hid_ctrl_buf);
+		hid->hid_ctrl_buf = NULL;
+		return ret;
+	}
 
-	if (rtos_task_create(&(hid->msg_parse_task), ((const char *)"usbh_composite_hid_msg_parse"), usbh_composite_hid_msg_parse_thread,
-						 NULL, 4 * 1024U, USBH_COMPOSITE_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hid parse task fail\n");
+	if (rtos_task_create(&(hid->msg_parse_task), ((const char *)"usbh_composite_hid_msg_parse_thread"), usbh_composite_hid_msg_parse_thread,
+						 NULL, USBH_COMPOSITE_HID_THREAD_STACK_SIZE, USBH_COMPOSITE_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create parse thread fail\n");
+		usb_ringbuf_manager_deinit(&(hid->report_msg));
+		usb_os_mfree(hid->hid_ctrl_buf);
+		hid->hid_ctrl_buf = NULL;
+		return HAL_ERR_UNKNOWN;
 	}
 
 	return HAL_OK;
@@ -822,11 +852,19 @@ int usbh_composite_hid_deinit(void)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 
+	if ((hid->cb != NULL) && (hid->cb->deinit != NULL)) {
+		hid->cb->deinit();
+	}
+
 	if (hid->parse_task_alive) {
 		hid->parse_task_exit = 1;
 		do {
 			rtos_time_delay_ms(1);
 		} while (hid->parse_task_alive);
+	}
+
+	if (hid->pipe.pipe_num && hid->driver && hid->driver->host) {
+		usbh_close_pipe(hid->driver->host, &(hid->pipe));
 	}
 
 	if (hid->hid_ctrl_buf != NULL) {

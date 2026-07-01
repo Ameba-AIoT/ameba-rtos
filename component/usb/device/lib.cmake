@@ -47,15 +47,18 @@ ameba_list_append(private_includes
 )
 
 ameba_list_append(private_sources
-    ${c_CMPT_SOC_DIR}/fwlib/ram_common/ameba_usb.c
     ../common/usb_hal.c
     ../common/usb_os.c
+    ../common/usb_diag.c
     ../common/usb_ringbuf.c
     core/usbd.c
-    core/usbd_core.c
     core/usbd_hal.c
     core/usbd_pcd.c
+    core/usbd_pcd_xfer.c
+    core/usbd_pcd_isr.c
 )
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/../hal/hal.cmake)
 
 ameba_list_append_ifnot(CONFIG_SUPPORT_USB_NO_PHY private_sources
     ../common/usb_phy.c

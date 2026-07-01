@@ -18,17 +18,17 @@ static const char *const TAG = "AT_SDIO-D";
 #define SDIO_RX_BD_NUM	10
 #define SDIO_RX_BUFSZ	(SPDIO_RX_BUFSZ_ALIGN(2048+24)) //n*64, must be rounded to 64, extra 24 bytes for spdio header info
 
-struct spdio_t spdio_dev = {0};
+static struct spdio_t spdio_dev = {0};
 
-rtos_sema_t atcmd_sdio_rx_sema;
-rtos_sema_t atcmd_sdio_tx_sema;
-rtos_sema_t atcmd_sdio_tx_done_sema;
-RingBuffer *at_sdio_rx_ring_buf = NULL;
-RingBuffer *at_sdio_tx_ring_buf = NULL;
+static rtos_sema_t atcmd_sdio_rx_sema;
+static rtos_sema_t atcmd_sdio_tx_sema;
+static rtos_sema_t atcmd_sdio_tx_done_sema;
+static RingBuffer *at_sdio_rx_ring_buf = NULL;
+static RingBuffer *at_sdio_tx_ring_buf = NULL;
 
-u8 sdio_txbuf[ATCMD_SDIO_MAX_SIZE];
+static u8 sdio_txbuf[ATCMD_SDIO_MAX_SIZE];
 
-u8 g_sdio_device_ready = 0;
+static u8 g_sdio_device_ready = 0;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
@@ -234,11 +234,11 @@ recv_again:
 					RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n");
 				}
 
-				memset((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+				memset((u8 *)pCmdLogBuf->UARTLogBuf, '\0', CMD_BUFLEN);
 				pCmdLogBuf->BufCount = 0;
 				continue;
 			} else {
-				memset((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+				memset((u8 *)pCmdLogBuf->UARTLogBuf, '\0', CMD_BUFLEN);
 			}
 		}
 
@@ -335,4 +335,3 @@ int atio_sdio_init(void)
 
 	return 0;
 }
-

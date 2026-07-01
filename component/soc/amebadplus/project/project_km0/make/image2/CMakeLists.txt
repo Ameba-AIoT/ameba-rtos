@@ -107,9 +107,9 @@ add_custom_target(
 #------------- EXTRA PROCESS -----------------#
 set(clean_files
     ${c_SDK_IMAGE_TARGET_DIR}
-    ${FINAL_IMAGE_DIR}/km0_km4_app.bin
+    ${FINAL_IMAGE_DIR}/app.bin
     ${FINAL_IMAGE_DIR}/ota_all.bin
-    ${FINAL_IMAGE_DIR}/km0_km4_app_mp.bin
+    ${FINAL_IMAGE_DIR}/app_mp.bin
 )
 
 set(link_deps

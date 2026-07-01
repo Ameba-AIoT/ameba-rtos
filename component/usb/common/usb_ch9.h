@@ -13,6 +13,12 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/** @addtogroup USB_Common_API USB Common API
+ *  @{
+ */
+/** @addtogroup USB_Common_Constants USB Common Constants
+ * @{
+ */
 #define USB_VERSION_ID_0201                           0x0201 /**< USB Specification version 2.01. */
 
 /**
@@ -218,12 +224,16 @@
 #define USB_PORT_STAT_C_OVERCURRENT        0x0008 /**< Over-current status has changed. */
 #define USB_PORT_STAT_C_RESET              0x0010 /**< Reset completion has occurred. */
 /** @} */
-/** @} */ // End of Hub_Defs
+/** @} */
+/** @} End of USB_Common_Constants group */
 
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
 
+/** @addtogroup USB_Common_Types USB Common Types
+ * @{
+ */
 /**
  * @brief Defines the transfer type of a USB endpoint.
  * @details Corresponds to the `bmAttributes` field in the endpoint descriptor.
@@ -246,6 +256,18 @@ typedef enum {
 } usb_speed_type_t;
 
 /**
+ * @brief USB endpoint information structure.
+ * @details Contains basic endpoint configuration: interval, address, max packet size, and type.
+ */
+typedef struct {
+	u16 interval;                       /**< Endpoint polling interval in ticks, High-speed means 2^(binterval-1). */
+	u16 mps : 11;                       /**< Maximum Packet Size for this endpoint (0-1024). */
+	u16 type : 2;                       /**< Endpoint type (Control, Bulk, Isochronous, Interrupt). */
+	u8 binterval;                       /**< Polling interval for the endpoint. Full Speed: 1-255, High Speed: 1-16 */
+	u8 addr;                            /**< Endpoint address (includes direction). */
+} usb_ep_info_t;
+
+/**
  * @brief Standard USB setup request packet structure.
  * @details This structure represents the 8-byte setup packet sent
  *          during the setup phase of a control transfer. (USB Spec 2.0, Table 9-2)
@@ -257,10 +279,11 @@ typedef struct {
 	u16 wIndex;                   /**< Request-specific index, often an interface or endpoint number. */
 	u16 wLength;                  /**< Number of bytes to transfer in the data phase. */
 } __PACKED usb_setup_req_t;
+/** @} End of USB_Common_Types group */
+/** @} End of USB_Common_API group */
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
 #endif /* USB_CH9_H */
-

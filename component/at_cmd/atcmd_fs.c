@@ -572,7 +572,7 @@ void at_cert(u16 argc, char **argv)
 		error_no = 2;
 		goto end;
 	}
-	memset(buffer, 0, sizeof(buffer));
+	memset(buffer, 0, MAX_CERT_LEN + 1);
 	prefix = find_vfs_tag(g_cert_fs);
 	if (prefix == NULL) {
 		RTK_LOGW(TAG, "VFS region is not exist\r\n");
@@ -594,7 +594,7 @@ void at_cert(u16 argc, char **argv)
 	}
 	at_printf("\r\n");
 
-	memset(buffer, 0, sizeof(buffer));
+	memset(buffer, 0, MAX_CERT_LEN + 1);
 
 	DiagSnPrintf(path, VFS_PATH_MAX, "%s:CERT/%s_key_%d.key", prefix, role == 0 ? "client" : "server", index);
 	at_printf("%s\r\n", path);
@@ -610,7 +610,7 @@ void at_cert(u16 argc, char **argv)
 	}
 	at_printf("\r\n");
 
-	memset(buffer, 0, sizeof(buffer));
+	memset(buffer, 0, MAX_CERT_LEN + 1);
 
 	DiagSnPrintf(path, VFS_PATH_MAX, "%s:CERT/%s_cert_%d.crt", prefix, role == 0 ? "client" : "server", index);
 	at_printf("%s\r\n", path);

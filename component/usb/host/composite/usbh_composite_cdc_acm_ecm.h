@@ -27,9 +27,11 @@
  *         Registers the application callback handler and user private parameters.
  * @param[in] acm_cb: Pointer to the CDC ACM user-defined callback structure.
  * @param[in] ecm_cb: Pointer to the CDC ECM user-defined callback structure.
+ * @param[in] cb: Pointer to the Comp[osite user-defined callback structure.
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
-int usbh_composite_acm_ecm_init(usbh_composite_cdc_acm_usr_cb_t *acm_cb, usbh_composite_cdc_ecm_usr_cb_t *ecm_cb);
+int usbh_composite_acm_ecm_init(usbh_composite_cdc_acm_usr_cb_t *acm_cb, usbh_composite_cdc_ecm_usr_cb_t *ecm_cb,
+								usbh_composite_cb_t *cb);
 
 /**
  * @brief  De-initializes the composite host class driver and releases resources.
@@ -56,4 +58,3 @@ u16 usbh_composite_acm_ecm_get_device_pid(void);
 u8 usbh_composite_acm_ecm_is_ready(void);
 
 #endif  /* USBH_COMPOSITE_CDC_ACM_ECM_H */
-

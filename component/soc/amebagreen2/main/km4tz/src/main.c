@@ -1,7 +1,7 @@
 
 #include "ameba_soc.h"
 #include "main.h"
-#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE || defined CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+#if defined(CONFIG_VFS_ENABLED)
 #include "vfs.h"
 #endif
 #include "os_wrapper.h"
@@ -69,6 +69,11 @@ void app_mbedtls_rom_init(void)
 #if defined(CONFIG_MBEDTLS_THREADING)
 	mbedtls_threading_init();
 #endif
+	/* mbedtls calls into the HW crypto engine with interrupts disabled via the
+	 * IPC semaphore, so cache inconsistency cannot occur; suppress the
+	 * cache-misalignment warning log.
+	 */
+	rtk_log_level_set("CPYPTO", RTK_LOG_ERROR);
 }
 
 void app_pmu_init(void)
@@ -169,11 +174,6 @@ int main(void)
 
 	/* pre-processor of application example */
 	app_pre_example();
-
-#ifdef CONFIG_ETHERNET
-	extern void eth_init(void);
-	eth_init();
-#endif
 
 #if defined(CONFIG_BT_COEXIST)
 	/* init coex ipc */

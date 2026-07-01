@@ -23,7 +23,7 @@
 #include "os_wrapper.h"
 #include <rtw_timer.h>
 #include "lwip/err.h"
-#include "ethernetif.h"
+#include "netif_adapter.h"
 
 
 #if defined(CONFIG_WHC_HOST)

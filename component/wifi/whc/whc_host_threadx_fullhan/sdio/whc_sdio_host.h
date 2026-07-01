@@ -340,10 +340,10 @@ int wifi_on(uint8_t mode);
 void whc_host_init(void);
 
 //below for lwip
-void LwIP_Init(void);
-void LwIP_SetIP(uint8_t idx, uint32_t addr, uint32_t netmask_addr, uint32_t gw_addr);
-void LwIP_netif_set_link_up(uint8_t idx);
-void LwIP_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr);
+void lwip_module_init(void);
+void lwip_set_ip(uint8_t idx, uint32_t addr, uint32_t netmask_addr, uint32_t gw_addr);
+void lwip_netif_set_link_up(uint8_t idx);
+void lwip_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr);
 
 #endif
 

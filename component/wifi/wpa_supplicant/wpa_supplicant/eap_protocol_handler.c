@@ -26,6 +26,11 @@ extern const unsigned char *eap_ca_cert;
 extern const unsigned char *eap_client_cert;
 extern const unsigned char *eap_client_key;
 
+extern int eap_fast_max_pac_list_len;
+extern int eap_fast_provisioning_mode;
+extern int eap_fast_use_binary_pac;
+extern char *eap_fast_machine_pac;
+
 extern void eap_server_cert_free(void);
 extern void eap_client_cert_free(void);
 extern int eap_cert_init(void);
@@ -95,9 +100,30 @@ int set_eap_ttls_method(void)
 #endif
 }
 
+int set_eap_fast_method(void)
+{
+#if CONFIG_ENABLE_FAST
+	int ret = eap_peer_fast_register();
+	if (ret != -1) {
+		ret = eap_peer_mschapv2_register();
+	}
+	if (ret != -1) {
+		eap = eap_peer_get_eap_method(EAP_VENDOR_IETF, EAP_TYPE_FAST);
+	}
+	if (eap == NULL) {
+		return -1;
+	}
+	g_eap_context.eap_method = EAP_TYPE_FAST;
+	wifi_set_eap_method(EAP_TYPE_FAST);
+	return 0;
+#else
+	return -1;
+#endif
+}
+
 void eap_send_eapol_start(u8 *dst_mac)
 {
-	u8 *dev_mac = LwIP_GetMAC(NETIF_WLAN_STA_INDEX);
+	u8 *dev_mac = lwip_get_mac(NETIF_WLAN_STA_INDEX);
 	struct wlan_ethhdr_t *eth_hdr;
 	struct lib1x_eapol *eapol;
 	u8 *buf = NULL;
@@ -135,7 +161,7 @@ static void eap_send_eap_rspidentity(u8 *rx_buf)
 	struct lib1x_eapol *eapol;
 	struct lib1x_eapol_message_hdr *received_eapol_identity_payload_hdr;
 	struct lib1x_eapol_message_hdr *eapol_identity_respose;
-	unsigned char *identity = g_eap_context.eap_sm->last_config->identity;
+	unsigned char *identity = (unsigned char *)g_eap_context.eap_sm->last_config->identity;
 	unsigned char *temp = NULL;
 	u8 *buf = NULL;
 	u32 length = ETH_HLEN + LIB1X_EAPOL_HDRLEN + 34; //52
@@ -228,6 +254,7 @@ void eap_sm_deinit(void)
 {
 	struct eap_sm *sm = g_eap_context.eap_sm;
 	void *data = g_eap_context.eap_data;
+	struct eap_method_ret *method_ret = g_eap_context.eap_method_ret;
 
 	g_eap_context.isKeySet = 0;
 
@@ -237,9 +264,13 @@ void eap_sm_deinit(void)
 		if (sm->last_config != NULL) {
 			os_free(sm->last_config, 0);
 		}
+		if (method_ret) {
+			os_free(method_ret, 0);
+		}
 		os_free(sm, 0);
 		g_eap_context.eap_sm = NULL;
 		g_eap_context.eap_data = NULL;
+		g_eap_context.eap_method_ret = NULL;
 	}
 
 	// unregister eap methods
@@ -254,6 +285,7 @@ int eap_sm_init(void)
 {
 	g_eap_context.eapIsProcessing = 1;
 	g_eap_context.isKeySet = 0;
+	char phase1_str[100];
 
 	if (eap == NULL) {
 		wpa_printf(MSG_INFO, "EAP: eap method null");
@@ -310,6 +342,26 @@ int eap_sm_init(void)
 		//conf->phase2 = "auth=MD5";
 		conf->phase2 = "auth=MSCHAPV2";
 		break;
+	case EAP_TYPE_FAST:
+		//load pacinfo for phase 1
+		memset(phase1_str, '\0', 100);
+		/*if(!eap_fast_pac_data) {
+			wpa_printf(MSG_INFO, "EAP: eap fast data address set failed. Please check eap_fast_pac_data");
+		}*/
+		if (eap_fast_provisioning_mode == 1 || eap_fast_provisioning_mode == 2) {
+			sprintf(phase1_str, "fast_provisioning=%d ", eap_fast_provisioning_mode);
+		}
+		if (eap_fast_max_pac_list_len > 0) {
+			sprintf(phase1_str + strlen(phase1_str), "fast_max_pac_list_len=%d ", eap_fast_max_pac_list_len);
+		}
+		if (eap_fast_use_binary_pac > 0) {
+			sprintf(phase1_str + strlen(phase1_str), "fast_pac_format=binary ");
+		}
+
+		conf->phase1 = phase1_str;
+		conf->phase2 = "auth=MSCHAPV2";
+		conf->pac_file = eap_fast_machine_pac;
+		break;
 	default:
 		break;
 	}
@@ -327,7 +379,9 @@ int eap_sm_init(void)
 		return -1;
 	}
 
-
+	if (g_eap_context.eap_method_ret == NULL) {
+		g_eap_context.eap_method_ret = (struct eap_method_ret *)os_zalloc(sizeof(struct eap_method_ret));
+	}
 
 	// set the cert auth
 	if (eap_cert_init() != 0) {
@@ -390,7 +444,7 @@ void eap_supplicant_handle_recvd(u8 *rx_buf)
 	}
 
 	reqData->buf = (unsigned char *)eapol_payload_hdr;
-	sendData = eap->process(g_eap_context.eap_sm, g_eap_context.eap_data, NULL, reqData);
+	sendData = eap->process(g_eap_context.eap_sm, g_eap_context.eap_data, g_eap_context.eap_method_ret, reqData);
 
 	os_free(reqData, 0);
 

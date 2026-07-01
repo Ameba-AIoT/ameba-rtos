@@ -351,7 +351,6 @@ static inline int _wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data,
 	return pos - buf;
 }
 
-#if 0
 /**
  * wpa_snprintf_hex - Print data as a hex string into a buffer
  * @buf: Memory area to use as the output buffer
@@ -364,7 +363,6 @@ int wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data, size_t len)
 {
 	return _wpa_snprintf_hex(buf, buf_size, data, len, 0);
 }
-#endif
 
 /**
  * wpa_snprintf_hex_uppercase - Print data as a upper case hex string into buf
@@ -1197,4 +1195,23 @@ size_t utf8_escape(const char *inp, size_t in_size,
 int is_ctrl_char(char c)
 {
 	return c > 0 && c < 32;
+}
+
+/* Try to prevent most compilers from optimizing out clearing of memory that
+ * becomes unaccessible after this function is called. This is mostly the case
+ * for clearing local stack variables at the end of a function. This is not
+ * exactly perfect, i.e., someone could come up with a compiler that figures out
+ * the pointer is pointing to memset and then end up optimizing the call out, so
+ * try go a bit further by storing the first octet (now zero) to make this even
+ * a bit more difficult to optimize out. Once memset_s() is available, that
+ * could be used here instead. */
+static void *(* const volatile memset_func)(void *, int, size_t) = memset;
+static u8 forced_memzero_val;
+
+void forced_memzero(void *ptr, size_t len)
+{
+	memset_func(ptr, 0, len);
+	if (len) {
+		forced_memzero_val = ((u8 *) ptr)[0];
+	}
 }

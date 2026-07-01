@@ -7,7 +7,6 @@
 /* Includes ------------------------------------------------------------------ */
 
 #include <platform_autoconf.h>
-#include "usbd.h"
 #include "usbd_composite_cdc_acm_msc.h"
 #include "os_wrapper.h"
 #ifdef CONFIG_USBD_COMPOSITE_MSC_SECOND_FLASH
@@ -35,9 +34,11 @@ static const char *const TAG = "COMP";
 #define CONFIG_USBD_COMPOSITE_CDC_ACM_MSC_BULK_OUT_XFER_SIZE	2048U
 
 // Thread priorities
-#define CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY				5U
-#define CONFIG_USBD_COMPOSITE_ISR_THREAD_PRIORITY				7U
-#define CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY			8U // Should be higher than CONFIG_USBD_COMPOSITE_ISR_THREAD_PRIORITY
+#define CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY           5U
+#define CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY        8U
+// Thread stack sizes
+#define CONFIG_USBD_COMPOSITE_INIT_THREAD_STACK_SIZE           1024U
+#define CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_STACK_SIZE        1024U
 
 /* Private types -------------------------------------------------------------*/
 
@@ -57,10 +58,8 @@ static void composite_cb_status_changed(u8 old_status, u8 status);
 
 static usbd_config_t composite_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
-	.isr_priority = CONFIG_USBD_COMPOSITE_ISR_THREAD_PRIORITY,
-	.intr_use_ptx_fifo = 0U,
+	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBASMART)
-	.ext_intr_enable = USBD_EPMIS_INTR,
 	.nptx_max_epmis_cnt = 100U,
 #elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 420U,
@@ -81,8 +80,6 @@ static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 };
 
 static usb_cdc_line_coding_t composite_cdc_acm_line_coding;
-
-static u16 composite_cdc_acm_ctrl_line_state;
 
 static usbd_composite_cb_t composite_cb = {
 	.status_changed = composite_cb_status_changed,
@@ -124,6 +121,8 @@ static int composite_cdc_acm_cb_deinit(void)
 
 /**
   * @brief  Data received over USB OUT endpoint are sent over CDC interface through this function.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  Buf: RX buffer
   * @param  Len: RX data length (in bytes)
   * @retval Status
@@ -136,6 +135,8 @@ static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 
 /**
   * @brief  Data transmit callback.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  status: TX status
   */
 static void composite_cdc_acm_cb_transmitted(u8 status)
@@ -148,6 +149,8 @@ static void composite_cdc_acm_cb_transmitted(u8 status)
 
 /**
   * @brief  Handle the CDC class control requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  cmd: Command code
   * @param  buf: Buffer containing command data (request parameters)
   * @param  len: Number of data to be sent (in bytes)
@@ -157,6 +160,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = HAL_OK;
 	usb_cdc_line_coding_t *lc = &composite_cdc_acm_line_coding;
+	u16 composite_cdc_acm_ctrl_line_state;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
@@ -168,34 +172,29 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_CDC_ACM_SET_COMM_FEATURE:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_SET_COMM_FEATURE\n");
 		/* Do nothing */
 		break;
 
 	case USB_CDC_ACM_GET_COMM_FEATURE:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_GET_COMM_FEATURE\n");
 		/* Do nothing */
 		break;
 
 	case USB_CDC_ACM_CLEAR_COMM_FEATURE:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_CLEAR_COMM_FEATURE\n");
 		/* Do nothing */
 		break;
 
 	case USB_CDC_ACM_SET_LINE_CODING:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_SET_LINE_CODING\n");
 		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
 			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "USB_CDC_ACM_SET_LINE_CODING XXX\n");
+			USB_DIAG(USB_LAYER_APP, USB_EVT_ERR_SETUP, 0);
 		}
 		break;
 
 	case USB_CDC_ACM_GET_LINE_CODING:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_GET_LINE_CODING\n");
 		buf[0] = (u8)(lc->b.dwDteRate & 0xFF);
 		buf[1] = (u8)((lc->b.dwDteRate >> 8) & 0xFF);
 		buf[2] = (u8)((lc->b.dwDteRate >> 16) & 0xFF);
@@ -206,7 +205,6 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_CDC_ACM_SET_CONTROL_LINE_STATE\n");
 		/*
 		wValue:	wValue, Control Signal Bitmap
 				D2-15:	Reserved, 0
@@ -215,17 +213,17 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		*/
 		composite_cdc_acm_ctrl_line_state = req->wValue;
 		if (composite_cdc_acm_ctrl_line_state & 0x01) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
+			/* VCOM port activate */
+			USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
 		}
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "USB_CDC_ACM_SEND_BREAK\n");
 		/* Do nothing */
 		break;
 
 	default:
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid CDC bRequest 0x%02x\n", req->bRequest);
+		USB_DIAG(USB_LAYER_APP, USB_EVT_ERR_SETUP, 1);
 		ret = HAL_ERR_PARA;
 		break;
 	}
@@ -233,17 +231,28 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	return ret;
 }
 
+/**
+  * @brief  Handle composite device attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void composite_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d\n", old_status, status);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	composite_attach_status = status;
 	rtos_sema_give(composite_attach_status_changed_sema);
+#else
+	UNUSED(status);
 #endif
 }
 
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
-static void composite_hotplug_thread(void *param)
+static void example_usbd_comp_acm_msc_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -285,7 +294,7 @@ static void composite_hotplug_thread(void *param)
 }
 #endif // CONFIG_USBD_COMPOSITE_HOTPLUG
 
-static void example_usbd_composite_thread(void *param)
+static void example_usbd_comp_acm_msc_init_thread(void *param)
 {
 	int ret = 0;
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
@@ -323,8 +332,9 @@ static void example_usbd_composite_thread(void *param)
 	}
 
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
-	ret = rtos_task_create(&task, "composite_hotplug_thread", composite_hotplug_thread, NULL,
-						   1024, CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_comp_acm_msc_hotplug_thread",
+						   example_usbd_comp_acm_msc_hotplug_thread, NULL,
+						   CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBD_COMPOSITE_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_check_task_fail;
 	}
@@ -371,9 +381,10 @@ void example_usbd_composite(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD COMP demo start...\n");
 
-	ret = rtos_task_create(&task, "example_usbd_composite_thread", example_usbd_composite_thread, NULL, 1024, CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_comp_acm_msc_init_thread",
+						   example_usbd_comp_acm_msc_init_thread, NULL,
+						   CONFIG_USBD_COMPOSITE_INIT_THREAD_STACK_SIZE, CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD COMP thread fail\n");
 	}
 }
-

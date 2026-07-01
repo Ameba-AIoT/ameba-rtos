@@ -214,7 +214,7 @@ uint32_t bt_audio_ring_buffer_read(bt_audio_ring_buffer_t *ring_buffer, uint8_t 
 	}
 	// copy second chunk
 	if (length != 0) {
-		(void)memcpy(p_out, &ring_buffer->storage[0], length);
+		memcpy(p_out, &ring_buffer->storage[0], length);
 		ring_buffer->last_read_index += length;
 	}
 	// clear full flag
@@ -222,5 +222,45 @@ uint32_t bt_audio_ring_buffer_read(bt_audio_ring_buffer_t *ring_buffer, uint8_t 
 	osif_mutex_give(ring_buffer->mtx);
 
 	return (bytes_to_copy + length);
+}
+
+uint32_t bt_audio_ring_buffer_clear(bt_audio_ring_buffer_t *ring_buffer, uint32_t data_length)
+{
+	uint32_t length = 0;
+	unsigned int bytes_until_end = 0;
+	unsigned int bytes_to_clear = 0;
+
+	if (!ring_buffer || !ring_buffer->used) {
+		BT_LOGE("%s: ring_buff is NULL or has not been initialized \r\n", __func__);
+		return 0;
+	}
+	/* limit data to get and report */
+	length = bt_audio_min(data_length, bt_audio_ring_buffer_bytes_read_available(ring_buffer));
+	/* simplify logic below by asserting data_length > 0 */
+	if (length == 0) {
+		BT_LOGE("[BT Audio] There is no data in bt audio ring buffer \r\n");
+		return 0;
+	}
+	osif_mutex_take(ring_buffer->mtx, BT_TIMEOUT_FOREVER);
+	/* copy first chunk */
+	bytes_until_end = ring_buffer->size - ring_buffer->last_read_index;
+	bytes_to_clear = bt_audio_min(bytes_until_end, length);
+	memset((void *)&ring_buffer->storage[ring_buffer->last_read_index], 0, bytes_to_clear);
+	length -= bytes_to_clear;
+	/* update last read index */
+	ring_buffer->last_read_index += bytes_to_clear;
+	if (ring_buffer->last_read_index == ring_buffer->size) {
+		ring_buffer->last_read_index = 0;
+	}
+	// copy second chunk
+	if (length != 0) {
+		memset(&ring_buffer->storage[0], 0, length);
+		ring_buffer->last_read_index += length;
+	}
+	// clear full flag
+	ring_buffer->full = 0;
+	osif_mutex_give(ring_buffer->mtx);
+
+	return (bytes_to_clear + length);
 }
 

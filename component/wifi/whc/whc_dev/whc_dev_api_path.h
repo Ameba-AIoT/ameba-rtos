@@ -95,9 +95,7 @@ void whc_event_nan_cfgvenfor(u32 api_id, u32 *param_buf);
 void whc_event_wtn_cmd(u32 api_id, u32 *param_buf);
 #endif
 
-#ifdef CONFIG_MP_INCLUDED
-void whc_event_mp_cmd(u32 api_id, u32 *param_buf);
-#endif
+
 #ifdef CONFIG_P2P
 void whc_event_p2p_role(u32 api_id, u32 *param_buf);
 void whc_event_p2p_remain_on_ch(u32 api_id, u32 *param_buf);

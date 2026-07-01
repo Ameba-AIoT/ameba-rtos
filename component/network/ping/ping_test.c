@@ -105,13 +105,13 @@ void ping_test(void *param)
 		if (family == AF_INET) {
 			struct sockaddr_in bind_addr = {
 				.sin_family = AF_INET,
-				.sin_addr.s_addr = *(u32_t *)LwIP_GetIP(ping_interface)
+				.sin_addr.s_addr = *(u32_t *)lwip_get_ip(ping_interface)
 			};
 			bind(ping_socket, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
 		}
 #if LWIP_IPV6
 		else {
-			struct netif * pnetif = LwIP_idx_get_netif(ping_interface);
+			struct netif *pnetif = lwip_idx_get_netif(ping_interface);
 			struct sockaddr_in6 bind_addr = { .sin6_family = AF_INET6 };
 			memcpy(&bind_addr.sin6_addr, netif_ip6_addr(pnetif, 0)->addr, 16);
 			bind(ping_socket, (struct sockaddr *)&bind_addr, sizeof(bind_addr));

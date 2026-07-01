@@ -1,4 +1,4 @@
-ameba_add_image(target_loader p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_boot_all.bin)
+ameba_add_image(target_loader p_IMAGE_ALL ${c_BOOT_BINARY_NAME})
 # variable c_CURRENT_IMAGE value is target_loader_${PROJECT_NAME}
 
 ###############################  ADD COMPONENT  ###################################
@@ -52,7 +52,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/target_loader.axf ${c_SDK_IMAGE_TARGET_DIR}/target_pure_loader.axf
     COMMAND ${CMAKE_STRIP} ${c_SDK_IMAGE_TARGET_DIR}/target_pure_loader.axf
 
-    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_MCU_PROJECT_NAME}_boot_all.bin"
+    COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_BOOT_BINARY_NAME}"
 
     COMMAND ${CMAKE_COMMAND}
         # common variables
@@ -82,7 +82,7 @@ add_custom_command(TARGET ${c_CURRENT_IMAGE} POST_BUILD
 ################################  EXTRA PROCESS  ###################################
 set(clean_files
     ${c_SDK_IMAGE_TARGET_DIR}
-    ${FINAL_IMAGE_DIR}/${c_MCU_PROJECT_NAME}_boot_all.bin
+    ${FINAL_IMAGE_DIR}/${c_BOOT_BINARY_NAME}
 )
 
 set(link_deps
@@ -97,4 +97,11 @@ set_target_properties(${c_CURRENT_IMAGE} PROPERTIES
         "${clean_files}"
     LINK_DEPENDS
         "${link_deps}"
+)
+################################  CUSTOM TARGET  ###################################
+
+add_custom_target(
+    boot
+    COMMENT "build bootloader only"
+    DEPENDS ${c_CURRENT_IMAGE}
 )

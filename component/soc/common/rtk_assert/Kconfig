@@ -1,10 +1,11 @@
 menu "CONFIG RTK Assert Level"
     choice
         prompt "RTK Assert Level"
-        config ASSERTION_ENABLE
-            bool "Assert Enable"
-        config ASSERTION_SILENT
-            bool "Assert Silent"
+        default ASSERTION_COMP
+        config ASSERTION_DETAIL
+            bool "Assert Detail (print file & line)"
+        config ASSERTION_COMP
+            bool "Assert Component (print component tag & line)"
         config ASSERTION_DISABLE
             bool "Assert Disable"
     endchoice

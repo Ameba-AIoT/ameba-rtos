@@ -1,7 +1,7 @@
 
 #include "ameba_soc.h"
 #include "main.h"
-#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
+#if defined(CONFIG_VFS_ENABLED)
 #include "vfs.h"
 #endif
 #include "os_wrapper.h"

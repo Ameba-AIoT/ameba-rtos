@@ -9,10 +9,8 @@
 #include <platform_autoconf.h>
 #include "platform_stdlib.h"
 #include "basic_types.h"
-#include "usbd.h"
 #include "usbd_hid.h"
 #include "os_wrapper.h"
-#include "example_usbd_hid.h"
 
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "HID";
@@ -27,10 +25,6 @@ static const char *const TAG = "HID";
 #define CONFIG_USBD_HID_SPEED						USB_SPEED_HIGH
 #endif
 
-// Thread priorities
-#define CONFIG_USBD_HID_INIT_THREAD_PRIORITY		5U
-#define CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY		8U // Should be higher than CONFIG_USBD_HID_ISR_THREAD_PRIORITY
-
 // Send mouse data through monitor.
 #define CONFIG_USBD_HID_MOUSE_CMD					1
 
@@ -38,6 +32,12 @@ static const char *const TAG = "HID";
 #define CONFIG_USBD_HID_CONSTANT_DATA				1
 #define CONFIG_USBD_HID_CONSTANT_LOOP				10
 
+// Thread priorities
+#define CONFIG_USBD_HID_INIT_THREAD_PRIORITY           5U
+#define CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY        8U
+// Thread stack sizes
+#define CONFIG_USBD_HID_INIT_THREAD_STACK_SIZE           1024U
+#define CONFIG_USBD_HID_HOTPLUG_THREAD_STACK_SIZE        1024U
 /* Private types -------------------------------------------------------------*/
 
 typedef struct {
@@ -78,15 +78,14 @@ static void hid_send_device_data(void *data);
 
 /* Private variables ---------------------------------------------------------*/
 
-static rtos_sema_t hid_connect_sema;
-static rtos_sema_t hid_transmit_sema;
-
 #if CONFIG_USBD_HID_HOTPLUG
 static u8 hid_attach_status;
 static rtos_sema_t hid_attach_status_changed_sema;
 #endif
 
 #if CONFIG_USBD_HID_CONSTANT_DATA
+static rtos_sema_t hid_connect_sema;
+static rtos_sema_t hid_transmit_sema;
 #if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
 static usbd_hid_mouse_data_t mdata[] = {
 	{0,   0,   0,  50,   0,   0},	//move the cursor 50 pixels to the right
@@ -172,33 +171,68 @@ static void hid_cb_deinit(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
 }
 
+/**
+  * @brief  Handle HID class control (setup) requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @retval None
+  */
 static void hid_cb_setup(void)
 {
 	rtos_sema_give(hid_connect_sema);
 }
 
+/**
+  * @brief  Notify completion of an HID IN transfer
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  status: Transfer completion status
+  * @retval None
+  */
 static void hid_cb_transmitted(u8 status)
 {
 	UNUSED(status);
-
+#if CONFIG_USBD_HID_CONSTANT_DATA
 	rtos_sema_give(hid_transmit_sema);
+#endif
 }
 
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+/**
+  * @brief  Data received over USB HID OUT endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  buf: RX buffer
+  * @param  len: RX data length (in bytes)
+  * @retval None
+  */
 static void hid_cb_received(u8 *buf, u32 len)
 {
-	if (len > 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "RX %d byte(s): 0x%02x\n", len, buf[0]);
-	}
+	UNUSED(buf);
+	UNUSED(len);
+	//if (len > 0) {
+	//	RTK_LOGS(TAG, RTK_LOG_INFO, "RX %d byte(s): 0x%02x\n", len, buf[0]);
+	//}
 }
 #endif
 
+/**
+  * @brief  Handle HID attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void hid_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_HID_HOTPLUG
 	hid_attach_status = status;
 	rtos_sema_give(hid_attach_status_changed_sema);
+#else
+	UNUSED(status);
 #endif
 }
 
@@ -292,7 +326,7 @@ static void hid_send_device_data(void *pdata)
 }
 
 #if CONFIG_USBD_HID_HOTPLUG
-static void hid_hotplug_thread(void *param)
+static void example_usbd_hid_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -343,9 +377,12 @@ static void example_usbd_hid_thread(void *param)
 	UNUSED(param);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD HID demo start\n");
 
+#if CONFIG_USBD_HID_CONSTANT_DATA
 	rtos_sema_create(&hid_connect_sema, 0U, 1U);
 	rtos_sema_create(&hid_transmit_sema, 0U, 1U);
 	rtos_sema_give(hid_transmit_sema);
+#endif
+
 #if CONFIG_USBD_HID_HOTPLUG
 	rtos_sema_create(&hid_attach_status_changed_sema, 0U, 1U);
 #endif
@@ -362,7 +399,9 @@ static void example_usbd_hid_thread(void *param)
 	}
 
 #if CONFIG_USBD_HID_HOTPLUG
-	ret = rtos_task_create(&task, "hid_hotplug_thread", hid_hotplug_thread, NULL, 1024U, CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_hid_hotplug_thread",
+						   example_usbd_hid_hotplug_thread, NULL,
+						   CONFIG_USBD_HID_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBD_HID_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		usbd_hid_deinit();
 		usbd_deinit();
@@ -408,8 +447,10 @@ example_usbd_hid_device_thread_fail:
 #if CONFIG_USBD_HID_HOTPLUG
 	rtos_sema_delete(hid_attach_status_changed_sema);
 #endif
+#if CONFIG_USBD_HID_CONSTANT_DATA
 	rtos_sema_delete(hid_connect_sema);
 	rtos_sema_delete(hid_transmit_sema);
+#endif
 	rtos_task_delete(NULL);
 }
 
@@ -420,7 +461,8 @@ void example_usbd_hid(void)
 	int ret;
 	rtos_task_t task;
 
-	ret = rtos_task_create(&task, "example_usbd_hid_thread", example_usbd_hid_thread, NULL, 1024, CONFIG_USBD_HID_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_hid_thread", example_usbd_hid_thread, NULL,
+						   CONFIG_USBD_HID_INIT_THREAD_STACK_SIZE, CONFIG_USBD_HID_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD HID thread fail\n");
 	}

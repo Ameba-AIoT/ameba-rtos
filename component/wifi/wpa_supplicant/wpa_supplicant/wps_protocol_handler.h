@@ -129,6 +129,13 @@ int wpas_wps_enrollee_init_assoc_ie(void);
 void wpas_wsc_sta_wps_start_hdl(u8 *evt_info);
 void wpas_wsc_wps_finish_hdl(u8 *evt_info);
 void wpas_wsc_eapol_recvd_hdl(u8 *buf, s32 buf_len);
+void wpas_wsc_ap_send_eap_reqidentity(void *priv, u8 *rx_buf);
+void wpas_wsc_ap_check_eap_rspidentity(void *priv, u8 *rx_buf);
+void wpas_wsc_registrar_send_eap_fail(void *priv);
+void wpas_wsc_registrar_handle_recvd(void *priv, u8 *rx_buf);
+
+void wifi_p2p_wps_success(const u8 *peer_addr, int registrar);
+void wifi_p2p_wps_failed(void);
 
 //#endif //CONFIG_WPS
 #endif //_WPS_PROTOCOL_HANDLER_H_

@@ -215,15 +215,21 @@ void whc_dev_enable_ap(u8 *buf)
 	}
 	//DiagPrintf("ap info: ssid %s ip %x psk %x %s \r\n", ap.ssid.val, value, ap.password, password);
 
+#ifdef CONFIG_LWIP_LAYER
+	extern void dhcps_deinit(struct netif * pnetif);
+	dhcps_deinit(pnetif_ap);
+#endif
 	wifi_stop_ap();
 	wifi_start_ap(&ap);
 #ifdef CONFIG_LWIP_LAYER
 	ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 	netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-	LwIP_SetIP(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
-	extern void dhcps_init(struct netif * pnetif);
+	lwip_set_ip(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
+	extern dhcps_t *dhcps_init(struct netif * pnetif);
+	extern err_t dhcps_start(struct netif * pnetif);
 	dhcps_init(pnetif_ap);
+	dhcps_start(pnetif_ap);
 #endif
 
 	memset(ap.ssid.val, 0, sizeof(ap.ssid.val));
@@ -382,9 +388,9 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					whc_dev_cmd_scan();
 #ifdef CONFIG_LWIP_LAYER
 				} else if (*ptr == WHC_WIFI_TEST_DHCP) {
-					LwIP_netif_set_link_up(NETIF_WLAN_STA_INDEX);
+					lwip_netif_set_link_up(NETIF_WLAN_STA_INDEX);
 					/* Start DHCPClient */
-					LwIP_IP_Address_Request(STA_WLAN_INDEX);
+					lwip_request_ip(STA_WLAN_INDEX);
 #endif
 				} else if (*ptr == WHC_WIFI_TEST_CONNECT) {
 					memset(&wifi, 0, sizeof(struct rtw_network_info));
@@ -409,7 +415,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 #ifdef CONFIG_LWIP_LAYER
 					if (ret == RTK_SUCCESS) {
 						/* Start DHCPClient */
-						LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
+						lwip_request_ip(NETIF_WLAN_STA_INDEX);
 					} else {
 						RTK_LOGE(TAG_WLAN_INIC, "connect fail !\n");
 					}
@@ -421,7 +427,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					if (!wifi_is_running(idx)) {
 						RTK_LOGE(TAG_WLAN_INIC, "%s, port %d is not running!\n", __func__, idx);
 					} else {
-						ip = LwIP_GetIP(idx);
+						ip = lwip_get_ip(idx);
 						ptr = buf;
 						*(u32 *)ptr = WHC_WIFI_TEST;
 						ptr += 4;
@@ -429,7 +435,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 						ptr += 1;
 						memcpy(ptr, ip, 4);
 						ptr += 4;
-						ip = LwIP_GetGW(idx);
+						ip = lwip_get_gw(idx);
 						memcpy(ptr, ip, 4);
 						ptr += 4;
 						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);

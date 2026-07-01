@@ -43,7 +43,7 @@ None
 
 1. Plugin Reset the board, following log shall be printed on the LOGUART console:
 	```
-	[UAC-I] USBD uac demo start
+	[UAC-I] USBD UAC demo start
 	```
 
 2. Connect the USB port of Ameba board to USB UAC host (for example PC) with USB cable.
@@ -69,4 +69,3 @@ None
 RTL8730E
 RTL8721Dx
 RTL8721F
-

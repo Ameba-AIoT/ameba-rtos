@@ -47,6 +47,8 @@ endmenu
 
 rsource "../../../soc/common/image3/Kconfig.trustzone"
 
+rsource "../../../soc/Kconfig"
+
 menu "CONFIG Link Option"
     choice
         prompt "IMG1(Bootloader) running on FLASH or SRAM?"
@@ -212,6 +214,10 @@ menu "CONFIG WHC INTF"
         #    bool "Support WHC DEV TCPIP KEEPALIVE"
 
         endmenu
+
+        config WHC_DEV_FLASH_BOOT
+            bool
+            default y
     endif
 
     if WHC_HOST_MENU && !WHC_INTF_IPC_MENU
@@ -351,17 +357,10 @@ menu "CONFIG WIFI"
 
 endmenu
 
-config VFS_MENU
-    bool
-    default y
+config VFS_ENABLED
+    def_bool y
     depends on !MP_SHRINK
-    select VFS_ENABLED_FOR_KR4 if (WHC_HOST_FOR_KR4 || WHC_NONE_FOR_KR4 || (WHC_DEV_FOR_KR4 && WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KR4))
-    select VFS_ENABLED_FOR_KM4 if (WHC_HOST_FOR_KM4 || WHC_NONE_FOR_KM4 || (WHC_DEV_FOR_KM4 && WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4))
-
-config VFS_ENABLED_FOR_KR4
-    bool
-config VFS_ENABLED_FOR_KM4
-    bool
+    depends on (WHC_HOST || WHC_NONE || (WHC_DEV && WHC_DEV_FLASH_BOOT))
 
 menu "CONFIG BT"
     config BT_MENU

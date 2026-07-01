@@ -968,8 +968,8 @@ void BOOT_Image1(void)
 			BOOT_Enable_AP();
 		}
 
-		ret &= ~LSYS_BIT_AP_RUNNING; /* CA32 will set this Bit */
-		ret |= LSYS_BIT_AP_ENABLE;
+		ret &= ~LSYS_BIT_AP_RST_WAIT_DRAM;
+		ret |= LSYS_BIT_AP_ENABLE | LSYS_BIT_AP_RUNNING;
 		HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW, ret);
 	} else {
 		BOOT_Disable_AP();
