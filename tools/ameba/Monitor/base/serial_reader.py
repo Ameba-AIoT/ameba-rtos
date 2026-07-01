@@ -270,7 +270,7 @@ class SerialReader(StoppableThread):
                 )
                 if self.remote_password:
                     self.serial.validate(self.remote_password)
-                    self.serial.query_version()
+                self.serial.query_version()
                 self.serial.open()
             else:
                 self.serial = serial.Serial(
