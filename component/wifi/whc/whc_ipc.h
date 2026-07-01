@@ -103,9 +103,9 @@ enum IPC_WIFI_CTRL_TYPE {
 };
 
 struct whc_ipc_dev_req_msg {
-	u32	enevt_id;
-	u32	param_buf[DEV_MSG_PARAM_NUM];
 	int	ret;
+	u32	param_buf[DEV_MSG_PARAM_NUM];
+	u32	enevt_id;	/*JIRA: https://jira.realtek.com/browse/RSWLANDIOT-15582*/
 	u8	dummy[DEV_MSG_DUMY_NUM]; /* add for 64B size alignment */
 };
 
