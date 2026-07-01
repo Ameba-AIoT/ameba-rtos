@@ -39,8 +39,9 @@ def main(argc, argv):
     parser.add_argument('-p', '--pristine', action='store_true', help='pristine build (remove build dir)')
     parser.add_argument('-g', '--target',
                          help='custom target',
-                         choices=['imgtool_flashloader', 'gen_imgtool_floader', 'gen_submodule_info']
+                         choices=['imgtool_flashloader', 'gen_imgtool_floader', 'gen_submodule_info', 'boot']
                         )
+    parser.add_argument('-k', '--core', help='build the specified core')
     parser.add_argument('-G', '--generator', default='Ninja', help='CMake generator (e.g., Ninja, "Unix Makefiles")')
     parser.add_argument('--daily-build', help='daily build flag')
     parser.add_argument('-gdb', '--gdb', action='store_true', help='gdb')
@@ -147,7 +148,8 @@ def main(argc, argv):
     # Key: Use 'cmake --build' and '--parallel'
     # This enables automatic parallel compilation regardless of the underlying generator (Ninja/Make)
     build_cmd = f'cmake --build "{build_dir}" --parallel'
-
+    if args.core:
+        build_cmd += f' --target {args.core}'
     if args.target:
         build_cmd += f' --target {args.target}'
 

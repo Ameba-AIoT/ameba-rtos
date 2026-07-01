@@ -30,7 +30,7 @@ extern s32(*scan_user_callback_ptr)(u32, void *);
 extern s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *);
 extern void (*p_ap_channel_switch_callback)(unsigned char channel, s8 ret);
 extern u8(*promisc_user_callback_ptr)(void *);
-extern int dhcps_ip_in_table_check(uint8_t gate, uint8_t d);
+extern int dhcps_ip_in_table_check(struct netif *pnetif, uint8_t gate, uint8_t d);
 extern s32(*scan_acs_report_user_callback_ptr)(struct rtw_acs_mntr_rpt *acs_mntr_rpt);
 extern int whc_host_init_done;
 
@@ -120,20 +120,20 @@ void whc_host_api_lwip_info_handler(u32 api_id, u32 *param_buf)
 	unsigned char *input = (unsigned char *)param_buf[2];
 	switch (type) {
 	case WHC_WLAN_GET_IP:
-		addr = (u32)LwIP_GetIP(index);
+		addr = (u32)lwip_get_ip(index);
 		break;
 	case WHC_WLAN_GET_GW:
-		addr = (u32)LwIP_GetGW(index);
+		addr = (u32)lwip_get_gw(index);
 		break;
 	case WHC_WLAN_GET_GWMSK:
-		addr = (u32)LwIP_GetMASK(index);
+		addr = (u32)lwip_get_mask(index);
 		break;
 	case WHC_WLAN_GET_HW_ADDR:
-		addr = (u32)LwIP_GetMAC(index);
+		addr = (u32)lwip_get_mac(index);
 		res_size = 6;
 		break;
 	case WHC_WLAN_IS_VALID_IP:
-		ret = LwIP_netif_is_valid_IP(index, input);
+		ret = lwip_is_valid_ip(index, input);
 		break;
 	}
 	if (addr != 0) {
@@ -151,7 +151,7 @@ void whc_host_api_set_netif_info_handler(u32 api_id, u32 *param_buf)
 	int idx = (u32)param_buf[0];
 	unsigned char *dev_addr = (unsigned char *)(&param_buf[1]);
 
-	LwIP_wlan_set_netif_info(idx, NULL, dev_addr);
+	lwip_wlan_set_netif_info(idx, NULL, dev_addr);
 	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
@@ -162,7 +162,7 @@ void whc_host_api_ip_table_chk(u32 api_id, u32 *param_buf)
 	u8 gate = (u8)param_buf[0];
 	u8 ip = (u8)param_buf[1];
 
-	ret = dhcps_ip_in_table_check(gate, ip);
+	ret = dhcps_ip_in_table_check(pnetif_ap, gate, ip);
 	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 

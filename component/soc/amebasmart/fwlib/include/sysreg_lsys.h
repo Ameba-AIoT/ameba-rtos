@@ -635,8 +635,9 @@
 #define LSYS_MASK_GDMA_CHANNELS   ((u32)0x000000FF << 24)           /*!< R/W 0x0  Indicate the usage status of every GDMA channel.*/
 #define LSYS_GDMA_CHANNELS(x)     (((u32)((x) & 0x000000FF) << 24))
 #define LSYS_GET_GDMA_CHANNELS(x) ((u32)(((x >> 24) & 0x000000FF)))
+// #define LSYS_BIT_AP_RUNNING       ((u32)0x00000001 << 19)
 // #define LSYS_BIT_AP_ENABLE        ((u32)0x00000001 << 18)
-// #define LSYS_BIT_AP_RUNNING       ((u32)0x00000001 << 17)
+// #define LSYS_BIT_AP_RST_WAIT_DRAM ((u32)0x00000001 << 17)
 // #define LSYS_BIT_AP_WAKE_FROM_PG  ((u32)0x00000001 << 16)
 /** @} */
 
@@ -1154,8 +1155,9 @@ enum CHIP_TYPE {
 #define REG_LSYS_AP_STATUS_SW     0x0266
 //using Absolute Address plat_get_my_entrypoint in plat_helpers.S !! change carefully!!
 #define LSYS_BIT_AP_WAKE_FROM_PG  ((u32)0x00000001 << 0)
-#define LSYS_BIT_AP_RUNNING       ((u32)0x00000001 << 1)
+#define LSYS_BIT_AP_RST_WAIT_DRAM ((u32)0x00000001 << 1)
 #define LSYS_BIT_AP_ENABLE        ((u32)0x00000001 << 2)
+#define LSYS_BIT_AP_RUNNING       ((u32)0x00000001 << 3)
 
 #define REG_LSYS_NP_STATUS_SW     0x026A
 #define LSYS_BIT_NP_RUNNING       ((u32)0x00000001 << 7)          /*!<R/W 0   */

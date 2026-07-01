@@ -154,7 +154,7 @@ void whc_host_pkt_rx_to_user(u8 *payload)
 		case WHC_WIFI_TEST_GET_MAC_ADDR:
 			idx = *ptr;
 			ptr += 1;
-			LwIP_wlan_set_netif_info(idx, NULL, ptr);
+			lwip_wlan_set_netif_info(idx, NULL, ptr);
 			break;
 		case WHC_WIFI_TEST_CONN_STATUS:
 			whc_host_set_connect_status(ptr);
@@ -163,8 +163,8 @@ void whc_host_pkt_rx_to_user(u8 *payload)
 			ipaddr = CONCAT_TO_UINT32(ptr[0], ptr[1], ptr[2], ptr[3]);
 			netmask = CONCAT_TO_UINT32(255, 255, 255, 0);
 			gw = CONCAT_TO_UINT32(ptr[0], ptr[1], ptr[2], 1);
-			LwIP_SetIP(STA_WLAN_INDEX, ipaddr, netmask, gw);
-			LwIP_netif_set_link_up(0);
+			lwip_set_ip(STA_WLAN_INDEX, ipaddr, netmask, gw);
+			lwip_netif_set_link_up(0);
 			break;
 		case WHC_WIFI_TEST_SOFTAP:
 			whc_host_softap_handler(ptr);

@@ -52,7 +52,8 @@ endif()
 add_custom_target(
     ${c_MCU_PROJECT_NAME}
     COMMENT "build ${c_MCU_PROJECT_NAME} only"
-    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image_list>
+    DEPENDS $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image1>
+            $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},image2>_postbuild
 )
 
 add_custom_target(

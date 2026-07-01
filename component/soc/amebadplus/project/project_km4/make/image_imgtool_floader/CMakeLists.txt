@@ -21,10 +21,10 @@ target_sources(${c_CURRENT_IMAGE} PRIVATE
 
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_reset.c
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_tim.c
-    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_usb.c
     ${c_CMPT_FWLIB_DIR}/ram_km4/ameba_flashclk.c
 
     ${c_CMPT_SWLIB_DIR}/log.c
+    ${c_CMPT_USB_DIR}/hal/amebadplus_usb.c
     ${c_CMPT_USB_DIR}/common/usb_hal.c
     ${c_CMPT_USB_DIR}/common/usb_os.c
 )

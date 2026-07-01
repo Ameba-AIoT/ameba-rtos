@@ -11,10 +11,20 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
+#include "usb_diag.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
-#define USBD_TP_TRACE_DEBUG             1U  /**<This define is used to trace transfer performance */
+/** @addtogroup USB_Device_API USB Device API
+ *  @{
+ */
+/** @addtogroup USB_Device_Constants USB Device Constants
+ * @{
+ */
+/** @addtogroup Device_Core_Constants Device Core Constants
+ * @{
+ */
+#define USBD_TP_TRACE_DEBUG             0U  /**<This define is used to trace transfer performance */
 
 /* USB descriptor configurations */
 #define USBD_MAX_NUM_INTERFACES			16U
@@ -36,14 +46,20 @@
  * @{
  */
 #define USBD_SOF_INTR                   (BIT0) /**< Start of (micro)Frame Interrupt (GINTSTS.Sof). */
-#define USBD_EOPF_INTR                  (BIT1) /**< End of Periodic Frame Interrupt (GINTSTS.EOPF). */
-#define USBD_EPMIS_INTR                 (BIT2) /**< Endpoint Mismatch Interrupt (GINTSTS.EPMis). */
 /** @} */
+/** @} End of Device_Core_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
 
+/** @addtogroup USB_Device_Types USB Device Types
+ * @{
+ */
+/** @addtogroup Device_Core_Types Device Core Types
+ * @{
+ */
 /**
  * @brief USB device state.
  */
@@ -64,52 +80,36 @@ typedef enum {
 	USBD_ATTACH_STATUS_DETACHED = 2U,          /**< Device is detached from the host. */
 } usbd_attach_status_t;
 
-// Forward declarations to resolve circular dependencies.
+/* Forward declarations to resolve circular dependencies. */
 struct _usbd_class_driver_t;
 
 /**
  * @brief Defines the structure for an USB endpoint.
  */
 typedef struct {
+	usb_ep_info_t info;                       /**< Endpoint information: addr, mps, type, binterval, interval. */
 	u8 *xfer_buf;                             /**< Pointer to the transfer buffer. */
-	u8 *rem_xfer_buf;                         /**< Pointer to the remaining part of the transfer buffer. */
 	u32 xfer_len;                             /**< Total length of the data to transfer. */
-	u32 rem_xfer_len;                         /**< Remaining length of data to transfer (used for EP0). */
 	u32 xfer_buf_len;                         /**< Total length of the class transfer buffer. */
-	u16 mps;                                  /**< Maximum Packet Size for this endpoint (0-64KB). */
-	u8 addr;                                  /**< Endpoint address (includes direction). */
-	u8 num;                                   /**< Endpoint number (0-15). */
-	u8 type;                                  /**< Endpoint type (Control, Bulk, Isochronous, Interrupt). */
-	u8 binterval;                             /**< Polling interval for the endpoint. */
-	u8 skip_dcache_pre_clean;                 /**< Skip `DCache_Clean` in TRX API and it will be called in class. */
-	u8 skip_dcache_post_invalidate;           /**< Skip `DCache_Invalidate` when RX complete and it will be called in class. */
 	__IO u8 xfer_state;                       /**< Current state of the class transfer. */
 	__IO u8 tx_zlp;                           /**< Flag to indicate if a Zero-Length Packet should be sent. */
-	__IO u8 dis_zlp;                          /**< Flag to disable Zero-Length Packet for the current transfer. */
 	__IO u8 is_busy;                          /**< Flag indicating if the endpoint is currently busy. */
+	u8 dis_zlp : 1;                           /**< Flag to disable Zero-Length Packet for the current transfer. */
+	u8 skip_dcache_pre_clean : 1;             /**< Skip `DCache_Clean` in TRX API and it will be called in class. */
+	u8 skip_dcache_post_invalidate : 1;       /**< Skip `DCache_Invalidate` when RX complete and it will be called in class. */
 } usbd_ep_t;
 
 /**
  * @brief Defines the core driver configuration parameters for the USB device.
  */
 typedef struct {
+#ifdef CONFIG_SUPPORT_USB_SHARED_DFIFO
 	/**
 	 * @brief Threshold count of EPMis interrupts for non-periodic IN transfers.
 	 * @details If the mismatch count exceeds this value, the GINTSTS.EPMis interrupt is handled.
-	 *          This is only active if `USBD_EPMIS_INTR` is enabled (Shared FIFO mode only).
 	 */
 	u32 nptx_max_epmis_cnt;
-
-	/**
-	 * @brief Enables extra interrupts.
-	 * @details Optional USB interrupt enable flags:
-	 * - `USBD_SOF_INTR`: For SOF-based timing synchronization.
-	 * - `USBD_EOPF_INTR`: For ISOC transfers parity setting in slave mode.
-	 * - `USBD_EPMIS_INTR`: To handle endpoint mismatches in shared FIFO mode.
-	 *    For restarting IN transfers, applicable to scenarios with multiple non-periodic IN endpoints.
-	 */
-	u32 ext_intr_enable;
-
+#else
 	u16 rx_fifo_depth;                        /**< RxFIFO depth in dwords which must not exceed hardware limits(Dedicated FIFO mode only). */
 
 	/**
@@ -121,21 +121,30 @@ typedef struct {
 	 *      rx_fifo_depth + all ptx_fifo_depth[n] <= Hardware total FIFO depth
 	 */
 	u16 ptx_fifo_depth[USB_MAX_ENDPOINTS - 1];
-
+#endif
+	/**
+	 * @brief Enables extra interrupts.
+	 * @details Optional USB interrupt enable flags:
+	 * - `USBD_SOF_INTR`: For SOF-based timing synchronization.
+	 */
+	u16 ext_intr_enable;
+	u16 diag_depth;                           /**< Diag ring buffer depth in entries; 0 uses @ref USB_DIAG_DEFAULT_DEPTH. Requires `diag_enable`. */
+	u16 diag_poll_ms;                         /**< Diag task polling interval in ms; 0 uses @ref USB_DIAG_DEFAULT_POLL_MS. Requires `diag_enable`. */
+	u8 isr_priority;                          /**< Priority of the USB interrupt. */
 	/**
 	 * @brief USB device speed mode. See @ref usb_speed_type_t.
 	 * - `USB_SPEED_HIGH`: USB 2.0 High-Speed PHY (for HS-capable SoCs).
-	 * - `USB_SPEED_HIGH_IN_FULL`: USB 2.0 PHY operating in Full-Speed mode (for HS-capable SoCs with low bandwidth applcations like UAC).
+	 * - `USB_SPEED_HIGH_IN_FULL`: USB 2.0 PHY operating in Full-Speed mode (for HS-capable SoCs with low bandwidth applications like UAC).
 	 * - `USB_SPEED_FULL`: USB 1.1 Full-Speed transceiver (for FS-only SoCs).
 	 */
-	u8 speed;
-
-	u8 isr_priority;                          /**< Priority of the USB interrupt. */
-	u8 isr_in_critical;                       /**< Flag to process USB ISR within a critical section. */
-	u8 intr_use_ptx_fifo;                     /**< Use Periodic TxFIFO for Interrupt IN transfers (Shared TxFIFO mode only). */
-#if USBD_TP_TRACE_DEBUG
-	u8 tp_trace;                              /**< Enable/disable tracing for transfer performance. */
+	u8 speed : 2;
+	u8 isr_in_critical : 1;                       /**< Flag to process USB ISR within a critical section. */
+#ifdef CONFIG_SUPPORT_USB_SHARED_DFIFO
+	u8 intr_use_ptx_fifo : 1;                     /**< Use Periodic TxFIFO for Interrupt IN transfers (Shared TxFIFO mode only). */
 #endif
+	u8 diag_enable : 1;                           /**< Enable USB diag ring buffer and polling task (0: Disable, 1: Enable).
+                                                      When disabled, error diagnostic information is silently lost.
+                                                      Enable this to capture USB error events for debugging. */
 } usbd_config_t;
 
 /**
@@ -154,22 +163,18 @@ typedef struct {
 	usbd_ep_t ep0_out;                       /**< Control endpoint 0 OUT. */
 	struct _usbd_class_driver_t *driver;     /**< Pointer to the active class driver. */
 	void *pcd;                               /**< Pointer to the low-level PCD (Platform Controller Driver) handle. */
-	u32 ep0_out_intr;                        /**< Previous interrupt status for EP0 OUT. */
-	u16 ep0_data_len;                        /**< Data length for the current EP0 transfer. */
-	u8 ep0_state;                            /**< Current state of the EP0 state machine. */
-	u8 ep0_old_state;                        /**< Previous state of the EP0 state machine. */
+	__IO u8 is_ready;                        /**< Device ready or not, 0-disabled, 1-enabled */
+	__IO u8 is_connected;                    /**< Device connected or not,0-disabled, 1-enabled */
 	u8 dev_config;                           /**< Current device configuration index. */
-	u8 dev_speed;                            /**< Current device speed. See @ref usb_speed_type_t. */
-	u8 dev_state;                            /**< Current device state. See @ref usbd_state_t. */
-	u8 dev_old_state;                        /**< Previous device state. */
-	u8 dev_attach_status;                    /**< Current device attach status. See @ref usbd_attach_status_t. */
-	u8 dev_old_attach_status;                /**< Previous device attach status. */
 	u8 test_mode;                            /**< Flag indicating if the device is in a test mode. */
-	u8 self_powered;                         /**< Power source status: 0 for bus-powered, 1 for self-powered. */
-	u8 remote_wakeup_en;                     /**< Remote wakeup enable or not, 0-disabled, 1-enabled */
-	u8 remote_wakeup;                        /**< Remote wakeup flag. */
-	u8 is_ready;                             /**< Device ready or not, 0-disabled, 1-enabled */
-	u8 is_connected;                         /**< Device connected or not,0-disabled, 1-enabled */
+	u8 dev_state;                            /**< Current device state. See @ref usbd_state_t. */
+	u8 dev_old_state;                        /**< Previous device state. See @ref usbd_state_t. */
+	u8 dev_attach_status;                    /**< Current device attach status. See @ref usbd_attach_status_t. */
+	u8 dev_old_attach_status;                /**< Previous device attach status. See @ref usbd_attach_status_t. */
+	u8 dev_speed : 2;                        /**< Current device speed. See @ref usb_speed_type_t. */
+	u8 self_powered : 1;                     /**< Power source status: 0 for bus-powered, 1 for self-powered. */
+	u8 remote_wakeup_en : 1;                 /**< Remote wakeup enable or not, 0-disabled, 1-enabled */
+	u8 remote_wakeup : 1;                    /**< Remote wakeup flag. */
 } usb_dev_t;
 
 /**
@@ -182,7 +187,9 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback to get a descriptor during enumeration when host requests USB descriptors.
 	 * @note
-	 *    The class driver must return the descriptor data buffer and length againt the `wValue` value of host setup request:
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *     time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 *    The class driver must return the descriptor data buffer and length against the `wValue` value of host setup request:
 	 *     - `USB_DESC_TYPE_DEVICE`: Device Descriptor, mandatory.
 	 *     - `USB_DESC_TYPE_CONFIGURATION`: Configuration Descriptor, mandatory.
 	 *     - `USB_DESC_TYPE_DEVICE_QUALIFIER`: Device Qualifier Descriptor, required for dual-speed (FS/HS) devices                                                                                                     |
@@ -198,6 +205,8 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback to set the device configuration.
 	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *     time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    Called upon `SET_CONFIGURATION` request in ADDRESSED state. The device class driver must:
 	 *     - Initialize endpoints via @ref usbd_ep_init.
 	 *     - Prepare first OUT transfer via @ref usbd_ep_receive.
@@ -210,6 +219,8 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback to clear the device configuration.
 	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *     time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    Called upon:
 	 *      - Core driver receives `SET_CONFIGURATION` control request in CONFIGURED state and needs to switch configuration.
 	 *      - Core driver receives `SET_CONFIGURATION` control request in non-ADDRESSED/CONFIGURED state.
@@ -225,6 +236,9 @@ typedef struct _usbd_class_driver_t {
 
 	/**
 	 * @brief Callback to handle class-specific or vendor-specific setup requests at control transfer setup phase.
+	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *     time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @details
 	 *     - Standard interface requests (`SET_INTERFACE/GET_INTERFACE/GET_STATUS`).
 	 *     - Class-specific requests per relevant class specifications.
@@ -237,6 +251,9 @@ typedef struct _usbd_class_driver_t {
 
 	/**
 	 * @brief Callback invoked at the Start-of-Frame (SOF).
+	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @details Called upon SOF interrupt (GINTSTS.Sof) for timing-sensitive operations (e.g. UAC clock synchronization).
 	 * @param[in] dev: USB device.
 	 * @return 0 on success, non-zero on failure.
@@ -245,6 +262,9 @@ typedef struct _usbd_class_driver_t {
 
 	/**
 	 * @brief Callback invoked when an IN data transfer on EP0 is complete.
+	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] dev: USB device.
 	 * @param[in] status: Status of the completed transfer.
 	 * @return 0 on success, non-zero on failure.
@@ -254,6 +274,8 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback invoked when an OUT data transfer on EP0 is complete.
 	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    The device driver does not need to re-enable the control OUT transfer since it is automatically done in core driver.
 	 * @param[in] dev: USB device.
 	 * @return 0 on success, non-zero on failure.
@@ -263,6 +285,8 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback invoked when a bulk/interrupt/isochronous IN data transfer on EP is complete.
 	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    The device class driver may mark endpoint ready for next transfer or retry failed transfers.
 	 * @param[in] dev: USB device structure.
 	 * @param[in] ep_addr: Endpoint address.
@@ -274,6 +298,8 @@ typedef struct _usbd_class_driver_t {
 	/**
 	 * @brief Callback invoked when a bulk/interrupt/isochronous OUT data transfer on EP is complete.
 	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    Typically, the device class driver shall:
 	 *      - Process received data via application callback.
 	 *      - Prepare next OUT transfer via @ref usbd_ep_receive.
@@ -286,20 +312,40 @@ typedef struct _usbd_class_driver_t {
 
 	/**
 	 * @brief Callback invoked when USB status change. See @ref usbd_attach_status_t.
+	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @details Called upon connection state changed for hot-plug support (e.g. do reinitialization on host disconnection)
 	 * @param[in] dev: USB device.
 	 * @param[in] old_status: Previous status of USB device.
 	 * @param[in] status: Current status of USB device.
-	 * @return None
 	 */
 	void (*status_changed)(usb_dev_t *dev, u8 old_status, u8 status);
+
+	/**
+	 * @brief Callback invoked when the device resumes from USB suspend (wakeup).
+	 * @note
+	 *    This callback is called within an interrupt service routine (ISR) context;
+	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @details Called upon resume from suspend (WKUINT or SOF detection),
+	 *          indicating that the USB bus is active and the upper layer can resume normal TRX.
+	 * @param[in] dev: USB device.
+	 */
+	void (*wakeup)(usb_dev_t *dev);
 } usbd_class_driver_t;
+/** @} End of Device_Core_Types group */
+/** @} End of USB_Device_Types group */
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
-/* API for application */
+/** @addtogroup USB_Device_Functions USB Device Functions
+ * @{
+ */
+/** @addtogroup Device_Core_Functions_For_Applications Device Core Functions For Applications
+ * @{
+ */
 /**
  * @brief Initialize USB device core driver with configuration.
  * @param[in] cfg: USB device configuration.
@@ -323,20 +369,38 @@ int usbd_get_status(void);
  * @brief Get USB device bus status.
  * @param[out] status: Return 0 on success, with the status parameter containing USB bus status
  *        represented as a bitwise combination of enumeration values:
- *          - `USB_DEV_BUS_STATUS_DN` = BIT0,       // D- line status bit.
- *          - `USB_DEV_BUS_STATUS_DP` = BIT1,       // D+ line status bit.
- *          - `USB_DEV_BUS_STATUS_SUSPEND` = BIT2,  //Suspend indication bit.
+ *          - `USB_DEV_BUS_STATUS_DN` = BIT0,        D- line status bit.
+ *          - `USB_DEV_BUS_STATUS_DP` = BIT1,        D+ line status bit.
+ *          - `USB_DEV_BUS_STATUS_SUSPEND` = BIT2,  Suspend indication bit.
  * @return 0 on success, non-zero on failure.
  */
 int usbd_get_bus_status(u32 *status);
+
+/**
+ * @brief Register the sleep callbacks for USB device Clock Gating (CG).
+ * @details Registers the PMU sleep callbacks so the USB device can be suspended/resumed
+ *          when the AP enters/exits the low-power clock gated state.
+ *          Wakelock operations and wake event configuration are handled by the caller,
+ *          not inside this function.
+ */
+void usbd_cg_register(void);
+
+/**
+ * @brief Unregister the sleep callbacks for USB device Clock Gating (CG).
+ * @note  Wakelock operations are handled by the caller, not inside this function.
+ */
+void usbd_cg_unregister(void);
 
 /**
  * @brief Sends a remote wakeup signal to the USB host to resume communication.
  * @return 0 on success, non-zero on failure.
  */
 int usbd_wake_host(void);
+/** @} End of Device_Core_Functions_For_Applications group */
 
-/* API for class */
+/** @addtogroup Device_Core_Functions_For_Classes Device Core Functions For Classes
+ * @{
+ */
 /**
  * @brief Register a device class driver, called in class initialization function.
  * @param[in] driver: USB class driver.
@@ -434,20 +498,8 @@ int usbd_ep_is_stall(usb_dev_t *dev, usbd_ep_t *ep);
  * @return The total length of the generated descriptor in bytes.
  */
 u16 usbd_get_str_desc(const char *str, u8 *desc);
-
-/**
- * @brief Sets the USB to enter Clock Gating (CG) state with a specific wakeup event.
- * @details This function configures the USB device to enter a low-power clock gated state.
- *          The wakeup mechanism depends on the value of the @ref sleep_ms parameter.
- * @param[in] sleep_ms:
- *          - 0: Wakeup is triggered by a USB event.
- *          - others: Wakeup is triggered by an Anon timer event after the specified time.
- */
-void usbd_enter_cg(u32 sleep_ms);
-
 /** @} End of Device_Core_Functions_For_Classes group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
 
 #endif /* USBD_H */
-

@@ -255,7 +255,7 @@ static int usbd_composite_hid_priv_send_data_internal(u8 *data, u32 len, u8 repo
 	usb_dev_t *dev = hid->cdev->dev;
 
 	if (!dev->is_ready) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX %d not ready\n", USBD_COMP_HID_INTR_IN_EP, len);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX not ready\n", USBD_COMP_HID_INTR_IN_EP);
 		return ret;
 	}
 
@@ -266,7 +266,7 @@ static int usbd_composite_hid_priv_send_data_internal(u8 *data, u32 len, u8 repo
 	}
 
 	if (len > valid_len) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Data len %d > max %d\n",  len, valid_len);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Data len %d > buf size %d\n",  len, valid_len);
 		len = valid_len;
 	}
 
@@ -341,6 +341,14 @@ static int usbd_hid_receive(void)
 	return usbd_ep_receive(cdev->dev, ep_intr_out);
 }
 
+/**
+  * @brief  Handle HID specific CTRL requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  req: USB CTRL requests
+  * @retval Status
+  */
 static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	int ret = HAL_OK;
@@ -413,7 +421,7 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			break;
 		default:
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid bRequest 0x%02x\n", req->bRequest);
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 0);
 			ret = HAL_ERR_PARA;
 			break;
 		}
@@ -436,7 +444,7 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		}
 		break;
 	default:
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid bmRequestType 0x%02x\n", req->bmRequestType);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 1);
 		ret = HAL_ERR_PARA;
 		break;
 	}
@@ -444,6 +452,14 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	return ret;
 }
 
+/**
+  * @brief  Set HID class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  config: USB configuration index
+  * @retval Status
+  */
 static int composite_hid_set_config(usb_dev_t *dev, u8 config)
 {
 	UNUSED(config);
@@ -453,21 +469,25 @@ static int composite_hid_set_config(usb_dev_t *dev, u8 config)
 	usbd_ep_t *ep_hid_priv_in = &(hid->ep_hid_priv_in);
 	usbd_ep_t *ep_hid_in = &(hid->ep_hid_in);
 	usbd_ep_t *ep_intr_out = &(hid->ep_intr_out);
+	usb_ep_info_t *info;
 
 	ep_hid_priv_in->xfer_state = 0U;
 	ep_hid_in->xfer_state = 0U;
 
 	/* Init INTR IN EP */
-	ep_hid_in->mps = USBD_COMP_HID_MAX_BUF_SIZE;
+	info = &ep_hid_in->info;
+	info->mps = USBD_COMP_HID_MAX_BUF_SIZE;
 	usbd_ep_init(dev, ep_hid_in);
 
 	/* Init Priv Hid command EP */
 	/* Init INTR IN EP */
-	ep_hid_priv_in->mps = USBD_COMP_HID_MAX_BUF_SIZE;
+	info = &ep_hid_priv_in->info;
+	info->mps = USBD_COMP_HID_MAX_BUF_SIZE;
 	usbd_ep_init(dev, ep_hid_priv_in);
 
 	/* Init INTR OUT EP */
-	ep_intr_out->mps = USBD_COMP_HID_MAX_BUF_SIZE;
+	info = &ep_intr_out->info;
+	info->mps = USBD_COMP_HID_MAX_BUF_SIZE;
 	usbd_ep_init(dev, ep_intr_out);
 	/* Prepare to receive next INTR OUT packet */
 	usbd_hid_receive();
@@ -479,6 +499,14 @@ static int composite_hid_set_config(usb_dev_t *dev, u8 config)
 	return ret;
 }
 
+/**
+  * @brief  Clear HID class configuration
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  config: USB configuration index
+  * @retval Status
+  */
 static int composite_hid_clear_config(usb_dev_t *dev, u8 config)
 {
 	int ret = 0;
@@ -501,6 +529,15 @@ static int composite_hid_clear_config(usb_dev_t *dev, u8 config)
 	return ret;
 }
 
+/**
+  * @brief  Data sent on non-control IN endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  ep_addr: endpoint address
+  * @param  status: transfer status
+  * @retval Status
+  */
 static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
@@ -510,7 +547,7 @@ static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status
 	UNUSED(dev);
 
 	if (status != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX err: %d\n", ep_addr, status);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 	} else {
 		if (ep_addr == USBD_COMP_HID_INTR_IN_EP) { // priv hid cmmand
 			ep_hid_priv_in->xfer_state = 0U;
@@ -525,6 +562,13 @@ static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status
 	return HAL_OK;
 }
 
+/**
+  * @brief  Handle SOF event
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @retval Status
+  */
 static int composite_hid_sof(usb_dev_t *dev)
 {
 	UNUSED(dev);
@@ -543,6 +587,15 @@ static int composite_hid_sof(usb_dev_t *dev)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Data received on non-control Out endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  dev: USB device instance
+  * @param  ep_addr: endpoint address
+  * @param  len: received data length
+  * @retval Status
+  */
 static int composite_hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
@@ -574,6 +627,8 @@ static int composite_hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 /**
   * @brief  Handle EP0 Rx Ready event
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @retval Status
   */
@@ -595,6 +650,8 @@ static int composite_hid_handle_ep0_data_out(usb_dev_t *dev)
 
 /**
   * @brief  Get descriptor callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
   * @param  buf: Poniter to Buffer
@@ -610,7 +667,9 @@ static u16 composite_hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8
 	switch (USB_HIGH_BYTE(req->wValue)) {
 
 	case USB_DESC_TYPE_CONFIGURATION:
+#ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
+#endif
 		len = sizeof(usbd_composite_hid_itf_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_composite_hid_itf_desc, len);
 		report_len = sizeof(usbd_comp_hid_report_desc);
@@ -630,6 +689,8 @@ static u16 composite_hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8
 
 /**
   * @brief  USB attach status change
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  old_status: USB old attach status
   * @param  status: USB USB attach status
@@ -656,8 +717,6 @@ static void usbd_composite_hid_ringbuf_ctrl_deinit(void)
 	buf_ctrl->write_idx = 0;
 	buf_ctrl->hid_mps = 0;
 	buf_ctrl->buf_array_cnt = 0;
-
-	// RTK_LOGS(TAG, RTK_LOG_DEBUG, "Buf 0x%08x-0x%08x sema %d\n",buf_ctrl->isoc_buf,buf_ctrl->buf_array,buf_ctrl->uac_sema_valid);
 
 	if (buf_ctrl->hid_buf != NULL) {
 		usb_os_mfree(buf_ctrl->hid_buf);
@@ -697,12 +756,11 @@ static int usbd_composite_hid_ring_buf_ctrl_init(void)
 
 	buf_ctrl->hid_mps = USBD_COMP_HID_MAX_BUF_SIZE;
 	if (buf_ctrl->hid_mps == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "MPS check fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid MPS\n");
 		return HAL_ERR_PARA;
 	}
 
 	buf_ctrl->buf_array_cnt = COMP_HID_BUF_MAX_CNT;
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Buf mps len %d, cnt %d\n", buf_ctrl->hid_mps, buf_ctrl->buf_array_cnt);
 
 	buf_ctrl->hid_buf = (u8 *)usb_os_malloc(CACHE_LINE_ALIGNMENT(buf_ctrl->hid_mps) * buf_ctrl->buf_array_cnt);
 	if (buf_ctrl->hid_buf == NULL) {
@@ -712,15 +770,12 @@ static int usbd_composite_hid_ring_buf_ctrl_init(void)
 
 	buf_ctrl->buf_array = (usbd_composite_hid_buf_t *)usb_os_malloc(sizeof(usbd_composite_hid_buf_t) * buf_ctrl->buf_array_cnt);
 	if (buf_ctrl->buf_array == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Can not get hid buf array mem\n");
 		return HAL_ERR_MEM;
 	}
 	for (idx = 0; idx < buf_ctrl->buf_array_cnt; idx ++) {
 		pdata = &(buf_ctrl->buf_array[idx]);
 		pdata->buf_valid_len = 0;
 		pdata->buf_raw = buf_ctrl->hid_buf + CACHE_LINE_ALIGNMENT(buf_ctrl->hid_mps) * idx ;
-
-		// RTK_LOGS(TAG, RTK_LOG_DEBUG, "Buf %d-%d-%d-0x%08x\n",idx,buf_ctrl->hid_mps,pdata->buf_valid_len,pdata->buf_raw);
 	}
 
 	rtos_sema_create(&(buf_ctrl->uac_hid_sema), 0U, 1U);
@@ -742,21 +797,22 @@ int usbd_composite_hid_init(usbd_composite_dev_t *cdev, usbd_composite_hid_usr_c
 	usbd_ep_t *ep_hid_priv_in = &(hid->ep_hid_priv_in);
 	usbd_ep_t *ep_hid_in = &(hid->ep_hid_in);
 	usbd_ep_t *ep_intr_out = &(hid->ep_intr_out);
+	usb_ep_info_t *info;
 
-	if (cb != NULL) {
-		hid->cb = cb;
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID cb is NULL\n");
+	if (cb == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
 		return HAL_ERR_PARA;
 	}
 
+	hid->cb = cb;
 	if (usbd_composite_hid_ring_buf_ctrl_init() != HAL_OK) { //init fail
 		ret = HAL_ERR_MEM;
 		goto usbd_hid_init_exit;
 	}
 
-	ep_hid_priv_in->addr = USBD_COMP_HID_INTR_IN_EP;
-	ep_hid_priv_in->type = USB_CH_EP_TYPE_INTR;
+	info = &ep_hid_priv_in->info;
+	info->addr = USBD_COMP_HID_INTR_IN_EP;
+	info->type = USB_CH_EP_TYPE_INTR;
 	ep_hid_priv_in->xfer_buf_len = USBD_COMP_HID_MAX_BUF_SIZE;
 	ep_hid_priv_in->xfer_buf = (u8 *)usb_os_malloc(ep_hid_priv_in->xfer_buf_len);
 	if (ep_hid_priv_in->xfer_buf == NULL) {
@@ -764,8 +820,9 @@ int usbd_composite_hid_init(usbd_composite_dev_t *cdev, usbd_composite_hid_usr_c
 		goto usbd_composite_hid_priv_out_buf_exit;
 	}
 
-	ep_hid_in->addr = USBD_COMP_HID_CONSUMER_INTR_IN_EP;
-	ep_hid_in->type = USB_CH_EP_TYPE_INTR;
+	info = &ep_hid_in->info;
+	info->addr = USBD_COMP_HID_CONSUMER_INTR_IN_EP;
+	info->type = USB_CH_EP_TYPE_INTR;
 	ep_hid_in->xfer_buf_len = USBD_COMP_HID_MAX_BUF_SIZE;
 	ep_hid_in->xfer_buf = (u8 *)usb_os_malloc(ep_hid_in->xfer_buf_len);
 	if (ep_hid_in->xfer_buf == NULL) {
@@ -773,8 +830,9 @@ int usbd_composite_hid_init(usbd_composite_dev_t *cdev, usbd_composite_hid_usr_c
 		goto usbd_composite_hid_clean_priv_exit;
 	}
 
-	ep_intr_out->addr = USBD_COMP_HID_INTR_OUT_EP;
-	ep_intr_out->type = USB_CH_EP_TYPE_INTR;
+	info = &ep_intr_out->info;
+	info->addr = USBD_COMP_HID_INTR_OUT_EP;
+	info->type = USB_CH_EP_TYPE_INTR;
 
 	if (cb->init != NULL) {
 		ret = cb->init();
@@ -789,8 +847,8 @@ int usbd_composite_hid_init(usbd_composite_dev_t *cdev, usbd_composite_hid_usr_c
 
 usbd_composite_hid_clean_all_exit:
 	if (ep_hid_in->xfer_buf) {
-		usb_os_mfree(ep_hid_priv_in->xfer_buf);
-		ep_hid_priv_in->xfer_buf = NULL;
+		usb_os_mfree(ep_hid_in->xfer_buf);
+		ep_hid_in->xfer_buf = NULL;
 	}
 
 usbd_composite_hid_clean_priv_exit:

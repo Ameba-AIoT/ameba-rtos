@@ -334,12 +334,12 @@ int FLASH_WriteStream(u32 address, u32 len, u8 *pbuf)
 	u32 size = addr_end - addr_begin;
 
 	if (len == 0) {
-		RTK_LOGW(NOTAG, "function %s, data length is invalid (0) \r\n", __func__);
+		RTK_LOGS(NOTAG, RTK_LOG_WARN, "function %s, data length is invalid (0) \r\n", __func__);
 		goto exit;
 	}
 
 	if (IS_FLASH_ADDR((u32)pbuf)) {
-		RTK_LOGE(NOTAG, "function %s, source address(%08x) can not be flash address\r\n", __func__, pbuf);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "function %s, source address(%08x) can not be flash address\r\n", __func__, pbuf);
 		assert_param(0);
 	}
 

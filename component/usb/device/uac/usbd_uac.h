@@ -66,8 +66,8 @@
 #define USBD_UAC_SAMPLING_FREQ_96K                  96000U  /**< Audio 96000 sample frequency. */
 #define USBD_UAC_SAMPLING_FREQ_192K                 192000U /**< Audio 192000 sample frequency. */
 
-/** @} End of Device_UAC_Constants group*/
-/** @} End of USB_Device_Constants group*/
+/** @} End of Device_UAC_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -105,6 +105,8 @@ typedef struct {
 
 	/**
 	 * @brief Called to handle class-specific SETUP requests.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] req: Pointer to the setup request packet.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
@@ -113,12 +115,16 @@ typedef struct {
 
 	/**
 	 * @brief Called when the UAC class driver initialization for application resource setup.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @return 0 on success, non-zero on failure.
 	 */
 	int(* set_config)(void);
 
 	/**
 	 * @brief Called when USB attach status changes for application to support hot-plug events.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] old_status: The previous attach status.
 	 * @param[in] status: The new attach status.
 	 */
@@ -126,18 +132,24 @@ typedef struct {
 
 	/**
 	 * @brief Called when the UAC class driver initialization for application resource setup.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] mute: Mute value, 0 unmute, 1 mute
 	 */
 	void(* mute_changed)(u8 mute);
 
 	/**
 	 * @brief Called when the UAC class driver initialization for application resource setup.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] volume: Volume value, from 0~100
 	 */
 	void(* volume_changed)(u8 volume);
 
 	/**
 	 * @brief Called when the audio format changed in the UAC class driver.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] sampling_freq: New sample frequency.
 	 * @param[in] ch_cnt: New channel count. such as 2,4,6,8...
 	 * @param[in] byte_width: New byte width, such as 1,2,3,4.
@@ -146,6 +158,8 @@ typedef struct {
 
 	/**
 	 * @brief Called when the SOF interrupt occurs in the UAC class driver.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 */
 
 	void(* sof)(void);
@@ -173,8 +187,8 @@ typedef struct {
 	__IO u8 next_xfer;         /**< Audio transfer continue flag. */
 } usbd_uac_buf_ctrl_t;
 
-/** @} End of Device_UAC_Types group*/
-/** @} End of USB_Device_Types group*/
+/** @} End of Device_UAC_Types group */
+/** @} End of USB_Device_Types group */
 
 /**
  * @brief Structure representing the UAC device instance.

@@ -102,7 +102,7 @@ static void example_ssl_server_thread(void *param)
 	const char *response = "<HTML><BODY>TLS OK</BODY></HTML>";
 
 	// Delay to check successful WiFi connection and obtain of an IP address
-	while (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+	while (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 		rtos_time_delay_ms(2000);
 	}
 
@@ -131,7 +131,7 @@ static void example_ssl_server_thread(void *param)
 	/*
 	 * 2. Start the connection
 	 */
-	ip = LwIP_GetIP(NETIF_WLAN_STA_INDEX);
+	ip = lwip_get_ip(NETIF_WLAN_STA_INDEX);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r  . Starting tcp server /%d.%d.%d.%d/%s...", ip[0], ip[1], ip[2], ip[3], SERVER_PORT);
 	mbedtls_net_init(&server_fd);
 

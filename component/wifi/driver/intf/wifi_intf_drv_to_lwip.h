@@ -29,7 +29,7 @@ struct netif;
 // Ethernet Buffer
 //----- ------------------------------------------------------------------
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
-#include "ethernetif.h"  // moved to ethernetif.h by jimmy 12/2/2015
+#include "netif_adapter.h"  // moved to netif_adapter.h by jimmy 12/2/2015
 #endif
 //----- ------------------------------------------------------------------
 // Wlan Interface Provided
@@ -53,9 +53,6 @@ void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len);
 int netif_is_valid_IP(int idx, unsigned char *ip_dest);
 unsigned char *netif_get_hwaddr(int idx_wlan);
 void netif_rx(int idx, unsigned int len);
-#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
-extern void ethernetif_recv(struct netif *netif, int total_len);
-#endif //CONFIG_LWIP_LAYER == 1
 
 extern unsigned char *rltk_wlan_get_ip(int idx);
 extern unsigned char *rltk_wlan_get_gw(int idx);

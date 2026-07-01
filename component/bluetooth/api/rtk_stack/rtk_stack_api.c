@@ -231,8 +231,10 @@ static uint16_t bt_stack_init(void *app_config)
 		default_conf.prefer_tx_phy = papp_conf->prefer_tx_phy;
 		default_conf.prefer_rx_phy = papp_conf->prefer_rx_phy;
 #endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 		default_conf.max_tx_octets = papp_conf->max_tx_octets;
 		default_conf.max_tx_time = papp_conf->max_tx_time;
+#endif
 		default_conf.key_convert_le_to_bredr = papp_conf->key_convert_le_to_bredr;
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
 		if (papp_conf->max_stack_tx_pending_num != 0) {
@@ -255,8 +257,10 @@ static uint16_t bt_stack_init(void *app_config)
 		default_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 		default_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 #endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 		default_conf.max_tx_octets = 0x40;
 		default_conf.max_tx_time = 0x200;
+#endif
 		default_conf.key_convert_le_to_bredr = false;
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
 		default_conf.max_stack_tx_pending_num = RTK_BT_GATT_DEFAULT_CREDITS;

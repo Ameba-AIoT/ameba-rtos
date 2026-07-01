@@ -56,13 +56,11 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 	[VND-I] ISOC test start, times:100, size: 1024
 	[VEN-I] ISOC OUT test finish 100/100:
 	[VEN-I]   0   1   2   3   4   5   6   7   8   9
-
-	```
+	...
 	[VEN-I]  90  91  92  93  94  95  96  97  98  99
 	[VEN-I] ISOC IN test finish 100/100:
 	[VEN-I]   0   1   2   3   4   5   6   7   8   9
-
-	```
+	...
 	[VEN-I]  90  91  92  93  94  95  96  97  98  99
 	[VND-I] ISOC test PASS
 	[VND-I] BULK loopback test start, times:100, size: 512
@@ -70,6 +68,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 	[VND-I] BULK loopback test PASS 100/100
 	[VND-I] INTR loopback test PASS 100/100
 	[VND-I] USBH vendor demo stop
+	```
 # Note
 
 For other chips, refer to the AN for setup guide.

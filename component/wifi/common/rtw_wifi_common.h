@@ -9,6 +9,7 @@
 #define TAG_WLAN_INIC  "INIC"
 #define TAG_WLAN_NAN   "NAN"
 #define TAG_WLAN_SME   "SME"
+#define TAG_WLAN_P2P   "P2P"
 
 
 /*

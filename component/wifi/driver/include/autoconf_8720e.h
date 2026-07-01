@@ -114,7 +114,7 @@
 /**************** configurations for task size **********************/
 #if defined (CONFIG_WHC_DEV)
 #if defined(CONFIG_WHC_INTF_IPC)
-#define WIFI_RECV_TASKLET_BASIC_SIZE	            1488
+#define WIFI_RECV_TASKLET_BASIC_SIZE	            1616
 #else
 #define WIFI_RECV_TASKLET_BASIC_SIZE	            3056
 #endif
@@ -123,11 +123,11 @@
 #endif
 
 #define WIFI_DRIVER_RESUME_TASKLET_BASIC_SIZE     464
-#define WIFI_LITTLE_TASKLET_BASIC_SIZE		        496
+#define WIFI_LITTLE_TASKLET_BASIC_SIZE		        512
 #define WIFI_INIC_IPC_DEV_API_BASIC_SIZE          1328
 #define WIFI_INIC_MSG_Q_BASIC_SIZE                476
 #define WIFI_INIC_IPC_HST_API_BASIC_SIZE          316
-#define WIFI_INIC_IPC_HST_EVT_API_BASIC_SIZE      1800
+#define WIFI_INIC_IPC_HST_EVT_API_BASIC_SIZE      2244
 #define COEX_IPC_HST_API_BASIC_SIZE               248
 #define COEX_IPC_DEV_API_BASIC_SIZE               816
 

@@ -43,7 +43,7 @@
 #define USBD_INIC_EP_STATE_IDLE							0U
 #define USBD_INIC_EP_STATE_BUSY							1U
 
-// Vendor requests
+/* Vendor requests */
 #define USBD_INIC_VENDOR_REQ_BT_HCI_CMD					0x00U
 #define USBD_INIC_VENDOR_REQ_FW_DOWNLOAD				0xF0U
 #define USBD_INIC_VENDOR_QUERY_CMD						0x01U
@@ -54,41 +54,42 @@
 #define USBD_INIC_FW_TYPE_APPLICATION					0xF2U
 
 #define USBD_INIC_RESET_THREAD_PRIORITY					6
+#define USBD_INIC_RESET_THREAD_STACK_SIZE				384   /**< Thread tack size */
 
 /* Exported types ------------------------------------------------------------*/
 
 typedef struct {
-	// DWORD 0
-	u32	data_len: 16;		// Data payload length
-	u32	data_offset: 8;		// Data payload offset i.e. header length
-	u32	data_checksum: 8;	// Checksum of the data payload
+	/* DWORD 0 */
+	u32	data_len: 16;		/* Data payload length */
+	u32	data_offset: 8;		/* Data payload offset i.e. header length */
+	u32	data_checksum: 8;	/* Checksum of the data payload */
 
-	// DWORD 1
-	u32	pkt_type: 8;		// Packet type
-	u32	xfer_status: 8;		// Xfer status
-	u32	rl_version: 8;		// RL Version
-	u32	dev_mode: 8;		// Device mode
+	/* DWORD 1 */
+	u32	pkt_type: 8;		/* Packet type */
+	u32	xfer_status: 8;		/* Xfer status */
+	u32	rl_version: 8;		/* RL Version */
+	u32	dev_mode: 8;		/* Device mode */
 
-	// DWORD 2
-	u32	mem_addr;			// Memory address
+	/* DWORD 2 */
+	u32	mem_addr;			/* Memory address */
 
-	// DWORD 3
-	u32	mem_size;			// Memory size
+	/* DWORD 3 */
+	u32	mem_size;			/* Memory size */
 
-	// DWORD 4
+	/* DWORD 4 */
 	union {
 		u32	d32;
 		u16	d16[2];
 		u8	d8[4];
-	} value;				// Target value
+	} value;				/* Target value */
 
-	// DWORD 5
+	/* DWORD 5 */
 	u32	reserved;
 } __PACKED usbd_inic_query_packet_t;
 
 typedef struct {
 	usbd_ep_t ep;
-	void *userdata; // userdata for each ep
+	void *userdata; /* userdata for each ep */
 } usbd_inic_ep_t;
 
 /**
@@ -111,6 +112,8 @@ typedef struct {
 
 	/**
 	 * @brief Called during control transfer SETUP/DATA phases to handle application-specific control requests.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] req: Pointer to the setup request packet.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
@@ -119,18 +122,24 @@ typedef struct {
 
 	/**
 	 * @brief Notifies application layer when INIC driver becomes operational.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @return 0 on success, non-zero on failure.
 	 */
 	int(* set_config)(void);
 
 	/**
 	 * @brief Notifies application layer when INIC driver becomes non-operational.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @return 0 on success, non-zero on failure.
 	 */
 	int(* clear_config)(void);
 
 	/**
 	 * @brief Called when non-control IN transfer done, for asynchronous non-control IN transfer status notification.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] in_ep: Pointer to the INIC IN endpoint.
 	 * @param[in] status: The status of the transmission.
 	 */
@@ -138,6 +147,8 @@ typedef struct {
 
 	/**
 	 * @brief Called when non-control OUT transfer done, for application to handle the received host command/data.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] out_ep: Pointer to the INIC OUT endpoint.
 	 * @param[in] len: Length of the received data in bytes.
 	 * @return 0 on success, non-zero on failure.
@@ -146,10 +157,20 @@ typedef struct {
 
 	/**
 	 * @brief Called when the USB device status changes for application to support USB hot-plug events.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] old_status: The previous USB device status.
 	 * @param[in] status: The new USB device status.
 	 */
 	void (*status_changed)(u8 old_status, u8 status);
+
+	/**
+	 * @brief Called when the USB device resumes from suspend (wakeup).
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @details Indicates that the USB bus is active again and the upper layer can resume normal TRX.
+	 */
+	void (*wakeup)(void);
 } usbd_inic_cb_t;
 
 typedef struct {
@@ -223,4 +244,3 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
  */
 u8 usbd_inic_is_bt_en(void);
 #endif  /* USBD_INIC_H */
-

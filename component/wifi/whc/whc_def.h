@@ -29,7 +29,11 @@
 
 #define WHC_API_PROCESS_DONE				0
 
-#define WHC_MP_MSG_BUF_SIZE				4096
+#define WHC_MP_MSG_BUF_SIZE					4096
+/* WHC_MP_MSG_BUF_SIZE exceeds the ~1500B per-transfer limit of USB/SDIO/SPI
+ * (roughly one TCP/IP packet size), so the buffer is split into WHC_MP_FRAG_NUM fragments. */
+#define WHC_MP_FRAG_NUM						3
+#define WHC_MP_FRAG_SIZE					((WHC_MP_MSG_BUF_SIZE + WHC_MP_FRAG_NUM - 1) / WHC_MP_FRAG_NUM) // (4096 + 3 - 1) / 3 = 1366
 
 enum WHC_WIFI_C2H_API_ID {
 	/* 0x0001~0x1000 reserved for basic API */
@@ -197,4 +201,3 @@ enum IPC_LWIP_INFO_TYPE {
 };
 
 #endif
-

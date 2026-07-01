@@ -87,10 +87,10 @@ void linux_ipc_otp_instruction(void *Data, u32 IrqStatus, u32 ChanNum)
 			ipc_send_message(IPC_NP_TO_AP, IPC_N2A_OTP_TX_TRAN, (PIPC_MSG_STRUCT)&ipc_msg);
 			DCache_CleanInvalidate((u32)&ipc_msg, sizeof(IPC_MSG_STRUCT));
 		} else {
-			printf("KM4 IPC Receive Linux OTP physical test physical write instruction.\n test write:  from address [%u] to [%u]. \n",
-				   (unsigned int)recv_req->addr, (unsigned int)(recv_req->addr + recv_req->len - 1));
+			RTK_LOGI(TAG, "KM4 IPC Receive Linux OTP physical test physical write instruction.\n test write:  from address [%u] to [%u]. \n",
+					 (unsigned int)recv_req->addr, (unsigned int)(recv_req->addr + recv_req->len - 1));
 			for (i = 0 ; i < (int)recv_req->len; i++) {
-				printf("[%u], %x\n", (unsigned int)(recv_req->addr + i), recv_req->param_buf[i]);
+				RTK_LOGI(TAG, "[%u], %x\n", (unsigned int)(recv_req->addr + i), recv_req->param_buf[i]);
 			}
 			otp_data[0] = 1;
 			otp_data[1] = i + 1;

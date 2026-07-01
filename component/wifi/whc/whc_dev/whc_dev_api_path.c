@@ -95,9 +95,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_GET_COUNTRY_CODE,	whc_event_wifi_get_countrycode},
 	{WHC_API_WIFI_SET_USR_CFG, whc_event_wifi_set_usr_config},
 
-#ifdef CONFIG_MP_INCLUDED
-	{WHC_API_WIFI_MP_CMD,	whc_event_mp_cmd},
-#endif
 };
 
 void whc_send_api_ret_value(u32 api_id, u8 *pbuf, u32 len)
@@ -879,24 +876,6 @@ void whc_event_wtn_cmd(u32 api_id, u32 *param_buf)
 
 	ret = rtw_wltunnel_command(cmd);
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
-#endif
-
-#ifdef CONFIG_MP_INCLUDED
-void whc_event_mp_cmd(u32 api_id, u32 *param_buf)
-{
-	char *outbuf;
-	int show_msg = (int)param_buf[0], buf_size = WHC_MP_MSG_BUF_SIZE;
-	char *cmd = (char *)(param_buf + 2);
-
-	outbuf = (char *)rtos_mem_malloc(buf_size);
-	if (outbuf == NULL) {
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Fail to allocate outbuf!\n\r");
-	}
-
-	wext_private_command(cmd, show_msg, outbuf);
-	whc_send_api_ret_value(api_id, (u8 *)outbuf, buf_size);
-	rtos_mem_free(outbuf);
 }
 #endif
 

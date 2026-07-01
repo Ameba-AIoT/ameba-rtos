@@ -12,7 +12,7 @@
 /* Scheduler includes. */
 #include "sheipa.h"
 #include "ameba_soc.h"
-#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
+#if defined(CONFIG_VFS_ENABLED)
 #include "vfs.h"
 #endif
 #include "os_wrapper.h"

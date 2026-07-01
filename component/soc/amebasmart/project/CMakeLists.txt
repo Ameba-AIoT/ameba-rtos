@@ -45,8 +45,8 @@ ameba_add_subdirectory(project_lp)
 configure_file(${c_MENUCONFIG_DIR}/.config ${CMAKE_CURRENT_BINARY_DIR}/.config COPYONLY)
 import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config)
 
+ameba_set_if(CONFIG_MP_INCLUDED app_name app_mp.bin p_ELSE app.bin)
 if(CONFIG_LINUX_FW_EN)
-    ameba_set_if(CONFIG_MP_INCLUDED app_name km0_km4_app_mp.bin p_ELSE km0_km4_app.bin)
     ameba_firmware_package(
         ${app_name}     #Output app name, referred by c_APP_BINARY_NAME in postbuild.cmake
         p_MCU_PROJECTS  #MCU project list, notice the ORDER is important which determines the image2/image3 order in final binary file
@@ -54,7 +54,6 @@ if(CONFIG_LINUX_FW_EN)
             hp
     )
 else()
-    ameba_set_if(CONFIG_MP_INCLUDED app_name km0_km4_ca32_app_mp.bin p_ELSE km0_km4_ca32_app.bin)
     ameba_firmware_package(
         ${app_name}     #Output app name, referred by c_APP_BINARY_NAME in postbuild.cmake
         p_MCU_PROJECTS  #MCU project list, notice the ORDER is important which determines the image2/image3 order in final binary file

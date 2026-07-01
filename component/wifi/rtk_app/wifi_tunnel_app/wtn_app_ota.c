@@ -1495,11 +1495,11 @@ int wtn_on_ota_request(u8 *buf, int recv_len, int *forward_sock_fd)
 	u8 ota_request_seq = 0;
 	u8 httpiplen = 0;
 	u8 http_resourcelen = 0;
-	u8 *self_mac_p1 = LwIP_GetMAC(NETIF_WLAN_AP_INDEX);
-	u8 *self_mac_p0 = LwIP_GetMAC(NETIF_WLAN_STA_INDEX);
+	u8 *self_mac_p1 = lwip_get_mac(NETIF_WLAN_AP_INDEX);
+	u8 *self_mac_p0 = lwip_get_mac(NETIF_WLAN_STA_INDEX);
 	u8 target_mac[6] = {0};
 #ifdef CONFIG_RNAT_EN
-	u8 *gw = LwIP_GetGW(NETIF_WLAN_AP_INDEX);
+	u8 *gw = lwip_get_gw(NETIF_WLAN_AP_INDEX);
 	u8 client_ip = 0;
 	u8 try_cnt = 5;
 	struct sockaddr_in ota_forward_dest_addr;

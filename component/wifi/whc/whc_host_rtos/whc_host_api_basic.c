@@ -189,7 +189,7 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 #if defined(TODO) && defined(CONFIG_LWIP_LAYER)
 	if (result == RTK_SUCCESS) {
 		/* Start DHCPClient */
-		LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
+		lwip_request_ip(NETIF_WLAN_STA_INDEX);
 	}
 #endif
 
@@ -272,7 +272,7 @@ s32 wifi_on(u8 mode)
 	if (ret == RTK_SUCCESS) { //wifi on success
 #if defined(CONFIG_LWIP_LAYER)
 		if (mode == RTW_MODE_STA) {
-			LwIP_netif_set_up(NETIF_WLAN_STA_INDEX);
+			lwip_netif_set_up(NETIF_WLAN_STA_INDEX);
 		}
 #endif
 	}
@@ -348,8 +348,8 @@ s32 wifi_start_ap(struct rtw_softap_info *softap_config)
 
 	if (ret == RTK_SUCCESS) {
 #ifdef CONFIG_LWIP_LAYER
-		LwIP_netif_set_up(NETIF_WLAN_AP_INDEX);
-		LwIP_netif_set_link_up(SOFTAP_WLAN_INDEX);
+		lwip_netif_set_up(NETIF_WLAN_AP_INDEX);
+		lwip_netif_set_link_up(SOFTAP_WLAN_INDEX);
 #endif
 	}
 
@@ -374,9 +374,8 @@ s32 wifi_stop_ap(void)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	dhcps_deinit();
-	LwIP_netif_set_down(NETIF_WLAN_AP_INDEX);
-	LwIP_netif_set_link_down(NETIF_WLAN_AP_INDEX);
+	lwip_netif_set_down(NETIF_WLAN_AP_INDEX);
+	lwip_netif_set_link_down(NETIF_WLAN_AP_INDEX);
 #endif
 
 	whc_host_api_message_send(WHC_API_WIFI_STOP_AP, NULL, 0, (u8 *)&ret, sizeof(ret));

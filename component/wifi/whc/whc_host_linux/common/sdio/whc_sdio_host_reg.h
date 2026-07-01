@@ -135,13 +135,19 @@
 #define SDIO_HCPWM_TOGGLE			(BIT(7))
 
 // Register RPWM2
-#define RPWM2_ACT_BIT			(0x00000001 << 0)	// Active
-#define RPWM2_CG_BIT			(0x00000001 << 1)	// Clock Gated
+#define RPWM2_ACT_BIT			(BIT(0))	// Active
+#define RPWM2_CG_BIT			(BIT(1))	// Clock Gated
 #define HRPWM2_NEED_CHECKSUM 	(BIT(2))
 #define HRPWM2_BOOT_RAM 		(BIT(3))
 #define RPWM2_TOGGLE_BIT		(BIT(15))	// Toggle bit
 
 // Register HCPWM2
-#define HCPWM2_CHECKSUM_READY			(BIT(14)) // device tells host checksum is ready 
+#define HCPWM2_ACT_BIT			(BIT(0))		// Active
+#define HCPWM2_IMG1_BIT			(BIT(2))		// bootloader
+#define HCPWM2_CHECKSUM_READY	(BIT(14)) // device tells host checksum is ready
+
+// Register SDIO_REG_RX0_REQ_LEN
+#define SDIO_RX_REQ_LEN_RDY		(BIT(31))
+#define SDIO_RX_REQ_LEN_MSK		(0xffffff)
 
 #endif

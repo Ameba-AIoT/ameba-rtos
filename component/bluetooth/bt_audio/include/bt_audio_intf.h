@@ -94,8 +94,11 @@ typedef struct {
 	uint32_t                   delta_index;                                                    /*!< to record delta number buffered in pres_delta_sum */
 	int64_t                    pres_delta_sum;                                                 /*!< record sum of render data time delta */
 	uint32_t                   pre_drop_cnt_left;                                              /*!< indicate left drop packets number */
-	uint8_t                    audio_hal_buff_count;                                           /*!< count audio hal buffer numbers */
-	void                       *audio_delay_start_timer;                                       /*!< delay start timer */
+	uint8_t                    mixer_pre_start_flag;                                           /*!< indicate running of mixer_pre_start_timer */
+	void
+	*mixer_pre_start_timer;                                         /*!< prestart for mixer (use limitation of AudioTrack_GetTimestamp) */
+	uint32_t                   latency;                                                        /*!< indicate latency(AudioTrack_GetLatency for mixer) */
+	uint8_t                    period;
 	void                       *audio_sync_mutex;                                              /*!< audio sync mutex */
 	bt_audio_ring_buffer_t     audio_delay_buff;                                               /*!< rtk_bt_audio_delay_start_t*/
 } rtk_bt_audio_track_t;

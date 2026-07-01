@@ -138,8 +138,8 @@ add_custom_target(
 #------------- EXTRA PROCESS -----------------#
 set(clean_files
     ${c_SDK_IMAGE_TARGET_DIR}
-    ${FINAL_IMAGE_DIR}/amebagreen2_app.bin
-    ${FINAL_IMAGE_DIR}/amebagreen2_app_mp.bin
+    ${FINAL_IMAGE_DIR}/app.bin
+    ${FINAL_IMAGE_DIR}/app_mp.bin
     ${FINAL_IMAGE_DIR}/ap_fullmac.bin
     ${FINAL_IMAGE_DIR}/ota_all.bin
 )

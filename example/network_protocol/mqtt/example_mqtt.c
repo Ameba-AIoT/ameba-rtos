@@ -32,7 +32,7 @@ void prvMQTTEchoTask(void *pvParameters)
 
 	mqtt_printf(MQTT_INFO, "Wait Wi-Fi to be connected.");
 	// Delay to check successful WiFi connection and obtain of an IP address
-	while (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+	while (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 		rtos_time_delay_ms(2000);
 	}
 	mqtt_printf(MQTT_INFO, "Wi-Fi connected.");
@@ -116,7 +116,7 @@ static void prvMQTTTask(void *pvParameters)
 	(void) pvParameters;
 
 	// Delay to check successful WiFi connection and obtain of an IP address
-	while (LwIP_Check_Connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+	while (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 		rtos_time_delay_ms(2000);
 	}
 

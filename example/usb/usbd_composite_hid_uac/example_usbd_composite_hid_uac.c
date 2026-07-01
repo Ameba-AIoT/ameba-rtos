@@ -32,7 +32,6 @@ static const char *const TAG = "COMP";
 
 #define CONFIG_USBD_COMPOSITE_HOTPLUG                            1
 
-#define CONFIG_USBD_HID_CONSTANT_LOOP                            2
 #define CONFIG_USBD_COMP_HID_TX_BUG_LEN                          1024
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
@@ -43,9 +42,6 @@ static const char *const TAG = "COMP";
 
 #define CONFIG_COMP_USBD_MSG_QUEUE_DEPTH                         10
 #define COMP_USBD_HOT_PLUG_STATUS                                1
-
-#define CONFIG_COMP_USBD_UAC_RECORD_TEST_CNT                     6
-#define CONFIG_COMP_USBD_UAC_RECORD_TEST_TIME                    10
 
 /* Task exit wait timeout */
 #define TASK_EXIT_WAIT_TIMEOUT_MS                                5000
@@ -64,10 +60,16 @@ static const char *const TAG = "COMP";
 #endif
 
 /* Thread priorities */
-#define CONFIG_USBD_COMPOSITE_HID_THREAD_PRIORITY                5U
-#define CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY                6U
-#define CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY               7U
-#define CONFIG_USBD_COMPOSITE_EVENT_TASK_PRIORITY                8U
+#define CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY        7U
+#define CONFIG_USBD_COMPOSITE_EVENT_TASK_PRIORITY         8U
+#define CONFIG_USBD_COMPOSITE_HID_THREAD_PRIORITY         5U
+#define CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY         6U
+
+/* Thread stack sizes */
+#define CONFIG_USBD_COMPOSITE_INIT_THREAD_STACK_SIZE        1024U
+#define CONFIG_USBD_COMPOSITE_EVENT_TASK_STACK_SIZE         (1024U * 2)
+#define CONFIG_USBD_COMPOSITE_HID_THREAD_STACK_SIZE         1024U
+#define CONFIG_USBD_COMPOSITE_UAC_THREAD_STACK_SIZE         (1024U * 16)
 
 /* Buffer sizes */
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
@@ -155,16 +157,18 @@ static usbd_config_t composite_usbd_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
 	.isr_priority = INT_PRI_HIGHEST,
 	.isr_in_critical = 0,
-	.intr_use_ptx_fifo = 0U,
-	.ext_intr_enable        = USBD_EPMIS_INTR | USBD_EOPF_INTR | USBD_SOF_INTR,
+#if defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBADPLUS)
+	.ext_intr_enable = USBD_SOF_INTR,
 	.nptx_max_epmis_cnt = 100U,
-#if defined (CONFIG_AMEBAGREEN2)
+#elif defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 420U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, },
+	.ext_intr_enable = USBD_SOF_INTR,
 #elif defined (CONFIG_AMEBAPRO3)
 	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
 	.rx_fifo_depth = 1424U,
 	.ptx_fifo_depth = {256U, 32U, 256U, },
+	.ext_intr_enable = USBD_SOF_INTR,
 #endif
 };
 
@@ -262,21 +266,28 @@ static void composite_stop_all_tasks(void)
 
 /**
  * @brief USB status change callback
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  */
 static void composite_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Status change: %d-%d-%d\n", old_status, status, usb_ready_flag);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_COMPOSITE_HOTPLUG
 	composite_attach_status = status;
 	if ((USBD_ATTACH_STATUS_DETACHED == status) && (usb_ready_flag)) {
 		u32 msg = COMP_USBD_HOT_PLUG_STATUS;
 		usb_os_queue_send(msg_queue, &msg, 0);
 	}
+#else
+	UNUSED(status);
 #endif
 }
 
 /**
  * @brief USB set config callback
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  */
 static int composite_cb_set_config(void)
 {
@@ -320,7 +331,7 @@ static void composite_do_reinit(void)
 /**
  * @brief Event handling task
  */
-static void composite_handle_event_task(void *param)
+static void example_usbd_comp_hid_uac_event_task(void *param)
 {
 	UNUSED(param);
 	u32 msg;
@@ -396,6 +407,13 @@ static int composite_hid_cb_received(u8 *buf, u32 len)
 	return HAL_OK;
 }
 
+/**
+  * @brief  HID transmit complete callback
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  status: TX status
+  * @retval Status
+  */
 static int composite_hid_cb_transmitted(u8 status)
 {
 	UNUSED(status);
@@ -407,6 +425,8 @@ static int composite_hid_cb_transmitted(u8 status)
 
 /**
   * @brief  Handle the CDC class control requests
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  cmd: Command code
   * @param  buf: Buffer containing command data (request parameters)
   * @param  len: Number of data to be sent (in bytes)
@@ -422,6 +442,8 @@ static int composite_hid_cb_setup(usb_setup_req_t *req, u8 *buf)
 
 /**
   * @brief  Set config callback
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  None
   * @retval Status
   */
@@ -455,6 +477,8 @@ static int composite_uac_cb_deinit(void)
 
 /**
   * @brief  Set config callback
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  None
   * @retval Status
   */
@@ -465,12 +489,26 @@ static int composite_uac_cb_set_config(void)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Mute state change notification from the USB host
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  mute: New mute state
+  * @retval Status
+  */
 static int composite_uac_cb_mute_changed(u8 mute)
 {
 	UNUSED(mute);
 	return HAL_OK;
 }
 
+/**
+  * @brief  Volume change notification from the USB host
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  volume: New volume value
+  * @retval Status
+  */
 static int composite_uac_cb_volume_changed(u8 volume)
 {
 	UNUSED(volume);
@@ -478,11 +516,20 @@ static int composite_uac_cb_volume_changed(u8 volume)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Audio format change notification from the USB host
+  * @note  This function is called within an interrupt service routine (ISR) context;
+  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  sampling_freq: New sampling frequency
+  * @param  ch_cnt: New channel count
+  * @param  byte_width: New sample byte width
+  * @retval Status
+  */
 static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
 	usbd_audio_cfg_t *out = &(composite_uac_usr_cb.out);
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC format rate %d ch %d\n", sampling_freq, ch_cnt);
+	//RTK_LOGS(TAG, RTK_LOG_INFO, "UAC format rate %d ch %d\n", sampling_freq, ch_cnt);
 
 	if (sampling_freq != 0U) {
 		out->sampling_freq = sampling_freq;
@@ -649,7 +696,7 @@ static void composite_usbd_audio_track_play(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Play exit\n");
 }
 
-static void composite_usbd_audio_track_thread(void *param)
+static void example_usbd_comp_hid_uac_audio_track_thread(void *param)
 {
 	UNUSED(param);
 
@@ -771,7 +818,7 @@ exit_record:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Recording stopped after %u loops, total errors: %d\n", loop_count, usbh_uac_err_count);
 }
 
-static void composite_usbd_audio_record_thread(void *param)
+static void example_usbd_comp_hid_uac_audio_record_thread(void *param)
 {
 	UNUSED(param);
 
@@ -794,7 +841,7 @@ static void composite_usbd_audio_record_thread(void *param)
 }
 #endif
 
-static void composite_usbd_init_thread(void *param)
+static void example_usbd_comp_hid_uac_init_thread(void *param)
 {
 	UNUSED(param);
 	int ret = 0;
@@ -817,7 +864,9 @@ static void composite_usbd_init_thread(void *param)
 		goto exit_usbd_composite_init_fail;
 	}
 
-	ret = rtos_task_create(&task, "composite_handle_event_task", composite_handle_event_task, NULL, 1024 * 2,  CONFIG_USBD_COMPOSITE_EVENT_TASK_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_comp_hid_uac_event_task",
+						   example_usbd_comp_hid_uac_event_task, NULL,
+						   CONFIG_USBD_COMPOSITE_EVENT_TASK_STACK_SIZE, CONFIG_USBD_COMPOSITE_EVENT_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_check_task_fail;
 	}
@@ -904,7 +953,7 @@ static u32 comp_record_start(u16 argc, u8 *argv[])
 	return HAL_OK;
 }
 
-static void composite_usbd_hid_rx_thread(void *param)
+static void example_usbd_comp_hid_uac_hid_rx_thread(void *param)
 {
 	UNUSED(param);
 	u32 read_data_len = 0;
@@ -939,26 +988,31 @@ void example_usbd_composite(void)
 	usbd_comp_audio_ready = 0;
 	usbd_comp_audio_play_stop = 0;
 
-	ret = rtos_task_create(&task, "composite_usbd_init_thread", composite_usbd_init_thread, NULL, 1024, CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_comp_hid_uac_init_thread",
+						   example_usbd_comp_hid_uac_init_thread, NULL,
+						   CONFIG_USBD_COMPOSITE_INIT_THREAD_STACK_SIZE, CONFIG_USBD_COMPOSITE_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD COMP thread fail\n");
 		return;
 	}
 
 #if defined(ENABLE_USB_RECORD_FEATURE)
-	if (rtos_task_create(NULL, ((const char *)"composite_usbd_audio_record_thread"), composite_usbd_audio_record_thread, NULL, 1024 * 16,
-						 CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_usbd_comp_hid_uac_audio_record_thread"),
+						 example_usbd_comp_hid_uac_audio_record_thread, NULL,
+						 CONFIG_USBD_COMPOSITE_UAC_THREAD_STACK_SIZE, CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create audio record fail\n");
 	}
 #endif
 
-	if (rtos_task_create(NULL, ((const char *)"composite_usbd_audio_track_thread"), composite_usbd_audio_track_thread, NULL, 1024 * 16,
-						 CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_usbd_comp_hid_uac_audio_track_thread"),
+						 example_usbd_comp_hid_uac_audio_track_thread, NULL,
+						 CONFIG_USBD_COMPOSITE_UAC_THREAD_STACK_SIZE, CONFIG_USBD_COMPOSITE_UAC_THREAD_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create audio track fail\n");
 	}
 
-	if (rtos_task_create(NULL, ((const char *)"composite_usbd_hid_rx_thread"), composite_usbd_hid_rx_thread, NULL, 1024,
-						 CONFIG_USBD_COMPOSITE_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"example_usbd_comp_hid_uac_hid_rx_thread"),
+						 example_usbd_comp_hid_uac_hid_rx_thread, NULL,
+						 CONFIG_USBD_COMPOSITE_HID_THREAD_STACK_SIZE, CONFIG_USBD_COMPOSITE_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create HID RX thread fail\n");
 	}
 }

@@ -59,23 +59,26 @@ u8 AT_SYNC_TO_MASTER_GPIO = PB_31;
 u8 SPI_INDEX = MBED_SPI0;
 
 /* for dma mode, start address of buffer should be CACHE_LINE_SIZE  aligned*/
-u8 SlaveTxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-u8 SlaveRxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 SlaveTxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 SlaveRxBuf[ATCMD_SPI_DMA_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
-spi_t spi_slave;
+static spi_t spi_slave;
 
-gpio_t at_spi_slave_to_master_gpio;
-gpio_irq_t at_spi_master_to_slave_irq;
+static gpio_t at_spi_slave_to_master_gpio;
+static gpio_irq_t at_spi_master_to_slave_irq;
 
-rtos_sema_t slave_tx_sema;
-rtos_sema_t slave_rx_sema;
-rtos_sema_t atcmd_spi_rx_sema;
+static rtos_sema_t slave_tx_sema;
+static rtos_sema_t slave_rx_sema;
+static rtos_sema_t atcmd_spi_rx_sema;
 
-rtos_queue_t g_spi_cmd_queue;
-RingBuffer *at_spi_rx_ring_buf = NULL;
-RingBuffer *at_spi_tx_ring_buf = NULL;
+static rtos_queue_t g_spi_cmd_queue;
+static RingBuffer *at_spi_rx_ring_buf = NULL;
+static RingBuffer *at_spi_tx_ring_buf = NULL;
 
-rtos_timer_t xTimers_SPI_Output;
+static rtos_mutex_t at_spi_rx_ringbuf_mutex = NULL;
+static rtos_mutex_t at_spi_tx_ringbuf_mutex = NULL;
+
+static rtos_timer_t xTimers_SPI_Output;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
@@ -160,7 +163,9 @@ void atcmd_spi_task(void)
 			if (remain_len > 0) {
 				memset(SlaveTxBuf, 0, ATCMD_SPI_DMA_SIZE);
 				send_len = (remain_len > ATCMD_SPI_DMA_SIZE - 8) ? ATCMD_SPI_DMA_SIZE - 8 : remain_len;
+				rtos_mutex_take(at_spi_tx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
 				RingBuffer_Read(at_spi_tx_ring_buf, SlaveTxBuf + 4, send_len);
+				rtos_mutex_give(at_spi_tx_ringbuf_mutex);
 
 				//add header magic number
 				SlaveTxBuf[0] = 0x41;
@@ -277,7 +282,9 @@ void atcmd_spi_task(void)
 			} else {
 				space = RingBuffer_Space(at_spi_rx_ring_buf);
 				if (space >= recv_len) {
+					rtos_mutex_take(at_spi_rx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
 					RingBuffer_Write(at_spi_rx_ring_buf, SlaveRxBuf + 4, recv_len);
+					rtos_mutex_give(at_spi_rx_ringbuf_mutex);
 					rtos_sema_give(atcmd_spi_rx_sema);
 				} else {
 					RTK_LOGW(TAG, "at_spi_rx_ring_buf is full, drop data\n");
@@ -295,7 +302,9 @@ void atcmd_spi_task(void)
 			}
 
 			memset(SlaveTxBuf, 0, ATCMD_SPI_DMA_SIZE);
+			rtos_mutex_take(at_spi_tx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
 			RingBuffer_Read(at_spi_tx_ring_buf, SlaveTxBuf + 4, send_len);
+			rtos_mutex_give(at_spi_tx_ringbuf_mutex);
 
 			//add header magic number
 			SlaveTxBuf[0] = 0x41;
@@ -405,7 +414,9 @@ void atcmd_spi_task(void)
 			} else {
 				space = RingBuffer_Space(at_spi_rx_ring_buf);
 				if (space >= recv_len) {
+					rtos_mutex_take(at_spi_rx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
 					RingBuffer_Write(at_spi_rx_ring_buf, SlaveRxBuf + 4, recv_len);
+					rtos_mutex_give(at_spi_rx_ringbuf_mutex);
 					rtos_sema_give(atcmd_spi_rx_sema);
 				} else {
 					RTK_LOGW(TAG, "at_spi_rx_ring_buf is full, drop data\n");
@@ -436,6 +447,7 @@ void atcmd_spi_input_handler_task(void)
 			continue;
 		}
 
+		rtos_mutex_take(at_spi_rx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
 		if (actual_len > CMD_BLOCK_SIZE) {
 			RingBuffer_Read(at_spi_rx_ring_buf, pShellRxBuf->UARTLogBuf, CMD_BLOCK_SIZE);
 			pShellRxBuf->BufCount = CMD_BLOCK_SIZE;
@@ -443,12 +455,15 @@ void atcmd_spi_input_handler_task(void)
 			RingBuffer_Read(at_spi_rx_ring_buf, pShellRxBuf->UARTLogBuf, actual_len);
 			pShellRxBuf->BufCount = actual_len;
 		}
+		rtos_mutex_give(at_spi_rx_ringbuf_mutex);
 
 recv_again:
 		if (shell_cmd_chk(pShellRxBuf->UARTLogBuf[i++], (UART_LOG_CTL *)&shell_ctl, ENABLE) == 2) {
 			if (pCmdLogBuf != NULL) {
 				if (RingBuffer_Available(at_spi_rx_ring_buf) > 0) {
+					rtos_mutex_take(at_spi_rx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
 					RingBuffer_Reset(at_spi_rx_ring_buf);
+					rtos_mutex_give(at_spi_rx_ringbuf_mutex);
 				}
 
 				ret = atcmd_service((char *)(pCmdLogBuf->UARTLogBuf));
@@ -457,11 +472,11 @@ recv_again:
 					RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n");
 				}
 
-				memset((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+				memset((u8 *)pCmdLogBuf->UARTLogBuf, '\0', CMD_BUFLEN);
 				pCmdLogBuf->BufCount = 0;
 				continue;
 			} else {
-				memset(shell_ctl.pTmpLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+				memset(shell_ctl.pTmpLogBuf->UARTLogBuf, '\0', CMD_BUFLEN);
 			}
 		}
 
@@ -494,10 +509,14 @@ void atio_spi_output(char *buf, int len)
 	while (1) {
 		space = RingBuffer_Space(at_spi_tx_ring_buf);
 		if (space >= send_len) {
+			rtos_mutex_take(at_spi_tx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
 			RingBuffer_Write(at_spi_tx_ring_buf, (u8 *)buf, send_len);
+			rtos_mutex_give(at_spi_tx_ringbuf_mutex);
 			break;
 		} else if (space > 0) {
+			rtos_mutex_take(at_spi_tx_ringbuf_mutex, MUTEX_WAIT_TIMEOUT);
 			RingBuffer_Write(at_spi_tx_ring_buf, (u8 *)buf, space);
+			rtos_mutex_give(at_spi_tx_ringbuf_mutex);
 			send_len -= space;
 			buf += space;
 		}
@@ -533,10 +552,14 @@ int atio_spi_init(void)
 	at_spi_rx_ring_buf = RingBuffer_Create(NULL, 4 * 1024, LOCAL_RINGBUFF, 1);
 	at_spi_tx_ring_buf = RingBuffer_Create(NULL, 32 * 1024, LOCAL_RINGBUFF, 1);
 
+	rtos_mutex_create(&at_spi_rx_ringbuf_mutex);
+	rtos_mutex_create(&at_spi_tx_ringbuf_mutex);
+
 	rtos_timer_create(&xTimers_SPI_Output, "SPI_Output_Timer", NULL, 12, FALSE, spi_output_timeout_handler);
 
 	if (slave_rx_sema == NULL || slave_tx_sema == NULL || atcmd_spi_rx_sema == NULL ||
-		g_spi_cmd_queue == NULL || at_spi_rx_ring_buf == NULL || at_spi_tx_ring_buf == NULL) {
+		g_spi_cmd_queue == NULL || at_spi_rx_ring_buf == NULL || at_spi_tx_ring_buf == NULL ||
+		at_spi_rx_ringbuf_mutex == NULL || at_spi_tx_ringbuf_mutex == NULL) {
 		return -1;
 	}
 

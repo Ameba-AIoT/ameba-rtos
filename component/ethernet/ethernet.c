@@ -1,13 +1,9 @@
 #include <cmsis.h>
-#include "build_info.h"
-#include "lwip_netconf.h"
 #include "ethernet_api.h"
 #include "wifi_api.h"
-#include "wifi_intf_drv_to_lwip.h"
 #include "ethernet.h"
 #include "ethernet_ex_api.h"
 #include "timer_api.h"
-#include "kv.h"
 
 static const char *const TAG = "ETH";
 
@@ -15,8 +11,6 @@ static const char *const TAG = "ETH";
 #define ETH_RX_DESC_CNT         16
 
 /* Configuration Flags */
-int eth_dhcp_mode = 1;
-int eth_is_default_if = 1;
 volatile int eth_link_is_up = 0;
 
 ETH_InitTypeDef eth_handle;
@@ -42,6 +36,12 @@ void eth_register_rx_patch(eth_rx_prehandler_t pfunc1)
 {
 	eth_rx_preprocess_cb = pfunc1;
 }
+
+void eth_register_link_cb(link_up_down_callback pfunc)
+{
+	eth_link_cb = pfunc;
+}
+
 /**
  * @brief  Configure Ethernet peripheral clock.
  */
@@ -219,7 +219,7 @@ void eth_rx_thread(void *param)
 				if (eth_rx_preprocess_cb) {
 					ret = eth_rx_preprocess_cb(&p, buf, len);
 					if (ret == UPLOAD_TO_LWIP && p != NULL) {
-						ethernetif_rmii_netif_recv(p);
+						netif_adapter_eth_recv(p);
 					} else if (p != NULL) {
 						pbuf_free(p);
 						p = NULL;
@@ -227,9 +227,9 @@ void eth_rx_thread(void *param)
 				} else {
 					/* Standard Path: Copy to pbuf and send to LwIP */
 					/* Note: len-2 excludes CRC usually, depending on HW setting */
-					p = ethernetif_rmii_buf_copy(len - 2, buf);
+					p = netif_adapter_eth_buf_copy(len - 2, buf);
 					if (p != NULL) {
-						ethernetif_rmii_netif_recv(p);
+						netif_adapter_eth_recv(p);
 					}
 				}
 
@@ -244,15 +244,12 @@ void eth_rx_thread(void *param)
 }
 
 /**
- * @brief  Link Status Monitor & IP Configuration Task.
- *         Handles DHCP/Static IP when cable is plugged/unplugged.
+ * @brief  Link Status Monitor Task.
+ *         Notifies user callback when cable is plugged/unplugged.
  */
 static void eth_link_monitor_thread(void *param)
 {
 	(void)param;
-	u32 dhcp_status = 0;
-	uint8_t eth_iptab[4];
-
 
 	if (rtos_sema_take(eth_init_done_sema, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Ethernet Init Timeout!\n");
@@ -268,57 +265,12 @@ static void eth_link_monitor_thread(void *param)
 		if (eth_link_is_up) {
 			RTK_LOGI(TAG, "Link Up\n");
 			Ethernet_GetSpeedDuplex();
-			/* 1. Notify LwIP Link is Up */
-			netif_set_link_up(pnetif_eth);
-
-			/* 2. Configure IP (Static or DHCP) */
-			if (rt_kv_size("eth_ip") > 0) {
-				/* Static IP Mode */
-				u32_t ip = 0, gw = 0, netmask = 0xFFFFFF00;
-
-				rt_kv_get("eth_ip", &ip, 4);
-				rt_kv_get("eth_gw", &gw, 4);
-				rt_kv_get("eth_netmask", &netmask, 4);
-
-				if (gw == 0) {
-					gw = (ip & 0xFFFFFF00) | 0x01; /* Guess Gateway if missing */
-				}
-
-				if (!netif_is_up(pnetif_eth)) {
-					netifapi_netif_set_up(pnetif_eth);
-				}
-
-				LwIP_SetIP(NETIF_ETH_INDEX, ip, netmask, gw);
-				netif_set_default(pnetif_eth);
-
-				/* Debug Print */
-				eth_iptab[3] = (uint8_t)(ip >> 24);
-				eth_iptab[2] = (uint8_t)(ip >> 16);
-				eth_iptab[1] = (uint8_t)(ip >> 8);
-				eth_iptab[0] = (uint8_t)(ip);
-				RTK_LOGI(TAG, "Static IP: %d.%d.%d.%d\n", eth_iptab[3], eth_iptab[2], eth_iptab[1], eth_iptab[0]);
-
-			} else {
-				/* DHCP Mode */
-				if (eth_dhcp_mode) {
-					/* This might block, better to be in state machine, but OK for now */
-					dhcp_status = LwIP_IP_Address_Request(NETIF_ETH_INDEX);
-				}
-
-				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
-					netif_set_default(pnetif_eth);
-				}
-			}
 		} else {
 			/* Link Down Handling */
 			RTK_LOGI(TAG, "Link Down\n");
-
-			netif_set_link_down(pnetif_eth);
-
-			LwIP_ReleaseIP(NETIF_ETH_INDEX);
 		}
 
-		/* 3. Execute User Callback */
+		/* Execute User Callback */
 		if (eth_link_cb) {
 			eth_link_cb(eth_link_is_up);
 		}
@@ -363,7 +315,7 @@ static void eth_init_thread(void *param)
 	/* Initialize LwIP Stack (One-time) */
 #ifndef CONFIG_RMII_VERIFY
 	if (!lwip_init_done) {
-		LwIP_Init();
+		lwip_module_init();
 	}
 #endif
 
@@ -439,7 +391,7 @@ static void eth_init_thread(void *param)
 	rtos_mutex_create(&eth_tx_mutex);
 
 #ifndef CONFIG_RMII_VERIFY
-	netif_set_up(pnetif_eth);
+	netifapi_netif_set_up(pnetif_eth);
 #endif
 
 	/* Signal Init Done */
@@ -472,7 +424,6 @@ void eth_init(void)
 	eth_config_mac_clock();
 
 	/* 3. Initialize Synchronization */
-	eth_is_default_if = 1;
 	rtos_sema_create_binary(&eth_init_done_sema);
 	rtos_sema_create_binary(&eth_link_sema);
 

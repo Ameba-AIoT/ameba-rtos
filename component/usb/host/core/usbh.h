@@ -11,11 +11,21 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
+#include "usb_diag.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
+/** @addtogroup USB_Host_API USB Host API
+ *  @{
+ */
+/** @addtogroup USB_Host_Constants USB Host Constants
+ * @{
+ */
+/** @addtogroup Host_Core_Constants Host Core Constants
+ * @{
+ */
 /* This define is used to trace transfer performance */
-#define USBH_TP_TRACE_DEBUG                 1U
+#define USBH_TP_TRACE_DEBUG                 0U
 
 #define USBH_MAX_CLASS_NUM                  1
 #define USBH_MAX_HUB_PORT                   32
@@ -50,9 +60,17 @@
  * @param pipe_num The pipe number associated with the change.
  */
 #define usbh_notify_class_state_change(host, pipe_num) usbh_notify_composite_class_state_change(host, pipe_num, USBH_EVENT_OWNER)
+/** @} End of Host_Core_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
+/** @addtogroup USB_Host_Types USB Host Types
+ * @{
+ */
+/** @addtogroup Host_Core_Types Host Core Types
+ * @{
+ */
 /**
  * @brief Defines the transfer states for an endpoint's pipe.
  */
@@ -94,6 +112,7 @@ typedef enum {
 	USBH_MSG_USER_SET_CONFIG = 0U,/**< Message to request user to set the configuration. */
 	USBH_MSG_CONNECTED,           /**< Message indicating a device has been successfully connected and configured. */
 	USBH_MSG_DISCONNECTED,        /**< Message indicating a device has been disconnected. */
+	USBH_MSG_WAKEUP,              /**< Message indicating the host has been woken from suspend by a device-initiated remote wakeup. */
 	USBH_MSG_PROBE_FAIL,          /**< Message indicating that device probing failed due to mismatched device properties. */
 	USBH_MSG_ATTACH_FAIL,         /**< Message indicating device attachment failed. */
 	USBH_MSG_ERROR,               /**< Message indicating a general error occurred. */
@@ -109,10 +128,10 @@ typedef enum {
 	                                 usage requirements or when timing accuracy does not need to match SOF counting precision.*/
 	USBH_SOF_TICK,                /**< Use the SOF (Start-of-Frame) interrupt as the tick source. Since it needs to periodically respond to SOF interrupts,
 	                                 CPU usage is higher, but timing accuracy matches SOF counting precision. */
-	USBH_TICK_ERROR,
+	USBH_TICK_ERROR,              /**< Error state for tick source. */
 } usbh_tick_source_t;
 
-// Forward declarations to resolve circular dependencies.
+/* Forward declarations to resolve circular dependencies. */
 struct _usbh_itf_data_t;
 struct _usb_host_t;
 
@@ -134,9 +153,10 @@ typedef struct {
 	u16 bcdUSB;                   /**< USB specification version number (e.g., 0x0200 for USB 2.0). */
 	u8 bDeviceClass;              /**< Class code (assigned by the USB-IF). */
 	u8 bDeviceSubClass;           /**< Subclass code (assigned by the USB-IF). */
-	u8 bDeviceProtocol;           /**< Protocol code (assigned by the USB-IF). If equal to 0, each interface specifies its own class
-                                     code if equal to 0xFF, the class code is vendor specified.
-                                     Otherwise field is valid class code.*/
+	u8 bDeviceProtocol;           /**< Protocol code (assigned by the USB-IF).
+                                     If 0, each interface specifies its own class code.
+                                     If 0xFF, the class code is vendor specified.
+                                     Otherwise, this field is a valid class code. */
 	u8 bMaxPacketSize;            /**< Maximum packet size for endpoint zero (only 8, 16, 32, or 64 are valid). */
 	u16 idVendor;                 /**< Vendor ID (assigned by the USB-IF). */
 	u16 idProduct;                /**< Product ID (assigned by the manufacturer). */
@@ -186,16 +206,37 @@ typedef struct {
 } __PACKED usbh_itf_desc_t;
 
 /**
- * @brief A structure to hold information about all alternate settings for a single interface number.
- * @details This forms a linked list where each node represents a unique interface number.
- *          Inside each node, it points to another linked list (`itf_desc_array`) of all alternate settings for that interface.
+ * @brief Holds all parsed information for one unique bInterfaceNumber.
+ *
+ * @details The USB framework organises interfaces along two axes:
+ *
+ *   1. Same bInterfaceNumber, different bAlternateSetting
+ *      -> stored inside this node as itf_desc_array[0..alt_setting_cnt-1].
+ *      Example: CDC-ACM data interface has alt=0 (no endpoints, default) and alt=1 (BULK IN + BULK OUT, active).
+ *
+ *   2. Different bInterfaceNumber, same class/subclass/protocol
+ *      -> chained via the `next` pointer.
+ *      Example: a composite device with 3 CDC-ACM produces three separate nodes (one per ACM ctrl interface) linked as:
+ *        [itf1/ACM#1] -> [itf2/ACM#2] -> [itf3/ACM#3] -> NULL
+ *
+ *   usbh_get_interface_descriptor() returns the head of the matching chain.
+ *   The caller walks ->next to reach every interface of the same class.
  */
 typedef struct _usbh_itf_data_t {
-	struct _usbh_itf_data_t *next;       /**< Pointer to the next info structure for a different interface number but has the same class/subclass/protocol. */
-	usbh_itf_desc_t *itf_desc_array;     /**< Pointer to a linked list of all alternate settings for this interface number (bAlternateSetting 0, 1, 2...). */
-	u8 *raw_data;                        /**< Pointer to the start of the raw interface descriptor data for class-specific parsing. */
-	u32 raw_data_len;                    /**< The total length of the entire interface descriptor in bytes. */
-	u8 alt_setting_cnt;                  /**< Count of alternate settings for this interface number. */
+	struct _usbh_itf_data_t *next;   /**< Next node with a different bInterfaceNumber
+	                                      but identical class/subclass/protocol;
+	                                      NULL if this is the last in the chain. */
+	usbh_itf_desc_t *itf_desc_array; /**< Array of alt-setting descriptors for this
+	                                      interface number, indexed [0..alt_setting_cnt-1]
+	                                      by bAlternateSetting order. */
+	u8 *raw_data;                    /**< Start of the raw descriptor bytes for this interface;
+	                                      used by class drivers to parse class-specific (CS)
+	                                      descriptors that the generic framework does not decode. */
+	u16 raw_data_len;                /**< Byte length of the raw_data region
+	                                      (covers all alt settings and their
+	                                      CS/endpoint descriptors). */
+	u8 alt_setting_cnt;              /**< Number of alternate settings;
+	                                      equals the length of itf_desc_array. */
 } usbh_itf_data_t;
 
 /**
@@ -211,7 +252,7 @@ typedef struct {
 	u8 bmAttributes;                     /**< Configuration characteristics (D7:Bus Powered, D6:Self Powered, D5:Remote Wakeup, D4..0 Reserved (0)). */
 	u8 bMaxPower;                        /**< Maximum power consumption of the device from the bus in 2mA units. */
 	usbh_itf_data_t *itf_data_array;     /**< Save all interfaces info in this struct, total count is defined by bNumInterfaces,
-                                             each interface is indentified by bInterfaceNumber: 0/1/2... */
+                                             each interface is identified by bInterfaceNumber: 0/1/2... */
 } usbh_cfg_desc_t;
 
 /**
@@ -225,7 +266,7 @@ typedef struct {
                                              D1...D0: Logical Power Switching Mode
                                              D2: Identifies a Compound Device
                                              D4...D3: Over-current Protection Mode
-                                             D6...D5: TT Think TIme
+                                             D6...D5: TT Think Time
                                              D7: Port Indicators Supported
                                              D15...D8: Reserved*/
 	u8 bPwrOn2PwrGood;                   /**< Time (in 2ms intervals) from when power is turned on to when power is good. */
@@ -253,49 +294,49 @@ typedef union {
  * @brief Packed structure for a USB event message.
  */
 typedef struct {
+	u32 data;                          /**< Event Private data. */
 	u16 tick;                          /**< Tick count when the event occurred. */
 	u8 pipe_num;                       /**< Pipe number associated with the event. */
 	u8 type: 4;                        /**< Message type, corresponds to `usbh_event_type_t`. */
 	u8 owner: 4;                       /**< Owner of the message (e.g., core, class). */
-} __PACKED usbh_event_msg_t;
-
-/**
- * @brief Union for a USB event.
- */
-typedef union {
-	u32 d32;                          /**< 32-bit access to the event data. */
-	usbh_event_msg_t msg;             /**< Access as a structured event message. */
 } usbh_event_t;
 
 /**
  * @brief USB host user configuration structure.
  */
 typedef struct {
-	u32 ext_intr_enable;              /**< Allows class drivers to enable optional interrupts,
+	u16 ext_intr_enable;              /**< Allows class drivers to enable optional interrupts,
 	                                     (e.g., @ref USBH_SOF_INTR is used for host class driver to handle timing issues in SOF callback). */
+#ifndef CONFIG_SUPPORT_USB_SHARED_DFIFO
 	u16 rx_fifo_depth;                /**< RxFIFO depth in dwords (Dedicated FIFO only).
 	                                     Min value 16 and max value restricted by SoC hardware. */
 	u16 nptx_fifo_depth;              /**< Non-periodic TxFIFO depth in dwords (Dedicated FIFO only).
 	                                     Min value 16 and max value restricted by SoC hardware. */
 	u16 ptx_fifo_depth;               /**< Periodic TxFIFO depth in dwords (Dedicated FIFO only).
 	                                     Min value 16 and max value restricted by SoC hardware. */
-	u8 isr_priority;                  /**< USB ISR priority. */
-	u8 isr_in_critical;               /**< Flag to process USB ISR within a critical section (0: Disable, 1: Enable). */
+#endif
+	u16 main_task_stack_size;         /**< USB main task stack size. */
+	u16 diag_depth;                   /**< Diag ring buffer depth in entries; 0 uses @ref USB_DIAG_DEFAULT_DEPTH. Requires `diag_enable`. */
+	u16 diag_poll_ms;                 /**< Diag task polling interval in ms; 0 uses @ref USB_DIAG_DEFAULT_POLL_MS. Requires `diag_enable`. */
 	u8 main_task_priority;            /**< USB main task priority, the main task processes the USB host messages. */
+	u8 isr_priority;                  /**< USB ISR priority. */
+
+	u8 xfer_retry_max_cnt;            /**< Maximum number of retries for a failed transfer. */
+
+	u8 tick_source : 3;               /**< Tick source for getting the usb host tick of USB host core driver, see @ref usbh_tick_source_t.
+	                                     Which is used to trigger periodic transfers based on the endpoint interval and to detect transfer timeouts.*/
 	/**
 	 * @brief USB speed mode. See @ref usb_speed_type_t.
 	 * - `USB_SPEED_HIGH`: USB 2.0 High-Speed mode(for HS-capable SoCs).
-	 * - `USB_SPEED_HIGH_IN_FULL`: USB 2.0 PHY operating in Full-Speed mode(for HS-capable SoCs with low bandwidth applcations like UAC).
+	 * - `USB_SPEED_HIGH_IN_FULL`: USB 2.0 PHY operating in Full-Speed mode(for HS-capable SoCs with low bandwidth applications like UAC).
 	 * - `USB_SPEED_FULL`: USB 1.1 Full-Speed mode(for FS-only SoCs).
 	 */
-	u8 speed;
-	u8 tick_source;                   /**< Tick source for getting the usb host tick of USB host core driver, see @ref usbh_tick_source_t.
-	                                     Which is used to trigger periodic transfers based on the endpoint interval and to detect transfer timeouts.*/
-	u8 xfer_retry_max_cnt;            /**< Maximum number of retries for a failed transfer. */
-	u8 hub_support;                   /**< Support 1-level HUB (0: Disable, 1: Enable). */
-#if USBH_TP_TRACE_DEBUG
-	u8 tp_trace;                      /**< Enable/disable tracing for transfer performance. */
-#endif
+	u8 speed : 2;
+	u8 isr_in_critical : 1;               /**< Flag to process USB ISR within a critical section (0: Disable, 1: Enable). */
+	u8 hub_support : 1;                   /**< Support 1-level HUB (0: Disable, 1: Enable). */
+	u8 diag_enable : 1;                   /**< Enable USB diag ring buffer and polling task (0: Disable, 1: Enable).
+                                              When disabled, error diagnostic information is silently lost.
+                                              Enable this to capture USB error events for debugging. */
 } usbh_config_t;
 
 /**
@@ -304,22 +345,25 @@ typedef struct {
 typedef struct {
 	u8 *xfer_buf;                     /**< Pointer to the transfer buffer. */
 	u32 xfer_len;                     /**< Total length of the data to transfer. */
-	__IO u32 frame_num;               /**< Frame number for the transfer (from HFNUM register, max 0x3FFF). */
-	__IO u32 tick;                    /**< Host tick count at the start of the transfer (based on SOF or timestamp). */
+	u32 tick;                         /**< Host tick count at the start of the transfer (based on SOF or timestamp). */
+	__IO u16 frame_num;               /**< Frame number for the transfer (from HFNUM register, max 0x3FFF). */
 	u16 max_timeout_tick;             /**< Maximum wait timeout in ticks for this transfer. */
 	u16 ep_interval;                  /**< Endpoint polling interval in ticks. */
 
 	/* Endpoint information get from the endpoint descriptor */
-	u16 ep_mps;                       /**< Endpoint Maximum Packet Size (0-64KB). */
-	u8 ep_trans;                      /**< Number of transactions per microframe (1-3, for HS isochronous). */
-	u8 ep_is_in;                      /**< Endpoint direction: 1 for IN, 0 for OUT. */
+	u16 ep_mps;                       /**< Endpoint Maximum Packet Size in bytes.
+	                                     - FS: max 64 (CTRL/BULK/INTR), max 1023 (ISOC)
+	                                     - HS: max 64 (CTRL), max 512 (BULK), max 1024 (INTR/ISOC) */
+	__IO u8 xfer_state;               /**< Current transfer state. See @ref usbh_ep_xfer_state_t. */
 	u8 ep_addr;                       /**< Endpoint address (including direction bit). */
-	u8 ep_type;                       /**< Endpoint type, `USB_CH_EP_TYPE_XXX` (Control, Bulk, Interrupt, Isochronous). */
 
 	u8 pipe_num;                      /**< Host pipe/channel number assigned to this endpoint. */
-	__IO u8 xfer_state;               /**< Current transfer state. See @ref usbh_ep_xfer_state_t. */
-	__IO u8 trx_zlp;                  /**< Flag to indicate if a Zero-Length Packet is required, only for BULK xfer with xfer_len is N*mps. */
-	__IO u8 retry_cnt;                /**< Current retry count for the transfer. */
+	u8 trx_zlp;                       /**< Flag to indicate if a Zero-Length Packet is required, only for BULK xfer with xfer_len is N*mps. */
+	u8 retry_cnt;                     /**< Current retry count for the transfer. */
+
+	u8 ep_trans : 2;                  /**< Number of transactions per microframe (1-3, for HS isochronous). */
+	u8 ep_type : 2;                   /**< Endpoint type, `USB_CH_EP_TYPE_XXX` (Control, Bulk, Interrupt, Isochronous). */
+	u8 ep_is_in : 1;                  /**< Endpoint direction: 1 for IN, 0 for OUT. */
 } usbh_pipe_t;
 
 /**
@@ -327,22 +371,22 @@ typedef struct {
  * @details This is used by class drivers to identify supported devices.
  */
 typedef struct {
-	/* Bitmask of flags from `USBH_DEV_ID_MATCH_XXX` specifying which fields are valid. */
-	u16 mMatchFlags;
+	/* Match Mask: Specifies which fields participate in matching (e.g., USBH_DEV_ID_MATCH_ITF_INFO) */
+	u16 mMatchFlags;                       /**< Match mask. */
 
-	/* Used for product specific matches. */
-	u16 idVendor;
-	u16 idProduct;
+	/* Product-level matching: Specific Vendor and Product IDs */
+	u16 idVendor;                          /**< Vendor ID. */
+	u16 idProduct;                         /**< Product ID. */
 
-	/* Used for device class matches. */
-	u8 bDeviceClass;
-	u8 bDeviceSubClass;
-	u8 bDeviceProtocol;
+	/* Device-level matching: Device Class/SubClass/Protocol */
+	u8 bDeviceClass;                       /**< Device class. */
+	u8 bDeviceSubClass;                    /**< Device subclass. */
+	u8 bDeviceProtocol;                    /**< Device protocol. */
 
-	/* Used for interface class matches. */
-	u8 bInterfaceClass;
-	u8 bInterfaceSubClass;
-	u8 bInterfaceProtocol;
+	/* Interface-level matching: Interface Class/SubClass/Protocol */
+	u8 bInterfaceClass;                   /**< Interface class. */
+	u8 bInterfaceSubClass;                /**< Interface subclass. */
+	u8 bInterfaceProtocol;                /**< Interface protocol. */
 } usbh_dev_id_t;
 
 /**
@@ -374,13 +418,15 @@ typedef struct {
 	/**
 	* @brief Main processing loop for the class driver after class setup to process class-specific transfers.
 	* @param[in] host: USB host.
-	* @param[in] msg: @ref usbh_msg_t.
+	* @param[in] event: @ref usbh_event_t.
 	* @return 0 on success, non-zero on failure.
 	*/
-	int(*process)(struct _usb_host_t *host, u32 msg);
+	int(*process)(struct _usb_host_t *host, usbh_event_t *event);
 
 	/**
 	* @brief Called at each Start-of-Frame (SOF) interrupt for class-specific timing process.
+	* @note  This callback is called within an interrupt service routine (ISR) context;
+	*        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	* @param[in] host: USB host.
 	* @return 0 on success, non-zero on failure.
 	*/
@@ -388,6 +434,8 @@ typedef struct {
 
 	/**
 	* @brief Called when a transfer on a specific pipe completes.
+	* @note  This callback is called within an interrupt service routine (ISR) context;
+	*        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	* @param[in] host: USB host.
 	* @param[in] pipe: Pipe number.
 	* @return 0 on success, non-zero on failure.
@@ -430,7 +478,7 @@ typedef struct _usb_host_t {
 	 * @{
 	 * @details These fields are used for debugging time-sensitive transfers (like isochronous for audio applications)
 	 *          by measuring the execution time of the interrupt handler.
-	 *          Enabled by `tp_trace` in `usbh_config_t`.
+	 *          Enabled by USBH_TP_TRACE_DEBUG.
 	 * 	     - if the isr_process_time is relatively large, check whether the callback of the class has taken a long time.
 	 * 	     - if the isr_enter_period is relatively large, check whether there is an operation to mask interrupts in the class.
 	 */
@@ -444,19 +492,24 @@ typedef struct _usb_host_t {
 	const usbh_dev_id_t *dev_id;        /**< Pointer to the active device ID. */
 	usbh_dev_desc_t *dev_desc;          /**< Pointer to the device's descriptor. */
 	usbh_user_cb_t *cb;                 /**< Pointer to the user-provided callbacks. */
-	void *core;                         /**< Pointer for USB host core. */
+	void *hcd;                          /**< Pointer to the HCD handle. */
 
 	u8 dev_addr;                        /**< The address of the attached device. */
 	u8 dev_speed;                       /**< The speed of the attached device. */
 	u8 connect_state;                   /**< The current connection state. See @ref usbh_state_t. */
 } usb_host_t;
+/** @} End of Host_Core_Types group */
+/** @} End of USB_Host_Types group */
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
-/*
- * API for application
+/** @addtogroup USB_Host_Functions USB Host Functions
+ * @{
+ */
+/** @addtogroup Host_Core_Functions_For_Applications Host Core Functions For Applications
+ * @{
  */
 /**
  * @brief Initialize USB host core driver with user configuration and callback.
@@ -472,8 +525,42 @@ int usbh_init(usbh_config_t *cfg, usbh_user_cb_t *cb);
  */
 int usbh_deinit(void);
 
-/*
- * API for class
+/* Usbh CTS test operations. */
+/**
+ * @brief  USB Host enter suspend.
+ */
+void usbh_suspend(void);
+
+/**
+ * @brief  USB Host exit suspend.
+ */
+void usbh_resume(void);
+
+/**
+ * @brief Register the sleep callbacks for USB host Clock Gating (CG).
+ * @details Registers the PMU sleep callbacks so the USB host can be suspended/resumed
+ *          when the AP enters/exits the low-power clock gated state.
+ *          Wakelock operations and wake event configuration are handled by the caller,
+ *          not inside this function.
+ */
+void usbh_cg_register(void);
+
+/**
+ * @brief Unregister the sleep callbacks for USB host Clock Gating (CG).
+ * @note  Wakelock operations are handled by the caller, not inside this function.
+ */
+void usbh_cg_unregister(void);
+
+/**
+ * @brief  USB Host Port Test Control.
+ * @param[in] mode: Test mode.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbh_select_test_mode(u8 mode);
+/** @} End of Host_Core_Functions_For_Applications group */
+
+/** @addtogroup Host_Core_Functions_For_Classes Host Core Functions For Classes
+ * @{
  */
 /**
  * @brief Register a host class driver, called in class initialization function.
@@ -509,7 +596,7 @@ int usbh_close_pipe(usb_host_t *host, usbh_pipe_t *pipe);
 
 /* Config operations, choose the config index while bNumConfigurations > 1 */
 /**
- * @brief  Get the config idx by devicd id information.
+ * @brief  Get the config idx by device id information.
  * @param[in] host: Host Handle.
  * @param[in] id: Device id information.
  * @return config index
@@ -525,7 +612,7 @@ int usbh_set_configuration(usb_host_t *host, u8 cfg);
 
 /* Descriptor operations */
 /**
- * @brief  Get the interface descriptor by devicd id information.
+ * @brief  Get the interface descriptor by device id information.
  * @param[in] host: Host Handle.
  * @param[in] id: Device id information.
  * @return interface descriptor handler.
@@ -636,7 +723,7 @@ int usbh_transfer_data(usb_host_t *host, usbh_pipe_t *pipe);
  * @brief  Get the last transfer data size of specific pipe.
  * @param[in] host: Host Handle.
  * @param[in] pipe: Pipe struct handle.
- * @return None
+ * @return Last transfer data size in bytes
  */
 u32 usbh_get_last_transfer_size(usb_host_t *host, usbh_pipe_t *pipe);
 
@@ -647,70 +734,8 @@ u32 usbh_get_last_transfer_size(usb_host_t *host, usbh_pipe_t *pipe);
  * @return 0 on success, non-zero on failure.
  */
 int usbh_transfer_process(usb_host_t *host, usbh_pipe_t *pipe);
-
-/**
- * @brief  Enable NAK mask for the pipe.
- * @param[in] host: Host Handle.
- * @param[in] pipe_num: Pipe number.
- * @return 0 on success, non-zero on failure.
- */
-int usbh_enable_nak_interrupt(usb_host_t *host, u8 pipe_num);
-
-/**
- * @brief  Check NAK time out.
- * @param[in] host: Host Handle.
- * @param[in] pipe_num: Pipe number.
- * @param[in] tick_cnt: Timout tick count.
- * @return 0 on success, non-zero on failure.
-*/
-int usbh_check_nak_timeout(usb_host_t *host, u8 pipe_num, u32 tick_cnt);
-
-/**
- * @brief  Increase pipe busy count.
- * @param[in] host: Host Handle.
- * @param[in] pipe_num: Pipe number.
- * @param[in] step: Increase step.
- * @return 0 on success, non-zero on failure.
- */
-int usbh_increase_busy_cnt(usb_host_t *host, u8 pipe_num, u8 step);
-
-/**
- * @brief  Prepare for retransfer.
- * @param[in] host: Host Handle.
- * @param[in] pipe_num: Pipe number.
- * @return 0 on success, non-zero on failure.
- */
-int usbh_prepare_retransfer(usb_host_t *host, u8 pipe_num);
-
-/* Usbh CTS test operations. */
-/**
- * @brief  USB Host enter suspend.
- * @return None
- */
-void usbh_suspend(void);
-
-/**
- * @brief  USB Host exit suspend.
- * @return None
- */
-void usbh_resume(void);
-
-/**
- * @brief Sets the USB to enter Clock Gating (CG) state with a specific wakeup event.
- * @details This function configures the USB host to enter a low-power clock gated state.
- *          The wakeup mechanism depends on the value of the @ref sleep_ms parameter.
- * @param[in] sleep_ms:
- *          - 0: Wakeup is triggered by a USB event.
- *          - others: Wakeup is triggered by an Anon timer event after the specified time.
- */
-void usbh_enter_cg(u32 sleep_ms);
-
-/**
- * @brief  USB Host Port Test Control.
- * @param[in] mode: Test mode.
- * @return 0 on success, non-zero on failure.
- */
-int usbh_select_test_mode(u8 mode);
+/** @} End of Host_Core_Functions_For_Classes group */
+/** @} End of USB_Host_Functions group */
+/** @} End of USB_Host_API group */
 
 #endif /* USBH_H */
-

@@ -181,6 +181,36 @@ end:
 
 }
 
+#ifdef CONFIG_MP_INCLUDED
+void whc_dev_mp_cmd(char *cmd, int show_msg)
+{
+	/* response layout per fragment: WHC_WIFI_TEST(4B) + WHC_WIFI_TEST_MP(1B) + frag_idx(1B) + data(WHC_MP_FRAG_SIZE) */
+	u8 *outbuf = rtos_mem_zmalloc(WHC_MP_FRAG_NUM * WHC_MP_FRAG_SIZE);
+	u8 *resp = rtos_mem_malloc(6 + WHC_MP_FRAG_SIZE);
+	u8 i;
+
+	if (!outbuf || !resp) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s Malloc fail!\n", __func__);
+		rtos_mem_free(outbuf);
+		rtos_mem_free(resp);
+		return;
+	}
+
+	wext_private_command(cmd, show_msg, (char *)outbuf);
+
+	for (i = 0; i < WHC_MP_FRAG_NUM; i++) {
+		*(u32 *)resp = WHC_WIFI_TEST;
+		resp[4] = WHC_WIFI_TEST_MP;
+		resp[5] = i; //frag_idx
+		memcpy(resp + 6, outbuf + i * WHC_MP_FRAG_SIZE, WHC_MP_FRAG_SIZE);
+		whc_dev_api_send_to_host(resp, 6 + WHC_MP_FRAG_SIZE);
+	}
+
+	rtos_mem_free(outbuf);
+	rtos_mem_free(resp);
+}
+#endif
+
 /* here in sdio rx done callback */
 __weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
 {
@@ -246,9 +276,9 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					whc_dev_cmd_scan();
 #ifdef CONFIG_LWIP_LAYER
 				} else if (*ptr == WHC_WIFI_TEST_DHCP) {
-					LwIP_netif_set_link_up(NETIF_WLAN_STA_INDEX);
+					lwip_netif_set_link_up(NETIF_WLAN_STA_INDEX);
 					/* Start DHCPClient */
-					LwIP_IP_Address_Request(STA_WLAN_INDEX);
+					lwip_request_ip(STA_WLAN_INDEX);
 #endif
 				} else if (*ptr == WHC_WIFI_TEST_CONNECT) {
 					memset(&wifi, 0, sizeof(struct rtw_network_info));
@@ -273,7 +303,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 #ifdef CONFIG_LWIP_LAYER
 					if (ret == RTK_SUCCESS) {
 						/* Start DHCPClient */
-						LwIP_IP_Address_Request(NETIF_WLAN_STA_INDEX);
+						lwip_request_ip(NETIF_WLAN_STA_INDEX);
 					} else {
 						RTK_LOGE(TAG_WLAN_INIC, "connect fail !\n");
 					}
@@ -285,7 +315,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					if (!wifi_is_running(idx)) {
 						RTK_LOGE(TAG_WLAN_INIC, "%s, port %d is not running!\n", __func__, idx);
 					} else {
-						ip = LwIP_GetIP(idx);
+						ip = lwip_get_ip(idx);
 						ptr = buf;
 						*(u32 *)ptr = WHC_WIFI_TEST;
 						ptr += 4;
@@ -293,7 +323,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 						ptr += 1;
 						memcpy(ptr, ip, 4);
 						ptr += 4;
-						ip = LwIP_GetGW(idx);
+						ip = lwip_get_gw(idx);
 						memcpy(ptr, ip, 4);
 						ptr += 4;
 						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
@@ -316,6 +346,11 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					wifi_user_config.cfg80211 = 0;
 				} else if (*ptr == WHC_WIFI_TEST_OTA) {
 					whc_dev_api_ota_process(ptr);
+				}
+#endif
+#ifdef CONFIG_MP_INCLUDED
+				if (*ptr == WHC_WIFI_TEST_MP) {
+					whc_dev_mp_cmd((char *)(ptr + 2), *(ptr + 1));
 				}
 #endif
 				rtos_mem_free(buf);

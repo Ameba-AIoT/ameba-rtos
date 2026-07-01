@@ -33,24 +33,40 @@
 #include "usbh_hw_uvc.h"
 #endif
 
-#define USBH_UVC_GET_FRAME_TIMEOUT                    500   /**< Timeout for getting a frame in ms. */
-
 /* Supported Video Formats */
 #define USBH_UVC_FORMAT_MJPEG                         0x6    /**< Motion-JPEG format. */
 #define USBH_UVC_FORMAT_YUV                           0x4    /**< Uncompressed YUV format. */
 #define USBH_UVC_FORMAT_H264                          0x10   /**< H.264 format. */
 
-/* USB Request Block (URB) Configuration */
-#define USBH_UVC_URB_NUMS                             4      /**< Number of URBs used for streaming. */
-#define USBH_UVC_URB_SIZE                             ((3072 + 32) * 4)   /**< Size of each URB buffer in bytes. */
+/* Configuration */
+/* Maximum number of supported VideoStreaming (VS) descriptors is 2 */
+#define USBH_UVC_VS_DESC_MAX_NUM                      1
 
+/* Maximum number of VideoStreaming alternate settings supported.
+ * The actual number of alternate settings depends on the capabilities
+ * of the connected UVC camera.
+ */
+#define USBH_UVC_VS_ALTS_MAX_NUM                      12
+
+/* USB Vedio Frame Configuration */
+#define USBH_UVC_GET_FRAME_TIMEOUT                    1000   /**< Timeout for getting a frame in ms. */
 #define USBH_UVC_VIDEO_FRAME_NUMS                     3      /**< Number of video frame buffers. Fixed to 3 if using HW decoder. */
 
-/* Task Configuration */
-#define USBH_UVC_COMBINE_TASK_STACK                    (1024U)   /**< Stack size for the combine task in bytes. */
-#define USBH_UVC_COMBINE_TASK_PRIORITY                 5           /**< Priority of the combine task. */
+/* Max retries for SET_INTERFACE(intf, alt) when STATUS IN is NAKed. */
+#define USBH_UVC_SET_ALT_RETRY_MAX                    5      /**< Max retries for SET_ALT (SET_INTERFACE) failures. */
 
-#define UBSH_UVC_REQUEST_BUF_LEN                       64     /**< Length of the UVC control request buffer. */
+/* Max retries for clear_feature in UVC_STATE_ERROR before forcing IDLE. */
+#define USBH_UVC_ERROR_CLEAR_RETRY_MAX                3      /**< Max retries for clear_feature before forcing IDLE. */
+
+#if (USBH_UVC_USE_HW == 0)
+/* USB Urb Block Configuration */
+#define USBH_UVC_URB_NUMS                             4      /**< Number of URBs used for streaming. */
+#define USBH_UVC_PKTS_PER_URB                         4      /**< Size of each URB buffer in bytes. */
+
+/* Task Configuration */
+#define USBH_UVC_COMBINE_TASK_STACK                    768U   /**< Stack size for the combine task in bytes. */
+#define USBH_UVC_COMBINE_TASK_PRIORITY                 5      /**< Priority of the combine task. */
+#endif
 
 /* Debug / Error Handling */
 #define USBH_UVC_DEBUG                                 0
@@ -77,14 +93,6 @@ typedef enum {
 } usbh_uvc_streaming_state_t;
 
 /**
- * @brief UVC Stream Data Transfer State.
- */
-typedef enum {
-	STREAM_DATA_OFF = 1, /**< Idle state, no data transfer. */
-	STREAM_DATA_IN,        /**< Data IN transfer state. */
-} usbh_uvc_stream_data_state_t;
-
-/**
  * @brief UVC Frame Buffer State.
  */
 typedef enum  {
@@ -98,11 +106,11 @@ typedef enum  {
  * @brief UVC Stream Context / Parameters.
  */
 typedef struct  {
-	int fmt_type;          /**< Video format type (e.g., USBH_UVC_FORMAT_MJPEG). */
-	int width;             /**< Video frame width in pixels. */
-	int height;            /**< Video frame height in pixels. */
-	int frame_rate;        /**< Video frame rate (fps). */
 	u32 frame_buf_size;    /**< Size of a single video frame buffer in bytes. */
+	u16 width;             /**< Video frame width in pixels. */
+	u16 height;            /**< Video frame height in pixels. */
+	u8 frame_rate;        /**< Video frame rate (fps). */
+	u8 fmt_type;          /**< Video format type (e.g., USBH_UVC_FORMAT_MJPEG). */
 } usbh_uvc_s_ctx_t;
 
 /**
@@ -151,10 +159,12 @@ typedef struct {
 	int(* setup)(void);
 
 	/**
-	 * @brief Callback invoked when parameters need to be set/negotiated.
+	 * @brief Callback invoked when the UVC parameter-setting sequence
+	 *        (Probe/Commit/SET_INTERFACE) completes; status is HAL_OK
+	 *        on success or HAL_ERR_HW on failure.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* setparam)(void);
+	int(* set_param)(int status);  // status: HAL_OK on success, HAL_ERR_HW on failure
 } usbh_uvc_cb_t;
 
 /**
@@ -164,15 +174,14 @@ typedef struct {
 typedef struct {
 	struct list_head list;      /**< Linked list node for queue management. */
 	u8 *buf;                    /**< Pointer to the data buffer containing the frame. */
-	u32 index;                  /**< Index of the frame in the pool. */
 	u32 byteused;               /**< Actual number of bytes used in the buffer (frame size). */
-	u32 err;                    /**< Error flags associated with this frame. */
 	u32 timestamp;              /**< Presentation timestamp of the frame. */
-	usbh_uvc_frame_state_t state; /**< Current state of this frame buffer. */
 #if USBH_UVC_DEBUG
 	u32 get_frame_ts;           /**< Timestamp recorded when consumer gets this frame. */
 	u32 submit_frame_ts;        /**< Timestamp recorded when driver submits this frame. */
 #endif
+	u8 err;                    /**< Error flags associated with this frame. */
+	u8 state;             /**< Current state of this frame buffer, @ref usbh_uvc_frame_state_t. */
 } usbh_uvc_frame_t;
 
 /** @} End of Host_UVC_Types group */
@@ -249,10 +258,19 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u32 itf_num);
 /**
  * @brief  Returns a processed frame back to the driver's free pool.
  *         Must be called after the application finishes using the frame.
- * @param[in] frame: Pointer to the frame to be released.
- * @param[in] itf_num: Interface number.
+ * @param[in] frame    Pointer to the frame to be released. Must be obtained via usbh_uvc_get_frame().
+ * @param[in] itf_num  Interface number.
+ * @return 0 on success; negative value on failure.
  */
-void usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num);
+int usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u32 itf_num);
+
+/**
+ * @brief  Dumps UVC device information for debugging purposes.
+ *         Prints descriptors, interfaces, supported formats/frames, and current stream settings to the log.
+ * @return None.
+ */
+void usbh_uvc_dump_dev_info(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -7,7 +7,6 @@
 /* Includes ------------------------------------------------------------------ */
 
 #include <platform_autoconf.h>
-#include "usbd.h"
 #include "usbd_inic.h"
 #include "os_wrapper.h"
 
@@ -26,9 +25,13 @@
 #define USBD_WHC_WIFI_EP7_BULK_OUT_BUF_SIZE			512U  /* WiFi EP5 BULK OUT buffer size */
 
 // Thread priorities
-#define CONFIG_USBD_INIC_INIT_THREAD_PRIORITY		5
-#define CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY	8
-#define CONFIG_USBD_INIC_XFER_THREAD_PRIORITY		6
+#define CONFIG_USBD_INIC_INIT_THREAD_PRIORITY           5
+#define CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY        8
+#define CONFIG_USBD_INIC_XFER_THREAD_PRIORITY           6
+// Thread stack sizes
+#define CONFIG_USBD_INIC_INIT_THREAD_STACK_SIZE           1024U
+#define CONFIG_USBD_INIC_HOTPLUG_THREAD_STACK_SIZE        1024U
+#define CONFIG_USBD_INIC_XFER_THREAD_STACK_SIZE           1024U
 
 /* Private types -------------------------------------------------------------*/
 static const char *const TAG = "INIC";
@@ -144,6 +147,14 @@ static void inic_bt_deinit(void)
 	}
 }
 
+/**
+  * @brief  Handle the INIC class control (setup) requests
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  req: USB setup request
+  * @param  buf: Buffer containing the setup data payload
+  * @retval Status
+  */
 static int inic_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	UNUSED(req);
@@ -317,6 +328,8 @@ static int inic_cb_deinit(void)
 
 /**
   * @brief  Set config callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  None
   * @retval Status
   */
@@ -342,6 +355,8 @@ static int inic_cb_set_config(void)
 
 /**
   * @brief  Clear config callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  None
   * @retval Status
   */
@@ -352,6 +367,8 @@ static int inic_cb_clear_config(void)
 
 /**
   * @brief  Data received over USB BULK OUT endpoint
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  buf: RX buffer
   * @param  len: RX data length (in bytes)
   * @retval Status
@@ -363,7 +380,7 @@ static int inic_cb_received(usbd_inic_ep_t *out_ep, u32 len)
 	usbd_ep_t *ep = &out_ep->ep;
 	u8 ep_num;
 
-	switch (ep->addr) {
+	switch (ep->info.addr) {
 	case USBD_INIC_BT_EP2_BULK_OUT:
 		// Loopback with EP2
 		ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN);
@@ -395,11 +412,19 @@ static int inic_cb_received(usbd_inic_ep_t *out_ep, u32 len)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Notify completion of an INIC IN endpoint transfer
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  in_ep: IN endpoint that completed the transfer
+  * @param  status: Transfer completion status
+  * @retval None
+  */
 static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status)
 {
 	usbd_ep_t *ep = &in_ep->ep;
 	(void)status;
-	switch (ep->addr) {
+	switch (ep->info.addr) {
 	case USBD_INIT_BT_EP1_INTR_IN:
 		// TBD
 		break;
@@ -414,7 +439,7 @@ static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status)
 	}
 }
 
-static void inic_wifi_bulk_in_thread(void *param)
+static void example_usbd_inic_wifi_bulk_in_thread(void *param)
 {
 	UNUSED(param);
 	usbd_inic_app_t *iapp = &usbd_inic_app;
@@ -433,7 +458,7 @@ static void inic_wifi_bulk_in_thread(void *param)
 	}
 }
 
-static void inic_bt_bulk_in_thread(void *param)
+static void example_usbd_inic_bt_bulk_in_thread(void *param)
 {
 	UNUSED(param);
 	usbd_inic_app_t *iapp = &usbd_inic_app;
@@ -452,17 +477,28 @@ static void inic_bt_bulk_in_thread(void *param)
 	}
 }
 
+/**
+  * @brief  Handle INIC attach status change notifications from the USB stack
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: New attach status
+  * @retval None
+  */
 static void inic_cb_status_changed(u8 old_status, u8 status)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
+	UNUSED(old_status);
+
 #if CONFIG_USBD_INIC_HOTPLUG
 	inic_attach_status = status;
 	rtos_sema_give(inic_attach_status_changed_sema);
+#else
+	UNUSED(status);
 #endif
 }
 
 #if CONFIG_USBD_INIC_HOTPLUG
-static void inic_hotplug_thread(void *param)
+static void example_usbd_inic_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -524,18 +560,24 @@ static void example_usbd_inic_thread(void *param)
 		goto clear_usb_driver_exit;
 	}
 
-	ret = rtos_task_create(&wifi_bulk_in_task, "inic_wifi_bulk_in_thread", inic_wifi_bulk_in_thread, NULL, 1024, CONFIG_USBD_INIC_XFER_THREAD_PRIORITY);
+	ret = rtos_task_create(&wifi_bulk_in_task, "example_usbd_inic_wifi_bulk_in_thread",
+						   example_usbd_inic_wifi_bulk_in_thread, NULL,
+						   CONFIG_USBD_INIC_XFER_THREAD_STACK_SIZE, CONFIG_USBD_INIC_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_class_exit;
 	}
 
-	ret = rtos_task_create(&bt_bulk_in_task, "inic_bt_bulk_in_thread", inic_bt_bulk_in_thread, NULL, 1024, CONFIG_USBD_INIC_XFER_THREAD_PRIORITY);
+	ret = rtos_task_create(&bt_bulk_in_task, "example_usbd_inic_bt_bulk_in_thread",
+						   example_usbd_inic_bt_bulk_in_thread, NULL,
+						   CONFIG_USBD_INIC_XFER_THREAD_STACK_SIZE, CONFIG_USBD_INIC_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_wifi_bulk_in_task;
 	}
 
 #if CONFIG_USBD_INIC_HOTPLUG
-	ret = rtos_task_create(&hotplug_task, "inic_hotplug_thread", inic_hotplug_thread, NULL, 1024, CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&hotplug_task, "example_usbd_inic_hotplug_thread",
+						   example_usbd_inic_hotplug_thread, NULL,
+						   CONFIG_USBD_INIC_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_bt_bulk_in_task;
 	}
@@ -574,12 +616,12 @@ exit:
 
 void example_usbd_inic(void)
 {
-	int status;
+	int ret;
 	rtos_task_t task;
 
-	status = rtos_task_create(&task, "example_usbd_inic_thread", example_usbd_inic_thread, NULL, 1024, CONFIG_USBD_INIC_INIT_THREAD_PRIORITY);
-	if (status != RTK_SUCCESS) {
+	ret = rtos_task_create(&task, "example_usbd_inic_thread", example_usbd_inic_thread, NULL,
+						   CONFIG_USBD_INIC_INIT_THREAD_STACK_SIZE, CONFIG_USBD_INIC_INIT_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD INIC thread fail\n");
 	}
 }
-
