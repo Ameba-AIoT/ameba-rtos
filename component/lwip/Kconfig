@@ -9,7 +9,7 @@ menu "CONFIG LWIP"
 
     config LWIP_IPV6_MENU
         bool "Enable LWIP IPV6"
-        select LWIP_IPV6 if WHC_HOST || WHC_NONE
+        select LWIP_IPV6 if WHC_HOST || WHC_NONE || WHC_DEV
 
     config LWIP_SKIP_CHECK_UDP_CHECKSUM
         bool "Skip check UDP checksum"
@@ -17,13 +17,20 @@ menu "CONFIG LWIP"
             Skip checksum for UDP RX packet
             Skipping it will provide higher throughput but reduce reliability.
 
+    config USB_ETHERNET_PROVIDER
+        bool
+    config USB_ETHERNET_BRIDGE_PROVIDER
+        bool
+
     config LWIP_USB_ETHERNET
-        depends on USBH_ECM_ETHERNET_MENU||USBH_ECM_ETHERNET_BRIDGE_MENU||USBH_ECM_MENU || USBH_COMPOSITE_ACM_ECM_MENU
         bool "Enable LWIP USB ETHERNET"
+        depends on USB_ETHERNET_PROVIDER
+        default y
 
     config LWIP_USB_ETHERNET_BRIDGE
-        depends on USBH_ECM_ETHERNET_BRIDGE_MENU
         bool "Enable LWIP USB ETHERNET BRIDGE"
+        depends on USB_ETHERNET_BRIDGE_PROVIDER
+        default y
 
     config LWIP_ETHERNET
         depends on ETHERNET

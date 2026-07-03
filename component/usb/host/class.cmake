@@ -67,6 +67,15 @@ if(CONFIG_USBH_VENDOR)
     )
 endif()
 
+if(CONFIG_USBH_DFU)
+    ameba_list_append(private_includes
+        ${USBH_CLASS_DIR}/dfu
+    )
+    ameba_list_append(private_sources
+        ${USBH_CLASS_DIR}/dfu/usbh_dfu.c
+    )
+endif()
+
 if(CONFIG_USBH_COMPOSITE)
     ameba_list_append(private_includes
         ${USBH_CLASS_DIR}/composite

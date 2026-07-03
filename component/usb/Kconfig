@@ -81,6 +81,8 @@ menu "CONFIG USB"
         bool
     config USBD_UVC
         bool
+    config USBD_DFU
+        bool
 
     config USBH_CDC_ACM
         bool
@@ -107,5 +109,7 @@ menu "CONFIG USB"
     config USBH_UVC
         bool
     config USBH_VENDOR
+        bool
+    config USBH_DFU
         bool
 endmenu

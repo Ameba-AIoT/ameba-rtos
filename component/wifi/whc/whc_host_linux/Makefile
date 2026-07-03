@@ -25,7 +25,6 @@ ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
 ccflags-$(CONFIG_IEEE80211R) += -DCONFIG_IEEE80211R
 ccflags-$(CONFIG_SUPPLICANT_SME) += -DCONFIG_SUPPLICANT_SME
-ccflags-$(CONFIG_WHC_HCI_IPC) += -DCONFIG_FULLMAC
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/driver/include
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/driver/intf
 ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/../../firmware/component/wifi/api
@@ -37,6 +36,7 @@ ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/common/netdev
 
 ccflags-$(CONFIG_WHC_HCI_IPC) += -DCONFIG_WHC_HCI_IPC
 ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
+ccflags-$(CONFIG_WHC_HCI_IPC) += -DCONFIG_WHC_HOST_LINUX
 
 obj-$(CONFIG_WIFI_RTK_CFG80211_FULLMAC)	+= whc-ipc.o
 whc-ipc-objs			:= ./common/netdev/whc_host_drv_probe.o \

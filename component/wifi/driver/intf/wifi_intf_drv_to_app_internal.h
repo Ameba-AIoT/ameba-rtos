@@ -20,7 +20,7 @@
 #define __WIFI_CONF_INTERNAL_H
 
 #include "wifi_api_types.h"
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 #include "lwip_netconf.h"
 #endif
 
@@ -229,7 +229,7 @@ struct rtw_event_report_frame {
 	u8 frame[];
 };
 
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 /**
  * @brief  The structure is join block param.
  */

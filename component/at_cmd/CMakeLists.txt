@@ -114,6 +114,17 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
 
     endif()
 endif()
+
+if(CONFIG_USB_HOST_EN OR CONFIG_USB_DEVICE_EN)
+    ameba_list_append(private_sources
+        atcmd_usb.c
+    )
+    ameba_list_append(private_includes
+        ${c_CMPT_USB_DIR}/common
+        ${c_CMPT_USB_DIR}/host/core
+        ${c_CMPT_USB_DIR}/device/core
+    )
+endif()
 endif()
 
 # Component private part, user config end(DO NOT remove this line)

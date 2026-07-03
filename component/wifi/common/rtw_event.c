@@ -15,7 +15,7 @@
   ******************************************************************************
   */
 #include "rtw_inic_common.h"
-#if !defined (CONFIG_FULLMAC) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
+#if !defined (CONFIG_WHC_HOST_LINUX) && !(defined(ZEPHYR_WIFI) && defined(CONFIG_WHC_HOST))
 #include "wifi_api.h"
 #include "platform_stdlib.h"
 #ifdef CONFIG_WIFI_P2P_ENABLE
@@ -406,7 +406,7 @@ void wifi_indication(u32 event, u8 *evt_info, s32 evt_len)
 #endif
 
 	/* rtos ipc host: enqueue wifi events instead of invoking handlers directly to prevent deep call stacks. */
-#if !defined (CONFIG_FULLMAC) && defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_INTF_IPC)
+#if !defined (CONFIG_WHC_HOST_LINUX) && defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_INTF_IPC)
 	whc_host_wifi_indication_enqueue(event, evt_info, evt_len);
 #else
 	wifi_event_handle(event, evt_info);

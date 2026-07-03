@@ -6,9 +6,9 @@
 #include "os_wrapper.h"
 #include "diag.h"
 
-int fatfs_mount_flag = 0;
-int fatfs2_mount_flag = 0;
-static struct dirent *fatfs_ent;
+volatile uint8_t fatfs_mount_flag = 0;
+volatile uint8_t fatfs2_mount_flag = 0;
+
 fatfs_params_t fatfs_flash_param;
 
 #if defined(CONFIG_FATFS_SECOND_FLASH) || defined(CONFIG_FATFS_SD_SPI_MODE) || defined(CONFIG_FATFS_SD_MODE) || defined(CONFIG_FATFS_USB_HOST)
@@ -194,8 +194,8 @@ int fatfs_seek(void *fs, long int offset, int origin, vfs_file *finfo)
 		pos = curr + offset;
 		break;
 	case SEEK_END:
-		res = f_lseek(fil, size - offset);
-		pos = size - offset;
+		res = f_lseek(fil, size + offset);
+		pos = size + offset;
 		break;
 	}
 	if (res > 0) {
@@ -317,11 +317,13 @@ int fatfs_opendir(void *fs, const char *name, vfs_file *finfo)
 	if (pdir == NULL) {
 		return -1;
 	}
-	finfo->file = (void *)pdir;
 	res = f_opendir(pdir, name);
 	if (res > 0) {
 		VFS_DBG(VFS_ERROR, "vfs-fatfs opendir error %d \r\n", res);
+		rtos_mem_free(pdir);
+		return res;
 	}
+	finfo->file = (void *)pdir;
 	return res;
 }
 
@@ -330,45 +332,31 @@ struct dirent *fatfs_readdir(void *fs, vfs_file *finfo)
 	(void) fs;
 	DIR *pdir = (DIR *)finfo->file;
 	FRESULT res;
-	char *fn;
 	if (pdir == NULL) {
 		return NULL;
-	}
-	if (fatfs_ent == NULL) {
-		fatfs_ent = rtos_mem_malloc(sizeof(struct dirent));
-		if (fatfs_ent == NULL) {
-			return NULL;
-		}
 	}
 	FILINFO m_fileinfo;
 
 	res = f_readdir(pdir, &m_fileinfo);
 	if (res != FR_OK) {
-		rtos_mem_free(fatfs_ent);
-		fatfs_ent = NULL;
 		VFS_DBG(VFS_ERROR, "vfs-fatfs readdir: error (%d)", res);
 		return NULL;
 	}
 
 	if (m_fileinfo.fname[0] == 0) {
-		rtos_mem_free(fatfs_ent);
-		fatfs_ent = NULL;
 		return NULL;
 	}
 
-	fn = m_fileinfo.fname;
-	fatfs_ent->d_ino = 0;
-	fatfs_ent->d_off = 0;
-	fatfs_ent->d_reclen = m_fileinfo.fsize;
+	finfo->ent.d_ino = 0;
+	finfo->ent.d_off = 0;
+	finfo->ent.d_reclen = m_fileinfo.fsize;
 	if (m_fileinfo.fattrib & AM_DIR) {
-		fatfs_ent->d_type = DT_DIR;    // directory
+		finfo->ent.d_type = DT_DIR;
 	} else {
-		fatfs_ent->d_type = DT_REG;    // regular file
+		finfo->ent.d_type = DT_REG;
 	}
-
-	fn = m_fileinfo.fname;
-	sprintf(fatfs_ent->d_name, "%s", fn);
-	return fatfs_ent;
+	sprintf(finfo->ent.d_name, "%s", m_fileinfo.fname);
+	return &finfo->ent;
 }
 
 int fatfs_closedir(void *fs, vfs_file *finfo)
@@ -377,10 +365,6 @@ int fatfs_closedir(void *fs, vfs_file *finfo)
 	DIR *pdir = (DIR *)finfo->file;
 	FRESULT res = f_closedir(pdir);
 	rtos_mem_free(pdir);
-	if (fatfs_ent != NULL) {
-		rtos_mem_free(fatfs_ent);
-		fatfs_ent = NULL;
-	}
 	if (res > 0) {
 		VFS_DBG(VFS_ERROR, "vfs-fatfs closedir error %d \r\n", res);
 		return -1;
@@ -490,7 +474,7 @@ int fatfs_stat(void *fs, char *path, struct stat *buf)
 	int day = finfo.fdate & 31;
 	int hour = finfo.ftime >> 11;
 	int minute = (finfo.ftime >> 5) & 63;
-	char timestr[512];
+	char timestr[24];
 	snprintf(timestr, sizeof(timestr), "%d/%d/%d %d:%d", year, month, day, hour, minute);
 
 	tm.tm_year = year - 1900; /* years since 1900 */
@@ -528,9 +512,9 @@ int fatfs_mount(int interface)
 	}
 
 	if (interface == VFS_INF_SD || interface == VFS_INF_SECOND_FLASH || interface == VFS_INF_SD_SPI || interface == VFS_INF_USBH) {
-		fatfs2_mount_flag = (ret == 0 ? 1 : -1);
+		fatfs2_mount_flag = (ret == 0 ? 1 : 0);
 	} else if (interface == VFS_INF_FLASH) {
-		fatfs_mount_flag = (ret == 0 ? 1 : -1);
+		fatfs_mount_flag = (ret == 0 ? 1 : 0);
 	}
 
 	return ret;
@@ -567,7 +551,7 @@ int fatfs_ummount(int interface)
 	return ret;
 }
 
-vfs_opt fatfs_drv = {
+const vfs_opt fatfs_drv = {
 #if !FF_FS_READONLY
 	.write = fatfs_write,
 	.fflush = fatfs_fflush,
@@ -595,5 +579,6 @@ vfs_opt fatfs_drv = {
 	.mount = fatfs_mount,
 	.unmount = fatfs_ummount,
 	.get_interface = fatfs_get_interface,
-	.TAG	= "fatfs"
+	.TAG	= "fatfs",
+	.vfs_type = VFS_FATFS
 };

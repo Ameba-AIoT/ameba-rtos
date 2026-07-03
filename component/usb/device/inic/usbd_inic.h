@@ -54,7 +54,7 @@
 #define USBD_INIC_FW_TYPE_APPLICATION					0xF2U
 
 #define USBD_INIC_RESET_THREAD_PRIORITY					6
-#define USBD_INIC_RESET_THREAD_STACK_SIZE				384   /**< Thread tack size */
+#define USBD_INIC_RESET_THREAD_STACK_SIZE				512   /**< Thread tack size */
 
 /* Exported types ------------------------------------------------------------*/
 

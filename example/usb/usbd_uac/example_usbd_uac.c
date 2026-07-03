@@ -34,7 +34,7 @@ static const char *const TAG = "UAC";
 	This configuration is used to enable a thread to check hotplug event
 	and reset USB stack to avoid memory leak, only for example.
 */
-#define CONFIG_USBD_UAC_HOTPLUG    0
+#define CONFIG_USBD_UAC_HOTPLUG    1
 /*
 	This configuration is used to choose one channel to play
 	for the audio does not support some channel, Such as 4 chs
