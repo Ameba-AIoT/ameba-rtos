@@ -35,8 +35,10 @@ void vTaskCompTick(const TickType_t xTicksToComp)
 	}
 }
 
-u32 vApplicationIdleHook_RAM(void) {
+u32 vApplicationIdleHook_RAM(void)
+{
 #if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+#if !(!defined(CONFIG_WHC_INTF_IPC) && defined(CONFIG_WHC_DEV))
 	extern int32_t driver_suspend_ret;
 #if defined (CONFIG_WLAN)
 	extern int32_t wlan_driver_check_and_suspend(void);
@@ -45,7 +47,6 @@ u32 vApplicationIdleHook_RAM(void) {
 #endif
 
 #if defined(CONFIG_WIFI_FW_EN) && CONFIG_WIFI_FW_EN
-#if defined(CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
 	extern void wififw_task_idle(void);
 	wififw_task_idle();
 #endif
@@ -143,36 +144,36 @@ void vPortCleanUpTCB(uint32_t *pulTCB)
 #endif
 }
 
-void newlib_assign_1(uint32_t * pxNewLib_reent)
+void newlib_assign_1(uint32_t *pxNewLib_reent)
 {
 	_impure_ptr = (struct _reent *)pxNewLib_reent;
 }
 
-void newlib_assign_2(uint32_t * pxNewLib_reent)
+void newlib_assign_2(uint32_t *pxNewLib_reent)
 {
 	_impure_ptr = (struct _reent *)pxNewLib_reent;
 }
 
-void newlib_reent_init_ptr(uint32_t * pxNewLib_reent)
+void newlib_reent_init_ptr(uint32_t *pxNewLib_reent)
 {
 	_REENT_INIT_PTR(((struct _reent *)pxNewLib_reent));
 }
 
-void newlib_reclaim_reent(uint32_t * pxNewLib_reent)
+void newlib_reclaim_reent(uint32_t *pxNewLib_reent)
 {
-	struct _reent * reent = (struct _reent *)pxNewLib_reent;
+	struct _reent *reent = (struct _reent *)pxNewLib_reent;
 	_reclaim_reent(reent);
-	#if defined(__NEWLIB__) && defined (_REENT_SMALL) && !defined(_REENT_GLOBAL_STDIO_STREAMS)
-		if (reent->_stdout) {
-			_fclose_r(reent, reent->_stdout);
-		}
-		if (reent->_stderr) {
-			_fclose_r(reent, reent->_stderr);
-		}
-		if (reent->_stdin)  {
-			_fclose_r(reent, reent->_stdin);
-		}
-	#endif
+#if defined(__NEWLIB__) && defined (_REENT_SMALL) && !defined(_REENT_GLOBAL_STDIO_STREAMS)
+	if (reent->_stdout) {
+		_fclose_r(reent, reent->_stdout);
+	}
+	if (reent->_stderr) {
+		_fclose_r(reent, reent->_stderr);
+	}
+	if (reent->_stdin)  {
+		_fclose_r(reent, reent->_stdin);
+	}
+#endif
 
 }
 
@@ -188,8 +189,8 @@ void os_rom_init(void)
 	os_cfg.idle_task_stack_size = configIDLE_TASK_STACK_DEPTH_RAM;
 	os_cfg.tick_rate_hz = configTICK_RATE_HZ_RAM;
 	os_cfg.port_initial_exc_return = portINITIAL_EXC_RETURN_RAM;
-	os_cfg.patch_pvPortMalloc=pvPortMalloc;
-	os_cfg.patch_vPortFree=vPortFree;
+	os_cfg.patch_pvPortMalloc = pvPortMalloc;
+	os_cfg.patch_vPortFree = vPortFree;
 
 	ucStaticTimerQueueStorage = ucStaticTimerQueueStorage_ram;
 	xIdleTaskTCB = &xIdleTaskTCB_ram;
@@ -236,12 +237,12 @@ void os_rom_init(void)
 	patch_SecureContext_Init = SecureContext_Init_rom;
 	patch_vPortAllocateSecureContext = vPortAllocateSecureContext_rom;
 #else
-	extern SecureContextHandle_t SecureContext_AllocateContext( uint32_t ulSecureStackSize );
-	extern void SecureContext_FreeContext( SecureContextHandle_t xSecureContextHandle );
-	extern void SecureInit_DePrioritizeNSExceptions( void );
-	extern void SecureContext_LoadContext( SecureContextHandle_t xSecureContextHandle );
-	extern void SecureContext_SaveContext( SecureContextHandle_t xSecureContextHandle );
-	extern void SecureContext_Init( void );
+	extern SecureContextHandle_t SecureContext_AllocateContext(uint32_t ulSecureStackSize);
+	extern void SecureContext_FreeContext(SecureContextHandle_t xSecureContextHandle);
+	extern void SecureInit_DePrioritizeNSExceptions(void);
+	extern void SecureContext_LoadContext(SecureContextHandle_t xSecureContextHandle);
+	extern void SecureContext_SaveContext(SecureContextHandle_t xSecureContextHandle);
+	extern void SecureContext_Init(void);
 	extern void vPortAllocateSecureContext(uint32_t ulSecureStackSize);
 	patch_SecureContext_AllocateContext = SecureContext_AllocateContext;
 	patch_SecureContext_FreeContext = SecureContext_FreeContext;

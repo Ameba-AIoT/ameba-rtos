@@ -720,12 +720,19 @@ int usbh_ctrl_request(usb_host_t *host, usbh_setup_req_t *req, u8 *buf);
 int usbh_transfer_data(usb_host_t *host, usbh_pipe_t *pipe);
 
 /**
- * @brief  Get the last transfer data size of specific pipe.
+ * @brief Get the actual number of bytes received in the last D2H transfer of specific pipe.
  * @param[in] host: Host Handle.
  * @param[in] pipe: Pipe struct handle.
  * @return Last transfer data size in bytes
  */
 u32 usbh_get_last_transfer_size(usb_host_t *host, usbh_pipe_t *pipe);
+
+/**
+ * @brief  Get the actual number of bytes received in the last D2H control transfer (EP0 IN data phase).
+ * @param[in] host: Host Handle.
+ * @return Bytes received; 0 if a ZLP was received.
+ */
+u32 usbh_get_last_ctrl_in_size(usb_host_t *host);
 
 /**
  * @brief  Start one transfer and handle result.

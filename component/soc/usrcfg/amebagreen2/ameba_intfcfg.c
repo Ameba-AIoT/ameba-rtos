@@ -39,7 +39,7 @@ const u8 ETHERNET_PAD[4][11] = {
 u8 SDIO_Pin_Grp = 0x1;
 
 /* sd host pinmux group: 0x0-0x6 */
-u8 SDH_Pin_Grp = 0x4;
+u8 SDH_Pin_Grp = 0x2;
 
 /* ethernet pinmux group: 0x0-0x3 */
 u8 ETHERNET_Pin_Grp = 0x0;

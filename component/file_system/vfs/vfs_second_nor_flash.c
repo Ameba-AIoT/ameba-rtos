@@ -6,17 +6,13 @@
 #include "spi_ex_api.h"
 #include "vfs_second_nor_flash.h"
 
-static const char *TAG = "SECOND-FLASH";
+static const char *TAG = "SEC-FLASH";
 
 static rtos_sema_t xTxSemaphore = NULL;
 static rtos_sema_t xRxSemaphore = NULL;
 static rtos_mutex_t device_lock = NULL;
 static spi_t spi_master;
 
-static volatile int MasterTxDone;
-static volatile int MasterRxDone;
-
-volatile int second_flash_init_flag = 0;
 flash_model_t current_flash_model = {0};
 
 void second_flash_tr_done_callback(u32 id, SpiIrq event)
@@ -417,13 +413,11 @@ void second_flash_get_id(void)
 			RTK_LOGI(TAG, "Detected Flash: %s\r\n", current_flash_model.model_name);
 		}
 		rtos_mutex_give(device_lock);
-		second_flash_init_flag = 1;
 		return;
 	}
 
 	/* Read Flash ID Fail */
 	RTK_LOGE(TAG, "%s: Failed to read Flash ID after %d retries!\r\n", __func__, retry_count);
-	second_flash_init_flag = -1;
 }
 
 void second_flash_spi_init(void)

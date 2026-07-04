@@ -2,7 +2,7 @@ CC=gcc
 
 CFLAGS = -I. -I.. -I../.. -I../common -I../common/include
 
-ccflags-y += -DCONFIG_FULLMAC
+ccflags-y += -DCONFIG_WHC_HOST_LINUX
 CFLAGS += $(ccflags-y)
 
 LDFLAGS = -lpthread

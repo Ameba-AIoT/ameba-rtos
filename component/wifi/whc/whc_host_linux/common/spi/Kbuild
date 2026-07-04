@@ -8,7 +8,7 @@ ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
 ccflags-$(CONFIG_SUPPLICANT_SME) += -DCONFIG_SUPPLICANT_SME
 ccflags-$(CONFIG_RMESH) += -DCONFIG_RMESH
 
-ccflags-y += -DCONFIG_FULLMAC
+ccflags-y += -DCONFIG_WHC_HOST_LINUX
 ccflags-y += -I$(src)/../netdev
 ccflags-y += -I$(src)/../include -I$(src)/.. -I$(src)/../../common -I$(src)/../spi
 

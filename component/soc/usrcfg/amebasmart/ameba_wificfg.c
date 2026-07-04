@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_FULLMAC
+#ifdef CONFIG_WHC_HOST_LINUX
 #include <whc_host_linux.h>
 #else
 #include "platform_autoconf.h"
@@ -30,7 +30,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_np = 22; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 8;
 #else
-#ifdef CONFIG_FULLMAC
+#ifdef CONFIG_WHC_HOST_LINUX
 	wifi_user_config.skb_num_ap = 10;
 #else
 	wifi_user_config.skb_num_ap = 8;	/*adjust to 8 for ping 10k*/
@@ -96,7 +96,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.sgi = 1;
 	wifi_user_config.he_gi_ltf_cap = RTW_HE_GI_LTF_ALL;
 
-#ifdef CONFIG_FULLMAC
+#ifdef CONFIG_WHC_HOST_LINUX
 	/* Linux wifi supports cfg80211 ops. */
 	wifi_user_config.cfg80211 = 1;
 #endif
@@ -111,7 +111,7 @@ _WEAK void wifi_set_user_config(void)
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
 	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {
 		wifi_user_config.skb_num_np = wifi_user_config.rx_ampdu_num + skb_num_np_rsvd;
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
 #endif
 	}
@@ -119,14 +119,14 @@ _WEAK void wifi_set_user_config(void)
 	/* ensure ap_sta_num not exceed 12*/
 	if (wifi_user_config.ap_sta_num > 12) {
 		wifi_user_config.ap_sta_num = 12;
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 12\n");
 #endif
 	}
 
 	if (wifi_user_config.lps_enable && wifi_user_config.uapsd_enable) {
 		wifi_user_config.lps_enable = 0;
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 		RTK_LOGW(TAG_WLAN_DRV, "only enable uspsd mode\n");
 #endif
 	}

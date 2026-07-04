@@ -105,7 +105,7 @@ static void *uart_irq_handle_sema;
 static void *uart_show_sema;
 static void *usbd_rx_ringbuf_mutex = NULL;
 static char uart_format_buffer[FORMAT_LEN];
-static u8 uart_irq_buffer[MAX_CMD_LEN] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 uart_irq_buffer[MAX_CMD_LEN] ALIGNMTO(CACHE_LINE_SIZE);
 static u32 uart_irq_count = 0;
 static u8 tt_mode_task_start = 0;
 static u32 tt_len = 10 * 1024 * 1024;
@@ -553,4 +553,3 @@ void example_atcmd_host_usbd(void)
 	xTaskCreate((void *)tt_mode_test_task, ((const char *)"tt_mode_test_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 1, NULL);
 	xTaskCreate((void *)uart_show_rx_data_task, ((const char *)"uart_show_rx_data_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 1, NULL);
 }
-

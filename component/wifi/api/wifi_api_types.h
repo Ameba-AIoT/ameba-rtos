@@ -19,7 +19,7 @@
 #ifndef __WIFI_API_TYPES_H
 #define __WIFI_API_TYPES_H
 
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 #include "ameba.h"
 #include "rtw_wifi_common.h"
 #include "rtw_byteorder.h"
@@ -124,7 +124,7 @@ enum rtw_security_flag {
   *         reasons by the driver and application layers.
   */
 enum rtw_disconn_reason {
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 	/*802.11 spec reason codes, received after connection in AP's deauth or disassoc frame.*/
 	RTW_DISCONN_RSN_80211_UNSPECIFIED                         = 1,
 	RTW_DISCONN_RSN_80211_PREV_AUTH_NOT_VALID 			      = 2,
@@ -944,7 +944,7 @@ struct rtw_softap_info {
 	u8		            channel;       /**< Desired operating channel for the SoftAP. */
 };
 
-#ifndef CONFIG_FULLMAC
+#ifndef CONFIG_WHC_HOST_LINUX
 /**
   * @brief  Stores information about clients associated with the SoftAP.
   */
