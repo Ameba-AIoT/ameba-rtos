@@ -66,7 +66,8 @@ typedef int sys_prot_t;
 #define PACK_STRUCT_END
 #define PACK_STRUCT_FIELD(x) x
 
-#define LWIP_PLATFORM_ASSERT(x) //do { if(!(x)) while(1); } while(0)
+#include "rtk_assert.h"
+#define LWIP_PLATFORM_ASSERT(x) rtk_assert(x, "LWIP")
 
 #ifdef LWIP_NO_CTYPE_H
 #undef LWIP_NO_CTYPE_H

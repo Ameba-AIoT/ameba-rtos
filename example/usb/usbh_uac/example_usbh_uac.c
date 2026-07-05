@@ -28,10 +28,10 @@
 #define USBH_UAC_HOTPLUG_THREAD_PRIORITY          6
 #define USBH_UAC_ISOC_TEST_THREAD_PRIORITY        4
 // Thread stack sizes
-#define USBH_UAC_INIT_THREAD_STACK_SIZE           (1024 * 2)
-#define USBH_UAC_MAIN_TASK_STACK_SIZE             768U
-#define USBH_UAC_HOTPLUG_THREAD_STACK_SIZE        (1024 * 2)
-#define USBH_UAC_ISOC_TEST_THREAD_STACK_SIZE      (1024 * 2)
+#define USBH_UAC_INIT_THREAD_STACK_SIZE           1024U
+#define USBH_UAC_MAIN_TASK_STACK_SIZE             1024U
+#define USBH_UAC_HOTPLUG_THREAD_STACK_SIZE        1024U
+#define USBH_UAC_ISOC_TEST_THREAD_STACK_SIZE      1024U
 
 #define USBH_UAC_XFER_CHECK               0   /* used to check the trx data valid */
 

@@ -413,8 +413,6 @@ int NetworkConnect(Network *n, char *addr, int port)
 			mbedtls_ssl_conf_own_cert(n->conf, client_crt, client_rsa);
 		}
 
-		mbedtls_ssl_set_hostname(n->ssl, addr);
-
 		retVal = mbedtls_ssl_handshake(n->ssl);
 		if (retVal < 0) {
 			mqtt_printf(MQTT_DEBUG, "ssl handshake failed err:-0x%04X", -retVal);

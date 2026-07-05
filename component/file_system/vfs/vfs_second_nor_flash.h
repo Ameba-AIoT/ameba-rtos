@@ -84,7 +84,6 @@ static const flash_model_t flash_models[] = {
 #define CACHE_LINE_SIZE CACHE_L1_DCACHE_LINE_SIZE
 #endif
 
-extern volatile int second_flash_init_flag;
 extern flash_model_t current_flash_model;
 
 void second_flash_spi_init(void);

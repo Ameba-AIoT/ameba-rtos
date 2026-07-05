@@ -30,8 +30,8 @@
 #define CONFIG_USBD_INIC_XFER_THREAD_PRIORITY           6
 // Thread stack sizes
 #define CONFIG_USBD_INIC_INIT_THREAD_STACK_SIZE           1024U
-#define CONFIG_USBD_INIC_HOTPLUG_THREAD_STACK_SIZE        1024U
-#define CONFIG_USBD_INIC_XFER_THREAD_STACK_SIZE           1024U
+#define CONFIG_USBD_INIC_HOTPLUG_THREAD_STACK_SIZE        768U
+#define CONFIG_USBD_INIC_XFER_THREAD_STACK_SIZE           700U
 
 /* Private types -------------------------------------------------------------*/
 static const char *const TAG = "INIC";

@@ -106,6 +106,24 @@ ameba_list_append(private_compile_options
     -Wno-address
 )
 
+# USB Ethernet support for R-NAPT
+if(CONFIG_LWIP_USB_ETHERNET)
+if(CONFIG_USBD_CDC_ECM)
+ameba_list_append(private_includes
+    ../usb/device/core
+    ../usb/device/cdc_ecm
+    ../usb/common
+)
+endif()
+if(CONFIG_USBH_CDC_ECM)
+ameba_list_append(private_includes
+    ../usb/host/core
+    ../usb/host/cdc_ecm
+    ../usb/common
+)
+endif()
+endif()
+
 # Component private part, user config end
 #------------------------------#
 

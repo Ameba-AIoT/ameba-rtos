@@ -162,6 +162,12 @@ u8 whc_dev_rcvpkt_redirect(struct sk_buff *skb, struct whc_pkt_attrib *pattrib)
 		return PORT_TO_UP;
 	}
 
+#if LWIP_IPV6
+	if (pattrib->protocol == lwip_htons(ETHTYPE_IPV6)) {
+		return PORT_TO_UP;
+	}
+#endif
+
 	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
 		return PORT_TO_BOTH;
 	}
@@ -213,12 +219,13 @@ u8 whc_dev_recv_pkt_process(u8 *idx, struct sk_buff **skb_send)
 	pattrib = (struct whc_pkt_attrib *)rtos_mem_zmalloc(sizeof(struct whc_pkt_attrib));
 	whc_dev_packet_attrib_parse(skb, pattrib);
 
-
+#if !LWIP_IPV6
 	if (pattrib->protocol == lwip_htons(ETHTYPE_IPV6)) {
 		dev_kfree_skb_any(skb);
 		rtos_mem_free(pattrib);
 		return 0;
 	}
+#endif
 
 	pattrib->port_idx = *idx;//check if needed
 

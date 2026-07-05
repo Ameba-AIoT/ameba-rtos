@@ -24,11 +24,6 @@ if(CONFIG_AMEBAGREEN2)
     )
 endif()
 
-if(CONFIG_AMEBAL2)
-    ameba_list_append(private_sources
-        ${USB_HAL_DIR}/amebaL2_usb.c
-    )
-endif()
 
 if(CONFIG_AMEBAPRO3)
     ameba_list_append(private_sources
