@@ -848,6 +848,7 @@ union rtw_phy_stats {
 		u8  cca_clm; /**< Channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result. */
 		u8	edcca_clm; /**< Channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result. */
 		u8	clm_channel; /**< Channel corresponding to the latest clm result.*/
+		s8	idle_noise; /**< Channel idle noise corresponding to the latest noise histogram measurement(nhm) result. "idle" denotes exclusion of CCA and TX statistics.*/
 	} cmn; /**< Common statistic.*/
 };
 
