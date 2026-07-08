@@ -94,16 +94,20 @@ Attach a USB camera to the USB port of the Ameba development board, then reset t
 ...
 [UVC-I] Captured frame 199, len=108264         #criteria: capture_complete
 [UVC-I] TP 4126 KB/s @ 4953 ms                 #criteria: throughput
-[UVC-I] Stream off                             #criteria: stream_off
 ```
 
 > **Note:** Values shown above (frame lengths, throughput, timestamps) are examples. Actual values vary depending on the camera and connection. The `Captured frame 199` line confirms all 200 frames (0-199) were captured successfully.
+>
+> **Note:** If `err` appears in the log, check whether the `len` in the nearby `Captured frame` line has reached the default maximum value (153,600). If so, increase `CONFIG_USBH_UVC_FRAME_BUF_SIZE` in `example/usb/usbh_uvc/example_usbh_uvc.c`.
 
 ## Scenario: VFS
 
-1. Insert a FAT32-formatted SD card into the SD card slot of the Ameba development board.
-2. Attach a USB camera to the USB port of the Ameba development board.
-3. Reset the board. The LOGUART console shall print the following output. Confirm that no USB-related errors are reported.
+1. Modify the `CONFIG_USBH_UVC_APP` in `example\usb\usbh_uvc\example_usbh_uvc.c` to `USBH_UVC_APP_VFS`.
+2. Ensure that, according to the `SW Configuration` instructions described earlier, support for `VFS -> FATFS Memory Type (SD MODE)` has been enabled via `menuconfig`.
+3. Rebuild and Download.
+4. Insert a FAT32-formatted SD card into the SD card slot of the Ameba development board.
+5. Attach a USB camera to the USB port of the Ameba development board.
+6. Reset the board. The LOGUART console shall print the following output. Confirm that no USB-related errors are reported.
 
 ```
 [UVC-I] USBH UVC demo start                    #criteria: init
@@ -123,12 +127,17 @@ Attach a USB camera to the USB port of the Ameba development board, then reset t
 
 ### Server Setup (Test PC Side)
 
-1. Connect the Windows PC to the same router or access point that the Ameba development board will use.
-2. Download Apache from https://projects.apache.org/releases.html and extract `apache24.7z` to a local directory.
-3. Edit `Apache24/conf/httpd.conf`:
+1. Modify the `CONFIG_USBH_UVC_APP` in `example\usb\usbh_uvc\example_usbh_uvc.c` to `USBH_UVC_APP_HTTPC`.
+2. Rebuild and Download
+3. Connect the Windows PC to the same router that the Ameba development board will use. The topology:
+```
+[Camera] ---USB Cable--- [Ameba] ---Wifi--- [Router] --- [PC]
+```
+4. Download Apache from https://projects.apache.org/releases.html and extract `apache24.7z` to a local directory.
+5. Edit `Apache24/conf/httpd.conf`:
    - Locate `SRVROOT` and update the path to the directory where Apache was extracted.
    - Locate `Listen` and change it to the PC's current IP address followed by port 5090.
-4. Create `Apache24/cgi-bin/submit.py`:
+6. Create `Apache24/cgi-bin/submit.py`:
 
    Verify that the path to python.exe corresponds to the Test PC's Python installation directory.
 
@@ -170,15 +179,23 @@ Attach a USB camera to the USB port of the Ameba development board, then reset t
    """ % message)
    ```
 
-5. Start the server:
+7. Start the server:
    - Open a command prompt (CMD) inside the `apache24/bin` directory.
    - Run `httpd.exe`. The PC is now listening for incoming data from the board.
 
 ### Board Operation
 
 1. Configure the server IP `USBH_UVC_HTTPC_SERVER` to the Test PC's current IP address in `example_usbh_uvc.c`.
-2. Attach a USB camera to the USB port of the Ameba development board.
-3. Reset the board. Ensure that the WiFi connection is established. The LOGUART console shall print the following output. Confirm that no USB-related errors are reported.
+2. Rebuild and Download.
+3. Attach a USB camera to the USB port of the Ameba development board.
+4. Reset the board. Connect to the router by entering the following AT command, Verify that the WiFi connection is successfully established before proceeding.
+	```
+	AT+WLCONN=ssid,<SSID>,pw,<PASSWORD>
+	```
+
+	> **Note:** Replace <SSID> with your Wi-Fi network name and <PASSWORD> with the corresponding Wi-Fi password.
+
+5. The LOGUART console shall print the following output. Confirm that no USB-related errors are reported.
 
 ```
 [UVC-I] USBH UVC demo start                    #criteria: init

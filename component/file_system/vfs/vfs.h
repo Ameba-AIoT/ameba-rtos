@@ -114,6 +114,7 @@ typedef struct _vfs_file {
 	unsigned char user_id;
 	void *file;
 	char name[VFS_PATH_MAX + 1];
+	struct dirent ent;
 } vfs_file;
 
 typedef struct {
@@ -166,17 +167,17 @@ typedef struct {
 typedef struct {
 	unsigned int drv_num;
 	unsigned int user_num;
-	vfs_opt	*drv[VFS_FS_MAX];
+	const vfs_opt *drv[VFS_FS_MAX];
 	user_config user[VFS_USER_REGION_MAX];
 } vfs_drv;
 
 extern vfs_drv vfs;
-extern vfs_opt fatfs_drv;
-extern vfs_opt littlefs_drv;
-extern int lfs_mount_flag;
-extern int lfs2_mount_flag;
-extern int fatfs_mount_flag;
-extern int fatfs2_mount_flag;
+extern const vfs_opt fatfs_drv;
+extern const vfs_opt littlefs_drv;
+extern volatile uint8_t lfs_mount_flag;
+extern volatile uint8_t lfs2_mount_flag;
+extern volatile uint8_t fatfs_mount_flag;
+extern volatile uint8_t fatfs2_mount_flag;
 
 extern u32 vfs_nand_flash_pagesize;
 extern u32 vfs_nand_flash_pagenum;
@@ -186,11 +187,12 @@ void vfs_deinit(void);
 int vfs_user_register(const char *prefix, int vfs_type, int interface, char region, char flag);
 int vfs_user_unregister(const char *prefix, int vfs_type, int interface);
 int vfs_scan_vfs(int vfs_type);
-int vfs_register(vfs_opt *drv, int vfs_type);
+int vfs_register(const vfs_opt *drv);
 int find_vfs_number(const char *name, int *prefix_len, int *user_id);
 int vfs_user_mount(const char *prefix);
 char *find_vfs_tag(char region);
 int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char *operation);
+void vfs_build_filename(int vfs_id, int user_id, const char *filename, int prefix_len, char *out_name, size_t out_size);
 
 void *opendir(const char *name);
 struct dirent *readdir(void *dirp);

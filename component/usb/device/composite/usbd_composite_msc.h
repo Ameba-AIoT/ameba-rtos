@@ -26,7 +26,7 @@
  */
 #define COMP_MSC_TX_THREAD_PRIORITY             5U     /**< TX thread priority */
 #define COMP_MSC_RX_THREAD_PRIORITY             5U     /**< RX thread priority */
-#define COMP_MSC_TRX_THREAD_STACK_SIZE          768U   /**< TX/RX thread tack size */
+#define COMP_MSC_TRX_THREAD_STACK_SIZE          1024U  /**< TX/RX thread tack size */
 
 /* MSC Endpoint parameters */
 #define COMP_MSC_HS_MAX_PACKET_SIZE				512U   /**< High speed BULK IN & OUT packet size */

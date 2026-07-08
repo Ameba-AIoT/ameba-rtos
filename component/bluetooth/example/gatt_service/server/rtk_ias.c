@@ -30,7 +30,7 @@ static rtk_bt_gatt_attr_t immediate_alert_attrs[] = {
 	/* Characteristic: alert level */
 	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_ALERT_LEVEL_CHAR,
 							   RTK_BT_GATT_CHRC_WRITE_WITHOUT_RESP,
-							   RTK_BT_GATT_PERM_READ | RTK_BT_GATT_PERM_WRITE),
+							   RTK_BT_GATT_PERM_WRITE),
 };
 
 static struct rtk_bt_gatt_service immediate_alert_srv = RTK_BT_GATT_SERVICE(immediate_alert_attrs, IMMEDIATE_ALERT_SRV_ID);

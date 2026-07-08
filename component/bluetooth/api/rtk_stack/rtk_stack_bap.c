@@ -1853,6 +1853,8 @@ static uint16_t bt_stack_le_audio_broadcast_config(void)
 			BT_LOGE("%s fail: broadcast_source_set_pa_param fail\r\n", __func__);
 			goto error;
 		}
+		osif_mem_free(pa_data);
+		pa_data = NULL;
 	}
 
 	if (false == broadcast_source_config(bt_le_audio_priv_data.bsrc.source_handle)) {
@@ -1860,6 +1862,9 @@ static uint16_t bt_stack_le_audio_broadcast_config(void)
 		goto error;
 	}
 
+	if (p_broadcast_audio_announcements) {
+		osif_mem_free(p_broadcast_audio_announcements);
+	}
 	return RTK_BT_OK;
 
 error:

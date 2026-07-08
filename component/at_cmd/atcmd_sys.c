@@ -17,6 +17,7 @@
 #include "atcmd_service.h"
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
+#include "atcmd_usb.h"
 #ifdef CONFIG_LWIP_LAYER
 #include "atcmd_mqtt.h"
 #include "atcmd_sockets.h"
@@ -264,6 +265,10 @@ void at_list(u16 argc, char **argv)
 #endif
 #endif // CONFIG_LWIP_LAYER
 #endif // CONFIG_WLAN
+#if defined(CONFIG_USB_HOST_EN) || defined(CONFIG_USB_DEVICE_EN)
+	/* USB commands. */
+	print_usb_at();
+#endif /* CONFIG_USB_HOST_EN || CONFIG_USB_DEVICE_EN */
 #endif // CONFIG_MP_SHRINK
 
 #if defined(CONFIG_BT) && CONFIG_BT
