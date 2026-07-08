@@ -893,18 +893,31 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 
 	timeout = usbh_get_tick(msc->host);
 
-	while (usbh_msc_process_rw(msc->host, lun) == HAL_BUSY) {
+	int rw_status;
+
+	while (1) {
+		if (host->connect_state < USBH_STATE_ATTACH) {
+			msc->unit[lun].state = MSC_IDLE;
+			msc->state = MSC_IDLE;
+			return HAL_ERR_UNKNOWN;
+		}
+		rw_status = usbh_msc_process_rw(msc->host, lun);
+		if (rw_status != HAL_BUSY) {
+			break;
+		}
 #if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 		//FIXME, remove this in AP
 		usb_os_delay_us(200);
 #endif
-		if ((usbh_get_elapsed_ticks(msc->host, timeout) > ((u64)10000U * length)) || (host->connect_state < USBH_STATE_ATTACH)) {
+		if (usbh_get_elapsed_ticks(msc->host, timeout) > ((u64)10000U * length)) {
+			msc->unit[lun].state = MSC_IDLE;
 			msc->state = MSC_IDLE;
 			return HAL_ERR_UNKNOWN;
 		}
 	}
+	msc->unit[lun].state = MSC_IDLE;
 	msc->state = MSC_IDLE;
-	return HAL_OK;
+	return rw_status;
 }
 
 /**
@@ -949,18 +962,32 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 	}
 
 	timeout = usbh_get_tick(msc->host);
-	while (usbh_msc_process_rw(msc->host, lun) == HAL_BUSY) {
+
+	int rw_status;
+
+	while (1) {
+		if (host->connect_state < USBH_STATE_ATTACH) {
+			msc->unit[lun].state = MSC_IDLE;
+			msc->state = MSC_IDLE;
+			return HAL_ERR_UNKNOWN;
+		}
+		rw_status = usbh_msc_process_rw(msc->host, lun);
+		if (rw_status != HAL_BUSY) {
+			break;
+		}
 #if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
 		//FIXME, remove this in AP
 		usb_os_delay_us(200);
 #endif
-		if ((usbh_get_elapsed_ticks(msc->host, timeout) > ((u64)10000U * length)) || (host->connect_state < USBH_STATE_ATTACH)) {
+		if (usbh_get_elapsed_ticks(msc->host, timeout) > ((u64)10000U * length)) {
+			msc->unit[lun].state = MSC_IDLE;
 			msc->state = MSC_IDLE;
 			return HAL_ERR_UNKNOWN;
 		}
 	}
+	msc->unit[lun].state = MSC_IDLE;
 	msc->state = MSC_IDLE;
-	return HAL_OK;
+	return rw_status;
 }
 
 /**

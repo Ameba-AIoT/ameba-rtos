@@ -601,7 +601,7 @@ static int usbd_uac_desc_dump(u8 *pbuf, int len)
 	}
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
-	return 0;
+	return HAL_OK;
 }
 #endif
 
@@ -613,6 +613,7 @@ static int usbd_uac_desc_dump(u8 *pbuf, int len)
 static u16 usbd_uac_get_ring_buf_cnt(u8 speed)
 {
 	UNUSED(speed);
+
 	return USBD_UAC_RX_BUF_MAX_CNT;
 }
 
@@ -624,18 +625,21 @@ static u16 usbd_uac_get_ring_buf_cnt(u8 speed)
   */
 static u16 usbd_uac_get_mps(usbd_audio_cfg_t *params, u8 speed)
 {
-	u16 mps_value;
+	u16 mps_value = 0;
+
 	UNUSED(speed);
+
 	if (NULL == params) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No Param\n");
-		return 0;
+		return mps_value;
 	}
 
 	/* for 44.1khz or the host clk is bigger than the device */
 	mps_value = params->ch_cnt * params->byte_width * (params->sampling_freq / USBD_UAC_ONE_KHZ + 1);
 	if (mps_value > USBD_UAC_FS_ISOC_MPS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid FS MPS %d-%d\n", mps_value, USBD_UAC_FS_ISOC_MPS);
-		return 0;
+		mps_value = 0;
+		return mps_value;
 	}
 
 	return mps_value;
@@ -732,7 +736,7 @@ static inline u8 usbd_uac_ep_enable(usbd_audio_cfg_t *ep)
 		return ep->enable;
 	}
 
-	return  0;
+	return HAL_OK;
 }
 
 /**
@@ -774,15 +778,24 @@ static int usbd_uac_clear_config(usb_dev_t *dev, u8 config)
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
 	usbd_ep_t *ep_isoc_out = &cdev->ep_isoc_out;
+	usb_ep_info_t *info;
+
 	UNUSED(config);
 
+	if (dev == NULL || cdev == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Dev not ready\n");
+		return ret;
+	}
+
 	/* DeInit ISOC IN EP */
-	if (usbd_uac_ep_enable(&(cdev->cb->in))) {
+	info = &ep_isoc_in->info;
+	if (cdev->cb && usbd_uac_ep_enable(&(cdev->cb->in)) && info->addr != 0) {
 		usbd_ep_deinit(dev, ep_isoc_in);
 	}
 
 	/* DeInit ISOC OUT EP */
-	if (usbd_uac_ep_enable(&(cdev->cb->out))) {
+	info = &ep_isoc_out->info;
+	if (cdev->cb && usbd_uac_ep_enable(&(cdev->cb->out)) && info->addr != 0) {
 		usbd_ep_deinit(dev, ep_isoc_out);
 	}
 
@@ -797,9 +810,11 @@ static int usbd_uac_clear_config(usb_dev_t *dev, u8 config)
   */
 static bool usbd_uac_is_valid_sample_rate(u32 freq, u8 speed)
 {
+	u8 i;
+
 	UNUSED(speed);
 
-	for (u8 i = 0; i < USBD_UAC_SAMPLING_FREQ_MAX_COUNT; ++i) {
+	for (i = 0; i < USBD_UAC_SAMPLING_FREQ_MAX_COUNT; ++i) {
 		if (freq == usbd_uac_sampling_rates[i]) {
 			return true;
 		}
@@ -1106,9 +1121,10 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
   */
 static int usbd_uac_handle_sof(usb_dev_t *dev)
 {
-	UNUSED(dev);
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_cb_t *cb = cdev->cb;
+
+	UNUSED(dev);
 
 	if (cb->sof != NULL) {
 		cb->sof();
@@ -1219,9 +1235,10 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
   */
 static int usbd_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
-	UNUSED(dev);
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_in);
+
+	UNUSED(dev);
 
 	if (pdata_ctrl->next_xfer) {
 		if (ep_addr == USBD_UAC_ISOC_IN_EP) {
@@ -1249,9 +1266,14 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	usbd_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_out);
 	usbd_uac_buf_t *p_buf = NULL;
 	usbd_ep_t *ep_isoc_out = &cdev->ep_isoc_out;
-	u8 wr_next;
-	UNUSED(dev);
 	int ret = HAL_OK;
+#if USBD_UAC_DEBUG
+	static u32 rx_last_tick = 0;
+	u32 rx_new_tick = 0; //us
+#endif
+	u8 wr_next;
+
+	UNUSED(dev);
 
 	if (pdata_ctrl->next_xfer) {
 		if (ep_addr == USBD_UAC_ISOC_OUT_EP) {
@@ -1287,9 +1309,9 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 #if USBD_UAC_DEBUG
 				cdev->isoc_rx_cnt ++;
-				static u32 g_rx_last_tick = 0;
-				u32 g_rx_new_tick = DTimestamp_Get(); //us
-				if ((g_rx_last_tick > 0) && (g_rx_new_tick - g_rx_last_tick > 175)) {  //125us -> 130 us
+				rx_last_tick = 0;
+				rx_new_tick = DTimestamp_Get(); //us
+				if ((rx_last_tick > 0) && (rx_new_tick - rx_last_tick > 175)) {  //125us -> 130 us
 					cdev->isoc_timeout_cnt ++;
 				}
 #endif
@@ -1401,11 +1423,12 @@ static void usbd_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
   */
 static void usbd_uac_status_dump_thread(void *param)
 {
-	UNUSED(param);
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	cdev->isoc_dump_thread = 1;
 	u32 loop_idx = 0;
 	u32 max_loop = USBD_UAC_DEBUG_LOOP_TIME / USBD_UAC_DEBUG_STEP_TIME;
+
+	UNUSED(param);
 
 	while (cdev->isoc_dump_thread) {
 		loop_idx = 0;
@@ -1460,7 +1483,7 @@ static u32 usbd_uac_read_ring_buf(usbd_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u
 		p_buf = &(pdata_ctrl->buf_array[pdata_ctrl->isoc_read_idx]);
 
 		if (*copy_len + p_buf->buf_valid_len > size) {
-			return 0; //get enough data
+			return HAL_OK; //get enough data
 		}
 
 		if (p_buf->buf_valid_len > 0) {
@@ -1473,7 +1496,7 @@ static u32 usbd_uac_read_ring_buf(usbd_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u
 
 	} while (pdata_ctrl->isoc_read_idx != pdata_ctrl->isoc_write_idx);
 
-	return 1;
+	return HAL_ERR_HW;
 }
 
 /* Exported functions --------------------------------------------------------*/
@@ -1552,6 +1575,10 @@ int usbd_uac_deinit(void)
 #if USBD_UAC_DEBUG
 	cdev->isoc_dump_thread = 0;
 #endif
+	usbd_unregister_class();
+
+	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_in));
+	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_out));
 
 	if (cdev->cb != NULL) {
 		if (cdev->cb->deinit != NULL) {
@@ -1559,11 +1586,6 @@ int usbd_uac_deinit(void)
 		}
 		cdev->cb = NULL;
 	}
-
-	usbd_unregister_class();
-
-	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_in));
-	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_out));
 
 	return HAL_OK;
 }
@@ -1579,7 +1601,8 @@ int usbd_uac_transmit_data(u8 *buf, u32 len)
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usb_dev_t *dev = cdev->dev;
 
-	if (!dev->is_ready) {
+	if (dev == NULL || dev->is_ready == 0) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Dev not ready\n");
 		return HAL_ERR_HW;
 	}
 
@@ -1608,9 +1631,13 @@ int usbd_uac_receive_data(void)
 	usbd_uac_buf_t *p_buf = NULL;
 	usbd_ep_t *ep_isoc_out = &cdev->ep_isoc_out;
 
-	if (!dev->is_ready) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "RX not ready\n");
-		return HAL_ERR_PARA;
+	if (dev == NULL || dev->is_ready == 0) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Dev not ready\n");
+		return HAL_ERR_HW;
+	}
+
+	if (pbuf_ctrl->buf_array == NULL) {
+		return HAL_ERR_HW;
 	}
 
 	if (usbd_uac_ep_enable(&(cdev->cb->out))) {
@@ -1633,10 +1660,10 @@ int usbd_uac_receive_data(void)
   */
 u8 usbd_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag)
 {
-	UNUSED(flag);
-
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_buf_ctrl_t *pbuf_ctrl;
+
+	UNUSED(flag);
 
 	/* all the transfer should finish */
 	/* TODO: re initiation the isoc buffer[usbd_uac_buf_ctrl_t] */
@@ -1702,15 +1729,21 @@ u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_out);
+	usb_dev_t *dev = cdev->dev;
 	u32 copy_len = 0;
 
+	if (dev == NULL || dev->is_ready == 0) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Dev not ready\n");
+		return copy_len;
+	}
+
 	if (pdata_ctrl->next_xfer == 0) {
-		return 0;
+		return copy_len;
 	}
 
 	if (time_out_ms == 0) {
 		if (pdata_ctrl->isoc_read_idx == pdata_ctrl->isoc_write_idx) { //no valid data
-			return 0;
+			return copy_len;
 		}
 
 		usbd_uac_read_ring_buf(pdata_ctrl, buffer, size, &copy_len);
@@ -1727,7 +1760,7 @@ u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms)
 				pdata_ctrl->read_wait_sema = 0;
 			} else {
 				/* if did not read any pkt, loop to check the wr/rd pos*/
-				if (usbd_uac_read_ring_buf(pdata_ctrl, buffer, size, &copy_len) == 0) {
+				if (usbd_uac_read_ring_buf(pdata_ctrl, buffer, size, &copy_len) == HAL_OK) {
 					break;
 				}
 			}
@@ -1747,10 +1780,12 @@ u32 usbd_uac_get_read_frame_cnt(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_out);
+	u32 read_cnt = 0;
 
 	if (pdata_ctrl == NULL) {
-		return 0;
+		return read_cnt;
 	}
 
-	return (pdata_ctrl->isoc_write_idx + pdata_ctrl->buf_array_cnt - pdata_ctrl->isoc_read_idx) % (pdata_ctrl->buf_array_cnt);
+	read_cnt = (pdata_ctrl->isoc_write_idx + pdata_ctrl->buf_array_cnt - pdata_ctrl->isoc_read_idx) % (pdata_ctrl->buf_array_cnt);
+	return read_cnt;
 }

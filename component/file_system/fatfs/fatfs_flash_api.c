@@ -84,16 +84,15 @@ int fatfs_flash_init(int interface)
 #else
 			VFS_DBG(VFS_INFO, "Mount existed FATFS failed, try to mkfs");
 
-			MKFS_PARM opt;
+			MKFS_PARM opt = {0};
 			opt.fmt = FM_ANY;
-			opt.au_size = 0;
 			ret = f_mkfs(fatfs_param->drv, &opt, NULL, 4096);
 			if (ret != FR_OK) {
 				VFS_DBG(VFS_ERROR, "Create FAT volume on Flash fail. (%d) ", ret);
 				goto fatfs_init_err;
 			}
 
-			ret = f_mount(&fatfs_param->fs, fatfs_param->drv, 0);
+			ret = f_mount(&fatfs_param->fs, fatfs_param->drv, 1);
 			if (ret != FR_OK) {
 				VFS_DBG(VFS_ERROR, "FATFS mount logical drive on Flash fail.");
 				goto fatfs_init_err;

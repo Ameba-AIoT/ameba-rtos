@@ -91,6 +91,15 @@ if(CONFIG_USBD_VENDOR)
     )
 endif()
 
+if(CONFIG_USBD_DFU)
+    ameba_list_append(private_includes
+        ${USBD_CLASS_DIR}/dfu
+    )
+    ameba_list_append(private_sources
+        ${USBD_CLASS_DIR}/dfu/usbd_dfu.c
+    )
+endif()
+
 ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_HID private_sources
     ${USBD_CLASS_DIR}/composite/usbd_composite_cdc_acm_hid.c
     ${USBD_CLASS_DIR}/composite/usbd_composite_cdc_acm.c

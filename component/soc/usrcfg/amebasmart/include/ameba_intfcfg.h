@@ -12,6 +12,8 @@ extern "C" {
 #endif
 
 extern SDIOHCFG_TypeDef sdioh_config;
+extern const u8 SDIO_PAD[2][6];
+extern u8 SDH_Pin_Grp;
 
 #ifdef __cplusplus
 }

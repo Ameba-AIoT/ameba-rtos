@@ -13,9 +13,9 @@
 extern lfs_t g_lfs;
 extern lfs_t g_second_lfs;
 extern int rt_lfs_init(lfs_t *lfs);
-int lfs_mount_flag = 0;
-int lfs2_mount_flag = 0;
-static struct dirent *lfs_ent;
+volatile uint8_t lfs_mount_flag = 0;
+volatile uint8_t lfs2_mount_flag = 0;
+
 
 int fmodeflags(const char *mode)
 {
@@ -285,13 +285,6 @@ struct dirent *littlefs_readdir(void *fs, vfs_file *finfo)
 {
 	lfs_dir_t *dir = (lfs_dir_t *)finfo->file;
 	struct lfs_info info;
-	if (lfs_ent == NULL) {
-		lfs_ent = rtos_mem_malloc(sizeof(struct dirent));
-		if (lfs_ent == NULL) {
-			return NULL;
-		}
-	}
-	memset(lfs_ent, 0, sizeof(struct dirent));
 	int err = lfs_dir_read(fs, dir, &info);
 	if (err <= 0) {
 		return NULL;
@@ -299,16 +292,16 @@ struct dirent *littlefs_readdir(void *fs, vfs_file *finfo)
 	if (info.name[0] == 0) {
 		return NULL;
 	}
-	lfs_ent->d_ino = 0;
-	lfs_ent->d_off = 0;
-	lfs_ent->d_reclen = info.size;
+	finfo->ent.d_ino = 0;
+	finfo->ent.d_off = 0;
+	finfo->ent.d_reclen = info.size;
 	if (info.type == LFS_TYPE_DIR) {
-		lfs_ent->d_type = DT_DIR;
+		finfo->ent.d_type = DT_DIR;
 	} else {
-		lfs_ent->d_type = DT_REG;
+		finfo->ent.d_type = DT_REG;
 	}
-	sprintf(lfs_ent->d_name, "%s", info.name);
-	return lfs_ent;
+	sprintf(finfo->ent.d_name, "%s", info.name);
+	return &finfo->ent;
 }
 
 int littlefs_closedir(void *fs, vfs_file *finfo)
@@ -317,10 +310,6 @@ int littlefs_closedir(void *fs, vfs_file *finfo)
 	lfs_dir_t *dir = (lfs_dir_t *)finfo->file;
 	ret = lfs_dir_close(fs, dir);
 	rtos_mem_free(dir);
-	if (lfs_ent != NULL) {
-		rtos_mem_free(lfs_ent);
-		lfs_ent = NULL;
-	}
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs Close directory fail: %d", ret);
 	}
@@ -407,9 +396,9 @@ int littlefs_mount(int interface)
 	if (ret) {
 		VFS_DBG(VFS_ERROR, "Littlefs mount fail, ret is %d", ret);
 		if (interface == VFS_INF_SECOND_FLASH) {
-			lfs2_mount_flag = -1;
+			lfs2_mount_flag = 0;
 		} else if (interface == VFS_INF_FLASH) {
-			lfs_mount_flag = -1;
+			lfs_mount_flag = 0;
 		}
 		return ret;
 	}
@@ -447,7 +436,7 @@ int littlefs_unmount(int interface)
 	return ret;
 }
 
-vfs_opt littlefs_drv = {
+const vfs_opt littlefs_drv = {
 	.open = littlefs_open,
 	.read = littlefs_read,
 	.write = littlefs_write,
@@ -472,5 +461,6 @@ vfs_opt littlefs_drv = {
 	.access = littlefs_access,
 	.mount = littlefs_mount,
 	.unmount = littlefs_unmount,
-	.TAG	= "littlefs"
+	.TAG	= "littlefs",
+	.vfs_type = VFS_LITTLEFS
 };

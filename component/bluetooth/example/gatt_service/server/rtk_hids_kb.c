@@ -152,7 +152,7 @@ static rtk_bt_gatt_attr_t hid_srv_attrs[] = {
 	/* 1, 2 */
 	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_PROTOCOL_MODE_CHAR,
 							   RTK_BT_GATT_CHRC_READ | RTK_BT_GATT_CHRC_WRITE_WITHOUT_RESP,
-							   RTK_BT_GATT_PERM_READ_AUTHEN | RTK_BT_GATT_PERM_READ_AUTHEN),
+							   RTK_BT_GATT_PERM_READ_AUTHEN | RTK_BT_GATT_PERM_WRITE_AUTHEN),
 
 	/* 3, 4 input report */
 	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_REPORT_CHAR,
@@ -200,13 +200,6 @@ static rtk_bt_gatt_attr_t hid_srv_attrs[] = {
 							   RTK_BT_GATT_CHRC_READ | RTK_BT_GATT_CHRC_WRITE | RTK_BT_GATT_CHRC_WRITE_WITHOUT_RESP,
 							   RTK_BT_GATT_PERM_READ_AUTHEN | RTK_BT_GATT_PERM_WRITE_AUTHEN),
 
-	// /* 21, 22 */
-	// RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_BOOT_MS_IN_REPORT_CHAR,
-	//                                         RTK_BT_GATT_CHRC_READ,
-	//                                 RTK_BT_GATT_PERM_READ_AUTHEN),
-	// /* 23 */
-	// RTK_BT_GATT_CCC(RTK_BT_GATT_PERM_READ_AUTHEN | RTK_BT_GATT_PERM_WRITE_AUTHEN),
-
 	/* 21, 22 */
 	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_HID_INFO_CHAR,
 							   RTK_BT_GATT_CHRC_READ,
@@ -215,7 +208,7 @@ static rtk_bt_gatt_attr_t hid_srv_attrs[] = {
 	/* 23, 24 */
 	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_HID_CONTROL_POINT_CHAR,
 							   RTK_BT_GATT_CHRC_WRITE_WITHOUT_RESP,
-							   RTK_BT_GATT_PERM_READ | RTK_BT_GATT_PERM_WRITE),
+							   RTK_BT_GATT_PERM_WRITE),
 
 	/* 25, 26 multimedia keyboard Input */
 	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_REPORT_CHAR,
@@ -519,6 +512,7 @@ void hid_srv_callback(uint8_t event, void *data)
 	case RTK_BT_GATTS_EVT_CCCD_IND:
 		hids_cccd_update_hdl(data);
 		break;
+
 	default:
 		break;
 	}

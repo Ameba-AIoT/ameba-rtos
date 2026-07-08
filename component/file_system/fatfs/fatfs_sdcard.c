@@ -33,7 +33,7 @@ static void sd_lock(void)
 	}
 
 	if (RTK_FAIL == rtos_mutex_take(sd_mutex, MUTEX_WAIT_TIMEOUT)) {
-		RTK_LOGE(NOTAG, "%s take mutex fail!\n");
+		RTK_LOGE(NOTAG, "sd_lock take mutex fail!\n");
 	}
 }
 
@@ -175,6 +175,7 @@ DRESULT SD_disk_write(const BYTE *buff, DWORD sector, /*unsigned int*/UINT count
 		if (!fatfs_init_status) {
 			VFS_DBG(VFS_ERROR, "sd card is not inserted");
 			res = STA_NODISK;
+			break;
 		}
 		res = interpret_sd_result(SD_WriteBlocks(sector, (uint8_t *)buff, count));
 		if (++retry_cnt >= 3) {
@@ -213,7 +214,7 @@ DRESULT SD_disk_ioctl(BYTE cmd, void *buff)
 		res = RES_OK;
 		break;
 	case GET_BLOCK_SIZE:	/* Get erase block size (for only f_mkfs()) */
-		*(DWORD *)buff = SD_BLOCK_SIZE;
+		*(DWORD *)buff = 1;
 		res = RES_OK;
 		break;
 	case CTRL_ERASE_SECTOR:/* Force erased a block of sectors (for only _USE_ERASE) */
@@ -354,6 +355,7 @@ DRESULT SD_disk_spi_write(const BYTE *buff, DWORD sector, /*unsigned int*/UINT c
 	do {
 		if (!fatfs_init_status) {
 			res = STA_NODISK;
+			break;
 		}
 		res = interpret_sd_result(sd_spi_write_data((uint8_t *)buff, sector, count));
 		if (++retry_cnt >= 3) {

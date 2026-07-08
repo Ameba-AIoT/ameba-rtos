@@ -90,8 +90,8 @@ DRESULT FLASH_disk_ioctl(BYTE cmd, void *buff)
 		break;
 
 	case GET_BLOCK_SIZE:	/* Get erase block size (for only f_mkfs()) */
-		*(DWORD *)buff = FLASH_BLOCK_SIZE;
-		res = RES_ERROR;
+		*(DWORD *)buff = FLASH_BLOCK_SIZE / SECTOR_SIZE_FLASH;
+		res = RES_OK;
 		break;
 	case CTRL_ERASE_SECTOR:/* Force erased a block of sectors (for only _USE_ERASE) */
 		res = RES_OK;
@@ -133,41 +133,54 @@ DRESULT FLASH_disk_read(BYTE *buff, DWORD sector, UINT count)
 #if _USE_WRITE == 1
 DRESULT FLASH_disk_write(const BYTE *buff, DWORD sector, UINT count)
 {
-	u8 sector_index = sector % SECTOR_NUM;
-	u32 start_addr = FLASH_APP_BASE + (sector / SECTOR_NUM) * FLASH_BLOCK_SIZE;
+	UINT remaining = count;
+	DWORD cur_sector = sector;
+	const BYTE *cur_buff = buff;
 
-	memset(fatfs_flash_buffer, 0xff, FLASH_BLOCK_SIZE);
+	while (remaining > 0) {
+		u8 sector_index = cur_sector % SECTOR_NUM;
+		u32 start_addr = FLASH_APP_BASE + (cur_sector / SECTOR_NUM) * FLASH_BLOCK_SIZE;
+		UINT sectors_this_block = SECTOR_NUM - sector_index;
+		if (sectors_this_block > remaining) {
+			sectors_this_block = remaining;
+		}
+
+		memset(fatfs_flash_buffer, 0xff, FLASH_BLOCK_SIZE);
 
 #ifdef CONFIG_SUPPORT_NAND_FLASH
-	u32 NandAddr, PageAddr, write_len = 0, first_sector;
-	if (fatfs_flash_is_nand) {
-		first_sector = (start_addr - FLASH_APP_BASE) / SECTOR_SIZE_FLASH;
-		FLASH_disk_read(fatfs_flash_buffer, first_sector, SECTOR_NUM);
-		memcpy(fatfs_flash_buffer + (sector_index * SECTOR_SIZE_FLASH), (BYTE *)buff, count * SECTOR_SIZE_FLASH);
+		u32 NandAddr, PageAddr, write_len = 0;
+		u32 first_sector = (start_addr - FLASH_APP_BASE) / SECTOR_SIZE_FLASH;
+		if (fatfs_flash_is_nand) {
+			FLASH_disk_read(fatfs_flash_buffer, first_sector, SECTOR_NUM);
+			memcpy(fatfs_flash_buffer + (sector_index * SECTOR_SIZE_FLASH), cur_buff, sectors_this_block * SECTOR_SIZE_FLASH);
 
-		while (write_len < FLASH_BLOCK_SIZE) {
-			NandAddr = FLASH_APP_BASE + first_sector * SECTOR_SIZE_FLASH + write_len;
-			PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
+			while (write_len < FLASH_BLOCK_SIZE) {
+				NandAddr = FLASH_APP_BASE + first_sector * SECTOR_SIZE_FLASH + write_len;
+				PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
 
-			if (write_len == 0) {
-				if (NAND_FTL_EraseBlock(PageAddr, 0)) {
+				if (write_len == 0) {
+					if (NAND_FTL_EraseBlock(PageAddr, 0)) {
+						return RES_ERROR;
+					}
+				}
+
+				if (NAND_FTL_WritePage(PageAddr, (uint8_t *)fatfs_flash_buffer + write_len, 0)) {
 					return RES_ERROR;
 				}
+				write_len += SECTOR_SIZE_FLASH;
 			}
-
-			if (NAND_FTL_WritePage(PageAddr, (uint8_t *)fatfs_flash_buffer + write_len, 0)) {
-				return RES_ERROR;
-			}
-			write_len += SECTOR_SIZE_FLASH;
-		}
-	} else
+		} else
 #endif
-	{
-		//deal with fisrt flash sector
-		flash_stream_read(&flash, start_addr, FLASH_BLOCK_SIZE, fatfs_flash_buffer);
-		memcpy(fatfs_flash_buffer + (sector_index * SECTOR_SIZE_FLASH), (BYTE *)buff, count * SECTOR_SIZE_FLASH);
-		flash_erase_sector(&flash, start_addr);
-		flash_stream_write(&flash, start_addr, FLASH_BLOCK_SIZE, fatfs_flash_buffer);
+		{
+			flash_stream_read(&flash, start_addr, FLASH_BLOCK_SIZE, fatfs_flash_buffer);
+			memcpy(fatfs_flash_buffer + (sector_index * SECTOR_SIZE_FLASH), cur_buff, sectors_this_block * SECTOR_SIZE_FLASH);
+			flash_erase_sector(&flash, start_addr);
+			flash_stream_write(&flash, start_addr, FLASH_BLOCK_SIZE, fatfs_flash_buffer);
+		}
+
+		cur_sector += sectors_this_block;
+		cur_buff += sectors_this_block * SECTOR_SIZE_FLASH;
+		remaining -= sectors_this_block;
 	}
 
 	return RES_OK;
@@ -236,8 +249,8 @@ DRESULT FLASH_second_disk_ioctl(BYTE cmd, void *buff)
 		break;
 
 	case GET_BLOCK_SIZE:	/* Get erase block size (for only f_mkfs()) */
-		*(DWORD *)buff = SECOND_FLASH_BLOCK_SIZE;
-		res = RES_ERROR;
+		*(DWORD *)buff = SECOND_FLASH_BLOCK_SIZE / SECOND_FLASH_SECTOR_SIZE;
+		res = RES_OK;
 		break;
 	case CTRL_ERASE_SECTOR:/* Force erased a block of sectors (for only _USE_ERASE) */
 		res = RES_OK;
@@ -267,22 +280,39 @@ DRESULT FLASH_second_disk_read(BYTE *buff, DWORD sector, UINT count)
 DRESULT FLASH_second_disk_write(const BYTE *buff, DWORD sector, UINT count)
 {
 	int res = 0;
-	u8 sector_index = sector % SECOND_SECTOR_NUM;
-	u32 start_addr = (sector / SECOND_SECTOR_NUM) * SECOND_FLASH_BLOCK_SIZE;
+	UINT remaining = count;
+	DWORD cur_sector = sector;
+	const BYTE *cur_buff = buff;
 
-	memset(fatfs_second_flash_buffer, 0xff, SECOND_FLASH_BLOCK_SIZE);
+	while (remaining > 0) {
+		u8 sector_index = cur_sector % SECOND_SECTOR_NUM;
+		u32 start_addr = (cur_sector / SECOND_SECTOR_NUM) * SECOND_FLASH_BLOCK_SIZE;
+		UINT sectors_this_block = SECOND_SECTOR_NUM - sector_index;
+		if (sectors_this_block > remaining) {
+			sectors_this_block = remaining;
+		}
+
+		memset(fatfs_second_flash_buffer, 0xff, SECOND_FLASH_BLOCK_SIZE);
 
 #ifdef CONFIG_SECOND_FLASH_NOR
-	DATA_FLASH_ReadStream(start_addr, SECOND_FLASH_BLOCK_SIZE, (u8 *)fatfs_second_flash_buffer);
-	memcpy(fatfs_second_flash_buffer + (sector_index * SECOND_FLASH_SECTOR_SIZE), (BYTE *)buff, count * SECOND_FLASH_SECTOR_SIZE);
-	DATA_FLASH_EraseXIP(EraseSector, start_addr);
-	DATA_FLASH_WriteStream(start_addr, SECOND_FLASH_BLOCK_SIZE, (u8 *)fatfs_second_flash_buffer);
+		DATA_FLASH_ReadStream(start_addr, SECOND_FLASH_BLOCK_SIZE, (u8 *)fatfs_second_flash_buffer);
+		memcpy(fatfs_second_flash_buffer + (sector_index * SECOND_FLASH_SECTOR_SIZE), cur_buff, sectors_this_block * SECOND_FLASH_SECTOR_SIZE);
+		DATA_FLASH_EraseXIP(EraseSector, start_addr);
+		DATA_FLASH_WriteStream(start_addr, SECOND_FLASH_BLOCK_SIZE, (u8 *)fatfs_second_flash_buffer);
 #else
-	res |= second_flash_read_stream(start_addr, SECOND_FLASH_BLOCK_SIZE, (char *)fatfs_second_flash_buffer);
-	memcpy(fatfs_second_flash_buffer + (sector_index * SECOND_FLASH_SECTOR_SIZE), (BYTE *)buff, count * SECOND_FLASH_SECTOR_SIZE);
-	res |= second_flash_erase_sector(start_addr);
-	res |= second_flash_write_stream(start_addr, SECOND_FLASH_BLOCK_SIZE, (char *)fatfs_second_flash_buffer);
+		res |= second_flash_read_stream(start_addr, SECOND_FLASH_BLOCK_SIZE, (char *)fatfs_second_flash_buffer);
+		memcpy(fatfs_second_flash_buffer + (sector_index * SECOND_FLASH_SECTOR_SIZE), cur_buff, sectors_this_block * SECOND_FLASH_SECTOR_SIZE);
+		res |= second_flash_erase_sector(start_addr);
+		res |= second_flash_write_stream(start_addr, SECOND_FLASH_BLOCK_SIZE, (char *)fatfs_second_flash_buffer);
+		if (res != 0) {
+			break;
+		}
 #endif
+		cur_sector += sectors_this_block;
+		cur_buff += sectors_this_block * SECOND_FLASH_SECTOR_SIZE;
+		remaining -= sectors_this_block;
+	}
+
 	return res == 0 ? RES_OK : RES_ERROR;
 }
 #endif

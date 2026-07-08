@@ -89,7 +89,7 @@ typedef struct {
 
 typedef struct {
 	Flash_InfoTypeDef MemInfo;
-	void *MfgOps;
+	const void *MfgOps;
 	__IO u8 CurTarget;
 	__IO u8 Initialized;
 	__IO u32 LastErasedBlockAddr;
@@ -109,4 +109,3 @@ u8 NAND_FTL_WritePage(u32 addr, const u8 *buf, u8 do_erase);
 u8 NAND_FTL_MfgInit(NAND_FTL_DeviceTypeDef *nand);
 
 #endif // _LFS_NAND_FTL_H
-
