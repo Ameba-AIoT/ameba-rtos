@@ -1862,7 +1862,7 @@ const COMMAND_TABLE usbh_uac_test_md_table[] = {
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_uac_init(usbh_uac_cb_t *cb, u8 frame_cnt)
+int usbh_uac_init(const usbh_uac_cb_t *cb, u8 frame_cnt)
 {
 	int ret;
 	usbh_uac_host_t *uac = &usbh_uac_host;
@@ -1894,7 +1894,6 @@ int usbh_uac_init(usbh_uac_cb_t *cb, u8 frame_cnt)
 		goto get_wd_buf_fail;
 	}
 
-	uac->cb = cb;
 	if (cb->init != NULL) {
 		ret = cb->init();
 		if (ret != HAL_OK) {
@@ -1902,6 +1901,8 @@ int usbh_uac_init(usbh_uac_cb_t *cb, u8 frame_cnt)
 			goto cb_init_fail;
 		}
 	}
+
+	uac->cb = cb;
 
 	usbh_register_class(&usbh_uac_driver);
 

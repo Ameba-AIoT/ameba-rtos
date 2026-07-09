@@ -41,7 +41,7 @@
  * @param[in] cb: Composite user callback
  * @return 0 on success, non-zero on failure
  */
-int usbd_composite_init(u32 cdc_bulk_out_xfer_size, u32 cdc_bulk_in_xfer_size, usbd_composite_cdc_acm_usr_cb_t *cdc_cb, usbd_composite_cb_t *cb);
+int usbd_composite_init(u32 cdc_bulk_out_xfer_size, u32 cdc_bulk_in_xfer_size, const usbd_composite_cdc_acm_usr_cb_t *cdc_cb, const usbd_composite_cb_t *cb);
 
 /**
  * @brief  DeInit composite class

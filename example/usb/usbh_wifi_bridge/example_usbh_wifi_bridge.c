@@ -64,7 +64,7 @@ static int cdc_ecm_cb_process(usb_host_t *host, u8 msg);
 static int cdc_ecm_cb_bulk_receive(u8 *pbuf, u32 Len);
 static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
 
-static usbh_config_t usbh_ecm_cfg = {
+static const usbh_config_t usbh_ecm_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = 0, //USBH_SOF_INTR
 	.isr_priority = INT_PRI_MIDDLE,
@@ -90,7 +90,7 @@ static usbh_config_t usbh_ecm_cfg = {
 #endif
 };
 
-static usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
+static const usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
 	.init   = cdc_ecm_cb_init,
 	.deinit = cdc_ecm_cb_deinit,
 	.attach = cdc_ecm_cb_attach,
@@ -99,7 +99,7 @@ static usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
 	.bulk_received = cdc_ecm_cb_bulk_receive,
 };
 
-static usbh_user_cb_t usbh_ecm_usr_cb = {
+static const usbh_user_cb_t usbh_ecm_usr_cb = {
 	.process = cdc_ecm_cb_process,
 	.validate = cdc_ecm_cb_device_check,
 };
@@ -424,7 +424,7 @@ static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 	return ERR_OK;
 }
 
-static void example_usbh_wifi_bridge_monitor_thread(void *param)
+static void example_usbh_bridge_monitor_thread(void *param)
 {
 	UNUSED(param);
 
@@ -455,7 +455,7 @@ static void example_usbh_wifi_bridge_monitor_thread(void *param)
 	}
 }
 
-static void example_usbh_wifi_bridge_bridge_thread(void *param)
+static void example_usbh_wifi_bridge_init_thread(void *param)
 {
 	UNUSED(param);
 
@@ -474,7 +474,7 @@ static void example_usbh_wifi_bridge_bridge_thread(void *param)
 }
 
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
-static void example_usbh_ecm_hotplug_thread(void *param)
+static void example_usbh_bridge_hotplug_thread(void *param)
 {
 	int ret = 0;
 
@@ -524,23 +524,23 @@ void example_usbh_wifi_bridge(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USB host usbh_wifi_bridge demo started\n");
 
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
-	ret = rtos_task_create(&hotplug_task, "example_usbh_ecm_hotplug_thread",
-						   example_usbh_ecm_hotplug_thread, NULL,
+	ret = rtos_task_create(&hotplug_task, "example_usbh_bridge_hotplug_thread",
+						   example_usbh_bridge_hotplug_thread, NULL,
 						   USBH_ECM_HOTPLUG_THREAD_STACK_SIZE, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
 	}
 #endif
 
-	ret = rtos_task_create(&monitor_task, "example_usbh_wifi_bridge_monitor_thread",
-						   example_usbh_wifi_bridge_monitor_thread, NULL,
+	ret = rtos_task_create(&monitor_task, "example_usbh_bridge_monitor_thread",
+						   example_usbh_bridge_monitor_thread, NULL,
 						   USBH_ECM_MONITOR_THREAD_STACK_SIZE, USBH_ECM_MONITOR_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USB host monitor_link_change thread: %d\n", ret);
 	}
 
-	ret = rtos_task_create(&bridge_task, "example_usbh_wifi_bridge_bridge_thread",
-						   example_usbh_wifi_bridge_bridge_thread, NULL,
+	ret = rtos_task_create(&bridge_task, "example_usbh_wifi_bridge_init_thread",
+						   example_usbh_wifi_bridge_init_thread, NULL,
 						   USBH_ECM_BRIDGE_THREAD_STACK_SIZE, USBH_ECM_BRIDGE_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USBH cdc_ecm_bridge_task thread\n");

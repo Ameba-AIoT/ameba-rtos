@@ -126,7 +126,7 @@ typedef struct {
 	usbh_pipe_t bulk_out;                       /**< BULK OUT pipe structure. */
 	usbh_pipe_t intr_in;                        /**< INTERRUPT IN pipe structure. */
 	usb_host_t *host;                           /**< Pointer to the USB host instance. */
-	usbh_cdc_acm_cb_t *cb;                      /**< Pointer to the user-defined callback structure. */
+	const usbh_cdc_acm_cb_t *cb;                      /**< Pointer to the user-defined callback structure. */
 	usb_cdc_line_coding_t *line_coding;    /**< Current line coding of the device. */
 	usb_cdc_line_coding_t *user_line_coding; /**< User requested line coding. */
 	u8 state;                                   /**< Current state of the CDC ACM host driver, @ref usbh_cdc_acm_state_t. */
@@ -153,7 +153,7 @@ typedef struct {
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb);
+int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb);
 
 /**
  * @brief De-initializes the CDC ACM host class driver.

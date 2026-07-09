@@ -119,7 +119,7 @@ static u8 play_buf[USB_AUDIO_BUF_SIZE];
 */
 static u8 recv_buf[USB_AUDIO_BUF_SIZE * 2];
 
-static usbd_config_t uac_cfg = {
+static const usbd_config_t uac_cfg = {
 	.speed = CONFIG_USBD_UAC_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -238,7 +238,7 @@ static void example_usbd_uac_hotplug_thread(void *param)
 				rtos_time_delay_ms(200);
 
 				wait_cnt = 0;
-				while (uac_playing && wait_cnt < 25) { /* 最多等待 ~500ms */
+				while (uac_playing && wait_cnt < 25) { /* max wait 500ms */
 					rtos_time_delay_ms(20);
 					wait_cnt++;
 				}

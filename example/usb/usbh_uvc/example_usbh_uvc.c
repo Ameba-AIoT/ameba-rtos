@@ -223,7 +223,7 @@ static rtos_sema_t uvc_httpc_done_sema = NULL;
 u8 uvc_buf[CONFIG_USBH_UVC_FRAME_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 #endif
 
-static usbh_config_t usbh_cfg = {
+static const usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
@@ -248,13 +248,13 @@ static usbh_config_t usbh_cfg = {
 #endif
 };
 
-static usbh_uvc_ctx_t uvc_cfg = {
+static const usbh_uvc_ctx_t uvc_cfg = {
 #if USBH_UVC_USE_HW
 	.hw_isr_pri = CONFIG_USBH_UVC_HW_IRQ_PRIORITY,
 #endif
 };
 
-static usbh_uvc_cb_t uvc_cb = {
+static const usbh_uvc_cb_t uvc_cb = {
 	.init = uvc_cb_init,
 	.deinit = uvc_cb_deinit,
 	.attach = uvc_cb_attach,

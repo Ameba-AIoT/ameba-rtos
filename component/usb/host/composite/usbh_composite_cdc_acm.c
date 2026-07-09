@@ -218,7 +218,7 @@ static void usbh_composite_cdc_acm_open_data_eps(usb_host_t *host, usbh_composit
 /**
   * @brief  Look up the dongle parameter entry that matches the device VID/PID.
   */
-static usbh_composite_cdc_acm_param_t *usbh_composite_cdc_acm_find_param(usbh_composite_cdc_acm_param_t *list, u16 vid, u16 pid)
+static const usbh_composite_cdc_acm_param_t *usbh_composite_cdc_acm_find_param(const usbh_composite_cdc_acm_param_t *list, u16 vid, u16 pid)
 {
 	while ((list != NULL) && (list->vid != 0)) {
 		if ((list->vid == vid) && (list->pid == pid)) {
@@ -764,7 +764,7 @@ static int usbh_composite_cdc_acm_process_intr_rx(usb_host_t *host)
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_composite_cdc_acm_init(usbh_composite_host_t *driver, usbh_composite_cdc_acm_usr_cb_t *cb)
+int usbh_composite_cdc_acm_init(usbh_composite_host_t *driver, const usbh_composite_cdc_acm_usr_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbh_composite_cdc_acm_host_t *cdc = &usbh_composite_cdc_acm_host;
@@ -785,7 +785,6 @@ int usbh_composite_cdc_acm_init(usbh_composite_host_t *driver, usbh_composite_cd
 	}
 #endif
 
-	cdc->cb = cb;
 	if (cb->init != NULL) {
 		ret = cb->init();
 		if (ret != HAL_OK) {
@@ -813,6 +812,8 @@ int usbh_composite_cdc_acm_init(usbh_composite_host_t *driver, usbh_composite_cd
 	ulc->b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
 	ulc->b.bParityType = LINE_CODING_PARITY_NO;
 	ulc->b.bDataBits = 8;
+
+	cdc->cb = cb;
 
 	return ret;
 }

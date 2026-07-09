@@ -696,7 +696,7 @@ static int usbh_vendor_process(usb_host_t *host, usbh_event_t *event)
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_vendor_init(usbh_vendor_cb_t *cb)
+int usbh_vendor_init(const usbh_vendor_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbh_vendor_host_t *vendor = &usbh_vendor_host;

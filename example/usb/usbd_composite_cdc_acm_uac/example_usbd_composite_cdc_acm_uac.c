@@ -85,7 +85,7 @@ static int composite_uac_cb_volume_changed(u8 volume);
 static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 
 /* Private variables ---------------------------------------------------------*/
-static usbd_config_t composite_cfg = {
+static const usbd_config_t composite_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBASMART)
@@ -100,12 +100,12 @@ static usbd_config_t composite_cfg = {
 #endif
 };
 
-static usbd_composite_cb_t composite_cb = {
+static const usbd_composite_cb_t composite_cb = {
 	.status_changed = composite_cb_status_changed,
 	.set_config = composite_cb_set_config,
 };
 
-static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
+static const usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 	.init = composite_cdc_acm_cb_init,
 	.deinit = composite_cdc_acm_cb_deinit,
 	.setup = composite_cdc_acm_cb_setup,
@@ -142,7 +142,7 @@ static u8 play_buf[COMP_USBD_AUDIO_BUF_SIZE];
 */
 static u8 recv_buf[COMP_USBD_AUDIO_BUF_SIZE * 2];
 
-static usbd_composite_uac_usr_cb_t composite_uac_usr_cb = {
+static const usbd_composite_uac_usr_cb_t composite_uac_usr_cb = {
 	.audio_ctx = NULL,
 	.in = {.enable = 0,}, /* current just support usb out,usb in TODO */
 	.out = {.enable = 1, },

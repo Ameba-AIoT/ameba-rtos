@@ -90,7 +90,7 @@ static rtos_sema_t cdc_acm_send_sema;
 static __IO int cdc_acm_total_rx_len = 0;
 static __IO int cdc_acm_is_ready = 0;
 
-static usbh_config_t usbh_cfg = {
+static const usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 	.ext_intr_enable = USBH_SOF_INTR,
@@ -117,7 +117,7 @@ static usbh_config_t usbh_cfg = {
 #endif
 };
 
-static usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
+static const usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
 	.init   = cdc_acm_cb_init,
 	.deinit = cdc_acm_cb_deinit,
 	.attach = cdc_acm_cb_attach,
@@ -131,7 +131,7 @@ static usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
 	.line_coding_changed = cdc_acm_cb_line_coding_changed
 };
 
-static usbh_user_cb_t usbh_usr_cb = {
+static const usbh_user_cb_t usbh_usr_cb = {
 	.process = cdc_acm_cb_process
 };
 

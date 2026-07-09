@@ -173,7 +173,7 @@ static u8 usbh_uac_record_buffer[USBH_COMPOSITE_UAC_HID_RECORD_BUFFER_SIZE];
  * @brief USB host controller configuration
  * Defines hardware parameters and priorities
  */
-static usbh_config_t usbh_cfg = {
+static const usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_FULL,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
@@ -201,7 +201,7 @@ static usbh_config_t usbh_cfg = {
 /**
  * @brief UAC (USB Audio Class) callback configuration
  */
-static usbh_composite_uac_usr_cb_t usbh_uac_cfg = {
+static const usbh_composite_uac_usr_cb_t usbh_uac_cfg = {
 	.init = usbh_uac_cb_init,
 	.deinit = usbh_uac_cb_deinit,
 	.attach = usbh_uac_cb_attach,
@@ -215,14 +215,14 @@ static usbh_composite_uac_usr_cb_t usbh_uac_cfg = {
 /**
  * @brief HID (Human Interface Device) callback configuration
  */
-static usbh_composite_hid_usr_cb_t usbh_hid_cfg = {
+static const usbh_composite_hid_usr_cb_t usbh_hid_cfg = {
 	.report = usbh_hid_cb_report,
 };
 
 /**
  * @brief General USB host event callbacks
  */
-static usbh_user_cb_t usbh_usr_cb = {
+static const usbh_user_cb_t usbh_usr_cb = {
 	.process = usbh_uac_cb_process
 };
 
@@ -598,6 +598,8 @@ static void example_usbh_comp_play_thread(void *param)
 						RTK_LOGS(TAG, RTK_LOG_ERROR, "Play err %d\n", usbh_uac_ctx.play.err_count);
 						goto play_stop;
 					}
+
+					rtos_time_delay_ms(2);
 					continue;
 				}
 

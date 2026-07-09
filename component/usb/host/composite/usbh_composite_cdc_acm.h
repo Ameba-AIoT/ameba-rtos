@@ -106,7 +106,7 @@ typedef struct {
 	*/
 	int(* line_coding_changed)(usb_cdc_line_coding_t *line_coding);
 
-	usbh_composite_cdc_acm_param_t *priv;
+	const usbh_composite_cdc_acm_param_t *priv;
 } usbh_composite_cdc_acm_usr_cb_t;
 
 /* CDC ACM host */
@@ -117,9 +117,9 @@ typedef struct {
 
 	usb_cdc_line_coding_t    *line_coding;      /**< Pointer to line coding  */
 	usb_cdc_line_coding_t    *user_line_coding; /**< Pointer to user line coding */
-	usbh_composite_cdc_acm_param_t          *priv_param;       /**< Pointer to private params */
-	usbh_composite_cdc_acm_param_t          *param_item;       /**< Pointer to choose param */
-	usbh_composite_cdc_acm_usr_cb_t         *cb;               /**< User callback structure */
+	const usbh_composite_cdc_acm_param_t    *priv_param;       /**< Pointer to private params */
+	const usbh_composite_cdc_acm_param_t    *param_item;       /**< Pointer to choose param */
+	const usbh_composite_cdc_acm_usr_cb_t   *cb;               /**< User callback structure */
 	usbh_composite_host_t                   *driver;           /**< Composite driver handle */
 
 	u8                                      state;             /**< Process status, ref usbh_composite_cdc_acm_state_t */
@@ -150,7 +150,7 @@ extern const usbh_class_driver_t usbh_composite_cdc_acm_driver;/**< Point to com
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
-int usbh_composite_cdc_acm_init(usbh_composite_host_t *host, usbh_composite_cdc_acm_usr_cb_t *cb);
+int usbh_composite_cdc_acm_init(usbh_composite_host_t *host, const usbh_composite_cdc_acm_usr_cb_t *cb);
 
 /**
  * @brief  De-initializes the CDC ACM host class driver and releases resources.

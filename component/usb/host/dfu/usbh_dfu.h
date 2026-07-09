@@ -146,9 +146,9 @@ typedef struct {
  */
 typedef struct {
 	usb_host_t          *host;          /**< Pointer to the USB host handle (set on attach). */
-	usbh_dfu_cb_t       *cb;            /**< Pointer to the user-supplied callback table. */
+	const usbh_dfu_cb_t *cb;            /**< Pointer to the user-supplied callback table. */
 	u8                  *xfer_buf;      /**< DMA-aligned transfer buffer (USBH_DFU_XFER_SIZE bytes). */
-	usb_dfu_func_desc_t func_desc;     /**< Parsed DFU Functional Descriptor fields. */
+	usb_dfu_func_desc_t func_desc;      /**< Parsed DFU Functional Descriptor fields. */
 	usbh_dfu_state_t     state;         /**< Current host-side DFU state machine state. */
 	u8                   dev_state;     /**< Latest device-side bState from GETSTATUS. */
 	u8                   dev_status;    /**< Latest device-side bStatus from GETSTATUS. */
@@ -194,7 +194,7 @@ typedef struct {
  * @param[in] cb: Pointer to the user-supplied callback structure.
  * @return HAL_OK on success, HAL_ERR_PARA if cb is NULL, HAL_ERR_MEM on allocation failure.
  */
-int usbh_dfu_init(usbh_dfu_cb_t *cb);
+int usbh_dfu_init(const usbh_dfu_cb_t *cb);
 
 /**
  * @brief De-initializes the DFU host class driver and frees all resources.

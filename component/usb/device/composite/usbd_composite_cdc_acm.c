@@ -556,7 +556,7 @@ static int composite_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
   * @param  cb: CDC ACM user callback
   * @retval Status
   */
-int usbd_composite_cdc_acm_init(usbd_composite_dev_t *cdev, u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, usbd_composite_cdc_acm_usr_cb_t *cb)
+int usbd_composite_cdc_acm_init(usbd_composite_dev_t *cdev, u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, const usbd_composite_cdc_acm_usr_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbd_composite_cdc_acm_dev_t *cdc = &composite_cdc_acm_dev;

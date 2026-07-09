@@ -995,7 +995,7 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_msc_init(usbh_msc_cb_t *cb)
+int usbh_msc_init(const usbh_msc_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbh_msc_host_t *msc = &usbh_msc_host;

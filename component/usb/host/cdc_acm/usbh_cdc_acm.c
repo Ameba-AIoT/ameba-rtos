@@ -536,7 +536,7 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb)
+int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;

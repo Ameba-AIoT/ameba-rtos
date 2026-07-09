@@ -760,7 +760,7 @@ static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
   * @param  cb: CDC ACM user callback
   * @retval Status
   */
-int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, usbd_cdc_acm_cb_t *cb)
+int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, const usbd_cdc_acm_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbd_cdc_acm_dev_t *cdc = &usbd_cdc_acm_dev;

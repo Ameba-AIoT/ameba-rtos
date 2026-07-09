@@ -164,7 +164,7 @@ typedef struct {
 	usbd_ep_t ep_bulk_out;      /**< BULK OUT endpoint structure. */
 	usbd_ep_t ep_intr_in;       /**< INTERRUPT IN endpoint structure. */
 	usb_dev_t *dev;             /**< Pointer to the USB device instance. */
-	usbd_cdc_acm_cb_t *cb;      /**< Pointer to the user-defined callback structure. */
+	const usbd_cdc_acm_cb_t *cb;      /**< Pointer to the user-defined callback structure. */
 #if defined(CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST) && (CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST == 1)
 	u16 intr_notify_idx;        /**< Index for managing interrupt notifications. */
 #endif
@@ -191,7 +191,7 @@ typedef struct {
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, usbd_cdc_acm_cb_t *cb);
+int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, const usbd_cdc_acm_cb_t *cb);
 
 /**
  * @brief De-initializes the CDC ACM class driver.

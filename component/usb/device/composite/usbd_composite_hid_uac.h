@@ -24,8 +24,8 @@
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbd_composite_init(usbd_composite_hid_usr_cb_t *hid_cb, usbd_composite_uac_usr_cb_t *uac_cb,
-						usbd_composite_cb_t *cb);
+int usbd_composite_init(const usbd_composite_hid_usr_cb_t *hid_cb, const usbd_composite_uac_usr_cb_t *uac_cb,
+						const usbd_composite_cb_t *cb);
 
 void usbd_composite_deinit(void);
 

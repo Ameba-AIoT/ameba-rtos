@@ -28,7 +28,7 @@ static const char *const TAG = "DFU";
 #define USBD_DFU_RECONF_THREAD_STACK_SIZE         768U
 /* Private variables ---------------------------------------------------------*/
 
-static usbd_config_t dfu_cfg = {
+static const usbd_config_t dfu_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.isr_priority = INT_PRI_MIDDLE,
 	.diag_enable = 1,

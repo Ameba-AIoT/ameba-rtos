@@ -11,6 +11,8 @@ from .sense_status import *
 from .device_info import *
 from .next_op import *
 from .flash_utils import *
+from .rtk_utils import RtkUtils
+
 
 BAUDSET = 0x81
 QUERY = 0x02
@@ -33,6 +35,16 @@ OTP_RRAW = 0x40
 OTP_WRAW = 0xC1
 OTP_RMAP = 0x42
 OTP_WMAP = 0xC3
+KEY_PROG = 0xC4
+
+MEM_TYPE_META = 0x7F
+WRITE_TYPE_ENCRYPTED_BIT = 0x80
+WRITE_TYPE_MEM_MASK = 0x7F
+
+META_ENC_MODE_NONE = 0x00
+META_ENC_MODE_CTR = 0x01
+META_ENC_MODE_XTS = 0x02
+META_ENC_MODE_GCM = 0x03
 
 ACK_BUF_EMPTY = 0xB0
 ACK_BUF_FULL = 0xB1
@@ -153,9 +165,14 @@ class FloaderHandler(object):
                         self.logger.debug(f"Unexpected response opcode {ret_byte.hex()}")
                 else:
                     if ret_byte[0] == ACK_BUF_FULL:
-                        self.logger.debug(f"ACK: Rx buffer full, wait {self.setting.request_retry_interval_second}s")
-                        time.sleep(self.setting.request_retry_interval_second)
+                        # Frame was accepted (queue full). Break out as success.
+                        self.logger.debug(f"ACK: Rx buffer full (frame accepted)")
                         ret = ErrType.OK
+                    elif ret_byte[0] == 0xE4:
+                        # FIFO overflow — frame was NOT processed. Must retry (do not break).
+                        self.logger.debug(f"ERR_FULL (0xE4): UART FIFO overflow, retrying")
+                        time.sleep(self.setting.request_retry_interval_second)
+                        # Leave ret as non-OK so the while loop retries the frame
                     elif ret_byte[0] == ACK_BUF_EMPTY:
                         self.logger.debug(f"Response: ACK")
                         ret = ErrType.OK
@@ -163,7 +180,7 @@ class FloaderHandler(object):
                     elif ret_byte[0] >= ErrType.DEV_ERR_BASE.value:
                         ret = ret_byte
                         self.logger.debug(f"Negative response: {ret_byte}")
-                        if ret_byte[0] == ErrType.DEV_FULL.value or ErrType.DEV_BUSY.value:
+                        if ret_byte[0] in (ErrType.DEV_FULL.value, ErrType.DEV_BUSY.value):
                             time.sleep(self.setting.request_retry_interval_second)
                     else:
                         ret = ErrType.SYS_PROTO
@@ -176,7 +193,6 @@ class FloaderHandler(object):
         except Exception as err:
             self.logger.debug(f"Response exception: {err}")
             ret = ErrType.SYS_IO
-
         return ret, response_bytes
 
     def sense(self, timeout, op_code=None, data=None):
@@ -198,10 +214,15 @@ class FloaderHandler(object):
                         ret = ErrType.SYS_PROTO
                         self.logger.error(
                             f"Sense protocol error: expect opcode-data {op_code.hex()}-{hex(data)}, get {hex(sense_status.op_code)}-{hex(sense_status.data)}")
+                    elif (data is not None) and sense_status.data != data:
+                        # Silent-loss guard: when a WRITE frame is dropped (e.g. UART FIFO
+                        # overflow on the device), floader's last-processed addr lags
+                        # behind what the host sent. Without this check, downloads finish
+                        # "successfully" but flash is missing pages → CHKSM fails later.
+                        ret = ErrType.SYS_PROTO
+                        self.logger.error(
+                            f"Sense data mismatch: opcode={hex(sense_status.op_code)} expect data={hex(data)}, get {hex(sense_status.data)} — frame loss")
                     else:
-                        if (data is not None) and sense_status.data != data:
-                            self.logger.debug(
-                                f"Sense protocol warning: opcode {op_code} expect data {data}, get {sense_status.data}, ignored")
                         self.logger.debug("Sense ok")
                 else:
                     self.logger.debug(f"Sense fail to parse sense response")
@@ -373,6 +394,49 @@ class FloaderHandler(object):
 
         return ret
 
+    def write_meta_data(self, enc_mode=META_ENC_MODE_NONE, iv=b"", key_map=b"",
+                        rsip_meta=None):
+        """Send WRITE Type=0x7F to set encryption meta data before binary download.
+
+        Two calling modes:
+
+        RSIP multi-region (new, preferred):
+            rsip_meta = bytes produced by manifest_parser.build_rsip_meta().
+            Format: num_regions(1B) + N × (enc_mode + rsip_iv[8] + logical_start[4]).
+            Pass rsip_meta=... and leave enc_mode/iv/key_map at defaults.
+
+        Legacy single enc_mode (backward compatible):
+            Pass enc_mode + optional iv/key_map.  Used by non-RSIP flows.
+        """
+        if rsip_meta is not None:
+            meta_data = rsip_meta
+            # New format: rsip_meta[0]=meta_type, rsip_meta[1]=num_regions
+            self.logger.info(
+                f"WRITE meta (RSIP): {len(rsip_meta)} bytes, "
+                f"meta_type=0x{rsip_meta[0]:02x}, {rsip_meta[1]} region(s)")
+        else:
+            meta_data = bytes([enc_mode]) + iv + key_map
+            self.logger.debug(
+                f"WRITE meta: enc_mode={enc_mode}, iv_len={len(iv)}, "
+                f"map_len={len(key_map)}")
+
+        request_data = [WRITE]
+        request_data.append(MEM_TYPE_META)
+        request_data.extend(list((0).to_bytes(4, byteorder="little")))  # addr = 0
+        request_data.extend(meta_data)
+
+        request_bytes = bytearray(request_data)
+        ret, _ = self.send_request(request_bytes, len(request_bytes),
+                                   self.setting.async_response_timeout_in_second, is_sync=False)
+        if ret != ErrType.OK:
+            self.logger.error(f"WRITE meta request fail: {ret}")
+            return ret
+
+        ret, _ = self.sense(self.setting.sync_response_timeout_in_second, op_code=WRITE, data=0)
+        if ret != ErrType.OK:
+            self.logger.error(f"WRITE meta sense fail: {ret}")
+        return ret
+
     def read(self, mem_type, addr, size, timeout):
         resp = None
 
@@ -386,14 +450,14 @@ class FloaderHandler(object):
         ret, resp_ack = self.send_request(read_bytes, len(read_bytes), timeout)
         if ret == ErrType.OK:
             if resp_ack[0] == READ:
-                resp = resp_ack[1:]
+                resp = bytes(resp_ack[1:size + 1])
             else:
                 self.logger.debug(f"READ got unexpected response {hex(resp_ack[0])}")
                 ret = ErrType.SYS_PROTO
         else:
             self.logger.debug(f"READ fail: {ret}")
 
-        return ret
+        return ret, resp
 
     def checksum(self, mem_type,  start_addr, end_addr, size, timeout):
         chk_rest = 0
@@ -642,5 +706,30 @@ class FloaderHandler(object):
             self.logger.debug("OTP_WMAP done")
         else:
             self.logger.debug(f"OTP_WMAP fail: {ret}")
+
+        return ret
+
+    def key_prog(self, key_type, lock, address, key_data=b"", raw_data=b"", enc_data=b""):
+        request_data = [KEY_PROG]
+        request_data.append(key_type & 0xFF)
+        request_data.append(lock & 0xFF)
+        request_data.extend(list(address.to_bytes(4, byteorder="little")))
+
+        for data in (key_data, raw_data, enc_data):
+            request_data.extend(list(len(data).to_bytes(4, byteorder="little")))
+            request_data.extend(data)
+
+        request_bytes = bytearray(request_data)
+        self.logger.debug(
+            f"KEY_PROG: type={key_type}, lock={lock}, addr={hex(address)}, key_len={len(key_data)}, raw_len={len(raw_data)}, enc_len={len(enc_data)}")
+        ret, _ = self.send_request(request_bytes, len(request_bytes), self.setting.async_response_timeout_in_second,
+                                   is_sync=False)
+        if ret != ErrType.OK:
+            self.logger.error(f"KEY_PROG request fail: {ret}")
+            return ret
+
+        ret, _ = self.sense(self.setting.sync_response_timeout_in_second, op_code=KEY_PROG, data=address)
+        if ret != ErrType.OK:
+            self.logger.error(f"KEY_PROG fail: {ret}")
 
         return ret
