@@ -85,7 +85,7 @@ static int composite_uac_cb_volume_changed(u8 volume);
 static int composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 
 /* Private variables ---------------------------------------------------------*/
-static usbd_config_t composite_cfg = {
+static const usbd_config_t composite_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBASMART)
@@ -100,12 +100,12 @@ static usbd_config_t composite_cfg = {
 #endif
 };
 
-static usbd_composite_cb_t composite_cb = {
+static const usbd_composite_cb_t composite_cb = {
 	.status_changed = composite_cb_status_changed,
 	.set_config = composite_cb_set_config,
 };
 
-static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
+static const usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 	.init = composite_cdc_acm_cb_init,
 	.deinit = composite_cdc_acm_cb_deinit,
 	.setup = composite_cdc_acm_cb_setup,
@@ -338,8 +338,10 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				D0:	DTR, 0 - Not Present, 1 - Present
 		*/
 		composite_cdc_acm_ctrl_line_state = req->wValue;
-		UNUSED(composite_cdc_acm_ctrl_line_state);
-
+		if (composite_cdc_acm_ctrl_line_state & 0x01) {
+			/* VCOM port activate */
+			USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
+		}
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
@@ -502,7 +504,7 @@ static void example_audio_track_play(void)
 	//user should set sdk/component/soc/**/usrcfg/include/ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_PIN to make sure amp is enabled.
 	AudioService_Init();
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio ch:%d,rate:%d,bits=%d\n", g_track_channel, g_track_rate, g_track_format);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio ch:%u,rate:%u,bits=%u\n", g_track_channel, g_track_rate, g_track_format);
 
 	switch (g_track_format) {
 	case 16:
@@ -588,14 +590,14 @@ static void example_audio_track_play(void)
 	while (!audio_task_stop) {
 		read_dat_len = usbd_composite_uac_read(recv_buf, COMP_USBD_AUDIO_BUF_SIZE, 500, &zero_pkt);
 		if (zero_pkt) {
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Audio track start %d-0x%08x\n", read_dat_len, zero_pkt);
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Audio track start %u-0x%08x\n", read_dat_len, zero_pkt);
 			zero_pkt = 0;
 		}
 		read_cnt ++;
 		if (read_dat_len > 0) {
 			total_len += read_dat_len;
 			if (read_cnt % 200 == 0) {
-				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Audio track get %d %d\n", read_dat_len, total_len);
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Audio track get %u %u\n", read_dat_len, total_len);
 			}
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Audio Read Timeout\n");

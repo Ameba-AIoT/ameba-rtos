@@ -144,8 +144,8 @@ static void usbd_uac_status_dump_thread(void *param);
 #endif
 static inline void usbd_uac_get_audio_data_cnt(u32 audio_len);
 static inline u16 usbd_uac_get_ring_buf_cnt(u8 speed);
-static u16 usbd_uac_get_mps(usbd_audio_cfg_t *params, u8 speed);
-static inline u8 usbd_uac_ep_enable(usbd_audio_cfg_t *ep);
+static u16 usbd_uac_get_mps(const usbd_audio_cfg_t *params, u8 speed);
+static inline u8 usbd_uac_ep_enable(const usbd_audio_cfg_t *ep);
 static bool usbd_uac_is_valid_sample_rate(u32 freq, u8 speed);
 
 /* Private variables ---------------------------------------------------------*/
@@ -623,7 +623,7 @@ static u16 usbd_uac_get_ring_buf_cnt(u8 speed)
   * @param  speed: USB connection speed
   * @retval Calculated MPS
   */
-static u16 usbd_uac_get_mps(usbd_audio_cfg_t *params, u8 speed)
+static u16 usbd_uac_get_mps(const usbd_audio_cfg_t *params, u8 speed)
 {
 	u16 mps_value = 0;
 
@@ -730,7 +730,7 @@ static int usbd_uac_ep_buf_ctrl_init(usbd_uac_buf_ctrl_t *buf_ctrl, usbd_audio_c
   * @param  ep: PUSB audio endpoint config
   * @retval Status
   */
-static inline u8 usbd_uac_ep_enable(usbd_audio_cfg_t *ep)
+static inline u8 usbd_uac_ep_enable(const usbd_audio_cfg_t *ep)
 {
 	if (ep) {
 		return ep->enable;
@@ -879,7 +879,7 @@ static u8 usbd_uac_volume_linear_interpolation(const u8 x_points[], const s16 y_
 static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
-	usbd_uac_cb_t *cb = cdev->cb;
+	const usbd_uac_cb_t *cb = cdev->cb;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 	int ret = HAL_OK;
@@ -1122,7 +1122,7 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 static int usbd_uac_handle_sof(usb_dev_t *dev)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
-	usbd_uac_cb_t *cb = cdev->cb;
+	const usbd_uac_cb_t *cb = cdev->cb;
 
 	UNUSED(dev);
 
@@ -1145,7 +1145,7 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 {
 	int ret = HAL_OK;
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
-	usbd_uac_cb_t *cb = cdev->cb;
+	const usbd_uac_cb_t *cb = cdev->cb;
 	usb_setup_req_t *p_ctrl_req = &(cdev->ctrl_req);
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
@@ -1505,7 +1505,7 @@ static u32 usbd_uac_read_ring_buf(usbd_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u
   * @param  cb: Callback functions for audio events
   * @retval Status
   */
-int usbd_uac_init(usbd_uac_cb_t *cb)
+int usbd_uac_init(const usbd_uac_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;

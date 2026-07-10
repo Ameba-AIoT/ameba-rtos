@@ -795,7 +795,7 @@ static void usbh_composite_hid_msg_parse_thread(void *param)
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_composite_hid_init(usbh_composite_host_t *driver, usbh_composite_hid_usr_cb_t *cb)
+int usbh_composite_hid_init(usbh_composite_host_t *driver, const usbh_composite_hid_usr_cb_t *cb)
 {
 	usbh_composite_hid_t *hid = &usbh_composite_hid;
 	int ret;
@@ -813,7 +813,6 @@ int usbh_composite_hid_init(usbh_composite_host_t *driver, usbh_composite_hid_us
 		return HAL_ERR_MEM;
 	}
 
-	hid->cb = cb;
 	if (cb->init != NULL) {
 		ret = cb->init();
 		if (ret != HAL_OK) {
@@ -840,6 +839,8 @@ int usbh_composite_hid_init(usbh_composite_host_t *driver, usbh_composite_hid_us
 		hid->hid_ctrl_buf = NULL;
 		return HAL_ERR_UNKNOWN;
 	}
+
+	hid->cb = cb;
 
 	return HAL_OK;
 }

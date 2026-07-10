@@ -203,7 +203,7 @@ typedef struct {
 	usbd_ep_t ep_intr_in;		/**< INTR IN endpoint structure */
 	usbd_ep_t ep_intr_out;		/**< INTR OUT endpoint structure */
 	usb_dev_t *dev;				/**< Pointer to the USB device instance */
-	usbd_vendor_cb_t *cb;		/**< Pointer to the user-defined callback structure */
+	const usbd_vendor_cb_t *cb;		/**< Pointer to the user-defined callback structure */
 	u8 alt_setting;				/**< Alternate setting number of the current interface */
 } usbd_vendor_dev_t;
 /** @} End of Device_Vendor_Types group */
@@ -227,7 +227,7 @@ typedef struct {
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_vendor_init(usbd_vendor_cb_t *cb);
+int usbd_vendor_init(const usbd_vendor_cb_t *cb);
 
 /**
  * @brief De-initializes the Vendor class driver.

@@ -39,7 +39,7 @@
  * @param[in] uac_cb: UAC user callback
  * @return 0 on success, non-zero on failure.
  */
-int usbh_composite_init(usbh_composite_hid_usr_cb_t *hid_cb, usbh_composite_uac_usr_cb_t *uac_cb);
+int usbh_composite_init(const usbh_composite_hid_usr_cb_t *hid_cb, const usbh_composite_uac_usr_cb_t *uac_cb);
 /**
  * @brief  DeInit composite class
  * @return None

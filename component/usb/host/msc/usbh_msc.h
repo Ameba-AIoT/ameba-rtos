@@ -183,7 +183,7 @@ typedef struct {
 	usbh_pipe_t bulk_out;                  /**< Pipe handle for the Bulk OUT endpoint. */
 	usbh_bot_handle_t hbot;                /**< Handle for the BOT protocol layer. */
 	usbh_msc_lun_t unit[USBH_MSC_MAX_LUN]; /**< Array to hold information for each LUN. */
-	usbh_msc_cb_t *cb;                     /**< Pointer to the user-registered callback structure. */
+	const usbh_msc_cb_t *cb;                     /**< Pointer to the user-registered callback structure. */
 	usb_host_t *host;                      /**< Pointer to the parent USB host structure. */
 	u8 *max_lun_buf;                       /**< Buffer to hold the result of GET MAX LUN request. */
 	u32 tick;                              /**< A tick counter for timeouts. */
@@ -211,7 +211,7 @@ typedef struct {
  * @param[in] cb: Pointer to a user callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_msc_init(usbh_msc_cb_t *cb);
+int usbh_msc_init(const usbh_msc_cb_t *cb);
 
 /**
  * @brief De-initializes the MSC class driver.

@@ -193,7 +193,7 @@ typedef struct {
 	__IO u32 event_cnt;                       /**< Debug: Event counter */
 #endif
 	usbh_composite_host_t *driver;            /**< Parent composite driver handle */
-	usbh_composite_hid_usr_cb_t *cb;          /**< User callback pointers */
+	const usbh_composite_hid_usr_cb_t *cb;    /**< User callback pointers */
 	u8 *report_desc;                          /**< Alias pointer into hid_ctrl_buf (zero-copy). */
 	u8 *hid_ctrl_buf;                         /**< General-purpose control transfer buffer (512 B); also backs report_desc.*/
 	u8 report_desc_status;                    /**< Status of report descriptor retrieval */
@@ -224,7 +224,7 @@ extern const usbh_class_driver_t usbh_composite_hid_driver;
  * @param  cb: Pointer to user callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_composite_hid_init(usbh_composite_host_t *chost, usbh_composite_hid_usr_cb_t *cb);
+int usbh_composite_hid_init(usbh_composite_host_t *chost, const usbh_composite_hid_usr_cb_t *cb);
 
 /**
  * @brief  De-Initialize the Composite HID class.

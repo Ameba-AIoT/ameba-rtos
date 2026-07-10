@@ -43,3 +43,9 @@ ChangeLog:
                   (4) Enable DTR/RTS function as default
                   (5) Fix version compatibility issues
 20260525  v1.1.7  Fix NOR flash erase size error
+20260701  v1.1.8  (1) Support merged image auto-split by device profile layout
+                  (2) Support NAND flash full chip erase
+                  (3) Support memory type auto-derivation from device profile
+                  (4) Fix worker thread exit code not propagated to main process during multi-port download
+                  (5) Fix post-processing effect not applied issue
+                  (6) Reorganize Settings.json into General/GUIRunTime sections (backward compatible)

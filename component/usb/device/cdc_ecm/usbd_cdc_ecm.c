@@ -42,7 +42,7 @@ enum usbd_cdc_ecm_dongle_mac_type_t {
  * Must be long enough to cover the ring-buffer drain time under peak throughput:
  *   USB HS (480 Mbps bus, ~40 MB/s BULK effective): BULK_TX_RB_SIZE - 1514 B / 40 MB/s -> 0.4 ms
  *   USB FS ( 12 Mbps bus, ~1.5 MB/s BULK effective): BULK_TX_RB_SIZE - 1514 B / 1.5 MB/s -> 10 ms
- * 10 ms gives 2¨C6 * headroom for normal bursts without risking a noticeable
+ * 10 ms gives 2 ~ 6 * headroom for normal bursts without risking a noticeable
  * tcpip-task freeze when the host stops polling BULK IN (stuck-TX scenario). */
 #define USBD_CDC_ECM_BULK_TX_TIMEOUT_MS               10U
 
@@ -83,7 +83,7 @@ enum usbd_cdc_ecm_dongle_mac_type_t {
  *   trigger the endpoint as soon as the thread frees the buffer.
  *
  * rx_xfer_idx tracks which of the two buffers is currently armed for USB OUT. */
-#define USBD_CDC_ECM_RX_THREAD_STACK_SIZE             1024U
+#define USBD_CDC_ECM_RX_THREAD_STACK_SIZE             1280U
 #define USBD_CDC_ECM_RX_THREAD_PRIORITY               6U
 #define USBD_CDC_ECM_RX_SEMA_TAKE_TIMEOUT_MS          100U
 
@@ -108,8 +108,8 @@ static void cdc_ecm_bulk_tx_start_from_rb(void);
 static int cdc_ecm_intr_in_send(void *data, u16 len);
 static int cdc_ecm_send_notification(void);
 static inline u8 cdc_ecm_char_to_hex(u8 value);
-static void cdc_ecm_mac_to_string(u8 *mac, char *mac_str);
-static void cdc_ecm_set_mac(u8 *mac);
+static void cdc_ecm_mac_to_string(const u8 *mac, char *mac_str);
+static void cdc_ecm_set_mac(const u8 *mac);
 static int cdc_ecm_bulk_send(u8 *buf, u32 len);
 #if USBD_CDC_ECM_STATE_TRACE_ENABLE
 static void cdc_ecm_trace_task_init(void);
@@ -404,7 +404,7 @@ static inline u8 cdc_ecm_char_to_hex(u8 value)
  * @param mac:     Input MAC address buffer (6 bytes).
  * @param mac_str: Output null-terminated string (must be at least 13 bytes).
  */
-static void cdc_ecm_mac_to_string(u8 *mac, char *mac_str)
+static void cdc_ecm_mac_to_string(const u8 *mac, char *mac_str)
 {
 	u8 str_index = 0;
 	u8 i;
@@ -424,7 +424,7 @@ static void cdc_ecm_mac_to_string(u8 *mac, char *mac_str)
  * @brief Set the device MAC address from an external source.
  * @param mac: Pointer to a 6-byte MAC address buffer. NULL is ignored.
  */
-static void cdc_ecm_set_mac(u8 *mac)
+static void cdc_ecm_set_mac(const u8 *mac)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 
@@ -433,7 +433,7 @@ static void cdc_ecm_set_mac(u8 *mac)
 		return;
 	}
 
-	memcpy((void *) & (ecm->mac[0]), (void *)mac, USBD_CDC_ECM_MAC_STR_LEN);
+	memcpy((void *) & (ecm->mac[0]), (const void *)mac, USBD_CDC_ECM_MAC_STR_LEN);
 	ecm->mac_src_type = CDC_ECM_MAC_UPPER_LAYER_SET;
 
 	ecm->mac_valid = 1;
@@ -1273,7 +1273,7 @@ static void cdc_ecm_trace_task_deinit(void)
  * @param cb: User callbacks
  * @retval Status
  */
-int usbd_cdc_ecm_init(usbd_cdc_ecm_cb_t *cb)
+int usbd_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	usbd_ep_t *ep_bulk_in = &ecm->ep_bulk_in;
@@ -1286,6 +1286,8 @@ int usbd_cdc_ecm_init(usbd_cdc_ecm_cb_t *cb)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
 		return HAL_ERR_PARA;
 	}
+
+	memset((void *)ecm, 0, sizeof(usbd_cdc_ecm_dev_t));
 
 	ecm->ctrl_req.bRequest = 0xFFU;
 
@@ -1375,7 +1377,7 @@ int usbd_cdc_ecm_init(usbd_cdc_ecm_cb_t *cb)
 	if ((cb != NULL) && (cb->priv != NULL) && (cb->priv->mac_value != NULL)) {
 		cdc_ecm_set_mac(cb->priv->mac_value);
 	} else {
-		cdc_ecm_set_mac((u8 *)ecm_mac);
+		cdc_ecm_set_mac(ecm_mac);
 	}
 
 	if (cb->init != NULL) {
@@ -1516,6 +1518,9 @@ int usbd_cdc_ecm_deinit(void)
 		}
 	}
 	ep_bulk_out->xfer_buf = NULL;
+
+	/* Clear user callback pointer */
+	ecm->cb = NULL;
 
 	return HAL_OK;
 }

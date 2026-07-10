@@ -210,7 +210,7 @@ extern "C"
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb);
+int usbh_uvc_init(const usbh_uvc_ctx_t *cfg, const usbh_uvc_cb_t *cb);
 
 /**
  * @brief  De-initializes the UVC host class driver and releases resources.

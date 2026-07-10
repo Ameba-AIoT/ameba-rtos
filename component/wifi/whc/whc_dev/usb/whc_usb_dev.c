@@ -11,7 +11,7 @@ u8 wifi_whc_usb_status = WIFI_WHC_USB_STATUS_ACTIVE;
 
 void rtw_pending_q_resume(void);
 
-static usbd_config_t whc_usb_wifi_cfg = {
+static const usbd_config_t whc_usb_wifi_cfg = {
 	.speed = WIFI_WHC_USB_SPEED,
 	.isr_priority = 4,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -276,7 +276,7 @@ static int whc_usb_dev_clear_config_cb(void)
 	return HAL_OK;
 }
 
-static usbd_inic_cb_t whc_usb_dev_cb = {
+static const usbd_inic_cb_t whc_usb_dev_cb = {
 	.init = whc_usb_dev_init_cb,
 	.deinit = whc_usb_dev_deinit_cb,
 	.setup = whc_usb_dev_setup_cb,

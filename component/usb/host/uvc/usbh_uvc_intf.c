@@ -219,7 +219,7 @@ static int usbh_uvc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t 
   * @param	cb: user callback function
   * @retval Status
   */
-int usbh_uvc_init(usbh_uvc_ctx_t *cfg, usbh_uvc_cb_t *cb)
+int usbh_uvc_init(const usbh_uvc_ctx_t *cfg, const usbh_uvc_cb_t *cb)
 {
 	int i;
 	int ret = HAL_OK;

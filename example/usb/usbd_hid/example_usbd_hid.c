@@ -74,7 +74,7 @@ static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[]);
 #endif
 #endif
 
-static void hid_send_device_data(void *data);
+static void hid_send_device_data(const void *data);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -87,7 +87,7 @@ static rtos_sema_t hid_attach_status_changed_sema;
 static rtos_sema_t hid_connect_sema;
 static rtos_sema_t hid_transmit_sema;
 #if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
-static usbd_hid_mouse_data_t mdata[] = {
+static const usbd_hid_mouse_data_t mdata[] = {
 	{0,   0,   0,  50,   0,   0},	//move the cursor 50 pixels to the right
 	{0,   0,   0,   0,  50,   0},	//move the cursor down 50 pixels
 	{0,   0,   0, -50,   0,   0},	//move the cursor 50 pixels to the left
@@ -132,7 +132,7 @@ const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
 #endif
 #endif  //CONFIG_USBD_HID_MOUSE_CMD
 
-static usbd_config_t hid_cfg = {
+static const usbd_config_t hid_cfg = {
 	.speed = CONFIG_USBD_HID_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -148,7 +148,7 @@ static usbd_config_t hid_cfg = {
 #endif
 };
 
-static usbd_hid_usr_cb_t hid_usr_cb = {
+static const usbd_hid_usr_cb_t hid_usr_cb = {
 	.init = hid_cb_init,
 	.deinit = hid_cb_deinit,
 	.setup = hid_cb_setup,
@@ -284,11 +284,11 @@ static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
 #endif  //CONFIG_USBD_HID_MOUSE_CMD
 
 /*brief: send device data.(wrapper function usbd_hid_send_data())*/
-static void hid_send_device_data(void *pdata)
+static void hid_send_device_data(const void *pdata)
 {
 #if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
 	u8 byte[4];
-	usbd_hid_mouse_data_t *data = (usbd_hid_mouse_data_t *)pdata;
+	const usbd_hid_mouse_data_t *data = (const usbd_hid_mouse_data_t *)pdata;
 
 	memset(byte, 0, 4);
 
@@ -318,10 +318,10 @@ static void hid_send_device_data(void *pdata)
 	byte[2] = data->y_axis;
 	byte[3] = data->wheel;
 
-	usbd_hid_send_data(byte, 4);
+	usbd_hid_send_data((const u8 *)byte, 4);
 #else
-	usbd_hid_keyboard_data_t *data = (usbd_hid_keyboard_data_t *)pdata;
-	usbd_hid_send_data((u8 *)data, 8);
+	const usbd_hid_keyboard_data_t *data = (const usbd_hid_keyboard_data_t *)pdata;
+	usbd_hid_send_data((const u8 *)data, 8);
 #endif
 }
 

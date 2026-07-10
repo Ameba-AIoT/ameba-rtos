@@ -36,7 +36,7 @@ static const u8 usbd_cdc_acm_dev_desc[USB_LEN_DEV_DESC] = {
 	0x00,                                           /* bcdUSB */
 	0x02,
 	0x02,                                           /* bDeviceClass */
-	0x02,                                           /* bDeviceSubClass */
+	0x00,                                           /* bDeviceSubClass */
 	0x00,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize */
 	USB_LOW_BYTE(USBD_CDC_ACM_VID),                      /* idVendor */
@@ -114,7 +114,7 @@ static const u8 usbd_cdc_acm_hs_config_desc[] = {
 	0x24,                                           /* bDescriptorType: CS_INTERFACE */
 	0x01,                                           /* bDescriptorSubtype: Call Management Functional Descriptor */
 	0x00,                                           /* bmCapabilities: D0+D1 */
-	0x01,                                           /* bDataInterface */
+	USBD_CDC_ACM_DATA_ITF_NUM,                      /* bDataInterface */
 
 	/* CDC ACM Functional Descriptor */
 	0x04,                                           /* bFunctionLength */
@@ -126,8 +126,8 @@ static const u8 usbd_cdc_acm_hs_config_desc[] = {
 	0x05,                                           /* bFunctionLength */
 	0x24,                                           /* bDescriptorType: CS_INTERFACE */
 	0x06,                                           /* bDescriptorSubtype: Union Functional Descriptor */
-	0x00,                                           /* bMasterInterface: Communication Class Interface */
-	0x01,                                           /* bSlaveInterface0: Data Class Interface */
+	USBD_CDC_ACM_COMM_ITF_NUM,                      /* bMasterInterface: Communication Class Interface */
+	USBD_CDC_ACM_DATA_ITF_NUM,                      /* bSlaveInterface0: Data Class Interface */
 
 	/* INTR IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
@@ -209,7 +209,7 @@ static const u8 usbd_cdc_acm_fs_config_desc[] = {
 	0x24,                                           /* bDescriptorType: CS_INTERFACE */
 	0x01,                                           /* bDescriptorSubtype: Call Management Functional Descriptor */
 	0x00,                                           /* bmCapabilities: D0+D1 */
-	0x01,                                           /* bDataInterface */
+	USBD_CDC_ACM_DATA_ITF_NUM,                      /* bDataInterface */
 
 	/* CDC ACM Functional Descriptor */
 	0x04,                                           /* bFunctionLength */
@@ -221,8 +221,8 @@ static const u8 usbd_cdc_acm_fs_config_desc[] = {
 	0x05,                                           /* bFunctionLength */
 	0x24,                                           /* bDescriptorType: CS_INTERFACE */
 	0x06,                                           /* bDescriptorSubtype: Union Functional Descriptor */
-	0x00,                                           /* bMasterInterface: Communication Class Interface */
-	0x01,                                           /* bSlaveInterface0: Data Class Interface */
+	USBD_CDC_ACM_COMM_ITF_NUM,                      /* bMasterInterface: Communication Class Interface */
+	USBD_CDC_ACM_DATA_ITF_NUM,                      /* bSlaveInterface0: Data Class Interface */
 
 	/* INTR IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
@@ -424,16 +424,18 @@ static int cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
 				ret = cdev->cb->setup(req, ep0_in->xfer_buf);
 				if (ret == HAL_OK) {
-					ep0_in->xfer_len = req->wLength;
+					ep0_in->xfer_len = (req->wLength < ep0_in->xfer_buf_len) ? req->wLength : ep0_in->xfer_buf_len;
 					usbd_ep_transmit(dev, ep0_in);
 				}
 			} else {
 				usb_os_memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
 				ep0_out->xfer_len = req->wLength;
-				usbd_ep_receive(dev, ep0_out);
+				ret = usbd_ep_receive(dev, ep0_out);
 			}
 		} else {
-			cdev->cb->setup(req, NULL);
+			/* Propagate the class callback status so an unsupported no-data
+			 * request is STALLed by the core instead of being ACKed. */
+			ret = cdev->cb->setup(req, NULL);
 		}
 		break;
 	default:
@@ -728,7 +730,7 @@ static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 			ntf->bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 			ntf->bNotificationType = type;
 			ntf->wValue = value;
-			ntf->wIndex = 0;
+			ntf->wIndex = USBD_CDC_ACM_COMM_ITF_NUM;
 			ntf->wLength = len;
 
 			usb_os_memcpy((void *)ntf->buf, (void *)data, len);
@@ -760,7 +762,7 @@ static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
   * @param  cb: CDC ACM user callback
   * @retval Status
   */
-int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, usbd_cdc_acm_cb_t *cb)
+int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, const usbd_cdc_acm_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbd_cdc_acm_dev_t *cdc = &usbd_cdc_acm_dev;
@@ -927,6 +929,8 @@ int usbd_cdc_acm_transmit(u8 *buf, u32 len)
 					DCache_Clean((u32)ep_bulk_in->xfer_buf, len);
 				} else {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "EP TX buf align err\n");
+					ep_bulk_in->xfer_state = 0U;
+					ep_bulk_in->is_busy = 0U;
 					return HAL_ERR_MEM;
 				}
 			}

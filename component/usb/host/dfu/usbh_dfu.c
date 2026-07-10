@@ -799,7 +799,7 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
   * @param  cb: User callback table
   * @retval Status
   */
-int usbh_dfu_init(usbh_dfu_cb_t *cb)
+int usbh_dfu_init(const usbh_dfu_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;

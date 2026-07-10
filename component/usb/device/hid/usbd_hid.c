@@ -785,7 +785,7 @@ static void hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbd_hid_init(u32 tx_buf_len, usbd_hid_usr_cb_t *cb)
+int usbd_hid_init(u32 tx_buf_len, const usbd_hid_usr_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbd_hid_t *hid = &hid_device;
@@ -878,7 +878,7 @@ int usbd_hid_deinit(void)
 	return HAL_OK;
 }
 
-int usbd_hid_send_data(u8 *data, u32 len)
+int usbd_hid_send_data(const u8 *data, u32 len)
 {
 	int ret = HAL_ERR_HW;
 	usbd_hid_t *hid = &hid_device;

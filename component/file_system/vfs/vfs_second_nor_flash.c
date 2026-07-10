@@ -194,8 +194,9 @@ int32_t second_flash_erase_sector(uint32_t address)
 	/* check WIP and WEL*/
 	cmd[0] = CMD_READ_STATUS;
 	do {
-		spi_flush_rx_fifo(&spi_master);
+		/* wait bus idle first so echo bytes have landed, then flush before read */
 		second_flash_wait_idle();
+		spi_flush_rx_fifo(&spi_master);
 		spi_master_write_read_stream_dma(&spi_master, cmd, status, CACHE_LINE_SIZE);
 
 		rtos_sema_take(xTxSemaphore, RTOS_SEMA_MAX_COUNT);
@@ -221,8 +222,9 @@ int32_t second_flash_erase_sector(uint32_t address)
 	cmd[0] = CMD_READ_STATUS;
 	count = 0;
 	do {
-		spi_flush_rx_fifo(&spi_master);
+		/* wait bus idle first so echo bytes have landed, then flush before read */
 		second_flash_wait_idle();
+		spi_flush_rx_fifo(&spi_master);
 		spi_master_write_read_stream_dma(&spi_master, cmd, status, CACHE_LINE_SIZE);
 
 		rtos_sema_take(xTxSemaphore, RTOS_SEMA_MAX_COUNT);
@@ -281,11 +283,13 @@ int32_t second_flash_write_stream(uint32_t address, uint32_t length, char *tx_bu
 		spi_master_write_stream_dma(&spi_master, cmd, CMD_LENGTH_ONE);
 
 		rtos_sema_take(xTxSemaphore, RTOS_SEMA_MAX_COUNT);
-		spi_flush_rx_fifo(&spi_master);
 		/* check WIP and WEL */
 		cmd[0] = CMD_READ_STATUS;
 		do {
+			/* wait bus idle first so the WREN echo has fully landed in RX FIFO,
+			 * then flush it, otherwise the stale echo shifts the status[] read */
 			second_flash_wait_idle();
+			spi_flush_rx_fifo(&spi_master);
 			spi_master_write_read_stream_dma(&spi_master, cmd, status, CACHE_LINE_SIZE);
 
 			rtos_sema_take(xTxSemaphore, RTOS_SEMA_MAX_COUNT);
@@ -318,13 +322,16 @@ int32_t second_flash_write_stream(uint32_t address, uint32_t length, char *tx_bu
 		}
 
 		rtos_sema_take(xTxSemaphore, RTOS_SEMA_MAX_COUNT);
-		spi_flush_rx_fifo(&spi_master);
 		_memset(cmd, 0x0, CACHE_LINE_SIZE);
 		/* check WIP */
 		cmd[0] = CMD_READ_STATUS;
 		count = 0;
 		do {
+			/* wait the page-program transfer to finish so all its echo bytes are
+			 * in RX FIFO, then flush; a flush before bus-idle leaves stale echo
+			 * that shifts status[] and corrupts the following WREN check */
 			second_flash_wait_idle();
+			spi_flush_rx_fifo(&spi_master);
 			ret = spi_master_write_read_stream_dma(&spi_master, cmd, status, CACHE_LINE_SIZE);
 
 			rtos_sema_take(xTxSemaphore, RTOS_SEMA_MAX_COUNT);

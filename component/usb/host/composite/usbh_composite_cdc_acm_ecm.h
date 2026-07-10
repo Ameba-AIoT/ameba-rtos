@@ -30,8 +30,8 @@
  * @param[in] cb: Pointer to the Comp[osite user-defined callback structure.
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
-int usbh_composite_acm_ecm_init(usbh_composite_cdc_acm_usr_cb_t *acm_cb, usbh_composite_cdc_ecm_usr_cb_t *ecm_cb,
-								usbh_composite_cb_t *cb);
+int usbh_composite_acm_ecm_init(const usbh_composite_cdc_acm_usr_cb_t *acm_cb, const usbh_composite_cdc_ecm_usr_cb_t *ecm_cb,
+								const usbh_composite_cb_t *cb);
 
 /**
  * @brief  De-initializes the composite host class driver and releases resources.

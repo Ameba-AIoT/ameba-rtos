@@ -50,7 +50,7 @@ static void usbh_msc_cmd_test(u16 argc, char **argv);
 
 /* Private variables ---------------------------------------------------------*/
 
-static usbd_config_t usbd_msc_cfg = {
+static const usbd_config_t usbd_msc_cfg = {
 	.speed = USB_DRD_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -63,7 +63,7 @@ static usbd_config_t usbd_msc_cfg = {
 #endif
 };
 
-static usbd_msc_cb_t usbd_msc_cb = {
+static const usbd_msc_cb_t usbd_msc_cb = {
 	.status_changed = usbd_msc_cb_status_changed
 };
 
@@ -73,7 +73,7 @@ static u8 file_cnt = 5;
 static u8 *msc_wt_buf;
 static u8 *msc_rd_buf;
 
-static usbh_config_t usbh_cfg = {
+static const usbh_config_t usbh_cfg = {
 	.speed = USB_DRD_SPEED,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
@@ -97,12 +97,12 @@ static usbh_config_t usbh_cfg = {
 #endif
 };
 
-static usbh_msc_cb_t usbh_msc_usr_cb = {
+static const usbh_msc_cb_t usbh_msc_usr_cb = {
 	.attach = usbh_msc_cb_attach,
 	.setup = usbh_msc_cb_setup,
 };
 
-static usbh_user_cb_t usbh_usr_cb = {
+static const usbh_user_cb_t usbh_usr_cb = {
 	.process = usbh_msc_cb_process
 };
 

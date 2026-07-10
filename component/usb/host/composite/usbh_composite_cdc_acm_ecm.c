@@ -29,7 +29,7 @@ static int usbh_composite_acm_ecm_user_device_check(usb_host_t *host, u8 cfg_max
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "COMP";
 
-static usbh_config_t usbh_composite_acm_ecm_cfg = {
+static const usbh_config_t usbh_composite_acm_ecm_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.isr_priority = USBH_COMPOSITE_ISR_PRIORITY,
 	.main_task_stack_size = 1792U,
@@ -48,7 +48,7 @@ static usbh_config_t usbh_composite_acm_ecm_cfg = {
 #endif
 };
 
-static usbh_user_cb_t usbh_composite_acm_ecm_usr_cb = {
+static const usbh_user_cb_t usbh_composite_acm_ecm_usr_cb = {
 	.process = usbh_composite_acm_ecm_user_process,
 	.validate = usbh_composite_acm_ecm_user_device_check,
 };
@@ -293,7 +293,7 @@ static int usbh_composite_acm_ecm_process(usb_host_t *host, usbh_event_t *event)
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_composite_acm_ecm_init(usbh_composite_cdc_acm_usr_cb_t *acm_cb, usbh_composite_cdc_ecm_usr_cb_t *ecm_cb, usbh_composite_cb_t *cb)
+int usbh_composite_acm_ecm_init(const usbh_composite_cdc_acm_usr_cb_t *acm_cb, const usbh_composite_cdc_ecm_usr_cb_t *ecm_cb, const usbh_composite_cb_t *cb)
 {
 	int ret;
 	usbh_composite_host_t *chost = &usbh_composite_host;

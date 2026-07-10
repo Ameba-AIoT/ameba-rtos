@@ -69,7 +69,7 @@ static __IO int vendor_is_ready = 0;
 static __IO int vendor_bulk_total_rx_len = 0;
 static __IO int vendor_intr_total_rx_len = 0;
 
-static usbh_config_t usbh_cfg = {
+static const usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
@@ -94,7 +94,7 @@ static usbh_config_t usbh_cfg = {
 #endif
 };
 
-static usbh_vendor_cb_t vendor_usr_cb = {
+static const usbh_vendor_cb_t vendor_usr_cb = {
 	.attach = vendor_cb_attach,
 	.detach = vendor_cb_detach,
 	.setup = vendor_cb_setup,
@@ -102,7 +102,7 @@ static usbh_vendor_cb_t vendor_usr_cb = {
 	.receive  = vendor_cb_receive,
 };
 
-static usbh_user_cb_t usbh_usr_cb = {
+static const usbh_user_cb_t usbh_usr_cb = {
 	.process = vendor_cb_process
 };
 

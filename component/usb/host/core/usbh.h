@@ -491,7 +491,7 @@ typedef struct _usb_host_t {
 #endif
 	const usbh_dev_id_t *dev_id;        /**< Pointer to the active device ID. */
 	usbh_dev_desc_t *dev_desc;          /**< Pointer to the device's descriptor. */
-	usbh_user_cb_t *cb;                 /**< Pointer to the user-provided callbacks. */
+	const usbh_user_cb_t *cb;           /**< Pointer to the user-provided callbacks. */
 	void *hcd;                          /**< Pointer to the HCD handle. */
 
 	u8 dev_addr;                        /**< The address of the attached device. */
@@ -517,7 +517,7 @@ typedef struct _usb_host_t {
  * @param[in] cb: USB user callback.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_init(usbh_config_t *cfg, usbh_user_cb_t *cb);
+int usbh_init(const usbh_config_t *cfg, const usbh_user_cb_t *cb);
 
 /**
  * @brief Deinitialize USB host core driver.
