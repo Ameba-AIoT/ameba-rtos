@@ -240,7 +240,7 @@ static int usbh_composite_hid_uac_process(usb_host_t *host, usbh_event_t *event)
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_composite_init(usbh_composite_hid_usr_cb_t *hid_cb, usbh_composite_uac_usr_cb_t *uac_cb)
+int usbh_composite_init(const usbh_composite_hid_usr_cb_t *hid_cb, const usbh_composite_uac_usr_cb_t *uac_cb)
 {
 	int ret;
 	usbh_composite_host_t *chost = &usbh_composite_host;

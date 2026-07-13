@@ -70,7 +70,7 @@
  * @brief USB CDC ECM Device Private Data Structure.
  */
 typedef struct {
-	u8 *mac_value;     /**< Pointer to the MAC address buffer; typically points to a 6-byte physical address. */
+	const u8 *mac_value;     /**< Pointer to the MAC address buffer; typically points to a 6-byte physical address. */
 } usbd_cdc_ecm_priv_data_t;
 
 /**
@@ -82,7 +82,7 @@ typedef struct {
 	/**
 	 * @brief Pointer to the USB CDC ECM private data structure.
 	 */
-	usbd_cdc_ecm_priv_data_t *priv;
+	const usbd_cdc_ecm_priv_data_t *priv;
 
 	/**
 	 * @brief Called when the CDC ECM class driver initialization for application resource setup.
@@ -145,7 +145,7 @@ typedef struct {
 	usb_os_sema_t rx_data_ready_sema;   /**< ISR -> thread: signals a buffer holds a frame. */
 
 	usb_dev_t *dev;        /**< USB device instance. */
-	usbd_cdc_ecm_cb_t *cb; /**< User-defined callback structure. */
+	const usbd_cdc_ecm_cb_t *cb; /**< User-defined callback structure. */
 	u8 *rx_msg_buf;        /**< Buffer pointer handed to the RX thread for current frame. */
 
 	u32 rx_msg_len;             /**< Frame length handed to the RX thread. */
@@ -200,7 +200,7 @@ typedef struct {
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_cdc_ecm_init(usbd_cdc_ecm_cb_t *cb);
+int usbd_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb);
 
 /**
  * @brief De-initializes the CDC ECM class driver.

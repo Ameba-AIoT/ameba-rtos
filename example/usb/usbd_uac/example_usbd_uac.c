@@ -59,8 +59,8 @@ static const char *const TAG = "UAC";
 
 /* Thread stack sizes */
 #define CONFIG_USBD_UAC_INIT_THREAD_STACK_SIZE           1024U
-#define CONFIG_USBD_UAC_HOTPLUG_THREAD_STACK_SIZE        1024U
-#define CONFIG_USBD_UAC_PLAYER_THREAD_STACK_SIZE         (1024U * 16)
+#define CONFIG_USBD_UAC_HOTPLUG_THREAD_STACK_SIZE        900U
+#define CONFIG_USBD_UAC_PLAYER_THREAD_STACK_SIZE         2700U
 
 #define AUDIO_BYTE_WIDTH_SIZE                   0x02U
 #define AUDIO_SAMPLING_FREQ                     USBD_UAC_SAMPLING_FREQ_48K
@@ -74,7 +74,7 @@ static const char *const TAG = "UAC";
 //#define USB_AUDIO_MS_BUF_SIZE             ((AUDIO_BYTE_WIDTH_SIZE) * (AUDIO_CHANNEL_NUM) * (AUDIO_SAMPLING_FREQ) / 1000)
 #define USB_AUDIO_MS_BUF_SIZE               4000U
 #endif
-#define USB_AUDIO_BUF_SIZE                  ((USB_AUDIO_MS_BUF_SIZE) * 3)
+#define USB_AUDIO_BUF_SIZE                  ((USB_AUDIO_MS_BUF_SIZE) * 3U)
 
 /* Private types -------------------------------------------------------------*/
 
@@ -119,7 +119,7 @@ static u8 play_buf[USB_AUDIO_BUF_SIZE];
 */
 static u8 recv_buf[USB_AUDIO_BUF_SIZE * 2];
 
-static usbd_config_t uac_cfg = {
+static const usbd_config_t uac_cfg = {
 	.speed = CONFIG_USBD_UAC_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -238,7 +238,8 @@ static void example_usbd_uac_hotplug_thread(void *param)
 				rtos_time_delay_ms(200);
 
 				wait_cnt = 0;
-				while (uac_playing && wait_cnt < 25) { /* 最多等待 ~500ms */
+
+				while ((uac_playing != 0) && (wait_cnt < 25)) { /* max wait 500ms */
 					rtos_time_delay_ms(20);
 					wait_cnt++;
 				}
@@ -318,7 +319,7 @@ static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 		uac_cb.out.byte_width = byte_width;
 	}
 
-	if (uac_cb.out.sampling_freq && uac_cb.out.byte_width && uac_cb.out.ch_cnt) {
+	if ((uac_cb.out.sampling_freq != 0U) && (uac_cb.out.byte_width != 0U) && (uac_cb.out.ch_cnt != 0U)) {
 		uac_player_stop = 1;
 		usbd_uac_stop_play();
 		rtos_sema_give(uac_ready_sema);
@@ -426,7 +427,7 @@ static void example_audio_track_play(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC stop %d\n", uac_player_stop);
 
 	uac_playing = 1;
-	while (!uac_task_exiting && !uac_player_stop) {
+	while ((uac_task_exiting != 1) && (uac_player_stop != 1)) {
 		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500);
 		if (read_dat_len > 0) {
 #if CONFIG_USBD_UAC_DEMUX_CH_DEBUG
@@ -460,7 +461,7 @@ static void example_audio_track_play(void)
 	total_len = 0;
 	read_cnt = 0;
 	uac_playing = 1;
-	while (!uac_task_exiting && !uac_player_stop) {
+	while ((uac_task_exiting != 1) && (uac_player_stop != 1)) {
 		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500);
 		read_cnt ++;
 		if (read_dat_len > 0) {
@@ -490,7 +491,7 @@ static void example_usbd_uac_audio_track_thread(void *param)
 		if (rtos_sema_take(uac_ready_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			break;
 		}
-		if (uac_task_exiting) {
+		if (uac_task_exiting != 0) {
 			break;
 		}
 		uac_player_stop = 0;

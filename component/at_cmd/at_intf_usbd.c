@@ -52,7 +52,7 @@ static void atcmd_usbd_status_changed(u8 old_status, u8 status);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "AT_USBD";
 
-static usbd_cdc_acm_cb_t atcmd_usbd_cb = {
+static const usbd_cdc_acm_cb_t atcmd_usbd_cb = {
 	.init = atcmd_usbd_init,
 	.deinit = atcmd_usbd_deinit,
 	.setup = atcmd_usbd_setup,
@@ -65,7 +65,7 @@ static usb_cdc_line_coding_t atcmd_usbd_line_coding;
 
 static u16 atcmd_usbd_ctrl_line_state;
 
-static usbd_config_t atcmd_usbd_cfg = {
+static const usbd_config_t atcmd_usbd_cfg = {
 	.speed = CONFIG_USBD_CDC_ACM_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)

@@ -202,8 +202,26 @@ typedef struct {
 	__IO u16 written;        /* Part write data length */
 
 	__IO u16 mps;
-	__IO u8 sema_valid;      /* Sema is valid */
-	__IO u8 wait_sema;       /* Wait sema */
+	/*
+	 * sema_active_status: runtime "activation window" of isoc_sema.
+	 *   1 -> reader may sema_take; ISR / other givers may sema_give.
+	 *   0 -> semaphore is being torn down or not yet armed; readers must
+	 *        break out (with sema_wait_status cleared) and givers must skip.
+	 *
+	 * This is DIFFERENT from "isoc_sema != NULL" (physical existence): the
+	 * semaphore object is kept alive across hot-plug cycles to avoid a
+	 * use-after-free in the reader thread, so the pointer stays non-NULL
+	 * while sema_active_status toggles 1 -> 0 on every unplug and 0 -> 1 on every
+	 * fresh init.
+	 */
+	__IO u8 sema_active_status;
+	/*
+	 * sema_wait_status: set to 1 by the reader immediately before entering
+	 * sema_take, cleared right after it returns. ep_buf_ctrl_deinit uses
+	 * this to know a reader is parked and must be woken (sema_give) before
+	 * the semaphore can be safely torn down.
+	 */
+	__IO u8 sema_wait_status;
 	__IO u8 xfer_continue;   /* Audio control xfer_continue flag */
 } usbd_composite_uac_buf_ctrl_t;
 
@@ -213,7 +231,7 @@ typedef struct {
 
 	usb_setup_req_t ctrl_req;                    /**< Stores the current control request. */
 	usbd_composite_dev_t *cdev;                  /**< Pointer to the USB composite device instance. */
-	usbd_composite_uac_usr_cb_t *cb;             /**< Pointer to the USB composite device user-defined callback structure. */
+	const usbd_composite_uac_usr_cb_t *cb;       /**< Pointer to the USB composite device user-defined callback structure. */
 
 #if USBD_COMPOSITE_UAC_DEBUG
 	rtos_task_t uac_dump_task;
@@ -240,7 +258,7 @@ extern const usbd_class_driver_t usbd_composite_uac_driver;
  * @param[in] cb: Pointer to the user callback structure passed by the upper layer.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_cb_t *cb);
+int usbd_composite_uac_init(usbd_composite_dev_t *cdev, const usbd_composite_uac_usr_cb_t *cb);
 
 /**
  * @brief De-initializes the UAC composite function.

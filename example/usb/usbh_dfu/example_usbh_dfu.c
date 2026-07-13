@@ -28,7 +28,7 @@ static const char *const TAG = "DFU";
 #define USBH_DFU_MAIN_TASK_STACK_SIZE             768U
 /* Private variables ---------------------------------------------------------*/
 
-static usbh_config_t usbh_cfg = {
+static const usbh_config_t usbh_cfg = {
 	.speed                = USB_SPEED_HIGH,
 	.isr_priority         = INT_PRI_MIDDLE,
 	.main_task_stack_size = USBH_DFU_MAIN_TASK_STACK_SIZE,
@@ -133,7 +133,7 @@ static void dfu_cb_upload_done(int status)
 	rtos_sema_give(dfu_upload_sema);
 }
 
-static usbh_dfu_cb_t dfu_cb = {
+static const usbh_dfu_cb_t dfu_cb = {
 	.attach        = dfu_cb_attach,
 	.detach        = dfu_cb_detach,
 	.get_block     = dfu_cb_get_block,
@@ -158,7 +158,7 @@ static int dfu_cb_process(usb_host_t *host, u8 msg)
 	return HAL_OK;
 }
 
-static usbh_user_cb_t usbh_usr_cb = {
+static const usbh_user_cb_t usbh_usr_cb = {
 	.process = dfu_cb_process
 };
 

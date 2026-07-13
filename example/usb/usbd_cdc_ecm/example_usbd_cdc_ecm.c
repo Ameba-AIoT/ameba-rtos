@@ -19,42 +19,42 @@
 	This configuration is used to enable a thread to check hotplug event
  	and reset USB stack to avoid memory leak, only for example.
 */
-#define CONFIG_USBD_CDC_ECM_HOTPLUG         1
+#define CONFIG_USBD_CDC_ECM_HOTPLUG                                 1
 
-#define CONFIG_USBD_CDC_ECM_TX_DEBUG        0
+#define CONFIG_USBD_CDC_ECM_TX_DEBUG                                0
 
 // USB speed
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define CONFIG_USBD_CDC_ECM_SPEED           USB_SPEED_FULL
+#define CONFIG_USBD_CDC_ECM_SPEED                                   USB_SPEED_FULL
 #else
-#define CONFIG_USBD_CDC_ECM_SPEED           USB_SPEED_HIGH
+#define CONFIG_USBD_CDC_ECM_SPEED                                   USB_SPEED_HIGH
 #endif
 
 // Thread priorities
-#define CONFIG_USBD_CDC_ECM_INIT_THREAD_PRIORITY         5
-#define CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_PRIORITY   4
-#define CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_PRIORITY      8
+#define CONFIG_USBD_CDC_ECM_INIT_THREAD_PRIORITY                    5
+#define CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_PRIORITY              4
+#define CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_PRIORITY                 8
 
 // Thread stack sizes
-#define CONFIG_USBD_CDC_ECM_INIT_THREAD_STACK_SIZE         2048U
-#define CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE      2048U
-#define CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_STACK_SIZE   2048U
+#define CONFIG_USBD_CDC_ECM_INIT_THREAD_STACK_SIZE                  1024U
+#define CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE               1024U
+#define CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_STACK_SIZE            1600U
 
 // USB ECM Device IP Configuration
-#define CONFIG_USBD_CDC_ECM_IP_ADDR0   192
-#define CONFIG_USBD_CDC_ECM_IP_ADDR1   168
-#define CONFIG_USBD_CDC_ECM_IP_ADDR2   45
-#define CONFIG_USBD_CDC_ECM_IP_ADDR3   1
+#define CONFIG_USBD_CDC_ECM_IP_ADDR0                                192
+#define CONFIG_USBD_CDC_ECM_IP_ADDR1                                168
+#define CONFIG_USBD_CDC_ECM_IP_ADDR2                                45
+#define CONFIG_USBD_CDC_ECM_IP_ADDR3                                1
 
-#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR0   255
-#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR1   255
-#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR2   255
-#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR3   0
+#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR0                           255
+#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR1                           255
+#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR2                           255
+#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR3                           0
 
-#define CONFIG_USBD_CDC_ECM_GW_ADDR0   192
-#define CONFIG_USBD_CDC_ECM_GW_ADDR1   168
-#define CONFIG_USBD_CDC_ECM_GW_ADDR2   45
-#define CONFIG_USBD_CDC_ECM_GW_ADDR3   1
+#define CONFIG_USBD_CDC_ECM_GW_ADDR0                                192
+#define CONFIG_USBD_CDC_ECM_GW_ADDR1                                168
+#define CONFIG_USBD_CDC_ECM_GW_ADDR2                                45
+#define CONFIG_USBD_CDC_ECM_GW_ADDR3                                1
 
 /* Private types -------------------------------------------------------------*/
 typedef enum {
@@ -89,7 +89,7 @@ static u8 dhcp_server_started = 0;
  * (iMACAddress string), so the host's virtual Ethernet adapter is assigned this MAC.
  * In other words, it identifies the "host-facing" end of the USB Ethernet dongle.
  */
-static u8 dongle_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
+static const u8 dongle_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
 /*
  * dhcp_server_mac: MAC address used by the device's local lwIP netif (pnetif_usb_eth).
  * It is copied into pnetif_usb_eth->hwaddr in example_usbd_ecm_link_change_thread() before the
@@ -99,14 +99,14 @@ static u8 dongle_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
  * Note: dongle_mac and dhcp_server_mac must differ (here only the last byte: 0x55 vs
  * 0x56) so the two ends of the point-to-point USB Ethernet link have distinct MACs.
  */
-static u8 dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56};
+static const u8 dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56};
 static __IO u8 cdc_ecm_link_disconnected = 0;
 
-static usbd_cdc_ecm_priv_data_t ecm_priv = {
+static const usbd_cdc_ecm_priv_data_t ecm_priv = {
 	dongle_mac,
 };
 
-static usbd_cdc_ecm_cb_t cdc_ecm_cb = {
+static const usbd_cdc_ecm_cb_t cdc_ecm_cb = {
 	.priv = &ecm_priv,
 	.init = cdc_ecm_cb_init,
 	.deinit = cdc_ecm_cb_deinit,
@@ -115,7 +115,7 @@ static usbd_cdc_ecm_cb_t cdc_ecm_cb = {
 	.status_changed = cdc_ecm_cb_status_changed,
 };
 
-static usbd_config_t cdc_ecm_cfg = {
+static const usbd_config_t cdc_ecm_cfg = {
 	.speed = CONFIG_USBD_CDC_ECM_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)

@@ -350,3 +350,6 @@ s8 wifi_hal_phy_get_power_limit_value_1v8(u8 regulation, u8 band, u8 limit_rate,
 		return power_limit;
 	}
 }
+
+// #define TXPWR_TOOL_MAJOR_UPDATE 1       /* since 1.1.15 */
+#define TXPWR_TOOL_MAJOR_UPDATE 2       /* since 1.1.17 */

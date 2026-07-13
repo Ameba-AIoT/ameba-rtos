@@ -112,7 +112,7 @@ typedef struct {
 	usbd_inic_ep_t in_ep[USB_MAX_ENDPOINTS];
 	usbd_inic_ep_t out_ep[USB_MAX_ENDPOINTS];
 	usb_dev_t *dev;
-	usbd_inic_cb_t *cb;
+	const usbd_inic_cb_t *cb;
 	usb_setup_req_t ctrl_req;
 	u8  bt_alt;
 	u8  bt_sco_alt;
@@ -125,7 +125,7 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbd_inic_init(usbd_inic_cb_t *cb);
+int usbd_inic_init(const usbd_inic_cb_t *cb);
 int usbd_inic_deinit(void);
 int usbd_inic_transmit_ctrl_data(u8 *buf, u16 len);
 int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);

@@ -34,9 +34,9 @@ static const u8 usbd_composite_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_LEN_DEV_DESC,                                                /* bLength */
 	USB_DESC_TYPE_DEVICE,                                            /* bDescriptorType */
 	0x00, 0x02,                                                        /* bcdUSB */
-	0x00,                                                            /* bDeviceClass: Miscellaneous */
-	0x00,                                                            /* bDeviceSubClass: Common Class */
-	0x00,                                                            /* bDeviceProtocol: Interface Association Descriptor */
+	0xEF,                                                            /* bDeviceClass: Miscellaneous */
+	0x02,                                                            /* bDeviceSubClass: Common Class */
+	0x01,                                                            /* bDeviceProtocol: Interface Association Descriptor */
 	USB_MAX_EP0_SIZE,                                                /* bMaxPacketSize */
 	USB_LOW_BYTE(USBD_COMP_VID), USB_HIGH_BYTE(USBD_COMP_VID),       /* idVendor */
 	USB_LOW_BYTE(USBD_COMP_PID), USB_HIGH_BYTE(USBD_COMP_PID),       /* idProduct */
@@ -155,11 +155,13 @@ static int usbd_composite_is_uac_class_request(int entityId, usb_setup_req_t *re
 	int ret = 0U;
 #if defined(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC1)
 	ret = (entityId == USBD_COMP_UAC_AC_HEADSET) ||
+		  (entityId == USBD_COMP_UAC_AS_HEADSET_MICROPHONE) ||
 		  (entityId == USBD_COMP_UAC_AS_HEADSET_HEADPHONES) ||
 		  ((req->bmRequestType & 0x1FU) == USB_REQ_RECIPIENT_ENDPOINT);
 #else/* CONFIG_USBD_COMPOSITE_CDC_ACM_UAC2 */
 	UNUSED(req);
 	ret = (entityId == USBD_COMP_UAC_AC_HEADSET) ||
+		  (entityId == USBD_COMP_UAC_AS_HEADSET_MICROPHONE) ||
 		  (entityId == USBD_COMP_UAC_AS_HEADSET_HEADPHONES);
 #endif
 	return ret;
@@ -196,7 +198,8 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 		default:
 			entityId = USB_LOW_BYTE(req->wIndex);
-			if ((entityId == USBD_COMP_UAC_AC_HEADSET) || (entityId == USBD_COMP_UAC_AS_HEADSET_HEADPHONES)) {
+			if ((entityId == USBD_COMP_UAC_AC_HEADSET) || (entityId == USBD_COMP_UAC_AS_HEADSET_MICROPHONE) ||
+				(entityId == USBD_COMP_UAC_AS_HEADSET_HEADPHONES)) {
 				ret = cdev->uac->setup(dev, req);
 			}
 			break;
@@ -280,8 +283,12 @@ static int usbd_composite_handle_ep0_data_out(usb_dev_t *dev)
 	int ret = HAL_OK;
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 
-	cdev->cdc->ep0_data_out(dev);
-	cdev->uac->ep0_data_out(dev);
+	if (cdev->cdc->ep0_data_out != NULL) {
+		cdev->cdc->ep0_data_out(dev);
+	}
+	if (cdev->uac->ep0_data_out != NULL) {
+		cdev->uac->ep0_data_out(dev);
+	}
 
 	return ret;
 }
@@ -420,8 +427,8 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
   * @param  cb: CDC ACM user callback
   * @retval Status
   */
-int usbd_composite_init(u32 cdc_bulk_out_xfer_size, u32 cdc_bulk_in_xfer_size, usbd_composite_cdc_acm_usr_cb_t *cdc_cb,
-						usbd_composite_uac_usr_cb_t *uac_cb, usbd_composite_cb_t *cb)
+int usbd_composite_init(u32 cdc_bulk_out_xfer_size, u32 cdc_bulk_in_xfer_size, const usbd_composite_cdc_acm_usr_cb_t *cdc_cb,
+						const usbd_composite_uac_usr_cb_t *uac_cb, const usbd_composite_cb_t *cb)
 {
 	int ret;
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;

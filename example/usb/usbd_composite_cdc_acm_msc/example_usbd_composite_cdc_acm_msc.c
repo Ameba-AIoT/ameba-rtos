@@ -56,7 +56,7 @@ static void composite_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
-static usbd_config_t composite_cfg = {
+static const usbd_config_t composite_cfg = {
 	.speed = CONFIG_USBD_COMPOSITE_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBASMART)
@@ -71,7 +71,7 @@ static usbd_config_t composite_cfg = {
 #endif
 };
 
-static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
+static const usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 	.init = composite_cdc_acm_cb_init,
 	.deinit = composite_cdc_acm_cb_deinit,
 	.setup = composite_cdc_acm_cb_setup,
@@ -81,7 +81,7 @@ static usbd_composite_cdc_acm_usr_cb_t composite_cdc_acm_usr_cb = {
 
 static usb_cdc_line_coding_t composite_cdc_acm_line_coding;
 
-static usbd_composite_cb_t composite_cb = {
+static const usbd_composite_cb_t composite_cb = {
 	.status_changed = composite_cb_status_changed,
 };
 

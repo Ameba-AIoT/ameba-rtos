@@ -569,7 +569,7 @@ static void usbd_composite_uac_append_data(void)
 	usb_ringbuf_add_tail(buf_list, NULL, buf_ctrl->last_xfer_len, 0);
 
 	//used for usb read
-	if (usb_ringbuf_is_empty(buf_list) == 0) { // not empty
+	if ((buf_ctrl->sema_active_status) && (usb_ringbuf_is_empty(buf_list) == 0)) { // not empty
 		usb_os_sema_give(buf_ctrl->isoc_sema);
 	}
 }
@@ -603,14 +603,14 @@ static u16 usbd_composite_uac_get_mps(usbd_audio_cfg_t *params, u8 speed)
 	/* for 44.1khz or the host clk is bigger than the device */
 	mps_value = USBD_UAC_CALC_FS_MPS(params->ch_cnt, params->byte_width, params->sampling_freq);
 	if ((mps_value == 0) || (mps_value > USBD_UAC_FS_ISOC_MPS)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid FS MPS %d-%d\n", mps_value, USBD_UAC_FS_ISOC_MPS);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid FS MPS %d-%d %d-%d-%d\n", mps_value, USBD_UAC_FS_ISOC_MPS, params->ch_cnt, params->byte_width, params->sampling_freq);
 		return 0;
 	}
 
 	return mps_value;
 }
 
-static inline void usbd_composite_uac_format_change(usbd_composite_uac_usr_cb_t *cb, usbd_audio_cfg_t *audio_cfg)
+static inline void usbd_composite_uac_format_change(const usbd_composite_uac_usr_cb_t *cb, usbd_audio_cfg_t *audio_cfg)
 {
 	if ((NULL == cb) || (NULL == audio_cfg) || (NULL == cb->format_changed)) {
 		return;
@@ -631,17 +631,13 @@ static void usbd_composite_uac_ep_buf_ctrl_deinit(usbd_composite_uac_buf_ctrl_t 
 	buf_ctrl->mps = 0;
 	buf_ctrl->xfer_continue = 0;
 
-	if (buf_ctrl->sema_valid) {
-		buf_ctrl->sema_valid = 0;
+	buf_ctrl->sema_active_status = 0;
 
-		if (buf_ctrl->wait_sema) {
-			usb_os_sema_give(buf_ctrl->isoc_sema);
-		}
-		do {
-			usb_os_delay_us(100U);
-		} while (buf_ctrl->wait_sema);
-
-		usb_os_sema_delete(buf_ctrl->isoc_sema);
+	if ((buf_ctrl->isoc_sema != NULL) && (buf_ctrl->sema_wait_status)) {
+		usb_os_sema_give(buf_ctrl->isoc_sema);
+	}
+	while (buf_ctrl->sema_wait_status) {
+		usb_os_delay_us(100U);
 	}
 
 	usb_ringbuf_manager_deinit(&(buf_ctrl->buf_list));
@@ -695,8 +691,14 @@ static int usbd_composite_uac_ep_buf_ctrl_init(usbd_composite_uac_buf_ctrl_t *bu
 
 		usb_ringbuf_manager_init(&(buf_ctrl->buf_list), buf_list_cnt, buf_ctrl->mps, 1);
 
-		rtos_sema_create(&(buf_ctrl->isoc_sema), 0U, 1U);
-		buf_ctrl->sema_valid = 1;
+		if (buf_ctrl->isoc_sema == NULL) {
+			if (rtos_sema_create(&(buf_ctrl->isoc_sema), 0U, 1U) != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Create isoc sema fail\n");
+				return HAL_ERR_MEM;
+			}
+		}
+		buf_ctrl->sema_active_status = 1;
+		buf_ctrl->sema_wait_status  = 0;
 	} else {
 		usbd_composite_uac_ep_buf_ctrl_deinit(buf_ctrl);
 	}
@@ -865,7 +867,7 @@ static u8 usbd_composite_uac_volume_linear_interpolation(const u8 x_points[], co
 static int usbd_composite_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
-	usbd_composite_uac_usr_cb_t *cb = uac->cb;
+	const usbd_composite_uac_usr_cb_t *cb = uac->cb;
 	usbd_audio_cfg_t *audio_cfg = NULL;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
@@ -1129,7 +1131,7 @@ static int usbd_composite_uac_handle_ep0_data_out(usb_dev_t *dev)
 	s16 volume_value = 0;
 	u32 sampling_freq;
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
-	usbd_composite_uac_usr_cb_t *cb = uac->cb;
+	const usbd_composite_uac_usr_cb_t *cb = uac->cb;
 	usb_setup_req_t *p_ctrl_req = &(uac->ctrl_req);
 	usbd_audio_cfg_t *audio_cfg = NULL;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
@@ -1274,7 +1276,7 @@ static int usbd_composite_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32
 				ep_out->xfer_len = buf_ctrl->mps;
 				usbd_ep_receive(cdev->dev, ep_out);
 
-				if (usb_ringbuf_is_empty(buf_list) == 0) { //not empty
+				if ((buf_ctrl->sema_active_status) && (usb_ringbuf_is_empty(buf_list) == 0)) { //not empty
 					usb_os_sema_give(buf_ctrl->isoc_sema);
 				}
 			}
@@ -1481,7 +1483,7 @@ static u32 usbd_composite_uac_read_ring_buf(usbd_composite_uac_buf_ctrl_t *buf_c
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbd_composite_uac_init(usbd_composite_dev_t *cdev, usbd_composite_uac_usr_cb_t *cb)
+int usbd_composite_uac_init(usbd_composite_dev_t *cdev, const usbd_composite_uac_usr_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbd_composite_uac_device_t *uac = &usbd_composite_uac_device;
@@ -1572,6 +1574,15 @@ int usbd_composite_uac_deinit(void)
 	usbd_composite_uac_ep_buf_ctrl_deinit(&(uac->isoc_in));
 	usbd_composite_uac_ep_buf_ctrl_deinit(&(uac->isoc_out));
 
+	if (uac->isoc_in.isoc_sema != NULL) {
+		usb_os_sema_delete(uac->isoc_in.isoc_sema);
+		uac->isoc_in.isoc_sema = NULL;
+	}
+	if (uac->isoc_out.isoc_sema != NULL) {
+		usb_os_sema_delete(uac->isoc_out.isoc_sema);
+		uac->isoc_out.isoc_sema = NULL;
+	}
+
 	return HAL_OK;
 }
 
@@ -1599,7 +1610,7 @@ int usbd_composite_uac_receive_data(void)
 		buf_ctrl->data_idx = 0;
 
 #if USBD_COMPOSITE_UAC_DEBUG
-		RTK_LOGS(TAG, RTK_LOG_INFO, "First trigger sema %d-%d \n", buf_ctrl->wait_sema, buf_ctrl->mps);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "First trigger sema %d-%d \n", buf_ctrl->sema_wait_status, buf_ctrl->mps);
 #endif
 	}
 
@@ -1706,13 +1717,18 @@ u32 usbd_composite_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt
 		do {
 			if (usb_ringbuf_is_empty(&(buf_ctrl->buf_list))) {
 				//wait sema
-				buf_ctrl->wait_sema = 1;
+				buf_ctrl->sema_wait_status = 1;
+
+				if (!buf_ctrl->sema_active_status) {
+					buf_ctrl->sema_wait_status = 0;
+					break;
+				}
 				if (usb_os_sema_take(buf_ctrl->isoc_sema, time_out_ms) != HAL_OK) {
-					buf_ctrl->wait_sema = 0;
+					buf_ctrl->sema_wait_status = 0;
 					break;
 				}
 
-				buf_ctrl->wait_sema = 0;
+				buf_ctrl->sema_wait_status = 0;
 			} else {
 				/* if did not read any pkt, loop to check the wr/rd pos*/
 				if ((usbd_composite_uac_read_ring_buf(buf_ctrl, buffer, size, &copy_len, &pkt_cnt, zero_pkt_flag) == 0)

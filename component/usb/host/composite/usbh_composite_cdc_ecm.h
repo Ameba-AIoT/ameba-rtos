@@ -58,8 +58,8 @@
  * @brief USB CDC ECM Composite Host Private Data Structure.
  */
 typedef struct {
-	u16 *led_array;    /**< Pointer to the LED status array; each u16 element represents the state or brightness of an LED. */
-	u8 *mac_value;     /**< Pointer to the MAC address buffer; typically points to a 6-byte physical address. */
+	const u16 *led_array;    /**< Pointer to the LED status array; each u16 element represents the state or brightness of an LED. */
+	const u8 *mac_value;     /**< Pointer to the MAC address buffer; typically points to a 6-byte physical address. */
 	u8 led_cnt;        /**< LED count; indicates the number of valid elements in the led_array. */
 } usbh_composite_cdc_ecm_priv_data_t;
 
@@ -108,7 +108,7 @@ typedef struct {
 	*/
 	int(* bulk_received)(u8 *buf, u32 len);
 
-	usbh_composite_cdc_ecm_priv_data_t *priv;
+	const usbh_composite_cdc_ecm_priv_data_t *priv;
 } usbh_composite_cdc_ecm_usr_cb_t;
 
 typedef struct {
@@ -138,7 +138,7 @@ typedef struct {
 	usbh_composite_cdc_ecm_pipe_info_t      bulk_rx;            /**< Bulk IN Endpoint Info */
 
 	usb_os_sema_t                           bulk_tx_sema;       /**<  Semaphore for BULK TX synchronization */
-	usbh_composite_cdc_ecm_usr_cb_t         *cb;                /**< User callback structure */
+	const usbh_composite_cdc_ecm_usr_cb_t         *cb;                /**< User callback structure */
 	usbh_composite_host_t                   *driver;            /**< Composite driver handle */
 	u16                                     *led_array;         /**< Pointer to LED array */
 	u8                                      *dongle_ctrl_buf;   /**< Buffer for control transfers (cache aligned)*/
@@ -189,7 +189,7 @@ extern const usbh_class_driver_t usbh_composite_cdc_ecm_driver;  /**< Point to c
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
-int usbh_composite_cdc_ecm_init(usbh_composite_host_t *chost, usbh_composite_cdc_ecm_usr_cb_t *cb);
+int usbh_composite_cdc_ecm_init(usbh_composite_host_t *chost, const usbh_composite_cdc_ecm_usr_cb_t *cb);
 
 /**
  * @brief  De-initializes the CDC ECM host class driver and releases resources.

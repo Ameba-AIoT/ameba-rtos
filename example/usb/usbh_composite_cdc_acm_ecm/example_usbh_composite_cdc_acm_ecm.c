@@ -17,6 +17,16 @@
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "Eth";
 
+/*enable this used to check ecm init/deinit memory leakage*/
+#define CONFIG_USBH_COMP_MEM_CHECK                              0
+#define CONFIG_USBH_COMP_HOT_PLUG_TEST                          1     /* Hot plug test */
+#define CONFIG_USBH_COMP_ENABLE_DUMP_FILE                       0
+#define CONFIG_USBH_COMP_ENABLE_REMOTE_FILE_DOWNLOAD            0
+#define CONFIG_USBH_COMP_ENABLE_USER_SET_DONGLE_MAC             0
+
+#define CONFIG_USBH_COMP_PBUF_MAX_LEN                           (128)
+#define CONFIG_USBH_COMP_NETWORK_INFO_MAX_STR                   (128)
+
 /* lwip api */
 extern void rltk_usb_eth_init(void);
 extern void rltk_usb_eth_deinit(void);
@@ -26,72 +36,66 @@ static int composite_ecm_cb_rxdata(u8 *buf, u32 len);
 static int composite_acm_cb_rxdata(u8 *buf, u32 len);
 
 // Thread priorities
-#define CONFIG_USBH_COMP_ACM_ECM_INIT_THREAD_PRIORITY             5U
-#define CONFIG_USBH_COMP_ACM_ECM_HOTPLUG_THREAD_PRIORITY          3U
-#define CONFIG_USBH_COMP_ACM_ECM_LINK_THREAD_PRIORITY             3U
-#define CONFIG_USBH_COMP_ACM_ECM_MEM_CHECK_THREAD_PRIORITY        3U
-#define CONFIG_USBH_COMP_ACM_ECM_DOWNLOAD_THREAD_PRIORITY         2U
+#define CONFIG_USBH_COMP_INIT_THREAD_PRIORITY                   5U
+#define CONFIG_USBH_COMP_HOTPLUG_THREAD_PRIORITY                3U
+#define CONFIG_USBH_COMP_LINK_THREAD_PRIORITY                   3U
+#define CONFIG_USBH_COMP_MEM_CHECK_THREAD_PRIORITY              3U
+#define CONFIG_USBH_COMP_DOWNLOAD_THREAD_PRIORITY               2U
 
 // Thread stack sizes
-#define CONFIG_USBH_COMP_ACM_ECM_INIT_THREAD_STACK_SIZE             (1024U * 2)
-#define CONFIG_USBH_COMP_ACM_ECM_HOTPLUG_THREAD_STACK_SIZE          1024U
-#define CONFIG_USBH_COMP_ACM_ECM_LINK_THREAD_STACK_SIZE             (1024U * 2)
-#define CONFIG_USBH_COMP_ACM_ECM_MEM_CHECK_THREAD_STACK_SIZE        (1024U * 2)
-#define CONFIG_USBH_COMP_ACM_ECM_DOWNLOAD_THREAD_STACK_SIZE         (1024U * 5)
-
-/*enable this used to check ecm init/deinit memory leakage*/
-#define CONFIG_USBH_COMPOSITE_MEM_CHECK    0
-#define CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST     1     /* Hot plug test */
-#define ENABLE_DUMP_FILE                        0
-#define ENABLE_REMOTE_FILE_DOWNLOAD        0
-#define ENABLE_USER_SET_DONGLE_MAC              0
-
-#define PBUF_MAX_LEN                            (128)
-#define NETWORK_INFO_MAX_STR                    (128)
+#define CONFIG_USBH_COMP_INIT_THREAD_STACK_SIZE                 (1024U)
+#define CONFIG_USBH_COMP_HOTPLUG_THREAD_STACK_SIZE              (1024U)
+#define CONFIG_USBH_COMP_LINK_THREAD_STACK_SIZE                 (1600U)
+#if CONFIG_USBH_COMP_MEM_CHECK
+#define CONFIG_USBH_COMP_MEM_CHECK_THREAD_STACK_SIZE            (1024U * 2)
+#endif
+#if CONFIG_USBH_COMP_ENABLE_REMOTE_FILE_DOWNLOAD
+#define CONFIG_USBH_COMP_DOWNLOAD_THREAD_STACK_SIZE             (1024U * 5)
+#endif
 
 /**
  * @brief Enable GPIO-driven power control for the attached USB device
- * When enabled, a GPIO pin (USB_DEV_PWR_CTRL_GPIO) is wired to the device's power switch
+ * When enabled, a GPIO pin (CONFIG_USBH_COMP_USB_DEV_PWR_CTRL_GPIO) is wired to the device's power switch
  * so firmware can power-cycle the device to physically trigger a hot-plug.
- * This is distinct from CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST, which only re-initializes the
+ * This is distinct from CONFIG_USBH_COMP_HOT_PLUG_TEST, which only re-initializes the
  * host stack in software after a detach event.
  */
-#define USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL            0
+#define CONFIG_USBH_COMP_GPIO_POWER_CTRL                        0
 
 /* while do mem check, disable download & hotplug */
-#if CONFIG_USBH_COMPOSITE_MEM_CHECK
-#undef  ENABLE_REMOTE_FILE_DOWNLOAD
-#define ENABLE_REMOTE_FILE_DOWNLOAD        0
-#undef  CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
-#define CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST     0
+#if CONFIG_USBH_COMP_MEM_CHECK
+#undef  CONFIG_USBH_COMP_ENABLE_REMOTE_FILE_DOWNLOAD
+#define CONFIG_USBH_COMP_ENABLE_REMOTE_FILE_DOWNLOAD            0
+#undef  CONFIG_USBH_COMP_HOT_PLUG_TEST
+#define CONFIG_USBH_COMP_HOT_PLUG_TEST                          0
 #endif
 
-#if ENABLE_REMOTE_FILE_DOWNLOAD
-#define MD5_CHECK_BUFFER_LEN                    (2)
+#if CONFIG_USBH_COMP_ENABLE_REMOTE_FILE_DOWNLOAD
+#define CONFIG_USBH_COMP_MD5_CHECK_BUFFER_LEN                   (2)
 /* socket server info */
-#define SERVER_HOST                             "www.baidu.com"
-#define SERVER_PORT                             80
-#define RESOURCE                                "/"
-#define BUFFER_SIZE                             1000      //download test buffer length
-#define RECV_TO                                 60*1000   // ms
+#define CONFIG_USBH_COMP_SERVER_HOST                            "www.baidu.com"
+#define CONFIG_USBH_COMP_SERVER_PORT                            80
+#define CONFIG_USBH_COMP_RESOURCE                               "/"
+#define CONFIG_USBH_COMP_BUFFER_SIZE                            1000      //download test buffer length
+#define CONFIG_USBH_COMP_RECV_TO                                60*1000   // ms
 
-static unsigned char dl_buf[BUFFER_SIZE + 1];
+static unsigned char dl_buf[CONFIG_USBH_COMP_BUFFER_SIZE + 1];
 static mbedtls_md5_context ctx;
-#if ENABLE_DUMP_FILE
-#define configTOTAL_PSRAM_HEAP_SIZE_TEST        (29000)
-static unsigned char dump_psRAMHeap[configTOTAL_PSRAM_HEAP_SIZE_TEST];
+#if CONFIG_USBH_COMP_ENABLE_DUMP_FILE
+#define CONFIG_USBH_COMP_PSRAM_HEAP_SIZE_TEST                   (29000)
+static unsigned char dump_psRAMHeap[CONFIG_USBH_COMP_PSRAM_HEAP_SIZE_TEST];
 #endif
-#endif  //ENABLE_REMOTE_FILE_DOWNLOAD
+#endif  //CONFIG_USBH_COMP_ENABLE_REMOTE_FILE_DOWNLOAD
 
-#if ENABLE_USER_SET_DONGLE_MAC
-static u16 ecm_led_color[1] = {0x1122};
-static u8 ecm_mac_str[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+#if CONFIG_USBH_COMP_ENABLE_USER_SET_DONGLE_MAC
+static const u16 ecm_led_color[1] = {0x1122};
+static const u8 ecm_mac_str[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 #endif
 
 static rtos_sema_t usb_detach_sema;
 static rtos_task_t eth_link_status_check_task;
 static rtos_task_t ecm_init_task;
-static u8 acm_ctrl_buf[PBUF_MAX_LEN] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 acm_ctrl_buf[CONFIG_USBH_COMP_PBUF_MAX_LEN] __attribute__((aligned(CACHE_LINE_SIZE)));
 static u8 dhcp_done = 0;
 
 /* Private types -------------------------------------------------------------*/
@@ -131,15 +135,15 @@ typedef enum {
 } fibocom_dongle_state_t;
 
 typedef struct {
-	u8 ip[NETWORK_INFO_MAX_STR];
-	u8 mask[NETWORK_INFO_MAX_STR];
-	u8 gw[NETWORK_INFO_MAX_STR];
-	u8 dns[NETWORK_INFO_MAX_STR];
+	u8 ip[CONFIG_USBH_COMP_NETWORK_INFO_MAX_STR];
+	u8 mask[CONFIG_USBH_COMP_NETWORK_INFO_MAX_STR];
+	u8 gw[CONFIG_USBH_COMP_NETWORK_INFO_MAX_STR];
+	u8 dns[CONFIG_USBH_COMP_NETWORK_INFO_MAX_STR];
 } network_info_t;
 
 static u8 acm_rx_busy = 0;
 
-static usbh_composite_cdc_acm_param_t dongle_array[] = {
+static const usbh_composite_cdc_acm_param_t dongle_array[] = {
 	{USBH_COMPOSITE_QUECTEL_DONGLE_VID, USBH_COMPOSITE_QUECTEL_DONGLE_EG915_PID, 2},
 	{USBH_COMPOSITE_QUECTEL_DONGLE_VID, USBH_COMPOSITE_QUECTEL_DONGLE_EG91_PID,  2},
 	{USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_VID, USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_PID, 2},
@@ -187,8 +191,8 @@ typedef struct {
 
 static dongle_ctx_t usbh_dongle_ctx;
 
-static usbh_composite_cdc_ecm_priv_data_t ecm_priv = {
-#if ENABLE_USER_SET_DONGLE_MAC
+static const usbh_composite_cdc_ecm_priv_data_t ecm_priv = {
+#if CONFIG_USBH_COMP_ENABLE_USER_SET_DONGLE_MAC
 	ecm_mac_str,
 	ecm_led_color,
 	sizeof(ecm_led_color) / sizeof(ecm_led_color[0]),
@@ -199,16 +203,16 @@ static usbh_composite_cdc_ecm_priv_data_t ecm_priv = {
 #endif
 };
 
-static usbh_composite_cb_t composite_cb = {
+static const usbh_composite_cb_t composite_cb = {
 	.detach = composite_cb_detach,
 };
 
-static usbh_composite_cdc_acm_usr_cb_t usbh_acm_cfg = {
+static const usbh_composite_cdc_acm_usr_cb_t usbh_acm_cfg = {
 	.bulk_received = composite_acm_cb_rxdata,
 	.priv = dongle_array,
 };
 
-static usbh_composite_cdc_ecm_usr_cb_t usbh_ecm_cfg = {
+static const usbh_composite_cdc_ecm_usr_cb_t usbh_ecm_cfg = {
 	.bulk_received = composite_ecm_cb_rxdata,
 	.priv = &ecm_priv,
 };
@@ -273,7 +277,7 @@ static u8 *composite_dev_dongle_get_netinfo(u8 *name)
 static int composite_cb_detach(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
-#if CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
+#if CONFIG_USBH_COMP_HOT_PLUG_TEST
 	rtos_sema_give(usb_detach_sema);
 #endif
 	return HAL_OK;
@@ -291,7 +295,7 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 	u16 vid = usbh_dongle_ctx.vid;
 	acm_rx_busy = 1;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "ACM data received len(%d) \n", len);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "ACM data received len(%u) \n", len);
 
 	for (i = 0; i < len;) {
 		if (i + 10 <= len) {
@@ -372,8 +376,12 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 			if (p) {
 				u8 dotcount = 0;
 				u8 ptmp[100];
-				memset(ptmp, 0, 100);
-				memcpy(ptmp, p, strlen(p));
+				u32 plen = strlen(p);
+				if (plen >= sizeof(ptmp)) {
+					plen = sizeof(ptmp) - 1;
+				}
+				memset(ptmp, 0, sizeof(ptmp));
+				memcpy(ptmp, p, plen);
 				tail = ptmp ;
 				do {
 					if (*tail == '.') {
@@ -383,6 +391,9 @@ static int composite_acm_cb_rxdata(u8 *pbuf, u32 len) //type is usb transfer typ
 							tail++;
 							break;
 						}
+					} else if (*tail == 0) {
+						/* reached end of the bounded, NUL-terminated buffer */
+						break;
 					}
 					tail++;
 				} while (1);
@@ -503,7 +514,7 @@ static u32 composite_acm_cmd_test(u16 argc, u8 *argv[])
 	RTK_LOGS(TAG, RTK_LOG_INFO, "At cmd(%s)\n", cmd);
 	if (USBH_COMPOSITE_QUECTEL_DONGLE_VID == usbh_dongle_ctx.vid ||
 		USBH_COMPOSITE_FIBOCOM_DONGLE_LE271_VID == usbh_dongle_ctx.vid) {
-		memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+		memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 		memcpy(acm_ctrl_buf, cmd, composite_dev_strlen(cmd));
 		acm_ctrl_buf[composite_dev_strlen(cmd) + 0] = 0x0D;
 		acm_ctrl_buf[composite_dev_strlen(cmd) + 1] = 0x0A;
@@ -550,7 +561,7 @@ static u8 dongle_quectel_eg915_diag_ctrl(void)
 			if (usbh_dongle_ctx.in_detach) {
 				return 1;
 			}
-			memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+			memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 			memcpy(acm_ctrl_buf, pdata0, composite_dev_strlen(pdata0));
 			acm_ctrl_buf[composite_dev_strlen(pdata0) + 0] = 0x0D;
 			acm_ctrl_buf[composite_dev_strlen(pdata0) + 1] = 0x0A;
@@ -559,7 +570,7 @@ static u8 dongle_quectel_eg915_diag_ctrl(void)
 			break;
 		case QUECTEL_DONGLE_STATUS_ECM_CFG:
 			if (1) {
-				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+				memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata1, composite_dev_strlen(pdata1));
 				acm_ctrl_buf[composite_dev_strlen(pdata1) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata1) + 1] = 0x0A;
@@ -569,7 +580,7 @@ static u8 dongle_quectel_eg915_diag_ctrl(void)
 			break;
 		case QUECTEL_DONGLE_STATUS_SEARCH:
 			if (1) {
-				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+				memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata2, composite_dev_strlen(pdata2));
 				acm_ctrl_buf[composite_dev_strlen(pdata2) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata2) + 1] = 0x0A;
@@ -579,7 +590,7 @@ static u8 dongle_quectel_eg915_diag_ctrl(void)
 			break;
 		case QUECTEL_DONGLE_STATUS_SET_APN:
 			if (1) {
-				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+				memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata3, composite_dev_strlen(pdata3));
 				acm_ctrl_buf[composite_dev_strlen(pdata3) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata3) + 1] = 0x0A;
@@ -589,7 +600,7 @@ static u8 dongle_quectel_eg915_diag_ctrl(void)
 			break;
 		case QUECTEL_DONGLE_STATUS_DIAG:
 			if (1) {
-				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+				memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata4, composite_dev_strlen(pdata4));
 				acm_ctrl_buf[composite_dev_strlen(pdata4) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata4) + 1] = 0x0A;
@@ -605,7 +616,7 @@ static u8 dongle_quectel_eg915_diag_ctrl(void)
 			break;
 		case QUECTEL_DONGLE_STATUS_DIAG_STATUS:
 			if (0 == usbh_dongle_ctx.quectel.ip_ready) {
-				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+				memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata5, composite_dev_strlen(pdata5));
 				acm_ctrl_buf[composite_dev_strlen(pdata5) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata5) + 1] = 0x0A;
@@ -667,7 +678,7 @@ static u8 dongle_quectel_eg91_diag_ctrl(void)
 			if (usbh_dongle_ctx.in_detach) {
 				return 1;
 			}
-			memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+			memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 			memcpy(acm_ctrl_buf, pdata0, composite_dev_strlen(pdata0));
 			acm_ctrl_buf[composite_dev_strlen(pdata0) + 0] = 0x0D;
 			acm_ctrl_buf[composite_dev_strlen(pdata0) + 1] = 0x0A;
@@ -678,7 +689,7 @@ static u8 dongle_quectel_eg91_diag_ctrl(void)
 			break;
 		case QUECTEL_DONGLE_STATUS_ECM_CFG:
 			if (1) {
-				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+				memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata1, composite_dev_strlen(pdata1));
 				acm_ctrl_buf[composite_dev_strlen(pdata1) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata1) + 1] = 0x0A;
@@ -690,7 +701,7 @@ static u8 dongle_quectel_eg91_diag_ctrl(void)
 			break;
 		case QUECTEL_DONGLE_STATUS_SEARCH:
 			if (1) {
-				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+				memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata2, composite_dev_strlen(pdata2));
 				acm_ctrl_buf[composite_dev_strlen(pdata2) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata2) + 1] = 0x0A;
@@ -702,7 +713,7 @@ static u8 dongle_quectel_eg91_diag_ctrl(void)
 			break;
 		case QUECTEL_DONGLE_STATUS_SET_APN:
 			if (1) {
-				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+				memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata3, composite_dev_strlen(pdata3));
 				acm_ctrl_buf[composite_dev_strlen(pdata3) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata3) + 1] = 0x0A;
@@ -714,7 +725,7 @@ static u8 dongle_quectel_eg91_diag_ctrl(void)
 			break;
 		case QUECTEL_DONGLE_STATUS_DIAG:
 			if (1) {
-				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+				memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata4, composite_dev_strlen(pdata4));
 				acm_ctrl_buf[composite_dev_strlen(pdata4) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata4) + 1] = 0x0A;
@@ -746,7 +757,7 @@ static u8 dongle_quectel_eg91_diag_ctrl(void)
 				if (usbh_dongle_ctx.in_detach) {
 					return 1;
 				}
-				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+				memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata5, composite_dev_strlen(pdata5));
 				acm_ctrl_buf[composite_dev_strlen(pdata5) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata5) + 1] = 0x0A;
@@ -771,7 +782,7 @@ static u8 dongle_quectel_eg91_diag_ctrl(void)
 			break;
 		case QUECTEL_DONGLE_STATUS_GET_MAC:
 			if (1) {
-				memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+				memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 				memcpy(acm_ctrl_buf, pdata6, composite_dev_strlen(pdata6));
 				acm_ctrl_buf[composite_dev_strlen(pdata6) + 0] = 0x0D;
 				acm_ctrl_buf[composite_dev_strlen(pdata6) + 1] = 0x0A;
@@ -817,11 +828,11 @@ static int fibocom_send_at_wait(const char *cmd, volatile u8 *ready_flag, u32 ti
 	u32 cmd_len = composite_dev_strlen((u8 *)cmd);
 	u32 elapsed = 0;
 
-	if (cmd_len + 2 > PBUF_MAX_LEN) {
+	if (cmd_len + 2 > CONFIG_USBH_COMP_PBUF_MAX_LEN) {
 		return -1;
 	}
 
-	memset(acm_ctrl_buf, 0x00, PBUF_MAX_LEN);
+	memset(acm_ctrl_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
 	memcpy(acm_ctrl_buf, cmd, cmd_len);
 	acm_ctrl_buf[cmd_len + 0] = 0x0D;
 	acm_ctrl_buf[cmd_len + 1] = 0x0A;
@@ -1172,12 +1183,12 @@ static int composite_ecm_cb_rxdata(u8 *buf, u32 len)
 	return HAL_OK;
 }
 
-#if USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL
-#define USB_DEV_PWR_CTRL_GPIO  _PA_3
+#if CONFIG_USBH_COMP_GPIO_POWER_CTRL
+#define CONFIG_USBH_COMP_USB_DEV_PWR_CTRL_GPIO                  _PA_3
 
 /**
   * @brief  Configure the device power-control GPIO as a push-pull output.
-  * @param  GPIO_Pin: Pin wired to the USB device power switch (USB_DEV_PWR_CTRL_GPIO).
+  * @param  GPIO_Pin: Pin wired to the USB device power switch (CONFIG_USBH_COMP_USB_DEV_PWR_CTRL_GPIO).
   * @retval None
   */
 static void gpio_power_init(uint32_t GPIO_Pin)
@@ -1197,7 +1208,7 @@ static void gpio_power_init(uint32_t GPIO_Pin)
 static void gpio_power_trigger(u8 level)
 {
 	level = level & BIT0;
-	GPIO_WriteBit(USB_DEV_PWR_CTRL_GPIO, level);
+	GPIO_WriteBit(CONFIG_USBH_COMP_USB_DEV_PWR_CTRL_GPIO, level);
 }
 
 /**
@@ -1213,7 +1224,7 @@ static void gpio_init(void)
 	if (init_ok == 0) {
 		init_ok = 1;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "[USB] gpio init\n");
-		gpio_power_init(USB_DEV_PWR_CTRL_GPIO);
+		gpio_power_init(CONFIG_USBH_COMP_USB_DEV_PWR_CTRL_GPIO);
 
 		gpio_power_trigger(0);      /* power off */
 		usb_os_sleep_ms(20);        /* let the power rail discharge */
@@ -1226,12 +1237,12 @@ static void gpio_init(void)
   * @brief  Physically power-cycle the attached USB device via the power-control
   *         GPIO: drop power for 500 ms, then restore it. This forces a real
   *         detach/attach so the hot-plug re-enumeration path can be exercised.
-  *         Only available when USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL is enabled.
+  *         Only available when CONFIG_USBH_COMP_GPIO_POWER_CTRL is enabled.
   * @retval HAL_OK
   */
 static u32 usbh_hotplug_test(void)
 {
-#if USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL
+#if CONFIG_USBH_COMP_GPIO_POWER_CTRL
 	gpio_power_trigger(0);
 	rtos_time_delay_ms(500);
 	gpio_power_trigger(1);
@@ -1412,12 +1423,12 @@ static void example_usbh_comp_link_change_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-#if ENABLE_REMOTE_FILE_DOWNLOAD
+#if CONFIG_USBH_COMP_ENABLE_REMOTE_FILE_DOWNLOAD
 static void composite_cdc_ecm_save_data_to_memory(char *pdata, unsigned int length)
 {
-#if ENABLE_DUMP_FILE
+#if CONFIG_USBH_COMP_ENABLE_DUMP_FILE
 	static unsigned int psram_pos = 0;
-	if (configTOTAL_PSRAM_HEAP_SIZE_TEST >= psram_pos + length) {
+	if (CONFIG_USBH_COMP_PSRAM_HEAP_SIZE_TEST >= psram_pos + length) {
 		memcpy((void *)&dump_psRAMHeap[psram_pos], pdata, length);
 		psram_pos += length;
 	}
@@ -1440,9 +1451,9 @@ static int composite_cdc_ecm_check_download_data(char *pdata, unsigned int lengt
 
 static void composite_cdc_ecm_write_data_to_flash(void)
 {
-#if ENABLE_DUMP_FILE
+#if CONFIG_USBH_COMP_ENABLE_DUMP_FILE
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Dump mem to flash start\n");
-	FLASH_WriteStream(0x100000, configTOTAL_PSRAM_HEAP_SIZE_TEST, dump_psRAMHeap);
+	FLASH_WriteStream(0x100000, CONFIG_USBH_COMP_PSRAM_HEAP_SIZE_TEST, dump_psRAMHeap);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Dump mem to flash done\n");
 #endif
 }
@@ -1455,12 +1466,12 @@ static void example_usbh_comp_download_thread(void *param)
 	struct hostent *server_host;
 	u32 resource_size = 0;
 	u32 content_len = 0;
-	unsigned char output[8 * MD5_CHECK_BUFFER_LEN];
+	unsigned char output[8 * CONFIG_USBH_COMP_MD5_CHECK_BUFFER_LEN];
 	int pos = 0, read_size = 0,  header_removed = 0;
 	UNUSED(param);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter donwload example\n");
-	memset(output, 0x00, 8 * MD5_CHECK_BUFFER_LEN);
+	memset(output, 0x00, 8 * CONFIG_USBH_COMP_MD5_CHECK_BUFFER_LEN);
 
 	while (0 == dhcp_done) {
 		if (++heart_beat % 30 == 0) {
@@ -1475,7 +1486,7 @@ static void example_usbh_comp_download_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Socket\n");
 		goto exit;
 	} else {
-		int recv_timeout_ms = RECV_TO;
+		int recv_timeout_ms = CONFIG_USBH_COMP_RECV_TO;
 		// lwip 1.5.0
 		struct timeval recv_timeout;
 		recv_timeout.tv_sec = recv_timeout_ms / 1000;
@@ -1486,10 +1497,10 @@ static void example_usbh_comp_download_thread(void *param)
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Server_fd=%d\n", server_fd);
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(SERVER_PORT);
+	server_addr.sin_port = htons(CONFIG_USBH_COMP_SERVER_PORT);
 
-	// Support SERVER_HOST in IP or domain name
-	server_host = gethostbyname(SERVER_HOST);
+	// Support CONFIG_USBH_COMP_SERVER_HOST in IP or domain name
+	server_host = gethostbyname(CONFIG_USBH_COMP_SERVER_HOST);
 	if (server_host != NULL) {
 		memcpy((void *) &server_addr.sin_addr, (void *) server_host->h_addr, 4);
 	} else {
@@ -1497,11 +1508,11 @@ static void example_usbh_comp_download_thread(void *param)
 		goto exit;
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Will do connect %s\n", SERVER_HOST);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Will do connect %s\n", CONFIG_USBH_COMP_SERVER_HOST);
 	if (connect(server_fd, (struct sockaddr *) &server_addr, sizeof(server_addr)) == 0) {
 		pos = 0, read_size = 0, resource_size = 0, content_len = 0, header_removed = 0;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Connect success\n");
-		sprintf((char *)dl_buf, "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", RESOURCE, SERVER_HOST);
+		sprintf((char *)dl_buf, "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", CONFIG_USBH_COMP_RESOURCE, CONFIG_USBH_COMP_SERVER_HOST);
 		u32 max = composite_dev_strlen((u8 *)dl_buf);
 
 		if (0) {
@@ -1519,7 +1530,7 @@ static void example_usbh_comp_download_thread(void *param)
 		mbedtls_md5_starts(&ctx);
 
 		while (((content_len == 0) || (resource_size < content_len)) /**/
-			   && ((read_size = read(server_fd, dl_buf + pos, BUFFER_SIZE - pos)) > 0)) {
+			   && ((read_size = read(server_fd, dl_buf + pos, CONFIG_USBH_COMP_BUFFER_SIZE - pos)) > 0)) {
 			if (header_removed == 0) {
 				char *header = NULL;
 
@@ -1548,7 +1559,7 @@ static void example_usbh_comp_download_thread(void *param)
 						RTK_LOGS(TAG, RTK_LOG_INFO, "Content len: %d\n", content_len);
 					}
 				} else {
-					if (pos >= BUFFER_SIZE) {
+					if (pos >= CONFIG_USBH_COMP_BUFFER_SIZE) {
 						RTK_LOGS(TAG, RTK_LOG_ERROR, "HTTP header pos=%d-%s\n", pos, dl_buf);
 						goto exit;
 					}
@@ -1568,7 +1579,7 @@ static void example_usbh_comp_download_thread(void *param)
 		mbedtls_md5_free(&ctx);
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "mbedtls_md5_finish md5\n");
-		for (u8 hh = 0; hh < MD5_CHECK_BUFFER_LEN; hh++) {
+		for (u8 hh = 0; hh < CONFIG_USBH_COMP_MD5_CHECK_BUFFER_LEN; hh++) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "md5 %d=%02x%02x%02x%02x%02x%02x%02x%02x\n\n", hh,
 					 output[8 * hh + 0], output[8 * hh + 1], output[8 * hh + 2], output[8 * hh + 3],
 					 output[8 * hh + 4], output[8 * hh + 5], output[8 * hh + 6], output[8 * hh + 7]);
@@ -1611,14 +1622,14 @@ static void composite_dev_init(void)
 	status = rtos_task_create(&eth_link_status_check_task,
 							  "example_usbh_comp_link_change_thread",
 							  example_usbh_comp_link_change_thread, NULL,
-							  CONFIG_USBH_COMP_ACM_ECM_LINK_THREAD_STACK_SIZE, CONFIG_USBH_COMP_ACM_ECM_LINK_THREAD_PRIORITY);
+							  CONFIG_USBH_COMP_LINK_THREAD_STACK_SIZE, CONFIG_USBH_COMP_LINK_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
 
 	status = rtos_task_create(&ecm_init_task, "example_usbh_comp_init_task",
 							  example_usbh_comp_init_task, NULL,
-							  CONFIG_USBH_COMP_ACM_ECM_INIT_THREAD_STACK_SIZE, CONFIG_USBH_COMP_ACM_ECM_INIT_THREAD_PRIORITY);
+							  CONFIG_USBH_COMP_INIT_THREAD_STACK_SIZE, CONFIG_USBH_COMP_INIT_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
@@ -1626,7 +1637,7 @@ static void composite_dev_init(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USB init start\r\n");
 }
 
-#if CONFIG_USBH_COMPOSITE_MEM_CHECK
+#if CONFIG_USBH_COMP_MEM_CHECK
 // extern void vPortGetTaskHeapInfo(void);
 // extern void mmeory_array_dump(void);
 static void example_usbh_comp_mem_check_thread(void *param)
@@ -1657,7 +1668,7 @@ static void example_usbh_comp_mem_check_thread(void *param)
 }
 #endif
 
-#if CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
+#if CONFIG_USBH_COMP_HOT_PLUG_TEST
 static void example_usbh_comp_hotplug_thread(void *param)
 {
 	UNUSED(param);
@@ -1697,25 +1708,25 @@ void example_usbh_composite_cdc_acm_ecm(void)
 	rltk_usb_eth_init();
 	rtos_sema_create(&usb_detach_sema, 0U, 1U);
 
-#if USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL
+#if CONFIG_USBH_COMP_GPIO_POWER_CTRL
 	gpio_init();
 #endif
 
-#if CONFIG_USBH_COMPOSITE_HOT_PLUG_TEST
+#if CONFIG_USBH_COMP_HOT_PLUG_TEST
 	rtos_task_t hot_plug_task;
 	ret = rtos_task_create(&hot_plug_task, "example_usbh_comp_hotplug_thread",
 						   example_usbh_comp_hotplug_thread, NULL,
-						   CONFIG_USBH_COMP_ACM_ECM_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_COMP_ACM_ECM_HOTPLUG_THREAD_PRIORITY);
+						   CONFIG_USBH_COMP_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_COMP_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hoptplag thread fail\n");
 	}
 #endif
 
-#if CONFIG_USBH_COMPOSITE_MEM_CHECK
+#if CONFIG_USBH_COMP_MEM_CHECK
 	rtos_task_t memory_monitor_task;
 	ret = rtos_task_create(&memory_monitor_task, "example_usbh_comp_mem_check_thread",
 						   example_usbh_comp_mem_check_thread, NULL,
-						   CONFIG_USBH_COMP_ACM_ECM_MEM_CHECK_THREAD_STACK_SIZE, CONFIG_USBH_COMP_ACM_ECM_MEM_CHECK_THREAD_PRIORITY);
+						   CONFIG_USBH_COMP_MEM_CHECK_THREAD_STACK_SIZE, CONFIG_USBH_COMP_MEM_CHECK_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
@@ -1723,11 +1734,11 @@ void example_usbh_composite_cdc_acm_ecm(void)
 
 	composite_dev_init();
 
-#if ENABLE_REMOTE_FILE_DOWNLOAD
+#if CONFIG_USBH_COMP_ENABLE_REMOTE_FILE_DOWNLOAD
 	rtos_task_t download_task;
 	ret = rtos_task_create(&download_task, "example_usbh_comp_download_thread",
 						   example_usbh_comp_download_thread, NULL,
-						   CONFIG_USBH_COMP_ACM_ECM_DOWNLOAD_THREAD_STACK_SIZE, CONFIG_USBH_COMP_ACM_ECM_DOWNLOAD_THREAD_PRIORITY);
+						   CONFIG_USBH_COMP_DOWNLOAD_THREAD_STACK_SIZE, CONFIG_USBH_COMP_DOWNLOAD_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create download thread fail\n");
 	}
@@ -1738,7 +1749,7 @@ void example_usbh_composite_cdc_acm_ecm(void)
 
 /**
   * @brief  Shell command: trigger a physical hot-plug by power-cycling the
-  *         USB device via GPIO. Requires USBH_COMPOSITE_CDC_ECM_GPIO_POWER_CTRL.
+  *         USB device via GPIO. Requires CONFIG_USBH_COMP_GPIO_POWER_CTRL.
   * @param  argc: Argument count (unused).
   * @param  argv: Argument vector (unused).
   * @retval HAL_OK

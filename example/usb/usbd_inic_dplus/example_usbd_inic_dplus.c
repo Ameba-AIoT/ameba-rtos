@@ -97,12 +97,12 @@ static void inic_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
-static usbd_config_t inic_cfg = {
+static const usbd_config_t inic_cfg = {
 	.speed = USB_SPEED_FULL,
 	.isr_priority = INT_PRI_MIDDLE,
 };
 
-static usbd_inic_cb_t inic_cb = {
+static const usbd_inic_cb_t inic_cb = {
 	.init = inic_cb_init,
 	.deinit = inic_cb_deinit,
 	.setup = inic_cb_setup,
