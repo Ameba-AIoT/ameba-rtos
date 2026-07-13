@@ -12,11 +12,12 @@
   * @{
   */
 
-/** @defgroup AES
+/** @defgroup AES AES
   * @brief AES driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -310,6 +311,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -340,7 +342,7 @@ typedef struct {
 
 	u32	CipherLen;		/*!< Specifies the AES cipher length in bytes. */
 
-	u32 key_len;
+	u32 key_len;	/*!< AES key length in bits. This parameter can be a value of @ref AES_Key_Size. */
 } AES_InitTypeDef;
 /** @} */
 
@@ -349,7 +351,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup AES_Key_Size
+/** @defgroup AES_Key_Size AES Key Size
   * @{
   */
 #define AES_KEY_SIZE_128				((u8)0x00)	/*!< Key size 128 bits */
@@ -357,22 +359,23 @@ typedef struct {
 #define AES_KEY_SIZE_256				((u8)0x02)	/*!< Key size 256 bits */
 /** @} */
 
-/** @defgroup AES_Cipher_Mode
+/** @defgroup AES_Cipher_Mode AES Cipher Mode
   * @{
   */
-#define CIPHER_ENCRYPTION_MODE  ((u8)0x01)
-#define CIPHER_DECRYPTION_MODE  ((u8)0x00)
+#define CIPHER_ENCRYPTION_MODE  ((u8)0x01)	/*!< AES encryption direction */
+#define CIPHER_DECRYPTION_MODE  ((u8)0x00)	/*!< AES decryption direction */
 
-#define CIPHER_MODE_ECB			((u8)0x00)
-#define CIPHER_MODE_CBC			((u8)0x01)
-#define CIPHER_MODE_CFB			((u8)0x02)
-#define CIPHER_MODE_OFB			((u8)0x03)
-#define CIPHER_MODE_CTR			((u8)0x04)
-#define CIPHER_MODE_GMAC		((u8)0x05)
-#define CIPHER_MODE_GCM			((u8)0x06)
-#define CIPHER_MODE_CMAC		((u8)0x07)
-#define CIPHER_MODE_XTS 		((u8)0x08)
+#define CIPHER_MODE_ECB			((u8)0x00)	/*!< Electronic Codebook mode */
+#define CIPHER_MODE_CBC			((u8)0x01)	/*!< Cipher Block Chaining mode */
+#define CIPHER_MODE_CFB			((u8)0x02)	/*!< Cipher Feedback mode */
+#define CIPHER_MODE_OFB			((u8)0x03)	/*!< Output Feedback mode */
+#define CIPHER_MODE_CTR			((u8)0x04)	/*!< Counter mode */
+#define CIPHER_MODE_GMAC		((u8)0x05)	/*!< Galois Message Authentication Code mode */
+#define CIPHER_MODE_GCM			((u8)0x06)	/*!< Galois/Counter Mode (authenticated encryption) */
+#define CIPHER_MODE_CMAC		((u8)0x07)	/*!< Cipher-based Message Authentication Code mode */
+#define CIPHER_MODE_XTS 		((u8)0x08)	/*!< XEX-based tweaked-codebook mode with ciphertext stealing */
 
+/** @brief Check whether MODE is a valid AES cipher mode. */
 #define IS_AES_CIPHER_MODE(MODE) (((MODE) == CIPHER_MODE_ECB) || \
 								((MODE) == CIPHER_MODE_CBC) || \
 								((MODE) == CIPHER_MODE_CFB) || \
@@ -385,45 +388,46 @@ typedef struct {
 
 /** @} */
 
-/** @defgroup AES_DMA_Settings
+/** @defgroup AES_DMA_Settings AES DMA Settings
   * @{
   */
-#define AES_DMA_CH_NUM                          0
-#define AES_DMA_CH_MASK                         ((u32)0x00000001 << AES_DMA_CH_NUM)
+#define AES_DMA_CH_NUM                          0       /*!< DMA channel number for AES transfers */
+#define AES_DMA_CH_MASK                         ((u32)0x00000001 << AES_DMA_CH_NUM)  /*!< DMA channel enable mask bit for AES */
 /** @} */
 
-/** @defgroup AES_Byte_Swap_Defaults
+/** @defgroup AES_Byte_Swap_Defaults AES Byte Swap Defaults
   * @{
   */
-#define AES_BYTE_SWAP_DEFAULTS AES_BIT_KEY_SWAP_DISABLE
-#define AES_BYTE_SWAP_KEY_SWAP ((u32) 0x00)
+#define AES_BYTE_SWAP_DEFAULTS AES_BIT_KEY_SWAP_DISABLE	/*!< Default byte swap: key in native order, no swap */
+#define AES_BYTE_SWAP_KEY_SWAP ((u32) 0x00)				/*!< Byte swap setting: key swap disabled (both key and payload in native order) */
 /** @} */
 
-/** @defgroup AES_Engine_Mode
+/** @defgroup AES_Engine_Mode AES Engine Mode
   * @{
   */
-#define AES_SLAVE_MODE			((u8)0x00)
-#define AES_DMA_MODE			((u8)0x01)
+#define AES_SLAVE_MODE			((u8)0x00)	/*!< Slave mode: plaintext written directly to hardware registers */
+#define AES_DMA_MODE			((u8)0x01)	/*!< DMA mode: plaintext transferred via DMA */
 
+/** @brief Check whether MODE is a valid AES engine mode. */
 #define IS_AES_ENGINE_MODE(MODE) (((MODE) == AES_SLAVE_MODE) || \
 								((MODE) == AES_DMA_MODE))
 /** @} */
 
-/** @defgroup AES_TIMEOUT
+/** @defgroup AES_TIMEOUT AES Timeout
   * @{
   */
-#define AES_DMA_TIMEOUT				((u32) 10000000)
-#define AES_MUTEX_TIMEOUT			((u32) 1000000)
-#define AES_SLAVE_TIMEOUT			((u32) 10000)
+#define AES_DMA_TIMEOUT			((u32) 10000000)	/*!< DMA mode operation timeout count */
+#define AES_MUTEX_TIMEOUT		((u32) 1000000)		/*!< Engine mutex acquisition timeout count */
+#define AES_SLAVE_TIMEOUT		((u32) 10000)		/*!< Slave mode operation timeout count */
 /** @} */
 
-/** @defgroup AES_DMA_SIZE
+/** @defgroup AES_DMA_SIZE AES DMA Size
   * @{
   */
-#define AES_BLOCK_SIZE            16
-#define AES_BLOCK_SIZE_BIT        128
-#define AES_DMA_MAX_BLOCK_TS      536870910
-#define AES_DMA_MAX_BLOCK_BYTE    (AES_DMA_MAX_BLOCK_TS * 1)
+#define AES_BLOCK_SIZE            16			/*!< AES block size in bytes */
+#define AES_BLOCK_SIZE_BIT        128			/*!< AES block size in bits */
+#define AES_DMA_MAX_BLOCK_TS      536870910		/*!< Maximum DMA block transfer size in transfer units */
+#define AES_DMA_MAX_BLOCK_BYTE    (AES_DMA_MAX_BLOCK_TS * 1)	/*!< Maximum DMA transfer size in bytes */
 /** @} */
 /** @} */
 
@@ -432,25 +436,384 @@ typedef struct {
   * @{
   */
 
-/** @defgroup AES_Normal_Functions AES Normal Functions
-  * @{
-  */
+/**
+ * @brief  Set software key value for AES
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *            @arg KEY_BIT_128
+ *            @arg KEY_BIT_192
+ *            @arg KEY_BIT_256
+ * @param  key_addr Address to software key array
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_aes_set_sw_key(u8 key_id, u32 key_len_bits, const u8 *key_addr);
 
 /**
- * @brief Return different AES crypto engine register addresses according to the state of secure
- * @retval AES_REG_BASE or AES_REG_BASE_S
+ * @brief  Control whether security keys can be shared with non-secure world.
+ *         Note that if sharing is enabled, non-secure code can only trigger the use of the key, but cannot read or write.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  is_share 1: share
+ * 			         0: not share (secure only)
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_aes_share_secure_key(const u8 key_id, const u8 is_share);
+
+/**
+ * @brief Perform AES-ECB mode encryption and decryption in slave mode.
+ *        In order to avoid the impact of 32-byte cache line alignment,
+ *        an additional slave mode interface is provided.
+ *        Input and output are limited to 16 bytes.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *		 @arg KEY_BIT_128
+ *		 @arg KEY_BIT_192
+ *		 @arg KEY_BIT_256
+ * @param is_encryption
+ * 		 @arg 1: Encryption
+ * 		 @arg 0: Decryption
+ * @param  input The address of the input data.
+ * @param  output The address of the output data.
+ * @note
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the AES engine at the same time.
+ *         - The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ *           At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_aes_ecb_slave(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 input[16], u8 output[16]);
+
+/**
+ * @brief Perform AES-CTR mode encryption and decryption in slave mode.
+ *        In order to avoid the impact of 32-byte cache line alignment,
+ *        an additional slave mode interface is provided.
+ *        Input and output are limited to 16 bytes.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *		 @arg KEY_BIT_128
+ *		 @arg KEY_BIT_192
+ *		 @arg KEY_BIT_256
+ * @param is_encryption
+ * 		 @arg 1: Encryption
+ * 		 @arg 0: Decryption
+ * @param  input The address of the input data.
+ * @param  iv IV array address. IV length must be 16 bytes.
+ * @param  output The address of the output data.
+ * @note
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the AES engine at the same time.
+ *         - The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ *           At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_aes_ctr_slave(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 input[16], u8 iv[16], u8 output[16]);
+
+/**
+ * @brief Perform AES-ECB encryption and decryption in DMA mode.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *		 @arg KEY_BIT_128
+ *		 @arg KEY_BIT_192
+ *		 @arg KEY_BIT_256
+ * @param is_encryption
+ * 		 @arg 1: Encryption
+ * 		 @arg 0: Decryption
+ * @param  input The address of the input data.
+ * @param  len The length of the data.
+ * @param  output The address of the output data.
+ * @note
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the AES engine at the same time.
+ *         - The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ *           At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_aes_ecb(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 *output);
+
+/**
+ * @brief Perform AES-CBC encryption and decryption in DMA mode.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *		 @arg KEY_BIT_128
+ *		 @arg KEY_BIT_192
+ *		 @arg KEY_BIT_256
+ * @param is_encryption
+ * 		 @arg 1: Encryption
+ * 		 @arg 0: Decryption
+ * @param  input The address of the input data.
+ * @param  len The length of the data.
+ * @param  iv IV array address. IV length must be 16 bytes.
+ * @param  output The address of the output data.
+ * @note
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the AES engine at the same time.
+ *         - The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ *           At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_aes_cbc(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 iv[16], u8 *output);
+
+/**
+ * @brief Perform AES-CFB encryption and decryption in DMA mode.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *		 @arg KEY_BIT_128
+ *		 @arg KEY_BIT_192
+ *		 @arg KEY_BIT_256
+ * @param is_encryption
+ * 		 @arg 1: Encryption
+ * 		 @arg 0: Decryption
+ * @param  input The address of the input data.
+ * @param  len The length of the data.
+ * @param  iv IV array address. IV length must be 16 bytes.
+ * @param  output The address of the output data.
+ * @note
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the AES engine at the same time.
+ *         - The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ *           At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_aes_cfb(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 iv[16], u8 *output);
+
+/**
+ * @brief Perform AES-OFB encryption and decryption in DMA mode.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *		 @arg KEY_BIT_128
+ *		 @arg KEY_BIT_192
+ *		 @arg KEY_BIT_256
+ * @param is_encryption
+ * 		 @arg 1: Encryption
+ * 		 @arg 0: Decryption
+ * @param  input The address of the input data.
+ * @param  len The length of the data.
+ * @param  iv IV array address. IV length must be 16 bytes.
+ * @param  output The address of the output data.
+ * @note
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the AES engine at the same time.
+ *         - The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ *           At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_aes_ofb(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 iv[16], u8 *output);
+
+/**
+ * @brief Perform AES-CTR encryption and decryption in DMA mode.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *		 @arg KEY_BIT_128
+ *		 @arg KEY_BIT_192
+ *		 @arg KEY_BIT_256
+ * @param is_encryption
+ * 		 @arg 1: Encryption
+ * 		 @arg 0: Decryption
+ * @param  input The address of the input data.
+ * @param  len The length of the data.
+ * @param  iv IV array address. IV length must be 16 bytes.
+ * @param  output The address of the output data.
+ * @note
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the AES engine at the same time.
+ *         - The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ *           At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_aes_ctr(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 iv[16], u8 *output);
+
+/**
+ * @brief  AES-XTS encryption and decryption in DMA mode.
+ * @param  key1_id XTS key 1 ID
+ * @param  key2_id XTS key 2 ID
+ * @param  key_len_bits
+ *		 @arg KEY_BIT_128
+ *		 @arg KEY_BIT_192
+ *		 @arg KEY_BIT_256
+ * @param  is_encryption
+ *       @arg 1: Encryption
+ * 		 @arg 0: Decryption
+ * @param  input The address of the input data.
+ * @param  len The length of the data.
+ * @param  tweak Tweak array address. Tweak length must be 16 Bytes.
+ * @param  output The address of the output data.
+ * @note
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the AES engine at the same time.
+ *         - The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ *           At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_aes_xts(u8 key1_id, u8 key2_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 tweak[16], u8 *output);
+
+/**
+ * @brief Compute AES-CMAC authentication tag.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *		 @arg KEY_BIT_128
+ *		 @arg KEY_BIT_192
+ *		 @arg KEY_BIT_256
+ * @param  input The address of the input data.
+ * @param  len The length of input data.
+ * @param  tag Pointer to the output tag address
+ * @note
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the AES engine at the same time.
+ *         - The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ *           At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_cmac(u8 key_id, u32 key_len_bits, const u8 *input, u32 len, u8 *tag);
+
+/**
+ * @brief AES-GCM mode encryption and decryption.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *		 @arg KEY_BIT_128
+ *		 @arg KEY_BIT_192
+ *		 @arg KEY_BIT_256
+ * @param is_encryption
+ * 		 @arg 1: Encryption
+ * 		 @arg 0: Decryption
+ * @param  len The length of the message.
+ * @param  iv_addr IV array address.
+ * @param  iv_len IV length
+ * @param  aad_addr AAD address
+ * @param  aad_len AAD length
+ * @param  input The address of the input message.
+ * @param  output The address of output data
+ * @param  tag_len GCM tag length, max length is 16 bytes
+ * @param  tag GCM tag output address
+ * @note This API supports 4 input modes of GCM mode:
+ * - Without AAD/PT/CT: set the input buffer to all 0, use slave mode to calculate tag (similar to CMAC mode input_len = 0)
+ * - Without PT/CT, with AAD: first use DMA + GMAC mode to calculate the temp tag of aad, then set the input buffer to all 0, and use slave + GCM mode to calculate the final tag
+ * - Without AAD, with PT or CT: slave + ECB mode to calculate ghash key, copy cpu_dataout reg to ghash_key reg. DMA+GCM mode, output tag
+ * - With AAD/PT or CT: Calculate IV, GMAC tag (GMAC mode) in order, output plaintext or ciphertext and tag
+ * This API is consistent with Mbedtls in various GCM modes. Users do not need to pay special attention to the calculation process.
+ * The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ * At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_gcm_encrypt_and_tag(u8 key_id, u32 key_len_bits, u8 is_encryption, u32 len, u8 *iv_addr, u32 iv_len, u8 *aad_addr, u32 aad_len,
+		const u8 *input,
+		u8 *output,
+		u32 tag_len, u8 *tag);
+
+/**
+ * @brief AES-GCM mode decryption and authentication.
+ *        While decrypting, the API will check whether the TAG generated by decryption is consistent with the input TAG.
+ *        If the TAG is consistent, it will return success. Otherwise, the decryption verification fails.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *		 @arg KEY_BIT_128
+ *		 @arg KEY_BIT_192
+ *		 @arg KEY_BIT_256
+ * @param  len The length of the message.
+ * @param  iv_addr IV array address.
+ * @param  iv_len IV length
+ * @param  aad_addr AAD address
+ * @param  aad_len AAD length
+ * @param  input The address of the input message.
+ * @param  output The address of output data
+ * @param  tag_len GCM tag length, max length is 16 bytes
+ * @param  tag GCM tag address (input for authentication)
+ * @note This API supports 4 input modes of GCM mode:
+ * - Without AAD/PT/CT: set the input buffer to all 0, use slave mode to calculate tag (similar to CMAC mode input_len = 0)
+ * - Without PT/CT, with AAD: first use DMA + GMAC mode to calculate the temp tag of aad, then set the input buffer to all 0, and use slave + GCM mode to calculate the final tag
+ * - Without AAD, with PT or CT: slave + ECB mode to calculate ghash key, copy cpu_dataout reg to ghash_key reg. DMA+GCM mode, output tag
+ * - With AAD/PT or CT: Calculate IV, GMAC tag (GMAC mode) in order, output plaintext or ciphertext and tag
+ * This API is consistent with Mbedtls in various GCM modes. Users do not need to pay special attention to the calculation process.
+ * The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ * At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_gcm_auth_decrypt(u8 key_id, u32 key_len_bits, u32 len, u8 *iv_addr, u32 iv_len, u8 *aad_addr, u32 aad_len, const u8 *input, u8 *output,
+										u32 tag_len,
+										u8 *tag);
+
+/**
+ * @brief  Generic AES DMA mode encryption and decryption for ECB, CBC, CFB, OFB, CTR, and XTS cipher modes.
+ *         This is the underlying function called by mode-specific APIs such as crypto_aes_ecb(),
+ *         crypto_aes_cbc(), etc.
+ * @param  key_id Value of @ref KM_KEY. For XTS mode, this is key 1.
+ * @param  xts_key2_id XTS key 2 ID. For non-XTS modes, pass 0.
+ * @param  key_len_bits
+ *         @arg KEY_BIT_128
+ *         @arg KEY_BIT_192
+ *         @arg KEY_BIT_256
+ * @param  aes_mode AES cipher mode. This parameter can be a value of @ref AES_Cipher_Mode.
+ *         Supported modes: CIPHER_MODE_ECB, CIPHER_MODE_CBC, CIPHER_MODE_CFB,
+ *         CIPHER_MODE_OFB, CIPHER_MODE_CTR, CIPHER_MODE_XTS.
+ * @param  is_encryption
+ *         @arg 1: encryption
+ *         @arg 0: decryption
+ * @param  input The address of the input data.
+ * @param  len The length of the data in bytes.
+ * @param  iv IV array address. IV length must be 16 bytes. Pass NULL for ECB mode.
+ *            For non-ECB modes, the updated IV is written back after the operation.
+ * @param  output The address of the output data.
+ * @note
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the AES engine at the same time.
+ *         - The length of encrypted and decrypted data must be 32-byte (cache line size) aligned.
+ *           At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_aes_start(u8 key_id, u8 xts_key2_id, u32 key_len_bits, int aes_mode, u8 is_encryption, const u8 *input, u32 len, u8 iv[16], u8 *output);
+/** @} */
+
+/**
+ * @brief Return different AES crypto engine register addresses according to the security state
+ * @return AES_REG_BASE or AES_REG_BASE_S
  */
 _LONG_CALL_ AES_TypeDef *AES_Get_AES_Addr(void);
 
 /**
- * @brief Return different AES key management register addresses according to the state of secure
- * @retval AES_KEY_REG_BASE or AES_KEY_REG_BASE_S
+ * @brief Return different AES key management register addresses according to the security state
+ * @return AES_KEY_REG_BASE or AES_KEY_REG_BASE_S
  */
 _LONG_CALL_ KEY_MANAGEMENT_AES_TypeDef *AES_get_km_aes_addr(void);
 
 /**
- * @brief Return different crypto engine DMA register addresses according to the state of secure
- * @retval AES_SHA_DMA_REG_BASE or AES_SHA_DMA_REG_BASE_S
+ * @brief Return different crypto engine DMA register addresses according to the security state
+ * @return AES_SHA_DMA_REG_BASE or AES_SHA_DMA_REG_BASE_S
  */
 _LONG_CALL_ GDMA_TypeDef *AES_Get_DMA_Addr(void);
 
@@ -459,96 +822,91 @@ _LONG_CALL_ GDMA_TypeDef *AES_Get_DMA_Addr(void);
  *        @arg AES_InitStruct->CipherMode = CIPHER_MODE_ECB;
  *        @arg AES_InitStruct->EngineMode = AES_DMA_MODE;
  *        @arg AES_InitStruct->IsEnc = TRUE;
- *        @arg AES_InitStruct->ByteSwap = FALSE;
  *        @arg AES_InitStruct->CipherLen = 0;
  *        @arg AES_InitStruct->key_len = 0;
- * @param  AES_InitStruct: non-null pointer to the structure
+ * @param  AES_InitStruct Non-null pointer to the structure
  */
 _LONG_CALL_ void AES_StructInit(AES_InitTypeDef *AES_InitStruct);
 
 /**
  * @brief  Initialize the AES engine according to the structure configuration
- * @param  AES_InitStruct: pointer to the initialized configuration structure
+ * @param  AES_InitStruct Pointer to the initialized configuration structure
+ * @return Process status:
+ *         - RTK_SUCCESS: success
+ *         - RTK_FAIL: invalid configuration in AES_InitStruct
  */
 _LONG_CALL_ int AES_Init(AES_InitTypeDef *AES_InitStruct);
 
 /**
- * @brief  Start AES engine.
- * @param  NewState:
- *  @arg 1：enable AES engine
- *  @arg 0: disable AES engine
- * @note After enabling AES engine, any configuration register of AES engine will not be able to be modified.
- *       Therefore, please enable the engine in the last step of AES engine configuration.
- *       DMA related registers are not affected.
+ * @brief  Set or clear the FIRST_BLOCK bit to indicate that the AES task starts from the first block.
+ * @param  NewState
+ *  @arg ENABLE: Set FIRST_BLOCK to 1. In DMA mode, set this as the last step before starting AES.
+ *  @arg DISABLE: Clear FIRST_BLOCK to 0.
+ * @note In DMA mode, when the engine is not idling, registers such as keys and IV cannot be modified.
  */
 _LONG_CALL_ void AES_Cmd(u32 NewState);
 
 /**
  * @brief Set the value of the initialization vector.
- * @param  iv: iv array address. IV length must be 16Byte.
- * @note  AES-GCM mode settings IV uses another API: AES_GCM_Set_Iv. All other AES modes use this interface.
+ * @param  iv IV array address. IV length must be 16 bytes.
+ * @note  For AES-GCM mode, use AES_GCM_Set_Iv() to set the IV; this function is for all other modes.
  */
 _LONG_CALL_ void AES_SetIv(u8 iv[16]);
 
 /**
  * @brief Get AES IV value
- * @param  iv: pointer to read out iv array. IV length must be 16Byte.
+ * @param  iv Pointer to read out iv array. IV length must be 16 bytes.
  */
 _LONG_CALL_ void AES_GetIv(u8 iv[16]);
 
 /**
- * @brief In CMAC and GCM mode, output TAG value.
- *        The full length output is 16Byte, and the length less than 16Byte is directly truncated from 16Byte from front to back.
- * @param  tag: pointer to the output tag address
- * @param  tag_len: max out put length is 16Byte
+ * @brief Output the TAG value in CMAC and GCM mode.
+ *        The full tag length is 16 bytes. If tag_len is less than 16, only the first tag_len bytes of the 16-byte tag are returned.
+ * @param  tag Pointer to the output tag address
+ * @param  tag_len Max output length is 16 bytes
  */
 _LONG_CALL_ void AES_GetTag(u8 *tag, u32 tag_len);
 
 /**
- * @brief Init DMA engine. It will init DMA channel 0 to: SRC/DST TrWidthEightBytes and MsizeFour.
+ * @brief Initialize the DMA engine. It will configure DMA channel 0 to: SRC/DST TrWidthOneByte and MsizeFour.
  */
 _LONG_CALL_ void AES_DMA_Init(void);
 
 /**
- * @brief DMA mode data input and output.
- * @param  input: The address of the input data.
- * @param  len: The length of the data.
- * @param  output: The address of the output data. Note that cache line alignment is required
- * @retval RTK_SUCCESS or CRYPTO_Process_Status
+ * @brief Perform DMA mode data input and output.
+ * @param  input The address of the input data.
+ * @param  len The length of the data.
+ * @param  output The address of the output data. Note that cache line alignment is required
+ * @return RTK_SUCCESS or CRYPTO_Process_Status
  */
 _LONG_CALL_ int AES_ProcessDma(const u8 *input, u32 len, u8 *output);
 
 /**
- * @brief Slave mode data input and output.
+ * @brief Perform slave mode data input and output.
  *        The slave mode is not used in normal mode. Much less efficient than DMA mode
- * @param  input: The address of the input data.
- * @param  len: The length of the data.
- * @param  output: The address of the output data.
- * @retval RTK_SUCCESS or CRYPTO_Process_Status
+ * @param  cipher_mode The cipher mode for AES. This parameter can be a value of @ref AES_Cipher_Mode.
+ * @param  input The address of the input data.
+ * @param  len The length of the data.
+ * @param  output The address of the output data.
+ * @return RTK_SUCCESS or CRYPTO_Process_Status
  */
 _LONG_CALL_ int AES_ProcessSlave(u32 cipher_mode, const u8 *input, u32 len, u8 *output);
 
 /**
- * @brief Before accessing the Crypto engine, it is necessary to read the mutex register once.
- *        Otherwise, any registers of the engine cannot be operated.
+ * @brief Lock the Crypto engine mutex before accessing any engine registers.
  *        This driver has called this API internally, so please do not reuse this API.
  */
 _LONG_CALL_ void AES_lock_mutex(void);
 
 /**
- * @brief The occupation needs to be released after the use of the Crypto engine is over.
+ * @brief Release the Crypto engine mutex after use.
  *        This driver has called this API internally, so please do not reuse this API.
  */
 _LONG_CALL_ void AES_unlock_mutex(void);
-/** @} */
-
-/** @defgroup AES_HAL_Functions AES HAL Functions
-  * @{
-  */
 
 /**
  * @brief  Set engine byte swap.
- * @param  new_status: value of AES_BYTE_SWAP_DISABLE bits
+ * @param  new_status Value of AES_BYTE_SWAP_DISABLE bits
  * @note This bit needs to be configured only in special cases. Users generally do not need to call this API.
  * @return Old byte swap setting
  */
@@ -556,317 +914,9 @@ _LONG_CALL_ u32 AES_set_swap_setting(u32 new_status);
 
 /**
  * @brief  Get current byte swap setting
- * @retval Current byte swap setting. AES_BYTE_SWAP_DISABLE bits
+ * @return Current byte swap setting. AES_BYTE_SWAP_DISABLE bits
  */
 _LONG_CALL_ u32 AES_get_swap_setting(void);
-
-/**
- * @brief  Set software key value for AES
- * @param  key_id: value of KM_AES_KEY in ameba_key_management_aes.h
- * @param  key_len_bits:
- *            @arg KEY_BIT_128
- *            @arg KEY_BIT_192
- *            @arg KEY_BIT_256
- * @param  key_addr: address to software key array
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_aes_set_sw_key(u8 key_id, u32 key_len_bits, const u8 *key_addr);
-
-/**
- * @brief  Control whether security keys can be shared with non-secure world.
- *         Note that if sharing is enabled, non-secure code can only trigger the use of the key, but cannot read or write.
- * @param  key_id: value of KM_AES_KEY in ameba_key_management_aes.h
- * @param  is_share: 1: share
- * 			         0: not share (secure only)
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_aes_share_secure_key(const u8 key_id, const u8 is_share);
-
-/**
- * @brief AES-ECB mode encryption and decryption.
- *        In order to avoid the impact of 32-byte cacheline alignment,
- *        an additional slave mode interface is provided.
- *        Input and output are limited to 16 bytes.
- * @param  key_id: alue of KM_AES_KEY in ameba_key_management_aes.h
- * @param  key_len_bits:
- *		 @arg KEY_BIT_128
- *		 @arg KEY_BIT_192
- *		 @arg KEY_BIT_256
- * @param is_encryption:
- * 		 @arg 1: encryption
- * 		 @arg 0: decryption
- * @param  input: The address of the input data.
- * @param  output: The address of the output data.
- * @note 1. The engine will be locked during the execution of this function,
- *          and will be unlocked after execution.
- *          Avoid multiple threads/CPUs using the AES engine at the same time.
- * @note 2. The length of encrypted and decrypted data must be 32-byte (cacheline size) aligned.
- *          At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_aes_ecb_slave(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 input[16], u8 output[16]);
-
-/**
- * @brief AES-CTR mode encryption and decryption.
- *        In order to avoid the impact of 32-byte cacheline alignment,
- *        an additional slave mode interface is provided.
- *        Input and output are limited to 16 bytes.
- * @param  key_id: alue of KM_AES_KEY in ameba_key_management_aes.h
- * @param  key_len_bits:
- *		 @arg KEY_BIT_128
- *		 @arg KEY_BIT_192
- *		 @arg KEY_BIT_256
- * @param is_encryption:
- * 		 @arg 1: encryption
- * 		 @arg 0: decryption
- * @param  input: The address of the input data.
- * @param  iv: iv array address. IV length must be 16Byte.
- * @param  output: The address of the output data.
- * @note 1. The engine will be locked during the execution of this function,
- *          and will be unlocked after execution.
- *          Avoid multiple threads/CPUs using the AES engine at the same time.
- * @note 2. The length of encrypted and decrypted data must be 32-byte (cacheline size) aligned.
- *          At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_aes_ctr_slave(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 input[16], u8 iv[16], u8 output[16]);
-
-/**
- * @brief AES-ECB mode encryption and decryption. DMA mode
- * @param  key_id: KM_KEY_SEL_NUM_x
- * @param  key_len_bits:
- *		 @arg KEY_BIT_128
- *		 @arg KEY_BIT_192
- *		 @arg KEY_BIT_256
- * @param is_encryption:
- * 		 @arg 1: encryption
- * 		 @arg 0: decryption
- * @param  input: The address of the input data.
- * @param  len: The length of the data.
- * @param  output: The address of the output data.
- * @note 1. The engine will be locked during the execution of this function,
- *          and will be unlocked after execution.
- *          Avoid multiple threads/CPUs using the AES engine at the same time.
- * @note 2. The length of encrypted and decrypted data must be 32-byte (cacheline size) aligned.
- *          At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_aes_ecb(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 *output);
-
-/**
- * @brief AES-CBC mode encryption and decryption. DMA mode
- * @param  key_id: KM_KEY_SEL_NUM_x
- * @param  key_len_bits:
- *		 @arg KEY_BIT_128
- *		 @arg KEY_BIT_192
- *		 @arg KEY_BIT_256
- * @param is_encryption:
- * 		 @arg 1: encryption
- * 		 @arg 0: decryption
- * @param  input: The address of the input data.
- * @param  len: The length of the data.
- * @param  iv: iv array address. IV length must be 16Byte.
- * @param  output: The address of the output data.
- * @note 1. The engine will be locked during the execution of this function,
- *          and will be unlocked after execution.
- *          Avoid multiple threads/CPUs using the AES engine at the same time.
- * @note 2. The length of encrypted and decrypted data must be 32-byte (cacheline size) aligned.
- *          At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
- * @retval 0: success
-  * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_aes_cbc(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 iv[16], u8 *output);
-
-/**
- * @brief AES-CFB mode encryption and decryption. DMA mode
- * @param  key_id: KM_KEY_SEL_NUM_x
- * @param  key_len_bits:
- *		 @arg KEY_BIT_128
- *		 @arg KEY_BIT_192
- *		 @arg KEY_BIT_256
- * @param is_encryption:
- * 		 @arg 1: encryption
- * 		 @arg 0: decryption
- * @param  input: The address of the input data.
- * @param  len: The length of the data.
- * @param  iv: iv array address. IV length must be 16Byte.
- * @param  output: The address of the output data.
- * @note 1. The engine will be locked during the execution of this function,
- *          and will be unlocked after execution.
- *          Avoid multiple threads/CPUs using the AES engine at the same time.
- * @note 2. The length of encrypted and decrypted data must be 32-byte (cacheline size) aligned.
- *          At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_aes_cfb(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 iv[16], u8 *output);
-
-/**
- * @brief AES-OFB mode encryption and decryption. DMA mode
- * @param  key_id: KM_KEY_SEL_NUM_x
- * @param  key_len_bits:
- *		 @arg KEY_BIT_128
- *		 @arg KEY_BIT_192
- *		 @arg KEY_BIT_256
- * @param is_encryption:
- * 		 @arg 1: encryption
- * 		 @arg 0: decryption
- * @param  input: The address of the input data.
- * @param  len: The length of the data.
- * @param  iv: iv array address. IV length must be 16Byte.
- * @param  output: The address of the output data.
- * @note 1. The engine will be locked during the execution of this function,
- *          and will be unlocked after execution.
- *          Avoid multiple threads/CPUs using the AES engine at the same time.
- *       2. The length of encrypted and decrypted data must be 32-byte (cacheline size) aligned.
- *          At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_aes_ofb(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 iv[16], u8 *output);
-
-/**
- * @brief AES-CTR mode encryption and decryption. DMA mode
- * @param  key_id: KM_KEY_SEL_NUM_x
- * @param  key_len_bits:
- *		 @arg KEY_BIT_128
- *		 @arg KEY_BIT_192
- *		 @arg KEY_BIT_256
- * @param is_encryption:
- * 		 @arg 1: encryption
- * 		 @arg 0: decryption
- * @param  input: The address of the input data.
- * @param  len: The length of the data.
- * @param  iv: iv array address. IV length must be 16Byte.
- * @param  output: The address of the output data.
- * @note 1. The engine will be locked during the execution of this function,
- *          and will be unlocked after execution.
- *          Avoid multiple threads/CPUs using the AES engine at the same time.
- *       2. The length of encrypted and decrypted data must be 32-byte (cacheline size) aligned.
- *          At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_aes_ctr(u8 key_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 iv[16], u8 *output);
-
-/**
- * @brief  AES-XTS mode encryption and decryption. DMA mode
- * @param  key1_id: XTS key 1 ID
- * @param  key2_id: XTS key 2 ID
- * @param  key_len_bits:
- *		 @arg KEY_BIT_128
- *		 @arg KEY_BIT_192
- *		 @arg KEY_BIT_256
- * @param  is_encryption:
- *       @arg 1: encryption
- * 		 @arg 0: decryption
- * @param  input: The address of the input data.
- * @param  len: The length of the data.
- * @param  tweak: tweak array address. Tweak length must be 16 Bytes.
- * @param  output: The address of the output data.
- * @note 1. The engine will be locked during the execution of this function,
- *          and will be unlocked after execution.
- *          Avoid multiple threads/CPUs using the AES engine at the same time.
- *       2. The length of encrypted and decrypted data must be 32-byte (cacheline size) aligned.
- *          At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_aes_xts(u8 key1_id, u8 key2_id, u32 key_len_bits, u8 is_encryption, const u8 *input, u32 len, u8 tweak[16], u8 *output);
-
-/**
- * @brief AES-CMAC mode caculation
- * @param  key_id: KM_KEY_SEL_NUM_x
- * @param  key_len_bits:
- *		 @arg KEY_BIT_128
- *		 @arg KEY_BIT_192
- *		 @arg KEY_BIT_256
- * @param  input: The address of the input data.
- * @param  tag: pointer to the output tag address
- * @note 1. The engine will be locked during the execution of this function,
- *          and will be unlocked after execution.
- *          Avoid multiple threads/CPUs using the AES engine at the same time.
- *       2. The length of encrypted and decrypted data must be 32-byte (cacheline size) aligned.
- *          At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_cmac(u8 key_id, u32 key_len_bits, const u8 *input, u32 len, u8 *tag);
-
-/**
- * @brief AES-GCM mode encryption and decryption.
- * @param  key_id: KM_KEY_SEL_NUM_x
- * @param  key_len_bits:
- *		 @arg KEY_BIT_128
- *		 @arg KEY_BIT_192
- *		 @arg KEY_BIT_256
- * @param is_encryption:
- * 		 @arg 1: encryption
- * 		 @arg 0: decryption
- * @param  len: the length of the message.
- * @param  iv_addr: iv array address.
- * @param  iv_len: iv length
- * @param  aad_addr: aad address
- * @param  aad_len: aad length
- * @param  input: the address of the input message.
- * @param  output: the address of output data
- * @param  tag_len: GCM tag length, max length is 16Byte
- * @param  tag: GCM tag output address
- * @note This API supports 4 input modes of GCM mode:
- * - Without AAD/PT/CT: set the input buffer to all 0, use slave mode to calculate tag (similar to CMAC mode input_len = 0)
- * - Without PT/CT, with AAD: first use DMA + GMAC mode to calculate the temp tag of aad, then set the input buffer to all 0, and use slave + GCM mode to calculate the final tag
- * - Without AAD, with PT or CT: slave + ECB mode to calculate ghash key, copy cpu_dataout reg to ghash_keg reg. DMA+GCM mode, output tag
- * - With AAD/PT or CT: Calculate IV, GMAC tag (GMAC mode) in order, output plaintext or ciphertext and tag
- * This API is consistent with Mbedtls in various GCM modes. Users do not need to pay special attention to the calculation process.
- * The length of encrypted and decrypted data must be 32-byte (cacheline size) aligned.
- * At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_gcm_encrypt_and_tag(u8 key_id, u32 key_len_bits, u8 is_encryption, u32 len, u8 *iv_addr, u32 iv_len, u8 *aad_addr, u32 aad_len,
-		const u8 *input,
-		u8 *output,
-		u32 tag_len, u8 *tag);
-
-/**
- * @brief AES-GCM mode decryption and authorization.
- *        While decrypting, the API will check whether the TAG generated by decryption is consistent with the input TAG.
- *        If the TAG is consistent, it will return success. Otherwise, the decryption verification fails.
- * @param  key_id: KM_KEY_SEL_NUM_x
- * @param  key_len_bits:
- *		 @arg KEY_BIT_128
- *		 @arg KEY_BIT_192
- *		 @arg KEY_BIT_256
- * @param  len: the length of the message.
- * @param  iv_addr: iv array address.
- * @param  iv_len: iv length
- * @param  aad_addr: aad address
- * @param  aad_len: aad length
- * @param  input: the address of the input message.
- * @param  output: the address of output data
- * @param  tag_len: GCM tag length, max length is 16Byte
- * @param  tag: GCM tag address (input for authorization)
- * @note This API supports 4 input modes of GCM mode:
- * - Without AAD/PT/CT: set the input buffer to all 0, use slave mode to calculate tag (similar to CMAC mode input_len = 0)
- * - Without PT/CT, with AAD: first use DMA + GMAC mode to calculate the temp tag of aad, then set the input buffer to all 0, and use slave + GCM mode to calculate the final tag
- * - Without AAD, with PT or CT: slave + ECB mode to calculate ghash key, copy cpu_dataout reg to ghash_keg reg. DMA+GCM mode, output tag
- * - With AAD/PT or CT: Calculate IV, GMAC tag (GMAC mode) in order, output plaintext or ciphertext and tag
- * This API is consistent with Mbedtls in various GCM modes. Users do not need to pay special attention to the calculation process.
- * The length of encrypted and decrypted data must be 32-byte (cacheline size) aligned.
- * At the same time, the destination address is also 32-byte aligned. Otherwise, an error will be reported.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_gcm_auth_decrypt(u8 key_id, u32 key_len_bits, u32 len, u8 *iv_addr, u32 iv_len, u8 *aad_addr, u32 aad_len, const u8 *input, u8 *output,
-										u32 tag_len,
-										u8 *tag);
-/** @} */
-/** @} */
 
 /** @} */
 /** @} */

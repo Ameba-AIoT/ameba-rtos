@@ -89,6 +89,34 @@ config WIFI_NAN_HOST_APP
       also enables WIFI_NAN_ENABLE so the NP build skips wifi_feature_dis_nan.c
       stubs that would otherwise mask the real weak handlers.
 
+# Only meaningful for IMG2 on FLASH (flash vs SRAM trade-off). For IMG2 on
+# PSRAM/SRAM the pre-link step just forces the TRX code to the default region.
+config WIFI_MOVE_TRX_CODE_TO_SRAM
+    bool "Move TRX code to SRAM"
+    depends on IMG2_FLASH
+    default y
+    help
+        Move the WLAN TX/RX path code (listed in section_placement.json5) into
+        SRAM for better throughput. When disabled the code is grouped into
+        .flash.only.text (flash). Applied by ameba_sections_rename.py at
+        pre-link (RTL8720F only for now).
+
+if WIFI_MOVE_TRX_CODE_TO_SRAM
+choice
+    prompt "TRX code in SRAM"
+    default WIFI_TRX_SRAM_PARTIAL
+    config WIFI_TRX_SRAM_PARTIAL
+        bool "Partial"
+        help
+            Only the hot TRX functions (.sram.only.text class) go to SRAM;
+            the rest stays in flash (.flash.only.text). No remap needed.
+    config WIFI_TRX_SRAM_ALL
+        bool "All"
+        help
+            All TRX functions go to SRAM.
+endchoice
+endif
+
 config WLAN_CRITICAL_CODE_IN_RAM
     bool "Enable Critical code in RAM"
     default y

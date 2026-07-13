@@ -82,13 +82,15 @@ menu "CONFIG Link Option"
 
     if TRUSTZONE
         choice
-            prompt "IMG3(SecureImage) running on PSRAM or SRAM?"
+            prompt "IMG3(SecureImage) running on SRAM, PSRAM or FLASH?"
             default IMG3_SRAM
             config IMG3_PSRAM
                 bool "PSRAM"
                 select PSRAM_USED
             config IMG3_SRAM
                 bool "SRAM"
+            config IMG3_FLASH
+                bool "FLASH"
         endchoice
     endif
 

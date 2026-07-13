@@ -18,7 +18,7 @@ int whc_host_recv_priv_init(void)
 
 	precvpriv->free_recvframe_cnt = 8;
 
-	precvpriv->amsdu_priv = NULL;
+	whc_host_hal_deseg_priv_reset(&precvpriv->deseg_priv);
 
 	precvpriv->pallocated_frame_buf = kmalloc(precvpriv->free_recvframe_cnt * sizeof(union recv_frame) + RXFRAME_ALIGN_SZ, GFP_KERNEL);
 	if (precvpriv->pallocated_frame_buf == NULL) {
@@ -1422,8 +1422,87 @@ _recv_indicatepkt_drop:
 	return -1;
 }
 
+static int whc_host_recv_amsdu_to_msdu(u8 iface_type, union recv_frame *prframe)
+{
+	struct rx_pkt_attrib *pattrib = &prframe->u.hdr.attrib;
+	u8 *buf = prframe->u.hdr.rx_data + pattrib->hdrlen + pattrib->iv_len; /* sub-MSDU region start. */
+	int payload_total = prframe->u.hdr.len - pattrib->hdrlen - pattrib->iv_len - pattrib->icv_len;
+	int off = 0;
+	int ret = 0;
+
+	while ((off + ETH_HLEN) <= payload_total) {
+		struct ieee80211_snap_hdr *psnap;
+		u8 *psnap_type;
+		struct sk_buff *sub_skb;
+		u8 *pdata;
+		u16 msdu_len, eth_type;
+		u8 bsnaphdr;
+		int hdr_len, payload_len;
+
+		msdu_len = get_unaligned_be16(buf + off + ETH_HLEN - 2);
+		if ((off + ETH_HLEN + msdu_len) > payload_total) {
+			dev_warn(global_idev.pwhc_dev, "[whc]: amsdu: sub-msdu len bad!\n");
+			break;
+		}
+
+		//Add AMSDU frame check if dst equals to rfc1042 header to fix FragAttacks vulnerabilities CVE-2020-24588
+		if (buf[off] == 0xaa && buf[off + 1] == 0xaa && buf[off + 2] == 0x03 &&
+			buf[off + 3] == 0x00 && buf[off + 4] == 0x00 && buf[off + 5] == 0x00) {
+			ret = -1;
+			break;
+		}
+
+		/* Strip the RFC1042 / bridge-tunnel SNAP after the sub-MSDU DA/SA/Length header. */
+		psnap = (struct ieee80211_snap_hdr *)(buf + off + ETH_HLEN);
+		psnap_type = (u8 *)psnap + sizeof(struct ieee80211_snap_hdr);
+		if ((msdu_len >= sizeof(struct ieee80211_snap_hdr) + 2) &&
+			((!memcmp(psnap, (void *)rfc1042_header, sizeof(struct ieee80211_snap_hdr)) &&
+			  (memcmp(psnap_type, (void *)SNAP_ETH_TYPE_IPX, 2) != 0) &&
+			  (memcmp(psnap_type, (void *)SNAP_ETH_TYPE_APPLETALK_AARP, 2) != 0)) ||
+			 !memcmp(psnap, (void *)bridge_tunnel_header, sizeof(struct ieee80211_snap_hdr)))) {
+			bsnaphdr = true;
+		} else {
+			bsnaphdr = false;
+		}
+
+		hdr_len = bsnaphdr ? (sizeof(struct ieee80211_snap_hdr) + 2) : 0;
+		payload_len = msdu_len - hdr_len;
+
+		sub_skb = netdev_alloc_skb(global_idev.pndev[iface_type], ETH_HLEN + payload_len);
+		if (sub_skb == NULL) {
+			dev_warn(global_idev.pwhc_dev, "[whc]: amsdu: sub skb NULL!\n");
+			ret = -1;
+			break;
+		}
+
+		/* Build the Ethernet frame: DA(6) SA(6) EtherType/Length(2) | payload. */
+		pdata = skb_put(sub_skb, ETH_HLEN + payload_len);
+		memcpy(pdata, buf + off, ETH_ALEN * 2); /* DA + SA */
+		if (bsnaphdr) {
+			memcpy(pdata + ETH_ALEN * 2, psnap_type, 2); /* EtherType from SNAP. */
+		} else {
+			eth_type = htons((unsigned short)payload_len);
+			memcpy(pdata + ETH_ALEN * 2, &eth_type, 2); /* 802.3 length. */
+		}
+		memcpy(pdata + ETH_HLEN, buf + off + ETH_HLEN + hdr_len, payload_len);
+
+		whc_host_if_netif_rx(sub_skb, NULL);
+
+		/* Advance past this sub-MSDU and its 4-byte alignment padding. */
+		off += ETH_HLEN + msdu_len;
+		off = (off + 3) & ~3;
+	}
+
+	whc_host_recv_free_frame(prframe);
+	return ret;
+}
+
 int whc_host_recv_process_indicatepkts(u8 iface_type, union recv_frame *prframe)
 {
+	if (prframe->u.hdr.attrib.b_amsdu) {
+		return whc_host_recv_amsdu_to_msdu(iface_type, prframe);
+	}
+
 	whc_host_recv_wlanhdr_to_ethhdr(prframe);
 
 	return whc_host_recv_indicatepkt(iface_type, prframe);
@@ -1470,15 +1549,19 @@ int whc_host_recv_func_posthandle(u8 iface_type, union recv_frame *prframe)
 	}
 
 	psta = prframe->u.hdr.psta;
-	ptr += pattrib->hdrlen + pattrib->iv_len + LLC_HEADER_SIZE;
-	memcpy(&ether_type, ptr, 2);
-	ether_type = htons((unsigned short)ether_type);
+	/* For A-MSDU the bytes after hdrlen+iv are the first sub-MSDU's DA/SA/Length, not an LLC
+	 * header, so the ether_type read does not apply; an A-MSDU is never an EAPOL frame. */
+	if (!pattrib->b_amsdu) {
+		ptr += pattrib->hdrlen + pattrib->iv_len + LLC_HEADER_SIZE;
+		memcpy(&ether_type, ptr, 2);
+		ether_type = htons((unsigned short)ether_type);
+	}
 
 	if (psecuritypriv->dot11_wpa_mode) {
 		if ((psta != NULL) && (psta->sta_security.b_ieee8021x_blocked)) {
 			//blocked
 			//only accept EAPOL frame
-			if (ether_type != ETH_P_PAE || prframe->u.hdr.attrib.b_privacy) {/*https://jira.realtek.com/browse/RSWLANDIOT-14516*/
+			if (pattrib->b_amsdu || ether_type != ETH_P_PAE || prframe->u.hdr.attrib.b_privacy) {
 				whc_host_recv_free_frame(prframe);
 				ret = -1;
 				goto _recv_data_drop;

@@ -491,7 +491,7 @@ typedef struct _usb_host_t {
 #endif
 	const usbh_dev_id_t *dev_id;        /**< Pointer to the active device ID. */
 	usbh_dev_desc_t *dev_desc;          /**< Pointer to the device's descriptor. */
-	usbh_user_cb_t *cb;                 /**< Pointer to the user-provided callbacks. */
+	const usbh_user_cb_t *cb;           /**< Pointer to the user-provided callbacks. */
 	void *hcd;                          /**< Pointer to the HCD handle. */
 
 	u8 dev_addr;                        /**< The address of the attached device. */
@@ -517,7 +517,7 @@ typedef struct _usb_host_t {
  * @param[in] cb: USB user callback.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_init(usbh_config_t *cfg, usbh_user_cb_t *cb);
+int usbh_init(const usbh_config_t *cfg, const usbh_user_cb_t *cb);
 
 /**
  * @brief Deinitialize USB host core driver.
@@ -720,12 +720,19 @@ int usbh_ctrl_request(usb_host_t *host, usbh_setup_req_t *req, u8 *buf);
 int usbh_transfer_data(usb_host_t *host, usbh_pipe_t *pipe);
 
 /**
- * @brief  Get the last transfer data size of specific pipe.
+ * @brief Get the actual number of bytes received in the last D2H transfer of specific pipe.
  * @param[in] host: Host Handle.
  * @param[in] pipe: Pipe struct handle.
  * @return Last transfer data size in bytes
  */
 u32 usbh_get_last_transfer_size(usb_host_t *host, usbh_pipe_t *pipe);
+
+/**
+ * @brief  Get the actual number of bytes received in the last D2H control transfer (EP0 IN data phase).
+ * @param[in] host: Host Handle.
+ * @return Bytes received; 0 if a ZLP was received.
+ */
+u32 usbh_get_last_ctrl_in_size(usb_host_t *host);
 
 /**
  * @brief  Start one transfer and handle result.

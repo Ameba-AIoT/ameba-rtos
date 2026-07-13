@@ -471,7 +471,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
-	usbd_vendor_cb_t *cb = cdev->cb;
+	const usbd_vendor_cb_t *cb = cdev->cb;
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	UNUSED(dev);
@@ -676,7 +676,7 @@ static void usbd_vendor_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
   * @brief  Initialize vendor device
   * @retval Status
   */
-int usbd_vendor_init(usbd_vendor_cb_t *cb)
+int usbd_vendor_init(const usbd_vendor_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;

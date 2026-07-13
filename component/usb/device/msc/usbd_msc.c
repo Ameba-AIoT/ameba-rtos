@@ -826,7 +826,7 @@ int usbd_msc_disk_deinit(void)
   * @brief  Initialize MSC device
   * @retval Status
   */
-int usbd_msc_init(usbd_msc_cb_t *cb)
+int usbd_msc_init(const usbd_msc_cb_t *cb)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_msc_disk_ops_t *ops = &cdev->disk_ops;

@@ -184,8 +184,7 @@ bool _get_supplicant_pid()
 	char cmd[512] = {0};
 	memset(cmd, 0, 512);
 	snprintf(cmd, sizeof(cmd),
-			 "pgrep -a wpa_supplicant| grep %s | sort -n -k1 | awk '{print $1}'"
-			 , nan_intf);
+			 "pgrep -f \"[w]pa_supplicant.*%s\" | head -n 1", nan_intf);
 
 	fp = popen(cmd, "r");
 	if (fp == NULL) {
@@ -732,6 +731,9 @@ RTW_RET_STATUS dns_subscribe(uint16_t phy_num,
 		goto exit;
 	}
 	ret = rtw_nan_api_subscribe(nan_intf, info);
+	if (info->sec_type == NAN_PMK_SET_BY_PAIRING && info->pairing_info.pasn_pw) {
+		rtw_nan_api_pasn_setpw(NULL, info->pairing_info.pasn_pw, info->pairing_info.pasn_pw_len);
+	}
 
 	return ret;
 exit:

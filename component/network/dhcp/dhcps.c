@@ -1288,7 +1288,7 @@ err_t dhcps_start(struct netif *pnetif)
 	udp_bind(dhcps->dhcps_pcb, &pnetif->ip_addr, DHCP_SERVER_PORT);
 	udp_recv(dhcps->dhcps_pcb, (udp_recv_fn)dhcps_receive_udp_packet_handler, dhcps);
 
-#ifndef IP_NAPT
+#ifndef IP_NAT
 	// DNS server init
 	err_t result = dns_server_init(dhcps);
 	if (result != ERR_OK) {
@@ -1342,7 +1342,7 @@ void dhcps_stop(struct netif *pnetif)
 	}
 
 	// Close DNS server
-#ifndef IP_NAPT
+#ifndef IP_NAT
 	dns_server_deinit(dhcps);
 #endif
 

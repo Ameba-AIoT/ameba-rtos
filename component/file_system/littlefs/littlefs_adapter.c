@@ -4,6 +4,8 @@
 
 #ifdef CONFIG_SUPPORT_NAND_FLASH
 #include "vfs_nand_ftl.h"
+#include "lbm.h"
+lbm_ctx_t g_lbm_ctx;   /* logical-block-mapping context, set up in rt_lfs_init() */
 #endif
 
 lfs_t g_lfs;
@@ -34,32 +36,29 @@ struct lfs_config g_nand_lfs_cfg = {
 	.block_size = 2048 * 64,
 	.lookahead_size = 8,
 	.cache_size = 2048,
-	.block_cycles = 100,
+	.block_cycles = 500,
+	.metadata_max = 4096,
 };
 
+/* NAND callbacks route through the LBM layer (logical block mapping): littlefs
+ * sees a contiguous, bad-block-free logical block device. block == lblk (1:1). */
 int lfs_nand_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
 {
+	(void)c;
 	if (size == 0) {
 		return LFS_ERR_OK;
 	}
 
-	u32 NandAddr, PageAddr, read_len = 0;
-
-	while (read_len < size) {
-		NandAddr = LFS_FLASH_BASE_ADDR + c->block_size * block + off + read_len;
-		PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
-
-		if (NAND_FTL_ReadPage(PageAddr, (uint8_t *)buffer + read_len)) {
-			return LFS_ERR_CORRUPT;
-		}
-		read_len += c->prog_size;
+	if (lbm_block_read(&g_lbm_ctx, (int)block, buffer, (u32)off, (u32)size) != LBM_OK) {
+		return LFS_ERR_CORRUPT;
 	}
-
 	return LFS_ERR_OK;
 }
 
 int lfs_nand_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size)
 {
+	int r;
+
 	if (size == 0) {
 		return LFS_ERR_OK;
 	}
@@ -69,36 +68,22 @@ int lfs_nand_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, 
 		return LFS_ERR_IO;
 	}
 
-	u32 NandAddr, PageAddr;
-
-	NandAddr = LFS_FLASH_BASE_ADDR + c->block_size * block + off;
-	PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
-
-	if (NAND_FTL_WritePage(PageAddr, (uint8_t *)buffer, 0)) {
-		return LFS_ERR_CORRUPT;
+	r = lbm_block_write(&g_lbm_ctx, (int)block, buffer, (u32)off, (u32)size);
+	if (r == LBM_ERR_BAD) {
+		return LFS_ERR_CORRUPT;   /* block retired; littlefs relocates */
 	}
-
-
-	return LFS_ERR_OK;
+	if (r == LBM_ERR_NOSPACE) {
+		return LFS_ERR_NOSPC;
+	}
+	return (r == LBM_OK) ? LFS_ERR_OK : LFS_ERR_IO;
 }
 
 int lfs_nand_erase(const struct lfs_config *c, lfs_block_t block)
 {
-	if (c->block_size != 0x20000) {
-		VFS_DBG(VFS_ERROR, "block size config wrong");
-		return LFS_ERR_IO;
-	}
-
-	u32 NandAddr, PageAddr;
-
-	NandAddr = LFS_FLASH_BASE_ADDR + c->block_size * block;
-	PageAddr = NAND_ADDR_TO_PAGE_ADDR(NandAddr);
-
-	if (NAND_FTL_EraseBlock(PageAddr, 0)) {
+	(void)c;
+	if (lbm_block_erase(&g_lbm_ctx, (int)block) != LBM_OK) {
 		return LFS_ERR_CORRUPT;
 	}
-
-
 	return LFS_ERR_OK;
 }
 #endif
@@ -351,9 +336,19 @@ int rt_lfs_init(lfs_t *lfs)
 	if (lfs == &g_lfs) {
 #ifdef CONFIG_SUPPORT_NAND_FLASH
 		if (SHOULD_USE_NAND()) {
-			g_nand_lfs_cfg.block_count = LFS_FLASH_SIZE / vfs_nand_flash_pagesize / vfs_nand_flash_pagenum;
+			if (lbm_init(&g_lbm_ctx) != LBM_OK) {
+				VFS_DBG(VFS_ERROR, "lbm_init fail");
+				return -1;
+			}
+			/* block_size/count come from the LBM layer (logical block geometry, bad blocks excluded) */
+			g_nand_lfs_cfg.block_size = lbm_block_size(&g_lbm_ctx);
+			g_nand_lfs_cfg.block_count = lbm_block_count(&g_lbm_ctx);
 			lfs_cfg = &g_nand_lfs_cfg;
-			VFS_DBG(VFS_INFO, "init nand lfs cfg");
+			VFS_DBG(VFS_INFO, "nand lfs cfg: block_size=%u block_count=%u read=%u prog=%u cache=%u lookahead=%u block_cycles=%d",
+					(unsigned int)g_nand_lfs_cfg.block_size, (unsigned int)g_nand_lfs_cfg.block_count,
+					(unsigned int)g_nand_lfs_cfg.read_size, (unsigned int)g_nand_lfs_cfg.prog_size,
+					(unsigned int)g_nand_lfs_cfg.cache_size, (unsigned int)g_nand_lfs_cfg.lookahead_size,
+					(int)g_nand_lfs_cfg.block_cycles);
 		} else
 #endif
 		{
@@ -373,6 +368,10 @@ int rt_lfs_init(lfs_t *lfs)
 
 	ret = lfs_mount(lfs, lfs_cfg);
 	int need_reformat = (ret == LFS_ERR_NOTFMT);
+	/* NOTE: do NOT reformat on LFS_ERR_NOSPC.  A no-space mount failure means
+	 * the filesystem is full (possibly with a pending power-loss fixup that
+	 * needs a spare block); auto-reformatting would silently destroy all user
+	 * data.  Surface NOSPC as a mount failure instead so data is preserved. */
 #if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
 	/* Reformat the writable region not only when it is blank (LFS_ERR_NOTFMT),
 	 * but also when an on-flash superblock is incompatible/corrupt:

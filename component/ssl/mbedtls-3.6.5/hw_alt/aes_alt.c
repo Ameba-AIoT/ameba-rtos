@@ -27,6 +27,7 @@
 #include "mbedtls/error.h"
 
 #include "ameba_soc.h"
+#include "mbedtls_alt_helper.h"
 
 /* Parameter validation macros based on platform_util.h */
 #define MBEDTLS_INTERNAL_VALIDATE_RET(cond, ret)  do { } while (0)
@@ -231,7 +232,7 @@ int mbedtls_aes_crypt_ecb( mbedtls_aes_context *ctx,
 exit:
 #endif
     IPC_SEMFree(IPC_SEM_CRYPTO_AES_SW_KEY);
-    return ret;
+    return map_hw_to_mbedtls_error(ret, MBEDTLS_ALT_ALGO_AES);
 }
 
 #if defined(MBEDTLS_CIPHER_MODE_CBC)
@@ -273,7 +274,7 @@ int mbedtls_aes_crypt_cbc( mbedtls_aes_context *ctx,
 exit:
         IPC_SEMFree(IPC_SEM_CRYPTO_AES_SW_KEY);
     }
-    return ret;
+    return map_hw_to_mbedtls_error(ret, MBEDTLS_ALT_ALGO_AES);
 }
 #endif /* MBEDTLS_CIPHER_MODE_CBC */
 
@@ -332,7 +333,7 @@ int mbedtls_aes_crypt_xts( mbedtls_aes_xts_context *ctx,
 
 exit:
     IPC_SEMFree(IPC_SEM_CRYPTO_AES_SW_KEY);
-    return( ret );
+    return map_hw_to_mbedtls_error(ret, MBEDTLS_ALT_ALGO_AES);
 }
 #endif /* MBEDTLS_CIPHER_MODE_XTS */
 
@@ -381,7 +382,7 @@ int mbedtls_aes_crypt_cfb128( mbedtls_aes_context *ctx,
 
 exit:
     IPC_SEMFree(IPC_SEM_CRYPTO_AES_SW_KEY);
-    return ret;
+    return map_hw_to_mbedtls_error(ret, MBEDTLS_ALT_ALGO_AES);
 }
 
 /*
@@ -405,8 +406,11 @@ int mbedtls_aes_crypt_cfb8( mbedtls_aes_context *ctx,
     AES_VALIDATE_RET( output != NULL );
     while( length-- )
     {
+        int hw_ret;
         memcpy( ov, iv, 16 );
-        mbedtls_aes_crypt_ecb( ctx, MBEDTLS_AES_ENCRYPT, iv, iv );
+        hw_ret = mbedtls_aes_crypt_ecb( ctx, MBEDTLS_AES_ENCRYPT, iv, iv );
+        if( hw_ret != 0 )
+            return hw_ret;  /* already mapped by crypt_ecb */
 
         if( mode == MBEDTLS_AES_DECRYPT )
             ov[16] = *input;
@@ -465,7 +469,7 @@ int mbedtls_aes_crypt_ofb( mbedtls_aes_context *ctx,
 
 exit:
     IPC_SEMFree(IPC_SEM_CRYPTO_AES_SW_KEY);
-    return( ret );
+    return map_hw_to_mbedtls_error(ret, MBEDTLS_ALT_ALGO_AES);
 }
 #endif /* MBEDTLS_CIPHER_MODE_OFB */
 
@@ -513,7 +517,7 @@ int mbedtls_aes_crypt_ctr( mbedtls_aes_context *ctx,
 
 exit:
     IPC_SEMFree(IPC_SEM_CRYPTO_AES_SW_KEY);
-    return ret;
+    return map_hw_to_mbedtls_error(ret, MBEDTLS_ALT_ALGO_AES);
 }
 #endif /* MBEDTLS_CIPHER_MODE_CTR */
 

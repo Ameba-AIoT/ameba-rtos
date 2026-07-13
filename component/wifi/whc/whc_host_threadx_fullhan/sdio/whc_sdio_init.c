@@ -5,13 +5,6 @@ extern struct whc_sdio whc_sdio_priv;
 void rtw_sdio_interrupt_handler(void)
 {
 	struct whc_sdio *priv = &whc_sdio_priv;
-	uint8_t data[4];
-#if defined WHC_SDIO_INT_MODE && !defined(WHC_SDIO_INT_GPIO)
-	uint32_t value;
-#endif
-#if defined CALCULATE_FREE_TXBD && defined CONFIG_SDIO_TX_ENABLE_AVAL_INT
-	uint32_t freepage;
-#endif
 
 #ifdef WHC_SDIO_INT_MODE
 	for (;;)  {
@@ -19,50 +12,9 @@ void rtw_sdio_interrupt_handler(void)
 		//SDIO->MASK |= SDIO_MASK_SDIOITIE;
 		sdio_enable_data1_irq();
 #endif
-		rtos_sema_take(whc_sdio_priv.host_irq, MUTEX_WAIT_TIMEOUT);
+		rtos_sema_take(whc_sdio_priv.host_irq, SEMA_WAIT_TIMEOUT);
 #endif
-
-		//read HISR
-		sdio_local_read(priv, SDIO_REG_HISR, 4, data);
-		priv->sdio_hisr = (*(uint32_t *)data);
-
-		if (priv->sdio_hisr & priv->sdio_himr) {
-			priv->sdio_hisr &= priv->sdio_himr;
-
-#if defined WHC_SDIO_INT_MODE && !defined(WHC_SDIO_INT_GPIO)
-			//clear HISR
-			value = priv->sdio_hisr & MASK_SDIO_HISR_CLEAR;
-			if (value) {
-				sdio_local_write(priv, SDIO_REG_HISR, 4, (uint8_t *)&value);
-			}
-#endif //no need clear if using gpio
-
-#ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
-			if (priv->sdio_hisr & SDIO_HISR_AVAL_INT) {
-#ifdef CALCULATE_FREE_TXBD
-				/* for DP bug, read txbd to clear aval int */
-				sdio_local_read(priv, SDIO_REG_FREE_TXBD_NUM, 4, (u8 *)&freepage);
-
-#else
-				/* option set in dev, read txbd will never clr aval int */
-				value = (SDIO_HISR_AVAL_INT);
-				sdio_local_write(priv, SDIO_REG_HISR, 4, (u8 *)&value);
-#endif
-				/* wakeup tx task if waiting */
-				if (priv->tx_avail_int_triggered == 1) {
-					rtos_sema_give(priv->txbd_wq);
-					priv->tx_avail_int_triggered = 0;
-				}
-			}
-#endif
-			if (priv->sdio_hisr & SDIO_HISR_RX_REQUEST) {
-				priv->sdio_hisr ^= SDIO_HISR_RX_REQUEST;
-				rtos_sema_give(whc_sdio_priv.host_recv_wake);
-			}
-
-		} else {
-
-		}
+		whc_host_sdio_isr_process(priv);
 #ifdef WHC_SDIO_INT_MODE
 	}
 #endif
@@ -131,7 +83,7 @@ static uint8_t rtw_sdio_get_tx_max_size(struct whc_sdio *priv)
 
 	//num * unit_sz(64 bytes) -32(reserved for safety)
 	priv->SdioTxMaxSZ = TxUnitCnt * 64 - 32;
-	printf("%s: TX_UNIT_BUF_MAX_SIZE @ %d bytes\n", __FUNCTION__, (int)priv->SdioTxMaxSZ);
+	printf("%s: TX_UNIT_BUF_MAX_SIZE @ %d bytes\n", __FUNCTION__, priv->SdioTxMaxSZ);
 	return TRUE;
 }
 
@@ -155,9 +107,11 @@ static void rtw_sdio_init_interrupt(struct whc_sdio *priv)
 								 SDIO_HIMR_CPWM1_MSK |
 								 0);
 
+	WHC_HOST_SDIO_ALLOC_IRQ(priv);
+
 	// Enable interrupt
 	himr = priv->sdio_himr;
-	sdio_local_write(priv, SDIO_REG_HIMR, 4, (uint8_t *)&himr);
+	rtw_write32(priv, SDIO_REG_HIMR, himr);
 }
 
 //TODO check real stack size
@@ -227,22 +181,13 @@ uint32_t rtw_sdio_init(struct whc_sdio *priv)
 	rtos_mutex_create(&(priv->lock));
 	rtos_mutex_create(&(priv->hw_lock));
 
-	priv->sdio_himr = (uint32_t)(\
-								 SDIO_HIMR_RX_REQUEST_MSK |
-#ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
-								 SDIO_HIMR_AVAL_MSK |
-#endif
-								 //SDIO_HIMR_CPU_NOT_RDY_MSK |
-								 SDIO_HIMR_CPWM1_MSK |
-								 0);
-
 	/* wait for device TRX ready */
 	for (i = 0; i < 100; i++) {
 		fw_ready = rtw_read8(priv, SDIO_REG_CPU_IND);
 		if (fw_ready & SDIO_SYSTEM_TRX_RDY_IND) {
 			break;
 		}
-		rt_thread_mdelay(10);
+		WHC_MSLEEP(10);
 	}
 
 	if (i == 100) {

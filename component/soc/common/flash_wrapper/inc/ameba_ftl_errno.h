@@ -27,6 +27,8 @@ enum ftl_errno {
 	ERR_NAND_BITFLIP_WARN,	/* NAND bitflips < ECC level, corrected */
 	ERR_NAND_BITFLIP_ERROR,	/* NAND bitflips equals to ECC level, corrected */
 	ERR_NAND_BITFLIP_FATAL,	/* NAND bitflips higher than ECC level, cannot be corrected*/
+	ERR_KEY_GEN,			/* Key generation failure */
+	ERR_KEY_VERIFY,		/* Key verify failure */
 };
 
 #ifdef __cplusplus

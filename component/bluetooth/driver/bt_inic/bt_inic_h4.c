@@ -44,12 +44,6 @@
 #define UART_RX     _PA_5
 #define UART_CTS    _PA_6
 #define UART_RTS    _PA_7
-#elif defined(CONFIG_AMEBAL2)
-#define UART_INDEX  0
-#define UART_TX     _PA_4
-#define UART_RX     _PA_5
-#define UART_CTS    _PA_6
-#define UART_RTS    _PA_7
 #elif defined(CONFIG_RTL8720F)
 #define UART_INDEX  0
 #define UART_TX     _PA_13

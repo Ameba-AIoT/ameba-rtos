@@ -45,12 +45,14 @@ ameba_list_append(private_includes
 
 ameba_list_append(private_sources
     src/ameba_nor_ftl.c
-    src/ameba_ftl.c
+    src/ameba_flash_dev.c
+    src/ameba_nor_dev.c
 )
 
 ameba_list_append_if(CONFIG_SUPPORT_NAND_FLASH private_sources
     src/ameba_nand_ftl.c
     src/ameba_nand_mfg_ftl.c
+    src/ameba_nand_dev.c
 )
 # Component private part, user config end
 #------------------------------#

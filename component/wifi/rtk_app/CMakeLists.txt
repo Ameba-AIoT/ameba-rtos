@@ -76,7 +76,7 @@ if(NOT CONFIG_MP_SHRINK)
         ameba_list_append(private_sources wifi_radar/wifi_radar.c)
         if (CONFIG_TFLITE_MICRO_EN)
             ameba_list_append(private_sources wifi_radar/nn_interface.cc)
-            ameba_list_append(private_sources wifi_radar/models/radar_float.c)
+            ameba_list_append(private_sources wifi_radar/models/radar_int8.c)
             ameba_list_append(private_definitions TF_LITE_STATIC_MEMORY)
             ameba_list_append(private_compile_options -Wno-unused-parameter -Wno-undef)
         endif()
@@ -146,7 +146,7 @@ if(CONFIG_WIFI_NAN_HOST_APP)
             wifi_nan_utility/rtw_nan_cmd.c
             wifi_nan_utility/nan_event.c
             wifi_nan_utility/sha256.c
-            wifi_nan_utility/nan_app.c
+            wifi_nan_utility/wifi_nan_api.c
         p_INCLUDES
             ${CMAKE_CURRENT_SOURCE_DIR}/wifi_nan_utility
         p_DEFINITIONS

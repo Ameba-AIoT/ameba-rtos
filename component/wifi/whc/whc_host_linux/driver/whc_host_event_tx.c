@@ -41,6 +41,7 @@ void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 		}
 
 		/* send */
+		event_priv->b_waiting_for_ret = 1;
 		whc_host_send_data(buf, buf_len, NULL);
 #ifndef CONFIG_INIC_USB_ASYNC_SEND
 		kfree(buf);
@@ -53,7 +54,6 @@ void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 	timeout = 2000;
 
 	/* wait for API calling done */
-	event_priv->b_waiting_for_ret = 1;
 	wait_ret = wait_for_completion_timeout(&event_priv->api_ret_sema, msecs_to_jiffies(timeout));
 	event_priv->b_waiting_for_ret = 0;
 

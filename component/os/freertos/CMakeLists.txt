@@ -157,11 +157,7 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
             ${portable_soc_mcu_dir}/port.c
             ${portable_soc_mcu_dir}/portasm.c
         )
-    elseif(CONFIG_AMEBAL2)
-        ameba_list_append(private_sources
-            ${portable_soc_mcu_dir}/non_secure/port.c
-            ${portable_soc_mcu_dir}/non_secure/portasm.c
-        )
+
     elseif(CONFIG_AMEBALITE)
         if("${c_MCU_PROJECT_NAME}" STREQUAL "km4")
             ameba_list_append(private_sources

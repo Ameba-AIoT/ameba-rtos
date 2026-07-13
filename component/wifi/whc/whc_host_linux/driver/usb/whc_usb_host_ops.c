@@ -1,5 +1,4 @@
 #include <whc_host_linux.h>
-#include <whc_host_cmd_path_api.h>
 
 struct rtw_usbreq *whc_usb_host_dequeue(struct list_head *q, int *counter)
 {
@@ -207,12 +206,15 @@ void whc_usb_host_recv_data(void *intf_priv)
 	struct whc_usb *priv = (struct whc_usb *)intf_priv;
 	struct sk_buff *skb;
 	unsigned long flags;
+	int budget = 64;
 
-	spin_lock_irqsave(&priv->usb_rxskb_lock, flags);
-	skb = skb_dequeue(&priv->rxnode_list);
-	spin_unlock_irqrestore(&priv->usb_rxskb_lock, flags);
-
-	if (skb) {
+	while (budget--) {
+		spin_lock_irqsave(&priv->usb_rxskb_lock, flags);
+		skb = skb_dequeue(&priv->rxnode_list);
+		spin_unlock_irqrestore(&priv->usb_rxskb_lock, flags);
+		if (!skb) {
+			break;
+		}
 		whc_host_recv_dispatch(skb);
 	}
 }

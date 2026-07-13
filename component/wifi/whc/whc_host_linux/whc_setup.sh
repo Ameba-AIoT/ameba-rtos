@@ -3,8 +3,6 @@
 mkdir -p ./driver/include
 
 # --- Helper functions ---
-ac_set()   { sed -i "s/#undef $1/#define $1 1/g" ./driver/autoconf.h; }
-ac_unset() { sed -i "s/#define $1 1/#undef $1/g" ./driver/autoconf.h; }
 mf_set()   { sed -i "s/$1 = n/$1 = y/g" Makefile; }
 mf_unset() { sed -i "s/$1 = y/$1 = n/g" Makefile; }
 
@@ -64,11 +62,11 @@ for feat in "$@"; do
 done
 
 # 3b. Select target IC
-ac_unset CONFIG_AMEBADPLUS
-ac_unset CONFIG_AMEBALITE
-ac_unset CONFIG_AMEBAGREEN2
-ac_unset CALCULATE_FREE_TXBD
-ac_unset CLEAR_AVAIL_INT_BY_RD_TXBD
+mf_unset CONFIG_AMEBADPLUS
+mf_unset CONFIG_AMEBALITE
+mf_unset CONFIG_AMEBAGREEN2
+mf_unset CONFIG_AMEBAX
+mf_unset CALCULATE_FREE_TXBD
 
 echo "choose target IC:"
 case "$INTF" in
@@ -83,50 +81,50 @@ case "$INTF:$choice" in
 	# --- sdio ---
 	sdio:1)
 		echo "AMEBADPLUS select"
-		ac_set CONFIG_AMEBADPLUS; ac_set CALCULATE_FREE_TXBD; ac_set CLEAR_AVAIL_INT_BY_RD_TXBD
+		mf_set CONFIG_AMEBADPLUS; mf_set CALCULATE_FREE_TXBD
 		cp ../../../soc/amebadplus/fwlib/include/ameba_inic.h ./driver/include
 		;;
 	sdio:2)
 		echo "AMEBAGREEN2 select"
-		ac_set CONFIG_AMEBAGREEN2; ac_set CALCULATE_FREE_TXBD
+		mf_set CONFIG_AMEBAGREEN2; mf_set CALCULATE_FREE_TXBD
 		cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./driver/include
 		;;
 	sdio:3)
 		echo "AMEBAGREEN2 with FW DOWNLOAD select"
-		ac_set CONFIG_AMEBAGREEN2; ac_set CALCULATE_FREE_TXBD
+		mf_set CONFIG_AMEBAGREEN2; mf_set CALCULATE_FREE_TXBD
 		mf_set CONFIG_FW_DOWNLOAD
 		cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./driver/include
 		;;
 	sdio:4)
 		echo "AMEBAX select"
-		ac_set CONFIG_AMEBAGREEN2; ac_set CALCULATE_FREE_TXBD
+		mf_set CONFIG_AMEBAX; mf_set CALCULATE_FREE_TXBD
 		cp ../../../soc/RTL8720F/fwlib/include/ameba_inic.h ./driver/include
 		;;
 	# --- spi ---
 	spi:1)
 		echo "AMEBADPLUS select"
-		ac_set CONFIG_AMEBADPLUS; ac_set CALCULATE_FREE_TXBD
+		mf_set CONFIG_AMEBADPLUS; mf_set CALCULATE_FREE_TXBD
 		;;
 	spi:2)
 		echo "AMEBAGREEN2 select"
-		ac_set CONFIG_AMEBAGREEN2
+		mf_set CONFIG_AMEBAGREEN2
 		;;
 	spi:3)
 		echo "AMEBALITE select"
-		ac_set CONFIG_AMEBALITE
+		mf_set CONFIG_AMEBALITE
 		;;
 	# --- usb ---
 	usb:1)
 		echo "AMEBADPLUS select"
-		ac_set CONFIG_AMEBADPLUS
+		mf_set CONFIG_AMEBADPLUS
 		;;
 	usb:2)
 		echo "AMEBAGREEN2 select"
-		ac_set CONFIG_AMEBAGREEN2
+		mf_set CONFIG_AMEBAGREEN2
 		;;
 	usb:3)
 		echo "AMEBAGREEN2 with FW DOWNLOAD select"
-		ac_set CONFIG_AMEBAGREEN2
+		mf_set CONFIG_AMEBAGREEN2
 		mf_set CONFIG_FW_DOWNLOAD
 		;;
 	*)
@@ -137,7 +135,7 @@ esac
 # --- Step 4: Copy common headers ---
 cp ../../common/rtw_wifi_common.h ./driver/include
 cp ../../common/rtw_inic_common.h ./driver/include
-cp ../whc_def.h ./driver/include
+cp ../whc_common/whc_def.h ./driver/include
 cp ../../api/wifi_api_types.h ./driver/include
 cp ../../api/wifi_api_event.h ./driver/include
 cp ../../driver/intf/wifi_intf_drv_to_app_internal.h ./driver/include

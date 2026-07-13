@@ -538,7 +538,11 @@ class FirmwarePackage(OperationBase):
             if section == None:
                 self.logger.fatal(f"No section for {input_file} to do rsip")
                 return Error(ErrorType.UNKNOWN_ERROR, f"No section for {input_file} to rsip")
-            Rsip.execute(self.context, tmp_en_file_name, tmp_en_src_file_name, section)
+            if getattr(manifest_config, 'rsip_encrypt_on_build', True):
+                Rsip.execute(self.context, tmp_en_file_name, tmp_en_src_file_name, section)
+            else:
+                # floader-side encryption: ship plaintext, floader encrypts on-the-fly
+                shutil.copy(tmp_en_src_file_name, tmp_en_file_name)
             if gcm_enable:
                 Pad.execute(self.context, tmp_gcm_file_name, 32)
                 PrependHeader.execute(self.context, tmp_gcm_prepend_file_name, tmp_gcm_file_name)

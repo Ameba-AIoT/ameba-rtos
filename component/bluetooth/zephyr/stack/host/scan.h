@@ -14,3 +14,7 @@ int bt_le_scan_set_enable(uint8_t enable);
 struct bt_le_per_adv_sync *bt_hci_get_per_adv_sync(uint16_t handle);
 
 void bt_periodic_sync_disable(void);
+
+#if 1 /* ZEPHYR_FIX_CODE */
+uint8_t get_adv_type(uint16_t evt_type);
+#endif

@@ -27,6 +27,7 @@
 #include "mbedtls/platform.h"
 
 #include "ameba_soc.h"
+#include "mbedtls_alt_helper.h"
 
 #define SHA256_BLOCK_SIZE 64
 
@@ -70,7 +71,7 @@ int mbedtls_sha256_starts(mbedtls_sha256_context *ctx, int is224)
     }
 #endif
     SHA_MODE = is224 ? SHA_224 : SHA_256;
-    return crypto_sha2_init(ctx, SHA_MODE);
+    return map_hw_to_mbedtls_error(crypto_sha2_init(ctx, SHA_MODE), MBEDTLS_ALT_ALGO_SHA256);
 }
 
 
@@ -91,7 +92,7 @@ int mbedtls_sha256_update(mbedtls_sha256_context *ctx,
     if (ilen == 0) {
         return 0;
     }
-    return crypto_sha2_update(ctx, input, NULL, ilen);
+    return map_hw_to_mbedtls_error(crypto_sha2_update(ctx, input, NULL, ilen), MBEDTLS_ALT_ALGO_SHA256);
 }
 
 /*
@@ -100,7 +101,7 @@ int mbedtls_sha256_update(mbedtls_sha256_context *ctx,
 int mbedtls_sha256_finish(mbedtls_sha256_context *ctx,
                           unsigned char *output)
 {
-    return crypto_sha2_final(ctx, output);
+    return map_hw_to_mbedtls_error(crypto_sha2_final(ctx, output), MBEDTLS_ALT_ALGO_SHA256);
 }
 
 #endif /* !MBEDTLS_SHA256_ALT */

@@ -68,6 +68,7 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_READ_SUGGESTED_DATALEN, bt_hci_cmd_ogf_le_ocf_read_suggested_datalen},
 	{BT_HCI_OP_LE_WRITE_SUGGESTED_DATALEN, bt_hci_cmd_ogf_le_ocf_write_suggested_datalen},
 #ifdef CONFIG_BLE_LL_PRIVACY_ENABLE
+	{BT_HCI_OP_LE_READ_PEER_RPA, bt_hci_cmd_ogf_le_ocf_read_peer_rpa},
 	{BT_HCI_OP_LE_READ_LOCAL_RPA, bt_hci_cmd_ogf_le_ocf_read_local_rpa},
 	{BT_HCI_OP_LE_ADD_DEV_TO_RL, bt_hci_cmd_ogf_le_ocf_add_dev_to_rl},
 	{BT_HCI_OP_LE_REM_DEV_FROM_RL, bt_hci_cmd_ogf_le_ocf_remove_dev_from_rl},

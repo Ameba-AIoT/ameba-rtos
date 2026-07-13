@@ -12,40 +12,29 @@ static const char *const TAG = "SPDIO";
  *  @{
  */
 
-/** @defgroup MBED_SPDIO_Exported_Constants MBED_SPDIO Exported Constants
- * @{
- */
+#define SPDIO_IRQ_PRIORITY			INT_PRI_MIDDLE   /*!< Interrupt priority for SDIO device IRQ. */
+#define SPDIO_TX_BD_BUF_SZ_UNIT		64   /*!< TX BD buffer size unit in bytes. */
+#define SPDIO_RX_BD_FREE_TH			5    /*!< Threshold of free RX BDs before triggering recycling. */
+#define SPDIO_MIN_RX_BD_SEND_PKT	2    /*!< Minimum free RX BDs required to receive a packet. */
+#define SPDIO_MAX_RX_BD_BUF_SIZE	16380   /*!< Maximum RX BD buffer size in bytes; 4-byte aligned. */
 
-#define SPDIO_IRQ_PRIORITY			INT_PRI_MIDDLE
-#define SPDIO_TX_BD_BUF_SZ_UNIT		64
-#define SPDIO_RX_BD_FREE_TH			5
-#define SPDIO_MIN_RX_BD_SEND_PKT	2
-#define SPDIO_MAX_RX_BD_BUF_SIZE	16380	// the Maximum size for a RX_BD point to, make it 4-bytes aligned
-
+/** @brief Interrupt status bits mask enabled at SDIO initialization. */
 #define SDIO_INIT_INT_MASK			(SDIO_WIFI_BIT_H2C_DMA_OK | SDIO_WIFI_BIT_C2H_DMA_OK | \
 									SDIO_WIFI_BIT_H2C_BUS_RES_FAIL | SDIO_WIFI_BIT_RX_BD_FLAG_ERR_INT | \
 									SDIO_NOTIFY_TYPE_INT)
 
+/** @brief Interrupt bits for SDIO WiFi notification events. */
 #define SDIO_NOTIFY_TYPE_INT		(SDIO_WIFI_BIT_H2C_MSG_INT | SDIO_WIFI_BIT_RPWM1_INT | \
 									SDIO_WIFI_BIT_RPWM2_INT | SDIO_WIFI_BIT_HOST_WAKE_CPU_INT | \
 									SDIO_WIFI_BIT_H2C_SUS_REQ)
 
+/** @brief Interrupt bits for SDIO BT notification events. */
 #define SDIO_NOTIFY_TYPE_INT_BT		(SDIO_BT_BIT_SDIO_CS_RDY | SDIO_BT_BIT_SDIO_CS_RST | \
 									SDIO_BT_BIT_HOST_WAKE_CPU_INT | SDIO_BT_BIT_H2C_SUS_REQ | \
  									SDIO_BT_BIT_CCCR_IOE2_SET | SDIO_BT_BIT_CCCR_IOE2_CLR)
 
-/** @}*/
-
-
-/** @defgroup MBED_SPDIO_Exported_Constants MBED_SPDIO Exported Constants
- * @{
- */
-
 SPDIO_ADAPTER gSPDIODevWifi;
 SPDIO_ADAPTER gSPDIODevBt;
-/**
- * @}
- */
 
 /** @defgroup MBED_SPDIO_Exported_Functions MBED_SPDIO Exported Functions
  * @{
@@ -90,10 +79,10 @@ static s8 spdio_rpwm_cb(PSPDIO_ADAPTER pSPDIODev)
 }
 
 /**
- * @brief Spdio write function.
- * @param obj Pointer to a initialized spdio_t structure.
- * @param pbuf Pointer to a spdio_buf_t structure which carries the payload.
- * @retval RTK_SUCCESS or RTK_FAIL.
+ * @brief Prepare RX buffer descriptor and notify the SD host.
+ * @param obj Pointer to an initialized @ref spdio_t structure.
+ * @param pbuf Pointer to a @ref spdio_buf_t structure which carries the payload.
+ * @return RTK_SUCCESS or RTK_FAIL.
  */
 u8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 {
@@ -101,9 +90,8 @@ u8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 }
 
 /**
- * @brief Get example settings for spdio obj.
- * @param obj Pointer to a spdio_t structure which will be initialized with an example settings.
- * @return None
+ * @brief Fill @ref spdio_t structure with default settings.
+ * @param obj Pointer to a @ref spdio_t structure which will be filled with default settings.
  */
 void spdio_structinit(struct spdio_t *obj)
 {
@@ -117,7 +105,7 @@ void spdio_structinit(struct spdio_t *obj)
 }
 
 /**
- * @brief Trigger SDIO read packet when have free skb.
+ * @brief Trigger SDIO to process a received packet when a free RX buffer is available.
  */
 void spdio_trigger_rx_handle(void)
 {
@@ -130,13 +118,11 @@ void spdio_trigger_rx_handle(void)
 }
 
 /**
- * @brief SPDIO device interrupt service routine, including
- * 		- Read and clean interrupt status.
- * 		- Wake up the SDIO task to handle the IRQ event.
+ * @brief SDIO device ISR that disables the interrupt and wakes up the IRQ task.
  * @param pData Pointer to SDIO device data structure.
- * @retval 0
+ * @return 0.
  */
-u32 SPDIO_IRQ_Handler(void *pData)
+static u32 SPDIO_IRQ_Handler(void *pData)
 {
 	PSPDIO_ADAPTER pSPDIODev = (PSPDIO_ADAPTER)pData;
 	struct spdio_t *obj = (struct spdio_t *)pSPDIODev->spdio_priv;
@@ -206,6 +192,10 @@ static void SPDIO_IRQ_Handler_BH(void *pData)
 	}
 }
 
+/// @cond
+/**
+ * @brief Configure SDIO pin mux and pad control.
+ */
 void SPDIO_Board_Init(void)
 {
 	u8 idx;
@@ -222,6 +212,10 @@ void SPDIO_Board_Init(void)
 	}
 }
 
+/**
+ * @brief Free SDIO adapter resources including BDs, descriptors, semaphore, and task.
+ * @param pSPDIODev Pointer to SDIO adapter structure.
+ */
 void SPDIO_Buffer_free(PSPDIO_ADAPTER pSPDIODev)
 {
 	struct spdio_t *obj = (struct spdio_t *)pSPDIODev->spdio_priv;
@@ -261,16 +255,16 @@ void SPDIO_Buffer_free(PSPDIO_ADAPTER pSPDIODev)
 		obj->irq_task_hdl = NULL;
 	}
 }
+/// @endcond
 
 /**
- * @brief Initialize spdio interface.
- * @param obj Pointer to a spdio_t structure which should be initialized by user,
- * 		and which will be used to initialize spdio interface.
- * 		- obj->host_rx_bd_num: spdio write bd number, needs 2 bd for one transaction.
- * 		- obj->host_tx_bd_num: spdio read bd number.
- * 		- obj->device_rx_bufsz: spdio read buffer size.
- * 		- obj->rx_buf: spdio read buffer array.
- * @return None
+ * @brief Initialize the SPDIO interface.
+ * @param obj Pointer to a @ref spdio_t structure which should be initialized by user,
+ * 		and which will be used to initialize the SPDIO interface.
+ * 		- obj->host_rx_bd_num: Number of host RX BDs for device-to-host transfer (must be even, 2 BDs per packet).
+ * 		- obj->host_tx_bd_num: Number of host TX BDs for host-to-device transfer.
+ * 		- obj->device_rx_bufsz: Device RX buffer size (must be a multiple of 64).
+ * 		- obj->rx_buf: Device RX buffer array pre-allocated by user.
  */
 void spdio_init(struct spdio_t *obj)
 {
@@ -375,9 +369,8 @@ SDIO_INIT_ERR:
 }
 
 /**
- * @brief Deinitialize spdio interface.
- * @param obj Pointer to a spdio_t structure which is already initialized
- * @return None
+ * @brief Deinitialize the SPDIO interface.
+ * @param obj Pointer to a @ref spdio_t structure which is already initialized.
  */
 void spdio_deinit(struct spdio_t *obj)
 {

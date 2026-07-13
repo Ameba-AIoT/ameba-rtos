@@ -184,3 +184,34 @@ void rtos_task_set_affinity(rtos_task_t p_handle, uint32_t coreID)
 	vTaskCoreAffinitySet((TaskHandle_t) p_handle, 1 << coreID);
 }
 #endif
+
+/* Realtek: Bind idle tasks to their respective cores at scheduler startup.
+ * This ensures idle task affinity is set correctly in SMP mode.
+ * When configUSE_CORE_AFFINITY is not enabled the function is a no-op. */
+#if defined(configUSE_CORE_AFFINITY) && (configUSE_CORE_AFFINITY == 1)
+
+static void rtos_affinity_idle_task(void *param)
+{
+	UNUSED(param);
+	/* Bind the primary idle task to core 0 and the passive idle task
+	 * (core 1's idle task) to core 1. */
+	rtos_task_set_affinity(rtos_task_handle_get_idle(0), 0);
+	rtos_task_set_affinity(rtos_task_handle_get_idle(1), 1);
+	rtos_task_delete(NULL);
+}
+
+void rtos_start_affinity_idle_task(void)
+{
+	rtos_task_create(NULL, "Affinity Idle Task",
+					 (rtos_task_function_t)rtos_affinity_idle_task,
+					 NULL, 1024, 9);
+}
+
+#else
+
+void rtos_start_affinity_idle_task(void)
+{
+	/* configUSE_CORE_AFFINITY not enabled — nothing to do. */
+}
+
+#endif /* configUSE_CORE_AFFINITY */

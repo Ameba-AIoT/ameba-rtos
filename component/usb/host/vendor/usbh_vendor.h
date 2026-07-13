@@ -144,7 +144,7 @@ typedef struct {
 	usbh_vendor_xfer_t intr_out_xfer;   /**< Interrupt OUT transfer handle */
 	usbh_vendor_xfer_t isoc_in_xfer;    /**< Isochronous IN transfer handle */
 	usbh_vendor_xfer_t isoc_out_xfer;   /**< Isochronous OUT transfer handle */
-	usbh_vendor_cb_t *cb;               /**< Pointer to user callback structure */
+	const usbh_vendor_cb_t *cb;         /**< Pointer to user callback structure */
 	usb_host_t *host;                   /**< Pointer to USB Host core handle */
 	u8 *ctrl_buf;                       /**< Buffer for control transfer */
 	u8 ep_mask;                         /**< Active endpoint mask */
@@ -170,7 +170,7 @@ typedef struct {
  * @param  cb: Pointer to the application callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_vendor_init(usbh_vendor_cb_t *cb);
+int usbh_vendor_init(const usbh_vendor_cb_t *cb);
 
 /**
  * @brief  De-Initialize the Vendor Class driver.

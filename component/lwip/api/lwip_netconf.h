@@ -161,6 +161,7 @@ void lwip_autoip_stop(uint8_t idx);
 #endif
 #if LWIP_IPV6
 void lwip_autoip_ipv6(uint8_t idx);
+void lwip_add_ipv6_neighbor(uint8_t idx, const uint8_t *peer_mac);
 #endif
 int lwip_netif_get_idx(struct netif *pnetif);
 struct netif *lwip_idx_get_netif(uint8_t idx);

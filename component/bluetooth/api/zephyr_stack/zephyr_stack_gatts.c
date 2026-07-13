@@ -414,8 +414,8 @@ void bt_stack_gatts_deinit(void)
 		node = list_first_entry(&svc_list, zephyr_svc_node, list);
 		if (node->registered) {
 			bt_gatt_service_unregister(&node->svc);
-			service_node_free(node);
 		}
+		service_node_free(node);
 	}
 
 	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
@@ -581,11 +581,17 @@ static void service_node_free(zephyr_svc_node *node)
 					}
 				}
 				if (include_node) {
-					node->include_ref--;
-					if (!node->include_ref && !node->registered) {
-						/* Only unregistered included service node need to free here, the registered include service node
-						    will be freed in service_node_free() when this service is traversed */
-						service_node_free(node);
+					include_node->include_ref--;
+					if (!include_node->include_ref && !include_node->registered) {
+						/* Only unregistered included service node need to free here, this is for rollback
+						 * when service A pre-alloc a node for the include service B, but service A register failed,
+						 * so, in the fail rollback, we need to use service_node_free to free service A, in this
+						 * situation, the included service B shall also be freed here.
+						 *
+						 * The registered include service node will be freed in bt_stack_gatts_deinit() when
+						 * this service is traversed
+						 */
+						service_node_free(include_node);
 					}
 				}
 			} else if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) && attr->user_data) {

@@ -11,158 +11,154 @@ import base64
 import json
 import subprocess
 
-SCRIPT_DIR = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
-PROFILE_DIR = os.path.realpath(os.path.join(SCRIPT_DIR, "../ameba/Flash/Devices/Profiles"))
-FLASH_TOOL = os.path.realpath(os.path.join(SCRIPT_DIR, "../ameba/Flash/AmebaFlash.py"))
+SCRIPT_DIR   = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
+PROFILE_DIR  = os.path.realpath(os.path.join(SCRIPT_DIR, "../ameba/Flash/Devices/Profiles"))
+FLASH_TOOL   = os.path.realpath(os.path.join(SCRIPT_DIR, "../ameba/Flash/AmebaFlash.py"))
+
+# Flags that select a standalone operation in AmebaFlash.py (no firmware download).
+# When any of these is present in the passthrough args, --download is NOT injected.
+# Note: --key-prog is intentionally excluded — it must run in the same floader
+# session as the firmware download, so --download is always injected alongside it.
+_NON_DOWNLOAD_OPS = {'--erase', '-e', '--chip-erase', '--read-wifimac'}
+
 
 class MemoryInfo:
-    MEMORY_TYPE_RAM = 0
-    MEMORY_TYPE_NOR = 1
+    MEMORY_TYPE_RAM  = 0
+    MEMORY_TYPE_NOR  = 1
     MEMORY_TYPE_NAND = 2
 
 
-def run_flash(argv):
-    cmds = [sys.executable, FLASH_TOOL] + argv
-    result = subprocess.run(cmds)
-    if result.returncode != 0:
-        sys.exit(1)
+def _resolve_profile(device: str, mem_t: str) -> str:
+    """Resolve a device name to an .rdev profile path."""
+    path = os.path.join(PROFILE_DIR, device + ".rdev")
+    if not os.path.exists(path):
+        path = os.path.join(PROFILE_DIR, device + "_" + mem_t.upper() + ".rdev")
+    return path
+
+
+def _build_partition_table(images, mem_t: str, image_dir: str) -> str:
+    """Convert flash.py's -i (name, start, end) triples to a base64 partition table."""
+    if mem_t == "nand":
+        memory_type = MemoryInfo.MEMORY_TYPE_NAND
+    elif mem_t == "ram":
+        memory_type = MemoryInfo.MEMORY_TYPE_RAM
     else:
-        sys.exit(0)
+        memory_type = MemoryInfo.MEMORY_TYPE_NOR
+
+    partition_table = []
+    for name, start_str, end_str in images:
+        image_path = os.path.realpath(os.path.join(image_dir, name))
+        try:
+            start_addr = int(start_str, 16)
+        except Exception as e:
+            raise ValueError(f"Invalid start address '{start_str}': {e}")
+        try:
+            end_addr = int(end_str, 16)
+        except Exception as e:
+            raise ValueError(f"Invalid end address '{end_str}': {e}")
+
+        partition_table.append({
+            "ImageName":    image_path,
+            "StartAddress": start_addr,
+            "EndAddress":   end_addr,
+            "FullErase":    False,
+            "MemoryType":   memory_type,
+            "Mandatory":    True,
+            "Description":  os.path.basename(image_path),
+        })
+
+    json_str  = json.dumps(partition_table)
+    b64_bytes = base64.b64encode(json_str.encode("utf-8"))
+    return b64_bytes.decode("utf-8")
+
+
+def run_flash(argv):
+    result = subprocess.run([sys.executable, FLASH_TOOL] + argv)
+    sys.exit(result.returncode)
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    # flash.py owns only three concerns:
+    #   1. --device   → auto-resolve to --profile (flash.py-exclusive shorthand)
+    #   2. -i/--image → nargs=3 custom format, converted to --partition-table
+    #   3. --image-dir → default image search path
+    #   4. -m/--memory-type → needed for image-layout conversion; re-added to cmds
+    #
+    # Every other argument (port, baudrate, log-level, chip-erase, no-reset,
+    # remote-server, key-prog and its sub-args, etc.) is captured in `passthrough`
+    # and forwarded to AmebaFlash.py unchanged.  Adding new AmebaFlash.py features
+    # therefore does NOT require touching this file.
 
-    parser.add_argument('-p', '--port', nargs="+", help='serial port')
-    parser.add_argument('-b', '--baudrate', type=int, default=1500000, help='serial port baud rate')
-    parser.add_argument('-m', '--memory-type', choices=['nor', 'nand', 'ram'], default="nor", help='specified memory type')
-    parser.add_argument('-i', '--image', nargs=3, action='append', metavar=('image-name', 'start-address', 'end-address'),
-                        help="user define image layout")
-    parser.add_argument('-o', '--log-file', type=str, help='output log file with path')
+    # flash.py exclusively handles four arguments; all others pass through to AmebaFlash.py.
+    #
+    # Why keep -p/--port and -b/--baudrate here (instead of pure passthrough)?
+    #   - -b/--baudrate has a default of 1500000 in flash.py.  AmebaFlash.py has NO
+    #     default; omitting -b causes AmebaFlash.py to fail with "no baudrate specified".
+    #     Keeping it here preserves the long-standing default for all existing callers.
+    #   - -p/--port is validated early so callers get the original error message
+    #     ("Serial port is invalid") rather than a cryptic AmebaFlash.py failure.
+    #
+    # Every other argument (log-level, chip-erase, no-reset, remote-server,
+    # key-prog and its sub-args, …) is in `passthrough` and forwarded unchanged.
+    # Adding new AmebaFlash.py features never requires touching this file.
 
-    parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
-    parser.add_argument('--remote-password', type=str, help='remote serial server validation password')
+    parser = argparse.ArgumentParser(
+        add_help=False,
+        description="flash.py — thin wrapper around AmebaFlash.py; "
+                    "use AmebaFlash.py --help for the full option list.")
 
-    parser.add_argument('--chip-erase', action='store_true', help='chip erase')
-    parser.add_argument('--log-level', default='info', help='log level')
-    parser.add_argument('--no-reset', action='store_true', help='do not reset after flashing finished')
-    parser.add_argument('--image-dir', type=str, help='image directory')
-    parser.add_argument('-dev', '--device', required=True, type=str, help='device name')
+    parser.add_argument('-dev', '--device', required=True, type=str,
+                        help='device name (e.g. RTL8721F); auto-resolves to device profile')
+    parser.add_argument('-p', '--port', nargs='+',
+                        help='serial port(s)')
+    parser.add_argument('-b', '--baudrate', type=int, default=1500000,
+                        help='serial port baud rate (default: 1500000)')
+    parser.add_argument('-m', '--memory-type',
+                        choices=['nor', 'nand', 'ram'], default='nor',
+                        help='memory type (default: nor)')
+    parser.add_argument('-i', '--image', nargs=3, action='append',
+                        metavar=('image-name', 'start-address', 'end-address'),
+                        help='custom image: name start_addr(hex) end_addr(hex); '
+                             'may be specified multiple times')
+    parser.add_argument('--image-dir', type=str,
+                        help='image directory (default: current working directory)')
+    parser.add_argument('-h', '--help', action='store_true',
+                        help='show this help and AmebaFlash.py help, then exit')
 
-    args = parser.parse_args()
-    ports = args.port
-    serial_baudrate = args.baudrate
-    mem_t = args.memory_type
-    images = args.image
+    args, passthrough = parser.parse_known_args()
 
-    log_file = args.log_file
-    log_level = args.log_level.upper()
+    if args.help:
+        parser.print_help()
+        print()
+        run_flash(['--help'])   # also shows AmebaFlash.py help (exits inside)
 
-    remote_server = args.remote_server
-
-    device = args.device
-
-    file_prefix = device
-    file_suffix = ".rdev"
-    file_suffix1 = "_" + mem_t.upper() + file_suffix    # _NAND.rdev or _NOR.rdev
-    PROFILE = os.path.join(PROFILE_DIR, file_prefix + file_suffix)
-    if not os.path.exists(PROFILE):
-        PROFILE = os.path.join(PROFILE_DIR, file_prefix + file_suffix1)
-
-    if args.image_dir:
-        IMAGE_DIR = os.path.realpath(args.image_dir)
-    else:
-        IMAGE_DIR = os.getcwd()
-
-    cmds = ["--download", "--profile", PROFILE]
-
-    if log_file is not None:
-        log_path = os.path.dirname(log_file)
-        if log_path:
-            if not os.path.exists(log_path):
-                os.makedirs(log_path, exist_ok=True)
-            log_f = log_file
-        else:
-            log_f = os.path.join(os.getcwd(), log_file)
-
-        cmds.append("--log-file")
-        cmds.append(log_f)
-    else:
-        log_f = None
-
-    if not ports:
+    if not args.port:
         raise ValueError("Serial port is invalid")
 
-    cmds.append("--port")
-    cmds.extend(ports)
-    cmds.append(f"--baudrate")
-    cmds.append(f"{serial_baudrate}")
-    cmds.append(f"--memory-type")
-    cmds.append(f"{mem_t}")
-    cmds.append(f"--log-level")
-    cmds.append(f"{log_level}")
+    mem_t     = args.memory_type
+    image_dir = os.path.realpath(args.image_dir) if args.image_dir else os.getcwd()
+    profile   = _resolve_profile(args.device, mem_t)
 
-    if remote_server:
-        cmds.append("--remote-server")
-        cmds.append(remote_server)
-    if args.remote_password:
-        cmds.append("--remote-password")
-        cmds.append(str(args.remote_password))
+    # Inject --download only when no explicit non-download operation was requested
+    is_download = not any(f in passthrough for f in _NON_DOWNLOAD_OPS)
 
-    if args.chip_erase:
-        cmds.append("--chip-erase")
+    cmds = []
+    if is_download:
+        cmds.append('--download')
 
-    if args.no_reset:
-        cmds.append("--no-reset")
+    cmds += ['--profile',      profile]
+    cmds += ['--port']  + args.port
+    cmds += ['--baudrate',     str(args.baudrate)]
+    cmds += ['--memory-type',  mem_t]
 
-    if not images:
-        cmds.append(f"--image-dir")
-        cmds.append(IMAGE_DIR)
+    if not args.image:
+        cmds += ['--image-dir', image_dir]
     else:
-        partition_table = []
+        cmds += ['--partition-table', _build_partition_table(args.image, mem_t, image_dir)]
 
-        if mem_t == "nand":
-            memory_type = MemoryInfo.MEMORY_TYPE_NAND
-        elif mem_t == "ram":
-            memory_type = MemoryInfo.MEMORY_TYPE_RAM
-        else:
-            memory_type = MemoryInfo.MEMORY_TYPE_NOR
-
-        # 1. Argparse.images format [[image-name, start-address, end-address], ...]
-        for group in images:
-            image_name_with_path = os.path.realpath(os.path.join(IMAGE_DIR, group[0]))
-            image_name = os.path.basename(image_name_with_path)
-            try:
-                start_addr = int(group[1], 16)
-            except Exception as err:
-                raise ValueError(f"Start addr in invalid: {err}")
-
-            try:
-                end_addr = int(group[2], 16)
-            except Exception as err:
-                raise ValueError(f"End addr in invalid: {err}")
-
-            partition_table.append({
-                "ImageName": image_name_with_path,
-                "StartAddress": start_addr,
-                "EndAddress": end_addr,
-                "FullErase": False,
-                "MemoryType": memory_type,
-                "Mandatory": True,
-                "Description": image_name
-            })
-
-        # 2. Convert list to json-str
-        partition_table_json_string = json.dumps(partition_table)
-
-        # 3. Encode json-str to bytes
-        partition_table_bytes = partition_table_json_string.encode('utf-8')
-
-        # 4. Base64 encode bytes
-        partition_table_base64 = base64.b64encode(partition_table_bytes).decode('utf-8')
-
-        cmds.append(f"--partition-table")
-        cmds.append(f"{partition_table_base64}")
+    # Forward all remaining args (log-level, chip-erase, no-reset, remote-server,
+    # key-prog and its sub-args, …) unchanged.
+    cmds += passthrough
 
     run_flash(cmds)
 

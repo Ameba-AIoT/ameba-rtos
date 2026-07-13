@@ -68,6 +68,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.freq_band_support = RTW_SUPPORT_BAND_MAX;
 	wifi_user_config.tx_pwr_table_selection = 2;
 	wifi_user_config.tpc_enable = 0; /* 1: apply TPC for FCC/MKK/KCC/IC/ETSI(5.25~5.35GHz, 5.47~5.725GHz), CN(5.25~5.35GHz) */
+	wifi_user_config.dfs_master_enable = 0; /* 0: Disable SoftAP DFS master, 1: Enable (CAC/NOP/radar on DFS channels) */
 	wifi_user_config.rtw_802_11d_en = 0;
 	wifi_user_config.rtw_trp_tis_cert_en = RTW_TRP_TIS_DISABLE;
 	wifi_user_config.rtw_edcca_mode = RTW_EDCCA_NORM;

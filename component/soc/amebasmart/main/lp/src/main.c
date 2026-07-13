@@ -133,7 +133,7 @@ int main(void)
 
 #ifdef CONFIG_SHELL
 	/* Register Log Uart Callback function */
-#ifndef CONFIG_LINUX_FW_EN
+#if !defined(CONFIG_LINUX_FW_EN) && !defined(CONFIG_PLATFORM_ZEPHYR)
 	InterruptRegister((IRQ_FUN) shell_uart_irq_rom, UART_LOG_IRQ, (u32)NULL, INT_PRI_LOWEST);
 	InterruptEn(UART_LOG_IRQ, INT_PRI_LOWEST);
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);

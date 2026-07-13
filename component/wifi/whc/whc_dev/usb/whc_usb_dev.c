@@ -9,7 +9,7 @@ struct whc_usb_priv_t whc_usb_priv = {0};
 
 u8 wifi_whc_usb_status = WIFI_WHC_USB_STATUS_ACTIVE;
 
-static usbd_config_t whc_usb_wifi_cfg = {
+static const usbd_config_t whc_usb_wifi_cfg = {
 	.speed = WIFI_WHC_USB_SPEED,
 	.isr_priority = 4,
 #if defined (CONFIG_AMEBAGREEN2)
@@ -78,13 +78,10 @@ static void whc_usb_dev_irq_task(void)
 				new_skb = skb_rcv;  // not need to malloc new skb
 			} else {
 				msg_info = (struct whc_msg_info *)skb_rcv->data;
-				if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 3) ||
-#ifdef CONFIG_WHCH
-					(rtw_xmit_check_txbd(msg_info->wlan_hw_queue) == FALSE) ||
-#endif
+				if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 2) ||
 					((new_skb = dev_alloc_skb(USB_BUFSZ, USB_SKB_RSVD_LEN)) == NULL)) {
-					new_skb = skb_rcv;
-					goto drop_pkt;
+					whc_usb_priv.irq_info.wait_xmit_skb = 1;
+					break;
 				}
 				skb_reserve(skb_rcv, sizeof(struct whc_msg_info));
 
@@ -93,7 +90,7 @@ static void whc_usb_dev_irq_task(void)
 				whc_dev_event_int_hdl((u8 *)msg_info, skb_rcv);
 				whc_usb_priv.rx_skb_addr[EPNUM_TO_IDX(ep_num)] = (u8 *)new_skb;
 			}
-drop_pkt:
+
 			whc_usb_priv.irq_info.rxdone_epnum[whc_usb_priv.irq_info.task_ridx] = 0;
 			whc_usb_priv.irq_info.len[whc_usb_priv.irq_info.task_ridx] = 0;
 			whc_usb_priv.irq_info.task_ridx = (whc_usb_priv.irq_info.task_ridx + 1) % (WIFI_WHC_USB_BULKOUT_EP_NUM);
@@ -262,7 +259,7 @@ static int whc_usb_dev_clear_config_cb(void)
 	return HAL_OK;
 }
 
-static usbd_inic_cb_t whc_usb_dev_cb = {
+static const usbd_inic_cb_t whc_usb_dev_cb = {
 	.init = whc_usb_dev_init_cb,
 	.deinit = whc_usb_dev_deinit_cb,
 	.setup = whc_usb_dev_setup_cb,
@@ -384,5 +381,13 @@ u8 whc_usb_dev_bus_is_idle(void)
 {
 	/*Not yet implemented*/
 	return TRUE;
+}
+
+void whc_usb_dev_trigger_rx_handle(void)
+{
+	if (whc_usb_priv.irq_info.wait_xmit_skb == 1) {
+		whc_usb_priv.irq_info.wait_xmit_skb = 0;
+		rtos_sema_give(whc_usb_priv.usb_irq_sema);
+	}
 }
 

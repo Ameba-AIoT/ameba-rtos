@@ -227,8 +227,8 @@ void nandow_send_cmd(struct nan_customer_nandow *nandoow_cmd,
 	}
 
 	/* write struct to file */
-	fwrite(input, input_len, 1, outfile);
-	if (fwrite != 0) {
+	size_t res = fwrite(input, input_len, 1, outfile);
+	if (res != 0) {
 		printf("contents to file written successfully !\n");
 	} else {
 		printf("error writing file !\n");
@@ -307,8 +307,8 @@ RTW_RET_STATUS send_vendor_cmd(unsigned int cmd_id,
 		exit(1);
 	}
 	// write struct to file
-	fwrite(input, input_len, 1, outfile);
-	if (fwrite != 0) {
+	size_t res = fwrite(input, input_len, 1, outfile);
+	if (res != 0) {
 		printf("contents to file written successfully !\n");
 	} else {
 		printf("error writing file !\n");
@@ -893,7 +893,17 @@ RTW_RET_STATUS rtw_nan_api_publish(char *intf, struct srvc_info *info)
 			 RTW_NAN_SDE_CTL_DATAPATH_TYPE |
 			 RTW_NAN_SDE_CTL_SECURITY_REQUIRED);
 		publish_srv->cipher_suite_id |= BIT(RTW_NAN_CIPHER_ID_NCS_SK_128);
+		publish_srv->sec_type = info->sec_type;
 		memcpy(publish_srv->key, info->pmk, NAN_PMK_SIZE);
+	} else if (info->sec_type == NAN_PMK_SET_BY_USER_PASSPRHRAE) {
+		INFO_PRINT("[rtw_cmd] Security type of publish is passphrase!\n");
+		publish_srv->control =
+			(RTW_NAN_SDE_CTL_DATAPATH_REQ_REQUIRED |
+			 RTW_NAN_SDE_CTL_DATAPATH_TYPE |
+			 RTW_NAN_SDE_CTL_SECURITY_REQUIRED);
+		publish_srv->cipher_suite_id |= BIT(RTW_NAN_CIPHER_ID_NCS_SK_128);
+		publish_srv->sec_type = info->sec_type;
+		memcpy(publish_srv->key, info->passphrase, info->passphrase_len);
 	} else if (info->sec_type == NAN_PMK_SET_BY_PAIRING) {
 		publish_srv->pairing_enable = true;
 		INFO_PRINT("[rtw_cmd] Security type of publish is Pairing!\n");
@@ -1042,6 +1052,12 @@ RTW_RET_STATUS rtw_nan_api_subscribe(char *intf, struct srvc_info *info)
 			(RTW_NAN_SDE_CTL_DATAPATH_REQ_REQUIRED |
 			 RTW_NAN_SDE_CTL_DATAPATH_TYPE |
 			 RTW_NAN_SDE_CTL_SECURITY_REQUIRED);
+	} else if (info->sec_type == NAN_PMK_SET_BY_USER_PASSPRHRAE) {
+		INFO_PRINT("[rtw_cmd] Security type of subscribe is passphrase!\n");
+		subscribe_srv->control =
+			(RTW_NAN_SDE_CTL_DATAPATH_REQ_REQUIRED |
+			 RTW_NAN_SDE_CTL_DATAPATH_TYPE |
+			 RTW_NAN_SDE_CTL_SECURITY_REQUIRED);
 	} else if (info->sec_type == NAN_PMK_SET_BY_PAIRING) {
 		INFO_PRINT("[rtw_cmd] Security type of subscribe is Pairing!\n");
 		subscribe_srv->pairing_enable = true;
@@ -1127,6 +1143,10 @@ RTW_RET_STATUS rtw_nan_api_send_datapath_req(struct datapath_info *info)
 		}
 		dp_req->cipher_suite_id = RTW_NAN_CIPHER_ID_NCS_SK_128;
 		memcpy(dp_req->key, info->pmk, NAN_PMK_SIZE);
+	} else if (dp_req->sec_type == NAN_PMK_SET_BY_USER_PASSPRHRAE) {
+		dp_req->cipher_suite_id = RTW_NAN_CIPHER_ID_NCS_SK_128;
+		memcpy(dp_req->key, info->passphrase, info->passphrase_len);
+		dp_req->key[info->passphrase_len] = '\0';
 	} else if (dp_req->sec_type == NAN_PMK_SET_BY_PAIRING) {
 		dp_req->cipher_suite_id = RTW_NAN_CIPHER_ID_PASN_128;
 	} else {
@@ -1201,6 +1221,10 @@ RTW_RET_STATUS rtw_nan_api_send_datapath_rsp(struct datapath_info *info)
 	if (NAN_PMK_SET_BY_USER_PMK == info->sec_type) {
 		dp_rsp->cipher_suite_id = RTW_NAN_CIPHER_ID_NCS_SK_128;
 		memcpy(dp_rsp->key, info->pmk, NAN_PMK_SIZE);
+	} else if (NAN_PMK_SET_BY_USER_PASSPRHRAE == info->sec_type) {
+		dp_rsp->cipher_suite_id = RTW_NAN_CIPHER_ID_NCS_SK_128;
+		memcpy(dp_rsp->key, info->passphrase, info->passphrase_len);
+		dp_rsp->key[info->passphrase_len] = '\0';
 	} else if (NAN_PMK_SET_BY_PAIRING == info->sec_type) {
 		dp_rsp->cipher_suite_id = RTW_NAN_CIPHER_ID_PASN_128;
 	} else {

@@ -152,8 +152,8 @@ void vPortSecondaryStart(void)
 	/* Wait until scheduler starts */
 	DiagPrintf("CPU%d: on\n", (int)portGET_CORE_ID());
 
-#ifdef CONFIG_CA32_FREERTOS_V11_1_0
-	/* CPU1 wake from pg */
+#if defined(CONFIG_CA32_FREERTOS_V11_1_0) || defined(CONFIG_CA32_FREERTOS_V11_3_0)
+	/* CPU1 wake from pg: restore saved context and return to idle task */
 	if (pmu_get_secondary_cpu_state(portGET_CORE_ID()) == CPU1_WAKE_FROM_PG) {
 		portDISABLE_INTERRUPTS();
 		/* Back to idle task */

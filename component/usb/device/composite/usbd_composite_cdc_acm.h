@@ -96,7 +96,7 @@ typedef struct {
  */
 typedef struct {
 	usbd_composite_dev_t *cdev;           /**< Pointer to the parent composite device structure. */
-	usbd_composite_cdc_acm_usr_cb_t *cb;  /**< Pointer to the user-registered callback structure. */
+	const usbd_composite_cdc_acm_usr_cb_t *cb;  /**< Pointer to the user-registered callback structure. */
 	usbd_ep_t ep_bulk_in;                 /**< Bulk IN endpoint handler. */
 	usbd_ep_t ep_bulk_out;                /**< Bulk OUT endpoint handler. */
 #if CONFIG_COMP_CDC_ACM_NOTIFY
@@ -130,7 +130,7 @@ extern const usbd_class_driver_t usbd_composite_cdc_acm_driver;
  * @param[in] cb: Pointer to the user callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_composite_cdc_acm_init(usbd_composite_dev_t *cdev, u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, usbd_composite_cdc_acm_usr_cb_t *cb);
+int usbd_composite_cdc_acm_init(usbd_composite_dev_t *cdev, u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, const usbd_composite_cdc_acm_usr_cb_t *cb);
 
 /**
  * @brief De-initializes the CDC ACM composite function.

@@ -42,7 +42,7 @@
 
 /* recv structure */
 struct host_priv {
-	rtos_sema_t host_send_sema; /* sema to protect inic ipc host send */
+	rtos_mutex_t host_send_lock; /* mutex to protect inic ipc host send */
 	rtos_timer_t whc_stats_timer; /* sema to protect inic ipc host send */
 	u32 rx_bytes; /* recv bytes */
 	u32 rx_pkts; /* recv number of packets */

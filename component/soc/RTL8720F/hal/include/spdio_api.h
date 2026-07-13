@@ -47,10 +47,10 @@ extern "C" {
  * @{
  */
 
-#define SPDIO_DMA_ALIGN_4			4
-#define SPDIO_RX_BUFSZ_ALIGN(x)	((((x-1)>>6)+1)<<6) //alignment to 64
+#define SPDIO_DMA_ALIGN_4			4   /*!< DMA alignment requirement in bytes for SPDIO buffers. */
+#define SPDIO_RX_BUFSZ_ALIGN(x)	((((x-1)>>6)+1)<<6)   /*!< Align RX buffer size x to the next multiple of 64 bytes. */
 
-#define SPDIO_RXDESC_SZ	24
+#define SPDIO_RXDESC_SZ	24   /*!< Size of the SPDIO receive descriptor in bytes. */
 
 /** @}*/
 
@@ -62,41 +62,42 @@ extern "C" {
  * @{
  */
 
+/** @brief MBED SPDIO driver configuration and callback structure. */
 struct spdio_t {
-	SDIO_TypeDef *pSDIO; // SDIO_WIFI or SDIO_BT
-	void *priv; //not used by user
-	u32 host_rx_bd_num; //for spdio send data to host, 2 bd for one packet, so this value must be rounded to 2
-	u32 host_tx_bd_num; //for spdio receive data from host
-	u32 device_rx_bufsz; //buffer size = desired packet length + 24(spdio header info), must be rounded to 64
-	struct spdio_buf_t *rx_buf; //buffer array for spdio receive assigned by user, device_rx_bufsz * host_tx_bd_num
+	SDIO_TypeDef *pSDIO;        /*!< Pointer to SDIO hardware base address (SDIO_WIFI or SDIO_BT). */
+	void *priv;                 /*!< Reserved for internal use; not set by user. */
+	u32 host_rx_bd_num;         /*!< Number of host RX BDs for sending data to host; 2 BDs per packet, must be even. */
+	u32 host_tx_bd_num;         /*!< Number of host TX BDs for receiving data from host. */
+	u32 device_rx_bufsz;        /*!< RX buffer size: desired packet length + 24-byte SPDIO header; must be a multiple of 64. */
+	struct spdio_buf_t *rx_buf; /*!< RX buffer array pre-allocated by user; total size = device_rx_bufsz * host_tx_bd_num. */
 
-	rtos_sema_t irq_sema; /* SDIO irq task semaphore */
-	rtos_task_t irq_task_hdl; /* SDIO irq task handler */
+	rtos_sema_t irq_sema;     /*!< SDIO IRQ task semaphore. */
+	rtos_task_t irq_task_hdl; /*!< SDIO IRQ task handle. */
 
 	/**
-	 * @brief Callback function defined by user, called by spdio when one packet is received.
-	 * @param priv Pointer to spdio_t structure which is used to initialize spdio interface.
-	 * @param pbuf Pointer to spdio_buf_t structure which is spdio receive buffer.
+	 * @brief Callback function defined by user, called by SPDIO when one packet is received.
+	 * @param priv Pointer to @ref spdio_t structure which is used to initialize the SPDIO interface.
+	 * @param pbuf Pointer to @ref spdio_buf_t structure which is the SPDIO receive buffer.
 	 * @param pdata Actual received packet payload.
 	 * @param size Actual payload length.
 	 * @param type Received packet type, which should be a value of @ref spdio_rx_data_t.
-	 * @retval RTK_SUCCESS or RTK_FAIL.
+	 * @return RTK_SUCCESS or RTK_FAIL.
 	 */
 	char (*device_rx_done_cb)(void *priv, void *pbuf, u8 *pdata, u16 size, u8 type);
 
 	/**
-	 * @brief Callback function defined by user, called by spdio when one packet is sent.
-	 * @param priv Pointer to spdio_t structure which is used to initialize spdio interface.
-	 * @param pbuf Pointer to spdio_buf_t structure which carries the transmit packet.
-	 * @retval RTK_SUCCESS or RTK_FAIL.
+	 * @brief Callback function defined by user, called by SPDIO when one packet is sent.
+	 * @param priv Pointer to @ref spdio_t structure which is used to initialize the SPDIO interface.
+	 * @param pbuf Pointer to @ref spdio_buf_t structure which carries the transmit packet.
+	 * @return RTK_SUCCESS or RTK_FAIL.
 	 */
 	char (*device_tx_done_cb)(void *priv, void *pbuf);
 
 	/**
-	 * @brief Callback function defined by user to response rpwm from host.
-	 * @param priv Pointer to spdio_t structure which is used to initialize spdio interface.
+	 * @brief Callback function defined by user to respond to RPWM from host.
+	 * @param priv Pointer to @ref spdio_t structure which is used to initialize the SPDIO interface.
 	 * @param value RPWM2 value.
-	 * @retval RTK_SUCCESS or RTK_FAIL.
+	 * @return RTK_SUCCESS or RTK_FAIL.
 	 */
 	char (*rpwm_cb)(void *priv, u16 value);
 };
@@ -111,7 +112,10 @@ void spdio_init(struct spdio_t *obj);
 void spdio_deinit(struct spdio_t *obj);
 u8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf);
 void spdio_trigger_rx_handle(void);
+/// @cond
 void SPDIO_Board_Init(void);
+void SPDIO_Buffer_free(PSPDIO_ADAPTER pSPDIODev);
+/// @endcond
 
 #ifdef __cplusplus
 }

@@ -29,6 +29,7 @@ extern "C"  {
 #define SCAN_PARAM_SRV_ID                   15
 #define TX_POWER_SRV_ID                     16
 #define LINK_LOSS_SRV_ID                    17
+#define RUNNING_SPEED_CADENCE_SRV_ID        18
 
 #define TRANSFER_MODULE_SRV_ID_BASE         0x80
 

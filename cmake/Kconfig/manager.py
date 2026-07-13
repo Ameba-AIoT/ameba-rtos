@@ -211,7 +211,7 @@ class Manager(object):
             self.unified_file_diff(self.config_default_old, self.config_default)
 
             print(f"{YELLOW}Press [Enter] to continue: Skip Kconfig updating and using current .config{RESET}")
-            print(f"{YELLOW}Press [CTRL+C] to exit: Run menuconfig.py to reconfiguration after exiting\r\n{RESET}")
+            print(f"{YELLOW}Press [CTRL+C] to exit: Run 'ameba.py menuconfig' to reconfiguration after exiting\r\n{RESET}")
 
             if not sys.stdin.isatty() or os.environ.get('AMEBA_KCONFIG_AUTO_SKIP') == '1':
                 print(f"{MAGENTA}Non-interactive shell detected, re-syncing .config to current Kconfig{RESET}")
@@ -227,7 +227,7 @@ class Manager(object):
                 os.remove(self.config_default_old)
                 return 0
             else:
-                print(f"{MAGENTA}Please run menuconfig.py{RESET}")
+                print(f"{MAGENTA}Please run 'ameba.py menuconfig'{RESET}")
                 return 3
         else:
             return 0

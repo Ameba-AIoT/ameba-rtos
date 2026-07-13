@@ -41,17 +41,6 @@ static struct rtw_softap_info ap = {0};
 static unsigned char password[129] = {0};
 static int security = -1;
 
-#if defined(CONFIG_IP_NAPT) && (CONFIG_IP_NAPT == 1)
-extern void ip_napt_dump(void);
-#endif
-#if defined(CONFIG_RNAPT)
-extern void rnapt_print_status(void);
-extern void ip_napt_dump(void);
-extern void dns_proxy_print_status(void);
-extern void dns_proxy_dump_cache(void);
-extern void dns_proxy_dump_transactions(void);
-#endif
-
 extern int wifi_set_ips_internal(u8 enable);
 #if defined(CONFIG_IEEE80211R) && (WIFI_LOGO_CERTIFICATION == 1)
 extern int rtw_ft_reassoc_dbg(u16 argc, char **argv);
@@ -1131,21 +1120,6 @@ void at_wlstate(u16 argc, char **argv)
 #endif /* CONFIG_LWIP_LAYER */
 
 	rtos_mem_free((void *)p_wifi_setting);
-
-#if defined(CONFIG_IP_NAPT) && (CONFIG_IP_NAPT == 1)
-#if defined(LWIP_IPV6) && (LWIP_IPV6 == 1)
-	print_rlocal_ipv6_addresses();
-	print_rlocal_nhb();
-#endif
-	ip_napt_dump();
-#endif
-#if defined(CONFIG_RNAPT)
-	rnapt_print_status();
-	ip_napt_dump();
-	dns_proxy_print_status();
-	dns_proxy_dump_cache();
-	dns_proxy_dump_transactions();
-#endif
 
 	at_printf(ATCMD_OK_END_STR);
 }

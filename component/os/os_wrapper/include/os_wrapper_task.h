@@ -201,4 +201,12 @@ rtos_task_t rtos_task_handle_get_idle(uint32_t coreID);
  */
 void rtos_task_set_affinity(rtos_task_t p_handle, uint32_t coreID);
 
+/**
+ * @brief  Create a one-shot task that binds idle tasks to their respective
+ *         cores (core 0 for the primary idle task, core 1 for the passive
+ *         idle task).  Must be called after the scheduler is started.
+ *         When configUSE_CORE_AFFINITY is not enabled this is a no-op.
+ */
+void rtos_start_affinity_idle_task(void);
+
 #endif

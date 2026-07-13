@@ -162,8 +162,8 @@ u32 rtc_alarm_intr_handler(void *data)
   */
 void rtc_init(void)
 {
-	RCC_PeriphClockCmd(NULL, APBPeriph_RTC_CLOCK, ENABLE);
-	RTC_Enable(ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_RTC, APBPeriph_RTC_CLOCK, ENABLE);
+
 	RTC_InitTypeDef RTC_InitStruct;
 
 	RTC_StructInit(&RTC_InitStruct);

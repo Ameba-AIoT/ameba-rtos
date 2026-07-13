@@ -268,7 +268,7 @@ typedef struct {
 	usbd_class_driver_t *uac;     /**< UAC class. */
 #endif
 
-	usbd_composite_cb_t *cb;      /**< Composite user callback */
+	const usbd_composite_cb_t *cb;      /**< Composite user callback */
 	usb_dev_t *dev;               /**< USB device instance */
 } usbd_composite_dev_t;
 /** @} End of Device_Composite_Types group */

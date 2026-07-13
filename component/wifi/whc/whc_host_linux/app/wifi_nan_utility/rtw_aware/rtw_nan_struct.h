@@ -15,8 +15,9 @@ static unsigned char WFA_OUI[] = {0x50, 0x6F, 0x9A};
 #define MAX_BIN_PATH_LEN 256
 #define MAX_SERVICE_TIME 30
 #define NAN_PMK_SIZE 32
-#define MIN_NAN_EVT_LSIZE 10485760 /* 10MB */
+#define MIN_NAN_EVT_LSIZE 102400
 #define MAX_PASN_PW_LEN 16
+#define MAX_PASSPHRASE_LEN 16
 #define MAX_PMKID_LEN 16
 
 #ifndef BIT
@@ -104,6 +105,8 @@ struct srvc_info {
 	uint16_t text_info_len;
 	uint8_t sec_type; /* enum nan_pmk_setting, 0 reserved */
 	uint8_t pmk[NAN_PMK_SIZE];
+	uint8_t passphrase[MAX_PASSPHRASE_LEN + 1];
+	uint16_t passphrase_len;
 	struct pairing_info pairing_info;
 	uint8_t gtk_enable;
 };
@@ -118,6 +121,8 @@ struct datapath_info {
 	uint8_t hostname[256];
 	uint16_t port_number;
 	uint8_t pmk[NAN_PMK_SIZE];
+	uint8_t passphrase[MAX_PASSPHRASE_LEN + 1];
+	uint16_t passphrase_len;
 	uint8_t sec_type; /* enum nan_pmk_setting, 0 reserved */
 };
 

@@ -97,6 +97,14 @@ s32 wifi_set_lps_bcn_window(u8 enable, u8 bcn_ely_time, u8 rx_bcn_timeout);
 s32 wifi_set_wowlan_rx_broadcast(u8 enable);
 
 /**
+ * @brief   Dynamically enable/disable IPv6 WoWLAN wake capability.
+ * @param[in]  enable: 0 = disable IPv6 wake in WoWLAN, 1 = enable IPv6 wake in WoWLAN.
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ */
+s32 wifi_set_wowlan_ipv6_wake(u8 enable);
+
+/**
  * @brief Set up custom TCP/UDP broadcast port filter white list for wifi wake application core under tickless state
  * @warning There are up to 6 port numbers.
  * @param[in] port_list: port list need to add in port filter white list

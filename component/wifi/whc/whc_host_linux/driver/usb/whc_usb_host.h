@@ -1,8 +1,6 @@
 #ifndef __WHC_USB_HOST_H__
 #define __WHC_USB_HOST_H__
 
-#include "autoconf.h"
-
 #define SIZE_RX_DESC			0
 #define SIZE_TX_DESC			0
 

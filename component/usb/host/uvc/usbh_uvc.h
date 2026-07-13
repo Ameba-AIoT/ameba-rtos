@@ -237,7 +237,7 @@ typedef struct {
 	usbh_setup_req_t setup_req;
 	struct list_head entity_list;
 	usb_host_t *host;
-	usbh_uvc_cb_t *cb;
+	const usbh_uvc_cb_t *cb;
 	u8 *request_buf;
 
 #if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG

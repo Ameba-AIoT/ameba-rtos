@@ -790,7 +790,7 @@ static int usbd_composite_hid_ring_buf_ctrl_init(void)
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbd_composite_hid_init(usbd_composite_dev_t *cdev, usbd_composite_hid_usr_cb_t *cb)
+int usbd_composite_hid_init(usbd_composite_dev_t *cdev, const usbd_composite_hid_usr_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbd_composite_hid_device_t *hid = &composite_hid_device;

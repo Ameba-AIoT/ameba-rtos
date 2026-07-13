@@ -1,3 +1,8 @@
+ccflags-$(CONFIG_AMEBADPLUS)           += -DCONFIG_AMEBADPLUS
+ccflags-$(CONFIG_AMEBAGREEN2)          += -DCONFIG_AMEBAGREEN2
+ccflags-$(CONFIG_AMEBALITE)            += -DCONFIG_AMEBALITE
+ccflags-$(CONFIG_AMEBAX)               += -DCONFIG_AMEBAX
+
 ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
 ccflags-$(CONFIG_IEEE80211R) += -DCONFIG_IEEE80211R
@@ -38,7 +43,6 @@ whc_spi-$(CONFIG_WHC_HCI_SPI) := \
 		../whc_host_event_rx.o \
 		../whc_host_event_hdl.o \
 		../whc_host_protocal_offload.o \
-		../whc_host_cust_evt.o \
 		../whc_host_acs.o
 
 whc_spi-$(CONFIG_BT_INIC) += rtb_spi.o

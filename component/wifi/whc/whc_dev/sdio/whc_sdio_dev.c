@@ -2,6 +2,7 @@
 
 struct whc_sdio_priv_t sdio_priv = {0};
 
+void rtw_pending_q_resume(void);
 void (*bt_inic_sdio_recv_ptr)(uint8_t *buffer, uint16_t len);
 
 static u32 whc_sdio_dev_suspend(u32 expected_idle_time, void *param)
@@ -76,13 +77,11 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		rx_skb = (struct sk_buff *)rx_buf->priv;
 		p_msg_info = (struct whc_msg_info *)(rx_skb->data + sizeof(INIC_TX_DESC));
 
-		/* reserved 3 skb for rx */
-		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 3) ||
-#ifdef CONFIG_WHCH
-			(rtw_xmit_check_txbd(p_msg_info->wlan_hw_queue) == FALSE) ||
-#endif
+		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 5) ||
 			((new_skb = dev_alloc_skb(SPDIO_DEVICE_RX_BUFSZ, SPDIO_SKB_RSVD_LEN)) == NULL)) {
-			goto drop_pkt;
+			/* resume pending queue to release skb */
+			rtw_pending_q_resume();
+			return RTK_FAIL;
 		}
 
 		/* assign new buffer for SPDIO RX ring */
@@ -106,10 +105,6 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 
 		whc_dev_event_int_hdl(pdata, rx_skb);
 
-#ifdef CONFIG_WHC_WIFI_API_PATH
-	} else if (event == WHC_CUST_EVT) {
-		whc_dev_recv_cust_evt(pdata);
-#endif
 	} else if (event >= WHC_BT_EVT_BASE && event <= WHC_BT_EVT_MAX) {
 		/* copy by bt, skb no change */
 		if (bt_inic_sdio_recv_ptr) {
@@ -199,10 +194,17 @@ fail:
 	return;
 }
 
+void whc_sdio_dev_trigger_rx_handle(void)
+{
+	spdio_trigger_rx_handle();
+}
+
 void whc_sdio_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb)
 {
 	struct whc_txbuf_info_t *buf_info = NULL;
 	struct spdio_buf_t *pbuf;
+	u8 tmp = 0;
+	struct whc_msg_info *msg_info = (struct whc_msg_info *)buf;
 
 	buf_info = whc_dev_alloc_buf_info(buf, len, buf_alloc, is_skb);
 	if (!buf_info) {
@@ -217,6 +219,10 @@ void whc_sdio_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb)
 	while (spdio_tx(&sdio_priv.dev, pbuf) == FALSE) {
 		/* wait for RXBD release */
 		rtos_sema_take(sdio_priv.rxbd_release_sema, 0xFFFFFFFF);
+
+		/* need update flowctrl status */
+		whc_dev_flowctrl(&tmp, 0);
+		msg_info->flow_ctrl_en = tmp;
 	}
 
 #ifdef WHC_SDIO_USE_GPIO_INT

@@ -41,6 +41,7 @@ uint8_t bt_hci_cmd_ogf_le_ocf_set_scan_enable(void *phci_cmd_param, uint8_t *rsp
 uint8_t bt_hci_cmd_ogf_le_ocf_create_connection(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_ext_create_connection_cancel(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_legacy_create_connection_cancel(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_read_peer_rpa(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_read_local_rpa(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_add_dev_to_fal(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_remove_dev_from_fal(void *phci_cmd_param, uint8_t *rsp);
@@ -130,15 +131,10 @@ void bt_hci_evt_num_completed_pkts(uint16_t conn_handle, uint16_t count);
 void bt_hci_evt_encryption_change(uint16_t conn_handle, uint8_t enc_enabled);
 void bt_hci_evt_encryption_key_refresh_complete(uint16_t conn_handle);
 void bt_hci_evt_phy_update_complete(uint16_t conn_handle, uint8_t tx_phy, uint8_t rx_phy);
-void bt_hci_evt_le_advertising_report(uint8_t *pkt, struct bt_le_addr_t *adv_addr);
-void bt_hci_evt_le_ext_adv_report(uint8_t *pri_pkt, uint8_t no_aux, uint8_t *sec_pkt, uint8_t chain_num,
-								  uint8_t adv_mode, uint8_t directed, uint8_t scan_rsp_valid,
-								  uint8_t data_status, struct bt_le_addr_t *a_addr, uint8_t prim_phy,
-								  uint8_t sec_phy, uint8_t sid, int8_t tx_power,
-								  uint16_t pa_interval, struct bt_le_addr_t *d_addr,
-								  uint16_t data_total_len, uint16_t scan_rsp_total_len);
-void bt_hci_evt_le_ext_adv_legacy_report(uint8_t *pkt,
-		struct bt_le_addr_t *adv_addr, struct bt_le_addr_t *direct_addr);
+void bt_hci_evt_le_advertising_report(void *pkt);
+void bt_hci_evt_le_ext_adv_report(void *pri_pkt, void *sec_pkt,
+								  uint8_t chain_num, uint8_t prim_phy, uint8_t scan_rsp_valid);
+void bt_hci_evt_le_ext_adv_legacy_report(void *pkt);
 void bt_hci_evt_le_connection_complete(uint8_t status, uint16_t conn_handle, uint8_t role, struct bt_le_addr_t *peer_addr,
 									   uint8_t *local_rpa, uint8_t *peer_rpa, void *conn_param);
 void bt_hci_evt_le_conn_update_complete(uint16_t conn_handle, uint8_t status, void *connparam);

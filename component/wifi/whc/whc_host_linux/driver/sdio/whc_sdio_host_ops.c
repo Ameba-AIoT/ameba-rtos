@@ -1,5 +1,4 @@
 #include <whc_host_linux.h>
-#include <whc_host_cmd_path_api.h>
 
 static struct sk_buff *whc_sdio_host_read_rxfifo(struct whc_sdio *priv, u32 size)
 {

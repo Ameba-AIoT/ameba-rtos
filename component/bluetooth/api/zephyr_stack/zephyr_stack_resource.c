@@ -417,3 +417,13 @@ void zephyr_internal_res_free(void)
 	osif_msg_queue_delete(bt_workq.queue); /* thread is abort in bt_disable() */
 #endif
 }
+
+void zephyr_builtin_gatt_svc_set(bool enable)
+{
+	static int default_size = -1;
+	if (default_size < 0) {
+		default_size = STRUCT_ARRAY_SIZE(bt_gatt_service_static);
+	}
+
+	STRUCT_ARRAY_SIZE(bt_gatt_service_static) = enable ? default_size : 0;
+}

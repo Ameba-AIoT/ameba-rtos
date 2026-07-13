@@ -910,6 +910,15 @@ struct bt_hci_rp_le_read_rl_size {
 	uint8_t  rl_size;
 } __attribute__((packed));
 
+#define BT_HCI_OP_LE_READ_PEER_RPA             BT_OP(BT_OGF_LE, 0x002b) /* 0x202b */
+struct bt_hci_cp_le_read_peer_rpa {
+	struct bt_le_addr_t  peer_id_addr;
+} __attribute__((packed));
+struct bt_hci_rp_le_read_peer_rpa {
+	uint8_t    status;
+	uint8_t    peer_rpa[BT_ADDR_SIZE];
+} __attribute__((packed));
+
 #define BT_HCI_OP_LE_READ_LOCAL_RPA             BT_OP(BT_OGF_LE, 0x002c) /* 0x202c */
 struct bt_hci_cp_le_read_local_rpa {
 	struct bt_le_addr_t  peer_id_addr;
@@ -1807,6 +1816,8 @@ struct bt_hci_evt_le_adv_set_terminated {
 	uint16_t conn_handle;
 	uint8_t num_cmpl_ext_adv_evts;
 } __attribute__((packed));
+
+#define BT_HCI_AUX_PHY_TO_HCI_PHY(aux_phy) ((aux_phy) + 1)
 
 #define BT_HCI_LE_ADV_EVT_TYPE_CONN                 BIT(0)
 #define BT_HCI_LE_ADV_EVT_TYPE_SCAN                 BIT(1)

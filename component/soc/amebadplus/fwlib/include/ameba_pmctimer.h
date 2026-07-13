@@ -129,6 +129,21 @@ extern "C" {
   * @{
   */
 
+/** @defgroup PMCTIMER_Device_Config PMCTIMER Device Config
+  * @{
+  */
+#ifdef CONFIG_ARM_CORE_CM4
+#define PMC_TIMER_DEV PMCTIMER_DEV0   /*!< PMC timer device instance for CM4/KM4 core. */
+#define PMC_TIMER_IRQ PMC_TIMER0_IRQ   /*!< PMC timer IRQ number for CM4/KM4 core. */
+#else
+#define PMC_TIMER_DEV PMCTIMER_DEV1   /*!< PMC timer device instance for CM0/KM0 core. */
+#define PMC_TIMER_IRQ PMC_TIMER1_IRQ   /*!< PMC timer IRQ number for CM0/KM0 core. */
+#endif
+#define PMC_TIMER_INT_PRIO INT_PRI_LOWEST   /*!< PMC timer interrupt priority. */
+/**
+  * @}
+  */
+
 /** @defgroup PMCTIMER_Index PMCTIMER Index
   * @{
   */
@@ -219,11 +234,11 @@ __STATIC_INLINE u32 PMCTimerCnt_Get(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
   * @param  PMC_TIMER The pointer of PMC TIMER DEV.
   * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @param  NewVaule New counter.
+  * @param  NewValue New counter.
   */
-__STATIC_INLINE void PMCTimerCnt_Set(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewVaule)
+__STATIC_INLINE void PMCTimerCnt_Set(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewValue)
 {
-	PMC_TIMER->PMCTTIM_SETx[Timer_Idx] = PMCTTIM_SETx(NewVaule);
+	PMC_TIMER->PMCTTIM_SETx[Timer_Idx] = PMCTTIM_SETx(NewValue);
 }
 
 /**

@@ -20,16 +20,6 @@ uint32_t system_can_yield = 1; /* default is can */
 static uint32_t timer_min_sleep_time = PMU_SLEEP_FOREVER;
 static uint32_t timer_max_sleep_time = PMU_SLEEP_FOREVER;
 
-#ifdef CONFIG_ARM_CORE_CM4
-#define PMC_TIMER_DEV PMCTIMER_DEV0
-#define PMC_TIMER_IRQ PMC_TIMER0_IRQ
-#define PMC_TIMER_INT_PRIO INT_PRI6
-#else
-#define PMC_TIMER_DEV PMCTIMER_DEV1
-#define PMC_TIMER_IRQ PMC_TIMER1_IRQ
-#define PMC_TIMER_INT_PRIO INT_PRI_LOWEST
-#endif
-
 /* ++++++++ FreeRTOS macro implementation ++++++++ */
 
 /* psm dd hook info */

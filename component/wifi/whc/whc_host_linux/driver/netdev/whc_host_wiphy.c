@@ -207,6 +207,9 @@ int rtw_wiphy_band_init(struct wiphy *pwiphy, u32 band_type)
 	} else if (band_type == NL80211_BAND_5GHZ) {
 		n_channels = MAX_CHANNEL_NUM_5G;
 		n_bitrates = RTW_A_RATES_NUM;
+	} else {
+		dev_err(global_idev.pwhc_dev, "invalid band_type %u\n", band_type);
+		return false;
 	}
 
 	band = (struct ieee80211_supported_band *)kzalloc(
@@ -224,7 +227,7 @@ int rtw_wiphy_band_init(struct wiphy *pwiphy, u32 band_type)
 
 	band->channels = (struct ieee80211_channel *)(((u8 *)band) + sizeof(struct ieee80211_supported_band));
 	band->bitrates = (struct ieee80211_rate *)(((u8 *)band->channels) + sizeof(struct ieee80211_channel) * n_channels);
-	band->band = NL80211_BAND_2GHZ;
+	band->band = band_type;
 	band->n_channels = n_channels;
 	band->n_bitrates = n_bitrates;
 	band->iftype_data = (struct ieee80211_sband_iftype_data *)(((u8 *)band->bitrates)
@@ -412,6 +415,10 @@ wiphy_fail:
 
 void rtw_wiphy_deinit(void)
 {
+	if (!global_idev.pwiphy_global) {
+		return;
+	}
+
 #ifdef CONFIG_NAN
 	whc_host_cfgvendor_detach(global_idev.pwiphy_global);
 #endif
@@ -425,9 +432,7 @@ void rtw_wiphy_deinit(void)
 		global_idev.pwiphy_global->bands[NL80211_BAND_5GHZ] = NULL;
 	}
 
-	if (global_idev.pwiphy_global) {
-		wiphy_free(global_idev.pwiphy_global);
-		dev_dbg(global_idev.pwhc_dev, "free wiphy done.");
-		global_idev.pwiphy_global = NULL;
-	}
+	wiphy_free(global_idev.pwiphy_global);
+	dev_dbg(global_idev.pwhc_dev, "free wiphy done.");
+	global_idev.pwiphy_global = NULL;
 }

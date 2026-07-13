@@ -17,6 +17,15 @@
 #define TZ_S_START			(u32)__image3_entry_func__
 #define TZ_SRAM_START		(u32)__image3_ram_start__
 #define TZ_XIP_REGION_END	0x01000000U
+#elif defined(CONFIG_IMG3_PSRAM)
+/* PSRAM mode: Secure code (entry + NSC gateway + bulk text) runs from PSRAM
+ * ([TZ_PSRAM_START, TZ_PSRAM_END)); .data/.bss and .sram.only code live in the
+ * small SRAM-TZ window ([TZ_SRAM_START, TZ_SRAM_END)). Both windows must be
+ * Secure, and the NSC gateway sits inside the Secure PSRAM region. */
+#define TZ_SRAM_START		(u32)__image3_ram_start__
+#define TZ_SRAM_END			(u32)__image3_ram_end__
+#define TZ_PSRAM_START		(u32)__image3_psram_ram_start__
+#define TZ_PSRAM_END		(u32)__image3_psram_ram_end__
 #else
 #define TZ_S_START			(u32)__image3_ram_start__
 #define TZ_SRAM_START		(u32)__image3_ram_start__
@@ -24,19 +33,34 @@
 #endif
 #define TZ_NSC_START		(u32)__ram_image3_nsc_start__
 #define TZ_NSC_END			(u32)__ram_image3_nsc_end__
+#ifndef CONFIG_IMG3_PSRAM
 #define TZ_S_END			(u32)__image3_ram_end__
+#endif
 
 const SAU_CFG_TypeDef sau_config[SAU_ENTRY_NUM] = {
 //  Start				End						NSC
-	{0x0001F000,		0x00200000 - 1,			0},	/* entry0: Share ROM NS */
-	{0x00200000,		TZ_S_START - 1,			0},	/* entry1: flash/SRAM before Secure TZ area */
-	{TZ_NSC_START,		TZ_NSC_END - 1,			1},	/* entry2: NSC inside merged TZ area */
-#ifdef CONFIG_IMG3_FLASH
-	/* entry3: flash+SRAM between Secure XIP end and Secure SRAM (covers NS XIP code + NS stack) */
+	/* entry0 merges the Share-ROM NS range [0x1F000,0x200000) with the
+	 * contiguous flash/SRAM NS range below the Secure TZ area: both are NS and
+	 * adjacent, and [0,0x1F000) (KM4TZ secure ROM) stays Secure below entry0. */
+#ifdef CONFIG_IMG3_PSRAM
+	/* Secure = [TZ_SRAM_START,TZ_SRAM_END) (SRAM-TZ) + [TZ_PSRAM_START,TZ_PSRAM_END) (PSRAM-TZ) */
+	{0x0001F000,		TZ_SRAM_START - 1,		0},	/* entry0: ShareROM + flash/low-SRAM before Secure SRAM window */
+	{TZ_SRAM_END,		TZ_PSRAM_START - 1,		0},	/* entry1: between Secure SRAM and Secure PSRAM */
+	{TZ_NSC_START,		TZ_NSC_END - 1,			1},	/* entry2: NSC inside Secure PSRAM */
+	{TZ_PSRAM_END,		0xFFFFFFFF,				0},	/* entry3: region after Secure PSRAM */
+	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry4: TODO */
+#elif defined(CONFIG_IMG3_FLASH)
+	{0x0001F000,		TZ_S_START - 1,			0},	/* entry0: ShareROM + flash before Secure XIP */
+	{TZ_NSC_START,		TZ_NSC_END - 1,			1},	/* entry1: NSC inside merged TZ area */
+	/* entry2: flash+SRAM between Secure XIP end and Secure SRAM (covers NS XIP code + NS stack) */
 	{TZ_XIP_REGION_END,	TZ_SRAM_START - 1,		0},
-	{TZ_S_END,			0xFFFFFFFF,				0},	/* entry4: region after Secure SRAM TZ */
-#else
 	{TZ_S_END,			0xFFFFFFFF,				0},	/* entry3: region after Secure SRAM TZ */
+	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry4: TODO */
+#else
+	{0x0001F000,		TZ_S_START - 1,			0},	/* entry0: ShareROM + flash/SRAM before Secure TZ area */
+	{TZ_NSC_START,		TZ_NSC_END - 1,			1},	/* entry1: NSC inside merged TZ area */
+	{TZ_S_END,			0xFFFFFFFF,				0},	/* entry2: region after Secure SRAM TZ */
+	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry3: TODO */
 	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry4: TODO */
 #endif
 	{0xFFFFFFFF,		0xFFFFFFFF,				0},	/* entry5: TODO */

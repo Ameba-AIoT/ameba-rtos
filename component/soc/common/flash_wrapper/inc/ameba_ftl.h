@@ -55,7 +55,7 @@ struct __PACKED ameba_flash_info {
 
 /* Exported functions --------------------------------------------------------*/
 
-void ftl_enable_4byte_address_mode(bool status);
+//void ftl_enable_4byte_address_mode(bool status);
 
 #ifdef __cplusplus
 }

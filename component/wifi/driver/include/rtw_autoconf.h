@@ -90,10 +90,6 @@
 /******************************* AmebaPro3 (8735c) ******************************/
 #include "autoconf_8721f.h"
 #include "rtw_task_size_8721f.h"
-#elif defined(CONFIG_AMEBAL2)
-/******************************* AmebaL2 (6955) ******************************/
-#include "autoconf_amebax.h"
-#include "rtw_task_size_amebax.h"
 #elif defined(CONFIG_RTL8720F)
 /******************************* Ameba (8720F) ******************************/
 #include "autoconf_8720f.h"
@@ -115,7 +111,7 @@
 
 #define CONFIG_ACM_METHOD 0	// 0:By SW 1:By HW.
 
-#if !defined(CONFIG_AMEBAL2) && !defined(CONFIG_RTL8720F)
+#if !defined(CONFIG_RTL8720F)
 #define CONFIG_FRAME_DEFRAG // support frame defragmentaion
 #endif
 

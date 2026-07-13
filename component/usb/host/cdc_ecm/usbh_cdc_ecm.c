@@ -573,7 +573,7 @@ static int usbh_cdc_ecm_process_led_set_ctrl(usb_host_t *host)
 	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
 }
 
-static void usbh_cdc_ecm_set_dongle_mac(u8 *mac)
+static void usbh_cdc_ecm_set_dongle_mac(const u8 *mac)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 
@@ -582,11 +582,11 @@ static void usbh_cdc_ecm_set_dongle_mac(u8 *mac)
 		return ;
 	}
 
-	memcpy((void *) & (cdc->mac[0]), (void *)mac, USBH_CDC_ECM_MAC_STR_LEN);
+	memcpy((void *) & (cdc->mac[0]), (const void *)mac, USBH_CDC_ECM_MAC_STR_LEN);
 	cdc->mac_src_type = CDC_ECM_MAC_UPPER_LAYER_SET;
 }
 
-static void usbh_cdc_ecm_set_dongle_led_array(u16 *led, u8 len)
+static void usbh_cdc_ecm_set_dongle_led_array(const u16 *led, u8 len)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 
@@ -603,7 +603,7 @@ static void usbh_cdc_ecm_set_dongle_led_array(u16 *led, u8 len)
 		cdc->led_cnt = 0;
 		return ;
 	}
-	memcpy((void *)cdc->led_array, (void *)led, len * sizeof(u16));
+	memcpy((void *)cdc->led_array, led, len * sizeof(u16));
 
 	cdc->led_cnt = len;
 }
@@ -1550,7 +1550,9 @@ static int usbh_cdc_ecm_cb_bulk_send(int state)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	if (state == HAL_OK) {
-		usb_os_sema_give(cdc->bulk_tx_sema);
+		if (cdc->bulk_tx_block) {
+			usb_os_sema_give(cdc->bulk_tx_sema);
+		}
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail %d\n", state);
 	}
@@ -1709,7 +1711,7 @@ const COMMAND_TABLE usbh_cdc_ecm_cmd_table[] = {
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_cdc_ecm_init(usbh_cdc_ecm_state_cb_t *cb, usbh_cdc_ecm_priv_data_t *priv)
+int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_priv_data_t *priv)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	int ret = HAL_OK;
@@ -1721,7 +1723,10 @@ int usbh_cdc_ecm_init(usbh_cdc_ecm_state_cb_t *cb, usbh_cdc_ecm_priv_data_t *pri
 
 	usb_os_memset(cdc, 0x00, sizeof(usbh_cdc_ecm_host_t));
 
-	usb_os_sema_create(&(cdc->bulk_tx_sema));
+	if (usb_os_sema_create(&(cdc->bulk_tx_sema)) != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX_Sema create fail\n");
+		return HAL_ERR_PARA;
+	}
 
 	cdc->dongle_ctrl_buf = (u8 *)usb_os_malloc(USBH_CDC_ECM_MAC_STRING_LEN);
 	if (NULL == cdc->dongle_ctrl_buf) {
@@ -1747,7 +1752,6 @@ int usbh_cdc_ecm_init(usbh_cdc_ecm_state_cb_t *cb, usbh_cdc_ecm_priv_data_t *pri
 		}
 	}
 
-	cdc->cb = cb;
 	if (cb->init != NULL) {
 		ret = cb->init();
 		if (ret != HAL_OK) {
@@ -1756,6 +1760,7 @@ int usbh_cdc_ecm_init(usbh_cdc_ecm_state_cb_t *cb, usbh_cdc_ecm_priv_data_t *pri
 		}
 	}
 
+	cdc->cb = cb;
 	usbh_register_class(&usbh_cdc_ecm_driver);
 
 #if USBH_CDC_ECM_STATE_TRACE_ENABLE
@@ -1799,6 +1804,8 @@ int usbh_cdc_ecm_deinit(void)
 	if ((cdc->cb != NULL) && (cdc->cb->deinit != NULL)) {
 		cdc->cb->deinit();
 	}
+
+	cdc->cb = NULL;
 
 	return HAL_OK;
 }
@@ -1889,6 +1896,10 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block)
 	}
 #endif
 
+	if (block) {
+		cdc->bulk_tx_block = 1;
+	}
+
 	while (1) {
 		ret = usbh_cdc_ecm_bulk_send(buf, len);
 		if (ret == HAL_OK) {
@@ -1906,7 +1917,6 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block)
 
 	//wait cdc_ecm_cb_bulk_send to give the sema
 	if ((ret == HAL_OK) && block) {
-		cdc->bulk_tx_block = 1;
 		usb_os_sema_take(cdc->bulk_tx_sema, USB_OS_SEMA_TIMEOUT);
 #if USBH_CDC_ECM_TX_SPEED_CHECK
 		usb_tx_end_time = usb_os_get_timestamp_ms();

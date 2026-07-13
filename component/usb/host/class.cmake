@@ -26,6 +26,15 @@ if(CONFIG_USBH_CDC_ECM)
 endif()
 
 
+if(CONFIG_USBH_CDC_NCM)
+    ameba_list_append(private_includes
+        ${USBH_CLASS_DIR}/cdc_ncm
+    )
+    ameba_list_append(private_sources
+        ${USBH_CLASS_DIR}/cdc_ncm/usbh_cdc_ncm.c
+    )
+endif()
+
 if(CONFIG_USBH_MSC)
     ameba_list_append(private_includes
         ${USBH_CLASS_DIR}/msc
@@ -64,6 +73,15 @@ if(CONFIG_USBH_VENDOR)
     )
     ameba_list_append(private_sources
         ${USBH_CLASS_DIR}/vendor/usbh_vendor.c
+    )
+endif()
+
+if(CONFIG_USBH_DFU)
+    ameba_list_append(private_includes
+        ${USBH_CLASS_DIR}/dfu
+    )
+    ameba_list_append(private_sources
+        ${USBH_CLASS_DIR}/dfu/usbh_dfu.c
     )
 endif()
 

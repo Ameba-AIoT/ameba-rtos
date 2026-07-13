@@ -2,7 +2,7 @@
 
 void wlan_initialize(void)
 {
-	whc_bridge_sdio_host_init();
+	whc_host_sdio_init();
 
 }
 

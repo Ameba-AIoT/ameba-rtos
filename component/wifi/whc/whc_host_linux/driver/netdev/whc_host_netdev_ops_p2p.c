@@ -126,7 +126,7 @@ int whc_host_ndev_p2p_register(enum nl80211_iftype type, const char *name, u8 wl
 	u8 dev_addr[ETH_ALEN] = {0};
 
 	/*step1: alloc netdev*/
-	ndev = alloc_etherdev_mq(sizeof(struct netdev_priv_t), 1);
+	ndev = alloc_etherdev_mq(sizeof(struct whc_netdev_priv_t), 1);
 	if (!ndev) {
 		goto dev_fail;
 	}

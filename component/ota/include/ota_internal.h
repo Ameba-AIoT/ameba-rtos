@@ -26,6 +26,9 @@ extern "C" {
 #define OTA_HEADER_LEN      8
 #define OTA_SUB_HEADER_LEN  24
 
+#define OTA_MANIFEST_PATTERN_LEN  8   /* sizeof Pattern field in ota_manifest_t (bootloader validity marker) */
+#define OTA_FLASH_SECTOR_SIZE     4096 /* flash erase sector size in bytes */
+
 /* ========== Type Aliases ========== */
 
 // /**
@@ -113,14 +116,14 @@ typedef struct {
 	u32 ImageLen;           /*!< Specifies the OTA image length. */
 	u32 FlashAddr;          /*!< Specifies the Flash Address.
 									This parameter is used to write the Image to the flash. */
-	int SigCnt;             /*!< Specifies the Manifest received length. */
-	u8 SigFg;               /*!< Specifies the Flag that Manifest received finished. */
+	int ManifestRecvLen;    /*!< Specifies the Manifest received length. */
+	u8 ManifestReady;       /*!< Specifies the Flag that Manifest received finished. */
 	u8 SkipBootOTAFg;       /*!< Specifies the Flag that skip update the bootloader. */
 
 	u8 IsGetOTAHdr;         /*!< Specifies the Flag that get ota target header. */
 	u8 IsDnldInit;          /*!< Specifies the Flag that download initialize. */
-	u8 slotIdx;           /*!< Specifies the ota target slot index. */
-	u8 index;              /*!< Specifies the current image index. */
+	u8 SlotIdx;           /*!< Specifies the ota target slot index. */
+	u8 Index;             /*!< Specifies the current image index. */
 } ota_download_ctrl_t;
 
 /**
@@ -223,8 +226,28 @@ typedef struct {
 	/** @brief User-defined yield function for custom scheduling (NULL for default)
 	 */
 	ota_yield_func_t yield_func;
+
+	/** @brief Body bytes received during HTTP header parsing, before the main
+	 *         read loop starts. Set by transport layer; consumed and freed by
+	 *         Core in the first iteration of ota_core_process(). NULL if none. */
+	u8 *prefill_buf;
+
+	/** @brief Length of prefill_buf in bytes (0 if prefill_buf is NULL). */
+	int prefill_len;
 } ota_context_t;
 
+
+/* ========== Helper ========== */
+
+/**
+ * @brief  Get the target OTA slot for a given image
+ * @param  imgId: image ID (e.g. OTA_IMGID_APP, OTA_IMGID_BOOT)
+ * @retval OTA_INDEX_1 or OTA_INDEX_2 (always the inactive slot)
+ */
+static inline u8 ota_get_target_slot(u8 imgId)
+{
+	return (ota_get_cur_index(imgId) == OTA_INDEX_1) ? OTA_INDEX_2 : OTA_INDEX_1;
+}
 
 /* ========== Storage Layer API ========== */
 
@@ -234,19 +257,36 @@ typedef struct {
 int ota_storage_init(void);
 
 /**
+ * @brief  Release storage layer buffers (idempotent; safe to call twice).
+ */
+void ota_storage_deinit(void);
+
+/**
  * @brief  Get target image address
  */
-u32 ota_storage_get_image_addr(u8 imgId, u8 slotIdx);
+u32 ota_storage_get_image_addr(u8 img_id, u8 slot_idx);
+
+/**
+ * @brief  Begin writing an image: reset the write cursor and slot bounds.
+ *         Call before the first ota_storage_write_stream of each image.
+ */
+void ota_storage_begin_image(u8 img_id, u8 slot_idx);
+
+/**
+ * @brief  Append image body bytes; storage owns cursor, erase and (NAND)
+ *         bad-block handling. Call ota_storage_flush() after the last append.
+ */
+int ota_storage_write_stream(const u8 *buf, u32 len);
+
+/**
+ * @brief  Flush the last buffered NAND page (no-op on NOR); call before verify
+ */
+int ota_storage_flush(void);
 
 /**
  * @brief  Verify image by checksum
  */
-int ota_storage_verify_checksum(ota_hdr_manager_t *pOtaTgtHdr, u8 slotIdx, int index);
-
-/**
- * @brief  Flash stream write
- */
-int ota_storage_write(u32 addr, u8 *data, u32 len);
+int ota_storage_verify_checksum(ota_hdr_manager_t *hdr_mgr, u8 slot_idx, u8 hdr_idx);
 
 /**
  * @brief  Flash stream read
@@ -254,19 +294,14 @@ int ota_storage_write(u32 addr, u8 *data, u32 len);
 int ota_storage_read(u32 addr, u8 *data, u32 len);
 
 /**
- * @brief  Flash erase sector
- */
-void ota_storage_erase_sector(u32 addr);
-
-/**
  * @brief  Update Manifest
  */
-int ota_storage_update_manifest(ota_hdr_manager_t *pOtaTgtHdr, u8 slotIdx, u8 hdrIdx);
+int ota_storage_update_manifest(ota_hdr_manager_t *hdr_mgr, u8 slot_idx, u8 hdr_idx);
 
 /**
  * @brief  Check layout
  */
-int ota_storage_check_layout(ota_hdr_manager_t *hdr);
+int ota_storage_check_layout(ota_hdr_manager_t *hdr_mgr);
 
 /* ========== Transport Layer API ========== */
 

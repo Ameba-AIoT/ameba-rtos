@@ -477,23 +477,23 @@ typedef struct {
   * @}
   */
 
-/** @defgroup TIM5_Channel TIM5 Channel
+/** @defgroup PWM_AUD_Channel PWM AUD Channel
   * @{
   */
-#define TIM5_Channel_0			((u16)0x0000)   /*!< TIM5 audio/motor channel 0 index. */
-#define TIM5_Channel_1			((u16)0x0001)   /*!< TIM5 audio/motor channel 1 index. */
-#define TIM5_Channel_2			((u16)0x0002)   /*!< TIM5 audio/motor channel 2 index. */
-#define TIM5_Channel_3			((u16)0x0003)   /*!< TIM5 audio/motor channel 3 index. */
-#define TIM5_Channel_4			((u16)0x0004)   /*!< TIM5 audio/motor channel 4 index. */
-#define TIM5_Channel_5			((u16)0x0005)   /*!< TIM5 audio/motor channel 5 index. */
+#define PWM_AUD_Channel_0		((u16)0x0000)   /*!< PWM audio/motor channel 0 index. */
+#define PWM_AUD_Channel_1		((u16)0x0001)   /*!< PWM audio/motor channel 1 index. */
+#define PWM_AUD_Channel_2		((u16)0x0002)   /*!< PWM audio/motor channel 2 index. */
+#define PWM_AUD_Channel_3		((u16)0x0003)   /*!< PWM audio/motor channel 3 index. */
+#define PWM_AUD_Channel_4		((u16)0x0004)   /*!< PWM audio/motor channel 4 index. */
+#define PWM_AUD_Channel_5		((u16)0x0005)   /*!< PWM audio/motor channel 5 index. */
 
-/** @brief Check if value is a valid TIM5 channel index (0–5). */
-#define IS_TIM5_CHANNEL(CHANNEL)	(((CHANNEL) == TIM5_Channel_0) || \
-								((CHANNEL) == TIM5_Channel_1) || \
-								((CHANNEL) == TIM5_Channel_2) || \
-								((CHANNEL) == TIM5_Channel_3) || \
-								((CHANNEL) == TIM5_Channel_4) || \
-								((CHANNEL) == TIM5_Channel_5))
+/** @brief Check if value is a valid PWM AUD channel index (0–5). */
+#define IS_PWM_AUD_CHANNEL(CHANNEL)	(((CHANNEL) == PWM_AUD_Channel_0) || \
+								((CHANNEL) == PWM_AUD_Channel_1) || \
+								((CHANNEL) == PWM_AUD_Channel_2) || \
+								((CHANNEL) == PWM_AUD_Channel_3) || \
+								((CHANNEL) == PWM_AUD_Channel_4) || \
+								((CHANNEL) == PWM_AUD_Channel_5))
 /**
   * @}
   */
@@ -645,16 +645,16 @@ typedef struct {
   * @}
   */
 
+/// @cond
 /** @defgroup TIM6_CC0_Pulse_Mode TIM6 CC0 Pulse Mode
   * @{
   */
 #define TIM6_GET_CC0PM(x)		((u32)(((x) & 0x10000000) >> 28)) /*!<R/W 0x0  CC0 pulse mode * 0: pulse mode 0 * 1: pulse mode 1 */
-#define TIM6_CC0PM(x)			((u32)(((x) & 0x00000001) << 28))   /*!< Set TIM6 CC0 pulse mode field from value. */
+#define TIM6_CC0PM(x)			((u32)(((x) & 0x00000001) << 28))
 /**
   * @}
   */
 
-/// @cond
 /** @defgroup TIMBasic_ARR TIMBasic ARR
   * @{
   */

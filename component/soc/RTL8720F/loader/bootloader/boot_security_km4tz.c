@@ -71,12 +71,18 @@ fih_ret BOOT_ROM_OTFCheck(u32 start_addr, u32 end_addr, u32 IV_index, u32 OTF_in
 fih_ret BOOT_DecRDPImg(u32 SrcAddr, Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 *Cnt)
 {
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
-	char *Img3Label[2] = {"AP IMG3", "AP NSC"};
+	/* Three sub-images: XIP (flash), SRAM, PSRAM.
+	 * In each CONFIG_IMG3_* mode exactly one bin carries the secure code;
+	 * the other two are header-only.  BOOT_LoadSubImage skips copying when
+	 * the destination is a flash address (IS_FLASH_ADDR), so the XIP bin
+	 * is verified in-place and executed directly from flash. */
+	char *Img3Label[3] = {"AP IMG3 XIP", "AP IMG3 SRAM", "AP IMG3 PSRAM"};
 	u8 SubImgCnt = sizeof(Img3Label) / sizeof(char *);
 	u32 IMG3_GCM_TagBase = 0;
 
 	u32 PhyAddr = SrcAddr;
 	u32 LogAddr = (u32)__km4tz_img3_text_start__ - IMAGE_HEADER_LEN;
+	/* RTL8720F only supports NOR flash boot, always use logical (XIP) address */
 	u32 ImgAddr = LogAddr;
 
 	*Cnt = SubImgCnt + 1;  /* add gcm tag bin */

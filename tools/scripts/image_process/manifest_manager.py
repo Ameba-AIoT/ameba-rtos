@@ -138,6 +138,11 @@ class ManifestImageConfig:
                 self.rsip_enable:bool = False
             else:
                 self.rsip_enable:bool = config.get("rsip_enable", config.get("rsip_en", False))
+            # Whether to encrypt at build time (True) or defer to floader-side encryption (False).
+            # Default True to preserve backward compatibility with the pre-SFI behavior where
+            # rsip_enable=True always implied compile-time encryption.
+            # Set to False explicitly in manifest.json5 to use floader-side encryption (SFI flow).
+            self.rsip_encrypt_on_build:bool = config.get("rsip_encrypt_on_build", True)
 
             # For IMAGE3 with RDP enabled, rsip_iv is needed for RDP encryption (combined with rdp_iv)
             # So we read rsip_iv even when rsip_enable is False for IMAGE3

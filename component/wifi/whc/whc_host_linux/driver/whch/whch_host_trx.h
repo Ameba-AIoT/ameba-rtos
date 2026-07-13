@@ -24,7 +24,7 @@ int  whc_host_xmit_tkip_addmic(struct whch_security_priv *psecuritypriv, struct 
 int  whc_host_xmit_enc_software(u8 iface_type, struct whch_security_priv *psecuritypriv, struct xmit_frame *pxmitframe);
 
 /* TX entry */
-int  whc_host_xmit_prehandle(int idx, struct sk_buff *pskb, u8 *wlan_hw_queue);
+int  whc_host_xmit_prehandle(int idx, struct sk_buff *pskb);
 
 /* MLME priv init / deinit */
 void whc_host_mlme_priv_init(void);

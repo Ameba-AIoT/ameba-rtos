@@ -7,6 +7,17 @@ config USBD_CDC_ECM_MENU
     select USBD_CDC_ECM if WHC_HOST || WHC_NONE
     select USB_ETHERNET_PROVIDER
 
+config USBD_CDC_NCM_MENU
+    bool "CDC NCM"
+    select USBD_CDC_NCM if WHC_HOST || WHC_NONE
+    select USB_ETHERNET_PROVIDER
+
+    if USBD_CDC_NCM_MENU
+        config USBD_CDC_NCM_TX_AGGREGATION
+            bool "Enable NCM TX aggregation"
+            default n
+    endif
+
 config USBD_COMPOSITE_MENU
     bool "Composite"
     select USBD_COMPOSITE if WHC_HOST || WHC_NONE
@@ -120,6 +131,10 @@ config USBD_UAC_MENU
 config USBD_VENDOR_MENU
     bool "VENDOR"
     select USBD_VENDOR if WHC_HOST || WHC_NONE
+
+config USBD_DFU_MENU
+    bool "DFU"
+    select USBD_DFU if WHC_HOST || WHC_NONE
 
 config USBD_UVC_MENU
     bool "UVC"

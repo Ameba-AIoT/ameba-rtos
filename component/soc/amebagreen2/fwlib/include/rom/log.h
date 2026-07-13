@@ -223,7 +223,7 @@ extern rtk_log_tag_t rtk_log_tag_array[LOG_TAG_CACHE_ARRAY_SIZE];
 /**
   * @brief  Recommended log macro — emit a formatted message at the specified level.
   * @param  tag     Module tag string; use NOTAG for untagged output.
-  * @param  level   Severity level (::rtk_log_level_t).
+  * @param  level   Log level (::rtk_log_level_t).
   * @param  format  printf-style format string.
   * @param  ...     Additional arguments for format.
   * @note   Gated by COMPIL_LOG_LEVEL at compile time and by the per-tag runtime
@@ -254,8 +254,8 @@ extern rtk_log_tag_t rtk_log_tag_array[LOG_TAG_CACHE_ARRAY_SIZE];
 
 /**
   * @brief  Clear all entries in the per-tag runtime level cache.
-  *         After this call rtk_log_level_get() returns RTK_LOG_DEFAULT_LEVEL
-  *         for every tag until new entries are written via rtk_log_level_set().
+  *         After this call @ref rtk_log_level_get() returns RTK_LOG_DEFAULT_LEVEL
+  *         for every tag until new entries are written via @ref rtk_log_level_set().
   */
 void rtk_log_array_clear(void);
 
@@ -276,14 +276,16 @@ rtk_log_level_t rtk_log_level_get(const char *tag);
   * @param  level  New log level (::rtk_log_level_t).
   * @return Status code:
   *         - 0: Success.
-  *         - -1: Tag cache was full; oldest entry evicted.
+  *         - -1: Invalid argument; tag is NULL or level exceeds RTK_LOG_DEBUG.
   */
 int rtk_log_level_set(const char *tag, rtk_log_level_t level);
 
 /**
   * @brief  Print all entries in a tag-level cache array.
   * @param  rtk_log_tag_array  Pointer to the cache array to print.
-  * @return Number of valid entries printed.
+  * @return Status code:
+  *         - 0: Success (RTK_SUCCESS).
+  *         - -1: rtk_log_tag_array is NULL (RTK_FAIL).
   */
 int rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array);
 
@@ -300,7 +302,7 @@ int rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array);
   *         Formats and outputs a log line prefixed with the level letter and tag.
   *         Called internally by RTK_LOG_ITEM(); use RTK_LOGS() or RTK_LOGx() macros
   *         in application code.
-  * @param  level   Severity level (::rtk_log_level_t).
+  * @param  level   Log level (::rtk_log_level_t).
   * @param  tag     Module tag string.
   * @param  letter  Single-character level indicator (A/E/W/I/D).
   * @param  fmt     printf-style format string.
@@ -310,9 +312,9 @@ void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, co
 
 /**
   * @brief  Low-footprint log write variant optimized for ROM/bootloader.
-  *         Functionally equivalent to rtk_log_write() but uses a compact internal
+  *         Functionally equivalent to @ref rtk_log_write() but uses a compact internal
   *         buffer to minimize code size. Called internally by RTK_LOG_ITEMS().
-  * @param  level   Severity level (::rtk_log_level_t).
+  * @param  level   Log level (::rtk_log_level_t).
   * @param  tag     Module tag string.
   * @param  letter  Single-character level indicator (A/E/W/I/D).
   * @param  fmt     printf-style format string.
@@ -347,12 +349,11 @@ void rtk_log_memory_dump_word(uint32_t *src, uint32_t len);
 void rtk_log_memory_dump_byte(uint8_t *src, uint32_t len);
 
 /**
-  * @brief  Emit a raw character buffer directly to the log output.
-  *         Writes up to buff_len bytes from src_buff without level filtering,
-  *         tag prefixing, or newline appending. Useful for pre-formatted or
-  *         binary-safe data output.
+  * @brief  Dump a memory region as bytes to the log output.
+  *         Prints buff_len bytes starting at src_buff in a formatted hex + ASCII table,
+  *         BYTES_PER_LINE bytes per row, with address offsets.
   * @param  src_buff  Pointer to the source buffer.
-  * @param  buff_len  Number of bytes to emit.
+  * @param  buff_len  Number of bytes to dump.
   */
 void rtk_log_memory_dump2char(const char *src_buff, uint32_t buff_len);
 

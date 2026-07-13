@@ -32,7 +32,7 @@ static int wifi_repeater_ap_config_complete = 0;
 rtos_task_t rnat_ap_start_task_hdl = NULL;
 rtos_task_t rnat_poll_ip_task_hdl = NULL;
 
-extern void ip_napt_reinitialize(void);
+extern void ip_nat_reinitialize(void);
 
 static void rnat_wifi_stop_ap(void)
 {
@@ -166,7 +166,7 @@ static void rnat_poll_ip_changed_thread(void *param)
 
 		if (1 == wifi_repeater_ap_config_complete && oldip != newip) {
 			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s(%d)oldip=%x,newip=%x\n", __FUNCTION__, __LINE__, oldip, newip);
-			ip_napt_reinitialize();
+			ip_nat_reinitialize();
 			dns_proxy_update_upstream_servers();
 			rnat_avoid_confliction_ip();
 			oldip = newip;

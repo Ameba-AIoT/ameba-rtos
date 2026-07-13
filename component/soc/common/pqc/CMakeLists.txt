@@ -11,7 +11,9 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 # You may use if-else condition to set or update predefined variable above
 
-ameba_list_append(public_libraries ${c_SDK_LIB_SOC_DIR}/lib_pqc.a)
+if(NOT c_CURRENT_IMAGE_IS_ROM)
+    ameba_list_append(public_libraries ${c_SDK_LIB_SOC_DIR}/lib_pqc.a)
+endif()
 
 # Component public part, user config end
 #----------------------------------------#
@@ -55,29 +57,36 @@ ameba_list_append(private_sources
     ${ML_DSA_65_Clean_Sources}
 )
 
-if(${c_CURRENT_IMAGE_IS_ROM})
-    foreach(src ${private_sources})
-        set_source_files_properties(${src} PROPERTIES COMPILE_OPTIONS -mpure-code)
-    endforeach()
-endif()
 # Component private part, user config end
 #------------------------------#
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
-ameba_add_external_soc_library(pqc
-    p_SOURCES
-        ${private_sources}
-    p_INCLUDES
-        ${private_includes}
-    p_DEFINITIONS
-        ${private_definitions}
-    p_COMPILE_OPTIONS
-        ${private_compile_options}
-)
-
-if(${c_CURRENT_IMAGE_IS_ROM})
+if(c_CURRENT_IMAGE_IS_ROM)
+    foreach(src ${private_sources})
+        set_source_files_properties(${src} PROPERTIES COMPILE_OPTIONS -mpure-code)
+    endforeach()
+    ameba_add_internal_library(pqc
+        p_SOURCES
+            ${private_sources}
+        p_INCLUDES
+            ${private_includes}
+        p_DEFINITIONS
+            ${private_definitions}
+        p_COMPILE_OPTIONS
+            ${private_compile_options}
+    )
     ameba_library_section_prefix(${c_CURRENT_TARGET_NAME} .pqc.rom)
+else()
+    ameba_add_external_soc_library(pqc
+        p_SOURCES
+            ${private_sources}
+        p_INCLUDES
+            ${private_includes}
+        p_DEFINITIONS
+            ${private_definitions}
+        p_COMPILE_OPTIONS
+            ${private_compile_options}
+    )
 endif()
 ##########################################################################################

@@ -63,7 +63,7 @@ static void msc_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
-static usbd_config_t msc_cfg = {
+static const usbd_config_t msc_cfg = {
 	.speed = CONFIG_USBD_MSC_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
@@ -81,7 +81,7 @@ static usbd_config_t msc_cfg = {
 #endif
 };
 
-static usbd_msc_cb_t msc_cb = {
+static const usbd_msc_cb_t msc_cb = {
 	.status_changed = msc_cb_status_changed
 };
 

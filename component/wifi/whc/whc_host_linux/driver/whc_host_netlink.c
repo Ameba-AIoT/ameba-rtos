@@ -1,7 +1,5 @@
 #include <whc_host_linux.h>
 #include <net/genetlink.h>
-#include <whc_host_netlink.h>
-#include <whc_host_cmd_path_api.h>
 
 struct genl_info wifi_event_user_genl_info;
 

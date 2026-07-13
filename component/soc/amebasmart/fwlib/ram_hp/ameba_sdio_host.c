@@ -10,12 +10,24 @@ SDIOH_InitTypeDef sdioh_init_para;
 u32 wait_for_sema = 0;
 extern int (*sd_sema_take_fn)(u32);
 
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @addtogroup SDHOST
+  * @{
+  */
+
+/* Exported functions --------------------------------------------------------*/
+/** @addtogroup SDHOST_Exported_Functions
+  * @{
+  */
+
 /**
-  * @brief  Check SDIOH is busy or not.
-  * @param  None
-  * @retval SDIOH busy status value:
-  *           - HAL_BUSY: Busy
-  *           - HAL_OK: Not Busy
+  * @brief  Check whether SD host is busy.
+  * @return HAL operation result:
+  *           - HAL_OK: Not busy.
+  *           - HAL_BUSY: Busy.
   */
 u32 SDIOH_Busy(void)
 {
@@ -44,12 +56,11 @@ u32 SDIOH_Busy(void)
 }
 
 /**
-  * @brief  Check if some error occurs when SDIOH transfer.
-  * @param  status: pointer to word which is used to save error status.
-  * @retval SDIOH status:
-  *           - HAL_ERR_UNKNOWN: Some error occurs when transfer, detailed error information
-  *				can be found in status parameter.
-  *           - HAL_OK: No error occurs when transfer.
+  * @brief  Check whether an error occurred during an SD host transfer.
+  * @param  status Pointer to a 16-bit variable used to store the detailed error status.
+  * @return HAL operation result:
+  *           - HAL_OK: No error occurred during transfer.
+  *           - HAL_ERR_UNKNOWN: An error occurred during transfer.
   */
 u32 SDIOH_CheckTxError(u16 *status)
 {
@@ -69,11 +80,11 @@ u32 SDIOH_CheckTxError(u16 *status)
 }
 
 /**
-  * @brief  Wait some time for SDIOH tx done.
-  * @param  timeout_us: timeout value in microseconds.
-  * @retval SDIOH tx status value:
-  *           - HAL_TIMEOUT: SDIOH tx timeout.
-  *           - HAL_OK: SDIOH tx done within a specified time.
+  * @brief  Wait for the SD host transfer to complete.
+  * @param  timeout_us Timeout value in microseconds.
+  * @return HAL operation result:
+  *           - HAL_OK: SD host TX completed within the specified timeout.
+  *           - HAL_TIMEOUT: SD host TX timeout.
   */
 u32 SDIOH_WaitTxDone(u32 timeout_us)
 {
@@ -92,6 +103,9 @@ u32 SDIOH_WaitTxDone(u32 timeout_us)
 	return HAL_TIMEOUT;
 }
 
+/**
+  * @brief  Enable DMA completion interrupt and set semaphore wait flag before a DMA transfer.
+  */
 void SDIOH_PreDMATrans(void)
 {
 	if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
@@ -101,17 +115,17 @@ void SDIOH_PreDMATrans(void)
 }
 
 /**
-  * @brief  Wait some time for SDIOH DMA done.
-  * @param  timeout_us: timeout value in microseconds.
-  * @retval SDIOH dma status:
-  *           - HAL_TIMEOUT: SDIOH DMA timeout.
-  *           - HAL_OK: SDIOH DMA done within a specified time.
+  * @brief  Wait some time for SD host DMA done.
+  * @param  timeout_us Timeout value in microseconds.
+  * @return HAL operation result:
+  *           - HAL_OK: SD host DMA done within a specified time.
+  *           - HAL_TIMEOUT: SD host DMA timeout.
   */
 u32 SDIOH_WaitDMADone(u32 timeout_us)
 {
 	SDIOH_TypeDef *psdioh = SDIOH_BASE;
 
-	/*If scheduling has already started, wait for sema to obtain the DMA done signal.*/
+	/* If scheduling has already started, wait for sema to obtain the DMA done signal. */
 	if (wait_for_sema == 1) {
 		wait_for_sema = 0;
 		if ((CPU_InInterrupt() == 0) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (sd_sema_take_fn != NULL)) {
@@ -125,7 +139,7 @@ u32 SDIOH_WaitDMADone(u32 timeout_us)
 		SDIOH_INTConfig(SDIOH_DMA_CTL_INT_EN, DISABLE);
 	}
 
-	/*If scheduling has already started, poll transfer status; otherwise, poll transfer and DMA_ Xfree status.*/
+	/* If scheduling has already started, poll transfer status; otherwise, poll transfer and DMA_Xfree status. */
 	do {
 		if ((psdioh->SD_TRANSFER & SDIOH_TRANSFER_END) && (!(psdioh->DMA_CRL3 & SDIOH_DMA_XFER))) {
 			SDIOH_DMAReset();
@@ -139,9 +153,8 @@ u32 SDIOH_WaitDMADone(u32 timeout_us)
 }
 
 /**
-  * @brief  Get SDIOH interrupt status.
-  * @param  timeout_us: None.
-  * @retval SDIOH interrupt status.
+  * @brief  Get SD host interrupt status.
+  * @return SD host interrupt status.
   */
 u32 SDIOH_GetISR(void)
 {
@@ -151,16 +164,17 @@ u32 SDIOH_GetISR(void)
 }
 
 /**
-  * @brief  SDIOH interrupt configure.
-  * 		BIT[SDIO_IT] == 1 && BIT[0] == 1 -> SDIO_IT en will be set 1
-  * 		BIT[SDIO_IT] == 1 && BIT[0] == 0 -> SDIO_IT en will be set 0
-  * 		Bit0 can only be written and cannot be read, with a default read value of 0
-  * @param  SDIO_IT: SDIOH interrupt source, which can be one or combination of the following values:
-  * 		@arg SDIOH_DMA_CTL_INT_EN
-  * 		@arg SDIOH_CARD_ERR_INT_EN
-  * 		@arg SDIOH_CARD_END_INT_EN
-  * @param newState: can be ENABLE or Disable
-  * @retval None.
+  * @brief  Configure SD host interrupt enable/disable.
+  * @internal
+  *         BIT[SDIO_IT] == 1 && BIT[0] == 1 -> SDIO_IT en will be set 1
+  *         BIT[SDIO_IT] == 1 && BIT[0] == 0 -> SDIO_IT en will be set 0
+  *         Bit0 can only be written and cannot be read, with a default read value of 0.
+  * @endinternal
+  * @param  SDIO_IT SD host interrupt source, which can be one or combination of the following values:
+  *         @arg SDIOH_DMA_CTL_INT_EN
+  *         @arg SDIOH_CARD_ERR_INT_EN
+  *         @arg SDIOH_CARD_END_INT_EN
+  * @param  newState New state of the interrupt, which can be ENABLE or DISABLE.
   */
 void SDIOH_INTConfig(u8 SDIO_IT, u32 newState)
 {
@@ -175,12 +189,11 @@ void SDIOH_INTConfig(u8 SDIO_IT, u32 newState)
 }
 
 /**
-  * @brief  Clear SDIOH pending interrupt status.
-  * @param  SDIO_IT: SDIOH interrupt pending bit, which can be one or combination of the following values:
-  * 		@arg SDIOH_DMA_TRANSFER_DONE
-  * 		@arg SDIOH_CARD_ERROR
-  * 		@arg SDIOH_CARD_END
-  * @retval None.
+  * @brief  Clear SD host pending interrupt status.
+  * @param  SDIO_IT SD host interrupt pending bit, which can be one or combination of the following values:
+  *         @arg SDIOH_DMA_TRANSFER_DONE
+  *         @arg SDIOH_CARD_ERROR
+  *         @arg SDIOH_CARD_END
   */
 void SDIOH_INTClearPendingBit(u8 SDIO_IT)
 {
@@ -190,12 +203,14 @@ void SDIOH_INTClearPendingBit(u8 SDIO_IT)
 }
 
 /**
-  * @brief  Check if SDIOH bus switch to a specified state in some time.
-  * @param  status: SDIOH bus state, which can be 0 or 1:
-  * 		@arg 0: bus switch to low level
-  * 		@arg 1: bus switch to high level
-  * @param  timeout_us: timeout value in microseconds.
-  * @retval None.
+  * @brief  Wait until the SD host bus transitions to the specified logic state within a given timeout.
+  * @param  status SD host bus state, which can be 0 or 1:
+  *         @arg 0: wait for bus to go low
+  *         @arg 1: wait for bus to go high
+  * @param  timeout_us Timeout value in microseconds.
+  * @return HAL operation result:
+  *           - HAL_OK: Bus switched to specified state within timeout.
+  *           - HAL_TIMEOUT: Timeout waiting for bus state.
   */
 u32 SDIOH_CheckBusState(u8 status, u32 timeout_us)
 {
@@ -222,11 +237,10 @@ u32 SDIOH_CheckBusState(u8 status, u32 timeout_us)
 }
 
 /**
-  * @brief  Get SDIOH bus width.
-  * @param  None.
-  * @retval Bus width: 0 or 1:
-  *		0: 1-bit bus
-  *		1: 4-bit bus
+  * @brief  Get SD host bus width.
+  * @return Bus width:
+  *           - 0: 1-bit bus.
+  *           - 1: 4-bit bus.
   */
 u8 SDIOH_GetBusWidth(void)
 {
@@ -236,9 +250,8 @@ u8 SDIOH_GetBusWidth(void)
 }
 
 /**
-  * @brief  Set SDIOH bus width.
-  * @param  width: can be SDIOH_BUS_WIDTH_1BIT or SDIOH_BUS_WIDTH_4BIT.
-  * @retval None
+  * @brief  Set SD host bus width.
+  * @param  width Bus width to set, which can be SDIOH_BUS_WIDTH_1BIT or SDIOH_BUS_WIDTH_4BIT.
   */
 void SDIOH_SetBusWidth(u8 width)
 {
@@ -253,9 +266,8 @@ void SDIOH_SetBusWidth(u8 width)
 }
 
 /**
-  * @brief  Set SDIOH DMA configuration.
-  * @param  dma_ctl: pointer to a SDIOH_DmaCtl structure which keep the dma parameters.
-  * @retval None
+  * @brief  Set SD host DMA configuration.
+  * @param  dma_ctl Pointer to an SDIOH_DmaCtl structure which contains the DMA configuration parameters.
   */
 void SDIOH_DMAConfig(SDIOH_DmaCtl *dma_ctl)
 {
@@ -298,9 +310,7 @@ void SDIOH_DMAConfig(SDIOH_DmaCtl *dma_ctl)
 }
 
 /**
-  * @brief  Reset SDIOH DMA configuration.
-  * @param  None.
-  * @retval None
+  * @brief  Reset SD host DMA configuration.
   */
 void SDIOH_DMAReset(void)
 {
@@ -316,11 +326,12 @@ void SDIOH_DMAReset(void)
 }
 
 /**
-  * @brief  SDIOH send command to card.
-  * @param  cmd_attrib: pointer to a SDIOH_CmdTypeDef structure which keeps the command attributes.
-  * @param timeout_us: timeout value
-  * @retval 0: Send command ok.
-  *		  Other values: error occurs
+  * @brief  Send a command to the SD card via SD host.
+  * @param  cmd_attrib Pointer to an SDIOH_CmdTypeDef structure containing the command attributes.
+  * @param  timeout_us Timeout value in microseconds.
+  * @return HAL operation result:
+  *           - HAL_OK: Command sent successfully.
+  *           - Others: Error occurred.
   */
 u32 SDIOH_SendCommand(SDIOH_CmdTypeDef *cmd_attrib, u32 timeout_us)
 {
@@ -442,9 +453,9 @@ u32 SDIOH_SendCommand(SDIOH_CmdTypeDef *cmd_attrib, u32 timeout_us)
 }
 
 /**
-  * @brief  SDIOH get command response.
-  * @param  byte_index: which byte of the response to be read
-  * @retval the specified byte value of Response
+  * @brief  Get a byte from the SD host command response register.
+  * @param  byte_index Index of the response byte to read.
+  * @return The value of the specified response byte.
   */
 u8 SDIOH_GetResponse(u8 byte_index)
 {
@@ -454,16 +465,14 @@ u8 SDIOH_GetResponse(u8 byte_index)
 }
 
 /**
-  * @brief  Switch speed of SDIOH.
-  * @param  clk_div: can be one of the following values:
-  *		 @arg SDIOH_CLK_DIV1:  divide by 1
-  *		 @arg SDIOH_CLK_DIV2:  divide by 2
-  *		 @arg SDIOH_CLK_DIV4:  divide by 4
-  *		 @arg SDIOH_CLK_DIV8:  divide by 8
-  * @param  mode: mode selection, can be one of the following values:
-  *		 @arg SDIOH_SD20_MODE
-  * @retval None
-  * @note AmebaD only support SD20_MODE
+  * @brief  Set the SD host clock divider and bus speed mode.
+  * @param  clk_div Clock divider, which can be one of the following values:
+  *         @arg SDIOH_CLK_DIV1:  divide by 1
+  *         @arg SDIOH_CLK_DIV2:  divide by 2
+  *         @arg SDIOH_CLK_DIV4:  divide by 4
+  *         @arg SDIOH_CLK_DIV8:  divide by 8
+  * @param  mode Bus speed mode, which can be SDIOH_SD20_MODE.
+  * @note  Only SD 2.0 mode (SDIOH_SD20_MODE) is supported.
   */
 void SDIOH_SwitchSpeed(u8 clk_div, u8 mode)
 {
@@ -483,11 +492,14 @@ void SDIOH_SwitchSpeed(u8 clk_div, u8 mode)
 }
 
 /**
-  * @brief  Configure SDIOH to initialization mode or not.
-  * @param  NewState: can be ENABLE/DISABLE
-  * @param  level: signal level, which can be @arg SDIOH_SIG_VOL_33.
-  * @retval  0: SDIOH is configured successfully
-  *			others: SDIOH is fail to configure.
+  * @brief  Enable or disable SD host initialization (card identification) mode.
+  * @param  NewState New state of the initialization mode, which can be ENABLE or DISABLE.
+  * @param  Level Signal level, which can be one of the following values:
+  *           @arg SDIOH_SIG_VOL_33
+  *           @arg SDIOH_SIG_VOL_18
+  * @return HAL operation result:
+  *           - HAL_OK: SD host configured successfully.
+  *           - Others: SD host failed to configure.
   */
 u32 SDIOH_InitialModeCmd(u8 NewState, u8 Level)
 {
@@ -529,10 +541,11 @@ u32 SDIOH_InitialModeCmd(u8 NewState, u8 Level)
 }
 
 /**
-  * @brief  Initialize SDIOH peripheral.
-  * @param  None
-  * @retval  0: SDIOH is initialized successfully
-  *		   others: SDIOH is fail to initialize
+  * @brief  Initialize the SD host controller and enable the SD clock.
+  * @param  BusBitMode Bus width mode, which can be SDIOH_BUS_WIDTH_1BIT or SDIOH_BUS_WIDTH_4BIT.
+  * @return HAL operation result:
+  *           - HAL_OK: SD host initialized successfully.
+  *           - Others: SD host failed to initialize.
   */
 u32 SDIOH_Init(u8 BusBitMode)
 {
@@ -546,7 +559,7 @@ u32 SDIOH_Init(u8 BusBitMode)
 		sdioh_init_para.SDIOH_idle_level = 0x03;
 	}
 
-	/* SDIOH func & clock enable */
+	/* SD host func & clock enable */
 	RCC_PeriphClockCmd(APBPeriph_SDH, APBPeriph_SDH_CLOCK, ENABLE);
 
 	/* Enable direct access mode */
@@ -573,9 +586,7 @@ u32 SDIOH_Init(u8 BusBitMode)
 }
 
 /**
-  * @brief  De-initialize SDIOH peripheral.
-  * @param  None
-  * @retval  None
+  * @brief  De-initialize SD host peripheral.
   */
 void SDIOH_DeInit(void)
 {
@@ -589,10 +600,9 @@ void SDIOH_DeInit(void)
 }
 
 /**
-  *  @brief To configure debounce function.
-  *  @param NewState: ENABLE/DISABLE.
-  *  @retval  none.
-  *  @note  only insert debounce is implemented.
+  * @brief  Enable or disable the card-detect debounce function.
+  * @param  NewState ENABLE or DISABLE.
+  * @note   Only insertion debounce is implemented.
   */
 void SDIOH_DebounceCmd(u8 NewState)
 {
@@ -609,9 +619,8 @@ void SDIOH_DebounceCmd(u8 NewState)
 }
 
 /**
-  *  @brief To set debounce value.
-  *  @param debouncevalue: unit is 1ms.
-  *  @retval  none.
+  * @brief  Set the card-detect debounce count.
+  * @param  debouncevalue Debounce count value (unit: 1 ms).
   */
 void SDIOH_DebounceSet(u32 debouncevalue)
 {
@@ -625,9 +634,8 @@ void SDIOH_DebounceSet(u32 debouncevalue)
 }
 
 /**
-  *  @brief To get debounce value.
-  *  @param: none.
-  *  @retval  debounce count value: unit is 1ms.
+  * @brief  Get the card-detect debounce count value.
+  * @return Debounce count value (unit: 1 ms).
   */
 u32 SDIOH_DebounceGet(void)
 {
@@ -636,3 +644,13 @@ u32 SDIOH_DebounceGet(void)
 
 	return HSYS_GET_SDCD_DBNC_CNT(temp);
 }
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/** @} */

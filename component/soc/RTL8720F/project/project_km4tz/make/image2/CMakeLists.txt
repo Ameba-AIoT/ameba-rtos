@@ -35,10 +35,25 @@ ameba_add_subdirectory_if_exist(${c_CMPT_WPAN_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_OTA_DIR})
 ameba_add_subdirectory(${c_CMPT_OTA_DIR})
+ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
 ameba_add_subdirectory(${c_MCU_SRC_DIR})
 
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#
+# TRX code placement remap for ameba_sections_rename.py:
+#   IMG2 on FLASH : off -> group all TRX into .flash.only.text (flash);
+#                   All -> .sram.only.text (SRAM); Partial -> no remap
+#   IMG2 on PSRAM/SRAM: force all TRX back to .text (default region), clearing any
+#                   .flash.only/.sram.only baked into the shipped libs (otherwise
+#                   functions stay stuck in flash after switching from FLASH mode)
+if(CONFIG_IMG2_FLASH)
+  set(c_TRX_REMAP
+    "$<$<NOT:$<BOOL:${CONFIG_WIFI_MOVE_TRX_CODE_TO_SRAM}>>:--remap=.sram.only.text=.flash.only.text>"
+    "$<$<BOOL:${CONFIG_WIFI_TRX_SRAM_ALL}>:--remap=.flash.only.text=.sram.only.text>")
+else()
+  set(c_TRX_REMAP --remap=.flash.only.text=.text,.sram.only.text=.text)
+endif()
+
 add_custom_command(
   TARGET ${c_CURRENT_IMAGE} PRE_LINK
   COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${c_IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
@@ -49,8 +64,7 @@ add_custom_command(
           --build-dir ${c_SDK_LIB_APPLICATION_DIR}
           --core ${c_MCU_PROJECT_NAME}
           --cross ${CROSS_COMPILE}
-          # IMG2 on PSRAM: remap every placement class to .text so it lands in PSRAM
-          "$<$<BOOL:${CONFIG_IMG2_PSRAM}>:--remap=.flash.only.text=.text,.sram.only.text=.text>"
+          ${c_TRX_REMAP}
   COMMENT "build img2 linkerscript + apply section placements"
 )
 

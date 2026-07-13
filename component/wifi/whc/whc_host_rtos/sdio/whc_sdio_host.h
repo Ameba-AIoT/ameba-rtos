@@ -3,13 +3,13 @@
 #define __INIC_SDIO_HOST_H__
 
 #include "os_wrapper.h"
+#include "rtw_skbuff.h"
 
-//#define tskIDLE_PRIORITY	0
-#define DEV_DMA_ALIGN	1
-#define SDIO_INT_MODE	1
-#define SDIO_BLOCK_SIZE		256
+#define DEV_DMA_ALIGN			1
+#define SDIO_INT_MODE			1
+#define SDIO_BLOCK_SIZE			256
 #ifdef CONFIG_AMEBADPLUS
-#define CALCULATE_FREE_TXBD 1 // for DP bug, comment after 7005 for tp
+#define CALCULATE_FREE_TXBD		1 // for DP bug, comment after 7005 for tp
 #endif
 
 #ifdef CONFIG_AMEBAGREEN2
@@ -18,29 +18,21 @@
 
 #define CONFIG_SDIO_TX_ENABLE_AVAL_INT 1
 
-#define PWR_STATE_ACTIVE	0
-#define PWR_STATE_SLEEP		1
+#define PWR_STATE_ACTIVE		0
+#define PWR_STATE_SLEEP			1
 
-#define SD_IO_TRY_CNT (8)
-#define TX_PACKET_802_3		(0x83)
+#define SD_IO_TRY_CNT			(8)
+#define TX_PACKET_802_3			(0x83)
 
-#define DEV_REQ_NETWORK_INFO_MAX_LEN	6
+#define WIFI_STACK_SIZE_RX_REQ_TASK (4096)
+#define SDIO_POLLING_STACK_SIZE 1024
 
-/* auth/assoc/key resnd limit can be configured, refer max >> RTW_JOIN_TIMEOUT
- * including auth + assoc + 4way handshake, no dhcp
- */
-#define RTW_JOIN_TIMEOUT (10 * 12000 + 13100 + 20200 + 50) //(MAX_CNT_SCAN_TIMES * SCANNING_TIMEOUT + MAX_JOIN_TIMEOUT + KEY_EXCHANGE_TIMEOUT + 50)
+#define SIZE_RX_DESC			(sizeof(struct INIC_RX_DESC))
+#define SIZE_TX_DESC			(sizeof(struct INIC_TX_DESC))
+#define TX_BUF_NUM				2
 
-struct whc_sdio_host_priv_t {
-	rtos_sema_t host_send; /* sema to protect inic  host send */
-	rtos_sema_t host_send_api; /* sema to protect inic ipc host send api */
-	rtos_sema_t host_recv_wake; /* for recv task */
-	rtos_sema_t host_recv_done; /* for recv task */
-
-	uint8_t *rx_buf;
-	struct whc_buf_info *txbuf_info; /* to free in hdl */
-};
-
+#define whc_host_send_data		whc_sdio_host_send
+#define whc_host_init			whc_sdio_host_init
 
 struct INIC_TX_DESC {
 	/* u4Byte 0 */
@@ -99,9 +91,7 @@ struct INIC_RX_DESC {
 struct whc_sdio {
 	rtos_mutex_t	lock; /* mutex to protect send host event_priv message */
 	rtos_sema_t txbd_wq;
-	//struct sdio_func *func;
-#ifdef TODO
-#endif
+
 	void *func;
 
 	uint32_t 		sdio_himr;
@@ -120,49 +110,16 @@ struct whc_sdio {
 
 	uint8_t dev_state;
 
-	rtos_sema_t host_send; /* sema to protect inic  host send */
-	rtos_sema_t host_send_api; /* sema to protect inic ipc host send api */
+	rtos_mutex_t host_send; /* mutex to protect inic host send */
 	rtos_sema_t host_recv_wake; /* for recv task */
 	rtos_sema_t host_recv_done; /* for recv task */
 	rtos_sema_t host_irq; /* for sdio irq */
 
 	uint8_t *rx_buf;
+
+	u8 used_buf_num;
+	u8 tx_buf[TX_BUF_NUM][4 + SIZE_TX_DESC + MAX_SKB_BUF_SIZE_NORMAL] __attribute__((aligned(4)));
 };
-
-#define _RND(sz, r) ((((sz)+((r)-1))/(r))*(r))
-#define RND4(x)	(((x >> 2) + (((x & 3) == 0) ?  0: 1)) << 2)
-static inline  u32 _RND4(u32 sz)
-{
-
-	u32	val;
-
-	val = ((sz >> 2) + ((sz & 3) ? 1 : 0)) << 2;
-
-	return val;
-
-}
-
-static inline  u32 _RND8(u32 sz)
-{
-
-	u32	val;
-
-	val = ((sz >> 3) + ((sz & 7) ? 1 : 0)) << 3;
-
-	return val;
-
-}
-
-static inline  u32 _RND128(u32 sz)
-{
-
-	u32	val;
-
-	val = ((sz >> 7) + ((sz & 127) ? 1 : 0)) << 7;
-
-	return val;
-
-}
 
 #define SDIO_LOCAL_DOMAIN_ID				0
 #define SDIO_TX_FIFO_DOMAIN_ID				4
@@ -291,28 +248,49 @@ static inline  u32 _RND128(u32 sz)
 
 #define CONCAT_TO_UINT32(b4, b3, b2, b1) (((u32)((b4) & 0xFF) << 24) | ((u32)((b3) & 0xFF) << 16) | ((u32)((b2) & 0xFF) << 8) | ((u32)((b1) & 0xFF)))
 
+#define _RND(sz, r) ((((sz)+((r)-1))/(r))*(r))
+#define RND4(x)	(((x >> 2) + (((x & 3) == 0) ?  0: 1)) << 2)
+static inline  u32 _RND4(u32 sz)
+{
+
+	u32	val;
+
+	val = ((sz >> 2) + ((sz & 3) ? 1 : 0)) << 2;
+
+	return val;
+
+}
+
+static inline  u32 _RND8(u32 sz)
+{
+
+	u32	val;
+
+	val = ((sz >> 3) + ((sz & 7) ? 1 : 0)) << 3;
+
+	return val;
+
+}
+
+static inline  u32 _RND128(u32 sz)
+{
+
+	u32	val;
+
+	val = ((sz >> 7) + ((sz & 127) ? 1 : 0)) << 7;
+
+	return val;
+
+}
 
 void whc_sdio_host_init_drv(void);
-void rtw_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb);
-void whc_sdio_host_rx_handler(uint8_t *buf);
-
-int sdio_recv_process(uint8_t *pbuf);
-void rtw_sdio_recv_data_process(void);
-
-void whc_host_sdio_send_api_ret_value(uint32_t api_id, uint8_t *pbuf, uint32_t len);
-void whc_host_api_message_send(uint32_t id, uint8_t *param, uint32_t param_len, uint8_t *ret, uint32_t ret_len);
+void whc_sdio_host_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb);
 
 uint8_t rtw_sdio_query_txbd_status(struct whc_sdio *priv);
 uint32_t rtw_sdio_init(struct whc_sdio *priv);
 
-void whc_host_api_task(void);
 s32 wifi_on(uint8_t mode);
 void whc_sdio_host_init(void);
-
-//#define whc_host_send_data       whc_sdio_host_send_data
-#define whc_host_init            whc_sdio_host_init
-#define SIZE_RX_DESC	(sizeof(struct INIC_RX_DESC))
-#define SIZE_TX_DESC	(sizeof(struct INIC_TX_DESC))
 
 #endif
 

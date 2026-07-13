@@ -16,6 +16,10 @@
 #include "atcmd_service.h"
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
+#ifdef CONFIG_WIFI_NAN_HOST_APP
+#include "atcmd_wifi_nan.h"
+#endif
+#include "atcmd_usb.h"
 #ifdef CONFIG_LWIP_LAYER
 #include "atcmd_mqtt.h"
 #include "atcmd_sockets.h"
@@ -229,6 +233,11 @@ void at_list(u16 argc, char **argv)
 	/* Wifi commands. */
 	at_printf("Wi-Fi AT Command:\r\n");
 	print_wifi_at();
+#ifdef CONFIG_WIFI_NAN_HOST_APP
+	/* Wi-Fi Aware (NAN) commands. */
+	at_printf("Wi-Fi Aware (NAN) AT Command:\r\n");
+	print_nan_at();
+#endif
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
 	/* Socket AT Commands. */
@@ -257,6 +266,10 @@ void at_list(u16 argc, char **argv)
 #endif
 #endif // CONFIG_LWIP_LAYER
 #endif // CONFIG_WLAN
+#if defined(CONFIG_USB_HOST_EN) || defined(CONFIG_USB_DEVICE_EN)
+	/* USB commands. */
+	print_usb_at();
+#endif /* CONFIG_USB_HOST_EN || CONFIG_USB_DEVICE_EN */
 #endif // CONFIG_MP_SHRINK
 
 #if defined(CONFIG_BT) && CONFIG_BT
@@ -327,13 +340,13 @@ void at_gpiotest(u16 argc, char **argv)
 		goto end;
 	}
 
-	gpio_init(&gpio_output, output_pin);
-	gpio_dir(&gpio_output, PIN_OUTPUT);
-	gpio_mode(&gpio_output, PullNone);
-
 	gpio_init(&gpio_input, input_pin);
 	gpio_dir(&gpio_input, PIN_INPUT);
 	gpio_mode(&gpio_input, PullNone);
+
+	gpio_init(&gpio_output, output_pin);
+	gpio_dir(&gpio_output, PIN_OUTPUT);
+	gpio_mode(&gpio_output, PullNone);
 
 	gpio_write(&gpio_output, val_w);
 	val_r = gpio_read(&gpio_input);

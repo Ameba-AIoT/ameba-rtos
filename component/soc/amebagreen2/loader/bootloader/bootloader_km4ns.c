@@ -38,6 +38,9 @@ void BOOT_Image1(void)
 	/* enable cache */
 	Cache_Enable(ENABLE);
 
+	/* Enable divide-by-zero fault */
+	SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
+
 	BOOT_CleanupSection();
 
 	/* update delay div for cacheable rom_ns */

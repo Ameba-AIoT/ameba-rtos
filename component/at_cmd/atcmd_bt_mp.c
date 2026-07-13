@@ -97,7 +97,9 @@ static void bt_hci_uart_deinit(void)
 #endif /* CONFIG_AMEBALITE or CONFIG_AMEBASMART */
 
 #if (defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1))
+#if defined(CONFIG_ARM_CORE_CM4_NP)
 static void *UartBkFunc = NULL;
+#endif
 #endif
 
 static void bt_uart_bridge_close(void)
@@ -147,6 +149,17 @@ static void bt_uart_bridge_close(void)
 	ConfigDebugClose = 0;
 
 #elif defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1)
+#if defined(CONFIG_ARM_CORE_CA32)
+	irq_disable(LOG_UART_IRQ);
+	LOGUART_WaitTxComplete();
+	/*restore the Baud register value*/
+	LOGUART_SetBaud(LOGUART_DEV, LOGUART_BAUDRATE);
+
+	/* AP send IPC to NP to restore shell loguart */
+	IPC_MSG_STRUCT ipc_msg_temp;
+	ipc_msg_temp.msg = 2;
+	ipc_send_message(IPC_AP_TO_NP, IPC_A2N_UARTBRIDGE, &ipc_msg_temp);
+#else
 	u32 TempVal;
 
 	LOGUART_WaitTxComplete();
@@ -165,6 +178,7 @@ static void bt_uart_bridge_close(void)
 
 	/* NP restore shell loguart irq func */
 	UserIrqFunTable[LOG_UART_IRQ] = (IRQ_FUN)UartBkFunc;
+#endif
 
 #else /* not (CONFIG_AMEBALITE or CONFIG_AMEBASMART) */
 
@@ -308,6 +322,20 @@ void bt_uart_bridge_open(void)
 	irq_enable(UART_LOG_IRQ);
 
 #elif defined(CONFIG_AMEBAPRO3) && (CONFIG_AMEBAPRO3 == 1)
+#if defined(CONFIG_ARM_CORE_CA32)
+	LOGUART_WaitTxComplete();
+	/*set Baud*/
+	LOGUART_SetBaud(LOGUART_DEV, HCI_UART_BAUDRATE);
+
+	/* AP send IPC to NP to close shell loguart */
+	IPC_MSG_STRUCT ipc_msg_temp;
+	ipc_msg_temp.msg = 1;
+	ipc_send_message(IPC_AP_TO_NP, IPC_A2N_UARTBRIDGE, &ipc_msg_temp);
+
+	/* Register Log Uart Callback function */
+	irq_register((IRQ_FUN)bt_uart_bridge_irq, LOG_UART_IRQ, (uint32_t)NULL, INT_PRI4);
+	irq_enable(LOG_UART_IRQ);
+#else
 	u32 TempVal;
 
 	LOGUART_WaitTxComplete();
@@ -331,6 +359,7 @@ void bt_uart_bridge_open(void)
 	/* Register Log Uart Callback function */
 	irq_register((IRQ_FUN)bt_uart_bridge_irq, LOG_UART_IRQ, (uint32_t)NULL, INT_PRI4);
 	irq_enable(LOG_UART_IRQ);
+#endif
 
 #else /* not (CONFIG_AMEBALITE or CONFIG_AMEBASMART) */
 

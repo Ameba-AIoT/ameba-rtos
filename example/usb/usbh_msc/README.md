@@ -2,6 +2,17 @@
 
 In this application, Ameba is designed as an USB MSC host which can communicate with USB MSC device such as U-disk.
 
+The example mounts a FATFS filesystem on the attached U-disk and runs a write/read performance test over `USBH_MSC_MAX_FILES` files (default 10, `TEST0.DAT` … `TEST9.DAT`), each written/read at multiple payload sizes (512 / 1024 / 2048 / 4096 bytes, `USBH_MSC_TEST_ROUNDS` rounds each).
+
+## Hotplug modes
+
+The behaviour after a test pass, and how a detach is handled, is selected by the `CONFIG_USBH_MSC_HOTPLUG` switch at the top of `example_usbh_msc.c`:
+
+| Value | Mode | Behaviour |
+|-------|------|-----------|
+| `0` (default) | **Replug loop** | Test the files once, then stop and wait for a physical **unplug + replug** before running again. The USB stack stays alive the whole time; the host core re-enumerates on replug. |
+| `1` | **Continuous** | Test the files, then repeat immediately without needing a replug. If the device is detached **during** the test, the stack is fully torn down and rebuilt, and the test resumes automatically once the device is re-attached. |
+
 # HW Configuration
 
 Some Ameba boards require hardware rework to support USB Host mode.
@@ -42,23 +53,23 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 	```
 	Save and exit.
 
-2. Build and Download:
+2. (Optional) Select the hotplug mode by editing `CONFIG_USBH_MSC_HOTPLUG` in `example_usbh_msc.c` (see the table above). Default is `0` (replug loop).
+
+3. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
 # Expect result
 
-1. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
+1. Reset the board. After the file system is initialized the demo starts and waits for a device:
 	```
-	[MAIN-I] File System Init Success
 	[MSC-I] USBH MSC demo start
-	[MSC-I] Register USB disk
-	[MSC-I] FatFS USB W/R performance test start...
+	[MSC-I] Wait for device attach...
 	```
 
 2. Attach an U disk formatted with FATFS to the USB port of the board with USB OTG cable.
 
-3. Ameba board will recoganize the MSC device and do write/read performance test, check the log on the LOGUART console and make sure there is no USB related error reported. The example of expected PASS log:
+3. Ameba board recognizes the MSC device, mounts it, and runs the write/read performance test over all files. Check the log on the LOGUART console and make sure there is no USB related error reported. Example of the expected PASS log (per file, sizes repeat 512 → 4096):
 	```
 	[USBH-A] Device attached,speed 0
 	[USBH-A] PID: 0x6545
@@ -76,6 +87,8 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 	[MSC-I] Max lun 1
 	[MSC-I] Lun 0
 	[MSC-I] SETUP
+	[MSC-I] Device ready
+	[MSC-I] Free heap: 0x...
 	[MSC-I] Open file: 0:/TEST0.DAT
 	[MSC-I] W test: size 512, round 20...
 	[MSC-I] W rate 204.0 KB/s for 20 round @ 49 ms
@@ -93,10 +106,36 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 	[MSC-I] W rate 1095.8 KB/s for 20 round @ 73 ms
 	[MSC-I] R test: size = 4096 round = 20...
 	[MSC-I] R rate 1600.0 KB/s for 20 round @ 50 ms
-	[MSC-I] FatFS USB W/R performance test done
-	[MSC-I] File close OK
-
+	[MSC-I] File 0:/TEST0.DAT done
+	...
+	[MSC-I] File 0:/TEST9.DAT done
+	[MSC-I] Free heap: 0x...
 	```
+
+4. After a full pass, the behaviour depends on `CONFIG_USBH_MSC_HOTPLUG`:
+
+	- **`CONFIG_USBH_MSC_HOTPLUG = 0` (replug loop):** the demo stops and waits for a physical replug. Unplug and replug the U-disk to run the test again.
+		```
+		[MSC-I] Test done, unplug and replug to repeat
+		[MSC-I] Wait for device attach...
+		```
+
+	- **`CONFIG_USBH_MSC_HOTPLUG = 1` (continuous):** the demo repeats immediately without a replug.
+		```
+		[MSC-I] All files done, repeat from 0
+		[MSC-I] Wait for device attach...
+		[MSC-I] Device ready
+		...
+		```
+		If the U-disk is unplugged **during** the test, the stack is torn down and rebuilt; re-attach the device and the test resumes:
+		```
+		[MSC-W] W err: device disconnected (rc=1)
+		[MSC-I] DETACH
+		[MSC-W] I/O interrupted, wait for next attach
+		[MSC-I] Hotplug: deinit USB stack
+		[MSC-I] Hotplug: USB stack re-initialized
+		[MSC-I] Wait for device attach...
+		```
 
 # Note
 

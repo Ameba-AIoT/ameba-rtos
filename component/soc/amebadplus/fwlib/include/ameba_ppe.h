@@ -103,76 +103,76 @@ typedef struct {
   * @brief  PPE Result Layer Address Type
   */
 typedef enum {
-	PPE_ADDR_MEM,
-	PPE_ADDR_QSPI,
+	PPE_ADDR_MEM,   /*!< Address in internal memory. */
+	PPE_ADDR_QSPI,  /*!< Address in QSPI flash. */
 } PPE_ADDR_TYPE;
 
 /**
   * @brief  PPE Pixel Format Definition
   */
 typedef enum {
-	PPE_ABGR8888 = 0x0,
-	PPE_ARGB8888,
-	PPE_XBGR8888,
-	PPE_XRGB8888,
-	PPE_BGRA8888,
-	PPE_RGBA8888,
-	PPE_BGRX8888,
-	PPE_RGBX8888,
-	PPE_ABGR4444,
-	PPE_ARGB4444,
-	PPE_XBGR4444,
-	PPE_XRGB4444,
-	PPE_BGRA4444,
-	PPE_RGBA4444,
-	PPE_BGRX4444,
-	PPE_RGBX4444,
-	PPE_ABGR2222,	//0x10
-	PPE_ARGB2222,
-	PPE_XBGR2222,
-	PPE_XRGB2222,
-	PPE_BGRA2222,
-	PPE_RGBA2222,
-	PPE_BGRX2222,
-	PPE_RGBX2222,
-	PPE_ABGR8565,
-	PPE_ARGB8565,
-	PPE_XBGR8565,
-	PPE_XRGB8565,
-	PPE_BGRA5658,
-	PPE_RGBA5658,
-	PPE_BGRX5658,
-	PPE_RGBX5658,
-	PPE_ABGR1555,	//0x20
-	PPE_ARGB1555,
-	PPE_XBGR1555,
-	PPE_XRGB1555,
-	PPE_BGRA5551,
-	PPE_RGBA5551,
-	PPE_BGRX5551,
-	PPE_RGBX5551,
-	PPE_BGR888,
-	PPE_RGB888,
-	PPE_BGR565,
-	PPE_RGB565,
-	PPE_A8,
-	PPE_X8,
-	PPE_ABGR8666 = 0x32,
-	PPE_ARGB8666,
-	PPE_XBGR8666,
-	PPE_XRGB8666,
-	PPE_BGRA6668,
-	PPE_RGBA6668,
-	PPE_BGRX6668,
-	PPE_RGBX6668,
+	PPE_ABGR8888 = 0x0, /*!< 32bpp ABGR 8-8-8-8 format. */
+	PPE_ARGB8888,       /*!< 32bpp ARGB 8-8-8-8 format. */
+	PPE_XBGR8888,       /*!< 32bpp XBGR 8-8-8-8 format. */
+	PPE_XRGB8888,       /*!< 32bpp XRGB 8-8-8-8 format. */
+	PPE_BGRA8888,       /*!< 32bpp BGRA 8-8-8-8 format. */
+	PPE_RGBA8888,       /*!< 32bpp RGBA 8-8-8-8 format. */
+	PPE_BGRX8888,       /*!< 32bpp BGRX 8-8-8-8 format. */
+	PPE_RGBX8888,       /*!< 32bpp RGBX 8-8-8-8 format. */
+	PPE_ABGR4444,       /*!< 16bpp ABGR 4-4-4-4 format. */
+	PPE_ARGB4444,       /*!< 16bpp ARGB 4-4-4-4 format. */
+	PPE_XBGR4444,       /*!< 16bpp XBGR 4-4-4-4 format. */
+	PPE_XRGB4444,       /*!< 16bpp XRGB 4-4-4-4 format. */
+	PPE_BGRA4444,       /*!< 16bpp BGRA 4-4-4-4 format. */
+	PPE_RGBA4444,       /*!< 16bpp RGBA 4-4-4-4 format. */
+	PPE_BGRX4444,       /*!< 16bpp BGRX 4-4-4-4 format. */
+	PPE_RGBX4444,       /*!< 16bpp RGBX 4-4-4-4 format. */
+	PPE_ABGR2222,       /*!< 8bpp ABGR 2-2-2-2 format. (= 0x10) */
+	PPE_ARGB2222,       /*!< 8bpp ARGB 2-2-2-2 format. */
+	PPE_XBGR2222,       /*!< 8bpp XBGR 2-2-2-2 format. */
+	PPE_XRGB2222,       /*!< 8bpp XRGB 2-2-2-2 format. */
+	PPE_BGRA2222,       /*!< 8bpp BGRA 2-2-2-2 format. */
+	PPE_RGBA2222,       /*!< 8bpp RGBA 2-2-2-2 format. */
+	PPE_BGRX2222,       /*!< 8bpp BGRX 2-2-2-2 format. */
+	PPE_RGBX2222,       /*!< 8bpp RGBX 2-2-2-2 format. */
+	PPE_ABGR8565,       /*!< 24bpp ABGR 8-5-6-5 format. */
+	PPE_ARGB8565,       /*!< 24bpp ARGB 8-5-6-5 format. */
+	PPE_XBGR8565,       /*!< 24bpp XBGR 8-5-6-5 format. */
+	PPE_XRGB8565,       /*!< 24bpp XRGB 8-5-6-5 format. */
+	PPE_BGRA5658,       /*!< 24bpp BGRA 5-6-5-8 format. */
+	PPE_RGBA5658,       /*!< 24bpp RGBA 5-6-5-8 format. */
+	PPE_BGRX5658,       /*!< 24bpp BGRX 5-6-5-8 format. */
+	PPE_RGBX5658,       /*!< 24bpp RGBX 5-6-5-8 format. */
+	PPE_ABGR1555,       /*!< 16bpp ABGR 1-5-5-5 format. (= 0x20) */
+	PPE_ARGB1555,       /*!< 16bpp ARGB 1-5-5-5 format. */
+	PPE_XBGR1555,       /*!< 16bpp XBGR 1-5-5-5 format. */
+	PPE_XRGB1555,       /*!< 16bpp XRGB 1-5-5-5 format. */
+	PPE_BGRA5551,       /*!< 16bpp BGRA 5-5-5-1 format. */
+	PPE_RGBA5551,       /*!< 16bpp RGBA 5-5-5-1 format. */
+	PPE_BGRX5551,       /*!< 16bpp BGRX 5-5-5-1 format. */
+	PPE_RGBX5551,       /*!< 16bpp RGBX 5-5-5-1 format. */
+	PPE_BGR888,         /*!< 24bpp BGR 8-8-8 format. */
+	PPE_RGB888,         /*!< 24bpp RGB 8-8-8 format. */
+	PPE_BGR565,         /*!< 16bpp BGR 5-6-5 format. */
+	PPE_RGB565,         /*!< 16bpp RGB 5-6-5 format. */
+	PPE_A8,             /*!< 8bpp alpha-only format. */
+	PPE_X8,             /*!< 8bpp ignored-alpha format. */
+	PPE_ABGR8666 = 0x32, /*!< 32bpp ABGR 8-6-6-6 format. */
+	PPE_ARGB8666,       /*!< 32bpp ARGB 8-6-6-6 format. */
+	PPE_XBGR8666,       /*!< 32bpp XBGR 8-6-6-6 format. */
+	PPE_XRGB8666,       /*!< 32bpp XRGB 8-6-6-6 format. */
+	PPE_BGRA6668,       /*!< 32bpp BGRA 6-6-6-8 format. */
+	PPE_RGBA6668,       /*!< 32bpp RGBA 6-6-6-8 format. */
+	PPE_BGRX6668,       /*!< 32bpp BGRX 6-6-6-8 format. */
+	PPE_RGBX6668,       /*!< 32bpp RGBX 6-6-6-8 format. */
 } PPE_PIXEL_FORMAT;
 
 /**
   * @brief  PPE Pixel Source Definition
   */
 typedef enum {
-	PPE_LAYER_SRC_CONST,
-	PPE_LAYER_SRC_FROM_DMA,
+	PPE_LAYER_SRC_CONST,      /*!< Pixel data from constant color register. */
+	PPE_LAYER_SRC_FROM_DMA,   /*!< Pixel data read from memory via DMA. */
 } PPE_PIXEL_SOURCE;
 
 
@@ -180,26 +180,26 @@ typedef enum {
   * @brief  PPE DMA Handshake Definition
   */
 typedef enum {
-	PPE_DMA_HW_HANDSHAKE,
-	PPE_DMA_SW_HANDSHAKE,
+	PPE_DMA_HW_HANDSHAKE,   /*!< Hardware DMA handshake mode. */
+	PPE_DMA_SW_HANDSHAKE,   /*!< Software DMA handshake mode. */
 } PPE_DMA_HANDSHAKE;
 
-
+/// @cond
 /**
   * @brief  PPE DMA Msize Log Definition
   */
 typedef enum {
-	PPE_MSIZE_1,
-	PPE_MSIZE_2,
-	PPE_MSIZE_4,
-	PPE_MSIZE_8,
-	PPE_MSIZE_16,
-	PPE_MSIZE_32,
-	PPE_MSIZE_64,
-	PPE_MSIZE_128,
-	PPE_MSIZE_256,
-	PPE_MSIZE_512,
-	PPE_MSIZE_1024,
+	PPE_MSIZE_1,    /*!< DMA burst transaction size: 1 data item. */
+	PPE_MSIZE_2,    /*!< DMA burst transaction size: 2 data items. */
+	PPE_MSIZE_4,    /*!< DMA burst transaction size: 4 data items. */
+	PPE_MSIZE_8,    /*!< DMA burst transaction size: 8 data items. */
+	PPE_MSIZE_16,   /*!< DMA burst transaction size: 16 data items. */
+	PPE_MSIZE_32,   /*!< DMA burst transaction size: 32 data items. */
+	PPE_MSIZE_64,   /*!< DMA burst transaction size: 64 data items. */
+	PPE_MSIZE_128,  /*!< DMA burst transaction size: 128 data items. */
+	PPE_MSIZE_256,  /*!< DMA burst transaction size: 256 data items. */
+	PPE_MSIZE_512,  /*!< DMA burst transaction size: 512 data items. */
+	PPE_MSIZE_1024, /*!< DMA burst transaction size: 1024 data items. */
 } PPE_MSIZE_LOG;
 
 
@@ -207,14 +207,14 @@ typedef enum {
   * @brief  PPE Max AXI Length Definition
   */
 typedef enum {
-	PPE_MAX_AXLEN_0,
-	PPE_MAX_AXLEN_1,
-	PPE_MAX_AXLEN_3,
-	PPE_MAX_AXLEN_7,
-	PPE_MAX_AXLEN_15,
-	PPE_MAX_AXLEN_31,
-	PPE_MAX_AXLEN_63,
-	PPE_MAX_AXLEN_127,
+	PPE_MAX_AXLEN_0,   /*!< Maximum AXI burst length: 1 beat. */
+	PPE_MAX_AXLEN_1,   /*!< Maximum AXI burst length: 2 beats. */
+	PPE_MAX_AXLEN_3,   /*!< Maximum AXI burst length: 4 beats. */
+	PPE_MAX_AXLEN_7,   /*!< Maximum AXI burst length: 8 beats. */
+	PPE_MAX_AXLEN_15,  /*!< Maximum AXI burst length: 16 beats. */
+	PPE_MAX_AXLEN_31,  /*!< Maximum AXI burst length: 32 beats. */
+	PPE_MAX_AXLEN_63,  /*!< Maximum AXI burst length: 64 beats. */
+	PPE_MAX_AXLEN_127, /*!< Maximum AXI burst length: 128 beats. */
 } PPE_MAX_AXLEN;
 
 
@@ -222,60 +222,53 @@ typedef enum {
   * @brief  PPE DMA Handshake Polarity Definition
   */
 typedef enum {
-	PPE_POLARITY_HIGH,
-	PPE_POLARITY_LOW,
+	PPE_POLARITY_HIGH,  /*!< Active-high DMA handshake polarity. */
+	PPE_POLARITY_LOW,   /*!< Active-low DMA handshake polarity. */
 } PPE_ACTIVE_POLARITY;
-
+/// @endcond
 
 /**
-  * @brief  PPE Arbusrt Definition
+  * @brief  PPE Arburst Definition
   */
 typedef enum {
-	PPE_ARBURST_FIX,
-	PPE_ARBURST_INCR,
+	PPE_ARBURST_FIX,   /*!< AXI FIXED burst type. */
+	PPE_ARBURST_INCR,  /*!< AXI INCR burst type. */
 } PPE_ARBURST;
 
-
 /**
-  * @brief  PPE Byte Swap Definition
+  * @brief  PPE Global State Definition
   */
 typedef enum {
-	PPE_NO_SWAP,
-	PPE_8BIT_SWAP,
-	PPE_16BIT_SWAP,
-	PPE_8_16BIT_SWAP,
-	PPE_32BIT_SWAP,
-	PPE_32_8BIT_SWAP,
-	PPE_32_16BIT_SWAP,
-	PPE_32_16_8BIT_SWAP,
-} PPE_BYTE_SWAP;
+	PPE_STATE_DISABLE  = 0, /*!< PPE is disabled. */
+	PPE_STATE_RUNNING  = 1, /*!< PPE is running. */
+} PPE_GLOBAL_STATE;
 
 /**
   * @brief  PPE LLI Layer Format Definition
   */
 typedef struct {
-	u32 LAYER_ADDR;
-	u32 LAYER_POS;
-	u32 LAYER_WINSIZE;
-	u32 LAYER_CONST_PIX;
+	u32 LAYER_ADDR;      /*!< Address of the first pixel. */
+	u32 LAYER_POS;       /*!< Position of the first pixel in the result window. */
+	u32 LAYER_WINSIZE;   /*!< Window size: height[31:16] and width[15:0] in pixels. */
+	u32 LAYER_CONST_PIX; /*!< Constant pixel value in ABGR8888 format. */
 } PPE_LLI_LAYER;
 
 /**
   * @brief  PPE Global register Format Definition
   */
 typedef struct {
-	u32 LL_CFG;
-	u32 LLP;
-	u32 SCA_RATIO_X;
-	u32 SCA_RATIO_Y;
+	u32 LL_CFG;      /*!< Linked list configuration register value. */
+	u32 LLP;         /*!< Linked list pointer register value. */
+	u32 SCA_RATIO_X; /*!< Horizontal scale ratio register value. */
+	u32 SCA_RATIO_Y; /*!< Vertical scale ratio register value. */
 } PPE_LLI_GLB;
 
 /**
   * @brief  PPE Function Structure Definition
   */
 typedef struct {
-	u32 function;
-	u32 blend_layer_num;
+	u32 function;        /*!< PPE function mode selection; see PPE_FUNCTION_ALPHA_BLEND and PPE_FUNCTION_SCALE. */
+	u32 blend_layer_num; /*!< Number of input layers used for alpha blending. */
 } PPE_InitTypeDef;
 
 
@@ -283,17 +276,17 @@ typedef struct {
   * @brief  PPE Input layer Init Structure Definition
   */
 typedef struct {
-	u32 src_addr;
-	u32 start_x;
-	u32 start_y;
-	u32 width;
-	u32 height;
-	u32 const_ABGR8888_value;
-	u32 key_color_value;
-	u32 line_len;
-	PPE_PIXEL_FORMAT format;
-	PPE_PIXEL_SOURCE src;
-	int color_key_en;
+	u32 src_addr;             /*!< Source address of the layer pixel data. */
+	u32 start_x;              /*!< X coordinate of the top-left pixel in the result window. */
+	u32 start_y;              /*!< Y coordinate of the top-left pixel in the result window. */
+	u32 width;                /*!< Width of the input layer in pixels. */
+	u32 height;               /*!< Height of the input layer in pixels. */
+	u32 const_ABGR8888_value; /*!< Constant pixel color in ABGR8888 format, used when src is PPE_LAYER_SRC_CONST. */
+	u32 key_color_value;      /*!< Transparent (chroma-key) color value. */
+	u32 line_len;             /*!< Number of bytes between two vertically adjacent pixels in memory (line stride). */
+	PPE_PIXEL_FORMAT format;  /*!< Pixel format of the input layer; see @ref PPE_PIXEL_FORMAT. */
+	PPE_PIXEL_SOURCE src;     /*!< Pixel data source; see @ref PPE_PIXEL_SOURCE. */
+	int color_key_en;         /*!< Color keying enable: 1 to enable, 0 to disable. */
 } PPE_InputLayer_InitTypeDef;
 
 
@@ -301,12 +294,12 @@ typedef struct {
   * @brief  PPE Result layer Init Structure Definition
   */
 typedef struct {
-	u32 src_addr;
-	u32 width;
-	u32 height;
-	u32 line_len;
-	PPE_PIXEL_FORMAT format;
-	PPE_ADDR_TYPE type;
+	u32 src_addr;            /*!< Destination address for the composited output. */
+	u32 width;               /*!< Width of the output image in pixels. */
+	u32 height;              /*!< Height of the output image in pixels. */
+	u32 line_len;            /*!< Number of bytes between two vertically adjacent pixels in memory (line stride). */
+	PPE_PIXEL_FORMAT format; /*!< Pixel format of the output layer; see @ref PPE_PIXEL_FORMAT. */
+	PPE_ADDR_TYPE type;      /*!< Address type of the output buffer; see @ref PPE_ADDR_TYPE. */
 } PPE_ResultLayer_InitTypeDef;
 
 /** @} */
@@ -796,37 +789,32 @@ typedef struct {
 /// @endcond
 
 /* Exported constants --------------------------------------------------------*/
-/** @defgroup PPE_Exported_Definitions PPE Exported Constants
+/** @defgroup PPE_Exported_Constants PPE Exported Constants
   * @{
   */
 
+/** @brief Check if PPE channel index is valid (0-16). */
 #define IS_PPE_CHN_INDEX(chn)                               (((chn) < 17) && ((chn) >= 0))
 
-#define PPE_FUNCTION_ALPHA_BLEND                        ((u32)0x0)
-#define PPE_FUNCTION_SCALE                              ((u32)0x1)
+#define PPE_FUNCTION_ALPHA_BLEND                        ((u32)0x0)   /*!< PPE function mode: alpha blending. */
+#define PPE_FUNCTION_SCALE                              ((u32)0x1)   /*!< PPE function mode: scaling. */
+/** @brief Check if PPE function selection is valid. */
 #define IS_PPE_FUNCTION(func)                           (((func) == PPE_FUNCTION_ALPHA_BLEND) || ((func) == PPE_FUNCTION_SCALE))
 
+/** @brief Check if PPE alpha blend layer count is valid (< 16). */
 #define IS_PPE_ALPHA_BLEND_LAYER_NUM(layer_num)         ((layer_num) < 16)
 
-#define PPE_RESULT_LAYER_INDEX                          0
-#define PPE_INPUT_LAYER1_INDEX                          1
-#define PPE_INPUT_LAYER2_INDEX                          2
-#define PPE_INPUT_LAYER3_INDEX                          3
+#define PPE_RESULT_LAYER_INDEX                          0   /*!< Index of the PPE result (output) layer. */
+#define PPE_INPUT_LAYER1_INDEX                          1   /*!< Index of PPE input layer 1. */
+#define PPE_INPUT_LAYER2_INDEX                          2   /*!< Index of PPE input layer 2. */
+#define PPE_INPUT_LAYER3_INDEX                          3   /*!< Index of PPE input layer 3. */
 
-#define PPE_RESULT_LAYER_BIT                          ((u32)0x1 << PPE_RESULT_LAYER_INDEX)
-#define PPE_INPUT_LAYER1_BIT                          ((u32)0x1 << PPE_INPUT_LAYER1_INDEX)
-#define PPE_INPUT_LAYER2_BIT                          ((u32)0x1 << PPE_INPUT_LAYER2_INDEX)
-#define PPE_INPUT_LAYER3_BIT                          ((u32)0x1 << PPE_INPUT_LAYER3_INDEX)
+#define PPE_RESULT_LAYER_BIT                          ((u32)0x1 << PPE_RESULT_LAYER_INDEX)   /*!< Bit mask for PPE result layer selection. */
+#define PPE_INPUT_LAYER1_BIT                          ((u32)0x1 << PPE_INPUT_LAYER1_INDEX)   /*!< Bit mask for PPE input layer 1 selection. */
+#define PPE_INPUT_LAYER2_BIT                          ((u32)0x1 << PPE_INPUT_LAYER2_INDEX)   /*!< Bit mask for PPE input layer 2 selection. */
+#define PPE_INPUT_LAYER3_BIT                          ((u32)0x1 << PPE_INPUT_LAYER3_INDEX)   /*!< Bit mask for PPE input layer 3 selection. */
 
 /** @} */
-
-/**
-  * @brief  PPE Global State Definition
-  */
-typedef enum {
-	PPE_STATE_DISABLE  = 0, /* PPE is disabled */
-	PPE_STATE_RUNNING  = 1, /* PPE is running */
-} PPE_GLOBAL_STATE;
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup PPE_Exported_Functions PPE Exported Functions

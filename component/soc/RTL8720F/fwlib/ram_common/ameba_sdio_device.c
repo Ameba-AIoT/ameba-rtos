@@ -6,6 +6,21 @@
 
 #include "ameba_soc.h"
 
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup SPDIO SPDIO
+  *
+  * @brief  SPDIO driver modules
+  * @{
+  */
+
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup SPDIO_Exported_Functions SPDIO Exported Functions
+  * @{
+  */
+
 static const char *const TAG = "SPDIO";
 
 #define SDIO_INCR_RING_IDX(idx, range)   \
@@ -16,6 +31,13 @@ static const char *const TAG = "SPDIO";
         }                         \
     } while(0)
 
+/**
+  * @brief Initialize TX buffer descriptor handle array.
+  * @param g_TXBDHdl Pointer to the TX BD handle array to be initialized.
+  * @param SPDIO_TXBDAddr Pointer to the TX BD buffer, must be 4-byte aligned.
+  * @param spdio_dev_rx_buf Pointer to the pre-allocated device receive buffer array.
+  * @param host_tx_bd_num Number of TX buffer descriptors.
+  */
 void SDIO_TxBdHdl_Init(SPDIO_TX_BD_HANDLE *g_TXBDHdl, SPDIO_TX_BD *SPDIO_TXBDAddr, struct spdio_buf_t *spdio_dev_rx_buf, u16 host_tx_bd_num)
 {
 	SPDIO_TX_BD_HANDLE *pTxBdHdl;
@@ -38,6 +60,13 @@ void SDIO_TxBdHdl_Init(SPDIO_TX_BD_HANDLE *g_TXBDHdl, SPDIO_TX_BD *SPDIO_TXBDAdd
 	DCache_Clean((u32)SPDIO_TXBDAddr, host_tx_bd_num * sizeof(SPDIO_TX_BD));
 }
 
+/**
+  * @brief Initialize RX buffer descriptor handle array.
+  * @param g_RXBDHdl Pointer to the RX BD handle array to be initialized.
+  * @param SPDIO_RXBDAddr Pointer to the RX BD buffer, must be 4-byte aligned.
+  * @param g_RXDESCAddr Pointer to the RX descriptor array.
+  * @param host_rx_bd_num Number of RX buffer descriptors.
+  */
 void SDIO_RxBdHdl_Init(SPDIO_RX_BD_HANDLE *g_RXBDHdl, SPDIO_RX_BD *SPDIO_RXBDAddr, INIC_RX_DESC *g_RXDESCAddr, u16 host_rx_bd_num)
 {
 	SPDIO_RX_BD_HANDLE *pRxBdHdl;
@@ -55,6 +84,11 @@ void SDIO_RxBdHdl_Init(SPDIO_RX_BD_HANDLE *g_RXBDHdl, SPDIO_RX_BD *SPDIO_RXBDAdd
 	DCache_Clean((u32)SPDIO_RXBDAddr, host_rx_bd_num * sizeof(SPDIO_RX_BD));
 }
 
+/**
+  * @brief Handle SDIO interrupt status notification.
+  * @param SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param IntStatus Interrupt status bits to be handled.
+  */
 void SPDIO_Notify_INT(SDIO_TypeDef *SDIO, u16 IntStatus)
 {
 	assert_param(IS_SDIO_DEVICE(SDIO));
@@ -107,6 +141,12 @@ void SPDIO_Notify_INT(SDIO_TypeDef *SDIO, u16 IntStatus)
 	}
 }
 
+/**
+  * @brief Recycle SDIO RX buffer descriptors after host DMA is done.
+  * @param SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param pSPDIODev Pointer to SPDIO adapter structure.
+  * @param spdio_device_tx_done_cb Callback function called when RX BD is recycled.
+  */
 void SPDIO_Recycle_Rx_BD(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, spdio_device_tx_done_cb_ptr spdio_device_tx_done_cb)
 {
 	SPDIO_RX_BD_HANDLE *pRxBdHdl;
@@ -141,11 +181,14 @@ void SPDIO_Recycle_Rx_BD(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, spdio_dev
 }
 
 /**
- * @brief Spdio write function.
- * @param obj Pointer to a initialized spdio_t structure.
- * @param pbuf Pointer to a spdio_buf_t structure which carries the payload.
- * @retval RTK_SUCCESS or RTK_FAIL.
- */
+  * @brief  Transmit data from device to host via SPDIO RX BD ring.
+  * @param SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param pSPDIODev Pointer to SPDIO adapter structure.
+  * @param pbuf Pointer to a @ref spdio_buf_t structure which carries the payload.
+  * @return Operation result:
+  *         - TRUE: Success
+  *         - FALSE: Fail
+  */
 u8 SPDIO_DeviceTx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, struct spdio_buf_t *pbuf)
 {
 	SPDIO_RX_BD_HANDLE *pRxBdHdl;
@@ -255,13 +298,15 @@ u8 SPDIO_DeviceTx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, struct spdio_buf
 	return TRUE;
 }
 
+/// @cond
 /**
- * @brief Handle the SDIO FIFO data ready interrupt, including
- * 		- Send those data to target driver via callback func, like WLan.
- * 		- Allocate a buffer for the TX BD
- * @param pSPDIODev Pointer to a SDIO device data structure.
- * @return None
- */
+  * @brief Handle the SDIO FIFO data ready interrupt, including
+  *         - Send those data to target driver via callback func, like WLan.
+  *         - Allocate a buffer for the TX BD
+  * @param SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param pSPDIODev Pointer to SPDIO adapter structure.
+  * @param spdio_device_rx_done_cb Callback function called when device receives data.
+  */
 void SPDIO_TxBd_DataReady_DeviceRx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, spdio_device_rx_done_cb_ptr spdio_device_rx_done_cb)
 {
 	SPDIO_TX_BD_HANDLE *pTxBdHdl;
@@ -293,7 +338,7 @@ void SPDIO_TxBd_DataReady_DeviceRx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev,
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "SPDIO_DeviceRx: PktSz=%d Offset=%d\n", pTxDesc->txpktsize, pTxDesc->offset);
 
 			if ((pTxDesc->txpktsize + pTxDesc->offset) <= pSPDIODev->device_rx_bufsz) {
-				// use the callback function to fordward this packet to target(WLan) driver
+				// use the callback function to forward this packet to target(WLan) driver
 				RxDataAddr = pTXBD->Address + pTxDesc->offset;
 				DCache_Invalidate(RxDataAddr, pTxDesc->txpktsize);
 				ret = spdio_device_rx_done_cb(pSPDIODev, pTxBdHdl->dev_rx_buf, (u8 *)(RxDataAddr), pTxDesc->txpktsize, pTxDesc->type);
@@ -334,7 +379,7 @@ void SPDIO_TxBd_DataReady_DeviceRx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev,
 		}
 
 		if (RTK_SUCCESS != ret) {
-			// may be is caused by TX queue is full, so we skip it and try again later
+			// May be caused by a full TX queue; skip and retry later.
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "SDIO_TX Force Break: TXBDWP=0x%x TXBDRP=0x%x\n", TxBDWPtr, pSPDIODev->TXBDRPtr);
 			break; // break the while loop
 		} else {
@@ -346,6 +391,11 @@ void SPDIO_TxBd_DataReady_DeviceRx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev,
 	}
 }
 
+/**
+  * @brief Initialize SPDIO device, including configuring BD rings and enabling interrupts.
+  * @param SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param pSPDIODev Pointer to SPDIO adapter structure.
+  */
 void SPDIO_Device_Init(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev)
 {
 	SDIO_InitTypeDef SDIO_InitStruct;
@@ -384,10 +434,10 @@ void SPDIO_Device_Init(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev)
 }
 
 /**
- * @brief Free SDIO device, including freeing TX FIFO buffer.
- * @return None
- * @note This function should be called in a task.
- */
+  * @brief Free SDIO device, including freeing TX FIFO buffer.
+  * @param SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @note This function should be called in a task.
+  */
 void SPDIO_Device_DeInit(SDIO_TypeDef *SDIO)
 {
 	assert_param(IS_SDIO_DEVICE(SDIO));
@@ -402,3 +452,9 @@ void SPDIO_Device_DeInit(SDIO_TypeDef *SDIO)
 	/* step3: disable fen & cke */
 	RCC_PeriphClockCmd(APBPeriph_SDD, APBPeriph_SDD_CLOCK, DISABLE);
 }
+/// @endcond
+/** @} */
+
+/** @} */
+
+/** @} */

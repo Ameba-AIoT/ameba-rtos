@@ -537,6 +537,31 @@ bool whc_spi_dev_txdma_init(
 	return TRUE;
 }
 
+void whc_spi_dev_flowctrl(u8 *status, u8 send_cmd)
+{
+	u8 status_change = 0;
+
+	if (skbpriv.skb_buff_num - skbpriv.skb_buff_used < SPI_FLOWCTRL_LOW_THRESHOLD) {
+		if (!spi_priv.flowctrl_en) {
+			spi_priv.flowctrl_en = 1;
+			status_change = 1;
+		}
+	} else if (skbpriv.skb_buff_num - skbpriv.skb_buff_used > SPI_FLOWCTRL_HIGH_THRESHOLD) {
+		if (spi_priv.flowctrl_en) {
+			spi_priv.flowctrl_en = 0;
+			status_change = 1;
+		}
+	}
+
+	if (status) {
+		*status = spi_priv.flowctrl_en;
+	}
+
+	if (send_cmd && status_change) {
+		whc_dev_send_flowctrl_cmd(spi_priv.flowctrl_en);
+	}
+}
+
 static s8 whc_spi_wait_dev_idle(void)
 {
 	s8 ret = 0;

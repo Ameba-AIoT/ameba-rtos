@@ -43,11 +43,11 @@ config FLASH_OTA2_SIZE
 # VFS region 1 (512K)
 config FLASH_VFS1_OFFSET
     hex "VFS1 Offset"
-    default 0x8640000
+    default 0x8600000
 
 config FLASH_VFS1_SIZE
     hex "VFS1 Size"
-    default 0x80000
+    default 0x200000
 
 # VFS region 2
 config FLASH_VFS2_OFFSET

@@ -2,7 +2,9 @@ ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin)
 # Use variable c_CURRENT_IMAGE to represent full image target name
 
 ###############################  ADD COMPONENT  ###################################
+set(c_KM4NS_HAS_COMPONENTS FALSE)
 if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_INTF_IPC AND CONFIG_WHC_DEV))
+    set(c_KM4NS_HAS_COMPONENTS TRUE)
     ameba_add_subdirectory(${c_CMPT_AT_CMD_DIR})
     ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
     ameba_add_subdirectory(${c_CMPT_BOOTLOADER_DIR})
@@ -59,9 +61,12 @@ target_link_libraries(${c_CURRENT_IMAGE}
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_no_whole_archive_libs>
     ${c_LINK_ROM_LIB}
 
-    ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main/crtbegin.o
-    ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main/crtend.o
-    -lm -lstdc++
+    # Only link crtbegin/crtend when there are actual components; otherwise C++ init stubs (frame_dummy etc.) would make sram_2.bin
+    # non-empty while KM4NS_BD_RAM is undefined, causing __sram_image2_start__ = 0 and bootloader to load the NP image to an invalid address.
+    $<$<BOOL:${c_KM4NS_HAS_COMPONENTS}>:${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main/crtbegin.o>
+    $<$<BOOL:${c_KM4NS_HAS_COMPONENTS}>:${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${ASDK_VER}/thumb/v8-m.main/crtend.o>
+    $<$<BOOL:${c_KM4NS_HAS_COMPONENTS}>:-lm>
+    $<$<BOOL:${c_KM4NS_HAS_COMPONENTS}>:-lstdc++>
 )
 
 #--------------- POST BUILD ------------------#

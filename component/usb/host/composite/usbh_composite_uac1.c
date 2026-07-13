@@ -2185,7 +2185,7 @@ static int usbh_composite_uac_wait_isoc_with_status_check(usbh_composite_uac_buf
   * @param  cb:     Pointer to the user callback structure; may be NULL for defaults.
   * @retval HAL_OK on success, HAL_ERR_MEM if a buffer allocation fails.
   */
-int usbh_composite_uac_init(usbh_composite_host_t *driver, usbh_composite_uac_usr_cb_t *cb)
+int usbh_composite_uac_init(usbh_composite_host_t *driver, const usbh_composite_uac_usr_cb_t *cb)
 {
 	usbh_composite_uac_t *uac = &usbh_composite_uac;
 	int ret;
@@ -2239,7 +2239,6 @@ int usbh_composite_uac_init(usbh_composite_host_t *driver, usbh_composite_uac_us
 		RTK_LOGS(TAG, RTK_LOG_INFO, "IN disabled by config\n");
 	}
 
-	uac->cb = cb;
 	if (cb->init != NULL) {
 		ret = cb->init();
 		if (ret != HAL_OK) {
@@ -2254,6 +2253,8 @@ int usbh_composite_uac_init(usbh_composite_host_t *driver, usbh_composite_uac_us
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dump task create fail\n");
 	}
 #endif
+
+	uac->cb = cb;
 
 	return HAL_OK;
 

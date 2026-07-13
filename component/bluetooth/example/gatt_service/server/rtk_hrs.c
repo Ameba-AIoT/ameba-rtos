@@ -51,8 +51,8 @@ static heart_rate_measurement_val_t heart_rate_measurement_val = {
 	.rr_interval = {0x11, 0x11, 0x11, 0x11},
 };
 
-static uint8_t hrs_sensor_location_val = 0x33;
-static uint8_t hrs_ctrl_point_val = 0x55;
+static uint8_t hrs_sensor_location_val = 0x1;
+static uint8_t hrs_ctrl_point_val = 0x0;
 static uint8_t hr_msmnt_cccd_ntf_en_map[RTK_BLE_GAP_MAX_LINKS] = {0};
 static uint32_t energy_expended_reset_time = 0;
 
@@ -60,8 +60,8 @@ static rtk_bt_gatt_attr_t hrs_attrs[] = {
 	RTK_BT_GATT_PRIMARY_SERVICE(RTK_BT_UUID_HEART_RATE_SRV),
 
 	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_HEART_RATE_MEASUREMENT_CHAR,
-							   RTK_BT_GATT_CHRC_READ | RTK_BT_GATT_CHRC_NOTIFY,
-							   RTK_BT_GATT_PERM_READ),
+							   RTK_BT_GATT_CHRC_NOTIFY,
+							   RTK_BT_GATT_PERM_NONE),
 	RTK_BT_GATT_CCC(RTK_BT_GATT_PERM_READ | RTK_BT_GATT_PERM_WRITE),
 
 	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_HRS_BODY_SENSOR_LOCATION_CHAR,

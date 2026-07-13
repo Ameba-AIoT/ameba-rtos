@@ -78,17 +78,22 @@ int __wrap_printf(const char *__restrict fmt, ...)
 #ifdef CONFIG_ARM_CORE_CA32
 	extern rtos_mutex_t log_mutex;
 	u32 in_isr = CPU_InInterrupt();
-	if ((!in_isr) && (log_mutex != NULL)) {
-		rtos_mutex_take(log_mutex, RTOS_MAX_DELAY);
+	/* Only lock when the scheduler is running: taking a mutex while it is
+	 * suspended asserts/hangs. Snapshot so give mirrors take exactly. */
+	u32 mutex_taken = 0;
+	if ((!in_isr) && (log_mutex != NULL) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING)) {
+		mutex_taken = (rtos_mutex_take(log_mutex, RTOS_MAX_DELAY) == RTK_SUCCESS);
 	}
 #endif
 
 	va_start(ap, fmt);
 	ret = rtk_printf_hook(fmt, ap);
 	if (ret < 0) {
-		/* hook not installed or declined; fall back to UART / libc */
+		/* hook not installed or declined; fall back to UART / libc.
+		 * vprintf()/fflush() take newlib's stdout lock (blocking); avoid it when
+		 * suspended / in a critical section / ISR - use lock-free DiagVprintf. */
 #ifdef CONFIG_ARM_CORE_CA32
-		if (in_isr) {
+		if (in_isr || rtos_sched_get_state() != RTOS_SCHED_RUNNING || rtos_get_critical_state() > 0) {
 			ret = DiagVprintf(fmt, ap);
 		}
 #else
@@ -104,7 +109,7 @@ int __wrap_printf(const char *__restrict fmt, ...)
 	va_end(ap);
 
 #ifdef CONFIG_ARM_CORE_CA32
-	if ((!in_isr) && (log_mutex != NULL)) {
+	if (mutex_taken) {
 		rtos_mutex_give(log_mutex);
 	}
 #endif

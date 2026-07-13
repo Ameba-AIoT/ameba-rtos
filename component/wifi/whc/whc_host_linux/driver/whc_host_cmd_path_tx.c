@@ -1,5 +1,4 @@
 #include <whc_host_linux.h>
-#include <whc_host_cmd_path_api.h>
 
 /* SIZE_TX_DESC not included in len  */
 /* pbuf needed to be freed by user if need */

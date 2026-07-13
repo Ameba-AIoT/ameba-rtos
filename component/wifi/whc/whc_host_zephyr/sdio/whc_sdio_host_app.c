@@ -8,7 +8,7 @@ __weak void whc_host_pkt_rx_to_user(u8 *pbuf)
 
 	if (event == WHC_WIFI_TEST) {
 		if (!event_priv.b_waiting_for_ret) {
-			k_free(pbuf);
+			WHC_FREE(pbuf);
 			return;
 		}
 
@@ -27,20 +27,19 @@ __weak void whc_host_pkt_rx_to_user(u8 *pbuf)
 	} else {
 
 		printf("%s: recv pbuf, user realize here \n", __func__);
-		k_free(pbuf);
+		WHC_FREE(pbuf);
 	}
 }
 
 /**
- * @brief  bridge sdio host send msg to dev.
+ * @brief  sdio host send msg to dev.
  * @param  msg: msg buf
  * @param  msg_len: message len to be sent.
  * @param  ret: return value buf if have return value
  * @param  ret_len: len of return value.
  * @return none.
  */
-// linux name: whc_bridge_host_send_data_to_dev
-void whc_bridge_sdio_host_send_msg(uint8_t *msg, uint32_t msg_len, uint8_t *ret, uint32_t ret_len)
+void whc_host_sdio_send_msg(uint8_t *msg, uint32_t msg_len, uint8_t *ret, uint32_t ret_len)
 {
 	uint8_t *buf = NULL;
 	uint8_t *ptr = NULL;
@@ -52,7 +51,7 @@ void whc_bridge_sdio_host_send_msg(uint8_t *msg, uint32_t msg_len, uint8_t *ret,
 	k_mutex_lock(&event_priv.send_mutex, MUTEX_WAIT_TIMEOUT);
 
 	buf_len = msg_len + SIZE_TX_DESC;
-	buf = k_malloc(buf_len);
+	buf = WHC_MALLOC(buf_len);
 	if (!buf) {
 		goto exit;
 	}
@@ -62,7 +61,7 @@ void whc_bridge_sdio_host_send_msg(uint8_t *msg, uint32_t msg_len, uint8_t *ret,
 	}
 
 	/* send ret_msg + ret_val(buf, len) */
-	whc_bridge_sdio_host_send_data(buf, buf_len, NULL);
+	whc_host_sdio_send_data(buf, buf_len, NULL);
 
 	/* wait for API calling done */
 	if (ret && (ret_len != 0)) {
@@ -83,10 +82,10 @@ void whc_bridge_sdio_host_send_msg(uint8_t *msg, uint32_t msg_len, uint8_t *ret,
 				memcpy(ret, (u8 *)(ret_msg + 1), ret_len);
 			}
 			/* free rx buffer */
-			k_free((uint8_t *)ptr);
+			WHC_FREE((uint8_t *)ptr);
 		} else {
 			/* free rx buffer */
-			k_free((uint8_t *)ptr);
+			WHC_FREE((uint8_t *)ptr);
 			printf("Host API return value is NULL!\n");
 		}
 
@@ -97,7 +96,7 @@ void whc_bridge_sdio_host_send_msg(uint8_t *msg, uint32_t msg_len, uint8_t *ret,
 
 exit:
 	if (buf) {
-		k_free(buf);
+		WHC_FREE(buf);
 	}
 
 	k_mutex_unlock(&event_priv.send_mutex);
@@ -116,7 +115,11 @@ int whc_host_get_mac_addr(u8 idx, struct rtw_mac *mac, u8 efuse)
 	u8 *msg = NULL;
 	u8 len = sizeof(struct whc_api_info) + 1;
 
-	msg = k_malloc(len);
+	msg = WHC_MALLOC(len);
+	if (msg == NULL) {
+		printf("%s malloc fail\n", __func__);
+		return -1;
+	}
 	msginfo = (struct whc_api_info *)msg;
 	ptr = msg;
 
@@ -125,9 +128,9 @@ int whc_host_get_mac_addr(u8 idx, struct rtw_mac *mac, u8 efuse)
 	ptr += sizeof(struct whc_api_info);
 	*ptr = idx;
 
-	whc_bridge_sdio_host_send_msg(msg, len, (uint8_t *)mac, sizeof(struct rtw_mac));
+	whc_host_sdio_send_msg(msg, len, (uint8_t *)mac, sizeof(struct rtw_mac));
 
-	k_free(msg);
+	WHC_FREE(msg);
 
 	return ret;
 }
@@ -142,7 +145,7 @@ int whc_host_get_ip(uint8_t idx, uint8_t *ip)
 	msginfo.api_id = WHC_WIFI_TEST_GET_IP;
 	memset(ip, 0, 4);
 
-	whc_bridge_sdio_host_send_msg((u8 *)&msginfo, len, (uint8_t *)ip, 4);
+	whc_host_sdio_send_msg((u8 *)&msginfo, len, (uint8_t *)ip, 4);
 	return RTK_SUCCESS;
 }
 
@@ -158,7 +161,7 @@ void whc_host_set_state(uint8_t state)
 		msginfo.api_id = WHC_WIFI_TEST_SET_UNREADY;
 	}
 
-	whc_bridge_sdio_host_send_msg((u8 *)&msginfo, len, NULL, 0);
+	whc_host_sdio_send_msg((u8 *)&msginfo, len, NULL, 0);
 
 }
 

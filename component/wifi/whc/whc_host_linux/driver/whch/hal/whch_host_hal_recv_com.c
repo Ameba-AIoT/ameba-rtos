@@ -1,6 +1,14 @@
 #include <whc_host_linux.h>
 
 #ifdef CONFIG_WHCH
+void whc_host_hal_deseg_priv_reset(struct rx_deseg_priv *pdeseg)
+{
+	if (pdeseg->deseg_skb) {
+		dev_kfree_skb_any(pdeseg->deseg_skb);
+	}
+	memset(pdeseg, 0, sizeof(struct rx_deseg_priv));
+}
+
 void whc_host_hal_normal_rx_process(union recv_frame *precvframe, u8 *pphy_info)
 {
 	struct sk_buff	*skb = precvframe->u.hdr.pkt;

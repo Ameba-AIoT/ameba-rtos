@@ -22,7 +22,7 @@ extern char *rtw_iw;
 rtw_nan_evt_cb g_nan_evt_cb;
 static volatile unsigned char g_evt_terminate;
 FILE *g_evt_log_file = NULL;
-int g_log_file_offset = 0;
+volatile int g_log_file_offset = 0;
 pthread_t tid;
 pthread_t g_detect_fsize_tid;
 static int g_max_event_log_size = MIN_NAN_EVT_LSIZE;

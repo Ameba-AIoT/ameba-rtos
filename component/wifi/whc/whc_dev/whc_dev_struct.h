@@ -12,9 +12,7 @@
 
 #if defined(CONFIG_WHC_INTF_SDIO)
 #include "spdio_api.h"
-#include "ameba_inic.h"
 #endif
-#include "whc_def.h"
 
 /* -------------------------------- Includes -------------------------------- */
 struct whc_buf_info {
@@ -39,24 +37,6 @@ struct whc_msg_node {
 	struct list_head	list;
 	void				*msg;
 };
-
-#define SPI_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32
-#define SPI_BUFSZ		(SPI_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
-#define SPI_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), 4)
-
-#ifdef CONFIG_WHCH
-#define SPDIO_DEVICE_RX_BUFSZ	(SPDIO_RX_BUFSZ_ALIGN(TXDESC_SIZE + WLAN_MAX_PROTOCOL_OVERHEAD + MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info) + sizeof(INIC_TX_DESC))) //n*64, must be rounded to 64
-#define SPDIO_SKB_RSVD_LEN		0
-#else
-#define SPDIO_DEVICE_RX_BUFSZ	(SPDIO_RX_BUFSZ_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info) + sizeof(INIC_TX_DESC))) //n*64, must be rounded to 64
-// Change to SKB_CACHE_SZ to avoid DcacheInvalid affect
-#define SPDIO_SKB_RSVD_LEN		N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info) - sizeof(INIC_TX_DESC), SKB_CACHE_SZ)
-#endif
-
-#define UART_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32 for cache line
-#define UART_BUFSZ		(UART_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
-/* uart as flow controller when rx */
-#define UART_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), WHC_UART_RX_BURST_SIZE)
 
 #endif /* __WHC_DEV_STRUCT_H__ */
 

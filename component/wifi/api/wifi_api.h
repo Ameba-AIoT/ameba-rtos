@@ -179,6 +179,7 @@ s32 wifi_get_scan_records(u32 *ap_num, struct rtw_scan_result *ap_list);
  *                            See struct rtw_softap_info in wifi_api_types.h for details.
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
+ *    - @ref RTW_DFS_CAC_PENDING : SoftAP on a DFS channel; CAC started, beaconing deferred (DFS master only).
  *    - @ref RTK_FAIL : Driver internal error.
  *    - -@ref RTK_ERR_BADARG : SSID length exceed @ref RTW_ESSID_MAX_SIZE.
  *    - -@ref RTK_ERR_WIFI_CONN_INVALID_KEY : Invalid password format.

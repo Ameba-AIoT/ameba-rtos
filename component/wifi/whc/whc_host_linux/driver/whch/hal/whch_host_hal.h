@@ -45,9 +45,9 @@ void whc_host_hal_pending_q_resume(void);
 
 /* TX frame operations */
 int  whc_host_hal_xmitframe_coalesce(u8 iface_type, struct sk_buff *pkt, struct xmit_frame *pxmitframe, u8 force_cts2self);
-int  whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe, u8 *wlan_hw_queue);
+int  whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe);
 void whc_host_hal_xmit_check_eapol4(u8 iface_type, struct xmit_frame *pxmitframe);
-int  whc_host_hal_xmit(u8 iface_type, struct xmit_frame *pxmitframe, u8 *wlan_hw_queue);
+int  whc_host_hal_xmit(u8 iface_type, struct xmit_frame *pxmitframe);
 int  whc_host_hal_xmit_thread(void *data);
 
 /* TX descriptor helpers */
@@ -61,9 +61,10 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf);
 void whc_host_hal_rxdesc_query(struct rx_pkt_attrib *pattrib, u8 *pdesc);
 
 /* RX frame operations */
+void whc_host_hal_deseg_priv_reset(struct rx_deseg_priv *pdeseg);
 void whc_host_hal_normal_rx_process(union recv_frame *precvframe, u8 *pphy_info);
 int  whc_host_hal_rx_mpdu(struct sk_buff *pskb);
-int  whc_host_hal_rx_mpdu_deseg(u8 *rxbd, struct sk_buff *skb, u8 *pdata);
+int  whc_host_hal_rx_mpdu_deseg(u8 *rxbd, struct sk_buff **skb, u8 *pdata);
 
 /* Rate conversion */
 u16  whc_host_hal_mrate_to_hwrate(u8 rate);

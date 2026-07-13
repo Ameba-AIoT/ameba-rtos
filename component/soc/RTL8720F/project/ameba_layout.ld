@@ -22,12 +22,12 @@
 #define TZ_S_SIZE                    (64)
 #endif
 
-#if defined(CONFIG_IMG3_SRAM)
+#if defined(CONFIG_IMG3_SRAM) || defined(CONFIG_IMG3_FLASH)
 #define KM4TZ_RAM_TZ_SIZE            KBYTES(TZ_S_SIZE)
 #define KM4TZ_PSRAM_TZ_SIZE          KBYTES(0)
 #define KM4TZ_MSP_RAM_NS_SIZE        KBYTES(2)
 #elif defined(CONFIG_IMG3_PSRAM)
-#define KM4TZ_RAM_TZ_SIZE            KBYTES(0)
+#define KM4TZ_RAM_TZ_SIZE            KBYTES(4)            /* minimum SRAM-TZ for .data/.bss in PSRAM mode */
 #define KM4TZ_PSRAM_TZ_SIZE          KBYTES(TZ_S_SIZE)
 #define KM4TZ_MSP_RAM_NS_SIZE        KBYTES(2)
 #else /* undefine trustzone */
@@ -163,7 +163,7 @@ MEMORY
     /* Flash */
     KM4NS_BOOT_XIP (rx) :                     ORIGIN = 0x00200020, LENGTH = 0x00400000 - 0x00200020    /* KM4NS IMG1 Virtual address: 2M */
     KM4TZ_BOOT_XIP (rx) :                     ORIGIN = 0x10400020, LENGTH = 0x10C00000 - 0x10400020    /* KM4TZ IMG1 Virtual address: 8M */
-    KM4TZ_IMG3_XIP (rx) :                     ORIGIN = 0x10C00020, LENGTH = 0x11000000 - 0x10C00020    /* KM4TZ IMG3 Virtual address: 4M */
+    KM4TZ_IMG3_XIP (rx) :                     ORIGIN = 0x00C00020, LENGTH = 0x01000000 - 0x00C00020    /* KM4TZ IMG3 Virtual address: 4M */
     KM4NS_IMG2_XIP (rx) :                     ORIGIN = 0x02000020, LENGTH = 0x04000000 - 0x02000020    /* KM4TZ IMG2 Virtual address: 32M */
     KM4TZ_IMG2_XIP (rx) :                     ORIGIN = 0x04000020, LENGTH = 0x06000000 - 0x04000020    /* KM4NS IMG2 Virtual address: 32M */
     BTRACE (rx) :                             ORIGIN = 0xC8800000, LENGTH = 0xC9000000 - 0xC8800000    /* BT LOG Virtual address: 8192k */
@@ -187,6 +187,10 @@ __km4tz_boot_text_start__ = ORIGIN(KM4TZ_BOOT_XIP);
 __km4tz_boot_text_end__ = ORIGIN(KM4TZ_BOOT_XIP) + LENGTH(KM4TZ_BOOT_XIP);
 __km4tz_img3_text_start__ = ORIGIN(KM4TZ_IMG3_XIP);
 __km4tz_img3_text_end__ = ORIGIN(KM4TZ_IMG3_XIP) + LENGTH(KM4TZ_IMG3_XIP);
+/* Per-mode start symbols for image3 sub-image headers (used by CMakeLists & SAU config) */
+__image3_xip_start__   = ORIGIN(KM4TZ_IMG3_XIP);
+__image3_sram_start__  = ORIGIN(KM4TZ_BD_RAM_TZ);
+__image3_psram_start__ = ORIGIN(KM4TZ_BD_PSRAM_TZ);
 
 /* Region 0: KM4TZ  ROM */
 __rom_text_region0_start__ = ORIGIN(KM4TZ_IROM);                                      /* 0x00020000 */

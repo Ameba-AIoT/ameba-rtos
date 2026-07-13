@@ -124,7 +124,7 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBALITE)
     ameba_list_append_if(CONFIG_BT_DUAL_MODE private_includes ${c_CMPT_BLUETOOTH_DIR}/rtk_stack/platform/${c_SOC_TYPE}/lib/${c_MCU_TYPE}/dual_mode)
 elseif(CONFIG_AMEBAPRO3)
 	ameba_list_append(private_includes ${c_CMPT_BLUETOOTH_DIR}/rtk_stack/platform/${c_SOC_TYPE}/lib/${c_MCU_TYPE})
-elseif(CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAL2)
+elseif(CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2)
 	ameba_list_append(private_includes ${c_CMPT_BLUETOOTH_DIR}/rtk_stack/platform/${c_SOC_TYPE}/lib)
 endif()
 

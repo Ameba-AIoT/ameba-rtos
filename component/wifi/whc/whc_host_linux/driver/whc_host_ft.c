@@ -10,6 +10,8 @@
 
 #include <whc_host_ft.h>
 
+#include <whc_host_linux.h>
+
 #ifdef CONFIG_IEEE80211R
 
 #define MAX_FT_AUTH_LEN (300)

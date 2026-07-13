@@ -1,43 +1,6 @@
 #ifndef __RTW_SDIO_DRVIO_H__
 #define __RTW_SDIO_DRVIO_H__
 
-#ifndef _RND
-#define _RND(sz, r) ((((sz)+((r)-1))/(r))*(r))
-#define RND4(x)	(((x >> 2) + (((x & 3) == 0) ?  0: 1)) << 2)
-inline static uint32_t _RND4(uint32_t sz)
-{
-
-	uint32_t	val;
-
-	val = ((sz >> 2) + ((sz & 3) ? 1 : 0)) << 2;
-
-	return val;
-
-}
-
-inline static uint32_t _RND8(uint32_t sz)
-{
-
-	uint32_t	val;
-
-	val = ((sz >> 3) + ((sz & 7) ? 1 : 0)) << 3;
-
-	return val;
-
-}
-
-inline static uint32_t _RND128(uint32_t sz)
-{
-
-	uint32_t	val;
-
-	val = ((sz >> 7) + ((sz & 127) ? 1 : 0)) << 7;
-
-	return val;
-
-}
-#endif
-
 #define rtw_read8(priv, addr) sdio_read8((priv), (addr))
 #define rtw_read16(priv, addr) sdio_read16((priv), (addr))
 #define rtw_read_port(priv, addr, cnt, mem) sdio_read_port((priv), (addr), (cnt), (mem))
@@ -73,7 +36,6 @@ int sdio_writeN(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbu
 void sdio_write_mem(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *wmem);
 uint32_t sdio_write_port(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *mem);
 uint32_t sdio_local_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf);
-uint32_t sdio_local_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf);
 uint8_t sdio_cmd52_read1byte_local(struct whc_sdio *priv, uint32_t addr);
 uint16_t sdio_cmd52_read2byte_local(struct whc_sdio *priv, uint32_t addr);
 uint32_t sdio_cmd52_read4byte_local(struct whc_sdio *priv, uint32_t addr);

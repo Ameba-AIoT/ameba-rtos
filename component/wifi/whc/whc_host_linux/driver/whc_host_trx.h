@@ -20,7 +20,11 @@
 #define WLAN_MAX_MIC_LEN	8
 #define WLAN_MAX_ICV_LEN	8
 
+#ifdef NAN_CUSTOMER_NANDOW
+#define MAXIMUM_ETHERNET_PACKET_SIZE		MAX_NANDOW_PARA_LEN	//!< Maximum Ethernet Packet Size
+#else
 #define MAXIMUM_ETHERNET_PACKET_SIZE		1514
+#endif
 #define SKB_WLAN_TX_EXTRA_LEN	(TXDESC_SIZE+WLAN_HDR_A4_QOS_HTC_LEN+WLAN_MAX_IV_LEN+WLAN_SNAP_HEADER-WLAN_ETHHDR_LEN)
 #define WLAN_MAX_PROTOCOL_OVERHEAD (WLAN_HDR_A4_QOS_HTC_LEN+WLAN_MAX_IV_LEN+\
 							WLAN_SNAP_HEADER+WLAN_MAX_MIC_LEN+WLAN_MAX_ICV_LEN)/*=68*/
@@ -101,7 +105,7 @@ struct whc_msg_node {
 #define RTK_TX_DIRECT		1
 #define RTK_TX_DROP			0
 
-int whc_host_xmit_posthandle(int idx, struct sk_buff *pskb, u8 wlan_hw_queue);
+int whc_host_xmit_posthandle(int idx, struct sk_buff *pskb);
 void whc_host_netif_rx(struct sk_buff *pskb, u8 wlan_idx);
 
 /* internal pkt rx: from dev to host kernel space */

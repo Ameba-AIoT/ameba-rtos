@@ -1,16 +1,11 @@
 #include "whc_host.h"
 
-#define fix_tx_buf_num	2
-
-u8 tx_buf[fix_tx_buf_num][4 + SIZE_TX_DESC + MAX_SKB_BUF_SIZE_NORMAL] = {0};
-u8 used_buf_num = 0;
 extern struct whc_sdio whc_sdio_priv;
-extern struct event_priv_t event_priv;
 extern int whc_host_init_done;
 
 /* host tx */
-int whc_sdio_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
-					   int total_len, struct skb_raw_para *raw_para, u8 is_special_pkt)
+int whc_sdio_host_send_pkt(int idx, struct eth_drv_sg *sg_list, int sg_len,
+						   int total_len, struct skb_raw_para *raw_para, u8 is_special_pkt)
 {
 	(void)raw_para;
 	(void)is_special_pkt;
@@ -26,7 +21,7 @@ int whc_sdio_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 
 	rtos_mutex_take(whc_sdio_priv.host_send, 0xFFFFFFFF);
 
-	uint8_t *ptr = &(tx_buf[used_buf_num][0]);
+	uint8_t *ptr = &(whc_sdio_priv.tx_buf[whc_sdio_priv.used_buf_num][0]);
 	uint8_t *buf;
 
 	if (*ptr != 0) {
@@ -60,36 +55,10 @@ int whc_sdio_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	}
 	len_send += msg->data_len;
 
-	rtw_sdio_send_data(buf, len_send, NULL);
+	whc_sdio_host_send(buf, len_send, &(whc_sdio_priv.tx_buf[whc_sdio_priv.used_buf_num][0]), 0);
 
-	used_buf_num = (used_buf_num + 1) % fix_tx_buf_num;
-	rtos_sema_give(whc_sdio_priv.host_send);
+	whc_sdio_priv.used_buf_num = (whc_sdio_priv.used_buf_num + 1) % TX_BUF_NUM;
+	rtos_mutex_give(whc_sdio_priv.host_send);
 
 	return ret;
-}
-
-/**
-* @brief  send buf to dev
-* @param  buf: data buf to be sent.
-* @param  len: real buf address, to be freed after sent.
-* @return none.
-*/
-void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
-{
-	u8 *txbuf = NULL;
-	u32 txsize = len + SIZE_TX_DESC;
-
-	/* construct struct whc_buf_info & whc_buf_info_t */
-	txbuf = rtos_mem_zmalloc(txsize);
-
-	if (txbuf == NULL) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s mem fail \r\n", __func__);
-		return;
-	}
-
-	/* copy data */
-	memcpy(txbuf + SIZE_TX_DESC, buf, len);
-
-	/* send ret_msg + ret_val(buf, len) */
-	rtw_sdio_send_data(txbuf, txsize, NULL);
 }

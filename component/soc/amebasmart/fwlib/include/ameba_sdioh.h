@@ -19,11 +19,12 @@ extern "C" {
   * @{
   */
 
-/** @defgroup SDHOST
+/** @defgroup SDHOST SDHOST
   * @brief SDHOST driver modules
   * @{
   */
 
+/// @cond
 /* Registers Definitions --------------------------------------------------------*/
 /**
  * @defgroup SDHOST_Register_Definitions SDHOST Register Definitions
@@ -262,12 +263,14 @@ extern "C" {
 #define SDIOH_DATA_FSM_IDLE											BIT(7)
 /** @} */
 /** @} */
+/// @endcond
 
 /* Exported Types --------------------------------------------------------*/
 /** @defgroup SDHOST_Exported_Types SDHOST Exported Types
   * @{
   */
 
+/// @cond
 /**
  * @brief SDHOST_HOST Register Declaration
  */
@@ -328,12 +331,13 @@ typedef struct {
 	__I   uint8_t   SD_CMD_STATE;		/*!< SD Command State Register,	Address offset: 0x00000595*/
 	__I   uint8_t   SD_DATA_STATE;		/*!< SD Data State Register, 	Address offset: 0x00000596*/
 } SDIOH_TypeDef;
+/// @endcond
 
 /**
   * @brief SDHOST Init Structure Definition
   */
 typedef struct {
-	u8 SDIOH_idle_level;	/*!> Indicate the idle pin level mask. When operate in 1-Bit bus width, this value is 0x03.
+	u8 SDIOH_idle_level;	/*!< Indicate the idle pin level mask. When operate in 1-Bit bus width, this value is 0x03.
 								When operate in 4-Bit bus width, this value is 0x1F. */
 } SDIOH_InitTypeDef;
 
@@ -343,8 +347,8 @@ typedef struct {
 typedef struct {
 	u32 start_addr;		/*!< Specify the DMA start address. Unit: 8 Bytes. */
 	u16 blk_cnt;		/*!< Specify the DMA transfer length.  Unit: 512 Bytes). */
-	u8 op;				/*!< Specify the data move direction. Should be a value of @ref SDIOH_DMA_Operation. */
-	u8 type;			/*!< Specify the transfer type. Shold be a value of @ref SDIOH_DMA_Transfer_Type. */
+	u8 op;				/*!< Specify the data move direction. Should be a value of @ref SDHOST_DMA_Operation. */
+	u8 type;			/*!< Specify the transfer type. Shold be a value of @ref SDHOST_DMA_Transfer_Type. */
 } SDIOH_DmaCtl;
 
 /**
@@ -353,10 +357,10 @@ typedef struct {
 typedef struct {
 	u32 arg;			/*!< Specify the argument to be transfered with command. */
 	u8 idx;				/*!< Specify the command to be transfered. */
-	u8 rsp_type;		/*!< Specify the response type. Should be a value of @ref SDIOH_Card_Response_Classification. */
+	u8 rsp_type;		/*!< Specify the response type. Should be a value of @ref SDHOST_Card_Response_Classification. */
 	u8 rsp_crc_chk;		/*!< Specify CRC7 check enable or not. Should be ENABLE or DISABLE. */
-	u8 data_present;	/*!< Specify which thers is data need to read after get response from card. Should be a value of
-    						@ref SDIOH_Data_Present */
+	u8 data_present;	/*!< Specify whether there is data transfer on the data line after getting response from the card. Should be a value of
+    						@ref SDHOST_Data_Present */
 } SDIOH_CmdTypeDef;
 
 
@@ -369,155 +373,155 @@ typedef struct {
   * @{
   */
 
-/** @defgroup SDHOST_Work_Mode
+/** @defgroup SDHOST_Work_Mode SDHOST Work Mode
   * @{
   */
-#define SDIOH_NORMAL_WRITE				0
-#define SDIOH_AUTO_WRITE3				1
-#define SDIOH_AUTO_WRITE4				2
-#define SDIOH_AUTO_READ3				5
-#define SDIOH_AUTO_READ4				6
-#define SDIOH_SEND_CMD_GET_RSP			8
-#define SDIOH_AUTO_WRITE1				9
-#define SDIOH_AUTO_WRITE2				10
-#define SDIOH_NORMAL_READ				12
-#define SDIOH_AUTO_READ1				13
-#define SDIOH_AUTO_READ2				14
-#define SDIOH_TUNING					15
+#define SDIOH_NORMAL_WRITE				0   /*!< Normal write transfer mode */
+#define SDIOH_AUTO_WRITE3				1   /*!< Auto write mode 3 */
+#define SDIOH_AUTO_WRITE4				2   /*!< Auto write mode 4 */
+#define SDIOH_AUTO_READ3				5   /*!< Auto read mode 3 */
+#define SDIOH_AUTO_READ4				6   /*!< Auto read mode 4 */
+#define SDIOH_SEND_CMD_GET_RSP			8   /*!< Send command and get response mode */
+#define SDIOH_AUTO_WRITE1				9   /*!< Auto write mode 1 */
+#define SDIOH_AUTO_WRITE2				10   /*!< Auto write mode 2 */
+#define SDIOH_NORMAL_READ				12   /*!< Normal read transfer mode */
+#define SDIOH_AUTO_READ1				13   /*!< Auto read mode 1 */
+#define SDIOH_AUTO_READ2				14   /*!< Auto read mode 2 */
+#define SDIOH_TUNING					15   /*!< Tuning mode */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_Card_Response_Type
+/** @defgroup SDHOST_Card_Response_Type SDHOST Card Response Type
   * @{
   */
-#define SDIOH_NO_RESP					0
-#define SDIOH_RESP_R1					1
-#define SDIOH_RESP_R2					2
-#define SDIOH_RESP_R3					3
-#define SDIOH_RESP_R6					4
-#define SDIOH_RESP_R7					5
+#define SDIOH_RESP_NONE					0   /*!< No response expected */
+#define SDIOH_RESP_R1					1   /*!< Response type R1 */
+#define SDIOH_RESP_R2					2   /*!< Response type R2 */
+#define SDIOH_RESP_R3					3   /*!< Response type R3 */
+#define SDIOH_RESP_R6					4   /*!< Response type R6 */
+#define SDIOH_RESP_R7					5   /*!< Response type R7 */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_Card_Response_Classification
+/** @defgroup SDHOST_Card_Response_Classification SDHOST Card Response Classification
   * @{
   */
-#define SDIOH_NO_RESP					0
-#define SDIOH_RSP_6B					1
-#define SDIOH_RSP_17B					2
+#define SDIOH_NO_RESP					0   /*!< No response classification */
+#define SDIOH_RSP_6B					1   /*!< 6-byte response classification */
+#define SDIOH_RSP_17B					2   /*!< 17-byte response classification */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_Data_Present
+/** @defgroup SDHOST_Data_Present SDHOST Data Present
   * @{
   */
-#define SDIOH_NO_DATA					0
-#define SDIOH_DATA_EXIST				1
+#define SDIOH_NO_DATA					0   /*!< No data present after command response */
+#define SDIOH_DATA_EXIST				1   /*!< Data present after command response */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_DMA_Transfer_Type
+/** @defgroup SDHOST_DMA_Transfer_Type SDHOST DMA Transfer Type
   * @{
   */
-#define SDIOH_DMA_NORMAL				0
-#define SDIOH_DMA_64B					1
-#define SDIOH_DMA_R2					2
+#define SDIOH_DMA_NORMAL				0   /*!< Normal DMA transfer type */
+#define SDIOH_DMA_64B					1   /*!< 64-byte DMA transfer type */
+#define SDIOH_DMA_R2					2   /*!< R2 response DMA transfer type */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_Mode
+/** @defgroup SDHOST_Mode SDHOST Mode
   * @{
   */
-#define SDIOH_SD20_MODE					0
-#define SDIOH_DDR_MODE					1
-#define SDIOH_SD30_MODE					2
+#define SDIOH_SD20_MODE					0   /*!< SD 2.0 compatible mode (Default Speed / High Speed, 3.3V signaling). */
+#define SDIOH_DDR_MODE					1   /*!< DDR (double data rate) mode. */
+#define SDIOH_SD30_MODE					2   /*!< UHS-I mode (SD 3.0 specification). */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_Bus_Width
+/** @defgroup SDHOST_Bus_Width SDHOST Bus Width
   * @{
   */
-#define SDIOH_BUS_WIDTH_1BIT			0
-#define SDIOH_BUS_WIDTH_4BIT			1
+#define SDIOH_BUS_WIDTH_1BIT			((u8)0x00U)   /*!< 1-bit bus width. */
+#define SDIOH_BUS_WIDTH_4BIT			((u8)0x01U)   /*!< 4-bit bus width. */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_DMA_Operation
+/** @defgroup SDHOST_DMA_Operation SDHOST DMA Operation
   * @{
   */
-#define SDIOH_DMA_WRITE					0
-#define SDIOH_DMA_READ					1
+#define SDIOH_DMA_WRITE					0   /*!< DMA write operation (host to card) */
+#define SDIOH_DMA_READ					1   /*!< DMA read operation (card to host) */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_Timeout_Value
+/** @defgroup SDHOST_Timeout_Value SDHOST Timeout Value
   * @{
   */
-#define SDIOH_CMD_CPLT_TIMEOUT			5000	/* Max. timeout value when checking the flag of command complete, unit: us */
-#define SDIOH_XFER_CPLT_TIMEOUT			1000000	/* Max. timeout value when checking the flag of transfer complete, unit: us */
+#define SDIOH_CMD_CPLT_TIMEOUT			5000   /*!< Maximum timeout value when checking the command complete flag, unit: us. */
+#define SDIOH_XFER_CPLT_TIMEOUT			1000000   /*!< Maximum timeout value when checking the transfer complete flag, unit: us. */
 
-#define SDIOH_READ_TIMEOUT				100000
-#define SDIOH_WRITE_TIMEOUT				250000
-#define SDIOH_ERASE_TIMEOUT				2000000//250000
+#define SDIOH_READ_TIMEOUT				100000   /*!< Read operation timeout value, unit: us. */
+#define SDIOH_WRITE_TIMEOUT				250000   /*!< Write operation timeout value, unit: us. */
+#define SDIOH_ERASE_TIMEOUT				2000000   /*!< Erase operation timeout value, unit: us. */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_CMD_Value
+/** @defgroup SDHOST_CMD_Value SDHOST CMD Value
   * @{
   */
-#define HOST_COMMAND					BIT(6)	/* Transmission bit of register "SD_CMD0", indicating the direction of transmission (host = 1)*/
-#define SDIOH_CMD_IDX_MASK				0x3F		/* Command index mask of register "SD_CMD0" */
-#define SDIOH_CMD8_VHS					0x1		/* Value of "VHS" field in CMD8, 2.7-3.6V */
-#define SDIOH_CMD8_CHK_PATN				0xAA		/* Value of "Check pattern" field in CMD8 */
-#define SDIOH_OCR_VDD_WIN				0xFF8000	/* Value of "OCR" field in ACMD41, OCR bit[23:0] */
+#define HOST_COMMAND					BIT(6)   /*!< Transmission bit of SD_CMD0 register; set to 1 when the host is the transmitter. */
+#define SDIOH_CMD_IDX_MASK				0x3F		 /*!< Command index mask of SD_CMD0 register. */
+#define SDIOH_CMD8_VHS					0x1		 /*!< VHS field value in CMD8 for the 2.7-3.6V voltage range. */
+#define SDIOH_CMD8_CHK_PATN				0xAA		 /*!< Check pattern field value in CMD8. */
+#define SDIOH_OCR_VDD_WIN				0xFF8000	 /*!< OCR field value in ACMD41 representing VDD voltage window bits [23:15]. */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_Specific_Data_Length
+/** @defgroup SDHOST_Specific_Data_Length SDHOST Specific Data Length
   * @{
   */
-#define SDIOH_C6R2_BUF_LEN				64		/* Buffer for CMD6, R2, etc.*/
-#define SDIOH_CSD_LEN					16
+#define SDIOH_C6R2_BUF_LEN				64	  	 /*!< Buffer length for CMD6 status data and R2 responses, in bytes. */
+#define SDIOH_CSD_LEN					16   /*!< CSD register response length, in bytes */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_Card_Response_Byte_Index
+/** @defgroup SDHOST_Card_Response SDHOST Card Response
   * @{
   */
-#define SDIO_RESP0						0
-#define SDIO_RESP1						1
-#define SDIO_RESP2						2
-#define SDIO_RESP3						3
-#define SDIO_RESP4						4
-#define SDIO_RESP5						5
+#define SDIO_RESP0						((u8)0x00U)   /*!< Response register 0. */
+#define SDIO_RESP1						((u8)0x01U)   /*!< Response register 1. */
+#define SDIO_RESP2						((u8)0x02U)   /*!< Response register 2. */
+#define SDIO_RESP3						((u8)0x03U)   /*!< Response register 3. */
+#define SDIO_RESP4						((u8)0x04U)   /*!< Response register 4. */
+#define SDIO_RESP5						((u8)0x05U)   /*!< Response register 5. */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_Signal_Level
+/** @defgroup SDHOST_Signal_Level SDHOST Signal Level
   * @{
   */
-#define SDIOH_SIG_VOL_33				0
-#define SDIOH_SIG_VOL_18	 			1
+#define SDIOH_SIG_VOL_33				0   /*!< Signal voltage level 3.3V */
+#define SDIOH_SIG_VOL_18	 			1   /*!< Signal voltage level 1.8V */
 /**
   * @}
   */
 
-/** @defgroup SDHOST_DMA_ALIGN_ADDR
+/** @defgroup SDHOST_DMA_ALIGN_ADDR SDHOST DMA ALIGN ADDR
   * @{
   */
-#define SDIOH_DMA_ALIGN_SZ      8 // hw: 8byte aligned
+#define SDIOH_DMA_ALIGN_SZ      (8)   /*!< DMA buffer alignment size in bytes (8-byte alignment required by hardware). */
 /**
   * @}
   */
@@ -531,7 +535,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup SDIO_HOST_Functions SDIO Host Functions
+/** @defgroup SDHOST_Functions SDHOST Functions
   * @{
   */
 _LONG_CALL_ u32 SDIOH_Busy(void);

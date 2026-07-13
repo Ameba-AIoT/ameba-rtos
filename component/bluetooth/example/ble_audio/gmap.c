@@ -1422,7 +1422,6 @@ static uint16_t app_bt_le_audio_encode_record_data(app_bt_le_audio_data_path_t *
 	uint32_t channel_allocation = 0;
 	rtk_bt_le_audio_cfg_codec_t *p_codec = NULL;
 	uint16_t read_size = 0;
-	struct enc_codec_buffer *p_enc_codec_buffer_t = NULL;
 	uint16_t ret = 0;
 
 	if (!p_iso_path) {
@@ -1431,7 +1430,7 @@ static uint16_t app_bt_le_audio_encode_record_data(app_bt_le_audio_data_path_t *
 	} else {
 		p_iso_path->p_encode_data = NULL;
 		p_iso_path->p_enc_codec_buffer_t = NULL;
-		p_codec = &p_iso_path->codec;
+		p_codec = &p_iso_path->codec_t;
 	}
 	if (!p_codec) {
 		BT_LOGE("[APP] %s p_codec is NULL\r\n", __func__);
@@ -1507,6 +1506,7 @@ static void bt_le_audio_demo_encode_task_entry(void *ctx)
 	uint8_t record_tx_path_num = 0;
 	struct enc_codec_buffer *p_enc_codec_buffer_t = NULL;
 	short *p_encode_data = NULL;
+	void *p_record_codec_entity = NULL;
 #endif
 	bt_le_audio_demo_encode_task.run = 1;
 	//give sem each 10ms in
@@ -1543,6 +1543,7 @@ static void bt_le_audio_demo_encode_task_entry(void *ctx)
 					} else {
 						p_enc_codec_buffer_t = app_le_audio_data_path[i].p_enc_codec_buffer_t;
 						p_encode_data = app_le_audio_data_path[i].p_encode_data;
+						p_record_codec_entity = app_le_audio_data_path[i].p_codec_entity;
 					}
 				} else {
 					if (p_enc_codec_buffer_t &&p_encode_data) {
@@ -1578,7 +1579,9 @@ static void bt_le_audio_demo_encode_task_entry(void *ctx)
 						BT_DUMPD("", app_le_audio_data_path[i].p_enc_codec_buffer_t->pbuffer, app_le_audio_data_path[i].p_enc_codec_buffer_t->frame_size);
 					}
 #if defined(RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT) && RTK_BLE_AUDIO_BIRDS_SING_PCM_SUPPORT
-					rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_LC3, app_le_audio_data_path[i].p_codec_entity, app_le_audio_data_path[i].p_enc_codec_buffer_t);
+					if (app_le_audio_data_path[i].p_enc_codec_buffer_t) {
+						rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_LC3, app_le_audio_data_path[i].p_codec_entity, app_le_audio_data_path[i].p_enc_codec_buffer_t);
+					}
 #endif
 					app_le_audio_data_path[i].p_enc_codec_buffer_t = NULL;
 				}
@@ -1586,7 +1589,7 @@ static void bt_le_audio_demo_encode_task_entry(void *ctx)
 				/* currently, not support multiple record handle, so p_enc_codec_buffer_t should be free after the final iso data has been transmitted */
 				if (i == (record_tx_path_num - 1)) {
 					if (p_enc_codec_buffer_t) {
-						rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_LC3, p_codec_entity, p_enc_codec_buffer_t);
+						rtk_bt_audio_free_encode_buffer(RTK_BT_AUDIO_CODEC_LC3, p_record_codec_entity, p_enc_codec_buffer_t);
 					}
 				}
 #endif

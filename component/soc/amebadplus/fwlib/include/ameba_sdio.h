@@ -11,7 +11,7 @@
   * @{
   */
 
-/** @defgroup SDIO
+/** @defgroup SDIO SDIO
   * @brief SDIO driver modules
   * @{
   */
@@ -22,7 +22,7 @@
   */
 
 /**
-  * @brief	 SDIO Init structure definition
+  * @brief SDIO Init Structure Definition
   */
 typedef struct {
 	/* TXBD */
@@ -33,9 +33,10 @@ typedef struct {
 	/* RXBD */
 	u32 RXBD_BAR;			/*!< Specifies RXBD base address */
 	u32 RXBD_RING_SIZE; 	/*!< Specifies RXBD ring size, This parameter must be set to a value in the 0-0xFFFF range. */
-	u32 RXBD_FREE_TH;		/*!< the threshold of free RX BD count to trigger interrupt */
+	u32 RXBD_FREE_TH;		/*!< Specifies the threshold of free RX BD count to trigger interrupt. */
 } SDIO_InitTypeDef;
 
+/// @cond
 /**
   * @brief SDIO Register Declaration
   */
@@ -66,6 +67,7 @@ typedef struct {
 	__I  uint32_t SPDIO_CPU_H2C_MSG_EXT   ;  /*!< Register,  Address offset:0x0DC */
 	__IO uint32_t SPDIO_CPU_C2H_MSG_EXT   ;  /*!< Register,  Address offset:0x0E0 */
 } SDIO_TypeDef;
+/// @endcond
 
 /**
   * @}
@@ -77,112 +79,61 @@ typedef struct {
   * @{
   */
 
-/** @defgroup SDIO_MP_CMD_definitions
-  * @brief The SDIO MP CMD definations
+/// @cond
+/** @defgroup SDIO_RPWM_definitions SDIO RPWM Definitions
+  * @brief The SDIO RPWM definitions
   * @{
   */
-#define SDIO_MP_START			1
-#define SDIO_MP_STOP			2
-#define SDIO_MP_LOOPBACK		3
-#define SDIO_MP_STATUS			4
-#define SDIO_MP_READ_REG8		5
-#define SDIO_MP_READ_REG16		6
-#define SDIO_MP_READ_REG32		7
-#define SDIO_MP_WRITE_REG8		8
-#define SDIO_MP_WRITE_REG16		9
-#define SDIO_MP_WRITE_REG32		10
-#define SDIO_MP_WAKEUP			11	// wakeup the SDIO task manually, for debugging
-#define SDIO_MP_DUMP			12	// start/stop to dump the SDIO status periodically
-#define SDIO_MP_CTX				13	// setup continue TX test
-#define SDIO_MP_CRX				14	// setup continue RX test
-#define SDIO_MP_CRX_DA			15	// setup continue RX with dynamic allocate RX Buf test
-#define SDIO_MP_CRX_STOP		16	// setup continue RX test
-#define SDIO_MP_DBG_MSG			17	// Debug message On/Off
+#define RPWM2_ACT_BIT			(0x00000001 << 0)	/*!< RPWM2 bit: active state indicator */
+#define RPWM2_CG_BIT			(0x00000001 << 1)	/*!< RPWM2 bit: clock gated state indicator */
+#define RPWM2_TOGGLE_BIT		(0x00000001 << 15)	/*!< RPWM2 bit: toggle bit for RPWM2 updates */
 /**
   * @}
   */
 
-/** @defgroup SDIO_RPWM_definitions
-  * @brief The SDIO RPWM definations
+/** @defgroup SDIO_CPWM2_definitions SDIO CPWM2 Definitions
+  * @brief The SDIO CPWM2 definitions
   * @{
   */
-#define RPWM2_ACT_BIT			(0x00000001 << 0)	// Active
-#define RPWM2_CG_BIT			(0x00000001 << 1)	// Clock Gated
-#define RPWM2_TOGGLE_BIT		(0x00000001 << 15)	// Toggle bit
+#define CPWM2_ACT_BIT			(0x00000001 << 0)	/*!< CPWM2 bit: active state indicator */
+#define CPWM2_DSTANDBY_BIT		(0x00000001 << 1)	/*!< CPWM2 bit: deep standby state indicator */
+#define CPWM2_IMG1_BIT			(0x00000001 << 2)	/*!< CPWM2 bit: bootloader image indicator */
+#define CPWM2_INIC_FW_RDY_BIT	(0x00000001 << 3)	/*!< CPWM2 bit: iNIC firmware ready (1) or boot firmware (0) */
+#define CPWM2_TOGGLE_BIT		(0x00000001 << 15)	/*!< CPWM2 bit: toggle bit for CPWM2 updates */
 /**
   * @}
   */
 
-/** @defgroup SDIO_CPWM2_definitions
-  * @brief The SDIO CPWM2 definations
+/** @defgroup SDIO_CPWM1_definitions SDIO CPWM1 Definitions
+  * @brief The SDIO CPWM1 definitions
   * @{
   */
-#define CPWM2_ACT_BIT			(0x00000001 << 0)	// Active
-#define CPWM2_DSTANDBY_BIT		(0x00000001 << 1)	// Deep Standby
-#define CPWM2_IMG1_BIT			(0x00000001 << 2)	// bootloader
-#define CPWM2_INIC_FW_RDY_BIT	(0x00000001 << 3)	// is the iNIC FW(1) or Boot FW(0)
-#define CPWM2_TOGGLE_BIT		(0x00000001 << 15)	// Toggle bit
+#define CPWM1_TOGGLE_BIT		(0x00000001 << 7)	/*!< CPWM1 bit: toggle bit for CPWM1 updates */
 /**
   * @}
   */
+/// @endcond
 
-/** @defgroup SDIO_CPWM1_definitions
-  * @brief The SDIO CPWM1 definations
+/** @defgroup SDIO_EVENT_definitions SDIO EVENT Definitions
+  * @brief The SDIO EVENT definitions
   * @{
   */
-#define CPWM1_TOGGLE_BIT		(0x00000001 << 7)	// Toggle bit
-/**
-  * @}
-  */
-
-/** @defgroup SDIO_EVENT_definitions
-  * @brief The SDIO EVENT definations
-  * @{
-  */
-#define SDIO_EVENT_RX_PKT_RDY		(0x00000001 << 1)	// A new SDIO packet ready
-#define SDIO_EVENT_DUMP				(0x00000001 << 3)	// SDIO status dump periodically Enable
-#define SDIO_EVENT_EXIT				(0x00000001 << 27)	// Request to exit the SDIO task
-#define SDIO_EVENT_MP_STOPPED		(0x00000001 << 28)	// The SDIO task is stopped
-#define SDIO_EVENT_IRQ_STOPPED		(0x00000001 << 29)	// The SDIO task is stopped
-#define SDIO_EVENT_TX_STOPPED		(0x00000001 << 30)	// The SDIO task is stopped
-#define SDIO_EVENT_RX_STOPPED		(0x00000001 << 31)	// The SDIO task is stopped
-/**
-  * @}
-  */
+#define SDIO_EVENT_RX_PKT_RDY		(0x00000001 << 1)	/*!< SDIO event: new RX packet ready */
+#define SDIO_EVENT_DUMP				(0x00000001 << 3)	/*!< SDIO event: enable periodic SDIO status dump */
+#define SDIO_EVENT_EXIT				(0x00000001 << 27)	/*!< SDIO event: request to exit the SDIO task */
+#define SDIO_EVENT_MP_STOPPED		(0x00000001 << 28)	/*!< SDIO event: SDIO MP task has stopped */
+#define SDIO_EVENT_IRQ_STOPPED		(0x00000001 << 29)	/*!< SDIO event: SDIO IRQ task has stopped */
+#define SDIO_EVENT_TX_STOPPED		(0x00000001 << 30)	/*!< SDIO event: SDIO TX task has stopped */
+#define SDIO_EVENT_RX_STOPPED		(0x00000001 << 31)	/*!< SDIO event: SDIO RX task has stopped */
 
 /**
   * @}
   */
 
-/**
-  * @}
-  */
-/**
-  * @}
-  */
+/** @brief Check if the given device is a valid SDIO device. */
+#define IS_SDIO_DEVICE(x)			((x) == SDIO_WIFI)
 
-_LONG_CALL_ void SDIO_StructInit(SDIO_InitTypeDef *SDIO_InitStruct);
-_LONG_CALL_ void SDIO_Init(SDIO_TypeDef *SDIO, SDIO_InitTypeDef *SDIOInit_Struct);
-_LONG_CALL_ void SDIO_INTClear(SDIO_TypeDef *SDIO, u16 IntStatus);
-_LONG_CALL_ void SDIO_INTClearAll(SDIO_TypeDef *SDIO);
-_LONG_CALL_ void SDIO_INTConfig(SDIO_TypeDef *SDIO, u16 IntMask, u32 NewState);
-_LONG_CALL_ u16 SDIO_INTStatus(SDIO_TypeDef *SDIO);
-_LONG_CALL_ u8 SDIO_RPWM1_Get(SDIO_TypeDef *SDIO);
-_LONG_CALL_ u16 SDIO_RPWM2_Get(SDIO_TypeDef *SDIO);
-_LONG_CALL_ void SDIO_CPWM1_Set(SDIO_TypeDef *SDIO, u8 Val);
-_LONG_CALL_ void SDIO_CPWM2_Set(SDIO_TypeDef *SDIO, u16 Val, u32 Newstate);
-_LONG_CALL_ u32 SDIO_H2C_MSG_Get(SDIO_TypeDef *SDIO);
-_LONG_CALL_ u16 SDIO_RXBD_RPTR_Get(SDIO_TypeDef *SDIO);
-_LONG_CALL_ void SDIO_RXBD_WPTR_Set(SDIO_TypeDef *SDIO, u16 Val);
-_LONG_CALL_ u32 SDIO_TXBD_WPTR_Get(SDIO_TypeDef *SDIO);
-_LONG_CALL_ void SDIO_TXBD_RPTR_Set(SDIO_TypeDef *SDIO, u32 Val);
-_LONG_CALL_ u32 SDIO_TXBD_RPTR_Get(SDIO_TypeDef *SDIO);
-_LONG_CALL_ void SDIO_DMA_Reset(SDIO_TypeDef *SDIO);
-_LONG_CALL_ u32 SDIO_DMA_CTRL_Get(SDIO_TypeDef *SDIO);
-_LONG_CALL_ void SDIO_SetReady(SDIO_TypeDef *SDIO, int ready);
-_LONG_CALL_ void SDIO_RxReq(SDIO_TypeDef *SDIO);
-_LONG_CALL_ void SDIO_AbortRxReq(SDIO_TypeDef *SDIO);
-
+/// @cond
 #define SDIO_CCCR_REG_BASE					(SDIO_REG_BASE + 0x1000)
 #define SDIO_LOCAL_REG_BASE					(SDIO_REG_BASE + 0x2000)
 
@@ -200,7 +151,7 @@ _LONG_CALL_ void SDIO_AbortRxReq(SDIO_TypeDef *SDIO);
 #define REG_SPDIO_RX_REQ_ADDR					0xBC	// 2 Bytes
 #define REG_SPDIO_CPU_INT_MASK					0xC0	// 2 Bytes
 #define REG_SPDIO_CPU_INT_STAS					0xC2	// 2 Bytes
-#define REG_SPDIO_CCPWM							0xC4	// 1 Byts
+#define REG_SPDIO_CCPWM							0xC4	// 1 Byte
 #define REG_SPDIO_CPU_IND						0xC5	// 1 Byte
 #define REG_SPDIO_CCPWM2						0xC6	// 2 Bytes
 #define REG_SPDIO_CPU_H2C_MSG					0xC8	// 4 Bytes
@@ -252,5 +203,51 @@ _LONG_CALL_ void SDIO_AbortRxReq(SDIO_TypeDef *SDIO);
 
 /* CCCR Registers Definitions --------------------------------------------------------*/
 #define MANF_PID									0x10	// 2 Bytes
+
+/// @endcond
+
+/**
+  * @}
+  */
+
+
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup SDIO_Exported_Functions SDIO Exported Functions
+  * @{
+  */
+
+_LONG_CALL_ void SDIO_StructInit(SDIO_InitTypeDef *SDIO_InitStruct);
+_LONG_CALL_ void SDIO_Init(SDIO_TypeDef *SDIO, SDIO_InitTypeDef *SDIOInit_Struct);
+_LONG_CALL_ void SDIO_INTClear(SDIO_TypeDef *SDIO, u16 SDIO_INT);
+_LONG_CALL_ void SDIO_INTClearAll(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_INTConfig(SDIO_TypeDef *SDIO, u16 IntMask, u32 NewState);
+_LONG_CALL_ u16 SDIO_INTStatus(SDIO_TypeDef *SDIO);
+_LONG_CALL_ u8 SDIO_RPWM1_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ u16 SDIO_RPWM2_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_CPWM1_Set(SDIO_TypeDef *SDIO, u8 Val);
+_LONG_CALL_ void SDIO_CPWM2_Set(SDIO_TypeDef *SDIO, u16 Val, u32 Newstate);
+_LONG_CALL_ u32 SDIO_H2C_MSG_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ u16 SDIO_RXBD_RPTR_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_RXBD_WPTR_Set(SDIO_TypeDef *SDIO, u16 Val);
+_LONG_CALL_ u32 SDIO_TXBD_WPTR_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_TXBD_RPTR_Set(SDIO_TypeDef *SDIO, u32 Val);
+_LONG_CALL_ u32 SDIO_TXBD_RPTR_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_DMA_Reset(SDIO_TypeDef *SDIO);
+_LONG_CALL_ u32 SDIO_DMA_CTRL_Get(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_SetReady(SDIO_TypeDef *SDIO, int ready);
+_LONG_CALL_ void SDIO_RxReq(SDIO_TypeDef *SDIO);
+_LONG_CALL_ void SDIO_AbortRxReq(SDIO_TypeDef *SDIO);
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
 
 #endif	/* #ifndef _AMEBA_SDIO_H_ */

@@ -19,6 +19,7 @@ from .rt_settings import *
 from .spic_addr_mode import *
 from .memory_info import *
 from .config_utils import *
+from .manifest_parser import build_rsip_meta, ENC_MODE_NONE as RSIP_ENC_MODE_NONE
 from typing import Optional, Dict, Any
 from pathlib import Path
 
@@ -118,6 +119,16 @@ class Ameba(object):
                 except Exception as e:
                     self.logger.error(f"close error: {e}", exc_info=True)
             self.serial_port = None
+
+    @staticmethod
+    def _addr_in_rsip_region(partition_offset, regions):
+        """Return True if this page offset is covered by an RSIP encrypted region."""
+        for r in regions or []:
+            start = r['phys_offset']
+            end = start + r['phys_size']
+            if start <= partition_offset < end:
+                return True
+        return False
 
     def clean_up(self):
         if self.serial_port:
@@ -419,6 +430,7 @@ class Ameba(object):
                     self.logger.debug(f"Check whether in floader with baudrate {self.baudrate}")
                     ret, status = self.floader_handler.sense(self.setting.sync_response_timeout_in_second)
                     if ret == ErrType.OK:
+                        # do not reset floader
                         is_floader = True
                         self.logger.debug("Floader handshake ok")
                     else:
@@ -726,6 +738,58 @@ class Ameba(object):
             self.logger.debug(f"{reset_timing_file} is not exists!")
 
         return ret
+
+    def burn_key(self, key_type, lock, address, key_data=b"", raw_data=b"", enc_data=b""):
+        """Program a key into OTP via KEY_PROG + SENSE.
+
+        Device-unique (一机一密): key_data is empty.
+            Device generates the key with TRNG; no RawData/EncData needed.
+
+        Model-unique (一型一密): key_data is provided.
+            Host auto-generates a random RawData block and computes
+            EncData = AES_ECB(KeyData, RawData) when they are not explicitly
+            supplied.  This allows the device to verify the written key via the
+            same AES operation without re-reading the key plaintext.
+        """
+        self.logger.info(f"Program key at {hex(address)}, "
+                         f"type={key_type}, lock={lock}, "
+                         f"mode={'device-unique' if not key_data else 'model-unique'}")
+
+        if key_data:
+            if not raw_data:
+                raw_data = os.urandom(16)
+                self.logger.debug(f"Generated RawData: {raw_data.hex()}")
+            if not enc_data:
+                try:
+                    enc_data = RtkUtils.aes_ecb_encrypt(key_data, raw_data)
+                    self.logger.debug(f"Computed EncData: {enc_data.hex()}")
+                except Exception as e:
+                    self.logger.error(f"Failed to compute EncData: {e}")
+                    return ErrType.SYS_PARAMETER
+
+        return self.floader_handler.key_prog(key_type, lock, address, key_data, raw_data, enc_data)
+
+    def burn_binary(self, image_path, image_info, enc_mode=None, iv=b"", key_map=b""):
+        """Download a binary image per protocol spec section 3.3.
+
+        If enc_mode is not None and != META_ENC_MODE_NONE:
+          - Step 1: Sends WRITE Type=0x7F (meta data with enc_mode, iv, key_map) + SENSE
+          - Steps 2-5: Erase, write with encrypted type (0x8X), verify checksum
+        Otherwise runs the standard raw download flow.
+        iv and key_map are TBD fields per the spec; pass empty bytes until finalized.
+        """
+        encrypt = (enc_mode is not None) and (enc_mode != META_ENC_MODE_NONE)
+
+        if encrypt:
+            self.logger.info(f"Binary download with encryption: enc_mode={enc_mode}")
+            ret = self.floader_handler.write_meta_data(enc_mode, iv, key_map)
+            if ret != ErrType.OK:
+                self.logger.error(f"Meta data write fail: {ret}")
+                return ret
+        else:
+            self.logger.info(f"Binary download without encryption")
+
+        return self._download_image(image_path, image_info, write_enc=encrypt)
 
     def post_process(self):
         ret = ErrType.OK
@@ -1045,16 +1109,39 @@ class Ameba(object):
                 self.logger.error(f"Chip erase fail")
                 return ret
 
+        # Split a merged single image into per-partition segments so the all-FF
+        # padding between/after partitions is skipped instead of being programmed.
+        self.expand_merged_image()
+
+        # Cache image1's RSIP params so image3 (which inherits from image1 and has
+        # no embedded manifest) can reuse them.  image1 is typically boot.bin and
+        # is processed first in the image list.
+        _image1_enc_mode = RSIP_ENC_MODE_NONE
+        _image1_rsip_iv  = None
+
         if self.download_img_info:
             for image_info in self.download_img_info:
                 img_path = image_info.image_name
                 img_name = os.path.basename(img_path)
                 image_info.image_name = img_name
 
-                self.logger.info(f"{img_name} download...")
-                ret = self._download_image(img_path, image_info)
+                img_label = self._image_log_label(image_info)
+                self.logger.info(f"{img_label} download...")
+                ret = self._download_image_with_rsip(
+                    img_path, image_info,
+                    enc_mode_hint=_image1_enc_mode,
+                    rsip_iv_hint=_image1_rsip_iv)
+
+                # After processing image1 (boot.bin), save its enc_mode and rsip_iv.
+                # Peek at the manifest to populate the cache without duplicating download logic.
+                if _image1_enc_mode == RSIP_ENC_MODE_NONE:
+                    _enc, _iv, _meta, _regions = build_rsip_meta(img_path)
+                    if _enc != RSIP_ENC_MODE_NONE and _iv is not None:
+                        _image1_enc_mode = _enc
+                        _image1_rsip_iv  = _iv
+
                 if ret != ErrType.OK:
-                    self.logger.info(f"{img_name} download fail: {ret}")
+                    self.logger.info(f"{img_label} download fail: {ret}")
                     break
         else:
             is_area_A = False
@@ -1077,7 +1164,7 @@ class Ameba(object):
 
                 img_name = self._process_image(img_name)
                 img_path = os.path.realpath(os.path.join(self.image_path, img_name))
-                ret = self._download_image(img_path, image_info)
+                ret = self._download_image_with_rsip(img_path, image_info)
                 if ret != ErrType.OK:
                     self.logger.info(f"{img_name} download fail: {ret}")
                     break
@@ -1087,6 +1174,49 @@ class Ameba(object):
 
         return ret
 
+    def _image_log_label(self, image_info) -> str:
+        """Return the image base name for logging, tagged with its address range when
+        the image is a per-partition segment of a split merged image (e.g.
+        image_all.bin). Segments share one file name, so the range makes each read as
+        a distinct region instead of looking like the same file programmed repeatedly.
+        Regular images (no ``file_offset``) keep their plain name."""
+        name = os.path.basename(image_info.image_name)
+        if hasattr(image_info, "file_offset"):
+            return (f"{name} "
+                    f"[0x{image_info.start_address:08X}-0x{image_info.end_address:08X}]")
+        return name
+
+    def _download_image_with_rsip(self, img_path: str, image_info,
+                                   enc_mode_hint: int = 0,
+                                   rsip_iv_hint: bytes = None) -> 'ErrType':
+        """Download one image, sending RSIP META first if the partition is RSIP-encrypted.
+
+        Parses the embedded manifest to determine whether RSIP is enabled and
+        builds the META payload.  On non-RSIP partitions falls back to plain write.
+
+        enc_mode_hint / rsip_iv_hint: used for image3 which inherits RSIP params
+        from image1 (no embedded manifest).  Supply the values from image1.
+        """
+        is_ram = self.profile_info.is_ram_address(image_info.start_address)
+        if is_ram:
+            # RAM partitions are never RSIP-encrypted
+            return self._download_image(img_path, image_info, write_enc=False)
+
+        enc_mode, rsip_iv, rsip_meta, rsip_regions = build_rsip_meta(
+            img_path, enc_mode_hint=enc_mode_hint, rsip_iv_hint=rsip_iv_hint)
+
+        if enc_mode == RSIP_ENC_MODE_NONE or rsip_meta is None:
+            return self._download_image(img_path, image_info, write_enc=False)
+
+        self.logger.info(
+            f"RSIP enabled (enc_mode={enc_mode}), plaintext payload detected; sending META before download")
+        ret = self.floader_handler.write_meta_data(rsip_meta=rsip_meta)
+        if ret != ErrType.OK:
+            self.logger.error(f"RSIP META send fail: {ret}")
+            return ret
+
+        return self._download_image(img_path, image_info, write_enc=True, rsip_regions=rsip_regions)
+
     def get_page_alligned_size(self, size, page_size):
         result = size
 
@@ -1095,7 +1225,130 @@ class Ameba(object):
 
         return result
 
-    def _download_image(self, image_path, image_info):
+    def _get_actual_image_length(self, data, alignment=4):
+        """Return the effective length of ``data`` after stripping the trailing
+        padding (0xFF) bytes, rounded up to ``alignment``.
+
+        Mirrors ``Uburn_GetActualImageLength`` in the 1-N MP image tool: scan from
+        the end towards the start until the first non-0xFF byte is found, then keep
+        everything from the beginning up to (and including) that byte."""
+        padding = FlashUtils.FlashWritePaddingData.value
+
+        end = len(data)
+        while end > 0 and data[end - 1] == padding:
+            end -= 1
+
+        if end == 0:
+            return 0
+
+        remainder = end % alignment
+        if remainder != 0:
+            end += alignment - remainder
+        if end > len(data):
+            end = len(data)
+
+        return end
+
+    def _compute_segment_valid_length(self, image_path, offset, length):
+        """Read ``length`` bytes from ``image_path`` starting at ``offset`` and
+        return the effective length after trimming the trailing 0xFF padding."""
+        with open(image_path, 'rb') as stream:
+            stream.seek(offset)
+            data = stream.read(length)
+        return self._get_actual_image_length(data)
+
+    def expand_merged_image(self):
+        """Split a single merged image (the ``-i`` case) into per-partition segments
+        according to the device profile layout.
+
+        A merged image (e.g. image_all.bin) may glue several firmware partitions
+        together and pad the unused tail of each partition with 0xFF. Programming the
+        whole blob wastes time writing that padding (including the all-FF gap between
+        two merged firmwares). Here we cut the blob at the layout boundaries and, for
+        each partition, trim the trailing 0xFF so only the meaningful data from the
+        partition start up to the last non-FF byte is programmed."""
+        if not self.download_img_info or len(self.download_img_info) != 1:
+            return
+
+        merged = self.download_img_info[0]
+        if not getattr(merged, "split_by_layout", False):
+            return
+
+        image_path = merged.image_name
+        try:
+            file_size = os.path.getsize(image_path)
+        except OSError as err:
+            self.logger.debug(f"Cannot stat merged image {image_path}: {err}")
+            return
+
+        base = merged.start_address
+        segments = []
+
+        for part in self.profile_info.images:
+            if not part.mandatory:
+                continue
+            # RAM partitions are not part of a merged flash image.
+            if self.profile_info.is_ram_address(part.start_address):
+                continue
+            # Partition is fully below the image start address.
+            if part.end_address <= base:
+                continue
+
+            seg_start = max(part.start_address, base)
+            offset = seg_start - base
+            if offset >= file_size:
+                continue
+
+            seg_len = part.end_address - seg_start
+            avail = file_size - offset
+            if seg_len > avail:
+                seg_len = avail
+
+            valid_length = self._compute_segment_valid_length(image_path, offset, seg_len)
+            if valid_length <= 0:
+                self.logger.debug(
+                    f"Skip empty (all-FF) partition 0x{seg_start:08X}-0x{part.end_address:08X}")
+                continue
+
+            seg = ImageInfo()
+            seg.image_name = image_path
+            seg.start_address = seg_start
+            seg.end_address = part.end_address
+            seg.memory_type = merged.memory_type
+            seg.mandatory = True
+            # NAND erases the whole partition before programming (as the 1-N MP image
+            # tool does), NOR only touches the trimmed range unless the layout marks
+            # the partition for a full erase.
+            if merged.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+                seg.full_erase = True
+            else:
+                seg.full_erase = part.full_erase
+            seg.description = part.description or os.path.basename(image_path)
+            seg.file_offset = offset
+            seg.valid_length = valid_length
+            segments.append(seg)
+
+        if segments:
+            self.logger.debug(
+                f"Merged image split into {len(segments)} partition segment(s) by profile layout")
+            for seg in segments:
+                self.logger.debug(
+                    f"> 0x{seg.start_address:08X}-0x{seg.end_address:08X}: "
+                    f"program {seg.valid_length}B of {seg.end_address - seg.start_address}B "
+                    f"(file offset 0x{seg.file_offset:X})")
+            self.download_img_info = segments
+        else:
+            # The image does not line up with any layout partition (e.g. a custom
+            # start address). Keep it as a single image but still trim its trailing
+            # 0xFF padding so the tail padding is not programmed.
+            valid_length = self._compute_segment_valid_length(image_path, 0, file_size)
+            if 0 < valid_length < file_size:
+                merged.file_offset = 0
+                merged.valid_length = valid_length
+                self.logger.info(
+                    f"Merged image kept as one image; trim trailing padding to {valid_length}B")
+
+    def _download_image(self, image_path, image_info, write_enc=False, rsip_regions=None):
         ret = ErrType.OK
 
         page_size = self.device_info.flash_page_size
@@ -1109,24 +1362,51 @@ class Ameba(object):
         padding_byte_val = self.setting.ram_download_padding_byte if is_ram else FlashUtils.FlashWritePaddingData.value
         padding_char = padding_byte_val.to_bytes(1, byteorder="little")
 
+        write_mem_type = (image_info.memory_type | WRITE_TYPE_ENCRYPTED_BIT) if write_enc else image_info.memory_type
+        if write_enc and rsip_regions:
+            self.logger.info("RSIP page-level WRITE type enabled: region pages use 0x81, non-region pages use 0x01")
         start_time = datetime.now()
 
         try:
-            img_length = os.path.getsize(image_path)
+            file_size = os.path.getsize(image_path)
         except OSError as e:
             self.logger.error(f"Failed to get file size: {e}")
             return ErrType.SYS_PARAMETER
 
+        # A segment of a merged image is described by a file offset and the effective
+        # (trailing-FF trimmed) length to program. Fall back to the whole file when
+        # these are not set so the regular single-image path is unchanged.
+        file_offset = getattr(image_info, "file_offset", 0) or 0
+        valid_length = getattr(image_info, "valid_length", None)
+        if valid_length is None:
+            img_length = file_size - file_offset
+        else:
+            img_length = valid_length
+
         aligned_img_length = self.get_page_alligned_size(img_length, page_size)
 
         self.logger.debug(
-            f"Image download size={aligned_img_length}({img_length}), start_addr={hex(image_info.start_address)}, "
-            f"end_addr={hex(image_info.end_address)}")
+            f"Image download size={aligned_img_length}({img_length}), offset={hex(file_offset)}, "
+            f"start_addr={hex(image_info.start_address)}, end_addr={hex(image_info.end_address)}")
 
         addr = image_info.start_address
         tx_sum = 0
+        bytes_remaining = img_length
+
+        def read_chunk():
+            # Read the next page-sized chunk, bounded by the effective length so a
+            # segment never reads into the following partition of a merged image.
+            nonlocal bytes_remaining
+            if bytes_remaining <= 0:
+                return b''
+            to_read = page_size if bytes_remaining >= page_size else bytes_remaining
+            chunk = file_stream.read(to_read)
+            bytes_remaining -= len(chunk)
+            return chunk
 
         with open(image_path, 'rb') as file_stream:
+            if file_offset:
+                file_stream.seek(file_offset)
             if ((image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND) or (
                     is_ram and (self.profile_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND))):
 
@@ -1158,7 +1438,7 @@ class Ameba(object):
 
                     i = 0
                     while i < pages_per_block:
-                        chunk_data = file_stream.read(page_size)
+                        chunk_data = read_chunk()
                         read_len = len(chunk_data)
 
                         if read_len <= 0:
@@ -1173,7 +1453,7 @@ class Ameba(object):
 
                             need_sense = (is_last_page or (i == pages_per_block - 1))
 
-                            ret = self.floader_handler.write(image_info.memory_type, chunk_data,
+                            ret = self.floader_handler.write(write_mem_type, chunk_data,
                                                              page_size, addr, write_timeout, need_sense=need_sense)
                             if ret == ErrType.OK:
                                 # 新的极速计算方式 (利用 C 语言层加速)
@@ -1234,17 +1514,18 @@ class Ameba(object):
                     kbps = aligned_img_length * 8 // elapse_ms
                     size_kb = aligned_img_length // 1024
 
+                    _label = self._image_log_label(image_info)
                     if self.is_usb:
                         self.logger.info(
-                            f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
+                            f"{_label} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
                     else:
                         self.logger.info(
-                            f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
+                            f"{_label} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
             else:
                 write_pages = 0
                 progress_int = 0
 
-                chunk_data = file_stream.read(page_size)
+                chunk_data = read_chunk()
                 read_len = len(chunk_data)
 
                 if read_len < page_size:
@@ -1292,11 +1573,38 @@ class Ameba(object):
                                   (write_pages + 1 >= pages_per_block) or
                                   (tx_sum + page_size >= aligned_img_length))
 
+                    # ── Per-page SENSE workaround ──────────────────────────────────
+                    # Uncomment the line below if burst download is unreliable.
+                    #
+                    # Symptom: sporadic ERR_TIMEOUT (0xE2) or ERR_FAIL (0xE0) during
+                    #   WRITE, especially on long bursts or encrypted images.
+                    #
+                    # Root cause: floader has FL_DEBUG_LOG_EN enabled (floader_debug.h),
+                    #   which maps FL_DBG → FL_LOG.  FL_LOG disables IRQ for the whole
+                    #   UART print (~300 µs/line >> the 16-byte RX FIFO fill time of
+                    #   ~80 µs at 1.5 Mbps).  During a burst, the host keeps streaming
+                    #   while the floader IRQ is masked → FIFO overflows → frame loss.
+                    #
+                    # Why this helps: per-page SENSE idles the host while floader
+                    #   processes each page (including any debug print), so the IRQ-off
+                    #   window never races the incoming stream.
+                    #
+                    # When to re-disable: after turning FL_DEBUG_LOG_EN off in
+                    #   floader_debug.h and rebuilding the floader binary.  With debug
+                    #   logging off the streaming path, burst mode is reliable.
+                    #
+                    # need_sense = True
+
                     # 写入
-                    ret = self.floader_handler.write(image_info.memory_type, chunk_data,
+                    page_write_mem_type = write_mem_type
+                    if write_enc and rsip_regions:
+                        part_off = addr - image_info.start_address
+                        if not self._addr_in_rsip_region(part_off, rsip_regions):
+                            page_write_mem_type = image_info.memory_type
+                    ret = self.floader_handler.write(page_write_mem_type, chunk_data,
                                                      page_size, addr, write_timeout, need_sense=need_sense)
                     if ret != ErrType.OK:
-                        self.logger.debug(f"Write to addr={hex(addr)} size={page_size} fail: {ret}")
+                        self.logger.info(f"Write to addr={hex(addr)} size={page_size} fail: {ret}")
                         break
 
                     write_pages += 1
@@ -1347,15 +1655,16 @@ class Ameba(object):
                         kbps = aligned_img_length * 8 // elapse_ms
                         size_kb = aligned_img_length // 1024
 
+                        _label = self._image_log_label(image_info)
                         if self.is_usb:
                             self.logger.info(
-                                f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
+                                f"{_label} download done: {size_kb}KB / {elapse_ms}ms / {kbps / 1000}Mbps")
                         else:
-                            self.logger.info(f"{image_info.image_name} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
+                            self.logger.info(f"{_label} download done: {size_kb}KB / {elapse_ms}ms / {kbps}Kbps")
 
                         break
 
-                    chunk_data = file_stream.read(page_size)
+                    chunk_data = read_chunk()
                     read_len = len(chunk_data)
 
                     if read_len < page_size:
@@ -1369,13 +1678,50 @@ class Ameba(object):
                 checksum_timeout = nand_checksum_timeout_in_second(aligned_img_length, None)
             else:
                 checksum_timeout = nor_checksum_timeout_in_second(aligned_img_length)
+            chksm_mode = "RSIP plaintext (device OTF-decrypt)" if write_enc else "plaintext (direct read)"
+            self.logger.debug(
+                f"Checksum verify: {image_info.image_name} len={aligned_img_length} "
+                f"mode={chksm_mode}")
             ret, cal_checksum = self.floader_handler.checksum(image_info.memory_type, image_info.start_address,
                                                               image_info.end_address, aligned_img_length,
                                                               checksum_timeout)
             if ret == ErrType.OK:
                 if cal_checksum != checksum:
-                    self.logger.debug(f"Checksum fail: expect {hex(checksum)} get {hex(cal_checksum)}")
+                    self.logger.info(f"Checksum fail: expect {hex(checksum)} get {hex(cal_checksum)}")
                     ret = ErrType.SYS_CHECKSUM
+                    if image_info.memory_type != MemoryInfo.MEMORY_TYPE_NAND:
+                        try:
+                            import struct as _struct
+                            rb_addr = image_info.start_address
+                            rb_timeout = nor_checksum_timeout_in_second(page_size)
+                            mismatch_count = 0
+                            with open(image_path, 'rb') as rb_stream:
+                                for pg in range(aligned_img_length // page_size):
+                                    expected = rb_stream.read(page_size)
+                                    if len(expected) < page_size:
+                                        expected += b'\xff' * (page_size - len(expected))
+                                    r, rb_data = self.floader_handler.read(
+                                        image_info.memory_type, rb_addr, page_size, rb_timeout)
+                                    if r == ErrType.OK and rb_data and len(rb_data) >= 4:
+                                        if rb_data[:page_size] != expected:
+                                            exp_w = _struct.unpack('<I', expected[:4])[0]
+                                            got_w = _struct.unpack('<I', rb_data[:4])[0]
+                                            self.logger.info(
+                                                f"  Page {pg} @ {hex(rb_addr)}: expect={hex(exp_w)} got={hex(got_w)}")
+                                            mismatch_count += 1
+                                    else:
+                                        self.logger.info(f"  Page {pg} @ {hex(rb_addr)}: read failed: {r}")
+                                        mismatch_count += 1
+                                    rb_addr += page_size
+                            self.logger.info(
+                                f"Readback: {mismatch_count}/{aligned_img_length // page_size} pages mismatch")
+                        except Exception as e:
+                            self.logger.debug(f"Readback diagnostic error: {e}")
+                else:
+                    self.logger.info(
+                        f"Checksum OK: {hex(checksum)}")
+            else:
+                self.logger.info(f"Checksum read fail: {ret}")
 
         return ret
 

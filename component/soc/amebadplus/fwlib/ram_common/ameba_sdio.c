@@ -9,8 +9,7 @@
   * @{
   */
 
-/** @defgroup SDIO
-  * @brief SDIO driver modules
+/** @addtogroup SDIO
   * @{
   */
 
@@ -19,10 +18,9 @@
   */
 
 /**
-  * @brief  Fills each SDIO_InitStruct member with its default value.
-  * @param  SDIO_InitStruct: pointer to a SDIO_InitTypeDef structure which will be
+  * @brief  Fill each SDIO_InitStruct member with its default value.
+  * @param  SDIO_InitStruct Pointer to an @ref SDIO_InitTypeDef structure which will be
   *         initialized.
-  * @retval None
   */
 void SDIO_StructInit(SDIO_InitTypeDef *SDIO_InitStruct)
 {
@@ -38,12 +36,11 @@ void SDIO_StructInit(SDIO_InitTypeDef *SDIO_InitStruct)
 }
 
 /**
-  * @brief  Initializes the SDIO registers according to the specified parameters
-  *         in SDIO_InitStruct. Note that pinmux function and CCCR(if need) should be
-  *         configured before this function.
-  * @param  SDIO_InitStruct: pointer to a SDIO_InitTypeDef structure that contains
-  *         the configuration information for the SDIO peripheral.
-  * @retval None
+  * @brief  Initialize the SDIO according to the specified parameters in SDIO_InitStruct.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param  SDIOInit_Struct Pointer to an @ref SDIO_InitTypeDef structure that contains
+  *         the configuration information of the SDIO peripheral.
+  * @note   Pinmux function and CCCR (if needed) should be configured before this function.
   */
 void SDIO_Init(SDIO_TypeDef *SDIO, SDIO_InitTypeDef *SDIOInit_Struct)
 {
@@ -58,7 +55,7 @@ void SDIO_Init(SDIO_TypeDef *SDIO, SDIO_InitTypeDef *SDIOInit_Struct)
 	HAL_WRITE8(SDIO_REG_BASE, REG_SPDIO_CPU_IND,
 			   HAL_READ8(SDIO_REG_BASE, REG_SPDIO_CPU_IND) | BIT_SYSTEM_READEE_DONE);
 
-	/* SDIO pinmux funtion enable */
+	/* SDIO pinmux function enable */
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_USB_SDIO_CTRL,
 				HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_USB_SDIO_CTRL) | LSYS_BIT_SDD_PMUX_FEN);
 
@@ -96,21 +93,20 @@ void SDIO_Init(SDIO_TypeDef *SDIO, SDIO_InitTypeDef *SDIOInit_Struct)
 }
 
 /**
-  * @brief  SDIO interrupt clear
-  * @note	clear all interrupt of SDIO
-  * @retval None
+  * @brief  Clear specified SDIO interrupt bit(s).
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param  SDIO_INT Specified interrupt bit(s) to be cleared.
   */
-void SDIO_INTClear(SDIO_TypeDef *SDIO, u16 IntStatus)
+void SDIO_INTClear(SDIO_TypeDef *SDIO, u16 SDIO_INT)
 {
 	UNUSED(SDIO);
 
-	HAL_WRITE16(SDIO_REG_BASE, REG_SPDIO_CPU_INT_STAS, IntStatus);	// clean the ISR
+	HAL_WRITE16(SDIO_REG_BASE, REG_SPDIO_CPU_INT_STAS, SDIO_INT);	// clean the ISR
 }
 
 /**
-  * @brief  SDIO interrupt clear
-  * @note	clear all interrupt of SDIO
-  * @retval None
+  * @brief  Clear all the SDIO interrupt bits.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
   */
 void SDIO_INTClearAll(SDIO_TypeDef *SDIO)
 {
@@ -124,22 +120,11 @@ void SDIO_INTClearAll(SDIO_TypeDef *SDIO)
 
 
 /**
-  * @brief  SDIO disable or enable interrupt by modify the interrupt mask
-  * @param  IntMask: The bit map to enable the interrupt.
-  *          This parameter can be one or combinations of the following values:
-  *            @arg BIT_TXFIFO_H2C_OVF:
-  *            @arg BIT_H2C_BUS_RES_FAIL:
-  *            @arg BIT_H2C_DMA_OK:
-  *            @arg BIT_C2H_DMA_OK:
-  *            @arg BIT_H2C_MSG_INT:
-  *            @arg BIT_RPWM1_INT:
-  *            @arg BIT_RPWM2_INT:
-  *            @arg BIT_SDIO_RST_CMD_INT:
-  *            @arg BIT_RXBD_FLAG_ERR_INT:
-  *            @arg BIT_RX_BD_AVAI_INT:
-  *            @arg BIT_HOST_WAKE_CPU_INT:
-  * @param  NewState: ENABLE or DISABLE.
-  * @retval None
+  * @brief  Enable or disable specified interrupt source(s).
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param  IntMask Specifies the interrupt source(s) to configure; refer to SPDIO_CPU_INT_MASK
+  *         definitions for the target SDIO instance.
+  * @param  NewState Interrupt status, which can be ENABLE or DISABLE.
   */
 void SDIO_INTConfig(SDIO_TypeDef *SDIO, u16 IntMask, u32 NewState)
 {
@@ -157,9 +142,9 @@ void SDIO_INTConfig(SDIO_TypeDef *SDIO, u16 IntMask, u32 NewState)
 }
 
 /**
-  * @brief  Get SDIO interrupt status
-  * @param  None.
-  * @retval Interrupt status
+  * @brief  Get SDIO interrupt status.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @return Interrupt status.
   */
 u16 SDIO_INTStatus(SDIO_TypeDef *SDIO)
 {
@@ -169,9 +154,9 @@ u16 SDIO_INTStatus(SDIO_TypeDef *SDIO)
 }
 
 /**
-  * @brief  Get RPWM1 from host.
-  * @param  None.
-  * @retval RPWM1 val.
+  * @brief  Get RPWM1 value from host.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @return RPWM1 value.
   */
 u8 SDIO_RPWM1_Get(SDIO_TypeDef *SDIO)
 {
@@ -181,9 +166,9 @@ u8 SDIO_RPWM1_Get(SDIO_TypeDef *SDIO)
 }
 
 /**
-  * @brief  Get RPWM2 from host.
-  * @param  None.
-  * @retval RPWM2 val.
+  * @brief  Get RPWM2 value from host.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @return RPWM2 value.
   */
 u16 SDIO_RPWM2_Get(SDIO_TypeDef *SDIO)
 {
@@ -193,9 +178,9 @@ u16 SDIO_RPWM2_Get(SDIO_TypeDef *SDIO)
 }
 
 /**
-  * @brief  Set CPWM1 to host
-  * @param  Val: CPWM msg to send.
-  * @retval None
+  * @brief  Set CPWM1 to host.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param  Val CPWM1 message to be sent.
   */
 void SDIO_CPWM1_Set(SDIO_TypeDef *SDIO, u8 Val)
 {
@@ -210,10 +195,10 @@ void SDIO_CPWM1_Set(SDIO_TypeDef *SDIO, u8 Val)
 }
 
 /**
-  * @brief  Set CPWM2 to host
-  * @param  Val: CPWM msg to send.
-  * @param  Newstate: DISABLE/ENABLE.
-  * @retval None
+  * @brief  Set CPWM2 to host.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param  Val CPWM2 message to be sent.
+  * @param  Newstate New state of CPWM2, which can be ENABLE or DISABLE.
   */
 void SDIO_CPWM2_Set(SDIO_TypeDef *SDIO, u16 Val, u32 Newstate)
 {
@@ -234,8 +219,8 @@ void SDIO_CPWM2_Set(SDIO_TypeDef *SDIO, u16 Val, u32 Newstate)
 
 /**
   * @brief  Get H2C message from host.
-  * @param  None.
-  * @retval H2C message val.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @return H2C message value.
   */
 u32 SDIO_H2C_MSG_Get(SDIO_TypeDef *SDIO)
 {
@@ -245,9 +230,9 @@ u32 SDIO_H2C_MSG_Get(SDIO_TypeDef *SDIO)
 }
 
 /**
-  * @brief  Get RXBD read pointer, updated by SDIO IP.
-  * @param  None
-  * @retval RXBD read pointer
+  * @brief  Get RXBD read pointer, which is updated by SDIO IP.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @return RXBD read pointer.
   */
 u16 SDIO_RXBD_RPTR_Get(SDIO_TypeDef *SDIO)
 {
@@ -257,9 +242,9 @@ u16 SDIO_RXBD_RPTR_Get(SDIO_TypeDef *SDIO)
 }
 
 /**
-  * @brief  Set RXBD write pointer, updated by cpu CM4 driver.
-  * @param  Val: RXBD write pointer
-  * @retval None
+  * @brief  Set RXBD write pointer, which is updated by CPU.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param  Val RXBD write pointer.
   */
 void SDIO_RXBD_WPTR_Set(SDIO_TypeDef *SDIO, u16 Val)
 {
@@ -269,9 +254,9 @@ void SDIO_RXBD_WPTR_Set(SDIO_TypeDef *SDIO, u16 Val)
 }
 
 /**
-  * @brief  Get TXBD write pointer, updated by SDIO IP.
-  * @param  None
-  * @retval TXBD write pointer
+  * @brief  Get TXBD write pointer, which is updated by SDIO IP.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @return TXBD write pointer.
   */
 u32 SDIO_TXBD_WPTR_Get(SDIO_TypeDef *SDIO)
 {
@@ -281,9 +266,9 @@ u32 SDIO_TXBD_WPTR_Get(SDIO_TypeDef *SDIO)
 }
 
 /**
-  * @brief  Set TXBD read pointer, updated by CM4 driver.
-  * @param  None
-  * @retval TXBD read pointer
+  * @brief  Set TXBD read pointer, which is updated by CPU.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param  Val TXBD read pointer.
   */
 void SDIO_TXBD_RPTR_Set(SDIO_TypeDef *SDIO, u32 Val)
 {
@@ -294,8 +279,8 @@ void SDIO_TXBD_RPTR_Set(SDIO_TypeDef *SDIO, u32 Val)
 
 /**
   * @brief  Get TXBD read pointer.
-  * @param  None
-  * @retval TXBD read pointer
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @return TXBD read pointer.
   */
 u32 SDIO_TXBD_RPTR_Get(SDIO_TypeDef *SDIO)
 {
@@ -306,8 +291,7 @@ u32 SDIO_TXBD_RPTR_Get(SDIO_TypeDef *SDIO)
 
 /**
   * @brief  Reset SDIO DMA.
-  * @param  None
-  * @retval TXBD read pointer
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
   */
 void SDIO_DMA_Reset(SDIO_TypeDef *SDIO)
 {
@@ -317,9 +301,9 @@ void SDIO_DMA_Reset(SDIO_TypeDef *SDIO)
 }
 
 /**
-  * @brief  Get AHB DMA control.
-  * @param  None.
-  * @retval H2C message val.
+  * @brief  Get AHB DMA control register value.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @return AHB DMA control register value.
   */
 u32 SDIO_DMA_CTRL_Get(SDIO_TypeDef *SDIO)
 {
@@ -329,9 +313,9 @@ u32 SDIO_DMA_CTRL_Get(SDIO_TypeDef *SDIO)
 }
 
 /**
-  * @brief  Set SDIO ready bit.
-  * @param  ready: Set if SDIO is ready. It can be ENABLE/DISABLE.
-  * @retval None
+  * @brief  Set SDIO ready bit to tell host if SDIO is ready.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  * @param  ready If SDIO is ready, which can be ENABLE or DISABLE.
   */
 void SDIO_SetReady(SDIO_TypeDef *SDIO, int ready)
 {
@@ -351,9 +335,8 @@ void SDIO_SetReady(SDIO_TypeDef *SDIO, int ready)
 }
 
 /**
-  * @brief  SDIO set Rx request.
-  * @param  None
-  * @retval None
+  * @brief  Set SDIO RX request.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
   */
 void SDIO_RxReq(SDIO_TypeDef *SDIO)
 {
@@ -363,10 +346,9 @@ void SDIO_RxReq(SDIO_TypeDef *SDIO)
 }
 
 /**
- * @brief Abort SDIO Rx request.
- * @param None
- * @retval None
- */
+  * @brief  Abort SDIO RX request.
+  * @param  SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  */
 void SDIO_AbortRxReq(SDIO_TypeDef *SDIO)
 {
 	UNUSED(SDIO);

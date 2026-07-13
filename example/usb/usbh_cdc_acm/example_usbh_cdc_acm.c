@@ -90,7 +90,7 @@ static rtos_sema_t cdc_acm_send_sema;
 static __IO int cdc_acm_total_rx_len = 0;
 static __IO int cdc_acm_is_ready = 0;
 
-static usbh_config_t usbh_cfg = {
+static const usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 	.ext_intr_enable = USBH_SOF_INTR,
@@ -117,7 +117,7 @@ static usbh_config_t usbh_cfg = {
 #endif
 };
 
-static usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
+static const usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
 	.init   = cdc_acm_cb_init,
 	.deinit = cdc_acm_cb_deinit,
 	.attach = cdc_acm_cb_attach,
@@ -131,7 +131,7 @@ static usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
 	.line_coding_changed = cdc_acm_cb_line_coding_changed
 };
 
-static usbh_user_cb_t usbh_usr_cb = {
+static const usbh_user_cb_t usbh_usr_cb = {
 	.process = cdc_acm_cb_process
 };
 
@@ -190,10 +190,8 @@ static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status)
 static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status)
 {
 	UNUSED(buf);
-
 	if (status == HAL_OK) {
 		u16 cdc_acm_bulk_in_mps = usbh_cdc_acm_get_bulk_ep_mps();
-		//limited the copy len
 		if ((len > 0) && ((cdc_acm_total_rx_len + len) <= USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) {
 			//memcpy(cdc_acm_loopback_rx_buf + cdc_acm_total_rx_len, buf, len);
 		}
@@ -284,7 +282,8 @@ static void example_usbh_bulk_tx_thread(void *param)
 			tx_loop_sub_cnt = 0;
 			tx_loop_cnt ++;
 			if ((tx_loop_cnt % TASK_DUMP_CNT) == 0) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Bulk loopback tx test PASS: rx(%d-%d) tx(%d-%d)\n", rx_loop_cnt, rx_loop_sub_cnt, tx_loop_cnt, tx_loop_sub_cnt);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Bulk loopback tx test PASS: rx(%u-%u) tx(%u-%u)\n", (u32)rx_loop_cnt, (u32)rx_loop_sub_cnt, (u32)tx_loop_cnt,
+						 (u32)tx_loop_sub_cnt);
 			}
 #if CONFIG_USBH_CDC_ACM_STRESS_TEST
 		}
@@ -321,7 +320,8 @@ static void example_usbh_bulk_rx_thread(void *param)
 			rx_loop_sub_cnt = 0;
 			rx_loop_cnt ++;
 			if ((rx_loop_cnt % TASK_DUMP_CNT) == 0) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Bulk loopback rx test PASS: rx(%d-%d) tx(%d-%d)\n", rx_loop_cnt, rx_loop_sub_cnt, tx_loop_cnt, tx_loop_sub_cnt);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Bulk loopback rx test PASS: rx(%u-%u) tx(%u-%u)\n", (u32)rx_loop_cnt, (u32)rx_loop_sub_cnt, (u32)tx_loop_cnt,
+						 (u32)tx_loop_sub_cnt);
 			}
 #if CONFIG_USBH_CDC_ACM_STRESS_TEST
 		}
@@ -392,7 +392,7 @@ static void cdc_acm_loopback_test(void)
 				return;
 			}
 			ret = usbh_cdc_acm_transmit(cdc_acm_loopback_tx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
-			if (ret < 0) {
+			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", ret);
 				return;
 			}
@@ -430,7 +430,7 @@ static void example_usbh_cdc_acm_notify_thread(void *param)
 		}
 	}
 
-	usbh_cdc_acm_set_control_line_state();
+	usbh_cdc_acm_set_control_line_state(0x01U); /* DTR=1, RTS=0 */
 	//wait for set control line finish
 	rtos_time_delay_ms(2000);
 
@@ -488,7 +488,7 @@ static void cdc_acm_request_test(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "GET_LINE_CODING:");
 	ret = usbh_cdc_acm_get_line_coding(&line_coding);
 	if (ret == HAL_OK) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "DteRate: %d\nCharFormat: %d\nParityType: %d\nDataBits: %d\n",
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "DteRate: %u\nCharFormat: %d\nParityType: %d\nDataBits: %d\n",
 				 line_coding.b.dwDteRate, line_coding.b.bCharFormat, line_coding.b.bParityType, line_coding.b.bDataBits);
 	} else {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "fail\n");
@@ -509,7 +509,7 @@ static void cdc_acm_request_test(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "GET_LINE_CODING:");
 	ret = usbh_cdc_acm_get_line_coding(&new_line_coding);
 	if (ret == HAL_OK) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "DteRate: %d\nCharFormat: %d\nParityType: %d\nDataBits: %d\n",
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "DteRate: %u\nCharFormat: %d\nParityType: %d\nDataBits: %d\n",
 				 new_line_coding.b.dwDteRate, new_line_coding.b.bCharFormat, new_line_coding.b.bParityType, new_line_coding.b.bDataBits);
 	} else {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "fail\n");
@@ -547,7 +547,7 @@ static void example_usbh_cdc_acm_hotplug_thread(void *param)
 			}
 
 			ret = usbh_cdc_acm_init(&cdc_acm_usr_cb);
-			if (ret < 0) {
+			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ACM fail\n");
 				usbh_deinit();
 				break;

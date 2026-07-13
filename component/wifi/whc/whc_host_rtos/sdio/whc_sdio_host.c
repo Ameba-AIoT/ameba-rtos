@@ -1,132 +1,14 @@
 #include "whc_host.h"
-#include "lwip/pbuf.h"
 
 struct whc_sdio whc_sdio_priv = {0};
-int whc_host_init_done;
 
-extern struct event_priv_t event_priv;
-#define WIFI_STACK_SIZE_API_TASK (4096)
-#define WIFI_STACK_SIZE_RX_REQ_TASK (4096)
-#define SDIO_POLLING_STACK_SIZE 1024
-
-static int buf_counter = 0;
-void whc_sdio_host_rx_handler(uint8_t *buf)
-{
-	uint8_t *ptr = buf + SIZE_RX_DESC;
-	struct whc_msg_info *msg_info = (struct whc_msg_info *)ptr;
-	char *data = (char *)(ptr + sizeof(struct whc_msg_info) + msg_info->pad_len);
-	struct pbuf *temp_buf = 0;
-	struct pbuf *p_buf;
-
-retry:
-	p_buf = pbuf_alloc(PBUF_RAW, msg_info->data_len, PBUF_POOL);
-
-	if (p_buf == NULL) {
-		buf_counter++;
-		//RTK_LOGE(TAG_WLAN_INIC, "%s: Alloc skb rx buf Err conuter %d \n", __func__, buf_counter);
-		rtos_time_delay_ms(1);
-		goto retry;
-		//just send rsp when pbuf alloc fail
-		//return;
-	}
-
-	if (buf_counter == 1000) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s: Alloc skb rx buf Err conuter %d \n", __func__, buf_counter);
-		buf_counter = 0;
-	}
-
-	/* cpoy data from skb(ipc data) to pbuf(ether net data) */
-	temp_buf = p_buf;
-	while (temp_buf) {
-		/* If tot_len > PBUF_POOL_BUFSIZE_ALIGNED, the skb will be
-		 * divided into several pbufs. Therefore, there is a while to
-		 * use to assigne data to pbufs.
-		 */
-
-		memcpy(temp_buf->payload, data, temp_buf->len);
-		data = data + temp_buf->len;
-		temp_buf = temp_buf->next;
-	}
-
-	if (p_buf != NULL) {
-		netif_adapter_wifi_recv_whc(msg_info->wlan_idx, p_buf);
-	}
-
-	rtos_mem_free(buf);
-}
-
-int sdio_recv_process(uint8_t *pbuf)
-{
-	int ret = 0;
-	uint32_t event = *(uint32_t *)(pbuf + SIZE_RX_DESC);
-	//dump_buf("sdio recv", pbuf + 16, 32);
-#ifdef CONFIG_WHC_CMD_PATH
-	u16 size;
-#endif
-
-#ifdef CONFIG_WHC_WIFI_API_PATH
-	struct whc_api_info *ret_msg;
-	int counter = 0;
-#endif
-
-	switch (event) {
-	case WHC_WIFI_EVT_RECV_PKTS:
-		whc_sdio_host_rx_handler(pbuf);
-		break;
-#ifdef CONFIG_WHC_WIFI_API_PATH
-	case WHC_WIFI_EVT_API_CALL:
-		while (event_priv.rx_api_msg) {
-			vTaskDelay(1);
-			counter ++;
-			if (counter == 500) {
-				counter = 0;
-				RTK_LOGE(TAG_WLAN_INIC, "%s: waiting for last event \n", __func__);
-			}
-		}
-		event_priv.rx_api_msg = pbuf;
-		rtos_sema_give(event_priv.task_wake_sema);
-		break;
-	case WHC_WIFI_EVT_API_RETURN:
-		if (event_priv.b_waiting_for_ret) {
-			while (event_priv.rx_ret_msg) {
-				vTaskDelay(1);
-				counter ++;
-				if (counter == 500) {
-					counter = 0;
-					RTK_LOGE(TAG_WLAN_INIC, "%s: waiting for last event \n", __func__);
-				}
-			}
-			event_priv.rx_ret_msg = pbuf;
-
-			/* unblock API calling func */
-			rtos_sema_give(event_priv.api_ret_sema);
-		} else {
-			ret_msg = (struct whc_api_info *)(pbuf + SIZE_RX_DESC);
-			RTK_LOGE(TAG_WLAN_INIC, "too late to receive API ret, ID: 0x%x!\n", ret_msg->api_id);
-
-			/* free rx buffer */
-			rtos_mem_free(pbuf);
-		}
-		break;
-#endif
-
-#ifndef CONFIG_WHC_CMD_PATH
-	default:
-		RTK_LOGE(TAG_WLAN_INIC, "%s: unknown event:%d\n", __func__, event);
-		rtos_mem_free(pbuf);
-		break;
-#else
-	default:
-		/* RX DESC first 16bits for size */
-		size = *(u16 *)pbuf;
-		whc_host_pkt_rx_to_user(pbuf + SIZE_RX_DESC, (u32)size);
-		rtos_mem_free(pbuf);
-		break;
-#endif
-	}
-	return ret;
-}
+extern int whc_host_init_done;
 extern size_t xFreeBytesRemaining;
+extern rtos_mutex_t sdio_lock;
+
+void rtw_sdio_interrupt_handler(void);
+void rtw_sdio_polling_task(void *arg1, void *arg2, void *arg3);
+
 //TODO  check RD desc
 static uint8_t *sdio_read_rxfifo(struct whc_sdio *priv, uint32_t size)
 {
@@ -159,7 +41,7 @@ static uint8_t *sdio_read_rxfifo(struct whc_sdio *priv, uint32_t size)
 	return pbuf;
 }
 
-void rtw_sdio_recv_data_process(void)
+void whc_sdio_recv_data_process(void)
 {
 	struct whc_sdio *sdio_priv = &whc_sdio_priv;
 	uint8_t tmp[4];
@@ -200,8 +82,8 @@ void rtw_sdio_recv_data_process(void)
 					retry = 0;
 					pbuf = sdio_read_rxfifo(sdio_priv, SdioRxFIFOSize);
 					if (pbuf) {
-						/* skip RX_DESC */
-						sdio_recv_process(pbuf);
+						/* SDIO carries pkt_len (payload after RX_DESC) in the RX descriptor */
+						whc_host_recv_dispatch(pbuf, *(u16 *)pbuf);
 					} else {
 						break;
 					}
@@ -217,44 +99,33 @@ void rtw_sdio_recv_data_process(void)
 	}
 
 }
-extern void rtw_sdio_interrupt_handler(void);
-extern void sdio_polling_task(void *arg1, void *arg2, void *arg3);
 
 void whc_sdio_host_init_drv(void)
 {
 	//RTK_LOGE(TAG_WLAN_INIC,"init sdio sema \r\n");
-	rtos_sema_create(&whc_sdio_priv.host_send, 1, 0xFFFFFFFF);
+	rtos_mutex_create(&whc_sdio_priv.host_send);
 	rtos_sema_create(&whc_sdio_priv.host_irq, 0, 0xFFFFFFFF);
-	rtos_sema_create(&whc_sdio_priv.host_send_api, 0, 0xFFFFFFFF);
 	rtos_sema_create(&(whc_sdio_priv.host_recv_wake), 0, 0xFFFFFFFF);
 	rtos_sema_create(&(whc_sdio_priv.host_recv_done), 1, 1);
 	rtos_sema_create(&(whc_sdio_priv.txbd_wq), 0, 0xFFFFFFFF);
 	rtos_mutex_create(&whc_sdio_priv.lock);
 
 	/* shpuld higher than polling, polling 7 */
-	if (rtos_task_create(NULL, ((const char *)"rtw_sdio_recv_data_process"), (rtos_task_function_t)rtw_sdio_recv_data_process, NULL, WIFI_STACK_SIZE_RX_REQ_TASK,
+	if (rtos_task_create(NULL, ((const char *)"whc_sdio_rx"), (rtos_task_function_t)whc_sdio_recv_data_process, NULL, WIFI_STACK_SIZE_RX_REQ_TASK,
 						 0 + 6) != RTK_SUCCESS) {
-		RTK_LOGE(TAG_WLAN_INIC, "create rtw_sdio_recv_data_process fail \n");
+		RTK_LOGE(TAG_WLAN_INIC, "create whc_sdio_rx fail \n");
 	}
 
 #ifdef CONFIG_WHC_WIFI_API_PATH
-	/* init event priv */
-	rtos_sema_create(&(event_priv.api_ret_sema), 0, 0xFFFFFFFF);
-	rtos_mutex_create(&(event_priv.send_mutex));
-
-	rtos_sema_create(&(event_priv.task_wake_sema), 0, 0xFFFFFFFF);
-
-	if (rtos_task_create(NULL, ((const char *)"whc_sdio_api_task"), whc_host_api_task, NULL, WIFI_STACK_SIZE_API_TASK, 3) != RTK_SUCCESS) {
-		RTK_LOGE(TAG_WLAN_INIC, "create whc_host_api_task fail \n");
-	}
+	whc_host_api_init();
 #endif
 
 #ifndef SDIO_INT_MODE
-	if (rtos_task_create(NULL, ((const char *)"sdioPollingTask"), (rtos_task_function_t)sdio_polling_task, NULL, SDIO_POLLING_STACK_SIZE, 0 + 7) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"sdioPollingTask"), (rtos_task_function_t)rtw_sdio_polling_task, NULL, SDIO_POLLING_STACK_SIZE,
+						 0 + 7) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "create sdioPollingTask fail \n");
 	}
 #else
-
 	if (rtos_task_create(NULL, ((const char *)"sdio_int_hal_task"), (rtos_task_function_t)rtw_sdio_interrupt_handler, NULL, SDIO_POLLING_STACK_SIZE,
 						 0 + 7) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "create sdio_int_hal_task fail \n");
@@ -262,8 +133,6 @@ void whc_sdio_host_init_drv(void)
 #endif
 
 }
-
-extern rtos_mutex_t sdio_lock;
 
 /**
  * @brief  to initialize the inic device.
@@ -288,14 +157,17 @@ void whc_sdio_host_init(void)
 	whc_host_init_done = 1;
 }
 
-void rtw_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb)
+
+/* Synchronous API: blocks until the transfer completes. Caller is responsible
+ * for freeing buf_alloc after this function returns. */
+void whc_sdio_host_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb)
 {
 	uint32_t polling_num = 0;
 	struct whc_sdio *priv = &whc_sdio_priv;
 	struct INIC_TX_DESC *ptxdesc;
 
-	(void) polling_num;
-	(void) pskb;
+	(void) buf_alloc;
+	(void) is_skb;
 
 	/* wakeup device if it's in power save mode before send msg */
 	if (priv->dev_state == PWR_STATE_SLEEP) {
@@ -350,9 +222,6 @@ void rtw_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb)
 
 exit:
 	rtos_mutex_give(priv->lock);
-
 	return;
-
-
 }
 

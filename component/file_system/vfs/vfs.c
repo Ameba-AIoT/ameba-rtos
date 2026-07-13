@@ -166,6 +166,7 @@ void vfs_deinit()
 int find_vfs_number(const char *name, int *prefix_len, int *user_id)
 {
 	size_t i, j = 0;
+	size_t name_tag_len;
 	int ret = -1;
 
 	if (name == NULL) {
@@ -173,14 +174,27 @@ int find_vfs_number(const char *name, int *prefix_len, int *user_id)
 		return ret;
 	}
 
+	name_tag_len = 0;
+	while (name[name_tag_len] != '\0' && name[name_tag_len] != ':' && name[name_tag_len] != '/') {
+		name_tag_len++;
+	}
+
 	for (i = 0; i < VFS_USER_REGION_MAX; i++) {
+		size_t tag_len;
+		size_t cmp_len;
 		if (vfs.user[i].tag == NULL) {
 			VFS_DBG(VFS_INFO, "VFS tag not match!");
-			break;
+			continue;  /* skip holes left by unregister, don't stop */
 		}
-		ret =  strncmp(name, vfs.user[i].tag, strlen(vfs.user[i].tag));
+		tag_len = strlen(vfs.user[i].tag);
+		cmp_len = name_tag_len > tag_len ? name_tag_len : tag_len;
+		ret =  strncmp(name, vfs.user[i].tag, cmp_len);
 		if (ret == 0) {
-			for (j = strlen(vfs.user[i].tag); j < strlen(name); j++) {
+			/* initialise prefix_len so the loop below is a no-op when name has no suffix after the tag */
+			if (prefix_len != NULL) {
+				*prefix_len = (int)tag_len;
+			}
+			for (j = tag_len; j < strlen(name); j++) {
 				if (name[j] != '/' && name[j] != ':') {
 					if (prefix_len != NULL) {
 						*prefix_len = j;
@@ -196,7 +210,9 @@ int find_vfs_number(const char *name, int *prefix_len, int *user_id)
 				}
 			}
 
-			*user_id = i;
+			if (user_id != NULL) {
+				*user_id = i;
+			}
 			return vfs.user[i].vfs_type_id;
 		}
 	}
@@ -207,15 +223,23 @@ int find_inf_number(const char *name)
 {
 	int i = 0;
 	int ret = 0;
+	size_t name_tag_len;
 
 	if (name == NULL) {
 		VFS_DBG(VFS_ERROR, "Filename is invalid!");
 		return -1;
 	}
 
+	name_tag_len = 0;
+	while (name[name_tag_len] != '\0' && name[name_tag_len] != ':' && name[name_tag_len] != '/') {
+		name_tag_len++;
+	}
+
 	for (i = 0; i < VFS_USER_REGION_MAX; i++) {
 		if (vfs.user[i].tag != NULL) {
-			ret =  strncmp(name, vfs.user[i].tag, strlen(vfs.user[i].tag));
+			size_t tag_len = strlen(vfs.user[i].tag);
+			size_t cmp_len = name_tag_len > tag_len ? name_tag_len : tag_len;
+			ret =  strncmp(name, vfs.user[i].tag, cmp_len);
 			if (ret == 0) {
 				VFS_DBG(VFS_INFO, "Correct %s %d", __FUNCTION__, i);
 				return i;
@@ -346,7 +370,7 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 				u32 img2_start_addr, img2_end_addr;
 				flash_get_layout_info(ota_index == OTA_INDEX_1 ? IMG_APP_OTA1 : IMG_APP_OTA2, &img2_start_addr, &img2_end_addr);
 				IMAGE_HEADER *img_hdr = (IMAGE_HEADER *)(img2_start_addr + 0x2000);  //add cert+manifest offset
-				while ((u32)img_hdr < img2_end_addr) {
+				while ((u32)img_hdr + sizeof(IMAGE_HEADER) <= img2_end_addr) {
 					if (img_hdr->signature[0] == PATTERN_VFS_1 && img_hdr->signature[1] == PATTERN_VFS_2 && img_hdr->image_addr == (u32)(&VFS1_FLASH_BASE_ADDR)) {
 						VFS_DBG(VFS_INFO, "find vfs region2 : 0x%x !!!\r\n", img_hdr);
 						break;
@@ -396,8 +420,12 @@ int vfs_scan_vfs(int vfs_type)
 
 void vfs_set_user_encrypt_callback(char *prefix, vfs_enc_callback_t encrypt_func, vfs_dec_callback_t decrypt_func, unsigned char iv_len)
 {
-	int user_id;
-	find_vfs_number(prefix, NULL, &user_id);
+	int user_id = -1;
+	int ret = find_vfs_number(prefix, NULL, &user_id);
+	if (ret < 0 || user_id < 0 || user_id >= VFS_USER_REGION_MAX) {
+		VFS_DBG(VFS_ERROR, "prefix not registered, encrypt callback ignored");
+		return;
+	}
 	if (vfs.user[user_id].vfs_enc_callback != NULL) {
 		VFS_DBG(VFS_WARNING, "User encrypt call back already exist !!!");
 		return;

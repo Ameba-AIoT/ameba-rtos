@@ -3344,13 +3344,13 @@
 #endif
 
 /**
- * IPNAPT_DEBUG: Enable debugging in lwip_ip4napt.c.
+ * IPNAT_DEBUG: Enable debugging in lwip_ip4nat.c.
  */
-#if !defined IPNAPT_DEBUG || defined __DOXYGEN__
-#ifdef CONFIG_IPNAPT_DEBUG
-#define IPNAPT_DEBUG                    LWIP_DBG_ON
+#if !defined IPNAT_DEBUG || defined __DOXYGEN__
+#ifdef CONFIG_IPNAT_DEBUG
+#define IPNAT_DEBUG                    LWIP_DBG_ON
 #else
-#define IPNAPT_DEBUG                    LWIP_DBG_OFF
+#define IPNAT_DEBUG                    LWIP_DBG_OFF
 #endif
 #endif
 

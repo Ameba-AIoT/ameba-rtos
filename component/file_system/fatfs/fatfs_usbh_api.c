@@ -13,7 +13,7 @@ static int fatfs_usbh_cb_process(usb_host_t *host, u8 msg);
 
 static __IO int fatfs_msc_is_ready = 0;
 
-static usbh_config_t fatfs_usbh_cfg = {
+static const usbh_config_t fatfs_usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
@@ -32,12 +32,12 @@ static usbh_config_t fatfs_usbh_cfg = {
 #endif
 };
 
-static usbh_msc_cb_t fatfs_msc_usr_cb = {
+static const usbh_msc_cb_t fatfs_msc_usr_cb = {
 	.attach = fatfs_msc_cb_attach,
 	.setup = fatfs_msc_cb_setup,
 };
 
-static usbh_user_cb_t fatfs_usbh_usr_cb = {
+static const usbh_user_cb_t fatfs_usbh_usr_cb = {
 	.process = fatfs_usbh_cb_process
 };
 

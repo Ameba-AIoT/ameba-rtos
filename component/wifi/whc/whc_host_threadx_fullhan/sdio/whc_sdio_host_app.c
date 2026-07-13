@@ -1,9 +1,5 @@
 #include "rtw_whc_common.h"
 
-#ifdef CONFIG_WHC_WIFI_API_PATH
-struct event_priv_t event_priv;
-#endif
-
 int scan_ap_cnt;
 char *whc_host_scan_result_list;
 extern struct whc_sdio whc_sdio_priv;
@@ -42,14 +38,12 @@ extern struct whc_sdio whc_sdio_priv;
 #define WHC_WIFI_SOFTAP_ENABLE	1
 #define WHC_WIFI_SOFTAP_STANUM	2
 
-//#define rtos_mem_zmalloc(n)		rt_malloc(n)
-#define rtos_mem_free(ptr)		rt_free(ptr)
 
 int whc_host_wifi_get_scanresult(WIFI_SCAN_RESULT_t *p_scan_result, int ap_cnt)
 {
 	if (whc_host_scan_result_list) {
 		memcpy((char *)p_scan_result, (char *)whc_host_scan_result_list, ap_cnt * sizeof(WIFI_SCAN_RESULT_t));
-		rt_free(whc_host_scan_result_list);
+		WHC_FREE(whc_host_scan_result_list);
 		whc_host_scan_result_list = NULL;
 		return 0;
 	} else {
@@ -309,10 +303,14 @@ void whc_host_wifi_scan(int *ap_cnt)
 
 	if (whc_host_scan_result_list) {
 		printf("error %s, scan report shoule be empty\r\n", __func__);
-		rt_free(whc_host_scan_result_list);
+		WHC_FREE(whc_host_scan_result_list);
 	}
 
-	whc_host_scan_result_list = rt_malloc(SCAN_MAX_NUM * sizeof(WIFI_SCAN_RESULT_t));
+	whc_host_scan_result_list = WHC_MALLOC(SCAN_MAX_NUM * sizeof(WIFI_SCAN_RESULT_t));
+	if (whc_host_scan_result_list == NULL) {
+		printf("%s malloc fail\r\n", __func__);
+		return;
+	}
 	memset(whc_host_scan_result_list, 0, SCAN_MAX_NUM * sizeof(WIFI_SCAN_RESULT_t));
 
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
@@ -332,7 +330,11 @@ void whc_host_wifi_connect(char *ssid, char *pwd)
 	uint8_t *ptr;
 	uint32_t buf_len = 0, len = 0;
 
-	buf = rt_malloc(128);
+	buf = WHC_MALLOC(128);
+	if (buf == NULL) {
+		printf("%s malloc fail\r\n", __func__);
+		return;
+	}
 	ptr = buf;
 
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
@@ -365,7 +367,7 @@ void whc_host_wifi_connect(char *ssid, char *pwd)
 
 	whc_sdio_host_send_to_dev(buf, buf_len);
 
-	rtos_mem_free(buf);
+	WHC_FREE(buf);
 }
 
 void whc_host_wifi_disconnect(void)
@@ -414,9 +416,14 @@ void whc_host_wifi_stop_ap(void)
 
 int whc_host_wifi_enable_ap(unsigned char *ssid, char *psk, int chn, unsigned int ip)
 {
-	uint8_t *buf = rt_malloc(128);
+	uint8_t *buf = WHC_MALLOC(128);
 	uint8_t *ptr = buf;
 	uint32_t buf_len = 0, len = 0;
+
+	if (buf == NULL) {
+		printf("%s malloc fail\r\n", __func__);
+		return -1;
+	}
 
 	*(uint32_t *)ptr = WHC_WIFI_TEST;
 	ptr += 4;
@@ -455,6 +462,8 @@ int whc_host_wifi_enable_ap(unsigned char *ssid, char *psk, int chn, unsigned in
 
 	whc_sdio_host_send_to_dev(buf, buf_len);
 
+	WHC_FREE(buf);
+
 	return 0;
 }
 
@@ -491,12 +500,12 @@ void whc_sdio_host_send_to_dev(uint8_t *buf, uint32_t len)
 	uint32_t txsize = len + SIZE_TX_DESC;
 
 	/* construct struct whc_buf_info & whc_buf_info_t */
-	txbuf = rt_malloc(txsize);
+	txbuf = WHC_MALLOC(txsize);
 
 	if (txbuf == NULL) {
 		printf("%s mem fail \r\n", __func__);
 		if (txbuf) {
-			rt_free(txbuf);
+			WHC_FREE(txbuf);
 		}
 		return;
 	}
@@ -506,6 +515,8 @@ void whc_sdio_host_send_to_dev(uint8_t *buf, uint32_t len)
 
 	/* send ret_msg + ret_val(buf, len) */
 	rtw_sdio_send_data(txbuf, txsize, NULL);
+
+	WHC_FREE(txbuf);
 }
 
 void whc_sdio_host_send_to_dev_block(uint8_t *buf, uint32_t len, uint8_t *ret, uint32_t ret_len)
@@ -514,13 +525,10 @@ void whc_sdio_host_send_to_dev_block(uint8_t *buf, uint32_t len, uint8_t *ret, u
 	uint32_t txsize = len + SIZE_TX_DESC;
 	int val;
 	/* construct struct whc_buf_info & whc_buf_info_t */
-	txbuf = rt_malloc(txsize);
+	txbuf = WHC_MALLOC(txsize);
 
 	if (txbuf == NULL) {
 		printf("%s mem fail \r\n", __func__);
-		if (txbuf) {
-			rt_free(txbuf);
-		}
 		return;
 	}
 
@@ -541,5 +549,7 @@ void whc_sdio_host_send_to_dev_block(uint8_t *buf, uint32_t len, uint8_t *ret, u
 		/* clear */
 		whc_sdio_priv.ret = NULL;
 	}
+
+	WHC_FREE(txbuf);
 }
 

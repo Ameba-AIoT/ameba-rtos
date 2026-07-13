@@ -3,7 +3,9 @@
 
 #define whc_dev_intf_init              whc_spi_dev_init
 #define whc_dev_bus_is_idle            whc_spi_dev_bus_is_idle
+#define whc_dev_trigger_rx_handle()
 #define whc_dev_send                   whc_spi_dev_send
+#define whc_dev_flowctrl(a, b)		   whc_spi_dev_flowctrl(a, b)
 
 #ifdef CONFIG_AMEBAGREEN2  // need use QFN100
 #define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI0
@@ -51,6 +53,9 @@
 
 #define DEV_DMA_ALIGN				4
 
+#define SPI_FLOWCTRL_LOW_THRESHOLD		(3 + 1)  // 3 skb reserved for wifi rx in driver
+#define SPI_FLOWCTRL_HIGH_THRESHOLD		(3 + 2)
+
 enum whc_spi_dma_type {
 	WHC_SPI_TXDMA,
 	WHC_SPI_RXDMA
@@ -63,6 +68,10 @@ enum whc_spi_dma_type {
 
 #define SPI_DMA_EVT_TX_DONE			1U
 #define SPI_DMA_EVT_RX_DONE			2U
+
+#define SPI_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32
+#define SPI_BUFSZ		(SPI_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
+#define SPI_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), 4)
 
 struct whc_spi_priv_t {
 	u32 dev_status;
@@ -82,6 +91,7 @@ struct whc_spi_priv_t {
 	u8 wait_tx;
 
 	u8 txdma_initialized: 1;
+	u8 flowctrl_en: 1;
 
 };
 
@@ -106,6 +116,7 @@ static inline void set_dev_txreq_pin(u8 status)
 u8 whc_spi_dev_bus_is_idle(void);
 void whc_spi_dev_init(void);
 void whc_spi_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb);
+void whc_spi_dev_flowctrl(u8 *status, u8 send_cmd);
 
 #endif
 

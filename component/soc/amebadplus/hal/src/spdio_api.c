@@ -14,101 +14,73 @@ static const char *const TAG = "SPDIO";
  *  @{
  */
 
-/** @defgroup MBED_SPDIO_Exported_Constants MBED_SPDIO Exported Constants
- * @{
- */
+#define SPDIO_IRQ_PRIORITY			INT_PRI_MIDDLE   /*!< Interrupt priority for SDIO device IRQ. */
+#define SPDIO_TX_BD_BUF_SZ_UNIT		64   /*!< TX BD buffer size unit in bytes. */
+#define SPDIO_RX_BD_FREE_TH				5   /*!< Threshold of free RX BDs before triggering recycling. */
+#define SPDIO_MIN_RX_BD_SEND_PKT			2   /*!< Minimum free RX BDs required to receive a packet. */
+#define SPDIO_MAX_RX_BD_BUF_SIZE			16380   /*!< Maximum RX BD buffer size in bytes; 4-byte aligned. */
 
-#define SPDIO_IRQ_PRIORITY			INT_PRI_MIDDLE
-#define SPDIO_TX_BD_BUF_SZ_UNIT		64
-#define SPDIO_RX_BD_FREE_TH				5
-#define SPDIO_MIN_RX_BD_SEND_PKT			2
-#define SPDIO_MAX_RX_BD_BUF_SIZE			16380	// the Maximum size for a RX_BD point to, make it 4-bytes aligned
-
-/** @}*/
-
-/** @defgroup MBED_SPDIO_Exported_Types MBED_SPDIO Exported Types
- * @{
- */
-
-/** @defgroup MBED_SPDIO_Structure_Type Structure Type
- * @{
- */
-
+/** @brief TX Buffer Descriptor structure. */
 typedef struct {
-	u32	Address;		/* The TX buffer physical address, it must be 4-bytes aligned */
+	u32	Address;		/*!< Physical address of the TX buffer; must be 4-byte aligned. */
 } SPDIO_TX_BD;
 
-/* The RX Buffer Descriptor format */
+/** @brief RX Buffer Descriptor structure. */
 typedef struct {
-	u32 BuffSize: 14;		/* bit[13:0], RX Buffer Size, Maximum 16384-1 */
-	u32 LS: 1;				/* bit[14], is the Last Segment ? */
-	u32 FS: 1;				/* bit[15], is the First Segment ? */
-	u32 Seq: 16;			/* bit[31:16], The sequence number, it's no use for now */
-	u32 PhyAddr;			/* The RX buffer physical address, it must be 4-bytes aligned */
+	u32 BuffSize: 14;		/*!< bit[13:0]: RX buffer size, maximum 16383. */
+	u32 LS: 1;				/*!< bit[14]: Last Segment flag; set when this BD is the last segment of a packet. */
+	u32 FS: 1;				/*!< bit[15]: First Segment flag; set when this BD is the first segment of a packet. */
+	u32 Seq: 16;			/*!< bit[31:16]: Sequence number; reserved and unused. */
+	u32 PhyAddr;			/*!< Physical address of the RX buffer; must be 4-byte aligned. */
 } SPDIO_RX_BD;
 
-/* the data structer to bind a TX_BD with a TX Packet */
+/** @brief Handle structure binding a TX BD with a TX packet. */
 typedef struct {
-	SPDIO_TX_BD *pTXBD;		/* Point to the TX_BD buffer */
-	void *priv;
-	u8 isPktEnd;			/* For a packet over 1 BD , this flag to indicate is this BD contains a packet end */
-	u8 isFree;				/* is this TX BD free */
+	SPDIO_TX_BD *pTXBD;		/*!< Pointer to the TX BD buffer. */
+	void *priv;				/*!< Private data associated with this TX BD. */
+	u8 isPktEnd;			/*!< Indicates whether this BD contains the last segment of a multi-BD packet. */
+	u8 isFree;				/*!< Indicates whether this TX BD is free. */
 } SPDIO_TX_BD_HANDLE;
 
-/* the data structer to bind a RX_BD with a RX Packet */
+/** @brief Handle structure binding an RX BD with an RX packet. */
 typedef struct {
-	void *priv;
-	SPDIO_RX_BD *pRXBD;		/* Point to the RX_BD buffer */
-	INIC_RX_DESC *pRXDESC;	/* point to the Rx Packet */
-	u8 isPktEnd;			/*  For a packet over 1 BD , this flag to indicate is this BD contains a packet end */
-	u8 isFree;				/* is this RX BD free (DMA done and its RX packet has been freed) */
+	void *priv;				/*!< Private data associated with this RX BD. */
+	SPDIO_RX_BD *pRXBD;		/*!< Pointer to the RX BD buffer. */
+	INIC_RX_DESC *pRXDESC;	/*!< Pointer to the RX packet descriptor. */
+	u8 isPktEnd;			/*!< Indicates whether this BD contains the last segment of a multi-BD packet. */
+	u8 isFree;				/*!< Indicates whether this RX BD is free (DMA complete and packet freed). */
 } SPDIO_RX_BD_HANDLE;
 
+/** @brief SPDIO adapter structure containing all SDIO device state. */
 typedef struct {
-	void *spdio_priv;				/*Data from User*/
-	u8 *pTXBDAddr;					/* The TX_BD start address */
-	SPDIO_TX_BD *pTXBDAddrAligned;	/* The TX_BD start address, it must be 4-bytes aligned */
+	void *spdio_priv;				/*!< Private data from user. */
+	u8 *pTXBDAddr;					/*!< Start address of the TX BD array. */
+	SPDIO_TX_BD *pTXBDAddrAligned;	/*!< 4-byte aligned start address of the TX BD array. */
 
-	SPDIO_TX_BD_HANDLE *pTXBDHdl;	/* point to the allocated memory for TX_BD Handle array */
-	u16 TXBDWPtr;					/* The SDIO TX(Host->Device) BD local write index, different with HW maintained write Index. */
-	u16 TXBDRPtr;					/* The SDIO TX(Host->Device) BD read index */
-	u16 TXBDRPtrReg;				/* The SDIO TX(Host->Device) BD read index has been write to HW register */
-	u8 TxOverFlow;
+	SPDIO_TX_BD_HANDLE *pTXBDHdl;	/*!< Pointer to the TX BD handle array. */
+	u16 TXBDWPtr;					/*!< Local write index of the SDIO TX (Host-to-Device) BD ring; differs from HW-maintained index. */
+	u16 TXBDRPtr;					/*!< Read index of the SDIO TX (Host-to-Device) BD ring. */
+	u16 TXBDRPtrReg;				/*!< TX BD read index last written to hardware register. */
+	u8 TxOverFlow;					/*!< TX overflow flag; set when host TX BDs are exhausted. */
 
-	u8 *pRXBDAddr;					/* The RX_BD start address */
-	SPDIO_RX_BD *pRXBDAddrAligned;	/* The RX_BD start address, it must be 8-bytes aligned */
+	u8 *pRXBDAddr;					/*!< Start address of the RX BD array. */
+	SPDIO_RX_BD *pRXBDAddrAligned;	/*!< 8-byte aligned start address of the RX BD array. */
 
-	u8 *pRXDESCAddr;
-	INIC_RX_DESC *pRXDESCAddrAligned;
-	SPDIO_RX_BD_HANDLE *pRXBDHdl;	/* point to the allocated memory for RX_BD Handle array */
-	u16 RXBDWPtr;					/* The SDIO RX(Device->Host) BD write index */
-	u16 RXBDRPtr;					/* The SDIO RX(Device->Host) BD local read index, different with HW maintained Read Index. */
+	u8 *pRXDESCAddr;				/*!< Start address of the RX descriptor array. */
+	INIC_RX_DESC *pRXDESCAddrAligned; /*!< Aligned start address of the RX descriptor array. */
+	SPDIO_RX_BD_HANDLE *pRXBDHdl;	/*!< Pointer to the RX BD handle array. */
+	u16 RXBDWPtr;					/*!< Write index of the SDIO RX (Device-to-Host) BD ring. */
+	u16 RXBDRPtr;					/*!< Local read index of the SDIO RX (Device-to-Host) BD ring; differs from HW-maintained index. */
 
-	rtos_sema_t IrqSema;					/* Semaphore for SDIO RX, use to wakeup the SDIO RX task */
-	rtos_task_t xSDIOIrqTaskHandle;	/* The handle of the SDIO Task speical for RX, can be used to delte the task */
+	rtos_sema_t IrqSema;					/*!< Semaphore for waking up the SDIO IRQ task. */
+	rtos_task_t xSDIOIrqTaskHandle;	/*!< Handle of the SDIO IRQ task. */
 
-	u8 WaitForDeviceRxbuf;
+	u8 WaitForDeviceRxbuf;			/*!< Flag indicating device is waiting for a free RX buffer. */
 } HAL_SPDIO_ADAPTER, *PHAL_SPDIO_ADAPTER;
-
-/**
- * @}
- */
-
-/**
- * @}
- */
-
-/** @defgroup MBED_SPDIO_Exported_Constants MBED_SPDIO Exported Constants
- * @{
- */
 
 struct spdio_t *g_spdio_priv = NULL;
 HAL_SPDIO_ADAPTER gSPDIODev;
 PHAL_SPDIO_ADAPTER pgSPDIODev = NULL;
-
-/**
- * @}
- */
 
 /** @defgroup MBED_SPDIO_Exported_Functions MBED_SPDIO Exported Functions
  * @{
@@ -156,10 +128,10 @@ static s8 spdio_rpwm_cb(void *padapter)
 }
 
 /**
- * @brief Spdio write function.
- * @param obj Pointer to a initialized spdio_t structure.
- * @param pbuf Pointer to a spdio_buf_t structure which carries the payload.
- * @retval RTK_SUCCESS or RTK_FAIL.
+ * @brief Prepare RX buffer descriptor and notify the SD host.
+ * @param obj Pointer to an initialized @ref spdio_t structure.
+ * @param pbuf Pointer to a @ref spdio_buf_t structure which carries the payload.
+ * @return RTK_SUCCESS or RTK_FAIL.
  */
 s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 {
@@ -289,9 +261,8 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 }
 
 /**
- * @brief Get example settings for spdio obj.
- * @param obj Pointer to a spdio_t structure which will be initialized with an example settings.
- * @return None
+ * @brief Fill @ref spdio_t structure with default settings.
+ * @param obj Pointer to a @ref spdio_t structure which will be filled with default settings.
  */
 void spdio_structinit(struct spdio_t *obj)
 {
@@ -305,7 +276,7 @@ void spdio_structinit(struct spdio_t *obj)
 }
 
 /**
- * @brief Trigger SDIO read packet when have free skb.
+ * @brief Trigger SDIO to process a received packet when a free RX buffer is available.
  */
 void spdio_trigger_rx_handle(void)
 {
@@ -314,12 +285,12 @@ void spdio_trigger_rx_handle(void)
 	}
 }
 
+/// @cond
 /**
  * @brief Handle the SDIO FIFO data ready interrupt, including
  * 		- Send those data to target driver via callback func, like WLan.
  * 		- Allocate a buffer for the TX BD
  * @param pSPDIODev Pointer to a SDIO device data structure.
- * @return None
  */
 void SPDIO_TxBd_DataReady_DeviceRx(PHAL_SPDIO_ADAPTER pSPDIODev)
 {
@@ -411,6 +382,7 @@ exit:
 
 	return;
 }
+/// @endcond
 
 static void SPDIO_Recycle_Rx_BD(PHAL_SPDIO_ADAPTER pgSPDIODev)
 {
@@ -449,13 +421,11 @@ static void SPDIO_Recycle_Rx_BD(PHAL_SPDIO_ADAPTER pgSPDIODev)
 }
 
 /**
- * @brief SPDIO device interrupt service routine, including
- * 		- Read and clean interrupt status.
- * 		- Wake up the SDIO task to handle the IRQ event.
+ * @brief SDIO device ISR that disables the interrupt and wakes up the IRQ task.
  * @param pData Pointer to SDIO device data structure.
- * @retval 0
+ * @return 0.
  */
-u32 SPDIO_IRQ_Handler(void *pData)
+static u32 SPDIO_IRQ_Handler(void *pData)
 {
 	PHAL_SPDIO_ADAPTER pSPDIODev = pData;
 	InterruptDis(SDIO_IRQ);
@@ -502,6 +472,10 @@ static void SPDIO_IRQ_Handler_BH(void *pData)
 	}
 }
 
+/// @cond
+/**
+ * @brief Configure SDIO pin mux and pad control.
+ */
 void SPDIO_Board_Init(void)
 {
 	u8 idx;
@@ -519,11 +493,11 @@ void SPDIO_Board_Init(void)
 }
 
 /**
- * @brief Initilaize SDIO device, including
+ * @brief Initialize SDIO device, including
  * 		- Allocate SDIO TX BD, RX BD and RX Desc.
  * 		- Allocate SDIO RX Buffer Descriptor and RX Buffer. Initialize RX related registers.
  * 		- Register the Interrupt function.
- * @param obj Pointer to a spdio_t structure.
+ * @param obj Pointer to a @ref spdio_t structure.
  * @return Initialization result, which can be RTK_SUCCESS(0) or RTK_FAIL(-1).
  */
 bool SPDIO_Device_Init(struct spdio_t *obj)
@@ -708,7 +682,6 @@ SDIO_INIT_ERR:
 
 /**
  * @brief Free SDIO device, including freeing TX FIFO buffer.
- * @return None
  * @note This function should be called in a task.
  */
 void SPDIO_Device_DeInit(void)
@@ -787,16 +760,16 @@ void SPDIO_Device_DeInit(void)
 	/* step3: disable fen & cke */
 	RCC_PeriphClockCmd(APBPeriph_SDIO, APBPeriph_SDIO_CLOCK, DISABLE);
 }
+/// @endcond
 
 /**
- * @brief Initialize spdio interface.
- * @param obj Pointer to a spdio_t structure which should be initialized by user,
- * 		and which will be used to initialize spdio interface.
- * 		- obj->host_rx_bd_num: spdio write bd number, needs 2 bd for one transaction.
- * 		- obj->host_tx_bd_num: spdio read bd number.
- * 		- obj->device_rx_bufsz: spdio read buffer size.
- * 		- obj->rx_buf: spdio read buffer array.
- * @return None
+ * @brief Initialize the SPDIO interface.
+ * @param obj Pointer to a @ref spdio_t structure which should be initialized by user,
+ * 		and which will be used to initialize the SPDIO interface.
+ * 		- obj->host_rx_bd_num: Number of host RX BDs for device-to-host transfer (must be even, 2 BDs per packet).
+ * 		- obj->host_tx_bd_num: Number of host TX BDs for host-to-device transfer.
+ * 		- obj->device_rx_bufsz: Device RX buffer size (must be a multiple of 64).
+ * 		- obj->rx_buf: Device RX buffer array pre-allocated by user.
  */
 void spdio_init(struct spdio_t *obj)
 {
@@ -816,9 +789,8 @@ void spdio_init(struct spdio_t *obj)
 }
 
 /**
- * @brief Deinitialize spdio interface.
- * @param obj Pointer to a spdio_t structure which is already initialized
- * @return None
+ * @brief Deinitialize the SPDIO interface.
+ * @param obj Pointer to a @ref spdio_t structure which is already initialized.
  */
 void spdio_deinit(struct spdio_t *obj)
 {

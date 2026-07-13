@@ -11,8 +11,6 @@
 #ifndef __RTW_PROMISC_H__
 #define __RTW_PROMISC_H__
 
-#include <whc_host_linux.h>
-
 int rtw_promisc_rx(struct rtw_rx_pkt_info *ppktinfo);
 
 #endif //__RTW_PROMISC_H__

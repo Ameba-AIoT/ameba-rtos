@@ -23,6 +23,7 @@
  *********************************************************************************************/
 #define EAP_UNBLK_API_SIZE	                      0
 #define WPS_UNBLK_API_SIZE	                      0
+#define NAN_PASN_UNBLK_API_SIZE                   0
 #define MCC_LITTE_TASK_SIZE	                      0
 #define NAN_LITTE_TASK_SIZE                       0
 #define NAN_SINGLE_TASK_SIZE                      0
@@ -35,6 +36,10 @@
 #if defined(CONFIG_ENABLE_WPS)
 #undef  WPS_UNBLK_API_SIZE
 #define WPS_UNBLK_API_SIZE                        744  /* enable WPS need 744 */
+#endif
+#if defined(CONFIG_WIFI_NAN_HOST_APP)
+#undef  NAN_PASN_UNBLK_API_SIZE
+#define NAN_PASN_UNBLK_API_SIZE                   4096 /* host NAN PASN/SAE+ECDH crypto runs on the evt task */
 #endif
 #if defined(CONFIG_WIFI_MCC_ENABLE)
 #undef  MCC_LITTE_TASK_SIZE
@@ -77,7 +82,7 @@
 #define COEX_IPC_DEV_API_BASIC_SIZE               648
 
 #define WIFI_WHC_IPC_HST_API_TASK_SIZE            (336 + CONTEXT_SAVE_SIZE_WITH_MARGIN)	// for psp overflow when update group key: jira: https://jira.realtek.com/browse/RSWLANQC-1027
-#define WIFI_WHC_IPC_HST_EVT_API_TASK_SIZE        (2296 + EAP_UNBLK_API_SIZE + WPS_UNBLK_API_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN)
+#define WIFI_WHC_IPC_HST_EVT_API_TASK_SIZE        (2296 + EAP_UNBLK_API_SIZE + WPS_UNBLK_API_SIZE + NAN_PASN_UNBLK_API_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN)
 
 #if defined(CONFIG_WHC_HOST)
 #define WIFI_WHC_IPC_MSG_Q_TASK_SIZE	            (488 + CONTEXT_SAVE_SIZE_WITH_MARGIN)
