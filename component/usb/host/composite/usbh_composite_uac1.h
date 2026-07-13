@@ -227,7 +227,7 @@ typedef struct {
 	rtos_mutex_t alt_set_mutex;           /**< Serializes concurrent usbh_composite_uac_set_alt_setting calls */
 	rtos_sema_t  ctrl_done_sema;          /**< Signaled by ctrl_setting when SET_ALT + SET_FREQ sequence completes */
 
-	usbh_composite_uac_usr_cb_t *cb;      /**< User callback structure registered via usbh_composite_uac_init */
+	const usbh_composite_uac_usr_cb_t *cb;/**< User callback structure registered via usbh_composite_uac_init */
 	usbh_composite_host_t *driver;        /**< Pointer to the parent USB Host Composite handle */
 
 	u8 *audio_ctrl_buf;                   /**< Shared buffer for all USB control transfer payloads */
@@ -280,7 +280,7 @@ extern const usbh_class_driver_t usbh_composite_uac_driver;  /**< Composite uac 
   * @param  cb: Pointer to the user callback structure.
   * @return 0 on success, non-zero on failure.
   */
-int usbh_composite_uac_init(usbh_composite_host_t *chost, usbh_composite_uac_usr_cb_t *cb);
+int usbh_composite_uac_init(usbh_composite_host_t *chost, const usbh_composite_uac_usr_cb_t *cb);
 
 /**
   * @brief  De-initialize the UAC Class Driver and release resources.

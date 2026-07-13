@@ -137,9 +137,14 @@ static bool bt_stack_sbc_encoder_init(SBC_ENC_PARAMS *p_params, rtk_bt_sbc_encod
 	p_params->pu8Packet = encoded_data;
 	p_params->u8NumPacketToEncode = p_encode_t->sbc_pkt_num;
 	SBC_Encoder_Init(p_params);
-	p_encode_t->bitpool = p_params->s16BitPool;
+	if (p_params->s16BitPool > p_encode_t->bitpool) {
+		BT_LOGA("SBC encode init bitpool %d is larger than configured bitpool %d \r\n", p_params->s16BitPool, p_encode_t->bitpool);
+		p_params->s16BitPool = p_encode_t->bitpool;
+	} else {
+		p_encode_t->bitpool = p_params->s16BitPool;
+	}
 	p_encode_t->frame_size = caculate_sbc_frame_size(p_params->s16NumOfBlocks, p_params->s16ChannelMode, p_params->s16NumOfSubBands, p_params->s16BitPool);
-	BT_LOGA("frame_size is %d \r\n", p_encode_t->frame_size);
+	BT_LOGA("frame_size is %d, bit pool is %d \r\n", p_encode_t->frame_size, p_encode_t->bitpool);
 
 	return true;
 }
@@ -272,6 +277,7 @@ static uint16_t sbc_decoder_process_data(void *pentity, uint8_t *data, uint32_t 
 												  pcm_data_pointer,
 												  &pcmBytes);
 				sbc_plc_bad_frame(&(priv_sbc_plc.plc_state), pcm_data_pointer, priv_sbc_plc.sbc_plc_out);
+				memcpy((void *)pcm_data_pointer, (void *)priv_sbc_plc.sbc_plc_out, 2 * SBC_FS);
 				frame_data_len = 0;
 				BT_LOGE("%s: bad frame, using PLC to fix it, status is 0x%x, len is %d, pcmBytes is %d \r\n", __func__, status, zero_signal_frame_len, pcmBytes);
 				break;

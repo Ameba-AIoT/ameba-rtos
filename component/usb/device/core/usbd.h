@@ -351,7 +351,7 @@ typedef struct _usbd_class_driver_t {
  * @param[in] cfg: USB device configuration.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_init(usbd_config_t *cfg);
+int usbd_init(const usbd_config_t *cfg);
 
 /**
  * @brief Deinitialize USB device core driver.

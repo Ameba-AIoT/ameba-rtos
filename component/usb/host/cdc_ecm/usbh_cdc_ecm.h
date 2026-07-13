@@ -56,8 +56,8 @@
  * @brief USB CDC ECM Host Private Data Structure.
  */
 typedef struct {
-	u16 *led_array;    /**< Pointer to the LED status array; each u16 element represents the state or brightness of an LED. */
-	u8 *mac_value;     /**< Pointer to the MAC address buffer; typically points to a 6-byte physical address. */
+	const u16 *led_array;    /**< Pointer to the LED status array; each u16 element represents the state or brightness of an LED. */
+	const u8 *mac_value;     /**< Pointer to the MAC address buffer; typically points to a 6-byte physical address. */
 	u8 led_cnt;        /**< LED count; indicates the number of valid elements in the led_array. */
 } usbh_cdc_ecm_priv_data_t;
 
@@ -135,7 +135,7 @@ typedef struct {
 
 	usb_os_sema_t bulk_tx_sema;                      /**< Semaphore for BULK TX synchronization */
 
-	usbh_cdc_ecm_state_cb_t  *cb;                    /**< User callback structure */
+	const usbh_cdc_ecm_state_cb_t  *cb;                    /**< User callback structure */
 	usb_host_t *host;                                /**< USB Host core handle */
 	u16 *led_array;                                  /**< Pointer to LED array */
 	u8  *dongle_ctrl_buf;                            /**< Buffer for control transfers (cache aligned) */
@@ -174,7 +174,7 @@ typedef struct {
  * @param[in] priv: Pointer to the user-defined private parameter structure.
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
-int usbh_cdc_ecm_init(usbh_cdc_ecm_state_cb_t *cb, usbh_cdc_ecm_priv_data_t *priv);
+int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_priv_data_t *priv);
 
 /**
  * @brief  De-initializes the CDC ECM host class driver and releases resources.

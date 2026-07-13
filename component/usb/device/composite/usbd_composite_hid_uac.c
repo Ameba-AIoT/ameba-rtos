@@ -502,8 +502,8 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
   * @param  cb:  composite callback
   * @retval Status
   */
-int usbd_composite_init(usbd_composite_hid_usr_cb_t *hid_cb, usbd_composite_uac_usr_cb_t *uac_cb,
-						usbd_composite_cb_t *cb)
+int usbd_composite_init(const usbd_composite_hid_usr_cb_t *hid_cb, const usbd_composite_uac_usr_cb_t *uac_cb,
+						const usbd_composite_cb_t *cb)
 {
 	int ret;
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;

@@ -17,14 +17,14 @@
 /* Private defines -----------------------------------------------------------*/
 static const char *const TAG = "MSC";
 
-/* ── Hotplug switch ──────────────────────────────────────────────────────
- *   0 = replug loop:  test files → stop → wait for replug → repeat
+/* Hotplug switch
+ *   0 = replug loop:  test files -> stop -> wait for replug -> repeat
  *                      USB stack stays alive; reconnect is handled by the
  *                      core without tearing down the stack
- *   1 = continuous:   test files → repeat immediately; on detach the
+ *   1 = continuous:   test files -> repeat immediately; on detach the
  *                      stack is fully torn down and rebuilt to guarantee
  *                      clean transfer state across plug/unplug cycles
- * ──────────────────────────────────────────────────────────────────────────*/
+ */
 #define CONFIG_USBH_MSC_HOTPLUG              0
 
 // Thread priorities
@@ -66,7 +66,7 @@ static u8 *msc_rd_buf;
 static rtos_sema_t msc_detach_sema;
 #endif
 
-static usbh_config_t usbh_cfg = {
+static const usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
@@ -91,13 +91,13 @@ static usbh_config_t usbh_cfg = {
 #endif
 };
 
-static usbh_msc_cb_t msc_usr_cb = {
+static const usbh_msc_cb_t msc_usr_cb = {
 	.attach = msc_cb_attach,
 	.detach = msc_cb_detach,
 	.setup = msc_cb_setup,
 };
 
-static usbh_user_cb_t usbh_usr_cb = {
+static const usbh_user_cb_t usbh_usr_cb = {
 	.process = msc_cb_process
 };
 
@@ -145,7 +145,7 @@ static int msc_cb_process(usb_host_t *host, u8 msg)
 	return HAL_OK;
 }
 
-/* ── I/O test routine (10 files, each with W/R of multiple sizes) ────────*/
+/* I/O test routine (10 files, each with W/R of multiple sizes) */
 static int msc_run_io_test(void)
 {
 	FATFS fs;
@@ -231,7 +231,7 @@ static int msc_run_io_test(void)
 				break;
 			}
 
-			/* ── Write ── */
+			/* Write */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "W test: size %d, round %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
 			start = SYSTIMER_TickGet();
 			for (round = 0; round < USBH_MSC_TEST_ROUNDS; ++round) {
@@ -262,7 +262,7 @@ static int msc_run_io_test(void)
 			perf = (round * test_size * 10000 / 1024) / elapse;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "W rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
 
-			/* ── Read ── */
+			/* Read */
 			f_lseek(&f, 0);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "R test: size = %d round = %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
 			start = SYSTIMER_TickGet();
@@ -336,7 +336,7 @@ static int msc_run_io_test(void)
 }
 
 #if CONFIG_USBH_MSC_HOTPLUG
-/* ── Hotplug thread: re-init USB stack after detach ──────────────────────*/
+/* Hotplug thread: re-init USB stack after detach */
 static void example_usbh_msc_hotplug_thread(void *param)
 {
 	int ret;
@@ -383,7 +383,7 @@ static void example_usbh_msc_hotplug_thread(void *param)
 }
 #endif
 
-/* ── Main test thread ────────────────────────────────────────────────────*/
+/* Main test thread */
 void example_usbh_msc_thread(void *param)
 {
 	int ret;
@@ -439,7 +439,7 @@ void example_usbh_msc_thread(void *param)
 		ret = msc_run_io_test();
 		if (ret == HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "All files done, repeat from 0\n");
-			/* Device still attached — give sema so the next call does not
+			/* Device still attached -- give sema so the next call does not
 			 * block at rtos_sema_take waiting for a new attach event. */
 			rtos_sema_give(msc_attach_sema);
 		} else {

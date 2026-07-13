@@ -67,7 +67,7 @@ static __IO int usbh_uac_is_ready = 0;
 static int usbh_uac_busy_count;
 static int usbh_uac_err_count;
 
-static usbh_config_t usbh_cfg = {
+static const usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_FULL,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
@@ -92,7 +92,7 @@ static usbh_config_t usbh_cfg = {
 #endif
 };
 
-static usbh_uac_cb_t usbh_uac_cfg = {
+static const usbh_uac_cb_t usbh_uac_cfg = {
 	.init = usbh_uac_cb_init,
 	.deinit = usbh_uac_cb_deinit,
 	.attach = usbh_uac_cb_attach,
@@ -101,7 +101,7 @@ static usbh_uac_cb_t usbh_uac_cfg = {
 	.isoc_transmitted = usbh_uac_cb_isoc_transmitted,
 };
 
-static usbh_user_cb_t usbh_usr_cb = {
+static const usbh_user_cb_t usbh_usr_cb = {
 	.process = usbh_uac_cb_process
 };
 

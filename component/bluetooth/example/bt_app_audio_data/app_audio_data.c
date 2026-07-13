@@ -62,14 +62,14 @@ static u32 usb_uac_get_enough_write_bytes(void)
 	return (buf_size + read_pos - write_pos - 1) % buf_size;
 }
 
-static usbd_config_t uac_cfg = {
+static const usbd_config_t uac_cfg = {
 	.speed = CONFIG_USBD_UAC_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 	.ext_intr_enable = 0,
 	.intr_use_ptx_fifo = 0U,
 };
 
-static usbd_uac_cb_t uac_cb = {
+static const usbd_uac_cb_t uac_cb = {
 	.audio_ctx = NULL,
 	.in = {.enable = 0,}, /* current just support usb out,usb in TODO */
 	.out = {.enable = 1, .sampling_freq = AUDIO_SAMPLING_RATE, .byte_width = AUDIO_BYTE_WIDTH_SIZE, .ch_cnt = AUDIO_CHANNEL_NUM},

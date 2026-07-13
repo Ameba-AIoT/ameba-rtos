@@ -251,7 +251,7 @@ class RomHandler(object):
         start_time = time.monotonic()
         found_nak = False
 
-        while time.monotonic() - start_time < 3:
+        while time.monotonic() - start_time < self.setting.rom_check_alive_timeout_in_second:
             ret, ch = self.ameba.read_bytes(0.05, 1)  # 探测是否有字节到达
             if ret == ErrType.OK and ch:
                 all_data.extend(ch)
@@ -381,12 +381,16 @@ class RomHandler(object):
 
         _baud_bytes = self.serial_port.baudrate.to_bytes(4, byteorder='little')
 
-        floader_aligned_size = self.get_page_aligned_size(floader_size, page_size)
         datas = io.BytesIO(floader_content)
         data_bytes = datas.read(floader_size)
 
         data_bytes += _baud_bytes
 
+        # Align on the FULL payload (floader + appended baudrate), otherwise a
+        # floader whose size is an exact multiple of page_size leaves the 4-byte
+        # baudrate in the next (untransferred) page, so the device reads a garbage
+        # baudrate and the floader handshake times out.
+        floader_aligned_size = self.get_page_aligned_size(len(data_bytes), page_size)
         data_bytes = data_bytes.ljust(floader_aligned_size, b"\x00")
 
         idx = 0

@@ -16,7 +16,7 @@
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 // while test suspend/resume, hotplug should be disabled
-#define CONFIG_USBD_CDC_ACM_HOTPLUG					0
+#define CONFIG_USBD_CDC_ACM_HOTPLUG					1
 
 // USB speed
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
@@ -61,7 +61,7 @@ static void cdc_acm_cb_status_changed(u8 old_status, u8 status);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "ACM";
 
-static usbd_cdc_acm_cb_t cdc_acm_cb = {
+static const usbd_cdc_acm_cb_t cdc_acm_cb = {
 	.init = cdc_acm_cb_init,
 	.deinit = cdc_acm_cb_deinit,
 	.setup = cdc_acm_cb_setup,
@@ -73,7 +73,7 @@ static usb_cdc_line_coding_t cdc_acm_line_coding;
 
 static u16 cdc_acm_ctrl_line_state;
 
-static usbd_config_t cdc_acm_cfg = {
+static const usbd_config_t cdc_acm_cfg = {
 	.speed = CONFIG_USBD_CDC_ACM_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)

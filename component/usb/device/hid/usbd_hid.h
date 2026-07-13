@@ -149,7 +149,7 @@ typedef struct {
 #if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
 	usbd_ep_t ep_intr_out;        /**< INTR OUT endpoint structure. */
 #endif
-	usbd_hid_usr_cb_t *cb;        /**< Pointer to the user-defined callback structure. */
+	const usbd_hid_usr_cb_t *cb;        /**< Pointer to the user-defined callback structure. */
 	usb_dev_t *dev;               /**< Pointer to the USB device instance. */
 	u8 protocol;                  /**< Store the device protocol value. */
 	u8 idle_rate;                 /**< Store the device idle rate. */
@@ -169,7 +169,7 @@ typedef struct {
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_hid_init(u32 tx_buf_len, usbd_hid_usr_cb_t *cb);
+int usbd_hid_init(u32 tx_buf_len, const usbd_hid_usr_cb_t *cb);
 
 /**
   * @brief  DeInitialize HID device
@@ -183,7 +183,7 @@ int usbd_hid_deinit(void);
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_hid_send_data(u8 *buf, u32 len);
+int usbd_hid_send_data(const u8 *buf, u32 len);
 
 /* Exported functions --------------------------------------------------------*/
 

@@ -106,7 +106,7 @@ typedef struct {
 	*/
 	int(* line_coding_changed)(usb_cdc_line_coding_t *line_coding);
 
-	usbh_composite_cdc_acm_param_t *priv;
+	const usbh_composite_cdc_acm_param_t *priv;
 } usbh_composite_cdc_acm_usr_cb_t;
 
 /* CDC ACM host */
@@ -117,13 +117,15 @@ typedef struct {
 
 	usb_cdc_line_coding_t    *line_coding;      /**< Pointer to line coding  */
 	usb_cdc_line_coding_t    *user_line_coding; /**< Pointer to user line coding */
-	usbh_composite_cdc_acm_param_t          *priv_param;       /**< Pointer to private params */
-	usbh_composite_cdc_acm_param_t          *param_item;       /**< Pointer to choose param */
-	usbh_composite_cdc_acm_usr_cb_t         *cb;               /**< User callback structure */
+	const usbh_composite_cdc_acm_param_t    *priv_param;       /**< Pointer to private params */
+	const usbh_composite_cdc_acm_param_t    *param_item;       /**< Pointer to choose param */
+	const usbh_composite_cdc_acm_usr_cb_t   *cb;               /**< User callback structure */
 	usbh_composite_host_t                   *driver;           /**< Composite driver handle */
 
+	u16                                     ctrl_line_state;   /**< Control Signal Bitmap for SET_CONTROL_LINE_STATE wValue: D0=DTR, D1=RTS (PSTN §6.3.12). */
 	u8                                      state;             /**< Process status, ref usbh_composite_cdc_acm_state_t */
 	u8                                      sub_status;        /**< ACM sub-status, ref usbh_composite_cdc_acm_ctrl_state_t */
+	u8                                      comm_itf_num;      /**< Communication interface number for class requests (wIndex) */
 	u8                                      data_itf_num;      /**< Data interface number for SET_INTERFACE */
 	u8                                      data_itf_alt;      /**< Data interface alternate setting with BULK endpoints */
 } usbh_composite_cdc_acm_host_t;
@@ -150,7 +152,7 @@ extern const usbh_class_driver_t usbh_composite_cdc_acm_driver;/**< Point to com
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
-int usbh_composite_cdc_acm_init(usbh_composite_host_t *host, usbh_composite_cdc_acm_usr_cb_t *cb);
+int usbh_composite_cdc_acm_init(usbh_composite_host_t *host, const usbh_composite_cdc_acm_usr_cb_t *cb);
 
 /**
  * @brief  De-initializes the CDC ACM host class driver and releases resources.
@@ -172,6 +174,13 @@ int usbh_composite_cdc_acm_ctrl_setting(usb_host_t *host);
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
 int usbh_composite_cdc_acm_transmit(u8 *buf, u32 len);
+
+/**
+ * @brief  Sets the CDC ACM control line state (PSTN §6.3.12 SET_CONTROL_LINE_STATE).
+ * @param[in] bitmap: Control Signal Bitmap written to wValue. D0=DTR, D1=RTS; all other bits reserved and shall be zero.
+ * @return 0 (HAL_OK) on success, non-zero on failure.
+ */
+int usbh_composite_cdc_acm_set_control_line_state(u16 bitmap);
 
 /** @} End of Host_Composite_Functions group */
 /** @} End of USB_Host_Functions group */

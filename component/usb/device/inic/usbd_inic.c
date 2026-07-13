@@ -1197,7 +1197,7 @@ static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev)
 {
 	int ret = HAL_OK;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
-	usbd_inic_cb_t *cb = idev->cb;
+	const usbd_inic_cb_t *cb = idev->cb;
 
 	UNUSED(dev);
 
@@ -1219,7 +1219,7 @@ static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev)
 static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
-	usbd_inic_cb_t *cb = idev->cb;
+	const usbd_inic_cb_t *cb = idev->cb;
 	usbd_inic_ep_t *in_ep = &idev->in_ep[USB_EP_NUM(ep_addr)];
 	usbd_ep_t *ep = &in_ep->ep;
 
@@ -1249,7 +1249,7 @@ static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
-	usbd_inic_cb_t *cb = idev->cb;
+	const usbd_inic_cb_t *cb = idev->cb;
 	usbd_inic_ep_t *out_ep = &idev->out_ep[USB_EP_NUM(ep_addr)];
 	usbd_ep_t *ep = &out_ep->ep;
 	void *userdata = out_ep->userdata;
@@ -1560,7 +1560,7 @@ static void usbd_inic_reset_thread(void *param)
   * @brief  Initialize inic device
   * @retval Status
   */
-int usbd_inic_init(usbd_inic_cb_t *cb)
+int usbd_inic_init(const usbd_inic_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;

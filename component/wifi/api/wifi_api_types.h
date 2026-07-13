@@ -587,20 +587,33 @@ enum rtw_txpwr_lmt {
 	TXPWR_LMT_ETSI = 2,     /**< European Telecommunications Standards Institute (CE).*/
 	TXPWR_LMT_IC = 3,       /**< Canada */
 	TXPWR_LMT_KCC = 4,      /**< South Korea */
-	TXPWR_LMT_ACMA = 5, 	/**< Australia */
+	TXPWR_LMT_ACMA = 5,     /**< Australia */
 	TXPWR_LMT_CHILE = 6,    /**< Chile */
 	TXPWR_LMT_MEXICO = 7,   /**< Mexico */
 	TXPWR_LMT_WW = 8,       /**< Worldwide, The mininum of all */
-	TXPWR_LMT_GL = 9,		/**< Global */
+	TXPWR_LMT_GL = 9,       /**< Global */
 	TXPWR_LMT_UKRAINE = 10, /**< Ukraine */
-	TXPWR_LMT_CN = 11,       /**< China */
+	TXPWR_LMT_CN = 11,      /**< China */
 	TXPWR_LMT_QATAR = 12,   /**< Qatar */
 	TXPWR_LMT_UK = 13,      /**< Great Britain (United Kingdom; England) */
 	TXPWR_LMT_NCC = 14,     /**< Taiwan */
 	TXPWR_LMT_EXT = 15,     /**< Customer Customization */
 
 	/* ===== Add new power limit above this line. ===== */
-	TXPWR_LMT_CONST_MAX     /**< unchanging part define max */
+	TXPWR_LMT_CONST_MAX,    /**< unchanging part define max */
+
+	/* customer extension: 17 ~ 20 reserved */
+	TXPWR_LMT_EXT1 = 21,
+	TXPWR_LMT_EXT2 = 22,
+	TXPWR_LMT_EXT3,
+	TXPWR_LMT_EXT4,
+	TXPWR_LMT_EXT5,
+	TXPWR_LMT_EXT6,
+	TXPWR_LMT_EXT7,
+	TXPWR_LMT_EXT8,
+	TXPWR_LMT_EXT9,
+	TXPWR_LMT_EXT10 = 30,
+	TXPWR_LMT_EXT_MAX = 31      /*support a maximum of 31 groups*/
 };
 
 /**

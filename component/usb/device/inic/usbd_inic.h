@@ -178,7 +178,7 @@ typedef struct {
 	usbd_inic_ep_t out_ep[USB_MAX_ENDPOINTS];
 	usbd_otp_t otp;
 	usb_dev_t *dev;
-	usbd_inic_cb_t *cb;
+	const usbd_inic_cb_t *cb;
 	usb_setup_req_t ctrl_req;
 	rtos_task_t reset_task;
 	rtos_sema_t reset_sema;
@@ -200,7 +200,7 @@ typedef struct {
 * @param[in] cb: Pointer to the user-defined callback structure.
 * @return 0 on success, non-zero on failure.
 */
-int usbd_inic_init(usbd_inic_cb_t *cb);
+int usbd_inic_init(const usbd_inic_cb_t *cb);
 
 /**
  * @brief DeInitialize HID device
