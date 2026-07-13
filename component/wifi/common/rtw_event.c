@@ -117,6 +117,18 @@ void wifi_event_join_status_internal_hdl(u8 *buf, s32 flags)
 #endif
 }
 
+#ifdef CONFIG_DFS_MASTER
+void rtw_dfs_cac_done_hdl(u8 *evt_info)
+{
+	(void)evt_info;
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
+	/* CAC passed with no radar: bring up the AP netif that was deferred while CAC ran. */
+	LwIP_netif_set_up(SOFTAP_WLAN_INDEX);
+	LwIP_netif_set_link_up(SOFTAP_WLAN_INDEX);
+#endif
+}
+#endif
+
 /**
  * @brief internal event handle, must have same order as enum
  */
@@ -147,6 +159,9 @@ void (*const event_internal_hdl[])(u8 *buf, s32 len, s32 flags, void *user_data)
 #endif
 #endif
 	rtw_psk_deauth_info_flash_event_hdl,			/*RTW_EVENT_DEAUTH_INFO_FLASH*/
+#ifdef CONFIG_DFS_MASTER
+	rtw_dfs_cac_done_hdl,				/*RTW_EVENT_DFS_CAC_DONE*/
+#endif
 #endif
 	/*RTW_EVENT_INTERNAL_MAX*/
 };

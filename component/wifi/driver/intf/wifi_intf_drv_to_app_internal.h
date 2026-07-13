@@ -83,6 +83,7 @@ enum  {
 #endif
 
 	RTW_EVENT_DEAUTH_INFO_FLASH		    = 117,
+	RTW_EVENT_DFS_CAC_DONE				= 118, /**< DFS master: CAC passed, host brings AP netif link up */
 	RTW_EVENT_INTERNAL_MAX,
 };
 
