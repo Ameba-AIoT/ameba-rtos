@@ -66,7 +66,7 @@ typedef struct {
 	usbh_class_driver_t *acm;    /**< CDC ACM class. */
 	usbh_class_driver_t *ecm;    /**< CDC ECM class. */
 #endif
-	usbh_composite_cb_t *cb;      /**< Pointer to the user-defined callback structure. */
+	const usbh_composite_cb_t *cb;      /**< Pointer to the user-defined callback structure. */
 	usb_host_t *host;             /**< Pointer to the host structure. */
 } usbh_composite_host_t;
 /** @} End of Host_Composite_Types group */

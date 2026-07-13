@@ -1,5 +1,4 @@
 #include <whc_host_linux.h>
-#include <whc_host_cmd_path_api.h>
 
 struct whc_msg_node *whc_host_dequeue_tx_packet(struct xmit_priv_t *xmit_priv);
 

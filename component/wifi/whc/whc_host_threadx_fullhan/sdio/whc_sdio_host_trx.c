@@ -1,17 +1,14 @@
 #include "rtw_whc_common.h"
 
-#define fix_tx_buf_num	1
+#define TX_BUF_NUM	1
 #define MAX_SKB_BUF_SIZE_NORMAL	1664
 
 #ifdef todo
 #endif //use dynamic buf later, malloc when init host.
 /* one buf for fullhan, host will not exit send task until data send done */
-__attribute__((aligned(32)))  uint8_t tx_buf[fix_tx_buf_num][4 + SIZE_TX_DESC + MAX_SKB_BUF_SIZE_NORMAL] = {0};
+__attribute__((aligned(32)))  uint8_t tx_buf[TX_BUF_NUM][4 + SIZE_TX_DESC + MAX_SKB_BUF_SIZE_NORMAL] = {0};
 uint8_t used_buf_num = 0;
 extern struct whc_sdio whc_sdio_priv;
-#ifdef CONFIG_WHC_WIFI_API_PATH
-extern struct event_priv_t event_priv;
-#endif
 extern int whc_host_init_done;
 
 /* host tx */

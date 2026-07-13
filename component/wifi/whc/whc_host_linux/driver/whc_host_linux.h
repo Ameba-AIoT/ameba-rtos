@@ -58,6 +58,7 @@
 #include <asm/byteorder.h>
 #include <asm/atomic.h>
 #include <asm/io.h>
+#include <asm/unaligned.h>
 #include <asm-generic/io.h>
 #include <linux/semaphore.h>
 #include <linux/sem.h>
@@ -86,7 +87,6 @@
 #include <linux/of_gpio.h>
 
 /* whc headers. */
-#include "autoconf.h"
 #include "whc_host_wiphy.h"
 #include "wifi_api_types.h"
 #include "wifi_api_event.h"
@@ -113,7 +113,6 @@
 #else
 /* non-ipc driver */
 #include "whc_def.h"
-#include "whc_host_cust_evt.h"
 #include "whc_host_protocal_offload.h"
 #if defined(CONFIG_WHC_HCI_SDIO)
 #include <linux/mmc/sdio_func.h>
@@ -148,6 +147,11 @@
 #include "whc_host_ethtool_ops.h"
 #include "whc_host_hci.h"
 #include "whc_host_function.h"
+
+#ifdef CONFIG_WHC_CMD_PATH
+#include "whc_host_cmd_path_api.h"
+#include "whc_host_netlink.h"
+#endif
 
 
 /******************************************************************/

@@ -36,7 +36,7 @@ bool is_stack_never_enabled(void);
 int zephyr_res_alloc(void);
 int zephyr_res_free(void);
 void zephyr_internal_res_free(void);
-
+void zephyr_builtin_gatt_svc_set(bool enable);
 #ifdef __cplusplus
 }
 #endif

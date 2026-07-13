@@ -34,7 +34,7 @@ void PPE_Cmd(int state)
 
 /**
   * @brief  Get PPE global state.
-  * @return One of @ref PPE_GLOBAL_STATE.
+  * @return One of PPE_GLOBAL_STATE.
   */
 u32 PPE_GetGlobalState(void)
 {
@@ -206,7 +206,7 @@ void PPE_SetValid(void)
 /**
   * @brief  Get the setting valid value for polling.
   * @return Set valid bit status:
-  *         - 0: User can call PPE_SetValid() to tell PPE the settings are valid
+  *         - 0: User can call @ref PPE_SetValid() to tell PPE the settings are valid
   *         - 1: Settings valid bit is set
   */
 u32 PPE_GetValid(void)
@@ -254,7 +254,7 @@ void PPE_SetLine(u32 line)
 
 /**
   * @brief  Fill each PPE_init_struct member with its default value.
-  * @param  PPE_init_struct Pointer to a PPE_InitTypeDef structure which will be initialized.
+  * @param  PPE_init_struct Pointer to a @ref PPE_InitTypeDef structure which will be initialized.
   */
 void PPE_StructInit(PPE_InitTypeDef *PPE_init_struct)
 {
@@ -299,7 +299,7 @@ void PPE_ResultLayer_StructInit(PPE_ResultLayer_InitTypeDef *layer_init_struct)
 
 /**
   * @brief  Initialize the PPE peripheral according to the specified parameters in the PPE_init_struct.
-  * @param  PPE_init_struct Pointer to a PPE_InitTypeDef structure that contains
+  * @param  PPE_init_struct Pointer to a @ref PPE_InitTypeDef structure that contains
   *                         the configuration information for the specified PPE peripheral.
   */
 void PPE_Init(PPE_InitTypeDef *PPE_init_struct)

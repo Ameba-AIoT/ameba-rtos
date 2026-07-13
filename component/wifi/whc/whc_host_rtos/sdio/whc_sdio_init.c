@@ -1,9 +1,22 @@
 #include "whc_host.h"
 
+//TODO check real stack size
+#define SDIO_POLLING_STACK_SIZE 1024
+
 static rtos_sema_t sdio_whc_sema;
 
 extern struct whc_sdio whc_sdio_priv;
 extern struct sdio_func sdio_func1;
+
+/* from sdio host irq */
+void SD_IRQ_Notify(void)
+{
+	struct whc_sdio *priv = &whc_sdio_priv;
+#ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
+	sdio_disable_data1_irq();
+#endif
+	rtos_sema_give(priv->host_irq); /* ignore failure since there is nothing that can be done about it in a ISR */
+}
 
 void rtw_sdio_interrupt_handler(void)
 {
@@ -66,23 +79,13 @@ void rtw_sdio_interrupt_handler(void)
 #endif
 }
 
-/* from sdio host irq */
-void SD_IRQ_NOTIFY(void)
-{
-	struct whc_sdio *priv = &whc_sdio_priv;
-#ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
-	sdio_disable_data1_irq();
-#endif
-	rtos_sema_give(priv->host_irq); /* ignore failure since there is nothing that can be done about it in a ISR */
-}
-
-static int sdio_give_sema(u32 timeout)
+static int rtw_sdio_give_sema(u32 timeout)
 {
 	UNUSED(timeout);
 	return  rtos_sema_give(sdio_whc_sema);
 }
 
-static int sdio_take_sema(u32 timeout)
+static int rtw_sdio_take_sema(u32 timeout)
 {
 	return rtos_sema_take(sdio_whc_sema, timeout);
 }
@@ -90,7 +93,7 @@ static int sdio_take_sema(u32 timeout)
 static uint32_t rtw_sdio_enable_func(struct whc_sdio *priv)
 {
 	rtos_sema_create(&sdio_whc_sema, 0, 1);
-	SD_SetSema(sdio_take_sema, sdio_give_sema);
+	SD_SetSema(rtw_sdio_take_sema, rtw_sdio_give_sema);
 
 	if (SD_Init() != SD_OK) {
 		return RTK_FAIL;
@@ -192,10 +195,7 @@ static void rtw_sdio_init_interrupt(struct whc_sdio *priv)
 
 }
 
-//TODO check real stack size
-#define SDIO_POLLING_STACK_SIZE 1024
-
-void sdio_polling_task(void *arg1, void *arg2, void *arg3)
+void rtw_sdio_polling_task(void *arg1, void *arg2, void *arg3)
 {
 	(void)arg1;
 	(void)arg2;

@@ -85,6 +85,7 @@ enum rtw_security_type {
 	RTW_SECURITY_OPEN = 0,
 	RTW_SECURITY_PMK,
 	RTW_SECURITY_PAIRING,
+	RTW_SECURITY_PASSPHRASE,
 	RTW_SECURITY_UNKNOWN,
 };
 
@@ -124,6 +125,7 @@ struct dns_sd_config {
 	uint8_t security_option;
 	uint8_t pmk[NAN_PMK_SIZE];
 	uint16_t bstrap_method;
+	char passphrase[MAX_PASSPHRASE_LEN + 1];
 	char pairing_pw[MAX_PASN_PW_LEN + 1];
 	uint8_t nik_caching;
 	uint8_t gtk_enable;
@@ -180,6 +182,8 @@ void clear_data_path(struct nan_data_mgnt *nan_data_mgnt)
 	memset(data_path->initiator_intf_identifier, 0, ETH_ALEN);
 	memset(data_path->responder_intf_identifier, 0, ETH_ALEN);
 	data_path->sec_type = 0;
+	data_path->passphrase_len = 0;
+	memset(data_path->passphrase, 0, MAX_PASSPHRASE_LEN + 1);
 
 	if (nan_data_mgnt->nan_status == NAN_STATUS_NDP_ESTABLISH ||
 		nan_data_mgnt->nan_status == NAN_STATUS_SEND_REQ ||
@@ -223,8 +227,9 @@ void wait_time(uint16_t waiting_sec)
 	}
 }
 
-void timer_handler()
+void timer_handler(int sig)
 {
+	(void)sig;
 	struct nan_data_mgnt *tmp_nan_data_mgnt = NULL;
 	int i = 0;
 
@@ -474,6 +479,9 @@ void parse_data_indication(struct nan_data_mgnt *nan_data_mgnt, struct dns_evt_d
 	nan_data_mgnt->data_path.sec_type = 0;
 	if (info->security) {
 		nan_data_mgnt->data_path.sec_type = NAN_PMK_SET_BY_USER_PMK;
+		if (nan_data_mgnt->service.sec_type == NAN_PMK_SET_BY_USER_PASSPRHRAE) {
+			nan_data_mgnt->data_path.sec_type = NAN_PMK_SET_BY_USER_PASSPRHRAE;
+		}
 		if (nan_data_mgnt->nan_status == NAN_STATUS_GET_PASN_RESULT) {
 			nan_data_mgnt->data_path.sec_type = NAN_PMK_SET_BY_PAIRING;
 		}
@@ -649,12 +657,13 @@ void dns_evt_discovery_result(struct dns_evt_disc_result_info *info, uint32_t le
 			}
 		} else if (info->pmk_set) {
 			/* PMK */
-			if (nan_mgnt->service.sec_type != NAN_PMK_SET_BY_USER_PMK) {
+			if (nan_mgnt->service.sec_type != NAN_PMK_SET_BY_USER_PMK &&
+				nan_mgnt->service.sec_type != NAN_PMK_SET_BY_USER_PASSPRHRAE) {
 				RTW_INFO("Security is mismatched, sec_type[%d]\n",
 						 nan_mgnt->service.sec_type);
 				return;
 			}
-			nan_mgnt->data_path.sec_type = NAN_PMK_SET_BY_USER_PMK;
+			nan_mgnt->data_path.sec_type = nan_mgnt->service.sec_type;
 			if (dns_datapath_req(&nan_mgnt->data_path) == RTW_RET_STATUS_SUCCESS) {
 				RTW_INFO("send data path success!!!\n");
 				nan_mgnt->nan_status = NAN_STATUS_SEND_REQ;
@@ -1127,6 +1136,8 @@ enum rtw_security_type get_security_type_from_input_str(char *str)
 		type = RTW_SECURITY_PMK;
 	} else if (strcmp(str, "pairing") == 0) {
 		type = RTW_SECURITY_PAIRING;
+	} else if (strcmp(str, "passphrase") == 0 || strcmp(str, "pw") == 0) {
+		type = RTW_SECURITY_PASSPHRASE;
 	}
 	return type;
 }
@@ -1326,6 +1337,24 @@ int get_publish_dns_sd_from_json(json_object *obj, struct dns_sd_config *dns_rec
 		dns_record->nik_caching = json_object_get_int(tmp_obj);
 		break;
 
+	case RTW_SECURITY_PASSPHRASE:
+		/* passphrase */
+		if (!json_object_object_get_ex(obj, "passphrase", &tmp_obj)) {
+			/* fallback: also accept "pw" as the JSON key */
+			if (!json_object_object_get_ex(obj, "pw", &tmp_obj)) {
+				RTW_INFO(" \"passphrase\" or \"pw\" not found\n");
+				return false;
+			}
+		}
+		if (strlen(json_object_get_string(tmp_obj)) > MAX_PASSPHRASE_LEN) {
+			RTW_INFO("passphrase length is bigger than %d! \n", MAX_PASSPHRASE_LEN);
+			return false;
+		}
+		memset(dns_record->passphrase, '\0', MAX_PASSPHRASE_LEN + 1);
+		CPY_OBJ_STR(dns_record->passphrase, tmp_obj);
+		RTW_INFO("passphrase: %s\n", dns_record->passphrase);
+		break;
+
 	case RTW_SECURITY_UNKNOWN:
 	default:
 		RTW_INFO("Unknow security type!\n");
@@ -1435,6 +1464,24 @@ int get_subscribe_dns_sd_from_json(json_object *obj, struct dns_sd_config *dns_r
 			return false;
 		}
 		dns_record->nik_caching = json_object_get_int(tmp_obj);
+		break;
+
+	case RTW_SECURITY_PASSPHRASE:
+		/* passphrase */
+		if (!json_object_object_get_ex(obj, "passphrase", &tmp_obj)) {
+			/* fallback: also accept "pw" as the JSON key */
+			if (!json_object_object_get_ex(obj, "pw", &tmp_obj)) {
+				RTW_INFO(" \"passphrase\" or \"pw\" not found\n");
+				return false;
+			}
+		}
+		if (strlen(json_object_get_string(tmp_obj)) > MAX_PASSPHRASE_LEN) {
+			RTW_INFO("passphrase length is bigger than %d! \n", MAX_PASSPHRASE_LEN);
+			return false;
+		}
+		memset(dns_record->passphrase, '\0', MAX_PASSPHRASE_LEN + 1);
+		CPY_OBJ_STR(dns_record->passphrase, tmp_obj);
+		RTW_INFO("passphrase: %s\n", dns_record->passphrase);
 		break;
 
 	case RTW_SECURITY_UNKNOWN:
@@ -1646,6 +1693,15 @@ void setup_nan_mgnt(enum rtw_aware_role role, struct dns_sd_config *dns_record, 
 
 		pairing_info->nik_caching = dns_record->nik_caching;
 		pairing_info->bstrap_method = dns_record->bstrap_method;
+		break;
+	case RTW_SECURITY_PASSPHRASE:
+		nan_data_mgnt->service.sec_type = NAN_PMK_SET_BY_USER_PASSPRHRAE;
+		nan_data_mgnt->service.gtk_enable = dns_record->gtk_enable;
+		nan_data_mgnt->service.passphrase_len = strlen(dns_record->passphrase);
+		memcpy(nan_data_mgnt->service.passphrase, dns_record->passphrase, nan_data_mgnt->service.passphrase_len);
+		nan_data_mgnt->data_path.passphrase_len = nan_data_mgnt->service.passphrase_len;
+		memcpy(nan_data_mgnt->data_path.passphrase, dns_record->passphrase, nan_data_mgnt->data_path.passphrase_len);
+		break;
 	default:
 		break;
 	}
@@ -1656,14 +1712,10 @@ void rtw_aware_help(char *str)
 	fprintf(stderr, "Usage: %s [-r publish|subscribe] [-f config_file] [option] \n", str);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "General : \n");
-	fprintf(stderr, "  -b \t enable bluetooth trigger, default is disabled.\n");
-	fprintf(stderr, "\n");
 	fprintf(stderr, "Publish : \n");
-	fprintf(stderr, "  -s \t open,pmk (Deprecated, the security type setting has been moved to the config file)\n");
 	fprintf(stderr, "  -t \t timeout value\n");
 	fprintf(stderr, "  -n \t number of service\n");
 	fprintf(stderr, "subscribe : \n");
-	fprintf(stderr, "  -s \t open,pmk (Deprecated, the security type setting has been moved to the config file)\n");
 	fprintf(stderr, "  -t \t timeout value\n");
 }
 

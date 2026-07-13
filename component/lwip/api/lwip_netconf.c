@@ -1,6 +1,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "lwip_netconf.h"
 #include "lwip/prot/dhcp.h"
+#if LWIP_IPV6
+#include "lwip/nd6.h"
+#endif
 #include "dhcp/dhcps.h"
 #include "atcmd_service.h"
 #include "wifi_intf_drv_to_upper.h"
@@ -587,6 +590,26 @@ void lwip_autoip_ipv6(uint8_t idx)
 	netif_create_ip6_linklocal_address(pnetif, 1);
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nIPv6 link-local address: ");
 	LwIP_DUMP_IPV6_ADDRESS(netif_ip6_addr(pnetif, 0)->addr);
+}
+
+/* Add a static IPv6 neighbor on netif idx: derive the peer link-local from its MAC
+ * (EUI-64) and bind it to that MAC as a reachable neighbor-cache entry. */
+void lwip_add_ipv6_neighbor(uint8_t idx, const uint8_t *peer_mac)
+{
+	struct netif *pnetif = lwip_idx_get_netif(idx);
+	ip6_addr_t ll;
+
+	if (pnetif == NULL || peer_mac == NULL) {
+		return;
+	}
+	ll.addr[0] = PP_HTONL(0xfe800000UL);
+	ll.addr[1] = 0;
+	ll.addr[2] = lwip_htonl(((u32_t)(peer_mac[0] ^ 0x02) << 24) | ((u32_t)peer_mac[1] << 16) |
+							((u32_t)peer_mac[2] << 8) | 0xffUL);
+	ll.addr[3] = lwip_htonl((0xfeUL << 24) | ((u32_t)peer_mac[3] << 16) |
+							((u32_t)peer_mac[4] << 8) | (u32_t)peer_mac[5]);
+	ip6_addr_assign_zone(&ll, IP6_UNICAST, pnetif);
+	nd6_add_static_neighbor(pnetif, &ll, peer_mac);
 }
 #endif
 

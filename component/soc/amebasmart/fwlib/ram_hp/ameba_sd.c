@@ -17,14 +17,19 @@ static void (*cd_cb)(SD_RESULT);
   * @{
   */
 
-/** @defgroup SDHOST
-* @brief SDHOST driver modules
-* @{
-*/
+/** @defgroup SDHOST SDHOST
+  * @brief SDHOST driver modules
+  * @{
+  */
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup SDHOST_Exported_Functions SDHOST Exported Functions
   * @{
+  */
+/**
+  * @brief  Handle the card detect GPIO interrupt.
+  * @param  id GPIO pin ID (unused).
+  * @param  event GPIO interrupt event indicating signal edge.
   */
 static void SD_CardDetectHdl(u32 id, u32 event)
 {
@@ -49,6 +54,9 @@ static void SD_CardDetectHdl(u32 id, u32 event)
 	}
 }
 
+/**
+  * @brief  Configure the pinmux and GPIO settings for the SD host controller.
+  */
 static void SDIOH_Pinmux(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct_CD;
@@ -117,11 +125,12 @@ static void SDIOH_Pinmux(void)
 }
 
 /**
-  * @brief  Check SDIOH response is valid or not.
-  * @param  resp_type: which can be a value of @ref SDIOH_Card_Response_Byte_Index.
-  * @param  cmd: indicate the command of which the response to be checked
-  * @retval  0: response is valid
-  *		   others: response is invalid
+  * @brief  Check whether the SD host response is valid.
+  * @param  resp_type Response type, which can be a value of @ref SDHOST_Card_Response_Type.
+  * @param  cmd Command index whose response is to be checked.
+  * @return Operation result:
+  *           - 0: Response is valid.
+  *           - Others: Response is invalid.
   */
 static u32 CmdRespError(u8 resp_type, u8 cmd)
 {
@@ -191,9 +200,9 @@ static u32 CmdRespError(u8 resp_type, u8 cmd)
 
 /**
   * @brief  Reset SD card.
-  * @param  None.
-  * @retval  0: reset SD card successfully
-  *		   others: fail to reset SD card
+  * @return Operation result:
+  *           - 0: Reset SD card successfully.
+  *           - Others: Fail to reset SD card.
   */
 static u32 SD_ResetCard(void)
 {
@@ -212,7 +221,7 @@ static u32 SD_ResetCard(void)
 	}
 
 	// check if any errors
-	ret = CmdRespError(SDIOH_NO_RESP, SD_CMD_GoIdleSte);
+	ret = CmdRespError(SDIOH_RESP_NONE, SD_CMD_GoIdleSte);
 	if (ret != HAL_OK) {
 		return ret;
 	}
@@ -222,11 +231,11 @@ static u32 SD_ResetCard(void)
 
 #if defined(SDIO) && (SDIO == SD)
 /**
-  * @brief  Sends SD Memory Card interface condition, which includes host supply voltage information
-  *  		and asks the card whether card supports voltage.
-  * @param  voltage_mismatch: pointer to a variable to indicate SD card responds to CMD8 or not.
-  * @retval  HAL_OK: SD card responds to CMD8 successfully
-  *		   HAL_TIMEOUT: SD card does not respond to CMD8
+  * @brief  Check SD card voltage compatibility by sending CMD8 (SEND_IF_COND).
+  * @param  voltage_mismatch Pointer to a variable indicating whether the SD card responded to CMD8.
+  * @return HAL operation result:
+  *           - HAL_OK: SD card responds to CMD8 successfully.
+  *           - HAL_TIMEOUT: SD card does not respond to CMD8.
   */
 static u32 SD_VoltageCheck(u8 *voltage_mismatch)
 {
@@ -260,10 +269,14 @@ static u32 SD_VoltageCheck(u8 *voltage_mismatch)
 #endif
 
 /**
-  * @brief  Forces the card to stop transmission.
-  * @param  None
-  * @retval  HAL_OK: Transmission is stopped successfully
-  *		   Others: Fail to stop transmisstion
+  * @}
+  */
+
+/**
+  * @brief  Force the card to stop transmission.
+  * @return HAL operation result:
+  *           - HAL_OK: Transmission is stopped successfully.
+  *           - Others: Fail to stop transmission.
   */
 u32 SD_StopTransfer(void)
 {
@@ -293,11 +306,16 @@ u32 SD_StopTransfer(void)
 	return HAL_OK;
 }
 
+/** @addtogroup SDHOST_Exported_Functions
+  * @{
+  */
+
 /**
-  * @brief  Get operating condition register(OCR) value in response.
-  * @param  voltage_mismatch: indicate voltage mismatch or not when check voltage.
-  * @retval  HAL_OK: Get OCR successfully
-  *		   Others: Fail to get OCR
+  * @brief  Get the Operating Condition Register (OCR) value from the ACMD41 response.
+  * @param  voltage_mismatch Indicates whether a voltage mismatch was detected during voltage checking.
+  * @return HAL operation result:
+  *           - HAL_OK: Get OCR successfully.
+  *           - Others: Fail to get OCR.
   */
 #if defined(SDIO) && (SDIO == SD)
 
@@ -447,10 +465,10 @@ static u32 SD_GetOCR(u8 voltage_mismatch)
 
 #endif
 /**
-  * @brief  Asks any card to send the CID numbers on the CMD line (any card that is connected to the host will respond)
-  * @param  None.
-  * @retval  HAL_OK: Get CID successfully
-  *		   Others: Fail to get CID
+  * @brief  Send CMD2 to request all connected cards to transmit their Card Identification (CID) register on the CMD line.
+  * @return HAL operation result:
+  *           - HAL_OK: Get CID successfully.
+  *           - Others: Fail to get CID.
   */
 static u32 SD_GetCID(void)
 {
@@ -513,10 +531,10 @@ static u32 SD_GetCID(void)
 }
 
 /**
-  * @brief  Ask the card to publish a new relative address (RCA)
-  * @param  None.
-  * @retval  HAL_OK: Get RCA successfully
-  *		   Others: Fail to get RCA
+  * @brief  Ask the card to publish a new Relative Card Address (RCA).
+  * @return HAL operation result:
+  *           - HAL_OK: Get RCA successfully.
+  *           - Others: Fail to get RCA.
   */
 static u32 SD_GetRCA(void)
 {
@@ -547,10 +565,10 @@ static u32 SD_GetRCA(void)
 }
 
 /**
-  * @brief  Ask the Addressed card sends its card-specific data (CSD) on the CMD line.
-  * @param  None.
-  * @retval  HAL_OK: Get CSD successfully
-  *		   Others: Fail to get CSD
+  * @brief  Ask the addressed card to send its Card-Specific Data (CSD) register on the CMD line.
+  * @return HAL operation result:
+  *           - HAL_OK: Get CSD successfully.
+  *           - Others: Fail to get CSD.
   */
 static u32 SD_GetCSD(void)
 {
@@ -628,10 +646,11 @@ static u32 SD_GetCSD(void)
 }
 
 /**
-  * @brief  Select/Deselect the SD card.
-  * @param  select: can be TRUE or FALSE.
-  * @retval  HAL_OK: Select/Deselect card successfully
-  *		   Others: Fail to Select/Deselect card
+  * @brief  Select or deselect the SD card.
+  * @param  select Set to TRUE to select the card, FALSE to deselect it.
+  * @return HAL operation result:
+  *           - HAL_OK: Select or deselect the SD card successfully.
+  *           - Others: Failed to select or deselect the card.
   */
 static u32 SD_SelectDeselect(u8 select)
 {
@@ -667,7 +686,7 @@ static u32 SD_SelectDeselect(u8 select)
 		}
 
 		// check if any errors
-		ret = CmdRespError(SDIOH_NO_RESP, SD_CMD_SelDeselCard);
+		ret = CmdRespError(SDIOH_RESP_NONE, SD_CMD_SelDeselCard);
 		if (ret != HAL_OK) {
 			return ret;
 		}
@@ -678,9 +697,10 @@ static u32 SD_SelectDeselect(u8 select)
 
 /**
   * @brief  Set the bus width of the SD card.
-  * @param  bus_width: can be one of the @ref SDIOH_Bus_Width
-  * @retval  HAL_OK: Set bus width successfully
-  *		   Others: Fail to set bus width
+  * @param  bus_width Bus width to set, which can be one of the values of @ref SDHOST_Bus_Width.
+  * @return HAL operation result:
+  *           - HAL_OK: Set bus width successfully.
+  *           - Others: Fail to set bus width.
   */
 static u32 SD_SetBusWidth(u8 bus_width)
 {
@@ -747,9 +767,9 @@ static u32 SD_SetBusWidth(u8 bus_width)
 #if defined(SDIO) && (SDIO == SD)
 /**
   * @brief  Get the SD Configuration Register (SCR).
-  * @param  None
-  * @retval  HAL_OK: Get SCR successfully
-  *		   Others: Fail to get SCR
+  * @return HAL operation result:
+  *           - HAL_OK: Get SCR successfully.
+  *           - Others: Fail to get SCR.
   */
 static u32 SD_GetSCR(void)
 {
@@ -843,12 +863,13 @@ static u32 SD_GetSCR(void)
 }
 
 /**
-  * @brief  Checks switchable function (mode 0) and switch card function (mode 1).
-  * @param  mode: can be a value of @ref SD_CMD6_operation_mode
-  * @param  speed: can be a value of @SD_CMD6_Function_Group1
-  * @param  buf_32align: pointer to a buffer to save the switch function status
-  * @retval  HAL_OK: Check/Set function successfully
-  *		   Others: Fail to get check/Set function
+  * @brief  Check (Mode 0) or switch (Mode 1) a card function using CMD6.
+  * @param  mode Operation mode, which can be a value of @ref SD_CMD6_OpMode.
+  * @param  speed Access mode speed, which can be a value of @ref SD_Access_Mode.
+  * @param  buf_32align Pointer to a buffer to store the switch function status, which should be 32-byte aligned.
+  * @return HAL operation result:
+  *           - HAL_OK: Check/Set function successfully.
+  *           - Others: Failed to check or switch the function.
   */
 static u32 SD_SwitchFunction(u8 mode, u8 speed, u8 *buf_32align)
 {
@@ -904,9 +925,8 @@ static u32 SD_SwitchFunction(u8 mode, u8 speed, u8 *buf_32align)
 #endif
 
 /**
-  * @brief  SD card interrupt handler.
-  * @param  None
-  * @retval  None
+  * @brief  SD Host interrupt handler.
+  * @return 0.
   */
 static u32 SD_IRQHandler(void *param)
 {
@@ -933,6 +953,13 @@ static u32 SD_IRQHandler(void *param)
 	return 0;
 }
 
+/**
+  * @brief  Read the extended CSD register from the eMMC card.
+  * @param  pbuf Pointer to a buffer to store the EXT_CSD data (must be cache-line aligned).
+  * @return SD operation result:
+  *           - SD_OK: Success.
+  *           - Others: Failure.
+  */
 SD_RESULT SD_GetEXTCSD(u8 *pbuf)
 {
 	u32 ret;
@@ -982,12 +1009,13 @@ SD_RESULT SD_GetEXTCSD(u8 *pbuf)
 }
 
 /**
- *  @brief To read one block from the SD card.
- *  @param  BlockIdx: The start block to begin to read from the card.
- *  @param  readbuff: The buffer to read data blocks (must be 32-Byte alignment).
- *  @retval  HAL_OK: Read data successfully
- *  		   Others: Fail to read data
- */
+  * @brief  Read one block from the SD card.
+  * @param  readbuff Buffer to store the read data (must be 32-byte aligned).
+  * @param  BlockIdx Index of the starting block to read.
+  * @return HAL operation result:
+  *             - HAL_OK: Read data successfully.
+  *             - Others: Fail to read data.
+  */
 u32 SD_ReadBlock(uint8_t *readbuff, uint32_t BlockIdx)
 {
 	u32 ret, start;
@@ -1044,13 +1072,14 @@ u32 SD_ReadBlock(uint8_t *readbuff, uint32_t BlockIdx)
 }
 
 /**
- *  @brief To read multi-block from the SD card.
- *  @param  BlockIdx: The start block to begin to read from the card.
- *  @param  readbuff: The buffer to read data blocks (must be 32-Byte alignment).
- *  @param  NumberOfBlocks: the number of blocks to be read
- *  @retval  HAL_OK: Read data successfully
- *  		   Others: Fail to read data
- */
+  * @brief  Read multiple blocks from the SD card.
+  * @param  readbuff The buffer to read data blocks (must be 32-byte aligned).
+  * @param  BlockIdx The index of the starting block to read.
+  * @param  NumberOfBlocks The number of blocks to be read.
+  * @return HAL operation result:
+  *             - HAL_OK: Read data successfully.
+  *             - Others: Fail to read data.
+  */
 u32 SD_ReadMultiBlocks(uint8_t *readbuff, uint32_t BlockIdx, uint32_t NumberOfBlocks)
 {
 	u32 ret, start;
@@ -1102,12 +1131,13 @@ u32 SD_ReadMultiBlocks(uint8_t *readbuff, uint32_t BlockIdx, uint32_t NumberOfBl
 }
 
 /**
- *  @brief To write one block to the SD card.
- *  @param  BlockIdx: The start block to begin writing to the card.
- *  @param  writebuff: The buffer to write data blocks (must be 32-Byte alignment).
- *  @retval  HAL_OK: Write data successfully
- *  		   Others: Fail to write data
- */
+  * @brief  Write one block to the SD card.
+  * @param  writebuff Buffer containing the data to write (must be 32-byte aligned).
+  * @param  BlockIdx The index of the starting block to write.
+  * @return HAL operation result:
+  *             - HAL_OK: Write data successfully.
+  *             - Others: Fail to write data.
+  */
 u32 SD_WriteBlock(uint8_t *writebuff, uint32_t BlockIdx)
 {
 	u32 ret, start;
@@ -1161,13 +1191,14 @@ u32 SD_WriteBlock(uint8_t *writebuff, uint32_t BlockIdx)
 }
 
 /**
- *  @brief To write multi-block to the SD card.
- *  @param  BlockIdx: The start block to begin writing to the card.
- *  @param  NumberOfBlocks: The block count.
- *  @param  writebuff: The buffer to write data blocks (must be 32-Byte alignment).
- *  @retval  HAL_OK: Write data successfully
- *  		   Others: Fail to write data
- */
+  * @brief  Write multiple blocks to the SD card.
+  * @param  writebuff The buffer to write data blocks (must be 32-byte aligned).
+  * @param  BlockIdx The index of the starting block to write.
+  * @param  NumberOfBlocks The number of blocks to write.
+  * @return HAL operation result:
+  *             - HAL_OK: Write data successfully.
+  *             - Others: Fail to write data.
+  */
 u32 SD_WriteMultiBlocks(uint8_t *writebuff, uint32_t BlockIdx, uint32_t NumberOfBlocks)
 {
 	u32 start, ret;
@@ -1250,12 +1281,13 @@ u32 SD_WriteMultiBlocks(uint8_t *writebuff, uint32_t BlockIdx, uint32_t NumberOf
 }
 
 /**
- *  @brief To erase data in the SD card.
- *  @param  StartBlock: The start block to begin erasing.
- *  @param  EndBlock: The end block to begin erasing.
- *  @retval  HAL_OK: Erase data successfully
- *  		   Others: Fail to Erase data.
- */
+  * @brief  Erase data in the SD card.
+  * @param  StartBlock The start block to erase.
+  * @param  EndBlock The end block to erase.
+  * @return HAL operation result:
+  *             - HAL_OK: Erase data successfully.
+  *             - Others: Failed to erase data.
+  */
 u32 SD_Erase(uint32_t StartBlock, uint32_t EndBlock)
 {
 	SDIOH_CmdTypeDef cmd_attr;
@@ -1330,10 +1362,13 @@ u32 SD_Erase(uint32_t StartBlock, uint32_t EndBlock)
 }
 
 /**
- *  @brief To get the current state of the SD card.
- *  @param  None.
- *  @retval  Current state of SD card, which is one of the @ref SD_Card_States values.
- */
+  * @}
+  */
+
+/**
+  * @brief  Get the current state of the SD card.
+  * @return Current state of the SD card, which is one of the @ref SD_Card_State_Types.
+  */
 u8 SD_GetCardStatus(void)
 {
 	u32 ret;
@@ -1348,7 +1383,7 @@ u8 SD_GetCardStatus(void)
 	cmd_attr.data_present = SDIOH_NO_DATA;
 	ret = SDIOH_SendCommand(&cmd_attr, SDIOH_CMD_CPLT_TIMEOUT);
 	if (ret != HAL_OK) {
-		return ret;
+		return SD_CARD_ERROR;
 	}
 
 	ret = CmdRespError(SDIOH_RESP_R1, SD_CMD_SendSts);
@@ -1363,12 +1398,17 @@ u8 SD_GetCardStatus(void)
 	return state;
 }
 
+/** @addtogroup SDHOST_Exported_Functions
+  * @{
+  */
+
 /**
- *  @brief To get the SD status from the SD card.
- *  @param  buf_32align: The buffer to store the SD status (must be 32-Byte alignment).
- *  @retval  HAL_OK: Get SD status successfully
- *  		   Others: Fail to get SD status.
- */
+  * @brief  Get the SD Status register (512-bit) from the card via ACMD13.
+  * @param  buf_32align Buffer to store the SD Status data (must be 32-byte aligned).
+  * @return HAL operation result:
+  *             - HAL_OK: Get SD status successfully.
+  *             - Others: Fail to get SD status.
+  */
 u32 SD_GetSDStatus(u8 *buf_32align)
 {
 	u32 ret;
@@ -1434,10 +1474,11 @@ u32 SD_GetSDStatus(u8 *buf_32align)
 }
 
 /**
-  *  @brief To switch the SD bus speed.
-  *  @param  speed: can be SD_SPEED_DS or SD_SPEED_HS of @ref SD_access_mode
-  *  @retval  HAL_OK: switch speed successfully
-  *  		   Others: Fail to switch speed.
+  * @brief Switch the SD bus speed.
+  * @param  speed Bus speed mode: SD_SPEED_DS or SD_SPEED_HS.
+  * @return HAL operation result:
+  *             - HAL_OK: Switch speed successfully.
+  *             - Others: Fail to switch speed.
   */
 #if defined(SDIO) && (SDIO == SD)
 
@@ -1564,14 +1605,14 @@ u32 SD_SwitchBusSpeed(u8 speed)
 
 /****************************** The following functions are for FATFS call **************************************/
 /**
-  *  @brief To get the current state of the SDIOH and card.
-  *  @param  None.
-  *  @retval  SD_OK: SD card is initialized.
-  * 		SD_NODISK: SD card is removed.
-  *			SD_INSERT: SD card is inserted.
-  *			SD_INITERR: SD card is init fail.
-  *			SD_PROTECTED: SD card is write-protected.
-  *			SD_ERROR: Some errors occur.
+  * @brief  Get the current status of the SD card.
+  * @return SD card status:
+  *             - SD_OK: SD card is initialized.
+  *             - SD_NODISK: SD card is removed.
+  *             - SD_INSERT: SD card is inserted.
+  *             - SD_INITERR: SD card initialization failed.
+  *             - SD_PROTECTED: SD card is write-protected.
+  *             - SD_ERROR: Some errors occur.
   */
 SD_RESULT SD_Status(void)
 {
@@ -1579,13 +1620,14 @@ SD_RESULT SD_Status(void)
 }
 
 /**
-  *  @brief To write blocks of data to the SD card.
-  *  @param  sector: the start index of blocks to write to.
-  *  @param  data: pointer to data buffer. If the address of data buffer is 32-byte alinged,
-  *		the write performance would be higher.
-  *  @param  count: specify how many blocks to be written.
-  *  @retval  SD_OK: Success to write blocks.
-  *		SD_ERROR: Fail to write blocks.
+  * @brief Write blocks of data to the SD card.
+  * @param  sector The start index of blocks to write to.
+  * @param  data Pointer to data buffer. If the address of data buffer is 32-byte aligned,
+  *        the write performance would be higher.
+  * @param  count Number of blocks to write.
+  * @return SD operation result:
+  *             - SD_OK: Wrote blocks successfully.
+  *             - SD_ERROR: Failed to write blocks.
   */
 SD_RESULT SD_WriteBlocks(u32 sector, const u8 *data, u32 count)
 {
@@ -1644,13 +1686,14 @@ SD_RESULT SD_WriteBlocks(u32 sector, const u8 *data, u32 count)
 }
 
 /**
-  *  @brief To read blocks of data from the SD card.
-  *  @param  sector: the start index of blocks to read from.
-  *  @param  data: pointer to data buffer. If the address of data buffer is 32-byte alinged,
-  *		the read performance would be higher.
-  *  @param  count: specify how many blocks to be read.
-  *  @retval  SD_OK: Success to read blocks.
-  *		SD_ERROR: Fail to read blocks.
+  * @brief Read blocks of data from the SD card.
+  * @param  sector The start index of blocks to read from.
+  * @param  data Pointer to data buffer. If the address of data buffer is 32-byte aligned,
+  *        the read performance would be higher.
+  * @param  count Number of blocks to read.
+  * @return SD operation result:
+  *             - SD_OK: Read blocks successfully.
+  *             - SD_ERROR: Failed to read blocks.
   */
 SD_RESULT SD_ReadBlocks(u32 sector, u8 *data, u32 count)
 {
@@ -1704,10 +1747,11 @@ SD_RESULT SD_ReadBlocks(u32 sector, u8 *data, u32 count)
 }
 
 /**
-  *  @brief To get the capacity of the SD card.
-  *  @param  sector_count: the capacity in blocks.
-  *  @retval  SD_OK: Success to get capacity.
-  *			SD_ERROR: Fail to get capacity.
+  * @brief Get the capacity of the SD card.
+  * @param  sector_count Pointer to a variable that will receive the card capacity in sectors (512-byte blocks).
+  * @return SD operation result:
+  *             - SD_OK: Capacity retrieved successfully.
+  *             - SD_ERROR: Failed to get capacity.
   */
 SD_RESULT SD_GetCapacity(u32 *sector_count)
 {
@@ -1736,6 +1780,9 @@ SD_RESULT SD_GetCapacity(u32 *sector_count)
 	return SD_ERROR;
 }
 
+/**
+  * @brief Initialize the connected device.
+  */
 void SD_CardInit(void)
 {
 	u32 ret;
@@ -1816,10 +1863,10 @@ void SD_CardInit(void)
 }
 
 /**
-  *  @brief To initialize the SD memory card.
-  *  @param  None.
-  *  @retval  SD_OK: Initialize SD card successfully
-  *			Others: Fail to initialize SD card
+  * @brief  Initialize the SD host controller and connected device.
+  * @return SD operation result:
+  *           - SD_OK: Success.
+  *           - Others: Failure.
   */
 SD_RESULT SD_Init(void)
 {
@@ -1831,7 +1878,7 @@ SD_RESULT SD_Init(void)
 	/* Configure pinmux */
 	SDIOH_Pinmux();
 
-	/* Initialize SDIOH */
+	/* Initialize SD host */
 	SDIOH_Init(sdioh_config.sdioh_bus_width);
 
 	InterruptRegister((IRQ_FUN)SD_IRQHandler, SDIO_HOST_IRQ, NULL, INT_PRI_HIGH);
@@ -1873,9 +1920,10 @@ SD_RESULT SD_Init(void)
 }
 
 /**
-  *  @brief To de-initialize the SDIO host controller.
-  *  @param None.
-  *  @retval  SD_OK: SDIO host controller is de-initialize successfully.
+  * @brief  De-initialize the SD host controller and connected device.
+  * @return SD operation result:
+  *           - SD_OK: Success.
+  *           - Others: Failure.
   */
 SD_RESULT SD_DeInit(void)
 {
@@ -1888,9 +1936,8 @@ SD_RESULT SD_DeInit(void)
 }
 
 /**
-  *  @brief Set card detect irq callback for user.
-  *  @param cd_callback: user callback function.
-  *  @retval  None.
+  * @brief  Register the card-detect IRQ callback.
+  * @param  cd_callback Pointer to the callback function called on card insertion or removal, receiving the detection result as @ref SD_RESULT.
   */
 void SD_SetCdCallback(void (*cd_callback)(SD_RESULT))
 {
@@ -1898,11 +1945,10 @@ void SD_SetCdCallback(void (*cd_callback)(SD_RESULT))
 }
 
 /**
-  *  @brief Sema stub function for sd transfer. If this funtcion is not called, polling mode will be used
-  *         when waiting for transfer dma done.
-  *  @param sema_take_fn: semaphore take function instance given by user.
-  *         sema_give_isr_fn: semaphore give function instance given by user.
-  *  @retval  None.
+  * @brief  Register semaphore functions for SD DMA transfer synchronization. If not called, polling mode is used
+  *         while waiting for DMA transfer completion.
+  * @param  sema_take_fn Pointer to the semaphore take function provided by the caller.
+  * @param  sema_give_isr_fn Pointer to the semaphore give function provided by the caller, invoked from ISR context.
   */
 void SD_SetSema(int (*sema_take_fn)(u32), int (*sema_give_isr_fn)(u32))
 {

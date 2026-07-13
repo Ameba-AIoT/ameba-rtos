@@ -1,12 +1,11 @@
 #include "rtw_whc_common.h"
 
-#define fix_tx_buf_num	2
+#define TX_BUF_NUM	2
 #define MAX_SKB_BUF_SIZE_NORMAL	1664
 
-u8 tx_buf[fix_tx_buf_num][4 + SIZE_TX_DESC + MAX_SKB_BUF_SIZE_NORMAL] = {0};
+u8 tx_buf[TX_BUF_NUM][4 + SIZE_TX_DESC + MAX_SKB_BUF_SIZE_NORMAL] = {0};
 u8 used_buf_num = 0;
 extern struct whc_sdio whc_sdio_priv;
-extern struct event_priv_t event_priv;
 extern int whc_host_init_done;
 
 /* host tx */
@@ -63,8 +62,8 @@ int whc_host_sdio_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 
 	rtw_sdio_send_data(buf, len_send, NULL);
 
-	used_buf_num = (used_buf_num + 1) % fix_tx_buf_num;
-	rtos_sema_give(whc_sdio_priv.host_send);
+	used_buf_num = (used_buf_num + 1) % TX_BUF_NUM;
+	rtos_mutex_give(whc_sdio_priv.host_send);
 
 	return ret;
 }

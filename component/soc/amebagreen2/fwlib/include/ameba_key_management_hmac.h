@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup KEY_MANAGEMENT_HMAC
+/** @defgroup KEY_MANAGEMENT_HMAC Key Management HMAC
   * @brief KEY_MANAGEMENT_HMAC driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -87,6 +88,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -95,30 +97,30 @@ extern "C" {
 
 
 /* Exported constants --------------------------------------------------------*/
-/** @defgroup KEY_MANAGEMENT_HMAC_Exported_Constants KEY_MANAGEMENT_HMAC Exported Constants
+/** @defgroup KEY_MANAGEMENT_Exported_Constants KEY_MANAGEMENT Exported Constants
   * @{
   */
 
-/** @defgroup KM_HMAC_KEY
+/** @defgroup KM_KEY KM Key
  * @brief HMAC supported key ID
  * @{
  */
-#define KM_HMAC_KEY_S_IPSEC_KEY1        ((u8)0x00)  /*!< Secure Hardware Key_1, OPT raw address:0x200, size: 256bit */
-#define KM_HMAC_KEY_S_IPSEC_KEY2        ((u8)0x01)  /*!< Secure Hardware Key_2, OPT raw address:0x220, size: 256bit */
-#define KM_HMAC_KEY_S_IPSEC_KEY3        ((u8)0x02)  /*!< Secure Hardware Key_3, OPT raw address:0x240, size: 256bit */
-#define KM_HMAC_KEY_S_IPSEC_KEY4        ((u8)0x03)  /*!< Secure Hardware Key_4, OPT raw address:0x260, size: 256bit */
-#define KM_HMAC_KEY_S_SW                ((u8)0x21)  /*!< Secure Software Key, size: 256bit */
-#define KM_HMAC_KEY_NS_SW               ((u8)0x22)  /*!< Non-Secure Software Key, size: 256bit */
+#define KM_HMAC_KEY_S_IPSEC_KEY1        ((u8)0x00)  /*!< Secure Hardware Key_1, OTP raw address:0x200, size: 256-bit */
+#define KM_HMAC_KEY_S_IPSEC_KEY2        ((u8)0x01)  /*!< Secure Hardware Key_2, OTP raw address:0x220, size: 256-bit */
+#define KM_HMAC_KEY_S_IPSEC_KEY3        ((u8)0x02)  /*!< Secure Hardware Key_3, OTP raw address:0x240, size: 256-bit */
+#define KM_HMAC_KEY_S_IPSEC_KEY4        ((u8)0x03)  /*!< Secure Hardware Key_4, OTP raw address:0x260, size: 256-bit */
+#define KM_HMAC_KEY_S_SW                ((u8)0x21)  /*!< Secure Software Key, size: 256-bit */
+#define KM_HMAC_KEY_NS_SW               ((u8)0x22)  /*!< Non-Secure Software Key, size: 256-bit */
 /** @} */
 
-/** @defgroup KM_HMAC_Shared_KEY
+/** @defgroup KM_Shared_KEY KM Shared Key
  * @brief HMAC secure hardware Key shared to non-secure
  * @{
  */
-#define KM_HMAC_SHARE_SEC_S_IPSEC_KEY1  ((u32)0x00000001 << 1)  /*!< If 1, secure Hardware Key_0 share to non-secure */
-#define KM_HMAC_SHARE_SEC_S_IPSEC_KEY2  ((u32)0x00000001 << 2)  /*!< If 1, secure Hardware Key_1 share to non-secure */
-#define KM_HMAC_SHARE_SEC_S_IPSEC_KEY3  ((u32)0x00000001 << 3)  /*!< If 1, secure Hardware Key_0 share to non-secure */
-#define KM_HMAC_SHARE_SEC_S_IPSEC_KEY4  ((u32)0x00000001 << 4)  /*!< If 1, secure Hardware Key_1 share to non-secure */
+#define KM_HMAC_SHARE_SEC_S_IPSEC_KEY1  ((u32)0x00000001 << 1)  /*!< If 1, secure Hardware Key_1 share to non-secure */
+#define KM_HMAC_SHARE_SEC_S_IPSEC_KEY2  ((u32)0x00000001 << 2)  /*!< If 1, secure Hardware Key_2 share to non-secure */
+#define KM_HMAC_SHARE_SEC_S_IPSEC_KEY3  ((u32)0x00000001 << 3)  /*!< If 1, secure Hardware Key_3 share to non-secure */
+#define KM_HMAC_SHARE_SEC_S_IPSEC_KEY4  ((u32)0x00000001 << 4)  /*!< If 1, secure Hardware Key_4 share to non-secure */
 #define KM_HMAC_SHARE_SEC_S_SW          ((u32)0x00000001 << 5)	/*!< If 1, secure Software Key_33 share to non-secure */
 /** @} */
 /** @} */
@@ -127,6 +129,7 @@ extern "C" {
 /** @} */
 
 /* Other constants --------------------------------------------------------*/
+/** @brief Check whether ID is a valid HMAC key selection number (hardware or software key). */
 #define KM_HMAC_IS_KEY_SEL_NUMBER(ID)  (((ID) == KM_HMAC_KEY_S_IPSEC_KEY1) || \
                                         ((ID) == KM_HMAC_KEY_S_IPSEC_KEY2) || \
                                         ((ID) == KM_HMAC_KEY_S_IPSEC_KEY3) || \
@@ -134,12 +137,14 @@ extern "C" {
                                         ((ID) == KM_HMAC_KEY_S_SW) || \
                                         ((ID) == KM_HMAC_KEY_NS_SW))
 
+/** @brief Check whether ID is a secure-domain HMAC key (hardware or secure software key). */
 #define KM_HMAC_IS_SECURE_KEY_NUM(ID)  (((ID) == KM_HMAC_KEY_S_IPSEC_KEY1) || \
                                         ((ID) == KM_HMAC_KEY_S_IPSEC_KEY2) || \
                                         ((ID) == KM_HMAC_KEY_S_IPSEC_KEY3) || \
                                         ((ID) == KM_HMAC_KEY_S_IPSEC_KEY4) || \
                                         ((ID) == KM_HMAC_KEY_S_SW))
 
+/** @brief Check whether ID is a software-managed HMAC key (secure or non-secure software key). */
 #define KM_HMAC_IS_SW_KEY_NUM(ID)      (((ID) == KM_HMAC_KEY_S_SW) || \
                                         ((ID) == KM_HMAC_KEY_NS_SW))
 #ifdef __cplusplus

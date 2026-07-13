@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup SDIO_WIFI
-  * @brief SDIO_WIFI driver modules
+/** @defgroup SDIO SDIO
+  * @brief SDIO driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -331,6 +332,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -340,12 +342,12 @@ extern "C" {
 
 //Please add your definition here
 
-/** @addtogroup SDIO_WIFI_Exported_Types
+/** @addtogroup SDIO_Exported_Types SDIO Exported Types
   * @{
   */
 
 /**
-  * @brief SDIO_WIFI Init Structure Definition
+  * @brief SDIO Init Structure Definition
   */
 typedef struct {
 	/* TXBD */
@@ -356,41 +358,45 @@ typedef struct {
 	/* RXBD */
 	u32 RXBD_BAR;			/*!< Specifies RXBD base address */
 	u32 RXBD_RING_SIZE; 	/*!< Specifies RXBD ring size, This parameter must be set to a value in the 0-0xFFFF range. */
-	u32 RXBD_FREE_TH;		/*!< the threshold of free RX BD count to trigger interrupt */
+	u32 RXBD_FREE_TH;		/*!< Specifies the threshold of free RX BD count to trigger interrupt. */
 
-	u32 TX_AGG_DISPATCH;
+	u32 TX_AGG_DISPATCH;	/*!< Specifies whether to enable TX aggregation dispatch function. */
 } SDIO_InitTypeDef;
 /**
   * @}
   */
 
 /* Exported constants --------------------------------------------------------*/
-/** @defgroup SDIO_WIFI_Exported_Constants SDIO_WIFI Exported Constants
+/** @defgroup SDIO_Exported_Constants SDIO Exported Constants
   * @{
   */
 
+/// @cond
 /* SPDIO_CRPWM2 bit definition */
-#define RPWM2_ACT_BIT					(BIT0)	// Active
-#define RPWM2_CG_BIT					(BIT1)	// Clock Gated
-#define RPWM2_TOGGLE_BIT				(BIT15)	// Toggle bit
+#define RPWM2_ACT_BIT					(BIT0)	/*!< RPWM2 bit: active state indicator. */
+#define RPWM2_CG_BIT					(BIT1)	/*!< RPWM2 bit: clock gated state indicator. */
+#define RPWM2_TOGGLE_BIT				(BIT15)	/*!< RPWM2 bit: toggle bit for RPWM2 updates. */
 
-#define SPDIO_CRPWM2_NEED_CHECKSUM		(BIT2) // fwdl need checksum
-#define SPDIO_CRPWM2_BOOT_RAM			(BIT3) // boot from ram after fwdl
+#define SPDIO_CRPWM2_NEED_CHECKSUM		(BIT2)	/*!< CRPWM2 bit: firmware download needs checksum. */
+#define SPDIO_CRPWM2_BOOT_RAM			(BIT3)	/*!< CRPWM2 bit: boot from RAM after firmware download. */
 
 /* SPDIO_CCPWM2 bit definition */
-#define CPWM2_ACT_BIT					(BIT0)	// Active
-#define CPWM2_DSTANDBY_BIT				(BIT1)	// Deep Standby
-#define CPWM2_IMG1_BIT					(BIT2)	// bootloader
-#define CPWM2_INIC_FW_RDY_BIT			(BIT3)	// is the iNIC FW(1) or Boot FW(0)
-#define CPWM2_TOGGLE_BIT				(BIT15)	// Toggle bit
+#define CPWM2_ACT_BIT					(BIT0)	/*!< CPWM2 bit: active state indicator. */
+#define CPWM2_DSTANDBY_BIT				(BIT1)	/*!< CPWM2 bit: deep standby state indicator. */
+#define CPWM2_IMG1_BIT					(BIT2)	/*!< CPWM2 bit: bootloader image indicator. */
+#define CPWM2_INIC_FW_RDY_BIT			(BIT3)	/*!< CPWM2 bit: iNIC firmware ready (1) or boot firmware (0). */
+#define CPWM2_TOGGLE_BIT				(BIT15)	/*!< CPWM2 bit: toggle bit for CPWM2 updates. */
 
-#define SPDIO_CCPWM2_SEND_CHECKSUM		(BIT14)  // checksum is ready to be sent
+#define SPDIO_CCPWM2_SEND_CHECKSUM		(BIT14)	/*!< CCPWM2 bit: checksum is ready to send. */
+/// @endcond
 
 /** @} */
-/** @} */
-/** @} */
 
-/* SDIO_WIFI Exported functions --------------------------------------------------------*/
+/* SDIO Exported functions --------------------------------------------------------*/
+/** @defgroup SDIO_Exported_Functions SDIO Exported Functions
+  * @{
+  */
+
 void SDIO_StructInit(SDIO_InitTypeDef *SDIO_InitStruct);
 void SDIO_Init(SDIO_TypeDef *SDIO, SDIO_InitTypeDef *SDIOInit_Struct);
 void SDIO_INTClear(SDIO_TypeDef *SDIO, u16 SDIO_INT);
@@ -415,12 +421,23 @@ void SDIO_DMA_Reset(SDIO_TypeDef *SDIO);
 u32 SDIO_DMA_CTRL_Get(SDIO_TypeDef *SDIO);
 void SDIO_SetReady(SDIO_TypeDef *SDIO, int ready);
 void SDIO_RxReq(SDIO_TypeDef *SDIO);
+/**
+  * @brief Abort SDIO RX request.
+  * @param SDIO SDIO device, refer to IS_SDIO_DEVICE() for valid values.
+  */
 void SDIO_AbortRxReq(SDIO_TypeDef *SDIO);
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }
 #endif
 
 /* MANUAL_GEN_END */
+
+/** @} */
+
+/** @} */
 
 #endif

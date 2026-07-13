@@ -3,7 +3,6 @@
 
 struct whc_sdio;
 
-#include "autoconf.h"
 #include "ameba_inic.h"
 #include "whc_sdio_host_reg.h"
 #include "whc_sdio_host_drvio.h"

@@ -9,8 +9,6 @@
 
 #define WHC_WIFI_TEST_BUF_SIZE     16
 
-struct event_priv_t event_priv;
-
 __weak void whc_host_pkt_rx_to_user(u8 *pbuf)
 {
 	int counter = 0;
@@ -57,13 +55,10 @@ void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 	u32 txsize = len + SIZE_TX_DESC;
 
 	/* construct struct whc_buf_info & whc_buf_info_t */
-	txbuf = rtos_mem_zmalloc(txsize);
+	txbuf = WHC_MALLOC(txsize);
 
 	if (txbuf == NULL) {
 		printf("%s mem fail \r\n", __func__);
-		if (txbuf) {
-			rtos_mem_free(txbuf);
-		}
 		return;
 	}
 
@@ -72,6 +67,10 @@ void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 
 	/* send ret_msg + ret_val(buf, len) */
 	rtw_sdio_send_data(txbuf, txsize, NULL);
+
+	if (txbuf) {
+		WHC_FREE(txbuf);
+	}
 }
 
 void whc_host_get_mac_addr(uint8_t idx)

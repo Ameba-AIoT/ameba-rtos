@@ -74,6 +74,11 @@ enum rtw_wlan_if_index {
 #define RTW_MAX_PSK_LEN		RTW_WPA3_MAX_PSK_LEN /**< Maximum PSK length used. */
 #define RTW_MIN_PSK_LEN		(8)		/**< Minimum PSK length. */
 
+/** wifi_start_ap() positive return: SoftAP started on a DFS channel; the AP is not
+ *  beaconing yet, CAC is running and the netif link-up is deferred until CAC passes
+ *  (driven by the RTW_EVENT_DFS_CAC_DONE handler). Not an error. DFS master only. */
+#define RTW_DFS_CAC_PENDING		1
+
 #define MAC_ARG(x)		((u8*)(x))[0],((u8*)(x))[1],\
 				((u8*)(x))[2],((u8*)(x))[3],\
 				((u8*)(x))[4],((u8*)(x))[5]      /**< Formats MAC address for printing. Usage Example: RTK_LOGS(NOTAG, RTK_LOG_INFO, "MAC addr="MAC_FMT"\n", MAC_ARG(mac_addr));*/
@@ -622,20 +627,33 @@ enum rtw_txpwr_lmt {
 	TXPWR_LMT_ETSI = 2,     /**< European Telecommunications Standards Institute (CE).*/
 	TXPWR_LMT_IC = 3,       /**< Canada */
 	TXPWR_LMT_KCC = 4,      /**< South Korea */
-	TXPWR_LMT_ACMA = 5, 	/**< Australia */
+	TXPWR_LMT_ACMA = 5,     /**< Australia */
 	TXPWR_LMT_CHILE = 6,    /**< Chile */
 	TXPWR_LMT_MEXICO = 7,   /**< Mexico */
 	TXPWR_LMT_WW = 8,       /**< Worldwide, The mininum of all */
-	TXPWR_LMT_GL = 9,		/**< Global */
+	TXPWR_LMT_GL = 9,       /**< Global */
 	TXPWR_LMT_UKRAINE = 10, /**< Ukraine */
-	TXPWR_LMT_CN = 11,       /**< China */
+	TXPWR_LMT_CN = 11,      /**< China */
 	TXPWR_LMT_QATAR = 12,   /**< Qatar */
 	TXPWR_LMT_UK = 13,      /**< Great Britain (United Kingdom; England) */
 	TXPWR_LMT_NCC = 14,     /**< Taiwan */
 	TXPWR_LMT_EXT = 15,     /**< Customer Customization */
 
 	/* ===== Add new power limit above this line. ===== */
-	TXPWR_LMT_CONST_MAX     /**< unchanging part define max */
+	TXPWR_LMT_CONST_MAX,    /**< unchanging part define max */
+
+	/* customer extension: 17 ~ 20 reserved */
+	TXPWR_LMT_EXT1 = 21,
+	TXPWR_LMT_EXT2 = 22,
+	TXPWR_LMT_EXT3,
+	TXPWR_LMT_EXT4,
+	TXPWR_LMT_EXT5,
+	TXPWR_LMT_EXT6,
+	TXPWR_LMT_EXT7,
+	TXPWR_LMT_EXT8,
+	TXPWR_LMT_EXT9,
+	TXPWR_LMT_EXT10 = 30,
+	TXPWR_LMT_EXT_MAX = 31  /*support a maximum of 31 groups*/
 };
 
 /**
@@ -958,6 +976,7 @@ union rtw_phy_stats {
 		u8  cca_clm; /**< Channel loading measurement ratio by cca (the ratio of CCA = 1 in number of samples). driver do clm every 2 seconds, the value is the lastest result. */
 		u8	edcca_clm; /**< Channel loading measurement ratio by edcca (the ratio of EDCCA = 1 in number of samples). The value is also the lastest result. */
 		u8	clm_channel; /**< Channel corresponding to the latest clm result.*/
+		s8	idle_noise; /**< Channel idle noise corresponding to the latest noise histogram measurement(nhm) result. "idle" denotes exclusion of CCA and TX statistics.*/
 	} cmn; /**< Common statistic.*/
 };
 

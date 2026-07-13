@@ -29,8 +29,8 @@
 #define MAX_SKB_BUF_SIZE_NORMAL  (((WLAN_HW_INFO_LEN+WLAN_MAX_PROTOCOL_OVERHEAD+WLAN_MAX_ETHFRM_LEN+8)\
 							+ SKB_CACHE_SZ) & ~(SKB_CACHE_SZ-1))
 
-#if defined(CONFIG_WHC_INTF_SDIO)
-#include "whc_dev_struct.h"
+#if defined(CONFIG_WHC_INTF_SDIO) && defined(CONFIG_WHC_DEV)
+#include "whc_sdio_dev.h"
 #define MAX_SKB_BUF_SIZE	MAX(MAX_SKB_BUF_SIZE_NORMAL, (SPDIO_DEVICE_RX_BUFSZ + SPDIO_SKB_RSVD_LEN + SKB_CACHE_SZ) & ~(SKB_CACHE_SZ-1))
 #else
 #define MAX_SKB_BUF_SIZE	MAX_SKB_BUF_SIZE_NORMAL
@@ -38,9 +38,13 @@
 
 #ifdef CONFIG_WHCH
 #include "whc_def.h"
-#define WHCH_RX_SKB_RSVD_LEN	N_BYTE_ALIGMENT(8 + sizeof(struct whc_msg_info), SKB_CACHE_SZ)	//RX_buffer_desc(8bytes)
+#define WHCH_RX_SKB_RSVD_LEN	N_BYTE_ALIGMENT(8 + sizeof(struct whc_msg_info) + sizeof(INIC_TX_DESC), SKB_CACHE_SZ)	//RX_buffer_desc(8bytes)
 #undef MAX_SKB_BUF_SIZE
+#if defined(CONFIG_WHC_INTF_SDIO)
+#define MAX_SKB_BUF_SIZE		MAX(MAX_SKB_BUF_SIZE_NORMAL + WHCH_RX_SKB_RSVD_LEN, (SPDIO_DEVICE_RX_BUFSZ + SPDIO_SKB_RSVD_LEN + SKB_CACHE_SZ) & ~(SKB_CACHE_SZ-1))
+#else
 #define MAX_SKB_BUF_SIZE		(MAX_SKB_BUF_SIZE_NORMAL + WHCH_RX_SKB_RSVD_LEN)
+#endif
 #else
 #define WHCH_RX_SKB_RSVD_LEN	0
 #endif

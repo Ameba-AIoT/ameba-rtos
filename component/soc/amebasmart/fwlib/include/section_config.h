@@ -46,19 +46,22 @@
 #define IMAGE3_ENTRY_SECTION				SECTION(".image3.nsc_entry.text")
 #define IMAGE3_BOOT_SECTION					SECTION(".image3.entry.data")
 
+#define _SEC_STR2(x)						#x
+#define _SEC_STR(x)							_SEC_STR2(x)
+
 // Define Non-Cacheable region
-#define SRAM_NOCACHE_DATA_SECTION			SECTION(".nocache.data")
+#define SRAM_NOCACHE_DATA_SECTION			SECTION(".nocache.data." _SEC_STR(__LINE__))
 
 /* non.dram can put in Flash(No DeepPowerDown) or SRAM after psram disabled, such as pmc code */
-#define NON_DRAM_TEXT_SECTION				SECTION(".non.dram.text")
+#define NON_DRAM_TEXT_SECTION				SECTION(".non.dram.text." _SEC_STR(__LINE__))
 
 /* .sramdram.only means cannot put in Flash, such as flash api */
-#define SRAMDRAM_ONLY_TEXT_SECTION			SECTION(".sramdram.only.text")
+#define SRAMDRAM_ONLY_TEXT_SECTION			SECTION(".sramdram.only.text." _SEC_STR(__LINE__))
 #define SRAMDRAM_ONLY_DATA_SECTION			SECTION(".sramdram.only.data")  // Only used to replace HAL_ROM_DATA_SECTION in CA32
 
 /* sram only used in pmc flow, such as deepsleep entry when flash deep down or after psram disabled */
-#define SRAM_ONLY_TEXT_SECTION				SECTION(".sram.only.text")
-#define SRAM_ONLY_DATA_SECTION				SECTION(".sram.only.data")
+#define SRAM_ONLY_TEXT_SECTION				SECTION(".sram.only.text." _SEC_STR(__LINE__))
+#define SRAM_ONLY_DATA_SECTION				SECTION(".sram.only.data." _SEC_STR(__LINE__))
 
 #define SRAM_WLAN_CRITICAL_CODE_SECTION
 #define SRAM_IPERF_CRITICAL_CODE_SECTION

@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup DEBUGTIMER
+/** @defgroup DEBUGTIMER Debug Timer
   * @brief DEBUGTIMER driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -103,6 +104,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -117,11 +119,11 @@ extern "C" {
   * @{
   */
 
-/** @defgroup DEBUGTIMER_Clock_Source
+/** @defgroup DEBUGTIMER_Clock_Source Debug Timer Clock Source
   * @{
   */
-#define  DTIM_CLK_XTAL  0
-#define  DTIM_CLK_32K    1
+#define  DTIM_CLK_XTAL  0   /*!< Select XTAL as clock source */
+#define  DTIM_CLK_32K   1   /*!< Select 32K as clock source */
 /**
   * @}
   */
@@ -130,21 +132,17 @@ extern "C" {
   * @}
   */
 
-/** @} */
 
-/** @} */
-
-
-/* group: DEBUGTIMER_Exported_Functions */
-/* Since all the members in the group are __STATIC_INLINE which will not be extracted to the doxygen doc,
-  original comment has been deleted to avoid there is nothing displayed under the group. */
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup DEBUGTIMER_Exported_Functions DEBUGTIMER Exported Functions
+  * @{
+  */
 
 /**
-  * @brief  Enables or disables the DebugTimer peripheral
-  *   The debug timer is a free run timer works at 1MHZ.
-  * @param  NewState: new state of the Debug timer peripheral.
+  * @brief  Enable or disable the Debug Timer peripheral
+  *   The debug timer is a free-running timer that works at 1 MHz.
+  * @param  Newstatus New state of the Debug Timer peripheral.
   *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
   */
 __STATIC_INLINE void DTimer_Cmd(bool Newstatus)
 {
@@ -159,9 +157,9 @@ __STATIC_INLINE void DTimer_Cmd(bool Newstatus)
 }
 
 /**
-  * @brief  Get the u32 passed time.
-  * @param  None
-  * @retval current counter
+  * @brief  Get the u32 elapsed time.
+  * @param  OldTime Old timestamp value for comparison.
+  * @return Elapsed timer ticks since OldTime.
   */
 __STATIC_INLINE u32 DTimesPassedtime32_Get(u32 OldTime)
 {
@@ -176,9 +174,9 @@ __STATIC_INLINE u32 DTimesPassedtime32_Get(u32 OldTime)
 }
 
 /**
-  * @brief  Get the u64 passed time.
-  * @param  None
-  * @retval current counter
+  * @brief  Get the u64 elapsed time.
+  * @param  OldTime Old timestamp value for comparison.
+  * @return Elapsed timer ticks since OldTime.
   */
 __STATIC_INLINE u64 DTimesPassedtime64_Get(u64 OldTime)
 {
@@ -188,9 +186,8 @@ __STATIC_INLINE u64 DTimesPassedtime64_Get(u64 OldTime)
 }
 
 /**
-  * @brief  Get the Debug timer u32 current Counter.
-  * @param  None
-  * @retval current counter
+  * @brief  Get the Debug Timer u32 current counter.
+  * @return Current u32 counter value.
   */
 __STATIC_INLINE u32 DTimestamp_Get(void)
 {
@@ -200,9 +197,8 @@ __STATIC_INLINE u32 DTimestamp_Get(void)
 }
 
 /**
-  * @brief  Get the Debug timer u64 current Counter.
-  * @param  None
-  * @retval current counter
+  * @brief  Get the Debug Timer u64 current counter.
+  * @return Current u64 counter value.
   */
 __STATIC_INLINE u64 DTimestamp64_Get(void)
 {
@@ -212,25 +208,23 @@ __STATIC_INLINE u64 DTimestamp64_Get(void)
 }
 
 /**
-  * @brief  Set the Debug timer current Counter.
-  * @param  NewVaule: new debug counter.
-  * @retval current counter
+  * @brief  Set the Debug Timer u64 current counter.
+  * @param  NewValue New u64 counter value.
   */
-__STATIC_INLINE void DTimestamp_Set(u64 NewVaule)
+__STATIC_INLINE void DTimestamp_Set(u64 NewValue)
 {
 	DEBUGTIMER_TypeDef *DTimer = DTIMER_DEV;
 
-	DTimer->DBGT_CRV0 = (u32)(NewVaule & (u64)0xFFFFFFFF);
-	DTimer->DBGT_CRV1 = (u32)((NewVaule & ((u64)0xFFFFFFFF << 32)) >> 32);
+	DTimer->DBGT_CRV0 = (u32)(NewValue & (u64)0xFFFFFFFF);
+	DTimer->DBGT_CRV1 = (u32)((NewValue & ((u64)0xFFFFFFFF << 32)) >> 32);
 	/*set DBGT_CRV0 and DBGT_CRV1 to dbgtcnt.*/
 	DTimer->DBGT_CTRL |= DBGT_BIT_CRV_SET;
 }
 
 /**
-  * @brief  Get the Debug timer atom value.
-  *   The read action won't trigger Atom increase
-  * @param  None
-  * @retval atom counter
+  * @brief  Get the Debug Timer atom counter value.
+  *   Reading this register does not increment the atom counter.
+  * @return Current atom counter value.
   */
 __STATIC_INLINE u32 DTimer_AtomGet(void)
 {
@@ -240,10 +234,9 @@ __STATIC_INLINE u32 DTimer_AtomGet(void)
 }
 
 /**
-  * @brief  Get the Debug timer atom value + 1.
-  *   The read action will trigger Atom increase
-  * @param  None
-  * @retval atom counter
+  * @brief  Get the Debug Timer atom counter value and trigger auto-increment.
+  *   Reading this register auto-increments the atom counter by 1.
+  * @return Atom counter value after auto-increment.
   */
 __STATIC_INLINE u32 DTimer_AtomIncGet(void)
 {
@@ -253,21 +246,19 @@ __STATIC_INLINE u32 DTimer_AtomIncGet(void)
 }
 
 /**
-  * @brief  Set the Debug timer atom value .
-  * @param  New value
-  * @retval None
+  * @brief  Set the Debug Timer atom counter value.
+  * @param  NewValue New atom counter value.
   */
-__STATIC_INLINE void DTimer_AtomSet(u32 NewVaule)
+__STATIC_INLINE void DTimer_AtomSet(u32 NewValue)
 {
 	DEBUGTIMER_TypeDef *DTimer = DTIMER_DEV;
 
-	DTimer->DBGT_ATOM = NewVaule;
+	DTimer->DBGT_ATOM = NewValue;
 }
 
 /**
-  * @brief  Get the Debug timer Scratch value.
-  * @param  None
-  * @retval atom scratch
+  * @brief  Get the Debug Timer scratch register value.
+  * @return Current scratch register value.
   */
 __STATIC_INLINE u32 DTimer_ScratchGet(void)
 {
@@ -277,17 +268,19 @@ __STATIC_INLINE u32 DTimer_ScratchGet(void)
 }
 
 /**
-  * @brief  Set the Debug timer Scratch value .
-  * @param  New value
-  * @retval None
+  * @brief  Set the Debug Timer scratch register value.
+  * @param  NewValue New scratch register value.
   */
-__STATIC_INLINE void DTimer_ScratchSet(u32 NewVaule)
+__STATIC_INLINE void DTimer_ScratchSet(u32 NewValue)
 {
 
 	DEBUGTIMER_TypeDef *DTimer = DTIMER_DEV;
 
-	DTimer->DBGT_SCRATCH = NewVaule;
+	DTimer->DBGT_SCRATCH = NewValue;
 }
+
+/** @} */
+
 /* end of the function group */
 
 #ifdef __cplusplus
@@ -295,5 +288,9 @@ __STATIC_INLINE void DTimer_ScratchSet(u32 NewVaule)
 #endif
 
 /* MANUAL_GEN_END */
+
+/** @} */
+
+/** @} */
 
 #endif

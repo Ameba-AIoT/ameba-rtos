@@ -1,5 +1,4 @@
 #include <whc_host_linux.h>
-#include <whc_host_cmd_path_api.h>
 
 void whc_host_recv_notify(void)
 {
@@ -139,9 +138,6 @@ int whc_host_recv_dispatch(struct sk_buff *pskb)
 		}
 		/* free rx buffer */
 		kfree_skb(pskb);
-		break;
-	case WHC_CUST_EVT:
-		whc_host_recv_cust_evt((u8 *)pskb->data + SIZE_RX_DESC);
 		break;
 #ifdef CONFIG_BT_INIC
 	case INIC_BT_HOST_RX:

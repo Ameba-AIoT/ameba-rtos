@@ -27,7 +27,6 @@
 #include "whc_dev_api_path.h"
 #include "whc_dev_trx.h"
 #include "whc_dev_msg_queue.h"
-#include "whc_dev_cust_evt.h"
 #ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 #include "whc_dev_tcpip.h"
 #endif

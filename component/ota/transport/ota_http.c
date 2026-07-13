@@ -221,12 +221,17 @@ static int ota_http_recv_response(ota_context_t *ctx)
 	RTK_LOGI(OTA_TAG, "[HTTP] idx = %lu, rsp_result.header_len = %lu\n", idx, rsp_result.header_len);
 
 	remain_len = idx - rsp_result.header_len;
-	/* remove http header_len from buf*/
+	/* Store body bytes received together with the HTTP header; Core layer
+	 * will inject them into the download pipeline before the read loop. */
 	if (remain_len > 0) {
-		ctx->otaCtrl->NextImgLen = remain_len;
-		_memset(ctx->otaCtrl->NextImgBuf, 0, OTA_BUF_SIZE);
-		_memcpy((void *)ctx->otaCtrl->NextImgBuf, (void *)(buf + rsp_result.header_len), remain_len);
-		ctx->otaCtrl->NextImgFg = 1;
+		ctx->prefill_buf = (u8 *)rtos_mem_malloc(remain_len);
+		if (!ctx->prefill_buf) {
+			RTK_LOGE(OTA_TAG, "[HTTP] Prefill malloc failed\n");
+			remain_len = -1;
+			goto exit;
+		}
+		_memcpy(ctx->prefill_buf, buf + rsp_result.header_len, remain_len);
+		ctx->prefill_len = remain_len;
 	}
 
 exit:

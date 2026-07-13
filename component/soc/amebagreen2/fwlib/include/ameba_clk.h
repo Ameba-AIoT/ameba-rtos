@@ -172,8 +172,8 @@ extern "C" {
 #define CLK_LIMIT_1P0V_HPERI      (120 * MHZ_TICK_CNT)
 #define CLK_LIMIT_LPERI           (40  * MHZ_TICK_CNT)
 #define CLK_LIMIT_PSRAM           (400 * MHZ_TICK_CNT)
-#define CLK_LIMIT_PSRAMC_FLASH    (204 * MHZ_TICK_CNT)
-#define CLK_LIMIT_SPIC            (204 * MHZ_TICK_CNT)  /* HW SPIC limit is 250MHz */
+#define CLK_LIMIT_PSRAMC_FLASH    (208 * MHZ_TICK_CNT)
+#define CLK_LIMIT_SPIC            (208 * MHZ_TICK_CNT)  /* HW SPIC limit is 250MHz */
 #define CLK_LIMIT_I2S             (100 * MHZ_TICK_CNT)
 #define CLK_LIMIT_VO              (200 * MHZ_TICK_CNT)
 

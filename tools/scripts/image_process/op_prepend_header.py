@@ -24,11 +24,10 @@ class PrependHeader(OperationBase):
     def register_args(parser) -> None:
         parser.add_argument('-m', '--map-file', help='Map file of axf file')
         parser.add_argument('-s', '--symbol', help='Symbol to be process')
-        parser.add_argument('-i', '--input-file', help='Input file to be process', required=True)
+        parser.add_argument('-i', '--input-file', help='Input file to be process')
         parser.add_argument('-o', '--output-file', help='Output processed file', required=True)
         parser.add_argument('--boot-index', type=lambda x: int(x, 0), help='Boot index')
-        parser.add_argument('--force-default', type=int,choices=[0, 1], default=0, help='Force use default header pattern (0: auto detect by filename, 1: force default)'
-    )
+        parser.add_argument('--force-default', type=int,choices=[0, 1], default=0, help='Force use default header pattern (0: auto detect by filename, 1: force default)')
 
     @staticmethod
     def require_manifest_file(context:Context) -> bool:
@@ -41,6 +40,22 @@ class PrependHeader(OperationBase):
     # @exit_on_failure(catch_exception=True)
     @staticmethod
     def execute(context:Context, output_file:str, input_file:str, map_file:str = '', symbol:str = '', boot_index:Union[int, None] = None, force_default: int = 0):
+        # Anchor mode: no -i supplied; address resolved from symbol in linker map.
+        # Generates a 32-byte size=0 header (no payload) carrying the logical base
+        # (from -s) so the host RSIP scanner can locate an image region whose
+        # sub-bins do not themselves carry the flash logical base (SRAM/PSRAM run).
+        if not input_file:
+            sym_info = parse_map_file(map_file, symbol) if map_file else ('0', '?', '')
+            addr = int(sym_info[0], 16)
+            header = PrependHeader.img2sign.to_bytes(8, 'big')
+            header += (0).to_bytes(4, 'little')
+            header += addr.to_bytes(4, 'little')
+            header += PrependHeader.reserved.to_bytes(8, 'little')
+            header += PrependHeader.reserved.to_bytes(8, 'little')
+            with open(output_file, 'wb') as f:
+                f.write(header)
+            return Error.success()
+
         file_name = os.path.basename(input_file)
         file_size = os.path.getsize(input_file)
         if map_file:
@@ -77,8 +92,12 @@ class PrependHeader(OperationBase):
         return Error.success()
 
     def pre_process(self) -> Error:
+        if not self.context.args.input_file:
+            if not (self.context.args.symbol and self.context.args.map_file):
+                self.logger.fatal('-i is required unless -s and -m are both provided (anchor mode)')
+                return Error(ErrorType.INVALID_INPUT)
         if self.context.args.map_file is None != self.context.args.symbol is None:
-            self.logger.fatal(f'--map-file and --symbol must be specified together or not specified at all')
+            self.logger.fatal('--map-file and --symbol must be specified together or not specified at all')
             return Error(ErrorType.INVALID_INPUT)
         return Error.success()
 
@@ -86,11 +105,11 @@ class PrependHeader(OperationBase):
         return PrependHeader.execute(
             self.context,
             self.context.args.output_file,
-            self.context.args.input_file,
+            self.context.args.input_file or '',
             self.context.args.map_file,
             self.context.args.symbol,
             self.context.args.boot_index,
-            self.context.args.force_default
+            self.context.args.force_default,
         )
 
 

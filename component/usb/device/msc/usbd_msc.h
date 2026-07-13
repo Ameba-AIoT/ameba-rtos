@@ -25,7 +25,7 @@
  */
 #define USBD_MSC_TX_THREAD_PRIORITY                 5U                 /**< TX thread priority */
 #define USBD_MSC_RX_THREAD_PRIORITY                 5U                 /**< RX thread priority */
-#define USBD_MSC_TRX_THREAD_STACK_SIZE              768U               /**< TX/RX thread tack size */
+#define USBD_MSC_TRX_THREAD_STACK_SIZE              1024U              /**< TX/RX thread tack size */
 
 /* Defines configuration constants like VID/PID, USB strings, and power settings. */
 #define USBD_MSC_VID                                USB_VID            /**< Vendor ID. */
@@ -154,7 +154,7 @@ typedef struct {
 	usb_msc_bot_cbw_t *cbw;                         /**< Pointer to the Command Block Wrapper. */
 	usb_msc_bot_csw_t *csw;                         /**< Pointer to the Command Status Wrapper. */
 	usbd_msc_disk_ops_t disk_ops;                   /**< Structure with disk operation function pointers. */
-	usbd_msc_cb_t *cb;                              /**< Pointer to the user callback structure. */
+	const usbd_msc_cb_t *cb;                              /**< Pointer to the user callback structure. */
 	usb_dev_t *dev;                                 /**< Pointer to the USB device structure. */
 	rtos_task_t rx_task;                            /**< RTOS task handle for data reception. */
 	rtos_sema_t rx_sema;                            /**< RTOS semaphore to signal data reception. */
@@ -190,7 +190,7 @@ typedef struct {
  * @param[in] cb: Pointer to the user callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_msc_init(usbd_msc_cb_t *cb);
+int usbd_msc_init(const usbd_msc_cb_t *cb);
 
 /**
  * @brief De-initializes the MSC device class driver.

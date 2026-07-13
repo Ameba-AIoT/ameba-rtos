@@ -1,43 +1,6 @@
 #ifndef __RTW_SDIO_DRVIO_H__
 #define __RTW_SDIO_DRVIO_H__
 
-#ifndef _RND
-#define _RND(sz, r) ((((sz)+((r)-1))/(r))*(r))
-#define RND4(x)	(((x >> 2) + (((x & 3) == 0) ?  0: 1)) << 2)
-inline static u32 _RND4(u32 sz)
-{
-
-	u32	val;
-
-	val = ((sz >> 2) + ((sz & 3) ? 1 : 0)) << 2;
-
-	return val;
-
-}
-
-inline static u32 _RND8(u32 sz)
-{
-
-	u32	val;
-
-	val = ((sz >> 3) + ((sz & 7) ? 1 : 0)) << 3;
-
-	return val;
-
-}
-
-inline static u32 _RND128(u32 sz)
-{
-
-	u32	val;
-
-	val = ((sz >> 7) + ((sz & 127) ? 1 : 0)) << 7;
-
-	return val;
-
-}
-#endif
-
 #define rtw_read8(priv, addr) sdio_read8((priv), (addr))
 #define rtw_read16(priv, addr) sdio_read16((priv), (addr))
 #define rtw_read32(priv, addr) sdio_read32((priv), (addr))

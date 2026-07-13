@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup SDIO_BT
+/** @defgroup SDIO_BT SDIO BT
   * @brief SDIO_BT driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -225,6 +226,7 @@
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus

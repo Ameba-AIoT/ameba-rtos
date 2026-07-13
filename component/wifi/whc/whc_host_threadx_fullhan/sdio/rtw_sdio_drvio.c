@@ -465,18 +465,6 @@ uint32_t sdio_write_port(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uin
 
 }
 
-uint32_t sdio_local_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *mem)
-{
-	int err = 0;
-	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);
-	err = sd_write(priv, addr, cnt, mem);
-	if (err) {
-		printf("%s, error=%d\n", __func__, err);
-	}
-
-	return err;
-}
-
 uint32_t sdio_convert_to_cmdaddr(uint32_t addr, uint8_t *pdeviceId, uint16_t *poffset)
 {
 	uint8_t domainId;

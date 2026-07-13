@@ -3,13 +3,9 @@ menu "CONFIG LWIP"
         bool "Enable Fast DHCP"
         select FAST_DHCP if WHC_HOST || WHC_NONE
 
-    config IP_NAPT_MENU
-        bool "Enable NAT REPEATER"
-        select IP_NAPT if WHC_HOST || WHC_NONE
-
-    config RNAPT_MENU
-        bool "Enable R-NAPT"
-        select RNAPT if WHC_HOST || WHC_NONE
+    config RNAT_MENU
+        bool "Enable R-NAT"
+        select RNAT if WHC_HOST || WHC_NONE
 
     config LWIP_IPV6_MENU
         bool "Enable LWIP IPV6"
@@ -42,9 +38,7 @@ menu "CONFIG LWIP"
 
     config FAST_DHCP
         bool
-    config IP_NAPT
-        bool
-    config RNAPT
+    config RNAT
         bool
     config LWIP_IPV6
         bool
@@ -72,8 +66,8 @@ menu "CONFIG LWIP"
             bool "Enable SOCKETS DEBUG"
         config ICMP_DEBUG
             bool "Enable ICMP DEBUG"
-        config IPNAPT_DEBUG
-            bool "Enable IPNAPT DEBUG"
+        config IPNAT_DEBUG
+            bool "Enable IPNAT DEBUG"
         config IGMP_DEBUG
             bool "Enable IGMP DEBUG"
         config INET_DEBUG

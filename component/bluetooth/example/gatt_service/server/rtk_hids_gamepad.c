@@ -236,7 +236,7 @@ static rtk_bt_gatt_attr_t gamepad_hid_attrs[] = {
 	/* 9, 10: Characteristic: Input Report */
 	RTK_BT_GATT_CHARACTERISTIC(RTK_BT_UUID_REPORT_CHAR,
 							   RTK_BT_GATT_CHRC_READ | RTK_BT_GATT_CHRC_NOTIFY,
-							   RTK_BT_GATT_PERM_READ_ENCRYPT | RTK_BT_GATT_PERM_WRITE_ENCRYPT),
+							   RTK_BT_GATT_PERM_READ_ENCRYPT),
 	/* 11: CCCD for Input Report */
 	RTK_BT_GATT_CCC(RTK_BT_GATT_PERM_READ | RTK_BT_GATT_PERM_WRITE),
 	/* 12: Report Reference for Input Report */

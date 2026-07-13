@@ -70,6 +70,9 @@ u32 app_mpu_nocache_init(void)
 		mpu_region_cfg(mpu_entry, &mpu_cfg);
 	}
 
+	/* retention ram is no-cache region */
+	/* IMG2 on flash keeps this SRAM region non-cacheable, unless all TRX code runs in SRAM */
+#if defined(CONFIG_IMG2_FLASH) && !defined(CONFIG_WIFI_TRX_SRAM_ALL)
 	/* set nocache region */
 	mpu_entry = mpu_entry_alloc();
 	mpu_cfg.region_base = (uint32_t)__sram_image2_start__;
@@ -81,6 +84,7 @@ u32 app_mpu_nocache_init(void)
 	if (mpu_cfg.region_size >= 32) {
 		mpu_region_cfg(mpu_entry, &mpu_cfg);
 	}
+#endif
 
 	return 0;
 }

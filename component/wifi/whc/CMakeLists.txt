@@ -11,20 +11,9 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 # You may use if-else condition to set or update predefined variable above
 set(release_target_name)
-
-if(CONFIG_WHC_HOST AND CONFIG_WHC_INTF_IPC)
-    if(CONFIG_MP_INCLUDED)
-        if(CONFIG_MP_SHRINK)
-            set(release_target_name wifi_whc_ap_mp_shrink)
-        else()
-            set(release_target_name wifi_whc_ap_mp)
-        endif()
-    else()
-        set(release_target_name wifi_whc_ap)
-    endif()
-endif()
-
+set(release_sources)
 if(CONFIG_WLAN AND CONFIG_WHC_HOST AND CONFIG_WHC_INTF_IPC)
+    set(release_target_name whc_ap)
     ameba_list_append(public_libraries
         ${c_SDK_LIB_APPLICATION_DIR}/lib_${release_target_name}.a
     )
@@ -32,6 +21,8 @@ endif()
 
 ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
+    whc_common
+    whc_common/ipc
     whc_dev
     whc_host_rtos
     whc_dev/spi
@@ -66,7 +57,6 @@ set(private_compile_options)         #private compile_options
 
 #------------------------------#
 # Component private part, user config begin
-set(is_internal_library TRUE)
 set(target_name)
 
 if(CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC)
@@ -88,7 +78,6 @@ if(CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC)
     if(CONFIG_WHC_WIFI_API_PATH)
         ameba_list_append(private_sources
             whc_dev/whc_dev_api_path.c
-            whc_dev/whc_dev_cust_evt.c
         )
     endif()
 
@@ -116,6 +105,10 @@ endif()
 
 
 if(CONFIG_WHC_HOST AND NOT CONFIG_WHC_INTF_IPC)
+    ameba_list_append(private_sources
+        whc_host_rtos/whc_host_common.c
+    )
+
     if(CONFIG_WHC_CMD_PATH)
         ameba_list_append(private_sources
         whc_host_rtos/whc_host_app.c
@@ -127,7 +120,6 @@ if(CONFIG_WHC_HOST AND NOT CONFIG_WHC_INTF_IPC)
             whc_host_rtos/whc_host_api.c
             whc_host_rtos/whc_host_api_basic.c
             whc_host_rtos/whc_host_api_ext.c
-            whc_host_rtos/whc_host_cust_evt.c
         )
     endif()
 endif()
@@ -187,7 +179,10 @@ elseif(CONFIG_WHC_HOST)
             whc_host_rtos/ipc/whc_ipc_host_api.c
             whc_host_rtos/ipc/whc_ipc_host_api_basic.c
             whc_host_rtos/ipc/whc_ipc_host_api_ext.c
-            whc_ipc_msg_queue.c
+            whc_host_rtos/ipc/whc_ipc_host_msg_queue.c
+        )
+        ameba_list_append(release_sources
+            whc_host_rtos/ipc/whc_ipc_host_rom_to_flash.c
         )
         if(CONFIG_WIFI_NAN_HOST_APP)
             ameba_list_append(private_sources
@@ -202,7 +197,7 @@ elseif(CONFIG_WHC_HOST)
                 whc_host_rtos/ipc/whc_ipc_host_zephyr.c
             )
         endif()
-        set(is_internal_library FALSE)
+        set(target_name wifi_whc_ipc_host)
     endif()
 endif()
 
@@ -277,30 +272,29 @@ endif()
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 if(private_sources)
-    if(is_internal_library)
-        ###NOTE: For open-source component, always build from source
-        ameba_add_internal_library(${target_name}
-            p_SOURCES
-                ${private_sources}
-            p_INCLUDES
-                ${private_includes}
-            p_DEFINITIONS
-                ${private_definitions}
-            p_COMPILE_OPTIONS
-                ${private_compile_options}
-        )
-    else()
-        ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-        ameba_add_external_app_library(${release_target_name}
-            p_SOURCES
-                ${private_sources}
-            p_INCLUDES
-                ${private_includes}
-            p_DEFINITIONS
-                ${private_definitions}
-            p_COMPILE_OPTIONS
-                ${private_compile_options}
-        )
-    endif()
+    ###NOTE: For open-source component, always build from source
+    ameba_add_internal_library(${target_name}
+        p_SOURCES
+            ${private_sources}
+        p_INCLUDES
+            ${private_includes}
+        p_DEFINITIONS
+            ${private_definitions}
+        p_COMPILE_OPTIONS
+            ${private_compile_options}
+    )
+endif()
+
+if(release_sources)
+    ameba_add_external_app_library(${release_target_name}
+        p_SOURCES
+            ${release_sources}
+        p_INCLUDES
+            ${private_includes}
+        p_DEFINITIONS
+            ${private_definitions}
+        p_COMPILE_OPTIONS
+            ${private_compile_options}
+    )
 endif()
 ##########################################################################################

@@ -73,11 +73,11 @@ u32 PMCTimerCnt_Get(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx)
   * @param  PMC_TIMER The pointer of PMC TIMER DEV.
   * @param  Timer_Idx Timer index in PMC TIMER DEV.
   *   This parameter can be: 0 ~ 3.
-  * @param  NewVaule New counter.
+  * @param  NewValue New counter.
   */
-void PMCTimerCnt_Set(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewVaule)
+void PMCTimerCnt_Set(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewValue)
 {
-	PMC_TIMER->PMCT_TIM_SETx[Timer_Idx] = PMCT_TIM_SETx(NewVaule);
+	PMC_TIMER->PMCT_TIM_SETx[Timer_Idx] = PMCT_TIM_SETx(NewValue);
 }
 
 /**

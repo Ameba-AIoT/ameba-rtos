@@ -758,6 +758,15 @@ enum {
 	 *  @note Requires @ref BT_CONN_LE_OPT_CODED.
 	 */
 	BT_CONN_LE_OPT_NO_1M = BIT(1),
+#if ZEPHYR_FIX_CODE
+	/** @brief Enable LE 2M PHY connection parameters.
+	 *
+	 *  Include LE 2M PHY in init_phys so the initiator can connect over a
+	 *  2M secondary channel when the advertiser uses a 2M secondary PHY.
+	 *  No primary scan is performed on 2M (per BLE spec).
+	 */
+	BT_CONN_LE_OPT_2M = BIT(2),
+#endif
 };
 
 struct bt_conn_le_create_param {

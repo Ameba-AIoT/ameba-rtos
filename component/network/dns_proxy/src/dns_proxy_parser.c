@@ -305,7 +305,7 @@ int dns_parser_extract_a_record(const uint8_t *msg, uint16_t msg_len,
 			}
 
 			/* Extract IP address */
-			IP4_ADDR(out_ip, msg[offset], msg[offset + 1],
+			IP4_ADDR(ip_2_ip4(out_ip), msg[offset], msg[offset + 1],
 					 msg[offset + 2], msg[offset + 3]);
 
 			/* Return TTL if requested */
@@ -437,10 +437,10 @@ int dns_parser_construct_response(const uint8_t *query_msg, uint16_t query_len,
 	answer_ptr += 2;
 
 	/* RDATA = IP address */
-	answer_ptr[0] = ip4_addr1(cached_ip);
-	answer_ptr[1] = ip4_addr2(cached_ip);
-	answer_ptr[2] = ip4_addr3(cached_ip);
-	answer_ptr[3] = ip4_addr4(cached_ip);
+	answer_ptr[0] = ip4_addr1(ip_2_ip4(cached_ip));
+	answer_ptr[1] = ip4_addr2(ip_2_ip4(cached_ip));
+	answer_ptr[2] = ip4_addr3(ip_2_ip4(cached_ip));
+	answer_ptr[3] = ip4_addr4(ip_2_ip4(cached_ip));
 
 	*out_response = response;
 	*out_response_len = resp_len;

@@ -10,11 +10,15 @@
 #define PSRAM_END                    (0x60400000)
 
 /* layout configuration */
+/* Minimum SRAM-TZ reserved even when the secure image runs from PSRAM, so the
+ * SRAM-resident sub-image (bin B: .data/.bss and .sram.only low-power code that
+ * must run after flash/psram are powered down) always has a home. */
+#define KM4TZ_RAM_TZ_MIN_SIZE        KBYTES(4)
 #if defined(CONFIG_IMG3_SRAM) || defined(CONFIG_IMG3_FLASH)
 #define KM4TZ_RAM_TZ_SIZE            KBYTES(CONFIG_TZ_S_SIZE)
 #define KM4TZ_PSRAM_TZ_SIZE          KBYTES(0)
 #elif defined(CONFIG_IMG3_PSRAM)
-#define KM4TZ_RAM_TZ_SIZE            KBYTES(0)
+#define KM4TZ_RAM_TZ_SIZE            KM4TZ_RAM_TZ_MIN_SIZE
 #define KM4TZ_PSRAM_TZ_SIZE          KBYTES(CONFIG_TZ_S_SIZE)
 #else /* undefine trustzone */
 #define KM4TZ_RAM_TZ_SIZE            KBYTES(0)
@@ -27,7 +31,16 @@
 #define KM4TZ_IMG1_SIZE              KBYTES(32)
 #endif
 
+/* WHY(gerrit:71060): NP heap is SRAM-only here (PSRAM_ALL_FOR_AP_HEAP), carved
+ * from this region. NAN's NP-side runtime needs ~30KB more than base WiFi:
+ * measured min-ever-free peaks show 96KB overflows (~-15KB) while 128KB leaves
+ * ~18KB headroom. Only bump when NAN is built in. Do not shrink below 128KB with
+ * NAN on without re-measuring (AT+WLDBG=heap min-ever-free). */
+#if defined(CONFIG_WIFI_NAN_ENABLE)
+#define RAM_KM4NS_IMG2_SIZE          KBYTES(128)
+#else
 #define RAM_KM4NS_IMG2_SIZE          KBYTES(96)
+#endif
 /*
                   amebagreen2 SRAM Layout (512K)
 0x20000000 ──────────►┌──────────────────────┐

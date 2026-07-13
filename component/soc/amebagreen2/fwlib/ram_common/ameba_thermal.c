@@ -95,22 +95,26 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
 void TM_PwrProgCmd(u32 NewState)
 {
 	THERMAL_TypeDef *thermal = TM_DEV;
+	u32 Tmp;
 
 	if (TrustZone_IsSecure()) {
 		thermal = TM_DEV_S;
 	}
 
+	Tmp = thermal->TM_CTRL;
+	Tmp &= ~TM_MASK_PWR;
+
 	if (NewState != DISABLE) {
-		thermal->TM_CTRL |= TM_PWR(TM_PROG_PWR);
-	} else {
-		thermal->TM_CTRL &= ~TM_MASK_PWR;
+		Tmp |= TM_PWR(TM_PROG_PWR);
 	}
+
+	thermal->TM_CTRL = Tmp;
 }
 
 /**
   * @brief  Enable or disable the thermal peripheral.
   * @param  NewState New state of the thermal peripheral.
-  *   			This parameter can be: ENABLE or DISABLE.
+  *   			This parameter can be ENABLE or DISABLE.
   */
 void TM_Cmd(u32 NewState)
 {
@@ -314,8 +318,6 @@ u32 TM_GetMinTemp(void)
 
 /**
   * @brief  Clear the max temperature recorded by thermal.
-  * @note tm_max_clr bit sets to 1, the record max temperature is cleared;
-  *         tm_max_clr bit sets to 0, thermal start to record the max temperature.
   */
 void TM_MaxTempClr(void)
 {
@@ -331,8 +333,6 @@ void TM_MaxTempClr(void)
 
 /**
   * @brief  Clear the min temperature recorded by thermal.
-  * @note tm_min_clr bit sets to 1, the record min temperature is cleared;
-  *         tm_min_clr bit sets to 0, thermal start to record the min temperature.
   */
 void TM_MinTempClr(void)
 {
@@ -348,12 +348,12 @@ void TM_MinTempClr(void)
 
 /**
   * @brief  Configure over-temp protect threshold for comparison with TEMP_OUT.
-  * @param  TM_HighPtThre When TEMP_OUT > TM_HighPtThre, it will set AON reset.
+  * @param  TM_HighPtThre When TEMP_OUT > TM_HighPtThre, an AON reset is triggered.
   * @internal
   * @note   Only between 0x046 (70°C) and 0x08C (140°C) are valid.
   * @endinternal
   * @param  NewState New state of the thermal over-temp protect comparison.
-  *   			This parameter can be: ENABLE or DISABLE.
+  *   			This parameter can be ENABLE or DISABLE.
   */
 void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState)
 {
@@ -382,10 +382,10 @@ void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState)
 
 /**
   * @brief  Configure over-temp warning threshold for comparison with TEMP_OUT.
-  * @param  TM_HighWtThre When TM_HighWtThre <= TEMP_OUT < TM_HighPtThre, it will set interrupt pending flag ISR_TM_HIGH.
+  * @param  TM_HighWtThre When TM_HighWtThre <= TEMP_OUT < TM_HighPtThre, the ISR_TM_HIGH interrupt flag is set.
   * @note   Only values greater than 0 are supported.
   * @param  NewState New state of the thermal over-temp warning comparison.
-  *   			This parameter can be: ENABLE or DISABLE.
+  *   			This parameter can be ENABLE or DISABLE.
   */
 void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState)
 {
@@ -411,9 +411,9 @@ void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState)
 
 /**
   * @brief  Configure low-temp warning threshold for comparison with TEMP_OUT.
-  * @param  TM_LowWtThre When TEMP_OUT <= TM_LowWtThre, it will set interrupt pending flag ISR_TM_LOW.
+  * @param  TM_LowWtThre When TEMP_OUT <= TM_LowWtThre, the ISR_TM_LOW interrupt flag is set.
   * @param  NewState New state of the thermal low-temp warning comparison.
-  *   			This parameter can be: ENABLE or DISABLE.
+  *   			This parameter can be ENABLE or DISABLE.
   */
 void TM_LowWtConfig(u16 TM_LowWtThre, u32 NewState)
 {

@@ -82,7 +82,7 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
   * @brief  Enable or disable the specified thermal fields to be programmed.
   * @param  NewState ENABLE or DISABLE.
   *         @arg ENABLE: Fill TM_PWR field with right password 0x69.
-  *         @arg DISABLE: Fill TM_PWR field with 0x0.
+  *         @arg DISABLE: Fill TM_PWR field with wrong password 0x0.
   */
 void TM_PwrProgCmd(u32 NewState)
 {
@@ -288,7 +288,7 @@ void TM_MinTempClr(void)
 
 /**
   * @brief  Configure over-temp protect threshold for comparison with TEMP_OUT.
-  * @param  TM_HighPtThre When TEMP_OUT > TM_HighPtThre, AON reset arises.
+  * @param  TM_HighPtThre When TEMP_OUT > TM_HighPtThre, an AON reset is triggered.
   * @internal
   * @note   Only between 0x046 (70°C) and 0x08C (140°C) are valid.
   * @endinternal
@@ -318,7 +318,7 @@ void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState)
 
 /**
   * @brief  Configure over-temp warning threshold for comparison with TEMP_OUT.
-  * @param  TM_HighWtThre When TM_HighWtThre <= TEMP_OUT < TM_HighPtThre, ISR_TM_HIGH interrupt arises.
+  * @param  TM_HighWtThre When TM_HighWtThre <= TEMP_OUT < TM_HighPtThre, the ISR_TM_HIGH interrupt flag is set.
   * @note   Only values greater than 0 are supported.
   * @param  NewState New state of the thermal over-temp warning comparison.
   * 		This parameter can be ENABLE or DISABLE.
@@ -342,7 +342,7 @@ void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState)
 
 /**
   * @brief  Configure low-temp warning threshold for comparison with TEMP_OUT.
-  * @param  TM_LowWtThre When TEMP_OUT <= TM_LowWtThre, ISR_TM_LOW interrupt arises.
+  * @param  TM_LowWtThre When TEMP_OUT <= TM_LowWtThre, the ISR_TM_LOW interrupt flag is set.
   * @param  NewState New state of the thermal low-temp warning comparison.
   * 		This parameter can be ENABLE or DISABLE.
   */

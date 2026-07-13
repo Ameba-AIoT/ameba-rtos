@@ -266,7 +266,7 @@ void PPE_Cmd(int state)
 
 /**
   * @brief  Get PPE global state.
-  * @return One of @ref PPE_GLOBAL_STATE.
+  * @return One of PPE_GLOBAL_STATE.
   */
 u32 PPE_GetGlobalState(void)
 {
@@ -422,7 +422,7 @@ void PPE_SetValid(void)
 /**
   * @brief  Get the setting valid value for polling.
   * @return Set valid bit status:
-  *         - 0: User can call PPE_SetValid() to tell PPE the settings are valid
+  *         - 0: User can call @ref PPE_SetValid() to tell PPE the settings are valid
   *         - 1: Settings valid bit is set
   */
 u32 PPE_GetValid(void)

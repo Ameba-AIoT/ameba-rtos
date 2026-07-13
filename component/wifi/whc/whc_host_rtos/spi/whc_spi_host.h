@@ -11,7 +11,7 @@
 #define SPIM_MOSI                   _PA_30
 #define SPIM_MISO                   _PA_31
 #define SPIM_SCLK                   _PA_29
-#define HOST_READY_PIN              _PB_0 //cs
+#define SPIM_SW_CS                  _PB_0 //cs
 #define SPI_CLOCK_DIVIDER           4   // 100M clock source according to HPERI_ClkGet
 
 #elif defined (CONFIG_AMEBADPLUS)
@@ -21,7 +21,7 @@
 #define SPIM_MOSI	                _PB_24
 #define SPIM_MISO	                _PB_25
 #define SPIM_SCLK	                _PB_23
-#define HOST_READY_PIN		        _PB_26  //cs
+#define SPIM_SW_CS   		        _PB_26  //cs
 #define SPI_CLOCK_DIVIDER           4   // 96M clock source according to spi_get_ipclk
 
 #elif defined (CONFIG_AMEBALITE)
@@ -31,10 +31,11 @@
 #define SPIM_MOSI	                _PA_29
 #define SPIM_MISO	                _PA_30
 #define SPIM_SCLK	                _PA_28
-#define HOST_READY_PIN		        _PA_31
+#define SPIM_SW_CS   		        _PA_31
 #define SPI_CLOCK_DIVIDER           6   // 120M clock source according to spi_get_ipclk
 #endif
 
+#define TX_BUF_NUM					2
 
 #define DEV_READY					1
 #define DEV_BUSY					0
@@ -42,73 +43,71 @@
 #define DEV_TX_REQ					1
 #define DEV_TX_IDLE					0
 
-#define HOST_READY					1
-#define HOST_BUSY					0
+#define CS_HIGH						1
+#define CS_LOW						0
 
-#define WHC_SPI_DEV				SPI0_DEV
+#define WHC_SPI_DEV					SPI0_DEV
 
-#define WHC_SPI_CLK_MHZ			20
+#define WHC_SPI_CLK_MHZ				20
 #define WHC_RECOVER_TIM_IDX			0
 #define WHC_RECOVER_TO_US			1000
 
 #define DEV_DMA_ALIGN				4
 
-#define SIZE_RX_DESC	0
-#define SIZE_TX_DESC	0
+#define SIZE_RX_DESC				0
+#define SIZE_TX_DESC				0
 
-#define whc_host_send_data       whc_spi_host_send_data
-#define whc_host_init            whc_spi_host_init
+#define HOST_RX_DMA_CB_DONE			BIT(0)
+#define HOST_TX_DMA_CB_DONE			BIT(1)
 
-#define HOST_RX_DMA_CB_DONE		BIT(0)
-#define HOST_TX_DMA_CB_DONE		BIT(1)
-struct whc_spi_host_priv_t {
-	u8 dev_state;
-	u8 host_recv_state;
-	u8 host_tx_state;
-	u8 host_dma_waiting_status;
+#define SPI_DMA_ALIGN(x)			((((x-1)>>5)+1)<<5) //alignement to 32
+#define SPI_BUFSZ					(SPI_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
+#define SPI_SKB_RSVD_LEN			N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), 4)
 
-	rtos_mutex_t	dev_lock; /* mutex to protect send host event_priv message */
-	rtos_sema_t dev_rdy_sema;
-	rtos_sema_t host_send; /* sema to protect inic  host send */
-	rtos_sema_t host_send_api; /* sema to protect inic ipc host send api */
-	rtos_sema_t host_recv_wake; /* for recv task */
-	rtos_sema_t rxirq_sema;
-	rtos_sema_t txirq_sema;
-	rtos_sema_t host_recv_done; /* for recv task */
+#define WIFI_STACK_SIZE_INIC_RX_REQ_TASK			(268 + 128 + CONTEXT_SAVE_SIZE)
+#define WIFI_STACK_WHC_SPI_HOST_RXDMA_IRQ_TASK		4096 //TODO
+#define WIFI_STACK_WHC_SPI_HOST_TXDMA_IRQ_TASK		(168 + 128 + CONTEXT_SAVE_SIZE)
 
-	GDMA_InitTypeDef SSITxGdmaInitStruct;
-	GDMA_InitTypeDef SSIRxGdmaInitStruct;
-
-	u8 *rx_buf;
-	u8 *dummy_tx_buf;
-	struct whc_buf_info *txbuf_info; /* to free in hdl */
-
-	u8 txdma_initialized: 1;
-};
-
-
+#define whc_host_send_data			whc_spi_host_send
+#define whc_host_init				whc_spi_host_init
 
 enum whc_spi_dma_type {
 	WHC_SPI_TXDMA,
 	WHC_SPI_RXDMA
 };
 
+struct whc_spi_host_priv_t {
+	GDMA_InitTypeDef SSITxGdmaInitStruct;
+	GDMA_InitTypeDef SSIRxGdmaInitStruct;
 
-#define SPI_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32
-#define SPI_BUFSZ		(SPI_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
-#define SPI_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), 4)
+	rtos_mutex_t dev_lock; /* mutex to protect send host event_priv message */
+	rtos_mutex_t host_send; /* mutex to protect inic  host send */
+	rtos_sema_t dev_rdy_sema;
+	rtos_sema_t host_recv_wake; /* for recv task */
+	rtos_sema_t rxirq_sema;
+	rtos_sema_t txirq_sema;
+	rtos_sema_t host_recv_done; /* for recv task */
 
-#define WIFI_STACK_SIZE_INIC_RX_REQ_TASK		    (268 + 128 + CONTEXT_SAVE_SIZE)
-#define WIFI_STACK_WHC_SPI_HOST_RXDMA_IRQ_TASK		4096 //TODO
-#define WIFI_STACK_WHC_SPI_HOST_TXDMA_IRQ_TASK		(168 + 128 + CONTEXT_SAVE_SIZE)
+	u8 *rx_buf;
+	u8 *dummy_tx_buf;
+	struct whc_buf_info *txbuf_info; /* to free in hdl */
 
-static inline void set_host_rdy_pin(u8 status)
+	u8 dev_state;
+	u8 host_recv_state;
+	u8 host_tx_state;
+	u8 host_dma_waiting_status;
+	u8 used_buf_num;
+	u8 txdma_initialized: 1;
+
+	u8 tx_buf[TX_BUF_NUM][4 + SPI_BUFSZ] __attribute__((aligned(4)));
+};
+
+static inline void set_sw_cs_pin(u8 status)
 {
-	GPIO_WriteBit(HOST_READY_PIN, status);
+	GPIO_WriteBit(SPIM_SW_CS, status);
 }
 
-void whc_spi_host_send_data(struct whc_buf_info *pbuf);
-void whc_spi_host_send_to_dev_internal(u8 *buf, u8 *buf_alloc, u16 len);
+void whc_spi_host_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb);
 void whc_spi_host_init(void);
 
 #endif

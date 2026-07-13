@@ -504,6 +504,10 @@ __weak void BOOT_Image1(void)
 		RRAM_DEV->MAGIC_NUMBER = 0x6969A5A5;
 	}
 
+	/* Enable divide-by-zero fault for both S and NS worlds */
+	SCB->CCR    |= SCB_CCR_DIV_0_TRP_Msk;
+	SCB_NS->CCR |= SCB_CCR_DIV_0_TRP_Msk;
+
 	BOOT_SOC_ClkSet();
 
 	/* Mem_LDO in normal0 mode by default, change dummy load from 500uA to 200uA */

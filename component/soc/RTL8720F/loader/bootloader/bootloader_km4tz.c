@@ -373,6 +373,10 @@ void BOOT_Image1(void)
 		Peripheral_Reset();
 	}
 
+	/* Enable divide-by-zero fault for both S and NS worlds */
+	SCB->CCR    |= SCB_CCR_DIV_0_TRP_Msk;
+	SCB_NS->CCR |= SCB_CCR_DIV_0_TRP_Msk;
+
 	BOOT_SOC_ClkSet();
 
 	BOOT_Log_Init();

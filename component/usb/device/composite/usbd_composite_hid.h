@@ -63,7 +63,7 @@ typedef struct {
 
 typedef struct {
 	usbd_ep_t ep_intr_in;
-	usbd_composite_hid_usr_cb_t *cb;
+	const usbd_composite_hid_usr_cb_t *cb;
 	usbd_composite_dev_t *cdev;
 } usbd_composite_hid_device_t;
 
@@ -75,7 +75,7 @@ extern const usbd_class_driver_t usbd_composite_hid_driver;
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbd_composite_hid_init(usbd_composite_dev_t *cdev, u16 tx_buf_len, usbd_composite_hid_usr_cb_t *cb);
+int usbd_composite_hid_init(usbd_composite_dev_t *cdev, u16 tx_buf_len, const usbd_composite_hid_usr_cb_t *cb);
 int usbd_composite_hid_deinit(void);
 
 /**

@@ -1,3 +1,9 @@
+ccflags-$(CONFIG_AMEBADPLUS)           += -DCONFIG_AMEBADPLUS
+ccflags-$(CONFIG_AMEBAGREEN2)          += -DCONFIG_AMEBAGREEN2
+ccflags-$(CONFIG_AMEBALITE)            += -DCONFIG_AMEBALITE
+ccflags-$(CONFIG_AMEBAX)               += -DCONFIG_AMEBAX
+ccflags-$(CALCULATE_FREE_TXBD)         += -DCALCULATE_FREE_TXBD
+
 ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
 ccflags-$(CONFIG_MCC) += -DCONFIG_MCC
@@ -18,7 +24,7 @@ ccflags-y += -I$(src)/../include -I$(src)/.. -I$(src)/../../common -I$(src)/../s
 
 ifeq ($(CONFIG_WHCH), y)
 ccflags-y += -I$(src)/../whch -I$(src)/../whch/hal
-ifeq ($(CONFIG_WHC_HAL_CHIP), rtl8721f)
+ifeq ($(CONFIG_AMEBAGREEN2), y)
 ccflags-y += -I$(src)/../whch/hal/rtl8721f
 endif
 endif
@@ -42,8 +48,7 @@ whc_sdio-$(CONFIG_WHC_HCI_SDIO) := \
 		../netdev/whc_host_ops_nan.o \
 		../netdev/whc_host_ops_p2p.o \
 		../netdev/whc_host_netdev_ops_p2p.o \
-		../whc_host_cfgvendor.o \
-		../whc_host_cust_evt.o
+		../whc_host_cfgvendor.o
 
 ifeq ($(CONFIG_WHCH), y)
     whc_sdio-$(CONFIG_WHC_HCI_SDIO) += \
@@ -56,7 +61,7 @@ ifeq ($(CONFIG_WHCH), y)
 		../whch/whch_host_addba.o \
 		../whch/hal/whch_host_hal_xmit_com.o \
 		../whch/hal/whch_host_hal_recv_com.o
-ifeq ($(CONFIG_WHC_HAL_CHIP), rtl8721f)
+ifeq ($(CONFIG_AMEBAGREEN2), y)
     whc_sdio-$(CONFIG_WHC_HCI_SDIO) += \
 		../whch/hal/rtl8721f/whch_host_hal_xmit.o \
 		../whch/hal/rtl8721f/whch_host_hal_rate.o \

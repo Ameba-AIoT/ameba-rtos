@@ -82,7 +82,7 @@ int dns_proxy_update_upstream_servers(void)
 	for (int i = 0; i < DNS_MAX_SERVERS; i++) {
 		server = dns_getserver(i);
 
-		if (server && !ip_addr_isany(server)) {
+		if (server && !ip_addr_isany_val(*server)) {
 			/* Check if server changed */
 			if (!ip_addr_cmp(server, &g_dns_proxy_ctx.upstream_servers[i])) {
 				servers_changed = true;

@@ -196,7 +196,7 @@ static struct spi_driver whc_spi_host_driver = {
 module_spi_driver(whc_spi_host_driver);
 
 MODULE_AUTHOR("Realtek");
-MODULE_DESCRIPTION("RealTek iNIC WHC");
+MODULE_DESCRIPTION("RealTek Ameba WHC");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("rtl8721da");
+MODULE_VERSION("1.0");
 

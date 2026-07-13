@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
+#include <linux/types.h>
+#include <linux/if_ether.h>
+#include <linux/timer.h>
+#include <net/cfg80211.h>
 /*
 * Realtek wireless local area network IC driver.
 *   This is an interface between cfg80211 and firmware in other core. The
@@ -10,8 +14,6 @@
 
 #ifndef __WHC_HOST_FT_H__
 #define __WHC_HOST_FT_H__
-
-#include <whc_host_linux.h>
 
 #ifdef CONFIG_IEEE80211R
 void whc_host_ft_init(void);

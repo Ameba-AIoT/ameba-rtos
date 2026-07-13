@@ -28,6 +28,7 @@
 #include <stack/host/conn_internal.h>
 #include <stack/host/smp.h>
 #include <stack/host/adv.h>
+#include <stack/host/scan.h>
 #include <zephyr/sys/byteorder.h>
 #include <stack/host/keys.h>
 #include <stack/host/settings.h>
@@ -424,7 +425,6 @@ static void _indicate_scan_stop(uint8_t reason)
 	rtk_bt_evt_indicate(p_evt, NULL);
 }
 
-extern uint8_t get_adv_type(uint8_t evt_type);
 static void scan_cb_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
 {
 	rtk_bt_evt_t *p_evt = NULL;
@@ -438,7 +438,7 @@ static void scan_cb_recv(const struct bt_le_scan_recv_info *info, struct net_buf
 #endif
 	{
 		if (zephyr_scan_state == ZEPHYR_SCAN_STATE_LEGACY) {
-			if (info->is_ext && !(info->adv_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY)) {
+			if (info->is_ext && !(info->adv_props & BT_HCI_LE_ADV_EVT_TYPE_LEGACY)) {
 				return;
 			}
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP,
@@ -451,7 +451,7 @@ static void scan_cb_recv(const struct bt_le_scan_recv_info *info, struct net_buf
 			scan_res = (rtk_bt_le_scan_res_ind_t *)p_evt->data;
 			scan_res->num_report = 1;
 			scan_res->adv_report.evt_type = (rtk_bt_le_adv_report_type_t)(info->is_ext ?
-																		  get_adv_type(info->adv_type) :
+																		  get_adv_type(info->adv_props) :
 																		  info->adv_type);
 			scan_res->adv_report.addr.type = (rtk_bt_le_addr_type_t)info->addr->type;
 			memcpy(scan_res->adv_report.addr.addr_val, info->addr->a.val, BT_ADDR_SIZE);
@@ -1711,6 +1711,11 @@ static uint16_t bt_stack_le_gap_ext_connect(void *param)
 				le_create_param.interval_coded = p_ext_conn_param->scan_interval[i];
 				le_create_param.window_coded = p_ext_conn_param->scan_window[i];
 				le_create_param.options |= BT_CONN_LE_OPT_CODED;
+#if ZEPHYR_FIX_CODE
+			} else if (i == 1) {
+				/* 2M cannot be a primary scan PHY; only flag its conn params */
+				le_create_param.options |= BT_CONN_LE_OPT_2M;
+#endif
 			} else {
 				le_create_param.interval = p_ext_conn_param->scan_interval[i];
 				le_create_param.window = p_ext_conn_param->scan_window[i];

@@ -369,13 +369,13 @@ int rtw_nan_iface_alloc(struct wiphy *wiphy,
 	}
 
 	/* alloc and init netdev */
-	ndev = alloc_etherdev_mq(sizeof(struct netdev_priv_t), 1);
+	ndev = alloc_etherdev_mq(sizeof(struct whc_netdev_priv_t), 1);
 	if (!ndev) {
 		goto exit;
 	}
 	global_idev.pndev[2] = ndev;
 	rtw_netdev_idx(ndev) = 2;
-	rtw_netdev_label(ndev) = WIFI_FULLMAC_LABEL;
+	memcpy(rtw_netdev_label(ndev), WHC_LABEL, sizeof(WHC_LABEL));
 	ndev->netdev_ops = &rtw_ndev_ops_nan;
 	ndev->watchdog_timeo = HZ * 3; /* 3 second timeout */
 #ifndef CONFIG_WHC_HCI_IPC
@@ -503,13 +503,13 @@ int rtw_ndev_alloc(void)
 
 	for (i = 0; i < TOTAL_IFACE_NUM; i++) {
 		/* alloc and init netdev */
-		ndev = alloc_etherdev_mq(sizeof(struct netdev_priv_t), 1);
+		ndev = alloc_etherdev_mq(sizeof(struct whc_netdev_priv_t), 1);
 		if (!ndev) {
 			goto fail;
 		}
 		global_idev.pndev[i] = ndev;
 		rtw_netdev_idx(ndev) = i;
-		rtw_netdev_label(ndev) = WIFI_FULLMAC_LABEL;
+		memcpy(rtw_netdev_label(ndev), WHC_LABEL, sizeof(WHC_LABEL));
 		rtw_netdev_flags(ndev) = ndev->flags;
 
 		ndev->netdev_ops = (i ? &rtw_ndev_ops_ap : &rtw_ndev_ops);
@@ -624,8 +624,7 @@ static int rtw_inetaddr_notifier_call(struct notifier_block *nb, unsigned long a
 	}
 
 	ndev = ifa->ifa_dev->dev;
-	if (rtw_netdev_label(ndev) != WIFI_FULLMAC_LABEL) {
-		dev_dbg(global_idev.pwhc_dev, "%s is not whc dev\n", ifa->ifa_label);
+	if (memcmp(rtw_netdev_label(ndev), WHC_LABEL, strlen(WHC_LABEL))) {
 		return NOTIFY_DONE;
 	}
 
@@ -656,8 +655,7 @@ static int rtw_inet6addr_notifier_call(struct notifier_block *nb, unsigned long 
 	}
 
 	ndev = inet6_ifa->idev->dev;
-	if (rtw_netdev_label(ndev) != WIFI_FULLMAC_LABEL) {
-		dev_dbg(global_idev.pwhc_dev, "Not whc dev\n");
+	if (memcmp(rtw_netdev_label(ndev), WHC_LABEL, strlen(WHC_LABEL))) {
 		return NOTIFY_DONE;
 	}
 
@@ -713,8 +711,6 @@ int rtw_netdev_probe(struct device *pdev)
 
 	/* Initialize axi_priv */
 	global_idev.pwhc_dev = pdev;
-
-	dev_dbg(global_idev.pwhc_dev, "rtw_dev_probe start\n");
 
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	/*step1: alloc and init wiphy */
@@ -804,7 +800,3 @@ int rtw_netdev_remove(struct device *pdev)
 	return 0;
 }
 
-MODULE_DESCRIPTION("Realtek Wireless Lan Driver");
-MODULE_LICENSE("GPL v2");
-MODULE_AUTHOR("Realtek Corporation");
-MODULE_VERSION(DRIVERVERSION);

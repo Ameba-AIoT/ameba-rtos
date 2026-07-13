@@ -406,6 +406,7 @@ module_init(whc_usb_host_init_module);
 module_exit(whc_usb_host_cleanup_module);
 
 MODULE_AUTHOR("Realtek");
-MODULE_DESCRIPTION("RealTek iNIC WHC");
+MODULE_DESCRIPTION("RealTek Ameba WHC");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("rtl8721da");
+MODULE_VERSION("1.0");
+

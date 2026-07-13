@@ -13,7 +13,9 @@
 
 #define whc_dev_intf_init                     whc_uart_dev_init
 #define whc_dev_bus_is_idle                   whc_uart_dev_bus_is_idle
+#define whc_dev_trigger_rx_handle()           whc_uart_dev_trigger_rx_handle()
 #define whc_dev_send                          whc_uart_dev_send
+#define whc_dev_flowctrl(a, b)
 
 #if defined (CONFIG_AMEBASMART)
 #define UART_TX		_PA_3 // UART0 TX
@@ -63,6 +65,7 @@ struct whc_uart_priv_t {
 	rtos_sema_t session_lock;
 	rtos_sema_t rxirq_sema;
 	rtos_sema_t txirq_sema;
+	rtos_sema_t free_skb_sema;
 
 	u32 rx_size_done;
 	u32 rx_size_total;
@@ -83,8 +86,14 @@ struct whc_uart_priv_t {
 #define WHC_UART_DEV_HDR_ACK       0x5
 #define WHC_UART_DEV_RX_END        0x6
 
+#define UART_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32 for cache line
+#define UART_BUFSZ		(UART_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
+/* uart as flow controller when rx */
+#define UART_SKB_RSVD_LEN	N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), WHC_UART_RX_BURST_SIZE)
+
 void whc_uart_dev_init(void);
 void whc_uart_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb);
 u8 whc_uart_dev_bus_is_idle(void);
+void whc_uart_dev_trigger_rx_handle(void);
 
 #endif

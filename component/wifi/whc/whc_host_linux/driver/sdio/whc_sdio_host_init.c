@@ -57,7 +57,7 @@ static void rtw_sdio_interrupt_handler(struct sdio_func *func)
 {
 	struct whc_sdio *priv;
 	u32 value, himr;
-#ifdef CLEAR_AVAIL_INT_BY_RD_TXBD
+#ifdef CONFIG_AMEBADPLUS
 	u32 freepage;
 #endif
 
@@ -91,7 +91,7 @@ static void rtw_sdio_interrupt_handler(struct sdio_func *func)
 
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
 		if (priv->sdio_hisr & SDIO_HISR_AVAL_INT) {
-#ifdef CLEAR_AVAIL_INT_BY_RD_TXBD
+#ifdef CONFIG_AMEBADPLUS
 			/* for DP, read txbd to clear aval int */
 			freepage = rtw_read32(priv, SDIO_REG_FREE_TXBD_NUM);
 #else
@@ -153,7 +153,7 @@ void rtw_sdio_init_txavailbd_threshold(struct whc_sdio *priv)
 
 	freeBDNum = rtw_read32(priv, SDIO_REG_FREE_TXBD_NUM);
 
-#ifdef CONFIG_AMEBAGREEN2
+#if defined(CONFIG_AMEBAGREEN2) || defined (CONFIG_AMEBAX)
 	/* The value of SDIO_REG_FREE_TXBD_NUM = actual FREE TXBD NUM-1.
 	When this value changes from "< txBDTh_l" to ">= txBDTh_h", TXBD_AVAIL interrupt triggers.
 	Because driver would keep at least 1 TXBD available, so this value would >= 0*/

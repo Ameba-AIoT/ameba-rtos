@@ -1087,7 +1087,7 @@ void RTIM_SetPhaseSel(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 Phase)
   */
 void RTIM_SetDeadzoneMAXChnID(RTIM_TypeDef *TIMx)
 {
-	u32 deadzone_tim_max = (TIMx->AUDx[TIM5_Channel_0] & TIM_MASK_CHx_DEADZONE_TIM);
+	u32 deadzone_tim_max = (TIMx->AUDx[PWM_AUD_Channel_0] & TIM_MASK_CHx_DEADZONE_TIM);
 	u32 deadzone_tim_max_chnid = 0;
 	u32 cfg = 0;
 	for (u8 i = 1; i < PWM_CHAN_MAX; i++) {

@@ -104,6 +104,7 @@ ethip6_output(struct netif *netif, struct pbuf *q, const ip6_addr_t *ip6addr)
 
 /* Added by Realtek start */
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
+    extern struct netif *pnetif_ap;
     struct ip6_hdr *ip6hdr;
     ip_addr_t current_iphdr_src;
     ip6hdr = (struct ip6_hdr *)q->payload;

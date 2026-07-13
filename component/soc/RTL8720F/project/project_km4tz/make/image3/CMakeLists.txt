@@ -49,6 +49,32 @@ if(TARGET target_img2_km4tz_postbuild)
     set(DEP_KM4TZ target_img2_km4tz_postbuild)
 endif()
 
+# image3 is packaged into three sub-images (xip / sram / psram). Each sub-image
+# is loaded to its region origin, so its header address is fixed regardless of
+# mode (the xip header is always a flash virtual address). Only which region
+# carries the secure code (entry + NSC gateway + bulk text) varies with the
+# mutually exclusive CONFIG_IMG3_* choice; the sram sub-image always also
+# carries the SRAM-resident .sram_image3.text.data section. Regions with no
+# content emit a header-only bin: objcopy'ing a non-existent section yields a
+# 0-byte bin.
+set(IMG3_XIP_SYM   __image3_xip_start__)
+set(IMG3_SRAM_SYM  __image3_sram_start__)
+set(IMG3_PSRAM_SYM __image3_psram_start__)
+
+set(IMG3_EMPTY_JSECS -j .null)  # non-existent section -> empty (header-only) bin
+set(IMG3_XIP_JSECS   ${IMG3_EMPTY_JSECS})
+set(IMG3_SRAM_JSECS  -j .sram_image3.text.data)
+set(IMG3_PSRAM_JSECS ${IMG3_EMPTY_JSECS})
+
+set(IMG3_SECCODE_JSECS -j .ram_image3.entry -j .gnu.sgstubs -j .ram_image3.text)
+if(CONFIG_IMG3_FLASH)
+    set(IMG3_XIP_JSECS   ${IMG3_SECCODE_JSECS})
+elseif(CONFIG_IMG3_PSRAM)
+    set(IMG3_PSRAM_JSECS ${IMG3_SECCODE_JSECS})
+else() # CONFIG_IMG3_SRAM
+    set(IMG3_SRAM_JSECS  ${IMG3_SECCODE_JSECS} -j .sram_image3.text.data)
+endif()
+
 add_custom_command(
     OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/cmse_implib.lib ${c_SDK_IMAGE_TARGET_DIR}/target_img3.axf
     COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_DIR}
@@ -65,25 +91,32 @@ add_custom_command(
     COMMAND ${CMAKE_OBJDUMP} -j .gnu.sgstubs -d ${c_SDK_IMAGE_TARGET_DIR}/target_img3.axf > ${c_SDK_IMAGE_TARGET_DIR}/cmse_implib.asm
 
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_MCU_PROJECT_NAME}_image3_all.bin"
-    COMMAND ${CMAKE_OBJCOPY}  -j .ram_image3.entry -j .gnu.sgstubs -j .ram_image3.text -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s.bin
-    COMMAND ${CMAKE_OBJCOPY}  -j .ram_image3.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin
+    COMMAND ${CMAKE_OBJCOPY}  ${IMG3_XIP_JSECS}   -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s.bin
+    COMMAND ${CMAKE_OBJCOPY}  ${IMG3_SRAM_JSECS}  -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/sram_3_s.bin
+    COMMAND ${CMAKE_OBJCOPY}  ${IMG3_PSRAM_JSECS} -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/psram_3_s.bin
 
     COMMAND ${CMAKE_COMMAND} -E echo "========== Image manipulating start =========="
-    COMMAND ${op_PAD} -i ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s.bin -l 32
-    COMMAND ${op_PAD} -i ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin -l 32
+    COMMAND ${op_PAD} -i ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s.bin   -l 32
+    COMMAND ${op_PAD} -i ${c_SDK_IMAGE_TARGET_DIR}/sram_3_s.bin  -l 32
+    COMMAND ${op_PAD} -i ${c_SDK_IMAGE_TARGET_DIR}/psram_3_s.bin -l 32
 
     COMMAND ${op_PREPEND_HEADER}
         -o ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s_prepend.bin
         -i ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s.bin
-        -s __image3_entry_func__
+        -s ${IMG3_XIP_SYM}
         -m ${c_SDK_IMAGE_TARGET_DIR}/target_img3.map
     COMMAND ${op_PREPEND_HEADER}
-        -o ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s_prepend.bin
-        -i ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin
-        -s __ram_image3_data_start__
+        -o ${c_SDK_IMAGE_TARGET_DIR}/sram_3_s_prepend.bin
+        -i ${c_SDK_IMAGE_TARGET_DIR}/sram_3_s.bin
+        -s ${IMG3_SRAM_SYM}
+        -m ${c_SDK_IMAGE_TARGET_DIR}/target_img3.map
+    COMMAND ${op_PREPEND_HEADER}
+        -o ${c_SDK_IMAGE_TARGET_DIR}/psram_3_s_prepend.bin
+        -i ${c_SDK_IMAGE_TARGET_DIR}/psram_3_s.bin
+        -s ${IMG3_PSRAM_SYM}
         -m ${c_SDK_IMAGE_TARGET_DIR}/target_img3.map
 
-    COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s_prepend.bin > ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image3_all.bin
+    COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/xip_3_s_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/sram_3_s_prepend.bin ${c_SDK_IMAGE_TARGET_DIR}/psram_3_s_prepend.bin > ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image3_all.bin
 
     DEPENDS ${c_CURRENT_IMAGE}
     WORKING_DIRECTORY ${c_SOC_PROJECT_DIR}

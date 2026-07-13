@@ -20,13 +20,10 @@ FWDL_OBJS-$(CONFIG_WHC_HCI_USB) += \
 	whc_usb_host_xfer.o \
 	whc_usb_host_fwdl.o
 
-# HAL chip selection
-CONFIG_WHC_HAL_CHIP ?= rtl8721f
-
-ifeq ($(CONFIG_WHC_HAL_CHIP), rtl8721f)
+ifeq ($(CONFIG_AMEBAGREEN2), y)
 FWDL_OBJS += whc_hal_rtl8721f.o
 else
-$(error Unknown HAL chip: $(CONFIG_WHC_HAL_CHIP))
+$(error No valid IC selected for fwdl HAL.)
 endif
 
 FWDL_OBJS += $(FWDL_OBJS-y)

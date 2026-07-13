@@ -921,6 +921,30 @@ void GDMA_DestinationScatter(u8 GDMA_Index, u8 GDMA_ChNum, u32 Dst_ScatterCount,
 	GDMA->CH[GDMA_ChNum].GDMA_CTLx_L |= GDMA_BIT_CTLx_L_DST_SCATTER_EN;
 	GDMA->CH[GDMA_ChNum].GDMA_DSRx_L = GDMA_DSRx_L_DSC(Dst_ScatterCount) | GDMA_DSRx_L_DSI(Dst_ScatterInterval);
 }
+/**
+ * @brief Check if the channel is active
+ *
+ * @param GDMA_Index 0
+ * @param GDMA_ChNum 0 ~ 7
+ * @retval TRUE/FALSE
+ */
+__weak
+u8 GDMA_ChannelIsActive(u8 GDMA_Index, u8 GDMA_ChNum)
+{
+	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *) GDMA_BASE);
+	if (TrustZone_IsSecure()) {
+		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
+	}
+	/* Check the parameters */
+	assert_param(IS_GDMA_Index(GDMA_Index));
+	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
+
+	if ((GDMA_GET_CHENREG_L_1_CH_EN(GDMA->GDMA_CHENREG_L_1) & BIT(GDMA_ChNum)) && \
+		((GDMA->CH[GDMA_ChNum].GDMA_CFGx_L & GDMA_BIT_CFGx_L_INACTIVE) == 0)) {
+		return TRUE;
+	}
+	return FALSE;
+}
 
 /**
   * @}

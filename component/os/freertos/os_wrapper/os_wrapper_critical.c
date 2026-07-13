@@ -69,9 +69,15 @@ void rtos_critical_enter(uint32_t component_id)
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] component_id invalid\r\n", __func__);
 	}
 
-	if (!rtos_critical_is_in_interrupt()) {
-		vTaskSuspendAll();
-	}
+	/* Context-switch guard is implemented in two places:
+	 * 1. portYIELD() macro (portmacro.h): when component nesting > 0, SWI is
+	 *    suppressed and xYieldPendings is set instead, covering all SWI paths
+	 *    ( vTaskYieldWithinAPI, vTaskExitCritical portYIELD).
+	 * 2. prvCheckForRunStateChange() early return: when component nesting > 0
+	 *    the IRQ window is not opened, covering all IRQ paths
+	 *    ( vTaskEnterCritical, vTaskSuspendAll).
+	 *
+	 * vTaskSuspendAll() is therefore no longer needed here. */
 
 	portDISABLE_INTERRUPTS();
 
@@ -114,7 +120,14 @@ void rtos_critical_exit(uint32_t component_id)
 		spin_unlock(&rtos_critical_spin_lock_list[component_id]);
 	}
 
-	/* before enable interrupt, OS critical nesting must return to 0 */
+	/* Before enabling interrupts, OS critical nesting must have returned to 0.
+	 * After enabling, call vTaskYieldWithinAPI() to immediately service any
+	 * xYieldPendings accumulated during this component critical section.
+	 * vTaskYieldWithinAPI() checks OS uxCriticalNesting: if 0 it fires SWI
+	 * directly (portYIELD), which will now pass the portYIELD macro guard
+	 * since component nesting is 0; if > 0 it sets xYieldPendings for
+	 * vTaskExitCritical to handle. Either way the deferred yield is consumed
+	 * at the earliest safe opportunity, not delayed until the next IRQ. */
 	if (GetComponentCriticalNesting(portGET_CORE_ID()) == 0) {
 		extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
 		if (uxPortSchedulerStart[portPrimaryCoreID] == pdFALSE) {
@@ -126,12 +139,8 @@ void rtos_critical_exit(uint32_t component_id)
 			}
 
 			if (!rtos_critical_is_in_interrupt()) {
-				xTaskResumeAll();
+				vTaskYieldWithinAPI();
 			}
-		}
-	} else {
-		if (!rtos_critical_is_in_interrupt()) {
-			xTaskResumeAll();
 		}
 	}
 
@@ -153,12 +162,10 @@ void __rtos_critical_enter_os(void)
 {
 	if (rtos_critical_is_in_interrupt()) {
 		portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
-
+		/* Only mask interrupts on the first nesting level; deeper nestings just
+		 * increment the counter. */
 		if (uxCriticalNestingCnt[portGET_CORE_ID()] == 0U) {
 			uxSavedInterruptStatus[portGET_CORE_ID()] = portSET_INTERRUPT_MASK_FROM_ISR();
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-			portGET_TASK_LOCK();
-#endif
 		}
 		uxCriticalNestingCnt[portGET_CORE_ID()]++;
 	} else {
@@ -171,9 +178,6 @@ void __rtos_critical_exit_os(void)
 	if (rtos_critical_is_in_interrupt()) {
 		uxCriticalNestingCnt[portGET_CORE_ID()]--;
 		if (uxCriticalNestingCnt[portGET_CORE_ID()] == 0U) {
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-			portRELEASE_TASK_LOCK();
-#endif
 			portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedInterruptStatus[portGET_CORE_ID()]);
 		}
 	} else {

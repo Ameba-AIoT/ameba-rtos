@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup KEY_MANAGEMENT
+/** @defgroup KEY_MANAGEMENT Key Management
   * @brief KEY_MANAGEMENT driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -142,33 +143,34 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Exported Contants --------------------------------------------------------*/
+/* Exported Constants --------------------------------------------------------*/
 
-/** @defgroup KEY_MANAGEMENT_Exported_Constants KEY_MANAGEMENT Exported Contants
+/** @defgroup KEY_MANAGEMENT_Exported_Constants KEY_MANAGEMENT Exported Constants
 * @{
 */
-/** @defgroup KM_KEY
- * @brief supported key ID
+/** @defgroup KM_KEY KM Key
+ * @brief Supported key ID
  * @{
  */
-#define KM_KEY_S_IPSEC_KEY1        ((u8)0x00)  /*!< Secure Hardware Key_1, OPT raw address:0x200, size: 256bit */
-#define KM_KEY_S_IPSEC_KEY2        ((u8)0x01)  /*!< Secure Hardware Key_2, OPT raw address:0x220, size: 256bit */
-#define KM_KEY_S_IPSEC_KEY3        ((u8)0x02)  /*!< Secure Hardware Key_3, OPT raw address:0x240, size: 256bit */
-#define KM_KEY_S_IPSEC_KEY4        ((u8)0x03)  /*!< Secure Hardware Key_4, OPT raw address:0x260, size: 256bit */
-#define KM_KEY_S_RSIP_KEY1         ((u8)0x04)  /*!< Secure Hardware Key_5, OPT raw address:0x2C0, size: 256bit */
-#define KM_KEY_S_RSIP_KEY2         ((u8)0x05)  /*!< Secure Hardware Key_6, OPT raw address:0x2E0, size: 256bit */
-#define KM_KEY_S_SW1               ((u8)0x21)  /*!< Secure Software Key, size: 256bit */
-#define KM_KEY_NS_SW1              ((u8)0x22)  /*!< Secure Software Key, size: 256bit */
+#define KM_KEY_S_IPSEC_KEY1        ((u8)0x00)  /*!< Secure Hardware Key_1, OTP raw address:0x200, size: 256-bit */
+#define KM_KEY_S_IPSEC_KEY2        ((u8)0x01)  /*!< Secure Hardware Key_2, OTP raw address:0x220, size: 256-bit */
+#define KM_KEY_S_IPSEC_KEY3        ((u8)0x02)  /*!< Secure Hardware Key_3, OTP raw address:0x240, size: 256-bit */
+#define KM_KEY_S_IPSEC_KEY4        ((u8)0x03)  /*!< Secure Hardware Key_4, OTP raw address:0x260, size: 256-bit */
+#define KM_KEY_S_RSIP_KEY1         ((u8)0x04)  /*!< Secure Hardware Key_5, OTP raw address:0x2C0, size: 256-bit */
+#define KM_KEY_S_RSIP_KEY2         ((u8)0x05)  /*!< Secure Hardware Key_6, OTP raw address:0x2E0, size: 256-bit */
+#define KM_KEY_S_SW1               ((u8)0x21)  /*!< Secure Software Key, size: 256-bit */
+#define KM_KEY_NS_SW1              ((u8)0x22)  /*!< Non-Secure Software Key, size: 256-bit */
 /** @} */
 
-/** @defgroup KM_Shared_KEY
- * @brief secure hardware Key shared to non-secure
+/** @defgroup KM_Shared_KEY KM Shared Key
+ * @brief Secure hardware Key shared to non-secure
  * @{
  */
 #define KM_SHARE_SEC_S_IPSEC_KEY1    ((u32)0x00000001 << 0)  /*!< If 1, secure Hardware Key_1 share to non-secure */
@@ -185,10 +187,11 @@ extern "C" {
 /** @} */
 
 /* Other constants --------------------------------------------------------*/
-#define KM_AES_ENGINE                    (0)
-#define KM_SHA_ENGINE                    (1)
-#define KM_MUTEX_TIMEOUT                 ((u32) 1000000)
+#define KM_AES_ENGINE                    (0)          /*!< AES engine port number for key management */
+#define KM_SHA_ENGINE                    (1)          /*!< SHA/HMAC engine port number for key management */
+#define KM_MUTEX_TIMEOUT                 ((u32) 1000000) /*!< Key management mutex acquisition timeout count */
 
+/** @brief Check whether ID is a valid key selection number (hardware or software key). */
 #define KM_IS_KEY_SEL_NUMBER(ID)  (((ID) == KM_KEY_S_IPSEC_KEY1) || \
                                        ((ID) == KM_KEY_S_IPSEC_KEY2) || \
                                        ((ID) == KM_KEY_S_IPSEC_KEY3) || \
@@ -198,6 +201,7 @@ extern "C" {
                                        ((ID) == KM_KEY_S_SW1) || \
                                        ((ID) == KM_KEY_NS_SW1))
 
+/** @brief Check whether ID is a secure-domain key (hardware or secure software key). */
 #define KM_IS_SECURE_KEY_NUM(ID)  (((ID) == KM_KEY_S_IPSEC_KEY1) || \
                                        ((ID) == KM_KEY_S_IPSEC_KEY2) || \
                                        ((ID) == KM_KEY_S_IPSEC_KEY3) || \
@@ -206,61 +210,82 @@ extern "C" {
                                        ((ID) == KM_KEY_S_RSIP_KEY2) || \
                                        ((ID) == KM_KEY_S_SW1))
 
+/** @brief Check whether ID is a software-managed key (secure or non-secure software key). */
 #define KM_IS_SW_KEY_NUM(ID)           (((ID) == KM_KEY_S_SW1) || \
                                        ((ID) == KM_KEY_NS_SW1))
 
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
 
+/** @addtogroup KEY_MANAGEMENT
+  * @{
+  */
 
-/**
- * @brief Return different key management register addresses according to the state of secure
- * @retval LALU_KEY_REG_BASE or LALU_KEY_REG_BASE_S
- */
-_LONG_CALL_ KEY_MANAGEMENT_TypeDef *crypto_km_get_addr(void);
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup KEY_MANAGEMENT_Exported_Functions KEY_MANAGEMENT Exported Functions
+  * @{
+  */
 
 /**
  * @brief  Set software key value
- * @param  key_id: value of KM_KEY in ameba_key_management.h
- * @param  key_len_bits:
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
  *            @arg KEY_BIT_128
  *            @arg KEY_BIT_192
  *            @arg KEY_BIT_256
- * @param  key_addr: address to software key array
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
+ * @param  key_addr Pointer to the software key array
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
  */
 _LONG_CALL_ int crypto_km_set_sw_key(u8 key_id, u32 key_len_bits, const u8 *key_addr);
 
 /**
  * @brief  Control whether security keys can be shared with non-secure world.
  *         Note that if sharing is enabled, non-secure code can only trigger the use of the key, but cannot read or write.
- * @param  key_id: value of KM_KEY in ameba_key_management.h
- * @param  is_share: 1: share
- * 			         0: not share (secure only)
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
+ * @param  key_id Value of @ref KM_KEY
+ * @param  is_share Sharing flag for the key with non-secure world:
+ *      @arg 1: Share (non-secure code can trigger key use but cannot read/write)
+ *      @arg 0: Not share (secure domain only)
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
  */
 _LONG_CALL_ int crypto_km_share_secure_key(const u8 key_id, const u8 is_share);
 
+/** @} */
+
+/**
+ * @brief Return the key management register base address based on the current security state (secure or non-secure).
+ * @return LALU_KEY_REG_BASE or LALU_KEY_REG_BASE_S
+ */
+_LONG_CALL_ KEY_MANAGEMENT_TypeDef *crypto_km_get_addr(void);
+
 /**
  * @brief  Trigger key load to AES or SHA engine
- * @param  engine_id:
+ * @param  engine_id
  *            @arg KM_AES_ENGINE
  *            @arg KM_SHA_ENGINE
- * @param  key_id: value of KM_KEY in ameba_key_management.h
- * @param  key_len_bits:
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
  *            @arg KEY_BIT_128
  *            @arg KEY_BIT_192
  *            @arg KEY_BIT_256
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
  */
 _LONG_CALL_ int crypto_km_load_key(u8 engine_id, u8 key_id, uint32_t key_len_bits);
 
+/** @} */
+/** @} */
+
 /* MbedTLS HW ALT */
-#define KM_AES_KEY_S_SW1          KM_KEY_S_SW1
-#define KM_AES_KEY_NS_SW1         KM_KEY_NS_SW1
-#define KM_AES_KEY_S_SW2          0
-#define KM_AES_KEY_NS_SW2         0
+#define KM_AES_KEY_S_SW1          KM_KEY_S_SW1   /*!< Alias of KM_KEY_S_SW1 for MbedTLS hardware acceleration */
+#define KM_AES_KEY_NS_SW1         KM_KEY_NS_SW1  /*!< Alias of KM_KEY_NS_SW1 for MbedTLS hardware acceleration */
+#define KM_AES_KEY_S_SW2          0              /*!< Placeholder; SW2 not supported on this SoC (always 0) */
+#define KM_AES_KEY_NS_SW2         0              /*!< Placeholder; NS_SW2 not supported on this SoC (always 0) */
 
 __inline__ int crypto_aes_set_sw_key(u8 key_id, u32 key_len_bits, const u8 *key_addr)
 {

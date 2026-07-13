@@ -1,0 +1,295 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:2e6f8b10-b60c-4c84-be45-7d65c2b2f06f",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-07-06T17:00:00+08:00",
+    "tools": [
+      {
+        "vendor": "Realtek Semiconductor Corp.",
+        "name": "rtwpriv",
+        "version": "V6.0.1_20260618"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "name": "rtwpriv",
+      "version": "V6.0.1_20260618",
+      "description": "Realtek WiFi RF HW/SW Tx testing utility for mass production line RF calibration and regulatory (FCC/CE/MKK) certification testing.",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only",
+            "name": "GNU General Public License v2.0 only"
+          }
+        }
+      ],
+      "copyright": "Copyright (c) 2007-2021 Realtek Semiconductor Corp.",
+      "cpe": "cpe:2.3:a:realtek:rtwpriv:6.0.1:*:*:*:*:*:*:*",
+      "purl": "pkg:generic/realtek/rtwpriv@V6.0.1_20260618",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.realtek.com"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "src:origin",
+        "value": "component/wifi/whc/whc_host_linux/app/rtwpriv/"
+      },
+      {
+        "name": "build:cc",
+        "value": "g++"
+      },
+      {
+        "name": "build:cflags",
+        "value": "-g -Wall -static -fstack-protector-strong -D_FORTIFY_SOURCE=2"
+      },
+      {
+        "name": "build:ldflags",
+        "value": "-lm"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "glibc",
+      "version": "2.31",
+      "description": "GNU C Library - provides libc (stdio, stdlib, string, errno, ctype, math, etc.)",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-2.1-only",
+            "name": "GNU Lesser General Public License v2.1 only"
+          }
+        }
+      ],
+      "purl": "pkg:generic/glibc@2.31",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.gnu.org/software/libc/"
+        }
+      ],
+      "evidence": {
+        "identity": {
+          "field": "purl",
+          "confidence": 1.0,
+          "methods": [
+            {
+              "technique": "source-analysis",
+              "value": "Runtime library required by g++ toolchain (libc). Resolved from #include <stdio.h>, <stdlib.h>, <string.h>, <errno.h>, <ctype.h>, <math.h>, <assert.h>, <unistd.h>, <stdint.h>, <stddef.h>"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "library",
+      "name": "libm",
+      "version": "2.31",
+      "description": "GNU C Library math library - linked via -lm",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-2.1-only",
+            "name": "GNU Lesser General Public License v2.1 only"
+          }
+        }
+      ],
+      "purl": "pkg:generic/libm@2.31",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.gnu.org/software/libc/"
+        }
+      ],
+      "evidence": {
+        "identity": {
+          "field": "purl",
+          "confidence": 1.0,
+          "methods": [
+            {
+              "technique": "source-analysis",
+              "value": "Explicitly linked via -lm in Makefile. Resolved from #include <math.h> in rtwpriv.h"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "library",
+      "name": "libstdc++",
+      "version": "13.1.0",
+      "description": "GNU Standard C++ Library - required as compiler is g++ (C++)",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-with-GCC-exception",
+            "name": "GNU General Public License v3.0 with GCC Runtime Library Exception"
+          }
+        }
+      ],
+      "purl": "pkg:generic/libstdcxx@13.1.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://gcc.gnu.org/onlinedocs/libstdc++/"
+        }
+      ],
+      "evidence": {
+        "identity": {
+          "field": "purl",
+          "confidence": 1.0,
+          "methods": [
+            {
+              "technique": "source-analysis",
+              "value": "Compiler set to 'g++' (C++ compiler) in Makefile. C++ features used: class (struct with methods implicit), cstdint, cctype headers"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "library",
+      "name": "Linux Kernel Userspace Headers (netlink)",
+      "version": "5.15.0",
+      "description": "Kernel netlink and wireless headers - provides linux/netlink.h, linux/genetlink.h, linux/sockios.h, linux/wireless.h",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only",
+            "name": "GNU General Public License v2.0 only"
+          }
+        }
+      ],
+      "purl": "pkg:generic/linux-headers@5.15.0",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.kernel.org/"
+        }
+      ],
+      "evidence": {
+        "identity": {
+          "field": "purl",
+          "confidence": 1.0,
+          "methods": [
+            {
+              "technique": "source-analysis",
+              "value": "Resolved from #include <linux/netlink.h>, <linux/genetlink.h>, <linux/sockios.h>, <linux/wireless.h> in rtw_nl.cpp and rtwpriv.h"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "library",
+      "name": "Linux Kernel WHC Netlink Driver (whc_demo)",
+      "version": "in-kernel",
+      "description": "WHC Demo Generic Netlink family driver - runtime peer that implements the 'whc_demo' Generic Netlink family. Required at runtime, not linked at build time.",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only",
+            "name": "GNU General Public License v2.0 only"
+          }
+        }
+      ],
+      "purl": "pkg:generic/whc-demo@unknown",
+      "evidence": {
+        "identity": {
+          "field": "purl",
+          "confidence": 1.0,
+          "methods": [
+            {
+              "technique": "source-analysis",
+              "value": "Resolved from rtw_nl.cpp #define WHC_CMD_GENL_NAME \"whc_demo\" and use of GENL_ID_CTRL to resolve family ID at runtime"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "library",
+      "name": "POSIX Socket API",
+      "version": "glibc-2.31",
+      "description": "POSIX networking and system interfaces - provides sys/socket.h, sys/ioctl.h, netinet/in.h, arpa/inet.h, sys/time.h, sys/wait.h",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-2.1-only",
+            "name": "GNU Lesser General Public License v2.1 only"
+          }
+        }
+      ],
+      "purl": "pkg:generic/posix-system-libraries@glibc-2.31",
+      "evidence": {
+        "identity": {
+          "field": "purl",
+          "confidence": 1.0,
+          "methods": [
+            {
+              "technique": "source-analysis",
+              "value": "Resolved from #include <sys/socket.h>, <sys/ioctl.h>, <netinet/in.h>, <arpa/inet.h>, <sys/time.h>, <sys/wait.h>"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "library",
+      "name": "gcc (GNU C Compiler / g++)",
+      "version": "9.4.0",
+      "description": "GNU C/C++ Compiler toolchain used to build rtwpriv",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-with-GCC-exception",
+            "name": "GNU General Public License v3.0 with GCC Runtime Library Exception"
+          }
+        }
+      ],
+      "purl": "pkg:generic/gcc@9.4.0",
+      "evidence": {
+        "identity": {
+          "field": "purl",
+          "confidence": 1.0,
+          "methods": [
+            {
+              "technique": "source-analysis",
+              "value": "Resolved from Makefile: CC = g++, CFLAGS = -g -Wall -static"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:generic/realtek/rtwpriv@V6.0.1_20260618",
+      "dependsOn": [
+        "pkg:generic/glibc@2.31",
+        "pkg:generic/libm@2.31",
+        "pkg:generic/libstdcxx@13.1.0",
+        "pkg:generic/linux-headers@5.15.0",
+        "pkg:generic/whc-demo@unknown",
+        "pkg:generic/posix-system-libraries@glibc-2.31",
+        "pkg:generic/gcc@9.4.0"
+      ]
+    }
+  ],
+  "compositions": [
+    {
+      "aggregate": "complete",
+      "assemblies": [
+        "pkg:generic/realtek/rtwpriv@V6.0.1_20260618"
+      ]
+    }
+  ]
+}

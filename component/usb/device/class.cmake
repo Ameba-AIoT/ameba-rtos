@@ -25,6 +25,15 @@ if(CONFIG_USBD_CDC_ECM)
     )
 endif()
 
+if(CONFIG_USBD_CDC_NCM)
+    ameba_list_append(private_includes
+        ${USBD_CLASS_DIR}/cdc_ncm
+    )
+    ameba_list_append(private_sources
+        ${USBD_CLASS_DIR}/cdc_ncm/usbd_cdc_ncm.c
+    )
+endif()
+
 ameba_list_append_if(CONFIG_USBD_COMPOSITE private_includes
     ${USBD_CLASS_DIR}/composite
 )
@@ -88,6 +97,15 @@ if(CONFIG_USBD_VENDOR)
     )
     ameba_list_append(private_sources
         ${USBD_CLASS_DIR}/vendor/usbd_vendor.c
+    )
+endif()
+
+if(CONFIG_USBD_DFU)
+    ameba_list_append(private_includes
+        ${USBD_CLASS_DIR}/dfu
+    )
+    ameba_list_append(private_sources
+        ${USBD_CLASS_DIR}/dfu/usbd_dfu.c
     )
 endif()
 

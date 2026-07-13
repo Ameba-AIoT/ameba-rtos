@@ -27,6 +27,7 @@
 #include "mbedtls/platform.h"
 
 #include "ameba_soc.h"
+#include "mbedtls_alt_helper.h"
 
 #define SHA512_BLOCK_SIZE 128
 
@@ -71,7 +72,7 @@ int mbedtls_sha512_starts(mbedtls_sha512_context *ctx, int is384)
 #endif
 
     SHA_MODE = is384 ? SHA_384 : SHA_512;
-    return crypto_sha2_init(ctx, SHA_MODE);
+    return map_hw_to_mbedtls_error(crypto_sha2_init(ctx, SHA_MODE), MBEDTLS_ALT_ALGO_SHA512);
 }
 
 int mbedtls_internal_sha512_process(mbedtls_sha512_context *ctx,
@@ -90,7 +91,7 @@ int mbedtls_sha512_update(mbedtls_sha512_context *ctx,
     if (ilen == 0) {
         return 0;
     }
-    return crypto_sha2_update(ctx, input, NULL, ilen);
+    return map_hw_to_mbedtls_error(crypto_sha2_update(ctx, input, NULL, ilen), MBEDTLS_ALT_ALGO_SHA512);
 }
 
 /*
@@ -99,7 +100,7 @@ int mbedtls_sha512_update(mbedtls_sha512_context *ctx,
 int mbedtls_sha512_finish(mbedtls_sha512_context *ctx,
                           unsigned char *output)
 {
-    return crypto_sha2_final(ctx, output);
+    return map_hw_to_mbedtls_error(crypto_sha2_final(ctx, output), MBEDTLS_ALT_ALGO_SHA512);
 }
 
 #endif /* !MBEDTLS_SHA512_ALT */

@@ -494,10 +494,12 @@ static uint16_t bt_stack_profile_deinit(void)
 	return 0;
 }
 
-static uint16_t zephyr_bt_enable(void)
+static uint16_t zephyr_bt_enable(bool user_def_service)
 {
 	int b_resource_init = 0;
 	int b_stack_init = 0;
+
+	zephyr_builtin_gatt_svc_set(!user_def_service);
 
 	b_resource_init = zephyr_res_alloc();
 	if (b_resource_init) {
@@ -571,7 +573,8 @@ static uint16_t bt_stack_init(void *app_config)
 		goto failed;
 	}
 
-	b_zephyr_init = zephyr_bt_enable();
+	b_zephyr_init = zephyr_bt_enable(app_config && ((rtk_bt_app_conf_t *)app_config)->user_def_service);
+
 	if (b_zephyr_init) {
 		BT_LOGE("b_zephyr_init failed (err %d)\r\n", b_zephyr_init);
 		goto failed;

@@ -271,6 +271,13 @@ exit:
 	return ret;
 }
 
+void whc_uart_dev_trigger_rx_handle(void)
+{
+	if (uart_priv.wait_for_skb) {
+		rtos_sema_give(uart_priv.free_skb_sema);
+	}
+}
+
 u32 whc_uart_dev_rx_done_cb(void *param)
 {
 	(void)param;
@@ -293,11 +300,20 @@ u32 whc_uart_dev_rx_done_cb(void *param)
 
 	/* receives XMIT_PKTS */
 	if (event == WHC_WIFI_EVT_XIMT_PKTS) {
-		/* reserved 3 skb for rx */
+retry:
+		/* alloc new skb, blocked if no skb.
+		block value <= wifi_user_config.skb_num_np - (rx_ring_buffer + wifi_user_config.rx_ampdu_num + 1 for rx_dma_buffer)
+		e.g. 3 <= 14 - (4 + 4 + 1)*/
 		if (((skbpriv.skb_buff_num - skbpriv.skb_buff_used) < 3) ||
 			((new_skb = dev_alloc_skb(UART_BUFSZ, UART_SKB_RSVD_LEN)) == NULL)) {
-			goto drop_pkt;
+			uart_priv.wait_for_skb = TRUE;
+
+			/* wait timeout to re-check skb, considering corner cases for wait_for_txbuf update */
+			rtos_sema_take(uart_priv.free_skb_sema, 5);
+
+			goto retry;
 		} else {
+			uart_priv.wait_for_skb = FALSE;
 			uart_priv.rx_skb = new_skb;
 		}
 		/* set new dest addr for RXDMA */
@@ -316,7 +332,6 @@ u32 whc_uart_dev_rx_done_cb(void *param)
 		whc_dev_dispatch_event_copy(uart_priv.rx_skb->data, uart_priv.payload_len);
 	}
 
-drop_pkt:
 	return ret;
 }
 
@@ -418,6 +433,7 @@ void whc_uart_dev_init(void)
 
 	rtos_sema_create(&whc_uart_priv->txirq_sema, 0, RTOS_SEMA_MAX_COUNT);
 	rtos_sema_create(&whc_uart_priv->rxirq_sema, 0, RTOS_SEMA_MAX_COUNT);
+	rtos_sema_create(&whc_uart_priv->free_skb_sema, 0, RTOS_SEMA_MAX_COUNT);
 
 	/* enable uart clock and function */
 	RCC_PeriphClockCmd(APBPeriph_UARTx[whc_uart_idx], APBPeriph_UARTx_CLOCK[whc_uart_idx], ENABLE);
@@ -430,8 +446,6 @@ void whc_uart_dev_init(void)
 	/* Configure UART TX and RX pin */
 	Pinmux_Config(UART_TX, UART_TX_FID[whc_uart_idx]);
 	Pinmux_Config(UART_RX, UART_RX_FID[whc_uart_idx]);
-#elif defined(CONFIG_AMEBAL2)
-	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "%s, need to check !!\n", __func__);
 #endif
 
 	PAD_PullCtrl(UART_TX, GPIO_PuPd_UP); // pull up Tx/Rx pin

@@ -18,7 +18,7 @@ fih_ret BOOT_ROM_OTFCheck(u32 start_addr, u32 end_addr, u32 IV_index, u32 OTF_in
 int BOOT_DecRDPImg(u32 SrcAddr, u8 *RdpIV, SubImgInfo_TypeDef *SubImgInfo, u8 *Cnt)
 {
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
-	char *Img3Label[2] = {"AP IMG3", "AP NSC"};
+	char *Img3Label[3] = {"AP IMG3 XIP", "AP IMG3 SRAM", "AP IMG3 PSRAM"};
 	u8 SubImgCnt = sizeof(Img3Label) / sizeof(char *);
 
 	u32 PhyAddr = SrcAddr;

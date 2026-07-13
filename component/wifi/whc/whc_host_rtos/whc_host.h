@@ -13,7 +13,6 @@
 /* -------------------------------- Includes -------------------------------- */
 #include "rtw_inic_common.h"
 #include "whc_host_api.h"
-#include "whc_host_cust_evt.h"
 
 #ifdef CONFIG_WHC_INTF_SPI
 #include "whc_spi_host.h"
@@ -40,46 +39,6 @@
 #include "bt_inic_defs.h"
 #define DEV_REQ_NETWORK_INFO_MAX_LEN	6
 
-enum WHC_WIFI_CTRL_TYPE {
-	WHC_WIFI_EVT_XIMT_PKTS = 0xa5a5a500,
-	WHC_WIFI_EVT_RECV_PKTS,
-	WHC_WIFI_EVT_API_CALL,
-	WHC_WIFI_EVT_API_RETURN,
-	WHC_WIFI_EVT_CMD,
-	WHC_WIFI_EVT_FLOWCTRL,
-	WHC_WIFI_EVT_MAX,
-	WHC_CUST_EVT, /* the ID to transmit data for the customer. */
-
-	WHC_BT_EVT_BASE = WHC_BT_ID_BASE,
-	WHC_BT_EVT_MAX = WHC_BT_ID_BASE + 0x1000000
-};
-
-struct whc_api_info {
-	u32	event;
-	u32	api_id;
-};
-
-/* the header for customer to send or receive the data between host and device. */
-struct whc_cust_hdr {
-	u32	event;
-	u32	len;
-};
-
-struct whc_msg_info {
-	u32	event;
-	u8	wlan_idx: 2;
-	u8	flow_ctrl_en: 1;
-	u8	rsvd1 : 5;
-	u8	rsvd2[3];
-	u32	data_len;
-	u32	pad_len;
-};
-
-struct whc_cmd_path_hdr {
-	u32	event;
-	u32	len;
-};
-
 struct event_func_t {
 	u32 api_id;
 	void (*func)(u32 api_id, u32 *param_buf);
@@ -89,7 +48,7 @@ struct event_priv_t {
 	rtos_task_t api_dev_task;
 
 	rtos_sema_t task_wake_sema;
-	rtos_sema_t send_mutex;
+	rtos_mutex_t send_mutex;
 	rtos_sema_t api_ret_sema;
 
 	u8 *rx_api_msg;
@@ -112,5 +71,9 @@ struct whc_txbuf_info_t {
 	u8 is_skb: 1;	/* the original buffer is skb or not */
 };
 
+/* ---------------------------- Common Functions ----------------------------- */
+void whc_host_rx_handler(u8 *buf);
+void whc_host_recv_dispatch(u8 *buf, u32 copy_len);
+struct whc_txbuf_info_t *whc_host_alloc_buf_info(u8 *buf, u32 len, void *alloc_buf, u8 is_skb);
 
 #endif /* __INIC_HOST_H__ */

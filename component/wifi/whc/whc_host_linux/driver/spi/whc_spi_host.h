@@ -54,6 +54,9 @@ check the correct number of the required GPIO pin to use command " cat /sys/kern
 
 #define BUF_ALIGN_SZ			4
 
+#define SPI_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32
+#define SPI_BUFSZ		(SPI_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
+
 struct whc_spi {
 	struct mutex	lock; /* mutex to protect send host event_priv message */
 

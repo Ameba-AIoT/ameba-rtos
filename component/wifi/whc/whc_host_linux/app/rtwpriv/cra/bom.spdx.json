@@ -1,0 +1,220 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "rtwpriv-V6.0.1_20260618",
+  "documentNamespace": "https://realtek.com/rtwpriv/spdx/2e6f8b10-b60c-4c84-be45-7d65c2b2f06f",
+  "creationInfo": {
+    "licenseListVersion": "3.28",
+    "creators": [
+      "Organization: Realtek Semiconductor Corp. (realtek.com)",
+      "Tool: Manual"
+    ],
+    "created": "2026-07-06T17:00:00+08:00"
+  },
+  "documentDescribes": [
+    "SPDXRef-Package-rtwpriv"
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-rtwpriv",
+      "name": "rtwpriv",
+      "versionInfo": "V6.0.1_20260618",
+      "supplier": "Organization: Realtek Semiconductor Corp.",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "packageFileName": "component/wifi/whc/whc_host_linux/app/rtwpriv/",
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "GPL-2.0-only",
+      "copyrightText": "Copyright (c) 2007-2021 Realtek Semiconductor Corp.",
+      "summary": "Realtek WiFi RF HW/SW Tx testing utility for mass production line RF calibration and regulatory (FCC/CE/MKK) certification testing.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/realtek/rtwpriv@V6.0.1_20260618"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:realtek:rtwpriv:6.0.1:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-glibc",
+      "name": "glibc",
+      "versionInfo": "2.31",
+      "supplier": "Organization: GNU Project",
+      "downloadLocation": "https://www.gnu.org/software/libc/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "LGPL-2.1-only",
+      "licenseDeclared": "LGPL-2.1-only",
+      "copyrightText": "Copyright (c) Free Software Foundation, Inc.",
+      "summary": "GNU C Library - provides libc (stdio, stdlib, string, errno, ctype, math, etc.)",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/glibc@2.31"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-libm",
+      "name": "libm",
+      "versionInfo": "2.31",
+      "supplier": "Organization: GNU Project",
+      "downloadLocation": "https://www.gnu.org/software/libc/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "LGPL-2.1-only",
+      "licenseDeclared": "LGPL-2.1-only",
+      "copyrightText": "Copyright (c) Free Software Foundation, Inc.",
+      "summary": "GNU C Library math library - linked via -lm",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/libm@2.31"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-libstdcxx",
+      "name": "libstdc++",
+      "versionInfo": "13.1.0",
+      "supplier": "Organization: Free Software Foundation",
+      "downloadLocation": "https://gcc.gnu.org/onlinedocs/libstdc++/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-with-GCC-exception",
+      "licenseDeclared": "GPL-3.0-with-GCC-exception",
+      "copyrightText": "Copyright (c) Free Software Foundation, Inc.",
+      "summary": "GNU Standard C++ Library - required as compiler is g++ (C++)",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/libstdcxx@13.1.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-linux-headers",
+      "name": "Linux Kernel Userspace Headers (netlink)",
+      "versionInfo": "5.15.0",
+      "supplier": "Organization: Linux Kernel Organization",
+      "downloadLocation": "https://www.kernel.org/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "GPL-2.0-only",
+      "copyrightText": "Copyright (c) Linux Kernel Organization",
+      "summary": "Kernel netlink and wireless headers - provides linux/netlink.h, linux/genetlink.h, linux/sockios.h, linux/wireless.h",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/linux-headers@5.15.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-whc-demo",
+      "name": "Linux Kernel WHC Netlink Driver (whc_demo)",
+      "versionInfo": "in-kernel",
+      "supplier": "Organization: Realtek Semiconductor Corp.",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "GPL-2.0-only",
+      "copyrightText": "Copyright (c) Realtek Semiconductor Corp.",
+      "summary": "WHC Demo Generic Netlink family driver - runtime peer that implements the 'whc_demo' Generic Netlink family",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/whc-demo@unknown"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-posix-socket",
+      "name": "POSIX Socket API",
+      "versionInfo": "glibc-2.31",
+      "supplier": "Organization: IEEE / The Open Group",
+      "downloadLocation": "https://pubs.opengroup.org/onlinepubs/9699919799/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "LGPL-2.1-only",
+      "licenseDeclared": "LGPL-2.1-only",
+      "copyrightText": "NOASSERTION",
+      "summary": "POSIX networking and system interfaces - provides sys/socket.h, sys/ioctl.h, netinet/in.h, arpa/inet.h, sys/time.h, sys/wait.h",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/posix-system-libraries@glibc-2.31"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-gcc",
+      "name": "gcc (GNU C Compiler / g++)",
+      "versionInfo": "9.4.0",
+      "supplier": "Organization: Free Software Foundation",
+      "downloadLocation": "https://gcc.gnu.org/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-with-GCC-exception",
+      "licenseDeclared": "GPL-3.0-with-GCC-exception",
+      "copyrightText": "Copyright (c) Free Software Foundation, Inc.",
+      "summary": "GNU C/C++ Compiler toolchain used to build rtwpriv (CC = g++)",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/gcc@9.4.0"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-Package-rtwpriv",
+      "relationshipType": "DESCRIBES"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-rtwpriv",
+      "relatedSpdxElement": "SPDXRef-Package-glibc",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-rtwpriv",
+      "relatedSpdxElement": "SPDXRef-Package-libm",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-rtwpriv",
+      "relatedSpdxElement": "SPDXRef-Package-libstdcxx",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-rtwpriv",
+      "relatedSpdxElement": "SPDXRef-Package-linux-headers",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-rtwpriv",
+      "relatedSpdxElement": "SPDXRef-Package-whc-demo",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-rtwpriv",
+      "relatedSpdxElement": "SPDXRef-Package-posix-socket",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-rtwpriv",
+      "relatedSpdxElement": "SPDXRef-Package-gcc",
+      "relationshipType": "BUILD_TOOL_OF"
+    }
+  ]
+}

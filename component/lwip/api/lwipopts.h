@@ -141,18 +141,13 @@ extern unsigned int sys_now(void);
 #define IP_REASS_MAX_PBUFS              60
 #endif
 
-#if defined(CONFIG_IP_NAPT) && (CONFIG_IP_NAPT == 1)
+#if defined(CONFIG_RNAT)
 #define IP_FORWARD                      1
-#define IP_NAPT                         1
-#if defined(LWIP_IPV6) && (LWIP_IPV6 == 1)
-#define CONFIG_IP6_RLOCAL 1
-#endif
-#endif
-
-#if defined(CONFIG_RNAPT)
-#define IP_FORWARD                      1
-#define IP_NAPT                         1
+#define IP_NAT                          1
 #define LWIP_NETIF_EXT_STATUS_CALLBACK  1
+#if defined(LWIP_IPV6) && (LWIP_IPV6 == 1)
+#define CONFIG_IP6_RLOCAL               1
+#endif
 #endif
 
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)

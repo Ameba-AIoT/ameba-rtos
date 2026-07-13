@@ -551,238 +551,187 @@ extern "C" {
   * @brief  PPE Pixel Format Definition
   */
 typedef enum {
-	PPE_ABGR8888 = 0x0,
-	PPE_ARGB8888,
-	PPE_XBGR8888,
-	PPE_XRGB8888,
-	PPE_BGRA8888,
-	PPE_RGBA8888,
-	PPE_BGRX8888,
-	PPE_RGBX8888,
-	PPE_ABGR4444,
-	PPE_ARGB4444,
-	PPE_XBGR4444,
-	PPE_XRGB4444,
-	PPE_BGRA4444,
-	PPE_RGBA4444,
-	PPE_BGRX4444,
-	PPE_RGBX4444,
-	PPE_ABGR2222,	//0x10
-	PPE_ARGB2222,
-	PPE_XBGR2222,
-	PPE_XRGB2222,
-	PPE_BGRA2222,
-	PPE_RGBA2222,
-	PPE_BGRX2222,
-	PPE_RGBX2222,
-	PPE_ABGR8565,
-	PPE_ARGB8565,
-	PPE_XBGR8565,
-	PPE_XRGB8565,
-	PPE_BGRA5658,
-	PPE_RGBA5658,
-	PPE_BGRX5658,
-	PPE_RGBX5658,
-	PPE_ABGR1555,	//0x20
-	PPE_ARGB1555,
-	PPE_XBGR1555,
-	PPE_XRGB1555,
-	PPE_BGRA5551,
-	PPE_RGBA5551,
-	PPE_BGRX5551,
-	PPE_RGBX5551,
-	PPE_BGR888,
-	PPE_RGB888,
-	PPE_BGR565,
-	PPE_RGB565,
-	PPE_A8,
-	PPE_X8,
-	PPE_ABGR8666 = 0x34,
-	PPE_ARGB8666,
-	PPE_XBGR8666,
-	PPE_XRGB8666,
-	PPE_BGRA6668,
-	PPE_RGBA6668,
-	PPE_BGRX6668,
-	PPE_RGBX6668,
-	PPE_BGR565_S,//0x3C
-	PPE_RGB565_S,
+	PPE_ABGR8888 = 0x0,  /*!< 32bpp ABGR 8-8-8-8 format. */
+	PPE_ARGB8888,        /*!< 32bpp ARGB 8-8-8-8 format. */
+	PPE_XBGR8888,        /*!< 32bpp XBGR 8-8-8-8 format. */
+	PPE_XRGB8888,        /*!< 32bpp XRGB 8-8-8-8 format. */
+	PPE_BGRA8888,        /*!< 32bpp BGRA 8-8-8-8 format. */
+	PPE_RGBA8888,        /*!< 32bpp RGBA 8-8-8-8 format. */
+	PPE_BGRX8888,        /*!< 32bpp BGRX 8-8-8-8 format. */
+	PPE_RGBX8888,        /*!< 32bpp RGBX 8-8-8-8 format. */
+	PPE_ABGR4444,        /*!< 16bpp ABGR 4-4-4-4 format. */
+	PPE_ARGB4444,        /*!< 16bpp ARGB 4-4-4-4 format. */
+	PPE_XBGR4444,        /*!< 16bpp XBGR 4-4-4-4 format. */
+	PPE_XRGB4444,        /*!< 16bpp XRGB 4-4-4-4 format. */
+	PPE_BGRA4444,        /*!< 16bpp BGRA 4-4-4-4 format. */
+	PPE_RGBA4444,        /*!< 16bpp RGBA 4-4-4-4 format. */
+	PPE_BGRX4444,        /*!< 16bpp BGRX 4-4-4-4 format. */
+	PPE_RGBX4444,        /*!< 16bpp RGBX 4-4-4-4 format. */
+	PPE_ABGR2222,        /*!< 8bpp ABGR 2-2-2-2 format. (= 0x10) */
+	PPE_ARGB2222,        /*!< 8bpp ARGB 2-2-2-2 format. */
+	PPE_XBGR2222,        /*!< 8bpp XBGR 2-2-2-2 format. */
+	PPE_XRGB2222,        /*!< 8bpp XRGB 2-2-2-2 format. */
+	PPE_BGRA2222,        /*!< 8bpp BGRA 2-2-2-2 format. */
+	PPE_RGBA2222,        /*!< 8bpp RGBA 2-2-2-2 format. */
+	PPE_BGRX2222,        /*!< 8bpp BGRX 2-2-2-2 format. */
+	PPE_RGBX2222,        /*!< 8bpp RGBX 2-2-2-2 format. */
+	PPE_ABGR8565,        /*!< 24bpp ABGR 8-5-6-5 format. */
+	PPE_ARGB8565,        /*!< 24bpp ARGB 8-5-6-5 format. */
+	PPE_XBGR8565,        /*!< 24bpp XBGR 8-5-6-5 format. */
+	PPE_XRGB8565,        /*!< 24bpp XRGB 8-5-6-5 format. */
+	PPE_BGRA5658,        /*!< 24bpp BGRA 5-6-5-8 format. */
+	PPE_RGBA5658,        /*!< 24bpp RGBA 5-6-5-8 format. */
+	PPE_BGRX5658,        /*!< 24bpp BGRX 5-6-5-8 format. */
+	PPE_RGBX5658,        /*!< 24bpp RGBX 5-6-5-8 format. */
+	PPE_ABGR1555,        /*!< 16bpp ABGR 1-5-5-5 format. (= 0x20) */
+	PPE_ARGB1555,        /*!< 16bpp ARGB 1-5-5-5 format. */
+	PPE_XBGR1555,        /*!< 16bpp XBGR 1-5-5-5 format. */
+	PPE_XRGB1555,        /*!< 16bpp XRGB 1-5-5-5 format. */
+	PPE_BGRA5551,        /*!< 16bpp BGRA 5-5-5-1 format. */
+	PPE_RGBA5551,        /*!< 16bpp RGBA 5-5-5-1 format. */
+	PPE_BGRX5551,        /*!< 16bpp BGRX 5-5-5-1 format. */
+	PPE_RGBX5551,        /*!< 16bpp RGBX 5-5-5-1 format. */
+	PPE_BGR888,          /*!< 24bpp BGR 8-8-8 format. */
+	PPE_RGB888,          /*!< 24bpp RGB 8-8-8 format. */
+	PPE_BGR565,          /*!< 16bpp BGR 5-6-5 format. */
+	PPE_RGB565,          /*!< 16bpp RGB 5-6-5 format. */
+	PPE_A8,              /*!< 8bpp alpha-only format. */
+	PPE_X8,              /*!< 8bpp ignored-alpha format. */
+	PPE_ABGR8666 = 0x34, /*!< 32bpp ABGR 8-6-6-6 format. */
+	PPE_ARGB8666,        /*!< 32bpp ARGB 8-6-6-6 format. */
+	PPE_XBGR8666,        /*!< 32bpp XBGR 8-6-6-6 format. */
+	PPE_XRGB8666,        /*!< 32bpp XRGB 8-6-6-6 format. */
+	PPE_BGRA6668,        /*!< 32bpp BGRA 6-6-6-8 format. */
+	PPE_RGBA6668,        /*!< 32bpp RGBA 6-6-6-8 format. */
+	PPE_BGRX6668,        /*!< 32bpp BGRX 6-6-6-8 format. */
+	PPE_RGBX6668,        /*!< 32bpp RGBX 6-6-6-8 format. */
+	PPE_BGR565_S,        /*!< 16bpp BGR 5-6-5 swapped format. (= 0x3C) */
+	PPE_RGB565_S,        /*!< 16bpp RGB 5-6-5 swapped format. */
 } PPE_PIXEL_FORMAT;
 
 /**
   * @brief  PPE Pixel Source Definition
   */
 typedef enum {
-	PPE_LAYER_SRC_CONST,
-	PPE_LAYER_SRC_FROM_DMA,
+	PPE_LAYER_SRC_CONST,       /*!< Pixel data from constant color register. */
+	PPE_LAYER_SRC_FROM_DMA,    /*!< Pixel data read from memory via DMA. */
 } PPE_PIXEL_SOURCE;
 
 /**
   * @brief  PPE Interpolation Type Definition
   */
 typedef enum {
-	PPE_INTERP_TYPE_Nearest_Neighbor,
-	PPE_INTERP_TYPE_Bilinear,
+	PPE_INTERP_TYPE_Nearest_Neighbor, /*!< Nearest-neighbor interpolation. */
+	PPE_INTERP_TYPE_Bilinear,          /*!< Bilinear interpolation. */
 } PPE_INTERP_TYPE;
 
 /**
   * @brief  PPE Color Key Mode Definition
   */
 typedef enum {
-	PPE_KEY_MODE_DISABLE,
-	PPE_KEY_MODE_INSIDE_MODE = 0x2,
-	PPE_KEY_MODE_OUTSIDE_MODE,
+	PPE_KEY_MODE_DISABLE,             /*!< Color keying disabled. */
+	PPE_KEY_MODE_INSIDE_MODE = 0x2,   /*!< Key matches pixels inside the defined color range. */
+	PPE_KEY_MODE_OUTSIDE_MODE,        /*!< Key matches pixels outside the defined color range. */
 } PPE_KEY_MODE;
 
 /**
   * @brief  PPE Background Source Definition
   */
 typedef enum {
-	PPE_BACKGROUND_SOURCE_CONST_BG,
-	PPE_BACKGROUND_SOURCE_LAYER1,
+	PPE_BACKGROUND_SOURCE_CONST_BG, /*!< Use constant background color register. */
+	PPE_BACKGROUND_SOURCE_LAYER1,   /*!< Use input layer 1 as background. */
 } PPE_BACKGROUND_SOURCE;
 
 /**
-  * @brief  PPE DMA Msize Log Definition
+  * @brief  PPE Global State Definition
   */
 typedef enum {
-	PPE_MSIZE_1,
-	PPE_MSIZE_2,
-	PPE_MSIZE_4,
-	PPE_MSIZE_8,
-	PPE_MSIZE_16,
-	PPE_MSIZE_32,
-	PPE_MSIZE_64,
-	PPE_MSIZE_128,
-	PPE_MSIZE_256,
-	PPE_MSIZE_512,
-	PPE_MSIZE_1024,
-} PPE_MSIZE_LOG;
-
-/**
-  * @brief  PPE Max AXI Length Definition
-  */
-typedef enum {
-	PPE_MAX_AXLEN_0,
-	PPE_MAX_AXLEN_1,
-	PPE_MAX_AXLEN_3,
-	PPE_MAX_AXLEN_7,
-	PPE_MAX_AXLEN_15,
-	PPE_MAX_AXLEN_31,
-	PPE_MAX_AXLEN_63,
-	PPE_MAX_AXLEN_127,
-} PPE_MAX_AXLEN;
-
-/**
-  * @brief  PPE DMA Handshake Polarity Definition
-  */
-typedef enum {
-	PPE_POLARITY_HIGH,
-	PPE_POLARITY_LOW,
-} PPE_ACTIVE_POLARITY;
-
-/**
-  * @brief  PPE Arbusrt Definition
-  */
-typedef enum {
-	PPE_ARBURST_FIX,
-	PPE_ARBURST_INCR,
-} PPE_ARBURST;
-
-/**
-  * @brief  PPE Byte Swap Definition
-  */
-typedef enum {
-	PPE_NO_SWAP,
-	PPE_8BIT_SWAP,
-	PPE_16BIT_SWAP,
-	PPE_8_16BIT_SWAP,
-	PPE_32BIT_SWAP,
-	PPE_32_8BIT_SWAP,
-	PPE_32_16BIT_SWAP,
-	PPE_32_16_8BIT_SWAP,
-} PPE_BYTE_SWAP;
+	PPE_STATE_DISABLE  = 0, /*!< PPE is disabled. */
+	PPE_STATE_RUNNING  = 1, /*!< PPE is running. */
+	PPE_STATE_INACTIVE = 2, /*!< PPE is inactive. */
+	PPE_STATE_SUSPEND  = 3, /*!< PPE is suspended. */
+} PPE_GLOBAL_STATE;
 
 /**
   * @brief  PPE LLI Input Layer Format Definition
   */
 typedef struct {
-	u32 ADDR_L;
-	u32 PIC_SIZE;
-	u32 PIC_CFG;
-	u32 CONST_PIX;
-	u32 WIN_MIN;
-	u32 WIN_MAX;
-	u32 KEY_MIN;
-	u32 KEY_MAX;
-	u32 MATRIX_E11;
-	u32 MATRIX_E12;
-	u32 MATRIX_E13;
-	u32 MATRIX_E21;
-	u32 MATRIX_E22;
-	u32 MATRIX_E23;
-	u32 MATRIX_E31;
-	u32 MATRIX_E32;
-	u32 MATRIX_E33;
+	u32 ADDR_L;      /*!< Low 32 bits of the source pixel data address. */
+	u32 PIC_SIZE;    /*!< Picture size: height[26:16] and width[10:0] in pixels. */
+	u32 PIC_CFG;     /*!< Picture configuration: line length, key mode, interpolation, pixel source, and format. */
+	u32 CONST_PIX;   /*!< Constant pixel value in ABGR8888 format. */
+	u32 WIN_MIN;     /*!< Minimum window coordinate: Y_MIN[26:16] and X_MIN[10:0]. */
+	u32 WIN_MAX;     /*!< Maximum window coordinate: Y_MAX[26:16] and X_MAX[10:0]. */
+	u32 KEY_MIN;     /*!< Minimum BGR value for the color key match range in BGR888 format. */
+	u32 KEY_MAX;     /*!< Maximum BGR value for the color key match range in BGR888 format. */
+	u32 MATRIX_E11;  /*!< Element E11 of the coordinates transformation matrix. */
+	u32 MATRIX_E12;  /*!< Element E12 of the coordinates transformation matrix. */
+	u32 MATRIX_E13;  /*!< Element E13 of the coordinates transformation matrix. */
+	u32 MATRIX_E21;  /*!< Element E21 of the coordinates transformation matrix. */
+	u32 MATRIX_E22;  /*!< Element E22 of the coordinates transformation matrix. */
+	u32 MATRIX_E23;  /*!< Element E23 of the coordinates transformation matrix. */
+	u32 MATRIX_E31;  /*!< Element E31 of the coordinates transformation matrix. */
+	u32 MATRIX_E32;  /*!< Element E32 of the coordinates transformation matrix. */
+	u32 MATRIX_E33;  /*!< Element E33 of the coordinates transformation matrix. */
 } PPE_LLI_INPUT_LAYER;
 
 /**
   * @brief  PPE LLI Result Layer Format Definition
   */
 typedef struct {
-	u32 ADDR_L;
-	u32 PIC_SIZE;
-	u32 PIC_CFG;
-	u32 CONST_BG;
+	u32 ADDR_L;    /*!< Low 32 bits of the output pixel data address. */
+	u32 PIC_SIZE;  /*!< Canvas size: height[26:16] and width[10:0] in pixels. */
+	u32 PIC_CFG;   /*!< Picture configuration: line length, background source, and pixel format. */
+	u32 CONST_BG;  /*!< Constant background color in ABGR8888 format. */
 } PPE_LLI_RESULT_LAYER;
 
 /**
   * @brief  PPE Global register Format Definition
   */
 typedef struct {
-	u32 LAY_EN;
-	u32 LL_CFG;
-	u32 LLP;
+	u32 LAY_EN;  /*!< Layer enable register value. */
+	u32 LL_CFG;  /*!< Linked list configuration register value. */
+	u32 LLP;     /*!< Linked list pointer register value. */
 } PPE_LLI_GLB;
 
 /**
   * @brief  PPE Input layer Init Structure Definition
   */
 typedef struct {
-	u32 src_addr;
-	u32 pic_width;
-	u32 pic_height;
-	PPE_PIXEL_FORMAT format;
-	PPE_PIXEL_SOURCE pic_src;
-	PPE_INTERP_TYPE interp;
-	PPE_KEY_MODE key_mode;
-	u32 line_len;
-	u32 const_ABGR8888_value;
-	u32 win_min_x;
-	u32 win_min_y;
-	u32 win_max_x;
-	u32 win_max_y;
-	u32 key_min_bgr;
-	u32 key_max_bgr;
-	float scale_x;		/* can be 16/1, 16/2, 16/3, ..., 16/65535*/
-	float scale_y;		/* can be 16/1, 16/2, 16/3, ..., 16/65535*/
-	u32 angle;
+	u32 src_addr;             /*!< Source address of the layer pixel data. */
+	u32 pic_width;            /*!< Width of the input picture in pixels. */
+	u32 pic_height;           /*!< Height of the input picture in pixels. */
+	PPE_PIXEL_FORMAT format;  /*!< Pixel format of the input layer; see @ref PPE_PIXEL_FORMAT. */
+	PPE_PIXEL_SOURCE pic_src; /*!< Pixel data source; see @ref PPE_PIXEL_SOURCE. */
+	PPE_INTERP_TYPE interp;   /*!< Interpolation type for scaling; see @ref PPE_INTERP_TYPE. */
+	PPE_KEY_MODE key_mode;    /*!< Color keying mode; see @ref PPE_KEY_MODE. */
+	u32 line_len;             /*!< Number of bytes between two vertically adjacent pixels in memory (line stride). */
+	u32 const_ABGR8888_value; /*!< Constant pixel color in ABGR8888 format, used when pic_src is PPE_LAYER_SRC_CONST. */
+	u32 win_min_x;            /*!< X coordinate of the top-left corner of the input window in the canvas. */
+	u32 win_min_y;            /*!< Y coordinate of the top-left corner of the input window in the canvas. */
+	u32 win_max_x;            /*!< X coordinate of the bottom-right corner of the input window in the canvas. */
+	u32 win_max_y;            /*!< Y coordinate of the bottom-right corner of the input window in the canvas. */
+	u32 key_min_bgr;          /*!< Minimum BGR color for the key match range in BGR888 format. */
+	u32 key_max_bgr;          /*!< Maximum BGR color for the key match range in BGR888 format. */
+	float scale_x;            /*!< Horizontal scaling factor; valid values are 16/1, 16/2, 16/3, ..., 16/65535. */
+	float scale_y;            /*!< Vertical scaling factor; valid values are 16/1, 16/2, 16/3, ..., 16/65535. */
+	u32 angle;                /*!< Rotation angle in degrees (0, 90, 180, or 270). */
 } PPE_InputLayer_InitTypeDef;
 
 /**
   * @brief  PPE Result layer Init Structure Definition
   */
 typedef struct {
-	u32 src_addr;
-	u32 pic_width;
-	u32 pic_height;
-	PPE_PIXEL_FORMAT format;
-	PPE_BACKGROUND_SOURCE bg_src;
-	u32 line_len;
-	u32 const_bg;
-	u32 blk_width;
-	u32 blk_height;
-	u32 xor_en;
+	u32 src_addr;                 /*!< Destination address for the composited output. */
+	u32 pic_width;                /*!< Width of the output canvas in pixels. */
+	u32 pic_height;               /*!< Height of the output canvas in pixels. */
+	PPE_PIXEL_FORMAT format;      /*!< Pixel format of the output layer; see @ref PPE_PIXEL_FORMAT. */
+	PPE_BACKGROUND_SOURCE bg_src; /*!< Background source selection; see @ref PPE_BACKGROUND_SOURCE. */
+	u32 line_len;                 /*!< Number of bytes between two vertically adjacent pixels in memory (line stride). */
+	u32 const_bg;                 /*!< Constant background color in ABGR8888 format, used when bg_src is PPE_BACKGROUND_SOURCE_CONST_BG. */
+	u32 blk_width;                /*!< Block width in pixels; must be greater than 0 and not exceed canvas width. */
+	u32 blk_height;               /*!< Block height in pixels; must be greater than 0 and not exceed canvas height. */
+	u32 xor_en;                   /*!< XOR blending enable: 1 to enable, 0 to disable. */
 } PPE_ResultLayer_InitTypeDef;
 
 /** @} */
@@ -791,31 +740,24 @@ typedef struct {
 /** @defgroup PPE_Exported_Constants PPE Exported Constants
   * @{
   */
+/** @brief Check if PPE channel index is valid (0-16). */
 #define IS_PPE_CHN_INDEX(chn)                               (((chn) < 17) && ((chn) >= 0))
 
+/** @brief Check if PPE alpha blend layer count is valid (< 16). */
 #define IS_PPE_ALPHA_BLEND_LAYER_NUM(layer_num)         ((layer_num) < 16)
 
-#define PPE_RESULT_LAYER_INDEX                          0
-#define PPE_INPUT_LAYER1_INDEX                          1
-#define PPE_INPUT_LAYER2_INDEX                          2
-#define PPE_INPUT_LAYER3_INDEX                          3
+#define PPE_RESULT_LAYER_INDEX                          0   /*!< Index of the PPE result (output) layer. */
+#define PPE_INPUT_LAYER1_INDEX                          1   /*!< Index of PPE input layer 1. */
+#define PPE_INPUT_LAYER2_INDEX                          2   /*!< Index of PPE input layer 2. */
+#define PPE_INPUT_LAYER3_INDEX                          3   /*!< Index of PPE input layer 3. */
 
-#define PPE_RESULT_LAYER_BIT                          ((u32)0x1 << PPE_RESULT_LAYER_INDEX)
-#define PPE_INPUT_LAYER1_BIT                          ((u32)0x1 << PPE_INPUT_LAYER1_INDEX)
-#define PPE_INPUT_LAYER2_BIT                          ((u32)0x1 << PPE_INPUT_LAYER2_INDEX)
-#define PPE_INPUT_LAYER3_BIT                          ((u32)0x1 << PPE_INPUT_LAYER3_INDEX)
+
+#define PPE_RESULT_LAYER_BIT                          ((u32)0x1 << PPE_RESULT_LAYER_INDEX)   /*!< Bit mask for PPE result layer selection. */
+#define PPE_INPUT_LAYER1_BIT                          ((u32)0x1 << PPE_INPUT_LAYER1_INDEX)   /*!< Bit mask for PPE input layer 1 selection. */
+#define PPE_INPUT_LAYER2_BIT                          ((u32)0x1 << PPE_INPUT_LAYER2_INDEX)   /*!< Bit mask for PPE input layer 2 selection. */
+#define PPE_INPUT_LAYER3_BIT                          ((u32)0x1 << PPE_INPUT_LAYER3_INDEX)   /*!< Bit mask for PPE input layer 3 selection. */
 
 /** @} */
-
-/**
-  * @brief  PPE Global State Definition
-  */
-typedef enum {
-	PPE_STATE_DISABLE  = 0, /* PPE is disabled */
-	PPE_STATE_RUNNING  = 1, /* PPE is running */
-	PPE_STATE_INACTIVE = 2, /* PPE is inactive */
-	PPE_STATE_SUSPEND  = 3, /* PPE is suspended */
-} PPE_GLOBAL_STATE;
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup PPE_Exported_Functions PPE Exported Functions

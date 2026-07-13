@@ -6,7 +6,7 @@
 * @return TRUE:
 * @return FALSE:
 */
-int rtw_inc_and_chk_continual_io_error(struct inic_sdio *priv)
+int rtw_inc_and_chk_continual_io_error(struct whc_sdio *priv)
 {
 	return FALSE;
 }
@@ -14,7 +14,7 @@ int rtw_inc_and_chk_continual_io_error(struct inic_sdio *priv)
 /*
 * Set the continual_io_error of this @param dvobjprive to 0
 */
-void rtw_reset_continual_io_error(struct inic_sdio *priv)
+void rtw_reset_continual_io_error(struct whc_sdio *priv)
 {
 	return;
 	//atomic_set(&priv->continual_io_error, 0);
@@ -26,7 +26,7 @@ void rtw_reset_continual_io_error(struct inic_sdio *priv)
  *	0		Success
  *	others	Fail
  */
-int sd_cmd52_read(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
+int sd_cmd52_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
 {
 
 	int err = 0;
@@ -84,7 +84,7 @@ int sd_cmd52_read(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *
  *	0		Success
  *	others	Fail
  */
-int sd_cmd52_write(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
+int sd_cmd52_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
 {
 	int err = 0;
 	uint32_t i;
@@ -135,7 +135,7 @@ int sd_cmd52_write(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t 
 	return err;
 }
 
-uint8_t sd_read8(struct inic_sdio *priv, uint32_t addr, int *err)
+uint8_t sd_read8(struct whc_sdio *priv, uint32_t addr, int *err)
 {
 	uint8_t v = 0;
 
@@ -149,7 +149,7 @@ uint8_t sd_read8(struct inic_sdio *priv, uint32_t addr, int *err)
 	return v;
 }
 
-uint16_t sd_read16(struct inic_sdio *priv, uint32_t addr, int *err)
+uint16_t sd_read16(struct whc_sdio *priv, uint32_t addr, int *err)
 {
 	uint16_t v = 0;
 	uint8_t data[2] = {0};
@@ -189,7 +189,7 @@ uint16_t sd_read16(struct inic_sdio *priv, uint32_t addr, int *err)
 	return  v;
 }
 
-uint32_t sd_read32(struct inic_sdio *priv, uint32_t addr, int *err)
+uint32_t sd_read32(struct whc_sdio *priv, uint32_t addr, int *err)
 {
 	uint32_t v = 0;
 	uint8_t data[4] = {0};
@@ -231,7 +231,7 @@ uint32_t sd_read32(struct inic_sdio *priv, uint32_t addr, int *err)
 	return  v;
 }
 
-void sd_write8(struct inic_sdio *priv, uint32_t addr, uint8_t v, int *err)
+void sd_write8(struct whc_sdio *priv, uint32_t addr, uint8_t v, int *err)
 {
 
 	*err = sdio_write_byte(priv->func, addr, v);
@@ -264,7 +264,7 @@ void sd_write8(struct inic_sdio *priv, uint32_t addr, uint8_t v, int *err)
 	}
 }
 
-void sd_write16(struct inic_sdio *priv, uint32_t addr, uint16_t v, int *err)
+void sd_write16(struct whc_sdio *priv, uint32_t addr, uint16_t v, int *err)
 {
 	uint8_t data[2] = {0};
 
@@ -299,7 +299,7 @@ void sd_write16(struct inic_sdio *priv, uint32_t addr, uint16_t v, int *err)
 	}
 }
 
-void sd_write32(struct inic_sdio *priv, uint32_t addr, uint32_t v, s32 *err)
+void sd_write32(struct whc_sdio *priv, uint32_t addr, uint32_t v, s32 *err)
 {
 	uint8_t data[4] = {0};
 
@@ -351,7 +351,7 @@ void sd_write32(struct inic_sdio *priv, uint32_t addr, uint32_t v, s32 *err)
  *	0		Success
  *	others	Fail
  */
-int sd_read(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, void *pdata)
+int sd_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, void *pdata)
 {
 	int err = -EPERM;
 
@@ -395,7 +395,7 @@ int sd_read(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, void *pdata)
  *  0		Success
  *  others	Fail
  */
-int sd_write(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, void *pdata)
+int sd_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, void *pdata)
 {
 	int err = -EPERM;
 
@@ -517,7 +517,7 @@ static uint32_t sdio_convert_to_cmdaddr(const uint32_t addr, uint8_t *pdeviceId,
 	return ftaddr;
 }
 
-uint8_t sdio_read8(struct inic_sdio *priv, uint32_t addr)
+uint8_t sdio_read8(struct whc_sdio *priv, uint32_t addr)
 {
 	uint32_t ftaddr;
 	uint8_t val;
@@ -529,7 +529,7 @@ uint8_t sdio_read8(struct inic_sdio *priv, uint32_t addr)
 	return val;
 }
 
-uint16_t sdio_read16(struct inic_sdio *priv, uint32_t addr)
+uint16_t sdio_read16(struct whc_sdio *priv, uint32_t addr)
 {
 	uint32_t ftaddr;
 	uint16_t val;
@@ -541,7 +541,7 @@ uint16_t sdio_read16(struct inic_sdio *priv, uint32_t addr)
 	return val;
 }
 
-uint32_t sdio_read32(struct inic_sdio *priv, uint32_t addr)
+uint32_t sdio_read32(struct whc_sdio *priv, uint32_t addr)
 {
 	uint32_t ftaddr;
 	uint32_t val;
@@ -557,7 +557,7 @@ uint32_t sdio_read32(struct inic_sdio *priv, uint32_t addr)
 	} else {
 		uint8_t *ptmpbuf;
 
-		ptmpbuf = (uint8_t *)k_malloc(8);
+		ptmpbuf = (uint8_t *)WHC_MALLOC(8);
 		if (NULL == ptmpbuf) {
 			printf("%s: Allocate memory FAIL!(size=8) addr=0x%x\n", __func__, addr);
 			return FALSE;
@@ -567,13 +567,13 @@ uint32_t sdio_read32(struct inic_sdio *priv, uint32_t addr)
 		sd_read(priv, ftaddr, 8, ptmpbuf);
 		memcpy(&val, ptmpbuf + shift, 4);
 
-		k_free(ptmpbuf);
+		WHC_FREE(ptmpbuf);
 	}
 
 	return val;
 }
 
-s32 sdio_readN(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
+s32 sdio_readN(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
 {
 
 	uint8_t deviceId;
@@ -594,7 +594,7 @@ s32 sdio_readN(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbu
 
 		ftaddr &= ~(uint16_t)0x3;
 		n = cnt + shift;
-		ptmpbuf = (uint8_t *)k_malloc(n);
+		ptmpbuf = (uint8_t *)WHC_MALLOC(n);
 		if (NULL == ptmpbuf) {
 			return -1;
 		}
@@ -602,13 +602,13 @@ s32 sdio_readN(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbu
 		if (!err) {
 			memcpy(pbuf, ptmpbuf + shift, cnt);
 		}
-		k_free(ptmpbuf);
+		WHC_FREE(ptmpbuf);
 	}
 
 	return err;
 }
 
-void sdio_read_mem(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *rmem)
+void sdio_read_mem(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *rmem)
 {
 	s32 err;
 
@@ -633,7 +633,7 @@ void sdio_read_mem(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t 
  */
 
 uint32_t sdio_read_port(
-	struct inic_sdio *priv,
+	struct whc_sdio *priv,
 	uint32_t addr,
 	uint32_t cnt,
 	uint8_t *mem)
@@ -656,7 +656,7 @@ uint32_t sdio_read_port(
 }
 
 
-s32 sdio_write8(struct inic_sdio *priv, uint32_t addr, uint8_t val)
+s32 sdio_write8(struct whc_sdio *priv, uint32_t addr, uint8_t val)
 {
 	uint32_t ftaddr;
 	s32 err;
@@ -667,7 +667,7 @@ s32 sdio_write8(struct inic_sdio *priv, uint32_t addr, uint8_t val)
 	return err;
 }
 
-s32 sdio_write16(struct inic_sdio *priv, uint32_t addr, uint16_t val)
+s32 sdio_write16(struct whc_sdio *priv, uint32_t addr, uint16_t val)
 {
 	uint32_t ftaddr;
 	s32 err;
@@ -678,7 +678,7 @@ s32 sdio_write16(struct inic_sdio *priv, uint32_t addr, uint16_t val)
 	return err;
 }
 
-s32 sdio_write32(struct inic_sdio *priv, uint32_t addr, uint32_t val)
+s32 sdio_write32(struct whc_sdio *priv, uint32_t addr, uint32_t val)
 {
 	uint8_t deviceId;
 	uint16_t offset;
@@ -700,7 +700,7 @@ s32 sdio_write32(struct inic_sdio *priv, uint32_t addr, uint32_t val)
 	return err;
 }
 
-s32 sdio_writeN(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
+s32 sdio_writeN(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
 {
 
 	uint8_t deviceId;
@@ -720,24 +720,24 @@ s32 sdio_writeN(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pb
 
 		ftaddr &= ~(uint16_t)0x3;
 		n = cnt + shift;
-		ptmpbuf = (uint8_t *)k_malloc(n);
+		ptmpbuf = (uint8_t *)WHC_MALLOC(n);
 		if (NULL == ptmpbuf) {
 			return -1;
 		}
 		err = sd_read(priv, ftaddr, 4, ptmpbuf);
 		if (err) {
-			k_free(ptmpbuf);
+			WHC_FREE(ptmpbuf);
 			return err;
 		}
 		memcpy(ptmpbuf + shift, pbuf, cnt);
 		err = sd_write(priv, ftaddr, n, ptmpbuf);
-		k_free(ptmpbuf);
+		WHC_FREE(ptmpbuf);
 	}
 
 	return err;
 }
 
-void sdio_write_mem(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *wmem)
+void sdio_write_mem(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *wmem)
 {
 	sdio_writeN(priv, addr, cnt, wmem);
 }
@@ -759,7 +759,7 @@ void sdio_write_mem(struct inic_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t
  *	FALSE(0)		Fail
  */
 uint32_t sdio_write_port(
-	struct inic_sdio *priv,
+	struct whc_sdio *priv,
 	uint32_t addr,
 	uint32_t cnt,
 	uint8_t *mem)
@@ -785,7 +785,7 @@ uint32_t sdio_write_port(
  * align address to 4 bytes in future.
  */
 s32 sdio_local_read(
-	struct inic_sdio *priv,
+	struct whc_sdio *priv,
 	uint32_t		addr,
 	uint32_t		cnt,
 	uint8_t		*pbuf)
@@ -797,7 +797,7 @@ s32 sdio_local_read(
 	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);
 
 	n = RND4(cnt);
-	ptmpbuf = (uint8_t *)k_malloc(n);
+	ptmpbuf = (uint8_t *)WHC_MALLOC(n);
 	if (!ptmpbuf) {
 		return (-1);
 	}
@@ -816,7 +816,7 @@ s32 sdio_local_read(
 	}
 
 	if (ptmpbuf) {
-		k_free(ptmpbuf);
+		WHC_FREE(ptmpbuf);
 	}
 
 	return err;
@@ -826,7 +826,7 @@ s32 sdio_local_read(
  * align address to 4 bytes in future.
  */
 s32 sdio_local_write(
-	struct inic_sdio *priv,
+	struct whc_sdio *priv,
 	uint32_t		addr,
 	uint32_t		cnt,
 	uint8_t		*pbuf)
@@ -843,7 +843,7 @@ s32 sdio_local_write(
 
 	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);
 
-	ptmpbuf = (uint8_t *)k_malloc(cnt);
+	ptmpbuf = (uint8_t *)WHC_MALLOC(cnt);
 	if (!ptmpbuf) {
 		return (-1);
 	}
@@ -853,14 +853,14 @@ s32 sdio_local_write(
 	err = sd_write(priv, addr, cnt, ptmpbuf);
 
 	if (ptmpbuf) {
-		k_free(ptmpbuf);
+		WHC_FREE(ptmpbuf);
 	}
 
 	return err;
 }
 
 
-uint8_t sdio_cmd52_read1byte_local(struct inic_sdio *priv, uint32_t addr)
+uint8_t sdio_cmd52_read1byte_local(struct whc_sdio *priv, uint32_t addr)
 {
 
 	uint8_t val = 0;
@@ -871,7 +871,7 @@ uint8_t sdio_cmd52_read1byte_local(struct inic_sdio *priv, uint32_t addr)
 	return val;
 }
 
-uint16_t sdio_cmd52_read2byte_local(struct inic_sdio *priv, uint32_t addr)
+uint16_t sdio_cmd52_read2byte_local(struct whc_sdio *priv, uint32_t addr)
 {
 
 	uint16_t val = 0;
@@ -883,7 +883,7 @@ uint16_t sdio_cmd52_read2byte_local(struct inic_sdio *priv, uint32_t addr)
 	return val;
 }
 
-uint32_t sdio_cmd52_read4byte_local(struct inic_sdio *priv, uint32_t addr)
+uint32_t sdio_cmd52_read4byte_local(struct whc_sdio *priv, uint32_t addr)
 {
 	uint32_t val = 0;
 
@@ -894,7 +894,7 @@ uint32_t sdio_cmd52_read4byte_local(struct inic_sdio *priv, uint32_t addr)
 	return val;
 }
 
-uint32_t sdio_cmd53_read4byte_local(struct inic_sdio *priv, uint32_t addr)
+uint32_t sdio_cmd53_read4byte_local(struct whc_sdio *priv, uint32_t addr)
 {
 	uint32_t val = 0;
 
@@ -905,19 +905,19 @@ uint32_t sdio_cmd53_read4byte_local(struct inic_sdio *priv, uint32_t addr)
 	return val;
 }
 
-void sdio_cmd52_write1byte_local(struct inic_sdio *priv, uint32_t addr, uint8_t v)
+void sdio_cmd52_write1byte_local(struct whc_sdio *priv, uint32_t addr, uint8_t v)
 {
 	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);
 	sd_cmd52_write(priv, addr, 1, &v);
 }
 
-void sdio_cmd52_write2byte_local(struct inic_sdio *priv, uint32_t addr, uint16_t v)
+void sdio_cmd52_write2byte_local(struct whc_sdio *priv, uint32_t addr, uint16_t v)
 {
 	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);
 	sd_cmd52_write(priv, addr, 2, (uint8_t *)&v);
 }
 
-void sdio_cmd52_write4byte_local(struct inic_sdio *priv, uint32_t addr, uint32_t v)
+void sdio_cmd52_write4byte_local(struct whc_sdio *priv, uint32_t addr, uint32_t v)
 {
 	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);
 	sd_cmd52_write(priv, addr, 4, (uint8_t *)&v);

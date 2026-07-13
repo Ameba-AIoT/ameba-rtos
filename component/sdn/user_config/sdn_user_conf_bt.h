@@ -1,24 +1,27 @@
 #ifndef __SDN_USER_CONF_BT_H__
 #define __SDN_USER_CONF_BT_H__
 
-#ifndef CONFIG_BT_INIC
+#ifdef CONFIG_BT_INIC
+#define BLE_FEATURE_DEFAULT         1
+#else
 #include <bt_api_config.h>
+#define BLE_FEATURE_DEFAULT         0
 #endif
 
 #ifndef RTK_BLE_PRIVACY_SUPPORT
-#define RTK_BLE_PRIVACY_SUPPORT                             1
+#define RTK_BLE_PRIVACY_SUPPORT                             BLE_FEATURE_DEFAULT
 #endif
 
 #ifndef RTK_BLE_5_0_SET_PHYS_SUPPORT
-#define RTK_BLE_5_0_SET_PHYS_SUPPORT                        1
+#define RTK_BLE_5_0_SET_PHYS_SUPPORT                        BLE_FEATURE_DEFAULT
 #endif
 
 #ifndef RTK_BLE_5_0_AE_ADV_SUPPORT
-#define RTK_BLE_5_0_AE_ADV_SUPPORT                          1
+#define RTK_BLE_5_0_AE_ADV_SUPPORT                          BLE_FEATURE_DEFAULT
 #endif
 
 #ifndef RTK_BLE_5_0_AE_SCAN_SUPPORT
-#define RTK_BLE_5_0_AE_SCAN_SUPPORT                         1
+#define RTK_BLE_5_0_AE_SCAN_SUPPORT                         BLE_FEATURE_DEFAULT
 #endif
 
 #ifndef RTK_BLE_5_0_PA_ADV_SUPPORT

@@ -14,7 +14,7 @@
 
 /* Private macros ------------------------------------------------------------*/
 #define USBH_UAC_WAIT_SLICE_MS              5
-#define USB_OTG_HFNUM_FRNUM_MAX             (0x3FFFUL)       /* Frame number max value */
+#define USBH_HFNUM_FRNUM_MAX                (0x3FFFUL)       /* Frame number max value */
 
 #define USBH_UAC_AUDIO_CTRL_BUF_MAX_LEN     512U
 #define USBH_UAC_ISOC_BUF_LENGTH            1024U
@@ -162,8 +162,8 @@ static void usbh_uac_status_dump(void)
 		u8 ready_cnt = usb_ringbuf_get_count(handle);
 		if (uac && uac->host) {
 			usb_host_t *host = uac->host;
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "UAC:%d-%d %d-%d/%d-%d-%d-%d/xfer=%d-%d-%d %d-%d-%d/%d-%d-%d-%d\n",
-					 ready_cnt, (handle->item_cnt - ready_cnt), handle->head, handle->tail,
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "UAC:%d %d-%d/%d-%d-%d-%d/xfer=%d-%d-%d %d-%d-%d/%d-%d-%d-%d\n",
+					 ready_cnt, handle->head, handle->tail,
 					 buf_ctrl->next_xfer, uac->ctrl_state, uac->xfer_state, pipe->xfer_state,
 					 (u32)(uac->sof_cnt), (u32)(uac->isoc_tx_start_cnt), (u32)(uac->isoc_tx_done_cnt),
 					 (u32)(uac->isoc_xfer_buf_empty_cnt), (u32)(uac->isoc_xfer_buf_err_cnt), (u32)(uac->isoc_xfer_interval_cnt),
@@ -203,19 +203,19 @@ static inline u32 usbh_uac_frame_num_dec(u32 new, u32 start)
 	if (new >= start) {
 		return new - start;
 	} else {
-		return (USB_OTG_HFNUM_FRNUM_MAX - start + 1 + new);
+		return (USBH_HFNUM_FRNUM_MAX - start + 1 + new);
 	}
 }
 
 /*
  * Increments frame by the amount specified by inc. The addition is done
- * modulo USB_OTG_HFNUM_FRNUM_MAX. Returns the incremented value.
+ * modulo USBH_HFNUM_FRNUM_MAX. Returns the incremented value.
  *
  * send the token in next frame
  */
 static inline u32 usbh_uac_frame_num_inc(u32 frame, u32 inc)
 {
-	return (frame + inc) & USB_OTG_HFNUM_FRNUM_MAX;
+	return (frame + inc) & USBH_HFNUM_FRNUM_MAX;
 }
 
 static u16 usbh_uac_volume_to_db(usbh_uac_volume_info_t *uac_dev, u8 percent)
@@ -435,8 +435,7 @@ static int usbh_uac_find_best_ac(void)
 	}
 
 #if USBH_UAC_DEBUG
-	usbh_uac_vol_ctrl_info *info;
-	info = &(ac_info->controls[ac_info->best_match_idx]);
+	usbh_uac_vol_ctrl_info *info = &(ac_info->controls[ac_info->best_match_idx]);
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "UAC 1.0 :\n");
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  ID: 0x%02x\n", info->sink_id);
@@ -625,17 +624,19 @@ static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 	usbh_uac_as_itf_info_t *as_itf = NULL;
 	usbh_ep_desc_t *ep_cfg = NULL;
 	u8 *desc = itf_data->raw_data;
+	int ret = HAL_OK;
 	u16 len;
 	u16 itf_total_len = 0;
 	u8 alt_set_idx;
 	u8 k;
+	u8 parsed = 0;
 
 	as_itf = (usbh_uac_as_itf_info_t *)usb_os_malloc(sizeof(usbh_uac_as_itf_info_t));
 	if (as_itf == NULL) {
 		return HAL_ERR_MEM;
 	}
 
-	//uac alt setting 0, desc += length, jump the alt_setting=0 descriptor
+	/* uac alt setting 0, desc += length, jump the alt_setting=0 descriptor */
 	as_itf->as_itf_num = desc[2];
 	RTK_LOGS(TAG, RTK_LOG_INFO, "AS itf %d-%d\n", as_itf->as_itf_num, desc[3]);
 	desc += ((usbh_desc_header_t *) desc)->bLength;
@@ -648,40 +649,55 @@ static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 		switch (((usbh_desc_header_t *) desc)->bDescriptorType) {
 		case USB_DESC_TYPE_INTERFACE:
 			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != as_itf->as_itf_num) {
-				RTK_LOGS(TAG, RTK_LOG_DEBUG, "AS intf new %d:old %d, return\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, as_itf->as_itf_num);
-				usb_os_mfree(as_itf);
-				return HAL_OK;
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "AS intf new %d:old %d, return\n",
+						 ((usbh_itf_desc_t *)desc)->bInterfaceNumber, as_itf->as_itf_num);
+				goto exit;
 			}
 
 			alt_set_idx = ((usbh_itf_desc_t *)desc)->bAlternateSetting;
-			if ((alt_set_idx != 0) && (as_itf->alt_setting_cnt < USBH_UAC_ALT_SETTING_MAX)) {
+
+			if (alt_set_idx == 0) {
+				len = ((usbh_desc_header_t *)desc)->bLength;
+				desc += len;
+				break;
+			}
+			if ((as_itf->alt_setting_cnt < USBH_UAC_ALT_SETTING_MAX)) {
 				alt_setting = &(as_itf->itf_info_array[as_itf->alt_setting_cnt]);
+				alt_setting->alt_setting = alt_set_idx;
 				as_itf->alt_setting_cnt ++;
 
 				len = ((usbh_desc_header_t *) desc)->bLength;
 				desc += len;
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "AS parse return %d %d\n", as_itf->alt_setting_cnt, USBH_UAC_ALT_SETTING_MAX);
-				usb_os_mfree(as_itf);
-				return HAL_OK;
+				RTK_LOGS(TAG, RTK_LOG_INFO, "AS parse return %d %d\n",
+						 as_itf->alt_setting_cnt, USBH_UAC_ALT_SETTING_MAX);
+				goto exit;
 			}
 			break;
 
 		case USB_UAC1_INTERFACE_DESC_TYPE: {
-			usb_uac1_format_type_i_discrete_descriptor *psubtype = (usb_uac1_format_type_i_discrete_descriptor *)desc;
-			if ((alt_setting != NULL) && (USB_UAC1_FORMAT_TYPE_II == psubtype->bDescriptorSubtype)) { /* get the format */
-				format_info = &(alt_setting->format_info);
-				format_info->channels = psubtype->bNrChannels;
-				format_info->bit_width = psubtype->bBitResolution;
-				format_info->freq_cnt = psubtype->bSamFreqType;
+			usb_ac_itf_desc_header_t *hdr = (usb_ac_itf_desc_header_t *)desc;
+			if (hdr->bDescriptorSubtype == USB_UAC1_FORMAT_TYPE) {
+				usb_uac1_format_type_i_discrete_descriptor *psubtype =
+					(usb_uac1_format_type_i_discrete_descriptor *)desc;
 
-				if (format_info->freq_cnt > USBH_UAC_FREQ_FORMAT_MAX) {
-					RTK_LOGS(TAG, RTK_LOG_WARN, "Freq cnt(%d) > cfg(%d) limit\n", format_info->freq_cnt, USBH_UAC_FREQ_FORMAT_MAX);
-					format_info->freq_cnt = USBH_UAC_FREQ_FORMAT_MAX;
-				}
+				if ((alt_setting != NULL) && (psubtype->bFormatType == USB_UAC1_FORMAT_TYPE_I)) {
+					/* get the format */
+					format_info = &(alt_setting->format_info);
+					format_info->channels = psubtype->bNrChannels;
+					format_info->bit_width = psubtype->bBitResolution;
+					format_info->freq_cnt = psubtype->bSamFreqType;
 
-				for (k = 0; k < format_info->freq_cnt; k++) {
-					usb_os_memcpy(&(format_info->freq[k]), &(psubtype->tSamFreq[k]), 3);
+					if (format_info->freq_cnt > USBH_UAC_FREQ_FORMAT_MAX) {
+						RTK_LOGS(TAG, RTK_LOG_WARN, "Freq cnt(%d) > cfg(%d) limit\n",
+								 format_info->freq_cnt, USBH_UAC_FREQ_FORMAT_MAX);
+						format_info->freq_cnt = USBH_UAC_FREQ_FORMAT_MAX;
+					}
+
+					for (k = 0; k < format_info->freq_cnt; k++) {
+						u8 *freq = (u8 *)psubtype->tSamFreq;
+						usb_os_memcpy(format_info->freq[k], freq + k * 3, 3);
+					}
 				}
 			}
 
@@ -697,14 +713,16 @@ static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 				usb_os_memcpy(ep_cfg, ep_desc, sizeof(usbh_ep_desc_t));
 
 				if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
-					// is_audio_in = 1;
+					/* audio in */
 					if (uac->as_isoc_in == NULL) {
 						uac->as_isoc_in = as_itf;
+						parsed = 1;
 					}
 				} else {
-					// is_audio_in = 0;
+					/* audio out */
 					if (uac->as_isoc_out == NULL) {
 						uac->as_isoc_out = as_itf;
+						parsed = 1;
 					}
 				}
 			}
@@ -724,7 +742,11 @@ static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 		itf_total_len += len;
 	}
 
-	return HAL_OK;
+exit:
+	if (!parsed && as_itf) {
+		usb_os_mfree(as_itf);
+	}
+	return ret;
 }
 
 /**
@@ -1840,7 +1862,7 @@ const COMMAND_TABLE usbh_uac_test_md_table[] = {
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_uac_init(usbh_uac_cb_t *cb, u8 frame_cnt)
+int usbh_uac_init(const usbh_uac_cb_t *cb, u8 frame_cnt)
 {
 	int ret;
 	usbh_uac_host_t *uac = &usbh_uac_host;
@@ -1872,7 +1894,6 @@ int usbh_uac_init(usbh_uac_cb_t *cb, u8 frame_cnt)
 		goto get_wd_buf_fail;
 	}
 
-	uac->cb = cb;
 	if (cb->init != NULL) {
 		ret = cb->init();
 		if (ret != HAL_OK) {
@@ -1880,6 +1901,8 @@ int usbh_uac_init(usbh_uac_cb_t *cb, u8 frame_cnt)
 			goto cb_init_fail;
 		}
 	}
+
+	uac->cb = cb;
 
 	usbh_register_class(&usbh_uac_driver);
 
@@ -1960,6 +1983,8 @@ int usbh_uac_deinit(void)
 	if (uac->as_isoc_out != NULL) {
 		if (uac->as_isoc_out->fmt_array) {
 			usb_os_mfree(uac->as_isoc_out->fmt_array);
+			uac->as_isoc_out->fmt_array = NULL;
+			uac->as_isoc_out->fmt_array_cnt = 0;
 		}
 		usb_os_mfree(uac->as_isoc_out);
 		uac->as_isoc_out = NULL;
@@ -1968,6 +1993,8 @@ int usbh_uac_deinit(void)
 	if (uac->as_isoc_in != NULL) {
 		if (uac->as_isoc_in->fmt_array) {
 			usb_os_mfree(uac->as_isoc_in->fmt_array);
+			uac->as_isoc_in->fmt_array = NULL;
+			uac->as_isoc_in->fmt_array_cnt = 0;
 		}
 		usb_os_mfree(uac->as_isoc_in);
 		uac->as_isoc_in = NULL;

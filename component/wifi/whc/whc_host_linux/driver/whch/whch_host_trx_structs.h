@@ -332,12 +332,25 @@ enum _RX_PACKET_TYPE {
 	C2H_PACKET = 5
 };
 
+struct rx_deseg_priv {
+	struct rx_pkt_attrib	attrib;		// sizing-only attrib for reassembly; re-derived downstream.
+	u8			wait_sub_seg;
+	/* Cross-segment reassembly: gather all segments into one raw-layout skb
+	 * ([rxbd + rxdesc + drvinfo + shift][mac header][body]) so the reassembled frame can be
+	 * handed straight back to whc_host_hal_rx_mpdu without an extra copy. A-MSDU
+	 * de-aggregation is deferred to the indicate stage (whc_host_recv_amsdu_to_msdu). */
+	struct sk_buff		*deseg_skb;	// Raw-layout reassembly skb.
+	int			prefix_len;	// rxbd + rxdesc + drvinfo + shift; body starts at prefix_len + mac header len.
+	int			reasm_total;	// Total raw bytes to collect = prefix_len + pkt_len.
+	int			reasm_len;	// Raw bytes collected so far.
+};
+
 struct whch_recv_priv {
 	struct	list_head	free_recv_queue;
 	spinlock_t			free_recv_lock;
 	u32					free_recvframe_cnt;
 
-	struct amsdu_priv_t	*amsdu_priv;
+	struct rx_deseg_priv	deseg_priv;
 
 	u8					*pallocated_frame_buf;
 };

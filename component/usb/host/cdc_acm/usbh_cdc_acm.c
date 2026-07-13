@@ -32,6 +32,7 @@ static int usbh_cdc_acm_setup(usb_host_t *host);
 static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
 static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
 static int usbh_cdc_acm_process_set_control_line_state(usb_host_t *host);
+static int usbh_cdc_acm_process_send_break(usb_host_t *host);
 static void usbh_cdc_acm_process_tx(usb_host_t *host);
 static void usbh_cdc_acm_process_rx(usb_host_t *host);
 
@@ -67,44 +68,49 @@ static usbh_cdc_acm_host_t usbh_cdc_acm_host;
 /* Private functions ---------------------------------------------------------*/
 
 /**
-  * @brief  Attach callback.
+  * @brief  Attach callback: enumerate interfaces and open pipes
   * @param  host: Host handle
-  * @retval Status
+  * @retval HAL_OK on success, others on failure.
   */
 static int usbh_cdc_acm_attach(usb_host_t *host)
 {
 	int status = HAL_ERR_UNKNOWN;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usbh_itf_data_t *itf_data;
+	usbh_itf_desc_t *comm_itf_desc;
 	usbh_itf_desc_t *data_itf_desc;
 	usbh_ep_desc_t *ep_desc;
 	usbh_pipe_t *bulk_out = &cdc->bulk_out;
 	usbh_pipe_t *bulk_in = &cdc->bulk_in;
 	usbh_dev_id_t dev_id = {0,};
-
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 	usbh_pipe_t *intr_in = &cdc->intr_in;
-	usbh_itf_desc_t *comm_itf_desc;
-	/* Get Communication Interface */
+#endif
+
+	/* Get Communication Interface — needed unconditionally for class request wIndex (PSTN §6.3).
+	 * Match by class+subclass only: the ACM control protocol (bInterfaceProtocol) varies across
+	 * spec-compliant devices (0x00 none / 0x01 AT-V.250 / 0x02-0x06 / 0xFF vendor) and does not
+	 * identify the interface — matching a fixed protocol would reject valid ACM devices. */
 	dev_id.bInterfaceClass = USB_CDC_COMM_INTERFACE_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_CDC_SUBCLASS_ACM;
-	dev_id.bInterfaceProtocol = USB_CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND;
-	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
+	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get comm itf fail\n");
-		return status;
-	} else 	{
-		comm_itf_desc = itf_data->itf_desc_array;
-		/* Set notification endpoint */
-		if (comm_itf_desc->bNumEndpoints >= 1) {
-			ep_desc = &comm_itf_desc->ep_desc_array[0];
-			if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
-				if (usbh_open_pipe(host, intr_in, ep_desc) == HAL_OK) {
-					intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
-				} else {
-					RTK_LOGS(TAG, RTK_LOG_WARN, "Open intr pipe fail\n");
-				}
+		return HAL_ERR_PARA;
+	}
+	comm_itf_desc = itf_data->itf_desc_array;
+	cdc->comm_itf_num = comm_itf_desc->bInterfaceNumber;
+
+#if CONFIG_USBH_CDC_ACM_NOTIFY
+	/* Set notification endpoint */
+	if (comm_itf_desc->bNumEndpoints >= 1) {
+		ep_desc = &comm_itf_desc->ep_desc_array[0];
+		if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
+			if (usbh_open_pipe(host, intr_in, ep_desc) == HAL_OK) {
+				intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
+			} else {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Open intr pipe fail\n");
 			}
 		}
 	}
@@ -117,7 +123,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get data itf fail\n");
-		return status;
+		goto open_fail;
 	} else {
 		data_itf_desc = itf_data->itf_desc_array;
 		/* Set data in/out endpoints */
@@ -179,12 +185,14 @@ static int usbh_cdc_acm_detach(usb_host_t *host)
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usbh_pipe_t *bulk_out = &cdc->bulk_out;
 	usbh_pipe_t *bulk_in = &cdc->bulk_in;
+#if CONFIG_USBH_CDC_ACM_NOTIFY
+	usbh_pipe_t *intr_in = &cdc->intr_in;
+#endif
 
 	if ((cdc->cb != NULL) && (cdc->cb->detach != NULL)) {
 		cdc->cb->detach();
 	}
 #if CONFIG_USBH_CDC_ACM_NOTIFY
-	usbh_pipe_t *intr_in = &cdc->intr_in;
 	if (intr_in->pipe_num) {
 		usbh_close_pipe(host, intr_in);
 	}
@@ -209,7 +217,7 @@ static int usbh_cdc_acm_detach(usb_host_t *host)
 /**
   * @brief  Standard control requests handling callback
   * @param  host: Host handle
-  * @retval Status
+  * @retval HAL_OK on success, others on failure.
   */
 static int usbh_cdc_acm_setup(usb_host_t *host)
 {
@@ -323,6 +331,16 @@ static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 		usbh_notify_class_state_change(host, 0);
 		break;
 
+	case USBH_CDC_ACM_STATE_SEND_BREAK:
+		req_status = usbh_cdc_acm_process_send_break(host);
+		if (req_status == HAL_OK) {
+			cdc->state = USBH_CDC_ACM_STATE_IDLE;
+		} else if (req_status != HAL_BUSY) {
+			cdc->state = USBH_CDC_ACM_STATE_ERROR;
+		}
+		usbh_notify_class_state_change(host, 0);
+		break;
+
 	case USBH_CDC_ACM_STATE_SET_LINE_CODING:
 		req_status = usbh_cdc_acm_process_set_line_coding(host, cdc->user_line_coding);
 		if (req_status == HAL_OK) {
@@ -336,9 +354,9 @@ static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 	case USBH_CDC_ACM_STATE_GET_LINE_CODING:
 		req_status = usbh_cdc_acm_process_get_line_coding(host, cdc->line_coding);
 		if (req_status == HAL_OK) {
-			cdc->state = USBH_CDC_ACM_STATE_IDLE;
 			usb_cdc_line_coding_t *lc = cdc->line_coding;
 			usb_cdc_line_coding_t *ulc = cdc->user_line_coding;
+			cdc->state = USBH_CDC_ACM_STATE_IDLE;
 			if ((lc->b.bCharFormat == ulc->b.bCharFormat) &&
 				(lc->b.bDataBits == ulc->b.bDataBits) &&
 				(lc->b.bParityType == ulc->b.bParityType) &&
@@ -391,11 +409,12 @@ static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding)
 {
 	usbh_setup_req_t setup;
+	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 
 	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest = USB_CDC_ACM_GET_LINE_CODING;
 	setup.req.wValue = 0U;
-	setup.req.wIndex = 0U;
+	setup.req.wIndex = cdc->comm_itf_num;
 	setup.req.wLength = USB_CDC_ACM_LINE_CODING_SIZE;
 
 	return usbh_ctrl_request(host, &setup, linecoding->d8);
@@ -410,11 +429,12 @@ static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_line_c
 static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding)
 {
 	usbh_setup_req_t setup;
+	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest = USB_CDC_ACM_SET_LINE_CODING;
 	setup.req.wValue = 0U;
-	setup.req.wIndex = 0U;
+	setup.req.wIndex = cdc->comm_itf_num;
 	setup.req.wLength = USB_CDC_ACM_LINE_CODING_SIZE;
 
 	return usbh_ctrl_request(host, &setup, linecoding->d8);
@@ -428,11 +448,30 @@ static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_line_c
 static int usbh_cdc_acm_process_set_control_line_state(usb_host_t *host)
 {
 	usbh_setup_req_t setup;
+	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest = USB_CDC_ACM_SET_CONTROL_LINE_STATE;
-	setup.req.wValue = 1U;
-	setup.req.wIndex = 0U;
+	setup.req.wValue = cdc->ctrl_line_state;
+	setup.req.wIndex = cdc->comm_itf_num;
+	setup.req.wLength = 0U;
+	return usbh_ctrl_request(host, &setup, NULL);
+}
+
+/**
+  * @brief  Send break
+  * @param  host: Host handle
+  * @retval Status
+  */
+static int usbh_cdc_acm_process_send_break(usb_host_t *host)
+{
+	usbh_setup_req_t setup;
+	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
+
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = USB_CDC_ACM_SEND_BREAK;
+	setup.req.wValue = cdc->break_duration;
+	setup.req.wIndex = cdc->comm_itf_num;
 	setup.req.wLength = 0U;
 	return usbh_ctrl_request(host, &setup, NULL);
 }
@@ -512,10 +551,31 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 	int status = usbh_transfer_process(host, intr_in);
 
 	if ((status == HAL_OK) && (intr_in->xfer_state == USBH_EP_XFER_IDLE)) {
-		/* Transfer completed successfully */
 		len = usbh_get_last_transfer_size(host, intr_in);
 		if ((cdc->cb != NULL) && (cdc->cb->notify != NULL)) {
-			cdc->cb->notify(intr_in->xfer_buf, len, status);
+			if (len >= 8U) {
+				/* Parse CDC notification header: byte1=bNotificationCode, bytes6-7=wLength */
+				u8 notif_code = intr_in->xfer_buf[1];
+				u16 data_len = (u16)intr_in->xfer_buf[6] | ((u16)intr_in->xfer_buf[7] << 8);
+				u8 *payload = intr_in->xfer_buf + 8U;
+				switch (notif_code) {
+				case USB_CDC_ACM_NOTIFY_SERIAL_STATE:
+					if (len >= (8U + (u32)data_len)) {
+						cdc->cb->notify(payload, (u32)data_len, status);
+					} else {
+						cdc->cb->notify(NULL, 0U, status);
+					}
+					break;
+				case USB_CDC_ACM_NOTIFY_RESPONSE_AVAILABLE:
+					cdc->cb->notify(NULL, 0U, status);
+					break;
+				default:
+					cdc->cb->notify(payload, (u32)data_len, status);
+					break;
+				}
+			} else {
+				cdc->cb->notify(intr_in->xfer_buf, len, status);
+			}
 		}
 	} else if (intr_in->xfer_state == USBH_EP_XFER_START) {
 		usbh_notify_class_state_change(host, intr_in->pipe_num);
@@ -536,7 +596,7 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb)
+int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
@@ -577,6 +637,7 @@ int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb)
 		return ret;
 	}
 
+	cdc->ctrl_line_state = 0x01U;
 	cdc->cb = cb;
 
 	return ret;
@@ -633,21 +694,22 @@ int usbh_cdc_acm_deinit(void)
 }
 
 /**
-* @brief  Set the control line status
-* @retval Status
+* @brief  Set the control line status (PSTN §6.3.12)
+* @param  bitmap: Control Signal Bitmap: D0=DTR, D1=RTS
+* @retval HAL_OK on success, others on failure.
 */
-int usbh_cdc_acm_set_control_line_state(void)
+int usbh_cdc_acm_set_control_line_state(u16 bitmap)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
-
-	if (host == NULL) {
-		return HAL_ERR_UNKNOWN;
-	}
-
 	int ret = HAL_ERR_UNKNOWN;
 
+	if (host == NULL) {
+		return HAL_ERR_PARA;
+	}
+
 	if (host->connect_state == USBH_STATE_SETUP) {
+		cdc->ctrl_line_state = bitmap;
 		cdc->state = USBH_CDC_ACM_STATE_SET_CONTROL_LINE_STATE;
 		usbh_notify_class_state_change(host, 0);
 		ret = HAL_OK;
@@ -657,25 +719,49 @@ int usbh_cdc_acm_set_control_line_state(void)
 }
 
 /**
-* @brief  Prepares the state before issuing the class specific commands
-* @param  line_coding: Line coding data
-* @retval Status
+* @brief  Send break signal (PSTN §6.3.13)
+* @param  duration_ms: Break duration in ms; 0xFFFF = continuous; 0x0000 = end break
+* @retval HAL_OK on success, others on failure.
+*/
+int usbh_cdc_acm_send_break(u16 duration_ms)
+{
+	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
+	usb_host_t *host = cdc->host;
+	int ret = HAL_ERR_UNKNOWN;
+
+	if (host == NULL) {
+		return HAL_ERR_PARA;
+	}
+
+	if (host->connect_state == USBH_STATE_SETUP) {
+		cdc->break_duration = duration_ms;
+		cdc->state = USBH_CDC_ACM_STATE_SEND_BREAK;
+		usbh_notify_class_state_change(host, 0);
+		ret = HAL_OK;
+	}
+
+	return ret;
+}
+
+/**
+* @brief  Set the line coding parameters (PSTN §6.3.10 SET_LINE_CODING)
+* @param  line_coding: Line coding data to apply
+* @retval HAL_OK on success, others on failure.
 */
 int usbh_cdc_acm_set_line_coding(usb_cdc_line_coding_t *line_coding)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
-
-	if (host == NULL) {
-		return HAL_ERR_UNKNOWN;
-	}
-
 	int ret = HAL_ERR_UNKNOWN;
 
+	if ((host == NULL) || (line_coding == NULL)) {
+		return HAL_ERR_PARA;
+	}
+
 	if (host->connect_state == USBH_STATE_SETUP) {
-		cdc->state = USBH_CDC_ACM_STATE_SET_LINE_CODING;
 		usb_cdc_line_coding_t *ulc = cdc->user_line_coding;
 		usb_cdc_line_coding_t *lc = line_coding;
+		cdc->state = USBH_CDC_ACM_STATE_SET_LINE_CODING;
 		ulc->b.dwDteRate = lc->b.dwDteRate;
 		ulc->b.bCharFormat = lc->b.bCharFormat;
 		ulc->b.bParityType = lc->b.bParityType;
@@ -688,20 +774,19 @@ int usbh_cdc_acm_set_line_coding(usb_cdc_line_coding_t *line_coding)
 }
 
 /**
-* @brief  Prepares the state before issuing the class specific commands
-* @param  line_coding: Line coding data
-* @retval Status
+* @brief  Get the current line coding parameters (PSTN §6.3.11 GET_LINE_CODING)
+* @param  line_coding: Pointer to store the retrieved line coding data
+* @retval HAL_OK on success, others on failure.
 */
 int usbh_cdc_acm_get_line_coding(usb_cdc_line_coding_t *line_coding)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
-
-	if (host == NULL) {
-		return HAL_ERR_UNKNOWN;
-	}
-
 	int ret = HAL_ERR_UNKNOWN;
+
+	if ((host == NULL) || (line_coding == NULL)) {
+		return HAL_ERR_PARA;
+	}
 
 	if ((host->connect_state == USBH_STATE_SETUP) || (host->connect_state == USBH_STATE_ATTACH)) {
 		usb_cdc_line_coding_t *lc = cdc->line_coding;
@@ -717,22 +802,21 @@ int usbh_cdc_acm_get_line_coding(usb_cdc_line_coding_t *line_coding)
 }
 
 /**
-  * @brief  Start to transfer data
+  * @brief  Start to transfer data via BULK OUT pipe
   * @param  buf: Data buffer
   * @param  len: Data length
-  * @retval Status
+  * @retval HAL_OK on success, others on failure.
   */
 int usbh_cdc_acm_transmit(u8 *buf, u32 len)
 {
-	int ret = HAL_BUSY;
+	int ret = HAL_ERR_UNKNOWN;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
-
-	if (host == NULL) {
-		return HAL_ERR_UNKNOWN;
-	}
-
 	usbh_pipe_t *pipe = &cdc->bulk_out;
+
+	if ((host == NULL) || (buf == NULL)) {
+		return HAL_ERR_PARA;
+	}
 
 	if ((host->connect_state == USBH_STATE_SETUP) &&
 		((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER))) {
@@ -757,22 +841,21 @@ int usbh_cdc_acm_transmit(u8 *buf, u32 len)
 }
 
 /**
-  * @brief  Start to receive data
+  * @brief  Start to receive data via BULK IN pipe
   * @param  buf: Data buffer
   * @param  len: Data length
-  * @retval Status
+  * @retval HAL_OK on success, others on failure.
   */
 int usbh_cdc_acm_receive(u8 *buf, u32 len)
 {
-	int ret = HAL_BUSY;
+	int ret = HAL_ERR_UNKNOWN;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
-
-	if (host == NULL) {
-		return HAL_BUSY;
-	}
-
 	usbh_pipe_t *pipe = &cdc->bulk_in;
+
+	if ((host == NULL) || (buf == NULL)) {
+		return HAL_ERR_PARA;
+	}
 
 	if ((host->connect_state == USBH_STATE_SETUP) &&
 		((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER))) {
@@ -798,22 +881,21 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len)
 
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 /**
-  * @brief  Start to receive notify data
+  * @brief  Start to receive notify data via INTERRUPT IN pipe
   * @param  buf: Data buffer
   * @param  len: Data length
-  * @retval Status
+  * @retval HAL_OK on success, others on failure.
   */
 int usbh_cdc_acm_notify_receive(u8 *buf, u32 len)
 {
-	int ret = HAL_BUSY;
+	int ret = HAL_ERR_UNKNOWN;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
-
-	if (host == NULL) {
-		return HAL_BUSY;
-	}
-
 	usbh_pipe_t *pipe = &cdc->intr_in;
+
+	if ((host == NULL) || (buf == NULL)) {
+		return HAL_ERR_PARA;
+	}
 
 	if ((host->connect_state == USBH_STATE_SETUP) &&
 		((cdc->state == USBH_CDC_ACM_STATE_IDLE) || (cdc->state == USBH_CDC_ACM_STATE_TRANSFER))) {
@@ -823,7 +905,7 @@ int usbh_cdc_acm_notify_receive(u8 *buf, u32 len)
 
 			/* The user buf len < MPS, update the xfer length */
 			if (len < pipe->ep_mps) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Pls inc inbuf len %d-%d\n", len, pipe->ep_mps);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Pls inc inbuf len %u-%u\n", len, pipe->ep_mps);
 				pipe->xfer_len = len;
 			}
 

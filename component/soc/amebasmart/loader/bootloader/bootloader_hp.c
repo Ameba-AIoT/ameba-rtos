@@ -691,10 +691,6 @@ void BOOT_WakeFromPG(void)
 	vector_table = (u32 *)Image2EntryFun->VectorNS;
 	vector_table[1] = (u32)Image2EntryFun->RamWakeupFun;
 	SCB_NS->VTOR = (u32)vector_table;
-#ifndef CONFIG_TRUSTZONE
-	/* TZ-off: image2 wake handler runs in Secure state. Need to config SCB->VTOR */
-	SCB->VTOR = (u32)vector_table;
-#endif
 
 	/* Add redefine secure fault handler to vector table* */
 	Fault_Hanlder_Redirect(NULL);
@@ -866,6 +862,10 @@ void BOOT_Image1(void)
 		SWR_AUDIO_Manual(DISABLE);
 		SWR_AUDIO(ENABLE);
 	}
+
+	/* Enable divide-by-zero fault for both S and NS worlds */
+	SCB->CCR    |= SCB_CCR_DIV_0_TRP_Msk;
+	SCB_NS->CCR |= SCB_CCR_DIV_0_TRP_Msk;
 
 	BOOT_SOC_ClkSet();
 

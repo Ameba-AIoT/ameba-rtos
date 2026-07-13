@@ -269,6 +269,7 @@ skip_wlanhdr:
 #endif
 		}
 		qc = (unsigned short *)(void *)(hdr + pattrib->hdrlen - 4 * htc_option - 2);
+		memset(qc, 0, 2);
 
 		if (pattrib->priority) {
 			SetPriority(qc, pattrib->priority);
@@ -864,7 +865,7 @@ exit:
 	return res;
 }
 
-int whc_host_xmit_prehandle(int idx, struct sk_buff *pskb, u8 *wlan_hw_queue)
+int whc_host_xmit_prehandle(int idx, struct sk_buff *pskb)
 {
 	struct xmit_frame *pxmitframe = NULL;
 	struct pkt_attrib *pattrib;
@@ -897,7 +898,7 @@ int whc_host_xmit_prehandle(int idx, struct sk_buff *pskb, u8 *wlan_hw_queue)
 	pxmitframe->pkt = pskb;
 	/* 802.3 to 802.11 */
 	/* add mac txdesc. and for some ic, txdesc should be 4-bytes aligned */
-	ret = whc_host_hal_xmit(idx, pxmitframe, wlan_hw_queue); /* after whc_host_hal_xmit success,the pxmitframe is freed*/
+	ret = whc_host_hal_xmit(idx, pxmitframe); /* after whc_host_hal_xmit success,the pxmitframe is freed*/
 
 	goto exit;
 

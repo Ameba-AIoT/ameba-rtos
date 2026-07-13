@@ -26,6 +26,7 @@
  * If FreeRTOS is selected with TLSF, RTOS pvPortMalloc and vPortFree will be
  * implemented with tlsf_malloc() and tlsf_free()
  */
+#include "ameba_soc.h"
 #include "os_wrapper_specific.h"
 #include "os_wrapper.h"
 #include "task.h"
@@ -134,7 +135,19 @@ extern void vApplicationGetRandomHeapCanary(portPOINTER_SIZE_TYPE *pxHeapCanary)
 #if ( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 )
 #define xHeadCanaryValue      0xABBA1234
 #define xTailCanaryValue      0xBAAD5678
-#define CANARY_SIZE_BYTES     4U
+/*
+ * The head canary is prepended to every allocation and the user pointer is
+ * returned at (block + HEAD_CANARY_SIZE). To avoid breaking the alignment that
+ * the underlying tlsf_malloc()/tlsf_memalign() guarantees, HEAD_CANARY_SIZE
+ * MUST be a multiple of the strongest alignment we hand out, i.e.
+ * portBYTE_CACHE_ALIGNMENT. Using 4 here would turn a 32-byte cache-aligned
+ * block (pvPortMallocCacheAligned, used by rtos_mem_zmalloc for WiFi SKB/DMA
+ * buffers) into a 32n+4 address -> "skb not align" -> DMA bus fault, and would
+ * also break the 8-byte portBYTE_ALIGNMENT contract of pvPortMalloc.
+ * Keeping head == tail == portBYTE_CACHE_ALIGNMENT lets vPortFree() recover the
+ * block with a single, uniform (pv - HEAD_CANARY_SIZE) for both paths.
+ */
+#define CANARY_SIZE_BYTES     ((size_t)portBYTE_CACHE_ALIGNMENT)
 #define HEAD_CANARY_SIZE       CANARY_SIZE_BYTES
 #define TAIL_CANARY_SIZE       CANARY_SIZE_BYTES
 #define CANARY_PADDING_WORDS  (CANARY_SIZE_BYTES / sizeof(uint32_t))
@@ -193,7 +206,9 @@ static void vPortInsertHeapInfo(size_t xSize)
 		}
 
 		if (xInserted == pdFALSE) {
-			RTK_LOGS(NOTAG, RTK_LOG_WARN, "CONFIG_HEAP_TRACE_MAX_TASK_NUMBER is not enough, record failed!\n");
+			/* Wording/level kept identical to heap_5.c (incl. its "enought" typo). */
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] Warning: CONFIG_HEAP_TRACE_MAX_TASK_NUMBER is not enought, record 0x%08x failed!\n", __func__,
+					 (unsigned)(uint32_t)curTaskHandle);
 		}
 	}
 }
@@ -208,19 +223,33 @@ static void vPortRemoveHeapInfo(size_t xSize)
 		for (x = 0; x < CONFIG_HEAP_TRACE_MAX_TASK_NUMBER; x++) {
 			if (heap_task_info[ x ].TaskHandle == curTaskHandle) {
 				if (heap_task_info[ x ].isExist == pdTRUE) {
-					configASSERT(heap_task_info[ x ].heap_size >= xSize);
-					heap_task_info[ x ].heap_size -= xSize;
+					/* A buffer may be allocated by one task and freed by another
+					 * (very common: worker frees what a producer allocated), so
+					 * this per-task counter can legitimately go negative. Clamp
+					 * instead of configASSERT() to keep heap-trace best-effort
+					 * and non-fatal (the assert here otherwise halts the system
+					 * during normal WiFi bring-up). */
+					if (heap_task_info[ x ].heap_size >= xSize) {
+						heap_task_info[ x ].heap_size -= xSize;
+					} else {
+						heap_task_info[ x ].heap_size = 0;
+					}
 					xRemoved = pdTRUE;
 					break;
 				} else {
-					RTK_LOGS(NOTAG, RTK_LOG_WARN, "task %p deleted with memory un-freed. It is recommended to free memory before task detelte\n"
-							 "         to avoid task heap usage statistics error\n"
-							 , curTaskHandle);
+					/* Slot exists but task was marked deleted: freeing memory of a
+					 * deleted task. Message aligned to heap_5.c. */
+					RTK_LOGS(NOTAG, RTK_LOG_WARN, "[%s] Warning: Free memory which is allocated by deleted task: 0x%08x, size: %u\n", __func__, (unsigned)(uint32_t)curTaskHandle,
+							 (unsigned)xSize);
 				}
 			}
 		}
 		if (xRemoved == pdFALSE) {
-			RTK_LOGS(NOTAG, RTK_LOG_WARN, "record failed! CONFIG_HEAP_TRACE_MAX_TASK_NUMBER is not enough\n");
+			/* Current task not tracked (table full, or cross-task free where the
+			 * freeing task never allocated). TLSF accounts by current task; heap_5.c
+			 * accounts by the owner handle stored in each block (see report). */
+			RTK_LOGS(NOTAG, RTK_LOG_WARN, "[%s] Warning: Free memory which is allocated by deleted task: 0x%08x, size: %u\n", __func__, (unsigned)(uint32_t)curTaskHandle,
+					 (unsigned)xSize);
 		}
 	}
 }
@@ -239,13 +268,13 @@ static size_t __attribute__((unused)) xPortCanaryCheck(void *pv)
 	for (size_t i = 0; i < CANARY_PADDING_WORDS; i++) {
 		if (pvStartHead[ i ] != xHeadCanaryValue) {
 			result = pdFALSE;
-			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "HEAD CANARY CORRUPT at %p. Underrun value: 0x%08lx\n", &pvStartHead[ i ], pvStartHead[ i ]);
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "HEAD CANARY CORRUPT at 0x%08x. Underrun value: 0x%08x\n", (unsigned)(uint32_t)&pvStartHead[ i ], (unsigned)pvStartHead[ i ]);
 			break;
 		}
 
 		if (pvStartTail[ i ] != xTailCanaryValue) {
 			result = pdFAIL;
-			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "TAIL CANARY CORRUPT at %p. Overrun value: 0x%08lx\n", &pvStartTail[ i ], pvStartTail[ i ]);
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "TAIL CANARY CORRUPT at 0x%08x. Overrun value: 0x%08x\n", (unsigned)(uint32_t)&pvStartTail[ i ], (unsigned)pvStartTail[ i ]);
 			break;
 		}
 	}
@@ -323,7 +352,8 @@ static void *pvPortMallocBaseCore(MALLOC_TYPES type, size_t xAlignedSize)
 	uint8_t *pxAddress = (uint8_t *) pvHeadCanary + 2 * sizeof(block_header_t *);
 	for (size_t i = 0; i < xCheckFreedBlockSize; i++) {
 		if (pxAddress[ i ] != xFillFreed) {
-			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Write to a unallocated Block: %p. Invalidate value: 0x%x\n", &pxAddress[ i ], pxAddress[ i ]);
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Write to a unallocated Block: 0x%08x. Invalidate value: 0x%08x\n", (unsigned)(uint32_t)&pxAddress[ i ],
+					 (unsigned)pxAddress[ i ]);
 			configASSERT(pdFALSE);
 		}
 	}
@@ -381,8 +411,8 @@ void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
 #if ( configUSE_MALLOC_FAILED_HOOK == 1 )
 	{
 		if (pvReturn == NULL) {
-			extern void vApplicationMallocFailedHook(void);
-			vApplicationMallocFailedHook();
+			extern void vApplicationMallocFailedHook(size_t xWantedSize);
+			vApplicationMallocFailedHook(xWantedSize);
 		}
 	}
 #endif
@@ -394,6 +424,23 @@ void *pvPortMallocBase(size_t xWantedSize, uint32_t startAddr)
 void *pvPortMalloc(size_t xWantedSize)
 {
 	return pvPortMallocBase(xWantedSize, 0);
+}
+
+void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize)
+{
+	void *pvReturn;
+
+	/* Reject overflow: if xWantedCnt * xWantedSize would wrap, bail out. */
+	if (xWantedSize != 0 && xWantedCnt > (((size_t) - 1) / xWantedSize)) {
+		return NULL;
+	}
+
+	pvReturn = pvPortMalloc(xWantedCnt * xWantedSize);
+	if (pvReturn != NULL) {
+		_memset(pvReturn, 0, xWantedCnt * xWantedSize);
+	}
+
+	return pvReturn;
 }
 
 void vPortFree(void *pv)
@@ -498,8 +545,8 @@ void *pvPortReAllocBase(void *pv, size_t xWantedSize, uint32_t startAddr)
 #if ( configUSE_MALLOC_FAILED_HOOK == 1 )
 	{
 		if (pvReturn == NULL) {
-			extern void vApplicationMallocFailedHook(void);
-			vApplicationMallocFailedHook();
+			extern void vApplicationMallocFailedHook(size_t xWantedSize);
+			vApplicationMallocFailedHook(xWantedSize);
 		}
 	}
 #endif
@@ -571,11 +618,58 @@ void *pvPortMallocCacheAligned(size_t xWantedSize)
 #if ( configUSE_MALLOC_FAILED_HOOK == 1 )
 	{
 		if (pvReturn == NULL) {
-			extern void vApplicationMallocFailedHook(void);
-			vApplicationMallocFailedHook();
+			extern void vApplicationMallocFailedHook(size_t xWantedSize);
+			vApplicationMallocFailedHook(xWantedSize);
 		}
 	}
 #endif /* if ( configUSE_MALLOC_FAILED_HOOK == 1 ) */
+
+	return pvReturn;
+}
+
+/*
+ * Cache-aligned realloc, mirrors pvPortReAllocBase but allocates the new block
+ * with pvPortMallocCacheAligned so the returned pointer stays cache-line
+ * aligned. Required by rtos_mem_realloc(). The malloc-failed hook is already
+ * invoked inside pvPortMallocCacheAligned on failure.
+ */
+void *pvPortReAllocCacheAligned(void *pv, size_t xWantedSize)
+{
+	void *pvReturn = NULL;
+
+	if (pv == NULL) {
+		return pvPortMallocCacheAligned(xWantedSize);
+	}
+
+	if (xWantedSize == 0) {
+		vPortFree(pv);
+		return NULL;
+	}
+
+	vTaskSuspendAll();
+	{
+		/* Old usable size (same header/canary offset scheme as regular blocks). */
+#if ( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 )
+		void *pvBlock = (uint8_t *)pv - HEAD_CANARY_SIZE;
+		configASSERT(xPortCanaryCheck(pvBlock));
+		size_t xOldBlockSize = tlsf_block_size(pvBlock) - HEAD_CANARY_SIZE - TAIL_CANARY_SIZE;
+#else
+		void *pvBlock = pv;
+		size_t xOldBlockSize = tlsf_block_size(pvBlock);
+#endif
+
+		pvReturn = pvPortMallocCacheAligned(xWantedSize);
+		if (pvReturn != NULL) {
+			size_t xCopySize = xOldBlockSize < xWantedSize ? xOldBlockSize : xWantedSize;
+			_memcpy(pvReturn, pv, xCopySize);
+		}
+	}
+	(void) xTaskResumeAll();
+
+	/* Free old block outside suspend to avoid nesting */
+	if (pvReturn != NULL) {
+		vPortFree(pv);
+	}
 
 	return pvReturn;
 }
@@ -604,6 +698,17 @@ size_t xPortGetMinimumEverFreeHeapSize(void)
 	}
 	(void) xTaskResumeAll();
 	return total;
+}
+
+void xPortResetHeapMinimumEverFreeHeapSize(void)
+{
+	vTaskSuspendAll();
+	{
+		for (int t = 0; t < TYPE_ALL; t++) {
+			g_tlsf[t].xMinimumEverFreeBytesRemaining = g_tlsf[t].xFreeBytesRemaining;
+		}
+	}
+	(void) xTaskResumeAll();
 }
 
 void vPortGetHeapStats(HeapStats_t *pxHeapStats)
@@ -637,20 +742,100 @@ void vPortGetHeapStats(HeapStats_t *pxHeapStats)
 	(void) xTaskResumeAll();
 }
 
+#if ( configUSE_MALLOC_FAILED_HOOK == 1 )
+/*
+ * Malloc-failed hook. When TLSF replaces heap_5.c this definition must live
+ * here, because heap_5.c (which used to provide it) is excluded from the build
+ * once CONFIG_TLSF_HEAP is selected. Signature matches heap_5.c
+ * (size_t xWantedSize) so the failing request size is reported. Uses a global
+ * stats buffer to keep the hook's own stack usage small.
+ */
+static HeapStats_t FailHookHeapStats;
+__attribute__((optimize("O0")))
+void vApplicationMallocFailedHook(size_t xWantedSize)
+{
+	char *pcCurrentTask = "NoTsk";
+#if defined (CONFIG_ARM_CORE_CM0)
+	const char *core_name = "KM0";
+#elif defined (CONFIG_ARM_CORE_CM4)
+	const char *core_name = "KM4";
+#elif defined (CONFIG_RSICV_CORE_KR4)
+	const char *core_name = "KR4";
+#elif defined (CONFIG_ARM_CORE_CA32)
+	const char *core_name = "CA32";
+#else
+	const char *core_name = "CPU";
+#endif
+
+	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+		pcCurrentTask = pcTaskGetName(NULL);
+	}
+
+	taskENTER_CRITICAL();
+
+	/* 1. Basic info: core / task / requested size. */
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Malloc failed. Core:[%s], Task:[%s], ", core_name, pcCurrentTask);
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[xWantedSize:%u]\r\n", xWantedSize);
+
+	/* 2. Full heap status. Avoid heap_get_stats to reduce stack usage. */
+	vPortGetHeapStats(&FailHookHeapStats);
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "AvailHeap: %u, MaxFreeBlock: %u, ",
+			 FailHookHeapStats.xAvailableHeapSpaceInBytes,
+			 FailHookHeapStats.xSizeOfLargestFreeBlockInBytes);
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Allocs: %u, Frees: %u\r\n",
+			 FailHookHeapStats.xNumberOfSuccessfulAllocations,
+			 FailHookHeapStats.xNumberOfSuccessfulFrees);
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "MinEverFree: %u\r\n",
+			 FailHookHeapStats.xMinimumEverFreeBytesRemaining);
+
+#if ( CONFIG_HEAP_TRACE == 1 )
+	/* 3. Task heap useage */
+	extern void vPortGetTaskHeapInfo(void);
+	vPortGetTaskHeapInfo();
+
+	/* 4. Back trace */
+#if defined (CONFIG_ARM_CORE_CM4) || defined (CONFIG_RSICV_CORE_KR4)
+	{
+		extern void get_call_stack(void **caller, uint32_t max_level);
+		void *pc_trace[ CONFIG_HEAP_TRACE_STACK_DEPTH ] = {0};
+		get_call_stack(pc_trace, CONFIG_HEAP_TRACE_STACK_DEPTH);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "********** stack backtrac cmd **********\n");
+#if defined (CONFIG_ARM_CORE_CM0) || defined (CONFIG_ARM_CORE_CM4)
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "%s/bin/arm-none-eabi-addr2line -e %s/target_img2.axf -afpiC 0x%08x", SDK_TOOLCHAIN, IMAGE_DIR,
+				 (unsigned)(uint32_t)pc_trace[ 0 ]);
+#elif defined (CONFIG_RSICV_CORE_KR4)
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "%s/bin/riscv32-elf-addr2line -e %s/target_img2.axf -afpiC 0x%08x", SDK_TOOLCHAIN, IMAGE_DIR, (unsigned)(uint32_t)pc_trace[ 0 ]);
+#endif
+		for (size_t i = 1; i < CONFIG_HEAP_TRACE_STACK_DEPTH; i++) {
+			if (pc_trace[ i ] == NULL) {
+				break;
+			}
+			RTK_LOGS(NOTAG, RTK_LOG_ERROR, " 0x%08x", (unsigned)(uint32_t)pc_trace[ i ]);
+		}
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "\r\n");
+	}
+#endif /* CONFIG_ARM_CORE_CM4 || CONFIG_RSICV_CORE_KR4 */
+#endif /* CONFIG_HEAP_TRACE */
+
+	for (;;);
+}
+#endif /* configUSE_MALLOC_FAILED_HOOK == 1 */
+
 #if (CONFIG_HEAP_TRACE == 1)
 
 void vPortGetTaskHeapInfo(void)
 {
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "********** Each Task Heap Usage **********\n");
 	vTaskSuspendAll();
 
 	for (int i = 0; i < CONFIG_HEAP_TRACE_MAX_TASK_NUMBER; i++) {
 		if (heap_task_info[ i ].TaskHandle != NULL) {
 			switch (heap_task_info[ i ].isExist) {
 			case pdTRUE:
-				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "Task: %s, task heap usage: 0x%lx\n", heap_task_info[ i ].Task_Name, heap_task_info[ i ].heap_size);
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "Task: %s, task heap usage: 0x%x\n", heap_task_info[ i ].Task_Name, (unsigned)heap_task_info[ i ].heap_size);
 				break;
 			case pdFALSE:
-				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "Deleted Task: %s, task heap usage: 0x%lx\n", heap_task_info[ i ].Task_Name, heap_task_info[ i ].heap_size);
+				RTK_LOGS(NOTAG, RTK_LOG_INFO, "Deleted Task: %s, task heap usage: 0x%x\n", heap_task_info[ i ].Task_Name, (unsigned)heap_task_info[ i ].heap_size);
 				break;
 			default :
 				break;
@@ -678,7 +863,8 @@ static void corrupt_detection_walker(void *ptr, size_t size, int used, void *use
 		pxAddress = (uint8_t *) ptr + 2 * sizeof(block_header_t *);
 		for (size_t i = 0; i < xCheckFreedBlockSize; i++) {
 			if (pxAddress[ i ] != xFillFreed) {
-				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Freed block has been modified after freed! Block address: %p. Invalidate value: 0x%x\n", &pxAddress[ i ], pxAddress[ i ]);
+				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Write to a unallocated Block: 0x%08x. Invalidate value: 0x%08x\n", (unsigned)(uint32_t)&pxAddress[ i ],
+						 (unsigned)pxAddress[ i ]);
 				configASSERT(pdFALSE);
 			}
 		}
@@ -690,10 +876,17 @@ static void corrupt_detection_walker(void *ptr, size_t size, int used, void *use
 }
 #endif /* CONFIG_HEAP_CORRUPTION_DETECT_LITE */
 
-uint32_t ulPortCheckHeapIntegrity(void)
+/*
+ * Signature matches heap_5.c: COMPREHENSIVE_CHECK gates the deep per-block
+ * canary / content walk. The structural tlsf_check() always runs (cheap);
+ * the boundary/content walk only runs when COMPREHENSIVE_CHECK is set.
+ */
+uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 {
 	int ret;
 	int t;
+
+	(void)COMPREHENSIVE_CHECK; /* only consumed when CORRUPTION_DETECT_LITE is on */
 
 	vTaskSuspendAll();
 
@@ -711,9 +904,11 @@ uint32_t ulPortCheckHeapIntegrity(void)
 		}
 
 #if( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 )
-		int i;
-		for (i = 0; i < inst->pool_count; i++) {
-			tlsf_walk_pool(inst->pools[ i ], corrupt_detection_walker, NULL);
+		if (COMPREHENSIVE_CHECK) {
+			int i;
+			for (i = 0; i < inst->pool_count; i++) {
+				tlsf_walk_pool(inst->pools[ i ], corrupt_detection_walker, NULL);
+			}
 		}
 #endif /* CONFIG_HEAP_CORRUPTION_DETECT_LITE */
 	}

@@ -45,6 +45,7 @@ typedef enum {
 	USBH_CDC_ACM_STATE_SET_LINE_CODING,          /**< State SET_LINE_CODING: Configuring line coding. */
 	USBH_CDC_ACM_STATE_GET_LINE_CODING,          /**< State GET_LINE_CODING: Retrieving line coding. */
 	USBH_CDC_ACM_STATE_SET_CONTROL_LINE_STATE,   /**< State SET_CONTROL_LINE_STATE: Setting control line state. */
+	USBH_CDC_ACM_STATE_SEND_BREAK,               /**< State SEND_BREAK: Sending break signal (PSTN §6.3.13). */
 	USBH_CDC_ACM_STATE_TRANSFER,                 /**< State TRANSFER: Data transfer in progress. */
 	USBH_CDC_ACM_STATE_ERROR,                    /**< State ERROR: Error occurred. */
 } usbh_cdc_acm_state_t;
@@ -126,10 +127,13 @@ typedef struct {
 	usbh_pipe_t bulk_out;                       /**< BULK OUT pipe structure. */
 	usbh_pipe_t intr_in;                        /**< INTERRUPT IN pipe structure. */
 	usb_host_t *host;                           /**< Pointer to the USB host instance. */
-	usbh_cdc_acm_cb_t *cb;                      /**< Pointer to the user-defined callback structure. */
+	const usbh_cdc_acm_cb_t *cb;                      /**< Pointer to the user-defined callback structure. */
 	usb_cdc_line_coding_t *line_coding;    /**< Current line coding of the device. */
 	usb_cdc_line_coding_t *user_line_coding; /**< User requested line coding. */
+	u16 ctrl_line_state;                        /**< Control Signal Bitmap sent in SET_CONTROL_LINE_STATE wValue: D0=DTR, D1=RTS (PSTN §6.3.12). */
+	u16 break_duration;                         /**< Duration for SEND_BREAK in milliseconds; 0xFFFF = continuous break. */
 	u8 state;                                   /**< Current state of the CDC ACM host driver, @ref usbh_cdc_acm_state_t. */
+	u8 comm_itf_num;                            /**< bInterfaceNumber of Communication Interface, used as wIndex in class requests. */
 } usbh_cdc_acm_host_t;
 
 /** @} End of Host_CDC_ACM_Types group */
@@ -153,7 +157,7 @@ typedef struct {
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_cdc_acm_init(usbh_cdc_acm_cb_t *cb);
+int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb);
 
 /**
  * @brief De-initializes the CDC ACM host class driver.
@@ -176,10 +180,18 @@ int usbh_cdc_acm_set_line_coding(usb_cdc_line_coding_t *lc);
 int usbh_cdc_acm_get_line_coding(usb_cdc_line_coding_t *lc);
 
 /**
- * @brief Sets the control line state (DTR, RTS).
+ * @brief Sets the control line state (PSTN §6.3.12 SET_CONTROL_LINE_STATE).
+ * @param[in] bitmap: Control Signal Bitmap written to wValue. D0=DTR, D1=RTS; all other bits reserved and shall be zero.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_cdc_acm_set_control_line_state(void);
+int usbh_cdc_acm_set_control_line_state(u16 bitmap);
+
+/**
+ * @brief Sends a break signal to the device (PSTN §6.3.13).
+ * @param[in] duration_ms: Break duration in milliseconds. 0xFFFF = continuous break; 0x0000 = end break.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbh_cdc_acm_send_break(u16 duration_ms);
 
 /**
  * @brief Transmits data to the device over the BULK OUT pipe.

@@ -1,4 +1,7 @@
-export CONFIG_AMEBADPLUS = y
+ccflags-$(CONFIG_AMEBADPLUS)           += -DCONFIG_AMEBADPLUS
+ccflags-$(CONFIG_AMEBAGREEN2)          += -DCONFIG_AMEBAGREEN2
+ccflags-$(CONFIG_AMEBALITE)            += -DCONFIG_AMEBALITE
+ccflags-$(CONFIG_AMEBAX)               += -DCONFIG_AMEBAX
 
 ccflags-$(CONFIG_NAN) += -DCONFIG_NAN
 ccflags-$(CONFIG_P2P) += -DCONFIG_P2P
@@ -15,7 +18,7 @@ ccflags-y += -I$(src)/../netdev
 ccflags-y += -I$(src)/../include -I$(src)/.. -I$(src)/../../common -I$(src)/../usb
 ifeq ($(CONFIG_WHCH), y)
 ccflags-y += -I$(src)/../whch -I$(src)/../whch/hal
-ifeq ($(CONFIG_WHC_HAL_CHIP), rtl8721f)
+ifeq ($(CONFIG_AMEBAGREEN2), y)
 ccflags-y += -I$(src)/../whch/hal/rtl8721f
 endif
 endif
@@ -46,7 +49,6 @@ whc_usb-$(CONFIG_WHC_HCI_USB) := \
 		../whc_host_event_rx.o \
 		../whc_host_event_hdl.o \
 		../whc_host_protocal_offload.o \
-		../whc_host_cust_evt.o \
 		../whc_host_acs.o
 
 ifeq ($(CONFIG_WHCH), y)
@@ -60,7 +62,7 @@ ifeq ($(CONFIG_WHCH), y)
 		../whch/whch_host_addba.o \
 		../whch/hal/whch_host_hal_xmit_com.o \
 		../whch/hal/whch_host_hal_recv_com.o
-ifeq ($(CONFIG_WHC_HAL_CHIP), rtl8721f)
+ifeq ($(CONFIG_AMEBAGREEN2), y)
     whc_usb-$(CONFIG_WHC_HCI_USB) += \
 		../whch/hal/rtl8721f/whch_host_hal_xmit.o \
 		../whch/hal/rtl8721f/whch_host_hal_rate.o \

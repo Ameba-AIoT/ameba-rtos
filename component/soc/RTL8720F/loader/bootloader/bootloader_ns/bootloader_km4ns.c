@@ -47,6 +47,9 @@ void BOOT_Start(void)
 {
 	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
 
+	/* Enable divide-by-zero fault */
+	SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
+
 #ifdef CONFIG_SOLO
 	BOOT_CopySRAMImg();
 

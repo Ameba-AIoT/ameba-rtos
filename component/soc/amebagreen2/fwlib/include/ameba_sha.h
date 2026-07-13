@@ -11,11 +11,12 @@
   * @{
   */
 
-/** @defgroup SHA
+/** @defgroup SHA SHA
   * @brief SHA driver modules
   * @{
   */
 
+/// @cond
 /* AUTO_GEN_START */
 // Do NOT modify any AUTO_GEN code below
 
@@ -238,6 +239,7 @@ typedef struct {
 
 // Do NOT modify any AUTO_GEN code above
 /* AUTO_GEN_END */
+/// @endcond
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus
@@ -255,28 +257,28 @@ extern "C" {
 typedef struct {
 	u32 EngineMode;  /*!< Specifies the SHA engine mode. This parameter can be a value of @ref SHA_Engine_Mode. */
 	u32 IcgEn;       /*!< Specifies enable or disable SHA auto clock gating. This parameter can be ENABLE or DISABLE. */
-	u32 DmaMode;     /*!< Specifies SHA DMA mode. This parameter can be a value of @ref SHA_Dma_Mode. */
-	u32 HmacMode;    /*!< Specifies the HMAC mode. This parameter can be a value of @ref SHA_BIT_HMAC_MODE. */
+	u32 DmaMode;     /*!< Specifies SHA DMA mode. This parameter can be a value of @ref SHA_DMA_Mode. */
+	u32 HmacMode;    /*!< Specifies the HMAC mode. This parameter can be a value of @ref SHA_HMAC_MODE. */
 } SHA_InitTypeDef;
 
 /**
   * @brief SHA Context Structure Definition
   */
 typedef struct {
-	u32 sha_mode;       /*!< specifies the SHA mode.This parameter can be a value of @ref SHA_Mode. */
-	u32 hmac_mode;      /*!< hmac opration mode. 0x0: use hash mode. 0x1: use hmac mode.*/
-	u32 block_size;		/*!< block size. This parameter can be a value of @ref SHA_BLOCK_SIZE. */
-	u32 ilen_bytes;		/*!< bytes occupied by input length storage. */
-	u32 digest_len;		/*!< digest length. */
-	u32 state[16];      /*!< digest state  */
-	u8 buffer[128] __attribute__((aligned(32)));   	/*!< data block being processed */
-	u32 buf_used_bytes;	/*!< buf used bytes */
-	u32 total_len;	    /*!< The total number of data bytes will be processed */
-	u8 dma_copy;        /*!< DMA opration mode. 0x0: read-only mode. 0x1: copy mode*/
-	u8 seq_hash_first;
-	u8 key_id;
-	u32 key_len_bits;
-	u32 DMA_CTL_LOW;
+	u32 sha_mode;       /*!< Specifies the SHA mode. This parameter can be a value of @ref SHA_Mode. */
+	u32 hmac_mode;      /*!< HMAC operation mode. 0x0: hash mode. 0x1: HMAC mode.*/
+	u32 block_size;		/*!< Block size. This parameter can be a value of @ref SHA_BLOCK_SIZE. */
+	u32 ilen_bytes;		/*!< Bytes occupied by input length storage. */
+	u32 digest_len;		/*!< Digest length. */
+	u32 state[16];      /*!< Digest state */
+	u8 buffer[128] __attribute__((aligned(32)));   	/*!< Data block being processed */
+	u32 buf_used_bytes;	/*!< Buffer bytes used */
+	u32 total_len;	    /*!< The total number of data bytes to be processed */
+	u8 dma_copy;        /*!< DMA operation mode. 0x0: read-only mode. 0x1: copy mode*/
+	u8 seq_hash_first;	/*!< Flag for sequential hash: 1 = this is the first block, 0 = subsequent block */
+	u8 key_id;			/*!< Key management key ID used for HMAC */
+	u32 key_len_bits;	/*!< HMAC key length in bits */
+	u32 DMA_CTL_LOW;	/*!< DMA control register low word value cached for this context */
 } SHA_context;
 /** @} */
 
@@ -285,133 +287,140 @@ typedef struct {
   * @{
   */
 
-/** @defgroup SHA_Mode
+/** @defgroup SHA_Mode SHA Mode
   * @{
   */
-#define SHA_224			((u8)0x00)
-#define SHA_256			((u8)0x01)
-#define SHA_384			((u8)0x02)
-#define SHA_512			((u8)0x03)
+#define SHA_224			((u8)0x00)	/*!< SHA-224 algorithm */
+#define SHA_256			((u8)0x01)	/*!< SHA-256 algorithm */
+#define SHA_384			((u8)0x02)	/*!< SHA-384 algorithm */
+#define SHA_512			((u8)0x03)	/*!< SHA-512 algorithm */
 
+/** @brief Check whether MODE is a valid SHA-2 algorithm selection. */
 #define IS_SHA_MODE(MODE) (((MODE) == SHA_224) || \
 								((MODE) == SHA_256) || \
 								((MODE) == SHA_384) || \
 								((MODE) == SHA_512))
 /** @} */
 
-/** @defgroup SHA_Byte_Swap_Defaults
+/** @defgroup SHA_Byte_Swap_Defaults SHA Byte Swap Defaults
   * @{
   */
-#define SHA_MASK_BYTE_INVERSION         ((u32)0x00000003 << 12)
-#define SHA_BYTE_SWAP_DEFAULTS          ((u32)(~SHA_BIT_KEY_BYTE_INVERSION_ENABLE) & SHA_BIT_PAYLOAD_BYTE_INVERSION_ENABLE)
-#define SHA_BYTE_SWAP_KEY_SWAP          ((u32)  SHA_BIT_KEY_BYTE_INVERSION_ENABLE  | SHA_BIT_PAYLOAD_BYTE_INVERSION_ENABLE)
+#define SHA_MASK_BYTE_INVERSION         ((u32)0x00000003 << 12)	/*!< Bitmask for key and payload byte inversion bits in CONTROL register */
+#define SHA_BYTE_SWAP_DEFAULTS          ((u32)(~SHA_BIT_KEY_BYTE_INVERSION_ENABLE) & SHA_BIT_PAYLOAD_BYTE_INVERSION_ENABLE)	/*!< Default: key in native order, payload byte-inverted */
+#define SHA_BYTE_SWAP_KEY_SWAP          ((u32)  SHA_BIT_KEY_BYTE_INVERSION_ENABLE  | SHA_BIT_PAYLOAD_BYTE_INVERSION_ENABLE)	/*!< Both key and payload in inverse byte order */
 /** @} */
 
-/** @defgroup SHA_Engine_Mode
+/** @defgroup SHA_Engine_Mode SHA Engine Mode
   * @{
   */
-#define SHA_DMA_MODE			((u8)0x00)
-#define SHA_SLAVE_MODE			((u8)0x01)
+#define SHA_DMA_MODE			((u8)0x00)	/*!< DMA mode: message data provided via DMA */
+#define SHA_SLAVE_MODE			((u8)0x01)	/*!< Slave mode: message data written directly to FIFO */
+/** @brief Check whether MODE is a valid SHA engine mode. */
 #define IS_SHA_ENGINE_MODE(MODE) (((MODE) == SHA_DMA_MODE) || \
 								((MODE) == SHA_SLAVE_MODE))
 /** @} */
 
-/** @defgroup SHA_DMA_Mode
+/** @defgroup SHA_DMA_Mode SHA DMA Mode
   * @{
   */
-#define SHA_READ_MODE		    ((u8)0x00)
-#define SHA_COPY_MODE		    ((u8)0x01)
-#define SHA_COPY_TO_READ_SWITCH ((u8)0x01)
-#define SHA_READ_TO_COPY_SWITCH ((u8)0x02)
+#define SHA_READ_MODE		    ((u8)0x00)	/*!< DMA read-only mode: engine reads source, no output copy */
+#define SHA_COPY_MODE		    ((u8)0x01)	/*!< DMA copy mode: engine reads source and writes to destination */
+#define SHA_COPY_TO_READ_SWITCH ((u8)0x01)	/*!< Switch from copy mode to read-only mode on next DMA transfer */
+#define SHA_READ_TO_COPY_SWITCH ((u8)0x02)	/*!< Switch from read-only mode to copy mode on next DMA transfer */
+/** @brief Check whether MODE is a valid SHA DMA mode. */
 #define IS_SHA_DMA_MODE(MODE) (((MODE) == SHA_READ_MODE) || \
 								((MODE) == SHA_COPY_MODE))
 /** @} */
 
-/** @defgroup SHA_Byte_Inv
+/** @defgroup SHA_Byte_Inv SHA Byte Inversion
   * @{
   */
-#define SHA_NATIVE_ORDER		((u8)0x00)
-#define SHA_INVERSE_ORDER		((u8)0x01)
+#define SHA_NATIVE_ORDER		((u8)0x00)	/*!< Native (big-endian) byte order */
+#define SHA_INVERSE_ORDER		((u8)0x01)	/*!< Inverse (little-endian) byte order */
+/** @brief Check whether INV is a valid SHA byte inversion setting. */
 #define IS_SHA_BYTE_INV(INV) (((INV) == SHA_NATIVE_ORDER) || \
 								((INV) == SHA_INVERSE_ORDER))
 /** @} */
 
-/** @defgroup SHA_HMAC_MODE
+/** @defgroup SHA_HMAC_MODE SHA HMAC Mode
   * @{
   */
-#define SHA_HASH_MODE		(0x00)
-#define SHA_HMAC_MODE		(0x01)
+#define SHA_HASH_MODE		(0x00)	/*!< Pure hash mode (no HMAC padding) */
+#define SHA_HMAC_MODE		(0x01)	/*!< HMAC mode (i-pad and o-pad applied to key) */
+/** @brief Check whether MODE is a valid SHA/HMAC operation mode. */
 #define IS_SHA_HMAC_MODE(MODE) (((MODE) == SHA_HASH_MODE) || \
 								((MODE) == SHA_HMAC_MODE))
 /** @} */
 
-/** @defgroup SHA_HMAC_KEY_SIZE
+/** @defgroup SHA_HMAC_KEY_SIZE SHA HMAC Key Size
   * @{
   */
-#define SHA_HMAC_KEY_SIZE_128		(0x00)
-#define SHA_HMAC_KEY_SIZE_192		(0x01)
-#define SHA_HMAC_KEY_SIZE_256		(0x02)
-#define SHA_HMAC_KEY_BIT_128        128
-#define SHA_HMAC_KEY_BIT_192        192
-#define SHA_HMAC_KEY_BIT_256        256
+#define SHA_HMAC_KEY_SIZE_128		(0x00)	/*!< Register encoding for 128-bit HMAC key */
+#define SHA_HMAC_KEY_SIZE_192		(0x01)	/*!< Register encoding for 192-bit HMAC key */
+#define SHA_HMAC_KEY_SIZE_256		(0x02)	/*!< Register encoding for 256-bit HMAC key */
+#define SHA_HMAC_KEY_BIT_128        128		/*!< HMAC key length: 128 bits */
+#define SHA_HMAC_KEY_BIT_192        192		/*!< HMAC key length: 192 bits */
+#define SHA_HMAC_KEY_BIT_256        256		/*!< HMAC key length: 256 bits */
+/** @brief Check whether SIZE is a valid HMAC key length in bits. */
 #define IS_SHA_HMAC_KEY_BIT(SIZE) (((SIZE) == SHA_HMAC_KEY_BIT_128) || \
 							 		((SIZE) == SHA_HMAC_KEY_BIT_192) || \
 								    ((SIZE) == SHA_HMAC_KEY_BIT_256))
 /** @} */
 
-/** @defgroup SHA_BLOCK_SIZE
+/** @defgroup SHA_BLOCK_SIZE SHA Block Size
   * @{
   */
-#define SHA_BLOCK_256			64
-#define SHA_BLOCK_512 			128
+#define SHA_BLOCK_256			64	/*!< Block size in bytes for SHA-224/256 (512-bit block = 64 bytes) */
+#define SHA_BLOCK_512 			128	/*!< Block size in bytes for SHA-384/512 (1024-bit block = 128 bytes) */
 /** @} */
 
-/** @defgroup SHA_ILEN_BYTES
+/** @defgroup SHA_ILEN_BYTES SHA Input Length Bytes
   * @{
   */
-#define SHA_ILEN_BYTES_256			8
-#define SHA_ILEN_BYTES_512			16
+#define SHA_ILEN_BYTES_256			8	/*!< Input length field size for SHA-224/256: 8 bytes (64-bit) */
+#define SHA_ILEN_BYTES_512			16	/*!< Input length field size for SHA-384/512: 16 bytes (128-bit) */
 /** @} */
 
-/** @defgroup SHA_DIGEST_LEN
+/** @defgroup SHA_DIGEST_LEN SHA Digest Length
   * @{
   */
-#define SHA_DIGEST_224			28
-#define SHA_DIGEST_256			32
-#define SHA_DIGEST_384			48
-#define SHA_DIGEST_512			64
+#define SHA_DIGEST_224			28	/*!< SHA-224 digest output length in bytes */
+#define SHA_DIGEST_256			32	/*!< SHA-256 digest output length in bytes */
+#define SHA_DIGEST_384			48	/*!< SHA-384 digest output length in bytes */
+#define SHA_DIGEST_512			64	/*!< SHA-512 digest output length in bytes */
 /** @} */
 
-/** @defgroup SHA_DIGEST_LEN
+/** @defgroup SHA_HMAC_KEY_BYTE SHA HMAC Key Byte Length
   * @{
   */
-#define SHA_HMAC_KEY_BYTE_128			16
-#define SHA_HMAC_KEY_BYTE_192			24
-#define SHA_HMAC_KEY_BYTE_256			32
+#define SHA_HMAC_KEY_BYTE_128			16	/*!< HMAC key length: 16 bytes (128 bits) */
+#define SHA_HMAC_KEY_BYTE_192			24	/*!< HMAC key length: 24 bytes (192 bits) */
+#define SHA_HMAC_KEY_BYTE_256			32	/*!< HMAC key length: 32 bytes (256 bits) */
 /** @} */
 
-/** @defgroup SHA_TIMEOUT
+/** @defgroup SHA_TIMEOUT SHA Timeout
   * @{
   */
-#define SHA_DMA_TIMEOUT				((u32) 1000000)
-#define SHA_MUTEX_TIMEOUT			((u32) 1000000)
-#define SHA_SLAVE_TIMEOUT			((u32) 10000)
+#define SHA_DMA_TIMEOUT			((u32) 1000000)		/*!< DMA mode operation timeout count */
+#define SHA_MUTEX_TIMEOUT		((u32) 1000000)		/*!< Engine mutex acquisition timeout count */
+#define SHA_SLAVE_TIMEOUT		((u32) 10000)		/*!< Slave mode operation timeout count */
 /** @} */
 
-/** @defgroup SHA_DMA
+/** @defgroup SHA_DMA SHA DMA
   * @{
   */
-#define SHA_DMA_CH_NUM                          1
-#define SHA_DMA_CH_MASK                         ((u32)0x00000001 << SHA_DMA_CH_NUM)
-#define SHA_DMA_MAX_BLOCK_TS_256                0x1FFFFFC0
-#define SHA_DMA_MAX_BLOCK_TS_512                0x1FFFFF80
-#define SHA_DMA_DST_TR_WIDTH                    TrWidthOneByte
-#define SHA_DMA_SRC_TR_WIDTH                    TrWidthOneByte
+#define SHA_DMA_CH_NUM                          1		/*!< DMA channel number for SHA transfers */
+#define SHA_DMA_CH_MASK                         ((u32)0x00000001 << SHA_DMA_CH_NUM)	/*!< DMA channel enable mask bit for SHA */
+#define SHA_DMA_MAX_BLOCK_TS_256                0x1FFFFFC0	/*!< Max DMA block transfer size for SHA-224/256 (64-byte aligned) */
+#define SHA_DMA_MAX_BLOCK_TS_512                0x1FFFFF80	/*!< Max DMA block transfer size for SHA-384/512 (128-byte aligned) */
+#define SHA_DMA_DST_TR_WIDTH                    TrWidthOneByte	/*!< DMA destination transfer width: byte */
+#define SHA_DMA_SRC_TR_WIDTH                    TrWidthOneByte	/*!< DMA source transfer width: byte */
 /** @} */
 
-/** @defgroup SHA_DMA_BEAT
+/** @defgroup SHA_DMA_BEAT SHA DMA Beat
   * @{
   */
+/** @brief Write a 64-bit value into byte buffer at offset i in big-endian order; used for SHA padding. */
 #ifndef SHA_PUT_UINT64_BE
 #define SHA_PUT_UINT64_BE(n,b,i)                            \
 {														\
@@ -426,6 +435,7 @@ typedef struct {
 }
 #endif
 
+/** @brief Write a 32-bit value into byte buffer at offset i in big-endian order; used for SHA padding. */
 #ifndef SHA_PUT_UINT32_BE
 #define SHA_PUT_UINT32_BE(n,b,i)                            \
 {														\
@@ -444,116 +454,267 @@ typedef struct {
   * @{
   */
 
+
+/** @defgroup SHA_HAL_Functions SHA HAL Functions
+  * @{
+  */
+
+
+/**
+ * @brief Initialize the SHA-2 context for read-only DMA mode computation.
+ * @param  SHAtype
+ *            @arg SHA_224
+ *            @arg SHA_256
+ *            @arg SHA_384
+ *            @arg SHA_512
+ * @param  ctx SHA context. This function will initialize the context.
+ * @note The engine will be locked during the execution of this function,
+ *       and will be unlocked after execution.
+ *       Avoid multiple threads/CPUs using the engine at the same time.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_sha2_init(SHA_context *ctx, u32 SHAtype);
+
+/**
+  * @brief  Update SHA state.
+  * @param 	ctx SHA context
+  * @param  input Pointer to input data.
+  * @param  dst Pointer to output data. If in read-only mode, set it to NULL
+  * @param  len Input data length.
+  * @note
+  *         - If copy mode and read-only mode are mixed for update,
+  *           then ensure that the message lengths of both copy mode and read-only mode are integer multiples of the SHA-BLOCK length.
+  *           (64-byte alignment for SHA-224/256, 128-byte alignment for SHA-384/512)
+  *         - The engine will be locked during the execution of this function,
+  *           and will be unlocked after execution.
+  *           Avoid multiple threads/CPUs using the engine at the same time.
+  *         - In copy mode, the destination address and calculation length must be 32 bytes (cache line size) aligned.
+  * @return Process status:
+  *         - 0: success
+  *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+  */
+_LONG_CALL_ int crypto_sha2_update(SHA_context *ctx, const u8 *input, u8 *dst, size_t len);
+
+/**
+  * @brief  Perform SHA final process.
+  * @param 	ctx SHA context
+  * @param  output The result of SHA function
+  * @note
+  *         - Since the SHA engine does not support hardware padding, software padding is performed instead.
+  *         - The engine will be locked during the execution of this function,
+  *           and will be unlocked after execution.
+  *           Avoid multiple threads/CPUs using the engine at the same time.
+  * @return Process status:
+  *         - 0: success
+  *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+  */
+_LONG_CALL_ int crypto_sha2_final(SHA_context *ctx, u8 *output);
+
+/**
+ * @brief  Set software key value for HMAC
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *            @arg KEY_BIT_128
+ *            @arg KEY_BIT_192
+ *            @arg KEY_BIT_256
+ * @param  key_addr Address to software key array
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_hmac_sha2_set_sw_key(u8 key_id, u32 key_len_bits, const u8 *key_addr);
+
+/**
+ * @brief  Control whether security keys can be shared with non-secure world.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  is_share
+ *      @arg 1: share
+ *      @arg 0: not share (secure only)
+ * @note If sharing is enabled, non-secure code can only trigger the use of the key, but cannot read or write.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_hmac_sha2_share_secure_key(const u8 key_id, const u8 is_share);
+
+/**
+ * @brief Initialize the HMAC-SHA2 context for read-only DMA mode computation.
+ * @param  SHAtype
+ *            @arg SHA_224
+ *            @arg SHA_256
+ *            @arg SHA_384
+ *            @arg SHA_512
+ * @param  ctx SHA context.
+ * @param  key_id Value of @ref KM_KEY
+ * @param  key_len_bits
+ *            @arg KEY_BIT_128
+ *            @arg KEY_BIT_192
+ *            @arg KEY_BIT_256
+ * @note The engine will be locked during the execution of this function,
+ *       and will be unlocked after execution.
+ *       Avoid multiple threads/CPUs using the engine at the same time.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_hmac_sha2_init(SHA_context *ctx, u32 SHAtype, u8 key_id, u32 key_len_bits);
+
+/**
+ * @brief  Update HMAC state.
+ * @param  ctx SHA context.
+ * @param  input Pointer to input data.
+ * @param  dst Pointer to output data. If in read-only mode, set it to NULL
+ * @param  len Input data length.
+ * @note
+ *         - If copy mode and read-only mode are mixed for update,
+ *           then ensure that the message lengths of both copy mode and read-only mode are integer multiples of the SHA-BLOCK length.
+ *           (64-byte alignment for SHA-224/256, 128-byte alignment for SHA-384/512)
+ *         - The HMAC key will be reloaded before each update. If a software key is used,
+ *           and the key is modified between updates, the calculation result will be wrong.
+ *           Ensure the software key is set to the correct value before calling update.
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the engine at the same time.
+ *         - In copy mode, the destination address and calculation length must be 32 bytes (cache line size) aligned.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_hmac_sha2_update(SHA_context *ctx, const u8 *input, u8 *dst, size_t len);
+
+/**
+ * @brief  Perform HMAC final process.
+ * @param  ctx SHA context.
+ * @param  output The result of HMAC function
+ * @note
+ *         - The HMAC key will be reloaded before the final process.
+ *           If a software key is used and the key is modified in final, the calculation result will be wrong.
+ *           Ensure the software key is set to the correct value before calling the final process.
+ *         - The engine will be locked during the execution of this function,
+ *           and will be unlocked after execution.
+ *           Avoid multiple threads/CPUs using the engine at the same time.
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
+ */
+_LONG_CALL_ int crypto_hmac_sha2_final(SHA_context *ctx, u8 *output);
+/** @} */
+/** @} */
+
 /** @defgroup SHA_Normal_Functions SHA Normal Functions
   * @{
   */
 
 /**
- * @brief Return different SHA/HMCA engine register addresses according to the state of secure
- * @retval SHA_REG_BASE or SHA_REG_BASE_S
+ * @brief Return different SHA/HMAC engine register addresses according to the security state
+ * @return SHA_REG_BASE or SHA_REG_BASE_S
  */
 _LONG_CALL_ SHA_TypeDef *SHA2_Get_SHA_Addr(void);
 
 /**
- * @brief Return different SHA key management register addresses according to the state of secure
- * @retval SHA_KEY_REG_BASE or SHA_KEY_REG_BASE_S
+ * @brief Return different SHA key management register addresses according to the security state
+ * @return SHA_KEY_REG_BASE or SHA_KEY_REG_BASE_S
  */
 _LONG_CALL_ KEY_MANAGEMENT_HMAC_TypeDef *SHA2_get_km_hmac_addr(void);
 
 /**
- * @brief Return different crypto engine DMA register addresses according to the state of secure
- * @retval AES_SHA_DMA_REG_BASE or AES_SHA_DMA_REG_BASE_S
+ * @brief Return different crypto engine DMA register addresses according to the security state
+ * @return AES_SHA_DMA_REG_BASE or AES_SHA_DMA_REG_BASE_S
  */
 _LONG_CALL_ GDMA_TypeDef *SHA2_Get_DMA_Addr(void);
 
 /**
- * @brief Restore HMAC engine registers from context
- * @param  ctx: pointer to SHA_context structure
- * @retval	None
+ * @brief Restore SHA/HMAC engine registers from context
+ * @param  ctx Pointer to @ref SHA_context structure
+ * @return Process status:
+ *         - 0: success
+ *         - Other: error code. Refer to @ref CRYPTO_Process_Status
  */
 _LONG_CALL_ int SHA2_Restore(SHA_context *ctx);
 
 /**
- * @brief Save HMAC engine registers to context
- * @param  ctx: pointer to SHA_context structure
- * @retval	None
+ * @brief Save SHA/HMAC engine registers to context
+ * @param  ctx Pointer to @ref SHA_context structure
  */
 _LONG_CALL_ void SHA2_Save(SHA_context *ctx);
 
 /**
-  * @brief  SHA get final digest result.
-  * @param 	ctx: SHA context
-  * @param 	out: final digest buffer
-  * @retval	None
+  * @brief  Get SHA final digest result.
+  * @param 	ctx SHA context
+  * @param 	out Final digest buffer
+  * @return Process status:
+  *         - 0: success
+  *         - Other: error code. Refer to @ref CRYPTO_Process_Status
   */
 _LONG_CALL_ int SHA2_Get_Final_Digest(SHA_context *ctx, u8 *out);
 
 /**
-  * @brief  Fill each SHA_InitTypeDef member with its default value.
-  * @param  SHA_InitStruct: pointer to a SHA_InitTypeDef structure which will be initialized.
-  * @retval None
+  * @brief  Fill each @ref SHA_InitTypeDef member with its default value.
+  * @param  SHA_InitStruct Pointer to a @ref SHA_InitTypeDef structure which will be initialized.
   */
 _LONG_CALL_ void SHA2_StructInit(SHA_InitTypeDef *SHA_InitStruct);
 
 /**
   * @brief  Initialize the SHA peripheral according to the specified
   *              parameters in the SHA_InitStruct.
-  * @param  SHA_InitStruct: pointer to a SHA_InitTypeDef structure that contains
+  * @param  SHA_InitStruct Pointer to a @ref SHA_InitTypeDef structure that contains
   *              the configuration information for SHA peripheral.
-  * @param  ctx: SHA context
-  * @retval None
+  * @param  ctx SHA context
+  * @return Process status:
+  *         - 0: success
+  *         - Other: error code. Refer to @ref CRYPTO_Process_Status
   */
 _LONG_CALL_ int SHA2_Init(SHA_InitTypeDef *SHA_InitStruct, SHA_context *ctx);
 
 /**
   * @brief  Initialize the SHA GDMA
-  * @param  ctx: SHA context
-  * @retval None
+  * @param  ctx SHA context
   */
 _LONG_CALL_ void SHA2_DMA_Init(SHA_context *ctx);
 
 /**
-  * @brief  SHA engine process in slave mode.
-  * @param 	ctx: SHA context
-  * @param  input: Point to input data.
-  * @note If input len is less than a block size, then hardware will auto padding.
-  * @return Result of process.
+  * @brief  Process SHA data in slave mode.
+  * @param  input Pointer to input data.
+  * @param  input_len The length of input data.
+  * @param  end_input Flag indicating this is the last input block.
+  * @note If the input length is less than a block size, the hardware will perform automatic padding.
+  * @return Process status:
+  *         - 0: success
+  *         - Other: error code. Refer to @ref CRYPTO_Process_Status
   */
 _LONG_CALL_ int SHA2_ProcessSlave(const u8 *input, u32 input_len, u8 end_input);
 
 /**
-  * @brief  SHA engine process in DMA mode. Note that SHA-DMA must set
-  * @param 	ctx: SHA context
-  * @param  input: Point to input data.
-  * @param  dst: Point to output data. If in read-only mode, set it to NULL
-  * @param  bodylen: The byte number of input data.
-  * @return Result of process.
+  * @brief  Process SHA input data in DMA mode. SHA DMA mode must be initialized with SHA2_DMA_Init() before calling this function.
+  * @param 	ctx SHA context
+  * @param  input Pointer to input data.
+  * @param  dst Pointer to output data. If in read-only mode, set it to NULL
+  * @param  bodylen The byte number of input data.
+  * @return Process status:
+  *         - 0: success
+  *         - Other: error code. Refer to @ref CRYPTO_Process_Status
   */
 _LONG_CALL_ int SHA2_ProcessDma(SHA_context *ctx, const u8 *input, u8 *dst, u32 bodylen);
 
 /**
- * @brief Before accessing the Crypto engine, it is necessary to read the mutex register once.
- *        Otherwise, any registers of the engine cannot be operated.
- *        This driver has called this API internally, so please do not reuse this API.
- * @retval None
+ * @brief Lock the SHA engine mutex before accessing registers.
+ *        Without locking, engine registers cannot be accessed.
+ *        This driver calls this API internally. Do not call this API from application code.
  */
 _LONG_CALL_ void SHA2_lock_mutex(void);
 
 /**
- * @brief The occupation needs to be released after the use of the Crypto engine is over.
- *        This driver has called this API internally, so please do not reuse this API.
- * @retval None
+ * @brief Release the SHA engine mutex after use.
+ *        This driver calls this API internally. Do not call this API from application code.
  */
 _LONG_CALL_ void SHA2_unlock_mutex(void);
 /** @} */
 
-/** @defgroup SHA_HAL_Functions SHA HAL Functions
-  * @{
-  */
-
 /**
- * @brief  Set key byte swap and pay_load byte swap.
- * @param  new_status: value of SHA_BIT_KEY_BYTE_INVERSION_ENABLE and SHA_BIT_PAYLOAD_BYTE_INVERSION_ENABLE
+ * @brief  Set key byte swap and payload byte swap.
+ * @param  new_status Value of SHA_BIT_KEY_BYTE_INVERSION_ENABLE and SHA_BIT_PAYLOAD_BYTE_INVERSION_ENABLE
  * @note This bit needs to be configured only in special cases. Users generally do not need to call this API.
  * @return Old byte swap setting
  */
@@ -564,137 +725,6 @@ _LONG_CALL_ int SHA2_set_swap_setting(u32 new_status);
  * @return Current byte swap setting. SHA_MASK_BYTE_INVERSION bits
  */
 _LONG_CALL_ int SHA2_get_swap_setting(void);
-
-/**
- * @brief SHA init to read-only mode
- * @param  SHAtype:
- *            @arg SHA_224
- *            @arg SHA_256
- *            @arg SHA_384
- *            @arg SHA_512
- * @param  ctx: SHA context. This function will init ctx.
- * @note The engine will be locked during the execution of this function,
- *       and will be unlocked after execution.
- *       Avoid multiple threads/CPUs using engine at the same time.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_sha2_init(SHA_context *ctx, u32 SHAtype);
-
-/**
-  * @brief  SHA update.
-  * @param 	ctx: SHA context
-  * @param  input: Pointer to input data.
-  * @param  dst: Pointer to output data. If in read-only mode, set it to NULL
-  * @param  len: Input data length.
-  * @note 1.If copy mode and read-only mode are mixed for update,
-  *         then ensure that the message lengths of both copy mode and read-only mode are integer multiples of the SHA-BLOCK length.
-  *         (64-byte alignment for SHA-224/256, 128-byte alignment for SHA-384/512)
-  * @note 2.The engine will be locked during the execution of this function,
-  *         and will be unlocked after execution.
-  *          Avoid multiple threads/CPUs using engine at the same time.
-  * @note 3.In copy mode, the destination address and calculation length must be 32 bytes (cacheline size) aligned.
-  * @retval 0: success
-  * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
-  */
-_LONG_CALL_ int crypto_sha2_update(SHA_context *ctx, const u8 *input, u8 *dst, size_t len);
-
-/**
-  * @brief  SHA final process.
-  * @param 	ctx: SHA context
-  * @param  output: the result of SHA function
-  * @note 1.Since SHA is not support hw padding at the moment, it must do sw padding.
-  * @note 2.The engine will be locked during the execution of this function,
-  *         and will be unlocked after execution.
-  *          Avoid multiple threads/CPUs using engine at the same time.
-  * @retval 0: success
-  * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
-  */
-_LONG_CALL_ int crypto_sha2_final(SHA_context *ctx, u8 *output);
-
-/**
- * @brief  Set software key value for hmac
- * @param  key_id: value of KM_HMAC_KEY in ameba_key_management_hmac.h
- * @param  key_len_bits:
- *            @arg KEY_BIT_128
- *            @arg KEY_BIT_192
- *            @arg KEY_BIT_256
- * @param  key_addr: address to software key array
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_hmac_sha2_set_sw_key(u8 key_id, u32 key_len_bits, const u8 *key_addr);
-
-/**
- * @brief  Controls whether security keys can be shared with non-secure world.
- * @param  key_id: value of KM_HMAC_KEY in ameba_key_management_hmac.h
- * @param  is_share:
- *      @arg 1: share
- *      @arg 0: not share (secure only)
- * @note If sharing is enabled, non-secure code can only trigger the use of the key, but cannot read or write.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_hmac_sha2_share_secure_key(const u8 key_id, const u8 is_share);
-
-/**
- * @brief HMAC init to read-only mode
- * @param  SHAtype:
- *            @arg SHA_224
- *            @arg SHA_256
- *            @arg SHA_384
- *            @arg SHA_512
- * @param  ctx: SHA context.
- * @param  key_id: value of KM_HMAC_KEY in ameba_key_management_hmac.h
- * @param  key_len_bits:
- *            @arg KEY_BIT_128
- *            @arg KEY_BIT_192
- *            @arg KEY_BIT_256
- * @note The engine will be locked during the execution of this function,
- *       and will be unlocked after execution.
- *       Avoid multiple threads/CPUs using engine at the same time.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_hmac_sha2_init(SHA_context *ctx, u32 SHAtype, u8 key_id, u32 key_len_bits);
-
-/**
- * @brief  HMAC update
- * @param  ctx: SHA context.
- * @param  input: Pointer to input data.
- * @param  dst: Pointer to output data. If in read-only mode, set it to NULL
- * @param  len: Input data length.
- * @note 1.If copy mode and read-only mode are mixed for update,
- *         then ensure that the message lengths of both copy mode and read-only mode are integer multiples of the SHA-BLOCK length.
- *         (64-byte alignment for SHA-224/256, 128-byte alignment for SHA-384/512)
- * @note  2.The HMAC KEY will be reloaded before each update. If a software key is used,
- *         and the key is modified between updates, the calculation result will be wrong.
- *         So if the value of the software key is modified in the middle, please modify it to the correct key before updating.
- * @note   3.The engine will be locked during the execution of this function,
- *         and will be unlocked after execution.
- *         Avoid multiple threads/CPUs using engine at the same time.
- * @note   4.In copy mode, the destination address and calculation length must be 32 bytes (cacheline size) aligned.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_hmac_sha2_update(SHA_context *ctx, const u8 *input, u8 *dst, size_t len);
-
-/**
- * @brief  HMAC final process.
- * @param  ctx: SHA context.
- * @param  output: the result of HMAC function
- * @note 1.The HMAC KEY will be reloaded before the final process.
- *         If a software key is used and the key is modified in final, the calculation result will be wrong.
- *         So if the value of the software key is modified in the middle, please modify it to the correct key before the final process.
- * @note  2.The engine will be locked during the execution of this function,
- *         and will be unlocked after execution.
- *         Avoid multiple threads/CPUs using engine at the same time.
- * @retval 0: success
- * @retval Other: error code. refer to CRYPTO_Process_Status in ameba_crypto_api.h
- */
-_LONG_CALL_ int crypto_hmac_sha2_final(SHA_context *ctx, u8 *output);
-/** @} */
-/** @} */
 
 /** @} */
 /** @} */

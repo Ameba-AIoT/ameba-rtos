@@ -213,3 +213,8 @@ void __exit whc_ipc_host_cleanup_module(void)
 module_init(whc_ipc_host_init_module);
 module_exit(whc_ipc_host_cleanup_module);
 
+MODULE_AUTHOR("Realtek");
+MODULE_DESCRIPTION("RealTek Ameba WHC");
+MODULE_LICENSE("GPL");
+MODULE_VERSION("1.0");
+

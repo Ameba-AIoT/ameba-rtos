@@ -374,6 +374,7 @@ struct rtw_nan_publish_data {
 	uint16_t bstrap_method;         // bitwise list
 	uint8_t  gtk;                   // GTK protection enable
 	uint8_t  npk_nik;               // NIK caching enable
+	uint8_t  sec_type;				// rtw_nan_pmk_setting
 };
 
 struct rtw_nan_subscribe_data {

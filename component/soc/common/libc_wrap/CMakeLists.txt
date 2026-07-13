@@ -48,6 +48,14 @@ if(CONFIG_TLSF_HEAP AND CONFIG_HEAP_TRACE)
     ameba_list_append(private_includes
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../os/freertos/heap_trace
     )
+    # Same SDK_TOOLCHAIN / IMAGE_DIR defines as the freertos component, so the
+    # malloc-failed backtrace in port_tlsf.c prints the exact addr2line command
+    # heap_5.c does.
+    file(RELATIVE_PATH IMAGE_DIR ${FINAL_IMAGE_DIR} ${c_SDK_IMAGE_TARGET_DIR})
+    ameba_list_append(private_definitions
+        SDK_TOOLCHAIN="${SDK_TOOLCHAIN}"
+        IMAGE_DIR="${IMAGE_DIR}"
+    )
 endif()
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#

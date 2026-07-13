@@ -101,7 +101,7 @@ int whc_host_xmit_thread(void *data)
 	return ret;
 }
 
-int whc_host_xmit_posthandle(int idx, struct sk_buff *pskb, u8 wlan_hw_queue)
+int whc_host_xmit_posthandle(int idx, struct sk_buff *pskb)
 {
 	bool b_dropped = false;
 	struct whc_msg_info *msg = NULL;
@@ -132,7 +132,6 @@ int whc_host_xmit_posthandle(int idx, struct sk_buff *pskb, u8 wlan_hw_queue)
 	msg->wlan_idx = idx;
 	msg->data_len = pskb->len - need_headroom;
 	msg->pad_len = pad_len;
-	msg->wlan_hw_queue = wlan_hw_queue;
 
 	/* enqueue pkt */
 	p_node = kzalloc(sizeof(struct whc_msg_node), GFP_KERNEL);
@@ -156,7 +155,7 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 	bool b_dropped = false;
 	struct net_device_stats *pstats = &global_idev.stats[idx];
 	struct net_device *pndev = global_idev.pndev[idx];
-	u8 wlan_hw_queue = 0;
+
 	if (!global_idev.host_init_done) {
 		dev_err(global_idev.pwhc_dev, "Host xmit err: wifi not init\n");
 		return -1;
@@ -172,7 +171,7 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 	}
 
 #ifdef CONFIG_WHCH
-	ret = whc_host_xmit_prehandle(idx, pskb, &wlan_hw_queue);
+	ret = whc_host_xmit_prehandle(idx, pskb);
 	if (ret == RTK_TX_DROP) {
 		b_dropped = true;
 		goto exit;
@@ -182,7 +181,7 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 	}
 #endif
 
-	b_dropped = whc_host_xmit_posthandle(idx, pskb, wlan_hw_queue);
+	b_dropped = whc_host_xmit_posthandle(idx, pskb);
 
 exit:
 	skb_tx_timestamp(pskb);
@@ -232,8 +231,8 @@ int whc_host_xmit_deinit(void)
 	/* de initialize queue */
 	while ((p_node = whc_host_dequeue_tx_packet(xmit_priv)) != NULL) {
 		/* release the memory */
-		kfree(p_node);
 		kfree(p_node->msg);
+		kfree(p_node);
 	}
 
 	return 0;

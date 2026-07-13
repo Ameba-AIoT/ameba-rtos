@@ -1,15 +1,18 @@
-/*
- *  Header files of WPA PSK module
- *
- *  $Id: 8192cd_psk.h,v 1.1 2009/11/06 12:26:48 victoryman Exp $
- *
- *  Copyright (c) 2009 Realtek Semiconductor Corp.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License version 2 as
- *  published by the Free Software Foundation.
- */
-
+/**
+  ******************************************************************************
+  * @file    wpa_lite_psk.h
+  * @author
+  * @version
+  * @date
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
+  ******************************************************************************
+  */
 #ifndef _WPA_LITE_PSK_H_
 #define _WPA_LITE_PSK_H_
 

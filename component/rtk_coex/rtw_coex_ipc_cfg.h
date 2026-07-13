@@ -111,7 +111,7 @@
 #endif
 #endif
 
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAPRO3) || defined(CONFIG_AMEBAL2) || defined(CONFIG_RTL8720F)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAPRO3) || defined(CONFIG_RTL8720F)
 #if defined(CONFIG_COEXIST_HOST)
 /* configuration for AP */
 #define COEX_IPC_DIR_MSG_RX IPC_NP_TO_AP

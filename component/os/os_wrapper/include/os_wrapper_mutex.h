@@ -13,6 +13,7 @@
 typedef void *rtos_mutex_t;
 
 #define MUTEX_WAIT_TIMEOUT	0xFFFFFFFFU //will be replaced by common max timeout later
+#define SEMA_WAIT_TIMEOUT	0xFFFFFFFFU //will be replaced by common max timeout later
 
 /**
  * @brief  Static memory allocation implementation of rtos_mutex_create

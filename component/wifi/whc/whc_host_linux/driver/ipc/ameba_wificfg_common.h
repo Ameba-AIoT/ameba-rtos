@@ -301,6 +301,9 @@ struct wifi_user_conf {
 
 	/*! 0: Disable TPC feature, 1: Enable TPC feature. */
 	u8 tpc_enable;
+
+	/*! 0: Disable SoftAP DFS master (CAC/NOP/radar handling on DFS channels), 1: Enable. */
+	u8 dfs_master_enable;
 };
 
 /** @} End of WIFI_Exported_Structure_Types group*/

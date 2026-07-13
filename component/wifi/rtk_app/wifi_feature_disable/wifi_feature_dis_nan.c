@@ -1,17 +1,18 @@
-/******************************************************************************
- *
- * Copyright(c) 2019 Realtek Corporation.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- *****************************************************************************/
+/**
+  ******************************************************************************
+  * @file    wifi_feature_dis_nan.c
+  * @author
+  * @version
+  * @date
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
+  ******************************************************************************
+  */
 #ifndef __WIFI_FEATURE_DIS_NAN_C__
 #define __WIFI_FEATURE_DIS_NAN_C__
 
@@ -186,6 +187,10 @@ void rtw_nan_schdlr_sta_set(u8 iface_type, bool bconnect)
 {
 	UNUSED(iface_type);
 	UNUSED(bconnect);
+}
+
+void rtw_nan_channel_switch_pending_flush(void)
+{
 }
 
 void rtw_nan_linked_status_chk(void)

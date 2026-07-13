@@ -13,6 +13,8 @@ ENTRY(Reset_Handler)
 
 #if defined(CONFIG_IMG3_PSRAM)
 	#define IMG3_TZ_REGION		KM4TZ_BD_PSRAM_TZ
+#elif defined(CONFIG_IMG3_FLASH)
+	#define IMG3_TZ_REGION		KM4TZ_IMG3_XIP
 #else
 	#define IMG3_TZ_REGION		KM4TZ_BD_RAM_TZ
 #endif

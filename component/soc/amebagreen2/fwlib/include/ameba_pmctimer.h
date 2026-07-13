@@ -137,12 +137,11 @@ extern "C" {
 #if defined(CONFIG_ARM_CORE_CM4_KM4TZ)
 #define PMC_TIMER_DEV PMCTIMER_DEV0   /*!< PMC timer device instance for CM4/KM4TZ core. */
 #define PMC_TIMER_IRQ PMC_TIMER0_IRQ   /*!< PMC timer IRQ number for CM4/KM4TZ core. */
-#define PMC_TIMER_INT_PRIO INT_PRI6   /*!< PMC timer interrupt priority for CM4/KM4TZ core. */
 #else
 #define PMC_TIMER_DEV PMCTIMER_DEV1   /*!< PMC timer device instance for CM4/KM4NS core. */
 #define PMC_TIMER_IRQ PMC_TIMER1_IRQ   /*!< PMC timer IRQ number for CM4/KM4NS core. */
-#define PMC_TIMER_INT_PRIO INT_PRI_LOWEST   /*!< PMC timer interrupt priority for CM4/KM4NS core. */
 #endif
+#define PMC_TIMER_INT_PRIO INT_PRI_LOWEST   /*!< PMC timer interrupt priority. */
 /**
   * @}
   */
@@ -185,7 +184,7 @@ extern "C" {
 void PMCTimer_Cmd(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, bool NewState);
 u32 PMCTimer_Valid_Check(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx);
 u32 PMCTimerCnt_Get(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx);
-void PMCTimerCnt_Set(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewVaule);
+void PMCTimerCnt_Set(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewValue);
 void PMCTimerCnt_Reset(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx);
 void PMCTimer_INTConfig(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx, u32 NewState);
 void PMCTimer_INTClear(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Idx);

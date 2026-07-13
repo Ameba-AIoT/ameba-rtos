@@ -47,6 +47,13 @@ void BOOT_SOC_ClkSet(void)
 
 	BOOT_SOC_ClkChk(pSocClk_Info);
 
+	/* Pre-populate key clock fields so CPU_ClkGet() reads valid data in step 5 */
+	/* No semaphore needed: KM4NS has not started yet at this point */
+	GBSS_DEV->clk_info_bk.USBPLL_CLK = pSocClk_Info->USBPLL_CLK;
+	GBSS_DEV->clk_info_bk.SYSPLL_CLK = pSocClk_Info->SYSPLL_CLK;
+	GBSS_DEV->clk_info_bk.Vol_Type = pSocClk_Info->Vol_Type;
+	GBSS_DEV->clk_info_bk.CPU_CKD = pSocClk_Info->CPU_CKD;
+
 	/* 1. core power confiuration */
 	LDO_CoreVolSet(core_ldo_vol);
 
@@ -109,10 +116,6 @@ void BOOT_SOC_ClkSet(void)
 
 	/* 9. save clock info ro retention memory */
 	IPC_SEMTake(IPC_SEM_RRAM, 0xffffffff);
-	GBSS_DEV->clk_info_bk.USBPLL_CLK = pSocClk_Info->USBPLL_CLK;
-	GBSS_DEV->clk_info_bk.SYSPLL_CLK = pSocClk_Info->SYSPLL_CLK;
-	GBSS_DEV->clk_info_bk.Vol_Type = pSocClk_Info->Vol_Type;
-	GBSS_DEV->clk_info_bk.CPU_CKD = pSocClk_Info->CPU_CKD;
 	GBSS_DEV->clk_info_bk.hperi_ckd = hperi_ckd;
 	GBSS_DEV->clk_info_bk.psramc_ckd = psramc_ckd;
 	IPC_SEMFree(IPC_SEM_RRAM);

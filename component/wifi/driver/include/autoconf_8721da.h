@@ -58,6 +58,8 @@
 /* For efuse or flash config end */
 /* PHY layer band config */
 #define CONFIG_DFS
+#define CONFIG_DFS_MASTER
+//#define CONFIG_DFS_WX_CAC	/* ETSI weather-radar 600s CAC on ch120/124/128 (5600~5650MHz); off by default */
 #define CONFIG_TPC
 /* 0: 20 MHz, 1: 40 MHz, 2: 80 MHz, 3: 160MHz, 4: 80+80MHz
 * 2.4G use bit 0 ~ 3, 5G use bit 4 ~ 7
@@ -124,10 +126,13 @@
 //#define CONFIG_AUDIO_TSF
 
 /*************************** Config for Gen TxPower Tool *******************************/
-/** VERSION 0: only support extending one EXT PWR_LIMIT table
-  * VERSION 1: support more EXT PWR_LIMIT tables, depending on customer configuration
+/** https://wiki.realtek.com/pages/viewpage.action?pageId=1150516670
+  * VERSION 0: only support extending one EXT PWR_LIMIT table
+  * VERSION 1: support more EXT PWR_LIMIT tables, depending on customer configuration(EXTx is defined within ameba_wifi_power_table_usrcfg.c and cannot be accessed by other C files.)
+  * VERSION 2: Supports a fixed set of user-defined extensions: EXT1 ~ EXT10 and RU grouping
   */
-#define GEN_TXPWR_TOOL_VERSION 1
+// #define GEN_TXPWR_TOOL_VERSION 1    /* since 1.1.15 */
+#define GEN_TXPWR_TOOL_VERSION 2    /* since 1.1.17 */
 /*************************** Config for Gen TxPower Tool End **************************/
 
 /*************************** Config for MP_MODE *******************************/

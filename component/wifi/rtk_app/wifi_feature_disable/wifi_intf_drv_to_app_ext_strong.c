@@ -320,6 +320,13 @@ s32 wifi_set_wowlan_rx_broadcast(u8 enable)
 	return -1;
 }
 
+s32 wifi_set_wowlan_ipv6_wake(u8 enable)
+{
+	UNUSED(enable);
+	call_noused = __LINE__;
+	return -1;
+}
+
 void wifi_wpa_pmksa_ops(struct rtw_pmksa_ops_t *pmksa_ops)
 {
 	UNUSED(pmksa_ops);

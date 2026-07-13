@@ -22,14 +22,6 @@
 #include <wifi_intf_ram_to_rom.h>
 #include "wpa_lite_intf.h"
 #include "rom_hal_rom_to_flash.h"
-/******************************************************
- *                    Constants
- ******************************************************/
-/* auth/assoc/key resnd limit can be configured, refer max >> RTW_JOIN_TIMEOUT
- * including auth + assoc + 4way handshake, no dhcp
- */
-#define RTW_JOIN_TIMEOUT (10 * 12000 + 13100 + 20200 + 50) //(MAX_CNT_SCAN_TIMES * SCANNING_TIMEOUT + MAX_JOIN_TIMEOUT + KEY_EXCHANGE_TIMEOUT + 50)
-#define RTW_SCAN_TIMEOUT (12000) //When blocking scan is invoked in BT COEXIST, the scan time may increases due to TDMA scan, up to 8.96s (5G) +2.17s (2.4G)*/
 
 /******************************************************
  *               Variables Declarations
@@ -47,7 +39,6 @@ s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *, u8 *,
 u8(*promisc_user_callback_ptr)(struct rtw_rx_pkt_info *pkt_info) = NULL;
 s32(*scan_acs_report_user_callback_ptr)(struct rtw_acs_mntr_rpt *acs_mntr_rpt) = NULL;
 
-extern void *param_indicator;
 u8 rtw_join_status = RTW_JOINSTATUS_UNKNOWN;
 int join_fail_reason = RTK_SUCCESS;
 u8 rtw_scan_api_inprocess = 0;

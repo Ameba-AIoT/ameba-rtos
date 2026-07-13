@@ -1,17 +1,18 @@
-/******************************************************************************
- *
- * Copyright(c) 2019 Realtek Corporation.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- *****************************************************************************/
+/**
+  ******************************************************************************
+  * @file    wifi_feature_dis_radar.c
+  * @author
+  * @version
+  * @date
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
+  ******************************************************************************
+  */
 #define __WIFI_FEATURE_DIS_CSI_C__
 
 #include "wifi_api_types.h"
@@ -61,6 +62,12 @@ void wifi_hal_radar_rpt_hdl(u8 *buf, void *a)
 {
 	UNUSED(buf);
 	UNUSED(a);
+}
+
+s32 wifi_hal_radar_check_status(u8 *radar_active)
+{
+	UNUSED(radar_active);
+	return 0;
 }
 
 void wifi_hal_radar_query(void)

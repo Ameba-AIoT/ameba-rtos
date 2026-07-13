@@ -87,6 +87,8 @@ void comp_nd6_time(u32_t ms);
 u8_t check_nd6_tmr_removable(void);
 #endif
 
+s8_t nd6_add_static_neighbor(struct netif *netif, const ip6_addr_t *ip6addr, const u8_t *lladdr);
+
 #ifdef __cplusplus
 }
 #endif

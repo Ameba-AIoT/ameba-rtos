@@ -77,7 +77,7 @@ void whc_host_hal_pending_q_dequeue(int iface_type)
 				atomic_dec(&pending_sta->qcnt);
 				atomic_dec(&pending_top->accnt);
 
-				whc_host_xmit_posthandle(iface_type, pskb, idx);
+				whc_host_xmit_posthandle(iface_type, pskb);
 			}
 			list_del_init(&pending_sta->list);
 			spin_unlock(&(pending_sta->frame_queue_lock));
@@ -273,7 +273,7 @@ exit:
 	return res;
 }
 
-int whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe, u8 *wlan_hw_queue)
+int whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe)
 {
 	struct whch_xmit_priv *pxmitpriv = &global_idev.whchpriv.xmitpriv;
 	struct pkt_attrib *pattrib = &pxmitframe->attrib;
@@ -310,7 +310,7 @@ int whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe, u8
 
 	hw_queue = whc_host_hal_hwqueue_get(pattrib->qsel);
 	ppending_q = &global_idev.whchpriv.pending_queue[iface_type].hwxmits[hw_queue];
-	*wlan_hw_queue = hw_queue;
+
 	/*step1: set txdesc*/
 	if (pxmitframe->pkt == NULL) {
 		dev_err(global_idev.pwhc_dev, "xmitdump fail1\n");
@@ -390,13 +390,13 @@ void whc_host_hal_xmit_check_eapol4(u8 iface_type, struct xmit_frame *pxmitframe
 	}
 }
 
-int whc_host_hal_xmit(u8 iface_type, struct xmit_frame *pxmitframe, u8 *wlan_hw_queue)
+int whc_host_hal_xmit(u8 iface_type, struct xmit_frame *pxmitframe)
 {
 	int ret = RTK_TX_DROP;
 
 	if (whc_host_hal_xmitframe_coalesce(iface_type, pxmitframe->pkt, pxmitframe, global_idev.wifi_user_config.force_cts2self) == 0) {
 		whc_host_hal_xmit_check_eapol4(iface_type, pxmitframe);
-		ret = whc_host_hal_xmitframe_dump(iface_type, pxmitframe, wlan_hw_queue);
+		ret = whc_host_hal_xmitframe_dump(iface_type, pxmitframe);
 	} else {
 		pxmitframe->pkt = NULL;
 		whc_host_xmitframe_free(pxmitframe);

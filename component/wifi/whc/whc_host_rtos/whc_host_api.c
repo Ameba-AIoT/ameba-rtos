@@ -25,9 +25,8 @@ extern u16 scanned_ap_cnt;
 extern u8 rtw_scan_api_inprocess;
 extern struct internal_block_param *scan_block_param;
 extern struct internal_block_param *scan_abort_block_param;
-extern void eap_autoreconnect_hdl(u8 method_id);
 extern s32(*scan_user_callback_ptr)(u32, void *);
-extern s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *);
+extern s32(*scan_each_report_user_callback_ptr)(struct rtw_scan_result *, void *, u8 *, u32);
 extern void (*p_ap_channel_switch_callback)(unsigned char channel, s8 ret);
 extern u8(*promisc_user_callback_ptr)(void *);
 extern int dhcps_ip_in_table_check(struct netif *pnetif, uint8_t gate, uint8_t d);
@@ -58,7 +57,7 @@ void whc_host_api_scan_user_callback_handler(u32 api_id, u32 *param_buf)
 	}
 
 	if (scan_each_report_user_callback_ptr) {
-		scan_each_report_user_callback_ptr(NULL, user_data);
+		scan_each_report_user_callback_ptr(NULL, user_data, NULL, 0);
 		scan_each_report_user_callback_ptr = NULL;
 	}
 
@@ -88,9 +87,11 @@ void whc_host_api_scan_each_report_callback_handler(u32 api_id, u32 *param_buf)
 	int ret = 0;
 	struct rtw_scan_result *scanned_ap_info = (struct rtw_scan_result *)param_buf[0];
 	void *user_data = (void *)param_buf[1];
+	u8 *ies = (u8 *)param_buf[2];
+	u32 ie_len = param_buf[3];
 
 	if (scan_each_report_user_callback_ptr) {
-		scan_each_report_user_callback_ptr(scanned_ap_info, user_data);
+		scan_each_report_user_callback_ptr(scanned_ap_info, user_data, ies, ie_len);
 	}
 
 	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
@@ -209,7 +210,6 @@ void whc_host_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 re
 	u8 *buf = NULL;
 	struct whc_api_info *info;
 	struct whc_api_info *ret_msg;
-	struct whc_txbuf_info_t *inic_tx;
 
 	if (!whc_host_init_done) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host api err: wifi not init\n");
@@ -218,7 +218,7 @@ void whc_host_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 re
 
 	RTK_LOGD(TAG_WLAN_INIC, "Host Call API %d %x \n", id, __builtin_return_address(0));
 
-	rtos_sema_take(event_priv.send_mutex, MUTEX_WAIT_TIMEOUT);
+	rtos_mutex_take(event_priv.send_mutex, MUTEX_WAIT_TIMEOUT);
 	//TODO SDIO need extra TXDESC size
 	buf = rtos_mem_zmalloc(sizeof(struct whc_api_info) + param_len + DEV_DMA_ALIGN);
 	if (!buf) {
@@ -232,20 +232,7 @@ void whc_host_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 re
 		memcpy((void *)(info + 1), param, param_len);
 	}
 
-	/* construct struct whc_buf_info & whc_buf_info_t */
-	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
-	if (!inic_tx) {
-		goto exit;
-	}
-
-	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)info;
-	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = sizeof(struct whc_api_info) + param_len;
-
-	inic_tx->ptr = buf;
-	inic_tx->is_skb = 0;
-
-	/* send ret_msg + ret_val(buf, len) */
-	whc_host_send_data(&inic_tx->txbuf_info);
+	whc_host_send_data((u8 *)info, sizeof(struct whc_api_info) + param_len, buf, 0);
 
 	/* wait for API calling done */
 	event_priv.b_waiting_for_ret = 1;
@@ -271,26 +258,16 @@ void whc_host_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 re
 		/* free rx buffer */
 		rtos_mem_free((u8 *)ret_msg);
 	} else {
-		/* free rx buffer */
-		rtos_mem_free((u8 *)ret_msg);
 		RTK_LOGE(TAG_WLAN_INIC, "Linux API return value is NULL!\n");
 	}
 
-	//TODO  SDIO need buf free after send
-	rtos_sema_give(event_priv.send_mutex);
-	return;
+#ifdef CONFIG_WHC_INTF_SDIO
+	rtos_mem_free(buf);
+#endif
 
 exit:
-	if (buf) {
-		rtos_mem_free(buf);
-	}
-	if (inic_tx) {
-		rtos_mem_free((u8 *)inic_tx);
-	}
-
-	rtos_sema_give(event_priv.send_mutex);
+	rtos_mutex_give(event_priv.send_mutex);
 	return;
-
 }
 
 
@@ -298,11 +275,10 @@ void whc_host_api_send_ret_value(u32 api_id, u8 *pbuf, u32 len)
 {
 	u8 *buf = NULL;
 	struct whc_api_info *ret_msg;
-	struct whc_txbuf_info_t *inic_tx;
 
 	buf = rtos_mem_zmalloc(sizeof(struct whc_api_info) + len + DEV_DMA_ALIGN);
 	if (!buf) {
-		goto exit;
+		return;
 	}
 	ret_msg = (struct whc_api_info *)N_BYTE_ALIGMENT((u32)buf, DEV_DMA_ALIGN);
 
@@ -312,34 +288,24 @@ void whc_host_api_send_ret_value(u32 api_id, u8 *pbuf, u32 len)
 
 	memcpy((void *)(ret_msg + 1), pbuf, len);
 
-	/* construct struct whc_buf_info & whc_buf_info_t */
-	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
-	if (!inic_tx) {
-		goto exit;
-	}
-
-	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)ret_msg;
-	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = sizeof(struct whc_api_info) + len;
-
-	inic_tx->ptr = buf;
-	inic_tx->is_skb = 0;
-
-	/* send ret_msg + ret_val(pbuf, len) */
-	whc_host_send_data(&inic_tx->txbuf_info);
+	whc_host_send_data((u8 *)ret_msg, sizeof(struct whc_api_info) + len, buf, 0);
+#ifdef CONFIG_WHC_INTF_SDIO
+	rtos_mem_free(buf);
+#endif
 
 	RTK_LOGD(TAG_WLAN_INIC, "Host API %x return\n", api_id);
+}
 
-	return;
+void whc_host_api_init(void)
+{
+	rtos_sema_create(&(event_priv.task_wake_sema), 0, 0xFFFFFFFF);
+	rtos_sema_create(&(event_priv.api_ret_sema), 0, 0xFFFFFFFF);
+	rtos_mutex_create(&(event_priv.send_mutex));
 
-exit:
-	if (buf) {
-		rtos_mem_free(buf);
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_host_api_task", (rtos_task_function_t)whc_host_api_task, NULL,
+										g_rtw_task_size.whc_hst_api_task, 3)) {
+		RTK_LOGE(TAG_WLAN_INIC, "Create api_host_task Err\n");
 	}
-	if (inic_tx) {
-		rtos_mem_free((u8 *)inic_tx);
-	}
-	return;
-
 }
 
 /**

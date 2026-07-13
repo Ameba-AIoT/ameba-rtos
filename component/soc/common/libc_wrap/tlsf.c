@@ -42,6 +42,7 @@
  */
 
 // #include <assert.h>
+#include "ameba_soc.h"
 #include "os_wrapper_specific.h"
 #include "os_wrapper.h"
 #include <limits.h>

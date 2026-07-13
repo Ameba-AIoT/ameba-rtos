@@ -73,6 +73,7 @@ enum rtw_event_id {
 	RTW_EVENT_WPA_EAPOL_RECVD,        /**< STA mode: EAPOL packet received during WPA enterprise authentication  */
 	RTW_EVENT_DHCP_STATUS,            /**< STA mode: DHCP status report (see @ref rtw_event_dhcp_status)  */
 	RTW_EVENT_RADAR_REPORT,           /**< Radar report ready (see example_wifi_radar.c) */
+	RTW_EVENT_DFS_RADAR_DETECTED,     /**< SoftAP DFS master: radar detected on the operating channel (see @ref rtw_event_dfs_radar_detected_info) */
 
 	RTW_EVENT_MAX,
 };
@@ -258,11 +259,18 @@ struct rtw_event_radar_report_info {
 	u16 doppler_sample_num;
 	float aagc_gain;
 	float dagc_gain_normal_mode[4];
-	u8 rsvd[5];                   /**< Ensure the total sizes of struct is 4-byte alignment */
+	u8 rsvd[6];                   /**< Ensure the total sizes of struct is 4-byte alignment (rsvd[5] carries mean_fct) */
 	u32 radar_data_length;        /**< radar raw data length, unit: byte. [segments report raw data len or complete repoprt raw data len] */
 	u8 radar_data[];              /**< radar raw data head address */
 };
 #pragma pack()
+
+/**
+  * @brief  Report info for event @ref RTW_EVENT_DFS_RADAR_DETECTED
+  */
+struct rtw_event_dfs_radar_detected_info {
+	u8 channel;                    /**< DFS channel the radar was detected on (now vacated and put into NOP) */
+};
 
 /** @} End of WIFI_Exported_Structure_Types group*/
 /** @} End of WIFI_Exported_Types group*/

@@ -16,6 +16,7 @@ if(CONFIG_WLAN AND ((CONFIG_WHC_HOST OR CONFIG_WHC_NONE) OR CONFIG_WHC_DEV_TCPIP
     ameba_add_subdirectory(iperf)
     ameba_add_subdirectory(ping)
     ameba_add_subdirectory(xml)
+    ameba_add_subdirectory(ssdp)
 endif()
 
 #OPTIMIZE: cJSON.h is always included in atcmd

@@ -272,8 +272,13 @@ void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, co
 		}
 #ifdef CONFIG_ARM_CORE_CA32
 		u32 in_isr = CPU_InInterrupt();
-		if ((!in_isr) && (log_mutex != NULL)) {
-			rtos_mutex_take(log_mutex, RTOS_MAX_DELAY);
+		/* Only lock when the scheduler is running: taking a mutex while it is
+		 * suspended asserts/hangs (FreeRTOS "SUSPENDED && ticks!=0"). Under
+		 * suspend we print unlocked and accept possible interleaving. Snapshot
+		 * the take so give mirrors it exactly (no leak if state flips on SMP). */
+		u32 mutex_taken = 0;
+		if ((!in_isr) && (log_mutex != NULL) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING)) {
+			mutex_taken = (rtos_mutex_take(log_mutex, RTOS_MAX_DELAY) == RTK_SUCCESS);
 		}
 #endif
 		if (tag[0] != '#') {
@@ -283,7 +288,7 @@ void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, co
 		DiagVprintf(fmt, ap);
 		va_end(ap);
 #ifdef CONFIG_ARM_CORE_CA32
-		if ((!in_isr) && (log_mutex != NULL)) {
+		if (mutex_taken) {
 			rtos_mutex_give(log_mutex);
 		}
 #endif
@@ -300,8 +305,13 @@ void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char lette
 		}
 #ifdef CONFIG_ARM_CORE_CA32
 		u32 in_isr = CPU_InInterrupt();
-		if ((!in_isr) && (log_mutex != NULL)) {
-			rtos_mutex_take(log_mutex, RTOS_MAX_DELAY);
+		/* Only lock when the scheduler is running: taking a mutex while it is
+		 * suspended asserts/hangs (FreeRTOS "SUSPENDED && ticks!=0"). Under
+		 * suspend we print unlocked and accept possible interleaving. Snapshot
+		 * the take so give mirrors it exactly (no leak if state flips on SMP). */
+		u32 mutex_taken = 0;
+		if ((!in_isr) && (log_mutex != NULL) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING)) {
+			mutex_taken = (rtos_mutex_take(log_mutex, RTOS_MAX_DELAY) == RTK_SUCCESS);
 		}
 #endif
 		if (tag[0] != '#') {
@@ -311,7 +321,7 @@ void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char lette
 		DiagVprintfNano(fmt, ap);
 		va_end(ap);
 #ifdef CONFIG_ARM_CORE_CA32
-		if ((!in_isr) && (log_mutex != NULL)) {
+		if (mutex_taken) {
 			rtos_mutex_give(log_mutex);
 		}
 #endif
