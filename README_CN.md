@@ -4,7 +4,7 @@
 
 # ameba-rtos
 
-**瑞昱 Ameba 系列芯片官方物联网开发框架，同时支持 Linux 和 Windows 操作系统。**
+**瑞昱 Ameba 系列芯片官方物联网开发框架，同时支持 Linux、 Windows 和 macOS 操作系统。**
 
 [![SDK](https://badgen.net/badge/SDK/FreeRTOS/blue)](https://aiot.realmcu.com/zh/latest/rtos/index.html)
 [![Release](https://badgen.net/github/release/Ameba-AIoT/ameba-rtos)](https://github.com/Ameba-AIoT/ameba-rtos/releases)
@@ -13,6 +13,7 @@
 [![Last Commit](https://badgen.net/github/last-commit/Ameba-AIoT/ameba-rtos/master?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/commits/master)<br>
 [![CI Linux](https://badgen.net/badge/Linux/success/green?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/actions/workflows/ameba_build_system.yml?query=branch%3Amaster)
 [![CI Windows](https://badgen.net/badge/Windows/success/green?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/actions/workflows/ameba_build_system.yml?query=branch%3Amaster)
+[![CI macOS](https://badgen.net/badge/macOS/success/green?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/actions/workflows/ameba_build_system.yml?query=branch%3Amaster)
 [![Gitee Mirror](https://badgen.net/badge/mirror/Gitee/c71d23?icon=git)](https://gitee.com/ameba-aiot/ameba-rtos)
 
 [English](README.md) · [中文版](README_CN.md) · [文档](https://aiot.realmcu.com/zh/latest/rtos/index.html) · [产品介绍](https://aiot.realmcu.com/zh/product/index.html)
@@ -90,8 +91,9 @@ ameba-rtos/
 - **安全** — mbedTLS 3.x、GmSSL、安全启动、TrustZone
 - **文件系统** — FatFS、LittleFS、FTL、VFS 抽象层，支持 SD 卡与 USB MSC
 - **USB** — Device（CDC-ACM、HID、MSC、UAC、Vendor）与 Host 类
-- **OTA** — 基于 HTTP/HTTPS 的双分区空中升级
+- **OTA** — 基于 HTTP/HTTPS/VFS 的双分区固件升级
 - **AT 指令** — 支持 UART / SPI / SDIO / USB 多接口
+- **外设** - 支持 GPIO、SPI、I2C、UART、PWM、ADC 等外设接口
 - **音频** — 音频框架及 Codec 驱动 *(XDK)*
 - **AI 语音** — AI 语音处理框架 *(XDK)*
 - **TFLite Micro** — TensorFlow Lite Micro 端侧推理 *(XDK)*
@@ -152,7 +154,7 @@ Ameba 扩展插件是在 Cline 基础上开发的 VS Code 扩展，兼容原生 
 **1. 配置 SDK 环境**
 
 ```bash
-source env.sh   # Linux
+source env.sh   # Linux / macOS
 env.bat         # Windows
 ```
 
