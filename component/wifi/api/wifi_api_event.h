@@ -71,6 +71,7 @@ enum rtw_event_id {
 	RTW_EVENT_WPA_WPS_FINISH,         /**< STA mode: WPS procedure completed */
 	RTW_EVENT_WPA_EAPOL_START,        /**< STA mode: WPA enterprise authentication started */
 	RTW_EVENT_WPA_EAPOL_RECVD,        /**< STA mode: EAPOL packet received during WPA enterprise authentication */
+	RTW_EVENT_DFS_RADAR_DETECTED,     /**< SoftAP DFS master: radar detected on the operating channel (see @ref rtw_event_dfs_radar_detected_info) */
 	RTW_EVENT_MAX,
 };
 /** @} End of WIFI_Exported_Enumeration_Types group*/
@@ -94,6 +95,14 @@ struct rtw_event_info_joinstatus_joinfail {
 	u16					reason_or_status_code; /**< 802.11 reason code or status code from AP.*/
 	u8					bssid[6];              /**< MAC address of the AP.*/
 };
+
+/**
+  * @brief  Report info for event @ref RTW_EVENT_DFS_RADAR_DETECTED
+  */
+struct rtw_event_dfs_radar_detected_info {
+	u8 channel;                    /**< DFS channel the radar was detected on (now vacated and put into NOP) */
+};
+
 /** @} End of WIFI_Exported_Structure_Types group*/
 /** @} End of WIFI_Exported_Types group*/
 
@@ -118,6 +127,7 @@ struct rtw_event_info_joinstatus_joinfail {
  *                    - @ref RTW_EVENT_WPA_WPS_FINISH
  *                    - @ref RTW_EVENT_WPA_EAPOL_START
  *                    - @ref RTW_EVENT_WPA_EAPOL_RECVD
+ *                    - @ref RTW_EVENT_DFS_RADAR_DETECTED
  * @param[in] handler_func : The callback function to process the events. It has the following parameters:
  *                    - \b buf: Event data passed from the driver to the application layer.
  *                    - \b len: Length of the `buf`.
@@ -135,6 +145,7 @@ struct rtw_event_info_joinstatus_joinfail {
  *                         <tr><td>RTW_EVENT_WPA_WPS_FINISH</td><td>NULL</td><td>0</td></tr>
  *                         <tr><td>RTW_EVENT_WPA_EAPOL_START</td><td>Source MAC of assoc response</td><td>0</td></tr>
  *                         <tr><td>RTW_EVENT_WPA_EAPOL_RECVD</td><td>EAPOL message</td><td>0</td></tr>
+ *                         <tr><td>RTW_EVENT_DFS_RADAR_DETECTED</td><td>rtw_event_dfs_radar_detected_info</td><td>0</td></tr>
  *                         </table>
  *                    - \b user_data: User-provided data (see `handler_user_data`).
  * @param[in] handler_user_data :  Optional user-defined data passed to the callback function. Can be NULL.
@@ -154,6 +165,7 @@ void wifi_reg_event_handler(u32 event_id, void (*handler_func)(u8 *buf, s32 len,
  *                    - @ref RTW_EVENT_WPA_WPS_FINISH
  *                    - @ref RTW_EVENT_WPA_EAPOL_START
  *                    - @ref RTW_EVENT_WPA_EAPOL_RECVD
+ *                    - @ref RTW_EVENT_DFS_RADAR_DETECTED
  * @param[in] handler_func : The callback function previously registered for event processing.
  * @return None.
  */

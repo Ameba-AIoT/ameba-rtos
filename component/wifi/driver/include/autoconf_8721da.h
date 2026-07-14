@@ -55,6 +55,8 @@
 /* For efuse or flash config end */
 /* PHY layer band config */
 #define CONFIG_DFS
+#define CONFIG_DFS_MASTER
+//#define CONFIG_DFS_WX_CAC	/* ETSI weather-radar 600s CAC on ch120/124/128 (5600~5650MHz); off by default */
 
 /* 0: 20 MHz, 1: 40 MHz, 2: 80 MHz, 3: 160MHz, 4: 80+80MHz
 * 2.4G use bit 0 ~ 3, 5G use bit 4 ~ 7

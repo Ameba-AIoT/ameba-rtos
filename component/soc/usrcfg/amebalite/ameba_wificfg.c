@@ -56,6 +56,7 @@ _WEAK void wifi_set_user_config(void)
 	/* LPS(Legacy Power Save), power save when wifi connected */
 	wifi_user_config.lps_enable = 1;
 	wifi_user_config.lps_listen_interval = 0;
+	wifi_user_config.listen_interval_in_assoc_req = 2 * wifi_user_config.lps_listen_interval;
 	wifi_user_config.lps_rx_unicast_pkt_timeout = 40;	/* set rx unicast packet timeout in LPS, unit:ms, max_value:100*/
 	wifi_user_config.wowlan_rx_bcmc_dis = 0;
 
@@ -96,4 +97,3 @@ _WEAK void wifi_set_user_config(void)
 		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 5\n");
 	}
 }
-
