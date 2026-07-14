@@ -1241,6 +1241,8 @@ struct bt_hci_rp_vendor_get_eco_version {
 	uint8_t eco_version;
 };
 
+#define BT_HCI_OP_VENDOR_SET_MESH_INFO              BT_OP(BT_OGF_VENDOR, 0xA6) /*0xFCA6*/
+
 #define BT_HCI_OP_VENDOR_MP                         BT_OP(BT_OGF_VENDOR, 0xEB) /*0xFCEB*/
 
 #define BT_CONTROLLER_MP_MODULE_PLATFORM            0x00

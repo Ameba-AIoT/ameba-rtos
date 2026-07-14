@@ -57,6 +57,7 @@ static const char *const TAG = "ACM";
 
 static u8 cdc_acm_loopback_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
 static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
+static u8 tt_mode_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
 #endif
@@ -242,7 +243,7 @@ static void tt_mode_test_task(void *param)
 	UNUSED(param);
 	u32 tt_len_tmp = tt_len;
 	u32 send_len;
-	u8 *tt_tx_buf = pvPortMalloc(USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+	u8 *tt_tx_buf = tt_mode_tx_buf;  /* USB host DMA buffer must be cache-line aligned; pvPortMalloc only guarantees 8-byte alignment */
 	int ret;
 
 	while (tt_len_tmp > 0) {
@@ -258,7 +259,6 @@ static void tt_mode_test_task(void *param)
 		xSemaphoreGive(tt_mode_tx_sema);
 	}
 
-	vPortFree(tt_tx_buf);
 	tt_mode_task_start = 0;
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "atcmd_tt_mode_task end\r\n");
 	vTaskDelete(NULL);

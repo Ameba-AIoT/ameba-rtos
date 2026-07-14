@@ -1,7 +1,6 @@
 #include "rtw_whc_common.h"
 
 struct whc_sdio whc_sdio_priv = {0};
-int whc_host_init_done = 0;
 #define WIFI_STACK_SIZE_RX_REQ_TASK (4096)
 #define SDIO_POLLING_STACK_SIZE 1024
 extern void rtw_sdio_interrupt_handler(void);
@@ -93,7 +92,7 @@ void whc_host_init(void)
 {
 	struct whc_sdio *priv = &whc_sdio_priv;
 
-	if (whc_host_init_done == 1) {
+	if (priv->whc_host_init_done == 1) {
 		return;
 	}
 
@@ -107,76 +106,11 @@ void whc_host_init(void)
 
 	lwip_module_init();
 
-	whc_host_init_done = 1;
+	priv->whc_host_init_done = 1;
 
 	/* tell dev host type rtos */
 	whc_host_set_host();
 	/* init wifi when sdio done */
 	whc_host_wifi_on();
-}
-
-void rtw_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb)
-{
-	uint32_t polling_num = 0;
-	struct whc_sdio *priv = &whc_sdio_priv;
-	struct INIC_TX_DESC *ptxdesc;
-
-	(void) polling_num;
-	(void) pskb;
-
-	/* wakeup device if it's in power save mode before send msg */
-	if (priv->dev_state == PWR_STATE_SLEEP) {
-		printf("%s: wakeup device", __func__);
-		//TODO wake
-	}
-
-	WHC_MUTEX_TAKE(priv->lock, MUTEX_WAIT_TIMEOUT);
-	// check if hardware tx fifo page is enough
-	while (priv->SdioTxBDFreeNum < 1) {
-#ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
-		//TODO
-		if (polling_num++ > 0) {
-			priv->tx_avail_int_triggered = 1;
-			if (rtos_sema_take(priv->txbd_wq, 1000) != 0) {
-				goto exit;
-			}
-		}
-		rtw_sdio_query_txbd_status(priv);
-#else
-		rtw_sdio_query_txbd_status(priv);
-		polling_num++;
-		if ((polling_num % 60) == 0) {
-			WHC_MSLEEP(1);
-		}
-		// Total number of TXBD is NOT available, so update current TXBD status
-		rtw_sdio_query_txbd_status(priv);
-#endif
-	}
-
-	if (len > priv->SdioTxMaxSZ) {
-		printf("%s: PKT SIZE ERROR, total size: %d\n", __FUNCTION__, (int)len);
-		goto exit;
-	}
-
-	ptxdesc = (struct INIC_TX_DESC *)buf;
-	ptxdesc->txpktsize = len - SIZE_TX_DESC;
-	ptxdesc->offset = SIZE_TX_DESC;
-	ptxdesc->type = TX_PACKET_802_3;
-	ptxdesc->bus_agg_num = 1;
-
-	//dump_buf("sdio send", buf + SIZE_TX_DESC, 32);
-	//printf("send counter %d size %d buf %x\r\n", ++counter, len - SIZE_TX_DESC - sizeof(struct whc_msg_info), buf);
-
-	rtw_write_port(priv, SDIO_TX_FIFO_DOMAIN_ID, len, buf);
-
-	if (priv->SdioTxBDFreeNum > 0) {
-		priv->SdioTxBDFreeNum -= 1;
-	}
-
-	priv->txbd_wptr = (priv->txbd_wptr + 1) % priv->txbd_size;
-exit:
-	WHC_MUTEX_GIVE(priv->lock);
-
-	return;
 }
 

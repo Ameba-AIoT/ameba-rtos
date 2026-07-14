@@ -109,6 +109,7 @@ uint8_t bt_hci_cmd_ogf_vendor_ocf_mp(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_vendor_ocf_phy(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_vendor_ocf_read_radio_reg_pi(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_vendor_ocf_write_radio_reg_pi(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_vendor_ocf_set_mesh_packet_priority(void *phci_cmd_param, uint8_t *rsp);
 
 void bt_hci_set_evt_mask(uint8_t *pevt_mask);
 bool bt_hci_evt_mask_is_set(uint64_t evt);

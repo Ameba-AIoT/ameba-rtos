@@ -72,7 +72,6 @@
 #define USBD_MSC_DATA_IN                            2U          /**< Data In state */
 #define USBD_MSC_LAST_DATA_IN                       3U          /**< Last Data In state */
 #define USBD_MSC_SEND_DATA                          4U          /**< Send Immediate data */
-#define USBD_MSC_NO_DATA                            5U          /**< No data Stage */
 
 /* BOT status */
 #define USBD_MSC_STATUS_NORMAL                      0U          /**< Normal working status */
@@ -174,7 +173,8 @@ typedef struct {
 	u8 scsi_sense_tail;                             /**< Tail index of SCSI sense data list. */
 	u8 is_open : 1;                                 /**< MSC is ready for data transfer. */
 	u8 phase_error : 1;                             /**< SCSI check status. */
-	u8 ro : 1;                                       /**< Flag for media is write-protected. */
+	u8 ro : 1;                                      /**< Flag for media is write-protected. */
+	u8 bot_reset_pending : 1;                       /**< Set after BOT Reset; triggers one-time OUT EP reinit in send_csw. */
 } usbd_msc_dev_t;
 
 /* Exported functions --------------------------------------------------------*/

@@ -7,6 +7,7 @@
 #include "whc_sdio_host.h"
 #include "whc_sdio_drvio.h"
 #include "whc_dev.h"
+#include "whc_host_sdio_init_common.h"
 
 #include <zephyr/kernel.h>
 #include <soc.h>

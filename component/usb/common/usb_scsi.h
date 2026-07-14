@@ -46,7 +46,8 @@
 #define READ_FORMAT_CAPACITY_DATA_LEN               12U
 #define MODE_SENSE10_DATA_LEN                       8U
 #define MODE_SENSE6_DATA_LEN                        4U
-#define PAGE00_INQUIRY_DATA_LEN	                    7U
+#define PAGE00_INQUIRY_DATA_LEN	                    6U
+#define PAGE80_INQUIRY_DATA_LEN                     8U
 
 #define CBW_CB_LENGTH                               16U
 #define CBW_LENGTH                                  10U

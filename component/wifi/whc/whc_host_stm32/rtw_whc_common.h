@@ -1,15 +1,14 @@
-#ifndef _RTW_INIC_HOST_COMMON_H
-#define _RTW_INIC_HOST_COMMON_H
+#ifndef _RTW_WHC_COMMON_H
+#define _RTW_WHC_COMMON_H
 
 #include "rtw_wifi_common.h"
 #include "os_wrapper.h"
 
 #include "whc_sdio_host.h"
 #include "rtw_sdio_drvio.h"
-//#include "rtw_skbuff.h"
+#include "whc_host_sdio_init_common.h"
 
 #include <stdio.h>
-
 
 /*NETMASK*/
 #define NETMASK_ADDR0   255
