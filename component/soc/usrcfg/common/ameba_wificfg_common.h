@@ -78,6 +78,11 @@ struct wifi_user_conf {
 	/*!	In LPS, the sta wakes up every lps_listen_interval * 102.4ms to receive beacon.*/
 	u8 lps_listen_interval;
 
+	/*!	Listen interval to be sent in the Association Request to tell AP how many beacon intervals the STA will sleep.\n
+		This value is separate from lps_listen_interval (which controls the STA's wakeup interval).\n
+		Default: 2 * lps_listen_interval. If set to 0, the driver will use a default value 3. */
+	u8 listen_interval_in_assoc_req;
+
 	/*! Enable or disable rx broadcast of LPS. LPS is the abbreviation of Leisure Power Save mode.
 		1 means disable rx broadcast of LPS, 0 means enable(default) rx broadcast of LPS.*/
 	u8 wowlan_rx_bcmc_dis;
@@ -267,6 +272,9 @@ struct wifi_user_conf {
 
 	/*! Max node number in R-mesh network, this is used for decide each node's beacon window.*/
 	u16 wtn_max_node_num;
+
+	/*! 0: Disable SoftAP DFS master (CAC/NOP/radar handling on DFS channels), 1: Enable. */
+	u8 dfs_master_enable;
 };
 
 /** @} End of WIFI_Exported_Structure_Types group*/
@@ -282,4 +290,3 @@ void wifi_set_user_config(void);
 #endif
 
 #endif
-

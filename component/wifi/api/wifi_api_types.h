@@ -85,6 +85,15 @@ extern "C" {
  */
 
 /**
+ * @brief  WiFi API positive return values (ret > 0): success with extra status, NOT an error.
+ *         Complements the RTK return contract: 0 = RTK_SUCCESS, < 0 = -rtk_error_code.
+ *         These values are WiFi-local and interpreted only by the direct caller of the API.
+ */
+enum rtw_api_status {
+	RTW_DFS_CAC_PENDING = 1,   /**< wifi_start_ap(): SoftAP started on a DFS channel; not beaconing yet, CAC running and netif link-up deferred until CAC passes (driven by the RTW_EVENT_DFS_CAC_DONE handler). DFS master only. */
+};
+
+/**
  * @brief  Security flags for @ref rtw_security (size: u32).
  */
 enum rtw_security_flag {
