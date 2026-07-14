@@ -28,8 +28,8 @@ jobs:
           - os: windows-latest
             shell: powershell
 
-#          - os: macos-latest
-#            shell: bash
+          - os: macos-latest
+            shell: bash
 
 #          - os: windows-latest
 #            shell: bash
@@ -47,7 +47,7 @@ jobs:
           sudo ln -sf /bin/bash /bin/sh
         elif [ "${{ matrix.os }}" == "macos-latest" ]; then
           brew update
-          brew install cmake ninja jq
+          brew install cmake ninja jq wget
         else
           choco install cmake ninja wget jq -y --no-progress
         fi
