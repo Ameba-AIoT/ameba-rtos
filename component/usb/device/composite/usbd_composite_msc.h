@@ -54,7 +54,6 @@
 #define COMP_MSC_DATA_IN						2U             /* Data In state */
 #define COMP_MSC_LAST_DATA_IN					3U             /* Last Data In Last */
 #define COMP_MSC_SEND_DATA						4U             /* Send Immediate data */
-#define COMP_MSC_NO_DATA						5U             /* No data Stage */
 
 /* BOT Status */
 #define COMP_MSC_STATUS_NORMAL					0U             /**< Normal working status */
@@ -113,8 +112,6 @@ typedef struct {
 	rtos_sema_t tx_sema;
 	u32 num_sectors;
 	u32 lba; /* logic block address */
-	u32 blkbits; /* bits of logical block size of bound block device */
-	u32 blksize;
 	u32 blklen;
 	u32 data_length;
 	u16 rx_data_length;
@@ -127,6 +124,7 @@ typedef struct {
 	u8 scsi_sense_tail;
 	u8 is_open : 1;
 	u8 phase_error : 1;
+	u8 bot_reset_pending : 1;       /**< Set after BOT Reset; triggers one-time OUT EP reinit in send_csw. */
 } usbd_composite_msc_dev_t;
 
 extern const usbd_class_driver_t usbd_composite_msc_driver;
