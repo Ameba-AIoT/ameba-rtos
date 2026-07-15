@@ -839,6 +839,7 @@ _LONG_CALL_ u32 ADC_GetRxCount(void);
 _LONG_CALL_ u32 ADC_GetLastChan(void);
 _LONG_CALL_ void ADC_SetComp(u8 ADC_channel, u16 CompThresH, u16 CompThresL, u8 CompCtrl);
 _LONG_CALL_ void ADC_ResetCSwList(void);
+_LONG_CALL_ void ADC_SetChList(u8 *ChanIdBuf, u8 ChanLen);
 _LONG_CALL_ u32 ADC_Readable(void);
 _LONG_CALL_ u32 ADC_Read(void);
 _LONG_CALL_ void ADC_ReceiveBuf(u32 *pBuf, u32 len);

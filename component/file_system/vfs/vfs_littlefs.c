@@ -155,9 +155,10 @@ int littlefs_seek(void *fs, long int offset, int origin, vfs_file *finfo)
 
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs fseek error %d \r\n", ret);
+		return -1;
 	}
 
-	return ret;
+	return 0;
 }
 
 void littlefs_rewind(void *fs, vfs_file *finfo)
@@ -182,9 +183,10 @@ int littlefs_fsetops(void *fs, unsigned int offset, vfs_file *finfo)
 
 	if (ret < 0) {
 		VFS_DBG(VFS_ERROR, "vfs-littlefs fsetops error %d \r\n", ret);
+		return -1;
 	}
 
-	return ret;
+	return 0;
 }
 
 int littlefs_fflush(void *fs, vfs_file *finfo)

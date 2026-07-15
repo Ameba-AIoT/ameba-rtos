@@ -2085,6 +2085,16 @@ struct bt_le_scan_param {
 	 */
 	uint16_t timeout;
 
+#if ZEPHYR_FIX_CODE
+	/**
+	 * @brief Scan period (N * 1.28 s)
+	 *
+	 * Time between the start of two consecutive scan durations.
+	 * Set zero to disable periodic scanning.
+	 */
+	uint16_t period;
+#endif
+
 	/**
 	 * @brief Scan interval LE Coded PHY (N * 0.625 MS)
 	 *

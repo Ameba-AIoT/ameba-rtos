@@ -52,7 +52,7 @@ extern "C" {
   * @{
   */
 /**
-  * @brief typedef struct pwmout_s to pwmout_t
+  * @brief Typedef struct pwmout_s to pwmout_t.
   */
 typedef struct pwmout_s pwmout_t;
 /** @} */
@@ -70,6 +70,9 @@ void pwmout_period_us(pwmout_t *obj, int us);
 void pwmout_pulsewidth(pwmout_t *obj, float seconds);
 void pwmout_pulsewidth_ms(pwmout_t *obj, int ms);
 void pwmout_pulsewidth_us(pwmout_t *obj, int us);
+void pwmout_start(pwmout_t *obj);
+void pwmout_stop(pwmout_t *obj);
+void pwmout_set_polarity(pwmout_t *obj, int polarity);
 
 #ifdef __cplusplus
 }

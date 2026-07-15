@@ -113,6 +113,17 @@ int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char region, char
 			return -1;
 		}
 		break;
+#ifdef CONFIG_VFS_REALFS_INCLUDED
+	case VFS_REALFS:
+		if (vfs_interface_type == VFS_INF_SD) {
+			check_flag = &realfs_mount_flag;
+		}
+		if (check_flag != NULL && *check_flag != 1) {
+			VFS_DBG(VFS_ERROR, "vfs-realfs mount fail, %s is not allowed", operation);
+			return -1;
+		}
+		break;
+#endif
 	default:
 		return -1;
 		break;
@@ -444,11 +455,14 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 	int ret = -1;
 	rtos_mutex_take(vfs_mutex, MUTEX_WAIT_TIMEOUT);
 
-	if (vfs_type != VFS_FATFS && vfs_type != VFS_LITTLEFS) {
+	if (vfs_type != VFS_FATFS && vfs_type != VFS_LITTLEFS && vfs_type != VFS_REALFS) {
 		VFS_DBG(VFS_ERROR, "It don't support the file system");
 		goto EXIT;
 	} else if (vfs_type == VFS_LITTLEFS && interface > VFS_INF_SECOND_FLASH) {
 		VFS_DBG(VFS_ERROR, "interface type not supported by littlefs");
+		goto EXIT;
+	} else if (vfs_type == VFS_REALFS && interface != VFS_INF_SD && interface != VFS_INF_FLASH) {
+		VFS_DBG(VFS_ERROR, "interface type not supported by realfs");
 		goto EXIT;
 	} else {
 		if (find_inf_number(prefix) >= 0) {
@@ -461,6 +475,12 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 					vfs_num = vfs_register(&littlefs_drv);
 					VFS_DBG(VFS_INFO, "littlefs register");
 				}
+#ifdef CONFIG_VFS_REALFS_INCLUDED
+				else if (vfs_type == VFS_REALFS) {
+					vfs_num = vfs_register(&realfs_drv);
+					VFS_DBG(VFS_INFO, "realfs register");
+				}
+#endif
 #ifdef CONFIG_VFS_FATFS_INCLUDED
 				else {
 					vfs_num = vfs_register(&fatfs_drv);

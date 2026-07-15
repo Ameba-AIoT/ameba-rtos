@@ -24,7 +24,8 @@ extern "C" {
 /*vfs_type*/
 #define VFS_FATFS		0X00
 #define VFS_LITTLEFS	0X01
-#define VFS_FS_MAX	0x02
+#define VFS_REALFS		0X02
+#define VFS_FS_MAX	0x03
 
 /*vfs_interface_type*/
 #define VFS_INF_FLASH			0x00
@@ -191,6 +192,8 @@ typedef struct {
 extern vfs_drv vfs;
 extern const vfs_opt fatfs_drv;
 extern const vfs_opt littlefs_drv;
+extern const vfs_opt realfs_drv;
+extern volatile uint8_t realfs_mount_flag;
 extern volatile uint8_t lfs_mount_flag;
 extern volatile uint8_t lfs2_mount_flag;
 #if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)

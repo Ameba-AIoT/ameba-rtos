@@ -11,7 +11,7 @@
   * @{
   */
 
-/** @defgroup DEBUGTIMER Debug Timer
+/** @defgroup DEBUGTIMER DEBUGTIMER
   * @brief DEBUGTIMER driver modules
   * @{
   */

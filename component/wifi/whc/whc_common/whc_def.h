@@ -362,5 +362,6 @@ struct whc_ps_cmd {
 #define WHC_WPA_OPS_EVENT_SCANING			0x1
 #define WHC_WPA_OPS_EVENT_SCAN_COMPLETE		0x2
 #define WHC_WPA_OPS_EVENT_JOIN_STATUS		0x3
+#define WHC_WPA_OPS_EVENT_SCAN_RAW_DATA		0x4
 
 #endif

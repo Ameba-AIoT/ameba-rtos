@@ -193,6 +193,10 @@ typedef struct {
   * @}
   */
 
+/* Non Exported function */
+_LONG_CALL_ void WDG_StructMemValueSet(WDG_InitTypeDef *WDG_InitStruct, u32 window, u32 timeout, u32 eicnt);
+_LONG_CALL_ void WDG_Cmd(WDG_TypeDef *WDG, u32 NewState);
+
 /* Exported functions ------------------------------------------------------------*/
 /** @defgroup WDG_Exported_Functions WDG Exported Functions
   * @{

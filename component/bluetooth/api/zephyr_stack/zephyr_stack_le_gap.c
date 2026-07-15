@@ -1657,6 +1657,9 @@ static uint16_t bt_stack_le_gap_ext_scan_set_param(void *param)
 	memset(&scan_param, 0, sizeof(struct bt_le_scan_param));
 	bt_dev.scan_own_addr_type = p_param->own_addr_type;
 	scan_param.timeout = p_param->duration;
+#if ZEPHYR_FIX_CODE
+	scan_param.period = p_param->period;
+#endif
 
 	if ((p_param->duplicate_opt == RTK_BT_LE_SCAN_DUPLICATE_ENABLE) || (p_param->duplicate_opt == RTK_BT_LE_SCAN_DUPLICATE_ENABLED_RESET_FOR_EACH_PERIOD)) {
 		scan_param.options |= BT_LE_SCAN_OPT_FILTER_DUPLICATE;

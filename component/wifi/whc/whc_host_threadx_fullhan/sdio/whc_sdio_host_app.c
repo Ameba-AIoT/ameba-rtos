@@ -514,7 +514,7 @@ void whc_sdio_host_send_to_dev(uint8_t *buf, uint32_t len)
 	memcpy(txbuf + SIZE_TX_DESC, buf, len);
 
 	/* send ret_msg + ret_val(buf, len) */
-	rtw_sdio_send_data(txbuf, txsize, NULL);
+	whc_host_sdio_send_data(txbuf, txsize, NULL);
 
 	WHC_FREE(txbuf);
 }
@@ -536,7 +536,7 @@ void whc_sdio_host_send_to_dev_block(uint8_t *buf, uint32_t len, uint8_t *ret, u
 	memcpy(txbuf + SIZE_TX_DESC, buf, len);
 
 	/* send ret_msg + ret_val(buf, len) */
-	rtw_sdio_send_data(txbuf, txsize, NULL);
+	whc_host_sdio_send_data(txbuf, txsize, NULL);
 
 	if (ret != NULL) {
 		whc_sdio_priv.ret = ret;

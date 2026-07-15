@@ -213,7 +213,10 @@ extern "C" {
 //Please add your defination here
 
 /* Exported types ------------------------------------------------------------*/
-/** @addtogroup PWMTIMER_Exported_Types PWMTIMER Exported Types
+/** @addtogroup BASICTIMER
+  * @{
+  */
+/** @defgroup BASICTIMER_Exported_Types BASICTIMER Exported Types
   * @{
   */
 
@@ -222,19 +225,19 @@ extern "C" {
   */
 typedef struct {
 	u32 TIM_Prescaler;		/*!< Specifies the prescaler value used to divide the TIM clock.
-							This parameter can be a number between 0x0 and 0xFFFF, basic timer dont care */
+							This parameter can be a number between 0x0 and 0xFFFF, basic timer dont care. */
 	u32 TIM_Period;			/*!< Specifies the period value to be loaded into the active
 								Auto-Reload Register at the next update event.
-								This parameter is 16bits for TIM8-9, and 32bits for TIM0-TIM7
-								you can get it from SourceClock & TIM_Prescaler */
+								This parameter is 16bits for PWM/Capture timers, and 32bits for basic timers.
+								You can get it from SourceClock & TIM_Prescaler. */
 	u32 TIM_UpdateEvent;	/*!< Specifies whether or not to enable update event(UEV).
-								This parameter can be ENABLE or DISABLE. ENABLE means UEV Enable, DISABLE means UEV Disable*/
+								This parameter can be ENABLE or DISABLE. ENABLE means UEV Enable, DISABLE means UEV Disable. */
 	u32 TIM_UpdateSource;	/*!< Specifies the update request source. This parameter can be
 								TIM_UpdateSource_Overflow or TIM_UpdateSource_Global.
 								TIM_UpdateSource_Overflow means counter overflow generates an update event(UEV).
 								TIM_UpdateSource_Global means both counter overflow and setting the UG bit can generate UEV.*/
 	u32 TIM_ARRProtection;	/*!< DISABLE or ENABLE, when ENABLE: period will update when cnt = 0(counter overflow, an UEV happens),
-								or  period will update immediatly */
+								or  period will update immediatly. */
 
 	u8	TIM_Idx;			/*!< Specifies the timer index. */
 
@@ -243,10 +246,24 @@ typedef struct {
 } RTIM_TimeBaseInitTypeDef;
 
 /**
+  * @}
+  */
+/**
+  * @}
+  */
+
+/** @addtogroup PWMTIMER
+  * @{
+  */
+/** @defgroup PWMTIMER_Exported_Types PWMTIMER Exported Types
+  * @{
+  */
+
+/**
   * @brief  TIM Output Compare Init Structure Definition
   */
 typedef struct {
-	u32 TIM_CCMode;			/*!< Specifies the TIM8 mode. This parameter can be a value of TIM_CCMode_PWM or TIM_CCMode_Inputcapture */
+	u32 TIM_CCMode;			/*!< Specifies the CC timer mode. This parameter can be a value of TIM_CCMode_PWM or TIM_CCMode_Inputcapture. */
 	u32 TIM_CCPolarity;		/*!< Specifies the polarity. This parameter can be TIM_CCPolarity_High/TIM_CCPolarity_Low.
 								If CCx channel is configured as output:
 									TIM_CCPolarity_High means OCx active high.
@@ -260,17 +277,23 @@ typedef struct {
 								TIM_OCPreload_Disable means duty cycle will update immediately if write to CCRx field in TIMx_CCRX.*/
 
 	u32 TIM_OCPulse;		/*!< Specifies the output pulse value to be loaded into the CCRx Register, which decides the duty cycle.
-								This parameter can be a number between 0x0000 and 0xFFFF */
+								This parameter can be a number between 0x0000 and 0xFFFF. */
 
-	u32 TIM_ICPulseMode;	/*!< Specifies the pulse mode of TIM with pulse capability. This parameter can be TIM_CCMode_PulseWidth or TIM_CCMode_PulseNumber */
+	u32 TIM_ICPulseMode;	/*!< Specifies the pulse mode of TIM with pulse capability. This parameter can be TIM_CCMode_PulseWidth or TIM_CCMode_PulseNumber. */
 } TIM_CCInitTypeDef;
 
 /**
   * @}
   */
+/**
+  * @}
+  */
 
 /* Exported constants --------------------------------------------------------*/
-/** @defgroup PWMTIMER_Exported_Constants PWMTIMER Exported Constants
+/** @addtogroup BASICTIMER
+  * @{
+  */
+/** @defgroup BASICTIMER_Exported_Constants BASICTIMER Exported Constants
   * @{
   */
 
@@ -328,12 +351,149 @@ typedef struct {
 								((PERIPH) == TIM7_S) || \
 								((PERIPH) == TIM8_S) || \
 								((PERIPH) == TIM9_S) || \
-								((PERIPH) == TIM10_S)|| \
-								((PERIPH) == TIM11_S)|| \
-								((PERIPH) == TIM12_S)|| \
-								((PERIPH) == TIM13_S)|| \
+								((PERIPH) == TIM10_S) || \
+								((PERIPH) == TIM11_S) || \
+								((PERIPH) == TIM12_S) || \
+								((PERIPH) == TIM13_S) || \
 								((PERIPH) == TIM14_S))
 
+/** @brief Check if peripheral is a basic timer. */
+#define IS_TIM_BASIC_TIM(PERIPH)	(((PERIPH) == TIM0) || \
+									((PERIPH) == TIM1) || \
+									((PERIPH) == TIM2) || \
+									((PERIPH) == TIM3) || \
+									((PERIPH) == TIM4) || \
+									((PERIPH) == TIM5) || \
+									((PERIPH) == TIM6) || \
+									((PERIPH) == TIM7) || \
+									((PERIPH) == TIM10) || \
+									((PERIPH) == TIM11) || \
+									((PERIPH) == TIM12) || \
+									((PERIPH) == TIM13) || \
+									((PERIPH) == TIM14) || \
+									((PERIPH) == TIM0_S) || \
+									((PERIPH) == TIM1_S) || \
+									((PERIPH) == TIM2_S) || \
+									((PERIPH) == TIM3_S) || \
+									((PERIPH) == TIM4_S) || \
+									((PERIPH) == TIM5_S) || \
+									((PERIPH) == TIM6_S) || \
+									((PERIPH) == TIM7_S) || \
+									((PERIPH) == TIM10_S) || \
+									((PERIPH) == TIM11_S) || \
+									((PERIPH) == TIM12_S) || \
+									((PERIPH) == TIM13_S) || \
+									((PERIPH) == TIM14_S))
+
+/** @brief Check if peripheral is a 40 MHz timer. */
+#define IS_TIM_40M_TIM(PERIPH)	(((PERIPH) == TIM8) || \
+								((PERIPH) == TIM9) || \
+								((PERIPH) == TIM10) || \
+								((PERIPH) == TIM11) || \
+								((PERIPH) == TIM12) || \
+								((PERIPH) == TIM13) || \
+								((PERIPH) == TIM14) || \
+								((PERIPH) == TIM8_S) || \
+								((PERIPH) == TIM9_S) || \
+								((PERIPH) == TIM10_S) || \
+								((PERIPH) == TIM11_S) || \
+								((PERIPH) == TIM12_S) || \
+								((PERIPH) == TIM13_S) || \
+								((PERIPH) == TIM14_S))
+/**
+  * @}
+  */
+
+/** @defgroup TIM_Prescaler TIM Prescaler
+  * @{
+  */
+/** @brief Check if prescaler value fits in 16 bits. */
+#define IS_TIM_PSC(VAL) (VAL <= 0xFFFF)
+/**
+  * @}
+  */
+
+/** @defgroup TIM_UpdateSource TIM Update Source
+  * @{
+  */
+#define TIM_UpdateSource_Global			((u32)0x00000000) /*!< Source of update is the counter overflow or the setting of UG bit. */
+#define TIM_UpdateSource_Overflow		((u32)0x00000004) /*!< Source of update is counter overflow. */
+/** @brief Check if update request source value is valid. */
+#define IS_TIM_UPDATE_SOURCE(SOURCE)	(((SOURCE) == TIM_UpdateSource_Global) || \
+										((SOURCE) == TIM_UpdateSource_Overflow))
+/**
+  * @}
+  */
+
+/** @defgroup TIM_PSC_Reload_Mode TIM PSC Reload Mode
+  * @{
+  */
+#define TIM_PSCReloadMode_Update		((u32)0x00000000)   /*!< Prescaler reloaded at next update event. */
+#define TIM_PSCReloadMode_Immediate		((u32)0x00000001)   /*!< Prescaler reloaded immediately. */
+/** @brief Check if prescaler reload mode value is valid. */
+#define IS_TIM_PRESCALER_RELOAD(RELOAD)	(((RELOAD) == TIM_PSCReloadMode_Update) || \
+										((RELOAD) == TIM_PSCReloadMode_Immediate))
+/**
+  * @}
+  */
+
+/** @defgroup TIM_Event_Source TIM Event Source
+  * @{
+  */
+#define TIM_EventSource_Update		((u32)0x00000001)   /*!< Event source: counter update event. */
+/** @brief Check if LP timer event source value is valid. */
+#define IS_LP_TIM_EVENT_SOURCE(SOURCE)	((((SOURCE) & 0xFFFFFFFE) == 0x0000) && \
+										(((SOURCE) & 0x1) != 0x0000))
+/** @brief Check if HP timer event source value is valid. */
+#define IS_HP_TIM_EVENT_SOURCE(SOURCE)	((((SOURCE) & 0xFFFFFE00) == 0x0000) && \
+										(((SOURCE) & 0x1FF) != 0x0000))
+/**
+  * @}
+  */
+
+/// @cond
+/** @defgroup TIMBasic_ARR TIMBasic ARR
+  * @{
+  */
+#define TIMBasic_GET_ARR(x)		((u32)(((x) & 0xFFFFFFFF) >> 0)) /*!<R/W 0xFFFFFFFF  the value to be loaded in the actual auto-reload register. It can be preloaded by setting ARPE bit in TIM_CR. */
+#define TIMBasic_ARR(x)			((u32)(((x) & 0xFFFFFFFF) << 0))
+/**
+  * @}
+  */
+
+/** @defgroup TIMBasic_CNT TIMBasic CNT
+  * @{
+  */
+#define TIMBasic_GET_CNT(x)		((u32)(((x) & 0xFFFFFFFF) >> 0)) /*!<R 0x0  counter value */
+#define TIMBasic_CNT(x)			((u32)(((x) & 0xFFFFFFFF) << 0))
+/**
+  * @}
+  */
+/// @endcond
+
+/** @defgroup TIM_Peripheral_Count TIM Peripheral Count
+  * @{
+  */
+#define TimerNum	15   /*!< Total number of TIM peripherals. */
+/** @} */
+
+/**
+  * @}
+  */
+/**
+  * @}
+  */
+
+/** @addtogroup PWMTIMER
+  * @{
+  */
+/** @defgroup PWMTIMER_Exported_Constants PWMTIMER Exported Constants
+  * @{
+  */
+
+/** @defgroup TIM_PWM_Type TIM PWM Type
+  * @{
+  */
 /** @brief Check if peripheral is a one-pulse capable timer. */
 #define IS_TIM_ONE_PULSE_TIM(PERIPH)	(((PERIPH) == TIM8) || \
 										((PERIPH) == TIM8_S))
@@ -347,26 +507,6 @@ typedef struct {
 /** @brief Check if peripheral is a PWM output timer. */
 #define IS_TIM_PWM_TIM(PERIPH)	(((PERIPH) == TIM8) || \
 								((PERIPH) == TIM8_S))
-
-/** @brief Check if peripheral is an input pulse capture timer. */
-#define IS_TIM_INPULSE_TIM(PERIPH)	(((PERIPH) == TIM9) || \
-									((PERIPH) == TIM9_S))
-
-/** @brief Check if peripheral is a 40 MHz timer. */
-#define IS_TIM_40M_TIM(PERIPH)	(((PERIPH) == TIM8) || \
-								((PERIPH) == TIM9) || \
-								((PERIPH) == TIM10) || \
-								((PERIPH) == TIM11) || \
-								((PERIPH) == TIM12) || \
-								((PERIPH) == TIM13) || \
-								((PERIPH) == TIM14) || \
-								((PERIPH) == TIM8_S) || \
-								((PERIPH) == TIM9_S) || \
-								((PERIPH) == TIM10_S)|| \
-								((PERIPH) == TIM11_S)|| \
-								((PERIPH) == TIM12_S)|| \
-								((PERIPH) == TIM13_S)|| \
-								((PERIPH) == TIM14_S))
 /**
   * @}
   */
@@ -396,16 +536,7 @@ typedef struct {
   * @}
   */
 
-/** @defgroup TIM_Prescaler TIM Prescaler
-  * @{
-  */
-/** @brief Check if prescaler value fits in 16 bits. */
-#define IS_TIM_PSC(VAL) (VAL <= 0xFFFF)
-/**
-  * @}
-  */
-
-/** @defgroup TIM_Control_Bit TIM Control Bit
+/** @defgroup TIM_OPM_Control TIM OPM Control
   * @{
   */
 #define TIM_OPMode_ETP_positive		((u32)0x00000000)   /*!< External trigger polarity: positive edge active. */
@@ -421,12 +552,37 @@ typedef struct {
 /** @brief Check if one-pulse operation mode value is valid. */
 #define IS_TIM_OPM_MODE(MODE)		(((MODE) == TIM_OPMode_Single) || \
 									((MODE) == TIM_OPMode_Repetitive))
+/**
+  * @}
+  */
 
-#define TIM_UpdateSource_Global			((u32)0x00000000) /*!< Source of update is the counter overflow or the setting of UG bit. */
-#define TIM_UpdateSource_Overflow		((u32)0x00000004) /*!< Source of update is counter overflow. */
-/** @brief Check if update request source value is valid. */
-#define IS_TIM_UPDATE_SOURCE(SOURCE)	(((SOURCE) == TIM_UpdateSource_Global) || \
-										((SOURCE) == TIM_UpdateSource_Overflow))
+/** @defgroup TIM_CC_Control TIM Capture Compare Control
+  * @{
+  */
+#define TIM_CCx_Enable		((u32)0x01000000)   /*!< Enable the Capture/Compare channel output. */
+#define TIM_CCx_Disable		((u32)0x00000000)   /*!< Disable the Capture/Compare channel output. */
+/** @brief Check if CCx enable/disable value is valid. */
+#define IS_TIM_CCX(CCX)		(((CCX) == TIM_CCx_Enable) || ((CCX) == TIM_CCx_Disable))
+
+#define TIM_OCPreload_Enable			((u32)0x02000000)   /*!< Enable output compare preload register on CCRx. */
+#define TIM_OCPreload_Disable			((u32)0x00000000)   /*!< Disable output compare preload register on CCRx. */
+/** @brief Check if output compare preload state value is valid. */
+#define IS_TIM_OCPRELOAD_STATE(STATE)	(((STATE) == TIM_OCPreload_Enable) || \
+										((STATE) == TIM_OCPreload_Disable))
+
+#define TIM_CCPolarity_High				((u32)0x00000000) /*!< if input is set :  Positive edge of TRGI is active for capture */
+#define TIM_CCPolarity_Low				((u32)0x04000000) /*!< if input is set :  negative edge of TRGI is active for capture */
+/** @brief Check if CC polarity value is valid. */
+#define IS_TIM_CC_POLARITY(POLARITY)	(((POLARITY) == TIM_CCPolarity_High) || \
+										((POLARITY) == TIM_CCPolarity_Low))
+
+/* TIM8 PWM or Inputcapture mode */
+#define TIM_CCMode_PWM					((u32)0x00000000)   /*!< CC channel configured as PWM output mode. */
+#define TIM_CCMode_Inputcapture			((u32)0x08000000)   /*!< CC channel configured as input capture mode. */
+/** @brief Check if CC mode value is valid. */
+#define IS_TIM_CC_MODE(MODE)			(((MODE) == TIM_CCMode_PWM) || \
+										((MODE) == TIM_CCMode_Inputcapture))
+
 /**
   * @}
   */
@@ -476,22 +632,9 @@ typedef struct {
   * @}
   */
 
-/** @defgroup TIM_PSC_Reload_Mode TIM PSC Reload Mode
+/** @defgroup TIM_CC_Event_Source TIM CC Event Source
   * @{
   */
-#define TIM_PSCReloadMode_Update		((u32)0x00000000)   /*!< Prescaler reloaded at next update event. */
-#define TIM_PSCReloadMode_Immediate		((u32)0x00000001)   /*!< Prescaler reloaded immediately. */
-/** @brief Check if prescaler reload mode value is valid. */
-#define IS_TIM_PRESCALER_RELOAD(RELOAD)	(((RELOAD) == TIM_PSCReloadMode_Update) || \
-										((RELOAD) == TIM_PSCReloadMode_Immediate))
-/**
-  * @}
-  */
-
-/** @defgroup TIM_Event_Source TIM Event Source
-  * @{
-  */
-#define TIM_EventSource_Update		((u32)0x00000001)   /*!< Event source: counter update event. */
 #define TIM_EventSource_CC0			((u32)0x00000002)   /*!< Event source: Capture/Compare channel 0 event. */
 #define TIM_EventSource_CC1			((u32)0x00000004)   /*!< Event source: Capture/Compare channel 1 event. */
 #define TIM_EventSource_CC2			((u32)0x00000008)   /*!< Event source: Capture/Compare channel 2 event. */
@@ -500,85 +643,9 @@ typedef struct {
 #define TIM_EventSource_CC5			((u32)0x00000040)   /*!< Event source: Capture/Compare channel 5 event. */
 #define TIM_EventSource_CC6			((u32)0x00000080)   /*!< Event source: Capture/Compare channel 6 event. */
 #define TIM_EventSource_CC7			((u32)0x00000100)   /*!< Event source: Capture/Compare channel 7 event. */
-/** @brief Check if LP timer event source value is valid. */
-#define IS_LP_TIM_EVENT_SOURCE(SOURCE)	((((SOURCE) & 0xFFFFFFFE) == 0x0000) && \
-										(((SOURCE) & 0x1) != 0x0000))
-/** @brief Check if HP timer event source value is valid. */
-#define IS_HP_TIM_EVENT_SOURCE(SOURCE)	((((SOURCE) & 0xFFFFFE00) == 0x0000) && \
-										(((SOURCE) & 0x1FF) != 0x0000))
 /**
   * @}
   */
-
-/** @defgroup TIM_Capture_Compare_Control TIM Capture Compare Control
-  * @{
-  */
-#define TIM_CCx_Enable		((u32)0x01000000)   /*!< Enable the Capture/Compare channel output. */
-#define TIM_CCx_Disable		((u32)0x00000000)   /*!< Disable the Capture/Compare channel output. */
-/** @brief Check if CCx enable/disable value is valid. */
-#define IS_TIM_CCX(CCX)		(((CCX) == TIM_CCx_Enable) || ((CCX) == TIM_CCx_Disable))
-
-#define TIM_OCPreload_Enable			((u32)0x02000000)   /*!< Enable output compare preload register on CCRx. */
-#define TIM_OCPreload_Disable			((u32)0x00000000)   /*!< Disable output compare preload register on CCRx. */
-/** @brief Check if output compare preload state value is valid. */
-#define IS_TIM_OCPRELOAD_STATE(STATE)	(((STATE) == TIM_OCPreload_Enable) || \
-										((STATE) == TIM_OCPreload_Disable))
-
-#define TIM_CCPolarity_High				((u32)0x00000000) /*!< if input is set :  Positive edge of TRGI is active for capture */
-#define TIM_CCPolarity_Low				((u32)0x04000000) /*!< if input is set :  negative edge of TRGI is active for capture */
-/** @brief Check if CC polarity value is valid. */
-#define IS_TIM_CC_POLARITY(POLARITY)	(((POLARITY) == TIM_CCPolarity_High) || \
-										((POLARITY) == TIM_CCPolarity_Low))
-
-/* TIM8 PWM or Inputcapture mode */
-#define TIM_CCMode_PWM					((u32)0x00000000)   /*!< CC channel configured as PWM output mode. */
-#define TIM_CCMode_Inputcapture			((u32)0x08000000)   /*!< CC channel configured as input capture mode. */
-/** @brief Check if CC mode value is valid. */
-#define IS_TIM_CC_MODE(MODE)			(((MODE) == TIM_CCMode_PWM) || \
-										((MODE) == TIM_CCMode_Inputcapture))
-
-/* TIM9 pulse mode */
-#define TIM_CCMode_PulseWidth			((u32)0x00000000)   /*!< Input pulse mode: measure pulse width. */
-#define TIM_CCMode_PulseNumber			((u32)0x10000000)   /*!< Input pulse mode: count pulse number. */
-/** @brief Check if TIM pulse mode value is valid. */
-#define IS_TIM_CC_PULSEMODE(MODE)		(((MODE) == TIM_CCMode_PulseWidth) || \
-										((MODE) == TIM_CCMode_PulseNumber))
-
-#define TIM_CCMode_CCR					((u32)0x0000FFFF)   /*!< Maximum CCR value mask (16-bit). */
-/** @brief Check if pulse width compare value fits in CCR. */
-#define IS_TIM_CC_PULSEWIDTH(Compare)	((Compare) <= TIM_CCMode_CCR)
-/**
-  * @}
-  */
-
-/// @cond
-/** @defgroup TIM9_CC0_Pulse_Mode TIM9 CC0 Pulse Mode
-  * @{
-  */
-#define TIM9_GET_CC0PM(x)		((u32)(((x) & 0x10000000) >> 28)) /*!<R/W 0x0  CC0 pulse mode * 0: pulse mode 0 * 1: pulse mode 1 */
-#define TIM9_CC0PM(x)			((u32)(((x) & 0x00000001) << 28))
-/**
-  * @}
-  */
-
-/** @defgroup TIMBasic_ARR TIMBasic ARR
-  * @{
-  */
-#define TIMBasic_GET_ARR(x)		((u32)(((x) & 0xFFFFFFFF) >> 0)) /*!<R/W 0xFFFFFFFF  the value to be loaded in the actual auto-reload register. It can be preloaded by setting ARPE bit in TIM_CR. */
-#define TIMBasic_ARR(x)			((u32)(((x) & 0xFFFFFFFF) << 0))
-/**
-  * @}
-  */
-
-/** @defgroup TIMBasic_CNT TIMBasic CNT
-  * @{
-  */
-#define TIMBasic_GET_CNT(x)		((u32)(((x) & 0xFFFFFFFF) >> 0)) /*!<R 0x0  counter value */
-#define TIMBasic_CNT(x)			((u32)(((x) & 0xFFFFFFFF) << 0))
-/**
-  * @}
-  */
-/// @endcond
 
 /** @defgroup TIM_Phase_Sync_Control TIM Phase Sync Control
   * @{
@@ -613,15 +680,66 @@ typedef struct {
 /**
   * @}
   */
+/**
+  * @}
+  */
+
+/** @addtogroup CAPTIMER
+  * @{
+  */
+/** @defgroup CAPTIMER_Exported_Constants CAPTIMER Exported Constants
+  * @{
+  */
+
+/** @defgroup TIM_Capture_Type TIM Capture Type
+  * @{
+  */
+/** @brief Check if peripheral is an input pulse capture timer. */
+#define IS_TIM_INPULSE_TIM(PERIPH)	(((PERIPH) == TIM9) || \
+									((PERIPH) == TIM9_S))
+/**
+  * @}
+  */
+
+/** @defgroup TIM_CC_Pulse_Mode TIM CC Pulse Mode
+  * @{
+  */
+/* TIM9 pulse mode */
+#define TIM_CCMode_PulseWidth			((u32)0x00000000)   /*!< Input pulse mode: measure pulse width. */
+#define TIM_CCMode_PulseNumber			((u32)0x10000000)   /*!< Input pulse mode: count pulse number. */
+/** @brief Check if TIM pulse mode value is valid. */
+#define IS_TIM_CC_PULSEMODE(MODE)		(((MODE) == TIM_CCMode_PulseWidth) || \
+										((MODE) == TIM_CCMode_PulseNumber))
+#define TIM_CCMode_CCR					((u32)0x0000FFFF)   /*!< Maximum CCR value mask (16-bit). */
+/** @brief Check if pulse width compare value fits in CCR. */
+#define IS_TIM_CC_PULSEWIDTH(Compare)	((Compare) <= TIM_CCMode_CCR)
+/**
+  * @}
+  */
 
 /// @cond
-/** @} */
-
-/** @} */
+/** @defgroup TIM9_CC0_Pulse_Mode TIM9 CC0 Pulse Mode
+  * @{
+  */
+#define TIM9_GET_CC0PM(x)		((u32)(((x) & 0x10000000) >> 28)) /*!<R/W 0x0  CC0 pulse mode * 0: pulse mode 0 * 1: pulse mode 1 */
+#define TIM9_CC0PM(x)			((u32)(((x) & 0x00000001) << 28))
+/**
+  * @}
+  */
 /// @endcond
 
+/**
+  * @}
+  */
+/**
+  * @}
+  */
+
 /* Exported functions --------------------------------------------------------*/
-/** @defgroup PWMTIMER_Exported_Functions PWMTIMER Exported Functions
+/** @addtogroup BASICTIMER
+  * @{
+  */
+/** @addtogroup BASICTIMER_Exported_Functions
   * @{
   */
 
@@ -644,21 +762,6 @@ _LONG_CALL_ void RTIM_ChangePeriodImmediate(RTIM_TypeDef *TIMx, u32 Autoreload);
 _LONG_CALL_ void RTIM_Reset(RTIM_TypeDef *TIMx);
 /** @} */
 
-/** @defgroup Capture_Compare_Management_Functions Capture Compare Management Functions
-  * @{
-  */
-_LONG_CALL_ void RTIM_CCStructInit(TIM_CCInitTypeDef *TIM_CCInitStruct);
-_LONG_CALL_ void RTIM_CCxInit(RTIM_TypeDef *TIMx, TIM_CCInitTypeDef *TIM_CCInitStruct, u16 TIM_Channel);
-_LONG_CALL_ void RTIM_CCRxMode(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_CCMode);
-_LONG_CALL_ void RTIM_CCRxSet(RTIM_TypeDef *TIMx, u32 Compare, u16 TIM_Channel);
-_LONG_CALL_ u32 RTIM_CCRxGet(RTIM_TypeDef *TIMx, u16 TIM_Channel);
-_LONG_CALL_ void RTIM_OCxPreloadConfig(RTIM_TypeDef *TIMx, u32 TIM_OCProtection, u16 TIM_Channel);
-_LONG_CALL_ void RTIM_CCxPolarityConfig(RTIM_TypeDef *TIMx, u32 TIM_OCPolarity, u16 TIM_Channel);
-_LONG_CALL_ void RTIM_CCxCmd(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_CCx);
-_LONG_CALL_ void RTIM_SetOnePulseOutputMode(RTIM_TypeDef *TIMx, u32 TIM_OPMode, u32 TriggerPolarity);
-_LONG_CALL_ void RTIM_SetOnePulseDefaultLevel(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 DefaultLevel);
-/** @} */
-
 /** @defgroup Interrupt_Management_Functions Interrupt Management Functions
   * @{
   */
@@ -666,6 +769,34 @@ _LONG_CALL_ void RTIM_INTConfig(RTIM_TypeDef *TIMx, u32 TIM_IT, u32 NewState);
 _LONG_CALL_ void RTIM_INTClear(RTIM_TypeDef *TIMx);
 _LONG_CALL_ void RTIM_INTClearPendingBit(RTIM_TypeDef *TIMx, u32 TIM_IT);
 _LONG_CALL_ u32 RTIM_GetINTStatus(RTIM_TypeDef *TIMx, u32 TIM_IT);
+/** @} */
+
+/**
+  * @}
+  */
+/**
+  * @}
+  */
+
+/** @addtogroup PWMTIMER
+  * @{
+  */
+/** @addtogroup PWMTIMER_Exported_Functions
+  * @{
+  */
+
+/** @defgroup Capture_Compare_Management_Functions Capture Compare Management Functions
+  * @{
+  */
+_LONG_CALL_ void RTIM_CCStructInit(TIM_CCInitTypeDef *TIM_CCInitStruct);
+_LONG_CALL_ void RTIM_CCxInit(RTIM_TypeDef *TIMx, TIM_CCInitTypeDef *TIM_CCInitStruct, u16 TIM_Channel);
+_LONG_CALL_ void RTIM_CCRxMode(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_CCMode);
+_LONG_CALL_ void RTIM_CCRxSet(RTIM_TypeDef *TIMx, u32 Compare, u16 TIM_Channel);
+_LONG_CALL_ void RTIM_OCxPreloadConfig(RTIM_TypeDef *TIMx, u32 TIM_OCProtection, u16 TIM_Channel);
+_LONG_CALL_ void RTIM_CCxPolarityConfig(RTIM_TypeDef *TIMx, u32 TIM_OCPolarity, u16 TIM_Channel);
+_LONG_CALL_ void RTIM_CCxCmd(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 TIM_CCx);
+_LONG_CALL_ void RTIM_SetOnePulseOutputMode(RTIM_TypeDef *TIMx, u32 TIM_OPMode, u32 TriggerPolarity);
+_LONG_CALL_ void RTIM_SetOnePulseDefaultLevel(RTIM_TypeDef *TIMx, u16 TIM_Channel, u32 DefaultLevel);
 /** @} */
 
 /** @defgroup Phase_Sync_Functions Phase Sync Functions
@@ -684,12 +815,23 @@ _LONG_CALL_ u32 RTIM_GetChannelCountx(RTIM_TypeDef *TIMx, u16 TIM_Channel);
 /**
   * @}
   */
+/**
+  * @}
+  */
 
-/// @cond
-/** @} */
-
-/** @} */
-/// @endcond
+/** @addtogroup CAPTIMER
+  * @{
+  */
+/** @addtogroup CAPTIMER_Exported_Functions
+  * @{
+  */
+_LONG_CALL_ u32 RTIM_CCRxGet(RTIM_TypeDef *TIMx, u16 TIM_Channel);
+/**
+  * @}
+  */
+/**
+  * @}
+  */
 
 /* Other Definitions -------------------------------------------------------------------*/
 
@@ -701,8 +843,6 @@ typedef struct {
 	u32 KM0_CHAN_STATUS;	/*!< PWM channel status for KM0 core. */
 	u32 KM4_CHAN_STATUS;	/*!< PWM channel status for KM4 core. */
 } PWMCHANCFG_TypeDef;
-
-#define TimerNum	15   /*!< Total number of timer instances. */
 
 extern PWMCHANCFG_TypeDef  pwmchannel_config[];
 extern int TIMx_irq[TimerNum];

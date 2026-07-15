@@ -123,7 +123,20 @@ extern "C" {
 
 
 //Please add your defination here
+/// @cond
+/** @} */
 
+/** @} */
+/// @endcond
+
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @addtogroup PMCTIMER PMCTIMER
+* @brief PMCTIMER driver modules
+* @{
+*/
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup PMCTIMER_Exported_Constants PMCTIMER Exported Constants
   * @{
@@ -283,16 +296,14 @@ __STATIC_INLINE void PMCTimer_INTClear(PMCTIMER_TpyeDef *PMC_TIMER, u32 Timer_Id
 }
 /** @} */
 
+/** @} */
+
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 /* MANUAL_GEN_END */
-
-/// @cond
-/** @} */
-
-/** @} */
-/// @endcond
 
 #endif

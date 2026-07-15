@@ -66,7 +66,7 @@ void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 	memcpy(txbuf + SIZE_TX_DESC, buf, len);
 
 	/* send ret_msg + ret_val(buf, len) */
-	rtw_sdio_send_data(txbuf, txsize, NULL);
+	whc_host_sdio_send_data(txbuf, txsize, NULL);
 
 	if (txbuf) {
 		WHC_FREE(txbuf);

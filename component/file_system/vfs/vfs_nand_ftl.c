@@ -360,6 +360,44 @@ u8 NAND_FTL_ReadPage(u32 addr, u8 *buf)
 }
 
 /**
+  * @brief  Read page without the per-read bad-block marker check.
+  *         Intended for callers that manage bad blocks in RAM (e.g. LBM) and
+  *         only read blocks already known good -- saves one NAND array-to-cache
+  *         per page (the marker read).  ECC status is still evaluated.
+  * @param  addr : page address
+  * @param  buf : data buffer
+  * @retval HAL_OK : OK; others : FAIL
+  */
+u8 NAND_FTL_ReadPageFast(u32 addr, u8 *buf)
+{
+	NAND_FTL_DeviceTypeDef *nand = &NF_Device;
+	Flash_InfoTypeDef *info = &nand->MemInfo;
+	u8 status;
+	u8 ret;
+	NAND_FTL_MfgOpsTypeDef *ops = (NAND_FTL_MfgOpsTypeDef *)nand->MfgOps;
+
+	if (!nand->Initialized) {
+		return UERR_INIT;
+	}
+
+	ret = NF_SelectTarget(nand, addr);
+	if (ret != HAL_OK) {
+		return ret;
+	}
+
+	status = NAND_Page_Read(addr, 0, info->PageSize, buf);
+	if (status == 0U) {
+		ret = HAL_OK;
+	} else if (status == 0xFFU) {
+		ret = HAL_TIMEOUT;
+	} else {
+		ret = ops->GetEccStatus(nand, status);
+	}
+
+	return ret;
+}
+
+/**
   * @brief  Read page status
   * @param  addr : page address
   * @param  buf : data buffer

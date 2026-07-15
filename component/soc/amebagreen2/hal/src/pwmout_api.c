@@ -75,9 +75,8 @@ static const u32 PinMap_PWM[PWM_TIMER_NUM][PWM_CHANNEL_MAX] = {
  */
 
 /**
-  * @brief  Initialize the PWMTIM device.
-  * @param  obj: PWM object defined in application software.
-  * @retval none
+  * @brief  Initialize the PWMTIMER device.
+  * @param  obj PWM object defined in application software.
   */
 static void pwmout_timer_init(pwmout_t *obj)
 {
@@ -97,13 +96,12 @@ static void pwmout_timer_init(pwmout_t *obj)
 
 /**
   * @brief  Initialize PWM channel output according to the specified pin.
-  * @param  obj: PWM object defined in application software.
-  * @param  pin: Pinname of corresponding PWM channel to be set.
-  * @retval none
+  * @param  obj PWM object defined in application software.
+  * @param  pin Pin name of corresponding PWM channel to be set.
   * @note
-  *             - default period: 1638us
-  *             - default pulse width: 102us
-  *             - default duty cycle: 6.227%
+  *             - Default period: 1638us.
+  *             - Default pulse width: 102us.
+  *             - Default duty cycle: 6.227%.
   */
 void pwmout_init(pwmout_t *obj, PinName pin)
 {
@@ -131,8 +129,7 @@ void pwmout_init(pwmout_t *obj, PinName pin)
 
 /**
   * @brief  Deinitialize the PWM device of the specified channel.
-  * @param  obj: PWM object defined in application software.
-  * @retval none
+  * @param  obj PWM object defined in application software.
   * @note  If all channels are released, PWMTIMER will also be disabled.
   */
 void pwmout_free(pwmout_t *obj)
@@ -161,9 +158,8 @@ void pwmout_free(pwmout_t *obj)
 
 /**
   * @brief  Set the duty cycle of the specified channel.
-  * @param  obj: PWM object defined in application software.
-  * @param  percent: The duty cycle value to be set.
-  * @retval none
+  * @param  obj PWM object defined in application software.
+  * @param  percent The duty cycle value to be set.
   */
 void pwmout_write(pwmout_t *obj, float percent) //write duty-cycle
 {
@@ -184,9 +180,8 @@ void pwmout_write(pwmout_t *obj, float percent) //write duty-cycle
 
 /**
   * @brief  Get the duty cycle of the specified channel.
-  * @param  obj: PWM object defined in application software.
-  * @return Duty cycle of the specified channel.
-  * @retval 0~1.0
+  * @param  obj PWM object defined in application software.
+  * @return Duty cycle of the specified channel, in the range [0.0, 1.0].
   */
 float pwmout_read(pwmout_t *obj) //read duty-cycle
 {
@@ -199,9 +194,8 @@ float pwmout_read(pwmout_t *obj) //read duty-cycle
 
 /**
   * @brief  Set the period of the specified channel in seconds.
-  * @param  obj: PWM object defined in application software.
-  * @param  seconds: The period value to be set in seconds(s).
-  * @retval none
+  * @param  obj PWM object defined in application software.
+  * @param  seconds The period value to be set in seconds(s).
   */
 void pwmout_period(pwmout_t *obj, float seconds)
 {
@@ -209,10 +203,9 @@ void pwmout_period(pwmout_t *obj, float seconds)
 }
 
 /**
-  * @brief  Set the period of the specified channel in millseconds.
-  * @param  obj: PWM object defined in application software.
-  * @param  ms: The period value to be set in millseconds(ms).
-  * @retval none
+  * @brief  Set the period of the specified channel in milliseconds.
+  * @param  obj PWM object defined in application software.
+  * @param  ms The period value to be set in milliseconds(ms).
   */
 void pwmout_period_ms(pwmout_t *obj, int ms)
 {
@@ -221,9 +214,8 @@ void pwmout_period_ms(pwmout_t *obj, int ms)
 
 /**
   * @brief  Set the period of the specified channel in microseconds.
-  * @param  obj: PWM object defined in application software.
-  * @param  us: The period value to be set in microseconds(us).
-  * @retval none
+  * @param  obj PWM object defined in application software.
+  * @param  us The period value to be set in microseconds(us).
   */
 void pwmout_period_us(pwmout_t *obj, int us)
 {
@@ -246,9 +238,8 @@ void pwmout_period_us(pwmout_t *obj, int us)
 
 /**
   * @brief  Set the pulse width of the specified channel in seconds.
-  * @param  obj: PWM object defined in application software.
-  * @param  seconds: The pulse width value to be set in seconds(s).
-  * @retval none
+  * @param  obj PWM object defined in application software.
+  * @param  seconds The pulse width value to be set in seconds(s).
   */
 void pwmout_pulsewidth(pwmout_t *obj, float seconds)
 {
@@ -257,9 +248,8 @@ void pwmout_pulsewidth(pwmout_t *obj, float seconds)
 
 /**
   * @brief  Set the pulse width of the specified channel in milliseconds.
-  * @param  obj: PWM object defined in application software.
-  * @param  ms: The pulse width value to be set in milliseconds(ms).
-  * @retval none
+  * @param  obj PWM object defined in application software.
+  * @param  ms The pulse width value to be set in milliseconds(ms).
   */
 void pwmout_pulsewidth_ms(pwmout_t *obj, int ms)
 {
@@ -268,9 +258,8 @@ void pwmout_pulsewidth_ms(pwmout_t *obj, int ms)
 
 /**
   * @brief  Set the pulse width of the specified channel in microseconds.
-  * @param  obj: PWM object defined in application software.
-  * @param  us: The pulse width value to be set in microseconds(us).
-  * @retval none
+  * @param  obj PWM object defined in application software.
+  * @param  us The pulse width value to be set in microseconds(us).
   */
 void pwmout_pulsewidth_us(pwmout_t *obj, int us)
 {
@@ -284,8 +273,7 @@ void pwmout_pulsewidth_us(pwmout_t *obj, int us)
 
 /**
   * @brief  Enable the specified channel to output PWM.
-  * @param  obj: PWM object defined in application software.
-  * @retval none
+  * @param  obj PWM object defined in application software.
   */
 void pwmout_start(pwmout_t *obj)
 {
@@ -294,8 +282,7 @@ void pwmout_start(pwmout_t *obj)
 
 /**
   * @brief  Disable the specified channel to output PWM.
-  * @param  obj: PWM object defined in application software.
-  * @retval none
+  * @param  obj PWM object defined in application software.
   */
 void pwmout_stop(pwmout_t *obj)
 {
@@ -304,12 +291,11 @@ void pwmout_stop(pwmout_t *obj)
 
 /**
   * @brief  Set the polarity of the specified PWM channel.
-  * @param  obj: PWM object defined in application software.
-  * @param  polarity: This parameter can be one of the following values:
-  *   @arg  0: Output is LOW when timer count < setvalue.
-  *   @arg  1: Output is HIGH when timer count < setvalue.(default)
+  * @param  obj PWM object defined in application software.
+  * @param  polarity This parameter can be one of the following values:
+  *   @arg  0: Output is LOW when timer count < set value.
+  *   @arg  1: Output is HIGH when timer count < set value (default).
   * @attention Configure polarity after setting duty cycle or pulse width.
-  * @retval none
   */
 void pwmout_set_polarity(pwmout_t *obj, int polarity)
 {
