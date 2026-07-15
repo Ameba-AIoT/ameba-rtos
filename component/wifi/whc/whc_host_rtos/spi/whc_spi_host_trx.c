@@ -39,11 +39,6 @@ int whc_spi_host_send_pkt(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	rtos_mutex_take(spi_host_priv.host_send, MUTEX_WAIT_TIMEOUT);
 
 	ptr = &(spi_host_priv.tx_buf[spi_host_priv.used_buf_num][0]);
-	if (*ptr != 0) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s fail buf busy !\n\r", __func__);
-		ret = -RTK_ERR_WIFI_TX_BUF_FULL;
-		goto exit;
-	}
 
 	if (total_len > MAXIMUM_ETHERNET_PACKET_SIZE) {
 		RTK_LOGE(TAG_WLAN_INIC, "%s: len(%d) > MAXIMUM_ETHERNET_PACKET_SIZE !\n\r", __func__, total_len);
@@ -51,8 +46,7 @@ int whc_spi_host_send_pkt(int idx, struct eth_drv_sg *sg_list, int sg_len,
 		goto exit;
 	}
 
-	/* SPI_TODO: skip busy flag at ptr[0], align to DEV_DMA_ALIGN so pad_len is 0 */
-	msg = (struct whc_msg_info *)N_BYTE_ALIGMENT((u32)ptr + 4, DEV_DMA_ALIGN);
+	msg = (struct whc_msg_info *)N_BYTE_ALIGMENT((u32)ptr, DEV_DMA_ALIGN);
 	msg->event = WHC_WIFI_EVT_XIMT_PKTS;
 	msg->wlan_idx = idx;
 	msg->pad_len = 0;
@@ -75,7 +69,6 @@ int whc_spi_host_send_pkt(int idx, struct eth_drv_sg *sg_list, int sg_len,
 exit:
 	rtos_mutex_give(spi_host_priv.host_send);
 
-	//rtos_mem_free(buf_info);
 	return ret;
 }
 

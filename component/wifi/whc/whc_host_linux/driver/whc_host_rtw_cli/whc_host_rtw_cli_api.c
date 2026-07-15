@@ -207,6 +207,77 @@ int scan_result_cb(u8 *scan_data)
 
 }
 
+/*
+ * Binary scan raw data format (device -> host via WHC):
+ *
+ * Offset  Size  Field             Description
+ * ────────────────────────────────────────────────
+ *  0       2    total_entries      Total number of BSS entries
+ *  2       2    entry_index        0-based index (0xFFFF = done marker)
+ *  4       2    data_len           Bytes following this header
+ * ────────────────────────────────────────────────
+ *  6       6    bssid              MAC address
+ * 12       2    beacon_interval    Beacon interval (TU)
+ * 14       2    capability_info    Capability info bits
+ * 16       4    frequency          MHz
+ * 20       4    signal             RSSI (dBm, as s32)
+ * 24       1    ssid_len           SSID length
+ * 25    ssid_len ssid              SSID string (not null-terminated)
+ * 25+ssid  2    ie_len             Total IE length
+ * 25+ssid+2 ie_len ies            Information elements
+ */
+static int scan_raw_data_cb(u8 *buf_p)
+{
+	u16 total_entries, entry_index, data_len;
+	u8 *bssid;
+	u16 beacon_interval, cap_info, ie_len;
+	u32 freq, signal;
+	u8 ssid_len;
+	int chan;
+
+	total_entries = buf_p[0] | (buf_p[1] << 8);
+	entry_index   = buf_p[2] | (buf_p[3] << 8);
+	data_len      = buf_p[4] | (buf_p[5] << 8);
+
+	/* Done marker: entry_index == 0xFFFF */
+	if (entry_index == 0xFFFF) {
+		printk("[scan_raw] Scan complete -- %d AP(s) total\n",
+			   total_entries);
+		return 1;
+	}
+
+	/* Parse BSS entry fields */
+	bssid           = buf_p + 6;
+	beacon_interval = buf_p[12] | (buf_p[13] << 8);
+	cap_info        = buf_p[14] | (buf_p[15] << 8);
+	freq            = buf_p[16] | (buf_p[17] << 8)
+					  | (buf_p[18] << 16) | (buf_p[19] << 24);
+	signal          = buf_p[20] | (buf_p[21] << 8)
+					  | (buf_p[22] << 16) | (buf_p[23] << 24);
+	ssid_len        = buf_p[24];
+	ie_len          = buf_p[25 + ssid_len]
+					  | (buf_p[25 + ssid_len + 1] << 8);
+
+	/* Convert frequency (MHz) to channel number */
+	if (freq >= 2412 && freq <= 2484) {
+		chan = (freq - 2412) / 5 + 1;
+	} else if (freq >= 5180 && freq <= 5825) {
+		chan = (freq - 5180) / 5 + 36;
+	} else {
+		chan = 0;
+	}
+
+	printk("[scan_raw] [%d/%d] %pM | %.*s | Ch %d (%d MHz) | "
+		   "%d dBm | beacon %d | caps 0x%04x | ie_len %d\n",
+		   entry_index + 1, total_entries,
+		   bssid,
+		   ssid_len, buf_p + 25,
+		   chan, freq, (s32)signal,
+		   beacon_interval, cap_info, ie_len);
+
+	return 1;
+}
+
 static int getmac_address_cb(u8 *buf)
 {
 	u8 idx = 0;
@@ -319,6 +390,13 @@ int pre_process_buf_data(u8 *buf, u16 size)
 			join_event_cb(buf_p);
 
 			ret = FALSE;
+
+			break;
+		case WHC_WPA_OPS_EVENT_SCAN_RAW_DATA:
+
+			buf_p += 2;  /* skip cmd_id + idx, now points to scan_raw payload */
+			scan_raw_data_cb(buf_p);
+			ret = TRUE;
 
 			break;
 		default:

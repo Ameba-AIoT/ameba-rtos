@@ -20,4 +20,4 @@
 
 void example_usbd_cdc_ecm(void);
 
-#endif /* EXAMPLE_USBD_CDC_ACM_H */
+#endif /* EXAMPLE_USBD_CDC_ECM_H */

@@ -72,27 +72,27 @@ extern void rltk_usb_eth_deinit(void);
 
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block);
 
-static int cdc_ecm_cb_init(void);
-static int cdc_ecm_cb_deinit(void);
-static int cdc_ecm_cb_setup(usb_setup_req_t *req, u8 *buf);
-static int cdc_ecm_cb_received(u8 *buf, u32 Len);
-static void cdc_ecm_cb_status_changed(u8 old_status, u8 status);
+static int usbd_ecm_cb_init(void);
+static int usbd_ecm_cb_deinit(void);
+static int usbd_ecm_cb_setup(usb_setup_req_t *req, u8 *buf);
+static int usbd_ecm_cb_received(u8 *buf, u32 Len);
+static void usbd_ecm_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "ECM";
 
 extern struct netif *pnetif_usb_eth;
-static u8 dhcp_server_started = 0;
+static u8 usbd_ecm_dhcp_server_started = 0;
 /*
  * dongle_mac: MAC address reported to the USB host side of the CDC-ECM link.
- * It is passed into ecm_priv and advertised through the ECM functional descriptor
+ * It is passed into usbd_ecm_priv and advertised through the ECM functional descriptor
  * (iMACAddress string), so the host's virtual Ethernet adapter is assigned this MAC.
  * In other words, it identifies the "host-facing" end of the USB Ethernet dongle.
  */
 static const u8 dongle_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
 /*
  * dhcp_server_mac: MAC address used by the device's local lwIP netif (pnetif_usb_eth).
- * It is copied into pnetif_usb_eth->hwaddr in example_usbd_ecm_link_change_thread() before the
+ * It is copied into pnetif_usb_eth->hwaddr in usbd_ecm_link_change_thread() before the
  * DHCP server is started, so it is the source MAC for frames the device sends to the
  * host (DHCP offers, ARP replies, gateway traffic). This is the "device-facing" end.
  *
@@ -100,22 +100,22 @@ static const u8 dongle_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
  * 0x56) so the two ends of the point-to-point USB Ethernet link have distinct MACs.
  */
 static const u8 dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56};
-static __IO u8 cdc_ecm_link_disconnected = 0;
+static __IO u8 usbd_ecm_link_disconnected = 0;
 
-static const usbd_cdc_ecm_priv_data_t ecm_priv = {
+static const usbd_cdc_ecm_priv_data_t usbd_ecm_priv = {
 	dongle_mac,
 };
 
-static const usbd_cdc_ecm_cb_t cdc_ecm_cb = {
-	.priv = &ecm_priv,
-	.init = cdc_ecm_cb_init,
-	.deinit = cdc_ecm_cb_deinit,
-	.setup = cdc_ecm_cb_setup,
-	.received = cdc_ecm_cb_received,
-	.status_changed = cdc_ecm_cb_status_changed,
+static const usbd_cdc_ecm_cb_t usbd_ecm_cb = {
+	.priv = &usbd_ecm_priv,
+	.init = usbd_ecm_cb_init,
+	.deinit = usbd_ecm_cb_deinit,
+	.setup = usbd_ecm_cb_setup,
+	.received = usbd_ecm_cb_received,
+	.status_changed = usbd_ecm_cb_status_changed,
 };
 
-static const usbd_config_t cdc_ecm_cfg = {
+static const usbd_config_t usbd_ecm_cfg = {
 	.speed = CONFIG_USBD_CDC_ECM_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
@@ -223,14 +223,14 @@ static const uint8_t usb_cdc_ecm_dhcp_offer_pkt[368] = {
 #endif
 
 #if CONFIG_USBD_CDC_ECM_HOTPLUG
-static __IO u8 cdc_ecm_attach_status = USBD_ATTACH_STATUS_INIT;
-static __IO u8 cdc_ecm_attach_old_status = USBD_ATTACH_STATUS_INIT;
-static rtos_sema_t cdc_ecm_attach_status_changed_sema = NULL;
-static __IO u8 cdc_ecm_hotplug_thread_running = 0;
+static __IO u8 usbd_ecm_attach_status = USBD_ATTACH_STATUS_INIT;
+static __IO u8 usbd_ecm_attach_old_status = USBD_ATTACH_STATUS_INIT;
+static rtos_sema_t usbd_ecm_attach_status_changed_sema = NULL;
+static __IO u8 usbd_ecm_hotplug_thread_running = 0;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
-static void example_usbd_ecm_link_change_thread(void *param)
+static void usbd_ecm_link_change_thread(void *param)
 {
 	eth_state_t ethernet_state = ETH_STATUS_IDLE;
 	u8 link_is_up = 0;
@@ -239,10 +239,10 @@ static void example_usbd_ecm_link_change_thread(void *param)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task!\n");
 
 	while (1) {
-		link_is_up = usbd_cdc_ecm_get_connect_status();
+		link_is_up = usbd_cdc_ecm_get_link_status();
 
-		if (cdc_ecm_link_disconnected) {
-			cdc_ecm_link_disconnected = 0;
+		if (usbd_ecm_link_disconnected) {
+			usbd_ecm_link_disconnected = 0;
 			link_is_up = 0;
 		}
 
@@ -250,7 +250,7 @@ static void example_usbd_ecm_link_change_thread(void *param)
 			if (pnetif_usb_eth == NULL) {
 				rtos_time_delay_ms(1000);
 			} else {
-				if (!dhcp_server_started) {
+				if (!usbd_ecm_dhcp_server_started) {
 					// RTK_LOGS(TAG, RTK_LOG_INFO, "Starting USB ECM DHCP Server...\n");
 
 					// 1. Set netif MAC address
@@ -280,7 +280,7 @@ static void example_usbd_ecm_link_change_thread(void *param)
 					dhcps_init(pnetif_usb_eth);
 					dhcps_start(pnetif_usb_eth);
 
-					dhcp_server_started = 1;
+					usbd_ecm_dhcp_server_started = 1;
 					ethernet_state = ETH_STATUS_INIT;
 
 					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server started\n");
@@ -289,7 +289,7 @@ static void example_usbd_ecm_link_change_thread(void *param)
 		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {
 			ethernet_state = ETH_STATUS_DEINIT;
 			// USB disconnected, stop DHCP server
-			if (dhcp_server_started) {
+			if (usbd_ecm_dhcp_server_started) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Stopping USB ECM DHCP Server...\n");
 
 				// 1. Stop DHCP service first
@@ -300,7 +300,7 @@ static void example_usbd_ecm_link_change_thread(void *param)
 				netifapi_netif_set_down(pnetif_usb_eth);
 				netifapi_netif_set_link_down(pnetif_usb_eth);
 
-				dhcp_server_started = 0;
+				usbd_ecm_dhcp_server_started = 0;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server stopped\n");
 			}
 		} else {
@@ -313,7 +313,7 @@ static void example_usbd_ecm_link_change_thread(void *param)
   * @brief  Initializes the CDC ECM media layer
   * @retval Status
   */
-static int cdc_ecm_cb_init(void)
+static int usbd_ecm_cb_init(void)
 {
 	return HAL_OK;
 }
@@ -322,7 +322,7 @@ static int cdc_ecm_cb_init(void)
   * @brief  DeInitializes the CDC ECM media layer
   * @retval Status
   */
-static int cdc_ecm_cb_deinit(void)
+static int usbd_ecm_cb_deinit(void)
 {
 	return HAL_OK;
 }
@@ -333,7 +333,7 @@ static int cdc_ecm_cb_deinit(void)
   * @param  length: RX data length (in bytes)
   * @retval Status
   */
-static int cdc_ecm_cb_received(u8 *buf, u32 length)
+static int usbd_ecm_cb_received(u8 *buf, u32 length)
 {
 	if (buf == NULL || length == 0) {
 		return HAL_ERR_PARA;
@@ -363,7 +363,7 @@ static int cdc_ecm_cb_received(u8 *buf, u32 length)
   * @param  buf: Buffer containing command data
   * @retval Status
   */
-static int cdc_ecm_cb_setup(usb_setup_req_t *req, u8 *buf)
+static int usbd_ecm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = HAL_OK;
 	UNUSED(buf);
@@ -393,6 +393,7 @@ static int cdc_ecm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		case USB_CDC_ECM_SET_ETHERNET_MULTICAST_FILTERS:
 			break;
 		case USB_CDC_ECM_GET_ETHERNET_STATISTIC:
+			ret = HAL_ERR_UNKNOWN;
 			break;
 		default:
 			ret = HAL_ERR_UNKNOWN;
@@ -410,7 +411,7 @@ static int cdc_ecm_cb_setup(usb_setup_req_t *req, u8 *buf)
   * @param  old_status: Previous attach status
   * @param  status: Current attach status
   */
-static void cdc_ecm_cb_status_changed(u8 old_status, u8 status)
+static void usbd_ecm_cb_status_changed(u8 old_status, u8 status)
 {
 	/*
 	The scenario of state change is as follows:
@@ -423,10 +424,10 @@ static void cdc_ecm_cb_status_changed(u8 old_status, u8 status)
 	*/
 
 #if CONFIG_USBD_CDC_ECM_HOTPLUG
-	cdc_ecm_attach_old_status = old_status;
-	cdc_ecm_attach_status = status;
-	if (cdc_ecm_attach_status_changed_sema != NULL) {
-		rtos_sema_give(cdc_ecm_attach_status_changed_sema);
+	usbd_ecm_attach_old_status = old_status;
+	usbd_ecm_attach_status = status;
+	if (usbd_ecm_attach_status_changed_sema != NULL) {
+		rtos_sema_give(usbd_ecm_attach_status_changed_sema);
 	}
 #else
 	UNUSED(status);
@@ -434,7 +435,7 @@ static void cdc_ecm_cb_status_changed(u8 old_status, u8 status)
 #endif
 
 	if (status == USBD_ATTACH_STATUS_DETACHED) {
-		cdc_ecm_link_disconnected = 1;
+		usbd_ecm_link_disconnected = 1;
 	}
 }
 
@@ -443,22 +444,22 @@ static void cdc_ecm_cb_status_changed(u8 old_status, u8 status)
   * @brief  USB hotplug detection and handling thread
   * @param  param: Thread parameter (unused)
   */
-static void example_usbd_ecm_hotplug_thread(void *param)
+static void usbd_ecm_hotplug_thread(void *param)
 {
 	int ret = 0;
 	u8 current_status;
 	UNUSED(param);
 
-	cdc_ecm_hotplug_thread_running = 1;
+	usbd_ecm_hotplug_thread_running = 1;
 
-	while (cdc_ecm_hotplug_thread_running) {
+	while (usbd_ecm_hotplug_thread_running) {
 		// Wait for attach status change notification
-		if (rtos_sema_take(cdc_ecm_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
+		if (rtos_sema_take(usbd_ecm_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			continue;
 		}
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Status change %d -> %d \n", cdc_ecm_attach_old_status, cdc_ecm_attach_status);
-		current_status = cdc_ecm_attach_status;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Status change %d -> %d \n", usbd_ecm_attach_old_status, usbd_ecm_attach_status);
+		current_status = usbd_ecm_attach_status;
 
 		if (current_status == USBD_ATTACH_STATUS_DETACHED) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
@@ -482,14 +483,14 @@ static void example_usbd_ecm_hotplug_thread(void *param)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x\n", rtos_mem_get_free_heap_size());
 
 			// Re-initialize USB device
-			ret = usbd_init(&cdc_ecm_cfg);
+			ret = usbd_init(&usbd_ecm_cfg);
 			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail %d\n", ret);
 				break;
 			}
 
 			// Re-initialize CDC ECM
-			ret = usbd_cdc_ecm_init(&cdc_ecm_cb);
+			ret = usbd_cdc_ecm_init(&usbd_ecm_cb);
 			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init ECM fail %d\n", ret);
 				usbd_deinit();
@@ -504,7 +505,7 @@ static void example_usbd_ecm_hotplug_thread(void *param)
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Thread exit\n");
-	cdc_ecm_hotplug_thread_running = 0;
+	usbd_ecm_hotplug_thread_running = 0;
 	rtos_task_delete(NULL);
 }
 #endif // CONFIG_USBD_CDC_ECM_HOTPLUG
@@ -513,7 +514,7 @@ static void example_usbd_ecm_hotplug_thread(void *param)
   * @brief  USB CDC ECM initialization thread
   * @param  param: Thread parameter (unused)
   */
-static void example_usbd_cdc_ecm_thread(void *param)
+static void usbd_ecm_init_thread(void *param)
 {
 	int ret = 0;
 #if CONFIG_USBD_CDC_ECM_HOTPLUG
@@ -526,7 +527,7 @@ static void example_usbd_cdc_ecm_thread(void *param)
 
 #if CONFIG_USBD_CDC_ECM_HOTPLUG
 	// Create semaphore for hotplug detection
-	ret = rtos_sema_create(&cdc_ecm_attach_status_changed_sema, 0U, 1U);
+	ret = rtos_sema_create(&usbd_ecm_attach_status_changed_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create attach sema fail\n");
 		goto exit_cleanup;
@@ -534,14 +535,14 @@ static void example_usbd_cdc_ecm_thread(void *param)
 #endif
 
 	// Initialize USB device
-	ret = usbd_init(&cdc_ecm_cfg);
+	ret = usbd_init(&usbd_ecm_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail %d\n", ret);
 		goto exit_usbd_init_fail;
 	}
 
 	// Initialize CDC ECM
-	ret = usbd_cdc_ecm_init(&cdc_ecm_cb);
+	ret = usbd_cdc_ecm_init(&usbd_ecm_cb);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init ECM fail %d\n", ret);
 		goto exit_usbd_cdc_ecm_init_fail;
@@ -550,8 +551,8 @@ static void example_usbd_cdc_ecm_thread(void *param)
 #if CONFIG_USBD_CDC_ECM_HOTPLUG
 	// Create hotplug detection thread
 	ret = rtos_task_create(&hotplug_task,
-						   "example_usbd_ecm_hotplug_thread",
-						   example_usbd_ecm_hotplug_thread,
+						   "usbd_ecm_hotplug_thread",
+						   usbd_ecm_hotplug_thread,
 						   NULL,
 						   CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE,
 						   CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_PRIORITY);
@@ -577,9 +578,9 @@ exit_usbd_cdc_ecm_init_fail:
 
 exit_usbd_init_fail:
 #if CONFIG_USBD_CDC_ECM_HOTPLUG
-	if (cdc_ecm_attach_status_changed_sema != NULL) {
-		rtos_sema_delete(cdc_ecm_attach_status_changed_sema);
-		cdc_ecm_attach_status_changed_sema = NULL;
+	if (usbd_ecm_attach_status_changed_sema != NULL) {
+		rtos_sema_delete(usbd_ecm_attach_status_changed_sema);
+		usbd_ecm_attach_status_changed_sema = NULL;
 	}
 exit_cleanup:
 #endif
@@ -605,8 +606,8 @@ void example_usbd_cdc_ecm(void)
 	rtos_task_t monitor_task = NULL;
 
 	ret = rtos_task_create(&init_task,
-						   "example_usbd_cdc_ecm_thread",
-						   example_usbd_cdc_ecm_thread,
+						   "usbd_ecm_init_thread",
+						   usbd_ecm_init_thread,
 						   NULL,
 						   CONFIG_USBD_CDC_ECM_INIT_THREAD_STACK_SIZE,
 						   CONFIG_USBD_CDC_ECM_INIT_THREAD_PRIORITY);
@@ -616,8 +617,8 @@ void example_usbd_cdc_ecm(void)
 	}
 
 	ret = rtos_task_create(&monitor_task,
-						   "example_usbd_ecm_link_change_thread",
-						   example_usbd_ecm_link_change_thread,
+						   "usbd_ecm_link_change_thread",
+						   usbd_ecm_link_change_thread,
 						   NULL,
 						   CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_STACK_SIZE,
 						   CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_PRIORITY);
@@ -641,10 +642,10 @@ void example_usbd_cdc_ecm(void)
  * virtual NIC carrier up/down) without waiting for a real link event.
  *
  * Note: this does NOT touch the example's internal DHCP/lwIP teardown
- * path (cdc_ecm_link_disconnected); it only sends the USB-level
+ * path (usbd_ecm_link_disconnected); it only sends the USB-level
  * notification. Add a second command if you want to drive both at once.
  */
-static u32 cmd_ecm_link(u16 argc, u8 *argv[])
+static u32 usbd_ecm_cmd_link(u16 argc, u8 *argv[])
 {
 	u8 link_up;
 
@@ -663,5 +664,5 @@ static u32 cmd_ecm_link(u16 argc, u8 *argv[])
 
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usbd_cdc_ecm_cmd_table[] = {
-	{"usbd_ecm_link", cmd_ecm_link},
+	{"usbd_ecm_link", usbd_ecm_cmd_link},
 };

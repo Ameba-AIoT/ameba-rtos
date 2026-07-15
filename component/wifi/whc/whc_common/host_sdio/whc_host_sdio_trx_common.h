@@ -42,4 +42,13 @@ void whc_host_pkt_rx_to_user(uint8_t *pbuf);
  */
 void whc_host_sdio_isr_process(struct whc_sdio *priv);
 
+/* Shared SDIO host TX entry: fill TX descriptor and push buf to the device
+ * TX FIFO, blocking on the TXBD-avail sema/poll until a slot is free.
+ * Additional required port macros:
+ *   - WHC_MUTEX_TAKE(m, t) / WHC_MUTEX_GIVE(m)
+ *   - WHC_SEM_TAKE_TIMEOUT(s, t)
+ *   - WHC_MSLEEP(ms)
+ * plus rtw_sdio_query_txbd_status() and hal rtw_write_port(). */
+void whc_host_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb);
+
 #endif /* __WHC_HOST_SDIO_TRX_H__ */

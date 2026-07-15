@@ -1,15 +1,6 @@
 #include "rtw_whc_common.h"
 
-#define TX_BUF_NUM	1
-#define MAX_SKB_BUF_SIZE_NORMAL	1664
-
-#ifdef todo
-#endif //use dynamic buf later, malloc when init host.
-/* one buf for fullhan, host will not exit send task until data send done */
-__attribute__((aligned(32)))  uint8_t tx_buf[TX_BUF_NUM][4 + SIZE_TX_DESC + MAX_SKB_BUF_SIZE_NORMAL] = {0};
-uint8_t used_buf_num = 0;
 extern struct whc_sdio whc_sdio_priv;
-extern int whc_host_init_done;
 
 /* host tx */
 int whc_host_sdio_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
@@ -20,21 +11,20 @@ int whc_host_sdio_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	int ret = 0, i = 0;
 	int len_send = 0;
 	struct whc_msg_info *msg;
+	uint8_t *ptr = whc_sdio_priv.tx_buf;
+	uint8_t *buf;
 
-	if (!whc_host_init_done) {
+	if (!whc_sdio_priv.whc_host_init_done) {
 		printf("Host trx err: wifi not init\n");
 		return -1;
 	}
-
-	rtos_sema_take(whc_sdio_priv.host_send, 0xFFFFFFFF);
-
-	uint8_t *ptr = &(tx_buf[used_buf_num][0]);
-	uint8_t *buf;
 
 	if (total_len > MAX_SKB_BUF_SIZE_NORMAL) {
 		printf("%s: len(%d) > MAXIMUM_ETHERNET_PACKET_SIZE !\n\r", __func__, total_len);
 		return -1;
 	}
+
+	rtos_sema_take(whc_sdio_priv.host_send, 0xFFFFFFFF);
 
 	/* buf to sdio send */
 	buf = ptr;
@@ -57,7 +47,7 @@ int whc_host_sdio_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	}
 	len_send += msg->data_len;
 
-	rtw_sdio_send_data(buf, len_send, NULL);
+	whc_host_sdio_send_data(buf, len_send, NULL);
 
 	rtos_sema_give(whc_sdio_priv.host_send);
 

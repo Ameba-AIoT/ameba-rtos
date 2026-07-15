@@ -60,6 +60,8 @@ struct eth_drv_sg {
 #define SOFTAP_WLAN_INDEX	1
 #endif
 
+#include "whc_host_sdio_init_common.h"
+
 int wifi_is_connected_to_ap(void);
 void rtw_psk_wpa_deinit(uint8_t port);
 void rtw_wakelock_timeout(uint32_t timeoutms);

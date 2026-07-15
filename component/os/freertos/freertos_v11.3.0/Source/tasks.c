@@ -7604,7 +7604,7 @@ static void prvResetNextTaskUnblockTime( void )
                             /* Realtek: DiagSnPrintf replaces snprintf to skip newlib stack cost */
                             iSnprintfReturnValue = DiagSnPrintf( pcWriteBuffer,
                                                              uxBufferLength - uxConsumedBufferLength,
-                                                             "\t%c\t%u\t%u\t%u\t0x%x\r\n",
+                                                             "\t%c\t%d\t%d\t%d\t0x%x\r\n",
                                                              cStatus,
                                                              ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority,
                                                              ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark,
@@ -7614,7 +7614,7 @@ static void prvResetNextTaskUnblockTime( void )
                             /* Realtek: DiagSnPrintf replaces snprintf to skip newlib stack cost */
                             iSnprintfReturnValue = DiagSnPrintf( pcWriteBuffer,
                                                              uxBufferLength - uxConsumedBufferLength,
-                                                             "\t%c\t%u\t%u\t%u\r\n",
+                                                             "\t%c\t%d\t%d\t%d\r\n",
                                                              cStatus,
                                                              ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority,
                                                              ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark,
@@ -7765,7 +7765,7 @@ static void prvResetNextTaskUnblockTime( void )
                                     /* Realtek: DiagSnPrintf replaces snprintf to skip newlib stack cost */
                                     iSnprintfReturnValue = DiagSnPrintf( pcWriteBuffer,
                                                                      uxBufferLength - uxConsumedBufferLength,
-                                                                     "\t%u\t\t%u%%\r\n",
+                                                                     "\t%d\t\t%d%%\r\n",
                                                                      ( unsigned int ) pxTaskStatusArray[ x ].ulRunTimeCounter,
                                                                      ( unsigned int ) ulStatsAsPercentage );
                                 }
@@ -7790,7 +7790,7 @@ static void prvResetNextTaskUnblockTime( void )
                                     /* Realtek: DiagSnPrintf replaces snprintf to skip newlib stack cost */
                                     iSnprintfReturnValue = DiagSnPrintf( pcWriteBuffer,
                                                                      uxBufferLength - uxConsumedBufferLength,
-                                                                     "\t%u\t\t<1%%\r\n",
+                                                                     "\t%d\t\t<1%%\r\n",
                                                                      ( unsigned int ) pxTaskStatusArray[ x ].ulRunTimeCounter );
                                 }
                                 #endif /* ifdef portLU_PRINTF_SPECIFIER_REQUIRED */

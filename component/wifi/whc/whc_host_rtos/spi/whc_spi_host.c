@@ -3,42 +3,6 @@
 struct whc_spi_host_priv_t spi_host_priv = {0};
 extern int whc_host_init_done;
 
-u32 whc_spi_host_rxdma_irq_handler(void *pData)
-{
-	GDMA_InitTypeDef *GDMA_InitStruct;
-	u32 int_status;
-
-	(void)pData;
-
-	GDMA_InitStruct = &spi_host_priv.SSIRxGdmaInitStruct;
-
-	/* check and clear RX DMA ISR */
-	int_status = GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-
-	if (spi_host_priv.host_recv_state) {
-		GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
-		SSI_SetDmaEnable(WHC_SPI_DEV, DISABLE, SPI_BIT_RDMAE);
-		rtos_sema_give(spi_host_priv.rxirq_sema);
-		spi_host_priv.host_recv_state = 0;
-	} else {
-		SSI_SetDmaEnable(WHC_SPI_DEV, DISABLE, SPI_BIT_RDMAE);
-		rtos_sema_give(spi_host_priv.host_recv_done);
-	}
-
-	spi_host_priv.host_dma_waiting_status &= (~HOST_RX_DMA_CB_DONE);
-	if (spi_host_priv.host_dma_waiting_status == 0) {
-		set_sw_cs_pin(CS_HIGH);
-	}
-
-	if (int_status & ErrType) {
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "spi rxdma err occurs!!\n");
-	}
-
-	return 0;
-}
-
-
-
 _OPTIMIZE_NONE_
 void whc_spi_host_flush_rx_fifo(void)
 {
@@ -60,15 +24,13 @@ void whc_spi_host_rx_req_task(void)
 {
 	for (;;) {
 		rtos_sema_take(spi_host_priv.host_recv_wake, MUTEX_WAIT_TIMEOUT);
+
+		/* TODO: check if this flow is ok?? 1) acquire dev_lock, 2) check dev ready, 3) remove SSI_Busy check*/
 retry:
 		while (GPIO_ReadDataBit(DEV_READY_PIN) == DEV_BUSY) {
-			/* wait for sema*/
-			if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == RTK_SUCCESS) {
-				if (spi_host_priv.dev_state == DEV_BUSY) {
-					//RTK_LOGE(TAG_WLAN_INIC, "%s: wait dev busy timeout, can't recv data %d \n\r", __func__, spi_host_priv.dev_state);
-				}
-			} else {
-				RTK_LOGD(TAG_WLAN_INIC, "%s: down sema timeout, can't recv data\n\r", __func__);
+			/* wait for dev ready */
+			if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == RTK_FAIL) {
+				RTK_LOGD(TAG_WLAN_INIC, "wait dev ready TO\n\r");
 			}
 		}
 
@@ -89,7 +51,7 @@ retry:
 			set_sw_cs_pin(CS_LOW);
 
 			whc_spi_host_flush_rx_fifo();
-			spi_host_priv.host_recv_state = 1;
+			spi_host_priv.host_rx_state = 1;
 			SSI_SetDmaEnable(WHC_SPI_DEV, ENABLE, SPI_BIT_RDMAE);
 
 			spi_host_priv.host_tx_state = 0;
@@ -100,12 +62,10 @@ retry:
 			rtos_sema_give(spi_host_priv.dev_rdy_sema);
 		}
 		rtos_mutex_give(spi_host_priv.dev_lock);
-
 	}
-
 }
 
-static int whc_spi_host_devrdy_handler(int irq, void *context)
+static int whc_spi_host_dev_rdy_handler(int irq, void *context)
 {
 	(void)irq;
 
@@ -113,12 +73,11 @@ static int whc_spi_host_devrdy_handler(int irq, void *context)
 
 	if (GPIO_ReadDataBit(DEV_READY_PIN)) {
 		spi_host_priv.dev_state = DEV_READY;
-		/* wakeup wait task */
 		rtos_sema_give(spi_host_priv.dev_rdy_sema);
 	} else {
 		spi_host_priv.dev_state = DEV_BUSY;
 	}
-	return 1; //IRQ_HANDLED;
+	return 1;
 }
 
 static int whc_spi_host_dev_txreq_handler(int irq, void *context)
@@ -127,64 +86,41 @@ static int whc_spi_host_dev_txreq_handler(int irq, void *context)
 	(void)context;
 	rtos_sema_give(spi_host_priv.host_recv_wake);
 
-	return 1;//IRQ_HANDLED;
+	return 1;
 }
 
-static void whc_spi_host_setup_gpio(void)
+u32 whc_spi_host_rxdma_irq_handler(void *pData)
 {
-	GPIO_InitTypeDef GPIO_InitStruct;
+	GDMA_InitTypeDef *GDMA_InitStruct;
+	u32 int_status;
 
-	InterruptRegister(GPIO_INTHandler, GPIOB_IRQ, (u32)GPIOB_BASE, 6);
-	InterruptEn(GPIOB_IRQ, 6);
+	(void)pData;
 
-	/* Initialize GPIO */
-	/* tx req only need rising */
-	GPIO_InitStruct.GPIO_Pin = DEV_TX_REQ_PIN;
-	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
-	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_INT;
-	GPIO_InitStruct.GPIO_ITTrigger = GPIO_INT_Trigger_EDGE;
-	GPIO_InitStruct.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_HIGH;
-	GPIO_Init(&GPIO_InitStruct);
-	GPIO_UserRegIrq(GPIO_InitStruct.GPIO_Pin, whc_spi_host_dev_txreq_handler, &GPIO_InitStruct);
-	GPIO_INTConfig(GPIO_InitStruct.GPIO_Pin, ENABLE);
+	GDMA_InitStruct = &spi_host_priv.SSIRxGdmaInitStruct;
 
-	/* dev ready need both edge */
-	GPIO_InitStruct.GPIO_Pin = DEV_READY_PIN;
-	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
-	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_INT;
-	GPIO_InitStruct.GPIO_ITTrigger = GPIO_INT_Trigger_BOTHEDGE;
-	GPIO_Init(&GPIO_InitStruct);
-	GPIO_UserRegIrq(GPIO_InitStruct.GPIO_Pin, whc_spi_host_devrdy_handler, &GPIO_InitStruct);
-	GPIO_INTConfig(GPIO_InitStruct.GPIO_Pin, ENABLE);
+	/* check and clear RX DMA ISR */
+	int_status = GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
-	GPIO_InitStruct.GPIO_Pin = SPIM_SW_CS;
-	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_Init(&GPIO_InitStruct);
-	set_sw_cs_pin(CS_HIGH);
+	if (spi_host_priv.host_rx_state) {
+		GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+		SSI_SetDmaEnable(WHC_SPI_DEV, DISABLE, SPI_BIT_RDMAE);
+		rtos_sema_give(spi_host_priv.rxirq_sema);
+		spi_host_priv.host_rx_state = 0;
+	} else {
+		SSI_SetDmaEnable(WHC_SPI_DEV, DISABLE, SPI_BIT_RDMAE);
+		rtos_sema_give(spi_host_priv.host_recv_done);
+	}
 
-#ifdef SPI_DEBUG
-	GPIO_InitStruct.GPIO_Pin = _PB_20;
-	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
-	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_Init(&GPIO_InitStruct);
+	spi_host_priv.host_dma_waiting_status &= (~HOST_RX_DMA_CB_DONE);
+	if (spi_host_priv.host_dma_waiting_status == 0) {
+		set_sw_cs_pin(CS_HIGH);
+	}
 
-	GPIO_InitStruct.GPIO_Pin = _PB_6;
-	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
-	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_Init(&GPIO_InitStruct);
+	if (int_status & ErrType) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "spi rxdma err occurs!!\n");
+	}
 
-	GPIO_InitStruct.GPIO_Pin = _PA_24;
-	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
-	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_Init(&GPIO_InitStruct);
-
-	GPIO_InitStruct.GPIO_Pin = _PA_25;
-	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
-	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_Init(&GPIO_InitStruct);
-#endif
-
+	return 0;
 }
 
 u32 whc_spi_host_txdma_irq_handler(void *pData)
@@ -227,11 +163,7 @@ void whc_spi_host_dma_tx_done_cb(void)
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 	SSI_SetDmaEnable(WHC_SPI_DEV, DISABLE, SPI_BIT_TDMAE);
 
-	/* Dev TX complete, free tx skb or buffer */
-	if (buf_info->is_skb) {
-		char *buf = buf_info->ptr;
-		*buf = 0;
-	} else {
+	if (!buf_info->is_skb) {
 		rtos_mem_free((u8 *)buf_info->ptr);
 	}
 	rtos_mem_free((u8 *)buf_info);
@@ -253,6 +185,7 @@ void whc_spi_host_rxdma_irq_task(void *pData)
 {
 	GDMA_InitTypeDef *GDMA_InitStruct = &(spi_host_priv.SSIRxGdmaInitStruct);
 	u8 *recv_msg;
+	u8 *new_buf;
 
 	(void)pData;
 	for (;;) {
@@ -262,17 +195,26 @@ void whc_spi_host_rxdma_irq_task(void *pData)
 
 		/* take over the filled buffer, re-arm rx dma with a fresh one */
 		recv_msg = spi_host_priv.rx_buf;
-		spi_host_priv.rx_buf = rtos_mem_zmalloc(SPI_BUFSZ);
+
+		new_buf = rtos_mem_zmalloc(SPI_BUFSZ);
+		if (new_buf) {
+			spi_host_priv.rx_buf = new_buf;
+		} else {
+			RTK_LOGE(TAG_WLAN_INIC, "SPI rx_buf alloc fail, drop frame\n");
+		}
 		DCache_CleanInvalidate((u32)spi_host_priv.rx_buf, SPI_BUFSZ);
 		GDMA_SetDstAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, (u32)spi_host_priv.rx_buf);
 		GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 		rtos_sema_give(spi_host_priv.host_recv_done);
 
-		whc_host_recv_dispatch(recv_msg, SPI_BUFSZ);
+		if (new_buf) {
+			whc_host_recv_dispatch(recv_msg, SPI_BUFSZ);
+		}
+
 	}
 }
 
-static void whc_spi_host_spi_init(void)
+static int whc_spi_host_spi_init(void)
 {
 	SSI_InitTypeDef SSI_InitStructMaster;
 
@@ -303,6 +245,10 @@ static void whc_spi_host_spi_init(void)
 	SSI_Init(WHC_SPI_DEV, &SSI_InitStructMaster);
 
 	spi_host_priv.rx_buf = rtos_mem_zmalloc(SPI_BUFSZ);
+	if (!spi_host_priv.rx_buf) {
+		RTK_LOGE(TAG_WLAN_INIC, "SPI rx_buf alloc fail\n");
+		return RTK_FAIL;
+	}
 	DCache_CleanInvalidate((u32)spi_host_priv.rx_buf, SPI_BUFSZ);
 	SSI_RXGDMA_Init(index, &(spi_host_priv.SSIRxGdmaInitStruct), (void *)WHC_SPI_RXDMA, (IRQ_FUN) whc_spi_host_rxdma_irq_handler, spi_host_priv.rx_buf,
 					SPI_BUFSZ);
@@ -313,21 +259,26 @@ static void whc_spi_host_spi_init(void)
 
 	/* fix for dummy tx when rx */
 	spi_host_priv.dummy_tx_buf = rtos_mem_zmalloc(SPI_BUFSZ);
+	if (!spi_host_priv.dummy_tx_buf) {
+		RTK_LOGE(TAG_WLAN_INIC, "SPI dummy_tx_buf alloc fail\n");
+		return RTK_FAIL;
+	}
 	DCache_CleanInvalidate((u32)spi_host_priv.dummy_tx_buf, SPI_BUFSZ);
 
 	if (rtos_task_create(NULL, "SPI_RXDMA_IRQ_TASK", whc_spi_host_rxdma_irq_task, (void *)&spi_host_priv, WIFI_STACK_WHC_SPI_HOST_RXDMA_IRQ_TASK,
 						 7) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_RXDMA_IRQ_TASK Err!!\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (rtos_task_create(NULL, "SPI_TXDMA_IRQ_TASK", whc_spi_host_txdma_irq_task, (void *)&spi_host_priv, WIFI_STACK_WHC_SPI_HOST_TXDMA_IRQ_TASK,
 						 7) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_TXDMA_IRQ_TASK Err!!\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	RTK_LOGI(TAG_WLAN_INIC, "SPI Host init done! \n");
+	return RTK_SUCCESS;
 }
 
 bool whc_spi_host_txdma_init(
@@ -385,7 +336,7 @@ bool whc_spi_host_txdma_init(
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 			GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 		} else {
-			RTK_LOGE(TAG_WLAN_INIC, "SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%lu\n", pTxData, Length);
+			RTK_LOGE(TAG_WLAN_INIC, "SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%u\n", pTxData, Length);
 			return FALSE;
 		}
 	} else {
@@ -417,28 +368,26 @@ void whc_spi_host_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb)
 {
 	GDMA_InitTypeDef *GDMA_InitStruct = &(spi_host_priv.SSITxGdmaInitStruct);
 	u32 index = (WHC_SPI_DEV == SPI0_DEV) ? 0 : 1;
-	struct whc_txbuf_info_t *buf_info;
+	struct whc_txbuf_info_t *buf_info = NULL;
+
+	if (len > SPI_BUFSZ) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s: len(%d) > SPI_BUFSZ\n\r", __func__, len);
+		goto drop;
+	}
 
 	buf_info = whc_host_alloc_buf_info(buf, len, buf_alloc, is_skb);
 	if (!buf_info) {
-		return;
+		goto drop;
 	}
 
 	DCache_CleanInvalidate((u32)buf, SPI_BUFSZ);
 
-	if (len > SPI_BUFSZ) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s: len(%d) > SPI_BUFSZ\n\r", __func__, len);
-	}
-
+	/* TODO: check if this flow is ok?? 1) acquire dev_lock, 2) check dev ready, 3) remove SSI_Busy check*/
 retry:
 	while (GPIO_ReadDataBit(DEV_READY_PIN) == DEV_BUSY) {
-		/* wait for sema*/
-		if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == RTK_SUCCESS) {
-			if (spi_host_priv.dev_state == DEV_BUSY) {
-				RTK_LOGD(TAG_WLAN_INIC, "%s: wait dev busy timeout, can't send data %d \n\r", __func__, spi_host_priv.dev_state);
-			}
-		} else {
-			RTK_LOGD(TAG_WLAN_INIC, "%s: down sema timeout, can't send data\n\r", __func__);
+		/* wait for dev ready */
+		if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == RTK_FAIL) {
+			RTK_LOGD(TAG_WLAN_INIC, "wait dev ready TO\n\r");
 		}
 	}
 
@@ -467,7 +416,7 @@ retry:
 	rtos_sema_take(spi_host_priv.host_recv_done, MUTEX_WAIT_TIMEOUT);
 
 	whc_spi_host_flush_rx_fifo();
-	spi_host_priv.host_recv_state = 1;
+	spi_host_priv.host_rx_state = 1;
 	spi_host_priv.host_tx_state = 1;
 	spi_host_priv.host_dma_waiting_status = HOST_RX_DMA_CB_DONE | HOST_TX_DMA_CB_DONE;
 
@@ -482,9 +431,78 @@ retry:
 	rtos_critical_exit(RTOS_CRITICAL_WIFI);
 
 	rtos_mutex_give(spi_host_priv.dev_lock);
+	return;
+
+drop:
+	/* Host drop tx, free tx skb or buffer */
+	if (is_skb) {
+		/* clear first byte of pre-allocated buffer */
+		*((u8 *) buf_alloc) = 0;
+	} else {
+		/* free dynamically-allocated buffer */
+		rtos_mem_free((u8 *)buf_alloc);
+	}
+	rtos_mem_free((u8 *)buf_info);
 }
 
-static void whc_spi_host_drv_init(void)
+static void whc_spi_host_setup_gpio(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct;
+
+	InterruptRegister(GPIO_INTHandler, GPIOB_IRQ, (u32)GPIOB_BASE, 6);
+	InterruptEn(GPIOB_IRQ, 6);
+
+	/* Initialize GPIO */
+	/* tx req only need rising */
+	GPIO_InitStruct.GPIO_Pin = DEV_TX_REQ_PIN;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_INT;
+	GPIO_InitStruct.GPIO_ITTrigger = GPIO_INT_Trigger_EDGE;
+	GPIO_InitStruct.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_HIGH;
+	GPIO_Init(&GPIO_InitStruct);
+	GPIO_UserRegIrq(GPIO_InitStruct.GPIO_Pin, whc_spi_host_dev_txreq_handler, &GPIO_InitStruct);
+	GPIO_INTConfig(GPIO_InitStruct.GPIO_Pin, ENABLE);
+
+	/* dev ready need both edge */
+	GPIO_InitStruct.GPIO_Pin = DEV_READY_PIN;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_INT;
+	GPIO_InitStruct.GPIO_ITTrigger = GPIO_INT_Trigger_BOTHEDGE;
+	GPIO_Init(&GPIO_InitStruct);
+	GPIO_UserRegIrq(GPIO_InitStruct.GPIO_Pin, whc_spi_host_dev_rdy_handler, &GPIO_InitStruct);
+	GPIO_INTConfig(GPIO_InitStruct.GPIO_Pin, ENABLE);
+
+	GPIO_InitStruct.GPIO_Pin = SPIM_SW_CS;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_Init(&GPIO_InitStruct);
+	set_sw_cs_pin(CS_HIGH);
+
+#ifdef SPI_DEBUG
+	GPIO_InitStruct.GPIO_Pin = _PB_20;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_Init(&GPIO_InitStruct);
+
+	GPIO_InitStruct.GPIO_Pin = _PB_6;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_Init(&GPIO_InitStruct);
+
+	GPIO_InitStruct.GPIO_Pin = _PA_24;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_Init(&GPIO_InitStruct);
+
+	GPIO_InitStruct.GPIO_Pin = _PA_25;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_Init(&GPIO_InitStruct);
+#endif
+
+}
+
+static int whc_spi_host_drv_init(void)
 {
 	/* init host priv */
 	rtos_mutex_create(&(spi_host_priv.dev_lock));
@@ -498,10 +516,10 @@ static void whc_spi_host_drv_init(void)
 	spi_host_priv.rx_buf = NULL;
 	spi_host_priv.host_dma_waiting_status = 0;
 
-	if (rtos_task_create(NULL, (const char *const)"SPI_RX_REQ_TASK", (rtos_task_function_t)whc_spi_host_rx_req_task, NULL, WIFI_STACK_SIZE_INIC_RX_REQ_TASK,
+	if (rtos_task_create(NULL, (const char *const)"SPI_RX_REQ_TASK", (rtos_task_function_t)whc_spi_host_rx_req_task, NULL, WIFI_STACK_WHC_SPI_RXREQ_TASK,
 						 6) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "Create SPI_RXDMA_IRQ_TASK Err!!\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (GPIO_ReadDataBit(DEV_READY_PIN)) {
@@ -516,6 +534,7 @@ static void whc_spi_host_drv_init(void)
 	whc_host_api_init();
 #endif
 
+	return RTK_SUCCESS;
 }
 
 /**
@@ -525,13 +544,17 @@ static void whc_spi_host_drv_init(void)
  */
 void whc_spi_host_init(void)
 {
-	whc_spi_host_drv_init();
+	if (whc_spi_host_drv_init() != RTK_SUCCESS) {
+		return;
+	}
 
 	/* dev rdy and req pin */
 	whc_spi_host_setup_gpio();
 
 	/* init spi */
-	whc_spi_host_spi_init();
+	if (whc_spi_host_spi_init() != RTK_SUCCESS) {
+		return;
+	}
 
 	whc_host_init_done = 1;
 }

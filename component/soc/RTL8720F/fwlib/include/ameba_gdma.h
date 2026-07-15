@@ -967,107 +967,107 @@ extern "C" {
   */
 typedef struct {
 	u8	GDMA_Index;               /*!< Specifies the GDMA index.
-					                           This parameter can be the value 0.*/
+					                           This parameter can be the value 0. */
 
 	u8	GDMA_ChNum;               /*!< Specifies the GDMA channel number.
-					                           This parameter can be the value 0 ~ 7.*/
+					                           This parameter can be the value 0 ~ 7. */
 
 	u8	GDMA_ChPrior;             /*!< Specifies the GDMA channel priority.
 					                           This parameter can be the value 0 ~ 7, while 0 for highest priority.
 	                                   If more than one channel are set with the same priority value,
-							                      the channel with small channel number index has higher priority.*/
+							                      the channel with small channel number index has higher priority. */
 
 	u32	GDMA_DIR;	                /*!< Specifies the GDMA transmission direction.
-					                           This parameter can be a value of @ref GDMA_Data_Transfer_Direction */
+					                           This parameter can be a value of @ref GDMA_Data_Transfer_Direction. */
 
 	u32	GDMA_DstDataWidth;        /*!< Specifies the GDMA destination transfer width.
-					                           This parameter can be a value of @ref GDMA_Data_Size */
+					                           This parameter can be a value of @ref GDMA_Data_Size. */
 
 	u32	GDMA_SrcDataWidth;        /*!< Specifies the GDMA transfer width.
-					                           This parameter can be a value of @ref GDMA_Data_Size */
+					                           This parameter can be a value of @ref GDMA_Data_Size. */
 
 	u32	GDMA_DstInc;		          /*!< Specifies the GDMA destination address increment mode.
-					                           This parameter can be a value of @ref GDMA_Increment_Mode */
+					                           This parameter can be a value of @ref GDMA_Increment_Mode. */
 
 	u32	GDMA_SrcInc;              /*!< Specifies the GDMA source address increment mode.
-					                           This parameter can be a value of @ref GDMA_Increment_Mode */
+					                           This parameter can be a value of @ref GDMA_Increment_Mode. */
 
 	u32	GDMA_DstMsize;            /*!< Specifies the GDMA destination burst transaction length.
-					                           This parameter can be a value of @ref GDMA_Msize */
+					                           This parameter can be a value of @ref GDMA_Msize. */
 
 	u32	GDMA_SrcMsize;            /*!< Specifies the GDMA source burst transaction length.
-					                           This parameter can be a value of @ref GDMA_Msize */
+					                           This parameter can be a value of @ref GDMA_Msize. */
 
 	u32	GDMA_SrcAddr;             /*!< Specifies the GDMA source address.
 					                           This parameter can be a value of the memory or peripheral space address,
 					                           depending on the GDMA data transfer direction.If this address is configured,
-					                           GDMA will move data from here to the destination address space*/
+					                           GDMA will move data from here to the destination address space. */
 
 	u32	GDMA_DstAddr;             /*!< Specifies the GDMA destination address.
 					                           This parameter can be a value of the memory or peripheral space address,
 					                           depending on the GDMA data transfer direction.If this address is configured,
-					                           GDMA will move data here from source address space*/
+					                           GDMA will move data here from source address space. */
 
 	u32	GDMA_BlockSize; 	        /*!< Specifies the GDMA block transfer size.
 					                           @note This parameter indicates the total number of single transactions for
-					                           every block transfer.*/
+					                           every block transfer. */
 
 	u32	GDMA_IsrType;             /*!< Specifies the GDMA interrupt types.
-					                           This parameter can be a value of @ref GDMA_Interrupt_Type */
+					                           This parameter can be a value of @ref GDMA_Interrupt_Type. */
 
 	u32	GDMA_ReloadSrc;           /*!< Specifies the GDMA automatic source reload .
 					                           This parameter can be the 0 or 1.(0 : disable / 1 : enable).
-					                           @note if this value is set to 1, source address register can be automatically
+					                           @note If this value is set to 1, source address register can be automatically
 					                           reloaded from its initial value at the end of every block for multi-block transfers.
-					                           this parameter is only valid in multi block transmission mode*/
+					                           This parameter is only valid in multi block transmission mode. */
 
 	u32	GDMA_ReloadDst;           /*!< Specifies the GDMA automatic destination reload .
 					                           This parameter can be the 0 or 1.(0 : disable / 1 : enable).
-					                           @note if this parameter is set 1, destination address register can be automatically
+					                           @note If this parameter is set 1, destination address register can be automatically
 					                           reloaded from its initial value at the end of every block for multi-block transfers.
-					                           this parameter is only valid in multi block transmission mode*/
+					                           This parameter is only valid in multi block transmission mode. */
 
 	u32	GDMA_LlpDstEn;            /*!< Specifies the GDMA whether block chaining is enabled or disabled on the destination side only.
-					                           @note this parameter is only valid in multi-block transmission mode*/
+					                           @note This parameter is only valid in multi-block transmission mode. */
 
 	u32	GDMA_LlpSrcEn;            /*!< Specifies the GDMA whether block chaining is enabled or disabled on the source side only.
-					                           @note this parameter is only valid in multi-block transmission mode*/
+					                           @note This parameter is only valid in multi-block transmission mode. */
 
 	u32	GDMA_SrcHandshakeInterface;    /*!< Specifies the GDMA hardware handshaking interface for the source
 							                       peripheral of a GDMA channel.
-							                       This parameter can be a value of @ref GDMA0_HS_HandShake_Interface */
+							                       This parameter can be a value of @ref GDMA0_HS_HandShake_Interface. */
 
 	u32	GDMA_DstHandshakeInterface;   /*!< Specifies the GDMA hardware handshaking interface for the destination
 							                       peripheral of a GDMA channel.
-							                       This parameter can be a value of @ref GDMA0_HS_HandShake_Interface */
+							                       This parameter can be a value of @ref GDMA0_HS_HandShake_Interface. */
 
-	u32	MuliBlockCunt;            /*!< Specifies the GDMA Multi-block counter. This parameter is used in multi-block transmission.*/
+	u32	MuliBlockCunt;            /*!< Specifies the GDMA Multi-block counter. This parameter is used in multi-block transmission. */
 
 	u32	MaxMuliBlock;             /*!< Specifies the GDMA Max block number in Multi-block transmission.
-					                           This parameter is used in multi-block transmission.*/
-	u32	SecureTransfer;		        /*!< Specifies the GDMA secure transmission. This parameter is used in secure world of trustzone.*/
+					                           This parameter is used in multi-block transmission. */
+	u32	SecureTransfer;		        /*!< Specifies the GDMA secure transmission. This parameter is used in secure world of trustzone. */
 } GDMA_InitTypeDef, *PGDMA_InitTypeDef;
 /**
   * @brief  GDMA LLI ELE Structure Definition
   */
 typedef struct {
 	u32 Sarx;                     /*!< Specifies the GDMA channel x Source Address Register (SARx) value field of a block descriptor
-	                                   in block chaining. This parameter stores the source address of the current block transfer.*/
+	                                   in block chaining. This parameter stores the source address of the current block transfer. */
 
 	u32 Darx;                     /*!< Specifies the GDMA channel x Destination Address Register(DARx) value field of a block descriptor
-	                                   in block chaining. This parameter stores the destination address of the current block transfer.*/
+	                                   in block chaining. This parameter stores the destination address of the current block transfer. */
 
 	u32 Llpx;                     /*!< Specifies the GDMA channel x Linked List Pointer Register(LLPx) value field of a block descriptor
-	                                   in block chaining. This parameter is a address, which points to the next block descriptor.*/
+	                                   in block chaining. This parameter is a address, which points to the next block descriptor. */
 
 	u32 CtlxLow;                  /*!< Specifies the GDMA channel x Control Register(CTRx) Low 32 bit value field of a block descriptor
-	                                    in block chaining. This parameter stores the DMA control parameters of the current block transfer.*/
+	                                    in block chaining. This parameter stores the DMA control parameters of the current block transfer. */
 
 	u32 CtlxUp;                   /*!< Specifies the GDMA channel x Control Register(CTRx) High 32 bit value field of a block descriptor
-	                                    in block chaining. This parameter stores the DMA control parameters of the current block transfer.*/
+	                                    in block chaining. This parameter stores the DMA control parameters of the current block transfer. */
 
 	u32 Temp;                     /*!< Specifies the reserved GDMA channel x register value field of a block descriptor
-	                                    in block chaining.*/
+	                                    in block chaining. */
 } GDMA_CH_LLI_ELE, *PGDMA_CH_LLI_ELE;
 
 /**
@@ -1075,13 +1075,13 @@ typedef struct {
   */
 struct GDMA_CH_LLI {
 	GDMA_CH_LLI_ELE	 LliEle;     /*!< Specifies the GDMA Linked List Item Element structure field of Linked List Item
-	                                  in block chaining. This structure variable stores the necessary parameters of a block descriptor.*/
+	                                  in block chaining. This structure variable stores the necessary parameters of a block descriptor. */
 
 	u32 BlockSize;               /*!< Specifies the GDMA block size of one block in block chaining.
-					                          This parameter indicates the block size of the current block transfer.*/
+					                          This parameter indicates the block size of the current block transfer. */
 
 	struct GDMA_CH_LLI *pNextLli;/*!< Specifies the GDMA Linked List Item pointer.
-					                          This parameter stores the address pointing to the next Linked List Item in block chaining.*/
+					                          This parameter stores the address pointing to the next Linked List Item in block chaining. */
 };
 
 /**
@@ -1269,10 +1269,6 @@ struct GDMA_CH_LLI {
 
 /* MANUAL_GEN_END */
 
-/** @} */
-
-/** @} */
-
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup GDMA_Exported_Functions GDMA Exported Functions
   * @{
@@ -1306,4 +1302,8 @@ _LONG_CALL_ void GDMA_DestinationScatter(u8 GDMA_Index, u8 GDMA_ChNum, u32 Dst_S
 /**
   * @}
   */
+
+/** @} */
+
+/** @} */
 #endif //_AMEBA_GDMA_H_
