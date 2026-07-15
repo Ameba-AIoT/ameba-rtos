@@ -29,6 +29,7 @@
 #include "netif/ethernet.h"
 #include "lwip/udp.h"
 #include "lwip/lwip_ip6_rlocal.h"
+#include "lwip_netconf.h"
 
 /* ---------------copy from nd6.c ------------------*/
 #define ND6_SEND_FLAG_MULTICAST_DEST 0x01
@@ -534,7 +535,7 @@ handle_NS(struct pbuf *p, struct netif *inp)
     int idx = inp - xnetif;
 
     ns_hdr = (struct ns_header *)p->payload;
-    ns_is_dad = ip6_addr_isany(ip6_current_src_addr());
+    ns_is_dad = ip6_addr_isany_val(*ip6_current_src_addr());
 
     /* Check that ns header fits in packet. */
     if (p->len < sizeof(struct ns_header)) {
@@ -637,7 +638,7 @@ handle_NS_sta(struct pbuf *p, struct netif *inp)
   s8_t i;
 
   ns_hdr = (struct ns_header *)p->payload;
-  ns_is_dad = ip6_addr_isany(ip6_current_src_addr());
+  ns_is_dad = ip6_addr_isany_val(*ip6_current_src_addr());
   
   if (ns_is_dad) {
     /* Check that ns header fits in packet. */

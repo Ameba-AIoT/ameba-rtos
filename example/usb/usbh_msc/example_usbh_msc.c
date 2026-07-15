@@ -145,8 +145,8 @@ static int msc_cb_process(usb_host_t *host, u8 msg)
 	return HAL_OK;
 }
 
-/* I/O test routine (10 files, each with W/R of multiple sizes) */
-static int msc_run_io_test(void)
+/* ── I/O test routine (10 files, each with W/R of multiple sizes) ────────*/
+static int usbh_msc_file_test(void)
 {
 	FATFS fs;
 	FIL f;
@@ -201,7 +201,7 @@ static int msc_run_io_test(void)
 		return HAL_ERR_UNKNOWN;
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%08x\n", rtos_mem_get_free_heap_size());
+	RTK_LOGS(TAG, RTK_LOG_INFO, "FatFS USB W/R performance test start, free heap: 0x%08x\n", rtos_mem_get_free_heap_size());
 
 	/* Write / read up to USBH_MSC_MAX_FILES files */
 	for (filenum = 0; filenum < USBH_MSC_MAX_FILES; filenum++) {
@@ -212,7 +212,7 @@ static int msc_run_io_test(void)
 			break;
 		}
 #endif
-		sprintf(&path[3], "TEST%ld.DAT", filenum);
+		sprintf(&path[3], "TEST%u.DAT", (unsigned int)filenum);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Open file: %s\n", path);
 
 		res = f_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
@@ -331,7 +331,7 @@ static int msc_run_io_test(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Unregister disk driver fail\n");
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%08x\n", rtos_mem_get_free_heap_size());
+	RTK_LOGS(TAG, RTK_LOG_INFO, "FatFS USB W/R performance test done, free heap: 0x%08x\n", rtos_mem_get_free_heap_size());
 	return ret;
 }
 
@@ -436,7 +436,7 @@ void example_usbh_msc_thread(void *param)
 	/* I/O test loop */
 #if CONFIG_USBH_MSC_HOTPLUG
 	for (;;) {
-		ret = msc_run_io_test();
+		ret = usbh_msc_file_test();
 		if (ret == HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "All files done, repeat from 0\n");
 			/* Device still attached -- give sema so the next call does not
@@ -450,10 +450,10 @@ void example_usbh_msc_thread(void *param)
 	}
 #else
 	/* Replug loop: test 10 files, then wait for the next physical replug
-	 * event before running again.  msc_run_io_test() blocks at
+	 * event before running again.  usbh_msc_file_test() blocks at
 	 * rtos_sema_take(msc_attach_sema) until msc_cb_attach fires. */
 	for (;;) {
-		ret = msc_run_io_test();
+		ret = usbh_msc_file_test();
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Test %s, unplug and replug to repeat\n",
 				 ret == HAL_OK ? "done" : "interrupted");
 	}
