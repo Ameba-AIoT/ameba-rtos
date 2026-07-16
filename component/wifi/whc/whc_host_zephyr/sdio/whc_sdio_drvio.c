@@ -2,7 +2,7 @@
 #include <zephyr/sd/sdio.h>
 #include "rtw_whc_common.h"
 /*
-* Increase and check if the continual_io_error of this @param dvobjprive is larger than MAX_CONTINUAL_IO_ERR
+* Increase and check if the continual_io_error of this @param priv is larger than MAX_CONTINUAL_IO_ERR
 * @return TRUE:
 * @return FALSE:
 */
@@ -12,7 +12,7 @@ int rtw_inc_and_chk_continual_io_error(struct whc_sdio *priv)
 }
 
 /*
-* Set the continual_io_error of this @param dvobjprive to 0
+* Set the continual_io_error of this @param priv to 0
 */
 void rtw_reset_continual_io_error(struct whc_sdio *priv)
 {
@@ -342,7 +342,7 @@ void sd_write32(struct whc_sdio *priv, uint32_t addr, uint32_t v, s32 *err)
  * Use CMD53 to read data from SDIO device.
  *
  * Parameters:
- *	psdio	pointer of SDIO_DATA
+ *	priv	pointer of whc_sdio
  *	addr	address to read
  *	cnt		amount to read
  *	pdata	pointer to put data, this should be a "DMA:able scratch buffer"!
@@ -386,7 +386,7 @@ int sd_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, void *pdata)
  * Use CMD53 to write data to SDIO device.
  *
  * Parameters:
- *  psdio	pointer of SDIO_DATA
+ *  priv	pointer of whc_sdio
  *  addr	address to write
  *  cnt		amount to write
  *  pdata	data pointer, this should be a "DMA:able scratch buffer"!
@@ -425,7 +425,8 @@ int sd_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, void *pdata)
 
 //
 // Description:
-//	The following mapping is for SDIO host local register space.
+//	The following mapping translates domain ID + offset to the SDIO command address
+//	for local registers, TX FIFO, and RX FIFO domains.
 static void sdio_get_cmdaddr(
 	uint8_t				DomainID,
 	uint32_t				Param,
@@ -622,7 +623,7 @@ void sdio_read_mem(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *
  *	and make sure data transfer will be done in one command.
  *
  * Parameters:
- *	func		a pointer of sdio func
+ *	priv		a pointer of whc_sdio
  *	addr		port ID
  *	cnt			size to read
  *	rmem		address to put data
@@ -749,7 +750,7 @@ void sdio_write_mem(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t 
  *	and make sure data could be written in one command.
  *
  * Parameters:
- *	pintfhdl	a pointer of intf_hdl
+ *	priv		a pointer of whc_sdio
  *	addr		port ID
  *	cnt			size to write
  *	wmem		data pointer to write

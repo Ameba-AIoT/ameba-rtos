@@ -45,6 +45,6 @@ void example_raw_pmc_dslp(void)
 		}
 	}
 	/*3.Register interrupt for processing.*/
-	InterruptRegister((IRQ_FUN)aontimer_dslp_handler, AON_TIM_IRQ, NULL, 3);
+	InterruptRegister((IRQ_FUN)aontimer_dslp_handler, AON_TIM_IRQ, (u32)NULL, 3);
 	InterruptEn(AON_TIM_IRQ, 3);
 }

@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    inic_host_api.c
+  * @file    whc_host_api.c
   * @author
   * @version
   * @date
@@ -18,7 +18,7 @@
 #include "whc_host.h"
 
 
-/* -------------------------------- spi --------------------------------- */
+/* ------------------------------- Variables -------------------------------- */
 
 struct event_priv_t event_priv;
 extern u16 scanned_ap_cnt;
@@ -71,7 +71,7 @@ void whc_host_api_scan_user_callback_handler(u32 api_id, u32 *param_buf)
 		rtos_sema_give(scan_block_param->sema);
 	}
 
-	/* Clear state after callback excuted and/or block sema released, prevent new scan to overwrite these paras */
+	/* Clear state after callback executed and/or block sema released, prevent new scan to overwrite these paras */
 	rtw_scan_api_inprocess = 0;
 
 	/* if Synchronous scan abort, up sema when scan done */

@@ -5,3 +5,4 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF
     ameba_add_subdirectory_if(CONFIG_BT ftl)
 endif()
 ameba_add_subdirectory_if(CONFIG_VFS_FATFS_INCLUDED fatfs)
+ameba_add_subdirectory_if(CONFIG_VFS_REALFS_INCLUDED realfs)

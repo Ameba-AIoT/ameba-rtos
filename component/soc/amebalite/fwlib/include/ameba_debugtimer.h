@@ -106,6 +106,20 @@ extern "C" {
 
 
 //Please add your defination here
+/// @cond
+/** @} */
+
+/** @} */
+/// @endcond
+
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @addtogroup DEBUGTIMER DEBUGTIMER
+* @brief DEBUGTIMER driver modules
+* @{
+*/
 
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup DEBUGTIMER_Exported_Constants DEBUGTIMER Exported Constants
@@ -270,15 +284,14 @@ __STATIC_INLINE void DTimer_ScratchSet(u32 NewValue)
 
 /* end of the function group */
 
+/** @} */
+
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 /* MANUAL_GEN_END */
 
-/// @cond
-/** @} */
-
-/** @} */
-/// @endcond
 #endif

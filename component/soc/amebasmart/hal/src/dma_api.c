@@ -56,9 +56,9 @@ static u32 dma_memcpy_int(void *pData)
 
 /**
  *  @brief Initialize the GDMA.
- *  @param dma_obj: GDMA object defined in application software.
- *  @param handler: User-defined GDMA IRQ callback function.
- *  @param id: User-defined GDMA IRQ callback parameter.
+ *  @param dma_obj GDMA object defined in application software.
+ *  @param handler User-defined GDMA IRQ callback function.
+ *  @param id User-defined GDMA IRQ callback parameter.
  *
  */
 void dma_memcpy_init(gdma_t *dma_obj, dma_irq_handler handler, uint32_t id)
@@ -79,7 +79,7 @@ void dma_memcpy_init(gdma_t *dma_obj, dma_irq_handler handler, uint32_t id)
 
 /**
  *  @brief Deinitialize the GDMA.
- *  @param dma_obj: GDMA object defined in application software.
+ *  @param dma_obj GDMA object defined in application software.
  *
  */
 void dma_memcpy_deinit(gdma_t *dma_obj)
@@ -89,10 +89,10 @@ void dma_memcpy_deinit(gdma_t *dma_obj)
 
 /**
  *  @brief Accomplish memory copy by DMA.
- *  @param dma_obj: GDMA object defined in application software.
- *  @param dst: Destination memory address.
- *  @param src: Source memory address.
- *  @param len: Copy data length.
+ *  @param dma_obj GDMA object defined in application software.
+ *  @param dst Destination memory address.
+ *  @param src Source memory address.
+ *  @param len Copy data length.
  */
 void dma_memcpy(gdma_t *dma_obj, void *dst, void *src, uint32_t len)
 {

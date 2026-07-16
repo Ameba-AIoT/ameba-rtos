@@ -154,7 +154,7 @@ u32 PMCTimer_INT_Hdl(UNUSED_WARN_DIS void *Data)
   */
 void PMCTimer_Init(void)
 {
-	InterruptRegister(PMCTimer_INT_Hdl, PMC_TIMER_IRQ, NULL, PMC_TIMER_INT_PRIO);
+	InterruptRegister(PMCTimer_INT_Hdl, PMC_TIMER_IRQ, (u32)NULL, PMC_TIMER_INT_PRIO);
 	InterruptEn(PMC_TIMER_IRQ, PMC_TIMER_INT_PRIO);
 	PMCTimer_INTConfig(PMC_TIMER_DEV, PMC_WAKEUP_TIMER, ENABLE);
 }

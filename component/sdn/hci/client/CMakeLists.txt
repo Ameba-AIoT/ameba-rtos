@@ -73,6 +73,7 @@ ameba_list_append(private_compile_options
 
 ###NOTE: For open-source component, always build from source
 ameba_add_internal_library(sdn_client
+    p_NO_SEAL
     p_SOURCES
         ${private_sources}
     p_INCLUDES

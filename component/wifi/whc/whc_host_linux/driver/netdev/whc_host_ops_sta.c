@@ -769,14 +769,15 @@ static int whc_host_get_channel_ops(struct wiphy *wiphy,
 
 	if (ret < 0) {
 		dev_dbg(global_idev.pwhc_dev, "[whc]: %s, get channel failed(%d).", __func__, ret);
-		return ret;
+		goto exit;
 	}
 
 	freq = rtw_ch2freq(setting_vir->channel);
 	chan = ieee80211_get_channel(wiphy, freq);
 	if (!chan) {
 		dev_err(global_idev.pwhc_dev, "[whc]: %s, ieee80211_get_channel failed.", __func__);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto exit;
 	}
 
 	memset(chandef, 0, sizeof(struct cfg80211_chan_def));
@@ -784,6 +785,7 @@ static int whc_host_get_channel_ops(struct wiphy *wiphy,
 	chandef->center_freq1 = freq;
 	chandef->chan = chan;
 
+exit:
 	rtw_mfree(sizeof(struct rtw_wifi_setting), setting_vir, setting_phy);
 	return ret;
 }
@@ -858,7 +860,8 @@ static int whc_sme_host_auth(struct wiphy *wiphy, struct net_device *ndev, struc
 		 * TODO: handle the following:
 		 *    NL80211_AUTHTYPE_NETWORK_EAP
 		 */
-		return -EFAULT;
+		ret = -EFAULT;
+		goto exit;
 	}
 
 	data->tx_chan = (u8)ieee80211_frequency_to_channel(req->bss->channel->center_freq);
@@ -924,6 +927,7 @@ static int whc_sme_host_auth(struct wiphy *wiphy, struct net_device *ndev, struc
 
 	whc_host_sme_auth(data_phy);
 
+exit:
 	rtw_mfree(data_len, (void *)data, data_phy);
 
 	return 0;

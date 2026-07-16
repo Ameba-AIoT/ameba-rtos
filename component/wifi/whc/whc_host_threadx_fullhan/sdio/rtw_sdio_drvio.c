@@ -1,9 +1,9 @@
 #include "rtw_whc_common.h"
 
 //sdio_drv_creg_read  -- cmd52
-//sdio_drv_read_write  -- cmd53
+//sdio_drv_read       -- cmd53
 typedef void *HSDC;
-//cmd  read
+//cmd52 read
 extern int sdio_drv_creg_read(HSDC handle, int addr, int fn, unsigned int *resp);
 //cmd52 write
 extern int sdio_drv_creg_write(HSDC handle, int addr, int fn, unsigned char data, unsigned int *resp);

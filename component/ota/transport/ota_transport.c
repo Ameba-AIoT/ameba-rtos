@@ -68,7 +68,7 @@ int ota_transport_read(ota_context_t *ctx, u8 *buf, int len)
 
 	if (bytes_read < 0) {
 		RTK_LOGE(OTA_TAG, "[TRANSPORT] Read error\n");
-		return -2;
+		return -1;
 	}
 
 	return bytes_read;

@@ -21,7 +21,8 @@ static int read_exact(ota_context_t *ctx, u8 *buf, u32 need)
 			return OTA_ERR;
 		}
 		if (read_bytes == 0) {
-			break; /* EOF */
+			RTK_LOGE(OTA_TAG, "[CORE] Unexpected EOF, %lu bytes remaining\n", need);
+			return OTA_ERR;
 		}
 		need -= read_bytes;
 		buf  += read_bytes;
@@ -509,12 +510,11 @@ static int ota_core_process(ota_context_t *ctx)
 			buf_ptr    = buf;
 			read_bytes = ota_transport_read(ctx, buf, OTA_BUF_SIZE);
 			if (read_bytes == 0) {
-				ret = OTA_OK;
+				RTK_LOGE(OTA_TAG, "[CORE] Unexpected EOF\n");
 				break;
 			}
 			if (read_bytes < 0) {
 				RTK_LOGE(OTA_TAG, "[CORE] Read failed\n");
-				ret = OTA_ERR;
 				break;
 			}
 		}
@@ -529,12 +529,11 @@ static int ota_core_process(ota_context_t *ctx)
 
 		if (ret == OTA_FINISH) {
 			RTK_LOGI(OTA_TAG, "[CORE] All images downloaded\n");
-			ret = OTA_OK;
 			break;
 		}
 		if (ret == OTA_ERR) {
 			RTK_LOGE(OTA_TAG, "[CORE] Process failed\n");
-			break;
+			break; /* ret != OTA_FINISH, ota_start will report failure */
 		}
 		if (ctx->yield_func) {
 			ctx->yield_func();
@@ -590,7 +589,7 @@ int ota_start(ota_context_t *ctx)
 	}
 
 	/*----------------step2: ota process (download and program)---------------------*/
-	if (ota_core_process(ctx) != OTA_OK) {
+	if (ota_core_process(ctx) != OTA_FINISH) {
 		RTK_LOGE(OTA_TAG, "[CORE] Process failed\n");
 		ret = OTA_ERR;
 		goto exit;

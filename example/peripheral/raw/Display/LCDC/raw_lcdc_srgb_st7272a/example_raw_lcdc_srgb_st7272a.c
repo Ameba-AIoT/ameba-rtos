@@ -194,7 +194,7 @@ static void lcdc_display_st7272a(void)
 	LCDC_RccEnable();
 
 	/* register irq handler */
-	InterruptRegister((IRQ_FUN)lcdc_irq_handler, gLcdcIrqInfo.IrqNum, NULL, gLcdcIrqInfo.IrqPriority);
+	InterruptRegister((IRQ_FUN)lcdc_irq_handler, gLcdcIrqInfo.IrqNum, (u32)NULL, gLcdcIrqInfo.IrqPriority);
 	InterruptEn(gLcdcIrqInfo.IrqNum, gLcdcIrqInfo.IrqPriority);
 
 	/* init lcdc driver */

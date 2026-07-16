@@ -74,11 +74,6 @@ enum rtw_wlan_if_index {
 #define RTW_MAX_PSK_LEN		RTW_WPA3_MAX_PSK_LEN /**< Maximum PSK length used. */
 #define RTW_MIN_PSK_LEN		(8)		/**< Minimum PSK length. */
 
-/** wifi_start_ap() positive return: SoftAP started on a DFS channel; the AP is not
- *  beaconing yet, CAC is running and the netif link-up is deferred until CAC passes
- *  (driven by the RTW_EVENT_DFS_CAC_DONE handler). Not an error. DFS master only. */
-#define RTW_DFS_CAC_PENDING		1
-
 #define MAC_ARG(x)		((u8*)(x))[0],((u8*)(x))[1],\
 				((u8*)(x))[2],((u8*)(x))[3],\
 				((u8*)(x))[4],((u8*)(x))[5]      /**< Formats MAC address for printing. Usage Example: RTK_LOGS(NOTAG, RTK_LOG_INFO, "MAC addr="MAC_FMT"\n", MAC_ARG(mac_addr));*/
@@ -110,6 +105,15 @@ enum rtw_wlan_if_index {
 /** @addtogroup WIFI_Exported_Enumeration_Types Enumeration Type
  * @{
  */
+
+/**
+ * @brief  WiFi API positive return values (ret > 0): success with extra status, NOT an error.
+ *         Complements the RTK return contract: 0 = RTK_SUCCESS, < 0 = -rtk_error_code.
+ *         These values are WiFi-local and interpreted only by the direct caller of the API.
+ */
+enum rtw_api_status {
+	RTW_DFS_CAC_PENDING = 1,   /**< wifi_start_ap(): SoftAP started on a DFS channel; not beaconing yet, CAC running and netif link-up deferred until CAC passes (driven by the RTW_EVENT_DFS_CAC_DONE handler). DFS master only. */
+};
 
 /**
  * @brief  Security flags for @ref rtw_security (size: u32).

@@ -20,8 +20,6 @@ const u8 Boot_Tzcfg_En = FALSE;
 /* Certificate is suggested to use SEC_PKKEY_PK1_0 */
 u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
 
-#define CLKCFG_0P9
-
 /**
  * @brief Clock Source configuration structure
  *
@@ -33,14 +31,15 @@ u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
  */
 SocClk_Info_TypeDef SocClk_Info[] = {
 	/* USBPLL_CLK,		SYSPLL_CLK,		Vol_Type,		CPU_CKD*/
-#if defined CLKCFG_0P9
-	/* 1. Low power consumption scenario. (CPU clk: 240Mhz) */
+	/* 0. Low power consumption scenario. (CPU clk: 240Mhz) */
 	{PLL_960M,			PLL_400M,		CORE_VOL_0P9,	CLKDIV(4) | IS_USB_PLL},
-#elif defined CLKCFG_1P0
-	/* 2. Use RMII or/and USB peripherals. (CPU clk: 320Mhz) */
+	/* 1. Use RMII or/and USB peripherals. (CPU clk: 320Mhz) */
 	{PLL_960M,			PLL_400M,		CORE_VOL_1P0,	CLKDIV(3) | IS_USB_PLL},
-#else
-#error "Incorrect clock config"
-#endif
 };
+
+/**
+* @brif  SocClk_Info select. Configured via menuconfig "SoC Clock Config".
+* Boot_SocClk_Info_Idx is [0, sizeof(SocClk_Info)), Soc will set socclk by SocClk_Info[Boot_SocClk_Info_Idx]
+*/
+u8 Boot_SocClk_Info_Idx = CONFIG_CLKCFG_IDX;
 

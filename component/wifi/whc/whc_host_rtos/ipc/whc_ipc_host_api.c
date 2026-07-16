@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    inic_ipc_host_api.c
+  * @file    whc_ipc_host_api.c
   * @author
   * @version
   * @date
@@ -63,7 +63,7 @@ extern int dhcps_ip_in_table_check(uint8_t gate, uint8_t d);
 extern int(*rmesh_ota_user_callback)(u8 *, u16);
 #endif
 /* ---------------------------- Private Functions --------------------------- */
-/* wifi calbabck & blocked in NP */
+/* wifi callback & blocked in NP */
 static void whc_ipc_host_api_scan_user_callback_handler(struct whc_ipc_host_unblk_api_node *p_unblk_api_node)
 {
 	unsigned int ap_num = p_unblk_api_node->param_buf[0];
@@ -89,7 +89,7 @@ static void whc_ipc_host_api_scan_user_callback_handler(struct whc_ipc_host_unbl
 		rtos_sema_give(scan_block_param->sema);
 	}
 
-	/* Clear state after callback excuted and/or block sema released, prevent new scan to overwrite these paras */
+	/* Clear state after callback executed and/or block sema released, prevent new scan to overwrite these paras */
 	rtw_scan_api_inprocess = 0;
 
 	/* if Synchronous scan abort, up sema when scan done */
@@ -507,7 +507,7 @@ void whc_ipc_host_blk_api_task_h(void)
 		}
 
 		switch (p_ipc_msg->enevt_id) {
-		/* callback & api with return value & api whitch require block*/
+		/* callback & api with return value & api which require block*/
 		case WHC_API_GET_LWIP_INFO:
 			whc_ipc_host_api_lwip_info_handler(p_ipc_msg);
 			break;
@@ -620,7 +620,7 @@ void whc_ipc_host_unblk_api_task_h(void)
 }
 
 /**
- * @brief  to haddle the ipc message interrupt, wakeup event task to process.
+ * @brief  to handle the ipc message interrupt, wakeup event task to process.
  * @param  Data[inout]: IPC data.
  * @param  IrqStatus[in]: interrupt status.
  * @param  ChanNum[in]: IPC channel number.
@@ -639,8 +639,9 @@ void whc_ipc_host_api_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum)
 
 /**
  * @brief  to send a ipc message to device and wait result.
- * @param  ID[in]: api_id.
+ * @param  id[in]: api_id.
  * @param  param_buf[in]: pointer to API parameter.
+ * @param  buf_len[in]: number of u32 entries in param_buf.
  * @return result of API.
  */
 int whc_ipc_host_api_message_send(u32 id, u32 *param_buf, u32 buf_len)

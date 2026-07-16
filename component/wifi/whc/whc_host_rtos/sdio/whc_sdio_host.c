@@ -3,7 +3,6 @@
 struct whc_sdio whc_sdio_priv = {0};
 
 extern int whc_host_init_done;
-extern size_t xFreeBytesRemaining;
 extern rtos_mutex_t sdio_lock;
 
 void rtw_sdio_interrupt_handler(void);
@@ -20,7 +19,7 @@ static uint8_t *sdio_read_rxfifo(struct whc_sdio *priv, uint32_t size)
 
 	pbuf = (uint8_t *)rtos_mem_zmalloc(allocsize);
 	if (pbuf == NULL) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s: Alloc skb rx buf Err, alloc_sz %x free %x !!\n\r", __func__, allocsize, xFreeBytesRemaining);
+		RTK_LOGE(TAG_WLAN_INIC, "%s: Alloc skb rx buf Errs!!\n\r", __func__);
 		return NULL;
 	}
 
@@ -32,7 +31,7 @@ static uint8_t *sdio_read_rxfifo(struct whc_sdio *priv, uint32_t size)
 			/* retry to reduce impact of bus err */
 			if (retry++ > 10) {
 				rtos_mem_free(pbuf);
-				RTK_LOGE(TAG_WLAN_INIC, "%s: read port FAIL!\n", __FUNCTION__);
+				RTK_LOGE(TAG_WLAN_INIC, "%s: read port FAIL!\n", __func__);
 				return NULL;
 			};
 		}
@@ -110,7 +109,7 @@ void whc_sdio_host_init_drv(void)
 	rtos_sema_create(&(whc_sdio_priv.txbd_wq), 0, 0xFFFFFFFF);
 	rtos_mutex_create(&whc_sdio_priv.lock);
 
-	/* shpuld higher than polling, polling 7 */
+	/* should be higher than polling, polling 7 */
 	if (rtos_task_create(NULL, ((const char *)"whc_sdio_rx"), (rtos_task_function_t)whc_sdio_recv_data_process, NULL, WIFI_STACK_SIZE_RX_REQ_TASK,
 						 0 + 6) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "create whc_sdio_rx fail \n");

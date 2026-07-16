@@ -82,7 +82,6 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms);
  * @brief  For FreeRTOS, map to xSemaphoreGive / xSemaphoreGiveFromISR
  *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
  * @param  p_handle:
- * @param  wait_ms:
  * @retval
  */
 int rtos_mutex_give(rtos_mutex_t p_handle);
@@ -114,7 +113,7 @@ int rtos_mutex_recursive_create(rtos_mutex_t *pp_handle);
 int rtos_mutex_recursive_delete(rtos_mutex_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreTake / xSemaphoreTakeFromISR
+ * @brief  For FreeRTOS, map to xSemaphoreTakeRecursive
  * @note   For FreeRTOS, recursive mutexes cannot be used in interrupt service routines.
  * @param  p_handle:
  * @param  wait_ms:
@@ -123,10 +122,9 @@ int rtos_mutex_recursive_delete(rtos_mutex_t p_handle);
 int rtos_mutex_recursive_take(rtos_mutex_t p_handle, uint32_t wait_ms);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreGiveRecursive / xSemaphoreGiveRecursiveFromISR
+ * @brief  For FreeRTOS, map to xSemaphoreGiveRecursive
  * @note   Recursive mutexes cannot be used in interrupt service routines.
  * @param  p_handle:
- * @param  wait_ms:
  * @retval
  */
 int rtos_mutex_recursive_give(rtos_mutex_t p_handle);

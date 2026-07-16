@@ -103,7 +103,6 @@ int rtos_task_yield(void);
 
 /**
  * @brief  Get current os level task routine handle. For FreeRTOS, map to xTaskGetCurrentTaskHandle
- * @param  pp_handle: The handle itself is a pointer, and the pp_handle means a pointer to the handle.
  * @retval The task handle pointer
  */
 rtos_task_t rtos_task_handle_get(void);

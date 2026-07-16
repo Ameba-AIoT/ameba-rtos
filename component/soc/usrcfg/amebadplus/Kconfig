@@ -81,4 +81,69 @@ config LOGUART_AGG_EN
 
 endmenu
 
+menu "Clock Configuration"
+
+choice
+    prompt "SoC Clock Config"
+    default CLKCFG_USB_0P9_480M
+    help
+        Select the SoC clock configuration. The leading [N] is the index into
+        SocClk_Info[] in ameba_bootcfg.c (assigned to Boot_SocClk_Info_Idx via
+        CONFIG_CLKCFG_IDX). The bootloader still validates the choice against the
+        chip package (SiP Psram / No Psram); an unsupported combination will
+        assert at boot.
+        When USB device is enabled, only the 480MHz option (PLL is an integer
+        multiple of 48MHz) is available.
+
+config CLKCFG_PSRAM_0P9_524M
+    bool "[0] SiP Psram, 0.9V, PLL 524MHz"
+    depends on !USB_DEVICE_EN
+
+config CLKCFG_PSRAM_0P9_392M
+    bool "[1] SiP Psram, 0.9V, PLL 392MHz"
+    depends on !USB_DEVICE_EN
+
+config CLKCFG_PSRAM_1P0_334M
+    bool "[2] SiP Psram, 1.0V, PLL 334MHz"
+    depends on !USB_DEVICE_EN
+
+config CLKCFG_NOPSRAM_0P9_512M
+    bool "[3] SiP Flash / single die, 0.9V, PLL 512MHz"
+    depends on !USB_DEVICE_EN
+
+config CLKCFG_NOPSRAM_0P9_400M
+    bool "[4] SiP Flash / single die, 0.9V, PLL 400MHz"
+    depends on !USB_DEVICE_EN
+
+config CLKCFG_NOPSRAM_1P0_334M
+    bool "[5] SiP Flash / single die, 1.0V, PLL 334MHz"
+    depends on !USB_DEVICE_EN
+
+config CLKCFG_USB_0P9_480M
+    bool "[6] USB (48M-multiple), 0.9V, PLL 480MHz"
+
+config CLKCFG_AUDIO_1P0_677M
+    bool "[7] Audio, 1.0V, PLL 677.376MHz"
+    depends on !USB_DEVICE_EN
+
+config CLKCFG_AUDIO_1P0_688M
+    bool "[8] Audio, 1.0V, PLL 688.128MHz"
+    depends on !USB_DEVICE_EN
+
+endchoice
+
+config CLKCFG_IDX
+    int
+    default 0 if CLKCFG_PSRAM_0P9_524M
+    default 1 if CLKCFG_PSRAM_0P9_392M
+    default 2 if CLKCFG_PSRAM_1P0_334M
+    default 3 if CLKCFG_NOPSRAM_0P9_512M
+    default 4 if CLKCFG_NOPSRAM_0P9_400M
+    default 5 if CLKCFG_NOPSRAM_1P0_334M
+    default 7 if CLKCFG_AUDIO_1P0_677M
+    default 8 if CLKCFG_AUDIO_1P0_688M
+    default 6
+
+endmenu
+
 endmenu

@@ -81,4 +81,30 @@ config LOGUART_AGG_EN
 
 endmenu
 
+menu "Clock Configuration"
+
+choice
+    prompt "SoC Clock Config"
+    default CLKCFG_0P9
+    help
+        Select the SoC clock configuration. The leading [N] is the index into
+        SocClk_Info[] in ameba_bootcfg.c (assigned to Boot_SocClk_Info_Idx via
+        CONFIG_CLKCFG_IDX).
+
+config CLKCFG_0P9
+    bool "[0] 0.9V, CPU 240MHz"
+
+config CLKCFG_1P0
+    bool "[1] 1.0V, CPU 320MHz"
+
+endchoice
+
+config CLKCFG_IDX
+    int
+    default 0 if CLKCFG_0P9
+    default 1 if CLKCFG_1P0
+    default 0
+
+endmenu
+
 endmenu

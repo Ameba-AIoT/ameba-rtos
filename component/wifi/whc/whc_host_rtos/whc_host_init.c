@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    inic_ipc_host_api_basic.c
+  * @file    whc_host_init.c
   * @author
   * @version
   * @date

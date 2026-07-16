@@ -61,7 +61,7 @@ if(CONFIG_USBH_UVC)
     )
     ameba_list_append(private_sources
         ${USBH_CLASS_DIR}/uvc/usbh_uvc_class.c
-        ${USBH_CLASS_DIR}/uvc/usbh_uvc_intf.c
+        ${USBH_CLASS_DIR}/uvc/usbh_uvc.c
         ${USBH_CLASS_DIR}/uvc/usbh_uvc_parse.c
         ${USBH_CLASS_DIR}/uvc/usbh_uvc_stream.c
     )

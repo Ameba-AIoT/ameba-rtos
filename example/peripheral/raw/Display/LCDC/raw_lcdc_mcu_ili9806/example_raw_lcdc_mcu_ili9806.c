@@ -207,7 +207,7 @@ static void lcdc_display_mcu_ili9806(void)
 	LCDC_DMAImgCfg(LCDC, (u32)PIX_DATA0);
 
 	/* register irq handler */
-	InterruptRegister((IRQ_FUN)lcdc_irq_handler, gLcdcIrqInfo.IrqNum, NULL, gLcdcIrqInfo.IrqPriority);
+	InterruptRegister((IRQ_FUN)lcdc_irq_handler, gLcdcIrqInfo.IrqNum, (u32)NULL, gLcdcIrqInfo.IrqPriority);
 	InterruptEn(gLcdcIrqInfo.IrqNum, gLcdcIrqInfo.IrqPriority);
 
 	LCDC_LineINTPosConfig(LCDC, LCDC_LINE_NUM_INTR_DEF);

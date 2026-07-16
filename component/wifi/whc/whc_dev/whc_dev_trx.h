@@ -3,8 +3,8 @@
  * Copyright(c) 2020 - 2021 Realtek Corporation. All rights reserved.
  *
  ******************************************************************************/
-#ifndef __WHC_DEV_TX_H__
-#define __WHC_DEV_TX_H__
+#ifndef __WHC_DEV_TRX_H__
+#define __WHC_DEV_TRX_H__
 
 /* -------------------------------- Defines --------------------------------- */
 #define whc_dev_tx_done(a)
@@ -29,4 +29,4 @@ struct whc_txbuf_info_t *whc_dev_alloc_buf_info(u8 *buf, u16 len, void *alloc_bu
 void whc_dev_free_txbuf(struct whc_txbuf_info_t *buf_info);
 void whc_dev_dispatch_event_copy(const u8 *src, u32 size);
 void whc_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb);
-#endif /* __INIC_DEV_TX_H__ */
+#endif /* __WHC_DEV_TRX_H__ */

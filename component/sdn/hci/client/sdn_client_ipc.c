@@ -5,6 +5,7 @@
 #include <ameba_ipc.h>
 
 extern struct sdn_t g_sdn;
+u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum);
 
 static void _client_ipc_rx_int_hdl(void *data, uint32_t irq_status, uint32_t channel_num)
 {
@@ -37,6 +38,7 @@ void sdn_c2h(struct sdn_data_buf *pdata_buf)
 	DCache_Clean(ipc_tx.msg, ipc_tx.msg_len);
 
 	ipc_send_message(IPC_NP_TO_AP, IPC_N2A_BT_VIRTUAL_HCI, &ipc_tx);
+	IPC_wait_idle(IPC_GetDev(IPC_NP_TO_AP, 0), IPC_N2A_BT_VIRTUAL_HCI);
 }
 
 // controller IPC TX channel table define

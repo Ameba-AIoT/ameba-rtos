@@ -59,6 +59,27 @@ extern "C" {
 #define USB_ADDON_REG_AUTOLOAD_UPHY_P2E4                    (USB_ADDON_REG_BASE + 0xFCUL)
 /** @} */
 
+/** @defgroup USB_OTP_UPHY_Parameters
+ * @brief USB PHY parameters sourced directly from the OTP logical area, used when the
+ *        HW autoload shadow registers above are unavailable: FT-unprogrammed parts, or
+ *        after the system returns from PG (PG resets the autoload registers).
+ *   - flag @0x2A4 has BIT(3) set (USB_OTP_UPHY_FLAG_AUTOLOAD_UPHY_EN_BIT) and != 0xFF:
+ *       params programmed -> apply the 32-byte packed block @0x2E0
+ *       (same byte layout as the ADDON autoload UPHY regs above)
+ *   - flag @0x2A4 == 0xFF : OTP never programmed -> apply the fixed default set
+ *   - BIT(3) clear or any unexpected value : OTP absent/corrupt -> apply the fixed default set
+ * @{
+ **/
+#define USB_OTP_UPHY_FLAG_OFFSET                            0x2A4U
+#define USB_OTP_UPHY_FLAG_AUTOLOAD_UPHY_EN_BIT              BIT(3)
+#define USB_OTP_UPHY_FLAG_BLANK                             0xFFU
+#define USB_OTP_UPHY_PARA_OFFSET                            0x2E0U
+#define USB_OTP_UPHY_PARA_LEN                               32U
+
+/* Assemble a little-endian u32 from a 4-byte OTP slice, matching the ADDON autoload byte order */
+#define USB_OTP_UPHY_U32(p)                                 ((u32)(p)[0] | ((u32)(p)[1] << 8) | ((u32)(p)[2] << 16) | ((u32)(p)[3] << 24))
+/** @} */
+
 /** @} */
 
 /** @defgroup USB_Exported_Constants USB Exported Constants

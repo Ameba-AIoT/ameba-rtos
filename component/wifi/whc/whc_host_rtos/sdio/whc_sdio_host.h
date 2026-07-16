@@ -83,7 +83,7 @@ struct INIC_RX_DESC {
 	u32	start_addr;
 
 	/* u4Byte 3 */
-	u32 data_len: 16;			// bit[15:0], the type of this packet
+	u32 data_len: 16;			// bit[15:0], the data length of this packet
 	u32 result: 8;				// bit[23:16], the result of memory write command
 	u32 rsvd2: 8;				// bit[31:24]
 };

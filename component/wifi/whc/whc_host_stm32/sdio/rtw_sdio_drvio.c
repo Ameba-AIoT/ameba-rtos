@@ -12,9 +12,9 @@
 rtos_mutex_t sdio_lock;
 
 /*
-* Increase and check if the continual_io_error of this @param dvobjprive is larger than MAX_CONTINUAL_IO_ERR
-* @return TRUE:
-* @return FALSE:
+* Read a byte from SDIO address addr into pdata under the sdio_lock.
+* @return 0: success
+* @return 1: mutex take timeout
 */
 int sdio_read_byte(void *func, uint32_t addr, uint8_t *pdata)
 {
@@ -519,7 +519,8 @@ int sd_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, void *pdata)
 
 //
 // Description:
-//	The following mapping is for SDIO host local register space.
+//	The following mapping translates domain ID + offset to the SDIO command address
+//	for local registers, TX FIFO, and RX FIFO domains.
 static void sdio_get_cmdaddr(
 	uint8_t				DomainID,
 	uint32_t				Param,

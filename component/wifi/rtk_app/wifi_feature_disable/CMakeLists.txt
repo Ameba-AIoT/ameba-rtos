@@ -111,6 +111,7 @@ endif()
 ###NOTE: For open-source component, always build from source
 if(private_sources)
     ameba_add_internal_library(wifi_feature_disable
+        p_NO_SEAL
         p_SOURCES
             ${private_sources}
         p_INCLUDES

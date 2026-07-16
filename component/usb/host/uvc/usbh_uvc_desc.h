@@ -13,59 +13,59 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-#define USBH_UVC_CLASS_CODE                                  0xE
+#define USBH_UVC_CLASS_CODE                                  0xEU
 
 /* A.5. Video Class-Specific VC Interface Descriptor Subtypes */
-#define USBH_UVC_VC_DESCRIPTOR_UNDEFINED                     0x00
-#define USBH_UVC_VC_HEADER                                   0x01
-#define USBH_UVC_VC_INPUT_TERMINAL                           0x02
-#define USBH_UVC_VC_OUTPUT_TERMINAL                          0x03
-#define USBH_UVC_VC_SELECTOR_UNIT                            0x04
-#define USBH_UVC_VC_PROCESSING_UNIT                          0x05
-#define USBH_UVC_VC_EXTENSION_UNIT                           0x06
-#define USBH_UVC_VC_ENCODING_UNIT                            0x07
+#define USBH_UVC_VC_DESCRIPTOR_UNDEFINED                     0x00U
+#define USBH_UVC_VC_HEADER                                   0x01U
+#define USBH_UVC_VC_INPUT_TERMINAL                           0x02U
+#define USBH_UVC_VC_OUTPUT_TERMINAL                          0x03U
+#define USBH_UVC_VC_SELECTOR_UNIT                            0x04U
+#define USBH_UVC_VC_PROCESSING_UNIT                          0x05U
+#define USBH_UVC_VC_EXTENSION_UNIT                           0x06U
+#define USBH_UVC_VC_ENCODING_UNIT                            0x07U
 
 /* A.6. Video Class-Specific VS Interface Descriptor Subtypes */
-#define USBH_UVC_VS_UNDEFINED                                0x00
-#define USBH_UVC_VS_INPUT_HEADER                             0x01
-#define USBH_UVC_VS_OUTPUT_HEADER                            0x02
-#define USBH_UVC_VS_STILL_IMAGE_FRAME                        0x03
-#define USBH_UVC_VS_FORMAT_UNCOMPRESSED                      0x04
-#define USBH_UVC_VS_FRAME_UNCOMPRESSED                       0x05
-#define USBH_UVC_VS_FORMAT_MJPEG                             0x06
-#define USBH_UVC_VS_FRAME_MJPEG                              0x07
-#define USBH_UVC_VS_FORMAT_MPEG2TS                           0x0a
-#define USBH_UVC_VS_FORMAT_DV                                0x0c
-#define USBH_UVC_VS_COLORFORMAT                              0x0d
-#define USBH_UVC_VS_FORMAT_FRAME_BASED                       0x10
-#define USBH_UVC_VS_FRAME_FRAME_BASED                        0x11
-#define USBH_UVC_VS_FORMAT_STREAM_BASED                      0x12
+#define USBH_UVC_VS_UNDEFINED                                0x00U
+#define USBH_UVC_VS_INPUT_HEADER                             0x01U
+#define USBH_UVC_VS_OUTPUT_HEADER                            0x02U
+#define USBH_UVC_VS_STILL_IMAGE_FRAME                        0x03U
+#define USBH_UVC_VS_FORMAT_UNCOMPRESSED                      0x04U
+#define USBH_UVC_VS_FRAME_UNCOMPRESSED                       0x05U
+#define USBH_UVC_VS_FORMAT_MJPEG                             0x06U
+#define USBH_UVC_VS_FRAME_MJPEG                              0x07U
+#define USBH_UVC_VS_FORMAT_MPEG2TS                           0x0aU
+#define USBH_UVC_VS_FORMAT_DV                                0x0cU
+#define USBH_UVC_VS_COLORFORMAT                              0x0dU
+#define USBH_UVC_VS_FORMAT_FRAME_BASED                       0x10U
+#define USBH_UVC_VS_FRAME_FRAME_BASED                        0x11U
+#define USBH_UVC_VS_FORMAT_STREAM_BASED                      0x12U
 
 /* A.7. Video Class-Specific Endpoint Descriptor Subtypes */
-#define USBH_UVC_EP_UNDEFINED                                0x00
-#define USBH_UVC_EP_GENERAL                                  0x01
-#define USBH_UVC_EP_ENDPOINT                                 0x02
-#define USBH_UVC_EP_INTERRUPT                                0x03
+#define USBH_UVC_EP_UNDEFINED                                0x00U
+#define USBH_UVC_EP_GENERAL                                  0x01U
+#define USBH_UVC_EP_ENDPOINT                                 0x02U
+#define USBH_UVC_EP_INTERRUPT                                0x03U
 
 /* A.8. Video Class-Specific Request Codes */
-#define USBH_UVC_RC_UNDEFINED                                0x00
-#define USBH_UVC_SET_CUR                                     0x01
-#define USBH_UVC_GET_CUR                                     0x81
-#define USBH_UVC_GET_MIN                                     0x82
-#define USBH_UVC_GET_MAX                                     0x83
-#define USBH_UVC_GET_RES                                     0x84
-#define USBH_UVC_GET_LEN                                     0x85
-#define USBH_UVC_GET_INFO                                    0x86
-#define USBH_UVC_GET_DEF                                     0x87
+#define USBH_UVC_RC_UNDEFINED                                0x00U
+#define USBH_UVC_SET_CUR                                     0x01U
+#define USBH_UVC_GET_CUR                                     0x81U
+#define USBH_UVC_GET_MIN                                     0x82U
+#define USBH_UVC_GET_MAX                                     0x83U
+#define USBH_UVC_GET_RES                                     0x84U
+#define USBH_UVC_GET_LEN                                     0x85U
+#define USBH_UVC_GET_INFO                                    0x86U
+#define USBH_UVC_GET_DEF                                     0x87U
 
-#define USBH_UVC_VS_PROBE_CONTROL                           (0x1<<8)
-#define USBH_UVC_VS_COMMIT_CONTROL                          (0x2<<8)
+#define USBH_UVC_VS_PROBE_CONTROL                            (0x1U<<8U)
+#define USBH_UVC_VS_COMMIT_CONTROL                           (0x2U<<8U)
 
-#define USBH_UVC_SUBCLASS_VIDEOCONTROL                       0x01
-#define USBH_UVC_SUBCLASS_VIDEOSTREAMING                     0x02
+#define USBH_UVC_SUBCLASS_VIDEOCONTROL                       0x01U
+#define USBH_UVC_SUBCLASS_VIDEOSTREAMING                     0x02U
 
-#define USBH_UVC_DESC_TYPE_CS_INTERFACE                      0x24
-#define USBH_UVC_DESC_TYPE_CS_ENDPOINT                       0x25
+#define USBH_UVC_DESC_TYPE_CS_INTERFACE                      0x24U
+#define USBH_UVC_DESC_TYPE_CS_ENDPOINT                       0x25U
 
 
 /* Exported types ------------------------------------------------------------*/
@@ -253,7 +253,7 @@ typedef struct {
 	u8 type;
 	u8 id;
 	u8 source[0];
-}  usbh_uvc_entity_t;
+} usbh_uvc_entity_t;
 
 /* Exported variables --------------------------------------------------------*/
 

@@ -99,7 +99,10 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *data, uint16_t len)
 	// SDN_LOGA("%s type %d\r\n", __func__, type);
 	// SDN_DUMPA("", data, len);
 
+	/* This function is called in interrupt contex in IPC mode, critical is unnecessary. */
+#ifdef CONFIG_SDN_HOST
 	rtos_critical_enter(RTOS_CRITICAL_BT);
+#endif
 
 	switch (protocol) {
 #ifdef CONFIG_BT_SDN
@@ -141,7 +144,9 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *data, uint16_t len)
 			list_del_init(&pdata_buf->list);
 		}
 	}
+#ifdef CONFIG_SDN_HOST
 	rtos_critical_exit(RTOS_CRITICAL_BT);
+#endif
 
 	if (!pdata_buf) {
 		return SDN_INTF_ERR_TX_DATA_FAIL;
@@ -151,7 +156,11 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *data, uint16_t len)
 	pdata_buf->pmsg->type = type;
 	memcpy(pdata_buf->pmsg->data, data, len);
 	pdata_buf->len = len + sizeof(struct sdn_intf_data_msg);
+#ifdef CONFIG_SDN_HOST
 	_add_tail_lock(pdata_buf, &g_sdn_client_intf.rx.busy_list);
+#else
+	list_add_tail(&pdata_buf->list, &g_sdn_client_intf.rx.busy_list);
+#endif
 	rtos_sema_give(g_sdn_client_intf.rx.task.sema);
 	return SDN_INTF_ERR_OK;
 }

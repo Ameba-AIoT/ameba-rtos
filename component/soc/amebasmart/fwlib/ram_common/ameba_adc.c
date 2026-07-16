@@ -302,6 +302,45 @@ void ADC_ResetCSwList(void)
 }
 
 /**
+  * @brief  Set list length and channel ID of ADC channel switch list.
+  * @param  ChanIdBuf Pointer to ADC channel ID buffer, which contains value of @ref ADC_Chn_Selection.
+  * @param  ChanLen ADC channel list length, which can be 1 ~ 16.
+  */
+void ADC_SetChList(u8 *ChanIdBuf, u8 ChanLen)
+{
+	ADC_TypeDef	*adc = ADC;
+	u32 value;
+	u8 i, len;
+
+	assert_param(ChanLen >= 1 && ChanLen <= 16);
+
+	/* Set channel switch list length */
+	value = adc->ADC_CONF;
+	value &= ~ADC_MASK_CVLIST_LEN;
+	value |= ADC_CVLIST_LEN(ChanLen - 1);
+	adc->ADC_CONF = value;
+
+	/* Set channel switch list 0 (entries 0 ~ 7) */
+	value = adc->ADC_CHSW_LIST_0;
+	len = (ChanLen > 8) ? 8 : ChanLen;
+	for (i = 0; i < len; i++) {
+		value &= ~((u32)0x0000000F << ADC_SHIFT_CHSW0(i));
+		value |= (u32)(ChanIdBuf[i] & 0x0F) << ADC_SHIFT_CHSW0(i);
+	}
+	adc->ADC_CHSW_LIST_0 = value;
+
+	/* Set channel switch list 1 (entries 8 ~ 15) */
+	if (ChanLen > 8) {
+		value = adc->ADC_CHSW_LIST_1;
+		for (i = 8; i < ChanLen; i++) {
+			value &= ~((u32)0x0000000F << ADC_SHIFT_CHSW1(i));
+			value |= (u32)(ChanIdBuf[i] & 0x0F) << ADC_SHIFT_CHSW1(i);
+		}
+		adc->ADC_CHSW_LIST_1 = value;
+	}
+}
+
+/**
   * @brief Determine ADC FIFO is readable or not.
   * @return ADC FIFO is readable or not:
   *        - 0: Not readable

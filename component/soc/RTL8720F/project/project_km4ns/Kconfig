@@ -1,5 +1,9 @@
 comment "----------CPU config----------"
 
+menu "CONFIG Chip Arch"
+    # Adding the suffix _FOR_KM4NS is not allowed here
+endmenu
+
 menu "CONFIG CHIP"
     choice
         prompt "ArmCore"
@@ -19,5 +23,3 @@ menu "CONFIG CHIP"
             bool "RTL8720F_A_Cut"
     endchoice
 endmenu
-
-

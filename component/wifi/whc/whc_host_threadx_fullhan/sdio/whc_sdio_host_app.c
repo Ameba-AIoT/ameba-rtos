@@ -388,8 +388,7 @@ void whc_host_wifi_disconnect(void)
 }
 
 /**
-* @brief  enable/disable ap mode
-* @param  state: 0: disable, 1: enable
+* @brief  stop (disable) ap mode.
 * @return none.
 */
 void whc_host_wifi_stop_ap(void)
@@ -491,7 +490,7 @@ void whc_sdio_host_get_stanum(int *num)
 /**
 * @brief  send buf to dev
 * @param  buf: data buf to be sent.
-* @param  len: real buf address, to be freed after sent.
+* @param  len: length of buf in bytes.
 * @return none.
 */
 void whc_sdio_host_send_to_dev(uint8_t *buf, uint32_t len)
@@ -514,7 +513,7 @@ void whc_sdio_host_send_to_dev(uint8_t *buf, uint32_t len)
 	memcpy(txbuf + SIZE_TX_DESC, buf, len);
 
 	/* send ret_msg + ret_val(buf, len) */
-	rtw_sdio_send_data(txbuf, txsize, NULL);
+	whc_host_sdio_send_data(txbuf, txsize, NULL);
 
 	WHC_FREE(txbuf);
 }
@@ -536,7 +535,7 @@ void whc_sdio_host_send_to_dev_block(uint8_t *buf, uint32_t len, uint8_t *ret, u
 	memcpy(txbuf + SIZE_TX_DESC, buf, len);
 
 	/* send ret_msg + ret_val(buf, len) */
-	rtw_sdio_send_data(txbuf, txsize, NULL);
+	whc_host_sdio_send_data(txbuf, txsize, NULL);
 
 	if (ret != NULL) {
 		whc_sdio_priv.ret = ret;

@@ -26,4 +26,4 @@ int whc_host_api_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
 void whc_host_api_task(void);
 void whc_host_api_init(void);
 
-#endif /* __INIC_HOST_H__ */
+#endif /* __WHC_HOST_API_H__ */

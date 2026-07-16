@@ -48,6 +48,7 @@
 #include <linux/platform_device.h>
 #include <linux/of_address.h>
 #include <linux/dma-mapping.h>
+#include <linux/unaligned.h>
 #include <net/cfg80211.h>
 #include <linux/netdevice.h>
 #include <linux/of.h>
@@ -58,7 +59,6 @@
 #include <asm/byteorder.h>
 #include <asm/atomic.h>
 #include <asm/io.h>
-#include <asm/unaligned.h>
 #include <asm-generic/io.h>
 #include <linux/semaphore.h>
 #include <linux/sem.h>

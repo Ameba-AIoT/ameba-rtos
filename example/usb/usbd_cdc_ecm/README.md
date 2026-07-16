@@ -1,6 +1,6 @@
 # Example Description
 
-In this application, Ameba is designed as an USB CDC ECM device which can communicate with USB CDC ECM host and do DHCP test.
+In this application, Ameba is designed as an USB CDC ECM device which can communicate with USB CDC ECM host (e.g., Ubuntu PC) and do DHCP test.
 
 The topology:
 ```

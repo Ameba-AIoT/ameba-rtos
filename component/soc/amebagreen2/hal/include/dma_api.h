@@ -52,22 +52,29 @@ extern "C" {
   * @{
   */
 /**
-  * @brief typedef struct gdma_s to gdma_t
+  * @brief GDMA object type.
   */
 typedef struct gdma_s gdma_t;
 /** @} */
-/** @} */
-/** @} */
-/** @} */
 
 /**
-  * @brief typedef function pointer to point interrupt handler
+  * @brief DMA IRQ callback function type.
   */
 typedef u32(*dma_irq_handler)(void *id);
+
+/** @} */
+
+/** @defgroup MBED_GDMA_Exported_Functions MBED_GDMA Exported Functions
+  * @{
+  */
 
 void dma_memcpy_init(gdma_t *dma_obj, dma_irq_handler handler, uint32_t id);
 void dma_memcpy_deinit(gdma_t *dma_obj);
 void dma_memcpy(gdma_t *dma_obj, void *dst, void *src, uint32_t len);
+
+/** @} */
+/** @} */
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -94,7 +94,7 @@
 #define ICMP_CHECKSUM_SRC_ADDR_OFFSET       0
 #define ICMP_CHECKSUM_DES_ADDR_OFFSET       72
 
-// below is IPv4 header offset
+// below is ICMPv4 header offset
 #define ICMPV4_HEADER_LEN                   8
 #define ICMPV4_TYPE_OFFSET                  0
 #define ICMPV4_CODE_OFFSET                  1

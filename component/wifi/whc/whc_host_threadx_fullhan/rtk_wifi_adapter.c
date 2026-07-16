@@ -48,7 +48,7 @@ retry:
 		//return;
 	}
 
-	/* cpoy data from skb(ipc data) to pbuf(ether net data) */
+	/* copy data from skb(ipc data) to pbuf(ether net data) */
 	temp_buf = p_buf;
 	while (temp_buf) {
 		/* If tot_len > PBUF_POOL_BUFSIZE_ALIGNED, the skb will be

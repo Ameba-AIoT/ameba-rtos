@@ -46,7 +46,7 @@ __weak void whc_host_pkt_rx_to_user(u8 *pbuf)
 /**
 * @brief  send buf to dev
 * @param  buf: data buf to be sent.
-* @param  len: real buf address, to be freed after sent.
+* @param  len: length of buf in bytes.
 * @return none.
 */
 void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
@@ -66,7 +66,7 @@ void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 	memcpy(txbuf + SIZE_TX_DESC, buf, len);
 
 	/* send ret_msg + ret_val(buf, len) */
-	rtw_sdio_send_data(txbuf, txsize, NULL);
+	whc_host_sdio_send_data(txbuf, txsize, NULL);
 
 	if (txbuf) {
 		WHC_FREE(txbuf);

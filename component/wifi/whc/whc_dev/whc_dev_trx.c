@@ -55,7 +55,7 @@ void whc_dev_xmit_init(void)
 
 /**
  * @brief  receiving function to send the received data to host.
- * @param  idx_wlan[in]: which port of wifi to set.
+ * @param  idx[in]: wlan interface index.
  * @return none.
  */
 void whc_dev_netif_rx(int idx)
@@ -211,11 +211,10 @@ struct whc_txbuf_info_t *whc_dev_alloc_buf_info(u8 *buf, u16 len, void *alloc_bu
 }
 
 /**
- * @brief  to haddle the inic message interrupt. If the message queue is
+ * @brief  to handle the whc message interrupt. If the message queue is
  * 	initialized, it will enqueue the message and wake up the message
- * 	task to haddle the message. If last send message cannot be done, I will
- * 	set pending for next sending message.
- * @param  rxbuf: rx data.
+ * 	task to handle the message.
+ * @param  rxbuf[in]: rx data.
  * @return none.
  */
 void whc_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
