@@ -1,6 +1,7 @@
 /* Includes ------------------------------------------------------------------*/
-#include "lwip/prot/dhcp.h"
 #include "lwip_netconf.h"
+#include "lwip/prot/dhcp.h"
+#include "dhcp/dhcps.h"
 #include "atcmd_service.h"
 #include "wifi_intf_drv_to_upper.h"
 #include "ameba_pmu.h"
@@ -11,30 +12,6 @@
 
 #ifndef UNUSED
 #define UNUSED(x) ((void)(x))
-#endif
-
-/*Static IP ADDRESS FOR ETHERNET*/
-#ifndef ETH_IP_ADDR0
-#define ETH_IP_ADDR0 192
-#define ETH_IP_ADDR1 168
-#define ETH_IP_ADDR2 0
-#define ETH_IP_ADDR3 80
-#endif
-
-/*NETMASK FOR ETHERNET*/
-#ifndef ETH_NETMASK_ADDR0
-#define ETH_NETMASK_ADDR0 255
-#define ETH_NETMASK_ADDR1 255
-#define ETH_NETMASK_ADDR2 255
-#define ETH_NETMASK_ADDR3 0
-#endif
-
-/*Gateway address for ethernet*/
-#ifndef ETH_GW_ADDR0
-#define ETH_GW_ADDR0 192
-#define ETH_GW_ADDR1 168
-#define ETH_GW_ADDR2 0
-#define ETH_GW_ADDR3 1
 #endif
 
 /* Private define ------------------------------------------------------------*/
@@ -97,37 +74,15 @@ void lwip_module_init(void)
 
 	Adds your network interface to the netif_list. Allocate a struct
 	netif and pass a pointer to this structure as the first argument.
-	Give pointers to cleared ip_addr structures when using DHCP,
-	or fill them with sane numbers otherwise. The state pointer may be NULL.
+	Give pointers to cleared ip_addr structures. The state pointer may be NULL.
 
 	The init function pointer must point to a initialization function for
 	your ethernet netif interface. The following code illustrates it's use.*/
 	//RTK_LOGS(NOTAG, RTK_LOG_INFO, "NET_IF_NUM:%d\n\r",NET_IF_NUM);
 	for (idx = 0; idx < NET_IF_NUM; idx++) {
-		if (idx == 0) {
-			IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-			IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-			IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-		}
-#if defined(CONFIG_LWIP_USB_ETHERNET)
-		else if (idx == NETIF_USB_ETH_INDEX) {
-			IP4_ADDR(ip_2_ip4(&ipaddr), ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
-			IP4_ADDR(ip_2_ip4(&netmask), ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1, ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
-			IP4_ADDR(ip_2_ip4(&gw), ETH_GW_ADDR0, ETH_GW_ADDR1, ETH_GW_ADDR2, ETH_GW_ADDR3);
-		}
-#endif
-#if defined(CONFIG_LWIP_ETHERNET)
-		else if (idx == NETIF_ETH_INDEX) {
-			IP4_ADDR(ip_2_ip4(&ipaddr), ETH_IP_ADDR0, ETH_IP_ADDR1, ETH_IP_ADDR2, ETH_IP_ADDR3);
-			IP4_ADDR(ip_2_ip4(&netmask), ETH_NETMASK_ADDR0, ETH_NETMASK_ADDR1, ETH_NETMASK_ADDR2, ETH_NETMASK_ADDR3);
-			IP4_ADDR(ip_2_ip4(&gw), ETH_GW_ADDR0, ETH_GW_ADDR1, ETH_GW_ADDR2, ETH_GW_ADDR3);
-		}
-#endif
-		else {
-			IP4_ADDR(ip_2_ip4(&ipaddr), AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
-			IP4_ADDR(ip_2_ip4(&netmask), AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
-			IP4_ADDR(ip_2_ip4(&gw), AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-		}
+		IP4_ADDR(ip_2_ip4(&ipaddr), IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
+		IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+		IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 
 		xnetif[idx].name[0] = 'r';
 		xnetif[idx].name[1] = '0' + idx;
@@ -308,6 +263,9 @@ uint8_t lwip_dhcp(uint8_t idx, uint8_t dhcp_state)
 					p_wifi_join_info_free(IFACE_PORT0);
 				}
 #endif
+				/* Detect and handle subnet conflict after DHCP success */
+				lwip_manage_subnet_conflict(lwip_netif_get_idx(pnetif));
+
 				wifi_indication(RTW_EVENT_DHCP_STATUS, &DHCP_state, sizeof(uint8_t));
 				ret = DHCP_ADDRESS_ASSIGNED;
 				goto exit;
@@ -680,4 +638,131 @@ uint8_t lwip_request_ip(uint8_t idx)
 	ret = lwip_dhcp(idx, DHCP_START);
 #endif
 	return ret;
+}
+
+/**
+  * @brief  Check if a subnet is already used by any netif except 'exclude'
+  * @param  check_ip: The IP address to check
+  * @param  exclude: Netif to skip during the check, NULL to check all netifs
+  * @retval 1: subnet is used; 0: subnet is not used
+  */
+int lwip_subnet_is_used(struct ip_addr *check_ip, struct netif *exclude)
+{
+	if (check_ip == NULL || ip_addr_isany(check_ip)) {
+		return 0;
+	}
+
+	for (int i = 0; i < NET_IF_NUM; i++) {
+		struct netif *pnetif = lwip_idx_get_netif(i);
+		if (pnetif == NULL || pnetif == exclude) {
+			continue;
+		}
+
+		struct ip_addr *compared_ip = &pnetif->ip_addr;
+		if (ip_addr_isany(compared_ip)) {
+			continue;
+		}
+
+		struct ip_addr *mask = &pnetif->netmask;
+		if (ip_addr_netcmp(check_ip, compared_ip, ip_2_ip4(mask))) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+/**
+  * @brief  Allocate a non-conflicting IP address from IP pool for the netif
+  * @param  idx: The index of network interface to allocate IP address
+  * @retval 0: success; -1: failed
+  */
+int lwip_alloc_ip(uint8_t idx)
+{
+	struct netif *pnetif = lwip_idx_get_netif(idx);
+	if (pnetif == NULL) {
+		return -1;
+	}
+
+	struct ip_addr new_ip, new_mask, new_gw;
+
+	/* Try from 192.168.NETWORK_SEGMENT_POOL_START.x to 192.168.NETWORK_SEGMENT_POOL_END.x */
+	for (uint8_t subnet = NETWORK_SEGMENT_POOL_START; subnet <= NETWORK_SEGMENT_POOL_END; subnet++) {
+		IP4_ADDR(ip_2_ip4(&new_ip), 192, 168, subnet, 1);
+		IP4_ADDR(ip_2_ip4(&new_mask), 255, 255, 255, 0);
+		IP4_ADDR(ip_2_ip4(&new_gw), 192, 168, subnet, 1);
+
+		/* Check if this subnet is used by any other netif (exclude self) */
+		if (!lwip_subnet_is_used(&new_ip, pnetif)) {
+			netifapi_netif_set_addr(pnetif, ip_2_ip4(&new_ip), ip_2_ip4(&new_mask), ip_2_ip4(&new_gw));
+
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Netif %c alloc IP: %d.%d.%d.%d\n", pnetif->name[1],
+					 ip4_addr1(ip_2_ip4(&new_ip)), ip4_addr2(ip_2_ip4(&new_ip)),
+					 ip4_addr3(ip_2_ip4(&new_ip)), ip4_addr4(ip_2_ip4(&new_ip)));
+			return 0;
+		}
+	}
+
+	/* All subnets conflicted */
+	RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Failed to alloc IP\n");
+	return -1;
+}
+
+/**
+  * @brief  Detect and handle subnet conflict after DHCP client gets IP
+  * @param  idx: The index of DHCP client netif that got conflicting IP
+  * @retval 0: success; -1: failed
+  */
+int lwip_manage_subnet_conflict(uint8_t idx)
+{
+	struct netif *pnetif = lwip_idx_get_netif(idx);
+	if (pnetif == NULL) {
+		return -1;
+	}
+
+	struct ip_addr *target_ip = &pnetif->ip_addr;
+	if (ip_addr_isany(target_ip)) {
+		return 0;
+	}
+
+	for (int i = 0; i < NET_IF_NUM; i++) {
+		struct netif *existing_netif = lwip_idx_get_netif(i);
+		if (existing_netif == NULL || existing_netif == pnetif || !netif_is_up(existing_netif)) {
+			continue;
+		}
+
+		struct ip_addr *existing_ip = &existing_netif->ip_addr;
+		struct ip_addr *mask = &existing_netif->netmask;
+		if (ip_addr_isany(existing_ip)) {
+			continue;
+		}
+
+		if (!ip_addr_netcmp(target_ip, existing_ip, ip_2_ip4(mask))) {
+			continue;
+		}
+
+		dhcps_t *dhcps = dhcps_get_from_netif(existing_netif);
+		bool is_dhcp_server = (dhcps != NULL && dhcps->dhcps_pcb != NULL);
+		if (is_dhcp_server) {
+			/* Case A: Client vs Server conflict - restart DHCP server */
+			RTK_LOGS(NOTAG, RTK_LOG_WARN, "CONFLICT: DHCPC(Netif %c) vs DHCPS(Netif %c) use same subnet\n",
+					 pnetif->name[1], existing_netif->name[1]);
+
+			dhcps_stop(existing_netif);
+
+			if (lwip_alloc_ip(i) == 0) {
+				/* Restart DHCP Server with new IP */
+				dhcps_start(existing_netif);
+			} else {
+				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "Netif %c failed to realloc IP\n", existing_netif->name[1]);
+				return -1;
+			}
+		} else {
+			/* Case B: Client vs Client conflict - warning only */
+			RTK_LOGS(NOTAG, RTK_LOG_WARN, "Warn: DHCPC(Netif %c) vs DHCPC(Netif %c) use same subnet\n",
+					 pnetif->name[1], existing_netif->name[1]);
+		}
+	}
+
+	return 0;
 }

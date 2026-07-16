@@ -10,9 +10,11 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # Component public part, user config begin
 
 # You may use if-else condition to set or update predefined variable above
-ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_ipdnrd.a
+
+ameba_list_append(public_includes
+    include
 )
+
 # Component public part, user config end
 #----------------------------------------#
 
@@ -40,18 +42,13 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    common.c
-    dnrd.c
-    dns.c
-    lib.c
-    master.c
-    query.c
-    relay.c
-    udp.c
-)
-
-ameba_list_append(private_includes
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    src/dns_proxy_core.c
+    src/dns_proxy_listener.c
+    src/dns_proxy_parser.c
+    src/dns_proxy_cache.c
+    src/dns_proxy_transaction.c
+    src/dns_proxy_forwarder.c
+    src/dns_proxy_utils.c
 )
 
 # Component private part, user config end
@@ -60,7 +57,7 @@ ameba_list_append(private_includes
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_external_app_library(ipdnrd
+ameba_add_internal_library(dns_proxy
     p_SOURCES
         ${private_sources}
     p_INCLUDES

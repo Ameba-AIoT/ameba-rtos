@@ -3348,9 +3348,9 @@
  */
 #if !defined IPNAT_DEBUG || defined __DOXYGEN__
 #ifdef CONFIG_IPNAT_DEBUG
-#define IPNAT_DEBUG                     LWIP_DBG_ON
+#define IPNAT_DEBUG                    LWIP_DBG_ON
 #else
-#define IPNAT_DEBUG                     LWIP_DBG_OFF
+#define IPNAT_DEBUG                    LWIP_DBG_OFF
 #endif
 #endif
 
