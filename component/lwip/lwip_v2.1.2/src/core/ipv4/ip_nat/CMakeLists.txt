@@ -43,10 +43,6 @@ ameba_list_append(private_sources
     lwip_ip4nat.c
 )
 
-ameba_list_append(private_definitions
-    IP_FORWARD
-    IP_NAT
-)
 
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#

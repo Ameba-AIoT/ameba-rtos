@@ -547,9 +547,8 @@ ip4_input(struct pbuf *p, struct netif *inp)
 #if defined(IP_NAT) && (IP_NAT == 1)
   if(ip_nat_enqueue(p, inp) != ERR_OK) {
     pbuf_free(p);
-    IP_STATS_INC(ip.chkerr);
     IP_STATS_INC(ip.drop);
-    MIB2_STATS_INC(mib2.ipinhdrerrors);
+    MIB2_STATS_INC(mib2.ipindiscards);
     return ERR_OK;
   }
 #endif

@@ -19,4 +19,4 @@ void print_nhb(void);
 }
 #endif
 
-#endif /* __LWIP_NAT_H__ */
+#endif /* __LWIP_RLOCAL_H__ */

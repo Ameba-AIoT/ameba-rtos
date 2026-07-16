@@ -34,7 +34,8 @@ static int ota_core_recv_header(ota_context_t *ctx, u8 *Recvbuf, u32 writelen, u
 				return OTA_ERR;
 			}
 			if (read_bytes == 0) {
-				break;
+				RTK_LOGE(OTA_TAG, "[CORE] Unexpected EOF, %lu bytes remaining\n", TempLen);
+				return OTA_ERR;
 			}
 			TempLen -= read_bytes;
 			buf += read_bytes;
@@ -66,7 +67,8 @@ static int ota_core_recv_header(ota_context_t *ctx, u8 *Recvbuf, u32 writelen, u
 				return OTA_ERR;
 			}
 			if (read_bytes == 0) {
-				break;
+				RTK_LOGE(OTA_TAG, "[CORE] Unexpected EOF, %lu bytes remaining\n", TempLen);
+				return OTA_ERR;
 			}
 			TempLen -= read_bytes;
 			buf += read_bytes;
@@ -494,17 +496,15 @@ static int ota_core_process(ota_context_t *ctx)
 		_memset(buf, 0, OTA_BUF_SIZE);
 		read_bytes = ota_transport_read(ctx, buf, OTA_BUF_SIZE);
 		if (read_bytes == 0) {
-			ret = OTA_OK;
-			break; // Read end
+			RTK_LOGE(OTA_TAG, "[CORE] Unexpected EOF\n");
+			break;
 		}
 		if (read_bytes < 0) {
 			RTK_LOGE(OTA_TAG, "[CORE] Read failed\n");
-			ret = OTA_ERR;
 			break;
 		}
 		ret = ota_fw_program(ctx, buf, read_bytes);
 		if (ret == OTA_FINISH) {
-			ret = OTA_OK;
 			RTK_LOGI(OTA_TAG, "[CORE] All images downloaded\n");
 			break;
 		}
@@ -566,7 +566,7 @@ int ota_start(ota_context_t *ctx)
 	}
 
 	/*----------------step2: ota process (download and program)---------------------*/
-	if (ota_core_process(ctx) != OTA_OK) {
+	if (ota_core_process(ctx) != OTA_FINISH) {
 		RTK_LOGE(OTA_TAG, "[CORE] Process failed\n");
 		ret = OTA_ERR;
 		goto exit;

@@ -104,16 +104,19 @@ static int usbh_msc_attach(usb_host_t *host)
 			goto open_fail;
 		}
 
+		msc->itf_num = msc_itf_desc->bInterfaceNumber;
 		msc->current_lun = 0U;
 		msc->state = MSC_INIT;
 		msc->error = MSC_OK;
 		msc->req_state = MSC_REQ_IDLE;
 
 		cbw->field.dCBWSignature = USB_MSC_CBW_SIGN;
-		cbw->field.dCBWTag = USB_BOT_CBW_TAG;
+		msc->hbot.tag_counter = USB_BOT_CBW_TAG;
+		cbw->field.dCBWTag = msc->hbot.tag_counter;
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_SEND;
+		msc->hbot.reset_recovery = 0U;
 
 		/* De-Initialize LUNs information */
 		usb_os_memset(msc->unit, 0, sizeof(msc->unit));
@@ -183,7 +186,7 @@ static int usbh_msc_setup(usb_host_t *host)
 								  | USB_REQ_RECIPIENT_INTERFACE;
 		setup.req.bRequest = USB_MSC_REQUEST_GET_MAX_LUN;
 		setup.req.wValue = 0U;
-		setup.req.wIndex = 0U;
+		setup.req.wIndex = msc->itf_num;
 		setup.req.wLength = 1U;
 		status = usbh_ctrl_request(host, &setup, msc->max_lun_buf);
 		/* When devices do not support the GetMaxLun request, this should
@@ -239,32 +242,34 @@ static int usbh_msc_process(usb_host_t *host, usbh_event_t *event)
 	switch (msc->state) {
 	case MSC_INIT:
 		if (msc->current_lun < msc->max_lun) {
-			msc->unit[msc->current_lun].error = MSC_NOT_READY;
+			usbh_msc_lun_t *unit = &msc->unit[msc->current_lun];
+
+			unit->error = MSC_NOT_READY;
 			/* Switch MSC REQ state machine */
-			switch (msc->unit[msc->current_lun].state) {
+			switch (unit->state) {
 			case MSC_INIT:
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Lun %d\n", msc->current_lun);
-				msc->unit[msc->current_lun].state = MSC_READ_INQUIRY;
+				unit->state = MSC_READ_INQUIRY;
 				msc->tick = usbh_get_tick(host);
 				break;
 
 			case MSC_READ_INQUIRY:
-				scsi_status = usbh_scsi_inquiry(msc, (u8)msc->current_lun, &msc->unit[msc->current_lun].inquiry);
+				scsi_status = usbh_scsi_inquiry(msc, (u8)msc->current_lun, &unit->inquiry);
 
 				if (scsi_status == HAL_OK) {
 #if USBH_MSC_DEBUG
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Inq ven %s\n", msc->unit[msc->current_lun].inquiry.vendor_id);
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Inq prod %s\n", msc->unit[msc->current_lun].inquiry.product_id);
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Inq ver %s\n", msc->unit[msc->current_lun].inquiry.revision_id);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Inq ven %s\n", unit->inquiry.vendor_id);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Inq prod %s\n", unit->inquiry.product_id);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Inq ver %s\n", unit->inquiry.revision_id);
 #endif
-					msc->unit[msc->current_lun].state = MSC_TEST_UNIT_READY;
+					unit->state = MSC_TEST_UNIT_READY;
 				}
 				if (scsi_status == HAL_ERR_UNKNOWN) {
-					msc->unit[msc->current_lun].state = MSC_REQUEST_SENSE;
+					unit->state = MSC_REQUEST_SENSE;
 				} else {
 					if (scsi_status == HAL_ERR_HW) {
-						msc->unit[msc->current_lun].state = MSC_IDLE;
-						msc->unit[msc->current_lun].error = MSC_ERROR;
+						unit->state = MSC_IDLE;
+						unit->error = MSC_ERROR;
 					}
 				}
 				break;
@@ -273,88 +278,88 @@ static int usbh_msc_process(usb_host_t *host, usbh_event_t *event)
 				scsi_status = usbh_scsi_test_unit_ready(msc, (u8)msc->current_lun);
 
 				if (scsi_status == HAL_OK) {
-					if (msc->unit[msc->current_lun].prev_ready_state != HAL_OK) {
-						msc->unit[msc->current_lun].state_changed = 1U;
+					if (unit->prev_ready_state != HAL_OK) {
+						unit->state_changed = 1U;
 						//RTK_LOGS(TAG, RTK_LOG_INFO, "Device ready\n");
 					} else {
-						msc->unit[msc->current_lun].state_changed = 0U;
+						unit->state_changed = 0U;
 					}
-					msc->unit[msc->current_lun].state = MSC_READ_CAPACITY10;
-					msc->unit[msc->current_lun].error = MSC_OK;
-					msc->unit[msc->current_lun].prev_ready_state = HAL_OK;
+					unit->state = MSC_READ_CAPACITY10;
+					unit->error = MSC_OK;
+					unit->prev_ready_state = HAL_OK;
 				}
 				if (scsi_status == HAL_ERR_UNKNOWN) {
 					/* Media not ready, so try to check again during 10s */
-					if (msc->unit[msc->current_lun].prev_ready_state != HAL_ERR_UNKNOWN) {
-						msc->unit[msc->current_lun].state_changed = 1U;
+					if (unit->prev_ready_state != HAL_ERR_UNKNOWN) {
+						unit->state_changed = 1U;
 						RTK_LOGS(TAG, RTK_LOG_WARN, "Device not ready\n");
 					} else {
-						msc->unit[msc->current_lun].state_changed = 0U;
+						unit->state_changed = 0U;
 					}
-					msc->unit[msc->current_lun].state = MSC_REQUEST_SENSE;
-					msc->unit[msc->current_lun].error = MSC_NOT_READY;
-					msc->unit[msc->current_lun].prev_ready_state = HAL_ERR_UNKNOWN;
+					unit->state = MSC_REQUEST_SENSE;
+					unit->error = MSC_NOT_READY;
+					unit->prev_ready_state = HAL_ERR_UNKNOWN;
 				} else {
 					if (scsi_status == HAL_ERR_HW) {
-						msc->unit[msc->current_lun].state = MSC_IDLE;
-						msc->unit[msc->current_lun].error = MSC_ERROR;
+						unit->state = MSC_IDLE;
+						unit->error = MSC_ERROR;
 					}
 				}
 				break;
 
 			case MSC_READ_CAPACITY10:
-				scsi_status = usbh_scsi_read_capacity(msc, (u8)msc->current_lun, &msc->unit[msc->current_lun].capacity);
+				scsi_status = usbh_scsi_read_capacity(msc, (u8)msc->current_lun, &unit->capacity);
 
 				if (scsi_status == HAL_OK) {
-					if (msc->unit[msc->current_lun].state_changed == 1U) {
+					if (unit->state_changed == 1U) {
 #if USBH_MSC_DEBUG
 						RTK_LOGS(TAG, RTK_LOG_INFO, "Capacity %dB\n",
-								 (msc->unit[msc->current_lun].capacity.block_nbr * msc->unit[msc->current_lun].capacity.block_size));
-						RTK_LOGS(TAG, RTK_LOG_INFO, "Block num %d\n", msc->unit[msc->current_lun].capacity.block_nbr);
-						RTK_LOGS(TAG, RTK_LOG_INFO, "Block size %d\n", msc->unit[msc->current_lun].capacity.block_size);
+								 (unit->capacity.block_nbr * unit->capacity.block_size));
+						RTK_LOGS(TAG, RTK_LOG_INFO, "Block num %d\n", unit->capacity.block_nbr);
+						RTK_LOGS(TAG, RTK_LOG_INFO, "Block size %d\n", unit->capacity.block_size);
 #endif
 					}
-					msc->unit[msc->current_lun].state = MSC_IDLE;
-					msc->unit[msc->current_lun].error = MSC_OK;
+					unit->state = MSC_IDLE;
+					unit->error = MSC_OK;
 					msc->current_lun++;
 				} else if (scsi_status == HAL_ERR_UNKNOWN) {
-					msc->unit[msc->current_lun].state = MSC_REQUEST_SENSE;
+					unit->state = MSC_REQUEST_SENSE;
 				} else {
 					if (scsi_status == HAL_ERR_HW) {
-						msc->unit[msc->current_lun].state = MSC_IDLE;
-						msc->unit[msc->current_lun].error = MSC_ERROR;
+						unit->state = MSC_IDLE;
+						unit->error = MSC_ERROR;
 					}
 				}
 				break;
 
 			case MSC_REQUEST_SENSE:
-				scsi_status = usbh_scsi_request_sense(msc, (u8)msc->current_lun, &msc->unit[msc->current_lun].sense);
+				scsi_status = usbh_scsi_request_sense(msc, (u8)msc->current_lun, &unit->sense);
 
 				if (scsi_status == HAL_OK) {
-					if ((msc->unit[msc->current_lun].sense.key == SCSI_SENSE_KEY_UNIT_ATTENTION) ||
-						(msc->unit[msc->current_lun].sense.key == SCSI_SENSE_KEY_NOT_READY)) {
+					if ((unit->sense.key == SCSI_SENSE_KEY_UNIT_ATTENTION) ||
+						(unit->sense.key == SCSI_SENSE_KEY_NOT_READY)) {
 
 						if (usbh_get_elapsed_ticks(host, msc->tick) < 10000U) {
-							msc->unit[msc->current_lun].state = MSC_TEST_UNIT_READY;
+							unit->state = MSC_TEST_UNIT_READY;
 							break;
 						}
 					}
 
 #if USBH_MSC_DEBUG
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Sense key %x\n", msc->unit[msc->current_lun].sense.key);
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code %x\n", msc->unit[msc->current_lun].sense.asc);
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code qua %x\n", msc->unit[msc->current_lun].sense.ascq);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Sense key %x\n", unit->sense.key);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code %x\n", unit->sense.asc);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code qua %x\n", unit->sense.ascq);
 #endif
-					msc->unit[msc->current_lun].state = MSC_IDLE;
+					unit->state = MSC_IDLE;
 					msc->current_lun++;
 				}
 				if (scsi_status == HAL_ERR_UNKNOWN) {
 					RTK_LOGS(TAG, RTK_LOG_WARN, "Device not ready\n");
-					msc->unit[msc->current_lun].state = MSC_UNRECOVERED_ERROR;
+					unit->state = MSC_UNRECOVERED_ERROR;
 				} else {
 					if (scsi_status == HAL_ERR_HW) {
-						msc->unit[msc->current_lun].state = MSC_IDLE;
-						msc->unit[msc->current_lun].error = MSC_ERROR;
+						unit->state = MSC_IDLE;
+						unit->error = MSC_ERROR;
 					}
 				}
 				break;
@@ -399,29 +404,30 @@ static int usbh_msc_process(usb_host_t *host, usbh_event_t *event)
 static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
+	usbh_msc_lun_t *unit = &msc->unit[lun];
 	int status = HAL_BUSY;
 	int scsi_status = HAL_BUSY;
 
 	/* Switch MSC REQ state machine */
-	switch (msc->unit[lun].state) {
+	switch (unit->state) {
 
 	case MSC_READ:
 		scsi_status = usbh_scsi_read(msc, lun, 0U, NULL, 0U);
 
 		if (scsi_status == HAL_OK) {
-			msc->unit[lun].state = MSC_IDLE;
+			unit->state = MSC_IDLE;
 			status = HAL_OK;
 		} else if (scsi_status == HAL_ERR_UNKNOWN) {
-			msc->unit[lun].state = MSC_REQUEST_SENSE;
+			unit->state = MSC_REQUEST_SENSE;
 		} else if (scsi_status == HAL_ERR_MEM) {
 			/* Bounce-buffer alloc failed: the BOT transfer never started, so abort
 			   this operation (no BOT reset needed) and fail fast instead of spinning. */
-			msc->unit[lun].state = MSC_IDLE;
-			msc->unit[lun].error = MSC_ERROR;
+			unit->state = MSC_IDLE;
+			unit->error = MSC_ERROR;
 			status = HAL_ERR_UNKNOWN;
 		} else {
 			if (scsi_status == HAL_ERR_HW) {
-				msc->unit[lun].state = MSC_UNRECOVERED_ERROR;
+				unit->state = MSC_UNRECOVERED_ERROR;
 				status = HAL_ERR_UNKNOWN;
 			}
 		}
@@ -433,19 +439,19 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 		scsi_status = usbh_scsi_write(msc, lun, 0U, NULL, 0U);
 
 		if (scsi_status == HAL_OK) {
-			msc->unit[lun].state = MSC_IDLE;
+			unit->state = MSC_IDLE;
 			status = HAL_OK;
 		} else if (scsi_status == HAL_ERR_UNKNOWN) {
-			msc->unit[lun].state = MSC_REQUEST_SENSE;
+			unit->state = MSC_REQUEST_SENSE;
 		} else if (scsi_status == HAL_ERR_MEM) {
 			/* Bounce-buffer alloc failed: the BOT transfer never started, so abort
 			   this operation (no BOT reset needed) and fail fast instead of spinning. */
-			msc->unit[lun].state = MSC_IDLE;
-			msc->unit[lun].error = MSC_ERROR;
+			unit->state = MSC_IDLE;
+			unit->error = MSC_ERROR;
 			status = HAL_ERR_UNKNOWN;
 		} else {
 			if (scsi_status == HAL_ERR_HW) {
-				msc->unit[lun].state = MSC_UNRECOVERED_ERROR;
+				unit->state = MSC_UNRECOVERED_ERROR;
 				status = HAL_ERR_UNKNOWN;
 			}
 		}
@@ -454,16 +460,16 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 		break;
 
 	case MSC_REQUEST_SENSE:
-		scsi_status = usbh_scsi_request_sense(msc, lun, &msc->unit[lun].sense);
+		scsi_status = usbh_scsi_request_sense(msc, lun, &unit->sense);
 
 		if (scsi_status == HAL_OK) {
 #if USBH_MSC_DEBUG
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Sense key: %x\n", msc->unit[lun].sense.key);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code: %x\n", msc->unit[lun].sense.asc);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code qua: %x\n", msc->unit[lun].sense.ascq);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Sense key: %x\n", unit->sense.key);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code: %x\n", unit->sense.asc);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code qua: %x\n", unit->sense.ascq);
 #endif
-			msc->unit[lun].state = MSC_IDLE;
-			msc->unit[lun].error = MSC_ERROR;
+			unit->state = MSC_IDLE;
+			unit->error = MSC_ERROR;
 
 			status = HAL_ERR_UNKNOWN;
 		}
@@ -471,7 +477,7 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Device not ready\n");
 		} else {
 			if (scsi_status == HAL_ERR_HW) {
-				msc->unit[lun].state = MSC_UNRECOVERED_ERROR;
+				unit->state = MSC_UNRECOVERED_ERROR;
 				status = HAL_ERR_UNKNOWN;
 			}
 		}
@@ -531,7 +537,10 @@ static usb_msc_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
 				/* Check Condition 3. dCSWTag matches the dCBWTag from the
 				corresponding CBW */
 
-				if (csw->field.bCSWStatus == 0U) {
+				/* dCSWDataResidue must not exceed dCBWDataTransferLength (BOT §6.5.1) */
+				if (csw->field.dCSWDataResidue > cbw->field.dCBWDataTransferLength) {
+					status = BOT_CSW_PHASE_ERROR;
+				} else if (csw->field.bCSWStatus == 0U) {
 					/* Refer to USB Mass-Storage Class : BOT (www.usb.org)
 
 					Hn Host expects no data transfers
@@ -615,6 +624,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 		if (bulk_out->xfer_state == USBH_EP_XFER_START) {
 			cbw->field.bCBWLUN = lun;
+			cbw->field.dCBWTag = ++msc->hbot.tag_counter;
 			bulk_out->xfer_buf = cbw->data;
 			bulk_out->xfer_len = USB_MSC_CBW_LEN;
 			usbh_transfer_process(host, bulk_out);
@@ -698,15 +708,22 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 			if (usbh_get_urb_state(host, bulk_in) == USBH_URB_DONE) {
 				bulk_in->xfer_state = USBH_EP_XFER_IDLE;
-				msc->hbot.state = BOT_SEND_CBW;
-				msc->hbot.cmd_state = BOT_CMD_SEND;
-				bulk_out->xfer_state = USBH_EP_XFER_START;
 				CSW_Status = usbh_msc_decode_csw(host);
 
-				if (CSW_Status == BOT_CSW_CMD_PASSED) {
-					status = HAL_OK;
+				if (CSW_Status == BOT_CSW_PHASE_ERROR) {
+					/* BOT §6.3.3: PHASE_ERROR requires Reset Recovery */
+					msc->hbot.state = BOT_UNRECOVERED_ERROR;
+					msc->hbot.cmd_state = BOT_CMD_BUSY;
+					status = HAL_BUSY;
 				} else {
-					status = HAL_ERR_UNKNOWN;
+					msc->hbot.state = BOT_SEND_CBW;
+					msc->hbot.cmd_state = BOT_CMD_SEND;
+					bulk_out->xfer_state = USBH_EP_XFER_START;
+					if (CSW_Status == BOT_CSW_CMD_PASSED) {
+						status = HAL_OK;
+					} else {
+						status = HAL_ERR_UNKNOWN;
+					}
 				}
 				usbh_notify_class_state_change(host, 0);
 			} else if (usbh_get_urb_state(host, bulk_in) == USBH_URB_STALL) {
@@ -718,12 +735,19 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 	case BOT_ERROR_IN:
 		error = usbh_ctrl_clear_feature(host, bulk_in->ep_addr);
 		if (error == HAL_OK) {
-			msc->hbot.state = BOT_RECEIVE_CSW;
-			bulk_in->xfer_state = USBH_EP_XFER_START;
+			if (msc->hbot.reset_recovery) {
+				/* BOT §6.3.3: both EP halts cleared — Reset Recovery complete */
+				msc->hbot.reset_recovery = 0U;
+				msc->hbot.state = BOT_SEND_CBW;
+				msc->hbot.cmd_state = BOT_CMD_SEND;
+				bulk_out->xfer_state = USBH_EP_XFER_START;
+			} else {
+				msc->hbot.state = BOT_RECEIVE_CSW;
+				bulk_in->xfer_state = USBH_EP_XFER_START;
+			}
 		} else if (error == HAL_ERR_HW) {
 			/* This means that there is a STALL Error limit, Do Reset Recovery */
 			msc->hbot.state = BOT_UNRECOVERED_ERROR;
-		} else {
 		}
 		break;
 
@@ -743,13 +767,19 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 		setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 		setup.req.bRequest = USB_MSC_REQUEST_BOT_RESET;
 		setup.req.wValue = 0U;
-		setup.req.wIndex = 0U;
+		setup.req.wIndex = msc->itf_num;
 		setup.req.wLength = 0U;
 
 		status = usbh_ctrl_request(host, &setup, NULL);
 		if (status == HAL_OK) {
+			/* BOT §6.3.3: after BOT_RESET, clear ENDPOINT_HALT on both bulk EPs */
+			msc->hbot.reset_recovery = 1U;
+			msc->hbot.state = BOT_ERROR_OUT;
+		} else if (status != HAL_BUSY) {
+			/* BOT Reset failed permanently; give up and force a command retry */
 			msc->hbot.state = BOT_SEND_CBW;
-			bulk_out->xfer_state = USBH_EP_XFER_START;
+			msc->hbot.cmd_state = BOT_CMD_SEND;
+			status = HAL_ERR_HW;
 		}
 		break;
 
@@ -863,6 +893,7 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 	u32 timeout;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usb_host_t *host = msc->host;
+	usbh_msc_lun_t *unit;
 
 	if (lun >= USBH_MSC_MAX_LUN) {
 		return HAL_ERR_PARA;
@@ -872,21 +903,23 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 		return HAL_ERR_UNKNOWN;
 	}
 
+	unit = &msc->unit[lun];
+
 	if (((host->connect_state != USBH_STATE_ATTACH) &&
 		 (host->connect_state != USBH_STATE_SETUP)) ||
-		(msc->unit[lun].state != MSC_IDLE)) {
+		(unit->state != MSC_IDLE)) {
 		return  HAL_ERR_UNKNOWN;
 	}
 
 	msc->state = MSC_READ;
-	msc->unit[lun].state = MSC_READ;
+	unit->state = MSC_READ;
 
 	/* Kick off the transfer; the bounce buffer is allocated here. Catch an
 	   allocation failure now and fail fast (avoid entering the loop with the
 	   command stuck in BOT_CMD_SEND and a length=0 retry). */
 	if (usbh_scsi_read(msc, lun, address, pbuf, length) == HAL_ERR_MEM) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Read buf alloc fail\n");
-		msc->unit[lun].state = MSC_IDLE;
+		unit->state = MSC_IDLE;
 		msc->state = MSC_IDLE;
 		return HAL_ERR_MEM;
 	}
@@ -933,6 +966,7 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 	u32 timeout;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usb_host_t *host = msc->host;
+	usbh_msc_lun_t *unit;
 
 	if (lun >= USBH_MSC_MAX_LUN) {
 		return HAL_ERR_PARA;
@@ -942,21 +976,23 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 		return HAL_ERR_UNKNOWN;
 	}
 
+	unit = &msc->unit[lun];
+
 	if (((host->connect_state != USBH_STATE_ATTACH) &&
 		 (host->connect_state != USBH_STATE_SETUP)) ||
-		(msc->unit[lun].state != MSC_IDLE)) {
+		(unit->state != MSC_IDLE)) {
 		return  HAL_ERR_UNKNOWN;
 	}
 
 	msc->state = MSC_WRITE;
-	msc->unit[lun].state = MSC_WRITE;
+	unit->state = MSC_WRITE;
 
 	/* Kick off the transfer; the bounce buffer is allocated here. Catch an
 	   allocation failure now and fail fast (avoid entering the loop with the
 	   command stuck in BOT_CMD_SEND and a length=0 retry). */
 	if (usbh_scsi_write(msc, lun, address, pbuf, length) == HAL_ERR_MEM) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Write buf alloc fail\n");
-		msc->unit[lun].state = MSC_IDLE;
+		unit->state = MSC_IDLE;
 		msc->state = MSC_IDLE;
 		return HAL_ERR_MEM;
 	}

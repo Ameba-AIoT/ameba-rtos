@@ -103,14 +103,14 @@ typedef enum {
 typedef struct {
 	usb_msc_bot_cbw_t *cbw;         /**< Pointer to the Command Block Wrapper. */
 	usb_msc_bot_csw_t *csw;         /**< Pointer to the Command Status Wrapper. */
-	u32 origin_tx_pbuf_len;         /**< Original length of the user's transmit buffer. */
 	u32 origin_rx_pbuf_len;         /**< Original length of the user's receive buffer. */
-	u8 *origin_tx_pbuf;             /**< Pointer to the original user transmit buffer. */
 	u8 *origin_rx_pbuf;             /**< Pointer to the original user receive buffer. */
 	u8 *pbuf;                       /**< Internal pointer to the current data buffer for transfer. */
 	u8 *data;                       /**< A general-purpose data buffer. */
+	u32 tag_counter;                /**< Per-CBW tag; incremented before each CBW send (BOT §6.3.1). */
 	u8 state;                       /**< Current state of the BOT state machine, @ref usbh_bot_state_t. */
 	u8 cmd_state;                   /**< Current state of the command processing, @ref usbh_bot_cmd_state_t. */
+	u8 reset_recovery;              /**< Set during BOT Reset Recovery to redirect BOT_ERROR_IN→BOT_SEND_CBW. */
 } usbh_bot_handle_t;
 
 /**
@@ -119,7 +119,7 @@ typedef struct {
  */
 typedef struct {
 	u32 block_nbr;                  /**< Total number of logical blocks on the medium. */
-	u16 block_size;                 /**< Size of each logical block in bytes. */
+	u32 block_size;                 /**< Size of each logical block in bytes. */
 } usbh_scsi_capacity_t;
 
 /* INQUIRY data */
@@ -192,6 +192,7 @@ typedef struct {
 	u8 state;                              /**< Current state of the main MSC state machine, @ref usbh_msc_state_t. */
 	u8 error;                              /**< Stores the last occurred error, @ref usbh_msc_error_t. */
 	u8 req_state;                          /**< Current state of the MSC control request state machine, @ref usbh_msc_req_state_t. */
+	u8 itf_num;                            /**< MSC interface number; used as wIndex in class requests (BOT §3.1). */
 } usbh_msc_host_t;
 
 /* Exported macros -----------------------------------------------------------*/

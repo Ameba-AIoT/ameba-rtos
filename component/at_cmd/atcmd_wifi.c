@@ -41,10 +41,6 @@ static struct rtw_softap_info ap = {0};
 static unsigned char password[129] = {0};
 static int security = -1;
 
-#if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
-extern void ipnat_dump(void);
-#endif
-
 extern int wifi_set_ips_internal(u8 enable);
 #if defined(CONFIG_IEEE80211R) && (WIFI_LOGO_CERTIFICATION == 1)
 extern int rtw_ft_reassoc_dbg(u16 argc, char **argv);
@@ -726,7 +722,6 @@ void at_wlstartap(u16 argc, char **argv)
 	int ret = 0, i = 0, j = 0;
 	int error_no = RTW_AT_OK;
 #ifdef CONFIG_LWIP_LAYER
-	u32 ip_addr, netmask, gw;
 	struct ip_addr start_ip, end_ip;
 	int pool_specified = 0;
 #endif
@@ -969,10 +964,7 @@ void at_wlstartap(u16 argc, char **argv)
 	}
 
 #ifdef CONFIG_LWIP_LAYER
-	ip_addr = CONCAT_TO_UINT32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
-	netmask = CONCAT_TO_UINT32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
-	gw = CONCAT_TO_UINT32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-	lwip_set_ip(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
+	lwip_alloc_ip(NETIF_WLAN_AP_INDEX);
 	dhcps_init(pnetif_ap);
 	if (pool_specified) {
 		dhcps_set_addr_pool(pnetif_ap, 1, &start_ip, &end_ip);
@@ -1128,14 +1120,6 @@ void at_wlstate(u16 argc, char **argv)
 #endif /* CONFIG_LWIP_LAYER */
 
 	rtos_mem_free((void *)p_wifi_setting);
-
-#if defined(CONFIG_IP_NAT) && (CONFIG_IP_NAT == 1)
-#if defined(LWIP_IPV6) && (LWIP_IPV6 == 1)
-	print_rlocal_ipv6_addresses();
-	print_rlocal_nhb();
-#endif
-	ipnat_dump();
-#endif
 
 	at_printf(ATCMD_OK_END_STR);
 }
