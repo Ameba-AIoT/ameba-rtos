@@ -37,7 +37,7 @@ const TZ_CFG_TypeDef mpc2_config[MPC_ENTRY_NUM] =						/* Security configuration
 {
 //  Start							End					CTRL
 	/* Note: __non_secure_psram_end__ maybe not real, update this info by the chipinfo value in bootloader. */
-	{(u32)__km4_bd_psram_start__,	(u32)__non_secure_psram_end__ - 1,			MPC_RW | MPC_NS},	/* entry0: psram can be rw by ns word */
+	{(u32)__non_secure_psram_start__,	(u32)__non_secure_psram_end__ - 1,		MPC_RW | MPC_NS},	/* entry0: psram can be rw by ns word */
 	{0xFFFFFFFF,					0xFFFFFFFF,			MPC_RW | MPC_NS},	/* entry1: End Flag */
 	{0xFFFFFFFF,					0xFFFFFFFF,			MPC_RW | MPC_NS},	/* entry2: TODO */
 	{0xFFFFFFFF,					0xFFFFFFFF,			MPC_RW | MPC_NS},	/* entry3: TODO */

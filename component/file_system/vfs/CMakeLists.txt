@@ -67,6 +67,33 @@ if(CONFIG_VFS_FATFS_INCLUDED)
     )
 endif()
 
+if(CONFIG_VFS_REALFS_INCLUDED)
+    ameba_list_append(private_sources vfs_realfs.c)
+    if(CONFIG_REALFS_SD_MODE)
+        ameba_list_append(private_sources
+            ${c_CMPT_FILE_SYSTEM_DIR}/realfs/port/realfs_bdev_sd.c
+        )
+    endif()
+    if(CONFIG_REALFS_FLASH)
+        ameba_list_append(private_sources
+            ${c_CMPT_FILE_SYSTEM_DIR}/realfs/port/realfs_bdev_flash.c
+        )
+        if(CONFIG_REALFS_FLASH_NAND_LBM)
+            ameba_list_append(private_sources
+                ${c_CMPT_FILE_SYSTEM_DIR}/realfs/port/realfs_erasedev_lbm.c
+            )
+        endif()
+        if(CONFIG_REALFS_FLASH_NOR_MAP)
+            ameba_list_append(private_sources
+                ${c_CMPT_FILE_SYSTEM_DIR}/realfs/port/realfs_erasedev_nor.c
+            )
+        endif()
+    endif()
+    ameba_list_append(private_includes
+        ${c_CMPT_FILE_SYSTEM_DIR}/realfs/port
+    )
+endif()
+
 #FIXME: vfs/vfs.c uses headers from mbedtls, but these two component are not always enabled at same time
 ameba_list_append(private_includes
     ${c_MBEDTLS_DIR}/include

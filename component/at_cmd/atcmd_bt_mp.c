@@ -79,7 +79,7 @@ static void bt_hci_uart_init(void)
 	/* Disable and Enable UART Interrupt */
 	InterruptDis(HCI_UART_IRQ);
 	InterruptUnRegister(HCI_UART_IRQ);
-	InterruptRegister((IRQ_FUN)bt_hci_uart_bridge_irq, HCI_UART_IRQ, NULL, INT_PRI4);
+	InterruptRegister((IRQ_FUN)bt_hci_uart_bridge_irq, HCI_UART_IRQ, (u32)NULL, INT_PRI4);
 	InterruptEn(HCI_UART_IRQ, INT_PRI4);
 
 	UART_INTConfig(HCI_UART_DEV, RUART_BIT_ETBEI, DISABLE);

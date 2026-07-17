@@ -131,6 +131,7 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_VENDOR_MP_PHY_CMD, bt_hci_cmd_ogf_vendor_ocf_phy},
 	{BT_HCI_OP_VENDOR_READ_RADIO_REG_PI, bt_hci_cmd_ogf_vendor_ocf_read_radio_reg_pi},
 	{BT_HCI_OP_VENDOR_WRITE_RADIO_REG_PI, bt_hci_cmd_ogf_vendor_ocf_write_radio_reg_pi},
+	{BT_HCI_OP_VENDOR_SET_MESH_INFO, bt_hci_cmd_ogf_vendor_ocf_set_mesh_packet_priority},
 };
 
 void bt_hci_get_supported_hci_command(uint8_t *pcommands)

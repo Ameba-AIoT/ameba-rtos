@@ -64,8 +64,8 @@
 #define SPI_BUFSZ					(SPI_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
 #define SPI_SKB_RSVD_LEN			N_BYTE_ALIGMENT(SKB_WLAN_TX_EXTRA_LEN - sizeof(struct whc_msg_info), 4)
 
-#define WIFI_STACK_SIZE_INIC_RX_REQ_TASK			(268 + 128 + CONTEXT_SAVE_SIZE)
-#define WIFI_STACK_WHC_SPI_HOST_RXDMA_IRQ_TASK		4096 //TODO
+#define WIFI_STACK_WHC_SPI_RXREQ_TASK				(268 + 128 + CONTEXT_SAVE_SIZE)
+#define WIFI_STACK_WHC_SPI_HOST_RXDMA_IRQ_TASK		(1100 + 128 + CONTEXT_SAVE_SIZE)
 #define WIFI_STACK_WHC_SPI_HOST_TXDMA_IRQ_TASK		(168 + 128 + CONTEXT_SAVE_SIZE)
 
 #define whc_host_send_data			whc_spi_host_send
@@ -81,19 +81,19 @@ struct whc_spi_host_priv_t {
 	GDMA_InitTypeDef SSIRxGdmaInitStruct;
 
 	rtos_mutex_t dev_lock; /* mutex to protect send host event_priv message */
-	rtos_mutex_t host_send; /* mutex to protect inic  host send */
+	rtos_mutex_t host_send; /* mutex to protect whc host send */
 	rtos_sema_t dev_rdy_sema;
 	rtos_sema_t host_recv_wake; /* for recv task */
+	rtos_sema_t host_recv_done; /* for recv task */
 	rtos_sema_t rxirq_sema;
 	rtos_sema_t txirq_sema;
-	rtos_sema_t host_recv_done; /* for recv task */
 
 	u8 *rx_buf;
 	u8 *dummy_tx_buf;
 	struct whc_buf_info *txbuf_info; /* to free in hdl */
 
 	u8 dev_state;
-	u8 host_recv_state;
+	u8 host_rx_state;
 	u8 host_tx_state;
 	u8 host_dma_waiting_status;
 	u8 used_buf_num;

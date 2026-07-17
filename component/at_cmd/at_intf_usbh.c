@@ -56,9 +56,6 @@ static const char *const TAG = "ACM";
 static u8 cdc_acm_loopback_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
-static u8 uart_show_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] = {0};
-static char uart_format_buffer[FORMAT_LEN];
-
 static rtos_sema_t cdc_acm_detach_sema;
 static rtos_sema_t cdc_acm_attach_sema;
 static rtos_sema_t cdc_acm_receive_sema;
@@ -77,9 +74,6 @@ static RingBuffer *at_usbh_rx_ring_buf = NULL;
 static RingBuffer *at_usbh_tx_ring_buf = NULL;
 
 static __IO int cdc_acm_is_ready = 0;
-
-static char uart_irq_buffer[MAX_CMD_LEN] = {0};
-static u32 uart_irq_count = 0;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;

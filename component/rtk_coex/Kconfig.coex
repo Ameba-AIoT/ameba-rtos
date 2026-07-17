@@ -97,6 +97,7 @@ if WLAN_MENU
                 default "PA_21" if AMEBAGREEN2
                 default "PA_26" if AMEBAD
                 default "PF_12" if AMEBAPRO3
+                default "PA_2" if RTL8720F
 
             config EXT_PTA_PIN_PRI
                 string "Pin PTA Priority"
@@ -106,6 +107,7 @@ if WLAN_MENU
                 default "PA_18" if AMEBAGREEN2
                 default "PB_1" if AMEBAD
                 default "PF_13" if AMEBAPRO3
+                default "PA_1" if RTL8720F
 
             config EXT_PTA_PIN_GNT
                 string "Pin PTA Gnt"
@@ -115,6 +117,7 @@ if WLAN_MENU
                 default "PA_19" if AMEBAGREEN2
                 default "PA_27" if AMEBAD
                 default "PF_11" if AMEBAPRO3
+                default "PA_5" if RTL8720F
 
             config COEX_EXT_CHIP_SUPPORT
                 bool

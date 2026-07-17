@@ -220,7 +220,7 @@ static void ppe_linklist(void *para)
 	/* dcache clean here because PPE will read lli after ppe enable */
 	DCache_Clean((u32)lli, sizeof(lli));
 
-	InterruptRegister(PPE_Handler, PPE_IRQ, NULL, 4);
+	InterruptRegister(PPE_Handler, PPE_IRQ, (u32)NULL, 4);
 	InterruptEn(PPE_IRQ, 4);
 	PPE_MaskINTConfig(PPE_ALL_OVER_INT | PPE_FR_OVER_INT, ENABLE);
 

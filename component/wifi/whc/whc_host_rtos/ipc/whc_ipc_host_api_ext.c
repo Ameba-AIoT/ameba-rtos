@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    inic_ipc_host_api_ext.c
+  * @file    whc_ipc_host_api_ext.c
   * @author
   * @version
   * @date

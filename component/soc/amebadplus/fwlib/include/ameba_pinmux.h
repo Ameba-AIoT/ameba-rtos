@@ -301,6 +301,7 @@ _LONG_CALL_ void Pinmux_Swdoff(void);
 /** @} */
 
 _LONG_CALL_ void PAD_SpicCtrl(u32  PinLocation);
+_LONG_CALL_ u8 PAD_PullCtrlGet(u8 pin_name);
 
 /** @defgroup PAD_Exported_Functions PAD Exported Functions
   * @{
@@ -314,6 +315,7 @@ _LONG_CALL_ void PAD_PullCtrl(u8 PinName, u8 PullType);
 _LONG_CALL_ void PAD_SleepPullCtrl(u8 PinName, u8 PullType);
 _LONG_CALL_ void PAD_ResistorCtrl(u8 PinName, u8 RType);
 _LONG_CALL_ void PAD_InputCtrl(u8 PinName, u32 NewState);
+
 /** @} */
 
 /** @} */

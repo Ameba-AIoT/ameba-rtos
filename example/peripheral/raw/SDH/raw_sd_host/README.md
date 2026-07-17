@@ -51,3 +51,4 @@ User may select different configuration by modify sdioh_config. The HW configura
 # Supported IC
 
 RTL8730E
+RTL8735C

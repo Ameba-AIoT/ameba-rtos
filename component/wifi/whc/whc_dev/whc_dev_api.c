@@ -144,7 +144,7 @@ void whc_dev_api_set_default_direction(u8 dir)
 }
 
 /**
- * @brief  set default direction for pkts when pkt not match any filter entry
+ * @brief  get default direction for pkts when pkt not match any filter entry
  * @return INDICATE_TO_HOST/INDICATE_TO_BOTH/INDICATE_TO_DEV_LWIP
  * @note: default INDICATE_TO_HOST in RTK code.
  */

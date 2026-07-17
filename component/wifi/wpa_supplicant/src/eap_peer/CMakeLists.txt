@@ -13,9 +13,6 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 
 set(TARGET_LIB eap)
 
-ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a
-)
 
 # Component public part, user config end
 #----------------------------------------#
@@ -58,8 +55,8 @@ ameba_list_append(private_sources ${CSRC})
 #------------------------------#
 #WARNING: Select right API based on your component's release/not-release/standalone
 
-###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
-ameba_add_external_app_library(${TARGET_LIB}
+###NOTE: For open-source component, always build from source
+ameba_add_internal_library(${TARGET_LIB}
     p_SOURCES
         ${private_sources}
     p_INCLUDES

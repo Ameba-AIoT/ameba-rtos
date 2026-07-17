@@ -133,6 +133,7 @@ static void BOOT_SecureChip_PPCCfg(void)
   *         Called from image3 (secure world) after the TZ region is loaded.
   *  @retval None
   */
+#ifndef __ZEPHYR__
 BOOT_RAM_TEXT_SECTION
 void BOOT_CPU_TZCfg(const SAU_CFG_TypeDef *sau_config)
 {
@@ -169,6 +170,7 @@ void BOOT_CPU_TZCfg(const SAU_CFG_TypeDef *sau_config)
 				 ((SCB_AIRCR_PRIS_VAL         << SCB_AIRCR_PRIS_Pos)         & SCB_AIRCR_PRIS_Msk)         |
 				 ((SCB_AIRCR_BFHFNMINS_VAL    << SCB_AIRCR_BFHFNMINS_Pos)    & SCB_AIRCR_BFHFNMINS_Msk);
 }
+#endif /* !__ZEPHYR__ BOOT_CPU_TZCfg */
 
 BOOT_RAM_TEXT_SECTION
 static void BOOT_CPU_Cfg(void)

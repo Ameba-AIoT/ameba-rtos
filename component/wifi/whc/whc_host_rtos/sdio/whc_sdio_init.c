@@ -21,7 +21,6 @@ void SD_IRQ_Notify(void)
 void rtw_sdio_interrupt_handler(void)
 {
 	struct whc_sdio *priv = &whc_sdio_priv;
-	uint8_t data[4];
 	uint32_t value;
 #ifdef CALCULATE_FREE_TXBD
 	u32 freepage;
@@ -36,8 +35,7 @@ void rtw_sdio_interrupt_handler(void)
 		rtos_sema_take(whc_sdio_priv.host_irq, MUTEX_WAIT_TIMEOUT);
 #endif
 		//read HISR
-		sdio_local_read(priv, SDIO_REG_HISR, 4, data);
-		priv->sdio_hisr = (*(u32 *)data);
+		priv->sdio_hisr = rtw_read32(priv, SDIO_REG_HISR);
 
 		if (priv->sdio_hisr & priv->sdio_himr) {
 			priv->sdio_hisr &= priv->sdio_himr;
@@ -45,19 +43,19 @@ void rtw_sdio_interrupt_handler(void)
 			// clear HISR
 			value = priv->sdio_hisr & MASK_SDIO_HISR_CLEAR;
 			if (value) {
-				sdio_local_write(priv, SDIO_REG_HISR, 4, (uint8_t *)&value);
+				rtw_write32(priv, SDIO_REG_HISR, value);
 			}
 
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
 			if (priv->sdio_hisr & SDIO_HISR_AVAL_INT) {
 #ifdef CALCULATE_FREE_TXBD
 				/* for DP bug, read txbd to clear aval int */
-				sdio_local_read(priv, SDIO_REG_FREE_TXBD_NUM, 4, (u8 *)&freepage);
+				freepage = rtw_read32(priv, SDIO_REG_FREE_TXBD_NUM);
 
 #else
 				/* option set in dev, read txbd will never clr aval int */
 				value = (SDIO_HISR_AVAL_INT);
-				sdio_local_write(priv, SDIO_REG_HISR, 4, (u8 *)&value);
+				rtw_write32(priv, SDIO_REG_HISR, value);
 #endif
 				/* wakeup tx task if waiting */
 				if (priv->tx_avail_int_triggered == 1) {
@@ -118,7 +116,7 @@ uint8_t rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 
 	if (priv->txbd_size == 0) {
 		priv->txbd_size = rtw_read16(priv, SPDIO_REG_TXBD_NUM);
-		RTK_LOGE(TAG_WLAN_INIC, "txbd_size: %x\n", priv->txbd_size);
+		RTK_LOGI(TAG_WLAN_INIC, "txbd_size: %x\n", priv->txbd_size);
 	}
 
 	wptr = rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
@@ -137,7 +135,7 @@ uint8_t rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 
 	if (priv->txbd_size == 0) {
 		priv->txbd_size = rtw_read16(priv, SPDIO_REG_TXBD_NUM);
-		RTK_LOGE(TAG_WLAN_INIC, "txbd_size: %x\n", priv->txbd_size);
+		RTK_LOGI(TAG_WLAN_INIC, "txbd_size: %x\n", priv->txbd_size);
 	}
 
 	wptr = rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
@@ -158,14 +156,14 @@ uint8_t rtw_sdio_query_txbd_status(struct whc_sdio *priv)
 static int rtw_sdio_get_tx_max_size(struct whc_sdio *priv)
 {
 	int TxUnitCnt = 0;
-	TxUnitCnt = sdio_cmd52_read1byte_local(priv, SPDIO_REG_TXBUF_UNIT_SZ);
+	TxUnitCnt = rtw_read8(priv, SPDIO_REG_TXBUF_UNIT_SZ);
 	if (TxUnitCnt == RTK_FAIL) {
 		return RTK_FAIL;
 	}
 
 	//num * unit_sz(64 bytes) -32(reserved for safety)
 	priv->SdioTxMaxSZ = TxUnitCnt * 64 - 32;
-	RTK_LOGE(TAG_WLAN_INIC, "%s: TX_UNIT_BUF_MAX_SIZE @ %d bytes\n", __FUNCTION__, priv->SdioTxMaxSZ);
+	RTK_LOGI(TAG_WLAN_INIC, "%s: TX_UNIT_BUF_MAX_SIZE @ %d bytes\n", __FUNCTION__, priv->SdioTxMaxSZ);
 	return RTK_SUCCESS;
 }
 
@@ -191,7 +189,7 @@ static void rtw_sdio_init_interrupt(struct whc_sdio *priv)
 
 	// Enable interrupt
 	himr = priv->sdio_himr;
-	sdio_local_write(priv, SDIO_REG_HIMR, 4, (uint8_t *)&himr);
+	rtw_write32(priv, SDIO_REG_HIMR, himr);
 
 }
 
@@ -202,7 +200,7 @@ void rtw_sdio_polling_task(void *arg1, void *arg2, void *arg3)
 	(void)arg3;
 
 	u32 Interval = 100;
-	RTK_LOGE(TAG_WLAN_INIC, "sdio polling every %dms \n", Interval);
+	RTK_LOGI(TAG_WLAN_INIC, "sdio polling every %dms \n", Interval);
 
 	while (1) {
 		// polling int reg
@@ -220,7 +218,7 @@ void rtw_sdio_init_txavailbd_threshold(struct whc_sdio *priv)
 	(void)freeBDNum;
 
 #ifdef CONFIG_AMEBAGREEN2
-	freeBDNum = sdio_cmd53_read4byte_local(priv, SDIO_REG_FREE_TXBD_NUM);
+	freeBDNum = rtw_read32(priv, SDIO_REG_FREE_TXBD_NUM);
 
 	/* The value of SDIO_REG_FREE_TXBD_NUM = actual FREE TXBD NUM-1.
 	When this value changes from "< txBDTh_l" to ">= txBDTh_h", TXBD_AVAIL interrupt triggers.
@@ -237,7 +235,7 @@ void rtw_sdio_init_txavailbd_threshold(struct whc_sdio *priv)
 	rtw_write16(priv, SDIO_REG_AVAI_BD_NUM_TH_L, txBDTh_l);
 	rtw_write16(priv, SDIO_REG_AVAI_BD_NUM_TH_H, txBDTh_h);
 
-	RTK_LOGE(TAG_WLAN_INIC, "%s: SDIO_REG_AVAI_BD_NUM_TH_L @ 0x%04x, SDIO_REG_AVAI_BD_NUM_TH_H @ 0x%04x\n", __FUNCTION__,
+	RTK_LOGI(TAG_WLAN_INIC, "%s: SDIO_REG_AVAI_BD_NUM_TH_L @ 0x%04x, SDIO_REG_AVAI_BD_NUM_TH_H @ 0x%04x\n", __FUNCTION__,
 			 rtw_read16(priv, SDIO_REG_AVAI_BD_NUM_TH_L),
 			 rtw_read16(priv, SDIO_REG_AVAI_BD_NUM_TH_H));
 }
@@ -274,7 +272,7 @@ uint32_t rtw_sdio_init(struct whc_sdio *priv)
 	}
 
 	if (i == 100) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s: Wait Device Firmware Ready Timeout!!SDIO_REG_CPU_IND @ 0x%04x\n", __FUNCTION__, fw_ready);
+		RTK_LOGI(TAG_WLAN_INIC, "%s: Wait Device Firmware Ready Timeout!!SDIO_REG_CPU_IND @ 0x%04x\n", __FUNCTION__, fw_ready);
 		return RTK_FAIL;
 	}
 

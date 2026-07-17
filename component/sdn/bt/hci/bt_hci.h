@@ -109,6 +109,7 @@ uint8_t bt_hci_cmd_ogf_vendor_ocf_mp(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_vendor_ocf_phy(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_vendor_ocf_read_radio_reg_pi(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_vendor_ocf_write_radio_reg_pi(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_vendor_ocf_set_mesh_packet_priority(void *phci_cmd_param, uint8_t *rsp);
 
 void bt_hci_set_evt_mask(uint8_t *pevt_mask);
 bool bt_hci_evt_mask_is_set(uint64_t evt);
@@ -145,6 +146,7 @@ void bt_hci_evt_le_phy_update_complete(uint8_t status, uint16_t conn_handle, uin
 void bt_hci_evt_le_read_remote_features_complete(uint16_t conn_handle, void *features);
 void bt_hci_evt_le_ltk_req(uint16_t conn_handle, uint8_t *rand_ediv);
 void bt_hci_evt_le_adv_set_terminated(uint8_t status, uint8_t adv_handle, uint16_t conn_handle, uint8_t num_cmpl_ext_adv_evts);
+void bt_hci_evt_le_scan_timeout(void);
 
 uint8_t bt_hci_check_le_connhandle(uint16_t handle);
 

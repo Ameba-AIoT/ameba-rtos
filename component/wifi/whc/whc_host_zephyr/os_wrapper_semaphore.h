@@ -18,7 +18,7 @@
 typedef struct k_sem *rtos_sema_t;
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreCreateCounting
+ * @brief  For Zephyr, map to k_sem_init
  *         Dynamic allocate memory.
  * @note   Usage example:
  * Create:
@@ -38,7 +38,7 @@ typedef struct k_sem *rtos_sema_t;
 int rtos_sema_create(rtos_sema_t *pp_handle, uint32_t init_count, uint32_t max_count);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreCreateBinary
+ * @brief  For Zephyr, map to k_sem_init
  *         Dynamic allocate memory.
  * @note   The semaphore must first be 'given' before it can be 'taken'.
  * Usage example:
@@ -57,18 +57,15 @@ int rtos_sema_create(rtos_sema_t *pp_handle, uint32_t init_count, uint32_t max_c
 int rtos_sema_create_binary(rtos_sema_t *pp_handle);
 
 /**
- * @brief  For FreeRTOS, map to vSemaphoreDelete
+ * @brief  For Zephyr, map to k_free
  * @param  p_handle:
  * @retval
  */
 int rtos_sema_delete(rtos_sema_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreTake / xSemaphoreTakeFromISR
- *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
- *
- * @note   If timeout_ms is set to the maximum value,
- *         then if the semaphore cannot be obtained consistently, the log will be printed every 10 seconds.
+ * @brief  For Zephyr, map to k_sem_take
+ * @note   k_sem_take cannot be called from interrupt context.
  * @param  p_handle:
  * @param  timeout_ms:
  * @retval
@@ -76,22 +73,21 @@ int rtos_sema_delete(rtos_sema_t p_handle);
 int rtos_sema_take(rtos_sema_t p_handle, uint32_t timeout_ms);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreGive / xSemaphoreGiveFromISR
- *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
+ * @brief  For Zephyr, map to k_sem_give
  * @param  p_handle:
  * @retval
  */
 int rtos_sema_give(rtos_sema_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to uxSemaphoreGetCount
+ * @brief  For Zephyr, map to k_sem_count_get
  * @param  p_handle:
  * @retval
  */
 uint32_t rtos_sema_get_count(rtos_sema_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreCreateCounting
+ * @brief  For Zephyr, map to k_sem_init
  *         Dynamic allocate memory.
  * @note   Usage example:
  * Create:
@@ -111,7 +107,7 @@ uint32_t rtos_sema_get_count(rtos_sema_t p_handle);
 int rtos_sema_create_static(rtos_sema_t *pp_handle, uint32_t init_count, uint32_t max_count);
 
 /**
- * @brief  For FreeRTOS, map to vSemaphoreDelete
+ * @brief  For Zephyr, map to k_sem_reset (resets statically-allocated sema to zero count)
  * @param  p_handle:
  * @retval
  */

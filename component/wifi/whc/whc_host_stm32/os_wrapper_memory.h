@@ -61,7 +61,6 @@ void *rtos_mem_realloc(void *pbuf, uint32_t size);
 /**
  * @brief  For FreeRTOS, map to vPortFree
  * @param  pbuf:
- * @param  size: Optional parameters, the default value is 0. This parameter currently has no effect.
  */
 void rtos_mem_free(void *pbuf);
 

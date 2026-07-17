@@ -133,7 +133,7 @@ void aontimer_test()
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 	AONTimer_Setting(2000);
 	AONTimer_INT(ENABLE);
-	InterruptRegister(aontimer_int, AON_TIM_IRQ, NULL, 3);
+	InterruptRegister(aontimer_int, AON_TIM_IRQ, (u32)NULL, 3);
 	InterruptEn(AON_TIM_IRQ, 3);
 	SOCPS_SetAPWakeEvent(WAKE_SRC_AON_TIM, ENABLE);
 	SOCPS_SetNPWakeEvent(WAKE_SRC_AP_WAKE_IRQ, ENABLE);
@@ -327,7 +327,7 @@ u32 pmc_wakeuptimer_int_hdl(void *Data)
 
 void pmu_init_wakeup_timer(void)
 {
-	InterruptRegister(pmc_wakeuptimer_int_hdl, PMC_TIMER_IRQ, NULL, PMC_TIMER_INT_PRIO);
+	InterruptRegister(pmc_wakeuptimer_int_hdl, PMC_TIMER_IRQ, (u32)NULL, PMC_TIMER_INT_PRIO);
 	InterruptEn(PMC_TIMER_IRQ, PMC_TIMER_INT_PRIO);
 	PMCTimer_INTConfig(PMC_TIMER_DEV, PMC_WAKEUP_TIMER, ENABLE);
 }

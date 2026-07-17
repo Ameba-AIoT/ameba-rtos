@@ -259,7 +259,9 @@ struct rtw_event_radar_report_info {
 	u16 doppler_sample_num;
 	float aagc_gain;
 	float dagc_gain_normal_mode[4];
-	u8 rsvd[6];                   /**< Ensure the total sizes of struct is 4-byte alignment (rsvd[5] carries mean_fct) */
+	s16 isolation;                /**< Antenna isolation in dBm (carried from NP via IPC) */
+	s16 range_leakage_dBx10;     /**< Range leakage power encoded as 5-bit exp + 11-bit mantissa */
+	u8  rsvd[1];                  /**< Ensure 4-byte alignment */
 	u32 radar_data_length;        /**< radar raw data length, unit: byte. [segments report raw data len or complete repoprt raw data len] */
 	u8 radar_data[];              /**< radar raw data head address */
 };

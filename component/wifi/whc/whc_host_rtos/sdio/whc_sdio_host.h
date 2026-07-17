@@ -83,7 +83,7 @@ struct INIC_RX_DESC {
 	u32	start_addr;
 
 	/* u4Byte 3 */
-	u32 data_len: 16;			// bit[15:0], the type of this packet
+	u32 data_len: 16;			// bit[15:0], the data length of this packet
 	u32 result: 8;				// bit[23:16], the result of memory write command
 	u32 rsvd2: 8;				// bit[31:24]
 };
@@ -100,7 +100,6 @@ struct whc_sdio {
 	uint16_t		rxbd_num;
 	uint16_t 		SdioTxBDFreeNum;
 	uint32_t 		SdioTxMaxSZ; //The Size of Single Tx buf addressed by TX_BD
-	uint8_t			SdioRxFIFOCnt;
 	uint8_t			tx_avail_int_triggered;
 	uint8_t	tx_block_mode;
 	uint8_t	rx_block_mode;
@@ -241,10 +240,9 @@ struct whc_sdio {
 #define SDIO_HCPWM_WWLAN			(BIT(3))
 #define SDIO_HCPWM_TOGGLE			(BIT(7))
 
-// Register RPWM2
-//#define RPWM2_ACT_BIT			(0x00000001 << 0)	// Active
-//#define RPWM2_CG_BIT			(0x00000001 << 1)	// Clock Gated
-//#define RPWM2_TOGGLE_BIT		(0x00000001 << 15)	// Toggle bit
+// Register SDIO_REG_RX0_REQ_LEN
+#define SDIO_RX_REQ_LEN_RDY		(BIT(31))
+#define SDIO_RX_REQ_LEN_MSK		(0xffffff)
 
 #define CONCAT_TO_UINT32(b4, b3, b2, b1) (((u32)((b4) & 0xFF) << 24) | ((u32)((b3) & 0xFF) << 16) | ((u32)((b2) & 0xFF) << 8) | ((u32)((b1) & 0xFF)))
 

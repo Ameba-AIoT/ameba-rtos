@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    inic_ipc_host_trx.h
+  * @file    whc_ipc_host_trx.h
   * @author
   * @version
   * @date
@@ -43,7 +43,7 @@
 /* recv structure */
 struct host_priv {
 	rtos_mutex_t host_send_lock; /* mutex to protect inic ipc host send */
-	rtos_timer_t whc_stats_timer; /* sema to protect inic ipc host send */
+	rtos_timer_t whc_stats_timer; /* timer for periodic tx statistics reporting */
 	u32 rx_bytes; /* recv bytes */
 	u32 rx_pkts; /* recv number of packets */
 	u32 tx_bytes; /* xmit bytes */
@@ -70,4 +70,4 @@ int whc_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total
 void whc_ipc_host_trx_event_hdl(u8 event_num, u32 msg_addr, u8 wlan_idx);
 int whc_ipc_host_send_skb(int idx, struct sk_buff *skb);
 
-#endif /* __INIC_IPC_HOST_TRX_H__ */
+#endif /* __WHC_IPC_HOST_TRX_H__ */

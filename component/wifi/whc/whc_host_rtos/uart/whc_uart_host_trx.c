@@ -14,13 +14,6 @@
   * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
   ******************************************************************************
   */
-
-#define __WHC_UART_HOST_TRX_C__
-
-/* -------------------------------- Includes -------------------------------- */
-/* external head files */
-
-/* internal head files */
 #include "whc_host.h"
 
 extern int whc_host_init_done;
@@ -32,7 +25,7 @@ int whc_uart_host_send_pkt(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	(void)raw_para;
 	(void)is_special_pkt;
 	struct eth_drv_sg *psg_list;
-	int ret = RTK_SUCCESS, i = 0;
+	int i = 0;
 	struct whc_msg_info *msg;
 	u8 *ptr;
 
@@ -46,25 +39,17 @@ int whc_uart_host_send_pkt(int idx, struct eth_drv_sg *sg_list, int sg_len,
 		return -RTK_ERR_BUFFER_OVERFLOW;
 	}
 
-	rtos_mutex_take(uart_host_priv.host_send, 0xFFFFFFFF);
+	rtos_mutex_take(uart_host_priv.host_send, MUTEX_WAIT_TIMEOUT);
 
 	ptr = &(uart_host_priv.tx_buf[uart_host_priv.used_buf_num][0]);
-	if (*ptr != 0) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s fail buf busy !\n\r", __func__);
-		rtos_mutex_give(uart_host_priv.host_send);
-		return -RTK_ERR_WIFI_TX_BUF_FULL;
-	}
 
-	ptr += 4;
-
-	msg = (struct whc_msg_info *)(ptr);
+	msg = (struct whc_msg_info *)N_BYTE_ALIGMENT((u32)ptr, DEV_DMA_ALIGN);
 	msg->event = WHC_WIFI_EVT_XIMT_PKTS;
 	msg->wlan_idx = idx;
 	msg->pad_len = 0;
 	msg->data_len = 0;
-	/* allocate the skb buffer */
 
-	ptr += sizeof(struct whc_msg_info);
+	ptr = (u8 *)(msg + 1);
 
 	for (i = 0; i < sg_len; i++) {
 		psg_list = &sg_list[i];
@@ -80,5 +65,5 @@ int whc_uart_host_send_pkt(int idx, struct eth_drv_sg *sg_list, int sg_len,
 
 	rtos_mutex_give(uart_host_priv.host_send);
 
-	return ret;
+	return RTK_SUCCESS;
 }

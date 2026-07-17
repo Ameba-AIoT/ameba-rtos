@@ -167,6 +167,3 @@ __psram_image2_start__ = .;
 
 __psram_heap_buffer_start__ = .;
 __psram_heap_buffer_size__ = 0;
-
-__psram_heap_extend_start__ = .;
-__psram_heap_extend_size__ = 0;

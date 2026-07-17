@@ -56,7 +56,7 @@ void raw_adc_vbat_demo(void)
 	ADC_Init(&ADC_InitStruct);
 	ADC_INTConfig(ADC_BIT_IT_FIFO_FULL_EN, ENABLE);
 
-	InterruptRegister((IRQ_FUN)adc_irq_handle, ADC_IRQ, NULL, INT_PRI_MIDDLE);
+	InterruptRegister((IRQ_FUN)adc_irq_handle, ADC_IRQ, (u32)NULL, INT_PRI_MIDDLE);
 	InterruptEn(ADC_IRQ, INT_PRI_MIDDLE);
 
 	ADC_Cmd(ENABLE);

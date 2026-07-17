@@ -59,6 +59,7 @@ ameba_list_append(private_sources
 #WARNING: Select right API based on your component's release/not-release/standalone
 ###NOTE: For open-source component, always build from source
 ameba_add_internal_library(usrcfg
+    p_NO_SEAL
     p_SOURCES
         ${private_sources}
     p_INCLUDES

@@ -664,7 +664,7 @@ bool demo_uart_init(void)
 	UART_INTConfig(DEMO_UART_DEV, (RUART_BIT_ERBI | RUART_BIT_ELSI), DISABLE);
 	{
 		/* timeout interrupt */
-		InterruptRegister((IRQ_FUN)demo_uart_irq, DEMO_UART_IRQ, NULL, DEMO_UART_IRQ_PRIO);
+		InterruptRegister((IRQ_FUN)demo_uart_irq, DEMO_UART_IRQ, (u32)NULL, DEMO_UART_IRQ_PRIO);
 		InterruptEn(DEMO_UART_IRQ, DEMO_UART_IRQ_PRIO);
 		UART_INTConfig(DEMO_UART_DEV, RUART_BIT_ETOI, ENABLE);
 	}
@@ -677,7 +677,7 @@ bool demo_uart_init(void)
 	/* Disable and Enable UART Interrupt */
 	InterruptDis(DEMO_UART_IRQ);
 	InterruptUnRegister(DEMO_UART_IRQ);
-	InterruptRegister((IRQ_FUN)demo_uart_irq, DEMO_UART_IRQ, NULL, DEMO_UART_IRQ_PRIO);
+	InterruptRegister((IRQ_FUN)demo_uart_irq, DEMO_UART_IRQ, (u32)NULL, DEMO_UART_IRQ_PRIO);
 	InterruptEn(DEMO_UART_IRQ, DEMO_UART_IRQ_PRIO);
 
 	UART_INTConfig(DEMO_UART_DEV, RUART_BIT_ETBEI, DISABLE);

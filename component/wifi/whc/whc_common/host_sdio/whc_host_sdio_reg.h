@@ -130,4 +130,8 @@
 #define RPWM2_CG_BIT			(0x00000001 << 1)	// Clock Gated
 #define RPWM2_TOGGLE_BIT		(0x00000001 << 15)	// Toggle bit
 
+// Register SDIO_REG_RX0_REQ_LEN
+#define SDIO_RX_REQ_LEN_RDY		(BIT(31))
+#define SDIO_RX_REQ_LEN_MSK		(0xffffff)
+
 #endif /* __WHC_HOST_SDIO_REG_H__ */

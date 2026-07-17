@@ -1,7 +1,10 @@
+#include "ameba_soc.h"
 #include "lwip_netconf.h"
 #include "httpc_util.h"
 
 #define HTTPC_DUMP_BUFFER_LEN 100
+
+static const char *TAG = "HTTPC";
 
 void *httpc_malloc(size_t size)
 {
@@ -30,9 +33,9 @@ void httpc_conn_dump_header(struct httpc_conn *conn)
 			if (conn->response.version_len < HTTPC_DUMP_BUFFER_LEN) {
 				memset(buf, 0, sizeof(buf));
 				memcpy(buf, conn->response.version, conn->response.version_len);
-				printf("\nversion=[%s]\n", buf);
+				RTK_LOGI(TAG, "version=[%s]\n", buf);
 			} else {
-				printf("\nversion_len exceed %d\n", HTTPC_DUMP_BUFFER_LEN - 1);
+				RTK_LOGI(TAG, "version_len exceed %d\n", HTTPC_DUMP_BUFFER_LEN - 1);
 			}
 		}
 
@@ -40,9 +43,9 @@ void httpc_conn_dump_header(struct httpc_conn *conn)
 			if (conn->response.status_len < HTTPC_DUMP_BUFFER_LEN) {
 				memset(buf, 0, sizeof(buf));
 				memcpy(buf, conn->response.status, conn->response.status_len);
-				printf("\nstatus=[%s]\n", buf);
+				RTK_LOGI(TAG, "status=[%s]\n", buf);
 			} else {
-				printf("\nstatus_len exceed %d\n", HTTPC_DUMP_BUFFER_LEN - 1);
+				RTK_LOGI(TAG, "status_len exceed %d\n", HTTPC_DUMP_BUFFER_LEN - 1);
 			}
 		}
 
@@ -50,21 +53,21 @@ void httpc_conn_dump_header(struct httpc_conn *conn)
 			if (conn->response.content_type_len < HTTPC_DUMP_BUFFER_LEN) {
 				memset(buf, 0, sizeof(buf));
 				memcpy(buf, conn->response.content_type, conn->response.content_type_len);
-				printf("\ncontent_type=[%s]\n", buf);
+				RTK_LOGI(TAG, "content_type=[%s]\n", buf);
 			} else {
-				printf("\ncontent_type_len exceed %d\n", HTTPC_DUMP_BUFFER_LEN - 1);
+				RTK_LOGI(TAG, "content_type_len exceed %d\n", HTTPC_DUMP_BUFFER_LEN - 1);
 			}
 		}
 
 		if (conn->response.content_len) {
-			printf("\ncontent_lenght=%d\n", conn->response.content_len);
+			RTK_LOGI(TAG, "content_lenght=%d\n", conn->response.content_len);
 		}
 
 		if (conn->response.trans_enc) {
 			if (conn->response.trans_enc_len < HTTPC_DUMP_BUFFER_LEN) {
 				memset(buf, 0, sizeof(buf));
 				memcpy(buf, conn->response.trans_enc, conn->response.trans_enc_len);
-				printf("\nTransfer-Encoding=%s\n", buf);
+				RTK_LOGI(TAG, "Transfer-Encoding=%s\n", buf);
 			}
 		}
 	}

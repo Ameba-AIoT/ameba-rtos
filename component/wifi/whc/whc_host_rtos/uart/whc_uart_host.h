@@ -47,28 +47,26 @@
 #define UART_RX						_PA_26//_PA_19 // UART0 RX
 #endif
 
-#define WHC_UART_HOST_RX_DONE       0x0
-#define WHC_UART_HOST_RX_HEADER     0x1
-#define WHC_UART_HOST_RX_REQ        0x2
-#define WHC_UART_HOST_RX_PAYLOAD    0x3
-#define WHC_UART_HOST_HDR_ACK       0x4
-#define WHC_UART_HOST_RX_END        0x5
-#define WHC_UART_HOST_RX_DMA_EN     0x6
+#define WHC_UART_HOST_RX_IDLE		0x0
+#define WHC_UART_HOST_RX_HANDSHAKE	0x1
+#define WHC_UART_HOST_RX_HEADER		0x2
+#define WHC_UART_HOST_WAIT_PAYLOAD	0x3
+#define WHC_UART_HOST_RX_PAYLOAD	0x4
 
 #define whc_host_send_data			whc_uart_host_send
 #define whc_host_init				whc_uart_host_init
 
 struct whc_uart_host_priv_t {
-	struct whc_uart_hdr rx_hdr;
 	GDMA_InitTypeDef UARTTxGdmaInitStruct;
 	GDMA_InitTypeDef UARTRxGdmaInitStruct;
 	UART_InitTypeDef UART_InitStruct;
+	struct whc_uart_hdr rx_hdr;
 
 	rtos_mutex_t host_send;
 	rtos_sema_t tx_lock;
 	rtos_sema_t hdr_reply;
 	rtos_sema_t session_lock;
-	rtos_sema_t rxirq_sema;
+	rtos_sema_t rx_wakeup_sema;
 	rtos_sema_t txirq_sema;
 
 	struct whc_buf_info *txbuf_info;

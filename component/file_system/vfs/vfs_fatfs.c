@@ -182,26 +182,22 @@ int fatfs_seek(void *fs, long int offset, int origin, vfs_file *finfo)
 	int size = f_size(fil);
 	int curr = f_tell(fil);
 	FRESULT res = FR_INT_ERR;
-	int pos = 0;
 	switch (origin) {
 	case SEEK_SET:
 		res = f_lseek(fil, offset);
-		pos = offset;
 		break;
 	case SEEK_CUR:
 		res = f_lseek(fil, curr + offset);
-		pos = curr + offset;
 		break;
 	case SEEK_END:
 		res = f_lseek(fil, size + offset);
-		pos = size + offset;
 		break;
 	}
 	if (res > 0) {
 		VFS_DBG(VFS_ERROR, "vfs-fatfs fseek error %d \r\n", res);
 		return -1;
 	}
-	return pos;
+	return 0;
 }
 
 void fatfs_rewind(void *fs, vfs_file *finfo)
@@ -229,9 +225,10 @@ int fatfs_fsetops(void *fs, unsigned int offset, vfs_file *finfo)
 
 	if (value > 0) {
 		VFS_DBG(VFS_ERROR, "vfs-fatfs fsetops error %d \r\n", value);
+		return -1;
 	}
 
-	return value;
+	return 0;
 }
 
 int fatfs_fflush(void *fs, vfs_file *finfo)

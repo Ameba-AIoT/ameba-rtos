@@ -39,7 +39,7 @@ int rtos_sema_create_binary_static(rtos_sema_t *pp_handle);
 int rtos_sema_delete_static(rtos_sema_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreCreateCounting
+ * @brief  For RT-Thread, map to rt_sem_create
  *         Dynamic allocate memory.
  * @note   Usage example:
  * Create:
@@ -59,7 +59,7 @@ int rtos_sema_delete_static(rtos_sema_t p_handle);
 int rtos_sema_create(rtos_sema_t *pp_handle, uint32_t init_count, uint32_t max_count);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreCreateBinary
+ * @brief  For RT-Thread, map to rt_sem_create
  *         Dynamic allocate memory.
  * @note   The semaphore must first be 'given' before it can be 'taken'.
  * Usage example:
@@ -78,14 +78,14 @@ int rtos_sema_create(rtos_sema_t *pp_handle, uint32_t init_count, uint32_t max_c
 int rtos_sema_create_binary(rtos_sema_t *pp_handle);
 
 /**
- * @brief  For FreeRTOS, map to vSemaphoreDelete
+ * @brief  For RT-Thread, map to rt_sem_delete
  * @param  p_handle:
  * @retval
  */
 int rtos_sema_delete(rtos_sema_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreTake / xSemaphoreTakeFromISR
+ * @brief  For RT-Thread, map to rt_sem_take
  *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
  *
  * @note   If timeout_ms is set to the maximum value,
@@ -97,7 +97,7 @@ int rtos_sema_delete(rtos_sema_t p_handle);
 int rtos_sema_take(rtos_sema_t p_handle, uint32_t timeout_ms);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreGive / xSemaphoreGiveFromISR
+ * @brief  For RT-Thread, map to rt_sem_release
  *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
  * @param  p_handle:
  * @retval
@@ -105,7 +105,7 @@ int rtos_sema_take(rtos_sema_t p_handle, uint32_t timeout_ms);
 int rtos_sema_give(rtos_sema_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to uxSemaphoreGetCount
+ * @brief  For RT-Thread, get the current semaphore count without consuming it.
  * @param  p_handle:
  * @retval
  */

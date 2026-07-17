@@ -1,10 +1,10 @@
 /**
   ******************************************************************************
-  * @file    inic_ipc.h
+  * @file    whc_ipc.h
   * @author
   * @version
   * @date
-  * @brief   Routines to access hardware
+  * @brief   WHC IPC structures and declarations for host/device communication
   ******************************************************************************
   * @attention
   *
@@ -201,4 +201,4 @@ int whc_ipc_dev_wtn_socket_send(u8 *buf, u32 len);
 void whc_ipc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start);
 #endif
 #endif
-#endif /* __INIC_IPC_H__ */
+#endif /* __WHC_IPC_H__ */
