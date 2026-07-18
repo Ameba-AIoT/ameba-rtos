@@ -404,13 +404,16 @@ int lbm_block_read(lbm_ctx_t *ctx, int lblk, void *buf, uint32_t off, uint32_t l
 			chunk = len - done;
 		}
 
+		/* Fast read: LBM only reads blocks it has already vetted as good
+		 * (mapped in ctx->state); the per-read marker check in NAND_FTL is
+		 * redundant here and doubles read latency.  ECC is still checked. */
 		if ((page_off == 0) && (chunk == ctx->page_size)) {
-			r = NAND_FTL_ReadPage(page, (uint8_t *)buf + done);
+			r = NAND_FTL_ReadPageFast(page, (uint8_t *)buf + done);
 			if (!lbm_read_ok(r)) {
 				return LBM_ERR_IO;
 			}
 		} else {
-			r = NAND_FTL_ReadPage(page, ctx->pagebuf);
+			r = NAND_FTL_ReadPageFast(page, ctx->pagebuf);
 			if (!lbm_read_ok(r)) {
 				return LBM_ERR_IO;
 			}
@@ -441,8 +444,13 @@ int lbm_block_write(lbm_ctx_t *ctx, int lblk, const void *buf, uint32_t off, uin
 			return LBM_ERR_NOSPACE;
 		}
 		if (lbm_write_blk_hdr(ctx, (uint32_t)pblk, (uint32_t)lblk) != LBM_OK) {
-			lbm_retire_block(ctx, (uint32_t)pblk);
-			ctx->avail_count--;   /* was FREE/allocatable */
+			/* Program failure -- treat exactly like a data-page write failure
+			 * (and like a read error): just report it, do NOT mark bad here.
+			 * The block may carry a partial header, so mark it DIRTY -> it is
+			 * erased before reuse (via lbm_alloc_block pass2 -> lbm_make_free),
+			 * and retired only if THAT erase also fails.  It stays in the
+			 * available pool, so avail_count is unchanged (FREE -> DIRTY). */
+			ctx->state[pblk] = LBM_BLK_DIRTY;
 			return LBM_ERR_BAD;
 		}
 		ctx->state[pblk] = LBM_BLK_USED;

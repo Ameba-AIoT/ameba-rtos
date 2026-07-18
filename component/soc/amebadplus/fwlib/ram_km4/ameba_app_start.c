@@ -147,15 +147,6 @@ void app_start(void)
 
 	RTK_LOGI(TAG, "VTOR: %lx, VTOR_NS:%lx\n", SCB->VTOR, SCB_NS->VTOR);
 
-#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
-	extern bool os_heap_add(u8 * start_addr, size_t heap_size);
-#ifdef CONFIG_PSRAM_ALL_FOR_AP_HEAP
-	if (ChipInfo_PsramExists()) {
-		os_heap_add((uint8_t *)__km4_bd_psram_start__, (size_t)(__non_secure_psram_end__ - __km4_bd_psram_start__));
-	}
-#endif
-#endif
-
 	/* configure FreeRTOS interrupt and heap region. After heap is configured, printf can be used*/
 	rtos_mem_init();
 

@@ -1241,6 +1241,8 @@ struct bt_hci_rp_vendor_get_eco_version {
 	uint8_t eco_version;
 };
 
+#define BT_HCI_OP_VENDOR_SET_MESH_INFO              BT_OP(BT_OGF_VENDOR, 0xA6) /*0xFCA6*/
+
 #define BT_HCI_OP_VENDOR_MP                         BT_OP(BT_OGF_VENDOR, 0xEB) /*0xFCEB*/
 
 #define BT_CONTROLLER_MP_MODULE_PLATFORM            0x00
@@ -1807,6 +1809,10 @@ struct bt_hci_evt_le_pa_sync_lost {
 	uint16_t sync_handle;
 } __attribute__((packed));
 
+#define BT_HCI_EVT_LE_SCAN_TIMEOUT               0x11
+struct bt_hci_evt_le_scan_timeout {
+	uint8_t subevent;
+} __attribute__((packed));
 
 #define BT_HCI_EVT_LE_ADVERTISING_SET_TERMINATED    0x12
 struct bt_hci_evt_le_adv_set_terminated {

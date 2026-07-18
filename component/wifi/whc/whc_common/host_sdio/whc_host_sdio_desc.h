@@ -37,7 +37,7 @@ struct INIC_TX_DESC {
 
 	/* u4Byte 1 */
 	uint32_t type: 8;				// bit[7:0], the packet type
-	uint32_t data: 8;				// bit[8:15], the value to be written to the memory
+	uint32_t data: 8;				// bit[15:8], the value to be written to the memory
 	uint32_t reply: 1;				// bit[16], request to send a reply message
 	uint32_t rsvd0: 15;
 
@@ -78,7 +78,7 @@ struct INIC_RX_DESC {
 	uint32_t	start_addr;
 
 	/* u4Byte 3 */
-	uint32_t data_len: 16;			// bit[15:0], the type of this packet
+	uint32_t data_len: 16;			// bit[15:0], the data length of this packet
 	uint32_t result: 8;				// bit[23:16], the result of memory write command
 	uint32_t rsvd2: 8;				// bit[31:24]
 };

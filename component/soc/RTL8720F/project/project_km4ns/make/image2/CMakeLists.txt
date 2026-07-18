@@ -13,12 +13,42 @@ if(CONFIG_SOC_SINGLE_CORE)
     return()
 endif()
 
+###############################  PREBUILT INTERNAL LIBS DETECTION  ###############
+# Detect BEFORE ameba_add_image so early-return doesn't leave an empty link target.
+
+# Step 1: consume sealed internal libs ONLY in a released prebuilt SDK.
+# Discriminator is CONFIG_AMEBA_RLS (release.py flips it to =y in the released
+# Kconfig; dev trees are always =n) AND the presence of lib/internal/*.a.
+# Gating on AMEBA_RLS, not on lib/internal presence alone, keeps a normal
+# (non-release) build fully decoupled from the seal artifacts: even if a prior
+# seal build left stale lib/internal (or lib/bin) behind in the tree, a dev build
+# compiles km4ns from source and never links the prebuilt libs. During release
+# build_lib AMEBA_RLS is still n (it is set only after all conf passes), so every
+# pass, including the ones after the seal build, also rebuilds from source with
+# its own config, so there is no config-mismatch link error and no need to reuse
+# a prebuilt bin.
+# (Uses AMEBA_RLS, not the seal switch, so this block survives the release strip.)
+if(CONFIG_AMEBA_RLS AND EXISTS "${c_MCU_PROJECT_DIR}/lib/internal")
+    file(GLOB _psc_int_libs "${c_MCU_PROJECT_DIR}/lib/internal/*.a")
+    if(_psc_int_libs)
+        set(CONFIG_KM4NS_IMG2_PREBUILT TRUE)
+    endif()
+endif()
+
+# Step 2: seal build -> always recompile from source.
+# Defensive only: AMEBA_RLS is already n during a seal, so Step 1 leaves
+# PREBUILT false anyway. This block is removed by the release strip step.
+
 if(CONFIG_SOLO)
 ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin p_TYPE image2 p_HIDE_FROM_ALL_PATH)
 else()
 ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin)
 endif()
 # Use variable c_CURRENT_IMAGE to represent full image target name
+
+# Note: sealed internal libs are registered per-lib inside ameba_add_internal_library
+# path 2, using the MP suffix derived from menuconfig. No GLOB needed here.
+# lib/soc and lib/application are registered by their own component subdirs' public sections.
 
 ###############################  ADD COMPONENT  ###################################
 if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_INTF_IPC AND CONFIG_WHC_DEV))

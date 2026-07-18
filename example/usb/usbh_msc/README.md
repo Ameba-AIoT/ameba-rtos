@@ -88,7 +88,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 	[MSC-I] Lun 0
 	[MSC-I] SETUP
 	[MSC-I] Device ready
-	[MSC-I] Free heap: 0x...
+	[MSC-I] FatFS USB W/R performance test start, free heap: 0x...
 	[MSC-I] Open file: 0:/TEST0.DAT
 	[MSC-I] W test: size 512, round 20...
 	[MSC-I] W rate 204.0 KB/s for 20 round @ 49 ms
@@ -109,7 +109,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 	[MSC-I] File 0:/TEST0.DAT done
 	...
 	[MSC-I] File 0:/TEST9.DAT done
-	[MSC-I] Free heap: 0x...
+	[MSC-I] FatFS USB W/R performance test done, free heap: 0x...
 	```
 
 4. After a full pass, the behaviour depends on `CONFIG_USBH_MSC_HOTPLUG`:
@@ -145,3 +145,4 @@ None
 
 RTL8730E
 RTL8721F
+RTL8735C

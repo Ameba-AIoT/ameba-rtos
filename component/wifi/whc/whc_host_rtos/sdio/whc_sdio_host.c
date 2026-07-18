@@ -3,7 +3,6 @@
 struct whc_sdio whc_sdio_priv = {0};
 
 extern int whc_host_init_done;
-extern size_t xFreeBytesRemaining;
 extern rtos_mutex_t sdio_lock;
 
 void rtw_sdio_interrupt_handler(void);
@@ -20,7 +19,7 @@ static uint8_t *sdio_read_rxfifo(struct whc_sdio *priv, uint32_t size)
 
 	pbuf = (uint8_t *)rtos_mem_zmalloc(allocsize);
 	if (pbuf == NULL) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s: Alloc skb rx buf Err, alloc_sz %x free %x !!\n\r", __func__, allocsize, xFreeBytesRemaining);
+		RTK_LOGE(TAG_WLAN_INIC, "%s: Alloc skb rx buf Errs!!\n\r", __func__);
 		return NULL;
 	}
 
@@ -32,7 +31,7 @@ static uint8_t *sdio_read_rxfifo(struct whc_sdio *priv, uint32_t size)
 			/* retry to reduce impact of bus err */
 			if (retry++ > 10) {
 				rtos_mem_free(pbuf);
-				RTK_LOGE(TAG_WLAN_INIC, "%s: read port FAIL!\n", __FUNCTION__);
+				RTK_LOGE(TAG_WLAN_INIC, "%s: read port FAIL!\n", __func__);
 				return NULL;
 			};
 		}
@@ -44,10 +43,9 @@ static uint8_t *sdio_read_rxfifo(struct whc_sdio *priv, uint32_t size)
 void whc_sdio_recv_data_process(void)
 {
 	struct whc_sdio *sdio_priv = &whc_sdio_priv;
-	uint8_t tmp[4];
 	uint8_t *pbuf;
 	uint32_t rx_len_rdy, himr;
-	uint16_t SdioRxFIFOSize;
+	uint32_t SdioRxFIFOSize;
 	uint8_t retry = 0;
 
 
@@ -62,16 +60,14 @@ void whc_sdio_recv_data_process(void)
 
 		/* TODO disable RX_REQ interrupt */
 		himr = sdio_priv->sdio_himr & (~SDIO_HIMR_RX_REQUEST_MSK);
-		sdio_local_write(sdio_priv, SDIO_REG_HIMR, 4, (uint8_t *)&himr);
+		rtw_write32(sdio_priv, SDIO_REG_HIMR, himr);
 
 		do {
 			/* validate RX_LEN_RDY before reading RX0_REQ_LEN */
-			rx_len_rdy = sdio_read8(sdio_priv, SDIO_REG_RX0_REQ_LEN + 3) & BIT(7);
+			rx_len_rdy = rtw_read8(sdio_priv, SDIO_REG_RX0_REQ_LEN + 3) & BIT(7);
 
 			if (rx_len_rdy) {
-				sdio_local_read(sdio_priv, SDIO_REG_RX0_REQ_LEN, 4, tmp);
-				SdioRxFIFOSize = (*(u16 *)tmp);
-
+				SdioRxFIFOSize = rtw_read32(sdio_priv, SDIO_REG_RX0_REQ_LEN) & SDIO_RX_REQ_LEN_MSK;
 				if (SdioRxFIFOSize == 0) {
 					if (retry ++ < 3) {
 						continue;
@@ -95,7 +91,7 @@ void whc_sdio_recv_data_process(void)
 
 		/* restore RX_REQ interrupt*/
 		himr = (sdio_priv->sdio_himr);
-		sdio_local_write(sdio_priv, SDIO_REG_HIMR, 4, (u8 *)&himr);
+		rtw_write32(sdio_priv, SDIO_REG_HIMR, himr);
 	}
 
 }
@@ -110,7 +106,7 @@ void whc_sdio_host_init_drv(void)
 	rtos_sema_create(&(whc_sdio_priv.txbd_wq), 0, 0xFFFFFFFF);
 	rtos_mutex_create(&whc_sdio_priv.lock);
 
-	/* shpuld higher than polling, polling 7 */
+	/* should be higher than polling, polling 7 */
 	if (rtos_task_create(NULL, ((const char *)"whc_sdio_rx"), (rtos_task_function_t)whc_sdio_recv_data_process, NULL, WIFI_STACK_SIZE_RX_REQ_TASK,
 						 0 + 6) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "create whc_sdio_rx fail \n");

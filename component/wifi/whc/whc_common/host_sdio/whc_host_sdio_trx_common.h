@@ -1,5 +1,5 @@
-#ifndef __WHC_HOST_SDIO_TRX_H__
-#define __WHC_HOST_SDIO_TRX_H__
+#ifndef __WHC_HOST_SDIO_TRX_COMMON_H__
+#define __WHC_HOST_SDIO_TRX_COMMON_H__
 
 #include <stdint.h>
 
@@ -22,7 +22,7 @@ struct whc_sdio;
  *   - WHC_HOST_SDIO_RX_INT_RESTORE(p)   : restore device RX_REQ int (or no-op)
  *   - WHC_HOST_SDIO_RECV_PKTS(pbuf)     : handle a WHC_WIFI_EVT_RECV_PKTS buffer
  *   - WHC_HOST_SDIO_RX_DEFAULT(pbuf)    : handle any other event buffer
- *   - hal: sdio_read8 / sdio_local_read / sdio_read_port
+ *   - hal: sdio_read8 / sdio_read_port
  *   - SDIO_BLOCK_SIZE and the SDIO register map (whc_host_sdio_reg.h)
  */
 void whc_host_sdio_recv_data_process(void);
@@ -42,4 +42,13 @@ void whc_host_pkt_rx_to_user(uint8_t *pbuf);
  */
 void whc_host_sdio_isr_process(struct whc_sdio *priv);
 
-#endif /* __WHC_HOST_SDIO_TRX_H__ */
+/* Shared SDIO host TX entry: fill TX descriptor and push buf to the device
+ * TX FIFO, blocking on the TXBD-avail sema/poll until a slot is free.
+ * Additional required port macros:
+ *   - WHC_MUTEX_TAKE(m, t) / WHC_MUTEX_GIVE(m)
+ *   - WHC_SEM_TAKE_TIMEOUT(s, t)
+ *   - WHC_MSLEEP(ms)
+ * plus rtw_sdio_query_txbd_status() and hal rtw_write_port(). */
+void whc_host_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb);
+
+#endif /* __WHC_HOST_SDIO_TRX_COMMON_H__ */

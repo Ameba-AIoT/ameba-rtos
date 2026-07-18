@@ -439,7 +439,7 @@ void VAD_Interrupt_set(u32 vad_interrupt_source, IRQ_FUN CallbackFunc, u32 IrqPr
 		break;
 	}
 
-	InterruptRegister(CallbackFunc, VADBT_OR_VADPC_IRQ, NULL, IrqPriority);
+	InterruptRegister(CallbackFunc, VADBT_OR_VADPC_IRQ, (u32)NULL, IrqPriority);
 	InterruptEn(VADBT_OR_VADPC_IRQ, IrqPriority);
 }
 

@@ -128,7 +128,9 @@
  * @{
  **/
 #define GPIO_MASK_INT_MASK              ((u32)0xFFFFFFFF << 0)          /*!<R/W 0  Controls whether an interrupt on Portx can create an interrupt for the interrupt controller by not masking it. By default, all interrupts bits are unmasked. Whenever a 1 is written to a bit in this register, it masks the interrupt generation capability for this signal; otherwise interrupts are allowed through. The unmasked status can be read as well as the resultant status after masking. 0: Interrupt bits are unmasked (default) 1: Mask interrupt */
+#ifndef __ZEPHYR__
 #define GPIO_INT_MASK(x)                (((u32)((x) & 0xFFFFFFFF) << 0))
+#endif
 #define GPIO_GET_INT_MASK(x)            ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -459,19 +461,9 @@ _LONG_CALL_ void GPIO_PortWrite(u32 GPIO_Port, u32 GPIO_Mask, u32 Port_State);
 _LONG_CALL_ void GPIO_PortDirection(u32 GPIO_Port, u32 GPIO_Mask, u32 data_direction);
 _LONG_CALL_ void GPIO_DebounceClock(u32 GPIO_Port, u32 DivideCount);
 _LONG_CALL_ void GPIO_LevelSync(u32 GPIO_Port, u32 NewState);
-
-/**
-  * @brief  Get the interrupt status.
-  * @param  GPIO_Port Specifies port number, which can be any GPIO_PORT_X defined in @ref GPIO_Port_Type.
-  * @return The interrupt status of the specified port pins
-  */
 _LONG_CALL_ u32 GPIO_INTStatusGet(u32 GPIO_Port);
-
-/**
-  * @brief  Clear the edge interrupt status.
-  * @param  GPIO_Port Specifies port number, which can be any GPIO_PORT_X defined in @ref GPIO_Port_Type.
-  */
 _LONG_CALL_ void GPIO_INTStatusClearEdge(u32 GPIO_Port);
+_LONG_CALL_ u32 GPIO_DirectionGet(u8 port, u32 pin_mask);
 
 /**
   * @brief Initialize specified GPIO pin output in Open Drain mode.

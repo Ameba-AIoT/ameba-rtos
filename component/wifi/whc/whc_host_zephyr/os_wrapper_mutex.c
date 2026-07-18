@@ -28,7 +28,7 @@ int rtos_mutex_create(rtos_mutex_t *pp_handle)
 }
 
 /**
- * @brief  For FreeRTOS, map to vSemaphoreDelete
+ * @brief  For Zephyr, map to k_free
  * @note   Do not delete mutex if held by a task
  * @param  p_handle:
  * @retval
@@ -45,7 +45,7 @@ int rtos_mutex_delete(rtos_mutex_t p_handle)
 }
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreTake / xSemaphoreTakeFromISR
+ * @brief  For Zephyr, map to k_mutex_lock
  *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
  * @param  p_handle:
  * @param  wait_ms:
@@ -56,7 +56,7 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 	int status;
 	k_timeout_t timeout;
 
-	timeout.ticks = wait_ms;
+	timeout.ticks = K_MSEC(wait_ms);
 	status = k_mutex_lock(p_handle, timeout);
 	if (status == 0) {
 		return SUCCESS;
@@ -66,10 +66,9 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 }
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreGive / xSemaphoreGiveFromISR
+ * @brief  For Zephyr, map to k_mutex_unlock
  *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
  * @param  p_handle:
- * @param  wait_ms:
  * @retval
  */
 int rtos_mutex_give(rtos_mutex_t p_handle)

@@ -141,7 +141,7 @@ static void ppe_auto_reload(void *para)
 	PPE_AutoReloadSetLayer(PPE_RESULT_LAYER_BIT | PPE_INPUT_LAYER1_BIT | PPE_INPUT_LAYER2_BIT | PPE_INPUT_LAYER3_BIT);
 	PPE_AutoClearCmd(ENABLE);
 
-	InterruptRegister(PPE_Handler, PPE_IRQ, NULL, 4);
+	InterruptRegister(PPE_Handler, PPE_IRQ, (u32)NULL, 4);
 	InterruptEn(PPE_IRQ, 4);
 	PPE_MaskINTConfig(PPE_LOAD_OVER_INT | PPE_FR_OVER_INT | PPE_ALL_OVER_INT, ENABLE);
 

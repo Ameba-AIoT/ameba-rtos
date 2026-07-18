@@ -50,6 +50,23 @@ u8 BOOT_CertificateCheck(Certificate_TypeDef *Cert, u32 addr);
 u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum);
 void BOOT_VerCheck(void);
 
+/* Platform init utilities (also used by Zephyr KM4 MCUboot boot_prepare.c) */
+void BOOT_ReasonSet(void);
+void BOOT_SOC_ClkSet(void);
+void BOOT_GRstConfig(void);
+void BOOT_RccConfig(void);
+void BOOT_Log_Init(void);
+void BOOT_DDR_Init(void);
+void BOOT_DDR_LCDC_HPR(void);
+void BOOT_PSRAM_Init(void);
+void BOOT_Enable_KM0(void);
+void BOOT_Enable_AP(void);
+void BOOT_Disable_AP(void);
+void BOOT_TCMSet(u32 TCM_Size);
+u32  BOOT_Share_Memory_Patch(void);
+void Peripheral_Reset(void);
+bool BOOT_RRAM_InfoValid(void);
+
 #ifdef __cplusplus
 }
 #endif

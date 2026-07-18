@@ -33,7 +33,7 @@ void BOOT_SOC_ClkSet(void)
 	u32 temp;
 	u8 hperi_ckd;
 	u8 psramc_ckd;
-	const SocClk_Info_TypeDef *pSocClk_Info = &SocClk_Info[0];
+	const SocClk_Info_TypeDef *pSocClk_Info = &SocClk_Info[Boot_SocClk_Info_Idx];
 	const u32 usb_pll_clk = pSocClk_Info->USBPLL_CLK;
 	const u32 sys_pll_clk = pSocClk_Info->SYSPLL_CLK;
 	const u8 core_ldo_vol = pSocClk_Info->Vol_Type;

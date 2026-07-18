@@ -31,5 +31,9 @@ void ota_vfs_close(ota_context_t *ctx)
 
 int ota_vfs_read(ota_context_t *ctx, u8 *buf, int len)
 {
-	return fread(buf, len, 1, (FILE *)ctx->fd);
+	int n = (int)fread(buf, len, 1, (FILE *)ctx->fd);
+	if (n == 0 && ferror((FILE *)ctx->fd)) {
+		return -1;
+	}
+	return n;
 }

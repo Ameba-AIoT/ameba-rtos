@@ -162,7 +162,7 @@ int main(void)
 	RTK_LOGI(TAG, "AP MAIN \n");
 	ameba_rtos_get_version();
 
-#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
+#if !defined (CONFIG_WHC_INTF_IPC)
 	app_fullmac_init();
 	app_IWDG_init();
 #else

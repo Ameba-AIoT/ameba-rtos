@@ -12,7 +12,10 @@
 #define SRAM_BASE                    (0x20000000)
 #define SRAM_END                     (0x20080000)
 #define PSRAM_BASE                   (0x60000000)
-#define PSRAM_END                    (0x60400000)
+/* PSRAM_END is the address window top = the largest PSRAM this chip supports
+ * (RTL8720F: 8MB). Real heap top is runtime-measured (ChipInfo_PsramHeapTop),
+ * so smaller boards shrink automatically and no customer configuration is needed. */
+#define PSRAM_END                    (0x60800000)
 
 /* layout configuration */
 /* KM4TZ_RAM_TZ_SIZE / KM4TZ_PSRAM_TZ_SIZE: total TrustZone image3 region size. */
@@ -96,13 +99,50 @@ IMG3 size is 0.    │  │                      │    │
 #define KM4NS_BOOT_RAM_START          (SRAM_END - RAM_KM4NS_BOOT_SIZE)                      /* 0x20064000 ~ 0x20064000 | 0x20064000 ~ 0x20064000 */
 #define KM4NS_IMG2_RAM_START          (KM4NS_BOOT_RAM_START - RAM_KM4NS_IMG2_SIZE)          /* 0x20064000 ~ 0x20080000 | 0x20064000 ~ 0x20080000 */
 
-/* IMG3 On PSRAM */
-#define KM4TZ_PSRAM_TZ_START          (PSRAM_BASE)                                          /* 0x60000000 | unavailable when TZ off */
+/*
+                  RTL8720F PSRAM Layout (window 8MB, runtime-measured capacity)
+PSRAM_BASE      ──────────►┌──────────────────────┐
+0x60000000                 │                      │
+                        ┌──┤  KM4TZ BD PSRAM TZ   │
+If Trustzone off,       │  │  (IMG3 on PSRAM)     ├─────►  KM4TZ_PSRAM_TZ_SIZE = KBYTES(CONFIG_TZ_S_SIZE)
+  TZ_SIZE = 0.     ◄────┤  │                      │        0 when TrustZone off or IMG3 not on PSRAM.
+                        └──┤                      │
+                           ├──────────────────────┤
+                           │                      │
+                           │   KM4NS BD PSRAM     │
+                           │   (NP core image2)   ├─────►  KBYTES(CONFIG_PSRAM_KM4NS_IMG2_KB)
+                           │   right after TZ,    │        default 876K; Kconfig-configurable.
+                           │   or 0 if NP uses no  │        Present only when NP places code/data
+                           │   PSRAM              │        in PSRAM (IMG2_PSRAM/DATA_HEAP_PSRAM).
+                           ├──────────────────────┤
+                           │                      │
+                           │   KM4TZ BD PSRAM     │
+                           │   (AP core image2)   ├─────►  PSRAM_END - KM4TZ_IMG2_PSRAM_START
+                           │   Fills to PSRAM_END │        (fills to 8MB window top).
+                           │   window; heap top   │        Heap top = ChipInfo_PsramHeapTop()
+                           │   = runtime-measured │        (runtime-measured capacity, may be
+                           │   PSRAM capacity.    │        less than PSRAM_END on small boards).
+                           │                      │
+PSRAM_END       ──────────►└──────────────────────┘
+0x60800000 (8MB)               chip max; real heap top capped to ChipInfo_PsramHeapTop()
+*/
 
-#define PSRAM_KM4TZ_IMG2_SIZE         (KBYTES(3220) - KM4TZ_PSRAM_TZ_SIZE)
-#define KM4TZ_IMG2_PSRAM_START        (KM4TZ_PSRAM_TZ_START + KM4TZ_PSRAM_TZ_SIZE)            /* 0x60040000 ~ 0x60325000 | 0x60000000 ~ 0x60325000*/
-#define KM4NS_IMG2_PSRAM_START        (KM4TZ_IMG2_PSRAM_START + PSRAM_KM4TZ_IMG2_SIZE)         /* 0x60325000 ~ 0x60400000 | 0x60325000 ~ 0x60400000*/
-#define PSRAM_KM4NS_IMG2_SIZE         (PSRAM_END - KM4NS_IMG2_PSRAM_START)
+#define KM4TZ_PSRAM_TZ_START          (PSRAM_BASE)
+#define KM4NS_IMG2_PSRAM_START        (KM4TZ_PSRAM_TZ_START + KM4TZ_PSRAM_TZ_SIZE)
+#define KM4TZ_IMG2_PSRAM_START        (KM4NS_IMG2_PSRAM_START + KM4NS_PSRAM_IMG2_SIZE)
+
+/* PSRAM layout: TZ → NP(KM4NS) → AP(KM4TZ), see ASCII diagram above.
+ * NP(KM4NS) gets a segment only when it puts code/data in PSRAM;
+ * else it collapses to 0 and all non-secure PSRAM folds into AP(KM4TZ). */
+#if defined(CONFIG_IMG2_PSRAM) || defined(CONFIG_DATA_HEAP_PSRAM)
+#define KM4NS_PSRAM_IMG2_SIZE         KBYTES(CONFIG_PSRAM_KM4NS_IMG2_KB)
+#define KM4NS_BD_PSRAM_ORIGIN         (KM4NS_IMG2_PSRAM_START + IMAGE_HEADER_LEN)
+#define KM4NS_BD_PSRAM_LENGTH         (KM4NS_PSRAM_IMG2_SIZE - IMAGE_HEADER_LEN)
+#else
+#define KM4NS_PSRAM_IMG2_SIZE         0
+#define KM4NS_BD_PSRAM_ORIGIN         KM4NS_IMG2_PSRAM_START
+#define KM4NS_BD_PSRAM_LENGTH         0
+#endif
 
 MEMORY
 {
@@ -149,13 +189,10 @@ MEMORY
     KM4NS_BD_RAM (rwx) :                      ORIGIN = KM4NS_IMG2_RAM_START + KM4NS_IPC_RAM_SIZE + IMAGE_HEADER_LEN,   LENGTH = RAM_KM4NS_IMG2_SIZE - KM4NS_IPC_RAM_SIZE - IMAGE_HEADER_LEN    /* KM4NS BD RAM: 112KB */
     KM4NS_BOOTLOADER_RAM (rwx) :              ORIGIN = KM4NS_BOOT_RAM_START + IMAGE_HEADER_LEN,   LENGTH = RAM_KM4NS_BOOT_SIZE - IMAGE_HEADER_LEN                                   /* KM4NS BOOT RAM */
 
-    KM4TZ_BD_PSRAM_TZ (rwx) :                 ORIGIN = KM4TZ_PSRAM_TZ_START + IMAGE_HEADER_LEN,        LENGTH = KM4TZ_PSRAM_TZ_SIZE - IMAGE_HEADER_LEN                                            /* KM4TZ BD PSRAM TZ: CONFIG_TZ_S_SIZE KB */
+    KM4TZ_BD_PSRAM_TZ (rwx) :                 ORIGIN = KM4TZ_PSRAM_TZ_START + IMAGE_HEADER_LEN,   LENGTH = KM4TZ_PSRAM_TZ_SIZE - IMAGE_HEADER_LEN                                   /* KM4TZ BD PSRAM TZ: CONFIG_TZ_S_SIZE KB */
     /* KM4TZ Non-secure PSRAM */
-    KM4TZ_BD_PSRAM (rwx) :                    ORIGIN = KM4TZ_IMG2_PSRAM_START + IMAGE_HEADER_LEN, LENGTH = PSRAM_KM4TZ_IMG2_SIZE - IMAGE_HEADER_LEN                                 /* KM4TZ BD PSRAM : Tz off,3220K; TZ on, 3072K */
-    KM4NS_BD_PSRAM (rwx) :                    ORIGIN = KM4NS_IMG2_PSRAM_START + IMAGE_HEADER_LEN, LENGTH = PSRAM_KM4NS_IMG2_SIZE - IMAGE_HEADER_LEN
-
-    KM4TZ_PSRAM_HEAP_EXT (rwx) :              ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF    /* KM4TZ PSRAM HEKM4TZ EXT */
-    KM4NS_PSRAM_HEAP_EXT (rwx) :              ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF    /* KM4NS PSRAM HEKM4TZ EXT */
+    KM4NS_BD_PSRAM (rwx) :                    ORIGIN = KM4NS_BD_PSRAM_ORIGIN,                    LENGTH = KM4NS_BD_PSRAM_LENGTH                                                    /* KM4NS BD PSRAM: CONFIG_PSRAM_KM4NS_IMG2_KB (default 876K), or 0 when NP uses no PSRAM */
+    KM4TZ_BD_PSRAM (rwx) :                    ORIGIN = KM4TZ_IMG2_PSRAM_START + IMAGE_HEADER_LEN, LENGTH = (PSRAM_END - KM4TZ_IMG2_PSRAM_START) - IMAGE_HEADER_LEN                   /* KM4TZ BD PSRAM: last segment, fills to PSRAM_END; heap top capped to measured at runtime */
 
     /* Retention RAM */
     RETENTION_RAM (rwx) :                     ORIGIN = 0x4080AA00, LENGTH = 0x4080AC00 - 0x4080AA00    /* KM4NS Retention SRAM: 512B */
@@ -224,8 +261,9 @@ __km4ns_bd_ram_end__ = ORIGIN(KM4NS_BD_RAM) + LENGTH(KM4NS_BD_RAM);
 /*PSRAM Layout boundary*/
 __km4tz_bd_psram_start__ = ORIGIN(KM4TZ_BD_PSRAM) - IMAGE_HEADER_LEN;
 __km4tz_bd_psram_end__ = ORIGIN(KM4TZ_BD_PSRAM) + LENGTH(KM4TZ_BD_PSRAM);
-__km4ns_bd_psram_start__ = ORIGIN(KM4NS_BD_PSRAM) - IMAGE_HEADER_LEN;
-__km4ns_bd_psram_end__ = ORIGIN(KM4NS_BD_PSRAM) + LENGTH(KM4NS_BD_PSRAM);
+__km4ns_bd_psram_start__ = KM4NS_IMG2_PSRAM_START;
+__km4ns_bd_psram_end__ = KM4NS_IMG2_PSRAM_START + KM4NS_PSRAM_IMG2_SIZE;
+__non_secure_psram_start__ = KM4NS_IMG2_PSRAM_START;
 __non_secure_psram_end__ = PSRAM_END;
 
 /* Just for ROM check */

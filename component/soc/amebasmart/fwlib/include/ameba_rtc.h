@@ -561,6 +561,8 @@ typedef struct {
   * @}
   */
 
+_LONG_CALL_ void RTC_Enable(u8 NewState);
+
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup RTC_Exported_Functions RTC Exported Functions
   * @{

@@ -31,8 +31,7 @@
 #include "utils/common.h"
 
 #include "crypto.h"
-//#include "sha1.h"
-#include "rom_rtw_core.h"
+#include "rom_secure_common.h"
 #include "random.h"
 
 //#ifdef CONFIG_WPS

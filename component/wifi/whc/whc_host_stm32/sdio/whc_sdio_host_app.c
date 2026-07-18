@@ -1,7 +1,5 @@
 #include "rtw_whc_common.h"
 
-/* type */
-#define WHC_WIFI_TEST  0x1
 /* subtype */
 #define WHC_WIFI_TEST_GET_MAC_ADDR 0x1
 #define WHC_WIFI_TEST_GET_IP       0x2
@@ -11,9 +9,9 @@
 
 __weak void whc_host_pkt_rx_to_user(u8 *pbuf)
 {
-	int counter = 0;
-	uint32_t event = *(uint32_t *)(pbuf);
-	u8 *ptr = pbuf;
+	/* pbuf = buf + SIZE_RX_DESC, so pbuf[0..7] is whc_cmd_path_hdr */
+	u8 *ptr = pbuf + sizeof(struct whc_cmd_path_hdr);
+	uint32_t event = *(uint32_t *)ptr;
 	u8 id;
 	u32 ipaddr, netmask, gw;
 	uint8_t idx;
@@ -46,31 +44,29 @@ __weak void whc_host_pkt_rx_to_user(u8 *pbuf)
 /**
 * @brief  send buf to dev
 * @param  buf: data buf to be sent.
-* @param  len: real buf address, to be freed after sent.
+* @param  len: length of buf in bytes.
 * @return none.
 */
 void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 {
+	struct whc_cmd_path_hdr *hdr;
 	u8 *txbuf = NULL;
-	u32 txsize = len + SIZE_TX_DESC;
+	u32 txsize = len + sizeof(struct whc_cmd_path_hdr) + SIZE_TX_DESC;
 
-	/* construct struct whc_buf_info & whc_buf_info_t */
 	txbuf = WHC_MALLOC(txsize);
-
 	if (txbuf == NULL) {
 		printf("%s mem fail \r\n", __func__);
 		return;
 	}
 
-	/* copy data */
-	memcpy(txbuf + SIZE_TX_DESC, buf, len);
+	hdr = (struct whc_cmd_path_hdr *)(txbuf + SIZE_TX_DESC);
+	hdr->event = WHC_WIFI_EVT_CMD;
+	hdr->len = len;
+	memcpy(txbuf + SIZE_TX_DESC + sizeof(struct whc_cmd_path_hdr), buf, len);
 
-	/* send ret_msg + ret_val(buf, len) */
-	rtw_sdio_send_data(txbuf, txsize, NULL);
+	whc_host_sdio_send_data(txbuf, txsize, NULL);
 
-	if (txbuf) {
-		WHC_FREE(txbuf);
-	}
+	WHC_FREE(txbuf);
 }
 
 void whc_host_get_mac_addr(uint8_t idx)

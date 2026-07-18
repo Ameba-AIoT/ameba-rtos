@@ -44,7 +44,7 @@ DATA_PAGE     = 2
 # the device mounts with a different block_count and littlefs returns
 # LFS_ERR_INVAL. ---------------------------------------------------------------
 LBM_RESERVED_PCT   = 2
-LBM_RESERVED_FLOOR = 20
+LBM_RESERVED_FLOOR = 2
 
 
 def lbm_usable_blocks(partition_size, peb_size):

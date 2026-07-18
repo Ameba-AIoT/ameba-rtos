@@ -96,7 +96,7 @@ static rtos_sema_t msc_sd_status_changed_sema;
 #endif
 
 #if (CONFIG_USBD_MSC_SD_HOTPLUG == 1) || (CONFIG_USBD_MSC_USB_HOTPLUG == 1)
-usbd_msc_hotplug_type_t msc_hotplug_ongoing_type;
+static usbd_msc_hotplug_type_t msc_hotplug_ongoing_type;
 #endif
 /* Private functions ---------------------------------------------------------*/
 

@@ -33,11 +33,10 @@ struct whc_msg_node *whc_msg_dequeue(struct __queue *p_queue)
 }
 
 /**
- * @brief  put the inic message to queue.
- * @param  p_node[in]: the pointer for the inic message node that need to be
- * 	pushed into the queue.
- * @param  p_queue[in]: the queue used to store the p_node.
- * @return status, always RTK_SUCCESS.
+ * @brief  put the whc message to queue.
+ * @param  msg[in]: the message pointer to be pushed into the queue.
+ * @param  p_queue[in]: the queue used to store the message.
+ * @return RTK_SUCCESS on success, RTK_FAIL if memory allocation fails.
  */
 sint whc_msg_enqueue(void *msg, struct __queue *p_queue)
 {

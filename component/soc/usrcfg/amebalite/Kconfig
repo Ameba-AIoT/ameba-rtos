@@ -91,4 +91,57 @@ config LOGUART_AGG_EN
 
 endmenu
 
+menu "Clock Configuration"
+
+choice
+    prompt "SoC Clock Config"
+    default CLKCFG_AUTO
+    help
+        Select the SoC clock configuration. AUTO (CONFIG_CLKCFG_IDX 0xFF) lets the
+        bootloader pick the clock/voltage level at runtime according to the PSRAM
+        clock limit (recommended). For the fixed levels, the leading [N] is the
+        index into SocClk_Info[] in ameba_bootcfg.c.
+
+config CLKCFG_AUTO
+    bool "[auto] Auto by PSRAM clock (0xFF)"
+
+config CLKCFG_0P9_PSRAM166
+    bool "[0] 0.9V, PSRAM 166MHz"
+
+config CLKCFG_1P0_PSRAM166
+    bool "[1] 1.0V, PSRAM 166MHz"
+
+config CLKCFG_1P0_PSRAM200
+    bool "[2] 1.0V, PSRAM 200MHz"
+
+config CLKCFG_1P0_PSRAM250
+    bool "[3] 1.0V, PSRAM 250MHz"
+
+endchoice
+
+config CLKCFG_IDX
+    int
+    default 0 if CLKCFG_0P9_PSRAM166
+    default 1 if CLKCFG_1P0_PSRAM166
+    default 2 if CLKCFG_1P0_PSRAM200
+    default 3 if CLKCFG_1P0_PSRAM250
+    default 255
+
+endmenu
+
+menu "RAM Layout Configuration"
+
+# TrustZone secure image (Image3) size. For SoCs without PSRAM this region may
+# live in SRAM, so it is a general RAM-layout parameter, configured per IC.
+config TZ_S_SIZE
+    int "TrustZone Secure Image Size (KB)"
+    depends on TRUSTZONE
+    default 128 if TRUSTZONE_MBEDTLS
+    default 64
+    help
+        Size of TrustZone secure image (Image3) in KB.
+        Default 64KB, or 128KB when MbedTLS is enabled.
+
+endmenu
+
 endmenu

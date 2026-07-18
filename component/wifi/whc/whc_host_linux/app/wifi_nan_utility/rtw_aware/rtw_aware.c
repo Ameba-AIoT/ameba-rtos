@@ -1812,6 +1812,7 @@ int main(int argc, char *argv[])
 	}
 
 	signal(SIGINT, signal_func);
+	signal(SIGTERM, signal_func);
 	while (1) {
 		wait_time(max_service_time_sec);
 		if (sig_flag) {

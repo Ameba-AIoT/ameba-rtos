@@ -193,6 +193,18 @@ function(ameba_add_library name)
 endfunction()
 
 function(ameba_add_internal_library name)
+    # SoC hook (only addition to the original function): a SoC may define
+    # ameba_soc_internal_library_hook to intercept internal-library creation
+    if(COMMAND ameba_soc_internal_library_hook)
+        set(_soc_hook_handled FALSE)
+        ameba_soc_internal_library_hook("${name}" "${ARGN}" _soc_hook_handled)
+        if(_soc_hook_handled)
+            set(c_CURRENT_TARGET_NAME ${c_CURRENT_TARGET_NAME} PARENT_SCOPE)
+            set(c_CURRENT_TARGET_FILE ${c_CURRENT_TARGET_FILE} PARENT_SCOPE)
+            return()
+        endif()
+    endif()
+
     set(options
         p_NO_WHOLE_ARCHIVE          # If set, the target will be linked without whole_archive options
     )

@@ -136,7 +136,7 @@ void aontimer_test(void)
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 	AONTimer_Setting(2000);
 	AONTimer_INT(ENABLE);
-	InterruptRegister((IRQ_FUN)aontimer_int, AON_TIM_IRQ, NULL, 3);
+	InterruptRegister((IRQ_FUN)aontimer_int, AON_TIM_IRQ, (u32)NULL, 3);
 	InterruptEn(AON_TIM_IRQ, 3);
 	SOCPS_SetAPWakeEvent(WAKE_SRC_AON_TIM, ENABLE);
 	SOCPS_SetNPWakeEvent(WAKE_SRC_AP_WAKE_IRQ, ENABLE);

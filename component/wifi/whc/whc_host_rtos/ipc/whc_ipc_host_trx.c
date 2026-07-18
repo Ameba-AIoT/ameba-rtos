@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    inic_ipc_host_trx.c
+  * @file    whc_ipc_host_trx.c
   * @author
   * @version
   * @date
@@ -52,7 +52,7 @@ extern u8 wifi_dbg_log_enable; // BIT(0): dp_log
  * @brief  to send skb to device for port idx.
  * @param  idx[in]: which port of wifi to tx.
  * @param  skb[inout]: skb to send.
- * @return -1 failed, 0 seccessful.
+ * @return -1 failed, 0 successful.
  */
 SRAM_WLAN_CRITICAL_CODE_SECTION
 int whc_ipc_host_send_skb(int idx, struct sk_buff *skb)
@@ -338,7 +338,7 @@ static inline struct sk_buff *whc_ipc_host_find_one_free_skb(int *skb_index)
 }
 
 /**
- * @brief  to put the Rx data from rx buffer into Rx queue.
+ * @brief  to send data to device for port idx.
  * @param  idx[in]: which port of wifi to tx.
  * @param  sg_list[in]: pbuf list to send.
  * @param  sg_len[in]: the length of sg_list.
@@ -420,7 +420,7 @@ RETRY:
 #endif
 
 /**
-* @brief  haddle the message of IPC.
+* @brief  handle the message of IPC.
 * @param  none.
 * @return none.
 */
@@ -442,9 +442,9 @@ void whc_ipc_host_trx_event_hdl(u8 event_num, u32 msg_addr, u8 wlan_idx)
 
 /* ---------------------------- Public Functions ---------------------------- */
 /**
-* @brief  to haddle the ipc message interrupt. If the message queue is
+* @brief  to handle the ipc message interrupt. If the message queue is
 *  initialized, it will enqueue the ipc message and wake up the message
-*  task to haddle the message. If last send message cannot be done, I will
+*  task to handle the message. If last send message cannot be done, I will
 *  set pending for next sending message.
 * @param  Data[inout]: IPC data.
 * @param  IrqStatus[in]: interrupt status.
@@ -477,7 +477,7 @@ void whc_ipc_host_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum)
 		/* put the ipc message to the queue */
 		ret = whc_msg_enqueue(p_ipc_msg);
 	} else {
-		/* the message queue does't work, call haddle function
+		/* the message queue doesn't work, call handle function
 		* directly */
 		whc_ipc_host_trx_event_hdl(p_ipc_msg->event_num, p_ipc_msg->msg_addr, p_ipc_msg->wlan_idx);
 		ret = RTK_SUCCESS;
@@ -488,7 +488,7 @@ void whc_ipc_host_trx_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum)
 	} else {
 		p_ipc_msg->msg_queue_status = IPC_WIFI_MSG_MEMORY_NOT_ENOUGH;
 	}
-	/* enqueuing message is seccussful, send acknowledgement to another port*/
+	/* enqueuing message is successful, send acknowledgement to another port*/
 	p_ipc_msg->event_num = IPC_WIFI_MSG_READ_DONE;
 #ifdef CONFIG_ENABLE_CACHE
 	DCache_Clean((u32)p_ipc_msg, sizeof(struct whc_ipc_ex_msg));

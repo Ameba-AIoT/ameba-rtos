@@ -81,4 +81,82 @@ config LOGUART_AGG_EN
 
 endmenu
 
+menu "Clock Configuration"
+
+choice
+    prompt "SoC Clock Config"
+    default CLKCFG_0P9_RMII_USB
+    help
+        Select the SoC clock configuration. The leading [N] is the index into
+        SocClk_Info[] in ameba_bootcfg.c (assigned to Boot_SocClk_Info_Idx via
+        CONFIG_CLKCFG_IDX).
+
+config CLKCFG_0P9_NO_SYSPLL
+    bool "[0] 0.9V, no SysPLL, CPU 240MHz (low power)"
+
+config CLKCFG_0P9_RMII_USB
+    bool "[1] 0.9V, RMII/USB, CPU 240MHz"
+
+config CLKCFG_0P9_AUDIO98P304M_USB
+    bool "[2] 0.9V, Audio(98.304MHz)/USB, CPU 240MHz"
+
+config CLKCFG_0P9_AUDIO45P1584M_USB
+    bool "[3] 0.9V, Audio(45.1584MHz)/USB, CPU 240MHz"
+
+config CLKCFG_0P9_AUDIO_RMII
+    bool "[4] 0.9V, Audio/RMII, CPU 266.7MHz"
+
+config CLKCFG_1P0_RMII_USB
+    bool "[5] 1.0V, RMII/USB, CPU 320MHz"
+
+config CLKCFG_1P0_AUDIO_USB
+    bool "[6] 1.0V, Audio/USB, CPU 320MHz"
+
+config CLKCFG_1P0_AUDIO_RMII
+    bool "[7] 1.0V, Audio/RMII, CPU 333.3MHz"
+
+endchoice
+
+config CLKCFG_IDX
+    int
+    default 0 if CLKCFG_0P9_NO_SYSPLL
+    default 1 if CLKCFG_0P9_RMII_USB
+    default 2 if CLKCFG_0P9_AUDIO98P304M_USB
+    default 3 if CLKCFG_0P9_AUDIO45P1584M_USB
+    default 4 if CLKCFG_0P9_AUDIO_RMII
+    default 5 if CLKCFG_1P0_RMII_USB
+    default 6 if CLKCFG_1P0_AUDIO_USB
+    default 7 if CLKCFG_1P0_AUDIO_RMII
+    default 1
+
+endmenu
+
+menu "RAM Layout Configuration"
+
+# TrustZone secure image (Image3) size. For SoCs without PSRAM this region may
+# live in SRAM, so it is a general RAM-layout parameter, configured per IC.
+config TZ_S_SIZE
+    int "TrustZone Secure Image Size (KB)"
+    depends on TRUSTZONE
+    default 128 if TRUSTZONE_MBEDTLS
+    default 64
+    help
+        Size of TrustZone secure image (Image3) in KB.
+        Default 64KB, or 128KB when MbedTLS is enabled.
+
+# KM4NS (NP core) PSRAM image2 region size, in KB. Fixed-size region placed
+# right after the TrustZone segment. The AP(KM4TZ) core absorbs the remainder.
+config PSRAM_KM4NS_IMG2_KB
+    int "KM4NS PSRAM image2 size (KB)"
+    depends on IMG2_PSRAM || DATA_HEAP_PSRAM
+    range 64 2048
+    default 876
+    help
+        Size of the NP(KM4NS) PSRAM image2 segment. Only meaningful when the NP
+        core places code (IMG2_PSRAM) or data/heap (DATA_HEAP_PSRAM) in PSRAM.
+        Otherwise the segment collapses to 0 and all non-secure PSRAM goes to
+        the AP(KM4TZ) heap.
+
+endmenu
+
 endmenu

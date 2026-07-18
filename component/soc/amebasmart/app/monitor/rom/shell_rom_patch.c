@@ -261,11 +261,15 @@ u8 shell_cmd_chk(
 			(*(*prvUartLogCtl).pTmpLogBuf).BufCount++;
 		}
 	} else if ((*(*prvUartLogCtl).pTmpLogBuf).BufCount == (UART_LOG_CMD_BUFLEN - 1)) {
-		RTNSTS = 1;
+		/* return 2 (DONE) so the shell task processes the truncated command and
+		 * resets the buffer; returning 1 leaves BufCount stuck at BUFLEN-1 and the
+		 * command is never dispatched (host waits forever). Aligns with amebadplus. */
+		RTNSTS = 2;
 
+		(*(*prvUartLogCtl).pTmpLogBuf).UARTLogBuf[(*(*prvUartLogCtl).pTmpLogBuf).BufCount++] = '\0';
 		pfEcho((u8 *)"\n\r <<<Too long cmd string.>>> \n");
-		(*(*prvUartLogCtl).pTmpLogBuf).UARTLogBuf[(*(*prvUartLogCtl).pTmpLogBuf).BufCount] = '\0';
 		pfEcho(&(*(*prvUartLogCtl).pTmpLogBuf).UARTLogBuf[0]);
+		pfEcho((u8 *)"\r\n");
 	}
 
 	return RTNSTS;

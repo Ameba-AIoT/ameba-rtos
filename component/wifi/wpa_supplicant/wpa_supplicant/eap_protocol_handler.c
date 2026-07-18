@@ -13,7 +13,6 @@
 #include "crypto/tls.h"
 #include "eap_peer/eap_config.h"
 #include "wpa_lite_intf.h"
-#include "rtw_wifi_constants.h"
 
 struct task_struct eap_recvd_tsk;
 struct rtw_eap_context g_eap_context = {0};

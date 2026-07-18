@@ -83,7 +83,7 @@ static struct ipc_msg_node *dequeue_ipc_msg_node(struct __queue *p_queue)
 }
 
 /**
- * @brief  task to operation the queue when the queue is not empty.
+ * @brief  task to operate the queue when the queue is not empty.
  * @param  none
  * @return none
  */
@@ -246,7 +246,10 @@ u8 whc_msg_get_queue_status(void)
 /**
  * @brief  to send the ipc message. It will wait when the last message is not
  * 	read.
- * @param  p_ipc_msg[inout]: the message to send.
+ * @param  event_num[in]: IPC event number to send.
+ * @param  msg_addr[in]: address of the message payload.
+ * @param  msg_queue_status[in]: current message queue status.
+ * @param  wlan_idx[in]: which wlan port this message belongs to.
  * @return none.
  */
 SRAM_WLAN_CRITICAL_CODE_SECTION

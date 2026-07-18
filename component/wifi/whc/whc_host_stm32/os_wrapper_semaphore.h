@@ -88,8 +88,6 @@ int rtos_sema_delete(rtos_sema_t p_handle);
  * @brief  For FreeRTOS, map to xSemaphoreTake / xSemaphoreTakeFromISR
  *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
  *
- * @note   If timeout_ms is set to the maximum value,
- *         then if the semaphore cannot be obtained consistently, the log will be printed every 10 seconds.
  * @param  p_handle:
  * @param  timeout_ms:
  * @retval

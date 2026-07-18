@@ -178,3 +178,4 @@ The log in the expect result is only for reference.
 
 RTL8730E
 RTL8721F
+RTL8735C

@@ -107,6 +107,7 @@ ameba_add_external_app_library(${TARGET_LIB}
 else()
 ###NOTE: For open-source component, always build from source
 ameba_add_internal_library(rtw_event
+    p_NO_SEAL
     p_SOURCES
         rtw_event.c
         rtw_task_size.c

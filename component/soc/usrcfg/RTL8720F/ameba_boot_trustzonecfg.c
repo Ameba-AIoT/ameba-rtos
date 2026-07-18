@@ -72,7 +72,7 @@ const SAU_CFG_TypeDef sau_config[SAU_ENTRY_NUM] = {
 #define BD_RAM_START	(u32)__km4tz_bd_ram_start__
 #define BD_RAM_END		(u32)__km4ns_bd_ram_end__
 
-#define BD_PSRAM_START 	(u32)__km4tz_bd_psram_start__
+#define BD_PSRAM_START 	(u32)__non_secure_psram_start__
 #define BD_PSRAM_END	(u32)__non_secure_psram_end__
 
 const TZ_CFG_TypeDef mpc3_config[MPC_ENTRY_NUM] =						/* Security configuration for PSRAM */

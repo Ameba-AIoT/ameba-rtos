@@ -138,7 +138,7 @@ void _uart0_init(IRQ_FUN func)
 	/* Disable and Enable UART Interrupt */
 	InterruptDis(UART_IRQ);
 	InterruptUnRegister(UART_IRQ);
-	InterruptRegister(func, UART_IRQ, NULL, UART_IRQ_PRIO);
+	InterruptRegister(func, UART_IRQ, (u32)NULL, UART_IRQ_PRIO);
 	InterruptEn(UART_IRQ, UART_IRQ_PRIO);
 	UART_INTConfig(UART_DEV, UART_IRQ_MASK, ENABLE);
 
