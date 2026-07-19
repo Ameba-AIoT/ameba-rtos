@@ -52,6 +52,7 @@ static struct sdn_host_ipc {
 #define SDN_CONF_HOST_154_RX_NUM                                   0
 #endif
 
+u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum);
 
 static void sdn_host_ipc_tx_deinit(void)
 {
@@ -122,7 +123,6 @@ static struct sdn_data_buf *sdn_host_ipc_rx_get_buf(uint8_t protocol)
 	struct sdn_data_buf *pdata_buf = NULL;
 	bool balloc_avaliable = false;
 
-	rtos_critical_enter(RTOS_CRITICAL_BT);
 	switch (protocol) {
 #ifdef CONFIG_BT_SDN
 	case SDN_INTF_BT:
@@ -152,7 +152,6 @@ static struct sdn_data_buf *sdn_host_ipc_rx_get_buf(uint8_t protocol)
 			list_del_init(&pdata_buf->list);
 		}
 	}
-	rtos_critical_exit(RTOS_CRITICAL_BT);
 
 	return pdata_buf;
 }
@@ -341,10 +340,7 @@ static void sdn_host_ipc_rx_int_hdl(void *data, uint32_t irq_status, uint32_t ch
 			memcpy(pdata_buf->pmsg, (uint8_t *)p_ipc_rx_msg->msg, p_ipc_rx_msg->msg_len);
 			pdata_buf->len = p_ipc_rx_msg->msg_len;
 
-			rtos_critical_enter(RTOS_CRITICAL_BT);
 			list_add_tail(&pdata_buf->list, &g_sdn_host_intf.rx.busy_list);
-			rtos_critical_exit(RTOS_CRITICAL_BT);
-
 			rtos_sema_give(g_sdn_host_intf.rx.task.sema);
 		}
 	} else {
@@ -370,6 +366,8 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *pdata, uint16_t len)
 	if (IPC_SEND_SUCCESS != ipc_send_message(IPC_AP_TO_NP, IPC_A2N_BT_VIRTUAL_HCI, &ipc_tx)) {
 		return SDN_INTF_ERR_TX_CTRL_FAIL;
 	}
+
+	IPC_wait_idle(IPC_GetDev(IPC_AP_TO_NP, 0), IPC_A2N_BT_VIRTUAL_HCI);
 
 	if (protocol == SDN_INTF_CTRL) {
 		/* client only has one memory buffer for ctrl message, so send ctrl msg one by one. */

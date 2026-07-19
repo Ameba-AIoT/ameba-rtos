@@ -837,7 +837,7 @@ _LONG_CALL_ void LOGUART_Relay_LPSetBaud(LOGUART_TypeDef *UARTLOG, u32 RPBaudRat
 _LONG_CALL_ void LOGUART_RxMonitorCmd(LOGUART_TypeDef *UARTLOG, u32 NewState);
 _LONG_CALL_ u32 LOGUART_RxMonBaudCtrlRegGet(LOGUART_TypeDef *UARTLOG);
 _LONG_CALL_ u32 LOGUART_RxMonitorSatusGet(LOGUART_TypeDef *UARTLOG);
-
+_LONG_CALL_ u8 LOGUART_Writable(void);
 
 #define DiagPutChar		LOGUART_PutChar
 #define DiagGetChar		LOGUART_GetChar

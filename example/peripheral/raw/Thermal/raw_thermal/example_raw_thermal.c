@@ -93,7 +93,7 @@ void raw_thermal_task(void)
 
 	TM_Init(&TM_InitStruct);
 
-	InterruptRegister((IRQ_FUN)TMIrqHandler, THERMAL_IRQ, NULL, 5);
+	InterruptRegister((IRQ_FUN)TMIrqHandler, THERMAL_IRQ, (u32)NULL, 5);
 	InterruptEn(THERMAL_IRQ, 5);
 
 	TM_Display_Result(TM_GetTempResult());

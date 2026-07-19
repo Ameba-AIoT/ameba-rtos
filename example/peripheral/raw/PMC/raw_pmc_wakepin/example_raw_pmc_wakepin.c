@@ -49,7 +49,7 @@ int example_raw_pmc_wakepin(void)
 	}
 
 	/*interrupt should be registed every time*/
-	InterruptRegister((IRQ_FUN)wakepin_dslp_handler, AON_WAKEPIN_IRQ, NULL, 3);
+	InterruptRegister((IRQ_FUN)wakepin_dslp_handler, AON_WAKEPIN_IRQ, (u32)NULL, 3);
 	InterruptEn(AON_WAKEPIN_IRQ, 3);
 
 	return 0;

@@ -28,6 +28,12 @@ extern u32 Cert_PKHash_OTP_ADDR;
 // CPU_CKD range is [3, 5], PSRAMC_CKD range is [3, 4]
 extern SocClk_Info_TypeDef SocClk_Info[];
 
+/**
+* @brif  SocClk_Info select. Configured via menuconfig "SoC Clock Config".
+* Boot_SocClk_Info_Idx is [0, sizeof(SocClk_Info)), Soc will set socclk by SocClk_Info[Boot_SocClk_Info_Idx]
+*/
+extern u8 Boot_SocClk_Info_Idx;
+
 
 /**
 * @brif  TRUSTZONE enable or disable

@@ -295,7 +295,7 @@ void bt_inic_h4_init(void)
 	/* Disable and Enable UART Interrupt */
 	InterruptDis(UART_IRQ);
 	InterruptUnRegister(UART_IRQ);
-	InterruptRegister((IRQ_FUN)_uart_irq, UART_IRQ, NULL, UART_IRQ_PRIO);
+	InterruptRegister((IRQ_FUN)_uart_irq, UART_IRQ, (u32)NULL, UART_IRQ_PRIO);
 	InterruptEn(UART_IRQ, UART_IRQ_PRIO);
 	UART_INTConfig(UART_DEV, UART_IRQ_MASK, ENABLE);
 

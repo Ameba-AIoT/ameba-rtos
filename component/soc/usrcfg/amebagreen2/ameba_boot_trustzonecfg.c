@@ -69,7 +69,9 @@ const SAU_CFG_TypeDef sau_config[SAU_ENTRY_NUM] = {
 };
 
 #define BD_RAM_START	(u32)__km4tz_bd_ram_start__
-#define BD_PSRAM_START 	(u32)__km4tz_bd_psram_start__
+/* Non-secure PSRAM starts at the first segment after the TZ segment (KM4NS),
+ * not at the AP image (which is now the last segment). */
+#define BD_PSRAM_START 	(u32)__non_secure_psram_start__
 #define BD_PSRAM_END	(u32)__non_secure_psram_end__
 
 const TZ_CFG_TypeDef mpc3_config[MPC_ENTRY_NUM] =						/* Security configuration for PSRAM */

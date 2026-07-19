@@ -66,6 +66,7 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 #if defined(CONFIG_USBD_CDC_ECM)
 
 static const u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+static const u8 dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56};
 
 static const usbd_cdc_ecm_priv_data_t ecm_priv = {
 	mac_valid,
@@ -480,8 +481,8 @@ static void usb_eth_link_change_thread(void *param)
 
 	while (1) {
 #if defined(CONFIG_USBD_CDC_ECM)
-		link_is_up = usbd_cdc_ecm_get_connect_status();
-		mac = (u8 *)usbd_cdc_ecm_get_mac_str();
+		link_is_up = usbd_cdc_ecm_get_link_status();
+		mac = (u8 *)dhcp_server_mac;
 		if (cdc_ecm_link_disconnected) {
 			cdc_ecm_link_disconnected = 0;
 			link_is_up = 0;

@@ -30,7 +30,7 @@
 #include <stack/host/keys.h>
 #include <stack/host/settings.h>
 
-static uint16_t bt_stack_gap_vendor_cmd_req(void *param)
+uint16_t bt_stack_gap_vendor_cmd_req(void *param)
 {
 	struct net_buf *net_buf = NULL;
 	rtk_bt_gap_vendor_cmd_param_t *vendor = (rtk_bt_gap_vendor_cmd_param_t *)param;

@@ -638,101 +638,7 @@ void ip_nat_set_tcp_timeout(u32_t secs)
 	ip_nat_tcp_max_timeout = secs * 1000;
 }
 
-/**
- * @brief Rewrite a TCP port field and update the TCP checksum.
- * @param tcphdr TCP header to modify.
- * @param dest 0 = rewrite source port, 1 = rewrite destination port.
- * @param newval New port value in network byte order.
- */
-static void ip_nat_manipulate_port_tcp(struct tcp_hdr *tcphdr, u8_t dest, u16_t newval)
-{
-	u16_t local_csum = tcphdr->chksum;
-	u16_t oldval;
-	unsigned char *optr = (unsigned char *)&oldval;
-	unsigned char *nptr = (unsigned char *)&newval;
-
-	if (dest == 0) {
-		oldval = tcphdr->src;
-		tcphdr->src = newval;
-	} else {
-		oldval = tcphdr->dest;
-		tcphdr->dest = newval;
-	}
-
-	/* Checksum update: subtract old field, add new field. */
-	unsigned char *chksum = (unsigned char *)&local_csum;
-	long x, old, new;
-	x = chksum[0] * 256 + chksum[1];
-	x = ~x & 0xFFFF;
-
-	old = optr[0] * 256 + optr[1];
-	x -= old & 0xffff;
-	if (x <= 0) {
-		x--;
-		x &= 0xffff;
-	}
-
-	new = nptr[0] * 256 + nptr[1];
-	x += new & 0xffff;
-	if (x & 0x10000) {
-		x++;
-		x &= 0xffff;
-	}
-
-	x = ~x & 0xFFFF;
-	chksum[0] = x / 256;
-	chksum[1] = x & 0xff;
-	tcphdr->chksum = local_csum;
-}
-
-/**
- * @brief Rewrite an IP address field referenced by the TCP header pseudo-header and update the TCP checksum.
- * @param tcphdr TCP header whose checksum is updated.
- * @param field Pointer to the IP address field (in the IP header) to rewrite.
- * @param newval New IP address value in network byte order.
- */
-void ip_nat_manipulate_address_tcp(struct tcp_hdr *tcphdr, ip4_addr_p_t *field, u32_t newval)
-{
-	u16_t local_csum = tcphdr->chksum;
-	u32_t local_target = field->addr;
-	u32_t new_target = newval;
-	unsigned char *optr = (unsigned char *)&local_target;
-	unsigned char *nptr = (unsigned char *)&new_target;
-	int olen = 4;
-	int nlen = 4;
-
-	unsigned char *chksum = (unsigned char *)&local_csum;
-	long x, old, new;
-	x = chksum[0] * 256 + chksum[1];
-	x = ~x & 0xFFFF;
-	while (olen) {
-		old = optr[0] * 256 + optr[1];
-		optr += 2;
-		x -= old & 0xffff;
-		if (x <= 0) {
-			x--;
-			x &= 0xffff;
-		}
-		olen -= 2;
-	}
-	while (nlen) {
-		new = nptr[0] * 256 + nptr[1];
-		nptr += 2;
-		x += new & 0xffff;
-		if (x & 0x10000) {
-			x++;
-			x &= 0xffff;
-		}
-		nlen -= 2;
-	}
-	x = ~x & 0xFFFF;
-	chksum[0] = x / 256;
-	chksum[1] = x & 0xff;
-	tcphdr->chksum = local_csum;
-
-}
 #endif // LWIP_TCP
-
 
 #if LWIP_UDP
 /**
@@ -744,146 +650,130 @@ void ip_nat_set_udp_timeout(u32_t secs)
 	ip_nat_udp_max_timeout = secs * 1000;
 }
 
+#endif // LWIP_UDP
+
 /**
- * @brief Rewrite a UDP port field and update the UDP checksum.
+ * @brief  Incrementally update a 16-bit checksum for a field changing from old to new (RFC1624).
+ * @param  chksum Current checksum value (network byte order in memory).
+ * @param  old Bytes of the old field value.
+ * @param  new Bytes of the new field value.
+ * @param  len Field length in bytes (2 = port, 4 = IPv4 address).
+ * @return Updated checksum.
+ */
+static u16_t ip_nat_chksum_adjust(u16_t chksum, const u8_t *old, const u8_t *new, u8_t len)
+{
+	unsigned char *c = (unsigned char *)&chksum;
+	long x, v;
+	u8_t n = len;
+
+	x = ~(c[0] * 256 + c[1]) & 0xFFFF;
+	while (n) {
+		v = old[0] * 256 + old[1];
+		old += 2;
+		x -= v & 0xffff;
+		if (x <= 0) {
+			x--;
+			x &= 0xffff;
+		}
+		n -= 2;
+	}
+	n = len;
+	while (n) {
+		v = new[0] * 256 + new[1];
+		new += 2;
+		x += v & 0xffff;
+		if (x & 0x10000) {
+			x++;
+			x &= 0xffff;
+		}
+		n -= 2;
+	}
+	x = ~x & 0xFFFF;
+	c[0] = x / 256;
+	c[1] = x & 0xff;
+	return chksum;
+}
+
+#if LWIP_TCP
+/**
+ * @brief Rewrite a TCP port field and update the TCP checksum incrementally.
+ * @param tcphdr TCP header to modify.
+ * @param dest 0 = rewrite source port, 1 = rewrite destination port.
+ * @param newval New port value in network byte order.
+ */
+static void ip_nat_tcp_rewrite_port(struct tcp_hdr *tcphdr, u8_t dest, u16_t newval)
+{
+	u16_t oldval;
+
+	if (dest) {
+		oldval = tcphdr->dest;
+		tcphdr->dest = newval;
+	} else {
+		oldval = tcphdr->src;
+		tcphdr->src = newval;
+	}
+	tcphdr->chksum = ip_nat_chksum_adjust(tcphdr->chksum, (const u8_t *)&oldval, (const u8_t *)&newval, 2);
+}
+
+/**
+ * @brief Update the TCP checksum for a change of an IPv4 address in its pseudo-header.
+ * @param tcphdr TCP header whose checksum is updated.
+ * @param oldip Old IPv4 address (network byte order).
+ * @param newip New IPv4 address (network byte order).
+ */
+static void ip_nat_tcp_adjust_addr(struct tcp_hdr *tcphdr, u32_t oldip, u32_t newip)
+{
+	tcphdr->chksum = ip_nat_chksum_adjust(tcphdr->chksum, (const u8_t *)&oldip, (const u8_t *)&newip, 4);
+}
+#endif /* LWIP_TCP */
+
+#if LWIP_UDP
+/**
+ * @brief Rewrite a UDP port field and update the UDP checksum incrementally.
  * @param udphdr UDP header to modify.
  * @param dest 0 = rewrite source port, 1 = rewrite destination port.
  * @param newval New port value in network byte order.
  */
-static void ip_nat_manipulate_port_udp(struct udp_hdr *udphdr, u8_t dest, u16_t newval)
+static void ip_nat_udp_rewrite_port(struct udp_hdr *udphdr, u8_t dest, u16_t newval)
 {
-	u16_t local_csum = udphdr->chksum;
 	u16_t oldval;
-	unsigned char *optr = (unsigned char *)&oldval;
-	unsigned char *nptr = (unsigned char *)&newval;
 
-	if (dest == 0) {
-		oldval = udphdr->src;
-		udphdr->src = newval;
-	} else {
+	if (dest) {
 		oldval = udphdr->dest;
 		udphdr->dest = newval;
+	} else {
+		oldval = udphdr->src;
+		udphdr->src = newval;
 	}
-
-	/* Checksum update: subtract old field, add new field. */
-	unsigned char *chksum = (unsigned char *)&local_csum;
-	long x, old, new;
-	x = chksum[0] * 256 + chksum[1];
-	x = ~x & 0xFFFF;
-
-	old = optr[0] * 256 + optr[1];
-	x -= old & 0xffff;
-	if (x <= 0) {
-		x--;
-		x &= 0xffff;
-	}
-
-	new = nptr[0] * 256 + nptr[1];
-	x += new & 0xffff;
-	if (x & 0x10000) {
-		x++;
-		x &= 0xffff;
-	}
-
-	x = ~x & 0xFFFF;
-	chksum[0] = x / 256;
-	chksum[1] = x & 0xff;
-	udphdr->chksum = local_csum;
+	udphdr->chksum = ip_nat_chksum_adjust(udphdr->chksum, (const u8_t *)&oldval, (const u8_t *)&newval, 2);
 }
 
 /**
- * @brief Rewrite an IP address field referenced by the UDP header pseudo-header and update the UDP checksum.
+ * @brief Update the UDP checksum for a change of an IPv4 address in its pseudo-header.
  * @param udphdr UDP header whose checksum is updated.
- * @param field Pointer to the IP address field (in the IP header) to rewrite.
- * @param newval New IP address value in network byte order.
+ * @param oldip Old IPv4 address (network byte order).
+ * @param newip New IPv4 address (network byte order).
  */
-void ip_nat_manipulate_address_udp(struct udp_hdr *udphdr, ip4_addr_p_t *field, u32_t newval)
+static void ip_nat_udp_adjust_addr(struct udp_hdr *udphdr, u32_t oldip, u32_t newip)
 {
-	u16_t local_csum = udphdr->chksum;
-	u32_t local_target = field->addr;
-	u32_t new_target = newval;
-	unsigned char *optr = (unsigned char *)&local_target;
-	unsigned char *nptr = (unsigned char *)&new_target;
-	int olen = 4;
-	int nlen = 4;
-
-	unsigned char *chksum = (unsigned char *)&local_csum;
-	long x, old, new;
-	x = chksum[0] * 256 + chksum[1];
-	x = ~x & 0xFFFF;
-	while (olen) {
-		old = optr[0] * 256 + optr[1];
-		optr += 2;
-		x -= old & 0xffff;
-		if (x <= 0) {
-			x--;
-			x &= 0xffff;
-		}
-		olen -= 2;
-	}
-	while (nlen) {
-		new = nptr[0] * 256 + nptr[1];
-		nptr += 2;
-		x += new & 0xffff;
-		if (x & 0x10000) {
-			x++;
-			x &= 0xffff;
-		}
-		nlen -= 2;
-	}
-	x = ~x & 0xFFFF;
-	chksum[0] = x / 256;
-	chksum[1] = x & 0xff;
-	udphdr->chksum = local_csum;
-
+	udphdr->chksum = ip_nat_chksum_adjust(udphdr->chksum, (const u8_t *)&oldip, (const u8_t *)&newip, 4);
 }
-#endif // LWIP_UDP
+#endif /* LWIP_UDP */
 
 /**
- * @brief Rewrite an IP address field in the IP header and update the IP header checksum.
- * @param iphdr IP header whose checksum is updated.
- * @param field Pointer to the src or dst address field within iphdr to rewrite.
- * @param newval New IP address value in network byte order.
+ * @brief Rewrite an IPv4 address field in the IP header and update the IP header checksum.
+ * @param iph IP header whose checksum is updated.
+ * @param field Pointer to the src or dst address field within @p iph to rewrite.
+ * @param newval New IPv4 address value in network byte order.
  */
-void ip_nat_manipulate_address(struct ip_hdr *iphdr, ip4_addr_p_t *field, u32_t newval)
+static void ip_nat_ip_rewrite_addr(struct ip_hdr *iph, ip4_addr_p_t *field, u32_t newval)
 {
-	u16_t local_csum = IPH_CHKSUM(iphdr);
-	u32_t local_target = field->addr;
-	u32_t new_target = newval;
-	unsigned char *optr = (unsigned char *)&local_target;
-	unsigned char *nptr = (unsigned char *)&new_target;
-	int olen = 4;
-	int nlen = 4;
-	unsigned char *chksum = (unsigned char *)&local_csum;
-	long x, old, new;
+	u16_t chksum = IPH_CHKSUM(iph);
+	u32_t oldval = field->addr;
 
-	x = chksum[0] * 256 + chksum[1];
-	x = ~x & 0xFFFF;
-	while (olen) {
-		old = optr[0] * 256 + optr[1];
-		optr += 2;
-		x -= old & 0xffff;
-		if (x <= 0) {
-			x--;
-			x &= 0xffff;
-		}
-		olen -= 2;
-	}
-	while (nlen) {
-		new = nptr[0] * 256 + nptr[1];
-		nptr += 2;
-		x += new & 0xffff;
-		if (x & 0x10000) {
-			x++;
-			x &= 0xffff;
-		}
-		nlen -= 2;
-	}
-	x = ~x & 0xFFFF;
-	chksum[0] = x / 256;
-	chksum[1] = x & 0xff;
+	chksum = ip_nat_chksum_adjust(chksum, (const u8_t *)&oldval, (const u8_t *)&newval, 4);
 
-	IPH_CHKSUM(iphdr) = local_csum;
+	IPH_CHKSUM(iph) = chksum;
 	field->addr = newval;
 }
 
@@ -910,7 +800,7 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 				rtos_mutex_give(nat_entry_lock);
 				return;
 			}
-			ip_nat_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
+			ip_nat_ip_rewrite_addr(iphdr, &iphdr->dest, NEntry->src);
 			rtos_mutex_give(nat_entry_lock);
 			return;
 		} else if ((IPH_OFFSET(iphdr) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
@@ -919,7 +809,7 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 			NEntry = ip_nat_entry_search(IP_PROTO_ICMP, iphdr->src.addr, 0, 0, 1, 1, 0, 0);
 
 			if (NEntry) {
-				ip_nat_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
+				ip_nat_ip_rewrite_addr(iphdr, &iphdr->dest, NEntry->src);
 			} else {
 				//RTK_LOGI(NOTAG, "\n\r");
 				//RTK_LOGI(NOTAG, "\n\r ICMP ip_nat_rx_packet NOT found!!!");
@@ -950,9 +840,9 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 		}
 
 		/* Restore destination port (mport -> sport) and destination IP (WAN IP -> LAN IP). */
-		ip_nat_manipulate_port_tcp(tcphdr, 1, NEntry->sport);
-		ip_nat_manipulate_address_tcp(tcphdr, &iphdr->dest, NEntry->src);
-		ip_nat_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
+		ip_nat_tcp_rewrite_port(tcphdr, 1, NEntry->sport);
+		ip_nat_tcp_adjust_addr(tcphdr, iphdr->dest.addr, NEntry->src);
+		ip_nat_ip_rewrite_addr(iphdr, &iphdr->dest, NEntry->src);
 
 		if ((TCPH_FLAGS(tcphdr) & (TCP_SYN | TCP_ACK)) == (TCP_SYN | TCP_ACK)) {
 			NEntry->syn_acked = 1;
@@ -992,9 +882,9 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 			}
 
 			/* Restore destination port (mport -> sport) and destination IP (WAN IP -> LAN IP). */
-			ip_nat_manipulate_port_udp(udphdr, 1, NEntry->sport);
-			ip_nat_manipulate_address_udp(udphdr, &iphdr->dest, NEntry->src);
-			ip_nat_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
+			ip_nat_udp_rewrite_port(udphdr, 1, NEntry->sport);
+			ip_nat_udp_adjust_addr(udphdr, iphdr->dest.addr, NEntry->src);
+			ip_nat_ip_rewrite_addr(iphdr, &iphdr->dest, NEntry->src);
 			rtos_mutex_give(nat_entry_lock);
 
 			return;
@@ -1002,7 +892,7 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 			rtos_mutex_take(nat_entry_lock, MUTEX_WAIT_TIMEOUT);
 			NEntry = ip_nat_entry_search(IP_PROTO_UDP, iphdr->src.addr, 0, 0, 1, 1, 0, 0);
 			if (NEntry) {
-				ip_nat_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
+				ip_nat_ip_rewrite_addr(iphdr, &iphdr->dest, NEntry->src);
 			} else {
 				//RTK_LOGI(NOTAG, "\n\r");
 				//RTK_LOGI(NOTAG, "\n\r %d UDP ip_nat_rx_packet NOT found!!!",__LINE__);
@@ -1029,6 +919,11 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 	struct nat_table *NEntry1;
 	u16_t frag_offset;
 
+	/* Downlink return path: already DNAT'd in ip_nat_rx_packet, nothing to do here. */
+	if (p->flags & PBUF_FLAG_NAT_DONE) {
+		return ERR_OK;
+	}
+
 #if LWIP_ICMP
 	if (IPH_PROTO(iphdr) == IP_PROTO_ICMP) {
 		frag_offset = lwip_ntohs(iphdr->_offset) & IP_OFFMASK;
@@ -1039,13 +934,13 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 			ip_nat_add_entry(IP_PROTO_ICMP, iphdr->src.addr, iecho->id, iphdr->dest.addr, iecho->id, 0);
 			rtos_mutex_give(nat_entry_lock);
 
-			ip_nat_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+			ip_nat_ip_rewrite_addr(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
 		} else if ((IPH_OFFSET(iphdr) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
 			rtos_mutex_take(nat_entry_lock, MUTEX_WAIT_TIMEOUT);
 			NEntry = ip_nat_entry_search(IP_PROTO_ICMP, iphdr->src.addr, 0, 0, 0, 1, iphdr->dest.addr, 0);
 
 			if (NEntry) {
-				ip_nat_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+				ip_nat_ip_rewrite_addr(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
 			} else {
 				//RTK_LOGI(NOTAG, "\n\r");
 				//RTK_LOGI(NOTAG, "\n\r ICMP ip_nat_forward_packet NOT found!!!");
@@ -1084,45 +979,36 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 			rtos_mutex_give(nat_entry_lock);
 
 			/* Rewrite source port (sport -> mport) and source IP (LAN IP -> WAN IP). */
-			ip_nat_manipulate_port_tcp(tcphdr, 0, mport);  /* 0 = source port */
-			ip_nat_manipulate_address_tcp(tcphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
-			ip_nat_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+			ip_nat_tcp_rewrite_port(tcphdr, 0, mport);  /* 0 = source port */
+			ip_nat_tcp_adjust_addr(tcphdr, iphdr->src.addr, ip_2_ip4(&(output_iface->ip_addr))->addr);
+			ip_nat_ip_rewrite_addr(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
 		} else {
 			rtos_mutex_take(nat_entry_lock, MUTEX_WAIT_TIMEOUT);
 
 			NEntry = ip_nat_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, 0, 0, 0, 0, 0);
 			if (!NEntry) {
-				NEntry = ip_nat_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, tcphdr->dest, 1, 0, 0, 0);
-				if (NEntry) {
-					//RTK_LOGI(NOTAG, "\n\r %s %d TCP NAT RX has update DNAT --Do Nothing %08X sport=%d ~~~%08X dport=%d",__FUNCTION__, __LINE__, iphdr->src.addr, lwip_ntohs(tcphdr->src), iphdr->dest.addr, lwip_ntohs(tcphdr->dest));
+				NEntry1 = ip_nat_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, 0, 0, 0, iphdr->dest.addr, tcphdr->dest);
+				if (NEntry1) {
+					ip_nat_set_entry_idle(NEntry1);
+					NEntry1->src = iphdr->src.addr;
+					NEntry1->sport = tcphdr->src;
+					NEntry1->ts = sys_now();
+					NEntry1->dest = iphdr->dest.addr;
+					NEntry1->dport = tcphdr->dest;
+					NEntry1->app_use = 0;
+					ip_nat_insert_new_rule(NEntry1);
 					rtos_mutex_give(nat_entry_lock);
-				} else {
-					NEntry1 = ip_nat_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, 0, 0, 0, iphdr->dest.addr, tcphdr->dest);
-					if (NEntry1) {
-						ip_nat_set_entry_idle(NEntry1);
-						NEntry1->src = iphdr->src.addr;
-						NEntry1->sport = tcphdr->src;
-						NEntry1->ts = sys_now();
-						NEntry1->dest = iphdr->dest.addr;
-						NEntry1->dport = tcphdr->dest;
-						NEntry1->app_use = 0;
-						//RTK_LOGI(NOTAG, "\n\r Update E %08X %d %08X %d", NEntry1->src,lwip_ntohs(NEntry1->sport), NEntry1->dest, lwip_ntohs(NEntry1->dport));
-						ip_nat_insert_new_rule(NEntry1);
-						//RTK_LOGI(NOTAG, "\n\r %d ~~%08X %d %08X %d~~", __LINE__, NEntry1->src, lwip_ntohs(NEntry1->sport), NEntry1->dest, lwip_ntohs(NEntry1->dport));
-						//RTK_LOGI(NOTAG, "\n\r %d ~~%08X %d %08X %d~~", __LINE__, iphdr->src.addr, lwip_ntohs(tcphdr->src), iphdr->dest.addr, lwip_ntohs(tcphdr->dest));
-						rtos_mutex_give(nat_entry_lock);
 
-						ip_nat_manipulate_port_tcp(tcphdr, 0, NEntry1->mport);
-						ip_nat_manipulate_address_tcp(tcphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
-						ip_nat_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
-						return ERR_OK;
-					}
-					rtos_mutex_give(nat_entry_lock);
-#if LWIP_ICMP
-					icmp_dest_unreach(p, ICMP_DUR_PORT);
-#endif
-					return ERR_RTE; /* Drop unknown TCP session */
+					ip_nat_tcp_rewrite_port(tcphdr, 0, NEntry1->mport);
+					ip_nat_tcp_adjust_addr(tcphdr, iphdr->src.addr, ip_2_ip4(&(output_iface->ip_addr))->addr);
+					ip_nat_ip_rewrite_addr(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+					return ERR_OK;
 				}
+				rtos_mutex_give(nat_entry_lock);
+#if LWIP_ICMP
+				icmp_dest_unreach(p, ICMP_DUR_PORT);
+#endif
+				return ERR_RTE; /* Drop unknown TCP session */
 			} else {
 				if (NEntry->dest != iphdr->dest.addr || NEntry->dport != tcphdr->dest) {
 					rtos_mutex_give(nat_entry_lock);
@@ -1150,9 +1036,9 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 				rtos_mutex_give(nat_entry_lock);
 
 				/* Rewrite source port (sport -> mport) and source IP (LAN IP -> WAN IP). */
-				ip_nat_manipulate_port_tcp(tcphdr, 0, mport);
-				ip_nat_manipulate_address_tcp(tcphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
-				ip_nat_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+				ip_nat_tcp_rewrite_port(tcphdr, 0, mport);
+				ip_nat_tcp_adjust_addr(tcphdr, iphdr->src.addr, ip_2_ip4(&(output_iface->ip_addr))->addr);
+				ip_nat_ip_rewrite_addr(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
 			}
 			return ERR_OK;
 		}
@@ -1162,7 +1048,6 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 #if LWIP_UDP
 	if (IPH_PROTO(iphdr) == IP_PROTO_UDP) {
 		struct udp_hdr *udphdr = (struct udp_hdr *)((u8_t *)p->payload + IPH_HL(iphdr) * 4);
-		struct nat_table *NEntry1;
 		u16_t mport;
 
 		frag_offset = lwip_ntohs(iphdr->_offset) & IP_OFFMASK;
@@ -1171,29 +1056,19 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 
 			NEntry = ip_nat_entry_search(IP_PROTO_UDP, iphdr->src.addr, udphdr->src, 0, 0, 0, 0, 0);
 			if (!NEntry) {
-				NEntry1 = ip_nat_entry_search(IP_PROTO_UDP, iphdr->src.addr, udphdr->src, udphdr->dest, 1, 0, 0, 0);
-				if (NEntry1) {
-					if (NEntry1->src == iphdr->dest.addr) {
-						//RTK_LOGI(NOTAG, "\n\r %s %d NAT RX has update DNAT --Do Nothing ",__FUNCTION__, __LINE__);
-					} else {
-						RTK_LOGI(NOTAG, "\n\r %s %d NAT RX has NOT update forward update %X", __FUNCTION__, __LINE__, NEntry1->src);
-					}
+				mport = ip_nat_add_entry(IP_PROTO_UDP, iphdr->src.addr, udphdr->src,
+								 iphdr->dest.addr, udphdr->dest, 0);
+				if (mport == 0) {
 					rtos_mutex_give(nat_entry_lock);
-				} else {
-					mport = ip_nat_add_entry(IP_PROTO_UDP, iphdr->src.addr, udphdr->src,
-									 iphdr->dest.addr, udphdr->dest, 0);
-					if (mport == 0) {
-						rtos_mutex_give(nat_entry_lock);
-						return ERR_RTE;
-					}
-
-					rtos_mutex_give(nat_entry_lock);
-
-					/* Rewrite source port (sport -> mport) and source IP (LAN IP -> WAN IP). */
-					ip_nat_manipulate_port_udp(udphdr, 0, mport);
-					ip_nat_manipulate_address_udp(udphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
-					ip_nat_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+					return ERR_RTE;
 				}
+
+				rtos_mutex_give(nat_entry_lock);
+
+				/* Rewrite source port (sport -> mport) and source IP (LAN IP -> WAN IP). */
+				ip_nat_udp_rewrite_port(udphdr, 0, mport);
+				ip_nat_udp_adjust_addr(udphdr, iphdr->src.addr, ip_2_ip4(&(output_iface->ip_addr))->addr);
+				ip_nat_ip_rewrite_addr(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
 			} else {
 				if (NEntry->dest != iphdr->dest.addr || NEntry->dport != udphdr->dest) {
 					if (NEntry->src == iphdr->src.addr && NEntry->sport == udphdr->src) {
@@ -1221,16 +1096,16 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 				rtos_mutex_give(nat_entry_lock);
 
 				/* Rewrite source port (sport -> mport) and source IP (LAN IP -> WAN IP). */
-				ip_nat_manipulate_port_udp(udphdr, 0, mport);
-				ip_nat_manipulate_address_udp(udphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
-				ip_nat_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+				ip_nat_udp_rewrite_port(udphdr, 0, mport);
+				ip_nat_udp_adjust_addr(udphdr, iphdr->src.addr, ip_2_ip4(&(output_iface->ip_addr))->addr);
+				ip_nat_ip_rewrite_addr(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
 			}
 		} else if ((IPH_OFFSET(iphdr) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
 			rtos_mutex_take(nat_entry_lock, MUTEX_WAIT_TIMEOUT);
 
 			NEntry = ip_nat_entry_search(IP_PROTO_UDP, iphdr->src.addr, 0, 0, 0, 1, iphdr->dest.addr, 0);
 			if (NEntry) {
-				ip_nat_manipulate_address(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
+				ip_nat_ip_rewrite_addr(iphdr, &iphdr->src, ip_2_ip4(&(output_iface->ip_addr))->addr);
 			} else {
 				//RTK_LOGI(NOTAG, "\n\r");
 				//RTK_LOGI(NOTAG, "\n\r UDP frag ip_nat_forward_packet NOT found!!!");
@@ -1292,7 +1167,15 @@ err_t ip_nat_enqueue(struct pbuf *p, struct netif *inp)
 		return ERR_OK;
 	}
 	if (ip4_addr_cmp(&iphdr->dest, ip_2_ip4(&(inp->ip_addr)))) {
+		u32_t orig_dest = iphdr->dest.addr;
+
 		ip_nat_rx_packet(p, iphdr);
+
+		/* DNAT rewrites the destination to the LAN client; flag the packet so the
+		   forward path skips the redundant downlink NAT lookups. */
+		if (iphdr->dest.addr != orig_dest) {
+			p->flags |= PBUF_FLAG_NAT_DONE;
+		}
 	}
 
 	return ERR_OK;

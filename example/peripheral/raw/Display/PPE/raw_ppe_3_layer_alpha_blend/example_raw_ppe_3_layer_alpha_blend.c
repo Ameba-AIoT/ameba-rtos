@@ -194,7 +194,7 @@ static void ppe_3_layer_alpha_blend(void *para)
 	}
 
 #if (PPE_MODE == INTR_MODE)
-	InterruptRegister(PPE_Handler, PPE_IRQ, NULL, 4);
+	InterruptRegister(PPE_Handler, PPE_IRQ, (u32)NULL, 4);
 	InterruptEn(PPE_IRQ, 4);
 	PPE_MaskINTConfig(PPE_FR_OVER_INT, ENABLE);
 #endif

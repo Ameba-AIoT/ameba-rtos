@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    inic_ipc_host_trx.h
+  * @file    whc_ipc_host_api.h
   * @author
   * @version
   * @date
@@ -25,4 +25,4 @@
 /* -------------------------- Function declaration -------------------------- */
 int whc_ipc_host_api_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
 
-#endif /* __INIC_IPC_HOST_TRX_H__ */
+#endif /* __WHC_IPC_HOST_API_H__ */

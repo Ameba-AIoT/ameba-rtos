@@ -1881,7 +1881,7 @@ SD_RESULT SD_Init(void)
 	/* Initialize SD host */
 	SDIOH_Init(sdioh_config.sdioh_bus_width);
 
-	InterruptRegister((IRQ_FUN)SD_IRQHandler, SDIO_HOST_IRQ, NULL, INT_PRI_HIGH);
+	InterruptRegister((IRQ_FUN)SD_IRQHandler, SDIO_HOST_IRQ, (u32)NULL, INT_PRI_HIGH);
 	InterruptEn(SDIO_HOST_IRQ, INT_PRI_HIGH);
 
 	if ((sdioh_config.sdioh_cd_pin == _PNC) || (GPIO_ReadDataBit(sdioh_config.sdioh_cd_pin) == 0)) {

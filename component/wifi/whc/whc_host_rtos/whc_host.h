@@ -76,4 +76,4 @@ void whc_host_rx_handler(u8 *buf);
 void whc_host_recv_dispatch(u8 *buf, u32 copy_len);
 struct whc_txbuf_info_t *whc_host_alloc_buf_info(u8 *buf, u32 len, void *alloc_buf, u8 is_skb);
 
-#endif /* __INIC_HOST_H__ */
+#endif /* __WHC_HOST_H__ */

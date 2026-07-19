@@ -82,11 +82,16 @@ enum CHIPEN_WORK_MODE {
 };
 
 
+/* In Zephyr, CPU_ID is a macro (kernel_structs.h).  Guard the enum tag so the
+ * preprocessor does not expand CPU_ID inside "enum CPU_ID { ... }" and produce
+ * a syntax error ("expected '{' before '(' token"). */
+#ifndef CPU_ID
 enum CPU_ID {
 	LP_CPU_ID = 0,
 	NP_CPU_ID = 1,
 	AP_CPU_ID = 2,
 };
+#endif
 
 
 #define SYS_RESET_KEY 0x96969696

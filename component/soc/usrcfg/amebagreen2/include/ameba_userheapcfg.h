@@ -19,19 +19,22 @@
 
 #else
 
-#if defined(CONFIG_ARM_CORE_CM4_KM4TZ)
 #define SRAM_HEAP0_START					__bdram_heap_buffer_start__
 #define SRAM_HEAP0_SIZE						__bdram_heap_buffer_size__
-#else
-#define SRAM_HEAP0_START					__bdram_heap_buffer_start__
-#define SRAM_HEAP0_SIZE						__bdram_heap_buffer_size__
-#endif
 
+#if defined(CONFIG_ARM_CORE_CM4_KM4TZ)
+/* AP(TZ) core owns the last PSRAM segment plus all capacity up to the
+ * runtime-measured boundary. Register the whole [image_end, PsramHeapTop) as
+ * one region so it extends beyond the PSRAM_END window. The static
+ * __psram_heap_buffer_size__ is used only as a "this core has PSRAM heap" flag
+ * (0 only when PSRAM is disabled). */
+#define PSRAM_HEAP0_START					__psram_heap_buffer_start__
+#define PSRAM_HEAP0_SIZE					((u32)__psram_heap_buffer_size__ ? (ChipInfo_PsramHeapTop() - (u32)__psram_heap_buffer_start__) : 0)
+#else
+/* NP core: fixed image region, static tail only, no runtime extension. */
 #define PSRAM_HEAP0_START					__psram_heap_buffer_start__
 #define PSRAM_HEAP0_SIZE					__psram_heap_buffer_size__
-
-#define PSRAM_HEAP1_START					__psram_heap_extend_start__
-#define PSRAM_HEAP1_SIZE					__psram_heap_extend_size__
+#endif
 #endif
 
 #endif

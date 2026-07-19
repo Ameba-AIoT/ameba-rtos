@@ -7,8 +7,6 @@ extern struct whc_sdio whc_sdio_priv;
 #define SCAN_MAX_NUM	64
 
 /* for test demo */
-/* type */
-#define WHC_WIFI_TEST  0x1
 /* subtype */
 #define WHC_WIFI_TEST_GET_MAC_ADDR   0x1
 #define WHC_WIFI_TEST_GET_IP         0x2
@@ -133,9 +131,9 @@ void whc_host_softap_handler(u8 *buf)
 
 void whc_host_pkt_rx_to_user(u8 *payload)
 {
-	//(void)len;
-	u32 event = *(u32 *)payload;
-	u8 *ptr = payload;
+	/* payload = buf + SIZE_RX_DESC, so payload[0..7] is whc_cmd_path_hdr */
+	u8 *ptr = payload + sizeof(struct whc_cmd_path_hdr);
+	u32 event = *(u32 *)ptr;
 	u8 id;
 	u32 ipaddr, netmask, gw;
 	uint8_t idx = 0;
@@ -388,8 +386,7 @@ void whc_host_wifi_disconnect(void)
 }
 
 /**
-* @brief  enable/disable ap mode
-* @param  state: 0: disable, 1: enable
+* @brief  stop (disable) ap mode.
 * @return none.
 */
 void whc_host_wifi_stop_ap(void)
@@ -491,52 +488,50 @@ void whc_sdio_host_get_stanum(int *num)
 /**
 * @brief  send buf to dev
 * @param  buf: data buf to be sent.
-* @param  len: real buf address, to be freed after sent.
+* @param  len: length of buf in bytes.
 * @return none.
 */
 void whc_sdio_host_send_to_dev(uint8_t *buf, uint32_t len)
 {
+	struct whc_cmd_path_hdr *hdr;
 	uint8_t *txbuf = NULL;
-	uint32_t txsize = len + SIZE_TX_DESC;
+	uint32_t txsize = len + sizeof(struct whc_cmd_path_hdr) + SIZE_TX_DESC;
 
-	/* construct struct whc_buf_info & whc_buf_info_t */
 	txbuf = WHC_MALLOC(txsize);
-
 	if (txbuf == NULL) {
 		printf("%s mem fail \r\n", __func__);
-		if (txbuf) {
-			WHC_FREE(txbuf);
-		}
 		return;
 	}
 
-	/* copy data */
-	memcpy(txbuf + SIZE_TX_DESC, buf, len);
+	hdr = (struct whc_cmd_path_hdr *)(txbuf + SIZE_TX_DESC);
+	hdr->event = WHC_WIFI_EVT_CMD;
+	hdr->len = len;
+	memcpy(txbuf + SIZE_TX_DESC + sizeof(struct whc_cmd_path_hdr), buf, len);
 
-	/* send ret_msg + ret_val(buf, len) */
-	rtw_sdio_send_data(txbuf, txsize, NULL);
+	whc_host_sdio_send_data(txbuf, txsize, NULL);
 
 	WHC_FREE(txbuf);
 }
 
 void whc_sdio_host_send_to_dev_block(uint8_t *buf, uint32_t len, uint8_t *ret, uint32_t ret_len)
 {
+	struct whc_cmd_path_hdr *hdr;
 	uint8_t *txbuf = NULL;
-	uint32_t txsize = len + SIZE_TX_DESC;
+	uint32_t txsize = len + sizeof(struct whc_cmd_path_hdr) + SIZE_TX_DESC;
 	int val;
-	/* construct struct whc_buf_info & whc_buf_info_t */
-	txbuf = WHC_MALLOC(txsize);
 
+	txbuf = WHC_MALLOC(txsize);
 	if (txbuf == NULL) {
 		printf("%s mem fail \r\n", __func__);
 		return;
 	}
 
-	/* copy data */
-	memcpy(txbuf + SIZE_TX_DESC, buf, len);
+	hdr = (struct whc_cmd_path_hdr *)(txbuf + SIZE_TX_DESC);
+	hdr->event = WHC_WIFI_EVT_CMD;
+	hdr->len = len;
+	memcpy(txbuf + SIZE_TX_DESC + sizeof(struct whc_cmd_path_hdr), buf, len);
 
-	/* send ret_msg + ret_val(buf, len) */
-	rtw_sdio_send_data(txbuf, txsize, NULL);
+	whc_host_sdio_send_data(txbuf, txsize, NULL);
 
 	if (ret != NULL) {
 		whc_sdio_priv.ret = ret;

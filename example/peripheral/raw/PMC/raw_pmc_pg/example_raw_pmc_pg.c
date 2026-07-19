@@ -62,7 +62,7 @@ void pmu_aontimer_wakeup_task(void)
 	AONTimer_Setting(WAKEUP_TIME);
 	AONTimer_INT(ENABLE);
 
-	InterruptRegister((IRQ_FUN)pmu_aontimer_int, AON_TIM_IRQ, NULL, 3);
+	InterruptRegister((IRQ_FUN)pmu_aontimer_int, AON_TIM_IRQ, (u32)NULL, 3);
 	InterruptEn(AON_TIM_IRQ, 3);
 	/*2. Call API or modify sleepcfg.c to set wakeup mask.*/
 	SOCPS_SetAPWakeEvent(WAKE_SRC_AON_TIM, ENABLE);

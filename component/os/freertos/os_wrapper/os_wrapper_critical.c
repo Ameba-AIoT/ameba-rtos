@@ -39,7 +39,7 @@ int rtos_critical_is_in_interrupt(void)
 #ifdef CONFIG_ARM_CORE_CM4
 	return (__get_xPSR() & 0x1FF) != 0;
 #elif defined(CONFIG_RSICV_CORE_KR4)
-	return plic_get_active_irq_id() != 0;
+	return CPU_InInterrupt() != 0;
 #else
 	return __get_IPSR() != 0;
 #endif

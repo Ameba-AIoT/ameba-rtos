@@ -68,12 +68,8 @@ u8 Valid_Boot_Idx_for_SiP_Psram[6] = {0, 1, 2, 6, 7, 8};
 u8 Valid_Boot_Idx_for_No_Psram[6] = {3, 4, 5, 6, 7, 8};
 
 /**
-* @brif  SocClk_Info select. One of Valid_Boot_Idx_for_SiP_Psram or Valid_Boot_Idx_for_No_Psram depend on different chip types
+* @brif  SocClk_Info select. Configured via menuconfig "SoC Clock Config".
+* One of Valid_Boot_Idx_for_SiP_Psram or Valid_Boot_Idx_for_No_Psram depend on different chip types
 * Boot_SocClk_Info_Idx is [0, sizeof(SocClk_Info)), Soc will set socclk by SocClk_Info[Boot_SocClk_Info_Idx]
 */
-#ifdef CONFIG_USB_DEVICE_EN
-u8 Boot_SocClk_Info_Idx = 6; /* Make sure the PLL_CLK for USB is an integer multiple of 48MHz */
-#else
-u8 Boot_SocClk_Info_Idx = 6; /* 480M has an acceptable impact on the RF performance of SiP Psram and SiP Flash */
-#endif
-
+u8 Boot_SocClk_Info_Idx = CONFIG_CLKCFG_IDX;

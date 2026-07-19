@@ -20,6 +20,11 @@
 extern "C" {
 #endif
 
+/* RTK API return-value contract:
+ *   ret == 0 : success (RTK_SUCCESS)
+ *   ret <  0 : error, magnitude is a rtk_error_code (e.g. -RTK_ERR_BADARG)
+ *   ret >  0 : success with extra status; values are module-local, defined by each
+ *              module (e.g. WiFi's enum rtw_api_status in wifi_api_types.h). */
 #define RTK_SUCCESS	0
 #define RTK_FAIL	(-1)
 

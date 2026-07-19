@@ -4,51 +4,29 @@
 #define rtw_read8(priv, addr) sdio_read8((priv), (addr))
 #define rtw_read16(priv, addr) sdio_read16((priv), (addr))
 #define rtw_read32(priv, addr) sdio_read32((priv), (addr))
-#define rtw_read_mem(priv, addr, cnt, mem) sdio_read_mem((priv), (addr), (cnt), (mem))
 #define rtw_read_port(priv, addr, cnt, mem) sdio_read_port((priv), (addr), (cnt), (mem))
 
 #define  rtw_write8(priv, addr, val) sdio_write8((priv), (addr), (val))
 #define  rtw_write16(priv, addr, val) sdio_write16((priv), (addr), (val))
 #define  rtw_write32(priv, addr, val) sdio_write32((priv), (addr), (val))
-#define  rtw_writeN(priv, addr, length, data) sdio_writeN((priv), (addr), (length), (data))
 
 #define rtw_write_port(priv, addr, cnt, mem) sdio_write_port((priv), (addr), (cnt), (mem))
 
 
-s32 sd_cmd52_read(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *pdata);
-s32 sd_cmd52_write(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *pdata);
-u8 sd_read8(struct whc_sdio *priv, u32 addr, s32 *err);
-u8 sd_f0_read8(struct whc_sdio *priv, u32 addr, s32 *err);
-void sd_f0_write8(struct whc_sdio *priv, u32 addr, u8 v, s32 *err);
-u16 sd_read16(struct whc_sdio *priv, u32 addr, s32 *err);
-u32 sd_read32(struct whc_sdio *priv, u32 addr, s32 *err);
-void sd_write8(struct whc_sdio *priv, u32 addr, u8 v, s32 *err);
-void sd_write16(struct whc_sdio *priv, u32 addr, u16 v, s32 *err);
-void sd_write32(struct whc_sdio *priv, u32 addr, u32 v, s32 *err);
-s32 sd_read(struct whc_sdio *priv, u32 addr, u32 cnt, void *pdata);
-s32 sd_write(struct whc_sdio *priv, u32 addr, u32 cnt, void *pdata);
+/* low-level primitives provided by the zephyr SDIO glue */
+int sdio_read_byte(void *func, uint32_t addr, uint8_t *pdata);
+int sdio_write_byte(void *func, uint32_t addr, uint8_t pdata);
+int sdio_read_fifo(void *func, uint32_t addr, uint8_t *pdata, int len);
+int sdio_write_fifo(void *func, uint32_t addr, uint8_t *pdata, int len);
 
 u8 sdio_read8(struct whc_sdio *priv, u32 addr);
 u16 sdio_read16(struct whc_sdio *priv, u32 addr);
 u32 sdio_read32(struct whc_sdio *priv, u32 addr);
-void sdio_read_mem(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *rmem);
 u32 sdio_read_port(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *mem);
-u8 sdio_f0_read8(struct whc_sdio *priv, u32 addr);
 s32 sdio_write8(struct whc_sdio *priv, u32 addr, u8 val);
 s32 sdio_write16(struct whc_sdio *priv, u32 addr, u16 val);
 s32 sdio_write32(struct whc_sdio *priv, u32 addr, u32 val);
-s32 sdio_writeN(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *pbuf);
-void sdio_write_mem(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *wmem);
 u32 sdio_write_port(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *mem);
-s32 sdio_local_read(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *pbuf);
-s32 sdio_local_write(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *pbuf);
-u8 sdio_cmd52_read1byte_local(struct whc_sdio *priv, u32 addr);
-u16 sdio_cmd52_read2byte_local(struct whc_sdio *priv, u32 addr);
-u32 sdio_cmd52_read4byte_local(struct whc_sdio *priv, u32 addr);
-u32 sdio_cmd53_read4byte_local(struct whc_sdio *priv, u32 addr);
-void sdio_cmd52_write1byte_local(struct whc_sdio *priv, u32 addr, u8 v);
-void sdio_cmd52_write2byte_local(struct whc_sdio *priv, u32 addr, u16 v);
-void sdio_cmd52_write4byte_local(struct whc_sdio *priv, u32 addr, u32 v);
 
 #endif
 

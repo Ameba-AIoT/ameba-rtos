@@ -61,7 +61,7 @@ int rtos_sema_take(rtos_sema_t p_handle, uint32_t wait_ms)
 	int status;
 	k_timeout_t timeout;
 
-	timeout.ticks = wait_ms;
+	timeout.ticks = K_MSEC(wait_ms);
 	status = k_sem_take(p_handle, timeout);
 	if (status == 0) {
 		return SUCCESS;

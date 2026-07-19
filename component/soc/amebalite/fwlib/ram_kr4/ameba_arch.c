@@ -129,6 +129,21 @@ void CPU_ClkSet(u32 Source)
   */
 u32 CPU_InInterrupt(void)
 {
+	/* xISRStackTop/xISRStack are defined in FreeRTOS port.c (AmebaLite_KR4).
+	 * Timer interrupt and ecall exception switch SP to the ISR stack before
+	 * calling any C code, but neither routes through PLIC, so
+	 * plic_get_active_irq_id() returns 0 for both.  Detect them by checking
+	 * whether the current SP falls inside the ISR stack region. */
+	extern u32 xISRStack[];
+	extern const u32 xISRStackTop;
+	u32 sp;
+
+	__asm__ volatile("mv %0, sp" : "=r"(sp));
+
+	if (sp >= (u32)xISRStack && sp < xISRStackTop) {
+		return 1;
+	}
+
 	return plic_get_active_irq_id() != 0;
 
 }

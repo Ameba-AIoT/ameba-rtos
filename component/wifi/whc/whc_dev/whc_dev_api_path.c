@@ -1094,10 +1094,13 @@ void whc_event_wifi_driver_is_mp(u32 api_id, u32 *param_buf)
 }
 
 /**
- * @brief  send a inic message and wait resut.
+ * @brief  send a whc message and wait result.
  * @param  ID[in]: api_id.
- * @param  param_buf[inout]: pointer to API parameter.
- * @return result of API.
+ * @param  param[in]: pointer to API parameter.
+ * @param  param_len[in]: length of param in bytes.
+ * @param  ret[out]: pointer to buffer for return value.
+ * @param  ret_len[in]: length of ret buffer in bytes.
+ * @return none.
  */
 void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 {
@@ -1179,7 +1182,7 @@ void whc_dev_wifi_event_indicate(u32 event_cmd, u8 *evt_info, s32 evt_len)
 	if (no_need_malloc) {
 		param = (u32 *)evt_info;
 		size = evt_len;
-		event_cmd &= ~((u32)1 << 31);  /* clear bit13 */
+		event_cmd &= ~((u32)1 << 31);  /* clear bit31 */
 	} else {
 		size = 2 * sizeof(u32) + evt_len;
 		param = (u32 *)rtos_mem_zmalloc(size);
@@ -1351,7 +1354,7 @@ void whc_dev_update_regd_event_indicate(struct rtw_country_code_table *table)
 
 
 /**
- * @brief  to initialize the host for WIFI api.
+ * @brief  to initialize the device for WIFI api.
  * @param  none.
  * @return none.
  */

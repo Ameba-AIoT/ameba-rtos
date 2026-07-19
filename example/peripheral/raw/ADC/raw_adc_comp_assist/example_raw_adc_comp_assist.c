@@ -98,7 +98,7 @@ void adc_comp_demo(void)
 
 	/* When input voltage of each channel (0~4) matches the criteria, comparator will send
 	wakeup signal to system and trigger ADC to sample */
-	InterruptRegister((IRQ_FUN)CMPIrqHandle, ADC_COMP_IRQ, NULL, INT_PRI_MIDDLE);
+	InterruptRegister((IRQ_FUN)CMPIrqHandle, ADC_COMP_IRQ, (u32)NULL, INT_PRI_MIDDLE);
 	InterruptEn(ADC_COMP_IRQ, INT_PRI_MIDDLE);
 
 	while (1);

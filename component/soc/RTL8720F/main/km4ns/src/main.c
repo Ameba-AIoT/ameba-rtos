@@ -7,17 +7,33 @@
 #ifdef CONFIG_MBEDTLS_ENABLED
 #include "threading_alt.h"
 #endif
-#if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
-#endif
 #if defined(CONFIG_BT) && defined(CONFIG_BT_INIC)
 #include "bt_inic.h"
 #endif
-#if defined(CONFIG_SDN_DEV)
-void sdn_client_init(void);
-#endif
 static const char *const TAG = "MAIN";
 u32 use_hw_crypto_func;
+
+_WEAK void wifi_init(void)          {}
+_WEAK void wififw_task_create(void) {}
+_WEAK void sdn_client_init(void)    {}
+_WEAK void coex_ipc_dev_init(void)  {}
+
+/*
+ * WiFi/OS power-mgmt integration points referenced by other SEALED libs
+ * (lib_freertos port idle hook, lib_fwlib_km4ns npcap ap_resume). These calls
+ * are compiled into those libs at seal time (WiFi on); when the customer
+ * disables WiFi the real symbols are absent, so provide weak defaults here so
+ * lib_project_src (always linked) satisfies them. Strong symbols from the wifi
+ * libs override these via --whole-archive when WiFi is enabled.
+ */
+_WEAK int32_t wlan_driver_check_and_suspend(void)
+{
+	return 0;
+}
+_WEAK void    wififw_task_idle(void)              {}
+_WEAK void    wifi_hal_system_resume_wlan(void)   {}
+_WEAK int32_t driver_suspend_ret;
 
 void app_mbedtls_rom_init(void)
 {
@@ -149,28 +165,18 @@ int main(void)
 	/* pre-processor of application example */
 	app_pre_example();
 
-#if defined(CONFIG_BT_COEXIST)
-	/* init coex ipc */
 	coex_ipc_entry();
-#endif
 
-//only NP can init FW
-#if defined(CONFIG_WIFI_FW_EN) && defined(CONFIG_FW_DRIVER_COEXIST)
 	wififw_task_create();
-#endif
 
-#ifdef CONFIG_WLAN
 	wifi_init();
-#endif
 
 	/* initialize BT iNIC */
 #if defined(CONFIG_BT) && defined(CONFIG_BT_INIC)
 	bt_inic_init();
 #endif
 
-#if defined(CONFIG_SDN_DEV)
 	sdn_client_init();
-#endif
 
 #ifdef CONFIG_SHELL
 #if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))

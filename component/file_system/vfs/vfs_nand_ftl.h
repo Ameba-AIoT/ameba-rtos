@@ -104,6 +104,12 @@ typedef struct {
 
 u8 NAND_FTL_Init(void);
 u8 NAND_FTL_ReadPage(u32 addr, u8 *buf);
+/* Like NAND_FTL_ReadPage but skips the per-read bad-block marker check (one
+ * extra NAND array-to-cache).  For callers (e.g. LBM) that already track bad
+ * blocks in RAM and only ever read blocks they have vetted as good: the marker
+ * check is redundant there and roughly doubles read latency.  ECC status is
+ * still evaluated, so data-integrity reporting is unchanged. */
+u8 NAND_FTL_ReadPageFast(u32 addr, u8 *buf);
 u8 NAND_FTL_EraseBlock(u32 addr, u8 force);
 u8 NAND_FTL_WritePage(u32 addr, const u8 *buf, u8 do_erase);
 u8 NAND_FTL_MarkBad(u32 addr);

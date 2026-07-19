@@ -81,4 +81,19 @@ config LOGUART_AGG_EN
 
 endmenu
 
+menu "RAM Layout Configuration"
+
+# TrustZone secure image (Image3) size. For SoCs without PSRAM this region may
+# live in SRAM, so it is a general RAM-layout parameter, configured per IC.
+config TZ_S_SIZE
+    int "TrustZone Secure Image Size (KB)"
+    depends on TRUSTZONE
+    default 128 if TRUSTZONE_MBEDTLS
+    default 64
+    help
+        Size of TrustZone secure image (Image3) in KB.
+        Default 64KB, or 128KB when MbedTLS is enabled.
+
+endmenu
+
 endmenu

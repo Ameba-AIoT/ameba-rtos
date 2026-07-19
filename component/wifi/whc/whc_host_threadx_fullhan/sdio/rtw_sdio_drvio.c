@@ -1,9 +1,9 @@
 #include "rtw_whc_common.h"
 
 //sdio_drv_creg_read  -- cmd52
-//sdio_drv_read_write  -- cmd53
+//sdio_drv_read       -- cmd53
 typedef void *HSDC;
-//cmd  read
+//cmd52 read
 extern int sdio_drv_creg_read(HSDC handle, int addr, int fn, unsigned int *resp);
 //cmd52 write
 extern int sdio_drv_creg_write(HSDC handle, int addr, int fn, unsigned char data, unsigned int *resp);
@@ -11,38 +11,6 @@ extern int sdio_drv_creg_write(HSDC handle, int addr, int fn, unsigned char data
 extern int sdio_drv_read(HSDC handle, unsigned int addr, unsigned int fn, unsigned int bcnt, unsigned int bsize, unsigned char *buf);
 //cmd53 write
 extern int sdio_drv_write(HSDC handle, unsigned int addr, unsigned int fn, unsigned int bcnt, unsigned int bsize, unsigned char *buf);
-
-uint32_t sdio_convert_to_cmdaddr(const uint32_t addr, uint8_t *pdeviceId, uint16_t *poffset);
-
-//swap buffer for read，DMA cache line need invalidate
-__attribute__((aligned(64))) uint8_t read_buf[64];
-
-static u8 sdio_get_domainid(u32 addr)
-{
-	u8 domainId;
-	u16 pseudoId;
-
-	pseudoId = (u16)(addr >> 16);
-	switch (pseudoId) {
-	case 0x1025:
-		domainId = SDIO_LOCAL_DOMAIN_ID;
-		break;
-
-	case 0x1031:
-		domainId = SDIO_TX_FIFO_DOMAIN_ID;
-		break;
-
-	case 0x1034:
-		domainId = SDIO_RX_FIFO_DOMAIN_ID;
-		break;
-
-	default:
-		domainId = SDIO_LOCAL_DOMAIN_ID;
-		break;
-	}
-
-	return domainId;
-}
 
 // Description:
 //	The following mapping is for SDIO host local register space.
@@ -137,48 +105,6 @@ int sd_cmd52_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *
 	return err;
 }
 
-uint32_t sd_read32(struct whc_sdio *priv, uint32_t addr, int *err)
-{
-	uint32_t v = 0;
-	int ret = rtos_mutex_take(priv->hw_lock, 1000);
-
-	if (ret != 0) {
-		printf("take hw lock fail %s\r\n", __func__);
-		return -1;
-	}
-	*err = sdio_drv_read(priv->func, addr, 1, 1, 4, (unsigned char *)&read_buf);
-
-	rtos_mutex_give(priv->hw_lock);
-
-	if (*err) {
-		printf("%s: FAIL!(%d) addr=0x%x\n", __func__, *err, (unsigned int)addr);
-	} else {
-		memcpy((u8 *)&v, read_buf, 4);
-	}
-	return v;
-}
-
-void sd_write8(struct whc_sdio *priv, uint32_t addr, u8 v, int *err)
-{
-	int ret;
-
-	ret = sd_cmd52_write(priv, addr, 1, &v);
-
-	if (err) {
-		*err = ret;
-	}
-}
-
-void sd_write16(struct whc_sdio *priv, uint32_t addr, u16 v, int *err)
-{
-	int ret;
-
-	ret =  sd_cmd52_write(priv, addr, 2, (u8 *)&v);
-	if (err) {
-		*err = ret;
-	}
-}
-
 void sd_write32(struct whc_sdio *priv, uint32_t addr, uint32_t v, int *err)
 {
 	int ret;
@@ -194,14 +120,6 @@ void sd_write32(struct whc_sdio *priv, uint32_t addr, uint32_t v, int *err)
 	}
 	rtos_mutex_give(priv->hw_lock);
 
-}
-
-uint8_t sdio_cmd52_read1byte_local(struct whc_sdio *priv, uint32_t addr)
-{
-	u8 val = 0;
-	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);
-	sd_cmd52_read(priv, addr, 1, &val);
-	return val;
 }
 
 #if 1
@@ -276,9 +194,9 @@ uint8_t sdio_read8(struct whc_sdio *priv, uint32_t addr)
 {
 	uint8_t val = 0;
 	uint32_t ftaddr;
-	ftaddr = sdio_convert_to_cmdaddr(addr, NULL, NULL);
-	sd_cmd52_read(priv, ftaddr, 1, (uint8_t *)&val);
 
+	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr & SDIO_LOCAL_MSK, &ftaddr);
+	sd_cmd52_read(priv, ftaddr, 1, &val);
 	return val;
 }
 
@@ -287,9 +205,19 @@ uint16_t sdio_read16(struct whc_sdio *priv, uint32_t addr)
 	uint16_t val = 0;
 	uint32_t ftaddr;
 
-	ftaddr = sdio_convert_to_cmdaddr(addr, NULL, NULL);
+	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr & SDIO_LOCAL_MSK, &ftaddr);
 	sd_cmd52_read(priv, ftaddr, 2, (uint8_t *)&val);
+	return val;
+}
 
+uint32_t sdio_read32(struct whc_sdio *priv, uint32_t addr)
+{
+	uint32_t val = 0;
+	uint32_t ftaddr;
+
+	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr & SDIO_LOCAL_MSK, &ftaddr);
+	/* CMD53 4-byte read; little-endian host places byte@lowest-addr as LSB */
+	sd_read(priv, ftaddr, 4, (uint8_t *)&val);
 	return val;
 }
 
@@ -297,11 +225,8 @@ uint32_t sdio_read_port(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint
 {
 	int err;
 
-	sdio_get_cmdaddr(addr, priv->SdioRxFIFOCnt++, &addr);
+	sdio_get_cmdaddr(addr, 0, &addr);
 	cnt = _RND4(cnt);
-	// if (cnt >  64) {
-	//  	cnt = _RND(cnt, 64);
-	// }
 
 	err = sd_read(priv, addr, cnt, mem);
 	if (err) {
@@ -310,35 +235,12 @@ uint32_t sdio_read_port(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint
 	return 1;
 }
 
-uint32_t sdio_local_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pbuf)
-{
-	int err = 0;
-	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr, &addr);
-
-	int ret = rtos_mutex_take(priv->hw_lock, 1000);
-
-	if (ret != 0) {
-		printf("take hw lock fail %s\r\n", __func__);
-		return -1;
-	}
-	err = sdio_drv_read(priv->func, addr, 1, 1, cnt, (unsigned char *)&read_buf);
-	rtos_mutex_give(priv->hw_lock);
-
-	if (err) {
-		printf("%s: FAIL!(%d) addr=0x%x\n", __func__, err, (unsigned int)addr);
-	} else {
-		memcpy(pbuf, read_buf, 4);
-	}
-	return err;
-}
-
 int sdio_write8(struct whc_sdio *priv, uint32_t addr, uint8_t val)
 {
 	u32 ftaddr;
 	int err;
 
-	ftaddr = sdio_convert_to_cmdaddr(addr, NULL, NULL);
-
+	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr & SDIO_LOCAL_MSK, &ftaddr);
 	err = sd_cmd52_write(priv, ftaddr, 1, &val);
 	return err;
 }
@@ -349,30 +251,19 @@ int sdio_write16(struct whc_sdio *priv, uint32_t addr, uint16_t val)
 	u32 ftaddr;
 	int err;
 
-	ftaddr = sdio_convert_to_cmdaddr(addr, NULL, NULL);
-
+	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr & SDIO_LOCAL_MSK, &ftaddr);
 	err = sd_cmd52_write(priv, ftaddr, 2, (u8 *)&val);
 	return err;
 }
 
+/* addr should always be 4-byte aligned */
 int sdio_write32(struct whc_sdio *priv, uint32_t addr, uint32_t val)
 {
 	uint32_t ftaddr;
-	u8 deviceId;
-	u16 offset;
-	uint8_t shift;
-	int err;
+	int err = 0;
 
-	ftaddr = sdio_convert_to_cmdaddr(addr, &deviceId, &offset);
-	// 4 bytes alignment
-	shift = ftaddr & 0x3;
-
-	if (shift == 0) {
-		sd_write32(priv, ftaddr, val, &err);
-	} else {
-		err = sd_cmd52_write(priv, ftaddr, 4, (u8 *)&val);
-	}
-
+	sdio_get_cmdaddr(SDIO_LOCAL_DOMAIN_ID, addr & SDIO_LOCAL_MSK, &ftaddr);
+	sd_write32(priv, ftaddr, val, &err);
 	return err;
 }
 
@@ -465,41 +356,3 @@ uint32_t sdio_write_port(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uin
 
 }
 
-uint32_t sdio_convert_to_cmdaddr(uint32_t addr, uint8_t *pdeviceId, uint16_t *poffset)
-{
-	uint8_t domainId;
-	uint16_t offset;
-	uint32_t ftaddr;
-
-	domainId = sdio_get_domainid(addr);
-	offset = 0;
-
-	switch (domainId) {
-	case SDIO_LOCAL_DOMAIN_ID:
-		offset = addr & SDIO_LOCAL_MSK;
-		break;
-
-	case SDIO_TX_FIFO_DOMAIN_ID:
-		offset = addr & SDIO_TX_FIFO_MSK;
-		break;
-
-	case SDIO_RX_FIFO_DOMAIN_ID:
-		offset = addr & SDIO_RX_FIFO_MSK;
-		break;
-
-	default:
-		domainId = SDIO_LOCAL_DOMAIN_ID;
-		offset = addr & SDIO_LOCAL_MSK;
-		break;
-	}
-	ftaddr = (domainId << 13) | offset;
-
-	if (pdeviceId) {
-		*pdeviceId = domainId;
-	}
-	if (poffset) {
-		*poffset = offset;
-	}
-
-	return ftaddr;
-}

@@ -70,8 +70,6 @@ extern u8 __bdram_heap_buffer_start__[];
 extern u8 __bdram_heap_buffer_size__[];
 extern u8 __psram_heap_buffer_start__[];
 extern u8 __psram_heap_buffer_size__[];
-extern u8 __psram_heap_extend_start__[];
-extern u8 __psram_heap_extend_size__[];
 
 #if defined (CONFIG_UNITY_TEST) && CONFIG_UNITY_TEST
 extern u8 __unity_table_start__[];
@@ -98,7 +96,8 @@ extern u8 __km4_bd_ram_start__[];
 extern u8 __km4_bd_ram_end__[];
 
 extern u8 __km4_bd_psram_start__[];
-extern u8 __non_secure_psram_end__[]; /* if psram is 8MB, than write 0x60800000 will write 0x60000000 */
+extern u8 __non_secure_psram_start__[]; /* start of non-secure PSRAM (first segment after TZ) */
+extern u8 __non_secure_psram_end__[];
 
 /* backtrace addr */
 extern u8 __rom_text_region0_start__[];

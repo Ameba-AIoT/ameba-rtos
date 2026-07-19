@@ -5,7 +5,11 @@
  */
 
 #include "ameba_soc.h"
-#include "FreeRTOS.h"
+#ifndef __ZEPHYR__
+#include "arch_timer.h"
+#endif
+
+extern uint64_t vGetGenericTimerFreq(void);
 
 #define DelayCheck()						\
 	do {							\
@@ -20,11 +24,11 @@ void DelayUs(u32 us)
 {
 	uint64_t cntvct;
 
-	/*check if arch timer is still close, open it */
+#ifndef __ZEPHYR__
 	if ((SYSCFG_CHIPType_Get() == CHIP_TYPE_RTLSIM) || !(arm_arch_timer_check_enable())) {
-		arm_arch_timer_enable(pdTRUE);
+		arm_arch_timer_enable(TRUE);
 	}
-
+#endif
 	cntvct = (uint64_t)(arm_arch_timer_count() + vGetGenericTimerFreq() * us / MHZ_TICK_CNT);
 
 	while (arm_arch_timer_count() < cntvct) {
