@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    inic_ipc_dev_trx.h
+  * @file    whc_ipc_dev_trx.h
   * @author
   * @version
   * @date
@@ -15,8 +15,8 @@
   ******************************************************************************
   */
 
-#ifndef __WHC_IPC_DEV_TX_H__
-#define __WHC_IPC_DEV_TX_H__
+#ifndef __WHC_IPC_DEV_TRX_H__
+#define __WHC_IPC_DEV_TRX_H__
 /* -------------------------------- Includes -------------------------------- */
 /* external head files */
 #include "platform_autoconf.h"
@@ -42,4 +42,4 @@
 void whc_dev_netif_rx(int idx);
 void whc_ipc_dev_tx_done(int idx);
 void whc_ipc_dev_trx_event_hdl(u8 event_num, u32 msg_addr, u8 wlan_idx);
-#endif /* __INIC_IPC_DEV_TX_H__ */
+#endif /* __WHC_IPC_DEV_TRX_H__ */

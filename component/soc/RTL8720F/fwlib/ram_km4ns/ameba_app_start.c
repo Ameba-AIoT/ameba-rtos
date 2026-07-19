@@ -75,15 +75,6 @@ u32 app_mpu_nocache_init(void)
 
 void os_init(void)
 {
-#ifdef CONFIG_PSRAM_ALL_FOR_AP_HEAP
-#if (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)
-	extern bool os_heap_add(u8 * start_addr, size_t heap_size);
-	if (ChipInfo_PsramExists()) {
-		os_heap_add((uint8_t *)__km4tz_bd_psram_start__, (size_t)(__non_secure_psram_end__ - __km4tz_bd_psram_start__));
-	}
-#endif
-#endif
-
 	rtos_mem_init();
 }
 

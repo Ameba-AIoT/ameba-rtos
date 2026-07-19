@@ -490,6 +490,8 @@ _LONG_CALL_ void GPIO_ODInit(u8 PinName, u32 PUInternal);
 _LONG_CALL_ void GPIO_ODWriteBit(u8 PinName, u32 PinState);
 _LONG_CALL_ void GPIO_SetDWWrapper(u32 Status);
 _LONG_CALL_ u32 GPIO_GetDWWrapper(void);
+_LONG_CALL_ void GPIO_PortWrite(u32 GPIO_Port, u32 GPIO_Mask, u32 Port_State);
+_LONG_CALL_ u32 GPIO_DirectionGet(u8 port, u32 pin_mask);
 
 /**
   * @}

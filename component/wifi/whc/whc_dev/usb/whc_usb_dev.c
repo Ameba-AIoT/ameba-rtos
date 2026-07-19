@@ -315,7 +315,7 @@ void whc_usb_dev_init(void)
 	rtos_sema_create_static(&whc_usb_priv.usb_attach_status_sema, 0, 1);
 	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_usb_hotplug_task", (rtos_task_function_t)whc_usb_hotplug_task,
 										NULL, 1024, 8)) {
-		RTK_LOGI(NOTAG, "Create whc_usb_dev_irq_task Err!!\n");
+		RTK_LOGI(NOTAG, "Create whc_usb_hotplug_task Err!!\n");
 	}
 #endif
 

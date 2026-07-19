@@ -64,7 +64,7 @@ int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf)
 	*ptr = idx;
 	ptr += 1;
 	memcpy(ptr, dev_mac.octet, 6);
-	//6+4+1=11
+	//6+4+1+1=12
 	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE, NULL, 0);
 
 	return 0;
@@ -83,6 +83,13 @@ void whc_dev_rtw_cli_wpas_reply_event_hdl(u8 idx, const char *reply, size_t repl
 {
 
 	whc_rtw_cli_send_to_host(idx, WHC_WPA_OPS_EVENT, WHC_WPA_OPS_EVENT_JOIN_STATUS,
+							 (u8 *)reply, reply_len);
+}
+
+void whc_dev_rtw_cli_wpas_reply_scan_raw_hdl(u8 idx, const char *reply, size_t reply_len)
+{
+
+	whc_rtw_cli_send_to_host(idx, WHC_WPA_OPS_EVENT, WHC_WPA_OPS_EVENT_SCAN_RAW_DATA,
 							 (u8 *)reply, reply_len);
 }
 

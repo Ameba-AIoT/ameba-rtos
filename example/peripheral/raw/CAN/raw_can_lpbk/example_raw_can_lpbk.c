@@ -179,7 +179,7 @@ static void EMC_CANInit(void)
 	/* 4. Configure Interrupts */
 	InterruptDis(CAN_IRQ_0);
 	InterruptUnRegister(CAN_IRQ_0);
-	InterruptRegister((IRQ_FUN)can0_interrupt_handler, CAN_IRQ_0, NULL, INT_PRI_MIDDLE);
+	InterruptRegister((IRQ_FUN)can0_interrupt_handler, CAN_IRQ_0, (u32)NULL, INT_PRI_MIDDLE);
 	InterruptEn(CAN_IRQ_0, INT_PRI_MIDDLE);
 
 	CAN_INTConfig(CANx_0, (CAN_TX_INT | CAN_RX_INT | CAN_RAM_MOVE_DONE_INT | CAN_ERR_INT | CAN_BUSOFF_INT | CAN_WKUP_INT), ENABLE);

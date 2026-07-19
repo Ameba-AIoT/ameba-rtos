@@ -141,11 +141,6 @@ menu "CONFIG Link Option"
     config PSRAM_USED
         bool
 
-    config PSRAM_ALL_FOR_AP_HEAP
-        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM
-        bool "ALL PSRAM USED FOR APPLICATION HEAP"
-        default y
-
 endmenu
 
 menu "CONFIG Mass Production"

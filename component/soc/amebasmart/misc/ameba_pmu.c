@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "FreeRTOS.h"
-#include "task.h"
 #include "platform_autoconf.h"
 #include "ameba_soc.h"
 #include "os_wrapper_specific.h"
@@ -30,7 +28,7 @@ static uint32_t timer_max_sleep_time = PMU_SLEEP_FOREVER;
 volatile uint32_t cpuhp_flag[configNUM_CORES];
 #endif
 
-/* ++++++++ FreeRTOS macro implementation ++++++++ */
+/* ++++++++ wakelock and sleep hook implementation ++++++++ */
 
 /* psm dd hook info */
 PSM_DD_HOOK_INFO gPsmDdHookInfo[PMU_MAX];
@@ -215,7 +213,7 @@ int pmu_ready_to_sleep(void)
  **/
 int pmu_ready_to_dsleep(void)
 {
-	uint32_t current_tick = xTaskGetTickCount();
+	uint32_t current_tick = rtos_time_get_current_system_time_ms();
 
 	/* timeout */
 	if (current_tick < deepwakelock_timeout) {
@@ -298,7 +296,7 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 	*tick_before_sleep = SYSTIMER_TickGet();
 	sysactive_timeout_flag = 1;
 
-	/* some function call like xTaskGetTickCount may cause IRQ ON, */
+	/* some function call may cause IRQ ON, */
 	/* so we close IRQ again here to avoid sys irq when enter or exit sleep */
 	//__asm volatile( "cpsid i" );
 
@@ -315,42 +313,24 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 }
 #endif
 
-/* -------- FreeRTOS macro implementation -------- */
+/* -------- wakelock implementation -------- */
 
 void pmu_acquire_wakelock(uint32_t nDeviceId)
 {
-	uint32_t PrevStatus;
-#ifndef CONFIG_ARM_CORE_CA32
-	PrevStatus = ulSetInterruptMaskFromISR();
-#else
-	PrevStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-#endif
+	uint32_t PrevStatus = irq_disable_save();
 
 	wakelock |= BIT(nDeviceId);
 
-#ifndef CONFIG_ARM_CORE_CA32
-	vClearInterruptMaskFromISR(PrevStatus);
-#else
-	portRESTORE_INTERRUPTS(PrevStatus);
-#endif
+	irq_enable_restore(PrevStatus);
 }
 
 void pmu_release_wakelock(uint32_t nDeviceId)
 {
-	uint32_t PrevStatus;
-#ifndef CONFIG_ARM_CORE_CA32
-	PrevStatus = ulSetInterruptMaskFromISR();
-#else
-	PrevStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-#endif
+	uint32_t PrevStatus = irq_disable_save();
 
 	wakelock &= ~BIT(nDeviceId);
 
-#ifndef CONFIG_ARM_CORE_CA32
-	vClearInterruptMaskFromISR(PrevStatus);
-#else
-	portRESTORE_INTERRUPTS(PrevStatus);
-#endif
+	irq_enable_restore(PrevStatus);
 }
 
 uint32_t pmu_get_wakelock_status(void)
@@ -407,7 +387,7 @@ void pmu_set_dsleep_active_time(uint32_t TimeOutMs)
 	uint32_t timeout = 0;
 
 
-	timeout = xTaskGetTickCount() + TimeOutMs;
+	timeout = rtos_time_get_current_system_time_ms() + TimeOutMs;
 	//DBG_8195A("pmu_set_dsleep_active_time: %d %d\n", timeout, deepwakelock_timeout);
 
 	if (timeout > deepwakelock_timeout) {

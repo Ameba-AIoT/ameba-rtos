@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    inic_ipc_msg_queue.h
+  * @file    whc_ipc_msg_queue.h
   * @author
   * @version
   * @date
@@ -42,4 +42,4 @@ void whc_msg_q_deinit(void);
 u8 whc_msg_get_queue_status(void);
 void whc_ipc_send_msg(u32 event_num, u32 msg_addr, u32 msg_queue_status, u32 wlan_idx);
 
-#endif /* __INIC_IPC_MSG_QUEUE_H__ */
+#endif /* __WHC_IPC_MSG_QUEUE_H__ */

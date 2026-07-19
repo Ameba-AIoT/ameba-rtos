@@ -23,7 +23,7 @@
 
 static u8 *PIX_DATA0 = (u8 *)0x60000000;
 static u8 *PIX_DATA1 = (u8 *)(0x60000000 + MEM_SIZE);
-static u8 *PIX_DATA2 = (u8 *)(0x60000000 + MEM_SIZE*2);
+static u8 *PIX_DATA2 = (u8 *)(0x60000000 + MEM_SIZE * 2);
 
 #else /* alloc small buffer for compile issue */
 
@@ -233,7 +233,7 @@ static void lcdc_display_rgb_st7262(void)
 	LCDC_RccEnable();
 
 	/* register irq handler */
-	InterruptRegister((IRQ_FUN)lcdc_irq_handler, gLcdcIrqInfo.IrqNum, NULL, gLcdcIrqInfo.IrqPriority);
+	InterruptRegister((IRQ_FUN)lcdc_irq_handler, gLcdcIrqInfo.IrqNum, (u32)NULL, gLcdcIrqInfo.IrqPriority);
 	InterruptEn(gLcdcIrqInfo.IrqNum, gLcdcIrqInfo.IrqPriority);
 
 	/* init lcdc driver */

@@ -11,8 +11,10 @@ static const char *const TAG = "DDR";
 #define FRQC_TEST             0
 
 //////////////////////////////////////////////////
-// ROUND_UP function
+// ROUND_UP function — ceil-division ceil(divider/divisor), NOT alignment.
+// Zephyr's <sys/util.h> defines ROUND_UP(x, align), so drop it before redefining ours.
 //////////////////////////////////////////////////
+#undef ROUND_UP
 #define ROUND_UP(divider, divisor) (((divider)%(divisor)) ? (((divider)/(divisor))+1) : ((divider)/(divisor)))
 
 u8 ddr_init_index(void)

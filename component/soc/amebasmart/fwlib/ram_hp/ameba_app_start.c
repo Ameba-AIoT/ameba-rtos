@@ -109,17 +109,17 @@ static void dslp_wake_handler(void)
 		//RTK_LOGI(TAG, "dslp from aontimer\n");
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 		//AONTimer_INT(ENABLE);
-		InterruptRegister((IRQ_FUN)aontimer_dslp_handler, AON_TIM_IRQ, NULL, 3);
+		InterruptRegister((IRQ_FUN)aontimer_dslp_handler, AON_TIM_IRQ, (u32)NULL, 3);
 		InterruptEn(AON_TIM_IRQ, 3);
 	}
 
 	if (BootReason & AON_BIT_RTC_ISR_EVT) {
-		InterruptRegister((IRQ_FUN)rtc_dslp_handler, RTC_IRQ, NULL, 3);
+		InterruptRegister((IRQ_FUN)rtc_dslp_handler, RTC_IRQ, (u32)NULL, 3);
 		InterruptEn(RTC_IRQ, 3);
 	}
 
 	if (BootReason & (AON_BIT_GPIO_PIN0_WAKDET_EVT | AON_BIT_GPIO_PIN1_WAKDET_EVT | AON_BIT_GPIO_PIN2_WAKDET_EVT | AON_BIT_GPIO_PIN3_WAKDET_EVT)) {
-		InterruptRegister((IRQ_FUN)wakepin_dslp_handler, AON_WAKEPIN_IRQ, NULL, 3);
+		InterruptRegister((IRQ_FUN)wakepin_dslp_handler, AON_WAKEPIN_IRQ, (u32)NULL, 3);
 		InterruptEn(AON_WAKEPIN_IRQ, 3);
 	}
 }

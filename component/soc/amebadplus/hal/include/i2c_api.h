@@ -66,7 +66,7 @@ typedef enum {
   * @{
   */
 
-/** @brief I2C object type, defined as struct @ref i2c_s. */
+/** @brief I2C object type, defined as struct i2c_s. */
 typedef struct i2c_s i2c_t;
 
 /**

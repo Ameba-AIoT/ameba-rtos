@@ -181,6 +181,13 @@ typedef enum {
 #define PBUF_FLAG_LLMCAST   0x10U
 /** indicates this pbuf includes a TCP FIN flag */
 #define PBUF_FLAG_TCP_FIN   0x20U
+/* Added by Realtek start */
+#if defined(IP_NAT) && (IP_NAT == 1)
+/** indicates this pbuf was already NAT-translated (DNAT) on the RX path;
+    the forward path must not translate it again */
+#define PBUF_FLAG_NAT_DONE  0x40U
+#endif
+/* Added by Realtek end */
 
 /** Main packet buffer struct */
 struct pbuf {

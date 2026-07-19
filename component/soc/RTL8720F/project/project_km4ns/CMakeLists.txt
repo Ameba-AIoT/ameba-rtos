@@ -7,6 +7,12 @@ set(c_VERBOSE_MAKEFILE FALSE)
 ameba_mcu_project_create(km4ns km4)
 ameba_mcu_project_check()
 
+# km4ns hook for ameba_add_internal_library (seal / link prebuilt libs).
+# Defined here (after km4tz is already configured) so it applies to km4ns only.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/soc_hooks.cmake")
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/soc_hooks.cmake)
+endif()
+
 ###############################################################################
 set(DAILY_BUILD 0 CACHE STRING "code analysis argument")
 message ("DAILY_BUILD = " ${DAILY_BUILD})

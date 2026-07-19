@@ -53,6 +53,64 @@ menu "CONFIG VFS"
         config FATFS_SUPPORT_EXFAT
             bool "FATFS Support EXFAT"
     endif
+    config VFS_REALFS_INCLUDED
+        bool "Enable REALFS"
+        default n
+    if VFS_REALFS_INCLUDED
+        choice
+            prompt "REALFS Memory Type"
+            config REALFS_FLASH
+                bool "FLASH"
+                help
+                    SPI flash (NOR or NAND). On NAND-boot targets
+                    (CONFIG_SUPPORT_NAND_FLASH) the erase-aware backend
+                    (route B, LBM) is selected at runtime; on NOR-boot
+                    targets the NOR backend is used. Mirrors littlefs.
+            config REALFS_SD_MODE_MENU
+                depends on SUPPORT_SDIOH
+                bool "SD Card"
+                select REALFS_SD_MODE
+        endchoice
+        if REALFS_FLASH
+            choice
+                prompt "REALFS NOR backend"
+                default REALFS_FLASH_DIRECT
+                depends on !SUPPORT_NAND_FLASH
+                help
+                    NOR-only backend selection. Hidden on NAND targets
+                    (SUPPORT_NAND_FLASH) where the erase-aware path is used.
+                config REALFS_FLASH_DIRECT
+                    bool "Direct 4 KB block"
+                config REALFS_FLASH_NOR_MAP
+                    bool "Layer on raw NOR via erase-aware map (512 B block)"
+                    help
+                        On raw SPI-NOR, run REALFS in erase-aware (route-B) mode with a
+                        512 B block (496 B usable) instead of the 4 KB direct block. Each
+                        4 KB NOR sector is one segment of 8 pages; REALFS's own LBT and
+                        segment GC provide the thin logical->physical map with SINGLE-layer
+                        COW (no second FTL/log). Builds the NOR erase-device backend
+                        (realfs_erasedev_nor.c).
+            endchoice
+            config REALFS_FLASH_NAND_LBM
+                bool
+                default SUPPORT_NAND_FLASH
+                depends on SUPPORT_NAND_FLASH
+                help
+                    Automatically enabled on NAND-flash targets. Compiles
+                    the erase-aware REALFS core (route B) and the LBM thin-FTL
+                    backend (realfs_erasedev_lbm.c). At runtime SHOULD_USE_NAND()
+                    selects this path; on NOR boards the NOR backend runs instead.
+                    No extra work needed: just enable CONFIG_SUPPORT_NAND_FLASH.
+        endif
+        config REALFS_DEBUG
+            bool "REALFS debug dump / consistency check"
+            default n
+            help
+                Compile realfs_dump_* and realfs_check (defines
+                REALFS_ENABLE_DEBUG). Adds read-only inspection of the
+                superblock, buckets, files, and bitmap plus an integrity
+                checker -- handy for long-run debugging. Costs ~1-2 KB.
+    endif
 endmenu
 
 config LITTLEFS_SECOND_FLASH
@@ -71,4 +129,7 @@ config FATFS_USB_HOST
     bool
 
 config FATFS_SD_HOTPLUG
+    bool
+
+config REALFS_SD_MODE
     bool

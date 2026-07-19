@@ -147,6 +147,11 @@ extern "C"
  */
 #elif defined(CONFIG_RTL8720F) && CONFIG_RTL8720F
 
+#define VENDOR_CMD_SET_MESH_INFO_SUPPORT                 1
+#if defined(VENDOR_CMD_SET_MESH_INFO_SUPPORT) && VENDOR_CMD_SET_MESH_INFO_SUPPORT
+#define VENDOR_CMD_SET_MESH_INFO_OPCODE                  0xFCA6
+#endif
+
 /*
  * AmebaPro3
  */

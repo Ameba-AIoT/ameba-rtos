@@ -10,4 +10,4 @@
 sint whc_msg_enqueue(void *msg, struct __queue *p_queue);
 struct whc_msg_node *whc_msg_dequeue(struct __queue *p_queue);
 
-#endif /* __INIC_MSG_QUEUE_H__ */
+#endif /* __WHC_MSG_QUEUE_H__ */

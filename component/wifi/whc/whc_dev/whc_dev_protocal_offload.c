@@ -745,7 +745,7 @@ void issue_MDNS_v4_rsp(int idx, u8 *TargetIP, u8 *TargetMAC, struct MDNS_RX_DATA
 	SET_IPHDR_FLAGS(ptr, 0x40);
 	SET_IPHDR_FRAG_OFFSET(ptr, 0);
 	SET_IPHDR_TTL(ptr, 0x40);
-	SET_IPHDR_PROTOCOL(ptr, 0x11);  // ICMP-UDP
+	SET_IPHDR_PROTOCOL(ptr, 0x11);  // UDP
 	SET_IPHDR_SRC_IP_ADDR(ptr, IPv4Parm.IP);
 
 	if (mdns_rx_data->ans_records[issue_no].is_multicast) {
@@ -1380,5 +1380,5 @@ exit:
 	return;
 }
 
-#endif  /* CONFIG_OFFLOAD_MSDN_V6 */
+#endif  /* CONFIG_OFFLOAD_MDNS_V6 */
 

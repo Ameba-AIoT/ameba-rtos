@@ -251,6 +251,13 @@ bool _start_wpa_supplicant()
 	}
 
 	memset(cmd, 0, 512);
+	/* remove old log file so each session starts fresh */
+	if (supplicant_log_file && supplicant_log_file[0] != '\0') {
+		remove(supplicant_log_file);
+	} else {
+		supplicant_log_file = "/dev/null";
+	}
+
 	snprintf(cmd, sizeof(cmd), "%s -i %s -Dnl80211 -c %s -K %s -B -f %s",
 			 rtw_supplicant,
 			 nan_intf,

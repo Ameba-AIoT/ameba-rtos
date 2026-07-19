@@ -202,17 +202,4 @@ ASSERT(__psram_image2_start__ == ORIGIN(KM4NS_BD_PSRAM), "__psram_image2_start__
 	__bdram_heap_buffer_size__ = 0;
 #endif
 
-#if defined(CONFIG_PSRAM_ALL_FOR_AP_HEAP) || defined(CONFIG_DISABLE_PSRAM)
-__psram_heap_buffer_start__ = .;
-__psram_heap_buffer_size__ = 0;
-
-__psram_heap_extend_start__ = .;
-__psram_heap_extend_size__ = 0;
-
-#else
 __psram_heap_buffer_size__ = ORIGIN(KM4NS_BD_PSRAM) + LENGTH(KM4NS_BD_PSRAM) - __psram_heap_buffer_start__;
-
-__psram_heap_extend_start__ = ORIGIN(KM4NS_PSRAM_HEAP_EXT);
-__psram_heap_extend_size__ = LENGTH(KM4NS_PSRAM_HEAP_EXT);
-
-#endif

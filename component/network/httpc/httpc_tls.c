@@ -6,6 +6,8 @@
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/base64.h"
 
+static const char *TAG = "HTTPC";
+
 int httpc_setsockopt_rcvtimeo(struct httpc_conn *conn, int recv_timeout)
 {
 	int ret = 0;
@@ -34,9 +36,9 @@ static int _verify_func(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *
 	mbedtls_x509_crt_info(buf, sizeof(buf) - 1, "", crt);
 
 	if (*flags) {
-		printf("\n[HTTPC] ERROR: certificate verify\n%s\n", buf);
+		RTK_LOGE(TAG, "certificate verify\n%s\n", buf);
 	} else {
-		//printf("\n[HTTPC] Certificate verified\n%s\n", buf);
+		//RTK_LOGI(TAG, "Certificate verified\n%s\n", buf);
 	}
 
 	return 0;
@@ -75,7 +77,7 @@ void *httpc_tls_new(int *sock, char *client_cert, char *client_key, char *ca_cer
 											   MBEDTLS_SSL_TRANSPORT_STREAM,
 											   MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
 
-			printf("\n[HTTPC] ERROR: mbedtls_ssl_config_defaults %d\n", ret);
+			RTK_LOGE(TAG, "mbedtls_ssl_config_defaults %d\n", ret);
 			ret = -1;
 			goto exit;
 		}
@@ -85,19 +87,19 @@ void *httpc_tls_new(int *sock, char *client_cert, char *client_key, char *ca_cer
 
 		if (client_cert && client_key) {
 			if ((ret = mbedtls_x509_crt_parse(&tls->cert, (const unsigned char *) client_cert, strlen(client_cert) + 1)) != 0) {
-				printf("\n[HTTPC] ERROR: mbedtls_x509_crt_parse %d\n", ret);
+				RTK_LOGE(TAG, "mbedtls_x509_crt_parse %d\n", ret);
 				ret = -1;
 				goto exit;
 			}
 
 			if ((ret = mbedtls_pk_parse_key(&tls->key, (const unsigned char *) client_key, strlen(client_key) + 1, NULL, 0, NULL, NULL)) != 0) {
-				printf("\n[HTTPC] ERROR: mbedtls_pk_parse_key %d\n", ret);
+				RTK_LOGE(TAG, "mbedtls_pk_parse_key %d\n", ret);
 				ret = -1;
 				goto exit;
 			}
 
 			if ((ret = mbedtls_ssl_conf_own_cert(conf, &tls->cert, &tls->key)) != 0) {
-				printf("\n[HTTPC] ERROR: mbedtls_ssl_conf_own_cert %d\n", ret);
+				RTK_LOGE(TAG, "mbedtls_ssl_conf_own_cert %d\n", ret);
 				ret = -1;
 				goto exit;
 			}
@@ -106,7 +108,7 @@ void *httpc_tls_new(int *sock, char *client_cert, char *client_key, char *ca_cer
 		if (ca_certs) {
 			// set trusted ca certificates next to client certificate
 			if ((ret = mbedtls_x509_crt_parse(&tls->ca, (const unsigned char *) ca_certs, strlen(ca_certs) + 1)) != 0) {
-				printf("\n[HTTPC] ERROR: mbedtls_x509_crt_parse %d\n", ret);
+				RTK_LOGE(TAG, "mbedtls_x509_crt_parse %d\n", ret);
 				ret = -1;
 				goto exit;
 			}
@@ -117,14 +119,14 @@ void *httpc_tls_new(int *sock, char *client_cert, char *client_key, char *ca_cer
 		}
 
 		if ((ret = mbedtls_ssl_setup(ssl, conf)) != 0) {
-			printf("\n[HTTPC] ERROR: mbedtls_ssl_setup %d\n", ret);
+			RTK_LOGE(TAG, "mbedtls_ssl_setup %d\n", ret);
 			ret = -1;
 			goto exit;
 		}
 
 		mbedtls_ssl_set_bio(ssl, sock, mbedtls_net_send, mbedtls_net_recv, NULL);
 	} else {
-		printf("\n[HTTPC] ERROR: malloc\n");
+		RTK_LOGE(TAG, "malloc\n");
 		ret = -1;
 		goto exit;
 	}
@@ -167,10 +169,10 @@ int httpc_tls_handshake(void *tls_in, char *host)
 	mbedtls_ssl_set_hostname(&tls->ctx, host);
 
 	if ((ret = mbedtls_ssl_handshake(&tls->ctx)) != 0) {
-		printf("\n[HTTPC] ERROR: mbedtls_ssl_handshake %d\n", ret);
+		RTK_LOGE(TAG, "mbedtls_ssl_handshake %d\n", ret);
 		ret = -1;
 	} else {
-		printf("\n[HTTPC] Use ciphersuite %s\n", mbedtls_ssl_get_ciphersuite(&tls->ctx));
+		RTK_LOGI(TAG, "Use ciphersuite %s\n", mbedtls_ssl_get_ciphersuite(&tls->ctx));
 	}
 
 	return ret;
@@ -208,7 +210,7 @@ int httpc_base64_encode(uint8_t *data, size_t data_len, char *base64_buf, size_t
 	}
 
 	if ((ret = mbedtls_base64_encode((unsigned char *)base64_buf, buf_len, &output_len, data, data_len)) != 0) {
-		printf("\n[HTTPC] ERROR: mbedtls_base64_encode %d\n", ret);
+		RTK_LOGE(TAG, "mbedtls_base64_encode %d\n", ret);
 		ret = -1;
 	}
 

@@ -81,4 +81,56 @@ config LOGUART_AGG_EN
 
 endmenu
 
+menu "Clock Configuration"
+
+choice
+    prompt "SoC Clock Config"
+    default CLKCFG_0P9
+    help
+        Select the SoC clock configuration. The leading [N] is the index into
+        SocClk_Info[] in ameba_bootcfg.c (assigned to Boot_SocClk_Info_Idx via
+        CONFIG_CLKCFG_IDX).
+
+config CLKCFG_0P9
+    bool "[0] 0.9V, CPU 240MHz"
+
+config CLKCFG_1P0
+    bool "[1] 1.0V, CPU 320MHz"
+
+endchoice
+
+config CLKCFG_IDX
+    int
+    default 0 if CLKCFG_0P9
+    default 1 if CLKCFG_1P0
+    default 0
+
+endmenu
+
+menu "RAM Layout Configuration"
+
+# TrustZone secure image (Image3) size. For SoCs without PSRAM this region may
+# live in SRAM, so it is a general RAM-layout parameter, configured per IC.
+config TZ_S_SIZE
+    int "TrustZone Secure Image Size (KB)"
+    depends on TRUSTZONE
+    default 128 if TRUSTZONE_MBEDTLS
+    default 64
+    help
+        Size of TrustZone secure image (Image3) in KB.
+        Default 64KB, or 128KB when MbedTLS is enabled.
+
+config PSRAM_KM4NS_IMG2_KB
+    int "KM4NS PSRAM image2 size (KB)"
+    depends on IMG2_PSRAM || DATA_HEAP_PSRAM
+    range 64 2048
+    default 876
+    help
+        Size of the NP(KM4NS) PSRAM image2 segment. Only meaningful when the NP
+        core places code (IMG2_PSRAM) or data/heap (DATA_HEAP_PSRAM) in PSRAM.
+        Otherwise the segment collapses to 0 and all non-secure PSRAM goes to
+        the AP(KM4TZ) heap.
+
+endmenu
+
 endmenu

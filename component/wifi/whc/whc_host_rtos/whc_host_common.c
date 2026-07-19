@@ -93,7 +93,7 @@ retry:
  *         starts at buf + SIZE_RX_DESC (SIZE_RX_DESC is 0 on SPI/UART). Since the
  *         three transports are mutually exclusive per build, SIZE_RX_DESC resolves
  *         to the active transport's value.
- * @param  copy_len: payload bytes to copy for the API path; each transport knows
+ * @param  len: payload bytes to copy for the API path; each transport knows
  *         its own length (SDIO pkt_len / SPI SPI_BUFSZ / UART payload_len).
  * @return none.
  */

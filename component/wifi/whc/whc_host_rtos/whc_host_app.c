@@ -5,7 +5,7 @@
 /**
 * @brief  send buf to dev using CMD path
 * @param  buf: data buf to be sent.
-* @param  len: real buf address, to be freed after sent.
+* @param  len: length of buf in bytes.
 * @return none.
 */
 void whc_host_api_send_to_dev(u8 *buf, u32 len)

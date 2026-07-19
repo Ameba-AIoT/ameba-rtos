@@ -95,12 +95,16 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
 		status = usbh_msc_bot_process(msc->host, lun);
 
 		if (status == HAL_OK) {
-			/*assign the capacity*/
-			capacity->block_nbr = msc->hbot.pbuf[3] | ((u32)msc->hbot.pbuf[2] << 8U) | \
-								  ((u32)msc->hbot.pbuf[1] << 16U) | ((u32)msc->hbot.pbuf[0] << 24U);
+			/* READ CAPACITY(10) returns Last LBA; block count = Last LBA + 1 */
+			u32 last_lba = ((u32)msc->hbot.pbuf[0] << 24U) | ((u32)msc->hbot.pbuf[1] << 16U) |
+						   ((u32)msc->hbot.pbuf[2] << 8U) | (u32)msc->hbot.pbuf[3];
+			/* SBC: last_lba == 0xFFFFFFFF means device needs READ_CAPACITY(16) */
+			capacity->block_nbr = (last_lba < 0xFFFFFFFFU) ? last_lba + 1U : 0xFFFFFFFFU;
 
-			/*assign the page length*/
-			capacity->block_size = (u16)(msc->hbot.pbuf[7] | ((u32)msc->hbot.pbuf[6] << 8U));
+			/* Block length is a 4-byte big-endian field (bytes 4-7) */
+			u32 blk_len = ((u32)msc->hbot.pbuf[4] << 24U) | ((u32)msc->hbot.pbuf[5] << 16U) |
+						  ((u32)msc->hbot.pbuf[6] << 8U) | (u32)msc->hbot.pbuf[7];
+			capacity->block_size = blk_len;
 		}
 		break;
 
@@ -131,9 +135,10 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
 		cbw->field.bmCBWFlags = USB_D2H;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CBWCB, 0, CBW_LENGTH);
+		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
 		cbw->field.CBWCB[0] = SCSI_INQUIRY;
-		cbw->field.CBWCB[1] = (lun << 5);
+		/* CBWCB[1]: EVPD bit only; bits 7:1 reserved per SPC-3; LUN in bCBWLUN */
+		cbw->field.CBWCB[1] = 0U;
 		cbw->field.CBWCB[2] = 0U;
 		cbw->field.CBWCB[3] = 0U;
 		cbw->field.CBWCB[4] = 0x24U;
@@ -197,7 +202,8 @@ int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_dat
 
 		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
 		cbw->field.CBWCB[0] = SCSI_REQUEST_SENSE;
-		cbw->field.CBWCB[1] = (lun << 5);
+		/* CBWCB[1]: DESC bit only; bits 7:1 reserved per SPC-3; LUN in bCBWLUN */
+		cbw->field.CBWCB[1] = 0U;
 		cbw->field.CBWCB[2] = 0U;
 		cbw->field.CBWCB[3] = 0U;
 		cbw->field.CBWCB[4] = REQUEST_SENSE_DATA_LEN;
@@ -242,11 +248,15 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 len
 	int status = HAL_ERR_UNKNOWN;
 	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
 
+	if (msc->unit[lun].capacity.block_size == 0U) {
+		return HAL_ERR_PARA;
+	}
+
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
 		/*Prepare the CBW and relevant field*/
-		cbw->field.dCBWDataTransferLength = length * msc->unit[0].capacity.block_size;
+		cbw->field.dCBWDataTransferLength = length * msc->unit[lun].capacity.block_size;
 		cbw->field.bmCBWFlags = USB_H2D;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
 
@@ -263,8 +273,6 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 len
 		cbw->field.CBWCB[7] = (((u8 *)(void *)&length)[1]);
 		cbw->field.CBWCB[8] = (((u8 *)(void *)&length)[0]);
 
-		msc->hbot.origin_tx_pbuf = pbuf;
-		msc->hbot.origin_tx_pbuf_len = cbw->field.dCBWDataTransferLength;
 		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
 			usb_os_mfree(msc->hbot.pbuf);
 		}
@@ -308,11 +316,15 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 	int status = HAL_ERR_UNKNOWN;
 	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
 
+	if (msc->unit[lun].capacity.block_size == 0U) {
+		return HAL_ERR_PARA;
+	}
+
 	switch (msc->hbot.cmd_state) {
 	case BOT_CMD_SEND:
 
 		/*Prepare the CBW and relevant field*/
-		cbw->field.dCBWDataTransferLength = length * msc->unit[0].capacity.block_size;
+		cbw->field.dCBWDataTransferLength = length * msc->unit[lun].capacity.block_size;
 		cbw->field.bmCBWFlags = USB_D2H;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
 

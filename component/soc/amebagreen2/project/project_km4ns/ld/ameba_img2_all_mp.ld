@@ -188,6 +188,3 @@ __bdram_heap_buffer_size__ = ORIGIN(KM4NS_BD_RAM_MP) + LENGTH(KM4NS_BD_RAM_MP) -
 
 __psram_heap_buffer_start__ = .;
 __psram_heap_buffer_size__ = 0;
-
-__psram_heap_extend_start__ = .;
-__psram_heap_extend_size__ = 0;

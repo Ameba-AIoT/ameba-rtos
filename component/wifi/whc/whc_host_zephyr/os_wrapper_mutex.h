@@ -34,7 +34,7 @@ typedef struct k_mutex *rtos_mutex_t;
 int rtos_mutex_create(rtos_mutex_t *pp_handle);
 
 /**
- * @brief  For FreeRTOS, map to vSemaphoreDelete
+ * @brief  For Zephyr, map to k_free
  * @note   Do not delete mutex if held by a task
  * @param  p_handle:
  * @retval
@@ -42,8 +42,8 @@ int rtos_mutex_create(rtos_mutex_t *pp_handle);
 int rtos_mutex_delete(rtos_mutex_t p_handle);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreTake / xSemaphoreTakeFromISR
- *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
+ * @brief  For Zephyr, map to k_mutex_lock
+ * @note   k_mutex_lock cannot be called from interrupt context.
  * @param  p_handle:
  * @param  wait_ms:
  * @retval
@@ -51,10 +51,9 @@ int rtos_mutex_delete(rtos_mutex_t p_handle);
 int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms);
 
 /**
- * @brief  For FreeRTOS, map to xSemaphoreGive / xSemaphoreGiveFromISR
- *         The API internally determines whether it is in the interrupt state and calls the corresponding RTOS interface.
+ * @brief  For Zephyr, map to k_mutex_unlock
+ * @note   k_mutex_unlock cannot be called from interrupt context.
  * @param  p_handle:
- * @param  wait_ms:
  * @retval
  */
 int rtos_mutex_give(rtos_mutex_t p_handle);

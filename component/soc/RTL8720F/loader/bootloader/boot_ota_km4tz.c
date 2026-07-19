@@ -450,9 +450,7 @@ u8 BOOT_OTA_IMG(void)
 	 * 2. Extract OTA2 to override OTA1 After OTA2 secure boot check pass.
 	 * 3. Special pattern in manifest indicate extract is needed, clear pattern to 0 after extract.
 	 */
-	if (SYSCFG_OTP_BootFromNor()) {
-		BOOT_OTA_Extract();
-	}
+	BOOT_OTA_Extract();
 #endif
 
 	/* step2: Select Slot according to Cert Version */

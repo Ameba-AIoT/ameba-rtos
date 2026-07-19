@@ -440,6 +440,7 @@ typedef struct {
 /** @} */
 
 _LONG_CALL_ void PAD_SpicCtrl(u32  PinLocation);
+_LONG_CALL_ u8 PAD_PullCtrlGet(u8 pin_name);
 
 /** @defgroup PAD_Exported_Functions PAD Exported Functions
  * @{

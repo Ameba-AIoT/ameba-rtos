@@ -280,7 +280,7 @@ void lwip_netif_set_link_up(uint8_t idx)
 	if (idx == STA_WLAN_INDEX) {
 		netifapi_netif_set_default(&xnetif[STA_WLAN_INDEX]);
 	} else if ((idx == SOFTAP_WLAN_INDEX) && (!(xnetif[STA_WLAN_INDEX].flags & NETIF_FLAG_LINK_UP))) {
-		/*default netif is on sta when sta and softap both up*/
+		/*set softap as default netif when softap comes up and STA is not yet link-up*/
 		netifapi_netif_set_default(&xnetif[SOFTAP_WLAN_INDEX]);
 	}
 }
@@ -331,8 +331,9 @@ void lwip_dhcp_stop(uint8_t idx)
 
 /**
   * @brief  LwIP_DHCP_Process_Handle
-  * @param  None
-  * @retval None
+  * @param  idx[in]: wlan interface index.
+  * @param  dhcp_state[in]: initial DHCP state.
+  * @retval current DHCP state after processing.
   */
 uint8_t lwip_dhcp(uint8_t idx, uint8_t dhcp_state)
 {

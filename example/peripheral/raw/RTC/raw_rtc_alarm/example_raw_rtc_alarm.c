@@ -59,7 +59,7 @@ void raw_rtc_alarm_demo(void)
 	RTC_SetAlarm(RTC_Format_BIN, &RTC_AlarmStruct_temp);
 	RTC_AlarmCmd(ENABLE);
 
-	InterruptRegister((IRQ_FUN)RTC_Handler, RTC_IRQ, NULL, 5);
+	InterruptRegister((IRQ_FUN)RTC_Handler, RTC_IRQ, (u32)NULL, 5);
 	InterruptEn(RTC_IRQ, 5);
 
 	rtos_task_delete(NULL);

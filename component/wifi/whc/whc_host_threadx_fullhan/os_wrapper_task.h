@@ -22,7 +22,7 @@ typedef void *rtos_task_t;
 typedef void (*rtos_task_function_t)(void *);
 
 /**
- * @brief  Create os level task routine. For FreeRTOS, map to xTaskCreate
+ * @brief  Create os level task routine. For RT-Thread, map to rt_thread_create + rt_thread_startup
  * @note   Usage example:
  * Create:
  *          rtos_task_t handle;
@@ -45,9 +45,9 @@ int rtos_task_create(rtos_task_t *pp_handle, const char *p_name, rtos_task_funct
 					 void *p_param, uint16_t stack_size_in_byte, uint16_t priority);
 
 /**
- * @brief  Delete os level task routine. For FreeRTOS, map to vTaskDelete
+ * @brief  Delete os level task routine. For RT-Thread, map to rt_thread_delete
  * @param  p_handle: Task handle. If a null pointer is passed, the task itself is deleted.
- * @retval For FreeRTOS, return SUCCESS
+ * @retval SUCCESS(0) / FAIL(-1)
  */
 int rtos_task_delete(rtos_task_t p_handle);
 

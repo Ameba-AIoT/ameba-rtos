@@ -77,3 +77,4 @@ For other chips, refer to the AN for setup guide.
 
 RTL8730E
 RTL8721F
+RTL8735C

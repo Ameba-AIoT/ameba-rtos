@@ -110,6 +110,7 @@ if(CONFIG_PLATFORM_ZEPHYR)
 else()
 ###NOTE: For open-source component, always build from source
     ameba_add_internal_library(${TARGET_LIB}
+        p_NO_SEAL
         p_DROP_IF_NO_SOURCES
         p_SOURCES
             ${private_sources}

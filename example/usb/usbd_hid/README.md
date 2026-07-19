@@ -84,3 +84,4 @@ Tested on Windows 7/10, MacOS, Ubuntu.
 RTL8730E
 RTL8721Dx
 RTL8721F
+RTL8735C
