@@ -56,6 +56,9 @@ extern void wifi_cast_wifi_join_status_ev_hdl(u8 *evt_info);
 #if defined(CONFIG_WHC_HOST) && !defined(CONFIG_PLATFORM_ZEPHYR) && !defined(CONFIG_MP_SHRINK) && defined(CONFIG_RMESH_EN)
 extern void wtn_zrpp_get_ap_info_evt_hdl(u8 *evt_info);
 #endif
+#ifdef CONFIG_RADAR
+extern void wifi_radar_report_evt_hdl(u8 *evt_info);
+#endif
 /**********************************************************************************************
  *                                          Internal events
  *********************************************************************************************/
@@ -310,6 +313,9 @@ const struct rtw_event_hdl_func_t event_internal_hdl[] = {
 #endif
 #if defined(CONFIG_WHC_HOST) && !defined(CONFIG_PLATFORM_ZEPHYR) && !defined(CONFIG_MP_SHRINK) && defined(CONFIG_RMESH_EN)
 	{RTW_EVENT_WTN_ZRPP_GET_AP_INFO, wtn_zrpp_get_ap_info_evt_hdl},
+#endif
+#ifdef CONFIG_RADAR
+	{RTW_EVENT_RADAR_PROC_RPT,		wifi_radar_report_evt_hdl},
 #endif
 };
 

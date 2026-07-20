@@ -15,7 +15,7 @@ extern BaseType_t xPortStartScheduler(void);
 extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
 
 #if ( configNUM_CORES > 1 )
-extern spinlock_t flash_lock;
+spinlock_t flash_lock;
 #endif
 /*-----------------------------------------------------------*/
 

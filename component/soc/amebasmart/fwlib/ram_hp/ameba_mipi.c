@@ -8,6 +8,20 @@
 
 static const char *const TAG = "MIPI";
 
+static u8 MIPI_BitsPerPixel(u8 VideoDataFormat)
+{
+	switch (VideoDataFormat) {
+	case MIPI_VIDEO_DATA_FORMAT_RGB565:
+		return 16;
+	case MIPI_VIDEO_DATA_FORMAT_RGB666_PACKED:
+		return 18;
+	case MIPI_VIDEO_DATA_FORMAT_RGB888:
+	case MIPI_VIDEO_DATA_FORMAT_RGB666_LOOSELY:
+	default:
+		return 24;
+	}
+}
+
 void MIPI_DPHY_Reset(MIPI_TypeDef *MIPIx)
 {
 	u32 Value32;
@@ -199,97 +213,6 @@ void MIPI_DPHY_init(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruct)
 	MIPI_DPHY_PLL_Set(MIPIx, MIPI_InitStruct->MIPI_VideDataLaneFreq);
 	MIPI_DPHY_Timing_Set(MIPIx, MIPI_InitStruct->MIPI_VideDataLaneFreq);
 	MIPI_DPHY_Reset_Release(MIPIx, MIPI_InitStruct->MIPI_VideDataLaneFreq, MIPI_InitStruct->MIPI_LaneNum);
-}
-
-void MIPI_DSI_TC0_Set(MIPI_TypeDef *MIPIx, u16 HSA, u16 HACT, u8 VideoDataFormat)
-{
-	u32 Value32;
-
-	/* set HSA/HACT(RGB888*3, RGB565*2, RGB666*2.25, RGB666loosely*3) */
-	Value32 = MIPIx->MIPI_TC0;
-	Value32 &= ~(MIPI_MASK_HSA | MIPI_MASK_HACT);
-	Value32 |= MIPI_HSA(HSA);
-
-	switch (VideoDataFormat) {
-	case MIPI_VIDEO_DATA_FORMAT_RGB565:
-		Value32 |= MIPI_HACT(HACT * 2);
-		break;
-	case MIPI_VIDEO_DATA_FORMAT_RGB666_PACKED:
-		Value32 |= MIPI_HACT(HACT * 18 / 8);
-		break;
-	case MIPI_VIDEO_DATA_FORMAT_RGB888:
-	case MIPI_VIDEO_DATA_FORMAT_RGB666_LOOSELY:
-	default:
-		Value32 |= MIPI_HACT(HACT * 3);
-		break;
-	}
-	MIPIx->MIPI_TC0 = Value32;
-}
-
-void MIPI_DSI_TC1_Set(MIPI_TypeDef *MIPIx, u16 HBP, u16 HFP)
-{
-	u32 Value32;
-
-	/* set HBP/HFP */
-	Value32 = MIPIx->MIPI_TC1;
-	Value32 &= ~(MIPI_MASK_HBP | MIPI_MASK_HFP);
-	Value32 |= MIPI_HBP(HBP) | MIPI_HFP(HFP);
-	MIPIx->MIPI_TC1 = Value32;
-}
-
-void MIPI_DSI_TC2_Set(MIPI_TypeDef *MIPIx, u16 VSA, u16 VACT)
-{
-	u32 Value32;
-
-	/* set VSA/VACT */
-	Value32 = MIPIx->MIPI_TC2;
-	Value32 &= ~(MIPI_MASK_VSA | MIPI_MASK_VACT);
-	Value32 |= MIPI_VSA(VSA) | MIPI_VACT(VACT);
-	MIPIx->MIPI_TC2 = Value32;
-}
-
-void MIPI_DSI_TC3_Set(MIPI_TypeDef *MIPIx, u16 VBP, u16 VFP)
-{
-	u32 Value32;
-
-	/* set VBP/VFP */
-	Value32 = MIPIx->MIPI_TC3;
-	Value32 &= ~(MIPI_MASK_VBP | MIPI_MASK_VFP);
-	Value32 |= MIPI_VBP(VBP) | MIPI_VFP(VFP);
-	MIPIx->MIPI_TC3 = Value32;
-}
-
-void MIPI_DSI_TC4_Set(MIPI_TypeDef *MIPIx, u8 VideoModeInterface, u16 BllpLen)
-{
-	u32 Value32;
-
-	/*set video mode and clock req timing*/
-	Value32 = MIPIx->MIPI_TC4;
-	Value32 &= ~(MIPI_MASK_CRC_LEN | MIPI_MASK_HEADER_LEN | MIPI_BIT_ACTIVE_BURST_EN | MIPI_BIT_HSE_EN | MIPI_MASK_BLLP_LEN);
-	Value32 |= MIPI_CRC_LEN(2) | MIPI_HEADER_LEN(4) | MIPI_BLLP_LEN(BllpLen);
-	switch (VideoModeInterface) {
-	case MIPI_VIDEO_NON_BURST_MODE_WITH_SYNC_PULSES:
-		Value32 |= MIPI_BIT_HSE_EN;
-		break;
-	case MIPI_VIDEO_BURST_MODE:
-		Value32 |= MIPI_BIT_ACTIVE_BURST_EN;
-		break;
-	case MIPI_VIDEO_NON_BURST_MODE_WITH_SYNC_EVENTS:
-	default:
-		break;
-	}
-	MIPIx->MIPI_TC4 = Value32;
-}
-
-void MIPI_DSI_TC5_Set(MIPI_TypeDef *MIPIx, u16 PixelNum, u16 LineTime)
-{
-	u32 Value32;
-
-	/*set pixel number and line time */
-	Value32 = MIPIx->MIPI_TC5;
-	Value32 &= ~(MIPI_MASK_PIXEL_NUM | MIPI_MASK_LINE_TIME);
-	Value32 |= MIPI_PIXEL_NUM(PixelNum) | MIPI_LINE_TIME(LineTime);
-	MIPIx->MIPI_TC5 = Value32;
 }
 
 void MIPI_DSI_Pat_Gen(MIPI_TypeDef *MIPIx, u8 NewState, u8 pg_type, u32 user_color)
@@ -517,13 +440,65 @@ void MIPI_DSI_Main_Ctrl(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruct)
 
 void MIPI_DSI_Timing_Ctrl(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruct)
 {
-	/* Video Timing Set */
-	MIPI_DSI_TC0_Set(MIPIx, MIPI_InitStruct->MIPI_HSA, MIPI_InitStruct->MIPI_HACT, MIPI_InitStruct->MIPI_VideoDataFormat);
-	MIPI_DSI_TC1_Set(MIPIx, MIPI_InitStruct->MIPI_HBP, MIPI_InitStruct->MIPI_HFP);
-	MIPI_DSI_TC2_Set(MIPIx, MIPI_InitStruct->MIPI_VSA, MIPI_InitStruct->MIPI_VACT);
-	MIPI_DSI_TC3_Set(MIPIx, MIPI_InitStruct->MIPI_VBP, MIPI_InitStruct->MIPI_VFP);
-	MIPI_DSI_TC4_Set(MIPIx, MIPI_InitStruct->MIPI_VideoModeInterface, MIPI_InitStruct->MIPI_BllpLen);
-	MIPI_DSI_TC5_Set(MIPIx, MIPI_InitStruct->MIPI_HACT, MIPI_InitStruct->MIPI_LineTime);
+	u8 bpp = MIPI_BitsPerPixel(MIPI_InitStruct->MIPI_VideoDataFormat);
+	u16 hsa_bytes  = MIPI_InitStruct->MIPI_HSA * bpp / 8;
+	u16 hact_bytes = MIPI_InitStruct->MIPI_HACT * bpp / 8;
+	/* sync-events mode: controller does not send HSA packet,
+	 * its time is absorbed into HBP */
+	u16 hbp_bytes  = (MIPI_InitStruct->MIPI_VideoModeInterface == MIPI_VIDEO_NON_BURST_MODE_WITH_SYNC_EVENTS)
+					 ? (MIPI_InitStruct->MIPI_HSA + MIPI_InitStruct->MIPI_HBP) * bpp / 8
+					 : MIPI_InitStruct->MIPI_HBP * bpp / 8;
+	u16 hfp_bytes  = MIPI_InitStruct->MIPI_HFP * bpp / 8;
+	u32 Value32;
+
+	/* TC0: HSA / HACT in bytes */
+	Value32 = MIPIx->MIPI_TC0;
+	Value32 &= ~(MIPI_MASK_HSA | MIPI_MASK_HACT);
+	Value32 |= MIPI_HSA(hsa_bytes) | MIPI_HACT(hact_bytes);
+	MIPIx->MIPI_TC0 = Value32;
+
+	/* TC1: HBP / HFP in bytes */
+	Value32 = MIPIx->MIPI_TC1;
+	Value32 &= ~(MIPI_MASK_HBP | MIPI_MASK_HFP);
+	Value32 |= MIPI_HBP(hbp_bytes) | MIPI_HFP(hfp_bytes);
+	MIPIx->MIPI_TC1 = Value32;
+
+	/* TC2: VSA / VACT in lines */
+	Value32 = MIPIx->MIPI_TC2;
+	Value32 &= ~(MIPI_MASK_VSA | MIPI_MASK_VACT);
+	Value32 |= MIPI_VSA(MIPI_InitStruct->MIPI_VSA) | MIPI_VACT(MIPI_InitStruct->MIPI_VACT);
+	MIPIx->MIPI_TC2 = Value32;
+
+	/* TC3: VBP / VFP in lines */
+	Value32 = MIPIx->MIPI_TC3;
+	Value32 &= ~(MIPI_MASK_VBP | MIPI_MASK_VFP);
+	Value32 |= MIPI_VBP(MIPI_InitStruct->MIPI_VBP) | MIPI_VFP(MIPI_InitStruct->MIPI_VFP);
+	MIPIx->MIPI_TC3 = Value32;
+
+	/* TC4: video mode and BLLP */
+	u16 bllp_len = MIPI_InitStruct->MIPI_LineTime / 2;
+
+	Value32 = MIPIx->MIPI_TC4;
+	Value32 &= ~(MIPI_MASK_CRC_LEN | MIPI_MASK_HEADER_LEN | MIPI_BIT_ACTIVE_BURST_EN | MIPI_BIT_HSE_EN | MIPI_MASK_BLLP_LEN);
+	Value32 |= MIPI_CRC_LEN(2) | MIPI_HEADER_LEN(4) | MIPI_BLLP_LEN(bllp_len);
+	switch (MIPI_InitStruct->MIPI_VideoModeInterface) {
+	case MIPI_VIDEO_NON_BURST_MODE_WITH_SYNC_PULSES:
+		Value32 |= MIPI_BIT_HSE_EN;
+		break;
+	case MIPI_VIDEO_BURST_MODE:
+		Value32 |= MIPI_BIT_ACTIVE_BURST_EN;
+		break;
+	case MIPI_VIDEO_NON_BURST_MODE_WITH_SYNC_EVENTS:
+	default:
+		break;
+	}
+	MIPIx->MIPI_TC4 = Value32;
+
+	/* TC5: pixel count and line time */
+	Value32 = MIPIx->MIPI_TC5;
+	Value32 &= ~(MIPI_MASK_PIXEL_NUM | MIPI_MASK_LINE_TIME);
+	Value32 |= MIPI_PIXEL_NUM(MIPI_InitStruct->MIPI_HACT) | MIPI_LINE_TIME(MIPI_InitStruct->MIPI_LineTime);
+	MIPIx->MIPI_TC5 = Value32;
 }
 
 void MIPI_DSI_init(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruct)
@@ -548,22 +523,24 @@ void MIPI_StructInit(MIPI_InitTypeDef *MIPI_InitStruct)
 	MIPI_InitStruct->MIPI_LaneNum = 2;
 	MIPI_InitStruct->MIPI_FrameRate = 60;
 
-	/*DataLaneFreq * LaneNum = FrameRate * (VSA+VBP+VACT+VFP) * (HSA+HBP+HACT+HFP) * PixelFromat*/
-	MIPI_InitStruct->MIPI_VideDataLaneFreq = 775;
-
-	/* HSA(Byte) = tHSA * LaneNum / UI*/
-	MIPI_InitStruct->MIPI_HSA = 33;
-	MIPI_InitStruct->MIPI_HBP = 100;
-	MIPI_InitStruct->MIPI_HACT = 1024; /* pixel */
-	MIPI_InitStruct->MIPI_HFP = 100;
+	/* HSA/HBP/HFP are in pixels */
+	MIPI_InitStruct->MIPI_HSA = 11;
+	MIPI_InitStruct->MIPI_HBP = 33;
+	MIPI_InitStruct->MIPI_HACT = 1024;
+	MIPI_InitStruct->MIPI_HFP = 33;
 
 	MIPI_InitStruct->MIPI_VSA = 2;
 	MIPI_InitStruct->MIPI_VBP = 5;
 	MIPI_InitStruct->MIPI_VACT = 768;
 	MIPI_InitStruct->MIPI_VFP = 10;
 
-	MIPI_InitStruct->MIPI_LineTime = 1250 * 3 / MIPI_InitStruct->MIPI_LaneNum;
-	MIPI_InitStruct->MIPI_BllpLen = MIPI_InitStruct->MIPI_LineTime / 2;
+	/* DPHY overhead: T_LPX+T_HS_PREP+T_HS_ZERO+T_HS_TRAIL+T_HS_EXIT, panel specific.
+	 * Override with actual panel value before calling MIPI_Init(). */
+	MIPI_InitStruct->MIPI_DphyOverheadCyc = 36;	/* default: 5+6+10+8+7 */
+
+	/* Computed by MIPI_Init(); zero until then */
+	MIPI_InitStruct->MIPI_VideDataLaneFreq = 0;
+	MIPI_InitStruct->MIPI_LineTime = 0;
 
 }
 
@@ -582,27 +559,59 @@ void MIPI_BG_CMD(u32 NewStatus)
 
 void MIPI_CLK_Set(MIPI_InitTypeDef *MIPI_InitStruct)
 {
-	//MIPI(<=66.7M), LCDC(<=NPPLL/4), LCDC : MIPI >= 3 : 1
-	u32 totaly = MIPI_InitStruct->MIPI_VSA + MIPI_InitStruct->MIPI_VBP + MIPI_InitStruct->MIPI_VFP + MIPI_InitStruct->MIPI_VACT;
-	u32 totalx = MIPI_InitStruct->MIPI_HSA + MIPI_InitStruct->MIPI_HBP + MIPI_InitStruct->MIPI_HFP + MIPI_InitStruct->MIPI_HACT;
-	u32 vo_freq = totaly * totalx * MIPI_InitStruct->MIPI_FrameRate / 1000000 + 1;
-	assert_param(vo_freq < 67);
+	u32 vo_freq, PLLDiv, PLL_CLK, data_pixel_freq, lcdc_freq;
+	u8 vo_ckd, lcdc_ckd;
+	u32 vtotal = MIPI_InitStruct->MIPI_VSA + MIPI_InitStruct->MIPI_VBP + MIPI_InitStruct->MIPI_VACT + MIPI_InitStruct->MIPI_VFP;
+	u32 htotal = MIPI_InitStruct->MIPI_HSA + MIPI_InitStruct->MIPI_HBP + MIPI_InitStruct->MIPI_HACT + MIPI_InitStruct->MIPI_HFP;
+	u8 bpp     = MIPI_BitsPerPixel(MIPI_InitStruct->MIPI_VideoDataFormat);
+	u32 total_bits = htotal * bpp + (u32)MIPI_InitStruct->MIPI_DphyOverheadCyc * MIPI_InitStruct->MIPI_LaneNum * 8;
 
-	u32 PLLDiv = PLL_GET_NPLL_DIVN_SDM(PLL_BASE->PLL_NPPLL_CTRL1) + 2;
-	u32 PLL_CLK = XTAL_ClkGet() / 1000000 * PLLDiv;
-	u32 mipi_ckd = PLL_CLK / vo_freq - 1;
-	mipi_ckd = (mipi_ckd > 0x3F) ? 0x3F : mipi_ckd;
+	/* Compute and store data lane frequency and line time */
+	MIPI_InitStruct->MIPI_VideDataLaneFreq = (u16)(MIPI_InitStruct->MIPI_FrameRate * total_bits * vtotal / MIPI_InitStruct->MIPI_LaneNum / 1000000 + 1);
+	MIPI_InitStruct->MIPI_LineTime = (u16)((MIPI_InitStruct->MIPI_VideDataLaneFreq * 1000000UL) / 8 / MIPI_InitStruct->MIPI_FrameRate / vtotal + 1);
+	/* DataLaneFreq is already ddr */
+	RTK_LOGI(TAG, "DataLaneFreq: %uMbps, LineTime: %u\n", MIPI_InitStruct->MIPI_VideDataLaneFreq, MIPI_InitStruct->MIPI_LineTime);
 
-	vo_freq = PLL_CLK / (mipi_ckd + 1);
-	RTK_LOGI(TAG, "vo_freq: %u\n", vo_freq);
-
-	if (MIPI_InitStruct->MIPI_VideDataLaneFreq * 2 / 24 >= vo_freq) {
-		RTK_LOGE(TAG, "%lx %lx\n", (uint32_t)MIPI_InitStruct->MIPI_VideDataLaneFreq * 2 / 24, vo_freq);
-		RTK_LOGE(TAG, "!!ERROR!!, VO CLK too slow!\n");
+	if (MIPI_InitStruct->MIPI_LineTime * MIPI_InitStruct->MIPI_LaneNum < total_bits / 8) {
+		RTK_LOGE(TAG, "!!ERROR!!, LINE TIME TOO SHORT!\n");
 	}
 
-	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0) & ~LSYS_MASK_CKD_MIPI) | LSYS_CKD_MIPI(mipi_ckd));
-	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0) & ~LSYS_MASK_CKD_HPERI) | LSYS_CKD_HPERI(3));
+	/* MIPI(<=66.7M), LCDC(<=NPPLL/4), LCDC:MIPI >= 3:1 */
+	vo_freq = vtotal * htotal * MIPI_InitStruct->MIPI_FrameRate / 1000000 + 1;
+	PLLDiv   = PLL_GET_NPLL_DIVN_SDM(PLL_BASE->PLL_NPPLL_CTRL1) + 2;
+	PLL_CLK  = XTAL_ClkGet() / 1000000 * PLLDiv;
+	vo_ckd = PLL_CLK / vo_freq - 1;
+	vo_ckd = (vo_ckd > 0x3F) ? 0x3F : vo_ckd;
+	vo_freq = PLL_CLK / (vo_ckd + 1);
+
+	data_pixel_freq = MIPI_InitStruct->MIPI_VideDataLaneFreq * MIPI_InitStruct->MIPI_LaneNum / bpp;
+	if (data_pixel_freq >= vo_freq) {
+		// RTK_LOGE(TAG, "!!ERROR!!, VO CLK too slow!\n");
+		vo_freq = data_pixel_freq + 1;
+		vo_ckd = PLL_CLK / vo_freq - 1;
+	}
+
+	if (MIPI_InitStruct->MIPI_VACT * MIPI_InitStruct->MIPI_HACT % 16 != 0) {
+		RTK_LOGW(TAG, "if HACT*VACT is multiple of 16, no limit here!\n");
+
+		/* LCDC:VO <= 7(3*Tvo_clk + 2*Tlcdc_clk < 3*Tlcdc_clk*8, maybe 2*Tvo_clk), lcdc_ckd shall be < 8 */
+		if (8 * 7 <= vo_ckd) {
+			RTK_LOGI(TAG, "vo_freq: %uM is enough, but LCDC:VO <= 7\n", vo_freq);
+			vo_ckd = 8 * 7 - 1;
+			vo_freq = PLL_CLK / (vo_ckd + 1);
+		}
+		lcdc_ckd = (vo_ckd / 7 + 1) - 1;
+		lcdc_ckd = MAX(lcdc_ckd, 3);
+	} else {
+		lcdc_ckd = 3;
+	}
+
+	lcdc_freq = PLL_CLK / (lcdc_ckd + 1);
+	assert_param((lcdc_freq >= vo_freq * 3) && (vo_freq < 67));
+	RTK_LOGI(TAG, "vo_freq: %uM, lcdc_freq: %uM\n", vo_freq, lcdc_freq);
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0) & ~LSYS_MASK_CKD_MIPI) | LSYS_CKD_MIPI(vo_ckd));
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKD_GRP0) & ~LSYS_MASK_CKD_HPERI) | LSYS_CKD_HPERI(lcdc_ckd));
 
 	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_HPERI_CLOCK, ENABLE);
 	RCC_PeriphClockCmd(APBPeriph_LCDC, APBPeriph_LCDCMIPI_CLOCK, ENABLE);
@@ -617,10 +626,13 @@ void MIPI_CLK_Set(MIPI_InitTypeDef *MIPI_InitStruct)
   */
 void MIPI_Init(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruct)
 {
+	/* Sanity check: HSA/HBP/HFP are now in pixels (previously bytes). Sum > 512 almost certainly means caller is passing byte values. */
+	assert_param(MIPI_InitStruct->MIPI_HSA + MIPI_InitStruct->MIPI_HBP + MIPI_InitStruct->MIPI_HFP <= 512);
+
 	/* Enable BG */
 	MIPI_BG_CMD(ENABLE);
-	MIPI_CLK_Set(MIPI_InitStruct);
 
+	MIPI_CLK_Set(MIPI_InitStruct);
 	MIPI_DPHY_init(MIPIx, MIPI_InitStruct);
 	MIPI_DSI_init(MIPIx, MIPI_InitStruct);
 }

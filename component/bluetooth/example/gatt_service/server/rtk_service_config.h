@@ -30,6 +30,7 @@ extern "C"  {
 #define TX_POWER_SRV_ID                     16
 #define LINK_LOSS_SRV_ID                    17
 #define RUNNING_SPEED_CADENCE_SRV_ID        18
+#define CYCLING_SPEED_CADENCE_SRV_ID        19
 
 #define TRANSFER_MODULE_SRV_ID_BASE         0x80
 

@@ -91,6 +91,8 @@ enum  {
 
 	RTW_EVENT_DFS_CAC_DONE				= 127, /**< DFS master: CAC passed, host brings AP netif link up */
 
+	RTW_EVENT_RADAR_PROC_RPT				= 128, /**< Radar report ready */
+
 	RTW_EVENT_INTERNAL_MAX,
 };
 
@@ -240,6 +242,31 @@ struct rtw_event_nb_resp_recv {
 struct rtw_event_report_frame {
 	u32 frame_len;
 	u8 frame[];
+};
+
+
+struct rtw_event_radar_proc_rpt_info {
+	u8 rpt_type : 3;
+	u8 rpt_seg_start : 1;
+	u8 rpt_seg_end : 1;
+	u8 bw_idx : 2;
+	u8 chirp_width : 2;
+	u8 channel;
+	u8 frame_num;
+	u8 frame_interval;             /**< unit ms */
+	u8 fft_num_sub;
+	s16 fft_strt_idx;
+	u16 chirp_num;
+	u8 doppler_t2f_step[3];
+	s16 doppler_t2f_strt_idx[3];
+	s16 doppler_t2f_end_idx[3];
+	u16 doppler_sample_num;
+	float aagc_gain;
+	float dagc_gain_normal_mode[4];
+	s16 isolation;                /**< Antenna isolation in dBm (carried from NP via IPC) */
+	s16 range_leakage_dBx10;     /**< Range leakage power encoded as 5-bit exp + 11-bit mantissa */
+	u32 radar_data_length;
+	u8 radar_data[];
 };
 
 struct rtw_task_size {

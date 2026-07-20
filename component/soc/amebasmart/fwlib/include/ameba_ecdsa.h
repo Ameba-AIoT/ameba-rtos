@@ -7,9 +7,6 @@
 #ifndef _AMEBA_ECDSA_H_
 #define _AMEBA_ECDSA_H_
 
-#include "mbedtls/bignum.h"
-#include "mbedtls/ecp.h"
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */

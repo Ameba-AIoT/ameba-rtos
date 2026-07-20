@@ -41,7 +41,7 @@ In addition, if testing the VFS SD card scenario, please adjust the SDIOH pinmux
    | `CONFIG_USBH_UVC_WIDTH`                  | `1280`                 | Target resolution and compression ratio (host stack selects closest match if camera does not support) |
    | `CONFIG_USBH_UVC_HEIGHT`                 | `720`                  | Target resolution and compression ratio (host stack selects closest match if camera does not support) |
    | `CONFIG_USBH_UVC_FRAME_RATE`             | `30`                   | Target resolution and compression ratio (host stack selects closest match if camera does not support) |
-   | `CONFIG_USBH_UVC_FRAME_BUF_SIZE`         | `(150 * 1024)`         | Frame buffer size in bytes (increase if an oversize error occurs, see detailed calculation guide in example)                                     |
+   | `CONFIG_USBH_UVC_FRAME_BUF_SIZE`         | see source             | Frame buffer size in bytes (increase if a truncation error occurs; default defined in `example_usbh_uvc.c`, may change per resolution/format)     |
    | `CONFIG_USBH_UVC_IF_NUM_0`               | `0`                    | Video stream interface index (0 for single stream, 1 for dual streams)                                |
    | `CONFIG_USBH_UVC_HOT_PLUG`               | `1`                    | Hot plug / memory leak test                                                                           |
    | `CONFIG_USBH_UVC_CHECK_MJEPG_DATA`       | `1`                    | Check image data validity (0: Disable, 1: Enable)                                                     |
@@ -98,7 +98,7 @@ Attach a USB camera to the USB port of the Ameba development board, then reset t
 
 > **Note:** Values shown above (frame lengths, throughput, timestamps) are examples. Actual values vary depending on the camera and connection. The `Captured frame 199` line confirms all 200 frames (0-199) were captured successfully.
 >
-> **Note:** If `err` appears in the log, check whether the `len` in the nearby `Captured frame` line has reached the default maximum value (153,600). If so, increase `CONFIG_USBH_UVC_FRAME_BUF_SIZE` in `example/usb/usbh_uvc/example_usbh_uvc.c`.
+> **Note:** If a `truncated` error appears in the log, the camera frame was larger than the buffer and its tail was dropped. Check whether the `len` in the nearby `Captured frame` line has reached `CONFIG_USBH_UVC_FRAME_BUF_SIZE`. If so, increase `CONFIG_USBH_UVC_FRAME_BUF_SIZE` in `example/usb/usbh_uvc/example_usbh_uvc.c`.
 
 ## Scenario: VFS
 
@@ -107,7 +107,9 @@ Attach a USB camera to the USB port of the Ameba development board, then reset t
 3. Rebuild and Download.
 4. Insert a FAT32-formatted SD card into the SD card slot of the Ameba development board.
 5. Attach a USB camera to the USB port of the Ameba development board.
-6. Reset the board. The LOGUART console shall print the following output. Confirm that no USB-related errors are reported.
+6. Reset the board. The LOGUART console shall print the following output. Confirm that no USB-related errors are reported. The saved file layout depends on `CONFIG_USBH_UVC_FORMAT_TYPE`:
+
+   **MJPEG** — each captured frame is written to its own `imgN.jpeg` file. Capture stops after `CONFIG_USBH_UVC_LOOP` frames.
 
 ```
 [UVC-I] USBH UVC demo start                    #criteria: init
@@ -119,9 +121,24 @@ Attach a USB camera to the USB port of the Ameba development board, then reset t
 [UVC-I] Create image file: sdcard:img0.jpeg    #criteria: vfs_write
 [UVC-I] fwrite() ok, w 25946                   #criteria: vfs_write_ok
 ...
+[UVC-I] VFS MJPEG done, 195 files written to SD #criteria: vfs_done
 ```
 
-4. Read the data from the SD card and verify that the JPEG files were received and saved correctly.
+   **H264 / H265** — the whole stream is written to a single `stream.h264` / `stream.h265` file. Capture stops once the file reaches the `USBH_UVC_VFS_VIDEO_SIZE` (2 MB) target, not after a fixed frame count.
+
+```
+[UVC-I] USBH UVC demo start                    #criteria: init
+[UVC-I] INIT
+...
+[UVC-I] SETUP
+[UVC-I] Stream on
+[UVC-I] VFS-SDcard Init Success                #criteria: vfs_ready
+[UVC-I] Create image file: sdcard:stream.h264  #criteria: vfs_write
+...
+[UVC-I] VFS stream.h264 done, 2097152 bytes    #criteria: vfs_done
+```
+
+4. Read the data from the SD card and verify that the received files were saved correctly: the `imgN.jpeg` files for MJPEG, or the single `stream.h264` / `stream.h265` file for H264 / H265.
 
 ## Scenario: HTTPC
 
@@ -182,20 +199,29 @@ Attach a USB camera to the USB port of the Ameba development board, then reset t
 7. Start the server:
    - Open a command prompt (CMD) inside the `apache24/bin` directory.
    - Run `httpd.exe`. The PC is now listening for incoming data from the board.
+   > **Note:** `httpd.exe` may exit on startup instead of staying resident. Verify it is listening before testing the board — in a separate CMD window run `netstat -an | findstr 5090` and confirm a `x.x.x.x:5090 ... LISTENING` line. If nothing is listening, check `Apache24\logs\error.log` for the cause, or run `httpd.exe -X` to print the startup error directly. For example, `vcruntime140.dll ... is not compatible` means the Visual C++ Redistributable (x64, VS 2015–2022) must be updated — download it from https://aka.ms/vs/17/release/vc_redist.x64.exe .
 
 ### Board Operation
 
-1. Configure the server IP `USBH_UVC_HTTPC_SERVER` to the Test PC's current IP address in `example_usbh_uvc.c`.
+1. Configure the HTTP server IP so the board knows where to upload frames:
+   - **Compile-time:** set `USBH_UVC_HTTPC_SERVER` in `example_usbh_uvc.c` to the Test PC's IP, then rebuild an download;
+   - **Runtime (no rebuild):** after reset, enter the following LOGUART command to override the server IP.
+   ```
+   uvch_set_ip <ip>
+   ```
+   On success the console prints `HTTPC server IP set to: <ip>`. Enter this command before the WiFi/HTTPC connection is established.
 2. Rebuild and Download.
 3. Attach a USB camera to the USB port of the Ameba development board.
 4. Reset the board. Connect to the router by entering the following AT command, Verify that the WiFi connection is successfully established before proceeding.
-	```
-	AT+WLCONN=ssid,<SSID>,pw,<PASSWORD>
-	```
+   ```
+   AT+WLCONN=ssid,<SSID>,pw,<PASSWORD>
+   ```
 
-	> **Note:** Replace <SSID> with your Wi-Fi network name and <PASSWORD> with the corresponding Wi-Fi password.
+   > **Note:** Replace <SSID> with your Wi-Fi network name and <PASSWORD> with the corresponding Wi-Fi password.
 
-5. The LOGUART console shall print the following output. Confirm that no USB-related errors are reported.
+5. The LOGUART console shall print the following output. Confirm that no USB-related errors are reported. The upload behavior depends on `CONFIG_USBH_UVC_FORMAT_TYPE`:
+
+   **MJPEG** — each captured frame is POSTed as one HTTP request. Upload stops after `CONFIG_USBH_UVC_LOOP` frames.
 
 ```
 [UVC-I] USBH UVC demo start                    #criteria: init
@@ -207,7 +233,21 @@ Attach a USB camera to the USB port of the Ameba development board, then reset t
 ...
 ```
 
-4. Check the HTTP server side `Apache24/uploads` directory and verify that the JPEG files were received and saved correctly.
+   **H264 / H265** — the stream is uploaded in bulk rather than per-frame. When hardware UVC is enabled, frames are first accumulated in PSRAM and then POSTed together; otherwise the stream is POSTed continuously until the 2 MB `USBH_UVC_HTTPC_VIDEO_SIZE` target is reached. Upload is not bounded by a fixed frame count.
+
+```
+[UVC-I] USBH UVC demo start                    #criteria: init
+...
+[UVC-I] SETUP
+[UVC-I] Start httpc                            #criteria: httpc_start
+[UVC-I] Stream on
+[UVC-I] HTTP: 60 frames (160951 bytes) ready for upload
+[UVC-I] HTTP: PSRAM has 160951 bytes from 60 frames
+[UVC-I] HTTP: Upload complete: 160951 bytes (60 frames) #criteria: httpc_upload_ok
+...
+```
+
+6. Check the HTTP server side `Apache24/uploads` directory and verify that the received files were saved correctly: the per-frame JPEG files for MJPEG, or the `stream.h264` / `stream.h265` file for H264 / H265.
 
 # Note
 
@@ -217,4 +257,3 @@ None
 
 RTL8730E
 RTL8721F
-RTL8735C

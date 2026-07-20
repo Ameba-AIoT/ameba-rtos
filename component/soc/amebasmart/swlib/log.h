@@ -284,12 +284,12 @@ int rtk_log_level_set(const char *tag, rtk_log_level_t level);
 
 /**
   * @brief  Print all entries in a tag-level cache array.
-  * @param  rtk_log_tag_array  Pointer to the cache array to print.
+  * @param  log_tag_array      Pointer to the cache array to print.
   * @return Status code:
   *         - 0: Success (RTK_SUCCESS).
-  *         - -1: rtk_log_tag_array is NULL (RTK_FAIL).
+  *         - -1: log_tag_array is NULL (RTK_FAIL).
   */
-int rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array);
+int rtk_log_array_print(rtk_log_tag_t *log_tag_array);
 
 /**
   * @}

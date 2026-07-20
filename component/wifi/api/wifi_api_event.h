@@ -72,7 +72,6 @@ enum rtw_event_id {
 	RTW_EVENT_WPA_EAPOL_START,        /**< STA mode: WPA enterprise authentication started */
 	RTW_EVENT_WPA_EAPOL_RECVD,        /**< STA mode: EAPOL packet received during WPA enterprise authentication  */
 	RTW_EVENT_DHCP_STATUS,            /**< STA mode: DHCP status report (see @ref rtw_event_dhcp_status)  */
-	RTW_EVENT_RADAR_REPORT,           /**< Radar report ready (see example_wifi_radar.c) */
 	RTW_EVENT_DFS_RADAR_DETECTED,     /**< SoftAP DFS master: radar detected on the operating channel (see @ref rtw_event_dfs_radar_detected_info) */
 
 	RTW_EVENT_MAX,
@@ -234,36 +233,6 @@ struct rtw_event_csi_report_info {
 	u8 rsvd[6];                 /**< Ensure the total sizes of struct is 4-byte alignment */
 	u32 csi_data_length;        /**< CSI raw data length, unit: byte. */
 	u8 csi_data[];              /**< CSI raw data head address */
-};
-#pragma pack()
-
-#pragma pack(1) /* radar report info should be 1 byte alignment */
-/**
- * @brief  Layout of Radar report info.
- */
-struct rtw_event_radar_report_info {
-	u8 rpt_type : 3;               /**< Radar report type (see @ref rtw_radar_type) */
-	u8 rpt_seg_start : 1;          /**< Instructions for segmented reporting, invalid after integration. */
-	u8 rpt_seg_end : 1;            /**< Instructions for segmented reporting, invalid after integration. */
-	u8 bw_idx : 2;                 /**< Operating bandwidth (0: 70MHz, 1: 40MHz, 2: 20M). */
-	u8 chirp_width : 2;            /**< 0:8us, 1:16us, 2:32us, 3:64us. */
-	u8 channel;                    /**< Operating central frequency. */
-	u8 frame_num;
-	u8 frame_interval;             /**< unit ms */
-	u8 fft_num_sub;
-	s16 fft_strt_idx;
-	u16 chirp_num;
-	u8 doppler_t2f_step[3];
-	s16 doppler_t2f_strt_idx[3];
-	s16 doppler_t2f_end_idx[3];
-	u16 doppler_sample_num;
-	float aagc_gain;
-	float dagc_gain_normal_mode[4];
-	s16 isolation;                /**< Antenna isolation in dBm (carried from NP via IPC) */
-	s16 range_leakage_dBx10;     /**< Range leakage power encoded as 5-bit exp + 11-bit mantissa */
-	u8  rsvd[1];                  /**< Ensure 4-byte alignment */
-	u32 radar_data_length;        /**< radar raw data length, unit: byte. [segments report raw data len or complete repoprt raw data len] */
-	u8 radar_data[];              /**< radar raw data head address */
 };
 #pragma pack()
 

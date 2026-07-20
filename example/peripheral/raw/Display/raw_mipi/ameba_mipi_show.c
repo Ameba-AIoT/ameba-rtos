@@ -34,7 +34,7 @@ static const char *const TAG = "EP_MIPI";
 #define REGFLAG_DELAY						0xFC
 #define REGFLAG_END_OF_TABLE				0xFD	// END OF REGISTERS MARKER
 
-#define Mhz									1000000UL
+/* DPHY lane timing parameters (panel datasheet) */
 #define T_LPX		5
 #define T_HS_PREP	6
 #define T_HS_TRAIL	8
@@ -123,6 +123,7 @@ LCDC_IRQInfo LcdcIrqInfo = {
 	.IrqData = (u32)LCDC,
 };
 
+static rtos_sema_t lcdc_sema = NULL;
 
 /* Resulation : 480x800
  * Inversion  : 2dot
@@ -218,61 +219,28 @@ void Mipi_LCM_Set_Reset_Pin(u8 Newstatus)
 
 void MIPI_InitStruct_Config(MIPI_InitTypeDef *MIPI_InitStruct)
 {
-	u32 vtotal, htotal_bits, bit_per_pixel, overhead_cycles, overhead_bits, total_bits;
-
-	switch (MIPI_InitStruct->MIPI_VideoDataFormat) {
-	case MIPI_VIDEO_DATA_FORMAT_RGB565:
-		bit_per_pixel = 16;
-		break;
-	case MIPI_VIDEO_DATA_FORMAT_RGB666_PACKED:
-		bit_per_pixel = 18;
-		break;
-	case MIPI_VIDEO_DATA_FORMAT_RGB666_LOOSELY:
-	case MIPI_VIDEO_DATA_FORMAT_RGB888:
-	default:
-		bit_per_pixel = 24;
-		break;
-	}
-
-	MIPI_InitStruct->MIPI_LaneNum = 2;
+	MIPI_InitStruct->MIPI_LaneNum   = 2;
 	MIPI_InitStruct->MIPI_FrameRate = MIPI_FRAME_RATE;
 
-	MIPI_InitStruct->MIPI_HSA = MIPI_DSI_HSA * bit_per_pixel / 8 ;//- 10; /* here the unit is pixel but not us */
-	if (MIPI_InitStruct->MIPI_VideoModeInterface == MIPI_VIDEO_NON_BURST_MODE_WITH_SYNC_PULSES) {
-		MIPI_InitStruct->MIPI_HBP = MIPI_DSI_HBP * bit_per_pixel / 8 ;//- 10;
-	} else {
-		MIPI_InitStruct->MIPI_HBP = (MIPI_DSI_HSA + MIPI_DSI_HBP) * bit_per_pixel / 8 ;//-10 ;
-	}
-
+	/* HSA / HBP / HFP in pixels — driver converts to bytes internally */
+	MIPI_InitStruct->MIPI_HSA  = MIPI_DSI_HSA;
+	MIPI_InitStruct->MIPI_HBP  = MIPI_DSI_HBP;
 	MIPI_InitStruct->MIPI_HACT = MIPI_HACT_g;
-	MIPI_InitStruct->MIPI_HFP = MIPI_DSI_HFP * bit_per_pixel / 8 ;//-12;
+	MIPI_InitStruct->MIPI_HFP  = MIPI_DSI_HFP;
 
-	MIPI_InitStruct->MIPI_VSA = MIPI_DSI_VSA;
-	MIPI_InitStruct->MIPI_VBP = MIPI_DSI_VBP;
+	MIPI_InitStruct->MIPI_VSA  = MIPI_DSI_VSA;
+	MIPI_InitStruct->MIPI_VBP  = MIPI_DSI_VBP;
 	MIPI_InitStruct->MIPI_VACT = MIPI_VACT_g;
-	MIPI_InitStruct->MIPI_VFP = MIPI_DSI_VFP;
+	MIPI_InitStruct->MIPI_VFP  = MIPI_DSI_VFP;
 
-	/*DataLaneFreq * LaneNum = FrameRate * (VSA+VBP+VACT+VFP) * (HSA+HBP+HACT+HFP) * PixelFromat*/
-	vtotal = MIPI_InitStruct->MIPI_VSA + MIPI_InitStruct->MIPI_VBP + MIPI_InitStruct->MIPI_VACT + MIPI_InitStruct->MIPI_VFP;
-	htotal_bits = (MIPI_DSI_HSA + MIPI_DSI_HBP + MIPI_InitStruct->MIPI_HACT + MIPI_DSI_HFP) * bit_per_pixel;
-	overhead_cycles = T_LPX + T_HS_PREP + T_HS_ZERO + T_HS_TRAIL + T_HS_EXIT;
-	overhead_bits = overhead_cycles * MIPI_InitStruct->MIPI_LaneNum * 8;
-	total_bits = htotal_bits + overhead_bits;
-
-	MIPI_InitStruct->MIPI_VideDataLaneFreq = MIPI_InitStruct->MIPI_FrameRate * total_bits * vtotal / MIPI_InitStruct->MIPI_LaneNum / Mhz + 20;
-
-	MIPI_InitStruct->MIPI_LineTime = (MIPI_InitStruct->MIPI_VideDataLaneFreq * Mhz) / 8 / MIPI_InitStruct->MIPI_FrameRate / vtotal;
-	MIPI_InitStruct->MIPI_BllpLen = MIPI_InitStruct->MIPI_LineTime / 2;
-
-	if (MIPI_DSI_HSA + MIPI_DSI_HBP + MIPI_HACT_g + MIPI_DSI_HFP < (512 + MIPI_DSI_RTNI * 16)) {
+	/* Panel constraint: htotal must be large enough for DSI reverse turn-around */
+	u32 htotal = MIPI_DSI_HSA + MIPI_DSI_HBP + MIPI_HACT_g + MIPI_DSI_HFP;
+	if (htotal < (512 + MIPI_DSI_RTNI * 16)) {
 		RTK_LOGE(TAG, "!!ERROR!!, LCM NOT SUPPORT\n");
 	}
 
-	if (MIPI_InitStruct->MIPI_LineTime * MIPI_InitStruct->MIPI_LaneNum < total_bits / 8) {
-		RTK_LOGE(TAG, "!!ERROR!!, LINE TIME TOO SHORT!\n");
-	}
-
-	RTK_LOGI(TAG, "DataLaneFreq: %d, LineTime: %d\n", MIPI_InitStruct->MIPI_VideDataLaneFreq, MIPI_InitStruct->MIPI_LineTime);
+	/* DPHY overhead per line: T_LPX + T_HS_PREP + T_HS_ZERO + T_HS_TRAIL + T_HS_EXIT */
+	MIPI_InitStruct->MIPI_DphyOverheadCyc = T_LPX + T_HS_PREP + T_HS_ZERO + T_HS_TRAIL + T_HS_EXIT;
 }
 
 void MipiDsi_ST7701S_isr(void)
@@ -639,8 +607,9 @@ u32 LCDCRgbHvIsr(void *Data)
 	volatile u32 IntId = LCDC_GetINTStatus(LCDCx);
 
 	/*select operations according to interrupt ID*/
-	if (IntId & LCDC_BIT_LCD_LIN_INTS) {
-		LCDC_ClearINT(LCDCx, LCDC_BIT_LCD_LIN_INTS);
+	if (IntId & LCDC_BIT_LCD_FRD_INTS) {
+		LCDC_ClearINT(LCDCx, LCDC_BIT_LCD_FRD_INTS);
+		rtos_sema_give(lcdc_sema);
 	}
 
 	if (IntId & LCDC_BIT_DMA_UN_INTS) {
@@ -683,10 +652,8 @@ void LcdcRgbDisplayTest(void)
 	InterruptRegister((IRQ_FUN)LCDCRgbHvIsr, LcdcIrqInfo.IrqNum, (u32)LcdcIrqInfo.IrqData, LcdcIrqInfo.IrqPriority);
 	InterruptEn(LcdcIrqInfo.IrqNum, LcdcIrqInfo.IrqPriority);
 
-	/*line number*/
-	LCDC_LineINTPosConfig(LCDC, MIPI_VACT_g * 4 / 5);
 	/*enbale LCDC interrupt*/
-	LCDC_INTConfig(LCDC, LCDC_BIT_LCD_LIN_INTEN | LCDC_BIT_DMA_UN_INTEN, ENABLE);
+	LCDC_INTConfig(LCDC, LCDC_BIT_LCD_FRD_INTEN | LCDC_BIT_DMA_UN_INTEN, ENABLE);
 
 	LcdcEnable();
 
@@ -713,13 +680,14 @@ void LcdcRgbDisplayChk(void)
 
 	/*dump the current X/Y position*/
 	while (1) {
+		rtos_sema_take(lcdc_sema, RTOS_MAX_DELAY);
+
 		if (LCDC_InitStruct.layerx[layer_idx].LCDC_LayerImgBaseAddr == (u32)LcdImgBuffer1) {
 			LcdShowBuffer = (u32 *)BackupLcdImgBuffer;
 		} else {
 			LcdShowBuffer = (u32 *)LcdImgBuffer1;
 		}
 		LCDC_InitStruct.layerx[layer_idx].LCDC_LayerImgBaseAddr = (u32)LcdShowBuffer;
-		LCDC_LayerConfig(LCDC, layer_idx, &LCDC_InitStruct.layerx[layer_idx]);
 
 		switch (LCDC_Show_Idx++) {
 		case 0:
@@ -740,8 +708,8 @@ void LcdcRgbDisplayChk(void)
 			break;
 		}
 
+		LCDC_LayerConfig(LCDC, layer_idx, &LCDC_InitStruct.layerx[layer_idx]);
 		LCDC_TrigerSHWReload(LCDC);
-		rtos_time_delay_ms(1000);
 	}
 }
 
@@ -752,6 +720,10 @@ void MIPIDemoShow_task(void)
 		RTK_LOGE(TAG, "Remember Modify LCDC_IMG_BUF_OFFSET in PSRAM(8MB)\n");
 		BackupLcdImgBuffer = (u8 *)(DDR_BASE + (5 << 20));	/*PSRAM use 5~8M*/
 		LcdImgBuffer1 = (u8 *)(BackupLcdImgBuffer + LCDC_IMG_BUF_SIZE);
+	}
+
+	if (rtos_sema_create_binary(&lcdc_sema) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "lcdc_sema create failed\n");
 	}
 
 	MipiDsi_ST7701S_lcm_init();

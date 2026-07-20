@@ -56,7 +56,7 @@ static void i2c_StructInit(i2c_t *obj, uint32_t I2c_index, uint8_t sda, uint8_t 
 	/* I2C Pin Mux Initialization */
 
 
-#if (defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBAD))
+#if (defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBAD) || defined (CONFIG_AMEBAPRO3))
 	Pinmux_Config(sda, PINMUX_FUNCTION_I2C);
 	Pinmux_Config(scl, PINMUX_FUNCTION_I2C);
 #else
@@ -89,7 +89,6 @@ static void i2c_StructInit(i2c_t *obj, uint32_t I2c_index, uint8_t sda, uint8_t 
 	I2CInitData[obj->i2c_idx].I2CClk        = 100;
 	I2CInitData[obj->i2c_idx].I2CAckAddr    = I2C_SLAVE_ADDR0;
 	I2CInitData[obj->i2c_idx].I2CAddrMod    = I2C_ADDR_7BIT;
-
 }
 
 void i2c_Restart_enable(i2c_t *obj)

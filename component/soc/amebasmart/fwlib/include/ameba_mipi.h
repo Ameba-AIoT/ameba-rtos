@@ -1342,6 +1342,10 @@ extern "C" {
  * @brief AMEBAD2_MIPI Register Declaration
  **/
 
+/**
+ * @note  BREAKING CHANGE: MIPI_HSA / MIPI_HBP / MIPI_HFP are now in PIXELS (previously in bytes). Driver handles pixel-to-byte conversion internally
+ *        inside MIPI_DSI_Timing_Ctrl. caller always sets raw pixel values.
+ */
 typedef struct {
 	u8 MIPI_VideoNCmdMode;
 	u8 MIPI_VideoDataFormat;
@@ -1355,20 +1359,21 @@ typedef struct {
 
 	u8 MIPI_LaneNum;
 	u16 MIPI_FrameRate;
-	u16 MIPI_VideDataLaneFreq;	/* in Mbps */
+	u16 MIPI_VideDataLaneFreq;	/* in Mbps; computed by MIPI_Init(), may be overridden */
+	u16 MIPI_LineTime;			/* in byteclk cycles; computed by MIPI_Init() */
 
-	u16 MIPI_HSA;				/* in bytes */
-	u16 MIPI_HBP;
-	u16 MIPI_HACT;
-	u16 MIPI_HFP;
+	u16 MIPI_HSA;				/* in pixels */
+	u16 MIPI_HBP;				/* in pixels */
+	u16 MIPI_HACT;				/* in pixels */
+	u16 MIPI_HFP;				/* in pixels */
 
 	u16 MIPI_VSA;				/* in lines */
-	u16 MIPI_VBP;
-	u16 MIPI_VACT;
-	u16 MIPI_VFP;
+	u16 MIPI_VBP;				/* in lines */
+	u16 MIPI_VACT;				/* in lines */
+	u16 MIPI_VFP;				/* in lines */
 
-	u16 MIPI_BllpLen;			/* in byteclk cycles */
-	u16 MIPI_LineTime;			/* in byteclk cycles */
+	/* Sum of DPHY lane overhead cycles per line (T_LPX + T_HS_PREP + T_HS_ZERO + T_HS_TRAIL + T_HS_EXIT), in byteclk cycles. Panel datasheet specific. */
+	u16 MIPI_DphyOverheadCyc;
 } MIPI_InitTypeDef;
 /**
   * @}

@@ -40,6 +40,12 @@ __attribute__((unused)) static u32 I2CCLK_TABLE[2] = {40000000, 40000000};
 #define I2C_MTR_SCL    _PA_25
 __attribute__((unused)) static u32 I2CCLK_TABLE[2] = {10000000, 10000000};
 
+#elif defined (CONFIG_AMEBAPRO3)
+
+#define I2C_MTR_SDA    _PF_3
+#define I2C_MTR_SCL    _PF_2
+__attribute__((unused)) static u32 I2CCLK_TABLE[2] = {10000000, 10000000};
+
 #elif defined (CONFIG_RTL8720F)
 
 #define I2C_MTR_SDA    _PA_22

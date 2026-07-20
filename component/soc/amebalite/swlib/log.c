@@ -19,17 +19,17 @@ static volatile uint32_t rtk_log_entry_count = 0;
 /***
 *  @brief	Print the modules' tag/level set by the rtk_log_level_set()
 *
-*  @param	rtk_log_tag_array cache array
+*  @param	log_tag_array cache array
 *
 *  @return	success,0; fail,-1
 *
 ***/
-int rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array)
+int rtk_log_array_print(rtk_log_tag_t *log_tag_array)
 {
 	uint32_t index = MIN(rtk_log_entry_count, LOG_TAG_CACHE_ARRAY_SIZE);
-	if (rtk_log_tag_array != NULL) {
+	if (log_tag_array != NULL) {
 		for (uint32_t i = 0; i < index; i++) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] level = %d\n", rtk_log_tag_array[i].tag, rtk_log_tag_array[i].level);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] level = %d\n", log_tag_array[i].tag, log_tag_array[i].level);
 		}
 		return RTK_SUCCESS;
 	}
