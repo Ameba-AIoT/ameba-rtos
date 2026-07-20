@@ -193,6 +193,15 @@ struct rtw_kvr_param_t {
 #endif
 };
 
+/**
+ * @brief  The structure is ethernet hdr format.
+ */
+struct wlan_ethhdr_t {
+	unsigned char		daddr[ETH_ALEN];
+	unsigned char		saddr[ETH_ALEN];
+	unsigned short		type;
+};
+
 struct rtw_event_deauth_info_flash {
 	struct deauth_info *deauth_data;
 	u32 deauth_date_len;

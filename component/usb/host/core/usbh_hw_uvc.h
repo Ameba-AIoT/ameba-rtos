@@ -36,18 +36,6 @@
 #define USBH_HW_UVC_STOP_DELAY_MS              (1U)      /**< Delay before disabling concat after stop. */
 /* Exported types ------------------------------------------------------------*/
 
-/**
- * @brief UVC Hardware Error Codes
- * Defined to distinguish error type and buffer location.
- */
-typedef enum {
-	USBH_HW_UVC_ERR_NONE = 0,
-	USBH_HW_UVC_ERR_BUF0_OVERSIZE,  /* Frame data exceeded buffer size in BUF0 */
-	USBH_HW_UVC_ERR_BUF0_HEADER,    /* Payload header parsing error in BUF0 */
-	USBH_HW_UVC_ERR_BUF1_OVERSIZE,  /* Frame data exceeded buffer size in BUF1 */
-	USBH_HW_UVC_ERR_BUF1_HEADER,    /* Payload header parsing error in BUF1 */
-} usbh_hw_uvc_err_status_t;
-
 typedef struct {
 	u32 buf_start_addr;
 	u32 buf_size;
@@ -60,12 +48,15 @@ typedef struct {
 	 * @brief Called when the HW UVC decoder reports an error condition.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-	 * @param[in] err: HW UVC error status, see @ref usbh_hw_uvc_err_status_t.
+	 * @param[in] err: Bitmask of HW UVC error flags (USBH_HW_UVC_CHx_BUFx_OVERSIZE / _HEADER).
 	 */
-	void (*err_cb)(usbh_hw_uvc_err_status_t err);
+	void (*err_cb)(u32 err);
 
-	__IO u32 frame_done_cnt;
-	__IO u32 frame_done_size;
+	__IO u32 frame_done_idx;   /**< Buffer index (0..MAX_BUF_NUM-1) of the last completed frame. */
+	__IO u32 frame_done_size;  /**< Byte size of the last completed frame. */
+	__IO u32 frame_rx_cnt;     /**< Total frames the HW decoder completed (produced). */
+	__IO u32 frame_drop_cnt;   /**< Frames overwritten before usbh_uvc_get_frame() consumed them. */
+	__IO u8  buf_locked[USBH_HW_UVC_MAX_BUF_NUM]; /**< 1: buffer held by the app between get_frame() and put_frame(); ISR must not recycle it. */
 	u32 free_buf_cnt;
 
 	/* cmd reg related */
@@ -80,12 +71,15 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
-void usbh_hw_uvc_init(usbh_hw_uvc_dec_t *uvc_dec, usbh_pipe_t *pipe);
+void usbh_hw_uvc_init(usbh_hw_uvc_dec_t *uvc_dec);
+void usbh_hw_uvc_prepare(usbh_hw_uvc_dec_t *uvc_dec, usbh_pipe_t *pipe);
 void usbh_hw_uvc_deinit(usbh_hw_uvc_dec_t *uvc_dec);
 usbh_hw_uvc_dec_t *usbh_hw_uvc_alloc_channel(void);
 void usbh_hw_uvc_free_channel(usbh_hw_uvc_dec_t *uvc_dec);
 void usbh_hw_uvc_start(usbh_hw_uvc_dec_t *uvc_dec);
 void usbh_hw_uvc_stop(usbh_hw_uvc_dec_t *uvc_dec);
+void usbh_hw_uvc_release_buf(usbh_hw_uvc_dec_t *uvc_dec, u32 buf_idx);
+void usbh_hw_uvc_flush(usbh_hw_uvc_dec_t *uvc_dec);
 void usbh_hw_uvc_irq_en(u8 irq_pri);
 void usbh_hw_uvc_irq_dis(void);
 #endif
