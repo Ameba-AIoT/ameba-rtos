@@ -48,7 +48,6 @@
 #include <linux/platform_device.h>
 #include <linux/of_address.h>
 #include <linux/dma-mapping.h>
-#include <linux/unaligned.h>
 #include <net/cfg80211.h>
 #include <linux/netdevice.h>
 #include <linux/of.h>
@@ -85,6 +84,11 @@
 #include <linux/ieee80211.h>
 #include <net/cfg80211.h>
 #include <linux/of_gpio.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0)
+#include <linux/unaligned.h>
+#else
+#include <asm/unaligned.h>
+#endif
 
 /* whc headers. */
 #include "whc_host_wiphy.h"

@@ -62,7 +62,7 @@ void i2c_StructInit(i2c_t *obj, uint32_t I2c_index, uint8_t sda, uint8_t scl, ui
 	i2c_idx = I2c_index;
 	/* I2C Pin Mux Initialization */
 
-#if (defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBAD))
+#if (defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBAD) || defined (CONFIG_AMEBAPRO3))
 	Pinmux_Config(sda, PINMUX_FUNCTION_I2C);
 	Pinmux_Config(scl, PINMUX_FUNCTION_I2C);
 #else

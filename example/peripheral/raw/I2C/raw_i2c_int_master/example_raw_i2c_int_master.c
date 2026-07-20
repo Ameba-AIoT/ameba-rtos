@@ -96,7 +96,7 @@ void i2c_int_task(void)
 	i2c_intctrl.I2CWaitSem = i2c_take_sema;
 
 	/* I2C Pin Mux Initialization */
-#if (defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBAD))
+#if (defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBAD) || defined (CONFIG_AMEBAPRO3))
 	Pinmux_Config(I2C_MTR_SDA, PINMUX_FUNCTION_I2C);
 	Pinmux_Config(I2C_MTR_SCL, PINMUX_FUNCTION_I2C);
 #else

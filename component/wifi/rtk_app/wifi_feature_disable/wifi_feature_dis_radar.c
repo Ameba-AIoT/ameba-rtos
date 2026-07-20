@@ -70,9 +70,10 @@ s32 wifi_hal_radar_check_status(u8 *radar_active)
 	return 0;
 }
 
-void wifi_hal_radar_query(void)
+void wifi_hal_radar_query(char *cmd_ptr, u32 extra_arg)
 {
-
+	(void)cmd_ptr;
+	(void)extra_arg;
 }
 
 void wifi_hal_dbg_radar_edcca_th(char *cmd_ptr, u32 extra_arg)

@@ -5,6 +5,7 @@
  */
 
 #include "ameba_soc.h"
+#include <stdlib.h>
 #include "ameba_vad_pc.h"
 #include "sysreg_lsys.h"
 #include "sysreg_pll.h"

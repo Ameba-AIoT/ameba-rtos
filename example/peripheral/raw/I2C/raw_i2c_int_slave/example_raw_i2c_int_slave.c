@@ -139,6 +139,7 @@ static u32 I2CISRHandle(void *Data)
 
 	u32 intr_status = I2C_GetINT(obj->I2Cint.I2Cx);
 
+#if !defined(CONFIG_AMEBAPRO3)
 	/* I2C ADDR MATCH Intr*/
 	if (intr_status & I2C_BIT_M_LP_WAKE_1) {
 		/* Clear I2C interrupt */
@@ -148,6 +149,7 @@ static u32 I2CISRHandle(void *Data)
 		/* Clear I2C interrupt */
 		I2C_ClearINT(obj->I2Cint.I2Cx, I2C_BIT_M_LP_WAKE_2);
 	}
+#endif
 
 	/* I2C STOP DET Intr */
 	if (intr_status & I2C_BIT_R_STOP_DET) {
@@ -258,7 +260,7 @@ static void RtkI2CInit(i2c_ts *obj1, uint8_t sda, uint8_t scl)
 	}
 #endif
 
-#if (defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBAD))
+#if (defined (CONFIG_AMEBASMART) || defined (CONFIG_AMEBAD) || defined (CONFIG_AMEBAPRO3))
 	Pinmux_Config(I2C_SLV_SDA, PINMUX_FUNCTION_I2C);
 	Pinmux_Config(I2C_SLV_SCL, PINMUX_FUNCTION_I2C);
 #else

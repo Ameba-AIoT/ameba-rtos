@@ -36,6 +36,11 @@
 #define MBED_I2C_MTR_SDA    _PA_26
 #define MBED_I2C_MTR_SCL    _PA_25
 
+#elif defined (CONFIG_AMEBAPRO3)
+
+#define MBED_I2C_MTR_SDA    _PF_3
+#define MBED_I2C_MTR_SCL    _PF_2
+
 #elif defined (CONFIG_RTL8720F)
 
 #define MBED_I2C_MTR_SDA    _PA_22

@@ -28,17 +28,18 @@ u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
  * 		 3.The clk of all peripherals can be set as close to the peak performance frequency as possible according to the different core voltages.
  * 		 4.RMII(GMAC) has a fixed input of 50M clk, while SPORT(audio) has a fixed input of 98.304M clk.
  * 		 5.The working clock range of CAN is 40M~125M. Peak performance is between 100-125M. Sleep and wake up using 4M OSC.
+ * 		 6.The eye diagram test for this IC failed at 0.9V. Therefore, all USB-enabled options are set to 1.0V by default.
  */
 SocClk_Info_TypeDef SocClk_Info[] = {
 	/* USBPLL_CLK,		SYSPLL_CLK,		Vol_Type,		CPU_CKD*/
 	/* 0. Low power consumption scenario. (CPU clk: 240Mhz) */
 	{PLL_960M,			PLL_NONE,		CORE_VOL_0P9,	CLKDIV(4) | IS_USB_PLL},
-	/* 1. Use RMII or/and USB peripherals. (CPU clk: 240Mhz) */
+	/* 1. Use RMII peripheral. (CPU clk: 240Mhz) */
 	{PLL_960M,			PLL_400M,		CORE_VOL_0P9,	CLKDIV(4) | IS_USB_PLL},
 	/* 2. Use Audio or/and USB peripherals. (CPU clk: 240Mhz) */
-	{PLL_960M,			PLL_393P216M,	CORE_VOL_0P9,	CLKDIV(4) | IS_USB_PLL},
-	/* 3. Use Audio or/and RMII peripherals. (CPU clk: 240Mhz) */
-	{PLL_960M,			PLL_361P2672M,	CORE_VOL_0P9,	CLKDIV(4) | IS_USB_PLL},
+	{PLL_960M,			PLL_393P216M,	CORE_VOL_1P0,	CLKDIV(4) | IS_USB_PLL},
+	/* 3. Use Audio or/and RMII/USB peripherals. (CPU clk: 240Mhz) */
+	{PLL_960M,			PLL_361P2672M,	CORE_VOL_1P0,	CLKDIV(4) | IS_USB_PLL},
 	/* 4. Use Audio or/and RMII peripherals. (CPU clk: 266.7Mhz) */
 	{PLL_800M,			PLL_393P216M,	CORE_VOL_0P9,	CLKDIV(3) | IS_USB_PLL},
 	/* 5. 1P0_RMII_USB: Use RMII or/and USB peripherals. (CPU clk: 320Mhz) */
