@@ -119,7 +119,7 @@ enum rtk_coex_wl_c2h_evt {
 enum rtk_coex_halrf_rfk_process {
 	RTK_COEX_WL_RFK_STOP		= 0,
 	RTK_COEX_WL_RFK_START		= 1,
-	RTK_COEX_WL_RFK_ONESHOT_START	= 2,
-	RTK_COEX_WL_RFK_ONESHOT_STOP	= 3
+	RTK_COEX_WL_RFK_RADAR_START	= 2,
+	RTK_COEX_WL_RFK_RADAR_STOP	= 3
 };
 #endif /* RTW_COEX_API_STRUCT_H */

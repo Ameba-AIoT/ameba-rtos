@@ -177,6 +177,29 @@ void newlib_reclaim_reent(uint32_t *pxNewLib_reent)
 
 }
 
+/*
+ * Wrapper for the non-ROM vPortFree used as os_cfg.patch_vPortFree.
+ *
+ * The ROM vPortFree compiled from heap_5.c calls the patch as:
+ *   blx  patch_vPortFree(pv)
+ *   cbnz R0, <return>   ; non-zero => "handled, skip ROM's own logic"
+ *
+ * The ROM expects a non-zero return to mean "handled".  The non-ROM vPortFree
+ * is declared void and ends with a tail-call to xTaskResumeAll(), which can
+ * return pdFALSE (0) when no context-switch is needed.  That 0 propagates as
+ * the apparent return value back to ROM, which then falls through to its own
+ * release logic using xHeapStructSize=32, corrupting heap blocks that were
+ * allocated with xHeapStructSize=8 (portBYTE_ALIGNMENT=8 in the non-ROM build).
+ *
+ * Fix: call vPortFree (non-ROM) explicitly without a tail-call so the return
+ * path comes back here, then return a non-zero sentinel so ROM always exits.
+ */
+static u32 vPortFree_rom_patch(void *pv)
+{
+	vPortFree(pv);
+	return 1;
+}
+
 void os_rom_init(void)
 {
 	/* Toolchain should not changed because size of struct _reent in TCB in ROM OS is fixed, or user shold use RAM OS */
@@ -190,7 +213,7 @@ void os_rom_init(void)
 	os_cfg.tick_rate_hz = configTICK_RATE_HZ_RAM;
 	os_cfg.port_initial_exc_return = portINITIAL_EXC_RETURN_RAM;
 	os_cfg.patch_pvPortMalloc = pvPortMalloc;
-	os_cfg.patch_vPortFree = vPortFree;
+	os_cfg.patch_vPortFree = vPortFree_rom_patch;
 
 	ucStaticTimerQueueStorage = ucStaticTimerQueueStorage_ram;
 	xIdleTaskTCB = &xIdleTaskTCB_ram;

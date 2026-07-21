@@ -43,10 +43,15 @@ extern "C" {
  * @{
  */
 
-#define STA_WLAN_INDEX	    0
-#define SOFTAP_WLAN_INDEX	1
-#define NAN_WLAN_INDEX	    2
-#define NONE_WLAN_INDEX	    0xFF
+enum rtw_wlan_if_index {
+	STA_WLAN_INDEX = 0,
+	SOFTAP_WLAN_INDEX = 1,
+#ifdef CONFIG_NAN
+	NAN_WLAN_INDEX = 2,
+#endif
+	WLAN_NET_IF_NUM,
+	NONE_WLAN_INDEX	= 0xFF
+};
 
 /** When set to this value, a fast survey is conducted with a scan time of 25 ms on the specified channel.
  *  Otherwise, a normal scan is performed with a duration of 110 ms on the specified channel. */

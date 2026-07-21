@@ -159,5 +159,10 @@ int rtw_p2p_remain_on_ch(u8 wlan_idx, u8 enable)
 	return 0;
 }
 
+u8 whc_ipc_dev_p2p_api_hdl(void *p_ipc_msg)
+{
+	UNUSED(p_ipc_msg);
+	return FALSE;
+}
 #endif
 #endif

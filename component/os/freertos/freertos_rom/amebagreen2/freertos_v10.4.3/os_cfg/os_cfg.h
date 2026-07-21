@@ -34,7 +34,7 @@ struct platform_os_cfg {
 	void (*patch_vApplicationStackOverflowHook)(void *, char *);
 	void (*patch_pvPortMalloc_NoReturn)(size_t);
 	void *(*patch_pvPortMalloc)(size_t);
-	void (*patch_vPortFree)(void *);
+	u32 (*patch_vPortFree)(void *);  /* ROM checks: blx patch; cbnz R0, return — must return non-zero to signal "handled" */
 	u32 (*patch_vTaskStartScheduler)(void);
 	u32 (*patch_vTaskSwitchContext)(void);
 	u32 (*patch_prvIdleTask)(void);

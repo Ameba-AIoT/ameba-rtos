@@ -1038,7 +1038,7 @@ void at_wlstate(u16 argc, char **argv)
 	}
 
 	RTK_LOGI(NOTAG, "[+WLSTATE]: _AT_WLAN_INFO_\r\n");
-	for (i = 0; i < NET_IF_NUM; i++) {
+	for (i = 0; i < WLAN_NET_IF_NUM; i++) {
 		if (wifi_is_running(i)) {
 #ifdef CONFIG_LWIP_LAYER
 			mac = lwip_get_mac(i);
