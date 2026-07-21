@@ -15,6 +15,7 @@
 int whc_wpa_ops_get_status(char *ptr, u8 *buf);
 int whc_dev_rtw_cli_wpas_cmd_hdl(char *ptr, u8 *buf, int msg_len);
 int whc_dev_rtw_cli_remove_network(char *ptr, u8 *buf);
+void whc_dev_rtw_cli_wpas_notify_event_hdl(u8 idx, u32 notify_event, u32 notify_sub_event, u32 size);
 
 
 #endif

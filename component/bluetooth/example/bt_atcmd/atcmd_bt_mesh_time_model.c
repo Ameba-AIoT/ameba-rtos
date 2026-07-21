@@ -213,7 +213,7 @@ static int atcmd_ble_mesh_time_role_set(int argc, char **argv)
 	uint16_t ret = 0;
 	rtk_bt_mesh_time_role_set_t time_role_set;
 	time_role_set.dst = str_to_int(argv[0]);
-	time_role_set.role = str_to_int(argv[1]);
+	time_role_set.role = (rtk_bt_mesh_time_role_t)(str_to_int(argv[1]));
 	time_role_set.app_key_index = str_to_int(argv[2]);
 	ret = rtk_bt_mesh_time_role_set(&time_role_set);
 	if (ret) {

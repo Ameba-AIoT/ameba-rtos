@@ -21,7 +21,7 @@ static void rtw_sdio_interrupt_handler(void)
 	whc_host_sdio_isr_process(priv);
 }
 
-static uint32_t rtw_sdio_enable_func(struct whc_sdio *priv)
+uint32_t rtw_sdio_enable_func(struct whc_sdio *priv)
 {
 	//int err = 0;
 
@@ -70,55 +70,4 @@ void rtw_sdio_polling_init(void)
 	k_timer_start(&sdio_polling_timer, K_MSEC(Interval), K_MSEC(Interval));
 }
 
-uint32_t rtw_sdio_init(struct whc_sdio *priv)
-{
-	uint8_t fw_ready;
-	uint32_t i;
-	uint8_t value;
-
-	/* enable func and set block size */
-	if (rtw_sdio_enable_func(priv) == FALSE) {
-		return FALSE;
-	}
-
-	k_mutex_init(&(priv->lock));
-
-	/* wait for device TRX ready */
-	for (i = 0; i < 100; i++) {
-		fw_ready = rtw_read8(priv, SDIO_REG_CPU_IND);
-		if (fw_ready & SDIO_SYSTEM_TRX_RDY_IND) {
-			break;
-		}
-		WHC_MSLEEP(10);
-	}
-	if (i == 100) {
-		printf("%s: Wait Device Firmware Ready Timeout!!SDIO_REG_CPU_IND @ 0x%04x\n", __FUNCTION__, fw_ready);
-		return FALSE;
-	}
-
-	//TODO read slave reg
-	value = rtw_read8(priv, SDIO_REG_TX_CTRL) | SDIO_EN_HISR_MASK_TIMER;
-	rtw_write8(priv, SDIO_REG_TX_CTRL, value);
-
-	rtw_write16(priv, SDIO_REG_STATIS_RECOVERY_TIMOUT, 0x10); //500us
-
-#ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
-	rtw_sdio_init_txavailbd_threshold(priv);
-#endif
-
-	priv->txbd_wptr = (uint16_t)rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
-	rtw_sdio_query_txbd_status(priv);
-
-	if (rtw_sdio_get_tx_max_size(priv) == FALSE) {
-		return FALSE;
-	}
-
-#ifdef SDIO_INT_MODE
-	rtw_sdio_init_interrupt(priv);
-#else
-	rtw_sdio_polling_init();
-#endif
-
-	return TRUE;
-}
 

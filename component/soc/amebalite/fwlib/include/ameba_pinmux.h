@@ -270,7 +270,7 @@ _LONG_CALL_ void Pinmux_Swdoff(void);
 /** @} */
 
 
-/** @defgroup PINMUX_PAD_DrvStrength_definitions PINMUX PAD Drive Strength Definitions
+/** @defgroup PAD_DrvStrength_definitions PAD Drive Strength Definitions
   * @{
   */
 #define PAD_DRV_ABILITITY_LOW			(0)   /*!< PAD drive strength lowest level. */
@@ -279,13 +279,14 @@ _LONG_CALL_ void Pinmux_Swdoff(void);
 #define PAD_DRV_ABILITITY_HIGH			(3)   /*!< PAD drive strength highest level. */
 /** @} */
 
-/** @defgroup PINMUX_PAD_SlewRate_definitions PINMUX PAD Slew Rate Definitions
+/** @defgroup PAD_SlewRate_definitions PAD Slew Rate Definitions
   * @{
   */
 #define PAD_SlewRate_Fast				(0)   /*!< PAD output slew rate fast. */
 #define PAD_SlewRate_Slow				(1)   /*!< PAD output slew rate slow. */
 /** @} */
 
+/// @cond
 /** @defgroup PINMUX_Special_Pad_definitions PINMUX Special Pad Definitions
   * @{
   */
@@ -309,6 +310,7 @@ _LONG_CALL_ void Pinmux_Swdoff(void);
 #define SWD_DATA					_PB_0   /*!< Default pin for SWD data signal. */
 #define	SWD_CLK						_PB_1   /*!< Default pin for SWD clock signal. */
 /** @} */
+/// @endcond
 
 /** @} */
 
@@ -323,9 +325,9 @@ _LONG_CALL_ void PAD_DrvStrength(u8 PinName, u32 DrvStrength);
 
 /**
   *  @brief Set the PAD slew rate control status.
-  *  @param PinName: Specify the target pin. This parameter must be one of the values
-  *                  defined in @ref PINMUX_Pin_Name_definitions.
-  *  @param NewState: Specify the slew rate control status. Refer to the datasheet for detail informations.
+  *  @param PinName Target pin. This parameter must be one of the values
+  *                  defined in PINMUX_Pin_Name_definitions.
+  *  @param NewState Specify the slew rate control status. Refer to the datasheet for detail informations.
   *                   This parameter can be one of the following values:
   *           @arg PAD_SlewRate_Slow
   *           @arg PAD_SlewRate_Fast
@@ -334,8 +336,8 @@ _LONG_CALL_ void PAD_SlewRateCtrl(u8 PinName, u32 NewState);
 
 /**
   *  @brief Set the PAD Schmitt trigger control status.
-  *  @param PinName Specify the target pin. This parameter must be one of the values
-  *                 defined in @ref PINMUX_Pin_Name_definitions.
+  *  @param PinName Target pin. This parameter must be one of the values
+  *                 defined in PINMUX_Pin_Name_definitions.
   *  @param NewState Specify the control status. Refer to the datasheet for detail informations.
   *                  This parameter can be: ENABLE or DISABLE.
   */
@@ -348,7 +350,8 @@ _LONG_CALL_ void PAD_ResistorCtrl(u8 PinName, u8 RType);
 
 /**
   *  @brief Control digital path input.
-  *  @param PinName Value of @ref PINMUX_Pin_Name_definitions.
+  *  @param PinName Target pin. This parameter must be one of the values
+  *                 defined in PINMUX_Pin_Name_definitions.
   *  @param NewState Digital path input status.
   *    @arg ENABLE: Enable digital path input.
   *    @arg DISABLE: Disable digital path input.

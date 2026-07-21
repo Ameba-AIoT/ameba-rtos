@@ -243,7 +243,7 @@ static rtk_bt_evt_cb_ret_t ble_wifimate_device_gap_app_callback(uint8_t evt_code
 				memcpy(&adv_param, &def_adv_param, sizeof(rtk_bt_le_adv_param_t));
 				BT_LOGA("[APP] Reconnect ADV starting, adv type:%d,  own_addr_type: %d, filter_policy: %d\r\n"
 						, adv_param.type,  adv_param.own_addr_type, adv_param.filter_policy);
-				BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
+				BT_APP_EVT_CB_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
 			}
 			/* gatts action */
 			ble_wifimate_server_disconnect(disconn_ind->conn_handle);

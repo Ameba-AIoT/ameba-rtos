@@ -339,29 +339,34 @@ struct whc_ps_cmd {
 	for wpa_cli defs
 --------------------------------------------------------------------------------*/
 // For Utility
-#define WHC_WPA_OPS_UTIL					0xffa5a5a5
+#define WHC_WPA_OPS_UTIL			0xffa5a5a5
 #define WHC_WPA_OPS_UTIL_GET_MAC_ADDR		0x1
 #define WHC_WPA_OPS_UTIL_SET_NETWORK		0x2
 #define WHC_WPA_OPS_UTIL_LIST_NETWORK		0x3
 #define WHC_WPA_OPS_UTIL_SELECT_NETWORK		0x4
-#define WHC_WPA_OPS_UTIL_GET_STATUS			0x5
+#define WHC_WPA_OPS_UTIL_GET_STATUS		0x5
 #define WHC_WPA_OPS_UTIL_OFLD_RESULT		0x6
+#define WHC_WPA_OPS_UTIL_SCAN_RAW_DATA		0x7
 
 // For Custom API
-#define WHC_WPA_OPS_CUSTOM_API					0xff112255
-#define WHC_WPA_OPS_CUSTOM_API_SCAN				0x1
+#define WHC_WPA_OPS_CUSTOM_API			0xff112255
+#define WHC_WPA_OPS_CUSTOM_API_SCAN		0x1
 #define WHC_WPA_OPS_CUSTOM_API_INIT_WPAS_STD	0x2
-#define WHC_WPA_OPS_CUSTOM_API_WIFION			0x3
+#define WHC_WPA_OPS_CUSTOM_API_WIFION		0x3
 
 // For CB
-#define WHC_WPA_OPS_SOC_CB					0xff112233
+#define WHC_WPA_OPS_SOC_CB			0xff112233
 #define WHC_WPA_OPS_SOC_CB_SCAN_RESULT		0x1
 
 // For Event
-#define WHC_WPA_OPS_EVENT					0xff000000
-#define WHC_WPA_OPS_EVENT_SCANING			0x1
+#define WHC_WPA_OPS_EVENT			0xff000000
+#define WHC_WPA_OPS_EVENT_SCANING		0x1
 #define WHC_WPA_OPS_EVENT_SCAN_COMPLETE		0x2
 #define WHC_WPA_OPS_EVENT_JOIN_STATUS		0x3
-#define WHC_WPA_OPS_EVENT_SCAN_RAW_DATA		0x4
+
+// For WPAS_STD (wpa_supplicant standard events)
+#define WHC_WPA_STD_EVENT			0xffaabbcc
+#define WHC_WPA_STD_EVENT_SCAN_RESULTS		0x01
+#define WHC_WPA_STD_EVENT_WIFI_DRV		0x02
 
 #endif

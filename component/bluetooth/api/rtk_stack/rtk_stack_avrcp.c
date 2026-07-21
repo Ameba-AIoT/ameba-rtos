@@ -155,7 +155,7 @@ static void app_avrcp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t 
 					p_link->bd_addr[5], p_link->bd_addr[4], p_link->bd_addr[3], p_link->bd_addr[2], p_link->bd_addr[1], p_link->bd_addr[0],
 					p_link->avrcp_play_status);
 			p_link->reg_play_status_flag = true;
-			bt_avrcp_play_status_change_register_rsp(p_link->bd_addr, p_link->avrcp_play_status);
+			bt_avrcp_play_status_change_register_rsp(p_link->bd_addr, (T_BT_AVRCP_PLAY_STATUS)p_link->avrcp_play_status);
 		}
 	}
 	break;

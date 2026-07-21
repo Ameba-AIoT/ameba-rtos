@@ -353,12 +353,13 @@ static rtk_bt_evt_cb_ret_t ble_transfer_module_gap_app_callback(uint8_t evt_code
 #if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 				if (privacy_enable) {
 					uint8_t bond_size = 0;
-					adv_param.own_addr_type = 2;
-					BT_APP_PROCESS(rtk_bt_le_sm_get_bond_num(&bond_size));
+					adv_param.own_addr_type = RTK_BT_LE_ADDR_TYPE_RPA_PUBLIC;
+					BT_APP_EVT_CB_PROCESS(rtk_bt_le_sm_get_bond_num(&bond_size));
 					if (bond_size != 0) {
 #if defined(PRIVACY_USE_DIR_ADV_WHEN_BONDED) && PRIVACY_USE_DIR_ADV_WHEN_BONDED
-						rtk_bt_le_bond_info_t bond_info = {0};
+						rtk_bt_le_bond_info_t bond_info;
 						uint8_t bond_num = 1;
+						memset(&bond_info, 0, sizeof(bond_info));
 						rtk_bt_le_sm_get_bond_info(&bond_info, &bond_num);
 						adv_param.type = RTK_BT_LE_ADV_TYPE_DIRECT_IND_LOW;
 						adv_param.peer_addr.type = 0;
@@ -678,13 +679,14 @@ int ble_transfer_module_main(uint8_t enable)
 			BT_APP_PROCESS(rtk_bt_le_gap_privacy_init(privacy_whitelist));
 #if !defined(RTK_BLE_5_0_USE_EXTENDED_ADV) || !RTK_BLE_5_0_USE_EXTENDED_ADV
 			/* If privacy on, default use RPA adv, even not bonded */
-			adv_param.own_addr_type = 2;
+			adv_param.own_addr_type = RTK_BT_LE_ADDR_TYPE_RPA_PUBLIC;
 #endif
 			BT_APP_PROCESS(rtk_bt_le_sm_get_bond_num(&bond_size));
 			if (bond_size != 0) {
 #if (defined(PRIVACY_USE_DIR_ADV_WHEN_BONDED) && PRIVACY_USE_DIR_ADV_WHEN_BONDED) && (!defined(RTK_BLE_5_0_USE_EXTENDED_ADV) || !RTK_BLE_5_0_USE_EXTENDED_ADV)
-				rtk_bt_le_bond_info_t bond_info = {0};
+				rtk_bt_le_bond_info_t bond_info;
 				uint8_t bond_num = 1;
+				memset(&bond_info, 0, sizeof(bond_info));
 				rtk_bt_le_sm_get_bond_info(&bond_info, &bond_num);
 				adv_param.type = RTK_BT_LE_ADV_TYPE_DIRECT_IND_LOW;
 				adv_param.peer_addr.type = 0;

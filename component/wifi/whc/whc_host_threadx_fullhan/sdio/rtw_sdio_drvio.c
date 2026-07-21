@@ -3,6 +3,8 @@
 //sdio_drv_creg_read  -- cmd52
 //sdio_drv_read       -- cmd53
 typedef void *HSDC;
+
+rtos_mutex_t hw_lock;
 //cmd52 read
 extern int sdio_drv_creg_read(HSDC handle, int addr, int fn, unsigned int *resp);
 //cmd52 write
@@ -40,7 +42,7 @@ int sd_cmd52_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *p
 	unsigned int err = 0;
 	uint32_t i;
 	unsigned int resp;
-	int ret = rtos_mutex_take(priv->hw_lock, 1000);
+	int ret = rtos_mutex_take(hw_lock, 1000);
 
 	if (ret != 0) {
 		printf("take hw lock fail %s\r\n", __func__);
@@ -56,17 +58,16 @@ int sd_cmd52_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *p
 			pdata[i] = (uint8_t)resp;
 		}
 	}
-	rtos_mutex_give(priv->hw_lock);
+	rtos_mutex_give(hw_lock);
 	return err;
 }
 
 int sd_cmd52_f0_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
 {
-	int err = 0;
 	uint32_t i;
-	int ret = rtos_mutex_take(priv->hw_lock, 1000);
+	int err = rtos_mutex_take(hw_lock, 1000);
 
-	if (ret != 0) {
+	if (err != 0) {
 		printf("take hw lock fail %s\r\n", __func__);
 		return -1;
 	}
@@ -77,17 +78,16 @@ int sd_cmd52_f0_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_
 			break;
 		}
 	}
-	rtos_mutex_give(priv->hw_lock);
+	rtos_mutex_give(hw_lock);
 
 	return err;
 }
-
 
 int sd_cmd52_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
 {
 	int err = 0;
 	uint32_t i;
-	int ret = rtos_mutex_take(priv->hw_lock, 1000);
+	int ret = rtos_mutex_take(hw_lock, 1000);
 
 	if (ret != 0) {
 		printf("take hw lock fail %s\r\n", __func__);
@@ -100,7 +100,7 @@ int sd_cmd52_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *
 			break;
 		}
 	}
-	rtos_mutex_give(priv->hw_lock);
+	rtos_mutex_give(hw_lock);
 
 	return err;
 }
@@ -108,7 +108,7 @@ int sd_cmd52_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *
 void sd_write32(struct whc_sdio *priv, uint32_t addr, uint32_t v, int *err)
 {
 	int ret;
-	ret = rtos_mutex_take(priv->hw_lock, 1000);
+	ret = rtos_mutex_take(hw_lock, 1000);
 
 	if (ret != 0) {
 		printf("take hw lock fail %s\r\n", __func__);
@@ -118,7 +118,7 @@ void sd_write32(struct whc_sdio *priv, uint32_t addr, uint32_t v, int *err)
 	if (err) {
 		*err = ret;
 	}
-	rtos_mutex_give(priv->hw_lock);
+	rtos_mutex_give(hw_lock);
 
 }
 
@@ -133,7 +133,7 @@ int sd_read(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *pdata)
 		return err;
 	}
 
-	int ret = rtos_mutex_take(priv->hw_lock, 1000);
+	int ret = rtos_mutex_take(hw_lock, 1000);
 
 	if (ret != 0) {
 		printf("take hw lock fail %s\r\n", __func__);
@@ -152,7 +152,7 @@ int sd_read(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *pdata)
 		err = sdio_drv_read(priv->func, addr, 1, 1, remain_size, pdata + bcnt * priv->block_transfer_len);
 	}
 
-	rtos_mutex_give(priv->hw_lock);
+	rtos_mutex_give(hw_lock);
 
 	return err;
 }
@@ -167,7 +167,7 @@ int sd_read(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *pdata)
 		return err;
 	}
 
-	int ret = rtos_mutex_take(priv->hw_lock, 1000);
+	int ret = rtos_mutex_take(hw_lock, 1000);
 
 	if (ret != 0) {
 		printf("take hw lock fail %s\r\n", __func__);
@@ -185,7 +185,7 @@ int sd_read(struct whc_sdio *priv, u32 addr, u32 cnt, u8 *pdata)
 		err = sdio_drv_read(priv->func, addr, 1, 1, remain_size, pdata + bcnt * priv->block_transfer_len);
 	}
 
-	rtos_mutex_give(priv->hw_lock);
+	rtos_mutex_give(hw_lock);
 
 	return err;
 }
@@ -276,7 +276,7 @@ int sd_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
 		err = sd_cmd52_write(priv, addr, cnt, pdata);
 		return err;
 	}
-	int ret = rtos_mutex_take(priv->hw_lock, 1000);
+	int ret = rtos_mutex_take(hw_lock, 1000);
 
 	//uint32_t tick_start, tick_total;
 
@@ -298,7 +298,7 @@ int sd_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
 	//tick_total = rt_tick_get() - tick_start;
 
 	//printf("sw %d\r\n", tick_total);
-	rtos_mutex_give(priv->hw_lock);
+	rtos_mutex_give(hw_lock);
 
 	return err;
 }
@@ -313,7 +313,7 @@ int sd_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
 		return err;
 	}
 
-	int ret = rtos_mutex_take(priv->hw_lock, 1000);
+	int ret = rtos_mutex_take(hw_lock, 1000);
 
 	if (ret != 0) {
 		printf("take hw lock fail %s\r\n", __func__);
@@ -331,7 +331,7 @@ int sd_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata)
 		err = sdio_drv_write(priv->func, addr, 1, 1, remain_size, pdata + bcnt * priv->block_transfer_len);
 	}
 
-	rtos_mutex_give(priv->hw_lock);
+	rtos_mutex_give(hw_lock);
 
 	return err;
 }

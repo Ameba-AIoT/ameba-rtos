@@ -58,15 +58,23 @@ uint8_t hci_get_hdr_len(uint8_t type)
 uint16_t hci_get_body_len(const void *hdr, uint8_t type)
 {
 	uint16_t len = 0;
+	size_t len_offset = 0;
+	const uint8_t *buf = (const uint8_t *)hdr;
+	const uint8_t *len_p = NULL;
+
 	if (type == HCI_CMD) {
 		len = ((const struct hci_cmd_hdr *)hdr)->param_len;
 	} else if (type == HCI_EVT) {
 		len = ((const struct hci_evt_hdr *)hdr)->len;
 	} else if (type == HCI_ISO) {
-		LE_TO_UINT16(len, &(((const struct hci_iso_hdr *)hdr)->len));
+		len_offset = offsetof(struct hci_iso_hdr, len);
+		len_p = buf + len_offset;
+		LE_TO_UINT16(len, len_p);
 		len &= 0x3FFF;
 	} else if (type == HCI_ACL) {
-		LE_TO_UINT16(len, &(((const struct hci_acl_hdr *)hdr)->len));
+		len_offset = offsetof(struct hci_acl_hdr, len);
+		len_p = buf + len_offset;
+		LE_TO_UINT16(len, len_p);
 	} else if (type == HCI_SCO) {
 		len = ((const struct hci_sco_hdr *)hdr)->len;
 	}

@@ -66,32 +66,22 @@ struct whc_txbuf_info_t {
 };
 
 /* ---- port glue for the shared whc_host_sdio_trx_common.c ---- */
-#define WHC_MALLOC(_sz)		k_malloc(_sz)
-#define WHC_FREE(_p)		k_free(_p)
-#define WHC_SEM_TAKE(_s)	k_sem_take(&(_s), MUTEX_WAIT_TIMEOUT)
-#define WHC_SEM_TAKE_TIMEOUT(_s, _t)	rtos_sema_take(&(_s), (_t))
-#define WHC_HOST_SDIO_RX_INT_DISABLE(_p) \
-	do { uint32_t _himr = (_p)->sdio_himr & (~SDIO_HIMR_RX_REQUEST_MSK); \
-		rtw_write32((_p), SDIO_REG_HIMR,  _himr); } while (0)
-#define WHC_HOST_SDIO_RX_INT_RESTORE(_p) \
-	do { uint32_t _himr = (_p)->sdio_himr; \
-		rtw_write32((_p), SDIO_REG_HIMR,  _himr); } while (0)
-#define WHC_SEM_GIVE(_s)	k_sem_give(&(_s))
-#define WHC_HOST_SDIO_HISR_CLEAR(_p) \
-	do { uint32_t _v = (_p)->sdio_hisr & MASK_SDIO_HISR_CLEAR; \
-		if (_v) { rtw_write32((_p), SDIO_REG_HISR, _v); } } while (0)
+#define whc_malloc(_sz)		k_malloc(_sz)
+#define whc_free(_p)		k_free(_p)
 
-#define WHC_MUTEX_TAKE(_m, _t)		k_mutex_lock(&(_m), (_t))
-#define WHC_MUTEX_GIVE(_m)		k_mutex_unlock(&(_m))
-#define WHC_MSLEEP(_ms)			k_sleep(K_MSEC(_ms))
-#define WHC_HOST_SDIO_ALLOC_IRQ(_p)		rtw_sdio_alloc_irq(_p)
+#define whc_sem_take_timeout(_s, _t)	rtos_sema_take(&(_s), (_t))
+#define whc_sem_give(_s)	k_sem_give(&(_s))
+#define whc_mutex_init(_m)		k_mutex_init(&(_m))
+#define whc_mutex_take(_m, _t)		k_mutex_lock(&(_m), (_t))
+#define whc_mutex_give(_m)		k_mutex_unlock(&(_m))
 
-#define WHC_HOST_SDIO_RX_DEFAULT(_b)	whc_host_pkt_rx_to_user(_b)
+#define whc_msleep(_ms)			k_sleep(K_MSEC(_ms))
+
+#define whc_host_sdio_alloc_irq(_p)	rtw_sdio_alloc_irq(_p)
+#define whc_host_sdio_rx_default(_b)	whc_host_pkt_rx_to_user(_b)
 
 void whc_host_sdio_recv_pkts(uint8_t *buf);
-
 uint32_t rtw_sdio_init(struct whc_sdio *priv);
-
 s32 wifi_on(uint8_t mode);
 void whc_host_sdio_init(void);
 

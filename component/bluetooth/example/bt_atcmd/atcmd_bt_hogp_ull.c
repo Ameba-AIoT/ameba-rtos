@@ -429,7 +429,8 @@ static int atcmd_bt_hogp_ull_scan_is_notify_enabled(int argc, char **argv)
 static int atcmd_bt_hogp_ull_connect(int argc, char **argv)
 {
 	(void)argc;
-	rtk_bt_le_addr_t peer_addr = {0};
+	rtk_bt_le_addr_t peer_addr;
+	memset(&peer_addr, 0, sizeof(peer_addr));
 	char addr_str[30] = {0};
 
 	hexdata_str_to_bd_addr(argv[0], peer_addr.addr_val, RTK_BD_ADDR_LEN);
@@ -901,7 +902,8 @@ static int atcmd_bt_hogp_ull_ext_scan(int argc, char **argv)
 	uint8_t op = (uint8_t)str_to_int(argv[0]);
 
 	if (op == 1) {
-		rtk_bt_le_ext_scan_param_t ext_scan_param = {0};
+		rtk_bt_le_ext_scan_param_t ext_scan_param;
+		memset(&ext_scan_param, 0, sizeof(ext_scan_param));
 		ext_scan_param.own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC;
 		ext_scan_param.phys[0] = true;   /* 1M PHY */
 		ext_scan_param.phys[1] = true;   /* Coded PHY */

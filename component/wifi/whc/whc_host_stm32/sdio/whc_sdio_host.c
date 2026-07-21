@@ -50,7 +50,7 @@ retry:
 		netif_adapter_wifi_recv_whc(msg_info->wlan_idx, p_buf);
 	}
 
-	WHC_FREE(buf);
+	whc_free(buf);
 }
 
 
@@ -65,16 +65,23 @@ void whc_sdio_host_init_drv(void)
 	rtos_sema_create(&(whc_sdio_priv.txbd_wq), 0, SEMA_MAX_COUNT);
 	rtos_mutex_create(&whc_sdio_priv.lock);
 
-	/* shpuld higher than polling, polling 7 */
+	/* should higher than polling, polling 7 */
+	/* rx task */
 	if (rtos_task_create(NULL, ((const char *)"whc_host_sdio_recv_data_process"), whc_host_sdio_recv_data_process, NULL, WIFI_STACK_SIZE_RX_REQ_TASK,
 						 0 + 6) != SUCCESS) {
 		printf("create whc_host_sdio_recv_data_process fail \n");
 	}
 
-#ifndef SDIO_INT_MODE
-	xTaskCreate(sdio_polling_task, "sdioPollingTask", SDIO_POLLING_STACK_SIZE, NULL, 0 + 7, NULL);
+#ifndef WHC_SDIO_INT_MODE
+	if (rtos_task_create(NULL, ((const char *)"sdioPollingTask"), sdio_polling_task, NULL, SDIO_POLLING_STACK_SIZE,
+						 0 + 7) != SUCCESS) {
+		printf("create sdioPollingTask fail \n");
+	}
 #else
-	xTaskCreate(rtw_sdio_interrupt_handler, "sdio_int_hal_task", SDIO_POLLING_STACK_SIZE, NULL, 0 + 7, NULL);
+	if (rtos_task_create(NULL, ((const char *)"sdio_int_hal_task"), rtw_sdio_interrupt_handler, NULL, SDIO_POLLING_STACK_SIZE,
+						 0 + 7) != SUCCESS) {
+		printf("create sdio_int_hal_task fail \n");
+	}
 #endif
 }
 

@@ -1428,7 +1428,7 @@ struct bt_hci_rp_vendor_mp_packet_rx_report {
 	uint32_t rx_error_bits;
 	uint16_t ber;
 	uint16_t cfo;
-	uint8_t rx_rssi;
+	int8_t rx_rssi;
 };
 
 struct bt_hci_rp_vendor_mp_phy_version {

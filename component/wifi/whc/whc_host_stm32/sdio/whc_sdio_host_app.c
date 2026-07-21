@@ -53,7 +53,7 @@ void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 	u8 *txbuf = NULL;
 	u32 txsize = len + sizeof(struct whc_cmd_path_hdr) + SIZE_TX_DESC;
 
-	txbuf = WHC_MALLOC(txsize);
+	txbuf = whc_malloc(txsize);
 	if (txbuf == NULL) {
 		printf("%s mem fail \r\n", __func__);
 		return;
@@ -66,7 +66,7 @@ void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 
 	whc_host_sdio_send_data(txbuf, txsize, NULL);
 
-	WHC_FREE(txbuf);
+	whc_free(txbuf);
 }
 
 void whc_host_get_mac_addr(uint8_t idx)

@@ -51,7 +51,7 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 				break;
 			}
 		}
-		bt_a2dp_connect_req(param->sdp_attr_info.bd_addr, sdp_info->protocol_version, a2dp_remote_role);
+		bt_a2dp_connect_req(param->sdp_attr_info.bd_addr, sdp_info->protocol_version, (T_BT_A2DP_ROLE)a2dp_remote_role);
 		{
 			p_evt = rtk_bt_event_create(RTK_BT_BR_GP_A2DP, RTK_BT_A2DP_EVT_SDP_ATTR_INFO, sizeof(rtk_bt_a2dp_sdp_attr_info_t));
 			if (!p_evt) {

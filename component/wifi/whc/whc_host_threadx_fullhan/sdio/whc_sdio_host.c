@@ -1,10 +1,9 @@
 #include "rtw_whc_common.h"
 
 struct whc_sdio whc_sdio_priv = {0};
-#define WIFI_STACK_SIZE_RX_REQ_TASK (4096)
-#define SDIO_POLLING_STACK_SIZE 1024
 extern void rtw_sdio_interrupt_handler(void);
 extern void sdio_polling_task(void *arg1, void *arg2, void *arg3);
+extern rtos_mutex_t hw_lock;
 
 void dump_buf(char *info, uint8_t *buf, uint32_t len)
 {
@@ -33,7 +32,7 @@ retry:
 		if (buf_counter >= 1000) {
 			printf("%s: Alloc skb rx buf Err conuter %d \n", __func__, buf_counter);
 			buf_counter = 0;
-			WHC_FREE(buf);
+			whc_free(buf);
 			return;
 		}
 		printf("%s: Alloc skb rx buf Err conuter %d \n", __func__, buf_counter);
@@ -58,18 +57,19 @@ retry:
 		netif_adapter_wifi_recv_whc(msg_info->wlan_idx, p_buf);
 	}
 
-	WHC_FREE(buf);
+	whc_free(buf);
 }
 #endif
 
 
 void whc_sdio_host_init_drv(void)
 {
-	int ret;
-	ret = rtos_sema_create(&whc_sdio_priv.host_send, 1, SEMA_MAX_COUNT);
-	ret += rtos_sema_create(&(whc_sdio_priv.host_irq), 0, SEMA_MAX_COUNT);
-	ret += rtos_sema_create(&whc_sdio_priv.host_send_block_sema, 0, SEMA_MAX_COUNT);
-	ret += rtos_sema_create(&(whc_sdio_priv.host_recv_wake), 0, SEMA_MAX_COUNT);
+
+	rtos_sema_create(&(whc_sdio_priv.host_send), 1, SEMA_MAX_COUNT);
+	rtos_sema_create(&(whc_sdio_priv.host_irq), 0, SEMA_MAX_COUNT);
+	rtos_sema_create(&(whc_sdio_priv.host_send_block_sema), 0, SEMA_MAX_COUNT);
+	rtos_sema_create(&(whc_sdio_priv.host_recv_wake), 0, SEMA_MAX_COUNT);
+	rtos_mutex_create(&(whc_sdio_priv.lock));
 
 	/* should higher than polling, polling 7 */
 	if (rtos_task_create(NULL, ((const char *)"whc_host_sdio_recv_data_process"), (rtos_task_function_t)whc_host_sdio_recv_data_process, NULL,
@@ -77,9 +77,15 @@ void whc_sdio_host_init_drv(void)
 		printf("create whc_host_sdio_recv_data_process fail \n");
 	}
 
+#ifndef WHC_SDIO_INT_MODE
 	if (rtos_task_create(NULL, ((const char *)"sdioPollingTask"), (rtos_task_function_t)sdio_polling_task, NULL, SDIO_POLLING_STACK_SIZE, 7) != 0) {
 		printf("%s(), fail to create sdioPollingTask \r\n", __func__);
 	}
+#else
+	if (rtos_task_create(NULL, ((const char *)"sdio_int_hal_task"), (rtos_task_function_t)rtw_sdio_interrupt_handler, NULL, SDIO_POLLING_STACK_SIZE, 7) != 0) {
+		printf("%s(), fail to create sdioPollingTask \r\n", __func__);
+	}
+#endif
 
 }
 
@@ -96,6 +102,7 @@ void whc_host_init(void)
 		return;
 	}
 
+	rtos_mutex_create(&hw_lock);
 	if (rtw_sdio_init(priv) != TRUE) {
 		printf("%s: initialize SDIO Failed!\n", __FUNCTION__);
 		return;
@@ -103,7 +110,6 @@ void whc_host_init(void)
 
 	/* init sdio */
 	whc_sdio_host_init_drv();
-
 	lwip_module_init();
 
 	priv->whc_host_init_done = 1;

@@ -421,7 +421,7 @@ typedef struct {
 /** @} */
 
 
-/** @defgroup PINMUX_PAD_DrvStrength_definitions PINMUX PAD Drive Strength Definitions
+/** @defgroup PAD_DrvStrength_definitions PAD Drive Strength Definitions
  * @{
  */
 #define PAD_DRV_ABILITITY_LOW				(0)   /*!< PAD drive strength lowest level. */
@@ -430,7 +430,7 @@ typedef struct {
 #define PAD_DRV_ABILITITY_HIGH				(3)   /*!< PAD drive strength highest level. */
 /** @} */
 
-/** @defgroup PINMUX_PAD_SlewRate_definitions PINMUX PAD Slew Rate Definitions
+/** @defgroup PAD_SlewRate_definitions PAD Slew Rate Definitions
  * @{
  */
 #define PAD_SlewRate_Fast				(0)   /*!< PAD output slew rate fast. */
