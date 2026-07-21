@@ -193,6 +193,15 @@ struct rtw_kvr_param_t {
 #endif
 };
 
+/**
+ * @brief  The structure is ethernet hdr format.
+ */
+struct wlan_ethhdr_t {
+	unsigned char		daddr[ETH_ALEN];
+	unsigned char		saddr[ETH_ALEN];
+	unsigned short		type;
+};
+
 struct rtw_event_deauth_info_flash {
 	struct deauth_info *deauth_data;
 	u32 deauth_date_len;
@@ -257,7 +266,7 @@ struct _Rltk_wlan_t {
 	unsigned char		enable;
 	rtos_sema_t			netif_rx_sema;	/**<  Prevent race condition on .skb in rltk_netif_rx(). */
 };
-extern struct _Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
+extern struct _Rltk_wlan_t rltk_wlan_info[WLAN_NET_IF_NUM];
 
 #define netdev_priv(dev)		dev->priv
 #define rtw_is_netdev_enable(idx)	(rltk_wlan_info[idx].enable)

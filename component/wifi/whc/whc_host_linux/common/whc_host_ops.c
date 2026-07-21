@@ -1054,7 +1054,7 @@ static int whc_host_get_channel_ops(struct wiphy *wiphy,
 	}
 
 	pnetdev = wdev_to_ndev(wdev);
-	if (!netif_running(pnetdev)) {
+	if (!pnetdev || !netif_running(pnetdev)) {
 		return -EPERM;
 	}
 

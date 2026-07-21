@@ -20,9 +20,10 @@
 #ifndef CONFIG_WHC_HOST
 #ifndef CONFIG_RMESH_EN
 
-void whc_ipc_dev_wtn_api_hdl(void *p_ipc_msg)
+u8 whc_ipc_dev_wtn_api_hdl(void *p_ipc_msg)
 {
 	UNUSED(p_ipc_msg);
+	return FALSE;
 }
 
 void wifi_tunnelapi_rnat_softap_bcnie_record(u8 *IEs, u32 ie_len)
@@ -239,9 +240,10 @@ int whc_dev_wtn_socket_send(u8 *buf, u32 len)
 
 #ifndef CONFIG_RMESH_OTA_EN
 
-void whc_ipc_dev_wtn_ota_api_hdl(void *p_ipc_msg)
+u8 whc_ipc_dev_wtn_ota_api_hdl(void *p_ipc_msg)
 {
 	UNUSED(p_ipc_msg);
+	return FALSE;
 }
 
 int whc_ipc_dev_wtn_ota_callback_indicate(u8 *buf, u16 len)

@@ -53,10 +53,8 @@ static int whc_host_del_virtual_intf(struct wiphy *wiphy, struct wireless_dev *w
 	int ret = 0;
 
 #if defined (CONFIG_NAN)
-	struct net_device *ndev = wdev_to_ndev(wdev);
-
 	if (wdev->iftype == NL80211_IFTYPE_NAN) {
-		dev_info(global_idev.pwhc_dev, "=>"FUNC_NDEV_FMT" - free nan\n", FUNC_NDEV_ARG(ndev));
+		dev_info(global_idev.pwhc_dev, "%s: free nan\n", __func__);
 		if (wdev == global_idev.pwdev_global[2]) {
 			rtw_nan_iface_free(wiphy);
 		} else {

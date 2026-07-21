@@ -1,6 +1,7 @@
 #ifndef _WPA_LITE_H_
 #define _WPA_LITE_H_
 
+#include "rom_platform.h"
 #include "rom_secure_common.h"
 #include "rtw_wifi_common.h"
 #include "wpa_lite_intf.h"

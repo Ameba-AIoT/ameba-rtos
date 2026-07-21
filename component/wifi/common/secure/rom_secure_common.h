@@ -18,7 +18,6 @@
 #ifndef ROM_SECURE_COMMON_H
 #define ROM_SECURE_COMMON_H
 
-#include "rom_platform.h"
 #include "rom_arc4.h"
 #include "rom_rc4.h"
 #include "rom_aes.h"
