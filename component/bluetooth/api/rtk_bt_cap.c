@@ -32,8 +32,8 @@ uint16_t rtk_bt_le_audio_csis_gen_rsi(uint8_t *p_sirk, uint8_t *p_rsi)
 
 uint16_t rtk_bt_le_audio_csis_update_sirk(rtk_bt_le_audio_csis_sirk_type_t sirk_type, uint8_t *p_sirk)
 {
-	rtk_bt_le_audio_csis_update_sirk_param_t info = {0};
-
+	rtk_bt_le_audio_csis_update_sirk_param_t info;
+	memset(&info, 0, sizeof(info));
 	info.sirk_type = sirk_type;
 	memcpy(info.sirk, p_sirk, RTK_BT_LE_CSIS_SIRK_LEN);
 
@@ -87,7 +87,8 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_cfg_discover(rtk_bt_le_audio_group
 uint16_t rtk_bt_le_audio_csis_set_coordinator_add_group(rtk_bt_le_audio_csis_set_mem_info_t *p_mem_info, rtk_bt_le_audio_group_handle_t *p_group_handle,
 														rtk_bt_le_audio_device_handle_t *p_device_handle)
 {
-	rtk_bt_le_audio_csis_set_coordinator_add_group_info_t info = {0};
+	rtk_bt_le_audio_csis_set_coordinator_add_group_info_t info;
+	memset(&info, 0, sizeof(info));
 
 	if (p_mem_info == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;

@@ -26,6 +26,10 @@ static void whc_host_sdio_init_drv(void)
 	k_sem_init(&(whc_sdio_priv.api_ret_sema), 0, SEMA_MAX_COUNT);
 	k_mutex_init(&(whc_sdio_priv.send_mutex));
 
+#ifndef WHC_SDIO_INT_MODE
+	rtw_sdio_polling_init();
+#endif
+
 	k_thread_create(&ameba_host_rx_req_thread, whc_sdio_rx_req_stack,
 					WIFI_STACK_SIZE_RX_REQ_TASK,
 					(k_thread_entry_t)whc_host_sdio_recv_data_process, NULL, NULL, NULL,
@@ -63,6 +67,6 @@ void whc_host_sdio_recv_pkts(uint8_t *buf)
 		rx_callback_ptr(msg_info->wlan_idx, data, len);
 	}
 
-	WHC_FREE(buf);
+	whc_free(buf);
 }
 

@@ -265,6 +265,7 @@ reassign_buf:
 	/* Re-assign RX buffer for next DMA transfer */
 	new_buf = (u32)rtos_mem_malloc(obj->device_rx_bufsz + SPDIO_DMA_ALIGN_4);
 	if (new_buf) {
+		DCache_CleanInvalidate(new_buf, obj->device_rx_bufsz + SPDIO_DMA_ALIGN_4);
 		rtos_mem_free((void *)rx_buf->buf_allocated);
 		rx_buf->buf_allocated = new_buf;
 		rx_buf->size_allocated = obj->device_rx_bufsz + SPDIO_DMA_ALIGN_4;

@@ -125,10 +125,11 @@ static int atcmd_bt_bap_broadcast_pa_sync_create(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 
-	rtk_bt_le_addr_t adv_addr = {0};
+	rtk_bt_le_addr_t adv_addr;
 	uint8_t adv_sid = 0;
 	uint8_t broadcast_id[RTK_BT_LE_AUDIO_BROADCAST_ID_LEN] = {0};
 
+	memset(&adv_addr, 0, sizeof(adv_addr));
 	adv_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)adv_addr.addr_val, RTK_BD_ADDR_LEN);
 	adv_sid = (uint8_t)str_to_int(argv[2]);
@@ -147,7 +148,8 @@ static int atcmd_bt_bap_broadcast_pa_sync_remove(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 
-	rtk_bt_le_addr_t adv_addr = {0};
+	rtk_bt_le_addr_t adv_addr;
+	memset(&adv_addr, 0, sizeof(adv_addr));
 	adv_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)adv_addr.addr_val, RTK_BD_ADDR_LEN);
 
@@ -165,7 +167,8 @@ static int atcmd_bt_bap_broadcast_big_sync_create(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 
-	rtk_bt_le_addr_t adv_addr = {0};
+	rtk_bt_le_addr_t adv_addr;
+	memset(&adv_addr, 0, sizeof(adv_addr));
 	adv_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)adv_addr.addr_val, RTK_BD_ADDR_LEN);
 
@@ -183,7 +186,8 @@ static int atcmd_bt_bap_broadcast_big_sync_remove(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 
-	rtk_bt_le_addr_t adv_addr = {0};
+	rtk_bt_le_addr_t adv_addr;
+	memset(&adv_addr, 0, sizeof(adv_addr));
 	adv_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)adv_addr.addr_val, RTK_BD_ADDR_LEN);
 	if (rtk_bt_le_audio_broadcast_big_sync_terminate(adv_addr)) {
@@ -226,9 +230,10 @@ static int atcmd_bt_bap_broadcast_assistant_reception_start(int argc, char **arg
 	(void)argc;
 	(void)argv;
 
-	rtk_bt_le_addr_t adv_addr = {0};
+	rtk_bt_le_addr_t adv_addr;
 	uint8_t group_idx = 0;
 
+	memset(&adv_addr, 0, sizeof(adv_addr));
 	adv_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)adv_addr.addr_val, RTK_BD_ADDR_LEN);
 	group_idx = (uint8_t)str_to_int(argv[2]);
@@ -247,9 +252,10 @@ static int atcmd_bt_bap_broadcast_assistant_reception_stop(int argc, char **argv
 	(void)argc;
 	(void)argv;
 
-	rtk_bt_le_addr_t adv_addr = {0};
+	rtk_bt_le_addr_t adv_addr;
 	uint8_t group_idx = 0;
 
+	memset(&adv_addr, 0, sizeof(adv_addr));
 	adv_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)adv_addr.addr_val, RTK_BD_ADDR_LEN);
 	group_idx = (uint8_t)str_to_int(argv[2]);
@@ -268,9 +274,10 @@ static int atcmd_bt_bap_broadcast_assistant_reception_remove(int argc, char **ar
 	(void)argc;
 	(void)argv;
 
-	rtk_bt_le_addr_t adv_addr = {0};
+	rtk_bt_le_addr_t adv_addr;
 	uint8_t group_idx = 0;
 
+	memset(&adv_addr, 0, sizeof(adv_addr));
 	adv_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 	hexdata_str_to_bd_addr(argv[1], (uint8_t *)adv_addr.addr_val, RTK_BD_ADDR_LEN);
 	group_idx = (uint8_t)str_to_int(argv[2]);

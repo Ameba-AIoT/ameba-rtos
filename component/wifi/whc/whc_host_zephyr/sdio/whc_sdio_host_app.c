@@ -9,12 +9,12 @@ __weak void whc_host_pkt_rx_to_user(u8 *pbuf)
 
 	if (event != WHC_WIFI_EVT_CMD) {
 		printf("%s: recv pbuf, user realize here \n", __func__);
-		WHC_FREE(pbuf);
+		whc_free(pbuf);
 		return;
 	}
 
 	if (!event_priv.b_waiting_for_ret) {
-		WHC_FREE(pbuf);
+		whc_free(pbuf);
 		return;
 	}
 
@@ -50,7 +50,7 @@ void whc_host_sdio_send_msg(uint8_t *msg, uint32_t msg_len, uint8_t *ret, uint32
 	k_mutex_lock(&event_priv.send_mutex, MUTEX_WAIT_TIMEOUT);
 
 	buf_len = msg_len + SIZE_TX_DESC + sizeof(struct whc_cmd_path_hdr);
-	buf = WHC_MALLOC(buf_len);
+	buf = whc_malloc(buf_len);
 	if (!buf) {
 		goto exit;
 	}
@@ -78,7 +78,7 @@ void whc_host_sdio_send_msg(uint8_t *msg, uint32_t msg_len, uint8_t *ret, uint32
 				 * skip INIC_RX_DESC + whc_cmd_path_hdr + msg_len to reach return data */
 				memcpy(ret, ptr + SIZE_RX_DESC + sizeof(struct whc_cmd_path_hdr) + msg_len, ret_len);
 			}
-			WHC_FREE((uint8_t *)ptr);
+			whc_free((uint8_t *)ptr);
 		} else {
 			printf("Host API return value is NULL!\n");
 		}
@@ -86,7 +86,7 @@ void whc_host_sdio_send_msg(uint8_t *msg, uint32_t msg_len, uint8_t *ret, uint32
 
 exit:
 	if (buf) {
-		WHC_FREE(buf);
+		whc_free(buf);
 	}
 
 	k_mutex_unlock(&event_priv.send_mutex);

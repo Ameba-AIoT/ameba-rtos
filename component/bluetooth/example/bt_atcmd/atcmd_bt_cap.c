@@ -327,7 +327,7 @@ static int atcmd_bt_aics_server_get(int argc, char **argv)
 		BT_LOGE("%s: osif_mem_alloc len %d fail\r\n", __func__, value_len);
 		return RTK_BT_ERR_NO_RESOURCE;
 	}
-	if (rtk_bt_le_audio_aics_get_param(srv_instance_id, aics_param_type, value_len, p_value)) {
+	if (rtk_bt_le_audio_aics_get_param(srv_instance_id, (rtk_bt_le_audio_aics_param_type_t)aics_param_type, value_len, p_value)) {
 		BT_LOGE("aics server get fail\r\n");
 		return -1;
 	}
@@ -670,7 +670,7 @@ static int atcmd_bt_vocs_client_get_char(int argc, char **argv)
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	srv_instance_id = (uint8_t)str_to_int(argv[1]);
 	for (uint8_t vocs_char_type = RTK_BT_LE_AUDIO_VOCS_CHAR_OFFSET_STATE; vocs_char_type <= RTK_BT_LE_AUDIO_VOCS_CHAR_AUDIO_OUTPUT_DESC; vocs_char_type++) {
-		if (rtk_bt_le_audio_vocs_read_char_value(conn_handle, srv_instance_id, vocs_char_type)) {
+		if (rtk_bt_le_audio_vocs_read_char_value(conn_handle, srv_instance_id, (rtk_bt_le_audio_vocs_char_type_t)vocs_char_type)) {
 			BT_LOGE("vocs client get char fail\r\n");
 			return -1;
 		}
@@ -825,7 +825,7 @@ static int atcmd_bt_aics_client_get_char(int argc, char **argv)
 	conn_handle = (uint16_t)str_to_int(argv[0]);
 	srv_instance_id = (uint8_t)str_to_int(argv[1]);
 	for (aics_char_type = RTK_BT_LE_AUDIO_AICS_CHAR_INPUT_STATE; aics_char_type <= RTK_BT_LE_AUDIO_AICS_CHAR_INPUT_DES; aics_char_type++) {
-		if (rtk_bt_le_audio_aics_read_char_value(conn_handle, srv_instance_id, aics_char_type)) {
+		if (rtk_bt_le_audio_aics_read_char_value(conn_handle, srv_instance_id, (rtk_bt_le_audio_aics_char_type_t)aics_char_type)) {
 			BT_LOGE("aics client get char fail\r\n");
 			return -1;
 		}

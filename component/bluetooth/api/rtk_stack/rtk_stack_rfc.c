@@ -61,7 +61,6 @@ static void bt_stack_rfc_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 			rtk_bt_evt_indicate(p_evt, NULL);
 			break;
 		}
-		BT_LOGE("bt_stack_rfc_evt_ind_cback: Get sdp attr discov info, but uuid is not registered!!\r\n");
 	}
 	break;
 

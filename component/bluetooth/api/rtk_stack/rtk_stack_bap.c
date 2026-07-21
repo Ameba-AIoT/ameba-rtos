@@ -81,7 +81,7 @@ static rtk_bt_le_audio_broadcast_source_config_t bt_le_audio_broadcast_source_co
 	.primary_adv_interval_min = RTK_BT_LE_AUDIO_PRIMARY_ADV_INTERVAL_MIN,
 	.primary_adv_interval_max = RTK_BT_LE_AUDIO_PRIMARY_ADV_INTERVAL_MAX,
 	.primary_adv_channel_map = RTK_BT_LE_ADV_CHNL_ALL,
-	.own_addr = {0},                /**<Set it in main. */
+	.own_addr = {RTK_BT_LE_ADDR_TYPE_PUBLIC, {0}},                /**<Set it in main. */
 	.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 	.tx_power = 0x7F,
 	.primary_adv_phy = RTK_BT_LE_PHYS_PRIM_ADV_1M,
@@ -205,7 +205,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			rtk_bt_le_audio_group_handle_t group_handle = NULL;
 			rtk_bt_le_audio_device_handle_t device_handle = NULL;
 			uint8_t conn_id = 0;
-			rtk_bt_le_addr_type_t addr_type = 0;
+			rtk_bt_le_addr_type_t addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC;
 			uint8_t addr_val[RTK_BD_ADDR_LEN] = {0};
 			p_group_info = bt_stack_le_audio_find_group_by_idx(0);// default init one group
 			if (!p_group_info) {
@@ -491,7 +491,8 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			break;
 		}
 		rtk_bt_le_audio_ase_t *p_lea_ase = NULL;
-		T_ISOCH_INFO info = {0};
+		T_ISOCH_INFO info;
+		memset(&info, 0, sizeof(info));
 		p_lea_ase = bt_stack_le_audio_find_ase(p_data->conn_handle, p_data->ase_id);
 		if (p_lea_ase) {
 			p_lea_ase->iso_conn_handle = p_data->cis_conn_handle;
@@ -514,7 +515,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		p_ind = (rtk_bt_le_audio_ascs_setup_data_path_ind_t *)p_evt->data;
 		p_ind->conn_handle = p_data->conn_handle;
 		p_ind->ase_id = p_data->ase_id;
-		p_ind->path_direction = p_data->path_direction;
+		p_ind->path_direction = (rtk_bt_le_audio_iso_data_path_direction_t)p_data->path_direction;
 		p_ind->cis_conn_handle = p_data->cis_conn_handle;
 		p_ind->codec_cfg.type_exist = p_data->codec_parsed_data.type_exist;
 		p_ind->codec_cfg.frame_duration = p_data->codec_parsed_data.frame_duration;
@@ -524,7 +525,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		p_ind->codec_cfg.audio_channel_allocation = p_data->codec_parsed_data.audio_channel_allocation;
 		p_ind->iso_chann_t.p_iso_chann = (void *)p_iso_chann;
 		p_ind->iso_chann_t.iso_conn_handle = p_iso_chann->iso_conn_handle;
-		p_ind->iso_chann_t.path_direction = p_data->path_direction;
+		p_ind->iso_chann_t.path_direction = (rtk_bt_le_audio_iso_data_path_direction_t)p_data->path_direction;
 		p_ind->iso_chann_t.iso_interval = info.iso_interval;
 		p_ind->presentation_delay = p_iso_chann->presentation_delay;
 		p_ind->transport_latency_m_to_s = p_iso_chann->transport_latency_m_to_s;
@@ -568,7 +569,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		p_ind = (rtk_bt_le_audio_ascs_remove_data_path_ind_t *)p_evt->data;
 		p_ind->conn_handle = p_data->conn_handle;
 		p_ind->ase_id = p_data->ase_id;
-		p_ind->path_direction = p_data->path_direction;
+		p_ind->path_direction = (rtk_bt_le_audio_iso_data_path_direction_t)p_data->path_direction;
 		p_ind->cis_conn_handle = p_data->cis_conn_handle;
 		/* Send event */
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -596,7 +597,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		p_ind->conn_handle = p_data->conn_handle;
 		p_ind->ase_id = p_data->ase_data.ase_id;
 		p_ind->direction = p_data->ase_data.direction;
-		p_ind->ase_state = p_data->ase_data.ase_state;
+		p_ind->ase_state = (rtk_bt_le_audio_ascs_ase_state_t)p_data->ase_data.ase_state;
 		/* Send event */
 		/* directly calling to avoid memcpy of metadata memory */
 		rtk_bt_evt_indicate(p_evt, &cb_ret);
@@ -1019,7 +1020,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 					break;
 				}
 				p_sync_dev_info->adv_sid = p_data->p_brs_data->source_adv_sid;
-				p_sync_dev_info->adv_addr.type = p_data->p_brs_data->source_address_type;
+				p_sync_dev_info->adv_addr.type = (rtk_bt_le_addr_type_t)p_data->p_brs_data->source_address_type;
 				memcpy(&p_sync_dev_info->adv_addr.addr_val, &p_data->p_brs_data->source_address, sizeof(rtk_bt_le_addr_t));
 				memcpy(p_sync_dev_info->broadcast_id, p_data->p_brs_data->broadcast_id, RTK_BT_LE_AUDIO_BROADCAST_ID_LEN);
 			}
@@ -1750,8 +1751,8 @@ static uint8_t bt_stack_le_audio_broadcast_gen_pbp_adv_data(uint8_t **p_audio_ad
 	uint8_t feature = 0;
 	uint8_t *audio_adv_data;
 	uint8_t audio_data_len;
-	T_BROADCAST_SOURCE_INFO src_info = {0};
-
+	T_BROADCAST_SOURCE_INFO src_info;
+	memset(&src_info, 0, sizeof(src_info));
 	if (false == broadcast_source_get_info(bt_le_audio_priv_data.bsrc.source_handle, &src_info)) {
 		BT_LOGE("[LEA STACK] %s broadcast_source_get_info fail\r\n", __func__);
 		return RTK_BT_ERR_LOWER_STACK_API;
@@ -2048,7 +2049,8 @@ static void bt_stack_le_audio_broadcast_source_cb(T_BROADCAST_SOURCE_HANDLE hand
 	case MSG_BROADCAST_SOURCE_SETUP_DATA_PATH: {
 		rtk_bt_le_audio_iso_channel_info_t *p_iso_chann = NULL;
 		rtk_bt_le_audio_bis_conn_handle_info_t bis_info = {0};
-		T_BROADCAST_SOURCE_INFO src_info = {0};
+		T_BROADCAST_SOURCE_INFO src_info;
+		memset(&src_info, 0, sizeof(src_info));
 		APP_PRINT_INFO2("MSG_BROADCAST_SOURCE_SETUP_DATA_PATH: bis_idx %d, cause 0x%x",
 						p_sm_data->p_setup_data_path->bis_idx,
 						p_sm_data->p_setup_data_path->cause);
@@ -2063,7 +2065,6 @@ static void bt_stack_le_audio_broadcast_source_cb(T_BROADCAST_SOURCE_HANDLE hand
 			BT_LOGE("[BAP] %s bt_stack_le_audio_data_path_add fail\r\n", __func__);
 			break;
 		} else {
-			T_BROADCAST_SOURCE_INFO src_info = {0};
 			if (false == broadcast_source_get_info(bt_le_audio_priv_data.bsrc.source_handle, &src_info)) {
 				BT_LOGE("[BAP] %s broadcast_source_get_info fail\r\n", __func__);
 			} else {
@@ -2306,8 +2307,8 @@ static uint16_t bt_stack_le_audio_broadcast_init(rtk_bt_le_audio_codec_cfg_item_
 												 rtk_bt_le_addr_type_t local_addr_type, bool encryption,
 												 uint16_t stream_audio_contexts)
 {
-	T_BROADCAST_SOURCE_INFO src_info = {0};
-
+	T_BROADCAST_SOURCE_INFO src_info;
+	memset(&src_info, 0, sizeof(src_info));
 	if (bt_le_audio_priv_data.bsrc.source_handle == NULL) {
 		BT_LOGE("[LEA STACK] %s: broadcast need to add before initialized \r\n", __func__);
 		return 1;
@@ -2862,14 +2863,14 @@ static uint16_t bt_stack_le_audio_broadcast_assistant_reception_start(void *para
 				if (p_brs_char) {
 					/* find the sync_handle in brs_char_tbl, means the broadcast source is added, so modify it */
 					ret = bass_cp_modify_source_by_sync_info((T_BLE_AUDIO_SYNC_HANDLE)p_sync_dev_info->sync_handle, p_link->conn_handle,
-															 p_brs_char->source_id, pa_sync,
+															 p_brs_char->source_id, (T_BASS_PA_SYNC)pa_sync,
 															 bis_array, false);
 					BT_LOGA("%s: bass modify source for sync_handle %08x %s \r\n", __func__, p_sync_dev_info->sync_handle,
 							((true != ret) ? "fail" : "ok"));
 				} else {
 					/* not find the sync_handle in brs_char_tbl, means the broadcast source has not added, so add it */
 					ret = bass_cp_add_source_by_sync_info((T_BLE_AUDIO_SYNC_HANDLE)p_sync_dev_info->sync_handle, p_link->conn_handle,
-														  pa_sync, bis_array, false);
+														  (T_BASS_PA_SYNC)pa_sync, bis_array, false);
 					BT_LOGA("%s: bass add source for sync_handle %08x %s \r\n", __func__, p_sync_dev_info->sync_handle,
 							((true != ret) ? "fail" : "ok"));
 				}
@@ -3186,8 +3187,9 @@ void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_HANDLE 
 
 	case AUDIO_GROUP_MSG_BAP_START_QOS_CFG: {
 		T_AUDIO_GROUP_BAP_START_QOS_CFG *p_data = (T_AUDIO_GROUP_BAP_START_QOS_CFG *)buf;
-		T_BAP_UNICAST_SESSION_INFO session_info = {0};
+		T_BAP_UNICAST_SESSION_INFO session_info;
 		T_AUDIO_ASE_QOS_CFG ase_qos_cfg = {0};
+		memset(&session_info, 0, sizeof(session_info));
 		APP_PRINT_INFO8("AUDIO_GROUP_MSG_BAP_START_QOS_CFG: group handle 0x%x, session handle 0x%x, sink presentation delay(0x%x-0x%x),source presentation delay(0x%x-0x%x), sink latency 0x%x, source latency 0x%x",
 						handle, p_data->handle,
 						p_data->sink_presentation_delay_min, p_data->sink_presentation_delay_max,
@@ -3383,7 +3385,8 @@ void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_HANDLE 
 			BT_LOGE("[BAP] %s bt_stack_le_audio_data_path_add fail \r\n", __func__);
 			break;
 		}
-		T_ISOCH_INFO info = {0};
+		T_ISOCH_INFO info;
+		memset(&info, 0, sizeof(info));
 		if (true != cig_mgr_get_isoch_info(p_iso_chann->iso_conn_handle, &info)) {
 			BT_LOGE("[BAP] %s cig_mgr_get_isoch_info fail (cis_conn_handle = 0x%x)\r\n", __func__, p_iso_chann->iso_conn_handle);
 			break;
@@ -3409,12 +3412,12 @@ void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_HANDLE 
 		memcpy(&p_ind->codec_parsed_data, &p_data->codec_parsed_data, sizeof(rtk_bt_le_audio_cfg_codec_t));
 		p_ind->iso_chann_t.p_iso_chann = (void *)p_iso_chann;
 		p_ind->iso_chann_t.iso_conn_handle = p_iso_chann->iso_conn_handle;
-		p_ind->iso_chann_t.path_direction = p_data->path_direction;
+		p_ind->iso_chann_t.path_direction = (rtk_bt_le_audio_iso_data_path_direction_t)p_data->path_direction;
 		p_ind->iso_chann_t.iso_interval = info.iso_interval;
 		p_ind->transport_latency_m_to_s = p_iso_chann->transport_latency_m_to_s;
 		p_ind->transport_latency_s_to_m = p_iso_chann->transport_latency_s_to_m;
 		if (p_data->path_direction == RTK_BLE_AUDIO_ISO_DATA_PATH_TX) {
-			rtk_bt_le_audio_group_info_t *p_group_info = bt_stack_le_audio_find_group(handle);
+			p_group_info = bt_stack_le_audio_find_group(handle);
 			if (p_group_info) {
 				p_ind->dev_num = p_group_info->lea_unicast.dev_num;
 			}

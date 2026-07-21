@@ -8,7 +8,7 @@
 
 //#define tskIDLE_PRIORITY	0
 #define DEV_DMA_ALIGN	1
-#define SDIO_INT_MODE	1
+#define WHC_SDIO_INT_MODE	1
 #define SDIO_BLOCK_SIZE		256
 #define CALCULATE_FREE_TXBD 1 // for DP bug, comment after 7005 for tp
 #define CONFIG_SDIO_TX_ENABLE_AVAL_INT 1
@@ -59,28 +59,20 @@ struct whc_sdio {
 };
 
 /* ---- port glue for the shared whc_host_sdio_trx_common.c ---- */
-#define WHC_MALLOC(_sz)		rtos_mem_malloc(_sz)
-#define WHC_FREE(_p)		rtos_mem_free(_p)
-#define WHC_SEM_TAKE(_s)	rtos_sema_take((_s), MUTEX_WAIT_TIMEOUT)
-#define WHC_SEM_TAKE_TIMEOUT(_s, _t)	rtos_sema_take((_s), (_t))
-#define WHC_HOST_SDIO_RX_INT_DISABLE(_p) \
-	do { uint32_t _himr = (_p)->sdio_himr & (~SDIO_HIMR_RX_REQUEST_MSK); \
-		rtw_write32((_p), SDIO_REG_HIMR, _himr); } while (0)
-#define WHC_HOST_SDIO_RX_INT_RESTORE(_p) \
-	do { uint32_t _himr = (_p)->sdio_himr; \
-		rtw_write32((_p), SDIO_REG_HIMR, _himr); } while (0)
-#define WHC_SEM_GIVE(_s)	rtos_sema_give(_s)
-#define WHC_HOST_SDIO_HISR_CLEAR(_p) \
-	do { uint32_t _v = (_p)->sdio_hisr & MASK_SDIO_HISR_CLEAR; \
-		if (_v) { rtw_write32((_p), SDIO_REG_HISR,  _v); } } while (0)
+#define whc_malloc(_sz)		rtos_mem_malloc(_sz)
+#define whc_free(_p)		rtos_mem_free(_p)
+#define whc_sem_take_timeout(_s, _t)	rtos_sema_take((_s), (_t))
 
-#define WHC_MUTEX_TAKE(_m, _t)		rtos_mutex_take((_m), (_t))
-#define WHC_MUTEX_GIVE(_m)		rtos_mutex_give(_m)
-#define WHC_MSLEEP(_ms)			vTaskDelay(pdMS_TO_TICKS(_ms))
-#define WHC_HOST_SDIO_ALLOC_IRQ(_p)		/* no-op */
+#define whc_sem_give(_s)	rtos_sema_give(_s)
 
-#define WHC_HOST_SDIO_RX_DEFAULT(_b) \
-	do { whc_host_pkt_rx_to_user((_b) + SIZE_RX_DESC); WHC_FREE(_b); } while (0)
+#define whc_mutex_take(_m, _t)		rtos_mutex_take((_m), (_t))
+#define whc_mutex_give(_m)		rtos_mutex_give(_m)
+#define whc_msleep(_ms)			vTaskDelay(pdMS_TO_TICKS(_ms))
+#define whc_mutex_init(_m)		rtos_mutex_create(&(_m))
+#define whc_host_sdio_alloc_irq(_p)	/* no-op */
+
+#define whc_host_sdio_rx_default(_b) \
+	do { whc_host_pkt_rx_to_user((_b) + SIZE_RX_DESC); whc_free(_b); } while (0)
 
 
 void whc_sdio_host_init_drv(void);

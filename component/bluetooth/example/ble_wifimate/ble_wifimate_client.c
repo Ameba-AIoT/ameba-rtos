@@ -71,18 +71,24 @@ static uint32_t ble_wifimate_client_checksum_cal(uint16_t len, uint8_t *data)
 
 static uint16_t ble_wifimate_aes_ecb_encrypt(uint8_t src_len, uint8_t *src, uint8_t key_len, uint8_t *key, uint8_t *result_len, uint8_t *result)
 {
-	mbedtls_aes_context ctx;
-	uint32_t key_bit = BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_128;
-	uint8_t key_le[key_len];
-	int i = 0;
-
 	if (!src || !key || !result_len || !result) {
 		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	mbedtls_aes_context ctx;
+	uint32_t key_bit = BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_128;
+	int i = 0;
+
+	uint8_t *key_le = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, key_len); //the array length need a constant value
+	if (!key_le) {
+		BT_LOGE("%s: key_le malloc failed\r\n", __func__);
+		return RTK_BT_FAIL;
 	}
 
 	/* use a software key, it needs to be converted to little-endian format.
 	   For example, the key is 00112233445566778899aabbccddeeff, the key array should like:
 	   uint8_t key1[32] = {0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00 };. */
+	memset(key_le, 0, key_len);
 	memcpy(key_le, key, key_len);
 	array_to_little_endian(key_le, key_len);
 
@@ -95,12 +101,25 @@ static uint16_t ble_wifimate_aes_ecb_encrypt(uint8_t src_len, uint8_t *src, uint
 	// set AES encrypt key
 	if (mbedtls_aes_setkey_enc(&ctx, key_le, key_bit) != 0) {
 		BT_LOGE("%s: mbedtls AES key set fail\r\n", __func__);
+		osif_mem_free(key_le);
 		return RTK_BT_FAIL;
 	}
 
 	uint8_t message_len = (uint8_t)ceil(src_len / 16.0) * 16;
-	uint8_t message[message_len];
-	uint8_t encrypted[message_len];
+	uint8_t *message = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, message_len);
+	if (!message) {
+		BT_LOGE("%s: message malloc failed\r\n", __func__);
+		osif_mem_free(key_le);
+		return RTK_BT_FAIL;
+	}
+
+	uint8_t *encrypted = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, message_len);
+	if (!encrypted) {
+		BT_LOGE("%s: encrypted malloc failed\r\n", __func__);
+		osif_mem_free(key_le);
+		osif_mem_free(message);
+		return RTK_BT_FAIL;
+	}
 
 	memset(message, 0, message_len);
 	memset(encrypted, 0, message_len);
@@ -116,6 +135,9 @@ static uint16_t ble_wifimate_aes_ecb_encrypt(uint8_t src_len, uint8_t *src, uint
 	}
 
 	if (i < message_len) {
+		osif_mem_free(key_le);
+		osif_mem_free(message);
+		osif_mem_free(encrypted);
 		return RTK_BT_FAIL;
 	}
 
@@ -125,6 +147,10 @@ static uint16_t ble_wifimate_aes_ecb_encrypt(uint8_t src_len, uint8_t *src, uint
 	BT_DUMPD("====encrypt key=====\r\n", key, key_len);
 	BT_DUMPD("====encrypt message=====\r\n", message, message_len);
 	BT_DUMPD("====encrypt result=====\r\n", result, *result_len);
+
+	osif_mem_free(key_le);
+	osif_mem_free(message);
+	osif_mem_free(encrypted);
 
 	return RTK_BT_OK;
 }

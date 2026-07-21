@@ -26,14 +26,13 @@ void rtw_sdio_interrupt_handler(void)
 	u32 freepage;
 #endif
 
-#ifdef SDIO_INT_MODE
 	for (;;)  {
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
 		//SDIO->MASK |= SDIO_MASK_SDIOITIE;
 		sdio_enable_data1_irq();
 #endif
 		rtos_sema_take(whc_sdio_priv.host_irq, MUTEX_WAIT_TIMEOUT);
-#endif
+
 		//read HISR
 		priv->sdio_hisr = rtw_read32(priv, SDIO_REG_HISR);
 
@@ -72,9 +71,7 @@ void rtw_sdio_interrupt_handler(void)
 		} else {
 
 		}
-#ifdef SDIO_INT_MODE
 	}
-#endif
 }
 
 static int rtw_sdio_give_sema(u32 timeout)

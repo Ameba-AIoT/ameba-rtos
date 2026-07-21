@@ -12,7 +12,7 @@ static uint8_t *whc_host_sdio_read_rxfifo(struct whc_sdio *priv, uint32_t size)
 
 	allocsize = _RND(size, SDIO_BLOCK_SIZE);
 
-	pbuf = (uint8_t *)WHC_MALLOC(allocsize);
+	pbuf = (uint8_t *)whc_malloc(allocsize);
 	if (pbuf == NULL) {
 		return NULL;
 	}
@@ -24,7 +24,7 @@ static uint8_t *whc_host_sdio_read_rxfifo(struct whc_sdio *priv, uint32_t size)
 		} else {
 			/* retry to reduce impact of bus err */
 			if (retry++ > 10) {
-				WHC_FREE(pbuf);
+				whc_free(pbuf);
 				return NULL;
 			}
 		}
@@ -45,7 +45,7 @@ int whc_host_sdio_recv_process(uint8_t *pbuf)
 		break;
 
 	default:
-		WHC_HOST_SDIO_RX_DEFAULT(pbuf);
+		whc_host_sdio_rx_default(pbuf);
 		break;
 	}
 
@@ -59,16 +59,22 @@ void whc_host_sdio_recv_data_process(void)
 	uint32_t rx_len_rdy;
 	uint32_t SdioRxFIFOSize;
 	uint8_t retry = 0;
+	uint32_t himr;
 
 	for (;;) {
-		WHC_SEM_TAKE(priv->host_recv_wake);
+		retry = 0;
+		whc_sem_take_timeout(priv->host_recv_wake, MUTEX_WAIT_TIMEOUT);
 
 		/* wakeup device if it's sleep */
 		if (priv->dev_state == PWR_STATE_SLEEP) {
 			//TODO resume
 		}
 
-		WHC_HOST_SDIO_RX_INT_DISABLE(priv);
+		/* no need to close data1 irq if using gpio as int src */
+#if defined(WHC_SDIO_INT_MODE) && !defined(WHC_SDIO_INT_GPIO)
+		himr = priv->sdio_himr & (~SDIO_HIMR_RX_REQUEST_MSK);
+		rtw_write32(priv, SDIO_REG_HIMR, himr);
+#endif
 
 		do {
 			/* validate RX_LEN_RDY before reading RX0_REQ_LEN */
@@ -97,22 +103,29 @@ void whc_host_sdio_recv_data_process(void)
 				break;
 			}
 		} while (1);
-
-		WHC_HOST_SDIO_RX_INT_RESTORE(priv);
+#if defined(WHC_SDIO_INT_MODE) && !defined(WHC_SDIO_INT_GPIO)
+		himr = priv->sdio_himr;
+		rtw_write32(priv, SDIO_REG_HIMR, himr);
+#endif
 	}
 }
 
 /* one pass of HISR handling, shared by all ports' interrupt handlers */
 void whc_host_sdio_isr_process(struct whc_sdio *priv)
 {
+	u32 value;
 	/* read HISR */
 	priv->sdio_hisr = rtw_read32(priv, SDIO_REG_HISR);
 
 	if (priv->sdio_hisr & priv->sdio_himr) {
 		priv->sdio_hisr &= priv->sdio_himr;
 
-		/* clear serviced HISR bits (port decides, may be a no-op) */
-		WHC_HOST_SDIO_HISR_CLEAR(priv);
+#if defined(WHC_SDIO_INT_MODE) && !defined(WHC_SDIO_INT_GPIO)
+		value = priv->sdio_hisr & MASK_SDIO_HISR_CLEAR;
+		if (value) {
+			rtw_write32(priv, SDIO_REG_HISR, value);
+		}
+#endif
 
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
 		if (priv->sdio_hisr & SDIO_HISR_AVAL_INT) {
@@ -122,22 +135,22 @@ void whc_host_sdio_isr_process(struct whc_sdio *priv)
 			/* wakeup tx task if waiting */
 			if (priv->tx_avail_int_triggered == 0) {
 				priv->tx_avail_int_triggered = 1;
-				WHC_SEM_GIVE(priv->txbd_wq);
+				whc_sem_give(priv->txbd_wq);
 			}
 		}
 #endif
 		if (priv->sdio_hisr & SDIO_HISR_RX_REQUEST) {
 			priv->sdio_hisr ^= SDIO_HISR_RX_REQUEST;
-			WHC_SEM_GIVE(priv->host_recv_wake);
+			whc_sem_give(priv->host_recv_wake);
 		}
 	}
 }
 
 /* Shared SDIO host TX: wait for a free TXBD, fill the TX descriptor and push
  * the buffer into the device TX FIFO. Additional required port macros:
- *   - WHC_MUTEX_TAKE(m, t) / WHC_MUTEX_GIVE(m)
- *   - WHC_SEM_TAKE_TIMEOUT(s, t)   : timed wait on the TXBD-avail sema object
- *   - WHC_MSLEEP(ms)
+ *   - whc_mutex_take(m, t) / whc_mutex_give(m)
+ *   - whc_sem_take_timeout(s, t)   : timed wait on the TXBD-avail sema object
+ *   - whc_msleep(ms)
  * plus rtw_sdio_query_txbd_status() and hal rtw_write_port(). */
 void whc_host_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb)
 {
@@ -154,7 +167,7 @@ void whc_host_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb)
 		//TODO wake
 	}
 
-	WHC_MUTEX_TAKE(priv->lock, MUTEX_WAIT_TIMEOUT);
+	whc_mutex_take(priv->lock, MUTEX_WAIT_TIMEOUT);
 	// check if hardware tx fifo page is enough
 	while (priv->SdioTxBDFreeNum < 1) {
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
@@ -164,7 +177,7 @@ void whc_host_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb)
 		if (priv->SdioTxBDFreeNum >= 1) {
 			break;
 		}
-		if (WHC_SEM_TAKE_TIMEOUT(priv->txbd_wq, 1000) != 0) {
+		if (whc_sem_take_timeout(priv->txbd_wq, 1000) != 0) {
 			printf("txbd unavaliable \n");
 		}
 #else
@@ -175,7 +188,7 @@ void whc_host_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb)
 		}
 		polling_num++;
 		if ((polling_num % 60) == 0) {
-			WHC_MSLEEP(1);
+			whc_msleep(1);
 		}
 #endif
 	}
@@ -201,7 +214,7 @@ void whc_host_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb)
 	priv->txbd_wptr = (priv->txbd_wptr + 1) % priv->txbd_size;
 
 exit:
-	WHC_MUTEX_GIVE(priv->lock);
+	whc_mutex_give(priv->lock);
 
 	return;
 }
