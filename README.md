@@ -4,15 +4,16 @@
 
 # ameba-rtos
 
-**The official IoT development framework for Realtek Ameba series chips, supporting Linux and Windows.**
+**The official IoT development framework for Realtek Ameba series chips, supporting Linux, Windows and macOS.**
 
 [![SDK](https://badgen.net/badge/SDK/FreeRTOS/blue)](https://aiot.realmcu.com/en/latest/rtos/index.html)
 [![Version](https://badgen.net/github/release/Ameba-AIoT/ameba-rtos)](https://github.com/Ameba-AIoT/ameba-rtos/releases)
 [![Language](https://badgen.net/badge/language/C/blue)](https://github.com/Ameba-AIoT/ameba-rtos/search?l=c)
 [![License](https://badgen.net/badge/License/Apache%202.0/lightgrey)](LICENSE)
 [![Last Commit](https://badgen.net/github/last-commit/Ameba-AIoT/ameba-rtos/master?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/commits/master)<br>
-[![CI Linux](https://badgen.net/badge/Linux/success/green?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/actions/workflows/ameba_build_system.yml)
-[![CI Windows](https://badgen.net/badge/Windows/success/green?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/actions/workflows/ameba_build_system.yml)
+[![CI Linux](https://badgen.net/badge/Linux/success/green?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/actions/workflows/ameba_build_system.yml?query=branch%3Amaster)
+[![CI Windows](https://badgen.net/badge/Windows/success/green?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/actions/workflows/ameba_build_system.yml?query=branch%3Amaster)
+[![CI macOS](https://badgen.net/badge/macOS/success/green?icon=github)](https://github.com/Ameba-AIoT/ameba-rtos/actions/workflows/ameba_build_system.yml?query=branch%3Amaster)
 [![Gitee Mirror](https://badgen.net/badge/mirror/Gitee/c71d23?icon=git)](https://gitee.com/ameba-aiot/ameba-rtos)
 
 [English](README.md) · [中文版](README_CN.md) · [Documentation](https://aiot.realmcu.com/en/latest/rtos/index.html) · [Products](https://aiot.realmcu.com/en/product/index.html)
@@ -90,8 +91,9 @@ ameba-rtos/
 - **Security** — mbedTLS 3.x, GmSSL, Secure Boot, TrustZone
 - **File systems** — FatFS, LittleFS, FTL, VFS abstraction with SD card and USB MSC
 - **USB** — Device (CDC-ACM, HID, MSC, UAC, vendor) and Host classes
-- **OTA** — dual-bank OTA over HTTP/HTTPS
+- **OTA** — dual-bank OTA over HTTP/HTTPS/VFS
 - **AT Command** — AT command framework over UART / SPI / SDIO / USB
+- **Peripheral** - Supports GPIO, SPI, I2C, UART, PWM, ADC, and other peripheral interfaces
 - **Audio** — audio framework with codec drivers *(XDK)*
 - **AI Voice** — AI voice processing framework *(XDK)*
 - **TFLite Micro** — TensorFlow Lite Micro for on-device inference *(XDK)*
@@ -152,7 +154,7 @@ If you prefer to configure the build environment manually, refer to the [FreeRTO
 **1. Set up the SDK environment**
 
 ```bash
-source env.sh   # Linux
+source env.sh   # Linux / macOS
 env.bat         # Windows
 ```
 
