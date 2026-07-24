@@ -56,34 +56,6 @@
 #define PHYDM	2
 #define HALBBRF	3
 
-#if defined(CONFIG_AMEBADPLUS)
-/******************************* AmebaDPLUS (8721DA) *******************************/
-#include "autoconf_8721da.h"
-#elif defined(CONFIG_AMEBAD)
-/******************************* AmebaD2 (8730E) ******************************/
-#include "autoconf_8721d.h"
-#elif defined(CONFIG_AMEBASMART)
-/******************************* AmebaD2 (8730E) ******************************/
-#include "autoconf_8730e.h"
-#elif defined(CONFIG_AMEBALITE)
-/***************************** AmebaLite (8720E) *****************************/
-#include "autoconf_8720e.h"
-#elif defined(CONFIG_AMEBAGREEN2)
-/******************************* Amebalite2 (8721f) ******************************/
-#include "autoconf_8721f.h"
-#elif defined(CONFIG_AMEBAPRO3)
-/******************************* AmebaPro3 (8735c) ******************************/
-#include "autoconf_8721f.h"
-#elif defined(CONFIG_AMEBAL2)
-/******************************* AmebaL2 (6955) ******************************/
-#include "autoconf_amebax.h"
-#elif defined(CONFIG_RTL8720F)
-/******************************* Ameba (8720F) ******************************/
-#include "autoconf_8720f.h"
-#endif
-/****************** Configurations for each platform end **********************/
-
-
 /************************ For EAP auth configurations *************************/
 /* wpa_supplicant_std handles EAP configuration in its own config.
  * Do not include autoconf_eap.h to avoid configuration conflicts.
@@ -91,6 +63,42 @@
 #ifndef CONFIG_WPA_STD
 #include "autoconf_eap.h"
 #endif
+
+#if defined(CONFIG_AMEBADPLUS)
+/******************************* AmebaDPLUS (8721DA) *******************************/
+#include "autoconf_8721da.h"
+#include "rtw_task_size_8721da.h"
+#elif defined(CONFIG_AMEBAD)
+/******************************* AmebaD2 (8730E) ******************************/
+#include "autoconf_8721d.h"
+#include "rtw_task_size_8721d.h"
+#elif defined(CONFIG_AMEBASMART)
+/******************************* AmebaD2 (8730E) ******************************/
+#include "autoconf_8730e.h"
+#include "rtw_task_size_8730e.h"
+#elif defined(CONFIG_AMEBALITE)
+/***************************** AmebaLite (8720E) *****************************/
+#include "autoconf_8720e.h"
+#include "rtw_task_size_8720e.h"
+#elif defined(CONFIG_AMEBAGREEN2)
+/******************************* Amebalite2 (8721f) ******************************/
+#include "autoconf_8721f.h"
+#include "rtw_task_size_8721f.h"
+#elif defined(CONFIG_AMEBAPRO3)
+/******************************* AmebaPro3 (8735c) ******************************/
+#include "autoconf_8721f.h"
+#include "rtw_task_size_8721f.h"
+#elif defined(CONFIG_AMEBAL2)
+/******************************* AmebaL2 (6955) ******************************/
+#include "autoconf_amebax.h"
+#include "rtw_task_size_amebax.h"
+#elif defined(CONFIG_RTL8720F)
+/******************************* Ameba (8720F) ******************************/
+#include "autoconf_8720f.h"
+#include "rtw_task_size_8720f.h"
+#endif
+/****************** Configurations for each platform end **********************/
+
 /************************ For EAP auth configurations *************************/
 /* KVR macro is default opened, but actually not working. To use it, need turn on the switch in menuconfig */
 #define CONFIG_IEEE80211V
