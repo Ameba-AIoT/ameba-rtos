@@ -12,7 +12,6 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_uvc.h"
-#include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
 /*Just capture and abandon frame*/

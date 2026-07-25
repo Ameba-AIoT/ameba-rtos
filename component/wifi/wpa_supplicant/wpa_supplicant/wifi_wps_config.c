@@ -310,9 +310,6 @@ static int wps_connect_to_AP_by_certificate(struct rtw_network_info *wifi)
 	while (1) {
 		ret = wifi_connect(wifi, 1);
 		if (ret == RTK_SUCCESS) {
-			if (retry_count == wifi_user_config.wps_retry_count) {
-				rtos_time_delay_ms(6000);    //When start wps with OPEN AP, AP will send a disassociate frame after STA connected, need reconnect here.
-			}
 			if (wifi_get_join_status(&join_status) == RTK_SUCCESS && join_status == RTW_JOINSTATUS_SUCCESS) {
 				wps_check_and_show_connection_info();
 				break;
@@ -930,6 +927,8 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 	// choose first credential as default
 	if (dev_cred[select_index].ssid[0] != 0 && dev_cred[select_index].ssid_len <= 32) {
 		wps_config_wifi_setting(&wifi, &dev_cred[select_index]);
+		/* The target AP channel is already known from WPS, scan only this channel instead of full scan. */
+		wifi.channel = channel;
 		wifi_set_wps_phase(STA_WLAN_INDEX, DISABLE);
 		ret = wps_connect_to_AP_by_certificate(&wifi);
 		os_free(dev_cred, 0);

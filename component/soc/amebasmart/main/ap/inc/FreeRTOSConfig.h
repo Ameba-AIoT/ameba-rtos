@@ -61,7 +61,7 @@ extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
 
 #define configNUM_CORES							CONFIG_CPUS_NUM  /* Do not modify core number here but in menuconfig*/
 
-#ifdef CONFIG_CA32_FREERTOS_V11_1_0
+#if defined(CONFIG_CA32_FREERTOS_V11_1_0) || defined(CONFIG_CA32_FREERTOS_V11_3_0)
 /* SMP related */
 #define configNUMBER_OF_CORES					CONFIG_CORE_NUM
 #if ( configNUMBER_OF_CORES > 1 )
@@ -74,7 +74,6 @@ extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
 #endif
 
 /* Different form v10.2.1_smp*/
-#define configUSE_TICKLESS_IDLE					0
 #define configTASK_NOTIFICATION_ARRAY_ENTRIES      3
 #define configENABLE_BACKWARD_COMPATIBILITY        1
 #define configSTACK_DEPTH_TYPE					   uint32_t
@@ -88,14 +87,13 @@ extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
 #define INCLUDE_xTaskGetIdleTaskHandle          1
 #define INCLUDE_uxTaskGetStackHighWaterMark     0
 #define INCLUDE_xEventGroupSetBitFromISR        1
-#else
-#define configUSE_TICKLESS_IDLE					1
-#endif  /* CONFIG_CA32_FREERTOS_V11_1_0 */
+#endif  /* CONFIG_CA32_FREERTOS_V11_1_0 || CONFIG_CA32_FREERTOS_V11_3_0 */
 
 #define configCPU_CLOCK_HZ						CPU_ClkGet()
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION	0
 #define configUSE_NEWLIB_REENTRANT				1
 #define configTICK_RATE_HZ						( ( TickType_t ) 1000 )
+#define configUSE_TICKLESS_IDLE					1
 #define configUSE_PREEMPTION					1
 #define configUSE_IDLE_HOOK						0
 #define configUSE_TICK_HOOK						0

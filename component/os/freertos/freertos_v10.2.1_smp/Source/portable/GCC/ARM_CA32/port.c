@@ -186,6 +186,16 @@ volatile uint32_t ulFlashPG_Flag = 0;
 
 /*-----------------------------------------------------------*/
 
+/* Flag to record if the scheduler has started and is set pdTRUE by core0.
+ *
+ * Add uxPortSchedulerStart flag to allow secondary cores to detect when
+ * the scheduler has started without calling xTaskGetSchedulerState().
+ * This avoids a race condition where xTaskGetSchedulerState() enters
+ * critical section to check task state and try to yield itself before IPI
+ * is properly set up.
+ */
+volatile uint32_t uxPortSchedulerStart[configNUM_CORES] = {pdFALSE};
+
 /*
  * See header file for description.
  */
@@ -295,6 +305,7 @@ __attribute__((naked)) void TaskExitError(void)
 BaseType_t xPortStartScheduler(void)
 {
 	uint32_t ulAPSR;
+	uint32_t xCoreID;
 
 	/* Only continue if the CPU is not in User mode.  The CPU must be in a
 	Privileged mode for the scheduler to start. */
@@ -316,8 +327,16 @@ BaseType_t xPortStartScheduler(void)
 		}
 #endif
 
-		/* Start the timer that generates the tick ISR. */
-		configSETUP_TICK_INTERRUPT();
+		xCoreID = portGET_CORE_ID();
+		uxPortSchedulerStart[xCoreID] = pdTRUE;
+
+		/* Core0 specific initialization */
+		/* Realtek modify. core1 need tick for API rtos_time_get_current_system_time_ns()*/
+		// if ( xCoreID == portPrimaryCoreID )
+		// {
+			/* Start the timer that generates the tick ISR. */
+			configSETUP_TICK_INTERRUPT();
+		// }
 
 		/* Start the first task executing. */
 		vPortRestoreTaskContext();
@@ -337,6 +356,12 @@ void vPortEndScheduler(void)
 {
 	/* Not implemented in ports where there is nothing to return to.
 	Artificially force an assert. */
+
+	for ( BaseType_t xCoreID = 0; xCoreID < configNUM_CORES; xCoreID++ )
+	{
+		uxPortSchedulerStart[xCoreID] = pdFALSE;
+	}
+
 	configASSERT(ulCriticalNesting == 1000UL);
 }
 /*-----------------------------------------------------------*/
@@ -794,4 +819,3 @@ void vPortCleanUpTCB(uint32_t * pxTCB)
 #endif
 }
 /*-----------------------------------------------------------*/
-
