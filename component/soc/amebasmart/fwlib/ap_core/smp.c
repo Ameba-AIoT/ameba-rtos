@@ -11,7 +11,8 @@
 
 static const char *const TAG = "#";
 extern void _boot(void);
-extern void vPortRestoreTaskContext(void);
+extern BaseType_t xPortStartScheduler(void);
+extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
 
 #if ( configNUM_CORES > 1 )
 extern spinlock_t flash_lock;
@@ -73,7 +74,7 @@ void rtk_core1_power_off(void)
 void vPortGateOtherCore(void)
 {
 #if ( configNUM_CORES > 1 )
-	if (rtos_sched_get_state() == RTOS_SCHED_NOT_STARTED) {
+	if (uxPortSchedulerStart[portPrimaryCoreID] == pdFALSE) {
 		/* If os not start schedule, cpu1 cannot handle interrupt */
 		return;
 	}
@@ -141,26 +142,21 @@ void vPortSecondaryOff(void)
 
 void vPortSecondaryStart(void)
 {
-	/* Wait until scheduler starts */
-	if (pmu_get_secondary_cpu_state(portGET_CORE_ID()) == CPU1_RUNNING)
-		while (rtos_sched_get_state() == RTOS_SCHED_NOT_STARTED);
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "CPU%d: on\n", (int)portGET_CORE_ID());
-#if ( configNUM_CORES > 1 )
 	/* Configure the hardware ready to run the demo. */
 	prvSetupHardwareSecondary();
 
-	/* Enable ipi for yield core */
-	configSETUP_IPI_INTERRUPT();
-#endif
-	/* Start the timer that generates the tick ISR. */
-	configSETUP_TICK_INTERRUPT();
+	if (pmu_get_secondary_cpu_state(portGET_CORE_ID()) == CPU1_RUNNING) {
+		while (uxPortSchedulerStart[portPrimaryCoreID] == pdFALSE);
+	}
+
+	/* Wait until scheduler starts */
+	DiagPrintf("CPU%d: on\n", (int)portGET_CORE_ID());
 
 	/* Secondary core is up, set cpu state to CPU1_RUNNING */
 	pmu_set_secondary_cpu_state(1, CPU1_RUNNING);
 
-	/* Start the first task executing. */
-	vPortRestoreTaskContext();
+	/* Enable IPI and start the first task. */
+	(void) xPortStartScheduler();
 }
 /*-----------------------------------------------------------*/
 
