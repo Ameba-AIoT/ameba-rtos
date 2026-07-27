@@ -141,25 +141,6 @@
 
 #define CONFIG_P2P
 
-/**************** configurations for task size **********************/
-#if defined (CONFIG_WHC_DEV)
-#if defined(CONFIG_WHC_INTF_IPC)
-#define WIFI_RECV_TASKLET_BASIC_SIZE	            1360
-#else
-#define WIFI_RECV_TASKLET_BASIC_SIZE	            3056
-#endif
-#else
-#define WIFI_RECV_TASKLET_BASIC_SIZE	            1024
-#endif
-
-#define WIFI_LITTLE_TASKLET_BASIC_SIZE		        400
-#define WIFI_INIC_IPC_DEV_API_BASIC_SIZE          1280
-#define WIFI_INIC_MSG_Q_BASIC_SIZE                576
-#define WIFI_INIC_IPC_HST_API_BASIC_SIZE          440
-#define WIFI_INIC_IPC_HST_EVT_API_BASIC_SIZE      2272
-#define COEX_IPC_HST_API_BASIC_SIZE               376
-#define COEX_IPC_DEV_API_BASIC_SIZE               632
-
 /*************************** Config for Gen TxPower Tool *******************************/
 /** https://wiki.realtek.com/pages/viewpage.action?pageId=1150516670
   * VERSION 0: only support extending one EXT PWR_LIMIT table

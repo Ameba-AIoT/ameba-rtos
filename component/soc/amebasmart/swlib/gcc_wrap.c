@@ -71,7 +71,12 @@ int __wrap_printf(const char *__restrict fmt, ...)
 
 #ifdef CONFIG_ARM_CORE_CA32
 	/* The CA32 has two cores that need to be locked when printing to avoid interrupting each other */
-	rtos_critical_enter(RTOS_CRITICAL_LOG);
+	extern rtos_mutex_t log_mutex;
+	if (log_mutex == NULL) {
+		rtos_mutex_create(&log_mutex);
+	}
+
+	rtos_mutex_take(log_mutex, RTOS_MAX_DELAY);
 #endif
 
 	va_start(ap, fmt);
@@ -91,7 +96,7 @@ int __wrap_printf(const char *__restrict fmt, ...)
 	va_end(ap);
 
 #ifdef CONFIG_ARM_CORE_CA32
-	rtos_critical_exit(RTOS_CRITICAL_LOG);
+	rtos_mutex_give(log_mutex);
 #endif
 
 	return ret;
