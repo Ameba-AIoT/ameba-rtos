@@ -116,7 +116,8 @@ void rtos_critical_exit(uint32_t component_id)
 
 	/* before enable interrupt, OS critical nesting must return to 0 */
 	if (GetComponentCriticalNesting(portGET_CORE_ID()) == 0) {
-		if (rtos_sched_get_state() == RTOS_SCHED_NOT_STARTED) {
+		extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
+		if (uxPortSchedulerStart[portPrimaryCoreID] == pdFALSE) {
 			/* if Scheduler not start, pxCurrentTCBs is invalid */
 			portENABLE_INTERRUPTS();
 		} else {
