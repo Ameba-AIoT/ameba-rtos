@@ -66,7 +66,7 @@ static uint16_t rtk_stack_le_audio_gmas_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		}
 		p_ind = (rtk_bt_le_audio_gmas_client_read_role_result_t *)p_evt->data;
 		p_ind->conn_handle = read_res->conn_handle;
-		p_ind->gmap_role = read_res->gmap_role;
+		p_ind->gmap_role = (rtk_bt_le_audio_gmap_role_t)read_res->gmap_role;
 		p_ind->cause = read_res->cause;
 		/* Send event */
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -229,7 +229,7 @@ uint16_t bt_stack_gmap_act_handle(rtk_bt_cmd_t *p_cmd)
 
 uint16_t bt_stack_gmap_init(void *p_conf)
 {
-	rtk_bt_le_audio_gmap_role_t gmap_role = 0;
+	rtk_bt_le_audio_gmap_role_t gmap_role = RTK_BT_LE_AUDIO_GMAP_ROLE_UNKNOWN;
 	rtk_bt_le_audio_app_conf_t *p_le_audio_app_conf = NULL;
 
 	if (p_conf == NULL) {

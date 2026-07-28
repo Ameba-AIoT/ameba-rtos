@@ -41,7 +41,7 @@ uint8_t hci_patch_get_patch_version(uint8_t **pp_patch_buf, uint32_t *p_patch_le
 	const uint8_t ext_section_sig[] = {0x51, 0x04, 0xFD, 0x77};                      /* Extension section signature */
 	bool ext_section_check;
 	uint8_t *p_patch = NULL;
-	uint32_t patch_len;
+	uint32_t patch_len = 0;
 	uint8_t patch_version = PATCH_VERSION_INVALID;
 
 	if (CHECK_CFG_SW(CFG_SW_USE_FLASH_PATCH)) {

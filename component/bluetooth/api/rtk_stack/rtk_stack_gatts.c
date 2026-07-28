@@ -1112,7 +1112,7 @@ void bt_stack_gatts_evt_indicate_mtu_exchange(uint16_t conn_handle, uint16_t mtu
 /* convert ATT error to T_APP_RESULT which is used in rtk ble stack */
 static T_APP_RESULT att_err_to_app_result(uint8_t att_err)
 {
-	return att_err ? (ATT_ERR | att_err) : APP_RESULT_SUCCESS;
+	return (T_APP_RESULT)(att_err ? (ATT_ERR | att_err) : APP_RESULT_SUCCESS);
 }
 
 static uint16_t bt_stack_gatts_read_rsp(void *param)
