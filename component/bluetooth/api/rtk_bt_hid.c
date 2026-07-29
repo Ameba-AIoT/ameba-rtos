@@ -37,7 +37,7 @@ uint16_t rtk_hid_descriptor_add(void *des, uint32_t length)
 
 uint16_t rtk_bt_hid_connect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -51,7 +51,7 @@ uint16_t rtk_bt_hid_connect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_hid_disconnect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -65,7 +65,7 @@ uint16_t rtk_bt_hid_disconnect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_hid_get_report_rsp(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -79,7 +79,7 @@ uint16_t rtk_bt_hid_get_report_rsp(uint8_t *bd_addr)
 
 uint16_t rtk_bt_hid_input_data_send(uint8_t *bd_addr, uint8_t *data, uint32_t len)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_hid_input_data_t data_t = {0};
 
 	if (!bd_addr || !data) {

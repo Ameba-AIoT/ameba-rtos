@@ -1765,7 +1765,7 @@ static uint16_t app_bt_le_audio_vocs_set_param(uint8_t sound_channel)
 	}
 	vocs_param.output_des.p_output_des = (uint8_t *)RTK_BT_LE_AUDIO_VOCS_DES;
 	vocs_param.output_des.output_des_len = strlen(RTK_BT_LE_AUDIO_VOCS_DES);
-	BT_APP_PROCESS(rtk_bt_le_audio_vocs_set_param(srv_instance_id, set_mask, &vocs_param));
+	rtk_bt_le_audio_vocs_set_param(srv_instance_id, set_mask, &vocs_param);
 
 	return RTK_BT_OK;
 }

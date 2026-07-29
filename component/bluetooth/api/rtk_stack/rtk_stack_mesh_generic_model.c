@@ -676,7 +676,7 @@ static int32_t generic_power_on_off_server_data(const mesh_model_info_p pmodel_i
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_ON_OFF_SERVER_MODEL_GET,
 									sizeof(rtk_bt_mesh_generic_power_on_off_server_get_t));
 		p_get_data = (rtk_bt_mesh_generic_power_on_off_server_get_t *)p_evt->data;
-		p_get_data->on_power_up = &(((generic_power_on_off_server_get_t *)pargs)->on_power_up);
+		p_get_data->on_power_up = (rtk_bt_mesh_generic_on_power_up_t *)(&(((generic_power_on_off_server_get_t *)pargs)->on_power_up));
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
 	break;
