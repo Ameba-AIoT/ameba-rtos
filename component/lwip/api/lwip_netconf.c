@@ -34,7 +34,7 @@ extern void (*p_wifi_join_info_free)(u8 iface_type);
 struct netif xnetif[NET_IF_NUM]; /* network interface structure */
 struct netif *pnetif_sta = &xnetif[NETIF_WLAN_STA_INDEX];
 struct netif *pnetif_ap = &xnetif[NETIF_WLAN_AP_INDEX];
-#if defined(CONFIG_NAN)
+#if defined(CONFIG_WIFI_NAN_ENABLE)
 struct netif *pnetif_nan = &xnetif[NETIF_WLAN_NAN_INDEX];
 #endif
 #if defined(CONFIG_LWIP_ETHERNET)

@@ -323,7 +323,8 @@ uint16_t rtk_bt_le_iso_sync_info(rtk_bt_le_iso_sync_info_t *p_info)
 uint16_t rtk_bt_le_iso_get_iso_conn_handle(rtk_bt_le_iso_role_t role, rtk_bt_le_iso_conn_handle_info_t *p_info)
 {
 	uint16_t ret = RTK_BT_FAIL;
-	rtk_bt_le_iso_get_conn_handle_t param = {0};
+	rtk_bt_le_iso_get_conn_handle_t param;
+	memset(&param, 0, sizeof(param));
 
 	if (!p_info) {
 		return RTK_BT_ERR_PARAM_INVALID;

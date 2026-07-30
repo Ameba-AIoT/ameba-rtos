@@ -753,8 +753,13 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 
 	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_DONE:
+		/* Set IDLE before callback: if the application calls usbh_dfu_upload()
+		 * from within download_done(), it must see IDLE to pass the state guard. */
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Transfer done (is_download=%u)\n",
 				 dfu->is_download);
+		dfu->state = USBH_DFU_STATE_IDLE;
+		status = HAL_OK;
+
 		if (dfu->is_download) {
 			if ((dfu->cb != NULL) && (dfu->cb->download_done != NULL)) {
 				dfu->cb->download_done(HAL_OK);
@@ -764,14 +769,15 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				dfu->cb->upload_done(HAL_OK);
 			}
 		}
-		dfu->state = USBH_DFU_STATE_IDLE;
-		status = HAL_OK;
 		break;
 
 	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_ERROR:
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Transfer error (is_download=%u)\n",
 				 dfu->is_download);
+		dfu->state = USBH_DFU_STATE_IDLE;
+		status = HAL_OK;
+
 		if (dfu->is_download) {
 			if ((dfu->cb != NULL) && (dfu->cb->download_done != NULL)) {
 				dfu->cb->download_done(HAL_ERR_UNKNOWN);
@@ -781,8 +787,6 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				dfu->cb->upload_done(HAL_ERR_UNKNOWN);
 			}
 		}
-		dfu->state = USBH_DFU_STATE_IDLE;
-		status = HAL_OK;
 		break;
 
 	default:
@@ -873,7 +877,7 @@ int usbh_dfu_download(void)
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 	usb_host_t *host = dfu->host;
 
-	if (host == NULL || host->connect_state != USBH_STATE_SETUP) {
+	if (host == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No DFU device connected\n");
 		return HAL_ERR_UNKNOWN;
 	}
@@ -908,7 +912,7 @@ int usbh_dfu_upload(void)
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 	usb_host_t *host = dfu->host;
 
-	if (host == NULL || host->connect_state != USBH_STATE_SETUP) {
+	if (host == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No DFU device connected\n");
 		return HAL_ERR_UNKNOWN;
 	}
@@ -943,7 +947,7 @@ int usbh_dfu_abort(void)
 	usb_host_t *host = dfu->host;
 	int ret;
 
-	if (host == NULL || host->connect_state != USBH_STATE_SETUP) {
+	if (host == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No DFU device connected\n");
 		return HAL_ERR_UNKNOWN;
 	}

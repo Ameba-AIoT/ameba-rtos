@@ -662,7 +662,8 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 
 	case BT_EVENT_HFP_AG_INDICATORS_STATUS_REQ: {
 		rtk_bt_hfp_ag_indicators_status_req_t *p_ag_ind_status_req = NULL;
-		rtk_bt_hfp_ag_indicators_status_t ind_t = {0};
+		rtk_bt_hfp_ag_indicators_status_t ind_t;
+		memset(&ind_t, 0, sizeof(ind_t));
 
 		p_link = app_find_br_link(param->hfp_ag_indicators_status_req.bd_addr);
 		if (p_link != NULL) {

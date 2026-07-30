@@ -100,7 +100,7 @@ static int32_t generic_on_off_server_data(const mesh_model_info_p pmodel_info, u
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_ONOFF_SERVER_MODEL, RTK_BT_MESH_GENERIC_ONOFF_SERVER_MODEL_EVT_GET,
 									sizeof(rtk_bt_mesh_generic_onoff_server_evt_get_t));
 		get_onoff = (rtk_bt_mesh_generic_onoff_server_evt_get_t *)p_evt->data;
-		get_onoff->on_off = &(((generic_on_off_server_get_t *)pargs)->on_off);
+		get_onoff->on_off = (rtk_bt_mesh_generic_on_off_t *)(&(((generic_on_off_server_get_t *)pargs)->on_off));
 		rtk_bt_evt_indicate(p_evt, NULL);
 		break;
 	}
