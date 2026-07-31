@@ -21,7 +21,7 @@
 #if defined(CONFIG_WIFI_P2P_ENABLE) && !defined(CONFIG_WPA_STD)
 #include "wifi_p2p_supplicant.h"
 #endif
-#if !defined(CONFIG_WHC_DEV)|| defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+#if !defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 #include "atcmd_service.h"
 #include "wpa_lite_intf.h"
 #ifndef CONFIG_WPA_STD

@@ -2165,6 +2165,8 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 					pa2dp_stream->bd_addr[5], pa2dp_stream->bd_addr[4], pa2dp_stream->bd_addr[3], pa2dp_stream->bd_addr[2], pa2dp_stream->bd_addr[1],
 					pa2dp_stream->bd_addr[0]);
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SNK) {
+			/* flush remaining decode data */
+			rtk_bt_audio_codec_reset(audio_codec_conf.codec_index, a2dp_demo_codec_entity);
 			if (a2dp_demo_audio_track_hdl) {
 				rtk_bt_audio_track_resume(a2dp_demo_audio_track_hdl->audio_track_hdl);
 			}

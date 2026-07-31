@@ -228,12 +228,12 @@ u8 nand_ftl_init(struct ameba_flash_info *info)
 	flash_ID[2] = 0;
 
 	/* Reset to clean status */
-	NAND_TxCmd(0xFF, 0, NULL, 0, NULL);
+	NAND_TxCmd_Wait_Safe(0xFF, 0, NULL, 0, NULL);
 
-	NAND_RxCmd(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 2, flash_ID);
+	NAND_RxCmd_Safe(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 2, flash_ID);
 	if (flash_ID[0] == NAND_MFG_MICRON) {
 		/* Micron's did are two bytes */
-		NAND_RxCmd(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 3, flash_ID);
+		NAND_RxCmd_Safe(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 3, flash_ID);
 	}
 
 	info->mid = flash_ID[0];
@@ -599,7 +599,7 @@ u8 nand_ftl_get_status(u8 cmd, u8 addr, u8 *value)
 		return ERR_FAIL;
 	}
 
-	NAND_RxCmd(cmd, 1, &addr, 1, value);
+	NAND_RxCmd_Safe(cmd, 1, &addr, 1, value);
 
 	return ERR_NONE;
 }
@@ -619,8 +619,6 @@ u8 nand_ftl_set_status(u8 cmd, u8 addr, u8 value)
 		return ERR_FAIL;
 	}
 
-	NAND_TxCmd(cmd, 1, &addr, 1, &value);
-
-	return NAND_WaitBusy(WAIT_FLASH_BUSY);
+	NAND_TxCmd_Wait_Safe(cmd, 1, &addr, 1, &value);
+	return ERR_NONE;
 }
-

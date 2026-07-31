@@ -241,6 +241,14 @@ class SerialMonitor(Monitor):
         self.serial_handler.start_cmd_sent = False
 
     def serial_write(self, data):
+        # Intercept: hard reset command — not forwarded to device
+        if isinstance(data, str) and "__HARD_RESET__" in data:
+            ok = self.serial_reader.hard_reset()
+            if ok:
+                print_yellow("Hard reset SUCCESS.")
+            else:
+                print_red("Hard reset FAILED.")
+            return
         try:
             data_to_send = data.encode('utf-8')
             # Display raw byte data in debug mode

@@ -38,6 +38,16 @@ extern "C" {
  */
 
 /**
+ * @brief  Result codes for @ref RTW_EVENT_RADAR_RPT.
+ */
+enum rtw_radar_rpt_result {
+	RTW_RADAR_RPT_OK      = 0, /**< Range report parsed successfully */
+	RTW_RADAR_RPT_TX_FAIL = 1, /**< Radar TX failed */
+	RTW_RADAR_RPT_ERR     = 2, /**< Range report parse error */
+	RTW_RADAR_RPT_UNKNOWN = 3, /**< Unknown error */
+};
+
+/**
   * @brief Join status flags for @ref RTW_EVENT_JOIN_STATUS.
   */
 enum rtw_join_status {
@@ -72,6 +82,7 @@ enum rtw_event_id {
 	RTW_EVENT_WPA_EAPOL_START,        /**< STA mode: WPA enterprise authentication started */
 	RTW_EVENT_WPA_EAPOL_RECVD,        /**< STA mode: EAPOL packet received during WPA enterprise authentication  */
 	RTW_EVENT_DHCP_STATUS,            /**< STA mode: DHCP status report (see @ref rtw_event_dhcp_status)  */
+	RTW_EVENT_RADAR_RPT,              /**< Radar raw data report ready (see example_radar_raw.c) */
 	RTW_EVENT_DFS_RADAR_DETECTED,     /**< SoftAP DFS master: radar detected on the operating channel (see @ref rtw_event_dfs_radar_detected_info) */
 
 	RTW_EVENT_MAX,
@@ -235,6 +246,21 @@ struct rtw_event_csi_report_info {
 	u8 csi_data[];              /**< CSI raw data head address */
 };
 #pragma pack()
+
+/**
+ * @brief  Report info for event @ref RTW_EVENT_RADAR_RPT
+ */
+struct rtw_event_radar_rpt_info {
+	u8 result;                     /**< Parse result (see @ref rtw_radar_rpt_result) */
+	u8 channel;                    /**< Operating central frequency channel */
+	u8 chirp_bw_idx;               /**< Chirp bandwidth: 0=70MHz, 1=40MHz, 2=20MHz */
+	u8 sample_num;                 /**< IQ samples per frame (same for near and far) */
+	s16 isolation;                 /**< Antenna isolation in dBm */
+	u16 rpt_seq;                   /**< Monotonic report sequence; wraps at 65535; used to detect missed reports */
+	float noise_floor;             /**< Noise floor in dBm */
+	u32 radar_data_length;         /**< Total IQ data length in bytes; first half=near, second half=far */
+	u8  radar_data[];              /**< Near IQ data followed by far IQ data */
+};
 
 /**
   * @brief  Report info for event @ref RTW_EVENT_DFS_RADAR_DETECTED

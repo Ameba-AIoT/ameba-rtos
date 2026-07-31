@@ -1,4 +1,5 @@
 #include <basic_types.h>
+#include <sdn_user_conf_intf.h>
 #include <sdn_user_conf_bt.h>
 #include <sdn_conf.h>
 #include <bt_hci.h>
@@ -10,6 +11,22 @@ struct bt_hci_cmd_pkt {
 };
 
 #define BT_HCI_EVT_RSP_MAX_LEN              70
+
+uint8_t bt_hci_ogf_le_ocf_read_buffer_size(void *phci_cmd_param, uint8_t *rsp)
+{
+	(void)phci_cmd_param;
+	struct bt_hci_rp_le_read_buffer_size *buffer_size = (struct bt_hci_rp_le_read_buffer_size *)rsp;
+
+	buffer_size->status = BT_HCI_ERROR_SUCCESS;
+#if BT_LL_FEATURE_BT42_LE_DATA_LENGTH_EXTENSION
+	buffer_size->le_max_len = (251 > (SDN_INTF_MAX_DATA_LEN - 4)) ? (SDN_INTF_MAX_DATA_LEN - 4) : 251; /* LL_LE_PDU_MAX_PAYLOAD_SIZE */
+#else
+	buffer_size->le_max_len = 27; /* LL_LE_PDU_MIN_PAYLOAD_SIZE */
+#endif
+	buffer_size->le_max_num = BLE_LL_TX_ACL_NUM_PER_LINK;
+
+	return sizeof(struct bt_hci_rp_le_read_buffer_size);
+}
 
 static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	//BT_OGF_LINK_CTRL
@@ -49,11 +66,13 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF, bt_hci_cmd_ogf_le_ocf_set_host_chan_classif},
 	{BT_HCI_OP_LE_READ_CHAN_MAP, bt_hci_cmd_ogf_le_ocf_read_channel_map},
 	{BT_HCI_OP_LE_READ_REMOTE_FEATURES, bt_hci_cmd_ogf_le_ocf_read_remote_feature},
-	{BT_HCI_OP_LE_ENCRYPT, bt_hci_cmd_ofg_le_ocf_le_encrypt},
 	{BT_HCI_OP_LE_RAND, bt_hci_cmd_ogf_le_ocf_rand},
+#if BT_LL_FEATURE_BT42_SECURE_CONNECTION
+	{BT_HCI_OP_LE_ENCRYPT, bt_hci_cmd_ofg_le_ocf_le_encrypt},
 	{BT_HCI_OP_LE_ENABLE_ENCRYPTION, bt_hci_cmd_ogf_le_ocf_enable_encryption},
 	{BT_HCI_OP_LE_LTK_REQ_REPLY, bt_hci_cmd_ogf_le_ocf_ltk_req_reply},
 	{BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, bt_hci_cmd_ogf_le_ocf_ltk_req_neg_reply},
+#endif
 	{BT_HCI_OP_LE_READ_SUPP_STATES, bt_hci_cmd_ogf_le_ocf_read_supp_states},
 #ifdef CONFIG_BLE_LL_DTM_ENABLE
 	{BT_HCI_OP_LE_RECEIVER_TEST_V1, bt_hci_cmd_ogf_le_ocf_recv_test_v1},
@@ -64,7 +83,9 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 #endif
 	{BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY, bt_hci_cmd_ogf_le_ocf_conn_param_req_reply},
 	{BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY, bt_hci_cmd_ogf_le_ocf_conn_param_req_neg_reply},
+#ifdef CONFIG_BLE_LL_DATA_LEN_EXT_ENABLE
 	{BT_HCI_OP_LE_SET_DATA_LENGTH, bt_hci_cmd_ogf_le_ocf_set_data_length},
+#endif
 	{BT_HCI_OP_LE_READ_SUGGESTED_DATALEN, bt_hci_cmd_ogf_le_ocf_read_suggested_datalen},
 	{BT_HCI_OP_LE_WRITE_SUGGESTED_DATALEN, bt_hci_cmd_ogf_le_ocf_write_suggested_datalen},
 #ifdef CONFIG_BLE_LL_PRIVACY_ENABLE
@@ -164,13 +185,13 @@ void bt_hci_get_supported_hci_command(uint8_t *pcommands)
 	pcommands[27] |= (COMMAND_27_HCI_LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST |
 					  COMMAND_27_HCI_LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST);
 	pcommands[27] |= (COMMAND_27_HCI_LE_ENCRYPT | COMMAND_27_HCI_LE_RAND);
-// #ifdef BT_LL_LE_CENTRAL
+// #if BT_LL_LE_CENTRAL
 	pcommands[27] |= COMMAND_27_HCI_LE_SET_HOST_CHANNEL_CLASSIFICATION;
 // #endif
 	pcommands[27] |= (COMMAND_27_HCI_LE_CONNECTION_UPDATE |
 					  COMMAND_27_HCI_LE_READ_CHANNEL_MAP |
 					  COMMAND_27_HCI_LE_READ_REMOTE_FEATURES_PAGE_0);
-// #ifdef BT_LL_LE_CENTRAL
+// #if BT_LL_LE_CENTRAL
 	pcommands[28] |= COMMAND_28_HCI_LE_ENABLE_ENCRYPTION;
 // #endif
 	pcommands[28] |= (COMMAND_28_HCI_LE_LONG_TERM_KEY_REQUEST_REPLY |
@@ -233,7 +254,7 @@ void bt_hci_get_supported_hci_command(uint8_t *pcommands)
 void ble_ll_init_feature(uint64_t *pfeature)
 {
 	*pfeature |= BT_LL_LE_FEATURE_ENCRYPTION;
-#if (BT_LL_FEATURE_CONN_PARAM_REQ == 1)
+#if BT_LL_FEATURE_CONN_PARAM_REQ
 	*pfeature |= BT_LL_LE_FEATURE_CONN_PARA_REQ_PROCEDURE;
 #endif
 	*pfeature |= BT_LL_LE_FEATURE_EXT_REJECT_IND;
@@ -271,7 +292,7 @@ void ble_ll_init_feature(uint64_t *pfeature)
 void bt_hci_cmd_handler(uint8_t *pbuf)
 {
 	struct bt_hci_cmd_pkt *phci_cmd_pkt = (struct bt_hci_cmd_pkt *)pbuf;
-	uint8_t len = sizeof(struct bt_hci_evt_cc_status);;
+	uint8_t len = sizeof(struct bt_hci_evt_cc_status);
 	uint8_t rsp[BT_HCI_EVT_RSP_MAX_LEN] = {BT_HCI_ERROR_UNKNOWN_COMMAND};
 	uint32_t i = 0;
 

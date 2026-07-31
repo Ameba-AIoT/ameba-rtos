@@ -2130,19 +2130,17 @@ struct bt_le_scan_recv_info {
 	int8_t tx_power;
 
 #if ZEPHYR_FIX_CODE
-	/* The scan info is from LE extend adv report event */
+	/* If true, the scan info is from LE extended adv report event. Otherwise, scan info is from LE legacy adv report event. */
 	bool is_ext;
+
+	/* LE legacy adv report event type, if is_ext is true, it's convert from ext adv event type */
+	uint8_t adv_type;
+
+	/* LE extended adv report event type, if is_ext is false, it should be ignored. */
+	uint16_t adv_props;
 
 	/* The target address in direct adv */
 	bt_addr_le_t *direct_addr;
-
-	union {
-		/* le adv report event type */
-		uint8_t adv_type;
-
-		/* le extended adv report event type */
-		uint16_t adv_props;
-	};
 #else
 	/**
 	 * @brief Advertising packet type.

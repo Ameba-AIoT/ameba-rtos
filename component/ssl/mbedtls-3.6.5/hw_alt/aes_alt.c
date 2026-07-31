@@ -219,7 +219,7 @@ int mbedtls_aes_crypt_ecb( mbedtls_aes_context *ctx,
     // A mutex is required to ensure that
     // the SW key will not be modified during the calculation process.
     IPC_SEMTake(IPC_SEM_CRYPTO_AES_SW_KEY, 0xffffffff);
-#if defined(CONFIG_RTL8720F)
+#if (defined(CONFIG_RTL8720F) || defined(CONFIG_RLE1509))
     // RTL8720F crypto_aes_ecb_slave takes key_addr inline; no separate set_sw_key call needed
     ret = crypto_aes_ecb_slave(key_id, ctx->key_len_bits, ctx->key_val, mode, input, output);
 #else

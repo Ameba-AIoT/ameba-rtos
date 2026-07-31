@@ -15,7 +15,11 @@
 #define TEST_BUF_SIZE		2048
 #define DataFrameSize		8
 #define ClockDivider 		1000
-#define TEST_LOOP			10
+#define MASTER_NR_SLAVES	2
+
+#ifndef LOOP_COUNT
+#define LOOP_COUNT 10
+#endif
 
 /* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
@@ -46,8 +50,12 @@ typedef struct {
 
 #if SPI_IS_AS_MASTER
 SPI_OBJ spi_master;
+static rtos_mutex_t spi_master_lock;
+static volatile int master_workers_done;
+#define TAG "SPI_MASTER"
 #else
 SPI_OBJ spi_slave;
+#define TAG "SPI_SLAVE"
 #endif
 
 static u32 spi_interrupt(void *Adaptor)
@@ -59,7 +67,7 @@ static u32 spi_interrupt(void *Adaptor)
 	SSI_SetIsrClean(spi_obj->spi_dev, InterruptStatus);
 
 	if (InterruptStatus & (SPI_BIT_TXOIS | SPI_BIT_RXUIS | SPI_BIT_RXOIS | SPI_BIT_TXUIS)) {
-		printf("[INT] Tx/Rx Warning %lx ", InterruptStatus);
+		RTK_LOGI(TAG, "[INT] Tx/Rx Warning %08x ", InterruptStatus);
 	}
 
 	if ((InterruptStatus & SPI_BIT_RXFIS)) {
@@ -128,7 +136,7 @@ void dump_data(u8 *start, u32 size, char *strHeader)
 	16 bytes per line
 	*/
 	if (strHeader) {
-		printf("%s", strHeader);
+		RTK_LOGI(TAG, "%s", strHeader);
 	}
 
 	column = size % 16;
@@ -141,22 +149,22 @@ void dump_data(u8 *start, u32 size, char *strHeader)
 			break;    /* If we need not dump this line, break it. */
 		}
 
-		printf("\n[%p] ", line);
+		RTK_LOGI(TAG, "\n[%08x] ", (u32)line);
 
 		//Hex
 		for (index2 = 0; index2 < max; index2++) {
 			if (index2 == 8) {
-				printf("  ");
+				RTK_LOGI(TAG, "  ");
 			}
-			printf("%02x ", (u8) buf[index2]);
+			RTK_LOGI(TAG, "%02x ", (u8) buf[index2]);
 		}
 
 		if (max != 16) {
 			if (max < 8) {
-				printf("  ");
+				RTK_LOGI(TAG, "  ");
 			}
 			for (index2 = 16 - max; index2 > 0; index2--) {
-				printf("   ");
+				RTK_LOGI(TAG, "   ");
 			}
 		}
 
@@ -179,6 +187,77 @@ static void spi_master_write_stream(SPI_OBJ *spi_obj, u8 *tx_buffer, u32 length)
 
 	spi_obj->TxData = (void *)tx_buffer;
 	SSI_INTConfig(spi_obj->spi_dev, (SPI_BIT_TXOIM | SPI_BIT_TXEIM), ENABLE);
+}
+
+static void spi_master_write_stream_with_cs(SPI_OBJ *spi_obj, u8 *tx_buffer, u32 length, u32 cs_pin)
+{
+	/* assert CS */
+	GPIO_WriteBit(cs_pin, 0);
+	RTK_LOGI(TAG, "%s: enable\n",
+			 (cs_pin == SPI_GPIO_CS0) ? "SPI_GPIO_CS0" :
+			 (cs_pin == SPI_GPIO_CS1) ? "SPI_GPIO_CS1" : "CS");
+	/* wait Slave ready */
+	DelayMs(1000);
+
+	RTK_LOGI(TAG, "SPI Master Write Test==>\n");
+	TrDone = 0;
+	spi_master_write_stream(spi_obj, tx_buffer, length);
+
+	RTK_LOGI(TAG, "SPI Master Wait Write Done...\n");
+	while (TrDone == 0) {
+		DelayMs(100);
+	}
+	RTK_LOGI(TAG, "SPI Master Write Done!!\n");
+
+	/* deassert CS */
+	GPIO_WriteBit(cs_pin, 1);
+}
+
+/*
+ * Two master worker threads, one per GPIO CS line.  Both share the
+ * same SPI bus via spi_master_lock, simulating an RTOS scenario
+ * where multiple tasks contend for a shared SPI bus.
+ *
+ * arg holds the GPIO CS pin number to use.
+ */
+static void spi_master_worker(void *arg)
+{
+	u32 cs_pin = (u32)(uintptr_t)arg;
+	const char *cs_name = (cs_pin == SPI_GPIO_CS0) ? "CS0" : "CS1";
+	int Counter, i;
+
+	RTK_LOGI(TAG, "[%s] worker started\n", cs_name);
+	for (Counter = 0; Counter < LOOP_COUNT; Counter++) {
+		RTK_LOGI(TAG, "\n[%s] ====== Test Loop %d =======\n", cs_name, Counter);
+
+		rtos_mutex_take(spi_master_lock, RTOS_MAX_DELAY);
+
+		/* prepare pattern inside the lock */
+		for (i = 0; i < TEST_BUF_SIZE; i++) {
+			if (DataFrameSize > 8) {
+				*((u16 *)TestBuf + i) = (cs_pin == SPI_GPIO_CS0) ? i : ~i;
+			} else {
+				*((u8 *)TestBuf + i) = (cs_pin == SPI_GPIO_CS0) ? i : ~i;
+			}
+		}
+		spi_master_write_stream_with_cs(&spi_master, TestBuf, TEST_BUF_SIZE, cs_pin);
+
+		rtos_mutex_give(spi_master_lock);
+
+		/* yield so the sibling thread gets a fair chance */
+		rtos_time_delay_ms(2000);
+	}
+
+	RTK_LOGI(TAG, "[%s] completed all loops\n", cs_name);
+
+	rtos_mutex_take(spi_master_lock, RTOS_MAX_DELAY);
+	if (++master_workers_done == MASTER_NR_SLAVES) {
+		spi_free(&spi_master);
+		RTK_LOGI(TAG, "SPI Master Test <==\n");
+	}
+	rtos_mutex_give(spi_master_lock);
+
+	rtos_task_delete(NULL);
 }
 
 #else
@@ -222,8 +301,6 @@ void spi_multislave_task(void)
 {
 	u32 SclkPhase = SCPH_TOGGLES_IN_MIDDLE; // SCPH_TOGGLES_IN_MIDDLE or SCPH_TOGGLES_AT_START
 	u32 SclkPolarity = SCPOL_INACTIVE_IS_LOW; // SCPOL_INACTIVE_IS_LOW or SCPOL_INACTIVE_IS_HIGH
-	int Counter = 0;
-	int i;
 
 	/* wait total cpus enter application to avoid log missing */
 	rtos_time_delay_ms(5000);
@@ -255,15 +332,15 @@ void spi_multislave_task(void)
 	spi_master.spi_dev = SPI_DEV_TABLE[spi_master.Index].SPIx;
 	spi_master.IrqNum = SPI_DEV_TABLE[spi_master.Index].IrqNum;
 
-	/* init SPI1 */
+	/* init spi master */
 	SSI_InitTypeDef SSI_InitStructM;
 	SSI_StructInit(&SSI_InitStructM);
 	RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
-	Pinmux_Config(SPI1_MOSI, PINMUX_FUNCTION_SPIM);
-	Pinmux_Config(SPI1_MISO, PINMUX_FUNCTION_SPIM);
-	Pinmux_Config(SPI1_SCLK, PINMUX_FUNCTION_SPIM);
-	Pinmux_Config(SPI1_CS, PINMUX_FUNCTION_SPIM);
-	PAD_PullCtrl((u32)SPI1_CS, GPIO_PuPd_UP);
+	Pinmux_Config(SPI_MOSI, PINMUX_FUNCTION_SPIM);
+	Pinmux_Config(SPI_MISO, PINMUX_FUNCTION_SPIM);
+	Pinmux_Config(SPI_SCLK, PINMUX_FUNCTION_SPIM);
+	Pinmux_Config(SPI_CS, PINMUX_FUNCTION_SPIM);
+	PAD_PullCtrl((u32)SPI_CS, GPIO_PuPd_UP);
 
 	SSI_SetRole(spi_master.spi_dev, SSI_MASTER);
 	SSI_InitStructM.SPI_Role = SSI_MASTER;
@@ -280,59 +357,27 @@ void spi_multislave_task(void)
 	SSI_SetBaudDiv(spi_master.spi_dev, ClockDivider); // IpClk of SPI1 is 50MHz, IpClk of SPI0 is 100MHz
 
 
-	while (Counter < TEST_LOOP) {
-		printf("\r\n======= Test Loop %d =======\r\n", Counter);
-
-		if (Counter % 2) {
-			for (i = 0; i < TEST_BUF_SIZE; i++) {
-				if (DataFrameSize > 8) {
-					*((u16 *)TestBuf + i) = i;
-				} else {
-					*((u8 *)TestBuf + i) = i;
-				}
-			}
-			GPIO_WriteBit(SPI_GPIO_CS0, 0);
-			GPIO_WriteBit(SPI_GPIO_CS1, 1);
-			// wait Slave ready
-			DelayMs(1000);
-		} else {
-			for (i = 0; i < TEST_BUF_SIZE; i++) {
-				if (DataFrameSize > 8) {
-					*((u16 *)TestBuf + i) = ~i;
-				} else {
-					*((u8 *)TestBuf + i) = ~i;
-				}
-			}
-
-			GPIO_WriteBit(SPI_GPIO_CS0, 1);
-			GPIO_WriteBit(SPI_GPIO_CS1, 0);
-			// wait Slave ready
-			DelayMs(1000);
-		}
-
-		printf("SPI Master Write Test==>\r\n");
-		TrDone = 0;
-
-		spi_master_write_stream(&spi_master, TestBuf, TEST_BUF_SIZE);
-
-		i = 0;
-		printf("SPI Master Wait Write Done...\r\n");
-		while (TrDone == 0) {
-			DelayMs(100);
-			i++;
-		}
-		printf("SPI Master Write Done!!\r\n");
-
-		GPIO_WriteBit(SPI_GPIO_CS0, 1);
-		GPIO_WriteBit(SPI_GPIO_CS1, 1);
-
-		DelayMs(4000);
-		Counter++;
+	/* Create mutex to protect the shared SPI0 bus */
+	if (rtos_mutex_create(&spi_master_lock) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Create spi_master_lock failed\n");
+		rtos_task_delete(NULL);
+		return;
 	}
-	/* free spi master */
-	spi_free(&spi_master);
 
-	printf("SPI Master Test <==\r\n");
+	/* Create two worker threads, one per GPIO CS line */
+	if (rtos_task_create(NULL, ((const char *)"spi_master_cs0"), (rtos_task_t)spi_master_worker,
+						 (void *)SPI_GPIO_CS0, 1024 * 4, 1) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Create master worker CS0 failed\n");
+	}
+	if (rtos_task_create(NULL, ((const char *)"spi_master_cs1"), (rtos_task_t)spi_master_worker,
+						 (void *)SPI_GPIO_CS1, 1024 * 4, 1) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Create master worker CS1 failed\n");
+	}
+
+	/* Wait for both workers to complete before continuing */
+	while (master_workers_done < MASTER_NR_SLAVES) {
+		rtos_time_delay_ms(100);
+	}
 
 #else
 	/* SPI0 as Slave */
@@ -345,11 +390,11 @@ void spi_multislave_task(void)
 	SSI_InitTypeDef SSI_InitStructS;
 	SSI_StructInit(&SSI_InitStructS);
 	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
-	Pinmux_Config(SPI0_MOSI, PINMUX_FUNCTION_SPIS);
-	Pinmux_Config(SPI0_MISO, PINMUX_FUNCTION_SPIS);
-	Pinmux_Config(SPI0_SCLK, PINMUX_FUNCTION_SPIS);
-	Pinmux_Config(SPI0_CS, PINMUX_FUNCTION_SPIS);
-	PAD_PullCtrl(SPI0_CS, GPIO_PuPd_UP);
+	Pinmux_Config(SPI_MOSI, PINMUX_FUNCTION_SPIS);
+	Pinmux_Config(SPI_MISO, PINMUX_FUNCTION_SPIS);
+	Pinmux_Config(SPI_SCLK, PINMUX_FUNCTION_SPIS);
+	Pinmux_Config(SPI_CS, PINMUX_FUNCTION_SPIS);
+	PAD_PullCtrl(SPI_CS, GPIO_PuPd_UP);
 
 	SSI_SetRole(spi_slave.spi_dev, SSI_SLAVE);
 	SSI_InitStructS.SPI_Role = SSI_SLAVE;
@@ -363,20 +408,18 @@ void spi_multislave_task(void)
 	SSI_SetDataFrameSize(spi_slave.spi_dev, DataFrameSize - 1);
 
 	if (SclkPolarity == SCPOL_INACTIVE_IS_LOW) {
-		PAD_PullCtrl((u32)SPI0_SCLK, GPIO_PuPd_DOWN);
+		PAD_PullCtrl((u32)SPI_SCLK, GPIO_PuPd_DOWN);
 	} else {
-		PAD_PullCtrl((u32)SPI0_SCLK, GPIO_PuPd_UP);
+		PAD_PullCtrl((u32)SPI_SCLK, GPIO_PuPd_UP);
 	}
 
-	while (SSI_Busy(spi_slave.spi_dev)) {
-		printf("Wait SPI Bus Ready...\r\n");
-		DelayMs(1000);
-	}
+	int Counter, i;
+	int cs_low_pass = 0, cs_low_fail = 0, cs_deselected = 0;
 
-	while (Counter < TEST_LOOP) {
-		printf("\r\n======= Test Loop %d =======\r\n", Counter);
+	for (Counter = 0; Counter < LOOP_COUNT; Counter++) {
+		RTK_LOGI(TAG, "\n======= Test Loop %d =======\n", Counter);
 		_memset(TestBuf, 0, TEST_BUF_SIZE);
-		printf("SPI Slave Read Test ==>\r\n");
+		RTK_LOGI(TAG, "SPI Slave Read Test ==>\n");
 
 		TrDone = 0;
 
@@ -386,28 +429,52 @@ void spi_multislave_task(void)
 		spi_slave_read_stream(&spi_slave, (u8 *)TestBuf, TEST_BUF_SIZE);
 
 		i = 0;
-		printf("SPI Slave Wait Read Done...\r\n");
+		RTK_LOGI(TAG, "SPI Slave Wait Read Done...\n");
 		while (TrDone == 0) {
 			DelayMs(100);
 			i++;
 
-//			if (i > 150) {
-			if (i > 60) {
-				printf("SPI Slave Wait Timeout\r\n");
+			if (i > 150) {
+				RTK_LOGE(TAG, "SPI Slave Wait Timeout\n");
 				break;
 			}
 		}
 
-		dump_data((u8 *)TestBuf, TEST_BUF_SIZE, "SPI Slave Read Data:");
+		if (TrDone) {
+			int pass = 1;
+			int is_inc = (TestBuf[0] == 0); /* 0x00: inc pattern, 0xFF: dec pattern */
+			for (i = 0; i < TEST_BUF_SIZE; i++) {
+				u8 expected = is_inc ? (u8)i : (u8)(~i);
+				if (TestBuf[i] != expected) {
+					RTK_LOGE(TAG, "mismatch at [%d]: got %08x expected %08x\n", i, (u32)TestBuf[i], (u32)expected);
+					pass = 0;
+					break;
+				}
+			}
+			if (pass) {
+				RTK_LOGI(TAG, "CS low: data check PASS\n");
+				cs_low_pass++;
+			} else {
+				dump_data((u8 *)TestBuf, TEST_BUF_SIZE, "SPI Slave Read Data:");
+				RTK_LOGE(TAG, "CS low: data check FAIL\n");
+				cs_low_fail++;
+			}
+		} else {
+			RTK_LOGI(TAG, "No data received (deselected)\n");
+			cs_deselected++;
+		}
 
-		Counter++;
 	}
+
+	RTK_LOGI(TAG, "\n=== Summary ===\n");
+	RTK_LOGI(TAG, "success: %d, fail: %d, deselected: %d\n", cs_low_pass, cs_low_fail, cs_deselected);
+
 	/* free spi slave */
 	spi_free(&spi_slave);
 
 #endif
 
-	printf("\nSPI Demo finished.\n");
+	RTK_LOGI(TAG, "\nSPI Demo finished.\n");
 
 	rtos_task_delete(NULL);
 
@@ -421,7 +488,7 @@ void spi_multislave_task(void)
 int example_raw_spi_multislave(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"spi_multislave_task"), (rtos_task_t)spi_multislave_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(spi_multislave_task) failed", __FUNCTION__);
+		RTK_LOGE(TAG, "%s Create spi_multislave_task task failed", __FUNCTION__);
 	}
 
 	return 0;

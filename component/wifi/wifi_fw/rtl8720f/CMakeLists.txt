@@ -6,11 +6,7 @@ set(public_includes)                #public include directories, NOTE: relative 
 set(public_definitions)             #public definitions
 set(public_libraries)               #public libraries(files), NOTE: linked with whole-archive options
 
-if(CONFIG_MP_INCLUDED AND CONFIG_MP_EXPAND)
-    set(TARGET_LIB wifi_fw_mp)
-else()
-    set(TARGET_LIB wifi_fw)
-endif()
+set(TARGET_LIB wifi_fw)
 
 #----------------------------------------#
 # Component public part, user config begin

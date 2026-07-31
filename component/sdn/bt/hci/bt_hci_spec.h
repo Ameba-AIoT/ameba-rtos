@@ -1221,19 +1221,19 @@ struct bt_hci_cp_le_set_privacy_mode {
 struct bt_hci_cp_vendor_read_vendor_reg {
 	uint8_t type;
 	uint32_t addr;
-};
+} __attribute__((packed));
 
 struct bt_hci_rp_vendor_read_vendor_reg {
 	uint8_t status;
 	uint32_t rdata;
-};
+} __attribute__((packed));
 
 #define BT_HCI_OP_VENDOR_WRITE_VENDOR_REG           BT_OP(BT_OGF_VENDOR, 0x62) /*0xFC62*/
 struct bt_hci_cp_vendor_write_vendor_reg {
 	uint8_t type;
 	uint32_t addr;
 	uint8_t wdata[0];
-};
+} __attribute__((packed));
 
 #define BT_HCI_OP_VENDOR_GET_ECO_VERSION           BT_OP(BT_OGF_VENDOR, 0x6D) /*0xFC6D*/
 struct bt_hci_rp_vendor_get_eco_version {
@@ -1417,7 +1417,7 @@ struct bt_hci_rp_vendor_mp_packet_tx_report {
 	uint8_t module_id;
 	uint8_t subcmd;
 	uint32_t total_tx_packet;
-};
+} __attribute__((packed));
 
 struct bt_hci_rp_vendor_mp_packet_rx_report {
 	uint8_t status;
@@ -1429,7 +1429,7 @@ struct bt_hci_rp_vendor_mp_packet_rx_report {
 	uint16_t ber;
 	uint16_t cfo;
 	uint8_t rx_rssi;
-};
+} __attribute__((packed));
 
 struct bt_hci_rp_vendor_mp_phy_version {
 	uint8_t status;

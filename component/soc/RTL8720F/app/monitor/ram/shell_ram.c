@@ -244,13 +244,19 @@ void shell_init_ram(void)
 	/* Create a Semaphone */
 	rtos_sema_create_binary(&shell_sema);
 
-	if (RTK_SUCCESS != rtos_task_create(NULL, "shell_task", shell_task_ram, NULL, SHELL_TASK_FUNC_STACK_SIZE, 2)) {
+#if defined(CONFIG_WIFI_NAN_HOST_APP)
+	/* NAN AT-cmd path stacks a ~2.5 KB nandow struct; default shell_task stack overflows. */
+	u32 shell_task_stack = SHELL_TASK_FUNC_STACK_SIZE + 8 * 1024;
+#else
+	u32 shell_task_stack = SHELL_TASK_FUNC_STACK_SIZE;
+#endif
+	if (RTK_SUCCESS != rtos_task_create(NULL, "shell_task", shell_task_ram, NULL, shell_task_stack, 2)) {
 		DiagPrintf("Create Log UART Task Err!!\n");
 	}
 	//CONSOLE_AMEBA();
 }
 
-#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
+// #if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_shell_table = {
 	.USER_MSG_TYPE = IPC_USER_DATA,
@@ -261,4 +267,4 @@ const IPC_INIT_TABLE ipc_shell_table = {
 	.IPC_Direction = IPC_NP_TO_AP,
 	.IPC_Channel = IPC_N2A_LOGUART_RX_SWITCH
 };
-#endif
+// #endif

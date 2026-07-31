@@ -47,7 +47,7 @@ static const usbh_dev_id_t uvc_devs[] = {
 };
 
 /* USB Host UVC class driver */
-static usbh_class_driver_t usbh_uvc_driver = {
+const usbh_class_driver_t usbh_uvc_driver = {
 	.id_table = uvc_devs,
 	.attach = usbh_uvc_attach,
 	.detach = usbh_uvc_detach,
@@ -325,7 +325,7 @@ static void usbh_uvc_ctrl_set_alt_done(usbh_uvc_host_t *uvc, usbh_uvc_stream_t *
 		stream->state = STREAM_STATE_CTRL_IDLE;
 		stream->set_alt = 0x0;
 		stream->set_alt_retry = 0;
-		usbh_open_pipe(uvc->host, &cur_set->pipe, cur_set->altsetting->endpoint);
+		usbh_open_pipe(uvc->host, &cur_set->pipe, cur_set->altsetting->endpoint, &usbh_uvc_driver);
 #if USBH_UVC_DEBUG
 		RTK_LOGS(TAG, RTK_LOG_INFO,
 				 "Alt %d: ep_addr=0x%02X, mps=%d, interval=%d, type=%d, xfer_len=%d\n",
@@ -413,7 +413,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
 		usbh_uvc_stream_free_urb_buffer(stream);
 #endif
 		stream->state = STREAM_STATE_RESET_ALT;
-		usbh_notify_class_state_change(uvc->host, 0);   /* transfer-less kick */
+		usbh_notify(uvc->host, 0, &usbh_uvc_driver);   /* transfer-less kick */
 		break;
 
 	/* Set Alt : interface / 0 */
@@ -553,7 +553,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
 		uvc->state = UVC_STATE_CTRL;
 		stream->state = STREAM_STATE_SET_ALT;
 		uvc->stream_ctrl_idx = stream->stream_idx;
-		usbh_notify_class_state_change(uvc->host, 0);
+		usbh_notify(uvc->host, 0, &usbh_uvc_driver);
 		ret_status = HAL_OK;
 		break;
 
@@ -616,7 +616,7 @@ static int usbh_uvc_process(usb_host_t *host, usbh_event_t *event)
 			if (event->pipe_num == 0x00U) {
 				ret = usbh_uvc_process_ctrl(host, event);
 			} else {
-				usbh_notify_class_state_change(host, 0);
+				usbh_notify(host, 0, &usbh_uvc_driver);
 			}
 		}
 		break;
@@ -709,3 +709,4 @@ void usbh_uvc_class_deinit(void)
 {
 	usbh_unregister_class(&usbh_uvc_driver);
 }
+

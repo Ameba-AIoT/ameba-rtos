@@ -19,6 +19,13 @@ def parse_arguments():
     parser.add_argument('project_dir', help='Project directory path (optional, defaults to SDK root)')
     parser.add_argument('action', nargs='?', choices=['debug', 'flash'], default='flash',
                         help='Action to perform: debug or flash (default: flash)')
+    parser.add_argument('--remote-server', type=str, default='',
+                        help='Remote GDB server IP (e.g. 192.168.1.100). Default: "" (localhost).')
+    parser.add_argument('--image-dir', type=str, default='',
+                        help='Path to directory containing firmware .bin files. '
+                             'When set, reads binaries from this flat directory instead of '
+                             'build/project_xxx/image/. Useful for flashing firmware placed '
+                             'via build -D FINAL_IMAGE_DIR.')
     return parser.parse_args()
 
 args = parse_arguments()
@@ -26,6 +33,7 @@ args = parse_arguments()
 PROJECT_DIR = os.path.abspath(args.project_dir)
 SOC_TYPE = os.path.basename(os.path.dirname(PROJECT_DIR))
 action = args.action
+host_ip = args.remote_server
 
 # =============== Load SOC Configuration =====================#
 class HexInt(int):
@@ -132,7 +140,16 @@ def copy_files_with_glob(src_folder, dst_folder, pattern):
         print(f" copy done : {file_path} -> {dst_file_path}")
 
 
-def get_bin_paths(bin_map, build_type):
+def get_bin_paths(bin_map, build_type, flat=False):
+    """
+    Generate binary file paths from BIN_MAP configuration.
+
+    Args:
+        bin_map: List of [name, size_key] pairs from SOC config.
+        build_type: True for MP build (CONFIG_MP_INCLUDED=y).
+        flat: When True, returns plain filenames without ./image/ or ./image_mp/ prefix.
+              Use with --image-dir for FINAL_IMAGE_DIR-style flat directories.
+    """
     base_dir = './image_mp' if build_type else './image'
     paths = {}
     APP_BASE_NAME = bin_map[0][0] if bin_map else None
@@ -141,10 +158,10 @@ def get_bin_paths(bin_map, build_type):
         is_app = (name == APP_BASE_NAME) or (size_key == 'FlashFileSize')
         need_mp_suffix = build_type and is_app
         fname = name + ('_mp' if need_mp_suffix else '') + '.bin'
-        if name == 'dsp':
+        if name == 'dsp' and not flat:
             rel_path = '../project_dsp/image/dsp.bin'
         else:
-            rel_path = f'{base_dir}/{fname}'
+            rel_path = fname if flat else f'{base_dir}/{fname}'
         paths[size_key] = rel_path
 
     return paths
@@ -196,6 +213,7 @@ if action == 'debug':
 
     ex_list = []
     ex_list.append(fmt_gdb_arg('GDB_PORT', gdb_port))
+    ex_list.append(fmt_gdb_arg('HOST_IP', host_ip))
     for var_name, var_value in reg_vars.items():
         ex_list.append(fmt_gdb_arg(var_name, var_value))
     ex_commands = "".join(ex_list)
@@ -218,6 +236,7 @@ if FPGA == True:
         ex_list = []
         ex_list.append(fmt_gdb_arg('SCRIPT_DIR', GNU_SCRIPT))
         ex_list.append(fmt_gdb_arg('GDB_PORT', CONFIG.get('GDB_PORTS', {}).get(core, 2335)))
+        ex_list.append(fmt_gdb_arg('HOST_IP', host_ip))
         ex_list.append(fmt_gdb_arg('ROM_BIN', file_list[0]))
         ex_list.append(fmt_gdb_arg('ROM_ADDR', file_list[1]))
         ex_commands = "".join(ex_list)
@@ -230,8 +249,14 @@ print('\033[32m========== gdb load app image ============\033[0m')
 
 copy_files_with_glob(GDB_FLOADER, GNU_SCRIPT, '*')
 
-IMAGE_PARENT = fmt_path(os.path.join(BUILD_DIR, f'project_{target_prj}'))        # parent dir of /image or /image_mp
-BIN_PATHS = get_bin_paths(BIN_MAP, BUILD_TYPE)
+if args.image_dir:
+    IMAGE_PARENT = fmt_path(os.path.abspath(args.image_dir))
+    BIN_PATHS = get_bin_paths(BIN_MAP, BUILD_TYPE, flat=True)
+    print(f'Using custom image directory: {IMAGE_PARENT}')
+else:
+    IMAGE_PARENT = fmt_path(os.path.join(BUILD_DIR, f'project_{target_prj}'))        # parent dir of /image or /image_mp
+    BIN_PATHS = get_bin_paths(BIN_MAP, BUILD_TYPE)
+
 BIN_SIZES = {k: get_bin_size(IMAGE_PARENT, v) for k, v in BIN_PATHS.items()}
 for k, v in BIN_PATHS.items():
     print(f'image file: {v}, size: {BIN_SIZES[k]}')
@@ -241,6 +266,7 @@ gdb_port = CONFIG.get('GDB_PORTS', {}).get(target_prj, 2335)
 ex_list = []
 ex_list.append(fmt_gdb_arg('SCRIPT_DIR', GNU_SCRIPT))
 ex_list.append(fmt_gdb_arg('GDB_PORT',   gdb_port))
+ex_list.append(fmt_gdb_arg('HOST_IP',   host_ip))
 ex_list.append(fmt_gdb_arg('FlashFileSize', BIN_SIZES.get("FlashFileSize", 0)))
 ex_list.append(fmt_gdb_arg('XIPBootSize',   BIN_SIZES.get("XIPBootSize", 0)))
 ex_list.append(fmt_gdb_arg('Img3FileSize',  BIN_SIZES.get("Img3FileSize", 0)))

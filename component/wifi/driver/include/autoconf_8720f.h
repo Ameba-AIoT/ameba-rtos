@@ -26,7 +26,7 @@
 
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
-//#define CONFIG_NAN
+#define CONFIG_NAN
 //#define NAN_TEST
 //#define CONFIG_MCC_MODE
 #ifdef CONFIG_NAN
@@ -91,6 +91,7 @@
 
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
+#define NAN_CUSTOMER_NANDOW
 #endif
 
 //#define CONFIG_SUPPORT_DYNAMIC_TXPWR

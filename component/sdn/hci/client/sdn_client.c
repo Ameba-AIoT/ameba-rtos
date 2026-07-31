@@ -5,6 +5,10 @@
 #if defined(CONFIG_BT_COEXIST)
 #include "sdn_coex_intf.h"
 #endif
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+#include "wifi_api.h"
+#include "wifi_intf_drv_to_app_internal.h"
+#endif
 
 struct sdn_client_ipc_tx {
 	struct list_head free_list;
@@ -83,6 +87,26 @@ extern void sdn_watchdog_deinit(void);
 bool sdn_uart_is_on(void);
 void sdn_uart_tx(struct sdn_data_buf *pdata_buf);
 #endif
+
+bool _rtk_bt_pre_enable(void)
+{
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+	if (!(wifi_is_running(STA_WLAN_INDEX) || wifi_is_running(SOFTAP_WLAN_INDEX))) {
+		return false;
+	}
+
+	wifi_ps_en_by_bt_state(DISABLE);
+#endif
+
+	return true;
+}
+
+void _rtk_bt_post_enable(void)
+{
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+	wifi_ps_en_by_bt_state(ENABLE);
+#endif
+}
 
 static void _add_tail_lock(struct sdn_data_buf *pdata_buf, struct list_head *head)
 {
@@ -322,9 +346,9 @@ bool sdn_in_mp(void)
 
 #ifndef CONFIG_SDN_HOST
 void sdn_client_intf_close(void);
-static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
+static void _sdn_ctrl_rx(uint8_t type, uint8_t *data)
 {
-	switch (pmsg->type) {
+	switch (type) {
 	case SDN_INTF_CTRL_INTF_OPEN:
 		sdn_enable();
 		break;
@@ -334,20 +358,20 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 		break;
 
 	case SDN_INTF_CTRL_PROTO_ADD:
-		sdn_add_protocol(pmsg->data[0]);
+		sdn_add_protocol(data[0]);
 		break;
 
 	case SDN_INTF_CTRL_PROTO_REMOVE:
-		sdn_remove_protocol(pmsg->data[0]);
+		sdn_remove_protocol(data[0]);
 		break;
 
 #ifdef CONFIG_MP_INCLUDED
 	case SDN_INTF_CTRL_MP:
-		sdn_set_mp(pmsg->data[0]);
+		sdn_set_mp(data[0]);
 		break;
 
 	case SDN_INTF_CTRL_BRIDGE_OPEN:
-		sdn_bridge_open(pmsg->data[0]);
+		sdn_bridge_open(data[0]);
 		break;
 
 	case SDN_INTF_CTRL_BRIDGE_CLOSE:
@@ -356,7 +380,7 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 #endif
 
 	case SDN_INTF_CTRL_FIX_ADDR:
-		sdn_fix_bt_addr(pmsg->data);
+		sdn_fix_bt_addr(data);
 		break;
 
 	default:
@@ -365,7 +389,10 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 	}
 
 	sdn_c2h(NULL); /* indicate host that msg has been processed. */
-	if (pmsg->type == SDN_INTF_CTRL_INTF_CLOSE) {
+
+	/* Host is able to send another ctrl message after sdn_c2h(NULL).
+	   So, pointer data is not safe to use here. */
+	if (type == SDN_INTF_CTRL_INTF_CLOSE) {
 		sdn_client_intf_close();
 	}
 }
@@ -410,7 +437,7 @@ static void _rx_task_hdl(void *pcontext)
 
 #ifndef CONFIG_SDN_HOST
 			case SDN_INTF_CTRL:
-				_sdn_ctrl_rx(pdata_buf->pmsg);
+				_sdn_ctrl_rx(pdata_buf->pmsg->type, pdata_buf->pmsg->data);
 				continue;
 #endif
 				break;
@@ -579,6 +606,11 @@ uint8_t *sdn_client_intf_get_txbuf(uint8_t protocol, uint8_t type, uint16_t len,
 	struct list_head *pos = NULL;
 	uint8_t free_num = 0;
 
+	if (len > SDN_INTF_MAX_DATA_LEN) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "sdn_client_intf_get_txbuf ERROR %d > max(%d)\r\n", len, SDN_INTF_MAX_DATA_LEN);
+		return NULL;
+	}
+
 	if (g_sdn_client_intf.tx.task.stop) {
 		return NULL;
 	}
@@ -682,16 +714,6 @@ uint8_t sdn_client_intf_get_free_rx_num(uint8_t type, uint8_t sub_type)
 	}
 
 	return free_rx_num;
-}
-
-uint8_t sdn_client_intf_get_rx_bt_acl_max_num(void)
-{
-	return SDN_CONF_CLIENT_BT_RX_ACL_NUM;
-}
-
-uint8_t sdn_client_intf_get_rx_bt_acl_max_len(void)
-{
-	return (SDN_INTF_MAX_DATA_LEN - 1);
 }
 
 void sdn_client_init(void)

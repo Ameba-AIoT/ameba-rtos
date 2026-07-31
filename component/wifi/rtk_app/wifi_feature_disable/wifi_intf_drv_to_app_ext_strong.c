@@ -487,3 +487,59 @@ int wifi_rmesh_check_node_ota_ver(u8 *ota_ver, u8 ota_ver_len, enum rtw_rmesh_no
 	call_noused = __LINE__;
 	return RTK_FAIL;
 }
+
+int wifi_xmesh_init(u8 channel, u16 groupid, u8 selfid, u8 boot_epoch)
+{
+	UNUSED(channel);
+	UNUSED(groupid);
+	UNUSED(selfid);
+	UNUSED(boot_epoch);
+	call_noused = __LINE__;
+	return RTK_FAIL;
+}
+
+void wifi_xmesh_register_cb(u8(*callback)(struct rtw_rx_pkt_info *pkt_info))
+{
+	UNUSED(callback);
+	call_noused = __LINE__;
+}
+
+int wifi_xmesh_send_frame(u8 *payload, u16 len)
+{
+	UNUSED(payload);
+	UNUSED(len);
+	call_noused = __LINE__;
+	return RTK_FAIL;
+}
+
+int wifi_xmesh_get_rssi_info_list(u8 *buf, u8 *max_id)
+{
+	UNUSED(buf);
+	UNUSED(max_id);
+	call_noused = __LINE__;
+	return RTK_FAIL;
+}
+
+int wifi_xmesh_get_trx_statistic(u32 *relay_cnt, u16 *loss_2_cnt, u16 *loss_3_cnt, u16 *loss_m3_cnt, u8 *max_id)
+{
+	UNUSED(relay_cnt);
+	UNUSED(loss_2_cnt);
+	UNUSED(loss_3_cnt);
+	UNUSED(loss_m3_cnt);
+	UNUSED(max_id);
+	call_noused = __LINE__;
+	return RTK_FAIL;
+}
+
+int wifi_xmesh_clear_trx_statistic(void)
+{
+	call_noused = __LINE__;
+	return RTK_FAIL;
+}
+
+int wifi_xmesh_stop_xmesh(u8 enable)
+{
+	UNUSED(enable);
+	call_noused = __LINE__;
+	return RTK_FAIL;
+}

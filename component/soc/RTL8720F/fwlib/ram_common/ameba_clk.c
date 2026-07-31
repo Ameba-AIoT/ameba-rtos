@@ -125,8 +125,13 @@ u32 OSC2M_Calibration(u32 ppm_limit)
 		}
 	}
 
+	temp = ldo->LDO_2M_OSC_CTRL;
 	/* The consistency of the chips' OSC is poor, so we switched to the lowest gear to avoid consistency issues */
-	ldo->LDO_2M_OSC_CTRL &= ~LDO_MASK_REG_2MOSC_RCAL;
+	temp &= ~LDO_MASK_REG_2MOSC_RCAL;
+	/* Set IBIAS to 3 for better temperature drift performance */
+	temp &= ~LDO_MASK_REG_2MOSC_ISEL;
+	temp |= LDO_REG_2MOSC_ISEL(3);
+	ldo->LDO_2M_OSC_CTRL = temp;
 #if 0
 	/* Step2: Adjust R_CAL. Enter the following loop: each loop decides one bit of 41000108[5:0]-RCAL, i.e. the first loop decides RCAL[5], the second loop decides RCAL[4] …, suppose the current loop is N (N=1..6) */
 	/* Loop Step1: Set RCAL[6-N] = 0x1 */
@@ -207,54 +212,6 @@ u32 OSC2M_Calibration(u32 ppm_limit)
 	return TRUE;
 }
 
-
-void XTAL_AACK(void)
-{
-#ifdef RTL8720F_TODO
-	u32 temp;
-	u32 xtal_mode;
-	XTAL_TypeDef *xtal = XTAL_BASE;
-
-	//XTAL must be high performance mode
-	xtal_mode = XTAL_GET_MODE_DEC(xtal->XTAL_ANAPAR_XTAL_MODE_DEC_ON_1);
-	if (xtal_mode != XTAL_HP_MODE) {
-		RTK_LOGW(TAG, "XTAL is not in HP mode:%lx\n", xtal_mode);
-	}
-
-	//open clk for acc
-	xtal->XTAL_ANAPAR_XTAL_ON_1 |= XTAL_BIT_EN_XTAL_DRV_DIGI;
-
-	//reset_n_aac
-
-	xtal->XTAL_FEN &= ~XTAL_BIT_FEN_XAACK;
-	xtal->XTAL_FEN |= XTAL_BIT_FEN_XAACK;
-
-	//only K as one set of GM values
-	xtal->XTAL_ANAPAR_XTAL_AAC_ON_1 |= (XTAL_MASK_PK_START_AR | XTAL_MASK_PK_END_AR);
-
-	xtal->XTAL_ANAPAR_XTAL_ON_2 |= XTAL_MASK_AAC_MODE;
-
-	//EN_XTAL_AAC_PKDET
-	xtal->XTAL_ANAPAR_XTAL_OFF_0 |= XTAL_BIT_EN_XTAL_AAC_PKDET;
-	DelayUs(50);
-	//EN_XTAL_AAC_DIGI
-	xtal->XTAL_ANAPAR_XTAL_AAC |= XTAL_BIT_EN_XTAL_AAC_DIGI;
-	DelayUs(50);
-	//EN_XTAL_AAC_GM
-	xtal->XTAL_ANAPAR_XTAL_OFF_0 |= XTAL_BIT_EN_XTAL_AAC_GM;
-	DelayUs(50);
-
-	while (1) {
-		temp = xtal->XTAL_ANAPAR_XTAL_OFF_0 ;
-		if (temp & XTAL_BIT_EN_XTAL_AAC_GM) {
-			break;
-		} else {
-			xtal->XTAL_ANAPAR_XTAL_OFF_0 |= XTAL_BIT_EN_XTAL_AAC_GM;
-		}
-	}
-#endif
-}
-
 SRAMDRAM_ONLY_TEXT_SECTION
 static u32 _PERI_ClkGet(u8 peri_ckd)
 {
@@ -325,7 +282,6 @@ u32 CPU_ClkGet(void)
 int CPU_Clk_Check(void)
 {
 	int ret = RTK_SUCCESS;
-#ifdef RTL8720F_TODO
 	u32 CpuClk, CpuClk_Src;
 
 	if (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA) {
@@ -350,7 +306,6 @@ int CPU_Clk_Check(void)
 	if (CPU_ClkGet() != CpuClk) {
 		ret = RTK_FAIL;
 	}
-#endif
 	return ret;
 }
 

@@ -28,7 +28,6 @@ uint8_t bt_hci_cmd_ogf_status_ocf_read_rssi(void *phci_cmd_param, uint8_t *rsp);
 
 //OGF: BT_OGF_LE
 uint8_t bt_hci_ogf_le_ocf_set_evt_mask(void *phci_cmd_param, uint8_t *rsp);
-uint8_t bt_hci_ogf_le_ocf_read_buffer_size(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_ogf_le_ocf_read_local_feature(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_ogf_le_ocf_set_random_addr(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_adv_set_param(void *phci_cmd_param, uint8_t *rsp);

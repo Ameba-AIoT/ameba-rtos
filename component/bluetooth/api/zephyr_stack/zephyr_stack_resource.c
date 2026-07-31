@@ -21,11 +21,13 @@
  */
 
 /*---------- SYS_INIT ----------------------------------------*/
+#if defined(CONFIG_BT_LONG_WQ)
 extern struct init_entry Z_INIT_ENTRY_NAME(long_wq_init);
 STRUCT_ARRAY_DECLARE(init_entry) = {
 	&(Z_INIT_ENTRY_NAME(long_wq_init)),
 };
 STRUCT_ARRAY_SIZE_DECLARE(init_entry) = sizeof(STRUCT_ARRAY(init_entry)) / sizeof(struct init_entry *);
+#endif
 
 /*---------- K_MEM_SLAB_DEFINE -------------------------------*/
 /*---------- K_MEM_SLAB_DEFINE_STATIC ------------------------*/
@@ -345,12 +347,14 @@ int zephyr_res_alloc(void)
 		}
 	}
 
+#if defined(CONFIG_BT_LONG_WQ)
 	STRUCT_SECTION_FOREACH(init_entry, _entry) {
 		ret = _entry->init(_entry->dev);
 		if (ret < 0) {
 			return ret;
 		}
 	}
+#endif
 
 	zephyr_static_sem_init();
 	zephyr_net_buf_pool_init();
@@ -358,7 +362,9 @@ int zephyr_res_alloc(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_LONG_WQ)
 extern struct k_work_q bt_long_wq;
+#endif
 /* Free all resources created in zephyr_res_alloc(). */
 int zephyr_res_free(void)
 {
@@ -374,7 +380,9 @@ int zephyr_res_free(void)
 		k_mutex_deinit(rtos_mutex_t);
 	}
 
+#if defined(CONFIG_BT_LONG_WQ)
 	k_work_queue_delete(&bt_long_wq);
+#endif
 	return 0;
 }
 

@@ -157,7 +157,7 @@ static const usbh_dev_id_t usbh_cdc_ncm_devs[] = {
 };
 
 /* USB Host CDC NCM class driver */
-static usbh_class_driver_t usbh_cdc_ncm_driver = {
+static const usbh_class_driver_t usbh_cdc_ncm_driver = {
 	.id_table = usbh_cdc_ncm_devs,
 	.attach  = usbh_cdc_ncm_attach,
 	.detach  = usbh_cdc_ncm_detach,
@@ -1040,7 +1040,7 @@ static int usbh_cdc_ncm_attach(usb_host_t *host)
 	/* Control IN (INTR) */
 	pipe_info = &(cdc->intr_rx);
 	if (pipe_info->valid) {
-		usbh_open_pipe(host, &(pipe_info->pipe), &(pipe_info->ep_desc));
+		usbh_open_pipe(host, &(pipe_info->pipe), &(pipe_info->ep_desc), &usbh_cdc_ncm_driver);
 		pipe_info->pipe.xfer_buf = (u8 *)usb_os_malloc(pipe_info->pipe.ep_mps);
 		pipe_info->pipe.xfer_len = pipe_info->pipe.ep_mps;
 		pipe_info->pipe.xfer_state = USBH_EP_XFER_START;
@@ -1052,14 +1052,14 @@ static int usbh_cdc_ncm_attach(usb_host_t *host)
 	/* BULK OUT (TX) */
 	pipe_info = &(cdc->bulk_tx);
 	if (pipe_info->valid) {
-		usbh_open_pipe(host, &(pipe_info->pipe), &(pipe_info->ep_desc));
+		usbh_open_pipe(host, &(pipe_info->pipe), &(pipe_info->ep_desc), &usbh_cdc_ncm_driver);
 		pipe_info->pipe.max_timeout_tick = USBH_CDC_NCM_BULK_OUT_BUSY_MAX_CNT;
 	}
 
 	/* BULK IN (RX) */
 	pipe_info = &(cdc->bulk_rx);
 	if (pipe_info->valid) {
-		usbh_open_pipe(host, &(pipe_info->pipe), &(pipe_info->ep_desc));
+		usbh_open_pipe(host, &(pipe_info->pipe), &(pipe_info->ep_desc), &usbh_cdc_ncm_driver);
 		/* NCM use bulk, allocate buffer for NTB reception */
 		pipe_info->pipe.xfer_buf = (u8 *)usb_os_malloc(USBH_CDC_NCM_RX_NTB_BUF_SIZE);
 		pipe_info->pipe.xfer_len = USBH_CDC_NCM_RX_NTB_BUF_SIZE;
@@ -1123,7 +1123,7 @@ static int usbh_cdc_ncm_setup(usb_host_t *host)
 
 	status = HAL_OK;
 
-	usbh_notify_class_state_change(host, 0);
+	usbh_notify(host, 0, &usbh_cdc_ncm_driver);
 
 	return status;
 }
@@ -1154,9 +1154,9 @@ static int usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event)
 			usb_os_unlock(cdc->tx_agg_lock);
 #endif
 			cdc->state = CDC_NCM_STATE_TRANSFER;
-			usbh_notify_class_state_change(host, cdc->intr_rx.pipe.pipe_num);
+			usbh_notify(host, cdc->intr_rx.pipe.pipe_num, &usbh_cdc_ncm_driver);
 		} else {
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_cdc_ncm_driver);
 		}
 		break;
 
@@ -1231,11 +1231,11 @@ static void usbh_cdc_ncm_process_bulk_out(usb_host_t *host)
 	if ((status == HAL_OK) && (ep->xfer_state == USBH_EP_XFER_IDLE)) {
 		usbh_cdc_ncm_cb_bulk_send(status);
 	} else if (ep->xfer_state == USBH_EP_XFER_START) {
-		usbh_notify_class_state_change(host, ep->pipe_num);
+		usbh_notify(host, ep->pipe_num, &usbh_cdc_ncm_driver);
 	} else if (ep->xfer_state == USBH_EP_XFER_ERROR) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail %d\n", usbh_get_urb_state(host, ep));
 		ep->xfer_state = USBH_EP_XFER_START;
-		usbh_notify_class_state_change(host, ep->pipe_num);
+		usbh_notify(host, ep->pipe_num, &usbh_cdc_ncm_driver);
 	}
 }
 
@@ -1293,15 +1293,15 @@ static void usbh_cdc_ncm_process_bulk_in(usb_host_t *host)
 		usbh_cdc_ncm_cb_bulk_receive(bulk_in->xfer_buf, len);
 
 		bulk_in->xfer_state = USBH_EP_XFER_START;
-		usbh_notify_class_state_change(host, bulk_in->pipe_num);
+		usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_ncm_driver);
 	} else if (bulk_in->xfer_state == USBH_EP_XFER_START) {
 		/* Transfer not yet complete: do not deliver data (last_transfer_size
 		   would be 0 or stale). Just keep the pipeline moving. */
-		usbh_notify_class_state_change(host, bulk_in->pipe_num);
+		usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_ncm_driver);
 	} else if (bulk_in->xfer_state == USBH_EP_XFER_ERROR) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX fail: %d\n", usbh_get_urb_state(host, bulk_in));
 		bulk_in->xfer_state = USBH_EP_XFER_START;
-		usbh_notify_class_state_change(host, bulk_in->pipe_num);
+		usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_ncm_driver);
 	}
 }
 
@@ -1326,7 +1326,7 @@ static void usbh_cdc_ncm_process_intr_in(usb_host_t *host)
 		len = usbh_get_last_transfer_size(host, intr_in);
 		usbh_cdc_ncm_cb_intr_receive(intr_in->xfer_buf, len);
 	} else if ((intr_in->xfer_state == USBH_EP_XFER_START)) {
-		usbh_notify_class_state_change(host, intr_in->pipe_num);
+		usbh_notify(host, intr_in->pipe_num, &usbh_cdc_ncm_driver);
 	} else if (intr_in->xfer_state == USBH_EP_XFER_ERROR) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX fail: %d\n", usbh_get_urb_state(host, intr_in));
 	}
@@ -1443,7 +1443,7 @@ static int usbh_cdc_ncm_bulk_tx(void)
 		if (cdc->state == CDC_NCM_STATE_TRANSFER) {
 			if ((ep->xfer_state == USBH_EP_XFER_IDLE) || (usbh_cdc_ncm_bulk_tx_time_check() == HAL_OK)) {
 
-				usbh_notify_class_state_change(host, ep->pipe_num);
+				usbh_notify(host, ep->pipe_num, &usbh_cdc_ncm_driver);
 				ret = HAL_OK;
 			}
 		}
@@ -1475,7 +1475,7 @@ static int usbh_cdc_ncm_bulk_receive(void)
 				ep->xfer_state = USBH_EP_XFER_START;
 			}
 
-			usbh_notify_class_state_change(host, ep->pipe_num);
+			usbh_notify(host, ep->pipe_num, &usbh_cdc_ncm_driver);
 			ret = HAL_OK;
 		}
 	}
@@ -1505,7 +1505,7 @@ static int usbh_cdc_ncm_intr_receive(void)
 			|| (usbh_cdc_ncm_intr_rx_time_check() == HAL_OK)) {
 			ep->xfer_state = USBH_EP_XFER_START;
 			cdc->state = CDC_NCM_STATE_TRANSFER;
-			usbh_notify_class_state_change(host, ep->pipe_num);
+			usbh_notify(host, ep->pipe_num, &usbh_cdc_ncm_driver);
 			ret = HAL_OK;
 		}
 	}
@@ -1643,7 +1643,7 @@ static void usbh_cdc_ncm_agg_launch(void)
 	usbh_cdc_ncm_agg_reset_buf(cdc->tx_agg_fill_idx);
 
 	cdc->state = CDC_NCM_STATE_TRANSFER;
-	usbh_notify_class_state_change(cdc->host, ep->pipe_num);
+	usbh_notify(cdc->host, ep->pipe_num, &usbh_cdc_ncm_driver);
 }
 
 /* Queue one Ethernet frame; coalesce while a transfer is in flight */
@@ -1731,7 +1731,7 @@ static int usbh_cdc_ncm_bulk_send(u8 *buf, u32 len)
 			}
 			ep->xfer_state = USBH_EP_XFER_START;
 			cdc->state = CDC_NCM_STATE_TRANSFER;
-			usbh_notify_class_state_change(host, ep->pipe_num);
+			usbh_notify(host, ep->pipe_num, &usbh_cdc_ncm_driver);
 			ret = HAL_OK;
 		}
 	}

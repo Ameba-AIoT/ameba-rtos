@@ -259,6 +259,9 @@ static int usbh_cdc_ncm_do_init(void)
 		return 0;
 	}
 
+	/* All class drivers registered; start USB TRX so enumeration can run. */
+	usbh_start();
+
 	do {
 		if (usbh_cdc_ncm_is_configured()) {
 			break;
@@ -510,6 +513,7 @@ static void usbh_ncm_mem_check_thread(void *param)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Del monitor_task\n");
 			rtos_task_delete(monitor_task);
 
+			usbh_stop();
 			usbh_cdc_ncm_deinit();
 			usbh_deinit();
 
@@ -532,6 +536,7 @@ static void usbh_ncm_hotplug_thread(void *param)
 		usb_os_sema_take(cdc_ncm_detach_sema, USB_OS_SEMA_TIMEOUT);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Hot plug\n");
 		//stop isr
+		usbh_stop();
 		usbh_cdc_ncm_deinit();
 		usbh_deinit();
 
@@ -550,6 +555,9 @@ static void usbh_ncm_hotplug_thread(void *param)
 			usbh_deinit();
 			break;
 		}
+
+		/* Re-arm USB TRX after the re-init. */
+		usbh_start();
 	}
 }
 #endif

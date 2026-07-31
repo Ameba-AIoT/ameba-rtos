@@ -18,10 +18,22 @@ ameba_modify_file_path(${app_ns_full_path} app_compress_ns p_SUFFIX _compress)
 
 if (CONFIG_WHC_INTF_SDIO)
     ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_1.bin ${FINAL_IMAGE_DIR}/RTL8720F_FW_1.bin)
-    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_2.bin ${FINAL_IMAGE_DIR}/RTL8720F_FW_2.bin)
+    ameba_execute_process(
+        COMMAND ${CMAKE_COMMAND} -E cat ${c_IMAGE2_ALL_FILES}
+        OUTPUT_FILE ${c_IMAGE_OUTPUT_DIR}/combined_image2_all.bin
+    )
+    ameba_axf2bin_fw_pack(
+        ${FINAL_IMAGE_DIR}/RTL8720F_FW_2.bin
+        p_FULLMAC_IMAGE
+            ${c_IMAGE_OUTPUT_DIR}/combined_image2_all.bin
+    )
+
+    if (CONFIG_MP_INCLUDED)
+        ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/RTL8720F_FW_1.bin ${FINAL_IMAGE_DIR}/RTL8720F_FW_1_MP.bin)
+        ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/RTL8720F_FW_2.bin ${FINAL_IMAGE_DIR}/RTL8720F_FW_2_MP.bin)
+    endif()
 else()
     ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E remove ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_1.bin)
-    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E remove ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_2.bin)
 endif()
 
 if(CONFIG_TRUSTZONE)

@@ -5,6 +5,7 @@
 #include "lwip/sys.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
+#include "sys_api.h"
 
 struct whc_cmd_path_priv whc_cmdpath_data;
 
@@ -389,6 +390,9 @@ connect_fail:
 #endif
 				}
 #endif
+				if (*ptr == WHC_WIFI_TEST_CLEAR_OTA) {
+					sys_clear_ota_signature(*(ptr + 1));
+				}
 #ifdef CONFIG_MP_INCLUDED
 				if (*ptr == WHC_WIFI_TEST_MP) {
 					whc_dev_mp_cmd((char *)(ptr + 2), *(ptr + 1));

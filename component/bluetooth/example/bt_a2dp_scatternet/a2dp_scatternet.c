@@ -1132,7 +1132,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 				if (privacy_enable) {
 					uint8_t bond_size = 0;
 					adv_param.own_addr_type = 2;
-					BT_APP_PROCESS(rtk_bt_le_sm_get_bond_num(&bond_size));
+					BT_APP_EVT_CB_PROCESS(rtk_bt_le_sm_get_bond_num(&bond_size));
 					if (bond_size != 0) {
 #if defined(PRIVACY_USE_DIR_ADV_WHEN_BONDED) && PRIVACY_USE_DIR_ADV_WHEN_BONDED
 						rtk_bt_le_bond_info_t bond_info = {0};
@@ -1153,7 +1153,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 #endif /* RTK_BLE_PRIVACY_SUPPORT */
 				BT_LOGA("[APP] Reconnect ADV starting, adv type:%d,  own_addr_type: %d, filter_policy: %d\r\n"
 						, adv_param.type,  adv_param.own_addr_type, adv_param.filter_policy);
-				BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
+				BT_APP_EVT_CB_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
 			}
 #endif /* RTK_BLE_5_0_USE_EXTENDED_ADV */
 			/* gatts action */
@@ -3051,6 +3051,8 @@ audio_codec_conf.param_len = sizeof(aac_codec_t);
 					pa2dp_stream->bd_addr[5], pa2dp_stream->bd_addr[4], pa2dp_stream->bd_addr[3], pa2dp_stream->bd_addr[2], pa2dp_stream->bd_addr[1],
 					pa2dp_stream->bd_addr[0]);
 		if (a2dp_demo_role == RTK_BT_A2DP_ROLE_SNK) {
+			/* flush remaining decode data */
+			rtk_bt_audio_codec_reset(audio_codec_conf.codec_index, a2dp_demo_codec_entity);
 			if (a2dp_demo_audio_track_hdl) {
 				rtk_bt_audio_track_resume(a2dp_demo_audio_track_hdl->audio_track_hdl);
 			}

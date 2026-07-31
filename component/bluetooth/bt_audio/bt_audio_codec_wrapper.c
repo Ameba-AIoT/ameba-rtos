@@ -362,6 +362,41 @@ uint16_t bt_audio_update_codec(uint32_t type, void *param, uint32_t param_len, P
 	return err;
 }
 
+uint16_t bt_audio_reset_codec(uint32_t type, PAUDIO_CODEC_ENTITY pentity)
+{
+	uint16_t err = RTK_BT_AUDIO_FAIL;
+
+	if (!pentity) {
+		BT_LOGE("[BT_AUDIO] pentity is empty \r\n");
+		return err;
+	}
+	switch (type) {
+#if defined(CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT) && CONFIG_BT_AUDIO_CODEC_SBC_SUPPORT
+	case RTK_BT_AUDIO_CODEC_SBC:
+	case RTK_BT_AUDIO_CODEC_mSBC:
+		if (pentity->active_flag) {
+			if (pentity->reset) {
+				if (pentity->reset(pentity)) {
+					BT_LOGE("[BT_AUDIO] reset sbc codec fail \r\n");
+					break;
+				}
+				err = RTK_BT_AUDIO_OK;
+			} else {
+				BT_LOGE("[BT_AUDIO] sbc codec reset func is null \r\n");
+			}
+		} else {
+			BT_LOGE("[BT_AUDIO] sbc codec has not been initialized, no need to reset \r\n");
+		}
+		break;
+#endif
+	default:
+		BT_LOGE("[BT_AUDIO] unknown codec type \r\n");
+		break;
+	}
+
+	return err;
+}
+
 uint16_t bt_audio_unregister_codec(uint32_t type, PAUDIO_CODEC_ENTITY pentity)
 {
 	(void)type;

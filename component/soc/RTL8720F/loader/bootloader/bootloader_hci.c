@@ -14,8 +14,6 @@
 #endif
 
 static const char *const TAG = "BOOT";
-extern IMAGE_HEADER EmptyXipImgHdr;
-extern IMAGE_HEADER EmptyPsramImgHdr;
 
 static void _Init_SDIO_By_PinGrp(void)
 {
@@ -68,8 +66,10 @@ static void Boot_Fullmac_SetImgInfo(SubImgInfo_TypeDef *SubImgInfo, IMAGE_HEADER
 	}
 }
 
-static IMAGE_HEADER *Boot_Fullmac_ResolveImgHdr(IMAGE_HEADER *EmptyHdr, u8 Valid, u32 RealAddr)
+static IMAGE_HEADER *Boot_Fullmac_ResolveImgHdr(u8 Valid, u32 RealAddr)
 {
+	IMAGE_HEADER *EmptyHdr = HCI_SelectEmptyHdr(RealAddr);
+
 	if (Valid && (EmptyHdr->image_addr == 0)) {
 		return (IMAGE_HEADER *)RealAddr;
 	}
@@ -79,13 +79,12 @@ static IMAGE_HEADER *Boot_Fullmac_ResolveImgHdr(IMAGE_HEADER *EmptyHdr, u8 Valid
 
 void Boot_Fullmac_Secure_Check(u8 FlashValid, u8 PsramValid)
 {
-	SubImgInfo_TypeDef SubImgInfo[3];
+	SubImgInfo_TypeDef SubImgInfo[6];
+	const char *NpLabel[] = {"NP XIP IMG", "NP SRAM", "NP PSRAM"};
 	const char *ApLabel[] = {"AP XIP IMG", "AP SRAM", "AP PSRAM"};
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
 	Manifest_TypeDef *Manifest;
 	IMAGE_HEADER *ImgHdr;
-
-	assert_param(sizeof(ApLabel) / sizeof(ApLabel[0]) == sizeof(SubImgInfo) / sizeof(SubImgInfo[0]));
 
 	/* for sram recycle, manifest is locate at 0x3007F000. */
 	Manifest = (Manifest_TypeDef *)0x3007F000;
@@ -93,18 +92,43 @@ void Boot_Fullmac_Secure_Check(u8 FlashValid, u8 PsramValid)
 	/* set IMG2 IV */
 	BOOT_RSIPIvSet(Manifest, RSIP_IV1);
 
-	RSIP_MMU_Config(MMU_ID2, (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN, (u32)__km4tz_flash_text_end__, 0x08001000);
+	/* --- NP sub-images [0..2] --- */
+	RSIP_MMU_Config(MMU_ID1, (u32)__km4ns_flash_text_start__ - IMAGE_HEADER_LEN, (u32)__km4ns_flash_text_end__, SPI_FLASH_BASE + PAGE_SIZE_4K);
+	RSIP_MMU_Cmd(MMU_ID1, ENABLE);
+	RSIP_MMU_Cache_Clean();
+
+	ImgHdr = Boot_Fullmac_ResolveImgHdr(FlashValid, (u32)__km4ns_flash_text_start__ - IMAGE_HEADER_LEN);
+	Boot_Fullmac_SetImgInfo(&SubImgInfo[0], ImgHdr, NpLabel[0]);
+
+	ImgHdr = (IMAGE_HEADER *)((u32)__km4ns_bd_ram_start__);
+	Boot_Fullmac_SetImgInfo(&SubImgInfo[1], ImgHdr, NpLabel[1]);
+	if (ImgHdr->boot_index == NP_BOOT_INDEX) {
+		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_ADDR_KM4NS, ImgHdr->image_addr);
+	}
+
+	ImgHdr = Boot_Fullmac_ResolveImgHdr(PsramValid, (u32)__km4ns_bd_psram_start__);
+	Boot_Fullmac_SetImgInfo(&SubImgInfo[2], ImgHdr, NpLabel[2]);
+
+	/* --- AP sub-images [3..5] --- */
+	u32 ap_xip_phys;
+	if (SubImgInfo[0].Len == IMAGE_HEADER_LEN) { // No NP XIP IMG
+		ap_xip_phys = SPI_FLASH_BASE + PAGE_SIZE_4K;
+	} else {
+		ImgHdr = (IMAGE_HEADER *)(SPI_FLASH_BASE + PAGE_SIZE_4K);
+		ap_xip_phys = (SPI_FLASH_BASE + PAGE_SIZE_4K) + (((ImgHdr->image_size + IMAGE_HEADER_LEN) + PAGE_SIZE_4K - 1) & ~(PAGE_SIZE_4K - 1));
+	}
+	RSIP_MMU_Config(MMU_ID2, (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN, (u32)__km4tz_flash_text_end__, ap_xip_phys);
 	RSIP_MMU_Cmd(MMU_ID2, ENABLE);
 	RSIP_MMU_Cache_Clean();
 
-	ImgHdr = Boot_Fullmac_ResolveImgHdr(&EmptyXipImgHdr, FlashValid, (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN);
-	Boot_Fullmac_SetImgInfo(&SubImgInfo[0], ImgHdr, ApLabel[0]);
+	ImgHdr = Boot_Fullmac_ResolveImgHdr(FlashValid, (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN);
+	Boot_Fullmac_SetImgInfo(&SubImgInfo[3], ImgHdr, ApLabel[0]);
 
 	ImgHdr = (IMAGE_HEADER *)((u32)__image2_entry_func__ - IMAGE_HEADER_LEN);
-	Boot_Fullmac_SetImgInfo(&SubImgInfo[1], ImgHdr, ApLabel[1]);
+	Boot_Fullmac_SetImgInfo(&SubImgInfo[4], ImgHdr, ApLabel[1]);
 
-	ImgHdr = Boot_Fullmac_ResolveImgHdr(&EmptyPsramImgHdr, PsramValid, (u32)__km4tz_bd_psram_start__);
-	Boot_Fullmac_SetImgInfo(&SubImgInfo[2], ImgHdr, ApLabel[2]);
+	ImgHdr = Boot_Fullmac_ResolveImgHdr(PsramValid, (u32)__km4tz_bd_psram_start__);
+	Boot_Fullmac_SetImgInfo(&SubImgInfo[5], ImgHdr, ApLabel[2]);
 
 	DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
 
@@ -161,7 +185,6 @@ void Boot_Fullmac_ImgDownload(void)
 
 void Boot_Fullmac_LoadIMGAll(void)
 {
-#ifndef CONFIG_WHC_DEV_FLASH_BOOT
 	u8 mem_type = ChipInfo_MemoryType();
 	switch (mem_type) {
 	case MCM_TYPE_NOR_FLASH:
@@ -187,6 +210,5 @@ void Boot_Fullmac_LoadIMGAll(void)
 		Boot_Fullmac_Secure_Check(FALSE, FALSE);
 		break;
 	}
-#endif
 }
 #endif

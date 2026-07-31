@@ -9,8 +9,12 @@
 #define MAX_BLOCKS 511
 #define MAX_BYTE_SIZE 511
 
-rtos_mutex_t sdio_lock;
+static rtos_mutex_t sdio_lock;
 
+void sdio_init_hwlock(void)
+{
+	whc_mutex_init(sdio_lock);
+}
 // Description:
 //	The following mapping translates domain ID + offset to the SDIO command address
 //	for local registers, TX FIFO, and RX FIFO domains.

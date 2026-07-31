@@ -1534,6 +1534,20 @@ uint16_t rtk_bt_audio_codec_update(rtk_bt_audio_codec_conf_t *paudio_codec_conf,
 	return bt_audio_update_codec(paudio_codec_conf->codec_index, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
 }
 
+uint16_t rtk_bt_audio_codec_reset(uint32_t type, void *pentity)
+{
+	if (!pentity) {
+		BT_LOGE("[BT AUDIO] pentity is null \r\n");
+		return RTK_BT_AUDIO_FAIL;
+	}
+	/* judge whether already initialized */
+	if (!bt_audio_init_flag) {
+		BT_LOGE("[BT_AUDIO] BT audio has not be initialized \r\n");
+		return RTK_BT_AUDIO_FAIL;
+	}
+	return bt_audio_reset_codec(type, pentity);
+}
+
 uint16_t rtk_bt_audio_codec_remove(uint32_t type, void *pentity)
 {
 	struct bt_audio_codec_priv *priv = NULL;
