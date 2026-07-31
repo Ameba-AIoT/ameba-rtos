@@ -55,6 +55,8 @@
 
 #define BLE_WIFIMATE_DECRYPT_PASSWORD_LEN_MAX           (128)
 
+#define ENUM_TYPE_SWITCH(enum1, enum2)    ((uint32_t)enum1 | (uint32_t)enum2)
+
 enum ble_wifimate_server_state_e {
 	BLE_WIFIMATE_SERVER_STATE_IDLE = 0,
 	BLE_WIFIMATE_SERVER_STATE_CONNECT = 1,
@@ -160,14 +162,20 @@ static uint16_t ble_wifimate_char_multi_indicate_data_init(struct ble_wifimate_w
 
 		memcpy(s_multi_indicate.data + offset, ap_info->ssid.val, ap_info->ssid.len);
 		offset += ap_info->ssid.len;
+		/*the struct rtw_scan_result is defined as packed(1), the member of signal_strength/security/channel are 2/4 bytes，There is a risk of misalignment*/
+		size_t len_offset = 0;
+		const uint8_t *p_buf = (const uint8_t *)ap_info;
 
-		memcpy(s_multi_indicate.data + offset, &ap_info->signal_strength, CHAR_WIFI_SCAN_INFO_SEG_THIRD_ELE_LEN);
+		len_offset = offsetof(struct rtw_scan_result, signal_strength);
+		memcpy(s_multi_indicate.data + offset, p_buf + len_offset, CHAR_WIFI_SCAN_INFO_SEG_THIRD_ELE_LEN);
 		offset += CHAR_WIFI_SCAN_INFO_SEG_THIRD_ELE_LEN;
 
-		memcpy(s_multi_indicate.data + offset, &ap_info->security, CHAR_WIFI_SCAN_INFO_SEG_FORTH_ELE_LEN);
+		len_offset = offsetof(struct rtw_scan_result, security);
+		memcpy(s_multi_indicate.data + offset, p_buf + len_offset, CHAR_WIFI_SCAN_INFO_SEG_FORTH_ELE_LEN);
 		offset += CHAR_WIFI_SCAN_INFO_SEG_FORTH_ELE_LEN;
 
-		memcpy(s_multi_indicate.data + offset, &ap_info->channel, CHAR_WIFI_SCAN_INFO_SEG_FIFTH_ELE_LEN);
+		len_offset = offsetof(struct rtw_scan_result, channel);
+		memcpy(s_multi_indicate.data + offset, p_buf + len_offset, CHAR_WIFI_SCAN_INFO_SEG_FIFTH_ELE_LEN);
 		offset += CHAR_WIFI_SCAN_INFO_SEG_FIFTH_ELE_LEN;
 	}
 
@@ -339,7 +347,7 @@ static uint16_t ble_wifimate_server_send_wifi_scan_info_initial(uint16_t conn_ha
 static uint16_t ble_wifimate_server_send_wifi_scan_info_segment(uint16_t conn_handle)
 {
 	int     remain = s_multi_indicate.total_len - s_multi_indicate.offset;
-	uint16_t ret;
+	uint16_t ret = 0;
 	uint8_t *ind_data = NULL;
 	rtk_bt_gatts_ntf_and_ind_param_t ind_param = {0};
 
@@ -437,15 +445,15 @@ static uint8_t ble_wifimate_convert_wifi_scan_security(uint32_t security)
 		   (security == RTW_SECURITY_WPA_WPA2_TKIP_PSK) ? BWM_SECURITY_WPA_WPA2_TKIP_PSK :
 		   (security == RTW_SECURITY_WPA_WPA2_AES_PSK) ? BWM_SECURITY_WPA_WPA2_AES_PSK :
 		   (security == RTW_SECURITY_WPA_WPA2_MIXED_PSK) ? BWM_SECURITY_WPA_WPA2_MIXED_PSK :
-		   (security == (RTW_SECURITY_WPA_TKIP_PSK | ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_TKIP_PSK :
-		   (security == (RTW_SECURITY_WPA_AES_PSK | ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_AES_PSK :
-		   (security == (RTW_SECURITY_WPA_MIXED_PSK | ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_MIXED_PSK :
-		   (security == (RTW_SECURITY_WPA2_TKIP_PSK | ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA2_TKIP_PSK :
-		   (security == (RTW_SECURITY_WPA2_AES_PSK | ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA2_AES_PSK :
-		   (security == (RTW_SECURITY_WPA2_MIXED_PSK | ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA2_MIXED_PSK :
-		   (security == (RTW_SECURITY_WPA_WPA2_TKIP_PSK | ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_WPA2_TKIP_PSK :
-		   (security == (RTW_SECURITY_WPA_WPA2_AES_PSK | ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_WPA2_AES_PSK :
-		   (security == (RTW_SECURITY_WPA_WPA2_MIXED_PSK | ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_WPA2_MIXED_PSK :
+		   (security == ENUM_TYPE_SWITCH(RTW_SECURITY_WPA_TKIP_PSK, ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_TKIP_PSK :
+		   (security == ENUM_TYPE_SWITCH(RTW_SECURITY_WPA_AES_PSK, ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_AES_PSK :
+		   (security == ENUM_TYPE_SWITCH(RTW_SECURITY_WPA_MIXED_PSK, ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_MIXED_PSK :
+		   (security == ENUM_TYPE_SWITCH(RTW_SECURITY_WPA2_TKIP_PSK, ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA2_TKIP_PSK :
+		   (security == ENUM_TYPE_SWITCH(RTW_SECURITY_WPA2_AES_PSK, ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA2_AES_PSK :
+		   (security == ENUM_TYPE_SWITCH(RTW_SECURITY_WPA2_MIXED_PSK, ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA2_MIXED_PSK :
+		   (security == ENUM_TYPE_SWITCH(RTW_SECURITY_WPA_WPA2_TKIP_PSK, ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_WPA2_TKIP_PSK :
+		   (security == ENUM_TYPE_SWITCH(RTW_SECURITY_WPA_WPA2_AES_PSK, ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_WPA2_AES_PSK :
+		   (security == ENUM_TYPE_SWITCH(RTW_SECURITY_WPA_WPA2_MIXED_PSK, ENTERPRISE_ENABLED)) ? BWM_SECURITY_WPA_WPA2_MIXED_PSK :
 #ifdef CONFIG_SAE_SUPPORT
 		   (security == RTW_SECURITY_WPA3_AES_PSK) ? BWM_SECURITY_WPA3_AES_PSK :
 		   (security == RTW_SECURITY_WPA2_WPA3_MIXED) ? BWM_SECURITY_WPA2_WPA3_MIXED :
@@ -707,18 +715,24 @@ static uint16_t ble_wifimate_wifi_connect(uint16_t conn_handle, struct wifi_conn
 static uint16_t ble_wifimate_aes_ecb_decrypt(uint8_t src_len, uint8_t *src, uint8_t key_len,
 											 uint8_t *key, uint8_t *result_len, uint8_t *result)
 {
-	mbedtls_aes_context ctx;
-	uint32_t key_bit = BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_128;
-	uint8_t key_le[key_len];
-	int i = 0;
-
 	if (!src || !key || !result_len || !result) {
 		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	mbedtls_aes_context ctx;
+	uint32_t key_bit = BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_128;
+	int i = 0;
+
+	uint8_t *key_le = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, key_len);
+	if (!key_le) {
+		BT_LOGE("%s: key_le malloc failed\r\n", __func__);
+		return RTK_BT_FAIL;
 	}
 
 	/* use a software key, it needs to be converted to little-endian format.
 	   For example, the key is 00112233445566778899aabbccddeeff, the key array should like:
 	   uint8_t key1[32] = {0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00 };. */
+	memset(key_le, 0, key_len);
 	memcpy(key_le, key, key_len);
 	array_to_little_endian(key_le, key_len);
 
@@ -731,12 +745,25 @@ static uint16_t ble_wifimate_aes_ecb_decrypt(uint8_t src_len, uint8_t *src, uint
 	// set AES decrypt key
 	if (mbedtls_aes_setkey_dec(&ctx, key_le, key_bit) != 0) {
 		BT_LOGE("%s: mbedtls AES key set fail\r\n", __func__);
+		osif_mem_free(key_le);
 		return RTK_BT_FAIL;
 	}
 
 	uint8_t message_len = (uint8_t)ceil(src_len / 16.0) * 16;
-	uint8_t message[message_len];
-	uint8_t decrypted[message_len];
+	uint8_t *message = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, message_len);
+	if (!message) {
+		BT_LOGE("%s: message malloc failed\r\n", __func__);
+		osif_mem_free(key_le);
+		return RTK_BT_FAIL;
+	}
+
+	uint8_t *decrypted = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, message_len);
+	if (!decrypted) {
+		BT_LOGE("%s: decrypted malloc failed\r\n", __func__);
+		osif_mem_free(key_le);
+		osif_mem_free(message);
+		return RTK_BT_FAIL;
+	}
 
 	memset(message, 0, message_len);
 	memset(decrypted, 0, message_len);
@@ -751,6 +778,9 @@ static uint16_t ble_wifimate_aes_ecb_decrypt(uint8_t src_len, uint8_t *src, uint
 	}
 
 	if (i < message_len) {
+		osif_mem_free(key_le);
+		osif_mem_free(message);
+		osif_mem_free(decrypted);
 		return RTK_BT_FAIL;
 	}
 
@@ -760,6 +790,10 @@ static uint16_t ble_wifimate_aes_ecb_decrypt(uint8_t src_len, uint8_t *src, uint
 	BT_DUMPD("====decrypt key=====\r\n", key, key_len);
 	BT_DUMPD("====decrypt message=====\r\n", message, message_len);
 	BT_DUMPD("====decrypt result=====\r\n", result, *result_len);
+
+	osif_mem_free(key_le);
+	osif_mem_free(message);
+	osif_mem_free(decrypted);
 
 	return RTK_BT_OK;
 }
@@ -884,13 +918,15 @@ static uint16_t ble_wifimate_server_write_wifi_connect_hdl(uint16_t conn_handle,
 			BT_LOGD("%s: recv_checksum=%u, cal_checksum=%u\r\n",
 					__func__, s_multi_recv.checksum, checksum);
 			if (checksum == s_multi_recv.checksum) {
-				uint8_t decrypt_pw[BLE_WIFIMATE_DECRYPT_PASSWORD_LEN_MAX] ALIGNMTO(CACHE_LINE_SIZE) = {0};
+				/*the alignment requirement of auto variables cannot exceed the current stack, here change as static*/
+				static uint8_t decrypt_pw[BLE_WIFIMATE_DECRYPT_PASSWORD_LEN_MAX] ALIGNMTO(CACHE_LINE_SIZE) = {0};
 				struct wifi_conn_config_t conn_config = {0};
 				BT_LOGA("[APP] BLE WiFiMate conn_handle=%d wifi connect recv checksum pass!\r\n", conn_handle);
 				ret = ble_wifimate_parse_wifi_connect_config(s_multi_recv.total_len, s_multi_recv.data, decrypt_pw, &conn_config);
 				if (ret == RTK_BT_OK) {
 					ret = ble_wifimate_wifi_connect(conn_handle, &conn_config);
 				}
+				memset(decrypt_pw, 0, BLE_WIFIMATE_DECRYPT_PASSWORD_LEN_MAX);
 			} else {
 				ret = RTK_BT_FAIL;
 				BT_LOGE("[APP] BLE WiFiMate conn_handle=%d wifi connect recv checksum fail!\r\n", conn_handle);

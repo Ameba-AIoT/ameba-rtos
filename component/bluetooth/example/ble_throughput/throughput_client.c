@@ -66,7 +66,7 @@ typedef struct {
 } throughput_client_links_t;
 
 static throughput_client_links_t *throughput_client_links[RTK_BLE_GAP_MAX_LINKS] = {0};
-throughput_config_param_t config_param = {0};
+throughput_config_param_t config_param;
 
 static throughput_client_links_t *ble_throughput_client_choose_link(uint16_t conn_handle)
 {
@@ -1207,6 +1207,8 @@ uint16_t ble_throughput_client_link_disconnected(uint16_t conn_handle)
 
 uint16_t ble_throughput_client_add(void)
 {
+	memset(&config_param, 0, sizeof(config_param));
+
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 	return rtk_bt_gattc_register_profile(THROUGHPUT_CLIENT_PROFILE_ID, throughput_ble_uuid);
 #else

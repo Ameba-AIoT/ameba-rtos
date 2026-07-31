@@ -50,7 +50,7 @@ uint16_t rtk_bt_hfp_cfg(uint8_t role, void *p_conf_t)
 
 uint16_t rtk_bt_hfp_connect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -64,7 +64,7 @@ uint16_t rtk_bt_hfp_connect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_hfp_disconnect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -78,7 +78,7 @@ uint16_t rtk_bt_hfp_disconnect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_hfp_sco_connect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -92,7 +92,7 @@ uint16_t rtk_bt_hfp_sco_connect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_hfp_sco_disconnect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -106,7 +106,7 @@ uint16_t rtk_bt_hfp_sco_disconnect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_hfp_call_incoming(uint8_t *bd_addr, const char *call_num, uint8_t call_num_len, uint8_t call_num_type)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_hfp_call_incoming_t call_incoming_t = {0};
 
 	if (!bd_addr || !call_num) {
@@ -131,7 +131,7 @@ uint16_t rtk_bt_hfp_call_incoming(uint8_t *bd_addr, const char *call_num, uint8_
 
 uint16_t rtk_bt_hfp_call_answer(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -145,7 +145,7 @@ uint16_t rtk_bt_hfp_call_answer(uint8_t *bd_addr)
 
 uint16_t rtk_bt_hfp_call_terminate(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -159,7 +159,7 @@ uint16_t rtk_bt_hfp_call_terminate(uint8_t *bd_addr)
 
 uint16_t rtk_bt_hfp_dial_with_number_req(uint8_t *bd_addr, const char *call_num, uint8_t call_num_len)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_hfp_dial_number_t hfp_dial_number = {0};
 
 	if (!bd_addr || !call_num) {
@@ -177,7 +177,7 @@ uint16_t rtk_bt_hfp_dial_with_number_req(uint8_t *bd_addr, const char *call_num,
 
 uint16_t rtk_bt_hfp_dial_last_number_req(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -191,7 +191,7 @@ uint16_t rtk_bt_hfp_dial_last_number_req(uint8_t *bd_addr)
 
 uint16_t rtk_bt_hfp_data_send(rtk_bt_hfp_sco_data_send_t *p_data_send_t)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_data_send_t) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -205,7 +205,7 @@ uint16_t rtk_bt_hfp_data_send(rtk_bt_hfp_sco_data_send_t *p_data_send_t)
 
 uint16_t rtk_bt_hfp_batt_level_report(uint8_t *bd_addr, uint8_t power_level)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_hfp_batt_level_t batt_level_t = {0};
 
 	if (!bd_addr) {
@@ -222,7 +222,7 @@ uint16_t rtk_bt_hfp_batt_level_report(uint8_t *bd_addr, uint8_t power_level)
 
 uint16_t rtk_bt_hfp_speaker_gain_report(uint8_t *bd_addr, uint8_t gain)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_hfp_speaker_gain_t param_t = {0};
 
 	if (!bd_addr) {
@@ -239,7 +239,7 @@ uint16_t rtk_bt_hfp_speaker_gain_report(uint8_t *bd_addr, uint8_t gain)
 
 uint16_t rtk_bt_hfp_microphone_gain_report(uint8_t *bd_addr, uint8_t gain)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_hfp_microphone_gain_t param_t = {0};
 
 	if (!bd_addr) {
@@ -256,7 +256,7 @@ uint16_t rtk_bt_hfp_microphone_gain_report(uint8_t *bd_addr, uint8_t gain)
 
 uint16_t rtk_bt_hfp_send_vnd_at_cmd_req(uint8_t *bd_addr, const char *at_cmd, uint16_t len)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_hfp_vnd_at_cmd_t vnd_cmd = {0};
 
 	if (!bd_addr || !at_cmd) {

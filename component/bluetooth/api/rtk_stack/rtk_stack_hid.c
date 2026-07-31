@@ -22,7 +22,7 @@
 #include <bt_hid.h>
 #include <bt_sdp.h>
 
-static uint8_t hid_role;
+//static uint8_t hid_role;
 static uint8_t remote_addr[6] = {0};
 static uint8_t *hid_data = NULL;
 static uint8_t data[100] = {0};
@@ -302,6 +302,7 @@ uint16_t bt_stack_hid_act_handle(rtk_bt_cmd_t *p_cmd)
 
 uint16_t bt_stack_hid_init(uint8_t role)
 {
+	(void)role;
 	BT_LOGA("[HID]app_hid_init\n");
 
 	if (!pdescriptor) {
@@ -314,7 +315,7 @@ uint16_t bt_stack_hid_init(uint8_t role)
 	}
 	bt_hid_descriptor_set(pdescriptor->des, pdescriptor->len);
 	bt_mgr_cback_register(app_hid_bt_cback);
-	hid_role = role;
+	//hid_role = role;
 
 	return RTK_BT_OK;
 }

@@ -1132,7 +1132,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 				if (privacy_enable) {
 					uint8_t bond_size = 0;
 					adv_param.own_addr_type = 2;
-					BT_APP_PROCESS(rtk_bt_le_sm_get_bond_num(&bond_size));
+					BT_APP_EVT_CB_PROCESS(rtk_bt_le_sm_get_bond_num(&bond_size));
 					if (bond_size != 0) {
 #if defined(PRIVACY_USE_DIR_ADV_WHEN_BONDED) && PRIVACY_USE_DIR_ADV_WHEN_BONDED
 						rtk_bt_le_bond_info_t bond_info = {0};
@@ -1153,7 +1153,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 #endif /* RTK_BLE_PRIVACY_SUPPORT */
 				BT_LOGA("[APP] Reconnect ADV starting, adv type:%d,  own_addr_type: %d, filter_policy: %d\r\n"
 						, adv_param.type,  adv_param.own_addr_type, adv_param.filter_policy);
-				BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
+				BT_APP_EVT_CB_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
 			}
 #endif /* RTK_BLE_5_0_USE_EXTENDED_ADV */
 			/* gatts action */

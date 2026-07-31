@@ -1,6 +1,6 @@
 menu "CONFIG WIFI MODE"
 if WHC_DEV_MENU
-    config NAN
+    config WIFI_NAN_ENABLE
         bool "Enable NAN"
         default n
 endif
@@ -73,13 +73,25 @@ endif
 endif
 
 if LINUX_FW_EN
-    config NAN
+    config WIFI_NAN_ENABLE
         bool "Enable NAN"
         default n
     config WIFI_P2P_ENABLE
         bool "Enable P2P"
         default n
 endif
+
+config WIFI_NAN_HOST_APP
+    bool "Enable NAN host control app (km4_tz / WHC host)"
+    default n
+    select WIFI_NAN_ENABLE
+    help
+      Build the in-firmware NAN control + AT command front-end on the
+      application (WHC host / km4_tz) core. It drives the NP-core NAN driver
+      over the WHC IPC path (AT+NANINIT/START/PUB/SUB/STOP/DEINIT). The NP
+      core must have the NAN driver (CONFIG_NAN) enabled. Selecting this
+      also enables WIFI_NAN_ENABLE so the NP build skips wifi_feature_dis_nan.c
+      stubs that would otherwise mask the real weak handlers.
 
 config WLAN_CRITICAL_CODE_IN_RAM
     bool "Enable Critical code in RAM"

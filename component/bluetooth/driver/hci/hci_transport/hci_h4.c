@@ -274,7 +274,7 @@ uint16_t hci_transport_send(uint8_t type, uint8_t *buf, uint16_t len, bool has_r
 uint8_t hci_transport_open(void)
 {
 	int i;
-	void *pkt;
+	struct hci_rx_packet_t *pkt = NULL;
 
 	if (!h4) {
 		h4 = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct hci_h4_t));
@@ -306,7 +306,7 @@ uint8_t hci_transport_open(void)
 		goto failed;
 	}
 	for (i = 0; i < CONFIG_HCI_RX_TOTAL_NUM; i++) {
-		struct hci_rx_packet_t *pkt = &h4->rxpkts[i];
+		pkt = &h4->rxpkts[i];
 		if (i < CONFIG_HCI_RX_DATA_NUM) {
 			pkt->buf = &h4->rx_data_buf[i][0];
 			if (false == osif_msg_send(h4->rx_data_free, &pkt, BT_TIMEOUT_NONE)) {

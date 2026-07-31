@@ -438,7 +438,7 @@ void bt_wait_cmd_send_complete(void)
 
 static uint8_t rtk_bt_excute_evt_cb(uint8_t group, uint8_t evt_code, void *param, uint32_t len)
 {
-	uint8_t ret = 0;
+	uint8_t ret = RTK_BT_OK;
 	rtk_bt_evt_cb_t cb_func = NULL;
 
 	if (/*group >= RTK_BT_API_LE_BASE && */group < RTK_BT_LE_GP_MAX) {
@@ -527,7 +527,7 @@ uint16_t rtk_bt_evt_init(void)
 	}
 
 	event_task_running = true;
-	return 0;
+	return RTK_BT_OK;
 
 failed:
 	if (g_evt_task_hdl) {
@@ -546,13 +546,11 @@ failed:
 	return RTK_BT_FAIL;
 }
 
-static uint16_t rtk_bt_evt_reset_callback(void)
+static void rtk_bt_evt_reset_callback(void)
 {
 	memset(rtk_bt_le_evt_cb_tbl, 0, sizeof(rtk_bt_le_evt_cb_tbl));
 	memset(rtk_bt_br_evt_cb_tbl, 0, sizeof(rtk_bt_br_evt_cb_tbl));
 	memset(rtk_bt_evt_cb_tbl, 0, sizeof(rtk_bt_evt_cb_tbl));
-
-	return 0;
 }
 
 uint16_t rtk_bt_evt_deinit(void)
@@ -580,7 +578,7 @@ uint16_t rtk_bt_evt_deinit(void)
 	g_evt_queue = NULL;
 	rtk_bt_evt_reset_callback();
 
-	return 0;
+	return RTK_BT_OK;
 }
 
 uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb)
@@ -611,7 +609,7 @@ uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb)
 		rtk_bt_evt_cb_tbl[group - RTK_BT_API_COMMON_BASE] = cb;
 	}
 
-	return 0;
+	return RTK_BT_OK;
 }
 
 uint16_t rtk_bt_evt_unregister_callback(uint8_t group)
@@ -645,7 +643,7 @@ uint16_t rtk_bt_evt_unregister_callback(uint8_t group)
 		rtk_bt_evt_cb_tbl[group - RTK_BT_API_COMMON_BASE] = NULL;
 	}
 
-	return 0;
+	return RTK_BT_OK;
 }
 
 rtk_bt_evt_t *rtk_bt_event_create(uint8_t group, uint8_t evt, uint32_t param_len)
@@ -794,7 +792,7 @@ static bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code)
 
 uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	uint32_t msg_num = 0;
 	rtk_bt_evt_t *p_evt = (rtk_bt_evt_t *)evt;
 
@@ -810,7 +808,7 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 		/* If the evt cb is direct calling, the evt msg isn't actually send to evt task,
 		Instead, it's excuted here, so need to free it here */
 		rtk_bt_event_free(evt);
-		return 0;
+		return RTK_BT_OK;
 	}
 
 	/* send EXIT as last msg to kill task */
