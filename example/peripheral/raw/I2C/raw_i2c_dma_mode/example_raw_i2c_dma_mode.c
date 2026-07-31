@@ -14,6 +14,21 @@
 #include "os_wrapper.h"
 #include <stdio.h>
 
+/* modify following definitions to control the role and direction */
+/* master send: [1, 1] slave read: [0, 1] */
+/* master read: [1, 0] slave send: [0, 0] */
+#ifndef I2C_MASTER_DEVICE
+#define I2C_MASTER_DEVICE 1
+#endif
+
+#ifndef MASTER_SEND
+#define MASTER_SEND 1
+#endif
+
+#ifndef LOOP_COUNT
+#define LOOP_COUNT 3
+#endif
+
 typedef struct {
 	u8 *pbuf;
 	int datalen;
@@ -34,11 +49,6 @@ typedef struct {
 	GDMA_InitTypeDef    I2CRxGdmaInitStruct;              //Pointer to GDMA_InitTypeDef
 } i2c_dma_t;
 
-/*I2C pin location:
-* I2C0:
-*	  - S0:  PA_25(SCL)/PA_26(SDA).
-*	         PB_5(SCL)/PB_6(SDA).
-*/
 
 #define MBED_I2C_SLAVE_ADDR0    0x23
 
@@ -50,19 +60,17 @@ uint8_t	i2cdatasrc[I2C_DATA_LENGTH];
 uint8_t	i2cdatadst[I2C_DATA_LENGTH];
 I2C_InitTypeDef I2CInitData[2];
 
-#define I2C_MASTER_DEVICE		1
-
 #define I2C_0 0
 #define I2C_1 1
 static const char *const TAG = "I2C";
 
-/*if defined 1, master send, slave read mode.
- else master read slave send mode.*/
-#define MASTER_SEND				1
-
 i2c_dma_t i2cdmamaster;
 i2c_dma_t i2cdmaslave;
 int length = 255;
+
+int loop_counter = 0;
+volatile int dma_tx_done = 0;
+volatile int dma_rx_done = 0;
 
 u32
 I2CTXGDMAISRHandle(
@@ -391,16 +399,13 @@ void RtkI2CInit(i2c_dma_t *obj, PinName sda, PinName scl)
 
 u32 dma_tx_callback(void *data)
 {
-	i2c_dma_t *obj = (i2c_dma_t *)data;
+	(void)data;
 
 	RTK_LOGI(TAG, "DMA Tx Done!!\r\n");
 
+	RTK_LOGI(TAG, "Result is success\n");
 
-	for (int i = 0; i < obj->ptxbuf.datalen; i++) {
-		RTK_LOGI(TAG, "%02x", *(obj->ptxbuf.pbuf + i));
-	}
-	RTK_LOGI(TAG, "\n");
-
+	dma_tx_done = 1;
 	return 0;
 }
 
@@ -410,10 +415,16 @@ u32 dma_rx_callback(void *data)
 
 	RTK_LOGI(TAG, "DMA Rx Done!!\r\n");
 
+	/* Verify received data against expected pattern (i + 0x2) */
+	int pass = 1;
 	for (int i = 0; i < obj->prxbuf.datalen; i++) {
-		RTK_LOGI(TAG, "%02x", *(obj->prxbuf.pbuf + i));
+		if (*(obj->prxbuf.pbuf + i) != (u8)(i + 0x2)) {
+			pass = 0;
+			break;
+		}
 	}
-	RTK_LOGI(TAG, "\n");
+	RTK_LOGI(TAG, "Result is %s\n", pass ? "success" : "fail");
+	dma_rx_done = 1;
 
 	return 0;
 }
@@ -444,15 +455,16 @@ void i2c_dma_test(void)
 
 	RTK_LOGI(TAG, "i2c dma mode demo\n");
 	RTK_LOGI(TAG, "Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
+	RTK_LOGI(TAG, "Loop count: %d\n", LOOP_COUNT);
 
 #if I2C_MASTER_DEVICE
+	/* Master write mode */
 	_memset(&i2cdmamaster, 0x00, sizeof(i2c_dma_t));
-//	i2c_StructInit(&i2cdmamaster.I2Cint, I2C_0, MBED_I2C_MTR_SDA, MBED_I2C_MTR_SCL, I2C_MASTER_MODE);
-//
+
 	i2cdmamaster.I2Cint.i2c_idx = I2C_0;
 
 	I2C_StructInit(&I2CInitData[i2cdmamaster.I2Cint.i2c_idx]);
-//
+
 	I2CInitData[i2cdmamaster.I2Cint.i2c_idx].I2CAckAddr	= MBED_I2C_SLAVE_ADDR0;
 	I2CInitData[i2cdmamaster.I2Cint.i2c_idx].I2CMaster = I2C_MASTER_MODE;
 	I2CInitData[i2cdmamaster.I2Cint.i2c_idx].I2CSpdMod = I2C_SS_MODE;
@@ -464,33 +476,54 @@ void i2c_dma_test(void)
 	// Master write - Slave read
 	RTK_LOGI(TAG, "Master write>>>\n");
 
-	i2cdmamaster.ptxbuf.pbuf = i2cdatasrc;
-	i2cdmamaster.ptxbuf.datalen = length;
-	i2cdmamaster.user_tx_cb = (IRQ_FUN)dma_tx_callback;
+	loop_counter = 0;
 
-//	i2c_Write(&i2cdmamaster.I2Cint, MBED_I2C_SLAVE_ADDR0, &i2cdatasrc[0], I2C_DATA_LENGTH, 1);
+	for (int i = 0; i < LOOP_COUNT; i++) {
+		loop_counter = i;
+		RTK_LOGI(TAG, "Loop %d/%d\n", i + 1, LOOP_COUNT);
+		dma_tx_done = 0;
+		i2cdmamaster.ptxbuf.pbuf = i2cdatasrc;
+		i2cdmamaster.ptxbuf.datalen = length;
+		i2cdmamaster.user_tx_cb = (IRQ_FUN)dma_tx_callback;
 
-	RtkI2CDmaSend(&i2cdmamaster, MBED_I2C_SLAVE_ADDR0);
+		RtkI2CDmaSend(&i2cdmamaster, MBED_I2C_SLAVE_ADDR0);
+		while (!dma_tx_done) {
+			rtos_time_delay_ms(1);
+		}
+	}
+	RTK_LOGI(TAG, "All %d TX loops completed\n", LOOP_COUNT);
 
 #else //I2C_SLAVE_DEVICE
+	/* Slave read mode */
 	_memset(&i2cdmaslave, 0x00, sizeof(i2c_dma_t));
 
 	i2cdmaslave.I2Cint.i2c_idx = I2C_0;
 	I2C_StructInit(&I2CInitData[i2cdmaslave.I2Cint.i2c_idx]);
 	I2CInitData[i2cdmaslave.I2Cint.i2c_idx].I2CAckAddr	= MBED_I2C_SLAVE_ADDR0;
 	I2CInitData[i2cdmaslave.I2Cint.i2c_idx].I2CMaster = I2C_SLAVE_MODE;
-	I2CInitData[i2cdmamaster.I2Cint.i2c_idx].I2CSpdMod = I2C_SS_MODE;
+	I2CInitData[i2cdmaslave.I2Cint.i2c_idx].I2CSpdMod = I2C_SS_MODE;
 
 	RtkI2CInit(&i2cdmaslave, MBED_I2C_SLV_SDA, MBED_I2C_SLV_SCL);
 
 	// Master write - Slave read
 	RTK_LOGI(TAG, "Slave read>>>\n");
 
-	i2cdmaslave.prxbuf.pbuf = i2cdatadst;
-	i2cdmaslave.prxbuf.datalen = length;
-	i2cdmaslave.user_rx_cb = (IRQ_FUN)dma_rx_callback;
+	loop_counter = 0;
 
-	RtkI2CDmaReceive(&i2cdmaslave, MBED_I2C_SLAVE_ADDR0);
+	for (int i = 0; i < LOOP_COUNT; i++) {
+		loop_counter = i;
+		RTK_LOGI(TAG, "Loop %d/%d\n", i + 1, LOOP_COUNT);
+		dma_rx_done = 0;
+		i2cdmaslave.prxbuf.pbuf = i2cdatadst;
+		i2cdmaslave.prxbuf.datalen = length;
+		i2cdmaslave.user_rx_cb = (IRQ_FUN)dma_rx_callback;
+
+		RtkI2CDmaReceive(&i2cdmaslave, MBED_I2C_SLAVE_ADDR0);
+		while (!dma_rx_done) {
+			rtos_time_delay_ms(1);
+		}
+	}
+	RTK_LOGI(TAG, "All %d RX loops completed\n", LOOP_COUNT);
 
 #endif // #ifdef I2C_SLAVE_DEVICE
 
@@ -521,6 +554,7 @@ void i2c_dma_test(void)
 
 	RTK_LOGI(TAG, "i2c dma mode demo\n");
 	RTK_LOGI(TAG, "Slave addr=%x\n", MBED_I2C_SLAVE_ADDR0);
+	RTK_LOGI(TAG, "Loop count: %d\n", LOOP_COUNT);
 
 #if I2C_MASTER_DEVICE
 	_memset(&i2cdmamaster, 0x00, sizeof(i2c_dma_t));
@@ -538,11 +572,22 @@ void i2c_dma_test(void)
 	// Master read - Slave write
 	RTK_LOGI(TAG, "Master read>>>\n");
 
-	i2cdmamaster.prxbuf.pbuf = i2cdatadst;
-	i2cdmamaster.prxbuf.datalen = length;
-	i2cdmamaster.user_rx_cb = (IRQ_FUN)dma_rx_callback;
+	loop_counter = 0;
 
-	RtkI2CDmaReceive(&i2cdmamaster, MBED_I2C_SLAVE_ADDR0);
+	for (int i = 0; i < LOOP_COUNT; i++) {
+		loop_counter = i;
+		RTK_LOGI(TAG, "Loop %d/%d\n", i + 1, LOOP_COUNT);
+		dma_rx_done = 0;
+		i2cdmamaster.prxbuf.pbuf = i2cdatadst;
+		i2cdmamaster.prxbuf.datalen = length;
+		i2cdmamaster.user_rx_cb = (IRQ_FUN)dma_rx_callback;
+
+		RtkI2CDmaReceive(&i2cdmamaster, MBED_I2C_SLAVE_ADDR0);
+		while (!dma_rx_done) {
+			rtos_time_delay_ms(1);
+		}
+	}
+	RTK_LOGI(TAG, "All %d RX loops completed\n", LOOP_COUNT);
 
 #else //I2C_SLAVE_DEVICE
 	_memset(&i2cdmaslave, 0x00, sizeof(i2c_dma_t));
@@ -560,11 +605,22 @@ void i2c_dma_test(void)
 	// Master read - Slave write
 	RTK_LOGI(TAG, "Slave write>>>\n");
 
-	i2cdmaslave.ptxbuf.pbuf = i2cdatasrc;
-	i2cdmaslave.ptxbuf.datalen = length;
-	i2cdmaslave.user_tx_cb = (IRQ_FUN)dma_tx_callback;
+	loop_counter = 0;
 
-	RtkI2CDmaSend(&i2cdmaslave, MBED_I2C_SLAVE_ADDR0);
+	for (int i = 0; i < LOOP_COUNT; i++) {
+		loop_counter = i;
+		RTK_LOGI(TAG, "Loop %d/%d\n", i + 1, LOOP_COUNT);
+		dma_tx_done = 0;
+		i2cdmaslave.ptxbuf.pbuf = i2cdatasrc;
+		i2cdmaslave.ptxbuf.datalen = length;
+		i2cdmaslave.user_tx_cb = (IRQ_FUN)dma_tx_callback;
+
+		RtkI2CDmaSend(&i2cdmaslave, MBED_I2C_SLAVE_ADDR0);
+		while (!dma_tx_done) {
+			rtos_time_delay_ms(1);
+		}
+	}
+	RTK_LOGI(TAG, "All %d TX loops completed\n", LOOP_COUNT);
 
 #endif // #ifdef I2C_SLAVE_DEVICE
 

@@ -28,7 +28,6 @@
 #include <stack/host/conn_internal.h>
 #include <stack/host/smp.h>
 #include <stack/host/adv.h>
-#include <stack/host/scan.h>
 #include <zephyr/sys/byteorder.h>
 #include <stack/host/keys.h>
 #include <stack/host/settings.h>
@@ -41,6 +40,7 @@
 #endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 #include <rtk_bt_device.h>
+#include <rtk_bt_mesh_common.h>
 bool rtk_ble_mesh_scan_enable_flag = false;
 #endif
 
@@ -76,19 +76,35 @@ uint16_t bt_stack_le_gap_get_conn_id(uint16_t conn_handle, uint8_t *p_conn_id);
 
 static void _indicate_adv_stop(uint8_t stop_reason)
 {
-	rtk_bt_le_adv_stop_ind_t *p_le_adv_stop_ind = NULL;
-	rtk_bt_evt_t *p_evt = NULL;
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+	if (rtk_bt_mesh_is_enable()) {
+		rtk_bt_evt_t *p_evt = NULL;
+		rtk_bt_mesh_stack_evt_stop_adv_t *p_stop_adv;
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_STOP_ADV,
+									sizeof(rtk_bt_mesh_stack_evt_stop_adv_t));
+		if (!p_evt) {
+			return;
+		}
+		p_stop_adv = (rtk_bt_mesh_stack_evt_stop_adv_t *)p_evt->data;
+		p_stop_adv->result = 0;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else
+#endif
+	{
+		rtk_bt_le_adv_stop_ind_t *p_le_adv_stop_ind = NULL;
+		rtk_bt_evt_t *p_evt = NULL;
 
-	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_ADV_STOP_IND,
-								sizeof(rtk_bt_le_adv_stop_ind_t));
-	if (!p_evt) {
-		return;
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_ADV_STOP_IND,
+									sizeof(rtk_bt_le_adv_stop_ind_t));
+		if (!p_evt) {
+			return;
+		}
+
+		p_le_adv_stop_ind = (rtk_bt_le_adv_stop_ind_t *)p_evt->data;
+		p_le_adv_stop_ind->err = 0;
+		p_le_adv_stop_ind->stop_reason = stop_reason;
+		rtk_bt_evt_indicate(p_evt, NULL);
 	}
-
-	p_le_adv_stop_ind = (rtk_bt_le_adv_stop_ind_t *)p_evt->data;
-	p_le_adv_stop_ind->err = 0;
-	p_le_adv_stop_ind->stop_reason = stop_reason;
-	rtk_bt_evt_indicate(p_evt, NULL);
 }
 
 static void bt_zephyr_connected_callback(struct bt_conn *conn, uint8_t err)
@@ -450,9 +466,7 @@ static void scan_cb_recv(const struct bt_le_scan_recv_info *info, struct net_buf
 
 			scan_res = (rtk_bt_le_scan_res_ind_t *)p_evt->data;
 			scan_res->num_report = 1;
-			scan_res->adv_report.evt_type = (rtk_bt_le_adv_report_type_t)(info->is_ext ?
-																		  get_adv_type(info->adv_props) :
-																		  info->adv_type);
+			scan_res->adv_report.evt_type = (rtk_bt_le_adv_report_type_t)info->adv_type;
 			scan_res->adv_report.addr.type = (rtk_bt_le_addr_type_t)info->addr->type;
 			memcpy(scan_res->adv_report.addr.addr_val, info->addr->a.val, BT_ADDR_SIZE);
 			scan_res->adv_report.len = buf->len;
@@ -1156,16 +1170,33 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 		return zephyr_err_to_rtk(err);
 	}
 
-	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_ADV_START_IND,
-								sizeof(rtk_bt_le_adv_start_ind_t));
-	if (!p_evt) {
-		return RTK_BT_ERR_NO_MEMORY;
-	}
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+	/* When mesh is running, app adv is treated as mesh adv (align with rtk_stack),
+	 * report mesh stack event instead of GAP event. */
+	if (rtk_bt_mesh_is_enable()) {
+		rtk_bt_mesh_stack_evt_start_adv_t *p_start_adv;
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_START_ADV,
+									sizeof(rtk_bt_mesh_stack_evt_start_adv_t));
+		if (!p_evt) {
+			return RTK_BT_ERR_NO_MEMORY;
+		}
+		p_start_adv = (rtk_bt_mesh_stack_evt_start_adv_t *)p_evt->data;
+		p_start_adv->result = err;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else
+#endif
+	{
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_ADV_START_IND,
+									sizeof(rtk_bt_le_adv_start_ind_t));
+		if (!p_evt) {
+			return RTK_BT_ERR_NO_MEMORY;
+		}
 
-	p_le_adv_start_ind = (rtk_bt_le_adv_start_ind_t *)p_evt->data;
-	p_le_adv_start_ind->adv_type = padv_param->type;
-	p_le_adv_start_ind->err = 0;
-	rtk_bt_evt_indicate(p_evt, NULL);
+		p_le_adv_start_ind = (rtk_bt_le_adv_start_ind_t *)p_evt->data;
+		p_le_adv_start_ind->adv_type = padv_param->type;
+		p_le_adv_start_ind->err = 0;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	}
 
 	return 0;
 }
@@ -1401,7 +1432,9 @@ static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
 		le_adv.options |= BT_LE_ADV_OPT_CODED;
 	} else if (padv_param->primary_adv_phy == RTK_BT_LE_PHYS_PRIM_ADV_1M &&
 			   padv_param->secondary_adv_phy == RTK_BT_LE_PHYS_1M) {
-		le_adv.options |= BT_LE_ADV_OPT_NO_2M;
+		if (!(padv_param->adv_event_prop & BT_HCI_LE_ADV_PROP_LEGACY)) {
+			le_adv.options |= BT_LE_ADV_OPT_NO_2M; //legacy adv cannot use this option
+		}
 	} else if (!(padv_param->primary_adv_phy == RTK_BT_LE_PHYS_PRIM_ADV_1M &&
 				 padv_param->secondary_adv_phy == RTK_BT_LE_PHYS_2M)) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1536,10 +1569,16 @@ static uint16_t bt_stack_le_gap_start_ext_adv(void *param)
 static uint16_t bt_stack_le_gap_stop_ext_adv(void *param)
 {
 	uint8_t id = *((uint8_t *)param);
+	bool idle = true;
 	int err;
 
 	if (!bt_stack_le_gap_ext_adv_handle_valid(id)) {
 		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	adv_idle_check_func(_ext_adv_tbl[id].adv, &idle);
+	if (idle) {
+		return RTK_BT_ERR_ALREADY_DONE;
 	}
 
 	err = bt_le_ext_adv_stop(_ext_adv_tbl[id].adv);

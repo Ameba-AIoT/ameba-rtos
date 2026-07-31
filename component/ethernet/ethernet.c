@@ -48,10 +48,23 @@ void eth_register_link_cb(link_up_down_callback pfunc)
 static void eth_config_mac_clock(void)
 {
 	u8 gmac_ckd;
-	const SocClk_Info_TypeDef *pSocClk_Info = &SocClk_Info[0];
+	u32 gmac_clk = 0;
+
+	const SocClk_Info_TypeDef *pSocClk_Info = &SocClk_Info[Boot_SocClk_Info_Idx];
 
 	/* Select a clock source that can be divided up to 50MHz */
 	gmac_ckd = PLL_ClkSrcGet(pSocClk_Info->SYSPLL_CLK, pSocClk_Info->USBPLL_CLK, CLK_LIMIT_GMAC);
+
+	if (gmac_ckd & IS_SYS_PLL) {
+		gmac_clk = pSocClk_Info->SYSPLL_CLK / GET_CLK_DIV(gmac_ckd);
+	} else {
+		gmac_clk = pSocClk_Info->USBPLL_CLK / GET_CLK_DIV(gmac_ckd);
+	}
+
+	if (gmac_clk != CLK_LIMIT_GMAC) {
+		RTK_LOGE(TAG, "GMAC Clock %d Hz is invalid. RMII requires 50MHz!\n", gmac_clk);
+		assert_param(0);
+	}
 
 	if (gmac_ckd & IS_SYS_PLL) {
 		RCC_PeriphClockSourceSet(GMAC, SYS_PLL);

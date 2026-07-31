@@ -97,12 +97,9 @@ struct whc_sdio {
 	uint32_t 		sdio_himr;
 	uint32_t 		sdio_hisr;
 	uint16_t		txbd_size;
-	uint16_t		rxbd_num;
 	uint16_t 		SdioTxBDFreeNum;
 	uint32_t 		SdioTxMaxSZ; //The Size of Single Tx buf addressed by TX_BD
 	uint8_t			tx_avail_int_triggered;
-	uint8_t	tx_block_mode;
-	uint8_t	rx_block_mode;
 	uint32_t block_transfer_len;
 
 	int32_t bSurpriseRemoved;
@@ -111,10 +108,8 @@ struct whc_sdio {
 
 	rtos_mutex_t host_send; /* mutex to protect inic host send */
 	rtos_sema_t host_recv_wake; /* for recv task */
-	rtos_sema_t host_recv_done; /* for recv task */
 	rtos_sema_t host_irq; /* for sdio irq */
 
-	uint8_t *rx_buf;
 
 	u8 used_buf_num;
 	u8 tx_buf[TX_BUF_NUM][4 + SIZE_TX_DESC + MAX_SKB_BUF_SIZE_NORMAL] __attribute__((aligned(4)));

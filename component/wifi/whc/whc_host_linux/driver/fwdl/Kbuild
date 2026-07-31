@@ -22,6 +22,8 @@ FWDL_OBJS-$(CONFIG_WHC_HCI_USB) += \
 
 ifeq ($(CONFIG_AMEBAGREEN2), y)
 FWDL_OBJS += whc_hal_rtl8721f.o
+else ifeq ($(CONFIG_AMEBAX), y)
+FWDL_OBJS += whc_hal_rtl8720f.o
 else
 $(error No valid IC selected for fwdl HAL.)
 endif

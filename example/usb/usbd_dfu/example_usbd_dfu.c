@@ -10,7 +10,6 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "os_wrapper.h"
-#include "usbd.h"
 #include "usbd_dfu.h"
 
 /* Private defines -----------------------------------------------------------*/

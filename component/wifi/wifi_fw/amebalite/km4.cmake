@@ -2,11 +2,7 @@ set(DIR ${WIFIFWDIR}/amebalite/ram)
 set(DIR_COMMON ${WIFIFWDIR}/common)
 set(DIR_TEST ${WIFIFWDIR}/amebalite/test/src)
 
-if(CONFIG_MP_INCLUDED AND CONFIG_MP_EXPAND)
-    set(TARGET_LIB wifi_fw_mp)
-else()
-    set(TARGET_LIB wifi_fw)
-endif()
+set(TARGET_LIB wifi_fw)
 
 set(
     MODULE_IFLAGS

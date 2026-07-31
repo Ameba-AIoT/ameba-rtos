@@ -10,16 +10,18 @@
 #include "ameba_soc.h"
 #include "example_spi_ext.h"
 #include "os_wrapper.h"
-#include <stdio.h>
+#define TAG "SPI_MASTER"
+
+#ifndef LOOP_COUNT
+#define LOOP_COUNT 1
+#endif
 
 /* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
-#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI1
-//#define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI0
+#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI0
 #else
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI
-//#define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI
 #endif
 #endif
 
@@ -83,7 +85,7 @@ u32 Gdma_multiblock_irq(void *Data)
 #if defined (SSI_DEBUG_ENABLE) && (SSI_DEBUG_ENABLE == 1)
 	u8 *pSrcData = (u8 *)(GDMA_InitStruct->GDMA_SrcAddr + BLOCK_SIZE * (GDMA_InitStruct->MuliBlockCunt));
 	for (int num = 0; num < BLOCK_SIZE; num++) {
-		printf("\r\src: %d\n", *(pSrcData + num));
+		RTK_LOGI(TAG, "src: %d\n", *(pSrcData + num));
 	}
 #endif
 
@@ -112,7 +114,7 @@ u32 Gdma_multiblock_irq(void *Data)
 	return 0;
 }
 
-bool SSI_Multi_TXGDMA_Init(PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pTxData, u32 Length)
+bool SSI_Multi_TXGDMA_Init(u8 Index, PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc, u8 *pTxData, u32 Length)
 {
 	u8 GdmaChnl;
 	IRQn_Type IrqNum;
@@ -123,18 +125,18 @@ bool SSI_Multi_TXGDMA_Init(PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData
 
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, 6);
 	if (GdmaChnl == 0xFF) {
-		printf("No Available DMA channel... \r\n");
+		RTK_LOGE(TAG, "No Available DMA channel... \n");
 		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
 
 	GDMA_InitStruct->GDMA_DIR = TTFCMemToPeri;
-	GDMA_InitStruct->GDMA_DstHandshakeInterface = SPI_DEV_TABLE[1].Tx_HandshakeInterface;
+	GDMA_InitStruct->GDMA_DstHandshakeInterface = SPI_DEV_TABLE[Index].Tx_HandshakeInterface;
 #ifndef CONFIG_AMEBAD
-	GDMA_InitStruct->GDMA_DstAddr = (u32)&SPI_DEV_TABLE[1].SPIx->SPI_DRx;
+	GDMA_InitStruct->GDMA_DstAddr = (u32)&SPI_DEV_TABLE[Index].SPIx->SPI_DRx;
 #else
-	GDMA_InitStruct->GDMA_DstAddr = (u32)&SPI_DEV_TABLE[1].SPIx->DR;
+	GDMA_InitStruct->GDMA_DstAddr = (u32)&SPI_DEV_TABLE[Index].SPIx->DR;
 #endif
 	GDMA_InitStruct->GDMA_Index = 0;
 	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
@@ -163,7 +165,7 @@ bool SSI_Multi_TXGDMA_Init(PGDMA_InitTypeDef GDMA_InitStruct, void *CallbackData
 			GDMA_InitStruct->GDMA_DstMsize  = MsizeEight;
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 		} else {
-			printf("SSI_TXGDMA_Init: Aligment Err: pTxData=0x%p,  Length=%lu\n", pTxData, Length);
+			RTK_LOGE(TAG, "SSI_TXGDMA_Init: Aligment Err: pTxData=0x%08x,  Length=%u\n", (u32)pTxData, Length);
 			return FALSE;
 		}
 	} else {
@@ -227,16 +229,17 @@ void spi_multiblock_task(void)
 	Pinmux_Swdoff();
 
 	int i = 0;
+	int spi_index = 0;
 	SSI_InitTypeDef SSI_InitStruct;
 
-	RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
-	Pinmux_Config(SPI1_MOSI, PINMUX_FUNCTION_SPIM);
-	Pinmux_Config(SPI1_MISO, PINMUX_FUNCTION_SPIM);
-	Pinmux_Config(SPI1_SCLK, PINMUX_FUNCTION_SPIM);
-	Pinmux_Config(SPI1_CS, PINMUX_FUNCTION_SPIM);
+	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
+	Pinmux_Config(SPI_MOSI, PINMUX_FUNCTION_SPIM);
+	Pinmux_Config(SPI_MISO, PINMUX_FUNCTION_SPIM);
+	Pinmux_Config(SPI_SCLK, PINMUX_FUNCTION_SPIM);
+	Pinmux_Config(SPI_CS, PINMUX_FUNCTION_SPIM);
 
 	/* init master SPI */
-	spi_master = SPI_DEV_TABLE[1].SPIx;
+	spi_master = SPI_DEV_TABLE[spi_index].SPIx;
 	SSI_SetRole(spi_master, SSI_MASTER);
 
 	SSI_StructInit(&SSI_InitStruct);
@@ -252,42 +255,53 @@ void spi_multiblock_task(void)
 		*((u8 *)MasterTxBuf + i) = i;
 	}
 
-	printf("----------- SPI DMA multi-block TX test -----------\n");
+	RTK_LOGI(TAG, "----------- SPI DMA multi-block TX test -----------\n");
 
-	MasterTxDone = 0;
-	MultiTxDone  = 0;
+	// Main test loop
+	for (int loop = 1; loop <= LOOP_COUNT; loop++) {
+#if LOOP_COUNT > 1
+		if (loop > 1) {
+			// wait slave finish last loop and ready for next loop
+			rtos_time_delay_ms(500);
+			RTK_LOGI(TAG, "SPI TX loop %d...\n", loop);
+		}
+#endif
+		MasterTxDone = 0;
+		MultiTxDone  = 0;
 
-	SSI_SetDmaEnable(spi_master, ENABLE, SPI_BIT_TDMAE);
-	SSI_Multi_TXGDMA_Init(&SSITxGdmaInitStruct, spi_master, (IRQ_FUN) Gdma_multiblock_irq, MasterTxBuf, TEST_BUF_SIZE);
+		SSI_SetDmaEnable(spi_master, ENABLE, SPI_BIT_TDMAE);
+		SSI_Multi_TXGDMA_Init(spi_index, &SSITxGdmaInitStruct, spi_master, (IRQ_FUN) Gdma_multiblock_irq, MasterTxBuf, TEST_BUF_SIZE);
 
-	/* transfer the remaining data with single block */
-	i = 0;
-	if (If_single) {
-		while (MultiTxDone == 0) {
-			DelayMs(5);
-			i++;
-			if (i > 3000) {
-				printf("SPI Multi Block Timeout\r\n");
-				break;
+		/* transfer the remaining data with single block */
+		i = 0;
+		if (If_single) {
+			while (MultiTxDone == 0) {
+				DelayMs(5);
+				i++;
+				if (i > 3000) {
+					RTK_LOGE(TAG, "SPI Multi Block Timeout\n");
+					break;
+				}
 			}
+
+			SSI_TXGDMA_Init(spi_index, &SSITxGdmaInitStruct, &SSITxGdmaInitStruct, (IRQ_FUN) Gdma_singleblock_irq, (u8 *)(MasterTxBuf + TEST_BUF_SIZE - If_single),
+							If_single);
 		}
 
-		SSI_TXGDMA_Init(1, &SSITxGdmaInitStruct, &SSITxGdmaInitStruct, (IRQ_FUN) Gdma_singleblock_irq, (u8 *)(MasterTxBuf + TEST_BUF_SIZE - If_single), If_single);
-	}
-
-	i = 0;
-	while (MasterTxDone == 0) {
-		DelayMs(100);
-		i++;
-		if (i > 150) {
-			printf("SPI Timeout\r\n");
-			break;
+		i = 0;
+		while (MasterTxDone == 0) {
+			DelayMs(100);
+			i++;
+			if (i > 150) {
+				RTK_LOGE(TAG, "SPI Timeout\n");
+				break;
+			}
 		}
 	}
 
 	Spi_free(spi_master);
 
-	printf("SPI tx Demo finished.\n\n");
+	RTK_LOGI(TAG, "SPI tx Demo finished.\n\n");
 
 	rtos_task_delete(NULL);
 
@@ -301,7 +315,7 @@ void spi_multiblock_task(void)
 int example_raw_spi_multi_dma_tx_master(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"spi_multiblock_task"), (rtos_task_t)spi_multiblock_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(spi_multiblock_task) failed", __FUNCTION__);
+		RTK_LOGE(TAG, "%s Create spi_multiblock_task task failed", __FUNCTION__);
 	}
 
 	return 0;

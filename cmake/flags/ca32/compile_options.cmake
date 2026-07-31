@@ -37,7 +37,9 @@ ameba_list_append_if(CONFIG_DYNAMIC_APP_LOAD_EN c_GLOBAL_MCU_COMPILE_ASM_OPTIONS
 # ++++++++++++++++ c_GLOBAL_MCU_COMPILE_C_OPTIONS +++++++++++++++ #
 ameba_list_append(c_GLOBAL_MCU_COMPILE_C_OPTIONS
     ${c_GLOBAL_MCU_COMPILE_ASM_OPTIONS}
-    -marm
+    -mthumb
+    # override the global -O2 (cmake/flags/common/compile_options.cmake) for CA32
+    -Os
 )
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 

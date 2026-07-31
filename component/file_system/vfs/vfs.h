@@ -22,9 +22,9 @@ extern "C" {
 #define VFS_O_CLOEXEC	0x02000000
 
 /*vfs_type*/
-#define VFS_FATFS		0X00
-#define VFS_LITTLEFS	0X01
-#define VFS_REALFS		0X02
+#define VFS_FATFS		0x00
+#define VFS_LITTLEFS	0x01
+#define VFS_REALFS	0x02
 #define VFS_FS_MAX	0x03
 
 /*vfs_interface_type*/

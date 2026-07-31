@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #include <whc_host_linux.h>
 #include <net/genetlink.h>
 #include <whc_host_rtw_cli_api.h>
@@ -55,7 +56,7 @@ int whc_host_do_mp_cmd(struct sk_buff *skb, struct genl_info *info)
 	ptr += 1;
 	memcpy(ptr, string_data, string_len);
 
-	whc_host_cmd_data_send_to_dev(buf, buf_len, 1);
+	whc_host_send_cmd_data_to_dev(buf, buf_len, 1);
 	kfree(buf);
 
 	return 0;
@@ -118,7 +119,7 @@ int whc_host_do_scan(struct sk_buff *skb, struct genl_info *info)
 	ptr += SIZE_TX_DESC;
 
 	memcpy(ptr, payload, payload_len);
-	whc_host_cmd_data_send_to_dev(buf, buf_len, 1);
+	whc_host_send_cmd_data_to_dev(buf, buf_len, 1);
 	kfree(buf);
 
 	//TODO Free scan_result
@@ -378,9 +379,27 @@ int pre_process_buf_data(u8 *buf, u16 size)
 			ret = FALSE;
 
 			break;
+		case WHC_WPA_OPS_UTIL_SCAN_RAW_DATA:
+
+			buf_p += 2;  /* skip cmd_id + idx, now points to scan_raw payload */
+			scan_raw_data_cb(buf_p);
+			ret = TRUE;
+
+			break;
 		default:
 			break;
 		}
+	} else if (whc_cmd_catg == WHC_WPA_STD_EVENT) {
+		u8 wpa_cmd_id = *buf_p;
+		u8 dev_idx   = *(buf_p + 1);
+		u8 sub_event = *(buf_p + 2);
+		u8 extra     = *(buf_p + 3);
+
+		printk("WHC_WPA_STD_EVENT cmd_id=%d idx=%d sub=0x%02x extra=0x%02x\n",
+			   wpa_cmd_id, dev_idx, sub_event, extra);
+
+		ret = FALSE;
+
 	} else if (whc_cmd_catg == WHC_WPA_OPS_EVENT) {
 		printk("WHC_WPA_OPS_EVENT cmd_id: %d\n", *buf_p);
 		switch (*buf_p) {
@@ -390,13 +409,6 @@ int pre_process_buf_data(u8 *buf, u16 size)
 			join_event_cb(buf_p);
 
 			ret = FALSE;
-
-			break;
-		case WHC_WPA_OPS_EVENT_SCAN_RAW_DATA:
-
-			buf_p += 2;  /* skip cmd_id + idx, now points to scan_raw payload */
-			scan_raw_data_cb(buf_p);
-			ret = TRUE;
 
 			break;
 		default:

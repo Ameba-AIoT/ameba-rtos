@@ -183,10 +183,10 @@ int whc_host_sta_free_stainfo(u8 iface_type, u8 *hwaddr)
 	pmlmeinfo->total_sta_count_by_port--;
 	spin_unlock(&pstapriv->sta_list_mutex);
 
-	/* free pendingq */
-	spin_lock(&pxmitpriv->mutex);
+	/* free pendingq (process context; pxmitpriv->mutex is also taken in softirq -> use _bh) */
+	spin_lock_bh(&pxmitpriv->mutex);
 	whc_host_hal_pending_q_free(iface_type, &psta->sta_xmitpriv);
-	spin_unlock(&pxmitpriv->mutex);
+	spin_unlock_bh(&pxmitpriv->mutex);
 
 	whc_host_defrag_ctrl_deinit(&psta->sta_recvpriv.defrag_ctrl);
 	del_timer_sync(&psta->sta_recvpriv.defrag_ctrl.defrag_timer);

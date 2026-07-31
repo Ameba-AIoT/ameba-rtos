@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbh_uvc.h"
+#include "usbh_uvc_class.h"
 #include "usbh_uvc_stream.h"
 #include "usbh_uvc_parse.h"
 
@@ -1021,7 +1022,7 @@ void usbh_uvc_stream_process_sof(usb_host_t *host)
 			}
 
 			if (stream->state != STREAM_STATE_CTRL_IDLE) {
-				usbh_notify_class_state_change(host, 0x00);
+				usbh_notify(host, 0x00, &usbh_uvc_driver);
 			}
 		}
 	}
@@ -1678,7 +1679,7 @@ int usbh_uvc_stream_start(usbh_uvc_stream_t *stream)
 	usbh_hw_uvc_start(stream->uvc_dec);
 #endif
 
-	usbh_notify_class_state_change(uvc->host, pipe->pipe_num);
+	usbh_notify(uvc->host, pipe->pipe_num, &usbh_uvc_driver);
 	return HAL_OK;
 }
 

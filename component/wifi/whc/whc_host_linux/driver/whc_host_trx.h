@@ -98,6 +98,10 @@ static inline unsigned char *dev_skb_put(struct dev_sk_buff *skb, unsigned int l
 struct whc_msg_node {
 	struct list_head	list;
 	void				*msg;
+#ifdef WHCH_TXAGG
+	u8					is_txagg;	/* msg points to struct whc_xmit_buf (recycle to pool), not sk_buff */
+	u8					txagg_num;
+#endif
 };
 #endif
 

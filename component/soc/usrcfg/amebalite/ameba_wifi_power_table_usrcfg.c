@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2024 Realtek Semiconductor Corp.
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+* Copyright (c) 2024 Realtek Semiconductor Corp.
+*
+* SPDX-License-Identifier: Apache-2.0
+*/
 
 #include "wifi_api.h"
 
@@ -14,7 +14,7 @@ volatile struct _pwr_lmt_regu_remap pwrlmt_regu_remapping[1] = {{0}};
 volatile u8 array_len_of_pwrlmt_regu_remapping = sizeof(pwrlmt_regu_remapping) / sizeof(struct _pwr_lmt_regu_remap);
 
 /******************************************************************************
- *                           TX_Power Limit
+ *                             TX_Power Limit
  ******************************************************************************/
 
 // regu_en = {FCC, MKK, ETSI, IC, KCC, ACMA, CHILE, MEXICO, WW, GL, UKRAINE, CN, QATAR, UK, NCC, EXT}
@@ -23,9 +23,9 @@ const bool regu_en[16] = {1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0};
 u8 regu_en_array_len = sizeof(regu_en) / sizeof(bool);
 
 const s8 tx_pwr_limit_2g_fcc[3][14] = {
-	{80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 76, 68, 127}, /*CCK*/
-	{80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 66, 56, 127}, /*OFDM*/
-	{76, 80, 80, 80, 80, 80, 80, 80, 80, 76, 74, 62, 54, 127}  /*HE_B20*/
+	{80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 78, 68, 56, 127}, /*CCK*/
+	{70, 80, 80, 80, 80, 80, 80, 80, 80, 80, 68, 52, 44, 127}, /*OFDM*/
+	{66, 78, 80, 80, 80, 80, 80, 80, 80, 76, 62, 52, 32, 127}  /*HE_B20*/
 };
 const u8 tx_shap_fcc[1][3] = {{1, 3, 3}}; /*{2G{CCK, OFDM, HE_B20}}*/
 
@@ -37,16 +37,16 @@ const s8 tx_pwr_limit_2g_etsi[3][14] = {
 const u8 tx_shap_etsi[1][3] = {{0, 0, 0}}; /*{2G{CCK, OFDM, HE_B20}}*/
 
 const s8 tx_pwr_limit_2g_mkk[3][14] = {
-	{68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 72}, /*CCK*/
-	{76, 78, 78, 78, 78, 78, 76, 78, 78, 78, 78, 78, 78, 127}, /*OFDM*/
+	{64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 72}, /*CCK*/
+	{76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 127}, /*OFDM*/
 	{78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 127}  /*HE_B20*/
 };
 const u8 tx_shap_mkk[1][3] = {{0, 0, 0}}; /*{2G{CCK, OFDM, HE_B20}}*/
 
 const s8 tx_pwr_limit_2g_ic[3][14] = {
-	{80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 76, 68, 127}, /*CCK*/
-	{80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 66, 56, 127}, /*OFDM*/
-	{76, 80, 80, 80, 80, 80, 80, 80, 80, 76, 74, 62, 54, 127}  /*HE_B20*/
+	{80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 78, 68, 56, 127}, /*CCK*/
+	{70, 80, 80, 80, 80, 80, 80, 80, 80, 80, 68, 52, 44, 127}, /*OFDM*/
+	{66, 78, 80, 80, 80, 80, 80, 80, 80, 76, 62, 52, 32, 127}  /*HE_B20*/
 };
 const u8 tx_shap_ic[1][3] = {{1, 3, 3}}; /*{2G{CCK, OFDM, HE_B20}}*/
 
@@ -66,8 +66,8 @@ const u8 tx_shap_cn[1][3] = {{1, 3, 3}}; /*{2G{CCK, OFDM, HE_B20}}*/
 
 const s8 tx_pwr_limit_2g_ww[3][14] = {
 	{60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 54, 72}, /*CCK*/
-	{68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 62, 54, 127}, /*OFDM*/
-	{68, 68, 68, 68, 68, 68, 68, 68, 68, 66, 66, 60, 48, 127}  /*HE_B20*/
+	{68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 52, 44, 127}, /*OFDM*/
+	{66, 68, 68, 68, 68, 68, 68, 68, 68, 66, 62, 52, 32, 127}  /*HE_B20*/
 };
 const s8 tx_pwr_limit_2g_acma[][CH_NULL] = {{0}};
 const u8 tx_shap_acma[][CH_NULL] = {{0}};
@@ -75,6 +75,8 @@ const s8 tx_pwr_limit_2g_chile[][CH_NULL] = {{0}};
 const u8 tx_shap_chile[][CH_NULL] = {{0}};
 const s8 tx_pwr_limit_2g_mexico[][CH_NULL] = {{0}};
 const u8 tx_shap_mexico[][CH_NULL] = {{0}};
+const s8 tx_pwr_limit_2g_gl[][CH_NULL] = {{0}};
+const u8 tx_shap_gl[][CH_NULL] = {{0}};
 const s8 tx_pwr_limit_2g_ukraine[][CH_NULL] = {{0}};
 const u8 tx_shap_ukraine[][CH_NULL] = {{0}};
 const s8 tx_pwr_limit_2g_qatar[][CH_NULL] = {{0}};
@@ -91,9 +93,9 @@ const u8 tx_shap_ext[][CH_NULL] = {{0}};
  *                           txpwr_lmt_ru
  ******************************************************************************/
 const s8 tx_pwr_limit_ru_2g_fcc[3][14] = {
-	{54, 74, 76, 80, 80, 80, 80, 80, 76, 64, 44, 44, 6, 127}, /*HE-RU26*/
-	{56, 76, 80, 80, 80, 80, 80, 80, 80, 76, 62, 60, 16, 127}, /*HE-RU52*/
-	{74, 76, 80, 80, 80, 80, 80, 80, 80, 78, 66, 66, 30, 127}  /*HE-RU106*/
+	{20, 28, 40, 46, 46, 46, 46, 38, 30, 16, 8, 6, -16, 127}, /*HE-RU26*/
+	{36, 44, 50, 50, 50, 50, 50, 42, 42, 30, 22, 26, 10, 127}, /*HE-RU52*/
+	{60, 66, 66, 66, 66, 66, 66, 58, 58, 56, 48, 52, 24, 127}  /*HE-RU106*/
 };
 const u8 tx_shap_ru_fcc[1][3] = {{0, 0, 0}}; /*{2G{HE-RU26, HE-RU52, HE-RU106}*/
 
@@ -105,16 +107,16 @@ const s8 tx_pwr_limit_ru_2g_etsi[3][14] = {
 const u8 tx_shap_ru_etsi[1][3] = {{0, 0, 0}}; /*{2G{HE-RU26, HE-RU52, HE-RU106}*/
 
 const s8 tx_pwr_limit_ru_2g_mkk[3][14] = {
-	{36, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 36, 127}, /*HE-RU26*/
-	{48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 46, 127}, /*HE-RU52*/
-	{58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 127}  /*HE-RU106*/
+	{40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 127}, /*HE-RU26*/
+	{52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 127}, /*HE-RU52*/
+	{62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 127}  /*HE-RU106*/
 };
 const u8 tx_shap_ru_mkk[1][3] = {{0, 0, 0}}; /*{2G{HE-RU26, HE-RU52, HE-RU106}*/
 
 const s8 tx_pwr_limit_ru_2g_ic[3][14] = {
-	{54, 74, 76, 80, 80, 80, 80, 80, 76, 64, 44, 44, 6, 127}, /*HE-RU26*/
-	{56, 76, 80, 80, 80, 80, 80, 80, 80, 76, 62, 60, 16, 127}, /*HE-RU52*/
-	{74, 76, 80, 80, 80, 80, 80, 80, 80, 78, 66, 66, 30, 127}  /*HE-RU106*/
+	{20, 28, 40, 46, 46, 46, 46, 38, 30, 16, 8, 6, -16, 127}, /*HE-RU26*/
+	{36, 44, 50, 50, 50, 50, 50, 42, 42, 30, 22, 26, 10, 127}, /*HE-RU52*/
+	{60, 66, 66, 66, 66, 66, 66, 58, 58, 56, 48, 52, 24, 127}  /*HE-RU106*/
 };
 const u8 tx_shap_ru_ic[1][3] = {{0, 0, 0}}; /*{2G{HE-RU26, HE-RU52, HE-RU106}*/
 
@@ -133,9 +135,9 @@ const s8 tx_pwr_limit_ru_2g_cn[3][14] = {
 const u8 tx_shap_ru_cn[1][3] = {{0, 0, 0}}; /*{2G{HE-RU26, HE-RU52, HE-RU106}*/
 
 const s8 tx_pwr_limit_ru_2g_ww[3][14] = {
-	{36, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 6, 127}, /*HE-RU26*/
-	{48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 16, 127}, /*HE-RU52*/
-	{58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 58, 30, 127}  /*HE-RU106*/
+	{20, 28, 38, 38, 38, 38, 38, 38, 30, 16, 8, 6, -16, 127}, /*HE-RU26*/
+	{36, 44, 48, 48, 48, 48, 48, 42, 42, 30, 22, 26, 10, 127}, /*HE-RU52*/
+	{60, 60, 60, 60, 60, 60, 60, 58, 58, 56, 48, 52, 24, 127}  /*HE-RU106*/
 };
 const s8 tx_pwr_limit_ru_2g_acma[][CH_NULL] = {{0}};
 const u8 tx_shap_ru_acma[][CH_NULL] = {{0}};
@@ -143,6 +145,8 @@ const s8 tx_pwr_limit_ru_2g_chile[][CH_NULL] = {{0}};
 const u8 tx_shap_ru_chile[][CH_NULL] = {{0}};
 const s8 tx_pwr_limit_ru_2g_mexico[][CH_NULL] = {{0}};
 const u8 tx_shap_ru_mexico[][CH_NULL] = {{0}};
+const s8 tx_pwr_limit_ru_2g_gl[][CH_NULL] = {{0}};
+const u8 tx_shap_ru_gl[][CH_NULL] = {{0}};
 const s8 tx_pwr_limit_ru_2g_ukraine[][CH_NULL] = {{0}};
 const u8 tx_shap_ru_ukraine[][CH_NULL] = {{0}};
 const s8 tx_pwr_limit_ru_2g_qatar[][CH_NULL] = {{0}};
@@ -296,12 +300,15 @@ s8 wifi_get_power_limit_and_limit_ru_by_ch(u8 regulation, u8 chnl, u8 limit_rate
 			*tx_shape_idx = tx_shap_ext[band][limit_rate];
 		}
 		break;
+
 	default:
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "pwrlmt regu not exist\n");
 		break;
 	}
 
 	return val;
 }
 
-// #define TXPWR_TOOL_MAJOR_UPDATE 1       /* since 1.1.15 */
+
+//#define TXPWR_TOOL_MAJOR_UPDATE 1       /* since 1.1.15 */
 #define TXPWR_TOOL_MAJOR_UPDATE 2       /* since 1.1.17 */

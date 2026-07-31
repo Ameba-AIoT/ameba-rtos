@@ -26,6 +26,13 @@ int  whc_host_xmit_enc_software(u8 iface_type, struct whch_security_priv *psecur
 /* TX entry */
 int  whc_host_xmit_prehandle(int idx, struct sk_buff *pskb);
 
+#ifdef WHCH_TXAGG
+/* TX aggregation: pooled copy buffer for one [whc_msg_info][txdesc+frame]... bulk-out transfer */
+struct whc_xmit_buf *whc_host_xmitbuf_alloc(void);
+void whc_host_xmitbuf_free(struct whc_xmit_buf *pxmitbuf);
+void whc_host_xmit_enqueue_agg(int idx, struct whc_xmit_buf *pxmitbuf, u8 agg_num);
+#endif
+
 /* MLME priv init / deinit */
 void whc_host_mlme_priv_init(void);
 void whc_host_mlme_priv_deinit(void);

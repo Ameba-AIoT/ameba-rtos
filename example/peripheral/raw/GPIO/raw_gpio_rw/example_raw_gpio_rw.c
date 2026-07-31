@@ -16,6 +16,10 @@ void raw_gpio_demo(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct_LED;
 	GPIO_InitTypeDef GPIO_InitStruct_PUSHBT;
+#ifdef GPIO_LOOPBACK
+	static u8 output_value = 0;
+	u8 input_value;
+#endif
 
 	printf("raw_gpio_rw_demo \r\n");
 
@@ -34,6 +38,16 @@ void raw_gpio_demo(void)
 	GPIO_Init(&GPIO_InitStruct_PUSHBT);
 
 	while (1) {
+#ifdef GPIO_LOOPBACK
+		output_value = !output_value; // Toggle output
+		GPIO_WriteBit(GPIO_LED_PIN, output_value);
+		input_value = GPIO_ReadDataBit(GPIO_PUSHBT_PIN); // Read and verify
+		if (input_value == output_value) {
+			printf("PASS: Output=%d, Input=%d\r\n", output_value, input_value);
+		} else {
+			printf("FAIL: Output=%d, Input=%d (Check wire!)\r\n", output_value, input_value);
+		}
+#else
 		if (GPIO_ReadDataBit(GPIO_PUSHBT_PIN)) {
 			GPIO_WriteBit(GPIO_LED_PIN, 0); //turn off LED
 			// printf("0: read 0x%x, %lu \n", GPIO_LED_PIN, GPIO_ReadDataBit(GPIO_LED_PIN));
@@ -41,6 +55,7 @@ void raw_gpio_demo(void)
 			GPIO_WriteBit(GPIO_LED_PIN, 1); // turn on LED
 			// printf("1: read 0x%x, %lu \n", GPIO_LED_PIN, GPIO_ReadDataBit(GPIO_LED_PIN));
 		}
+#endif
 		rtos_time_delay_ms(1000);
 	}
 }

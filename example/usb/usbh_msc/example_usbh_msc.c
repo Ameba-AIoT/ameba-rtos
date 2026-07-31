@@ -145,7 +145,7 @@ static int msc_cb_process(usb_host_t *host, u8 msg)
 	return HAL_OK;
 }
 
-/* ── I/O test routine (10 files, each with W/R of multiple sizes) ────────*/
+/*  I/O test routine (10 files, each with W/R of multiple sizes) */
 static int usbh_msc_file_test(void)
 {
 	FATFS fs;
@@ -348,6 +348,7 @@ static void example_usbh_msc_hotplug_thread(void *param)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug: deinit USB stack\n");
 			rtos_time_delay_ms(100);
 
+			usbh_stop();
 			usbh_msc_deinit();
 			rtos_time_delay_ms(20); /* let USB main task flush its queue before deletion */
 			usbh_deinit();
@@ -374,6 +375,9 @@ static void example_usbh_msc_hotplug_thread(void *param)
 				usbh_deinit();
 				break;
 			}
+
+			/* Re-arm USB TRX after the re-init. */
+			usbh_start();
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug: USB stack re-initialized\n");
 		}
@@ -415,6 +419,9 @@ void example_usbh_msc_thread(void *param)
 		usbh_deinit();
 		goto exit_free;
 	}
+
+	/* All class drivers registered; start USB TRX so enumeration can run. */
+	usbh_start();
 
 #if CONFIG_USBH_MSC_HOTPLUG
 	/* Start hotplug thread (waits on detach_sema, re-inits USB stack) */
@@ -461,6 +468,7 @@ void example_usbh_msc_thread(void *param)
 
 	/* Cleanup (unreachable in CONFIG_USBH_MSC_HOTPLUG=1 for the test thread, but keeps
 	 * the pattern consistent) */
+	usbh_stop();
 	usbh_msc_deinit();
 	usbh_deinit();
 

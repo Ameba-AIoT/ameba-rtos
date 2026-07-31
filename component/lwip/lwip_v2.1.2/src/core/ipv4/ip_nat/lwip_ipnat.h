@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 #if IP_FORWARD
-#if IP_NAT
+#if defined(IP_NAT) && IP_NAT
 
 /* ======================================================================== */
 /*                           Table Configuration                            */

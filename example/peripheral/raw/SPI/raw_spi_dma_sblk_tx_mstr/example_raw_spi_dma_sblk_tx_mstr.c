@@ -10,16 +10,18 @@
 #include "ameba_soc.h"
 #include "example_spi_ext.h"
 #include "os_wrapper.h"
-#include <stdio.h>
+#define TAG "SPI_MASTER"
+
+#ifndef LOOP_COUNT
+#define LOOP_COUNT 1
+#endif
 
 /* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
-#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI1
-//#define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI0
+#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI0
 #else
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI
-//#define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI
 #endif
 #endif
 
@@ -86,17 +88,17 @@ void spi_singleblock_task(void)
 
 	int i = 0;
 
-	/* configure SPI1 as master tx with dma mode */
-	spi_master.Index = 0x1;
+	/* configure SPI0 as master tx with dma mode */
+	spi_master.Index = 0;
 	spi_master.spi_dev = SPI_DEV_TABLE[spi_master.Index].SPIx;
 
-	/* Init SPI1 as master */
-	RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
+	/* Init SPI0 as master */
+	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
 
-	Pinmux_Config(SPI1_MOSI, PINMUX_FUNCTION_SPIM);
-	Pinmux_Config(SPI1_MISO, PINMUX_FUNCTION_SPIM);
-	Pinmux_Config(SPI1_SCLK, PINMUX_FUNCTION_SPIM);
-	Pinmux_Config(SPI1_CS, PINMUX_FUNCTION_SPIM);
+	Pinmux_Config(SPI_MOSI, PINMUX_FUNCTION_SPIM);
+	Pinmux_Config(SPI_MISO, PINMUX_FUNCTION_SPIM);
+	Pinmux_Config(SPI_SCLK, PINMUX_FUNCTION_SPIM);
+	Pinmux_Config(SPI_CS, PINMUX_FUNCTION_SPIM);
 
 	SSI_InitTypeDef SSI_InitStructM;
 
@@ -115,26 +117,37 @@ void spi_singleblock_task(void)
 		*((u8 *)MasterTxBuf + i) = i;
 	}
 
-	printf("------------ SPI tx %d Bytes in DMA mode ---------------\n", TEST_BUF_SIZE);
-	MasterTxDone = 0;
+	RTK_LOGI(TAG, "------------ SPI tx %d Bytes in DMA mode ---------------\n", TEST_BUF_SIZE);
 
-	SSI_SetDmaEnable(spi_master.spi_dev, ENABLE, SPI_BIT_TDMAE);
-	SSI_TXGDMA_Init(spi_master.Index, &spi_master.SSITxGdmaInitStruct, &spi_master,
-					(IRQ_FUN) spi_dma_tx_irq, (u8 *) MasterTxBuf, TEST_BUF_SIZE);
+	// Main test loop
+	for (int loop = 1; loop <= LOOP_COUNT; loop++) {
+#if LOOP_COUNT > 1
+		if (loop > 1) {
+			// wait slave finish last loop and ready for next loop
+			rtos_time_delay_ms(500);
+			RTK_LOGI(TAG, "SPI tx loop %d...\n", loop);
+		}
+#endif
+		MasterTxDone = 0;
 
-	i = 0;
-	while (MasterTxDone == 0) {
-		DelayMs(100);
-		i++;
-		if (i > 150) {
-			printf("SPI Timeout\r\n");
-			break;
+		SSI_SetDmaEnable(spi_master.spi_dev, ENABLE, SPI_BIT_TDMAE);
+		SSI_TXGDMA_Init(spi_master.Index, &spi_master.SSITxGdmaInitStruct, &spi_master,
+						(IRQ_FUN) spi_dma_tx_irq, (u8 *) MasterTxBuf, TEST_BUF_SIZE);
+
+		i = 0;
+		while (MasterTxDone == 0) {
+			DelayMs(100);
+			i++;
+			if (i > 150) {
+				RTK_LOGE(TAG, "SPI Timeout\n");
+				break;
+			}
 		}
 	}
 
 	Spi_free(&spi_master);
 
-	printf("SPI tx Demo finished.\n");
+	RTK_LOGI(TAG, "SPI tx Demo finished.\n");
 
 	rtos_task_delete(NULL);
 
@@ -148,7 +161,7 @@ void spi_singleblock_task(void)
 int example_spi_dma_single_block_tx_master(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"spi_singleblock_task"), (rtos_task_t)spi_singleblock_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		printf("\n\r%s rtos_task_create(spi_singleblock_task) failed", __FUNCTION__);
+		RTK_LOGE(TAG, "%s Create spi_singleblock_task task failed", __FUNCTION__);
 	}
 
 	return 0;

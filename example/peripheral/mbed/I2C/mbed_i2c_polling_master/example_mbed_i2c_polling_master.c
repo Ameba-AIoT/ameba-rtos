@@ -19,6 +19,9 @@
 // RESTART verification
 //#define I2C_RESTART_DEMO
 
+#ifndef LOOP_COUNT
+#define LOOP_COUNT 1
+#endif
 
 #define MBED_I2C_SLAVE_ADDR0    0x23
 #define MBED_I2C_BUS_CLK        100000  //hz
@@ -91,6 +94,18 @@ void i2c_dual_master_task(void)
 	i2c_read(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
 
 	i2c_master_rx_check();
+
+#if (LOOP_COUNT - 1)
+	for (int i = 2; i <= LOOP_COUNT; i++) {
+		// Master write - Slave read
+		RTK_LOGI(TAG, "Master write %d>>>\n", i);
+		i2c_write(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], I2C_DATA_LENGTH, 1);
+		// Master read - Slave write
+		RTK_LOGI(TAG, "Master read %d>>>\n", i);
+		i2c_read(&i2cmaster, MBED_I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
+		i2c_master_rx_check();
+	}
+#endif
 
 	while (1) {;}
 }

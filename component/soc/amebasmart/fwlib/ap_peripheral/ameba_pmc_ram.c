@@ -79,8 +79,8 @@ void SOCPS_Sleep(void)
 	RTK_LOGI(TAG, "CA32 sleep\n");
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_TICKLESS_INDICATION, (PIPC_MSG_STRUCT)&sleep_param);
 
-	asm volatile("wfe");
-	asm volatile("wfe");
+	__WFE();
+	__WFE();
 }
 
 void SOCPS_LPWAP_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)

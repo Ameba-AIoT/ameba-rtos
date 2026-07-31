@@ -12,7 +12,6 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_uvc.h"
-#include "usbh.h"
 
 /* Private defines -----------------------------------------------------------*/
 /*Just capture and abandon frame*/
@@ -1249,6 +1248,7 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug: uvc_test exited\n");
 
+			usbh_stop();
 			usbh_uvc_deinit();
 			usbh_deinit();
 			rtos_time_delay_ms(10);
@@ -1268,6 +1268,9 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 				usbh_deinit();
 				break;
 			}
+
+			/* Re-arm USB TRX after the re-init. */
+			usbh_start();
 		}
 	}
 
@@ -1607,9 +1610,11 @@ static void example_usbh_uvc_task(void *param) {
 
 	ret = usbh_uvc_init(&uvc_cfg, &uvc_cb);
 	if (ret != HAL_OK) {
-		usbh_deinit();
 		goto usb_deinit_exit;
 	}
+
+	/* All class drivers registered; start USB TRX so enumeration can run. */
+	usbh_start();
 
 #if CONFIG_USBH_UVC_HOT_PLUG
 	ret = rtos_task_create(&hotplug_task, "example_usbh_uvc_hotplug_thread",
@@ -1639,6 +1644,7 @@ delete_hotplug_task_exit:
 
 #if CONFIG_USBH_UVC_HOT_PLUG
 usbh_uvc_deinit_exit:
+	usbh_stop();
 #endif
 	usbh_uvc_deinit();
 

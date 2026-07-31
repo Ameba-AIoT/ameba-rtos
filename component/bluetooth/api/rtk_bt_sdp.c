@@ -37,7 +37,7 @@ uint16_t rtk_sdp_record_add(void *record, uint32_t length)
 
 uint16_t rtk_bt_sdp_discov_start(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;

@@ -7,7 +7,17 @@
 #define whc_dev_send                   whc_spi_dev_send
 #define whc_dev_flowctrl(a, b)		   whc_spi_dev_flowctrl(a, b)
 
-#ifdef CONFIG_AMEBAGREEN2  // need use QFN100
+#ifdef CONFIG_RTL8720F
+#define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI0
+#define DEV_READY_PIN				_PA_4
+#define DEV_TX_REQ_PIN				_PA_5
+#define SPIS_MOSI                   _PA_1
+#define SPIS_MISO                   _PA_2
+#define SPIS_SCLK                   _PA_0
+#define SPIS_CS                     _PA_3
+#define WHC_RECOVER_TIM_IDX			0
+
+#elif defined (CONFIG_AMEBAGREEN2)  // need use QFN100
 #define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI0
 #define DEV_READY_PIN				_PA_22
 #define DEV_TX_REQ_PIN				_PA_24
@@ -15,7 +25,7 @@
 #define SPIS_MISO                   _PA_31
 #define SPIS_SCLK                   _PA_29
 #define SPIS_CS                     _PB_0
-#define WHC_RECOVER_TIM_IDX			0 //todo: need check
+#define WHC_RECOVER_TIM_IDX			0
 
 #elif defined (CONFIG_AMEBADPLUS)
 #define PINMUX_FUNCTION_SPIS	    PINMUX_FUNCTION_SPI
@@ -97,7 +107,7 @@ struct whc_spi_priv_t {
 
 static inline void set_dev_rdy_pin(u8 status)
 {
-#ifdef CONFIG_AMEBAGREEN2
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
 	GPIO_WriteBit(DEV_READY_PIN, status);
 #else
 	GPIO_WriteBit_Critical(DEV_READY_PIN, status);
@@ -106,7 +116,7 @@ static inline void set_dev_rdy_pin(u8 status)
 
 static inline void set_dev_txreq_pin(u8 status)
 {
-#ifdef CONFIG_AMEBAGREEN2
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
 	GPIO_WriteBit(DEV_TX_REQ_PIN, status);
 #else
 	GPIO_WriteBit_Critical(DEV_TX_REQ_PIN, status);

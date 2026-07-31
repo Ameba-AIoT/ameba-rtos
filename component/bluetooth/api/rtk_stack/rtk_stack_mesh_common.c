@@ -41,7 +41,7 @@
 static bool dev_info_switch_flag = false;
 static uint8_t rtk_bt_mesh_uuid_user[16] = {0};
 extern bool rtk_ble_mesh_scan_enable_flag;
-static mesh_role_t mesh_role = 0xff;
+static mesh_role_t mesh_role;
 
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 extern uint8_t proxy_client_conn_id;
@@ -277,7 +277,7 @@ static bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 	}
 	case PROV_CB_TYPE_COMPLETE: {
 		bool dkri_flag = 0;
-		uint8_t dkri;
+		uint8_t dkri = 0;
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 		if (MESH_ROLE_PROVISIONER == mesh_role) {
 			/* the spec requires to disconnect, but you can remove it as you like! :) */
@@ -637,8 +637,9 @@ T_APP_RESULT bt_stack_mesh_client_callback(T_CLIENT_ID client_id, uint8_t conn_i
 	T_APP_RESULT  result = APP_RESULT_SUCCESS;
 	if (client_id == prov_client_id) {
 		prov_client_cb_data_t *pcb_data = (prov_client_cb_data_t *)p_data;
-		rtk_bt_mesh_stack_prov_dis_result dis_res;
+		rtk_bt_mesh_stack_prov_dis_result dis_res = RTK_BT_MESH_PROV_DISC_NOT_FOUND;
 		rtk_bt_mesh_stack_evt_prov_dis_t *dis_event = NULL;
+		rtk_bt_evt_t *p_evt = NULL;
 		switch (pcb_data->cb_type) {
 		case PROV_CLIENT_CB_TYPE_DISC_STATE:
 			switch (pcb_data->cb_content.disc_state) {
@@ -657,7 +658,6 @@ T_APP_RESULT bt_stack_mesh_client_callback(T_CLIENT_ID client_id, uint8_t conn_i
 			default:
 				break;
 			}
-			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_PROV_SERVICE_DIS_RESULT, sizeof(rtk_bt_mesh_stack_evt_prov_dis_t));
 			dis_event = (rtk_bt_mesh_stack_evt_prov_dis_t *)p_evt->data;
 			dis_event->dis_result = dis_res;
@@ -672,8 +672,9 @@ T_APP_RESULT bt_stack_mesh_client_callback(T_CLIENT_ID client_id, uint8_t conn_i
 		}
 	} else if (client_id == proxy_client_id) {
 		proxy_client_cb_data_t *pcb_data = (proxy_client_cb_data_t *)p_data;
-		rtk_bt_mesh_stack_proxy_dis_result dis_res;
+		rtk_bt_mesh_stack_proxy_dis_result dis_res = RTK_BT_MESH_PROXY_DISC_NOT_FOUND;
 		rtk_bt_mesh_stack_evt_proxy_dis_t *dis_event = NULL;
+		rtk_bt_evt_t *p_evt = NULL;
 		switch (pcb_data->cb_type) {
 		case PROXY_CLIENT_CB_TYPE_DISC_STATE:
 			switch (pcb_data->cb_content.disc_state) {
@@ -692,7 +693,6 @@ T_APP_RESULT bt_stack_mesh_client_callback(T_CLIENT_ID client_id, uint8_t conn_i
 			default:
 				break;
 			}
-			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_PROXY_SERVICE_DIS_RESULT, sizeof(rtk_bt_mesh_stack_evt_proxy_dis_t));
 			dis_event = (rtk_bt_mesh_stack_evt_proxy_dis_t *)p_evt->data;
 			dis_event->dis_result = dis_res;
@@ -1687,11 +1687,12 @@ static uint16_t rtk_stack_prov_service_discovery(rtk_bt_mesh_stack_act_prov_dis_
 static uint16_t rtk_stack_prov_service_set_notify(rtk_bt_mesh_stack_act_prov_set_notify_t *prov_notify)
 {
 	uint16_t ret;
+	uint8_t ctx_id = 0;
 	if (!prov_client_data_out_cccd_set(prov_client_conn_id, prov_notify->is_enable)) {
 		ret = RTK_BT_MESH_STACK_API_FAIL;
 		goto end;
 	}
-	uint8_t ctx_id = prov_service_alloc_proxy_ctx(prov_client_conn_id);
+	ctx_id = prov_service_alloc_proxy_ctx(prov_client_conn_id);
 	if (ctx_id == MESH_PROXY_PROTOCOL_RSVD_CTX_ID) {
 		ret = RTK_BT_MESH_STACK_API_FAIL;
 		goto end;
@@ -1784,7 +1785,7 @@ static bool rtk_stack_lpn_init(rtk_bt_mesh_stack_act_lpn_init_t *lpn)
 static rtk_bt_mesh_stack_lpn_req_result_type rtk_stack_lpn_req(rtk_bt_mesh_stack_act_lpn_req_t *lpn)
 {
 	lpn_req_reason_t req_result;
-	rtk_bt_mesh_stack_lpn_req_result_type rtk_req_result;
+	rtk_bt_mesh_stack_lpn_req_result_type rtk_req_result = RTK_BT_MESH_LPN_REQ_REASON_UNKNOWN;
 	lpn_req_params_t req_params = {50, 100, {1, 0, 0, 0}, NULL};
 	uint8_t fn_index = lpn->fn_index;
 	uint16_t net_key_index = lpn->net_key_index;

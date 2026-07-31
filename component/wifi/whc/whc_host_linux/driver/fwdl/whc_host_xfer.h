@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /******************************************************************************
  *
  * Copyright(c) Realtek Corporation. All rights reserved.
@@ -52,11 +53,12 @@
 #define WHC_XFER_CFG_WRITE_CHK_MASK			0x01
 
 #define WHC_XFER_MANIFEST_SIZE				4096
+#define PAGE_SIZE_4K					0x1000U /* Flash sector / 4KB page size for address alignment */
 
 #define WHC_XFER_MANIFEST_POS_HEAD			0
 #define WHC_XFER_MANIFEST_POS_TAIL			1
 
-#define WHC_XFER_FLASH_PAGE_SIZE				1024
+#define WHC_XFER_FLASH_WRITE_SIZE				1024
 
 #define WHC_XFER_DEFAULT_TIMEOUT				5
 #define WHC_XFER_QUERY_TIMEOUT				5

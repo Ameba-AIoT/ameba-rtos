@@ -39,8 +39,9 @@ static const char *const TAG = "I2C";
 //#define I2C_RESTART_DEMO
 
 /*LOOP write then read 3 times*/
-#define I2C_LOOP_TEST
-
+#ifndef LOOP_COUNT
+#define LOOP_COUNT 3
+#endif
 
 i2c_t i2cmaster;
 i2c_t i2cslave;
@@ -352,24 +353,16 @@ void i2c_dual_master_task(void)
 	DelayMs(50);
 	i2c_master_rx_check();
 
-#ifdef I2C_LOOP_TEST
-
-	RTK_LOGI(TAG, "Master polling write2>>>\n");
-	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], I2C_DATA_LENGTH, 1);
-	DelayMs(50);
-	RTK_LOGI(TAG, "Master polling read2>>>\n");
-	i2c_Read(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
-	DelayMs(50);
-	i2c_master_rx_check();
-
-	RTK_LOGI(TAG, "Master polling write3>>>\n");
-	i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], I2C_DATA_LENGTH, 1);
-	DelayMs(50);
-	RTK_LOGI(TAG, "Master polling read3>>>\n");
-	i2c_Read(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
-	DelayMs(50);
-
-	i2c_master_rx_check();
+#if (LOOP_COUNT - 1)
+	for (int i = 2; i <= LOOP_COUNT; i++) {
+		RTK_LOGI(TAG, "Master polling write%d>>>\n", i);
+		i2c_Write(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatasrc[0], I2C_DATA_LENGTH, 1);
+		DelayMs(50);
+		RTK_LOGI(TAG, "Master polling read%d>>>\n", i);
+		i2c_Read(&i2cmaster, I2C_SLAVE_ADDR0, (char *)&i2cdatarddst[0], I2C_DATA_LENGTH, 1);
+		DelayMs(50);
+		i2c_master_rx_check();
+	}
 #endif
 
 	while (1);

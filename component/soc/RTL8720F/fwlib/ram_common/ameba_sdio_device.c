@@ -334,6 +334,7 @@ void SPDIO_TxBd_DataReady_DeviceRx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev,
 		if (SDIO_WIFI == SDIO) {
 			pTxDesc = (PINIC_TX_DESC)(pTXBD->Address);
 			DCache_Invalidate((u32)pTxDesc, sizeof(INIC_TX_DESC));
+			assert_param(pTxDesc->txpktsize != 0); /* TRUE When SDIO is Non-Secure Master */
 
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "SPDIO_DeviceRx: PktSz=%d Offset=%d\n", pTxDesc->txpktsize, pTxDesc->offset);
 

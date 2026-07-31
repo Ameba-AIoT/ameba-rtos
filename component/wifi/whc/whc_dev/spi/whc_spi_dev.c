@@ -378,7 +378,7 @@ void whc_spi_dev_init(void)
 #endif
 
 	/* Initialize Timer*/
-#ifdef CONFIG_AMEBAGREEN2
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
 	/* Switch clock source to 40M (default is 32768), default frequency division is 40, so acquire 1M timer (Dplus APBPeriph_HTIM0 is 1M).
 	   Can use RCC_PeriphClockDividerSet(XTAL_LTIM0, 4) to set div4, acquire 10M timer. */
 	RCC_PeriphClockSourceSet(LTIM0, XTAL);
@@ -404,6 +404,8 @@ void whc_spi_dev_init(void)
 	Pinmux_Config(SPIS_CS, PINMUX_FUNCTION_SPIS);//CS
 	PAD_PullCtrl(SPIS_CS, GPIO_PuPd_UP);  // pull-up, default 1
 	PAD_PullCtrl(SPIS_SCLK, GPIO_PuPd_DOWN);
+	PAD_PullCtrl(SPIS_MOSI, GPIO_PuPd_NOPULL);
+	PAD_PullCtrl(SPIS_MISO, GPIO_PuPd_NOPULL);
 
 	SSI_SetRole(WHC_SPI_DEV, SSI_SLAVE);
 	SSI_StructInit(&SSI_InitStructSlave);

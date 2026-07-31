@@ -55,6 +55,35 @@ static struct realfs_bdev g_bdev;
 static struct realfs_erasedev g_edev;  /* erase-device backend (NAND-LBM / NOR-map) */
 #endif
 
+/* Serialises every operation that touches core state (g_rfs's shared io_buf /
+ * bm_cache / meta_cache / transaction buffers, plus the file-scope scratch in
+ * realfs.c).  The REALFS core is single-threaded and the VFS layer does not
+ * serialise per-file I/O (littlefs/fatfs rely on their own reentrancy locks),
+ * so without this two concurrent fwrite/fopen would corrupt each other.
+ * Created on the first mount/format and kept for the process lifetime (never
+ * deleted, so an in-flight op can never race a lock teardown).  Handle-local
+ * ops (seek/tell/eof and buffered-mode memcpy read/write) don't take it. */
+static rtos_mutex_t g_rfs_lock = NULL;
+
+static void rfs_lock_init(void)
+{
+	if (g_rfs_lock == NULL) {
+		rtos_mutex_create(&g_rfs_lock);
+	}
+}
+static inline void rfs_lock(void)
+{
+	if (g_rfs_lock) {
+		rtos_mutex_take(g_rfs_lock, MUTEX_WAIT_TIMEOUT);
+	}
+}
+static inline void rfs_unlock(void)
+{
+	if (g_rfs_lock) {
+		rtos_mutex_give(g_rfs_lock);
+	}
+}
+
 /* Per-open handle stored in vfs_file->file.
  * write_mode: 0 = read-only, 1 = streaming write ("w"), 2 = buffered write */
 struct rfs_fh {
@@ -150,14 +179,23 @@ static int realfs_vfs_open(void *fs, const char *filename, const char *mode, vfs
 	int has_a = (strchr(mode, 'a') != NULL);
 	int has_p = (strchr(mode, '+') != NULL);
 
+	rfs_lock();
+	if (!realfs_mount_flag) {            /* re-check under lock vs a racing unmount */
+		rfs_unlock();
+		rtos_mem_free(h);
+		return -1;
+	}
+
 	if (!has_w && !has_a && !has_p) {
 		/* pure read */
 		h->rf = (struct realfs_file *)rtos_mem_malloc(sizeof(*h->rf));
 		if (!h->rf) {
+			rfs_unlock();
 			rtos_mem_free(h);
 			return -1;
 		}
 		if (realfs_open(&g_rfs, h->path, h->rf)) {
+			rfs_unlock();
 			rtos_mem_free(h->rf);
 			rtos_mem_free(h);
 			return -1;
@@ -172,10 +210,12 @@ static int realfs_vfs_open(void *fs, const char *filename, const char *mode, vfs
 			h->write_mode = 1;
 			h->wctx = (struct realfs_write_ctx *)rtos_mem_malloc(sizeof(*h->wctx));
 			if (!h->wctx) {
+				rfs_unlock();
 				rtos_mem_free(h);
 				return -1;
 			}
 			if (realfs_write_begin(&g_rfs, filename, h->wctx)) {
+				rfs_unlock();
 				rtos_mem_free(h->wctx);
 				rtos_mem_free(h);
 				return -1;
@@ -187,6 +227,7 @@ static int realfs_vfs_open(void *fs, const char *filename, const char *mode, vfs
 				/* w+ : truncate to empty, nothing to preload */
 			} else if (has_a) {
 				if (rfs_preload(h, 0)) {   /* a / a+ : keep existing if any */
+					rfs_unlock();
 					rtos_mem_free(h);
 					return -1;
 				}
@@ -194,6 +235,7 @@ static int realfs_vfs_open(void *fs, const char *filename, const char *mode, vfs
 			} else {
 				/* r+ : update in place, file must exist */
 				if (rfs_preload(h, 1)) {
+					rfs_unlock();
 					rtos_mem_free(h);
 					return -1;
 				}
@@ -201,6 +243,7 @@ static int realfs_vfs_open(void *fs, const char *filename, const char *mode, vfs
 		}
 	}
 
+	rfs_unlock();
 	finfo->file = (void *)h;
 	return 0;
 }
@@ -219,6 +262,7 @@ static int realfs_vfs_read(void *fs, unsigned char *buf, unsigned int size,
 	}
 
 	if (h->write_mode) {
+		/* buffered/streaming handle: data served from the per-handle wbuf */
 		if (h->pos >= h->wsize) {
 			return 0;
 		}
@@ -231,7 +275,9 @@ static int realfs_vfs_read(void *fs, unsigned char *buf, unsigned int size,
 		return (int)n;
 	}
 
+	rfs_lock();
 	int rc = realfs_read(h->rf, buf, h->pos, n);
+	rfs_unlock();
 	if (rc < 0) {
 		return -1;
 	}
@@ -253,15 +299,18 @@ static int realfs_vfs_write(void *fs, unsigned char *buf, unsigned int size,
 	}
 
 	if (h->write_mode == 1) {
-		/* streaming: feed directly to write_chunk */
-		if (realfs_write_chunk(h->wctx, buf, n)) {
+		/* streaming: feed directly to write_chunk (touches core scratch) */
+		rfs_lock();
+		int rc = realfs_write_chunk(h->wctx, buf, n);
+		rfs_unlock();
+		if (rc) {
 			return -1;
 		}
 		h->pos += n;
 		return (int)n;
 	}
 
-	/* buffered write (write_mode == 2) */
+	/* buffered write (write_mode == 2): accumulate in the per-handle wbuf */
 	if (rfs_ensure(h, h->pos + n)) {
 		return -1;
 	}
@@ -277,17 +326,10 @@ static int realfs_vfs_write(void *fs, unsigned char *buf, unsigned int size,
 	return (int)n;
 }
 
-static int realfs_vfs_fflush(void *fs, vfs_file *finfo)
+/* Commit a buffered-write handle to flash.  Caller MUST hold g_rfs_lock (so it
+ * can be reused by realfs_vfs_close without re-taking a non-recursive lock). */
+static int rfs_flush_locked(struct rfs_fh *h)
 {
-	(void)fs;
-	struct rfs_fh *h = (struct rfs_fh *)finfo->file;
-	if (!h) {
-		return -1;
-	}
-	if (h->write_mode == 1) {
-		/* streaming: fflush is a no-op (data already on flash, commit at fclose) */
-		return 0;
-	}
 	if (h->write_mode == 2 && h->dirty) {
 		int rc = realfs_write(&g_rfs, h->path, h->wsize ? h->wbuf : NULL, h->wsize);
 		if (rc == REALFS_ERR_FRAGMENTED) {
@@ -301,6 +343,23 @@ static int realfs_vfs_fflush(void *fs, vfs_file *finfo)
 	return 0;
 }
 
+static int realfs_vfs_fflush(void *fs, vfs_file *finfo)
+{
+	(void)fs;
+	struct rfs_fh *h = (struct rfs_fh *)finfo->file;
+	if (!h) {
+		return -1;
+	}
+	if (h->write_mode == 1) {
+		/* streaming: fflush is a no-op (data already on flash, commit at fclose) */
+		return 0;
+	}
+	rfs_lock();
+	int rc = rfs_flush_locked(h);
+	rfs_unlock();
+	return rc;
+}
+
 static int realfs_vfs_close(void *fs, vfs_file *finfo)
 {
 	(void)fs;
@@ -309,6 +368,7 @@ static int realfs_vfs_close(void *fs, vfs_file *finfo)
 		return -1;
 	}
 	int ret = 0;
+	rfs_lock();
 	if (h->write_mode == 1) {
 		if (h->wctx->active) {
 			int rc = realfs_write_end(h->wctx);
@@ -322,7 +382,7 @@ static int realfs_vfs_close(void *fs, vfs_file *finfo)
 		}
 		rtos_mem_free(h->wctx);
 	} else if (h->write_mode == 2) {
-		ret = realfs_vfs_fflush(fs, finfo);
+		ret = rfs_flush_locked(h);   /* already holding the lock */
 		if (h->wbuf) {
 			rtos_mem_free(h->wbuf);
 		}
@@ -330,6 +390,7 @@ static int realfs_vfs_close(void *fs, vfs_file *finfo)
 		realfs_close(h->rf);
 		rtos_mem_free(h->rf);
 	}
+	rfs_unlock();
 	rtos_mem_free(h);
 	finfo->file = NULL;
 	return ret;
@@ -455,7 +516,10 @@ static int realfs_vfs_remove(void *fs, const char *name)
 	if (!realfs_mount_flag) {
 		return -1;
 	}
-	return realfs_delete(&g_rfs, name) ? -1 : 0;
+	rfs_lock();
+	int rc = realfs_mount_flag ? realfs_delete(&g_rfs, name) : REALFS_ERR_IO;
+	rfs_unlock();
+	return rc ? -1 : 0;
 }
 
 static int realfs_vfs_rename(void *fs, const char *old_name, const char *new_name)
@@ -465,16 +529,20 @@ static int realfs_vfs_rename(void *fs, const char *old_name, const char *new_nam
 		return -1;
 	}
 	struct realfs_file rf;
-	if (realfs_open(&g_rfs, old_name, &rf)) {
+	uint8_t *buf = NULL;
+	int ret = -1;
+
+	rfs_lock();
+	if (!realfs_mount_flag || realfs_open(&g_rfs, old_name, &rf)) {
+		rfs_unlock();
 		return -1;
 	}
 	uint32_t sz = rf.file_size;
-	uint8_t *buf = NULL;
-	int ret = -1;
 	if (sz) {
 		buf = (uint8_t *)rtos_mem_malloc(sz);
 		if (!buf) {
 			realfs_close(&rf);
+			rfs_unlock();
 			return -1;
 		}
 		if (realfs_read(&rf, buf, 0, sz) != (int)sz) {
@@ -488,6 +556,7 @@ static int realfs_vfs_rename(void *fs, const char *old_name, const char *new_nam
 	ret = 0;
 out:
 	realfs_close(&rf);
+	rfs_unlock();
 	if (buf) {
 		rtos_mem_free(buf);
 	}
@@ -501,7 +570,10 @@ static int realfs_vfs_stat(void *fs, char *path, struct stat *buf)
 		return -1;
 	}
 	struct realfs_stat s;
-	if (realfs_stat(&g_rfs, path, &s)) {
+	rfs_lock();
+	int rc = realfs_mount_flag ? realfs_stat(&g_rfs, path, &s) : REALFS_ERR_IO;
+	rfs_unlock();
+	if (rc) {
 		return -1;
 	}
 	memset(buf, 0, sizeof(*buf));
@@ -519,7 +591,10 @@ static int realfs_vfs_access(void *fs, const char *pathname, int mode)
 		return -1;
 	}
 	struct realfs_stat s;
-	return realfs_stat(&g_rfs, pathname, &s) ? -1 : 0;
+	rfs_lock();
+	int rc = realfs_mount_flag ? realfs_stat(&g_rfs, pathname, &s) : REALFS_ERR_IO;
+	rfs_unlock();
+	return rc ? -1 : 0;
 }
 
 /* Directories are virtual (flat hash space): creating/removing them is a no-op
@@ -680,7 +755,14 @@ static int realfs_vfs_mount(int interface)
 	if (realfs_mount_flag) {
 		return 0;
 	}
+	rfs_lock_init();
+	rfs_lock();
+	if (realfs_mount_flag) {          /* mounted by another thread while we waited */
+		rfs_unlock();
+		return 0;
+	}
 	if (realfs_open_bdev(interface, &g_bdev, 0) != 0) {
+		rfs_unlock();
 		return -1;
 	}
 
@@ -688,30 +770,55 @@ static int realfs_vfs_mount(int interface)
 #if defined(REALFS_EDEV_MODE)
 	if (realfs_is_edev(interface)) {
 		rc = realfs_ea_mount(&g_rfs, &g_edev);
+		if (rc == REALFS_ERR_CORRUPT) {
+			/* Unformatted / no valid superblock: format once and retry, matching
+			 * the auto-format-on-first-mount that littlefs/fatfs do in the VFS
+			 * layer. Only CORRUPT triggers this — an IO error (transient/HW) or
+			 * INVAL (config) must never wipe the device. Reuse the already-open
+			 * edev and held lock; do NOT call realfs_flash_format() here (it
+			 * re-takes rfs_lock and re-opens the device). */
+			VFS_DBG(VFS_WARNING, "realfs(edev) unformatted; auto-formatting");
+			if (realfs_ea_format(&g_edev, 0) == 0) {
+				rc = realfs_ea_mount(&g_rfs, &g_edev);
+			}
+		}
 		if (rc) {
-			VFS_DBG(VFS_ERROR, "realfs edev mount failed (%d); format first", rc);
+			VFS_DBG(VFS_ERROR, "realfs edev mount failed (%d)", rc);
 			realfs_edev_close();
+			rfs_unlock();
 			return -1;
 		}
 		g_bdev_inf = interface;
 		realfs_mount_flag = 1;
+		rfs_unlock();
 		return 0;
 	}
 #endif
 	rc = realfs_mount(&g_rfs, &g_bdev);
+	if (rc == REALFS_ERR_CORRUPT) {
+		/* See the edev branch: auto-format only on CORRUPT (unformatted / no
+		 * valid superblock), reusing the already-open bdev and held lock. */
+		VFS_DBG(VFS_WARNING, "realfs unformatted; auto-formatting");
+		if (realfs_format(&g_bdev, 0) == 0) {
+			rc = realfs_mount(&g_rfs, &g_bdev);
+		}
+	}
 	if (rc) {
-		VFS_DBG(VFS_ERROR, "realfs_mount failed (%d); format the device first", rc);
+		VFS_DBG(VFS_ERROR, "realfs_mount failed (%d)", rc);
 		realfs_close_bdev(interface, &g_bdev);
+		rfs_unlock();
 		return -1;
 	}
 	g_bdev_inf = interface;
 	realfs_mount_flag = 1;
+	rfs_unlock();
 	return 0;
 }
 
 static int realfs_vfs_unmount(int interface)
 {
 	(void)interface;
+	rfs_lock();
 	if (realfs_mount_flag) {
 #if defined(REALFS_EDEV_MODE)
 		if (realfs_is_edev(g_bdev_inf)) {
@@ -719,6 +826,7 @@ static int realfs_vfs_unmount(int interface)
 			realfs_edev_close();
 			g_bdev_inf = -1;
 			realfs_mount_flag = 0;
+			rfs_unlock();
 			return 0;
 		}
 #endif
@@ -727,28 +835,35 @@ static int realfs_vfs_unmount(int interface)
 		g_bdev_inf = -1;
 		realfs_mount_flag = 0;
 	}
+	rfs_unlock();
 	return 0;
 }
 
 /* Format the device behind `interface` (VFS_INF_SD / VFS_INF_FLASH). */
 static int realfs_format_inf(int interface, unsigned int hash_buckets)
 {
+	rfs_lock_init();
+	rfs_lock();
 	if (realfs_mount_flag) {
 		VFS_DBG(VFS_ERROR, "unmount REALFS before formatting");
+		rfs_unlock();
 		return -1;
 	}
 	if (realfs_open_bdev(interface, &g_bdev, 1) != 0) {
+		rfs_unlock();
 		return -1;
 	}
 #if defined(REALFS_EDEV_MODE)
 	if (realfs_is_edev(interface)) {
 		int rc = realfs_ea_format(&g_edev, (uint32_t)hash_buckets);
 		realfs_edev_close();
+		rfs_unlock();
 		return rc ? -1 : 0;
 	}
 #endif
 	int rc = realfs_format(&g_bdev, hash_buckets);
 	realfs_close_bdev(interface, &g_bdev);
+	rfs_unlock();
 	return rc ? -1 : 0;
 }
 

@@ -287,6 +287,16 @@ _LONG_CALL_ int crypto_km_load_key(u8 engine_id, u8 key_id, uint32_t key_len_bit
 #define KM_AES_KEY_S_SW2          0              /*!< Placeholder; SW2 not supported on this SoC (always 0) */
 #define KM_AES_KEY_NS_SW2         0              /*!< Placeholder; NS_SW2 not supported on this SoC (always 0) */
 
+/* Aliases for the common imgtool floader SFI/RSIP key-programming code, which
+ * references the amebagreen2 KM_AES_KEY_S_* names.  Same OTP key slots / IDs on
+ * this SoC, just named KM_KEY_S_* here. */
+#define KM_AES_KEY_S_IPSEC_KEY1   KM_KEY_S_IPSEC_KEY1   /*!< 0x00, OTP 0x200 */
+#define KM_AES_KEY_S_IPSEC_KEY2   KM_KEY_S_IPSEC_KEY2   /*!< 0x01, OTP 0x220 */
+#define KM_AES_KEY_S_IPSEC_KEY3   KM_KEY_S_IPSEC_KEY3   /*!< 0x02, OTP 0x240 */
+#define KM_AES_KEY_S_IPSEC_KEY4   KM_KEY_S_IPSEC_KEY4   /*!< 0x03, OTP 0x260 */
+#define KM_AES_KEY_S_RSIP_ECB_KEY KM_KEY_S_RSIP_KEY1    /*!< 0x04, OTP 0x2C0 */
+#define KM_AES_KEY_S_RSIP_CTR_KEY KM_KEY_S_RSIP_KEY2    /*!< 0x05, OTP 0x2E0 */
+
 __inline__ int crypto_aes_set_sw_key(u8 key_id, u32 key_len_bits, const u8 *key_addr)
 {
 	return crypto_km_set_sw_key(key_id, key_len_bits, key_addr);

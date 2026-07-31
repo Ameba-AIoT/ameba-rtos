@@ -14,12 +14,8 @@ static void _client_ipc_rx_int_hdl(void *data, uint32_t irq_status, uint32_t cha
 	PIPC_MSG_STRUCT p_ipc_rx_msg = ipc_get_message(IPC_AP_TO_NP, channel_num);
 	struct sdn_intf_data_msg *pmsg;
 
-	if (p_ipc_rx_msg->msg_type == IPC_USER_POINT) {
-		DCache_Invalidate(p_ipc_rx_msg->msg, p_ipc_rx_msg->msg_len);
-		pmsg = (struct sdn_intf_data_msg *)(p_ipc_rx_msg->msg);
-	} else {
-		pmsg = (struct sdn_intf_data_msg *)(&p_ipc_rx_msg->msg);
-	}
+	DCache_Invalidate(p_ipc_rx_msg->msg, p_ipc_rx_msg->msg_len);
+	pmsg = (struct sdn_intf_data_msg *)(p_ipc_rx_msg->msg);
 
 	sdn_h2c(pmsg->protocol, pmsg->type, pmsg->data, p_ipc_rx_msg->msg_len - sizeof(struct sdn_intf_data_msg));
 }
@@ -31,14 +27,13 @@ void sdn_c2h(struct sdn_data_buf *pdata_buf)
 	if (pdata_buf) {
 		ipc_tx.msg = (uint32_t)pdata_buf->pmsg;
 		ipc_tx.msg_len = pdata_buf->len;
+		DCache_Clean(ipc_tx.msg, ipc_tx.msg_len);
 	} else {
 		ipc_tx.msg = (uint32_t)NULL;
 		ipc_tx.msg_len = 0;
 	}
-	DCache_Clean(ipc_tx.msg, ipc_tx.msg_len);
 
 	ipc_send_message(IPC_NP_TO_AP, IPC_N2A_BT_VIRTUAL_HCI, &ipc_tx);
-	IPC_wait_idle(IPC_GetDev(IPC_NP_TO_AP, 0), IPC_N2A_BT_VIRTUAL_HCI);
 }
 
 // controller IPC TX channel table define

@@ -14,25 +14,35 @@ static void dump_buf(char *info, uint8_t *buf, uint32_t len)
 }
 #endif
 
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2)
 const u8 UART_TX_FID[MAX_UART_INDEX] = {
+#ifdef PINMUX_FUNCTION_UART0_TXD
 	PINMUX_FUNCTION_UART0_TXD,
+#endif
+#ifdef PINMUX_FUNCTION_UART1_TXD
 	PINMUX_FUNCTION_UART1_TXD,
+#endif
+#ifdef PINMUX_FUNCTION_UART2_TXD
 	PINMUX_FUNCTION_UART2_TXD,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
-	PINMUX_FUNCTION_UART3_TXD
+#endif
+#ifdef PINMUX_FUNCTION_UART3_TXD
+	PINMUX_FUNCTION_UART3_TXD,
 #endif
 };
 
 const u8 UART_RX_FID[MAX_UART_INDEX] = {
+#ifdef PINMUX_FUNCTION_UART0_RXD
 	PINMUX_FUNCTION_UART0_RXD,
+#endif
+#ifdef PINMUX_FUNCTION_UART1_RXD
 	PINMUX_FUNCTION_UART1_RXD,
+#endif
+#ifdef PINMUX_FUNCTION_UART2_RXD
 	PINMUX_FUNCTION_UART2_RXD,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
-	PINMUX_FUNCTION_UART3_RXD
+#endif
+#ifdef PINMUX_FUNCTION_UART3_RXD
+	PINMUX_FUNCTION_UART3_RXD,
 #endif
 };
-#endif
 
 /* move to gdma api later*/
 void whc_uart_set_dma_len(u32 size, GDMA_InitTypeDef *GDMA_InitStruct)
@@ -435,7 +445,7 @@ void whc_uart_dev_init(void)
 #if defined(CONFIG_AMEBASMART)
 	Pinmux_Config(UART_TX, PINMUX_FUNCTION_UART);
 	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART);
-#elif defined(CONFIG_AMEBALITE) || defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
+#else
 	Pinmux_Config(UART_TX, UART_TX_FID[whc_uart_idx]);
 	Pinmux_Config(UART_RX, UART_RX_FID[whc_uart_idx]);
 #endif
@@ -495,7 +505,7 @@ void whc_uart_dev_init(void)
 		return;
 	}
 
-	RTK_LOGI(TAG_WLAN_INIC, "UART init done!\n");
+	RTK_LOGI(TAG_WLAN_INIC, "UART dev init done!\n");
 }
 
 void whc_uart_dev_send_hdr(u16 size, u32 checksum)

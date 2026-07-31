@@ -40,6 +40,15 @@ typedef enum {
 } rtk_bt_audio_pres_comp_t;
 
 /**
+ * @typedef   rtk_bt_audio_track_play_state_t
+ * @brief     audio track play state
+ */
+typedef enum {
+	RTK_BT_AUDIO_TRACK_PAUSED = 0x00,
+	RTK_BT_AUDIO_TRACK_PLAYING = 0x01,
+} rtk_bt_audio_track_play_state_t;
+
+/**
  * @typedef   rtk_bt_audio_pcm_cb_t
  * @brief     bt audio pcm data call back handle
  * @param[in] p_pcm_buf: pointer of pcm data
@@ -71,6 +80,7 @@ typedef struct {
 	uint32_t                   rate;                                                           /*!< sample rate */
 	uint32_t                   bits;                                                           /*!< bit per sample */
 	uint32_t                   format;                                                         /*!< audio format */
+	uint16_t                   play_state;                                                     /*!< 0 for pause, 1 for play */
 	int32_t                    track_num;                                                      /*!< indicate enqueued audio data numbers */
 	bool                       audio_sync_flag;                                                /*!< indicate whether audio sync is need */
 	uint8_t                    pres_comp_event;                                                /*!< indicate presentation delay compensation events */
@@ -211,6 +221,26 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
 											 uint32_t duration, pcm_data_cb cb, bool play_flag);
 
 /**
+* @brief     set bt audio track play state
+* @param[in] ptrack: audio data codec type
+* @param[in] play_state: rtk_bt_audio_track_play_state_t
+* @return
+ *            - 0  : set success
+ *            - 1: set fail
+*/
+uint16_t rtk_bt_audio_track_set_play_state(rtk_bt_audio_track_t *ptrack, uint16_t play_state);
+
+/**
+* @brief     get bt audio track play state
+* @param[in] ptrack: audio data codec type
+* @return
+*            - RTK_BT_AUDIO_TRACK_PAUSED
+*            - RTK_BT_AUDIO_TRACK_PLAYING
+*            - RTK_BT_AUDIO_GET_VALUE_FAIL
+*/
+uint16_t rtk_bt_audio_track_get_play_state(rtk_bt_audio_track_t *ptrack);
+
+/**
 * @brief     enable audio play sync mode for specific track(This api should be invoked immediately after rtk_bt_audio_track_add, if used)
 * @param[in] ptrack: audio data codec type
 * @param[in] pd: left init volume
@@ -319,6 +349,16 @@ void *rtk_bt_audio_codec_add(rtk_bt_audio_codec_conf_t *paudio_codec_conf);
  *            - others: Codec entity
  */
 uint16_t rtk_bt_audio_codec_update(rtk_bt_audio_codec_conf_t *paudio_codec_conf, void *pentity);
+
+/**
+ * @brief     reset audio codec
+ * @param[in] type: audio data codec type
+ * @param[in] pentity: audio codec entity
+ * @return
+ *            - 1  : Fail
+ *            - 0: Success
+ */
+uint16_t rtk_bt_audio_codec_reset(uint32_t type, void *pentity);
 
 /**
  * @brief     remove one audio codec

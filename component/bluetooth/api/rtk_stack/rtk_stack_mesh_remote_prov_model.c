@@ -119,8 +119,8 @@ static int32_t remote_prov_client_data(const mesh_model_info_p pmodel_info, uint
 									sizeof(rtk_bt_mesh_rmt_prov_client_scan_status_t));
 		scan_status = (rtk_bt_mesh_rmt_prov_client_scan_status_t *)p_evt->data;
 		scan_status->src = pdata->src;
-		scan_status->prov_status = pdata->status;
-		scan_status->scan_status = pdata->scan_state;
+		scan_status->prov_status = (rtk_bt_mesh_rmt_prov_status_t)pdata->status;
+		scan_status->scan_status = (rtk_bt_mesh_rmt_prov_scan_state_t)pdata->scan_state;
 		scan_status->scanned_items_limit = pdata->scanned_items_limit;
 		scan_status->timeout = pdata->timeout;
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -176,8 +176,8 @@ static int32_t remote_prov_client_data(const mesh_model_info_p pmodel_info, uint
 									sizeof(rtk_bt_mesh_rmt_prov_client_link_status_t));
 		link_status = (rtk_bt_mesh_rmt_prov_client_link_status_t *)p_evt->data;
 		link_status->src = pdata->src;
-		link_status->prov_status = pdata->status;
-		link_status->link_status = pdata->link_state;
+		link_status->prov_status = (rtk_bt_mesh_rmt_prov_status_t)pdata->status;
+		link_status->link_status = (rtk_bt_mesh_rmt_prov_link_state_t)pdata->link_state;
 		rtk_bt_evt_indicate(p_evt, NULL);
 		break;
 	}
@@ -189,10 +189,10 @@ static int32_t remote_prov_client_data(const mesh_model_info_p pmodel_info, uint
 									sizeof(rtk_bt_mesh_rmt_prov_client_link_report_t));
 		link_report = (rtk_bt_mesh_rmt_prov_client_link_report_t *)p_evt->data;
 		link_report->src = pdata->src;
-		link_report->prov_status = pdata->status;
-		link_report->link_status = pdata->link_state;
+		link_report->prov_status = (rtk_bt_mesh_rmt_prov_status_t)pdata->status;
+		link_report->link_status = (rtk_bt_mesh_rmt_prov_link_state_t)pdata->link_state;
 		if (pdata->preason) {
-			link_report->close_reason = *pdata->preason;
+			link_report->close_reason = (rtk_bt_mesh_rmt_prov_link_close_reason_t)(*pdata->preason);
 		} else {
 			link_report->close_reason = RTK_BT_MESH_RMT_PROV_LINK_NOT_CLOSE;
 		}
