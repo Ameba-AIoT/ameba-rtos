@@ -310,6 +310,7 @@ typedef struct {
 #define	PSRAM_TYPE_WB958	0x2
 #define	PSRAM_TYPE_APM64	0x10
 #define	PSRAM_TYPE_APM128	0x11
+#define	PSRAM_TYPE_APM_UPSRAM	0x12	/* APM APS03208E 32Mb X8 uPSRAM */
 
 
 /**
@@ -487,10 +488,13 @@ _LONG_CALL_ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct);
 _LONG_CALL_ void PSRAM_CTRL_Init(void);
 _LONG_CALL_ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR, u8 DQ_16);
 _LONG_CALL_ void PSRAM_REG_Write(u32 type, u32 addr, u32 write_len, u8 *write_data, u8 DQ_16);
+_LONG_CALL_ void PSRAM_UPSRAM_REG_Read(u32 mr_addr, u8 *read_data);
+_LONG_CALL_ void PSRAM_UPSRAM_REG_Write(u32 mr_addr, u8 write_data);
 _LONG_CALL_ bool PSRAM_calibration(void);
 _LONG_CALL_ void PSRAM_InfoDump(void);
 _LONG_CALL_ void PSRAM_APM_DEVIC_Init(void);
 _LONG_CALL_ void PSRAM_WB_DEVIC_Init(void);
+_LONG_CALL_ void PSRAM_UPSRAM_DEVIC_Init(void);
 _LONG_CALL_ void PSRAM_Pinmux_init(void);
 _LONG_CALL_ void set_psram_sleep_mode(void);
 _LONG_CALL_ void set_psram_wakeup_mode(void);
@@ -520,6 +524,46 @@ _LONG_CALL_ void set_psram_wakeup_mode(void);
 
 #define APM_RD_CMD				0x2020
 #define APM_WR_CMD				0xa0a0
+
+/* APM uPSRAM (APS03208E) commands — 1-byte cmd, addr embedded for MR access */
+#define APM_UPSRAM_RD_CMD		0x0000	/* Sync Read  INST[7:0] = 0x00 */
+#define APM_UPSRAM_WR_CMD		0x8080	/* Sync Write INST[7:0] = 0x80 */
+
+/* APM uPSRAM MR6 field definitions */
+#define APM_UPSRAM_MR6_CLM		(1 << 7)	/* Clock Latency Method: 1=Legacy-Clock (required), 0=Eco-Clock (default, unsupported) */
+#define APM_UPSRAM_MR6_LC(x)	(((x) & 0x7) << 2)	/* Read/Write Latency Code MR6[4:2] */
+#define APM_UPSRAM_MR6_WRAP(x)	(((x) & 0x3) << 0)	/* Wrap Length MR6[1:0]: 00=16B 01=32B 10=64B 11=128B */
+
+/* APM uPSRAM MR6[4:2] Latency Codes (Table 5/7, Legacy-Clock mode) */
+#define APM_UPSRAM_LC_CODE_3CLK		0x0	/* max  66 MHz */
+#define APM_UPSRAM_LC_CODE_4CLK		0x1	/* max 109 MHz */
+#define APM_UPSRAM_LC_CODE_5CLK		0x2	/* max 133 MHz */
+#define APM_UPSRAM_LC_CODE_6CLK		0x3	/* max 166 MHz */
+#define APM_UPSRAM_LC_CODE_7CLK		0x4	/* max 200 MHz */
+#define APM_UPSRAM_LC_CODE_10CLK	0x5	/* max 266 MHz */
+
+/* APM uPSRAM MR3 field definitions */
+#define APM_UPSRAM_MR3_RF(x)	(((x) & 0x3) << 6)	/* Refresh Rate MR3[7:6] */
+#define APM_UPSRAM_MR3_PMOS(x)	(((x) & 0x3) << 2)	/* PMOS Drive Strength MR3[3:2] */
+#define APM_UPSRAM_MR3_NMOS(x)	(((x) & 0x3) << 0)	/* NMOS Drive Strength MR3[1:0] */
+
+/* APM uPSRAM MR3[7:6] Refresh Rate */
+#define APM_UPSRAM_RF_8X		0x1	/* 8x refresh, 105°C ~ 125°C */
+#define APM_UPSRAM_RF_4X		0x0	/* 4x refresh (default), 60°C ~ 105°C */
+#define APM_UPSRAM_RF_1X		0x3	/* 1x refresh, 40°C ~ 60°C */
+#define APM_UPSRAM_RF_0P5X		0x2	/* 0.5x refresh, < 40°C */
+
+/* APM uPSRAM MR3[3:2]/[1:0] Drive Strength (PMOS/NMOS independent) */
+#define APM_UPSRAM_DRV_50OHM	0x0	/* 50 ohms (default) */
+#define APM_UPSRAM_DRV_66OHM	0x1	/* 66 ohms */
+#define APM_UPSRAM_DRV_100OHM	0x2	/* 100 ohms */
+#define APM_UPSRAM_DRV_200OHM	0x3	/* 200 ohms */
+
+/* APM uPSRAM MR6[1:0] Wrap Length */
+#define APM_UPSRAM_WRAP_16B		0x0	/* default per v0.16 spec */
+#define APM_UPSRAM_WRAP_32B		0x1
+#define APM_UPSRAM_WRAP_64B		0x2
+#define APM_UPSRAM_WRAP_128B	0x3
 
 #define Psram_RESUME_TIME		32		//unit ns, worst 50ns
 #define Psram_IDLETIME_PLL		1		//unit us
@@ -607,6 +651,7 @@ _LONG_CALL_ void set_psram_wakeup_mode(void);
 } while (0)
 
 extern u8 APM_WR_INIT_LATENCY_SPEC[6];
+extern PSRAMINFO_TypeDef PsramInfo;
 
 #define ChipInfo_MemoryInfo() ChipInfo_MCMInfo()
 

@@ -120,7 +120,7 @@ static u8 NAND_FTL_GetMfgStatus(u8 cmd, u8 addr)
 {
 	u8 data;
 
-	NAND_RxCmd(cmd, 1, &addr, 1, &data);
+	NAND_RxCmd_Safe(cmd, 1, &addr, 1, &data);
 
 	return data;
 }
@@ -214,7 +214,7 @@ static u8 NAND_FTL_Winbond_SelectTarget(NAND_FTL_DeviceTypeDef *nand, u8 target)
 {
 	Flash_InfoTypeDef *info = &nand->MemInfo;
 	if (info->Targets > 1) {
-		NAND_TxCmd(NF_WINBOND_DIE_SEL_CMD, 0, NULL, 1, &target);
+		NAND_TxCmd_Safe(NF_WINBOND_DIE_SEL_CMD, 0, NULL, 1, &target);
 	}
 	return HAL_OK;
 }

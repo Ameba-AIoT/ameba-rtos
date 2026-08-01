@@ -86,6 +86,7 @@ static bool bt_stack_sbc_decoder_init(rtk_bt_sbc_decode_t *p_decode_t, OI_CODEC_
 		BT_LOGE("%s : error during reset %d \r\n", __func__, status);
 		return false;
 	}
+	memset(context_data, 0, sizeof(context_data));
 	// btstack_sbc_plc_init(&pstate->plc_state);
 
 	return true;
@@ -202,6 +203,33 @@ static uint16_t sbc_codec_update(void *pentity, void *param)
 	return 0;
 }
 
+static uint16_t sbc_codec_reset(void *pentity)
+{
+	(void)pentity;
+	OI_STATUS status = OI_STATUS_SUCCESS;
+
+#if defined(SBC_PLC_INCLUDED) && SBC_PLC_INCLUDED
+	if (sbc_codec_t.decoder_t.sbc_dec_mode == SBC_MODE_mSBC) {
+		// sbc plc init for mSBC
+		memset((void *)&priv_sbc_plc, 0, sizeof(sbc_plc_t));
+		sbc_plc_init(&priv_sbc_plc.plc_state);
+		BT_LOGA("%s : reset plc for mSBC \r\n", __func__);
+	}
+#endif
+	status = OI_CODEC_SBC_DecoderReset(&priv_decode_context, context_data, sizeof(context_data),
+									   sbc_codec_t.decoder_t.sbc_dec_mode == SBC_MODE_mSBC ? 1 : SBC_DEFAULT_DECODE_CHANNEL_NUM,
+									   sbc_codec_t.decoder_t.sbc_dec_mode == SBC_MODE_mSBC ? 1 : SBC_DEFAULT_DECODE_CHANNEL_NUM, false,
+									   (bool)(sbc_codec_t.decoder_t.sbc_dec_mode == SBC_MODE_mSBC ? true : false));
+	if (status != OI_STATUS_SUCCESS) {
+		BT_LOGE("%s : error during reset %d \r\n", __func__, status);
+		return 1;
+	}
+	memset(context_data, 0, sizeof(context_data));
+	BT_LOGA("%s : reset successfully \r\n", __func__);
+
+	return 0;
+}
+
 static uint16_t sbc_codec_deinit(void *pentity)
 {
 	(void)pentity;
@@ -295,6 +323,7 @@ static uint16_t sbc_decoder_process_data(void *pentity, uint8_t *data, uint32_t 
 																   (bool)(priv_decode_context.sbc_mode == OI_SBC_MODE_MSBC ? true : false))) {
 					BT_LOGE("%s: OI_CODEC_SBC_DecoderReset failed with error code %d \r\n", __func__, status);
 				}
+				memset(context_data, 0, sizeof(context_data));
 				break;
 			}
 
@@ -607,6 +636,7 @@ uint16_t rtk_bt_audio_sbc_register(uint32_t type, PAUDIO_CODEC_ENTITY p_entity)
 	p_entity->stream_in_num = 0;
 	p_entity->init = sbc_codec_init;
 	p_entity->update = sbc_codec_update;
+	p_entity->reset = sbc_codec_reset;
 	p_entity->deinit = sbc_codec_deinit;
 	p_entity->bt_audio_handle_media_data_packet = sbc_audio_handle_media_data_packet;
 	p_entity->encoding_func = sbc_encoder_process_data;

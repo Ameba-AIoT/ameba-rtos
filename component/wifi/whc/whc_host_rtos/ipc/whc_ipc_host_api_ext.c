@@ -1430,12 +1430,12 @@ s32 wifi_tsf_sync_to_user_target(u8 enable, u8 *mac_addr)
 	return ret;
 }
 
-s32 wifi_set_p1_to_p0_tsf_offset(u16 offset_us)
+s32 wifi_set_p1_to_p0_tsf_offset(u32 offset_us)
 {
 	s32 ret = 0;
 	u32 param_buf[1] = {0};
 
-	param_buf[0] = (u32)offset_us;
+	param_buf[0] = offset_us;
 	ret = whc_ipc_host_api_message_send(WHC_API_WIFI_SET_P1_TO_P0_TSF_OFFSET, param_buf, 2);
 
 	return ret;
@@ -1577,6 +1577,159 @@ int wifi_p2p_set_remain_on_ch(unsigned char wlan_idx, u8 enable)
 	return ret;
 }
 
+#endif
+
+#ifdef CONFIG_WIFI_XMESH
+int wifi_xmesh_init(u8 channel, u16 groupid, u8 selfid, u8 boot_epoch)
+{
+	u32 param_buf[4];
+
+	param_buf[0] = (u32)channel;
+	param_buf[1] = (u32)groupid;
+	param_buf[2] = (u32)selfid;
+	param_buf[3] = (u32)boot_epoch;
+	return whc_ipc_host_api_message_send(WHC_API_XMESH_INIT, param_buf, 4);
+}
+
+void wifi_xmesh_register_cb(u8(*callback)(struct rtw_rx_pkt_info *pkt_info))
+{
+	struct rtw_promisc_para para = {0};
+	para.filter_mode = RTW_PROMISC_FILTER_ALL_PKT;
+	para.callback = callback;
+	wifi_promisc_enable(1, &para);
+}
+
+int wifi_xmesh_send_frame(u8 *payload, u16 len)
+{
+	u16 frame_len = 24 + XMESH_HDR_LEN + len;
+	u8 *buf = (u8 *)rtos_mem_zmalloc(frame_len);
+	struct rtw_raw_frame_desc desc = {0};
+	int ret;
+	u8 any_success = 0;
+
+	if (buf == NULL) {
+		return RTK_FAIL;
+	}
+
+	/* 802.11 MAC header */
+	buf[0] = 0x08;
+	buf[1] = 0x02; /* fromDS */
+	memset(buf + 4, 0xff, ETH_ALEN); /* A1: broadcast */
+	memcpy(buf + 10, lwip_get_mac(STA_WLAN_INDEX), ETH_ALEN);
+	memcpy(buf + 16, lwip_get_mac(STA_WLAN_INDEX), ETH_ALEN); /* A3: source */
+
+	/* Payload */
+	memcpy(buf + 24 + XMESH_HDR_LEN, payload, len);
+
+	desc.buf = buf;
+	desc.buf_len = frame_len;
+	desc.wlan_idx = STA_WLAN_INDEX;
+	desc.tx_rate = RTW_RATE_24M;
+	desc.retry_limit = 2;
+
+	for (int j = 0; j < 3; j++) {
+		if (j > 0) {
+			buf[24 + XMESH_HDR_FLAGS_OFFSET] |= XMESH_HDR_FLAG_RETRY;
+		} else {
+			buf[24 + XMESH_HDR_FLAGS_OFFSET] &= ~XMESH_HDR_FLAG_RETRY;
+		}
+
+		ret = wifi_send_raw_frame(&desc);
+		if (ret < 0) {
+			for (int k = 0; k < 2; k++) {
+				rtos_time_delay_ms(1);
+				ret = wifi_send_raw_frame(&desc);
+				if (ret == RTK_SUCCESS) {
+					break;
+				}
+			}
+		}
+		if (ret == RTK_SUCCESS) {
+			any_success = 1;
+		}
+	}
+	rtos_mem_free(buf);
+	return any_success ? RTK_SUCCESS : RTK_FAIL;
+}
+
+int wifi_xmesh_get_trx_statistic(u32 *relay_cnt, u16 *loss_2_cnt, u16 *loss_3_cnt, u16 *loss_m3_cnt, u8 *max_id)
+{
+	int ret;
+	u32 param_buf[4];
+
+	u8 max_id_in = *max_id;
+	/* buf layout: [relay_cnt(u32)] [max_id(u32)] [l2(u16[])] [l3(u16[])] [lm3(u16[])] */
+	u32 *buf = (u32 *)rtos_mem_zmalloc(sizeof(u32) * 2 + sizeof(u16) * 3 * max_id_in);
+	if (buf == NULL) {
+		return RTK_FAIL;
+	}
+
+	buf[1] = max_id_in;
+	param_buf[0] = (u32)buf;
+	param_buf[1] = (u32)(buf + 1);  /* pointer to max_id slot */
+	DCache_CleanInvalidate((u32)buf, sizeof(u32) * 2 + sizeof(u16) * 3 * max_id_in);
+
+	ret = whc_ipc_host_api_message_send(WHC_API_XMESH_GET_TRX_STATISTIC, param_buf, 2);
+
+	DCache_Invalidate((u32)buf, sizeof(u32) * 2 + sizeof(u16) * 3 * max_id_in);
+	*relay_cnt = buf[0];
+	u8 actual_max = (u8)buf[1];
+	*max_id = actual_max;
+	memcpy(loss_2_cnt, (u16 *)(buf + 2), actual_max * sizeof(u16));
+	memcpy(loss_3_cnt, (u16 *)(buf + 2) + max_id_in, actual_max * sizeof(u16));
+	memcpy(loss_m3_cnt, (u16 *)(buf + 2) + max_id_in * 2, actual_max * sizeof(u16));
+
+	rtos_mem_free(buf);
+	return ret;
+}
+
+int wifi_xmesh_clear_trx_statistic(void)
+{
+	return whc_ipc_host_api_message_send(WHC_API_XMESH_CLEAR_TRX_STATISTIC, NULL, 0);
+}
+
+int wifi_xmesh_stop_xmesh(u8 enable)
+{
+	u32 param_buf[1];
+
+	param_buf[0] = (u32)enable;
+	return whc_ipc_host_api_message_send(WHC_API_XMESH_STOP, param_buf, 1);
+}
+
+int wifi_xmesh_get_rssi_info_list(u8 *buf, u8 *max_id)
+{
+	int ret;
+	u32 param_buf[2];
+	u8 max_num = *max_id;
+
+	u8 *buf_tmp = (u8 *)rtos_mem_zmalloc(max_num);
+	if (buf_tmp == NULL) {
+		return RTK_FAIL;
+	}
+
+	u8 *max_id_tmp = (u8 *)rtos_mem_zmalloc(sizeof(u8));
+	if (max_id_tmp == NULL) {
+		rtos_mem_free(buf_tmp);
+		return RTK_FAIL;
+	}
+	*max_id_tmp = max_num;
+
+	param_buf[0] = (u32)buf_tmp;
+	param_buf[1] = (u32)max_id_tmp;
+	DCache_CleanInvalidate((u32)buf_tmp, max_num);
+	DCache_CleanInvalidate((u32)max_id_tmp, sizeof(u8));
+
+	ret = whc_ipc_host_api_message_send(WHC_API_XMESH_GET_RSSI_INFO_LIST, param_buf, 2);
+
+	DCache_Invalidate((u32)max_id_tmp, sizeof(u8));
+	DCache_Invalidate((u32)buf_tmp, *max_id_tmp);
+	*max_id = *max_id_tmp;
+	memcpy(buf, buf_tmp, *max_id_tmp);
+
+	rtos_mem_free(buf_tmp);
+	rtos_mem_free(max_id_tmp);
+	return ret;
+}
 #endif
 
 #endif	//#if CONFIG_WLAN

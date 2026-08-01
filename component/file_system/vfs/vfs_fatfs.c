@@ -249,7 +249,12 @@ int fatfs_remove(void *fs, const char *name)
 	(void) fs;
 	FRESULT res = f_unlink(name);
 
-	if (res > 0) {
+	if (res == FR_NO_FILE || res == FR_NO_PATH) {
+		/* Removing a file that isn't there is benign (POSIX remove() returns
+		 * -1/ENOENT); log at INFO, not ERROR — matches vfs_littlefs behavior and
+		 * avoids noise from callers that remove() up-front to clear leftovers. */
+		VFS_DBG(VFS_INFO, "The file to be deleted does not exist.\r\n");
+	} else if (res > 0) {
 		VFS_DBG(VFS_ERROR, "vfs-fatfs remove error %d \r\n", res);
 	}
 

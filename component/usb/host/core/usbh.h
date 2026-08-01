@@ -27,9 +27,7 @@
 /* This define is used to trace transfer performance */
 #define USBH_TP_TRACE_DEBUG                 0U
 
-#define USBH_MAX_CLASS_NUM                  1
 #define USBH_MAX_HUB_PORT                   32
-#define USBH_EVENT_OWNER                    0x00
 
 /* USB Host interrupt enable flag*/
 #define USBH_SOF_INTR                       (BIT0) /**< Start of (micro)Frame GINTSTS.Sof. For host class driver to handle timing issues in SOF callback of @ref usbh_class_driver_t */
@@ -51,15 +49,6 @@
 #define USBH_DEV_ID_MATCH_ITF_INFO          (USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS | USBH_DEV_ID_MATCH_ITF_PROTOCOL)
 /** @} */
 
-/* Exported macros -----------------------------------------------------------*/
-
-/**
- * @brief Notifies the host core that the class state has changed.
- * @details This is a convenience macro for @ref usbh_notify_composite_class_state_change with owner set to `USBH_EVENT_OWNER`.
- * @param host Pointer to the @ref usb_host_t.
- * @param pipe_num The pipe number associated with the change.
- */
-#define usbh_notify_class_state_change(host, pipe_num) usbh_notify_composite_class_state_change(host, pipe_num, USBH_EVENT_OWNER)
 /** @} End of Host_Core_Constants group */
 /** @} End of USB_Host_Constants group */
 
@@ -294,11 +283,14 @@ typedef union {
  * @brief Packed structure for a USB event message.
  */
 typedef struct {
-	u32 data;                          /**< Event Private data. */
+	u32 data;                          /**< Event private data. For USBH_CLASS_EVENT this carries the
+	                                        originating class driver's slot index (0..config.class_num-1);
+	                                        CLASS_READY dispatch uses it to index class_slot[] and route
+	                                        the event to exactly that driver, so per-class process()
+	                                        handlers no longer need an owner filter guard. */
 	u16 tick;                          /**< Tick count when the event occurred. */
 	u8 pipe_num;                       /**< Pipe number associated with the event. */
-	u8 type: 4;                        /**< Message type, corresponds to `usbh_event_type_t`. */
-	u8 owner: 4;                       /**< Owner of the message (e.g., core, class). */
+	u8 type;                           /**< Message type, corresponds to `usbh_event_type_t`. */
 } usbh_event_t;
 
 /**
@@ -320,9 +312,8 @@ typedef struct {
 	u16 diag_poll_ms;                 /**< Diag task polling interval in ms; 0 uses @ref USB_DIAG_DEFAULT_POLL_MS. Requires `diag_enable`. */
 	u8 main_task_priority;            /**< USB main task priority, the main task processes the USB host messages. */
 	u8 isr_priority;                  /**< USB ISR priority. */
-
 	u8 xfer_retry_max_cnt;            /**< Maximum number of retries for a failed transfer. */
-
+	u8 class_num;                     /**< Maximum number of class drivers that can be registered. */
 	u8 tick_source : 3;               /**< Tick source for getting the usb host tick of USB host core driver, see @ref usbh_tick_source_t.
 	                                     Which is used to trigger periodic transfers based on the endpoint interval and to detect transfer timeouts.*/
 	/**
@@ -564,17 +555,45 @@ int usbh_select_test_mode(u8 mode);
  */
 /**
  * @brief Register a host class driver, called in class initialization function.
+ *        Only records the driver in class_driver[]; USB TRX is NOT started
+ *        here. Call usbh_start() once after all class drivers are registered.
  * @param[in] driver: USB class driver.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_register_class(usbh_class_driver_t *driver);
+int usbh_register_class(const usbh_class_driver_t *driver);
 
 /**
  * @brief Un-register a class, called in class de-initialization function.
+ *        Removes ONLY the matching driver from class_driver[]; does not stop
+ *        hardware (usbh_stop()) or release core resources (usbh_deinit()).
  * @param[in] driver: USB class driver.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_unregister_class(usbh_class_driver_t *driver);
+int usbh_unregister_class(const usbh_class_driver_t *driver);
+
+/**
+ * @brief Start USB host TRX: drive VBUS and enable global interrupts.
+ * @details Must be invoked ONCE after usbh_init() and after every class
+ *          driver you need has been registered via its *_init() (which
+ *          internally calls usbh_register_class()). Enumeration for an
+ *          already-plugged device begins the moment this returns, and
+ *          Phase-1 driver match iterates over class_driver[] as it is
+ *          at that instant - classes registered later can still bind on
+ *          subsequent hot-plugs, but will miss the initial device.
+ *          Idempotent (guarded by hcd->started); repeated calls are safe.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbh_start(void);
+
+/**
+ * @brief Stop USB host TRX: disable global interrupts.
+ * @details Symmetric counterpart of usbh_start() - the interrupt half it
+ *          enabled. Halts USB ISR-driven TRX. VBUS is not dropped here; that
+ *          is done by usbh_deinit(). Does not remove class drivers
+ *          (usbh_unregister_class()). Safe to call when already stopped.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbh_stop(void);
 
 /* Pipe operations */
 /**
@@ -584,7 +603,7 @@ int usbh_unregister_class(usbh_class_driver_t *driver);
  * @param[in] ep_desc: Endpoint descriptor handle.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_open_pipe(usb_host_t *host, usbh_pipe_t *pipe, usbh_ep_desc_t *ep_desc);
+int usbh_open_pipe(usb_host_t *host, usbh_pipe_t *pipe, usbh_ep_desc_t *ep_desc, const usbh_class_driver_t *owner);
 
 /**
  * @brief  Close a pipe.
@@ -668,13 +687,28 @@ u32 usbh_get_elapsed_frame_cnt(usb_host_t *host, u32 start_frame);
 usbh_urb_state_t usbh_get_urb_state(usb_host_t *host, usbh_pipe_t *pipe);
 
 /**
- * @brief  Notify composite class state change.
+ * @brief  Post a CLASS_EVENT to schedule the caller's process().
+ *
+ * Called by a class driver when it wants its own process() invoked (e.g. after
+ * setup, on a state transition, or after handling a pipe completion in its ISR
+ * callback). The event is routed by `owner` (resolved to its class_slot index),
+ * NOT by `pipe_num` - many callers pass pipe_num=0 for non-pipe-bound state
+ * events, and pipe 0 (control EP0) has no class owner anyway. See
+ * usbh_notify() in usbh.c for the full routing rationale.
+ *
+ * Note: pipe completion / state-changed events posted from the ISR use a
+ * separate routing path (hc[pipe_num].driver_idx), so this API is only for
+ * class-originated CLASS_EVENTs.
+ *
  * @param[in] host: Host Handle.
- * @param[in] pipe_num: Pipe number.
- * @param[in] owner: Notify owner class.
+ * @param[in] pipe_num: Optional context, carried through to event.pipe_num;
+ *                      0 when the event is not tied to a specific pipe.
+ *                      Not used for routing.
+ * @param[in] owner: Originating class driver. Required for routing. NULL falls
+ *                   back defensively to slot 0.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_notify_composite_class_state_change(usb_host_t *host, u8 pipe_num, u8 owner);
+int usbh_notify(usb_host_t *host, u8 pipe_num, const usbh_class_driver_t *owner);
 
 /* Transfer operations */
 /**

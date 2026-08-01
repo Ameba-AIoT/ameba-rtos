@@ -31,6 +31,9 @@ extern "C"  {
 #define LINK_LOSS_SRV_ID                    17
 #define RUNNING_SPEED_CADENCE_SRV_ID        18
 #define CYCLING_SPEED_CADENCE_SRV_ID        19
+#define HEALTH_THERMOMETER_SRV_ID           20
+#define LOCATION_NAVIGATION_SRV_ID          21
+#define IPSS_SRV_ID                         22
 
 #define TRANSFER_MODULE_SRV_ID_BASE         0x80
 

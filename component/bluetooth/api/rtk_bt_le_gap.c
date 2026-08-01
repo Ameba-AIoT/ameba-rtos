@@ -16,7 +16,7 @@
 
 uint16_t rtk_bt_le_gap_get_conn_id(uint16_t conn_handle, uint8_t *p_conn_id)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_get_conn_id_t param = {
 		.conn_handle = conn_handle,
 		.p_conn_id = p_conn_id,
@@ -33,7 +33,7 @@ uint16_t rtk_bt_le_gap_get_conn_id(uint16_t conn_handle, uint8_t *p_conn_id)
 
 uint16_t rtk_bt_le_gap_get_version(rtk_bt_le_version_info_t *version)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!version) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -46,7 +46,7 @@ uint16_t rtk_bt_le_gap_get_version(rtk_bt_le_version_info_t *version)
 
 uint16_t rtk_bt_le_gap_get_bd_addr(rtk_bt_le_addr_t *paddr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!paddr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -59,7 +59,7 @@ uint16_t rtk_bt_le_gap_get_bd_addr(rtk_bt_le_addr_t *paddr)
 
 uint16_t rtk_bt_le_gap_set_device_name(const uint8_t *name)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!name) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -72,7 +72,7 @@ uint16_t rtk_bt_le_gap_set_device_name(const uint8_t *name)
 
 uint16_t rtk_bt_le_gap_set_rand_addr(bool auto_generate, rtk_bt_le_rand_addr_type_t type, uint8_t *p_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_set_rand_addr_t param;
 
 	if (!p_addr) {
@@ -94,7 +94,7 @@ uint16_t rtk_bt_le_gap_set_rand_addr(bool auto_generate, rtk_bt_le_rand_addr_typ
 
 uint16_t rtk_bt_le_gap_set_appearance(uint16_t appearance)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_SET_APPEARANCE, (void *)&appearance, 4);
 
@@ -103,7 +103,7 @@ uint16_t rtk_bt_le_gap_set_appearance(uint16_t appearance)
 
 uint16_t rtk_bt_le_gap_set_preferred_conn_param(rtk_bt_le_preferred_conn_param_t *p_preferred_conn_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_SET_PREFERRED_CONN_PARAM,
 						  (void *)p_preferred_conn_param, sizeof(rtk_bt_le_preferred_conn_param_t));
@@ -113,7 +113,7 @@ uint16_t rtk_bt_le_gap_set_preferred_conn_param(rtk_bt_le_preferred_conn_param_t
 
 uint16_t rtk_bt_le_gap_gen_rand_addr(rtk_bt_le_rand_addr_type_t type, uint8_t *p_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_gen_rand_addr_t param;
 
 	if (type > RTK_BT_LE_RAND_ADDR_RESOLVABLE) {
@@ -135,7 +135,7 @@ uint16_t rtk_bt_le_gap_gen_rand_addr(rtk_bt_le_rand_addr_type_t type, uint8_t *p
 
 uint16_t rtk_bt_le_gap_cfg_local_ident_addr(rtk_bt_le_ident_addr_type_t type, uint8_t *p_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_ident_addr_t param;
 
 	if (type > RTK_BT_LE_IDENT_ADDR_RAND) {
@@ -157,7 +157,7 @@ uint16_t rtk_bt_le_gap_cfg_local_ident_addr(rtk_bt_le_ident_addr_type_t type, ui
 
 uint16_t rtk_bt_le_gap_set_adv_data(uint8_t *padv_data, uint32_t adv_len)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (adv_len > RTK_BT_LE_MAX_ADV_DATA_LEN) {
 		return RTK_BT_ERR_ADV_LENGTH_INVALID;
@@ -170,7 +170,7 @@ uint16_t rtk_bt_le_gap_set_adv_data(uint8_t *padv_data, uint32_t adv_len)
 
 uint16_t rtk_bt_le_gap_set_scan_rsp_data(uint8_t *pscan_rsp_data, uint32_t scan_rsp_len)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (scan_rsp_len > RTK_BT_LE_MAX_ADV_DATA_LEN) {
 		return RTK_BT_ERR_ADV_LENGTH_INVALID;
@@ -183,7 +183,7 @@ uint16_t rtk_bt_le_gap_set_scan_rsp_data(uint8_t *pscan_rsp_data, uint32_t scan_
 
 uint16_t rtk_bt_le_gap_start_adv(rtk_bt_le_adv_param_t *padv_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!padv_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -233,7 +233,7 @@ uint16_t rtk_bt_le_gap_start_adv(rtk_bt_le_adv_param_t *padv_param)
 
 uint16_t rtk_bt_le_gap_stop_adv(void)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_STOP_ADV, NULL, 0);
 
@@ -242,7 +242,7 @@ uint16_t rtk_bt_le_gap_stop_adv(void)
 
 uint16_t rtk_bt_le_gap_get_adv_param(rtk_bt_le_adv_param_t *padv_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_GET_ADV_PARAM, padv_param, sizeof(rtk_bt_le_adv_param_t));
 
@@ -251,7 +251,7 @@ uint16_t rtk_bt_le_gap_get_adv_param(rtk_bt_le_adv_param_t *padv_param)
 
 bool rtk_bt_le_gap_adv_is_idle(void)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_ADV_STATE, NULL, sizeof(bool));
 
@@ -261,7 +261,7 @@ bool rtk_bt_le_gap_adv_is_idle(void)
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 uint16_t rtk_bt_le_gap_create_ext_adv(rtk_bt_le_ext_adv_param_t *p_adv_param, uint8_t *p_adv_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_ext_adv_create_t param = {
 		.p_adv_param = p_adv_param,
 		.p_adv_handle = p_adv_handle,
@@ -308,7 +308,7 @@ uint16_t rtk_bt_le_gap_create_ext_adv(rtk_bt_le_ext_adv_param_t *p_adv_param, ui
 
 uint16_t rtk_bt_le_gap_set_ext_adv_data(uint8_t adv_handle, uint8_t *padv_data, uint16_t adv_len)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (adv_len > RTK_BT_LE_MAX_EXT_ADV_DATA_LEN) {
 		return RTK_BT_ERR_ADV_LENGTH_INVALID;
@@ -326,7 +326,7 @@ uint16_t rtk_bt_le_gap_set_ext_adv_data(uint8_t adv_handle, uint8_t *padv_data, 
 
 uint16_t rtk_bt_le_gap_set_ext_scan_rsp_data(uint8_t adv_handle, uint8_t *pscan_rsp_data, uint16_t scan_rsp_len)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (scan_rsp_len > RTK_BT_LE_MAX_EXT_ADV_DATA_LEN) {
 		return RTK_BT_ERR_ADV_LENGTH_INVALID;
@@ -344,7 +344,7 @@ uint16_t rtk_bt_le_gap_set_ext_scan_rsp_data(uint8_t adv_handle, uint8_t *pscan_
 
 uint16_t rtk_bt_le_gap_start_ext_adv(uint8_t adv_handle, uint16_t duration, uint8_t num_events)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_ext_adv_start_t param = {
 		.adv_handle = adv_handle,
 		.duration = duration,
@@ -358,7 +358,7 @@ uint16_t rtk_bt_le_gap_start_ext_adv(uint8_t adv_handle, uint16_t duration, uint
 
 uint16_t rtk_bt_le_gap_stop_ext_adv(uint8_t adv_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_STOP_EXT_ADV, &adv_handle, sizeof(uint8_t));
 
@@ -367,7 +367,7 @@ uint16_t rtk_bt_le_gap_stop_ext_adv(uint8_t adv_handle)
 
 uint16_t rtk_bt_le_gap_remove_ext_adv(uint8_t adv_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_REMOVE_EXT_ADV, &adv_handle, sizeof(uint8_t));
 
@@ -376,7 +376,7 @@ uint16_t rtk_bt_le_gap_remove_ext_adv(uint8_t adv_handle)
 
 uint16_t rtk_bt_le_gap_get_ext_adv_handle_by_conn_handle(uint16_t conn_handle, uint8_t *adv_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_get_eadv_by_conn_handle_param_t get_adv_hdl = {
 		.conn_handle = conn_handle,
 		.adv_handle = adv_handle,
@@ -389,7 +389,7 @@ uint16_t rtk_bt_le_gap_get_ext_adv_handle_by_conn_handle(uint16_t conn_handle, u
 
 uint16_t rtk_bt_le_gap_ext_connect(rtk_bt_le_ext_create_conn_param_t *p_ext_conn_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	int i = 0;
 
 	if (!p_ext_conn_param) {
@@ -447,7 +447,7 @@ uint16_t rtk_bt_le_gap_ext_connect(rtk_bt_le_ext_create_conn_param_t *p_ext_conn
 #if defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT
 uint16_t rtk_bt_le_gap_start_pa(rtk_bt_le_pa_param_t *param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (param->pa_interval_min < 6 || param->pa_interval_max < 6 || (!(param->pa_interval_min <= param->pa_interval_max))) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -469,7 +469,7 @@ uint16_t rtk_bt_le_gap_start_pa(rtk_bt_le_pa_param_t *param)
 
 uint16_t rtk_bt_le_gap_stop_pa(uint8_t adv_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_STOP_PA, &adv_handle, sizeof(uint8_t));
 
@@ -478,7 +478,7 @@ uint16_t rtk_bt_le_gap_stop_pa(uint8_t adv_handle)
 
 uint16_t rtk_bt_le_gap_update_pa(uint8_t adv_handle, bool update_did_only, uint8_t *data, uint16_t len)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	rtk_bt_le_pa_update_t param = {
 		.adv_handle = adv_handle,
@@ -500,7 +500,7 @@ uint16_t rtk_bt_le_gap_update_pa(uint8_t adv_handle, bool update_did_only, uint8
 #if defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) && RTK_BLE_5_0_PA_SYNC_SUPPORT
 uint16_t rtk_bt_le_gap_pa_sync_modify_adv_list(rtk_bt_le_pa_sync_advlist_op_t operation, rtk_bt_le_addr_t adv_addr, uint8_t adv_sid)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	rtk_bt_le_pa_sync_modify_advlist_t param = {
 		.operation = operation,
@@ -525,7 +525,7 @@ uint16_t rtk_bt_le_gap_pa_sync_modify_adv_list(rtk_bt_le_pa_sync_advlist_op_t op
 
 uint16_t rtk_bt_le_gap_pa_sync_create(rtk_bt_le_pa_sync_create_t *param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (param->p_sync_id == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -552,7 +552,7 @@ uint16_t rtk_bt_le_gap_pa_sync_create(rtk_bt_le_pa_sync_create_t *param)
 
 uint16_t rtk_bt_le_gap_pa_sync_terminate(uint8_t sync_id)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_PA_SYNC_TERMINATE, &sync_id, sizeof(uint8_t));
 
@@ -562,7 +562,7 @@ uint16_t rtk_bt_le_gap_pa_sync_terminate(uint8_t sync_id)
 // #if defined(RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT) && RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT
 // uint16_t rtk_bt_le_gap_pa_sync_report_set(uint8_t sync_id, bool report_enable, bool duplicate_filter_enable)
 // {
-//  uint16_t ret = 0;
+//  uint16_t ret = RTK_BT_OK;
 
 //  rtk_bt_le_pa_sync_report_set_t param = {
 //      .sync_id = sync_id,
@@ -580,7 +580,7 @@ uint16_t rtk_bt_le_gap_pa_sync_terminate(uint8_t sync_id)
 #if defined(RTK_BLE_5_1_PAST_SENDER_SUPPORT) && RTK_BLE_5_1_PAST_SENDER_SUPPORT
 uint16_t rtk_bt_le_gap_past_send(uint16_t conn_handle, uint16_t service_data, bool use_sync_id, uint8_t idx)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_past_send_t param = {
 		.conn_handle = conn_handle,
 		.service_data = service_data,
@@ -597,7 +597,7 @@ uint16_t rtk_bt_le_gap_past_send(uint16_t conn_handle, uint16_t service_data, bo
 #if defined(RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT) && RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT
 uint16_t rtk_bt_le_gap_past_recipient_set(rtk_bt_le_past_recv_param_t *param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (param->skip > 0x01F3) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -614,7 +614,7 @@ uint16_t rtk_bt_le_gap_past_recipient_set(rtk_bt_le_past_recv_param_t *param)
 
 uint16_t rtk_bt_le_gap_default_past_recipient_set(rtk_bt_le_past_recv_param_t *param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (param->skip > 0x01F3) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -632,7 +632,7 @@ uint16_t rtk_bt_le_gap_default_past_recipient_set(rtk_bt_le_past_recv_param_t *p
 
 uint16_t rtk_bt_le_gap_scan_info_filter(rtk_bt_le_scan_info_filter_param_t *p_scan_info)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_scan_info) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -646,7 +646,7 @@ uint16_t rtk_bt_le_gap_scan_info_filter(rtk_bt_le_scan_info_filter_param_t *p_sc
 
 uint16_t rtk_bt_le_gap_set_scan_param(rtk_bt_le_scan_param_t *p_gap_scan_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_gap_scan_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -679,7 +679,7 @@ uint16_t rtk_bt_le_gap_set_scan_param(rtk_bt_le_scan_param_t *p_gap_scan_param)
 
 uint16_t rtk_bt_le_gap_get_scan_param(rtk_bt_le_scan_param_t *pscan_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_GET_SCAN_PARAM, pscan_param, sizeof(rtk_bt_le_scan_param_t));
 
@@ -688,7 +688,7 @@ uint16_t rtk_bt_le_gap_get_scan_param(rtk_bt_le_scan_param_t *pscan_param)
 
 uint16_t rtk_bt_le_gap_start_scan(void)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_START_SCAN, NULL, 0);
 
@@ -697,7 +697,7 @@ uint16_t rtk_bt_le_gap_start_scan(void)
 
 uint16_t rtk_bt_le_gap_stop_scan(void)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_STOP_SCAN, NULL, 0);
 
@@ -707,7 +707,7 @@ uint16_t rtk_bt_le_gap_stop_scan(void)
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 uint16_t rtk_bt_le_gap_set_ext_scan_param(rtk_bt_le_ext_scan_param_t *p_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -767,7 +767,7 @@ uint16_t rtk_bt_le_gap_set_ext_scan_param(rtk_bt_le_ext_scan_param_t *p_param)
 
 uint16_t rtk_bt_le_gap_start_ext_scan(void)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_EXT_SCAN_START, NULL, 0);
 
@@ -776,7 +776,7 @@ uint16_t rtk_bt_le_gap_start_ext_scan(void)
 
 uint16_t rtk_bt_le_gap_stop_ext_scan(void)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_EXT_SCAN_STOP, NULL, 0);
 
@@ -786,7 +786,7 @@ uint16_t rtk_bt_le_gap_stop_ext_scan(void)
 
 uint16_t rtk_bt_le_gap_connect(rtk_bt_le_create_conn_param_t *p_conn_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_conn_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -834,7 +834,7 @@ uint16_t rtk_bt_le_gap_connect(rtk_bt_le_create_conn_param_t *p_conn_param)
 
 uint16_t rtk_bt_le_gap_connect_cancel(rtk_bt_le_addr_t *cancel_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!cancel_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -851,7 +851,7 @@ uint16_t rtk_bt_le_gap_connect_cancel(rtk_bt_le_addr_t *cancel_addr)
 
 uint16_t rtk_bt_le_gap_disconnect(uint16_t conn_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_DISCONN,
 						  &conn_handle, sizeof(uint16_t));
@@ -861,7 +861,7 @@ uint16_t rtk_bt_le_gap_disconnect(uint16_t conn_handle)
 
 uint16_t rtk_bt_le_gap_disconnect_with_reason(uint16_t conn_handle, uint8_t reason)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_disconn_with_reason_param_t disconn_with_reason = {
 		.conn_handle = conn_handle,
 		.reason = reason,
@@ -883,7 +883,7 @@ uint16_t rtk_bt_le_gap_disconnect_with_reason(uint16_t conn_handle, uint8_t reas
 
 uint16_t rtk_bt_le_gap_update_conn_param(rtk_bt_le_update_conn_param_t *p_update_conn_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_update_conn_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -916,7 +916,7 @@ uint16_t rtk_bt_le_gap_update_conn_param(rtk_bt_le_update_conn_param_t *p_update
 
 uint16_t rtk_bt_le_gap_modify_whitelist(rtk_bt_le_modify_wl_param_t *p_wl_op_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_wl_op_param) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -941,7 +941,7 @@ uint16_t rtk_bt_le_gap_modify_whitelist(rtk_bt_le_modify_wl_param_t *p_wl_op_par
 
 uint16_t rtk_bt_le_gap_read_rssi(uint16_t conn_handle, int8_t *p_rssi)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_read_rssi_param_t read_rssi = {0};
 	read_rssi.conn_handle = conn_handle;
 	read_rssi.p_rssi = p_rssi;
@@ -958,7 +958,7 @@ uint16_t rtk_bt_le_gap_read_rssi(uint16_t conn_handle, int8_t *p_rssi)
 
 uint16_t rtk_bt_le_gap_read_remote_version(uint16_t conn_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_READ_REMOTE_VERSION,
 						  &conn_handle, sizeof(uint16_t));
@@ -968,7 +968,7 @@ uint16_t rtk_bt_le_gap_read_remote_version(uint16_t conn_handle)
 
 uint16_t rtk_bt_le_gap_get_dev_state(rtk_bt_le_gap_dev_state_t *p_dev_state)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_dev_state) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -982,7 +982,7 @@ uint16_t rtk_bt_le_gap_get_dev_state(rtk_bt_le_gap_dev_state_t *p_dev_state)
 
 uint16_t rtk_bt_le_gap_get_active_conn(rtk_bt_le_get_active_conn_t *p_active_conn)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_active_conn) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -996,7 +996,7 @@ uint16_t rtk_bt_le_gap_get_active_conn(rtk_bt_le_get_active_conn_t *p_active_con
 
 uint16_t rtk_bt_le_gap_get_conn_handle_by_addr(rtk_bt_le_addr_t *p_addr, uint16_t *p_conn_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_get_conn_handle_by_addr_param_t conn_handle_by_addr;
 	memset(&conn_handle_by_addr, 0, sizeof(rtk_bt_le_get_conn_handle_by_addr_param_t));
 	memcpy((void *)&conn_handle_by_addr.addr, (void *)p_addr, sizeof(rtk_bt_le_addr_t));
@@ -1014,7 +1014,7 @@ uint16_t rtk_bt_le_gap_get_conn_handle_by_addr(rtk_bt_le_addr_t *p_addr, uint16_
 
 uint16_t rtk_bt_le_gap_get_conn_info(uint16_t conn_handle, rtk_bt_le_conn_info_t *p_conn_info)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_get_conn_info_param_t get_info = {0};
 	get_info.conn_handle = conn_handle;
 	get_info.p_conn_info = p_conn_info;
@@ -1031,7 +1031,7 @@ uint16_t rtk_bt_le_gap_get_conn_info(uint16_t conn_handle, rtk_bt_le_conn_info_t
 
 uint16_t rtk_bt_le_gap_get_mtu_size(uint16_t conn_handle, uint16_t *p_mtu_size)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_get_mtu_size_param_t get_mtu = {0};
 	get_mtu.conn_handle = conn_handle;
 	get_mtu.p_mtu_size = p_mtu_size;
@@ -1048,7 +1048,7 @@ uint16_t rtk_bt_le_gap_get_mtu_size(uint16_t conn_handle, uint16_t *p_mtu_size)
 
 uint16_t rtk_bt_le_gap_set_max_mtu_size(uint16_t mtu_size)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_SET_MAX_MTU_SIZE,
 						  &mtu_size, sizeof(uint16_t));
@@ -1058,7 +1058,7 @@ uint16_t rtk_bt_le_gap_set_max_mtu_size(uint16_t mtu_size)
 
 uint16_t rtk_bt_le_gap_set_channels(uint8_t *p_chan_map)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_chan_map) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1073,7 +1073,7 @@ uint16_t rtk_bt_le_gap_set_channels(uint8_t *p_chan_map)
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 uint16_t rtk_bt_le_gap_set_data_len(rtk_bt_le_set_datalen_param_t *p_datalen_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_datalen_param) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1097,7 +1097,7 @@ uint16_t rtk_bt_le_gap_set_data_len(rtk_bt_le_set_datalen_param_t *p_datalen_par
 #if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 uint16_t rtk_bt_le_gap_set_phy(rtk_bt_le_set_phy_param_t *p_phy_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_phy_param ||
 		p_phy_param->all_phys > 1 << 2 || p_phy_param->tx_phys > 1 << 3 ||
@@ -1115,7 +1115,7 @@ uint16_t rtk_bt_le_gap_set_phy(rtk_bt_le_set_phy_param_t *p_phy_param)
 #if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 uint16_t rtk_bt_le_gap_privacy_init(bool whitelist)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_PRIVACY_INIT,
 						  &whitelist, sizeof(bool));
@@ -1126,7 +1126,7 @@ uint16_t rtk_bt_le_gap_privacy_init(bool whitelist)
 uint16_t rtk_bt_le_gap_set_privacy_mode(rtk_bt_le_ident_addr_type_t peer_ident_addr_type,
 										uint8_t *peer_addr, rtk_bt_le_privacy_mode_t privacy_mode)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_set_privacy_mode_param_t param = {
 		.peer_ident_addr_type = peer_ident_addr_type,
 		.peer_addr = peer_addr,
@@ -1141,7 +1141,7 @@ uint16_t rtk_bt_le_gap_set_privacy_mode(rtk_bt_le_ident_addr_type_t peer_ident_a
 uint16_t rtk_bt_le_gap_read_local_resolv_addr(rtk_bt_le_ident_addr_type_t peer_ident_addr_type,
 											  uint8_t *peer_addr, uint8_t *local_rpa)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_read_local_rpa_param_t param = {
 		.peer_ident_addr_type = peer_ident_addr_type,
 		.peer_addr = peer_addr,
@@ -1156,7 +1156,7 @@ uint16_t rtk_bt_le_gap_read_local_resolv_addr(rtk_bt_le_ident_addr_type_t peer_i
 uint16_t rtk_bt_le_gap_read_peer_resolv_addr(rtk_bt_le_ident_addr_type_t peer_ident_addr_type,
 											 uint8_t *peer_addr, uint8_t *peer_rpa)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_read_peer_rpa_param_t param = {
 		.peer_ident_addr_type = peer_ident_addr_type,
 		.peer_addr = peer_addr,
@@ -1171,7 +1171,7 @@ uint16_t rtk_bt_le_gap_read_peer_resolv_addr(rtk_bt_le_ident_addr_type_t peer_id
 
 uint16_t rtk_bt_le_sm_set_pairing_mode(rtk_bt_le_pairing_mode_t pairing_mode)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (pairing_mode > RTK_PAIRING_MODE_PAIRABLE) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1185,7 +1185,7 @@ uint16_t rtk_bt_le_sm_set_pairing_mode(rtk_bt_le_pairing_mode_t pairing_mode)
 
 uint16_t rtk_bt_le_sm_set_security_param(rtk_bt_le_security_param_t *p_sec_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_sec_param ||
 		p_sec_param->io_cap >= RTK_IO_CAP_MAX ||
@@ -1201,7 +1201,7 @@ uint16_t rtk_bt_le_sm_set_security_param(rtk_bt_le_security_param_t *p_sec_param
 
 uint16_t rtk_bt_le_sm_get_security_param(rtk_bt_le_security_param_t *p_sec_param)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_GET_SEC_PARAM,
 						  p_sec_param, sizeof(rtk_bt_le_security_param_t));
@@ -1211,7 +1211,7 @@ uint16_t rtk_bt_le_sm_get_security_param(rtk_bt_le_security_param_t *p_sec_param
 
 uint16_t rtk_bt_le_sm_start_security(uint16_t conn_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_START_SECURITY,
 						  &conn_handle, sizeof(uint16_t));
@@ -1221,7 +1221,7 @@ uint16_t rtk_bt_le_sm_start_security(uint16_t conn_handle)
 
 uint16_t rtk_bt_le_sm_pairing_confirm(rtk_bt_le_pair_cfm_t *p_pair_cfm)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_pair_cfm) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1235,7 +1235,7 @@ uint16_t rtk_bt_le_sm_pairing_confirm(rtk_bt_le_pair_cfm_t *p_pair_cfm)
 
 uint16_t rtk_bt_le_sm_passkey_entry(rtk_bt_le_auth_key_input_t *p_key_input)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_key_input || p_key_input->passkey > RTK_PAIRING_PASSKEY_MAX) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1249,7 +1249,7 @@ uint16_t rtk_bt_le_sm_passkey_entry(rtk_bt_le_auth_key_input_t *p_key_input)
 
 uint16_t rtk_bt_le_sm_passkey_confirm(rtk_bt_le_auth_key_confirm_t *p_key_cfm)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_key_cfm) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1264,7 +1264,7 @@ uint16_t rtk_bt_le_sm_passkey_confirm(rtk_bt_le_auth_key_confirm_t *p_key_cfm)
 #if defined(RTK_BLE_SMP_OOB_SUPPORT) && RTK_BLE_SMP_OOB_SUPPORT
 uint16_t rtk_bt_le_sm_set_oob_tk(rtk_bt_le_set_oob_key_t *p_set_oob_key)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_set_oob_key) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1278,7 +1278,7 @@ uint16_t rtk_bt_le_sm_set_oob_tk(rtk_bt_le_set_oob_key_t *p_set_oob_key)
 
 uint16_t rtk_bt_le_sm_get_sc_local_oob(rtk_bt_le_sc_local_oob_data_t *local_oob)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!local_oob) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -1292,7 +1292,7 @@ uint16_t rtk_bt_le_sm_get_sc_local_oob(rtk_bt_le_sc_local_oob_data_t *local_oob)
 
 uint16_t rtk_bt_le_sm_input_sc_peer_oob(rtk_bt_le_sc_peer_oob_data_t *peer_oob)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!peer_oob) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -1307,7 +1307,7 @@ uint16_t rtk_bt_le_sm_input_sc_peer_oob(rtk_bt_le_sc_peer_oob_data_t *peer_oob)
 
 uint16_t rtk_bt_le_sm_get_bond_num(uint8_t *bond_num)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bond_num) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1357,7 +1357,7 @@ bool rtk_bt_le_sm_is_device_bonded(rtk_bt_le_addr_t *paddr)
 
 uint16_t rtk_bt_le_sm_get_bond_info(rtk_bt_le_bond_info_t *p_bond_info, uint8_t *size)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_get_bond_info_param_t get_bondinfo = {0};
 
 	if (!p_bond_info || !size) {
@@ -1375,7 +1375,7 @@ uint16_t rtk_bt_le_sm_get_bond_info(rtk_bt_le_bond_info_t *p_bond_info, uint8_t 
 
 uint16_t rtk_bt_le_sm_delete_bond_device(rtk_bt_le_addr_t *paddr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!paddr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -1389,7 +1389,7 @@ uint16_t rtk_bt_le_sm_delete_bond_device(rtk_bt_le_addr_t *paddr)
 
 uint16_t rtk_bt_le_sm_clear_bond_list(void)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_CLEAR_BOND_LIST, NULL, 0);
 
@@ -1398,7 +1398,7 @@ uint16_t rtk_bt_le_sm_clear_bond_list(void)
 
 uint16_t rtk_bt_le_gap_get_tx_pending_num(uint16_t conn_handle, uint16_t *p_tx_pending_num)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_get_tx_pending_num_param_t param = {0};
 
 	if (!p_tx_pending_num) {
@@ -1418,7 +1418,7 @@ uint16_t rtk_bt_le_gap_get_tx_pending_num(uint16_t conn_handle, uint16_t *p_tx_p
 uint16_t rtk_bt_le_gap_read_local_tx_power(uint16_t conn_handle, rtk_bt_le_txpower_phy_t phy,
 										   int8_t *cur_txpower, int8_t *max_txpower)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_txpower_read_local_t param = {
 		.conn_handle = conn_handle,
 		.phy = phy,
@@ -1434,7 +1434,7 @@ uint16_t rtk_bt_le_gap_read_local_tx_power(uint16_t conn_handle, rtk_bt_le_txpow
 
 uint16_t rtk_bt_le_gap_read_remote_tx_power(uint16_t conn_handle, rtk_bt_le_txpower_phy_t phy)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_txpower_read_remote_t param = {
 		.conn_handle = conn_handle,
 		.phy = phy
@@ -1448,7 +1448,7 @@ uint16_t rtk_bt_le_gap_read_remote_tx_power(uint16_t conn_handle, rtk_bt_le_txpo
 
 uint16_t rtk_bt_le_gap_tx_power_report_set(uint16_t conn_handle, bool local_enable, bool remote_enable)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_txpower_report_set_t param = {
 		.conn_handle = conn_handle,
 		.local_enable = local_enable,
@@ -1466,7 +1466,7 @@ uint16_t rtk_bt_le_gap_tx_power_report_set(uint16_t conn_handle, bool local_enab
 
 uint16_t rtk_bt_le_gap_get_antenna_info(rtk_bt_le_gap_antenna_info_t *antenna_info)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!antenna_info) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -1482,7 +1482,7 @@ uint16_t rtk_bt_le_gap_get_antenna_info(rtk_bt_le_gap_antenna_info_t *antenna_in
 
 uint16_t rtk_bt_le_gap_connless_cte_rx_start(uint8_t sync_id, rtk_bt_le_gap_connless_cte_rx_param_t *params)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_gap_connless_cte_rx_start_t start_param = {
 		.sync_id = sync_id,
 		.param = params
@@ -1512,7 +1512,7 @@ uint16_t rtk_bt_le_gap_connless_cte_rx_start(uint8_t sync_id, rtk_bt_le_gap_conn
 
 uint16_t rtk_bt_le_gap_connless_cte_rx_stop(uint8_t sync_id)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP,
 						  RTK_BT_LE_GAP_ACT_CONNLESS_CTE_RX_STOP,
@@ -1525,7 +1525,7 @@ uint16_t rtk_bt_le_gap_connless_cte_rx_stop(uint8_t sync_id)
 uint16_t rtk_bt_le_gap_conn_cte_rx_start(uint16_t conn_handle,
 										 rtk_bt_le_gap_conn_cte_rx_param_t *rx_params)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	rtk_bt_le_gap_conn_cte_rx_t start = {
 		.conn_handle = conn_handle,
@@ -1563,7 +1563,7 @@ uint16_t rtk_bt_le_gap_conn_cte_rx_start(uint16_t conn_handle,
 
 uint16_t rtk_bt_le_gap_conn_cte_rx_stop(uint16_t conn_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	rtk_bt_le_gap_conn_cte_rx_t stop = {
 		.conn_handle = conn_handle,
@@ -1582,7 +1582,7 @@ uint16_t rtk_bt_le_gap_conn_cte_rx_stop(uint16_t conn_handle)
 
 uint16_t rtk_bt_le_gap_conn_cte_tx_start(uint16_t conn_handle, rtk_bt_le_gap_conn_cte_tx_param_t *params)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	bool aod;
 
 	rtk_bt_le_gap_conn_cte_tx_start_t start = {
@@ -1613,7 +1613,7 @@ uint16_t rtk_bt_le_gap_conn_cte_tx_start(uint16_t conn_handle, rtk_bt_le_gap_con
 
 uint16_t rtk_bt_le_gap_conn_cte_tx_stop(uint16_t conn_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP,
 						  RTK_BT_LE_GAP_ACT_CONN_CTE_TX_STOP,
@@ -1627,7 +1627,7 @@ uint16_t rtk_bt_le_gap_conn_cte_tx_stop(uint16_t conn_handle)
 
 static uint16_t rtk_bt_le_gap_connless_cte_tx_enable(uint8_t adv_handle, rtk_bt_le_gap_connless_cte_tx_param_t *params)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	bool aod;
 
 	rtk_bt_le_gap_connless_cte_tx_start_t start = {
@@ -1670,7 +1670,7 @@ static uint16_t rtk_bt_le_gap_connless_cte_tx_enable(uint8_t adv_handle, rtk_bt_
 
 static uint16_t rtk_bt_le_gap_connless_cte_tx_disable(uint8_t adv_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP,
 						  RTK_BT_LE_GAP_ACT_CONNLESS_CTE_TX_STOP,
@@ -1685,7 +1685,7 @@ uint16_t rtk_bt_le_gap_connless_cte_tx_start(rtk_bt_le_gap_connless_cte_tx_param
 											 rtk_bt_le_pa_param_t *p_pa_param,
 											 uint8_t *p_adv_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	uint8_t  adv_handle;
 	if (!p_cte_param || !p_eadv_param || !p_pa_param || !p_adv_handle) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -1730,7 +1730,7 @@ uint16_t rtk_bt_le_gap_connless_cte_tx_start(rtk_bt_le_gap_connless_cte_tx_param
 
 uint16_t rtk_bt_le_gap_connless_cte_tx_stop(uint8_t adv_handle)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	ret = rtk_bt_le_gap_connless_cte_tx_disable(adv_handle);
 	ret = rtk_bt_le_gap_stop_pa(adv_handle);
 	ret = rtk_bt_le_gap_stop_ext_adv(adv_handle);
@@ -1745,7 +1745,7 @@ uint16_t rtk_bt_le_gap_connless_cte_tx_stop(uint8_t adv_handle)
 #if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
 uint16_t rtk_bt_le_gap_coc_register_psm(uint8_t is_register, uint16_t le_psm)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	rtk_bt_le_coc_psm_reg_param_t param = {
 		.is_register = is_register,
@@ -1760,7 +1760,7 @@ uint16_t rtk_bt_le_gap_coc_set_psm_security(uint16_t le_psm, uint8_t active,
 											rtk_bt_le_coc_security_mode_t sec_mode,
 											uint8_t key_size)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (sec_mode > RTK_BT_LE_COC_SEC_SECURE_CONN_AUTHEN) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1779,7 +1779,7 @@ uint16_t rtk_bt_le_gap_coc_set_psm_security(uint16_t le_psm, uint8_t active,
 
 uint16_t rtk_bt_le_gap_coc_set_param(rtk_bt_le_coc_param_type_t param_type, uint16_t value)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (param_type > RTK_BT_LE_COC_PARAM_LOCAL_MTU) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1797,7 +1797,7 @@ uint16_t rtk_bt_le_gap_coc_set_param(rtk_bt_le_coc_param_type_t param_type, uint
 uint16_t rtk_bt_le_gap_coc_get_chan_param(rtk_bt_le_coc_chan_param_type_t param_type,
 										  uint16_t cid, uint16_t *value)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!value) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -1819,7 +1819,7 @@ uint16_t rtk_bt_le_gap_coc_get_chan_param(rtk_bt_le_coc_chan_param_type_t param_
 
 uint16_t rtk_bt_le_gap_coc_connect(uint16_t conn_handle, uint16_t le_psm)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	rtk_bt_le_coc_connect_param_t param = {
 		.conn_handle = conn_handle,
@@ -1832,7 +1832,7 @@ uint16_t rtk_bt_le_gap_coc_connect(uint16_t conn_handle, uint16_t le_psm)
 
 uint16_t rtk_bt_le_gap_coc_disconnect(uint16_t cid)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_COC_DISCONN,
 						  &cid, sizeof(uint16_t));
@@ -1841,7 +1841,7 @@ uint16_t rtk_bt_le_gap_coc_disconnect(uint16_t cid)
 
 uint16_t rtk_bt_le_gap_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!data) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -1860,7 +1860,7 @@ uint16_t rtk_bt_le_gap_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data)
 
 uint16_t rtk_bt_le_gap_dtm_rx_test(rtk_bt_le_dtm_rx_param_t *p_rx_param, rtk_bt_le_dtm_rx_version_t rx_version)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_gap_act_t act;
 
 	if (!p_rx_param) {
@@ -1913,7 +1913,7 @@ uint16_t rtk_bt_le_gap_dtm_rx_test(rtk_bt_le_dtm_rx_param_t *p_rx_param, rtk_bt_
 
 uint16_t rtk_bt_le_gap_dtm_tx_test(rtk_bt_le_dtm_tx_param_t *p_tx_param, rtk_bt_le_dtm_tx_version_t tx_version)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	rtk_bt_le_gap_act_t act;
 
 	if (!p_tx_param) {
@@ -1966,7 +1966,7 @@ uint16_t rtk_bt_le_gap_dtm_tx_test(rtk_bt_le_dtm_tx_param_t *p_tx_param, rtk_bt_
 
 uint16_t rtk_bt_le_gap_dtm_end(uint16_t *p_num_pkts)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_DTM_END_TEST, p_num_pkts, sizeof(uint16_t));
 

@@ -10,7 +10,6 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "os_wrapper.h"
-#include "usbh.h"
 #include "usbh_dfu.h"
 
 /* Private defines -----------------------------------------------------------*/
@@ -195,6 +194,9 @@ static void example_usbh_dfu_thread(void *param)
 		goto exit;
 	}
 
+	/* All class drivers registered; start USB TRX so enumeration can run. */
+	usbh_start();
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH DFU demo start\n");
 
 	/* Wait for DFU device to attach */
@@ -243,6 +245,7 @@ static void example_usbh_dfu_thread(void *param)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH DFU demo stop\n");
 deinit:
+	usbh_stop();
 	usbh_dfu_deinit();
 	usbh_deinit();
 

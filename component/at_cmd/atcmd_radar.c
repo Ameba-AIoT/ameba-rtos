@@ -19,6 +19,8 @@
 #endif
 #endif
 
+static void (*g_at_radarstart_cb)(u16 argc, char **argv) = NULL;
+
 static void at_rad_help(void)
 {
 	RTK_LOGI(NOTAG, "\r\n");
@@ -180,12 +182,18 @@ end:
 	}
 }
 
-/* Weak stub: overridden by example/wifi/wifi_radar/atcmd_wifi_radar.c when that example is built. */
-__weak void at_radarstart(u16 argc, char **argv)
+void radar_atcmd_register_start_cb(void (*cb)(u16 argc, char **argv))
 {
-	(void)argc;
-	(void)argv;
-	at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_UNKNOWN_ERR);
+	g_at_radarstart_cb = cb;
+}
+
+void at_radarstart(u16 argc, char **argv)
+{
+	if (g_at_radarstart_cb) {
+		g_at_radarstart_cb(argc, argv);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_UNKNOWN_ERR);
+	}
 }
 
 ATCMD_APONLY_TABLE_DATA_SECTION

@@ -5,8 +5,12 @@
 #if defined(CONFIG_BT_COEXIST)
 #include "sdn_coex_intf.h"
 #endif
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+#include "wifi_api.h"
+#include "wifi_intf_drv_to_app_internal.h"
+#endif
 
-struct sdn_client_ipc_tx {
+struct sdn_client_tx {
 	struct list_head free_list;
 	struct list_head busy_list;
 	uint8_t *msg_pool;
@@ -18,7 +22,7 @@ struct sdn_client_ipc_tx {
 	void *done_sema;
 };
 
-struct sdn_client_ipc_rx {
+struct sdn_client_rx {
 	struct list_head free_list;
 	struct list_head busy_list;
 	uint8_t *msg_pool;
@@ -27,19 +31,18 @@ struct sdn_client_ipc_rx {
 	uint8_t ctrl_msg[7];
 #ifdef CONFIG_BT_SDN
 	uint8_t num_bt_hci_cmd;
-	uint8_t num_bt_acl_data;
 #endif
 #if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
 	uint8_t num_154;
 #endif
 };
 
-struct sdn_client_ipc {
-	struct sdn_client_ipc_tx tx;
-	struct sdn_client_ipc_rx rx;
+struct sdn_client {
+	struct sdn_client_tx tx;
+	struct sdn_client_rx rx;
 	bool is_mp;
 };
-static struct sdn_client_ipc g_sdn_client_intf = {0};
+static struct sdn_client g_sdn_client_intf = {0};
 extern struct sdn_t g_sdn;
 
 #define SDN_CLIENT_RX_TASK_PRI          5
@@ -59,7 +62,6 @@ extern struct sdn_t g_sdn;
 #define TAG_SDN_COEX    "SDN_COEX"
 #endif
 
-extern void bt_hci_client_recv_data(uint8_t type, uint8_t *pdata);
 extern int rtk_wpan_vhdlc_receive(uint8_t *buf, uint32_t length);
 extern void sdn_coex_b2w_scbd_bt_on(uint8_t bt_on, uint8_t direct_send);
 extern void sdn_loguart_init(void);
@@ -84,6 +86,30 @@ bool sdn_uart_is_on(void);
 void sdn_uart_tx(struct sdn_data_buf *pdata_buf);
 #endif
 
+extern void bt_hci_rx_acl_data(uint8_t *pbuf);
+extern void bt_hci_cmd_handler(uint8_t *pbuf);
+extern void ble_conn_free_rx(void *rx);
+
+bool _rtk_bt_pre_enable(void)
+{
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+	if (!(wifi_is_running(STA_WLAN_INDEX) || wifi_is_running(SOFTAP_WLAN_INDEX))) {
+		return false;
+	}
+
+	wifi_ps_en_by_bt_state(DISABLE);
+#endif
+
+	return true;
+}
+
+void _rtk_bt_post_enable(void)
+{
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+	wifi_ps_en_by_bt_state(ENABLE);
+#endif
+}
+
 static void _add_tail_lock(struct sdn_data_buf *pdata_buf, struct list_head *head)
 {
 	rtos_critical_enter(RTOS_CRITICAL_BT);
@@ -99,6 +125,13 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *data, uint16_t len)
 	// SDN_LOGA("%s type %d\r\n", __func__, type);
 	// SDN_DUMPA("", data, len);
 
+#ifdef CONFIG_BT_SDN
+	if (protocol == SDN_INTF_BT && type == BT_HCI_H4_ACL) {
+		bt_hci_rx_acl_data(data);
+		return SDN_INTF_ERR_OK;
+	}
+#endif
+
 	/* This function is called in interrupt contex in IPC mode, critical is unnecessary. */
 #ifdef CONFIG_SDN_HOST
 	rtos_critical_enter(RTOS_CRITICAL_BT);
@@ -110,11 +143,6 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *data, uint16_t len)
 		if (type == BT_HCI_H4_CMD) {
 			if (g_sdn_client_intf.rx.num_bt_hci_cmd) {
 				g_sdn_client_intf.rx.num_bt_hci_cmd--;
-				balloc_avaliable = true;
-			}
-		} else {
-			if (g_sdn_client_intf.rx.num_bt_acl_data) {
-				g_sdn_client_intf.rx.num_bt_acl_data--;
 				balloc_avaliable = true;
 			}
 		}
@@ -210,10 +238,14 @@ static void _tx_task_hdl(void *pcontext)
 				{
 					sdn_c2h(pdata_buf);
 				}
-				_add_tail_lock(pdata_buf, &g_sdn_client_intf.tx.free_list);
+
+				if (pdata_buf->pmsg->protocol == SDN_INTF_BT && pdata_buf->pmsg->type == BT_HCI_H4_ACL) {
+					ble_conn_free_rx(pdata_buf);
+				} else {
+					_add_tail_lock(pdata_buf, &g_sdn_client_intf.tx.free_list);
+				}
 			}
 		}
-
 	}
 
 	g_sdn_client_intf.tx.task.running = 0;
@@ -322,9 +354,9 @@ bool sdn_in_mp(void)
 
 #ifndef CONFIG_SDN_HOST
 void sdn_client_intf_close(void);
-static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
+static void _sdn_ctrl_rx(uint8_t type, uint8_t *data)
 {
-	switch (pmsg->type) {
+	switch (type) {
 	case SDN_INTF_CTRL_INTF_OPEN:
 		sdn_enable();
 		break;
@@ -334,20 +366,20 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 		break;
 
 	case SDN_INTF_CTRL_PROTO_ADD:
-		sdn_add_protocol(pmsg->data[0]);
+		sdn_add_protocol(data[0]);
 		break;
 
 	case SDN_INTF_CTRL_PROTO_REMOVE:
-		sdn_remove_protocol(pmsg->data[0]);
+		sdn_remove_protocol(data[0]);
 		break;
 
 #ifdef CONFIG_MP_INCLUDED
 	case SDN_INTF_CTRL_MP:
-		sdn_set_mp(pmsg->data[0]);
+		sdn_set_mp(data[0]);
 		break;
 
 	case SDN_INTF_CTRL_BRIDGE_OPEN:
-		sdn_bridge_open(pmsg->data[0]);
+		sdn_bridge_open(data[0]);
 		break;
 
 	case SDN_INTF_CTRL_BRIDGE_CLOSE:
@@ -356,7 +388,7 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 #endif
 
 	case SDN_INTF_CTRL_FIX_ADDR:
-		sdn_fix_bt_addr(pmsg->data);
+		sdn_fix_bt_addr(data);
 		break;
 
 	default:
@@ -365,7 +397,10 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 	}
 
 	sdn_c2h(NULL); /* indicate host that msg has been processed. */
-	if (pmsg->type == SDN_INTF_CTRL_INTF_CLOSE) {
+
+	/* Host is able to send another ctrl message after sdn_c2h(NULL).
+	   So, pointer data is not safe to use here. */
+	if (type == SDN_INTF_CTRL_INTF_CLOSE) {
 		sdn_client_intf_close();
 	}
 }
@@ -396,24 +431,24 @@ static void _rx_task_hdl(void *pcontext)
 			list_del_init(&pdata_buf->list);
 			rtos_critical_exit(RTOS_CRITICAL_BT);
 			switch (pdata_buf->pmsg->protocol) {
-			case SDN_INTF_BT:
 #ifdef CONFIG_BT_SDN
-				bt_hci_client_recv_data(pdata_buf->pmsg->type, pdata_buf->pmsg->data);
-#endif
+			case SDN_INTF_BT:
+				bt_hci_cmd_handler(pdata_buf->pmsg->data);
 				break;
+#endif
 
-			case SDN_INTF_154:
 #if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
+			case SDN_INTF_154:
 				rtk_wpan_vhdlc_receive(pdata_buf->pmsg->data, pdata_buf->len - sizeof(struct sdn_intf_data_msg));
-#endif
 				break;
+#endif
 
 #ifndef CONFIG_SDN_HOST
 			case SDN_INTF_CTRL:
-				_sdn_ctrl_rx(pdata_buf->pmsg);
+				_sdn_ctrl_rx(pdata_buf->pmsg->type, pdata_buf->pmsg->data);
 				continue;
-#endif
 				break;
+#endif
 			default:
 				break;
 			}
@@ -425,8 +460,6 @@ static void _rx_task_hdl(void *pcontext)
 			case SDN_INTF_BT:
 				if (pdata_buf->pmsg->type == BT_HCI_H4_CMD) {
 					g_sdn_client_intf.rx.num_bt_hci_cmd ++;
-				} else {
-					g_sdn_client_intf.rx.num_bt_acl_data ++;
 				}
 				break;
 #endif
@@ -458,7 +491,6 @@ static void sdn_client_rx_deinit(void)
 
 #ifdef CONFIG_BT_SDN
 	g_sdn_client_intf.rx.num_bt_hci_cmd = 0;
-	g_sdn_client_intf.rx.num_bt_acl_data = 0;
 #endif
 #if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
 	g_sdn_client_intf.rx.num_154 = 0;
@@ -522,9 +554,7 @@ static uint32_t sdn_client_rx_init(void)
 
 #ifdef CONFIG_BT_SDN
 	g_sdn_client_intf.rx.num_bt_hci_cmd = SDN_CONF_CLIENT_BT_RX_CMD_NUM;
-	g_sdn_client_intf.rx.num_bt_acl_data = SDN_CONF_CLIENT_BT_RX_ACL_NUM;
 	rx_num += g_sdn_client_intf.rx.num_bt_hci_cmd;
-	rx_num += g_sdn_client_intf.rx.num_bt_acl_data;
 #endif
 #if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
 	g_sdn_client_intf.rx.num_154 = SDN_CONF_CLIENT_154_RX_NUM;
@@ -578,6 +608,11 @@ uint8_t *sdn_client_intf_get_txbuf(uint8_t protocol, uint8_t type, uint16_t len,
 	struct sdn_data_buf *pdata_buf = NULL;
 	struct list_head *pos = NULL;
 	uint8_t free_num = 0;
+
+	if (len > SDN_INTF_MAX_DATA_LEN) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "sdn_client_intf_get_txbuf ERROR %d > max(%d)\r\n", len, SDN_INTF_MAX_DATA_LEN);
+		return NULL;
+	}
 
 	if (g_sdn_client_intf.tx.task.stop) {
 		return NULL;
@@ -657,41 +692,9 @@ void sdn_client_intf_send(void *pdata_buf)
 	rtos_sema_give(g_sdn_client_intf.tx.task.sema);
 }
 
-uint8_t sdn_client_intf_get_free_rx_num(uint8_t type, uint8_t sub_type)
+uint8_t sdn_client_intf_get_free_bt_cmd_num(void)
 {
-	(void)sub_type;
-	uint8_t free_rx_num = 0;
-	switch (type) {
-#ifdef CONFIG_BT_SDN
-	case SDN_INTF_BT:
-		if (sub_type == BT_HCI_H4_CMD) {
-			free_rx_num = g_sdn_client_intf.rx.num_bt_hci_cmd;
-		} else {
-			free_rx_num = g_sdn_client_intf.rx.num_bt_acl_data;
-		}
-		break;
-#endif
-
-#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
-	case SDN_INTF_154:
-		free_rx_num = g_sdn_client_intf.rx.num_154;
-		break;
-#endif
-	default:
-		break;
-	}
-
-	return free_rx_num;
-}
-
-uint8_t sdn_client_intf_get_rx_bt_acl_max_num(void)
-{
-	return SDN_CONF_CLIENT_BT_RX_ACL_NUM;
-}
-
-uint8_t sdn_client_intf_get_rx_bt_acl_max_len(void)
-{
-	return (SDN_INTF_MAX_DATA_LEN - 1);
+	return g_sdn_client_intf.rx.num_bt_hci_cmd;
 }
 
 void sdn_client_init(void)

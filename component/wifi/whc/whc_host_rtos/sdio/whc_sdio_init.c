@@ -1,12 +1,9 @@
 #include "whc_host.h"
 
-//TODO check real stack size
 #define SDIO_POLLING_STACK_SIZE 1024
 
 static rtos_sema_t sdio_whc_sema;
-
 extern struct whc_sdio whc_sdio_priv;
-extern struct sdio_func sdio_func1;
 
 /* from sdio host irq */
 void SD_IRQ_Notify(void)
@@ -26,14 +23,13 @@ void rtw_sdio_interrupt_handler(void)
 	u32 freepage;
 #endif
 
-#ifdef SDIO_INT_MODE
 	for (;;)  {
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
 		//SDIO->MASK |= SDIO_MASK_SDIOITIE;
 		sdio_enable_data1_irq();
 #endif
 		rtos_sema_take(whc_sdio_priv.host_irq, MUTEX_WAIT_TIMEOUT);
-#endif
+
 		//read HISR
 		priv->sdio_hisr = rtw_read32(priv, SDIO_REG_HISR);
 
@@ -72,9 +68,7 @@ void rtw_sdio_interrupt_handler(void)
 		} else {
 
 		}
-#ifdef SDIO_INT_MODE
 	}
-#endif
 }
 
 static int rtw_sdio_give_sema(u32 timeout)
@@ -98,12 +92,7 @@ static uint32_t rtw_sdio_enable_func(struct whc_sdio *priv)
 	}
 
 	//TODO set block size SDIO_BLOCK_SIZE
-#ifdef TODO
-#endif
-	//priv->func = &sdio_func1;
 	priv->block_transfer_len = SDIO_BLOCK_SIZE;
-	priv->tx_block_mode = 1;
-	priv->rx_block_mode = 1;
 
 	return RTK_SUCCESS;
 }

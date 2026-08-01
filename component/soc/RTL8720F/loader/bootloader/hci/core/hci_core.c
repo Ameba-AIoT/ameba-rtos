@@ -17,8 +17,8 @@
 #endif
 /* Private defines -----------------------------------------------------------*/
 
-#define HCI_FLASH_PAGE_SIZE 1024U
-#define HCI_SRAM_SIZE_IN_KB	512U
+#define WHC_XFER_FLASH_WRITE_SIZE  1024U
+#define HCI_SRAM_SIZE_IN_KB   512U
 
 /* Private types -------------------------------------------------------------*/
 
@@ -31,8 +31,29 @@
 static const char *const TAG = "HCI";
 
 HCI_AdapterTypeDef HCI_Adapter;
-IMAGE_HEADER EmptyXipImgHdr;
-IMAGE_HEADER EmptyPsramImgHdr;
+IMAGE_HEADER EmptyNpXipImgHdr;
+IMAGE_HEADER EmptyApXipImgHdr;
+IMAGE_HEADER EmptyNpPsramImgHdr;
+IMAGE_HEADER EmptyApPsramImgHdr;
+
+/* Select the correct empty header slot by address range */
+IMAGE_HEADER *HCI_SelectEmptyHdr(u32 addr)
+{
+	if (addr >= (u32)__km4ns_flash_text_start__ - IMAGE_HEADER_LEN && addr < (u32)__km4ns_flash_text_end__) {
+		return &EmptyNpXipImgHdr;
+	}
+
+	if (addr >= (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN && addr < (u32)__km4tz_flash_text_end__) {
+		return &EmptyApXipImgHdr;
+	}
+
+	if (addr >= (u32)__km4tz_bd_psram_start__ && addr < (u32)__km4tz_bd_psram_end__) {
+		/* If no psram, psram_ap.bin == psram_np.bin */
+		return &EmptyApPsramImgHdr;
+	}
+
+	return &EmptyNpPsramImgHdr;
+}
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -46,13 +67,9 @@ static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 {
 	u32 i;
 
-	/* Host Send empty img header */
+	/* Host Send empty img header: redirect to the per-core empty slot */
 	if (size == IMAGE_HEADER_LEN) {
-		if (IS_FLASH_ADDR(addr)) {
-			addr = (u32)&EmptyXipImgHdr;
-		} else {
-			addr = (u32)&EmptyPsramImgHdr;
-		}
+		addr = (u32)HCI_SelectEmptyHdr(addr);
 	}
 
 	if (IS_FLASH_ADDR(addr)) {
@@ -60,17 +77,18 @@ static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 			return HAL_ERR_PARA;
 		}
 
-		if ((size % HCI_FLASH_PAGE_SIZE) != 0) {
+		if ((size % WHC_XFER_FLASH_WRITE_SIZE) != 0) {
 			return HAL_ERR_PARA;
 		}
 
-		for (i = 0; i < size; i += HCI_FLASH_PAGE_SIZE) {
+		for (i = 0; i < size; i += WHC_XFER_FLASH_WRITE_SIZE) {
 			nor_ftl_write_page(addr + i, src + i);
 		}
 	} else {
-		/* Only allow to write hs sram, to avoid attack */
+		/* Only allow writes to km4tz FULLMAC region or km4ns BD RAM */
 #ifdef HCI_TARGET_ADDR_CHECK_TODO
-		if (!RANGE_IS_FULLMAC(addr, size - 1)) {
+		if (!RANGE_IS_FULLMAC(addr, size - 1) &&
+			!is_memory_range_valid(addr, size, (u32)__km4ns_bd_ram_start__, (u32)__km4ns_bd_ram_end__)) {
 			return HAL_ERR_PARA;
 		}
 #endif
@@ -97,13 +115,9 @@ static int HCI_CalculateChecksum(u32 addr, u32 size, u32 *result)
 	u32 data;
 	u32 i;
 
-	/* Host Send empty img header */
+	/* Host Send empty img header: redirect to the per-core empty slot */
 	if (size == IMAGE_HEADER_LEN) {
-		if (IS_FLASH_ADDR(addr)) {
-			addr = (u32)&EmptyXipImgHdr;
-		} else {
-			addr = (u32)&EmptyPsramImgHdr;
-		}
+		addr = (u32)HCI_SelectEmptyHdr(addr);
 	}
 
 	if (IS_FLASH_ADDR(addr)) {

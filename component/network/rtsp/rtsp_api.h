@@ -176,8 +176,8 @@ struct rtsp_context {
 };
 
 uint32_t rtsp_get_timestamp(struct stream_context *stream_ctx, uint32_t current_clock_tick);
-int rtsp_get_number(int number_base, uint32_t *number_bitmap, rtos_mutex_t *bitmap_lock);
-void rtsp_put_number(int number, int number_base, uint32_t *number_bitmap, rtos_mutex_t *bitmap_lock);
+int rtsp_get_number(int number_base, uint32_t *number_bitmap);
+void rtsp_put_number(int number, int number_base, uint32_t *number_bitmap);
 struct rtsp_context *rtsp_context_create(uint8_t nb_streams);
 void rtsp_context_free(struct rtsp_context *rtsp_ctx);
 int rtsp_is_stream_enabled(struct rtsp_context *rtsp_ctx);

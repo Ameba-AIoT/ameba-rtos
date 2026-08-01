@@ -50,6 +50,8 @@ struct sdn_intf_data_msg {
 	uint8_t data[0];
 } __attribute__((packed));
 
+/* Do NOT modify this struct.
+ * It should keep the same structure as 'struct bt_le_conn_rx' */
 struct sdn_data_buf {
 	struct list_head list;
 	uint16_t len;		/* actual length of pmsg */

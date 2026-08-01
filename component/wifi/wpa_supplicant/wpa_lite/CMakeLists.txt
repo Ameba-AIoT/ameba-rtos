@@ -23,7 +23,7 @@ ameba_list_append_if(CONFIG_RTW_CLI public_includes
 set(TARGET_LIB wpa_lite)
 
 if((CONFIG_WHC_HOST AND NOT CONFIG_MP_SHRINK)
-OR (CONFIG_WHC_DEV AND (CONFIG_WPA_LOCATION_DEV OR CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD))
+OR (CONFIG_WHC_DEV AND CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 OR (CONFIG_WHC_NONE AND NOT CONFIG_MP_SHRINK))
 ameba_list_append(public_libraries
     ${c_SDK_LIB_APPLICATION_DIR}/lib_${TARGET_LIB}.a
@@ -63,7 +63,7 @@ include(sources.cmake OPTIONAL)
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 if((CONFIG_WHC_HOST AND NOT CONFIG_MP_SHRINK)
-OR (CONFIG_WHC_DEV AND (CONFIG_WPA_LOCATION_DEV OR CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD))
+OR (CONFIG_WHC_DEV AND CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 OR (CONFIG_WHC_NONE AND NOT CONFIG_MP_SHRINK))
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/application
 ameba_add_external_app_library(${TARGET_LIB}

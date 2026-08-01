@@ -152,7 +152,6 @@ void app_start(void)
 	/* Init heap region and configure FreeRTOS */
 	os_init();
 
-
 	if (SYSCFG_CHIPType_Get() == CHIP_TYPE_ASIC) {//Only Asic need OSC Calibration
 		OSC2M_Calibration(30000);
 	}

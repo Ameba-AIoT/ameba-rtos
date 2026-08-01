@@ -104,7 +104,7 @@ static u8 nand_ftl_get_mfg_status(u8 cmd, u8 addr)
 {
 	u8 data;
 
-	NAND_RxCmd(cmd, 1, &addr, 1, &data);
+	NAND_RxCmd_Safe(cmd, 1, &addr, 1, &data);
 
 	return data;
 }
@@ -194,7 +194,7 @@ static u8 nand_ftl_winbond_select_target(struct nand_ftl_device *nand, u8 target
 {
 	struct ameba_flash_info *info = nand->flash_info;
 	if (info->targets > 1) {
-		NAND_TxCmd(NF_WINBOND_DIE_SEL_CMD, 0, NULL, 1, &target);
+		NAND_TxCmd_Safe(NF_WINBOND_DIE_SEL_CMD, 0, NULL, 1, &target);
 	}
 	return ERR_NONE;
 }
@@ -544,4 +544,3 @@ u8 nand_ftl_mfg_init(struct nand_ftl_device *nand)
 
 	return ret;
 }
-

@@ -11,111 +11,44 @@
 #include "platform_autoconf.h"
 
 #if defined (CONFIG_AMEBASMART)
-// SPI0
 //both EV30EL0 and EV30EA0 support
-#define SPI0_MOSI  _PA_13
-#define SPI0_MISO  _PA_14
-#define SPI0_SCLK  _PA_15
-#define SPI0_CS    _PA_16
-
-
-// SPI1
-#define SPI1_MOSI  _PA_5
-#define SPI1_MISO  _PA_4
-#define SPI1_SCLK  _PA_3
-#define SPI1_CS    _PA_2
+#define SPI_MOSI  _PA_13
+#define SPI_MISO  _PA_14
+#define SPI_SCLK  _PA_15
+#define SPI_CS    _PA_16
 
 #define CACHE_LINE_SIZE CACHE_L1_DCACHE_LINE_SIZE
 
 #elif defined (CONFIG_AMEBALITE)
-// SPI1
-#define SPI1_MOSI	_PB_3
-#define SPI1_MISO	_PB_4
-#define SPI1_SCLK	_PB_2
-#define SPI1_CS		_PB_5
-// SPI0
-#define SPI0_MOSI	_PA_29
-#define SPI0_MISO	_PA_30
-#define SPI0_SCLK	_PA_28
-#define SPI0_CS		_PA_31
+#define SPI_MOSI	_PA_29
+#define SPI_MISO	_PA_30
+#define SPI_SCLK	_PA_28
+#define SPI_CS		_PA_31
 
 #elif defined (CONFIG_AMEBADPLUS)
-// SPI1 FID=8 & Fully PG
-#define SPI1_MOSI	_PB_19
-#define SPI1_MISO	_PB_20
-#define SPI1_SCLK	_PB_18
-#define SPI1_CS		_PB_21
-
-// SPI0 FID=8
-#define SPI0_MOSI	_PB_24
-#define SPI0_MISO	_PB_25
-#define SPI0_SCLK	_PB_23
-#define SPI0_CS		_PB_26
+#define SPI_MOSI	_PB_24
+#define SPI_MISO	_PB_25
+#define SPI_SCLK	_PB_23
+#define SPI_CS		_PB_26
 
 #elif defined (CONFIG_AMEBAD)
-/*
-SPI0:
-
-   S0: PB_18  (MOSI)
-       PB_19  (MISO)
-   	   PB_20  (SCLK)
-       PB_21  (CS)
-
-
-   S1: PA_16  (MOSI)
-       PA_17  (MISO)
-       PA_18  (SCLK)
-       PA_19  (CS)
-
-SPI1:
-
-   S0: PA_12  (MOSI)
-       PA_13  (MISO)
-       PA_14  (SCLK)
-       PA_15  (CS)
-
-   S1: PB_4  (MOSI)
-       PB_5  (MISO)
-       PB_6  (SCLK)
-       PB_7  (CS)
-   */
-// SPI0 S0
-#define SPI0_MOSI  _PB_18
-#define SPI0_MISO  _PB_19
-#define SPI0_SCLK  _PB_20
-#define SPI0_CS    _PB_21
-
-// SPI1 (S1) //M
-#define SPI1_MOSI  _PB_4
-#define SPI1_MISO  _PB_5
-#define SPI1_SCLK  _PB_6
-#define SPI1_CS    _PB_7
+#define SPI_MOSI  _PB_18
+#define SPI_MISO  _PB_19
+#define SPI_SCLK  _PB_20
+#define SPI_CS    _PB_21
 
 #elif defined (CONFIG_AMEBAGREEN2)
-// SPI0 //S - Pinmux S0
-#define SPI0_MOSI  _PA_30
-#define SPI0_MISO  _PA_31
-#define SPI0_SCLK  _PA_29
-#define SPI0_CS    _PB_0
-
-// SPI1 //M - Pinmux S0
-#define SPI1_MOSI  _PB_8
-#define SPI1_MISO  _PB_9
-#define SPI1_SCLK  _PB_7
-#define SPI1_CS    _PB_10
+#define SPI_MOSI  _PA_30
+#define SPI_MISO  _PA_31
+#define SPI_SCLK  _PA_29
+#define SPI_CS    _PB_0
 
 #elif defined (CONFIG_RTL8720F)
-// // SPI0 - Slave
-// #define SPI0_MOSI  _PA_8
-// #define SPI0_MISO  _PA_9
-// #define SPI0_SCLK  _PA_7
-// #define SPI0_CS    _PA_10
+#define SPI_MOSI  _PA_8
+#define SPI_MISO  _PA_9
+#define SPI_SCLK  _PA_7
+#define SPI_CS    _PA_10
 
-// SPI1 - Master
-#define SPI1_MOSI  _PA_26
-#define SPI1_MISO  _PA_27
-#define SPI1_SCLK  _PA_25
-#define SPI1_CS    _PA_28
 #endif
 
 extern int example_spi_dma_single_block_tx_master(void);

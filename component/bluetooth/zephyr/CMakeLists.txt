@@ -99,16 +99,16 @@ ameba_list_append_if(CONFIG_BT_DUAL_MODE private_sources
     stack/host/classic/avdtp.c
     stack/host/classic/keys_br.c
     stack/host/classic/l2cap_br.c
+    stack/host/classic/rfcomm.c
+    stack/host/classic/hfp_hf.c
+    stack/host/classic/hfp_ag.c
+    stack/host/classic/at.c
     stack_ext/avctp.c
     stack_ext/avrcp.c
     stack_ext/spp.c
     stack_ext/goep.c
     stack_ext/opp.c
     stack_ext/pbap.c
-    stack/host/classic/rfcomm.c
-    stack/host/classic/hfp_hf.c
-    stack/host/classic/hfp_ag.c
-    stack/host/classic/at.c
 )
 
 if (CONFIG_BT_MESH_PROVISIONER_SUPPORT OR CONFIG_BT_MESH_DEVICE_SUPPORT)
@@ -190,10 +190,6 @@ ameba_list_append(private_sources
     settings/settings_store.c
     settings/settings_line.c
     settings/settings_init.c
-    # settings/settings_nvs.c
-    # settings/nvs.c
-
-#    settings/settings_ftl.c
     settings/settings_kv.c
     util/dec.c
     util/hex.c

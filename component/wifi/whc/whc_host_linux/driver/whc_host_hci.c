@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #include <whc_host_linux.h>
 #include <linux/spi/spi.h>
 #include <linux/of_gpio.h>

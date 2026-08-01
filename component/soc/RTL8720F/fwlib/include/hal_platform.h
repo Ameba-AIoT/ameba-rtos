@@ -461,10 +461,8 @@ extern "C" {
 
 #define RSIP_BASE			((RSIP_REG_TypeDef		*) (RSIP_REG_BASE))
 
-#ifndef RTL8720F_TODO
 #define AUDIO_SPORT_DEV	((AUDIO_SPORT_TypeDef	*) SPORT_REG_BASE)
 #define AUDIO_SPORT_DEV_S	((AUDIO_SPORT_TypeDef	*) SPORT_REG_BASE_S)	/*SPORT0 secure */
-#endif
 
 #define SDIO_HOST			((SDIOHOST_TypeDef		*) SDIO_HOST_CCCR_REG_BASE)
 #define SDIO_WIFI			((SDIO_TypeDef			*) SDIO_WIFI_REG_BASE)
@@ -477,9 +475,6 @@ extern "C" {
 #define SWR_BASE      ((SWR_TypeDef *)  (SWR_REG_BASE))
 #define WLAFE_BASE    ((WLAFE_TypeDef *) (WLAFE_REG_BASE))
 #define XTAL_BASE     ((XTAL_TypeDef *) (XTAL_REG_BASE))
-#define OSC131K_BASE      ((RTC_MISC_TypeDef *)  (RTC_MISC_REG_BASE))
-#define PSEUDO_I2C0_DEV      ((LEDC_PRO_TypeDef *)  (LEDC0_REG_BASE))
-#define PSEUDO_I2C1_DEV      ((LEDC_PRO_TypeDef *)  (LEDC1_REG_BASE))
 
 #define RXI_300				((RXI300_TypeDef			*) RXI300_REG_BASE)
 #define RXI_300_S				((RXI300_TypeDef			*) RXI300_REG_BASE_S)
@@ -518,13 +513,6 @@ extern "C" {
 #endif
 
 #define CONTEXT_SAVE_SIZE_WITH_MARGIN		(CONTEXT_SAVE_SIZE + 64)
-
-#ifndef RTL8720F_TODO
-#define AES_KEY_REG_BASE                   0x401C6000        /* ID:S2-10, Inter. Type:APB4, Top Address:0x401C6FFF, Size(KB):4K, Clk Domain:PERI_HCLK */
-#define SHA_KEY_REG_BASE                   0x401C6000        /* ID:S2-10, Inter. Type:APB4, Top Address:0x401C6FFF, Size(KB):4K, Clk Domain:PERI_HCLK */
-#define AES_KEY_REG_BASE_S                   0x501C6000        /* ID:S2-10, Inter. Type:APB4, Top Address:0x401C6FFF, Size(KB):4K, Clk Domain:PERI_HCLK */
-#define SHA_KEY_REG_BASE_S                   0x501C6000        /* ID:S2-10, Inter. Type:APB4, Top Address:0x401C6FFF, Size(KB):4K, Clk Domain:PERI_HCLK */
-#endif
 
 
 /** @} End of group AmebaD_Outline */

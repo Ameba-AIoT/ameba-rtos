@@ -4,10 +4,20 @@
 #include "spi_api.h"
 #include "spi_ex_api.h"
 
-#ifdef CONFIG_AMEBAGREEN2  // need use QFN100
+#ifdef CONFIG_RTL8720F
 #define PINMUX_FUNCTION_SPIM	    PINMUX_FUNCTION_SPI0
-#define DEV_READY_PIN				_PA_18
-#define DEV_TX_REQ_PIN				_PA_19
+#define DEV_READY_PIN				_PA_4	//_PA_11
+#define DEV_TX_REQ_PIN				_PA_5	//_PA_12
+#define SPIM_MOSI                   _PA_1	//_PA_8
+#define SPIM_MISO                   _PA_2	//_PA_9
+#define SPIM_SCLK                   _PA_0	//_PA_7
+#define SPIM_SW_CS                  _PA_3	//_PA_10
+#define SPI_CLOCK_DIVIDER           4
+
+#elif CONFIG_AMEBAGREEN2  // need use QFN100
+#define PINMUX_FUNCTION_SPIM	    PINMUX_FUNCTION_SPI0
+#define DEV_READY_PIN				_PA_18//TODO
+#define DEV_TX_REQ_PIN				_PA_19//TODO
 #define SPIM_MOSI                   _PA_30
 #define SPIM_MISO                   _PA_31
 #define SPIM_SCLK                   _PA_29

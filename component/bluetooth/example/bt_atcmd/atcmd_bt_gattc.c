@@ -191,7 +191,7 @@ static int atcmd_bt_gattc_read(int argc, char **argv)
 
 	read_param.conn_handle = str_to_int(argv[0]);
 	read_param.profile_id = GCS_CLIENT_PROFILE_ID;
-	read_param.type = str_to_int(argv[1]);
+	read_param.type = (rtk_bt_gattc_read_type_t)str_to_int(argv[1]);
 
 	switch (read_param.type) {
 	case 0:
@@ -288,7 +288,7 @@ static int atcmd_bt_gattc_write(int argc, char **argv)
 
 	write_param.conn_handle = str_to_int(argv[0]);
 	write_param.profile_id = GCS_CLIENT_PROFILE_ID;
-	write_param.type = str_to_int(argv[1]);
+	write_param.type = (rtk_bt_gattc_write_type_t)str_to_int(argv[1]);
 	write_param.handle = str_to_int(argv[2]);
 	write_param.length = str_to_int(argv[3]);
 
@@ -568,7 +568,7 @@ static int atcmd_gaps_client_read_char(int argc, char **argv)
 
 	conn_handle = str_to_int(argv[0]);
 	char_index = str_to_int(argv[1]);
-	ret = gaps_client_char_read(conn_handle, char_index);
+	ret = gaps_client_char_read(conn_handle, (gaps_charac_index_t)char_index);
 	if (RTK_BT_OK != ret) {
 		BT_LOGE("GAPS client read charac failed! err: 0x%x\r\n", ret);
 		return -1;

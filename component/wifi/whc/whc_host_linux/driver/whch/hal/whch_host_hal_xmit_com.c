@@ -52,39 +52,81 @@ void whc_host_hal_pending_q_dequeue(int iface_type)
 	struct whch_xmit_priv 	*pxmitpriv = &global_idev.whchpriv.xmitpriv;
 	struct hw_xmit			*pending_top = NULL;
 	struct pending_sta_t	*pending_sta = NULL;
+	struct list_head 		*phead;
+	struct list_head 		*sta_phead;
 	struct sk_buff 			*pskb = NULL;
-	struct list_head 		*plist, *phead;
-	struct list_head 		*sta_plist, *sta_phead;
+#ifdef WHCH_TXAGG
+	struct whc_xmit_buf		*pxmitbuf = NULL;
+	u32 unit;
+	u8 *p;
+	u8 agg_num;
+#endif
 	int idx;
 
-	spin_lock(&pxmitpriv->mutex);
+	spin_lock_bh(&pxmitpriv->mutex);
 	/* 0(VO), 1(VI), 2(BE), 3(BK) */
 	for (idx = 0; idx < 4; idx++) {
 		pending_top = &global_idev.whchpriv.pending_queue[iface_type].hwxmits[idx];
 		sta_phead = &pending_top->sta_queue;
-		sta_plist = sta_phead->next;
-		while (sta_plist != sta_phead) {
+		while (!list_empty(sta_phead)) {
 			/*get a pending sta*/
-			pending_sta = list_entry(sta_plist, struct pending_sta_t, list);
+			pending_sta = list_first_entry(sta_phead, struct pending_sta_t, list);
 			spin_lock(&(pending_sta->frame_queue_lock));
 			phead = &pending_sta->frame_queue;
-			plist = phead->next;
-			while (plist != phead) {
+#ifdef WHCH_TXAGG
+			while (!list_empty(phead)) {
+				pxmitbuf = whc_host_xmitbuf_alloc();
+				if (pxmitbuf == NULL) {
+					//dev_warn(global_idev.pwhc_dev, "%s: no free tx-agg buf, keep pkts pending\n", __func__);
+					spin_unlock(&(pending_sta->frame_queue_lock));
+					goto unlock;
+				}
+				pxmitbuf->len = sizeof(struct whc_msg_info);
+
+				/* copy each [txdesc+frame] unit (8-byte padded) and drop it from the queue,
+				 * stopping at WHCH_TXAGG_NUM frames or before overflow (always take one) */
+				agg_num = 0;
+				while (!list_empty(phead) && agg_num < WHCH_TXAGG_NUM) {
+					pskb = list_first_entry(phead, struct sk_buff, list);
+					unit = WHCH_TXAGG_ALIGN(pskb->len);
+					if (agg_num && (pxmitbuf->len + unit > WHCH_TXAGG_BUFSZ)) {
+						break;
+					}
+
+					list_del_init(&pskb->list);
+					atomic_dec(&pending_sta->qcnt);
+					atomic_dec(&pending_top->accnt);
+
+					p = pxmitbuf->pbuf + pxmitbuf->len;
+					memcpy(p, pskb->data, pskb->len);
+					if (unit > pskb->len) {
+						memset(p + pskb->len, 0, unit - pskb->len);
+					}
+					pxmitbuf->len += unit;
+					agg_num++;
+					dev_kfree_skb_any(pskb);
+				}
+
+				/* hand the aggregate to the usb tx thread (it fills the leading header) */
+				whc_host_xmit_enqueue_agg(iface_type, pxmitbuf, agg_num);
+			}
+#else
+			while (!list_empty(phead)) {
 				/*get a pending frame of this sta*/
-				pskb = list_entry(plist, struct sk_buff, list);
-				list_del_init(plist);
-				plist = phead->next;
+				pskb = list_first_entry(phead, struct sk_buff, list);
+				list_del_init(&pskb->list);
 				atomic_dec(&pending_sta->qcnt);
 				atomic_dec(&pending_top->accnt);
 
 				whc_host_xmit_posthandle(iface_type, pskb);
 			}
+#endif
 			list_del_init(&pending_sta->list);
 			spin_unlock(&(pending_sta->frame_queue_lock));
-			sta_plist = sta_phead->next;
 		}
 	}
-	spin_unlock(&pxmitpriv->mutex);
+unlock:
+	spin_unlock_bh(&pxmitpriv->mutex);
 }
 
 void whc_host_hal_pending_q_resume(void)
@@ -129,7 +171,7 @@ void whc_host_hal_pending_q_free(int iface_type, struct sta_xmit_priv *psta_xmit
 	struct pending_sta_t	*pending_sta = NULL;
 	struct txdesc_priv		*ptxdesc;
 	struct sk_buff			*skb;
-	struct list_head		*plist, *phead;
+	struct list_head		*phead;
 	int hw_queue = 0;
 
 	for (hw_queue = 0; hw_queue < 4; hw_queue++) {
@@ -137,9 +179,8 @@ void whc_host_hal_pending_q_free(int iface_type, struct sta_xmit_priv *psta_xmit
 		phead = &pending_sta->frame_queue;
 		dev_dbg(global_idev.pwhc_dev, "[whc] %s hw_queue=%d.", __func__, hw_queue);
 		while (!list_empty(phead)) {
-			plist = phead->next;
-			skb = list_entry(plist, struct sk_buff, list);
-			list_del_init(plist);
+			skb = list_first_entry(phead, struct sk_buff, list);
+			list_del_init(&skb->list);
 			dev_dbg(global_idev.pwhc_dev, "[whc] %s hw_queue=%d skb=%x.", __func__, hw_queue, skb);
 			ptxdesc = (struct txdesc_priv *)skb->data;
 			pending_top = &global_idev.whchpriv.pending_queue[iface_type].hwxmits[hw_queue];
@@ -336,9 +377,12 @@ int whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe)
 	{
 		/*step2.2: check if need move to pending_q*/
 		spin_lock(&pxmitpriv->mutex);
+#ifndef WHCH_TXAGG
 		if ((whc_host_hal_pending_q_check(ppending_q) > 0) ||
 			(whc_host_hal_txbd_enough_check() == 0) ||	//TODO: maybe check usb/sdio resource?
-			global_idev.mlme_priv.b_in_scan || global_idev.mlme_priv.b_in_linking) {
+			global_idev.mlme_priv.b_in_scan || global_idev.mlme_priv.b_in_linking)
+#endif
+		{
 			if (psta_xmitpriv) {
 				//dev_dbg(global_idev.pwhc_dev, "[whc] %s %d enqueue.", __func__, __LINE__);
 				whc_host_hal_pending_q_enqueue(ppending_q, psta_xmitpriv, pxmitframe->pkt, hw_queue);

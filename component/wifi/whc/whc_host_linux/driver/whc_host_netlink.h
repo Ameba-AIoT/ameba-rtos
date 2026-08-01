@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #ifndef __WHC_HOST_NETLINK_H__
 #define __WHC_HOST_NETLINK_H__
 

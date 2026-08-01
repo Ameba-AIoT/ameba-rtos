@@ -19,6 +19,8 @@
 
 /* Exported variables --------------------------------------------------------*/
 
+extern const usbh_class_driver_t usbh_uvc_driver;
+
 /* Exported functions --------------------------------------------------------*/
 
 int usbh_uvc_class_init(void);

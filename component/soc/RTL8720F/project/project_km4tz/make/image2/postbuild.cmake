@@ -76,18 +76,9 @@ if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
         p_FULLMAC_IMAGE
             ${c_SDK_IMAGE_TARGET_DIR}/fullmac_ram_1_prepend.bin
     )
-
-    ameba_axf2bin_fw_pack(
-        ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_fullmac_img_2.bin
-        p_FULLMAC_IMAGE
-            ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image2_all.bin
-    )
     ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_fullmac_img_1.bin ${FINAL_IMAGE_DIR})
-    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_fullmac_img_2.bin ${FINAL_IMAGE_DIR})
 
-    if (CONFIG_FPGA)
-        ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${FINAL_IMAGE_DIR}/${c_MCU_PROJECT_NAME}_fullmac.bin ${c_SDK_IMAGE_TARGET_DIR}/app.bin)
-    endif()
+    # FW_2 (combined km4tz + km4ns) is assembled in project/postbuild.cmake using c_IMAGE2_ALL_FILES which already contains both image2_all.bin
     message("========= linker fullmac image end =========")
 endif()
 

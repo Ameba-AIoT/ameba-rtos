@@ -353,6 +353,7 @@ int rt_lfs_init(lfs_t *lfs)
 #endif
 		{
 			g_nor_lfs_cfg.block_count = LFS_FLASH_SIZE / 4096;
+			g_nor_lfs_cfg.file_max = LFS_FLASH_SIZE;
 			lfs_cfg = &g_nor_lfs_cfg;
 			VFS_DBG(VFS_INFO, "init nor lfs cfg");
 		}
@@ -361,6 +362,7 @@ int rt_lfs_init(lfs_t *lfs)
 #ifdef CONFIG_LITTLEFS_SECOND_FLASH
 	if (lfs == &g_second_lfs) {
 		g_second_nor_lfs_cfg.block_count = LFS_SECOND_FLASH_SIZE / 4096;
+		g_second_nor_lfs_cfg.file_max = LFS_SECOND_FLASH_SIZE;
 		VFS_DBG(VFS_INFO, "init second nor lfs cfg");
 		lfs_cfg = &g_second_nor_lfs_cfg;
 	}

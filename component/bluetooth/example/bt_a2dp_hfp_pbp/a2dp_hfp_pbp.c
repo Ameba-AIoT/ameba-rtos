@@ -1455,7 +1455,9 @@ static uint16_t rtk_bt_audio_decode_pcm_data_callback(void *p_pcm_data, uint16_t
 	if (false == lea_broadcast_start) {
 #if defined(RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_LOCAL_PLAY_SUPPORT
 		/* play local music here*/
-		rtk_bt_audio_track_play(a2dp_audio_track_hdl->audio_track_hdl, p_pcm_data, p_len);
+		if (rtk_bt_audio_track_get_play_state(a2dp_audio_track_hdl) == RTK_BT_AUDIO_TRACK_PLAYING) {
+			rtk_bt_audio_track_play(a2dp_audio_track_hdl->audio_track_hdl, p_pcm_data, p_len);
+		}
 #endif
 		if (0 == (fail_cnt % 10000)) {
 			BT_LOGE("[APP] PBP broadcast has not started!\r\n");
@@ -2542,10 +2544,13 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 		BT_AT_PRINT("+BTA2DP:start,%02x:%02x:%02x:%02x:%02x:%02x,%d\r\n",
 					pa2dp_stream->bd_addr[5], pa2dp_stream->bd_addr[4], pa2dp_stream->bd_addr[3], pa2dp_stream->bd_addr[2], pa2dp_stream->bd_addr[1],
 					pa2dp_stream->bd_addr[0]);
+		/* flush remaining decode data */
+		rtk_bt_audio_codec_reset(audio_a2dp_codec_conf.codec_index, a2dp_codec_entity);
 		a2dp_play_flag = true;
 		if (a2dp_audio_track_hdl) {
 			if (!lea_broadcast_start) {
 				rtk_bt_audio_track_resume(a2dp_audio_track_hdl->audio_track_hdl);
+				rtk_bt_audio_track_set_play_state(a2dp_audio_track_hdl, (uint16_t)RTK_BT_AUDIO_TRACK_PLAYING);
 			}
 		}
 	}
@@ -2564,6 +2569,7 @@ static rtk_bt_evt_cb_ret_t app_bt_a2dp_callback(uint8_t evt_code, void *param, u
 		/* pkt drop flag reset*/
 		app_bt_handle_packet_drop_reset();
 		if (a2dp_audio_track_hdl) {
+			rtk_bt_audio_track_set_play_state(a2dp_audio_track_hdl, (uint16_t)RTK_BT_AUDIO_TRACK_PAUSED);
 			rtk_bt_audio_track_pause(a2dp_audio_track_hdl->audio_track_hdl);
 		}
 		// /* stop Auracast when HFP call incoming*/
@@ -3652,6 +3658,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 				param->bis_conn_handle, param->bis_idx, param->cause);
 		// A2DP local play suspend
 		if (a2dp_audio_track_hdl) {
+			rtk_bt_audio_track_set_play_state(a2dp_audio_track_hdl, (uint16_t)RTK_BT_AUDIO_TRACK_PAUSED);
 			rtk_bt_audio_track_pause(a2dp_audio_track_hdl->audio_track_hdl);
 			rtk_bt_avrcp_pause(remote_bd_addr);
 		}
@@ -3700,6 +3707,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 		lea_broadcast_start = true;
 		/* a2dp local play suspend */
 		if (a2dp_audio_track_hdl) {
+			rtk_bt_audio_track_set_play_state(a2dp_audio_track_hdl, (uint16_t)RTK_BT_AUDIO_TRACK_PAUSED);
 			rtk_bt_audio_track_pause(a2dp_audio_track_hdl->audio_track_hdl);
 			BT_LOGA("[APP] %s: rtk_bt_audio_track_pause \r\n", __func__);
 		}
@@ -3748,6 +3756,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 			/* wait for all BIS track release, a2dp local play resume*/
 			if (a2dp_audio_track_hdl) {
 				rtk_bt_audio_track_resume(a2dp_audio_track_hdl->audio_track_hdl);
+				rtk_bt_audio_track_set_play_state(a2dp_audio_track_hdl, (uint16_t)RTK_BT_AUDIO_TRACK_PLAYING);
 				BT_LOGA("[APP] %s: rtk_bt_audio_track_resume \r\n", __func__);
 			}
 		}

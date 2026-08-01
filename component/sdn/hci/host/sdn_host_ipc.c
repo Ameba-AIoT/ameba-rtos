@@ -354,6 +354,11 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *pdata, uint16_t len)
 	IPC_MSG_STRUCT ipc_tx = {0};
 	struct sdn_intf_data_msg *pdata_msg = NULL;
 
+	if (len > SDN_INTF_MAX_DATA_LEN) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "sdn_h2c ERROR %d > max(%d)\r\n", len, SDN_INTF_MAX_DATA_LEN);
+		return SDN_INTF_ERR_TX_DATA_FAIL;
+	}
+
 	pdata_msg = (struct sdn_intf_data_msg *)g_sdn_host_intf.tx.pbuf;
 	pdata_msg->protocol = protocol;
 	pdata_msg->type = type;
@@ -364,7 +369,7 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *pdata, uint16_t len)
 	DCache_Clean(ipc_tx.msg, ipc_tx.msg_len);
 
 	if (IPC_SEND_SUCCESS != ipc_send_message(IPC_AP_TO_NP, IPC_A2N_BT_VIRTUAL_HCI, &ipc_tx)) {
-		return SDN_INTF_ERR_TX_CTRL_FAIL;
+		return SDN_INTF_ERR_TX_DATA_FAIL;
 	}
 
 	IPC_wait_idle(IPC_GetDev(IPC_AP_TO_NP, 0), IPC_A2N_BT_VIRTUAL_HCI);
