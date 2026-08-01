@@ -137,7 +137,7 @@ static bool bt_stack_framework_init(void)
 	bool b_sys;
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	bool b_remote = false;
-	bool b_bt;
+	bool b_bt = false;
 #endif
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 	BLE_MGR_PARAMS param = {0};
@@ -220,7 +220,10 @@ static uint16_t bt_stack_init(void *app_config)
 	uint16_t b_bt_ble_gap_init_ret = 0;
 	rtk_bt_app_conf_t *papp_conf = (rtk_bt_app_conf_t *)app_config;
 	rtk_bt_app_conf_t default_conf = {0};
-
+#if defined(F_BT_SC_LINK_CONVERT_SUPPORT) && F_BT_SC_LINK_CONVERT_SUPPORT
+	uint8_t flag = GAP_SC_KEY_CONVERT_LE_TO_BREDR_FLAG;
+	T_GAP_CAUSE cause = GAP_CAUSE_SUCCESS;
+#endif
 	//set default conf
 	if (papp_conf != NULL) {
 		default_conf.mtu_size = papp_conf->mtu_size;
@@ -297,8 +300,6 @@ static uint16_t bt_stack_init(void *app_config)
 #endif
 
 #if defined(F_BT_SC_LINK_CONVERT_SUPPORT) && F_BT_SC_LINK_CONVERT_SUPPORT
-	uint8_t flag = GAP_SC_KEY_CONVERT_LE_TO_BREDR_FLAG;
-	T_GAP_CAUSE cause = 0;
 	if (default_conf.key_convert_le_to_bredr) {
 		cause = gap_set_param(GAP_PARAM_BOND_LINK_KEY_CONVERT, sizeof(flag), &flag);
 		if (cause) {

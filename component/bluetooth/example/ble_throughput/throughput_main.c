@@ -211,7 +211,7 @@ static rtk_bt_evt_cb_ret_t ble_throughput_gap_app_callback(uint8_t evt_code, voi
 			if (rtk_bt_le_gap_adv_is_idle()) {
 				BT_LOGA("[APP] Reconnect Ext ADV starting, adv event prop:%d,  own addr type: %d, filter policy: %d\r\n",
 						def_tp_ext_adv_param.adv_event_prop, def_tp_ext_adv_param.own_addr.type, def_tp_ext_adv_param.filter_policy);
-				BT_APP_PROCESS(rtk_bt_le_gap_start_ext_adv(tp_ext_adv_handle, 0, 0));
+				BT_APP_EVT_CB_PROCESS(rtk_bt_le_gap_start_ext_adv(tp_ext_adv_handle, 0, 0));
 			}
 #else
 			rtk_bt_le_gap_dev_state_t dev_state;
@@ -219,7 +219,7 @@ static rtk_bt_evt_cb_ret_t ble_throughput_gap_app_callback(uint8_t evt_code, voi
 				dev_state.gap_adv_state == RTK_BT_LE_ADV_STATE_IDLE) {
 				BT_LOGA("[APP] Reconnect ADV starting, adv type:%d,  own addr type: %d, filter policy: %d\r\n",
 						def_tp_adv_param.type, def_tp_adv_param.own_addr_type, def_tp_adv_param.filter_policy);
-				BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&def_tp_adv_param));
+				BT_APP_EVT_CB_PROCESS(rtk_bt_le_gap_start_adv(&def_tp_adv_param));
 			}
 #endif
 			if (RTK_BT_OK == ble_throughput_server_link_disconnected(disconn_ind->conn_handle)) {

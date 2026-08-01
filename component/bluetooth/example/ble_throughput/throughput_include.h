@@ -94,6 +94,7 @@ typedef enum {
  * @brief     Bluetooth LE Throughput test mode type.
  */
 typedef enum {
+	THROUGHPUT_MODE_NONE                 = 0x0,
 	THROUGHPUT_MODE_NOTIFY               = 0x01, /*!< Test mode: Notification */
 	THROUGHPUT_MODE_WRITE_CMD            = 0x10, /*!< Test mode: Write Command */
 	THROUGHPUT_MODE_NOTIFY_WRITE_CMD     = 0x11, /*!< Test mode: Notification & Write Command */

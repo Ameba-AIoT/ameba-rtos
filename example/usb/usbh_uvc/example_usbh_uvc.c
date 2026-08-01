@@ -1606,7 +1606,6 @@ static void example_usbh_uvc_task(void *param) {
 
 	ret = usbh_uvc_init(&uvc_cfg, &uvc_cb);
 	if (ret != HAL_OK) {
-		usbh_deinit();
 		goto usb_deinit_exit;
 	}
 

@@ -70,8 +70,8 @@ static uint16_t dfu_initiator_cb(uint8_t type, void *pdata)
 		rtk_bt_mesh_dfu_evt_initiator_transfer_t *trans = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL, RTK_BT_MESH_DFU_EVT_INITIATOR_TRANSFER, sizeof(rtk_bt_mesh_dfu_evt_initiator_transfer_t));
 		trans = (rtk_bt_mesh_dfu_evt_initiator_transfer_t *)p_evt->data;
-		trans->type = ptransfer->type;
-		trans->init_phase = ptransfer->init_phase;
+		trans->type = (rtk_bt_mesh_dfu_initiator_cb_type_t)ptransfer->type;
+		trans->init_phase = (rtk_bt_mesh_dfu_initiator_phase_t)ptransfer->init_phase;
 		if (RTK_BT_MESH_DFU_INIT_CB_TYPE_UPLOAD_PROGRESS == trans->type) {
 			trans->progress = ptransfer->progress;
 		} else {
@@ -119,16 +119,16 @@ static uint16_t dfu_initiator_cb(uint8_t type, void *pdata)
 		dfu_init_client_data_t *pclient_data = (dfu_init_client_data_t *)pdata;
 		switch (pclient_data->type) {
 		case FW_DIST_CLIENT_RECVS_STATUS: {
-			fw_dist_client_recvs_status_t *pdata = (fw_dist_client_recvs_status_t *)pclient_data->pdata;
-			BT_LOGD("[%s] Receive Firmware Distribution Receivers Status message, status:%d, list count:%d.\r\n", __func__, pdata->status, pdata->recvs_list_cnt);
+			fw_dist_client_recvs_status_t *precvs = (fw_dist_client_recvs_status_t *)pclient_data->pdata;
+			BT_LOGD("[%s] Receive Firmware Distribution Receivers Status message, status:%d, list count:%d.\r\n", __func__, precvs->status, precvs->recvs_list_cnt);
 			rtk_bt_evt_t *p_evt = NULL;
 			rtk_bt_mesh_dfu_initiator_evt_dist_client_recvs_status *pstatus = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL, RTK_BT_MESH_DFU_EVT_INITIATOR_DIST_CLIENT_RECEIVES_STATUS,
 										sizeof(rtk_bt_mesh_dfu_initiator_evt_dist_client_recvs_status));
 			pstatus = (rtk_bt_mesh_dfu_initiator_evt_dist_client_recvs_status *)p_evt->data;
-			pstatus->src = pdata->src;
-			pstatus->status = pdata->status;
-			pstatus->recvs_list_cnt = pdata->recvs_list_cnt;
+			pstatus->src = precvs->src;
+			pstatus->status = (rtk_bt_mesh_dfu_fw_dist_status_code_t)precvs->status;
+			pstatus->recvs_list_cnt = precvs->recvs_list_cnt;
 			rtk_bt_evt_indicate(p_evt, NULL);
 			break;
 		}
@@ -141,20 +141,20 @@ static uint16_t dfu_initiator_cb(uint8_t type, void *pdata)
 			break;
 		}
 		case FW_DIST_CLIENT_STATUS: {
-			fw_dist_client_dist_status_t *pdata = (fw_dist_client_dist_status_t *)pclient_data->pdata;
-			BT_LOGD("[%s] Receive Firmware Distribution Status message, status:%d.\r\n", __func__, pdata->status);
+			fw_dist_client_dist_status_t *pdist_status = (fw_dist_client_dist_status_t *)pclient_data->pdata;
+			BT_LOGD("[%s] Receive Firmware Distribution Status message, status:%d.\r\n", __func__, pdist_status->status);
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL, RTK_BT_MESH_DFU_EVT_INITIATOR_DIST_CLIENT_DISTRIBUTION_STATUS, sizeof(uint8_t));
-			*(uint8_t *)p_evt->data = pdata->status;
+			*(uint8_t *)p_evt->data = pdist_status->status;
 			rtk_bt_evt_indicate(p_evt, NULL);
 			break;
 		}
 		case FW_DIST_CLIENT_UPLOAD_STATUS: {
-			fw_dist_client_upload_status_t *pdata = (fw_dist_client_upload_status_t *)pclient_data->pdata;
-			BT_LOGD("[%s] Receive Firmware Distribution Upload Status message, status:%d.\r\n", __func__, pdata->status);
+			fw_dist_client_upload_status_t *pupload_status = (fw_dist_client_upload_status_t *)pclient_data->pdata;
+			BT_LOGD("[%s] Receive Firmware Distribution Upload Status message, status:%d.\r\n", __func__, pupload_status->status);
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL, RTK_BT_MESH_DFU_EVT_INITIATOR_DIST_CLIENT_UPLOAD_STATUS, sizeof(uint8_t));
-			*(uint8_t *)p_evt->data = pdata->status;
+			*(uint8_t *)p_evt->data = pupload_status->status;
 			rtk_bt_evt_indicate(p_evt, NULL);
 			break;
 		}
@@ -330,7 +330,7 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 			rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t *node_fail = NULL;
 			p_evt = rtk_bt_event_create(group, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_NODE_FAIL, sizeof(rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t));
 			node_fail = (rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t *)p_evt->data;
-			node_fail->dist_phase = ptransfer->dist_phase;
+			node_fail->dist_phase = (rtk_bt_mesh_dfu_dist_phase_t)(ptransfer->dist_phase);
 			node_fail->addr = ptransfer->paddr[0];
 			break;
 		}
@@ -338,7 +338,7 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 			rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t *trans_progress = NULL;
 			p_evt = rtk_bt_event_create(group, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_PROGRESS, sizeof(rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t));
 			trans_progress = (rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t *)p_evt->data;
-			trans_progress->dist_phase = ptransfer->dist_phase;
+			trans_progress->dist_phase = (rtk_bt_mesh_dfu_dist_phase_t)(ptransfer->dist_phase);
 			trans_progress->progress = ptransfer->progress;
 			break;
 		}
@@ -362,7 +362,7 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 			uint16_t num_of_addr = ptransfer->addr_num;
 			p_evt = rtk_bt_event_create(group, event, sizeof(rtk_bt_mesh_dfu_evt_distributor_transfer_other_t) + num_of_addr * sizeof(uint16_t));
 			trans_other = (rtk_bt_mesh_dfu_evt_distributor_transfer_other_t *)p_evt->data;
-			trans_other->dist_phase = ptransfer->dist_phase;
+			trans_other->dist_phase = (rtk_bt_mesh_dfu_dist_phase_t)(ptransfer->dist_phase);
 			trans_other->addr_num = num_of_addr;
 			trans_other->paddr = (uint16_t *)((uint8_t *)p_evt->data + sizeof(rtk_bt_mesh_dfu_evt_distributor_transfer_other_t));
 			for (uint16_t i = 0; i < num_of_addr; i++) {
@@ -481,27 +481,27 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 			break;
 		}
 		case FW_DIST_SERVER_UPLOAD_FAIL: {
-			fw_dist_server_upload_fail_t *pdata = (fw_dist_server_upload_fail_t *)pupload->pupload_data;
+			fw_dist_server_upload_fail_t *pupload_fail = (fw_dist_server_upload_fail_t *)pupload->pupload_data;
 #if 1
-			BT_LOGA("[%s] Case distributor server upload fail, reason:%d.\r\n", __func__, pdata->reason);
+			BT_LOGA("[%s] Case distributor server upload fail, reason:%d.\r\n", __func__, pupload_fail->reason);
 #else
 			rtk_bt_mesh_dfu_evt_distributor_server_upload_fail_t *fail = NULL;
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_DISTRIBUTOR_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_UPLOAD_COMPLETE,
 										sizeof(rtk_bt_mesh_dfu_evt_distributor_server_upload_fail_t));
 			fail = (rtk_bt_mesh_dfu_evt_distributor_server_upload_fail_t *)p_evt->data;
-			fail->reason = pdata->reason;
+			fail->reason = pupload_fail->reason;
 			rtk_bt_evt_indicate(p_evt, NULL);
 #endif
 			break;
 		}
 		case FW_DIST_SERVER_URI_CHECK: {
 			// download from URI
-			fw_dist_server_uri_check_t *pdata = (fw_dist_server_uri_check_t *)pupload->pupload_data;
-			BT_LOGA("URI: %s\r\n", pdata->puri);
+			fw_dist_server_uri_check_t *puri_check = (fw_dist_server_uri_check_t *)pupload->pupload_data;
+			BT_LOGA("URI: %s\r\n", puri_check->puri);
 			/* set the firmware image size */
 			// fw_dist_server_ctx.upload_fw_size = 300;
-			*pdata->pstatus = FW_DIST_STATUS_SUCCESS;
+			*puri_check->pstatus = FW_DIST_STATUS_SUCCESS;
 			break;
 		}
 		default:
