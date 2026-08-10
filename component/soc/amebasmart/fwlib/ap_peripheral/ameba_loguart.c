@@ -228,6 +228,40 @@ void LOGUART_AGGPathCmd(LOGUART_TypeDef *UARTLOG, u8 PathIndex, u32 NewState)
 }
 
 /**
+  * @brief  Set AGG timeout val.
+  * @param  UARTLOG: LOGUART device.
+  * @param  TimeOut: Timeout Val (unit is one baudrate period of loguart Tx).
+  * @retval None
+  */
+void LOGUART_AGGSetTimeOut(LOGUART_TypeDef *UARTLOG, u32 TimeOut)
+{
+	u32 TempAGGC;
+
+	TempAGGC = UARTLOG->LOGUART_UART_AGGC;
+	TempAGGC &= ~(LOGUART_MASK_AGG_TO);
+	TempAGGC |= LOGUART_AGG_TO(TimeOut);
+	UARTLOG->LOGUART_UART_AGGC = TempAGGC;
+}
+
+/**
+  * @brief  Set AGG threshold val.
+  * @param  UARTLOG: LOGUART device.
+  * @param  Threshold: Threshold Val.
+  * @retval None
+  */
+void LOGUART_AGGSetThreshold(LOGUART_TypeDef *UARTLOG, u32 Threshold)
+{
+	u32 TempAGGC;
+
+	assert_param(IS_LOGUART_AGG_THRESHOLD_LEVEL(Threshold));
+
+	TempAGGC = UARTLOG->LOGUART_UART_AGGC;
+	TempAGGC &= ~(LOGUART_MASK_AGG_TH);
+	TempAGGC |= LOGUART_AGG_TH(Threshold);
+	UARTLOG->LOGUART_UART_AGGC = TempAGGC;
+}
+
+/**
  * @brief Get LOGUART IER value.
  * @return LOGUART IER value.
  */
