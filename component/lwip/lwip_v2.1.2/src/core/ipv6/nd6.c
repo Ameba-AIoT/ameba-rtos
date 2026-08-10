@@ -2708,4 +2708,28 @@ exit:
 }
 #endif
 
+/* Added by Realtek: install a static neighbor cache entry (REACHABLE) for a known
+ * ip6addr -> lladdr, so output can proceed without a multicast Neighbor Solicitation. */
+s8_t nd6_add_static_neighbor(struct netif *netif, const ip6_addr_t *ip6addr, const u8_t *lladdr)
+{
+  s8_t i;
+
+  if (netif == NULL || ip6addr == NULL || lladdr == NULL) {
+    return -1;
+  }
+  i = nd6_find_neighbor_cache_entry(ip6addr);
+  if (i < 0) {
+    i = nd6_new_neighbor_cache_entry();
+    if (i < 0) {
+      return -1;
+    }
+    ip6_addr_set(&(neighbor_cache[i].next_hop_address), ip6addr);
+  }
+  neighbor_cache[i].netif = netif;
+  MEMCPY(neighbor_cache[i].lladdr, lladdr, netif->hwaddr_len);
+  neighbor_cache[i].state = ND6_REACHABLE;
+  neighbor_cache[i].counter.reachable_time = reachable_time;
+  return i;
+}
+
 #endif /* LWIP_IPV6 */

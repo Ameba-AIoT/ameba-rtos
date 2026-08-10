@@ -163,11 +163,15 @@ static struct bt_evt_pool {
 	void *pool_q_small;
 	uint8_t buf_small[BT_EVT_SMALL_POOL_SIZE][BT_EVT_SMALL_BUF_SIZE];
 
+#if defined(BT_EVT_MEDIUM_POOL_SIZE) && BT_EVT_MEDIUM_POOL_SIZE
 	void *pool_q_medium;
 	uint8_t buf_medium[BT_EVT_MEDIUM_POOL_SIZE][BT_EVT_MEDIUM_BUF_SIZE];
+#endif
 
+#if defined(BT_EVT_LARGE_POOL_SIZE) && BT_EVT_LARGE_POOL_SIZE
 	void *pool_q_large;
 	uint8_t buf_large[BT_EVT_LARGE_POOL_SIZE][BT_EVT_LARGE_BUF_SIZE];
+#endif
 } *evt_pool = NULL;
 
 bool bt_api_sem_pool_init(void)
@@ -249,17 +253,15 @@ bool bt_evt_mem_pool_init(void)
 	if (false == osif_msg_queue_create(&evt_pool->pool_q_small, BT_EVT_SMALL_POOL_SIZE, sizeof(void *))) {
 		goto fail;
 	}
-	if (false == osif_msg_queue_create(&evt_pool->pool_q_medium, BT_EVT_MEDIUM_POOL_SIZE, sizeof(void *))) {
-		goto fail;
-	}
-	if (false == osif_msg_queue_create(&evt_pool->pool_q_large, BT_EVT_LARGE_POOL_SIZE, sizeof(void *))) {
-		goto fail;
-	}
 	for (i = 0; i < BT_EVT_SMALL_POOL_SIZE; i++) {
 		pbuf = &evt_pool->buf_small[i][0];
 		if (false == osif_msg_send(evt_pool->pool_q_small, &pbuf, 0)) {
 			goto fail;
 		}
+	}
+#if defined(BT_EVT_MEDIUM_POOL_SIZE) && BT_EVT_MEDIUM_POOL_SIZE
+	if (false == osif_msg_queue_create(&evt_pool->pool_q_medium, BT_EVT_MEDIUM_POOL_SIZE, sizeof(void *))) {
+		goto fail;
 	}
 	for (i = 0; i < BT_EVT_MEDIUM_POOL_SIZE; i++) {
 		pbuf = &evt_pool->buf_medium[i][0];
@@ -267,12 +269,18 @@ bool bt_evt_mem_pool_init(void)
 			goto fail;
 		}
 	}
+#endif
+#if defined(BT_EVT_LARGE_POOL_SIZE) && BT_EVT_LARGE_POOL_SIZE
+	if (false == osif_msg_queue_create(&evt_pool->pool_q_large, BT_EVT_LARGE_POOL_SIZE, sizeof(void *))) {
+		goto fail;
+	}
 	for (i = 0; i < BT_EVT_LARGE_POOL_SIZE; i++) {
 		pbuf = &evt_pool->buf_large[i][0];
 		if (false == osif_msg_send(evt_pool->pool_q_large, &pbuf, 0)) {
 			goto fail;
 		}
 	}
+#endif
 	return true;
 
 fail:
@@ -280,14 +288,18 @@ fail:
 		while (osif_msg_recv(evt_pool->pool_q_small, &pbuf, 0));
 		osif_msg_queue_delete(evt_pool->pool_q_small);
 	}
+#if defined(BT_EVT_MEDIUM_POOL_SIZE) && BT_EVT_MEDIUM_POOL_SIZE
 	if (evt_pool->pool_q_medium) {
 		while (osif_msg_recv(evt_pool->pool_q_medium, &pbuf, 0));
 		osif_msg_queue_delete(evt_pool->pool_q_medium);
 	}
+#endif
+#if defined(BT_EVT_LARGE_POOL_SIZE) && BT_EVT_LARGE_POOL_SIZE
 	if (evt_pool->pool_q_large) {
 		while (osif_msg_recv(evt_pool->pool_q_large, &pbuf, 0));
 		osif_msg_queue_delete(evt_pool->pool_q_large);
 	}
+#endif
 	if (evt_pool) {
 		osif_mem_free(evt_pool);
 		evt_pool = NULL;
@@ -304,12 +316,15 @@ void bt_evt_mem_pool_deinit(void)
 	}
 
 	while (osif_msg_recv(evt_pool->pool_q_small, &pbuf, 0));
-	while (osif_msg_recv(evt_pool->pool_q_medium, &pbuf, 0));
-	while (osif_msg_recv(evt_pool->pool_q_large, &pbuf, 0));
 	osif_msg_queue_delete(evt_pool->pool_q_small);
+#if defined(BT_EVT_MEDIUM_POOL_SIZE) && BT_EVT_MEDIUM_POOL_SIZE
+	while (osif_msg_recv(evt_pool->pool_q_medium, &pbuf, 0));
 	osif_msg_queue_delete(evt_pool->pool_q_medium);
+#endif
+#if defined(BT_EVT_LARGE_POOL_SIZE) && BT_EVT_LARGE_POOL_SIZE
+	while (osif_msg_recv(evt_pool->pool_q_large, &pbuf, 0));
 	osif_msg_queue_delete(evt_pool->pool_q_large);
-
+#endif
 	osif_mem_free(evt_pool);
 	evt_pool = NULL;
 }
@@ -318,11 +333,18 @@ static void *choose_evt_mem_pool_q(uint32_t size)
 {
 	if (size <= BT_EVT_SMALL_BUF_SIZE) {
 		return evt_pool->pool_q_small;
-	} else if (size <= BT_EVT_MEDIUM_BUF_SIZE) {
+	}
+#if defined(BT_EVT_MEDIUM_POOL_SIZE) && BT_EVT_MEDIUM_POOL_SIZE
+	else if (size > BT_EVT_SMALL_BUF_SIZE && size <= BT_EVT_MEDIUM_BUF_SIZE) {
 		return evt_pool->pool_q_medium;
-	} else if (size <= BT_EVT_LARGE_BUF_SIZE) {
+	}
+#endif
+#if defined(BT_EVT_LARGE_POOL_SIZE) && BT_EVT_LARGE_POOL_SIZE
+	else if (size > BT_EVT_MEDIUM_BUF_SIZE && size <= BT_EVT_LARGE_BUF_SIZE) {
 		return evt_pool->pool_q_large;
-	} else {
+	}
+#endif
+	else {
 		return NULL;
 	}
 }
@@ -332,13 +354,20 @@ static void *find_evt_pool_q_by_buf(uint8_t *pbuf)
 	if (pbuf >= &evt_pool->buf_small[0][0] &&
 		pbuf < (uint8_t *)&evt_pool->buf_small[0][0] + sizeof(evt_pool->buf_small)) {
 		return evt_pool->pool_q_small;
-	} else if (pbuf >= &evt_pool->buf_medium[0][0] &&
-			   pbuf < (uint8_t *)&evt_pool->buf_medium[0][0] + sizeof(evt_pool->buf_medium)) {
+	}
+#if defined(BT_EVT_MEDIUM_POOL_SIZE) && BT_EVT_MEDIUM_POOL_SIZE
+	else if (pbuf >= &evt_pool->buf_medium[0][0] &&
+			 pbuf < (uint8_t *)&evt_pool->buf_medium[0][0] + sizeof(evt_pool->buf_medium)) {
 		return evt_pool->pool_q_medium;
-	} else if (pbuf >= &evt_pool->buf_large[0][0] &&
-			   pbuf < (uint8_t *)&evt_pool->buf_large[0][0] + sizeof(evt_pool->buf_large)) {
+	}
+#endif
+#if defined(BT_EVT_LARGE_POOL_SIZE) && BT_EVT_LARGE_POOL_SIZE
+	else if (pbuf >= &evt_pool->buf_large[0][0] &&
+			 pbuf < (uint8_t *)&evt_pool->buf_large[0][0] + sizeof(evt_pool->buf_large)) {
 		return evt_pool->pool_q_large;
-	} else {
+	}
+#endif
+	else {
 		return NULL;
 	}
 }
@@ -438,7 +467,7 @@ void bt_wait_cmd_send_complete(void)
 
 static uint8_t rtk_bt_excute_evt_cb(uint8_t group, uint8_t evt_code, void *param, uint32_t len)
 {
-	uint8_t ret = 0;
+	uint8_t ret = RTK_BT_EVT_CB_OK;
 	rtk_bt_evt_cb_t cb_func = NULL;
 
 	if (/*group >= RTK_BT_API_LE_BASE && */group < RTK_BT_LE_GP_MAX) {
@@ -527,7 +556,7 @@ uint16_t rtk_bt_evt_init(void)
 	}
 
 	event_task_running = true;
-	return 0;
+	return RTK_BT_OK;
 
 failed:
 	if (g_evt_task_hdl) {
@@ -546,13 +575,11 @@ failed:
 	return RTK_BT_FAIL;
 }
 
-static uint16_t rtk_bt_evt_reset_callback(void)
+static void rtk_bt_evt_reset_callback(void)
 {
 	memset(rtk_bt_le_evt_cb_tbl, 0, sizeof(rtk_bt_le_evt_cb_tbl));
 	memset(rtk_bt_br_evt_cb_tbl, 0, sizeof(rtk_bt_br_evt_cb_tbl));
 	memset(rtk_bt_evt_cb_tbl, 0, sizeof(rtk_bt_evt_cb_tbl));
-
-	return 0;
 }
 
 uint16_t rtk_bt_evt_deinit(void)
@@ -580,7 +607,7 @@ uint16_t rtk_bt_evt_deinit(void)
 	g_evt_queue = NULL;
 	rtk_bt_evt_reset_callback();
 
-	return 0;
+	return RTK_BT_OK;
 }
 
 uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb)
@@ -611,7 +638,7 @@ uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb)
 		rtk_bt_evt_cb_tbl[group - RTK_BT_API_COMMON_BASE] = cb;
 	}
 
-	return 0;
+	return RTK_BT_OK;
 }
 
 uint16_t rtk_bt_evt_unregister_callback(uint8_t group)
@@ -645,7 +672,7 @@ uint16_t rtk_bt_evt_unregister_callback(uint8_t group)
 		rtk_bt_evt_cb_tbl[group - RTK_BT_API_COMMON_BASE] = NULL;
 	}
 
-	return 0;
+	return RTK_BT_OK;
 }
 
 rtk_bt_evt_t *rtk_bt_event_create(uint8_t group, uint8_t evt, uint32_t param_len)
@@ -794,7 +821,7 @@ static bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code)
 
 uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 	uint32_t msg_num = 0;
 	rtk_bt_evt_t *p_evt = (rtk_bt_evt_t *)evt;
 
@@ -810,7 +837,7 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 		/* If the evt cb is direct calling, the evt msg isn't actually send to evt task,
 		Instead, it's excuted here, so need to free it here */
 		rtk_bt_event_free(evt);
-		return 0;
+		return RTK_BT_OK;
 	}
 
 	/* send EXIT as last msg to kill task */

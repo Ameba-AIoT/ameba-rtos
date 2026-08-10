@@ -17,6 +17,9 @@
 #include "atcmd_service.h"
 #ifndef CONFIG_MP_SHRINK
 #include "atcmd_wifi.h"
+#ifdef CONFIG_WIFI_NAN_HOST_APP
+#include "atcmd_wifi_nan.h"
+#endif
 #include "atcmd_usb.h"
 #ifdef CONFIG_LWIP_LAYER
 #include "atcmd_mqtt.h"
@@ -237,6 +240,11 @@ void at_list(u16 argc, char **argv)
 	/* Wifi commands. */
 	at_printf("Wi-Fi AT Command:\r\n");
 	print_wifi_at();
+#ifdef CONFIG_WIFI_NAN_HOST_APP
+	/* Wi-Fi Aware (NAN) commands. */
+	at_printf("Wi-Fi Aware (NAN) AT Command:\r\n");
+	print_nan_at();
+#endif
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
 	/* Socket AT Commands. */
@@ -411,13 +419,13 @@ void at_gpiotest(u16 argc, char **argv)
 		goto end;
 	}
 
-	gpio_init(&gpio_output, output_pin);
-	gpio_dir(&gpio_output, PIN_OUTPUT);
-	gpio_mode(&gpio_output, PullNone);
-
 	gpio_init(&gpio_input, input_pin);
 	gpio_dir(&gpio_input, PIN_INPUT);
 	gpio_mode(&gpio_input, PullNone);
+
+	gpio_init(&gpio_output, output_pin);
+	gpio_dir(&gpio_output, PIN_OUTPUT);
+	gpio_mode(&gpio_output, PullNone);
 
 	gpio_write(&gpio_output, val_w);
 	val_r = gpio_read(&gpio_input);
@@ -432,6 +440,67 @@ end:
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, ATCMD_ERROR_END_STR, error_no);
 	}
+}
+
+void at_gpiostatus(u16 argc, char **argv)
+{
+	u8 error_no = 0;
+	u8 input_pin;
+	gpio_t gpio_input;
+	int sta;
+	PinMode mode;
+
+	if (argc != 3) {
+		error_no = 1;
+		goto end;
+	}
+
+	if (strstr(argv[1], "PA")) {
+		input_pin = _PA_0 + atoi(&argv[1][2]);
+	} else if (strstr(argv[1], "PB")) {
+		input_pin = _PB_0 + atoi(&argv[1][2]);
+	}
+#ifdef _PC_0
+	else if (strstr(argv[1], "PC")) {
+		input_pin = _PC_0 + atoi(&argv[1][2]);
+	}
+#endif
+	else {
+		error_no = 2;
+		goto end;
+	}
+
+	sta = atoi(argv[2]);
+	switch (sta) {
+	case -1:
+		mode = PullDown;
+		break;
+	case  0:
+		mode = PullNone;
+		break;
+	case  1:
+		mode = PullUp;
+		break;
+	default:
+		error_no = 2;
+		goto end;
+		break;
+	}
+
+	/*this configuration will be hold during mp test*/
+	sys_jtag_off();
+
+	gpio_init(&gpio_input, input_pin);
+	gpio_dir(&gpio_input, PIN_INPUT);
+	gpio_mode(&gpio_input, mode);
+
+end:
+	if (error_no == 0) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, ATCMD_OK_END_STR);
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, ATCMD_ERROR_END_STR, error_no);
+	}
+
 }
 #endif
 
@@ -487,6 +556,7 @@ const log_item_t at_sys_items[] = {
 	{"+GMR", at_gmr},
 #ifdef CONFIG_MP_INCLUDED
 	{"+GPIOTEST", at_gpiotest},
+	{"+GPIOSTATUS", at_gpiostatus},
 #endif
 #ifdef CONFIG_ATCMD_HOST_CONTROL
 	{"+UART", at_uart},

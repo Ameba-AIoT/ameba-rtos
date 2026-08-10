@@ -41,10 +41,6 @@
 
 #include "whc_dev_protocal_offload.h"
 
-#if !defined(CONFIG_FULLMAC) && defined(CONFIG_NAN)
-#include "rtw_nan_enum.h"
-#endif
-
 #include "whc_dev_powersave.h"
 /* remove after rom freeze */
 #ifndef CONFIG_BUILD_ROM

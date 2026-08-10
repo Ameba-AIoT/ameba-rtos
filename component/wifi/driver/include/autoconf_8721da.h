@@ -26,8 +26,8 @@
 #define CONFIG_WTN_SOCKET_APP
 #endif
 //#define CONFIG_WTN_JUST_LINKAP
-#ifndef CONFIG_WIFI_TUNNEL
-//#define CONFIG_NAN
+#ifdef CONFIG_WHC_DEV
+#define CONFIG_NAN
 #endif
 
 #if defined(CONFIG_PLATFORM_ZEPHYR)
@@ -84,6 +84,7 @@
 //#define CONFIG_TWT
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
+#define NAN_CUSTOMER_NANDOW
 #undef CONFIG_ADDRESS_CAM
 #endif
 

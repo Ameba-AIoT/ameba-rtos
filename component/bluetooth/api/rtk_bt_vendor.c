@@ -219,7 +219,7 @@ uint16_t rtk_bt_get_hc_clock_offset(int64_t *p_offset)
 
 	uint8_t data[2] = {0};
 	rtk_bt_gap_vendor_cmd_param_t param;
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	data[0] = SUB_CMD_FREE_RUN_CLOCK_LATCH_ENABLE;
 	data[1] = 0x1;
@@ -302,7 +302,7 @@ uint16_t rtk_bt_get_le_iso_sync_ref_ap_info(uint16_t conn_handle, uint8_t dir, r
 #if defined(VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT) && VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT
 	uint8_t data[3] = {0};
 	rtk_bt_gap_vendor_cmd_param_t param;
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_info) {
 		BT_LOGE("p_info is NULL!\r\n");

@@ -382,7 +382,7 @@ static uint16_t bt_stack_gattc_find(void *param)
 
 static uint16_t bt_stack_gattc_read(void *param)
 {
-	T_GAP_CAUSE cause = 0;
+	T_GAP_CAUSE cause = GAP_CAUSE_SUCCESS;
 	rtk_bt_gattc_read_param_t *p_read_param = (rtk_bt_gattc_read_param_t *)param;
 
 	if (p_read_param->type == RTK_BT_GATT_CHAR_READ_BY_HANDLE) {
@@ -403,7 +403,7 @@ static uint16_t bt_stack_gattc_write(void *param)
 {
 	T_GAP_CAUSE cause;
 	rtk_bt_gattc_write_param_t *p_write_param = (rtk_bt_gattc_write_param_t *)param;
-	T_GATT_WRITE_TYPE write_type = 0;
+	T_GATT_WRITE_TYPE write_type = GATT_WRITE_TYPE_REQ;
 	uint16_t credits = 0;
 
 	le_get_gap_param(GAP_PARAM_LE_REMAIN_CREDITS, &credits);
