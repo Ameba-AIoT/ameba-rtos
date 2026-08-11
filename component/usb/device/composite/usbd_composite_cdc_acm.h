@@ -13,6 +13,10 @@
 #include "usbd_composite_config.h"
 #include "usb_cdc_acm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Device_API USB Device API
@@ -158,5 +162,9 @@ int usbd_composite_cdc_acm_notify_serial_state(u16 serial_state);
 /** @} End of Device_Composite_CDC_ACM_Functions group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBD_COMPOSITE_CDC_ACM_H */

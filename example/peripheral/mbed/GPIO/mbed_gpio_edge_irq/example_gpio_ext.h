@@ -31,6 +31,10 @@
 #define GPIO_SIGNAL_SOURCE		_PA_25
 #define GPIO_IRQ_EDGE_PIN		_PA_26
 
+#elif defined (CONFIG_AMEBAPRO3)
+#define GPIO_SIGNAL_SOURCE		_PE_5
+#define GPIO_IRQ_EDGE_PIN		_PF_2
+
 #elif defined (CONFIG_RTL8720F)
 #define GPIO_SIGNAL_SOURCE		_PA_23
 #define GPIO_IRQ_EDGE_PIN		_PA_24

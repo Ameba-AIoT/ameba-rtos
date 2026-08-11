@@ -1,0 +1,4 @@
+pytest
+-e ../../../tools/ameba_pytest
+pexpect
+pytest-html

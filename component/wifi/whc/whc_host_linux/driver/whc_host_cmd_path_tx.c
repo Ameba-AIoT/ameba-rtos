@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #include <whc_host_linux.h>
 
 /* SIZE_TX_DESC not included in len  */
 /* pbuf needed to be freed by user if need */
-void whc_host_cmd_data_send_to_dev(u8 *pbuf, u32 len, u32 with_txdesc)
+void whc_host_send_cmd_data_to_dev(u8 *pbuf, u32 len, u32 with_txdesc)
 {
 	struct whc_cmd_path_hdr *hdr = NULL;
 	u8 *buf;

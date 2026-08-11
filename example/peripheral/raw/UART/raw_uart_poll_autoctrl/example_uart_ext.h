@@ -38,11 +38,21 @@
 #define UART_CTS	_PA_26 // UART0 CTS
 
 #elif defined (CONFIG_RTL8720F)
-/* fully programmable zone */
+/* fully programmable zone.
+ * When wired pin-to-pin (PA21-PA21, PA22-PA22, ...) instead of cross-wired,
+ * build the peer board firmware with -DUART_AUTOCTRL_PEER to swap TX/RX and
+ * RTS/CTS so the signal directions come out correct over the straight cable. */
+#ifndef PEER_BOARD
 #define UART_TX		_PA_21 // UART0 TX
 #define UART_RX		_PA_22 // UART0 RX
 #define UART_RTS	_PA_23 // UART0 RTS
 #define UART_CTS	_PA_24 // UART0 CTS
+#else
+#define UART_TX		_PA_22 // peer TX - dut RX
+#define UART_RX		_PA_21 // peer RX - dut TX
+#define UART_RTS	_PA_24 // peer RTS - dut CTS
+#define UART_CTS	_PA_23 // peer CTS - dut RTS
+#endif
 
 #endif
 

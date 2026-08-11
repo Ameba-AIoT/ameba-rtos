@@ -14,6 +14,11 @@ Chips of AmebaLite, AmebaSmart and AmebaDplus are recommended.
 ### Set up Development Environment
 Setting the environment by following the readme in each [example](#application-examples).
 
+### Enable WIFI-CAST
+WIFI-CAST is disabled by default. Enable `CONFIG WIFI -> Enable WIFI CAST` in `menuconfig`
+(or add `CONFIG_WIFI_CAST_ENABLE=y` to the project's `prj.conf`) before building your own
+application. The examples below already carry this option in their `prj.conf`.
+
 ## Frame Format
 In WIFI-CAST, QoS data frame is transmited between devices.
 

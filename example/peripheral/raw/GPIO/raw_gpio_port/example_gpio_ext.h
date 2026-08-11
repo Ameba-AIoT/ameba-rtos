@@ -10,7 +10,9 @@
 #define GPIO_EXT_H
 #include "platform_autoconf.h"
 
-#define PORT_OUTPUT_TEST	1 // 0: input test, 1: output test
+#ifndef PORT_OUTPUT_TEST
+#define PORT_OUTPUT_TEST	1 // 0: input test, 1: output test (override via -D in build)
+#endif
 #define GPIO_TEST_PORT		0 // 0: GPIO_PORT_A, 1: GPIO_PORT_B
 
 #define LED_PATTERN_NUM		12
@@ -68,9 +70,23 @@ const uint32_t led_pattern[LED_PATTERN_NUM] = {0x1FF00000, 0x1FE00000, 0x1FD0000
 
 #elif defined (CONFIG_RTL8720F)
 //for PortA
-unsigned int pin_mask = 0x01E04000;
-const unsigned int led_pattern[LED_PATTERN_NUM] = {0x01E04000, 0x01E00000, 0x01C00000, 0x01800000, 0x01000000, 0x00000000, 0x01E04000, 0x01E00000, 0x01C00000, 0x01800000, 0x01000000, 0x00000000};
+unsigned int pin_mask = 0x00664000;
 
+const unsigned int led_pattern[LED_PATTERN_NUM] = {
+	0x00664000,  // PA14 PA17 PA18 PA21 PA22
+	0x00660000,  // PA17 PA18 PA21 PA22
+	0x00460000,  // PA17 PA18 PA22
+	0x00060000,  // PA17 PA18
+	0x00040000,  // PA18
+	0x00000000,  // all off
+
+	0x00664000,  // PA14 PA17 PA18 PA21 PA22
+	0x00660000,  // PA17 PA18 PA21 PA22
+	0x00460000,  // PA17 PA18 PA22
+	0x00060000,  // PA17 PA18
+	0x00040000,  // PA18
+	0x00000000   // all off
+};
 #endif
 
 extern int example_raw_gpio_port(void);

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #include <whc_host_linux.h>
 #include <net/genetlink.h>
 #include <whc_host_rtw_cli_api.h>
@@ -55,7 +56,7 @@ int whc_host_do_mp_cmd(struct sk_buff *skb, struct genl_info *info)
 	ptr += 1;
 	memcpy(ptr, string_data, string_len);
 
-	whc_host_cmd_data_send_to_dev(buf, buf_len, 1);
+	whc_host_send_cmd_data_to_dev(buf, buf_len, 1);
 	kfree(buf);
 
 	return 0;
@@ -118,7 +119,7 @@ int whc_host_do_scan(struct sk_buff *skb, struct genl_info *info)
 	ptr += SIZE_TX_DESC;
 
 	memcpy(ptr, payload, payload_len);
-	whc_host_cmd_data_send_to_dev(buf, buf_len, 1);
+	whc_host_send_cmd_data_to_dev(buf, buf_len, 1);
 	kfree(buf);
 
 	//TODO Free scan_result
@@ -378,9 +379,58 @@ int pre_process_buf_data(u8 *buf, u16 size)
 			ret = FALSE;
 
 			break;
+		case WHC_WPA_OPS_UTIL_SCAN_RAW_DATA:
+
+			buf_p += 2;  /* skip cmd_id + idx, now points to scan_raw payload */
+			scan_raw_data_cb(buf_p);
+			ret = TRUE;
+
+			break;
 		default:
 			break;
 		}
+	} else if (whc_cmd_catg == WHC_WPA_STD_EVENT) {
+		u8 wpa_cmd_id = *buf_p;
+		u8 dev_idx   = *(buf_p + 1);
+		u8 sub_event = *(buf_p + 2);
+		u8 extra     = *(buf_p + 3);
+
+		printk("WHC_WPA_STD_EVENT cmd_id=%d idx=%d sub=0x%02x extra=0x%02x\n",
+			   wpa_cmd_id, dev_idx, sub_event, extra);
+
+		/* Parse extended join status detail for FAIL / DISCONNECT */
+		/*
+		 * Size guards (from buf start, including 4-byte category):
+		 *   FAIL:       size >= 14 — 4(cat) + 2(cmd_id+idx) + 2(sub+extra)
+		 *                            + 4(fail_reason) + 2(status_code)
+		 *   DISCONNECT: size >= 10 — 4(cat) + 2(cmd_id+idx) + 2(sub+extra)
+		 *                            + 2(disconn_reason)
+		 */
+		if (wpa_cmd_id == WHC_WPA_STD_EVENT_WIFI_DRV) {
+			if (extra == RTW_JOINSTATUS_FAIL) {
+				if (size < 14) {
+					printk("JOIN FAIL: truncated payload\n");
+				} else {
+					s32 fail_reason;
+					u16 reason_or_status_code;
+					memcpy(&fail_reason, buf_p + 4, sizeof(fail_reason));
+					memcpy(&reason_or_status_code, buf_p + 8, sizeof(reason_or_status_code));
+					printk("JOIN FAIL: fail_reason=%d status_code=%d\n",
+						   fail_reason, reason_or_status_code);
+				}
+			} else if (extra == RTW_JOINSTATUS_DISCONNECT) {
+				if (size < 10) {
+					printk("JOIN DISCONNECT: truncated payload\n");
+				} else {
+					u16 disconn_reason;
+					memcpy(&disconn_reason, buf_p + 4, sizeof(disconn_reason));
+					printk("DISCONNECT: reason=%d\n", disconn_reason);
+				}
+			}
+		}
+
+		ret = FALSE;
+
 	} else if (whc_cmd_catg == WHC_WPA_OPS_EVENT) {
 		printk("WHC_WPA_OPS_EVENT cmd_id: %d\n", *buf_p);
 		switch (*buf_p) {
@@ -390,13 +440,6 @@ int pre_process_buf_data(u8 *buf, u16 size)
 			join_event_cb(buf_p);
 
 			ret = FALSE;
-
-			break;
-		case WHC_WPA_OPS_EVENT_SCAN_RAW_DATA:
-
-			buf_p += 2;  /* skip cmd_id + idx, now points to scan_raw payload */
-			scan_raw_data_cb(buf_p);
-			ret = TRUE;
 
 			break;
 		default:

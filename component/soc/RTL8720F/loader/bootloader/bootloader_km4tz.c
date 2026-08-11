@@ -92,7 +92,15 @@ int BOOT_PSRAM_Init(void)
 	PSRAM_PHY_StructInit(&PSPHY_InitStruct);
 	PSRAM_PHY_Init(&PSPHY_InitStruct);
 
-	if (gbss->PSRAM_TYPE == MCM_PSRAM_VENDOR_APM) {
+	if (PsramInfo.Psram_Type == PSRAM_TYPE_APM_UPSRAM) {
+		RTK_LOGI(TAG, "Init APM uPSRAM\r\n");
+
+		/* init psram controller */
+		PSRAM_CTRL_Init();
+		/* init psram device */
+		PSRAM_UPSRAM_DEVIC_Init();
+
+	} else if (gbss->PSRAM_TYPE == MCM_PSRAM_VENDOR_APM) {
 		RTK_LOGI(TAG, "Init APM PSRAM\r\n");
 
 		/* init psram controller */
@@ -198,8 +206,8 @@ void BOOT_SOLO_Enable(void)
 	HAL_WRITE32(PMC_BASE, SYSPMC_CTRL, HAL_READ32(PMC_BASE, SYSPMC_CTRL) & (~PMC_BIT_CPU0_NMI_MASK));
 
 	/* set timeout: from [(threshold -1)*256*(2^(grade-1)+1)] to [threshold*256*(2^(grade-1)+1)] */
-	RXI_300_S->TIMEOUT_MON_CFG0 = 0x10005; // threshold = 5, grade = 1, clock for fpga is 20M, so timeout is about 40us~50us
-	RXI_300_S->TIMEOUT_MON_CFG1 = 0x10005; // RTL8720F_TODO need change for asic
+	RXI_300_S->TIMEOUT_MON_CFG0 = 0x1000a; // threshold = 0xa, grade = 1, plfm clock is 100M, the timeout is about 50us
+	RXI_300_S->TIMEOUT_MON_CFG1 = 0x1000a;
 
 	/* enable bus timeout */
 	RXI_300_S->TIMEOUT_GUARD_EN |= (RXI300_BIT_TMO_GUARDIAN_EN_PLFM1_MA | RXI300_BIT_TMO_GUARDIAN_EN_CPU1_MA);
@@ -233,12 +241,12 @@ void BOOT_Share_Cache_To_TCM(void)
 
 void BOOT_Config_PMC_Role(void)
 {
-#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
-	HAL_WRITE32(PMC_BASE, SYSPMC_CTRL, HAL_READ32(PMC_BASE, SYSPMC_CTRL) & (~PMC_BIT_NP_CPU_ID));
-	RTK_LOGI(TAG, "PMC_CORE_ROLE: CPU0\n");
-#else
-	RTK_LOGI(TAG, "PMC_CORE_ROLE: CPU1\n");
-#endif
+// #if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
+// 	HAL_WRITE32(PMC_BASE, SYSPMC_CTRL, HAL_READ32(PMC_BASE, SYSPMC_CTRL) & (~PMC_BIT_NP_CPU_ID));
+// 	RTK_LOGI(TAG, "PMC_CORE_ROLE: KM4TZ\n");
+// #else
+	RTK_LOGI(TAG, "PMC_CORE_ROLE: KM4NS\n");
+// #endif
 }
 
 void BOOT_WakeFromPG(void)
@@ -355,9 +363,6 @@ void BOOT_Image1(void)
 
 	_memset((void *)__image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
 
-	/* Disable SDIO Download function */
-	BOOT_ROM_SDIO_NS_Config();
-
 #ifdef CONFIG_WHC_INTF_SDIO
 	Boot_SDIO_Pinmux_init();
 #endif
@@ -421,13 +426,12 @@ void BOOT_Image1(void)
 	BOOT_SOLO_Enable();
 #endif
 
-#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
-	/*NP shall wait MPC setting for non-secure access*/
-	BOOT_Enable_NP();
-#else
-	BOOT_Share_Cache_To_TCM();
-	Boot_Fullmac_LoadIMGAll();
+#if defined(CONFIG_WHC_DEV_HCI_BOOT)
+	// BOOT_Share_Cache_To_TCM();
+	Boot_Fullmac_LoadIMGAll(); /* Need Called After BOOT_RAM_TZCfg */
 #endif
+
+	BOOT_Enable_NP();
 
 	// vector_table = (u32 *)Image2EntryFun->VectorNS;
 	// vector_table[1] = (u32)Image2EntryFun->RamStartFun;

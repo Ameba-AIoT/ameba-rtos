@@ -446,7 +446,13 @@ void *pvPortMallocBaseCore(size_t xWantedSize, uint32_t startAddr)
 				while (((pxBlock->xBlockSize < xWantedSize) || ((uint32_t)pxBlock + xHeapStructSize) < startAddr ) && (pxBlock->pxNextFreeBlock != heapPROTECT_BLOCK_POINTER(NULL)))  {
 					pxPreviousBlock = pxBlock;
 					pxBlock = heapPROTECT_BLOCK_POINTER(pxBlock->pxNextFreeBlock);
-					heapVALIDATE_BLOCK_POINTER(pxBlock);
+
+					/* pxEnd is the end marker of the free list. It is located at
+					 * pucHeapHighAddress and is not part of the usable heap, so it
+					 * must be excluded from the heap block pointer validation. */
+					if (pxBlock != pxEnd) {
+						heapVALIDATE_BLOCK_POINTER(pxBlock);
+					}
 				}
 
 				/* If the end marker was reached then a block of adequate size
@@ -582,7 +588,13 @@ void *pvPortMallocBaseCore(size_t xWantedSize, uint32_t startAddr)
 				while (((pxBlock->xBlockSize < xWantedSize) || ((uint32_t)pxBlock + xHeapStructSize) < startAddr ) && (pxBlock->pxNextFreeBlock != heapPROTECT_BLOCK_POINTER(NULL)))  {
 					pxPreviousBlock = pxBlock;
 					pxBlock = heapPROTECT_BLOCK_POINTER(pxBlock->pxNextFreeBlock);
-					heapVALIDATE_BLOCK_POINTER(pxBlock);
+
+					/* pxEnd is the end marker of the free list. It is located at
+					 * pucHeapHighAddress and is not part of the usable heap, so it
+					 * must be excluded from the heap block pointer validation. */
+					if (pxBlock != pxEnd) {
+						heapVALIDATE_BLOCK_POINTER(pxBlock);
+					}
 				}
 
 				/* If the end marker was reached then a block of adequate size
@@ -739,21 +751,30 @@ void vPortFree(void *pv)
 		if ((pxLink->xBlockSize & xBlockAllocatedBit) != 0) {
 			if (pxLink->pxNextFreeBlock == heapPROTECT_BLOCK_POINTER(NULL)) {
 				/* The block is being returned to the heap - it is no longer
-				 * allocated. */
-				pxLink->xBlockSize &= ~xBlockAllocatedBit;
+				 * allocated. Clearing the allocated bit MUST happen inside the
+				 * critical section (SMP: interrupts off + scheduler spinlock held):
+				 * otherwise a context switch between clearing the bit and
+				 * prvInsertBlockIntoFreeList() lets the task-switch-out heap
+				 * integrity check observe a half-freed block (allocated bit clear,
+				 * but pxNextFreeBlock still protected-NULL because it hasn't been
+				 * relinked yet) and falsely assert as a corrupt header. The
+				 * COMPREHENSIVE poison-fill must also stay after the clear (it sizes
+				 * the fill from the cleaned xBlockSize) and before the relink (once
+				 * relinked the block may be handed to another core). */
+				taskENTER_CRITICAL();
+				{
+					pxLink->xBlockSize &= ~xBlockAllocatedBit;
 
 #if( defined CONFIG_HEAP_CORRUPTION_DETECT_LITE)
-				configASSERT(xPortCanaryCheck(pxLink));
+					configASSERT(xPortCanaryCheck(pxLink));
 #endif
 
 #if ( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE)
-				pucBlockToFree = puc + xHeapStructSize;
-				xBlockToFillSize = pxLink->xBlockSize - xHeapStructSize;
-				_memset(pucBlockToFree, xFillFreed, xBlockToFillSize);
+					pucBlockToFree = puc + xHeapStructSize;
+					xBlockToFillSize = pxLink->xBlockSize - xHeapStructSize;
+					_memset(pucBlockToFree, xFillFreed, xBlockToFillSize);
 #endif
 
-				taskENTER_CRITICAL();
-				{
 					/* Add this block to the list of free blocks. */
 					xFreeBytesRemaining += pxLink->xBlockSize;
 					traceFREE(pv, pxLink->xBlockSize);
@@ -793,11 +814,13 @@ void vPortFree(void *pv)
 		if ((pxLink->xBlockSize & xBlockAllocatedBit) != 0) {
 			if (pxLink->pxNextFreeBlock == heapPROTECT_BLOCK_POINTER(NULL)) {
 				/* The block is being returned to the heap - it is no longer
-				 * allocated. */
-				pxLink->xBlockSize &= ~xBlockAllocatedBit;
-
+				 * allocated. Clearing the allocated bit MUST happen inside the
+				 * critical section so the task-switch-out heap integrity check can
+				 * never observe a half-freed block. */
 				taskENTER_CRITICAL();
 				{
+					pxLink->xBlockSize &= ~xBlockAllocatedBit;
+
 					/* Add this block to the list of free blocks. */
 					xFreeBytesRemaining += pxLink->xBlockSize;
 					traceFREE(pv, pxLink->xBlockSize);
@@ -1035,7 +1058,7 @@ void vPortGetHeapStats(HeapStats_t *pxHeapStats)
 		/* pxBlock will be NULL if the heap has not been initialised.  The heap
 		 * is initialised automatically when the first allocation is made. */
 		if (pxBlock != NULL) {
-			do {
+			while (pxBlock != pxEnd) {
 				/* Increment the number of blocks and record the largest block seen
 				 * so far. */
 				xBlocks++;
@@ -1056,7 +1079,7 @@ void vPortGetHeapStats(HeapStats_t *pxHeapStats)
 				/* Move to the next block in the chain until the last block is
 				 * reached. */
 				pxBlock = heapPROTECT_BLOCK_POINTER(pxBlock->pxNextFreeBlock);
-			} while (pxBlock != pxEnd);
+			}
 		}
 	}
 	taskEXIT_CRITICAL();
@@ -1235,10 +1258,9 @@ void* pvPortReAllocBase( void *pv,  size_t xWantedSize, uint32_t startAddr)
 {
 	BlockLink_t *pxLink;
 	unsigned char *puc = ( unsigned char * ) pv;
-#if( defined CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE )
-	uint8_t *pucBlockToFree = NULL;
-	size_t xBlockToFillSize = 0;
-#endif
+	/* NOTE: realloc delegates the free to vPortFree(pv) below, which does the
+	 * COMPREHENSIVE 0xDD poison-fill itself — so no local free-fill vars here
+	 * (leftover pucBlockToFree/xBlockToFillSize would be unused -> -Werror). */
 
 	if( pv )
 	{
@@ -1399,7 +1421,13 @@ void *pvPortMallocCacheAlignedCore(size_t xWantedSize)
 		{
 			pxPreviousBlock = &xStart;
 			pxBlock = heapPROTECT_BLOCK_POINTER(xStart.pxNextFreeBlock);
-			heapVALIDATE_BLOCK_POINTER(pxBlock);
+
+			/* pxEnd is the end marker of the free list. It is located at
+			 * pucHeapHighAddress and is not part of the usable heap, so it
+			 * must be excluded from the heap block pointer validation. */
+			if (pxBlock != pxEnd) {
+				heapVALIDATE_BLOCK_POINTER(pxBlock);
+			}
 
 			while (pxBlock != pxEnd) {
 				prvCacheAlignedGap(pxBlock, xAlignedSize, xHeaderOffset,
@@ -1411,7 +1439,13 @@ void *pvPortMallocCacheAlignedCore(size_t xWantedSize)
 
 				pxPreviousBlock = pxBlock;
 				pxBlock = heapPROTECT_BLOCK_POINTER(pxBlock->pxNextFreeBlock);
-				heapVALIDATE_BLOCK_POINTER(pxBlock);
+
+				/* pxEnd is the end marker of the free list. It is located at
+				 * pucHeapHighAddress and is not part of the usable heap, so it
+				 * must be excluded from the heap block pointer validation. */
+				if (pxBlock != pxEnd) {
+					heapVALIDATE_BLOCK_POINTER(pxBlock);
+				}
 			}
 
 			if (pxBlock != pxEnd) {
@@ -1437,8 +1471,17 @@ void *pvPortMallocCacheAlignedCore(size_t xWantedSize)
 				for (size_t i = 0; i < xNumPadding; i++) {
 					pvHeadCanary[i] = xHeadCanaryValue;
 				}
+				/* Anchor the tail canary to the PHYSICAL block end
+				 * (pxBlock + xBlockSize - xTailCanarySize), NOT the user-data end
+				 * (xUserAddr + xAlignedSize). xPortCanaryCheck() and regular malloc
+				 * both locate the tail canary from xBlockSize alone. When a block is
+				 * handed out whole because the leftover was too small to split
+				 * (xBlockSize > xTotalSize), the user-data end sits before the
+				 * physical end with slack in between; anchoring here keeps write and
+				 * check at the same address and avoids a false "TAIL CANARY CORRUPT"
+				 * on that slack. */
 				uint32_t *pvTailCanary =
-				    (uint32_t *)((uint8_t *)xUserAddr + xAlignedSize);
+				    (uint32_t *)((uint8_t *)pxBlock + pxBlock->xBlockSize - xTailCanarySize);
 				for (size_t i = 0; i < xNumPadding; i++) {
 					pvTailCanary[i] = xTailCanaryValue;
 				}

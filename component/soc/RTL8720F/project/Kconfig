@@ -161,12 +161,9 @@ menu "CONFIG WHC INTF"
                 bool "WHC_DEV"
                 select WIFI_HOST_CONTROL
                 select WHC_DEV_FOR_KM4TZ
-            config WHC_BRIDGE
-                bool "BRIDGE_DEV"
-                select WIFI_HOST_CONTROL
-                select WHC_NONE_FOR_KM4TZ
             config WHC_HOST_MENU
                 bool "WHC_HOST"
+                select WHC_HOST_IMPL
                 select WHC_HOST_FOR_KM4TZ
     endchoice
 
@@ -175,46 +172,77 @@ menu "CONFIG WHC INTF"
            prompt "HW INTERFACE"
            config WHC_INTF_SDIO
                 bool "WHC_INTF_SDIO"
-            config WHC_INTF_USB
-                bool "WHC_INTF_USB"
             config WHC_INTF_SPI
                 bool "WHC_INTF_SPI"
+            config WHC_INTF_UART
+                bool "WHC_INTF_UART"
         endchoice
     endif
 
     if WHC_DEV_MENU
-
-        #WPA Lite in dev for WHC host without std wpa_supplicant
-        choice
-            prompt "WPA Lite Location"
-            default WPA_LOCATION_HOST
-            config WPA_LOCATION_HOST
-                bool "HOST"
-            config WPA_LOCATION_DEV
-                bool "DEV"
-        endchoice
+        menu "WHC config"
+        config WHC_CMD_PATH
+            default y if WHC_DEV_MENU
+            bool "Support WHC CMD PATH"
+        config WHC_WIFI_API_PATH
+            default y if WHC_DEV_MENU
+            bool "Support WHC WIFI API PATH"
+        config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
+            bool "Support WHC SUPPLICANT OFFLOAD"
+        config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4TZ
+            bool "Support WHC DEV TCPIP KEEPALIVE"
+        endmenu
 
         choice
             prompt "Boot Source"
-            default WHC_DEV_HCI_BOOT
+            default WHC_DEV_FLASH_BOOT
             config WHC_DEV_FLASH_BOOT
                 bool "Boot From Flash"
             config WHC_DEV_HCI_BOOT
                 bool "Boot From HCI"
         endchoice
+
+        if WHC_DEV_HCI_BOOT
+        rsource "../../../soc/common/log_forward/Kconfig"
+        endif
     endif
 
-    if WHC_DEV_MENU
+    if WHC_HOST_MENU && !WHC_INTF_IPC_MENU
+        menu "WHC HOST config"
+        config WHC_CMD_PATH
+            default y
+            bool "Support WHC CMD PATH"
+        config WHC_WIFI_API_PATH
+            default y
+            bool "Support WHC WIFI API PATH"
+        endmenu
+    endif
 
+    if WHC_DEV_MENU && WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
+
+        menu "WPA Mode"
+
+        #choose WPA_STD will compile std supplicant in device side.
         choice
-            prompt "WIFI Driver Location"
-            config WHC_DEV_LOC_KM4TZ_MENU
-                bool "KM4TZ"
-                select WHC_DEV_FOR_KM4TZ
-            # config WHC_DEV_LOC_KM4NS_MENU
-            #     bool "KM4NS"
-            #     select WHC_DEV_FOR_KM4NS
+            prompt "WPA Mode Selection"
+            config WPA_LITE
+                bool "WPA LITE"
+            config WPA_STD
+                bool "WPA Supplicant STD"
         endchoice
+
+        if WPA_STD
+
+            orsource "../../../wifi/wpa_supplicant/wpa_supplicant_std/Kconfig"
+
+        endif
+
+        menu "RTW CLI"
+        config RTW_CLI
+            bool "Support RTW_CLI"
+        endmenu
+
+        endmenu
     endif
 
     if WHC_INTF_IPC_MENU || WIFI_SINGLE_CORE_MENU
@@ -258,10 +286,6 @@ menu "CONFIG WIFI"
 
         rsource "../../../wifi/Kconfig.wifi"
 
-        config HIGH_TP_TEST
-            bool "Enable HIGH TP"
-            default y
-
         config WIFI_RADAR_ENABLE
             bool "Enable RADAR"
             default n
@@ -278,16 +302,10 @@ menu "CONFIG WIFI"
             depends on WHC_DEV
             select WLAN
             select FW_DRIVER_COEXIST
-            select WIFI_FW_EN
-            select WHC_WIFI_API_PATH
+            select WIFI_FW_EN if !MP_SHRINK
+            select LWIP_LAYER if WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4TZ
 
-        config WHC_BRIDGE
-            bool
-            depends on WHC_NONE
-            select WLAN
-            select LWIP_LAYER
-
-        config WHC_HOST_MENU
+        config WHC_HOST_IMPL
             bool
             depends on WHC_HOST
             select WLAN
@@ -318,17 +336,13 @@ menu "CONFIG WIFI"
         bool
     config WHC_INTF_SPI
         bool
-    config WHC_INTF_USB
-        bool
     config WIFI_FW_EN
         bool
     config ENABLE_WPS
         bool
     config ENABLE_WPS_DISCOVERY
         bool
-    config WHC_HOST_MENU
-        bool
-    config WHC_BRIDGE
+    config WHC_HOST_IMPL
         bool
     config WIFI_HOST_CONTROL
         bool
@@ -360,6 +374,10 @@ menu "CONFIG BT"
 
         config BT_ZEPHYR
             def_bool y
+
+        # IC BT capability
+        # config BT_HAS_MESH
+        #    def_bool y
 
         config BT_SDN    # controller is SDN
             def_bool y

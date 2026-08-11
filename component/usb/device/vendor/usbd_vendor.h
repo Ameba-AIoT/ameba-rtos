@@ -11,6 +11,10 @@
 
 #include "usbd.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Device_API USB Device API
@@ -287,5 +291,9 @@ int usbd_vendor_receive_isoc_data(void);
 /** @} End of Device_Vendor_Functions group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBD_VENDOR_H */

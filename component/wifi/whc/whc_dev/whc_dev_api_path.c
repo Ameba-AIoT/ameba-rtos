@@ -1107,6 +1107,7 @@ void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret
 	u8 *buf = NULL;
 	struct whc_api_info *info;
 	struct whc_api_info *ret_msg;
+	u8 no_ret = (ret == NULL && ret_len == 0) ? 1 : 0;
 
 	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Device Call API %ld\n", id);
 
@@ -1118,9 +1119,18 @@ void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret
 	}
 	info = (struct whc_api_info *)N_BYTE_ALIGMENT((u32)buf, DEV_DMA_ALIGN);
 	info->event = WHC_WIFI_EVT_API_CALL;
-	info->api_id = id;
+	/* tag no-ret calls so the host knows not to send an API_RETURN back */
+	info->api_id = no_ret ? (id | WHC_API_NO_RET_FLAG) : id;
 
 	memcpy((void *)(info + 1), param, param_len);
+
+	if (no_ret) {
+		/* No return value expected, don't block on api_ret_sema.
+		 * Waiting here would deadlock if the host cannot service the H2C ring. */
+		whc_dev_send((u8 *)info, sizeof(struct whc_api_info) + param_len, buf, 0);
+		rtos_mutex_give(event_priv.send_mutex);
+		return;
+	}
 
 	/* wait for API calling done */
 	event_priv.b_waiting_for_ret = 1;

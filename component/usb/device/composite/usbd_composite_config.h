@@ -11,6 +11,10 @@
 
 #include "usbd.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Device_API USB Device API
@@ -280,5 +284,9 @@ typedef struct {
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USBD_COMPOSITE_CONFIG_H */

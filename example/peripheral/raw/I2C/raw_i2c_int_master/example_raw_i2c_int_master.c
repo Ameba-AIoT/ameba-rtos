@@ -12,6 +12,10 @@
 #include <stdio.h>
 #include "example_i2c_ext.h"
 
+#ifndef LOOP_COUNT
+#define LOOP_COUNT 3
+#endif
+
 #define I2C_ID 0
 
 #define I2C_MTR_ID 			I2C_ID
@@ -43,6 +47,23 @@ static void i2c_take_sema(u32 IsWrite)
 	} else {
 		rtos_sema_take(rxSemaphore, RTOS_MAX_DELAY);
 	}
+}
+
+void i2c_master_rx_check(u8 *dataDst, u8 *dataSrc)
+{
+	int     i;
+	int     result = 0;
+
+	RTK_LOGI(TAG, "check master received data>>>\n");
+	// verify result
+	result = 1;
+	for (i = 0; i < I2C_DATA_LENGTH; i++) {
+		if (dataDst[i] != dataSrc[i]) {
+			result = 0;
+			break;
+		}
+	}
+	RTK_LOGI(TAG, "Master receive: Result is %s\r\n", (result) ? "success" : "fail");
 }
 
 void i2c_int_task(void)
@@ -124,20 +145,16 @@ void i2c_int_task(void)
 	pdatabuf = i2cdatasrc;
 
 
-	I2C_MasterWriteInt(i2c_intctrl.I2Cx, &i2c_intctrl, pdatabuf, I2C_DATA_LENGTH);
-	DelayMs(50);
-	I2C_MasterReadInt(i2c_intctrl.I2Cx, &i2c_intctrl, pdatabuf, I2C_DATA_LENGTH);
-	DelayMs(50);
+	for (int i = 0; i < LOOP_COUNT; i++) {
+		RTK_LOGI(TAG, "Master write %d>>>\n", i + 1);
+		I2C_MasterWriteInt(i2c_intctrl.I2Cx, &i2c_intctrl, pdatabuf, I2C_DATA_LENGTH);
+		DelayMs(50);
 
-	I2C_MasterWriteInt(i2c_intctrl.I2Cx, &i2c_intctrl, pdatabuf, I2C_DATA_LENGTH);
-	DelayMs(50);
-	I2C_MasterReadInt(i2c_intctrl.I2Cx, &i2c_intctrl, pdatabuf, I2C_DATA_LENGTH);
-	DelayMs(50);
-
-	I2C_MasterWriteInt(i2c_intctrl.I2Cx, &i2c_intctrl, pdatabuf, I2C_DATA_LENGTH);
-	DelayMs(50);
-	I2C_MasterReadInt(i2c_intctrl.I2Cx, &i2c_intctrl, pdatabuf, I2C_DATA_LENGTH);
-
+		RTK_LOGI(TAG, "Master read %d>>>\n", i + 1);
+		I2C_MasterReadInt(i2c_intctrl.I2Cx, &i2c_intctrl, pdatabuf, I2C_DATA_LENGTH);
+		DelayMs(50);
+		i2c_master_rx_check(pdatabuf, i2cdatasrc);
+	}
 
 	while (1);
 }

@@ -1,6 +1,104 @@
 #include <whc_host_linux.h>
 
 #ifdef CONFIG_WHCH
+
+#ifdef WHCH_TXAGG
+static void whc_host_xmitbuf_pool_deinit(void)
+{
+	struct whch_xmit_priv *pxmitpriv = &global_idev.whchpriv.xmitpriv;
+	int i;
+
+	if (pxmitpriv->xmit_bufs) {
+		for (i = 0; i < WHCH_TXAGG_XMITBUF_NUM; i++) {
+			kfree(pxmitpriv->xmit_bufs[i].pbuf);
+			pxmitpriv->xmit_bufs[i].pbuf = NULL;
+		}
+	}
+
+	kfree(pxmitpriv->pallocated_xmit_buf);
+	pxmitpriv->pallocated_xmit_buf = NULL;
+	pxmitpriv->xmit_bufs = NULL;
+}
+
+static int whc_host_xmitbuf_pool_init(void)
+{
+	struct whch_xmit_priv *pxmitpriv = &global_idev.whchpriv.xmitpriv;
+	struct whc_xmit_buf *pxmitbuf;
+	int i;
+
+	INIT_LIST_HEAD(&pxmitpriv->xmitbuf_free);
+	spin_lock_init(&pxmitpriv->xmitbuf_lock);
+	pxmitpriv->xmitbuf_starved = 0;
+
+	/* one allocation for the whole array (kzalloc so every pbuf starts NULL -> deinit is safe on
+	 * partial failure); align the array start to 4 bytes like pallocated_frame_buf. */
+	pxmitpriv->pallocated_xmit_buf = kzalloc(WHCH_TXAGG_XMITBUF_NUM * sizeof(struct whc_xmit_buf) + 4, GFP_KERNEL);
+	if (pxmitpriv->pallocated_xmit_buf == NULL) {
+		return -ENOMEM;
+	}
+	pxmitpriv->xmit_bufs = (struct whc_xmit_buf *)N_BYTE_ALIGMENT((size_t)(pxmitpriv->pallocated_xmit_buf), 4);
+
+	pxmitbuf = pxmitpriv->xmit_bufs;
+	for (i = 0; i < WHCH_TXAGG_XMITBUF_NUM; i++) {
+		pxmitbuf->pbuf = kmalloc(WHCH_TXAGG_BUFSZ, GFP_KERNEL);
+		if (pxmitbuf->pbuf == NULL) {
+			whc_host_xmitbuf_pool_deinit();
+			return -ENOMEM;
+		}
+		pxmitbuf->len = 0;
+		list_add_tail(&pxmitbuf->list, &pxmitpriv->xmitbuf_free);
+		pxmitbuf++;
+	}
+
+	return 0;
+}
+
+struct whc_xmit_buf *whc_host_xmitbuf_alloc(void)
+{
+	struct whch_xmit_priv *pxmitpriv = &global_idev.whchpriv.xmitpriv;
+	struct whc_xmit_buf *pxmitbuf = NULL;
+	unsigned long flags;
+
+	spin_lock_irqsave(&pxmitpriv->xmitbuf_lock, flags);
+	if (!list_empty(&pxmitpriv->xmitbuf_free)) {
+		pxmitbuf = list_first_entry(&pxmitpriv->xmitbuf_free, struct whc_xmit_buf, list);
+		list_del_init(&pxmitbuf->list);
+	} else {
+		/* pool exhausted: the caller will leave frames pending, so ask the next free to retry */
+		pxmitpriv->xmitbuf_starved = 1;
+	}
+	spin_unlock_irqrestore(&pxmitpriv->xmitbuf_lock, flags);
+
+	if (pxmitbuf) {
+		pxmitbuf->len = 0;
+	}
+
+	return pxmitbuf;
+}
+
+void whc_host_xmitbuf_free(struct whc_xmit_buf *pxmitbuf)
+{
+	struct whch_xmit_priv *pxmitpriv = &global_idev.whchpriv.xmitpriv;
+	unsigned long flags;
+	u8 retry;
+
+	if (pxmitbuf == NULL) {
+		return;
+	}
+
+	spin_lock_irqsave(&pxmitpriv->xmitbuf_lock, flags);
+	list_add_tail(&pxmitbuf->list, &pxmitpriv->xmitbuf_free);
+	/* only kick the hal tx thread if a prior alloc starved (frames are waiting in the pending queue) */
+	retry = pxmitpriv->xmitbuf_starved;
+	pxmitpriv->xmitbuf_starved = 0;
+	spin_unlock_irqrestore(&pxmitpriv->xmitbuf_lock, flags);
+
+	if (retry) {
+		up(&pxmitpriv->hal_tx_sema);
+	}
+}
+#endif /* WHCH_TXAGG */
+
 int	whc_host_xmit_priv_init(void)
 {
 	struct xmit_frame *pxframe;
@@ -34,6 +132,15 @@ int	whc_host_xmit_priv_init(void)
 
 	atomic_set(&pxmitpriv->free_xmitframe_cnt, nr_xmitframe);
 
+#ifdef WHCH_TXAGG
+	if (whc_host_xmitbuf_pool_init() != 0) {
+		dev_err(global_idev.pwhc_dev, "FAIL to alloc tx-agg buf pool!\n");
+		kfree(pxmitpriv->pallocated_frame_buf);
+		res = -ENOMEM;
+		goto exit;
+	}
+#endif
+
 	/* init hal_xmit_thread */
 	sema_init(&pxmitpriv->hal_tx_sema, 0);
 
@@ -41,8 +148,11 @@ int	whc_host_xmit_priv_init(void)
 	if (IS_ERR(pxmitpriv->hal_tx_thread)) {
 		dev_err(global_idev.pwhc_dev, "FAIL to create hal_tx_thread!\n");
 		pxmitpriv->hal_tx_thread = NULL;
+#ifdef WHCH_TXAGG
+		whc_host_xmitbuf_pool_deinit();
+#endif
 		kfree(pxmitpriv->pallocated_frame_buf);
-		return -EINVAL;
+		res = -EINVAL;
 	}
 
 exit:
@@ -65,24 +175,24 @@ void whc_host_xmit_priv_free(void)
 	}
 
 	/* free pxmitframe */
-	if (pxmitpriv->pxmit_frame_buf == NULL) {
-		goto out;
-	}
-
-	for (i = 0; i < nr_xmitframe; i++) {
-		if (pxmitframe->pkt) {
-			dev_kfree_skb_any(pxmitframe->pkt);
+	if (pxmitframe) {
+		for (i = 0; i < nr_xmitframe; i++) {
+			if (pxmitframe->pkt) {
+				dev_kfree_skb_any(pxmitframe->pkt);
+			}
+			pxmitframe->pkt = NULL;
+			pxmitframe++;
 		}
-		pxmitframe->pkt = NULL;
-		pxmitframe++;
 	}
 
 	if (pxmitpriv->pallocated_frame_buf) {
 		kfree(pxmitpriv->pallocated_frame_buf);
 	}
 
+#ifdef WHCH_TXAGG
+	whc_host_xmitbuf_pool_deinit();
+#endif
 
-out:
 	return;
 }
 
@@ -233,7 +343,7 @@ int whc_host_xmit_make_wlanhdr(u8 iface_type, u8 *hdr, struct pkt_attrib *pattri
 			SetFrDs(&fctrl);
 			pwlanhdr->frame_ctl = fctrl;
 			memcpy(pwlanhdr->addr1, pattrib->dst, ETH_ALEN);
-			memcpy(pwlanhdr->addr2, mybssid, ETH_ALEN);
+			memcpy(pwlanhdr->addr2, global_idev.pndev[iface_type]->dev_addr, ETH_ALEN);
 			memcpy(pwlanhdr->addr3, pattrib->src, ETH_ALEN);
 			if (psta_mlmepriv && psta_mlmepriv->b_sta_qos_option) {
 				qos_option = true;
@@ -270,7 +380,6 @@ skip_wlanhdr:
 		}
 		qc = (unsigned short *)(void *)(hdr + pattrib->hdrlen - 4 * htc_option - 2);
 		memset(qc, 0, 2);
-
 		if (pattrib->priority) {
 			SetPriority(qc, pattrib->priority);
 		}
@@ -720,7 +829,7 @@ int whc_host_xmit_update_attrib(u8 iface_type, struct sk_buff *pkt, struct pkt_a
 		memcpy(pattrib->ta, pattrib->src, ETH_ALEN);
 	} else if (iface_type == WHC_AP_PORT) {
 		memcpy(pattrib->ra, pattrib->dst, ETH_ALEN);
-		memcpy(pattrib->ta, mybssid, ETH_ALEN);
+		memcpy(pattrib->ta, global_idev.pndev[iface_type]->dev_addr, ETH_ALEN);
 	}
 
 	pattrib->pktlen = pktfile.pkt_len;

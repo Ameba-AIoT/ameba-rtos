@@ -249,7 +249,7 @@ static void ble_throughput_server_tx_taskentry(void *param)
 	uint16_t conn_handle = *((uint16_t *)param);
 	uint16_t len;
 	uint16_t ret = 0;
-	throughput_test_mode_t mode = 0;
+	throughput_test_mode_t mode = THROUGHPUT_MODE_NONE;
 	throughput_server_links_t *p_conn_link;
 	rtk_bt_gatts_ntf_and_ind_param_t *p_ntf_ind_param;
 

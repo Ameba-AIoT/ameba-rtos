@@ -13,7 +13,6 @@
 
 #define RTSP_CTX_ID_BASE	0
 static uint32_t rtsp_ctx_id_bitmap = 0;
-rtos_mutex_t rtsp_ctx_id_bitmap_lock = NULL;
 unsigned portBASE_TYPE rtsp_service_priority = RTSP_SERVICE_PRIORITY;
 
 static char *plid_string = NULL;
@@ -149,33 +148,32 @@ uint32_t rtsp_get_timestamp(struct stream_context *stream_ctx, uint32_t current_
 	return stream_ctx->rtp_timestamp;
 }
 
-int rtsp_get_number(int number_base, uint32_t *number_bitmap, rtos_mutex_t *bitmap_lock)
+int rtsp_get_number(int number_base, uint32_t *number_bitmap)
 {
 	int number = -1;
 	int i;
-	rtos_mutex_take(*bitmap_lock, MUTEX_WAIT_TIMEOUT);
-	for (i = 0; i < 32; i ++) {
-		if (!((1 << i)&*number_bitmap)) {
-			break;
-		}
+
+	rtos_critical_enter(RTOS_CRITICAL_NETWORK);
+	uint32_t val = *number_bitmap;
+	i = (val == 0xFFFFFFFF) ? 32 : __builtin_ctz(~val);
+	if (i < 32) {
+		*number_bitmap = val | (1U << i);
+		number = number_base + i;
 	}
+	rtos_critical_exit(RTOS_CRITICAL_NETWORK);
+
 	if (i == 32) {
 		RTSP_DBG_ERROR("no more bitmap available!");
-		rtos_mutex_give(*bitmap_lock);
-		return number;
 	}
-	*number_bitmap |= 1 << i;
-	number = number_base + i;
-	rtos_mutex_give(*bitmap_lock);
 	return number;
 }
 
-void rtsp_put_number(int number, int number_base, uint32_t *number_bitmap, rtos_mutex_t *bitmap_lock)
+void rtsp_put_number(int number, int number_base, uint32_t *number_bitmap)
 {
 	int i = number - number_base;
-	rtos_mutex_take(*bitmap_lock, MUTEX_WAIT_TIMEOUT);
-	*number_bitmap &= ~(1 << i);
-	rtos_mutex_give(*bitmap_lock);
+	rtos_critical_enter(RTOS_CRITICAL_NETWORK);
+	*number_bitmap &= ~(1U << i);
+	rtos_critical_exit(RTOS_CRITICAL_NETWORK);
 }
 
 int rtsp_parse_stream_media_type(struct codec_info *codec)
@@ -335,10 +333,7 @@ struct rtsp_context *rtsp_context_create(uint8_t nb_streams)
 		free(rtsp_ctx);
 		return NULL;
 	}
-	if (rtsp_ctx_id_bitmap_lock == NULL) {
-		rtos_mutex_create(&rtsp_ctx_id_bitmap_lock);
-	}
-	rtsp_ctx->id = rtsp_get_number(RTSP_CTX_ID_BASE, &rtsp_ctx_id_bitmap, &rtsp_ctx_id_bitmap_lock);
+	rtsp_ctx->id = rtsp_get_number(RTSP_CTX_ID_BASE, &rtsp_ctx_id_bitmap);
 	rtsp_ctx->allow_stream = 0;
 	rtsp_ctx->state = RTSP_INIT;
 	rtsp_transport_init(rtsp_ctx);
@@ -415,13 +410,10 @@ void rtsp_context_free(struct rtsp_context *rtsp_ctx)
 #ifdef SUPPORT_RTCP
 		rtos_sema_delete(rtsp_ctx->start_rtcp_sema);
 #endif
-		rtsp_put_number(rtsp_ctx->id, RTSP_CTX_ID_BASE, &rtsp_ctx_id_bitmap, &rtsp_ctx_id_bitmap_lock);
+		rtsp_put_number(rtsp_ctx->id, RTSP_CTX_ID_BASE, &rtsp_ctx_id_bitmap);
 		rtos_mutex_delete(rtsp_ctx->socket_lock);
 		free(rtsp_ctx);
 		rtsp_ctx = NULL;
-	}
-	if (rtsp_ctx_id_bitmap == 0) {
-		rtos_mutex_delete(rtsp_ctx_id_bitmap_lock);
 	}
 }
 
@@ -1196,6 +1188,11 @@ void rtsp_close_service(struct rtsp_context *rtsp_ctx)
 	rtsp_disable_stream(rtsp_ctx);
 	rtsp_disable_service(rtsp_ctx);
 	while (rtsp_ctx->rtsp_server_state != RTSP_SERV_EXIT) {
+		vTaskDelay(1);
+	}
+	/* Wait for rtp_service_init task to exit its sema-wait loop before the
+	 * caller frees the context. */
+	while (rtsp_ctx->is_rtp_start) {
 		vTaskDelay(1);
 	}
 	rtsp_ctx->rtsp_server_state = RTSP_SERV_INIT;

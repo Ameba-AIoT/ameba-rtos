@@ -32,7 +32,7 @@ static int atcmd_ble_mesh_generic_onff_set(int argc, char **argv)
 	}
 	case 4: {
 		onoff_set.dst = str_to_int(argv[0]);
-		onoff_set.on_off = str_to_int(argv[1]);
+		onoff_set.on_off = (rtk_bt_mesh_generic_on_off_t)(str_to_int(argv[1]));
 		onoff_set.ack = str_to_int(argv[2]);
 		onoff_set.app_key_index = str_to_int(argv[3]);
 		break;

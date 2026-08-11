@@ -460,6 +460,97 @@
 #define BIT64(i)   (1ULL << (i))
 #endif
 
+#define BT_LL_FEAT_PAGE0_BYTE0_BR_3_SLOT_PKTS						BIT0
+#define BT_LL_FEAT_PAGE0_BYTE0_BR_5_SLOT_PKTS						BIT1
+#define BT_LL_FEAT_PAGE0_BYTE0_ENCRYPTION							BIT2
+#define BT_LL_FEAT_PAGE0_BYTE0_SLOT_OFFSET							BIT3
+#define BT_LL_FEAT_PAGE0_BYTE0_TIMING_ACCURACY						BIT4
+#define BT_LL_FEAT_PAGE0_BYTE0_ROLE_SWITCH							BIT5
+#define BT_LL_FEAT_PAGE0_BYTE0_HOLD_MODE							BIT6
+#define BT_LL_FEAT_PAGE0_BYTE0_SNIFF_MODE							BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE1_BIT0									BIT0
+#define BT_LL_FEAT_PAGE0_BYTE1_POWER_CTRL_REQ						BIT1
+#define BT_LL_FEAT_PAGE0_BYTE1_CQDDR								BIT2
+#define BT_LL_FEAT_PAGE0_BYTE1_SCO_LINK								BIT3
+#define BT_LL_FEAT_PAGE0_BYTE1_HV2_PKTS								BIT4
+#define BT_LL_FEAT_PAGE0_BYTE1_HV3_PKTS								BIT5
+#define BT_LL_FEAT_PAGE0_BYTE1_U_LAW_SCO_DATA						BIT6
+#define BT_LL_FEAT_PAGE0_BYTE1_A_LAW_SCO_DATA						BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE2_CSVD_SCO_DATA						BIT0
+#define BT_LL_FEAT_PAGE0_BYTE2_POWER_CONTROL						BIT1
+#define BT_LL_FEAT_PAGE0_BYTE2_PAGING_PARM_NEGO						BIT2
+#define BT_LL_FEAT_PAGE0_BYTE2_TRANSPARENT_SCO_DATA					BIT3
+#define BT_LL_FEAT_PAGE0_BYTE2_FLOW_CTRL_LAG_LEAST					BIT4
+#define BT_LL_FEAT_PAGE0_BYTE2_FLOW_CTRL_LAG_MID					BIT5
+#define BT_LL_FEAT_PAGE0_BYTE2_FLOW_CTRL_LAG_MOST					BIT6
+#define BT_LL_FEAT_PAGE0_BYTE2_BC_ENC								BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE3_BIT0									BIT0
+#define BT_LL_FEAT_PAGE0_BYTE3_EDR_2M								BIT1
+#define BT_LL_FEAT_PAGE0_BYTE3_EDR_3M								BIT2
+#define BT_LL_FEAT_PAGE0_BYTE3_ENHANCED_INQUIRY_SCAN				BIT3
+#define BT_LL_FEAT_PAGE0_BYTE3_INTERLACED_INQUIRY_SCAN				BIT4
+#define BT_LL_FEAT_PAGE0_BYTE3_INTERLACED_PAGE_SCAN				 	BIT5
+#define BT_LL_FEAT_PAGE0_BYTE3_INQUIRY_RESULT_WITH_RSSI				BIT6
+#define BT_LL_FEAT_PAGE0_BYTE3_ESCO_LINK						 	BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE4_EV4_PKTS				 				BIT0
+#define BT_LL_FEAT_PAGE0_BYTE4_EV5_PKTS				 				BIT1
+#define BT_LL_FEAT_PAGE0_BYTE4_BIT2				 					BIT2
+#define BT_LL_FEAT_PAGE0_BYTE4_AFH_CAPA_PERI				 		BIT3
+#define BT_LL_FEAT_PAGE0_BYTE4_AFH_CLASSIFICATION_PERI				BIT4
+#define BT_LL_FEAT_PAGE0_BYTE4_NOT_SUPPORT_CLASSIC				 	BIT5
+#define BT_LL_FEAT_PAGE0_BYTE4_LE_SUPPORT				 			BIT6
+#define BT_LL_FEAT_PAGE0_BYTE4_3_SLOT_EDR_ACL_PKT				 	BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE5_5_SLOT_EDR_ACL_PKT				 	BIT0
+#define BT_LL_FEAT_PAGE0_BYTE5_SNIFF_SUBRATING					 	BIT1
+#define BT_LL_FEAT_PAGE0_BYTE5_PAUSE_ENC				 			BIT2
+#define BT_LL_FEAT_PAGE0_BYTE5_AFH_CAPA_CENTRAL				 		BIT3
+#define BT_LL_FEAT_PAGE0_BYTE5_AFH_CLASSIFICATION_CENTRAL			BIT4
+#define BT_LL_FEAT_PAGE0_BYTE5_EDR_SCO_2M				 			BIT5
+#define BT_LL_FEAT_PAGE0_BYTE5_EDR_SCO_3M				 			BIT6
+#define BT_LL_FEAT_PAGE0_BYTE5_3_SLOT_EDR_SCO				 		BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE6_EXTENDED_INQUIRY_RSP				 	BIT0
+#define BT_LL_FEAT_PAGE0_BYTE6_LE_CLASSIC_CONCURRENT				BIT1
+#define BT_LL_FEAT_PAGE0_BYTE6_BIT2				 					BIT2
+#define BT_LL_FEAT_PAGE0_BYTE6_SECURE_SIMPLE_PAIRING				BIT3
+#define BT_LL_FEAT_PAGE0_BYTE6_ENCAPSULATED_PDU				 		BIT4
+#define BT_LL_FEAT_PAGE0_BYTE6_ERR_DATA_REPORTING				 	BIT5
+#define BT_LL_FEAT_PAGE0_BYTE6_NONFLUSHABLE_PKT_BOUNDARY_FLAG		BIT6
+#define BT_LL_FEAT_PAGE0_BYTE6_BIT7				 					BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE7_SUPERVISION_TIMEOUT_CHANGE_EVT		BIT0
+#define BT_LL_FEAT_PAGE0_BYTE7_VARIABLE_INQUIRY_TX_POWER			BIT1
+#define BT_LL_FEAT_PAGE0_BYTE7_ENHANCED_POWER_CONTROL				BIT2
+#define BT_LL_FEAT_PAGE0_BYTE7_BIT3				 					BIT3
+#define BT_LL_FEAT_PAGE0_BYTE7_BIT4				 					BIT4
+#define BT_LL_FEAT_PAGE0_BYTE7_BIT5				 					BIT5
+#define BT_LL_FEAT_PAGE0_BYTE7_BIT6				 					BIT6
+#define BT_LL_FEAT_PAGE0_BYTE7_EXTENDED_FEATURES				 	BIT7
+
+#define BT_LL_FEAT_PAGE1_BYTE0_SECURE_SIMPLE_PAIRING_HOST			BIT0
+#define BT_LL_FEAT_PAGE1_BYTE0_LE_SUPPORT_HOST				 		BIT1
+#define BT_LL_FEAT_PAGE1_BYTE0_BIT2				 					BIT2
+#define BT_LL_FEAT_PAGE1_BYTE0_SECURE_CONNECTION				 	BIT3
+
+#define BT_LL_FEAT_PAGE2_BYTE0_CPB_TX				 				BIT0
+#define BT_LL_FEAT_PAGE2_BYTE0_CPB_RX				 				BIT1
+#define BT_LL_FEAT_PAGE2_BYTE0_SYNCHRONIZATION_TRAIN				BIT2
+#define BT_LL_FEAT_PAGE2_BYTE0_SYNCHRONIZATION_SCAN					BIT3
+#define BT_LL_FEAT_PAGE2_BYTE0_INQUIRY_RSP_NOTIFY_EVT				BIT4
+#define BT_LL_FEAT_PAGE2_BYTE0_INTERLACED_SCAN						BIT5
+#define BT_LL_FEAT_PAGE2_BYTE0_COARSE_CLK_ADJUSTMENT				BIT6
+#define BT_LL_FEAT_PAGE2_BYTE0_BIT7									BIT7
+
+#define BT_LL_FEAT_PAGE2_BYTE1_SECURE_CONNECTION					BIT0
+#define BT_LL_FEAT_PAGE2_BYTE1_PING									BIT1
+#define BT_LL_FEAT_PAGE2_BYTE1_SAM									BIT2
+#define BT_LL_FEAT_PAGE2_BYTE1_TRAIN_NUDGING						BIT3
+
 #define BT_LL_LE_FEATURE_ENCRYPTION                             BIT64(0)
 #define BT_LL_LE_FEATURE_CONN_PARA_REQ_PROCEDURE                BIT64(1)
 #define BT_LL_LE_FEATURE_EXT_REJECT_IND                         BIT64(2)
@@ -1221,19 +1312,19 @@ struct bt_hci_cp_le_set_privacy_mode {
 struct bt_hci_cp_vendor_read_vendor_reg {
 	uint8_t type;
 	uint32_t addr;
-};
+} __attribute__((packed));
 
 struct bt_hci_rp_vendor_read_vendor_reg {
 	uint8_t status;
 	uint32_t rdata;
-};
+} __attribute__((packed));
 
 #define BT_HCI_OP_VENDOR_WRITE_VENDOR_REG           BT_OP(BT_OGF_VENDOR, 0x62) /*0xFC62*/
 struct bt_hci_cp_vendor_write_vendor_reg {
 	uint8_t type;
 	uint32_t addr;
 	uint8_t wdata[0];
-};
+} __attribute__((packed));
 
 #define BT_HCI_OP_VENDOR_GET_ECO_VERSION           BT_OP(BT_OGF_VENDOR, 0x6D) /*0xFC6D*/
 struct bt_hci_rp_vendor_get_eco_version {
@@ -1417,7 +1508,7 @@ struct bt_hci_rp_vendor_mp_packet_tx_report {
 	uint8_t module_id;
 	uint8_t subcmd;
 	uint32_t total_tx_packet;
-};
+} __attribute__((packed));
 
 struct bt_hci_rp_vendor_mp_packet_rx_report {
 	uint8_t status;
@@ -1429,7 +1520,7 @@ struct bt_hci_rp_vendor_mp_packet_rx_report {
 	uint16_t ber;
 	uint16_t cfo;
 	uint8_t rx_rssi;
-};
+} __attribute__((packed));
 
 struct bt_hci_rp_vendor_mp_phy_version {
 	uint8_t status;
@@ -1529,7 +1620,7 @@ struct bt_hci_rp_vendor_mp_zigbee_phy_rx_06 {
 	uint8_t module_id;
 	uint8_t subcmd;
 	uint8_t ed_scan_state;
-	int8_t ed_value;
+	uint8_t ed_value;
 };
 
 struct bt_hci_rp_vendor_mp_zigbee_phy_rx_08 {

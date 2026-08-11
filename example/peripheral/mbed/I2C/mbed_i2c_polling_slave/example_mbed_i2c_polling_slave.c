@@ -16,7 +16,10 @@
 #include "pinmap.h"
 #include <stdio.h>
 
-//#include "ex_api.h"
+#ifndef LOOP_COUNT
+#define LOOP_COUNT 1
+#endif
+
 #define I2C_0 0
 #define I2C_1 1
 static const char *const TAG = "I2C";
@@ -121,6 +124,18 @@ void i2c_dual_slave_task(void)
 
 	RTK_LOGI(TAG, "Slave write>>>\n");
 	i2c_slave_write(&i2cslave, (char *)&i2cdatardsrc[0], I2C_DATA_LENGTH);
+
+#if (LOOP_COUNT - 1)
+	for (int i = 2; i <= LOOP_COUNT; i++) {
+		// Master write - Slave read
+		RTK_LOGI(TAG, "Slave read %d>>>\n", i);
+		i2c_slave_read(&i2cslave, (char *)&i2cdatadst[0], I2C_DATA_LENGTH);
+		i2c_slave_rx_check();
+		// Master read - Slave write
+		RTK_LOGI(TAG, "Slave write %d>>>\n", i);
+		i2c_slave_write(&i2cslave, (char *)&i2cdatardsrc[0], I2C_DATA_LENGTH);
+	}
+#endif
 
 	while (1);
 }

@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Realtek wireless local area network IC driver.
+ *
+ * Copyright(c) 2024 Realtek Corporation. All rights reserved.
+ */
 #include <whc_host_linux.h>
 
 u32 rtw_sdio_get_rx_len(struct whc_sdio *priv)

@@ -36,6 +36,10 @@ extern int cmd_wps(int argc, char **argv);
 #include "wifi_p2p_supplicant.h"
 #endif
 
+#ifdef CONFIG_WIFI_XMESH
+#include "wifi_xmesh_xgravitation_demo.h"
+#endif
+
 static struct rtw_network_info wifi = {0};
 static struct rtw_softap_info ap = {0};
 static unsigned char password[129] = {0};
@@ -52,16 +56,6 @@ extern struct netif *pnetif_eth;
 #endif
 #if defined(CONFIG_LWIP_USB_ETHERNET)
 extern struct netif *pnetif_usb_eth;
-#endif
-
-#ifdef CONFIG_WIFI_XMESH
-static rtos_task_t xmesh_tx_task_hdl = NULL;
-static int xmesh_tx_stop_req = 0;
-
-struct xmesh_tx_param {
-	int cnt;
-	int interval;
-};
 #endif
 
 static void init_wifi_struct(void)
@@ -1514,6 +1508,7 @@ void at_wlp2p_autogo(u16 argc, char **argv)
 	char *serial_number = "9";	// max strlen 32
 	u8 pri_dev_type[8] = {0x00, 0x0A, 0x00, 0x50, 0xF2, 0x04, 0x00, 0x01};	// category ID:0x00,0x0A; sub category ID:0x00,0x01
 	struct p2p_auto_go_params *param = NULL;
+	enum p2p_wps_method wps_method = WPS_PBC;
 	int i = 0, j = 0;
 
 	RTK_LOGI(NOTAG, "[+WLP2PGO]: _AT_P2P_AUTO_GO_START_\n\r");
@@ -1524,7 +1519,7 @@ void at_wlp2p_autogo(u16 argc, char **argv)
 		goto end;
 	}
 
-	if ((argc < 2) || (argc > 7)) {
+	if ((argc < 2) || (argc > 9)) {
 		RTK_LOGW(NOTAG, "[+WLP2PGO] command format error\r\n");
 		error_no = RTW_AT_ERR_PARAM_NUM_ERR;
 		goto end;
@@ -1567,6 +1562,18 @@ void at_wlp2p_autogo(u16 argc, char **argv)
 			if ((argc > j) && (0 != strlen(argv[j]))) {
 				param->channel = atoi(argv[j]);
 			}
+		}
+		/* WPS method: "pbc" (default) or "pin" (GO displays PIN, peer enters it) */
+		else if (0 == strcmp("wps", argv[i])) {
+			if ((argc <= j) || (0 == strcmp("pbc", argv[j]))) {
+				wps_method = WPS_PBC;
+			} else if (0 == strcmp("pin", argv[j])) {
+				wps_method = WPS_PIN_DISPLAY;
+			} else {
+				RTK_LOGW(NOTAG, "[+WLP2PGO] wps should be \"pbc\" or \"pin\"\r\n");
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
 		} else {
 			RTK_LOGW(NOTAG, "[+WLP2PGO] Invalid parameter type\r\n");
 			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
@@ -1580,6 +1587,7 @@ void at_wlp2p_autogo(u16 argc, char **argv)
 	param->model_number = model_number;
 	param->serial_number = serial_number;
 	param->pri_dev_type = pri_dev_type;
+	param->wps_method = wps_method;
 
 	if (wifi_p2p_start_auto_go(param) < 0) {
 		RTK_LOGI(NOTAG, "\r\n[+WLP2PGO]: start p2p go fail.\n\r");
@@ -2057,105 +2065,69 @@ end:
 #endif
 
 #ifdef CONFIG_WIFI_XMESH
-static void xmesh_tx_task(void *param)
-{
-	struct xmesh_tx_param *p = (struct xmesh_tx_param *)param;
-	static u32 last_tx_time_ms = 0;
-	int i = 0;
-	int cnt = p->cnt;
-	int interval = p->interval;
-	u16 frame_len = 24 + 16 + 1 + 2 + 64;
-	u16 retry_offset = 24 + 15; /* WLAN_HDR_A3_LEN + xmesh retry field offset within xmesh hdr */
-	rtos_mem_free(p);
-
-	u8 XMESH_PATTERN[5] = {0x58, 0x4d, 0x45, 0x53, 0x48};
-	u8 *buf = (u8 *)rtos_mem_zmalloc(frame_len);
-	if (buf == NULL) {
-		xmesh_tx_task_hdl = NULL;
-		rtos_task_delete(NULL);
-		return;
-	}
-
-	buf[0] = 0x08;
-	buf[1] = 0x02;
-	memset(buf + 4, 0xff, ETH_ALEN);
-	memcpy(buf + 16, lwip_get_mac(STA_WLAN_INDEX), ETH_ALEN);
-	memcpy(buf + 24, XMESH_PATTERN, sizeof(XMESH_PATTERN));
-
-	struct rtw_raw_frame_desc desc = {0};
-	desc.buf = buf;
-	desc.buf_len = frame_len;
-	desc.tx_rate = RTW_RATE_18M;
-
-
-	for (i = 0; cnt < 0 || i < cnt; i++) {
-		if (xmesh_tx_stop_req) {
-			break;
-		}
-
-		for (int j = 0; j < 3; j++) {
-			buf[retry_offset] = (j > 0) ? 1 : 0;
-			int ret = wifi_send_raw_frame(&desc);
-			if (ret < 0) {
-				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "TXFAIL\n");
-			}
-		}
-		u32 cur_tx_time_ms = rtos_time_get_current_system_time_ms();
-		if (cur_tx_time_ms - last_tx_time_ms > 500) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "gravitation show ""xmesh_txcnt:%d\n", (i + 1));
-			last_tx_time_ms = cur_tx_time_ms;
-		}
-		rtos_time_delay_ms(interval);
-	}
-
-	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "gravitation show ""xmesh_txcnt:%d\n", (i));
-	rtos_mem_free(buf);
-	xmesh_tx_task_hdl = NULL;
-	xmesh_tx_stop_req = 0;
-	rtos_task_delete(NULL);
-}
-
 /****************************************************************
 AT command process:
-	AT+WLXMESH=tx,<interval_ms>[,<cnt>]  start xmesh tx task (cnt omitted = infinite)
-	AT+WLXMESH=tx,stop                   stop xmesh tx task
+	AT+WLXMESH=reporter			        set reporter
+	AT+WLXMESH=tx_nodes,tx_cnt,tx_interval,id1[,id2,...]  notify nodes to start tx (shared cnt/interval)
+	AT+WLXMESH=selfid,<selfid>           save selfid to flash
+	AT+WLXMESH=reset,<delaytime>,id1[,id2,...]  notify nodes to reset after delaytime seconds
 ****************************************************************/
-void at_wlxmesh(u16 argc, char **argv)
+__weak void at_wlxmesh(u16 argc, char **argv)
 {
-	if (argc < 2 || strcmp(argv[1], "tx") != 0) {
+	if (argc < 2) {
 		at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_PARAM_NUM_ERR);
 		return;
 	}
 
-	if (argc >= 2 && strcmp(argv[2], "stop") == 0) {
-		if (xmesh_tx_task_hdl == NULL) {
-			at_printf(ATCMD_OK_END_STR);
+	if (strcmp(argv[1], "tx_nodes") == 0) {
+		if (argc < 5) {
+			at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_PARAM_NUM_ERR);
 			return;
 		}
-		xmesh_tx_stop_req = 1;
 
+		u8 node_num = (u8)(argc - 4);
+		struct xmesh_tx_param params[XMESH_MAX_NODES];
+		for (u8 i = 0; i < node_num; i++) {
+			params[i].id          = (u8)atoi(argv[4 + i]);
+			params[i].tx_cnt      = (u32)atoi(argv[2]);
+			params[i].tx_interval = (u32)atoi(argv[3]);
+		}
+
+		wifi_xmesh_notify_tx_start(params, node_num);
 		at_printf(ATCMD_OK_END_STR);
 		return;
 	}
 
-	if (argc < 3) {
-		at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_PARAM_NUM_ERR);
+	if (strcmp(argv[1], "reset") == 0) {
+		if (argc < 4) {
+			at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_PARAM_NUM_ERR);
+			return;
+		}
+		u8 delaytime = (u8)atoi(argv[2]);
+		u8 node_num = (u8)(argc - 3);
+		u8 buf[XMESH_MAX_NODES];
+		for (u8 i = 0; i < node_num; i++) {
+			buf[i] = (u8)atoi(argv[3 + i]);
+		}
+
+		wifi_xmesh_notify_reset(delaytime, buf, node_num);
+		at_printf(ATCMD_OK_END_STR);
 		return;
 	}
 
-	if (xmesh_tx_task_hdl != NULL) {
-		at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_PARAM_NUM_ERR);
+	if (strcmp(argv[1], "reporter") == 0) {
+		wifi_xmesh_set_reporter();
+		at_printf(ATCMD_OK_END_STR);
 		return;
 	}
 
-	struct xmesh_tx_param *p = (struct xmesh_tx_param *)rtos_mem_zmalloc(sizeof(struct xmesh_tx_param));
-	p->interval = atoi(argv[2]);
-	p->cnt = (argc >= 4) ? atoi(argv[3]) : -1;
-	xmesh_tx_stop_req = 0;
-
-	if (rtos_task_create(&xmesh_tx_task_hdl, "xmesh_tx_task", xmesh_tx_task, p, 1024, 2) != RTK_SUCCESS) {
-		rtos_mem_free(p);
-		at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_PARAM_NUM_ERR);
+	if (strcmp(argv[1], "selfid") == 0) {
+		if (argc < 3) {
+			at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_PARAM_NUM_ERR);
+			return;
+		}
+		wifi_xmesh_set_selfid_to_flash((u8)atoi(argv[2]));
+		at_printf(ATCMD_OK_END_STR);
 		return;
 	}
 

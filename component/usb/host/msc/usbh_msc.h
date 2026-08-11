@@ -13,6 +13,10 @@
 #include "usbh_msc_disk.h"
 #include "usb_msc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Host_API USB Host API
@@ -277,5 +281,9 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length);
  * @return 0 on success, non-zero on failure.
  */
 int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBH_MSC_H */

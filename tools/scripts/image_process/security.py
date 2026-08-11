@@ -661,8 +661,18 @@ class secure_boot():
         keyinfo['sboot_public_key_hash'] = pubkey_hash
         return keyinfo
 
-    def gen_image_hash(self, filename, imghash):
+    def gen_image_hash(self, filename, imghash, skip_bytes=0):
+        # skip_bytes: leading bytes excluded from hash (e.g. RSIP GCM tag bin,
+        # which is authenticated by RSIP HW OTF instead of the image hash).
+        # Guard against a misconfigured skip that would leave no (or negative)
+        # bytes to hash, which would silently produce a hash over an empty stream.
+        file_size = os.path.getsize(filename)
+        if skip_bytes < 0 or skip_bytes >= file_size:
+            print('gen_image_hash: invalid skip_bytes %d for file %s (size %d)' % (skip_bytes, filename, file_size))
+            return -1
         with open(filename, 'rb') as f:
+            if skip_bytes:
+                f.seek(skip_bytes)
             buf = f.read(1024)
             if self.IsHMAC == 0:
                 hash = hashlib.new(self.MdType)

@@ -52,7 +52,7 @@ static const usbh_dev_id_t dfu_devs[] = {
 };
 
 /* USB Host DFU class driver */
-static usbh_class_driver_t usbh_dfu_driver = {
+static const usbh_class_driver_t usbh_dfu_driver = {
 	.id_table = dfu_devs,
 	.attach   = usbh_dfu_attach,
 	.detach   = usbh_dfu_detach,
@@ -156,7 +156,7 @@ static int usbh_dfu_attach(usb_host_t *host)
 		 * re-enumerates with Protocol=0x02. */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Run-Time DFU device: starting reconfiguration\n");
 		dfu->state = USBH_DFU_STATE_RECONFIGURE;
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify(host, 0, &usbh_dfu_driver);
 		return HAL_OK;
 	}
 	/* DFU mode device (Protocol=0x02): may be a fresh DFU-only device or a
@@ -340,6 +340,7 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 	int status     = HAL_BUSY;
 	int req_status = HAL_OK;
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
+
 	u8 *buf = dfu->xfer_buf;
 	int block_len;
 
@@ -382,7 +383,7 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		} else if (req_status != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "DFU_DETACH failed (%d)\n", req_status);
 			dfu->state = USBH_DFU_STATE_ERROR;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		}
 		break;
 
@@ -460,11 +461,11 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				dfu->state = USBH_DFU_STATE_ERROR;
 				break;
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		} else if (req_status != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "GETSTATUS failed (%d)\n", req_status);
 			dfu->state = USBH_DFU_STATE_ERROR;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		}
 		/* HAL_BUSY: ctrl transfer in flight — CTRL/URB event re-triggers process() */
 		break;
@@ -488,11 +489,11 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				dfu->state = dfu->is_download ? USBH_DFU_STATE_DNLOAD_BLOCK
 							 : USBH_DFU_STATE_UPLOAD_BLOCK;
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		} else if (req_status != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "CLRSTATUS failed (%d)\n", req_status);
 			dfu->state = USBH_DFU_STATE_ERROR;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		}
 		break;
 
@@ -501,7 +502,7 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		if (dfu->cb == NULL || dfu->cb->get_block == NULL) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "No get_block callback\n");
 			dfu->state = USBH_DFU_STATE_ERROR;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 			break;
 		}
 
@@ -520,13 +521,13 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "get_block() error (%d) at blk %u\n",
 						 block_len, (u32)dfu->block_num);
 				dfu->state = USBH_DFU_STATE_ERROR;
-				usbh_notify_class_state_change(host, 0);
+				usbh_notify(host, 0, &usbh_dfu_driver);
 				break;
 			}
 			if (block_len == 0) {
 				/* End of firmware — send zero-length final DNLOAD */
 				dfu->state = USBH_DFU_STATE_DNLOAD_FINAL;
-				usbh_notify_class_state_change(host, 0);
+				usbh_notify(host, 0, &usbh_dfu_driver);
 				break;
 			}
 			dfu->xfer_len = (u16)block_len;
@@ -540,7 +541,7 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 					 dfu->block_num, (u32)dfu->xfer_len);
 			dfu->block_num++;
 			dfu->state = USBH_DFU_STATE_GET_STATUS;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		} else if (req_status == HAL_BUSY) {
 			dfu->xfer_pending = 1U;
 			/* ctrl transfer in flight — CTRL/URB event re-triggers process() */
@@ -549,7 +550,7 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 			RTK_LOGS(TAG, RTK_LOG_ERROR,
 					 "DNLOAD block %u failed (%d)\n", dfu->block_num, req_status);
 			dfu->state = USBH_DFU_STATE_ERROR;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		}
 		break;
 
@@ -560,7 +561,7 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 			usb_os_sleep_ms(dfu->poll_timeout);
 		}
 		dfu->state = USBH_DFU_STATE_GET_STATUS;
-		usbh_notify_class_state_change(host, 0);
+		usbh_notify(host, 0, &usbh_dfu_driver);
 		break;
 
 	/* ------------------------------------------------------------------ */
@@ -573,11 +574,11 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 			dfu->state = USBH_DFU_STATE_MANIFEST_POLL;
 			dfu->retry_cnt = 0U;
 			dfu->manifest_retry_cnt = 0U;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		} else if (req_status != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "DNLOAD final failed (%d)\n", req_status);
 			dfu->state = USBH_DFU_STATE_ERROR;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		}
 		break;
 
@@ -639,12 +640,12 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 						 "Unexpected state %u during manifest\n", dfu->dev_state);
 				dfu->state = USBH_DFU_STATE_ERROR;
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		} else if (req_status != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR,
 					 "GETSTATUS during manifest failed (%d)\n", req_status);
 			dfu->state = USBH_DFU_STATE_ERROR;
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		}
 		break;
 
@@ -669,7 +670,7 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				RTK_LOGS(TAG, RTK_LOG_ERROR,
 						 "UPLOAD block %u failed (%d)\n", dfu->block_num, req_status);
 				dfu->state = USBH_DFU_STATE_ERROR;
-				usbh_notify_class_state_change(host, 0);
+				usbh_notify(host, 0, &usbh_dfu_driver);
 				break;
 			}
 			/*
@@ -687,7 +688,7 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 						RTK_LOGS(TAG, RTK_LOG_INFO,
 								 "recv_block returned %d, aborting upload\n", cb_ret);
 						dfu->state = USBH_DFU_STATE_DONE;
-						usbh_notify_class_state_change(host, 0);
+						usbh_notify(host, 0, &usbh_dfu_driver);
 						break;
 					}
 				}
@@ -696,7 +697,7 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				if (actual_len < (u32)dfu->func_desc.wTransferSize) {
 					dfu->block_num++;
 					dfu->state = USBH_DFU_STATE_DONE;
-					usbh_notify_class_state_change(host, 0);
+					usbh_notify(host, 0, &usbh_dfu_driver);
 					break;
 				}
 			}
@@ -715,7 +716,7 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 						 "GETSTATUS after UPLOAD failed (%d)\n", gs_status);
 				dfu->upload_phase = 0U;
 				dfu->state = USBH_DFU_STATE_ERROR;
-				usbh_notify_class_state_change(host, 0);
+				usbh_notify(host, 0, &usbh_dfu_driver);
 				break;
 			}
 
@@ -747,14 +748,19 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 						 "Unexpected state %u during upload\n", dfu->dev_state);
 				dfu->state = USBH_DFU_STATE_ERROR;
 			}
-			usbh_notify_class_state_change(host, 0);
+			usbh_notify(host, 0, &usbh_dfu_driver);
 		}
 		break;
 
 	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_DONE:
+		/* Set IDLE before callback: if the application calls usbh_dfu_upload()
+		 * from within download_done(), it must see IDLE to pass the state guard. */
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Transfer done (is_download=%u)\n",
 				 dfu->is_download);
+		dfu->state = USBH_DFU_STATE_IDLE;
+		status = HAL_OK;
+
 		if (dfu->is_download) {
 			if ((dfu->cb != NULL) && (dfu->cb->download_done != NULL)) {
 				dfu->cb->download_done(HAL_OK);
@@ -764,14 +770,15 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				dfu->cb->upload_done(HAL_OK);
 			}
 		}
-		dfu->state = USBH_DFU_STATE_IDLE;
-		status = HAL_OK;
 		break;
 
 	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_ERROR:
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Transfer error (is_download=%u)\n",
 				 dfu->is_download);
+		dfu->state = USBH_DFU_STATE_IDLE;
+		status = HAL_OK;
+
 		if (dfu->is_download) {
 			if ((dfu->cb != NULL) && (dfu->cb->download_done != NULL)) {
 				dfu->cb->download_done(HAL_ERR_UNKNOWN);
@@ -781,8 +788,6 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				dfu->cb->upload_done(HAL_ERR_UNKNOWN);
 			}
 		}
-		dfu->state = USBH_DFU_STATE_IDLE;
-		status = HAL_OK;
 		break;
 
 	default:
@@ -873,7 +878,7 @@ int usbh_dfu_download(void)
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 	usb_host_t *host = dfu->host;
 
-	if (host == NULL || host->connect_state != USBH_STATE_SETUP) {
+	if (host == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No DFU device connected\n");
 		return HAL_ERR_UNKNOWN;
 	}
@@ -894,7 +899,7 @@ int usbh_dfu_download(void)
 	dfu->retry_cnt       = 0U;
 	dfu->state           = USBH_DFU_STATE_GET_STATUS;
 
-	usbh_notify_class_state_change(host, 0);
+	usbh_notify(host, 0, &usbh_dfu_driver);
 
 	return HAL_OK;
 }
@@ -908,7 +913,7 @@ int usbh_dfu_upload(void)
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 	usb_host_t *host = dfu->host;
 
-	if (host == NULL || host->connect_state != USBH_STATE_SETUP) {
+	if (host == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No DFU device connected\n");
 		return HAL_ERR_UNKNOWN;
 	}
@@ -928,7 +933,7 @@ int usbh_dfu_upload(void)
 	dfu->upload_phase = 0U;
 	dfu->state       = USBH_DFU_STATE_GET_STATUS; /* confirm dfuIDLE before upload */
 
-	usbh_notify_class_state_change(host, 0);
+	usbh_notify(host, 0, &usbh_dfu_driver);
 
 	return HAL_OK;
 }
@@ -943,7 +948,7 @@ int usbh_dfu_abort(void)
 	usb_host_t *host = dfu->host;
 	int ret;
 
-	if (host == NULL || host->connect_state != USBH_STATE_SETUP) {
+	if (host == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No DFU device connected\n");
 		return HAL_ERR_UNKNOWN;
 	}
@@ -958,7 +963,7 @@ int usbh_dfu_abort(void)
 	 * will complete the transfer.  Host state is already IDLE regardless. */
 
 	dfu->state = USBH_DFU_STATE_IDLE;
-	usbh_notify_class_state_change(host, 0);
+	usbh_notify(host, 0, &usbh_dfu_driver);
 
 	return (ret == HAL_BUSY) ? HAL_OK : ret;
 }

@@ -28,7 +28,6 @@ uint8_t bt_hci_cmd_ogf_status_ocf_read_rssi(void *phci_cmd_param, uint8_t *rsp);
 
 //OGF: BT_OGF_LE
 uint8_t bt_hci_ogf_le_ocf_set_evt_mask(void *phci_cmd_param, uint8_t *rsp);
-uint8_t bt_hci_ogf_le_ocf_read_buffer_size(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_ogf_le_ocf_read_local_feature(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_ogf_le_ocf_set_random_addr(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_adv_set_param(void *phci_cmd_param, uint8_t *rsp);
@@ -116,12 +115,7 @@ bool bt_hci_evt_mask_is_set(uint64_t evt);
 void bt_hci_set_le_evt_mask(uint8_t *ple_evt_mask);
 bool bt_hci_le_evt_mask_is_set(uint64_t le_evt);
 void bt_hci_enable(uint8_t max_hci_cmd_num);
-uint8_t bt_hci_get_rx_hci_cmd_num(void);
 
-void bt_hci_tx_acl_data(void *pdu, uint8_t len, uint16_t conn_handle, bool is_start);
-void bt_hci_rx_acl_data(uint8_t *pbuf);
-
-void bt_hci_cmd_handler(uint8_t *pbuf);
 void bt_hci_get_supported_hci_command(uint8_t *pcommands);
 void bt_hci_get_le_local_feature(uint8_t *pfeature);
 

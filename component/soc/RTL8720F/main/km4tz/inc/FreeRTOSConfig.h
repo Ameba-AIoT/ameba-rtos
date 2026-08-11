@@ -64,6 +64,18 @@ extern uint32_t SystemCoreClock;
 #endif
 #include "ameba_userheapcfg.h"
 
+/* Realtek heap trace configuration. */
+#ifdef CONFIG_HEAP_TRACE
+#define traceMALLOC( pvAddress, uiSize ) trace_malloc(pvAddress,uiSize)
+#define traceFREE( pvAddress, uiSize ) trace_free(pvAddress,uiSize)
+#endif
+
+/* Realtek Heap Integrity Check configuration. */
+#ifdef CONFIG_HEAP_INTEGRITY_CHECK_IN_TASK_SWITCHED_OUT
+extern uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK);
+#define traceTASK_SWITCHED_OUT ulPortCheckHeapIntegrity
+#endif
+
 /* Cortex M33 port configuration. */
 #define configENABLE_MPU								0
 #define portUSING_MPU_WRAPPERS							0

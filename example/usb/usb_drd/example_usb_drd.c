@@ -445,9 +445,12 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 			rtos_sema_delete(usbh_msc_attach_sema);
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init MSC: %d\n", ret);
 		}
+		/* All class drivers registered; start USB TRX so enumeration can run. */
+		usbh_start();
 		RTK_LOGS(TAG, RTK_LOG_INFO, "MSC host session start\n");
 	} else if (_stricmp(cmd, "deinit") == 0) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit MSC host driver\n");
+		usbh_stop();
 		ret = usbh_msc_deinit();
 		if (ret != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to deinit MSC: %d\n", ret);

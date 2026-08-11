@@ -13,6 +13,10 @@
 #include "usb_ringbuf.h"
 #include "usbd_composite_config.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Device_API USB Device API
@@ -339,5 +343,9 @@ u32 usbd_composite_uac_write(u8 *buffer, u32 size, u32 timeout_ms);
 /** @} End of Device_Composite_UAC_Functions group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USBD_COMPOSITE_UAC_H */

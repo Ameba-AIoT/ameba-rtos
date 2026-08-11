@@ -12,6 +12,10 @@
 #include "usbh.h"
 #include "usb_dfu.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Host_API USB Host API
@@ -239,5 +243,9 @@ u8 usbh_dfu_get_attr(void);
 /** @} End of Host_DFU_Functions group */
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USBH_DFU_H */
