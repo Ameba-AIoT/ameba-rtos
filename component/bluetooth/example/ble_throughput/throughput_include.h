@@ -155,7 +155,9 @@ throughput_tx_end_t ble_throughput_get_tx_end(throughput_test_mode_t mode);
 
 /********************************Throughput Server related*******************************/
 rtk_bt_evt_cb_ret_t ble_throughput_server_gatts_app_callback(uint8_t event, void *data, uint32_t len);
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 void ble_throughput_server_update_phy(uint16_t conn_handle);
+#endif
 uint16_t ble_throughput_server_link_connected(uint16_t conn_handle);
 uint16_t ble_throughput_server_link_disconnected(uint16_t conn_handle);
 uint16_t ble_throughput_server_add(void);
