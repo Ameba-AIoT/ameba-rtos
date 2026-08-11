@@ -162,6 +162,8 @@ rsource "../../../ota/Kconfig"
 
 rsource "../../../usb/Kconfig"
 
+rsource "../../usrcfg/amebagreen2/Kconfig"
+
 menu "CONFIG APPLICATION"
 
     orsource "../../../ui/Kconfig"
@@ -210,6 +212,8 @@ menu "CONFIG WHC INTF"
                 select USB_HAL_LIB
                 select USB_DEVICE_EN
                 select USBD_INIC
+                select USB_OTG_EN_MENU
+                select USBD_INIC_MENU if SUPPORT_USBD_INIC
             config WHC_INTF_SPI
                 bool "WHC_INTF_SPI"
             config WHC_INTF_UART

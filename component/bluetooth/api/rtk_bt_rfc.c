@@ -15,7 +15,7 @@
 
 uint16_t rtk_bt_rfc_connect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -29,7 +29,7 @@ uint16_t rtk_bt_rfc_connect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_rfc_disconnect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -43,7 +43,7 @@ uint16_t rtk_bt_rfc_disconnect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_rfc_data_send(rtk_bt_rfc_data_send_t *p_data_send_t)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_data_send_t) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -57,7 +57,7 @@ uint16_t rtk_bt_rfc_data_send(rtk_bt_rfc_data_send_t *p_data_send_t)
 
 uint16_t rtk_bt_rfc_credits_give(rtk_bt_rfc_credits_give_t *p_credits_give_t)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_credits_give_t) {
 		return RTK_BT_ERR_POINTER_INVALID;

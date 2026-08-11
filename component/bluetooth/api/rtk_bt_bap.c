@@ -65,7 +65,8 @@ uint16_t rtk_bt_le_audio_ext_scan_act(bool enable)
 
 uint16_t rtk_bt_le_audio_broadcast_pa_sync_create(rtk_bt_le_addr_t addr, uint8_t adv_sid, uint8_t *broadcast_id)
 {
-	rtk_bt_le_audio_broadcast_sync_create_param_t param = {0};
+	rtk_bt_le_audio_broadcast_sync_create_param_t param;
+	memset(&param, 0, sizeof(param));
 
 	if (broadcast_id == NULL) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -120,7 +121,8 @@ uint16_t rtk_bt_le_audio_broadcast_assistant_remote_ext_scan_act(bool enable, ui
 
 uint16_t rtk_bt_le_audio_broadcast_assistant_reception_start(rtk_bt_le_addr_t addr, uint8_t group_idx)
 {
-	rtk_bt_le_audio_broadcast_assistant_reception_act_param_t param = {0};
+	rtk_bt_le_audio_broadcast_assistant_reception_act_param_t param;
+	memset(&param, 0, sizeof(param));
 
 	memcpy(&param.addr, &addr, sizeof(rtk_bt_le_addr_t));
 	param.group_idx = group_idx;
@@ -131,7 +133,8 @@ uint16_t rtk_bt_le_audio_broadcast_assistant_reception_start(rtk_bt_le_addr_t ad
 
 uint16_t rtk_bt_le_audio_broadcast_assistant_reception_stop(rtk_bt_le_addr_t addr, uint8_t group_idx)
 {
-	rtk_bt_le_audio_broadcast_assistant_reception_act_param_t param = {0};
+	rtk_bt_le_audio_broadcast_assistant_reception_act_param_t param;
+	memset(&param, 0, sizeof(param));
 
 	memcpy(&param.addr, &addr, sizeof(rtk_bt_le_addr_t));
 	param.group_idx = group_idx;
@@ -142,7 +145,8 @@ uint16_t rtk_bt_le_audio_broadcast_assistant_reception_stop(rtk_bt_le_addr_t add
 
 uint16_t rtk_bt_le_audio_broadcast_assistant_reception_remove(rtk_bt_le_addr_t addr, uint8_t group_idx)
 {
-	rtk_bt_le_audio_broadcast_assistant_reception_act_param_t param = {0};
+	rtk_bt_le_audio_broadcast_assistant_reception_act_param_t param;
+	memset(&param, 0, sizeof(param));
 
 	memcpy(&param.addr, &addr, sizeof(rtk_bt_le_addr_t));
 	param.group_idx = group_idx;
