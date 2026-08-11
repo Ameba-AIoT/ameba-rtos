@@ -100,7 +100,7 @@ enum {
 	NETIF_WLAN_STA_INDEX = STA_WLAN_INDEX,
 	NETIF_WLAN_AP_INDEX = SOFTAP_WLAN_INDEX,
 #endif
-#if defined(CONFIG_NAN)
+#if defined(CONFIG_WIFI_NAN_ENABLE)
 	NETIF_WLAN_NAN_INDEX,
 #endif
 #if defined(CONFIG_LWIP_USB_ETHERNET)
@@ -161,6 +161,7 @@ void lwip_autoip_stop(uint8_t idx);
 #endif
 #if LWIP_IPV6
 void lwip_autoip_ipv6(uint8_t idx);
+void lwip_add_ipv6_neighbor(uint8_t idx, const uint8_t *peer_mac);
 #endif
 int lwip_netif_get_idx(struct netif *pnetif);
 struct netif *lwip_idx_get_netif(uint8_t idx);
@@ -169,6 +170,7 @@ uint8_t lwip_request_ip(uint8_t idx);
 int lwip_subnet_is_used(struct ip_addr *check_ip, struct netif *exclude);
 int lwip_alloc_ip(uint8_t idx);
 int lwip_manage_subnet_conflict(uint8_t idx);
+uint8_t lwip_get_ipv6_enabled(void);
 
 #ifdef __cplusplus
 }

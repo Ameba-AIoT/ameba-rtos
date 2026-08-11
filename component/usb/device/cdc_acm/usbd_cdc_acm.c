@@ -793,11 +793,13 @@ int usbd_cdc_acm_init(u32 bulk_out_xfer_size, u32 bulk_in_xfer_size, const usbd_
 	info->addr = USBD_CDC_ACM_BULK_IN_EP;
 	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_in->xfer_buf_len = bulk_in_xfer_size;
+#if !CONFIG_CDC_ACM_BULK_TX_SKIP_MEMCPY
 	ep_bulk_in->xfer_buf = (u8 *)usb_os_malloc(ep_bulk_in->xfer_buf_len);
 	if (ep_bulk_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto USBD_CDC_Init_clean_bulk_out_buf_exit;
 	}
+#endif
 
 #if CONFIG_USBD_CDC_ACM_NOTIFY
 	info = &ep_intr_in->info;
@@ -832,10 +834,12 @@ USBD_CDC_Init_clean_cb_init_exit:
 USBD_CDC_Init_clean_bulk_in_buf_exit:
 #endif
 
+#if !CONFIG_CDC_ACM_BULK_TX_SKIP_MEMCPY
 	usb_os_mfree(ep_bulk_in->xfer_buf);
 	ep_bulk_in->xfer_buf = NULL;
 
 USBD_CDC_Init_clean_bulk_out_buf_exit:
+#endif
 	usb_os_mfree(ep_bulk_out->xfer_buf);
 	ep_bulk_out->xfer_buf = NULL;
 
@@ -859,12 +863,14 @@ int usbd_cdc_acm_deinit(void)
 #endif
 
 #if CONFIG_USBD_CDC_ACM_NOTIFY
-	while (ep_bulk_in->is_busy || ep_intr_in->is_busy) {
-#else
-	while (ep_bulk_in->is_busy) {
-#endif
+	while (ep_bulk_in->xfer_state || ep_intr_in->xfer_state) {
 		usb_os_delay_us(100);
 	}
+#else
+	while (ep_bulk_in->xfer_state) {
+		usb_os_delay_us(100);
+	}
+#endif
 
 	usbd_unregister_class();
 
@@ -879,10 +885,14 @@ int usbd_cdc_acm_deinit(void)
 	}
 #endif
 
+#if CONFIG_CDC_ACM_BULK_TX_SKIP_MEMCPY
+	ep_bulk_in->xfer_buf = NULL;
+#else
 	if (ep_bulk_in->xfer_buf != NULL) {
 		usb_os_mfree(ep_bulk_in->xfer_buf);
 		ep_bulk_in->xfer_buf = NULL;
 	}
+#endif
 
 	if (ep_bulk_out->xfer_buf != NULL) {
 		usb_os_mfree(ep_bulk_out->xfer_buf);

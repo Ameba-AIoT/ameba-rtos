@@ -1512,6 +1512,7 @@ void at_wlp2p_autogo(u16 argc, char **argv)
 	char *serial_number = "9";	// max strlen 32
 	u8 pri_dev_type[8] = {0x00, 0x0A, 0x00, 0x50, 0xF2, 0x04, 0x00, 0x01};	// category ID:0x00,0x0A; sub category ID:0x00,0x01
 	struct p2p_auto_go_params *param = NULL;
+	enum p2p_wps_method wps_method = WPS_PBC;
 	int i = 0, j = 0;
 
 	RTK_LOGI(NOTAG, "[+WLP2PGO]: _AT_P2P_AUTO_GO_START_\n\r");
@@ -1522,7 +1523,7 @@ void at_wlp2p_autogo(u16 argc, char **argv)
 		goto end;
 	}
 
-	if ((argc < 2) || (argc > 7)) {
+	if ((argc < 2) || (argc > 9)) {
 		RTK_LOGW(NOTAG, "[+WLP2PGO] command format error\r\n");
 		error_no = RTW_AT_ERR_PARAM_NUM_ERR;
 		goto end;
@@ -1565,6 +1566,18 @@ void at_wlp2p_autogo(u16 argc, char **argv)
 			if ((argc > j) && (0 != strlen(argv[j]))) {
 				param->channel = atoi(argv[j]);
 			}
+		}
+		/* WPS method: "pbc" (default) or "pin" (GO displays PIN, peer enters it) */
+		else if (0 == strcmp("wps", argv[i])) {
+			if ((argc <= j) || (0 == strcmp("pbc", argv[j]))) {
+				wps_method = WPS_PBC;
+			} else if (0 == strcmp("pin", argv[j])) {
+				wps_method = WPS_PIN_DISPLAY;
+			} else {
+				RTK_LOGW(NOTAG, "[+WLP2PGO] wps should be \"pbc\" or \"pin\"\r\n");
+				error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
+				goto end;
+			}
 		} else {
 			RTK_LOGW(NOTAG, "[+WLP2PGO] Invalid parameter type\r\n");
 			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
@@ -1578,6 +1591,7 @@ void at_wlp2p_autogo(u16 argc, char **argv)
 	param->model_number = model_number;
 	param->serial_number = serial_number;
 	param->pri_dev_type = pri_dev_type;
+	param->wps_method = wps_method;
 
 	if (wifi_p2p_start_auto_go(param) < 0) {
 		RTK_LOGI(NOTAG, "\r\n[+WLP2PGO]: start p2p go fail.\n\r");

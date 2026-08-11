@@ -79,6 +79,9 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
         atcmd_websocket.c
         atcmd_wifi.c
     )
+    ameba_list_append_if(CONFIG_WIFI_NAN_HOST_APP private_sources
+        atcmd_wifi_nan.c
+    )
     ameba_list_append_if(CONFIG_ETHERNET private_sources
         atcmd_ethernet.c
     )

@@ -46,7 +46,7 @@ uint16_t rtk_bt_a2dp_codec_cfg(uint8_t codec_type, void *codec_t, uint32_t lengt
 
 uint16_t rtk_bt_a2dp_connect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -60,7 +60,7 @@ uint16_t rtk_bt_a2dp_connect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_a2dp_disconnect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -74,7 +74,7 @@ uint16_t rtk_bt_a2dp_disconnect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_a2dp_start(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -88,7 +88,7 @@ uint16_t rtk_bt_a2dp_start(uint8_t *bd_addr)
 
 uint16_t rtk_bt_a2dp_suspend(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -102,7 +102,7 @@ uint16_t rtk_bt_a2dp_suspend(uint8_t *bd_addr)
 
 uint16_t rtk_bt_a2dp_data_send(rtk_bt_a2dp_stream_data_send_t *p_data_send_t)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_data_send_t) {
 		return RTK_BT_ERR_POINTER_INVALID;

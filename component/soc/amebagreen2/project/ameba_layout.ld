@@ -57,7 +57,16 @@
 #define KM4TZ_IMG1_SIZE              KBYTES(32)
 #endif
 
+/* WHY(gerrit:71060): NP heap is SRAM-only here (PSRAM_ALL_FOR_AP_HEAP), carved
+ * from this region. NAN's NP-side runtime needs ~30KB more than base WiFi:
+ * measured min-ever-free peaks show 96KB overflows (~-15KB) while 128KB leaves
+ * ~18KB headroom. Only bump when NAN is built in. Do not shrink below 128KB with
+ * NAN on without re-measuring (AT+WLDBG=heap min-ever-free). */
+#if defined(CONFIG_WIFI_NAN_ENABLE)
+#define RAM_KM4NS_IMG2_SIZE          KBYTES(128)
+#else
 #define RAM_KM4NS_IMG2_SIZE          KBYTES(96)
+#endif
 /*
                   amebagreen2 SRAM Layout (512K)
 0x20000000 ──────────►┌──────────────────────┐

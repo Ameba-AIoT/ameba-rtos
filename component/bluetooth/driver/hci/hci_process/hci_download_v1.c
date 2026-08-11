@@ -60,8 +60,8 @@ static void hci_patch_download_done(void)
 
 static uint32_t _parse_patch(uint8_t *p_buf)
 {
-	uint16_t patch_num, fw_chip_id, fw_len;
-	uint32_t i, fw_offset;
+	uint16_t patch_num, fw_chip_id, fw_len = 0;
+	uint32_t i, fw_offset = 0;
 	bool patch_found = false;
 
 	LE_TO_UINT16(patch_num, p_buf);
