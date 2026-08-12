@@ -68,8 +68,6 @@ typedef struct {
 static throughput_client_links_t *throughput_client_links[RTK_BLE_GAP_MAX_LINKS] = {0};
 throughput_config_param_t config_param = {0};
 
-void ble_throughput_client_update_phy(uint16_t conn_handle);
-
 static throughput_client_links_t *ble_throughput_client_choose_link(uint16_t conn_handle)
 {
 	uint8_t conn_id;
@@ -844,6 +842,47 @@ failed:
 	return RTK_BT_FAIL;
 }
 
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
+void ble_throughput_client_update_phy(uint16_t conn_handle)
+{
+	uint16_t ret = 0;
+	uint8_t prefer_phy = THROUGHPUT_PHYS_PREFER_2M_BIT;
+	uint16_t option = THROUGHPUT_PHYS_OPTIONS_CODED_PREFER_NO;
+	rtk_bt_le_set_phy_param_t conn_phy_param = {0};
+	throughput_client_links_t *p_conn_link;
+
+	if (!(p_conn_link = ble_throughput_client_choose_link(conn_handle))) {
+		return;
+	}
+
+	if (p_conn_link->tp_cfg_param.phy == THROUGHPUT_PHY_1M) {
+		prefer_phy = THROUGHPUT_PHYS_PREFER_1M_BIT;
+	} else if (p_conn_link->tp_cfg_param.phy == THROUGHPUT_PHY_2M) {
+		prefer_phy = THROUGHPUT_PHYS_PREFER_2M_BIT;
+	} else if (p_conn_link->tp_cfg_param.phy == THROUGHPUT_PHY_CODED_S2) {
+		prefer_phy = THROUGHPUT_PHYS_PREFER_CODED_BIT;
+		option = THROUGHPUT_PHYS_OPTIONS_CODED_PREFER_S2;
+	} else if (p_conn_link->tp_cfg_param.phy == THROUGHPUT_PHY_CODED_S8) {
+		prefer_phy = THROUGHPUT_PHYS_PREFER_CODED_BIT;
+		option = THROUGHPUT_PHYS_OPTIONS_CODED_PREFER_S8;
+	}
+	conn_phy_param.conn_handle = conn_handle;
+	conn_phy_param.all_phys = THROUGHPUT_PHYS_PREFER_ALL;
+	conn_phy_param.tx_phys = prefer_phy;
+	conn_phy_param.rx_phys = prefer_phy;
+	conn_phy_param.phy_options = option;
+
+	if (RTK_BT_OK != (ret = rtk_bt_le_gap_set_phy(&conn_phy_param))) {
+		BT_LOGE("[APP] Throughput client update phy ops failed! err: 0x%x, conn_handle: %d\r\n",
+				ret, conn_handle);
+		if (RTK_BT_OK != (ret = rtk_bt_le_gap_disconnect(conn_handle))) {
+			BT_LOGE("[APP] Throughput client disconnect ops failed! err: 0x%x, conn_handle: %d\r\n",
+					ret, conn_handle);
+		}
+	}
+}
+#endif
+
 static void ble_throughput_client_write_res_hdl(void *data)
 {
 	rtk_bt_gattc_write_ind_t *write_res = (rtk_bt_gattc_write_ind_t *)data;
@@ -875,8 +914,9 @@ static void ble_throughput_client_write_res_hdl(void *data)
 			BT_LOGE("[APP] Throughput client update connect params failed! err: 0x%x, conn_handle: %d\r\n",
 					err, conn_handle);
 		}
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 		ble_throughput_client_update_phy(conn_handle);
-
+#endif
 	} else if (attr_handle == p_conn_db->char_db[THROUGHPUT_CHAR_WRITE_REQ].char_val_handle
 			   && RTK_BT_GATT_CHAR_WRITE_REQ == write_type) {
 		p_write_param = &p_conn_link->tp_write_param;
@@ -998,50 +1038,6 @@ uint16_t ble_throughput_client_select_tx_mode(uint16_t conn_handle)
 		return ret;
 	}
 	return RTK_BT_OK;
-}
-
-void ble_throughput_client_update_phy(uint16_t conn_handle)
-{
-#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
-	uint16_t ret = 0;
-	uint8_t prefer_phy = THROUGHPUT_PHYS_PREFER_2M_BIT;
-	uint16_t option = THROUGHPUT_PHYS_OPTIONS_CODED_PREFER_NO;
-	rtk_bt_le_set_phy_param_t conn_phy_param = {0};
-	throughput_client_links_t *p_conn_link;
-
-	if (!(p_conn_link = ble_throughput_client_choose_link(conn_handle))) {
-		return;
-	}
-
-	if (p_conn_link->tp_cfg_param.phy == THROUGHPUT_PHY_1M) {
-		prefer_phy = THROUGHPUT_PHYS_PREFER_1M_BIT;
-	} else if (p_conn_link->tp_cfg_param.phy == THROUGHPUT_PHY_2M) {
-		prefer_phy = THROUGHPUT_PHYS_PREFER_2M_BIT;
-	} else if (p_conn_link->tp_cfg_param.phy == THROUGHPUT_PHY_CODED_S2) {
-		prefer_phy = THROUGHPUT_PHYS_PREFER_CODED_BIT;
-		option = THROUGHPUT_PHYS_OPTIONS_CODED_PREFER_S2;
-	} else if (p_conn_link->tp_cfg_param.phy == THROUGHPUT_PHY_CODED_S8) {
-		prefer_phy = THROUGHPUT_PHYS_PREFER_CODED_BIT;
-		option = THROUGHPUT_PHYS_OPTIONS_CODED_PREFER_S8;
-	}
-	conn_phy_param.conn_handle = conn_handle;
-	conn_phy_param.all_phys = THROUGHPUT_PHYS_PREFER_ALL;
-	conn_phy_param.tx_phys = prefer_phy;
-	conn_phy_param.rx_phys = prefer_phy;
-	conn_phy_param.phy_options = option;
-
-	if (RTK_BT_OK != (ret = rtk_bt_le_gap_set_phy(&conn_phy_param))) {
-		BT_LOGE("[APP] Throughput client update phy ops failed! err: 0x%x, conn_handle: %d\r\n",
-				ret, conn_handle);
-		if (RTK_BT_OK != (ret = rtk_bt_le_gap_disconnect(conn_handle))) {
-			BT_LOGE("[APP] Throughput client disconnect ops failed! err: 0x%x, conn_handle: %d\r\n",
-					ret, conn_handle);
-		}
-	}
-#else
-	(void)conn_handle;
-	BT_LOGE("[APP] Platform not support set PHY.\r\n");
-#endif
 }
 
 rtk_bt_evt_cb_ret_t ble_throughput_client_gattc_app_callback(uint8_t event, void *data, uint32_t len)

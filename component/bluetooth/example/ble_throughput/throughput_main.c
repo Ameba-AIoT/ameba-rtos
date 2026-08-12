@@ -94,10 +94,9 @@ static rtk_bt_le_adv_param_t def_tp_adv_param = {
 };
 #endif
 
-
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 static void ble_throughput_set_data_len(uint16_t conn_handle)
 {
-#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	uint16_t ret = 0;
 	rtk_bt_le_set_datalen_param_t data_len_param = {0};
 
@@ -113,11 +112,8 @@ static void ble_throughput_set_data_len(uint16_t conn_handle)
 			BT_LOGE("[APP] Throughput disconnect ops failed! err: 0x%x\r\n", ret);
 		}
 	}
-#else
-	(void)conn_handle;
-	BT_LOGE("[APP] Platform not support set data len.\r\n");
-#endif
 }
+#endif
 
 static rtk_bt_evt_cb_ret_t ble_throughput_gap_app_callback(uint8_t evt_code, void *param, uint32_t len)
 {
@@ -181,8 +177,9 @@ static rtk_bt_evt_cb_ret_t ble_throughput_gap_app_callback(uint8_t evt_code, voi
 			role = conn_ind->role ? "slave" : "master";
 			BT_LOGA("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n",
 					conn_ind->conn_handle, role, le_addr);
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 			ble_throughput_set_data_len(conn_ind->conn_handle);
-
+#endif
 			if (RTK_BT_LE_ROLE_MASTER == conn_ind->role &&
 				RTK_BT_OK == ble_throughput_client_link_connected(conn_ind->conn_handle)) {
 				BT_LOGA("[APP] Throughput client link connect success, conn_handle: %d\r\n",
@@ -278,6 +275,7 @@ static rtk_bt_evt_cb_ret_t ble_throughput_gap_app_callback(uint8_t evt_code, voi
 		break;
 	}
 
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	case RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND: {
 		rtk_bt_le_data_len_change_ind_t *data_len_change = (rtk_bt_le_data_len_change_ind_t *)param;
 		BT_LOGA("[APP] Data len is updated, conn_handle: %d, "     \
@@ -296,7 +294,9 @@ static rtk_bt_evt_cb_ret_t ble_throughput_gap_app_callback(uint8_t evt_code, voi
 					data_len_change->max_rx_time);
 		break;
 	}
+#endif
 
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	case RTK_BT_LE_GAP_EVT_PHY_UPDATE_IND: {
 		rtk_bt_le_phy_update_ind_t *phy_update_ind = (rtk_bt_le_phy_update_ind_t *)param;
 		if (RTK_BT_OK != (ret = rtk_bt_le_gap_get_conn_info(phy_update_ind->conn_handle, &conn_info))) {
@@ -325,6 +325,7 @@ static rtk_bt_evt_cb_ret_t ble_throughput_gap_app_callback(uint8_t evt_code, voi
 		}
 		break;
 	}
+#endif
 
 	default:
 		BT_LOGE("[APP] Unknown gap cb evt type: %d\r\n", evt_code);
@@ -347,11 +348,15 @@ int ble_throughput_main(uint8_t enable)
 		bt_app_conf.mtu_size = 0xF7;
 		bt_app_conf.master_init_mtu_req = true;
 		bt_app_conf.slave_init_mtu_req = false;
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 		bt_app_conf.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
 		bt_app_conf.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 		bt_app_conf.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+#endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
+#endif
 		bt_app_conf.user_def_service = false;
 		bt_app_conf.cccd_not_check = false;
 

@@ -93,13 +93,17 @@ void rtk_bt_fw_log_open(void)
 #if !(defined(CONFIG_PLATFORM_AMEBAPRO3) && CONFIG_PLATFORM_AMEBAPRO3)
 	LOGUART_Relay_InitTypeDef LOGUART_Relay_InitStruct;
 
+	LOGUART_WaitTxComplete();
+	LOGUART_AGGSetTimeOut(LOGUART_DEV, 120);
+	LOGUART_AGGSetThreshold(LOGUART_DEV, LOGUART_AGG_THRESHOLD_LEVEL_4BYTES);
+
 	LOGUART_AGGCmd(LOGUART_DEV, ENABLE);
 	LOGUART_AGGPathCmd(LOGUART_DEV, LOGUART_PATH_INDEX_5, ENABLE);
 
 	LOGUART_Relay_StructInit(&LOGUART_Relay_InitStruct);
 	LOGUART_Relay_ClearRxFifo(LOGUART_DEV);
 	LOGUART_Relay_SetFormat(LOGUART_DEV, &LOGUART_Relay_InitStruct);
-	LOGUART_Relay_SetBaud(LOGUART_DEV, 833333);    //If capture FW log before patch download, please change baudrate to 115200.
+	LOGUART_Relay_SetBaud(LOGUART_DEV, 500000);    //If capture FW log before patch download, please change baudrate to 115200.
 	LOGUART_Relay_RxCmd(LOGUART_DEV, ENABLE);
 #endif
 }
