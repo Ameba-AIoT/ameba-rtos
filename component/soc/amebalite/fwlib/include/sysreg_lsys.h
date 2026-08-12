@@ -1212,7 +1212,9 @@ typedef struct {
 
 	__IO u32 MAGIC_NUMBER;
 
-	__IO u8 RRAM_USER_RSVD[144];
+	__IO u32 OTA_IMG_REMAP[3];
+
+	__IO u8 RRAM_USER_RSVD[132];
 } RRAM_TypeDef;
 
 Compile_Assert(sizeof(RRAM_TypeDef) == 512, "RRAM_TypeDef size shall be 512");

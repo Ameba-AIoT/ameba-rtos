@@ -81,14 +81,17 @@ void i2c_init(i2c_t *obj, PinName sda, PinName scl)
 	/* Set I2C Device Number */
 	I2CInitDat[obj->i2c_idx].I2CIdx = i2c_idx;
 
-	/* Load I2C default value */
+	/* Load I2C default value and modify */
 	I2C_StructInit(&I2CInitDat[obj->i2c_idx]);
 
-	/* Assign I2C Pin Mux */
 	I2CInitDat[obj->i2c_idx].I2CMaster     = I2C_MASTER_MODE;
 	I2CInitDat[obj->i2c_idx].I2CSpdMod     = I2C_SS_MODE;
 	I2CInitDat[obj->i2c_idx].I2CClk        = 100;
 	I2CInitDat[obj->i2c_idx].I2CAckAddr    = 0;
+
+	/* Init global variables */
+	i2c_target_addr[obj->i2c_idx] = I2CInitDat[obj->i2c_idx].I2CAckAddr;
+	restart_enable = 0;
 
 	/* Init I2C now */
 	if (I2CInitDat[obj->i2c_idx].I2CIdx == 0) {
@@ -549,8 +552,9 @@ void i2c_slave_address(i2c_t *obj, int idx, uint32_t address, uint32_t mask)
 		/* Deinit I2C first */
 		i2c_reset(obj);
 
-		/* Load the user defined I2C clock */
-		I2CInitDat[obj->i2c_idx].I2CAckAddr    = i2c_user_addr;
+		/* Load the user defined I2C target slave address */
+		i2c_target_addr[obj->i2c_idx] 		= i2c_user_addr;
+		I2CInitDat[obj->i2c_idx].I2CAckAddr	= i2c_user_addr;
 
 		/* Init I2C now */
 		I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);

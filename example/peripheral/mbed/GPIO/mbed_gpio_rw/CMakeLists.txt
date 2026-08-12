@@ -39,6 +39,12 @@ ameba_list_append(private_sources
     example_mbed_gpio_rw.c
     app_example.c
 )
+if(DEFINED CACHE{GPIO_LOOPBACK} AND GPIO_LOOPBACK)    # set by cmake -D
+    ameba_list_append(private_definitions
+        GPIO_LOOPBACK
+    )
+    unset(GPIO_LOOPBACK CACHE)
+endif()
 
 # Component private part, user config end
 #------------------------------#

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #include <whc_host_linux.h>
 #include <net/genetlink.h>
 #include <whc_host_rtw_cli_api.h>
@@ -44,7 +45,7 @@ int whc_host_nl_custom_api(struct sk_buff *skb, struct genl_info *info)
 		ptr += SIZE_TX_DESC;
 
 		memcpy(ptr, payload, payload_len);
-		whc_host_cmd_data_send_to_dev(buf, buf_len, 1);
+		whc_host_send_cmd_data_to_dev(buf, buf_len, 1);
 		kfree(buf);
 
 	} else if (cmd == API_WIFI_DO_SCAN) {
@@ -156,7 +157,7 @@ int whc_host_send_to_user(u8 *buf, u16 size, u16 api_id)
 	return 0;
 }
 
-int whc_host_send_rxbuf_to_user(u8 *buf, u16 size)
+int whc_host_deliver_rxbuf_to_user(u8 *buf, u16 size)
 {
 	int ret = 0;
 

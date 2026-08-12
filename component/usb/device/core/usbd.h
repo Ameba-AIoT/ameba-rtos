@@ -13,6 +13,10 @@
 #include "usb_ch9.h"
 #include "usb_diag.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Device_API USB Device API
@@ -501,5 +505,9 @@ u16 usbd_get_str_desc(const char *str, u8 *desc);
 /** @} End of Device_Core_Functions_For_Classes group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USBD_H */

@@ -598,7 +598,6 @@ static void lfs_alloc_drop(lfs_t *lfs)
 }
 
 #ifndef LFS_READONLY
-extern uint32_t size_count;
 static int lfs_alloc(lfs_t *lfs, lfs_block_t *block)
 {
 	while (true) {
@@ -3604,19 +3603,19 @@ static lfs_soff_t lfs_file_rawseek(lfs_t *lfs, lfs_file_t *file,
 	lfs_off_t npos = file->pos;
 	lfs_soff_t filesize = lfs_file_rawsize(lfs, file);
 	if (whence == LFS_SEEK_SET) {
-		if (off < 0 || off > filesize) {
+		if (off < 0) {
 			return LFS_ERR_INVAL;
 		}
 		npos = off;
 	} else if (whence == LFS_SEEK_CUR) {
-		if ((lfs_soff_t)file->pos + off < 0 || (lfs_soff_t)file->pos + off > filesize) {
+		if ((lfs_soff_t)file->pos + off < 0) {
 			return LFS_ERR_INVAL;
 		} else {
 			npos = file->pos + off;
 		}
 	} else if (whence == LFS_SEEK_END) {
 		lfs_soff_t res = filesize + off;
-		if (res < 0 || res > filesize) {
+		if (res < 0) {
 			return LFS_ERR_INVAL;
 		} else {
 			npos = res;
@@ -6057,4 +6056,3 @@ int lfs_migrate(lfs_t *lfs, const struct lfs_config *cfg)
 	return err;
 }
 #endif
-

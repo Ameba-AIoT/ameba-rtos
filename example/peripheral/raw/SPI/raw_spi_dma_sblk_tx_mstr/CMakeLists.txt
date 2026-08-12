@@ -39,6 +39,12 @@ ameba_list_append(private_sources
     example_raw_spi_dma_sblk_tx_mstr.c
     app_example.c
 )
+if(DEFINED CACHE{LOOP_COUNT} AND LOOP_COUNT)    # set by cmake -D
+    ameba_list_append(private_definitions
+        LOOP_COUNT=${LOOP_COUNT}
+    )
+    unset(LOOP_COUNT CACHE)
+endif()
 
 # Component private part, user config end
 #------------------------------#

@@ -75,6 +75,15 @@ soc_configs:Dict[str, SocImageConfig] = {
         image3_section = "KM4TZ_IMG3_XIP",
         dsp_section = None
     ),
+    "RLE1509": SocImageConfig(
+        image1_section = "KM4TZ_BOOT_XIP",
+        image2_section = {
+            "km4ns": "KM4NS_IMG2_XIP",
+            "km4tz": "KM4TZ_IMG2_XIP",
+        },
+        image3_section = "KM4TZ_IMG3_XIP",
+        dsp_section = None
+    ),
     "amebalite": SocImageConfig(
         image1_section = "KM4_BOOT_XIP",
         image2_section = {
@@ -294,7 +303,11 @@ class FirmwarePackage(OperationBase):
             self.encrypt_and_update_manifest_source(input_file, ImageType.IMAGE1, tmp_en_file_name, tmp_manifest_source_file)
 
             manifest_file_name = os.path.join(self.output_image_dir, 'manifest_boot.bin') #output manifest file
-            res = self.manifest_manager.create_manifest(manifest_file_name, tmp_manifest_source_file, ImageType.IMAGE1)
+            # GCM tag bin is prepended to the manifest source for ImgSize accounting, but it is
+            # authenticated by RSIP HW OTF, so exclude it from the image hash (matches ROM which
+            # skips SubImgInfo[0] in SBOOT_Validate_ImgHash).
+            hash_skip_bytes = os.path.getsize(tmp_gcm_prepend_file_name) if gcm_enable else 0
+            res = self.manifest_manager.create_manifest(manifest_file_name, tmp_manifest_source_file, ImageType.IMAGE1, hash_skip_bytes=hash_skip_bytes)
             if res:
                 self.logger.fatal("Failed generating manifest file")
                 return res
@@ -431,12 +444,16 @@ class FirmwarePackage(OperationBase):
         # └───────────────────────────────┘
 
         #Step1: create encrypt file and manifest/cert file
-        tmp_manifest_source_file = os.path.join(self.output_image_dir, 'app_manifest_source.bin') #file for creating manifest
+        tmp_manifest_source_file = os.path.join(self.output_image_dir, 'app_manifest_source.bin') #file for creating manifest (ImgSize source, includes gcm tag prepends)
+        # Plaintext-only hash source: excludes gcm tag prepends so the image hash omits GCM tag
+        # bins (authenticated by RSIP HW OTF), matching the bootloader's SBOOT_Validate_ImgHash.
+        tmp_hash_source_file = os.path.join(self.output_image_dir, 'app_hash_source.bin')
         if os.path.exists(tmp_manifest_source_file): os.remove(tmp_manifest_source_file)
+        if os.path.exists(tmp_hash_source_file): os.remove(tmp_hash_source_file)
 
         for img2 in self.context.args.image2:
             tmp_en_file_name = modify_file_path(img2, suffix='_en')             #encrypted file
-            self.encrypt_and_update_manifest_source(img2, ImageType.IMAGE2, tmp_en_file_name, tmp_manifest_source_file)
+            self.encrypt_and_update_manifest_source(img2, ImageType.IMAGE2, tmp_en_file_name, tmp_manifest_source_file, hash_source_file=tmp_hash_source_file)
 
             if self.context.args.image3:
                 #WARNING: Here image3's file path is used to determine which image2 it should be packaged behind during the packaging process
@@ -444,16 +461,16 @@ class FirmwarePackage(OperationBase):
                 img3_info = parse_project_info(self.context.args.image3)
                 if img2_info['mcu_project'] == img3_info['mcu_project']:
                     tmp_en_file_name = modify_file_path(self.context.args.image3, suffix='_en')             #encrypted file
-                    self.encrypt_and_update_manifest_source(self.context.args.image3, ImageType.IMAGE3, tmp_en_file_name, tmp_manifest_source_file)
+                    self.encrypt_and_update_manifest_source(self.context.args.image3, ImageType.IMAGE3, tmp_en_file_name, tmp_manifest_source_file, hash_source_file=tmp_hash_source_file)
 
         if self.context.args.dsp:
             tmp_en_file_name = modify_file_path(self.context.args.dsp, suffix='_en')             #encrypted file
-            self.encrypt_and_update_manifest_source(self.context.args.dsp, ImageType.DSP, tmp_en_file_name, tmp_manifest_source_file)
+            self.encrypt_and_update_manifest_source(self.context.args.dsp, ImageType.DSP, tmp_en_file_name, tmp_manifest_source_file, hash_source_file=tmp_hash_source_file)
 
 
         manifest_file_name = os.path.join(self.output_image_dir, 'manifest_app.bin') #output manifest file
         cert_file_name = os.path.join(self.output_image_dir, 'app_cert.bin') #output cert file
-        res = self.manifest_manager.create_manifest(manifest_file_name, tmp_manifest_source_file, ImageType.IMAGE2)
+        res = self.manifest_manager.create_manifest(manifest_file_name, tmp_manifest_source_file, ImageType.IMAGE2, hash_input_file=tmp_hash_source_file)
         if res:
             self.logger.fatal("Failed generating manifest file")
             return res
@@ -505,7 +522,7 @@ class FirmwarePackage(OperationBase):
 
         return Error.success()
 
-    def encrypt_and_update_manifest_source(self, input_file:str, image_type, output_encrypt_file:str, manifest_source_file:Union[str, None], sboot:bool = False) -> Error:
+    def encrypt_and_update_manifest_source(self, input_file:str, image_type, output_encrypt_file:str, manifest_source_file:Union[str, None], sboot:bool = False, hash_source_file:Union[str, None] = None) -> Error:
         input_file_dir = get_file_dir(input_file)
         if input_file_dir != self.output_image_dir:
             # copy input file to output_image_dir if not in
@@ -554,4 +571,8 @@ class FirmwarePackage(OperationBase):
             self.logger.info(f"Both rsip and rdp are not enabled for {image_type.name.lower()}")
             shutil.copy(tmp_en_src_file_name, tmp_en_file_name)
         if manifest_source_file: append_files(manifest_source_file, tmp_en_src_file_name)
+        # hash_source_file collects plaintext images ONLY (never the gcm tag prepend), so the
+        # image hash excludes GCM tag bins. This matches the ROM/bootloader which skip the GCM
+        # tag SubImgInfo entries in SBOOT_Validate_ImgHash. Tag bins are authenticated by RSIP HW OTF.
+        if hash_source_file: append_files(hash_source_file, tmp_en_src_file_name)
         return Error.success()

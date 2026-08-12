@@ -285,7 +285,7 @@ int usbh_uvc_set_param(usbh_uvc_s_ctx_t *para, u8 stream_index)
 	uvc->state = UVC_STATE_CTRL;
 	stream->state = STREAM_STATE_SET_PARA;
 	if (uvc->host != NULL) {
-		usbh_notify_class_state_change(uvc->host, 0U);
+		usbh_notify(uvc->host, 0U, &usbh_uvc_driver);
 	}
 
 	return HAL_OK;

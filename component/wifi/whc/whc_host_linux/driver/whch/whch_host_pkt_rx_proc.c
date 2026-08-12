@@ -320,7 +320,7 @@ struct sta_info *whc_host_recv_sta2ap_data_frame(u8 iface_type, union recv_frame
 	struct rx_pkt_attrib *pattrib = &precv_frame->u.hdr.attrib;
 	unsigned char *mybssid  = global_idev.pndev[iface_type]->dev_addr;
 	int ret = 0;
-	unsigned char pwrbit;
+	u8 subtype;
 
 	if (iface_type == WHC_AP_PORT) {
 		//For AP mode, RA=BSSID, TX=STA(SRC_ADDR), A3=DST_ADDR
@@ -328,46 +328,20 @@ struct sta_info *whc_host_recv_sta2ap_data_frame(u8 iface_type, union recv_frame
 			ret = -1;
 			goto exit;
 		}
+
 		psta = whc_host_sta_get_stainfo(iface_type, pattrib->src);
-#if 0   /* TODO_softap */
 		if (psta == NULL) {
-			/* TODO_softap */
-			rtw_issue_deauth(iface_type, pattrib->src, RTW_DISCONN_RSN_80211_CLASS3_FRAME_FROM_NONASSOC_STA);
 			ret = -1;
 			goto exit;
 		}
 
-		// process_pwrbit_data
-		pwrbit = GetPwrMgt(ptr);
-		if (pwrbit) {
-			if ((g_apmlmepriv.sta_dz_bitmap & BIT(psta_mlmepriv->stainfo_aid)) == 0) { /*sta not in ps mode*/
-				rtw_ap_stop_sta_xmit(psta_mlmepriv, &psta->sta_xmitpriv);
-			}
-		} else {
-			if (g_apmlmepriv.sta_dz_bitmap & BIT(psta_mlmepriv->stainfo_aid)) {/*sta in ps mode*/
-				rtw_ap_wakeup_sta_to_xmit(wifi_rom_singlethread_wakeup_sema, psta_mlmepriv, &psta->sta_xmitpriv);
-			}
-		}
-
-		// if NULL-frame, drop packet
-		if ((GetFrameSubType(ptr)) == RTW_DATA_NULL) {
+		subtype = GetFrameSubType(ptr);
+		if (subtype == RTW_DATA_NULL || subtype == RTW_QOS_DATA_NULL) {
 			//temporily count it here
-			whc_host_recv_count_rx_stats(pstats, precv_frame, psta_mlmepriv);
+			whc_host_recv_count_rx_stats(pstats, precv_frame, psta ? &psta->sta_mlmepriv : NULL);
 			ret = -1;
 			goto exit;
 		}
-
-		//drop QoS-SubType Data, including QoS NULL, excluding QoS-Data
-		if ((GetFrameSubType(ptr) & RTW_QOS_DATA_TYPE) == RTW_QOS_DATA_TYPE) {
-
-			if (GetFrameSubType(ptr) == RTW_QOS_DATA_NULL) {
-				//temporily count it here
-				whc_host_recv_count_rx_stats(pstats, precv_frame, psta_mlmepriv);
-				ret = -1;
-				goto exit;
-			}
-		}
-#endif
 	}
 
 exit:
@@ -1310,36 +1284,32 @@ int whc_host_recv_indicatepkt(u8 iface_type, union recv_frame *precv_frame)
 	skb_set_tail_pointer(skb, precv_frame->u.hdr.len);
 	skb->len = precv_frame->u.hdr.len;
 
-#if 0 /* TODO_softap */
 	if (iface_type == WHC_AP_PORT) {
 		struct sk_buff *pskb2 = NULL;
 
-		if (memcmp(pattrib->dst, rtw_get_adapter_mac_addr(iface_type), ETH_ALEN) != 0) {
+		if (memcmp(pattrib->dst, global_idev.pndev[iface_type]->dev_addr, ETH_ALEN) != 0) {
 			//Add station authenticated check to fix FragAttacks vulnerabilities CVE-2020-26139
 			psta = whc_host_sta_get_stainfo(iface_type, pattrib->ta);
 			if (psta) {
-				if ((psecuritypriv->dot11_wpa_mode == Ndis802_11AuthModeWPAPSK) || (psecuritypriv->dot11_wpa_mode == Ndis802_11AuthModeWPA2PSK) ||
-					(psecuritypriv->dot11_wpa_mode == Ndis802_11AuthModeWPA3PSK)) {
-					//if station is not authenticated, then bypass forwarding
-					if (psta->sta_security.b_pairwise_key_installed != true) {
-						goto bypass_forwarding;
-					}
+				//if WPA/WPA2/WPA3 and station is not authenticated, then bypass forwarding
+				if (psecuritypriv->dot11_wpa_mode && (psta->sta_security.b_pairwise_key_installed != true)) {
+					goto bypass_forwarding;
 				}
 			}
 
 			// not forwarding if only one sta or ap bypass forwarding enabled(RSWLANDIOT-14240)
-			if ((wifi_user_config.ap_bypass_forwarding == 1) || (rtw_ap_get_assoc_sta_num() <= 1)) {
+			// total_sta_count_by_port includes the bcmc stainfo entry, so <= 2 means at most one real client
+			if ((global_idev.wifi_user_config.ap_bypass_forwarding == 1) || (pmlmeinfo->total_sta_count_by_port <= 2)) {
 				// indicate directly
 				goto bypass_forwarding;
 			}
 			if (IS_MCAST(pattrib->dst)) {//broadcast and multicast frames
 				u8 bc_addr[ETH_ALEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 				psta = whc_host_sta_get_stainfo(iface_type, bc_addr);
-				ether_type = htons(*(unsigned short *)(skb->data + 12));
 				//1208 iphone5 connection issue, need to check psta exist first
 				if (psta) {
 					//skb  rx->tx,reserve tx desc
-					pskb2 = skb_copy(skb, GFP_KERNEL, SKB_WLAN_TX_EXTRA_LEN);
+					pskb2 = skb_copy_expand(skb, SKB_WLAN_TX_EXTRA_LEN, 0, GFP_KERNEL);
 					if (pskb2 != NULL) {	//only pskb2 is not null, transmit pskb2 to rtw_xmit_entry
 						pskb2->dev = global_idev.pndev[iface_type];
 						rtw_xmit_entry(pskb2, pskb2->dev);//tx pskb2
@@ -1350,7 +1320,7 @@ int whc_host_recv_indicatepkt(u8 iface_type, union recv_frame *precv_frame)
 				psta = whc_host_sta_get_stainfo(iface_type, pattrib->dst);
 				if (psta) {
 					//skb  rx->tx,reserve tx desc
-					pskb2 = skb_copy(skb, GFP_KERNEL, SKB_WLAN_TX_EXTRA_LEN);
+					pskb2 = skb_copy_expand(skb, SKB_WLAN_TX_EXTRA_LEN, 0, GFP_KERNEL);
 					dev_kfree_skb_any(skb);//free skb as it is not used anymore
 
 					if (pskb2 != NULL) {	//only pskb2 is not null, transmit pskb2 to rtw_xmit_entry
@@ -1364,7 +1334,6 @@ bypass_forwarding:
 			;
 		}
 	}
-#endif
 
 	skb->dev = global_idev.pndev[iface_type];
 
@@ -1386,20 +1355,21 @@ bypass_forwarding:
 			}
 
 			if (preorder_ctrl) {
+				spin_lock_bh(&preorder_ctrl->pending_recvframe_lock);
 				if (list_empty(&preorder_ctrl->node_free_list)) {
+					spin_unlock_bh(&preorder_ctrl->pending_recvframe_lock);
 					dev_err(global_idev.pwhc_dev, "[whc]: %s reorder node pool empty!\n", __func__);
 					goto _recv_indicatepkt_drop;
 				}
 				preorder_ctrl->new_node = list_first_entry(&preorder_ctrl->node_free_list, struct reorder_node, list);
 				list_del_init(&preorder_ctrl->new_node->list);
-				if (preorder_ctrl->new_node == NULL) {
-					dev_err(global_idev.pwhc_dev, "[whc]: %s get reorder_node fail!\n", __func__);
-					goto _recv_indicatepkt_drop;
-				}
 				preorder_ctrl->new_node->skb = skb;
 				preorder_ctrl->new_node->seq_num = pattrib->seq_num;
 				INIT_LIST_HEAD(&(preorder_ctrl->new_node->list));
+				spin_unlock_bh(&preorder_ctrl->pending_recvframe_lock);
 			}
+		} else {
+			preorder_ctrl = NULL;
 		}
 	}
 
@@ -1585,12 +1555,6 @@ int  whc_host_recv_entry(union recv_frame *precvframe)
 	struct whch_rx_stats *pstats = &global_idev.whchpriv.rx_stats[iface_type];
 	struct whch_security_priv *psecuritypriv = &global_idev.whchpriv.securitypriv[iface_type];
 
-#if 0   /* TODO_softap */
-	if (iface_type == WHC_AP_PORT) {
-		rtos_mutex_take(g_apmlmepriv.expire_mutex, MUTEX_WAIT_TIMEOUT);
-	}
-#endif
-
 	if (GetFrameType(precvframe->u.hdr.rx_data) == RTW_DATA_TYPE) {
 		pstats->cur_rx_data_rate = pattrib->data_rate;
 	}
@@ -1612,11 +1576,6 @@ int  whc_host_recv_entry(union recv_frame *precvframe)
 	if (ret == 0) {
 		ret = whc_host_recv_func_posthandle(iface_type, precvframe);
 	}
-#if 0   /* TODO_softap */
-	if (iface_type == WHC_AP_PORT) {
-		rtos_mutex_give(g_apmlmepriv.expire_mutex);
-	}
-#endif
 	if (ret == -1) {
 		goto _recv_entry_drop;
 	}

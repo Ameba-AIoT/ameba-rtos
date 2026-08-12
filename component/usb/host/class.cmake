@@ -85,24 +85,11 @@ if(CONFIG_USBH_DFU)
     )
 endif()
 
-if(CONFIG_USBH_COMPOSITE)
+if(CONFIG_USBH_HID)
     ameba_list_append(private_includes
-        ${USBH_CLASS_DIR}/composite
+        ${USBH_CLASS_DIR}/hid
     )
-
-    if(CONFIG_USBH_COMPOSITE_HID_UAC1)
-        set(COMPOSITE_UAC_SOURCE ${USBH_CLASS_DIR}/composite/usbh_composite_uac1.c)
-    endif()
-
-    ameba_list_append_if(CONFIG_USBH_COMPOSITE_HID_UAC private_sources
-        ${USBH_CLASS_DIR}/composite/usbh_composite_hid_uac.c
-        ${USBH_CLASS_DIR}/composite/usbh_composite_hid.c
-        ${COMPOSITE_UAC_SOURCE}
-    )
-
-    ameba_list_append_if(CONFIG_USBH_COMPOSITE_ACM_ECM private_sources
-        ${USBH_CLASS_DIR}/composite/usbh_composite_cdc_acm_ecm.c
-        ${USBH_CLASS_DIR}/composite/usbh_composite_cdc_acm.c
-        ${USBH_CLASS_DIR}/composite/usbh_composite_cdc_ecm.c
+    ameba_list_append(private_sources
+        ${USBH_CLASS_DIR}/hid/usbh_hid.c
     )
 endif()

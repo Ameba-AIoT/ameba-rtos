@@ -25,7 +25,7 @@ typedef struct {
 } WIFI_SCAN_RESULT_t;
 
 /* -------------------------- Function declaration -------------------------- */
-void whc_host_pkt_rx_to_user(uint8_t *payload);
+void whc_host_deliver_rxbuf_to_user(uint8_t *payload);
 
 void whc_sdio_host_send_to_dev(uint8_t *buf, uint32_t len);
 void whc_sdio_host_send_to_dev_block(uint8_t *buf, uint32_t len, uint8_t *ret, uint32_t ret_len);

@@ -17,6 +17,10 @@
 #include "os_wrapper.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Common_API USB Common API
@@ -270,6 +274,10 @@ u32 usb_os_get_free_heap_size(void);
 #endif
 /** @} End of USB_Common_Functions group */
 /** @} End of USB_Common_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USB_OS_H */
 

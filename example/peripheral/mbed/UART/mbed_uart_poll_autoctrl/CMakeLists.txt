@@ -39,6 +39,12 @@ ameba_list_append(private_sources
     example_mbed_uart_poll_autoctrl.c
     app_example.c
 )
+if(DEFINED CACHE{PEER_BOARD} AND PEER_BOARD)    # set by cmake -D
+    ameba_list_append(private_definitions
+        PEER_BOARD
+    )
+    unset(PEER_BOARD CACHE)
+endif()
 
 # Component private part, user config end
 #------------------------------#

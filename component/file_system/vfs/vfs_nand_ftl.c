@@ -256,12 +256,12 @@ u8 NAND_FTL_Init(void)
 	//NAND_Init(SpicOneBitMode);
 
 	/* Reset to clean status */
-	NAND_TxCmd(0xFF, 0, NULL, 0, NULL);
+	NAND_TxCmd_Wait_Safe(0xFF, 0, NULL, 0, NULL);
 
-	NAND_RxCmd(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 2, flash_ID);
+	NAND_RxCmd_Safe(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 2, flash_ID);
 	if (flash_ID[0] == NAND_MFG_MICRON) {
 		/* Micron's DID are two bytes */
-		NAND_RxCmd(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 3, flash_ID);
+		NAND_RxCmd_Safe(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 3, flash_ID);
 	}
 
 	info->MID = flash_ID[0];
@@ -707,7 +707,7 @@ u8 NAND_FTL_GetStatus(u8 cmd, u8 addr, u8 *value)
 		return UERR_INIT;
 	}
 
-	NAND_RxCmd(cmd, 1, &addr, 1, value);
+	NAND_RxCmd_Safe(cmd, 1, &addr, 1, value);
 
 	return HAL_OK;
 }
@@ -728,8 +728,6 @@ u8 NAND_FTL_SetStatus(u8 cmd, u8 addr, u8 value)
 		return UERR_INIT;
 	}
 
-	NAND_TxCmd(cmd, 1, &addr, 1, &value);
-
-	return NAND_WaitBusy(WAIT_FLASH_BUSY);
+	NAND_TxCmd_Wait_Safe(cmd, 1, &addr, 1, &value);
+	return HAL_OK;
 }
-

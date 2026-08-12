@@ -42,3 +42,17 @@ int whc_host_sdio_send(int idx, void *pkt_addr, uint32_t len)
 	return 0;
 }
 
+void whc_host_sdio_recv_pkts(uint8_t *buf)
+{
+	uint8_t *ptr = buf + SIZE_RX_DESC;
+	struct whc_msg_info *msg_info = (struct whc_msg_info *)ptr;
+	char *data = (char *)(ptr + sizeof(struct whc_msg_info) + msg_info->pad_len);
+	uint32_t len = msg_info->data_len;
+
+	// direct up to zephyr network, free after done
+	if (rx_callback_ptr) {
+		rx_callback_ptr(msg_info->wlan_idx, data, len);
+	}
+
+	whc_free(buf);
+}

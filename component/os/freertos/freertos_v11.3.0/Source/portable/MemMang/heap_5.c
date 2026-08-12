@@ -350,7 +350,14 @@ void * pvPortMallocBaseCore( size_t xWantedSize, uint32_t startAddr )
                 {
                     pxPreviousBlock = pxBlock;
                     pxBlock = heapPROTECT_BLOCK_POINTER( pxBlock->pxNextFreeBlock );
-                    heapVALIDATE_BLOCK_POINTER( pxBlock );
+
+                    /* pxEnd is the end marker of the free list. It is located at
+                     * pucHeapHighAddress and is not part of the usable heap, so it
+                     * must be excluded from the heap block pointer validation. */
+                    if( pxBlock != pxEnd )
+                    {
+                        heapVALIDATE_BLOCK_POINTER( pxBlock );
+                    }
                 }
 
                 /* If the end marker was reached then a block of adequate size
@@ -946,7 +953,14 @@ void * pvPortMallocCacheAlignedCore( size_t xWantedSize )
         {
             pxPreviousBlock = &xStart;
             pxBlock = heapPROTECT_BLOCK_POINTER( xStart.pxNextFreeBlock );
-            heapVALIDATE_BLOCK_POINTER( pxBlock );
+
+            /* pxEnd is the end marker of the free list. It is located at
+             * pucHeapHighAddress and is not part of the usable heap, so it
+             * must be excluded from the heap block pointer validation. */
+            if( pxBlock != pxEnd )
+            {
+                heapVALIDATE_BLOCK_POINTER( pxBlock );
+            }
 
             while( pxBlock != pxEnd )
             {
@@ -961,7 +975,14 @@ void * pvPortMallocCacheAlignedCore( size_t xWantedSize )
 
                 pxPreviousBlock = pxBlock;
                 pxBlock = heapPROTECT_BLOCK_POINTER( pxBlock->pxNextFreeBlock );
-                heapVALIDATE_BLOCK_POINTER( pxBlock );
+
+                /* pxEnd is the end marker of the free list. It is located at
+                 * pucHeapHighAddress and is not part of the usable heap, so it
+                 * must be excluded from the heap block pointer validation. */
+                if( pxBlock != pxEnd )
+                {
+                    heapVALIDATE_BLOCK_POINTER( pxBlock );
+                }
             }
 
             if( pxBlock != pxEnd )

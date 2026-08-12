@@ -12,6 +12,10 @@
 #include "usbd.h"
 #include "usbd_composite_config.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* HID requests */
@@ -85,5 +89,9 @@ int usbd_composite_hid_deinit(void);
  * @return 0 on success, non-zero on failure.
  */
 int usbd_composite_hid_send_data(u8 *data, u16 len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USBD_COMPOSITE_HID_H */

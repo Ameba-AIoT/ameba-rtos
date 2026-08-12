@@ -517,6 +517,12 @@ u8 BOOT_OTA_IMG(void)
 
 	version = (u32)(Ver[ImgIndex] & 0xFFFFFFFF);
 	RTK_LOGI(TAG, "IMG2 BOOT from OTA %d, Version: %x.%x \n", ImgIndex + 1, ((version >> 16) & 0xFFFF), (version & 0xFFFF));
+
+	/* Save RSIP remap regs to retention RAM so the app can query the running OTA index
+	 * (ota_get_cur_index) without accessing RSIP registers. Index by OTA_IMGID_x. */
+	RRAM_DEV->OTA_IMG_REMAP[0] = RSIP_BASE->FLASH_MMU[0].RSIP_REMAPxOR;
+	RRAM_DEV->OTA_IMG_REMAP[1] = RSIP_BASE->FLASH_MMU[1].RSIP_REMAPxOR;
+
 	return ImgIndex;
 
 Fail:

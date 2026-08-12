@@ -11,6 +11,10 @@
 
 #include "usbh.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Host_API USB Host API
@@ -246,5 +250,9 @@ u16 usbh_vendor_get_intr_ep_mps(void);
 /** @} End of Host_Vendor_Functions group */
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBH_VENDOR_H */

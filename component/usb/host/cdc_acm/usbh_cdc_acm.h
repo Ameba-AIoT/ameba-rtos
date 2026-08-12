@@ -12,6 +12,10 @@
 #include "usbh.h"
 #include "usb_cdc_acm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Host_API USB Host API
@@ -24,6 +28,28 @@
  * @{
  */
 #define CONFIG_USBH_CDC_ACM_NOTIFY                  0   /**< Enable/Disable notification feature. */
+
+#define USBH_CDC_ACM_DEBUG                          0   /**< Enable/Disable debug dump (pipe/descriptor info). Set to 1 for debug. */
+
+/**
+ * @brief Enable optional 4G LTE dongle support (Quectel / Fibocom, ECM mode).
+ *        When enabled, the driver accepts a VID/PID parameter table via
+ *        usbh_cdc_acm_cb_t::priv and handles vendor-specific ACM topologies
+ *        (param-driven AT-command interface index, single vendor interface
+ *        carrying INTR+BULK+BULK, SET_INTERFACE alternate setting). A plain
+ *        CDC ACM device (priv == NULL) works exactly as before.
+ */
+#ifndef CONFIG_USBH_CDC_ACM_4G_DONGLE
+#define CONFIG_USBH_CDC_ACM_4G_DONGLE               0
+#endif
+
+/* Quectel CAT1 dongle (ECM mode) VID/PID */
+#define USBH_CDC_ACM_QUECTEL_DONGLE_VID             (0x2C7C)
+#define USBH_CDC_ACM_QUECTEL_DONGLE_EG915_PID       (0x0901)
+#define USBH_CDC_ACM_QUECTEL_DONGLE_EG91_PID        (0x0191)
+/* Fibocom LE271 CAT1 dongle (ECM mode) VID/PID */
+#define USBH_CDC_ACM_FIBOCOM_DONGLE_LE271_VID       (0x2CB7)
+#define USBH_CDC_ACM_FIBOCOM_DONGLE_LE271_PID       (0x0D01)
 
 /** @} End of Host_CDC_ACM_Constants group */
 /** @} End of USB_Host_Constants group */
@@ -49,6 +75,20 @@ typedef enum {
 	USBH_CDC_ACM_STATE_TRANSFER,                 /**< State TRANSFER: Data transfer in progress. */
 	USBH_CDC_ACM_STATE_ERROR,                    /**< State ERROR: Error occurred. */
 } usbh_cdc_acm_state_t;
+
+#if CONFIG_USBH_CDC_ACM_4G_DONGLE
+/**
+ * @brief 4G dongle VID/PID parameter entry (optional, CONFIG_USBH_CDC_ACM_4G_DONGLE).
+ * @details A NULL-terminated array (vid==0 sentinel) supplied via
+ *          usbh_cdc_acm_cb_t::priv lets the driver recognise specific LTE
+ *          dongles and locate their AT-command interface.
+ */
+typedef struct {
+	u16 vid;               /**< Dongle Vendor ID. */
+	u16 pid;               /**< Dongle Product ID. */
+	u8 at_line_idx;        /**< Dongle AT-command interface index (used as SET/GET_LINE_CODING wIndex and comm interface number). */
+} usbh_cdc_acm_param_t;
+#endif  /* CONFIG_USBH_CDC_ACM_4G_DONGLE */
 
 /**
  * @brief Structure containing callback functions for the CDC ACM host class.
@@ -117,6 +157,13 @@ typedef struct {
 	 * @return 0 on success, non-zero on failure.
 	 */
 	int(* line_coding_changed)(usb_cdc_line_coding_t *line_coding);
+#if CONFIG_USBH_CDC_ACM_4G_DONGLE
+	/**
+	 * @brief Optional 4G-dongle VID/PID parameter table (NULL-terminated,
+	 *        vid==0 sentinel). Leave NULL for a plain CDC ACM device.
+	 */
+	usbh_cdc_acm_param_t *priv;
+#endif
 } usbh_cdc_acm_cb_t;
 
 /**
@@ -127,13 +174,20 @@ typedef struct {
 	usbh_pipe_t bulk_out;                       /**< BULK OUT pipe structure. */
 	usbh_pipe_t intr_in;                        /**< INTERRUPT IN pipe structure. */
 	usb_host_t *host;                           /**< Pointer to the USB host instance. */
-	const usbh_cdc_acm_cb_t *cb;                      /**< Pointer to the user-defined callback structure. */
-	usb_cdc_line_coding_t *line_coding;    /**< Current line coding of the device. */
-	usb_cdc_line_coding_t *user_line_coding; /**< User requested line coding. */
+	const usbh_cdc_acm_cb_t *cb;                /**< Pointer to the user-defined callback structure. */
+	usb_cdc_line_coding_t *line_coding;         /**< Current line coding of the device. */
+	usb_cdc_line_coding_t *user_line_coding;    /**< User requested line coding. */
 	u16 ctrl_line_state;                        /**< Control Signal Bitmap sent in SET_CONTROL_LINE_STATE wValue: D0=DTR, D1=RTS (PSTN §6.3.12). */
 	u16 break_duration;                         /**< Duration for SEND_BREAK in milliseconds; 0xFFFF = continuous break. */
+#if CONFIG_USBH_CDC_ACM_4G_DONGLE
+	usbh_cdc_acm_param_t *priv_param;           /**< 4G dongle param table (from cb->priv). */
+	usbh_cdc_acm_param_t *param_item;           /**< Matched 4G dongle param entry for the attached device. */
+	u8 data_itf_num;                            /**< Data interface number for SET_INTERFACE. */
+	u8 data_itf_alt;                            /**< Data interface alternate setting carrying BULK endpoints. */
+	u8 sub_status;                              /**< 4G control-setting sub-state. */
+#endif
+	u8 comm_itf_num;                            /**< bInterfaceNumber of Communication Interface, used as wIndex in class requests (SET_CONTROL_LINE_STATE / SEND_BREAK). */
 	u8 state;                                   /**< Current state of the CDC ACM host driver, @ref usbh_cdc_acm_state_t. */
-	u8 comm_itf_num;                            /**< bInterfaceNumber of Communication Interface, used as wIndex in class requests. */
 } usbh_cdc_acm_host_t;
 
 /** @} End of Host_CDC_ACM_Types group */
@@ -225,8 +279,24 @@ int usbh_cdc_acm_notify_receive(u8 *buf, u32 len);
  */
 u16 usbh_cdc_acm_get_bulk_ep_mps(void);
 
+#if CONFIG_USBH_CDC_ACM_4G_DONGLE
+/**
+ * @brief Run the 4G-dongle control-setting sequence (SET_INTERFACE alt setting,
+ *        SET/GET line coding using the dongle AT interface index). Called from
+ *        the driver setup() phase; returns HAL_OK when the sequence completes,
+ *        HAL_BUSY while in progress.
+ * @param[in] host: USB host handle.
+ * @return 0 (HAL_OK) on completion, HAL_BUSY if still running, else error.
+ */
+int usbh_cdc_acm_ctrl_setting(usb_host_t *host);
+#endif
+
 /** @} End of Host_CDC_ACM_Functions group */
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBH_CDC_ACM_H */

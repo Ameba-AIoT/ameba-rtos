@@ -224,6 +224,23 @@ struct xmit_frame {
 	u8 					b_need_polling : 1;
 };
 
+#ifdef WHCH_TXAGG
+#define WHCH_TXAGG_BUFSZ		(WHCH_TXAGG_NUM * (TXDESC_SIZE + WLAN_MAX_PROTOCOL_OVERHEAD + MAXIMUM_ETHERNET_PACKET_SIZE) \
+								 + sizeof(struct whc_msg_info))
+
+#define WHCH_TXAGG_XMITBUF_NUM		16
+
+struct whc_xmit_buf {
+	struct list_head	list;
+	u8					*pbuf;	/* WHCH_TXAGG_BUFSZ bytes, DMA-able (kmalloc) */
+	u32					len;	/* bytes currently filled */
+};
+#endif
+
+#ifdef WHCH_RXAGG
+#define WHCH_RXAGG_BUFSZ		(sizeof(struct whc_msg_info) + WHCH_RXAGG_NUM * 1800)
+#endif
+
 struct whch_xmit_priv {
 	spinlock_t			mutex;
 
@@ -237,6 +254,14 @@ struct whch_xmit_priv {
 	u8					*pxmit_frame_buf;
 
 	atomic_t			free_xmitframe_cnt;
+
+#ifdef WHCH_TXAGG
+	u8					*pallocated_xmit_buf;
+	struct whc_xmit_buf	*xmit_bufs;
+	struct list_head	xmitbuf_free;
+	spinlock_t			xmitbuf_lock;
+	u8					xmitbuf_starved;
+#endif
 };
 
 struct hw_xmit {

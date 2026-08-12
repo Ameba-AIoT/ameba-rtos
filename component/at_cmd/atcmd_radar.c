@@ -18,6 +18,10 @@
 #include "whc_host_api.h"
 #endif
 #endif
+#include "os_wrapper.h"
+#include <stdlib.h>
+
+static void (*g_at_radarstart_cb)(u16 argc, char **argv) = NULL;
 
 static void at_rad_help(void)
 {
@@ -134,7 +138,7 @@ AT command process:
 ****************************************************************/
 void at_raddbg(u16 argc, char **argv)
 {
-	char buf[64] = {0};
+	char *buf = NULL;
 	int error_no = RTW_AT_OK;
 	int ret = 0;
 	u32 pos = 0;
@@ -152,15 +156,35 @@ void at_raddbg(u16 argc, char **argv)
 	}
 
 	/* NP-side params: forward via iwpriv */
-	for (i = 1; i < argc && pos < sizeof(buf) - 1; i++) {
+	u32 total_len = 0;
+	for (i = 1; i < argc; i++) {
+		total_len += strlen(argv[i]);
+	}
+	total_len += (argc - 2) + 1;  /* spaces + null */
+	/* This buffer is shared with the NP over IPC; both cores perform 32-byte
+	 * cache-line-granular DCache clean/invalidate on it. Allocate it cache-line
+	 * aligned and padded (rtos_mem_zmalloc == pvPortMallocCacheAligned) so those
+	 * ops never touch adjacent heap blocks' metadata. A plain malloc() here is
+	 * only 8-byte aligned and would corrupt the free list -> crash on next
+	 * malloc (e.g. AT+RAD=enable). */
+	total_len = (total_len + 31) & ~31u;
+	buf = (char *)rtos_mem_zmalloc(total_len);
+	if (buf == NULL) {
+		RTK_LOGW(NOTAG, "[RADDBG] malloc failed\r\n");
+		error_no = RTW_AT_ERR_UNKNOWN_ERR;
+		goto end;
+	}
+	buf[0] = '\0';
+	pos = 0;
+	for (i = 1; i < argc && pos < total_len - 1; i++) {
 		int len = strlen(argv[i]);
 		if (pos > 0) {
 			buf[pos++] = ' ';
 		}
-		strncpy(buf + pos, argv[i], sizeof(buf) - pos - 1);
+		strncpy(buf + pos, argv[i], total_len - pos - 1);
 		pos += len;
 	}
-	buf[sizeof(buf) - 1] = '\0';
+	buf[total_len - 1] = '\0';
 
 #ifdef CONFIG_WHC_HOST
 	ret = whc_host_api_iwpriv_command(buf, strlen(buf) + 1, 1);
@@ -173,6 +197,9 @@ void at_raddbg(u16 argc, char **argv)
 	}
 
 end:
+	if (buf) {
+		rtos_mem_free(buf);
+	}
 	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
@@ -180,12 +207,18 @@ end:
 	}
 }
 
-/* Weak stub: overridden by example/wifi/wifi_radar/atcmd_wifi_radar.c when that example is built. */
-__weak void at_radarstart(u16 argc, char **argv)
+void radar_atcmd_register_start_cb(void (*cb)(u16 argc, char **argv))
 {
-	(void)argc;
-	(void)argv;
-	at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_UNKNOWN_ERR);
+	g_at_radarstart_cb = cb;
+}
+
+void at_radarstart(u16 argc, char **argv)
+{
+	if (g_at_radarstart_cb) {
+		g_at_radarstart_cb(argc, argv);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_UNKNOWN_ERR);
+	}
 }
 
 ATCMD_APONLY_TABLE_DATA_SECTION

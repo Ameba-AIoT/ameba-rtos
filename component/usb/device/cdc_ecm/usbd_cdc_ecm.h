@@ -14,6 +14,10 @@
 #include "usb_os.h"
 #include "usb_ringbuf.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Device_API USB Device API
@@ -242,5 +246,9 @@ int usbd_cdc_ecm_set_link_status(u8 link_up);
 /** @} End of Device_CDC_ECM_Functions group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBD_CDC_ECM_H */

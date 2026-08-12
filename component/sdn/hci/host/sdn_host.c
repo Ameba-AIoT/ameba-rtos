@@ -132,21 +132,21 @@ void sdn_host_fix_bt_addr(uint8_t *addr)
 #if defined(CONFIG_BT_INIC) && CONFIG_BT_INIC
 extern void bt_inic_send_to_host(uint8_t type, uint8_t *pdata, uint32_t len);
 #endif
-void sdn_c2h(struct sdn_data_buf *pdata_buf)//uint8_t protocol, uint8_t type, uint8_t *pdata, uint16_t len)
+void sdn_c2h(struct sdn_data_buf *pdata_buf)
 {
 #if defined(CONFIG_BT_INIC) && CONFIG_BT_INIC
-	bt_inic_send_to_host(pdata_buf->pmsg->msg_type, pdata_buf->pmsg->data, pdata_buf->len - sizeof(struct sdn_intf_data_msg));
+	bt_inic_send_to_host(pdata_buf->msg_type, pdata_buf->data, pdata_buf->len);
 #else
-	switch (pdata_buf->pmsg->protocol) {
+	switch (pdata_buf->protocol) {
 #ifdef CONFIG_BT_SDN
 	case SDN_INTF_BT:
-		bt_c2h_cb(pdata_buf->pmsg->type, pdata_buf->pmsg->data, pdata_buf->len - sizeof(struct sdn_intf_data_msg));
+		bt_c2h_cb(pdata_buf->type, pdata_buf->data, pdata_buf->len);
 		break;
 #endif
 
 #if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
 	case SDN_INTF_154:
-		rtk_wpan_vhdlc_receive(pdata_buf->pmsg->data, pdata_buf->len - sizeof(struct sdn_intf_data_msg));
+		rtk_wpan_vhdlc_receive(pdata_buf->data, pdata_buf->len);
 		break;
 #endif
 
@@ -155,3 +155,14 @@ void sdn_c2h(struct sdn_data_buf *pdata_buf)//uint8_t protocol, uint8_t type, ui
 	}
 #endif
 }
+
+#ifndef CONFIG_SDN_DEV
+void sdn_host_ipc_return_buf(struct sdn_data_buf *pdata_buf)
+{
+	rtos_mutex_take(g_sdn_host.mutex, MUTEX_WAIT_TIMEOUT);
+	if (g_sdn_host.protocols) {
+		sdn_h2c(SDN_INTF_MEM, 0, pdata_buf, 0);
+	}
+	rtos_mutex_give(g_sdn_host.mutex);
+}
+#endif

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /******************************************************************************
  *
  * Copyright(c) Realtek Corporation. All rights reserved.
@@ -508,7 +509,7 @@ static int whc_xfer_page_write(struct whc_xfer_adapter_t *adapter, int offset, u
 	u8 *rx_buff = adapter->rx_buf;
 	int tx_size = size + WHC_XFER_DESC_SIZE;
 	int rx_size = WHC_XFER_DESC_SIZE;
-	int timeout = ((size + WHC_XFER_FLASH_PAGE_SIZE - 1) / WHC_XFER_FLASH_PAGE_SIZE) * WHC_XFER_PAGE_WRITE_TIMEOUT;
+	int timeout = ((size + WHC_XFER_FLASH_WRITE_SIZE - 1) / WHC_XFER_FLASH_WRITE_SIZE) * WHC_XFER_PAGE_WRITE_TIMEOUT;
 	int ret;
 #if CONFIG_WHC_WRITE_CHK_EN
 	int i = 0;
@@ -1054,6 +1055,7 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 	u32 sub_image_size;
 	bool need_padding = false;
 	bool skip_download = false;
+	u32 current_flash_addr = 0;  /* initialized after image is assigned */
 	struct whc_xfer_ops_t *ops = adapter->ops;
 
 	if (image_type == WHC_IMAGE_TYPE_BOOTLOADER) {
@@ -1091,6 +1093,9 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 	}
 
 	image = &adapter->images[image_type];
+	/* Flash sub-images are laid out sequentially starting at flash_target_addr.
+	 * Each sub-image occupies align_up(size, PAGE_SIZE_4K) bytes. */
+	current_flash_addr = image->flash_target_addr;
 	image_path = whc_xfer_join_path(adapter->image_dir, image->image_name);
 
 	WHC_XFER_DBG("Start to download image: %s\n", image_path);
@@ -1147,7 +1152,7 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 			if ((region->mem_type == WHC_MEM_TYPE_FLASH) && (header->image_size != 0)) {
 				WHC_XFER_DBG("Sub-image type: Flash\n");
 				need_padding = true;
-				sub_image_start_addr = image->flash_target_addr;
+				sub_image_start_addr = current_flash_addr;
 				ret = whc_xfer_calculate_hash(adapter, sub_image_start_addr, sub_image_size, hash);
 				if (ret < 0) {
 					WHC_XFER_LOG("Fail to get flash hash (%d)\n", ret);
@@ -1157,9 +1162,9 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 				/* Check if flash content matches file content */
 				ret = whc_xfer_check_hash(adapter, fp, &offset, sub_image_size, hash);
 				if (ret == 0) {
-					/* Hash match, skip this sub-image download */
+					/* Hash match, skip download but still advance flash address */
 					WHC_XFER_LOG("Flash hash match, skip download (0x%08X)\n", sub_image_start_addr);
-					skip_download = true;
+					current_flash_addr += (sub_image_size + PAGE_SIZE_4K - 1) & ~(PAGE_SIZE_4K - 1);
 					remain_image_size -= sub_image_size;
 					continue;
 				}
@@ -1190,6 +1195,11 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 				if (ret != 0) {
 					break;
 				}
+			}
+
+			/* Advance Flash address for the next Flash sub-image (4KB sector aligned) */
+			if (region->mem_type == WHC_MEM_TYPE_FLASH && header->image_size != 0) {
+				current_flash_addr += (sub_image_size + PAGE_SIZE_4K - 1) & ~(PAGE_SIZE_4K - 1);
 			}
 
 			remain_image_size -= sub_image_size;

@@ -16,6 +16,7 @@ enum sdn_protocol_type {
 	SDN_INTF_154,
 	SDN_INTF_COEX,
 	SDN_INTF_CTRL,
+	SDN_INTF_MEM,
 	SDN_INTF_PROTOCOL_MAX,
 };
 
@@ -36,10 +37,20 @@ enum sdn_intf_ctrl_op {
 	SDN_INTF_CTRL_FIX_ADDR,
 };
 
+enum sdn_intf_mem_owner {
+	SDN_INTF_MEM_OWNER_DEV = 0, /* keep it zero */
+	SDN_INTF_MEM_OWNER_HOST,
+};
+
 #define SDN_MSG_PROTOCOL(msgtype)		(((msgtype) >> 5) & 0x7)
 #define SDN_MSG_TYPE(msgtype)			((msgtype) & 0x1F)
+#define SDN_MSG(protocol, type)			(((protocol) << 5) | ((type) & 0x1F))
 
-struct sdn_intf_data_msg {
+/* Do NOT modify this struct.
+ * It should keep the same structure as 'struct bt_le_conn_rx' */
+struct sdn_data_buf {
+	struct list_head list;
+	uint16_t len;		/* actual length of pmsg */
 	union {
 		struct {
 			uint8_t type : 5;
@@ -47,13 +58,9 @@ struct sdn_intf_data_msg {
 		};
 		uint8_t msg_type;
 	};
-	uint8_t data[0];
-} __attribute__((packed));
-
-struct sdn_data_buf {
-	struct list_head list;
-	uint16_t len;		/* actual length of pmsg */
-	struct sdn_intf_data_msg *pmsg;
+	uint8_t owner : 1;
+	uint8_t rsvd : 7;
+	uint8_t *data;
 };
 
 struct sdn_intf_task {

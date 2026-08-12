@@ -12,6 +12,10 @@
 #include "usbd.h"
 #include "usb_dfu.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* ---------- Configuration defines (device-specific) -----------------------*/
@@ -296,5 +300,9 @@ void usbd_dfu_set_manifest_poll_ms(u32 poll_ms);
  * @retval Current @ref usb_dfu_state_t value (e.g. USB_DFU_STATE_DFU_IDLE).
  */
 u8 usbd_dfu_get_state(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USBD_DFU_H */

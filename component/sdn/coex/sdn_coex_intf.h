@@ -6,7 +6,7 @@
 #endif
 
 #define COEX_SDN_MSG_NUM    8
-#define COEX_SDN_BUF_SIZE   9
+#define COEX_SDN_BUF_SIZE   8
 
 #define MSG_DIR_B2W         (1)
 #define MSG_DIR_W2B         (2)
@@ -14,5 +14,5 @@
 
 void sdn_coex_b2w_send_to_task(uint8_t plen, void *param);
 void sdn_coex_w2b_send_to_task(uint8_t plen, void *param);
-void sdn_coex_msg_parse(struct sdn_intf_data_msg *pmsg);
+void sdn_coex_msg_parse(struct sdn_data_buf *pmsg);
 #endif

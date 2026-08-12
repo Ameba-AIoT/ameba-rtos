@@ -100,7 +100,7 @@ void wifi_hal_dbg_radar_rfk_en(char *cmd_ptr, u32 extra_arg)
 	(void)extra_arg;
 }
 
-void wifi_hal_dbg_radar_rf_srk_dis(char *cmd_ptr, u32 extra_arg)
+void wifi_hal_dbg_radar_debug_type(char *cmd_ptr, u32 extra_arg)
 {
 	(void)cmd_ptr;
 	(void)extra_arg;

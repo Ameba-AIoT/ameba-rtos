@@ -39,6 +39,25 @@ ameba_list_append(private_sources
     app_example.c
 )
 
+if(DEFINED CACHE{I2C_MASTER_DEVICE})    # set by cmake -D
+    ameba_list_append(private_definitions
+        I2C_MASTER_DEVICE=${I2C_MASTER_DEVICE}
+    )
+    unset(I2C_MASTER_DEVICE CACHE)
+endif()
+if(DEFINED CACHE{MASTER_SEND})          # set by cmake -D
+    ameba_list_append(private_definitions
+        MASTER_SEND=${MASTER_SEND}
+    )
+    unset(MASTER_SEND CACHE)
+endif()
+if(DEFINED CACHE{LOOP_COUNT} AND LOOP_COUNT)    # set by cmake -D
+    ameba_list_append(private_definitions
+        LOOP_COUNT=${LOOP_COUNT}
+    )
+    unset(LOOP_COUNT CACHE)
+endif()
+
 # Component private part, user config end
 #------------------------------#
 

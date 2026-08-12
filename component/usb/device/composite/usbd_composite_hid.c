@@ -173,6 +173,10 @@ static int composite_hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					usbd_ep_transmit(dev, ep0_in);
 				}
 			} else {
+				if (req->wLength > ep0_out->xfer_buf_len) {
+					ret = HAL_ERR_PARA;
+					break;
+				}
 				usb_os_memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
 				ep0_out->xfer_len = req->wLength;
 				usbd_ep_receive(dev, ep0_out);
@@ -259,11 +263,10 @@ static int composite_hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 	}
 
+	ep_intr_in->xfer_state = 0U;
 	if (hid->cb->transmitted) {
 		hid->cb->transmitted(status);
 	}
-
-	ep_intr_in->xfer_state = 0U;
 
 	return HAL_OK;
 }
@@ -282,7 +285,7 @@ static int composite_hid_handle_ep0_data_out(usb_dev_t *dev)
 	usbd_composite_dev_t *cdev = hid->cdev;
 
 	if (cdev->ctrl_req.bRequest != 0xFFU) {
-		hid->cb->setup(&cdev->ctrl_req, dev->ep0_in.xfer_buf);
+		hid->cb->setup(&cdev->ctrl_req, dev->ep0_out.xfer_buf);
 		cdev->ctrl_req.bRequest = 0xFFU;
 
 		ret = HAL_OK;
@@ -377,8 +380,14 @@ int usbd_composite_hid_deinit(void)
 	usbd_composite_hid_device_t *hid = &composite_hid_device;
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
 
-	while (ep_intr_in->is_busy) {
+	/* Wait for an in-flight INTR IN transfer to complete (xfer_state is cleared
+	 * in the completion ISR) before freeing the DMA buffer. Bounded to ~100 ms
+	 * to avoid a hang on hot-unplug where the completion never arrives. */
+
+	u32 wait = 0U;
+	while (ep_intr_in->xfer_state && (wait < 1000U)) {
 		usb_os_delay_us(100);
+		wait++;
 	}
 
 	if ((hid->cb != NULL) && (hid->cb->deinit != NULL)) {
@@ -406,6 +415,7 @@ int usbd_composite_hid_send_data(u8 *data, u16 len)
 	}
 
 	if (len > ep_intr_in->xfer_buf_len) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "len %d > buf %d, truncated\n", len, ep_intr_in->xfer_buf_len);
 		len = ep_intr_in->xfer_buf_len;
 	}
 

@@ -1,4 +1,4 @@
-ameba_internal_library(example_usbh_uac)
+ameba_internal_library(example_usbh_composite_hid_uac)
 
 target_sources(
     ${CURRENT_LIB_NAME} PRIVATE
@@ -12,7 +12,8 @@ target_include_directories(
 
     ${BASEDIR}/component/usb/common
     ${BASEDIR}/component/usb/host/core
-    ${BASEDIR}/component/usb/host/composite
+    ${BASEDIR}/component/usb/host/uac
+    ${BASEDIR}/component/usb/host/hid
 
     ${BASEDIR}/component/audio/interfaces
     ${BASEDIR}/component/audio/base/osal/osal_c/interfaces
