@@ -458,9 +458,9 @@ static void ble_throughput_server_write_hdl(void *data)
 	}
 }
 
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 void ble_throughput_server_update_phy(uint16_t conn_handle)
 {
-#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	uint16_t ret = 0;
 	rtk_bt_le_set_phy_param_t conn_phy_param = {0};
 	throughput_server_links_t *p_conn_link;
@@ -484,11 +484,8 @@ void ble_throughput_server_update_phy(uint16_t conn_handle)
 	if ((ret = rtk_bt_le_gap_set_phy(&conn_phy_param)) != RTK_BT_OK) {
 		BT_LOGE("[APP] Throuhgput set coded PHY failed! err:0x%x\r\n", ret);
 	}
-#else
-	(void)conn_handle;
-	BT_LOGE("[APP] Platform not support set PHY.\r\n");
-#endif
 }
+#endif
 
 rtk_bt_evt_cb_ret_t ble_throughput_server_gatts_app_callback(uint8_t event, void *data, uint32_t len)
 {

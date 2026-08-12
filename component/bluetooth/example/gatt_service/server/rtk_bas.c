@@ -207,8 +207,6 @@ void battery_cccd_notify(uint16_t conn_handle)
 	}
 
 	if (battery_cccd_ntf_en_map[conn_id]) {
-		(100 == battery_level) ? (100) : (battery_level++);
-
 		ntf_param.app_id = BATTERY_SRV_ID;
 		ntf_param.conn_handle = conn_handle;
 		// ntf_param.cid = 4;   // choose dynamic created L2CAP channel when EATT is enbaled.
