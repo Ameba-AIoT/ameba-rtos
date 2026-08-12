@@ -105,7 +105,7 @@ extern "C" {
 #define CONFIG_BT_FIXED_PASSKEY 1
 /* to support secure connection */
 #define CONFIG_BT_ECC 1
-#define CONFIG_BT_TINYCRYPT_ECC 1
+#define CONFIG_BT_MBEDTLS_ECC 1
 #define CONFIG_BT_DEVICE_NAME_DYNAMIC 1
 #define CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC 1
 
@@ -192,11 +192,14 @@ extern "C" {
 
 //extend adv
 #define CONFIG_BT_EXT_ADV 1
+
+#if defined(CONFIG_BT_EXT_ADV)
 #define CONFIG_BT_EXT_ADV_MAX_ADV_SET 3
 #define CONFIG_BT_EXT_SCAN_BUF_SIZE 1650
 /* Permit to choose legacy adv hci cmd if the ext adv feature bit is not set,
 even if CONFIG_BT_EXT_ADV is enabled */
 #define CONFIG_BT_EXT_ADV_LEGACY_SUPPORT 1
+#endif /* CONFIG_BT_EXT_ADV */
 
 #if 0
 //periodic adv

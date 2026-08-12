@@ -84,7 +84,7 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 	rtk_bt_cmd_t *p_cmd = NULL;
 	rtk_bt_evt_t *p_evt = NULL;
 	uint8_t i, j = 0;
-	uint8_t cig_idx, cis_idx = 0;
+	uint8_t cig_idx = 0, cis_idx = 0;
 	UNUSED(cig_id);
 
 	BT_LOGD("%s: cig_id %d, cb_type 0x%x\r\n", __func__, cig_id, cb_type);
@@ -100,7 +100,7 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 						p_data->p_cig_mgr_start_setting_rsp->cig_id,
 						p_data->p_cig_mgr_start_setting_rsp->cis_count);
 		if ((p_data->p_cig_mgr_start_setting_rsp->cause == GAP_SUCCESS) && p_data->p_cig_mgr_start_setting_rsp->cis_count) {
-			for (uint8_t i = 0; i < p_data->p_cig_mgr_start_setting_rsp->cis_count; i++) {
+			for (i = 0; i < p_data->p_cig_mgr_start_setting_rsp->cis_count; i++) {
 				BT_LOGA("MSG_CIG_MGR_START_SETTING: cis_info[%d], cig_id 0x%x, cis_id 0x%x, cis_conn_handle 0x%x\r\n",
 						i,
 						p_data->p_cig_mgr_start_setting_rsp->cig_id,
@@ -151,7 +151,7 @@ T_APP_RESULT bt_stack_le_iso_cig_initiator_cb(uint8_t cig_id, uint8_t cb_type, v
 		APP_PRINT_INFO2("MSG_CIG_MGR_CREATE_CIS: cause 0x%x, cis_count 0x%x",
 						p_data->p_cig_mgr_create_cis_rsp->cause,
 						p_data->p_cig_mgr_create_cis_rsp->cis_count);
-		for (uint8_t i = 0; i < p_data->p_cig_mgr_create_cis_rsp->cis_count; i++) {
+		for (i = 0; i < p_data->p_cig_mgr_create_cis_rsp->cis_count; i++) {
 			BT_LOGA("cis_info[%d]: cig_id 0x%x, cis_id 0x%x, state 0x%x, cis_conn_handle 0x%x\r\n", i,
 					p_data->p_cig_mgr_create_cis_rsp->cis_info[i].cig_id,
 					p_data->p_cig_mgr_create_cis_rsp->cis_info[i].cis_id,
@@ -651,7 +651,7 @@ T_APP_RESULT bt_stack_le_iso_cig_acceptor_cb(uint8_t cb_type, void *p_cb_data)
 	rtk_bt_cmd_t *p_cmd = NULL;
 	rtk_bt_evt_t *p_evt = NULL;
 	uint8_t i, j = 0;
-	uint8_t cig_idx, cis_idx = 0;
+	uint8_t cig_idx = 0, cis_idx = 0;
 
 	BT_LOGD("app_isoc_cis_acceptor_cb: cb_type 0x%x\r\n", cb_type);
 

@@ -55,10 +55,11 @@
 #endif
 
 #if defined(CONFIG_BT_MESH_GATT_SERVER) && CONFIG_BT_MESH_GATT_SERVER
-#define CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE
+#define CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE  1
 #endif
 
-#define CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE  0
+/* To disable friend-separate, leave it UNDEFINED. Defining it to 0 still makes. */
+#undef CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE
 #endif  // CONFIG_BT_MESH_ADV_EXT
 
 #define CONFIG_BT_MESH_ADV_BUF_COUNT    32  // range:1~256, the default value 6 is not big when execute mesh OTA
@@ -283,7 +284,7 @@
 #define CONFIG_BT_MESH_PROXY_CLIENT    1
 /* ------------------------ end Proxy menu ---------------------------------*/
 
-#define CONFIG_BT_MESH_USES_TINYCRYPT    1
+#define CONFIG_BT_MESH_USES_MBEDTLS    1
 // #define CONFIG_BT_MESH_USES_MBEDTLS_PSA    1  // maybe used in future
 // #define CONFIG_BT_MESH_USES_TFM_PSA    1  // maybe used in future
 // #if CONFIG_BT_MESH_USES_MBEDTLS_PSA || CONFIG_BT_MESH_USES_TFM_PSA
@@ -314,6 +315,8 @@
 #define CONFIG_BT_MESH_LPN_SCAN_LATENCY    15
 #define CONFIG_BT_MESH_LPN_GROUPS    8
 // #define CONFIG_BT_MESH_LPN_SUB_ALL_NODES_ADDR    0  // maybe used in future
+#define CONFIG_BT_MESH_LPN_POLL_XMIT_CNT     4
+#define CONFIG_BT_MESH_LPN_POLL_XMIT_INT     20
 #endif  // CONFIG_BT_MESH_LOW_POWER
 #endif  // RTK_BLE_MESH_LPN_SUPPORT
 
@@ -328,6 +331,8 @@
 #define CONFIG_BT_MESH_FRIEND_LPN_COUNT    2
 #define CONFIG_BT_MESH_FRIEND_SEG_RX    1
 #define CONFIG_BT_MESH_FRIEND_ADV_LATENCY    0
+#define CONFIG_BT_MESH_FRIEND_FRIEND_XMIT_CNT   4
+#define CONFIG_BT_MESH_FRIEND_FRIEND_XMIT_INT   20
 #endif  // CONFIG_BT_MESH_FRIEND
 #endif  // RTK_BLE_MESH_FN_SUPPORT
 

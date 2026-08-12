@@ -1,4 +1,5 @@
 #include <basic_types.h>
+#include <sdn_user_conf_intf.h>
 #include <sdn_user_conf_bt.h>
 #include <sdn_conf.h>
 #include <bt_hci.h>
@@ -10,6 +11,22 @@ struct bt_hci_cmd_pkt {
 };
 
 #define BT_HCI_EVT_RSP_MAX_LEN              70
+
+uint8_t bt_hci_ogf_le_ocf_read_buffer_size(void *phci_cmd_param, uint8_t *rsp)
+{
+	(void)phci_cmd_param;
+	struct bt_hci_rp_le_read_buffer_size *buffer_size = (struct bt_hci_rp_le_read_buffer_size *)rsp;
+
+	buffer_size->status = BT_HCI_ERROR_SUCCESS;
+#if defined(CONFIG_BLE_LL_DATA_LEN_EXT_ENABLE) && BT_LL_FEATURE_BT42_LE_DATA_LENGTH_EXTENSION
+	buffer_size->le_max_len = 251; /* LL_LE_PDU_MAX_PAYLOAD_SIZE */
+#else
+	buffer_size->le_max_len = 27; /* LL_LE_PDU_MIN_PAYLOAD_SIZE */
+#endif
+	buffer_size->le_max_num = BT_LL_LE_MAX_CONN_NUM * BLE_LL_TX_ACL_NUM_PER_LINK;
+
+	return sizeof(struct bt_hci_rp_le_read_buffer_size);
+}
 
 static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	//BT_OGF_LINK_CTRL
@@ -41,19 +58,29 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_SET_ADV_ENABLE, bt_hci_cmd_ogf_le_ocf_set_adv_enable},
 	{BT_HCI_OP_LE_SET_SCAN_PARAM, bt_hci_cmd_ogf_le_ocf_set_scan_param},
 	{BT_HCI_OP_LE_SET_SCAN_ENABLE, bt_hci_cmd_ogf_le_ocf_set_scan_enable},
+#if BT_LL_LE_CENTRAL
 	{BT_HCI_OP_LE_CREATE_CONN, bt_hci_cmd_ogf_le_ocf_create_connection},
+#endif
 	{BT_HCI_OP_LE_ADD_DEV_TO_FAL, bt_hci_cmd_ogf_le_ocf_add_dev_to_fal},
 	{BT_HCI_OP_LE_REM_DEV_FROM_FAL, bt_hci_cmd_ogf_le_ocf_remove_dev_from_fal},
 	{BT_HCI_OP_LE_CLEAR_ALL_FAL, bt_hci_cmd_ogf_le_ocf_clear_all_fal},
+#if BT_LL_FEATURE_CONN_PARAM_REQ || BT_LL_LE_CENTRAL
 	{BT_HCI_OP_LE_CONN_UPDATE, bt_hci_cmd_ogf_le_ocf_conn_udpate},
+#endif
+#if BT_LL_LE_CENTRAL
 	{BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF, bt_hci_cmd_ogf_le_ocf_set_host_chan_classif},
+#endif
 	{BT_HCI_OP_LE_READ_CHAN_MAP, bt_hci_cmd_ogf_le_ocf_read_channel_map},
 	{BT_HCI_OP_LE_READ_REMOTE_FEATURES, bt_hci_cmd_ogf_le_ocf_read_remote_feature},
-	{BT_HCI_OP_LE_ENCRYPT, bt_hci_cmd_ofg_le_ocf_le_encrypt},
 	{BT_HCI_OP_LE_RAND, bt_hci_cmd_ogf_le_ocf_rand},
+#if BT_LL_FEATURE_BT42_SECURE_CONNECTION
+	{BT_HCI_OP_LE_ENCRYPT, bt_hci_cmd_ofg_le_ocf_le_encrypt},
+#if BT_LL_LE_CENTRAL
 	{BT_HCI_OP_LE_ENABLE_ENCRYPTION, bt_hci_cmd_ogf_le_ocf_enable_encryption},
+#endif
 	{BT_HCI_OP_LE_LTK_REQ_REPLY, bt_hci_cmd_ogf_le_ocf_ltk_req_reply},
 	{BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, bt_hci_cmd_ogf_le_ocf_ltk_req_neg_reply},
+#endif
 	{BT_HCI_OP_LE_READ_SUPP_STATES, bt_hci_cmd_ogf_le_ocf_read_supp_states},
 #ifdef CONFIG_BLE_LL_DTM_ENABLE
 	{BT_HCI_OP_LE_RECEIVER_TEST_V1, bt_hci_cmd_ogf_le_ocf_recv_test_v1},
@@ -62,12 +89,16 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_RECEIVER_TEST_V2, bt_hci_ogf_le_ocf_recv_test_v2},
 	{BT_HCI_OP_LE_TRANSMITTER_TEST_V2, bt_hci_ogf_le_ocf_transmit_test_v2},
 #endif
+#if BT_LL_FEATURE_CONN_PARAM_REQ
 	{BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY, bt_hci_cmd_ogf_le_ocf_conn_param_req_reply},
 	{BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY, bt_hci_cmd_ogf_le_ocf_conn_param_req_neg_reply},
+#endif
+#if defined(CONFIG_BLE_LL_DATA_LEN_EXT_ENABLE) && BT_LL_FEATURE_BT42_LE_DATA_LENGTH_EXTENSION
 	{BT_HCI_OP_LE_SET_DATA_LENGTH, bt_hci_cmd_ogf_le_ocf_set_data_length},
+#endif
 	{BT_HCI_OP_LE_READ_SUGGESTED_DATALEN, bt_hci_cmd_ogf_le_ocf_read_suggested_datalen},
 	{BT_HCI_OP_LE_WRITE_SUGGESTED_DATALEN, bt_hci_cmd_ogf_le_ocf_write_suggested_datalen},
-#ifdef CONFIG_BLE_LL_PRIVACY_ENABLE
+#if defined(CONFIG_BLE_LL_PRIVACY_ENABLE) && BT_LL_FEATURE_BT42_LE_PRIVACY
 	{BT_HCI_OP_LE_READ_PEER_RPA, bt_hci_cmd_ogf_le_ocf_read_peer_rpa},
 	{BT_HCI_OP_LE_READ_LOCAL_RPA, bt_hci_cmd_ogf_le_ocf_read_local_rpa},
 	{BT_HCI_OP_LE_ADD_DEV_TO_RL, bt_hci_cmd_ogf_le_ocf_add_dev_to_rl},
@@ -79,13 +110,12 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_SET_PRIVACY_MODE, bt_hci_cmd_ogf_le_ocf_set_privacy_mode},
 #endif
 	{BT_HCI_OP_LE_READ_MAX_DATALEN, bt_hci_cmd_ogf_le_ocf_read_max_datalen},
-#ifdef CONFIG_BLE_LL_SET_PHY_ENABLE
+#if defined(CONFIG_BLE_LL_SET_PHY_ENABLE) && (BT_LL_FEATURE_BT50_LE_2M_PHY || BT_LL_FEATURE_BT50_LE_CODED_PHY)
 	{BT_HCI_OP_LE_READ_PHY, bt_hci_cmd_ogf_le_ocf_read_phy},
 	{BT_HCI_OP_LE_SET_DEFAULT_PHY, bt_hci_cmd_ogf_le_ocf_set_default_phy},
 	{BT_HCI_OP_LE_SET_PHY, bt_hci_cmd_ogf_le_ocf_set_phy},
 #endif
-
-#ifdef CONFIG_BLE_LL_EXT_ADV_ENABLE
+#if defined(CONFIG_BLE_LL_EXT_ADV_ENABLE) && BT_LL_FEATURE_BT50_LE_EXT_ADV
 	{BT_HCI_OP_LE_READ_MAX_ADV_DATA_LEN, bt_hci_ogf_le_ocf_read_max_adv_data_len},
 	{BT_HCI_OP_LE_READ_NUM_ADV_SETS, bt_hci_ogf_le_ocf_read_max_adv_set},
 	{BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR, bt_hci_ogf_le_ocf_set_ext_adv_random_addr},
@@ -97,20 +127,22 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_CLEAR_ADV_SETS, bt_hci_cmd_ogf_le_ocf_ext_set_clear},
 	{BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, bt_hci_ogf_le_ocf_set_ext_scan_param},
 	{BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, bt_hci_ogf_le_ocf_set_ext_scan_enable},
+#if BT_LL_LE_CENTRAL
 	{BT_HCI_OP_LE_EXT_CREATE_CONN, bt_hci_cmd_ogf_le_ocf_ext_create_connection},
 	{BT_HCI_OP_LE_EXT_CREATE_CONN_V2, bt_hci_cmd_ogf_le_ocf_ext_create_connection_v2},
 	{BT_HCI_OP_LE_CREATE_CONN_CANCEL, bt_hci_cmd_ogf_le_ocf_ext_create_connection_cancel},
+#endif
 #else
+#if BT_LL_LE_CENTRAL
 	{BT_HCI_OP_LE_CREATE_CONN_CANCEL, bt_hci_cmd_ogf_le_ocf_legacy_create_connection_cancel}, /* for coding size */
 #endif
-
-#ifdef CONFIG_BLE_LL_PA_ADV_ENABLE
+#endif
+#if defined(CONFIG_BLE_LL_PA_ADV_ENABLE) && BT_LL_FEATURE_BT50_LE_PA_ADV
 	{BT_HCI_OP_LE_SET_PERIODIC_ADV_PARAM_V1, bt_hci_cmd_ogf_le_ocf_set_periodic_adv_param_v1},
 	{BT_HCI_OP_LE_SET_PERIODIC_ADV_DATA, bt_hci_cmd_ogf_le_ocf_set_periodic_adv_data},
 	{BT_HCI_OP_LE_SET_PERIODIC_ADV_ENABLE, bt_hci_cmd_ogf_le_ocf_set_periodic_adv_enable},
 #endif
-
-#ifdef CONFIG_BLE_LL_PA_SYNC_ENABLE
+#if defined(CONFIG_BLE_LL_PA_SYNC_ENABLE) && BT_LL_FEATURE_BT50_LE_PA_SYNC
 	{BT_HCI_OP_LE_PERIODIC_ADV_CREATE_SYNC, bt_hci_cmd_ogf_le_ocf_pa_create_sync},
 	{BT_HCI_OP_LE_PERIODIC_ADV_CREATE_SYNC_CANCEL, bt_hci_cmd_ogf_le_ocf_pa_create_sync_cancel},
 	{BT_HCI_OP_LE_PERIODIC_ADV_TERMINATE_SYNC, bt_hci_cmd_ogf_le_ocf_pa_terminate_sync},
@@ -164,13 +196,13 @@ void bt_hci_get_supported_hci_command(uint8_t *pcommands)
 	pcommands[27] |= (COMMAND_27_HCI_LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST |
 					  COMMAND_27_HCI_LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST);
 	pcommands[27] |= (COMMAND_27_HCI_LE_ENCRYPT | COMMAND_27_HCI_LE_RAND);
-// #ifdef BT_LL_LE_CENTRAL
+// #if BT_LL_LE_CENTRAL
 	pcommands[27] |= COMMAND_27_HCI_LE_SET_HOST_CHANNEL_CLASSIFICATION;
 // #endif
 	pcommands[27] |= (COMMAND_27_HCI_LE_CONNECTION_UPDATE |
 					  COMMAND_27_HCI_LE_READ_CHANNEL_MAP |
 					  COMMAND_27_HCI_LE_READ_REMOTE_FEATURES_PAGE_0);
-// #ifdef BT_LL_LE_CENTRAL
+// #if BT_LL_LE_CENTRAL
 	pcommands[28] |= COMMAND_28_HCI_LE_ENABLE_ENCRYPTION;
 // #endif
 	pcommands[28] |= (COMMAND_28_HCI_LE_LONG_TERM_KEY_REQUEST_REPLY |
@@ -233,7 +265,7 @@ void bt_hci_get_supported_hci_command(uint8_t *pcommands)
 void ble_ll_init_feature(uint64_t *pfeature)
 {
 	*pfeature |= BT_LL_LE_FEATURE_ENCRYPTION;
-#if (BT_LL_FEATURE_CONN_PARAM_REQ == 1)
+#if BT_LL_FEATURE_CONN_PARAM_REQ
 	*pfeature |= BT_LL_LE_FEATURE_CONN_PARA_REQ_PROCEDURE;
 #endif
 	*pfeature |= BT_LL_LE_FEATURE_EXT_REJECT_IND;
@@ -263,6 +295,7 @@ void ble_ll_init_feature(uint64_t *pfeature)
 
 #if (defined(CONFIG_BLE_LL_PA_ADV_ENABLE) || defined(CONFIG_BLE_LL_PA_SYNC_ENABLE))
 	*pfeature |= BT_LL_LE_FEATURE_LE_PERIODIC_ADV;
+	*pfeature |= BT_LL_LE_FEATURE_LE_PA_ADI_SUPPORT;
 #endif
 
 	*pfeature |= BT_LL_LE_FEATURE_LE_CHANNEL_SEL_2;
@@ -271,7 +304,7 @@ void ble_ll_init_feature(uint64_t *pfeature)
 void bt_hci_cmd_handler(uint8_t *pbuf)
 {
 	struct bt_hci_cmd_pkt *phci_cmd_pkt = (struct bt_hci_cmd_pkt *)pbuf;
-	uint8_t len = sizeof(struct bt_hci_evt_cc_status);;
+	uint8_t len = sizeof(struct bt_hci_evt_cc_status);
 	uint8_t rsp[BT_HCI_EVT_RSP_MAX_LEN] = {BT_HCI_ERROR_UNKNOWN_COMMAND};
 	uint32_t i = 0;
 

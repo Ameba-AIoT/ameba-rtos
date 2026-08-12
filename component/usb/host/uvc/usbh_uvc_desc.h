@@ -232,7 +232,7 @@ typedef struct {
 	u8 bTriggerSupport;
 	u8 bTriggerUsage;
 	u8 bControlSize;
-	u8 bmaControls;
+	u8 bmaControls[];
 } __PACKED usbh_uvc_vs_input_header_desc_t;
 
 typedef struct {
@@ -244,7 +244,7 @@ typedef struct {
 	u8 bEndPointAddress;
 	u8 bTerminalLink;
 	u8 bControlSize;
-	u8 bmaControls;
+	u8 bmaControls[];
 } __PACKED usbh_uvc_vs_output_header_desc_t;
 
 typedef struct {
@@ -252,7 +252,7 @@ typedef struct {
 	u8 *p;
 	u8 type;
 	u8 id;
-	u8 source[0];
+	u8 source[];
 } usbh_uvc_entity_t;
 
 /* Exported variables --------------------------------------------------------*/

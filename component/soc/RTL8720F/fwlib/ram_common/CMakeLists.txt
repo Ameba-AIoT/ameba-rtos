@@ -57,7 +57,6 @@ ameba_list_append(private_sources
     ameba_pmc_com.c
     ameba_pmctimer.c
     ameba_pmu.c
-    ameba_pseduo_i2c.c
     ameba_psram.c
     ameba_reset.c
     ameba_rtc.c

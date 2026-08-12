@@ -10,15 +10,17 @@
 #include "ameba_soc.h"
 #include "example_spi_ext.h"
 #include "os_wrapper.h"
-#include <stdio.h>
+#define TAG "SPI_SLAVE"
+
+#ifndef LOOP_COUNT
+#define LOOP_COUNT 1
+#endif
 
 /* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
-//#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI1
 #define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI0
 #else
-//#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI
 #define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI
 #endif
 #endif
@@ -87,7 +89,7 @@ void Ssi_Print(u8 *pSrc, u8 *pDst, u32 Length)
 	u32 index;
 
 	for (index = 0; index < Length; index++) {
-		printf("[%lu]: 0x%x ---- 0x%x\n", index, pSrc[index] & dfs_mask, pDst[index]);
+		RTK_LOGI(TAG, "[%u]: 0x%x ---- 0x%x\n", index, pSrc[index] & dfs_mask, pDst[index]);
 	}
 }
 
@@ -121,13 +123,13 @@ void spi_singleblock_task(void)
 	spi_slave.spi_dev = SPI_DEV_TABLE[spi_slave.Index].SPIx;
 
 	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
-	Pinmux_Config(SPI0_MOSI, PINMUX_FUNCTION_SPIS);
-	Pinmux_Config(SPI0_MISO, PINMUX_FUNCTION_SPIS);
-	Pinmux_Config(SPI0_SCLK, PINMUX_FUNCTION_SPIS);
-	Pinmux_Config(SPI0_CS, PINMUX_FUNCTION_SPIS);
+	Pinmux_Config(SPI_MOSI, PINMUX_FUNCTION_SPIS);
+	Pinmux_Config(SPI_MISO, PINMUX_FUNCTION_SPIS);
+	Pinmux_Config(SPI_SCLK, PINMUX_FUNCTION_SPIS);
+	Pinmux_Config(SPI_CS, PINMUX_FUNCTION_SPIS);
 
-	PAD_PullCtrl(SPI0_CS, GPIO_PuPd_UP);
-	PAD_PullCtrl(SPI0_SCLK, GPIO_PuPd_DOWN); // pull down for idle level is low
+	PAD_PullCtrl(SPI_CS, GPIO_PuPd_UP);
+	PAD_PullCtrl(SPI_SCLK, GPIO_PuPd_DOWN); // pull down for idle level is low
 
 	SSI_SetRole(spi_slave.spi_dev, SSI_SLAVE);
 
@@ -146,29 +148,43 @@ void spi_singleblock_task(void)
 		*((u8 *)MasterTxBuf + i) = i;
 	}
 
-	printf("------------ SPI rx %d Bytes in DMA mode ---------------\n", TEST_BUF_SIZE);
+	RTK_LOGI(TAG, "------------ SPI rx %d Bytes in DMA mode ---------------\n", TEST_BUF_SIZE);
 
-	SSI_RXGDMA_Init(spi_slave.Index, &spi_slave.SSIRxGdmaInitStruct, &spi_slave,
-					(IRQ_FUN) spi_dma_rx_irq, (u8 *) SlaveRxBuf, TEST_BUF_SIZE);
-	SSI_SetDmaEnable(spi_slave.spi_dev, ENABLE, SPI_BIT_RDMAE);
+	// Main test loop
+	for (int loop = 1; loop <= LOOP_COUNT; loop++) {
+#if LOOP_COUNT > 1
+		if (loop > 1) {
+			RTK_LOGI(TAG, "SPI rx loop %d...\n", loop);
+		}
+#endif
+		SSI_RXGDMA_Init(spi_slave.Index, &spi_slave.SSIRxGdmaInitStruct, &spi_slave,
+						(IRQ_FUN) spi_dma_rx_irq, (u8 *) SlaveRxBuf, TEST_BUF_SIZE);
+		SSI_SetDmaEnable(spi_slave.spi_dev, ENABLE, SPI_BIT_RDMAE);
 
-	i = 0;
-	while (SlaveRxDone == 0) {
-		DelayMs(100);
-		i++;
-		if (i > 150) {
-			printf("SPI Timeout\r\n");
-			break;
+		SlaveRxDone = 0;
+		i = 0;
+		while (SlaveRxDone == 0) {
+			DelayMs(100);
+			i++;
+			if (i > 150) {
+				RTK_LOGE(TAG, "SPI Timeout\n");
+				break;
+			}
+		}
+
+		//	Ssi_Print(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
+		cmp_result = Ssi_DataCompare(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
+		if (cmp_result) {
+			RTK_LOGI(TAG, "SPI RX test: OK!\n");
+		} else {
+			RTK_LOGE(TAG, "SPI RX test: fail!\n");
+			Ssi_Print(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
 		}
 	}
 
-//	Ssi_Print(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
-	cmp_result = Ssi_DataCompare(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
-	printf("\r\nSPI RX test: %s!\r\n", cmp_result ? "OK" : "fail");
-	Ssi_Print(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
 	Spi_free(&spi_slave);
 
-	printf("SPI rx Demo finished.\n");
+	RTK_LOGI(TAG, "SPI rx Demo finished.\n");
 
 	rtos_task_delete(NULL);
 
@@ -182,7 +198,7 @@ void spi_singleblock_task(void)
 int example_raw_spi_single_dma_rx_slave(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"spi_singleblock_task"), (rtos_task_t)spi_singleblock_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		printf("\r\n%s rtos_task_create(spi_singleblock_task) failed\r\n", __FUNCTION__);
+		RTK_LOGE(TAG, "%s Create spi_singleblock_task task failed\n", __FUNCTION__);
 	}
 
 	return 0;

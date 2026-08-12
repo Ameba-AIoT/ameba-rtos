@@ -24,9 +24,15 @@
 #define LDPC_TX_NS
 #define TPU_RU_LOC_EXT
 
+/* WiFi Tunnel (R-Mesh / WTN) */
+// #define CONFIG_WIFI_TUNNEL
+// #if defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_INTF_IPC)
+// #define CONFIG_WTN_SOCKET_APP
+// #endif
+
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
-//#define CONFIG_NAN
+#define CONFIG_NAN
 //#define NAN_TEST
 //#define CONFIG_MCC_MODE
 #ifdef CONFIG_NAN
@@ -91,6 +97,7 @@
 
 #ifdef CONFIG_NAN
 #define CONFIG_NAN_PAIRING
+#define NAN_CUSTOMER_NANDOW
 #endif
 
 //#define CONFIG_SUPPORT_DYNAMIC_TXPWR
@@ -164,6 +171,8 @@
 #undef CONFIG_WIFI_TDMA_DIG /*for softap*/
 #undef CONFIG_WIFI_EDCCA
 #undef CONFIG_WIFI_ANTDIV
+#undef CONFIG_WIFI_TUNNEL
+#undef CONFIG_WTN_SOCKET_APP
 #define DISABLE_FW
 #endif
 

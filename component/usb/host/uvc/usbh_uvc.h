@@ -13,6 +13,11 @@
 #include "dlist.h"
 #include "usbh_uvc_desc.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Host_API USB Host API
@@ -501,10 +506,6 @@ typedef struct {
 /** @addtogroup Host_UVC_Functions Host UVC Functions
  * @{
  */
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 /**
  * @brief  Initializes the UVC host class driver.
  *         Registers the application callback handler and global context, and
@@ -611,6 +612,7 @@ void usbh_uvc_clear_stats(u8 stream_index);
 void usbh_uvc_print_stats(u8 stream_index);
 #endif
 #endif
+
 #ifdef __cplusplus
 }
 #endif

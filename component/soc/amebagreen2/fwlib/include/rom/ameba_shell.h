@@ -89,6 +89,15 @@ _LONG_CALL_ u8 shell_get_argc(const   u8  *string);
 void shell_init_ram(void);
 void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum);
 
+/**
+ * @brief  Inject a command string into the shell task as if typed on the UART console.
+ * @param  cmd: NUL-terminated command string.
+ * @param  len: length of cmd, not including the NUL terminator.
+ * @note   Callers outside the shell subsystem must use this instead of
+ *         accessing shell_ctl directly.
+ */
+void shell_cmd_inject(const char *cmd, u32 len);
+
 //#define RtlConsolTaskRom		shell_task_rom
 
 //extern u32 shell_interrupt_on;

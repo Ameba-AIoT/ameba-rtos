@@ -1,15 +1,40 @@
 #include <ameba.h>
 #include <os_wrapper.h>
 #include <sdn_intf.h>
+#include <sdn_conf.h>
 #include <sdn_user_conf_intf.h>
+#include <sdn_user_conf_bt.h>
 #if defined(CONFIG_BT_COEXIST)
 #include "sdn_coex_intf.h"
 #endif
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+#include "wifi_api.h"
+#include "wifi_intf_drv_to_app_internal.h"
+#endif
 
-struct sdn_client_ipc_tx {
-	struct list_head free_list;
+#define LEN_ALIGN4(size)    (((size) + 3) & (~3))
+#define LEN_ALIGN32(size)   (((size) + 31) & (~31))
+
+#ifdef CONFIG_BT_SDN
+#if defined(CONFIG_BLE_LL_EXT_ADV_ENABLE) && BT_LL_FEATURE_BT50_LE_EXT_ADV
+#define SDN_INTF_MAX_BT_CMD_LEN        255    /* ext adv data */
+#define SDN_INTF_MAX_BT_EVT_LEN        257
+#else
+#define SDN_INTF_MAX_BT_CMD_LEN        42     /* cmd 0x2027 has the max length: 3 + 39 */
+#define SDN_INTF_MAX_BT_EVT_LEN        70     /* cmd complete event for 0x1002 has the max length: 2 + 3 + 65 */
+#endif
+#endif
+
+struct sdn_client_tx {
+#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
+	uint8_t *wapn_pool;
+	struct list_head wpan_list;
+#endif
+#ifdef CONFIG_BT_SDN
+	uint8_t *bt_pool;
+	struct list_head bt_event_list;
+#endif
 	struct list_head busy_list;
-	uint8_t *msg_pool;
 #if defined(CONFIG_BT_COEXIST)
 	uint8_t *coex_pool;
 	struct list_head coex_free_list;
@@ -18,28 +43,27 @@ struct sdn_client_ipc_tx {
 	void *done_sema;
 };
 
-struct sdn_client_ipc_rx {
-	struct list_head free_list;
+struct sdn_client_rx {
+#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
+	uint8_t *wapn_pool;
+	struct list_head wpan_list;
+#endif
+#ifdef CONFIG_BT_SDN
+	uint8_t *bt_pool;
+	struct list_head bt_cmd_list;
+#endif
 	struct list_head busy_list;
-	uint8_t *msg_pool;
 	struct sdn_intf_task task;
 	struct sdn_data_buf ctrl;
-	uint8_t ctrl_msg[7];
-#ifdef CONFIG_BT_SDN
-	uint8_t num_bt_hci_cmd;
-	uint8_t num_bt_acl_data;
-#endif
-#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
-	uint8_t num_154;
-#endif
+	uint8_t ctrl_msg[6];
 };
 
-struct sdn_client_ipc {
-	struct sdn_client_ipc_tx tx;
-	struct sdn_client_ipc_rx rx;
+struct sdn_client {
+	struct sdn_client_tx tx;
+	struct sdn_client_rx rx;
 	bool is_mp;
 };
-static struct sdn_client_ipc g_sdn_client_intf = {0};
+static struct sdn_client g_sdn_client_intf = {0};
 extern struct sdn_t g_sdn;
 
 #define SDN_CLIENT_RX_TASK_PRI          5
@@ -59,7 +83,6 @@ extern struct sdn_t g_sdn;
 #define TAG_SDN_COEX    "SDN_COEX"
 #endif
 
-extern void bt_hci_client_recv_data(uint8_t type, uint8_t *pdata);
 extern int rtk_wpan_vhdlc_receive(uint8_t *buf, uint32_t length);
 extern void sdn_coex_b2w_scbd_bt_on(uint8_t bt_on, uint8_t direct_send);
 extern void sdn_loguart_init(void);
@@ -68,6 +91,8 @@ extern void sdn_host_init(void);
 #endif
 extern int rtk_ot_start(void);
 extern int rtk_ot_loop_exit(void);
+extern int rtk_zb_start(void);
+extern int rtk_zb_loop_exit(void);
 extern bool ble_ll_init(void);
 extern void ble_ll_deinit(void);
 extern void sdn_pwr_leave_suspend(void);
@@ -84,6 +109,30 @@ bool sdn_uart_is_on(void);
 void sdn_uart_tx(struct sdn_data_buf *pdata_buf);
 #endif
 
+extern void bt_hci_rx_acl_data(uint8_t *pbuf);
+extern void bt_hci_cmd_handler(uint8_t *pbuf);
+extern void ble_conn_free_rx(void *rx);
+
+bool _rtk_bt_pre_enable(void)
+{
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+	if (!(wifi_is_running(STA_WLAN_INDEX) || wifi_is_running(SOFTAP_WLAN_INDEX))) {
+		return false;
+	}
+
+	wifi_ps_en_by_bt_state(DISABLE);
+#endif
+
+	return true;
+}
+
+void _rtk_bt_post_enable(void)
+{
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+	wifi_ps_en_by_bt_state(ENABLE);
+#endif
+}
+
 static void _add_tail_lock(struct sdn_data_buf *pdata_buf, struct list_head *head)
 {
 	rtos_critical_enter(RTOS_CRITICAL_BT);
@@ -94,10 +143,16 @@ static void _add_tail_lock(struct sdn_data_buf *pdata_buf, struct list_head *hea
 uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *data, uint16_t len)
 {
 	struct sdn_data_buf *pdata_buf = NULL;
-	bool balloc_avaliable = false;
 
-	// SDN_LOGA("%s type %d\r\n", __func__, type);
+	// SDN_LOGA("%s protocol %d type %d\r\n", __func__, protocol, type);
 	// SDN_DUMPA("", data, len);
+
+#ifdef CONFIG_BT_SDN
+	if (protocol == SDN_INTF_BT && type == BT_HCI_H4_ACL) {
+		bt_hci_rx_acl_data(data);
+		return SDN_INTF_ERR_OK;
+	}
+#endif
 
 	/* This function is called in interrupt contex in IPC mode, critical is unnecessary. */
 #ifdef CONFIG_SDN_HOST
@@ -107,43 +162,32 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *data, uint16_t len)
 	switch (protocol) {
 #ifdef CONFIG_BT_SDN
 	case SDN_INTF_BT:
-		if (type == BT_HCI_H4_CMD) {
-			if (g_sdn_client_intf.rx.num_bt_hci_cmd) {
-				g_sdn_client_intf.rx.num_bt_hci_cmd--;
-				balloc_avaliable = true;
-			}
-		} else {
-			if (g_sdn_client_intf.rx.num_bt_acl_data) {
-				g_sdn_client_intf.rx.num_bt_acl_data--;
-				balloc_avaliable = true;
-			}
+		if (!list_empty(&g_sdn_client_intf.rx.bt_cmd_list)) {
+			pdata_buf = (struct sdn_data_buf *)g_sdn_client_intf.rx.bt_cmd_list.next;
+			list_del(&pdata_buf->list);
 		}
 		break;
 #endif
 
 #if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
 	case SDN_INTF_154:
-		if (g_sdn_client_intf.rx.num_154) {
-			g_sdn_client_intf.rx.num_154--;
-			balloc_avaliable = true;
+		if (!list_empty(&g_sdn_client_intf.rx.wpan_list)) {
+			pdata_buf = (struct sdn_data_buf *)g_sdn_client_intf.rx.wpan_list.next;
+			list_del(&pdata_buf->list);
 		}
 		break;
 #endif
 
+#ifndef CONFIG_SDN_HOST
 	case SDN_INTF_CTRL:
 		pdata_buf = &g_sdn_client_intf.rx.ctrl;
 		break;
+#endif
 
 	default:
 		break;
 	}
 
-	if (balloc_avaliable) {
-		if (!list_empty(&g_sdn_client_intf.rx.free_list)) {
-			pdata_buf = (struct sdn_data_buf *)g_sdn_client_intf.rx.free_list.next;
-			list_del_init(&pdata_buf->list);
-		}
-	}
 #ifdef CONFIG_SDN_HOST
 	rtos_critical_exit(RTOS_CRITICAL_BT);
 #endif
@@ -152,10 +196,10 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *data, uint16_t len)
 		return SDN_INTF_ERR_TX_DATA_FAIL;
 	}
 
-	pdata_buf->pmsg->protocol = protocol;
-	pdata_buf->pmsg->type = type;
-	memcpy(pdata_buf->pmsg->data, data, len);
-	pdata_buf->len = len + sizeof(struct sdn_intf_data_msg);
+	pdata_buf->protocol = protocol;
+	pdata_buf->type = type;
+	memcpy(pdata_buf->data, data, len);
+	pdata_buf->len = len;
 #ifdef CONFIG_SDN_HOST
 	_add_tail_lock(pdata_buf, &g_sdn_client_intf.rx.busy_list);
 #else
@@ -165,6 +209,27 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *data, uint16_t len)
 	return SDN_INTF_ERR_OK;
 }
 
+void sdn_client_tx_buf_complete(struct sdn_data_buf *pdata_buf)
+{
+#ifdef CONFIG_BT_SDN
+	if (pdata_buf->protocol == SDN_INTF_BT) {
+		if (pdata_buf->type == BT_HCI_H4_ACL) {
+			ble_conn_free_rx(pdata_buf);
+		} else {
+			_add_tail_lock(pdata_buf, &g_sdn_client_intf.tx.bt_event_list);
+		}
+	}
+#endif
+#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
+	if (pdata_buf->protocol == SDN_INTF_154) {
+		_add_tail_lock(pdata_buf, &g_sdn_client_intf.tx.wpan_list);
+	}
+#endif
+}
+
+#ifndef CONFIG_SDN_HOST
+static void sdn_client_intf_close(void);
+#endif
 static void _tx_task_hdl(void *pcontext)
 {
 	(void)pcontext;
@@ -174,57 +239,68 @@ static void _tx_task_hdl(void *pcontext)
 
 	while (true) {
 		rtos_sema_take(g_sdn_client_intf.tx.task.sema, MUTEX_WAIT_TIMEOUT);
-		if (g_sdn_client_intf.tx.task.stop) {
-#if defined(CONFIG_BT_COEXIST)
-			// bt off notify wl
-			sdn_coex_b2w_scbd_bt_on(0, 1);
-#endif
-			break;
-		}
-
 		while (true) {
-			pdata_buf = NULL;
-			rtos_critical_enter(RTOS_CRITICAL_BT);
-			if (!list_empty(&g_sdn_client_intf.tx.busy_list)) {
-				pdata_buf = (struct sdn_data_buf *)g_sdn_client_intf.tx.busy_list.next;
-				list_del_init(&pdata_buf->list);
+			if (g_sdn_client_intf.tx.task.stop) {
+#ifdef CONFIG_BT_COEXIST
+				// bt off notify wl
+				sdn_coex_b2w_scbd_bt_on(0, 1);
+#endif
+				goto exit;
 			}
-			rtos_critical_exit(RTOS_CRITICAL_BT);
 
-			if (!pdata_buf) {
+			rtos_critical_enter(RTOS_CRITICAL_BT);
+			if (list_empty(&g_sdn_client_intf.tx.busy_list)) {
+				rtos_critical_exit(RTOS_CRITICAL_BT);
 				break;
 			}
-#if defined(CONFIG_BT_COEXIST)
-			if (pdata_buf->pmsg->protocol == SDN_INTF_COEX) {
-				sdn_coex_msg_parse(pdata_buf->pmsg);
+			pdata_buf = (struct sdn_data_buf *)g_sdn_client_intf.tx.busy_list.next;
+			list_del(&pdata_buf->list);
+			rtos_critical_exit(RTOS_CRITICAL_BT);
+
+#ifdef CONFIG_BT_COEXIST
+			if (pdata_buf->protocol == SDN_INTF_COEX) {
+				sdn_coex_msg_parse(pdata_buf);
 				_add_tail_lock(pdata_buf, &g_sdn_client_intf.tx.coex_free_list);
 			} else
 #endif
-			{
-				// SDN_DUMPA("sdn_tx:\r\n", pdata_buf->pmsg, pdata_buf->len);
-#if defined(CONFIG_MP_INCLUDED)
-				if (sdn_uart_is_on()) {
-					sdn_uart_tx(pdata_buf);
+#ifndef CONFIG_SDN_HOST
+				if (pdata_buf->protocol == SDN_INTF_CTRL) {
+					if (pdata_buf->type == SDN_INTF_CTRL_INTF_CLOSE) { /* pdata_buf may be changed after sdn_c2h(NULL). So pdata_buf is only valid before sdn_c2h(NULL) */
+						g_sdn_client_intf.tx.task.stop = 1;
+					}
+					sdn_c2h(NULL); /* indicate host that msg has been processed. */
 				} else
 #endif
 				{
-					sdn_c2h(pdata_buf);
+					// SDN_DUMPA("sdn_tx:\r\n", pdata_buf->data, pdata_buf->len);
+#ifdef CONFIG_MP_INCLUDED
+					if (sdn_uart_is_on()) {
+						sdn_uart_tx(pdata_buf);
+					} else
+#endif
+					{
+						sdn_c2h(pdata_buf);
+					}
+#ifdef CONFIG_SDN_HOST
+					sdn_client_tx_buf_complete(pdata_buf); /* return memory directly in singlecore. */
+#endif
 				}
-				_add_tail_lock(pdata_buf, &g_sdn_client_intf.tx.free_list);
-			}
 		}
-
 	}
 
+exit:
 	g_sdn_client_intf.tx.task.running = 0;
 	rtos_sema_delete(g_sdn_client_intf.tx.task.sema);
+
+#ifndef CONFIG_SDN_HOST
+	sdn_client_intf_close();
+#endif
 	rtos_task_delete(NULL);
 }
 
 static void sdn_client_tx_deinit(void)
 {
-	//delete task
-	if (g_sdn_client_intf.tx.task.running) {
+	if (g_sdn_client_intf.tx.task.running) { /* in IPC mode, tx task kills itself. */
 		g_sdn_client_intf.tx.task.stop = 1;
 		rtos_sema_give(g_sdn_client_intf.tx.task.sema);
 
@@ -238,56 +314,80 @@ static void sdn_client_tx_deinit(void)
 		g_sdn_client_intf.tx.coex_pool = NULL;
 	}
 #endif
-	if (g_sdn_client_intf.tx.msg_pool) {
-		rtos_mem_free(g_sdn_client_intf.tx.msg_pool);
-		g_sdn_client_intf.tx.msg_pool = NULL;
+#ifdef CONFIG_BT_SDN
+	if (g_sdn_client_intf.tx.bt_pool) {
+		rtos_mem_free(g_sdn_client_intf.tx.bt_pool);
+		g_sdn_client_intf.tx.bt_pool = NULL;
 	}
+#endif
+#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
+	if (g_sdn_client_intf.tx.wapn_pool) {
+		rtos_mem_free(g_sdn_client_intf.tx.wapn_pool);
+		g_sdn_client_intf.tx.wapn_pool = NULL;
+	}
+#endif
+}
+
+static void *_alloc_data_list(struct list_head *head, uint16_t size, uint8_t num, uint8_t msg_type, bool align32)
+{
+	int i;
+	uint8_t *pool, *data;
+	uint16_t len = LEN_ALIGN4(sizeof(struct sdn_data_buf) + size);
+	struct sdn_data_buf *pdata_buf = NULL;
+
+#ifdef CONFIG_SDN_HOST
+	(void)align32; /* no IPC, no need alignment */
+#else
+	if (align32) {
+		len = LEN_ALIGN32(len);
+	}
+#endif
+
+	INIT_LIST_HEAD(head);
+
+	pool = rtos_mem_zmalloc(len * num);
+	if (pool == NULL) {
+		return NULL;
+	}
+
+	data = pool;
+	for (i = 0; i < num; i++) {
+		pdata_buf = (struct sdn_data_buf *)data;
+		pdata_buf->data = data + sizeof(struct sdn_data_buf);
+		pdata_buf->msg_type = msg_type;
+		rtos_critical_enter(RTOS_CRITICAL_BT);
+		list_add_tail(&pdata_buf->list, head);
+		rtos_critical_exit(RTOS_CRITICAL_BT);
+		data += len;
+	}
+
+	return pool;
 }
 
 static uint32_t sdn_client_tx_init(void)
 {
-	uint8_t tx_num = SDN_CONF_CLIENT_TX_NUM;
-	uint8_t i = 0;
-	struct sdn_data_buf *pdata_buf = NULL;
-	uint8_t *pool, *data;
-	uint16_t size = sizeof(struct sdn_intf_data_msg) + SDN_INTF_MAX_DATA_LEN;
-
-#if !defined(CONFIG_SDN_HOST) || !defined(CONFIG_SDN_DEV)
-	size = (size + 31) & (~31); /* align with 32 bytes for IPC send */
-#endif
-
 	g_sdn_client_intf.tx.task.stop = 0;
-	//msg resource
 	INIT_LIST_HEAD(&g_sdn_client_intf.tx.busy_list);
-	INIT_LIST_HEAD(&g_sdn_client_intf.tx.free_list);
 
-	pool = rtos_mem_malloc(tx_num * (sizeof(struct sdn_data_buf) + size));
-	if (pool == NULL) {
+#ifdef CONFIG_BT_SDN
+	g_sdn_client_intf.tx.bt_pool = _alloc_data_list(&g_sdn_client_intf.tx.bt_event_list, SDN_INTF_MAX_BT_EVT_LEN,
+								   SDN_CONF_CLIENT_BT_EVT_TX_NUM, SDN_MSG(SDN_INTF_BT, BT_HCI_H4_EVT), true);
+	if (!g_sdn_client_intf.tx.bt_pool) {
 		goto fail;
 	}
-
-	data = pool + tx_num * size;
-	for (i = 0; i < tx_num; i++) {
-		pdata_buf = (struct sdn_data_buf *)(data + i * sizeof(struct sdn_data_buf));
-		pdata_buf->pmsg = (struct sdn_intf_data_msg *)(pool + i * size);
-		rtos_critical_enter(RTOS_CRITICAL_BT);
-		list_add_tail(&pdata_buf->list, &g_sdn_client_intf.tx.free_list);
-		rtos_critical_exit(RTOS_CRITICAL_BT);
+#endif
+#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
+	g_sdn_client_intf.tx.wapn_pool = _alloc_data_list(&g_sdn_client_intf.tx.wpan_list, SDN_INTF_MAX_154_LEN,
+									 SDN_CONF_CLIENT_154_TX_NUM, SDN_MSG(SDN_INTF_154, 0), true);
+	if (!g_sdn_client_intf.tx.wapn_pool) {
+		goto fail;
 	}
-	g_sdn_client_intf.tx.msg_pool = pool;
-
+#endif
 #if defined(CONFIG_BT_COEXIST)
-	INIT_LIST_HEAD(&g_sdn_client_intf.tx.coex_free_list);
-	if (g_sdn_client_intf.tx.coex_pool == NULL) {
-		g_sdn_client_intf.tx.coex_pool = rtos_mem_malloc(COEX_SDN_MSG_NUM * (sizeof(struct sdn_data_buf) + COEX_SDN_BUF_SIZE));
-		if (g_sdn_client_intf.tx.coex_pool == NULL) {
-			goto fail;
-		}
-	}
-	for (i = 0; i < COEX_SDN_MSG_NUM; i++) {
-		pdata_buf = (struct sdn_data_buf *)(g_sdn_client_intf.tx.coex_pool + i * sizeof(struct sdn_data_buf));
-		pdata_buf->pmsg = (struct sdn_intf_data_msg *)(g_sdn_client_intf.tx.coex_pool + COEX_SDN_MSG_NUM * sizeof(struct sdn_data_buf) + i * COEX_SDN_BUF_SIZE);
-		list_add_tail(&pdata_buf->list, &g_sdn_client_intf.tx.coex_free_list);
+	g_sdn_client_intf.tx.coex_pool = _alloc_data_list(&g_sdn_client_intf.tx.coex_free_list, COEX_SDN_BUF_SIZE,
+									 COEX_SDN_MSG_NUM, SDN_MSG(SDN_INTF_COEX, 0), false);
+	if (!g_sdn_client_intf.tx.coex_pool) {
+		goto fail;
 	}
 #endif
 
@@ -320,11 +420,16 @@ bool sdn_in_mp(void)
 	return g_sdn_client_intf.is_mp;
 }
 
-#ifndef CONFIG_SDN_HOST
-void sdn_client_intf_close(void);
-static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
+void sdn_client_intf_send(void *pdata_buf)
 {
-	switch (pmsg->type) {
+	_add_tail_lock(pdata_buf, &g_sdn_client_intf.tx.busy_list);
+	rtos_sema_give(g_sdn_client_intf.tx.task.sema);
+}
+
+#ifndef CONFIG_SDN_HOST
+static void _sdn_ctrl_rx(struct sdn_data_buf *pdata_buf)
+{
+	switch (pdata_buf->type) {
 	case SDN_INTF_CTRL_INTF_OPEN:
 		sdn_enable();
 		break;
@@ -334,20 +439,20 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 		break;
 
 	case SDN_INTF_CTRL_PROTO_ADD:
-		sdn_add_protocol(pmsg->data[0]);
+		sdn_add_protocol(pdata_buf->data[0]);
 		break;
 
 	case SDN_INTF_CTRL_PROTO_REMOVE:
-		sdn_remove_protocol(pmsg->data[0]);
+		sdn_remove_protocol(pdata_buf->data[0]);
 		break;
 
 #ifdef CONFIG_MP_INCLUDED
 	case SDN_INTF_CTRL_MP:
-		sdn_set_mp(pmsg->data[0]);
+		sdn_set_mp(pdata_buf->data[0]);
 		break;
 
 	case SDN_INTF_CTRL_BRIDGE_OPEN:
-		sdn_bridge_open(pmsg->data[0]);
+		sdn_bridge_open(pdata_buf->data[0]);
 		break;
 
 	case SDN_INTF_CTRL_BRIDGE_CLOSE:
@@ -356,7 +461,7 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 #endif
 
 	case SDN_INTF_CTRL_FIX_ADDR:
-		sdn_fix_bt_addr(pmsg->data);
+		sdn_fix_bt_addr(pdata_buf->data);
 		break;
 
 	default:
@@ -364,10 +469,7 @@ static void _sdn_ctrl_rx(struct sdn_intf_data_msg *pmsg)
 		break;
 	}
 
-	sdn_c2h(NULL); /* indicate host that msg has been processed. */
-	if (pmsg->type == SDN_INTF_CTRL_INTF_CLOSE) {
-		sdn_client_intf_close();
-	}
+	sdn_client_intf_send(pdata_buf); /* indicate host that msg has been processed. */
 }
 #endif
 
@@ -393,54 +495,36 @@ static void _rx_task_hdl(void *pcontext)
 			}
 
 			pdata_buf = (struct sdn_data_buf *)g_sdn_client_intf.rx.busy_list.next;
-			list_del_init(&pdata_buf->list);
+			list_del(&pdata_buf->list);
 			rtos_critical_exit(RTOS_CRITICAL_BT);
-			switch (pdata_buf->pmsg->protocol) {
-			case SDN_INTF_BT:
+			switch (pdata_buf->protocol) {
 #ifdef CONFIG_BT_SDN
-				bt_hci_client_recv_data(pdata_buf->pmsg->type, pdata_buf->pmsg->data);
-#endif
+			case SDN_INTF_BT:
+				bt_hci_cmd_handler(pdata_buf->data);
+				rtos_critical_enter(RTOS_CRITICAL_BT);
+				list_add_tail(&pdata_buf->list, &g_sdn_client_intf.rx.bt_cmd_list);
+				rtos_critical_exit(RTOS_CRITICAL_BT);
 				break;
+#endif
 
-			case SDN_INTF_154:
 #if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
-				rtk_wpan_vhdlc_receive(pdata_buf->pmsg->data, pdata_buf->len - sizeof(struct sdn_intf_data_msg));
-#endif
+			case SDN_INTF_154:
+				rtk_wpan_vhdlc_receive(pdata_buf->data, pdata_buf->len);
+				rtos_critical_enter(RTOS_CRITICAL_BT);
+				list_add_tail(&pdata_buf->list, &g_sdn_client_intf.rx.wpan_list);
+				rtos_critical_exit(RTOS_CRITICAL_BT);
 				break;
+#endif
 
 #ifndef CONFIG_SDN_HOST
 			case SDN_INTF_CTRL:
-				_sdn_ctrl_rx(pdata_buf->pmsg);
+				_sdn_ctrl_rx(pdata_buf);
 				continue;
-#endif
 				break;
+#endif
 			default:
 				break;
 			}
-
-			rtos_critical_enter(RTOS_CRITICAL_BT);
-			list_add_tail(&pdata_buf->list, &g_sdn_client_intf.rx.free_list);
-			switch (pdata_buf->pmsg->protocol) {
-#ifdef CONFIG_BT_SDN
-			case SDN_INTF_BT:
-				if (pdata_buf->pmsg->type == BT_HCI_H4_CMD) {
-					g_sdn_client_intf.rx.num_bt_hci_cmd ++;
-				} else {
-					g_sdn_client_intf.rx.num_bt_acl_data ++;
-				}
-				break;
-#endif
-
-#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
-			case SDN_INTF_154:
-				g_sdn_client_intf.rx.num_154 ++;
-				break;
-#endif
-
-			default:
-				break;
-			}
-			rtos_critical_exit(RTOS_CRITICAL_BT);
 		}
 	}
 
@@ -451,17 +535,17 @@ static void _rx_task_hdl(void *pcontext)
 
 static void sdn_client_rx_deinit(void)
 {
-	if (g_sdn_client_intf.rx.msg_pool) {
-		rtos_mem_free(g_sdn_client_intf.rx.msg_pool);
-		g_sdn_client_intf.rx.msg_pool = NULL;
-	}
-
 #ifdef CONFIG_BT_SDN
-	g_sdn_client_intf.rx.num_bt_hci_cmd = 0;
-	g_sdn_client_intf.rx.num_bt_acl_data = 0;
+	if (g_sdn_client_intf.rx.bt_pool) {
+		rtos_mem_free(g_sdn_client_intf.rx.bt_pool);
+		g_sdn_client_intf.rx.bt_pool = NULL;
+	}
 #endif
 #if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
-	g_sdn_client_intf.rx.num_154 = 0;
+	if (g_sdn_client_intf.rx.wpan_pool) {
+		rtos_mem_free(g_sdn_client_intf.rx.wpan_pool);
+		g_sdn_client_intf.rx.wpan_pool = NULL;
+	}
 #endif
 
 #ifdef CONFIG_SDN_HOST
@@ -483,7 +567,7 @@ static uint32_t sdn_client_rx_task_init(void)
 
 	INIT_LIST_HEAD(&g_sdn_client_intf.rx.busy_list);
 
-	g_sdn_client_intf.rx.ctrl.pmsg = (struct sdn_intf_data_msg *)g_sdn_client_intf.rx.ctrl_msg;
+	g_sdn_client_intf.rx.ctrl.data = g_sdn_client_intf.rx.ctrl_msg;
 
 	//RX task
 	if (RTK_SUCCESS != rtos_sema_create(&g_sdn_client_intf.rx.task.sema, 0, 1)) {
@@ -500,16 +584,6 @@ static uint32_t sdn_client_rx_task_init(void)
 
 static uint32_t sdn_client_rx_init(void)
 {
-	uint32_t rx_num = 0;
-	uint32_t i = 0;
-	struct sdn_data_buf *pdata_buf = NULL;
-	uint8_t *pool, *data;
-	uint16_t size = sizeof(struct sdn_intf_data_msg) + SDN_INTF_MAX_DATA_LEN;
-
-#if !defined(CONFIG_SDN_HOST) || !defined(CONFIG_SDN_DEV)
-	size = (size + 31) & (~31); /* align with 32 bytes for IPC send */
-#endif
-
 	g_sdn_client_intf.rx.task.stop = 0;
 
 #ifdef CONFIG_SDN_HOST
@@ -518,33 +592,20 @@ static uint32_t sdn_client_rx_init(void)
 	}
 #endif
 
-	INIT_LIST_HEAD(&g_sdn_client_intf.rx.free_list);
-
 #ifdef CONFIG_BT_SDN
-	g_sdn_client_intf.rx.num_bt_hci_cmd = SDN_CONF_CLIENT_BT_RX_CMD_NUM;
-	g_sdn_client_intf.rx.num_bt_acl_data = SDN_CONF_CLIENT_BT_RX_ACL_NUM;
-	rx_num += g_sdn_client_intf.rx.num_bt_hci_cmd;
-	rx_num += g_sdn_client_intf.rx.num_bt_acl_data;
-#endif
-#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
-	g_sdn_client_intf.rx.num_154 = SDN_CONF_CLIENT_154_RX_NUM;
-	rx_num += g_sdn_client_intf.rx.num_154;
-#endif
-
-	pool = rtos_mem_malloc(rx_num * (sizeof(struct sdn_data_buf) + size));
-	if (pool == NULL) {
+	g_sdn_client_intf.rx.bt_pool = _alloc_data_list(&g_sdn_client_intf.rx.bt_cmd_list, SDN_INTF_MAX_BT_CMD_LEN,
+								   SDN_CONF_CLIENT_BT_CMD_RX_NUM, SDN_MSG(SDN_INTF_BT, BT_HCI_H4_CMD), true);
+	if (!g_sdn_client_intf.rx.bt_pool) {
 		goto fail;
 	}
-
-	data = pool + rx_num * size;
-	for (i = 0; i < rx_num; i++) {
-		pdata_buf = (struct sdn_data_buf *)(data + i * sizeof(struct sdn_data_buf));
-		pdata_buf->pmsg = (struct sdn_intf_data_msg *)(pool + i * size);
-		rtos_critical_enter(RTOS_CRITICAL_BT);
-		list_add_tail(&pdata_buf->list, &g_sdn_client_intf.rx.free_list);
-		rtos_critical_exit(RTOS_CRITICAL_BT);
+#endif
+#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
+	g_sdn_client_intf.rx.wpan_pool = _alloc_data_list(&g_sdn_client_intf.rx.wpan_list, SDN_INTF_MAX_154_LEN,
+									 SDN_CONF_CLIENT_154_RX_NUM, SDN_MSG(SDN_INTF_154, 0), true);
+	if (!g_sdn_client_intf.rx.wpan_pool) {
+		goto fail;
 	}
-	g_sdn_client_intf.rx.msg_pool = pool;
+#endif
 
 	return SDN_INTF_ERR_OK;
 
@@ -553,7 +614,7 @@ fail:
 	return SDN_INTF_ERR_OPEN_FAIL;
 }
 
-uint32_t sdn_client_intf_open(void)
+static uint32_t sdn_client_intf_open(void)
 {
 	if (SDN_INTF_ERR_OK != sdn_client_tx_init()) {
 		return SDN_INTF_ERR_OPEN_FAIL;
@@ -567,13 +628,14 @@ uint32_t sdn_client_intf_open(void)
 	return SDN_INTF_ERR_OK;
 }
 
-void sdn_client_intf_close(void)
+static void sdn_client_intf_close(void)
 {
 	sdn_client_tx_deinit();
 	sdn_client_rx_deinit();
 }
 
-uint8_t *sdn_client_intf_get_txbuf(uint8_t protocol, uint8_t type, uint16_t len, void **pbuf, bool discardable)
+#ifdef CONFIG_BT_SDN
+uint8_t *sdn_client_intf_get_bt_buf(uint16_t len, void **pbuf, bool discardable)
 {
 	struct sdn_data_buf *pdata_buf = NULL;
 	struct list_head *pos = NULL;
@@ -583,11 +645,15 @@ uint8_t *sdn_client_intf_get_txbuf(uint8_t protocol, uint8_t type, uint16_t len,
 		return NULL;
 	}
 
+	if (len > SDN_INTF_MAX_BT_EVT_LEN) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s ERROR %d > max(%d)\r\n", __func__, len, SDN_INTF_MAX_BT_EVT_LEN);
+		return NULL;
+	}
 	rtos_critical_enter(RTOS_CRITICAL_BT);
-	list_for_each(pos, &g_sdn_client_intf.tx.free_list) {
-		if (!discardable || ++free_num > 2) { /* reserve 2 entries for indiscardable event */
-			pdata_buf = list_first_entry(&g_sdn_client_intf.tx.free_list, struct sdn_data_buf, list);
-			list_del_init(&pdata_buf->list);
+	list_for_each(pos, &g_sdn_client_intf.tx.bt_event_list) {
+		if (!discardable || ++free_num > 1) { /* reserve 1 entries for indiscardable event */
+			pdata_buf = list_first_entry(&g_sdn_client_intf.tx.bt_event_list, struct sdn_data_buf, list);
+			list_del(&pdata_buf->list);
 			break;
 		}
 	}
@@ -595,17 +661,47 @@ uint8_t *sdn_client_intf_get_txbuf(uint8_t protocol, uint8_t type, uint16_t len,
 
 	*pbuf = pdata_buf;
 	if (pdata_buf) {
-		pdata_buf->pmsg->protocol = protocol;
-		pdata_buf->pmsg->type = type;
-		pdata_buf->len = len + sizeof(struct sdn_intf_data_msg);
-		return pdata_buf->pmsg->data;
+		pdata_buf->len = len;
+		return pdata_buf->data;
 	}
 
 	if (!discardable) {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "sdn client get tx buf NULL, protocol=%d, type=%d, len=%d\r\n", protocol, type, len);
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s, len=%d\r\n", __func__, len);
 	}
 	return NULL;
 }
+#endif
+
+#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
+uint8_t *sdn_client_intf_get_154_buf(uint8_t type, uint16_t len, void **pbuf)
+{
+	struct sdn_data_buf *pdata_buf = NULL;
+
+	if (g_sdn_client_intf.tx.task.stop) {
+		return NULL;
+	}
+
+	if (len > SDN_INTF_MAX_154_LEN) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s ERROR %d > max(%d)\r\n", __func__, len, SDN_INTF_MAX_154_LEN);
+		return NULL;
+	}
+	rtos_critical_enter(RTOS_CRITICAL_BT);
+	if (!list_empty(&g_sdn_client_intf.tx.wpan_list)) {
+		pdata_buf = list_first_entry(&g_sdn_client_intf.tx.wpan_list, struct sdn_data_buf, list);
+		list_del(&pdata_buf->list);
+	}
+	rtos_critical_exit(RTOS_CRITICAL_BT);
+
+	*pbuf = pdata_buf;
+	if (pdata_buf) {
+		pdata_buf->type = type;
+		pdata_buf->len = len;
+		return pdata_buf->data;
+	}
+
+	return NULL;
+}
+#endif
 
 #if defined(CONFIG_BT_COEXIST)
 #define RET_REASON_BUF_SUCC	(0)
@@ -621,7 +717,7 @@ uint8_t sdn_client_intf_get_coex_buf(uint8_t type, uint16_t len, void **pbuf, ui
 		return RET_REASON_BT_STOP;
 	}
 
-	if (len > COEX_SDN_BUF_SIZE - sizeof(struct sdn_intf_data_msg)) {
+	if (len > COEX_SDN_BUF_SIZE) {
 		return RET_REASON_LEN_LONG;
 	}
 
@@ -632,18 +728,17 @@ uint8_t sdn_client_intf_get_coex_buf(uint8_t type, uint16_t len, void **pbuf, ui
 	rtos_critical_enter(RTOS_CRITICAL_BT);
 	if (!list_empty(&g_sdn_client_intf.tx.coex_free_list)) {
 		pdata_buf = list_first_entry(&g_sdn_client_intf.tx.coex_free_list, struct sdn_data_buf, list);
-		list_del_init(&pdata_buf->list);
+		list_del(&pdata_buf->list);
 	}
 	rtos_critical_exit(RTOS_CRITICAL_BT);
 
 	*pbuf = pdata_buf;
 
 	if (pdata_buf) {
-		pdata_buf->pmsg->protocol = SDN_INTF_COEX;
-		pdata_buf->pmsg->type = type;
-		pdata_buf->len = len + sizeof(struct sdn_intf_data_msg);
+		pdata_buf->type = type;
+		pdata_buf->len = len;
 
-		*pdata = pdata_buf->pmsg->data;
+		*pdata = pdata_buf->data;
 		return RET_REASON_BUF_SUCC;
 
 	}
@@ -651,47 +746,19 @@ uint8_t sdn_client_intf_get_coex_buf(uint8_t type, uint16_t len, void **pbuf, ui
 	return RET_REASON_BUF_FAIL;
 }
 #endif
-void sdn_client_intf_send(void *pdata_buf)
-{
-	_add_tail_lock(pdata_buf, &g_sdn_client_intf.tx.busy_list);
-	rtos_sema_give(g_sdn_client_intf.tx.task.sema);
-}
 
-uint8_t sdn_client_intf_get_free_rx_num(uint8_t type, uint8_t sub_type)
+uint8_t sdn_client_intf_get_free_bt_cmd_num(void)
 {
-	(void)sub_type;
-	uint8_t free_rx_num = 0;
-	switch (type) {
-#ifdef CONFIG_BT_SDN
-	case SDN_INTF_BT:
-		if (sub_type == BT_HCI_H4_CMD) {
-			free_rx_num = g_sdn_client_intf.rx.num_bt_hci_cmd;
-		} else {
-			free_rx_num = g_sdn_client_intf.rx.num_bt_acl_data;
-		}
-		break;
-#endif
+	uint8_t num = 0;
+	struct list_head *pos = NULL;
 
-#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM
-	case SDN_INTF_154:
-		free_rx_num = g_sdn_client_intf.rx.num_154;
-		break;
-#endif
-	default:
-		break;
+	rtos_critical_enter(RTOS_CRITICAL_BT);
+	list_for_each(pos, &g_sdn_client_intf.rx.bt_cmd_list) {
+		num++;
 	}
+	rtos_critical_exit(RTOS_CRITICAL_BT);
 
-	return free_rx_num;
-}
-
-uint8_t sdn_client_intf_get_rx_bt_acl_max_num(void)
-{
-	return SDN_CONF_CLIENT_BT_RX_ACL_NUM;
-}
-
-uint8_t sdn_client_intf_get_rx_bt_acl_max_len(void)
-{
-	return (SDN_INTF_MAX_DATA_LEN - 1);
+	return num;
 }
 
 void sdn_client_init(void)
@@ -710,9 +777,11 @@ bool sdn_enable(void)
 		return false;
 	}
 
+#if SDN_HAL_SUSPEND_ENABLE
 	rtos_critical_enter(RTOS_CRITICAL_BT);
 	sdn_pwr_leave_suspend();
 	rtos_critical_exit(RTOS_CRITICAL_BT);
+#endif
 
 	sdn_log_init();
 
@@ -738,11 +807,14 @@ void sdn_add_protocol(uint8_t protocol)
 		break;
 #endif
 
-#if defined(CONFIG_WPAN_THREAD_EN) && CONFIG_WPAN_THREAD_EN
 	case SDN_INTF_154:
+#if defined(CONFIG_WPAN_THREAD_EN) && CONFIG_WPAN_THREAD_EN
 		rtk_ot_start();
-		break;
 #endif
+#if defined(CONFIG_WPAN_ZIGBEE_EN) && CONFIG_WPAN_ZIGBEE_EN
+		rtk_zb_start();
+#endif
+		break;
 
 	default:
 		break;
@@ -758,11 +830,14 @@ void sdn_remove_protocol(uint8_t protocol)
 		break;
 #endif
 
-#if defined(CONFIG_WPAN_THREAD_EN) && CONFIG_WPAN_THREAD_EN
 	case SDN_INTF_154:
+#if defined(CONFIG_WPAN_THREAD_EN) && CONFIG_WPAN_THREAD_EN
 		rtk_ot_loop_exit();
-		break;
 #endif
+#if defined(CONFIG_WPAN_ZIGBEE_EN) && CONFIG_WPAN_ZIGBEE_EN
+		rtk_zb_loop_exit();
+#endif
+		break;
 
 	default:
 		break;

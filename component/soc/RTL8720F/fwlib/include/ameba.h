@@ -63,7 +63,6 @@
 #include "crypto_sm4_ccm.h"
 #include "crypto_sm4_gcm.h"
 #include "ameba_pke.h"
-#include "ameba_ledc_pro.h"
 
 #ifndef CONFIG_BUILD_ROM
 #include "ameba_ipc_api.h"

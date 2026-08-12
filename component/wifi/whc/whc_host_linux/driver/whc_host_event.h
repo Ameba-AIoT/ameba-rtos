@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #ifndef __WHC_HOST_EVENT_H__
 #define __WHC_HOST_EVENT_H__
 

@@ -12,6 +12,10 @@
 #include "usbh.h"
 #include "usb_cdc_ecm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
         Example Hierarchy:
           LWIP (Network Stack)
@@ -34,7 +38,7 @@
  * @{
  */
 
-#define USBH_CDC_ECM_STATE_TRACE_ENABLE                         0        /**< Enable or disable CDC ECM state trace logging. */
+#define USBH_CDC_ECM_STATE_TRACE_ENABLE                              (0)      /**< Enable or disable CDC ECM state trace logging. */
 
 #define USBH_CDC_ECM_MAC_STR_LEN                                     (6)      /**< Length of the MAC address in bytes. */
 #define USBH_CDC_ECM_CTRL_REG_BUF_LEN                                (4)      /**< Length of the ECM dongle control register buffer. */
@@ -156,6 +160,7 @@ typedef struct {
 	u8 mac_src_type;                                 /**< ECM dongle MAC source type, see usbh_cdc_ecm_dongle_mac_type_t */
 	__IO u8 bulk_tx_block;                           /**< Flag indicating BULK TX is blocked/busy */
 	__IO u8 eth_hw_connect;                          /**< Ethernet physical link status: 0=Disconnect, 1=Connect */
+	u8 ready_to_xfer;                                /**< Upper-layer prepare-done gate: set via usbh_cdc_ecm_prepare_done() once the dongle (e.g. 4G AT config) is ready; SOF withholds data transfer until this is set. */
 } usbh_cdc_ecm_host_t;
 
 /* Exported functions --------------------------------------------------------*/
@@ -204,6 +209,14 @@ int usbh_cdc_ecm_check_config_desc(usb_host_t *host);
 u8 usbh_cdc_ecm_usb_is_ready(void);
 
 /**
+ * @brief  Signal that the upper layer has finished all pre-transfer preparation
+ *         (e.g. 4G dongle AT configuration) and Ethernet data transfer may start.
+ *         Until this is called, SOF withholds bulk/intr transfer scheduling.
+ * @return HAL_OK.
+ */
+u8 usbh_cdc_ecm_prepare_done(void);
+
+/**
  * @brief  Transmits an Ethernet packet to the device via the Bulk OUT endpoint.
  * @param[in] buf: Pointer to the data buffer (Ethernet frame) to be transmitted.
  * @param[in] len: Length of the data in bytes.
@@ -213,11 +226,11 @@ u8 usbh_cdc_ecm_usb_is_ready(void);
 int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block);
 
 /**
- * @brief  Gets the Ethernet physical link status.
- * @return 1: Link Up (Cable connected).
- *         0: Link Down (Cable disconnected or device not ready).
+ * @brief  Gets the current network link state (uplink status).
+ * @return 1: Network link is up (connected to uplink).
+ *         0: Network link is down (disconnected, or USB not yet enumerated).
  */
-int usbh_cdc_ecm_get_connect_status(void);
+int usbh_cdc_ecm_get_link_status(void);
 
 /**
  * @brief  Gets the MAC address of the connected device.
@@ -225,8 +238,24 @@ int usbh_cdc_ecm_get_connect_status(void);
  */
 const u8 *usbh_cdc_ecm_process_mac_str(void);
 
+/**
+ * @brief  Gets the Vendor ID of the attached CDC ECM device.
+ * @return VID on success, 0 if no device is attached.
+ */
+u16 usbh_cdc_ecm_get_device_vid(void);
+
+/**
+ * @brief  Gets the Product ID of the attached CDC ECM device.
+ * @return PID on success, 0 if no device is attached.
+ */
+u16 usbh_cdc_ecm_get_device_pid(void);
+
 /** @} End of Host_CDC_ECM_Functions group */
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBH_CDC_ECM_H */

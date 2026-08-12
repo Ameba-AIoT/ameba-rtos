@@ -637,7 +637,7 @@ class ManifestManager(ABC):
 
         return Error.success()
 
-    def create_manifest(self, output_file:str, input_file:str, img_type = ImageType.UNKNOWN, compress = False) -> Error:
+    def create_manifest(self, output_file:str, input_file:str, img_type = ImageType.UNKNOWN, compress = False, hash_skip_bytes = 0, hash_input_file = None) -> Error:
         image_type = img_type if img_type != ImageType.UNKNOWN else parse_image_type(input_file)
         valid_type = [ImageType.IMAGE1, ImageType.IMAGE2, ImageType.APP_ALL]
         if image_type not in valid_type: #NOTE: APP_ALL used in compress image
@@ -728,7 +728,12 @@ class ManifestManager(ABC):
                 return Error(ErrorType.UNKNOWN_ERROR, "self.sboot gen hash id failed")
             self.sboot.HmacKey = image_config.sboot_hmac_key
             self.sboot.HmacKeyLen = len(image_config.sboot_hmac_key) // 2
-            ret = self.sboot.gen_image_hash(input_file, basic_manifest_part.ImgHash)
+            # The image hash must exclude RSIP GCM tag bins (authenticated by RSIP HW OTF).
+            # image1 has a single leading tag bin -> hash_skip_bytes skips it in input_file.
+            # image2/3 have interspersed tag bins -> caller passes hash_input_file, a
+            # plaintext-only concatenation (no gcm prepends). ImgSize still uses input_file.
+            hash_file = hash_input_file if hash_input_file else input_file
+            ret = self.sboot.gen_image_hash(hash_file, basic_manifest_part.ImgHash, hash_skip_bytes)
             if ret != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, f"self.sboot gen image hash failed: {ret}")
 

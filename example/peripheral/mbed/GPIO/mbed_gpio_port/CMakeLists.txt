@@ -39,6 +39,12 @@ ameba_list_append(private_sources
     example_mbed_gpio_port.c
     app_example.c
 )
+if(DEFINED CACHE{PORT_OUTPUT_TEST})    # set by cmake -D
+    ameba_list_append(private_definitions
+        PORT_OUTPUT_TEST=${PORT_OUTPUT_TEST}
+    )
+    unset(PORT_OUTPUT_TEST CACHE)
+endif()
 
 # Component private part, user config end
 #------------------------------#

@@ -2,9 +2,42 @@
 #ifdef CONFIG_LOG_FWD
 #include "log_forward.h"
 #endif
+#ifdef CONFIG_SUPPORT_ATCMD
+#include "atcmd_service.h"
+
+static void whc_at_output(char *buf, int len)
+{
+	u32 pkt_len = sizeof(u32) + 1 + (u32)len;
+	u8 *pkt = rtos_mem_malloc(pkt_len);
+
+	if (!pkt) {
+		return;
+	}
+	*(u32 *)pkt = WHC_WIFI_TEST;
+	pkt[4]      = WHC_WIFI_TEST_AT_RESP;
+	memcpy(pkt + 5, buf, (u32)len);
+	whc_dev_api_send_to_host(pkt, pkt_len, NULL, 0);
+	rtos_mem_free(pkt);
+}
+
+void whc_at_resp_enable(void)
+{
+	out_buffer = whc_at_output;
+}
+
+void whc_at_resp_disable(void)
+{
+	out_buffer = NULL;
+}
+#else
+void whc_at_resp_enable(void) {}
+void whc_at_resp_disable(void) {}
+#endif /* CONFIG_SUPPORT_ATCMD */
+
 #include "lwip/sys.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
+#include "sys_api.h"
 
 struct whc_cmd_path_priv whc_cmdpath_data;
 
@@ -384,11 +417,19 @@ connect_fail:
 #ifdef CONFIG_LOG_FWD
 				} else if (*ptr == WHC_WIFI_TEST_LOG_ENABLE) {
 					rtk_log_forward_enable();
+					whc_at_resp_enable();
 				} else if (*ptr == WHC_WIFI_TEST_LOG_DISABLE) {
 					rtk_log_forward_disable();
+					whc_at_resp_disable();
 #endif
+				} else if (*ptr == WHC_WIFI_TEST_SHELL_CMD) {
+					u8 *cmdstr = ptr + 1;
+					shell_cmd_inject((const char *)cmdstr, _strlen((const char *)cmdstr));
 				}
 #endif
+				if (*ptr == WHC_WIFI_TEST_CLEAR_OTA) {
+					sys_clear_ota_signature(*(ptr + 1));
+				}
 #ifdef CONFIG_MP_INCLUDED
 				if (*ptr == WHC_WIFI_TEST_MP) {
 					whc_dev_mp_cmd((char *)(ptr + 2), *(ptr + 1));

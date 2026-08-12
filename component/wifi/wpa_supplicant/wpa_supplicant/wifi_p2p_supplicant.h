@@ -89,6 +89,7 @@ struct p2p_auto_go_params {
 	char *serial_number;
 	u8 *pri_dev_type;
 	u8 channel;
+	enum p2p_wps_method wps_method;	/* WPS_PBC (default) or WPS_PIN_DISPLAY */
 };
 
 struct p2p_connect_params {

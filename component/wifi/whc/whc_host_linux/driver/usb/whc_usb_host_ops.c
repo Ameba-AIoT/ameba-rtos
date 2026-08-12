@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Realtek wireless local area network IC driver.
+ *
+ * Copyright(c) 2024 Realtek Corporation. All rights reserved.
+ */
 #include <whc_host_linux.h>
 
 struct rtw_usbreq *whc_usb_host_dequeue(struct list_head *q, int *counter)
@@ -45,15 +51,25 @@ static void whc_usb_host_tx_complete_cb(struct urb *urb)
 	}
 
 	if (req->skb) {
-		if (!req->is_buf) {
-			dev_kfree_skb_any(req->skb);
-		} else {
-			kfree(req->skb);
+#ifdef WHCH_TXAGG
+		if (req->is_txagg) {
+			whc_host_xmitbuf_free(req->skb);
+		} else
+#endif
+		{
+			if (!req->is_buf) {
+				dev_kfree_skb_any(req->skb);
+			} else {
+				kfree(req->skb);
+			}
 		}
 	}
 
 	req->skb = NULL;
 	req->is_buf = 0;
+#ifdef WHCH_TXAGG
+	req->is_txagg = 0;
+#endif
 	whc_usb_host_enqueue(&priv->tx_freeq, req, NULL);
 	atomic_dec(&priv->tx_inflight);
 	priv->txreq_available = 1;
@@ -69,9 +85,9 @@ void whc_usb_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 	struct rtw_usbreq *req;
 	int ret = 0;
 
-	if (len > RTW_USB_MAX_SKB_SIZE) {
+	if (len > WHC_USB_TX_MAX_BUF_SIZE) {
 		printk("usb send data size overflow!\n");
-		len = RTW_USB_MAX_SKB_SIZE;
+		len = WHC_USB_TX_MAX_BUF_SIZE;
 	}
 
 	if (priv->usb_disconnecting && (!priv->usb_deregistering)) {
@@ -135,9 +151,9 @@ exit_free_buf:
 		return;
 	}
 
-	if (len > RTW_USB_MAX_SKB_SIZE) {
+	if (len > WHC_USB_TX_MAX_BUF_SIZE) {
 		printk("usb send data size overflow!\n");
-		len = RTW_USB_MAX_SKB_SIZE;
+		len = WHC_USB_TX_MAX_BUF_SIZE;
 	}
 
 	mutex_lock(&priv->lock);
@@ -154,6 +170,67 @@ exit_free_buf:
 	mutex_unlock(&priv->lock);
 #endif
 }
+
+#ifdef WHCH_TXAGG
+void whc_usb_host_send_xmitbuf(struct whc_xmit_buf *pxmitbuf)
+{
+	struct whc_usb *priv = &whc_usb_host_priv;
+	struct rtw_usbreq *req;
+	int ret = 0;
+	u8 pipe_idx;
+	u32 len = pxmitbuf->len;
+
+	if (len > WHC_USB_TX_MAX_BUF_SIZE) {
+		printk("usb send txagg size overflow!\n");
+		len = WHC_USB_TX_MAX_BUF_SIZE;
+	}
+
+	if (priv->usb_disconnecting && (!priv->usb_deregistering)) {
+		whc_host_xmitbuf_free(pxmitbuf);
+		return;
+	}
+	mutex_lock(&priv->lock);
+
+dequeue_again:
+	req = whc_usb_host_dequeue(&priv->tx_freeq, NULL);
+	if (req == NULL) {
+		priv->txreq_available = 0;
+		if (!wait_event_timeout(priv->txreq_wq, priv->txreq_available == 1, msecs_to_jiffies(500))) {
+			printk("wait txreq available timeout\n");
+			goto exit_free_buf;
+		} else {
+			goto dequeue_again;
+		}
+	}
+	req->skb = pxmitbuf;
+	req->is_buf = 0;
+	req->is_txagg = 1;
+
+	/* one aggregate already spans a single sta+ac queue; no per-frame flow context here, round-robin the EP */
+	pipe_idx = priv->out_pipe_idx;
+	priv->out_pipe_idx = (priv->out_pipe_idx + 1) % WIFI_OUT_EP_NUM_TOTAL;
+
+	req->urb->transfer_flags |= URB_ZERO_PACKET;
+	usb_fill_bulk_urb(req->urb, priv->usb_dev, priv->tx_pipe[pipe_idx],
+					  pxmitbuf->pbuf, len, whc_usb_host_tx_complete_cb, req);
+	ret = usb_submit_urb(req->urb, GFP_ATOMIC);
+	if (ret) {
+		printk("%s: Failed to submit TX URB: %d\n", __func__, ret);
+		req->skb = NULL;
+		req->is_buf = 0;
+		req->is_txagg = 0;
+		whc_usb_host_enqueue(&priv->tx_freeq, req, NULL);
+		goto exit_free_buf;
+	}
+	atomic_inc(&priv->tx_inflight);
+	mutex_unlock(&priv->lock);
+	return;
+
+exit_free_buf:
+	whc_host_xmitbuf_free(pxmitbuf);
+	mutex_unlock(&priv->lock);
+}
+#endif
 
 void whc_usb_host_rx_complete(struct urb *urb)
 {
@@ -175,7 +252,7 @@ void whc_usb_host_rx_complete(struct urb *urb)
 		return;
 	}
 
-	skb = dev_alloc_skb(RTW_USB_MAX_SKB_SIZE);
+	skb = dev_alloc_skb(WHC_USB_RX_MAX_BUF_SIZE);
 	addr = (unsigned long)(skb->data);
 
 	if (!skb) {
@@ -193,7 +270,7 @@ void whc_usb_host_rx_complete(struct urb *urb)
 	whc_host_recv_notify();
 
 	usb_fill_bulk_urb(req->urb, priv->usb_dev, priv->rx_pipe,
-					  skb->data, RTW_USB_MAX_SKB_SIZE, whc_usb_host_rx_complete, req);
+					  skb->data, WHC_USB_RX_MAX_BUF_SIZE, whc_usb_host_rx_complete, req);
 	ret = usb_submit_urb(req->urb, GFP_ATOMIC);
 	if (ret) {
 		printk("%s: Failed to resubmit URB: %d\n", __func__, ret);
@@ -223,6 +300,9 @@ void whc_usb_host_recv_data(void *intf_priv)
 struct hci_ops_t whc_usb_host_intf_ops = {
 	.send_data = whc_usb_host_send_data,
 	.recv_data = whc_usb_host_recv_data,
+#ifdef WHCH_TXAGG
+	.send_xmitbuf = whc_usb_host_send_xmitbuf,
+#endif
 };
 
 int whc_usb_host_send_event_check(u32 event_id)

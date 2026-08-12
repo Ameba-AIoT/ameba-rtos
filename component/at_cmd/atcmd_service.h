@@ -106,7 +106,8 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index);
 int atcmd_get_ssl_certificate_size(CERT_TYPE cert_type, int index);
 
 /* TODO */
-#if (defined CONFIG_ATCMD_HOST_CONTROL && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE))
+#if (defined CONFIG_ATCMD_HOST_CONTROL && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)) \
+    || (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 typedef void (*at_write)(char *buf, int len);
 extern uint16_t atcmd_switch;
 extern char global_buf[SMALL_BUF];

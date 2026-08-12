@@ -7,7 +7,7 @@
 
 #define WHC_WIFI_TEST_BUF_SIZE     16
 
-__weak void whc_host_pkt_rx_to_user(u8 *pbuf)
+__weak void whc_host_deliver_rxbuf_to_user(u8 *pbuf)
 {
 	/* pbuf = buf + SIZE_RX_DESC, so pbuf[0..7] is whc_cmd_path_hdr */
 	u8 *ptr = pbuf + sizeof(struct whc_cmd_path_hdr);
@@ -53,7 +53,7 @@ void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 	u8 *txbuf = NULL;
 	u32 txsize = len + sizeof(struct whc_cmd_path_hdr) + SIZE_TX_DESC;
 
-	txbuf = WHC_MALLOC(txsize);
+	txbuf = whc_malloc(txsize);
 	if (txbuf == NULL) {
 		printf("%s mem fail \r\n", __func__);
 		return;
@@ -66,7 +66,7 @@ void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 
 	whc_host_sdio_send_data(txbuf, txsize, NULL);
 
-	WHC_FREE(txbuf);
+	whc_free(txbuf);
 }
 
 void whc_host_get_mac_addr(uint8_t idx)

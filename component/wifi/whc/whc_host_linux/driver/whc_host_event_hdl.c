@@ -99,6 +99,9 @@ void whc_host_join_status_hdl(u32 event, char *evt_info)
 	if (event == RTW_EVENT_AP_STA_ASSOC) {
 		dev_dbg(global_idev.pwhc_dev, "%s: sta assoc \n", __func__);
 		sta_assoc_info = (struct rtw_event_ap_sta_assoc *)evt_info;
+#ifdef CONFIG_WHCH
+		whc_host_sta_update_stainfo(WHC_AP_PORT, sta_assoc_info->sta_mac, &sta_assoc_info->stainfo, &sta_assoc_info->sec_priv);
+#endif
 		whc_host_sta_assoc_indicate(sta_assoc_info->frame, sta_assoc_info->frame_len);
 	}
 
@@ -120,6 +123,9 @@ void whc_host_join_status_hdl(u32 event, char *evt_info)
 		}
 
 		sta_disassoc_info = (struct rtw_event_ap_sta_disassoc *)evt_info;
+#ifdef CONFIG_WHCH
+		whc_host_sta_free_stainfo(WHC_AP_PORT, sta_disassoc_info->sta_mac);
+#endif
 		cfg80211_del_sta(global_idev.pndev[1], sta_disassoc_info->sta_mac, GFP_ATOMIC);
 	}
 

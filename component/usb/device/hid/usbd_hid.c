@@ -33,7 +33,7 @@ static int hid_set_config(usb_dev_t *dev, u8 config);
 static int hid_clear_config(usb_dev_t *dev, u8 config);
 static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static int hid_handle_ep0_data_out(usb_dev_t *dev);
 #endif
@@ -99,7 +99,7 @@ static const u8 usbd_hid_fs_config_desc[] = {
 	0x01,         									/*bNumInterfaces*/
 	0x01,         									/*bConfigurationValue*/
 	0x00,        									/*iConfiguration*/
-	0x80,         									/*bmAttributes*/
+	0xC0,         									/*bmAttributes: self-powered (matches GET_STATUS self-powered bit)*/
 	0x32,         									/*MaxPower 100 mA*/
 
 	/* HID Interface Descriptor*/
@@ -107,14 +107,14 @@ static const u8 usbd_hid_fs_config_desc[] = {
 	USB_DESC_TYPE_INTERFACE,						/*bDescriptorType*/
 	0x00,											/*bInterfaceNumber*/
 	0x00,											/*bAlternateSetting*/
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 	0x01,											/*bNumEndpoints*/
 #else
 	0x02,											/*bNumEndpoints*/
 #endif
 	0x03,											/*bInterfaceClass: HID*/
 	0x01,											/*bInterfaceSubClass: 1=BOOT, 0=no boot*/
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 	0x02,											/*nInterfaceProtocol: 0=none, 1=keyboard, 2=mouse*/
 #else
 	0x01,											/*nInterfaceProtocol: 0=none, 1=keyboard, 2=mouse*/
@@ -141,7 +141,7 @@ static const u8 usbd_hid_fs_config_desc[] = {
 	USB_HIGH_BYTE(USBD_HID_FS_INT_MAX_PACKET_SIZE),
 	0xA,											/*bInterval*/
 
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	/* Endpoint Descriptor*/
 	0x07,											/*bLength*/
 	USB_DESC_TYPE_ENDPOINT,							/*bDescriptorType:*/
@@ -164,7 +164,7 @@ static const u8 usbd_hid_hs_config_desc[] = {
 	0x01,											/*bNumInterfaces*/
 	0x01,											/*bConfigurationValue*/
 	0x00,											/*iConfiguration*/
-	0x80,											/*bmAttributes*/
+	0xC0,											/*bmAttributes: self-powered (matches GET_STATUS self-powered bit)*/
 	0x32,											/*MaxPower*/
 
 	/* HID Interface Descriptor*/
@@ -172,14 +172,14 @@ static const u8 usbd_hid_hs_config_desc[] = {
 	USB_DESC_TYPE_INTERFACE,						/*bDescriptorType*/
 	0x00,											/*bInterfaceNumber*/
 	0x00,											/*bAlternateSetting*/
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 	0x01,											/*bNumEndpoints*/
 #else
 	0x02,											/*bNumEndpoints*/
 #endif
 	0x03,											/*bInterfaceClass*/
 	0x01,											/*bInterfaceSubClass: 1=BOOT, 0=no boot*/
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 	0x02,											/*nInterfaceProtocol: 0=none, 1=keyboard, 2=mouse*/
 #else
 	0x01,											/*nInterfaceProtocol: 0=none, 1=keyboard, 2=mouse*/
@@ -204,9 +204,9 @@ static const u8 usbd_hid_hs_config_desc[] = {
 	0x03,											/*bmAttributest*/
 	USB_LOW_BYTE(USBD_HID_HS_INT_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
 	USB_HIGH_BYTE(USBD_HID_HS_INT_MAX_PACKET_SIZE),
-	0xA,											/*bInterval*/
+	0x04,											/*bInterval: HS 2^(4-1)=8 microframes = 1 ms*/
 
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	/* Endpoint Descriptor*/
 	0x07,											/*bLength*/
 	USB_DESC_TYPE_ENDPOINT,							/*bDescriptorType:*/
@@ -214,7 +214,7 @@ static const u8 usbd_hid_hs_config_desc[] = {
 	0x03,											/*bmAttributes*/
 	USB_LOW_BYTE(USBD_HID_HS_INT_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
 	USB_HIGH_BYTE(USBD_HID_HS_INT_MAX_PACKET_SIZE),
-	0xA,											/*bInterval*/
+	0x04,											/*bInterval: HS 2^(4-1)=8 microframes = 1 ms*/
 #endif
 };
 #endif
@@ -232,7 +232,7 @@ static const u8 usbd_hid_desc[USBD_HID_DESC_SIZE] = {
 	0x00,
 };
 
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 /* HID Mouse Report Descriptor */
 static const u8 hid_mouse_report_desc[] = {
 	0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
@@ -306,12 +306,13 @@ static const u8 hid_keyboard_report_desc[] = {
 	0x08,	//Report Size(0x8 )
 	0x15,	//bSize: 0x01, bType: Global, bTag: Logical Minimum
 	0x00,	//Logical Minimum(0x0 )
-	0x25,	//bSize: 0x01, bType: Global, bTag: Logical Maximum
-	0xFF,	//Logical Maximum(0xFF )
+	0x26,	//bSize: 0x02, bType: Global, bTag: Logical Maximum (2-byte, signed-safe)
+	0xFF,	//Logical Maximum low byte
+	0x00,	//Logical Maximum high byte => 255
 	0x19,	//bSize: 0x01, bType: Local, bTag: Usage Minimum
 	0x00,	//Usage Minimum(0x0 )
-	0x29,	//bSize: 0x02, bType: Local, bTag: Usage Maximum
-	0xFF,		//Usage Maximum(0xFF )
+	0x29,	//bSize: 0x01, bType: Local, bTag: Usage Maximum
+	0xFF,	//Usage Maximum(0xFF )
 	0x81,	//bSize: 0x01, bType: Main, bTag: Input
 	// 6 command key values
 	0x00,	//Input(Data, Array, Absolute, No Wrap, Linear, Preferred State, No Null Position, Bit Field)
@@ -353,7 +354,7 @@ static const usbd_class_driver_t usbd_hid_driver = {
 	.clear_config = hid_clear_config,
 	.setup = hid_setup,
 	.ep_data_in = hid_handle_ep_data_in,
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	.ep0_data_out = hid_handle_ep0_data_out,
 	.ep_data_out = hid_handle_ep_data_out,
 #endif
@@ -364,7 +365,7 @@ static usbd_hid_t hid_device;
 
 /* Private functions ---------------------------------------------------------*/
 
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 
 /**
   * @brief  Prepare to receive INT OUT packet
@@ -391,6 +392,11 @@ static int hid_handle_ep0_data_out(usb_dev_t *dev)
 	UNUSED(dev);
 
 	if (hid->ctrl_req.bRequest != 0xFFU) {
+		/* Deliver SET_REPORT data (e.g., keyboard LED state) to the application.
+		 * Some hosts send SET_REPORT via the control endpoint instead of INTR OUT. */
+		if (hid->cb->received) {
+			hid->cb->received(dev->ep0_out.xfer_buf, hid->ctrl_req.wLength);
+		}
 		hid->ctrl_req.bRequest = 0xFFU;
 		ret = HAL_OK;
 	}
@@ -424,7 +430,7 @@ static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	return HAL_OK;
 }
 
-#endif // USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#endif // CONFIG_USBD_HID_KEYBOARD
 
 /**
   * @brief  Handle HID specific CTRL requests
@@ -472,20 +478,20 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			break;
 		case USB_REQ_GET_DESCRIPTOR:
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 			report_len = sizeof(hid_mouse_report_desc);
 #else
 			report_len = sizeof(hid_keyboard_report_desc);
 #endif
 			if (USB_HIGH_BYTE(req->wValue) == USBD_HID_REPORT_DESC) {
 				/* HID Report Descriptor */
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 				buf = (u8 *)hid_mouse_report_desc;
 #else
 				buf = (u8 *)hid_keyboard_report_desc;
 #endif
 				ep0_in->xfer_len = MIN(report_len, req->wLength);
-				usb_os_memcpy((void *)ep0_in->xfer_buf, (void *)buf, report_len);
+				usb_os_memcpy((void *)ep0_in->xfer_buf, (void *)buf, ep0_in->xfer_len);
 			} else if (USB_HIGH_BYTE(req->wValue) == USBD_HID_DESC) {
 				/* HID Descriptor */
 				len = USBD_HID_DESC_SIZE;
@@ -529,11 +535,15 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			break;
 		case USBD_HID_SET_REPORT:
 			if ((req->wLength) && (!(req->bmRequestType & 0x80U))) {
+				if (req->wLength > ep0_out->xfer_buf_len) {
+					/* Cannot accept the data stage: stall so the host recovers promptly */
+					ret = HAL_ERR_PARA;
+					break;
+				}
 				usb_os_memcpy((void *)&hid->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
 				ep0_out->xfer_len = req->wLength;
-				usbd_ep_receive(dev, ep0_out);
+				ret = usbd_ep_receive(dev, ep0_out);
 			}
-			ret = HAL_OK;
 			break;
 
 		case USBD_HID_SET_IDLE:
@@ -570,7 +580,7 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 	int ret = HAL_OK;
 	usbd_hid_t *hid = &hid_device;
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
 #endif
 	usb_ep_info_t *info;
@@ -586,7 +596,7 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
 	usbd_ep_init(dev, ep_intr_in);
 
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	/* Init INTR OUT EP */
 	info = &ep_intr_out->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
@@ -611,7 +621,7 @@ static int hid_clear_config(usb_dev_t *dev, u8 config)
 	int ret = HAL_OK;
 	usbd_hid_t *hid = &hid_device;
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
 #endif
 
@@ -620,7 +630,7 @@ static int hid_clear_config(usb_dev_t *dev, u8 config)
 	/* DeInit INTR IN EP */
 	usbd_ep_deinit(dev, ep_intr_in);
 
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	usbd_ep_deinit(dev, ep_intr_out);
 #endif
 	return ret;
@@ -643,14 +653,14 @@ static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	UNUSED(dev);
 	UNUSED(ep_addr);
 
-	if (status == HAL_OK) {
-		/*TX done*/
-	} else {
+	if (status != HAL_OK) {
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 	}
 
-	hid->cb->transmitted(status);
 	ep_intr_in->xfer_state = 0U;
+	if (hid->cb->transmitted) {
+		hid->cb->transmitted(status);
+	}
 
 	return HAL_OK;
 }
@@ -672,7 +682,7 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 	u16 len = 0;
 	u16 report_len;
 
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 	report_len = sizeof(hid_mouse_report_desc);
 #else
 	report_len = sizeof(hid_keyboard_report_desc);
@@ -797,7 +807,7 @@ int usbd_hid_init(u32 tx_buf_len, const usbd_hid_usr_cb_t *cb)
 		return HAL_ERR_PARA;
 	}
 
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
 	info = &ep_intr_out->info;
 	info->addr = USBD_HID_INTERRUPT_OUT_EP_ADDRESS;
@@ -826,6 +836,7 @@ int usbd_hid_init(u32 tx_buf_len, const usbd_hid_usr_cb_t *cb)
 	}
 
 	hid->cb = cb;
+	hid->protocol = 1U; /* HID 1.11 7.2.6: default to Report Protocol after enumeration */
 	if (cb->init != NULL) {
 		cb->init();
 	}
@@ -835,7 +846,7 @@ int usbd_hid_init(u32 tx_buf_len, const usbd_hid_usr_cb_t *cb)
 	return ret;
 
 usbd_hid_init_clean_intr_out_buf_exit:
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	if (ep_intr_out->xfer_buf) {
 		usb_os_mfree(ep_intr_out->xfer_buf);
 	}
@@ -850,12 +861,18 @@ int usbd_hid_deinit(void)
 	usbd_hid_t *hid = &hid_device;
 
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
 #endif
 
-	while (ep_intr_in->is_busy) {
+	/* Wait for an in-flight INTR IN transfer to actually complete (xfer_state is
+	 * cleared in the completion ISR) before freeing the DMA buffer, so the
+	 * controller never DMAs from freed memory on hot-unplug. Bounded (~100 ms)
+	 * to avoid a hang if the completion never arrives after detach. */
+	u32 wait = 0U;
+	while (ep_intr_in->xfer_state && (wait < 1000U)) {
 		usb_os_delay_us(100);
+		wait++;
 	}
 
 	usbd_unregister_class();
@@ -868,7 +885,7 @@ int usbd_hid_deinit(void)
 		usb_os_mfree(ep_intr_in->xfer_buf);
 		ep_intr_in->xfer_buf = NULL;
 	}
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	if (ep_intr_out->xfer_buf != NULL) {
 		usb_os_mfree(ep_intr_out->xfer_buf);
 		ep_intr_out->xfer_buf = NULL;
@@ -891,6 +908,7 @@ int usbd_hid_send_data(const u8 *data, u32 len)
 	}
 
 	if (len > ep_intr_in->xfer_buf_len) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "len %d > buf %d, truncated\n", len, ep_intr_in->xfer_buf_len);
 		len = ep_intr_in->xfer_buf_len;
 	}
 

@@ -150,12 +150,6 @@ _WEAK void app_example(void)
 
 }
 
-void app_rtc_init(void)
-{
-#ifdef RTL8720F_TODO
-#endif
-}
-
 void CPU1_WDG_RST_Handler(void)
 {
 	/* Let NP run */
@@ -171,15 +165,10 @@ int main(void)
 	RTK_LOGI(TAG, "KM4TZ MAIN \n");
 	ameba_rtos_get_version();
 
-#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
-	app_fullmac_init();
-	app_IWDG_init();
-#else
 	/*IPC table initialization*/
 	ipc_table_init(IPCAP_DEV);
 	InterruptRegister(IPC_INTHandler, IPC_KM4TZ_IRQ, (u32)IPCAP_DEV, INT_PRI5);
 	InterruptEn(IPC_KM4TZ_IRQ, INT_PRI5);
-#endif
 
 #if defined(CONFIG_MBEDTLS_ENABLED)
 	app_mbedtls_rom_init();
@@ -228,20 +217,11 @@ int main(void)
 #endif
 
 	app_pmu_init();
-	app_rtc_init();
 
 	/* Register CPU1_WDG_RST_IRQ Callback function */
 	InterruptRegister((IRQ_FUN) CPU1_WDG_RST_Handler, KM4TZ_NS_WDG_IRQ, (u32)NULL, INT_PRI_LOWEST);//KM4TZ_S_WDG_IRQ
 	InterruptEn(KM4TZ_NS_WDG_IRQ, INT_PRI_LOWEST);//KM4TZ_S_WDG_IRQ
 
-#ifdef CONFIG_SHELL
-#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
-	/* Register Log Uart Callback function */
-	InterruptRegister((IRQ_FUN) shell_uart_irq_rom, UART_LOG_IRQ, (u32)NULL, INT_PRI_LOWEST);
-	InterruptEn(UART_LOG_IRQ, INT_PRI_LOWEST);
-	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_AP, ENABLE);
-#endif
-#endif
 	/* Execute application example */
 	app_example();
 

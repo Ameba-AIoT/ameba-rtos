@@ -90,7 +90,7 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 {
 	/* Set lock flag */
 	Flash_Sync_Flag[0] = sync_type;
-#if (defined CONFIG_WHC_INTF_IPC)
+// #if (defined CONFIG_WHC_INTF_IPC)
 	IPC_MSG_STRUCT ipc_msg_temp;
 	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
 
@@ -106,7 +106,7 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 			break;
 		}
 	}
-#endif
+// #endif
 }
 #endif
 

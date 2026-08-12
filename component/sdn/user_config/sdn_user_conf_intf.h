@@ -3,18 +3,11 @@
 
 #include "platform_autoconf.h"
 
-#ifdef CONFIG_BT_INIC
-#define SDN_CONF_CLIENT_BT_RX_ACL_NUM                               8
-#define SDN_CONF_CLIENT_BT_RX_CMD_NUM                               8
-#else
-#define SDN_CONF_CLIENT_BT_RX_ACL_NUM                               4
-#define SDN_CONF_CLIENT_BT_RX_CMD_NUM                               4
-#endif
+#define SDN_CONF_CLIENT_BT_CMD_RX_NUM                               2
+#define SDN_CONF_CLIENT_BT_EVT_TX_NUM                               4
 
+#define SDN_CONF_CLIENT_154_TX_NUM                                  4
 #define SDN_CONF_CLIENT_154_RX_NUM                                  4
-
-#define SDN_CONF_CLIENT_TX_NUM                                      8
-
-#define SDN_INTF_MAX_DATA_LEN                                       256
+#define SDN_INTF_MAX_154_LEN                                        255
 
 #endif

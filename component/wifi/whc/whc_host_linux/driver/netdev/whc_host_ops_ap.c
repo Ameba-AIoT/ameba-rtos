@@ -420,6 +420,10 @@ static int whc_host_start_ap_ops(struct wiphy *wiphy, struct net_device *ndev, s
 
 	netif_carrier_on(ndev);
 
+#ifdef CONFIG_WHCH
+	whc_host_init_bcmc_stainfo(wlan_idx);
+#endif
+
 	if (buf) {
 		kfree(buf);
 	}
@@ -487,6 +491,10 @@ static int whc_host_stop_ap_ops(struct wiphy *wiphy, struct net_device *ndev
 	}
 
 	ret = whc_host_stop_ap();
+
+#ifdef CONFIG_WHCH
+	whc_host_free_bcmc_stainfo(rtw_netdev_idx(ndev));
+#endif
 
 	netif_carrier_off(ndev);
 	return ret;

@@ -273,6 +273,26 @@ class SerialReader(StoppableThread):
         commands_list = sorted(set(commands))
         console_update_session(commands_list)
 
+    def hard_reset(self):
+        """Pulse DTR/RTS to trigger a hardware reset on the target.
+
+        For remote serial connections, calls RemoteSerial.reset_device()
+        instead.  Returns True on success, False on failure.
+        """
+        try:
+            if RemoteSerial and isinstance(self.serial, RemoteSerial):
+                return self.serial.reset_device(timeout=10.0)
+            self.serial.setDTR(True)
+            self.serial.setRTS(True)
+            time.sleep(0.1)
+            self.serial.setDTR(False)
+            self.serial.setRTS(False)
+            time.sleep(0.1)
+            return True
+        except Exception as e:
+            print_red(f"Hard reset failed: {e}")
+            return False
+
     def decode(self, data):
         try:
             self.decode_error_cnt = 0

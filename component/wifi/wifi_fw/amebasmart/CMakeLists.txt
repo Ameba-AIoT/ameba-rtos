@@ -1,10 +1,6 @@
 set(DIR ${WIFIFWDIR}/amebasmart/ram)
 
-if(CONFIG_MP_INCLUDED AND CONFIG_MP_EXPAND)
-    set(TARGET_LIB wifi_fw_mp)
-else()
-    set(TARGET_LIB wifi_fw)
-endif()
+set(TARGET_LIB wifi_fw)
 
 if(CONFIG_WIFI_FW_EN)
     set(

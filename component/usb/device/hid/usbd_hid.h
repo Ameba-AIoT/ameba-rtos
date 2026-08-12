@@ -11,6 +11,10 @@
 
 #include "usbd.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Device_API USB Device API
@@ -22,12 +26,6 @@
 /** @addtogroup Device_HID_Constants Device HID Constants
  * @{
  */
-
-/* HID usage configuration */
-#define USBD_HID_MOUSE_DEVICE					1   /**< HID device type, act as a mouse. */
-#define USBD_HID_KEYBOARD_DEVICE				2   /**< HID device type, act as a keyboard. */
-
-#define USBD_HID_DEVICE_TYPE					USBD_HID_MOUSE_DEVICE   /**< HID device type. */
 
 /* HID PID/VID */
 #define USBD_HID_VID							USB_VID  /**< Vendor ID. */
@@ -61,11 +59,11 @@
 #endif
 
 #define USBD_HID_HS_INT_MAX_PACKET_SIZE                64 /**< High speed INTR maximum packet size */
-#define USBD_HID_FS_INT_MAX_PACKET_SIZE                64 /**< High speed INTR OUT maximum packet size */
+#define USBD_HID_FS_INT_MAX_PACKET_SIZE                64 /**< Full speed INTR maximum packet size */
 
 #define USBD_HID_DESC_SIZE						9       /**< HID descriptor size. */
-#define USBD_HID_DESC_ITEM_LENGTH_OFFSET		7       /**< Mouse Reserved. all bit should set to 1. */
-#define USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET	25      /**< Mouse Reserved. all bit should set to 1. */
+#define USBD_HID_DESC_ITEM_LENGTH_OFFSET		7       /**< Offset of report desc wItemLength in the HID descriptor. */
+#define USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET	25      /**< Offset of report desc wItemLength in the config descriptor. */
 
 /* Mouse button definition  */
 #define USBD_HID_MOUSE_BUTTON_LEFT				0x01    /**< Mouse Left button. 0: release, 1: press. */
@@ -116,7 +114,7 @@ typedef struct {
 	 */
 	void(* transmitted)(u8 status);
 
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	/**
 	 * @brief Called when new data is received from the host on the INTR IN endpoint, used for keyboard.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
@@ -146,7 +144,7 @@ typedef struct {
 typedef struct {
 	usb_setup_req_t ctrl_req;     /**< Stores the current control request. */
 	usbd_ep_t ep_intr_in;         /**< INTR IN endpoint structure. */
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	usbd_ep_t ep_intr_out;        /**< INTR OUT endpoint structure. */
 #endif
 	const usbd_hid_usr_cb_t *cb;        /**< Pointer to the user-defined callback structure. */
@@ -190,4 +188,9 @@ int usbd_hid_send_data(const u8 *buf, u32 len);
 /** @} End of Device_HID_Functions group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* USBD_HID_H */

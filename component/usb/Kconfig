@@ -88,6 +88,8 @@ menu "CONFIG USB"
 
     config USBH_CDC_ACM
         bool
+    config USBH_CDC_ACM_4G_DONGLE
+        bool
     config USBH_CDC_ECM
         bool
     config USBH_CDC_NCM
@@ -98,17 +100,11 @@ menu "CONFIG USB"
         bool
     config USB_UAC
         bool
-    config USBH_COMPOSITE
-        bool
-    config USBH_COMPOSITE_HID_UAC
-        bool
-    config USBH_COMPOSITE_HID_UAC1
-        bool
-    config USBH_COMPOSITE_ACM_ECM
-        bool
     config USBH_MSC
         bool
     config USBH_UAC
+        bool
+    config USBH_HID
         bool
     config USBH_UVC
         bool

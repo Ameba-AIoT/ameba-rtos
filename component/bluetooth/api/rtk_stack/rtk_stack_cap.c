@@ -340,7 +340,7 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			rtk_bt_le_audio_group_handle_t group_handle = NULL;
 			rtk_bt_le_audio_device_handle_t device_handle = NULL;
 			uint8_t conn_id = 0;
-			rtk_bt_le_addr_type_t addr_type = 0;
+			rtk_bt_le_addr_type_t addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC;
 			uint8_t addr_val[RTK_BD_ADDR_LEN] = {0};
 			group_handle = ble_audio_group_allocate();
 			if (group_handle == NULL) {
@@ -498,7 +498,7 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		p_ind->conn_handle = p_read_result->conn_handle;
 		p_ind->group_handle = p_read_result->group_handle;
 		p_ind->dev_handle = p_read_result->dev_handle;
-		p_ind->mem_info.bd_addr.type = p_read_result->mem_info.addr_type;
+		p_ind->mem_info.bd_addr.type = (rtk_bt_le_addr_type_t)p_read_result->mem_info.addr_type;
 		memcpy(p_ind->mem_info.bd_addr.addr_val, p_read_result->mem_info.bd_addr, RTK_BD_ADDR_LEN);
 		p_ind->mem_info.srv_uuid = p_read_result->mem_info.srv_uuid;
 		p_ind->mem_info.srv_instance_id = p_read_result->mem_info.srv_instance_id;
@@ -605,7 +605,7 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 		p_ind = (rtk_bt_le_audio_csis_client_set_mem_found_ind_t *)p_evt->data;
 		p_ind->group_handle = p_add->group_handle;
 		p_ind->dev_handle = p_add->dev_handle;
-		p_ind->bd_addr.type = p_add->addr_type;
+		p_ind->bd_addr.type = (rtk_bt_le_addr_type_t)p_add->addr_type;
 		memcpy(p_ind->bd_addr.addr_val, p_add->bd_addr, RTK_BD_ADDR_LEN);
 		p_ind->srv_uuid = p_add->srv_uuid;
 		p_ind->rank = p_add->rank;
@@ -2031,7 +2031,7 @@ static uint16_t bt_stack_le_audio_mics_get_mute_value(void *data)
 #if defined(RTK_BLE_AUDIO_MICP_MIC_DEVICE_SUPPORT) && RTK_BLE_AUDIO_MICP_MIC_DEVICE_SUPPORT
 static uint16_t bt_stack_le_audio_mics_set_param(void *data)
 {
-	T_MICS_PARAM mics_param = {0};
+	T_MICS_PARAM mics_param = {MICS_NOT_MUTE};
 	rtk_bt_le_audio_mics_param_t *p_param = NULL;
 
 	if (!data) {
@@ -2053,7 +2053,7 @@ static uint16_t bt_stack_le_audio_mics_set_param(void *data)
 
 static uint16_t bt_stack_le_audio_mics_get_param(void *data)
 {
-	T_MICS_PARAM mics_param = {0};
+	T_MICS_PARAM mics_param = {MICS_NOT_MUTE};
 	rtk_bt_le_audio_mics_param_t *p_param = NULL;
 
 	if (!data) {
@@ -2226,7 +2226,6 @@ static uint16_t bt_stack_le_audio_vocs_write_cp_by_group(void *data)
 
 static uint16_t bt_stack_le_audio_vocs_write_audio_location(void *data)
 {
-	T_LE_AUDIO_CAUSE ret = LE_AUDIO_CAUSE_SUCCESS;
 	rtk_bt_le_audio_vocs_write_audio_location_param_t *p_param = NULL;
 
 	if (!data) {
@@ -2239,9 +2238,8 @@ static uint16_t bt_stack_le_audio_vocs_write_audio_location(void *data)
 	BT_LOGD("%s conn_handle %d, srv_instance_id %d,audio_location 0x%x\r\n", __func__, p_param->conn_handle, p_param->srv_instance_id,
 			(unsigned int)p_param->audio_location);
 
-	ret = vocs_write_audio_location(p_param->conn_handle, p_param->srv_instance_id, p_param->audio_location);
-	if (LE_AUDIO_CAUSE_SUCCESS != ret) {
-		BT_LOGE("%s fail: vocs_write_audio_location ret = 0x%x\r\n", __func__, ret);
+	if (false == vocs_write_audio_location(p_param->conn_handle, p_param->srv_instance_id, p_param->audio_location)) {
+		BT_LOGE("%s fail: vocs_write_audio_location\r\n", __func__);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -2250,7 +2248,6 @@ static uint16_t bt_stack_le_audio_vocs_write_audio_location(void *data)
 
 static uint16_t bt_stack_le_audio_vocs_write_output_des(void *data)
 {
-	T_LE_AUDIO_CAUSE ret = LE_AUDIO_CAUSE_SUCCESS;
 	rtk_bt_le_audio_vocs_write_output_des_param_t *p_param = NULL;
 
 	if (!data) {
@@ -2264,7 +2261,7 @@ static uint16_t bt_stack_le_audio_vocs_write_output_des(void *data)
 			p_param->conn_handle, p_param->srv_instance_id, p_param->output_des_len, p_param->p_output_des);
 
 	if (false == vocs_write_output_des(p_param->conn_handle, p_param->srv_instance_id, p_param->p_output_des, p_param->output_des_len)) {
-		BT_LOGE("%s fail: vocs_write_output_des ret = 0x%x\r\n", __func__, ret);
+		BT_LOGE("%s fail: vocs_write_output_des\r\n", __func__);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -2588,7 +2585,7 @@ uint16_t bt_stack_cap_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 #endif
 
-#if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT
+#if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT
 	case RTK_BT_LE_AUDIO_ACT_MCP_SERVER_SEND_DATA: {
 		BT_LOGD("RTK_BT_LE_AUDIO_ACT_MCP_SERVER_SEND_DATA \r\n");
 		ret = bt_stack_le_audio_mcp_server_send_data(p_cmd->param);
@@ -2600,7 +2597,7 @@ uint16_t bt_stack_cap_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	}
 #endif
-#if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT
+#if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT
 	case RTK_BT_LE_AUDIO_ACT_MCP_CLIENT_WRITE_MEDIA_CP: {
 		BT_LOGD("RTK_BT_LE_AUDIO_ACT_MCP_CLIENT_WRITE_MEDIA_CP \r\n");
 		ret = bt_stack_le_audio_mcp_client_write_media_cp(p_cmd->param);
@@ -2873,7 +2870,7 @@ uint16_t bt_stack_csis_cap_init(uint8_t csip_role, T_CAP_INIT_PARAMS *p_param, r
 		memcpy(bt_le_audio_priv_data.lea_csis_sirk, default_csis_sirk, RTK_BT_LE_CSIS_SIRK_LEN);
 		p_param->csis_num = p_csis_param->csis_num;
 		p_param->cas.enable = true;
-		p_param->cas.csis_sirk_type = p_csis_param->csis_sirk_type;
+		p_param->cas.csis_sirk_type = (T_CSIS_SIRK_TYPE)p_csis_param->csis_sirk_type;
 		p_param->cas.csis_size = p_csis_param->csis_size;
 		if (p_csis_param->csis_cfg == RTK_BT_LEA_CSIS_CFG_RANK_1) {
 			p_param->cas.csis_rank = 1;

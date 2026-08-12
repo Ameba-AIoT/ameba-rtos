@@ -7,7 +7,9 @@
 #ifdef CONFIG_MBEDTLS_ENABLED
 #include "threading_alt.h"
 #endif
+#ifdef CONFIG_BT_COEXIST
 #include "rtw_coex_ipc.h"
+#endif
 #if defined(CONFIG_BT) && defined(CONFIG_BT_INIC)
 #include "bt_inic.h"
 #endif
@@ -165,7 +167,9 @@ int main(void)
 	/* pre-processor of application example */
 	app_pre_example();
 
+#ifdef CONFIG_BT_COEXIST
 	coex_ipc_entry();
+#endif
 
 	wififw_task_create();
 
@@ -179,7 +183,6 @@ int main(void)
 	sdn_client_init();
 
 #ifdef CONFIG_SHELL
-#if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 	/* init console */
 	shell_init_rom(0, NULL);
 	shell_init_ram();
@@ -189,7 +192,6 @@ int main(void)
 	InterruptEn(UART_LOG_IRQ, INT_PRI_LOWEST);
 	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_NP, ENABLE);
 	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_AP, DISABLE);
-#endif
 #endif
 
 #ifndef CONFIG_SOLO

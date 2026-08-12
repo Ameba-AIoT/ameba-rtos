@@ -1153,9 +1153,9 @@ RTW_RET_STATUS rtw_nan_api_send_datapath_req(struct datapath_info *info)
 		dp_req->cipher_suite_id = RTW_NAN_CIPHER_ID_OPEN;
 	}
 
-	/* Qos */
-	dp_req->qos.max_service_internal = 1;
-	dp_req->qos.low_latency_required = 1;
+	/* Qos, subscriber not set qos requirement by default*/
+	// dp_req->qos.max_service_internal = 1;
+	// dp_req->qos.low_latency_required = 1;
 
 	/* send nandow command */
 	input = &nandow_cmd;

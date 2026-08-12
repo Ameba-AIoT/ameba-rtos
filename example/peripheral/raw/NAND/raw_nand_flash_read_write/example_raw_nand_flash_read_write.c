@@ -25,7 +25,7 @@ static void flash_test_task(void *param)
 
 	NAND_SPIC_DPHY_CTRL(&flash_init_para, 1);
 
-	NAND_RxCmd(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 3, data);
+	NAND_RxCmd_Safe(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 3, data);
 	DiagPrintf("MID:0x%x, DID:0x%x, DID:0x%x \n\r", data[0], data[1], data[2]);
 
 	u8 feature_id = 0xA0;

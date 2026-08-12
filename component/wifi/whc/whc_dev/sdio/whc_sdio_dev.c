@@ -203,8 +203,6 @@ void whc_sdio_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb)
 {
 	struct whc_txbuf_info_t *buf_info = NULL;
 	struct spdio_buf_t *pbuf;
-	u8 tmp = 0;
-	struct whc_msg_info *msg_info = (struct whc_msg_info *)buf;
 
 	buf_info = whc_dev_alloc_buf_info(buf, len, buf_alloc, is_skb);
 	if (!buf_info) {
@@ -220,9 +218,8 @@ void whc_sdio_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb)
 		/* wait for RXBD release */
 		rtos_sema_take(sdio_priv.rxbd_release_sema, 0xFFFFFFFF);
 
-		/* need update flowctrl status */
-		whc_dev_flowctrl(&tmp, 0);
-		msg_info->flow_ctrl_en = tmp;
+		/* Refresh flow_ctrl_en if this is a RECV_PKTS packet. */
+		whc_dev_update_flowctrl(buf);
 	}
 
 #ifdef WHC_SDIO_USE_GPIO_INT
