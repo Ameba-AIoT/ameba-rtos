@@ -13,6 +13,9 @@ on:
 jobs:
   cross-platform-build:
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     env:
       SOC_MAP_JSON: '{"amebalite":"RTL8726E","amebasmart":"RTL8730E","amebadplus":"RTL8721Dx","amebagreen2":"RTL8721F", "RTL8720F":"RTL8720F"}'
 
@@ -24,58 +27,32 @@ jobs:
 
           - os: windows-latest
             shell: cmd
- 
+
           - os: windows-latest
             shell: powershell
 
           - os: macos-latest
             shell: bash
 
-#          - os: windows-latest
-#            shell: bash
-
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Platform prepare and setup
-      shell: bash
-      run: |
-        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-          sudo apt-get update -qq
-          sudo apt-get install -y cmake ninja-build jq
-          sudo ln -sf /bin/bash /bin/sh
-        elif [ "${{ matrix.os }}" == "macos-latest" ]; then
-          brew update
-          brew install cmake ninja jq wget
-        else
-          choco install cmake ninja wget jq -y --no-progress
-        fi
-
-        python -m pip install --upgrade pip
-        pip install -r tools/requirements.txt
-
+    # ── Json file parser ────────────────────────────────────────────────────────
     - name: Json file parser
       id: build_config
       shell: bash
-      run: |        
-        # 检查文件是否存在
+      run: |
         JSON_FILE=.github/workflows/ameba_build_config.json
         if [ ! -f "$JSON_FILE" ]; then
           echo "::error file=ameba_build_config.json::配置文件不存在"
           exit 1
         fi
-
-        # 验证JSON格式
         if ! jq empty $JSON_FILE; then
           echo "::error file=$JSON_FILE::无效的JSON格式"
           exit 1
         fi
-
-        # 提取嵌套数据
         echo "ic ${{ inputs.ic_name }} "
         echo "ic ${{ inputs.build_stage_name }} "
-        echo "ic ${{ github.event.inputs.build_stage_name }} "
         BUILD_CONFIG=$(
           jq -r \
             --arg ic "${{ inputs.ic_name }}" \
@@ -83,45 +60,69 @@ jobs:
             --arg prefix "tools/scripts/daily_build_tool/${{ inputs.ic_name }}/" \
             '
             .[$ic][$stage] as $v
-            | if $v == null or ($v | type) != "string" then
-                ""
-              else
-                ($v
-                | split(" ")
-                | map(select(length > 0))
-                | map($prefix + .)
-                | join(" "))
+            | if $v == null or ($v | type) != "string" then ""
+              else ($v | split(" ") | map(select(length > 0)) | map($prefix + .) | join(" "))
               end
             ' "$JSON_FILE"
         )
-
         echo "build_config=$BUILD_CONFIG" >> $GITHUB_OUTPUT
         echo "SOC_NAME=${{ fromJson(env.SOC_MAP_JSON)[inputs.ic_name] }}" >> $GITHUB_ENV
 
-    - name: Menuconfig
-      run: |
-        echo "Menuconfig Current shell is ${{ matrix.shell }}"
-        echo "${{ inputs.ic_name }} stage ${{ inputs.build_stage_name }} build config ${{ steps.build_config.outputs.build_config }}"
-
-        python ameba.py menuconfig ${{ env.SOC_NAME }} -f ${{ steps.build_config.outputs.build_config }}
-      if: ${{ inputs.build_stage_name != 'B0' }}
-
-    - name: Build
-      id: build_unix
-      run: |
-        echo "Build Current shell is ${{ matrix.shell }}"
-        python ameba.py build ${{ env.SOC_NAME }} -D USE_SECOND_SOURCE=True
+    # ── Unix ────────────────────────────────────────────────────────────────────
+    - name: Platform prepare, Menuconfig and Build (Unix)
       if: ${{ matrix.os != 'windows-latest' }}
+      shell: bash
+      run: |
+        if [ "${{ matrix.os }}" == "macos-latest" ]; then
+          brew install openssl@3
+        fi
 
-    - name: Build_windows
+        export USE_SECOND_SOURCE=True
+        source env.sh
+
+        if [ "${{ inputs.build_stage_name }}" != "B0" ]; then
+          echo "Menuconfig ${{ inputs.ic_name }} stage ${{ inputs.build_stage_name }} build config ${{ steps.build_config.outputs.build_config }}"
+          python ameba.py menuconfig ${{ env.SOC_NAME }} -f ${{ steps.build_config.outputs.build_config }}
+        fi
+
+        python ameba.py build ${{ env.SOC_NAME }}
+        python ameba.py cleansoc ${{ env.SOC_NAME }}
+
+    # ── Windows: 公共 setup（cmd 和 powershell 共享）─────────────────────────
+    - name: Run env.bat (Windows)
+      if: ${{ matrix.os == 'windows-latest' }}
+      shell: cmd
+      run: |
+        set USE_SECOND_SOURCE=True
+        echo USE_SECOND_SOURCE=True>>%GITHUB_ENV%
+        call env.bat
+
+    - name: Export prebuilts PATH (Windows)
+      if: ${{ matrix.os == 'windows-latest' }}
+      shell: bash
+      run: |
+        PREBUILTS_VERSION=$(grep -m1 'PREBUILTS_VERSION=' env.bat | sed 's/.*PREBUILTS_VERSION=\(.*\)/\1/' | tr -d '"\r')
+        PREBUILTS_DIR="C:/rtk-toolchain/prebuilts-win-${PREBUILTS_VERSION}"
+        echo "${PREBUILTS_DIR}/bin"            >> "$GITHUB_PATH"
+        echo "${PREBUILTS_DIR}/cmake/bin"      >> "$GITHUB_PATH"
+        echo "${PREBUILTS_DIR}/make"           >> "$GITHUB_PATH"
+        echo "${PREBUILTS_DIR}/winpty"         >> "$GITHUB_PATH"
+        echo "${GITHUB_WORKSPACE}/.venv/Scripts" >> "$GITHUB_PATH"
+        echo "VIRTUAL_ENV=${GITHUB_WORKSPACE}/.venv" >> "$GITHUB_ENV"
+        echo "PYTHONNOUSERSITE=True"           >> "$GITHUB_ENV"
+
+    # ── Windows（shell 由 defaults.run.shell 决定，cmd/powershell 矩阵各自跑）────
+    - name: Menuconfig (Windows)
+      if: ${{ matrix.os == 'windows-latest' && inputs.build_stage_name != 'B0' }}
+      run: |
+        echo Menuconfig (${{ matrix.shell }}) ${{ inputs.ic_name }} stage ${{ inputs.build_stage_name }} build config ${{ steps.build_config.outputs.build_config }}
+        python ameba.py menuconfig ${{ env.SOC_NAME }} -f ${{ steps.build_config.outputs.build_config }}
+
+    - name: Build (Windows)
       id: build_win
-      run: |
-          echo "Build Current shell is ${{ matrix.shell }}"
-          python ameba.py build ${{ env.SOC_NAME }} -D USE_SECOND_SOURCE=True
-      if: ${{ inputs.ic_name != 'amebasmart' && matrix.os == 'windows-latest' }}
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: python ameba.py build ${{ env.SOC_NAME }}
 
-    - name: Post-Build Cleanup
-      run: |
-        echo "Post-Build Current shell is ${{ matrix.shell }}"
-        python ameba.py clean ${{ env.SOC_NAME }}
-      if: ${{ steps.build_unix.outcome == 'success' || steps.build_win.outcome == 'success' }}
+    - name: Post-Build Cleanup (Windows)
+      if: ${{ steps.build_win.outcome == 'success' }}
+      run: python ameba.py cleansoc ${{ env.SOC_NAME }}
