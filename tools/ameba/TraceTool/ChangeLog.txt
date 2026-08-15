@@ -82,3 +82,6 @@ ChangeLog:
 20260615  v2.1.42 (1) Support UTF-8 as default
                   (2) Fine tune GUI
                   (3) Enhance serial port operation for driver compatibility
+20260629  v2.1.43 Fix DIAG issues
+20260713  v2.1.44 (1) Optimize runtime CPU usage
+                  (2) Support Ctrl+C interruption
