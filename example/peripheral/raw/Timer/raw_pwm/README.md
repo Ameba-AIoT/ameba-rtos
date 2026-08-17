@@ -43,12 +43,12 @@ For example:
 	GND <--> LED2 <---> PA_8
 	GND <--> LED3 <---> PA_10
 
-4. If you run this example in RTL8720F, then connect as below
+5. If you run this example in RTL8720F, then connect as below
 
-	GND <--> LED0 <---> PA_15
-	GND <--> LED1 <---> PA_16
-	GND <--> LED2 <---> PA_25
-	GND <--> LED3 <---> PA_26
+	GND <--> LED0 <---> PA_21
+	GND <--> LED1 <---> PA_22
+	GND <--> LED2 <---> PA_23
+	GND <--> LED3 <---> PA_20
 
 # SW configuration
 1. Build and Download:
@@ -87,3 +87,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F

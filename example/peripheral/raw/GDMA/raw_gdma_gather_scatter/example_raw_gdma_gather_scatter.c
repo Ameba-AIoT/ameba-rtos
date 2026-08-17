@@ -37,6 +37,37 @@ void gdma_dump_memory(u8 *src, u32 len)
 	}
 	printf("\n");
 }
+
+static bool gdma_verify_gather_chunk(void)
+{
+	uint32_t cbytes = SRC_GATHER_COUNT * 2;
+	uint32_t sstride = (SRC_GATHER_COUNT + SRC_GATHER_INTERVAL) * 2;
+	for (u32 si = 0; si < sizeof(gather_src_buf); si += sstride) {
+		u32 di = (si / sstride) * cbytes;
+		for (u32 k = 0; k < cbytes; k++) {
+			if (gather_src_buf[si + k] != gather_dst_buf[di + k]) {
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
+static bool gdma_verify_scatter_chunk(void)
+{
+	uint32_t cbytes = DST_SCATTER_COUNT;
+	uint32_t dstride = DST_SCATTER_COUNT + DST_SCATTER_INTERVAL;
+	for (u32 si = 0; si < sizeof(scatter_src_buf); si += cbytes) {
+		u32 di = (si / cbytes) * dstride;
+		for (u32 k = 0; k < cbytes; k++) {
+			if (scatter_src_buf[si + k] != scatter_dst_buf[di + k]) {
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
 u32 gdma_source_gather_irq(void *data)
 {
 	GDMA_InitTypeDef *p_gdma_init = (GDMA_InitTypeDef *)data;
@@ -116,6 +147,9 @@ void gdma_source_gather_task(void)
 	printf("Gather Dst buffer data\n");
 	gdma_dump_memory(gather_dst_buf, sizeof(gather_dst_buf));
 	printf("****transfer over****\n");
+
+	printf("Source Gather %s\n", gdma_verify_gather_chunk() ? "PASS" : "FAIL");
+
 	rtos_task_delete(NULL);
 }
 
@@ -165,6 +199,9 @@ void gdma_dest_scatter_task(void)
 	printf("scatter dst buffer data\n");
 	gdma_dump_memory(scatter_dst_buf, sizeof(scatter_dst_buf));
 	printf("====transfer over====\n");
+
+	printf("Dest Scatter %s\n", gdma_verify_scatter_chunk() ? "PASS" : "FAIL");
+
 	rtos_task_delete(NULL);
 }
 

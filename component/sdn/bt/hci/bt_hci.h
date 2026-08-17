@@ -3,6 +3,16 @@
 
 #include <bt_hci_spec.h>
 
+struct c2h_flowctrl {
+	uint8_t acl_mtu;
+	uint8_t acl_pkts;
+	uint8_t acl_avail;
+	uint8_t sco_mtu;
+	uint8_t sco_pkts;
+	uint8_t sco_avail;
+	uint8_t enable;
+};
+
 typedef uint8_t (*hci_cmd_func_t)(void *param, uint8_t *status);
 struct bt_hci_cmd_func_hdl {
 	uint16_t opcode;
@@ -16,6 +26,9 @@ uint8_t bt_hci_cmd_ogf_linkctrl_ocf_read_version(void *phci_cmd_param, uint8_t *
 //OGF: BT_OGF_BASEBAND
 uint8_t bt_hci_cmd_ogf_baseband_ocf_evt_mask(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ofg_baseband_ocf_reset(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ofg_baseband_ocf_ctrl_to_host_flow(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ofg_baseband_ocf_host_buffer_size(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ofg_baseband_ocf_host_num_completed_packets(void *phci_cmd_param, uint8_t *rsp);
 
 //OGF: BT_OGF_INFO
 uint8_t bt_hci_cmd_ogf_info_ocf_read_local_version_info(void *phci_cmd_para, uint8_t *rsp);
@@ -28,7 +41,6 @@ uint8_t bt_hci_cmd_ogf_status_ocf_read_rssi(void *phci_cmd_param, uint8_t *rsp);
 
 //OGF: BT_OGF_LE
 uint8_t bt_hci_ogf_le_ocf_set_evt_mask(void *phci_cmd_param, uint8_t *rsp);
-uint8_t bt_hci_ogf_le_ocf_read_buffer_size(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_ogf_le_ocf_read_local_feature(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_ogf_le_ocf_set_random_addr(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_adv_set_param(void *phci_cmd_param, uint8_t *rsp);
@@ -96,6 +108,7 @@ uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_adv_enable(void *phci_cmd_param, uint
 uint8_t bt_hci_cmd_ogf_le_ocf_pa_create_sync(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_pa_create_sync_cancel(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_pa_terminate_sync(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_pa_receive_enable(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_add_pa_list(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_remove_pa_list(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_clear_pa_list(void *phci_cmd_param, uint8_t *rsp);
@@ -116,12 +129,7 @@ bool bt_hci_evt_mask_is_set(uint64_t evt);
 void bt_hci_set_le_evt_mask(uint8_t *ple_evt_mask);
 bool bt_hci_le_evt_mask_is_set(uint64_t le_evt);
 void bt_hci_enable(uint8_t max_hci_cmd_num);
-uint8_t bt_hci_get_rx_hci_cmd_num(void);
 
-void bt_hci_tx_acl_data(void *pdu, uint8_t len, uint16_t conn_handle, bool is_start);
-void bt_hci_rx_acl_data(uint8_t *pbuf);
-
-void bt_hci_cmd_handler(uint8_t *pbuf);
 void bt_hci_get_supported_hci_command(uint8_t *pcommands);
 void bt_hci_get_le_local_feature(uint8_t *pfeature);
 
@@ -154,9 +162,8 @@ void bt_hci_evt_le_pa_sync_established(uint8_t status, uint16_t sync_handle, uin
 									   uint8_t adv_addr_type, uint8_t *adv_addr, uint8_t adv_phy,
 									   uint16_t pa_interval, uint8_t adv_clk_accuracy);
 
-void bt_hci_evt_le_pa_report(uint16_t sync_handle, uint8_t tx_power, int8_t rssi,
-							 uint8_t cte_type, uint8_t data_status, uint8_t data_len,
-							 uint8_t *pdata);
+void bt_hci_evt_le_pa_report(uint16_t sync_handle, void *aux_sync_ind,
+							 uint8_t chain_num, void *chain_ind_list);
 
 void bt_hci_evt_le_pa_sync_lost(uint16_t sync_handle);
 #endif

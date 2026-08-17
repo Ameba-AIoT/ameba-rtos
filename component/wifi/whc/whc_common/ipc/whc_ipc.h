@@ -32,6 +32,9 @@
 #ifdef CONFIG_WIFI_TUNNEL
 #include "wifi_api_wtn.h"
 #endif
+#ifdef CONFIG_WIFI_XMESH
+#include "wifi_api_xmesh.h"
+#endif
 #endif
 /* -------------------------------- Defines --------------------------------- */
 /*msg q task*/

@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Realtek wireless local area network IC driver.
+ *
+ * Copyright(c) 2024 Realtek Corporation. All rights reserved.
+ */
 #include <whc_host_linux.h>
 #include <linux/spi/spi.h>
 #include <linux/of_gpio.h>
@@ -110,7 +116,7 @@ static int whc_usb_host_trx_resource_init(struct list_head *q, int qsize, int pr
 		}
 
 		if (pre_submit) {
-			skb = dev_alloc_skb(RTW_USB_MAX_SKB_SIZE);
+			skb = dev_alloc_skb(WHC_USB_RX_MAX_BUF_SIZE);
 			if (!skb) {
 				goto qinit_fail;
 			}
@@ -122,7 +128,7 @@ static int whc_usb_host_trx_resource_init(struct list_head *q, int qsize, int pr
 
 		if (pre_submit) {
 			usb_fill_bulk_urb(req->urb, priv->usb_dev, priv->rx_pipe,
-							  skb->data, RTW_USB_MAX_SKB_SIZE, whc_usb_host_rx_complete, req);
+							  skb->data, WHC_USB_RX_MAX_BUF_SIZE, whc_usb_host_rx_complete, req);
 
 			ret = usb_submit_urb(req->urb, GFP_ATOMIC);
 			if (ret) {
@@ -351,7 +357,7 @@ static int whc_usb_host_resume(struct usb_interface *intf)
 
 		skb = req->skb;
 		usb_fill_bulk_urb(req->urb, priv->usb_dev, priv->rx_pipe,
-						  skb->data, RTW_USB_MAX_SKB_SIZE, whc_usb_host_rx_complete, req);
+						  skb->data, WHC_USB_RX_MAX_BUF_SIZE, whc_usb_host_rx_complete, req);
 
 		ret = usb_submit_urb(req->urb, GFP_ATOMIC);
 		if (ret) {

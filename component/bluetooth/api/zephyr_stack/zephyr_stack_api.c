@@ -83,10 +83,12 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		BT_LOGD("RTK_BT_LE_GP_GATTS group \r\n");
 		bt_stack_gatts_act_handle(p_cmd);
 		break;
+#if defined(RTK_BLE_GATTC_SUPPORT) && RTK_BLE_GATTC_SUPPORT
 	case RTK_BT_LE_GP_GATTC:
 		BT_LOGD("RTK_BT_LE_GP_GATTC group \r\n");
 		bt_stack_gattc_act_handle(p_cmd);
 		break;
+#endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	case RTK_BT_LE_GP_MESH_STACK:
 		BT_LOGD("RTK_BT_LE_GP_MESH_STACK group");

@@ -11,6 +11,10 @@
 #include "dlist.h"
 #include "usbd_video.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 #define USBD_UVC_INTF_CONTROL        0
 #define USBD_UVC_INTF_STREAMING      1
@@ -150,7 +154,7 @@ typedef  struct {
  */
 typedef  struct {
 	struct list_head buffer_list;
-	u8 *mem;
+	const u8 *mem;
 	u32 bytesused;
 	void *exbuf;
 	int index;
@@ -273,11 +277,16 @@ usbd_uvc_dev_t *get_private_usbd_uvcd(void);
 void usbd_uvc_video_put_out_stream_queue(usbd_uvc_buffer_t *payload);
 void usbd_uvc_video_put_in_stream_queue(usbd_uvc_buffer_t *payload);
 usbd_uvc_buffer_t *usbd_uvc_video_out_stream_queue(void);
+void usbd_uvc_wait_frame_down(void);
+int usbd_uvc_get_status(void);
 int usbd_uvc_init(void);
-int usbd_uvc_uvcd_get_status(void);
-void usbd_uvc_uvcd_wait_frame_down(void);
 int usbd_uvc_parameter_init(void);
 void usbd_uvc_deinit(void);
 void usbd_uvc_set_change_parm_cb(int cb);
 usbd_uvc_format_t *usbd_uvc_get_format(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* USBD_UVC_H */

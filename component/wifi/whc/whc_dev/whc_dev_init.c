@@ -16,6 +16,7 @@ static void whc_log_output(const u8 *buf, u32 len)
 }
 #endif /* CONFIG_LOG_FWD */
 
+
 /**
  * @brief  to initialize the whc device (non-IPC).
  * @param  none.

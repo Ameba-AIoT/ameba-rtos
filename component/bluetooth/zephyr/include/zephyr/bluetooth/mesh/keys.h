@@ -28,11 +28,11 @@ struct bt_mesh_key {
 	psa_key_id_t key;
 };
 
-#elif defined CONFIG_BT_MESH_USES_TINYCRYPT
+#elif defined CONFIG_BT_MESH_USES_MBEDTLS
 
 /** The structure that keeps representation of key. */
 struct bt_mesh_key {
-	/** tinycrypt key representation is the pure key value. */
+	/** mbedtls key representation is the pure key value. */
 	uint8_t key[16];
 };
 

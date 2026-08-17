@@ -684,7 +684,7 @@ static uint16_t ble_transfer_module_register_default_srv(void)
 
 static uint16_t ble_transfer_module_register_default_user_defined_srvs(void)
 {
-	uint16_t ret;
+	uint16_t ret = 0;
 
 	for (int i = 0; i < TRANSFER_MODULE_USER_DEFINED_SRV_MAX_NUM; ++i) {
 		if (user_defined_srvs[i] && user_defined_srvs[i]->srv) {
@@ -1186,10 +1186,10 @@ static uint16_t transfer_module_srv_attrs_init(struct rtk_bt_gatt_service *srv,
 	for (int char_idx = 0; char_idx < char_num; ++char_idx) {
 		uint8_t perm = 0;
 		uint16_t props = chars[char_idx].char_property;
-		uint8_t uuid_type = chars[char_idx].uuid_type;
+		uint8_t char_uuid_type = chars[char_idx].uuid_type;
 		uint8_t *uuid = chars[char_idx].char_uuid;
 
-		ret = transfer_module_char_decl_init(&srv->attrs[attr_idx++], uuid_type, uuid, props);
+		ret = transfer_module_char_decl_init(&srv->attrs[attr_idx++], char_uuid_type, uuid, props);
 		if (ret != RTK_BT_OK) {
 			break;
 		}
@@ -1201,7 +1201,7 @@ static uint16_t transfer_module_srv_attrs_init(struct rtk_bt_gatt_service *srv,
 			perm |= RTK_BT_GATT_PERM_WRITE;
 		}
 
-		ret = transfer_module_char_value_init(&srv->attrs[attr_idx++], uuid_type, uuid, perm);
+		ret = transfer_module_char_value_init(&srv->attrs[attr_idx++], char_uuid_type, uuid, perm);
 		if (ret != RTK_BT_OK) {
 			break;
 		}

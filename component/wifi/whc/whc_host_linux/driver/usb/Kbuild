@@ -62,6 +62,10 @@ ifeq ($(CONFIG_WHCH), y)
 		../whch/whch_host_addba.o \
 		../whch/hal/whch_host_hal_xmit_com.o \
 		../whch/hal/whch_host_hal_recv_com.o
+ifeq ($(CONFIG_NAN), y)
+    whc_usb-$(CONFIG_WHC_HCI_USB) += \
+		../whch/whch_host_nan.o
+endif
 ifeq ($(CONFIG_AMEBAGREEN2), y)
     whc_usb-$(CONFIG_WHC_HCI_USB) += \
 		../whch/hal/rtl8721f/whch_host_hal_xmit.o \

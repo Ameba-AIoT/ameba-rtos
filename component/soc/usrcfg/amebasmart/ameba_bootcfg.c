@@ -26,7 +26,7 @@ RCC_ConfDef RCC_Config[] = {
 	{APBPeriph_LX1,			APBPeriph_LX1_CLOCK,			ENABLE},
 	{APBPeriph_TIM0,		APBPeriph_TIM0_CLOCK,			ENABLE},
 
-	{0xFFFFFFFF,			NULL,							ENABLE},
+	{0xFFFFFFFF,			0,					ENABLE},
 };
 
 u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;

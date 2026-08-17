@@ -15,6 +15,9 @@
 #ifdef CONFIG_RTL8720F
 IRQn_Type GPIO_IrqNum[1] = {GPIOA_IRQ};
 u32 GPIO_RegBase[1] = {(u32)GPIOA_BASE};
+#elif defined (CONFIG_AMEBAPRO3)
+IRQn_Type GPIO_IrqNum[8] = {AON_GPIO_IRQ, PON_GPIO_IRQ, GPIO_IRQ, GPIO_IRQ, GPIO_IRQ, PON_GPIO_IRQ, GPIO_IRQ, PON_GPIO_IRQ};
+u32 GPIO_RegBase[8] = {(u32)AON_GPIO_BASE, (u32)PON_GPIO_BASE, (u32)GPIO_BASE, (u32)GPIO_BASE, (u32)GPIO_BASE, (u32)PON_GPIO_BASE, (u32)GPIO_BASE, (u32)PON_GPIO_BASE};
 #else
 IRQn_Type GPIO_IrqNum[2] = {GPIOA_IRQ, GPIOB_IRQ};
 u32 GPIO_RegBase[2] = {(u32)GPIOA_BASE, (u32)GPIOB_BASE};
@@ -65,6 +68,7 @@ void raw_gpio_edge_irq_demo(void)
 	GPIO_InitStruct_EDGE_INT.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStruct_EDGE_INT.GPIO_ITTrigger = GPIO_INT_Trigger_EDGE;
 	GPIO_InitStruct_EDGE_INT.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_LOW;
+	GPIO_InitStruct_EDGE_INT.GPIO_ITDebounce = GPIO_INT_DEBOUNCE_DISABLE;
 
 	InterruptRegister((IRQ_FUN)GPIO_INTHandler, GPIO_IrqNum[port_num], (u32)GPIO_RegBase[port_num], 6);
 	InterruptEn(GPIO_IrqNum[port_num], 6);

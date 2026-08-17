@@ -45,6 +45,16 @@ ameba_list_append(private_sources
     ecdsa_sign_service.c
 )
 
+# RSA client key service: only included when building rdp_mutual_auth_rsa
+ameba_list_append_if(CONFIG_IMG3_RSA_CLIENT_SERVICE private_sources
+    secure_client_service_rsa.c
+)
+
+# ECDSA client key service: only included when building rdp_mutual_auth_ecdsa
+ameba_list_append_if(CONFIG_IMG3_ECDSA_CLIENT_SERVICE private_sources
+    secure_ecdsa_client_service.c
+)
+
 # amebadplus, amebalite, RTL8720F, amebagreen2 have ecdsa_sign_service and low_level_io
 # amebasmart doesn't have these
 if(NOT CONFIG_AMEBASMART)

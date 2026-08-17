@@ -276,6 +276,11 @@ void whc_host_api_send_ret_value(u32 api_id, u8 *pbuf, u32 len)
 	u8 *buf = NULL;
 	struct whc_api_info *ret_msg;
 
+	/* device marked this call as no-ret call; skip sending API_RETURN */
+	if (api_id & WHC_API_NO_RET_FLAG) {
+		return;
+	}
+
 	buf = rtos_mem_zmalloc(sizeof(struct whc_api_info) + len + DEV_DMA_ALIGN);
 	if (!buf) {
 		return;
@@ -320,6 +325,7 @@ void whc_host_api_task(void)
 	void (*api_hdl)(u32 api_id, u32 * param_buf);
 	u32 i = 0;
 	int ret = RTK_FAIL;
+	u32 api_id;
 
 	do {
 		rtos_sema_take(event_priv.task_wake_sema, 0xFFFFFFFF);
@@ -328,11 +334,15 @@ void whc_host_api_task(void)
 		event_priv.rx_api_msg = NULL;
 		param_buf = (u32 *)(p_recv_msg + 1);
 
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "DEV CALL API(%x)\n", p_recv_msg->api_id);
+		/* strip no_ret flag for handler matching; pass raw api_id to handler
+		 * so send_ret_value can check the flag directly */
+		api_id = p_recv_msg->api_id & ~WHC_API_NO_RET_FLAG;
+
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "DEV CALL API(%x)\n", api_id);
 
 		api_hdl = NULL;
 		for (i = 0; i < sizeof(host_api_handlers) / sizeof(struct event_func_t); i++) {
-			if (host_api_handlers[i].api_id == p_recv_msg->api_id) {
+			if (host_api_handlers[i].api_id == api_id) {
 				api_hdl = host_api_handlers[i].func;
 				break;
 			}
@@ -341,11 +351,11 @@ void whc_host_api_task(void)
 		if (api_hdl != NULL) {
 			api_hdl(p_recv_msg->api_id, param_buf);
 		} else {
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host Unknown API(%x)\n", p_recv_msg->api_id);
+			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host Unknown API(%x)\n", api_id);
 			whc_host_api_send_ret_value(p_recv_msg->api_id, (u8 *)&ret, sizeof(ret));
 		}
 
-		RTK_LOGD(TAG_WLAN_INIC, "Host CALL API(%x) done\n", p_recv_msg->api_id);
+		RTK_LOGD(TAG_WLAN_INIC, "Host CALL API(%x) done\n", api_id);
 
 		/* free rx_api_msg */
 		rtos_mem_free((u8 *)p_recv_msg);

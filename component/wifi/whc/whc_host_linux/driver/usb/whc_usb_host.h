@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Realtek wireless local area network IC driver.
+ *
+ * Copyright(c) 2024 Realtek Corporation. All rights reserved.
+ */
 #ifndef __WHC_USB_HOST_H__
 #define __WHC_USB_HOST_H__
 
@@ -15,6 +21,18 @@
 #define RTW_USB_MAX_SKB_SIZE				1800
 #else
 #define RTW_USB_MAX_SKB_SIZE				1600
+#endif
+
+#ifdef WHCH_TXAGG
+#define WHC_USB_TX_MAX_BUF_SIZE				WHCH_TXAGG_BUFSZ
+#else
+#define WHC_USB_TX_MAX_BUF_SIZE				RTW_USB_MAX_SKB_SIZE
+#endif
+
+#ifdef WHCH_RXAGG
+#define WHC_USB_RX_MAX_BUF_SIZE				WHCH_RXAGG_BUFSZ
+#else
+#define WHC_USB_RX_MAX_BUF_SIZE				RTW_USB_MAX_SKB_SIZE
 #endif
 
 #define CONFIG_INIC_USB_ASYNC_SEND
@@ -59,6 +77,9 @@ struct rtw_usbreq {
 	struct urb *urb;
 	void  *skb;
 	u8	is_buf;
+#ifdef WHCH_TXAGG
+	u8	is_txagg;
+#endif
 };
 
 extern struct whc_usb whc_usb_host_priv;

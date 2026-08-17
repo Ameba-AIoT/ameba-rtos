@@ -261,7 +261,7 @@ void SPDIO_Buffer_free(PSPDIO_ADAPTER pSPDIODev)
  * @brief Initialize the SPDIO interface.
  * @param obj Pointer to a @ref spdio_t structure which should be initialized by user,
  * 		and which will be used to initialize the SPDIO interface.
- * 		- obj->host_rx_bd_num: Number of host RX BDs for device-to-host transfer (must be even, 2 BDs per packet).
+ * 		- obj->host_rx_bd_num: Number of host RX BDs for device-to-host transfer.
  * 		- obj->host_tx_bd_num: Number of host TX BDs for host-to-device transfer.
  * 		- obj->device_rx_bufsz: Device RX buffer size (must be a multiple of 64).
  * 		- obj->rx_buf: Device RX buffer array pre-allocated by user.
@@ -279,7 +279,7 @@ void spdio_init(struct spdio_t *obj)
 	}
 
 	if ((obj->host_tx_bd_num == 0) || (obj->device_rx_bufsz == 0) || (obj->device_rx_bufsz % 64)
-		|| (obj->host_rx_bd_num == 0) || (obj->host_rx_bd_num % 2) || (obj->rx_buf == NULL)) {
+		|| (obj->host_rx_bd_num == 0) || (obj->rx_buf == NULL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "spdio obj resource isn't correctly inited, spdio init failed!\n");
 		return;
 	}

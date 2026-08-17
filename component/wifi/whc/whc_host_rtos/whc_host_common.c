@@ -160,7 +160,7 @@ void whc_host_recv_dispatch(u8 *buf, u32 len)
 		 * payload (see whc_dev_api_send_to_host). Must skip the hdr and use hdr->len;
 		 * don't pass buf/desc size directly. */
 		hdr = (struct whc_cmd_path_hdr *)(buf + SIZE_RX_DESC);
-		whc_host_pkt_rx_to_user((u8 *)(hdr + 1), hdr->len);
+		whc_host_deliver_rxbuf_to_user((u8 *)(hdr + 1), hdr->len);
 		break;
 #endif
 	default:
@@ -170,7 +170,10 @@ void whc_host_recv_dispatch(u8 *buf, u32 len)
 				bt_inic_spi_recv_host_ptr(buf + SIZE_RX_DESC, len - SIZE_RX_DESC);
 			}
 		} else {
+			/* spi host would rx dummy data, which does not need to be reported. */
+#ifndef CONFIG_WHC_INTF_SPI
 			RTK_LOGE(TAG_WLAN_INIC, "%s: unknown event:%d\n", __func__, event);
+#endif
 		}
 		break;
 	}

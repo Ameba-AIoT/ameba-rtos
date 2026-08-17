@@ -10,7 +10,7 @@ static void aontimer_dslp_handler(void)
 
 	AONTimer_ClearINT();
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "BKUP_REG1's value = 0x%08lx \n", BKUP_Read(BKUP_REG1));
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "BKUP_REG1's value = 0x%08x \n", BKUP_Read(BKUP_REG1));
 }
 
 void example_raw_pmc_dslp(void)

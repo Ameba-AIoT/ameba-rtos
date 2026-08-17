@@ -545,12 +545,13 @@ typedef struct {
 	__IO u32 IMQ_HEAP_ADDR;
 	__IO u32 IMQ_HEAP_SIZE;
 	__IO u32 IMQ_INIT_DONE;
+	__IO u32 OTA_APP_REMAP;
 	__IO u8 VOL_TYPE;
 	__IO u8 APPLL_STATE;
 	__IO u8 MEM_TYPE;
 	__IO u8 CHIP_INFO;
 	__IO u8 PSRAM_LATENCY;
-	__IO u8 RRAM_USER_RSVD[107];            /* Rsvd for user */
+	__IO u8 RRAM_USER_RSVD[103];            /* Rsvd for user */
 
 	__IO u8 RRAM_PCR_RSVD[128];             /* Rsvd for PCR */
 } RRAM_TypeDef;

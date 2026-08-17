@@ -13,7 +13,10 @@
 #define LINK_NODE_NUM    (DATA_SIZE/BLOCK_SIZE)
 
 /*abort loop link list transfer*/
-uint8_t abort_transfer = 1;
+#ifndef ABORT_TRANSFER
+#define ABORT_TRANSFER 1
+#endif
+uint8_t abort_transfer = ABORT_TRANSFER;
 
 /* gdma link node*/
 ALIGNMTO(CACHE_LINE_SIZE) struct GDMA_CH_LLI gdma_link[LINK_NODE_NUM];

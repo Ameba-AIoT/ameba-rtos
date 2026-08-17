@@ -2,7 +2,7 @@
 
 # Example Description
 
-1. This example shows master sends data to multiple slaves by MBED SPI API.
+1. This example shows master sends data to multiple slaves by MBED SPI API. The master uses **dual-task** mode: two independent worker threads share the SPI bus via a mutex, each owning one GPIO CS line (CS0 / CS1). This simulates an RTOS scenario where multiple tasks contend for a shared SPI bus, each addressing a different slave device.
 2. The SPI Interface provides a "Serial Peripheral Interface" Master.
 3. This interface can be used for communication with SPI slave devices, such as FLASH memory, LCD screens and other modules or integrated circuits.
 
@@ -51,8 +51,8 @@ For example:
   - master's `MOSI (_PA_26)` connect to slave1's `MOSI (_PA_8)` & slave0's `MOSI (_PA_8)`
   - master's `MISO (_PA_27)` connect to slave1's `MISO (_PA_9)`& slave0's `MISO (_PA_9)`
   - master's `SCLK (_PA_25)` connect to slave1's `SCLK (_PA_7)`& slave0's `SCLK (_PA_7)`
-  - master's `SPI_GPIO_CS0 (_PA_8)` connect to slave0's `CS (_PA_10)`
-  - master's `SPI_GPIO_CS1 (_PA_9)` connect to slave1's `CS (_PA_10)`
+  - master's `SPI_GPIO_CS0 (_PA_10)` connect to slave0's `CS (_PA_10)`
+  - master's `SPI_GPIO_CS1 (_PA_3)` connect to slave1's `CS (_PA_10)`
 
 # SW configuration
 
@@ -69,9 +69,8 @@ For example:
 
 # Expect result
 
-1. At first, slave1 would receive data in decreasing order in a loop, while slave0 which is not selected by master receives nothing and generates rx timeout at the same time.
-2. In the next loop, slave0 selected by the master receives data in increasing order, while slave1 receives nothing and generates rx timeout.
-3. For slave which is not selected in current loop, log like "SPI Slave Wait Timeout" will be shown, and dump data is 0x0 totally.
+1. The master runs two worker threads sharing the SPI bus via a mutex, each with its own GPIO CS line (CS0/CS1). Each worker sends 10 rounds of data. Scheduling is non-deterministic.
+2. The slave receives data from whichever worker holds the bus, auto-detects the pattern (increment for CS0, decrement for CS1), and verifies every byte. Summary shows `success`, `fail`, `deselected` counts.
 
 # Note
 

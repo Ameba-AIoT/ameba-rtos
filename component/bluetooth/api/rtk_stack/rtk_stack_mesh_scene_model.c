@@ -162,7 +162,7 @@ static int32_t scene_server_data(const mesh_model_info_p pmodel_info, uint32_t t
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL, RTK_BT_MESH_SCENE_SERVER_MODEL_GET_REGISTER_STATUS,
 									sizeof(rtk_bt_mesh_scene_server_get_register_status_t));
 		p_get_data = (rtk_bt_mesh_scene_server_get_register_status_t *)p_evt->data;
-		p_get_data->status = &(((scene_server_get_register_status_t *)pargs)->status);
+		p_get_data->status = (rtk_bt_mesh_scene_status_code_t *)(&(((scene_server_get_register_status_t *)pargs)->status));
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
 	break;
@@ -197,7 +197,7 @@ static int32_t scene_server_data(const mesh_model_info_p pmodel_info, uint32_t t
 									sizeof(rtk_bt_mesh_scene_server_get_status_recall_t));
 		p_get_data = (rtk_bt_mesh_scene_server_get_status_recall_t *)p_evt->data;
 		p_get_data->scene_number = p_data->scene_number;
-		p_get_data->status_recall = &(((scene_server_get_status_recall_t *)pargs)->status_recall);
+		p_get_data->status_recall = (rtk_bt_mesh_scene_status_code_t *)(&(((scene_server_get_status_recall_t *)pargs)->status_recall));
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
 	break;
@@ -269,7 +269,7 @@ static int32_t scene_setup_server_data(const mesh_model_info_p pmodel_info, uint
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL, RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_STORE,
 										SCENE_DATA_MAX_LEN + sizeof(rtk_bt_mesh_scene_server_store_t));
 			scene_store = (rtk_bt_mesh_scene_server_store_t *)p_evt->data;
-			scene_store->status = p_get_data->status;
+			scene_store->status = (rtk_bt_mesh_scene_status_code_t)p_get_data->status;
 			scene_store->scene_number = p_get_data->scene_number;
 			memset(scene_store_data, 0, sizeof(scene_store_data));
 			scene_store->pmemory = scene_store_data;
@@ -331,7 +331,7 @@ static int32_t scene_setup_server_data(const mesh_model_info_p pmodel_info, uint
 									sizeof(rtk_bt_mesh_scene_server_get_register_status_t));
 		p_get_data = (rtk_bt_mesh_scene_setup_server_get_register_status_t *)p_evt->data;
 		p_get_data->scene_number = p_data->scene_number;
-		p_get_data->status = &(((scene_setup_server_get_register_status_t *)pargs)->status);
+		p_get_data->status = (rtk_bt_mesh_scene_status_code_t *)(&(((scene_setup_server_get_register_status_t *)pargs)->status));
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
 	break;

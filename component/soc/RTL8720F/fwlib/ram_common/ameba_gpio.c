@@ -118,7 +118,8 @@ void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData)
 
 		GPIO_IrqTable[idx].IrqIdleEntryFlag = GPIO_IRQ_ENTRY_USED_MAGIC_NUMBER;
 	} else {
-		RTK_LOGE(TAG, "No idle entry in GPIO_IrqTable, please enlarge CONFIG_GPIO_IRQ_TABLE_MAX_NUM !!! \r\n");
+		RTK_LOGE(TAG, "GPIO IRQ table full, enlarge CONFIG_GPIO_IRQ_TABLE_MAX_NUM via menuconfig -> CONFIG User Config -> GPIO IRQ Configuration\r\n");
+		assert_param(0);
 	}
 }
 

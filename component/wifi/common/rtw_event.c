@@ -21,7 +21,7 @@
 #if defined(CONFIG_WIFI_P2P_ENABLE) && !defined(CONFIG_WPA_STD)
 #include "wifi_p2p_supplicant.h"
 #endif
-#if !defined(CONFIG_WHC_DEV)|| defined(CONFIG_WPA_LOCATION_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+#if !defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 #include "atcmd_service.h"
 #include "wpa_lite_intf.h"
 #ifndef CONFIG_WPA_STD
@@ -49,7 +49,7 @@ extern int join_fail_reason;
 extern struct internal_block_param *join_block_param;
 extern void (*p_wifi_join_info_free)(u8 iface_type);
 extern void eap_disconnected_hdl(void);
-#if !defined(CONFIG_MP_SHRINK) && defined (CONFIG_WHC_HOST)
+#if defined(CONFIG_WIFI_CAST_ENABLE) && !defined(CONFIG_MP_SHRINK) && defined (CONFIG_WHC_HOST)
 extern u8 wifi_cast_get_initialized(void);
 extern void wifi_cast_wifi_join_status_ev_hdl(u8 *evt_info);
 #endif
@@ -138,7 +138,7 @@ void wifi_event_join_status_internal_hdl(u8 *evt_info)
 	rtw_reconn_join_status_hdl(evt_info);
 #endif
 
-#if defined(CONFIG_WHC_HOST) && !defined(CONFIG_PLATFORM_ZEPHYR)
+#if defined(CONFIG_WIFI_CAST_ENABLE) && defined(CONFIG_WHC_HOST) && !defined(CONFIG_PLATFORM_ZEPHYR)
 	if (wifi_cast_get_initialized()) {
 		wifi_cast_wifi_join_status_ev_hdl(evt_info);
 	}

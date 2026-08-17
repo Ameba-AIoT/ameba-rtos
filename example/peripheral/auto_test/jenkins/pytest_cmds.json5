@@ -1,0 +1,31 @@
+{
+  cwd: "~/workspace/peripheral_test/rtos_sdk/example/peripheral/auto_test",     // 特殊字段：pytest 执行目录
+
+  common: {                            // 公共参数：注入到每个环境的 pytest 命令行
+    ".": true,                         // 当前目录作为位置参数，确保 pytest 正确发现 rootdir 及配置文件
+    "--log-dir": "~/workspace/peripheral_test/pytest_logs",  // 日志输出目录
+    "--auto-build": true,              // 自动编译固件
+    "--retry": "3",                    // case fail或error时重试次数
+  },
+
+  environments: [
+    {
+      name: "常规测试项（单板 + 双板）",
+      "--target": "RTL8720F",
+      "--port": "/dev/r_rtl8720f_dut0|/dev/r_rtl8720f_dut1",
+      "-m": "generic",
+    },
+    {
+      name: "GPIO 回环测试（RTL8720F：PA_23 <-> PA_24）",
+      "--target": "RTL8720F",
+      "--port": "/dev/r_rtl8720f_dut2",
+      "-m": "gpio_loopback",
+    },
+    {
+      name: "Timer 回环测试（RTL8720F：PA_23 <-> PA_24）",
+      "--target": "RTL8720F",
+      "--port": "/dev/r_rtl8720f_dut2",
+      "-m": "tim_loopback",
+    },
+  ]
+}

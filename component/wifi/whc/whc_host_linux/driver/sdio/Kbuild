@@ -61,6 +61,10 @@ ifeq ($(CONFIG_WHCH), y)
 		../whch/whch_host_addba.o \
 		../whch/hal/whch_host_hal_xmit_com.o \
 		../whch/hal/whch_host_hal_recv_com.o
+ifeq ($(CONFIG_NAN), y)
+    whc_sdio-$(CONFIG_WHC_HCI_SDIO) += \
+		../whch/whch_host_nan.o
+endif
 ifeq ($(CONFIG_AMEBAGREEN2), y)
     whc_sdio-$(CONFIG_WHC_HCI_SDIO) += \
 		../whch/hal/rtl8721f/whch_host_hal_xmit.o \

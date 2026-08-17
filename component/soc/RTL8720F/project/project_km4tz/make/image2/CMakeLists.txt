@@ -36,6 +36,7 @@ ameba_add_subdirectory(${c_CMPT_SOC_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_OTA_DIR})
 ameba_add_subdirectory(${c_CMPT_OTA_DIR})
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
+ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/log_forward)
 ameba_add_subdirectory(${c_MCU_SRC_DIR})
 
 ###############################  GENERATE IMAGE  ###################################
@@ -96,10 +97,6 @@ target_link_libraries(${c_CURRENT_IMAGE}
 )
 
 #--------------- POST BUILD ------------------#
-if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
-    ameba_layout_extract(FULLMAC_IMG2 ${c_LAYOUT_LD} FULLMAC_IMG2_ORIGIN FULLMAC_IMG2_END FULLMAC_IMG2_LENGTH)
-endif()
-
 add_custom_command(
     OUTPUT ${c_SDK_IMAGE_TARGET_DIR}/target_img2.axf ${KM4NS_BUILD_DIR}/${c_SDK_IMAGE_FOLDER_NAME}/target_img2_otrcore.asm
     COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_DIR}
@@ -134,7 +131,6 @@ add_custom_command(
 
         # special variables for current image
         -DKM4TZ_PROJECT_DIR=${KM4TZ_PROJECT_DIR}
-        -DFULLMAC_IMG2_LENGTH=${FULLMAC_IMG2_LENGTH}
 
         # cmake toolchain variables
         -DIMAGESCRIPTDIR=${IMAGESCRIPTDIR}

@@ -140,6 +140,9 @@ void whc_dev_cfg80211_indicate_nan_match(u8 type, u8 inst_id, u8 peer_inst_id, u
 void whc_dev_cfg80211_nan_func_free(u64 data);
 void whc_dev_cfg80211_nan_cfgvendor_event_report(u16 event_id, void *event, int event_len);
 void whc_dev_cfg80211_cfgvendor_send_cmd_reply(void *data, int len);
+#ifdef CONFIG_WHCH
+void whc_dev_nan_ndp_status_report(void *info, int len);
+#endif
 #endif
 
 int whc_dev_ip_in_table_indicate(u8 gate, u8 ip);

@@ -159,7 +159,7 @@ static int atcmd_ble_mesh_generic_power_on_off_set(int argc, char **argv)
 	uint16_t ret = 0;
 	rtk_bt_mesh_generic_on_power_up_set_t power_set;
 	power_set.dst = str_to_int(argv[0]);
-	power_set.on_power_up = str_to_int(argv[1]);
+	power_set.on_power_up = (rtk_bt_mesh_generic_on_power_up_t)(str_to_int(argv[1]));
 	power_set.ack = str_to_int(argv[2]);
 	power_set.app_key_index = str_to_int(argv[3]);
 	ret = rtk_bt_mesh_generic_on_power_up_client_set(&power_set);

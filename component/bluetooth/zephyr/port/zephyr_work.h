@@ -206,6 +206,8 @@ void k_work_sys_work_queue_start(void);
 void k_work_sys_work_queue_delete(void);
 int k_work_submit(struct k_work *work);
 bool k_work_flush(struct k_work *work, struct k_work_sync *sync);
+int k_work_busy_get(const struct k_work *work);
+bool k_work_is_pending(const struct k_work *work);
 int k_work_schedule(struct k_work_delayable *dwork,k_timeout_t delay);
 int k_work_schedule_for_queue(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay);
 int k_work_reschedule_for_queue(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay);

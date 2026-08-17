@@ -20,22 +20,20 @@ u8 ota_get_cur_index(u8 img_id)
 {
 	u32 PhyAddr;
 	u32 AddrStart;
-	RSIP_REG_TypeDef *RSIP = ((RSIP_REG_TypeDef *) RSIP_REG_BASE);
 
 #if defined(CONFIG_AMEBASMART)
 	if (img_id == OTA_IMGID_BOOT) {
-		AddrStart = RSIP->FLASH_MMU[MMU_BOOTLOADER_IDX].RSIP_REMAPxOR;
 		// Compatiable Nand and Nor Flash
 		u32 BootInfo = BKUP_Read(BKUP_REG0);
 		u32 BootVer = (BootInfo & BOOT_VER_NUM) >> 30;
 		return BootVer;
 	} else {
-		AddrStart = RSIP->FLASH_MMU[MMU_LP_IDX].RSIP_REMAPxOR;
+		AddrStart = RRAM->OTA_APP_REMAP;
 	}
-#elif defined(CONFIG_RTL8720F)
-	AddrStart = RSIP->FLASH_MMU[img_id].RSIP_REMAP_x_OFFSET;
+#elif (defined(CONFIG_RTL8720F) || defined(CONFIG_RLE1509))
+	AddrStart = GBSS_DEV->OTA_IMG_REMAP[img_id];
 #else
-	AddrStart = RSIP->FLASH_MMU[img_id].RSIP_REMAPxOR;
+	AddrStart = RRAM_DEV->OTA_IMG_REMAP[img_id];
 #endif
 
 #if defined(CONFIG_AMEBASMART)

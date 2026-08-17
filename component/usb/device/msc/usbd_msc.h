@@ -12,6 +12,10 @@
 #include "usbd.h"
 #include "usb_msc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Device_API USB Device API
@@ -211,5 +215,9 @@ int usbd_msc_disk_deinit(void);
 /** @} End of Device_MSC_Functions group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USBD_MSC_H */

@@ -574,17 +574,16 @@ typedef struct {
 
 /** @} End of group AmebaD_Peripheral_Declaration */
 
-#define HS_SRAM_S_ADDR_START		0x30000000 /* rom used, can not change */
-#define HS_SRAM_S_ADDR_END			0x30FFFFFF /* rom used, can not change */
-
-#define HS_BOOT_ADDR_START			(HS_SRAM_S_ADDR_START +  0x00003000)	/* rom used, can not change */
-#define HS_BOOT_ADDR_END			(HS_SRAM_S_ADDR_START + 0x0001AFFF)	/* rom used, can not change */
-
 #define LS_SRAM_ADDR_START			LP_SRAM_BASE
 #define LS_SRAM_ADDR_END			(LP_SRAM_BASE + 0x00FFFFFF)
 #endif
 
 #define CA32_FIP_MAX_SIZE				(0x00200000)  /* 2MB */
+
+#define HS_SRAM_S_ADDR_START		0x30000000 /* rom used, can not change */
+#define HS_SRAM_S_ADDR_END			0x30FFFFFF /* rom used, can not change */
+#define HS_BOOT_ADDR_START			(HS_SRAM_S_ADDR_START +  0x00003000)	/* rom used, can not change */
+#define HS_BOOT_ADDR_END			(HS_SRAM_S_ADDR_START + 0x0001AFFF)	/* rom used, can not change */
 
 #define MSP_RAM_LP			    0x23001FFC
 #define MSPLIM_RAM_LP			  (u32)__km0_msp_ram_limit__

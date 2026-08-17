@@ -83,7 +83,7 @@ struct INIC_RX_DESC {
 	uint32_t rsvd2: 8;				// bit[31:24]
 };
 
-#define SIZE_RX_DESC	(sizeof(struct INIC_RX_DESC))
+#define SIZE_RX_DESC	0
 #define SIZE_TX_DESC	(sizeof(struct INIC_TX_DESC))
 
 #ifndef _RND

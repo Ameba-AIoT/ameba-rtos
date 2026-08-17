@@ -1,124 +1,79 @@
 #include "rtw_whc_common.h"
 #include "../../whc_common/host_sdio/whc_host_sdio_init_common.h"
+
 extern struct whc_sdio whc_sdio_priv;
 extern struct sdio_func sdio_func1;
+struct whc_sdio whc_sdio_priv = {0};
 
-void rtw_sdio_polling_timer_expiry(struct k_timer *dummy);
+K_THREAD_STACK_DEFINE(whc_sdio_rx_req_stack, WIFI_STACK_SIZE_RX_REQ_TASK);
+static struct k_thread ameba_host_rx_req_thread;
+/* defined in ameba_wifi.c in zephyr sdk */
+void (*tx_read_pkt_ptr)(void *pkt_addr, void *data, size_t length);
+int (*rx_callback_ptr)(uint8_t idx, void *buffer, uint16_t len);
 
-//timer for sdio int polling
-K_SEM_DEFINE(sdio_polling_sem, 0, SEMA_MAX_COUNT);
-K_TIMER_DEFINE(sdio_polling_timer, rtw_sdio_polling_timer_expiry, NULL);
-
-//TODO check real stack size
-#define SDIO_POLLING_STACK_SIZE 1024
 K_THREAD_STACK_DEFINE(sdio_polling_task_stack, SDIO_POLLING_STACK_SIZE);
 struct k_thread sdio_polling_thread;
 
-static void rtw_sdio_interrupt_handler(void)
+uint32_t whc_sdio_host_enable_func(struct whc_sdio *priv)
 {
-	struct whc_sdio *priv = &whc_sdio_priv;
-
-	whc_host_sdio_isr_process(priv);
-}
-
-static uint32_t rtw_sdio_enable_func(struct whc_sdio *priv)
-{
-	//int err = 0;
-
 	//TODO set block size SDIO_BLOCK_SIZE
-
 	priv->func = &sdio_func1;
 	priv->block_transfer_len = SDIO_BLOCK_SIZE;
-	priv->tx_block_mode = 1;
-	priv->rx_block_mode = 1;
 
 	return TRUE;
 }
 
-
-void rtw_sdio_polling_task(void *arg1, void *arg2, void *arg3)
+void whc_sdio_host_polling_task(void *arg1, void *arg2, void *arg3)
 {
 	(void)arg1;
 	(void)arg2;
 	(void)arg3;
+	u32 Interval = 10;
+	struct whc_sdio *priv = &whc_sdio_priv;
 
 	while (1) {
-		// wait for sema from timer
-		k_sem_take(&sdio_polling_sem, K_FOREVER);
-		rtw_sdio_interrupt_handler();
+		/* check int status */
+		whc_sdio_host_isr_process(priv);
+		whc_msleep(Interval);
 	}
 }
 
-void rtw_sdio_polling_timer_expiry(struct k_timer *dummy)
+static void whc_sdio_host_init_drv(void)
 {
-	(void)dummy;
-	k_sem_give(&sdio_polling_sem);
-}
+	k_sem_init(&whc_sdio_priv.host_send, 1, SEMA_MAX_COUNT);
+	k_sem_init(&(whc_sdio_priv.host_recv_wake), 0, SEMA_MAX_COUNT);
+	k_sem_init(&(whc_sdio_priv.txbd_wq), 0, SEMA_MAX_COUNT);
+	k_mutex_init(&whc_sdio_priv.lock);
 
-void rtw_sdio_polling_init(void)
-{
-	u32 Interval = 10;
-	printf("sdio polling every %dms \n", Interval);
-
+#ifndef WHC_SDIO_INT_MODE
 	k_thread_create(&sdio_polling_thread,
 					sdio_polling_task_stack, SDIO_POLLING_STACK_SIZE,
-					rtw_sdio_polling_task,
+					whc_sdio_host_polling_task,
 					NULL, NULL, NULL,
 					K_PRIO_PREEMPT(7), 0, K_NO_WAIT);
+#endif
 
-	//TODO check period to achieve best tp
-	k_timer_start(&sdio_polling_timer, K_MSEC(Interval), K_MSEC(Interval));
+	k_thread_create(&ameba_host_rx_req_thread, whc_sdio_rx_req_stack,
+					WIFI_STACK_SIZE_RX_REQ_TASK,
+					(k_thread_entry_t)whc_host_sdio_recv_data_process, NULL, NULL, NULL,
+					whc_host_rx_req_task_prio, K_USER,
+					K_NO_WAIT);
 }
 
-uint32_t rtw_sdio_init(struct whc_sdio *priv)
+/**
+ * @brief  to initialize the whc sdio host.
+ * @param  none.
+ * @return none.
+ */
+void whc_host_sdio_init(void)
 {
-	uint8_t fw_ready;
-	uint32_t i;
-	uint8_t value;
+	struct whc_sdio *priv = &whc_sdio_priv;
 
-	/* enable func and set block size */
-	if (rtw_sdio_enable_func(priv) == FALSE) {
-		return FALSE;
+	if (whc_sdio_host_init(priv) != TRUE) {
+		printf("%s: initialize SDIO Failed!\n", __FUNCTION__);
+		return;
 	}
 
-	k_mutex_init(&(priv->lock));
-
-	/* wait for device TRX ready */
-	for (i = 0; i < 100; i++) {
-		fw_ready = rtw_read8(priv, SDIO_REG_CPU_IND);
-		if (fw_ready & SDIO_SYSTEM_TRX_RDY_IND) {
-			break;
-		}
-		WHC_MSLEEP(10);
-	}
-	if (i == 100) {
-		printf("%s: Wait Device Firmware Ready Timeout!!SDIO_REG_CPU_IND @ 0x%04x\n", __FUNCTION__, fw_ready);
-		return FALSE;
-	}
-
-	//TODO read slave reg
-	value = rtw_read8(priv, SDIO_REG_TX_CTRL) | SDIO_EN_HISR_MASK_TIMER;
-	rtw_write8(priv, SDIO_REG_TX_CTRL, value);
-
-	rtw_write16(priv, SDIO_REG_STATIS_RECOVERY_TIMOUT, 0x10); //500us
-
-#ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
-	rtw_sdio_init_txavailbd_threshold(priv);
-#endif
-
-	priv->txbd_wptr = (uint16_t)rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
-	rtw_sdio_query_txbd_status(priv);
-
-	if (rtw_sdio_get_tx_max_size(priv) == FALSE) {
-		return FALSE;
-	}
-
-#ifdef SDIO_INT_MODE
-	rtw_sdio_init_interrupt(priv);
-#else
-	rtw_sdio_polling_init();
-#endif
-
-	return TRUE;
+	/* init sdio */
+	whc_sdio_host_init_drv();
 }
-

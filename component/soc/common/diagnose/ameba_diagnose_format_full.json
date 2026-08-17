@@ -9,6 +9,12 @@
       "compatible": [
         "6292f679"
       ],
+      "format": {}
+    },
+    "522b9f08": {
+      "compatible": [
+        "87f57635"
+      ],
       "format": {
         "rtk_event_level": {
           "RTK_EVENT_LEVEL_ALWAYS": 0,
@@ -202,5 +208,5 @@
       }
     }
   },
-  "latest_hash": "87f57635"
+  "latest_hash": "522b9f08"
 }

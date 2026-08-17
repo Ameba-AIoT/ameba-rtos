@@ -19,12 +19,13 @@ gtimer_t my_timer1;
 gtimer_t my_timer2;
 gpio_t gpio_led1;
 gpio_t gpio_led2;
+volatile uint32_t time1_expired = 0;
 volatile uint32_t time2_expired = 0;
 
 void timer1_timeout_handler(uint32_t id)
 {
 	gpio_t *gpio_led = (gpio_t *)id;
-
+	time1_expired = 1;
 	gpio_write(gpio_led, !gpio_read(gpio_led));
 }
 
@@ -55,7 +56,12 @@ void mbed_gtimer_demo(void)
 	gtimer_start_one_shout(&my_timer2, 500000, (void *)timer2_timeout_handler, NULL);
 
 	while (1) {
+		if (time1_expired) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "GTIMER_PERIOD_EXPIRED\n");
+			time1_expired = 0;
+		}
 		if (time2_expired) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "GTIMER_ONESHOT_EXPIRED\n");
 			gpio_write(&gpio_led2, !gpio_read(&gpio_led2));
 			time2_expired = 0;
 			gtimer_start_one_shout(&my_timer2, 500000, (void *)timer2_timeout_handler, NULL);

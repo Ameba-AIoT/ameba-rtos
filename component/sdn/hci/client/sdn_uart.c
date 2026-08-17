@@ -228,14 +228,17 @@ void sdn_uart_tx(struct sdn_data_buf *pdata_buf)
 {
 	if (sdn_uart_type == SDN_UART_LOGUART) {
 		uint16_t i = 0;
+		while (!LOGUART_Writable());
+		LOGUART_PutChar_RAM(pdata_buf->msg_type); /* H4 packet type indicator */
 		while (i < pdata_buf->len) {
 			while (!LOGUART_Writable());
 			// LOGUART_PutChar_RAM(0xFF);
-			LOGUART_PutChar_RAM(*((uint8_t *)pdata_buf->pmsg + i));
+			LOGUART_PutChar_RAM(*((uint8_t *)pdata_buf->data + i));
 			i++;
 		}
 	} else if (sdn_uart_type == SDN_UART_UART0) {
-		UART_SendData(UART_DEV, (uint8_t *)pdata_buf->pmsg, pdata_buf->len);
+		UART_SendData(UART_DEV, &pdata_buf->msg_type, 1); /* H4 packet type indicator */
+		UART_SendData(UART_DEV, (uint8_t *)pdata_buf->data, pdata_buf->len);
 	}
 }
 

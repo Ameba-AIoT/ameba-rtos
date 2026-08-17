@@ -42,7 +42,7 @@ extern "C" {
 #define CONFIG_BT_BUF_CMD_TX_SIZE 255
 
 #define CONFIG_BT_BUF_ACL_RX_COUNT 8  /* Increase it to fix acl flow pending, ref RSWLAND-1587 Q12 */
-#define CONFIG_BT_BUF_ACL_RX_SIZE 255
+#define CONFIG_BT_BUF_ACL_RX_SIZE 266
 
 #define CONFIG_BT_BUF_EVT_RX_COUNT 8  /* Increase it to fix deadlock problem, ref RSWLAND-1587 Q4 */
 #define CONFIG_BT_BUF_EVT_RX_SIZE 255
@@ -52,7 +52,7 @@ extern "C" {
 
 #define CONFIG_BT_L2CAP_TX_BUF_COUNT 8
 #define CONFIG_BT_ATT_TX_COUNT 5
-#define CONFIG_BT_L2CAP_TX_MTU 252
+#define CONFIG_BT_L2CAP_TX_MTU 262
 
 #define CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL
 
@@ -105,7 +105,7 @@ extern "C" {
 #define CONFIG_BT_FIXED_PASSKEY 1
 /* to support secure connection */
 #define CONFIG_BT_ECC 1
-#define CONFIG_BT_TINYCRYPT_ECC 1
+#define CONFIG_BT_MBEDTLS_ECC 1
 #define CONFIG_BT_DEVICE_NAME_DYNAMIC 1
 #define CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC 1
 
@@ -192,11 +192,14 @@ extern "C" {
 
 //extend adv
 #define CONFIG_BT_EXT_ADV 1
+
+#if defined(CONFIG_BT_EXT_ADV)
 #define CONFIG_BT_EXT_ADV_MAX_ADV_SET 3
 #define CONFIG_BT_EXT_SCAN_BUF_SIZE 1650
 /* Permit to choose legacy adv hci cmd if the ext adv feature bit is not set,
 even if CONFIG_BT_EXT_ADV is enabled */
 #define CONFIG_BT_EXT_ADV_LEGACY_SUPPORT 1
+#endif /* CONFIG_BT_EXT_ADV */
 
 #if 0
 //periodic adv

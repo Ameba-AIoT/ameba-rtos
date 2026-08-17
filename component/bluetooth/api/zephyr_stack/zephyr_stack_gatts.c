@@ -70,7 +70,7 @@ void bt_zephyr_gatts_mtu_udpated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 	p_gatt_mtu_exchange_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)p_evt_t->data;
 	p_gatt_mtu_exchange_ind->result = RTK_BT_OK;
 	p_gatt_mtu_exchange_ind->conn_handle = conn->handle;
-	p_gatt_mtu_exchange_ind->mtu_size = (tx > rx) ? rx : tx;
+	p_gatt_mtu_exchange_ind->mtu_size = MIN(tx, rx);
 
 	rtk_bt_evt_indicate(p_evt_t, NULL);
 

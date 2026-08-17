@@ -13,7 +13,7 @@
 
 #define rtw_write_port(priv, addr, cnt, mem) sdio_write_port((priv), (addr), (cnt), (mem))
 
-
+void sdio_init_hwlock(void);
 int sd_cmd52_read(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata);
 int sd_cmd52_write(struct whc_sdio *priv, uint32_t addr, uint32_t cnt, uint8_t *pdata);
 void sd_write32(struct whc_sdio *priv, uint32_t addr, uint32_t v, int *err);

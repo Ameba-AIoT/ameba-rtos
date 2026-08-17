@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #include <whc_host_linux.h>
 
 u8 whc_host_event_scan_report_indicate(u32 *param_buf)
@@ -111,6 +112,21 @@ u8 whc_host_event_nan_cfgvendor_cmd_reply(u32 *param_buf)
 	whc_host_cfgvendor_send_cmd_reply(data_addr, size);
 	return 0;
 }
+
+#ifdef CONFIG_WHCH
+u8 whc_host_event_nan_ndp_status_indicate(u32 *param_buf)
+{
+	struct rtw_event_nan_ndp_status_info *info =
+		(struct rtw_event_nan_ndp_status_info *)&param_buf[2];
+
+	if (info->status) {
+		whch_host_nan_ndp_established(info);
+	} else {
+		whch_host_nan_ndp_terminated(info);
+	}
+	return 0;
+}
+#endif /* CONFIG_WHCH */
 #endif
 
 void whc_host_event_task(struct work_struct *data)
@@ -122,32 +138,43 @@ void whc_host_event_task(struct work_struct *data)
 	struct whc_api_info *ret_msg;
 	u8 *buf;
 	u32 buf_len;
-	u32 api_id = p_recv_msg->api_id;
+	/* device tags no return value calls: it won't wait for a return, so we must not send one */
+	u8 no_ret = (p_recv_msg->api_id & WHC_API_NO_RET_FLAG) ? 1 : 0;
+	u32 api_id = p_recv_msg->api_id & ~WHC_API_NO_RET_FLAG;
 
 	dev_dbg(global_idev.pwhc_dev, "-----DEVICE CALLING API %x START\n", api_id);
 
 	already_ret = whc_host_internal_event_handle(api_id, param_buf);
 
+	/* already_ret != 0 means the handler already sent its own reply AND freed rx_api_msg itself. */
 	if (already_ret == 0) {
-		buf_len = SIZE_TX_DESC + sizeof(struct whc_api_info);
-		buf = kzalloc(buf_len, GFP_KERNEL);
-		if (buf) {
-			/* fill and send ret_msg */
-			ret_msg = (struct whc_api_info *)(buf + SIZE_TX_DESC);
-			ret_msg->event = WHC_WIFI_EVT_API_RETURN;
-			ret_msg->api_id = api_id;
+		/* no_ret: device won't wait for a return, so skip sending API_RETURN */
+		if (!no_ret) {
+			buf_len = SIZE_TX_DESC + sizeof(struct whc_api_info);
+			buf = kzalloc(buf_len, GFP_KERNEL);
+			if (buf) {
+				/* fill and send ret_msg */
+				ret_msg = (struct whc_api_info *)(buf + SIZE_TX_DESC);
+				ret_msg->event = WHC_WIFI_EVT_API_RETURN;
+				ret_msg->api_id = api_id;
 
-			/* free rx_event_msg */
-			kfree_skb(event_priv->rx_api_msg);
-
-			whc_host_send_data(buf, buf_len, NULL);
+				whc_host_send_data(buf, buf_len, NULL);
 #ifndef CONFIG_INIC_USB_ASYNC_SEND
-			kfree(buf);
+				kfree(buf);
 #endif
+			}
 		}
+
+		/* handler did not consume the skb; free it here.
+		 * (normal, no_ret and buf-alloc-fail cases all land here) */
+		kfree_skb(event_priv->rx_api_msg);
 	}
 
 	dev_dbg(global_idev.pwhc_dev, "-----DEVICE CALLING API %x END\n", api_id);
+
+	/* signal dispatch: this API is fully processed; the next WHC_WIFI_EVT_API_CALL
+	 * can now overwrite rx_api_msg without overwriting a still-pending message */
+	event_priv->rx_api_msg = NULL;
 
 	return;
 }

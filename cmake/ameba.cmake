@@ -3,6 +3,7 @@ set(RS_AMEBA_INCLUDED TRUE)
 
 include(${CMAKE_CURRENT_LIST_DIR}/global_define.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/common.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/install_tools.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/ccache.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/axf2bin.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/git/GetGitRevisionDescription.cmake)

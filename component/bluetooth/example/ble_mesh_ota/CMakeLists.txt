@@ -39,9 +39,11 @@ ameba_list_append(private_sources
     rtk_bt_device_firmware_update_interface.c
 )
 
-ameba_list_append(private_sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/platform/${c_SOC_TYPE}/rtk_bt_device_firmware_update_platform.c
-)
+if(CONFIG_AMEBASMART OR CONFIG_AMEBALITE OR CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2)
+    ameba_list_append(private_sources
+        ${CMAKE_CURRENT_SOURCE_DIR}/platform/${c_SOC_TYPE}/rtk_bt_device_firmware_update_platform.c
+    )
+endif()
 
 ameba_list_append(private_includes
     ${CMAKE_CURRENT_SOURCE_DIR}

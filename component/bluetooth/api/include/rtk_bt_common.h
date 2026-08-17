@@ -1339,6 +1339,15 @@ void rtk_bt_event_free(rtk_bt_evt_t *pevt);
         }                                                   \
     } while (0)
 
+#define BT_APP_EVT_CB_PROCESS(func)                                \
+    do {                                                    \
+        uint16_t __func_ret = func;                         \
+        if (RTK_BT_OK != __func_ret) {                      \
+            BT_LOGE("[APP] %s failed! line: %d, err: 0x%x\r\n", __func__, __LINE__, __func_ret);   \
+            return RTK_BT_EVT_CB_FAIL;                                      \
+        }                                                   \
+    } while (0)
+
 #ifdef __cplusplus
 }
 #endif

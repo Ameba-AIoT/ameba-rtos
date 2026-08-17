@@ -39,8 +39,8 @@
 #define PWM_32K_CH3_PIN	    _PB_16
 
 #elif defined (CONFIG_RTL8720F)
-#define TIM6_TRIG_PIN		_PA_15
-#define PWM_32K_CH3_PIN	    _PA_16
+#define TIM6_TRIG_PIN		_PA_23
+#define PWM_32K_CH3_PIN	    _PA_24
 #endif
 
 

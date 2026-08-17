@@ -30,6 +30,8 @@
 
 //#define CONFIG_WIFI_XMESH
 
+//#define CONFIG_WHCH
+
 #ifdef CONFIG_WIFI_P2P_ENABLE
 #define CONFIG_WPS_P2PGO 1
 #endif

@@ -2,18 +2,21 @@
 #include <whc_host_linux.h>
 
 #ifdef CONFIG_WHCH
+#define WHC_HOST_DYNAMIC_PERIOD_MS	2000
+
 void whc_host_mlme_priv_init(void)
 {
 	struct whch_mlme_priv	*pmlmepriv = &global_idev.whchpriv.mlmepriv;
 
-	timer_setup(&pmlmepriv->dynamic_timer, whc_host_dynamic_timer_hdl, 0);
+	INIT_DELAYED_WORK(&pmlmepriv->dynamic_work, whc_host_dynamic_timer_hdl);
+	schedule_delayed_work(&pmlmepriv->dynamic_work, msecs_to_jiffies(WHC_HOST_DYNAMIC_PERIOD_MS));
 }
 
 void whc_host_mlme_priv_deinit(void)
 {
 	struct whch_mlme_priv	*pmlmepriv = &global_idev.whchpriv.mlmepriv;
 
-	del_timer_sync(&pmlmepriv->dynamic_timer);
+	cancel_delayed_work_sync(&pmlmepriv->dynamic_work);
 }
 
 int whc_host_init_default_value(u8 iface_type)
@@ -102,7 +105,7 @@ void whc_host_set_key(struct rtw_crypt_info *crypt)
 
 	return;
 }
-void whc_host_dynamic_timer_hdl(struct timer_list *t)
+void whc_host_dynamic_timer_hdl(struct work_struct *work)
 {
 	struct whch_rx_stats *pcount = &global_idev.whchpriv.rx_stats[WHC_STA_PORT];
 	struct rtw_stats_info *pstats;
@@ -111,43 +114,124 @@ void whc_host_dynamic_timer_hdl(struct timer_list *t)
 	u32 size;
 	u32 *param;
 
+	if (!whc_host_check_sta_associated_to_ap()
+		&& !(global_idev.pndev[1] && rtw_netdev_priv_is_on(global_idev.pndev[1]))
+#ifdef CONFIG_NAN
+		&& !whch_host_nan_check_datalink_exist()
+#endif
+	   ) {
+		goto rearm;
+	}
+
 	size = sizeof(struct rtw_stats_info);
-	param = (u32 *)kzalloc(size, GFP_ATOMIC);
+	param = (u32 *)kzalloc(size, GFP_KERNEL);
 	if (param == NULL) {
-		return;
+		goto rearm;
 	}
 
 	pstats = (struct rtw_stats_info *)param;
 
+	/* The device accumulates (+=) every counter it receives and zeroes its own
+	 * per-period accumulators each expire tick, so the host must report the delta
+	 * since the previous sync and then reset its own period counters below. */
 	pstats->NumRxOkInPeriod = pmlmepriv->NumRxOkInPeriod;
 	pstats->NumRxUnicastOkInPeriod = pmlmepriv->NumRxUnicastOkInPeriod;
+	pmlmepriv->NumRxOkInPeriod = 0;
+	pmlmepriv->NumRxUnicastOkInPeriod = 0;
 
 	pstats->port_stats_info[0].rx_bytes_in2s = pcount->rx_bytes_in2s;
 	pstats->port_stats_info[0].rx_byte_uni_in2s = pcount->rx_byte_uni_in2s;
 	pstats->port_stats_info[0].rx_packets = pcount->rx_packets;
+	pcount->rx_bytes_in2s = 0;
+	pcount->rx_byte_uni_in2s = 0;
+	pcount->rx_packets = 0;
 
 	if (whc_host_check_sta_associated_to_ap()) {
 		pstats->sta_num = 1;
 		psta_info = whc_host_sta_get_stainfo(WHC_STA_PORT, global_idev.bssid);
 		if (psta_info) {
 			pstats->sta_stats_info[0].macid = 0;
+			pstats->sta_stats_info[0].port = WHC_STA_PORT;
 			pstats->sta_stats_info[0].stainfo_rx_data_pkts_in2s = psta_info->sta_mlmepriv.stainfo_rx_data_pkts_in2s;
 			pstats->sta_stats_info[0].stainfo_rx_byte_uni_in2s = psta_info->sta_mlmepriv.stainfo_rx_byte_uni_in2s;
 			memcpy(pstats->sta_stats_info[0].mac_addr, psta_info->sta_mlmepriv.stainfo_mac_addr, ETH_ALEN);
+			psta_info->sta_mlmepriv.stainfo_rx_data_pkts_in2s = 0;
+			psta_info->sta_mlmepriv.stainfo_rx_byte_uni_in2s = 0;
 		}
 	}
 
 	if (global_idev.pndev[1] && rtw_netdev_priv_is_on(global_idev.pndev[1])) {
+		struct whch_sta_priv *pstapriv = &global_idev.whchpriv.stapriv[WHC_AP_PORT];
+		struct list_head *plist, *phead;
+		u8 idx = pstats->sta_num;
+
 		pcount = &global_idev.whchpriv.rx_stats[WHC_AP_PORT];
 		pstats->port_stats_info[1].rx_bytes_in2s = pcount->rx_bytes_in2s;
 		pstats->port_stats_info[1].rx_byte_uni_in2s = pcount->rx_byte_uni_in2s;
 		pstats->port_stats_info[1].rx_packets = pcount->rx_packets;
+		pcount->rx_bytes_in2s = 0;
+		pcount->rx_byte_uni_in2s = 0;
+		pcount->rx_packets = 0;
 
-		/* TODO_softap stainfo rx counter */
+		spin_lock_bh(&pstapriv->sta_list_mutex);
+		phead = &pstapriv->sta_list;
+		plist = phead->next;
+		while ((plist != phead) && (idx < ARRAY_SIZE(pstats->sta_stats_info))) {
+			psta_info = list_entry(plist, struct sta_info, list);
+			plist = plist->next;
+			/* skip the bcmc stainfo entry */
+			if (IS_MCAST(psta_info->sta_mlmepriv.stainfo_mac_addr)) {
+				continue;
+			}
+			pstats->sta_stats_info[idx].macid = psta_info->sta_mlmepriv.stainfo_macid;
+			pstats->sta_stats_info[idx].port = WHC_AP_PORT;
+			pstats->sta_stats_info[idx].stainfo_rx_data_pkts_in2s = psta_info->sta_mlmepriv.stainfo_rx_data_pkts_in2s;
+			pstats->sta_stats_info[idx].stainfo_rx_byte_uni_in2s = psta_info->sta_mlmepriv.stainfo_rx_byte_uni_in2s;
+			memcpy(pstats->sta_stats_info[idx].mac_addr, psta_info->sta_mlmepriv.stainfo_mac_addr, ETH_ALEN);
+			psta_info->sta_mlmepriv.stainfo_rx_data_pkts_in2s = 0;
+			psta_info->sta_mlmepriv.stainfo_rx_byte_uni_in2s = 0;
+			idx++;
+		}
+		spin_unlock_bh(&pstapriv->sta_list_mutex);
+		pstats->sta_num = idx;
 	}
+
+#ifdef CONFIG_NAN
+	if (whch_host_nan_check_datalink_exist()) {
+		struct whch_sta_priv *pstapriv = &global_idev.whchpriv.stapriv[WHC_NAN_PORT];
+		struct list_head *plist, *phead;
+		u8 idx = pstats->sta_num;
+
+		spin_lock_bh(&pstapriv->sta_list_mutex);
+		phead = &pstapriv->sta_list;
+		plist = phead->next;
+		while ((plist != phead) && (idx < ARRAY_SIZE(pstats->sta_stats_info))) {
+			psta_info = list_entry(plist, struct sta_info, list);
+			plist = plist->next;
+			/* skip the bcmc stainfo entry */
+			if (IS_MCAST(psta_info->sta_mlmepriv.stainfo_mac_addr)) {
+				continue;
+			}
+			pstats->sta_stats_info[idx].macid = psta_info->sta_mlmepriv.stainfo_macid;
+			pstats->sta_stats_info[idx].port = WHC_NAN_PORT;
+			pstats->sta_stats_info[idx].stainfo_rx_data_pkts_in2s = psta_info->sta_mlmepriv.stainfo_rx_data_pkts_in2s;
+			pstats->sta_stats_info[idx].stainfo_rx_byte_uni_in2s = psta_info->sta_mlmepriv.stainfo_rx_byte_uni_in2s;
+			memcpy(pstats->sta_stats_info[idx].mac_addr, psta_info->sta_mlmepriv.stainfo_mac_addr, ETH_ALEN);
+			psta_info->sta_mlmepriv.stainfo_rx_data_pkts_in2s = 0;
+			psta_info->sta_mlmepriv.stainfo_rx_byte_uni_in2s = 0;
+			idx++;
+		}
+		spin_unlock_bh(&pstapriv->sta_list_mutex);
+		pstats->sta_num = idx;
+	}
+#endif
 
 	whc_host_send_event(WHC_API_WIFI_WHCH_STATES_SYNC, (u8 *)param, size, NULL, 0);
 
 	kfree((void *)param);
+
+rearm:
+	/* self-rearm: delayed_work is one-shot */
+	schedule_delayed_work(&pmlmepriv->dynamic_work, msecs_to_jiffies(WHC_HOST_DYNAMIC_PERIOD_MS));
 }
 #endif

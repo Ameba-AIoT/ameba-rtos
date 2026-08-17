@@ -1,3 +1,4 @@
+#include "platform_autoconf.h"
 #include "wifi_api.h"
 #include "rom_secure_common.h"
 #include "wps_protocol_handler.h"
@@ -35,6 +36,7 @@ struct rtw_wps_context g_wps_context = {0};
 extern struct eap_method wsc_eap;
 extern struct eap_server_method wsc_server_eap;
 
+#ifdef CONFIG_WIFI_P2P_ENABLE
 static u16  rtw_encode_to_wps_auth(u32 security)
 {
 	u16 authtype = WPS_AUTH_OPEN;
@@ -77,6 +79,7 @@ static u16 rtw_encode_to_wps_encr(u32 security)
 
 	return encrp_type;
 }
+#endif
 
 
 static u16 wps_fix_config_methods(u16 config_methods)
@@ -157,6 +160,7 @@ static void *wpas_eap_wsc_init(void)
 	return wsc_eap.init(NULL);
 }
 
+#ifdef CONFIG_WIFI_P2P_ENABLE
 static int  wpas_set_wps_ie(void *ctx, struct wpabuf *beacon_ie,
 							struct wpabuf *probe_resp_ie)
 {
@@ -188,6 +192,7 @@ static void wpas_notify_wps_sucess(void *ctx, const u8 *mac_addr,
 	g_wps_context.clientWpsDone = 1;
 	wifi_p2p_wps_success(mac_addr, 1);
 }
+#endif
 
 __attribute__((noinline)) void wpas_wsc_notify_wps_finish(void)
 {
@@ -706,8 +711,9 @@ void wpas_wsc_wps_finish_hdl(u8 *evt_info)
 }
 
 /* AP handle, the role of registrar or enrollee will be determined after identify req/rsp. */
-__weak void wpas_wsc_ap_send_eap_reqidentity(void *priv, u8 *rx_buf)
+void wpas_wsc_ap_send_eap_reqidentity(void *priv, u8 *rx_buf)
 {
+#ifdef CONFIG_WIFI_P2P_ENABLE
 	struct wlan_ethhdr_t *eth_hdr;
 	struct lib1x_eapol *eapol;
 	struct lib1x_eapol_message_hdr *received_eapol_identity_payload_hdr;
@@ -765,11 +771,16 @@ __weak void wpas_wsc_ap_send_eap_reqidentity(void *priv, u8 *rx_buf)
 	os_free(buf, length);
 
 	return;
+#else
+	(void) priv;
+	(void) rx_buf;
+#endif
 }
 
 /* When AP recv eap identity rsp,decide to be enrolle or registrar */
-__weak void wpas_wsc_ap_check_eap_rspidentity(void *priv, u8 *rx_buf)
+void wpas_wsc_ap_check_eap_rspidentity(void *priv, u8 *rx_buf)
 {
+#ifdef CONFIG_WIFI_P2P_ENABLE
 	struct lib1x_eapol_message_hdr *eapol_payload_hdr;
 	struct wpabuf *sendData = NULL;
 	struct eap_wsc_data *wsc_data;
@@ -817,11 +828,16 @@ __weak void wpas_wsc_ap_check_eap_rspidentity(void *priv, u8 *rx_buf)
 		rtw_wps->clientWpsDone = 0;
 	}
 	wpas_wsc_send_packet(rtw_wps, sendData);
+#else
+	(void) priv;
+	(void) rx_buf;
+#endif
 }
 
 /* Registrar handle */
-__weak void wpas_wsc_registrar_send_eap_fail(void *priv)
+void wpas_wsc_registrar_send_eap_fail(void *priv)
 {
+#ifdef CONFIG_WIFI_P2P_ENABLE
 	struct wlan_ethhdr_t *eth_hdr;
 	struct lib1x_eapol *eapol;
 	struct rtw_wps_context *rtw_wps = (struct rtw_wps_context *)priv;
@@ -865,6 +881,9 @@ __weak void wpas_wsc_registrar_send_eap_fail(void *priv)
 	os_free(buf, length);
 
 	return;
+#else
+	(void) priv;
+#endif
 }
 
 static void wpas_wsc_registrar_set_retrans(struct eap_wsc_data *wsc_data, struct wpabuf *sendData)
@@ -943,8 +962,9 @@ exit:
 	}
 }
 
-__weak void wpas_wsc_registrar_handle_recvd(void *priv, u8 *rx_buf)
+void wpas_wsc_registrar_handle_recvd(void *priv, u8 *rx_buf)
 {
+#ifdef CONFIG_WIFI_P2P_ENABLE
 	struct _LIB1X_EAPOL_WSC *eapol_wsc = (struct _LIB1X_EAPOL_WSC *)((u8 *)rx_buf + ETH_HLEN + LIB1X_EAPOL_HDRLEN);
 	unsigned char  Receive_message_type;
 	struct rtw_wps_context *rtw_wps = (struct rtw_wps_context *)priv;
@@ -998,10 +1018,15 @@ __weak void wpas_wsc_registrar_handle_recvd(void *priv, u8 *rx_buf)
 				   "registrar handle", eapol_wsc->OpCode);
 
 	}
+#else
+	(void) priv;
+	(void) rx_buf;
+#endif
 }
 
-__weak int wpas_wps_init(unsigned char wlan_idx)
+int wpas_wps_init(unsigned char wlan_idx)
 {
+#ifdef CONFIG_WIFI_P2P_ENABLE
 	struct wps_context *wps;
 	struct wps_registrar_config rcfg;
 	struct rtw_wifi_setting setting = {0};
@@ -1044,10 +1069,15 @@ __weak int wpas_wps_init(unsigned char wlan_idx)
 	}
 #endif
 	return 0;
+#else
+	(void) wlan_idx;
+	return 0;
+#endif
 }
 
-__weak void wpas_wps_deinit(void)
+void wpas_wps_deinit(void)
 {
+#ifdef CONFIG_WIFI_P2P_ENABLE
 	struct wps_context *wps = g_wps_context.wps;
 
 	rtw_del_timer(&g_wps_context.wps_start_timer);
@@ -1073,6 +1103,7 @@ __weak void wpas_wps_deinit(void)
 		g_wps_context.wsc_data = NULL;
 		rtos_critical_exit(RTOS_CRITICAL_WIFI);
 	}
+#endif
 }
 
 int wpas_wps_dev_config(u8 *dev_addr, u8 bregistrar)

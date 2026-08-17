@@ -42,6 +42,9 @@ void raw_rtc_demo(void)
 #ifdef CONFIG_AMEBAGREEN2
 	RCC_PeriphClockCmd(NULL, APBPeriph_RTC_CLOCK, ENABLE);
 	RTC_Enable(ENABLE);
+#elif defined CONFIG_AMEBAPRO3
+	RCC_PeriphClockCmd(APBPeriph_RTC, APBPeriph_RTC_CLOCK, ENABLE);
+	RTC_Enable(ENABLE);
 #else
 	RCC_PeriphClockCmd(APBPeriph_RTC, APBPeriph_RTC_CLOCK, ENABLE);
 #endif

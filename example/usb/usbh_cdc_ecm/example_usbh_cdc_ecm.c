@@ -262,12 +262,23 @@ static int cdc_ecm_do_init(void)
 		return 0;
 	}
 
+	/* All class drivers registered; start USB TRX so enumeration can run. */
+	usbh_start();
+
 	do {
 		if (usbh_cdc_ecm_usb_is_ready()) {
 			break;
 		}
 		rtos_time_delay_ms(1000);
 	} while (1); //wait usb init success
+
+	/* USB enumerated and upper layer is ready: release the SOF data-transfer
+	 * gate so bulk/intr scheduling can begin (see usbh_cdc_ecm_sof()).
+	 * Runs on both the initial bring-up and every hot-plug re-init (this
+	 * function is reused by the hotplug thread), re-arming the gate that
+	 * detach() cleared. For devices needing upper-layer prep (e.g. 4G AT
+	 * config), gate this on the real ready signal instead of usb_is_ready(). */
+	usbh_cdc_ecm_prepare_done();
 
 	return 1;
 }
@@ -304,7 +315,7 @@ static void example_usbh_ecm_link_change_thread(void *param)
 			}
 		}
 
-		link_is_up = usbh_cdc_ecm_get_connect_status();
+		link_is_up = usbh_cdc_ecm_get_link_status();
 
 		if (1 == link_is_up && (ethernet_state < ETH_STATUS_INIT)) {	// unlink -> link
 			mac = (u8 *)usbh_cdc_ecm_process_mac_str();
@@ -560,30 +571,24 @@ static void example_usbh_ecm_mem_check_thread(void *param)
 #if CONFIG_USBH_CDC_ECM_HOT_PLUG
 static void example_usbh_ecm_hotplug_thread(void *param)
 {
-	int ret = 0;
-
 	UNUSED(param);
 
 	for (;;) {
 		usb_os_sema_take(cdc_ecm_detach_sema, USB_OS_SEMA_TIMEOUT);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Hot plug\n");
 		//stop isr
+		usbh_stop();
 		usbh_cdc_ecm_deinit();
 		usbh_deinit();
 
 		rtos_time_delay_ms(10);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap size: 0x%08x\n", usb_os_get_free_heap_size());
 
-		ret = usbh_init(&usbh_ecm_cfg, &usbh_ecm_usr_cb);
-		if (ret != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
-			break;
-		}
-
-		ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_priv);
-		if (ret < 0) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
-			usbh_deinit();
+		/* Re-run the full init sequence (usbh_init + ecm_init + wait-for-ready).
+		 * Reuses cdc_ecm_do_init() so the re-attach path stays in lock-step with
+		 * the initial bring-up, including the usb_is_ready() wait. */
+		if (cdc_ecm_do_init() == 0) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Re-init after hot plug fail\n");
 			break;
 		}
 	}

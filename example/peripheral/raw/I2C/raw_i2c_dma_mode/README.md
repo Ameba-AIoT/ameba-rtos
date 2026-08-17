@@ -26,8 +26,8 @@ This test needs two demo board, one as master and the other as slave.
 
 # SW Configuration
 
-1. The codes of Master and Slave are distinguished by the value of macro 'I2C_MASTER_DEVICE' in the code.
-2. The codes of Master send Slave read mode and Master read Slave send mode are distinguished by the value of macro 'MASTER_SEND' in the code.
+1. The codes of Master and Slave are distinguished by the value of macro 'I2C_MASTER_DEVICE' in the code. You can run `ameba.py build -a raw_i2c_dma_mode -D I2C_MASTER_DEVICE=0` to set the value to 0 and build the example.
+2. The codes of Master send Slave read mode and Master read Slave send mode are distinguished by the value of macro 'MASTER_SEND' in the code. You can run `ameba.py build -a raw_i2c_dma_mode -D MASTER_SEND=0` to set the value to 0 and build the example.
 3. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.

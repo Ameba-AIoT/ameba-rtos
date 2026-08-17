@@ -133,9 +133,6 @@
 #define CONFIG_AUTO_RECONNECT 0
 #endif
 
-#ifdef NAN_CUSTOMER_NANDOW
-#define MAX_NANDOW_PARA_LEN 2600
-#endif
 
 /* When using supplicant SME, 11R is supported by default, instead of reuse the path of RTOS 11R */
 #ifdef CONFIG_SUPPLICANT_SME

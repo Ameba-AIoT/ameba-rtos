@@ -8,6 +8,23 @@ extern "C" {
 #include "log.h"
 #include <sys/unistd.h>
 #include <sys/stat.h>
+#include <stdio.h>
+
+/* newlib defines feof()/ferror() as MACROS in <stdio.h> that read FILE->_flags
+ * inline, so they never emit a call to the feof/ferror symbol and bypass the
+ * VFS redirection (cmake/flags/common/link_options.cmake -> __wrap_feof/
+ * __wrap_ferror in vfs_wrap.c). On a VFS FILE* (really a vfs_file*) the macro
+ * reads garbage. Since every fopen() is VFS-wrapped, all FILE* are vfs_file*,
+ * so we drop the macros here and let feof()/ferror() resolve to the wrapped
+ * functions. <stdio.h> is pulled in just above so its include guard makes any
+ * later #include <stdio.h> a no-op, keeping the undef effective regardless of
+ * header order. clearerr is intentionally NOT undef'd: it has no VFS wrapper. */
+#ifdef feof
+#undef feof
+#endif
+#ifdef ferror
+#undef ferror
+#endif
 
 #define VFS_PATH_MAX 256
 
@@ -22,9 +39,9 @@ extern "C" {
 #define VFS_O_CLOEXEC	0x02000000
 
 /*vfs_type*/
-#define VFS_FATFS		0X00
-#define VFS_LITTLEFS	0X01
-#define VFS_REALFS		0X02
+#define VFS_FATFS		0x00
+#define VFS_LITTLEFS	0x01
+#define VFS_REALFS	0x02
 #define VFS_FS_MAX	0x03
 
 /*vfs_interface_type*/

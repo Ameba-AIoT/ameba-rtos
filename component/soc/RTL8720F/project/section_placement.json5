@@ -55,7 +55,6 @@
   { func: "alloc_skb",                                  section: ".sram.only.text",   core: "km4ns" },
   { func: "cancel_timer_ex",                            section: ".sram.only.text",   core: "km4ns" },
   { func: "dev_alloc_skb",                              section: ".sram.only.text",   core: "km4ns" },
-  { func: "halbb_physts_parsing",                       section: ".sram.only.text",   core: "km4ns" },
   { func: "mod_timer",                                  section: ".sram.only.text",   core: "km4ns" },
   { func: "rtw_check_sta_associated_to_ap",             section: ".sram.only.text",   core: "km4ns" },
   { func: "rtw_dequeue_cmd",                            section: ".sram.only.text",   core: "km4ns" },

@@ -77,6 +77,13 @@ static inline void coex_ipc_entry(void)
 #if defined(CONFIG_COEXIST_DEV) && (!defined(CONFIG_WHC_NONE))
 	coex_ipc_dev_init();
 #endif
+#elif defined(CONFIG_BT_SDN) // SDN@NS + COEX@TZ
+#if defined(CONFIG_COEXIST_HOST) && defined(CONFIG_SDN_DEV)
+	coex_ipc_host_init();
+#endif
+#if defined(CONFIG_COEXIST_DEV) && (!defined(CONFIG_SDN_DEV))
+	coex_ipc_dev_init();
+#endif
 #endif
 
 #if !defined(CONFIG_PLATFORM_ZEPHYR)

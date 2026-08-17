@@ -364,6 +364,8 @@ macro(ameba_mcu_project_create name mcu_type)
     set_property(TARGET ${c_BUILD_INFO} PROPERTY ADDITIONAL_CLEAN_FILES ${c_MCU_INC_DIR}/build_info.h)
     set(c_CURRENT_IMAGE_IS_ROM FALSE) #Flag to identify whether current image is rom, updated in ameba_add_image
     ameba_add_empty_object()
+
+    ameba_install_directory("${c_MCU_INC_DIR}")
 endmacro()
 
 function(ameba_firmware_package output_app_name)

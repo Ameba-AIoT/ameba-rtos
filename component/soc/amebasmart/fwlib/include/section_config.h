@@ -85,5 +85,13 @@
 #define SHELL_ROM_DATA_SECTION				SRAMDRAM_ONLY_DATA_SECTION
 #define SHELL_ROM_BSS_SECTION
 
+/* Native SDK needs this to land in ameba_img1_s.ld's KM4_BOOTLOADER_RAM_S
+ * region. Under Zephyr there's no such region, and the explicit section
+ * merges every tagged function into one input section, blocking
+ * --gc-sections from dropping unused ones individually. */
+#ifdef __ZEPHYR__
+#define BOOT_RAM_TEXT_SECTION
+#else
 #define BOOT_RAM_TEXT_SECTION				SECTION(".boot.ram.text")
+#endif
 #endif //_SECTION_CONFIG_H_

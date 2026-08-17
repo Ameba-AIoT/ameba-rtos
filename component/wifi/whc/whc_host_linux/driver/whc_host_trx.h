@@ -20,11 +20,7 @@
 #define WLAN_MAX_MIC_LEN	8
 #define WLAN_MAX_ICV_LEN	8
 
-#ifdef NAN_CUSTOMER_NANDOW
-#define MAXIMUM_ETHERNET_PACKET_SIZE		MAX_NANDOW_PARA_LEN	//!< Maximum Ethernet Packet Size
-#else
 #define MAXIMUM_ETHERNET_PACKET_SIZE		1514
-#endif
 #define SKB_WLAN_TX_EXTRA_LEN	(TXDESC_SIZE+WLAN_HDR_A4_QOS_HTC_LEN+WLAN_MAX_IV_LEN+WLAN_SNAP_HEADER-WLAN_ETHHDR_LEN)
 #define WLAN_MAX_PROTOCOL_OVERHEAD (WLAN_HDR_A4_QOS_HTC_LEN+WLAN_MAX_IV_LEN+\
 							WLAN_SNAP_HEADER+WLAN_MAX_MIC_LEN+WLAN_MAX_ICV_LEN)/*=68*/
@@ -98,6 +94,10 @@ static inline unsigned char *dev_skb_put(struct dev_sk_buff *skb, unsigned int l
 struct whc_msg_node {
 	struct list_head	list;
 	void				*msg;
+#ifdef WHCH_TXAGG
+	u8					is_txagg;	/* msg points to struct whc_xmit_buf (recycle to pool), not sk_buff */
+	u8					txagg_num;
+#endif
 };
 #endif
 

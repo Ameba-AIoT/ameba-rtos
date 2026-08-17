@@ -1256,7 +1256,9 @@ struct rtw_tx_power_ctl_info {
  * @brief Configuration for Automatic Channel Selection (ACS).
  */
 struct rtw_acs_config {
+	u8 *ch_list; /**< Candidate channel array; NULL means use the full WiFi channel list. */
 	u8 band; /**< Frequency band: @ref RTW_SUPPORT_BAND_2_4G, etc. */
+	u8 ch_num; /**< Number of entries in ch_list; ignored when ch_list is NULL. */
 };
 
 /**

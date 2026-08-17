@@ -63,13 +63,13 @@ static void hid_cb_init(void);
 static void hid_cb_deinit(void);
 static void hid_cb_setup(void);
 static void hid_cb_transmitted(u8 status);
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 static void hid_cb_received(u8 *buf, u32 len);
 #endif
 static void hid_cb_status_changed(u8 old_status, u8 status);
 
 #if CONFIG_USBD_HID_MOUSE_CMD
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[]);
 #endif
 #endif
@@ -86,7 +86,7 @@ static rtos_sema_t hid_attach_status_changed_sema;
 #if CONFIG_USBD_HID_CONSTANT_DATA
 static rtos_sema_t hid_connect_sema;
 static rtos_sema_t hid_transmit_sema;
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 static const usbd_hid_mouse_data_t mdata[] = {
 	{0,   0,   0,  50,   0,   0},	//move the cursor 50 pixels to the right
 	{0,   0,   0,   0,  50,   0},	//move the cursor down 50 pixels
@@ -116,7 +116,7 @@ usbd_hid_keyboard_data_t mdata[] = {
 #endif
 
 #if CONFIG_USBD_HID_MOUSE_CMD
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 /*exmaple cmd: mouse  0   0   0   50   0   0
 	left button release,
 	right button release,
@@ -153,7 +153,7 @@ static const usbd_hid_usr_cb_t hid_usr_cb = {
 	.deinit = hid_cb_deinit,
 	.setup = hid_cb_setup,
 	.transmitted = hid_cb_transmitted,
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 	.received = hid_cb_received,
 #endif
 	.status_changed = hid_cb_status_changed,
@@ -197,7 +197,7 @@ static void hid_cb_transmitted(u8 status)
 #endif
 }
 
-#if USBD_HID_DEVICE_TYPE == USBD_HID_KEYBOARD_DEVICE
+#ifdef CONFIG_USBD_HID_KEYBOARD
 /**
   * @brief  Data received over USB HID OUT endpoint
   * @note   This function is called within an interrupt service routine (ISR) context;
@@ -237,7 +237,7 @@ static void hid_cb_status_changed(u8 old_status, u8 status)
 }
 
 #if CONFIG_USBD_HID_MOUSE_CMD
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
 {
 	usbd_hid_mouse_data_t data;
@@ -286,7 +286,7 @@ static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
 /*brief: send device data.(wrapper function usbd_hid_send_data())*/
 static void hid_send_device_data(const void *pdata)
 {
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 	u8 byte[4];
 	const usbd_hid_mouse_data_t *data = (const usbd_hid_mouse_data_t *)pdata;
 
@@ -417,7 +417,7 @@ static void example_usbd_hid_thread(void *param)
 
 	rtos_sema_take(hid_connect_sema, RTOS_SEMA_MAX_COUNT);
 
-#if USBD_HID_DEVICE_TYPE == USBD_HID_MOUSE_DEVICE
+#ifdef CONFIG_USBD_HID_MOUSE
 	array_len = sizeof(mdata) / sizeof(usbd_hid_mouse_data_t);
 	delaytime = 1000;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Mouse data TX test start\n");

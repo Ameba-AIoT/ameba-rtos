@@ -32,7 +32,7 @@
 
 5. If you run this example in RTL8720F, then connect as below
 
-   PA_15 <--> PA_16
+   PA_23 <--> PA_24
    GND <--> button <---> PA_17
 
 # SW Configuration
@@ -59,3 +59,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F
