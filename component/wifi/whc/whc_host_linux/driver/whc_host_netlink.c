@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #include <whc_host_linux.h>
 #include <net/genetlink.h>
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+#include "whc_host_log_fwd.h"
+#endif
 
 struct genl_info wifi_event_user_genl_info;
 
@@ -18,6 +22,9 @@ static struct whc_host_netlink_command_entry netlink_cmd_table[] = {
 	{API_WIFI_NETIF_ON, whc_host_nl_set_netifon},
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	{API_WIFI_DBG, whc_host_nl_dbg},
+#endif
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+	{API_WIFI_LOG_FWD, whc_host_nl_log_fwd},
 #endif
 	/* api end */
 	{0xFF, NULL}
@@ -63,7 +70,7 @@ static int _whc_host_ipc_cmd_work(u32 cmd, char *buf, u32 buf_len, struct genl_i
 
 	buf_len = strlen(user_buf + hdr_len);
 	user_buf[buf_len + hdr_len] = '\0';
-	ret = whc_host_send_rxbuf_to_user(user_buf + hdr_len, buf_len + 1);
+	ret = whc_host_deliver_rxbuf_to_user(user_buf + hdr_len, buf_len + 1);
 
 func_exit:
 	if (user_buf) {
@@ -134,7 +141,7 @@ static int whc_host_nl_send_buf_to_dev(struct genl_info *info)
 	ptr += SIZE_TX_DESC;
 
 	memcpy(ptr, payload, payload_len);
-	whc_host_cmd_data_send_to_dev(buf, buf_len, 1);
+	whc_host_send_cmd_data_to_dev(buf, buf_len, 1);
 	kfree(buf);
 	return 0;
 }
@@ -198,7 +205,7 @@ static int whc_host_nl_dbg(struct genl_info *info)
 	whc_host_iwpriv_cmd((dma_addr_t)buf, buf_len, buf, user_buf);
 	buf_len = strlen(user_buf);
 	user_buf[buf_len] = '\0';
-	whc_host_send_rxbuf_to_user(user_buf, buf_len + 1);
+	whc_host_deliver_rxbuf_to_user(user_buf, buf_len + 1);
 	kfree(user_buf);
 	return 0;
 }
@@ -235,6 +242,7 @@ static const struct nla_policy whc_nl_cmd_policy[NUM_WHC_ATTR] = {
 	[WHC_ATTR_PAYLOAD] = {.type = NLA_BINARY},
 	[WHC_ATTR_CHUNK_INDEX] = {.type = NLA_U32},
 	[WHC_ATTR_LAST_CHUNK] = {.type = NLA_U8},
+	[WHC_ATTR_LOG_ENABLE] = {.type = NLA_U8},
 };
 
 static const struct genl_multicast_group whc_mcgrps[] = {
@@ -271,7 +279,7 @@ struct genl_family whc_nl_family = {
 	.module = THIS_MODULE,
 };
 
-__attribute__((weak)) int whc_host_send_rxbuf_to_user(u8 *buf, u16 size)
+__attribute__((weak)) int whc_host_deliver_rxbuf_to_user(u8 *buf, u16 size)
 {
 	struct sk_buff *skb;
 	void *reply;
@@ -303,7 +311,7 @@ __attribute__((weak)) int whc_host_send_rxbuf_to_user(u8 *buf, u16 size)
 	}
 	if (nla_put(skb, WHC_ATTR_PAYLOAD, size, buf)) {
 		nlmsg_free(skb);
-		printk("fail whc_host_send_rxbuf_to_user");
+		printk("fail whc_host_deliver_rxbuf_to_user");
 		return -EMSGSIZE;
 	}
 	genlhdr = nlmsg_data(nlmsg_hdr(skb));

@@ -14,6 +14,10 @@
 #include "usbd_composite_cdc_acm.h"
 #include "usbd_composite_hid.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -28,6 +32,10 @@ int usbd_composite_init(u32 cdc_bulk_out_xfer_size, u32 cdc_bulk_in_xfer_size, c
 						u32 hid_intr_in_xfer_size, const usbd_composite_hid_usr_cb_t *hid_cb, const usbd_composite_cb_t *cb);
 
 void usbd_composite_deinit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USBD_COMPOSITE_CDC_ACM_HID_H */
 

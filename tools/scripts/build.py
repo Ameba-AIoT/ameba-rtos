@@ -69,6 +69,8 @@ def main(argc, argv):
                          help='build.py --new <target_dir> [-a <APP>] (use [-a list-apps] to check available apps)')
     parser.add_argument('-q', '--quiet', action='store_true',
                         help='suppress verbose output; show only [INFOR] lines, errors, and final status')
+    parser.add_argument('--remote-server', type=str, help=argparse.SUPPRESS)
+    parser.add_argument('--image-dir', type=str, default='', help=argparse.SUPPRESS)
 
     args = parser.parse_args()
 
@@ -163,8 +165,17 @@ def main(argc, argv):
             if run_command(cmake_config_cmd) != 0:
                 sys.exit(1)
 
-        mode = 'debug' if args.debug else ''
-        os.system(f'python {gdb_script_dir} {project_dir} {mode}')
+        cmd = [sys.executable, gdb_script_dir, project_dir]
+        if args.debug:
+            cmd.append('debug')
+        if args.remote_server:
+            cmd.extend(["--remote-server", args.remote_server])
+        if args.image_dir:
+            cmd.extend(["--image-dir", args.image_dir])
+        try:
+            subprocess.run(cmd, check=True)
+        except KeyboardInterrupt:
+            sys.exit(1)
         return
 
     # --- 5. App Logic (Submodules & Re-configure) ---

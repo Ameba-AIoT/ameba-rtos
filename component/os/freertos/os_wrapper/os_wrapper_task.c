@@ -70,8 +70,14 @@ int rtos_task_create(rtos_task_t *pp_handle, const char *p_name, void (*p_routin
 		return RTK_FAIL;
 	}
 
-#if defined (CONFIG_HEAP_PROTECTOR)
-	/* if enable heap trace, we need to increase heap size */
+#if defined (CONFIG_HEAP_TRACE) || defined (CONFIG_HEAP_INTEGRITY_CHECK_IN_TASK_SWITCHED_OUT)
+	/* These debug features run extra code on the CALLING task's own stack
+	 * (per-alloc backtrace capture in heap trace; full-heap integrity walk in
+	 * the task-switched-out hook), deepening each task's worst-case stack use,
+	 * so every task needs more stack headroom.
+	 * Do NOT gate this on CONFIG_HEAP_PROTECTOR alone: PROTECTOR by itself is
+	 * only free-list pointer obfuscation with no stack-side work, so paying
+	 * +1024 per task then just wastes ~1KB * task_count of heap. */
 	stack_size_in_byte += 1024;
 #endif
 	ret = xTaskCreate(p_routine, (const char *)p_name, stack_size_in_byte / sizeof(portSTACK_TYPE),

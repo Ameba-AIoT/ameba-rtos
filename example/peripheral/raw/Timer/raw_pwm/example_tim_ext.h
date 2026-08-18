@@ -76,10 +76,10 @@ u8 PWM_GPIOx_S0[PWM_CHANNEL_MAX] = {
 
 #elif defined (CONFIG_RTL8720F)
 
-	_PA_15,
-	_PA_16,
-	_PA_25,
-	_PA_26,
+	_PA_21,
+	_PA_22,
+	_PA_23,
+	_PA_20,
 
 #endif
 

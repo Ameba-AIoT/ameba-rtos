@@ -80,9 +80,12 @@ extern u8 __ram_image3_nsc_start__[];
 extern u8 __ram_image3_nsc_end__[];
 extern u8 __km4tz_bd_ram_start__[];
 extern u8 __km4tz_bd_ram_end__[];
+extern u8 __km4ns_bd_ram_start__[];
 extern u8 __km4ns_bd_ram_end__[];
 
+extern u8 __km4ns_bd_psram_start__[];
 extern u8 __km4tz_bd_psram_start__[];
+extern u8 __km4tz_bd_psram_end__[];
 extern u8 __non_secure_psram_start__[]; /* start of non-secure PSRAM (first segment after TZ) */
 extern u8 __non_secure_psram_end__[];
 

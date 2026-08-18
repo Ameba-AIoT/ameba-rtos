@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Realtek wireless local area network IC driver.
+ *
+ * Copyright(c) 2024 Realtek Corporation. All rights reserved.
+ */
 #include <whc_host_linux.h>
 
 struct whc_spi whc_spi_priv = {0};
@@ -193,7 +199,31 @@ static struct spi_driver whc_spi_host_driver = {
 	.probe = whc_spi_host_probe,
 	.remove = whc_spi_host_remove,
 };
-module_spi_driver(whc_spi_host_driver);
+
+static int __init whc_spi_host_init_module(void)
+{
+	int ret;
+
+	ret = spi_register_driver(&whc_spi_host_driver);
+	if (ret) {
+		pr_err("spi register driver Failed!\n");
+		return ret;
+	}
+
+	rtw_inetaddr_notifier_register();
+
+	return ret;
+}
+
+static void __exit whc_spi_host_cleanup_module(void)
+{
+	rtw_inetaddr_notifier_unregister();
+
+	spi_unregister_driver(&whc_spi_host_driver);
+}
+
+module_init(whc_spi_host_init_module);
+module_exit(whc_spi_host_cleanup_module);
 
 MODULE_AUTHOR("Realtek");
 MODULE_DESCRIPTION("RealTek Ameba WHC");

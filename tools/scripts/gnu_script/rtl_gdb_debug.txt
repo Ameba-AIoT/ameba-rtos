@@ -5,10 +5,10 @@
 #===============================================================================
 # GDB connection
 set remotetimeout 100000
-# Enter user IP here for remote connect
-set $HOST_IP = ""
+# HOST_IP is set via gdb.py --remote-server (passed through -ex).
 # Port $GDB_PORT will be set via -ex parameter before sourcing this script
 # target remote :2335
+printf "HOST_IP=[%s] GDB_PORT=[%d]\n", $HOST_IP, $GDB_PORT
 eval "target remote %s:%d", $HOST_IP, $GDB_PORT
 
 #===============================================================================

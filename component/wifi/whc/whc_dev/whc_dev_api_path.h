@@ -11,14 +11,11 @@ struct event_priv_t {
 
 	rtos_sema_t task_wake_sema;
 	rtos_mutex_t send_mutex;
-	rtos_sema_t api_ret_sema;
 
 	u8 *rx_api_msg;
-	u8 *rx_ret_msg;
 
 	u8 dev_req_network_info[DEV_REQ_NETWORK_INFO_MAX_LEN];
 
-	u8 b_waiting_for_ret: 1;
 };
 
 struct event_func_t {
@@ -55,7 +52,6 @@ void whc_event_wifi_send_mgnt(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_EDCA_param(u32 api_id, u32 *param_buf);
 void whc_event_wifi_ap_del_client(u32 api_id, u32 *param_buf);
 void whc_event_wifi_iwpriv_info(u32 api_id, u32 *param_buf);
-void whc_event_wifi_ip_update(u32 api_id, u32 *param_buf);
 void whc_event_wifi_ap_switch_ch(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_chplan(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_countrycode(u32 api_id, u32 *param_buf);
@@ -132,7 +128,6 @@ void whc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *sca
 u8 whc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info);
 void whc_dev_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret);
 void whc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
-int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index);
 void whc_dev_cfg80211_indicate_scan_report(u32 channel, u32 frame_is_bcn, s32 rssi, u8 *mac_addr, u8 *IEs, u32 ie_len);
 
 #ifdef CONFIG_NAN
@@ -140,6 +135,9 @@ void whc_dev_cfg80211_indicate_nan_match(u8 type, u8 inst_id, u8 peer_inst_id, u
 void whc_dev_cfg80211_nan_func_free(u64 data);
 void whc_dev_cfg80211_nan_cfgvendor_event_report(u16 event_id, void *event, int event_len);
 void whc_dev_cfg80211_cfgvendor_send_cmd_reply(void *data, int len);
+#ifdef CONFIG_WHCH
+void whc_dev_nan_ndp_status_report(void *info, int len);
+#endif
 #endif
 
 int whc_dev_ip_in_table_indicate(u8 gate, u8 ip);

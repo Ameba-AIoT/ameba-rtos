@@ -19,7 +19,6 @@
 #include "rtw_coex_ipc_cfg.h"
 #include "rtw_coex_ipc.h"
 #include "rtw_coex_host_api.h"
-#include "wifi_intf_drv_to_upper.h"
 
 /* -------------------------------- Defines --------------------------------- */
 /*host api task*/
@@ -27,6 +26,7 @@
 #define COEX_STACK_SIZE_IPC_HST_API (COEX_IPC_HST_API_BASIC_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN)
 
 /* ---------------------------- Global Variables ---------------------------- */
+static u8 coex_ipc_host_initialized = 0;
 rtos_sema_t  g_host_coex_ipc_api_task_wake_sema = NULL;
 rtos_sema_t  g_host_coex_ipc_api_message_send_sema = NULL;
 
@@ -47,6 +47,11 @@ __weak int rtk_coex_ipc_h2c_info_handler(u16 type, u8 *pdata, u16 data_len)
 	int ret = 0;
 	u32 param_buf[3];
 	u8 *data_temp = NULL;
+
+	if (!coex_ipc_host_initialized) {
+		//RTK_LOGS(TAG_WLAN_COEX, RTK_LOG_WARN, "coex ipc host not initialized!\r\n");
+		return ret;
+	}
 
 	if (pdata == NULL || data_len == 0) {
 		param_buf[0] = (u32)type;
@@ -87,6 +92,8 @@ void coex_ipc_api_host_task(void)
 	struct coex_ipc_dev_req_msg *p_ipc_msg = NULL;
 	int ret = 0;
 
+	coex_ipc_host_initialized = 1;
+
 	do {
 		rtos_sema_take(g_host_coex_ipc_api_task_wake_sema, 0xFFFFFFFF);
 
@@ -125,6 +132,7 @@ void coex_ipc_api_host_task(void)
 		p_ipc_msg->enevt_id = 0;
 		DCache_Clean((u32)p_ipc_msg, sizeof(struct coex_ipc_dev_req_msg));
 	} while (1);
+	coex_ipc_host_initialized = 0;
 	rtos_task_delete(NULL);
 }
 
@@ -141,6 +149,11 @@ void coex_ipc_api_host_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum)
 	(void) Data;
 	(void) IrqStatus;
 	(void) ChanNum;
+
+	if (!coex_ipc_host_initialized) {
+		//RTK_LOGS(TAG_WLAN_COEX, RTK_LOG_WARN, "coex ipc host not initialized!\r\n");
+		return;
+	}
 
 	/* wakeup task */
 	rtos_sema_give(g_host_coex_ipc_api_task_wake_sema);
@@ -228,6 +241,8 @@ void coex_ipc_api_init_host(void)
 	/* Initialize the event task */
 	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"coex_ipc_api_host_task", (rtos_task_function_t)coex_ipc_api_host_task, NULL,
 										COEX_STACK_SIZE_IPC_HST_API, CONFIG_COEX_IPC_HOST_API_PRIO)) {
+		rtos_sema_delete_static(g_host_coex_ipc_api_message_send_sema);
+		rtos_sema_delete_static(g_host_coex_ipc_api_task_wake_sema);
 		RTK_LOGS(TAG_WLAN_COEX, RTK_LOG_ERROR, "Create coex_ipc_api_host_task Err\n");
 	}
 

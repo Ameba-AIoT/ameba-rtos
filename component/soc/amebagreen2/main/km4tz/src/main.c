@@ -42,8 +42,6 @@ void app_IWDG_init(void)
 	}
 
 	IWDG_LP_Enable(IWDG_DEV, DISABLE);
-	/*set IWDG timeout to 4s*/
-	WDG_Timeout(IWDG_DEV, 0x0FFF);
 	WDG_Refresh(IWDG_DEV);
 	RTK_LOGI(TAG, "IWDG refresh thread Started!\n");
 

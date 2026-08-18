@@ -45,6 +45,12 @@
 /* fully programmable zone */
 #define UART_TX						_PA_25//_PA_18 // UART0 TX
 #define UART_RX						_PA_26//_PA_19 // UART0 RX
+
+#elif defined (CONFIG_RTL8720F)
+/* fully programmable zone */
+#define UART_TX						_PA_13
+#define UART_RX						_PA_14
+
 #endif
 
 #define WHC_UART_HOST_RX_IDLE		0x0

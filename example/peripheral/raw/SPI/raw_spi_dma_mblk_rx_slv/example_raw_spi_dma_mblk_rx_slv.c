@@ -10,7 +10,11 @@
 #include "ameba_soc.h"
 #include "example_spi_ext.h"
 #include "os_wrapper.h"
-#include <stdio.h>
+#define TAG "SPI_SLAVE"
+
+#ifndef LOOP_COUNT
+#define LOOP_COUNT 1
+#endif
 
 /* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
@@ -100,6 +104,7 @@ u32 Gdma_multiblock_irq(void *Data)
 //		printf("DMA Block %d\n",GDMA_InitStruct->MuliBlockCunt);
 //		printf("DMA data complete MaxMuliBlock:%d \n", GDMA_InitStruct->MaxMuliBlock);
 		MultiRxDone = 1;
+		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	}
 
 	return 0;
@@ -132,7 +137,7 @@ bool SSI_Multi_RXGDMA_Init(u8 Index, PGDMA_InitTypeDef GDMA_InitStruct, void *Ca
 #endif
 	GDMA_InitStruct->GDMA_Index = 0;
 	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
-	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType | SrcTransferType | DstTransferType);
+	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
 
 	GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
 	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
@@ -156,7 +161,7 @@ bool SSI_Multi_RXGDMA_Init(u8 Index, PGDMA_InitTypeDef GDMA_InitStruct, void *Ca
 			GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 		} else {
-			printf("%s: Aligment Err: pTxData=0x%p, Length=%lu\n", __FUNCTION__, pRxData, Length);
+			RTK_LOGE(TAG, "%s: Aligment Err: pRxData=0x%08x, Length=%u\n", __FUNCTION__, (u32)pRxData, Length);
 			return FALSE;
 		}
 	} else {
@@ -200,7 +205,7 @@ void Ssi_Print(u8 *pSrc, u8 *pDst, u32 Length)
 
 	for (index = 0; index < Length; index++) {
 		if ((pSrc[index] & dfs_mask) != pDst[index]) {
-			printf("[%lu]: 0x%x ---- 0x%x\n", index, pSrc[index] & dfs_mask, pDst[index]);
+			RTK_LOGI(TAG, "[%u]: 0x%x ---- 0x%x\n", index, pSrc[index] & dfs_mask, pDst[index]);
 		}
 	}
 }
@@ -252,13 +257,13 @@ void spi_multiblock_task(void)
 	spi_slave.spi_dev = SPI_DEV_TABLE[spi_slave.Index].SPIx;
 
 	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
-	Pinmux_Config(SPI0_MOSI, PINMUX_FUNCTION_SPIS);
-	Pinmux_Config(SPI0_MISO, PINMUX_FUNCTION_SPIS);
-	Pinmux_Config(SPI0_SCLK, PINMUX_FUNCTION_SPIS);
-	Pinmux_Config(SPI0_CS, PINMUX_FUNCTION_SPIS);
+	Pinmux_Config(SPI_MOSI, PINMUX_FUNCTION_SPIS);
+	Pinmux_Config(SPI_MISO, PINMUX_FUNCTION_SPIS);
+	Pinmux_Config(SPI_SCLK, PINMUX_FUNCTION_SPIS);
+	Pinmux_Config(SPI_CS, PINMUX_FUNCTION_SPIS);
 
-	PAD_PullCtrl(SPI0_CS, GPIO_PuPd_UP);
-	PAD_PullCtrl(SPI0_SCLK, GPIO_PuPd_DOWN); // pull down for idel level is low
+	PAD_PullCtrl(SPI_CS, GPIO_PuPd_UP);
+	PAD_PullCtrl(SPI_SCLK, GPIO_PuPd_DOWN); // pull down for idel level is low
 
 	SSI_SetRole(spi_slave.spi_dev, SSI_SLAVE);
 
@@ -276,33 +281,50 @@ void spi_multiblock_task(void)
 		*((u8 *)MasterTxBuf + i) = i;
 	}
 
-	printf("----------- SPI DMA multi-block RX test -----------\n");
+	RTK_LOGI(TAG, "----------- SPI DMA multi-block RX test -----------\n");
+
+	// Main test loop
+	for (int loop = 1; loop <= LOOP_COUNT; loop++) {
+#if LOOP_COUNT > 1
+		if (loop > 1) {
+			RTK_LOGI(TAG, "SPI RX loop %d...\n", loop);
+		}
+#endif
+		MultiRxDone = 0;
+
+		// Clear RX buffer for each loop to ensure clean data
+		_memset(SlaveRxBuf, 0, TEST_BUF_SIZE);
 
 #if BLOCK_COUNT >= 2
-	SSI_Multi_RXGDMA_Init(spi_slave.Index, &spi_slave.SSIRxGdmaInitStruct, &spi_slave, (IRQ_FUN) Gdma_multiblock_irq, SlaveRxBuf, TEST_BUF_SIZE);
-	SSI_SetDmaEnable(spi_slave.spi_dev, ENABLE, SPI_BIT_RDMAE);
+		SSI_Multi_RXGDMA_Init(spi_slave.Index, &spi_slave.SSIRxGdmaInitStruct, &spi_slave, (IRQ_FUN) Gdma_multiblock_irq, SlaveRxBuf, TEST_BUF_SIZE);
+		SSI_SetDmaEnable(spi_slave.spi_dev, ENABLE, SPI_BIT_RDMAE);
 #else
-	SSI_RXGDMA_Init(spi_slave.Index, &spi_slave.SSIRxGdmaInitStruct, &spi_slave, (IRQ_FUN) Gdma_singleblock_irq, SlaveRxBuf, TEST_BUF_SIZE);
-	SSI_SetDmaEnable(spi_slave.spi_dev, ENABLE, SPI_BIT_RDMAE);
+		SSI_RXGDMA_Init(spi_slave.Index, &spi_slave.SSIRxGdmaInitStruct, &spi_slave, (IRQ_FUN) Gdma_singleblock_irq, SlaveRxBuf, TEST_BUF_SIZE);
+		SSI_SetDmaEnable(spi_slave.spi_dev, ENABLE, SPI_BIT_RDMAE);
 #endif
 
-	i = 0;
-	while (MultiRxDone == 0) {
-		DelayMs(100);
-		i++;
-		if (i > 150) {
-			printf("SPI Multi Block Timeout\r\n");
-			break;
+		i = 0;
+		while (MultiRxDone == 0) {
+			DelayMs(100);
+			i++;
+			if (i > 150) {
+				RTK_LOGE(TAG, "SPI Multi Block Timeout\n");
+				break;
+			}
 		}
-	}
 
-	//Ssi_Print(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
-	cmp_result = Ssi_DataCompare(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
-	printf("\r\nSPI RX test: %s!\r\n", cmp_result ? "OK" : "fail");
+		//Ssi_Print(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
+		cmp_result = Ssi_DataCompare(MasterTxBuf, SlaveRxBuf, TEST_BUF_SIZE);
+		if (cmp_result) {
+			RTK_LOGI(TAG, "SPI RX test: OK!\n");
+		} else {
+			RTK_LOGE(TAG, "SPI RX test: fail!\n");
+		};
+	}
 
 	Spi_free(&spi_slave);
 
-	printf("SPI rx Demo finished.\n\n");
+	RTK_LOGI(TAG, "SPI rx Demo finished.\n\n");
 
 	rtos_task_delete(NULL);
 
@@ -316,10 +338,10 @@ void spi_multiblock_task(void)
 int example_raw_spi_multi_dma_rx_slave(void)
 {
 #if IF_SINGLE_BUF
-	printf("Data buffer size must be integer multiple of block size!\r\n");
+	RTK_LOGE(TAG, "Data buffer size must be integer multiple of block size!\n");
 #else
 	if (rtos_task_create(NULL, ((const char *)"spi_multiblock_task"), (rtos_task_t)spi_multiblock_task, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-		printf("\r\n%s rtos_task_create(spi_multiblock_task) failed\r\n", __FUNCTION__);
+		RTK_LOGE(TAG, "%s Create spi_multiblock_task task failed\n", __FUNCTION__);
 	}
 
 	return 0;

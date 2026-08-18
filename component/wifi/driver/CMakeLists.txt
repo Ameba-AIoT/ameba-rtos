@@ -80,6 +80,7 @@ ameba_list_append_if(CONFIG_AMEBADPLUS public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/phydm
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel/include
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel/rtl8721da
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_xmesh/rtl8721da
 )
 
 ameba_list_append_if(CONFIG_AMEBAD public_includes
@@ -111,6 +112,7 @@ ameba_list_append_if(CONFIG_AMEBAGREEN2 public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/rtl8721f
     ${CMAKE_CURRENT_SOURCE_DIR}/rtl8721f_rom
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel/rtl8721f
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_xmesh/rtl8721f
 )
 
 ameba_list_append_if(CONFIG_AMEBAPRO3 public_includes
@@ -136,6 +138,7 @@ ameba_list_append_if(CONFIG_RTL8720F public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf/halrf_8720f
     ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f
     ${CMAKE_CURRENT_SOURCE_DIR}/rtl8720f_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel/rtl8720f
 )
 
 set(release_target_name wlan)

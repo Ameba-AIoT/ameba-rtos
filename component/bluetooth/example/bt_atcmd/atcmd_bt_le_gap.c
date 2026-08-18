@@ -30,7 +30,8 @@ static uint8_t def_adv_data[] = {
 };
 
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
-static uint8_t def_ext_adv_data[] = {
+#define  EXT_ADV_DATA_DEFAULT_LEN  (0x02 + 1 + 0x12 + 1 + 0xd8 + 1)
+static uint8_t def_ext_adv_data[RTK_BT_LE_MAX_EXT_ADV_DATA_LEN] = {
 	// Flags
 	0x02,
 	RTK_BT_LE_GAP_ADTYPE_FLAGS,
@@ -59,7 +60,8 @@ static uint8_t def_ext_adv_data[] = {
 	0xd, 0xd, 0xd, 0xd, 0xd,
 };
 
-static uint8_t def_ext_scan_data[] = {
+#define  EXT_SCAN_DATA_DEFAULT_LEN  (0x3 + 1 + 0xf6 + 1)
+static uint8_t def_ext_scan_data[RTK_BT_LE_MAX_EXT_ADV_DATA_LEN] = {
 	//GAP_ADTYPE_APPEARANCE
 	0x3,
 	RTK_BT_LE_GAP_ADTYPE_APPEARANCE,
@@ -89,7 +91,8 @@ static uint8_t def_ext_scan_data[] = {
 #endif
 
 #if defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT
-static uint8_t def_pa_data[] = {
+#define PA_ADV_DATA_DEFAULT_LEN  (0x02 + 1 + 0x13 + 1 + 0xe4 + 1)
+static uint8_t def_pa_data[RTK_BT_LE_MAX_EXT_ADV_DATA_LEN] = {
 	// Flags
 	0x02,
 	RTK_BT_LE_GAP_ADTYPE_FLAGS,
@@ -125,7 +128,7 @@ static rtk_bt_le_pa_param_t def_pa_param = {
 	80,
 	RTK_BT_LE_PA_ADV_PROP_INCLUDE_TX_POWER,
 	(uint8_t *)def_pa_data,
-	sizeof(def_pa_data),
+	PA_ADV_DATA_DEFAULT_LEN,
 #if defined(RTK_BLE_5_4_PA_RSP_SUPPORT) && RTK_BLE_5_4_PA_RSP_SUPPORT
 	2,
 	20,
@@ -347,7 +350,7 @@ static int atcmd_ble_gap_set_rand_addr(int argc, char **argv)
 	uint16_t ret = 0;
 	rtk_bt_le_rand_addr_type_t type = RTK_BT_LE_RAND_ADDR_STATIC;
 	uint8_t addr[RTK_BD_ADDR_LEN] = {0};
-	bool auto_generate;
+	bool auto_generate = false;
 	char addr_str[20];
 
 	if (argc == 1) {
@@ -356,7 +359,7 @@ static int atcmd_ble_gap_set_rand_addr(int argc, char **argv)
 		}
 		auto_generate = false;
 	} else if (argc == 2) {
-		type = str_to_int(argv[1]);
+		type = (rtk_bt_le_rand_addr_type_t)str_to_int(argv[1]);
 		auto_generate = true;
 	}
 
@@ -381,7 +384,7 @@ static int atcmd_ble_gap_gen_rand_addr(int argc, char **argv)
 	char addr_str[20];
 	rtk_bt_le_rand_addr_type_t type;
 
-	type = str_to_int(argv[0]);
+	type = (rtk_bt_le_rand_addr_type_t)str_to_int(argv[0]);
 	ret = rtk_bt_le_gap_gen_rand_addr(type, addr);
 	if (ret) {
 		BT_LOGE("GAP generate random address failed! err: 0x%x\r\n", ret);
@@ -594,12 +597,44 @@ static int atcmd_ble_gap_set_scan_resp(int argc, char **argv)
 }
 
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
+
+// Temp function, just for zephyr stack when set long ADV data
+static bool set_adv_data_to_element_struct(uint8_t *p_start, uint16_t target_add_len)
+{
+	uint16_t offset, add_len, element_len;
+
+	offset = 0;
+	add_len = target_add_len;
+
+	while (add_len > 0) {
+		if (add_len > (0xff + 1)) {
+			element_len = 0xff + 1;
+		} else {
+			element_len = add_len;
+		}
+
+		if (element_len < 4) {
+			// BT_LOGA("[%s][%d] The ADV element len(%d) < 3, fail.\r\n", __func__, __LINE__, element_len);
+			return false;
+		}
+
+		p_start[offset] = element_len - 1;  // length
+		p_start[offset + 1] = RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC;  // type
+		p_start[offset + 2] = 0x5d;
+		p_start[offset + 3] = 0;
+
+		offset += element_len;
+		add_len -= element_len;
+	}
+	return true;
+}
+
 static int atcmd_ble_gap_set_ext_adv_data(int argc, char **argv)
 {
 	uint16_t ret = 0;
 	uint8_t adv_handle = 0;
 	uint8_t *pdata = (uint8_t *)def_ext_adv_data;
-	uint16_t len = sizeof(def_ext_adv_data);
+	uint16_t len = EXT_ADV_DATA_DEFAULT_LEN;
 
 	if (argc > 0) {
 		adv_handle = str_to_int(argv[0]);
@@ -607,9 +642,11 @@ static int atcmd_ble_gap_set_ext_adv_data(int argc, char **argv)
 
 	if (argc == 2) {
 		len = str_to_int(argv[1]);
-		if (len > sizeof(def_ext_adv_data)) {
-			BT_LOGE("GAP set ext adv data failed! Length too long!\r\n");
-			return -1;
+		if (len > EXT_ADV_DATA_DEFAULT_LEN && len < RTK_BT_LE_MAX_EXT_ADV_DATA_LEN) {
+			if (!set_adv_data_to_element_struct(pdata + EXT_ADV_DATA_DEFAULT_LEN, len - EXT_ADV_DATA_DEFAULT_LEN)) {
+				BT_LOGE("GAP set ext adv data failed! ADV element length < 3!\r\n");
+				return -1;
+			}
 		}
 	}
 
@@ -734,7 +771,7 @@ static int atcmd_ble_gap_set_ext_scan_resp(int argc, char **argv)
 	uint16_t ret = 0;
 	uint8_t adv_handle = 0;
 	uint8_t *pdata = (uint8_t *)def_ext_scan_data;
-	uint16_t len = sizeof(def_ext_scan_data);
+	uint16_t len = EXT_SCAN_DATA_DEFAULT_LEN;
 
 	if (argc > 0) {
 		adv_handle = str_to_int(argv[0]);
@@ -742,9 +779,11 @@ static int atcmd_ble_gap_set_ext_scan_resp(int argc, char **argv)
 
 	if (argc == 2) {
 		len = str_to_int(argv[1]);
-		if (len > sizeof(def_ext_scan_data)) {
-			BT_LOGE("GAP set ext scan resp data failed! Length too long!\r\n");
-			return -1;
+		if (len > EXT_SCAN_DATA_DEFAULT_LEN && len < RTK_BT_LE_MAX_EXT_ADV_DATA_LEN) {
+			if (!set_adv_data_to_element_struct(pdata + EXT_SCAN_DATA_DEFAULT_LEN, len - EXT_SCAN_DATA_DEFAULT_LEN)) {
+				BT_LOGE("GAP set ext scan resp data failed! ADV element len < 3!\r\n");
+				return -1;
+			}
 		}
 	}
 
@@ -804,7 +843,14 @@ static int atcmd_ble_gap_pa_adv(int argc, char **argv)
 		}
 
 		if (argc > 4) {
-			param.pa_len = str_to_int(argv[4]);
+			uint16_t input_len = str_to_int(argv[4]);
+			if (input_len > PA_ADV_DATA_DEFAULT_LEN && input_len < RTK_BT_LE_MAX_EXT_ADV_DATA_LEN) {
+				if (!set_adv_data_to_element_struct(def_pa_param.pa_data + PA_ADV_DATA_DEFAULT_LEN, input_len - PA_ADV_DATA_DEFAULT_LEN)) {
+					BT_LOGE("GAP set PA ADV data failed! ADV element length < 3!\r\n");
+					return -1;
+				}
+			}
+			param.pa_len = input_len;
 		}
 
 		ret = rtk_bt_le_gap_start_pa(&param);
@@ -872,7 +918,7 @@ static int atcmd_ble_gap_pa_sync_modify_list(int argc, char **argv)
 	uint16_t ret = 0;
 	uint8_t op;
 	rtk_bt_le_addr_t addr;
-	uint8_t adv_sid;
+	uint8_t adv_sid = 0;
 
 	op = str_to_int(argv[0]);
 
@@ -883,13 +929,13 @@ static int atcmd_ble_gap_pa_sync_modify_list(int argc, char **argv)
 		}
 
 		adv_sid = str_to_int(argv[1]);
-		addr.type = str_to_int(argv[2]);
+		addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[2]);
 		if (false == hexdata_str_to_bd_addr(argv[3], addr.addr_val, RTK_BD_ADDR_LEN)) {
 			return -1;
 		}
 	}
 
-	ret = rtk_bt_le_gap_pa_sync_modify_adv_list(op, addr, adv_sid);
+	ret = rtk_bt_le_gap_pa_sync_modify_adv_list((rtk_bt_le_pa_sync_advlist_op_t)op, addr, adv_sid);
 	if (RTK_BT_OK != ret) {
 		BT_LOGE("GAP modify PA sync adv list failed! err: 0x%x\r\n", ret);
 		return -1;
@@ -911,7 +957,7 @@ static int atcmd_ble_gap_pa_sync_op(int argc, char **argv)
 			.options = RTK_BT_LE_PA_SYNC_CREATE_OPTIONS_REPORT_INITIALLY_DISABLED,
 			.sync_cte_type = 0,
 			.adv_sid = 0,
-			.adv_addr = {0, {0, 0, 0, 0, 0, 0}},
+			.adv_addr = {RTK_BT_LE_ADDR_TYPE_PUBLIC, {0, 0, 0, 0, 0, 0}},
 			.skip = 0,
 			.sync_timeout = 0x1000,
 			.p_sync_id = &sync_id,
@@ -931,7 +977,7 @@ static int atcmd_ble_gap_pa_sync_op(int argc, char **argv)
 			}
 
 			if (argc > 5) {
-				create.adv_addr.type = str_to_int(argv[4]);
+				create.adv_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[4]);
 				if (false == hexdata_str_to_bd_addr(argv[5], create.adv_addr.addr_val, RTK_BD_ADDR_LEN)) {
 					return -1;
 				}
@@ -1114,7 +1160,8 @@ static int atcmd_ble_gap_get_scan_param(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 	uint16_t ret = 0;
-	rtk_bt_le_scan_param_t scan_param = {0};
+	rtk_bt_le_scan_param_t scan_param;
+	memset(&scan_param, 0, sizeof(scan_param));
 
 	ret = rtk_bt_le_gap_get_scan_param(&scan_param);
 	if (RTK_BT_OK != ret) {
@@ -1498,9 +1545,10 @@ static int atcmd_ble_gap_get_conn_handle_by_addr(int argc, char **argv)
 	(void)argc;
 	uint16_t ret = 0;
 	uint16_t conn_handle = 0xFF;
-	rtk_bt_le_addr_t addr = {0};
+	rtk_bt_le_addr_t addr;
+	memset(&addr, 0, sizeof(addr));
 
-	addr.type = str_to_int(argv[0]);
+	addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 
 	if (false == hexdata_str_to_bd_addr(argv[1], addr.addr_val, RTK_BD_ADDR_LEN) ||
 		(ret = rtk_bt_le_gap_get_conn_handle_by_addr(&addr, &conn_handle)) != RTK_BT_OK) {
@@ -1740,7 +1788,7 @@ static int atcmd_ble_gap_add_whitelist(int argc, char **argv)
 	rtk_bt_le_modify_wl_param_t wl_op_param;
 
 	wl_op_param.op = RTK_BT_LE_WHITELIST_ADD;
-	wl_op_param.addr.type = str_to_int(argv[0]);
+	wl_op_param.addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 
 	if (false == hexdata_str_to_bd_addr(argv[1], (uint8_t *)wl_op_param.addr.addr_val, RTK_BD_ADDR_LEN)) {
 		return BT_AT_ERR_PARAM_INVALID;
@@ -1762,7 +1810,7 @@ static int atcmd_ble_gap_remove_whitelist(int argc, char **argv)
 	rtk_bt_le_modify_wl_param_t wl_op_param;
 
 	wl_op_param.op = RTK_BT_LE_WHITELIST_REMOVE;
-	wl_op_param.addr.type = str_to_int(argv[0]);
+	wl_op_param.addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
 
 	if (false == hexdata_str_to_bd_addr(argv[1], (uint8_t *)wl_op_param.addr.addr_val, RTK_BD_ADDR_LEN)) {
 		return BT_AT_ERR_PARAM_INVALID;
@@ -1841,7 +1889,8 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 		return 0;
 	}
 
-	rtk_bt_le_security_param_t sec_param = {0};
+	rtk_bt_le_security_param_t sec_param;
+	memset(&sec_param, 0, sizeof(sec_param));
 	if (argc > 6) {
 		sec_param.io_cap = (rtk_bt_le_io_cap_t)str_to_int(argv[0]);
 		sec_param.oob_data_flag = (uint8_t)str_to_int(argv[1]);
@@ -1872,7 +1921,8 @@ static int atcmd_ble_gap_get_security_param(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 	uint8_t ret = 0;
-	rtk_bt_le_security_param_t sec_param = {0};
+	rtk_bt_le_security_param_t sec_param;
+	memset(&sec_param, 0, sizeof(sec_param));
 
 	ret = rtk_bt_le_sm_get_security_param(&sec_param);
 	if (ret) {
@@ -2626,7 +2676,7 @@ static int atcmd_ble_gap_dtm_rx_test(int argc, char **argv)
 		.sw_pattern_len = 2,
 		.p_antenna_ids = antenna_ids,
 	};
-	rtk_bt_le_dtm_rx_version_t rx_version = 0;
+	rtk_bt_le_dtm_rx_version_t rx_version = RTK_BT_LE_DTM_RX_VERSION_V1;
 	uint16_t ret = 0;
 	bool is_malloc = false;
 
@@ -2693,7 +2743,7 @@ static int atcmd_ble_gap_dtm_tx_test(int argc, char **argv)
 		.p_antenna_ids = antenna_ids,
 		.tx_power_level = 0x7F,
 	};
-	rtk_bt_le_dtm_tx_version_t tx_version = 0;
+	rtk_bt_le_dtm_tx_version_t tx_version = RTK_BT_LE_DTM_TX_VERSION_V1;
 	uint16_t ret = 0;
 	bool is_malloc = false;
 

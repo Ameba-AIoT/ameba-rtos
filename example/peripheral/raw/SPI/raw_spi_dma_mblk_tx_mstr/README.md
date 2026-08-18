@@ -8,7 +8,7 @@
 
 # HW Configuration
 
-1. In this example, it use SPI1 as master to send data, and need to connect with another SPI slave device as below:
+1. In this example, it use SPI0 as master to send data, and need to connect with another SPI slave device as below:
    `Connect Master's MOSI to Slave's MOSI`
    `Connect Master's MISO to Slave's MISO`
    `Connect Master's SCLK to Slave's SCLK`
@@ -16,40 +16,40 @@
    The related Master's and Slave's pins are defined in the current example's header file.
    - The relevant header file can be found in the directory:
      `example/peripheral/{mebd|raw}/{peripheral_name}/{example_folder_name}/`
-   In this header file, the macros with prefix of SPI1 are master's pins, and macros with prefix of SPI0 are slave's pins.
+   Both master's and slave's macros use common SPI pin names (SPI_MOSI, SPI_MISO, SPI_SCLK, SPI_CS) since both sides utilize SPI0.
 
-   For example:
+   Two boards are required for this test. Connect the SPI0 pins of the master board to the SPI0 pins of the slave board:
 
 - On RTL8730E, connect as below
-  - Connect `SPI0_MOSI (_PA_13)` to `SPI1_MOSI (_PA_5)`
-  - Connect `SPI0_MISO (_PA_14)` to `SPI1_MISO (_PA_4)`
-  - Connect `SPI0_SCLK (_PA_15)` to `SPI1_SCLK (_PA_3)`
-  - Connect `SPI0_CS   (_PA_16)` to `SPI1_CS (_PA_2)`
+  - Connect `SPI_MOSI (_PA_13)` [Master] to `SPI_MOSI (_PA_13)` [Slave]
+  - Connect `SPI_MISO (_PA_14)` [Master] to `SPI_MISO (_PA_14)` [Slave]
+  - Connect `SPI_SCLK (_PA_15)` [Master] to `SPI_SCLK (_PA_15)` [Slave]
+  - Connect `SPI_CS   (_PA_16)` [Master] to `SPI_CS   (_PA_16)` [Slave]
 - On RTL8726E/RTL8720E/RTL8713E/RTL8710E, connect as below
-  - Connect `SPI0_MOSI (_PA_29)` to `SPI1_MOSI (_PB_3)`
-  - Connect `SPI0_MISO (_PA_30)` to `SPI1_MISO (_PB_4)`
-  - Connect `SPI0_SCLK (_PA_28)` to `SPI1_SCLK (_PB_2)`
-  - Connect `SPI0_CS   (_PA_31)` to `SPI1_CS   (_PB_5)`
+  - Connect `SPI_MOSI (_PA_29)` [Master] to `SPI_MOSI (_PA_29)` [Slave]
+  - Connect `SPI_MISO (_PA_30)` [Master] to `SPI_MISO (_PA_30)` [Slave]
+  - Connect `SPI_SCLK (_PA_28)` [Master] to `SPI_SCLK (_PA_28)` [Slave]
+  - Connect `SPI_CS   (_PA_31)` [Master] to `SPI_CS   (_PA_31)` [Slave]
 - On RTL8721Dx, connect as below
-  - Connect `SPI0_MOSI (_PB_24)` to `SPI1_MOSI (_PB_19)`
-  - Connect `SPI0_MISO (_PB_25)` to `SPI1_MISO (_PB_20)`
-  - Connect `SPI0_SCLK (_PB_23)` to `SPI1_SCLK (_PB_18)`
-  - Connect `SPI0_CS (_PB_26)` to `SPI1_CS (_PB_21)`
+  - Connect `SPI_MOSI (_PB_24)` [Master] to `SPI_MOSI (_PB_24)` [Slave]
+  - Connect `SPI_MISO (_PB_25)` [Master] to `SPI_MISO (_PB_25)` [Slave]
+  - Connect `SPI_SCLK (_PB_23)` [Master] to `SPI_SCLK (_PB_23)` [Slave]
+  - Connect `SPI_CS   (_PB_26)` [Master] to `SPI_CS   (_PB_26)` [Slave]
 - On RTL8721F, connect as below
-  - Connect `SPI0_MOSI (_PA_30)` to `SPI1_MOSI (_PB_8)`
-  - Connect `SPI0_MISO (_PA_31)` to `SPI1_MISO (_PB_9)`
-  - Connect `SPI0_SCLK (_PA_29)` to `SPI1_SCLK (_PB_7)`
-  - Connect `SPI0_CS (_PB_0)` to `SPI1_CS (_PB_10)`
+  - Connect `SPI_MOSI (_PA_30)` [Master] to `SPI_MOSI (_PA_30)` [Slave]
+  - Connect `SPI_MISO (_PA_31)` [Master] to `SPI_MISO (_PA_31)` [Slave]
+  - Connect `SPI_SCLK (_PA_29)` [Master] to `SPI_SCLK (_PA_29)` [Slave]
+  - Connect `SPI_CS   (_PB_0)`  [Master] to `SPI_CS   (_PB_0)`  [Slave]
 - On RTL8720F, connect as below
-  - Connect `SPI0_MOSI (_PA_8)` to `SPI1_MOSI (_PA_26)`
-  - Connect `SPI0_MISO (_PA_9)` to `SPI1_MISO (_PA_27)`
-  - Connect `SPI0_SCLK (_PA_7)` to `SPI1_SCLK (_PA_25)`
-  - Connect `SPI0_CS (_PA_10)` to `SPI1_CS (_PA_28)`
+  - Connect `SPI_MOSI (_PA_8)`  [Master] to `SPI_MOSI (_PA_8)`  [Slave]
+  - Connect `SPI_MISO (_PA_9)`  [Master] to `SPI_MISO (_PA_9)`  [Slave]
+  - Connect `SPI_SCLK (_PA_7)`  [Master] to `SPI_SCLK (_PA_7)`  [Slave]
+  - Connect `SPI_CS   (_PA_10)` [Master] to `SPI_CS   (_PA_10)` [Slave]
 
-2. If you have SPI slave device, choose your own slave's pins to connect instead of slave's pins mentioned in step1, then ignore step3 and goto step4 of HW Configuration. Otherwise goto step3.
-3. We offer another example named "`raw_spi_dma_mblk_rx_slv`", it can be used as SPI slave device to communicate data with this example.
+1. If you have SPI slave device, choose your own slave's pins to connect instead of slave's pins mentioned in step1, then ignore step3 and goto step4 of HW Configuration. Otherwise goto step3.
+2. We offer another example named "`raw_spi_dma_mblk_rx_slv`", it can be used as SPI slave device to communicate data with this example.
 Refer the README of example `raw_spi_dma_mblk_rx_slv` to build slave image and download into another EVB board.
-4. Reset Slave device first and then Master device.
+1. Reset Slave device first and then Master device.
 
 # SW Configuration
 

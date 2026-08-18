@@ -1,24 +1,74 @@
 #include "whc_dev.h"
-#ifdef CONFIG_LOG_FWD
-#include "log_forward.h"
-#endif
 #include "lwip/sys.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
+#include "sys_api.h"
+#ifdef CONFIG_LOG_FWD
+#include "log_forward.h"
+#endif
+#ifdef CONFIG_SUPPORT_ATCMD
+#include "atcmd_service.h"
+#endif
+
+#ifdef CONFIG_LOG_FWD
+/* Reply to host that LOG_ENABLE/DISABLE has taken effect on the device;
+ * host waits for this ACK before proceeding with bus suspend. */
+static void whc_dev_log_fwd_send_ack(u8 op)
+{
+	u8 ack[6];
+	*(u32 *)ack = WHC_WIFI_TEST;
+	ack[4] = WHC_WIFI_TEST_LOG_ACK;
+	ack[5] = op;
+	whc_dev_api_send_to_host(ack, sizeof(ack), NULL, 0);
+}
+#endif
+
+#ifdef CONFIG_SUPPORT_ATCMD
+static void whc_at_output(char *buf, int len)
+{
+	u32 pkt_len = sizeof(u32) + 1 + (u32)len;
+	u8 *pkt = rtos_mem_malloc(pkt_len);
+
+	if (!pkt) {
+		return;
+	}
+	*(u32 *)pkt = WHC_WIFI_TEST;
+	pkt[4]      = WHC_WIFI_TEST_AT_RESP;
+	memcpy(pkt + 5, buf, (u32)len);
+	whc_dev_api_send_to_host(pkt, pkt_len, NULL, 0);
+	rtos_mem_free(pkt);
+}
+
+void whc_at_resp_enable(void)
+{
+	out_buffer = whc_at_output;
+}
+
+void whc_at_resp_disable(void)
+{
+	out_buffer = NULL;
+}
+#else
+void whc_at_resp_enable(void) {}
+void whc_at_resp_disable(void) {}
+#endif /* CONFIG_SUPPORT_ATCMD */
 
 struct whc_cmd_path_priv whc_cmdpath_data;
 
 /* update from host in mode s1d */
 struct whc_dev_network_info whc_network_info[2] = {0};
 
+#ifdef CONFIG_NAN
+extern u8 NAN_IPv6Parm[16];
+#endif
+
 /**
   * @brief  Check if an IP address is already in the IP allocation table.
   * @param  gate: the third octet of the IP address (network segment).
   * @param  d: the fourth octet of the IP address (host ID).
   * @retval 0: IP is available; 1: IP is marked or network segment mismatch.
-  * @note   this weak API is used when both the API_PATH and TCPIP keepalive are disabled.
   */
-__weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
+int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
 {
 	(void)gate;
 	(void)ip;
@@ -31,35 +81,32 @@ __weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
 
 /**
   * @brief  Get ip, gw, gw_mask information.
-  * @param  type: info type, it can be WHC_WLAN_GET_IP/WHC_WLAN_GET_GW/WHC_WLAN_GET_GWMSK.
+  * @param  type: info type, it can be WHC_WLAN_GET_IP/WHC_WLAN_GET_GW/WHC_WLAN_GET_GWMSK/WHC_WLAN_GET_HW_ADDR.
   * @param  input: ip address if needed.
   * @param  index: netif index
   * @retval the address where ip/gw/gw_mask info is stored.
-  * @note   this weak API is used when both the API_PATH and TCPIP keepalive are disabled.
   */
-__weak int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index)
+int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index)
 {
-	int ret = 0;
-	(void)input;
+	(void) input;
+
+	u8 *ptr = NULL;
 
 	switch (type) {
 	case WHC_WLAN_GET_IP:
-		ret = (int)whc_network_info[index].ip;
+		ptr = whc_network_info[index].ip;
 		break;
-
 	case WHC_WLAN_GET_GW:
-		ret = (int)whc_network_info[index].gw;
+		ptr = whc_network_info[index].gw;
 		break;
-
 	case WHC_WLAN_GET_GWMSK:
-		ret = (int)whc_network_info[index].gw_mask;
+		ptr = whc_network_info[index].gw_mask;
 		break;
 	default:
-		RTK_LOGE(TAG_WLAN_INIC, "%s, ERROR: unknown network info type\n", __func__);
 		break;
 	}
 
-	return ret;
+	return (int)ptr;
 }
 
 static void rtw_scan_result_to_string(struct rtw_scan_result *result, u8 *buffer, size_t buffer_size)
@@ -381,12 +428,38 @@ connect_fail:
 					wifi_user_config.cfg80211 = 0;
 				} else if (*ptr == WHC_WIFI_TEST_OTA) {
 					whc_dev_ota_process(ptr);
-#ifdef CONFIG_LOG_FWD
-				} else if (*ptr == WHC_WIFI_TEST_LOG_ENABLE) {
-					rtk_log_forward_enable();
-				} else if (*ptr == WHC_WIFI_TEST_LOG_DISABLE) {
-					rtk_log_forward_disable();
+				} else if (*ptr == WHC_WIFI_TEST_NETWORK_INFO_UPDATE) {
+					idx = *(ptr + 1);
+					memcpy(whc_network_info[idx].ip, ptr + 2, 4);
+					memcpy(whc_network_info[idx].gw, ptr + 6, 4);
+					memcpy(whc_network_info[idx].gw_mask, ptr + 10, 4);
+
+					if (idx == 0) {
+						memcpy(whc_ipc_ip_addr, ptr + 2, 4);
+						//memcpy(IPv4Parm.IP, ptr + 2, 4);
+						//memcpy(IPv6Parm.IP, ptr + 14, 16);
+					}
+#ifdef CONFIG_NAN
+					memcpy(NAN_IPv6Parm, ptr + 14, 16);
 #endif
+				}
+#endif
+				if (*ptr == WHC_WIFI_TEST_CLEAR_OTA) {
+					sys_clear_ota_signature(*(ptr + 1));
+				} else if (*ptr == WHC_WIFI_TEST_SHELL_CMD) {
+					u8 *cmdstr = ptr + 1;
+					shell_cmd_inject((const char *)cmdstr, _strlen((const char *)cmdstr));
+				}
+#ifdef CONFIG_LOG_FWD
+				else if (*ptr == WHC_WIFI_TEST_LOG_ENABLE || *ptr == WHC_WIFI_TEST_LOG_DISABLE) {
+					if (*ptr == WHC_WIFI_TEST_LOG_ENABLE) {
+						rtk_log_forward_enable();
+						whc_at_resp_enable();
+					} else {
+						rtk_log_forward_disable();
+						whc_at_resp_disable();
+					}
+					whc_dev_log_fwd_send_ack(*ptr);
 				}
 #endif
 #ifdef CONFIG_MP_INCLUDED

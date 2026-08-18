@@ -1452,8 +1452,6 @@ void nandow_dump_test_data_confirm(struct nan_customer_nandow *nandow_test);
 void nandow_load_test_data_end(struct nan_customer_nandow *nandow_test);
 void nandow_dump_test_data_end(struct nan_customer_nandow *nandow_test);
 
-void nandow_load_test_ndc_avail(struct nan_customer_nandow *nandow_test, char **argv, int argc);
-void nandow_dump_test_ndc_avail(struct nan_customer_nandow *nandow_test);
 
 void nandow_load_test_set_scan_control(struct nan_customer_nandow *nandow_test);
 void nandow_dump_test_set_scan_control(struct nan_customer_nandow *nandow_test);
@@ -1551,9 +1549,6 @@ void nandow_load_test_data(struct nan_customer_nandow *nandow_test, char **argv,
 	case RTW_NAN_CMD_DATAPATH_END:
 		nandow_load_test_data_end(nandow_test);
 		break;
-	case RTW_NAN_CMD_NDC_AVAIL:
-		nandow_load_test_ndc_avail(nandow_test, argv, argc);
-		break;
 	case RTW_NAN_CMD_SCAN_CONTROL:
 		nandow_load_test_set_scan_control(nandow_test);
 		break;
@@ -1627,9 +1622,6 @@ void nandow_pre_actions(struct nan_customer_nandow *nandow_test)
 		break;
 	case RTW_NAN_CMD_DATAPATH_END:
 		nandow_test->para_len = sizeof(struct rtw_nan_datapath_end);
-		break;
-	case RTW_NAN_CMD_NDC_AVAIL:
-		nandow_test->para_len = sizeof(struct rtw_nan_data_cluster_availability);
 		break;
 	case RTW_NAN_CMD_SCAN_CONTROL:
 		nandow_test->para_len = sizeof(struct rtw_nan_set_scan_control);
@@ -1774,9 +1766,6 @@ void nandow_dump_test_data(struct nan_customer_nandow *nandow_test)
 		break;
 	case RTW_NAN_CMD_DATAPATH_END:
 		nandow_dump_test_data_end(nandow_test);
-		break;
-	case RTW_NAN_CMD_NDC_AVAIL:
-		nandow_dump_test_ndc_avail(nandow_test);
 		break;
 	case RTW_NAN_CMD_SCAN_CONTROL:
 		nandow_dump_test_set_scan_control(nandow_test);
@@ -2621,31 +2610,6 @@ void nandow_dump_test_data_end(struct nan_customer_nandow *nandow_test)
 		   ndp_end->peer_address.ether_addr_octet[5]);
 }
 
-void nandow_load_test_ndc_avail(struct nan_customer_nandow *nandow_test,
-								char **argv,
-								int argc)
-{
-	struct rtw_nan_data_cluster_availability *ndc_avail_para = &nandow_test->para.avail_ndc;
-	u8 ndc[4] = {0x00, 0x03, 0x00, 0x00};
-
-	ndc_avail_para->num_maps_ids = 1;
-	//ndc_avail_para->availability_params[0].data_cluster_id = {}; /* parsing from iw event? */
-	ndc_avail_para->availability_params[0].map_id = 0;
-	ndc_avail_para->availability_params[0].selected = 1;
-	ndc_avail_para->availability_params[0].time_bitmap.offset = 0;
-	ndc_avail_para->availability_params[0].time_bitmap.period = 3;
-	ndc_avail_para->availability_params[0].time_bitmap.bit_duration = 0;
-	ndc_avail_para->availability_params[0].time_bitmap.time_bitmap_length = 4;
-	memcpy(ndc_avail_para->availability_params[0].time_bitmap.time_bitmap, ndc, 4);
-
-}
-
-void nandow_dump_test_ndc_avail(struct nan_customer_nandow *nandow_test)
-{
-	struct rtw_nan_data_cluster_availability *ndc_avail_para = &nandow_test->para.avail_ndc;
-
-	printf("\nrtw_nan_ndc_avail(%x)\n", RTW_NAN_CMD_NDC_AVAIL);
-}
 
 // RTW_NAN_CMD_SCAN_CONTROL
 void nandow_load_test_set_scan_control(struct nan_customer_nandow *nandow_test)

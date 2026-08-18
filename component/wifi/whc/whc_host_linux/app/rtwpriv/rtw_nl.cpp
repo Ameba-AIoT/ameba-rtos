@@ -42,6 +42,7 @@
 #define CMD_WIFI_INFO_INIT	6
 #define CMD_WIFI_MP		10
 #define CMD_WIFI_DBG		11
+#define CMD_WIFI_LOG_FWD	13
 
 /* ---------------------------------------------------------------------------
  * Attribute types (enum whc_attr_type)
@@ -50,6 +51,7 @@
 #define WHC_ATTR_WLAN_IDX	2
 #define WHC_ATTR_STRING		3
 #define WHC_ATTR_PAYLOAD	4
+#define WHC_ATTR_LOG_ENABLE	7
 
 /* ---------------------------------------------------------------------------
  * WHC command types (enum whc_cmd_type)
@@ -717,6 +719,28 @@ int rtw_nl_send_buf(const uint8_t *payload, uint32_t payload_len, int expect_rep
 	msg.n.nlmsg_len += ptr - msg.buf;
 
 	return nl_do_transaction(&msg, expect_reply, expect_sub, NULL, 0);
+}
+
+/* ---------------------------------------------------------------------------
+ * Public API - rtw_nl_send_log_fwd (Pattern B: CMD_WIFI_LOG_FWD)
+ *
+ * Kernel owns log-fwd on/off (needs state across suspend/resume and blocks
+ * until device ACKs), so we can't reuse CMD_WIFI_SEND_BUF's transparent path.
+ * ------------------------------------------------------------------------- */
+
+int rtw_nl_send_log_fwd(int enable)
+{
+	struct msgtemplate msg;
+	unsigned char *ptr = msg.buf;
+
+	memset(&msg, 0, sizeof(msg));
+
+	whc_host_fill_nlhdr(&msg, 0, 0, WHC_CMD_ECHO);
+	nla_put_u32(&ptr, WHC_ATTR_API_ID, CMD_WIFI_LOG_FWD);
+	nla_put_u8(&ptr, WHC_ATTR_LOG_ENABLE, enable ? 1 : 0);
+	msg.n.nlmsg_len += ptr - msg.buf;
+
+	return nl_do_transaction(&msg, RTW_NL_NO_REPLY, -1, NULL, 0);
 }
 
 /* ---------------------------------------------------------------------------

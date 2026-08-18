@@ -352,16 +352,17 @@ static int atcmd_ble_mesh_method_choose_for_prov(int argc, char **argv)
 {
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 	uint16_t ret = 0;
-	rtk_bt_mesh_stack_prov_start_t prov_choose = {0};
+	rtk_bt_mesh_stack_prov_start_t prov_choose;
+	memset(&prov_choose, 0, sizeof(prov_choose));
 	switch (argc) {
 	case 5:
 		prov_choose.auth_action.oob_action = str_to_int(argv[3]);
 		prov_choose.auth_size.oob_size = str_to_int(argv[4]);
 		__attribute__((fallthrough));
 	case 3:
-		prov_choose.algorithm = str_to_int(argv[0]);
-		prov_choose.public_key = str_to_int(argv[1]);
-		prov_choose.auth_method = str_to_int(argv[2]);
+		prov_choose.algorithm = (rtk_bt_mesh_prov_start_algorithm_t)(str_to_int(argv[0]));
+		prov_choose.public_key = (rtk_bt_mesh_prov_start_public_key_t)(str_to_int(argv[1]));
+		prov_choose.auth_method = (rtk_bt_mesh_prov_auth_method_t)(str_to_int(argv[2]));
 		break;
 	default:
 		break;

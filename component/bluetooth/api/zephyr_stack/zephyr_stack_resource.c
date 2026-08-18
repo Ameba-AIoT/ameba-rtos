@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <osif.h>
 #include <zephyr/bluetooth/conn.h>
-#include <settings_nvs.h>
 #include <zephyr/init.h>
 #include <hci_core.h>
 #include <zephyr/kernel.h>
@@ -21,11 +20,13 @@
  */
 
 /*---------- SYS_INIT ----------------------------------------*/
+#if defined(CONFIG_BT_LONG_WQ)
 extern struct init_entry Z_INIT_ENTRY_NAME(long_wq_init);
 STRUCT_ARRAY_DECLARE(init_entry) = {
 	&(Z_INIT_ENTRY_NAME(long_wq_init)),
 };
 STRUCT_ARRAY_SIZE_DECLARE(init_entry) = sizeof(STRUCT_ARRAY(init_entry)) / sizeof(struct init_entry *);
+#endif
 
 /*---------- K_MEM_SLAB_DEFINE -------------------------------*/
 /*---------- K_MEM_SLAB_DEFINE_STATIC ------------------------*/
@@ -246,11 +247,13 @@ STRUCT_ARRAY_SIZE_DECLARE(bt_mesh_app_key_cb) = sizeof(STRUCT_ARRAY(bt_mesh_app_
 /*---------- BT_MESH_SUBNET_CB_DEFINE ----------------------------*/
 extern struct bt_mesh_subnet_cb bt_mesh_subnet_cb_app_keys;
 extern struct bt_mesh_subnet_cb bt_mesh_subnet_cb_beacon;
+#if defined(CONFIG_BT_MESH_FRIEND) && CONFIG_BT_MESH_FRIEND
 extern struct bt_mesh_subnet_cb bt_mesh_subnet_cb_friend;
+#endif
 #if defined(CONFIG_BT_MESH_GATT_PROXY) && CONFIG_BT_MESH_GATT_PROXY
 extern struct bt_mesh_subnet_cb bt_mesh_subnet_cb_gatt_services;
 #endif
-#if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
+#if defined(CONFIG_BT_MESH_LOW_POWER) && CONFIG_BT_MESH_LOW_POWER
 extern struct bt_mesh_subnet_cb bt_mesh_subnet_cb_lpn;
 #endif
 extern struct bt_mesh_subnet_cb bt_mesh_subnet_cb_proxy_cli;
@@ -258,11 +261,13 @@ extern struct bt_mesh_subnet_cb bt_mesh_subnet_cb_rpr_srv;
 STRUCT_ARRAY_DECLARE(bt_mesh_subnet_cb) = {
 	&bt_mesh_subnet_cb_app_keys,
 	&bt_mesh_subnet_cb_beacon,
+#if defined(CONFIG_BT_MESH_FRIEND) && CONFIG_BT_MESH_FRIEND
 	&bt_mesh_subnet_cb_friend,
+#endif
 #if defined(CONFIG_BT_MESH_GATT_PROXY) && CONFIG_BT_MESH_GATT_PROXY
 	&bt_mesh_subnet_cb_gatt_services,
 #endif
-#if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
+#if defined(CONFIG_BT_MESH_LOW_POWER) && CONFIG_BT_MESH_LOW_POWER
 	&bt_mesh_subnet_cb_lpn,
 #endif
 	&bt_mesh_subnet_cb_proxy_cli,
@@ -345,12 +350,14 @@ int zephyr_res_alloc(void)
 		}
 	}
 
+#if defined(CONFIG_BT_LONG_WQ)
 	STRUCT_SECTION_FOREACH(init_entry, _entry) {
 		ret = _entry->init(_entry->dev);
 		if (ret < 0) {
 			return ret;
 		}
 	}
+#endif
 
 	zephyr_static_sem_init();
 	zephyr_net_buf_pool_init();
@@ -358,7 +365,9 @@ int zephyr_res_alloc(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_LONG_WQ)
 extern struct k_work_q bt_long_wq;
+#endif
 /* Free all resources created in zephyr_res_alloc(). */
 int zephyr_res_free(void)
 {
@@ -374,12 +383,13 @@ int zephyr_res_free(void)
 		k_mutex_deinit(rtos_mutex_t);
 	}
 
+#if defined(CONFIG_BT_LONG_WQ)
 	k_work_queue_delete(&bt_long_wq);
+#endif
 	return 0;
 }
 
 extern struct bt_dev bt_dev;
-extern struct settings_nvs default_settings_nvs;
 extern bool settings_subsys_initialized;
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 extern struct k_work_q bt_workq;
@@ -388,7 +398,6 @@ extern struct k_work_q bt_workq;
 static void _zephyr_settings_deinit(void)
 {
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		// k_mutex_deinit(&default_settings_nvs.cf_nvs.nvs_lock);
 		settings_subsys_initialized = false;
 	}
 }
@@ -414,8 +423,16 @@ void zephyr_internal_res_free(void)
 
 	/* Global struct k_work_q created by k_work_queue_start */
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
+	void *msg;
+	while (osif_msg_recv(bt_workq.queue, &msg, BT_TIMEOUT_NONE));
 	osif_msg_queue_delete(bt_workq.queue); /* thread is abort in bt_disable() */
 #endif
+	struct net_buf *buf;
+	/* Buf in bt_dev.rx_queue is handled and freed in bt_workq thread. Here, when bt_workq.queue is cleared,
+	these buf shall also be freed */
+	while ((buf = net_buf_slist_get(&bt_dev.rx_queue)) != NULL) {
+		net_buf_unref(buf);
+	}
 }
 
 void zephyr_builtin_gatt_svc_set(bool enable)

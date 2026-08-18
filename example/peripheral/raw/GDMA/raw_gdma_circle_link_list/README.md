@@ -10,12 +10,23 @@ None.
 
 # SW Configuration
 
+`ABORT_TRANSFER` is a compile-time macro; set it via `-D` to select the desired mode:
+
+| `-D` Option | Macro Value | Behavior |
+|---|---|---|
+| `-D ABORT_TRANSFER=0` | `#define ABORT_TRANSFER 0` | Circle mode — transmission runs forever without stopping |
+| `-D ABORT_TRANSFER=1` | `#define ABORT_TRANSFER 1` | Stop mode — terminates after each block completes |
+
 Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
+   * `./ameba.py build -a raw_gdma_circle_link_list -D ABORT_TRANSFER=0`
+   * Or `./ameba.py build -a raw_gdma_circle_link_list -D ABORT_TRANSFER=1`
+   * Download images to board by Ameba Image Tool.
 
 # Expected Result
-1. If `abort_trasfer = 1`, the log is displayed as:
+
+The macro `ABORT_TRANSFER` corresponds to the runtime variable `abort_transfer` in the source code. The log output differs depending on the chosen mode:
+
+1. **Stop mode** (`ABORT_TRANSFER=1`, `abort_transfer = 1`):
 ```shell
 Block 0 Over
 Last Block 0 is over, and transmission terminated
@@ -25,7 +36,7 @@ Last Block 1 is over, and transmission terminated
 
 transfer over
 ```
-2. If `abort_transfer = 0`, the log is displayed as:
+2. **Circle mode** (`ABORT_TRANSFER=0`, `abort_transfer = 0`):
 ```shell
 Block 0 Over
 Block 1 Over

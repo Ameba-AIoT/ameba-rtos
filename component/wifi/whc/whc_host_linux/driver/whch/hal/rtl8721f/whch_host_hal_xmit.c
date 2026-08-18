@@ -316,7 +316,7 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 	}
 
 #ifdef CONFIG_NAN
-	wifi_hal_nan_update_txdesc(pxmitframe, pbuf);
+	whch_host_nan_update_txdesc(pxmitframe, pbuf);
 #endif
 
 #ifdef CONFIG_WIFI_TUNNEL

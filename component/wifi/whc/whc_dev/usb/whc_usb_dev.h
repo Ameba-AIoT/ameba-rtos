@@ -9,10 +9,18 @@
 #define whc_dev_bus_is_idle           whc_usb_dev_bus_is_idle
 #define whc_dev_flowctrl(a, b)
 
+#ifdef WHCH_TXAGG
+#define WHCH_USB_RXBUF_NUM	(WIFI_WHC_USB_BULKOUT_EP_NUM + 12)
+#endif
+
 #define DEV_DMA_ALIGN			CACHE_LINE_SIZE
 #define USB_DMA_ALIGN(x)	(((x + CACHE_LINE_SIZE - 1) / CACHE_LINE_SIZE) * CACHE_LINE_SIZE)
 #ifdef CONFIG_WHCH
+#ifdef WHCH_TXAGG
+#define USB_BUFSZ		(USB_DMA_ALIGN(WHCH_TXAGG_NUM * (TXDESC_SIZE + WLAN_MAX_PROTOCOL_OVERHEAD + MAXIMUM_ETHERNET_PACKET_SIZE) + sizeof(struct whc_msg_info)))
+#else
 #define USB_BUFSZ		(USB_DMA_ALIGN(TXDESC_SIZE + WLAN_MAX_PROTOCOL_OVERHEAD + MAXIMUM_ETHERNET_PACKET_SIZE  + sizeof(struct whc_msg_info)))
+#endif
 #define USB_SKB_RSVD_LEN	0
 #else
 #define USB_BUFSZ		(USB_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
@@ -46,6 +54,11 @@
      (ep_num) == WIFI_WHC_USB_BULKOUT_2 ? 1 : \
      (ep_num) == WIFI_WHC_USB_BULKOUT_3 ? 2 : -1)
 
+#define EPIDX_TO_NUM(ep_idx)\
+    ((ep_idx) == 0 ? WIFI_WHC_USB_BULKOUT_1 : \
+     (ep_idx) == 1 ? WIFI_WHC_USB_BULKOUT_2 : \
+     (ep_idx) == 2 ? WIFI_WHC_USB_BULKOUT_3 : 0xFFU) /* 0xFF: invalid ep (endpoint nums are unsigned) */
+
 struct whc_usb_irq_info {
 	/* device->host */
 	u8 txdone;
@@ -57,14 +70,27 @@ struct whc_usb_irq_info {
 	u8 wait_xmit_skb;  // set 1 means when free skb, sema up device task to deal blocked usb rx data
 };
 
+#ifdef WHCH_TXAGG
+struct whch_usb_txbuf {
+	struct whch_buff *usb_rxbuff_pool;		// rxbuffer used to store wifi txpkt
+	struct list_head usb_rxbuf_list;		// free rxbuf list (in-flight buffers stay off-list)
+	int usb_rxbuff_num;						// number of rxbufs currently on usb_rxbuf_list (++ on list_add, -- on list_del)
+};
+#endif	/* WHCH_TXAGG */
+
 struct whc_usb_priv_t {
 	struct whc_usb_irq_info irq_info;
 	/* device->host */
 	u8 *tx_buf;
+#ifdef WHCH_TXAGG
+	struct whch_usb_txbuf	usb_rxbuf;	/* host->device, whch_buff pool */
+	struct whch_buff	*cur_rxbuff[WIFI_WHC_USB_BULKOUT_EP_NUM];	/* buffer currently armed on each BULKOUT EP (NULL = starved) */
+#else
 	/* host->device, store skb addr.
 	Implements USB endpoint num to rx_skb_addr list idx mapping through the macro EPNUM_TO_IDX, e.g,
 	for endpoint WIFI_WHC_USB_BULKOUT_1: ep_num = 0x05U, idx = EPNUM_TO_IDX(ep_num) = 0, skb = rx_skb_addr[idx] */
 	u8 *rx_skb_addr[WIFI_WHC_USB_BULKOUT_EP_NUM];
+#endif
 	rtos_mutex_t tx_lock;
 	rtos_sema_t usb_tx_sema;
 	rtos_sema_t usb_irq_sema;
@@ -79,5 +105,11 @@ void whc_usb_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb);
 u8 whc_usb_dev_bus_is_idle(void);
 void whc_usb_dev_trigger_rx_handle(void);
 
+#ifdef WHCH_TXAGG
+int whch_usb_dev_txagg_buf_num(void);
+void whch_usb_dev_txagg_buff_free(u32 idx, u8 pktidx);
+void whch_usb_dev_txagg_buf_busy(struct whch_buff *buff, u8 delivered, u8 agg_num);
 #endif
+
+#endif /* _WHC_USB_DEV_H_ */
 

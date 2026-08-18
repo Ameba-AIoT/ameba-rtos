@@ -10,6 +10,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "ameba_soc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 #ifndef CONFIG_NON_OS
@@ -64,5 +68,9 @@ void usb_diag(usb_diag_layer_t layer, usb_diag_event_t event, u8 id);
 #else
 #define USB_DIAG(layer, event, id)  do {} while (0)
 #endif /* CONFIG_NON_OS */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USB_DIAG_H */

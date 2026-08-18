@@ -45,6 +45,12 @@ void bt_zephyr_mtu_exchange_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt
 	rtk_bt_gatt_mtu_exchange_ind_t *p_gatt_mtu_exchange_ind = NULL;
 	rtk_bt_evt_t *p_evt_t = NULL;
 
+	if (!err) {
+		/* mtu exchanged success will be reported in bt_zephyr_gattc_mtu_udpated. Here, we only
+		handle the situation that gattc exchange mtu with error rsp */
+		return;
+	}
+
 	p_evt_t = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,
 								  RTK_BT_GATTC_EVT_MTU_EXCHANGE,
 								  sizeof(rtk_bt_gatt_mtu_exchange_ind_t));
@@ -53,13 +59,8 @@ void bt_zephyr_mtu_exchange_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt
 	}
 
 	p_gatt_mtu_exchange_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)p_evt_t->data;
-	if (err) {
-		p_gatt_mtu_exchange_ind->result = RTK_BT_FAIL;
-	} else {
-		p_gatt_mtu_exchange_ind->result = RTK_BT_OK;
-	}
+	p_gatt_mtu_exchange_ind->result = RTK_BT_ATT_ERR(err);
 	p_gatt_mtu_exchange_ind->conn_handle = conn->handle;
-	p_gatt_mtu_exchange_ind->mtu_size = bt_gatt_get_mtu(conn);
 
 	rtk_bt_evt_indicate(p_evt_t, NULL);
 }
@@ -762,7 +763,7 @@ void bt_zephyr_gattc_mtu_udpated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 	p_gatt_mtu_exchange_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)p_evt_t->data;
 	p_gatt_mtu_exchange_ind->result = RTK_BT_OK;
 	p_gatt_mtu_exchange_ind->conn_handle = conn->handle;
-	p_gatt_mtu_exchange_ind->mtu_size = tx;
+	p_gatt_mtu_exchange_ind->mtu_size = MIN(tx, rx);
 
 	rtk_bt_evt_indicate(p_evt_t, NULL);
 }

@@ -40,6 +40,11 @@ ameba_list_append(private_sources
     app_example.c
 )
 
+if(DEFINED CACHE{GPIO_LED_PIN})
+    ameba_list_append(private_definitions GPIO_LED_PIN=${GPIO_LED_PIN})
+    unset(GPIO_LED_PIN CACHE)
+endif()
+
 # Component private part, user config end
 #------------------------------#
 

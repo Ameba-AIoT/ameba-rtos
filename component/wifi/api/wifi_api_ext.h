@@ -725,7 +725,7 @@ s32 wifi_tsf_sync_to_user_target(u8 enable, u8 *mac_addr);
  *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode,
  *                      unable to access Wi-Fi registers.
  */
-s32 wifi_set_p1_to_p0_tsf_offset(u16 offset_us);
+s32 wifi_set_p1_to_p0_tsf_offset(u32 offset_us);
 
 /** @} End of Extended_Functions group */
 /** @} End of WIFI_Exported_Functions group*/

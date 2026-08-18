@@ -99,6 +99,12 @@ void ChipInfo_InitPsramInfoFromMemInfo(const MCM_MemTypeDef *meminfo, PSRAMINFO_
 		case MCM_PSRAM_VENDOR_APM:
 			info->Psram_Vendor = MCM_PSRAM_VENDOR_APM;
 			switch (meminfo->dram_info.density) {
+			case MCM_PSRAM_SIZE_32Mb:
+				info->Psram_Size	   = 4 * 1024 * 1024;
+				info->Psram_Page_size  = PSRAM_PAGE512;
+				info->Psram_Clk_Limit  = PSRAM_DEVICE_CLK_200;
+				info->Psram_Type       = PSRAM_TYPE_APM_UPSRAM;
+				break;
 			case MCM_PSRAM_SIZE_64Mb:
 				info->Psram_Size	   = 8 * 1024 * 1024;
 				info->Psram_Page_size  = PSRAM_PAGE1024;
@@ -337,6 +343,13 @@ void PSRAM_InfoDump(void)
 
 		RTK_LOGI(TAG, "IR0=[0x%x, 0x%x], CR0=[0x%x, 0x%x], CR1=[0x%x, 0x%x]\n",
 				 psramir0[1], psramir0[0], psramcr0[1], psramcr0[0], psramcr1[1], psramcr1[0]);
+	} else if (PsramInfo.Psram_Type == PSRAM_TYPE_APM_UPSRAM) {
+		u8 mr1, mr2;
+
+		PSRAM_UPSRAM_REG_Read(0x1, &mr1);
+		PSRAM_UPSRAM_REG_Read(0x2, &mr2);
+
+		RTK_LOGI(TAG, "MR1=0x%x, MR2=0x%x\n", mr1, mr2);
 	} else {
 		u8 mr0 = 0, mr4 = 0, mr8 = 0;
 
@@ -419,6 +432,89 @@ void PSRAM_CTRL_Init(void)
 		psram_ctrl->AUTO_LENGTH = AUTO_CMD_LENGTH(0x1) | AUTO_ADDR_LENGTH(0x5);
 		/* 0x118 set user cmd len and addr len */
 		psram_ctrl->USER_LENGTH = USER_ADDR_LENGTH(0x5) | USER_CMD_LENGTH(0x1);
+	} else if (PsramInfo.Psram_Type == PSRAM_TYPE_APM_UPSRAM) { //apm upsram
+		/*0x134 uPSRAM: DQ8, 512B page, 1-byte cmd, 4x prefetch → ATOM_SIZE=4B, atom_phase=1 */
+		psram_ctrl->DEVICE_INFO = BIT31 | BIT_PSRAM | ATOM_SIZE(0x2) | BIT28 | BIT_RD_PAGE_EN | \
+								  BIT_WR_PAGE_EN | PAGE_SIZE(PsramInfo.Psram_Page_size);
+		//only for 8IO
+		psram_ctrl->CTRLR0 |= MASK_DATA_CH;
+
+		/*0x110 uPSRAM: SO_DNUM=0 (single channel), write no variable latency, read var latency only */
+		psram_ctrl->CTRLR2 = (psram_ctrl->CTRLR2 & (MASK_TX_FIFO_ENTRY | MASK_RX_FIFO_ENTRY)) | BIT_DM_ACT | \
+							 WR_VL_EN(0) | RD_VL_EN(1) | RD_WEIGHT(0x2);
+
+		psram_ctrl->CTRLR2 &= (~BIT_SO_DNUM);
+
+		/* 0x138
+			default is fast refresh: Tcem <= 1us
+			sequentical timeout = CS_SEQ_TIMEOUT*4*Tclk, the maximum value of CS_SEQ_TIMEOUT is 0xff
+			CS_ACTIVE_HOLD tCHD: 2ns~-, reuse APM_CSH
+			CS_H_WR/RD_DUM_LEN: derived from tCPH (CS# pulse high), reuse APM CSHI values
+		*/
+		psram_ctrl->TPR0 = (CS_TCEM(Psram_Tcem_T85 * 1000 / PsramInfo.PSRAMC_Clk_Unit / 32 - 2)) | \
+						   (CS_SEQ_TIMEOUT(Psram_Seq_timeout)) | \
+						   (CS_ACTIVE_HOLD(Psram_APM_CSH)) | \
+						   (CS_H_WR_DUM_LEN((PsramInfo.Psram_CSHI * 1000 / PsramInfo.PSRAMC_Clk_Unit) > 0 ? (((PsramInfo.Psram_CSHI * 1000 + PsramInfo.PSRAMC_Clk_Unit - 1) /
+											PsramInfo.PSRAMC_Clk_Unit) - 2) : 1)) | \
+						   (CS_H_RD_DUM_LEN((PsramInfo.Psram_CSHI * 1000 / PsramInfo.PSRAMC_Clk_Unit) > 0 ? (((PsramInfo.Psram_CSHI * 1000 + PsramInfo.PSRAMC_Clk_Unit - 1) /
+											PsramInfo.PSRAMC_Clk_Unit) - 2) : 1));
+
+		/*0xe0 uPSRAM Sync Read INST = 0x00 (1-byte) */
+		psram_ctrl->READ_FAST_SINGLE = FRD_CMD(APM_UPSRAM_RD_CMD);
+		/*0xf4 uPSRAM Sync Write INST = 0x80 (1-byte) */
+		psram_ctrl->WRITE_SINGLE = WR_CMD(APM_UPSRAM_WR_CMD);
+		/*0x11c cmd=1B addr=4B */
+		psram_ctrl->AUTO_LENGTH = AUTO_CMD_LENGTH(0x2) | AUTO_ADDR_LENGTH(0x4);
+		/* 0x118 user mode cmd=1B addr=4B */
+		psram_ctrl->USER_LENGTH = USER_ADDR_LENGTH(0x4) | USER_CMD_LENGTH(0x2);
+
+		/*
+		 * uPSRAM only supports variable latency.
+		 * v0.17 spec: read LC now equals write LC for the same MR6[4:2] code
+		 * (Table 5 read latency was raised; Table 7 write latency is unchanged).
+		 *   Table 5 (Read):  000→3, 001→4, 010→5, 011→6, 100→7, 101→10, 110→13, 111→16
+		 *   Table 7 (Write): 000→3, 001→4, 010→5, 011→6, 100→7, 101→10, 110→13, 111→16
+		 * MR6[4:2] code = Psram_Latency_Set - 3
+		 * dummy formula (per legacy APM convention): read = 2*LC-1, write = 2*LC-2
+		 */
+		u32 lc_code = PsramInfo.Psram_Latency_Set - 3;
+		u32 rd_lc, wr_lc;
+		if (lc_code == 0)      {
+			rd_lc = 3;
+			wr_lc = 3;
+		} else if (lc_code == 1) {
+			rd_lc = 4;
+			wr_lc = 4;
+		} else if (lc_code == 2) {
+			rd_lc = 5;
+			wr_lc = 5;
+		} else if (lc_code == 3) {
+			rd_lc = 6;
+			wr_lc = 6;
+		} else if (lc_code == 4) {
+			rd_lc = 7;
+			wr_lc = 7;
+		} else if (lc_code == 5) {
+			rd_lc = 10;
+			wr_lc = 10;
+		} else if (lc_code == 6) {
+			rd_lc = 13;
+			wr_lc = 13;
+		} else                   {
+			rd_lc = 16;
+			wr_lc = 16;
+		}
+
+		RTK_LOGI(TAG, "UPSRAM LC_code=%lu (Latency_Set=%lu): RD_LC=%lu, WR_LC=%lu (RD_dummy=%lu, WR_dummy=%lu)\n",
+				 lc_code, PsramInfo.Psram_Latency_Set, rd_lc, wr_lc,
+				 2 * rd_lc - 1, 2 * wr_lc - 2);
+
+		/*0x11c auto read dummy = 2*rd_lc - 1 */
+		psram_ctrl->AUTO_LENGTH |= RD_DUMMY_LENGTH(2 * rd_lc - 1);
+		/*0x13c auto write dummy = 2*wr_lc - 2 */
+		psram_ctrl->AUTO_LENGTH2 = WR_DUMMY_LENGTH(2 * wr_lc - 2);
+		/*0x118 user read dummy = 2*rd_lc - 1 */
+		psram_ctrl->USER_LENGTH |= USER_RD_DUMMY_LENGTH(2 * rd_lc - 1);
 	} else { //apm
 		if (PsramInfo.Psram_DQ16 == MCM_PSRAM_DQ16) {
 			/*0x134 set page size , channel number and cmd type*/
@@ -459,7 +555,9 @@ void PSRAM_CTRL_Init(void)
 		psram_ctrl->USER_LENGTH = USER_ADDR_LENGTH(0x4) | USER_CMD_LENGTH(0x2);
 	}
 
-	if (PSRSAM_FIX_LATENCY) {
+	if (PsramInfo.Psram_Type == PSRAM_TYPE_APM_UPSRAM) {
+		/* uPSRAM latency already configured in the branch above (variable only, read/wr LC differ) */
+	} else if (PSRSAM_FIX_LATENCY) {
 		/*0x11c auto read latency, inphy cycle = rfifo delay + 2 */
 		psram_ctrl->AUTO_LENGTH |= RD_DUMMY_LENGTH(2 * 2 * PsramInfo.Psram_Latency_Set - 1) | \
 								   IN_PHYSICAL_CYC(PSPHY_RFIFO_READY_DELAY_FIX + 2);
@@ -813,7 +911,13 @@ void set_psram_sleep_mode(void)
 	}
 
 	/* Send cmd to make PSRAM enter halfsleep mode */
-	if (psram_vendor == MCM_PSRAM_VENDOR_APM) {
+	if (PsramInfo.Psram_Type == PSRAM_TYPE_APM_UPSRAM) {
+		/* APS03208E uPSRAM has no half-sleep/DPD command. Its MR6 is the
+		 * CLM/Latency/Wrap register, so writing the APM 0xF0F0 code here
+		 * would corrupt the latency config instead of sleeping. It stays in
+		 * CE# standby (self-refresh) on its own, so just skip the command. */
+		RTK_LOGD(TAG, "uPSRAM: not support half-sleep cmd, skip\n");
+	} else if (psram_vendor == MCM_PSRAM_VENDOR_APM) {
 		psram_halfsleep[0] = 0xF0;
 		psram_halfsleep[1] = 0xF0;
 
@@ -875,4 +979,128 @@ void set_psram_wakeup_mode(void)
 	/*6. backfill the value of the register*/
 	// psram_ctrl->TPR1 &= ~(MASK_CR_IDLE_WINDOW | MASK_CR_TPWR);
 
+}
+
+/**
+  * @brief  Read one APM uPSRAM mode register via single-byte MRR command.
+  * @param  mr_addr:   Mode Register address (0x1 / 0x2 / 0x3 / 0x6).
+  * @param  read_data: Pointer to receive the 1-byte register value.
+  * @retval None
+  * @note   uPSRAM MRR protocol: INST[7:0] = 0x40 | MA[2:0], then read 1 data byte.
+  *         This is different from the legacy APM PSRAM which uses a 2-byte 0x4040 command.
+  */
+NON_DRAM_TEXT_SECTION
+void PSRAM_UPSRAM_REG_Read(u32 mr_addr, u8 *read_data)
+{
+	SPIC_TypeDef *psram_ctrl = PSRAMC_DEV;
+	u16 rxdata = 0;
+	/* INST[7:0] = 4'h4, 1'b0, MA[2:0] — Mode Register Read */
+	u16 command = (u16)(0x40 | (mr_addr & 0x7)) | ((0x40 | (mr_addr & 0x7)) << 8);
+
+	/* Wait for SPIC not busy before switch to user mode */
+	while (psram_ctrl->SR & BIT_BUSY);
+
+	/* Enter User Mode */
+	psram_ctrl->CTRLR0 |= BIT_USER_MODE;
+
+	psram_ctrl->CTRLR0 &= (~ MASK_DATA_CH);
+
+	psram_ctrl->SSIENR = 0;
+	psram_ctrl->RX_NDF = RX_NDF(2);
+	psram_ctrl->TX_NDF = 0;
+	psram_ctrl->CTRLR0 |= TMOD(3);
+
+	/* Write INST (address embedded) */
+	psram_ctrl->DR[0].HALF = command;
+	psram_ctrl->DR[0].HALF = 0;
+	psram_ctrl->DR[0].HALF = 0;
+
+	/* Enable and wait */
+	psram_ctrl->SSIENR = BIT_SPIC_EN;
+	while (psram_ctrl->SSIENR & BIT_SPIC_EN);
+
+	rxdata = psram_ctrl->DR[0].HALF & 0xFFFF;
+	*read_data = (u8)(rxdata & 0xFF);
+
+	/* Wait until transfer is complete */
+	while (psram_ctrl->SR & BIT_BUSY);
+
+	psram_ctrl->CTRLR0 |=  MASK_DATA_CH;
+	/* Restore to auto mode */
+	psram_ctrl->CTRLR0 &= ~BIT_USER_MODE;
+}
+
+/**
+  * @brief  Write one APM uPSRAM mode register via single-byte MRW command.
+  * @param  mr_addr:    Mode Register address (0x3 / 0x6).
+  * @param  write_data: 1-byte value to write.
+  * @retval None
+  * @note   uPSRAM MRW protocol: INST[7:0] = 0xC0 | MA[2:0], then send 1 data byte.
+  *         This is different from the legacy APM PSRAM which uses a 2-byte 0xC0C0 command.
+  */
+NON_DRAM_TEXT_SECTION
+void PSRAM_UPSRAM_REG_Write(u32 mr_addr, u8 write_data)
+{
+	SPIC_TypeDef *psram_ctrl = PSRAMC_DEV;
+	/* INST[7:0] = 4'hC, 1'b0, MA[2:0] — Mode Register Write */
+	u16 command = (u16)(0xC0 | (mr_addr & 0x7)) | ((0xC0 | (mr_addr & 0x7)) << 8);
+
+	/* Wait for SPIC not busy before switching to user mode */
+	while (psram_ctrl->SR & BIT_BUSY);
+
+	/* Enter User Mode */
+	psram_ctrl->CTRLR0 |= BIT_USER_MODE;
+
+	psram_ctrl->SSIENR = 0;
+	psram_ctrl->CTRLR0 &= ~TMOD(3);
+	psram_ctrl->RX_NDF = 0;
+	psram_ctrl->TX_NDF = 0;	/* TX_NDF=0, data length controlled by DR writes only */
+
+	/* Write INST+MA (1 half) + MR data (1 half) + padding (1 half) = 3 halves = 6 bytes */
+	psram_ctrl->DR[0].HALF = command;
+	psram_ctrl->DR[0].HALF = (u16)((write_data << 8) & 0xFFFF);
+	psram_ctrl->DR[0].HALF = 0;
+
+	/* Enable and wait */
+	psram_ctrl->SSIENR = BIT_SPIC_EN;
+	while (psram_ctrl->SSIENR & BIT_SPIC_EN);
+
+	/* Wait for transfer to complete */
+	while (psram_ctrl->SR & BIT_BUSY);
+
+	/* Restore to auto mode */
+	psram_ctrl->CTRLR0 &= ~BIT_USER_MODE;
+}
+
+/**
+  * @brief  Initialize APM uPSRAM (APS03208E) device registers.
+  * @retval None
+  * @note   Must be called after PSRAM_CTRL_Init().
+  *         Writes MR6 to switch from Eco-Clock (default, unsupported) to Legacy-Clock mode
+  *         and configure Read/Write latency. Writes MR3 for drive strength and refresh rate.
+  */
+
+void PSRAM_UPSRAM_DEVIC_Init(void)
+{
+	u8 mr3, mr6;
+
+	/*
+	 * MR6: CLM=1 (Legacy-Clock), Page=1, AS=1,
+	 *      LC = latency code for current clock, Wrap=512B
+	 * NOTE: MR6[7] CLM must be written before adjusting MR6[4:2] latency (per spec note 2).
+	 */
+	mr6 = APM_UPSRAM_MR6_CLM | BIT6 | BIT5 |
+		  APM_UPSRAM_MR6_LC(PsramInfo.Psram_Latency_Set - 3);
+
+	PSRAM_UPSRAM_REG_Write(0x6, mr6);
+
+	/*
+	 * MR3: Refresh rate 4x (default, suitable for <= 105°C),
+	 *      PMOS/NMOS drive strength 50 ohms (default)
+	 */
+	mr3 = APM_UPSRAM_MR3_RF(APM_UPSRAM_RF_4X) |
+		  APM_UPSRAM_MR3_PMOS(APM_UPSRAM_DRV_50OHM) |
+		  APM_UPSRAM_MR3_NMOS(APM_UPSRAM_DRV_50OHM);
+
+	PSRAM_UPSRAM_REG_Write(0x3, mr3);
 }

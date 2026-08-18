@@ -63,7 +63,11 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+/* Same include guard as MCUboot's own bootutil/fault_injection_hardening.h;
+ * skip it under Zephyr so bootutil's richer fih_ret definition wins. */
+#ifndef __ZEPHYR__
 #include "fault_injection_hardening.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

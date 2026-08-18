@@ -1,0 +1,17 @@
+{
+  // RTOS peripheral_test 团队设备别名列表
+  //
+  // 命名规范：r_<chip>_<role><序号>
+  //   r_         — 前缀，标识这是 RTOS 团队设备
+  //   <chip>     — 芯片型号（小写，如 rtl8720f）
+  //   <role>     — 角色（dut0/dut1 主从串口，dut2 loopback 专用）
+  //
+  // 此文件由 RTOS peripheral_test 团队维护。
+  // 使用时：./setup_serial_alias.sh --config dev_aliases_rtos.json5
+  //
+  aliases: [
+    "r_rtl8720f_dut0",    // 主 DUT（串口 0）
+    "r_rtl8720f_dut1",    // 从 DUT（串口 1）
+    "r_rtl8720f_dut2",    // loopback 专用（串口 2）
+  ],
+}

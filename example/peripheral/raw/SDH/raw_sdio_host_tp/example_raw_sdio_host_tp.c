@@ -53,9 +53,7 @@ static const char *const TAG = "SDIO_HOST";
 #define HELLO_HOST_RESP					"Hello Host! I am Here"
 #define HELLO_HOST_RESP_LEN				(sizeof(HELLO_HOST_RESP) - 1)
 
-/* INIC_TX_DESC / INIC_RX_DESC header size */
 #define INIC_TX_DESC_SIZE				sizeof(INIC_TX_DESC)
-#define INIC_RX_DESC_SIZE				sizeof(INIC_RX_DESC)
 
 /* Packet type for user data in INIC_TX_DESC */
 #define SPDIO_RX_DATA_USER				0x83
@@ -170,68 +168,62 @@ static u16 crc16_ccitt(const u8 *data, u32 len)
 	return crc;
 }
 
-/* ---------- Validate a received TP packet ----------
- *  Device-to-host data has an INIC_RX_DESC header (16 bytes) prepended by
- *  the SDIO IP.  Skip it before parsing the TP packet.                     */
-static void host_validate_rx_packet(const u8 *pdata, u32 size)
+/* Validate one bare [tp_pkt_header + data + crc] unit.
+ * Returns bytes consumed, or 0 on non-magic / overrun (end-of-buffer / padding). */
+static u32 host_validate_rx_packet(const u8 *pdata, u32 available)
 {
 	const tp_pkt_header_t *hdr;
 	u16 recv_crc, calc_crc;
-	u32 total_size;
-	const u8 *payload;
 	u32 payload_size;
 	u32 err_pct;
 
+	if (available < PKT_HEADER_SIZE + PKT_CRC_SIZE) {
+		return 0;
+	}
+
+	hdr = (const tp_pkt_header_t *)pdata;
+	if (hdr->magic != PKT_MAGIC) {
+		return 0;
+	}
+
+	payload_size = PKT_HEADER_SIZE + hdr->data_len + PKT_CRC_SIZE;
+	if (payload_size > available) {
+		return 0;
+	}
+
 	tp_rx_total++;
 
-	/* Skip INIC_RX_DESC header prepended by SDIO device IP */
-	if (size < INIC_RX_DESC_SIZE) {
-		tp_rx_error++;
-		RTK_LOGE(TAG, "[Phase 1] Pkt too small for RX_DESC: %lu B\n", size);
-		return;
-	}
-	payload = pdata + INIC_RX_DESC_SIZE;
-	payload_size = size - INIC_RX_DESC_SIZE;
-
-	if (payload_size < PKT_HEADER_SIZE + PKT_CRC_SIZE) {
-		tp_rx_error++;
-		RTK_LOGE(TAG, "[Phase 1] Payload too small: %lu B (min=%d)\n",
-				 payload_size, PKT_HEADER_SIZE + PKT_CRC_SIZE);
-		return;
-	}
-
-	hdr = (const tp_pkt_header_t *)payload;
-
-	if (hdr->magic != PKT_MAGIC) {
-		tp_rx_error++;
-		RTK_LOGE(TAG, "[Phase 1] Bad magic: 0x%04x (expect 0x%04x) seq=%u\n",
-				 hdr->magic, PKT_MAGIC, hdr->seq);
-		return;
-	}
-
-	total_size = PKT_HEADER_SIZE + hdr->data_len + PKT_CRC_SIZE;
-	if (total_size != payload_size) {
-		tp_rx_error++;
-		RTK_LOGE(TAG, "[Phase 1] Size mismatch: hdr=%lu actual=%u seq=%u\n",
-				 total_size, payload_size, hdr->seq);
-		return;
-	}
-
-	memcpy(&recv_crc, payload + PKT_HEADER_SIZE + hdr->data_len, 2);
-	calc_crc = crc16_ccitt(payload, PKT_HEADER_SIZE + hdr->data_len);
+	memcpy(&recv_crc, pdata + PKT_HEADER_SIZE + hdr->data_len, 2);
+	calc_crc = crc16_ccitt(pdata, PKT_HEADER_SIZE + hdr->data_len);
 	if (recv_crc != calc_crc) {
 		tp_rx_error++;
 		RTK_LOGE(TAG, "[Phase 1] CRC error: recv=0x%04x calc=0x%04x seq=%u\n",
 				 recv_crc, calc_crc, hdr->seq);
-		return;
+		goto stats;
 	}
 
 	tp_rx_correct++;
 
+stats:
 	if (tp_rx_total != 0 && tp_rx_total % TP_STATS_INTERVAL == 0) {
 		err_pct = tp_rx_error * 100 / tp_rx_total;
 		RTK_LOGI(TAG, "[Stats @ RX=%lu] TX sent:%lu fail:%lu | RX total:%lu ok:%lu err:%lu (%lu%%)\n",
 				 tp_rx_total, tp_tx_count, tp_tx_fail, tp_rx_total, tp_rx_correct, tp_rx_error, err_pct);
+	}
+	return payload_size;
+}
+
+static void host_validate_agg_rx_packets(const u8 *pbuf, u32 total_size)
+{
+	u32 offset = 0;
+	u32 consumed;
+
+	while (offset < total_size) {
+		consumed = host_validate_rx_packet(pbuf + offset, total_size - offset);
+		if (consumed == 0) {
+			break;
+		}
+		offset += consumed;
 	}
 }
 
@@ -245,7 +237,7 @@ static u8 *sdio_read_rxfifo(u32 size)
 
 	allocsize = _RND(size, SD_BLOCK_SIZE);
 
-	pbuf = (u8 *)rtos_mem_zmalloc(allocsize);
+	pbuf = (u8 *)rtos_mem_malloc(allocsize);
 	if (!pbuf) {
 		RTK_LOGE(TAG, "Alloc RX buf fail (size=%lu)\n", allocsize);
 		return NULL;
@@ -265,7 +257,6 @@ static u8 *sdio_read_rxfifo(u32 size)
 		}
 	}
 
-	DCache_Invalidate((u32)pbuf, allocsize);
 	return pbuf;
 }
 
@@ -348,7 +339,7 @@ static void sdio_recv_data_process(void)
 					}
 					/* Phase 1: Validate TP packet from device */
 					else if (tp_phase == 1) {
-						host_validate_rx_packet(pbuf, rxfifo_size);
+						host_validate_agg_rx_packets(pbuf, rxfifo_size);
 					}
 					rtos_mem_free(pbuf);
 				} else {

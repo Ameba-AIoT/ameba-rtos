@@ -108,6 +108,7 @@ void tim_pwm_one_pulse(void)
 
 	/* enable gpio interrupt*/
 	gpio_interrupt_enable();
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "PWM_ONE_PULSE_READY\n");
 
 	rtos_task_delete(NULL);
 }

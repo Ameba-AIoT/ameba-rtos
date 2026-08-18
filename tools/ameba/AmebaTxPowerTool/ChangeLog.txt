@@ -1,0 +1,44 @@
+Changelog：
+20230110  v1.0.1   GenRFTxPwrTool Draft
+20230110  v1.1.0  (1) Remove IC name from RF .c&.h file
+                  (2) Add textEdit for generate info
+				  (3) Add PopupWindow when generate files if files has exists
+20230118  v1.1.1   Add print for generate file path
+20230518  v1.1.2  (1) Raise error mechanism
+                  (2) Ru data not must
+				  (3) Rename .c
+				  (4) Seperate 2.5g with 5g table
+				  (5) Remove weak define
+				  (6) Remove radioA generate from customer tool
+				  (7) Adjust regulation map
+				  (8) Adjust power byrate table
+				  (9) Rename ww as gl in regulation table
+				  (10) Add regulation remapping rules
+				  (11) Add parser info to log
+20230524  v1.1.3  (1) Remove _WEAK
+                  (2) Update tool log when occure error
+				  (3) Rename WW table to GL and set GL to 1
+				  (4) Add regu_en_array_len
+20230704  v1.1.4  (1) Add ChipInfo to excel
+				  (2) Add api for different IC descripted in ChipInfo 			  
+20230705  v1.1.5  (1) Fix leak of empty regulation bug
+                  (2) Fix empty remapping crash bug
+20230726  v1.1.6  (1) Rename remapping sheet
+                  (2) Fix gen .c error
+20230731  v1.1.7  (1) Convert 5g NA to 127
+                  (2) Not convert RU data if not support ax
+20230803  v1.1.8  (1) Move support_40m from configuration to Excel
+20231027  v1.1.9  Fix convert float power by rate data error bug
+20231116  v1.1.10 (1) Update wifi_hal_phy_get_power_limit_value api with is_shape
+                  (2) Support voltage with 1v8_1v25/3v3_1v25
+20231226  v1.1.11 Rename array_len_of_pwrlmt_regu_remapping with voltage
+20240626  v1.1.12 (1) Rename power table _GL to _WW
+                  (2) Update copyright
+20240212  v1.1.13 Support user define EXTx in power table
+20250620  v1.1.14 Update ameba_wifi_power_table_usrcfg.c content
+20251120  v1.1.15 (1) Support append suffix for functions/table in CLI mode
+                  (2) Add TXPWR_MAJOR_UPDATE in C file
+20260610  v1.1.16 Support RU_LOC parameter extension
+20260706  v1.1.17 (1) Fix GUI residual data bug when loading multiple Excels
+	              (2) Add sheet name validation (EXT1~EXT10 only)
+			      (3) Update TXPWR_MAJOR_UPDATE version

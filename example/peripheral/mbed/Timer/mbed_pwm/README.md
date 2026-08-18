@@ -29,6 +29,12 @@ for example:
 	GND <--> LED2 <---> PA_8
 	GND <--> LED3 <---> PA_10
 
+5. If you run this example in RTL8720F, then connect as below
+	GND <--> LED0 <---> PA_21
+	GND <--> LED1 <---> PA_22
+	GND <--> LED2 <---> PA_23
+	GND <--> LED3 <---> PA_20
+
 # SW configuration
 Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -54,3 +60,4 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F

@@ -1,0 +1,16 @@
+{
+  // Zephyr_test 团队设备别名列表
+  //
+  // 命名规范：z_<完整board名>_<序号>
+  //   z_              — 前缀，标识这是 Zephyr 团队设备
+  //   <完整board名>   — 不用缩写（如 rtl872xda 易看错，用 rtl872xda_evb）
+  //
+  // 此文件由 Zephyr_test 团队维护。
+  // 使用时：./setup_serial_alias.sh --config dev_aliases_zephyr.json5
+  //
+  aliases: [
+    "z_rtl872xda_evb_0",   // AmebaDplus EVB
+    "z_rtl8721f_evb_0",    // AmebaD EVB
+    "z_rtl8730e_evb_0",    // AmebaSmart EVB
+  ],
+}

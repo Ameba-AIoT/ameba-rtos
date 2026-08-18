@@ -710,7 +710,7 @@ static void nand_get_vendor(void)
 	u8 flash_ID[4];
 
 	/* Read flash ID */
-	NAND_RxCmd(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 2, flash_ID);
+	NAND_RxCmd_Safe(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 2, flash_ID);
 	RTK_LOGI(TAG, "NAND ID: %x-%x\n", flash_ID[0], flash_ID[1]);
 
 	/* Get flash chip information */

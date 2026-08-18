@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #ifndef __WHC_HOST_EVENT_H__
 #define __WHC_HOST_EVENT_H__
 
@@ -42,6 +43,9 @@ u8 whc_host_event_promisc_pkt_hdl(u32 *param_buf);
 u8 whc_host_event_nan_match_indicate(u32 *param_buf);
 u8 whc_host_event_nan_cfgvendor_event_indicate(u32 *param_buf);
 u8 whc_host_event_nan_cfgvendor_cmd_reply(u32 *param_buf);
+#ifdef CONFIG_WHCH
+u8 whc_host_event_nan_ndp_status_indicate(u32 *param_buf);
+#endif
 #endif
 
 #endif //__WHC_HOST_EVENT_H__

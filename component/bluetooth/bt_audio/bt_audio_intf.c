@@ -202,7 +202,7 @@ exit:
 
 static void do_audio_track_write(rtk_bt_audio_track_t *track, uint8_t *data, uint32_t size)
 {
-	int32_t write_bytes;
+	int32_t write_bytes = 0;
 
 	BT_LOGD("%s: try to write %lu bytes \r\n", __func__, size);
 	// for (uint32_t i = 0; i < size; i++) {
@@ -211,7 +211,9 @@ static void do_audio_track_write(rtk_bt_audio_track_t *track, uint8_t *data, uin
 	if (track->audio_sync_flag) {
 		osif_mutex_take(track->audio_sync_mutex, BT_TIMEOUT_FOREVER);
 	}
-	write_bytes = rtk_bt_audio_track_play(track->audio_track_hdl, (void *)data, size);
+	if (rtk_bt_audio_track_get_play_state(track) == RTK_BT_AUDIO_TRACK_PLAYING) {
+		write_bytes = rtk_bt_audio_track_play(track->audio_track_hdl, (void *)data, size);
+	}
 	/* empty buffer */
 	if (write_bytes > 0) {
 		track->trans_bytes += write_bytes;
@@ -1038,9 +1040,31 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
 	osif_mutex_give(bt_audio_intf_priv_mutex);
 	if (ptrack->audio_track_hdl) {
 		rtk_bt_audio_track_start(ptrack->audio_track_hdl, left_volume, right_volume);
+		rtk_bt_audio_track_set_play_state(ptrack, RTK_BT_AUDIO_TRACK_PLAYING);
 	}
 
 	return ptrack;
+}
+
+uint16_t rtk_bt_audio_track_set_play_state(rtk_bt_audio_track_t *ptrack, uint16_t play_state)
+{
+	if (!ptrack) {
+		BT_LOGE("[BT AUDIO] set play state fail, cause ptrack is NULL \r\n");
+		return RTK_BT_AUDIO_FAIL;
+	}
+	ptrack->play_state = play_state;
+
+	return RTK_BT_AUDIO_OK;
+}
+
+uint16_t rtk_bt_audio_track_get_play_state(rtk_bt_audio_track_t *ptrack)
+{
+	if (!ptrack) {
+		BT_LOGE("[BT AUDIO] get play state fail, cause ptrack is NULL \r\n");
+		return RTK_BT_AUDIO_GET_VALUE_FAIL;
+	}
+
+	return ptrack->play_state;
 }
 
 uint16_t rtk_bt_audio_track_enable_sync_mode(rtk_bt_audio_track_t *ptrack, uint32_t pd)
@@ -1532,6 +1556,20 @@ uint16_t rtk_bt_audio_codec_update(rtk_bt_audio_codec_conf_t *paudio_codec_conf,
 		return RTK_BT_AUDIO_FAIL;
 	}
 	return bt_audio_update_codec(paudio_codec_conf->codec_index, paudio_codec_conf->param, paudio_codec_conf->param_len, pentity);
+}
+
+uint16_t rtk_bt_audio_codec_reset(uint32_t type, void *pentity)
+{
+	if (!pentity) {
+		BT_LOGE("[BT AUDIO] pentity is null \r\n");
+		return RTK_BT_AUDIO_FAIL;
+	}
+	/* judge whether already initialized */
+	if (!bt_audio_init_flag) {
+		BT_LOGE("[BT_AUDIO] BT audio has not be initialized \r\n");
+		return RTK_BT_AUDIO_FAIL;
+	}
+	return bt_audio_reset_codec(type, pentity);
 }
 
 uint16_t rtk_bt_audio_codec_remove(uint32_t type, void *pentity)

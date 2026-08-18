@@ -9,6 +9,8 @@ ccflags-$(CONFIG_IEEE80211R) += -DCONFIG_IEEE80211R
 ccflags-$(CONFIG_WHC_HCI_USB) += -DCONFIG_WHC_HCI_USB
 ccflags-$(CONFIG_WHC_CMD_PATH) += -DCONFIG_WHC_CMD_PATH
 ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
+CONFIG_WHC_HOST_LOG_FWD := y
+ccflags-$(CONFIG_WHC_HOST_LOG_FWD) += -DCONFIG_WHC_HOST_LOG_FWD
 ccflags-$(CONFIG_SUPPLICANT_SME) += -DCONFIG_SUPPLICANT_SME
 ccflags-$(CONFIG_FW_DOWNLOAD) += -DCONFIG_FW_DOWNLOAD
 ccflags-$(CONFIG_WHCH) += -DCONFIG_WHCH
@@ -62,6 +64,10 @@ ifeq ($(CONFIG_WHCH), y)
 		../whch/whch_host_addba.o \
 		../whch/hal/whch_host_hal_xmit_com.o \
 		../whch/hal/whch_host_hal_recv_com.o
+ifeq ($(CONFIG_NAN), y)
+    whc_usb-$(CONFIG_WHC_HCI_USB) += \
+		../whch/whch_host_nan.o
+endif
 ifeq ($(CONFIG_AMEBAGREEN2), y)
     whc_usb-$(CONFIG_WHC_HCI_USB) += \
 		../whch/hal/rtl8721f/whch_host_hal_xmit.o \
@@ -74,6 +80,7 @@ ifeq ($(CONFIG_WHC_CMD_PATH), y)
     whc_usb-$(CONFIG_WHC_HCI_USB) += \
             ../whc_host_netlink.o \
             ../whc_host_cmd_path_tx.o
+    whc_usb-$(CONFIG_WHC_HOST_LOG_FWD) += ../whc_host_log_fwd.o
 endif
 
 include $(src)/../fwdl/Kbuild

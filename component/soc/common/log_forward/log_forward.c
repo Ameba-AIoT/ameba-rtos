@@ -60,6 +60,7 @@ typedef struct {
 	log_fwd_ring_t       ring;
 	rtk_log_output_fn    output_fn;
 	volatile bool        enabled;
+	rtos_mutex_t         send_lock;   /* serialises disable() with sender task's output_fn */
 } log_fwd_state_t;
 
 static log_fwd_state_t g_fwd;
@@ -281,9 +282,13 @@ static void log_fwd_sender_task(void *arg)
 				msg_len = sizeof(read_buf);   /* defensive; should never happen */
 			}
 			u32 n = ring_read(read_buf, msg_len);
-			if (g_fwd.output_fn) {
+
+			/* hold send_lock so disable() waits for this send before returning */
+			rtos_mutex_take(g_fwd.send_lock, MUTEX_WAIT_TIMEOUT);
+			if (g_fwd.enabled && g_fwd.output_fn) {
 				g_fwd.output_fn((const u8 *)read_buf, n);
 			}
+			rtos_mutex_give(g_fwd.send_lock);
 		}
 	}
 }
@@ -296,6 +301,8 @@ void rtk_log_forward_init(rtk_log_output_fn fn)
 
 	g_fwd.output_fn = fn;
 	g_fwd.enabled = false;
+
+	rtos_mutex_create(&g_fwd.send_lock);
 
 	/* Max count reflects realistic ring capacity: each message occupies at
 	 * least sizeof(u16)+1 bytes, so the ring can hold at most this many. */
@@ -324,39 +331,19 @@ void rtk_log_forward_enable(void)
 void rtk_log_forward_disable(void)
 {
 	if (!g_fwd.enabled) {
-		return;   /* already off: skip flush and drop report to avoid duplicates */
+		return;
 	}
 
-	/* Stop accepting new characters first.  After this point log_diag_hook
-	 * will call DiagPutChar instead of accumulating into line slots, so the
-	 * slot buffers are stable and can be flushed without racing writers. */
+	/* wait for any in-progress output_fn to finish, then block new ones */
+	rtos_mutex_take(g_fwd.send_lock, MUTEX_WAIT_TIMEOUT);
+
 	g_fwd.enabled = false;
 
-	/* Flush any half-lines (no trailing '\n') still in the line slots.
-	 * Because enabled is now false no new chars arrive via log_diag_hook.
-	 * log_fwd_submit has no enabled check — it always writes to the ring,
-	 * so the residual bytes are forwarded to the host over SDIO. */
+	/* discard buffered half-lines; no flush to avoid racing a bus shutdown */
 	int i;
 	for (i = 0; i < LOG_FWD_LINE_SLOTS; i++) {
-		if (g_line[i].len) {
-			if (g_line[i].len < LOG_FWD_LINE_MAX) {
-				g_line[i].buf[g_line[i].len++] = '\n';
-			}
-			log_fwd_submit(g_line[i].buf, g_line[i].len);
-			g_line[i].len = 0;
-		}
+		g_line[i].len = 0;
 	}
 
-	/* Report the per-session drop count to the host.  Cannot use RTK_LOGS
-	 * here: enabled is false so log_diag_hook would call DiagPutChar (UART)
-	 * instead of the ring.  Format directly and submit to reach dmesg. */
-	if (g_fwd.ring.drop_count) {
-		char msg[64];
-		int n = DiagSnPrintf(msg, sizeof(msg),
-							 "[log_fwd] dropped %u msg(s) this session\n",
-							 (unsigned int)g_fwd.ring.drop_count);
-		if (n > 0) {
-			log_fwd_submit(msg, (u32)n);
-		}
-	}
+	rtos_mutex_give(g_fwd.send_lock);
 }

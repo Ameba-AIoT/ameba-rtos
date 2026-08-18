@@ -232,6 +232,8 @@ static int whc_spi_host_spi_init(void)
 	//Pinmux_Config(SPIM_CS, PINMUX_FUNCTION_SPIM);//CS
 	//PAD_PullCtrl(SPIM_CS, GPIO_PuPd_UP);  // pull-up, default 1
 	PAD_PullCtrl(SPIM_SCLK, GPIO_PuPd_DOWN);
+	PAD_PullCtrl(SPIM_MOSI, GPIO_PuPd_NOPULL);
+	PAD_PullCtrl(SPIM_MISO, GPIO_PuPd_NOPULL);
 
 	SSI_SetRole(WHC_SPI_DEV, SSI_MASTER);
 	SSI_StructInit(&SSI_InitStructMaster);
@@ -445,12 +447,40 @@ drop:
 	rtos_mem_free((u8 *)buf_info);
 }
 
+/* register GPIO_INTHandler for the port the given pin belongs to (GPIO_PORT_x -> GPIOx_IRQ) */
+static void whc_spi_host_reg_gpio_irq(u32 pin)
+{
+	/* GPIOx_IRQ indexed by PORT_NUM(pin); only ports present on the SoC are populated. base comes from GPIO_PORTx[] */
+	const IRQn_Type gpio_irq_tbl[] = {
+#ifdef GPIOA_BASE
+		[GPIO_PORT_A] = GPIOA_IRQ,
+#endif
+#ifdef GPIOB_BASE
+		[GPIO_PORT_B] = GPIOB_IRQ,
+#endif
+#ifdef GPIOC_BASE
+		[GPIO_PORT_C] = GPIOC_IRQ,
+#endif
+	};
+	u32 port = PORT_NUM(pin);
+
+	if (port >= sizeof(gpio_irq_tbl) / sizeof(gpio_irq_tbl[0])) {
+		return;
+	}
+
+	InterruptRegister(GPIO_INTHandler, gpio_irq_tbl[port], (u32)GPIO_PORTx[port], 6);
+	InterruptEn(gpio_irq_tbl[port], 6);
+}
+
 static void whc_spi_host_setup_gpio(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct;
 
-	InterruptRegister(GPIO_INTHandler, GPIOB_IRQ, (u32)GPIOB_BASE, 6);
-	InterruptEn(GPIOB_IRQ, 6);
+	/* register GPIO IRQ for the port(s) DEV_TX_REQ_PIN / DEV_READY_PIN belong to */
+	whc_spi_host_reg_gpio_irq(DEV_TX_REQ_PIN);
+	if (PORT_NUM(DEV_READY_PIN) != PORT_NUM(DEV_TX_REQ_PIN)) {
+		whc_spi_host_reg_gpio_irq(DEV_READY_PIN);
+	}
 
 	/* Initialize GPIO */
 	/* tx req only need rising */
@@ -532,6 +562,10 @@ static int whc_spi_host_drv_init(void)
 
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	whc_host_api_init();
+#endif
+
+#ifdef CONFIG_LWIP_LAYER
+	whc_host_netinfo_monitor_init();
 #endif
 
 	return RTK_SUCCESS;

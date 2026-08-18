@@ -13,6 +13,8 @@ ccflags-$(CONFIG_WHC_HCI_SDIO) += -DCONFIG_WHC_HCI_SDIO
 ccflags-$(CONFIG_WHC_CMD_PATH) += -DCONFIG_WHC_CMD_PATH
 ccflags-$(CONFIG_WHC_WIFI_API_PATH) += -DCONFIG_WHC_WIFI_API_PATH
 ccflags-$(CONFIG_WHC_ACTIVE_DETECT) += -DCONFIG_WHC_ACTIVE_DETECT
+CONFIG_WHC_HOST_LOG_FWD := y
+ccflags-$(CONFIG_WHC_HOST_LOG_FWD) += -DCONFIG_WHC_HOST_LOG_FWD
 ccflags-$(CONFIG_SUPPLICANT_SME) += -DCONFIG_SUPPLICANT_SME
 ccflags-$(CONFIG_RMESH) += -DCONFIG_RMESH
 ccflags-$(CONFIG_FW_DOWNLOAD) += -DCONFIG_FW_DOWNLOAD
@@ -61,6 +63,10 @@ ifeq ($(CONFIG_WHCH), y)
 		../whch/whch_host_addba.o \
 		../whch/hal/whch_host_hal_xmit_com.o \
 		../whch/hal/whch_host_hal_recv_com.o
+ifeq ($(CONFIG_NAN), y)
+    whc_sdio-$(CONFIG_WHC_HCI_SDIO) += \
+		../whch/whch_host_nan.o
+endif
 ifeq ($(CONFIG_AMEBAGREEN2), y)
     whc_sdio-$(CONFIG_WHC_HCI_SDIO) += \
 		../whch/hal/rtl8721f/whch_host_hal_xmit.o \
@@ -90,6 +96,7 @@ ifeq ($(CONFIG_WHC_CMD_PATH), y)
     whc_sdio-$(CONFIG_WHC_HCI_SDIO) += \
             ../whc_host_netlink.o \
             ../whc_host_cmd_path_tx.o
+    whc_sdio-$(CONFIG_WHC_HOST_LOG_FWD) += ../whc_host_log_fwd.o
 
     ifeq ($(CONFIG_WHC_HOST_RTW_CLI),y)
         ccflags-$(CONFIG_WHC_HOST_RTW_CLI) += -DCONFIG_WHC_HOST_RTW_CLI

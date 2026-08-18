@@ -286,7 +286,10 @@ void BOOT_Enable_KM0(void)
 
 }
 
-void BOOT_WakeFromPG(void)
+/* __weak so a loader that is not itself the secure world (TF-M BL2) can supply
+ * its own wake entry: the ROM reaches this through RamStartTable.RamWakeupFun,
+ * and the body below enters the non-secure image as this loader's own. */
+__weak void BOOT_WakeFromPG(void)
 {
 	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
 	u32 *vector_table = NULL;

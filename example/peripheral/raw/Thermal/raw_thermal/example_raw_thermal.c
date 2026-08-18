@@ -93,9 +93,6 @@ void raw_thermal_task(void)
 
 	TM_Init(&TM_InitStruct);
 
-	InterruptRegister((IRQ_FUN)TMIrqHandler, THERMAL_IRQ, (u32)NULL, 5);
-	InterruptEn(THERMAL_IRQ, 5);
-
 	TM_Display_Result(TM_GetTempResult());
 
 	tm = TM_GetCdegree(TM_GetTempResult());
@@ -105,6 +102,9 @@ void raw_thermal_task(void)
 	tm = TM_GetFdegree(TM_GetTempResult());
 
 	printf("Temperature = %4f F\n", tm);
+
+	InterruptRegister((IRQ_FUN)TMIrqHandler, THERMAL_IRQ, (u32)NULL, 5);
+	InterruptEn(THERMAL_IRQ, 5);
 
 	while (1);
 }

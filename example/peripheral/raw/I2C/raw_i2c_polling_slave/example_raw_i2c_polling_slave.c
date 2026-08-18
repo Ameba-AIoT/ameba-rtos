@@ -21,7 +21,9 @@ typedef struct i2c_m i2c_t;
 //#define I2C_RESTART_DEMO
 
 /*LOOP read then write 3 times*/
-#define I2C_LOOP_TEST
+#ifndef LOOP_COUNT
+#define LOOP_COUNT 2
+#endif
 
 #define I2C_ID 0
 
@@ -222,30 +224,22 @@ void i2c_dual_slave_task(void)
 	I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_RX_DONE);
 	I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_RD_REQ);
 	I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_TX_ABRT);
-#ifdef I2C_LOOP_TEST
-	RTK_LOGI(TAG, "Slave read  2>>>\n");
-	I2C_SlaveRead(i2cslave.I2Cx, &i2cdatadst[0], I2C_DATA_LENGTH);
-	i2c_slave_rx_check();
 
-	RTK_LOGI(TAG, "Slave write  2>>>\n");
-	I2C_SlaveWrite(i2cslave.I2Cx, &i2cdatardsrc[0], I2C_DATA_LENGTH);
-	DelayMs(1);
-	I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_RX_DONE);
-	I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_RD_REQ);
-	I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_TX_ABRT);
+#if (LOOP_COUNT - 1)
+	for (int i = 2; i <= LOOP_COUNT; i++) {
+		RTK_LOGI(TAG, "Slave read  %d>>>\n", i);
+		I2C_SlaveRead(i2cslave.I2Cx, &i2cdatadst[0], I2C_DATA_LENGTH);
+		i2c_slave_rx_check();
 
-
-	RTK_LOGI(TAG, "Slave read 3>>>\n");
-	I2C_SlaveRead(i2cslave.I2Cx, &i2cdatadst[0], I2C_DATA_LENGTH);
-	i2c_slave_rx_check();
-
-	RTK_LOGI(TAG, "Slave write 3>>>\n");
-	I2C_SlaveWrite(i2cslave.I2Cx, &i2cdatardsrc[0], I2C_DATA_LENGTH);
-	DelayMs(1);
-	I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_RX_DONE);
-	I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_RD_REQ);
-	I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_TX_ABRT);
+		RTK_LOGI(TAG, "Slave write  %d>>>\n", i);
+		I2C_SlaveWrite(i2cslave.I2Cx, &i2cdatardsrc[0], I2C_DATA_LENGTH);
+		DelayMs(1);
+		I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_RX_DONE);
+		I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_RD_REQ);
+		I2C_ClearINT(i2cslave.I2Cx, I2C_BIT_R_TX_ABRT);
+	}
 #endif
+
 	while (1);
 }
 

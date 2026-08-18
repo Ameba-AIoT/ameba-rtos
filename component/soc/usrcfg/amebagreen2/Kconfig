@@ -85,6 +85,7 @@ menu "Clock Configuration"
 
 choice
     prompt "SoC Clock Config"
+    default CLKCFG_1P0_AUDIO98P304M_USB if WHC_INTF_USB
     default CLKCFG_0P9_RMII
     help
         Select the SoC clock configuration. The leading [N] is the index into
@@ -93,9 +94,11 @@ choice
 
 config CLKCFG_0P9_NO_SYSPLL
     bool "[0] 0.9V, no SysPLL, CPU 240MHz (low power)"
+    depends on !WHC_INTF_USB
 
 config CLKCFG_0P9_RMII
     bool "[1] 0.9V, RMII, CPU 240MHz"
+    depends on !WHC_INTF_USB
 
 config CLKCFG_1P0_AUDIO98P304M_USB
     bool "[2] 1.0V, Audio(98.304MHz)/USB, CPU 240MHz"
@@ -105,6 +108,7 @@ config CLKCFG_1P0_AUDIO45P1584M_USB
 
 config CLKCFG_0P9_AUDIO_RMII
     bool "[4] 0.9V, Audio/RMII, CPU 266.7MHz"
+    depends on !WHC_INTF_USB
 
 config CLKCFG_1P0_RMII_USB
     bool "[5] 1.0V, RMII/USB, CPU 320MHz"
@@ -156,6 +160,16 @@ config PSRAM_KM4NS_IMG2_KB
         core places code (IMG2_PSRAM) or data/heap (DATA_HEAP_PSRAM) in PSRAM.
         Otherwise the segment collapses to 0 and all non-secure PSRAM goes to
         the AP(KM4TZ) heap.
+
+endmenu
+
+menu "GPIO IRQ Configuration"
+
+# GPIO IRQ table size
+config GPIO_IRQ_TABLE_MAX_NUM
+	int "GPIO IRQ table maximum number"
+	range 1 94
+	default 4
 
 endmenu
 

@@ -39,6 +39,10 @@ ameba_list_append(private_sources
     example_raw_gdma_susp_rsm_abrt.c
     app_example.c
 )
+if(DEFINED CACHE{ABORT_TRANSFER})
+    ameba_list_append(private_definitions ABORT_TRANSFER=${ABORT_TRANSFER})
+    unset(ABORT_TRANSFER CACHE)
+endif()
 
 # Component private part, user config end
 #------------------------------#

@@ -18,10 +18,10 @@ ChangeLog:
 20250701  v1.0.3  (1) Support compatibility with MinGW path format
                   (2) Support customized DTR/RTS timing for reset/reburn
 20250703  v1.1.0  Support 1-N download/erase
-20251105  v1.1.1  (1) Support for remote server port download 
+20251105  v1.1.1  (1) Support for remote server port download
                   (2) Set PostProcess as reset after flashing finished
 				  (3) Add no_reset param
-			      (4) Change some log level 
+			      (4) Change some log level
 				  (5) Rename flashloader folder with Devices
 20251208  v1.1.2  (1) Optimize read_bytes api
                   (2) Optimize the issue where 1-N took longer than 1-1
@@ -35,7 +35,7 @@ ChangeLog:
 20251218  v1.1.4  (1) Fix download multi-images fail issue
                   (2) Fix probability of failure when enter to download mode
 				  (3) Fix enter download mode fail issue when in lower download baudrate
-20250309  v1.1.5  (1) Fix read wifi-mac fail issue 
+20250309  v1.1.5  (1) Fix read wifi-mac fail issue
                   (2) Enable auto program sipc addr 4-byte mode as default
 20260407  v1.1.6  (1) Optimize the display format of device info
 				  (2) Optimize check device alive method
@@ -49,3 +49,4 @@ ChangeLog:
                   (4) Fix worker thread exit code not propagated to main process during multi-port download
                   (5) Fix post-processing effect not applied issue
                   (6) Reorganize Settings.json into General/GUIRunTime sections (backward compatible)
+                  (7) Add support for RTL8735C

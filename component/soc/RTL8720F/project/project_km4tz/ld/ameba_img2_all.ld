@@ -238,7 +238,7 @@ ASSERT(__romlib_bss_end__ == 0x2000103c, "__romlib_bss_end__ is changed. Common 
 
 
 #if defined(CONFIG_DATA_HEAP_SRAM)
-	#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
+	#if defined (CONFIG_WHC_DEV_HCI_BOOT)
 		//ASSERT(__ipc_table_start__ == __ipc_table_end__, "fullmac does not require ipc table!")
 
 		__bdram_heap_buffer_size__ = SRAM_END - __bdram_heap_buffer_start__;

@@ -39,6 +39,10 @@ ameba_list_append(private_sources
     example_raw_gdma_multiblock.c
     app_example.c
 )
+if(DEFINED CACHE{GDMA_TYPE})
+    ameba_list_append(private_definitions GDMA_TYPE=${GDMA_TYPE})
+    unset(GDMA_TYPE CACHE)
+endif()
 
 # Component private part, user config end
 #------------------------------#

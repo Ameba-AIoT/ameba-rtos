@@ -15,7 +15,7 @@
 
 uint16_t rtk_bt_pbap_connect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -29,7 +29,7 @@ uint16_t rtk_bt_pbap_connect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_pbap_disconnect(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -43,7 +43,7 @@ uint16_t rtk_bt_pbap_disconnect(uint8_t *bd_addr)
 
 uint16_t rtk_bt_pbap_set_phone_book(rtk_bt_pbap_set_pb_t *p_set_pb_t)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_set_pb_t) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -57,7 +57,7 @@ uint16_t rtk_bt_pbap_set_phone_book(rtk_bt_pbap_set_pb_t *p_set_pb_t)
 
 uint16_t rtk_bt_pbap_phone_book_pull(rtk_bt_pbap_pb_pull_t *p_pb_pull_t)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_pb_pull_t) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -71,7 +71,7 @@ uint16_t rtk_bt_pbap_phone_book_pull(rtk_bt_pbap_pb_pull_t *p_pb_pull_t)
 
 uint16_t rtk_bt_pbap_phone_book_pull_continue(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -85,7 +85,7 @@ uint16_t rtk_bt_pbap_phone_book_pull_continue(uint8_t *bd_addr)
 
 uint16_t rtk_bt_pbap_phone_book_pull_abort(uint8_t *bd_addr)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!bd_addr) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -99,7 +99,7 @@ uint16_t rtk_bt_pbap_phone_book_pull_abort(uint8_t *bd_addr)
 
 uint16_t rtk_bt_pbap_phone_book_size_get(rtk_bt_pbap_pb_size_get_t *p_pb_size_t)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_pb_size_t) {
 		return RTK_BT_ERR_POINTER_INVALID;
@@ -113,7 +113,7 @@ uint16_t rtk_bt_pbap_phone_book_size_get(rtk_bt_pbap_pb_size_get_t *p_pb_size_t)
 
 uint16_t rtk_bt_pbap_pull_caller_id_name(rtk_bt_pbap_pull_caller_id_name_t *p_pull_caller_id_name_t)
 {
-	uint16_t ret = 0;
+	uint16_t ret = RTK_BT_OK;
 
 	if (!p_pull_caller_id_name_t) {
 		return RTK_BT_ERR_POINTER_INVALID;

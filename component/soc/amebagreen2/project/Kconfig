@@ -52,20 +52,6 @@ config SUPPORT_USBH_ECM_BRIDGE
 config SUPPORT_HEAP_TRACE
     def_bool y
 
-#
-# Audio features
-#
-
-# audio cmds
-config SUPPORT_AUDIO_CMD_ARECORD
-    def_bool y
-
-config SUPPORT_AUDIO_CMD_APLAY
-    def_bool y
-
-config SUPPORT_AUDIO_CMD_PLAYER
-    def_bool y
-
 #---------- FEATURE LIST END-------------#
 
 rsource "../../../soc/common/image3/Kconfig.trustzone"
@@ -220,6 +206,8 @@ menu "CONFIG WHC INTF"
                 select USB_HAL_LIB
                 select USB_DEVICE_EN
                 select USBD_INIC
+                select USB_OTG_EN_MENU
+                select USBD_INIC_MENU if SUPPORT_USBD_INIC
             config WHC_INTF_SPI
                 bool "WHC_INTF_SPI"
             config WHC_INTF_UART
@@ -333,10 +321,6 @@ menu "CONFIG WIFI"
         default y
     if WLAN_MENU
         rsource "../../../wifi/Kconfig.wifi"
-
-        config HIGH_TP_TEST
-            bool "Enable HIGH TP"
-            default n
 
         config WHC_INTF_IPC_MENU
             bool

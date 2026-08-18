@@ -33,30 +33,20 @@ __weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
 	//todo
 }
 
-__weak int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index)
+int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index)
 {
-	int ret;
-	(void)input;
-
 	switch (type) {
 	case WHC_WLAN_GET_IP:
-		ret = (int)whc_network_info[index].ip;
-		break;
-
+		return (int)whc_network_info[index].ip;
 	case WHC_WLAN_GET_GW:
-		ret = (int)whc_network_info[index].gw;
-		break;
-
+		return (int)whc_network_info[index].gw;
 	case WHC_WLAN_GET_GWMSK:
-		ret = (int)whc_network_info[index].gw_mask;
-		break;
+		return (int)whc_network_info[index].gw_mask;
 	default:
-		RTK_LOGE(TAG_WLAN_INIC, "%s, ERROR: unknown network info type\n", __func__);
-		break;
+		return 0;
 	}
-
-	return ret;
 }
+
 void rtw_scan_result_for_fullhan(struct rtw_scan_result *result, u8 *buffer, size_t buffer_size)
 {
 	u8 *ptr = buffer;
@@ -450,6 +440,20 @@ __weak void whc_dev_cmd_rx_to_user_task(void)
 					wifi_on(RTW_MODE_STA);
 				} else if (*ptr == WHC_WIFI_TEST_SET_HOST_RTOS) {
 					wifi_user_config.cfg80211 = 0;
+				} else if (*ptr == WHC_WIFI_TEST_NETWORK_INFO_UPDATE) {
+					idx = *(ptr + 1);
+					memcpy(whc_network_info[idx].ip, ptr + 2, 4);
+					memcpy(whc_network_info[idx].gw, ptr + 6, 4);
+					memcpy(whc_network_info[idx].gw_mask, ptr + 10, 4);
+
+					if (idx == 0) {
+						memcpy(whc_ipc_ip_addr, ptr + 2, 4);
+						//memcpy(IPv4Parm.IP, ptr + 2, 4);
+						//memcpy(IPv6Parm.IP, ptr + 14, 16);
+					}
+#ifdef CONFIG_NAN
+					memcpy(NAN_IPv6Parm, ptr + 14, 16);
+#endif
 				}
 #endif
 				rtos_mem_free(buf);

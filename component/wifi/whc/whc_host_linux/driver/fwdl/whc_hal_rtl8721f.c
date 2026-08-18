@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /******************************************************************************
  *
  * Copyright(c) Realtek Corporation. All rights reserved.
@@ -28,6 +29,12 @@
 
 #include "whc_hal.h"
 #include "whc_host_xfer.h"
+#include <linux/module.h>
+
+/* MP firmware select: mp=1 downloads *_MP.bin images */
+static bool mp;
+module_param(mp, bool, 0444);
+MODULE_PARM_DESC(mp, "Download MP firmware images (*_MP.bin) when set to 1");
 
 /* Memory region configuration for RTL8721F */
 static const struct whc_mem_region_t rtl8721f_mem_regions[] = {
@@ -39,22 +46,27 @@ static const struct whc_mem_region_t rtl8721f_mem_regions[] = {
 };
 
 #ifdef CONFIG_WHC_HCI_SDIO
-#define WHC_FW_1_NAME "RTL8851FS_FW_1.bin"
-#define WHC_FW_2_NAME "RTL8851FS_FW_2.bin"
-#else
-#define WHC_FW_1_NAME "RTL8851FU_FW_1.bin"
-#define WHC_FW_2_NAME "RTL8851FU_FW_2.bin"
-#endif
+#define WHC_FW_1_BASE "RTL8851FS_FW_1"
+#define WHC_FW_2_BASE "RTL8851FS_FW_2"
+#else /* USB */
+#define WHC_FW_1_BASE "RTL8851FU_FW_1"
+#define WHC_FW_2_BASE "RTL8851FU_FW_2"
+#endif /* CONFIG_WHC_HCI_SDIO */
 
-/* Image configuration for RTL8721F */
-static const struct whc_image_t rtl8721f_images[] = {
+#define WHC_FW_1_NAME WHC_FW_1_BASE ".bin"
+#define WHC_FW_2_NAME WHC_FW_2_BASE ".bin"
+#define WHC_FW_1_MP_NAME WHC_FW_1_BASE "_MP.bin"
+#define WHC_FW_2_MP_NAME WHC_FW_2_BASE "_MP.bin"
+
+/* Image configuration for RTL8721F (image_name rewritten to *_MP.bin when mp=1) */
+static struct whc_image_t rtl8721f_images[] = {
 	{WHC_DEFINE_IMAGE(WHC_FW_1_NAME, 0x96969999, 0xFC66CC3F, 0x00000000, 0x00000000, WHC_IMAGE_TYPE_BOOTLOADER, WHC_POST_PROCESS_BOOT)},
 	{WHC_DEFINE_IMAGE(WHC_FW_2_NAME, 0x35393138, 0x31313738, 0x08001000, 0x3007F000, WHC_IMAGE_TYPE_APPLICATION, WHC_POST_PROCESS_BOOT)},
 	{0}  /* Terminator */
 };
 
-/* HAL configuration for RTL8721F */
-static const struct whc_hal_config_t rtl8721f_config = {
+/* HAL configuration for RTL8721F (images selected at runtime by whc_hal_get_config) */
+static struct whc_hal_config_t rtl8721f_config = {
 	/* Chip identification */
 	.chip_id = 0x8721,
 	.chip_name = "RTL8721F",
@@ -83,5 +95,10 @@ static const struct whc_hal_config_t rtl8721f_config = {
  */
 const struct whc_hal_config_t *whc_hal_get_config(void)
 {
+	/* Rewrite image names to MP firmware when the mp module parameter is set */
+	if (mp) {
+		rtl8721f_images[0].image_name = WHC_FW_1_MP_NAME;
+		rtl8721f_images[1].image_name = WHC_FW_2_MP_NAME;
+	}
 	return &rtl8721f_config;
 }

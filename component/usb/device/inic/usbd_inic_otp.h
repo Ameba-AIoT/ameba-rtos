@@ -11,6 +11,10 @@
 
 #include "usbd.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 #define USBD_OTP_MAX_STR_LEN	58U
@@ -43,6 +47,10 @@ typedef struct {
 
 int usbd_otp_init(usbd_otp_t *otp);
 void usbd_otp_deinit(usbd_otp_t *otp);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBD_INIC_OTP_H */
 

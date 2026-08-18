@@ -56,6 +56,7 @@
 #define BT_HCI_ERROR_CONNECTION_FAILED_TO_ESTABLISH             0x3E
 #define BT_HCI_ERROR_UNKNOWN_ADVERTISING_IDENTIFIER             0x42
 #define BT_HCI_ERROR_LIMIT_REACHED                              0x43
+#define BT_HCI_ERROR_OPERATION_CANCELLED_BY_HOST                0x44
 #define BT_HCI_ERROR_PACKET_TOO_LONG                            0x45
 
 
@@ -460,6 +461,97 @@
 #define BIT64(i)   (1ULL << (i))
 #endif
 
+#define BT_LL_FEAT_PAGE0_BYTE0_BR_3_SLOT_PKTS						BIT0
+#define BT_LL_FEAT_PAGE0_BYTE0_BR_5_SLOT_PKTS						BIT1
+#define BT_LL_FEAT_PAGE0_BYTE0_ENCRYPTION							BIT2
+#define BT_LL_FEAT_PAGE0_BYTE0_SLOT_OFFSET							BIT3
+#define BT_LL_FEAT_PAGE0_BYTE0_TIMING_ACCURACY						BIT4
+#define BT_LL_FEAT_PAGE0_BYTE0_ROLE_SWITCH							BIT5
+#define BT_LL_FEAT_PAGE0_BYTE0_HOLD_MODE							BIT6
+#define BT_LL_FEAT_PAGE0_BYTE0_SNIFF_MODE							BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE1_BIT0									BIT0
+#define BT_LL_FEAT_PAGE0_BYTE1_POWER_CTRL_REQ						BIT1
+#define BT_LL_FEAT_PAGE0_BYTE1_CQDDR								BIT2
+#define BT_LL_FEAT_PAGE0_BYTE1_SCO_LINK								BIT3
+#define BT_LL_FEAT_PAGE0_BYTE1_HV2_PKTS								BIT4
+#define BT_LL_FEAT_PAGE0_BYTE1_HV3_PKTS								BIT5
+#define BT_LL_FEAT_PAGE0_BYTE1_U_LAW_SCO_DATA						BIT6
+#define BT_LL_FEAT_PAGE0_BYTE1_A_LAW_SCO_DATA						BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE2_CSVD_SCO_DATA						BIT0
+#define BT_LL_FEAT_PAGE0_BYTE2_POWER_CONTROL						BIT1
+#define BT_LL_FEAT_PAGE0_BYTE2_PAGING_PARM_NEGO						BIT2
+#define BT_LL_FEAT_PAGE0_BYTE2_TRANSPARENT_SCO_DATA					BIT3
+#define BT_LL_FEAT_PAGE0_BYTE2_FLOW_CTRL_LAG_LEAST					BIT4
+#define BT_LL_FEAT_PAGE0_BYTE2_FLOW_CTRL_LAG_MID					BIT5
+#define BT_LL_FEAT_PAGE0_BYTE2_FLOW_CTRL_LAG_MOST					BIT6
+#define BT_LL_FEAT_PAGE0_BYTE2_BC_ENC								BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE3_BIT0									BIT0
+#define BT_LL_FEAT_PAGE0_BYTE3_EDR_2M								BIT1
+#define BT_LL_FEAT_PAGE0_BYTE3_EDR_3M								BIT2
+#define BT_LL_FEAT_PAGE0_BYTE3_ENHANCED_INQUIRY_SCAN				BIT3
+#define BT_LL_FEAT_PAGE0_BYTE3_INTERLACED_INQUIRY_SCAN				BIT4
+#define BT_LL_FEAT_PAGE0_BYTE3_INTERLACED_PAGE_SCAN				 	BIT5
+#define BT_LL_FEAT_PAGE0_BYTE3_INQUIRY_RESULT_WITH_RSSI				BIT6
+#define BT_LL_FEAT_PAGE0_BYTE3_ESCO_LINK						 	BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE4_EV4_PKTS				 				BIT0
+#define BT_LL_FEAT_PAGE0_BYTE4_EV5_PKTS				 				BIT1
+#define BT_LL_FEAT_PAGE0_BYTE4_BIT2				 					BIT2
+#define BT_LL_FEAT_PAGE0_BYTE4_AFH_CAPA_PERI				 		BIT3
+#define BT_LL_FEAT_PAGE0_BYTE4_AFH_CLASSIFICATION_PERI				BIT4
+#define BT_LL_FEAT_PAGE0_BYTE4_NOT_SUPPORT_CLASSIC				 	BIT5
+#define BT_LL_FEAT_PAGE0_BYTE4_LE_SUPPORT				 			BIT6
+#define BT_LL_FEAT_PAGE0_BYTE4_3_SLOT_EDR_ACL_PKT				 	BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE5_5_SLOT_EDR_ACL_PKT				 	BIT0
+#define BT_LL_FEAT_PAGE0_BYTE5_SNIFF_SUBRATING					 	BIT1
+#define BT_LL_FEAT_PAGE0_BYTE5_PAUSE_ENC				 			BIT2
+#define BT_LL_FEAT_PAGE0_BYTE5_AFH_CAPA_CENTRAL				 		BIT3
+#define BT_LL_FEAT_PAGE0_BYTE5_AFH_CLASSIFICATION_CENTRAL			BIT4
+#define BT_LL_FEAT_PAGE0_BYTE5_EDR_SCO_2M				 			BIT5
+#define BT_LL_FEAT_PAGE0_BYTE5_EDR_SCO_3M				 			BIT6
+#define BT_LL_FEAT_PAGE0_BYTE5_3_SLOT_EDR_SCO				 		BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE6_EXTENDED_INQUIRY_RSP				 	BIT0
+#define BT_LL_FEAT_PAGE0_BYTE6_LE_CLASSIC_CONCURRENT				BIT1
+#define BT_LL_FEAT_PAGE0_BYTE6_BIT2				 					BIT2
+#define BT_LL_FEAT_PAGE0_BYTE6_SECURE_SIMPLE_PAIRING				BIT3
+#define BT_LL_FEAT_PAGE0_BYTE6_ENCAPSULATED_PDU				 		BIT4
+#define BT_LL_FEAT_PAGE0_BYTE6_ERR_DATA_REPORTING				 	BIT5
+#define BT_LL_FEAT_PAGE0_BYTE6_NONFLUSHABLE_PKT_BOUNDARY_FLAG		BIT6
+#define BT_LL_FEAT_PAGE0_BYTE6_BIT7				 					BIT7
+
+#define BT_LL_FEAT_PAGE0_BYTE7_SUPERVISION_TIMEOUT_CHANGE_EVT		BIT0
+#define BT_LL_FEAT_PAGE0_BYTE7_VARIABLE_INQUIRY_TX_POWER			BIT1
+#define BT_LL_FEAT_PAGE0_BYTE7_ENHANCED_POWER_CONTROL				BIT2
+#define BT_LL_FEAT_PAGE0_BYTE7_BIT3				 					BIT3
+#define BT_LL_FEAT_PAGE0_BYTE7_BIT4				 					BIT4
+#define BT_LL_FEAT_PAGE0_BYTE7_BIT5				 					BIT5
+#define BT_LL_FEAT_PAGE0_BYTE7_BIT6				 					BIT6
+#define BT_LL_FEAT_PAGE0_BYTE7_EXTENDED_FEATURES				 	BIT7
+
+#define BT_LL_FEAT_PAGE1_BYTE0_SECURE_SIMPLE_PAIRING_HOST			BIT0
+#define BT_LL_FEAT_PAGE1_BYTE0_LE_SUPPORT_HOST				 		BIT1
+#define BT_LL_FEAT_PAGE1_BYTE0_BIT2				 					BIT2
+#define BT_LL_FEAT_PAGE1_BYTE0_SECURE_CONNECTION				 	BIT3
+
+#define BT_LL_FEAT_PAGE2_BYTE0_CPB_TX				 				BIT0
+#define BT_LL_FEAT_PAGE2_BYTE0_CPB_RX				 				BIT1
+#define BT_LL_FEAT_PAGE2_BYTE0_SYNCHRONIZATION_TRAIN				BIT2
+#define BT_LL_FEAT_PAGE2_BYTE0_SYNCHRONIZATION_SCAN					BIT3
+#define BT_LL_FEAT_PAGE2_BYTE0_INQUIRY_RSP_NOTIFY_EVT				BIT4
+#define BT_LL_FEAT_PAGE2_BYTE0_INTERLACED_SCAN						BIT5
+#define BT_LL_FEAT_PAGE2_BYTE0_COARSE_CLK_ADJUSTMENT				BIT6
+#define BT_LL_FEAT_PAGE2_BYTE0_BIT7									BIT7
+
+#define BT_LL_FEAT_PAGE2_BYTE1_SECURE_CONNECTION					BIT0
+#define BT_LL_FEAT_PAGE2_BYTE1_PING									BIT1
+#define BT_LL_FEAT_PAGE2_BYTE1_SAM									BIT2
+#define BT_LL_FEAT_PAGE2_BYTE1_TRAIN_NUDGING						BIT3
+
 #define BT_LL_LE_FEATURE_ENCRYPTION                             BIT64(0)
 #define BT_LL_LE_FEATURE_CONN_PARA_REQ_PROCEDURE                BIT64(1)
 #define BT_LL_LE_FEATURE_EXT_REJECT_IND                         BIT64(2)
@@ -547,7 +639,6 @@ struct bt_hci_cp_read_remote_version_info {
 	uint16_t handle;
 } __attribute__((packed));
 
-
 /* Controller & Baseband commands */
 #define BT_HCI_OP_SET_EVENT_MASK                BT_OP(BT_OGF_BASEBAND, 0x0001) /* 0x0c01 */
 struct bt_hci_cp_set_event_mask {
@@ -555,6 +646,30 @@ struct bt_hci_cp_set_event_mask {
 } __attribute__((packed));
 
 #define BT_HCI_OP_RESET                         BT_OP(BT_OGF_BASEBAND, 0x0003) /* 0x0c03 */
+
+#define BT_HCI_OP_SET_CTL_TO_HOST_FLOW          BT_OP(BT_OGF_BASEBAND, 0x0031) /* 0x0c31 */
+struct bt_hci_cp_set_ctl_to_host_flow {
+	uint8_t  flow_enable;
+} __packed;
+
+#define BT_HCI_OP_HOST_BUFFER_SIZE              BT_OP(BT_OGF_BASEBAND, 0x0033) /* 0x0c33 */
+struct bt_hci_cp_host_buffer_size {
+	uint16_t acl_mtu;
+	uint8_t  sco_mtu;
+	uint16_t acl_pkts;
+	uint16_t sco_pkts;
+} __packed;
+
+struct bt_hci_handle_count {
+	uint16_t handle;
+	uint16_t count;
+} __packed;
+
+#define BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS    BT_OP(BT_OGF_BASEBAND, 0x0035) /* 0x0c35 */
+struct bt_hci_cp_host_num_completed_packets {
+	uint8_t  num_handles;
+	struct bt_hci_handle_count h[0];
+} __packed;
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO       BT_OP(BT_OGF_INFO, 0x0001) /* 0x1001 */
 struct bt_hci_rp_read_local_version_info {
@@ -1188,6 +1303,14 @@ struct bt_hci_cp_le_periodic_adv_terminate_sync {
 	uint16_t sync_handle;
 } __attribute__((packed));
 
+#define BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE       BT_OP(BT_OGF_LE, 0x0059) /* 0x2059 */
+#define BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_ENABLE            BIT(0)
+#define BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_FILTER_DUPLICATE  BIT(1)
+struct bt_hci_cp_le_set_per_adv_recv_enable {
+	uint16_t sync_handle;
+	uint8_t  enable;
+} __attribute__((packed));
+
 /* Periodic Advertiser List management (Core Spec v5.4 Vol 4, Part E, 7.8.68-7.8.71) */
 #define BT_HCI_OP_LE_ADD_PERIODIC_ADV_LIST         BT_OP(BT_OGF_LE, 0x0047) /* 0x2047 */
 #define BT_HCI_OP_LE_REMOVE_PERIODIC_ADV_LIST      BT_OP(BT_OGF_LE, 0x0048) /* 0x2048 */
@@ -1221,19 +1344,19 @@ struct bt_hci_cp_le_set_privacy_mode {
 struct bt_hci_cp_vendor_read_vendor_reg {
 	uint8_t type;
 	uint32_t addr;
-};
+} __attribute__((packed));
 
 struct bt_hci_rp_vendor_read_vendor_reg {
 	uint8_t status;
 	uint32_t rdata;
-};
+} __attribute__((packed));
 
 #define BT_HCI_OP_VENDOR_WRITE_VENDOR_REG           BT_OP(BT_OGF_VENDOR, 0x62) /*0xFC62*/
 struct bt_hci_cp_vendor_write_vendor_reg {
 	uint8_t type;
 	uint32_t addr;
 	uint8_t wdata[0];
-};
+} __attribute__((packed));
 
 #define BT_HCI_OP_VENDOR_GET_ECO_VERSION           BT_OP(BT_OGF_VENDOR, 0x6D) /*0xFC6D*/
 struct bt_hci_rp_vendor_get_eco_version {
@@ -1417,7 +1540,7 @@ struct bt_hci_rp_vendor_mp_packet_tx_report {
 	uint8_t module_id;
 	uint8_t subcmd;
 	uint32_t total_tx_packet;
-};
+} __attribute__((packed));
 
 struct bt_hci_rp_vendor_mp_packet_rx_report {
 	uint8_t status;
@@ -1429,7 +1552,7 @@ struct bt_hci_rp_vendor_mp_packet_rx_report {
 	uint16_t ber;
 	uint16_t cfo;
 	uint8_t rx_rssi;
-};
+} __attribute__((packed));
 
 struct bt_hci_rp_vendor_mp_phy_version {
 	uint8_t status;
@@ -1529,7 +1652,7 @@ struct bt_hci_rp_vendor_mp_zigbee_phy_rx_06 {
 	uint8_t module_id;
 	uint8_t subcmd;
 	uint8_t ed_scan_state;
-	int8_t ed_value;
+	uint8_t ed_value;
 };
 
 struct bt_hci_rp_vendor_mp_zigbee_phy_rx_08 {
@@ -1644,11 +1767,6 @@ struct bt_hci_evt_cmd_status {
 	uint8_t  status;
 	uint8_t  ncmd;
 	uint16_t opcode;
-} __attribute__((packed));
-
-struct bt_hci_handle_count {
-	uint16_t handle;
-	uint16_t count;
 } __attribute__((packed));
 
 #define BT_HCI_EVT_NUM_COMPLETED_PACKETS        0x13
@@ -1780,6 +1898,10 @@ struct bt_hci_evt_le_phy_update_complete {
 
 /* LE Periodic Advertising HCI Events */
 #define BT_HCI_EVT_LE_PA_SYNC_ESTABLISHED       0x0E
+
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST               BIT(0)
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED       BIT(1)
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE       BIT(2)
 struct bt_hci_evt_le_pa_sync_established {
 	uint8_t  subevent;
 	uint8_t  status;
@@ -1792,10 +1914,12 @@ struct bt_hci_evt_le_pa_sync_established {
 } __attribute__((packed));
 
 #define BT_HCI_EVT_LE_PA_REPORT                 0x0F
+#define BT_HCI_LE_ADV_EVT_CTE_TYPE_NONE         0xFF
+#define BT_HCI_PA_REPORT_DATA_MAX_SIZE    		247U
 struct bt_hci_evt_le_pa_report {
 	uint8_t  subevent;
 	uint16_t sync_handle;
-	uint8_t  tx_power;
+	int8_t   tx_power;
 	int8_t   rssi;
 	uint8_t  cte_type;
 	uint8_t  data_status;
@@ -1846,6 +1970,7 @@ struct bt_hci_evt_le_adv_set_terminated {
 #define BT_HCI_LE_ADV_EVT_PHY_CODED_S2          0x04
 
 #define BT_HCI_LE_ADV_TX_POWER_NO_PREF          0x7F
+#define BT_HCI_EXT_ADV_REPORT_DATA_MAX_SIZE     229U
 
 struct bt_hci_evt_le_ext_advertising_info {
 	uint16_t     evt_type;

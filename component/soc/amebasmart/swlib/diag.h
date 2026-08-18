@@ -20,6 +20,7 @@ u32 DiagPrintf(const char *fmt, ...);
 u32 DiagPrintfD(const char *fmt, ...);
 int DiagVprintf(const char *fmt, va_list ap);
 int DiagVSprintf(char *buf, const char *fmt, va_list ap);
+int DiagVSNprintf(char *buf, size_t maxlen, const char *fmt, va_list ap);
 u32 DiagSPrintf(u8 *buf, const char *fmt, ...);
 int DiagSnPrintf(char *buf, size_t size, const char *fmt, ...);
 u32 DiagPrintfNano(const char *fmt, ...);

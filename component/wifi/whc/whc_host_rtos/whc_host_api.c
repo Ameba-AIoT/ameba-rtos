@@ -38,16 +38,12 @@ const struct event_func_t host_api_handlers[] = {
 	{WHC_API_SCAN_USER_CALLBACK,	whc_host_api_scan_user_callback_handler},
 	{WHC_API_SCAN_EACH_REPORT_USER_CALLBACK,	whc_host_api_scan_each_report_callback_handler},
 	{WHC_API_WIFI_EVENT,	whc_host_api_wifi_event_handler},
-	{WHC_API_GET_LWIP_INFO,	whc_host_api_lwip_info_handler},
 	{WHC_API_SET_NETIF_INFO,	whc_host_api_set_netif_info_handler},
-	{WHC_API_IP_TABLE_CHK, whc_host_api_ip_table_chk},
 	{WHC_API_AP_CH_SWITCH, whc_host_api_ap_ch_switch},
 };
 
 void whc_host_api_scan_user_callback_handler(u32 api_id, u32 *param_buf)
 {
-	int ret = 0;
-
 	unsigned int ap_num = param_buf[0];
 	void *user_data = (void *)param_buf[1];
 
@@ -78,13 +74,10 @@ void whc_host_api_scan_user_callback_handler(u32 api_id, u32 *param_buf)
 	if (scan_abort_block_param) {
 		rtos_sema_give(scan_abort_block_param->sema);
 	}
-
-	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
 void whc_host_api_scan_each_report_callback_handler(u32 api_id, u32 *param_buf)
 {
-	int ret = 0;
 	struct rtw_scan_result *scanned_ap_info = (struct rtw_scan_result *)param_buf[0];
 	void *user_data = (void *)param_buf[1];
 	u8 *ies = (u8 *)param_buf[2];
@@ -93,94 +86,33 @@ void whc_host_api_scan_each_report_callback_handler(u32 api_id, u32 *param_buf)
 	if (scan_each_report_user_callback_ptr) {
 		scan_each_report_user_callback_ptr(scanned_ap_info, user_data, ies, ie_len);
 	}
-
-	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
 void whc_host_api_wifi_event_handler(u32 api_id, u32 *param_buf)
 {
-	int ret = 0;
 	u32 event = (u32)param_buf[0];
 	s32 evt_len = (s32)param_buf[1];
 	u8 *evt_info = (u8 *)(&param_buf[2]);
 
 	wifi_indication(event, evt_info, evt_len);
-
-	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
-
-void whc_host_api_lwip_info_handler(u32 api_id, u32 *param_buf)
-{
-	int ret;
-	u32 addr = 0;
-	u8 buf[DEV_REQ_NETWORK_INFO_MAX_LEN] = {0};
-
-	u32 type = (u32)param_buf[0];
-	u32 index = (u32)param_buf[1];
-	int res_size = 4;
-	unsigned char *input = (unsigned char *)param_buf[2];
-	switch (type) {
-	case WHC_WLAN_GET_IP:
-		addr = (u32)lwip_get_ip(index);
-		break;
-	case WHC_WLAN_GET_GW:
-		addr = (u32)lwip_get_gw(index);
-		break;
-	case WHC_WLAN_GET_GWMSK:
-		addr = (u32)lwip_get_mask(index);
-		break;
-	case WHC_WLAN_GET_HW_ADDR:
-		addr = (u32)lwip_get_mac(index);
-		res_size = 6;
-		break;
-	case WHC_WLAN_IS_VALID_IP:
-		ret = lwip_is_valid_ip(index, input);
-		break;
-	case WHC_WLAN_GET_IPV6_ENABLED:
-		ret = lwip_get_ipv6_enabled();
-		break;
-	}
-	if (addr != 0) {
-		memcpy((void *)buf, (void *)addr, res_size);
-		whc_host_api_send_ret_value(api_id, (u8 *)buf, res_size);
-	} else {
-		whc_host_api_send_ret_value(api_id, (u8 *)(&ret), sizeof(ret));
-	}
 }
 
 void whc_host_api_set_netif_info_handler(u32 api_id, u32 *param_buf)
 {
-	int ret = 0;
-
 	int idx = (u32)param_buf[0];
 	unsigned char *dev_addr = (unsigned char *)(&param_buf[1]);
 
 	lwip_wlan_set_netif_info(idx, NULL, dev_addr);
-	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
-
-void whc_host_api_ip_table_chk(u32 api_id, u32 *param_buf)
-{
-	int ret = 0;
-
-	u8 gate = (u8)param_buf[0];
-	u8 ip = (u8)param_buf[1];
-
-	ret = dhcps_ip_in_table_check(pnetif_ap, gate, ip);
-	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
 void whc_host_api_ap_ch_switch(u32 api_id, u32 *param_buf)
 {
-	int ret = 0;
 	unsigned char channel = (unsigned char)param_buf[0];
 	s8 res = (s8)param_buf[1];
 
 	if (p_ap_channel_switch_callback) {
 		p_ap_channel_switch_callback(channel, res);
 	}
-
-	whc_host_api_send_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
 int whc_host_api_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg)
@@ -270,32 +202,6 @@ exit:
 	return;
 }
 
-
-void whc_host_api_send_ret_value(u32 api_id, u8 *pbuf, u32 len)
-{
-	u8 *buf = NULL;
-	struct whc_api_info *ret_msg;
-
-	buf = rtos_mem_zmalloc(sizeof(struct whc_api_info) + len + DEV_DMA_ALIGN);
-	if (!buf) {
-		return;
-	}
-	ret_msg = (struct whc_api_info *)N_BYTE_ALIGMENT((u32)buf, DEV_DMA_ALIGN);
-
-	/* notify NP that event is finished */
-	ret_msg->event = WHC_WIFI_EVT_API_RETURN;
-	ret_msg->api_id = api_id;
-
-	memcpy((void *)(ret_msg + 1), pbuf, len);
-
-	whc_host_send_data((u8 *)ret_msg, sizeof(struct whc_api_info) + len, buf, 0);
-#ifdef CONFIG_WHC_INTF_SDIO
-	rtos_mem_free(buf);
-#endif
-
-	RTK_LOGD(TAG_WLAN_INIC, "Host API %x return\n", api_id);
-}
-
 void whc_host_api_init(void)
 {
 	rtos_sema_create(&(event_priv.task_wake_sema), 0, 0xFFFFFFFF);
@@ -319,7 +225,6 @@ void whc_host_api_task(void)
 	u32 *param_buf;
 	void (*api_hdl)(u32 api_id, u32 * param_buf);
 	u32 i = 0;
-	int ret = RTK_FAIL;
 
 	do {
 		rtos_sema_take(event_priv.task_wake_sema, 0xFFFFFFFF);
@@ -342,7 +247,6 @@ void whc_host_api_task(void)
 			api_hdl(p_recv_msg->api_id, param_buf);
 		} else {
 			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host Unknown API(%x)\n", p_recv_msg->api_id);
-			whc_host_api_send_ret_value(p_recv_msg->api_id, (u8 *)&ret, sizeof(ret));
 		}
 
 		RTK_LOGD(TAG_WLAN_INIC, "Host CALL API(%x) done\n", p_recv_msg->api_id);

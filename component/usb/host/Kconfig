@@ -2,6 +2,13 @@ config USBH_CDC_ACM_MENU
     bool "CDC ACM"
     select USBH_CDC_ACM if WHC_HOST || WHC_NONE
 
+    if USBH_CDC_ACM_MENU
+        config USBH_CDC_ACM_4G_DONGLE_MENU
+            bool "4G LTE dongle support"
+            default n
+            select USBH_CDC_ACM_4G_DONGLE if WHC_HOST || WHC_NONE
+    endif
+
 config USBH_CDC_ECM_MENU
     bool "CDC ECM"
     depends on SUPPORT_USBH_ECM || SUPPORT_USBH_ECM_BRIDGE
@@ -36,33 +43,6 @@ config USBH_CDC_NCM_MENU
             default n
     endif
 
-config USBH_COMPOSITE_MENU
-    bool "Composite"
-    select USBH_COMPOSITE if WHC_HOST || WHC_NONE
-    if USBH_COMPOSITE_MENU
-        choice
-            prompt "Select Composite Class"
-            config USBH_COMPOSITE_HID_UAC_MENU
-                bool "HID + UAC"
-                depends on SUPPORT_USBH_UAC
-                select USB_UAC if WHC_HOST || WHC_NONE
-                select USBH_COMPOSITE_HID_UAC if WHC_HOST || WHC_NONE
-                select AUDIO_FWK_MENU if SUPPORT_AUDIO_FOR_USB
-                choice
-                    prompt "Select UAC Version"
-                    depends on USBH_COMPOSITE_HID_UAC_MENU
-                    config USBH_COMPOSITE_HID_UAC1_MENU
-                        bool "UAC 1.0"
-                        select USBH_COMPOSITE_HID_UAC1 if WHC_HOST || WHC_NONE
-                endchoice
-            config USBH_COMPOSITE_ACM_ECM_MENU
-                bool "ACM + ECM"
-                select USBH_COMPOSITE_ACM_ECM if WHC_HOST || WHC_NONE
-                select USB_ETHERNET_PROVIDER
-                select USBH_ECM_ETHERNET if WHC_HOST || WHC_NONE
-        endchoice
-    endif
-
 config USBH_MSC_MENU
     bool "MSC"
     select USBH_MSC if WHC_HOST || WHC_NONE
@@ -72,6 +52,11 @@ config USBH_UAC_MENU
     bool "UAC"
     select USB_UAC  if WHC_HOST || WHC_NONE
     select USBH_UAC  if WHC_HOST || WHC_NONE
+    select AUDIO_FWK_MENU if SUPPORT_AUDIO_FOR_USB
+
+config USBH_HID_MENU
+    bool "HID"
+    select USBH_HID if WHC_HOST || WHC_NONE
 
 config USBH_UVC_MENU
     bool "UVC"

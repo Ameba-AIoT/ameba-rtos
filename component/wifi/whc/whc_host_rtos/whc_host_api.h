@@ -12,7 +12,6 @@
 
 /* -------------------------------- Includes -------------------------------- */
 void whc_host_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len);
-void whc_host_api_send_ret_value(u32 api_id, u8 *pbuf, u32 len);
 
 void whc_host_api_scan_user_callback_handler(u32 api_id, u32 *param_buf);
 void whc_host_api_scan_each_report_callback_handler(u32 api_id, u32 *param_buf);
@@ -25,5 +24,6 @@ void whc_host_api_ap_ch_switch(u32 api_id, u32 *param_buf);
 int whc_host_api_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg);
 void whc_host_api_task(void);
 void whc_host_api_init(void);
+void whc_host_netinfo_monitor_init(void);
 
 #endif /* __WHC_HOST_API_H__ */

@@ -15,7 +15,8 @@
 #define UART_BAUD	38400
 #define UART_BUF_SIZE	1000
 
-u8 buffer[UART_BUF_SIZE];
+static u8 s_tx_buf[UART_BUF_SIZE];
+static u8 s_rx_buf[UART_BUF_SIZE];
 
 UART_InitTypeDef  UART_InitStruct;
 
@@ -74,11 +75,85 @@ u32 uart_get_idx(UART_TypeDef *UartDEV)
 	return 0xFF;
 }
 
+void uart_tx_task(void *param)
+{
+	u32 i;
+	(void)param;
+
+	RTK_LOGI(NOTAG, "UART TX task started\n");
+
+	for (i = 0; i < UART_BUF_SIZE; i++) {
+		s_tx_buf[i] = 0x30 + (i % 10);
+	}
+
+	/* extra sync: peer may still be in sync loop */
+	rtos_time_delay_ms(100);
+	UART_CharPut(UART_DEV, 0xFF);
+	rtos_time_delay_ms(200);
+	UART_CharPut(UART_DEV, 0xFF);
+	rtos_time_delay_ms(200);
+
+	RTK_LOGI(NOTAG, "UART TX data send start\n");
+
+	for (i = 0; i < UART_BUF_SIZE; i++) {
+		while (!UART_Writable(UART_DEV)) {
+			rtos_time_delay_ms(1); /* yield to let lower-priority RX drain FIFO (prevents deadlock) */
+		}
+		UART_CharPut(UART_DEV, s_tx_buf[i]);
+		if ((i & 0xFF) == 0) {
+			/* busy-wait to starve lower-priority RX task, triggering flow control */
+			DelayMs(80);
+			rtos_time_delay_ms(20);
+			RTK_LOGI(NOTAG, "UART TX sent %d bytes\n", i);
+		}
+	}
+
+	RTK_LOGI(NOTAG, "UART TX task done\n");
+	while (1) {
+		rtos_time_delay_ms(1000);
+	}
+}
+
+void uart_rx_task(void *param)
+{
+	u32 rx_count = 0, errors = 0, i;
+	(void)param;
+
+	RTK_LOGI(NOTAG, "UART RX task started\n");
+
+	while (rx_count < UART_BUF_SIZE) {
+		if (UART_Readable(UART_DEV)) {
+			u8 b;
+			UART_CharGet(UART_DEV, &b);
+			if (b == 0xFF) {
+				continue;
+			}
+			s_rx_buf[rx_count++] = b;
+		} else {
+			rtos_time_delay_ms(1);
+		}
+	}
+
+	for (i = 0; i < UART_BUF_SIZE; i++) {
+		if (s_rx_buf[i] != (0x30 + (i % 10))) {
+			errors++;
+		}
+	}
+
+	if (errors) {
+		RTK_LOGE(NOTAG, "UART RX done: %d / %d bytes mismatch\n", errors, UART_BUF_SIZE);
+	} else {
+		RTK_LOGI(NOTAG, "UART RX done: all %d bytes match\n", UART_BUF_SIZE);
+	}
+
+	while (1) {
+		rtos_time_delay_ms(1000);
+	}
+}
+
 void uart_auto_flow_ctrl_demo(void)
 {
-	u8 rc;
-	u32 i, j;
-	u32 rx_side = 0;
+	u32 i, retries = 0, sync_count = 0;
 	u32 uart_idx = uart_get_idx(UART_DEV);
 
 	if (0xFF == uart_idx) {
@@ -112,21 +187,6 @@ void uart_auto_flow_ctrl_demo(void)
 	UART_Init(UART_DEV, &UART_InitStruct);
 	UART_SetBaud(UART_DEV, UART_BAUD);
 	UART_RxCmd(UART_DEV, ENABLE);
-
-	for (i = 0; i < 128; i++) {
-		RTK_LOGI(NOTAG, "Wait peer ready...\n");
-		UART_CharPut(UART_DEV, i + 1);
-		if (UART_Readable(UART_DEV)) {
-			UART_CharGet(UART_DEV, &rc);
-			if (rc > i) {
-				rx_side = 1;
-			} else {
-				rx_side = 0;
-			}
-			break;
-		}
-		DelayMs(100);
-	}
 	UART_ClearRxFifo(UART_DEV);
 
 #if defined (CONFIG_AMEBASMART)
@@ -142,60 +202,67 @@ void uart_auto_flow_ctrl_demo(void)
 	/* enable auto flow control */
 	UART_DEV->MCR |= RUART_MCL_FLOW_ENABLE;
 
-	if (rx_side) {
-		RTK_LOGI(NOTAG, "UART Flow Control: RX ==>\n");
-		_memset(buffer, 0, UART_BUF_SIZE);
-		i = 0;
-		j = 0;
-		while (1) {
+	/* sync handshake: send 0xFF until we hear 2 from the peer */
+	RTK_LOGI(NOTAG, "UART sync start\n");
+
+	while (1) {
+		UART_CharPut(UART_DEV, 0xFF);
+		rtos_time_delay_ms(200);
+		if (sync_count >= 2) {
+			break;
+		}
+		/* poll for incoming sync bytes during wait */
+		for (i = 0; i < 20; i++) {
 			if (UART_Readable(UART_DEV)) {
-				UART_CharGet(UART_DEV, buffer + i);
-				i++;
-				if (i == UART_BUF_SIZE) {
-					break;
-				}
-				if ((i & 0xF) == 0) {
-					// Make some delay to cause the RX FIFO full and then trigger flow controll
-					DelayMs(100);
-					RTK_LOGI(NOTAG, "UART RX got %d bytes\n", i);
-				}
-				j = 0;
-			} else {
-				DelayMs(10);
-				j++;
-				if (j == 1000) {
-					RTK_LOGE(NOTAG, "UART RX Failed, Got %d bytes\n", i);
-					break;
+				u8 b;
+				UART_CharGet(UART_DEV, &b);
+				if (b == 0xFF) {
+					sync_count++;
+					if (sync_count >= 2) {
+						break;
+					}
 				}
 			}
+			rtos_time_delay_ms(10);
 		}
-
-	} else {
-		RTK_LOGI(NOTAG, "UART Flow Control: TX ==>\n");
-		DelayMs(400);
-		/*send large number to make peer device be rx side */
-		UART_CharPut(UART_DEV, 0xFF);
-		DelayMs(100);
-
-		for (i = 0; i < UART_BUF_SIZE; i++) {
-			buffer[i] = 0x30 + (i % 10);
+		if (sync_count >= 2) {
+			break;
 		}
-
-		for (i = 0; i < UART_BUF_SIZE; i++) {
-			while (!UART_Writable(UART_DEV));
-			UART_CharPut(UART_DEV, buffer[i]);
+		retries++;
+		if (retries > 100) {
+			RTK_LOGE(NOTAG, "UART sync timeout\n");
+			while (1);
+		}
+		if ((retries % 5) == 0) {
+			RTK_LOGI(NOTAG, "UART sync retry %d\n", retries);
 		}
 	}
 
-	RTK_LOGI(NOTAG, "UART Flow Control Test Done!\n");
-	while (1);
+	RTK_LOGI(NOTAG, "UART sync OK\n");
+
+	RTK_LOGI(NOTAG, "UART creating TX (pri 2) and RX (pri 1) tasks\n");
+
+	if (RTK_SUCCESS != rtos_task_create(NULL, "uart_tx_task",
+										(rtos_task_t)uart_tx_task, NULL,
+										1024 * 4, 2)) {
+		RTK_LOGE(NOTAG, "create tx failed\n");
+	}
+	if (RTK_SUCCESS != rtos_task_create(NULL, "uart_rx_task",
+										(rtos_task_t)uart_rx_task, NULL,
+										1024 * 4, 1)) {
+		RTK_LOGE(NOTAG, "create rx failed\n");
+	}
+
+	while (1) {
+		rtos_time_delay_ms(1000);
+	}
 }
 
 int example_raw_uart_polling_auto_flow_ctrl(void)
 {
 	if (rtos_task_create(NULL, ((const char *)"uart_auto_flow_ctrl_demo"), (rtos_task_t)uart_auto_flow_ctrl_demo, NULL, 1024 * 4,
 						 1) != RTK_SUCCESS) {
-		RTK_LOGE(NOTAG, "%s rtos_task_create(uart_auto_flow_ctrl_demo) failed\n", __FUNCTION__);
+		RTK_LOGE(NOTAG, "%s Create uart_auto_flow_ctrl_demo task failed\n", __FUNCTION__);
 	}
 
 	return 0;

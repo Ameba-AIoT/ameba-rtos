@@ -166,19 +166,27 @@ function download_update_prebuilts
     fi
     if [ ! -f "$PREBUILTS_ZIP_FILE" ]; then
         echo "download.... "
-        curl -fL# -o "$PREBUILTS_ZIP_FILE" "$DOWNLOAD_URL"
+
+        # Set USE_SECOND_SOURCE=True to skip the primary mirror and download
+        # directly from the second source (e.g. GitHub Releases).
+        if [ "${USE_SECOND_SOURCE}" = "True" ]; then
+            echo "USE_SECOND_SOURCE=True, downloading from $DOWNLOAD_URL_SECOND_SOURCE"
+            curl -fL# -o "$PREBUILTS_ZIP_FILE" "$DOWNLOAD_URL_SECOND_SOURCE"
+        else
+            curl -fL# -o "$PREBUILTS_ZIP_FILE" "$DOWNLOAD_URL"
+            if [ $? -ne 0 ]; then
+                rm -f "$PREBUILTS_ZIP_FILE"
+                echo "Try to download from $DOWNLOAD_URL_SECOND_SOURCE"
+                curl -fL# -o "$PREBUILTS_ZIP_FILE" "$DOWNLOAD_URL_SECOND_SOURCE"
+            fi
+        fi
 
         if [ $? -ne 0 ]; then
             rm -f "$PREBUILTS_ZIP_FILE"
-            echo "Try to download from $DOWNLOAD_URL_SECOND_SOURCE"
-            curl -fL# -o "$PREBUILTS_ZIP_FILE" "$DOWNLOAD_URL_SECOND_SOURCE"
-            if [ $? -ne 0 ]; then
-                rm -f "$PREBUILTS_ZIP_FILE"
-                echo "Download failed. Please check your network, or download manually from:"
-                echo "  $DOWNLOAD_URL"
-                echo "  $DOWNLOAD_URL_SECOND_SOURCE"
-                return 1
-            fi
+            echo "Download failed. Please check your network, or download manually from:"
+            echo "  $DOWNLOAD_URL"
+            echo "  $DOWNLOAD_URL_SECOND_SOURCE"
+            return 1
         fi
     fi
 
@@ -262,35 +270,25 @@ if [ "$(uname)" = "Linux" ] || [ "$(uname)" = "Darwin" ]; then
 
     # 3. Find scripts and batch set execute permission (fast)
     # Limit search to max 4 levels, process in parallel based on CPU cores
+    # Note: avoid xargs -I{} on macOS — BSD xargs limits constructed args to 255 chars.
+    # Also avoid -r (GNU-only flag not available on macOS BSD xargs).
     for base in "${SCAN_DIRS[@]}"; do
         for pattern in "${FILE_PATTERNS[@]}"; do
             find "$base" -maxdepth 5 -type f -name "$pattern" -print0
         done
     done \
-    | xargs -0 -r -P "$NPROC" -I{} bash -c '
-        file="$1"
-        if [ ! -x "$file" ]; then
-            chmod +x "{}" 2>/dev/null
-            if [ $? -ne 0 ]; then
-                echo "[WARNING] Failed to add execute permission to binary: $file. Please check permissions or ownership." >&2
-            fi
-        fi '
+    | xargs -0 chmod +x 2>/dev/null || true
 
     # 4. Fix execute permission for binaries without extensions under PREBUILTS_DIR
     if [ -d "$PREBUILTS_DIR" ]; then
         find "$PREBUILTS_DIR" -type f ! -name "*.*" -print0 \
-        | xargs -0 -r -P "$NPROC" bash -c '
-            file="$1"
-            if file "$file" | grep -q 'executable'; then
-                if [ ! -x "$file" ]; then
-                    if [ ! -x "$file" ]; then
-                        chmod +x "$file" 2>/dev/null
-                        if [ $? -ne 0 ]; then
-                            echo "[WARNING] Failed to add execute permission to binary: $file. Please check permissions or ownership." >&2
-                        fi
-                    fi
-                fi
-            fi '
+        | xargs -0 -P "$NPROC" sh -c '
+            for f; do
+                file "$f" 2>/dev/null | grep -q "executable" || continue
+                [ ! -x "$f" ] || continue
+                chmod +x "$f" 2>/dev/null || \
+                    echo "[WARNING] Failed to add execute permission to binary: $f. Please check permissions or ownership." >&2
+            done' _
     else
         echo "[WARNING] PREBUILTS_DIR not found: $PREBUILTS_DIR" >&2
     fi

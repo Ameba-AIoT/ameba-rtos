@@ -177,14 +177,6 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 		}
 	}
 
-	/* ameba start dhcp in atcmd, check where start dhcp when connect success in no ameba ic */
-#if defined(TODO) && defined(CONFIG_LWIP_LAYER)
-	if (result == RTK_SUCCESS) {
-		/* Start DHCPClient */
-		lwip_request_ip(NETIF_WLAN_STA_INDEX);
-	}
-#endif
-
 error:
 	if (param_buf) {
 		rtos_mem_free((u8 *)param_buf);

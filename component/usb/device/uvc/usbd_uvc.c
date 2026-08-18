@@ -163,7 +163,7 @@ static int
 usbd_uvc_video_encode_data(usbd_uvc_video_t *video, usbd_uvc_buffer_t *buf, u8 *data, int len)
 {
 	u32 nbytes;
-	void *mem;
+	const void *mem;
 
 	/* Copy video data to the USB buffer. */
 	mem = buf->mem + video->buf_used;

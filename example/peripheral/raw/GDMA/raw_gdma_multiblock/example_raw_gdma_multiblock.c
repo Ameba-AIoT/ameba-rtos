@@ -23,7 +23,10 @@ enum {
 	MAXGdmaTestMode
 };
 
-static u8 	GdmaType = ReloadDst;
+#ifndef GDMA_TYPE
+#define GDMA_TYPE ReloadDst  /* ReloadDst default */
+#endif
+static u8 	GdmaType = GDMA_TYPE;
 static u32 	Gdma_BlockLen = 0;
 
 struct gdma_s {

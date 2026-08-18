@@ -1,9 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Realtek wireless local area network IC driver.
+ *
+ * Copyright(c) 2024 Realtek Corporation. All rights reserved.
+ */
 #include <whc_host_linux.h>
 #include <linux/spi/spi.h>
 #include <linux/of_gpio.h>
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>
 #include "whc_usb_host.h"
+#include "whc_host_log_fwd.h"
 
 
 #define RTK_USB_VID							0x0BDA
@@ -110,7 +117,7 @@ static int whc_usb_host_trx_resource_init(struct list_head *q, int qsize, int pr
 		}
 
 		if (pre_submit) {
-			skb = dev_alloc_skb(RTW_USB_MAX_SKB_SIZE);
+			skb = dev_alloc_skb(WHC_USB_RX_MAX_BUF_SIZE);
 			if (!skb) {
 				goto qinit_fail;
 			}
@@ -122,7 +129,7 @@ static int whc_usb_host_trx_resource_init(struct list_head *q, int qsize, int pr
 
 		if (pre_submit) {
 			usb_fill_bulk_urb(req->urb, priv->usb_dev, priv->rx_pipe,
-							  skb->data, RTW_USB_MAX_SKB_SIZE, whc_usb_host_rx_complete, req);
+							  skb->data, WHC_USB_RX_MAX_BUF_SIZE, whc_usb_host_rx_complete, req);
 
 			ret = usb_submit_urb(req->urb, GFP_ATOMIC);
 			if (ret) {
@@ -300,15 +307,10 @@ static int whc_usb_host_suspend(struct usb_interface *intf, pm_message_t message
 	struct whc_usb *priv = &whc_usb_host_priv;
 	struct rtw_usbreq *req, *next;
 
-#if defined(CONFIG_WHC_WIFI_API_PATH)
-	/* staion mode */
-	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_SUCCESS) {
-		/* update ip address success */
-		if (whc_host_update_ip_addr()) {
-			return -EPERM;
-		}
+	/* disable log fwd before killing RX URBs; otherwise device wakes host via usbd_wake_host() */
+	if (whc_host_log_forward_pause()) {
+		return -EAGAIN;
 	}
-#endif
 
 	/* set wowlan_state, stop schedule rx/tx work */
 	global_idev.wowlan_state = 1;
@@ -331,6 +333,7 @@ static int whc_usb_host_suspend(struct usb_interface *intf, pm_message_t message
 	return 0;
 
 FAIL:
+	(void)whc_host_log_forward_resume();
 	netif_tx_start_all_queues(global_idev.pndev[0]);
 	netif_tx_wake_all_queues(global_idev.pndev[0]);
 	global_idev.wowlan_state = 0;
@@ -351,7 +354,7 @@ static int whc_usb_host_resume(struct usb_interface *intf)
 
 		skb = req->skb;
 		usb_fill_bulk_urb(req->urb, priv->usb_dev, priv->rx_pipe,
-						  skb->data, RTW_USB_MAX_SKB_SIZE, whc_usb_host_rx_complete, req);
+						  skb->data, WHC_USB_RX_MAX_BUF_SIZE, whc_usb_host_rx_complete, req);
 
 		ret = usb_submit_urb(req->urb, GFP_ATOMIC);
 		if (ret) {
@@ -363,6 +366,8 @@ static int whc_usb_host_resume(struct usb_interface *intf)
 	netif_tx_wake_all_queues(global_idev.pndev[0]);
 
 	global_idev.wowlan_state = 0;
+
+	(void)whc_host_log_forward_resume();
 
 	return 0;
 }

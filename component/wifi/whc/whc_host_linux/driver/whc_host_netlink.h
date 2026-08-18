@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #ifndef __WHC_HOST_NETLINK_H__
 #define __WHC_HOST_NETLINK_H__
 
@@ -31,6 +32,7 @@ enum whc_cmd_api_id {
 	API_WIFI_MP,
 	API_WIFI_DBG,
 	API_WIFI_GET_JOIN_EVENT,
+	API_WIFI_LOG_FWD,	/* kernel handles logon/logoff; blocks until device ACKs */
 };
 
 enum whc_cmd_type {
@@ -49,6 +51,7 @@ enum whc_attr_type {
 	WHC_ATTR_PAYLOAD,
 	WHC_ATTR_CHUNK_INDEX,
 	WHC_ATTR_LAST_CHUNK,
+	WHC_ATTR_LOG_ENABLE,	/* 1B bool: 1 = on, 0 = off */
 	WHC_ATTR_AFTER_LAST,
 	NUM_WHC_ATTR = WHC_ATTR_AFTER_LAST,
 	WHC_ATTR_MAX = WHC_ATTR_AFTER_LAST - 1,

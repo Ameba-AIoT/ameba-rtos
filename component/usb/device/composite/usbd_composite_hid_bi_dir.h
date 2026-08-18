@@ -12,6 +12,10 @@
 #include "usbd.h"
 #include "usbd_composite_config.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 #define COMP_HID_BUF_MAX_CNT                           10
@@ -156,4 +160,9 @@ u32 usbd_composite_hid_get_read_buf_cnt(void);
   * @retval 1 if the ring buf is full, else 0
  */
 u32 usbd_composite_hid_ring_buf_is_full(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* USBD_COMPOSITE_HID_BI_DIR_H */

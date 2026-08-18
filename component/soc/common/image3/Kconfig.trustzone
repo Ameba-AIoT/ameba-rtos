@@ -17,6 +17,24 @@ if TRUSTZONE
         help
             Enable MbedTLS library in TrustZone secure image (Image3).
             When enabled, CONFIG_TZ_S_SIZE default will be increased to 128K.
+
+    config IMG3_RSA_CLIENT_SERVICE
+        bool "Include RSA client key service in Image3"
+        depends on TRUSTZONE_MBEDTLS
+        default n
+        help
+            Compile secure_client_service.c into image3.
+            Required only by the rdp_mutual_auth_rsa example (RSA-2048 mTLS client).
+            Leave disabled for all other examples to keep image3 smaller.
+
+    config IMG3_ECDSA_CLIENT_SERVICE
+        bool "Include ECDSA client key service in Image3"
+        depends on TRUSTZONE_MBEDTLS
+        default n
+        help
+            Compile secure_ecdsa_client_service.c into image3.
+            Required only by the rdp_mutual_auth_ecdsa example (ECDSA P-256 mTLS client).
+            Leave disabled for all other examples to keep image3 smaller.
 endif
 
 endmenu

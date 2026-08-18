@@ -2,7 +2,9 @@
 
 # Example Description
 
-This example describes how to UART auto-flow-control function.
+UART auto-flow-control (RTS/CTS) demo with **polling RX** and **dual tasks** (TX pri 2 / RX pri 1).
+
+Both boards run **identical firmware**. Each board simultaneously sends and receives 1000 bytes over UART at 38400 baud. Hardware flow control (RTS/CTS) protects against FIFO overflow when the lower-priority RX task is starved by the higher-priority TX task.
 
 # HW Configuration
 
@@ -48,15 +50,17 @@ By default, `UART0` is used to transmit or receive `1000` data to or from anothe
    For more info of UART pins, refer to pinmux spec.
 3. `UART_BUF_SIZE` can be modified to set desired data number.
 4. `FifoLv1Byte` can be modified to `0 ~ 3`, which represents different rx fifo trigger level, refer to function serial_rx_fifo_level() for more info.
-5. Build and Download:
+5. Build and Download: both boards use the same firmware
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
 # Expected Result
 
-1. The first powered board will be `the TX side`, and the other one will be `the RX side`.
-2. The RX side will make some delay every 16-byte data received, by this way the flow control mechanism is triggered.
-3. After transmit-receive is completed, responding end log will be printed out.
+1. Each board creates TX task (pri 2) and RX task (pri 1).
+2. After 0xFF sync handshake, TX sends 1000 bytes with a busy-wait every 256 bytes to starve RX.
+3. RX polls incoming data using `serial_readable()`. During TX busy-wait, RX is starved and the FIFO fills up → hardware deasserts RTS → peer pauses.
+4. When TX yields (`rtos_time_delay_ms`), RX drains the FIFO, flow control recovers.
+5. Both boards print `UART TX task done` and `UART RX done: all 1000 bytes match` on completion.
 
 # Note
 

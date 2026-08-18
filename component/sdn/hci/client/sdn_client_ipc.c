@@ -4,24 +4,22 @@
 #include <ameba_ipccfg.h>
 #include <ameba_ipc.h>
 
-extern struct sdn_t g_sdn;
-u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum);
+void sdn_client_tx_buf_complete(struct sdn_data_buf *pdata_buf);
 
 static void _client_ipc_rx_int_hdl(void *data, uint32_t irq_status, uint32_t channel_num)
 {
 	(void)data;
 	(void)irq_status;
 	PIPC_MSG_STRUCT p_ipc_rx_msg = ipc_get_message(IPC_AP_TO_NP, channel_num);
-	struct sdn_intf_data_msg *pmsg;
+	struct sdn_data_buf *pbuf = (struct sdn_data_buf *)(p_ipc_rx_msg->msg);
 
-	if (p_ipc_rx_msg->msg_type == IPC_USER_POINT) {
-		DCache_Invalidate(p_ipc_rx_msg->msg, p_ipc_rx_msg->msg_len);
-		pmsg = (struct sdn_intf_data_msg *)(p_ipc_rx_msg->msg);
+	DCache_Invalidate(p_ipc_rx_msg->msg, p_ipc_rx_msg->msg_len);
+
+	if (pbuf->owner == SDN_INTF_MEM_OWNER_DEV) { /* AP returns memory */
+		sdn_client_tx_buf_complete(pbuf);
 	} else {
-		pmsg = (struct sdn_intf_data_msg *)(&p_ipc_rx_msg->msg);
+		sdn_h2c(pbuf->protocol, pbuf->type, pbuf->data, pbuf->len);
 	}
-
-	sdn_h2c(pmsg->protocol, pmsg->type, pmsg->data, p_ipc_rx_msg->msg_len - sizeof(struct sdn_intf_data_msg));
 }
 
 void sdn_c2h(struct sdn_data_buf *pdata_buf)
@@ -29,16 +27,12 @@ void sdn_c2h(struct sdn_data_buf *pdata_buf)
 	IPC_MSG_STRUCT ipc_tx = {0};
 
 	if (pdata_buf) {
-		ipc_tx.msg = (uint32_t)pdata_buf->pmsg;
-		ipc_tx.msg_len = pdata_buf->len;
-	} else {
-		ipc_tx.msg = (uint32_t)NULL;
-		ipc_tx.msg_len = 0;
+		ipc_tx.msg = (uint32_t)pdata_buf;
+		ipc_tx.msg_len = sizeof(struct sdn_data_buf) + pdata_buf->len;
+		DCache_Clean(ipc_tx.msg, ipc_tx.msg_len);
 	}
-	DCache_Clean(ipc_tx.msg, ipc_tx.msg_len);
 
 	ipc_send_message(IPC_NP_TO_AP, IPC_N2A_BT_VIRTUAL_HCI, &ipc_tx);
-	IPC_wait_idle(IPC_GetDev(IPC_NP_TO_AP, 0), IPC_N2A_BT_VIRTUAL_HCI);
 }
 
 // controller IPC TX channel table define

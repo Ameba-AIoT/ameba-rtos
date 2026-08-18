@@ -70,8 +70,8 @@ mf_unset CALCULATE_FREE_TXBD
 
 echo "choose target IC:"
 case "$INTF" in
-	sdio) mf_set CONFIG_WHC_HCI_SDIO ; echo "  1) AMEBADPLUS"; echo "  2) AMEBAGREEN2"; echo "  3) AMEBAGREEN2 & FW_DOWNLOAD"; echo "  4) AMEBAX" ;;
-	spi)  mf_set CONFIG_WHC_HCI_SPI  ; echo "  1) AMEBADPLUS"; echo "  2) AMEBAGREEN2"; echo "  3) AMEBALITE" ;;
+	sdio) mf_set CONFIG_WHC_HCI_SDIO ; echo "  1) AMEBADPLUS"; echo "  2) AMEBAGREEN2"; echo "  3) AMEBAGREEN2 & FW_DOWNLOAD"; echo "  4) AMEBAX"; echo "  5) AMEBAX & FW_DOWNLOAD" ;;
+	spi)  mf_set CONFIG_WHC_HCI_SPI  ; echo "  1) AMEBADPLUS"; echo "  2) AMEBAGREEN2"; echo "  3) AMEBALITE"; echo "  4) AMEBAX" ;;
 	usb)  mf_set CONFIG_WHC_HCI_USB  ; echo "  1) AMEBADPLUS"; echo "  2) AMEBAGREEN2"; echo "  3) AMEBAGREEN2 & FW_DOWNLOAD" ;;
 esac
 
@@ -100,6 +100,12 @@ case "$INTF:$choice" in
 		mf_set CONFIG_AMEBAX; mf_set CALCULATE_FREE_TXBD
 		cp ../../../soc/RTL8720F/fwlib/include/ameba_inic.h ./driver/include
 		;;
+	sdio:5)
+		echo "RTL8720F (AMEBAX) with FW DOWNLOAD select"
+		mf_set CONFIG_AMEBAX; mf_set CALCULATE_FREE_TXBD
+		mf_set CONFIG_FW_DOWNLOAD
+		cp ../../../soc/RTL8720F/fwlib/include/ameba_inic.h ./driver/include
+		;;
 	# --- spi ---
 	spi:1)
 		echo "AMEBADPLUS select"
@@ -112,6 +118,10 @@ case "$INTF:$choice" in
 	spi:3)
 		echo "AMEBALITE select"
 		mf_set CONFIG_AMEBALITE
+		;;
+	spi:4)
+		echo "AMEBAX select"
+		mf_set CONFIG_AMEBAX
 		;;
 	# --- usb ---
 	usb:1)

@@ -34,8 +34,8 @@
 
 // Thread Priorities
 #define CONFIG_USBH_CDC_ACM_INIT_THREAD_PRIORITY             1U
-#define CONFIG_USBH_CDC_ACM_MAIN_TASK_PRIORITY               4U
-#define CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_PRIORITY          3U
+#define CONFIG_USBH_CDC_ACM_MAIN_TASK_PRIORITY               5U
+#define CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_PRIORITY          6U
 #define CONFIG_USBH_CDC_ACM_BULK_XFER_THREAD_PRIORITY        3U
 #define CONFIG_USBH_CDC_ACM_NOTIFY_THREAD_PRIORITY           2U
 
@@ -535,6 +535,7 @@ static void example_usbh_cdc_acm_hotplug_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(cdc_acm_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			rtos_time_delay_ms(100);
+			usbh_stop();
 			usbh_cdc_acm_deinit();
 			usbh_deinit();
 			rtos_time_delay_ms(10);
@@ -552,6 +553,9 @@ static void example_usbh_cdc_acm_hotplug_thread(void *param)
 				usbh_deinit();
 				break;
 			}
+
+			/* Re-arm USB TRX after the re-init. */
+			usbh_start();
 		}
 	}
 
@@ -586,11 +590,15 @@ static void example_usbh_cdc_acm_thread(void *param)
 		goto error_exit;
 	}
 
+	/* All class drivers registered; start USB TRX so enumeration can run. */
+	usbh_start();
+
 #if CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST
 	ret = rtos_task_create(&task, "example_usbh_cdc_acm_hotplug_thread",
 						   example_usbh_cdc_acm_hotplug_thread, NULL,
 						   CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
+		usbh_stop();
 		usbh_cdc_acm_deinit();
 		usbh_deinit();
 		goto error_exit;

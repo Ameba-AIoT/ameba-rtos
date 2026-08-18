@@ -99,7 +99,8 @@ static int32_t sensor_client_data(const mesh_model_info_p pmodel_info,
 		memcpy(p_evt->data, pdata, 6);
 		memcpy((bool *)p_evt->data + 6, &flag, 1);
 		if (pdata->setting != NULL) {
-			memcpy((uint8_t *)p_evt->data + 7, &pdata->setting->setting_property_id, 4);
+			const uint8_t *p_buf = (uint8_t *)pdata->setting; // avoid to use of address of unaligned structure member
+			memcpy((uint8_t *)p_evt->data + 7, p_buf, 4); //memcpy include the member of setting_property_id,setting_access,setting_raw_len
 			memcpy((uint8_t *)p_evt->data + 11, pdata->setting->setting_raw, pdata->setting->setting_raw_len);
 		}
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -509,7 +510,7 @@ static int32_t sensor_setup_server_data(const mesh_model_info_p pmodel_info, uin
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_SETTING_SET,
 										len);
 			memcpy(p_evt->data, &p_set_data->property_id, 2);
-			memcpy((uint8_t *)(p_evt->data) + 2, &(p_set_data->setting->setting_property_id), 2);
+			memcpy((uint8_t *)(p_evt->data) + 2, p_set_data->setting, 2);
 			memcpy((uint8_t *)(p_evt->data) + 4, &(p_set_data->setting->setting_access), 1);
 			memcpy((uint8_t *)(p_evt->data) + 5, &(p_set_data->setting->setting_raw_len), 1);
 			memcpy((uint8_t *)(p_evt->data) + 6, p_set_data->setting->setting_raw, (p_set_data->setting)->setting_raw_len);
