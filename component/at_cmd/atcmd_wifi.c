@@ -441,8 +441,12 @@ void at_wldisconn(void *arg)
 	}
 
 	if (wifi_is_connected_to_ap() != RTW_SUCCESS) {
-		RTK_LOGI(NOTAG, "[+WLDISCONN] Not connected yet\r\n");
-		goto end;
+		enum rtw_join_status_type join_status = wifi_get_join_status();
+		if ((join_status == RTW_JOINSTATUS_UNKNOWN) || (join_status == RTW_JOINSTATUS_DISCONNECT)) {
+			RTK_LOGI(NOTAG, "[+WLDISCONN] Not connected yet\r\n");
+			goto end;
+		}
+		RTK_LOGI(NOTAG, "[+WLDISCONN] Disconnect while linking/fail, status=%d\r\n", join_status);
 	}
 
 	/* Disconnecting ...... */
