@@ -8,22 +8,18 @@ None
 
 # SW configuration
 
-1. Set HID device type via USBD_HID_DEVICE_TYPE defined in <sdk>\component\usb\device\hid\usbd_hid.h
-	- For HID mouse (default):
-	#define USBD_HID_DEVICE_TYPE		USBD_HID_MOUSE_DEVICE
-	- For HID keyboard:
-	#define USBD_HID_DEVICE_TYPE		USBD_HID_KEYBOARD_DEVICE
-
-2. Menuconfig
-	Use menuconfig and choose `CONFIG USB`:
+1. Menuconfig
+	Use menuconfig and choose `CONFIG USB`, then select the HID device type under `HID`
+	(Mouse is the default; Mouse and Keyboard are mutually exclusive):
 	```
 	[*] Enable USB
 			USB Mode (Device)  --->
 	[*] 	HID
+				Select HID device type (Mouse)  --->
 	```
 	Save and exit.
 
-3. Build and Download:
+2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 

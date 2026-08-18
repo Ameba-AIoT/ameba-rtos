@@ -2,6 +2,9 @@
 #include <net/genetlink.h>
 #include <whc_host_netlink.h>
 #include <whc_host_cmd_path_api.h>
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+#include "whc_host_log_fwd.h"
+#endif
 
 struct genl_info wifi_event_user_genl_info;
 
@@ -20,6 +23,9 @@ static struct whc_host_netlink_command_entry netlink_cmd_table[] = {
 	{CMD_WIFI_NETIF_ON, whc_host_set_netifon},
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	{CMD_WIFI_DBG, whc_host_dbg},
+#endif
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+	{CMD_WIFI_LOG_FWD, whc_host_nl_log_fwd},
 #endif
 	/* api end */
 	{0xFF, NULL}
@@ -237,6 +243,7 @@ static const struct nla_policy whc_nl_cmd_policy[NUM_WHC_ATTR] = {
 	[WHC_ATTR_PAYLOAD] = {.type = NLA_BINARY},
 	[WHC_ATTR_CHUNK_INDEX] = {.type = NLA_U32},
 	[WHC_ATTR_LAST_CHUNK] = {.type = NLA_U8},
+	[WHC_ATTR_LOG_ENABLE] = {.type = NLA_U8},
 };
 
 static const struct genl_multicast_group whc_mcgrps[] = {

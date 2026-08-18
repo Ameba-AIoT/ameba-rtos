@@ -131,6 +131,8 @@ int whc_host_api_get_family_id(int fd, char *family_name);
 void whc_host_set_ps_cmd(struct whc_dev_ps_cmd *pcmd, char *cmd_arg);
 
 
+int whc_host_log_enable(void);
+int whc_host_log_disable(void);
 int whc_host_get_mac(void);
 int whc_host_get_ip(void);
 int whc_host_set_state(void);

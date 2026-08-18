@@ -12,6 +12,10 @@
 #include "usbd.h"
 #include "usbd_inic_otp.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 #define USBD_INIC_VID									USB_VID
@@ -243,4 +247,9 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
  *        - 0: BT is disabled.
  */
 u8 usbd_inic_is_bt_en(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* USBD_INIC_H */

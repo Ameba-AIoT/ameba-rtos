@@ -86,13 +86,6 @@ s32 wifi_ap_switch_chl_and_inform(struct rtw_csa_parm *csa_param)
 	return -1;
 }
 
-s32 wifi_set_countrycode(u8 *cntcode)
-{
-	UNUSED(cntcode);
-	call_noused = __LINE__;
-	return RTK_FAIL;
-}
-
 s32 wifi_get_countrycode(struct rtw_country_code_table *pinfo)
 {
 	UNUSED(pinfo);

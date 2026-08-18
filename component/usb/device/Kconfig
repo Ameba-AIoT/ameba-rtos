@@ -73,6 +73,16 @@ endif
 config USBD_HID_MENU
     bool "HID"
     select USBD_HID if WHC_HOST || WHC_NONE
+    if USBD_HID_MENU
+        choice
+            prompt "Select HID device type"
+            default USBD_HID_MOUSE
+            config USBD_HID_MOUSE
+                bool "Mouse"
+            config USBD_HID_KEYBOARD
+                bool "Keyboard"
+        endchoice
+    endif
 
 config USBD_INIC_MENU
     bool "INIC"

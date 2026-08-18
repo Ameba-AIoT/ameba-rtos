@@ -8,7 +8,7 @@
 #include "nan_event.h"
 #include "rtw_nan_vendor_def.h"
 
-#define MAX_NANDOW_PARA_LEN 2600
+#define MAX_NANDOW_PARA_LEN 1514
 #define MAX_NANDOW_REPLY_LEN 512
 #define OUI_REALTEK 0x00E04C
 #define NL80211_SUBCMD_NAN_RANGE_START 0x1900
@@ -53,9 +53,6 @@ union nandow_para {
 	struct rtw_nan_datapath_end datapath_end;
 	struct rtw_nan_datapath_response datapath_rsp;
 	struct rtw_nan_datapath_confirm datapath_confirm;
-	struct rtw_nan_committed_availability avail_cmt;
-	struct rtw_nan_potential_availability avail_pot;
-	struct rtw_nan_data_cluster_availability avail_ndc;
 	struct rtw_nan_set_scan_control set_scan_ctl;
 	struct rtw_nan_country_code_data country_code;
 };
@@ -181,9 +178,6 @@ void nandow_pre_actions(struct nan_customer_nandow *nandow_test)
 		break;
 	case RTW_NAN_CMD_DATAPATH_END:
 		nandow_test->para_len = sizeof(struct rtw_nan_datapath_end);
-		break;
-	case RTW_NAN_CMD_NDC_AVAIL:
-		nandow_test->para_len = sizeof(struct rtw_nan_data_cluster_availability);
 		break;
 	case RTW_NAN_CMD_SCAN_CONTROL:
 		nandow_test->para_len = sizeof(struct rtw_nan_set_scan_control);
@@ -1153,9 +1147,9 @@ RTW_RET_STATUS rtw_nan_api_send_datapath_req(struct datapath_info *info)
 		dp_req->cipher_suite_id = RTW_NAN_CIPHER_ID_OPEN;
 	}
 
-	/* Qos */
-	dp_req->qos.max_service_internal = 1;
-	dp_req->qos.low_latency_required = 1;
+	/* Qos, subscriber not set qos requirement by default*/
+	// dp_req->qos.max_service_internal = 1;
+	// dp_req->qos.low_latency_required = 1;
 
 	/* send nandow command */
 	input = &nandow_cmd;

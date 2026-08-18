@@ -106,7 +106,7 @@ int whc_host_recv_process(struct sk_buff *pskb)
 #endif
 	default:
 #if defined(CONFIG_WHC_CMD_PATH)
-		whc_host_cmd_data_rx_to_user(pskb);
+		whc_host_cmd_data_process(pskb);
 #elif !defined(CONFIG_WHC_HCI_SPI)
 		dev_err(global_idev.pwhc_dev, "%s: unknown event:%d\n", __func__, event);
 #endif

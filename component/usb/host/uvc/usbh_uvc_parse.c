@@ -89,7 +89,7 @@ static int usbh_uvc_parse_entity(u8 *desc)
 
 	case USBH_UVC_VC_INPUT_TERMINAL:
 		vc_intf->entity_num ++;
-		entity = usbh_uvc_entity_alloc(0);
+		entity = usbh_uvc_entity_alloc(1);
 		if (entity == NULL) {
 			return HAL_ERR_MEM;
 		}
@@ -102,7 +102,7 @@ static int usbh_uvc_parse_entity(u8 *desc)
 
 	case USBH_UVC_VC_OUTPUT_TERMINAL:
 		vc_intf->entity_num ++;
-		entity = usbh_uvc_entity_alloc(0);
+		entity = usbh_uvc_entity_alloc(1);
 		if (entity == NULL) {
 			return HAL_ERR_MEM;
 		}
@@ -126,7 +126,7 @@ static int usbh_uvc_parse_entity(u8 *desc)
 
 	case USBH_UVC_VC_PROCESSING_UNIT:
 		vc_intf->entity_num ++;
-		entity = usbh_uvc_entity_alloc(0);
+		entity = usbh_uvc_entity_alloc(1);
 		if (entity == NULL) {
 			return HAL_ERR_MEM;
 		}
@@ -150,7 +150,7 @@ static int usbh_uvc_parse_entity(u8 *desc)
 
 	case USBH_UVC_VC_ENCODING_UNIT:
 		vc_intf->entity_num ++;
-		entity = usbh_uvc_entity_alloc(0);
+		entity = usbh_uvc_entity_alloc(1);
 		if (entity == NULL) {
 			return HAL_ERR_MEM;
 		}
@@ -383,6 +383,9 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	interval_store = (u32 *)(void *)((u8 *)(void *)tmp_frame + frame_array_size);
 
 	while (len < real_len) {
+		if (desc[0] == 0U) {
+			break;
+		}
 		if (desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
 			len += desc[0];
 			desc = pbuf + len;

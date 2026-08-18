@@ -498,6 +498,10 @@ void whc_usb_dev_init(void)
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	whc_dev_api_init();
 #endif
+
+#ifdef CONFIG_LOG_FWD
+	whc_dev_log_forward_init();
+#endif
 }
 
 /**

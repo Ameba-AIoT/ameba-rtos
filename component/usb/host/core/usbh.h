@@ -13,6 +13,10 @@
 #include "usb_ch9.h"
 #include "usb_diag.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Host_API USB Host API
@@ -744,5 +748,9 @@ int usbh_transfer_process(usb_host_t *host, usbh_pipe_t *pipe);
 /** @} End of Host_Core_Functions_For_Classes group */
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USBH_H */

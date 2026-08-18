@@ -107,13 +107,18 @@ volatile char g_tt_mode_stop_flag = 0;
 volatile u8 g_tt_mode_stop_char_cnt = 0;
 rtos_timer_t xTimers_TT_Mode;
 char pin_name[5] = "NONE";
-char global_buf[SMALL_BUF];
-/* Out callback function */
-at_write out_buffer;
 rtos_sema_t atcmd_tt_mode_sema;
 static char at_config_file_exist = 0;
 extern int kv_init_done;
 extern s32 wifi_set_countrycode(u8 *cntcode);
+#endif
+
+#if (defined CONFIG_ATCMD_HOST_CONTROL && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE)) \
+    || (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
+
+char global_buf[SMALL_BUF];
+/* Out callback function */
+at_write out_buffer;
 
 /**
  * @brief Output format strings, like printf.
@@ -132,7 +137,7 @@ int at_printf(const char *fmt, ...)
 
 	va_list ap;
 	va_start(ap, fmt);
-	len_fmt = vsnprintf(global_buf, SMALL_BUF, fmt, ap);
+	len_fmt = DiagVSNprintf(global_buf, SMALL_BUF, fmt, ap);
 	va_end(ap);
 
 	if (len_fmt < 0) {
@@ -148,7 +153,7 @@ int at_printf(const char *fmt, ...)
 		}
 
 		va_start(ap, fmt);
-		vsnprintf(buf, len_fmt + 1, fmt, ap);
+		DiagVSNprintf(buf, len_fmt + 1, fmt, ap);
 		va_end(ap);
 	} else {
 		RTK_LOGE(TAG, "print string len %d exceed max buffer length : %d\n", (int)len_fmt, MAX_BUF_LEN);
@@ -159,6 +164,10 @@ int at_printf(const char *fmt, ...)
 
 	if (out_buffer) {
 		out_buffer(buf, len_fmt);
+	} else {
+		/* no host channel registered — fall back to UART so output is
+		 * still visible on the serial console (e.g. before logon). */
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s", buf);
 	}
 
 	if (len_fmt >= SMALL_BUF) {
@@ -187,7 +196,7 @@ int at_printf_indicate(const char *fmt, ...)
 
 	va_list ap;
 	va_start(ap, fmt);
-	len_fmt = vsnprintf(global_buf, SMALL_BUF, fmt, ap);
+	len_fmt = DiagVSNprintf(global_buf, SMALL_BUF, fmt, ap);
 	va_end(ap);
 
 	if (len_fmt < 0) {
@@ -203,7 +212,7 @@ int at_printf_indicate(const char *fmt, ...)
 		}
 
 		va_start(ap, fmt);
-		vsnprintf(buf, len_fmt + 4, fmt, ap);
+		DiagVSNprintf(buf, len_fmt + 4, fmt, ap);
 		va_end(ap);
 	} else {
 		RTK_LOGE(TAG, "print string len %d exceed max buffer length : %d\n", (int)len_fmt, MAX_BUF_LEN - 1);
@@ -253,7 +262,9 @@ int at_printf_data(char *data, u32 len)
 
 	return len;
 }
+#endif /* CONFIG_ATCMD_HOST_CONTROL || CONFIG_WHC_DEV */
 
+#if (defined CONFIG_ATCMD_HOST_CONTROL && (defined CONFIG_WHC_HOST || defined CONFIG_WHC_NONE))
 int atcmd_tt_mode_start(u32 len)
 {
 	u32 ring_buf_size = len >= MAX_TT_HEAP_SIZE ? MAX_TT_HEAP_SIZE : len + 1;
@@ -677,6 +688,7 @@ exit:
 
 #else
 
+#ifndef CONFIG_WHC_DEV
 int at_printf_data(char *data, u32 len)
 {
 	u32 cur_len = 0;
@@ -688,6 +700,7 @@ int at_printf_data(char *data, u32 len)
 
 	return len;
 }
+#endif /* CONFIG_WHC_DEV */
 
 int atcmd_tt_mode_start(u32 len)
 {

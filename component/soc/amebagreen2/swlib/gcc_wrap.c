@@ -73,6 +73,13 @@ void *__wrap__calloc_r(void *reent, size_t xWantedCnt, size_t xWantedSize)
 extern u32 CPU_InInterrupt(void);
 extern int vprintf(const char *fmt, va_list ap);
 
+__weak int rtk_printf_hook(const char *fmt, va_list ap)
+{
+	(void)fmt;
+	(void)ap;
+	return -1;
+}
+
 int __wrap_printf(const char *__restrict fmt, ...)
 {
 	int ret;
@@ -83,10 +90,14 @@ int __wrap_printf(const char *__restrict fmt, ...)
 #endif
 
 	va_start(ap, fmt);
-	if (CPU_InInterrupt() || rtos_sched_get_state() != RTOS_SCHED_RUNNING) {
-		ret = DiagVprintf(fmt, ap);
-	} else {
-		ret = vprintf(fmt, ap);
+	ret = rtk_printf_hook(fmt, ap);
+	if (ret < 0) {
+		/* hook not installed or declined; fall back to UART / libc */
+		if (CPU_InInterrupt() || rtos_sched_get_state() != RTOS_SCHED_RUNNING) {
+			ret = DiagVprintf(fmt, ap);
+		} else {
+			ret = vprintf(fmt, ap);
+		}
 	}
 	va_end(ap);
 

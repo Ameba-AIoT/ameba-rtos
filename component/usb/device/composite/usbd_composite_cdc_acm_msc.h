@@ -14,6 +14,10 @@
 #include "usbd_composite_cdc_acm.h"
 #include "usbd_composite_msc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -50,5 +54,9 @@ void usbd_composite_deinit(void);
 /** @} End of Device_Composite_CDC_ACM_MSC_Functions group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USBD_COMPOSITE_CDC_ACM_MSC_H */

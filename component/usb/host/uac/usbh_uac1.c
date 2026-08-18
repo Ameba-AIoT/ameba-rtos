@@ -2025,6 +2025,13 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 	int i, j;
 	u8 itf_num, alt_num;
 
+	/* Reject if the device is gone (detach nulled uac->host): host is used below
+	 * by usbh_open_pipe()/usbh_notify() and would otherwise be dereferenced NULL. */
+	if (usbh_uac_usb_status_check() != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dev not ready\n");
+		return HAL_ERR_HW;
+	}
+
 	as_itf = usbh_uac_get_as_itf_instance(dir);
 	if (as_itf == NULL) {
 		return HAL_ERR_PARA;
@@ -2228,6 +2235,11 @@ void usbh_uac_start_play(void)
 	usbh_uac_host_t *uac = &usbh_uac_host;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out);
 	usbh_pipe_t *pipe = NULL;
+
+	if (usbh_uac_usb_status_check() != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dev not ready\n");
+		return;
+	}
 
 	if (uac->as_isoc_out == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No ISOC OUT interface\n");

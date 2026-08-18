@@ -31,6 +31,7 @@ enum whc_cmd_api_id {
 	CMD_WIFI_MP,
 	CMD_WIFI_DBG,
 	CMD_WIFI_GET_JOIN_EVENT,
+	CMD_WIFI_LOG_FWD,	/* kernel handles logon/logoff; blocks until device ACKs */
 };
 
 enum whc_cmd_type {
@@ -49,6 +50,7 @@ enum whc_attr_type {
 	WHC_ATTR_PAYLOAD,
 	WHC_ATTR_CHUNK_INDEX,
 	WHC_ATTR_LAST_CHUNK,
+	WHC_ATTR_LOG_ENABLE,	/* 1B bool: 1 = on, 0 = off */
 	WHC_ATTR_AFTER_LAST,
 	NUM_WHC_ATTR = WHC_ATTR_AFTER_LAST,
 	WHC_ATTR_MAX = WHC_ATTR_AFTER_LAST - 1,
@@ -62,6 +64,7 @@ enum nl80211_multicast_groups {
 #define WHC_WIFI_TEST 0xffa5a5a5
 #define WHC_ATCMD_TEST 0xeea5a5a5
 #define WHC_RMESH_TEST 0xdda5a5a5
+#define WHC_LOG_EVENT  0x4
 
 #define WHC_WIFI_TEST_GET_MAC_ADDR   0x1
 #define WHC_WIFI_TEST_GET_IP         0x2
@@ -81,6 +84,15 @@ enum nl80211_multicast_groups {
 #define WHC_WIFI_TEST_CONN_STATUS    0x12
 #define WHC_WIFI_TEST_DISCONN        0x13
 #define WHC_WIFI_TEST_WIFIOFF        0x14
+#define WHC_WIFI_TEST_LOG_ENABLE     0x15
+#define WHC_WIFI_TEST_LOG_DISABLE    0x16
+#define WHC_WIFI_TEST_CLEAR_OTA      0x17
+/* host→device: transparent shell command string (NUL-terminated) */
+#define WHC_WIFI_TEST_SHELL_CMD      0x18
+/* device→host: AT command response text from at_printf() */
+#define WHC_WIFI_TEST_AT_RESP        0x19
+/* device→host: ACK for LOG_ENABLE/DISABLE; payload = WHC_WIFI_TEST(4B) | LOG_ACK(1B) | op(1B) */
+#define WHC_WIFI_TEST_LOG_ACK        0x1B
 
 /* for rtos host only */
 #define WHC_WIFI_TEST_SET_HOST_RTOS  0xFF

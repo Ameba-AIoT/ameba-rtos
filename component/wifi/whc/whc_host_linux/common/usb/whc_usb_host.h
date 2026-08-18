@@ -14,7 +14,6 @@
 #define WIFI_OUT_EP_NUM_TOTAL	3
 #endif
 #define RTW_USB_MAX_SKB_SIZE				1600
-
 #define CONFIG_INIC_USB_ASYNC_SEND
 
 struct whc_usb {

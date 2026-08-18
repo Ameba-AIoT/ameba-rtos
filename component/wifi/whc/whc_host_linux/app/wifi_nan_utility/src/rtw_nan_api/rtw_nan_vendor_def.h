@@ -29,8 +29,8 @@ extern "C" {
 #define RTW_NAN_SERVICE_NAME_HASH_SIZE           6
 #define RTW_NAN_PMK_SIZE                         32
 #define RTW_NAN_PMKID_SIZE                       16
-#define RTW_NAN_MAX_TX_MATCHING_FILTERS          16
-#define RTW_NAN_MAX_RX_MATCHING_FILTERS          16
+#define RTW_NAN_MAX_TX_MATCHING_FILTERS          8
+#define RTW_NAN_MAX_RX_MATCHING_FILTERS          8
 #define RTW_NAN_IPV6_INTERFACE_IDENTIFIER_LENGTH 8
 #define RTW_NAN_MAX_MAC_ADDRESS_FILTERS          16
 #define RTW_NAN_BLOOM_FILTER_MAX_SIZE            64
@@ -97,9 +97,6 @@ enum rtw_nan_cmd_id {
 	RTW_NAN_CMD_FOLLOWUP_TX                        = 19,  // Follow-up transmit
 	RTW_NAN_CMD_DATAPATH_RSP                       = 21,  // Datapath response
 	RTW_NAN_CMD_DATAPATH_CONFIRM                   = 22,  // Datapath confirm
-	RTW_NAN_CMD_CMT_AVAIL                          = 23,  // Committed availability
-	RTW_NAN_CMD_POT_AVAIL                          = 24,  // Potential availability
-	RTW_NAN_CMD_NDC_AVAIL                          = 25,  // NDC availability
 	RTW_NAN_CMD_FORCED_DISC_BCN                    = 26,  // Forced discovery beacon
 	RTW_NAN_CMD_SCAN_CONTROL                       = 31,  // Scan control
 	RTW_NAN_CMD_COUNTRY_CODE                       = 32,  // Country code
@@ -278,16 +275,6 @@ struct rtw_nan_availability_time_bitmap {
 	uint8_t  time_bitmap[RTW_NAN_AVAILABILITY_MAX_BITMAP_LENGTH];
 };
 
-struct rtw_nan_channel_availability_entry {
-	uint8_t  usage_preference;   // 0=none to 3=high
-	uint8_t  utilization;        // 0-5 representing % utilization
-	uint8_t  rx_nss;             // number of spatial streams
-	struct   rtw_nan_availability_time_bitmap time_bitmap;
-	uint8_t  op_class;           // operating class
-	uint8_t  primary_channel_bitmap;
-	uint16_t op_class_bitmap;
-	uint16_t auxiliary_channel_bitmap;
-};
 
 /* ========== Command Data Structs ========== */
 struct rtw_nan_device_capability {
@@ -367,7 +354,6 @@ struct rtw_nan_publish_data {
 	struct   rtw_nan_qos_requirements qos;
 	uint8_t  service_update_indicator;
 	uint8_t  interface_identifier[RTW_NAN_IPV6_INTERFACE_IDENTIFIER_LENGTH];
-	struct   rtw_nan_service_info data_service_specific_info;
 	struct   rtw_nan_ether_addr responder_data_address;
 	uint8_t  pmkid[RTW_NAN_PMKID_SIZE];
 	uint8_t  pairing_enable;
@@ -470,43 +456,6 @@ struct rtw_nan_datapath_end {
 };
 
 /* ========== Availability Structs ========== */
-struct rtw_nan_committed_ch_schedule {
-	uint8_t  max_period;
-	uint8_t  num_entries;
-	uint8_t  map_id;
-	struct   rtw_nan_channel_availability_entry channel_entries[RTW_NAN_AVAILABILITY_MAX_CHANNEL_ENTRIES];
-};
-
-struct rtw_nan_committed_availability {
-	struct rtw_nan_ether_addr addr;    // peer mac, NULL for self
-	uint8_t  num_maps_ids;
-	struct   rtw_nan_committed_ch_schedule schedule[RTW_NAN_MAX_MAP_IDS];
-};
-
-struct rtw_nan_potential_ch_schedule {
-	uint8_t  map_id;
-	uint8_t  num_band_entries;
-	uint8_t  band_ids[RTW_NAN_MAX_BAND_IDS];
-	uint8_t  num_entries;
-	struct   rtw_nan_channel_availability_entry channel_entries[RTW_NAN_AVAILABILITY_MAX_CHANNEL_ENTRIES];
-};
-
-struct rtw_nan_potential_availability {
-	uint8_t  num_maps_ids;
-	struct rtw_nan_potential_ch_schedule potential[RTW_NAN_MAX_MAP_IDS];
-};
-
-struct rtw_nan_data_cluster_avail_params {
-	struct   rtw_nan_ether_addr data_cluster_id;
-	uint8_t  map_id;
-	uint8_t  selected;       // 1=true, 0=false
-	struct   rtw_nan_availability_time_bitmap time_bitmap;
-};
-
-struct rtw_nan_data_cluster_availability {
-	uint8_t  num_maps_ids;
-	struct rtw_nan_data_cluster_avail_params availability_params[RTW_NAN_MAX_MAP_IDS];
-};
 
 struct rtw_nan_forced_discovery_beacon_tx_avail_params {
 	uint8_t  map_id;

@@ -14,6 +14,10 @@
 #include "usbd_composite_hid_bi_dir.h"
 #include "usbd_composite_uac.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -28,6 +32,10 @@ int usbd_composite_init(const usbd_composite_hid_usr_cb_t *hid_cb, const usbd_co
 						const usbd_composite_cb_t *cb);
 
 void usbd_composite_deinit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USBD_COMPOSITE_HID_UAC_H */
 

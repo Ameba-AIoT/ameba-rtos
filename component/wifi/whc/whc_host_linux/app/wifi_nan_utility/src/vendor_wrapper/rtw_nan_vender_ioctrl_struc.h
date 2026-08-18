@@ -160,7 +160,7 @@ struct nan_pairing_start {
 
 #ifdef NAN_CUSTOMER_NANDOW
 
-#define MAX_NANDOW_PARA_LEN 2600
+#define MAX_NANDOW_PARA_LEN 1514
 #define MAX_NANDOW_REPLY_LEN 512
 
 #include "rtw_nan_vendor_def.h"
@@ -190,9 +190,6 @@ union nandow_para {
 	struct rtw_nan_datapath_end datapath_end;
 	struct rtw_nan_datapath_response datapath_rsp;
 	struct rtw_nan_datapath_confirm datapath_confirm;
-	struct rtw_nan_committed_availability avail_cmt;
-	struct rtw_nan_potential_availability avail_pot;
-	struct rtw_nan_data_cluster_availability avail_ndc;
 	struct rtw_nan_forced_discovery_beacon_transmission forced_disc_bcn;
 	struct rtw_nan_set_scan_control scan_ctl;
 	struct rtw_nan_country_code_data country_code;
