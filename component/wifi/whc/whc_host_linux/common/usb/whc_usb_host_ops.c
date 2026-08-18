@@ -1,5 +1,9 @@
 #include <whc_host_linux.h>
 #include <whc_host_cmd_path_api.h>
+#include <whc_host_netlink.h>
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+#include "whc_host_log_fwd.h"
+#endif
 
 struct rtw_usbreq *whc_usb_host_dequeue(struct list_head *q, int *counter)
 {
@@ -267,7 +271,7 @@ void whc_host_send_cmd_data(u8 *buf, u32 len)
 	whc_usb_host_send_data(txbuf, txsize, NULL);
 }
 
-int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb)
+int whc_host_cmd_data_process(struct sk_buff *pskb)
 {
 	int ret = 0;
 	u32 event = *(u32 *)(pskb->data + SIZE_RX_DESC);
@@ -280,7 +284,23 @@ int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb)
 		hdr = (struct whc_cmd_path_hdr *)(pskb->data + SIZE_RX_DESC);
 		size = hdr->len;
 		rxbuf = (u8 *)pskb->data + SIZE_RX_DESC + sizeof(struct whc_cmd_path_hdr);
-		whc_host_buf_rx_to_user(rxbuf, size);
+		if (size >= sizeof(u32) && *(u32 *)rxbuf == WHC_LOG_EVENT) {
+			int log_len = (int)(size - sizeof(u32));
+			const char *log_buf = (const char *)(rxbuf + sizeof(u32));
+			if (log_len > 0 && log_buf[log_len - 1] == '\n') {
+				pr_info("[FW] %.*s", log_len, log_buf);
+			} else if (log_len > 0) {
+				pr_info("%.*s", log_len, log_buf);
+			}
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+		} else if (size >= sizeof(u32) + 2 &&
+				   *(u32 *)rxbuf == WHC_WIFI_TEST &&
+				   rxbuf[4] == WHC_WIFI_TEST_LOG_ACK) {
+			whc_host_log_forward_ack(rxbuf[5]);
+#endif
+		} else {
+			whc_host_buf_rx_to_user(rxbuf, size);
+		}
 		break;
 	default:
 		break;

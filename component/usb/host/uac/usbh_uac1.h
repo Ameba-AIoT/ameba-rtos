@@ -13,6 +13,10 @@
 #include "os_wrapper.h"
 #include "usb_ringbuf.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Host_API USB Host API
@@ -314,5 +318,9 @@ void usbh_uac_stop_play(void);
 /** @} End of Host_UAC_Functions group */
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBH_UAC1_H */

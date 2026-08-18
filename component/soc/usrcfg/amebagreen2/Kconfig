@@ -51,3 +51,13 @@ config CLKCFG_IDX
     default 1
 
 endmenu
+
+menu "GPIO IRQ Configuration"
+
+# GPIO IRQ table size
+config GPIO_IRQ_TABLE_MAX_NUM
+	int "GPIO IRQ table maximum number"
+	range 1 94
+	default 4
+
+endmenu

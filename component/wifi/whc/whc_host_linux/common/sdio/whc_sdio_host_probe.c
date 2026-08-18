@@ -1,4 +1,5 @@
 #include <whc_host_linux.h>
+#include "whc_host_log_fwd.h"
 
 // for host change detect
 #include <linux/mmc/host.h>
@@ -171,12 +172,18 @@ int whc_sdio_host_suspend_common(struct whc_sdio *priv)
 	}
 #endif
 
+	/* disable log fwd before RPWM SUSPEND; once SDIO_SetReady(DISABLE) host cannot command device */
+	if (whc_host_log_forward_pause()) {
+		return -EAGAIN;
+	}
+
 	/* set wowlan_state, stop schedule rx/tx work */
 	global_idev.wowlan_state = 1;
 	netif_tx_stop_all_queues(global_idev.pndev[0]);
 
 	/* suspend device */
 	if (!whc_sdio_host_rpwm_notify(priv, RPWM2_PWR_SUSPEND)) {
+		(void)whc_host_log_forward_resume();   /* rollback */
 		return -EPERM;
 	}
 	return 0;
@@ -244,6 +251,8 @@ int whc_sdio_host_resume_common(struct whc_sdio *priv)
 	netif_tx_wake_all_queues(global_idev.pndev[0]);
 
 	global_idev.wowlan_state = 0;
+
+	(void)whc_host_log_forward_resume();
 
 	return 0;
 }

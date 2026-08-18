@@ -243,6 +243,10 @@ menu "CONFIG WHC INTF"
             config WHC_DEV_HCI_BOOT
                 bool "Boot From HCI"
         endchoice
+
+        if WHC_DEV_HCI_BOOT
+        rsource "../../../soc/common/log_forward/Kconfig"
+        endif
     endif
 
     if WHC_HOST_MENU && !WHC_INTF_IPC_MENU

@@ -312,3 +312,4 @@ void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char lette
 #endif
 	}
 }
+

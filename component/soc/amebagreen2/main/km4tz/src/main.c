@@ -42,8 +42,6 @@ void app_IWDG_init(void)
 	}
 
 	IWDG_LP_Enable(IWDG_DEV, DISABLE);
-	/*set IWDG timeout to 4s*/
-	WDG_Timeout(IWDG_DEV, 0x0FFF);
 	WDG_Refresh(IWDG_DEV);
 	RTK_LOGI(TAG, "IWDG refresh thread Started!\n");
 
@@ -80,7 +78,6 @@ void app_pmu_init(void)
 {
 	SOCPS_SleepInit();
 	pmu_init_wakeup_timer();
-	pmu_set_sleep_type(SLEEP_PG);
 
 	/* only one core in fullmac mode */
 #if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))

@@ -36,7 +36,7 @@
 void whc_host_send_cmd_data(u8 *buf, u32 len);
 
 /* internal pkt rx: from dev to host kernel space */
-int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb);
+int whc_host_cmd_data_process(struct sk_buff *pskb);
 #endif
 
 #endif /* __RTW_LLHW_TRX_H__ */

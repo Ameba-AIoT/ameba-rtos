@@ -312,7 +312,7 @@ struct _raw_data_desc_t {
 };
 
 #ifdef CONFIG_NAN
-#define MAX_MATCHING_FILTERS           (16)
+#define MAX_MATCHING_FILTERS           (8)
 #define MAX_MATCHING_FILTER_LEN        (32)
 /**
  * @brief Describes a NAN function Rx / Tx filter.

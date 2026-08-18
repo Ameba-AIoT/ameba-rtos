@@ -73,20 +73,11 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	(void) IrqStatus;
 	(void) ChanNum;
 
-	PUART_LOG_BUF ptmpbuf;
-	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
 	PIPC_MSG_STRUCT	ipc_msg_temp = (PIPC_MSG_STRUCT)ipc_get_message(IPC_NP_TO_AP, IPC_N2A_LOGUART_RX_SWITCH);
-
-	ptmpbuf = (PUART_LOG_BUF) ipc_msg_temp->msg;
+	PUART_LOG_BUF ptmpbuf = (PUART_LOG_BUF) ipc_msg_temp->msg;
 	DCache_Invalidate((u32)ptmpbuf, sizeof(UART_LOG_BUF));
 	DCache_Invalidate((u32)ptmpbuf->UARTLogBuf, ptmpbuf->UARTLogBufLen);
-	pUartLogBuf->BufCount = ptmpbuf->BufCount;
-	_memcpy(pUartLogBuf->UARTLogBuf, ptmpbuf->UARTLogBuf, MIN(ptmpbuf->UARTLogBufLen, pUartLogBuf->UARTLogBufLen));
-
-	shell_ctl.ExecuteCmd = TRUE;
-	if (shell_ctl.shell_task_rdy) {
-		shell_ctl.GiveSema();
-	}
+	shell_cmd_inject((const char *)ptmpbuf->UARTLogBuf, ptmpbuf->BufCount);
 }
 
 #ifdef CONFIG_ARM_CORE_CM4_KM4NS
@@ -237,6 +228,22 @@ void shell_init_ram(void)
 		DiagPrintf("Create Log UART Task Err!!\n");
 	}
 	//CONSOLE_AMEBA();
+}
+
+void shell_cmd_inject(const char *cmd, u32 len)
+{
+	PUART_LOG_BUF pShellBuf = shell_ctl.pTmpLogBuf;
+
+	/* Clamp to buffer capacity; leave room for NUL terminator. */
+	len = MIN(len, (u32)(pShellBuf->UARTLogBufLen - 1));
+
+	_memcpy(pShellBuf->UARTLogBuf, cmd, len);
+	pShellBuf->UARTLogBuf[len] = '\0';
+	pShellBuf->BufCount = len;
+	shell_ctl.ExecuteCmd = TRUE;
+	if (shell_ctl.shell_task_rdy) {
+		shell_ctl.GiveSema();
+	}
 }
 
 #if !(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))

@@ -186,7 +186,7 @@ void whc_host_send_cmd_data(u8 *buf, u32 len)
 	}
 }
 
-int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb)
+int whc_host_cmd_data_process(struct sk_buff *pskb)
 {
 	int ret = 0;
 	u32 event = *(u32 *)(pskb->data + SIZE_RX_DESC);

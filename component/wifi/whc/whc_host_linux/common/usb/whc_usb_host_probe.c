@@ -1,4 +1,5 @@
 #include <whc_host_linux.h>
+#include "whc_host_log_fwd.h"
 #include <linux/spi/spi.h>
 #include <linux/of_gpio.h>
 #include <linux/interrupt.h>
@@ -311,6 +312,11 @@ static int whc_usb_host_suspend(struct usb_interface *intf, pm_message_t message
 	}
 #endif
 
+	/* disable log fwd before killing RX URBs; otherwise device wakes host via usbd_wake_host() */
+	if (whc_host_log_forward_pause()) {
+		return -EAGAIN;
+	}
+
 	/* set wowlan_state, stop schedule rx/tx work */
 	global_idev.wowlan_state = 1;
 	netif_tx_stop_all_queues(global_idev.pndev[0]);
@@ -332,6 +338,7 @@ static int whc_usb_host_suspend(struct usb_interface *intf, pm_message_t message
 	return 0;
 
 FAIL:
+	(void)whc_host_log_forward_resume();
 	netif_tx_start_all_queues(global_idev.pndev[0]);
 	netif_tx_wake_all_queues(global_idev.pndev[0]);
 	global_idev.wowlan_state = 0;
@@ -364,6 +371,8 @@ static int whc_usb_host_resume(struct usb_interface *intf)
 	netif_tx_wake_all_queues(global_idev.pndev[0]);
 
 	global_idev.wowlan_state = 0;
+
+	(void)whc_host_log_forward_resume();
 
 	return 0;
 }

@@ -92,6 +92,7 @@ _LONG_CALL_ u8 **shell_get_argv(const   u8  *string);
 _LONG_CALL_ u8 shell_get_argc(const   u8  *string);
 
 void shell_init_ram(void);
+void shell_cmd_inject(const char *cmd, u32 len);
 void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum);
 
 //#define RtlConsolTaskRom		shell_task_rom

@@ -12,6 +12,10 @@
 #include "usbh.h"
 #include "usb_cdc_ecm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
         Example Hierarchy:
           LWIP (Network Stack)
@@ -228,5 +232,9 @@ const u8 *usbh_cdc_ecm_process_mac_str(void);
 /** @} End of Host_CDC_ECM_Functions group */
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBH_CDC_ECM_H */

@@ -1,5 +1,72 @@
 
 #include "whc_dev_app.h"
+#ifdef CONFIG_LOG_FWD
+#include "log_forward.h"
+
+static void whc_log_output(const u8 *buf, u32 len)
+{
+	u8 *pkt = rtos_mem_malloc(sizeof(u32) + len);
+	if (!pkt) {
+		return;
+	}
+
+	*(u32 *)pkt = WHC_LOG_EVENT;
+	memcpy(pkt + sizeof(u32), buf, len);
+	whc_dev_api_send_to_host(pkt, sizeof(u32) + len);
+	rtos_mem_free(pkt);
+}
+
+void whc_dev_log_forward_init(void)
+{
+	rtk_log_forward_init(whc_log_output);
+}
+#endif /* CONFIG_LOG_FWD */
+#ifdef CONFIG_SUPPORT_ATCMD
+#include "atcmd_service.h"
+#endif
+
+#ifdef CONFIG_LOG_FWD
+/* Reply to host that LOG_ENABLE/DISABLE has taken effect on the device;
+ * host waits for this ACK before proceeding with bus suspend. */
+static void whc_dev_log_fwd_send_ack(u8 op)
+{
+	u8 ack[6];
+	*(u32 *)ack = WHC_WIFI_TEST;
+	ack[4] = WHC_WIFI_TEST_LOG_ACK;
+	ack[5] = op;
+	whc_dev_api_send_to_host(ack, sizeof(ack));
+}
+#endif
+
+#ifdef CONFIG_SUPPORT_ATCMD
+static void whc_at_output(char *buf, int len)
+{
+	u32 pkt_len = sizeof(u32) + 1 + (u32)len;
+	u8 *pkt = rtos_mem_malloc(pkt_len);
+
+	if (!pkt) {
+		return;
+	}
+	*(u32 *)pkt = WHC_WIFI_TEST;
+	pkt[4]      = WHC_WIFI_TEST_AT_RESP;
+	memcpy(pkt + 5, buf, (u32)len);
+	whc_dev_api_send_to_host(pkt, pkt_len);
+	rtos_mem_free(pkt);
+}
+
+void whc_at_resp_enable(void)
+{
+	out_buffer = whc_at_output;
+}
+
+void whc_at_resp_disable(void)
+{
+	out_buffer = NULL;
+}
+#else
+void whc_at_resp_enable(void) {}
+void whc_at_resp_disable(void) {}
+#endif /* CONFIG_SUPPORT_ATCMD */
 #include "lwip/sys.h"
 #include "lwip_netconf.h"
 #include "os_wrapper.h"
@@ -346,6 +413,22 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					wifi_user_config.cfg80211 = 0;
 				} else if (*ptr == WHC_WIFI_TEST_OTA) {
 					whc_dev_api_ota_process(ptr);
+				}
+#endif
+				if (*ptr == WHC_WIFI_TEST_SHELL_CMD) {
+					u8 *cmdstr = ptr + 1;
+					shell_cmd_inject((const char *)cmdstr, _strlen((const char *)cmdstr));
+				}
+#ifdef CONFIG_LOG_FWD
+				else if (*ptr == WHC_WIFI_TEST_LOG_ENABLE || *ptr == WHC_WIFI_TEST_LOG_DISABLE) {
+					if (*ptr == WHC_WIFI_TEST_LOG_ENABLE) {
+						rtk_log_forward_enable();
+						whc_at_resp_enable();
+					} else {
+						rtk_log_forward_disable();
+						whc_at_resp_disable();
+					}
+					whc_dev_log_fwd_send_ack(*ptr);
 				}
 #endif
 #ifdef CONFIG_MP_INCLUDED

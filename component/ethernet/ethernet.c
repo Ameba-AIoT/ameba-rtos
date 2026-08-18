@@ -50,7 +50,7 @@ static void eth_config_mac_clock(void)
 	u8 gmac_ckd;
 	u32 gmac_clk = 0;
 
-	const SocClk_Info_TypeDef *pSocClk_Info = &SocClk_Info[0];
+	const SocClk_Info_TypeDef *pSocClk_Info = &SocClk_Info[Boot_SocClk_Info_Idx];
 
 	/* Select a clock source that can be divided up to 50MHz */
 	gmac_ckd = PLL_ClkSrcGet(pSocClk_Info->SYSPLL_CLK, pSocClk_Info->USBPLL_CLK, CLK_LIMIT_GMAC);

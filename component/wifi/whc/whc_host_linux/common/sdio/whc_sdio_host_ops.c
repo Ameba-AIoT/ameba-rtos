@@ -1,5 +1,9 @@
 #include <whc_host_linux.h>
 #include <whc_host_cmd_path_api.h>
+#include <whc_host_netlink.h>
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+#include "whc_host_log_fwd.h"
+#endif
 
 static struct sk_buff *whc_sdio_host_read_rxfifo(struct whc_sdio *priv, u32 size)
 {
@@ -148,14 +152,40 @@ void whc_host_send_cmd_data(u8 *buf, u32 len)
 	whc_sdio_host_send_data(buf, len, NULL);
 }
 
-int whc_host_cmd_data_rx_to_user(struct sk_buff *pskb)
+int whc_host_cmd_data_process(struct sk_buff *pskb)
 {
 	int ret = 0;
 	u16 size;
+	u8 *rxbuf;
+	int log_len;
+	const char *log_buf;
 
 	/* size after padding for align */
 	size = *(u16 *)pskb->data;
-	ret = whc_host_buf_rx_to_user((u8 *)pskb->data + SIZE_RX_DESC, size);
+	rxbuf = (u8 *)pskb->data + SIZE_RX_DESC;
+
+	/* intercept log-forward packets and print to dmesg instead of user space */
+	if (size >= (u16)sizeof(u32) && *(u32 *)rxbuf == WHC_LOG_EVENT) {
+		log_len = (int)(size - sizeof(u32));
+		log_buf = (const char *)(rxbuf + sizeof(u32));
+		if (log_len > 0) {
+			if (log_buf[log_len - 1] == '\n') {
+				pr_info("[FW] %.*s", log_len, log_buf);
+			} else {
+				pr_info("[FW] %.*s\n", log_len, log_buf);
+			}
+		}
+		return 0;
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+	} else if (size >= (u16)(sizeof(u32) + 2) &&
+			   *(u32 *)rxbuf == WHC_WIFI_TEST &&
+			   rxbuf[4] == WHC_WIFI_TEST_LOG_ACK) {
+		whc_host_log_forward_ack(rxbuf[5]);
+		return 0;
+#endif
+	}
+
+	ret = whc_host_buf_rx_to_user(rxbuf, size);
 
 	return ret;
 }

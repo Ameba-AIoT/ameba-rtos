@@ -554,91 +554,90 @@ static uint16_t bt_stack_profile_init(void *app_conf)
 #endif
 	bt_stack_app_profile_conf = app_profile_support;
 
-	return 0;
+	return ret;
 }
 
 static uint16_t bt_stack_profile_deinit(void)
 {
-	uint32_t profile_conf = bt_stack_app_profile_conf;
 #if defined(RTK_BLE_GATTS_SUPPORT) && RTK_BLE_GATTS_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_GATTS) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_GATTS) {
 		bt_stack_gatts_deinit();
 	}
 #endif
 #if defined(RTK_BLE_GATTC_SUPPORT) && RTK_BLE_GATTC_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_GATTC) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_GATTC) {
 		bt_stack_gattc_deinit();
 	}
 #endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_MESH) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_MESH) {
 		bt_stack_mesh_deinit();
 	}
 #endif
 #if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 #if defined(RTK_BT_PROFILE_A2DP_SUPPORT) && RTK_BT_PROFILE_A2DP_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_A2DP) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_A2DP) {
 		bt_stack_a2dp_deinit();
 	}
 #endif
 #if defined(RTK_BT_PROFILE_AVRCP_SUPPORT) && RTK_BT_PROFILE_AVRCP_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_AVRCP) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_AVRCP) {
 		bt_stack_avrcp_deinit();
 	}
 #endif
 #if defined(RTK_BT_PROFILE_HFP_SUPPORT) && RTK_BT_PROFILE_HFP_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_HFP) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_HFP) {
 		bt_stack_hfp_deinit();
 	}
 #endif
 #if defined(RTK_BT_PROFILE_PBAP_SUPPORT) && RTK_BT_PROFILE_PBAP_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_PBAP) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_PBAP) {
 		bt_stack_pbap_deinit();
 	}
 #endif
 #if defined(RTK_BT_PROFILE_SPP_SUPPORT) && RTK_BT_PROFILE_SPP_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_SPP) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_SPP) {
 		bt_stack_spp_deinit();
 	}
 #endif
 #if defined(RTK_BT_PROFILE_RFC_SUPPORT) && RTK_BT_PROFILE_RFC_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_RFC) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_RFC) {
 		bt_stack_rfc_deinit();
 	}
 #endif
 #if defined(RTK_BT_PROFILE_HID_SUPPORT) && RTK_BT_PROFILE_HID_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_HID) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_HID) {
 		bt_stack_hid_deinit();
 	}
 #endif
 #if defined(RTK_BT_PROFILE_SDP_SUPPORT) && RTK_BT_PROFILE_SDP_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_SDP) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_SDP) {
 		bt_stack_sdp_deinit();
 	}
 #endif
 #endif
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_LE_ISO) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_LE_ISO) {
 		bt_stack_le_iso_deinit();
 	}
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_LEAUDIO) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_LEAUDIO) {
 		bt_stack_le_audio_deinit();
 	}
-	if (profile_conf & RTK_BT_PROFILE_BAP) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_BAP) {
 		bt_stack_bap_deinit();
 	}
-	if (profile_conf & RTK_BT_PROFILE_CAP) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_CAP) {
 		bt_stack_cap_deinit();
 	}
 #if defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_TMAP) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_TMAP) {
 		bt_stack_tmap_deinit();
 	}
 #endif
 #if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_GMAP) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_GMAP) {
 		bt_stack_gmap_deinit();
 	}
 #endif

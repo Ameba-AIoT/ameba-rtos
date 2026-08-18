@@ -81,16 +81,10 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	PIPC_MSG_STRUCT ipc_msg_temp = (PIPC_MSG_STRUCT)ipc_get_message(IPC_KM4_TO_DSP, IPC_M2D_LOGUART_RX_SWITCH);
 #endif
 
-	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
+	PUART_LOG_BUF ptmpbuf = (PUART_LOG_BUF) ipc_msg_temp->msg;
 
-	u32 addr = ipc_msg_temp->msg;
-	DCache_Invalidate(addr, sizeof(UART_LOG_BUF));
-	_memcpy(pUartLogBuf, (u32 *)addr, sizeof(UART_LOG_BUF));
-
-	shell_ctl.ExecuteCmd = TRUE;
-	if (shell_ctl.shell_task_rdy) {
-		shell_ctl.GiveSema();
-	}
+	DCache_Invalidate((u32)ptmpbuf, sizeof(UART_LOG_BUF));
+	shell_cmd_inject((const char *)ptmpbuf->UARTLogBuf, ptmpbuf->BufCount);
 }
 
 #ifdef CONFIG_ARM_CORE_CM4
@@ -262,6 +256,22 @@ void shell_init_ram(void)
 	}
 
 	//CONSOLE_AMEBA();
+}
+
+void shell_cmd_inject(const char *cmd, u32 len)
+{
+	PUART_LOG_BUF pShellBuf = shell_ctl.pTmpLogBuf;
+
+	/* Clamp to buffer capacity; leave room for NUL terminator. */
+	len = MIN(len, (u32)(CMD_BUFLEN - 1));
+
+	_memcpy(pShellBuf->UARTLogBuf, cmd, len);
+	pShellBuf->UARTLogBuf[len] = '\0';
+	pShellBuf->BufCount = len;
+	shell_ctl.ExecuteCmd = TRUE;
+	if (shell_ctl.shell_task_rdy) {
+		shell_ctl.GiveSema();
+	}
 }
 
 IPC_TABLE_DATA_SECTION

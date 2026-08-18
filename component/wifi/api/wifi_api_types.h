@@ -707,6 +707,17 @@ enum rtw_conn_step_retries_update_masks {
 	RTW_UPDATE_CONN_PARAM_ALL             = 0xFFFF,
 };
 
+enum rtw_channel_width {
+	RTW_CHANNEL_WIDTH_20        = 0,
+	RTW_CHANNEL_WIDTH_40        = 1,
+	RTW_CHANNEL_WIDTH_80        = 2,
+	RTW_CHANNEL_WIDTH_160       = 3,
+	RTW_CHANNEL_WIDTH_80_80     = 4,
+	RTW_CHANNEL_WIDTH_5         = 5,
+	RTW_CHANNEL_WIDTH_10        = 6,
+	RTW_CHANNEL_WIDTH_MAX       = 7,
+};
+
 /** @} End of WIFI_Exported_Enumeration_Types group*/
 
 /** @addtogroup WIFI_Exported_Structure_Types Structure Type
@@ -969,6 +980,7 @@ struct rtw_softap_info {
 struct rtw_client_list {
 	u32    count;         /**< Number of associated clients.    */
 	struct rtw_mac mac_list[MACID_HW_MAX_NUM - 2]; /**< Array of client MAC addresses. */
+	u8 bwmode[MACID_HW_MAX_NUM - 2]; /*per-STA operating channel width, see @ref rtw_channel_width*/
 };
 #endif
 

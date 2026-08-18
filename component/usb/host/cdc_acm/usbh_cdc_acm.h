@@ -12,6 +12,10 @@
 #include "usbh.h"
 #include "usb_cdc_acm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Host_API USB Host API
@@ -228,5 +232,9 @@ u16 usbh_cdc_acm_get_bulk_ep_mps(void);
 /** @} End of Host_CDC_ACM_Functions group */
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBH_CDC_ACM_H */
