@@ -7,11 +7,9 @@
 #include "ameba_soc.h"
 #include "ameba_secure_boot.h"
 #include "bootloader_hp.h"
-#ifndef __ZEPHYR__
 #include "boot_ota_hp.h"
 #include "ameba_v8m_crashdump.h"
 #include "ameba_fault_handle.h"
-#endif
 
 static const char *const TAG = "BOOT";
 typedef struct {
@@ -29,7 +27,6 @@ CPU_S_BackUp_TypeDef PMC_S_BK;
         } \
     } while (0)
 
-#ifndef __ZEPHYR__
 BOOT_RAM_TEXT_SECTION
 PRAM_START_FUNCTION BOOT_SectionInit(void)
 {
@@ -66,7 +63,6 @@ __attribute__((noinline)) void BOOT_NsStart(u32 Addr)
 	/* avoid compiler to pop stack when exit BOOT_NsStart */
 	while (1);
 }
-#endif
 
 /* open some always on functions in this function */
 BOOT_RAM_TEXT_SECTION
@@ -310,7 +306,6 @@ void BOOT_PSRAM_Init(void)
 	PSRAM_AutoGating(ENABLE, Psram_IDLETIME, Psram_RESUME_TIME / PsramInfo.PSRAMC_Clk_Unit);
 }
 
-#ifndef __ZEPHYR__
 BOOT_RAM_TEXT_SECTION
 void BOOT_SCBConfig_HP(void)
 {
@@ -395,7 +390,6 @@ u32 BOOT_LoadImages(void)
 #endif
 	return TRUE;
 }
-#endif
 
 /**
   * @brief  Copy Boot reason to a common register and clear Boot Reason.
@@ -639,7 +633,6 @@ void BOOT_Enable_AP(void)
 	ca32->CA32_C0_RST_CTRL |= (CA32_NCOREPORESET(CORE_NUM) | CA32_NCORERESET(CORE_NUM) | CA32_BIT_NRESETSOCDBG | CA32_BIT_NL2RESET | CA32_BIT_NGICRESET);
 }
 
-#ifndef __ZEPHYR__
 BOOT_RAM_TEXT_SECTION
 void BOOT_WakeFromPG(void)
 {
@@ -723,7 +716,6 @@ void BOOT_WakeFromPG(void)
 
 	return;
 }
-#endif /* !__ZEPHYR__ BOOT_WakeFromPG */
 
 BOOT_RAM_TEXT_SECTION
 u32 BOOT_Share_Memory_Patch(void)
@@ -829,10 +821,9 @@ bool BOOT_RRAM_InfoValid(void)
 	}
 }
 
-#ifndef __ZEPHYR__
 //3 Image 1
 BOOT_RAM_TEXT_SECTION
-void BOOT_Image1(void)
+__weak void BOOT_Image1(void)
 {
 	u32 ret;
 	u32 *vector_table = NULL;
@@ -1037,7 +1028,6 @@ INVALID_IMG2:
 		DelayMs(1000);//each delay is 100us
 	}
 }
-#endif /* !__ZEPHYR__ BOOT_Image1 */
 
 IMAGE1_VALID_PATTEN_SECTION
 const u8 RAM_IMG1_VALID_PATTEN[] = {
@@ -1048,10 +1038,6 @@ IMAGE1_EXPORT_SYMB_SECTION
 BOOT_EXPORT_SYMB_TABLE boot_export_symbol = {
 	.rdp_decrypt_func = NULL,
 };
-
-#ifdef __ZEPHYR__
-extern void z_arm_reset(void);
-#endif
 
 IMAGE1_ENTRY_SECTION
 RAM_FUNCTION_START_TABLE RamStartTable = {
@@ -1064,10 +1050,6 @@ RAM_FUNCTION_START_TABLE RamStartTable = {
 #endif
 	.RamPatchFun1 = NULL,
 	.RamPatchFun2 = NULL,
-#ifdef __ZEPHYR__
-	.FlashStartFun = z_arm_reset,
-#else
 	.FlashStartFun = BOOT_Image1,
-#endif
 	.ExportTable = &boot_export_symbol
 };

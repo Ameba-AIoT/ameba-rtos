@@ -1075,7 +1075,7 @@ endfunction()
 #   ameba_add_subdirectories([<value> ...])
 function(ameba_add_subdirectories)
     foreach(dir IN LISTS ARGN)
-        add_subdirectory(${dir})
+        ameba_add_subdirectory(${dir})
     endforeach()
 endfunction()
 

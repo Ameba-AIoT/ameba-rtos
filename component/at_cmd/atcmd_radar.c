@@ -18,6 +18,10 @@
 #include "whc_host_api.h"
 #endif
 #endif
+#include "os_wrapper.h"
+#include <stdlib.h>
+
+static void (*g_at_radarstart_cb)(u16 argc, char **argv) = NULL;
 
 static void at_rad_help(void)
 {
@@ -42,6 +46,7 @@ void at_rad(u16 argc, char **argv)
 {
 	int ret = 0, i = 0, j = 0;
 	int error_no = RTW_AT_OK;
+	int channel_is_set = 0;
 	struct rtw_radar_action_parm act_param = {
 		.mode        = RTW_RADAR_NORMAL_MODE,
 		.channel     = 7,
@@ -72,6 +77,7 @@ void at_rad(u16 argc, char **argv)
 		} else if (0 == strcmp("channel", argv[i])) {
 			if ((argc > j) && (strlen(argv[j]) != 0)) {
 				act_param.channel = (u8)atoi(argv[j]);
+				channel_is_set = 1;
 			}
 		} else if (0 == strcmp("chrip_bw", argv[i])) {
 			if ((argc > j) && (strlen(argv[j]) != 0)) {
@@ -89,6 +95,28 @@ void at_rad(u16 argc, char **argv)
 			RTK_LOGW(NOTAG, "[+RAD] Invalid parameter type\r\n");
 			error_no = RTW_AT_ERR_INVALID_PARAM_VALUE;
 			goto end;
+		}
+	}
+
+	/* ACS: when enabling radar and the user did not explicitly set a channel,
+	 * scan the valid channels for the configured BW and pick the least busy one.
+	 * BW=70M has only one valid channel (7), so ACS is skipped. */
+	if (act_param.enable && !channel_is_set && act_param.chrip_bw != 0) {
+		static const u8 ch_40m[] = {5, 6, 7, 8, 9};
+		static const u8 ch_20m[] = {3, 4, 5, 6, 7, 8, 9, 10, 11};
+		struct rtw_acs_config acs_cfg = {.band = RTW_SUPPORT_BAND_2_4G};
+		u8 best_ch = act_param.channel;
+
+		if (act_param.chrip_bw == 1) {
+			acs_cfg.ch_list = (u8 *)ch_40m;
+			acs_cfg.ch_num = sizeof(ch_40m);
+		} else {
+			acs_cfg.ch_list = (u8 *)ch_20m;
+			acs_cfg.ch_num = sizeof(ch_20m);
+		}
+
+		if (wifi_acs_find_ideal_channel(&acs_cfg, &best_ch) == RTK_SUCCESS && best_ch != 0) {
+			act_param.channel = best_ch;
 		}
 	}
 
@@ -134,7 +162,7 @@ AT command process:
 ****************************************************************/
 void at_raddbg(u16 argc, char **argv)
 {
-	char buf[64] = {0};
+	char *buf = NULL;
 	int error_no = RTW_AT_OK;
 	int ret = 0;
 	u32 pos = 0;
@@ -152,15 +180,35 @@ void at_raddbg(u16 argc, char **argv)
 	}
 
 	/* NP-side params: forward via iwpriv */
-	for (i = 1; i < argc && pos < sizeof(buf) - 1; i++) {
+	u32 total_len = 0;
+	for (i = 1; i < argc; i++) {
+		total_len += strlen(argv[i]);
+	}
+	total_len += (argc - 2) + 1;  /* spaces + null */
+	/* This buffer is shared with the NP over IPC; both cores perform 32-byte
+	 * cache-line-granular DCache clean/invalidate on it. Allocate it cache-line
+	 * aligned and padded (rtos_mem_zmalloc == pvPortMallocCacheAligned) so those
+	 * ops never touch adjacent heap blocks' metadata. A plain malloc() here is
+	 * only 8-byte aligned and would corrupt the free list -> crash on next
+	 * malloc (e.g. AT+RAD=enable). */
+	total_len = (total_len + 31) & ~31u;
+	buf = (char *)rtos_mem_zmalloc(total_len);
+	if (buf == NULL) {
+		RTK_LOGW(NOTAG, "[RADDBG] malloc failed\r\n");
+		error_no = RTW_AT_ERR_UNKNOWN_ERR;
+		goto end;
+	}
+	buf[0] = '\0';
+	pos = 0;
+	for (i = 1; i < argc && pos < total_len - 1; i++) {
 		int len = strlen(argv[i]);
 		if (pos > 0) {
 			buf[pos++] = ' ';
 		}
-		strncpy(buf + pos, argv[i], sizeof(buf) - pos - 1);
+		strncpy(buf + pos, argv[i], total_len - pos - 1);
 		pos += len;
 	}
-	buf[sizeof(buf) - 1] = '\0';
+	buf[total_len - 1] = '\0';
 
 #ifdef CONFIG_WHC_HOST
 	ret = whc_host_api_iwpriv_command(buf, strlen(buf) + 1, 1);
@@ -173,6 +221,9 @@ void at_raddbg(u16 argc, char **argv)
 	}
 
 end:
+	if (buf) {
+		rtos_mem_free(buf);
+	}
 	if (error_no == RTW_AT_OK) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
@@ -180,12 +231,18 @@ end:
 	}
 }
 
-/* Weak stub: overridden by example/wifi/wifi_radar/atcmd_wifi_radar.c when that example is built. */
-__weak void at_radarstart(u16 argc, char **argv)
+void radar_atcmd_register_start_cb(void (*cb)(u16 argc, char **argv))
 {
-	(void)argc;
-	(void)argv;
-	at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_UNKNOWN_ERR);
+	g_at_radarstart_cb = cb;
+}
+
+void at_radarstart(u16 argc, char **argv)
+{
+	if (g_at_radarstart_cb) {
+		g_at_radarstart_cb(argc, argv);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, RTW_AT_ERR_UNKNOWN_ERR);
+	}
 }
 
 ATCMD_APONLY_TABLE_DATA_SECTION

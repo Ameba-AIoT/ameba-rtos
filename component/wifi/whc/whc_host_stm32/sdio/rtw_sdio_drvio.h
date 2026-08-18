@@ -21,6 +21,7 @@
 	}                                                                          \
 }
 
+void sdio_init_hwlock(void);
 u8 sdio_read8(struct whc_sdio *priv, u32 addr);
 u16 sdio_read16(struct whc_sdio *priv, u32 addr);
 u32 sdio_read32(struct whc_sdio *priv, u32 addr);

@@ -302,7 +302,7 @@ def normalize_json(data):
         return data
 
 
-def calculate_json_md5(file_path):
+def calculate_json_hash(file_path):
 
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -311,8 +311,8 @@ def calculate_json_md5(file_path):
         normalized_data = normalize_json(json_data)
         normalized_str = json.dumps(normalized_data, separators=(',', ':'), ensure_ascii=False)
 
-        md5_hash = hashlib.md5(normalized_str.encode('utf-8')).hexdigest()[:8]
-        return md5_hash
+        sha256_hash = hashlib.sha256(normalized_str.encode('utf-8')).hexdigest()[:8]
+        return sha256_hash
     except Exception as e:
         print(f"Error processing file: {e}", file=sys.stderr)
         sys.exit(1)
@@ -320,7 +320,7 @@ def calculate_json_md5(file_path):
 
 def update_summary_json(json_file_path, summary_json_path):
 
-    current_hash = calculate_json_md5(json_file_path)
+    current_hash = calculate_json_hash(json_file_path)
 
     with open(json_file_path, 'r', encoding='utf-8') as f:
         current_content = json.load(f)
@@ -390,7 +390,7 @@ def main():
     vc_parser.add_argument('summary_json', help='The summary JSON path')
 
     # Calculate hash
-    cal_hash_parser = subparsers.add_parser('hash', help='Calculate normalized MD5 hash of a JSON file')
+    cal_hash_parser = subparsers.add_parser('hash', help='Calculate normalized SHA256 hash of a JSON file')
     cal_hash_parser.add_argument('input_json', help='Path to the input JSON file')
 
     args = parser.parse_args()
@@ -408,7 +408,7 @@ def main():
         update_summary_json(args.input_json, args.summary_json)
 
     elif args.command == 'hash':
-        hash_result = calculate_json_md5(args.input_json)
+        hash_result = calculate_json_hash(args.input_json)
         print(hash_result)
 
 if __name__ == '__main__':

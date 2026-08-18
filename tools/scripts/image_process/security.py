@@ -493,6 +493,22 @@ class secure_boot():
         # mlen: sizeof(Manifest_TypeDef) - SIGN_MAX_LEN
         # sig: Signature[SIGN_MAX_LEN]
         # print(string_at(sig, sizeof(sig)))
+
+        # HSM delegation: `privkey` is a key spec "rtk_hsm:<name>" (Realtek HSM,
+        # ECDSA SECP256R1 + SHA256).  Sign via the HSM; the private key never
+        # leaves it.  Output format matches the local path below: R_BE||S_BE.
+        from rtk_hsm import is_rtk_hsm_spec, rtk_hsm_sign
+        if is_rtk_hsm_spec(privkey):
+            if self.IsHMAC:
+                print('rtk_hsm: HMAC hash alg not supported (HSM signs ECDSA-SHA256 only)!')
+                return -1
+            msg_bytes = msg if isinstance(msg, bytes) else string_at(addressof(msg), mlen)
+            der = rtk_hsm_sign(privkey, msg_bytes)
+            r, s = decode_dss_signature(der)
+            csize = 32  # SECP256R1
+            memmove(addressof(sig), r.to_bytes(csize, 'big') + s.to_bytes(csize, 'big'), csize * 2)
+            return 0
+
         use_fastecdsa = 0
         if id == Curve.SECP192R1:
             curve = ec.SECP192R1()
@@ -661,8 +677,18 @@ class secure_boot():
         keyinfo['sboot_public_key_hash'] = pubkey_hash
         return keyinfo
 
-    def gen_image_hash(self, filename, imghash):
+    def gen_image_hash(self, filename, imghash, skip_bytes=0):
+        # skip_bytes: leading bytes excluded from hash (e.g. RSIP GCM tag bin,
+        # which is authenticated by RSIP HW OTF instead of the image hash).
+        # Guard against a misconfigured skip that would leave no (or negative)
+        # bytes to hash, which would silently produce a hash over an empty stream.
+        file_size = os.path.getsize(filename)
+        if skip_bytes < 0 or skip_bytes >= file_size:
+            print('gen_image_hash: invalid skip_bytes %d for file %s (size %d)' % (skip_bytes, filename, file_size))
+            return -1
         with open(filename, 'rb') as f:
+            if skip_bytes:
+                f.seek(skip_bytes)
             buf = f.read(1024)
             if self.IsHMAC == 0:
                 hash = hashlib.new(self.MdType)

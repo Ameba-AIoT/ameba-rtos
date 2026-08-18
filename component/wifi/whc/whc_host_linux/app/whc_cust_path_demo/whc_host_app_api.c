@@ -113,3 +113,22 @@ int whc_host_api_send_nl_payload(uint8_t *buf, uint32_t buf_len)
 
 }
 
+// Kernel handles logon/logoff and blocks until device ACKs.
+int whc_host_api_send_log_fwd(uint8_t enable)
+{
+	int ret = 0;
+	struct msgtemplate msg;
+	unsigned char *ptr = msg.buf;
+
+	whc_host_fill_nlhdr(&msg, whc_netlink_info.family_id, 0, WHC_CMD_ECHO);
+	nla_put_u32(&ptr, WHC_ATTR_API_ID, API_WIFI_LOG_FWD);
+	nla_put_u8(&ptr, WHC_ATTR_LOG_ENABLE, enable);
+	msg.n.nlmsg_len += ptr - msg.buf;
+	ret = whc_host_api_send_nl_msg(whc_netlink_info.sockfd, (char *)&msg, msg.n.nlmsg_len);
+	if (ret < 0) {
+		printf("log_fwd msg send fail\n");
+	}
+
+	return ret;
+}
+

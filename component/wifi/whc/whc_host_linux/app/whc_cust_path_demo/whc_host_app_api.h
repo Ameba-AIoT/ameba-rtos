@@ -115,6 +115,9 @@ static inline void nla_put_payload(unsigned char **pbuf, int attrtype, const cha
 /* buf in user space send to kernel, final kernel to device */
 int whc_host_api_send_nl_payload(uint8_t *buf, uint32_t buf_len);
 
+/* dedicated helper: kernel owns log-forward on/off (blocks until device ACKs) */
+int whc_host_api_send_log_fwd(uint8_t enable);
+
 int whc_host_set_mac_internal(uint8_t idx, char *mac);
 int whc_host_api_create_nl_socket(int protocol, int pid);
 int whc_host_api_send_nl_msg(int fd, char *buf, int buflen);

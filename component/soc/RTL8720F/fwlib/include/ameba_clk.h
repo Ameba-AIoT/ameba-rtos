@@ -322,7 +322,6 @@ void OSC2M_R_Set(u32 setbit, u32 clearbit);
 u32 OSC2M_Calibration(u32 ppm_limit);
 u32 OSC_CalResult_Get(u8 cal_clk);
 u32 OSC_Clk_Get(void);
-void XTAL_AACK(void);
 
 #ifdef __cplusplus
 }

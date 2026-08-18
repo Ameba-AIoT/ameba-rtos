@@ -22,6 +22,7 @@
 #include <zephyr_msg.h>
 #include <rtk_bt_gatts.h>
 #include <rtk_bt_gattc.h>
+#include <rtk_bt_le_gap.h>
 #include <bt_api_config.h>
 #include <zephyr_stack_internal.h>
 #include <zephyr/kernel.h>
@@ -75,18 +76,24 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 	uint16_t ret = 0;
 	BT_LOGD("bt_stack_act_handler: group = %d, act = %d \r\n", p_cmd->group, p_cmd->act);
 	switch (p_cmd->group) {
+#if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 	case RTK_BT_LE_GP_GAP:
 		BT_LOGD("RTK_BT_LE_GP_GAP group \r\n");
 		bt_stack_le_gap_act_handle(p_cmd);
 		break;
+#endif
+#if defined(RTK_BLE_GATTS_SUPPORT) && RTK_BLE_GATTS_SUPPORT
 	case RTK_BT_LE_GP_GATTS:
 		BT_LOGD("RTK_BT_LE_GP_GATTS group \r\n");
 		bt_stack_gatts_act_handle(p_cmd);
 		break;
+#endif
+#if defined(RTK_BLE_GATTC_SUPPORT) && RTK_BLE_GATTC_SUPPORT
 	case RTK_BT_LE_GP_GATTC:
 		BT_LOGD("RTK_BT_LE_GP_GATTC group \r\n");
 		bt_stack_gattc_act_handle(p_cmd);
 		break;
+#endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	case RTK_BT_LE_GP_MESH_STACK:
 		BT_LOGD("RTK_BT_LE_GP_MESH_STACK group");
@@ -422,18 +429,11 @@ static uint16_t bt_stack_profile_init(void *app_conf)
 
 	if (papp_conf == NULL) {
 		app_profile_support = RTK_BT_PROFILE_GATTS | RTK_BT_PROFILE_GATTC;
-		bt_host.cccd_not_check = false;
-		bt_host.att_mtu = 23;
-		bt_host.master_init_mtu_req = true;
-		bt_host.slave_init_mtu_req = false;
 	} else {
 		app_profile_support = papp_conf->app_profile_support;
-		bt_host.cccd_not_check = papp_conf->cccd_not_check;
-		bt_host.att_mtu = MAX(23, papp_conf->mtu_size);
-		bt_host.master_init_mtu_req = papp_conf->master_init_mtu_req;
-		bt_host.slave_init_mtu_req = papp_conf->slave_init_mtu_req;
 	}
 
+#if defined(RTK_BLE_GATTS_SUPPORT) && RTK_BLE_GATTS_SUPPORT
 	if (app_profile_support & RTK_BT_PROFILE_GATTS) {
 		BT_LOGD("GATTS Profile init  \r\n");
 		ret = bt_stack_gatts_init(app_conf);
@@ -441,13 +441,15 @@ static uint16_t bt_stack_profile_init(void *app_conf)
 			return ret;
 		}
 	}
-
+#endif
+#if defined(RTK_BLE_GATTC_SUPPORT) && RTK_BLE_GATTC_SUPPORT
 	if (app_profile_support & RTK_BT_PROFILE_GATTC) {
 		ret = bt_stack_gattc_init(app_conf);
 		if (ret) {
 			return ret;
 		}
 	}
+#endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	if (app_profile_support & RTK_BT_PROFILE_MESH) {
 		ret = bt_stack_mesh_enable(papp_conf);
@@ -476,30 +478,30 @@ static uint16_t bt_stack_profile_init(void *app_conf)
 
 static uint16_t bt_stack_profile_deinit(void)
 {
-	uint32_t profile_conf = bt_stack_app_profile_conf;
-	if (profile_conf & RTK_BT_PROFILE_GATTS) {
+#if defined(RTK_BLE_GATTS_SUPPORT) && RTK_BLE_GATTS_SUPPORT
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_GATTS) {
 		bt_stack_gatts_deinit();
 	}
-	if (profile_conf & RTK_BT_PROFILE_GATTC) {
+#endif
+#if defined(RTK_BLE_GATTC_SUPPORT) && RTK_BLE_GATTC_SUPPORT
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_GATTC) {
 		bt_stack_gattc_deinit();
 	}
+#endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
-	if (profile_conf & RTK_BT_PROFILE_MESH) {
+	if (bt_stack_app_profile_conf & RTK_BT_PROFILE_MESH) {
 		bt_stack_mesh_deinit();
 	}
 #endif
-
 	bt_stack_app_profile_conf = 0;
 
 	return 0;
 }
 
-static uint16_t zephyr_bt_enable(bool user_def_service)
+static uint16_t zephyr_bt_enable(void)
 {
 	int b_resource_init = 0;
 	int b_stack_init = 0;
-
-	zephyr_builtin_gatt_svc_set(!user_def_service);
 
 	b_resource_init = zephyr_res_alloc();
 	if (b_resource_init) {
@@ -555,6 +557,44 @@ static uint16_t zephyr_bt_disable(void)
 	return 0;
 }
 
+static void bt_zephyr_set_host_config(void *app_config)
+{
+	rtk_bt_app_conf_t *papp_conf = (rtk_bt_app_conf_t *)app_config;
+
+	/* bt host shall have default value */
+	bt_host.prefer_all_phy = RTK_BT_LE_PHYS_PREFER_ALL;
+	bt_host.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+	bt_host.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
+	bt_host.max_tx_octets = 0x40;
+	bt_host.max_tx_time = 0x200;
+	bt_host.cccd_not_check = false;
+	bt_host.master_init_mtu_req = true;
+	bt_host.slave_init_mtu_req = false;
+	bt_host.builtin_service = true;
+	bt_host.att_mtu = 180;
+
+	if (papp_conf) {
+#if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
+		bt_host.prefer_all_phy = papp_conf->prefer_all_phy;
+		bt_host.prefer_tx_phy = papp_conf->prefer_tx_phy;
+		bt_host.prefer_rx_phy = papp_conf->prefer_rx_phy;
+#endif
+#if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
+		if (papp_conf->max_tx_octets && papp_conf->max_tx_time) {
+			bt_host.max_tx_octets = papp_conf->max_tx_octets;
+			bt_host.max_tx_time = papp_conf->max_tx_time;
+		}
+#endif
+		bt_host.cccd_not_check = papp_conf->cccd_not_check;
+		bt_host.master_init_mtu_req = papp_conf->master_init_mtu_req;
+		bt_host.slave_init_mtu_req = papp_conf->slave_init_mtu_req;
+		bt_host.builtin_service = !papp_conf->user_def_service;
+		bt_host.att_mtu = MAX(23, papp_conf->mtu_size);
+	}
+
+	zephyr_builtin_gatt_svc_set(bt_host.builtin_service);
+}
+
 static uint16_t bt_stack_init(void *app_config)
 {
 	int b_uart_init = 0;
@@ -573,8 +613,10 @@ static uint16_t bt_stack_init(void *app_config)
 		goto failed;
 	}
 
-	b_zephyr_init = zephyr_bt_enable(app_config && ((rtk_bt_app_conf_t *)app_config)->user_def_service);
+	/* It shall be before zephyr_bt_enable, because some host param may be used in zephyr_bt_enable */
+	bt_zephyr_set_host_config(app_config);
 
+	b_zephyr_init = zephyr_bt_enable();
 	if (b_zephyr_init) {
 		BT_LOGE("b_zephyr_init failed (err %d)\r\n", b_zephyr_init);
 		goto failed;

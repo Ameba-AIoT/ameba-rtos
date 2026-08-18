@@ -780,6 +780,10 @@ typedef struct {
 								((PATHINDEX) == LOGUART_TX_EMPTY_PATH_2_INTR) || \
 								((PATHINDEX) == LOGUART_TX_EMPTY_PATH_3_INTR) || \
 								((PATHINDEX) == LOGUART_TX_EMPTY_PATH_4_INTR))
+
+/* Single core on this SoC: path 1 is the only TX FIFO path in use. */
+#define LOGUART_TX_EMPTY_INTR   LOGUART_TX_EMPTY_PATH_1_INTR
+#define LOGUART_TX_EMPTY_STATUS LOGUART_BIT_TP1F_EMPTY
 /**
   * @}
   */

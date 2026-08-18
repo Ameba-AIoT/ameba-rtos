@@ -61,6 +61,15 @@ int rtw_nl_send_buf(const uint8_t *payload, uint32_t payload_len, int expect_rep
 int rtw_nl_send_dbg(const char *dbg_cmd);
 
 /*
+ * rtw_nl_send_log_fwd - Turn device→host log forwarding on/off.
+ *
+ * Uses a dedicated netlink API (API_WIFI_LOG_FWD) because the kernel has
+ * to own this command: it maintains state used across suspend/resume and
+ * blocks until the device ACKs the request.
+ */
+int rtw_nl_send_log_fwd(int enable);
+
+/*
  * rtw_nl_set_mac - Set MAC address via CMD_WIFI_SET_MAC (Pattern B).
  */
 int rtw_nl_set_mac(uint8_t idx, const char *mac_str);

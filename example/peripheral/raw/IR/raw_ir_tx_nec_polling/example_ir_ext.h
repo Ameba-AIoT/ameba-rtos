@@ -55,11 +55,11 @@
 
 #elif defined (CONFIG_AMEBAGREEN2)
 
-#define IR_PINMUX_S0_TX		_PA_25
-#define IR_PINMUX_S0_RX		_PA_26
+#define IR_PINMUX_S1_TX		_PA_25
+#define IR_PINMUX_S1_RX		_PA_26
 
-#define IR_PINMUX_S1_TX		_PA_26
-#define IR_PINMUX_S1_RX		_PA_25
+#define IR_PINMUX_S0_TX		_PA_26
+#define IR_PINMUX_S0_RX		_PA_25
 
 #define IR_PINMUX_S2_TX		_PB_25
 #define IR_PINMUX_S2_RX		_PB_26
@@ -93,8 +93,8 @@
 #define IR_CLOCK_HZ			100000000
 
 #elif defined (CONFIG_RTL8720F)
-#define IR_PINMUX_S1_TX		_PA_23
-#define IR_PINMUX_S1_RX		_PA_24
+#define IR_PINMUX_S1_TX		_PA_24
+#define IR_PINMUX_S1_RX		_PA_23
 
 #define IR_PINMUX_S0_TX		_PA_9
 #define IR_PINMUX_S0_RX		_PA_10

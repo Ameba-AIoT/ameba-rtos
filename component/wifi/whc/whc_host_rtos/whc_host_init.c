@@ -23,6 +23,33 @@
 #include "wpa_lite_intf.h"
 #include "rom_hal_rom_to_flash.h"
 
+#ifdef CONFIG_LWIP_LAYER
+#include <lwip/netif.h>
+
+NETIF_DECLARE_EXT_CALLBACK(whc_netinfo_ext_cb);
+
+static void whc_netinfo_ext_callback(struct netif *netif, netif_nsc_reason_t reason,
+									 const netif_ext_callback_args_t *args)
+{
+	(void)args;
+	if (reason & (LWIP_NSC_IPV4_ADDRESS_CHANGED |
+				  LWIP_NSC_IPV4_NETMASK_CHANGED |
+				  LWIP_NSC_IPV4_GATEWAY_CHANGED |
+				  LWIP_NSC_IPV4_SETTINGS_CHANGED |
+				  LWIP_NSC_STATUS_CHANGED)) {
+		if (netif_is_up(netif)) {
+			whc_host_update_network_info((u8)lwip_netif_get_idx(netif));
+		}
+	}
+}
+
+void whc_host_netinfo_monitor_init(void)
+{
+	netif_add_ext_callback(&whc_netinfo_ext_cb, whc_netinfo_ext_callback);
+}
+#endif /* CONFIG_LWIP_LAYER */
+
+
 /* Give default value if not defined */
 /******************************************************
  *               Function Definitions
@@ -125,3 +152,4 @@ __weak void wifi_set_rom2flash(void)
 	wifi_set_platform_rom_func(_my_calloc, _my_free, _my_random);
 	wifi_set_platform_rom_os_func();
 }
+

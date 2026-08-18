@@ -1,6 +1,7 @@
 #include <basic_types.h>
-#include <sdn_user_conf_bt.h>
 #include <sdn_user_conf_intf.h>
+#ifdef CONFIG_BT_SDN
+#include <sdn_user_conf_bt.h>
 
 uint8_t g_ble_ll_max_adv_set = BLE_LL_MAX_ADV_SET;
 uint8_t g_ble_ll_max_rx_adv_chain_num = BLE_LL_MAX_ADV_RX_CHAIN_NUM;
@@ -21,4 +22,6 @@ uint8_t g_ble_ll_pa_sync_chain_num = BLE_LL_MAX_PA_SYNC_CHAIN_NUM;
 #else
 uint8_t g_ble_ll_max_pa_sync_set_num = 0;
 uint8_t g_ble_ll_pa_sync_chain_num = 0;
+#endif
+
 #endif

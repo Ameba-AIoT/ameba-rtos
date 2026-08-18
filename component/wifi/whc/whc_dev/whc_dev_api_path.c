@@ -8,10 +8,6 @@
  */
 #include "whc_dev.h"
 
-#ifdef CONFIG_NAN
-extern u8 NAN_IPv6Parm[16];
-#endif
-
 extern int wifi_set_chplan(u8 chplan);
 void rtw_sme_auth_event(struct rtw_sme_auth_info *auth_info);
 void rtw_sme_set_assocreq_ie(u8 *buf, u32 size, u8 wpa_rsn_exist);
@@ -43,7 +39,6 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SET_EDCA_PARAM,	whc_event_wifi_set_EDCA_param},
 	{WHC_API_WIFI_AP_DEL_CLIENT,	whc_event_wifi_ap_del_client},
 	{WHC_API_WIFI_IWPRIV_INFO,	whc_event_wifi_iwpriv_info},
-	{WHC_API_WIFI_IP_UPDATE,		whc_event_wifi_ip_update},
 	{WHC_API_WIFI_AP_CH_SWITCH,		whc_event_wifi_ap_switch_ch},
 	{WHC_API_WIFI_SET_CHPLAN,	whc_event_wifi_set_chplan},
 	{WHC_API_WIFI_SET_COUNTRY_CODE,	whc_event_wifi_set_countrycode},
@@ -676,22 +671,6 @@ void whc_event_wifi_iwpriv_info(u32 api_id, u32 *param_buf)
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
-void whc_event_wifi_ip_update(u32 api_id, u32 *param_buf)
-{
-	int ret = 0;
-	u8 *p_ip_addr = (u8 *)param_buf;
-
-	memcpy(whc_ipc_ip_addr, p_ip_addr, IPv4_ALEN);
-
-	memcpy(IPv4Parm.IP, p_ip_addr, IPv4_ALEN);
-	memcpy(IPv6Parm.IP, p_ip_addr + IPv4_ALEN, IPv6_ALEN);
-#ifdef CONFIG_NAN
-	memcpy(NAN_IPv6Parm, p_ip_addr + IPv4_ALEN, IPv6_ALEN);
-#endif
-
-	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
-}
-
 #ifdef CONFIG_WHCH
 void rtw_recv_rx_stats_count_update(struct rtw_stats_info *pstats_info);
 void whc_event_wifi_stats_update(u32 api_id, u32 *param_buf)
@@ -1098,15 +1077,12 @@ void whc_event_wifi_driver_is_mp(u32 api_id, u32 *param_buf)
  * @param  ID[in]: api_id.
  * @param  param[in]: pointer to API parameter.
  * @param  param_len[in]: length of param in bytes.
- * @param  ret[out]: pointer to buffer for return value.
- * @param  ret_len[in]: length of ret buffer in bytes.
  * @return none.
  */
-void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
+void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len)
 {
 	u8 *buf = NULL;
 	struct whc_api_info *info;
-	struct whc_api_info *ret_msg;
 
 	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Device Call API %ld\n", id);
 
@@ -1122,47 +1098,14 @@ void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret
 
 	memcpy((void *)(info + 1), param, param_len);
 
-	/* wait for API calling done */
-	event_priv.b_waiting_for_ret = 1;
-	/* send ret_msg + ret_val(buf, len) */
+	/* No return value expected, because blocked on api_ret would cause
+	 * single thread deadlock. https://jira.realtek.com/browse/RSWLANDIOT-13413 */
 	whc_dev_send((u8 *)info, sizeof(struct whc_api_info) + param_len, buf, 0);
-	rtos_sema_take(event_priv.api_ret_sema, 0xFFFFFFFF);
-	event_priv.b_waiting_for_ret = 0;
-
-	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "Device API %ld return\n", id);
-
-	/* get return value */
-	ret_msg = (struct whc_api_info *)event_priv.rx_ret_msg;
-	if (ret_msg != NULL) {
-		/* check api_id of return msg */
-		if (ret_msg->api_id != id) {
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Linux API return value id not match!\n");
-		}
-
-		/* copy return value*/
-		if (ret != NULL && ret_len != 0) {
-			memcpy(ret, (u8 *)(ret_msg + 1), ret_len);
-		}
-
-		/* free rx buffer */
-		rtos_mem_free((u8 *)ret_msg);
-
-		event_priv.rx_ret_msg = NULL;
-	} else {
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Linux API return value is NULL!\n");
-	}
-
-	rtos_mutex_give(event_priv.send_mutex);
-	return;
 
 exit:
-	if (buf) {
-		rtos_mem_free(buf);
-	}
-
 	rtos_mutex_give(event_priv.send_mutex);
-	return;
 
+	return;
 }
 
 /**
@@ -1192,7 +1135,7 @@ void whc_dev_wifi_event_indicate(u32 event_cmd, u8 *evt_info, s32 evt_len)
 		memcpy((void *)(param + 2), evt_info, evt_len);
 	}
 
-	whc_dev_api_message_send(WHC_API_WIFI_EVENT, (u8 *)param, size, NULL, 0);
+	whc_dev_api_message_send(WHC_API_WIFI_EVENT, (u8 *)param, size);
 
 	if (!no_need_malloc) {
 		/* free buffer */
@@ -1207,7 +1150,7 @@ void whc_dev_scan_user_callback_indicate(unsigned int ap_num, void *user_data)
 	param_buf[0] = ap_num;
 	param_buf[1] = (u32)user_data;
 
-	whc_dev_api_message_send(WHC_API_SCAN_USER_CALLBACK, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
+	whc_dev_api_message_send(WHC_API_SCAN_USER_CALLBACK, (u8 *)param_buf, sizeof(param_buf));
 }
 
 void whc_dev_scan_each_report_user_callback_indicate(struct rtw_scan_result *scanned_ap_info, void *user_data, u8 *ies, u32 ie_len)
@@ -1226,56 +1169,13 @@ u8 whc_dev_promisc_callback_indicate(struct rtw_rx_pkt_info *pkt_info)
 	return RTW_PROMISC_NEED_DRV_HDL;
 }
 
-int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
-{
-	u32 param_buf[2];
-	int ret = 0;
-	param_buf[0] = gate;
-	param_buf[1] = ip;
-
-	whc_dev_api_message_send(WHC_API_IP_TABLE_CHK, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(ret));
-
-	return ret;
-}
-
 void whc_dev_ap_ch_switch_callback_indicate(unsigned char channel, s8 ret)
 {
 	u32 param_buf[2];
 
 	param_buf[0] = (u32)channel;
 	param_buf[1] = (u32)ret;
-	whc_dev_api_message_send(WHC_API_AP_CH_SWITCH, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
-}
-
-int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index)
-{
-	u32 size;
-	u32 *param;
-	u8 res_size = 0;
-
-	size = 2 * sizeof(u32) + 4;
-	param = (u32 *)rtos_mem_zmalloc(size);
-
-	param[0] = type;
-	param[1] = index;
-
-	if (input) {
-		memcpy((void *)(param + 2), input, 4);
-	}
-
-	if (type == WHC_WLAN_GET_IP || type == WHC_WLAN_GET_GW || type == WHC_WLAN_GET_GWMSK) {
-		res_size = 4;
-	} else if (type == WHC_WLAN_GET_HW_ADDR) {
-		res_size = 6;
-	}
-
-	whc_dev_api_message_send(WHC_API_GET_LWIP_INFO, (u8 *)param, size, event_priv.dev_req_network_info, res_size);
-
-	/* free buffer */
-	rtos_mem_free((u8 *)param);
-
-	return (int)event_priv.dev_req_network_info;
-
+	whc_dev_api_message_send(WHC_API_AP_CH_SWITCH, (u8 *)param_buf, sizeof(param_buf));
 }
 
 void whc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr)
@@ -1291,7 +1191,7 @@ void whc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr)
 		memcpy((void *)(param + 1), dev_addr, ETH_ALEN);
 	}
 
-	whc_dev_api_message_send(WHC_API_SET_NETIF_INFO, (u8 *)param, size, NULL, 0);
+	whc_dev_api_message_send(WHC_API_SET_NETIF_INFO, (u8 *)param, size);
 
 	/* free buffer */
 	rtos_mem_free((u8 *)param);
@@ -1305,7 +1205,7 @@ void whc_dev_acs_info_indicate(struct rtw_acs_mntr_rpt *acs_mntr_rpt)
 	param = (u32 *)rtos_mem_zmalloc(size);
 	memcpy((void *)(param), acs_mntr_rpt, size);
 
-	whc_dev_api_message_send(WHC_API_IP_ACS, (u8 *)param, size, NULL, 0);
+	whc_dev_api_message_send(WHC_API_IP_ACS, (u8 *)param, size);
 
 	rtos_mem_free((u8 *)param);
 }
@@ -1332,7 +1232,7 @@ void whc_dev_cfg80211_indicate_scan_report(u32 channel, u32 frame_is_bcn, s32 rs
 	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "CH%ld, %02x:%02x:%02x:%02x:%02x:%02x\n", channel,
 			 mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
 
-	whc_dev_api_message_send(WHC_API_CFG80211_SCAN_REPORT, (u8 *)param, size, NULL, 0);
+	whc_dev_api_message_send(WHC_API_CFG80211_SCAN_REPORT, (u8 *)param, size);
 
 	rtos_mem_free((u8 *)param);
 }
@@ -1347,7 +1247,7 @@ void whc_dev_update_regd_event_indicate(struct rtw_country_code_table *table)
 	param = (u8 *)rtos_mem_zmalloc(size);
 	memcpy(param, (u8 *)table, size);
 
-	whc_dev_api_message_send(WHC_API_UPDATE_REGD_EVENT, param, size, NULL, 0);
+	whc_dev_api_message_send(WHC_API_UPDATE_REGD_EVENT, param, size);
 
 	rtos_mem_free(param);
 }
@@ -1361,11 +1261,8 @@ void whc_dev_update_regd_event_indicate(struct rtw_country_code_table *table)
 void whc_dev_api_init(void)
 {
 	/* initialize the semaphores */
-	rtos_sema_create_static(&event_priv.api_ret_sema, 0, 0xFFFFFFFF);
 	rtos_sema_create_static(&event_priv.task_wake_sema, 0, 0xFFFFFFFF);
 	rtos_mutex_create_static(&event_priv.send_mutex);
-
-	event_priv.b_waiting_for_ret = 0;
 
 	/* Initialize the event task */
 	if (RTK_SUCCESS != rtos_task_create(&event_priv.api_dev_task, (const char *const)"whc_dev_api_task", (rtos_task_function_t)whc_dev_api_task, NULL,
@@ -1396,7 +1293,7 @@ void whc_dev_cfg80211_indicate_nan_match(u8 type, u8 inst_id, u8 peer_inst_id, u
 	memcpy((void *)(param + 6), addr, ETH_ALEN);
 	memcpy((void *)((u8 *)(param + 6) + ETH_ALEN), info, info_len);
 
-	whc_dev_api_message_send(WHC_API_CFG80211_NAN_REPORT_MATCH_EVENT, (u8 *)param, size, NULL, 0);
+	whc_dev_api_message_send(WHC_API_CFG80211_NAN_REPORT_MATCH_EVENT, (u8 *)param, size);
 
 	rtos_mem_free((u8 *)param);
 }
@@ -1411,7 +1308,7 @@ void whc_dev_cfg80211_nan_func_free(u64 data)
 	param_buf[0] = (u32)(data & 0xFFFFFFFF);
 	param_buf[1] = (u32)((data >> 32) & 0xFFFFFFFF);
 
-	whc_dev_api_message_send(WHC_API_CFG80211_NAN_DEL_FUNC, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
+	whc_dev_api_message_send(WHC_API_CFG80211_NAN_DEL_FUNC, (u8 *)param_buf, sizeof(param_buf));
 }
 
 void whc_dev_cfg80211_nan_cfgvendor_event_report(u16 event_id, void *event, int event_len)
@@ -1432,7 +1329,7 @@ void whc_dev_cfg80211_nan_cfgvendor_event_report(u16 event_id, void *event, int 
 		memcpy((void *)(param + 2), event, event_len);
 	}
 
-	whc_dev_api_message_send(WHC_API_CFG80211_NAN_CFGVENDOR_EVENT, (u8 *)param, size, NULL, 0);
+	whc_dev_api_message_send(WHC_API_CFG80211_NAN_CFGVENDOR_EVENT, (u8 *)param, size);
 
 	/* free buffer */
 	rtos_mem_free((u8 *)param);
@@ -1454,10 +1351,37 @@ void whc_dev_cfg80211_cfgvendor_send_cmd_reply(void *data, int len)
 	param[0] = len;
 	memcpy((void *)(param + 1), data, len);
 
-	whc_dev_api_message_send(WHC_API_CFG80211_NAN_CFGVENDOR_CMD_REPLY, (u8 *)param, size, NULL, 0);
+	whc_dev_api_message_send(WHC_API_CFG80211_NAN_CFGVENDOR_CMD_REPLY, (u8 *)param, size);
 
 	/* free buffer */
 	rtos_mem_free((u8 *)param);
 
 }
+
+#ifdef CONFIG_WHCH
+void whc_dev_nan_ndp_status_report(void *info, int len)
+{
+	u32 size;
+	u32 *param;
+
+	if (!info || (len <= 0)) {
+		return;
+	}
+
+	size = 2 * sizeof(u32) + len;
+	param = (u32 *)rtos_mem_zmalloc(size);
+	if (!param) {
+		return;
+	}
+
+	param[0] = 0;		/* reserved (host skips param_buf[0..1]) */
+	param[1] = len;
+	memcpy((void *)(param + 2), info, len);
+
+	whc_dev_api_message_send(WHC_API_NAN_NDP_STATUS, (u8 *)param, size);
+
+	rtos_mem_free((u8 *)param);
+}
+#endif
+
 #endif

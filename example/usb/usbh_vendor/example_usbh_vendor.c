@@ -378,6 +378,7 @@ static void example_usbh_vendor_hotplug_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(vendor_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			rtos_time_delay_ms(100);//make sure disconnect handle finish before deinit.
+			usbh_stop();
 			usbh_vendor_deinit();
 			usbh_deinit();
 
@@ -397,6 +398,9 @@ static void example_usbh_vendor_hotplug_thread(void *param)
 				usbh_deinit();
 				break;
 			}
+
+			/* Re-arm USB TRX after the re-init. */
+			usbh_start();
 		}
 	}
 
@@ -446,11 +450,15 @@ void example_usbh_vendor_thread(void *param)
 		goto error_exit;
 	}
 
+	/* All class drivers registered; start USB TRX so enumeration can run. */
+	usbh_start();
+
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
 	ret = rtos_task_create(&task, "example_usbh_vendor_hotplug_thread",
 						   example_usbh_vendor_hotplug_thread, NULL,
 						   CONFIG_USBH_VENDOR_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
+		usbh_stop();
 		usbh_vendor_deinit();
 		usbh_deinit();
 		goto error_exit;

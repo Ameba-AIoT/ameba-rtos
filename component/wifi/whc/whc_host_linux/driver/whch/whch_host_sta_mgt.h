@@ -12,7 +12,7 @@ struct sta_mlme_priv {
 
 	u8      stainfo_macid;
 	u8      stainfo_mac_addr[ETH_ALEN];
-	u8		sta_state;
+	u8		sta_state;	/* used for softap */
 
 	u32		stainfo_rx_byte_uni_in2s;
 	u16		stainfo_rx_data_pkts_in2s;
@@ -138,11 +138,12 @@ struct rtw_chan_def {
 
 /* STA lifecycle */
 void whc_host_sta_init(u8 iface_type);
-void _whc_host_sta_init_stainfo(struct sta_info *psta);
 struct sta_info *whc_host_sta_alloc_stainfo(u8 iface_type, u8 *hwaddr);
 void whc_host_sta_update_stainfo(u8 iface_type, u8 *hwaddr, struct rtw_event_sta_info *pstainfo, struct rtw_event_security_priv *psecinfo);
 int  whc_host_sta_free_stainfo(u8 iface_type, u8 *hwaddr);
 void whc_host_sta_free_resource(u8 wlan_idx);
+int whc_host_init_bcmc_stainfo(u8 iface_type);
+void whc_host_free_bcmc_stainfo(u8 iface_type);
 
 /* STA query */
 struct sta_info *whc_host_sta_get_stainfo(u8 iface_type, u8 *hwaddr);

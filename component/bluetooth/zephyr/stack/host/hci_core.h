@@ -461,9 +461,17 @@ struct bt_dev {
 
 #if ZEPHYR_FIX_CODE
 struct bt_host {
+	/* gap related */
+	uint8_t  prefer_all_phy;
+	uint8_t  prefer_tx_phy;
+	uint8_t  prefer_rx_phy;
+	uint16_t max_tx_octets;
+	uint16_t max_tx_time;
+	/* gatt related */
 	bool cccd_not_check;
 	bool master_init_mtu_req;
 	bool slave_init_mtu_req;
+	bool builtin_service;
 	uint16_t att_mtu;
 };
 

@@ -97,6 +97,9 @@ struct xmit_priv_t {
 struct hci_ops_t {
 	void (*send_data)(u8 *buf, u32 len, struct sk_buff *pskb);
 	void (*recv_data)(void *intf_priv);
+#ifdef WHCH_TXAGG
+	void (*send_xmitbuf)(struct whc_xmit_buf *pxmitbuf);
+#endif
 };
 #endif
 
@@ -213,7 +216,6 @@ struct whc_device {
 #endif
 
 	u8 host_init_done: 1;
-	u8 ipv6_addr_updated: 1;
 };
 
 extern struct whc_device global_idev;

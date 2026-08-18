@@ -4,6 +4,67 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/utility_internal.cmake)
     include(${CMAKE_CURRENT_LIST_DIR}/utility_internal.cmake)
 endif()
 
+# _ameba_pop_keyword(<list_var> <keyword> <out_var>)
+#
+# S-2: Extract <keyword> and its values from <list_var>, modifying it
+# in-place.  Value collection stops at the next p_[A-Z_]+ keyword (or end of
+# list).  The extracted values are placed in <out_var>.  Unlike
+# cmake_parse_arguments, this macro never mistakes a subsequent p_XXX keyword
+# for a value of the current keyword.
+macro(_ameba_pop_keyword _apk_list _apk_key _apk_out)
+    set(${_apk_out})
+    set(_apk_kept)
+    set(_apk_in_key FALSE)
+    foreach(_apk_arg IN LISTS ${_apk_list})
+        if("${_apk_arg}" STREQUAL "${_apk_key}")
+            set(_apk_in_key TRUE)
+        elseif(_apk_in_key AND "${_apk_arg}" MATCHES "^p_[A-Z_]+$")
+            set(_apk_in_key FALSE)
+            list(APPEND _apk_kept "${_apk_arg}")
+        elseif(_apk_in_key)
+            list(APPEND ${_apk_out} "${_apk_arg}")
+        else()
+            list(APPEND _apk_kept "${_apk_arg}")
+        endif()
+    endforeach()
+    set(${_apk_list} ${_apk_kept})
+    unset(_apk_kept)
+    unset(_apk_in_key)
+    unset(_apk_arg)
+endmacro()
+
+# Convenience alias kept for readability at call sites.
+macro(_ameba_pop_release_includes _apri_list _apri_out)
+    _ameba_pop_keyword(${_apri_list} p_RELEASE_INCLUDES ${_apri_out})
+endmacro()
+
+# _ameba_install_public_headers(<argn_var>)
+#
+# Install the public/release headers for an external/internal library target.
+# Pops p_RELEASE_INCLUDES from <argn_var> and installs those directories;
+# falls back to ${public_includes} when p_RELEASE_INCLUDES is absent.
+# Only "*.h" files directly in each listed directory are installed —
+# subdirectories are not traversed. Additionally, any directory whose path
+# contains an "internal" component is skipped entirely, so callers need not
+# filter these out from public_includes / p_RELEASE_INCLUDES.
+macro(_ameba_install_public_headers _aiph_argn)
+    _ameba_pop_release_includes(${_aiph_argn} _aiph_includes)
+    if(NOT _aiph_includes)
+        set(_aiph_includes ${public_includes})
+    endif()
+    foreach(_aiph_inc IN LISTS _aiph_includes)
+        get_filename_component(_aiph_inc "${_aiph_inc}" ABSOLUTE
+                               BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+        if("${_aiph_inc}" MATCHES "(^|/)internal(/|$)")
+            continue()
+        endif()
+        ameba_install_directory_flat("${_aiph_inc}" p_GLOB "*.h")
+    endforeach()
+    unset(_aiph_includes)
+    unset(_aiph_inc)
+endmacro()
+
+
 # import_kconfig(<prefix> <kconfig_fragment> [<keys>] [TARGET <target>])
 #
 # Parse a KConfig fragment (typically with extension .config) and
@@ -215,6 +276,47 @@ function(ameba_add_internal_library name)
         list(REMOVE_ITEM ARGN p_NO_WHOLE_ARCHIVE)
     endif()
 
+    # Install headers and open-source files declared via p_SOURCES.
+    # - p_RELEASE_INCLUDES given: install only those dirs (explicit override).
+    # - p_RELEASE_INCLUDES absent: install both public_includes and p_INCLUDES.
+    # In both cases, directories whose path contains "internal/" are skipped.
+    set(_ail_argn ${ARGN})
+    # Detect p_RELEASE_INCLUDES before _ameba_install_public_headers consumes it.
+    if("p_RELEASE_INCLUDES" IN_LIST _ail_argn)
+        set(_ail_has_rls_incs TRUE)
+    else()
+        set(_ail_has_rls_incs FALSE)
+    endif()
+    _ameba_install_public_headers(_ail_argn)
+    # Use a tmp copy for p_INCLUDES / p_SOURCES so _ail_argn retains both
+    # keywords for the subsequent ameba_add_library call.
+    set(_ail_argn_tmp ${_ail_argn})
+    # Install p_INCLUDES only when p_RELEASE_INCLUDES was not given.
+    if(NOT _ail_has_rls_incs)
+        _ameba_pop_keyword(_ail_argn_tmp p_INCLUDES _ail_private_incs)
+        foreach(_ail_priv_inc IN LISTS _ail_private_incs)
+            get_filename_component(_ail_priv_inc "${_ail_priv_inc}" ABSOLUTE
+                                   BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+            if("${_ail_priv_inc}" MATCHES "(^|/)internal(/|$)")
+                continue()
+            endif()
+            ameba_install_directory_flat("${_ail_priv_inc}" p_GLOB "*.h")
+        endforeach()
+    endif()
+    # Install p_SOURCES files (skip generated files under the build tree).
+    _ameba_pop_keyword(_ail_argn_tmp p_SOURCES _ail_sources)
+    if(_ail_sources)
+        foreach(_ail_src IN LISTS _ail_sources)
+            get_filename_component(_ail_src "${_ail_src}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+            file(RELATIVE_PATH _ail_src_rel "${CMAKE_BINARY_DIR}" "${_ail_src}")
+            if(NOT _ail_src_rel MATCHES "^\\.\\.")
+                continue()
+            endif()
+            ameba_install_files("${_ail_src}")
+        endforeach()
+    endif()
+    set(ARGN ${_ail_argn})
+
     ameba_add_library(${name} ${ARGN})
 
     if(c_CURRENT_IMAGE)
@@ -268,6 +370,11 @@ endfunction()
 
 
 function(ameba_add_external_tmp_library name)
+    # Install public headers (p_RELEASE_INCLUDES if given, else public_includes).
+    set(_aetl_argn ${ARGN})
+    _ameba_install_public_headers(_aetl_argn)
+    set(ARGN ${_aetl_argn})
+
     #NOTE: Only work before release
     if(CONFIG_AMEBA_RLS)
         return()
@@ -284,6 +391,11 @@ function(ameba_add_external_app_library name)
         p_OUTPUT_NAME               # Set target output name, default: ${name}
     )
     cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+
+    # Install public headers (p_RELEASE_INCLUDES if given, else public_includes).
+    set(_aeail_argn ${ARGN})
+    _ameba_install_public_headers(_aeail_argn)
+    set(ARGN ${_aeail_argn})
 
     #NOTE: Only work before release
     if(CONFIG_AMEBA_RLS)
@@ -307,6 +419,11 @@ function(ameba_add_external_soc_library name)
     )
     cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
 
+    # Install public headers (p_RELEASE_INCLUDES if given, else public_includes).
+    set(_aesl_argn ${ARGN})
+    _ameba_install_public_headers(_aesl_argn)
+    set(ARGN ${_aesl_argn})
+
     #NOTE: Only work before release
     if(CONFIG_AMEBA_RLS)
         return()
@@ -328,6 +445,11 @@ function(ameba_add_external_module_library name output_path)
         p_OUTPUT_NAME               # Set target output name, default: ${name}
     )
     cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+
+    # Install public headers (p_RELEASE_INCLUDES if given, else public_includes).
+    set(_aeml_argn ${ARGN})
+    _ameba_install_public_headers(_aeml_argn)
+    set(ARGN ${_aeml_argn})
 
     #NOTE: Only work before release
     if(CONFIG_AMEBA_RLS)
@@ -609,6 +731,27 @@ function(ameba_add_rom name)
 endfunction()
 
 function(ameba_add_subdirectory dir)
+    # Install only the cmake/Kconfig files directly in `dir` (non-recursive).
+    # Each subdirectory registers its own files when ameba_add_subdirectory is
+    # called for it, so the install mirrors the exact set of directories the
+    # current IC visits during configure — no over-installation of sibling dirs.
+    if(IS_ABSOLUTE "${dir}")
+        set(_aas_abs "${dir}")
+    else()
+        set(_aas_abs "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
+    endif()
+    file(TO_CMAKE_PATH "${_aas_abs}" _aas_abs)
+    file(RELATIVE_PATH _aas_rel "${c_BASEDIR}" "${_aas_abs}")
+    file(GLOB _aas_files
+        "${_aas_abs}/CMakeLists.txt"
+        "${_aas_abs}/*.cmake"
+        "${_aas_abs}/Kconfig"
+        "${_aas_abs}/Kconfig.*"
+        "${_aas_abs}/README.md"
+    )
+    if(_aas_files)
+        ameba_install_files(${_aas_files})
+    endif()
     if(IS_ABSOLUTE "${dir}")
         if(ARGN)
             add_subdirectory(${dir} ${ARGN})
@@ -650,8 +793,195 @@ function(ameba_add_subdirectory_if_exist dir)
     ameba_add_subdirectory(${dir} ${ARGN})
 endfunction()
 
+# ameba_install_directory_flat(<src_dir> [p_GLOB <pat>...])
+#
+# Install files directly under <src_dir> (non-recursive) to the mirrored path
+# relative to c_BASEDIR.  Subdirectories are never traversed.
+# <src_dir> may be absolute or relative to CMAKE_CURRENT_SOURCE_DIR.
+# p_GLOB restricts which files are collected (e.g. "*.h"); when omitted all
+# files directly under <src_dir> are installed.
+function(ameba_install_directory_flat src_dir)
+    cmake_parse_arguments(ARG "" "" "p_GLOB" ${ARGN})
+
+    if(NOT IS_ABSOLUTE "${src_dir}")
+        set(src_dir "${CMAKE_CURRENT_SOURCE_DIR}/${src_dir}")
+    endif()
+    file(TO_CMAKE_PATH "${src_dir}" src_dir)
+    file(RELATIVE_PATH _aidf_rel "${c_BASEDIR}" "${src_dir}")
+
+    if(ARG_p_GLOB)
+        set(_aidf_files)
+        foreach(_aidf_pat IN LISTS ARG_p_GLOB)
+            file(GLOB _aidf_matched "${src_dir}/${_aidf_pat}")
+            list(APPEND _aidf_files ${_aidf_matched})
+        endforeach()
+    else()
+        file(GLOB _aidf_files "${src_dir}/*")
+        # Remove subdirectories — GLOB returns both files and dirs
+        list(FILTER _aidf_files EXCLUDE REGEX "/$")
+        foreach(_aidf_f IN LISTS _aidf_files)
+            if(IS_DIRECTORY "${_aidf_f}")
+                list(REMOVE_ITEM _aidf_files "${_aidf_f}")
+            endif()
+        endforeach()
+    endif()
+
+    if(_aidf_files)
+        install(FILES ${_aidf_files} DESTINATION "${_aidf_rel}")
+    endif()
+
+endfunction()
+
+# ameba_install_directory(<src_dir>
+#   [p_GLOB <pat>...]             # Positive file glob (e.g. "*.h"); implies FILES_MATCHING.
+#                                 # When omitted every file is installed.
+#   [p_EXCLUDE_PATTERN <pat>...]  # Subdirectory / file name patterns to exclude.
+#   [p_EXCLUDE_REGEX   <re>...]   # Regex patterns to exclude.
+# )
+#
+# Install all files under <src_dir> to the mirrored path relative to c_BASEDIR.
+# <src_dir> may be absolute or relative to CMAKE_CURRENT_SOURCE_DIR.
+# .git is always excluded automatically; callers need not repeat it.
+#
+# Examples:
+#   # Install everything (e.g. example or third-party dir)
+#   ameba_install_directory("${example_dir}")
+#
+#   # Install everything except lib/ and ld_ns/ at any depth (e.g. SoC project dir)
+#   ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}"
+#       p_EXCLUDE_REGEX "(^|/)lib($|/)" "(^|/)ld_ns($|/)"
+#   )
+#
+#   # Install only public headers, hide internal/ and secure/
+#   ameba_install_directory("${inc_dir}"
+#       p_GLOB "*.h"
+#       p_EXCLUDE_PATTERN "internal" "secure"
+#   )
+function(ameba_install_directory src_dir)
+    cmake_parse_arguments(ARG "" "" "p_GLOB;p_EXCLUDE_PATTERN;p_EXCLUDE_REGEX" ${ARGN})
+
+    if(NOT IS_ABSOLUTE "${src_dir}")
+        set(src_dir "${CMAKE_CURRENT_SOURCE_DIR}/${src_dir}")
+    endif()
+    file(TO_CMAKE_PATH "${src_dir}" src_dir)
+    file(RELATIVE_PATH _aid_rel "${c_BASEDIR}" "${src_dir}")
+
+    set(_aid_args DIRECTORY "${src_dir}/" DESTINATION "${_aid_rel}")
+
+    # Positive glob — implies FILES_MATCHING
+    if(ARG_p_GLOB)
+        list(APPEND _aid_args FILES_MATCHING)
+        foreach(_aid_pat IN LISTS ARG_p_GLOB)
+            list(APPEND _aid_args PATTERN "${_aid_pat}")
+        endforeach()
+    endif()
+
+    # Pattern-based excludes
+    foreach(_aid_pat IN LISTS ARG_p_EXCLUDE_PATTERN)
+        list(APPEND _aid_args PATTERN "${_aid_pat}" EXCLUDE)
+    endforeach()
+
+    # .git is always excluded
+    list(APPEND _aid_args REGEX "/\\.git($|/)" EXCLUDE)
+
+    # Additional regex-based excludes
+    foreach(_aid_rex IN LISTS ARG_p_EXCLUDE_REGEX)
+        list(APPEND _aid_args REGEX "${_aid_rex}" EXCLUDE)
+    endforeach()
+
+    install(${_aid_args})
+
+endfunction()
+
+# ameba_install_files(<file> [<file>...])
+#
+# Install one or more files to their mirrored paths relative to c_BASEDIR.
+# Each file's destination directory is derived from its own parent directory,
+# so files from different directories can be passed in a single call.
+# Paths may be absolute or relative to CMAKE_CURRENT_SOURCE_DIR.
+function(ameba_install_files)
+    foreach(_aif_file IN LISTS ARGN)
+        if(NOT IS_ABSOLUTE "${_aif_file}")
+            set(_aif_file "${CMAKE_CURRENT_SOURCE_DIR}/${_aif_file}")
+        endif()
+        file(TO_CMAKE_PATH "${_aif_file}" _aif_file)
+        get_filename_component(_aif_dir "${_aif_file}" DIRECTORY)
+        file(RELATIVE_PATH _aif_rel "${c_BASEDIR}" "${_aif_dir}")
+        if("${_aif_rel}" STREQUAL "")
+            set(_aif_rel ".")
+        endif()
+        install(FILES "${_aif_file}" DESTINATION "${_aif_rel}")
+    endforeach()
+endfunction()
+
+# Install the entire third-party directory (all files, no extension filter) and
+# enter it as a subdirectory.  Unlike ameba_add_subdirectory which only installs
+# cmake/Kconfig files, third-party sources are installed wholesale because their
+# directory layout is opaque and all content is needed in the release SDK.
+function(ameba_add_subdirectory_third_party dir)
+    # Install the entire third-party directory (all files, no extension filter) and
+    # enter it as a subdirectory.  Unlike ameba_add_subdirectory which only installs
+    # cmake/Kconfig files, third-party sources are installed wholesale because their
+    # directory layout is opaque and all content is needed in the release SDK.
+    ameba_install_directory("${dir}")
+
+    if(IS_ABSOLUTE "${dir}")
+        file(TO_CMAKE_PATH "${dir}" dir)
+        get_filename_component(dir_name ${dir} NAME)
+        add_subdirectory(${dir} ${CMAKE_CURRENT_BINARY_DIR}/${dir_name})
+    else()
+        add_subdirectory(${dir})
+    endif()
+endfunction()
+
+function(ameba_add_subdirectory_third_party_if condition dir)
+    if(DEFINED ${condition})
+        if(${condition})
+            ameba_add_subdirectory_third_party(${dir} ${ARGN})
+        endif()
+    endif()
+endfunction()
+
+# Enter a closed-source subdirectory without installing any of its
+# files into the release SDK.  The directory participates in the build normally
+# but its entire contents are excluded from the release package — the opposite of
+# ameba_add_subdirectory_third_party which installs the whole directory tree.
+#
+# CMAKE_SKIP_INSTALL_RULES is set to TRUE inside this function's scope and
+# inherited by add_subdirectory, suppressing all install() calls (including those
+# triggered by ameba_add_internal_library / ameba_install_files etc.) throughout
+# the entire subtree.  The variable is local to this function and does not affect
+# any other directories.
+function(ameba_add_subdirectory_internal dir)
+    if(NOT IS_ABSOLUTE "${dir}")
+        file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${dir}" dir)
+    endif()
+    if(NOT EXISTS "${dir}/CMakeLists.txt")
+        return()
+    endif()
+    set(CMAKE_SKIP_INSTALL_RULES TRUE)
+    get_filename_component(dir_name ${dir} NAME)
+    add_subdirectory(${dir} ${CMAKE_CURRENT_BINARY_DIR}/${dir_name})
+endfunction()
+
+function(ameba_add_subdirectory_internal_if condition dir)
+    if(DEFINED ${condition})
+        if(${condition})
+            ameba_add_subdirectory_internal(${dir} ${ARGN})
+        endif()
+    endif()
+endfunction()
+
 function(ameba_global_include)
     target_include_directories(${c_MCU_PROJ_CONFIG} INTERFACE ${ARGN})
+    foreach(_agi_inc IN LISTS ARGN)
+        get_filename_component(_agi_inc "${_agi_inc}" ABSOLUTE
+                               BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+        if("${_agi_inc}" MATCHES "(^|/)internal(/|$)")
+            continue()
+        endif()
+        ameba_install_directory_flat("${_agi_inc}" p_GLOB "*.h")
+    endforeach()
 endfunction()
 
 function(ameba_global_define)
@@ -672,6 +1002,16 @@ function(ameba_global_library)
             set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY ${c_CURRENT_IMAGE}_whole_archive_libs "${ARGN}")
         endif()
     endif()
+
+    # Install all .a files listed in public_libraries.
+    # install(FILES ...) registers the rule at configure time; the file only needs
+    # to exist at install time (i.e. after the build step), so both prebuilt .a
+    # files and compiled-output .a files are handled uniformly here.
+    foreach(_agl_lib IN LISTS ARGN)
+        if(EXISTS ${_agl_lib})
+            ameba_install_files("${_agl_lib}")
+        endif()
+    endforeach()
 endfunction()
 
 function(ameba_layout_extract name ldfile origin end length)

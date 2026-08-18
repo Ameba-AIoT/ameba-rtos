@@ -1485,10 +1485,11 @@ typedef struct {
 	__IO u8 PSRAM_DQ;
 	__IO u8 PSRAM_RSVD;
 	__IO u32 psram_backup[6];
+	__IO u32 OTA_IMG_REMAP[2];
 	struct CLK_Info_Backup clk_info_bk;
 	__IO u8 AP_WAKEUP_STATUS;
 
-	u8 GBSS_SYS_RSVD[22];/* resvd for system */
+	u8 GBSS_SYS_RSVD[14];/* resvd for system */
 
 	u8 GBSS_USER_RSVD[64];/* resvd for user */
 } GBSS_TypeDef;
@@ -1502,10 +1503,6 @@ Compile_Assert(sizeof(GBSS_TypeDef) == 128, "GBSS_TypeDef size shall be 128");
 #endif
 
 /* MANUAL_GEN_END */
-#ifndef RTL8720F_TODO
-#define REG_LSYS_BOOT_ADDR_TZ 	REG_LSYS_FLASH_PARA_ADDR0 // RL7005 0x2F0
-#define REG_LSYS_BOOT_ADDR_NS 	REG_LSYS_FLASH_PARA_ADDR1 // RL7005 0x2F4
-#endif
 
 #endif
 

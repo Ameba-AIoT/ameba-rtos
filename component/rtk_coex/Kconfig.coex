@@ -5,19 +5,15 @@ if WLAN_MENU
             default y if !AMEBAD
 
         if COEX_MENU
+            config COEXIST_HOST # AP core, Follow different scenario
+                def_bool y if ((WHC_HOST && WHC_INTF_IPC) || (!WHC_HOST&&!WHC_DEV&&!WHC_NONE&&RTL8720F))
+                select BT_COEXIST
+
+            config COEXIST_DEV # NP core, Follow WLAN
+                def_bool y if (WHC_DEV || WHC_NONE)
+                select BT_COEXIST
+                
             config BT_COEXIST
-                bool
-                # AP core, Follow different scenario
-                default y if (WHC_HOST && WHC_INTF_IPC)
-                # NP core, Follow WLAN
-                default y if (WHC_DEV || WHC_NONE)
-
-                select COEXIST_HOST if (WHC_HOST && WHC_INTF_IPC)
-                select COEXIST_DEV if (WHC_DEV || WHC_NONE)
-
-            config COEXIST_HOST
-                bool
-            config COEXIST_DEV
                 bool
         endif
 

@@ -36,7 +36,7 @@ Test parameters are defined as macros at the top of `example_mbed_sdio_device_tp
 | `TP_PAYLOAD_SIZE` | 1000 | Payload bytes per TP packet |
 | `TP_SEND_INTERVAL_MS` | 1 | TX interval (ms) |
 | `TP_STATS_INTERVAL` | 1000 | Print stats every N received packets |
-| `EX_SPDIO_TX_BD_NUM` | 8 | TX buffer descriptor count |
+| `EX_SPDIO_TX_BD_NUM` | 4 | TX buffer descriptor count |
 | `EX_SPDIO_RX_BD_NUM` | 4 | RX buffer descriptor count |
 
 To change the SDIO pin group, modify `SDIO_Pin_Grp` in `component/soc/usrcfg/amebagreen2/ameba_intfcfg.c`. For available pin groups, refer to the `SDIO_PAD` table in the same file.
@@ -52,7 +52,7 @@ Power on the Device board **before** the Host board, or reset both boards at rou
 1. After boot, the Device initializes and waits for the Host:
    ```
    [SDIO_DEV-I] SDIO Device initialized
-   [SDIO_DEV-I] TX_BD=8  RX_BD=4  RX_bufsz=2112
+   [SDIO_DEV-I] TX_BD=4  RX_BD=4  RX_bufsz=2112
    [SDIO_DEV-I] Phase 0: Waiting for host greeting...
    ```
 2. When the Host sends its greeting, the Device completes the handshake:

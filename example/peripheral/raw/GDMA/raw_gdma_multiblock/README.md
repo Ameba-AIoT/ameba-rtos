@@ -10,14 +10,21 @@ None.
 
 # SW Configuration
 
-1. Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
-2. In order to deal with different situation, modify GdmaType variable, and it can be set:
-   - **ReloadDst**, transfer multiple blocks from the source address to the same block at the destination address.
-   - **ReloadSrc**, transfer one block from the source address to multi blocks at the destination address.
-   - **ReloadSrcDst**,  transfer multiple blocks from the source address to multi blocks at the destination address.
-   - **SingleBlock**, unavailable.
+`GDMA_TYPE` is a compile-time macro; set it via `-D` to select the transfer mode:
+
+| `-D` Option | Macro Value | Behavior |
+|---|---|---|
+| `-D GDMA_TYPE=ReloadDst` (default) | `#define GDMA_TYPE ReloadDst` | transfer multiple blocks from the source address to the same block at the destination address |
+| `-D GDMA_TYPE=ReloadSrc` | `#define GDMA_TYPE ReloadSrc` | transfer one block from the source address to multi blocks at the destination address |
+| `-D GDMA_TYPE=ReloadSrcDst` | `#define GDMA_TYPE ReloadSrcDst` | transfer multiple blocks from the source address to multi blocks at the destination address |
+
+> **Note**: `SingleBlock` mode is defined in code but unavailable (assertion fails if used).
+
+Build and Download:
+   * `./ameba.py build -a raw_gdma_multiblock -D GDMA_TYPE=ReloadDst` (default)
+   * Or `./ameba.py build -a raw_gdma_multiblock -D GDMA_TYPE=ReloadSrc`
+   * Or `./ameba.py build -a raw_gdma_multiblock -D GDMA_TYPE=ReloadSrcDst`
+   * Download images to board by Ameba Image Tool.
 
 # Expected Result
 

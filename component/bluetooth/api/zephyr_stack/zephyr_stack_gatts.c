@@ -70,7 +70,7 @@ void bt_zephyr_gatts_mtu_udpated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 	p_gatt_mtu_exchange_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)p_evt_t->data;
 	p_gatt_mtu_exchange_ind->result = RTK_BT_OK;
 	p_gatt_mtu_exchange_ind->conn_handle = conn->handle;
-	p_gatt_mtu_exchange_ind->mtu_size = (tx > rx) ? rx : tx;
+	p_gatt_mtu_exchange_ind->mtu_size = MIN(tx, rx);
 
 	rtk_bt_evt_indicate(p_evt_t, NULL);
 
@@ -179,18 +179,21 @@ static ssize_t bt_stack_gatts_read_cb(struct bt_conn *conn, const struct bt_gatt
 /* if req contains data from perivous write request, append buf to perivous data */
 static bool _copy_write_buf(zephyr_gatts_received_req_t *req, const void *buf, uint16_t len, uint16_t handle, uint16_t index, uint16_t app_id)
 {
-	void *data;
-	data = osif_mem_alloc(RAM_TYPE_DATA_ON, len + req->len);
-	if (!data) {
-		return false;
-	}
+	void *data = NULL;
 
-	if (req->data) { /* copy old data */
-		memcpy(data, req->data, req->len);
-		osif_mem_free(req->data);
-	}
+	if (len + req->len) {
+		data = osif_mem_alloc(RAM_TYPE_DATA_ON, len + req->len);
+		if (!data) {
+			return false;
+		}
 
-	memcpy((uint8_t *)data + req->len, buf, len);
+		if (req->data) { /* copy old data */
+			memcpy(data, req->data, req->len);
+			osif_mem_free(req->data);
+		}
+
+		memcpy((uint8_t *)data + req->len, buf, len);
+	}
 	req->data = data;
 	req->len += len;
 	req->conn_handle = handle;

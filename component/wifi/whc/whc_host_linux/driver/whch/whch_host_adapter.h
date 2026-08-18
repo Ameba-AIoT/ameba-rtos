@@ -5,7 +5,7 @@ struct whch_mlme_priv {
 	u8					acm_mask;			/* for wmm acm mask */
 	u8					user_tx_rate;
 
-	struct timer_list dynamic_timer;
+	struct delayed_work dynamic_work;
 
 	/* traffic statics */
 	u32		NumRxOkInPeriod;

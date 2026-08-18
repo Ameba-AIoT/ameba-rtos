@@ -11,7 +11,10 @@
 #define DATA_SIZE   4096
 
 /* abort transfer*/
-uint8_t abort_transfer = 0;
+#ifndef ABORT_TRANSFER
+#define ABORT_TRANSFER 0
+#endif
+uint8_t abort_transfer = ABORT_TRANSFER;
 
 
 /*src/dst buffer*/

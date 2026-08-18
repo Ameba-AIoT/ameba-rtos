@@ -134,4 +134,36 @@
       REG_LSYS_BOOT_ADDR_TZ: '0x02F0',
     },
   },
+  RLE1509: {
+    IMG_PROJECT: 'km4tz',
+    GDB_PORTS: {
+      km4tz: 2335,
+      km4ns: 2331,
+    },
+    REG_VARS: {
+      SYSTEM_CTRL_BASE: '0x40800000',
+      REG_LSYS_BOOT_CFG: '0x026C',
+    },
+    ROM: {
+      km4tz:
+        ['./lib/RLE1509_rom_acut/km4tz_rom.bin', '0x00020000'], // one file only
+      km4ns:
+        ['./lib/RLE1509_rom_acut/km4ns_rom.bin', '0x00020000'], // one file only
+    },
+    BIN_MAP: [
+      ['app', 'FlashFileSize'],
+      ['boot', 'XIPBootSize'],
+      ['km4tz_image3_all', 'Img3FileSize'],
+    ],
+    FLASH_PARAMS: {
+      PC: '0x00020020',
+      SP: '0x30005000',
+      FLOADER_ADDR: '0x30070020',
+      WR_CHECK_EN: 0,
+      IMG2_ADDR: '0x14000',
+      IMG3_ADDR: '0x0',
+      TZ_SETUP_EN: 1,
+      REG_LSYS_BOOT_ADDR_TZ: '0x02F0',
+    },
+  },
 }

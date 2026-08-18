@@ -11,23 +11,18 @@
 
 #define MUTEX_WAIT_TIMEOUT K_FOREVER
 #define SEMA_MAX_COUNT	0xFFFFFFFF
-
 #define MAX_SKB_BUF_SIZE_NORMAL	1664
+#define whc_host_rx_req_task_prio	2
+#define WIFI_STACK_SIZE_RX_REQ_TASK (4096)
+#define SDIO_POLLING_STACK_SIZE 1024
 
 struct whc_sdio {
 	struct k_mutex lock; /* mutex to protect send host message */
 	struct k_sem txbd_wq;
 	struct k_sem host_send; /* sema to protect whc host send */
 	struct k_sem host_recv_wake; /* for recv task */
-	struct k_sem host_recv_done; /* for recv task */
 
-	/* for host<->dev synchronous request/return */
-	struct k_mutex send_mutex;
-	struct k_sem api_ret_sema;
 	struct sdio_func *func;
-
-	uint8_t *rx_buf;
-	uint8_t *rx_ret_msg;
 
 	uint32_t 	sdio_himr;
 	uint32_t	sdio_hisr;
@@ -36,14 +31,10 @@ struct whc_sdio {
 
 	uint16_t	txbd_size;
 	uint16_t	txbd_wptr;
-	uint16_t	rxbd_num;
 	uint16_t	SdioTxBDFreeNum;
 
 	uint8_t	tx_avail_int_triggered;
-	uint8_t	tx_block_mode;
-	uint8_t	rx_block_mode;
 	uint8_t dev_state;
-	uint8_t b_waiting_for_ret: 1;
 
 	/* one fixed tx buf, protected by host_send sema, sync tansfer for sdio host */
 	__attribute__((aligned(4))) uint8_t tx_buf[SIZE_TX_DESC + sizeof(struct whc_msg_info) + MAX_SKB_BUF_SIZE_NORMAL];
@@ -66,32 +57,22 @@ struct whc_txbuf_info_t {
 };
 
 /* ---- port glue for the shared whc_host_sdio_trx_common.c ---- */
-#define WHC_MALLOC(_sz)		k_malloc(_sz)
-#define WHC_FREE(_p)		k_free(_p)
-#define WHC_SEM_TAKE(_s)	k_sem_take(&(_s), MUTEX_WAIT_TIMEOUT)
-#define WHC_SEM_TAKE_TIMEOUT(_s, _t)	rtos_sema_take(&(_s), (_t))
-#define WHC_HOST_SDIO_RX_INT_DISABLE(_p) \
-	do { uint32_t _himr = (_p)->sdio_himr & (~SDIO_HIMR_RX_REQUEST_MSK); \
-		rtw_write32((_p), SDIO_REG_HIMR,  _himr); } while (0)
-#define WHC_HOST_SDIO_RX_INT_RESTORE(_p) \
-	do { uint32_t _himr = (_p)->sdio_himr; \
-		rtw_write32((_p), SDIO_REG_HIMR,  _himr); } while (0)
-#define WHC_SEM_GIVE(_s)	k_sem_give(&(_s))
-#define WHC_HOST_SDIO_HISR_CLEAR(_p) \
-	do { uint32_t _v = (_p)->sdio_hisr & MASK_SDIO_HISR_CLEAR; \
-		if (_v) { rtw_write32((_p), SDIO_REG_HISR, _v); } } while (0)
+#define whc_malloc(_sz)		k_malloc(_sz)
+#define whc_free(_p)		k_free(_p)
 
-#define WHC_MUTEX_TAKE(_m, _t)		k_mutex_lock(&(_m), (_t))
-#define WHC_MUTEX_GIVE(_m)		k_mutex_unlock(&(_m))
-#define WHC_MSLEEP(_ms)			k_sleep(K_MSEC(_ms))
-#define WHC_HOST_SDIO_ALLOC_IRQ(_p)		rtw_sdio_alloc_irq(_p)
+#define whc_sem_take_timeout(_s, _t)	rtos_sema_take(&(_s), (_t))
+#define whc_sem_give(_s)	k_sem_give(&(_s))
+#define whc_mutex_init(_m)		k_mutex_init(&(_m))
+#define whc_mutex_take(_m, _t)		k_mutex_lock(&(_m), (_t))
+#define whc_mutex_give(_m)		k_mutex_unlock(&(_m))
 
-#define WHC_HOST_SDIO_RX_DEFAULT(_b)	whc_host_pkt_rx_to_user(_b)
+#define whc_msleep(_ms)			k_sleep(K_MSEC(_ms))
+
+#define whc_host_sdio_alloc_irq(_p)	rtw_sdio_alloc_irq(_p)
+#define whc_host_sdio_rx_default(_b)	whc_host_deliver_rxbuf_to_user(_b)
 
 void whc_host_sdio_recv_pkts(uint8_t *buf);
-
-uint32_t rtw_sdio_init(struct whc_sdio *priv);
-
+uint32_t whc_sdio_host_init(struct whc_sdio *priv);
 s32 wifi_on(uint8_t mode);
 void whc_host_sdio_init(void);
 

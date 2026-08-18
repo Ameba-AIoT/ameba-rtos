@@ -111,7 +111,7 @@
 #endif
 #endif
 
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAPRO3) || defined(CONFIG_RTL8720F)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAPRO3)
 #if defined(CONFIG_COEXIST_HOST)
 /* configuration for AP */
 #define COEX_IPC_DIR_MSG_RX IPC_NP_TO_AP
@@ -124,6 +124,33 @@
 #define COEX_IPC_DIR_MSG_TX IPC_NP_TO_AP
 #define IPC_H2D_COEX_API_TRAN	IPC_A2N_COEX_API_TRAN
 #define IPC_D2H_COEX_API_TRAN	IPC_N2A_COEX_API_TRAN
+#endif
+
+#elif defined(CONFIG_RTL8720F)
+#if defined(CONFIG_WHC_INTF_IPC)
+#if defined(CONFIG_COEXIST_HOST)
+/* configuration for TZ */
+#define COEX_IPC_DIR_MSG_RX IPC_NP_TO_AP
+#define COEX_IPC_DIR_MSG_TX IPC_AP_TO_NP
+#elif defined(CONFIG_COEXIST_DEV)
+/* configuration for NS */
+#define COEX_IPC_DIR_MSG_RX IPC_AP_TO_NP
+#define COEX_IPC_DIR_MSG_TX IPC_NP_TO_AP
+#endif
+#define IPC_H2D_COEX_API_TRAN	IPC_A2N_COEX_API_TRAN
+#define IPC_D2H_COEX_API_TRAN	IPC_N2A_COEX_API_TRAN
+#else // need case: whc_dev(wifi@AP+SDN@NP), whc_none(wifi@AP+SDN@NP)
+#if defined(CONFIG_COEXIST_HOST)
+/* configuration for NS */
+#define COEX_IPC_DIR_MSG_RX IPC_AP_TO_NP
+#define COEX_IPC_DIR_MSG_TX IPC_NP_TO_AP
+#elif defined(CONFIG_COEXIST_DEV)
+/* configuration for TZ */
+#define COEX_IPC_DIR_MSG_RX IPC_NP_TO_AP
+#define COEX_IPC_DIR_MSG_TX IPC_AP_TO_NP
+#endif
+#define IPC_H2D_COEX_API_TRAN	IPC_N2A_COEX_API_TRAN
+#define IPC_D2H_COEX_API_TRAN	IPC_A2N_COEX_API_TRAN
 #endif
 
 #elif defined(CONFIG_AMEBAD)

@@ -32,7 +32,7 @@ struct ipc_msg_q_priv {
 	rtos_mutex_t msg_send_lock;
 	u8 b_queue_working; /* flag to notice the queue is working */
 	struct ipc_msg_node *ipc_msg_pool; /* dynamic pool for queue node */
-	u8 ipc_msg_node_max;
+	u16 ipc_msg_node_max;
 };
 
 /* -------------------------- Function declaration -------------------------- */

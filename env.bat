@@ -10,6 +10,7 @@ if defined RTK_TOOLCHAIN_DIR (
 ) else (
   set "RTK_TOOLCHAIN_DIR=%RTK_TOOLCHAIN_DIR_NT%"
 )
+if not exist "%RTK_TOOLCHAIN_DIR%" mkdir "%RTK_TOOLCHAIN_DIR%"
 
 set "PREBUILTS_VERSION=1.0.3"
 set "PREBUILTS_DIR=%RTK_TOOLCHAIN_DIR%\prebuilts-win-%PREBUILTS_VERSION%"
@@ -81,19 +82,26 @@ if not exist "%PREBUILTS_DIR%.zip" (
 		goto end
 	)
 	echo download....
-	curl.exe -fL# -o "%PREBUILTS_DIR%.zip" "%DOWNLOAD_URL%"
-	if !errorlevel! neq 0 (
-		if exist "%PREBUILTS_DIR%.zip" del /f /q "%PREBUILTS_DIR%.zip"
-		echo Try to download from %DOWNLOAD_URL_SECOND_SOURCE%
+	rem Set USE_SECOND_SOURCE=True or True to skip the primary mirror and download
+	rem directly from the second source (e.g. GitHub Releases).
+	if "%USE_SECOND_SOURCE%"=="True" (
+		echo USE_SECOND_SOURCE=True, downloading from %DOWNLOAD_URL_SECOND_SOURCE%
 		curl.exe -fL# -o "%PREBUILTS_DIR%.zip" "%DOWNLOAD_URL_SECOND_SOURCE%"
+	) else (
+		curl.exe -fL# -o "%PREBUILTS_DIR%.zip" "%DOWNLOAD_URL%"
 		if !errorlevel! neq 0 (
 			if exist "%PREBUILTS_DIR%.zip" del /f /q "%PREBUILTS_DIR%.zip"
-			echo Download failed. Please download manually from:
-			echo   %DOWNLOAD_URL%
-			echo   %DOWNLOAD_URL_SECOND_SOURCE%
-			echo and unzip it at %RTK_TOOLCHAIN_DIR%
-			goto end
+			echo Try to download from %DOWNLOAD_URL_SECOND_SOURCE%
+			curl.exe -fL# -o "%PREBUILTS_DIR%.zip" "%DOWNLOAD_URL_SECOND_SOURCE%"
 		)
+	)
+	if !errorlevel! neq 0 (
+		if exist "%PREBUILTS_DIR%.zip" del /f /q "%PREBUILTS_DIR%.zip"
+		echo Download failed. Please download manually from:
+		echo   %DOWNLOAD_URL%
+		echo   %DOWNLOAD_URL_SECOND_SOURCE%
+		echo and unzip it at %RTK_TOOLCHAIN_DIR%
+		goto end
 	)
 )
 where tar.exe >nul 2>&1

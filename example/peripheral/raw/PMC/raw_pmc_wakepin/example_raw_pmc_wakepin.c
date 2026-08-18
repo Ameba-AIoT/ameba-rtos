@@ -2,6 +2,10 @@
 #include "os_wrapper.h"
 #include <stdio.h>
 
+#ifndef PMC_WAKEPIN
+#define PMC_WAKEPIN  WAKEPIN_0
+#endif
+
 static void wakepin_dslp_handler(void)
 {
 	u32 pinidx;
@@ -28,7 +32,7 @@ int example_raw_pmc_wakepin(void)
 		/* config wakepin */
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "set aon wakepin to wakeup\n");
 		Wakepin_Debounce_Setting(100, ENABLE);
-		Wakepin_Setting(WAKEPIN_0, HIGH_LEVEL_WAKEUP);
+		Wakepin_Setting(PMC_WAKEPIN, HIGH_LEVEL_WAKEUP);
 
 		/* release wake lock and deep sleep wake lock */
 		pmu_release_deepwakelock(PMU_OS);

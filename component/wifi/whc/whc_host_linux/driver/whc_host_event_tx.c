@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 
 #include <whc_host_linux.h>
 
@@ -464,19 +465,6 @@ int whc_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	whc_host_send_event(WHC_API_WIFI_SAE_STATUS, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 
 	kfree((void *)param);
-
-	return ret;
-}
-
-u32 whc_host_update_ip_addr(void)
-{
-	u32 ret = 0;
-	u8 param[RTW_IP_ADDR_LEN + RTW_IPv6_ADDR_LEN];
-
-	memcpy(param, global_idev.ip_addr, RTW_IP_ADDR_LEN);
-	memcpy(param + RTW_IP_ADDR_LEN, global_idev.ipv6_addr, RTW_IPv6_ADDR_LEN);
-
-	whc_host_send_event(WHC_API_WIFI_IP_UPDATE, param, sizeof(param), (u8 *)&ret, sizeof(u32));
 
 	return ret;
 }

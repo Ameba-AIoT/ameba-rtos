@@ -18,7 +18,7 @@
 static const char *const TAG = "SDIO_DEV";
 
 #define EX_SPDIO_STACKSIZE		2048
-#define EX_SPDIO_TX_BD_NUM		8	/* n*2, 2 BD for one transaction */
+#define EX_SPDIO_TX_BD_NUM		4
 #define EX_SPDIO_RX_BD_NUM		4
 #define EX_SPDIO_RX_BUFSZ		(SPDIO_RX_BUFSZ_ALIGN(2048 + 24))
 
@@ -265,6 +265,7 @@ reassign_buf:
 	/* Re-assign RX buffer for next DMA transfer */
 	new_buf = (u32)rtos_mem_malloc(obj->device_rx_bufsz + SPDIO_DMA_ALIGN_4);
 	if (new_buf) {
+		DCache_CleanInvalidate(new_buf, obj->device_rx_bufsz + SPDIO_DMA_ALIGN_4);
 		rtos_mem_free((void *)rx_buf->buf_allocated);
 		rx_buf->buf_allocated = new_buf;
 		rx_buf->size_allocated = obj->device_rx_bufsz + SPDIO_DMA_ALIGN_4;
@@ -295,7 +296,7 @@ static void ex_spdio_thread(void *param)
 	UNUSED(param);
 	u32 i;
 
-	rtos_sema_create(&tx_sema, EX_SPDIO_TX_BD_NUM / 2 - 1, EX_SPDIO_TX_BD_NUM / 2 - 1);
+	rtos_sema_create(&tx_sema, EX_SPDIO_TX_BD_NUM - 1, EX_SPDIO_TX_BD_NUM - 1);
 	rtos_sema_create(&start_tx_sema, 0, 1);
 
 	spdio_dev.priv = NULL;

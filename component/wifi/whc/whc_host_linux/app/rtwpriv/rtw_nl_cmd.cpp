@@ -74,20 +74,32 @@ static int handle_getmac(int argc, char *argv[])
 
 static int handle_logon(int argc, char *argv[])
 {
-	uint8_t payload[8];
-	int len;
-	len = build_whc_payload(payload, sizeof(payload), 0x15, NULL, 0);
-	if (len < 0) {
-		return -1;
-	}
-	return rtw_nl_send_buf(payload, len, 0);
+	(void)argc;
+	(void)argv;
+	return rtw_nl_send_log_fwd(1);
 }
 
 static int handle_logoff(int argc, char *argv[])
 {
+	(void)argc;
+	(void)argv;
+	return rtw_nl_send_log_fwd(0);
+}
+
+static int handle_clearota(int argc, char *argv[])
+{
 	uint8_t payload[8];
+	uint8_t img_id = 1;
 	int len;
-	len = build_whc_payload(payload, sizeof(payload), 0x16, NULL, 0);
+
+	if (argc > 4) {
+		fprintf(stderr, "Usage: rtwpriv otaclear <img_id>\n");
+		return -1;
+	} else if (argc == 4) {
+		img_id = (uint8_t)atoi(argv[3]);
+	}
+
+	len = build_whc_payload(payload, sizeof(payload), 0x17, &img_id, 1);
 	if (len < 0) {
 		return -1;
 	}
@@ -124,6 +136,7 @@ static const struct {
 	{"getmac",	handle_getmac,	"<wlan_idx>",		"Get the MAC address of the given wlan index"},
 	{"logon",	handle_logon,	"",			"Enable firmware log output"},
 	{"logoff",	handle_logoff,	"",			"Disable firmware log output"},
+	{"otaclear",	handle_clearota,	"",		"Clear signature of current image to switch to another image. Only valid for BOOT_FROM_FLASH ICs"},
 	{"dbg",		handle_dbg,	"<cmd> [args...]",	"Send a raw debug command string"},
 	{NULL, NULL, NULL, NULL}
 };

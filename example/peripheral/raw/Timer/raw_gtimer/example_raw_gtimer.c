@@ -19,6 +19,7 @@
 #define GTIMER_PERIOD_US		1000000	//us
 #define GTIMER_ONESHOT_US		500000	//us
 
+volatile uint32_t time1_expired = 0;
 volatile uint32_t time2_expired = 0;
 
 u32 timer1_timeout_handler(void *id)
@@ -26,6 +27,7 @@ u32 timer1_timeout_handler(void *id)
 	RTIM_TimeBaseInitTypeDef *gtimer = (RTIM_TimeBaseInitTypeDef *) id;
 
 	GPIO_WriteBit(GPIO_LED_PIN1, !GPIO_ReadDataBit(GPIO_LED_PIN1));
+	time1_expired = 1;
 	RTIM_INTClear(TIMx[gtimer->TIM_Idx]);
 
 	/* make sure all intr pending bits cleared ok, to avoid timeout is not enough in rom code */
@@ -93,7 +95,12 @@ void raw_gtimer_demo(void)
 	RTIM_Cmd(TIMx[GTIMER_ONESHOT_IDX], ENABLE);
 
 	while (1) {
+		if (time1_expired) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "GTIMER_PERIOD_EXPIRED\n");
+			time1_expired = 0;
+		}
 		if (time2_expired) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "GTIMER_ONESHOT_EXPIRED\n");
 			GPIO_WriteBit(GPIO_LED_PIN2, !GPIO_ReadDataBit(GPIO_LED_PIN2));
 			time2_expired = 0;
 			RTIM_Cmd(TIMx[GTIMER_ONESHOT_IDX], ENABLE);

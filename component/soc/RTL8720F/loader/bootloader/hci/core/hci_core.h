@@ -130,7 +130,7 @@ int HCI_Init(void);
 void HCI_DeInit(void);
 int HCI_RxProcess(HCI_AdapterTypeDef *adapter, u8 *buf, u32 size);
 int HCI_WaitForExit(void);
-
+IMAGE_HEADER *HCI_SelectEmptyHdr(u32 addr);
 #ifdef __cplusplus
 }
 #endif

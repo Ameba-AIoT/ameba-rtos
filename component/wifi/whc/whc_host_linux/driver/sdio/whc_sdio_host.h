@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Realtek wireless local area network IC driver.
+ *
+ * Copyright(c) 2024 Realtek Corporation. All rights reserved.
+ */
 #ifndef _RTW_SDIO_H_
 #define _RTW_SDIO_H_
 
@@ -16,7 +22,7 @@ struct whc_sdio;
 //#define CONFIG_PS_DYNAMIC_CHK
 //#define SDIO_HOST_FAKE_SLEEP
 
-#define SIZE_RX_DESC	(sizeof(INIC_RX_DESC))
+#define SIZE_RX_DESC	0
 #define SIZE_TX_DESC	(sizeof(INIC_TX_DESC))
 
 #define BUF_ALIGN_SZ	4

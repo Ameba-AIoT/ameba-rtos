@@ -57,6 +57,26 @@ static char *whc_cmd_args[MAX_ARG_COUNT] = {0};
 char whc_cmd_backup[MAX_INPUT_SIZE] = {0};
 static uint32_t whc_cmd_argc;
 
+/* forward unrecognised user input to device shell verbatim */
+static int whc_host_send_shell_cmd(const char *cmdstr)
+{
+	uint32_t cmd_len = strlen(cmdstr) + 1; /* include NUL terminator */
+	uint32_t buf_len = sizeof(uint32_t) + 1 + cmd_len; /* WHC_WIFI_TEST + subtype + str */
+	uint8_t *buf = malloc(buf_len);
+	int ret;
+
+	if (!buf) {
+		printf("malloc fail\n");
+		return -1;
+	}
+	*(uint32_t *)buf = WHC_WIFI_TEST;
+	buf[4] = WHC_WIFI_TEST_SHELL_CMD;
+	memcpy(buf + 5, cmdstr, cmd_len);
+	ret = whc_host_api_send_nl_payload(buf, buf_len);
+	free(buf);
+	return ret;
+}
+
 static struct whc_host_command_entry cmd_table[] = {
 	{"getip", whc_host_get_ip},
 	{"getmac", whc_host_get_mac},
@@ -87,7 +107,12 @@ void whc_host_execute_command(char *cmd)
 			return;
 		}
 	}
-	printf("Unknown command: %s\n", cmd);
+
+	/* No local handler matched — forward to device shell verbatim. */
+	if (strncasecmp(cmd, "AT", 2) != 0) {
+		printf("-> forwarding to device: %s\n", whc_cmd_backup);
+	}
+	whc_host_send_shell_cmd(whc_cmd_backup);
 }
 
 int whc_host_get_mac(void)
@@ -477,24 +502,12 @@ int whc_host_nl_init(void)
 
 int whc_host_log_enable(void)
 {
-	uint8_t buf[5] = {0};
-	uint8_t *ptr = buf;
-
-	*(uint32_t *)ptr = WHC_WIFI_TEST;
-	ptr += 4;
-	*ptr = WHC_WIFI_TEST_LOG_ENABLE;
-	return whc_host_api_send_nl_payload(buf, sizeof(buf));
+	return whc_host_api_send_log_fwd(1);
 }
 
 int whc_host_log_disable(void)
 {
-	uint8_t buf[5] = {0};
-	uint8_t *ptr = buf;
-
-	*(uint32_t *)ptr = WHC_WIFI_TEST;
-	ptr += 4;
-	*ptr = WHC_WIFI_TEST_LOG_DISABLE;
-	return whc_host_api_send_nl_payload(buf, sizeof(buf));
+	return whc_host_api_send_log_fwd(0);
 }
 
 void whc_host_cmd_hdl(char *input)
@@ -716,6 +729,25 @@ void whc_host_rx_buf_hdl(struct msgtemplate *msg)
 			case WHC_WIFI_TEST_OTA:
 				whc_host_ota_from_dev(pos);
 				break;
+			case WHC_WIFI_TEST_AT_RESP: {
+				/*
+				 * pos[0] = WHC_WIFI_TEST_AT_RESP subtype
+				 * pos[1..] = at_printf() text from device
+				 *
+				 * na->nla_len = NLA_HDRLEN + WHC_WIFI_TEST(4B) + subtype(1B) + text_len
+				 */
+				na = (struct nlattr *)msg->buf;
+				int resp_len = (int)na->nla_len - (int)(NLA_HDRLEN + sizeof(uint32_t) + 1);
+				int max_len  = (int)payload_len  - (int)(NLA_HDRLEN + sizeof(uint32_t) + 1);
+				if (resp_len > max_len) {
+					resp_len = max_len;
+				}
+				if (resp_len > 0) {
+					fwrite(pos + 1, 1, (size_t)resp_len, stdout);
+					fflush(stdout);
+				}
+				break;
+			}
 			default:
 				break;
 			}

@@ -39,6 +39,10 @@ ameba_list_append(private_sources
     example_raw_pmc_wakepin.c
     app_example.c
 )
+if(DEFINED CACHE{PMC_WAKEPIN})
+    ameba_list_append(private_definitions PMC_WAKEPIN=${PMC_WAKEPIN})
+    unset(PMC_WAKEPIN CACHE)
+endif()
 
 # Component private part, user config end
 #------------------------------#

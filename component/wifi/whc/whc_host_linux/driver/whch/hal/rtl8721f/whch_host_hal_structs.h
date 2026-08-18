@@ -166,7 +166,9 @@ struct txdesc_priv {
 	u32 rts_rty_lowest_rate: 9;
 	u32 rsvd2418: 1;
 	u32 rty_use_des: 1;
-	u32 rsvd2420: 12;
+	u32 sw_use_pktidx: 5;	// WHCH TX-AGG: sub-frame index within the aggregate (device-filled)
+	u32 sw_use_buffidx: 4;	// WHCH TX-AGG: owning transport rx-buffer pool index (device-filled)
+	u32 rsvd2429: 3;
 
 	// Offset 28
 	u32 checksum: 16;

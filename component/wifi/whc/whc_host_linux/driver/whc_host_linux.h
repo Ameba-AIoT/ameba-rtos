@@ -104,6 +104,9 @@
 #include "whch_host_trx.h"
 #include "whch_host_hal.h"
 #include "whch_host_adapter.h"
+#ifdef CONFIG_NAN
+#include "whch_host_nan.h"
+#endif
 #endif
 #include "ameba_wificfg_common.h"
 

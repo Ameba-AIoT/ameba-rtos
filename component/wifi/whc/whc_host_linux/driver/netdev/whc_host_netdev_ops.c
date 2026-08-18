@@ -10,6 +10,13 @@
 
 #include <whc_host_linux.h>
 
+static struct work_struct whc_netinfo_update_work;
+
+static void whc_netinfo_update_work_handler(struct work_struct *work)
+{
+	whc_host_update_ip_addr();
+}
+
 /*
  * Set wlan0 mac address: 1) ip link set dev wlan0 down, 2) ip link set dev wlan0 address 86:EF:EB:92:A2:FF, 3) ip link set dev wlan0 up
  * Set wlan1 mac address: 1) ifconfig wlan1 up, 2) ip link set dev wlan0 address 86:EF:EB:92:A2:F0, 3) hostapd /etc/hostapd.conf -B -i wlan1
@@ -632,6 +639,7 @@ static int rtw_inetaddr_notifier_call(struct notifier_block *nb, unsigned long a
 	case NETDEV_UP:
 		memcpy(global_idev.ip_addr, &ifa->ifa_address, RTW_IP_ADDR_LEN);
 		dev_dbg(global_idev.pwhc_dev, "%s[%s]: up IP: [%pI4]\n", __func__, ifa->ifa_label, global_idev.ip_addr);
+		schedule_work(&whc_netinfo_update_work);
 		break;
 	case NETDEV_DOWN:
 		memset(global_idev.ip_addr, 0, RTW_IP_ADDR_LEN);
@@ -662,7 +670,7 @@ static int rtw_inet6addr_notifier_call(struct notifier_block *nb, unsigned long 
 	switch (action) {
 	case NETDEV_UP:
 		memcpy(global_idev.ipv6_addr, &inet6_ifa->addr, RTW_IPv6_ADDR_LEN);
-		global_idev.ipv6_addr_updated = 1;
+		schedule_work(&whc_netinfo_update_work);
 		dev_dbg(global_idev.pwhc_dev, "%s: up IP: [%pI6]\n", __func__, global_idev.ipv6_addr);
 		break;
 	case NETDEV_DOWN:
@@ -689,6 +697,7 @@ static struct notifier_block rtw_inet6addr_notifier = {
 
 void rtw_inetaddr_notifier_register(void)
 {
+	INIT_WORK(&whc_netinfo_update_work, whc_netinfo_update_work_handler);
 	register_inetaddr_notifier(&rtw_inetaddr_notifier);
 #if IS_ENABLED(CONFIG_IPV6)
 	register_inet6addr_notifier(&rtw_inet6addr_notifier);
@@ -697,6 +706,7 @@ void rtw_inetaddr_notifier_register(void)
 
 void rtw_inetaddr_notifier_unregister(void)
 {
+	cancel_work_sync(&whc_netinfo_update_work);
 	unregister_inetaddr_notifier(&rtw_inetaddr_notifier);
 #if IS_ENABLED(CONFIG_IPV6)
 	unregister_inet6addr_notifier(&rtw_inet6addr_notifier);

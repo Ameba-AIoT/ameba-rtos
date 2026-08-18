@@ -7,6 +7,13 @@
 #ifndef USB_RINGBUF_H
 #define USB_RINGBUF_H
 
+/* Includes ------------------------------------------------------------------*/
+#include "usb_os.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @file   usb_ringbuf.h
  * @brief  USB Ring Buffer Management Module
@@ -14,9 +21,6 @@
  * This module implements a block-based memory manager that handles discrete data nodes rather than a byte stream.
  * This structure ensures that data frames address meet DMA cache-line alignment requirements.
  */
-
-/* Includes ------------------------------------------------------------------*/
-#include "usb_os.h"
 
 /* Exported defines ----------------------------------------------------------*/
 #ifndef CONFIG_NON_OS
@@ -149,6 +153,10 @@ int usb_ringbuf_add_tail(usb_ringbuf_manager_t *handle, u8 *buf, u32 size, u8 va
  */
 u32 usb_ringbuf_remove_head(usb_ringbuf_manager_t *handle, u8 *buffer, u32 size, u8 *valid);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* USB_RINGBUF_H */

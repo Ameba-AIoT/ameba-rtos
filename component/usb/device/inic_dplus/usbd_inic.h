@@ -11,6 +11,10 @@
 
 #include "usbd.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Exported defines ----------------------------------------------------------*/
 
 #define USBD_INIC_VID									USB_VID
@@ -130,5 +134,9 @@ int usbd_inic_deinit(void);
 int usbd_inic_transmit_ctrl_data(u8 *buf, u16 len);
 int usbd_inic_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
 int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USBD_INIC_H */

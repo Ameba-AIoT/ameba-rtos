@@ -102,7 +102,6 @@ void whc_sdio_host_init_drv(void)
 	rtos_mutex_create(&whc_sdio_priv.host_send);
 	rtos_sema_create(&whc_sdio_priv.host_irq, 0, 0xFFFFFFFF);
 	rtos_sema_create(&(whc_sdio_priv.host_recv_wake), 0, 0xFFFFFFFF);
-	rtos_sema_create(&(whc_sdio_priv.host_recv_done), 1, 1);
 	rtos_sema_create(&(whc_sdio_priv.txbd_wq), 0, 0xFFFFFFFF);
 	rtos_mutex_create(&whc_sdio_priv.lock);
 
@@ -114,6 +113,10 @@ void whc_sdio_host_init_drv(void)
 
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	whc_host_api_init();
+#endif
+
+#ifdef CONFIG_LWIP_LAYER
+	whc_host_netinfo_monitor_init();
 #endif
 
 #ifndef SDIO_INT_MODE

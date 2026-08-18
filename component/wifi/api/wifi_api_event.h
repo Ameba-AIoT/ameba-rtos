@@ -38,6 +38,16 @@ extern "C" {
  */
 
 /**
+ * @brief  Result codes for @ref RTW_EVENT_RADAR_RPT.
+ */
+enum rtw_radar_rpt_result {
+	RTW_RADAR_RPT_OK      = 0, /**< Range report parsed successfully */
+	RTW_RADAR_RPT_TX_FAIL = 1, /**< Radar TX failed */
+	RTW_RADAR_RPT_ERR     = 2, /**< Range report parse error */
+	RTW_RADAR_RPT_UNKNOWN = 3, /**< Unknown error */
+};
+
+/**
   * @brief Join status flags for @ref RTW_EVENT_JOIN_STATUS.
   */
 enum rtw_join_status {
@@ -72,6 +82,7 @@ enum rtw_event_id {
 	RTW_EVENT_WPA_EAPOL_START,        /**< STA mode: WPA enterprise authentication started */
 	RTW_EVENT_WPA_EAPOL_RECVD,        /**< STA mode: EAPOL packet received during WPA enterprise authentication  */
 	RTW_EVENT_DHCP_STATUS,            /**< STA mode: DHCP status report (see @ref rtw_event_dhcp_status)  */
+	RTW_EVENT_RADAR_RPT,              /**< Radar raw data report ready (see example_radar_raw.c) */
 	RTW_EVENT_DFS_RADAR_DETECTED,     /**< SoftAP DFS master: radar detected on the operating channel (see @ref rtw_event_dfs_radar_detected_info) */
 
 	RTW_EVENT_MAX,
@@ -116,8 +127,44 @@ struct rtw_event_sta_info {
 	u8 ampdu_enable;
 	u8 ht_option;
 	u8 he_option;
+	u8 b_sta_qos_option;	/* peer QoS capability; needed for AP-mode block-ack/AMPDU downlink */
 };
-#endif
+
+#ifdef CONFIG_NAN
+/**
+  * @brief  Key material for one NAN data-path key, carried device->host so the
+  *         host-MAC path can encrypt/decrypt NAN data frames.
+  */
+struct rtw_event_nan_ndp_key {
+	u8 algorithm;		/**< cipher id (_AES_ etc.); 0 means not present */
+	u8 key_idx;
+	u8 key_len;
+	u8 key[32];
+	u8 pn[8];			/**< group key start PN/seq; 0 for pairwise */
+};
+
+/**
+  * @brief  Report info for event @ref WHC_API_NAN_NDP_STATUS
+  *         The device (NP) runs NAN NDP negotiation and PASN/pairing, then pushes
+  *         the resulting data-path state (peer NDI, macid, QoS/HT, keys) to the host
+  *         which runs the 802.11 MAC for NAN data frames. Mirrors STA join/disconnect.
+  */
+struct rtw_event_nan_ndp_status_info {
+	u8 status;				/**< 1: NDP established, 0: NDP terminated */
+	u8 datapath_id;			/**< ndp_attr_ndpid: unique per NDP */
+	u8 reason;				/**< terminate reason code (valid when status==0) */
+	u8 peer_ndi[ETH_ALEN];	/**< peer data-interface MAC (== peer NMI in current design) */
+	u8 self_ndi[ETH_ALEN];	/**< local NMI/NDI MAC (used as TX addr2) */
+	u8 self_bssid[ETH_ALEN];	/**< local NAN cluster BSSID (used as TX addr3) */
+
+	/* data-path params, valid when status==1 */
+	struct rtw_event_sta_info stainfo;		/**< macid + HT/QoS caps for host stainfo */
+	struct rtw_event_nan_ndp_key ptk;		/**< unicast key (rx/tx) */
+	struct rtw_event_nan_ndp_key peer_gtk;	/**< peer group key (rx decrypt) */
+	struct rtw_event_nan_ndp_key self_gtk;	/**< local group key (tx encrypt) */
+};
+#endif /* CONFIG_NAN */
+#endif /* CONFIG_WHCH */
 
 /**
   * @brief  Report info for event @ref RTW_EVENT_JOIN_STATUS
@@ -174,6 +221,10 @@ struct rtw_event_join_status_info {
   */
 struct rtw_event_ap_sta_assoc {
 	u8 sta_mac[ETH_ALEN];
+#ifdef CONFIG_WHCH
+	struct rtw_event_sta_info stainfo;
+	struct rtw_event_security_priv sec_priv;
+#endif
 	u32 frame_len;
 	u8 frame[];
 };
@@ -235,6 +286,21 @@ struct rtw_event_csi_report_info {
 	u8 csi_data[];              /**< CSI raw data head address */
 };
 #pragma pack()
+
+/**
+ * @brief  Report info for event @ref RTW_EVENT_RADAR_RPT
+ */
+struct rtw_event_radar_rpt_info {
+	u8 result;                     /**< Parse result (see @ref rtw_radar_rpt_result) */
+	u8 channel;                    /**< Operating central frequency channel */
+	u8 chirp_bw_idx;               /**< Chirp bandwidth: 0=70MHz, 1=40MHz, 2=20MHz */
+	u8 sample_num;                 /**< IQ samples per frame (same for near and far) */
+	s16 isolation;                 /**< Antenna isolation in dBm */
+	u16 rpt_seq;                   /**< Monotonic report sequence; wraps at 65535; used to detect missed reports */
+	float noise_floor;             /**< Noise floor in dBm */
+	u32 radar_data_length;         /**< Total IQ data length in bytes; first half=near, second half=far */
+	u8  radar_data[];              /**< Near IQ data followed by far IQ data */
+};
 
 /**
   * @brief  Report info for event @ref RTW_EVENT_DFS_RADAR_DETECTED

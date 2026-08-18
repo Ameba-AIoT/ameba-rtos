@@ -133,4 +133,14 @@ config PSRAM_KM4NS_IMG2_KB
 
 endmenu
 
+menu "GPIO IRQ Configuration"
+
+# GPIO IRQ table size
+config GPIO_IRQ_TABLE_MAX_NUM
+    int "GPIO IRQ table maximum number"
+    range 1 37
+    default 4
+
+endmenu
+
 endmenu

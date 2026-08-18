@@ -26,6 +26,7 @@ Usage:
 import argparse
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -33,6 +34,8 @@ import sys
 import tempfile
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+EXE_SUFFIX = '.exe' if platform.system() == 'Windows' else ''
 from pathlib import Path
 
 
@@ -94,8 +97,8 @@ def _find_toolchain_prefix() -> str:
 
 def _check_tools(cross: str) -> None:
     for tool in ('nm', 'objdump', 'objcopy', 'ar'):
-        if not shutil.which(cross + tool):
-            sys.exit(f'Tool not found: {cross}{tool}')
+        if not shutil.which(cross + tool + EXE_SUFFIX):
+            sys.exit(f'Tool not found: {cross}{tool}{EXE_SUFFIX}')
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +115,7 @@ def _nm_scan(archive: Path, wanted: set, cross: str) -> list[tuple[str, str]]:
     """
     try:
         r = subprocess.run(
-            [cross + 'nm', '-A', str(archive)],
+            [cross + 'nm' + EXE_SUFFIX, '-A', str(archive)],
             capture_output=True, text=True, timeout=60,
         )
     except (subprocess.TimeoutExpired, FileNotFoundError) as e:
@@ -154,7 +157,7 @@ def _current_section(obj_path: Path, func: str, cross: str) -> str | None:
     """
     try:
         r = subprocess.run(
-            [cross + 'objdump', '-t', str(obj_path)],
+            [cross + 'objdump' + EXE_SUFFIX, '-t', str(obj_path)],
             capture_output=True, text=True, timeout=15,
         )
     except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -187,8 +190,8 @@ def _apply_archive(
     """
     Returns the number of successful renames.
     """
-    ar_path      = cross + 'ar'
-    objcopy_path = cross + 'objcopy'
+    ar_path      = cross + 'ar'      + EXE_SUFFIX
+    objcopy_path = cross + 'objcopy' + EXE_SUFFIX
     rel_archive  = archive.relative_to(build_dir) if archive.is_relative_to(build_dir) \
                    else archive
 

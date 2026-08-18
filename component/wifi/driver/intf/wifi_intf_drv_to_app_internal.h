@@ -351,6 +351,7 @@ struct rtw_stats_info_by_port {
 
 struct rtw_stats_info_by_sta {
 	u8 macid;
+	u8 port;	/* iface port this sta belongs to: WHC_STA/AP/NAN_PORT */
 	u8 mac_addr[6];
 	u16 stainfo_rx_data_pkts_in2s;
 	u32 stainfo_rx_byte_uni_in2s;
@@ -374,7 +375,7 @@ struct rtw_event_addba_nego {
 #endif
 
 #ifdef CONFIG_NAN
-#define MAX_MATCHING_FILTERS           (16)
+#define MAX_MATCHING_FILTERS           (8)
 #define MAX_MATCHING_FILTER_LEN        (32)
 /**
  * @brief Describes a NAN function Rx / Tx filter.

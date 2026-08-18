@@ -1,5 +1,6 @@
 #include "whc_dev.h"
 #include "os_wrapper.h"
+#include "whc_wpas_std_app.h"
 
 extern int start_wpa_supplicant(char *iface_name);
 extern void whc_rtw_cli_send_to_host(u8 idx, u32 cmd_category, u8 cmd_id,
@@ -89,7 +90,25 @@ void whc_dev_rtw_cli_wpas_reply_event_hdl(u8 idx, const char *reply, size_t repl
 void whc_dev_rtw_cli_wpas_reply_scan_raw_hdl(u8 idx, const char *reply, size_t reply_len)
 {
 
-	whc_rtw_cli_send_to_host(idx, WHC_WPA_OPS_EVENT, WHC_WPA_OPS_EVENT_SCAN_RAW_DATA,
+	whc_rtw_cli_send_to_host(idx, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SCAN_RAW_DATA,
 							 (u8 *)reply, reply_len);
 }
 
+
+void whc_dev_rtw_cli_wpas_notify_event_hdl(u8 idx, u8 *notify_buf, u32 notify_len)
+{
+	/*
+	 * notify_buf[0] is the WHC command ID (WHC_WPA_STD_EVENT_xxx).
+	 * We strip it here because whc_rtw_cli_send_to_host prepends its own
+	 * [cmd_id][idx] header.  The remaining bytes (sub-event + data) are
+	 * forwarded verbatim so the host sees:
+	 *   [category(4)][cmd_id][idx][sub_event][extra][extended_data...]
+	 */
+	if (!notify_buf || notify_len < 1) {
+		return;
+	}
+
+	whc_rtw_cli_send_to_host(idx, WHC_WPA_STD_EVENT,
+							 notify_buf[0],
+							 notify_buf + 1, notify_len - 1);
+}

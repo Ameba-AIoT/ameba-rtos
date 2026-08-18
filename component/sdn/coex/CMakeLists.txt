@@ -68,6 +68,7 @@ endif()
 ameba_list_append(private_includes
     ${c_COMPONENT_DIR}/sdn/hci
     ${c_COMPONENT_DIR}/sdn/hci/client
+    ${c_COMPONENT_DIR}/sdn/util
 )
 
 # Component private part, user config end

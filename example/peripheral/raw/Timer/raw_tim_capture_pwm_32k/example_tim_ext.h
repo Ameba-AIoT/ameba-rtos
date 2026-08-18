@@ -34,8 +34,8 @@
 #define PWM_GEN_32KHz_CH3_PIN	_PB_16
 
 #elif defined (CONFIG_RTL8720F)
-#define TIM4_TRIG_PIN			_PA_15
-#define PWM_GEN_32KHz_CH3_PIN	_PA_16
+#define TIM4_TRIG_PIN			_PA_23
+#define PWM_GEN_32KHz_CH3_PIN	_PA_24
 
 #endif
 

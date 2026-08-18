@@ -12,9 +12,6 @@ SD_HdlTypeDef hsd0;
 
 static u32 wait_for_sema = 0;
 
-/* 32-Byte aligned for cache maintenance */
-static u8 scratch[SD_BLOCK_SIZE]__attribute__((aligned(32))) = {0};
-
 int (*sd_sema_take_fn)(u32);
 int (*sd_sema_give_isr_fn)(u32);
 static void (*cd_cb)(SD_RESULT);
@@ -2352,7 +2349,7 @@ SD_RESULT SD_SwitchFunction(SD_HdlTypeDef *hsd, u8 mode, u8 grp, u8 func, u8 *pD
 	u32 arg = 0xFFFFFF;
 	u32 grp_shift = (grp - 1) << 2;
 
-	assert_param(((u32)pData & 0x1F) == 0); // cache_line(32) aligned
+	assert_param(((u32)pData % CACHE_LINE_SIZE) == 0);
 
 	/* check card spec version and card command class */
 	if ((hsd->Card.CardSpecVer < SD_SPEC_V110) || ((hsd->Card.Class & SDMMC_CCC_SWITCH) == 0)) {
@@ -2414,7 +2411,7 @@ SD_RESULT SD_SwitchFunction(SD_HdlTypeDef *hsd, u8 mode, u8 grp, u8 func, u8 *pD
  */
 SD_RESULT SD_SwitchBusSpeed(SD_HdlTypeDef *hsd, u8 BusSpeed)
 {
-	u8 cmd6_resp[64]__attribute__((aligned(32))); // 512bit/8
+	u8 cmd6_resp[64]__attribute__((aligned(CACHE_LINE_SIZE))); // 512bit/8
 	SD_RESULT ret;
 
 	/* Send CMD6 to check(mode0) whether target mode is supported  */
@@ -2952,13 +2949,17 @@ SD_RESULT SD_Status(void)
 SD_RESULT SD_ReadBlocks(u32 sector, u8 *data, u32 count)
 {
 	SD_RESULT ret = SD_ERROR;
-	u32 i;
+	u8 *ptr;
+	u32 blk_remaining = count;
+	u32 blk_to_read;
+	u32 current_sector = sector;
 
 	if (SD_CheckStatusTO(&hsd0, SD_FATFS_TIMEOUT) < 0) {
 		return ret; // SD card did not turn ready before timeout
 	}
 
-	if (!((u32)data & 0x1F) && !((count * SD_BLOCK_SIZE) & 0x1F)) { // 32Byte-aligned
+	if (((u32)data % CACHE_LINE_SIZE) == 0) { // cache-line aligned
+		DCache_CleanInvalidate((u32)data, count * SD_BLOCK_SIZE);
 		if (SD_ReadBlocks_DMA(&hsd0, (u8 *)data, (u32)(sector), count) == SD_OK) {
 			if (SD_CheckStatusTO(&hsd0, SD_FATFS_TIMEOUT) >= 0) {
 				DCache_Invalidate((u32)data, count * SD_BLOCK_SIZE);
@@ -2966,23 +2967,34 @@ SD_RESULT SD_ReadBlocks(u32 sector, u8 *data, u32 count)
 			}
 		}
 	} else {
-		/* Slow path, fetch each sector a part and _memcpy to destination buffer */
-		for (i = 0; i < count; i++) {
-			if (SD_ReadBlocks_DMA(&hsd0, (u8 *)scratch, (u32)sector++, 1) == SD_OK) {
-				if (SD_CheckStatusTO(&hsd0, SD_FATFS_TIMEOUT) >= 0) {
-					/* invalidate the scratch buffer before the next read to get the actual data instead of the cached one */
-					DCache_Invalidate((u32)scratch, SD_BLOCK_SIZE);
-					_memcpy(data, scratch, SD_BLOCK_SIZE);
-					data += SD_BLOCK_SIZE;
-				} else {
-					break;
-				}
-			} else {
-				break;
-			}
+		/* Not cache-line aligned: use bounce buffer from rtos_mem_malloc (32B aligned) */
+		ptr = rtos_mem_malloc(SD_MALLOC_BLK_CNT * SD_BLOCK_SIZE);
+		if (ptr == NULL) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Allocate buffer error!\n");
+			return SD_ERROR;
 		}
 
-		if (i == count) {
+		while (blk_remaining > 0) {
+			blk_to_read = blk_remaining > SD_MALLOC_BLK_CNT ? SD_MALLOC_BLK_CNT : blk_remaining;
+
+			DCache_CleanInvalidate((u32)ptr, blk_to_read * SD_BLOCK_SIZE);
+			if (SD_ReadBlocks_DMA(&hsd0, (u8 *)ptr, current_sector, blk_to_read) != SD_OK) {
+				break;
+			}
+			if (SD_CheckStatusTO(&hsd0, SD_FATFS_TIMEOUT) < 0) {
+				break;
+			}
+			DCache_Invalidate((u32)ptr, blk_to_read * SD_BLOCK_SIZE);
+			_memcpy(data, ptr, blk_to_read * SD_BLOCK_SIZE);
+
+			current_sector += blk_to_read;
+			data += blk_to_read * SD_BLOCK_SIZE;
+			blk_remaining -= blk_to_read;
+		}
+
+		rtos_mem_free(ptr);
+
+		if (blk_remaining == 0) {
 			ret = SD_OK;
 		}
 	}
@@ -3139,23 +3151,37 @@ SD_RESULT SD_GetBlockSize(u32 *block_size)
  */
 SD_RESULT SD_IO_ReadBytes(u8 FuncNum, u32 Addr, u8 *pData, u16 ByteCnt)
 {
+	SD_RESULT ret = SD_ERROR;
+	u8 *ptr;
+
 	assert_param(ByteCnt <= SD_BLOCK_SIZE);
 
-	if (!((u32)pData & 0x1F) && !(ByteCnt & 0x1F)) { // 32Byte-aligned
-
+	if (((u32)pData % CACHE_LINE_SIZE) == 0) {
+		/* cache-line aligned: safe for DCache_Invalidate */
+		DCache_CleanInvalidate((u32)pData, ByteCnt);
 		if (SD_IO_RW_Extended(&hsd0, BUS_READ, FuncNum, 0x1, Addr, pData, 0, ByteCnt) == SD_OK) {
 			DCache_Invalidate((u32)pData, ByteCnt);
-			return SD_OK;
+			ret = SD_OK;
 		}
 	} else {
-		if (SD_IO_RW_Extended(&hsd0, BUS_READ, FuncNum, 0x1, Addr, scratch, 0, ByteCnt) == SD_OK) {
-			DCache_Invalidate((u32)scratch, ByteCnt);
-			_memcpy(pData, scratch, ByteCnt);
-			return SD_OK;
+		/* Not cache-line aligned: use bounce buffer from rtos_mem_malloc (32B aligned) */
+		ptr = rtos_mem_malloc(SD_BLOCK_SIZE);
+		if (ptr == NULL) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Allocate buffer error!\n");
+			return SD_ERROR;
 		}
+
+		DCache_CleanInvalidate((u32)ptr, SD_BLOCK_SIZE);
+		if (SD_IO_RW_Extended(&hsd0, BUS_READ, FuncNum, 0x1, Addr, ptr, 0, ByteCnt) == SD_OK) {
+			DCache_Invalidate((u32)ptr, ByteCnt);
+			_memcpy(pData, ptr, ByteCnt);
+			ret = SD_OK;
+		}
+
+		rtos_mem_free(ptr);
 	}
 
-	return SD_ERROR;
+	return ret;
 }
 
 /**
@@ -3170,28 +3196,49 @@ SD_RESULT SD_IO_ReadBytes(u8 FuncNum, u32 Addr, u8 *pData, u16 ByteCnt)
  */
 SD_RESULT SD_IO_ReadBlocks(u8 FuncNum, u32 Addr, u8 *pData, u16 BlockCnt)
 {
-	u32 i;
+	u8 *ptr;
+	u32 blk_remaining = BlockCnt;
+	u32 blk_to_read;
+	u32 current_addr = Addr;
 
-	if (!((u32)pData & 0x1F) && !((BlockCnt * SD_BLOCK_SIZE) & 0x1F)) { // 32Byte-aligned
+	if ((pData == NULL) || (BlockCnt == 0)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid data addr or block cnt!\n");
+		return SD_ERROR;
+	}
+
+	if (((u32)pData % CACHE_LINE_SIZE) == 0) {
+		/* cache-line aligned: safe for DCache_Invalidate */
+		DCache_CleanInvalidate((u32)pData, BlockCnt * SD_BLOCK_SIZE);
 		if (SD_IO_RW_Extended(&hsd0, BUS_READ, FuncNum, 0x1, Addr, pData, 1, BlockCnt) == SD_OK) {
 			DCache_Invalidate((u32)pData, BlockCnt * SD_BLOCK_SIZE);
 			return SD_OK;
 		}
 	} else {
-		/* Slow path, fetch each sector a part and _memcpy to destination buffer */
-		for (i = 0; i < BlockCnt; i++) {
-			if (SD_IO_RW_Extended(&hsd0, BUS_READ, FuncNum, 0x1, Addr, scratch, 1, 1) == SD_OK) {
-				/* invalidate the scratch buffer before the next read to get the actual data instead of the cached one */
-				DCache_Invalidate((u32)scratch, SD_BLOCK_SIZE);
-
-				_memcpy(pData, scratch, SD_BLOCK_SIZE);
-				pData += SD_BLOCK_SIZE;
-			} else {
-				break;
-			}
+		/* Not cache-line aligned: use bounce buffer from rtos_mem_malloc (32B aligned) */
+		ptr = rtos_mem_malloc(SD_MALLOC_BLK_CNT * SD_BLOCK_SIZE);
+		if (ptr == NULL) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Allocate buffer error!\n");
+			return SD_ERROR;
 		}
 
-		if (i == BlockCnt) {
+		while (blk_remaining > 0) {
+			blk_to_read = blk_remaining > SD_MALLOC_BLK_CNT ? SD_MALLOC_BLK_CNT : blk_remaining;
+
+			DCache_CleanInvalidate((u32)ptr, blk_to_read * SD_BLOCK_SIZE);
+			if (SD_IO_RW_Extended(&hsd0, BUS_READ, FuncNum, 0x1, current_addr, ptr, 1, blk_to_read) != SD_OK) {
+				break;
+			}
+			DCache_Invalidate((u32)ptr, blk_to_read * SD_BLOCK_SIZE);
+			_memcpy(pData, ptr, blk_to_read * SD_BLOCK_SIZE);
+
+			current_addr += blk_to_read;
+			pData += blk_to_read * SD_BLOCK_SIZE;
+			blk_remaining -= blk_to_read;
+		}
+
+		rtos_mem_free(ptr);
+
+		if (blk_remaining == 0) {
 			return SD_OK;
 		}
 	}

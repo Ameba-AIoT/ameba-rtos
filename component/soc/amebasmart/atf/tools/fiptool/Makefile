@@ -29,6 +29,17 @@ endif
 
 INCLUDE_PATHS := -I../../include/tools_share
 
+# On macOS, Homebrew OpenSSL is not linked into system paths.
+# Detect the prefix via brew (if available) and add it automatically.
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+  BREW_OPENSSL_PREFIX := $(shell brew --prefix openssl 2>/dev/null)
+  ifneq ($(BREW_OPENSSL_PREFIX),)
+    INCLUDE_PATHS += -I$(BREW_OPENSSL_PREFIX)/include
+    LDLIBS        += -L$(BREW_OPENSSL_PREFIX)/lib
+  endif
+endif
+
 HOSTCC ?= gcc
 
 .PHONY: all clean distclean

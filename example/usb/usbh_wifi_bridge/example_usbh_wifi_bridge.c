@@ -208,6 +208,9 @@ static int cdc_ecm_do_init(void)
 		return 0;
 	}
 
+	/* All class drivers registered; start USB TRX so enumeration can run. */
+	usbh_start();
+
 	do {
 		if (usbh_cdc_ecm_usb_is_ready()) {
 			break;
@@ -439,7 +442,7 @@ static void example_usbh_bridge_monitor_thread(void *param)
 	}
 
 	while (1) {
-		link_is_up = usbh_cdc_ecm_get_connect_status();
+		link_is_up = usbh_cdc_ecm_get_link_status();
 
 		if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {	// unlink -> link
 			ethernet_unplug = ETH_STATUS_INIT;
@@ -484,6 +487,7 @@ static void example_usbh_bridge_hotplug_thread(void *param)
 		usb_os_sema_take(cdc_ecm_detach_sema, USB_OS_SEMA_TIMEOUT);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Hot plug\n");
 		//stop isr
+		usbh_stop();
 		usbh_cdc_ecm_deinit();
 		usbh_deinit();
 
@@ -502,6 +506,9 @@ static void example_usbh_bridge_hotplug_thread(void *param)
 			usbh_deinit();
 			break;
 		}
+
+		/* Re-arm USB TRX after the re-init. */
+		usbh_start();
 	}
 }
 #endif

@@ -10,18 +10,29 @@ None.
 
 # SW Configuration
 
+`ABORT_TRANSFER` is a compile-time macro; set it via `-D` to select the desired mode:
+
+| `-D` Option | Macro Value | Behavior |
+|---|---|---|
+| `-D ABORT_TRANSFER=0` | `#define ABORT_TRANSFER 0` | Suspend/Resume mode — suspends and resumes transfer multiple times, then completes normally |
+| `-D ABORT_TRANSFER=1` | `#define ABORT_TRANSFER 1` | Abort mode — suspends then aborts the transfer immediately |
+
 Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
+   * `./ameba.py build -a raw_gdma_susp_rsm_abrt -D ABORT_TRANSFER=0`
+   * Or `./ameba.py build -a raw_gdma_susp_rsm_abrt -D ABORT_TRANSFER=1`
+   * Download images to board by Ameba Image Tool.
 
 # Expected Result
-1. If `abort_trasfer = 1`, the log is displayed as:
+
+The macro `ABORT_TRANSFER` corresponds to the runtime variable `abort_transfer` in the source code. The log output differs depending on the chosen mode:
+
+1. **Abort mode** (`ABORT_TRANSFER=1`, `abort_transfer = 1`):
 ```shell
 transfer suspend, and 1024 bytes have been moved
 transfer abort
 transfer over
 ```
-2. If `abort_transfer = 0`, the log is displayed as:
+2. **Suspend/Resume mode** (`ABORT_TRANSFER=0`, `abort_transfer = 0`):
 ```shell
 transfer suspend, and 1024 bytes have been moved
 transfer resume

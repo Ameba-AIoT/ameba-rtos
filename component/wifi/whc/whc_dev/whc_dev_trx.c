@@ -131,15 +131,6 @@ void whc_dev_netif_rx(int idx)
 	whc_dev_send((u8 *)msg_info, sizeof(struct whc_msg_info) + pad_len + skb->len, skb, 1);
 }
 
-#ifdef CONFIG_WHCH
-void whch_dev_netif_rx(struct sk_buff *skb)
-{
-	rltk_wlan_info[0].skb = (void *)skb;
-
-	whc_dev_netif_rx(0);
-}
-#endif
-
 void whc_dev_send_flowctrl_cmd(u8 fc_state)
 {
 	struct whc_msg_info *msg_info = NULL;
@@ -230,26 +221,15 @@ void whc_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
 		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == RTK_FAIL) {
 			break;
 		}
+#ifndef WHCH_TXAGG
 		/* wakeup task */
 		rtw_single_thread_wakeup();
+#endif
 		break;
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	case WHC_WIFI_EVT_API_CALL:
 		event_priv.rx_api_msg = rxbuf;
 		rtos_sema_give(event_priv.task_wake_sema);
-
-		break;
-	case WHC_WIFI_EVT_API_RETURN:
-		if (event_priv.b_waiting_for_ret) {
-			event_priv.rx_ret_msg = rxbuf;
-			rtos_sema_give(event_priv.api_ret_sema);
-		} else {
-			ret_msg = (struct whc_api_info *)rxbuf;
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_WARN, "API ret TO, ID: 0x%x!\n", ret_msg->api_id);
-
-			/* free rx buffer */
-			rtos_mem_free((u8 *)ret_msg);
-		}
 
 		break;
 #endif
@@ -264,3 +244,117 @@ void whc_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
 
 }
 
+#ifdef CONFIG_WHCH
+void whch_dev_netif_rx(struct sk_buff *skb)
+{
+	rltk_wlan_info[0].skb = (void *)skb;
+
+	whc_dev_netif_rx(0);
+}
+
+#ifdef WHCH_RXAGG
+/**
+ * @brief  send an aggregated run of RX units to the host as one USB transfer.
+ * @param  head_skb: skb of the first (contiguous) unit; msg_info is built in its headroom.
+ * @param  agg_num:  number of units in the run (1..WHCH_RXAGG_NUM).
+ * @param  stride:   fixed byte stride between unit starts (host parses units at this stride).
+ * @param  content_len: total wire bytes after msg_info+pad = (agg_num-1)*stride + last_unit_len.
+ * @return none.
+ */
+void whch_dev_rxagg_dispatch(struct sk_buff *head_skb, u8 agg_num, u16 stride, u32 content_len)
+{
+	u8 *ptr;
+	u8 pad_len, tmp = 0;
+	struct whc_msg_info *msg_info = NULL;
+
+	/* head_skb->data points at the first unit's rx_buffer_desc (rxbd pushed by caller) */
+	ptr = head_skb->data;
+	pad_len = ((u32)ptr - sizeof(struct whc_msg_info)) % DEV_DMA_ALIGN;
+
+	if (pad_len + sizeof(struct whc_msg_info) > (u32)(head_skb->data - head_skb->head)) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "rxagg: no room for msg_info!\n");
+		/* fixed-pool skb: never free it, just mark the run DMA-done so the RXBD is released */
+		head_skb->tx_raw.device_id = agg_num;
+		rtw_recv_interface_dma_ok(head_skb);
+		return;
+	}
+
+	msg_info = (struct whc_msg_info *)(ptr - (pad_len + sizeof(struct whc_msg_info)));
+	if ((u32)msg_info % DEV_DMA_ALIGN) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "rxagg: msg_info not aligned!\n");
+		head_skb->tx_raw.device_id = agg_num;
+		rtw_recv_interface_dma_ok(head_skb);
+		return;
+	}
+
+	msg_info->event = WHC_WIFI_EVT_RECV_PKTS;
+	msg_info->wlan_idx = 0;
+	msg_info->agg_num = agg_num;
+	msg_info->agg_stride = stride;
+	msg_info->data_len = content_len;
+	msg_info->pad_len = pad_len;
+
+	whc_dev_flowctrl(&tmp, 0);
+	msg_info->flow_ctrl_en = tmp;
+
+	/* run length carried on the head skb so tx-done can release every slot */
+	head_skb->tx_raw.device_id = agg_num;
+
+	whc_dev_send((u8 *)msg_info, (u16)(sizeof(struct whc_msg_info) + pad_len + content_len), head_skb, 1);
+}
+#endif /* WHCH_RXAGG */
+
+#ifdef WHCH_TXAGG
+void whch_dev_txagg_dispatch(struct whch_buff *buff, u32 buffidx, u8 *msg_hdr, u32 rx_len, u8 agg_num)
+{
+	u8 delivered = 0;
+
+	if ((agg_num == 0) || (agg_num > WHCH_TXAGG_NUM)) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "txagg bad agg_num=%d buff=%x\n", agg_num, buff);
+		buff->agg_num = 0;
+		buff->status = 0;
+		goto exit;
+	}
+
+	RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_DEBUG, "agg_num=%d\n", agg_num);
+
+	buff->agg_num = agg_num;
+	buff->status = (agg_num >= 32) ? 0xFFFFFFFFU : ((1U << agg_num) - 1U);
+
+	delivered = rtw_xmit_txagg_parse(buffidx, msg_hdr, sizeof(struct whc_msg_info), rx_len, agg_num);
+
+exit:
+	whch_usb_dev_txagg_buf_busy(buff, delivered, buff->agg_num);
+
+	if (buff->status) {
+		/* wakeup task */
+		rtw_single_thread_wakeup();
+	}
+}
+#endif /* WHCH_TXAGG */
+#endif /* CONFIG_WHCH */
+
+/**
+ * @brief  Refresh flow_ctrl_en in the packet header before a TX retry.
+ *
+ * Only RECV_PKTS packets carry a whc_msg_info header with flow_ctrl_en.
+ * All other packet types (EVT_CMD, EVT_API_*, …) use different headers
+ * whose byte-4 must not be touched.
+ *
+ * @param  buf: the same buffer pointer passed to whc_dev_send().
+ */
+void whc_dev_update_flowctrl(u8 *buf)
+{
+	struct whc_msg_info *msg_info = (struct whc_msg_info *)buf;
+	u8 tmp = 0;
+
+	/* Only RECV_PKTS or EVT_FLOWCTRL packets carry a whc_msg_info header with flow_ctrl_en.
+	 * All other packet types (EVT_CMD, EVT_API_*, …) use different headers
+	 * whose byte-4 must not be touched. */
+	if ((msg_info->event != WHC_WIFI_EVT_RECV_PKTS) && (msg_info->event != WHC_WIFI_EVT_FLOWCTRL)) {
+		return;
+	}
+
+	whc_dev_flowctrl(&tmp, 0);
+	msg_info->flow_ctrl_en = tmp;
+}
