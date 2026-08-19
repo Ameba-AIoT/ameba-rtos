@@ -494,21 +494,9 @@
   * @brief DMA low-32 bits ID Register
   * @{
   */
-#define GDMA_MASK_DMAIDREG_L_DMA_ID   ((u32)0xFFFFFFFF << 0)           /*!< R 32'h20240513  Hardcoded RTK_DMAC Peripheral ID*/
+#define GDMA_MASK_DMAIDREG_L_DMA_ID   ((u32)0xFFFFFFFF << 0)           /*!< R 32'h20250311  Hardcoded RTK_DMAC Peripheral ID*/
 #define GDMA_DMAIDREG_L_DMA_ID(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GDMA_GET_DMAIDREG_L_DMA_ID(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
-/** @} */
-
-/** @defgroup GDMA_DMAOSNUM_L
-  * @brief DMA low-32 bits Outstanding Number Register
-  * @{
-  */
-#define GDMA_MASK_DMAOSNUM_L_OSW   ((u32)0x00000007 << 8)           /*!< R/W 0x4  If the OSW number of DMAC is programmable, this register is writable. And DMAC will not issue new write command until OSW of DMAC is less than this value. If the OSW number is not programmable, this value is read as "4". And DMAC's OSW is fixed to 4. If user defines OSW_CNT, b = log2(OSW_CNT +1) +7; otherwise, b = log2(4+1) +7. bits 15: b+1 do not exist and read back as 0. Note: If write 0 to this register, DMAC can not issue any new write commands.*/
-#define GDMA_DMAOSNUM_L_OSW(x)     (((u32)((x) & 0x00000007) << 8))
-#define GDMA_GET_DMAOSNUM_L_OSW(x) ((u32)(((x >> 8) & 0x00000007)))
-#define GDMA_MASK_DMAOSNUM_L_OSR   ((u32)0x0000000F << 0)           /*!< R/W 0x8  If the OSR number of DMAC is programmable, this register is writable. And DMAC will not issue new read command until OSR of DMAC is less than this value. If the OSR number is not programmable, this value is read as "channel number". And DMAC does not limit the OSR number. If user defines OSR_CNT, b = log2(OSR_CNT +1); otherwise, b = log2(DMAH_NUM_CHANNELS +1) bits 7: b+1 do not exist and read back as 0. Note: If write 0 to this register, DMAC can not issue any new read commands.*/
-#define GDMA_DMAOSNUM_L_OSR(x)     (((u32)((x) & 0x0000000F) << 0))
-#define GDMA_GET_DMAOSNUM_L_OSR(x) ((u32)(((x >> 0) & 0x0000000F)))
 /** @} */
 
 /** @defgroup GDMA_DMA_COMP_PARAMS_6_L
@@ -736,7 +724,7 @@
   * @brief Refer to the bit table in the description for it
   * @{
   */
-#define GDMA_MASK_CH0_FIFO_DEPTH      ((u32)0x00000007 << 28)           /*!< R 0x4  The value of this register is derived from the DMAC_CH0_FIFO_DEPTH parameter. Default value is 0x0. 0x0 = 8 bytes 0x1 = 16 0x2 = 32 0x3 = 64 0x4 = 128 0x5 = Reserved 0x6 = Reserved 0x7 = Reserved*/
+#define GDMA_MASK_CH0_FIFO_DEPTH      ((u32)0x00000007 << 28)           /*!< R 0x5  The value of this register is derived from the DMAC_CH0_FIFO_DEPTH parameter. Default value is 0x0. 0x0 = 8 bytes 0x1 = 16 0x2 = 32 0x3 = 64 0x4 = 128 0x5 = Reserved 0x6 = Reserved 0x7 = Reserved*/
 #define GDMA_CH0_FIFO_DEPTH(x)        (((u32)((x) & 0x00000007) << 28))
 #define GDMA_GET_CH0_FIFO_DEPTH(x)    ((u32)(((x >> 28) & 0x00000007)))
 #define GDMA_MASK_CH0_MAX_MULT_SIZE   ((u32)0x00000007 << 16)           /*!< R 0x3  The value of this register is derived from the DMAC_CH0_MULT_SIZE parameter. Maxium burst transaction size. CH0_MAX_MULT_SIZE = log2(256/DMAC_DATA_WIDTH) 0x3 = 32 bits 0x2 = 64 bits 0x1 = 128 bits*/
@@ -815,10 +803,10 @@
   */
 #define GDMA_BIT_HIGH_BIT_NUM_HS_INT3 ((u32)0x00000001 << 31)           /*!< R 0x0  Number of hardware handshake interfaces. If it is 128, this bit read value is 1.*/
 #define GDMA_BIT_HIGH_BIT_NUM_HS_INT2 ((u32)0x00000001 << 30)           /*!< R 0x0  Number of hardware handshake interfaces. If it is greater than 63 and less than 128, this bit read value is 1.*/
-#define GDMA_BIT_HIGH_BIT_NUM_HS_INT1 ((u32)0x00000001 << 29)           /*!< R 0x0  Number of hardware handshake interfaces. If it is greater than 31 and less than 64, this bit read value is 1.*/
+#define GDMA_BIT_HIGH_BIT_NUM_HS_INT1 ((u32)0x00000001 << 29)           /*!< R 0x1  Number of hardware handshake interfaces. If it is greater than 31 and less than 64, this bit read value is 1.*/
 #define GDMA_BIT_STATIC_ENDIAN_SELECT ((u32)0x00000001 << 28)           /*!< R 0x0  The value of this register is derived from the DMAC_STATIC_ENDIAN_SELECT parameter. 0 = FALSE (dynamic endian fixed) 1 = TRUE (not supported)*/
 #define GDMA_BIT_ADD_ENCODED_PARAMS   ((u32)0x00000001 << 27)           /*!< R 0x1  The value of this register is derived from the DMAC_ADD_ENCODED_PARAMS parameter. 0 = FALSE 1 = TRUE*/
-#define GDMA_MASK_NUM_HS_INT          ((u32)0x0000001F << 22)           /*!< R 0x1E  Number of hardware handshake interfaces. The value of this register is derived from the DMAC_NUM_HS_INT parameter. NUM_HAS_INT = DMAC_NUM_HS_INT[4:0] 0x00 = 0 ...  0x10 = 16*/
+#define GDMA_MASK_NUM_HS_INT          ((u32)0x0000001F << 22)           /*!< R 0x10  Number of hardware handshake interfaces. The value of this register is derived from the DMAC_NUM_HS_INT parameter. NUM_HAS_INT = DMAC_NUM_HS_INT[4:0] 0x00 = 0 ...  0x10 = 16*/
 #define GDMA_NUM_HS_INT(x)            (((u32)((x) & 0x0000001F) << 22))
 #define GDMA_GET_NUM_HS_INT(x)        ((u32)(((x >> 22) & 0x0000001F)))
 #define GDMA_MASK_M2_DATA_WIDTH       ((u32)0x00000003 << 16)           /*!< R 0x0  AXI Master2 data width. The value of this register is derived from the DMAC_M2_DATA_WIDTH parameter. Master2 data width should be equal to that of Master 1. M2_DATA_WIDTH = log2(DMAC_DATA_WIDTH/32) 0x0 = 32 bits 0x1 = 64 bits  0x2 = 128 bits 0x3 = Reserved*/
@@ -845,7 +833,7 @@
   * @brief DMAC ID
   * @{
   */
-#define GDMA_MASK_DMA_COMPONENT_ID   ((u32)0xFFFFFFFF << 0)           /*!< R 32'h20240513  DMAC ID (release_date_. Configure it in config form.*/
+#define GDMA_MASK_DMA_COMPONENT_ID   ((u32)0xFFFFFFFF << 0)           /*!< R 32'h20250311  DMAC ID (release_date_. Configure it in config form.*/
 #define GDMA_DMA_COMPONENT_ID(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GDMA_GET_DMA_COMPONENT_ID(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
@@ -854,7 +842,7 @@
   * @brief It is obtained from the high 32 bits from git logs in git server.
   * @{
   */
-#define GDMA_MASK_RTL_GIT_VER   ((u32)0xFFFFFFFF << 0)           /*!< R 32'h482f5d83  It is obtained from the high 32 bits from git logs in git server.*/
+#define GDMA_MASK_RTL_GIT_VER   ((u32)0xFFFFFFFF << 0)           /*!< R 32'ha89a8bb5  It is obtained from the high 32 bits from git logs in git server.*/
 #define GDMA_RTL_GIT_VER(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GDMA_GET_RTL_GIT_VER(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
@@ -916,17 +904,14 @@ typedef struct {
 	__O  uint32_t GDMA_CLEARERR_L             ;  /*!< CLEAR FOR INTERR INTERRUPT Register,  Address offset:0x358 */
 	__O  uint32_t GDMA_CLEARERR_H             ;  /*!< CLEAR FOR NON-SECURE ACCESS SECURE REGISTER ERROR IF DEFINED Register,  Address offset:0x35C */
 	__I  uint32_t GDMA_STATUSINT_L            ;  /*!< COMBINED INTERRUPT SATAUS REGISTER,  Address offset:0x360 */
-	__IO uint32_t GDMA_STATUSINT_H            ;  /*!< COMBINED INTERRUPT SATAUS REGISTER,  Address offset:0x364 */
-	__IO uint32_t RSVD8[12]                   ;  /*!< Reserved,  Address offset:0x368-0x397 */
+	__IO uint32_t RSVD8[13]                   ;  /*!< Reserved,  Address offset:0x364-0x397 */
 	__IO uint32_t GDMA_DMACFGREG_L            ;  /*!< DMA LOW-32 BITS CONFIGURATION REGISTER,  Address offset:0x398 */
 	__IO uint32_t RSVD9                       ;  /*!< Reserved,  Address offset:0x39C-0x39F */
 	__IO uint32_t GDMA_CHENREG_L_1
 	;  /*!< DMA LOW-32 BITS CHANNEL ENABLE REGISTER IF CONFIGED CHN NUMBER IS LESS THAN OR EQUAL TO 8 Register,  Address offset:0x3A0 */
 	__IO uint32_t RSVD10                      ;  /*!< Reserved,  Address offset:0x3A4-0x3A7 */
 	__I  uint32_t GDMA_DMAIDREG_L             ;  /*!< DMA LOW-32 BITS ID REGISTER,  Address offset:0x3A8 */
-	__IO uint32_t RSVD11[3]                   ;  /*!< Reserved,  Address offset:0x3AC-0x3B7 */
-	__IO uint32_t GDMA_DMAOSNUM_L             ;  /*!< DMA LOW-32 BITS OUTSTANDING NUMBER REGISTER,  Address offset:0x3B8 */
-	__IO uint32_t RSVD12[3]                   ;  /*!< Reserved,  Address offset:0x3BC-0x3C7 */
+	__IO uint32_t RSVD11[7]                   ;  /*!< Reserved,  Address offset:0x3AC-0x3C7 */
 	__I  uint32_t GDMA_DMA_COMP_PARAMS_6_L    ;  /*!< REFER TO THE BIT TABLE IN THE DESCRIPTION FOR IT Register,  Address offset:0x3C8 */
 	__I  uint32_t GDMA_DMA_COMP_PARAMS_6_H    ;  /*!< REFER TO THE BIT TABLE IN THE DESCRIPTION FOR IT Register,  Address offset:0x3CC */
 	__I  uint32_t GDMA_DMA_COMP_PARAMS_5_L    ;  /*!< REFER TO THE BIT TABLE IN THE DESCRIPTION FOR IT Register,  Address offset:0x3D0 */

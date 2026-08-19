@@ -10,9 +10,7 @@
 #ifdef CONFIG_BT_COEXIST
 #include "rtw_coex_ipc.h"
 #endif
-#if defined(CONFIG_BT) && defined(CONFIG_BT_INIC)
-#include "bt_inic.h"
-#endif
+
 static const char *const TAG = "MAIN";
 u32 use_hw_crypto_func;
 
@@ -172,11 +170,6 @@ int main(void)
 	wififw_task_create();
 
 	wifi_init();
-
-	/* initialize BT iNIC */
-#if defined(CONFIG_BT) && defined(CONFIG_BT_INIC)
-	bt_inic_init();
-#endif
 
 	sdn_client_init();
 

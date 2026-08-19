@@ -1,7 +1,11 @@
 #include "ameba_soc.h"
 #include "osif.h"
 #include "bt_inic_defs.h"
+#ifdef CONFIG_BT_SDN
+#include "vhci_if_inic_sdn.h"
+#else
 #include "hci_if_inic.h"
+#endif
 #include "platform_autoconf.h"
 #include <stdio.h>
 #include <string.h>

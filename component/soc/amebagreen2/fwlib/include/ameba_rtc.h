@@ -309,7 +309,7 @@ typedef struct {
 
 	u32 RTC_AlarmMask;	/*!< Specifies the RTC Alarm1 Masks(H:M:S).
 					This parameter can be a value of @ref RTC_AlarmMask1 */
-	u32 RTC_Alarm2Mask;	/*!< Specifies the RTC Alarm2 Masks Day).
+	u32 RTC_Alarm2Mask;	/*!< Specifies the RTC Alarm2 Masks Day.
 					This parameter can be a value of @ref RTC_AlarmMask2 */
 } RTC_AlarmTypeDef;
 

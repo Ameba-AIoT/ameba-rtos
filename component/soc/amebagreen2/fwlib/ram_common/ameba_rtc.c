@@ -1053,7 +1053,7 @@ u32 RTC_WaitForWUTSynchro(void)
 /**
   * @brief  Set the specified RTC Wakeup Timer.
   * @note   The Wakeup Timer register can only be written when the WakeupTimer
-  *         is disabled (Use @ref RTC_WakeupTimerCmd (DISABLE)).
+  *         is disabled (Use @ref RTC_WakeupCmd (DISABLE)).
   * @param  RTC_WakeupRange Wakeup time to be configured.
   *	This parameter can be a value from 0x1 to 0x1FF.
   * @return Status value:

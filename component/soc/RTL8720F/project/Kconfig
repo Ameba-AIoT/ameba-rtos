@@ -362,16 +362,12 @@ config SDN_DEV_FOR_KM4NS    # SDN DEV is always on NP, set on when BT or wpan en
 config SDN_HOST             # SDN HOST is on the same core with BT or wpan.
     bool
 
-config SDN_HOST_FOR_KM4NS   # SDN HOST is on the same core with BT or wpan.
-    bool
-
 
 menu "CONFIG BT"
     config  BT_MENU
         bool "Enable BT"
 
     if BT_MENU
-
         config BT_ZEPHYR
             def_bool y
 
@@ -387,14 +383,11 @@ menu "CONFIG BT"
 
         if !BT_INIC
             rsource "../../../bluetooth/Kconfig"
-            config BT
-                def_bool WHC_HOST || WHC_NONE
-                select SDN_HOST
         endif
 
-        config BT_FOR_KM4NS
-            def_bool BT_INIC
-            select SDN_HOST_FOR_KM4NS
+        config BT
+            def_bool WHC_HOST || WHC_NONE || (BT_INIC && WHC_DEV)
+            select SDN_HOST
     endif
 endmenu
 

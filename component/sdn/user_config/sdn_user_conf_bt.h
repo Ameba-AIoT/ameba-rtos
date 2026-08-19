@@ -4,7 +4,7 @@
 #include <platform_autoconf.h>
 
 #ifdef CONFIG_BT_INIC
-/* ToDo */
+#include <sdn_inic_conf.h>
 #else
 #include <bt_api_config.h>
 #endif
