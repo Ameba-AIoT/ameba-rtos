@@ -1618,8 +1618,8 @@ void usbh_uvc_stream_flush(usbh_uvc_stream_t *stream)
 
 	stream->is_resource_safe = 1;
 #else
-	/* HW path: per-round state reset only. free_buf_cnt must be restored to its
-	 * initial value (2) so the 3-buffer rotation in usbh_hw_uvc_handle_frame_done()
+	/* HW path: per-round state reset only. The HW decode buffers must be reset to a
+	 * known 3-buffer layout so the rotation in usbh_hw_uvc_handle_frame_done()
 	 * starts from a known position, and stale dec_sema tokens are drained. */
 	if (stream->uvc_dec != NULL) {
 		/* usbh_hw_uvc_flush() discards any HW frame-done/error status latched in

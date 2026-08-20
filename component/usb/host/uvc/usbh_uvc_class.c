@@ -159,6 +159,7 @@ static int usbh_uvc_detach(usb_host_t *host)
 	for (i = 0U; i < vs_num; i ++) {
 		stream = &uvc->stream[i];
 		stream->state = STREAM_STATE_CTRL_IDLE;
+		stream->cur_setting.pipe.pipe_num = 0U;  /* clear stale pipe_num: next find_alt must not close a recycled channel */
 		if (stream->stream_state == UVC_STREAM_ACTIVE) {
 			usbh_uvc_stream_stop(stream);
 		}
