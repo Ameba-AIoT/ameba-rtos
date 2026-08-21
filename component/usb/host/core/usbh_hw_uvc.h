@@ -57,7 +57,6 @@ typedef struct {
 	__IO u32 frame_rx_cnt;     /**< Total frames the HW decoder completed (produced). */
 	__IO u32 frame_drop_cnt;   /**< Frames overwritten before usbh_uvc_get_frame() consumed them. */
 	__IO u8  buf_locked[USBH_HW_UVC_MAX_BUF_NUM]; /**< 1: buffer held by the app between get_frame() and put_frame(); ISR must not recycle it. */
-	u32 free_buf_cnt;
 
 	/* cmd reg related */
 	rtos_sema_t dec_sema;
