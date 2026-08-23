@@ -522,6 +522,20 @@ int usbh_uvc_stop(u8 stream_index)
 
 	stream = &uvc->stream[stream_index];
 
+	/* Send SET_INTERFACE(bInterfaceNumber, 0) to the camera so it stops transmitting
+	 * ISOC data. Guard: only when device is still connected and an alt was selected.
+	 * Fire-and-forget via ctrl state machine (set_alt=0 → no probe after reset). */
+	if ((uvc->host != NULL) &&
+		(uvc->host->connect_state >= USBH_STATE_SETUP) &&
+		(stream->cur_setting.valid != 0U)) {
+		stream->set_alt = 0U;
+		stream->set_alt_retry = 0U;
+		stream->state = STREAM_STATE_RESET_ALT;
+		uvc->state = UVC_STATE_CTRL;
+		uvc->stream_ctrl_idx = stream->stream_idx;
+		usbh_notify_class_state_change(uvc->host, 0U);
+	}
+
 	return usbh_uvc_stream_stop(stream);
 }
 
