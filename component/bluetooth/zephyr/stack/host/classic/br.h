@@ -12,6 +12,6 @@ void bt_br_discovery_reset(void);
 bool bt_br_update_sec_level(struct bt_conn *conn);
 
 #include <zephyr_config.h>
-#ifdef ZEPHYR_FIX_CODE /* zephyr_porting */
+#if ZEPHYR_RTK_PATCH /* zephyr_patch */
 #include "stack_ext/br_ext.h"
 #endif

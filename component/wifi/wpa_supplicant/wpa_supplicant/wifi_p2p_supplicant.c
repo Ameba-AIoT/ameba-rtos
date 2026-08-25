@@ -854,12 +854,7 @@ static int wifi_p2p_auth_go_neg(const u8 *peer_addr,
 
 u8 wifi_p2p_check_role(u8 role)
 {
-#ifdef CONFIG_WIFI_P2P_ENABLE
 	return g_p2p_context.role == role;
-#else
-	(void) role;
-	return 0;
-#endif
 }
 
 static void wifi_p2p_go_neg_completed(void *ctx, struct p2p_go_neg_results *res)

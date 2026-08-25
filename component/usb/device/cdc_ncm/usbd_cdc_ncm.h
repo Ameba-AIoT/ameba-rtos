@@ -30,7 +30,16 @@ extern "C" {
  * @{
  */
 
-#define USBD_CDC_NCM_MAC_STR_LEN                           (6)      /**< Length of the MAC address in bytes. */
+#define USBD_CDC_NCM_MAC_STR_LEN        (6)      /**< Length of the MAC address in bytes. */
+
+/* Defines basic device parameters like VID, PID, and string descriptors. */
+#define USBD_CDC_NCM_VID                              USB_VID               /**< Vendor ID. */
+#define USBD_CDC_NCM_PID                              USB_PID               /**< Product ID. */
+#define USBD_CDC_NCM_LANGID_STRING                    0x0409U               /**< Language ID for string descriptors (0x0409 = English) */
+#define USBD_CDC_NCM_MFG_STRING                       "Realtek"             /**< Manufacturer string. */
+#define USBD_CDC_NCM_PROD_HS_STRING                   "Realtek CDC NCM (HS)"/**< Product string for High-Speed mode. */
+#define USBD_CDC_NCM_PROD_FS_STRING                   "Realtek CDC NCM (FS)"/**< Product string for Full-Speed mode. */
+#define USBD_CDC_NCM_SN_STRING                        "1234567890"          /**< Serial number string. */
 
 /* Set to 1 to enable the periodic state-trace thread (default off).
  * When enabled, a low-priority thread prints link/endpoint/TX-ring-buffer state,
@@ -38,24 +47,13 @@ extern "C" {
  * stats once per USBD_CDC_NCM_TRACE_INTERVAL_MS so stalls can be diagnosed
  * without a debugger.  Zero-cost when disabled: every dbg_* counter field and
  * all instrumentation is compiled out. */
-#define USBD_CDC_NCM_STATE_TRACE_ENABLE               0
+#define USBD_CDC_NCM_STATE_TRACE_ENABLE 0
 
-/* Defines endpoint addresses for BULK and INTERRUPT transfers. */
-#if defined (CONFIG_AMEBAGREEN2)
-#define USBD_CDC_NCM_BULK_IN_EP                       0x82U
-#define USBD_CDC_NCM_BULK_OUT_EP                      0x02U
-#else
-#define USBD_CDC_NCM_BULK_IN_EP                       0x81U
-#define USBD_CDC_NCM_BULK_OUT_EP                      0x02U
-#endif
-#define USBD_CDC_NCM_INTR_IN_EP                       0x83U
-
-/* Interface numbers */
-#define USBD_CDC_NCM_COMM_INTERFACE_NUM               0x00U  /**< Communication interface */
-#define USBD_CDC_NCM_DATA_INTERFACE_NUM               0x01U  /**< Data interface */
+#define USBD_CDC_NCM_HS_INTR_IN_INTERVAL              1U     /**< High speed INTR IN interval */
+#define USBD_CDC_NCM_FS_INTR_IN_INTERVAL              1U     /**< Full speed INTR IN interval */
 
 /* Number of ping-pong RX buffers used to decouple USB OUT from upper-layer RX. */
-#define USBD_CDC_NCM_RX_BUF_NUM                       2U
+#define USBD_CDC_NCM_RX_BUF_NUM         2U
 
 /* Number of TX NTB ring slots (SPSC ring).
  * The ring keeps one empty gap between write and read index for lock-free
@@ -64,9 +62,9 @@ extern "C" {
  * Aggregation:     DEPTH=4 (3 usable: one being filled + one in-flight + one queued). */
 #ifndef USBD_CDC_NCM_TX_DEPTH
 #ifdef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-#define USBD_CDC_NCM_TX_DEPTH                      4U
+#define USBD_CDC_NCM_TX_DEPTH           4U
 #else
-#define USBD_CDC_NCM_TX_DEPTH                      3U
+#define USBD_CDC_NCM_TX_DEPTH           3U
 #endif
 #endif
 
@@ -75,7 +73,7 @@ extern "C" {
  * 4 nodes = enough to absorb one full NTB worth of frames (MAX_DATAGRAMS=2)
  * plus 2 slots of burst headroom, without wasting memory. */
 #ifndef USBD_CDC_NCM_TX_RB_DEPTH
-#define USBD_CDC_NCM_TX_RB_DEPTH                      4U
+#define USBD_CDC_NCM_TX_RB_DEPTH        4U
 #endif
 #endif
 
@@ -99,6 +97,17 @@ extern "C" {
 typedef struct {
 	const u8 *mac_value;     /**< Pointer to the MAC address buffer; typically points to a 6-byte physical address. */
 } usbd_cdc_ncm_priv_data_t;
+
+/**
+ * @brief EP configuration for CDC NCM.
+ * @details Specifies endpoint addresses for BULK IN/OUT and INTR IN endpoints.
+ *          Used by both standalone and composite modes. Assigned at example layer.
+ */
+typedef struct {
+	u8  bulk_in_addr;       /**< BULK IN endpoint address (e.g. 0x81) */
+	u8  bulk_out_addr;      /**< BULK OUT endpoint address (e.g. 0x01) */
+	u8  intr_in_addr;       /**< INTERRUPT IN endpoint address (e.g. 0x83) */
+} usbd_cdc_ncm_ep_cfg_t;
 
 /**
  * @brief One TX NTB buffer slot in the SPSC ring.
@@ -134,13 +143,13 @@ typedef struct {
 	 * @brief Called during CDC NCM class driver initialization to set up application resources.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* init)(void);
+	int (*init)(void);
 
 	/**
 	 * @brief Called when the CDC NCM device is de-initialized for resource cleanup.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* deinit)(void);
+	int (*deinit)(void);
 
 	/**
 	 * @brief Called to handle class-specific SETUP requests.
@@ -150,7 +159,7 @@ typedef struct {
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* setup)(usb_setup_req_t *req, u8 *buf);
+	int (*setup)(usb_setup_req_t *req, u8 *buf);
 
 	/**
 	 * @brief Called when new data is received from the host on the BULK OUT endpoint.
@@ -158,7 +167,7 @@ typedef struct {
 	 * @param[in] len: Length of the received data in bytes.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* received)(u8 *buf, u32 len);
+	int (*received)(u8 *buf, u32 len);
 
 	/**
 	 * @brief Called when USB attach status changes for application to support hot-plug events.
@@ -174,6 +183,10 @@ typedef struct {
  * @brief Structure representing the CDC NCM device instance.
  */
 typedef struct {
+	const usbd_cdc_ncm_ep_cfg_t *ep_cfg;  /**< Pointer to the EP configuration (set by init). */
+	const usbd_cdc_ncm_cb_t *cb;         /**< User-defined callback structure. */
+	usb_dev_t *dev;                 /**< USB device instance. */
+
 	usbd_ep_t ep_bulk_in;           /**< BULK IN endpoint. */
 	usbd_ep_t ep_bulk_out;          /**< BULK OUT endpoint. */
 	usbd_ep_t ep_intr_in;           /**< INTERRUPT IN endpoint. */
@@ -205,8 +218,6 @@ typedef struct {
 	usb_os_task_t rx_task;          /**< RX delivery thread handle. */
 
 	u8 *rx_buf[USBD_CDC_NCM_RX_BUF_NUM];  /**< Ping-pong RX buffers (ISR and RxThread). */
-	usb_dev_t *dev;                 /**< USB device instance. */
-	const usbd_cdc_ncm_cb_t *cb;         /**< User-defined callback structure. */
 	u8 *rx_msg_buf;                 /**< Buffer pointer handed to the RX thread for current data. */
 	u32 rx_msg_len;                 /**< Data length handed to the RX thread. */
 	__IO u32 rx_pending_len;       /**< Deferred data length waiting in rx_buf[rx_xfer_idx]. */
@@ -248,6 +259,7 @@ typedef struct {
 	__IO u8 rx_thread_running;      /**< RX thread loop guard; cleared to 0 to request exit. */
 	u8 ntb_format;                  /**< NTB format: 0=NTB16, currently only NTB16 supported. */
 	u8 crc_mode;                    /**< CRC mode: 0=none, currently only no-CRC supported. */
+	u8 from_composite;              /**< Flag indicating if part of a composite device. */
 } usbd_cdc_ncm_dev_t;
 
 /** @} End of Device_CDC_NCM_Types group*/
@@ -267,9 +279,20 @@ typedef struct {
 /**
  * @brief Initializes class driver with application callback handler.
  * @param[in] cb: Pointer to the user-defined callback structure.
+ * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses).
  * @return 0 on success, non-zero on failure.
  */
-int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb);
+int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_ep_cfg_t *ep_cfg);
+
+#ifdef CONFIG_USBD_COMPOSITE
+/**
+ * @brief Initializes class driver as part of a composite device.
+ * @param[in] cb: Pointer to the user-defined callback structure.
+ * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses).
+ * @return 0 on success, non-zero on failure.
+ */
+int usbd_composite_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_ep_cfg_t *ep_cfg);
+#endif
 
 /**
  * @brief De-initializes the CDC NCM class driver.

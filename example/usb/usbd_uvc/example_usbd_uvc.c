@@ -13,18 +13,27 @@
 #include "sample_h264.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "UVC";
 
-// Thread priorities
-#define CONFIG_USBD_UVC_INIT_THREAD_PRIORITY                5U
+// Endpoint address
+#define USBD_UVC_ISO_IN_EP                       0x83U
 
-// Thread stack sizes
-#define CONFIG_USBD_UVC_INIT_THREAD_STACK_SIZE              (256 * 4)
+// USB speed
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
+#define UVC_USB_SPEED                            USB_SPEED_FULL
+#else
+#define UVC_USB_SPEED                            USB_SPEED_HIGH
+#endif
 
 // Video parameters
-#define USBD_UVC_VIDEO_BUF_NUM                              1U
-#define USBD_UVC_VIDEO_FPS                                  30U
-#define USBD_UVC_H264_NAL_SIZE                              4U
+#define USBD_UVC_VIDEO_BUF_NUM                   1U
+#define USBD_UVC_VIDEO_FPS                       30U
+#define USBD_UVC_H264_NAL_SIZE                   4U
+
+// Thread priorities
+#define UVC_INIT_THREAD_PRIORITY                 5
+
+// Thread stack sizes
+#define UVC_INIT_THREAD_STACK_SIZE               (256 * 4)
 
 /* Private types -------------------------------------------------------------*/
 
@@ -39,17 +48,24 @@ typedef struct video_array_s {
 
 /* Private macros ------------------------------------------------------------*/
 
-#define USBD_UVC_FRAME_INTERVAL_MS                          (1000U / USBD_UVC_VIDEO_FPS)
+#define USBD_UVC_FRAME_INTERVAL_MS               (1000U / USBD_UVC_VIDEO_FPS)
 
 /* Private function prototypes -----------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
 
+static const char *const TAG = "UVC";
+
 static video_array_t video;
 static usbd_uvc_buffer_t uvc_payload[USBD_UVC_VIDEO_BUF_NUM];
 
+static const usbd_uvc_ep_cfg_t uvc_ep = {
+	.iso_in_addr = USBD_UVC_ISO_IN_EP,
+	.iso_in_xfer_size = USBD_UVC_IN_BUF_SIZE,
+};
+
 static usbd_config_t uvc_cfg = {
-	.speed = USB_SPEED_HIGH,
+	.speed = UVC_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBAPRO3)
 	//DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD
@@ -139,7 +155,7 @@ static void example_usbd_uvc_thread(void *param)
 		goto exit_usbd_init_fail;
 	}
 
-	ret = usbd_uvc_init();
+	ret = usbd_uvc_init(&uvc_ep);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init UVC class fail\n");
 		goto exit_usbd_uvc_init_fail;
@@ -155,8 +171,8 @@ static void example_usbd_uvc_thread(void *param)
 		usbd_uvc_video_put_out_stream_queue(&uvc_payload[i]);
 	}
 
-	ret = rtos_task_create(&task, "example_usbd_uvc_video_thread", example_usbd_uvc_video_thread, NULL, CONFIG_USBD_UVC_INIT_THREAD_STACK_SIZE,
-						   CONFIG_USBD_UVC_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_uvc_video_thread", example_usbd_uvc_video_thread, NULL, UVC_INIT_THREAD_STACK_SIZE,
+						   UVC_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD UVC video thread fail\n");
 		goto exit_create_video_task_fail;
@@ -181,8 +197,8 @@ void example_usbd_uvc(void)
 	int ret;
 	rtos_task_t task;
 
-	ret = rtos_task_create(&task, "example_usbd_uvc_thread", example_usbd_uvc_thread, NULL, CONFIG_USBD_UVC_INIT_THREAD_STACK_SIZE,
-						   CONFIG_USBD_UVC_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_uvc_thread", example_usbd_uvc_thread, NULL, UVC_INIT_THREAD_STACK_SIZE,
+						   UVC_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD UVC thread fail\n");
 	}

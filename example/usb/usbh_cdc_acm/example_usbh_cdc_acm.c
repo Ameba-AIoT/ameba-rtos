@@ -59,7 +59,7 @@ static int cdc_acm_cb_detach(void);
 static int cdc_acm_cb_setup(void);
 static int cdc_acm_cb_transmit(u8 status);
 static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status);
-static int cdc_acm_cb_line_coding_changed(usb_cdc_line_coding_t *line_coding);
+static int cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding);
 static int cdc_acm_cb_process(usb_host_t *host, u8 msg);
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status);
@@ -221,7 +221,7 @@ static int cdc_acm_cb_transmit(u8 status)
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_line_coding_changed(usb_cdc_line_coding_t *line_coding)
+static int cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding)
 {
 	UNUSED(line_coding);
 	return HAL_OK;
@@ -471,8 +471,8 @@ static void cdc_acm_notify_test(void)
 static void cdc_acm_request_test(void)
 {
 	int ret;
-	usb_cdc_line_coding_t line_coding;
-	usb_cdc_line_coding_t new_line_coding;
+	usb_cdc_acm_line_coding_t line_coding;
+	usb_cdc_acm_line_coding_t new_line_coding;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for device attach\n");
 

@@ -9,6 +9,11 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "basic_types.h"
+#include "usb_cdc.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -19,31 +24,8 @@
  * @{
  */
 
-/* CDC Class Codes */
-#define USB_CDC_ECM_CLASS_CODE                              0x02U /**< USB Communication Device Class (CDC) Code */
-#define USB_CDC_ECM_COMM_INTERFACE_CLASS_CODE               0x02U /**< CDC Communication Interface Class Code */
-#define USB_CDC_ECM_DATA_INTERFACE_CLASS_CODE               0x0AU /**< CDC Data Interface Class Code */
-
 /* CDC Communication Subclass Codes */
-#define USB_CDC_ECM_SUBCLASS_RESERVED                       0x00U /**< CDC Subclass Code: Reserved */
 #define USB_CDC_ECM_SUBCLASS_ECM                            0x06U /**< CDC Subclass Code: Ethernet Control Model (ECM) */
-
-/* Communication Interface Class Control Protocol Codes */
-#define USB_CDC_ECM_CTRL_PROTOCOL_NO_CLASS_SPECIFIC         0x00U  /**< CDC Protocol Code: No class specific protocol */
-#define USB_CDC_ECM_CTRL_PROTOCOL_VENDOR_SPECIFIC           0xFFU  /**< CDC Protocol Code: Vendor specific */
-
-/* Data Interface Class Protocol Codes */
-#define USB_CDC_ECM_DATA_PROTOCOL_NO_CLASS_SPECIFIC         0x00U  /**< CDC Data Protocol: No class specific protocol */
-#define USB_CDC_ECM_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK    0x01U  /**< CDC Data Protocol: Network Transfer Block */
-
-/* CDC Functional Descriptor Types */
-#define USB_CDC_ECM_CS_INTERFACE                            0x24U /**< Class-Specific Interface Descriptor Type */
-#define USB_CDC_ECM_CS_ENDPOINT                             0x25U /**< Class-Specific Endpoint Descriptor Type */
-
-/* CDC Functional Descriptor Subtypes */
-#define USB_CDC_ECM_FUNC_DESC_HEADER                        0x00U /**< Header Functional Descriptor */
-#define USB_CDC_ECM_FUNC_DESC_UNION                         0x06U /**< Union Functional Descriptor */
-#define USB_CDC_ECM_FUNC_DESC_ETHERNET_NETWORKING           0x0FU /**< Ethernet Networking Functional Descriptor */
 
 /* CDC ECM Class-Specific Request Codes */
 #define USB_CDC_ECM_SET_ETHERNET_MULTICAST_FILTERS      0x40U /**< Set Ethernet multicast address filters */
@@ -51,11 +33,6 @@
 #define USB_CDC_ECM_GET_ETHERNET_POWER_MANAGEMENT       0x42U /**< Get device power management pattern filter */
 #define USB_CDC_ECM_SET_ETHERNET_PACKET_FILTER          0x43U /**< Set Ethernet packet filter bitmap */
 #define USB_CDC_ECM_GET_ETHERNET_STATISTIC              0x44U /**< Retrieve Ethernet device statistics */
-
-/* CDC ECM Notification Codes */
-#define USB_CDC_ECM_NOTIFY_NETWORK_CONNECTION           0x00U /**< Network Connection Notification */
-#define USB_CDC_ECM_NOTIFY_RESPONSE_AVAILABLE           0x01U /**< Response Available Notification */
-#define USB_CDC_ECM_NOTIFY_CONNECTION_SPEED_CHANGE      0x2AU /**< Connection Speed Change Notification */
 
 /* Ethernet Packet Filter Bitmap (wValue for SET_ETHERNET_PACKET_FILTER) */
 #define USB_CDC_ECM_PACKET_TYPE_PROMISCUOUS             (1U << 0) /**< Promiscuous mode */
@@ -150,5 +127,9 @@ typedef struct {
 
 /** @} End of USB_Common_Types group */
 /** @} End of USB_Common_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USB_CDC_ECM_H */

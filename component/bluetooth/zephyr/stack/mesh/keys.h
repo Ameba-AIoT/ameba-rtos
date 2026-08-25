@@ -26,6 +26,8 @@ int bt_mesh_key_compare(const uint8_t raw_key[16], const struct bt_mesh_key *mes
 static inline int bt_mesh_key_import(enum bt_mesh_key_type type, const uint8_t in[16],
 				     struct bt_mesh_key *out)
 {
+	ARG_UNUSED(type);
+
 	memcpy(out, in, 16);
 	return 0;
 }
@@ -43,6 +45,8 @@ static inline void bt_mesh_key_assign(struct bt_mesh_key *dst, const struct bt_m
 
 static inline int bt_mesh_key_destroy(const struct bt_mesh_key *key)
 {
+	ARG_UNUSED(key);
+
 	return 0;
 }
 

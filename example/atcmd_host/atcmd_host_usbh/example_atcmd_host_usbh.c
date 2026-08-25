@@ -46,7 +46,7 @@ static int cdc_acm_cb_setup(void);
 static int cdc_acm_cb_transmit(usbh_urb_state_t state);
 static int cdc_acm_cb_receive(u8 *pbuf, u32 Len, u8 status);
 static int cdc_acm_cb_notify(u8 *pbuf, u32 Len, u8 status);
-static int cdc_acm_cb_line_coding_changed(usb_cdc_line_coding_t *line_coding);
+static int cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding);
 static int cdc_acm_cb_process(usb_host_t *host, u8 id);
 
 static void uart_send_string(serial_t *sobj, char *pstr, u32 len);
@@ -213,7 +213,7 @@ static int cdc_acm_cb_notify(u8 *buf, u32 length, u8 status)
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_line_coding_changed(usb_cdc_line_coding_t *line_coding)
+static int cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding)
 {
 	UNUSED(line_coding);
 	return HAL_OK;

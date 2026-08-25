@@ -87,3 +87,4 @@ After booting, a UART download example thread will be started automatically. The
 * RTL8710E
 * RTL8721Dx
 * RTL8721F
+* RTL8720F

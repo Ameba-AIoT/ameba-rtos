@@ -7,6 +7,9 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbd_cdc_ncm.h"
+#ifdef CONFIG_USBD_COMPOSITE
+#include "usbd_composite.h"
+#endif
 
 #define USBD_CDC_NCM_RX_SPEED_CHECK                       0                     /* CDC NCM rx speed test */
 #define USBD_CDC_NCM_TX_SPEED_CHECK                       0                     /* CDC NCM tx speed test */
@@ -59,6 +62,12 @@ _Static_assert(USBD_CDC_NCM_NTB_OUT_MAX_DATAGRAMS <= 255U,
 
 /* Private defines -----------------------------------------------------------*/
 
+#define USBD_CDC_NCM_MAC_STRING_INDEX                 (USBD_IDX_SERIAL_STR + 1) /**< MAC address string index. */
+
+/* Interface numbers */
+#define USBD_CDC_NCM_COMM_INTERFACE_NUM 0x00U  /**< Communication interface */
+#define USBD_CDC_NCM_DATA_INTERFACE_NUM 0x01U  /**< Data interface */
+
 /* Private macros ------------------------------------------------------------*/
 
 /* TX NTB slot depth: see USBD_CDC_NCM_TX_DEPTH in usbd_cdc_ncm.h. */
@@ -68,24 +77,6 @@ _Static_assert(USBD_CDC_NCM_NTB_OUT_MAX_DATAGRAMS <= 255U,
  * (wait forever) by default: the caller asked for backpressure, so the
  * upper layer prefers to stall rather than drop a frame. */
 #define USBD_CDC_NCM_BULK_TX_TIMEOUT_MS               USB_OS_SEMA_TIMEOUT
-
-/* Device identification */
-#define USBD_CDC_NCM_VID                              USB_VID               /**< Vendor ID */
-#define USBD_CDC_NCM_PID                              USB_PID               /**< Product ID */
-#define USBD_CDC_NCM_SELF_POWERED                     1U                    /**< Self-powered device */
-#define USBD_CDC_NCM_REMOTE_WAKEUP_EN                 1U                    /**< Remote wakeup enabled */
-
-/* String descriptors */
-#define USBD_CDC_NCM_LANGID_STRING                    0x0409U               /**< Language ID (US English) */
-#define USBD_CDC_NCM_MFG_STRING                       "Realtek"             /**< Manufacturer */
-#define USBD_CDC_NCM_PROD_HS_STRING                   "Realtek CDC NCM (HS)"/**< Product (HS) */
-#define USBD_CDC_NCM_PROD_FS_STRING                   "Realtek CDC NCM (FS)"/**< Product (FS) */
-#define USBD_CDC_NCM_SN_STRING                        "1234567890"          /**< Serial number */
-#define USBD_CDC_NCM_MAC_STRING_INDEX                 (USBD_IDX_SERIAL_STR + 1) /**< MAC string index */
-
-/* Interrupt Endpoint Intervals */
-#define USBD_CDC_NCM_HS_INTR_IN_INTERVAL              1U                    /**< HS INTR IN interval */
-#define USBD_CDC_NCM_FS_INTR_IN_INTERVAL              1U                    /**< FS INTR IN interval */
 
 /* NCM Functional Descriptor size (6 bytes) */
 #define USBD_CDC_NCM_FUNC_DESC_SIZE                   6U
@@ -171,7 +162,7 @@ static const u8 usbd_cdc_ncm_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_LEN_DEV_DESC,                               /* bLength */
 	USB_DESC_TYPE_DEVICE,                           /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB: 2.0 */
-	USB_CDC_NCM_COMM_INTERFACE_CLASS_CODE,              /* bDeviceClass: Communications */
+	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bDeviceClass: Communications */
 	0x00,                                           /* bDeviceSubClass: 0 at device level; NCM subclass lives on the comm interface descriptor */
 	0x00,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
@@ -217,12 +208,18 @@ static const u8 usbd_cdc_ncm_hs_config_desc[] = {
 	0x02,                                           /* bNumInterfaces */
 	0x01,                                           /* bConfigurationValue */
 	0x00,                                           /* iConfiguration */
-#if USBD_CDC_NCM_SELF_POWERED
-	0xE0,                                           /* bmAttributes: Self-powered, Remote wakeup */
-#else
-	0xA0,                                           /* bmAttributes: Bus-powered, Remote wakeup */
-#endif
+	0x80,                                           /* bmAttributes (patched at runtime for self_powered/remote_wakeup) */
 	0x32,                                           /* bMaxPower: 100mA */
+
+	/* IAD for CDC NCM (Communication + Data) */
+	USB_LEN_IAD_DESC,                               /* bLength */
+	USB_DESC_TYPE_IAD,                              /* bDescriptorType */
+	0x00,                                           /* bFirstInterface (patched by composite) */
+	0x02,                                           /* bInterfaceCount */
+	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bFunctionClass: CDC */
+	USB_CDC_NCM_SUBCLASS_CODE,                      /* bFunctionSubClass: NCM */
+	USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC,        /* bFunctionProtocol */
+	0x00,                                           /* iFunction */
 
 	/* Communication Interface Descriptor */
 	USB_LEN_IF_DESC,                                /* bLength */
@@ -230,28 +227,28 @@ static const u8 usbd_cdc_ncm_hs_config_desc[] = {
 	USBD_CDC_NCM_COMM_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x01,                                           /* bNumEndpoints */
-	USB_CDC_NCM_COMM_INTERFACE_CLASS_CODE,              /* bInterfaceClass: CDC */
+	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bInterfaceClass: CDC */
 	USB_CDC_NCM_SUBCLASS_CODE,                           /* bInterfaceSubClass: NCM */
-	0x00,                                           /* bInterfaceProtocol */
+	USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC,        /* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
 	/* CDC Header Functional Descriptor */
 	0x05,                                           /* bFunctionLength */
-	USB_CDC_NCM_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_NCM_FUNC_DESC_HEADER,                       /* bDescriptorSubtype */
+	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_FUNC_DESC_HEADER,                       /* bDescriptorSubtype */
 	0x10, 0x01,                                     /* bcdCDC: 1.10 */
 
 	/* CDC Union Functional Descriptor */
 	0x05,                                           /* bFunctionLength */
-	USB_CDC_NCM_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_NCM_FUNC_DESC_UNION,                        /* bDescriptorSubtype */
+	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_FUNC_DESC_UNION,                        /* bDescriptorSubtype */
 	USBD_CDC_NCM_COMM_INTERFACE_NUM,                /* bControlInterface */
 	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bSubordinateInterface0 */
 
 	/* CDC Ethernet Networking Functional Descriptor */
 	USBD_CDC_NCM_ETHERNET_FUNC_DESC_SIZE,           /* bFunctionLength */
-	USB_CDC_NCM_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_NCM_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
+	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
 	USBD_CDC_NCM_MAC_STRING_INDEX,                  /* iMACAddress */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE), /* wMaxSegmentSize */
@@ -261,7 +258,7 @@ static const u8 usbd_cdc_ncm_hs_config_desc[] = {
 
 	/* CDC NCM Functional Descriptor */
 	USBD_CDC_NCM_FUNC_DESC_SIZE,                    /* bFunctionLength: 6 */
-	USB_CDC_NCM_CS_INTERFACE,                           /* bDescriptorType: CS_INTERFACE (0x24) */
+	USB_CDC_CS_INTERFACE,                           /* bDescriptorType: CS_INTERFACE (0x24) */
 	USB_CDC_NCM_FUNC_DESC,                          /* bDescriptorSubtype: NCM (0x1A) */
 	0x00, 0x01,                                     /* bcdNcmVersion: 1.00 */
 	USB_CDC_NCM_NTB16_SUPPORTED,                    /* bmNetworkCapabilities: NTB16 supported */
@@ -269,7 +266,7 @@ static const u8 usbd_cdc_ncm_hs_config_desc[] = {
 	/* INTR IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_CDC_NCM_INTR_IN_EP,                        /* bEndpointAddress */
+	USB_D2H,                                        /* bEndpointAddress: dir IN (placeholder) */
 	USB_CH_EP_TYPE_INTR,                            /* bmAttributes */
 	USB_LOW_BYTE(USBD_CDC_NCM_INTR_IN_PACKET_SIZE),  /* wMaxPacketSize (reuse same size as ECM) */
 	USB_HIGH_BYTE(USBD_CDC_NCM_INTR_IN_PACKET_SIZE),
@@ -281,9 +278,9 @@ static const u8 usbd_cdc_ncm_hs_config_desc[] = {
 	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x00,                                           /* bNumEndpoints */
-	USB_CDC_NCM_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
-	0x00,                                           /* bInterfaceSubClass */
-	USB_CDC_NCM_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK,   /* bInterfaceProtocol: NCM */
+	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
+	USB_CDC_SUBCLASS_RESERVED,                      /* bInterfaceSubClass */
+	USB_CDC_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK,   /* bInterfaceProtocol: NCM */
 	0x00,                                           /* iInterface */
 
 	/* Data Interface Descriptor (Alt 1 - Active) */
@@ -292,15 +289,15 @@ static const u8 usbd_cdc_ncm_hs_config_desc[] = {
 	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x01,                                           /* bAlternateSetting */
 	0x02,                                           /* bNumEndpoints */
-	USB_CDC_NCM_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
-	0x00,                                           /* bInterfaceSubClass */
-	USB_CDC_NCM_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK,   /* bInterfaceProtocol: NCM */
+	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
+	USB_CDC_SUBCLASS_RESERVED,                      /* bInterfaceSubClass */
+	USB_CDC_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK,   /* bInterfaceProtocol: NCM */
 	0x00,                                           /* iInterface */
 
 	/* BULK IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_CDC_NCM_BULK_IN_EP,                        /* bEndpointAddress */
+	USB_D2H,                                    /* bEndpointAddress: dir IN (placeholder) */
 	USB_CH_EP_TYPE_BULK,                            /* bmAttributes */
 	USB_LOW_BYTE(USB_BULK_HS_MAX_MPS),              /* wMaxPacketSize */
 	USB_HIGH_BYTE(USB_BULK_HS_MAX_MPS),
@@ -309,7 +306,7 @@ static const u8 usbd_cdc_ncm_hs_config_desc[] = {
 	/* BULK OUT Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_CDC_NCM_BULK_OUT_EP,                       /* bEndpointAddress */
+	USB_H2D,                                    /* bEndpointAddress: dir OUT (placeholder) */
 	USB_CH_EP_TYPE_BULK,                            /* bmAttributes */
 	USB_LOW_BYTE(USB_BULK_HS_MAX_MPS),              /* wMaxPacketSize */
 	USB_HIGH_BYTE(USB_BULK_HS_MAX_MPS),
@@ -326,12 +323,18 @@ static const u8 usbd_cdc_ncm_fs_config_desc[] = {
 	0x02,                                           /* bNumInterfaces */
 	0x01,                                           /* bConfigurationValue */
 	0x00,                                           /* iConfiguration */
-#if USBD_CDC_NCM_SELF_POWERED
-	0xE0,                                           /* bmAttributes: Self-powered, Remote wakeup */
-#else
-	0xA0,                                           /* bmAttributes: Bus-powered, Remote wakeup */
-#endif
+	0x80,                                           /* bmAttributes (patched at runtime for self_powered/remote_wakeup) */
 	0x32,                                           /* bMaxPower: 100mA */
+
+	/* IAD for CDC NCM (Communication + Data) */
+	USB_LEN_IAD_DESC,                               /* bLength */
+	USB_DESC_TYPE_IAD,                              /* bDescriptorType */
+	0x00,                                           /* bFirstInterface (patched by composite) */
+	0x02,                                           /* bInterfaceCount */
+	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bFunctionClass: CDC */
+	USB_CDC_NCM_SUBCLASS_CODE,                      /* bFunctionSubClass: NCM */
+	USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC,        /* bFunctionProtocol */
+	0x00,                                           /* iFunction */
 
 	/* Communication Interface Descriptor */
 	USB_LEN_IF_DESC,                                /* bLength */
@@ -339,28 +342,28 @@ static const u8 usbd_cdc_ncm_fs_config_desc[] = {
 	USBD_CDC_NCM_COMM_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x01,                                           /* bNumEndpoints */
-	USB_CDC_NCM_COMM_INTERFACE_CLASS_CODE,              /* bInterfaceClass: CDC */
+	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bInterfaceClass: CDC */
 	USB_CDC_NCM_SUBCLASS_CODE,                           /* bInterfaceSubClass: NCM */
-	0x00,                                           /* bInterfaceProtocol */
+	USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC,        /* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
 	/* CDC Header Functional Descriptor */
 	0x05,                                           /* bFunctionLength */
-	USB_CDC_NCM_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_NCM_FUNC_DESC_HEADER,                       /* bDescriptorSubtype */
+	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_FUNC_DESC_HEADER,                       /* bDescriptorSubtype */
 	0x10, 0x01,                                     /* bcdCDC: 1.10 */
 
 	/* CDC Union Functional Descriptor */
 	0x05,                                           /* bFunctionLength */
-	USB_CDC_NCM_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_NCM_FUNC_DESC_UNION,                        /* bDescriptorSubtype */
+	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_FUNC_DESC_UNION,                        /* bDescriptorSubtype */
 	USBD_CDC_NCM_COMM_INTERFACE_NUM,                /* bControlInterface */
 	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bSubordinateInterface0 */
 
 	/* CDC Ethernet Networking Functional Descriptor */
 	USBD_CDC_NCM_ETHERNET_FUNC_DESC_SIZE,           /* bFunctionLength */
-	USB_CDC_NCM_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_NCM_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
+	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
+	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
 	USBD_CDC_NCM_MAC_STRING_INDEX,                  /* iMACAddress */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE), /* wMaxSegmentSize */
@@ -370,7 +373,7 @@ static const u8 usbd_cdc_ncm_fs_config_desc[] = {
 
 	/* CDC NCM Functional Descriptor */
 	USBD_CDC_NCM_FUNC_DESC_SIZE,                    /* bFunctionLength: 6 */
-	USB_CDC_NCM_CS_INTERFACE,                           /* bDescriptorType: CS_INTERFACE (0x24) */
+	USB_CDC_CS_INTERFACE,                           /* bDescriptorType: CS_INTERFACE (0x24) */
 	USB_CDC_NCM_FUNC_DESC,                          /* bDescriptorSubtype: NCM (0x1A) */
 	0x00, 0x01,                                     /* bcdNcmVersion: 1.00 */
 	USB_CDC_NCM_NTB16_SUPPORTED,                    /* bmNetworkCapabilities: NTB16 supported */
@@ -378,7 +381,7 @@ static const u8 usbd_cdc_ncm_fs_config_desc[] = {
 	/* INTR IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_CDC_NCM_INTR_IN_EP,                        /* bEndpointAddress */
+	USB_D2H,                                        /* bEndpointAddress: dir IN (placeholder) */
 	USB_CH_EP_TYPE_INTR,                            /* bmAttributes */
 	USB_LOW_BYTE(USBD_CDC_NCM_INTR_IN_PACKET_SIZE),  /* wMaxPacketSize */
 	USB_HIGH_BYTE(USBD_CDC_NCM_INTR_IN_PACKET_SIZE),
@@ -390,9 +393,9 @@ static const u8 usbd_cdc_ncm_fs_config_desc[] = {
 	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x00,                                           /* bNumEndpoints */
-	USB_CDC_NCM_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
-	0x00,                                           /* bInterfaceSubClass */
-	USB_CDC_NCM_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK,   /* bInterfaceProtocol: NCM */
+	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
+	USB_CDC_SUBCLASS_RESERVED,                      /* bInterfaceSubClass */
+	USB_CDC_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK,   /* bInterfaceProtocol: NCM */
 	0x00,                                           /* iInterface */
 
 	/* Data Interface Descriptor (Alt 1 - Active) */
@@ -401,15 +404,15 @@ static const u8 usbd_cdc_ncm_fs_config_desc[] = {
 	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
 	0x01,                                           /* bAlternateSetting */
 	0x02,                                           /* bNumEndpoints */
-	USB_CDC_NCM_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
-	0x00,                                           /* bInterfaceSubClass */
-	USB_CDC_NCM_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK,   /* bInterfaceProtocol: NCM */
+	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
+	USB_CDC_SUBCLASS_RESERVED,                      /* bInterfaceSubClass */
+	USB_CDC_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK,   /* bInterfaceProtocol: NCM */
 	0x00,                                           /* iInterface */
 
 	/* BULK IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_CDC_NCM_BULK_IN_EP,                        /* bEndpointAddress */
+	USB_D2H,                                    /* bEndpointAddress: dir IN (placeholder) */
 	USB_CH_EP_TYPE_BULK,                            /* bmAttributes */
 	USB_LOW_BYTE(USB_BULK_FS_MAX_MPS),              /* wMaxPacketSize */
 	USB_HIGH_BYTE(USB_BULK_FS_MAX_MPS),
@@ -418,7 +421,7 @@ static const u8 usbd_cdc_ncm_fs_config_desc[] = {
 	/* BULK OUT Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_CDC_NCM_BULK_OUT_EP,                       /* bEndpointAddress */
+	USB_H2D,                                    /* bEndpointAddress: dir OUT (placeholder) */
 	USB_CH_EP_TYPE_BULK,                            /* bmAttributes */
 	USB_LOW_BYTE(USB_BULK_FS_MAX_MPS),              /* wMaxPacketSize */
 	USB_HIGH_BYTE(USB_BULK_FS_MAX_MPS),
@@ -936,7 +939,7 @@ static int usbd_cdc_ncm_send_notification(void)
 
 	switch (ncm->notify_state) {
 	case NCM_NOTIFY_CONNECT:
-		event.bNotificationCode = USB_CDC_NCM_NOTIFY_NETWORK_CONNECTION;
+		event.bNotificationCode = USB_CDC_NOTIFY_NETWORK_CONNECTION;
 		event.wValue = ncm->connect_status;
 		event.wLength = 0;
 		length = USBD_CDC_NCM_NETWORK_CONNECTION_SIZE;
@@ -947,7 +950,7 @@ static int usbd_cdc_ncm_send_notification(void)
 		break;
 
 	case NCM_NOTIFY_SPEED:
-		event.bNotificationCode = USB_CDC_NCM_NOTIFY_CONNECTION_SPEED_CHANGE;
+		event.bNotificationCode = USB_CDC_NOTIFY_CONNECTION_SPEED_CHANGE;
 		event.wValue = 0;
 		event.wLength = 8;
 		speed_data.DLBitRate = 0; /* Downstream bits/sec */
@@ -1085,6 +1088,19 @@ static int usbd_cdc_ncm_set_config(usb_dev_t *dev, u8 config)
 	UNUSED(config);
 
 	ncm->dev = dev;
+
+	if (!ncm->from_composite) {
+#ifdef CONFIG_USBD_SELF_POWERED
+		dev->self_powered = 1;
+#else
+		dev->self_powered = 0;
+#endif
+#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
+		dev->remote_wakeup_en = 1;
+#else
+		dev->remote_wakeup_en = 0;
+#endif
+	}
 
 	/* Initialize INTR IN endpoint */
 	ep_intr_in->xfer_state = 0U;
@@ -1401,7 +1417,7 @@ static int usbd_cdc_ncm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	UNUSED(dev);
 	UNUSED(status);
 
-	if (ep_addr == USBD_CDC_NCM_BULK_IN_EP) {
+	if (ep_addr == ncm->ep_cfg->bulk_in_addr) {
 		ep_bulk_in->xfer_state = 0U;
 		/* SPSC consumer side: the slot at tx_rd just finished DMA.
 		 * Advance rd to release it, clear inflight, wake any producer
@@ -1421,7 +1437,7 @@ static int usbd_cdc_ncm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 #if USBD_CDC_NCM_STATE_TRACE_ENABLE
 		ncm->dbg_bulk_in_done_cnt++;
 #endif
-	} else if (ep_addr == USBD_CDC_NCM_INTR_IN_EP) {
+	} else if (ep_addr == ncm->ep_cfg->intr_in_addr) {
 		ep_intr_in->xfer_state = 0U;
 #if USBD_CDC_NCM_STATE_TRACE_ENABLE
 		ncm->dbg_intr_in_done_cnt++;
@@ -1435,6 +1451,9 @@ static int usbd_cdc_ncm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 				ncm->notify_retry = 1U;
 			}
 		}
+	} else {
+		/* Return non-zero so composite dispatcher continues iterating. */
+		return HAL_ERR_PARA;
 	}
 
 	return HAL_OK;
@@ -1496,7 +1515,7 @@ static int usbd_cdc_ncm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 	UNUSED(dev);
 
-	if (ep_addr != USBD_CDC_NCM_BULK_OUT_EP) {
+	if (ep_addr != ncm->ep_cfg->bulk_out_addr) {
 		return HAL_ERR_PARA;
 	}
 
@@ -1629,6 +1648,42 @@ static int usbd_cdc_ncm_handle_ep0_data_out(usb_dev_t *dev)
 }
 
 /**
+ * @brief Patch EP addresses in a configuration descriptor block
+ * @note   Replaces direction-only placeholders (USB_D2H/USB_H2D) with actual
+ *         EP addresses from the EP configuration structure.
+ * @param  desc: Pointer to config descriptor body (starting after config header)
+ * @param  len: Length of the descriptor block
+ * @param  ep_cfg: EP configuration with actual endpoint addresses
+ * @retval None
+ */
+static void usbd_cdc_ncm_patch_ep_addresses(u8 *desc, u16 len,
+		const usbd_cdc_ncm_ep_cfg_t *ep_cfg)
+{
+	for (u16 i = 0; i < len;) {
+		u8 dlen = desc[i];
+		u8 dtype = desc[i + 1];
+		if (dlen == 0) {
+			break;
+		}
+
+		if ((dtype == USB_DESC_TYPE_ENDPOINT) && (i + 3 <= len)) {
+			u8 addr  = desc[i + 2];
+			u8 dir   = addr & USB_REQ_DIR_MASK;
+			u8 type  = desc[i + 3] & 0x03;
+
+			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
+				desc[i + 2] = ep_cfg->bulk_in_addr;
+			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_BULK)) {
+				desc[i + 2] = ep_cfg->bulk_out_addr;
+			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_INTR)) {
+				desc[i + 2] = ep_cfg->intr_in_addr;
+			}
+		}
+		i += dlen;
+	}
+}
+
+/**
  * @brief Get USB descriptor
  * @note  This function is called within an interrupt service routine (ISR) context;
  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
@@ -1646,9 +1701,16 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 	char mac_buf[32] = {0,};
 	const u8 *desc = NULL;
 	u16 len = 0;
+	u8 attr = 0x80U;
 
-	dev->self_powered = USBD_CDC_NCM_SELF_POWERED;
-	dev->remote_wakeup_en = USBD_CDC_NCM_REMOTE_WAKEUP_EN;
+	if (!ncm->from_composite) {
+#ifdef CONFIG_USBD_SELF_POWERED
+		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
+#endif
+#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
+		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
+#endif
+	}
 
 	switch (desc_type) {
 	case USB_DESC_TYPE_DEVICE:
@@ -1669,8 +1731,18 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 		}
 
 		usb_os_memcpy((void *)buf, (void *)desc, len);
+
+		if (!ncm->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
+
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+
+		/* Patch EP addresses from placeholder to actual values */
+		usbd_cdc_ncm_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
+										len - USB_LEN_CFG_DESC,
+										ncm->ep_cfg);
 		break;
 
 #ifndef CONFIG_USB_FS
@@ -1685,9 +1757,17 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 		len = (speed == USB_SPEED_HIGH) ?
 			  sizeof(usbd_cdc_ncm_fs_config_desc) : sizeof(usbd_cdc_ncm_hs_config_desc);
 		usb_os_memcpy(buf, desc, len);
+
+		if (!ncm->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
 		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+		/* Patch EP addresses from placeholder to actual values */
+		usbd_cdc_ncm_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
+										len - USB_LEN_CFG_DESC,
+										ncm->ep_cfg);
 		break;
 #endif
 
@@ -1866,14 +1946,13 @@ static void usbd_cdc_ncm_trace_task_deinit(void)
 }
 #endif /* USBD_CDC_NCM_STATE_TRACE_ENABLE */
 
-/* Exported functions --------------------------------------------------------*/
-
 /**
  * @brief Initialize CDC NCM class
  * @param cb: User callbacks
+ * @param ep_cfg: EP configuration
  * @retval Status
  */
-int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb)
+static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_ep_cfg_t *ep_cfg)
 {
 	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 	usbd_ep_t *ep_bulk_in = &ncm->ep_bulk_in;
@@ -1884,6 +1963,11 @@ int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb)
 
 	if (cb == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return HAL_ERR_PARA;
+	}
+
+	if (ep_cfg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP cfg\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -1927,14 +2011,14 @@ int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb)
 
 	/* BULK IN use the caller buffer */
 	info = &ep_bulk_in->info;
-	info->addr = USBD_CDC_NCM_BULK_IN_EP;
+	info->addr = ep_cfg->bulk_in_addr;
 	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_in->xfer_buf_len = 0;
 	ep_bulk_in->xfer_buf = NULL;
 
 	/* Allocate BULK OUT ping-pong buffers */
 	info = &ep_bulk_out->info;
-	info->addr = USBD_CDC_NCM_BULK_OUT_EP;
+	info->addr = ep_cfg->bulk_out_addr;
 	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_out->xfer_buf_len = USBD_CDC_NCM_BULK_BUF_MAX_SIZE;
 	ep_bulk_out->xfer_len = ep_bulk_out->xfer_buf_len;
@@ -2003,7 +2087,7 @@ int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb)
 
 	/* Allocate INTR IN buffer */
 	info = &ep_intr_in->info;
-	info->addr = USBD_CDC_NCM_INTR_IN_EP;
+	info->addr = ep_cfg->intr_in_addr;
 	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_in->xfer_buf_len = USBD_CDC_NCM_INTR_IN_PACKET_SIZE;
 	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(ep_intr_in->xfer_buf_len);
@@ -2028,9 +2112,9 @@ int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb)
 
 	/* Initialize user callbacks */
 	ncm->cb = cb;
+	ncm->ep_cfg = ep_cfg;
 
 	/* Register CDC NCM class driver */
-	usbd_register_class(&usbd_cdc_ncm_driver);
 
 #if USBD_CDC_NCM_STATE_TRACE_ENABLE
 	usbd_cdc_ncm_trace_task_init();
@@ -2087,6 +2171,36 @@ exit: {
 	return ret;
 }
 
+/* Exported functions --------------------------------------------------------*/
+
+int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_ep_cfg_t *ep_cfg)
+{
+	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
+	int ret;
+
+	ncm->from_composite = 0;
+	ret = usbd_cdc_ncm_private_init(cb, ep_cfg);
+	if (ret == HAL_OK) {
+		usbd_register_class(&usbd_cdc_ncm_driver);
+	}
+	return ret;
+}
+
+#ifdef CONFIG_USBD_COMPOSITE
+int usbd_composite_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_ep_cfg_t *ep_cfg)
+{
+	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
+	int ret;
+
+	ncm->from_composite = 1;
+	ret = usbd_cdc_ncm_private_init(cb, ep_cfg);
+	if (ret == HAL_OK) {
+		ret = usbd_composite_register_driver(&usbd_cdc_ncm_driver);
+	}
+	return ret;
+}
+#endif
+
 /**
  * @brief Deinitialize CDC NCM class
  * @retval Status
@@ -2118,7 +2232,14 @@ int usbd_cdc_ncm_deinit(void)
 	}
 
 	/* Unregister class driver */
-	usbd_unregister_class();
+#ifdef CONFIG_USBD_COMPOSITE
+	if (ncm->from_composite) {
+		usbd_composite_unregister_driver(&usbd_cdc_ncm_driver);
+	} else
+#endif
+	{
+		usbd_unregister_class();
+	}
 
 	/* After unregister, no more USB ISRs will fire.  Tear down TX state. */
 	{

@@ -482,6 +482,37 @@ s32 wifi_set_wowlan_ipv6_wake(u8 enable)
 }
 //----------------------------------------------------------------------------//
 
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
+/* delegate STA dhcp to dev (blocking): dev runs/completes the lease on its own
+ * netif and returns ip/gw/netmask (raw ip4 addr) in ipinfo[0/1/2]. */
+s32 wifi_dev_dhcp(u8 idx, u32 *ipinfo)
+{
+	s32 ret;
+	u32 param_buf[2];
+	u32 *buf = (u32 *)rtos_mem_zmalloc(3 * sizeof(u32));
+
+	if (buf == NULL) {
+		return -1;
+	}
+	DCache_CleanInvalidate((u32)buf, 3 * sizeof(u32));
+
+	param_buf[0] = (u32)idx;
+	param_buf[1] = (u32)buf;
+	ret = whc_ipc_host_api_message_send(WHC_API_WIFI_DEV_DHCP, param_buf, 2);
+
+	DCache_Invalidate((u32)buf, 3 * sizeof(u32));
+	if (ret == DHCP_ADDRESS_ASSIGNED && ipinfo != NULL) {
+		ipinfo[0] = buf[0];
+		ipinfo[1] = buf[1];
+		ipinfo[2] = buf[2];
+	}
+
+	rtos_mem_free((u8 *)buf);
+	return ret;
+}
+#endif
+//----------------------------------------------------------------------------//
+
 int wifi_set_mfp_support(unsigned char value)
 {
 	int ret = 0;

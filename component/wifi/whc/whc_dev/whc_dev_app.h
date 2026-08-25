@@ -11,6 +11,11 @@
 #define at_printf(fmt, args...)    RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, fmt, ##args)
 #endif
 
+struct whc_dev_subcmd_entry {
+	u8 subcmd;
+	void (*handler)(u8 *subcmd_ptr);
+};
+
 struct whc_cmd_path_priv {
 	rtos_sema_t whc_user_rx_sema;
 	rtos_mutex_t whc_user_blocksend_mutex;

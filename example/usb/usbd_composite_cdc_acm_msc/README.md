@@ -14,10 +14,9 @@ Attach SD card to the SDIOH slot on the board.
 	[*] Enable USB
 			USB Mode (Device)  --->
 	[*] Composite
-			Select Composite Class (CDC ACM + MSC)  --->
-
-		(X) CDC ACM + MSC
-				Select storage media (RAM)  --->
+	[*] CDC ACM
+	[*] MSC
+			Select storage media (RAM)  --->
 	```
 	Save and exit.
 

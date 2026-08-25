@@ -16,60 +16,69 @@ extern "C" {
 #endif
 
 /* Exported defines ----------------------------------------------------------*/
-#define USBD_UVC_INTF_CONTROL        0
-#define USBD_UVC_INTF_STREAMING      1
+#define USBD_UVC_INTF_CONTROL           0
+#define USBD_UVC_INTF_STREAMING         1
 
-#define USBD_UVC_EVENT_FIRST			0
-#define USBD_UVC_EVENT_CONNECT			1
-#define USBD_UVC_EVENT_DISCONNECT		2
-#define USBD_UVC_EVENT_STREAMON			3
-#define USBD_UVC_EVENT_STREAMOFF		4
-#define USBD_UVC_EVENT_SETUP			5
-#define USBD_UVC_EVENT_DATA				6
-#define USBD_UVC_EVENT_LAST				7
+#define USBD_UVC_EVENT_FIRST            0
+#define USBD_UVC_EVENT_CONNECT          1
+#define USBD_UVC_EVENT_DISCONNECT       2
+#define USBD_UVC_EVENT_STREAMON         3
+#define USBD_UVC_EVENT_STREAMOFF        4
+#define USBD_UVC_EVENT_SETUP            5
+#define USBD_UVC_EVENT_DATA             6
+#define USBD_UVC_EVENT_LAST             7
 
-#define USBD_UVC_CMD_THREAD_PRIORITY	2
+#define USBD_UVC_CMD_THREAD_PRIORITY    2
 
-#define USBD_UVC_NUM_REQUESTS			2
-#define USBD_UVC_MAX_REQUEST_SIZE		64
-#define USBD_UVC_MAX_EVENTS				4
+#define USBD_UVC_NUM_REQUESTS           2
+#define USBD_UVC_MAX_REQUEST_SIZE       64
+#define USBD_UVC_MAX_EVENTS             4
 
-#define USBD_TUNING_MODE 0
+#define USBD_TUNING_MODE                0
 #if USBD_TUNING_MODE
-#define USBD_TUNING_W (USBD_UVC_FRAME_WIDTH*2)
-#define USBD_TUNING_H (USBD_UVC_FRAME_HEIGHT*3/2)
+#define USBD_TUNING_W                   (USBD_UVC_FRAME_WIDTH*2)
+#define USBD_TUNING_H                   (USBD_UVC_FRAME_HEIGHT*3/2)
 #else
-#define USBD_TUNING_W USBD_UVC_FRAME_WIDTH
-#define USBD_TUNING_H USBD_UVC_FRAME_HEIGHT
+#define USBD_TUNING_W                   USBD_UVC_FRAME_WIDTH
+#define USBD_TUNING_H                   USBD_UVC_FRAME_HEIGHT
 #endif
 
 
-#define USBD_UVC_WEBCAM_VENDOR_ID		USB_VID
-#define USBD_UVC_WEBCAM_PRODUCT_ID		USB_PID
-#define USBD_UVC_WEBCAM_DEVICE_BCD		0x0010
-#define USBD_UVC_LANGID_STRING 0x0409U
+#define USBD_UVC_WEBCAM_VENDOR_ID       USB_VID
+#define USBD_UVC_WEBCAM_PRODUCT_ID      USB_PID
+#define USBD_UVC_WEBCAM_DEVICE_BCD      0x0010
+#define USBD_UVC_LANGID_STRING          0x0409U
 
-#define USBD_UVC_MFG_STRING                       "Realtek"
-#define USBD_UVC_MFG_HS_STRING               	  "USB UVC CLASS"
-#define USBD_UVC_MFG_FS_STRING                    "USB UVC CLASS"
-#define USBD_UVC_SN_STRING                        "1234567890"
+#define USBD_UVC_MFG_STRING             "Realtek"
+#define USBD_UVC_MFG_HS_STRING          "USB UVC CLASS"
+#define USBD_UVC_MFG_FS_STRING          "USB UVC CLASS"
+#define USBD_UVC_SN_STRING              "1234567890"
 
 #define USBD_UVC_MAKE_SUBCMD(data,dir,subcmd) ((u8)(data)<<7|(u8)(dir)<<6|subcmd)
 
-#define USBD_UVC_STRING_CONTROL_IDX			0
-#define USBD_UVC_STRING_STREAMING_IDX		1
+#define USBD_UVC_STRING_CONTROL_IDX     0
+#define USBD_UVC_STRING_STREAMING_IDX   1
 
-#define USBD_UVC_INTF_VIDEO_CONTROL			0
-#define USBD_UVC_INTF_VIDEO_STREAMING		1
+#define USBD_UVC_INTF_VIDEO_CONTROL     0
+#define USBD_UVC_INTF_VIDEO_STREAMING   1
 
-#define USBD_UVC_STATUS_MAX_PACKET_SIZE		64	/* 16 bytes status */
+#define USBD_UVC_STATUS_MAX_PACKET_SIZE 64	/* 16 bytes status */
 
-#define USBD_UVC_IN_BUF_SIZE                 1024       /* 1000/768/512/256 */
+#define USBD_UVC_IN_BUF_SIZE            1024       /* 1000/768/512/256 */
 
-#define USBD_UVC_ISO_IN_EP                       0x83U
+#define USBD_UVC_ISO_IN_EP              0x83U
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
+
+/**
+ * @brief UVC endpoint configuration structure.
+ * @details Used to configure endpoint addresses at runtime.
+ */
+typedef struct {
+	u32 iso_in_xfer_size;  /**< ISOC IN transfer buffer size (0 = use default). */
+	u8 iso_in_addr;    /**< ISOC IN endpoint address for video streaming */
+} usbd_uvc_ep_cfg_t;
 
 /**
  * @brief UVC frame information structure.
@@ -222,7 +231,7 @@ typedef  struct {
  * Represents the complete UVC device state, including control,
  * streaming, USB endpoints, and synchronization primitives.
  */
-typedef  struct {
+typedef struct {
 	usbd_uvc_video_t video;
 	usbd_uvc_streaming_control_t probe;
 	usbd_uvc_streaming_control_t commit;
@@ -259,6 +268,8 @@ typedef  struct {
 	u8 config;
 	u8  ctrl_req;
 	u8  ctrl_data_len;
+	const usbd_uvc_ep_cfg_t *ep_cfg;
+	u8 from_composite;      /**< Flag indicating if part of a composite device. */
 } usbd_uvc_dev_t;
 
 /* Exported variables --------------------------------------------------------*/
@@ -279,7 +290,10 @@ void usbd_uvc_video_put_in_stream_queue(usbd_uvc_buffer_t *payload);
 usbd_uvc_buffer_t *usbd_uvc_video_out_stream_queue(void);
 void usbd_uvc_wait_frame_down(void);
 int usbd_uvc_get_status(void);
-int usbd_uvc_init(void);
+int usbd_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg);
+#ifdef CONFIG_USBD_COMPOSITE
+int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg);
+#endif
 int usbd_uvc_parameter_init(void);
 void usbd_uvc_deinit(void);
 void usbd_uvc_set_change_parm_cb(int cb);

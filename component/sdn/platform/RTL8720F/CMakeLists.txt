@@ -57,7 +57,7 @@ ameba_list_append(private_includes
 	${c_COMPONENT_DIR}/sdn/util
     ${c_COMPONENT_DIR}/sdn/hci/client
     ${c_COMPONENT_DIR}/sdn/hci
-    ${c_COMPONENT_DIR}/sdn/user_config
+    ${c_COMPONENT_DIR}/sdn/config
 )
 
 ameba_list_append(private_compile_options

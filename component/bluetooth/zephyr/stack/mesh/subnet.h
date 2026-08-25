@@ -100,7 +100,7 @@ struct bt_mesh_subnet_cb {
  *
  *  @param _name Handler name.
  */
-/* zephyr_porting Take out the "static" for struct extern in zephyr_stack_resource.c */
+/* zephyr_patch Take out the "static" for struct extern in zephyr_stack_resource.c */
 #define BT_MESH_SUBNET_CB_DEFINE(_name)                                    \
 	const STRUCT_SECTION_ITERABLE(                               \
 		bt_mesh_subnet_cb, _CONCAT(bt_mesh_subnet_cb_, _name))

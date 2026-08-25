@@ -157,7 +157,7 @@ struct bt_mesh_health_srv {
 	/** Attention Timer state */
 	struct k_work_delayable attn_timer;
 
-// zephyr_porting add health_info state to stored related info
+// zephyr_patch add health_info state to stored related info
 	/** Stored related health info */
 	void *health_info;
 };

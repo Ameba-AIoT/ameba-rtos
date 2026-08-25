@@ -14,21 +14,25 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-static const char *const TAG = "DFU";
-
 #define USBD_DFU_DEMO_BUF_SIZE      (USBD_DFU_XFER_SIZE * 4U)  /* 4 KB */
 #define USBD_DFU_DEMO_WRITE_POLL_MS 1U  /* write_task needs a scheduler tick even for RAM memcpy */
 
+// USB speed
+#define DFU_USB_SPEED                             USB_SPEED_HIGH
+
 // Thread priorities
-#define USBD_DFU_INIT_THREAD_PRIORITY             5
-#define USBD_DFU_RECONF_THREAD_PRIORITY           4
+#define DFU_INIT_THREAD_PRIORITY                  5
+#define DFU_RECONF_THREAD_PRIORITY                4
+
 // Thread stack sizes
-#define USBD_DFU_INIT_THREAD_STACK_SIZE           768U
-#define USBD_DFU_RECONF_THREAD_STACK_SIZE         768U
+#define DFU_INIT_THREAD_STACK_SIZE                768U
+#define DFU_RECONF_THREAD_STACK_SIZE              768U
+
 /* Private variables ---------------------------------------------------------*/
+static const char *const TAG = "DFU";
 
 static const usbd_config_t dfu_cfg = {
-	.speed = USB_SPEED_HIGH,
+	.speed = DFU_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 	.diag_enable = 1,
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
@@ -49,7 +53,7 @@ static const usbd_config_t dfu_cfg = {
 static u8  dfu_demo_fw_buf[USBD_DFU_DEMO_BUF_SIZE];
 static u32 dfu_demo_fw_len;
 
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 static rtos_sema_t dfu_reconf_sema;
 #endif
 
@@ -129,7 +133,7 @@ static void dfu_cb_detach(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DFU detach\n");
 }
 
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 /*
  * reconf() is called from the driver's reconf_task (task context) after the
  * GETSTATUS response has been transmitted.  Signal usbd_dfu_reconf_thread to
@@ -139,7 +143,7 @@ static void dfu_cb_reconf(void)
 {
 	rtos_sema_give(dfu_reconf_sema);
 }
-#endif /* CONFIG_USBD_DFU_WILL_DETACH */
+#endif /* USBD_DFU_WILL_DETACH */
 
 static usbd_dfu_cb_t dfu_cb = {
 	.init           = dfu_cb_init,
@@ -148,12 +152,12 @@ static usbd_dfu_cb_t dfu_cb = {
 	.read           = dfu_cb_read,
 	.manifest       = dfu_cb_manifest,
 	.detach         = dfu_cb_detach,
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 	.reconf         = dfu_cb_reconf,
 #endif
 };
 
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 static void usbd_dfu_reconf_thread(void *param)
 {
 	int ret;
@@ -187,18 +191,18 @@ static void usbd_dfu_reconf_thread(void *param)
 	rtos_sema_delete(dfu_reconf_sema);
 	rtos_task_delete(NULL);
 }
-#endif /* CONFIG_USBD_DFU_WILL_DETACH */
+#endif /* USBD_DFU_WILL_DETACH */
 
 static void example_usbd_dfu_thread(void *param)
 {
 	int ret;
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 	rtos_task_t reconf_task;
 #endif
 
 	UNUSED(param);
 
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 	rtos_sema_create(&dfu_reconf_sema, 0U, 1U);
 #endif
 
@@ -215,9 +219,9 @@ static void example_usbd_dfu_thread(void *param)
 
 	usbd_dfu_set_write_poll_ms(USBD_DFU_DEMO_WRITE_POLL_MS);
 
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 	ret = rtos_task_create(&reconf_task, "usbd_dfu_reconf_thread", usbd_dfu_reconf_thread, NULL,
-						   USBD_DFU_RECONF_THREAD_STACK_SIZE, USBD_DFU_RECONF_THREAD_PRIORITY);
+						   DFU_RECONF_THREAD_STACK_SIZE, DFU_RECONF_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		usbd_dfu_deinit();
 		usbd_deinit();
@@ -231,7 +235,7 @@ static void example_usbd_dfu_thread(void *param)
 
 exit:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD DFU demo fail\n");
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 	rtos_sema_delete(dfu_reconf_sema);
 #endif
 	rtos_task_delete(NULL);
@@ -245,7 +249,7 @@ void example_usbd_dfu(void)
 	rtos_task_t task;
 
 	status = rtos_task_create(&task, "example_usbd_dfu_thread", example_usbd_dfu_thread, NULL,
-							  USBD_DFU_INIT_THREAD_STACK_SIZE, USBD_DFU_INIT_THREAD_PRIORITY);
+							  DFU_INIT_THREAD_STACK_SIZE, DFU_INIT_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 	}

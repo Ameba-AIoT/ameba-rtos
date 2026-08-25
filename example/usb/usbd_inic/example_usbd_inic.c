@@ -14,7 +14,8 @@
 
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
-#define CONFIG_USBD_INIC_HOTPLUG					1
+// while test suspend/resume, hotplug should be disabled
+#define INIC_HOTPLUG                                          1
 
 #define USBD_INIC_BT_EP1_INTR_IN_BUF_SIZE				16U   /* BT EP1 INTR IN buffer size */
 #define USBD_INIC_BT_EP2_BULK_IN_BUF_SIZE				512U  /* BT EP2 BULK IN buffer size */
@@ -24,17 +25,20 @@
 #define USBD_WHC_WIFI_EP6_BULK_OUT_BUF_SIZE			512U  /* WiFi EP5 BULK OUT buffer size */
 #define USBD_WHC_WIFI_EP7_BULK_OUT_BUF_SIZE			512U  /* WiFi EP5 BULK OUT buffer size */
 
+// USB speed
+#define INIC_USB_SPEED                            USB_SPEED_HIGH
+
 // Thread priorities
-#define CONFIG_USBD_INIC_INIT_THREAD_PRIORITY           5
-#define CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY        8
-#define CONFIG_USBD_INIC_XFER_THREAD_PRIORITY           6
+#define INIC_INIT_THREAD_PRIORITY                 5
+#define INIC_HOTPLUG_THREAD_PRIORITY              8
+#define INIC_XFER_THREAD_PRIORITY                 6
+
 // Thread stack sizes
-#define CONFIG_USBD_INIC_INIT_THREAD_STACK_SIZE           1024U
-#define CONFIG_USBD_INIC_HOTPLUG_THREAD_STACK_SIZE        768U
-#define CONFIG_USBD_INIC_XFER_THREAD_STACK_SIZE           700U
+#define INIC_INIT_THREAD_STACK_SIZE               1024U
+#define INIC_HOTPLUG_THREAD_STACK_SIZE            768U
+#define INIC_XFER_THREAD_STACK_SIZE               700U
 
 /* Private types -------------------------------------------------------------*/
-static const char *const TAG = "INIC";
 
 typedef struct {
 	u8 *buf;
@@ -60,9 +64,10 @@ static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status);
 static void inic_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
+static const char *const TAG = "INIC";
 
 static const usbd_config_t inic_cfg = {
-	.speed = USB_SPEED_HIGH,
+	.speed = INIC_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 292U,
@@ -86,7 +91,7 @@ static usbd_inic_app_t usbd_inic_app;
 static rtos_sema_t inic_wifi_bulk_in_sema;
 static rtos_sema_t inic_bt_bulk_in_sema;
 
-#if CONFIG_USBD_INIC_HOTPLUG
+#if INIC_HOTPLUG
 static u8 inic_attach_status;
 static rtos_sema_t inic_attach_status_changed_sema;
 #endif
@@ -128,7 +133,7 @@ static void inic_bt_deinit(void)
 	usbd_inic_app_t *iapp = &usbd_inic_app;
 	usbd_inic_app_ep_t *ep;
 
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)];
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN)];
 	if (ep->buf != NULL) {
 		usb_os_mfree(ep->buf);
 		ep->buf = NULL;
@@ -234,7 +239,7 @@ static int inic_bt_init(void)
 	usbd_inic_app_ep_t *ep;
 	u8 ep_num;
 
-	ep_num = USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN);
+	ep_num = USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN);
 	ep = &iapp->in_ep[ep_num];
 	ep->buf_len = USBD_INIC_BT_EP1_INTR_IN_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
@@ -269,7 +274,7 @@ bt_init_clean_ep2_bulk_in_buf_exit:
 	ep->buf = NULL;
 
 bt_init_clean_ep1_intr_in_buf_exit:
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)];
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;
 
@@ -425,7 +430,7 @@ static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status)
 	usbd_ep_t *ep = &in_ep->ep;
 	(void)status;
 	switch (ep->info.addr) {
-	case USBD_INIT_BT_EP1_INTR_IN:
+	case USBD_INIC_BT_EP1_INTR_IN:
 		// TBD
 		break;
 	case USBD_INIC_BT_EP2_BULK_IN:
@@ -489,7 +494,7 @@ static void inic_cb_status_changed(u8 old_status, u8 status)
 {
 	UNUSED(old_status);
 
-#if CONFIG_USBD_INIC_HOTPLUG
+#if INIC_HOTPLUG
 	inic_attach_status = status;
 	rtos_sema_give(inic_attach_status_changed_sema);
 #else
@@ -497,7 +502,7 @@ static void inic_cb_status_changed(u8 old_status, u8 status)
 #endif
 }
 
-#if CONFIG_USBD_INIC_HOTPLUG
+#if INIC_HOTPLUG
 static void example_usbd_inic_hotplug_thread(void *param)
 {
 	int ret = 0;
@@ -533,12 +538,12 @@ static void example_usbd_inic_hotplug_thread(void *param)
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
 	rtos_task_delete(NULL);
 }
-#endif // CONFIG_USBD_INIC_HOTPLUG
+#endif // INIC_HOTPLUG
 
 static void example_usbd_inic_thread(void *param)
 {
 	int ret = 0;
-#if CONFIG_USBD_INIC_HOTPLUG
+#if INIC_HOTPLUG
 	rtos_task_t hotplug_task;
 #endif
 	rtos_task_t wifi_bulk_in_task;
@@ -546,7 +551,7 @@ static void example_usbd_inic_thread(void *param)
 
 	UNUSED(param);
 
-#if CONFIG_USBD_INIC_HOTPLUG
+#if INIC_HOTPLUG
 	rtos_sema_create(&inic_attach_status_changed_sema, 0, 1);
 #endif
 
@@ -562,26 +567,26 @@ static void example_usbd_inic_thread(void *param)
 
 	ret = rtos_task_create(&wifi_bulk_in_task, "example_usbd_inic_wifi_bulk_in_thread",
 						   example_usbd_inic_wifi_bulk_in_thread, NULL,
-						   CONFIG_USBD_INIC_XFER_THREAD_STACK_SIZE, CONFIG_USBD_INIC_XFER_THREAD_PRIORITY);
+						   INIC_XFER_THREAD_STACK_SIZE, INIC_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_class_exit;
 	}
 
 	ret = rtos_task_create(&bt_bulk_in_task, "example_usbd_inic_bt_bulk_in_thread",
 						   example_usbd_inic_bt_bulk_in_thread, NULL,
-						   CONFIG_USBD_INIC_XFER_THREAD_STACK_SIZE, CONFIG_USBD_INIC_XFER_THREAD_PRIORITY);
+						   INIC_XFER_THREAD_STACK_SIZE, INIC_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_wifi_bulk_in_task;
 	}
 
-#if CONFIG_USBD_INIC_HOTPLUG
+#if INIC_HOTPLUG
 	ret = rtos_task_create(&hotplug_task, "example_usbd_inic_hotplug_thread",
 						   example_usbd_inic_hotplug_thread, NULL,
-						   CONFIG_USBD_INIC_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBD_INIC_HOTPLUG_THREAD_PRIORITY);
+						   INIC_HOTPLUG_THREAD_STACK_SIZE, INIC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto clear_bt_bulk_in_task;
 	}
-#endif // CONFIG_USBD_INIC_HOTPLUG
+#endif // INIC_HOTPLUG
 
 	rtos_time_delay_ms(100);
 
@@ -605,7 +610,7 @@ clear_usb_driver_exit:
 
 exit:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD INIC demo stop\n");
-#if CONFIG_USBD_INIC_HOTPLUG
+#if INIC_HOTPLUG
 	rtos_sema_delete(inic_attach_status_changed_sema);
 #endif
 
@@ -620,7 +625,7 @@ void example_usbd_inic(void)
 	rtos_task_t task;
 
 	ret = rtos_task_create(&task, "example_usbd_inic_thread", example_usbd_inic_thread, NULL,
-						   CONFIG_USBD_INIC_INIT_THREAD_STACK_SIZE, CONFIG_USBD_INIC_INIT_THREAD_PRIORITY);
+						   INIC_INIT_THREAD_STACK_SIZE, INIC_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD INIC thread fail\n");
 	}

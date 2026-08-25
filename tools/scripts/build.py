@@ -29,6 +29,93 @@ from ameba_output import (
 _build_filter = BuildFilter(mode=get_output_mode())
 
 
+def _read_kconfig(config_file):
+    """Parse a .config file into a dict. 'y' values -> True, quoted strings kept
+    unquoted, '# CONFIG_X is not set' -> absent."""
+    cfg = {}
+    try:
+        with open(config_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#') or '=' not in line:
+                    continue
+                key, _, val = line.partition('=')
+                val = val.strip()
+                if len(val) >= 2 and val[0] == '"' and val[-1] == '"':
+                    val = val[1:-1]
+                cfg[key.strip()] = val
+    except OSError:
+        return None
+    return cfg
+
+
+def _resolve_dsp_sdk_root(cfg, project_dir):
+    """Derive the DSP SDK root from CONFIG_DSP_SDK_IMAGE_DIR (the SDK image dir,
+    e.g. <sdk>/project/image); the root is that dir two levels up. Absolute path
+    used as-is; relative resolved against the SoC project dir (same rule as
+    postbuild.cmake / dsp_layout_sync.py). Returns (sdk_root, image_dir), or
+    (None, None) when CONFIG_DSP_SDK_IMAGE_DIR is unset."""
+    image_dir = (cfg.get('CONFIG_DSP_SDK_IMAGE_DIR') or '').strip()
+    if not image_dir:
+        return None, None
+    image_dir = os.path.expanduser(image_dir)
+    if not os.path.isabs(image_dir):
+        image_dir = os.path.join(project_dir, image_dir)
+    image_dir = os.path.abspath(image_dir)
+    sdk_root = os.path.dirname(os.path.dirname(image_dir))  # project/image -> root
+    return sdk_root, image_dir
+
+
+def build_dsp_from_source(build_dir, project_dir):
+    """When CONFIG_DSP_BUILD_FROM_SOURCE=y, rebuild the DSP image from the DSP SDK
+    (project/auto_build/auto_build.sh) so it stays in sync with the MCU layout.
+    Runs before the MCU packaging step; returns 0 on success/skip, 1 on error."""
+    config_file = os.path.join(build_dir, 'project_km4', '.config_km4')
+    cfg = _read_kconfig(config_file)
+    if cfg is None:
+        # No km4 config yet (e.g. a target that does not run DSP): nothing to do.
+        return 0
+    if cfg.get('CONFIG_DSP_EN') != 'y' or cfg.get('CONFIG_DSP_BUILD_FROM_SOURCE') != 'y':
+        return 0
+
+    sdk_root, _ = _resolve_dsp_sdk_root(cfg, project_dir)
+    if not sdk_root:
+        print('\033[31mError: CONFIG_DSP_BUILD_FROM_SOURCE=y but CONFIG_DSP_SDK_IMAGE_DIR '
+              'is not set.\033[0m')
+        print('       Set it to the DSP SDK image output dir (holds dsp.bin / '
+              'dsp_all.bin); the SDK root is derived from it, e.g.:')
+        print('           CONFIG_DSP_SDK_IMAGE_DIR="/path/to/dsp_sdk/heap/source/project/image"')
+        return 1
+    auto_build_dir = os.path.join(sdk_root, 'project', 'auto_build')
+    is_windows = (os.name == 'nt')
+    script_name = 'auto_build.bat' if is_windows else 'auto_build.sh'
+    script_path = os.path.join(auto_build_dir, script_name)
+    if not os.path.isfile(script_path):
+        print(f'\033[31mError: DSP SDK root derived from CONFIG_DSP_SDK_IMAGE_DIR is '
+              f'invalid: {script_path} not found.\033[0m')
+        print(f'       Derived SDK root: {sdk_root}')
+        print('       Expected <sdk_root>/project/auto_build/'
+              f'{script_name}. CONFIG_DSP_SDK_IMAGE_DIR must point at '
+              '<sdk_root>/project/image.')
+        return 1
+
+    # auto_build.sh regenerates the bins in the SDK image dir (= CONFIG_DSP_SDK_IMAGE_DIR),
+    # which flashing and within-app packaging read directly -- no extra copy (DSP_BIN_OUT).
+    env = dict(os.environ)
+    if not is_quiet():
+        print(f'\033[36mBuilding DSP from source: {script_path}\033[0m')
+    cmd = [script_path] if is_windows else ['sh', script_name]
+    try:
+        subprocess.check_call(cmd, cwd=auto_build_dir, env=env)
+    except subprocess.CalledProcessError:
+        print('\033[31mError: DSP build from source failed.\033[0m')
+        return 1
+    except KeyboardInterrupt:
+        print('\n\033[31mKeyboardInterrupt: DSP build interrupted by user.\033[0m')
+        return 1
+    return 0
+
+
 def run_command(cmd, shell=True):
     """Helper function: run shell command and print log."""
     if is_quiet():
@@ -213,6 +300,12 @@ def main(argc, argv):
         if args.app:
             cmd_new += f' --app {args.app}'
         sys.exit(run_command(cmd_new))
+
+    # --- 6b. Build DSP from source (CONFIG_DSP_BUILD_FROM_SOURCE=y) ---
+    # Runs after configure (so .config_km4 exists) and before the MCU build, so a
+    # freshly built dsp.bin is available for packaging / the postbuild layout check.
+    if build_dsp_from_source(build_dir, project_dir) != 0:
+        sys.exit(1)
 
     # --- 7. Main Build Command ---
     # Key: Use 'cmake --build' and '--parallel'

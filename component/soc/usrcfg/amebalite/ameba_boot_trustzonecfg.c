@@ -36,7 +36,7 @@ const TZ_CFG_TypeDef mpc3_config[] =					/* Security configuration for PSRAM */
 {
 //  Start					End						NSC
 	/* Note: __non_secure_psram_end__ maybe not real, update this info by the chipinfo value in bootloader. */
-	{(u32)__km4_bd_psram_start__,	(u32)__non_secure_psram_end__ - 1,		0},	/* entry0: psram can be rw by ns word */
+	{(u32)__non_secure_psram_start__,	(u32)__non_secure_psram_end__ - 1,		0},	/* entry0: psram can be rw by ns word */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry1: End Flag */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry2: TODO */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry3: TODO */
@@ -72,4 +72,3 @@ const TZ_CFG_TypeDef mpc1_config[] =					/* Security configuration for sram0 S2 
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry7: TODO */
 };
 #endif
-

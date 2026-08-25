@@ -493,7 +493,7 @@ int bt_mesh_provision_gatt(const uint8_t uuid[16], uint16_t net_idx, uint16_t ad
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-// zephyr_porting add link_open_timeout parameter setting
+// zephyr_patch add link_open_timeout parameter setting
 int bt_mesh_provision_remote(struct bt_mesh_rpr_cli *cli,
 			     const struct bt_mesh_rpr_node *srv,
 			     const uint8_t uuid[16], uint16_t net_idx,
@@ -709,7 +709,7 @@ struct bt_mesh_lpn_cb {
  *
  *  @param _name Name of callback structure.
  */
-/* zephyr_porting Take out the "static" for struct extern in zephyr_stack_resource.c */
+/* zephyr_patch Take out the "static" for struct extern in zephyr_stack_resource.c */
 #define BT_MESH_LPN_CB_DEFINE(_name)                                  \
 	const STRUCT_SECTION_ITERABLE(bt_mesh_lpn_cb,          \
 					     _CONCAT(bt_mesh_lpn_cb_, \
@@ -762,7 +762,7 @@ struct bt_mesh_friend_cb {
  *
  *  @param _name Name of callback structure.
  */
-/* zephyr_porting Take out the "static" for struct extern in zephyr_stack_resource.c */
+/* zephyr_patch Take out the "static" for struct extern in zephyr_stack_resource.c */
 #define BT_MESH_FRIEND_CB_DEFINE(_name)                                  \
 	const STRUCT_SECTION_ITERABLE(bt_mesh_friend_cb,          \
 					     _CONCAT(bt_mesh_friend_cb_, \

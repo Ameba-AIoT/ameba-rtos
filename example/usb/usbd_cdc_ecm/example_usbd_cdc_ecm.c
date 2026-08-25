@@ -15,46 +15,55 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-/*
-	This configuration is used to enable a thread to check hotplug event
- 	and reset USB stack to avoid memory leak, only for example.
-*/
-#define CONFIG_USBD_CDC_ECM_HOTPLUG                                 1
+// Endpoint address
+#if defined (CONFIG_AMEBAGREEN2)
+#define CDC_ECM_BULK_IN_EP                        0x82U
+#define CDC_ECM_BULK_OUT_EP                       0x02U
+#else
+#define CDC_ECM_BULK_IN_EP                        0x81U
+#define CDC_ECM_BULK_OUT_EP                       0x02U
+#endif
+#define CDC_ECM_INTR_IN_EP                        0x83U
 
-#define CONFIG_USBD_CDC_ECM_TX_DEBUG                                0
+// This configuration is used to enable a thread to check hotplug event
+// and reset USB stack to avoid memory leak, only for example.
+// while test suspend/resume, hotplug should be disabled
+#define CDC_ECM_HOTPLUG                           1
+
+#define CDC_ECM_TX_DEBUG                          0
 
 // USB speed
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define CONFIG_USBD_CDC_ECM_SPEED                                   USB_SPEED_FULL
+#define CDC_ECM_USB_SPEED                         USB_SPEED_FULL
 #else
-#define CONFIG_USBD_CDC_ECM_SPEED                                   USB_SPEED_HIGH
+#define CDC_ECM_USB_SPEED                         USB_SPEED_HIGH
 #endif
 
 // Thread priorities
-#define CONFIG_USBD_CDC_ECM_INIT_THREAD_PRIORITY                    5
-#define CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_PRIORITY              4
-#define CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_PRIORITY                 8
+#define CDC_ECM_INIT_THREAD_PRIORITY              5
+#define CDC_ECM_LINK_STATE_THREAD_PRIORITY        4
+#define CDC_ECM_HOTPLUG_THREAD_PRIORITY           8
 
 // Thread stack sizes
-#define CONFIG_USBD_CDC_ECM_INIT_THREAD_STACK_SIZE                  1024U
-#define CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE               1024U
-#define CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_STACK_SIZE            1600U
+#define CDC_ECM_INIT_THREAD_STACK_SIZE            1024U
+#define CDC_ECM_HOTPLUG_THREAD_STACK_SIZE         1024U
+#define CDC_ECM_LINK_STATE_THREAD_STACK_SIZE      1600U
 
 // USB ECM Device IP Configuration
-#define CONFIG_USBD_CDC_ECM_IP_ADDR0                                192
-#define CONFIG_USBD_CDC_ECM_IP_ADDR1                                168
-#define CONFIG_USBD_CDC_ECM_IP_ADDR2                                45
-#define CONFIG_USBD_CDC_ECM_IP_ADDR3                                1
+#define CDC_ECM_IP_ADDR0                          192
+#define CDC_ECM_IP_ADDR1                          168
+#define CDC_ECM_IP_ADDR2                          45
+#define CDC_ECM_IP_ADDR3                          1
 
-#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR0                           255
-#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR1                           255
-#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR2                           255
-#define CONFIG_USBD_CDC_ECM_NETMASK_ADDR3                           0
+#define CDC_ECM_NETMASK_ADDR0                     255
+#define CDC_ECM_NETMASK_ADDR1                     255
+#define CDC_ECM_NETMASK_ADDR2                     255
+#define CDC_ECM_NETMASK_ADDR3                     0
 
-#define CONFIG_USBD_CDC_ECM_GW_ADDR0                                192
-#define CONFIG_USBD_CDC_ECM_GW_ADDR1                                168
-#define CONFIG_USBD_CDC_ECM_GW_ADDR2                                45
-#define CONFIG_USBD_CDC_ECM_GW_ADDR3                                1
+#define CDC_ECM_GW_ADDR0                          192
+#define CDC_ECM_GW_ADDR1                          168
+#define CDC_ECM_GW_ADDR2                          45
+#define CDC_ECM_GW_ADDR3                          1
 
 /* Private types -------------------------------------------------------------*/
 typedef enum {
@@ -115,8 +124,14 @@ static const usbd_cdc_ecm_cb_t usbd_ecm_cb = {
 	.status_changed = usbd_ecm_cb_status_changed,
 };
 
+static const usbd_cdc_ecm_ep_cfg_t usbd_ecm_ep_cfg = {
+	.bulk_in_addr  = CDC_ECM_BULK_IN_EP,
+	.bulk_out_addr = CDC_ECM_BULK_OUT_EP,
+	.intr_in_addr  = CDC_ECM_INTR_IN_EP,
+};
+
 static const usbd_config_t usbd_ecm_cfg = {
-	.speed = CONFIG_USBD_CDC_ECM_SPEED,
+	.speed = CDC_ECM_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
@@ -137,7 +152,7 @@ static const usbd_config_t usbd_ecm_cfg = {
 #endif
 };
 
-#if CONFIG_USBD_CDC_ECM_TX_DEBUG
+#if CDC_ECM_TX_DEBUG
 /*
  * USB ECM Network Packet: DHCP Offer
  * Total Size: 368 Bytes
@@ -222,7 +237,7 @@ static const uint8_t usb_cdc_ecm_dhcp_offer_pkt[368] = {
 };
 #endif
 
-#if CONFIG_USBD_CDC_ECM_HOTPLUG
+#if CDC_ECM_HOTPLUG
 static __IO u8 usbd_ecm_attach_status = USBD_ATTACH_STATUS_INIT;
 static __IO u8 usbd_ecm_attach_old_status = USBD_ATTACH_STATUS_INIT;
 static rtos_sema_t usbd_ecm_attach_status_changed_sema = NULL;
@@ -262,14 +277,14 @@ static void usbd_ecm_link_change_thread(void *param)
 					dhcps_deinit(pnetif_usb_eth);
 
 					// 3. Set Device IP address
-					u32 ip_addr = CONCAT_TO_UINT32(CONFIG_USBD_CDC_ECM_IP_ADDR0, CONFIG_USBD_CDC_ECM_IP_ADDR1, CONFIG_USBD_CDC_ECM_IP_ADDR2, CONFIG_USBD_CDC_ECM_IP_ADDR3);
-					u32 netmask = CONCAT_TO_UINT32(CONFIG_USBD_CDC_ECM_NETMASK_ADDR0, CONFIG_USBD_CDC_ECM_NETMASK_ADDR1, CONFIG_USBD_CDC_ECM_NETMASK_ADDR2,
-												   CONFIG_USBD_CDC_ECM_NETMASK_ADDR3);
-					u32 gw = CONCAT_TO_UINT32(CONFIG_USBD_CDC_ECM_GW_ADDR0, CONFIG_USBD_CDC_ECM_GW_ADDR1, CONFIG_USBD_CDC_ECM_GW_ADDR2, CONFIG_USBD_CDC_ECM_GW_ADDR3);
+					u32 ip_addr = CONCAT_TO_UINT32(CDC_ECM_IP_ADDR0, CDC_ECM_IP_ADDR1, CDC_ECM_IP_ADDR2, CDC_ECM_IP_ADDR3);
+					u32 netmask = CONCAT_TO_UINT32(CDC_ECM_NETMASK_ADDR0, CDC_ECM_NETMASK_ADDR1, CDC_ECM_NETMASK_ADDR2,
+												   CDC_ECM_NETMASK_ADDR3);
+					u32 gw = CONCAT_TO_UINT32(CDC_ECM_GW_ADDR0, CDC_ECM_GW_ADDR1, CDC_ECM_GW_ADDR2, CDC_ECM_GW_ADDR3);
 					lwip_set_ip(NETIF_USB_ETH_INDEX, ip_addr, netmask, gw);
 
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Device IP: %d.%d.%d.%d\n", CONFIG_USBD_CDC_ECM_IP_ADDR0, CONFIG_USBD_CDC_ECM_IP_ADDR1, CONFIG_USBD_CDC_ECM_IP_ADDR2,
-							 CONFIG_USBD_CDC_ECM_IP_ADDR3);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Device IP: %d.%d.%d.%d\n", CDC_ECM_IP_ADDR0, CDC_ECM_IP_ADDR1, CDC_ECM_IP_ADDR2,
+							 CDC_ECM_IP_ADDR3);
 
 					// 4. Activate network interface link
 					netifapi_netif_set_link_up(pnetif_usb_eth);
@@ -377,7 +392,7 @@ static int usbd_ecm_cb_setup(usb_setup_req_t *req, u8 *buf)
 
 	// Handle standard SET_INTERFACE request
 	if ((req_code == USB_REQ_SET_INTERFACE) && (req_type == USB_REQ_TYPE_STANDARD)) {
-#if CONFIG_USBD_CDC_ECM_TX_DEBUG
+#if CDC_ECM_TX_DEBUG
 		u16 alt_setting = req->wValue;
 		u16 interface = req->wIndex;
 
@@ -423,7 +438,7 @@ static void usbd_ecm_cb_status_changed(u8 old_status, u8 status)
 		is hot-plugged in, performs a remote wakeup, or the host resumes.
 	*/
 
-#if CONFIG_USBD_CDC_ECM_HOTPLUG
+#if CDC_ECM_HOTPLUG
 	usbd_ecm_attach_old_status = old_status;
 	usbd_ecm_attach_status = status;
 	if (usbd_ecm_attach_status_changed_sema != NULL) {
@@ -439,7 +454,7 @@ static void usbd_ecm_cb_status_changed(u8 old_status, u8 status)
 	}
 }
 
-#if CONFIG_USBD_CDC_ECM_HOTPLUG
+#if CDC_ECM_HOTPLUG
 /**
   * @brief  USB hotplug detection and handling thread
   * @param  param: Thread parameter (unused)
@@ -490,7 +505,7 @@ static void usbd_ecm_hotplug_thread(void *param)
 			}
 
 			// Re-initialize CDC ECM
-			ret = usbd_cdc_ecm_init(&usbd_ecm_cb);
+			ret = usbd_cdc_ecm_init(&usbd_ecm_cb, &usbd_ecm_ep_cfg);
 			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init ECM fail %d\n", ret);
 				usbd_deinit();
@@ -508,7 +523,7 @@ static void usbd_ecm_hotplug_thread(void *param)
 	usbd_ecm_hotplug_thread_running = 0;
 	rtos_task_delete(NULL);
 }
-#endif // CONFIG_USBD_CDC_ECM_HOTPLUG
+#endif // CDC_ECM_HOTPLUG
 
 /**
   * @brief  USB CDC ECM initialization thread
@@ -517,7 +532,7 @@ static void usbd_ecm_hotplug_thread(void *param)
 static void usbd_ecm_init_thread(void *param)
 {
 	int ret = 0;
-#if CONFIG_USBD_CDC_ECM_HOTPLUG
+#if CDC_ECM_HOTPLUG
 	rtos_task_t hotplug_task = NULL;
 #endif
 
@@ -525,7 +540,7 @@ static void usbd_ecm_init_thread(void *param)
 
 	rltk_usb_eth_init();
 
-#if CONFIG_USBD_CDC_ECM_HOTPLUG
+#if CDC_ECM_HOTPLUG
 	// Create semaphore for hotplug detection
 	ret = rtos_sema_create(&usbd_ecm_attach_status_changed_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
@@ -542,20 +557,20 @@ static void usbd_ecm_init_thread(void *param)
 	}
 
 	// Initialize CDC ECM
-	ret = usbd_cdc_ecm_init(&usbd_ecm_cb);
+	ret = usbd_cdc_ecm_init(&usbd_ecm_cb, &usbd_ecm_ep_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init ECM fail %d\n", ret);
 		goto exit_usbd_cdc_ecm_init_fail;
 	}
 
-#if CONFIG_USBD_CDC_ECM_HOTPLUG
+#if CDC_ECM_HOTPLUG
 	// Create hotplug detection thread
 	ret = rtos_task_create(&hotplug_task,
 						   "usbd_ecm_hotplug_thread",
 						   usbd_ecm_hotplug_thread,
 						   NULL,
-						   CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE,
-						   CONFIG_USBD_CDC_ECM_HOTPLUG_THREAD_PRIORITY);
+						   CDC_ECM_HOTPLUG_THREAD_STACK_SIZE,
+						   CDC_ECM_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_hotplug_task_fail;
 	}
@@ -568,7 +583,7 @@ static void usbd_ecm_init_thread(void *param)
 	rtos_task_delete(NULL);
 	return;
 
-#if CONFIG_USBD_CDC_ECM_HOTPLUG
+#if CDC_ECM_HOTPLUG
 exit_create_hotplug_task_fail:
 	usbd_cdc_ecm_deinit();
 #endif
@@ -577,7 +592,7 @@ exit_usbd_cdc_ecm_init_fail:
 	usbd_deinit();
 
 exit_usbd_init_fail:
-#if CONFIG_USBD_CDC_ECM_HOTPLUG
+#if CDC_ECM_HOTPLUG
 	if (usbd_ecm_attach_status_changed_sema != NULL) {
 		rtos_sema_delete(usbd_ecm_attach_status_changed_sema);
 		usbd_ecm_attach_status_changed_sema = NULL;
@@ -609,8 +624,8 @@ void example_usbd_cdc_ecm(void)
 						   "usbd_ecm_init_thread",
 						   usbd_ecm_init_thread,
 						   NULL,
-						   CONFIG_USBD_CDC_ECM_INIT_THREAD_STACK_SIZE,
-						   CONFIG_USBD_CDC_ECM_INIT_THREAD_PRIORITY);
+						   CDC_ECM_INIT_THREAD_STACK_SIZE,
+						   CDC_ECM_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
 		return;
@@ -620,8 +635,8 @@ void example_usbd_cdc_ecm(void)
 						   "usbd_ecm_link_change_thread",
 						   usbd_ecm_link_change_thread,
 						   NULL,
-						   CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_STACK_SIZE,
-						   CONFIG_USBD_CDC_ECM_LINK_STATE_THREAD_PRIORITY);
+						   CDC_ECM_LINK_STATE_THREAD_STACK_SIZE,
+						   CDC_ECM_LINK_STATE_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}

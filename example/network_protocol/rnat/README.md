@@ -383,3 +383,4 @@ NONE
 # Supported IC
 
 RTL8721F
+RTL8720F

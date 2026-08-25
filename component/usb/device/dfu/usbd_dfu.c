@@ -7,6 +7,9 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbd_dfu.h"
+#ifdef CONFIG_USBD_COMPOSITE
+#include "usbd_composite.h"
+#endif
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -27,7 +30,7 @@ static void usbd_dfu_reconf_task(void *param);
 
 static void usbd_dfu_manifest_task(void *param);
 static void usbd_dfu_manifest_timer_cb(void *timer);
-#if !CONFIG_USBD_DFU_WILL_DETACH
+#if !USBD_DFU_WILL_DETACH
 static void usbd_dfu_detach_timeout_cb(void *timer);
 #endif
 
@@ -82,16 +85,16 @@ static const u8 usbd_dfu_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
  * DFU Configuration Descriptor: Config(9) + Interface(9) + DFU Func(9) = 27 bytes
  * No endpoints: DFU is EP0-only.
  */
-static const u8 usbd_dfu_config_desc[USBD_DFU_CONFIG_DESC_SIZE] = {
+static const u8 usbd_dfu_config_desc[] = {
 	/* USB Standard Configuration Descriptor */
 	USB_LEN_CFG_DESC,                               /* bLength */
 	USB_DESC_TYPE_CONFIGURATION,                    /* bDescriptorType */
-	USB_LOW_BYTE(USBD_DFU_CONFIG_DESC_SIZE),        /* wTotalLength */
-	USB_HIGH_BYTE(USBD_DFU_CONFIG_DESC_SIZE),
+	0x00,                                           /* wTotalLength, runtime patched */
+	0x00,
 	0x01,                                           /* bNumInterfaces */
 	0x01,                                           /* bConfigurationValue */
 	0x00,                                           /* iConfiguration */
-	0x80,                                           /* bmAttributes: bus powered */
+	0x80,                                           /* bmAttributes (patched at runtime for self_powered/remote_wakeup) */
 	0x32,                                           /* bMaxPower: 100 mA */
 
 	/* USB Standard Interface Descriptor */
@@ -110,13 +113,13 @@ static const u8 usbd_dfu_config_desc[USBD_DFU_CONFIG_DESC_SIZE] = {
 	/* DFU Functional Descriptor */
 	0x09,                                           /* bLength */
 	USB_DFU_FUNC_DESC_TYPE,                        /* bDescriptorType: 0x21 */
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 	USB_DFU_ATTR_WILL_DETACH |
 #endif
-#if CONFIG_USBD_DFU_MANIFESTATION_TOL
+#if USBD_DFU_MANIFESTATION_TOL
 	USB_DFU_ATTR_MANIFEST_TOL |
 #endif
-#if CONFIG_USBD_DFU_CAN_UPLOAD
+#if USBD_DFU_CAN_UPLOAD
 	USB_DFU_ATTR_CAN_UPLOAD |
 #endif
 	USB_DFU_ATTR_CAN_DNLOAD |
@@ -156,6 +159,20 @@ static int usbd_dfu_set_config(usb_dev_t *dev, u8 config)
 	UNUSED(config);
 
 	dfu->dev = dev;
+
+	if (!dfu->from_composite) {
+#ifdef CONFIG_USBD_SELF_POWERED
+		dev->self_powered = 1;
+#else
+		dev->self_powered = 0;
+#endif
+#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
+		dev->remote_wakeup_en = 1;
+#else
+		dev->remote_wakeup_en = 0;
+#endif
+	}
+
 	dfu->alt_setting = 0U;
 	/* Save the default EP0 buffer and its capacity (shared by IN/OUT endpoints). */
 	dfu->ep0_default_buf         = dev->ep0_in.xfer_buf;
@@ -184,7 +201,7 @@ static int usbd_dfu_clear_config(usb_dev_t *dev, u8 config)
 	 * comes up in dfuIDLE; a true cable unplug in run-time mode stays appIDLE. */
 	dfu->state = (dfu->mode == USB_DFU_PROTOCOL_RUNTIME)
 				 ? USB_DFU_STATE_APP_IDLE : USB_DFU_STATE_DFU_IDLE;
-#if !CONFIG_USBD_DFU_WILL_DETACH
+#if !USBD_DFU_WILL_DETACH
 	/* USB Reset arrived before wDetachTimeOut: stop the one-shot timer early so
 	 * it doesn't fire needlessly after the re-enumeration is already complete. */
 	if ((dfu->mode == USB_DFU_PROTOCOL_DFU) && (dfu->detach_timer != NULL)) {
@@ -372,7 +389,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			break;
 
 		case USB_DFU_REQ_UPLOAD:
-#if CONFIG_USBD_DFU_CAN_UPLOAD
+#if USBD_DFU_CAN_UPLOAD
 			/* Reject oversized requests before using the buffer */
 			if (req->wLength > USBD_DFU_XFER_SIZE) {
 				ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
@@ -410,7 +427,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 #else
 			/* DFU 1.1 Table 3: bitCanUpload=0 → reject all UPLOAD, stall → dfuERROR */
 			ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
-#endif /* CONFIG_USBD_DFU_CAN_UPLOAD */
+#endif /* USBD_DFU_CAN_UPLOAD */
 			break;
 
 		case USB_DFU_REQ_GETSTATUS:
@@ -436,7 +453,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if (dfu->state == USB_DFU_STATE_MANIFEST) {
 				if (dfu->manifest_done) {
 					/* Manifest task + timer completed; transition per bmAttributes. */
-#if CONFIG_USBD_DFU_MANIFESTATION_TOL
+#if USBD_DFU_MANIFESTATION_TOL
 					dfu->manifest_done = 0U;
 					dfu->state  = USB_DFU_STATE_MANIFEST_SYNC;
 					dfu->status = USBD_DFU_STATUS_OK;
@@ -446,7 +463,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					dfu->state  = USB_DFU_STATE_MANIFEST_WAIT_RESET;
 					dfu->status = USBD_DFU_STATUS_OK;
 					usbd_dfu_send_status(dev, dfu, 0U);
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 					/* DFU 1.1 §7: device generates a detach-attach sequence.
 					 * Set mode to RUNTIME so the device re-enumerates in Run-Time mode
 					 * after deinit/init (booting the new firmware). */
@@ -573,7 +590,7 @@ static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status)
 		return HAL_OK;
 	}
 
-#if CONFIG_USBD_DFU_CAN_UPLOAD
+#if USBD_DFU_CAN_UPLOAD
 	if (dfu->upload_last) {
 		dfu->upload_last = 0U;
 		dfu->state = USB_DFU_STATE_DFU_IDLE;
@@ -704,14 +721,14 @@ static void usbd_dfu_manifest_timer_cb(void *timer)
 
 	if (dfu->manifest_done) {
 		/* "Status poll timeout" + work done -> transition per bmAttributes */
-#if CONFIG_USBD_DFU_MANIFESTATION_TOL
+#if USBD_DFU_MANIFESTATION_TOL
 		dfu->state = USB_DFU_STATE_MANIFEST_SYNC;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Manifest done -> MANIFEST-SYNC\n");
 #else
 		dfu->manifest_done = 0U;
 		dfu->state = USB_DFU_STATE_MANIFEST_WAIT_RESET;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Manifest done -> WAIT-RESET\n");
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 		dfu->mode = USB_DFU_PROTOCOL_RUNTIME;
 		dfu->reconf_pending = 1U;
 		usb_os_sema_give(dfu->reconf_sema);
@@ -771,9 +788,21 @@ static void usbd_dfu_cleanup_write(usbd_dfu_dev_t *dfu)
  */
 static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 {
+	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 	u16 len = 0U;
+	UNUSED(dev);
+	u8 attr = 0x80U;
 
-	dev->self_powered = 0U;
+	UNUSED(dev);
+
+	if (!dfu->from_composite) {
+#ifdef CONFIG_USBD_SELF_POWERED
+		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
+#endif
+#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
+		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
+#endif
+	}
 
 	switch (USB_HIGH_BYTE(req->wValue)) {
 
@@ -785,6 +814,10 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	case USB_DESC_TYPE_CONFIGURATION:
 		len = sizeof(usbd_dfu_config_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_dfu_config_desc, len);
+
+		if (!dfu->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN]     = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		/* Static array carries the DFU-mode protocol (0x02); rewrite it to the
@@ -804,6 +837,10 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		/* DFU has no endpoints, so the other-speed config is identical */
 		len = sizeof(usbd_dfu_config_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_dfu_config_desc, len);
+
+		if (!dfu->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN]     = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TYPE]          = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
@@ -857,7 +894,7 @@ static void usbd_dfu_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 }
 
 
-#if !CONFIG_USBD_DFU_WILL_DETACH
+#if !USBD_DFU_WILL_DETACH
 /**
  * @brief  One-shot timer callback: fires when wDetachTimeOut expires without a USB Reset.
  *         If state is still appDETACH the host never issued a USB Reset, so revert to
@@ -876,7 +913,7 @@ static void usbd_dfu_detach_timeout_cb(void *timer)
 				 USBD_DFU_DETACH_TIMEOUT);
 	}
 }
-#endif /* !CONFIG_USBD_DFU_WILL_DETACH */
+#endif /* !USBD_DFU_WILL_DETACH */
 
 /**
  * @brief  Reconfiguration task: handles the Run-Time → DFU mode transition off ISR context.
@@ -906,7 +943,7 @@ static void usbd_dfu_reconf_task(void *param)
 		}
 		dfu->reconf_pending = 0U;
 
-#if CONFIG_USBD_DFU_WILL_DETACH
+#if USBD_DFU_WILL_DETACH
 		/* Let the DFU_DETACH status stage (EP0 IN ZLP) complete before the
 		 * application tears down the stack. */
 		usb_os_sleep_ms(USBD_DFU_DETACH_STATUS_DELAY_MS);
@@ -925,54 +962,16 @@ static void usbd_dfu_reconf_task(void *param)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Detach: waiting for host USB Reset (%ums timeout)\n",
 				 USBD_DFU_DETACH_TIMEOUT);
 		rtos_timer_start(dfu->detach_timer, 0U);
-#endif /* CONFIG_USBD_DFU_WILL_DETACH */
+#endif /* USBD_DFU_WILL_DETACH */
 	}
 
 	rtos_task_delete(NULL);
-}
-/* Exported functions --------------------------------------------------------*/
-
-/**
- * @brief  Set the bwPollTimeout (ms) reported to the host while the device is
- *         busy writing a firmware block (dfuDNBUSY response to GETSTATUS).
- *         Should reflect worst-case flash write time (e.g., 50-100 ms for a
- *         4 KB sector erase + program).  Defaults to 0 (host polls immediately).
- */
-void usbd_dfu_set_write_poll_ms(u32 poll_ms)
-{
-	usbd_dfu_dev.write_poll_ms = poll_ms;
-}
-
-/**
- * @brief  Set the bwPollTimeout (ms) reported to the host while the device
- *         is in the MANIFEST state ("Status poll timeout").  The timer fires
- *         after this interval to check whether manifestation is complete.
- *         Defaults to USBD_DFU_MANIFEST_POLL_MS_DEFAULT.
- */
-void usbd_dfu_set_manifest_poll_ms(u32 poll_ms)
-{
-	usbd_dfu_dev.manifest_poll_ms = poll_ms;
-}
-
-/**
- * @brief  Read the current DFU device state.
- *
- *         Used by the application (e.g. OTA task) to determine when the
- *         DFU state machine has reached a terminal state after manifest,
- *         so it can safely call System_Reset() without racing against
- *         the host's final GETSTATUS read.
- *
- * @retval Current @ref usb_dfu_state_t value (e.g. USB_DFU_STATE_DFU_IDLE).
- */
-u8 usbd_dfu_get_state(void)
-{
-	return (u8)usbd_dfu_dev.state;
 }
 
 /**
  * @brief  Initialize the DFU device class driver.
  */
-int usbd_dfu_init(usbd_dfu_cb_t *cb)
+static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 {
 	int ret = HAL_OK;
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
@@ -1008,7 +1007,7 @@ int usbd_dfu_init(usbd_dfu_cb_t *cb)
 		return HAL_ERR_PARA;
 	}
 	dfu->write_poll_ms = USBD_DFU_WRITE_POLL_MS_DEFAULT;
-#if CONFIG_USBD_DFU_CAN_UPLOAD
+#if USBD_DFU_CAN_UPLOAD
 	if (cb->read == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "read cb required (CAN_UPLOAD=1)\n");
 		usb_os_mfree(dfu->xfer_buf);
@@ -1092,7 +1091,7 @@ int usbd_dfu_init(usbd_dfu_cb_t *cb)
 		goto reconf_fail;
 	}
 
-#if !CONFIG_USBD_DFU_WILL_DETACH
+#if !USBD_DFU_WILL_DETACH
 	/* One-shot timer: if host doesn't issue USB Reset within wDetachTimeOut, revert
 	 * to Run-Time mode.  Created here (task context); started in reconf_task. */
 	ret = rtos_timer_create(&dfu->detach_timer, "dfu_detach", 0U,
@@ -1108,12 +1107,11 @@ int usbd_dfu_init(usbd_dfu_cb_t *cb)
 		dfu->reconf_sema = NULL;
 		goto reconf_fail;
 	}
-#endif /* !CONFIG_USBD_DFU_WILL_DETACH */
+#endif /* !USBD_DFU_WILL_DETACH */
 
 	dfu->state  = USB_DFU_STATE_APP_IDLE;
 	dfu->status = USBD_DFU_STATUS_OK;
 
-	usbd_register_class(&usbd_dfu_driver);
 
 	return HAL_OK;
 
@@ -1127,6 +1125,73 @@ reconf_fail:
 	dfu->xfer_buf = NULL;
 	return HAL_ERR_MEM;
 }
+
+/* Exported functions --------------------------------------------------------*/
+
+/**
+ * @brief  Set the bwPollTimeout (ms) reported to the host while the device is
+ *         busy writing a firmware block (dfuDNBUSY response to GETSTATUS).
+ *         Should reflect worst-case flash write time (e.g., 50-100 ms for a
+ *         4 KB sector erase + program).  Defaults to 0 (host polls immediately).
+ */
+void usbd_dfu_set_write_poll_ms(u32 poll_ms)
+{
+	usbd_dfu_dev.write_poll_ms = poll_ms;
+}
+
+/**
+ * @brief  Set the bwPollTimeout (ms) reported to the host while the device
+ *         is in the MANIFEST state ("Status poll timeout").  The timer fires
+ *         after this interval to check whether manifestation is complete.
+ *         Defaults to USBD_DFU_MANIFEST_POLL_MS_DEFAULT.
+ */
+void usbd_dfu_set_manifest_poll_ms(u32 poll_ms)
+{
+	usbd_dfu_dev.manifest_poll_ms = poll_ms;
+}
+
+/**
+ * @brief  Read the current DFU device state.
+ *
+ *         Used by the application (e.g. OTA task) to determine when the
+ *         DFU state machine has reached a terminal state after manifest,
+ *         so it can safely call System_Reset() without racing against
+ *         the host's final GETSTATUS read.
+ *
+ * @retval Current @ref usb_dfu_state_t value (e.g. USB_DFU_STATE_DFU_IDLE).
+ */
+u8 usbd_dfu_get_state(void)
+{
+	return (u8)usbd_dfu_dev.state;
+}
+
+int usbd_dfu_init(usbd_dfu_cb_t *cb)
+{
+	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
+	int ret;
+
+	dfu->from_composite = 0;
+	ret = usbd_dfu_private_init(cb);
+	if (ret == HAL_OK) {
+		usbd_register_class(&usbd_dfu_driver);
+	}
+	return ret;
+}
+
+#ifdef CONFIG_USBD_COMPOSITE
+int usbd_composite_dfu_init(usbd_dfu_cb_t *cb)
+{
+	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
+	int ret;
+
+	dfu->from_composite = 1;
+	ret = usbd_dfu_private_init(cb);
+	if (ret == HAL_OK) {
+		ret = usbd_composite_register_driver(&usbd_dfu_driver);
+	}
+	return ret;
+}
+#endif
 
 /**
  * @brief  Deinitialize the DFU device class driver.
@@ -1142,16 +1207,23 @@ int usbd_dfu_deinit(void)
 		dfu->cb = NULL;
 	}
 
-	usbd_unregister_class();
+#ifdef CONFIG_USBD_COMPOSITE
+	if (dfu->from_composite) {
+		usbd_composite_unregister_driver(&usbd_dfu_driver);
+	} else
+#endif
+	{
+		usbd_unregister_class();
+	}
 
-#if !CONFIG_USBD_DFU_WILL_DETACH
+#if !USBD_DFU_WILL_DETACH
 	/* Stop and delete the detach timeout timer before tearing down reconf_task. */
 	if (dfu->detach_timer != NULL) {
 		rtos_timer_stop(dfu->detach_timer, 0U);
 		rtos_timer_delete(dfu->detach_timer, 0U);
 		dfu->detach_timer = NULL;
 	}
-#endif /* !CONFIG_USBD_DFU_WILL_DETACH */
+#endif /* !USBD_DFU_WILL_DETACH */
 	/* Stop reconf_task: set flag, unblock it, then delete. */
 	if (dfu->reconf_task != NULL) {
 		rtos_task_t t = dfu->reconf_task;

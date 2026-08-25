@@ -1,13 +1,12 @@
 #ifndef __SDN_CONF_H__
 #define __SDN_CONF_H__
 
-//#include "platform_autoconf.h"
 
 //SDN Configuration
 #define SDN_HAL_SUSPEND_ENABLE                                     1
 
 //IC configuration
-#define BT_LL_VERSION                                               BT_HCI_VERSION_5_4
+#define BT_LL_VERSION                                               BT_HCI_VERSION_6_0
 #define BT_LL_HCI_REVISION                                          0x000A
 #define BT_LL_LMP_SUB_VERSION                                       0x7098
 #define BT_LL_COMPANY_ID                                            0x005D
@@ -53,8 +52,6 @@
 #define BT_LL_LE_MAX_ACCEPT_LIST_SIZE                               8
 
 #define BT_LL_LE_SCAN_MAX_DUP_FILTER_NUM                            8
-
-#define BT_LL_LE_RESOLVING_LIST_SIZE                                8
 
 #define BT_LL_LE_MAX_PA_SYNC_LIST_SIZE                              8
 

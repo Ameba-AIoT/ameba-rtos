@@ -76,6 +76,12 @@ void wifi_hal_radar_query(char *cmd_ptr, u32 extra_arg)
 	(void)extra_arg;
 }
 
+void wifi_hal_dbg_radar_psd_check(char *cmd_ptr, u32 extra_arg)
+{
+	(void)cmd_ptr;
+	(void)extra_arg;
+}
+
 void wifi_hal_dbg_radar_edcca_th(char *cmd_ptr, u32 extra_arg)
 {
 	(void)cmd_ptr;

@@ -151,7 +151,7 @@ static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status)
 	usb_ep_info_t *info = &ep->info;
 
 	switch (info->addr) {
-	case USBD_INIT_BT_EP1_INTR_IN:
+	case USBD_INIC_BT_EP1_INTR_IN:
 		// TBD
 		bt_inic_usb_evt_txdone_cb(ep->xfer_buf);
 		break;

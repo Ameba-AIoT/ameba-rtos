@@ -17,24 +17,19 @@ extern "C" {
 
 /* Exported defines ----------------------------------------------------------*/
 
-#define USBD_INIC_VID									USB_VID
-#define USBD_INIC_PID									USB_PID
+#define USBD_INIC_VID               USB_VID
+#define USBD_INIC_PID               USB_PID
 
-#define USBD_INIC_LANGID_STRING							0x409
-#define USBD_INIC_IDX_INTERFACE_STR						0x04U
+#define USBD_INIC_LANGID_STRING     0x409
+#define USBD_INIC_MFG_STRING        "Realtek"               /**< Manufacturer string. */
+#define USBD_INIC_PROD_STRING       "802.11n WLAN Adapter"  /**< Product string. */
+#define USBD_INIC_SN_STRING         "123456789ABC"          /**< Serial number string. */
 
-#define USBD_INIC_ITF_NUM								1U
-#define USBD_INIC_ITF_WIFI								0U
+#define USBD_INIC_FS_BULK_MPS       64U   /* Full speed BULK IN & OUT maximum packet size */
 
-#define USBD_INIC_FS_BULK_MPS							64U   /* Full speed BULK IN & OUT maximum packet size */
-
-#define USBD_WHC_WIFI_EP3_BULK_IN 						0x83U
-#define USBD_WHC_WIFI_EP2_BULK_OUT						0x02U
-#define USBD_WHC_WIFI_EP4_BULK_OUT						0x04U
-
-#define USBD_INIC_CTRL_BUF_SIZE							512U  /* Control buffer size */
-#define USBD_INIC_EP_STATE_IDLE							0U
-#define USBD_INIC_EP_STATE_BUSY							1U
+#define USBD_WHC_WIFI_EP3_BULK_IN   0x83U
+#define USBD_WHC_WIFI_EP2_BULK_OUT  0x02U
+#define USBD_WHC_WIFI_EP4_BULK_OUT  0x04U
 
 /* Exported types ------------------------------------------------------------*/
 

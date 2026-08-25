@@ -306,7 +306,7 @@ typedef struct {
 
 	u32 RTC_AlarmMask;            /*!< Specifies the RTC Alarm1 Masks(H:M:S).
 					This parameter can be a value of @ref RTC_AlarmMask1 */
-	u32 RTC_Alarm2Mask;            /*!< Specifies the RTC Alarm2 Masks Day).
+	u32 RTC_Alarm2Mask;            /*!< Specifies the RTC Alarm2 Masks Day.
 					This parameter can be a value of @ref RTC_AlarmMask2 */
 } RTC_AlarmTypeDef;
 
@@ -430,24 +430,6 @@ typedef struct {
   * @}
   */
 
-/** @defgroup RTC_Alarm_Control RTC Alarm Control
-  * @{
-  */
-#define RTC_Alarm				((u32)0x00000100) /*!< RTC alarm identifier. */
-#define IS_RTC_ALARM(ALARM)		((ALARM) == RTC_Alarm) /*!< Check if RTC alarm value is valid. */
-#define IS_RTC_CMD_ALARM(ALARM)	(((ALARM) & RTC_Alarm) != (u32)0) /*!< Check if RTC alarm command value is valid. */
-/**
-  * @}
-  */
-
-/** @defgroup RTC_Alarm_Interrupt_Control RTC Alarm Interrupt Control
-  * @{
-  */
-#define RTC_Alarm_IntEn			((u32)0x00001000) /*!< Enable alarm interrupt. */
-/**
-  * @}
-  */
-
 /** @defgroup RTC_DayLightSaving_Control RTC DayLight Saving Control
   * @{
   */
@@ -553,6 +535,22 @@ typedef struct {
 #define RTC_SHIFT_HU		16 /*!< Bit shift for time hour units field. */
 #define RTC_SHIFT_MNU		8 /*!< Bit shift for time minute units field. */
 #define RTC_SHIFT_PM		22 /*!< Bit shift for time AM/PM field. */
+/**
+  * @}
+  */
+
+/** @defgroup Leap_Year_Check Leap Year Check
+  * @{
+  */
+/** @brief Check if the given year is a leap year. */
+#define IS_LEAP_YEAR_CHECK(YEAR, RET) do {\
+		if(((!(YEAR % 4)) && (YEAR % 100)) || (!(YEAR % 400))) { \
+			RET = 1; \
+		} else { \
+			RET = 0; \
+		} \
+} while (0)
+
 /**
   * @}
   */

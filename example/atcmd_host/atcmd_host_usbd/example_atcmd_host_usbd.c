@@ -24,29 +24,43 @@
 
 /* Private defines -----------------------------------------------------------*/
 
+// Endpoint address
+#if defined (CONFIG_AMEBAGREEN2)
+#define CDC_ACM_BULK_IN_EP                       0x82U
+#else
+#define CDC_ACM_BULK_IN_EP                       0x81U
+#endif
+#define CDC_ACM_BULK_OUT_EP                      0x02U
+#define CDC_ACM_INTR_IN_EP                       0x83U
+
+// Transfer size
+#define CDC_ACM_BULK_IN_XFER_SIZE                2048U
+#define CDC_ACM_BULK_OUT_XFER_SIZE               2048U
+
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 // while test suspend/resume, hotplug should be disabled
-#define CONFIG_USBD_CDC_ACM_HOTPLUG					1
+#define CDC_ACM_HOTPLUG                          1
 
 // USB speed
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define CONFIG_USBD_CDC_ACM_SPEED					USB_SPEED_FULL
+#define CDC_ACM_USB_SPEED                        USB_SPEED_FULL
 #else
-#define CONFIG_USBD_CDC_ACM_SPEED					USB_SPEED_HIGH
+#define CDC_ACM_USB_SPEED                        USB_SPEED_HIGH
 #endif
 
 // Asynchronous transfer size
-#define CONFIG_CDC_ACM_ASYNC_BUF_SIZE				2048U
-
-// Do not change the settings unless indeed necessary
-#define CONFIG_CDC_ACM_BULK_IN_XFER_SIZE			2048U
-#define CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE			2048U
+#define CDC_ACM_ASYNC_BUF_SIZE                   2048U
 
 // Thread priorities
-#define CONFIG_CDC_ACM_INIT_THREAD_PRIORITY			5
-#define CONFIG_CDC_ACM_HOTPLUG_THREAD_PRIORITY		8
-#define CONFIG_CDC_ACM_XFER_THREAD_PRIORITY			5
+#define CDC_ACM_INIT_THREAD_PRIORITY             5
+#define CDC_ACM_HOTPLUG_THREAD_PRIORITY          8
+#define CDC_ACM_XFER_THREAD_PRIORITY             5
+
+// Thread stack sizes
+#define CDC_ACM_INIT_THREAD_STACK_SIZE           1024U
+#define CDC_ACM_HOTPLUG_THREAD_STACK_SIZE        1024U
+#define CDC_ACM_XFER_THREAD_STACK_SIZE           1024U
 
 /* Private types -------------------------------------------------------------*/
 
@@ -62,6 +76,7 @@ static void cdc_acm_cb_transmitted(u8 status);
 static void cdc_acm_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
+
 static const char *const TAG = "ACM";
 
 static const usbd_cdc_acm_cb_t cdc_acm_cb = {
@@ -73,12 +88,21 @@ static const usbd_cdc_acm_cb_t cdc_acm_cb = {
 	.status_changed = cdc_acm_cb_status_changed,
 };
 
-static usb_cdc_line_coding_t cdc_acm_line_coding;
+static usb_cdc_acm_line_coding_t cdc_acm_line_coding;
 
 static u16 cdc_acm_ctrl_line_state;
 
+/* EP configuration for CDC ACM */
+static const usbd_cdc_acm_ep_cfg_t cdc_acm_ep = {
+	.bulk_in_addr  = CDC_ACM_BULK_IN_EP,
+	.bulk_out_addr = CDC_ACM_BULK_OUT_EP,
+	.intr_in_addr  = CDC_ACM_INTR_IN_EP,
+	.bulk_in_xfer_size  = CDC_ACM_BULK_IN_XFER_SIZE,
+	.bulk_out_xfer_size = CDC_ACM_BULK_OUT_XFER_SIZE,
+};
+
 static const usbd_config_t cdc_acm_cfg = {
-	.speed = CONFIG_USBD_CDC_ACM_SPEED,
+	.speed = CDC_ACM_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
@@ -91,7 +115,7 @@ static const usbd_config_t cdc_acm_cfg = {
 #endif
 };
 
-#if CONFIG_USBD_CDC_ACM_HOTPLUG
+#if CDC_ACM_HOTPLUG
 static u8 cdc_acm_attach_status;
 static rtos_sema_t cdc_acm_attach_status_changed_sema;
 #endif
@@ -110,7 +134,7 @@ static u32 uart_irq_count = 0;
 static u8 tt_mode_task_start = 0;
 static u32 tt_len = 10 * 1024 * 1024;
 static RingBuffer *at_usbd_rx_ring_buf = NULL;
-static u8 uart_show_buf[CONFIG_CDC_ACM_BULK_IN_XFER_SIZE] = {0};
+static u8 uart_show_buf[CDC_ACM_BULK_IN_XFER_SIZE] = {0};
 
 static void uart_irq(uint32_t id, SerialIrq event)
 {
@@ -168,7 +192,7 @@ static void uart_format_string_output(const char *fmt, ...)
   */
 static int cdc_acm_cb_init(void)
 {
-	usb_cdc_line_coding_t *lc = &cdc_acm_line_coding;
+	usb_cdc_acm_line_coding_t *lc = &cdc_acm_line_coding;
 
 	lc->b.dwDteRate = 150000;
 	lc->b.bCharFormat = 0x00;
@@ -257,7 +281,7 @@ static void cdc_acm_cb_transmitted(u8 status)
 
 static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
-	usb_cdc_line_coding_t *lc = &cdc_acm_line_coding;
+	usb_cdc_acm_line_coding_t *lc = &cdc_acm_line_coding;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
@@ -309,7 +333,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		cdc_acm_ctrl_line_state = req->wValue;
 		if (cdc_acm_ctrl_line_state & 0x01) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
-#if CONFIG_USBD_CDC_ACM_NOTIFY
+#if USBD_CDC_ACM_NOTIFY
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 #endif
 		}
@@ -339,13 +363,13 @@ static void cdc_acm_cb_status_changed(u8 old_status, u8 status)
 	*/
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Status change: %d -> %d \n", old_status, status);
 
-#if CONFIG_USBD_CDC_ACM_HOTPLUG
+#if CDC_ACM_HOTPLUG
 	cdc_acm_attach_status = status;
 	rtos_sema_give(cdc_acm_attach_status_changed_sema);
 #endif
 }
 
-#if CONFIG_USBD_CDC_ACM_HOTPLUG
+#if CDC_ACM_HOTPLUG
 static void cdc_acm_hotplug_thread(void *param)
 {
 	int ret = 0;
@@ -366,7 +390,7 @@ static void cdc_acm_hotplug_thread(void *param)
 				if (ret != 0) {
 					break;
 				}
-				ret = usbd_cdc_acm_init(CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE, CONFIG_CDC_ACM_BULK_IN_XFER_SIZE, &cdc_acm_cb);
+				ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_ep);
 				if (ret != 0) {
 					usbd_deinit();
 					break;
@@ -386,13 +410,13 @@ static void cdc_acm_hotplug_thread(void *param)
 static void example_usbd_cdc_acm_thread(void *param)
 {
 	int ret = 0;
-#if CONFIG_USBD_CDC_ACM_HOTPLUG
+#if CDC_ACM_HOTPLUG
 	rtos_task_t check_task;
 #endif
 
 	UNUSED(param);
 
-#if CONFIG_USBD_CDC_ACM_HOTPLUG
+#if CDC_ACM_HOTPLUG
 	rtos_sema_create(&cdc_acm_attach_status_changed_sema, 0, 1);
 #endif
 
@@ -412,13 +436,14 @@ static void example_usbd_cdc_acm_thread(void *param)
 		goto exit_usbd_init_fail;
 	}
 
-	ret = usbd_cdc_acm_init(CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE, CONFIG_CDC_ACM_BULK_IN_XFER_SIZE, &cdc_acm_cb);
+	ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_ep);
 	if (ret != HAL_OK) {
 		goto exit_usbd_cdc_acm_init_fail;
 	}
 
-#if CONFIG_USBD_CDC_ACM_HOTPLUG
-	ret = rtos_task_create(&check_task, "cdc_acm_hotplug_thread", cdc_acm_hotplug_thread, NULL, 1024, CONFIG_CDC_ACM_HOTPLUG_THREAD_PRIORITY);
+#if CDC_ACM_HOTPLUG
+	ret = rtos_task_create(&check_task, "cdc_acm_hotplug_thread", cdc_acm_hotplug_thread, NULL,
+						   CDC_ACM_HOTPLUG_THREAD_STACK_SIZE, CDC_ACM_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_check_task_fail;
 	}
@@ -432,7 +457,7 @@ static void example_usbd_cdc_acm_thread(void *param)
 
 	return;
 
-#if CONFIG_USBD_CDC_ACM_HOTPLUG
+#if CDC_ACM_HOTPLUG
 exit_create_check_task_fail:
 	usbd_cdc_acm_deinit();
 #endif
@@ -442,7 +467,7 @@ exit_usbd_cdc_acm_init_fail:
 
 exit_usbd_init_fail:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC ACM demo stop\n");
-#if CONFIG_USBD_CDC_ACM_HOTPLUG
+#if CDC_ACM_HOTPLUG
 	rtos_sema_delete(cdc_acm_attach_status_changed_sema);
 #endif
 
@@ -454,14 +479,14 @@ static void tt_mode_test_task(void *param)
 	UNUSED(param);
 	u32 tt_len_tmp;
 	u32 send_len;
-	u8 *tt_tx_buf = pvPortMalloc(CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE);
+	u8 *tt_tx_buf = pvPortMalloc(CDC_ACM_BULK_OUT_XFER_SIZE);
 	int ret;
 
 	while (1) {
 		tt_len_tmp = tt_len;
 		while (tt_len_tmp > 0) {
 			xSemaphoreTake(tt_mode_tx_sema, 0xFFFFFFFF);
-			send_len = tt_len_tmp > (CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE) ? (CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE) : tt_len_tmp;
+			send_len = tt_len_tmp > (CDC_ACM_BULK_OUT_XFER_SIZE) ? (CDC_ACM_BULK_OUT_XFER_SIZE) : tt_len_tmp;
 			ret = usbd_cdc_acm_transmit(tt_tx_buf, send_len);
 			while (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\r\n");
@@ -509,7 +534,7 @@ static void uart_show_rx_data_task(void *param)
 
 		actual_len = RingBuffer_Available(at_usbd_rx_ring_buf);
 		while (actual_len > 0) {
-			show_len = actual_len > CONFIG_CDC_ACM_BULK_IN_XFER_SIZE ? CONFIG_CDC_ACM_BULK_IN_XFER_SIZE : actual_len;
+			show_len = actual_len > CDC_ACM_BULK_IN_XFER_SIZE ? CDC_ACM_BULK_IN_XFER_SIZE : actual_len;
 			xSemaphoreTake(usbd_rx_ringbuf_mutex, 0xFFFFFFFF);
 			RingBuffer_Read(at_usbd_rx_ring_buf, uart_show_buf, show_len);
 			xSemaphoreGive(usbd_rx_ringbuf_mutex);
@@ -541,7 +566,8 @@ void example_atcmd_host_usbd(void)
 
 	at_usbd_rx_ring_buf = RingBuffer_Create(NULL, 4 * 1024, LOCAL_RINGBUFF, 1);
 
-	ret = rtos_task_create(&task, "example_usbd_cdc_acm_thread", example_usbd_cdc_acm_thread, NULL, 1024U, CONFIG_CDC_ACM_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "example_usbd_cdc_acm_thread", example_usbd_cdc_acm_thread, NULL,
+						   CDC_ACM_INIT_THREAD_STACK_SIZE, CDC_ACM_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD CDC ACM thread fail\n");
 	}

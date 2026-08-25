@@ -28,6 +28,8 @@ static inline bool bt_mesh_lpn_match(uint16_t addr)
 	if (bt_mesh_lpn_established()) {
 		return (addr == bt_mesh.lpn.frnd);
 	}
+#else
+	ARG_UNUSED(addr);
 #endif
 	return false;
 }

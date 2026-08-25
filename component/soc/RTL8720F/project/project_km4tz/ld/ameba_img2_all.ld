@@ -59,7 +59,8 @@ SECTIONS
 	.xip_image2.text :
 	{
 		__flash_text_start__ = .;
-		FLASH_INPUT_TEXT_SECTION
+		/* Place *(.flash.only.text*) at the beginning of .xip_image2.text with offset for higher cache hit rate*/
+		. = ALIGN(0x20) + 0x18;
 		*(.flash.only.text*)
 		__flash_text_end__ = .;
 	} > KM4TZ_IMG2_XIP
@@ -154,6 +155,7 @@ SECTIONS
 		KEEP(*(.fini_array))
 		__fini_array_end = .;
 		/*-----------------*/
+		FLASH_INPUT_TEXT_SECTION
 		__image2_backtrace_end__ = .;
 
 	} > IMG2_TEXT_LMA_REGION

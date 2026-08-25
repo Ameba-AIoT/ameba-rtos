@@ -1016,7 +1016,7 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CPF, BT_GATT_PERM_READ,		\
 			  bt_gatt_attr_read_cpf, NULL, (void *)_value)
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 ssize_t bt_gatt_attr_read_scc(struct bt_conn *conn,
 							const struct bt_gatt_attr *attr,
 							void *buf, uint16_t len, uint16_t offset);

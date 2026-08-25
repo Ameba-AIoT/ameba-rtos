@@ -94,6 +94,10 @@
 /******************************* Ameba (8720F) ******************************/
 #include "autoconf_8720f.h"
 #include "rtw_task_size_8720f.h"
+#elif defined(CONFIG_RLE1509)
+/******************************* Ameba (RLE1509) ******************************/
+#include "autoconf_rle1509.h"
+#include "rtw_task_size_rle1509.h"
 #endif
 /****************** Configurations for each platform end **********************/
 
@@ -111,7 +115,7 @@
 
 #define CONFIG_ACM_METHOD 0	// 0:By SW 1:By HW.
 
-#if !defined(CONFIG_RTL8720F)
+#if !defined(CONFIG_RTL8720F) && !defined(CONFIG_RLE1509)
 #define CONFIG_FRAME_DEFRAG // support frame defragmentaion
 #endif
 

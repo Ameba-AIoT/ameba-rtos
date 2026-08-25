@@ -13,6 +13,8 @@ target_include_directories(
     ${BASEDIR}/component/usb/common
     ${BASEDIR}/component/usb/device/core
     ${BASEDIR}/component/usb/device/composite
+    ${BASEDIR}/component/usb/device/hid
+    ${BASEDIR}/component/usb/device/uac
 
     ${BASEDIR}/component/audio/interfaces
     ${BASEDIR}/component/audio/base/osal/osal_c/interfaces

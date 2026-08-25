@@ -427,6 +427,21 @@ int pre_process_buf_data(u8 *buf, u16 size)
 					printk("DISCONNECT: reason=%d\n", disconn_reason);
 				}
 			}
+		} else if (wpa_cmd_id == WHC_WPA_STD_EVENT_WPAS_STATE) {
+			/* Only manage carrier for the AP interface (idx=1) */
+			if (dev_idx == 1 && global_idev.pndev[1]) {
+				if (sub_event == 9) {
+					/* WPA_COMPLETED: AP up, unblock TX */
+					printk("uAP WPA_COMPLETED, carrier on\n");
+					netif_carrier_on(global_idev.pndev[1]);
+					netif_tx_wake_all_queues(global_idev.pndev[1]);
+				} else if (sub_event == 0) {
+					/* WPA_DISCONNECTED: AP down, block TX */
+					printk("uAP WPA_DISCONNECTED, carrier off\n");
+					netif_carrier_off(global_idev.pndev[1]);
+					netif_tx_stop_all_queues(global_idev.pndev[1]);
+				}
+			}
 		}
 
 		ret = FALSE;

@@ -9,7 +9,11 @@
 #include "ameba_soc.h"
 #include "bt_debug.h"
 #include "bt_inic.h"
+#ifdef CONFIG_BT_SDN
+#include "vhci_if_inic_sdn.h"
+#else
 #include "hci_if_inic.h"
+#endif
 
 #if 0
 #define H5_LOG  BT_LOGA

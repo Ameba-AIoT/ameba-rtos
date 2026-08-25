@@ -71,7 +71,7 @@ struct bt_rfcomm_dlc_ops {
 	 */
 	void (*sent)(struct bt_rfcomm_dlc *dlc, int err);
 
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	void (*credits_given)(struct bt_rfcomm_dlc *dlc, uint8_t num);
 #endif
 };

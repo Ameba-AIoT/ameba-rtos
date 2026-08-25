@@ -15,20 +15,26 @@
 #include "atcmd_service.h"
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "DRD";
+
+#if defined(CONFIG_AMEBAGREEN2)
+#define MSC_BULK_IN_EP                              0x82U
+#define MSC_BULK_OUT_EP                             0x02U
+#else
+#define MSC_BULK_IN_EP                              0x81U
+#define MSC_BULK_OUT_EP                             0x02U
+#endif
 
 // USB speed
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #error	"USB DRD example only supports USB high speed"
 #endif
 
-#define USB_DRD_SPEED							USB_SPEED_HIGH
+#define MSC_USB_SPEED                            USB_SPEED_HIGH
 
 // Thread priorities
-#define USBH_MSC_RW_THREAD_PRIORITY        5U
-
-#define USBH_DRD_MAIN_TASK_PRIORITY        3U
-#define USBH_MSC_THREAD_STACK_SIZE         (1024 * 11 + 512)
+#define MSC_MAIN_TASK_PRIORITY                  3
+#define MSC_XFER_THREAD_PRIORITY                5
+#define MSC_XFER_THREAD_STACK_SIZE              11776U
 
 #define USBH_MSC_TEST_BUF_SIZE					4096
 #define USBH_MSC_TEST_ROUNDS					20
@@ -50,8 +56,10 @@ static void usbh_msc_cmd_test(u16 argc, char **argv);
 
 /* Private variables ---------------------------------------------------------*/
 
+static const char *const TAG = "DRD";
+
 static const usbd_config_t usbd_msc_cfg = {
-	.speed = USB_DRD_SPEED,
+	.speed = MSC_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 708U,
@@ -61,6 +69,11 @@ static const usbd_config_t usbd_msc_cfg = {
 	.rx_fifo_depth = 1680U,
 	.ptx_fifo_depth = {256U, 16U, 16U},
 #endif
+};
+
+static const usbd_msc_ep_cfg_t msc_ep = {
+	.bulk_in_addr = MSC_BULK_IN_EP,
+	.bulk_out_addr = MSC_BULK_OUT_EP,
 };
 
 static const usbd_msc_cb_t usbd_msc_cb = {
@@ -74,10 +87,10 @@ static u8 *msc_wt_buf;
 static u8 *msc_rd_buf;
 
 static const usbh_config_t usbh_cfg = {
-	.speed = USB_DRD_SPEED,
+	.speed = MSC_USB_SPEED,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
-	.main_task_priority = USBH_DRD_MAIN_TASK_PRIORITY,
+	.main_task_priority = MSC_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 #if defined (CONFIG_AMEBAGREEN2)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
@@ -187,7 +200,7 @@ static void usbd_msc_cmd_test(u16 argc, char **argv)
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init USBD: %d\n", ret);
 			return;
 		}
-		ret = usbd_msc_init(&usbd_msc_cb);
+		ret = usbd_msc_init(&usbd_msc_cb, &msc_ep);
 		if (ret != HAL_OK) {
 			usbd_deinit();
 			usbd_msc_disk_deinit();
@@ -468,7 +481,7 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "USB host MSC R&W test started\n");
 
 		ret = rtos_task_create(&task, "example_usb_drd_msc_trx_test", example_usb_drd_msc_trx_test, NULL,
-							   USBH_MSC_THREAD_STACK_SIZE, USBH_MSC_RW_THREAD_PRIORITY);
+							   MSC_XFER_THREAD_STACK_SIZE, MSC_XFER_THREAD_PRIORITY);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USB host MSC R&W test thread\n");
 		}

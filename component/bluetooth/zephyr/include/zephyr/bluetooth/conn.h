@@ -758,7 +758,7 @@ enum {
 	 *  @note Requires @ref BT_CONN_LE_OPT_CODED.
 	 */
 	BT_CONN_LE_OPT_NO_1M = BIT(1),
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	/** @brief Enable LE 2M PHY connection parameters.
 	 *
 	 *  Include LE 2M PHY in init_phys so the initiator can connect over a
@@ -774,7 +774,7 @@ struct bt_conn_le_create_param {
 	/** Bit-field of create connection options. */
 	uint32_t options;
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	uint8_t own_addr_type;
 #endif
 
@@ -874,7 +874,17 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		      const struct bt_conn_le_create_param *create_param,
 		      const struct bt_le_conn_param *conn_param,
 		      struct bt_conn **conn);
-
+#if ZEPHYR_RTK_PATCH
+/** @brief Used to cancel the HCI_LE_Create_Connection or HCI_LE_Extended_Create_Connection commands.
+ *
+ *  This uses the General Connection Cancel procedure.
+ *
+ *  @param[in]  peer         Remote address.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_create_cancel(const bt_addr_le_t *peer);
+#endif
 struct bt_conn_le_create_synced_param {
 
 	/** @brief Remote address
@@ -1294,7 +1304,7 @@ int bt_conn_cb_unregister(struct bt_conn_cb *cb);
  *
  *  @param _name Name of callback structure.
  */
-/* zephyr_porting Take out the "static" for struct extern in zephyr_stack_resource.c */
+/* zephyr_patch Take out the "static" for struct extern in zephyr_stack_resource.c */
 #define BT_CONN_CB_DEFINE(_name)					\
 	const STRUCT_SECTION_ITERABLE(bt_conn_cb,		\
 						_CONCAT(bt_conn_cb_,	\
@@ -1886,7 +1896,7 @@ struct bt_br_conn_param {
 struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 				  const struct bt_br_conn_param *param);
 
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 struct bt_conn *bt_br_get_conn_by_addr(bt_addr_t *addr);
 #endif
 

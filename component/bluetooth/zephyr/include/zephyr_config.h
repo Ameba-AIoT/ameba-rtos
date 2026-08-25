@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define ZEPHYR_FIX_CODE 1  /* the code that fix the bug or add additional function for zephyr stack */
+#define ZEPHYR_RTK_PATCH 1  /* The code that fix bugs or add additional function for zephyr stack. Do not change it! */
 
 #define CONFIG_LITTLE_ENDIAN
 

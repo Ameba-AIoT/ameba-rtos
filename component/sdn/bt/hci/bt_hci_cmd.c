@@ -1,6 +1,5 @@
 #include <basic_types.h>
-#include <sdn_user_conf_intf.h>
-#include <sdn_user_conf_bt.h>
+#include <host_bt_feature.h>
 #include <sdn_conf.h>
 #include <bt_hci.h>
 
@@ -11,7 +10,7 @@ struct bt_hci_cmd_pkt {
 };
 
 #define BT_HCI_EVT_RSP_MAX_LEN              70
-
+extern uint8_t g_ble_ll_max_conn_tx_acl_num;
 uint8_t bt_hci_ogf_le_ocf_read_buffer_size(void *phci_cmd_param, uint8_t *rsp)
 {
 	(void)phci_cmd_param;
@@ -23,7 +22,7 @@ uint8_t bt_hci_ogf_le_ocf_read_buffer_size(void *phci_cmd_param, uint8_t *rsp)
 #else
 	buffer_size->le_max_len = 27; /* LL_LE_PDU_MIN_PAYLOAD_SIZE */
 #endif
-	buffer_size->le_max_num = BT_LL_LE_MAX_CONN_NUM * BLE_LL_TX_ACL_NUM_PER_LINK;
+	buffer_size->le_max_num = g_ble_ll_max_conn_tx_acl_num;
 
 	return sizeof(struct bt_hci_rp_le_read_buffer_size);
 }

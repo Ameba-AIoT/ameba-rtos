@@ -16,7 +16,7 @@
 #define __ASSERT_PRINT          z_printf
 #define __ASSERT_POST_ACTION()  { }
 #define __ASSERT_UNREACHABLE    do { osif_sched_stop(); for(;;);} while(0)
-/* define k_oops to fix compile error, zephyr_porting */
+/* define k_oops to fix compile error, zephyr_patch */
 #define k_oops __ASSERT_UNREACHABLE
 
 

@@ -82,7 +82,7 @@ enum {
 };
 
 struct bt_conn_le {
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	bool dst_flag; 	/* 0: dst addr is resolved by controller.
 					 * 1: dst addr is resolved by host using the IRK and identity addr in bondlist.
 					 */
@@ -131,7 +131,7 @@ struct bt_conn_br {
 	uint8_t			features[LMP_MAX_PAGES][8];
 
 	struct bt_keys_link_key	*link_key;
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	void  (*conn_complete)(struct bt_conn *conn);
 #endif
 };
@@ -146,7 +146,7 @@ struct bt_conn_sco {
 	uint16_t                pkt_type;
 	uint8_t                 dev_class[3];
 	uint8_t                 link_type;
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	uint8_t                 air_mode;
 #endif
 };
@@ -375,7 +375,7 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
 			bt_conn_tx_cb_t cb, bool has_ts);
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer, bt_conn_state_t *conn_state);
 #else
 /* Check if a connection object with the peer already exists */

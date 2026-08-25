@@ -13,5 +13,6 @@ target_include_directories(
     ${BASEDIR}/component/usb/common
     ${BASEDIR}/component/usb/device/core
     ${BASEDIR}/component/usb/device/composite
+    ${BASEDIR}/component/usb/device/cdc_acm
+    ${BASEDIR}/component/usb/device/msc
 )
-

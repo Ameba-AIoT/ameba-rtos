@@ -10,7 +10,7 @@
  */
 
 /* HFP AG Supported features */
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 #define BT_HFP_AG_SUPPORTED_FEATURES  BT_HFP_AG_FEATURE_EXT_ERR
 #else
 #define BT_HFP_AG_SUPPORTED_FEATURES (BT_HFP_AG_FEATURE_INBAND_RINGTONE | BT_HFP_AG_FEATURE_EXT_ERR)
@@ -115,7 +115,7 @@ struct bt_hfp_ag {
 
 	/* Dial number or incoming number */
 	char number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	uint8_t number_type;
 #endif
 
@@ -146,6 +146,6 @@ struct bt_hfp_ag {
 /* Invalid status */
 #define HFP_AG_CLCC_STATUS_INVALID        0xFFU
 
-#ifdef ZEPHYR_FIX_CODE /* zephyr_porting */
+#if ZEPHYR_RTK_PATCH /* zephyr_patch */
 #include "stack_ext/hfp_ag_internal_ext.h"
 #endif

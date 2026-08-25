@@ -122,6 +122,7 @@
 #define USB_DESC_TYPE_INTERFACE_POWER                  0x08U   /**< Interface Power descriptor type. */
 #define USB_DESC_TYPE_IAD                              0x0BU   /**< Interface Association Descriptor (IAD) type. */
 #define USB_DESC_TYPE_BOS                              0x0FU   /**< Binary Device Object Store (BOS) descriptor type. */
+#define USB_DESC_TYPE_CS_INTERFACE                     0x24U   /**< Class-Specific Interface descriptor type (USB Spec Table 9-5). */
 #define USB_DESC_TYPE_HUB                              0x29U   /**< Hub descriptor type. */
 /** @} */
 

@@ -141,6 +141,19 @@ ameba_list_append_if(CONFIG_RTL8720F public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel/rtl8720f
 )
 
+ameba_list_append_if(CONFIG_RLE1509 public_includes
+    ${c_CMPT_WIFI_DIR}/wifi_reg/rle1509
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf
+    ${CMAKE_CURRENT_SOURCE_DIR}/intf/g6_intf/rle1509
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/bb/halbb_8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf
+    ${CMAKE_CURRENT_SOURCE_DIR}/phy_g6/rf/halrf_8720f
+    ${CMAKE_CURRENT_SOURCE_DIR}/rle1509
+    ${CMAKE_CURRENT_SOURCE_DIR}/rle1509_rom
+    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel/rle1509
+)
+
 set(release_target_name wlan)
 
 if(CONFIG_MP_INCLUDED)
@@ -252,6 +265,11 @@ ameba_list_append_if(CONFIG_AMEBAPRO3 private_includes
 ameba_list_append_if(CONFIG_RTL8720F private_includes
     ${c_COMPONENT_DIR}/soc/RTL8720F/rom/include
     ${c_CMPT_WIFI_DIR}/wifi_fw/rle1331/include
+)
+
+ameba_list_append_if(CONFIG_RLE1509 private_includes
+    ${c_COMPONENT_DIR}/soc/RLE1509/rom/include
+    ${c_CMPT_WIFI_DIR}/wifi_fw/rle1509/include
 )
 
 ameba_list_append(private_definitions COMPIL_LOG_LEVEL=RTK_LOG_INFO)
