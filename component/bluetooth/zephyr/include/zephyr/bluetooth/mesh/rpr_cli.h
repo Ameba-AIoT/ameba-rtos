@@ -77,7 +77,7 @@ struct bt_mesh_rpr_cli {
 			    struct bt_mesh_rpr_unprov *unprov,
 			    struct net_buf_simple *adv_data);
 
-	//zephyr_porting add link report & link status callback for app
+	//zephyr_patch add link report & link status callback for app
 	void (*link_status)(struct bt_mesh_rpr_cli *cli,
 						const struct bt_mesh_rpr_node *srv,
 						struct bt_mesh_rpr_link *link);

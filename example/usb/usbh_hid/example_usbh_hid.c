@@ -286,7 +286,7 @@ static void example_usbh_hid_init_thread(void *param)
 	usbh_start();
 
 #if CONFIG_USBH_HID_HOTPLUG
-	ret = rtos_task_create(&usbh_hid_ctx.hotplug_task, "example_usbh_hid_hotplug_thread",
+	ret = rtos_task_create(&usbh_hid_ctx.hotplug_task, "usbh_hid_hotplug_thread",
 						   example_usbh_hid_hotplug_thread, NULL,
 						   USBH_HID_HOTPLUG_THREAD_STACK_SIZE, USBH_HID_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -328,7 +328,7 @@ void example_usbh_hid(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH HID demo start\n");
 
-	ret = rtos_task_create(NULL, "example_usbh_hid_init_thread",
+	ret = rtos_task_create(NULL, "usbh_hid_init_thread",
 						   example_usbh_hid_init_thread, NULL,
 						   USBH_HID_INIT_THREAD_STACK_SIZE, USBH_HID_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {

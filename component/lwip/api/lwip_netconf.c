@@ -386,12 +386,14 @@ void lwip_netif_set_link_up(uint8_t idx)
 		return;
 	}
 	netifapi_netif_set_link_up(pnetif);
+#if !defined(CONFIG_RNAT)
 	if (idx == NETIF_WLAN_STA_INDEX) {
 		netifapi_netif_set_default(pnetif_sta);
 	} else if ((idx == NETIF_WLAN_AP_INDEX) && (!(xnetif[NETIF_WLAN_STA_INDEX].flags & NETIF_FLAG_LINK_UP))) {
 		/*default netif is on sta when sta and softap both up*/
 		netifapi_netif_set_default(pnetif_ap);
 	}
+#endif
 }
 
 void lwip_netif_set_link_down(uint8_t idx)
@@ -403,11 +405,13 @@ void lwip_netif_set_link_down(uint8_t idx)
 		return;
 	}
 	netifapi_netif_set_link_down(pnetif);
+#if !defined(CONFIG_RNAT)
 	if (idx == NETIF_WLAN_AP_INDEX) {
 		netifapi_netif_set_default(pnetif_sta);
 	} else if (idx == NETIF_WLAN_STA_INDEX) {
 		netifapi_netif_set_default(pnetif_ap);
 	}
+#endif
 }
 
 uint8_t *lwip_get_mac(uint8_t idx)
@@ -658,7 +662,24 @@ uint8_t lwip_request_ip(uint8_t idx)
 	lwip_autoip_ipv6(idx);
 #endif
 #if LWIP_IPV4
-	ret = lwip_dhcp(idx, DHCP_START);
+#if defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
+	/* dev runs the real dhcp client on its own netif; here host just mirrors the
+	 * returned lease onto its netif so host sockets share the same address. */
+	u32 ipinfo[3] = {0};
+	if (idx == NETIF_WLAN_STA_INDEX) {
+		lwip_clear_ip(idx);  /* mirror lwip_dhcp(DHCP_START): drop the previous lease before asking, so a timeout can't leave a stale addr on the netif */
+		ret = (uint8_t)wifi_dev_dhcp(idx, ipinfo);
+		if (ret == DHCP_ADDRESS_ASSIGNED) {
+			lwip_netif_set_up(idx);
+			lwip_set_ip(idx, PP_HTONL(ipinfo[0]), PP_HTONL(ipinfo[2]), PP_HTONL(ipinfo[1]));
+			/* Detect and handle subnet conflict after DHCP success */
+			lwip_manage_subnet_conflict(idx);
+		}
+	} else
+#endif
+	{
+		ret = lwip_dhcp(idx, DHCP_START);
+	}
 #endif
 	return ret;
 }

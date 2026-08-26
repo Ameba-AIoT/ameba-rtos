@@ -25,14 +25,16 @@
 #define TPU_RU_LOC_EXT
 
 /* WiFi Tunnel (R-Mesh / WTN) */
-// #define CONFIG_WIFI_TUNNEL
-// #if defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_INTF_IPC)
-// #define CONFIG_WTN_SOCKET_APP
-// #endif
+#define CONFIG_WIFI_TUNNEL
+#if defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_INTF_IPC)
+#define CONFIG_WTN_SOCKET_APP
+#endif
 
 /* For STA+AP Concurrent MODE */
 /****************** configurations for concurrent mode ************************/
+#ifdef CONFIG_WHC_DEV
 #define CONFIG_NAN
+#endif
 //#define NAN_TEST
 //#define CONFIG_MCC_MODE
 #ifdef CONFIG_NAN

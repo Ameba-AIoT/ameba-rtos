@@ -19,30 +19,48 @@
 #else
 #include <usbd_uac2.h>
 #endif
+/* Private defines -----------------------------------------------------------*/
+
+// Endpoint address
+#if defined (CONFIG_AMEBAGREEN2)
+#define USBD_UAC_ISOC_IN_EP                       0x84U
+#define USBD_UAC_ISOC_OUT_EP                      0x02U
+#else
+#define USBD_UAC_ISOC_IN_EP                       0x81U
+#define USBD_UAC_ISOC_OUT_EP                      0x02U
+#endif
+
+// USB speed
 /*
      USB_SPEED_FULL: pcm data will be callback in every 1/8 ms, which will increase the CPU load
      USB_SPEED_HIGH_IN_FULL: pcm data will be callback every 1 ms
 */
-#define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH_IN_FULL //#define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH
-#define AUDIO_SAMPLING_RATE_KHZ                 48U
-#define AUDIO_SAMPLING_RATE                     48000
-#define AUDIO_BYTE_WIDTH_SIZE                   0x02U
-#define AUDIO_CHANNEL_NUM                       0x02U
-#define USB_AUDIO_MS_BUF_SIZE                   ((AUDIO_BYTE_WIDTH_SIZE) * (AUDIO_CHANNEL_NUM) * (AUDIO_SAMPLING_RATE_KHZ))
-#define USB_AUDIO_BUF_SIZE                      ((USB_AUDIO_MS_BUF_SIZE) * 10)
-#define USB_AUDIO_READ_TIME_OUT                 0
-#define USB_AUDIO_RECEIVER_BUF_SIZE             10*USB_AUDIO_BUF_SIZE
-/* recv_buf: uac isoc rx buffer, used to save the audio data that received from the USB host */
-static u8 recv_buf[USB_AUDIO_RECEIVER_BUF_SIZE];
-static u8 tmp_buf[USB_AUDIO_RECEIVER_BUF_SIZE];
-static u32 write_pos = 0;
-static u32 read_pos = 0;
-static u32 buf_size = USB_AUDIO_RECEIVER_BUF_SIZE;
-static void *demo_usb_task_hdl = NULL;
-static void *demo_usb_task_sem = NULL;
-static void *uac_ready_sem = NULL;
-static u8 usb_task_stop = 0;
-static uint8_t demo_usb_task_run = 0;
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
+#define USBD_UAC_USB_SPEED                        USB_SPEED_FULL
+#else
+#define USBD_UAC_USB_SPEED                        USB_SPEED_HIGH_IN_FULL
+#endif
+
+// PCM data parameters
+#define AUDIO_SAMPLING_RATE_KHZ                   48U
+#define AUDIO_SAMPLING_RATE                       48000
+#define AUDIO_BYTE_WIDTH_SIZE                     0x02U
+#define AUDIO_CHANNEL_NUM                         0x02U
+
+// Transfer buffer sizes
+#define USB_AUDIO_MS_BUF_SIZE                     ((AUDIO_BYTE_WIDTH_SIZE) * (AUDIO_CHANNEL_NUM) * (AUDIO_SAMPLING_RATE_KHZ))
+#define USB_AUDIO_BUF_SIZE                        ((USB_AUDIO_MS_BUF_SIZE) * 10U)
+#define USB_AUDIO_READ_TIME_OUT                   0U
+#define USB_AUDIO_RECEIVER_BUF_SIZE               (10U * USB_AUDIO_BUF_SIZE)
+
+// Thread stack sizes
+#define USBD_UAC_INIT_THREAD_STACK_SIZE           5120U
+
+// Thread priorities
+#define USBD_UAC_INIT_THREAD_PRIORITY             5
+
+/* Private function prototypes -----------------------------------------------*/
+
 static int uac_cb_init(void);
 static int uac_cb_deinit(void);
 static int uac_cb_setup(usb_setup_req_t *req, u8 *buf);
@@ -52,20 +70,31 @@ static void uac_cb_mute_changed(u8 mute);
 static void uac_cb_volume_changed(u8 volume);
 static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 
-static u32 usb_uac_get_enough_read_bytes(void)
-{
-	return (buf_size + write_pos - read_pos) % buf_size;
-}
+/* Private variables ---------------------------------------------------------*/
 
-static u32 usb_uac_get_enough_write_bytes(void)
-{
-	return (buf_size + read_pos - write_pos - 1) % buf_size;
-}
+static const char *const TAG = "UAC";
+
+/* recv_buf: uac isoc rx buffer, used to save the audio data that received from the USB host */
+static u8 recv_buf[USB_AUDIO_RECEIVER_BUF_SIZE];
+static u8 tmp_buf[USB_AUDIO_RECEIVER_BUF_SIZE];
+static u32 write_pos;
+static u32 read_pos;
+static u32 buf_size = USB_AUDIO_RECEIVER_BUF_SIZE;
+static void *demo_usb_task_hdl;
+static void *demo_usb_task_sem;
+static void *uac_ready_sem;
+static u8 usb_task_stop;
+static uint8_t demo_usb_task_run;
 
 static const usbd_config_t uac_cfg = {
-	.speed = CONFIG_USBD_UAC_SPEED,
+	.speed = USBD_UAC_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 	.ext_intr_enable = 0,
+};
+
+static const usbd_uac_ep_cfg_t uac_ep = {
+	.isoc_in_addr  = USBD_UAC_ISOC_IN_EP,
+	.isoc_out_addr = USBD_UAC_ISOC_OUT_EP,
 };
 
 static const usbd_uac_cb_t uac_cb = {
@@ -82,6 +111,18 @@ static const usbd_uac_cb_t uac_cb = {
 	.format_changed = uac_cb_format_changed,
 	.sof = NULL,
 };
+
+/* Private functions ---------------------------------------------------------*/
+
+static u32 usb_uac_get_enough_read_bytes(void)
+{
+	return (buf_size + write_pos - read_pos) % buf_size;
+}
+
+static u32 usb_uac_get_enough_write_bytes(void)
+{
+	return (buf_size + read_pos - write_pos - 1) % buf_size;
+}
 
 /* Initializes uac application layer */
 static int uac_cb_init(void)
@@ -215,7 +256,7 @@ bool demo_usb_init(void)
 		DiagPrintf("USB device init failed\r\n");
 		goto exit;
 	}
-	ret = usbd_uac_init(&uac_cb);
+	ret = usbd_uac_init(&uac_cb, &uac_ep);
 	if (ret) {
 		DiagPrintf("USB UAC init failed\r\n");
 		goto clear_usb_driver_exit;
@@ -228,7 +269,7 @@ bool demo_usb_init(void)
 	}
 	if (demo_usb_task_hdl == NULL) {
 		if (osif_task_create(&demo_usb_task_hdl, ((const char *)"demo_usb_read_task"), bt_demo_usb_task_entry,
-							 NULL, 1024 * 5, 5) != true) {
+							 NULL, USBD_UAC_INIT_THREAD_STACK_SIZE, USBD_UAC_INIT_THREAD_PRIORITY) != true) {
 			DiagPrintf("%s: xTaskCreate(demo_usb_read_task) failed\r\n", __func__);
 			return false;
 		}

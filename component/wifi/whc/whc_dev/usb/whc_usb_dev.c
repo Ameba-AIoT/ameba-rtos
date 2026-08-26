@@ -307,7 +307,7 @@ static void whc_usb_dev_tx_done_cb(usbd_inic_ep_t *in_ep, u8 status)
 		}
 	}
 #if defined(CONFIG_BT) && defined(CONFIG_BT_INIC_USB)
-	else if (info->addr == USBD_INIT_BT_EP1_INTR_IN) {
+	else if (info->addr == USBD_INIC_BT_EP1_INTR_IN) {
 		bt_inic_usb_evt_txdone_cb(in_ep->ep.xfer_buf);
 	} else if (info->addr == USBD_INIC_BT_EP2_BULK_IN) {
 		bt_inic_usb_acl_txdone_cb(in_ep->ep.xfer_buf);

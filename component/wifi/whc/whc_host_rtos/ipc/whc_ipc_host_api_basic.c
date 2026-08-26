@@ -293,7 +293,7 @@ s32 wifi_start_ap(struct rtw_softap_info *softap_config)
 	struct rtw_softap_info *softap_config_temp = NULL;
 	struct psk_info *PSK_INFO = NULL;
 
-#ifdef CONFIG_P2P
+#ifdef CONFIG_WIFI_P2P_ENABLE
 	if (wifi_p2p_check_role(P2P_R_GO) == FALSE)
 #endif
 	{
@@ -348,7 +348,7 @@ s32 wifi_start_ap(struct rtw_softap_info *softap_config)
 #endif
 	ret = whc_host_api_message_send(WHC_API_WIFI_START_AP, param_buf, 2);
 
-#ifdef CONFIG_P2P
+#ifdef CONFIG_WIFI_P2P_ENABLE
 	if (wifi_p2p_check_role(P2P_R_GO)) {
 		wpas_wps_init(SOFTAP_WLAN_INDEX);
 	}

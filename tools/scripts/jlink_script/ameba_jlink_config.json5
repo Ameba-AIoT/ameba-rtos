@@ -115,5 +115,27 @@
       swd: [2, 3, 2],   // Init*1, Reset*2
     },
   },
+  RLE1509: {
+    GDB_PORTS: {
+      km4tz: 2335,
+      km4ns: 2331,
+      swd: 2335,
+    },
+    DEVICE: {
+      km4tz: 'Cortex-M33',
+      km4ns: 'Cortex-M33',
+    },
+    AP_ADD: {
+      '0': 'APB',
+      '1': 'AHB',
+      '2': 'AHB',
+      '3': 'APB',
+    },
+    AP_USE: {
+      km4tz: 2,
+      km4ns: 1,
+      swd: [2, 3, 2],   // Init*1, Reset*2
+    },
+  },
 
 }

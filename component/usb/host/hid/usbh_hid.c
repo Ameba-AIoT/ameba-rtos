@@ -556,6 +556,12 @@ static int usbh_hid_parse_details(usbh_itf_data_t *itf_data)
 		}
 
 		len = ((usbh_desc_header_t *) desc)->bLength;
+		if (len == 0U) {
+			break;    /* malformed: bLength==0 would spin forever */
+		}
+		if ((u16)(itf_total_len + len) > itf_data->raw_data_len) {
+			break;    /* bLength overshoots the raw_data window */
+		}
 		desc += len;
 		itf_total_len += len;
 

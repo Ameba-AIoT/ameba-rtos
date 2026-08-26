@@ -1669,9 +1669,7 @@ static uint16_t bt_stack_le_gap_ext_scan_set_param(void *param)
 	memset(&scan_param, 0, sizeof(struct bt_le_scan_param));
 	bt_dev.scan_own_addr_type = p_param->own_addr_type;
 	scan_param.timeout = p_param->duration;
-#if ZEPHYR_FIX_CODE
 	scan_param.period = p_param->period;
-#endif
 
 	if ((p_param->duplicate_opt == RTK_BT_LE_SCAN_DUPLICATE_ENABLE) || (p_param->duplicate_opt == RTK_BT_LE_SCAN_DUPLICATE_ENABLED_RESET_FOR_EACH_PERIOD)) {
 		scan_param.options |= BT_LE_SCAN_OPT_FILTER_DUPLICATE;
@@ -1726,11 +1724,9 @@ static uint16_t bt_stack_le_gap_ext_connect(void *param)
 				le_create_param.interval_coded = p_ext_conn_param->scan_interval[i];
 				le_create_param.window_coded = p_ext_conn_param->scan_window[i];
 				le_create_param.options |= BT_CONN_LE_OPT_CODED;
-#if ZEPHYR_FIX_CODE
 			} else if (i == 1) {
 				/* 2M cannot be a primary scan PHY; only flag its conn params */
 				le_create_param.options |= BT_CONN_LE_OPT_2M;
-#endif
 			} else {
 				le_create_param.interval = p_ext_conn_param->scan_interval[i];
 				le_create_param.window = p_ext_conn_param->scan_window[i];
@@ -1886,12 +1882,15 @@ static uint16_t bt_stack_le_gap_update_pa(void *param)
 	}
 	p_ext_adv = _ext_adv_tbl[p_param->adv_handle].adv;
 
-	ad_data[0].data_len = data_len;
-	ad_data[0].type = RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC;
-	ad_data[0].data = data;
+	if (p_param->update_did_only) {
+		err = bt_le_per_adv_update_did(p_ext_adv);
+	} else {
+		ad_data[0].data_len = data_len;
+		ad_data[0].type = RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC;
+		ad_data[0].data = data;
+		err = bt_le_per_adv_set_data(p_ext_adv, ad_data, 1);
+	}
 
-
-	err = bt_le_per_adv_set_data(p_ext_adv, ad_data, 1);
 	if (err) {
 		return zephyr_err_to_rtk(err);
 	}
@@ -2174,6 +2173,29 @@ static uint16_t bt_stack_le_gap_connect(void *param)
 	if (conn) {
 		bt_conn_unref(conn);
 	}
+	return 0;
+#endif
+}
+
+static uint16_t bt_stack_le_gap_connect_cancel(void *param)
+{
+#if !defined(CONFIG_BT_CENTRAL)
+	(void)param;
+	return RTK_BT_ERR_UNSUPPORTED;
+#else
+	rtk_bt_le_addr_t *p_addr = (rtk_bt_le_addr_t *)param;
+	bt_addr_le_t peer_addr = {};
+	int err = 0;
+
+	peer_addr.type = p_addr->type;
+	memcpy(peer_addr.a.val, p_addr->addr_val, BT_ADDR_SIZE);
+
+	err = bt_conn_le_create_cancel(&peer_addr);
+
+	if (err) {
+		return zephyr_err_to_rtk(err);
+	}
+
 	return 0;
 #endif
 }
@@ -3675,6 +3697,10 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_LE_GAP_ACT_CONN:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_CONN \r\n");
 		ret = bt_stack_le_gap_connect(p_cmd->param);
+		break;
+	case RTK_BT_LE_GAP_ACT_CONN_CANCEL:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_CONN_CANCEL \r\n");
+		ret = bt_stack_le_gap_connect_cancel(p_cmd->param);
 		break;
 	case RTK_BT_LE_GAP_ACT_DISCONN:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_DISCONN \r\n");

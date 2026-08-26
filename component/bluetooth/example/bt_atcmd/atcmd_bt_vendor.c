@@ -294,7 +294,11 @@ int atcmd_bt_set_tx_power(int argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_INIC) && CONFIG_BT_INIC
+#if defined(CONFIG_BT_SDN) && CONFIG_BT_SDN
+#include "vhci_if_inic_sdn.h"
+#else
 #include "hci_if_inic.h"
+#endif
 
 int atcmd_bt_remote_wakeup(int argc, char **argv)
 {

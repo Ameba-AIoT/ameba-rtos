@@ -1,15 +1,16 @@
 # Example Description
 
-This example demonstrates how to use the R-NAT (Router NAT) system for multi-interface routing management with automatic network segment conflict detection. It supports multiple network interfaces (WiFi STA, WiFi AP, Ethernet, USB-ETH) and provides flexible IP configuration through a clean config structure pattern.
+This example demonstrates how to use the R-NAT (Router NAT) system for multi-interface routing management with automatic network segment conflict detection. It supports multiple network interfaces (WiFi STA, WiFi AP, Ethernet, USB-ETH, 4G USB dongle) and provides flexible IP configuration through a clean config structure pattern.
 
 The example shows:
 - Multi-interface registration and management using `rnat_netif_create()` and `rnat_netif_start()`
 - Automatic IP assignment or static IP configuration via config structure
 - Network segment conflict detection and automatic resolution
-- WAN interfaces (DHCP Client) always have higher priority than LAN interfaces (DHCP Server)
+- WAN interfaces always have higher priority than LAN interfaces
 - Event-driven link-up status monitoring via LWIP extension callbacks
 - User-defined callbacks triggered on interface link up/down events
 - NAT forwarding between WAN and LAN interfaces for bidirectional communication
+- 4G USB dongle as WAN with automatic AT command dialing (Quectel / Fibocom / Simcom)
 
 # HW Configuration
 
@@ -23,6 +24,19 @@ The example shows:
 - For WAN mode: USB device connects to upstream network
 - For LAN mode: Connected devices obtain IP from board
 
+## USB 4G Dongle
+- Connect a supported 4G USB dongle to the board's USB port
+- Dongle must expose both a CDC-ACM (AT command) interface and a CDC-ECM (data) interface
+- The driver automatically handles AT command dialing; no manual setup required
+- **Supported models:**
+
+  | Vendor | Model | Notes |
+  |--------|-------|-------|
+  | Quectel | EG91 | DHCP from dongle; MAC obtained via AT+qnetifmac |
+  | Quectel | EG915 | Static IP from AT+CGCONTRDP; use `RNAT_IP_METHOD_STATIC` |
+  | Fibocom | LE271 (CAT1) | DHCP from dongle; ECM mode verified via AT+GTUSBMODE |
+  | SIMCom | SIM767X | DHCP from dongle; AT+NETOPEN session management |
+
 # SW configuration
 
 1. Enable R-NAT Feature:
@@ -33,8 +47,9 @@ The example shows:
 
    - **Ethernet**: Select `CONFIG ETHERNET`->`PHY SOURCE CLK (external 25M)`
    - **USB-ETH**: Enable one of the following USB ECM configurations:
-     - USB Device mode: `CONFIG USB`-> select `Device` mode -> `CDC ECM`
-     - USB Host mode: `CONFIG USB`-> select `Host` mode -> `CDC ECM`->`USB Ethernet`
+     - USB Device mode: `CONFIG USB` -> select `Device` mode -> `CDC ECM`
+     - USB Host mode: `CONFIG USB` -> select `Host` mode -> `CDC ECM` -> `USB Ethernet`
+   - **USB 4G Dongle**: `CONFIG USB` -> select `Host` mode -> `CDC ACM` -> `4G Dongle` and `CDC ECM` -> `USB Ethernet`
 
 3. Disable Fast Reconnect:
 
@@ -125,11 +140,55 @@ The example shows:
    };
    ```
 
+   **4G Dongle (USB WAN):**
+
+   The 4G dongle shares the same netif index (`NETIF_USB_ETH_INDEX`) and the same `rnat_netif_config_t` as the regular USB-ETH ECM adapter. The difference is purely in the Kconfig selection and the `ip_method` field — no change is needed to `rnat_netif_create()` or `rnat_netif_start()`. The driver selected by Kconfig (`CONFIG_USBH_CDC_ACM_4G_DONGLE`) automatically handles AT command dialing before handing the interface to rnat.
+
+   IP method depends on the dongle model:
+
+   - **DHCP-based dongles** (EG91, LE271, SIM767X): use `RNAT_IP_METHOD_DHCP_CLIENT`
+   - **Static-IP dongles** (EG915): use `RNAT_IP_METHOD_STATIC` with an `ip_info` placeholder; the driver overwrites the IP via AT command response
+
+   ```c
+   /* 4G Dongle (WAN) - DHCP from dongle's built-in DHCP server */
+   const rnat_netif_config_t g_rnat_usb_netif_config = {
+       .role     = RNAT_ROLE_WAN,
+       .ip_method = RNAT_IP_METHOD_DHCP_CLIENT,   /* EG91 / LE271 / SIM767X */
+       .priority  = RNAT_ROUTE_PRIO_WAN_USB,      /* 101 */
+       .ip_info   = NULL,
+       .if_desc   = "USB",
+       .status_callback    = user_netif_status_cb,
+       .callback_user_data = NULL
+   };
+
+   /* 4G Dongle (WAN) - EG915 static IP obtained from AT+CGCONTRDP */
+   static const rnat_ip_info_t g_usb_placeholder_ip = {
+       .ip      = { .addr = 0 },   /* overwritten by driver */
+       .gw      = { .addr = 0 },
+       .netmask = { .addr = 0 },
+   };
+   const rnat_netif_config_t g_rnat_usb_netif_config = {
+       .role      = RNAT_ROLE_WAN,
+       .ip_method = RNAT_IP_METHOD_STATIC,         /* EG915 */
+       .priority  = RNAT_ROUTE_PRIO_WAN_USB,       /* 101 */
+       .ip_info   = &g_usb_placeholder_ip,
+       .if_desc   = "USB",
+       .status_callback    = user_netif_status_cb,
+       .callback_user_data = NULL
+   };
+   ```
+
+   Start the interface (no extra argument needed; the driver manages dialing):
+   ```c
+   rnat_netif_t *usb_netif = rnat_netif_create(NETIF_USB_ETH_INDEX, &g_rnat_usb_netif_config);
+   rnat_netif_start(usb_netif, NULL);
+   ```
+
    Available configurations:
    - **STA (WiFi Client)**: Typically WAN port, priority 102
    - **AP (WiFi Access Point)**: Typically LAN port, priority 0
    - **Ethernet**: Can be WAN (priority 103) or LAN (priority 0)
-   - **USB-ETH**: Can be WAN (priority 101) or LAN (priority 0)
+   - **USB-ETH / 4G Dongle**: Can be WAN (priority 101) or LAN (priority 0); 4G dongle is always WAN
 
 5. User Callback Registration:
 
@@ -376,6 +435,49 @@ Ethernet Client (192.168.44.100) → ETH (192.168.44.1) → NAT → STA (192.168
 
 This enables NAT forwarding between WAN and LAN interfaces, allowing LAN devices to access the internet through the WAN connection.
 
+## 4G Dongle Connection
+
+When a supported 4G USB dongle is plugged in, the driver automatically runs the AT command dialing sequence and brings up the ECM data interface:
+
+```
+[USBH-A] Device connect
+...
+[USB-4G-I] VID 0x2c7c PID 0x0191
+[USB-4G-I] LE271 state(0)
+...
+[USB-4G-I] LE271 dial ok
+[USB-4G-I] TRX start
+[USB-4G-I] MAC:ea:24:64:58:ca:83 Vid 0x2c7c
+[R-NAT-I] === USB Link UP ===
+[R-NAT-I] [USB] LINK UP - ACTIVE
+[R-NAT-APP-A] [USER-CB] USB Link UP
+[R-NAT-I] [USB] DHCP Client
+[R-NAT-I] Default GW changed to: 10.72.154.211 (USB, prio=101)
+[R-NAT-I] [USB] WAN GW switched, reinitializing NAT
+[DNS_PROXY-A] Upstream DNS server[0]: 112.4.1.36
+[DNS_PROXY-A] Upstream DNS server[1]: 112.4.12.200
+[DNS_PROXY-A] Upstream servers changed, clearing cache and transactions
+[DNS_PROXY-A] Upstream DNS servers updated: 2 servers
+[$]wifi got ip:"10.72.154.211"
+[R-NAT-I] [USB] DHCP got IP: 10.72.154.211
+```
+
+When the dongle is unplugged, the driver detects the detach and tears down the connection:
+```
+[USBH-A] Device disconnected
+[USBH-A] Force to detach 12
+[USB-4G-I] DETACH
+[USB-4G-I] Hotplug reinit heap:0x1051468
+[USB-W] UPHY OTP flag 0xff, use default
+[USB-4G-I] Link down Vid 0x0
+[R-NAT-I] === USB Link DOWN ===
+[R-NAT-I] [USB] LINK DOWN - INACTIVE
+[R-NAT-APP-A] [USER-CB] USB Link DOWN
+[R-NAT-I] Default GW changed to: 192.168.43.1 (AP, prio=0)
+[R-NAT-I] [USB] WAN GW switched, reinitializing NAT
+[R-NAT-I] [USB] IP released
+```
+
 # Note
 
 NONE
@@ -383,3 +485,4 @@ NONE
 # Supported IC
 
 RTL8721F
+RTL8720F

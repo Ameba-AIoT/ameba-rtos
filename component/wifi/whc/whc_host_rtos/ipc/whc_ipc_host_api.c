@@ -633,8 +633,10 @@ void whc_ipc_host_api_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum)
 	(void) IrqStatus;
 	(void) ChanNum;
 
-	/* wakeup task */
-	rtos_sema_give(g_host_inic_api_task_wake_sema);
+	/* wakeup task - only if semaphore is initialized (HOST is ready) */
+	if (g_host_inic_api_task_wake_sema != NULL) {
+		rtos_sema_give(g_host_inic_api_task_wake_sema);
+	}
 }
 
 /**

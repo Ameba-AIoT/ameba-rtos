@@ -629,7 +629,7 @@ static int uvc_vfs_start(void)
 	uvc_vfs_img_file_no = 0;
 #endif
 	rtos_sema_create(&uvc_vfs_save_img_sema, 0U, 1U);
-	ret = rtos_task_create(&task, "example_usbh_uvc_vfs_thread", example_usbh_uvc_vfs_thread, NULL,
+	ret = rtos_task_create(&task, "usbh_uvc_vfs_thread", example_usbh_uvc_vfs_thread, NULL,
 						   CONFIG_USBH_UVC_VFS_THREAD_STACK_SIZE, CONFIG_USBH_UVC_VFS_THREAD_PRIORITY);
 
 	if (ret != RTK_SUCCESS) {
@@ -1135,7 +1135,7 @@ static int uvc_httpc_start(void)
 #else
 	rtos_sema_create(&uvc_httpc_save_img_sema, 0, 1);
 #endif
-	ret = rtos_task_create(&task, "example_usbh_uvc_httpc_thread", example_usbh_uvc_httpc_thread, NULL,
+	ret = rtos_task_create(&task, "usbh_uvc_httpc_thread", example_usbh_uvc_httpc_thread, NULL,
 						   CONFIG_USBH_UVC_HTTPC_THREAD_STACK_SIZE, CONFIG_USBH_UVC_HTTPC_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 #if (USBH_UVC_HTTPC_BUFFER_MODE == 1)
@@ -1617,7 +1617,7 @@ static void example_usbh_uvc_task(void *param) {
 	usbh_start();
 
 #if CONFIG_USBH_UVC_HOT_PLUG
-	ret = rtos_task_create(&hotplug_task, "example_usbh_uvc_hotplug_thread",
+	ret = rtos_task_create(&hotplug_task, "usbh_uvc_hotplug_thread",
 						   example_usbh_uvc_hotplug_thread, NULL,
 						   CONFIG_USBH_UVC_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_UVC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -1627,7 +1627,7 @@ static void example_usbh_uvc_task(void *param) {
 
 	while (1) {
 		if (rtos_sema_take(uvc_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			ret = rtos_task_create(&uvc_task, "example_usbh_uvc_test", example_usbh_uvc_test, NULL,
+			ret = rtos_task_create(&uvc_task, "usbh_uvc_test_thread", example_usbh_uvc_test, NULL,
 								   CONFIG_USBH_UVC_TEST_THREAD_STACK_SIZE, CONFIG_USBH_UVC_TEST_THREAD_PRIORITY);
 			if (ret != RTK_SUCCESS) {
 				goto delete_hotplug_task_exit;

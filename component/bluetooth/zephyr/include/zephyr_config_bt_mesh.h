@@ -11,9 +11,6 @@
 #include <zephyr_config.h>
 #include <rtk_bt_mesh_def.h>
 
-// Macro for add code to fix bug in zephyr mesh stack code
-#define CONFIG_BT_MESH_ZEPHYR_FIX    1
-
 #if defined(CONFIG_BT_MESH_PROVISIONER_SUPPORT) && CONFIG_BT_MESH_PROVISIONER_SUPPORT
 #endif
 

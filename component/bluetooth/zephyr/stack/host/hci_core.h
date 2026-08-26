@@ -86,7 +86,9 @@ enum {
 	BT_DEV_PSCAN,
 	BT_DEV_INQUIRY,
 #endif /* CONFIG_BT_CLASSIC */
-
+#if ZEPHYR_RTK_PATCH
+	BT_DEV_CONNECT_CANCELING,
+#endif
 	/* Total number of flags - must be at the end of the enum */
 	BT_DEV_NUM_FLAGS,
 };
@@ -172,7 +174,7 @@ struct bt_le_ext_adv {
 	/* Advertising handle */
 	uint8_t                 handle;
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	uint8_t                 own_addr_type;
 #endif
 
@@ -345,7 +347,7 @@ struct bt_dev {
 
 	struct bt_conn_le_create_param create_param;
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	bt_addr_t public_addr;
 
 	uint8_t scan_own_addr_type;
@@ -429,7 +431,7 @@ struct bt_dev {
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	bool            privacy_enabled;
 	/* Addr resolution enable flag */
 	bool            resl_en;
@@ -459,7 +461,7 @@ struct bt_dev {
 #endif
 };
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 struct bt_host {
 	/* gap related */
 	uint8_t  prefer_all_phy;
@@ -632,6 +634,6 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf);
 
 void bt_tx_irq_raise(void);
 
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 void bt_hci_mode_change(struct net_buf *buf);
 #endif

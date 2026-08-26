@@ -118,6 +118,9 @@ void whc_sdio_host_init_drv(void)
 #ifdef CONFIG_LWIP_LAYER
 	whc_host_netinfo_monitor_init();
 #endif
+#ifdef CONFIG_WHC_CMD_PATH
+	whc_host_cmd_path_init();
+#endif
 
 #ifndef SDIO_INT_MODE
 	if (rtos_task_create(NULL, ((const char *)"sdioPollingTask"), (rtos_task_function_t)rtw_sdio_polling_task, NULL, SDIO_POLLING_STACK_SIZE,

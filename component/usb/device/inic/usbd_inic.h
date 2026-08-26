@@ -18,47 +18,38 @@ extern "C" {
 
 /* Exported defines ----------------------------------------------------------*/
 
-#define USBD_INIC_VID									USB_VID
-#define USBD_INIC_PID									USB_PID
+#define USBD_INIC_VID                     USB_VID
+#define USBD_INIC_PID                     USB_PID
 
-#define USBD_INIC_LANGID_STRING							0x409
-#define USBD_INIC_IDX_INTERFACE_STR						0x04U
+#define USBD_INIC_LANGID_STRING           0x409
+#define USBD_INIC_MFG_STRING              "Realtek"               /**< Manufacturer string. */
+#define USBD_INIC_PROD_STRING             "802.11ax WLAN Adapter" /**< Product string. */
+#define USBD_INIC_SN_STRING               "00E04C000001"          /**< Serial number string. */
+#define USBD_INIC_BT_STRING               "Bluetooth Radio"       /**< Bluetooth interface string. */
+#define USBD_NIC_VID                      0x8006                  /**< NIC mode VID (used to patch device descriptor at runtime). */
 
-#define USBD_INIC_ITF_NUM								3U
-#define USBD_INIC_ITF_BT								0U
-#define USBD_INIC_ITF_BT_SCO							1U
-#define USBD_INIC_ITF_WIFI								2U
+#define USBD_INIC_HS_BULK_MPS             512U  /* High speed BULK IN & OUT maximum packet size */
+#define USBD_INIC_FS_BULK_MPS             64U   /* Full speed BULK IN & OUT maximum packet size */
+#define USBD_INIC_HS_INTR_MPS             16U   /* High speed INTR IN & OUT maximum packet size */
+#define USBD_INIC_FS_INTR_MPS             16U   /* Full speed INTR IN & OUT maximum packet size */
 
-#define USBD_INIC_HS_BULK_MPS							512U  /* High speed BULK IN & OUT maximum packet size */
-#define USBD_INIC_FS_BULK_MPS							64U   /* Full speed BULK IN & OUT maximum packet size */
-#define USBD_INIC_HS_INTR_MPS							16U   /* High speed INTR IN & OUT maximum packet size */
-#define USBD_INIC_FS_INTR_MPS							16U   /* Full speed INTR IN & OUT maximum packet size */
-
-#define USBD_INIT_BT_EP1_INTR_IN						0x81U
-#define USBD_INIC_BT_EP2_BULK_IN						0x82U
-#define USBD_INIC_BT_EP2_BULK_OUT						0x02U
-#define USBD_WHC_WIFI_EP4_BULK_IN 						0x84U
-#define USBD_WHC_WIFI_EP5_BULK_OUT						0x05U
-#define USBD_WHC_WIFI_EP6_BULK_OUT						0x06U
-#define USBD_WHC_WIFI_EP7_BULK_OUT						0x07U
-
-#define USBD_INIC_CTRL_BUF_SIZE							512U  /* Control buffer size */
-
-#define USBD_INIC_EP_STATE_IDLE							0U
-#define USBD_INIC_EP_STATE_BUSY							1U
+#define USBD_INIC_BT_EP1_INTR_IN          0x81U
+#define USBD_INIC_BT_EP2_BULK_IN          0x82U
+#define USBD_INIC_BT_EP2_BULK_OUT         0x02U
+#define USBD_WHC_WIFI_EP4_BULK_IN         0x84U
+#define USBD_WHC_WIFI_EP5_BULK_OUT        0x05U
+#define USBD_WHC_WIFI_EP6_BULK_OUT        0x06U
+#define USBD_WHC_WIFI_EP7_BULK_OUT        0x07U
 
 /* Vendor requests */
-#define USBD_INIC_VENDOR_REQ_BT_HCI_CMD					0x00U
-#define USBD_INIC_VENDOR_REQ_FW_DOWNLOAD				0xF0U
-#define USBD_INIC_VENDOR_QUERY_CMD						0x01U
-#define USBD_INIC_VENDOR_QUERY_ACK						0x81U
-#define USBD_INIC_VENDOR_RESET_CMD						0x02U
-#define USBD_INIC_VENDOR_RESET_ACK						0x82U
+#define USBD_INIC_VENDOR_REQ_BT_HCI_CMD   0x00U
+#define USBD_INIC_VENDOR_REQ_FW_DOWNLOAD  0xF0U
+#define USBD_INIC_VENDOR_QUERY_CMD        0x01U
+#define USBD_INIC_VENDOR_QUERY_ACK        0x81U
+#define USBD_INIC_VENDOR_RESET_CMD        0x02U
+#define USBD_INIC_VENDOR_RESET_ACK        0x82U
 
-#define USBD_INIC_FW_TYPE_APPLICATION					0xF2U
-
-#define USBD_INIC_RESET_THREAD_PRIORITY					6
-#define USBD_INIC_RESET_THREAD_STACK_SIZE				512   /**< Thread tack size */
+#define USBD_INIC_FW_TYPE_APPLICATION     0xF2U
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -192,8 +183,6 @@ typedef struct {
 } usbd_inic_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/
-
-#define	USBD_INIC_QUERY_PACKET_SIZE			(sizeof(usbd_inic_query_packet_t))
 
 /* Exported variables --------------------------------------------------------*/
 

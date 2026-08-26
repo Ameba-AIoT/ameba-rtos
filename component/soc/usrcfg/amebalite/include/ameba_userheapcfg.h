@@ -22,11 +22,14 @@
 #define SRAM_HEAP0_START					__bdram_heap_buffer_start__
 #define SRAM_HEAP0_SIZE						__bdram_heap_buffer_size__
 
+/* KM4(AP) owns the last PSRAM segment ONLY when DSP is off; then it extends to the runtime-measured top.
+ * With DSP on, KM4 is a fixed middle segment and DSP owns the tail, so use the static image size. */
 #define PSRAM_HEAP0_START					__psram_heap_buffer_start__
+#if !defined(CONFIG_DSP_EN)
+#define PSRAM_HEAP0_SIZE					(ChipInfo_PsramHeapTop() - (u32)__psram_heap_buffer_start__)
+#else
 #define PSRAM_HEAP0_SIZE					__psram_heap_buffer_size__
-
-#define PSRAM_HEAP1_START					__psram_heap_extend_start__
-#define PSRAM_HEAP1_SIZE					__psram_heap_extend_size__
+#endif
 
 #elif (defined CONFIG_RSICV_CORE_KR4)
 
@@ -42,12 +45,9 @@
 #define SRAM_HEAP1_START					__bdram_heap_buffer_start__
 #define SRAM_HEAP1_SIZE						__bdram_heap_buffer_size__
 
+/* KR4(NP) is always a fixed image region: static tail only, no runtime extension. */
 #define PSRAM_HEAP0_START					__psram_heap_buffer_start__
 #define PSRAM_HEAP0_SIZE					__psram_heap_buffer_size__
-
-#define PSRAM_HEAP1_START					__psram_heap_extend_start__
-#define PSRAM_HEAP1_SIZE					__psram_heap_extend_size__
 #endif
 
 #endif
-

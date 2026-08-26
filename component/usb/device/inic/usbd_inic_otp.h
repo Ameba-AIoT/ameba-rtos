@@ -17,8 +17,8 @@ extern "C" {
 
 /* Exported defines ----------------------------------------------------------*/
 
-#define USBD_OTP_MAX_STR_LEN	58U
-#define USBD_INIC_MAX_STR_LEN	(USBD_OTP_MAX_STR_LEN * 2 + 2)
+#define USBD_OTP_MAX_STR_LEN  58U
+#define USBD_INIC_MAX_STR_LEN (USBD_OTP_MAX_STR_LEN * 2 + 2)
 
 /* Exported types ------------------------------------------------------------*/
 

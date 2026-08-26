@@ -12,7 +12,7 @@
 #define BT_ASSERT_PRINT_MSG(fmt, ...)
 #endif /* CONFIG_BT_ASSERT_VERBOSE */
 
-/* Add () to fix compile error, zephyr_porting */
+/* Add () to fix compile error, zephyr_patch */
 #if defined(CONFIG_BT_ASSERT_PANIC)
 #define BT_ASSERT_DIE() k_panic
 #else

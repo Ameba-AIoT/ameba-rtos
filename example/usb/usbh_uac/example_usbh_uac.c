@@ -805,7 +805,7 @@ static void example_usbh_uac_thread(void *param)
 	}
 
 	/* Create resident play thread. */
-	ret = rtos_task_create(&usbh_uac_ctx.play.task, "example_usbh_uac_play_thread",
+	ret = rtos_task_create(&usbh_uac_ctx.play.task, "usbh_uac_play_thread",
 						   example_usbh_uac_play_thread, NULL,
 						   USBH_UAC_PLAY_THREAD_STACK_SIZE, USBH_UAC_PLAY_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -814,7 +814,7 @@ static void example_usbh_uac_thread(void *param)
 	}
 
 	/* Create resident record thread. */
-	ret = rtos_task_create(&usbh_uac_ctx.record.task, "example_usbh_uac_record_thread",
+	ret = rtos_task_create(&usbh_uac_ctx.record.task, "usbh_uac_record_thread",
 						   example_usbh_uac_record_thread, NULL,
 						   USBH_UAC_RECORD_THREAD_STACK_SIZE, USBH_UAC_RECORD_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -840,7 +840,7 @@ static void example_usbh_uac_thread(void *param)
 	usbh_start();
 
 #if USBH_UAC_HOT_PLUG_TEST
-	ret = rtos_task_create(&hotplug_task, "example_usbh_uac_hotplug_thread",
+	ret = rtos_task_create(&hotplug_task, "usbh_uac_hotplug_thread",
 						   example_usbh_uac_hotplug_thread, NULL,
 						   USBH_UAC_HOTPLUG_THREAD_STACK_SIZE, USBH_UAC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -902,7 +902,7 @@ void example_usbh_uac(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UAC demo start\n");
 
-	ret = rtos_task_create(&task, "example_usbh_uac_thread",
+	ret = rtos_task_create(&task, "usbh_uac_thread",
 						   example_usbh_uac_thread, NULL,
 						   USBH_UAC_INIT_THREAD_STACK_SIZE, USBH_UAC_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {

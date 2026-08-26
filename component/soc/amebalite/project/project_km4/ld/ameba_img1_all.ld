@@ -101,4 +101,9 @@ SECTIONS
 	} > LMA_TZ_REGION
 }
 
-__dsp_psram_addr__ = ORIGIN(DSP_BD_PSRAM);
+/* DSP image load / entry-table address IMG1 hands off to. No memory suffix: DSP may run from SRAM or PSRAM. */
+#if defined(CONFIG_DSP_RUN_IN_SRAM)
+__dsp_img_load_addr__ = ORIGIN(DSP_BD_SRAM);
+#else
+__dsp_img_load_addr__ = ORIGIN(DSP_BD_PSRAM);
+#endif

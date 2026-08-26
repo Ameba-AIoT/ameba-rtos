@@ -55,7 +55,6 @@ ameba_list_append(private_sources
 )
 
 ameba_list_append(private_includes
-    rtk_coex_wl_chip
     ${c_CMPT_WIFI_DIR}/common
     ${c_CMPT_WIFI_DIR}/driver/include    
 )

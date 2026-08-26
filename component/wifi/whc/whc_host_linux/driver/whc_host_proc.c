@@ -9,6 +9,9 @@
 */
 
 #include "whc_host_linux.h"
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+#include "whc_host_log_fwd.h"
+#endif /* CONFIG_WHC_HOST_LOG_FWD */
 
 #define get_proc_net init_net.proc_net
 
@@ -551,10 +554,58 @@ static void rtw_ndev_sta_proc_deinit(const char *name)
 	rtw_sta_proc = NULL;
 }
 
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+static int proc_read_log_fwd(struct seq_file *m, void *v)
+{
+	seq_printf(m, "(1=enabled, 0=disabled)\n");
+	seq_printf(m, "%d\n", whc_host_log_forward_is_enabled());
+	return 0;
+}
+
+static ssize_t proc_write_log_fwd(struct file *file,
+								  const char __user *buffer,
+								  size_t count, loff_t *pos, void *data)
+{
+	char tmp[8];
+	int ret;
+
+	if (count == 0) {
+		return 0;
+	}
+	if (count > sizeof(tmp)) {
+		return -EINVAL;
+	}
+	if (copy_from_user(tmp, buffer, count)) {
+		return -EFAULT;
+	}
+
+	if (tmp[0] == '1') {
+		ret = whc_host_log_forward_set(true);
+	} else if (tmp[0] == '0') {
+		ret = whc_host_log_forward_set(false);
+	} else {
+		return -EINVAL;
+	}
+
+	if (ret) {
+		return ret;
+	}
+
+	dev_info(global_idev.pwhc_dev,
+			 "log_fwd: %s\n",
+			 whc_host_log_forward_is_enabled() ? "enabled" : "disabled");
+
+	return count;
+}
+#endif /* CONFIG_WHC_HOST_LOG_FWD */
+
 /*
 * rtw_drv_proc
 */
 const struct rtw_proc_hdl drv_proc_hdls[] = {
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+	RTW_PROC_HDL_SSEQ("log_fwd", proc_read_log_fwd, proc_write_log_fwd),
+#endif /* CONFIG_WHC_HOST_LOG_FWD */
 };
 
 const int drv_proc_hdls_num = sizeof(drv_proc_hdls) / sizeof(struct rtw_proc_hdl);

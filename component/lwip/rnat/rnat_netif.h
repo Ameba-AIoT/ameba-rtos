@@ -104,7 +104,12 @@ typedef struct rnat_netif_obj {
 
 	/* LWIP integration */
 	struct netif *lwip_netif;					/* Pointer to global xnetif[idx] */
-	dhcps_t *dhcps_instance;					/* DHCPS instance pointer */
+
+	/* LAN uses dhcps_instance; WAN uses dns_cache. */
+	union {
+		dhcps_t    *dhcps_instance;				/* LAN: DHCPS instance pointer */
+		ip4_addr_t  dns_cache[DNS_MAX_SERVERS];	/* WAN: DNS servers cached */
+	};
 } rnat_netif_t;
 
 /* ======================================================================== */

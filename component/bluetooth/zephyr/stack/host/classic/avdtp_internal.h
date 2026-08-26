@@ -212,7 +212,7 @@ struct bt_avdtp_ops_cb {
 	int (*abort_ind)(struct bt_avdtp *session,
 		struct bt_avdtp_sep *sep, uint8_t *errcode);
 
-#ifdef ZEPHYR_FIX_CODE  /* zephyr_porting */
+#if ZEPHYR_RTK_PATCH  /* zephyr_patch */
 	int (*get_all_capabilities_ind)(struct bt_avdtp *session,
 		struct bt_avdtp_sep *sep, struct net_buf *rsp_buf, uint8_t *errcode);
 
@@ -289,6 +289,6 @@ int bt_avdtp_send_media_data(struct bt_avdtp_sep *sep, struct net_buf *buf);
 /* get media l2cap connection MTU */
 uint32_t bt_avdtp_get_media_mtu(struct bt_avdtp_sep *sep);
 
-#ifdef ZEPHYR_FIX_CODE /* zephyr_porting */
+#if ZEPHYR_RTK_PATCH /* zephyr_patch */
 #include "stack_ext/avdtp_internal_ext.h"
 #endif

@@ -73,7 +73,7 @@ extern u8 __kr4_flash_text_start__[];
 extern u8 __kr4_ipc_memory_start__[];
 extern u8 __km4_flash_text_start__[];
 extern u8 __dsp_flash_text_start__[];
-extern u8 __dsp_psram_addr__[];
+extern u8 __dsp_img_load_addr__[];
 extern u8 __kr4_image2_entry_func__[];
 extern u8 __km4_image2_entry_func__[];
 
@@ -83,8 +83,6 @@ extern u8 __kr4_sram_heap_extend_start__[];
 extern u8 __kr4_sram_heap_extend_size__[];
 extern u8 __psram_heap_buffer_start__[];
 extern u8 __psram_heap_buffer_size__[];
-extern u8 __psram_heap_extend_start__[];
-extern u8 __psram_heap_extend_size__[];
 
 #ifdef CONFIG_MP_SHRINK
 extern u8 __sram_floader_mp_start__[];
@@ -109,6 +107,8 @@ extern u8 __rom_stdlib_text_end__[];
 /* sym for trustzone config - merged TZ region: ENTRY + SECURE + NSC */
 extern u8 __km4_bd_ram_start__[];
 extern u8 __km4_bd_psram_start__[];
+extern u8 __non_secure_psram_start__[]; /* first non-secure PSRAM segment (after TZ): KR4 base */
+extern u8 __dsp_psram_start__[];        /* DSP PSRAM segment base */
 extern u8 __non_secure_psram_end__[]; /* if psram is 8MB, than write 0x60800000 will write 0x60000000 */
 
 /* backtrace addr */

@@ -208,8 +208,8 @@ ameba_list_append_if(CONFIG_BT_DUAL_MODE private_includes
 )
 
 ameba_list_append(private_compile_options
-    -Wno-error
-#     -O0
+    -include zephyr_config.h
+    # -O0
 )
 
 foreach(src ${private_sources})

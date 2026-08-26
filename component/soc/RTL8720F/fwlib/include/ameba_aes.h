@@ -368,14 +368,6 @@ typedef struct {
 #define CIPHER_BLOCK_SIZE			16	/*!< AES/cipher block size in bytes */
 /** @} */
 
-/** @defgroup Crypto_Timeout Crypto Timeout
-  * @{
-  */
-#define CRYPTO_DMA_TIMEOUT			((u32) 1000000)		/*!< DMA mode operation timeout count */
-#define CRYPTO_MUTEX_TIMEOUT			((u32) 1000000)		/*!< Engine mutex acquisition timeout count */
-#define CRYPTO_SLAVE_TIMEOUT			((u32) 10000)		/*!< Slave mode operation timeout count */
-/** @} */
-
 /** @defgroup AES_Key_Size AES Key Size
   * @{
   */

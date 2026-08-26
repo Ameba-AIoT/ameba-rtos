@@ -8,7 +8,11 @@
 #include <stdlib.h>
 #include "usbd.h"
 #include "usbd_uvc.h"
+#ifdef CONFIG_USBD_COMPOSITE
+#include "usbd_composite.h"
+#endif
 #include "usbd_video.h"
+#include "usb_video.h"
 /* Private defines -----------------------------------------------------------*/
 
 /* Private types -------------------------------------------------------------*/
@@ -86,7 +90,7 @@ static const u8 usbd_uvc_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_D
 #endif
 
 /* UVC Class Driver */
-usbd_class_driver_t usbd_uvc_driver = {
+static const usbd_class_driver_t usbd_uvc_driver = {
 	.get_descriptor = usbd_uvc_get_descriptor,
 	.set_config = usbd_uvc_set_config,
 	.clear_config = usbd_uvc_clear_config,
@@ -462,10 +466,23 @@ static int usbd_uvc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
   */
 static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "%s %d %x\r\n", __FUNCTION__, __LINE__, (req->wValue >> 8) & 0xFF);
-	u16 len = 0;
+	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usb_speed_type_t speed = dev->dev_speed;
+	u16 len = 0;
 	u8 *desc = NULL;
+	u8 attr = 0x80U;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "%s %d %x\r\n", __FUNCTION__, __LINE__, (req->wValue >> 8) & 0xFF);
+
+	if (!cdev->from_composite) {
+#ifdef CONFIG_USBD_SELF_POWERED
+		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
+#endif
+#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
+		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
+#endif
+	}
+
 	switch ((req->wValue >> 8) & 0xFF) {
 
 	case USB_DESC_TYPE_DEVICE:
@@ -483,6 +500,10 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "desc_self %p len %d\r\n", desc, len);
 		usb_os_memcpy((void *)buf, (void *)desc, len);
+
+		if (!cdev->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
 		break;
 
 #ifndef CONFIG_USB_FS
@@ -502,6 +523,10 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Use the array for uvc descriptors\r\n");
 
 		usb_os_memcpy((void *)buf, (void *)desc, len);
+
+		if (!cdev->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
 		break;
 #endif
 
@@ -561,6 +586,20 @@ static int usbd_uvc_set_config(usb_dev_t *dev, u8 config)
 	int ret = HAL_OK;
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	cdev->dev = dev;
+
+	if (!cdev->from_composite) {
+#ifdef CONFIG_USBD_SELF_POWERED
+		dev->self_powered = 1;
+#else
+		dev->self_powered = 0;
+#endif
+#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
+		dev->remote_wakeup_en = 1;
+#else
+		dev->remote_wakeup_en = 0;
+#endif
+	}
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "%s %d %d\r\n", __FUNCTION__, __LINE__, config);
 	/* Init ISOC IN EP */
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
@@ -802,16 +841,26 @@ __weak void usbd_ext_init(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "initialization of extension unit handle\r\n");
 }
 
-/* Exported functions --------------------------------------------------------*/
+static void usbd_uvc_patch_ep_addresses(u8 old_addr, u8 new_addr)
+{
+	int i;
+	for (i = 0; i < usbd_uvc_descriptors_size; i++) {
+		if (usbd_uvc_descriptors[i] == old_addr) {
+			usbd_uvc_descriptors[i] = new_addr;
+		}
+	}
+}
+
 /**
   * @brief  Initialize USB UVC device and related resources
   *         - Initialize USB device stack
   *         - Register UVC class driver
   *         - Create queues, semaphores, and tasks
   *         - Prepare video streaming environment
+  * @param  ep_cfg: Endpoint configuration
   * @retval HAL_OK if success, otherwise error code
   */
-int usbd_uvc_init(void)
+static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 {
 	int ret = HAL_OK;
 	usbd_uvc_dev_t *dev = &usbd_uvc_dev;
@@ -822,6 +871,15 @@ int usbd_uvc_init(void)
 	memset(dev, 0, sizeof(usbd_uvc_dev_t));
 	dev->probe = usbd_uvc_probe;
 	dev->commit = usbd_uvc_commit;
+
+	if (ep_cfg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP cfg\n");
+		return HAL_ERR_PARA;
+	}
+
+	dev->ep_cfg = ep_cfg;
+
+	usbd_uvc_patch_ep_addresses(USBD_UVC_ISO_IN_EP, dev->ep_cfg->iso_in_addr);
 
 	usbd_uvc_cmd_queue_init();
 
@@ -847,7 +905,7 @@ int usbd_uvc_init(void)
 
 	usb_os_queue_create(&dev->video.complete_bf_req, 10, sizeof(int));
 
-	info->addr = USBD_UVC_ISO_IN_EP;
+	info->addr = dev->ep_cfg->iso_in_addr;
 	info->type = USB_CH_EP_TYPE_ISOC;
 	info->binterval = 1;
 
@@ -858,25 +916,62 @@ int usbd_uvc_init(void)
 	// Mark as initialized before creating tasks, so tasks can run properly
 	usbd_uvc_dev.init_done = 1;
 
-	ret = rtos_task_create(NULL, "usbd_uvc_cmd_handler", usbd_uvc_cmd_handler, NULL, 1024U, 5);
+	ret = rtos_task_create(NULL, "usbd_uvc_cmd_thread", usbd_uvc_cmd_handler, NULL, 1024U, 5);
 	if (ret != SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Create USBD USBD_UVC CMD thread fail\n", __FUNCTION__);
 		ret = -1;
 		goto exit;
 	}
 
-	ret = rtos_task_create(NULL, "usbd_uvc_get_frame_handler", usbd_uvc_get_frame_handler, NULL, 1024U, 5);
+	ret = rtos_task_create(NULL, "usbd_uvc_frame_thread", usbd_uvc_get_frame_handler, NULL, 1024U, 5);
 	if (ret != SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Create USBD USBD_UVC GET FRAME thread fail\n", __FUNCTION__);
 		ret = -1;
 		goto exit;
 	}
 
-	dev->uvc_in_buf = malloc(USBD_UVC_IN_BUF_SIZE);
-	usbd_register_class(&usbd_uvc_driver);
+	dev->uvc_in_buf = malloc(dev->ep_cfg->iso_in_xfer_size ? dev->ep_cfg->iso_in_xfer_size : USBD_UVC_IN_BUF_SIZE);
 exit:
 	return ret;
 }
+
+/* Exported functions --------------------------------------------------------*/
+
+/**
+  * @brief  Initialize UVC device as a standalone device (from_composite = 0)
+  * @retval Status
+  */
+int usbd_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
+{
+	usbd_uvc_dev_t *dev = &usbd_uvc_dev;
+	int ret;
+
+	dev->from_composite = 0;
+	ret = usbd_uvc_private_init(ep_cfg);
+	if (ret == HAL_OK) {
+		usbd_register_class(&usbd_uvc_driver);
+	}
+	return ret;
+}
+
+#ifdef CONFIG_USBD_COMPOSITE
+/**
+  * @brief  Initialize UVC device as part of a composite device (from_composite = 1)
+  * @retval Status
+  */
+int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
+{
+	usbd_uvc_dev_t *dev = &usbd_uvc_dev;
+	int ret;
+
+	dev->from_composite = 1;
+	ret = usbd_uvc_private_init(ep_cfg);
+	if (ret == HAL_OK) {
+		ret = usbd_composite_register_driver(&usbd_uvc_driver);
+	}
+	return ret;
+}
+#endif
 
 /**
   * @brief  De-Initialize UVC device
@@ -887,7 +982,14 @@ exit:
   */
 void usbd_uvc_deinit(void)
 {
-	usbd_unregister_class();
+#ifdef CONFIG_USBD_COMPOSITE
+	if (usbd_uvc_dev.from_composite) {
+		usbd_composite_unregister_driver(&usbd_uvc_driver);
+	} else
+#endif
+	{
+		usbd_unregister_class();
+	}
 	usb_os_lock_delete(usbd_uvc_dev.lock);
 	usb_os_sema_delete(usbd_uvc_dev.uvc_Cmd_wakeup_sema);
 	usb_os_sema_delete(usbd_uvc_dev.video.output_queue_sema);

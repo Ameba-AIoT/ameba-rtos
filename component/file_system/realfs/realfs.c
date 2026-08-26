@@ -3318,6 +3318,93 @@ static int ea_mount_scan(struct realfs *fs)
 		}
 	}
 
+	/* Pass 3: reachability sweep.
+	 *
+	 * Pass 1 rebuilt the LBT from a raw data-page scan (highest seq wins), which
+	 * has no idea which pages still belong to a live file.  Deletes only drop the
+	 * block from ea_live/LBT in RAM (ea_mark_dead) and never erase or tombstone
+	 * the page, so after a reboot those pages resurrect here as bogus "live"
+	 * blocks -> capacity leaks a bit every fill/delete/reboot cycle until the
+	 * volume looks full.  The persisted namespace (SB bucket_map, already loaded)
+	 * is the source of truth for what is live, so walk bucket -> inode -> data
+	 * extents to build the real reachable set, and mark every mapped-but-
+	 * unreachable vblk dead.  GC then reclaims the now-0-live segments on demand. */
+	uint32_t reach_bytes = (fs->block_count + 7u) / 8u;
+	uint8_t *reach = (uint8_t *)malloc(reach_bytes);
+	if (reach) {
+		memset(reach, 0, reach_bytes);
+#define EA_REACH_SET(v) (reach[(v) >> 3] |= (uint8_t)(1u << ((v) & 7u)))
+#define EA_REACH_GET(v) ((reach[(v) >> 3] >> ((v) & 7u)) & 1u)
+		int reach_trusted = 1;              /* cleared on any walk error/inconsistency */
+		for (uint32_t bidx = 0; bidx < fs->hash_buckets; bidx++) {
+			uint32_t bh    = fs->bucket_map[bidx];
+			uint32_t guard = fs->block_count;   /* stop a corrupt overflow loop */
+			while (bh != REALFS_BLOCK_EMPTY && guard-- > 0) {
+				if (bh >= fs->block_count || ea_lbt_get(fs, bh) == EA_LBT_NONE) {
+					break;                      /* dangling bucket head */
+				}
+				EA_REACH_SET(bh);               /* bucket block is live */
+				if (rd1(fs, bh, fs->io_buf) != REALFS_OK || !bk_valid(fs->io_buf, fs->bs)) {
+					break;
+				}
+				uint32_t ec = bk_entry_count(fs->io_buf);
+				for (uint32_t j = 0; j < ec; j++) {
+					uint32_t inb = bk_entry_inode(fs->io_buf, j);
+					if (inb >= fs->block_count || ea_lbt_get(fs, inb) == EA_LBT_NONE) {
+						reach_trusted = 0;      /* bucket entry -> unmapped inode */
+						continue;
+					}
+					EA_REACH_SET(inb);          /* inode block is live */
+					if (rd1(fs, inb, fs->io_buf2) != REALFS_OK) {
+						reach_trusted = 0;      /* inode block unreadable */
+						continue;
+					}
+					struct inode_info ii;
+					if (inode_parse(fs->io_buf2, &ii) != REALFS_OK) {
+						reach_trusted = 0;      /* inode block corrupt */
+						continue;
+					}
+					for (uint32_t ext = 0; ext < ii.extent_count; ext++) {
+						uint32_t st  = ld32(fs->io_buf2, ii.extents_off + ext * 8);
+						uint32_t cnt = ld32(fs->io_buf2, ii.extents_off + ext * 8 + 4);
+						for (uint32_t k = 0; k < cnt; k++) {
+							uint32_t dv = st + k;
+							if (dv < fs->block_count) {
+								EA_REACH_SET(dv);   /* data block is live */
+							}
+						}
+					}
+				}
+				bh = bk_overflow(fs->io_buf, fs->bs);
+			}
+			/* bh != EMPTY here means a break above (dangling head / read error /
+			 * corrupt bucket) or the guard tripping a cycle cut this chain short,
+			 * so its tail went unwalked and the reachable set is incomplete. */
+			if (bh != REALFS_BLOCK_EMPTY) {
+				reach_trusted = 0;
+			}
+		}
+		/* Only reclaim orphans if the whole namespace walked cleanly. A partial
+		 * walk (read error / corruption) would leave live blocks unmarked, and
+		 * marking those dead would free live data -> skip the pass and let the
+		 * (rare) leak persist instead. */
+		if (reach_trusted) {
+			for (uint32_t v = 0; v < fs->block_count; v++) {
+				if (ea_lbt_get(fs, v) != EA_LBT_NONE && !EA_REACH_GET(v)) {
+					ea_mark_dead(fs, v);        /* orphan: deleted-but-resurrected */
+				}
+			}
+		}
+#undef EA_REACH_SET
+#undef EA_REACH_GET
+		free(reach);
+	}
+	/* else: OOM (near-impossible here — ea_lbt above already took ~16x this
+	 * bitmap's size). Skip the sweep best-effort: orphan blocks stay mapped
+	 * and a later mount with more heap reclaims them. Failing the mount for a
+	 * cleanup-only allocation would be worse than the minor capacity leak, and
+	 * this core stays board-header free (no RTK_LOGx), so it isn't logged. */
+
 	/* Recompute free_block_count from LBT */
 	uint32_t used = 0;
 	for (uint32_t v = 0; v < fs->block_count; v++)

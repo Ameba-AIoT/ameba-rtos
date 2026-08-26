@@ -158,6 +158,38 @@ int p2p_channel_to_freq(int op_class, int chan)
 
 
 /**
+ * p2p_chan_to_reg_class - Convert channel number to operating class
+ * @chan: Channel number
+ * Returns: Operating class or -1 if the specified channel is unknown
+ *
+ * Use this when only the channel a frame was received on is known, i.e. when
+ * there is no operating class to pair it with. cfg->reg_class must not be used
+ * for that, as it always describes the 2.4G listen channel while frames can be
+ * received on any operating channel (e.g. Auto GO on 5G).
+ *
+ * The returned class is only meant to be fed back into p2p_channel_to_freq()
+ * (which maps it back to the same frequency); it is not necessarily the class
+ * negotiated in the P2P negotiation (e.g. 40/80/160 MHz classes).
+ */
+int p2p_chan_to_reg_class(u8 chan)
+{
+	if (chan >= 1 && chan <= 13) {
+		return 81;
+	}
+
+	if (chan == 14) {
+		return 82;
+	}
+
+	if (chan >= 36 && chan <= 177) {
+		return 128;
+	}
+
+	return -1;
+}
+
+
+/**
  * p2p_freq_to_channel - Convert frequency into channel info
  * @op_class: Buffer for returning operating class
  * @channel: Buffer for returning channel number

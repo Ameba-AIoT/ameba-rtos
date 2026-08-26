@@ -56,6 +56,9 @@ void ota_uart_irq_handler(uint32_t id, SerialIrq event)
 
 	if (event == RxIrq) {
 		rc = serial_getc(sobj);
+		if (!ota_rx_ring_buf) {
+			return;
+		}
 		space = RingBuffer_Space(ota_rx_ring_buf);
 		if (space > 0) {
 			RingBuffer_Write(ota_rx_ring_buf, &rc, 1);
@@ -113,14 +116,14 @@ void ota_task(void *param)
 	serial_format(&sobj, 8, ParityNone, 1);
 	serial_rx_fifo_level(&sobj, FifoLv1Byte);
 	serial_set_flow_control(&sobj, FlowControlRTSCTS, UART_RTS, UART_CTS);
-	serial_irq_handler(&sobj, ota_uart_irq_handler, (uint32_t)&sobj);
-	serial_irq_set(&sobj, RxIrq, ENABLE);
-
 	ota_rx_ring_buf = RingBuffer_Create(NULL, 4 * 1024, LOCAL_RINGBUFF, 1);
 	if (!ota_rx_ring_buf) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "ota_rx_ring_buf malloc failed\r\n");
 		goto exit;
 	}
+
+	serial_irq_handler(&sobj, ota_uart_irq_handler, (uint32_t)&sobj);
+	serial_irq_set(&sobj, RxIrq, ENABLE);
 
 	ctx = (ota_context_t *)rtos_mem_malloc(sizeof(ota_context_t));
 	if (!ctx) {

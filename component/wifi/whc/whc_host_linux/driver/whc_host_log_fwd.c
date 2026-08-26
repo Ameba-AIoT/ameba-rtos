@@ -5,6 +5,11 @@
 #include "whc_host_log_fwd.h"
 #include "whc_host_cmd_path_api.h"
 
+/* CONFIG_WHC_HOST_LOG_FWD depends on CONFIG_WHC_CMD_PATH */
+#ifndef CONFIG_WHC_CMD_PATH
+#error "CONFIG_WHC_HOST_LOG_FWD requires CONFIG_WHC_CMD_PATH"
+#endif
+
 #define LOG_FWD_ACK_TIMEOUT_MS  500
 
 static DEFINE_MUTEX(g_lock);
@@ -93,6 +98,17 @@ int whc_host_log_forward_resume(void)
 	return ret;
 }
 
+bool whc_host_log_forward_is_enabled(void)
+{
+	bool enabled;
+
+	mutex_lock(&g_lock);
+	enabled = g_enabled;
+	mutex_unlock(&g_lock);
+
+	return enabled;
+}
+
 int whc_host_nl_log_fwd(struct genl_info *info)
 {
 	u8 enable;
@@ -102,4 +118,18 @@ int whc_host_nl_log_fwd(struct genl_info *info)
 	}
 	enable = *(u8 *)nla_data(info->attrs[WHC_ATTR_LOG_ENABLE]);
 	return whc_host_log_forward_set(enable ? true : false);
+}
+
+void whc_host_log_fwd_enable(bool enable)
+{
+	/* route through kernel state so ACK path is honored and set/pause/resume stay in sync */
+	int ret = whc_host_log_forward_set(enable);
+
+	if (ret)
+		pr_warn("whc: log_fwd_enable=%d failed (ret=%d); kernel state not updated\n",
+				enable, ret);
+	else
+		dev_info(global_idev.pwhc_dev,
+				 "log_fwd: log_fwd_enable=%d\n",
+				 enable);
 }

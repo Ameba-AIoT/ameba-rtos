@@ -735,7 +735,7 @@ extern "C" {
  */
 
 /** LE PHY types */
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 enum {
 	/** Convenience macro for when no PHY is set. */
 	BT_GAP_LE_PHY_NONE                    = 0x0,

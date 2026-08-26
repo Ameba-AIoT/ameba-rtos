@@ -115,3 +115,4 @@ For debug monitored mode, set WIFI_CAST_MONITORED to 1:
 # Supported IC
 
 RTL8721F
+RTL8720F

@@ -14,11 +14,11 @@ config FLASH_BOOT_SIZE
     default 0x14000
 
 # Certificate(4K) + Manifest(4K) + KM0 & KM4 Application OTA1 + RDP IMG OTA1
-config FLASH_APP_OTA1_OFFSET
+config FLASH_OTA1_OFFSET
     hex "APP OTA1 Offset"
     default 0x08014000
 
-config FLASH_APP_OTA1_SIZE
+config FLASH_OTA1_SIZE
     hex "APP OTA1 Size"
     default 0x1EC000
 
@@ -32,11 +32,11 @@ config FLASH_BOOT_OTA2_SIZE
     default 0x14000
 
 # Certificate(4K) + Manifest(4K) + KM0 & KM4 Application OTA2 + RDP IMG OTA2
-config FLASH_APP_OTA2_OFFSET
+config FLASH_OTA2_OFFSET
     hex "APP OTA2 Offset"
     default 0x08214000
 
-config FLASH_APP_OTA2_SIZE
+config FLASH_OTA2_SIZE
     hex "APP OTA2 Size"
     default 0x1C9000
 

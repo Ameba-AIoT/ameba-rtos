@@ -97,8 +97,8 @@ static const char *const TAG = "UAC";
 static const usbh_dev_id_t uac_devs[] = {
 	{
 		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS,
-		.bInterfaceClass = USB_UAC1_CLASS_CODE,
-		.bInterfaceSubClass = USB_UAC1_SUBCLASS_AUDIOSTREAMING,
+		.bInterfaceClass = USB_UAC_CLASS_CODE,
+		.bInterfaceSubClass = USB_UAC_SUBCLASS_AUDIOSTREAMING,
 	},
 	{
 	},
@@ -649,14 +649,14 @@ static int usbh_uac_parse_ac(usbh_itf_data_t *itf_data)
 
 			len = ((usbh_desc_header_t *) desc)->bLength;
 			desc += len;
-		} else if (type == USB_UAC1_INTERFACE_DESC_TYPE) {
+		} else if (type == USB_UAC_CS_INTERFACE) {
 			len = ((usbh_desc_header_t *) desc)->bLength;
 			ac_header = (usb_ac_itf_desc_header_t *)desc;
 			subtype = ac_header->bDescriptorSubtype;
 
-			if (subtype == USB_UAC1_HEADER) {
+			if (subtype == USB_UAC_AC_HEADER) {
 				//get the total ac length
-			} else if (subtype == USB_UAC1_INPUT_TERMINAL) {
+			} else if (subtype == USB_UAC_AC_INPUT_TERMINAL) {
 				if (len >= 0x0C) {
 					usbh_uac_term_info_t term = {
 						.terminal_id = desc[3],
@@ -665,7 +665,7 @@ static int usbh_uac_parse_ac(usbh_itf_data_t *itf_data)
 					};
 					usbh_uac_add_terminal(ac_info, &term);
 				}
-			} else if (subtype == USB_UAC1_OUTPUT_TERMINAL) {
+			} else if (subtype == USB_UAC_AC_OUTPUT_TERMINAL) {
 				if (len >= 0x09) {
 					usbh_uac_term_info_t term = {
 						.terminal_id = desc[3],
@@ -703,12 +703,12 @@ static int usbh_uac_parse_ac(usbh_itf_data_t *itf_data)
 
 			len = ((usbh_desc_header_t *) desc)->bLength;
 			desc += len;
-		} else if (type == USB_UAC1_INTERFACE_DESC_TYPE) {
+		} else if (type == USB_UAC_CS_INTERFACE) {
 			len = ((usbh_desc_header_t *) desc)->bLength;
 			ac_header = (usb_ac_itf_desc_header_t *)desc;
 			subtype = ac_header->bDescriptorSubtype;
 
-			if (subtype == USB_UAC1_FEATURE_UNIT) {
+			if (subtype == USB_UAC_AC_FEATURE_UNIT) {
 				if (len >= 0x07) {
 					usbh_uac_fu_info_t vol_info = {0};
 					vol_info.unit_id = desc[3];
@@ -832,9 +832,9 @@ static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 			}
 			break;
 
-		case USB_UAC1_INTERFACE_DESC_TYPE: {
+		case USB_UAC_CS_INTERFACE: {
 			usb_uac1_format_type_i_discrete_descriptor *psubtype = (usb_uac1_format_type_i_discrete_descriptor *)desc;
-			if ((alt_setting != NULL) && (USB_UAC1_FORMAT_TYPE == psubtype->bDescriptorSubtype)) { /* get the format */
+			if ((alt_setting != NULL) && (USB_UAC_AS_FORMAT_TYPE == psubtype->bDescriptorSubtype)) { /* get the format */
 				format_info = &(alt_setting->format_info);
 				format_info->channels = psubtype->bNrChannels;
 				format_info->bit_width = psubtype->bBitResolution;
@@ -861,13 +861,17 @@ static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 				ep_cfg = &(alt_setting->ep_desc);
 				usb_os_memcpy(ep_cfg, ep_desc, sizeof(usbh_ep_desc_t));
 
-				if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
-					if (uac->isoc_in.as_itf == NULL) {
-						uac->isoc_in.as_itf = as_itf;
-					}
-				} else {
-					if (uac->isoc_out.as_itf == NULL) {
-						uac->isoc_out.as_itf = as_itf;
+				/* UAC1 3.7.2.2: only Data endpoints carry audio samples. */
+				u8 usage_type = (ep_desc->bmAttributes >> 4) & 0x03U;
+				if (usage_type == 0U) {
+					if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
+						if (uac->isoc_in.as_itf == NULL) {
+							uac->isoc_in.as_itf = as_itf;
+						}
+					} else {
+						if (uac->isoc_out.as_itf == NULL) {
+							uac->isoc_out.as_itf = as_itf;
+						}
 					}
 				}
 			}
@@ -877,7 +881,7 @@ static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 		}
 		break;
 
-		case USB_UAC1_AUDIO_EP_DESC_TYPE:
+		case USB_UAC_CS_ENDPOINT:
 		default: {
 			len = ((usbh_desc_header_t *) desc)->bLength;
 			desc += len;
@@ -905,8 +909,8 @@ static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 static int usbh_uac_parse_interface_desc(usb_host_t *host)
 {
 	usbh_dev_id_t dev_id = {0,};
-	dev_id.bInterfaceClass = USB_UAC1_CLASS_CODE;
-	dev_id.bInterfaceSubClass = USB_UAC1_SUBCLASS_AUDIOCONTROL;
+	dev_id.bInterfaceClass = USB_UAC_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_UAC_SUBCLASS_AUDIOCONTROL;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
 	usbh_itf_data_t *itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	int ret = HAL_OK;
@@ -934,8 +938,8 @@ static int usbh_uac_parse_interface_desc(usb_host_t *host)
 		return HAL_ERR_PARA;
 	}
 
-	dev_id.bInterfaceClass = USB_UAC1_CLASS_CODE;
-	dev_id.bInterfaceSubClass = USB_UAC1_SUBCLASS_AUDIOSTREAMING;
+	dev_id.bInterfaceClass = USB_UAC_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_UAC_SUBCLASS_AUDIOSTREAMING;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	while (itf_data) {
@@ -1031,7 +1035,7 @@ static int usbh_uac_process_set_ch_volume(usb_host_t *host, u8 ch)
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest = USB_UAC1_SET_CUR;
-	setup.req.wValue = (ch) | (USB_UAC1_FU_VOLUME << 8);
+	setup.req.wValue = (ch) | (USB_UAC_FU_VOLUME << 8);
 	setup.req.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
 	setup.req.wLength = 2U;
 
@@ -1112,7 +1116,7 @@ static int usbh_uac_process_set_ch_mute(usb_host_t *host, u8 ch)
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest = USB_UAC1_SET_CUR;
-	setup.req.wValue = (ch) | (USB_UAC1_FU_MUTE << 8);
+	setup.req.wValue = (ch) | (USB_UAC_FU_MUTE << 8);
 	setup.req.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
 	setup.req.wLength = 1U;
 
@@ -1184,7 +1188,7 @@ static int usbh_uac_process_get_cur_mute(usb_host_t *host, u8 ch, u8 dir)
 
 	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest = USB_UAC1_GET_CUR;
-	setup.req.wValue = (ch) | (USB_UAC1_FU_MUTE << 8);
+	setup.req.wValue = (ch) | (USB_UAC_FU_MUTE << 8);
 	setup.req.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
 	setup.req.wLength = 1U;
 
@@ -1214,7 +1218,7 @@ static int usbh_uac_process_get_cur_volume(usb_host_t *host, u8 ch, u8 dir)
 
 	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest = USB_UAC1_GET_CUR;
-	setup.req.wValue = (ch) | (USB_UAC1_FU_VOLUME << 8);
+	setup.req.wValue = (ch) | (USB_UAC_FU_VOLUME << 8);
 	setup.req.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
 	setup.req.wLength = 2U;
 
@@ -1245,7 +1249,7 @@ static int usbh_uac_process_get_volume_range(usb_host_t *host, u8 min, u8 ch, u8
 
 	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest = (min) ? (USB_UAC1_GET_MIN) : (USB_UAC1_GET_MAX);
-	setup.req.wValue = (ch) | (USB_UAC1_FU_VOLUME << 8);
+	setup.req.wValue = (ch) | (USB_UAC_FU_VOLUME << 8);
 	setup.req.wIndex = (ac_info->ac_itf_idx) | (info->unit_id << 8);
 	setup.req.wLength = 2U;
 
@@ -1256,7 +1260,7 @@ static int usbh_uac_process_get_volume_range(usb_host_t *host, u8 min, u8 ch, u8
   * @brief  State machine that sequentially queries mute, current volume, min volume, and max volume
   *         for a single channel of the given Feature Unit via UAC1 GET_CUR/GET_MIN/GET_MAX requests.
   * @param  host:        Pointer to the USB host handle.
-  * @param  bma_control: Bitmap of controls supported by this channel (USB_UAC1_FU_MUTE, USB_UAC1_FU_VOLUME).
+  * @param  bma_control: Bitmap of controls supported by this channel (USB_UAC_FU_MUTE, USB_UAC_FU_VOLUME).
   * @param  ch:          Channel number (0 = master, 1..N = individual channels).
   * @param  dir:         USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR.
   * @retval HAL_OK when the sequence for this channel completes, HAL_BUSY while in progress, or an error code.

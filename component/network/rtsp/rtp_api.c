@@ -237,11 +237,11 @@ void rtp_report(struct stream_context *stream_ctx)
 
 	u32 report_timer_diff = (stream_ctx->periodic_report.timer2 - stream_ctx->periodic_report.timer1) / 1000;
 	u32 report_Kbps = stream_ctx->periodic_report.bytes / report_timer_diff * 8 / 1024;
-	RTP_DBG_INFO("[%d][%c] send:%d, %d Kbps, drop_total:%d",
-				 rtsp_ctx->id, type,
-				 stream_ctx->periodic_report.send_frame,
-				 report_Kbps,
-				 stream_ctx->periodic_report.drop_frame);
+	RTP_DBG_DEBUG("[%d][%c] send:%d, %d Kbps, drop_total:%d\r\n",
+				  rtsp_ctx->id, type,
+				  stream_ctx->periodic_report.send_frame,
+				  report_Kbps,
+				  stream_ctx->periodic_report.drop_frame);
 	stream_ctx->periodic_report.timer1 = rtos_time_get_current_system_time_ms();
 	stream_ctx->periodic_report.send_frame = 0;
 	stream_ctx->periodic_report.bytes = 0;

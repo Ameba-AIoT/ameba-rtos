@@ -103,3 +103,4 @@ curl -s -X POST http://<ip>:8080/mcp \
 # Supported IC
 
 RTL8721F
+RTL8720F

@@ -7,21 +7,14 @@
 #ifndef USB_UAC2_H
 #define USB_UAC2_H
 
+#include "usb_uac.h"
 
-#define USB_UAC2_CLASS_CODE                         0x01U
-
-/* A.5 Audio Interface Subclass Codes */
-#define USB_UAC2_SUBCLASS_AUDIOCONTROL              0x01U
-#define USB_UAC2_SUBCLASS_AUDIOSTREAMING            0x02U
-
-/* A.6 Audio Interface Protocol Codes */
-#define USB_UAC2_VERSION_02_00                      0x20U
-
-/* A.4 Audio Interface Class Code */
-#define USB_UAC2_IF_CLASS_AUDIO                     0x01U
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
- * Defines UAC 2.0 class-specific request codes.
+ * Defines UAC 2.0 descriptor lengths.
  */
 #define USB_UAC2_LEN_CTRL_IF_HEADER                 0x09U  /**<UAC Audio Control Interface Header Descriptor 2.0. */
 #define USB_UAC2_LEN_CLK_SRC_DESC                   0x08U  /**<UAC Audio Control Clock Source Unit Descriptor 2.0. */
@@ -32,18 +25,6 @@
 #define USB_UAC2_LEN_AS_FRT_TYPE_ALT_SET_DESC       0x06U  /**<UAC Audio Streaming Format Type Descriptor 2.0. */
 #define USB_UAC2_LEN_DATA_EP_DESC                   0x08U  /**<UAC Audio Data Endpoint Descriptor. */
 
-#define USB_UAC2_DESC_TYPE_AUDIO_CS_INTERFACE       0x24U  /**<UAC Audio Interface Descriptor Type. */
-#define USB_UAC2_CS_ENDPOINT_DESCRIPTOR             0x25U  /**<UAC Audio Data Endpoint Descriptor Type. */
-#define USB_UAC2_IAD_DESCRIPTOR_TYPE                0x0BU  /**<UAC IAD Descriptor type. */
-
-/**
- * Audio Class-Specific Audio Streaming Interface Descriptor Subtype Codes (UAC2.0 Spec Appendix A.10)
- */
-#define USB_UAC2_AS_IF_DESC_SUBTYPE_AS_GENERAL      0x01  /**<UAC Audio Streaming Interface Descriptor SubType. */
-#define USB_UAC2_AS_IF_DESC_SUBTYPE_FORMAT_TYPE     0x02  /**<UAC Audio Format Type Descriptor SubType. */
-/* Audio Class-Specific Audio Streaming Endpoint Descriptor Subtype Codes (UAC2.0 Spec Appendix A.13) */
-#define USB_UAC2_AS_EP_DESC_SUBTYPE_EP_GENERAL      0x01  /**<UAC Audio Data Endpoint Descriptor SubType. */
-
 #define USB_UAC2_IF_IDX_AC_HEADSET                  0x00U  /**<UAC Audio Control Interface Index. */
 #define USB_UAC2_IF_IDX_AS_HEADSET_HEADPHONES       0x01U  /**<UAC Audio Streaming Headphone Interface Index. */
 #define USB_UAC2_IF_IDX_AS_HEADSET_MICROPHONE       0x02U  /**<UAC Audio Streaming Microphone Interface Index. */
@@ -53,40 +34,14 @@
 #define USB_UAC2_FUNC_CATEGORY_CODE_DESKTOP_SPEAKER                0x01U  /**<UAC Audio Function Speaker. */
 #define USB_UAC2_FUNC_CATEGORY_CODE_DESKTOP_HEADSET                0x04U  /**<UAC Audio Function Headset. */
 
-/* Audio Class-Specific Audio Control Interface Descriptor Subtype Codes (UAC2.0 Spec Appendix A.9) */
-#define USB_UAC2_AC_IF_DESC_SUBTYPE_UNDEFINED                      0x00U  /**<UAC Audio Function Headset. */
-#define USB_UAC2_AC_IF_DESC_SUBTYPE_HEADER                         0x01U  /**<UAC Audio Function Headset. */
-#define USB_UAC2_AC_IF_DESC_SUBTYPE_INPUT_TERMINAL                 0x02U  /**<UAC Audio Function Headset. */
-#define USB_UAC2_AC_IF_DESC_SUBTYPE_OUTPUT_TERMINAL                0x03U  /**<UAC Audio Function Headset. */
-#define USB_UAC2_AC_IF_DESC_SUBTYPE_FEATURE_UNIT                   0x06U  /**<UAC Audio Function Headset. */
+/* A.9 Audio Class-Specific AC Interface Descriptor Subtype Codes (UAC2-specific) */
 #define USB_UAC2_AC_IF_DESC_SUBTYPE_CLOCK_SOURCE                   0x0AU  /**<UAC Audio Function Headset. */
 
-/* A.14 Audio Class-Specific Request Codes */
-#define USB_UAC2_CLASS_REQ_CODE_CUR                                0x01U /**< UAC Audio Class-Specific Request CUR code. */
-#define USB_UAC2_CLASS_REQ_CODE_RANGE                              0x02U /**< UAC Audio Class-Specific Request RANGE code. */
 /* A.17.1 Clock Source Control Selectors */
-#define USB_UAC2_CS_SAM_FREQ_CONTROL                               0x01U /**< UAC Audio Clock Source Sample Frequency. */
 #define USB_UAC2_CS_CLK_VALID_CONTROL                              0x02U /**< UAC Audio Clock Source Clock Valid Control. */
 /* A.17.4 Terminal Control Selectors */
 #define USB_UAC2_TE_CONNECTOR_CONTROL                              0x02U /**< UAC Audio Terminal Control Selectors CONNECTOR. */
 
-/* A.17.7 Feature Unit Control Selectors */
-#define USB_UAC2_CTRL_FU_MUTE_CONTROL_SELECTOR                     0x01U /**< UAC Feature Unit Mute Control */
-#define USB_UAC2_CTRL_FU_VOLUME_CONTROL_SELECTOR                   0x02U /**< UAC Feature Unit Volume Control */
-#define USB_UAC2_CTRL_FU_BASS_CONTROL_SELECTOR                     0x03U
-#define USB_UAC2_CTRL_FU_MID_CONTROL_SELECTOR                      0x04U
-#define USB_UAC2_CTRL_FU_TREBLE_CONTROL_SELECTOR                   0x05U
-#define USB_UAC2_CTRL_FU_GRAPHIC_EQUALIZER_CONTROL_SELECTOR        0x06U
-#define USB_UAC2_CTRL_FU_AUTOMATIC_GAIN_CONTROL_SELECTOR           0x07U
-#define USB_UAC2_CTRL_FU_DELAY_CONTROL_SELECTOR                    0x08U
-#define USB_UAC2_CTRL_FU_BASS_BOOST_CONTROL_SELECTOR               0x09U
-#define USB_UAC2_CTRL_FU_LOUDNESS_CONTROL_SELECTOR                 0x0AU
-#define USB_UAC2_CTRL_FU_INPUT_GAIN_CONTROL_SELECTOR               0x0BU
-#define USB_UAC2_CTRL_FU_INPUT_GAIN_PAD_CONTROL_SELECTOR           0x0CU
-#define USB_UAC2_CTRL_FU_PHASE_INVERTER_CONTROL_SELECTOR           0x0DU
-#define USB_UAC2_CTRL_FU_UNDERFLOW_CONTROL_SELECTOR                0x0EU
-#define USB_UAC2_CTRL_FU_OVERFLOW_CONTROL_SELECTOR                 0x0FU
-#define USB_UAC2_CTRL_FU_LATENCY_CONTROL_SELECTOR                  0x10U
 
 /* Class specific types -------------------------------------------------------------*/
 /* 5.2.5.4.2 Connector Control */
@@ -131,5 +86,9 @@ typedef struct {
 	u16 wNumSubRanges;
 	usb_uac2_freq_t usb_uac2_sub_ranges[];
 } __PACKED usb_uac2_sampling_freq_ctrl_range_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USB_UAC2_H */

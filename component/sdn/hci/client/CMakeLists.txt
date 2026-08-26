@@ -45,20 +45,18 @@ ameba_list_append(private_sources sdn_client.c)
 ameba_list_append_ifnot(CONFIG_SDN_HOST private_sources sdn_client_ipc.c)
 
 ameba_list_append(private_includes
-	${c_COMPONENT_DIR}/sdn/scheduler
-	${c_COMPONENT_DIR}/sdn/util
+    ${c_COMPONENT_DIR}/sdn/util
     ${c_COMPONENT_DIR}/sdn/hci
-    ${c_COMPONENT_DIR}/sdn/user_config
+    ${c_COMPONENT_DIR}/sdn/config
 )
 
 # bt_hci_cmd.c is open source for coding size
 ameba_list_append(private_sources 
                     ../../bt/hci/bt_hci_cmd.c
-                    ../../user_config/sdn_user_config.c)
+                    ../../config/sdn_mem_conf.c)
 
 ameba_list_append(private_includes
     ../../bt/hci
-    ../../bt/le
     ${c_CMPT_BLUETOOTH_DIR}/api/include
 )
 

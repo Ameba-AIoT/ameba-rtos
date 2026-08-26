@@ -26,7 +26,8 @@ static rtos_sema_t atcmd_sdio_tx_done_sema;
 static RingBuffer *at_sdio_rx_ring_buf = NULL;
 static RingBuffer *at_sdio_tx_ring_buf = NULL;
 
-static u8 sdio_txbuf[ATCMD_SDIO_MAX_SIZE];
+/* [atcmd_sdio_hdr][payload], payload capped at ATCMD_SDIO_MAX_SIZE */
+static u8 sdio_txbuf[ATCMD_SDIO_HDR_SIZE + ATCMD_SDIO_MAX_SIZE];
 
 static u8 g_sdio_device_ready = 0;
 
@@ -263,6 +264,7 @@ recv_again:
 void atcmd_sdio_output_handler_task(void)
 {
 	u32 actual_len = 0, send_len;
+	struct atcmd_sdio_hdr *hdr = (struct atcmd_sdio_hdr *)sdio_txbuf;
 	while (1) {
 		rtos_sema_take(atcmd_sdio_tx_sema, 0xFFFFFFFF);
 
@@ -271,13 +273,18 @@ void atcmd_sdio_output_handler_task(void)
 		if (actual_len > 0) {
 			send_len = actual_len > ATCMD_SDIO_MAX_SIZE ? ATCMD_SDIO_MAX_SIZE : actual_len;
 
-			memset(sdio_txbuf, 0, ATCMD_SDIO_MAX_SIZE);
-			RingBuffer_Read(at_sdio_tx_ring_buf, sdio_txbuf, send_len);
+			/* Prepend the length header so the host does not have to trust
+			 * RX0_REQ_LEN to be byte-exact (see at_intf_sdio.h).  No memset of
+			 * the tail: only ATCMD_SDIO_HDR_SIZE + send_len bytes are ever
+			 * copied out by ex_spdio_tx, and the host reads no further. */
+			hdr->magic = ATCMD_SDIO_HDR_MAGIC;
+			hdr->len = (u16)send_len;
+			RingBuffer_Read(at_sdio_tx_ring_buf, sdio_txbuf + ATCMD_SDIO_HDR_SIZE, send_len);
 
 			// take tx done sema
 			rtos_sema_take(atcmd_sdio_tx_done_sema, 0xFFFFFFFF);
 
-			ex_spdio_tx(sdio_txbuf, send_len, 0);
+			ex_spdio_tx(sdio_txbuf, ATCMD_SDIO_HDR_SIZE + send_len, 0);
 
 			if (actual_len > send_len) {
 				rtos_sema_give(atcmd_sdio_tx_sema);

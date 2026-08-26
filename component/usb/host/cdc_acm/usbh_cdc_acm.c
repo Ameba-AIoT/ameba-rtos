@@ -29,8 +29,8 @@ static int usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num);
 static void usbh_cdc_acm_process_intr_rx(usb_host_t *host);
 #endif
 static int usbh_cdc_acm_setup(usb_host_t *host);
-static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
-static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding);
+static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_acm_line_coding_t *linecoding);
+static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_acm_line_coding_t *linecoding);
 static int usbh_cdc_acm_process_set_control_line_state(usb_host_t *host);
 static int usbh_cdc_acm_process_send_break(usb_host_t *host);
 static void usbh_cdc_acm_process_tx(usb_host_t *host);
@@ -805,8 +805,8 @@ static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 	case USBH_CDC_ACM_STATE_GET_LINE_CODING:
 		req_status = usbh_cdc_acm_process_get_line_coding(host, cdc->line_coding);
 		if (req_status == HAL_OK) {
-			usb_cdc_line_coding_t *lc = cdc->line_coding;
-			usb_cdc_line_coding_t *ulc = cdc->user_line_coding;
+			usb_cdc_acm_line_coding_t *lc = cdc->line_coding;
+			usb_cdc_acm_line_coding_t *ulc = cdc->user_line_coding;
 			cdc->state = USBH_CDC_ACM_STATE_IDLE;
 			if ((lc->b.bCharFormat == ulc->b.bCharFormat) &&
 				(lc->b.bDataBits == ulc->b.bDataBits) &&
@@ -857,7 +857,7 @@ static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
   * @param  linecoding: Line coding data pointer
   * @retval Status
   */
-static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding)
+static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_acm_line_coding_t *linecoding)
 {
 	usbh_setup_req_t setup;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
@@ -884,7 +884,7 @@ static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_line_c
   * @param  linecoding: Line coding data pointer
   * @retval Status
   */
-static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_line_coding_t *linecoding)
+static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_acm_line_coding_t *linecoding)
 {
 	usbh_setup_req_t setup;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
@@ -1018,24 +1018,32 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 	if ((status == HAL_OK) && (intr_in->xfer_state == USBH_EP_XFER_IDLE)) {
 		len = usbh_get_last_transfer_size(host, intr_in);
 		if ((cdc->cb != NULL) && (cdc->cb->notify != NULL)) {
-			if (len >= 8U) {
+			if (len >= USB_CDC_NOTIFY_HDR_LEN) {
 				/* Parse CDC notification header: byte1=bNotificationCode, bytes6-7=wLength */
+				if (intr_in->xfer_buf[0] != (USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE)) {
+					cdc->cb->notify(NULL, 0U, status);
+					return;
+				}
 				u8 notif_code = intr_in->xfer_buf[1];
 				u16 data_len = (u16)intr_in->xfer_buf[6] | ((u16)intr_in->xfer_buf[7] << 8);
-				u8 *payload = intr_in->xfer_buf + 8U;
+				u8 *payload = intr_in->xfer_buf + USB_CDC_NOTIFY_HDR_LEN;
 				switch (notif_code) {
 				case USB_CDC_ACM_NOTIFY_SERIAL_STATE:
-					if (len >= (8U + (u32)data_len)) {
+					if (len >= (USB_CDC_NOTIFY_HDR_LEN + (u32)data_len)) {
 						cdc->cb->notify(payload, (u32)data_len, status);
 					} else {
 						cdc->cb->notify(NULL, 0U, status);
 					}
 					break;
-				case USB_CDC_ACM_NOTIFY_RESPONSE_AVAILABLE:
+				case USB_CDC_NOTIFY_RESPONSE_AVAILABLE:
 					cdc->cb->notify(NULL, 0U, status);
 					break;
 				default:
-					cdc->cb->notify(payload, (u32)data_len, status);
+					if (len >= (USB_CDC_NOTIFY_HDR_LEN + (u32)data_len)) {
+						cdc->cb->notify(payload, (u32)data_len, status);
+					} else {
+						cdc->cb->notify(NULL, 0U, status);
+					}
 					break;
 				}
 			} else {
@@ -1079,12 +1087,12 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb)
 		}
 	}
 
-	cdc->line_coding = (usb_cdc_line_coding_t *)usb_os_malloc(sizeof(usb_cdc_line_coding_t));
+	cdc->line_coding = (usb_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usb_cdc_acm_line_coding_t));
 	if (cdc->line_coding == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc line code fail\n");
 		return HAL_ERR_MEM;
 	}
-	cdc->user_line_coding = (usb_cdc_line_coding_t *)usb_os_malloc(sizeof(usb_cdc_line_coding_t));
+	cdc->user_line_coding = (usb_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usb_cdc_acm_line_coding_t));
 	if (cdc->user_line_coding == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc user line code fail\n");
 		usb_os_mfree(cdc->line_coding);
@@ -1224,7 +1232,7 @@ int usbh_cdc_acm_send_break(u16 duration_ms)
 * @param  line_coding: Line coding data to apply
 * @retval HAL_OK on success, others on failure.
 */
-int usbh_cdc_acm_set_line_coding(usb_cdc_line_coding_t *line_coding)
+int usbh_cdc_acm_set_line_coding(usb_cdc_acm_line_coding_t *line_coding)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
@@ -1235,8 +1243,8 @@ int usbh_cdc_acm_set_line_coding(usb_cdc_line_coding_t *line_coding)
 	}
 
 	if (host->connect_state == USBH_STATE_SETUP) {
-		usb_cdc_line_coding_t *ulc = cdc->user_line_coding;
-		usb_cdc_line_coding_t *lc = line_coding;
+		usb_cdc_acm_line_coding_t *ulc = cdc->user_line_coding;
+		usb_cdc_acm_line_coding_t *lc = line_coding;
 		cdc->state = USBH_CDC_ACM_STATE_SET_LINE_CODING;
 		ulc->b.dwDteRate = lc->b.dwDteRate;
 		ulc->b.bCharFormat = lc->b.bCharFormat;
@@ -1254,7 +1262,7 @@ int usbh_cdc_acm_set_line_coding(usb_cdc_line_coding_t *line_coding)
 * @param  line_coding: Pointer to store the retrieved line coding data
 * @retval HAL_OK on success, others on failure.
 */
-int usbh_cdc_acm_get_line_coding(usb_cdc_line_coding_t *line_coding)
+int usbh_cdc_acm_get_line_coding(usb_cdc_acm_line_coding_t *line_coding)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
@@ -1265,8 +1273,8 @@ int usbh_cdc_acm_get_line_coding(usb_cdc_line_coding_t *line_coding)
 	}
 
 	if ((host->connect_state == USBH_STATE_SETUP) || (host->connect_state == USBH_STATE_ATTACH)) {
-		usb_cdc_line_coding_t *lc = cdc->line_coding;
-		usb_cdc_line_coding_t *ulc = line_coding;
+		usb_cdc_acm_line_coding_t *lc = cdc->line_coding;
+		usb_cdc_acm_line_coding_t *ulc = line_coding;
 		ulc->b.dwDteRate = lc->b.dwDteRate;
 		ulc->b.bCharFormat = lc->b.bCharFormat;
 		ulc->b.bParityType = lc->b.bParityType;

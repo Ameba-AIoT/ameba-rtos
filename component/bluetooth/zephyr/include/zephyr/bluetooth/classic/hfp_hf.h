@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#ifdef ZEPHYR_FIX_CODE /* zephyr_porting */
+#if ZEPHYR_RTK_PATCH /* zephyr_patch */
 #include "stack_ext/hfp_hf_ext.h"
 #endif
 
@@ -160,7 +160,7 @@ struct bt_hfp_hf_cb {
 	void (*cmd_complete_cb)(struct bt_conn *conn,
 			      struct bt_hfp_hf_cmd_complete *cmd);
 
-#ifdef ZEPHYR_FIX_CODE /* add for more callback event */
+#if ZEPHYR_RTK_PATCH /* add for more callback event */
 	void (*caller_id)(struct bt_conn *conn, char *number, uint32_t type);
 
 	void (*ag_supported_features_ind)(struct bt_conn *conn, uint32_t features);

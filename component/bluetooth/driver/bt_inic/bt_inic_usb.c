@@ -75,7 +75,7 @@ void bt_inic_usb_tx_data(u8 type, u8 *data, u32 len)
 		osif_mutex_take(usb_priv.evt_tx_lock, BT_TIMEOUT_FOREVER);
 		osif_sem_take(usb_priv.evt_tx_done_sema, BT_TIMEOUT_FOREVER);
 
-		usbd_inic_transmit_data(USBD_INIT_BT_EP1_INTR_IN, data, len, NULL);
+		usbd_inic_transmit_data(USBD_INIC_BT_EP1_INTR_IN, data, len, NULL);
 		osif_mutex_give(usb_priv.evt_tx_lock);
 		break;
 	case HCI_ACL:
@@ -219,7 +219,7 @@ static int _usb_trx_buf_init(void)
 	usbd_inic_app_ep_t *ep;
 	u8 ep_num;
 
-	ep_num = USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN);
+	ep_num = USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN);
 	ep = &iapp->in_ep[ep_num];
 	ep->buf_len = USBD_INIC_BT_EP1_INTR_IN_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
@@ -254,7 +254,7 @@ bt_init_clean_ep2_bulk_in_buf_exit:
 	ep->buf = NULL;
 
 bt_init_clean_ep1_intr_in_buf_exit:
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)];
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;
 
@@ -267,7 +267,7 @@ static void _usb_trx_buf_deinit(void)
 	usbd_inic_app_t *iapp = &usbd_inic_app;
 	usbd_inic_app_ep_t *ep;
 
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)];
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN)];
 	if (ep->buf != NULL) {
 		usb_os_mfree(ep->buf);
 		ep->buf = NULL;

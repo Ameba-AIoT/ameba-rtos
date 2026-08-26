@@ -39,7 +39,7 @@ static const char *const TAG = "UVC";
 static const usbh_dev_id_t uvc_devs[] = {
 	{
 		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS,
-		.idVendor = 0x0bdb,
+		.idVendor = 0x0BDA,
 		.bInterfaceClass = USBH_UVC_CLASS_CODE,
 	},
 	{
@@ -159,6 +159,7 @@ static int usbh_uvc_detach(usb_host_t *host)
 	for (i = 0U; i < vs_num; i ++) {
 		stream = &uvc->stream[i];
 		stream->state = STREAM_STATE_CTRL_IDLE;
+		stream->cur_setting.pipe.pipe_num = 0U;  /* clear stale pipe_num: next find_alt must not close a recycled channel */
 		if (stream->stream_state == UVC_STREAM_ACTIVE) {
 			usbh_uvc_stream_stop(stream);
 		}
@@ -328,7 +329,7 @@ static void usbh_uvc_ctrl_set_alt_done(usbh_uvc_host_t *uvc, usbh_uvc_stream_t *
 		usbh_open_pipe(uvc->host, &cur_set->pipe, cur_set->altsetting->endpoint, &usbh_uvc_driver);
 #if USBH_UVC_DEBUG
 		RTK_LOGS(TAG, RTK_LOG_INFO,
-				 "Alt %d: ep_addr=0x%02X, mps=%d, interval=%d, type=%d, xfer_len=%d\n",
+				 "Alt %d: ep_addr=0x%02x, mps=%d, interval=%d, type=%d, xfer_len=%d\n",
 				 cur_set->bAlternateSetting,
 				 cur_set->pipe.ep_addr,
 				 cur_set->pipe.ep_mps,

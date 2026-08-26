@@ -209,7 +209,7 @@ struct bt_keys_link_key {
 	uint8_t                 storage_start[0]  __aligned(sizeof(void *));
 	uint8_t                 flags;
 	uint8_t                 val[16];
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	uint8_t                 key_type;  /* e.g.  BT_LK_COMBINATION */
 #endif
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)

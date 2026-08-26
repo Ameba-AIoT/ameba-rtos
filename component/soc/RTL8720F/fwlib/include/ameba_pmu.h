@@ -33,6 +33,8 @@ typedef enum {
 	PMU_BT_CONTROLLER,     /* BT runs on non-secure side */
 	PMU_BT_HOST,
 	PMU_WHC_WIFI,
+	PMU_DHCP_PROCESS,
+	PMU_LWIP_STACK,
 	PMU_DEV_USER_BASE,     /* reserved for customer use */
 	PMU_MAX,
 } PMU_DEVICE;

@@ -5,7 +5,7 @@
 
 #include "platform_autoconf.h"
 
-#if defined(CONFIG_LWIP_USB_ETHERNET) && defined(CONFIG_RNAT)
+#if defined(CONFIG_LWIP_USB_ETHERNET) && defined(CONFIG_RNAT) && !defined(CONFIG_USBH_CDC_ACM_4G_DONGLE)
 #include "os_wrapper.h"
 #include "lwip_netconf.h"
 #include "usb_ethernet.h"
@@ -59,11 +59,19 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 }
 #endif
 
-/* ========================================================================== */
-/*                                 USBD                                       */
-/* ========================================================================== */
+/* ========== USBD CDC ECM ========== */
 
 #if defined(CONFIG_USBD_CDC_ECM)
+
+// Endpoint address
+#if defined (CONFIG_AMEBAGREEN2)
+#define CDC_ECM_BULK_IN_EP                        0x82U
+#define CDC_ECM_BULK_OUT_EP                       0x02U
+#else
+#define CDC_ECM_BULK_IN_EP                        0x81U
+#define CDC_ECM_BULK_OUT_EP                       0x02U
+#endif
+#define CDC_ECM_INTR_IN_EP                        0x83U
 
 static const u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 static const u8 dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56};
@@ -86,6 +94,13 @@ static const usbd_cdc_ecm_cb_t cdc_ecm_cb = {
 	.received = cdc_ecm_cb_received,
 	.status_changed = cdc_ecm_cb_status_changed,
 };
+
+static const usbd_cdc_ecm_ep_cfg_t cdc_ecm_ep_cfg = {
+	.bulk_in_addr  = CDC_ECM_BULK_IN_EP,
+	.bulk_out_addr = CDC_ECM_BULK_OUT_EP,
+	.intr_in_addr  = CDC_ECM_INTR_IN_EP,
+};
+
 
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
 #define USB_ETH_SPEED  USB_SPEED_FULL
@@ -226,7 +241,7 @@ static void usb_eth_hotplug_thread(void *param)
 				break;
 			}
 
-			ret = usbd_cdc_ecm_init(&cdc_ecm_cb);
+			ret = usbd_cdc_ecm_init(&cdc_ecm_cb, &cdc_ecm_ep_cfg);
 			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM init fail %d\n", ret);
 				usbd_deinit();
@@ -261,7 +276,7 @@ static int usb_eth_do_usb_init(void)
 		return -1;
 	}
 
-	ret = usbd_cdc_ecm_init(&cdc_ecm_cb);
+	ret = usbd_cdc_ecm_init(&cdc_ecm_cb, &cdc_ecm_ep_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM init fail %d\n", ret);
 		usbd_deinit();

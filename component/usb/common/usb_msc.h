@@ -12,6 +12,11 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/* MSC interface class, subclass and protocol codes */
+#define USB_MSC_CLASS_CODE                      0x08U   /**< Mass Storage Class code.        */
+#define USB_MSC_SUBCLASS_SCSI                   0x06U   /**< SCSI transparent command set.   */
+#define USB_MSC_PROTOCOL_BOT                    0x50U   /**< Bulk-Only Transport protocol.   */
+
 /* Defines MSC class-specific request codes for the bRequest field. */
 #define USB_MSC_REQUEST_BOT_RESET                  0xFFU    /**< Bulk-Only Mass Storage Reset request. */
 #define USB_MSC_REQUEST_GET_MAX_LUN                0xFEU    /**< Get Max LUN request. */

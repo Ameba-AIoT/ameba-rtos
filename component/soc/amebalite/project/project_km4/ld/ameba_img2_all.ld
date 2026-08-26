@@ -29,10 +29,6 @@
 #define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*) WLAN_SRAMDRAM_ONLY_TEXT
 #endif
 
-#if defined(CONFIG_DSP_EN) && defined(CONFIG_DATA_HEAP_SRAM)
-#error When DSP is turned on, DSP has exclusive access to SRAM by default. Please modify the data and heap location of IMG2 in menuconfig or modify the default running location of DSP.
-#endif
-
 SECTIONS
 {
 	/* fixed region. do not add any code to this region */
@@ -216,15 +212,4 @@ __bdram_heap_buffer_size__ = 0;
 
 ASSERT(__psram_image2_start__ == ORIGIN(KM4_BD_PSRAM), "__psram_image2_start__ is changed.")
 
-#if defined(CONFIG_PSRAM_ALL_FOR_AP_HEAP)
-__psram_heap_buffer_start__ = .;
-__psram_heap_buffer_size__ = 0;
-
-__psram_heap_extend_start__ = .;
-__psram_heap_extend_size__ = 0;
-#else
 __psram_heap_buffer_size__ = ORIGIN(KM4_BD_PSRAM) + LENGTH(KM4_BD_PSRAM) - __psram_heap_buffer_start__;
-
-__psram_heap_extend_start__ = ORIGIN(KM4_PSRAM_HEAP_EXT);
-__psram_heap_extend_size__ = LENGTH(KM4_PSRAM_HEAP_EXT);
-#endif

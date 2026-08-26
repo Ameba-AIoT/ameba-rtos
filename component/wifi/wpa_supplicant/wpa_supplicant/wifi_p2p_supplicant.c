@@ -595,7 +595,7 @@ void wifi_p2p_rx_mgnt_handle(u8 *evt_info)
 		return;
 	}
 
-	freq = p2p_channel_to_freq(g_p2p_context.p2p->cfg->reg_class, rx_mgnt_info->channel);
+	freq = p2p_channel_to_freq(p2p_chan_to_reg_class(rx_mgnt_info->channel), rx_mgnt_info->channel);
 	if (freq < 0) {
 		return;
 	}
@@ -615,8 +615,6 @@ void wifi_p2p_rx_mgnt_handle(u8 *evt_info)
 		frm_len = len - sizeof(struct ieee80211_hdr) - 1;
 		p2p_rx_action(g_p2p_context.p2p, da, sa, bssid, category, frame_body + 1, frm_len, freq);
 	}
-
-	rtos_mem_free(evt_info);
 
 	return;
 }
@@ -854,12 +852,7 @@ static int wifi_p2p_auth_go_neg(const u8 *peer_addr,
 
 u8 wifi_p2p_check_role(u8 role)
 {
-#ifdef CONFIG_WIFI_P2P_ENABLE
 	return g_p2p_context.role == role;
-#else
-	(void) role;
-	return 0;
-#endif
 }
 
 static void wifi_p2p_go_neg_completed(void *ctx, struct p2p_go_neg_results *res)

@@ -277,12 +277,12 @@ struct bt_hci_cmd_hdr {
 					BT_FEAT_LE_BIS(feat))
 
 /* LE States. See Core_v5.4, Vol 4, Part E, Section 7.8.27 */
-/* ZEPHYR_FIX_CODE */
+/* ZEPHYR_RTK_PATCH */
 #define BT_LE_STATES_PER_CONN_ADV(states)     (states & BIT64(38))
 
 #if defined(CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL)
 /* Both passive and active scanner can be run in parallel with initiator. */
-/* ZEPHYR_FIX_CODE */
+/* ZEPHYR_RTK_PATCH */
 #define BT_LE_STATES_SCAN_INIT(states) ((states) & BIT64(22) && \
 					(states) & BIT64(23))
 #else
@@ -3099,7 +3099,7 @@ struct bt_hci_evt_le_biginfo_adv_report {
 	uint8_t  encryption;
 } __packed;
 
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 #define BT_HCI_EVT_MODE_CHANGE                  0x14
 struct bt_hci_evt_mode_change {
 	uint8_t status;
@@ -3140,7 +3140,7 @@ struct bt_hci_evt_mode_change {
 #define BT_EVT_MASK_SSP_COMPLETE                 BT_EVT_BIT(53)
 #define BT_EVT_MASK_USER_PASSKEY_NOTIFY          BT_EVT_BIT(58)
 #define BT_EVT_MASK_LE_META_EVENT                BT_EVT_BIT(61)
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 #define BT_EVT_MASK_MODE_CHANGE                  BT_EVT_BIT(19)
 #endif
 
