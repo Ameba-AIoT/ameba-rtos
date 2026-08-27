@@ -46,3 +46,25 @@ if(CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAPRO3 OR CONFIG_AMEBALI
         ${DIR_COMMON}/wififw_btcoex_mailbox_common.c
     )
 endif()
+
+# CONFIG_WIFI_TWT_ENABLE 未打开时，编译 TWT stub（置空函数）
+# only AX IC 并且排除 SMART 平台，需要编译 disable stub
+if(NOT CONFIG_AMEBASMART)
+    if(NOT CONFIG_WIFI_TWT_ENABLE)
+        list(
+            APPEND CSRC
+            ${DIR_COMMON}/wififw_ps_twt_disable_com.c
+        )
+    endif()
+endif()
+
+# CONFIG_WIFI_CSI_ENABLE 未打开时，编译 CSI stub（置空函数）
+#For smart,code size is not considered under the non-shared-core architecture 
+if(NOT CONFIG_AMEBASMART)
+    if(NOT CONFIG_WIFI_CSI_ENABLE)
+        list(
+            APPEND CSRC
+            ${DIR_COMMON}/wififw_csi_disable_com.c
+        )
+    endif()
+endif()

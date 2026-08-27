@@ -7,7 +7,6 @@
 #include "ameba_soc.h"
 #include "ameba_ddrphy_scanpara.h"
 
-static const char *const TAG = "DDRPHY";
 #if 0
 #define SCAN_PRINT DiagPrintf
 #define BSTC_DEBUG_PRINT TRUE
@@ -94,6 +93,7 @@ static const char *const TAG = "DDRPHY";
 //=========== User Define Part end  ===============//
 //=================================================//
 #if DDR_SCAN_PARA
+static const char *const TAG = "DDRPHY";
 
 uint32_t pattern[640] = {
 	0x8a18207f, 0xc50c103f, 0xe286081f, 0xf143040f, //random
@@ -297,6 +297,9 @@ void DDR_PHY_R480_CAL(void)
 	DDRPHY_TypeDef *ddr_phy = DDRPHY_DEV;
 	u32 temp;
 
+	temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1);
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1, temp | LSYS_BIT_BG_ON_USB2);
+
 	if (DDR_PHY_ChipInfo_ddrtype() == MCM_DDR3L) {
 		return; //DDR3L use external 240ohm, no need to K R480
 	}
@@ -452,16 +455,10 @@ void bstc_other_sram_fill(u32 sram_base_addr)
 
 void DDR_PHY_BSTC_STARK(void)
 {
-	u32 bstc_addr;
-	u32 data_entry;
-	u32 loop_cnt = 0;
 	u32 bsram0_cmd_lvl, bsram0_wd_lvl, bsram1_rg_lvl, bsram1_rd_lvl;
 	//int bstc_done;
 	int err_cnt;
 	DDRC_TypeDef *ddrc = DDRC_DEV;
-
-	u32 data_buf[16];
-	struct bstc_data_b128 *bstc_data = (struct bstc_data_b128 *)data_buf;
 
 	RTK_LOGI(TAG,  "rxi316_bstc start.\n");
 
@@ -489,11 +486,14 @@ void DDR_PHY_BSTC_STARK(void)
 	//********************************************************
 	//*******	   initialize bstc cmd				 *********
 	//********************************************************
-	data_entry = (BSTC_WD_EX_LVL / 4);
 	RTK_LOGI(TAG,  "===== Write BSTC CMD_SRAM =====\n");
 	bstc_cmd_sram_fill();
 
 #if BSTC_DEBUG_PRINT
+	u32 bstc_addr, loop_cnt, data_entry = (BSTC_WD_EX_LVL / 4);
+	u32 data_buf[16];
+	struct bstc_data_b128 *bstc_data = (struct bstc_data_b128 *)data_buf;
+
 	//Check CMD SRAM
 	RTK_LOGI(TAG,  "===== Read BSTC CMD_SRAM =====\n");
 	bstc_addr = CMD_SRAM_BASE;
@@ -611,7 +611,7 @@ void DDR_PHY_BSTC_STARK(void)
 	//********************************************************
 	// Wait BSTC_DONE
 	while ((ddrc->DDRC_CCR & DDRC_BIT_BSTC) >> 2 == 0) {
-		DelayMs(1000 * 5);
+		DelayMs(1000 * 1);
 		//RTK_LOGI(TAG,  "//===== Force BSTC OFF =====\n");
 		ddrc->DDRC_BCR |= DDRC_BIT_STOP;
 		RTK_LOGI(TAG,  "CR_BCR %p = 0x%08lX\n", &(ddrc->DDRC_BCR), ddrc->DDRC_BCR);
@@ -747,7 +747,7 @@ void sram_sg(void)
 	//********************************************************
 	// Wait BSTC_DONE
 	while ((ddrc->DDRC_CCR & DDRC_BIT_BSTC) >> 2 == 0) {
-		DelayMs(1000 * 2);//rw 秒數 ( sram_sg )
+		DelayMs(1000 * 1);//rw 秒數 ( sram_sg )
 		//RTK_LOGI(TAG,  "//===== Force BSTC OFF =====\n");
 		ddrc->DDRC_BCR |= DDRC_BIT_STOP;
 	};	// wait BISC done

@@ -305,7 +305,7 @@ typedef struct {
 
 	u32 RTC_AlarmMask;	/*!< Specifies the RTC Alarm1 Masks(H:M:S).
 					This parameter can be a value of @ref RTC_AlarmMask1 */
-	u32 RTC_Alarm2Mask;	/*!< Specifies the RTC Alarm2 Masks Day).
+	u32 RTC_Alarm2Mask;	/*!< Specifies the RTC Alarm2 Masks Day.
 					This parameter can be a value of @ref RTC_AlarmMask2 */
 } RTC_AlarmTypeDef;
 
@@ -538,10 +538,21 @@ typedef struct {
   * @}
   */
 
+/** @defgroup Leap_Year_Check Leap Year Check
+  * @{
+  */
+/** @brief Check if the given year is a leap year. */
+#define IS_LEAP_YEAR_CHECK(YEAR, RET) do {\
+		if(((!(YEAR % 4)) && (YEAR % 100)) || (!(YEAR % 400))) { \
+			RET = 1; \
+		} else { \
+			RET = 0; \
+		} \
+} while (0)
+
 /**
   * @}
   */
-
 
 /**
   * @}

@@ -11,8 +11,6 @@
 #define DDRPHY_LOOPBACK	DISABLE
 
 #if DDR_SCAN_PARA || DDRPHY_LOOPBACK
-#define ChipInfo_Get()				0xFF
-
 #define SUPPORT_DYNAMIC_POWEROFF	DISABLE
 #define DDRPHY_SSC_EN				DISABLE
 #else
@@ -67,8 +65,14 @@ static const DDRPHY_ZQ_Rx_Scan_Def ddrphy_zq_rx_scan[] = {
 
 	{0x0e141414,		0x140e0e0e,		0x26243c34,		0x261b2f28,		0xF,			0x3,				0x3,				0x3},//QFN144_DDR3L(0x0D)
 	{0x0a0c0c0c,		0x0c0a0a0a,		0x2616251f,		0x2614221d,		0x5,			0x2,				0x2,				0x4},//QFN144_DDR2(0x0E)
+	{0x0e141414,		0x140e0e0e,		0x26243c34,		0x261c3029,		0xF,			0x3,				0x3,				0x3},//QFN144_DDR3L(0x13)
+	{0x0b0f0c0c,		0x0c0b0b0b,		0x261F362D,		0x26162722,		0x6,			0x3,				0x3,				0x4},//QFN100_DDR2(0x12)
 };
 
+// PLL_PI0: dqs1/dqs0/cmd/ck
+// PLL_PI1: internal clock/dq0/dqs3/dqs2
+// PLL_PI2: cs/dq3/dq2/dq1
+// PLL_PI3: ck1/cs1
 static const DDRPHY_Tx_Scan_Def ddrphy_tx_scan[] = {
 	//PLL_PI0,		PLL_PI1,	PLL_PI2,	PLL_PI3,	PLL_CTL1,	AFIFO_STR_0,	AFIFO_STR_1,	AFIFO_STR_SEL
 	{0x00000000,	0x00080000,	0x00080808,	0x00000000,	0x20000000,	0x33333333,		0x000c0022,		0x00000000},//Default
@@ -79,6 +83,8 @@ static const DDRPHY_Tx_Scan_Def ddrphy_tx_scan[] = {
 
 	{0x1110001b,	0x00191111,	0x13191919,	0x00000013,	0x20000ffd,	0x22222222,		0x000c0012,		0x34000000},//QFN144_DDR3L(0x0D)
 	{0x1313001c,	0x001c1313,	0x121c1c1c,	0x00000012,	0x20000ffd,	0x22222222,		0x000c0012,		0x34000000},//QFN144_DDR2(0x0E)
+	{0x1010001b,	0x00191010,	0x11191919,	0x00000011,	0x20000ffd,	0x22222222,		0x000C0012,		0x34000000},//QFN144_DDR3L(0x13)
+	{0x0e0e001a,	0x00170e0e,	0x12171717,	0x00000012,	0x20000fc1,	0x22222222,		0x000c0012,		0x34000000},//QFN100_DDR2(0x12)
 };
 
 static u8 DDR_PHY_ChipInfo(void)
@@ -108,6 +114,12 @@ static u8 DDR_PHY_ChipInfo(void)
 	case 0x0E:
 	case 0x10:
 		s_chipinfo_ddr = 5;
+		break;
+	case 0x13:
+		s_chipinfo_ddr = 6;
+		break;
+	case 0x12:
+		s_chipinfo_ddr = 7;
 		break;
 	default:
 		for (i = 0; i < 20; i++) {

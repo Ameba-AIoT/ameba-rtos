@@ -427,7 +427,7 @@ void example_usbh_msc_thread(void *param)
 	/* Start hotplug thread (waits on detach_sema, re-inits USB stack) */
 	{
 		rtos_task_t hotplug_task;
-		ret = rtos_task_create(&hotplug_task, "example_usbh_msc_hotplug_thread",
+		ret = rtos_task_create(&hotplug_task, "usbh_msc_hotplug_thread",
 							   example_usbh_msc_hotplug_thread, NULL,
 							   USBH_MSC_HOTPLUG_THREAD_STACK_SIZE,
 							   USBH_MSC_HOTPLUG_THREAD_PRIORITY);
@@ -495,7 +495,7 @@ void example_usbh_msc(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH MSC demo start\n");
 
-	ret = rtos_task_create(&task, "example_usbh_msc_thread", example_usbh_msc_thread, NULL,
+	ret = rtos_task_create(&task, "usbh_msc_thread", example_usbh_msc_thread, NULL,
 						   USBH_MSC_INIT_THREAD_STACK_SIZE, USBH_MSC_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");

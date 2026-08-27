@@ -22,7 +22,7 @@ static inline bool bt_id_rpa_is_new(void)
 #endif
 }
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 enum bt_rslv_pend_reason {
 	BT_RSLV_PEND_BY_ADV = 0x1,
 	BT_RSLV_PEND_BY_SCAN = 0x2,

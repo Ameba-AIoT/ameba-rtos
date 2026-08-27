@@ -567,6 +567,9 @@ static int whc_spi_host_drv_init(void)
 #ifdef CONFIG_LWIP_LAYER
 	whc_host_netinfo_monitor_init();
 #endif
+#ifdef CONFIG_WHC_CMD_PATH
+	whc_host_cmd_path_init();
+#endif
 
 	return RTK_SUCCESS;
 }

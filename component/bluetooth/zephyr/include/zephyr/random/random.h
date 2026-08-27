@@ -45,7 +45,7 @@ extern "C" {
  *
  * @return 32-bit random value.
  */
-//zephyr_porting port sys_rand32_get function for zephyr
+//zephyr_patch port sys_rand32_get function for zephyr
 // __syscall uint32_t sys_rand32_get(void);
 
 /**

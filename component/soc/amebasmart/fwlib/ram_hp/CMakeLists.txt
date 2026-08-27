@@ -63,6 +63,12 @@ ameba_list_append_ifnot(CONFIG_ARM_CORE_CA32 private_sources
     ameba_pmc.c
 )
 
+if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image1")
+    ameba_list_append(private_sources
+        ameba_ddrphy_scanpara.c
+    )
+endif()
+
 # Component private part, user config end
 #------------------------------#
 

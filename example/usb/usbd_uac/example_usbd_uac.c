@@ -28,39 +28,44 @@
 #endif
 
 /* Private defines -----------------------------------------------------------*/
-static const char *const TAG = "UAC";
 
-/*
-	This configuration is used to enable a thread to check hotplug event
-	and reset USB stack to avoid memory leak, only for example.
-*/
-#define CONFIG_USBD_UAC_HOTPLUG    1
-/*
-	This configuration is used to choose one channel to play
-	for the audio does not support some channel, Such as 4 chs
-	while enable this configuration,choose the first ch to play
-*/
-#define CONFIG_USBD_UAC_DEMUX_CH_DEBUG   1
-
-/* USB speed */
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define CONFIG_USBD_UAC_SPEED USB_SPEED_FULL
-#elif defined(CONFIG_USBD_UAC1)
-/* UAC 1.0 spec supports only Full Speed. */
-#define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH_IN_FULL
+// Endpoint address
+#if defined(CONFIG_AMEBAGREEN2)
+#define USBD_UAC_ISOC_IN_EP                      0x84U
+#define USBD_UAC_ISOC_OUT_EP                     0x02U
 #else
-#define CONFIG_USBD_UAC_SPEED USB_SPEED_HIGH
+#define USBD_UAC_ISOC_IN_EP                      0x81U
+#define USBD_UAC_ISOC_OUT_EP                     0x02U
 #endif
 
-/* Thread priorities */
-#define CONFIG_USBD_UAC_INIT_THREAD_PRIORITY           6U
-#define CONFIG_USBD_UAC_HOTPLUG_THREAD_PRIORITY        8U
-#define CONFIG_USBD_UAC_PLAYER_THREAD_PRIORITY         6U
+// This configuration is used to enable a thread to check hotplug event
+// and reset USB stack to avoid memory leak, only for example.
+#define USBD_UAC_HOTPLUG                          1
 
-/* Thread stack sizes */
-#define CONFIG_USBD_UAC_INIT_THREAD_STACK_SIZE           1024U
-#define CONFIG_USBD_UAC_HOTPLUG_THREAD_STACK_SIZE        1024U
-#define CONFIG_USBD_UAC_PLAYER_THREAD_STACK_SIZE         2300U
+// This configuration is used to choose one channel to play
+// for the audio does not support some channel, Such as 4 chs
+// while enable this configuration,choose the first ch to play
+#define USBD_UAC_DEMUX_CH_DEBUG                   1
+
+// USB speed
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
+#define USBD_UAC_USB_SPEED                        USB_SPEED_FULL
+#elif defined(CONFIG_USBD_UAC1)
+// UAC 1.0 spec supports only Full Speed.
+#define USBD_UAC_USB_SPEED                        USB_SPEED_HIGH_IN_FULL
+#else
+#define USBD_UAC_USB_SPEED                        USB_SPEED_HIGH
+#endif
+
+// Thread priorities
+#define USBD_UAC_INIT_THREAD_PRIORITY             6
+#define USBD_UAC_HOTPLUG_THREAD_PRIORITY          8
+#define USBD_UAC_PLAYER_THREAD_PRIORITY           6
+
+// Thread stack sizes
+#define USBD_UAC_INIT_THREAD_STACK_SIZE           1024U
+#define USBD_UAC_HOTPLUG_THREAD_STACK_SIZE        1024U
+#define USBD_UAC_PLAYER_THREAD_STACK_SIZE         2300U
 
 #define AUDIO_BYTE_WIDTH_SIZE                   0x02U
 #define AUDIO_SAMPLING_FREQ                     USBD_UAC_SAMPLING_FREQ_48K
@@ -93,7 +98,9 @@ static void uac_cb_volume_changed(u8 volume);
 static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 /* Private variables ---------------------------------------------------------*/
 
-#if CONFIG_USBD_UAC_HOTPLUG
+static const char *const TAG = "UAC";
+
+#if USBD_UAC_HOTPLUG
 static rtos_task_t check_status_task;
 static rtos_sema_t uac_attach_status_changed_sema;
 static u8 uac_attach_status;
@@ -120,7 +127,7 @@ static u8 play_buf[USB_AUDIO_BUF_SIZE];
 static u8 recv_buf[USB_AUDIO_BUF_SIZE * 2];
 
 static const usbd_config_t uac_cfg = {
-	.speed = CONFIG_USBD_UAC_SPEED,
+	.speed = USBD_UAC_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 420U,
@@ -130,6 +137,11 @@ static const usbd_config_t uac_cfg = {
 	.rx_fifo_depth = 1680U,
 	.ptx_fifo_depth = {16U, 256U, 16U, },
 #endif
+};
+
+static const usbd_uac_ep_cfg_t uac_ep = {
+	.isoc_in_addr  = USBD_UAC_ISOC_IN_EP,
+	.isoc_out_addr = USBD_UAC_ISOC_OUT_EP,
 };
 
 static usbd_uac_cb_t uac_cb = {
@@ -212,7 +224,7 @@ static void uac_cb_status_changed(u8 old_status, u8 status)
 {
 	UNUSED(old_status);
 
-#if CONFIG_USBD_UAC_HOTPLUG
+#if USBD_UAC_HOTPLUG
 	uac_attach_status = status;
 	rtos_sema_give(uac_attach_status_changed_sema);
 #else
@@ -220,7 +232,7 @@ static void uac_cb_status_changed(u8 old_status, u8 status)
 #endif
 }
 
-#if CONFIG_USBD_UAC_HOTPLUG
+#if USBD_UAC_HOTPLUG
 static void example_usbd_uac_hotplug_thread(void *param)
 {
 	int ret = 0;
@@ -255,7 +267,7 @@ static void example_usbd_uac_hotplug_thread(void *param)
 				if (ret != 0) {
 					break;
 				}
-				ret = usbd_uac_init(&uac_cb);
+				ret = usbd_uac_init(&uac_cb, &uac_ep);
 				if (ret != 0) {
 					usbd_deinit();
 					break;
@@ -270,7 +282,7 @@ static void example_usbd_uac_hotplug_thread(void *param)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug thread fail\n");
 	rtos_task_delete(NULL);
 }
-#endif // CONFIG_USBD_UAC_HOTPLUG
+#endif // USBD_UAC_HOTPLUG
 
 /**
   * @brief  Handle UAC mute control changes from the host
@@ -338,7 +350,7 @@ static void example_audio_track_play(void)
 	u32 track_channel;
 	u32 track_format;
 	u32 play_track_channel;
-#if CONFIG_USBD_UAC_DEMUX_CH_DEBUG
+#if USBD_UAC_DEMUX_CH_DEBUG
 	u32 idx = 0;
 	u32 off = 0;
 	u32 play_data_size;
@@ -365,7 +377,7 @@ static void example_audio_track_play(void)
 
 	play_track_channel = track_channel;    //mix not support 4 channel
 
-#if CONFIG_USBD_UAC_DEMUX_CH_DEBUG
+#if USBD_UAC_DEMUX_CH_DEBUG
 	//force to get the 1st channel to play
 	play_track_channel = 1;
 	audio_src_step = track_channel * track_format / 8;
@@ -430,7 +442,7 @@ static void example_audio_track_play(void)
 	while ((uac_task_exiting != 1) && (uac_player_stop != 1)) {
 		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500);
 		if (read_dat_len > 0) {
-#if CONFIG_USBD_UAC_DEMUX_CH_DEBUG
+#if USBD_UAC_DEMUX_CH_DEBUG
 			play_data_size = 0;
 			//get the 2 channel data from the 4 channel
 			for (idx = 0, off = 0; idx < read_dat_len; idx += audio_src_step, off += audio_dst_step) {
@@ -509,7 +521,7 @@ static void example_usbd_uac_thread(void *param)
 		goto example_exit;
 	}
 
-#if CONFIG_USBD_UAC_HOTPLUG
+#if USBD_UAC_HOTPLUG
 	if (rtos_sema_create(&uac_attach_status_changed_sema, 0U, 1U) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
 		rtos_sema_delete(uac_ready_sema);
@@ -523,37 +535,37 @@ static void example_usbd_uac_thread(void *param)
 		goto exit;
 	}
 
-	ret = usbd_uac_init(&uac_cb);
+	ret = usbd_uac_init(&uac_cb, &uac_ep);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init fail\n");
 		goto clear_usb_driver_exit;
 	}
 
-	ret = rtos_task_create(&uac_player_task, ((const char *)"example_usbd_uac_audio_track_thread"),
+	ret = rtos_task_create(&uac_player_task, "usbd_uac_audio_track_thread",
 						   example_usbd_uac_audio_track_thread, NULL,
-						   CONFIG_USBD_UAC_PLAYER_THREAD_STACK_SIZE, CONFIG_USBD_UAC_PLAYER_THREAD_PRIORITY);
+						   USBD_UAC_PLAYER_THREAD_STACK_SIZE, USBD_UAC_PLAYER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create audio track fail\n");
 		usbd_uac_deinit();
 		goto clear_usb_driver_exit;
 	}
 
-#if CONFIG_USBD_UAC_HOTPLUG
-	ret = rtos_task_create(&check_status_task, "example_usbd_uac_hotplug_thread",
+#if USBD_UAC_HOTPLUG
+	ret = rtos_task_create(&check_status_task, "usbd_uac_hotplug_thread",
 						   example_usbd_uac_hotplug_thread, NULL,
-						   CONFIG_USBD_UAC_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBD_UAC_HOTPLUG_THREAD_PRIORITY);
+						   USBD_UAC_HOTPLUG_THREAD_STACK_SIZE, USBD_UAC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug task fail\n");
 		goto clear_usb_class_exit;
 	}
-#endif // CONFIG_USBD_UAC_HOTPLUG
+#endif // USBD_UAC_HOTPLUG
 
 	rtos_time_delay_ms(100);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UAC demo start\n");
 
 	goto example_exit;
-#if CONFIG_USBD_UAC_HOTPLUG
+#if USBD_UAC_HOTPLUG
 clear_usb_class_exit:
 	usbd_uac_stop_play();
 	usbd_uac_deinit();
@@ -565,7 +577,7 @@ clear_usb_driver_exit:
 exit:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UAC demo stop\n");
 	rtos_sema_delete(uac_ready_sema);
-#if CONFIG_USBD_UAC_HOTPLUG
+#if USBD_UAC_HOTPLUG
 	rtos_sema_delete(uac_attach_status_changed_sema);
 #endif
 
@@ -580,8 +592,8 @@ void example_usbd_uac(void)
 	int ret;
 	rtos_task_t task;
 
-	ret = rtos_task_create(&task, "example_usbd_uac_thread", example_usbd_uac_thread, NULL,
-						   CONFIG_USBD_UAC_INIT_THREAD_STACK_SIZE, CONFIG_USBD_UAC_INIT_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "usbd_uac_thread", example_usbd_uac_thread, NULL,
+						   USBD_UAC_INIT_THREAD_STACK_SIZE, USBD_UAC_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD UAC thread fail\n");
 	}

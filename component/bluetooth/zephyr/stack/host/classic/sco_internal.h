@@ -46,7 +46,7 @@ struct bt_sco_chan_ops {
 	 */
 	void (*disconnected)(struct bt_sco_chan *chan, uint8_t reason);
 
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	void (*recv)(struct bt_sco_chan *chan, struct net_buf *buf);
 #endif
 };
@@ -155,7 +155,7 @@ void bt_sco_chan_set_state_debug(struct bt_sco_chan *chan,
 void bt_sco_chan_set_state(struct bt_sco_chan *chan, enum bt_sco_state state);
 #endif /* CONFIG_BT_CONN_LOG_LEVEL_DBG */
 
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 struct net_buf *bt_sco_create_pdu(size_t reserve);
 
 int bt_sco_send(struct bt_conn *sco_conn, struct net_buf *buf);

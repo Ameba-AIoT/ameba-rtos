@@ -8,9 +8,8 @@
 #include <ameba_ipc.h>
 #include <sdn_intf.h>
 #ifdef CONFIG_BT_SDN
-#include <sdn_user_conf_bt.h>
+#include <host_bt_feature.h>
 #endif
-#include <sdn_user_conf_intf.h>
 
 struct sdn_host_ipc_tx {
 	struct sdn_data_buf *pbuf;

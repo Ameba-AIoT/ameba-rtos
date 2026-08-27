@@ -264,7 +264,7 @@ void example_usbh_dfu(void)
 	int status;
 	rtos_task_t task;
 
-	status = rtos_task_create(&task, "example_usbh_dfu_thread", example_usbh_dfu_thread, NULL,
+	status = rtos_task_create(&task, "usbh_dfu_thread", example_usbh_dfu_thread, NULL,
 							  USBH_DFU_INIT_THREAD_STACK_SIZE, USBH_DFU_INIT_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");

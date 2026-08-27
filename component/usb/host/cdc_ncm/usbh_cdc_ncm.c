@@ -148,7 +148,7 @@ static const char *const TAG = "NCMH";
 static const usbh_dev_id_t usbh_cdc_ncm_devs[] = {
 	{
 		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO,
-		.bInterfaceClass = USB_CDC_NCM_COMM_INTERFACE_CLASS_CODE,
+		.bInterfaceClass = USB_CDC_COMM_INTERFACE_CLASS_CODE,
 		.bInterfaceSubClass = USB_CDC_NCM_SUBCLASS_CODE,
 		.bInterfaceProtocol = 0x00,
 	},
@@ -242,7 +242,7 @@ static int usbh_cdc_ncm_cb_intr_receive(u8 *buf, u32 length)
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	if ((buf != NULL) && (length >= 8U)) {
 		/* A1 00 00 00 01 00 00 00 - Network Connection */
-		if (length == 8 && buf[0] == 0xA1 && buf[1] == USB_CDC_NCM_NOTIFY_NETWORK_CONNECTION) {
+		if (length == 8 && buf[0] == 0xA1 && buf[1] == USB_CDC_NOTIFY_NETWORK_CONNECTION) {
 			cdc->eth_hw_connect = buf[2];
 			if (cdc->eth_hw_connect && (cdc->intr_check_tick != usbh_cdc_ncm_get_eth_status_check_time())) {
 				cdc->intr_check_tick = usbh_cdc_ncm_get_eth_status_check_time();
@@ -252,7 +252,7 @@ static int usbh_cdc_ncm_cb_intr_receive(u8 *buf, u32 length)
 			cdc->intr_rx.pipe.max_timeout_tick = cdc->intr_check_tick;
 		}
 		/* A1 2A 00 00 01 00 00 08  00 00 00 00 00 00 00 00 - Connection Speed Change */
-		else if (length == 16 && buf[0] == 0xA1 && buf[1] == USB_CDC_NCM_NOTIFY_CONNECTION_SPEED_CHANGE) {
+		else if (length == 16 && buf[0] == 0xA1 && buf[1] == USB_CDC_NOTIFY_CONNECTION_SPEED_CHANGE) {
 			/* Speed change notification - could be parsed if needed */
 		}
 	}
@@ -752,9 +752,9 @@ static int usbh_cdc_ncm_parse_ctrl(usbh_itf_data_t *itf_data)
 		if (len == 0) {
 			break;
 		}
-		if (((usbh_desc_header_t *)desc)->bDescriptorType == USB_CDC_NCM_CS_INTERFACE) {
+		if (((usbh_desc_header_t *)desc)->bDescriptorType == USB_CDC_CS_INTERFACE) {
 			/* First look for Ethernet Networking Functional Descriptor for MAC address */
-			if (len >= 13 && desc[2] == USB_CDC_NCM_FUNC_DESC_ETHERNET_NETWORKING) {
+			if (len >= 13 && desc[2] == USB_CDC_FUNC_DESC_ETHERNET_NETWORKING) {
 				usb_cdc_ncm_ethernet_function_desc_t *eth_desc = (usb_cdc_ncm_ethernet_function_desc_t *)desc;
 				cdc->iMACAddressStringId = eth_desc->iMACAddress;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "NCM Mac string id(%d)\n", cdc->iMACAddressStringId);
@@ -793,7 +793,7 @@ static int usbh_cdc_ncm_parse_interface_desc(usb_host_t *host)
 	cdc->pid = pdesc->idProduct;
 
 	/* Get NCM control interface */
-	dev_id.bInterfaceClass = USB_CDC_NCM_COMM_INTERFACE_CLASS_CODE;
+	dev_id.bInterfaceClass = USB_CDC_COMM_INTERFACE_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_CDC_NCM_SUBCLASS_CODE;
 	dev_id.bInterfaceProtocol = 0x00;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
@@ -810,8 +810,8 @@ static int usbh_cdc_ncm_parse_interface_desc(usb_host_t *host)
 	}
 
 	/* Get NCM data interface */
-	dev_id.bInterfaceClass = USB_CDC_NCM_DATA_INTERFACE_CLASS_CODE;
-	dev_id.bInterfaceSubClass = USB_CDC_NCM_SUBCLASS_RESERVED;
+	dev_id.bInterfaceClass = USB_CDC_DATA_INTERFACE_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_CDC_SUBCLASS_RESERVED;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	data_itf_desc = NULL;
@@ -1834,7 +1834,7 @@ void usbh_cdc_ncm_trace_task_init(void)
 		return;
 	}
 
-	status = rtos_task_create(&cdc->trace_task, "ncm_trace", usbh_cdc_ncm_trace_thread, NULL, 1024U * 2, 1U);
+	status = rtos_task_create(&cdc->trace_task, "usbh_cdc_ncm_trace_thread", usbh_cdc_ncm_trace_thread, NULL, 1024U * 2, 1U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create ncm dump task fail\n");
 	}
@@ -1931,6 +1931,9 @@ int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_priv
 		}
 	}
 
+	/* Publish cb before cb->init() so the user hook doesn't see NULL. */
+	cdc->cb = cb;
+
 	if (cb->init != NULL) {
 		ret = cb->init();
 		if (ret != HAL_OK) {
@@ -1938,8 +1941,6 @@ int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_priv
 			goto user_init_fail;
 		}
 	}
-
-	cdc->cb = cb;
 
 	usbh_register_class(&usbh_cdc_ncm_driver);
 
@@ -2020,7 +2021,7 @@ int usbh_cdc_ncm_deinit(void)
 int usbh_cdc_ncm_choose_config(usb_host_t *host)
 {
 	usbh_dev_id_t dev_id = {0U};
-	dev_id.bInterfaceClass = USB_CDC_NCM_COMM_INTERFACE_CLASS_CODE;
+	dev_id.bInterfaceClass = USB_CDC_COMM_INTERFACE_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_CDC_NCM_SUBCLASS_CODE;
 	dev_id.bInterfaceProtocol = 0x00;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
@@ -2043,7 +2044,7 @@ int usbh_cdc_ncm_check_config_desc(usb_host_t *host)
 	u8 ncm_data_valid = 0;
 
 	usbh_dev_id_t dev_id = {0U};
-	dev_id.bInterfaceClass = USB_CDC_NCM_COMM_INTERFACE_CLASS_CODE;
+	dev_id.bInterfaceClass = USB_CDC_COMM_INTERFACE_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_CDC_NCM_SUBCLASS_CODE;
 	dev_id.bInterfaceProtocol = 0x00;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
@@ -2053,8 +2054,8 @@ int usbh_cdc_ncm_check_config_desc(usb_host_t *host)
 		ncm_ctrl_valid = 1;
 	}
 
-	dev_id.bInterfaceClass = USB_CDC_NCM_DATA_INTERFACE_CLASS_CODE;
-	dev_id.bInterfaceSubClass = USB_CDC_NCM_SUBCLASS_RESERVED;
+	dev_id.bInterfaceClass = USB_CDC_DATA_INTERFACE_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_CDC_SUBCLASS_RESERVED;
 	dev_id.bInterfaceProtocol = 0x00;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);

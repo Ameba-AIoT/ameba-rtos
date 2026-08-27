@@ -8,6 +8,7 @@
 #if defined(CONFIG_RNAT)
 
 #include "rnat_netif.h"
+#include "lwip/dns.h"
 #include "ethernet.h"
 #include "ameba_soc.h"
 #include "dhcp/dhcps.h"
@@ -131,6 +132,56 @@ rnat_netif_t *rnat_netif_get(struct netif *lwip_netif)
 }
 
 /* ======================================================================== */
+/*                          DNS Cache Helpers (WAN only)                    */
+/* ======================================================================== */
+
+/**
+ * @brief  Save lwIP dns_servers[] into a WAN netif's dns_cache.
+ * @note   Call after a WAN receives its IP; DNS is valid at that point because
+ *         DHCP sets DNS (dhcp_handle_ack) before IP (dhcp_bind).
+ */
+static void rnat_netif_cache_dns(rnat_netif_t *netif)
+{
+	int i;
+	const ip_addr_t *s;
+
+	for (i = 0; i < DNS_MAX_SERVERS; i++) {
+		s = dns_getserver(i);
+		if (s && !ip_addr_isany_val(*s)) {
+			ip4_addr_copy(netif->dns_cache[i], *ip_2_ip4(s));
+		} else {
+			ip4_addr_set_zero(&netif->dns_cache[i]);
+		}
+	}
+}
+
+/**
+ * @brief  Restore a WAN's cached DNS to lwIP dns_servers[] and sync the proxy.
+ * @note   Repairs overwrites caused by a secondary WAN's DHCP lease.
+ *         dns_proxy_update_upstream_servers() is a no-op when DNS is unchanged.
+ */
+static void rnat_sync_gw_dns(const rnat_netif_t *gw)
+{
+	int i;
+	ip_addr_t addr;
+
+	if (!gw || gw->role != RNAT_ROLE_WAN) {
+		return;
+	}
+
+	for (i = 0; i < DNS_MAX_SERVERS; i++) {
+		if (!ip4_addr_isany_val(gw->dns_cache[i])) {
+			ip4_addr_copy(*ip_2_ip4(&addr), gw->dns_cache[i]);
+			dns_setserver(i, &addr);
+		} else {
+			dns_setserver(i, NULL);
+		}
+	}
+
+	dns_proxy_update_upstream_servers();
+}
+
+/* ======================================================================== */
 /*                          NETIF Extension Callback                        */
 /* ======================================================================== */
 
@@ -164,9 +215,22 @@ static void rnat_netif_ext_callback(struct netif *netif,
 				rnat_netif->status_callback(rnat_netif, link_up, rnat_netif->callback_user_data);
 			}
 
-			/* Update default gw on link status change */
-			if (rnat_netif->role == RNAT_ROLE_LAN ||
-				(rnat_netif->role == RNAT_ROLE_WAN && rnat_netif->ip_method == RNAT_IP_METHOD_STATIC)) {
+			if (rnat_netif->role == RNAT_ROLE_WAN && rnat_netif->ip_method == RNAT_IP_METHOD_STATIC) {
+				/* Cache DNS first */
+				if (link_up) {
+					rnat_netif_cache_dns(rnat_netif);
+				}
+
+				/* Update default gateway */
+				rnat_update_default_gw();
+
+				/* Reinitialize NAT tables */
+				ip_nat_reinitialize();
+
+				/* Restore default GW's DNS */
+				rnat_sync_gw_dns(g_default_gw);
+			} else if (rnat_netif->role == RNAT_ROLE_LAN) {
+				/* Reinitialize NAT tables */
 				rnat_update_default_gw();
 			}
 		}
@@ -176,18 +240,22 @@ static void rnat_netif_ext_callback(struct netif *netif,
 	if (reason & LWIP_NSC_IPV4_ADDRESS_CHANGED) {
 		if (rnat_netif->role == RNAT_ROLE_WAN &&
 			rnat_netif->ip_method == RNAT_IP_METHOD_DHCP_CLIENT) {
-			/* Reinitialize NAT and sync DNS when WAN gets new IP */
-			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] WAN got new IP, reinitializing NAT\n",
-					 rnat_netif->if_desc);
 
-			/* Reinitialize NAT tables */
-			ip_nat_reinitialize();
+			/* Cache DNS first */
+			rnat_netif_cache_dns(rnat_netif);
 
-			/* Notify DNS Proxy to update upstream servers from LwIP */
-			dns_proxy_update_upstream_servers();
-
-			/* Update default gateway */
+			rnat_netif_t *prev_gw = g_default_gw;
 			rnat_update_default_gw();
+
+			/* Reinit NAT only when routing changes */
+			if (rnat_netif == g_default_gw || g_default_gw != prev_gw) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] WAN %s, reinitializing NAT\n",
+						 rnat_netif->if_desc, (g_default_gw != prev_gw) ? "GW switched" : "got new IP");
+				ip_nat_reinitialize();
+			}
+
+			/* Restore default GW's DNS */
+			rnat_sync_gw_dns(g_default_gw);
 		}
 	}
 }
@@ -358,7 +426,7 @@ int rnat_netif_destroy(rnat_netif_t *netif)
 	}
 
 	/* Ensure DHCP Server is fully deinitialized */
-	if (netif->dhcps_instance) {
+	if (netif->ip_method == RNAT_IP_METHOD_DHCP_SERVER && netif->dhcps_instance) {
 		dhcps_stop(netif->lwip_netif);
 		dhcps_deinit(netif->lwip_netif);
 		netif->dhcps_instance = NULL;
@@ -581,17 +649,15 @@ static void rnat_link_callback(rnat_netif_t *rnat_netif, int link_up)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "=== %s Link DOWN ===\n", rnat_netif->if_desc);
 
-		if (rnat_netif->ip_method == RNAT_IP_METHOD_DHCP_CLIENT) {
-			netifapi_netif_set_link_down(rnat_netif->lwip_netif);
-			lwip_clear_ip(rnat_netif->idx);
+		netifapi_netif_set_link_down(rnat_netif->lwip_netif);
 
+		if (rnat_netif->ip_method == RNAT_IP_METHOD_DHCP_CLIENT) {
+			lwip_clear_ip(rnat_netif->idx);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] IP released\n", rnat_netif->if_desc);
 		} else if (rnat_netif->ip_method == RNAT_IP_METHOD_DHCP_SERVER) {
 			dhcps_stop(rnat_netif->lwip_netif);
 			dhcps_deinit(rnat_netif->lwip_netif);
 			rnat_netif->dhcps_instance = NULL;
-
-			netifapi_netif_set_link_down(rnat_netif->lwip_netif);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] DHCP Server stopped\n", rnat_netif->if_desc);
 		}
 	}

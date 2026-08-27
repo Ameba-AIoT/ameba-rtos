@@ -30,12 +30,6 @@ void app_start(void)
 	if (ChipInfo_GetChipSram()) {
 		os_heap_add((u8 *)__ap_sram_heap_start, (size_t) __ap_sram_heap_size);
 	}
-
-#ifdef CONFIG_PSRAM_ALL_FOR_AP_HEAP
-	if (ChipInfo_PsramExists()) {
-		os_heap_add((uint8_t *)__km4_bd_psram_start__, (size_t)(__non_secure_psram_end__ - __km4_bd_psram_start__));
-	}
-#endif
 #endif
 	rtos_mem_init();
 

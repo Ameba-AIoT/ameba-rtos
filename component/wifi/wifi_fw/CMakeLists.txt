@@ -9,6 +9,8 @@ elseif(CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAPRO3)
 
 elseif(CONFIG_RTL8720F)
     ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN rtl8720f)
+elseif(CONFIG_RLE1509)
+    ameba_add_subdirectory_if(CONFIG_WIFI_FW_EN rle1509)
 elseif(CONFIG_AMEBALITE)
     if(CONFIG_WLAN)
         if(CONFIG_WHC_DEV OR CONFIG_WHC_NONE)
@@ -28,6 +30,10 @@ ameba_global_include(
 if(CONFIG_AMEBAPRO3)    #amebapro3 use amebagreen2 files
     ameba_global_include(
         amebagreen2/include
+    )
+elseif(CONFIG_RLE1509)
+    ameba_global_include(
+        rle1509/include
     )
 else()
     ameba_global_include(

@@ -5,6 +5,159 @@ import os
 import argparse
 import math
 import struct
+import sys
+
+# ---------------------------------------------------------------------------
+# Compatibility patch for PyFilesystem2 ('fs') when 'pkg_resources'
+# is unavailable.
+#
+# Older PyFilesystem2 releases depend on pkg_resources for namespace
+# package handling and entry-point discovery. In newer setuptools
+# environments, pkg_resources may no longer be available.
+#
+# The patch is applied only when importing pkg_resources fails. When
+# pkg_resources is available, the original fs package is left unchanged.
+#
+# Legacy APIs are replaced with Python standard-library equivalents:
+#
+#   pkg_resources.declare_namespace()
+#       -> pkgutil.extend_path()
+#
+#   pkg_resources.iter_entry_points()
+#       -> importlib.metadata.entry_points()
+#
+# This keeps compatibility with older environments while allowing
+# pyfatfs/fs to work in environments where pkg_resources is absent,
+# without requiring additional dependencies.
+# ---------------------------------------------------------------------------
+def _patch_fs_package():
+    """Patch PyFilesystem2 to work when pkg_resources is unavailable.
+
+    The patch is only applied when importing pkg_resources fails.
+    If pkg_resources is available, the installed 'fs' package is left
+    unchanged.
+
+    The patch replaces legacy pkg_resources namespace-package handling
+    and entry-point discovery with equivalent Python standard-library
+    functionality.
+    """
+    # Patch only when pkg_resources is unavailable.
+    # If it can be imported, keep the original fs implementation unchanged.
+    try:
+        import pkg_resources  # noqa: F401
+        return  # pkg_resources available, original 'fs' works fine
+    except ModuleNotFoundError:
+        pass
+
+    try:
+        import importlib.util
+        spec = importlib.util.find_spec("fs")
+    except ImportError:
+        return
+    if spec is None or not spec.origin:
+        return
+    fs_dir = os.path.dirname(spec.origin)
+    if not os.path.isdir(fs_dir):
+        return
+
+    # Replace legacy pkg_resources namespace-package declarations
+    # with the standard-library pkgutil.extend_path implementation.
+    _pkg_res_declare = (
+        '__import__("pkg_resources").declare_namespace(__name__)  # type: ignore'
+    )
+    _pkgutil_extend = (
+        'from pkgutil import extend_path\n'
+        '__path__ = extend_path(__path__, __name__)  # type: ignore'
+    )
+    for rel in ["__init__.py", "opener/__init__.py"]:
+        path = os.path.join(fs_dir, rel)
+        if not os.path.isfile(path):
+            continue
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        if _pkg_res_declare not in content:
+            continue
+        content = content.replace(_pkg_res_declare, _pkgutil_extend)
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(content)
+        except OSError as exc:
+            print(
+                "vfs.py: cannot patch '{}' ({}).\n"
+                " pkg_resources is unavailable and the 'fs' package is not "
+                "writable.\n"
+                " Fix: install pkg_resources (pip install setuptools<68) or "
+                "make the 'fs' package directory writable.".format(path, exc),
+                file=sys.stderr
+            )
+            return
+
+    # Replace pkg_resources entry-point discovery with
+    # importlib.metadata.entry_points from the Python standard library.
+    reg_path = os.path.join(fs_dir, "opener", "registry.py")
+    if os.path.isfile(reg_path):
+        with open(reg_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        changed = False
+        if "import pkg_resources" in content and \
+           "from importlib.metadata import entry_points" not in content:
+            content = content.replace(
+                "import pkg_resources",
+                "from importlib.metadata import entry_points"
+            )
+            changed = True
+        if 'pkg_resources.iter_entry_points("fs.opener")' in content:
+            content = content.replace(
+                'pkg_resources.iter_entry_points("fs.opener")',
+                'entry_points(group="fs.opener")'
+            )
+            changed = True
+        old_next = (
+            "            entry_point = next(\n"
+            '                pkg_resources.iter_entry_points("fs.opener", protocol), None\n'
+            "            )"
+        )
+        new_next = (
+            '            entry_points_for_protocol = entry_points('
+            'group="fs.opener", name=protocol)\n'
+            "            entry_point = entry_points_for_protocol[0] "
+            "if entry_points_for_protocol else None"
+        )
+        if old_next in content:
+            content = content.replace(old_next, new_next)
+            changed = True
+        if changed:
+            try:
+                with open(reg_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+            except OSError as exc:
+                print(
+                    "vfs.py: cannot patch '{}' ({}).\n"
+                    " pkg_resources is unavailable and the 'fs' package is "
+                    "not writable.\n"
+                    " Fix: install pkg_resources (pip install setuptools<68) "
+                    "or make the 'fs' package directory writable.".format(
+                        reg_path, exc),
+                    file=sys.stderr
+                )
+                return
+
+    # Remove stale bytecode caches so subsequent imports use the patched
+    # source files rather than previously compiled versions.
+    for root, dirs, _files in os.walk(fs_dir):
+        for d in dirs:
+            if d == "__pycache__":
+                pycache_dir = os.path.join(root, d)
+                for fname in os.listdir(pycache_dir):
+                    try:
+                        os.remove(os.path.join(pycache_dir, fname))
+                    except OSError:
+                        pass
+
+
+_patch_fs_package()
+# ---------------------------------------------------------------------------
+
 # NOTE: the filesystem backends are imported lazily inside their own code paths
 # only (littlefs -> `littlefs`, FATFS -> `pyfatfs`, REALFS -> `realfs`), so that
 # using one backend does not require the others' packages to be installed.

@@ -683,7 +683,7 @@ u32 RTC_SetAlarm(u32 RTC_Format, RTC_AlarmTypeDef *RTC_AlarmStruct)
 	RTC->RTC_WPR = RTC_KEY(0x53);
 
 	/* Disable Alarm */
-	RTC->RTC_CR &= ~RTC_Alarm;
+	RTC->RTC_CR &= ~RTC_BIT_ALME;
 	while (1) {
 		/* check Alarm update allowed */
 		if (RTC->RTC_ISR & RTC_BIT_ALMWF) {
@@ -798,7 +798,7 @@ void RTC_AlarmCmd(u32 NewState)
 	if (NewState != DISABLE) {
 		RTC->RTC_ISR |= RTC_BIT_ALMF;
 
-		RTC->RTC_CR |= (u32)(RTC_Alarm | RTC_Alarm_IntEn);
+		RTC->RTC_CR |= (u32)(RTC_BIT_ALME | RTC_BIT_ALMIE);
 
 		/* we should wait shadow reigster sync ok */
 		(void) RTC_WaitForSynchro();
@@ -807,7 +807,7 @@ void RTC_AlarmCmd(u32 NewState)
 		RTC->RTC_ISR |= RTC_BIT_ALMF;
 
 		/* Disable the Alarm in RTC_CR register */
-		RTC->RTC_CR &= (u32)~(RTC_Alarm | RTC_Alarm_IntEn);
+		RTC->RTC_CR &= (u32)~(RTC_BIT_ALME | RTC_BIT_ALMIE);
 
 		/* wait alarm disable */
 		while (1) {
@@ -908,7 +908,7 @@ u32 RTC_WaitForWUTSynchro(void)
 /**
   * @brief  Set the specified RTC Wakeup Timer.
   * @note   The Wakeup Timer register can only be written when the WakeupTimer
-  *         is disabled (Use @ref RTC_WakeupTimerCmd (DISABLE)).
+  *         is disabled (Use @ref RTC_WakeupCmd (DISABLE)).
   * @param  RTC_WakeupRange Wakeup time to be configured.
   *	This parameter can be a value from 0x1 to 0x1FF.
   * @return Status value:

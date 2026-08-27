@@ -37,6 +37,7 @@ void whc_dev_pktfilter_init(void);
 
 void whc_dev_api_set_host_state(u8 state);
 
+#ifndef CONFIG_WHC_INTF_IPC
 /* pkt rx: pkt from host to device */
 /* weak func in rtk code, Reimplement the function if needed */
 void whc_dev_cmd_rx_to_user(u8 *rxbuf);
@@ -45,4 +46,5 @@ void whc_dev_cmd_rx_to_user(u8 *rxbuf);
 void whc_dev_api_send_to_host(u8 *data, u32 len, uint8_t *ret, uint32_t ret_len);
 
 u8 whc_dev_api_bus_is_idle(void);
+#endif
 #endif

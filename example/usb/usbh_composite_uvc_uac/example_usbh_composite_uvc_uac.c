@@ -1299,7 +1299,7 @@ void example_usbh_composite_uvc_uac(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UVC&UAC composite demo start\n");
 
-	status = rtos_task_create(&task, "usbh_uvc_uac_main", example_usbh_uac_uvc_thread, NULL, 1024U * 2, 2U);
+	status = rtos_task_create(&task, "usbh_comp_main_thread", example_usbh_uac_uvc_thread, NULL, 1024U * 2, 2U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Failed to create main thread\n");
 	}
@@ -1331,7 +1331,7 @@ static void example_usbh_uac_uvc_thread(void *param)
 	rtos_sema_create(&usbh_uac_ready_sema, 0U, 1U);
 
 	/* Create UVC stream thread */
-	status = rtos_task_create(&usbh_uvc_stream_task, "usbh_uvc_stream", usbh_uvc_stream_thread,
+	status = rtos_task_create(&usbh_uvc_stream_task, "usbh_comp_uvc_stream_thread", usbh_uvc_stream_thread,
 							  NULL, 2048, USBH_UVC_STREAM_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create UVC stream thread fail\n");
@@ -1339,7 +1339,7 @@ static void example_usbh_uac_uvc_thread(void *param)
 	}
 
 	/* Create resident playback thread */
-	status = rtos_task_create(&usbh_uac_play_task, "usbh_uac_play", usbh_uac_play_thread,
+	status = rtos_task_create(&usbh_uac_play_task, "usbh_comp_uac_play_thread", usbh_uac_play_thread,
 							  NULL, 1024, USBH_UAC_PLAY_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create play thread fail\n");
@@ -1347,7 +1347,7 @@ static void example_usbh_uac_uvc_thread(void *param)
 	}
 
 	/* Create resident record thread */
-	status = rtos_task_create(&usbh_uac_record_task, "usbh_uac_record", usbh_uac_record_thread,
+	status = rtos_task_create(&usbh_uac_record_task, "usbh_comp_uac_record_thread", usbh_uac_record_thread,
 							  NULL, 1536, USBH_UAC_RECORD_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create record thread fail\n");
@@ -1382,7 +1382,7 @@ static void example_usbh_uac_uvc_thread(void *param)
 
 	/* Create hot-plug monitor thread */
 #if USBH_UVC_UAC_HOT_PLUG_TEST
-	status = rtos_task_create(&usbh_uvc_uac_hotplug_task, "usbh_uvc_uac_hotplug", usbh_uvc_uac_hotplug_thread,
+	status = rtos_task_create(&usbh_uvc_uac_hotplug_task, "usbh_comp_hotplug_thread", usbh_uvc_uac_hotplug_thread,
 							  NULL, 768, USBH_UVC_UAC_HOTPLUG_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");

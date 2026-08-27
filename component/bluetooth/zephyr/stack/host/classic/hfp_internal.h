@@ -53,7 +53,7 @@ struct bt_hfp_hf {
 	struct bt_conn *acl;
 	/* SCO Channel */
 	struct bt_sco_chan chan;
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	uint8_t call_status;
 	uint32_t ag_selected_xapl_feat;
 #endif
@@ -80,6 +80,6 @@ enum hfp_hf_ag_indicators {
 #define BT_HFP_CALL_SETUP_OUTGOING        2
 #define BT_HFP_CALL_SETUP_REMOTE_ALERTING 3
 
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 #include "stack_ext/hfp_internal_ext.h"
 #endif

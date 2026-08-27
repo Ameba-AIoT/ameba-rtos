@@ -532,7 +532,7 @@ struct bt_a2dp_cb {
 	 */
 	void (*reconfig_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	void (*stream_connected)(struct bt_a2dp_ep *ep);
 
 	void (*stream_disconnected)(struct bt_a2dp_ep *ep);
@@ -792,7 +792,7 @@ int bt_a2dp_stream_send(struct bt_a2dp_stream *stream,  struct net_buf *buf,
 			uint16_t seq_num, uint32_t ts);
 #endif
 
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 #include "stack_ext/a2dp_ext.h"
 #endif
 

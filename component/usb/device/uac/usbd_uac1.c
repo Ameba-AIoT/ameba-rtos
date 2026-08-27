@@ -8,6 +8,9 @@
 
 /* uac 1.0 */
 #include "usbd_uac.h"
+#ifdef CONFIG_USBD_COMPOSITE
+#include "usbd_composite.h"
+#endif
 #include "usb_uac1.h"
 
 /* Private defines -----------------------------------------------------------*/
@@ -26,7 +29,6 @@
 
 #define USBD_UAC_FS_ISOC_MPS                        1023U   /* Full speed ISOC IN & OUT max packet size */
 
-#define USBD_UAC_SELF_POWERED                       1U
 #define USBD_UAC_LANGID_STRING                      0x0409U
 #define USBD_UAC_MFG_STRING                         "Realtek"
 #define USBD_UAC_PROD_FS_STRING                     "Realtek UAC1.0 (FS)"
@@ -67,7 +69,8 @@
 #define USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_HEADSET_HEADPHONES   0x09U
 
 /* AC IF header interface num */
-#define USBD_UAC_AC_IF_NUM                          2U
+
+
 /* AC feature uint descriptor length */
 
 #define USBD_UAC_AC_FU_HEAD_DESC_LEN(ch_cnt)        (USB_UAC1_AC_FUNC_UNIT_DESC_LEN +  (ch_cnt))
@@ -122,7 +125,7 @@
 
 /* len of full speed total configuration descriptor buf */
 #define USBD_UAC_FS_CFG_DESC_BUF_LEN(ch_cnt) \
-    (USB_LEN_CFG_DESC + USBD_UAC_AC_IF_LEN(ch_cnt) + USBD_UAC_AS_TIF_LEN(USBD_UAC_FS_AS_ALT_SETTING_NUM))
+    (USB_LEN_CFG_DESC + USB_LEN_IAD_DESC + USBD_UAC_AC_IF_LEN(ch_cnt) + USBD_UAC_AS_TIF_LEN(USBD_UAC_FS_AS_ALT_SETTING_NUM))
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -188,16 +191,21 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	USB_DESC_TYPE_CONFIGURATION,       /* bDescriptorType */
 	USB_LOW_BYTE(USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DEFAULT_CH_CNT)), /* wTotalLength */
 	USB_HIGH_BYTE(USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DEFAULT_CH_CNT)),
-	USBD_UAC_AC_IF_NUM,                              /* Number of interfaces supported by this configuration */
+	2,                              /* Number of interfaces supported by this configuration */
 	0x01,                              /* Value to use as an argument to the SetConfiguration() request to select this configuration */
 	0x00,                              /* Index of string descriptor describing this configuration */
-#if USBD_UAC_SELF_POWERED
-	0xC0,                              /* bmAttributes: self powered */
-#else
-	0x80,                              /* bmAttributes: bus powered */
-#endif
+	0x80,                              /* bmAttributes (patched at runtime for self_powered/remote_wakeup) */
 	0x32,                              /* bMaxPower */
 
+	/* IAD for Audio Control + Audio Streaming */
+	USB_LEN_IAD_DESC,                  /* bLength */
+	USB_DESC_TYPE_IAD,                 /* bDescriptorType */
+	0x00,                              /* bFirstInterface (patched by composite) */
+	2,                /* bInterfaceCount */
+	USB_UAC_CLASS_CODE,                /* bFunctionClass: Audio */
+	USB_UAC_SUBCLASS_AUDIOCONTROL,     /* bFunctionSubClass */
+	USB_UAC_IP_VERSION_1,              /* bFunctionProtocol */
+	0x00,                              /* iFunction */
 
 	/* 4.7.1 Standard AC Interface Descriptor */
 	/* Interface 0 Descriptor */
@@ -206,16 +214,16 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	USB_UAC1_IF_IDX_AC_HEADSET,        /* Audio Control Interface Index - Headset (0) */
 	0x00,                              /* bAlternateSetting */
 	0x00,                              /* No associated endpoints with this interface (uses endpoint 0) */
-	USB_UAC1_CLASS_CODE,               /* Audio Device Class */
-	USB_UAC1_SUBCLASS_AUDIOCONTROL,    /* Audio Control Interface */
+	USB_UAC_CLASS_CODE,               /* Audio Device Class */
+	USB_UAC_SUBCLASS_AUDIOCONTROL,    /* Audio Control Interface */
 	0x00,                              /* Audio Protocol IP version 2.00 */
 	0x00,                              /* Interface string descriptor index (0) */
 
 	/* 4.7.2 Class-Specific AC Interface Descriptor */
 	/* Audio headset */
 	USB_UAC1_AC_IF_HEADER_LEN,                                           /* Size of the descriptor, in byte_width  */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                               /* CS_INTERFACE Descriptor Type   */
-	USB_UAC1_HEADER,                                                     /* HEADER descriptor subtype  */
+	USB_UAC_CS_INTERFACE,                               /* CS_INTERFACE Descriptor Type   */
+	USB_UAC_AC_HEADER,                                                     /* HEADER descriptor subtype  */
 	USB_LOW_BYTE(USB_UAC1_VERSION_01_10),                                /* bcdUSB */
 	USB_HIGH_BYTE(USB_UAC1_VERSION_01_10),
 	USB_LOW_BYTE(USBD_UAC_AC_IF_HEAD_DESC_LEN(USBD_UAC_DEFAULT_CH_CNT)),
@@ -226,8 +234,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 
 	/* Microphone Audio Control Input Terminal Descriptor 1.0 */
 	USB_UAC1_AC_IN_TTY_DESC_LEN,                             /* Size of the descriptor, in byte_width  */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                   /* CS_INTERFACE Descriptor Type   */
-	USB_UAC1_INPUT_TERMINAL,              /* INPUT_TERMINAL descriptor subtype   */
+	USB_UAC_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type   */
+	USB_UAC_AC_INPUT_TERMINAL,              /* INPUT_TERMINAL descriptor subtype   */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_HEADPHONES, /* Constant uniquely identifying the Terminal within the audio
                                                                   function. This value is used in all requests to address this Terminal.   */
 	0x01,
@@ -242,8 +250,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 
 	/* FEATURE_UNIT descriptor subtype */
 	USBD_UAC_AC_FU_HEAD_DESC_LEN(USBD_UAC_DEFAULT_CH_CNT),   /* Size of the descriptor, in byte_width  : 6 + (4 + 1) * 4 */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                   /* CS_INTERFACE Descriptor Type   */
-	USB_UAC1_FEATURE_UNIT,                                   /* FEATURE_UNIT descriptor subtype   */
+	USB_UAC_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type   */
+	USB_UAC_AC_FEATURE_UNIT,                                   /* FEATURE_UNIT descriptor subtype   */
 	USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_FEATUREUNIT,       /* Constant uniquely identifying the Unit within the audio function. This
                                                                 value is used in all requests to address this Unit.  */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_HEADPHONES, /* ID of the Unit or Terminal to which this Feature Unit is connected. */
@@ -267,8 +275,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 
 	/* OUTPUT_TERMINAL descriptor subtype   */
 	USB_UAC1_AC_OUT_TTY_DESC_LEN,                             /* Size of the descriptor, in byte_width   */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                    /* CS_INTERFACE Descriptor Type  */
-	USB_UAC1_OUTPUT_TERMINAL,              /* OUTPUT_TERMINAL descriptor subtype   */
+	USB_UAC_CS_INTERFACE,                    /* CS_INTERFACE Descriptor Type  */
+	USB_UAC_AC_OUTPUT_TERMINAL,              /* OUTPUT_TERMINAL descriptor subtype   */
 	USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_HEADSET_HEADPHONES, /* Constant uniquely identifying the Terminal within the audio
                                                                  function. This value is used in all requests to address this Terminal.   */
 	USBD_UAC_OT_DESC_TYPE_LOW(USBD_UAC_DEFAULT_CH_CNT),
@@ -285,8 +293,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	0x01,                                                      /* The number of this interface is 1.   */
 	0x00,                                                     /* The value used to select the alternate setting for this interface is 0 */
 	0x00,                                                     /* The number of endpoints used by this interface is 0 (excluding endpoint zero)   */
-	USB_UAC1_IF_CLASS_AUDIO,                                  /* The interface implements the Audio Interface class   */
-	USB_UAC1_SUBCLASS_AUDIOSTREAMING,                         /* The interface implements the AUDIOSTREAMING Subclass   */
+	USB_UAC_IF_CLASS_AUDIO,                                  /* The interface implements the Audio Interface class   */
+	USB_UAC_SUBCLASS_AUDIOSTREAMING,                         /* The interface implements the AUDIOSTREAMING Subclass   */
 	0x00,                                                     /* The Protocol code is 32   */
 	0x00,                                                     /* The interface string descriptor index is 0   */
 
@@ -297,16 +305,16 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	0x01,                                                      /* The number of this interface is 1.   */
 	0x01,                                                     /* The value used to select the alternate setting for this interface is 0 */
 	0x01,                                                     /* The number of endpoints used by this interface is 0 (excluding endpoint zero)   */
-	USB_UAC1_IF_CLASS_AUDIO,                                  /* The interface implements the Audio Interface class   */
-	USB_UAC1_SUBCLASS_AUDIOSTREAMING,                         /* The interface implements the AUDIOSTREAMING Subclass   */
+	USB_UAC_IF_CLASS_AUDIO,                                  /* The interface implements the Audio Interface class   */
+	USB_UAC_SUBCLASS_AUDIOSTREAMING,                         /* The interface implements the AUDIOSTREAMING Subclass   */
 	0x00,                                                     /* The Protocol code is 32   */
 	0x00,                                                     /* The interface string descriptor index is 0   */
 
 	/* 4.9.2 Class-Specific AS Interface Descriptor */
 	/* Microphone Class Specific Audio Streaming Interface Alt Setting 1 */
 	USB_UAC1_AS_IF_DESC_LEN,                                 /* Size of the descriptor, in byte_width   */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                   /* CS_INTERFACE Descriptor Type  */
-	USB_UAC1_AS_IF_DESC_SUBTYPE_AS_GENERAL,                  /* AS_GENERAL descriptor subtype   */
+	USB_UAC_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type  */
+	USB_UAC_AS_GENERAL,                  /* AS_GENERAL descriptor subtype   */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_HEADPHONES, /* The Terminal ID of the terminal to which this interface is connected */
 	0x01,                                                    /* bDelay */
 	0x01,
@@ -315,8 +323,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* 4.9.3 Class-Specific AS Format Type Descriptor */
 	/* Headphone Audio Streaming Format Type Descriptor 2.0 */
 	USBD_UAC1_AS_FRT_TYPE_DESC_LEN,                           /* Size of the descriptor, in byte_width   */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                   /* CS_INTERFACE Descriptor Type   */
-	USB_UAC1_AS_IF_DESC_SUBTYPE_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
+	USB_UAC_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type   */
+	USB_UAC_AS_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
 	0x01,                                                    /* The format type AudioStreaming interfae using is FORMAT_TYPE_I (0x01)   */
 	USBD_UAC_CH_CNT_2,                                       /* bNrChannels */
 	USBD_UAC_BYTE_WIDTH_2,                                   /* bSubframeSize */
@@ -333,7 +341,7 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* Microphone Audio Streaming ISO OUT Endpoint Descriptor */
 	USB_UAC1_EP_DESC_LEN,                                    /* Descriptor size is 7 byte_width */
 	USB_DESC_TYPE_ENDPOINT,                                  /* ENDPOINT Descriptor Type*/
-	USBD_UAC_ISOC_OUT_EP,                                    /* This is an OUT endpoint with endpoint number 2   */
+	USB_H2D,                                                  /* bEndpointAddress: dir OUT (placeholder) */
 	0x0D,                                                    /* Types -
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
@@ -347,8 +355,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* 4.10.1.2 Class-Specific AS Isochronous Audio Data Endpoint Descriptor */
 	/* Headphone Audio Data Endpoint Descriptor */
 	USB_UAC1_AUDIO_DATA_EP_DESC_LEN,                         /* Size of this descriptor (byte_width) */
-	USB_UAC1_AUDIO_EP_DESCRIPTOR,                         /* Class-specific Endpoint Descriptor type */
-	USB_UAC1_AS_EP_DESC_SUBTYPE_EP_GENERAL,                  /* EP_GENERAL Descriptor subtype */
+	USB_UAC_CS_ENDPOINT,                         /* Class-specific Endpoint Descriptor type */
+	USB_UAC_AS_EP_GENERAL,                  /* EP_GENERAL Descriptor subtype */
 	0x01,                                                    /* bmAttributes */
 	0x00,                                                    /* Undefined lock delay units */
 	0x00,                                                    /* Time it takes this endpoint to lock its */
@@ -362,16 +370,16 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	0x01,                                                      /* The number of this interface is 1.   */
 	0x02,                                                     /* The value used to select the alternate setting for this interface is 2 */
 	0x01,                                                     /* The number of endpoints used by this interface is 0 (excluding endpoint zero)   */
-	USB_UAC1_IF_CLASS_AUDIO,                                  /* The interface implements the Audio Interface class   */
-	USB_UAC1_SUBCLASS_AUDIOSTREAMING,                         /* The interface implements the AUDIOSTREAMING Subclass   */
+	USB_UAC_IF_CLASS_AUDIO,                                  /* The interface implements the Audio Interface class   */
+	USB_UAC_SUBCLASS_AUDIOSTREAMING,                         /* The interface implements the AUDIOSTREAMING Subclass   */
 	0x00,                                                     /* The Protocol code is 32   */
 	0x00,                                                     /* The interface string descriptor index is 0   */
 
 	/* 4.9.2 Class-Specific AS Interface Descriptor */
 	/* Microphone Class Specific Audio Streaming Interface Alt Setting 1 */
 	USB_UAC1_AS_IF_DESC_LEN,                                 /* Size of the descriptor, in byte_width   */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                   /* CS_INTERFACE Descriptor Type  */
-	USB_UAC1_AS_IF_DESC_SUBTYPE_AS_GENERAL,                  /* AS_GENERAL descriptor subtype   */
+	USB_UAC_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type  */
+	USB_UAC_AS_GENERAL,                  /* AS_GENERAL descriptor subtype   */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_HEADPHONES, /* The Terminal ID of the terminal to which this interface is connected */
 	0x01,                                                    /* bDelay */
 	0x01,
@@ -380,8 +388,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* 4.9.3 Class-Specific AS Format Type Descriptor */
 	/* Headphone Audio Streaming Format Type Descriptor 2.0 */
 	USBD_UAC1_AS_FRT_TYPE_DESC_LEN,                           /* Size of the descriptor, in byte_width   */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                   /* CS_INTERFACE Descriptor Type   */
-	USB_UAC1_AS_IF_DESC_SUBTYPE_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
+	USB_UAC_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type   */
+	USB_UAC_AS_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
 	0x01,                                                    /* The format type AudioStreaming interfae using is FORMAT_TYPE_I (0x01)   */
 	USBD_UAC_CH_CNT_4,                                       /* bNrChannels */
 	USBD_UAC_BYTE_WIDTH_2,                                   /* bSubframeSize */
@@ -398,7 +406,7 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* Microphone Audio Streaming ISO OUT Endpoint Descriptor */
 	USB_UAC1_EP_DESC_LEN,                                    /* Descriptor size is 7 byte_width */
 	USB_DESC_TYPE_ENDPOINT,                                  /* ENDPOINT Descriptor Type*/
-	USBD_UAC_ISOC_OUT_EP,                                    /* This is an OUT endpoint with endpoint number 2   */
+	USB_H2D,                                                  /* bEndpointAddress: dir OUT (placeholder) */
 	0x0D,                                                    /* Types -
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
@@ -412,8 +420,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* 4.10.1.2 Class-Specific AS Isochronous Audio Data Endpoint Descriptor */
 	/* Headphone Audio Data Endpoint Descriptor */
 	USB_UAC1_AUDIO_DATA_EP_DESC_LEN,                         /* Size of this descriptor (byte_width) */
-	USB_UAC1_AUDIO_EP_DESCRIPTOR,                         /* Class-specific Endpoint Descriptor type */
-	USB_UAC1_AS_EP_DESC_SUBTYPE_EP_GENERAL,                  /* EP_GENERAL Descriptor subtype */
+	USB_UAC_CS_ENDPOINT,                         /* Class-specific Endpoint Descriptor type */
+	USB_UAC_AS_EP_GENERAL,                  /* EP_GENERAL Descriptor subtype */
 	0x01,                                                    /* bmAttributes */
 	0x00,                                                    /* Undefined lock delay units */
 	0x00,                                                    /* Time it takes this endpoint to lock its */
@@ -428,16 +436,16 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	0x01,                                                      /* The number of this interface is 1.   */
 	0x03,                                                     /* The value used to select the alternate setting for this interface is 2 */
 	0x01,                                                     /* The number of endpoints used by this interface is 0 (excluding endpoint zero)   */
-	USB_UAC1_IF_CLASS_AUDIO,                                  /* The interface implements the Audio Interface class   */
-	USB_UAC1_SUBCLASS_AUDIOSTREAMING,                         /* The interface implements the AUDIOSTREAMING Subclass   */
+	USB_UAC_IF_CLASS_AUDIO,                                  /* The interface implements the Audio Interface class   */
+	USB_UAC_SUBCLASS_AUDIOSTREAMING,                         /* The interface implements the AUDIOSTREAMING Subclass   */
 	0x00,                                                     /* The Protocol code is 32   */
 	0x00,                                                     /* The interface string descriptor index is 0   */
 
 	/* 4.9.2 Class-Specific AS Interface Descriptor */
 	/* Microphone Class Specific Audio Streaming Interface Alt Setting 1 */
 	USB_UAC1_AS_IF_DESC_LEN,                                 /* Size of the descriptor, in byte_width   */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                   /* CS_INTERFACE Descriptor Type  */
-	USB_UAC1_AS_IF_DESC_SUBTYPE_AS_GENERAL,                  /* AS_GENERAL descriptor subtype   */
+	USB_UAC_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type  */
+	USB_UAC_AS_GENERAL,                  /* AS_GENERAL descriptor subtype   */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_HEADPHONES, /* The Terminal ID of the terminal to which this interface is connected */
 	0x01,                                                    /* bDelay */
 	0x01,
@@ -446,8 +454,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* 4.9.3 Class-Specific AS Format Type Descriptor */
 	/* Headphone Audio Streaming Format Type Descriptor 2.0 */
 	USBD_UAC1_AS_FRT_TYPE_DESC_LEN,                           /* Size of the descriptor, in byte_width   */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                   /* CS_INTERFACE Descriptor Type   */
-	USB_UAC1_AS_IF_DESC_SUBTYPE_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
+	USB_UAC_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type   */
+	USB_UAC_AS_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
 	0x01,                                                    /* The format type AudioStreaming interfae using is FORMAT_TYPE_I (0x01)   */
 	USBD_UAC_CH_CNT_6,                                       /* bNrChannels */
 	USBD_UAC_BYTE_WIDTH_2,                                   /* bSubframeSize */
@@ -464,7 +472,7 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* Microphone Audio Streaming ISO OUT Endpoint Descriptor */
 	USB_UAC1_EP_DESC_LEN,                                    /* Descriptor size is 7 byte_width */
 	USB_DESC_TYPE_ENDPOINT,                                  /* ENDPOINT Descriptor Type*/
-	USBD_UAC_ISOC_OUT_EP,                                    /* This is an OUT endpoint with endpoint number 2   */
+	USB_H2D,                                                  /* bEndpointAddress: dir OUT (placeholder) */
 	0x0D,                                                    /* Types -
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
@@ -478,8 +486,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* 4.10.1.2 Class-Specific AS Isochronous Audio Data Endpoint Descriptor */
 	/* Headphone Audio Data Endpoint Descriptor */
 	USB_UAC1_AUDIO_DATA_EP_DESC_LEN,                         /* Size of this descriptor (byte_width) */
-	USB_UAC1_AUDIO_EP_DESCRIPTOR,                         /* Class-specific Endpoint Descriptor type */
-	USB_UAC1_AS_EP_DESC_SUBTYPE_EP_GENERAL,                  /* EP_GENERAL Descriptor subtype */
+	USB_UAC_CS_ENDPOINT,                         /* Class-specific Endpoint Descriptor type */
+	USB_UAC_AS_EP_GENERAL,                  /* EP_GENERAL Descriptor subtype */
 	0x01,                                                    /* bmAttributes */
 	0x00,                                                    /* Undefined lock delay units */
 	0x00,                                                    /* Time it takes this endpoint to lock its */
@@ -494,16 +502,16 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	0x01,                                                      /* The number of this interface is 1.   */
 	0x04,                                                     /* The value used to select the alternate setting for this interface is 2 */
 	0x01,                                                     /* The number of endpoints used by this interface is 0 (excluding endpoint zero)   */
-	USB_UAC1_IF_CLASS_AUDIO,                                  /* The interface implements the Audio Interface class   */
-	USB_UAC1_SUBCLASS_AUDIOSTREAMING,                         /* The interface implements the AUDIOSTREAMING Subclass   */
+	USB_UAC_IF_CLASS_AUDIO,                                  /* The interface implements the Audio Interface class   */
+	USB_UAC_SUBCLASS_AUDIOSTREAMING,                         /* The interface implements the AUDIOSTREAMING Subclass   */
 	0x00,                                                     /* The Protocol code is 32   */
 	0x00,                                                     /* The interface string descriptor index is 0   */
 
 	/* 4.9.2 Class-Specific AS Interface Descriptor */
 	/* Microphone Class Specific Audio Streaming Interface Alt Setting 1 */
 	USB_UAC1_AS_IF_DESC_LEN,                                 /* Size of the descriptor, in byte_width   */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                   /* CS_INTERFACE Descriptor Type  */
-	USB_UAC1_AS_IF_DESC_SUBTYPE_AS_GENERAL,                  /* AS_GENERAL descriptor subtype   */
+	USB_UAC_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type  */
+	USB_UAC_AS_GENERAL,                  /* AS_GENERAL descriptor subtype   */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_HEADPHONES, /* The Terminal ID of the terminal to which this interface is connected */
 	0x01,                                                    /* bDelay */
 	0x01,
@@ -512,8 +520,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* 4.9.3 Class-Specific AS Format Type Descriptor */
 	/* Headphone Audio Streaming Format Type Descriptor 2.0 */
 	USBD_UAC1_AS_FRT_TYPE_DESC_LEN,                           /* Size of the descriptor, in byte_width   */
-	USB_UAC1_AUDIO_INTERFACE_DESC_TYPE,                   /* CS_INTERFACE Descriptor Type   */
-	USB_UAC1_AS_IF_DESC_SUBTYPE_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
+	USB_UAC_CS_INTERFACE,                   /* CS_INTERFACE Descriptor Type   */
+	USB_UAC_AS_FORMAT_TYPE,                 /* FORMAT_TYPE descriptor subtype   */
 	0x01,                                                    /* The format type AudioStreaming interfae using is FORMAT_TYPE_I (0x01)   */
 	USBD_UAC_CH_CNT_8,                                       /* bNrChannels */
 	USBD_UAC_BYTE_WIDTH_2,                                   /* bSubframeSize */
@@ -530,7 +538,7 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* Microphone Audio Streaming ISO OUT Endpoint Descriptor */
 	USB_UAC1_EP_DESC_LEN,                                    /* Descriptor size is 7 byte_width */
 	USB_DESC_TYPE_ENDPOINT,                                  /* ENDPOINT Descriptor Type*/
-	USBD_UAC_ISOC_OUT_EP,                                    /* This is an OUT endpoint with endpoint number 2   */
+	USB_H2D,                                                  /* bEndpointAddress: dir OUT (placeholder) */
 	0x0D,                                                    /* Types -
                                                                 Transfer: ISOCHRONOUS
                                                                 Sync: Async
@@ -544,8 +552,8 @@ static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DE
 	/* 4.10.1.2 Class-Specific AS Isochronous Audio Data Endpoint Descriptor */
 	/* Headphone Audio Data Endpoint Descriptor */
 	USB_UAC1_AUDIO_DATA_EP_DESC_LEN,                         /* Size of this descriptor (byte_width) */
-	USB_UAC1_AUDIO_EP_DESCRIPTOR,                         /* Class-specific Endpoint Descriptor type */
-	USB_UAC1_AS_EP_DESC_SUBTYPE_EP_GENERAL,                  /* EP_GENERAL Descriptor subtype */
+	USB_UAC_CS_ENDPOINT,                         /* Class-specific Endpoint Descriptor type */
+	USB_UAC_AS_EP_GENERAL,                  /* EP_GENERAL Descriptor subtype */
 	0x01,                                                    /* bmAttributes */
 	0x00,                                                    /* Undefined lock delay units */
 	0x00,                                                    /* Time it takes this endpoint to lock its */
@@ -755,6 +763,20 @@ static int usbd_uac_set_config(usb_dev_t *dev, u8 config)
 	UNUSED(config);
 
 	cdev->dev = dev;
+
+	if (!cdev->from_composite) {
+#ifdef CONFIG_USBD_SELF_POWERED
+		dev->self_powered = 1;
+#else
+		dev->self_powered = 0;
+#endif
+#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
+		dev->remote_wakeup_en = 1;
+#else
+		dev->remote_wakeup_en = 0;
+#endif
+	}
+
 	cdev->alt_setting = 0U;
 
 	if (cdev->cb->set_config != NULL) {
@@ -981,7 +1003,7 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
 
 			if (entityId == USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_FEATUREUNIT) {
-				if (controlSelector == USB_UAC1_CTRL_FU_MUTE_CONTROL_SELECTOR) {
+				if (controlSelector == USB_UAC_FU_MUTE) {
 					if (req->bRequest == USB_UAC1_GET_CUR) {
 						ep0_in->xfer_buf[0] = cdev->cur_mute;
 						ep0_in->xfer_len = 1U;
@@ -990,7 +1012,7 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 0);
 						ret = HAL_ERR_PARA;
 					}
-				} else if (controlSelector == USB_UAC1_CTRL_FU_VOLUME_CONTROL_SELECTOR) {
+				} else if (controlSelector == USB_UAC_FU_VOLUME) {
 					if (req->bRequest == USB_UAC1_GET_CUR) {
 						usb_os_memcpy(ep0_in->xfer_buf, (u8 *) & (cdev->cur_volume), 2);
 						ep0_in->xfer_len = 2U;
@@ -1021,7 +1043,7 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 
 			if ((req->bmRequestType & 0x1FU) == USB_REQ_RECIPIENT_ENDPOINT) {
-				if (controlSelector == USB_UAC1_CS_SAM_FREQ_CONTROL_TYPE) {
+				if (controlSelector == USB_UAC_CS_SAM_FREQ_CONTROL) {
 					if (req->bRequest == USB_UAC1_GET_CUR) {
 						usb_os_memcpy(ep0_in->xfer_buf, (u8 *) & (cdev->cur_sampling_freq), 3);
 						ep0_in->xfer_len = 3U;
@@ -1035,7 +1057,7 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		} else {
 			/* USB_H2D */
 			if ((req->bmRequestType & 0x1FU) == USB_REQ_RECIPIENT_ENDPOINT) {
-				if (controlSelector == USB_UAC1_CS_SAM_FREQ_CONTROL_TYPE) {
+				if (controlSelector == USB_UAC_CS_SAM_FREQ_CONTROL) {
 					if (req->bRequest == USB_UAC1_SET_CUR) {
 						usb_os_memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
 						ep0_out->xfer_len = req->wLength;
@@ -1053,7 +1075,7 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 
 			if (entityId == USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_FEATUREUNIT) { //0x05 FU
-				if (controlSelector == USB_UAC1_CTRL_FU_MUTE_CONTROL_SELECTOR) { //mute
+				if (controlSelector == USB_UAC_FU_MUTE) { //mute
 					if (req->bRequest == USB_UAC1_SET_CUR) {
 						usb_os_memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
 						ep0_out->xfer_len = req->wLength;
@@ -1064,7 +1086,7 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 6);
 						ret = HAL_ERR_PARA;
 					}
-				} else if (controlSelector == USB_UAC1_CTRL_FU_VOLUME_CONTROL_SELECTOR) { //volume
+				} else if (controlSelector == USB_UAC_FU_VOLUME) { //volume
 					if (req->bRequest == USB_UAC1_SET_CUR) {
 						usb_os_memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
 						ep0_out->xfer_len = req->wLength;
@@ -1162,12 +1184,12 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 	if (((p_ctrl_req->bmRequestType & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_CLASS) && (p_ctrl_req->bRequest == USB_UAC1_SET_CUR)) {
 		if ((USB_HIGH_BYTE(p_ctrl_req->wIndex) == USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_FEATUREUNIT &&
 			 ((p_ctrl_req->bmRequestType & 0x1FU) == USB_REQ_RECIPIENT_INTERFACE))) {
-			if ((USB_HIGH_BYTE(p_ctrl_req->wValue) == USB_UAC1_CTRL_FU_MUTE_CONTROL_SELECTOR) && (p_ctrl_req->wLength == 0x01)) {
+			if ((USB_HIGH_BYTE(p_ctrl_req->wValue) == USB_UAC_FU_MUTE) && (p_ctrl_req->wLength == 0x01)) {
 				if (cb->mute_changed != NULL) {
 					cdev->cur_mute = (ep0_out->xfer_buf[0] != 0) ? 1 : 0;
 					cb->mute_changed(cdev->cur_mute);
 				}
-			} else if ((USB_HIGH_BYTE(p_ctrl_req->wValue) == USB_UAC1_CTRL_FU_VOLUME_CONTROL_SELECTOR) && (p_ctrl_req->wLength == 0x02)) {
+			} else if ((USB_HIGH_BYTE(p_ctrl_req->wValue) == USB_UAC_FU_VOLUME) && (p_ctrl_req->wLength == 0x02)) {
 				volume_value = (u16)ep0_out->xfer_buf[0] + ((u16)(ep0_out->xfer_buf[1]) << 8);
 
 				num_points = sizeof(usbd_uac_pc_vol_lvl) / sizeof(usbd_uac_pc_vol_lvl[0]);
@@ -1186,7 +1208,7 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 		}
 
 		if (((p_ctrl_req->bmRequestType & 0x1FU) == USB_REQ_RECIPIENT_ENDPOINT)
-			&& (USB_HIGH_BYTE(p_ctrl_req->wValue) == USB_UAC1_CS_SAM_FREQ_CONTROL_TYPE) && (p_ctrl_req->wLength == 0x03)) {
+			&& (USB_HIGH_BYTE(p_ctrl_req->wValue) == USB_UAC_CS_SAM_FREQ_CONTROL) && (p_ctrl_req->wLength == 0x03)) {
 			freq = (ep0_out->xfer_buf[2] << 16) | (ep0_out->xfer_buf[1] << 8) | ep0_out->xfer_buf[0];
 			if (usbd_uac_is_valid_sample_rate(freq, dev->dev_speed)) {
 				if (cdev->cur_sampling_freq != freq) {
@@ -1241,13 +1263,17 @@ static int usbd_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 
 	UNUSED(dev);
 
+	/* Return non-zero if EP is not owned by UAC1, so composite
+	 * dispatcher can continue iterating to the correct sub-function. */
+	if (ep_addr != cdev->ep_cfg->isoc_in_addr) {
+		return HAL_ERR_PARA;
+	}
+
 	if (pdata_ctrl->next_xfer != 0) {
-		if (ep_addr == USBD_UAC_ISOC_IN_EP) {
-			if (status != HAL_OK) {
-				USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
-			}
-			//loop to next tx TODO
+		if (status != HAL_OK) {
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 		}
+		//loop to next tx TODO
 	}
 
 	return HAL_OK;
@@ -1276,51 +1302,86 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 	UNUSED(dev);
 
+	/* Return non-zero if EP is not owned by UAC1, so composite
+	 * dispatcher can continue iterating to the correct sub-function. */
+	if (ep_addr != cdev->ep_cfg->isoc_out_addr) {
+		return HAL_ERR_PARA;
+	}
+
 	if (pdata_ctrl->next_xfer != 0) {
-		if (ep_addr == USBD_UAC_ISOC_OUT_EP) {
-			if (len == 0) { //ZLP
-				p_buf = &(pdata_ctrl->buf_array[pdata_ctrl->isoc_write_idx]);
-				ep_isoc_out->xfer_buf = p_buf->buf_raw;
-				ep_isoc_out->xfer_len = pdata_ctrl->isoc_mps;
-				ret = usbd_ep_receive(cdev->dev, ep_isoc_out);
-			} else {
-				wr_next = (pdata_ctrl->isoc_write_idx + 1) % (pdata_ctrl->buf_array_cnt);
+		if (len == 0) { //ZLP
+			p_buf = &(pdata_ctrl->buf_array[pdata_ctrl->isoc_write_idx]);
+			ep_isoc_out->xfer_buf = p_buf->buf_raw;
+			ep_isoc_out->xfer_len = pdata_ctrl->isoc_mps;
+			ret = usbd_ep_receive(cdev->dev, ep_isoc_out);
+		} else {
+			wr_next = (pdata_ctrl->isoc_write_idx + 1) % (pdata_ctrl->buf_array_cnt);
 
-				/*
-					If no read, the function will overwrite the data, and the read_pos should be updated
-				*/
-				if (pdata_ctrl->isoc_read_idx == wr_next) {
-					pdata_ctrl->isoc_read_idx = (pdata_ctrl->isoc_read_idx + 1) % (pdata_ctrl->buf_array_cnt);
+			/*
+				If no read, the function will overwrite the data, and the read_pos should be updated
+			*/
+			if (pdata_ctrl->isoc_read_idx == wr_next) {
+				pdata_ctrl->isoc_read_idx = (pdata_ctrl->isoc_read_idx + 1) % (pdata_ctrl->buf_array_cnt);
 #if USBD_UAC_DEBUG
-					cdev->isoc_overwrite_cnt++;
-#endif
-				}
-
-				pdata_ctrl->buf_array[pdata_ctrl->isoc_write_idx].buf_valid_len = len;
-				pdata_ctrl->isoc_write_idx = wr_next;
-
-				p_buf = &(pdata_ctrl->buf_array[pdata_ctrl->isoc_write_idx]);
-				ep_isoc_out->xfer_buf = p_buf->buf_raw;
-				ep_isoc_out->xfer_len = pdata_ctrl->isoc_mps;
-				ret = usbd_ep_receive(cdev->dev, ep_isoc_out);
-
-				if (pdata_ctrl->read_wait_sema != 0) {
-					rtos_sema_give(pdata_ctrl->uac_isoc_sema);
-				}
-
-#if USBD_UAC_DEBUG
-				cdev->isoc_rx_cnt ++;
-				rx_last_tick = 0;
-				rx_new_tick = DTimestamp_Get(); //us
-				if ((rx_last_tick > 0) && (rx_new_tick - rx_last_tick > 175)) {  //125us -> 130 us
-					cdev->isoc_timeout_cnt ++;
-				}
+				cdev->isoc_overwrite_cnt++;
 #endif
 			}
+
+			pdata_ctrl->buf_array[pdata_ctrl->isoc_write_idx].buf_valid_len = len;
+			pdata_ctrl->isoc_write_idx = wr_next;
+
+			p_buf = &(pdata_ctrl->buf_array[pdata_ctrl->isoc_write_idx]);
+			ep_isoc_out->xfer_buf = p_buf->buf_raw;
+			ep_isoc_out->xfer_len = pdata_ctrl->isoc_mps;
+			ret = usbd_ep_receive(cdev->dev, ep_isoc_out);
+
+			if (pdata_ctrl->read_wait_sema != 0) {
+				rtos_sema_give(pdata_ctrl->uac_isoc_sema);
+			}
+
+#if USBD_UAC_DEBUG
+			cdev->isoc_rx_cnt ++;
+			rx_last_tick = 0;
+			rx_new_tick = DTimestamp_Get(); //us
+			if ((rx_last_tick > 0) && (rx_new_tick - rx_last_tick > 175)) {  //125us -> 130 us
+				cdev->isoc_timeout_cnt ++;
+			}
+#endif
 		}
 	}
 
 	return ret;
+}
+
+/**
+  * @brief  Patch endpoint addresses in the configuration descriptor with actual addresses from ep_cfg
+  * @param  desc: Pointer to the descriptor buffer (after configuration descriptor header)
+  * @param  len: Total length of descriptor data
+  * @param  ep_cfg: Endpoint configuration with actual addresses to patch in
+  * @retval void
+  */
+static void usbd_uac_patch_ep_addresses(u8 *desc, u16 len, const usbd_uac_ep_cfg_t *ep_cfg)
+{
+	u16 i;
+
+	for (i = 0; i < len;) {
+		u8 dlen = desc[i];
+		u8 dtype = desc[i + 1];
+		if (dlen == 0) {
+			break;
+		}
+		if ((dtype == USB_DESC_TYPE_ENDPOINT) && ((i + 3) <= len)) {
+			u8 addr = desc[i + 2];
+			u8 dir = addr & USB_REQ_DIR_MASK;
+			u8 type = desc[i + 3] & 0x03;
+			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_ISOC)) {
+				desc[i + 2] = ep_cfg->isoc_in_addr;
+			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_ISOC)) {
+				desc[i + 2] = ep_cfg->isoc_out_addr;
+			}
+		}
+		i += dlen;
+	}
 }
 
 /**
@@ -1337,13 +1398,21 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	usb_speed_type_t speed = dev->dev_speed;
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	u16 len = 0;
+	u8 attr = 0x80U;
 
 	if (speed == USB_SPEED_HIGH) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid speed, UAC 1.0 only support full speed\n");
 		return len;
 	}
 
-	dev->self_powered = USBD_UAC_SELF_POWERED;
+	if (!cdev->from_composite) {
+#ifdef CONFIG_USBD_SELF_POWERED
+		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
+#endif
+#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
+		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
+#endif
+	}
 
 	switch (USB_HIGH_BYTE(req->wValue)) {
 
@@ -1362,7 +1431,25 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 		len = sizeof(usbd_uac_fs_config_desc);
 		usb_os_memcpy((void *)buf, (void *)usbd_uac_fs_config_desc, len);
+
+		if (!cdev->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
+		usbd_uac_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, cdev->ep_cfg);
 		break;
+
+#ifndef CONFIG_USB_FS
+	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
+		len = sizeof(usbd_uac_fs_config_desc);
+		usb_os_memcpy((void *)buf, (void *)usbd_uac_fs_config_desc, len);
+
+		if (!cdev->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
+		usbd_uac_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, cdev->ep_cfg);
+		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
+		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
@@ -1509,13 +1596,12 @@ static u32 usbd_uac_read_ring_buf(usbd_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u
 	return HAL_ERR_HW;
 }
 
-/* Exported functions --------------------------------------------------------*/
 /**
   * @brief  Initialize UAC device
   * @param  cb: Callback functions for audio events
   * @retval Status
   */
-int usbd_uac_init(const usbd_uac_cb_t *cb)
+static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg)
 {
 	int ret = HAL_OK;
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
@@ -1532,15 +1618,22 @@ int usbd_uac_init(const usbd_uac_cb_t *cb)
 	cdev->cur_mute = 0;
 	cdev->cur_clk_valid = 1;
 
+	if (ep_cfg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid ep cfg\n");
+		return HAL_ERR_PARA;
+	}
+
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_in));
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_out));
 
+	cdev->ep_cfg = ep_cfg;
+
 	info = &ep_isoc_out->info;
-	info->addr = USBD_UAC_ISOC_OUT_EP;
+	info->addr = cdev->ep_cfg->isoc_out_addr;
 	info->type = USB_CH_EP_TYPE_ISOC;
 	info->binterval = 1U;
 	info = &ep_isoc_in->info;
-	info->addr = USBD_UAC_ISOC_IN_EP;
+	info->addr = cdev->ep_cfg->isoc_in_addr;
 	info->type = USB_CH_EP_TYPE_ISOC;
 	info->binterval = 1U;
 
@@ -1561,7 +1654,6 @@ int usbd_uac_init(const usbd_uac_cb_t *cb)
 	usbd_uac_desc_dump(usbd_uac_fs_config_desc, sizeof(usbd_uac_fs_config_desc) / sizeof(u8));
 #endif
 
-	usbd_register_class(&usbd_uac_driver);
 
 #if USBD_UAC_DEBUG
 	rtos_task_t task_dump;
@@ -1572,6 +1664,36 @@ int usbd_uac_init(const usbd_uac_cb_t *cb)
 
 	return ret;
 }
+
+/* Exported functions --------------------------------------------------------*/
+
+int usbd_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg)
+{
+	usbd_uac_dev_t *cdev = &usbd_uac_dev;
+	int ret;
+
+	cdev->from_composite = 0;
+	ret = usbd_uac_private_init(cb, ep_cfg);
+	if (ret == HAL_OK) {
+		usbd_register_class(&usbd_uac_driver);
+	}
+	return ret;
+}
+
+#ifdef CONFIG_USBD_COMPOSITE
+int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg)
+{
+	usbd_uac_dev_t *cdev = &usbd_uac_dev;
+	int ret;
+
+	cdev->from_composite = 1;
+	ret = usbd_uac_private_init(cb, ep_cfg);
+	if (ret == HAL_OK) {
+		ret = usbd_composite_register_driver(&usbd_uac_driver);
+	}
+	return ret;
+}
+#endif
 
 /**
   * @brief  DeInitialize UAC device
@@ -1585,7 +1707,14 @@ int usbd_uac_deinit(void)
 #if USBD_UAC_DEBUG
 	cdev->isoc_dump_thread = 0;
 #endif
-	usbd_unregister_class();
+#ifdef CONFIG_USBD_COMPOSITE
+	if (cdev->from_composite) {
+		usbd_composite_unregister_driver(&usbd_uac_driver);
+	} else
+#endif
+	{
+		usbd_unregister_class();
+	}
 
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_in));
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_out));
@@ -1621,7 +1750,7 @@ int usbd_uac_transmit_data(u8 *buf, u32 len)
 
 	if (usbd_uac_ep_enable(&(cdev->cb->in)) != 0) {
 		usb_os_memcpy(cdev->uac_isoc_in.isoc_buf, buf, len);
-		// usbd_ep_transmit(cdev->dev, USBD_UAC_ISOC_IN_EP, cdev->uac_isoc_in.isoc_buf, len);
+		// usbd_ep_transmit(cdev->dev, 0x81, cdev->uac_isoc_in.isoc_buf, len);
 	}
 
 	return HAL_OK;

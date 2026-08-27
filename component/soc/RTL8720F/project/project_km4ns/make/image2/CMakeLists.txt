@@ -77,10 +77,11 @@ ameba_add_subdirectory(${c_CMPT_SOC_DIR})
 ameba_add_subdirectory(${c_MCU_SRC_DIR})
 
 # Full set: WiFi/BT/Network and related components
+ameba_add_subdirectory(${c_COMPONENT_DIR}/sdn)
+
 if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_INTF_IPC AND CONFIG_WHC_DEV))
     ameba_add_subdirectory(${c_CMPT_UTILS_DIR})
     ameba_add_subdirectory(${c_CMPT_BLUETOOTH_DIR})
-    ameba_add_subdirectory(${c_COMPONENT_DIR}/sdn)
     ameba_add_subdirectory(${c_CMPT_EXAMPLE_DIR})
     ameba_add_subdirectory(${c_CMPT_FILE_SYSTEM_DIR})
     ameba_add_subdirectory(${c_CMPT_NETWORK_DIR})

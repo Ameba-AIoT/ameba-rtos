@@ -24,4 +24,10 @@ int  whc_host_log_forward_resume(void);
 /* Called by RX dispatcher when WHC_WIFI_TEST_LOG_ACK is received. */
 void whc_host_log_forward_ack(u8 op);
 
+/* Query whether log forwarding is currently enabled. */
+bool whc_host_log_forward_is_enabled(void);
+
+/* Check module_param log_fwd_enable and auto-enable if set. */
+void whc_host_log_fwd_enable(bool enable);
+
 #endif /* __WHC_HOST_LOG_FWD_H__ */

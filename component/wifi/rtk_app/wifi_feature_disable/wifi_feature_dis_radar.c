@@ -41,15 +41,18 @@ void wifi_hal_radar_deinit(void *a)
 	UNUSED(a);
 }
 
-s32 wifi_hal_radar_cfg(void *a)
+void wifi_hal_radar_parm_init(void)
 {
-	UNUSED(a);
+
+}
+
+s32 wifi_hal_radar_cfg(void)
+{
 	return -1;
 }
 
-s32 wifi_hal_radar_en(void *a)
+s32 wifi_hal_radar_en(void)
 {
-	UNUSED(a);
 	return -1;
 }
 
@@ -71,6 +74,18 @@ s32 wifi_hal_radar_check_status(u8 *radar_active)
 }
 
 void wifi_hal_radar_query(char *cmd_ptr, u32 extra_arg)
+{
+	(void)cmd_ptr;
+	(void)extra_arg;
+}
+
+void wifi_hal_radar_parm_set(char *cmd_ptr, u32 extra_arg)
+{
+	(void)cmd_ptr;
+	(void)extra_arg;
+}
+
+void wifi_hal_dbg_radar_psd_check(char *cmd_ptr, u32 extra_arg)
 {
 	(void)cmd_ptr;
 	(void)extra_arg;

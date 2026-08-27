@@ -102,3 +102,4 @@ Connect a LED with this GPIO to show the status.
 # Supported IC
 
 RTL8721F
+RTL8720F

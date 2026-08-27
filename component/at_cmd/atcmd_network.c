@@ -123,7 +123,8 @@ static void at_iperf_help(void)
 {
 	RTK_LOGI(NOTAG, "\r\n");
 	RTK_LOGI(NOTAG, "AT+IPERF=<-s>[,<-p>,<port>][,<-u>]\r\n");
-	RTK_LOGI(NOTAG, "AT+IPERF=<-c>,<host|stop>[,<-i>,<periodic>][,<-l>,<size>][,<-u>][,<-b>,<bandwidth>][,<-d>][,<-t>,<transtime>][,<-n>,<count>][,<-S>]\r\n");
+	RTK_LOGI(NOTAG, "AT+IPERF=<-c>,<host>[,<-i>,<periodic>][,<-l>,<size>][,<-u>][,<-b>,<bandwidth>][,<-d>][,<-t>,<transtime>][,<-n>,<count>][,<-S>]\r\n");
+	RTK_LOGI(NOTAG, "AT+IPERF=<stop>[,<stream_id>]\r\n");
 	RTK_LOGI(NOTAG, "\tClient/Server:\r\n");
 	RTK_LOGI(NOTAG, "\t\t?\t\t\tList all stream status\r\n");
 	RTK_LOGI(NOTAG, "\t\tstop\t#\t\tterminate specific stream id or terminate all stream if no id specified\r\n");
@@ -135,7 +136,7 @@ static void at_iperf_help(void)
 	RTK_LOGI(NOTAG, "\t\t-s\t\t\trun in server mode\r\n");
 	RTK_LOGI(NOTAG, "\t\t-B\t\t\tbind multicast address in udp server mode\n");
 	RTK_LOGI(NOTAG, "\tClient specific:\r\n");
-	RTK_LOGI(NOTAG, "\t\t-b\t#[KM]\t\tfor UDP, bandwidth to send at in bits/sec (default 1 Mbit/sec)\r\n");
+	RTK_LOGI(NOTAG, "\t\t-b\t#[KM]\t\tfor UDP, bandwidth to send at in bits/sec (default 128 Mbit/sec)\r\n");
 	RTK_LOGI(NOTAG, "\t\t-c\t<host>\trun in client mode, connecting to <host>\r\n");
 	RTK_LOGI(NOTAG, "\t\t-d\t\t\tdo a bidirectional test simultaneously\r\n");
 	RTK_LOGI(NOTAG, "\t\t-t\t#\t\ttime in seconds to transmit for (default 10 secs)\r\n");
@@ -146,7 +147,7 @@ static void at_iperf_help(void)
 	RTK_LOGI(NOTAG, "\t\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002\r\n");
 	RTK_LOGI(NOTAG, "\tExample for UDP:\r\n");
 	RTK_LOGI(NOTAG, "\t\tAT+IPERF=-s,-p,5002,-u\r\n");
-	RTK_LOGI(NOTAG, "\t\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u\r\n");
+	RTK_LOGI(NOTAG, "\t\tAT+IPERF=-c,192.168.1.2,-t,100,-p,5002,-u,-b,20M\r\n");
 }
 
 void at_iperf(u16 argc, char **argv)
@@ -243,7 +244,8 @@ static void at_iperf3_help(void)
 {
 	RTK_LOGI(NOTAG, "\r\n");
 	RTK_LOGI(NOTAG, "AT+IPERF3=<-s>[,<-p>,<port>]\r\n");
-	RTK_LOGI(NOTAG, "AT+IPERF3=<-c>,<host|stop>[,<-i>,<periodic>][,<-l>,<size>][,<-d>][,<-t>,<transtime>][,<-n>,<count>]\r\n");
+	RTK_LOGI(NOTAG, "AT+IPERF3=<-c>,<host>[,<-i>,<periodic>][,<-l>,<size>][,<-u>][,<-b>,<bandwidth>][,<-t>,<transtime>][,<-n>,<count>]\r\n");
+	RTK_LOGI(NOTAG, "AT+IPERF3=<stop>\r\n");
 	RTK_LOGI(NOTAG, "\tClient/Server:\r\n");
 	RTK_LOGI(NOTAG, "\t\tstop\t#\t\tterminate specific stream id or terminate all stream if no id specified\r\n");
 	RTK_LOGI(NOTAG, "\t\t-i\t#\t\tseconds between periodic bandwidth reports\r\n");
@@ -253,13 +255,16 @@ static void at_iperf3_help(void)
 	RTK_LOGI(NOTAG, "\tServer specific:\r\n");
 	RTK_LOGI(NOTAG, "\t\t-s\t\t\trun in server mode\r\n");
 	RTK_LOGI(NOTAG, "\tClient specific:\r\n");
+	RTK_LOGI(NOTAG, "\t\t-b\t#[KM]\t\tbandwidth to send at in bits/sec (default 1 Mbit/sec for UDP)\r\n");
 	RTK_LOGI(NOTAG, "\t\t-c\t<host>\trun in client mode, connecting to <host>\r\n");
-	RTK_LOGI(NOTAG, "\t\t-d\t\t\tdo a bidirectional test simultaneously\r\n");
 	RTK_LOGI(NOTAG, "\t\t-t\t#\t\ttime in seconds to transmit for (default 10 secs)\r\n");
 	RTK_LOGI(NOTAG, "\t\t-n\t#[KM]\t\tnumber of bytes to transmit (instead of -t)\r\n");
-	RTK_LOGI(NOTAG, "\tExample:\r\n");
+	RTK_LOGI(NOTAG, "\tExample for TCP:\r\n");
 	RTK_LOGI(NOTAG, "\t\tAT+IPERF3=-s,-p,5002\r\n");
 	RTK_LOGI(NOTAG, "\t\tAT+IPERF3=-c,192.168.1.2,-t,100,-p,5002\r\n");
+	RTK_LOGI(NOTAG, "\tExample for UDP:\r\n");
+	RTK_LOGI(NOTAG, "\t\tAT+IPERF3=-s,-p,5002,-u\r\n");
+	RTK_LOGI(NOTAG, "\t\tAT+IPERF3=-c,192.168.1.2,-t,100,-p,5002,-u,-b,20M\r\n");
 }
 
 void at_iperf3(u16 argc, char **argv)
@@ -271,7 +276,7 @@ void at_iperf3(u16 argc, char **argv)
 		goto end;
 	}
 
-	RTK_LOGI(NOTAG, "[+IPERF3]: _AT_WLAN_IPERF1_TCP_TEST_\r\n");
+	RTK_LOGI(NOTAG, "[+IPERF3]: _AT_WLAN_IPERF3_TEST_\r\n");
 	argv[0] = (char *)"iperf3";
 	if (argc > 1) {
 		error_no = cmd_iperf3(argc, argv);

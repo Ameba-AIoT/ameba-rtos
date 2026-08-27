@@ -296,6 +296,8 @@ menu "CONFIG WIFI"
             select WLAN
             select LWIP_LAYER if WHC_HOST && !MP_SHRINK
             select FW_DRIVER_COEXIST if WHC_DEV
+            select ENABLE_WPS if WHC_HOST && WIFI_WPS_ENABLE_MENU
+            select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
         config WHC_DEV_MENU
             bool
@@ -317,6 +319,8 @@ menu "CONFIG WIFI"
             select WLAN
             select LWIP_LAYER
             select FW_DRIVER_COEXIST
+            select ENABLE_WPS if WIFI_WPS_ENABLE_MENU
+            select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
         config WIFI_FW_EN_FOR_KM4NS
             depends on !WHC_DEV_MENU
@@ -362,16 +366,12 @@ config SDN_DEV_FOR_KM4NS    # SDN DEV is always on NP, set on when BT or wpan en
 config SDN_HOST             # SDN HOST is on the same core with BT or wpan.
     bool
 
-config SDN_HOST_FOR_KM4NS   # SDN HOST is on the same core with BT or wpan.
-    bool
-
 
 menu "CONFIG BT"
     config  BT_MENU
         bool "Enable BT"
 
     if BT_MENU
-
         config BT_ZEPHYR
             def_bool y
 
@@ -387,14 +387,11 @@ menu "CONFIG BT"
 
         if !BT_INIC
             rsource "../../../bluetooth/Kconfig"
-            config BT
-                def_bool WHC_HOST || WHC_NONE
-                select SDN_HOST
         endif
 
-        config BT_FOR_KM4NS
-            def_bool BT_INIC
-            select SDN_HOST_FOR_KM4NS
+        config BT
+            def_bool WHC_HOST || WHC_NONE || (BT_INIC && WHC_DEV)
+            select SDN_HOST
     endif
 endmenu
 

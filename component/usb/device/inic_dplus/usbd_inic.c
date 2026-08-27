@@ -10,9 +10,13 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBD_INIC_MFG_STRING	"Realtek"
-#define USBD_INIC_PROD_STRING	"802.11n  WLAN Adapter"
-#define USBD_INIC_SN_STRING		"123456789ABC"
+#define USBD_INIC_IDX_INTERFACE_STR 0x04U
+
+#define USBD_INIC_ITF_NUM           1U
+#define USBD_INIC_ITF_WIFI          0U
+
+#define USBD_INIC_EP_STATE_IDLE     0U
+#define USBD_INIC_EP_STATE_BUSY     1U
 
 /* Private types -------------------------------------------------------------*/
 

@@ -16,25 +16,38 @@
 #ifdef CONFIG_USB_DEVICE_EN
 /* Private defines -----------------------------------------------------------*/
 
+// Endpoint address
+#if defined (CONFIG_AMEBAGREEN2)
+#define CDC_ACM_BULK_IN_EP                       0x82U
+#else
+#define CDC_ACM_BULK_IN_EP                       0x81U
+#endif
+#define CDC_ACM_BULK_OUT_EP                      0x02U
+#define CDC_ACM_INTR_IN_EP                       0x83U
+
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 // while test suspend/resume, hotplug should be disabled
-#define CONFIG_USBD_CDC_ACM_HOTPLUG					0
+#define CDC_ACM_HOTPLUG                          0
 
 // USB speed
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define CONFIG_USBD_CDC_ACM_SPEED					USB_SPEED_FULL
+#define CDC_ACM_USB_SPEED                        USB_SPEED_FULL
 #else
-#define CONFIG_USBD_CDC_ACM_SPEED					USB_SPEED_HIGH
+#define CDC_ACM_USB_SPEED                        USB_SPEED_HIGH
 #endif
 
-// Do not change the settings unless indeed necessary
-#define CONFIG_CDC_ACM_BULK_IN_XFER_SIZE			2048U
-#define CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE			2048U
+// Transfer size
+#define CDC_ACM_BULK_IN_XFER_SIZE                2048U
+#define CDC_ACM_BULK_OUT_XFER_SIZE               2048U
 
 // Thread priorities
-#define CONFIG_CDC_ACM_HOTPLUG_THREAD_PRIORITY		8
-#define CONFIG_CDC_ACM_XFER_THREAD_PRIORITY			5
+#define CDC_ACM_HOTPLUG_THREAD_PRIORITY          8
+#define CDC_ACM_XFER_THREAD_PRIORITY             5
+
+// Thread stack sizes
+#define CDC_ACM_XFER_THREAD_STACK_SIZE           1024U
+#define CDC_ACM_NOTIFY_THREAD_STACK_SIZE         1024U
 
 /* Private types -------------------------------------------------------------*/
 
@@ -50,6 +63,7 @@ static void atcmd_usbd_transmitted(u8 status);
 static void atcmd_usbd_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
+
 static const char *const TAG = "AT_USBD";
 
 static const usbd_cdc_acm_cb_t atcmd_usbd_cb = {
@@ -61,12 +75,12 @@ static const usbd_cdc_acm_cb_t atcmd_usbd_cb = {
 	.status_changed = atcmd_usbd_status_changed,
 };
 
-static usb_cdc_line_coding_t atcmd_usbd_line_coding;
+static usb_cdc_acm_line_coding_t atcmd_usbd_line_coding;
 
 static u16 atcmd_usbd_ctrl_line_state;
 
 static const usbd_config_t atcmd_usbd_cfg = {
-	.speed = CONFIG_USBD_CDC_ACM_SPEED,
+	.speed = CDC_ACM_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
@@ -77,6 +91,14 @@ static const usbd_config_t atcmd_usbd_cfg = {
 	.rx_fifo_depth = 661U,
 	.ptx_fifo_depth = {256U, 16U, 32U, 16U, },
 #endif
+};
+
+static const usbd_cdc_acm_ep_cfg_t cdc_acm_ep = {
+	.bulk_in_addr  = CDC_ACM_BULK_IN_EP,
+	.bulk_out_addr = CDC_ACM_BULK_OUT_EP,
+	.intr_in_addr  = CDC_ACM_INTR_IN_EP,
+	.bulk_in_xfer_size  = CDC_ACM_BULK_IN_XFER_SIZE,
+	.bulk_out_xfer_size = CDC_ACM_BULK_OUT_XFER_SIZE,
 };
 
 static u8 usbd_tx_buf[ATCMD_USBD_MAX_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
@@ -105,7 +127,7 @@ extern int atcmd_service(char *line_buf);
   */
 static int atcmd_usbd_init(void)
 {
-	usb_cdc_line_coding_t *lc = &atcmd_usbd_line_coding;
+	usb_cdc_acm_line_coding_t *lc = &atcmd_usbd_line_coding;
 
 	lc->b.dwDteRate = 150000;
 	lc->b.bCharFormat = 0x00;
@@ -218,7 +240,7 @@ void atcmd_usbd_transmitted(u8 status)
   */
 static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf)
 {
-	usb_cdc_line_coding_t *lc = &atcmd_usbd_line_coding;
+	usb_cdc_acm_line_coding_t *lc = &atcmd_usbd_line_coding;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
@@ -270,7 +292,7 @@ static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf)
 		atcmd_usbd_ctrl_line_state = req->wValue;
 		if (atcmd_usbd_ctrl_line_state & 0x01) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
-#if CONFIG_USBD_CDC_ACM_NOTIFY
+#if USBD_CDC_ACM_NOTIFY
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 #endif
 		}
@@ -373,18 +395,18 @@ static int atcmd_usbd_thread_init(void)
 		goto exit_usbd_init_fail;
 	}
 
-	ret = usbd_cdc_acm_init(CONFIG_CDC_ACM_BULK_OUT_XFER_SIZE, CONFIG_CDC_ACM_BULK_IN_XFER_SIZE, &atcmd_usbd_cb);
+	ret = usbd_cdc_acm_init(&atcmd_usbd_cb, &cdc_acm_ep);
 	if (ret != HAL_OK) {
 		goto exit_usbd_cdc_acm_init_fail;
 	}
 
 	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(NULL, "atcmd_usbd_tx_task", atcmd_usbd_tx_task, NULL, 1024, CONFIG_CDC_ACM_XFER_THREAD_PRIORITY);
+	ret = rtos_task_create(NULL, "atcmd_usbd_tx_task", atcmd_usbd_tx_task, NULL, CDC_ACM_XFER_THREAD_STACK_SIZE, CDC_ACM_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_cdc_acm_init_fail;
 	}
 
-	ret = rtos_task_create(NULL, "atcmd_usbd_notify_task", atcmd_usbd_notify_task, NULL, 1024, CONFIG_CDC_ACM_XFER_THREAD_PRIORITY);
+	ret = rtos_task_create(NULL, "atcmd_usbd_notify_task", atcmd_usbd_notify_task, NULL, CDC_ACM_NOTIFY_THREAD_STACK_SIZE, CDC_ACM_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_cdc_acm_init_fail;
 	}

@@ -109,35 +109,11 @@ if(CONFIG_USBD_DFU)
     )
 endif()
 
-ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_HID private_sources
-    ${USBD_CLASS_DIR}/composite/usbd_composite_cdc_acm_hid.c
-    ${USBD_CLASS_DIR}/composite/usbd_composite_cdc_acm.c
-    ${USBD_CLASS_DIR}/composite/usbd_composite_hid.c
-)
-
-ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_MSC private_sources
-    ${USBD_CLASS_DIR}/composite/usbd_composite_cdc_acm_msc.c
-    ${USBD_CLASS_DIR}/composite/usbd_composite_cdc_acm.c
-    ${USBD_CLASS_DIR}/composite/usbd_composite_msc.c
-    ${USBD_CLASS_DIR}/composite/usbd_composite_scsi.c
-)
-
-if(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC1 OR CONFIG_USBD_COMPOSITE_HID_UAC1)
-    set(COMPOSITE_UAC_SOURCE ${USBD_CLASS_DIR}/composite/usbd_composite_uac1.c)
-else()
-    set(COMPOSITE_UAC_SOURCE ${USBD_CLASS_DIR}/composite/usbd_composite_uac2.c)
-endif()
-
-ameba_list_append_if(CONFIG_USBD_COMPOSITE_CDC_ACM_UAC private_sources
-    ${USBD_CLASS_DIR}/composite/usbd_composite_cdc_acm_uac.c
-    ${USBD_CLASS_DIR}/composite/usbd_composite_cdc_acm.c
-    ${COMPOSITE_UAC_SOURCE}
-)
-
-ameba_list_append_if(CONFIG_USBD_COMPOSITE_HID_UAC private_sources
-    ${USBD_CLASS_DIR}/composite/usbd_composite_hid_uac.c
-    ${USBD_CLASS_DIR}/composite/usbd_composite_hid_bi_dir.c
-    ${COMPOSITE_UAC_SOURCE}
+# New V6 composite framework: always built when CONFIG_USBD_COMPOSITE is enabled
+# Sub-function class drivers (CDC ACM, HID, MSC, UAC, etc.) are each enabled
+# by their own CONFIG_USBD_xxx and linked independently.
+ameba_list_append_if(CONFIG_USBD_COMPOSITE private_sources
+    ${USBD_CLASS_DIR}/composite/usbd_composite.c
 )
 
 if(CONFIG_USBD_UVC)

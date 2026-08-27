@@ -158,7 +158,7 @@
     FLASH_PARAMS: {
       PC: '0x00020020',
       SP: '0x30005000',
-      FLOADER_ADDR: '0x30070020',
+      FLOADER_ADDR: '0x300B0020',
       WR_CHECK_EN: 0,
       IMG2_ADDR: '0x14000',
       IMG3_ADDR: '0x0',

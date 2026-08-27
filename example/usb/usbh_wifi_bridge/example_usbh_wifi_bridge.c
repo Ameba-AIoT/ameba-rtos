@@ -531,7 +531,7 @@ void example_usbh_wifi_bridge(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USB host usbh_wifi_bridge demo started\n");
 
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
-	ret = rtos_task_create(&hotplug_task, "example_usbh_bridge_hotplug_thread",
+	ret = rtos_task_create(&hotplug_task, "usbh_bridge_hotplug_thread",
 						   example_usbh_bridge_hotplug_thread, NULL,
 						   USBH_ECM_HOTPLUG_THREAD_STACK_SIZE, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -539,14 +539,14 @@ void example_usbh_wifi_bridge(void)
 	}
 #endif
 
-	ret = rtos_task_create(&monitor_task, "example_usbh_bridge_monitor_thread",
+	ret = rtos_task_create(&monitor_task, "usbh_bridge_monitor_thread",
 						   example_usbh_bridge_monitor_thread, NULL,
 						   USBH_ECM_MONITOR_THREAD_STACK_SIZE, USBH_ECM_MONITOR_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USB host monitor_link_change thread: %d\n", ret);
 	}
 
-	ret = rtos_task_create(&bridge_task, "example_usbh_wifi_bridge_init_thread",
+	ret = rtos_task_create(&bridge_task, "usbh_wifi_bridge_init_thread",
 						   example_usbh_wifi_bridge_init_thread, NULL,
 						   USBH_ECM_BRIDGE_THREAD_STACK_SIZE, USBH_ECM_BRIDGE_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {

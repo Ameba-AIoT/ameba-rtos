@@ -595,7 +595,7 @@ void wifi_p2p_rx_mgnt_handle(u8 *evt_info)
 		return;
 	}
 
-	freq = p2p_channel_to_freq(g_p2p_context.p2p->cfg->reg_class, rx_mgnt_info->channel);
+	freq = p2p_channel_to_freq(p2p_chan_to_reg_class(rx_mgnt_info->channel), rx_mgnt_info->channel);
 	if (freq < 0) {
 		return;
 	}
@@ -615,8 +615,6 @@ void wifi_p2p_rx_mgnt_handle(u8 *evt_info)
 		frm_len = len - sizeof(struct ieee80211_hdr) - 1;
 		p2p_rx_action(g_p2p_context.p2p, da, sa, bssid, category, frame_body + 1, frm_len, freq);
 	}
-
-	rtos_mem_free(evt_info);
 
 	return;
 }
@@ -728,7 +726,6 @@ static void wifi_p2p_prov_disc_req(void *ctx, const u8 *peer, u16 config_methods
 								   size_t group_id_len)
 {
 	char devtype[WPS_DEV_TYPE_BUFSIZE] = {0};
-	char params[300];
 	u8 empty_dev_type[8];
 	unsigned int generated_pin = 0;
 	u8 device_pin[10];
@@ -751,29 +748,30 @@ static void wifi_p2p_prov_disc_req(void *ctx, const u8 *peer, u16 config_methods
 		os_memset(empty_dev_type, 0, sizeof(empty_dev_type));
 		pri_dev_type = empty_dev_type;
 	}
-	os_snprintf(params, sizeof(params), " p2p_dev_addr=" MACSTR
-				" pri_dev_type=%s name='%s' config_methods=0x%x "
-				"dev_capab=0x%x group_capab=0x%x%s%s",
-				MAC2STR(dev_addr),
-				wps_dev_type_bin2str(pri_dev_type, devtype,
-									 sizeof(devtype)),
-				dev_name, supp_config_methods, dev_capab, group_capab,
-				group ? " group=" : "",
-				group ? group : "");
-	params[sizeof(params) - 1] = '\0';
 
 	if (config_methods & WPS_CONFIG_DISPLAY) {
 		generated_pin = wps_generate_pin();
 		os_sprintf(device_pin, "%08d", generated_pin);
-		RTK_LOGI(TAG_WLAN_P2P, "P2P-PROV-DISC-SHOW-PIN " MACSTR " %08d%s\n",
-				 MAC2STR(peer), generated_pin, params);
+		RTK_LOGI(TAG_WLAN_P2P, "P2P-PROV-DISC-SHOW-PIN " MACSTR " %08d",
+				 MAC2STR(peer), generated_pin);
 	} else if (config_methods & WPS_CONFIG_KEYPAD) {
-		RTK_LOGI(TAG_WLAN_P2P, "P2P-PROV-DISC-ENTER-PIN " MACSTR "%s\n",
-				 MAC2STR(peer), params);
+		RTK_LOGI(TAG_WLAN_P2P, "P2P-PROV-DISC-ENTER-PIN " MACSTR,
+				 MAC2STR(peer));
 	} else if (config_methods & WPS_CONFIG_PUSHBUTTON) {
-		RTK_LOGI(TAG_WLAN_P2P, "P2P-PROV-DISC-PBC-REQ " MACSTR"%s\n",
-				 MAC2STR(peer), params);
+		RTK_LOGI(TAG_WLAN_P2P, "P2P-PROV-DISC-PBC-REQ " MACSTR,
+				 MAC2STR(peer));
 	}
+
+	RTK_LOGI(NOTAG, " p2p_dev_addr=" MACSTR
+			 " pri_dev_type=%s name='%s' config_methods=0x%x "
+			 "dev_capab=0x%x group_capab=0x%x%s%s\n",
+			 MAC2STR(dev_addr),
+			 wps_dev_type_bin2str(pri_dev_type, devtype,
+								  sizeof(devtype)),
+			 dev_name, supp_config_methods, dev_capab, group_capab,
+			 group ? " group=" : "",
+			 group ? group : "");
+
 	if (g_p2p_context.role == P2P_R_GO) {
 		wifi_start_ap_wps_thread(config_methods, (char *)device_pin);
 	}
@@ -854,12 +852,7 @@ static int wifi_p2p_auth_go_neg(const u8 *peer_addr,
 
 u8 wifi_p2p_check_role(u8 role)
 {
-#ifdef CONFIG_WIFI_P2P_ENABLE
 	return g_p2p_context.role == role;
-#else
-	(void) role;
-	return 0;
-#endif
 }
 
 static void wifi_p2p_go_neg_completed(void *ctx, struct p2p_go_neg_results *res)

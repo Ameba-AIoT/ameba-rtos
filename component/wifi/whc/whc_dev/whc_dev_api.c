@@ -154,6 +154,7 @@ u8  whc_dev_api_get_default_direction(void)
 }
 #endif
 
+#ifndef CONFIG_WHC_INTF_IPC
 #ifdef CONFIG_WHC_CMD_PATH
 /**
  * @brief  to send data to host
@@ -220,3 +221,4 @@ u8 whc_dev_api_bus_is_idle(void)
 {
 	return whc_dev_bus_is_idle();
 }
+#endif

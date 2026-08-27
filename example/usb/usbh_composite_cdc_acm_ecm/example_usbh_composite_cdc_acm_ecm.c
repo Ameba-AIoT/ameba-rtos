@@ -2196,14 +2196,14 @@ static void usbh_comp_init(void)
 {
 	int status;
 	status = rtos_task_create(&usbh_comp_link_check_task,
-							  "example_usbh_comp_link_change_thread",
+							  "usbh_comp_link_change_thread",
 							  example_usbh_comp_link_change_thread, NULL,
 							  CONFIG_USBH_COMP_LINK_THREAD_STACK_SIZE, CONFIG_USBH_COMP_LINK_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
 
-	status = rtos_task_create(&usbh_comp_ecm_init_task, "example_usbh_comp_init_task",
+	status = rtos_task_create(&usbh_comp_ecm_init_task, "usbh_comp_init_thread",
 							  example_usbh_comp_init_task, NULL,
 							  CONFIG_USBH_COMP_INIT_THREAD_STACK_SIZE, CONFIG_USBH_COMP_INIT_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
@@ -2386,7 +2386,7 @@ void example_usbh_composite_cdc_acm_ecm(void)
 		goto err_rx_task;
 	}
 
-	ret = rtos_task_create(&hot_plug_task, "example_usbh_comp_hotplug_thread",
+	ret = rtos_task_create(&hot_plug_task, "usbh_comp_hotplug_thread",
 						   example_usbh_comp_hotplug_thread, NULL,
 						   CONFIG_USBH_COMP_HOTPLUG_THREAD_STACK_SIZE,
 						   CONFIG_USBH_COMP_HOTPLUG_THREAD_PRIORITY);
@@ -2397,7 +2397,7 @@ void example_usbh_composite_cdc_acm_ecm(void)
 #endif
 
 #if CONFIG_USBH_COMP_MEM_CHECK
-	ret = rtos_task_create(&memory_monitor_task, "example_usbh_comp_mem_check_thread",
+	ret = rtos_task_create(&memory_monitor_task, "usbh_comp_mem_check_thread",
 						   example_usbh_comp_mem_check_thread, NULL,
 						   CONFIG_USBH_COMP_MEM_CHECK_THREAD_STACK_SIZE,
 						   CONFIG_USBH_COMP_MEM_CHECK_THREAD_PRIORITY);
@@ -2411,7 +2411,7 @@ void example_usbh_composite_cdc_acm_ecm(void)
 
 #if CONFIG_USBH_COMP_ENABLE_REMOTE_FILE_DOWNLOAD
 	/* Download thread failure is tolerable: ECM still works, just no HTTP demo */
-	ret = rtos_task_create(&download_task, "example_usbh_comp_download_thread",
+	ret = rtos_task_create(&download_task, "usbh_comp_download_thread",
 						   example_usbh_comp_download_thread, NULL,
 						   CONFIG_USBH_COMP_DOWNLOAD_THREAD_STACK_SIZE,
 						   CONFIG_USBH_COMP_DOWNLOAD_THREAD_PRIORITY);

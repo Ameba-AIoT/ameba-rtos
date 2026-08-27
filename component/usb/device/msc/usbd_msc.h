@@ -27,62 +27,45 @@ extern "C" {
 /** @addtogroup Device_MSC_Constants Device MSC Constants
  * @{
  */
-#define USBD_MSC_TX_THREAD_PRIORITY                 5U                 /**< TX thread priority */
-#define USBD_MSC_RX_THREAD_PRIORITY                 5U                 /**< RX thread priority */
-#define USBD_MSC_TRX_THREAD_STACK_SIZE              1024U              /**< TX/RX thread tack size */
+#define USBD_MSC_TX_THREAD_PRIORITY    5U                 /**< TX thread priority */
+#define USBD_MSC_RX_THREAD_PRIORITY    5U                 /**< RX thread priority */
+#define USBD_MSC_TRX_THREAD_STACK_SIZE 1024U              /**< TX/RX thread tack size */
 
 /* Defines configuration constants like VID/PID, USB strings, and power settings. */
-#define USBD_MSC_VID                                USB_VID            /**< Vendor ID. */
-#define USBD_MSC_PID                                USB_PID            /**< Product ID. */
-#define USBD_MSC_SELF_POWERED                       1U                 /**< Set to 1 if device is self-powered, 0 for bus-powered. */
-#define USBD_MSC_CONFIG_DESC_SIZE                   32U                /**< Size of the MSC configuration descriptor. */
-#define USBD_MSC_LANGID_STRING                      0x0409U            /**< Language ID string (0x0409 for U.S. English). */
-#define USBD_MSC_MFG_STRING                         "Realtek"          /**< Manufacturer string. */
-#define USBD_MSC_PROD_HS_STRING                     "Realtek MSC (HS)" /**< Product string for High-Speed. */
-#define USBD_MSC_PROD_FS_STRING                     "Realtek MSC (FS)" /**< Product string for Full-Speed. */
-#define USBD_MSC_SN_STRING                          "1234567890"       /**< Serial number string. */
+#define USBD_MSC_VID                   USB_VID            /**< Vendor ID. */
+#define USBD_MSC_PID                   USB_PID            /**< Product ID. */
+#define USBD_MSC_LANGID_STRING         0x0409U            /**< Language ID string (0x0409 for U.S. English). */
+#define USBD_MSC_MFG_STRING            "Realtek"          /**< Manufacturer string. */
+#define USBD_MSC_PROD_HS_STRING        "Realtek MSC (HS)" /**< Product string for High-Speed. */
+#define USBD_MSC_PROD_FS_STRING        "Realtek MSC (FS)" /**< Product string for Full-Speed. */
+#define USBD_MSC_SN_STRING             "1234567890"       /**< Serial number string. */
 
 /* Defines MSC-specific endpoint parameters. */
-#if defined (CONFIG_AMEBAGREEN2)
-#define USBD_MSC_BULK_IN_EP                         0x82U              /**< Endpoint for BULK IN. */
-#define USBD_MSC_BULK_OUT_EP                        0x02U              /**< Endpoint for BULK OUT. */
-#else
-#define USBD_MSC_BULK_IN_EP                         0x81U              /**< Endpoint for BULK IN. */
-#define USBD_MSC_BULK_OUT_EP                        0x02U              /**< Endpoint for BULK OUT. */
-#endif
-
-#define USBD_MSC_HS_MAX_PACKET_SIZE                 512U               /**< High-Speed BULK IN & OUT maximum packet size. */
-#define USBD_MSC_FS_MAX_PACKET_SIZE                 64U                /**< Full-Speed BULK IN & OUT maximum packet size. */
-
-#define USBD_MSC_CTRL_BUF_SIZE                      512U               /**< Control transfer buffer size */
+#define USBD_MSC_HS_MAX_PACKET_SIZE    512U               /**< High-Speed BULK IN & OUT maximum packet size. */
+#define USBD_MSC_FS_MAX_PACKET_SIZE    64U                /**< Full-Speed BULK IN & OUT maximum packet size. */
 
 /* MSC configurations */
-#define USBD_MSC_FIX_CV_TEST_ISSUE                  0                  /* Enable for CV test */
+#define USBD_MSC_FIX_CV_TEST_ISSUE     0                  /* Enable for CV test */
 
 /* Defines storage-related parameters like block size and buffer length. */
-#define USBD_MSC_BLK_BITS                           9                        /**< Number of bits per block (log2(512)). */
-#define USBD_MSC_BLK_SIZE                           (1 << USBD_MSC_BLK_BITS) /**< Block size in bytes (512). */
-#define USBD_MSC_BUFLEN                             (16 * 1024)              /**< Default size of the internal data buffer. */
+#define USBD_MSC_BLK_BITS              9                        /**< Number of bits per block (log2(512)). */
+#define USBD_MSC_BLK_SIZE              (1 << USBD_MSC_BLK_BITS) /**< Block size in bytes (512). */
+#define USBD_MSC_BUFLEN                (16 * 1024)              /**< Default size of the internal data buffer. */
 
 /* RAM disk configurations */
 #ifdef CONFIG_USBD_MSC_RAM_DISK
-#define USBD_MSC_RAM_DISK_SIZE                      (128 * 1024) /**< Total size of the RAM disk. Should be > 64KB to support ATTO benchmark test. */
-#define USBD_MSC_RAM_DISK_SECTORS                   (USBD_MSC_RAM_DISK_SIZE >> USBD_MSC_BLK_BITS) /**< Total number of sectors in RAM disk. */
+#define USBD_MSC_RAM_DISK_SIZE         (128 * 1024) /**< Total size of the RAM disk. Should be > 64KB to support ATTO benchmark test. */
+#define USBD_MSC_RAM_DISK_SECTORS      (USBD_MSC_RAM_DISK_SIZE >> USBD_MSC_BLK_BITS) /**< Total number of sectors in RAM disk. */
 #endif
 
 /* BOT state */
-#define USBD_MSC_IDLE                               0U          /**< Idle state */
-#define USBD_MSC_DATA_OUT                           1U          /**< Data Out state */
-#define USBD_MSC_DATA_IN                            2U          /**< Data In state */
-#define USBD_MSC_LAST_DATA_IN                       3U          /**< Last Data In state */
-#define USBD_MSC_SEND_DATA                          4U          /**< Send Immediate data */
+#define USBD_MSC_IDLE                  0U          /**< Idle state */
+#define USBD_MSC_DATA_OUT              1U          /**< Data Out state */
+#define USBD_MSC_DATA_IN               2U          /**< Data In state */
+#define USBD_MSC_LAST_DATA_IN          3U          /**< Last Data In state */
+#define USBD_MSC_SEND_DATA             4U          /**< Send Immediate data */
 
-/* BOT status */
-#define USBD_MSC_STATUS_NORMAL                      0U          /**< Normal working status */
-#define USBD_MSC_STATUS_RECOVERY                    1U          /**< Get MSC Reset request for recovery */
-#define USBD_MSC_STATUS_ERROR                       2U          /**< Error status */
-
-#define USBD_MSC_SENSE_LIST_DEPTH                   4U          /**< Depth of the SCSI sense data list. */
+#define USBD_MSC_SENSE_LIST_DEPTH      4U          /**< Depth of the SCSI sense data list. */
 
 /** @} End of Device_MSC_Constants group */
 /** @} End of USB_Device_Constants group */
@@ -147,18 +130,28 @@ typedef struct {
 /** @} End of USB_Device_Types group */
 
 /**
+ * @brief MSC endpoint configuration structure.
+ * @details This structure holds the endpoint addresses for MSC bulk IN and bulk OUT endpoints.
+ */
+typedef struct {
+	u8  bulk_in_addr;                           /**< Bulk IN endpoint address */
+	u8  bulk_out_addr;                          /**< Bulk OUT endpoint address */
+} usbd_msc_ep_cfg_t;
+
+/**
  * @brief Main structure for the MSC device class.
  * @details This structure holds all the state and context for the active MSC class instance.
  * @note The original snippet was incomplete.
  */
 typedef struct {
+	const usbd_msc_ep_cfg_t *ep_cfg;                /**< Pointer to the endpoint configuration structure. */
+	const usbd_msc_cb_t *cb;                        /**< Pointer to the user callback structure. */
+	usb_dev_t *dev;                                 /**< Pointer to the USB device structure. */
 	usbd_ep_t ep_bulk_in;                           /**< Structure for the Bulk IN endpoint. */
 	usbd_ep_t ep_bulk_out;                          /**< Structure for the Bulk OUT endpoint. */
 	usb_msc_bot_cbw_t *cbw;                         /**< Pointer to the Command Block Wrapper. */
 	usb_msc_bot_csw_t *csw;                         /**< Pointer to the Command Status Wrapper. */
 	usbd_msc_disk_ops_t disk_ops;                   /**< Structure with disk operation function pointers. */
-	const usbd_msc_cb_t *cb;                              /**< Pointer to the user callback structure. */
-	usb_dev_t *dev;                                 /**< Pointer to the USB device structure. */
 	rtos_task_t rx_task;                            /**< RTOS task handle for data reception. */
 	rtos_sema_t rx_sema;                            /**< RTOS semaphore to signal data reception. */
 	rtos_task_t tx_task;                            /**< RTOS task handle for data transmission. */
@@ -179,7 +172,10 @@ typedef struct {
 	u8 phase_error : 1;                             /**< SCSI check status. */
 	u8 ro : 1;                                      /**< Flag for media is write-protected. */
 	u8 bot_reset_pending : 1;                       /**< Set after BOT Reset; triggers one-time OUT EP reinit in send_csw. */
+	u8 from_composite;                              /**< Flag indicating if part of a composite device. */
 } usbd_msc_dev_t;
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -190,11 +186,22 @@ typedef struct {
  * @{
  */
 /**
- * @brief Initializes the MSC device class driver with application callback handler.
+ * @brief Initializes the MSC device class driver (standalone).
  * @param[in] cb: Pointer to the user callback structure.
+ * @param[in] ep_cfg: Pointer to the endpoint configuration structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_msc_init(const usbd_msc_cb_t *cb);
+int usbd_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_t *ep_cfg);
+
+#ifdef CONFIG_USBD_COMPOSITE
+/**
+ * @brief Initializes MSC as part of a composite device.
+ * @param[in] cb: Pointer to the user callback structure.
+ * @param[in] ep_cfg: Pointer to the endpoint configuration structure.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbd_composite_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_t *ep_cfg);
+#endif
 
 /**
  * @brief De-initializes the MSC device class driver.

@@ -463,6 +463,9 @@ void whc_uart_host_init(void)
 #ifdef CONFIG_LWIP_LAYER
 	whc_host_netinfo_monitor_init();
 #endif
+#ifdef CONFIG_WHC_CMD_PATH
+	whc_host_cmd_path_init();
+#endif
 
 	RTK_LOGI(TAG_WLAN_INIC, "UART host init done!\n");
 

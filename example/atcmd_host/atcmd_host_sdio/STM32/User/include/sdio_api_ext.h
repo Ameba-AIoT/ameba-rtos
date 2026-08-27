@@ -104,8 +104,25 @@ struct INIC_RX_DESC {
 
 #define _RND(sz, r) ((((sz)+((r)-1))/(r))*(r))
 
-#define SIZE_RX_DESC	(sizeof(struct INIC_RX_DESC))
+/* The device TX path no longer prepends an INIC_RX_DESC BD, so device->host
+ * data carries no RX descriptor.  struct INIC_RX_DESC above is kept only for
+ * reference. */
+#define SIZE_RX_DESC	0
 #define SIZE_TX_DESC	(sizeof(struct INIC_TX_DESC))
+
+/* Device->Host framing, must match component/at_cmd/at_intf_sdio.h.
+ * With the RX descriptor gone the payload length is carried inline instead of
+ * being inferred from the RX0_REQ_LEN register; magic makes a device/host
+ * firmware mismatch fail loudly and lets the host walk several payloads out of
+ * a single RX FIFO read. */
+#define ATCMD_SDIO_HDR_MAGIC 0x5AA5
+
+struct atcmd_sdio_hdr {
+	u16 magic;   /* ATCMD_SDIO_HDR_MAGIC */
+	u16 len;     /* payload bytes following this header */
+};
+
+#define ATCMD_SDIO_HDR_SIZE	((u16)sizeof(struct atcmd_sdio_hdr))
 
 static inline  u32 _RND4(u32 sz)
 {

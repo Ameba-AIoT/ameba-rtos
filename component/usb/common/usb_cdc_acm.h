@@ -9,6 +9,11 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "basic_types.h"
+#include "usb_cdc.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -18,19 +23,12 @@
 /** @addtogroup USB_Common_Constants USB Common Constants
  * @{
  */
-/* CDC Class Codes */
-#define USB_CDC_CLASS_CODE                              0x02U /**< USB Communication Device Class (CDC) Code */
-#define USB_CDC_COMM_INTERFACE_CLASS_CODE               0x02U /**< CDC Communication Interface Class Code */
-#define USB_CDC_DATA_INTERFACE_CLASS_CODE               0x0AU /**< CDC Data Interface Class Code */
 
 /* CDC Communication Subclass Codes */
-#define USB_CDC_SUBCLASS_RESERVED                       0x00U /**< CDC Subclass Code: Reserved */
 #define USB_CDC_SUBCLASS_ACM                            0x02U /**< CDC Subclass Code: Abstract Control Model (ACM) */
 
 /* Communication Interface Class Control Protocol Codes */
-#define USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC         0x00U  /**< CDC Protocol Code: No class */
-#define USB_CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND         0x01U  /**< CDC Protocol Code: AT cpmmand */
-#define USB_CDC_CTRL_PROTOCOL_VENDOR_SPECIFIC           0xFFU  /**< CDC Protocol Code: Vendor */
+#define USB_CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND         0x01U  /**< CDC Protocol Code: AT command */
 
 /* CDC Class-Specific Request Codes */
 #define USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND           0x00U /**< CDC request to send an encapsulated command. */
@@ -43,9 +41,7 @@
 #define USB_CDC_ACM_SET_CONTROL_LINE_STATE              0x22U /**< CDC request to set the control line state. */
 #define USB_CDC_ACM_SEND_BREAK                          0x23U /**< CDC request to send a break condition. */
 
-/* CDC Notification Codes */
-#define USB_CDC_ACM_NOTIFY_NETWORK_CONNECTION           0x00U /**< Notification: Network Connection */
-#define USB_CDC_ACM_NOTIFY_RESPONSE_AVAILABLE           0x01U /**< Notification: Response Available */
+/* CDC ACM Notification Codes */
 #define USB_CDC_ACM_NOTIFY_SERIAL_STATE                 0x20U /**< Notification: Serial State */
 
 /* Defines the bitmask for the SERIAL_STATE notification */
@@ -103,8 +99,12 @@ typedef union {
 		u8  bParityType; /**< Parity Type, see @ref usb_cdc_acm_line_coding_parity_t */
 		u8  bDataBits;   /**< Data Bits (usually 5, 6, 7, 8, or 16) */
 	} b;                 /**< Structured member access */
-} __PACKED usb_cdc_line_coding_t;
+} __PACKED usb_cdc_acm_line_coding_t;
 /** @} End of USB_Common_Types group */
 /** @} End of USB_Common_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* USB_CDC_ACM_H */

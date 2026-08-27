@@ -307,7 +307,7 @@ typedef struct {
 
 	u32 RTC_AlarmMask;	/*!< Specifies the RTC Alarm1 Masks(H:M:S).
 					This parameter can be a value of @ref RTC_AlarmMask1 */
-	u32 RTC_Alarm2Mask;	/*!< Specifies the RTC Alarm2 Masks Day).
+	u32 RTC_Alarm2Mask;	/*!< Specifies the RTC Alarm2 Masks Day.
 					This parameter can be a value of @ref RTC_AlarmMask2 */
 } RTC_AlarmTypeDef;
 
@@ -568,10 +568,6 @@ _LONG_CALL_ void RTC_Enable(u8 NewState);
   * @{
   */
 
-_LONG_CALL_ void RTC_ClkSource_Select(u8 CLK_Source);
-_LONG_CALL_ u32 Get_OSC131_STATE(void);
-_LONG_CALL_ void Set_OSC131_STATE(u32 temp);
-_LONG_CALL_ void RTC_ClearDetINT(void);
 _LONG_CALL_ u32 RTC_BypassShadowCmd(u32 NewState);
 _LONG_CALL_ void RTC_StructInit(RTC_InitTypeDef *RTC_InitStruct);
 _LONG_CALL_ u32 RTC_Init(RTC_InitTypeDef *RTC_InitStruct);

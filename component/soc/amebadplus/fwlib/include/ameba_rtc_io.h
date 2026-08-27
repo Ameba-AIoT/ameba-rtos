@@ -71,15 +71,13 @@ extern "C" {
   * @{
   */
 
-/**
-  * @brief RTCIO_TimeInfo Structure Definition
-  */
+/** @brief Backed-up RTC time and power-off elapsed counter for post-power-on time restoration. */
 typedef struct {//Take Care!!! member's Order and Size are forbidden change
 	u32 Bkup_Seconds; /*!< Backed-up seconds before power down (0-59). */
 	u32 Bkup_Minutes; /*!< Backed-up minutes before power down (0-59). */
 	u32 Bkup_Hours;   /*!< Backed-up hours before power down, 24-hour format (0-23). */
 	u32 Bkup_Days;    /*!< Backed-up days before power down. */
-	u32 Bkup_Year;    /*!< Backed-up year before power down, 24-hour format. */
+	u32 Bkup_Year;    /*!< Backed-up year before power down. */
 	//u8 padding; //align RTC_TimeTypeDef
 
 	u32 Pwd_Counter;  /*!< Counter elapsed during power-off period, unit: second. */

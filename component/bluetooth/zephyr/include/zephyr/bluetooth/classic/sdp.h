@@ -572,7 +572,7 @@ int bt_sdp_discover_cancel(struct bt_conn *conn,
 enum bt_sdp_proto {
 	BT_SDP_PROTO_RFCOMM = 0x0003,
 	BT_SDP_PROTO_L2CAP  = 0x0100,
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	BT_SDP_PROTO_AVCTP  = 0x0017,
 	BT_SDP_PROTO_AVDTP  = 0x0019,
 #endif
@@ -639,7 +639,7 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
  */
 int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features);
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 typedef struct {
 	bt_addr_t addr;
 	union {

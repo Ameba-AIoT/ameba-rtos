@@ -24,9 +24,37 @@ menu "CONFIG DSP Enable"
     config DSP_WITHIN_APP_IMG
         depends on DSP_EN
         bool "DSP within APP image"
-    config DSP_IMAGE_TARGET_DIR
-       string "DSP_IMAGE_TARGET_DIR"
-       depends on DSP_WITHIN_APP_IMG
+    config DSP_SDK_IMAGE_DIR
+        string "DSP SDK image output directory"
+        depends on DSP_EN
+        help
+          DSP SDK image output dir holding dsp.bin / dsp_all.bin
+          (e.g. <dsp_sdk>/heap/source/project/image). Single anchor for DSP on the
+          build host, replacing the old DSP_SDK_PATH env var: the SDK root is
+          derived two levels up (used by DSP_BUILD_FROM_SOURCE and dsp_layout_sync.py),
+          dsp.bin is packed from here when DSP_WITHIN_APP_IMG=y, and standalone
+          flashing reads dsp_all.bin from here. Absolute path used as-is; relative
+          path is resolved against the SoC project dir.
+    config DSP_BUILD_FROM_SOURCE
+        bool "Build DSP SDK from source during ameba.py build"
+        depends on DSP_EN
+        default n
+        help
+          When set, "ameba.py build" rebuilds the DSP image from source (via the
+          DSP SDK's project/auto_build/auto_build.sh) before packaging, so the DSP
+          image stays in sync with the MCU layout. Requires Xplorer and the DSP
+          SDK: point DSP_SDK_IMAGE_DIR at the DSP SDK image output dir (the SDK
+          source root is derived from it, two levels up). Default off: use the
+          prebuilt dsp.bin / dsp_all.bin as-is.
+    config DSP_RUN_IN_SRAM
+        bool "Run DSP from SRAM (no-PSRAM SoC)"
+        depends on DSP_EN
+        default n
+        help
+          Select where the DSP runs. Default off: DSP runs from PSRAM
+          (DSP_BD_PSRAM, LSP RTK_LSP/RTK_LSP_XIP) - the right choice whenever the
+          SoC has PSRAM, since the PSRAM heap is large. Set on for a SoC WITHOUT
+          PSRAM: the DSP then takes the SRAM tail.
 endmenu
 
 rsource "../../../soc/common/image3/Kconfig.trustzone"
@@ -58,7 +86,7 @@ menu "CONFIG Link Option"
         default DATA_HEAP_SRAM
         config DATA_HEAP_SRAM
             bool "SRAM"
-            depends on !DSP_EN
+            depends on !DSP_EN || DSP_RUN_IN_SRAM
         config DATA_HEAP_PSRAM
             bool "PSRAM"
             select PSRAM_USED
@@ -75,11 +103,6 @@ menu "CONFIG Link Option"
                 bool "SRAM"
         endchoice
     endif
-
-    config PSRAM_ALL_FOR_AP_HEAP
-        depends on !IMG2_PSRAM && !DATA_HEAP_PSRAM && !MP_SHRINK
-        bool "ALL PSRAM USED FOR APPLICATION HEAP"
-        default y
 
     config PSRAM_USED
         bool

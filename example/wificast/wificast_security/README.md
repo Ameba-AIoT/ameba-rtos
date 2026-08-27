@@ -116,3 +116,4 @@ Both sender and receiver can start scan.
 # Supported IC
 
 RTL8721F
+RTL8720F

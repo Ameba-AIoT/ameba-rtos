@@ -760,7 +760,7 @@ struct bt_le_adv_param {
 	 */
 	uint8_t  secondary_max_skip;
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	uint8_t own_addr_type;
 #endif
 
@@ -1408,6 +1408,31 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
  */
 int bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
 			   const struct bt_data *ad, size_t ad_len);
+
+// zephyr_patch for support execute HCI LE Set Periodic Advertising Data command with Operation==0x04(used for only update ADV DID).
+// Copy from the newest zephyr sdk.
+#if ZEPHYR_RTK_PATCH
+/**
+ * @brief Update the Advertising Data Identifier (DID) for periodic advertising
+ *        without changing the data.
+ *
+ * This sends a HCI command with operation set to "unchanged data" which causes
+ * the controller to update the ADI field (DID) in the periodic advertising PDU
+ * without modifying the advertising data payload.
+ *
+ * @kconfig_dep{CONFIG_BT_PER_ADV}
+ *
+ * @note The advertising set must have periodic advertising started
+ *       (via @ref bt_le_per_adv_start), must contain data, and ADI inclusion
+ *       must have been enabled via @ref BT_LE_PER_ADV_OPT_INCLUDE_ADI
+ *       before calling this function.
+ *
+ * @param adv       Advertising set object.
+ *
+ * @return 0 on success, negative errno value on failure.
+ */
+int bt_le_per_adv_update_did(const struct bt_le_ext_adv *adv);
+#endif
 
 struct bt_le_per_adv_subevent_data_params {
 	/** The subevent to set data for */
@@ -2085,7 +2110,7 @@ struct bt_le_scan_param {
 	 */
 	uint16_t timeout;
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	/**
 	 * @brief Scan period (N * 1.28 s)
 	 *
@@ -2129,7 +2154,7 @@ struct bt_le_scan_recv_info {
 	/** Transmit power of the advertiser. */
 	int8_t tx_power;
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	/* If true, the scan info is from LE extended adv report event. Otherwise, scan info is from LE legacy adv report event. */
 	bool is_ext;
 
@@ -2680,7 +2705,7 @@ struct bt_bond_info {
 	/** Address of the remote device. */
 	bt_addr_le_t addr;
 
-#if ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	bt_addr_t rpa;
 #endif
 };

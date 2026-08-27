@@ -52,12 +52,13 @@ config FLASH_VFS1_SIZE
 # Manifest(4K) + DSP IMG
 config FLASH_DSP_OFFSET
     hex "DSP Offset"
+    depends on DSP_EN && !DSP_WITHIN_APP_IMG
     default 0x08400000
 
 config FLASH_DSP_SIZE
-    hex "DSP Size" if DSP_EN
-    default 0x300000 if DSP_EN
-    default 0
+    hex "DSP Size"
+    depends on DSP_EN && !DSP_WITHIN_APP_IMG
+    default 0x300000
 
 # VFS region 2
 config FLASH_VFS2_OFFSET
@@ -141,6 +142,52 @@ config TZ_S_SIZE
     help
         Size of TrustZone secure image (Image3) in KB.
         Default 64KB, or 128KB when MbedTLS is enabled.
+
+# KR4(NP core) PSRAM image2 region size, in KB. Fixed segment right after TZ.
+config PSRAM_KR4_IMG2_KB
+    int "KR4 PSRAM image2 size (KB)"
+    depends on IMG2_PSRAM || DATA_HEAP_PSRAM
+    range 64 8192
+    default 1536
+    help
+        Size of the KR4 (NP core) PSRAM image2 region in KB. KR4 sits right
+        after the TrustZone region and does not move when KM4/DSP are resized.
+
+# KM4(AP core) PSRAM image2 region size, in KB. Only meaningful when DSP is on
+# (DSP takes the remainder up to PSRAM_END). When DSP is off, KM4 absorbs the
+# remainder itself and this value is ignored.
+config PSRAM_KM4_IMG2_KB
+    int "KM4 PSRAM image2 size (KB)"
+    depends on (IMG2_PSRAM || DATA_HEAP_PSRAM) && DSP_EN
+    range 64 8192
+    default 1536
+    help
+        Size of the KM4 (AP core) PSRAM image2 region in KB, including the
+        TrustZone slice carved from it. Only used when DSP is enabled; with DSP
+        off, KM4 extends to the runtime PSRAM top instead.
+
+# SRAM image2 budgets, only for the DSP-in-SRAM layout (no-PSRAM SoC). When
+# CONFIG_DSP_RUN_IN_SRAM is set the SRAM is carved TZ -> KM4(fixed) ->
+# KR4(fixed) -> DSP(fills the tail to SRAM_END). With DSP off / DSP in PSRAM the
+# SRAM keeps its existing WHC layout and these values are ignored.
+config SRAM_KM4_IMG2_KB
+    int "KM4 SRAM image2 size (KB), DSP-in-SRAM only"
+    depends on DSP_RUN_IN_SRAM
+    range 32 448
+    default 96
+    help
+        Fixed KM4 (AP core) SRAM image2 region in KB when the DSP runs from SRAM.
+        Must hold the KM4 SRAM-resident sections (.sram.*, and .data/.bss when
+        DATA_HEAP_SRAM). DSP takes whatever SRAM remains after KM4 + KR4.
+
+config SRAM_KR4_IMG2_KB
+    int "KR4 SRAM image2 size (KB), DSP-in-SRAM only"
+    depends on DSP_RUN_IN_SRAM
+    range 32 448
+    default 96
+    help
+        Fixed KR4 (NP core) SRAM image2 region in KB when the DSP runs from SRAM,
+        placed right after KM4. DSP fills the remainder up to SRAM_END.
 
 endmenu
 

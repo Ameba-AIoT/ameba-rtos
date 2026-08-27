@@ -188,8 +188,8 @@ static inline void bt_mesh_msg_ack_ctx_init(struct bt_mesh_msg_ack_ctx *ack)
 	k_sem_init(&ack->sem, 0, 1);
 }
 
-// zephyr_porting add deinit functioin for free resource
-#if CONFIG_BT_MESH_ZEPHYR_FIX
+// zephyr_patch add deinit functioin for free resource
+#if ZEPHYR_RTK_PATCH
 /** @brief Deinitialize an acknowledged message context.
  *
  *  Deinitializes semaphore used for synchronization between @ref bt_mesh_msg_ack_ctx_wait and
@@ -211,7 +211,7 @@ static inline void bt_mesh_msg_ack_ctx_deinit(struct bt_mesh_msg_ack_ctx *ack)
  */
 static inline void bt_mesh_msg_ack_ctx_reset(struct bt_mesh_msg_ack_ctx *ack)
 {
-// zephyr_porting there is no definition for function k_sem_reset and no invocation of bt_mesh_msg_ack_ctx_reset
+// zephyr_patch there is no definition for function k_sem_reset and no invocation of bt_mesh_msg_ack_ctx_reset
 #if 0
 	k_sem_reset(&ack->sem);
 #else

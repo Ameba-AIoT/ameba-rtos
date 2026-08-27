@@ -48,7 +48,7 @@ ameba_list_append(private_includes
 )
 
 ameba_list_append_ifnot(CONFIG_SDN_DEV private_includes
-    ${c_COMPONENT_DIR}/sdn/user_config
+    ${c_COMPONENT_DIR}/sdn/config
 )
 # Component private part, user config end
 #------------------------------#

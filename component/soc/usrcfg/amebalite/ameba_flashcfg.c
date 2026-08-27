@@ -94,6 +94,17 @@ const FlashLayoutInfo_TypeDef Flash_Layout[] = {
 #define CALC_END_ADDR(offset, size) ((size) == 0 ? (offset) : (offset) + (size) - 1)
 #endif
 
+/* CONFIG_FLASH_DSP_OFFSET/SIZE are Kconfig-defined only for a standalone DSP
+ * (they "depend on DSP_EN && !DSP_WITHIN_APP_IMG"). Fall back so the IMG_DSP
+ * layout entry still compiles otherwise: offset 0xFFFFFFFF + size 0 makes the
+ * region a disabled sentinel (0xFFFFFFFF, 0xFFFFFFFF), like VFS2. */
+#ifndef CONFIG_FLASH_DSP_OFFSET
+#define CONFIG_FLASH_DSP_OFFSET 0xFFFFFFFF
+#endif
+#ifndef CONFIG_FLASH_DSP_SIZE
+#define CONFIG_FLASH_DSP_SIZE 0
+#endif
+
 const FlashLayoutInfo_TypeDef Flash_Layout[] = {
 	/* Region_Type, [StartAddr, EndAddr] */
 	{IMG_BOOT,      CONFIG_FLASH_BOOT_OFFSET,      CALC_END_ADDR(CONFIG_FLASH_BOOT_OFFSET, CONFIG_FLASH_BOOT_SIZE)}, //Boot Manifest(4K) + KM4 Bootloader(76K)

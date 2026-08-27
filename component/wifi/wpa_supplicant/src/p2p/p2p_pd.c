@@ -867,7 +867,7 @@ void p2p_process_prov_disc_req(struct p2p_data *p2p, const u8 *sa,
 
 		if (((remote_conncap & P2PS_SETUP_GROUP_OWNER) ||
 			 msg->persistent_dev) && msg->operating_channel) {
-			struct p2p_channels intersect;
+			struct p2p_channels *intersect;
 
 			/*
 			 * There are cases where only the operating channel is
@@ -890,13 +890,23 @@ void p2p_process_prov_disc_req(struct p2p_data *p2p, const u8 *sa,
 				ch->reg_classes = 1;
 			}
 
-			p2p_channels_intersect(&p2p->channels, &dev->channels,
-								   &intersect);
-
-			if (intersect.reg_classes == 0) {
-				p2p_dbg(p2p,
-						"No common channels - force deferred flow");
+			/* struct p2p_channels is ~1KB (15 reg classes * 60 channels);
+			 * heap-allocate it instead of adding that to every caller's
+			 * (p2p_cmd_task's) worst-case stack depth. */
+			intersect = rtos_mem_zmalloc(sizeof(*intersect));
+			if (!intersect) {
+				p2p_dbg(p2p, "No common channels - force deferred flow");
 				auto_accept = 0;
+			} else {
+				p2p_channels_intersect(&p2p->channels, &dev->channels,
+									   intersect);
+
+				if (intersect->reg_classes == 0) {
+					p2p_dbg(p2p,
+							"No common channels - force deferred flow");
+					auto_accept = 0;
+				}
+				rtos_mem_free(intersect);
 			}
 		}
 
@@ -1880,7 +1890,7 @@ void p2p_reset_pending_pd(struct p2p_data *p2p)
 
 	dl_list_for_each(dev, &p2p->devices, struct p2p_device, list) {
 		if (memcmp(p2p->pending_pd_devaddr,
-				   dev->info.p2p_device_addr, ETH_ALEN)) {
+				   dev->info.p2p_device_addr, ETH_ALEN)) { //cppcheck-suppress uninitvar
 			continue;
 		}
 		if (!dev->req_config_methods) {

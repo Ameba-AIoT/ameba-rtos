@@ -874,8 +874,8 @@ struct bt_mesh_model_cb {
 	 */
 	void (*const pending_store)(const struct bt_mesh_model *model);
 
-// zephyr_porting add deinit callback functioin define for free resource
-#if CONFIG_BT_MESH_ZEPHYR_FIX
+// zephyr_patch add deinit callback functioin define for free resource
+#if ZEPHYR_RTK_PATCH
 	/** @brief Model deinit callback.
 	 *
 	 *  Called on every model instance during mesh deinitialization.
