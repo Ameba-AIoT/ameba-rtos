@@ -611,9 +611,11 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				}
 				/* Stay in MANIFEST_POLL */
 			} else if (dfu->dev_state == USB_DFU_STATE_MANIFEST_SYNC) {
-				/* Manifestation complete (TOL=1): device in MANIFEST-SYNC
-				 * waiting for another GETSTATUS to transition to dfuIDLE.
-				 * Do not count against retry limit. */
+				/* Reset retry counter on progress; prevents slow devices from timing out. */
+				dfu->manifest_retry_cnt = 0U;
+				if (dfu->poll_timeout > 0U) {
+					usb_os_sleep_ms(dfu->poll_timeout);
+				}
 				/* Stay in MANIFEST_POLL to re-issue GETSTATUS */
 			} else if (dfu->dev_state == USB_DFU_STATE_MANIFEST_WAIT_RESET) {
 				/* DFU 1.1 §7: device is in dfuMANIFEST-WAIT-RESET.

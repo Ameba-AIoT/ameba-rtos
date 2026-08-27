@@ -233,7 +233,7 @@ extern "C" {
 #define STRUCT_SECTION_ITERABLE_NAMED(struct_type, name, varname) \
 	TYPE_SECTION_ITERABLE(struct struct_type, varname, struct_type, name)
 
-/* ------------------ zephyr_porting ------------------ */
+/* ------------------ zephyr_patch ------------------ */
 #define STRUCT_ARRAY(struct_type) \
   _CONCAT(_##struct_type, _list_array)
 

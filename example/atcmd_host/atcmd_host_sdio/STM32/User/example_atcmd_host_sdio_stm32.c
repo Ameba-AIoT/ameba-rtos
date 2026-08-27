@@ -262,13 +262,29 @@ static void host_tt_mode_task(void *arg)
 	vTaskDelete(NULL);
 }
 
-void host_show_recv_data(uint8_t *data)
+/* Bounded search for needle inside payload[0..len), returns NULL if absent.
+ * The payload is not NUL-terminated on the wire, so strstr() must not be used. */
+static char *host_find_in_payload(char *payload, u16 len, const char *needle)
 {
-	struct INIC_RX_DESC *rdata = (struct INIC_RX_DESC *)data;
-	u16 len = rdata->pkt_len;
+	u16 needle_len = (u16)strlen(needle);
+	u16 pos;
+
+	if (len < needle_len) {
+		return NULL;
+	}
+
+	for (pos = 0; pos <= (u16)(len - needle_len); pos++) {
+		if (memcmp(payload + pos, needle, needle_len) == 0) {
+			return payload + pos;
+		}
+	}
+	return NULL;
+}
+
+static void host_handle_payload(char *payload, u16 len)
+{
 	static u32 start_time = 0, end_time = 0, ds_count = 0;
 	char *str_find = NULL;
-	char *payload = (char *)data + sizeof(struct INIC_RX_DESC);
 
 	if ((len == 5) && (memcmp(payload, ">>>", 3) == 0)) {
 		xTaskCreate((TaskFunction_t)host_tt_mode_task,
@@ -284,14 +300,15 @@ void host_show_recv_data(uint8_t *data)
 		Usart_SendString(DEBUG_USART, payload, len);
 	} else {
 		if (len > 0) {
-			if (memcmp(payload, ATCMD_DOWNSTREAM_TEST_START_STR, strlen(ATCMD_DOWNSTREAM_TEST_START_STR)) == 0) {
+			if ((len >= strlen(ATCMD_DOWNSTREAM_TEST_START_STR))
+				&& (memcmp(payload, ATCMD_DOWNSTREAM_TEST_START_STR, strlen(ATCMD_DOWNSTREAM_TEST_START_STR)) == 0)) {
 				start_time = xTaskGetTickCount();
 				printf(ATCMD_DOWNSTREAM_TEST_START_STR);
 				printf("start_time : %d\r\n", start_time);
 			}
 
 			if (start_time != 0) {
-				str_find = strstr((char *)payload, ATCMD_DOWNSTREAM_TEST_END_STR);
+				str_find = host_find_in_payload(payload, len, ATCMD_DOWNSTREAM_TEST_END_STR);
 				if (str_find != NULL) {
 					printf(ATCMD_DOWNSTREAM_TEST_END_STR);
 					end_time = xTaskGetTickCount();
@@ -302,7 +319,7 @@ void host_show_recv_data(uint8_t *data)
 					end_time = 0;
 					ds_count = 0;
 
-					if (strstr((char *)payload, "OK")) {
+					if (host_find_in_payload(payload, len, "OK")) {
 						printf("\r\nOK\r\n");
 					}
 				} else {
@@ -314,6 +331,58 @@ void host_show_recv_data(uint8_t *data)
 				//}
 			}
 		}
+	}
+}
+
+/*
+ * Consume one [atcmd_sdio_hdr][payload] unit.
+ * Returns the bytes consumed, or 0 when no complete unit is left (end of data
+ * or trailing padding in the block-rounded read).
+ */
+static u32 host_handle_one_frame(uint8_t *pdata, u32 available)
+{
+	struct atcmd_sdio_hdr *hdr;
+	u32 total;
+
+	if (available < ATCMD_SDIO_HDR_SIZE) {
+		return 0;
+	}
+
+	hdr = (struct atcmd_sdio_hdr *)pdata;
+	if (hdr->magic != ATCMD_SDIO_HDR_MAGIC) {
+		return 0;
+	}
+
+	total = (u32)ATCMD_SDIO_HDR_SIZE + hdr->len;
+	if (total > available) {
+		return 0;
+	}
+
+	if (hdr->len > 0) {
+		host_handle_payload((char *)pdata + ATCMD_SDIO_HDR_SIZE, hdr->len);
+	}
+	return total;
+}
+
+void host_show_recv_data(uint8_t *data, u32 size)
+{
+	u32 offset = 0;
+	u32 consumed;
+
+	/* One RX FIFO read may carry more than one framed payload if the device
+	 * ever has several packets outstanding, so walk them all. */
+	while (offset < size) {
+		consumed = host_handle_one_frame(data + offset, size - offset);
+		if (consumed == 0) {
+			break;
+		}
+		offset += consumed;
+	}
+
+	if (offset == 0) {
+		/* Bad magic on the very first frame: device firmware predates the
+		 * atcmd_sdio_hdr framing, or the two sides are out of sync. */
+		printf("RX bad frame header, dropped %u B\r\n", (unsigned int)size);
 	}
 
 	vPortFree(data);
@@ -354,7 +423,7 @@ static void host_recv_data_process_task(void *arg)
 					retry = 0;
 					pbuf = sdio_read_rxfifo(SdioRxFIFOSize);
 					if (pbuf) {
-						host_show_recv_data(pbuf);
+						host_show_recv_data(pbuf, SdioRxFIFOSize);
 					}
 				}
 			} else {

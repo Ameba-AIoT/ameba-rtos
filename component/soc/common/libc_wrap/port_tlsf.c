@@ -59,7 +59,7 @@ typedef struct block_header_t {
 
 /* Per-type maximum allocation size */
 #define TLSF_MAX_SIZE_TCM     ((size_t)64  * 1024)        /* 64KB  */
-#define TLSF_MAX_SIZE_SRAM    ((size_t)512 * 1024)        /* 512KB */
+#define TLSF_MAX_SIZE_SRAM    ((size_t)1024 * 1024)        /* 512KB */
 #define TLSF_MAX_SIZE_DRAM    ((size_t)64  * 1024 * 1024) /* 64MB, largest PSRAM variant */
 
 #ifdef CONFIG_CA32_FREERTOS_V10_2_1_SMP

@@ -14,7 +14,8 @@ None
 	[*] Enable USB
 			USB Mode (Device)  --->
 	[*] Composite
-			Select Composite Class (CDC ACM + HID)  --->
+	[*] CDC ACM
+	[*] HID
 	```
 	Save and exit.
 

@@ -27,48 +27,44 @@ extern "C" {
  * @{
  */
 
-#define USBD_UAC_DEBUG                              0    /**< Enable/Disable UAC debug feature. */
+#define USBD_UAC_DEBUG              0    /**< Enable/Disable UAC debug feature. */
 
 #if USBD_UAC_DEBUG && (USBD_TP_TRACE_DEBUG == 0)
 #error "Please set USBD_TP_TRACE_DEBUG in usbd.h"
 #endif
 
 /* Defines basic device parameters like VID, PID, and string descriptors. */
-#define USBD_UAC_VID                                USB_VID /**< Vendor ID. */
-#define USBD_UAC_PID                                USB_PID /**< Product ID. */
+#define USBD_UAC_VID                USB_VID /**< Vendor ID. */
+#define USBD_UAC_PID                USB_PID /**< Product ID. */
 
 /* Uac Endpoint parameters */
-#if defined (CONFIG_AMEBAGREEN2)
-#define USBD_UAC_ISOC_IN_EP                         0x84U   /**< EP for ISOC IN. */
-#define USBD_UAC_ISOC_OUT_EP                        0x02U   /**< EP for ISOC OUT. */
-#else
-#define USBD_UAC_ISOC_IN_EP                         0x81U   /**< EP for ISOC IN. */
-#define USBD_UAC_ISOC_OUT_EP                        0x02U   /**< EP for ISOC OUT. */
-#endif
-
 /* Audio channel count */
-#define USBD_UAC_CH_CNT_2                           2U /**< Audio 2 channel count. */
-#define USBD_UAC_CH_CNT_4                           4U /**< Audio 4 channel count. */
-#define USBD_UAC_CH_CNT_6                           6U /**< Audio 6 channel count. */
-#define USBD_UAC_CH_CNT_8                           8U /**< Audio 8 channel count. */
+#define USBD_UAC_CH_CNT_2           2U /**< Audio 2 channel count. */
+#define USBD_UAC_CH_CNT_4           4U /**< Audio 4 channel count. */
+#define USBD_UAC_CH_CNT_6           6U /**< Audio 6 channel count. */
+#define USBD_UAC_CH_CNT_8           8U /**< Audio 8 channel count. */
 
 /* Audio byte width */
-#define USBD_UAC_BYTE_WIDTH_2                       2U /**< Audio 2 bytes width. */
-#define USBD_UAC_BYTE_WIDTH_3                       3U /**< Audio 3 bytes width. */
+#define USBD_UAC_BYTE_WIDTH_2       2U /**< Audio 2 bytes width. */
+#define USBD_UAC_BYTE_WIDTH_3       3U /**< Audio 3 bytes width. */
 /* amebasmart itself cannot play 32-bit audio data */
-#define USBD_UAC_BYTE_WIDTH_4                       4U /**< Audio 4 bytes width. */
+#define USBD_UAC_BYTE_WIDTH_4       4U /**< Audio 4 bytes width. */
 
 /* Default channel cnt */
-#define USBD_UAC_DEFAULT_CH_CNT                     USBD_UAC_CH_CNT_8 /**< Default audio channel count. */
+#define USBD_UAC_DEFAULT_CH_CNT     USBD_UAC_CH_CNT_8 /**< Default audio channel count. */
 
 /* Default byte width */
-#define USBD_UAC_DEFAULT_BYTE_WIDTH                 USBD_UAC_BYTE_WIDTH_2 /**< Default audio byte width. */
+#define USBD_UAC_DEFAULT_BYTE_WIDTH USBD_UAC_BYTE_WIDTH_2 /**< Default audio byte width. */
+
+/* UAC interface count (AC + AS) */
+
+
 
 /* Sampling frequency */
-#define USBD_UAC_SAMPLING_FREQ_44K                  44100U  /**< Audio 44100 sample frequency. */
-#define USBD_UAC_SAMPLING_FREQ_48K                  48000U  /**< Audio 48000 sample frequency. */
-#define USBD_UAC_SAMPLING_FREQ_96K                  96000U  /**< Audio 96000 sample frequency. */
-#define USBD_UAC_SAMPLING_FREQ_192K                 192000U /**< Audio 192000 sample frequency. */
+#define USBD_UAC_SAMPLING_FREQ_44K  44100U  /**< Audio 44100 sample frequency. */
+#define USBD_UAC_SAMPLING_FREQ_48K  48000U  /**< Audio 48000 sample frequency. */
+#define USBD_UAC_SAMPLING_FREQ_96K  96000U  /**< Audio 96000 sample frequency. */
+#define USBD_UAC_SAMPLING_FREQ_192K 192000U /**< Audio 192000 sample frequency. */
 
 /** @} End of Device_UAC_Constants group */
 /** @} End of USB_Device_Constants group */
@@ -81,6 +77,12 @@ extern "C" {
 /** @addtogroup Device_UAC_Types Device UAC Types
  * @{
  */
+
+/* Endpoint address configuration for the UAC driver */
+typedef struct {
+	u8 isoc_in_addr;   /**< ISOC IN endpoint address */
+	u8 isoc_out_addr;  /**< ISOC OUT endpoint address */
+} usbd_uac_ep_cfg_t;
 
 /* Audio configuration parameters: The application uses this structure to configure audio parameters to the UAC driver. */
 typedef struct {
@@ -99,13 +101,13 @@ typedef struct {
 	 * @brief Called when the UAC class driver initialization for application resource setup.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* init)(void);
+	int (*init)(void);
 
 	/**
 	 * @brief Called when the UAC device is de-initialized for resource cleanup.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* deinit)(void);
+	int (*deinit)(void);
 
 	/**
 	 * @brief Called to handle class-specific SETUP requests.
@@ -115,7 +117,7 @@ typedef struct {
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* setup)(usb_setup_req_t *req, u8 *buf);
+	int (*setup)(usb_setup_req_t *req, u8 *buf);
 
 	/**
 	 * @brief Called when the UAC class driver initialization for application resource setup.
@@ -123,7 +125,7 @@ typedef struct {
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* set_config)(void);
+	int (*set_config)(void);
 
 	/**
 	 * @brief Called when USB attach status changes for application to support hot-plug events.
@@ -132,7 +134,7 @@ typedef struct {
 	 * @param[in] old_status: The previous attach status.
 	 * @param[in] status: The new attach status.
 	 */
-	void(* status_changed)(u8 old_status, u8 status);
+	void (*status_changed)(u8 old_status, u8 status);
 
 	/**
 	 * @brief Called when the UAC class driver initialization for application resource setup.
@@ -140,7 +142,7 @@ typedef struct {
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] mute: Mute value, 0 unmute, 1 mute
 	 */
-	void(* mute_changed)(u8 mute);
+	void (*mute_changed)(u8 mute);
 
 	/**
 	 * @brief Called when the UAC class driver initialization for application resource setup.
@@ -148,7 +150,7 @@ typedef struct {
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] volume: Volume value, from 0~100
 	 */
-	void(* volume_changed)(u8 volume);
+	void (*volume_changed)(u8 volume);
 
 	/**
 	 * @brief Called when the audio format changed in the UAC class driver.
@@ -158,7 +160,7 @@ typedef struct {
 	 * @param[in] ch_cnt: New channel count. such as 2,4,6,8...
 	 * @param[in] byte_width: New byte width, such as 1,2,3,4.
 	 */
-	void(* format_changed)(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
+	void (*format_changed)(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 
 	/**
 	 * @brief Called when the SOF interrupt occurs in the UAC class driver.
@@ -166,7 +168,7 @@ typedef struct {
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 */
 
-	void(* sof)(void);
+	void (*sof)(void);
 } usbd_uac_cb_t;
 
 /* Audio data buffer structure */
@@ -198,13 +200,15 @@ typedef struct {
  * @brief Structure representing the UAC device instance.
  */
 typedef struct {
+	const usbd_uac_ep_cfg_t *ep_cfg;   /**< Pointer to endpoint address configuration. */
+	const usbd_uac_cb_t *cb;           /**< Pointer to the user-defined callback structure. */
+	usb_dev_t *dev;                    /**< Pointer to the USB device instance. */
+
 	usbd_uac_buf_ctrl_t uac_isoc_out;  /**< ISOC OUT control structure. */
 	usbd_uac_buf_ctrl_t uac_isoc_in;   /**< ISOC IN control structure. */
 	usbd_ep_t ep_isoc_in;              /**< ISOC IN endpoint structure. */
 	usbd_ep_t ep_isoc_out;             /**< ISOC OUT endpoint structure. */
 	usb_setup_req_t ctrl_req;          /**< Stores the current control request. */
-	usb_dev_t *dev;                    /**< Pointer to the USB device instance. */
-	const usbd_uac_cb_t *cb;           /**< Pointer to the user-defined callback structure. */
 
 	u32 cur_sampling_freq;             /**< Current Audio sample freqnency. */
 	u16 cur_volume;                    /**< Current Audio volume . */
@@ -221,6 +225,7 @@ typedef struct {
 	__IO u32 isoc_overwrite_cnt;       /**< Audio over write count. */
 	__IO u8  isoc_dump_thread;         /**< Audio dump thread running flag. */
 #endif
+	u8 from_composite;			/**< Flag indicating if part of a composite device. */
 } usbd_uac_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/
@@ -236,11 +241,22 @@ typedef struct {
  * @{
  */
 /**
- * @brief Initializes class driver with application callback handler.
+ * @brief Initializes class driver as a standalone device.
  * @param[in] cb: Pointer to the user-defined callback structure.
+ * @param[in] ep_cfg: Pointer to endpoint address configuration, or NULL for defaults.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_uac_init(const usbd_uac_cb_t *cb);
+int usbd_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg);
+
+#ifdef CONFIG_USBD_COMPOSITE
+/**
+ * @brief Initializes class driver as part of a composite device.
+ * @param[in] cb: Pointer to the user-defined callback structure.
+ * @param[in] ep_cfg: Pointer to endpoint address configuration, or NULL for defaults.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg);
+#endif
 
 /**
   * @brief  DeInitialize UAC device

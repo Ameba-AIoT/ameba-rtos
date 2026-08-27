@@ -113,7 +113,7 @@ ameba_list_append(private_includes
     hci
     hci/client
     scheduler
-    user_config
+    config
 )
 
 ameba_list_append(private_sources

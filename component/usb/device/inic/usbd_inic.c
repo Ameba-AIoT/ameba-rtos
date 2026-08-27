@@ -11,11 +11,20 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBD_INIC_MFG_STRING	"Realtek"
-#define USBD_INIC_PROD_STRING	"802.11ax  WLAN Adapter"
-#define USBD_INIC_SN_STRING		"00E04C000001"
-#define USBD_INIC_BT_STRING		"Bluetooth Radio"
-#define USBD_NIC_VID             0x8006
+#define USBD_INIC_IDX_INTERFACE_STR       0x04U
+
+#define USBD_INIC_ITF_NUM                 3U
+#define USBD_INIC_ITF_BT                  0U
+#define USBD_INIC_ITF_BT_SCO              1U
+#define USBD_INIC_ITF_WIFI                2U
+
+#define USBD_INIC_EP_STATE_IDLE           0U
+#define USBD_INIC_EP_STATE_BUSY           1U
+
+#define USBD_INIC_RESET_THREAD_PRIORITY   6
+#define USBD_INIC_RESET_THREAD_STACK_SIZE 512   /**< Thread tack size */
+
+#define	USBD_INIC_QUERY_PACKET_SIZE       (sizeof(usbd_inic_query_packet_t))
 
 /* Private types -------------------------------------------------------------*/
 
@@ -887,7 +896,7 @@ static int usbd_inic_set_bt_config(usb_dev_t *dev, u8 config)
 	UNUSED(config);
 
 	/* Init INTR IN EP1 */
-	ep = &idev->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)].ep;
+	ep = &idev->in_ep[USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN)].ep;
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_INTR_MPS : USBD_INIC_FS_INTR_MPS;
 	usbd_ep_init(dev, ep);
@@ -988,7 +997,7 @@ static int usbd_inic_clear_bt_config(usb_dev_t *dev, u8 config)
 	UNUSED(config);
 
 	/* DeInit INTR IN EP1 */
-	ep = &idev->in_ep[USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN)].ep;
+	ep = &idev->in_ep[USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN)].ep;
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 	usbd_ep_deinit(dev, ep);
 
@@ -1483,10 +1492,10 @@ static int usbd_inic_bt_init(void)
 	usb_ep_info_t *info;
 	u8 ep_num;
 
-	ep_num = USB_EP_NUM(USBD_INIT_BT_EP1_INTR_IN);
+	ep_num = USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN);
 	ep = &idev->in_ep[ep_num].ep;
 	info = &ep->info;
-	info->addr = USBD_INIT_BT_EP1_INTR_IN;
+	info->addr = USBD_INIC_BT_EP1_INTR_IN;
 	info->type = USB_CH_EP_TYPE_INTR;
 
 	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN);

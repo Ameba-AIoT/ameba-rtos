@@ -35,6 +35,12 @@
 #ifdef CONFIG_WIFI_XMESH
 #include "wifi_api_xmesh.h"
 #endif
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
+/* dev-side tcpip keepalive is shared with the usb/spi/sdio path. */
+#include "rtw_skbuff.h"
+#include "whc_dev_tcpip.h"
+#include "whc_dev_api.h"
+#endif
 #endif
 /* -------------------------------- Defines --------------------------------- */
 /*msg q task*/

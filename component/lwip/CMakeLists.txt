@@ -67,6 +67,7 @@ ameba_list_append(private_sources
     api/lwip_netconf.c
     rnat/rnat_netif.c
     rnat/usb_ethernet.c
+    rnat/usb_4g_dongle_eth.c
 
     lwip_${v_LWIP_VER}/src/core/tcp_in.c
     lwip_${v_LWIP_VER}/src/core/tcp_out.c
@@ -123,6 +124,7 @@ if(CONFIG_USBH_CDC_ECM)
 ameba_list_append(private_includes
     ../usb/host/core
     ../usb/host/cdc_ecm
+    ../usb/host/cdc_acm
     ../usb/common
 )
 endif()

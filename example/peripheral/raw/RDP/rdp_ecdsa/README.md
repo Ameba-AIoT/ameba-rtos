@@ -10,7 +10,10 @@ This example demonstrates ECDSA signing and verification across TrustZone bounda
 The target chip must support TrustZone feature.
 
 # SW Configuration
-The steps to build this example are as follows:
+This example requires TrustZone mbedTLS support in the secure Image3:
+- Select `Enable_TrustZone`.
+- Select `Enable MbedTLS in Image3`.
+
 1. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool or ameba.py.

@@ -3,9 +3,9 @@
 #include <sdn_intf.h>
 #include <bt_hci.h>
 #include <sdn_conf.h>
-#include <sdn_user_conf_intf.h>
+#include <sdn_mem_conf.h>
 #ifdef CONFIG_BT_SDN
-#include <sdn_user_conf_bt.h>
+#include <host_bt_feature.h>
 #endif
 #if defined(CONFIG_BT_COEXIST)
 #include "sdn_coex_intf.h"
@@ -432,7 +432,7 @@ static uint32_t sdn_client_tx_init(void)
 
 #ifdef CONFIG_BT_SDN
 	g_sdn_client_intf.tx.bt_pool = _alloc_data_list(&g_sdn_client_intf.tx.bt_event_list, SDN_INTF_MAX_BT_EVT_LEN,
-								   SDN_CONF_CLIENT_BT_EVT_TX_NUM, SDN_MSG(SDN_INTF_BT, BT_HCI_H4_EVT), true);
+								   SDN_BT_HCI_EVT_RX_NUM, SDN_MSG(SDN_INTF_BT, BT_HCI_H4_EVT), true);
 	if (!g_sdn_client_intf.tx.bt_pool) {
 		goto fail;
 	}
@@ -655,7 +655,7 @@ static uint32_t sdn_client_rx_init(void)
 
 #ifdef CONFIG_BT_SDN
 	g_sdn_client_intf.rx.bt_pool = _alloc_data_list(&g_sdn_client_intf.rx.bt_cmd_list, SDN_INTF_MAX_BT_CMD_LEN,
-								   SDN_CONF_CLIENT_BT_CMD_RX_NUM, SDN_MSG(SDN_INTF_BT, BT_HCI_H4_CMD), true);
+								   SDN_BT_HCI_CMD_RX_NUM, SDN_MSG(SDN_INTF_BT, BT_HCI_H4_CMD), true);
 	if (!g_sdn_client_intf.rx.bt_pool) {
 		goto fail;
 	}
@@ -839,9 +839,7 @@ bool sdn_enable(void)
 	}
 
 #if SDN_HAL_SUSPEND_ENABLE
-	rtos_critical_enter(RTOS_CRITICAL_BT);
 	sdn_pwr_leave_suspend();
-	rtos_critical_exit(RTOS_CRITICAL_BT);
 #endif
 
 	sdn_log_init();

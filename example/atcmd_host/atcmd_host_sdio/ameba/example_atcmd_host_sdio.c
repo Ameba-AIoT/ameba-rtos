@@ -9,7 +9,8 @@
  *   Host->Device: SD_IO_WriteBlocks(FUNC1, 0x8000|(rnd>>2), buf, rnd/512)
  *                 Prepend INIC_TX_DESC (16B) before payload.
  *   Device->Host: SD_IO_ReadBlocks(FUNC1, 0xE000, buf, rnd/512)
- *                 Device SDIO IP prepends INIC_RX_DESC (16B); strip it.
+ *                 No INIC_RX_DESC on this direction; the device frames each
+ *                 payload as [atcmd_sdio_hdr][payload] (see at_intf_sdio.h).
  *   Registers:    SD_IO_ReadBytes/WriteBytes(FUNC1, offset, buf, n)
  */
 
@@ -21,11 +22,12 @@
 #include "os_wrapper.h"
 #include "serial_api.h"
 #include "serial_ex_api.h"
+#include "at_intf_sdio.h"
 #include "example_atcmd_host_sdio.h"
 
 /* ---------- User-configurable UART pins ---------- */
-#define HOST_UART_TX        PA_14
-#define HOST_UART_RX        PA_15
+#define HOST_UART_TX        PA_25
+#define HOST_UART_RX        PA_26
 #define HOST_UART_BAUDRATE  115200
 #define MAX_CMD_LEN         2000
 
@@ -48,13 +50,13 @@
 #define SDIO_HISR_RX_REQUEST      BIT(0)
 #define SDIO_HIMR_RX_REQUEST_MSK  BIT(0)
 
-/* ---------- Protocol ---------- */
+/* ---------- Protocol ----------
+ * ATCMD_SDIO_MAX_SIZE / struct atcmd_sdio_hdr come from at_intf_sdio.h so the
+ * wire format is defined once, shared with the device side. */
 #define SPDIO_RX_DATA_USER   0x83U
 #define INIC_TX_DESC_SIZE    ((u32)sizeof(INIC_TX_DESC))  /* 16 B */
-#define INIC_RX_DESC_SIZE    ((u32)sizeof(INIC_RX_DESC))  /* 16 B */
-#define ATCMD_SDIO_MAX_SIZE  (2048U - 16U)                /* max AT payload per frame */
-/* RX FIFO static buffer: _RND(ATCMD_SDIO_MAX_SIZE + INIC_RX_DESC_SIZE, SD_BLOCK_SIZE)
- * = _RND(2048, 512) = 2048 (4 blocks). Add one block margin for device edge cases. */
+/* RX FIFO static buffer: _RND(ATCMD_SDIO_HDR_SIZE + ATCMD_SDIO_MAX_SIZE, SD_BLOCK_SIZE)
+ * = _RND(2036, 512) = 2048 (4 blocks). Add one block margin for device edge cases. */
 #define SDIO_RX_MAX_RNDSIZE  (5U * SD_BLOCK_SIZE)         /* 2560 B — 5 blocks */
 
 #ifndef _RND
@@ -94,8 +96,8 @@ static u16 g_txbd_free;   /* cached free count, spent one per TX, refilled by qu
 
 /* ---------- Pre-allocated RX DMA buffer ----------
  * Used exclusively by atcmd_sdio_rx_task (no locking needed).
- * Must be cache-line aligned: SD DMA writes bypass cache; DCache_Invalidate
- * is called after each ReadBlocks so the CPU sees the fresh DMA data. */
+ * Must be cache-line aligned: SD_IO_ReadBlocks then DMAs straight into it and
+ * invalidates the range itself, instead of falling back to a bounce buffer. */
 static u8 g_sdio_rx_buf[SDIO_RX_MAX_RNDSIZE] ALIGNMTO(CACHE_LINE_SIZE);
 
 /* ---------- hsd0 exported by ameba_sd.c ---------- */
@@ -429,13 +431,42 @@ static void handle_rx_payload(const u8 *payload, u32 len)
 	uart_send((const char *)payload, len);
 }
 
+/*
+ * Consume one [atcmd_sdio_hdr][payload] unit.
+ * Returns the bytes consumed, or 0 when no complete unit is left (end of data
+ * or trailing padding in the block-rounded read).
+ */
+static u32 sdio_handle_one_frame(const u8 *pdata, u32 available)
+{
+	const struct atcmd_sdio_hdr *hdr;
+	u32 total;
+
+	if (available < ATCMD_SDIO_HDR_SIZE) {
+		return 0;
+	}
+
+	hdr = (const struct atcmd_sdio_hdr *)pdata;
+	if (hdr->magic != ATCMD_SDIO_HDR_MAGIC) {
+		return 0;
+	}
+
+	total = (u32)ATCMD_SDIO_HDR_SIZE + hdr->len;
+	if (total > available) {
+		return 0;
+	}
+
+	if (hdr->len > 0) {
+		handle_rx_payload(pdata + ATCMD_SDIO_HDR_SIZE, (u32)hdr->len);
+	}
+	return total;
+}
+
 static void sdio_drain_rx_fifo(void)
 {
 	u8  tmp[4];
 	u8  rx_rdy;
 	u32 rx_size, rnd_size;
-	INIC_RX_DESC *prxdesc;
-	u16 pkt_len;
+	u32 offset, consumed;
 	int rd_retry;
 
 	do {
@@ -462,7 +493,9 @@ static void sdio_drain_rx_fifo(void)
 			break;
 		}
 
-		/* Read from RX FIFO into pre-allocated buffer (address 0xE000, block mode) */
+		/* Read from RX FIFO into pre-allocated buffer (address 0xE000, block mode).
+		 * SD_IO_ReadBlocks invalidates the DCache range itself, so no explicit
+		 * DCache_Invalidate is needed here. */
 		for (rd_retry = 0; rd_retry < 3; rd_retry++) {
 			if (SD_IO_ReadBlocks(SDIO_FUNC1, 0xE000U,
 								 g_sdio_rx_buf, rnd_size / SD_BLOCK_SIZE) == SD_OK) {
@@ -474,19 +507,20 @@ static void sdio_drain_rx_fifo(void)
 			break;
 		}
 
-		/* SD DMA writes bypass DCache; invalidate so CPU sees fresh data */
-		DCache_Invalidate((u32)g_sdio_rx_buf, rnd_size);
-
-		/* Strip INIC_RX_DESC header (16B); pkt_len is the payload size */
-		if (rx_size < INIC_RX_DESC_SIZE) {
-			RTK_LOGE(TAG, "RX pkt too small: %u\n", rx_size);
-			break;
+		/* One RX FIFO read may carry more than one framed payload if the
+		 * device ever has several packets outstanding, so walk them all. */
+		offset = 0;
+		while (offset < rx_size) {
+			consumed = sdio_handle_one_frame(g_sdio_rx_buf + offset, rx_size - offset);
+			if (consumed == 0) {
+				break;
+			}
+			offset += consumed;
 		}
-		prxdesc = (INIC_RX_DESC *)g_sdio_rx_buf;
-		pkt_len = prxdesc->pkt_len;
-
-		if (pkt_len > 0) {
-			handle_rx_payload(g_sdio_rx_buf + INIC_RX_DESC_SIZE, (u32)pkt_len);
+		if (offset == 0) {
+			/* Bad magic on the very first frame: device firmware predates the
+			 * atcmd_sdio_hdr framing, or the two sides are out of sync. */
+			RTK_LOGE(TAG, "RX bad frame header, dropped %u B\n", rx_size);
 		}
 	} while (1);
 }

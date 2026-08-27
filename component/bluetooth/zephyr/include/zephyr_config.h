@@ -13,21 +13,22 @@
 extern "C" {
 #endif
 
-#define ZEPHYR_FIX_CODE 1  /* the code that fix the bug or add additional function for zephyr stack */
+#define ZEPHYR_RTK_PATCH 1  /* The code that fix bugs or add additional function for zephyr stack. Do not change it! */
 
-#define CONFIG_LITTLE_ENDIAN
+/* Note: If you want to enable a macro that is used in zephyr stack, please use
+ * "#define SAMPLE_MACRO 1". And when disable a marco, please remove it directly,
+ * it's not suggested to use "#define SAMPLE_MACRO 0" to disable macro.
+ */
 
-//osif configure
-#define CONFIG_RISCV
+#define CONFIG_LITTLE_ENDIAN 1
 
 //HCI
-// #define CONFIG_BT_RECV_BLOCKING
-#define CONFIG_BT_RECV_WORKQ_BT
+#define CONFIG_BT_RECV_WORKQ_BT 1
 #define CONFIG_BT_RX_PRIO 5
 #define CONFIG_BT_RX_STACK_SIZE 4096
 
-#define CONFIG_BT_HCI_TX_PRIO 6
-#define CONFIG_BT_HCI_TX_STACK_SIZE 2048
+#define CONFIG_SYSTEM_WORKQUEUE_PRIORITY 4
+#define CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE 4096
 
 #define CONFIG_BT_LONG_WQ_PRIO 4
 #define CONFIG_BT_LONG_WQ_STACK_SIZE 4096
@@ -37,7 +38,6 @@ extern "C" {
 #define CONFIG_BT_DEVICE_NAME "Ameba"
 #define CONFIG_BT_ID_MAX 1
 
-#define CONFIG_BT_HCI_RESERVE 1
 #define CONFIG_BT_BUF_CMD_TX_COUNT 5
 #define CONFIG_BT_BUF_CMD_TX_SIZE 255
 
@@ -162,14 +162,9 @@ extern "C" {
 #define CONFIG_BT_ATT_PREPARE_COUNT 4
 
 //assert
-#define CONFIG_BT_ASSERT_VERBOSE
-#define CONFIG_ASSERT_NO_COND_INFO
-#define CONFIG_BT_ASSERT
-#ifdef CONFIG_BT_ASSERT
-#define __ASSERT_ON 1
-#else
-#define __ASSERT_ON 0
-#endif
+#define CONFIG_ASSERT_NO_COND_INFO 1
+#define CONFIG_BT_ASSERT 1
+#define CONFIG_BT_ASSERT_VERBOSE 1
 
 #define CONFIG_LOG 1
 #define CONFIG_BT_LOG_SNIFFER_INFO  1

@@ -52,9 +52,7 @@ extern "C" {
   * @{
   */
 
-/**
-  * @brief Struct alarm_s
-  */
+/** @brief RTC alarm time configuration. */
 typedef struct alarm_s {
 	uint32_t yday; /*!< Day of year (1-365/366). */
 	uint32_t hour; /*!< Hour (0-23). */

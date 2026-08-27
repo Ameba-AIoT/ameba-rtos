@@ -11,7 +11,7 @@
 /* To be called when first SEP is being registered */
 int bt_a2dp_init(void);
 
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 static int a2dp_get_all_capabilities_ind(struct bt_avdtp *session,
 			struct bt_avdtp_sep *sep, struct net_buf *rsp_buf, uint8_t *errcode);
 

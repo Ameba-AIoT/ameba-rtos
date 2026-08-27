@@ -106,6 +106,20 @@ _CALC_END_ADDR_RE = re.compile(
     re.IGNORECASE,
 )
 _DOTCONFIG_VALUE_RE = re.compile(r"^(CONFIG_[\w]+)=(0x[0-9a-fA-F]+|\d+)$")
+_DOTCONFIG_STR_RE = re.compile(r'^(CONFIG_[\w]+)="(.*)"$')
+
+
+def _dotconfig_string(dot_config_content: str, name: str) -> Optional[str]:
+    """Return the value of a string-valued CONFIG_X="..." line, or None.
+
+    The numeric-only _DOTCONFIG_VALUE_RE (used for address macros) ignores
+    string configs like CONFIG_DSP_SDK_IMAGE_DIR="..."; this extracts those.
+    """
+    for line in dot_config_content.splitlines():
+        m = _DOTCONFIG_STR_RE.match(line.strip())
+        if m and m.group(1) == name:
+            return m.group(2)
+    return None
 
 
 def _expand_calc_end_addr(s: str) -> str:
@@ -524,6 +538,72 @@ def get_app_image_name(sdk_root: str, ic: str, dot_config_content: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Standalone DSP image
+# ---------------------------------------------------------------------------
+
+DEFAULT_DSP_IMAGE = "dsp_all.bin"
+
+
+def resolve_standalone_dsp_image(
+    sdk_root: str,
+    ic: str,
+    dot_config_content: str,
+    dsp_region: Optional[FlashRegion],
+) -> Optional[ResolvedImage]:
+    """Resolve the standalone DSP image, or None when it doesn't apply.
+
+    A separate DSP image is flashed only when DSP is enabled AND not packed
+    into the app image:
+        CONFIG_DSP_EN=y  and  CONFIG_DSP_WITHIN_APP_IMG *not* set.
+    (With CONFIG_DSP_WITHIN_APP_IMG=y the DSP is inside the app binary, so
+    there is nothing separate to flash.)
+
+    Flash bounds come straight from the already-resolved IMG_DSP layout region
+    (CONFIG_FLASH_DSP_OFFSET/SIZE, resolved just like boot/app). The binary
+    itself is the external DSP SDK output dsp_all.bin, located via
+    CONFIG_DSP_SDK_IMAGE_DIR (a relative path resolves against the SoC project
+    dir, per the Kconfig help) — it does NOT live in build_dir.
+    """
+    if not _config_is_set(dot_config_content, "CONFIG_DSP_EN"):
+        return None
+    if _config_is_set(dot_config_content, "CONFIG_DSP_WITHIN_APP_IMG"):
+        return None
+
+    # Standalone DSP needs a real reserved flash region. A collapsed IMG_DSP
+    # region means CONFIG_FLASH_DSP_SIZE is 0 — typically a stale value left
+    # over from enabling DSP_EN incrementally (olddefconfig keeps the old 0
+    # instead of applying the `0x300000 if DSP_EN` default). Fail loudly rather
+    # than silently flashing a DSP with no region (which boots "DSP IMG Invalid").
+    if dsp_region is None or dsp_region.start_addr in ("0x00000000", "0xFFFFFFFF"):
+        raise FlashCfgParseError(
+            "DSP is standalone (CONFIG_DSP_WITHIN_APP_IMG not set) but the "
+            "IMG_DSP flash region is empty (CONFIG_FLASH_DSP_SIZE=0). Set a "
+            "non-zero DSP size (default 0x300000): run a pristine build, or "
+            "`kconfig_set CONFIG_FLASH_DSP_SIZE=0x300000`, then rebuild."
+        )
+
+    image_dir = _dotconfig_string(dot_config_content, "CONFIG_DSP_SDK_IMAGE_DIR")
+    if not image_dir:
+        raise FlashCfgParseError(
+            "DSP is standalone (CONFIG_DSP_WITHIN_APP_IMG not set) but "
+            "CONFIG_DSP_SDK_IMAGE_DIR is empty; cannot locate dsp_all.bin. "
+            "Set the DSP SDK image dir in menuconfig."
+        )
+    image_dir = os.path.expanduser(image_dir)
+    if not os.path.isabs(image_dir):
+        image_dir = os.path.join(sdk_root, "component", "soc", ic, "project", image_dir)
+    dsp_path = os.path.abspath(os.path.join(image_dir, DEFAULT_DSP_IMAGE))
+
+    return ResolvedImage(
+        type="IMG_DSP",
+        path=dsp_path,
+        start_addr=dsp_region.start_addr,
+        end_addr=dsp_region.end_addr,
+        exists=os.path.isfile(dsp_path),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Top-level entrypoint
 # ---------------------------------------------------------------------------
 
@@ -600,6 +680,17 @@ def parse_project(sdk_root: str, soc: str, build_base: Optional[str] = None) -> 
     dot_config_path = os.path.join(build_dir, "build", ".config")
     dot_config = _read_text(dot_config_path) or ""
 
+    # Mirror ameba_flashcfg.c's `#ifndef CONFIG_FLASH_DSP_{OFFSET,SIZE}` guards:
+    # these are Kconfig-defined only for a standalone DSP (they "depend on
+    # DSP_EN && !DSP_WITHIN_APP_IMG"), so the .config omits them otherwise.
+    # Inject the same fallbacks so the IMG_DSP layout entry stays resolvable
+    # (offset 0xFFFFFFFF + size 0 → disabled sentinel), instead of failing on a
+    # missing macro.
+    if not re.search(r"^CONFIG_FLASH_DSP_OFFSET=", dot_config, re.M):
+        dot_config += "\nCONFIG_FLASH_DSP_OFFSET=0xFFFFFFFF\n"
+    if not re.search(r"^CONFIG_FLASH_DSP_SIZE=", dot_config, re.M):
+        dot_config += "\nCONFIG_FLASH_DSP_SIZE=0\n"
+
     if h_content:
         resolve_layout_addresses(parsed.layout, h_content, dot_config)
 
@@ -633,6 +724,15 @@ def parse_project(sdk_root: str, soc: str, build_base: Optional[str] = None) -> 
                 exists=os.path.isfile(path),
             )
         )
+
+    # Standalone DSP (CONFIG_DSP_WITHIN_APP_IMG not set): the DSP firmware is a
+    # separate binary in the external DSP SDK image dir, not in build_dir. Its
+    # flash bounds come from the IMG_DSP layout region resolved above; only the
+    # binary path is special, so it is emitted here rather than via type_to_name.
+    dsp_region = next((r for r in parsed.layout if r.type == "IMG_DSP"), None)
+    dsp_img = resolve_standalone_dsp_image(sdk_root, ic, dot_config, dsp_region)
+    if dsp_img is not None:
+        images.append(dsp_img)
 
     return ParsedProject(
         soc=soc,

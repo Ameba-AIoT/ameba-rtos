@@ -159,7 +159,7 @@ typedef struct {
 	 * @param[in] line_coding: Pointer to the new line coding structure.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* line_coding_changed)(usb_cdc_line_coding_t *line_coding);
+	int(* line_coding_changed)(usb_cdc_acm_line_coding_t *line_coding);
 #if CONFIG_USBH_CDC_ACM_4G_DONGLE
 	/**
 	 * @brief Optional 4G-dongle VID/PID parameter table (NULL-terminated,
@@ -178,8 +178,8 @@ typedef struct {
 	usbh_pipe_t intr_in;                        /**< INTERRUPT IN pipe structure. */
 	usb_host_t *host;                           /**< Pointer to the USB host instance. */
 	const usbh_cdc_acm_cb_t *cb;                /**< Pointer to the user-defined callback structure. */
-	usb_cdc_line_coding_t *line_coding;         /**< Current line coding of the device. */
-	usb_cdc_line_coding_t *user_line_coding;    /**< User requested line coding. */
+	usb_cdc_acm_line_coding_t *line_coding;         /**< Current line coding of the device. */
+	usb_cdc_acm_line_coding_t *user_line_coding;    /**< User requested line coding. */
 	u16 ctrl_line_state;                        /**< Control Signal Bitmap sent in SET_CONTROL_LINE_STATE wValue: D0=DTR, D1=RTS (PSTN §6.3.12). */
 	u16 break_duration;                         /**< Duration for SEND_BREAK in milliseconds; 0xFFFF = continuous break. */
 #if CONFIG_USBH_CDC_ACM_4G_DONGLE
@@ -227,14 +227,14 @@ int usbh_cdc_acm_deinit(void);
  * @param[in] lc: Pointer to the line coding structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_cdc_acm_set_line_coding(usb_cdc_line_coding_t *lc);
+int usbh_cdc_acm_set_line_coding(usb_cdc_acm_line_coding_t *lc);
 
 /**
  * @brief Gets the current line coding parameters from the device.
  * @param[out] lc: Pointer to the structure where the line coding will be stored.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_cdc_acm_get_line_coding(usb_cdc_line_coding_t *lc);
+int usbh_cdc_acm_get_line_coding(usb_cdc_acm_line_coding_t *lc);
 
 /**
  * @brief Sets the control line state (PSTN §6.3.12 SET_CONTROL_LINE_STATE).

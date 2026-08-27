@@ -265,4 +265,15 @@ extern unsigned int sys_now(void);
 #define LWIP_NETIF_EXT_STATUS_CALLBACK  1
 #endif
 
+#if defined(CONFIG_WHC_INTF_IPC) && defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
+#if defined(CONFIG_WHC_DEV)
+#define TCP_LOCAL_PORT_RANGE_START        0xc000
+#define TCP_LOCAL_PORT_RANGE_END          0xdfff
+#elif defined(CONFIG_WHC_HOST)
+#define TCP_LOCAL_PORT_RANGE_START        0xe000
+#define TCP_LOCAL_PORT_RANGE_END          0xffff
+#endif
+#define TCP_ENSURE_LOCAL_PORT_RANGE(port) ((u16_t)(TCP_LOCAL_PORT_RANGE_START + ((port) % (TCP_LOCAL_PORT_RANGE_END - TCP_LOCAL_PORT_RANGE_START))))
+#endif
+
 #endif /* LWIP_HDR_LWIPOPTS_H */

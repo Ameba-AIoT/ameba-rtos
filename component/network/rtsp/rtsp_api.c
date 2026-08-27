@@ -1791,7 +1791,7 @@ Redo:
 						RTSP_DBG_INFO("state changed from RTSP_PLAYING to RTSP_READY");
 						break;
 					case (RTSP_INTERLEAVED_FRAME):
-						RTSP_DBG_INFO("[%s] RTSP_INTERLEAVED_FRAME\n\r", (rtsp_ctx->is_connected_to_proxy == 1) ? "Proxy" : "Local");
+						RTSP_DBG_DEBUG("[%s] RTSP_INTERLEAVED_FRAME\n\r", (rtsp_ctx->is_connected_to_proxy == 1) ? "Proxy" : "Local");
 						break;
 					default:
 						RTSP_DBG_ERROR("Receive invalid command!");

@@ -9,6 +9,13 @@
 */
 
 #include <whc_host_linux.h>
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+#include "whc_host_log_fwd.h"
+
+static bool log_fwd_enable;
+module_param(log_fwd_enable, bool, 0444);
+MODULE_PARM_DESC(log_fwd_enable, "Enable FW log forwarding to host (default: 0)");
+#endif /* CONFIG_WHC_HOST_LOG_FWD */
 
 static struct work_struct whc_netinfo_update_work;
 
@@ -769,6 +776,10 @@ int rtw_netdev_probe(struct device *pdev)
 
 #if defined(CONFIG_WHC_CMD_PATH)
 	whc_host_register_genl_family();
+
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+	whc_host_log_fwd_enable(log_fwd_enable);
+#endif /* CONFIG_WHC_HOST_LOG_FWD */
 #endif
 
 	return 0; /* probe success */

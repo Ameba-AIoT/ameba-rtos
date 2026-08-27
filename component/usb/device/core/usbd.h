@@ -34,6 +34,12 @@ extern "C" {
 #define USBD_MAX_NUM_INTERFACES			16U
 #define USBD_MAX_NUM_CONFIGURATION		16U
 
+/** @brief Minimum EP0 control transfer buffer length in bytes.
+ *  @details Used when @ref usbd_config_t::ctrl_xfer_buf_len is 0 or smaller.
+ *           Shall be >= USBD_MIN_CTRL_BUF_LEN to handle standard enumeration.
+ */
+#define USBD_MIN_CTRL_BUF_LEN			512U
+
 /**
  * @brief USB device string descriptor index.
  * @{
@@ -126,6 +132,13 @@ typedef struct {
 	 */
 	u16 ptx_fifo_depth[USB_MAX_ENDPOINTS - 1];
 #endif
+	/**
+	 * @brief Control transfer buffer length in bytes for EP0 IN/OUT.
+	 * @details Defines the size of the shared EP0 transfer buffer allocated in @ref usbd_init.
+	 *          If set to 0 or less than @ref USBD_MIN_CTRL_BUF_LEN, @ref USBD_MIN_CTRL_BUF_LEN is used.
+	 *          Set this parameter to an appropriate value especially when defining a large device descriptor for a composite device.
+	 */
+	u16 ctrl_xfer_buf_len;
 	/**
 	 * @brief Enables extra interrupts.
 	 * @details Optional USB interrupt enable flags:
@@ -502,6 +515,15 @@ int usbd_ep_is_stall(usb_dev_t *dev, usbd_ep_t *ep);
  * @return The total length of the generated descriptor in bytes.
  */
 u16 usbd_get_str_desc(const char *str, u8 *desc);
+
+/**
+ * @brief  Get the control transfer buffer length used for descriptor assembly.
+ * @note   Returns the actual EP0 transfer buffer length after clamping to USBD_MIN_CTRL_BUF_LEN,
+ *         or USBD_MIN_CTRL_BUF_LEN if usbd_init has not been called yet.
+ * @retval EP0 transfer buffer length in bytes.
+ */
+u32 usbd_get_ctrl_xfer_buf_len(void);
+
 /** @} End of Device_Core_Functions_For_Classes group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */

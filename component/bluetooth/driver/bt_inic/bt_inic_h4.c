@@ -10,7 +10,7 @@
 #include "bt_debug.h"
 
 #ifdef CONFIG_BT_SDN
-#include "hci_if_inic_sdn.h"
+#include "vhci_if_inic_sdn.h"
 #else
 #include "hci_if_inic.h"
 #endif

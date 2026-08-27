@@ -49,6 +49,7 @@ ameba_list_append(private_sources
 
 ###NOTE: For open-source component, always build from source
 ameba_add_internal_library(monitor
+    p_NO_SEAL
     p_SOURCES
         ${private_sources}
     p_INCLUDES

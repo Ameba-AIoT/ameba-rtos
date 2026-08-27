@@ -11,7 +11,7 @@
 #define BT_MESH_ADV_DATA_SIZE 29
 
 #define BT_MESH_ADV_SCAN_UNIT(_ms) ((_ms) * 8 / 5)
-// zephyr_porting set scan window and scan interval same as rtk stack and 160/180 is better than default 30/30 according experiment
+// zephyr_patch set scan window and scan interval same as rtk stack and 160/180 is better than default 30/30 according experiment
 #define BT_MESH_SCAN_INTERVAL_MS 180
 #define BT_MESH_SCAN_WINDOW_MS   160
 

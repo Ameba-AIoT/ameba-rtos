@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-#ifdef ZEPHYR_FIX_CODE /* zephyr_porting */
+#if ZEPHYR_RTK_PATCH /* zephyr_patch */
 #include "stack_ext/hfp_ag_ext.h"
 #endif
 
@@ -83,7 +83,7 @@ struct bt_hfp_ag_cb {
 	 *  @param ag HFP AG object.
 	 *  @param sco_conn SCO/eSCO Connection object.
 	 */
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	void (*sco_disconnected)(struct bt_hfp_ag *ag, uint8_t reason);
 #else
 	void (*sco_disconnected)(struct bt_hfp_ag *ag);
@@ -168,7 +168,7 @@ struct bt_hfp_ag_cb {
 	 */
 	void (*codec)(struct bt_hfp_ag *ag, uint32_t ids);
 
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 	void (*battery_level)(struct bt_hfp_ag *ag, uint32_t batt_lev);
 
 	void (*speaker_volume_ind)(struct bt_hfp_ag *ag, uint32_t volume);
@@ -225,7 +225,7 @@ int bt_hfp_ag_disconnect(struct bt_hfp_ag *ag);
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-#ifdef ZEPHYR_FIX_CODE
+#if ZEPHYR_RTK_PATCH
 int bt_hfp_ag_remote_incoming(struct bt_hfp_ag *ag, const char *number, uint8_t number_type);
 #else
 int bt_hfp_ag_remote_incoming(struct bt_hfp_ag *ag, const char *number);

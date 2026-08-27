@@ -546,7 +546,7 @@ static void example_usbh_ecm_mem_check_thread(void *param)
 	UNUSED(param);
 
 	while (1) {
-		status = rtos_task_create(&monitor_task, "example_usbh_ecm_link_change_thread",
+		status = rtos_task_create(&monitor_task, "usbh_ecm_linkchg_thread",
 								  example_usbh_ecm_link_change_thread, NULL,
 								  CONFIG_USBH_CDC_ECM_MONITOR_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ECM_MONITOR_THREAD_PRIORITY);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop create %d: all_free:0x%08x\r\n", loop, usb_os_get_free_heap_size());
@@ -614,7 +614,7 @@ void example_usbh_cdc_ecm(void)
 	rltk_usb_eth_init();
 
 #if CONFIG_USBH_CDC_ECM_HOT_PLUG
-	ret = rtos_task_create(&hotplug_task, "example_usbh_ecm_hotplug_thread",
+	ret = rtos_task_create(&hotplug_task, "usbh_ecm_hotplug_thread",
 						   example_usbh_ecm_hotplug_thread, NULL,
 						   CONFIG_USBH_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ECM_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -623,14 +623,14 @@ void example_usbh_cdc_ecm(void)
 #endif
 
 #if CONFIG_USBH_CDC_ECM_MEM_CHECK
-	ret = rtos_task_create(&monitor_task, "example_usbh_ecm_mem_check_thread",
+	ret = rtos_task_create(&monitor_task, "usbh_ecm_mem_check_thread",
 						   example_usbh_ecm_mem_check_thread, NULL,
 						   CONFIG_USBH_CDC_ECM_MONITOR_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ECM_MONITOR_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
 	}
 #else
-	ret = rtos_task_create(&monitor_task, "example_usbh_ecm_link_change_thread",
+	ret = rtos_task_create(&monitor_task, "usbh_ecm_link_change_thread",
 						   example_usbh_ecm_link_change_thread, NULL,
 						   CONFIG_USBH_CDC_ECM_MONITOR_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ECM_MONITOR_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -639,7 +639,7 @@ void example_usbh_cdc_ecm(void)
 
 #if CONFIG_USBH_CDC_ECM_ENABLE_REMOTE_FILE_DOWNLOAD
 	rtos_task_t download_task;
-	ret = rtos_task_create(&download_task, "example_usbh_ecm_download_thread",
+	ret = rtos_task_create(&download_task, "usbh_ecm_download_thread",
 						   example_usbh_ecm_download_thread, NULL,
 						   CONFIG_USBH_CDC_ECM_DOWNLOAD_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ECM_DOWNLOAD_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {

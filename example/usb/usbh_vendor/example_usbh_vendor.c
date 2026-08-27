@@ -454,7 +454,7 @@ void example_usbh_vendor_thread(void *param)
 	usbh_start();
 
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
-	ret = rtos_task_create(&task, "example_usbh_vendor_hotplug_thread",
+	ret = rtos_task_create(&task, "usbh_vendor_hotplug_thread",
 						   example_usbh_vendor_hotplug_thread, NULL,
 						   CONFIG_USBH_VENDOR_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -468,12 +468,12 @@ void example_usbh_vendor_thread(void *param)
 	if (rtos_sema_take(vendor_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 		vendor_isoc_test();
 
-		if (rtos_task_create(&task, "example_usbh_vendor_bulk_test", example_usbh_vendor_bulk_test, NULL,
+		if (rtos_task_create(&task, "usbh_vendor_bulk_test_thread", example_usbh_vendor_bulk_test, NULL,
 							 CONFIG_USBH_VENDOR_TEST_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_TEST_THREAD_PRIORITY) != RTK_SUCCESS) {
 			goto error_exit;
 		}
 
-		if (rtos_task_create(&task, "example_usbh_vendor_intr_test", example_usbh_vendor_intr_test, NULL,
+		if (rtos_task_create(&task, "usbh_vendor_intr_test_thread", example_usbh_vendor_intr_test, NULL,
 							 CONFIG_USBH_VENDOR_TEST_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_TEST_THREAD_PRIORITY) != RTK_SUCCESS) {
 			goto error_exit;
 		}
@@ -508,7 +508,7 @@ void example_usbh_vendor(void)
 	rtos_task_t task;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH vendor demo start\n");
-	ret = rtos_task_create(&task, "example_usbh_vendor_thread", example_usbh_vendor_thread, NULL,
+	ret = rtos_task_create(&task, "usbh_vendor_thread", example_usbh_vendor_thread, NULL,
 						   CONFIG_USBH_VENDOR_INIT_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
