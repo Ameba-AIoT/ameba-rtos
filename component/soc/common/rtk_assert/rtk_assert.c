@@ -103,7 +103,7 @@ void rtk_assert_printf(const char *fmt, ...)
 	va_end(ap);
 }
 
-__attribute__((optimize("O0")))
+__attribute__((__noreturn__, optimize("O0")))
 void vAssertCalled(const char *pcInfo, uint32_t ulLine)
 {
 	__rtos_critical_enter_os();

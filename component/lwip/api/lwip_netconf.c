@@ -386,12 +386,14 @@ void lwip_netif_set_link_up(uint8_t idx)
 		return;
 	}
 	netifapi_netif_set_link_up(pnetif);
+#if !defined(CONFIG_RNAT)
 	if (idx == NETIF_WLAN_STA_INDEX) {
 		netifapi_netif_set_default(pnetif_sta);
 	} else if ((idx == NETIF_WLAN_AP_INDEX) && (!(xnetif[NETIF_WLAN_STA_INDEX].flags & NETIF_FLAG_LINK_UP))) {
 		/*default netif is on sta when sta and softap both up*/
 		netifapi_netif_set_default(pnetif_ap);
 	}
+#endif
 }
 
 void lwip_netif_set_link_down(uint8_t idx)
@@ -403,11 +405,13 @@ void lwip_netif_set_link_down(uint8_t idx)
 		return;
 	}
 	netifapi_netif_set_link_down(pnetif);
+#if !defined(CONFIG_RNAT)
 	if (idx == NETIF_WLAN_AP_INDEX) {
 		netifapi_netif_set_default(pnetif_sta);
 	} else if (idx == NETIF_WLAN_STA_INDEX) {
 		netifapi_netif_set_default(pnetif_ap);
 	}
+#endif
 }
 
 uint8_t *lwip_get_mac(uint8_t idx)
