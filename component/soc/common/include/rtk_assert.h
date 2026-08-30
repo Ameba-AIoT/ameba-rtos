@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-void vAssertCalled(const char *pcInfo, uint32_t ulLine);
+__attribute__((__noreturn__)) void vAssertCalled(const char *pcInfo, uint32_t ulLine);
 void rtk_assert_printf(const char *fmt, ...);
 
 /*

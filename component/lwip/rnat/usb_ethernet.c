@@ -5,7 +5,7 @@
 
 #include "platform_autoconf.h"
 
-#if defined(CONFIG_LWIP_USB_ETHERNET) && defined(CONFIG_RNAT)
+#if defined(CONFIG_LWIP_USB_ETHERNET) && defined(CONFIG_RNAT) && !defined(CONFIG_USBH_CDC_ACM_4G_DONGLE)
 #include "os_wrapper.h"
 #include "lwip_netconf.h"
 #include "usb_ethernet.h"
