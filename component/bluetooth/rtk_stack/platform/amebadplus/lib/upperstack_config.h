@@ -55,7 +55,7 @@
 #define F_BT_LE_5_0_RF_PATH_SUPPORT              ((F_BT_LE_5_0_AE_ADV_SUPPORT || F_BT_LE_5_2_POWER_CONTROL_SUPPORT) && 1)
 
 //BT 5.1
-#define F_BT_LE_5_1_SUPPORT                               (F_BT_LE_SUPPORT && 1)
+#define F_BT_LE_5_1_SUPPORT                               (F_BT_LE_SUPPORT && 0)
 #define F_BT_LE_5_1_PAST_SUPPORT                          ((F_BT_LE_5_0_PA_ADV_SUPPORT || F_BT_LE_5_0_PA_SYNC_SUPPORT) && F_BT_LE_5_1_SUPPORT && 0)
 #define F_BT_LE_5_1_PAST_SENDER_SUPPORT                   (F_BT_LE_5_1_PAST_SUPPORT && 1)
 #define F_BT_LE_5_1_PAST_SENDER_ADV_SUPPORT               (F_BT_LE_5_0_PA_ADV_SUPPORT && F_BT_LE_5_1_PAST_SENDER_SUPPORT && 1)
