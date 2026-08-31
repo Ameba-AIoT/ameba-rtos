@@ -60,7 +60,7 @@ iperf_create_streams(struct iperf_test *test)
 		if ((s = test->protocol->connect_iperf(test)) < 0) {
 			return -1;
 		}
-		IPERF3_DBG_INFO("\nconnect iperf server sucessfully\n");
+		IPERF3_DBG_INFO("\nconnect iperf server successfully\n");
 
 #if defined(HAVE_TCP_CONGESTION)
 		if (test->protocol->id == Ptcp) {
@@ -506,7 +506,7 @@ iperf_run_client(struct iperf_test *test)
 		printf("\n\r[ERROR] %s: Connect to server failed\n", __func__);
 		goto cleanup_and_fail;
 	}
-	printf("\n\r%s: Connect to server sucessfully\n", __func__);
+	printf("\n\r%s: Connect to server successfully\n", __func__);
 
 	/* Begin calculating CPU utilization */
 	cpu_util(NULL);

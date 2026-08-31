@@ -48,7 +48,7 @@ __weak void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 	(void) length;
 }
 
-void rtk_coex_btc_wl_send_sw_mailbox(u8 type, u8 *data, u16 length)
+__weak void rtk_coex_btc_wl_send_sw_mailbox(u8 type, u8 *data, u16 length)
 {
 	(void) type;
 	bt_coex_send_w2b_sw_mailbox(data, length);

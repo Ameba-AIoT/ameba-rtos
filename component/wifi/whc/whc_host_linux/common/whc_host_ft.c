@@ -128,6 +128,8 @@ static int _whc_host_ft_auth_resp_process(u8 *pframe, u32 pkt_len)
 
 static int _whc_host_ft_auth_rx(u8 *pframe, u32 pkt_len)
 {
+	struct ieee80211_mgmt *mgmt = (void *)pframe;
+	u16 status_code;
 	int ret = 0;
 
 	dev_dbg(global_idev.pwhc_dev, "%s===>\n", __func__);
@@ -137,13 +139,25 @@ static int _whc_host_ft_auth_rx(u8 *pframe, u32 pkt_len)
 #else
 		del_timer_sync(&lacal_ft_priv.ft_auth_timer);
 #endif
-		ret = _whc_host_ft_auth_resp_process(pframe, pkt_len);
-		if (ret < 0) {
+		/* set AUTHENTICATED before cfg80211_ft_event to avoid update_ft_ies race (RSWLANDIOT-16418) */
+		status_code = (pkt_len >= offsetof(struct ieee80211_mgmt, u.auth.status_code) + 2) ?
+					  le16_to_cpu(mgmt->u.auth.status_code) : WLAN_STATUS_UNSPECIFIED_FAILURE;
+		if (status_code != WLAN_STATUS_SUCCESS) {
 			_FT_SET_STATUS(_FT_UNASSOCIATED_STA);
 			cfg80211_disconnected(global_idev.pndev[WHC_STA_PORT], 0, NULL, 0, 1, GFP_ATOMIC);
 			whc_host_ft_status_indicate(NULL, WLAN_STATUS_CHALLENGE_FAIL);
-		} else {
-			_FT_SET_STATUS(_FT_AUTHENTICATED_STA);
+			return -ENOPROTOOPT;
+		}
+
+		/* auth ok: set state first, then notify wpa_supplicant */
+		_FT_SET_STATUS(_FT_AUTHENTICATED_STA);
+
+		ret = _whc_host_ft_auth_resp_process(pframe, pkt_len);
+		if (ret < 0) {
+			/* unexpected: fall back to unassociated */
+			_FT_SET_STATUS(_FT_UNASSOCIATED_STA);
+			cfg80211_disconnected(global_idev.pndev[WHC_STA_PORT], 0, NULL, 0, 1, GFP_ATOMIC);
+			whc_host_ft_status_indicate(NULL, WLAN_STATUS_CHALLENGE_FAIL);
 		}
 	}
 

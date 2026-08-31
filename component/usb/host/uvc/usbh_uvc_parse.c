@@ -204,6 +204,9 @@ static int usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 
 		/* Find next descriptor */
 		len = ((usbh_desc_header_t *)(void *) desc)->bLength;
+		if (len == 0U) {
+			break;
+		}
 
 		desc += len;
 		itf_total_len += len;
