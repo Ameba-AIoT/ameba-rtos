@@ -153,6 +153,7 @@ SD_RESULT SD_Init(void)
 	SD_RESULT ret;
 	u32 status;
 	SD_HdlTypeDef *hsd = &hsd0;
+	u8 retries = 3;
 
 	if (hsd == NULL) {
 		return SD_ERROR;
@@ -181,7 +182,20 @@ SD_RESULT SD_Init(void)
 
 	status = SDIO_CheckState(hsd->Instance);
 	if (status != HAL_OK) {
-		return SD_ERROR;
+		/* inhibit stuck: reset CMD+DAT then retry, up to 3 times */
+		while (retries-- != 0) {
+			status = SDIO_ResetCmdDat(hsd->Instance);
+			if (status != HAL_OK) {
+				break;
+			}
+			status = SDIO_CheckState(hsd->Instance);
+			if (status == HAL_OK) {
+				break;
+			}
+		}
+		if (status != HAL_OK) {
+			return SD_ERROR;
+		}
 	}
 
 	/* Initialize SDIO peripheral interface with default configuration */
@@ -2276,47 +2290,31 @@ SD_RESULT SD_SwitchBusSpeed(SD_HdlTypeDef *hsd, u8 BusSpeed)
 	u8 cmd6_resp[64]__attribute__((aligned(32))); // 512bit/8
 	SD_RESULT ret;
 
-	/* Send CMD6 to check(mode0) whether target mode is supported  */
-	ret = SD_SwitchFunction(hsd, SD_CMD6_CHECK_MODE, SD_ACCESS_MODE, SD_KEEP_CUR_SPEED, cmd6_resp); // check group1
+	/* CMD6 (1): CHECK Group1 = target speed, query supported speed modes */
+	ret = SD_SwitchFunction(hsd, SD_CMD6_CHECK_MODE, SD_ACCESS_MODE, BusSpeed, cmd6_resp); // check group1
 	if (ret != SD_OK) {
 		return ret;
 	}
 
+	/* cmd6_resp[13] reports all supported speed modes regardless of the Group1 arg above */
 	if ((cmd6_resp[13] & BIT(BusSpeed)) == 0) { // Group1 information [407:400]
 		RTK_LOGW(TAG, "This card does not support target speed mode(%d)!\n", BusSpeed);
 		return SD_ERROR;
 	}
 
-	if ((cmd6_resp[16] & 0xF) == BusSpeed) { // Group1 [383:376]
-		RTK_LOGI(TAG, "Current speed mode is already the target setting.\n");
-	} else {
-		/* Send CMD6 to check(mode0) whether target mode is ready  */
-		ret = SD_SwitchFunction(hsd, SD_CMD6_CHECK_MODE, SD_ACCESS_MODE, BusSpeed, cmd6_resp); // check group1
-		if (ret != SD_OK) {
-			return ret;
-		}
-
-		if ((cmd6_resp[16] & 0xF) != BusSpeed) { // Group1 [383:376]
-			RTK_LOGW(TAG, "The target speed mode(%d) cannot be switched!\n", BusSpeed);
-			return SD_ERROR;
-		} else {
-			/* Send CMD6 to switch(mode1) access_mode to target mode  */
-			ret = SD_SwitchFunction(hsd, SD_CMD6_SWITCH_MODE, SD_ACCESS_MODE, BusSpeed, cmd6_resp); // switch group1
-			if (ret != SD_OK) {
-				return ret;
-			}
-
-			if ((cmd6_resp[16] & 0xF) == BusSpeed) { // Group1 [383:376]
-				RTK_LOGI(TAG, "SD card has been changed to target speed mode(%d).\n", BusSpeed);
-				return SD_OK;
-			} else {
-				RTK_LOGW(TAG, "The switch request is cancelled!\n");
-				return SD_ERROR;
-			}
-		}
+	/* CMD6 (2): SET Group1 = target speed, verify from response */
+	ret = SD_SwitchFunction(hsd, SD_CMD6_SWITCH_MODE, SD_ACCESS_MODE, BusSpeed, cmd6_resp); // switch group1
+	if (ret != SD_OK) {
+		return ret;
 	}
 
-	return SD_OK;
+	if ((cmd6_resp[16] & 0xF) == BusSpeed) { // Group1 [383:376]
+		RTK_LOGI(TAG, "SD card has been changed to target speed mode(%d).\n", BusSpeed);
+		return SD_OK;
+	} else {
+		RTK_LOGW(TAG, "The switch request is cancelled!\n");
+		return SD_ERROR;
+	}
 }
 
 SD_RESULT SD_ConfigBusSpeed(SD_HdlTypeDef *hsd, u8 BusSpeed)

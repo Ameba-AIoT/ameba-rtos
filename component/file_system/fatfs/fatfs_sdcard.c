@@ -205,7 +205,8 @@ DRESULT SD_disk_ioctl(BYTE cmd, void *buff)
 		res = RES_OK;
 		break;
 	case GET_SECTOR_COUNT:	/* Get media size (for only f_mkfs()) */
-		result = SD_GetCapacity((unsigned long *) buff);
+		*(LBA_t *)buff = 0;
+		result = SD_GetCapacity((u32 *)buff);
 		res = interpret_sd_result(result);
 		break;
 	/* for case _MAX_SS != _MIN_SS */
