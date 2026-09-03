@@ -110,31 +110,79 @@ u32 SDIO_ResetAll(SDIOHOST_TypeDef *SDIOx)
 	return HAL_OK;
 }
 
+/**
+ * @brief  Reset the CMD and DAT state machines.
+ *         Used to clear inhibit-stuck conditions without disturbing host configuration.
+ * @param  SDIOx Pointer to SD host controller.
+ * @return HAL status:
+ *           - HAL_OK: Success.
+ *           - HAL_TIMEOUT: Failure.
+ */
+u32 SDIO_ResetCmdDat(SDIOHOST_TypeDef *SDIOx)
+{
+	u32 start_us;
+	u32 timeout_us = SDIO_CMD_TIMEOUT_US;
+	u32 mask = SDIOHOST_BIT_SW_RST_CMD | SDIOHOST_BIT_SW_RST_DAT;
+
+	SDIOx->SDIOHOST_SW_RST |= mask;
+
+	start_us = DTimestamp_Get();
+	while (SDIOx->SDIOHOST_SW_RST & mask) {
+		if (is_timeout(start_us, timeout_us)) {
+			RTK_LOGE(TAG, "%s: timeout\n", __func__);
+			return HAL_TIMEOUT;
+		}
+	}
+
+	return HAL_OK;
+}
+
+/**
+ * @brief  Poll until the specified inhibit bits in PRESENT_STATE are clear.
+ *         Polls every 1 ms for up to 10 attempts (10 ms total).
+ * @param  SDIOx  Pointer to SD host controller.
+ * @param  mask   Bitmask of inhibit bits to wait for
+ *                (SDIOHOST_BIT_CMD_INHIBIT_CMD and/or SDIOHOST_BIT_CMD_INHIBIT_DAT).
+ * @return HAL status:
+ *           - HAL_OK: Success.
+ *           - HAL_BUSY: Failure.
+ */
+static u32 SDIO_WaitInhibit(SDIOHOST_TypeDef *SDIOx, u32 mask)
+{
+	u8 retries = 10;
+
+	while (retries-- != 0) {
+		if (!(SDIO_GetStatus(SDIOx) & mask)) {
+			return HAL_OK;
+		}
+		DelayMs(1);
+	}
+
+	RTK_LOGE(TAG, "inhibit timeout, present_state=0x%08x\n", SDIO_GetStatus(SDIOx));
+	return HAL_BUSY;
+}
+
+/**
+ * @brief  Check that the SDIO bus and state machine are idle and the card is inserted.
+ * @param  SDIOx Pointer to SD host controller.
+ * @return HAL status:
+ *           - HAL_OK: Success.
+ *           - Others: Failure.
+ */
 u32 SDIO_CheckState(SDIOHOST_TypeDef *SDIOx)
 {
-	u32 status = SDIO_GetStatus(SDIOx);
+	u32 status;
+	u32 ret;
 
-	// check the SDIO bus status
-	/* CMD line + DATA(4) line level */
-	if ((status & (SDIOHOST_BIT_CMD_LINE_SIG_LVL | SDIOHOST_MASK_DAT_LINE_SIG_LVL)) !=
-		(SDIOHOST_BIT_CMD_LINE_SIG_LVL | SDIOHOST_MASK_DAT_LINE_SIG_LVL)) {
-		RTK_LOGE(TAG, "SDIO bus isn't in the idle state!!\n");
-		RTK_LOGE(TAG, "SDIOHOST_PRESENT_STATE:0x%x\n", status);
-		return HAL_BUSY;
+	ret = SDIO_WaitInhibit(SDIOx, SDIOHOST_BIT_CMD_INHIBIT_CMD | SDIOHOST_BIT_CMD_INHIBIT_DAT);
+	if (ret != HAL_OK) {
+		RTK_LOGE(TAG, "CMD/DAT state machine isn't in the idle state!!\n");
+		return ret;
 	}
 
-	// check the CMD & DATA state machine
-	if (status & SDIOHOST_BIT_CMD_INHIBIT_CMD) {
-		RTK_LOGE(TAG, "CMD state machine isn't in the idle state!!\n");
-		return HAL_BUSY;
-	}
+	status = SDIO_GetStatus(SDIOx);
 
-	if (status & SDIOHOST_BIT_CMD_INHIBIT_DAT) {
-		RTK_LOGE(TAG, "DATA state machine isn't in the idle state!!\n");
-		return HAL_BUSY;
-	}
-
-	// check the SDIO card module state machine
+	/* check the SDIO card module state machine */
 	if (status & (SDIOHOST_BIT_WRITE_XFER_ACTIVE | SDIOHOST_BIT_READ_XFER_ACTIVE)) {
 		RTK_LOGW(TAG, "SDIO card module state machine isn't in the idle state !!\n");
 		return HAL_BUSY;
@@ -377,12 +425,31 @@ void SDIO_ConfigData(SDIOHOST_TypeDef *SDIOx, SDIO_DataInitTypeDef *Data)
 void SDIO_SendCommand(SDIOHOST_TypeDef *SDIOx, SDIO_CmdInitTypeDef *Command)
 {
 	u32 tmp = 0;
+	u32 mask;
 
 	/* Check the parameters */
 	assert_param(IS_SD_CMD_INDEX(Command->CmdIndex));
 	assert_param(IS_SD_CMD_TYPE(Command->CmdType));
 	assert_param(IS_SD_RESP_TYPE(Command->RespType));
 	assert_param(IS_SD_DATA_TYPE(Command->DataPresent));
+
+	/* Data commands and R1b/R5b responses both occupy the DAT line (card pulls DAT0
+	 * low to signal busy), so wait for DAT_INHIBIT to clear before issuing them.
+	 * Exception: CMD12 (stop transfer) must bypass the DAT_INHIBIT check because it
+	 * is used to end the very transfer that is currently holding the DAT line. */
+	mask = SDIOHOST_BIT_CMD_INHIBIT_CMD;
+	if (Command->DataPresent == SDIO_TRANS_WITH_DATA ||
+		Command->RespType == SDMMC_RSP_R1B ||
+		Command->RespType == SDMMC_RSP_R5B) {
+		mask |= SDIOHOST_BIT_CMD_INHIBIT_DAT;
+	}
+	if (Command->CmdIndex == SDMMC_STOP_TRANSMISSION) {
+		mask &= ~SDIOHOST_BIT_CMD_INHIBIT_DAT;
+	}
+	if (SDIO_WaitInhibit(SDIOx, mask) != HAL_OK) {
+		RTK_LOGE(TAG, "cmd%d: inhibit not cleared, command dropped\n", Command->CmdIndex);
+		return;
+	}
 
 	/* Set the SDMMC Argument value */
 	SDIOx->SDIOHOST_CMD_ARG1 = Command->Argument;

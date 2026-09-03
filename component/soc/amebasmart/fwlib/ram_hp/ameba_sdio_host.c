@@ -20,27 +20,20 @@ extern int (*sd_sema_take_fn)(u32);
 u32 SDIOH_Busy(void)
 {
 	SDIOH_TypeDef *psdioh = SDIOH_BASE;
-	u8 idle_level = sdioh_init_para.SDIOH_idle_level;
+	u8 retries = 10;
 
-	/* check the SD bus status */
-	if ((psdioh->SD_BUS_STATUS & idle_level) == idle_level) {
+	while (retries-- != 0) {
 		/* check the CMD & DATA state machine */
 		if ((psdioh->SD_CMD_STATE & SDIOH_CMD_FSM_IDLE) && (psdioh->SD_DATA_STATE & SDIOH_DATA_FSM_IDLE)) {
-			/* check the SD card module state machine */
-			if ((psdioh->SD_TRANSFER & SDIOH_SD_MODULE_FSM_IDLE)) {
-				return HAL_OK;
-			} else {
-				RTK_LOGS(TAG, RTK_LOG_WARN, "SD card module state machine isn't in the idle state !\r\n");
-				return HAL_BUSY;
-			}
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "CMD or DATA state machine isn't in the idle state !!\r\n");
-			return HAL_BUSY;
+			return HAL_OK;
 		}
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "CMD or DAT[3:0] pin isn't in the idle state !!\r\n");
-		return HAL_BUSY;
+		DelayMs(1);
 	}
+
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "SD Host busy: CMD_STATE=0x%x, DAT_STATE=0x%x\n",
+			 psdioh->SD_CMD_STATE, psdioh->SD_DATA_STATE);
+
+	return HAL_BUSY;
 }
 
 /**
@@ -330,6 +323,7 @@ u32 SDIOH_SendCommand(SDIOH_CmdTypeDef *cmd_attrib, u32 timeout_us)
 
 	ret = SDIOH_Busy();
 	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "cmd%d: inhibit not cleared, command dropped\n", cmd);
 		return ret;
 	}
 

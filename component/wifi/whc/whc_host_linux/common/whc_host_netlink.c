@@ -182,7 +182,9 @@ static int whc_host_set_netifon(struct genl_info *info)
 		idx = 0;
 	}
 	/* __LINK_STATE_DORMANT set for roaming issue, need clear, or DHCP fail in S1D */
+#ifdef CONFIG_IEEE80211R
 	netif_dormant_off(global_idev.pndev[idx]);
+#endif
 	netif_carrier_on(global_idev.pndev[idx]);
 
 	return 0;

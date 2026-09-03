@@ -1937,6 +1937,7 @@ void SDIO_WriteFIFO(SDIOHOST_TypeDef *SDIOx, u32 *pWriteData);
 
 /* Peripheral Control functions */
 u32 SDIO_ResetAll(SDIOHOST_TypeDef *SDIOx);
+u32 SDIO_ResetCmdDat(SDIOHOST_TypeDef *SDIOx);
 u32 SDIO_CheckState(SDIOHOST_TypeDef *SDIOx);
 void SDIO_PowerState_ON(SDIOHOST_TypeDef *SDIOx);
 void SDIO_PowerState_OFF(SDIOHOST_TypeDef *SDIOx);

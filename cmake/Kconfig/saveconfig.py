@@ -117,8 +117,8 @@ def save_config(kconf, output_path, default_conf=None):
         else:
             add(f"CONFIG_{sym.name}={sym.str_value}\n")
 
-    with open(output_path, "w") as f:
-        f.write(f"# This file is generated automatically by : python menuconfig.py -s {output_path}\r\n")
+    with open(output_path, "w", newline="") as f:
+        f.write(f"# This file is generated automatically by : python menuconfig.py -s {output_path}\n")
         f.write("".join(chunks))
 
 

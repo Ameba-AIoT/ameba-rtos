@@ -6,25 +6,17 @@
 
 extern uint8_t httpc_debug;
 
-#define httpc_log(...) \
+#define httpc_log(fmt, ...) \
 	do { \
 		if(httpc_debug) { \
-			rtos_critical_enter(RTOS_CRITICAL_NETWORK); \
-			printf("\n\r[HTTPC] "); \
-			printf(__VA_ARGS__); \
-			printf("\n\r"); \
-			rtos_critical_exit(RTOS_CRITICAL_NETWORK); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[HTTPC] " fmt "\n\r", ##__VA_ARGS__); \
 		} \
 	} while(0)
 
-#define httpc_log_verbose(...) \
+#define httpc_log_verbose(fmt, ...) \
 	do { \
 		if(httpc_debug == HTTPC_DEBUG_VERBOSE) { \
-			rtos_critical_enter(RTOS_CRITICAL_NETWORK); \
-			printf("\n\r[HTTPC] "); \
-			printf(__VA_ARGS__); \
-			printf("\n\r"); \
-			rtos_critical_exit(RTOS_CRITICAL_NETWORK); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[HTTPC] " fmt "\n\r", ##__VA_ARGS__); \
 		} \
 	} while(0)
 

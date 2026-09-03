@@ -435,8 +435,8 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 	struct rtw_event_join_status_info *join_status_info = (struct rtw_event_join_status_info *)evt_info;
 #ifdef CONFIG_IEEE80211R
 	struct cfg80211_roam_info roam_info = {0};
-#endif
 	struct ieee80211_mgmt *mgmt = NULL;
+#endif
 	struct rtw_wpa_4way_status	rpt_4way = {0};
 
 	mlme_priv->rtw_join_status = join_status;
@@ -508,10 +508,12 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 			}
 			netif_carrier_on(global_idev.pndev[wlan_idx]);
 			if (wlan_idx == WHC_STA_PORT) {
+#ifdef CONFIG_IEEE80211R
 				mgmt = (struct ieee80211_mgmt *)mlme_priv->assoc_rsp_ie;
 				if (!(mgmt->u.assoc_resp.capab_info & WLAN_CAPABILITY_PRIVACY)) {
 					netif_dormant_off(global_idev.pndev[wlan_idx]);
 				}
+#endif
 			}
 
 			dev_dbg(global_idev.pwhc_dev, "[whc]: wlan_idx = %d, is_need_4wway= %d, is_4way_ongoing =%d", wlan_idx, global_idev.is_need_4way[wlan_idx],
@@ -559,9 +561,11 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 		} else {
 			cfg80211_connect_result(global_idev.pndev[wlan_idx], NULL, NULL, 0, NULL, 0, WLAN_STATUS_UNSPECIFIED_FAILURE, GFP_ATOMIC);
 		}
+#ifdef CONFIG_IEEE80211R
 		if ((wlan_idx == WHC_STA_PORT) && !netif_dormant(global_idev.pndev[wlan_idx])) {
 			netif_dormant_on(global_idev.pndev[wlan_idx]);
 		}
+#endif
 		netif_carrier_off(global_idev.pndev[wlan_idx]);
 		return;
 	}
@@ -956,9 +960,11 @@ static int whc_host_disconnect_ops(struct wiphy *wiphy, struct net_device *ndev,
 
 	wait_for_completion_interruptible(&global_idev.mlme_priv.disconnect_done_sema);
 
+#ifdef CONFIG_IEEE80211R
 	if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && (ret == 0) && !netif_dormant(ndev)) {
 		netif_dormant_on(ndev);
 	}
+#endif
 	netif_carrier_off(ndev);
 
 	return ret;
