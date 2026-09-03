@@ -18,25 +18,17 @@
 
 
 extern uint8_t ws_server_debug;
-#define ws_server_log(...) \
+#define ws_server_log(fmt, ...) \
 	do { \
 		if(ws_server_debug) { \
-			rtos_critical_enter(RTOS_CRITICAL_NETWORK); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[WS_SERVER] "); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, __VA_ARGS__); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r"); \
-			rtos_critical_exit(RTOS_CRITICAL_NETWORK); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[WS_SERVER] " fmt "\n\r", ##__VA_ARGS__); \
 		} \
 	} while(0)
 
-#define ws_server_log_verbose(...) \
+#define ws_server_log_verbose(fmt, ...) \
 	do { \
 		if(ws_server_debug == WS_SERVER_DEBUG_VERBOSE) { \
-			rtos_critical_enter(RTOS_CRITICAL_NETWORK); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[WS_SERVER] "); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, __VA_ARGS__); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r"); \
-			rtos_critical_exit(RTOS_CRITICAL_NETWORK); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[WS_SERVER] " fmt "\n\r", ##__VA_ARGS__); \
 		} \
 	} while(0)
 

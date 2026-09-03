@@ -285,7 +285,9 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 	}
 #endif
 	netif_tx_stop_all_queues(pnetdev);
+#ifdef CONFIG_IEEE80211R
 	netif_dormant_on(pnetdev);
+#endif
 	netif_carrier_off(pnetdev);
 	rtw_netdev_priv_is_on(pnetdev) = false;
 
@@ -662,9 +664,11 @@ int rtw_ndev_register(void)
 		if (dev_alloc_name(global_idev.pndev[i], wlan_name) < 0) {
 			dev_err(global_idev.pwhc_dev, "dev_alloc_name, fail!\n");
 		}
+#ifdef CONFIG_IEEE80211R
 		if (i == WHC_STA_PORT) {
 			netif_dormant_on(global_idev.pndev[i]);
 		}
+#endif
 		netif_carrier_off(global_idev.pndev[i]);
 		if (register_netdev(global_idev.pndev[i]) != 0) {
 			dev_err(global_idev.pwhc_dev, "netdevice register fail!\n");

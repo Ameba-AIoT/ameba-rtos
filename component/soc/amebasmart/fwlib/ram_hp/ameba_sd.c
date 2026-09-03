@@ -1444,7 +1444,7 @@ u32 SD_GetSDStatus(u8 *buf_32align)
 u32 SD_SwitchBusSpeed(u8 speed)
 {
 	u32 ret;
-	u8 sw_spd, support_spd;
+	u8 support_spd;
 	u8 *pbuf = card_info.dma_buf;
 
 	assert_param(speed <= SD_SPEED_HS);
@@ -1461,51 +1461,34 @@ u32 SD_SwitchBusSpeed(u8 speed)
 	}
 
 	if ((card_info.sd_spec_ver) >= SD_SPEC_V110) {
-		/* get the supported speed modes */
-		ret = SD_SwitchFunction(SD_CMD6_CHECK_MODE, SD_KEEP_CUR_SPEED, pbuf);
+		/* CMD6 (1): CHECK Group1 = target speed, query supported speed modes */
+		ret = SD_SwitchFunction(SD_CMD6_CHECK_MODE, speed, pbuf);
 		if (ret != HAL_OK) {
 			return ret;
 		}
 
-		sw_spd = speed;
-
+		/* pbuf[13] reports all supported speed modes regardless of the Group1 arg above */
 		support_spd = pbuf[13];
-		if (support_spd & (1 << sw_spd)) {
-			if ((pbuf[16] & 0xF) == sw_spd) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "SD card's current speed mode is already the specified setting !!\r\n");
+		if (support_spd & (1 << speed)) {
+			/* CMD6 (2): SET Group1 = target speed, verify from response */
+			ret = SD_SwitchFunction(SD_CMD6_SWITCH_MODE, speed, pbuf);
+
+			if (ret != HAL_OK) {
+				return ret;
+			}
+
+			if ((pbuf[16] & 0xF) == speed) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "SD card has been changed to target speed mode(%d).\n", speed);
+				if (speed == SD_SPEED_DS) {
+					SDIOH_SwitchSpeed(SDIOH_CLK_DIV4, SDIOH_SD20_MODE); // 25 MHz
+					card_info.bus_spd = SD_SPEED_DS;
+				} else if (speed == SD_SPEED_HS) {
+					SDIOH_SwitchSpeed(SDIOH_CLK_DIV2, SDIOH_SD20_MODE); // 50 MHz
+					card_info.bus_spd = SD_SPEED_HS;
+				}
 			} else {
-				/* check if the specified speed can be switched */
-				ret = SD_SwitchFunction(SD_CMD6_CHECK_MODE, sw_spd, pbuf);
-
-				if (ret != HAL_OK) {
-					return ret;
-				}
-
-				if ((pbuf[16] & 0xF) == sw_spd) {
-					/* Switch to the specified speed */
-					ret = SD_SwitchFunction(SD_CMD6_SWITCH_MODE, sw_spd, pbuf);
-
-					if (ret != HAL_OK) {
-						return ret;
-					}
-
-					if ((pbuf[16] & 0xF) == sw_spd) {
-						RTK_LOGS(TAG, RTK_LOG_INFO, "SD card changes to the specified speed mode successfully\r\n");
-						if (speed == SD_SPEED_DS) {
-							SDIOH_SwitchSpeed(SDIOH_CLK_DIV4, SDIOH_SD20_MODE); // 25 MHz
-							card_info.bus_spd = SD_SPEED_DS;
-						} else if (speed == SD_SPEED_HS) {
-							SDIOH_SwitchSpeed(SDIOH_CLK_DIV2, SDIOH_SD20_MODE); // 50 MHz
-							card_info.bus_spd = SD_SPEED_HS;
-						}
-					} else {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "The switch request is canceled !!\r\n");
-						return HAL_ERR_UNKNOWN;
-					}
-				} else {
-					RTK_LOGS(TAG, RTK_LOG_WARN, "The specified speed mode can't be switched !!\r\n");
-					return HAL_ERR_UNKNOWN;
-				}
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "The switch request is canceled!!\n");
+				return HAL_ERR_UNKNOWN;
 			}
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "This card doesn't support the specified speed mode !!\r\n");
@@ -1824,6 +1807,8 @@ void SD_CardInit(void)
 SD_RESULT SD_Init(void)
 {
 	SDIOH_TypeDef *psdioh = SDIOH_BASE;
+	u8 retries = 3;
+	u32 busy = HAL_BUSY;
 
 	_memset(&card_info, 0, sizeof(SD_CardInfo));
 	card_info.sd_status = SD_NODISK;
@@ -1834,7 +1819,22 @@ SD_RESULT SD_Init(void)
 	/* Initialize SDIOH */
 	SDIOH_Init(sdioh_config.sdioh_bus_width);
 
-	InterruptRegister((IRQ_FUN)SD_IRQHandler, SDIO_HOST_IRQ, NULL, INT_PRI_HIGH);
+	if (SDIOH_Busy() != HAL_OK) {
+		/* state machines still busy: reset and retry up to 3 times */
+		while (retries-- != 0) {
+			psdioh->CARD_STOP = SDIOH_TARGET_MODULE_SD;
+			busy = SDIOH_Busy();
+			if (busy == HAL_OK) {
+				break;
+			}
+		}
+		if (busy != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "SD host init: inhibit not cleared\r\n");
+			return SD_INITERR;
+		}
+	}
+
+	InterruptRegister((IRQ_FUN)SD_IRQHandler, SDIO_HOST_IRQ, (u32)NULL, INT_PRI_HIGH);
 	InterruptEn(SDIO_HOST_IRQ, INT_PRI_HIGH);
 
 	if ((sdioh_config.sdioh_cd_pin == _PNC) || (GPIO_ReadDataBit(sdioh_config.sdioh_cd_pin) == 0)) {

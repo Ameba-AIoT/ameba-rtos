@@ -6,25 +6,17 @@
 
 extern uint8_t httpd_debug;
 
-#define httpd_log(...) \
+#define httpd_log(fmt, ...) \
 	do { \
 		if(httpd_debug) { \
-			rtos_critical_enter(RTOS_CRITICAL_NETWORK); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[HTTPD] "); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, __VA_ARGS__); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r"); \
-			rtos_critical_exit(RTOS_CRITICAL_NETWORK); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[HTTPD] " fmt "\n\r", ##__VA_ARGS__); \
 		} \
 	} while(0)
 
-#define httpd_log_verbose(...) \
+#define httpd_log_verbose(fmt, ...) \
 	do { \
 		if(httpd_debug == HTTPD_DEBUG_VERBOSE) { \
-			rtos_critical_enter(RTOS_CRITICAL_NETWORK); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[HTTPD] "); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, __VA_ARGS__); \
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r"); \
-			rtos_critical_exit(RTOS_CRITICAL_NETWORK); \
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\r[HTTPD] " fmt "\n\r", ##__VA_ARGS__); \
 		} \
 	} while(0)
 
