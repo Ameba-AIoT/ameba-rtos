@@ -48,8 +48,7 @@ enum coex_subtype_h2c_com {
 	COEX_H2C_COM_VENDOR_INFO_SET,
 	COEX_H2C_COM_WL_SLOT_SET,
 	COEX_H2C_COM_STATE_GET,
-	COEX_H2C_COM_SET_COEX_ENABLE,
-	COEX_H2C_COM_GET_IS_ENABLED,
+	COEX_H2C_COM_COEX_DBG,
 	/* end */
 	COEX_H2C_COM_INVALID = ((1 << SUBTYPE_BITS) - 1),
 };
@@ -296,19 +295,7 @@ struct extchip_para_t {
 //////////////////////////////////////////////////////////
 ///////// for COMMON Function Declare
 //////////////////////////////////////////////////////////
-/**
- * @brief      set coex enable or disable.
- * @param[in]  enable coex enable status
- * @return
- *             - None.
- */
-void rtk_coex_com_coex_set_enable(bool enable);
-/**
- * @brief      get if coex is enabled.
- * @return
- *             - true: coex enabled, false: coex disabled.
- */
-bool rtk_coex_com_coex_is_enabled(void);
+void rtk_coex_com_dbg(char *cmd, u8 cmd_len);
 /**
  * @brief      Vendor info set.
  * @param[in]  vendor_id

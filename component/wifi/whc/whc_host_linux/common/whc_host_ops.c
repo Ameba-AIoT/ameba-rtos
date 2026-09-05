@@ -610,7 +610,9 @@ void whc_host_disconnect_indicate(u16 reason, u8 locally_generated, u8 *bssid)
 	if (global_idev.pndev[wlan_idx] != NULL) {
 		/* Do it first for tx broadcast pkt after disconnection issue! */
 		if (wlan_idx == WHC_STA_PORT) {
+#ifdef CONFIG_IEEE80211R
 			netif_dormant_on(global_idev.pndev[wlan_idx]);
+#endif
 		}
 		netif_carrier_off(global_idev.pndev[wlan_idx]);
 

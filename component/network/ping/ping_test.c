@@ -93,6 +93,23 @@ void ping_test(void *param)
 		if (255 == ping_interface) {
 			ping_interface = 0;
 		}
+		/* A bare fe80::/10 literal has no zone, so lwip cannot pick the egress netif.
+		 * Two ways to supply the zone:
+		 *  1) The address literal carried a scope ("fe80::..%r23"): getaddrinfo already
+		 *     filled sin6_scope_id (lwip index == netif->num + 1). Honour it, and derive
+		 *     ping_interface (the xnetif[] index) from it so the source bind below matches.
+		 *  2) No scope in the literal: stamp it from the `if <idx>` arg's netif. */
+		struct sockaddr_in6 *dst6 = (struct sockaddr_in6 *)res->ai_addr;
+		if (dst6->sin6_addr.s6_addr[0] == 0xfe && (dst6->sin6_addr.s6_addr[1] & 0xc0) == 0x80) {
+			if (dst6->sin6_scope_id != 0) {
+				ping_interface = dst6->sin6_scope_id - 1;
+			} else {
+				struct netif *ll_netif = lwip_idx_get_netif(ping_interface);
+				if (ll_netif != NULL) {
+					dst6->sin6_scope_id = netif_get_index(ll_netif);
+				}
+			}
+		}
 	}
 #endif
 	ping_socket = socket(family, SOCK_RAW, proto);
@@ -101,7 +118,11 @@ void ping_test(void *param)
 		goto cleanup_addrinfo;
 	}
 
-	if ((ping_interface == 0) || (ping_interface == 1)) {
+	if ((ping_interface == 0) || (ping_interface == 1)
+#if defined(CONFIG_WIFI_NAN_ENABLE)
+		|| (ping_interface == NETIF_WLAN_NAN_INDEX)
+#endif
+	   ) {
 		if (family == AF_INET) {
 			struct sockaddr_in bind_addr = {
 				.sin_family = AF_INET,
@@ -326,7 +347,12 @@ int cmd_ping(int argc, char **argv)
 					goto Exit;
 				}
 				ping_interface = (int)strtol(argv[argv_count], &endptr, 10);
-				if (*endptr != '\0' || endptr == argv[argv_count] || (ping_interface != 0 && ping_interface != 1)) {
+				if (*endptr != '\0' || endptr == argv[argv_count]
+					|| (ping_interface != 0 && ping_interface != 1
+#if defined(CONFIG_WIFI_NAN_ENABLE)
+						&& ping_interface != NETIF_WLAN_NAN_INDEX
+#endif
+					   )) {
 					error_no = 2;
 					goto Exit;
 				}
