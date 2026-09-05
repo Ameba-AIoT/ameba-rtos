@@ -46,10 +46,10 @@ enum coex_type {
 enum coex_subtype_h2c_com {
 	COEX_H2C_COM_UNDEF = 0,
 	COEX_H2C_COM_VENDOR_INFO_SET,
-	COEX_H2C_COM_WL_SLOT_SET,
+	COEX_H2C_COM_WEIGHT_SET,
 	COEX_H2C_COM_STATE_GET,
-	COEX_H2C_COM_SET_COEX_ENABLE,
-	COEX_H2C_COM_GET_IS_ENABLED,
+	COEX_H2C_COM_COEX_DBG,
+	COEX_H2C_COM_WEIGHT_MODE,
 	/* end */
 	COEX_H2C_COM_INVALID = ((1 << SUBTYPE_BITS) - 1),
 };
@@ -74,11 +74,8 @@ enum coex_subtype_h2c_ext {
 	/* common info */
 	COEX_H2C_EXT_UNDEF = 0,
 	COEX_H2C_EXT_GET_READY,
-	COEX_H2C_EXT_WL_PERFORMANCE_REQUEST,
 	/* info for WPAN*/
 	COEX_H2C_EXT_WPAN_CHANNEL,
-	/* info for BT*/
-	COEX_H2C_EXT_BT_PROFILE,
 	/* end */
 	COEX_H2C_EXT_INVALID = ((1 << SUBTYPE_BITS) - 1),
 };
@@ -156,6 +153,15 @@ struct rtk_coex_vendor_info {
 	uint8_t  product_id;
 };
 
+enum rtk_coex_weight_mode {
+	RTK_COEX_WEIGHT_UNDEF = 0,
+	/* Add from here */
+	RTK_COEX_WEIGHT_DEFAULT,			/* 1 */
+	RTK_COEX_WEIGHT_BT,		/* 2 */
+	RTK_COEX_WEIGHT_BALANCE,			/* 3 */
+	RTK_COEX_WEIGHT_WL,		/* 4 */
+	RTK_COEX_WEIGHT_MAX = 0xFF
+};
 
 //////////////////////////////////////////////////////////
 ///////// for BT Variables
@@ -214,26 +220,7 @@ enum EXT_PROTOCOL {
 	EXT_PTA_PROTOCOL_BT,
 	EXT_PTA_PROTOCOL_BT_WPAN,
 } ;
-/**
- * @brief   The enumeration lists wl perfomance request for extchip.
- */
-enum EXT_PERFORMANCE {
-	EXT_PERF_DEFAULT,
-	EXT_PERF_HIGH,
-	EXT_PERF_MED,
-	EXT_PERF_LOW,
-	EXT_PERF_INVALID,
-};
-/**
- * @brief   The enumeration lists bt profile running in extchip.
- */
-enum EXT_BT_PROFILE {
-	EXT_BT_UNDEF = 0,
-	EXT_BT_SCO = BIT(0),
-	EXT_BT_HID = BIT(1),
-	EXT_BT_A2DP = BIT(2),
-	EXT_BT_HFP = BIT(3),
-};
+
 /**
  * @brief   The enumeration lists pta index need for extchip.
  */
@@ -294,19 +281,7 @@ struct extchip_para_t {
 //////////////////////////////////////////////////////////
 ///////// for COMMON Function Declare
 //////////////////////////////////////////////////////////
-/**
- * @brief      set coex enable or disable.
- * @param[in]  enable coex enable status
- * @return
- *             - None.
- */
-void rtk_coex_com_coex_set_enable(bool enable);
-/**
- * @brief      get if coex is enabled.
- * @return
- *             - true: coex enabled, false: coex disabled.
- */
-bool rtk_coex_com_coex_is_enabled(void);
+void rtk_coex_com_dbg(char *cmd, u8 cmd_len);
 /**
  * @brief      Vendor info set.
  * @param[in]  vendor_id
@@ -316,18 +291,26 @@ bool rtk_coex_com_coex_is_enabled(void);
  */
 void rtk_coex_com_vendor_info_set(u8 vendor_id, u8 product_id);
 /**
- * @brief      wlan slot duration set.
- * @param[in]  wl_slot  wlan slot duration, unit: percent, value: [0-100].
+ * @brief      wlan weight set.
+ * @param[in]  wl_weight  wlan weight, unit: percent, value: [0-100].
  * @return
  *             - None.
  */
-void rtk_coex_com_wl_slot_set(u8 wl_slot);
+void rtk_coex_com_wl_weight_set(u8 wl_weight);
 /**
  * @brief      coex state get.
  * @return
  *             - None. (print as result)
  */
 void rtk_coex_com_state_get(void);
+
+/**
+ * @brief     set weight mode
+ * @param[in] mode  coex weight between bt&wl, refer to enum rtk_coex_weight_mode.
+ * @return
+ *			  - None.
+ */
+void rtk_coex_com_weight_mode_set(u8 mode);
 
 //////////////////////////////////////////////////////////
 ///////// for BT Function Declare
@@ -382,20 +365,6 @@ bool rtk_coex_extc_is_ready(void);
  *            - None.
  */
 void rtk_coex_extc_ntfy_wpan_channel(u8 channel);
-/**
- * @brief     ext chip req wl performance.
- * @param[in] performance_req  req wl performance level, refer to enum EXT_PERFORMANCE.
- * @return
- *            - None.
- */
-void rtk_coex_extc_ntfy_wl_performance_req(u8 performance_req);
-/**
- * @brief     ext bt profile notification.
- * @param[in] profile  bt profile, refer to enum EXT_BT_PROFILE.
- * @return
- *            - None.
- */
-void rtk_coex_extc_ntfy_bt_profile(u32 profile);
 
 //////////////////////////////////////////////////////////
 ///////// for Internal wpan Function Declare
