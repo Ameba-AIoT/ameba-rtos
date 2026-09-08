@@ -10,6 +10,7 @@
 #ifdef CONFIG_BT_COEXIST
 #include "rtw_coex_ipc.h"
 #endif
+#include "ameba_diagnose.h"
 
 static const char *const TAG = "MAIN";
 u32 use_hw_crypto_func;
@@ -188,6 +189,9 @@ int main(void)
 #ifndef CONFIG_SOLO
 	app_IWDG_init();
 #endif
+
+	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
+
 	/* Execute application example */
 	app_example();
 

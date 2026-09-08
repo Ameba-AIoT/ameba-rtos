@@ -4,13 +4,30 @@ set(c_GLOBAL_COMMON_LINK_OPTIONS)
 ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS
     -O2
     -nostartfiles
-    "SHELL:-specs nosys.specs"
     # Add -Wl,--gc-sections in actual target for not rom compile.
     -Wl,--cref
     -Wl,--build-id=none
     -save-temps
     -Wl,--warn-common
 )
+
+if(CONFIG_TOOLCHAIN_PICOLIBC)
+    ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS
+        "SHELL:-specs picolibc.specs"
+        "SHELL:--oslib=nosys"
+    )
+else()
+    ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS
+        "SHELL:-specs nosys.specs"
+    )
+endif()
+
+# GNU ld 2.42 warns on RWX LOAD segments (picolibc TLS mixed into .data); suppress until fixed.
+if(CONFIG_TOOLCHAIN_PICOLIBC)
+    ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS
+        -Wl,--no-warn-rwx-segments
+    )
+endif()
 
 # if no SHELL: -Wl,-wrap,memchr and -Wl,-wrap,memcmp may be merged as -Wl,-wrap,memchr,memcmp
 # wrap function are defined in strwrap.c

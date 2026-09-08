@@ -130,16 +130,16 @@ typedef struct {
 typedef struct {
 	u16 wLength;                 /**< Size of this structure in bytes (28) */
 	u16 bmNtbFormatsSupported;   /**< Bitmap of supported NTB formats (bit0=NTB16, bit1=NTB32) */
-	u32 dwNtbInMaxSize;          /**< Maximum NTB size for host-to-device direction */
-	u16 wNdbInDivisor;           /**< Divisor for datagram alignment in host-to-device direction */
-	u16 wNdbInPayloadRemainder;  /**< Required payload remainder in host-to-device direction */
-	u16 wNdbInAlignment;         /**< Alignment for NDP in host-to-device direction */
+	u32 dwNtbInMaxSize;          /**< Max NTB the device may send to the host (IN, device-to-host) */
+	u16 wNdbInDivisor;           /**< Datagram divisor for device-to-host (IN) NTBs */
+	u16 wNdbInPayloadRemainder;  /**< Datagram payload remainder for device-to-host (IN) NTBs */
+	u16 wNdbInAlignment;         /**< NDP alignment for device-to-host (IN) NTBs */
 	u16 wReserved1;              /**< Reserved (offset 14, set to 0) per NCM 1.0 Table 6-3 */
-	u32 dwNtbOutMaxSize;         /**< Maximum NTB size for device-to-host direction */
-	u16 wNdbOutDivisor;         /**< Divisor for datagram alignment in device-to-host direction */
-	u16 wNdbOutPayloadRemainder; /**< Required payload remainder in device-to-host direction */
-	u16 wNdbOutAlignment;       /**< Alignment for NDP in device-to-host direction */
-	u16 wNtbOutMaxDatagrams;    /**< Maximum number of datagrams per NTB in device-to-host direction */
+	u32 dwNtbOutMaxSize;         /**< Max NTB the host may send to the device (OUT, host-to-device) */
+	u16 wNdbOutDivisor;         /**< Datagram divisor for host-to-device (OUT) NTBs */
+	u16 wNdbOutPayloadRemainder; /**< Datagram payload remainder for host-to-device (OUT) NTBs */
+	u16 wNdbOutAlignment;       /**< NDP alignment for host-to-device (OUT) NTBs */
+	u16 wNtbOutMaxDatagrams;    /**< Max datagrams per host-to-device (OUT) NTB (0 = no limit) */
 } __PACKED usb_cdc_ncm_ntb_parameters_t;
 
 /**

@@ -66,7 +66,7 @@ extern "C" {
 struct spdio_t {
 	SDIO_TypeDef *pSDIO;        /*!< Pointer to SDIO hardware base address (SDIO_WIFI or SDIO_BT). */
 	void *priv;                 /*!< Reserved for internal use; not set by user. */
-	u32 host_rx_bd_num;         /*!< Number of host RX BDs for sending data to host; 2 BDs per packet, must be even. */
+	u32 host_rx_bd_num;         /*!< Number of host RX BDs for sending data to host. */
 	u32 host_tx_bd_num;         /*!< Number of host TX BDs for receiving data from host. */
 	u32 device_rx_bufsz;        /*!< RX buffer size: desired packet length + 24-byte SPDIO header; must be a multiple of 64. */
 	struct spdio_buf_t *rx_buf; /*!< RX buffer array pre-allocated by user; total size = device_rx_bufsz * host_tx_bd_num. */

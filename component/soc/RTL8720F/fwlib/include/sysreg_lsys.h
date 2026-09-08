@@ -1485,11 +1485,12 @@ typedef struct {
 	__IO u8 PSRAM_DQ;
 	__IO u8 PSRAM_RSVD;
 	__IO u32 psram_backup[6];
-	__IO u32 OTA_IMG_REMAP[2];
 	struct CLK_Info_Backup clk_info_bk;
 	__IO u8 AP_WAKEUP_STATUS;
+	u8 GBSS_ALIGN_RSVD[2];/* fill gap to 4B-align OTA_IMG_REMAP */
+	__IO u32 OTA_IMG_REMAP[2];
 
-	u8 GBSS_SYS_RSVD[14];/* resvd for system */
+	u8 GBSS_SYS_RSVD[12];/* resvd for system */
 
 	u8 GBSS_USER_RSVD[64];/* resvd for user */
 } GBSS_TypeDef;

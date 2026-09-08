@@ -1,3 +1,5 @@
+comment "USB Host Class Selection"
+
 config USBH_CDC_ACM_MENU
     bool "CDC ACM"
     select USBH_CDC_ACM if WHC_HOST || WHC_NONE

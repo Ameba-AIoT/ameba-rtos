@@ -28,6 +28,10 @@ In this example, ADC is configured to sample data in `2 normal channels`.
 	- Connect `ADC_CH0_PIN(_PA_13)` to `to-be-measured signal`
 	- Connect `ADC_CH1_PIN(_PA_14)` to `to-be-measured signal`
 	- Connect `GND` to `GND` of to-be-measured device
+* On RTL8735C
+	- Connect `ADC_CH0_PIN(_PF_12)` to `to-be-measured signal`
+	- Connect `ADC_CH1_PIN(_PF_3)` to `to-be-measured signal`
+	- Connect `GND` to `GND` of to-be-measured device
 
 # SW Configuration
 
@@ -68,3 +72,4 @@ RTL8710E
 RTL8721Dx
 RTL8721F
 RTL8720F
+RTL8735C

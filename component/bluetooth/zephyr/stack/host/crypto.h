@@ -6,3 +6,6 @@
  */
 
 int prng_init(void);
+#if ZEPHYR_RTK_PATCH /* zephyr_patch, pair with prng_init() to avoid a leak per enable/disable */
+void prng_deinit(void);
+#endif

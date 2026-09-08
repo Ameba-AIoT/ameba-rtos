@@ -24,14 +24,11 @@ extern "C" {
 
 //HCI
 #define CONFIG_BT_RECV_WORKQ_BT 1
-#define CONFIG_BT_RX_PRIO 5
-#define CONFIG_BT_RX_STACK_SIZE 4096
+#define CONFIG_BT_RX_PRIO 4
+#define CONFIG_BT_RX_STACK_SIZE 2048
 
 #define CONFIG_SYSTEM_WORKQUEUE_PRIORITY 4
-#define CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE 4096
-
-#define CONFIG_BT_LONG_WQ_PRIO 4
-#define CONFIG_BT_LONG_WQ_STACK_SIZE 4096
+#define CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE 2048
 
 //host Stack
 #define CONFIG_BT_DEVICE_APPEARANCE 0
@@ -106,6 +103,9 @@ extern "C" {
 /* to support secure connection */
 #define CONFIG_BT_ECC 1
 #define CONFIG_BT_MBEDTLS_ECC 1
+/* zephyr_patch: bt_rand() from local HMAC-DRBG instead of a synchronous HCI LE_RAND,
+ * which deadlocked the RX-drain thread once a burst had drained evt_pool */
+#define CONFIG_BT_HOST_CRYPTO_PRNG 1
 #define CONFIG_BT_DEVICE_NAME_DYNAMIC 1
 #define CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC 1
 
@@ -161,6 +161,7 @@ extern "C" {
 
 #define CONFIG_BT_ATT_PREPARE_COUNT 4
 
+#define CONFIG_BT_DEVICE_NAME_GATT_WRITABLE 1
 //assert
 #define CONFIG_ASSERT_NO_COND_INFO 1
 #define CONFIG_BT_ASSERT 1

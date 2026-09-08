@@ -1,148 +1,19 @@
 #!/bin/bash
+#
+# Stage firmware headers and BT host glue into ./driver/include, ./driver/spi
+# and ./driver/sdio for the out-of-tree build. This performs a FIXED set of
+# file copies that the Kbuild include paths expect; it does NOT depend on
+# .config. What actually gets compiled is decided later by Kbuild from the
+# selected config, so staging everything unconditionally keeps this step
+# independent of configuration.
+#
+# Usage: whc_setup.sh
+
+set -e
 
 mkdir -p ./driver/include
 
-# --- Helper functions ---
-mf_set()   { sed -i "s/$1 = n/$1 = y/g" Makefile; }
-mf_unset() { sed -i "s/$1 = y/$1 = n/g" Makefile; }
-
-INTF="$1"
-# Validate interface
-case "$INTF" in
-	sdio|spi|usb) ;;
-	*) echo "Error: invalid interface '$INTF', must be one of: sdio, spi, usb"; exit 1 ;;
-esac
-
-# --- Step 1: Disable IPC, will configure host-only mode ---
-mf_unset CONFIG_WHC_HCI_IPC
-
-# --- Step 2: Select host mode ---
-echo "choose target host mode:"
-echo "  1) WPAoH host with cfg80211"
-echo "  2) WPAoD host without cfg80211"
-read -p "choose target host mode: " choice
-
-case $choice in
-	1) echo "WPAoH host with cfg80211S select"; mf_set CONFIG_WHC_WIFI_API_PATH ;;
-	2) echo "WPAoD host without cfg80211 select"; mf_unset CONFIG_WHC_WIFI_API_PATH ;;
-	*) echo "Invalid selection" ;;
-esac
-
-# --- Step 3: Configure interface, features, and target IC ---
-# Reset all configs
-mf_unset CONFIG_WHC_HCI_SDIO
-mf_unset CONFIG_WHC_HCI_SPI
-mf_unset CONFIG_WHC_HCI_USB
-mf_unset CONFIG_NAN
-mf_unset CONFIG_P2P
-mf_unset CONFIG_BT_INIC
-mf_unset CONFIG_RMESH
-mf_unset CONFIG_FW_DOWNLOAD
-
-# Safely shift arguments, suppress errors, never fail
-shift 2>/dev/null || true
-
-# 3a. Enable extra features (nan, p2p, bt, rmesh)
-for feat in "$@"; do
-	case "$feat" in
-		nan)   mf_set CONFIG_NAN ;;
-		p2p)   mf_set CONFIG_P2P ;;
-		bt)
-			mf_set CONFIG_BT_INIC
-			if [ "$INTF" == "spi" ]; then
-				cp ../../../bluetooth/example/bt_host/linux_driver/spi/rtb_spi.c ./driver/spi
-				cp ../../../bluetooth/example/bt_host/linux_driver/spi/rtb_spi.h ./driver/spi
-			elif [ "$INTF" == "sdio" ]; then
-				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.c ./driver/sdio
-				cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.h ./driver/sdio
-			fi
-			;;
-		rmesh) mf_set CONFIG_RMESH ;;
-	esac
-done
-
-# 3b. Select target IC
-mf_unset CONFIG_AMEBADPLUS
-mf_unset CONFIG_AMEBALITE
-mf_unset CONFIG_AMEBAGREEN2
-mf_unset CONFIG_AMEBAX
-mf_unset CALCULATE_FREE_TXBD
-
-echo "choose target IC:"
-case "$INTF" in
-	sdio) mf_set CONFIG_WHC_HCI_SDIO ; echo "  1) AMEBADPLUS"; echo "  2) AMEBAGREEN2"; echo "  3) AMEBAGREEN2 & FW_DOWNLOAD"; echo "  4) AMEBAX"; echo "  5) AMEBAX & FW_DOWNLOAD" ;;
-	spi)  mf_set CONFIG_WHC_HCI_SPI  ; echo "  1) AMEBADPLUS"; echo "  2) AMEBAGREEN2"; echo "  3) AMEBALITE"; echo "  4) AMEBAX" ;;
-	usb)  mf_set CONFIG_WHC_HCI_USB  ; echo "  1) AMEBADPLUS"; echo "  2) AMEBAGREEN2"; echo "  3) AMEBAGREEN2 & FW_DOWNLOAD" ;;
-esac
-
-read -p "choose target IC: " choice
-
-case "$INTF:$choice" in
-	# --- sdio ---
-	sdio:1)
-		echo "AMEBADPLUS select"
-		mf_set CONFIG_AMEBADPLUS; mf_set CALCULATE_FREE_TXBD
-		cp ../../../soc/amebadplus/fwlib/include/ameba_inic.h ./driver/include
-		;;
-	sdio:2)
-		echo "AMEBAGREEN2 select"
-		mf_set CONFIG_AMEBAGREEN2; mf_set CALCULATE_FREE_TXBD
-		cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./driver/include
-		;;
-	sdio:3)
-		echo "AMEBAGREEN2 with FW DOWNLOAD select"
-		mf_set CONFIG_AMEBAGREEN2; mf_set CALCULATE_FREE_TXBD
-		mf_set CONFIG_FW_DOWNLOAD
-		cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./driver/include
-		;;
-	sdio:4)
-		echo "AMEBAX select"
-		mf_set CONFIG_AMEBAX; mf_set CALCULATE_FREE_TXBD
-		cp ../../../soc/RTL8720F/fwlib/include/ameba_inic.h ./driver/include
-		;;
-	sdio:5)
-		echo "RTL8720F (AMEBAX) with FW DOWNLOAD select"
-		mf_set CONFIG_AMEBAX; mf_set CALCULATE_FREE_TXBD
-		mf_set CONFIG_FW_DOWNLOAD
-		cp ../../../soc/RTL8720F/fwlib/include/ameba_inic.h ./driver/include
-		;;
-	# --- spi ---
-	spi:1)
-		echo "AMEBADPLUS select"
-		mf_set CONFIG_AMEBADPLUS; mf_set CALCULATE_FREE_TXBD
-		;;
-	spi:2)
-		echo "AMEBAGREEN2 select"
-		mf_set CONFIG_AMEBAGREEN2
-		;;
-	spi:3)
-		echo "AMEBALITE select"
-		mf_set CONFIG_AMEBALITE
-		;;
-	spi:4)
-		echo "AMEBAX select"
-		mf_set CONFIG_AMEBAX
-		;;
-	# --- usb ---
-	usb:1)
-		echo "AMEBADPLUS select"
-		mf_set CONFIG_AMEBADPLUS
-		;;
-	usb:2)
-		echo "AMEBAGREEN2 select"
-		mf_set CONFIG_AMEBAGREEN2
-		;;
-	usb:3)
-		echo "AMEBAGREEN2 with FW DOWNLOAD select"
-		mf_set CONFIG_AMEBAGREEN2
-		mf_set CONFIG_FW_DOWNLOAD
-		;;
-	*)
-		echo "Invalid selection"
-		;;
-esac
-
-# --- Step 4: Copy common headers ---
+# --- Common headers ---
 cp ../../common/rtw_wifi_common.h ./driver/include
 cp ../../common/rtw_inic_common.h ./driver/include
 cp ../whc_common/whc_def.h ./driver/include
@@ -152,4 +23,17 @@ cp ../../driver/intf/wifi_intf_drv_to_app_internal.h ./driver/include
 cp ../../../soc/usrcfg/common/ameba_wificfg_common.h ./driver/include
 cp ../../../bluetooth/driver/bt_inic/bt_inic_defs.h ./driver/include
 
-echo "WHC setup complete"
+# --- Firmware header (ameba_inic.h) ---
+# The INIC TX/RX descriptor layout and packet opcodes are identical across the
+# SDIO ICs (amebadplus/amebagreen2/RTL8720F), so a single canonical copy works
+# for any target -- no per-IC selection needed.
+cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./driver/include
+
+# --- Bluetooth host glue (both interfaces, unconditionally) ---
+# Kbuild compiles only the one matching CONFIG_BT_INIC + the selected interface.
+cp ../../../bluetooth/example/bt_host/linux_driver/spi/rtb_spi.c ./driver/spi
+cp ../../../bluetooth/example/bt_host/linux_driver/spi/rtb_spi.h ./driver/spi
+cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.c ./driver/sdio
+cp ../../../bluetooth/example/bt_host/linux_driver/sdio_dplus/rtb_sdio.h ./driver/sdio
+
+echo "WHC staging complete"

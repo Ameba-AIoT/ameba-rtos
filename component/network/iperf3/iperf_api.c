@@ -42,6 +42,7 @@
 #endif
 
 #include <sys/time.h>
+#include <time.h>
 #include <setjmp.h>
 #if defined(HAVE_CPUSET_SETAFFINITY)
 #include <sys/param.h>
@@ -2076,7 +2077,7 @@ JSON_read(int fd)
 		/* Allocate a buffer to hold the JSON */
 		strsize = hsize + 1;              /* +1 for trailing NULL */
 		if (strsize) {
-			str = (char *) calloc(sizeof(char), strsize);
+			str = (char *) calloc(strsize, sizeof(char));
 			if (str != NULL) {
 				rc = Nread(fd, str, hsize, Ptcp);
 				if (rc >= 0) {

@@ -14,6 +14,13 @@
 #define FLASH_CMD_BLOCK_ERASE_32K               0x52U
 #define FLASH_CMD_BLOCK_ERASE_64K               0xD8U
 
+/* Pro3 does not have IWDG; use the platform-level WDG refresh instead. */
+#if defined(CONFIG_AMEBAPRO3)
+#define NOR_FTL_WDG_REFRESH()   PLATFORM_WDG_Refresh()
+#else
+#define NOR_FTL_WDG_REFRESH()   WDG_Refresh(IWDG_DEV)
+#endif
+
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -107,7 +114,7 @@ void nor_ftl_erase(u32 addr, u32 size)
 	if (IS_FLASH_ADDR(addr)) {
 		if ((addr == SPI_FLASH_BASE) && (size == 0xFFFFFFFF)) {
 			FLASH_Erase(EraseChip, 0);
-			WDG_Refresh(IWDG_DEV);
+			NOR_FTL_WDG_REFRESH();
 			DCache_Invalidate(SPI_FLASH_BASE, 0x10000000 - SPI_FLASH_BASE);
 		} else {
 			erase_addr = (addr - SPI_FLASH_BASE) & 0xFFFFF000;
@@ -128,7 +135,7 @@ void nor_ftl_erase(u32 addr, u32 size)
 					erase_addr += 0x1000;
 					size_in_4kb--;
 				}
-				WDG_Refresh(IWDG_DEV);
+				NOR_FTL_WDG_REFRESH();
 			}
 			DCache_Invalidate(addr, size);
 		}

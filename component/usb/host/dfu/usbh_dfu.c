@@ -97,6 +97,7 @@ static int usbh_dfu_attach(usb_host_t *host)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get DFU itf fail\n");
 		return HAL_ERR_UNKNOWN;
 	}
+	dfu->itf_num = itf_data->itf_desc_array[0].bInterfaceNumber;
 
 	/*
 	 * Scan the raw interface descriptor data for the DFU Functional Descriptor
@@ -107,7 +108,7 @@ static int usbh_dfu_attach(usb_host_t *host)
 	remaining = itf_data->raw_data_len;
 	offset    = 0U;
 
-	usb_os_memset(&dfu->func_desc, 0, sizeof(dfu->func_desc));
+	usb_os_memset((void *)&dfu->func_desc, 0, sizeof(dfu->func_desc));
 
 	while (offset + 2U <= remaining) {
 		u8 desc_len  = buf[offset];
@@ -224,7 +225,7 @@ static int usbh_dfu_process_getstatus(usb_host_t *host)
 	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest      = USB_DFU_REQ_GETSTATUS;
 	setup.req.wValue        = 0U;
-	setup.req.wIndex        = 0U;
+	setup.req.wIndex        = dfu->itf_num;
 	setup.req.wLength       = USB_DFU_STATUS_PKT_SIZE;
 
 	return usbh_ctrl_request(host, &setup, dfu->xfer_buf);
@@ -237,12 +238,13 @@ static int usbh_dfu_process_getstatus(usb_host_t *host)
   */
 static int usbh_dfu_process_clrstatus(usb_host_t *host)
 {
+	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 	usbh_setup_req_t setup;
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest      = USB_DFU_REQ_CLRSTATUS;
 	setup.req.wValue        = 0U;
-	setup.req.wIndex        = 0U;
+	setup.req.wIndex        = dfu->itf_num;
 	setup.req.wLength       = 0U;
 
 	return usbh_ctrl_request(host, &setup, NULL);
@@ -258,12 +260,13 @@ static int usbh_dfu_process_clrstatus(usb_host_t *host)
   */
 static int usbh_dfu_process_dnload(usb_host_t *host, u16 block_num, u8 *buf, u16 len)
 {
+	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 	usbh_setup_req_t setup;
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest      = USB_DFU_REQ_DNLOAD;
 	setup.req.wValue        = block_num;
-	setup.req.wIndex        = 0U;
+	setup.req.wIndex        = dfu->itf_num;
 	setup.req.wLength       = len;
 
 	return usbh_ctrl_request(host, &setup, buf);
@@ -279,12 +282,13 @@ static int usbh_dfu_process_dnload(usb_host_t *host, u16 block_num, u8 *buf, u16
   */
 static int usbh_dfu_process_upload(usb_host_t *host, u16 block_num, u8 *buf, u16 len)
 {
+	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 	usbh_setup_req_t setup;
 
 	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest      = USB_DFU_REQ_UPLOAD;
 	setup.req.wValue        = block_num;
-	setup.req.wIndex        = 0U;
+	setup.req.wIndex        = dfu->itf_num;
 	setup.req.wLength       = len;
 
 	return usbh_ctrl_request(host, &setup, buf);
@@ -297,12 +301,13 @@ static int usbh_dfu_process_upload(usb_host_t *host, u16 block_num, u8 *buf, u16
   */
 static int usbh_dfu_process_abort(usb_host_t *host)
 {
+	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 	usbh_setup_req_t setup;
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest      = USB_DFU_REQ_ABORT;
 	setup.req.wValue        = 0U;
-	setup.req.wIndex        = 0U;
+	setup.req.wIndex        = dfu->itf_num;
 	setup.req.wLength       = 0U;
 
 	return usbh_ctrl_request(host, &setup, NULL);
@@ -318,12 +323,13 @@ static int usbh_dfu_process_abort(usb_host_t *host)
   */
 static int usbh_dfu_process_detach(usb_host_t *host, u16 timeout)
 {
+	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 	usbh_setup_req_t setup;
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest      = USB_DFU_REQ_DETACH;
 	setup.req.wValue        = timeout;
-	setup.req.wIndex        = 0U;
+	setup.req.wIndex        = dfu->itf_num;
 	setup.req.wLength       = 0U;
 
 	return usbh_ctrl_request(host, &setup, NULL);
@@ -348,12 +354,10 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 
 	switch (dfu->state) {
 
-	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_IDLE:
 		status = HAL_OK;
 		break;
 
-	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_RECONFIGURE:
 		/*
 		 * DFU 1.1 §5 Reconfiguration Phase:
@@ -387,7 +391,19 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		}
 		break;
 
-	/* ------------------------------------------------------------------ */
+	case USBH_DFU_STATE_ABORT:
+		req_status = usbh_dfu_process_abort(host);
+		if (req_status == HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "ABORT OK\n");
+			dfu->state = USBH_DFU_STATE_IDLE;
+			status = HAL_OK;
+		} else if (req_status != HAL_BUSY) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "ABORT failed (%d)\n", req_status);
+			dfu->state = USBH_DFU_STATE_IDLE;
+			status = HAL_OK;
+		}
+		break;
+
 	case USBH_DFU_STATE_GET_STATUS:
 		/*
 		 * usbh_ctrl_request() returns HAL_BUSY on the first call (transfer
@@ -470,7 +486,6 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		/* HAL_BUSY: ctrl transfer in flight — CTRL/URB event re-triggers process() */
 		break;
 
-	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_CLR_STATUS:
 		req_status = usbh_dfu_process_clrstatus(host);
 		if (req_status == HAL_OK) {
@@ -497,7 +512,6 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		}
 		break;
 
-	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_DNLOAD_BLOCK:
 		if (dfu->cb == NULL || dfu->cb->get_block == NULL) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "No get_block callback\n");
@@ -554,7 +568,6 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		}
 		break;
 
-	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_DNLOAD_POLL:
 		/* Wait the device-reported poll timeout then re-query status */
 		if (dfu->poll_timeout > 0U) {
@@ -564,7 +577,6 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		usbh_notify(host, 0, &usbh_dfu_driver);
 		break;
 
-	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_DNLOAD_FINAL:
 		/* Send zero-length DNLOAD to indicate end-of-firmware */
 		req_status = usbh_dfu_process_dnload(host, dfu->block_num, NULL, 0U);
@@ -582,7 +594,6 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		}
 		break;
 
-	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_MANIFEST_POLL:
 		req_status = usbh_dfu_process_getstatus(host);
 		if (req_status == HAL_OK) {
@@ -651,7 +662,6 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		}
 		break;
 
-	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_UPLOAD_BLOCK:
 		/*
 		 * UPLOAD_BLOCK has two sequential ctrl transfers per block:
@@ -754,7 +764,6 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		}
 		break;
 
-	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_DONE:
 		/* Set IDLE before callback: if the application calls usbh_dfu_upload()
 		 * from within download_done(), it must see IDLE to pass the state guard. */
@@ -774,7 +783,6 @@ static int usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		}
 		break;
 
-	/* ------------------------------------------------------------------ */
 	case USBH_DFU_STATE_ERROR:
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Transfer error (is_download=%u)\n",
 				 dfu->is_download);
@@ -816,7 +824,7 @@ int usbh_dfu_init(const usbh_dfu_cb_t *cb)
 		return HAL_ERR_PARA;
 	}
 
-	usb_os_memset(dfu, 0, sizeof(usbh_dfu_host_t));
+	usb_os_memset((void *)dfu, 0, sizeof(usbh_dfu_host_t));
 	dfu->cb = cb;
 
 	/* Allocate the DMA-aligned transfer buffer */
@@ -827,7 +835,7 @@ int usbh_dfu_init(const usbh_dfu_cb_t *cb)
 	}
 	if (!USB_IS_MEM_DMA_ALIGNED(dfu->xfer_buf)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "xfer_buf not DMA-aligned\n");
-		usb_os_mfree(dfu->xfer_buf);
+		usb_os_mfree((void *)dfu->xfer_buf);
 		dfu->xfer_buf = NULL;
 		return HAL_ERR_MEM;
 	}
@@ -836,7 +844,7 @@ int usbh_dfu_init(const usbh_dfu_cb_t *cb)
 		ret = cb->init();
 		if (ret != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "User init err %d\n", ret);
-			usb_os_mfree(dfu->xfer_buf);
+			usb_os_mfree((void *)dfu->xfer_buf);
 			dfu->xfer_buf = NULL;
 			return ret;
 		}
@@ -861,12 +869,10 @@ int usbh_dfu_deinit(void)
 
 	usbh_unregister_class(&usbh_dfu_driver);
 
-	if (dfu->xfer_buf != NULL) {
-		usb_os_mfree(dfu->xfer_buf);
-		dfu->xfer_buf = NULL;
-	}
+	usb_os_mfree((void *)dfu->xfer_buf);
+	dfu->xfer_buf = NULL;
 
-	usb_os_memset(dfu, 0, sizeof(usbh_dfu_host_t));
+	usb_os_memset((void *)dfu, 0, sizeof(usbh_dfu_host_t));
 
 	return HAL_OK;
 }
@@ -948,26 +954,16 @@ int usbh_dfu_abort(void)
 {
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 	usb_host_t *host = dfu->host;
-	int ret;
 
 	if (host == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No DFU device connected\n");
 		return HAL_ERR_UNKNOWN;
 	}
 
-	ret = usbh_dfu_process_abort(host);
-	if (ret == HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "ABORT OK\n");
-	} else if (ret != HAL_BUSY) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "ABORT failed (%d)\n", ret);
-	}
-	/* HAL_BUSY means the ABORT request has been queued; the USB main task
-	 * will complete the transfer.  Host state is already IDLE regardless. */
-
-	dfu->state = USBH_DFU_STATE_IDLE;
+	dfu->state = USBH_DFU_STATE_ABORT;
 	usbh_notify(host, 0, &usbh_dfu_driver);
 
-	return (ret == HAL_BUSY) ? HAL_OK : ret;
+	return HAL_OK;
 }
 
 /**

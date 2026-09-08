@@ -177,6 +177,23 @@ void SOCPS_SleepVoltRaiseTo0P9(void)
 	LDO->LDO_PFM_VOLT_CTRL = reg_temp;
 }
 
+/**
+ * @brief Check whether SDIO is armed as a wake source.
+ *
+ * @retval TRUE: SDIO can wake the system, FALSE: it cannot.
+ */
+u8 SOCPS_SDIOWakeCheck(void)
+{
+	u32 wake_src = WAKE_SRC_SDIO_WIFI | WAKE_SRC_SDIO_BT | WAKE_SRC_SDIO_HOST;
+	u32 np_msk = PMC_GET_WAK_NP_IMR_59_30(HAL_READ32(PMC_BASE, WAK_MASK1_NP));
+	u32 ap_msk = PMC_GET_WAK_AP_IMR_59_30(HAL_READ32(PMC_BASE, WAK_MASK1_AP));
+	if ((np_msk & wake_src) || (ap_msk & wake_src)) {
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 void SOCPS_ReguDelayAdjust(u8 delay_count)
 {
 	LDO_TypeDef	*LDO = LDO_BASE;
@@ -242,16 +259,16 @@ void SOCPS_ClockSourceConfig(u8 regu_state, u8 xtal_mode, u8 osc_option)
 	RTK_LOGI(TAG, "AIP_TRIGGER %08x\n", HAL_READ32(PMC_BASE, AIP_TRIGGER));
 
 	/* 3. Config XTAL and its work voltage in sleep status:*/
-	if ((xtal_mode == XTAL_LPS_Without_40M) || (xtal_mode == XTAL_LPS_With_40M)) {
+	if (xtal_mode == XTAL_LPS_Without_40M) {
 		SOCPS_PowerStateSetInSleep(STATE2_LDOPC_SWRPFM_08);
-		RTK_LOGI(TAG, "The voltage of XTAL LPS/LPS with 40M mode in sleep state is 0.8V\n");
-	} else if ((xtal_mode == XTAL_Normal) || (xtal_mode == XTAL_HP)) {
+		RTK_LOGI(TAG, "The voltage of XTAL LPS mode in sleep state is 0.8V\n");
+	} else if ((xtal_mode == XTAL_LPS_With_40M) || (xtal_mode == XTAL_Normal) || (xtal_mode == XTAL_HP)) {
 		SOCPS_SleepVoltRaiseTo0P9();
 		/* xtal clock gating can be set to 1 only when the sleep voltage is greater than or equal to 0.9V!*/
 		reg_temp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
 		reg_temp |= PMC_BIT_CKE_XTAL40M_SLEP;
 		HAL_WRITE32(PMC_BASE, SYSPMC_OPT, reg_temp);
-		RTK_LOGI(TAG, "The voltage of XTAL Normal/HP mode in sleep state is 0.9V\n");
+		RTK_LOGI(TAG, "The voltage of XTAL LPS with 40M/Normal/HP mode in sleep state is 0.9V\n");
 	}
 
 }
@@ -268,9 +285,6 @@ void SOCPS_PowerManage(u8 regu_state)
 	} else {
 		SOCPS_PowerStateSetInSleep(STATE1_LDOPC_SWRPFM_07);
 	}
-#if defined (CONFIG_WHC_DEV) && defined (CONFIG_WHC_INTF_SDIO)
-	SOCPS_SleepVoltRaiseTo0P9();
-#endif
 	/* 2. regu (SWR and core LDO) normal status configuration: default settings,state6: SWR-PFM, LDO-NORM.*/
 
 	/* change wait SOC power-cut stable time from 1024us to 40us to shrink wakeup time */
@@ -440,4 +454,20 @@ void SOCPS_PeriRestore(void)
 {
 	CRYPTO_Init();
 	RCC_PeriphClockCmd(APBPeriph_PKE, APBPeriph_PKE_CLOCK, ENABLE);
+
+	/* PG powers down the crypto GDMA and clears the per-channel un-mask bits
+	   (MASKTFR/MASKBLOCK). CRYPTO_Init() does not rebuild them (only SHA2/AES_DMA_Init
+	   write them). If a SHA/AES context is resumed across sleep (via *_Restore, not
+	   *_DMA_Init), the DMA completion check STATUSTFR = RawTfr & MaskTfr never fires
+	   because mask = 0, so the transfer times out and returns -17. Rebuild them here.
+	   SHA = ch1 (0x2), AES = ch0 (0x1); same encoding as *_DMA_Init: WE bits [15:8] +
+	   value bits [7:0]. This restore path runs non-secure, so it writes the non-secure
+	   crypto-GDMA alias, which is the same physical peripheral the secure crypto driver
+	   sees through its secure alias. Pick the base by current security state so it is
+	   correct regardless of the caller's world. */
+	GDMA_TypeDef *AES_SHA_GDMA = (GDMA_TypeDef *)(TrustZone_IsSecure() ?
+								 AES_SHA_DMA_REG_BASE_S : AES_SHA_DMA_REG_BASE);
+	u32 ch_mask = SHA_DMA_CH_MASK | AES_DMA_CH_MASK;
+	AES_SHA_GDMA->GDMA_MASKTFR_L   |= ch_mask | GDMA_CHENREG_L_1_CH_EN_WE(ch_mask);
+	AES_SHA_GDMA->GDMA_MASKBLOCK_L |= ch_mask | GDMA_CHENREG_L_1_CH_EN_WE(ch_mask);
 }

@@ -148,11 +148,15 @@ static struct hci_transport_cb bt_inic_cb = {
 };
 /***********************************************************/
 
+void hci_platform_external_fw_log_pin(void);
+
 bool bt_inic_open(void)
 {
 	if (hci_controller_is_opened()) {
 		return true;
 	}
+
+	hci_platform_external_fw_log_pin();
 
 	if (!hci_controller_open()) {
 		return false;

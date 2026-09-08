@@ -9,25 +9,8 @@
 
 static const char *const TAG = "GSPI";
 
-/* One GSPI frame lives inside a single CS-low window and has three phases:
- *   register read : CMD 4B -> Status 8B -> Data 4B
- *   everything else: CMD 4B -> Data NB -> Status 8B
- * The data phase length must be a multiple of 4; an unaligned length still
- * delivers the packet but leaves the Status phase undriven.
- *
- * Command word: R/W bit31, Fun bit29 (mandatory, undocumented), domain
- * bits[28:24], address bits[23:8], byte enables bits[3:0]. For the FIFO domains
- * the low 16 bits carry the transfer length instead of an address. */
-#define GSPI_CMD_FUN_BIT        ((u32)0x00000001 << 29)
-#define GSPI_DOMAIN_CTRL        0x00
-#define GSPI_DOMAIN_TXFIFO      0x0C
-#define GSPI_DOMAIN_RXFIFO      0x1F
-
-#define GSPI_ALIGN4(x)          (((x) + 3) & ~3u)
-
-/* Activation retries, see GSPI_Configuration(). */
-#define GSPI_ACTIVATE_RETRY     3
-#define GSPI_ACTIVATE_RETRY_MS  50
+/* Frame layout, command-word fields, domain IDs and the activation retry policy
+ * are all in ameba_gspi.h -- see the GSPI_Command_Word group there. */
 
 /* ---------------------------------------------------------------- internals */
 
@@ -101,13 +84,13 @@ static s32 gspi_wait_flag(GSPI_HandleTypeDef *hgspi, volatile u8 *flag)
 
 	while (*flag == 0) {
 		if (waited >= hgspi->Init.GSPI_XferTimeoutUs) {
-			return GSPI_ERR_TIMEOUT;
+			return -RTK_ERR_TIMEOUT;
 		}
 		DelayUs(1);
 		waited++;
 	}
 
-	return GSPI_OK;
+	return RTK_SUCCESS;
 }
 
 /* Drain whatever the RX FIFO collected while a TX-only DMA phase ran. */
@@ -131,7 +114,7 @@ static s32 gspi_xfer_dma(GSPI_HandleTypeDef *hgspi, u8 *tx, u8 *rx, u32 len)
 	if (rx) {
 		if (SSI_RXGDMA_Init(hgspi->Init.GSPI_Index, &hgspi->rxgdma, hgspi,
 							(IRQ_FUN)gspi_dma_rx_done, rx, len) != TRUE) {
-			return GSPI_ERR_STATE;
+			return RTK_FAIL;
 		}
 		SSI_SetDmaEnable(hgspi->spi_dev, ENABLE, SPI_BIT_RDMAE);
 	} else {
@@ -140,15 +123,15 @@ static s32 gspi_xfer_dma(GSPI_HandleTypeDef *hgspi, u8 *tx, u8 *rx, u32 len)
 
 	if (SSI_TXGDMA_Init(hgspi->Init.GSPI_Index, &hgspi->txgdma, hgspi,
 						(IRQ_FUN)gspi_dma_tx_done, tx ? tx : rx, len) != TRUE) {
-		return GSPI_ERR_STATE;
+		return RTK_FAIL;
 	}
 	SSI_SetDmaEnable(hgspi->spi_dev, ENABLE, SPI_BIT_TDMAE);
 
 	ret = gspi_wait_flag(hgspi, &hgspi->tx_dma_done);
-	if (ret == GSPI_OK) {
+	if (ret == RTK_SUCCESS) {
 		ret = gspi_wait_flag(hgspi, &hgspi->rx_dma_done);
 	}
-	if (ret != GSPI_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "dma timeout tx=%d rx=%d len=%d\n",
 				 hgspi->tx_dma_done, hgspi->rx_dma_done, (int)len);
 		return ret;
@@ -163,7 +146,7 @@ static s32 gspi_xfer_dma(GSPI_HandleTypeDef *hgspi, u8 *tx, u8 *rx, u32 len)
 		gspi_flush_rx(hgspi);
 	}
 
-	return GSPI_OK;
+	return RTK_SUCCESS;
 }
 
 static u8 gspi_use_dma(GSPI_HandleTypeDef *hgspi, u32 len)
@@ -265,7 +248,7 @@ static s32 gspi_write_reg(GSPI_HandleTypeDef *hgspi, u32 addr, u32 val, u8 width
 	cmd = gspi_build_cmd(hgspi, 1, GSPI_DOMAIN_CTRL, aligned, (u8)byte_en);
 	gspi_reg_xfer(hgspi, cmd, val, 1, sts);
 
-	return GSPI_OK;
+	return RTK_SUCCESS;
 }
 
 u8 GSPI_ReadReg8(GSPI_HandleTypeDef *hgspi, u32 addr, GSPI_StatusTypeDef *sts)
@@ -306,19 +289,19 @@ s32 GSPI_WriteReg32(GSPI_HandleTypeDef *hgspi, u32 addr, u32 val, GSPI_StatusTyp
   *        function, buf[4..4+len) holds TX descriptor plus payload, and the
   *        buffer must provide GSPI_FIFO_BUF_SIZE(len) bytes in total.
   * @param len Data bytes (descriptor + payload). Padded to 4 bytes internally.
-  * @return GSPI_OK, GSPI_NO_TXBD when the device has no free TX BD, or an error.
+  * @return RTK_SUCCESS, -RTK_ERR_BUSY when the device has no free TX BD, or an error.
   */
 s32 GSPI_WriteTxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusTypeDef *sts)
 {
 	u32 xlen = GSPI_ALIGN4(len);
 	u32 cmd;
-	s32 ret = GSPI_OK;
+	s32 ret = RTK_SUCCESS;
 
 	if ((hgspi == NULL) || (buf == NULL) || (len == 0)) {
-		return GSPI_ERR_PARAM;
+		return -RTK_ERR_BADARG;
 	}
 	if (GSPI_GetFreeTxBD(hgspi, NULL) == 0) {
-		return GSPI_NO_TXBD;
+		return -RTK_ERR_BUSY;
 	}
 
 	if (xlen > len) {
@@ -335,22 +318,22 @@ s32 GSPI_WriteTxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusTyp
 	} else {
 		gspi_xfer_poll(hgspi, buf + GSPI_CMD_LEN, xlen);
 	}
-	if (ret == GSPI_OK) {
+	if (ret == RTK_SUCCESS) {
 		gspi_xfer_poll(hgspi, buf + GSPI_CMD_LEN + xlen, GSPI_STATUS_LEN);
 	}
 	gspi_cs(hgspi, 1);
 
-	if (ret != GSPI_OK) {
+	if (ret != RTK_SUCCESS) {
 		return ret;
 	}
 
 	gspi_fill_status(sts, buf + GSPI_CMD_LEN + xlen);
 	if (sts && sts->valid && (sts->word0 & GSPI_MASK_TX_ERR)) {
 		RTK_LOGE(TAG, "tx rejected, status 0x%08x len %d\n", sts->word0, (int)len);
-		return GSPI_ERR_STATUS;
+		return RTK_FAIL;
 	}
 
-	return GSPI_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -365,10 +348,10 @@ s32 GSPI_ReadRxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusType
 {
 	u32 xlen = GSPI_ALIGN4(len);
 	u32 cmd;
-	s32 ret = GSPI_OK;
+	s32 ret = RTK_SUCCESS;
 
 	if ((hgspi == NULL) || (buf == NULL) || (len == 0)) {
-		return GSPI_ERR_PARAM;
+		return -RTK_ERR_BADARG;
 	}
 
 	_memset(buf + GSPI_CMD_LEN, 0, xlen + GSPI_STATUS_LEN);
@@ -382,18 +365,18 @@ s32 GSPI_ReadRxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusType
 	} else {
 		gspi_xfer_poll(hgspi, buf + GSPI_CMD_LEN, xlen);
 	}
-	if (ret == GSPI_OK) {
+	if (ret == RTK_SUCCESS) {
 		gspi_xfer_poll(hgspi, buf + GSPI_CMD_LEN + xlen, GSPI_STATUS_LEN);
 	}
 	gspi_cs(hgspi, 1);
 
-	if (ret != GSPI_OK) {
+	if (ret != RTK_SUCCESS) {
 		return ret;
 	}
 
 	gspi_fill_status(sts, buf + GSPI_CMD_LEN + xlen);
 
-	return GSPI_OK;
+	return RTK_SUCCESS;
 }
 
 /* --------------------------------------------------------------- convenience */
@@ -407,11 +390,11 @@ u32 GSPI_GetRxLen(GSPI_HandleTypeDef *hgspi, GSPI_StatusTypeDef *sts)
 {
 	u32 rx0 = GSPI_ReadReg32(hgspi, GSPI_REG_RX0_REQ_LEN, sts);
 
-	if ((rx0 & GSPI_BIT_RX0_RDY) == 0) {
+	if ((rx0 & GSPI_BIT_SYNC_RX_LEN_READY) == 0) {
 		return 0;
 	}
 
-	return rx0 & GSPI_MASK_RX0_LEN;
+	return rx0 & GSPI_MASK_RX_LENGTH_LAT;
 }
 
 u32 GSPI_GetFreeTxBD(GSPI_HandleTypeDef *hgspi, GSPI_StatusTypeDef *sts)
@@ -507,7 +490,7 @@ s32 GSPI_Init(GSPI_HandleTypeDef *hgspi, GSPI_InitTypeDef *init)
 	u8 clk_func, mosi_func, miso_func;
 
 	if ((hgspi == NULL) || (init == NULL)) {
-		return GSPI_ERR_PARAM;
+		return -RTK_ERR_BADARG;
 	}
 
 	_memset(hgspi, 0, sizeof(GSPI_HandleTypeDef));
@@ -562,7 +545,7 @@ s32 GSPI_Init(GSPI_HandleTypeDef *hgspi, GSPI_InitTypeDef *init)
 
 	hgspi->initialized = 1;
 
-	return GSPI_OK;
+	return RTK_SUCCESS;
 }
 
 void GSPI_DeInit(GSPI_HandleTypeDef *hgspi)
@@ -595,10 +578,10 @@ s32 GSPI_Configuration(GSPI_HandleTypeDef *hgspi, u8 spi_cfg)
 	u32 attempt;
 
 	if ((hgspi == NULL) || (hgspi->initialized == 0)) {
-		return GSPI_ERR_STATE;
+		return RTK_FAIL;
 	}
 	if ((spi_cfg != GSPI_BIG_ENDIAN_32) && (spi_cfg != GSPI_LITTLE_ENDIAN_32)) {
-		return GSPI_ERR_PARAM;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Retried, because a frame sent while the device is still running its own
@@ -619,7 +602,7 @@ s32 GSPI_Configuration(GSPI_HandleTypeDef *hgspi, u8 spi_cfg)
 			if (attempt > 1) {
 				RTK_LOGW(TAG, "activated on attempt %d\n", (int)attempt);
 			}
-			return GSPI_OK;
+			return RTK_SUCCESS;
 		}
 
 		RTK_LOGW(TAG, "activation attempt %d: SPI_CFG reads 0x%02x\n", (int)attempt, readback);
@@ -629,5 +612,5 @@ s32 GSPI_Configuration(GSPI_HandleTypeDef *hgspi, u8 spi_cfg)
 
 	RTK_LOGE(TAG, "activation failed after %d attempts\n", GSPI_ACTIVATE_RETRY);
 
-	return GSPI_ERR_STATUS;
+	return RTK_FAIL;
 }

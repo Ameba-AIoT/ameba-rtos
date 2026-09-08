@@ -57,6 +57,8 @@ extern "C" {
 
 /* Byte offset of bInterfaceProtocol inside the config blob: Config(9) + 7 */
 #define USBD_DFU_CFG_IF_PROTOCOL_OFFSET   16U
+/* Byte offset of iInterface inside the config blob: Config(9) + 8 */
+#define USBD_DFU_CFG_IF_ISTR_OFFSET       17U
 /* Reconfiguration task that performs the off-ISR bus detach/attach */
 #define USBD_DFU_REENUM_TASK_STACK        768U
 #define USBD_DFU_REENUM_TASK_PRIORITY     3U
@@ -206,8 +208,12 @@ typedef struct {
 	void (*status_changed)(u8 old_status, u8 status);
 } usbd_dfu_cb_t;
 
-/* Interface string descriptor index (beyond the standard 0x00–0x03) */
-#define USBD_DFU_IFACE_STRING_IDX         0x04U
+/* Class-specific string descriptors: indices above USBD_IDX_SERIAL_STR, laid out as a
+ * window whose base is the standalone default below, or the one assigned by the composite
+ * framework via set_class_str_base(). */
+#define USBD_DFU_STR_IDX_IFACE            0U                         /* Ordinal of the interface string inside the class string window */
+#define USBD_DFU_CLASS_STR_COUNT          1U                         /* Class-specific string count: iInterface only */
+#define USBD_DFU_CLASS_STR_BASE_DEFAULT   (USBD_IDX_SERIAL_STR + 1U) /* Standalone base, right above the device-global strings */
 
 /**
  * @brief Internal DFU device instance (opaque to application).
@@ -250,6 +256,9 @@ typedef struct {
 	rtos_timer_t       detach_timer;    /* One-shot timer: fires if host doesn't Reset within wDetachTimeOut */
 #endif
 	u8                from_composite;   /**< Flag indicating if part of a composite device. */
+	u8                cls_str_base;     /**< First class-specific string index; the standalone default
+	                                         (right above USBD_IDX_SERIAL_STR) unless the composite
+	                                         framework rebases it via set_class_str_base(). */
 } usbd_dfu_dev_t;
 
 /* Exported variables --------------------------------------------------------*/

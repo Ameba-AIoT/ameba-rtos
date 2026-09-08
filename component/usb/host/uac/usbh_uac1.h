@@ -166,6 +166,7 @@ typedef struct {
 	usbh_uac_format_cfg_t format_info; /**< Audio format details for this alternate setting */
 	usbh_ep_desc_t ep_desc;            /**< Isochronous endpoint descriptor for this alternate setting */
 	u8 alt_setting;                    /**< USB Alternate Setting number as reported in the descriptor */
+	u8 freq_ctrl_supported;            /**< 1 if the CS AS endpoint descriptor's bmAttributes advertises Sampling Frequency Control */
 } usbh_uac_as_itf_alt_info_t;
 
 /**

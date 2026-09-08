@@ -27,7 +27,6 @@ struct whch_priv_t {
 	/* mlme parameters */
 	struct whch_mlme_priv       mlmepriv;
 	struct whch_mlme_info		mlmeinfo[WHC_MAX_NET_PORT_NUM];
-	struct rtw_chan_def         cur_chandef;	// TODO, current not assign value
 
 	/* ht parameters */
 	struct whch_ht_priv			htpriv[WHC_MAX_NET_PORT_NUM];

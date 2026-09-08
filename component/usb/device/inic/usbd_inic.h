@@ -26,20 +26,63 @@ extern "C" {
 #define USBD_INIC_PROD_STRING             "802.11ax WLAN Adapter" /**< Product string. */
 #define USBD_INIC_SN_STRING               "00E04C000001"          /**< Serial number string. */
 #define USBD_INIC_BT_STRING               "Bluetooth Radio"       /**< Bluetooth interface string. */
+#ifdef CONFIG_WHC_ETH
+#define USBD_INIC_ETH_STRING              "Ethernet Adapter"      /**< Ethernet interface string. */
+#endif
 #define USBD_NIC_VID                      0x8006                  /**< NIC mode VID (used to patch device descriptor at runtime). */
 
 #define USBD_INIC_HS_BULK_MPS             512U  /* High speed BULK IN & OUT maximum packet size */
 #define USBD_INIC_FS_BULK_MPS             64U   /* Full speed BULK IN & OUT maximum packet size */
+#ifdef CONFIG_WHC_ETH
+/* High speed Ethernet BULK IN maximum packet size.
+Per USB 2.0 spec §5.8.3, the wMaxPacketSize of high-speed BULK IN EP should be 512, otherwise USB-IF Chapter 9 / USB3CV will fail.
+However, the TxFIFO 5# depth is only 128 DWORD / 512byte, so there will be latencies on the AHB between transactions without ping-pong. */
+#define USBD_WHC_ETH_HS_IN_MPS            512U
+#endif
 #define USBD_INIC_HS_INTR_MPS             16U   /* High speed INTR IN & OUT maximum packet size */
 #define USBD_INIC_FS_INTR_MPS             16U   /* Full speed INTR IN & OUT maximum packet size */
 
 #define USBD_INIC_BT_EP1_INTR_IN          0x81U
 #define USBD_INIC_BT_EP2_BULK_IN          0x82U
 #define USBD_INIC_BT_EP2_BULK_OUT         0x02U
+#ifdef CONFIG_WHC_ETH
+/* EP3 is reused as Ethernet BULK OUT, EP6 IN is free as WiFi only uses EP6 OUT */
+#define USBD_WHC_ETH_EP3_BULK_OUT         0x03U
+#define USBD_WHC_ETH_EP6_BULK_IN          0x86U
+#else
+/* BT SCO ISOC EPs, only available when Ethernet is disabled, EP3 is taken by Ethernet otherwise */
+#define USBD_INIC_BT_EP3_ISOC_IN          0x83U
+#define USBD_INIC_BT_EP3_ISOC_OUT         0x03U
+#endif
 #define USBD_WHC_WIFI_EP4_BULK_IN         0x84U
 #define USBD_WHC_WIFI_EP5_BULK_OUT        0x05U
 #define USBD_WHC_WIFI_EP6_BULK_OUT        0x06U
 #define USBD_WHC_WIFI_EP7_BULK_OUT        0x07U
+
+
+/* Interface class/subclass/protocol triples
+ *
+ * BT uses the USB-IF assigned Wireless Controller / RF Controller / Bluetooth
+ * Programming Interface triple. The others are vendor specific (class 0xFF),
+ * for which the USB spec leaves subclass and protocol to the vendor:
+ *   bInterfaceSubClass = 0x00 : Realtek WHC function family
+ *   bInterfaceProtocol        : function id within the family
+ *       0x00      - reserved, invalid
+ *       0x01      - WiFi
+ *       0x02      - Ethernet
+ *       0x03~0xFF - reserved for future functions
+ * The host driver matches an interface by this triple, so keep it in sync with
+ * the host side.
+ */
+#define USBD_INIC_BT_ITF_CLASS            0xE0U
+#define USBD_INIC_BT_ITF_SUBCLASS         0x01U
+#define USBD_INIC_BT_ITF_PROTOCOL         0x01U
+#define USBD_INIC_WIFI_ITF_CLASS          0xFFU
+#define USBD_INIC_WIFI_ITF_SUBCLASS       0x00U
+#define USBD_INIC_WIFI_ITF_PROTOCOL       0x01U
+#define USBD_INIC_ETH_ITF_CLASS           0xFFU
+#define USBD_INIC_ETH_ITF_SUBCLASS        0x00U
+#define USBD_INIC_ETH_ITF_PROTOCOL        0x02U
 
 /* Vendor requests */
 #define USBD_INIC_VENDOR_REQ_BT_HCI_CMD   0x00U
@@ -97,13 +140,13 @@ typedef struct {
 	 * @brief Called during class driver initialization for application resource setup.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* init)(void);
+	int (*init)(void);
 
 	/**
 	 * @brief Called during class driver deinitialization for resource cleanup.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* deinit)(void);
+	int (*deinit)(void);
 
 	/**
 	 * @brief Called during control transfer SETUP/DATA phases to handle application-specific control requests.
@@ -113,7 +156,7 @@ typedef struct {
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* setup)(usb_setup_req_t *req, u8 *buf);
+	int (*setup)(usb_setup_req_t *req, u8 *buf);
 
 	/**
 	 * @brief Notifies application layer when INIC driver becomes operational.
@@ -121,7 +164,7 @@ typedef struct {
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* set_config)(void);
+	int (*set_config)(void);
 
 	/**
 	 * @brief Notifies application layer when INIC driver becomes non-operational.
@@ -129,7 +172,7 @@ typedef struct {
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* clear_config)(void);
+	int (*clear_config)(void);
 
 	/**
 	 * @brief Called when non-control IN transfer done, for asynchronous non-control IN transfer status notification.
@@ -138,7 +181,7 @@ typedef struct {
 	 * @param[in] in_ep: Pointer to the INIC IN endpoint.
 	 * @param[in] status: The status of the transmission.
 	 */
-	void(* transmitted)(usbd_inic_ep_t *in_ep, u8 status);
+	void (*transmitted)(usbd_inic_ep_t *in_ep, u8 status);
 
 	/**
 	 * @brief Called when non-control OUT transfer done, for application to handle the received host command/data.
@@ -148,7 +191,7 @@ typedef struct {
 	 * @param[in] len: Length of the received data in bytes.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* received)(usbd_inic_ep_t *out_ep, u32 len);
+	int (*received)(usbd_inic_ep_t *out_ep, u32 len);
 
 	/**
 	 * @brief Called when the USB device status changes for application to support USB hot-plug events.
@@ -177,9 +220,9 @@ typedef struct {
 	usb_setup_req_t ctrl_req;
 	rtos_task_t reset_task;
 	rtos_sema_t reset_sema;
-	u8  bt_alt;
-	u8  bt_sco_alt;
-	u8  wifi_alt;
+#ifndef CONFIG_WHC_ETH
+	u8  bt_sco_alt; /* BT SCO is the only interface which owns alternate settings */
+#endif
 } usbd_inic_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/

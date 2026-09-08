@@ -105,6 +105,17 @@ typedef struct {
 } __PACKED usb_cdc_ecm_ethernet_function_desc_t;
 
 /**
+ * @brief CDC Union Functional Descriptor
+ */
+typedef struct {
+	u8  bFunctionLength;         /**< Size of this descriptor in bytes (5) */
+	u8  bDescriptorType;         /**< CS_INTERFACE descriptor type */
+	u8  bDescriptorSubtype;      /**< Union functional descriptor subtype */
+	u8  bControlInterface;       /**< Interface number of the control interface */
+	u8  bSubordinateInterface0;  /**< Interface number of the first subordinate (data) interface */
+} __PACKED usb_cdc_ecm_union_func_desc_t;
+
+/**
  * @brief Connection Speed Change Notification Data
  */
 typedef struct {

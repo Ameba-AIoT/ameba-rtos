@@ -100,6 +100,7 @@ void SOCPS_HWSleepFilter_NP(u32 enable);
 void SOCPS_PeriPermissionControl(uint32_t ip_mask, u32 enable);
 void SOCPS_BitPermissionControl(uint32_t ip_mask, u32 enable);
 void SOCPS_UartRxPinWakeSet(u32 status);
+u8 SOCPS_SDIOWakeCheck(void);
 _LONG_CALL_ void FLASH_DeepSleep_PDEX(u32 NewState);
 #ifdef __cplusplus
 }

@@ -177,7 +177,7 @@ u32 ipc_send_message(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT I
 		DCache_Clean((u32)&IPC_MSG[msg_idx], sizeof(IPC_MSG_STRUCT));
 	}
 
-	IPCx->IPC_TX_CH_ST |= BIT(IPC_ChNum);
+	IPCx->IPC_TX_CH_ST = BIT(IPC_ChNum);
 #else
 	(void)IPC_Dir;
 	(void)IPC_ChNum;
@@ -253,7 +253,7 @@ u32 ipc_send_message_unshare(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum, PIPC_DATA
 
 		if (len == IPC_Data->data_len - 1) {
 			/*if last data, set TX_STATUS, when channelx transfer done, hw will clear TX_STATUS to 0*/
-			IPCx->IPC_TX_CH_ST |= BIT(IPC_ChNum);
+			IPCx->IPC_TX_CH_ST = BIT(IPC_ChNum);
 		}
 	}
 

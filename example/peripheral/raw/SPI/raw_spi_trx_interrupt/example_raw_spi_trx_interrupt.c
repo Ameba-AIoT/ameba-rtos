@@ -14,6 +14,20 @@
 
 /* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
+
+#if defined (CONFIG_AMEBAPRO3)
+
+#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPIM1
+#define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPIS0
+#define APBPeriph_SPIS 			APBPeriph_SPIS0
+#define APBPeriph_SPIS_CLOCK 	APBPeriph_SPIS0_CLOCK
+#define SPI_SLAVE_INDEX			2
+#define APBPeriph_SPIM 			APBPeriph_SPIM1
+#define APBPeriph_SPIM_CLOCK 	APBPeriph_SPIM1_CLOCK
+#define SPI_MASTER_INDEX		1
+
+#else
+
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI1
 #define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI0
@@ -21,6 +35,16 @@
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI
 #define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI
 #endif
+
+#define APBPeriph_SPIS 			APBPeriph_SPI0
+#define APBPeriph_SPIS_CLOCK 	APBPeriph_SPI0_CLOCK
+#define SPI_SLAVE_INDEX			0
+#define APBPeriph_SPIM 			APBPeriph_SPI1
+#define APBPeriph_SPIM_CLOCK 	APBPeriph_SPI1_CLOCK
+#define SPI_MASTER_INDEX		1
+
+#endif
+
 #endif
 
 #define DataFrameSize	8
@@ -80,7 +104,7 @@ static u32  ssi_interrupt(void *Adaptor)
 
 		if (spi_obj->RxLength == 0) {
 			SSI_INTConfig(spi_obj->spi_dev, (SPI_BIT_RXFIM | SPI_BIT_RXOIM | SPI_BIT_RXUIM), DISABLE);
-			if (spi_obj->Index == 0) {
+			if (spi_obj->Index == SPI_SLAVE_INDEX) {
 				SlaveRxDone = 1;
 			} else {
 				MasterRxDone = 1;
@@ -107,7 +131,7 @@ static u32  ssi_interrupt(void *Adaptor)
 			SSI_INTConfig(spi_obj->spi_dev, (SPI_BIT_TXOIM | SPI_BIT_TXEIM), DISABLE);
 			// If it's not a dummy TX for master read SPI, then call the TX_done callback
 			if (spi_obj->TxData != NULL) {
-				if (spi_obj->Index == 0) {
+				if (spi_obj->Index == SPI_SLAVE_INDEX) {
 					SlaveTxDone = 1;
 				} else {
 					MasterTxDone = 1;
@@ -256,7 +280,7 @@ void Spi_interrupt_task(void)
 	int i = 0;
 
 	/* SPI1 as Master */
-	spi_master.Index = 0x1;
+	spi_master.Index = SPI_MASTER_INDEX;
 	spi_master.Role = SSI_MASTER;
 	spi_master.spi_dev = SPI_DEV_TABLE[spi_master.Index].SPIx;
 	spi_master.IrqNum = SPI_DEV_TABLE[spi_master.Index].IrqNum;
@@ -264,7 +288,7 @@ void Spi_interrupt_task(void)
 	/* init SPI1 */
 	SSI_InitTypeDef SSI_InitStructM;
 	SSI_StructInit(&SSI_InitStructM);
-	RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_SPIM, APBPeriph_SPIM_CLOCK, ENABLE);
 	Pinmux_Config(SPI1_MOSI, PINMUX_FUNCTION_SPIM);
 	Pinmux_Config(SPI1_MISO, PINMUX_FUNCTION_SPIM);
 	Pinmux_Config(SPI1_SCLK, PINMUX_FUNCTION_SPIM);
@@ -286,7 +310,7 @@ void Spi_interrupt_task(void)
 	SSI_SetBaudDiv(spi_master.spi_dev, ClockDivider); // Fspi_clk is 100MHz
 
 	/* SPI0 as Slave */
-	spi_slave.Index = 0x0;
+	spi_slave.Index = SPI_SLAVE_INDEX;
 	spi_slave.Role = SSI_SLAVE;
 	spi_slave.spi_dev = SPI_DEV_TABLE[spi_slave.Index].SPIx;
 	spi_slave.IrqNum = SPI_DEV_TABLE[spi_slave.Index].IrqNum;
@@ -295,7 +319,7 @@ void Spi_interrupt_task(void)
 	SSI_InitTypeDef SSI_InitStructS;
 	SSI_StructInit(&SSI_InitStructS);
 
-	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_SPIS, APBPeriph_SPIS_CLOCK, ENABLE);
 	Pinmux_Config(SPI0_MOSI, PINMUX_FUNCTION_SPIS);
 	Pinmux_Config(SPI0_MISO, PINMUX_FUNCTION_SPIS);
 	Pinmux_Config(SPI0_SCLK, PINMUX_FUNCTION_SPIS);

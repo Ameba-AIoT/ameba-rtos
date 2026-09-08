@@ -34,6 +34,9 @@ unsigned char ap_ip[4] = {192, 168, 43, 1}, ap_netmask[4] = {255, 255, 255, 0}, 
 
 
 extern void (*p_wifi_join_info_free)(u8 iface_type);
+#if defined(CONFIG_WHC_DEV)
+extern int rtw_check_sta_connected(void);
+#endif
 struct netif xnetif[NET_IF_NUM]; /* network interface structure */
 struct netif *pnetif_sta = &xnetif[NETIF_WLAN_STA_INDEX];
 struct netif *pnetif_ap = &xnetif[NETIF_WLAN_AP_INDEX];
@@ -621,9 +624,13 @@ void lwip_add_ipv6_neighbor(uint8_t idx, const uint8_t *peer_mac)
 int lwip_check_connectivity(uint8_t idx)
 {
 	if (idx == NETIF_WLAN_STA_INDEX) {
+#if defined(CONFIG_WHC_DEV)
+		if (!((rtw_check_sta_connected() == TRUE)
+#else
 		u8 join_status = RTW_JOINSTATUS_UNKNOWN;
 		if (!((wifi_get_join_status(&join_status) == RTK_SUCCESS)
 			  && (join_status == RTW_JOINSTATUS_SUCCESS)
+#endif
 #if defined(CONFIG_LWIP_USB_ETHERNET_BRIDGE) && CONFIG_LWIP_USB_ETHERNET_BRIDGE
 			 )) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "Wait for WiFi Connect Success...\n");

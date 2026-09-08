@@ -1,0 +1,66 @@
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+
+# set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+set(ToolChainVerMajor asdk-${ASDK_VER})
+set(ToolChainVerMinor 4470)
+if(USE_SECOND_SOURCE)
+set(TOOLCHAINURL https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/14.3.1_v4/)
+else()
+set(TOOLCHAINURL https://aiot.realmcu.com/download/toolchain)
+endif()
+
+set(TOOLCHAINDIR)
+
+if(DEFINED ENV{RTK_TOOLCHAIN_DIR})
+    set(TOOLCHAINDIR $ENV{RTK_TOOLCHAIN_DIR})
+	message("env toolchain path: ${TOOLCHAINDIR}")
+endif()
+
+if(TOOLCHAIN_DIR)
+	set(TOOLCHAINDIR ${TOOLCHAIN_DIR})
+	message("User defined toolchain path: ${TOOLCHAINDIR}")
+endif()
+
+file(TO_CMAKE_PATH "${TOOLCHAINDIR}" TOOLCHAINDIR)
+
+if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
+	if(NOT TOOLCHAINDIR)
+		set(TOOLCHAINDIR "$ENV{HOME}/rtk-toolchain")
+		message("Default toolchain path: ${TOOLCHAINDIR}")
+	endif()
+	set(SDK_TOOLCHAIN ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor}/linux/picolibc)
+	set(TOOLCHAINNAME ${ToolChainVerMajor}-linux-picolibc-build-${ToolChainVerMinor}-x86_64.tar.bz2)
+elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Darwin)
+	if(NOT TOOLCHAINDIR)
+		set(TOOLCHAINDIR "$ENV{HOME}/rtk-toolchain")
+		message("Default toolchain path: ${TOOLCHAINDIR}")
+	endif()
+	set(SDK_TOOLCHAIN ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor}/darwin/picolibc)
+	set(TOOLCHAINNAME ${ToolChainVerMajor}-darwin-picolibc-build-${ToolChainVerMinor}-arm64.tar.bz2)
+elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
+	if(NOT TOOLCHAINDIR)
+		set(TOOLCHAINDIR C:/rtk-toolchain)
+		message("Default toolchain path: ${TOOLCHAINDIR}")
+	endif()
+	set(SDK_TOOLCHAIN ${TOOLCHAINDIR}/${ToolChainVerMajor}-${ToolChainVerMinor}/mingw32/picolibc)
+	set(TOOLCHAINNAME ${ToolChainVerMajor}-mingw32-picolibc-build-${ToolChainVerMinor}-x86_64.zip)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "") # disable ccache on Windows
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "")
+else()
+	message(FATAL_ERROR "unknown host platform ")
+endif()
+
+set(CROSS_COMPILE ${SDK_TOOLCHAIN}/bin/arm-none-eabi-)
+
+# Fallback: fetch tarball from internal git server if not already downloaded.
+# check.cmake will handle extraction and rename into ${SDK_TOOLCHAIN}.
+if(NOT EXISTS ${SDK_TOOLCHAIN} AND NOT EXISTS ${TOOLCHAINDIR}/${TOOLCHAINNAME})
+    set(_GIT "ssh://cn3sd10-git-slave.rtkbf.com:29418/iot/sw/toolchain/gcc")
+    file(MAKE_DIRECTORY ${TOOLCHAINDIR})
+    execute_process(COMMAND bash -c
+        "git archive --remote=${_GIT} HEAD asdk-14.3.x/${TOOLCHAINNAME} | tar -xO > ${TOOLCHAINDIR}/${TOOLCHAINNAME}"
+    )
+endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/ameba-toolchain-check.cmake)

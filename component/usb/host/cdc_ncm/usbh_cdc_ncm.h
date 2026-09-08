@@ -142,8 +142,8 @@ typedef struct {
 #else
 	u8 *tx_agg_buf[USBH_CDC_NCM_TX_AGG_NUM_BUF];    /**< DMA-safe TX aggregation ping-pong buffers, allocated in init */
 #endif
-	u32 ntb_in_max_size;                             /**< Max NTB input size (host-to-device) */
-	u32 ntb_out_max_size;                            /**< Max NTB output size (device-to-host) */
+	u32 ntb_in_max_size;                             /**< Max NTB the device may send to the host (IN direction) */
+	u32 ntb_out_max_size;                            /**< Max NTB the host may send to the device (OUT direction) */
 
 #if defined(CONFIG_USBH_CDC_NCM_TX_AGGREGATION)
 	/* ====================================================================
@@ -239,6 +239,7 @@ typedef struct {
 	u8 ctrl_itf_id;                                  /**< Communication (control) Interface number */
 	u8 data_itf_id;                                  /**< Data Interface number */
 	u8 data_alt_set;                                 /**< Alternate Setting value for Data Interface */
+	u8 union_data_itf_id;                            /**< Data Interface number from Union Functional Descriptor, 0xFF if not found */
 	u8 iMACAddressStringId;                          /**< Index of the MAC address string descriptor */
 	u8 state;                                        /**< Internal state machine status */
 	u8 mac_valid;                                    /**< Flag indicating if MAC address is valid */

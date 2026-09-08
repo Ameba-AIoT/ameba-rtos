@@ -39,6 +39,11 @@ master's GND connect to slave's GND
   - master's `SCL (_PA_21)` connect to slave's `SCL`
   - master's `GND` connect to slave's `GND`
 
+* On RTL8735C
+  - master's `SDA (_PF_3)` connect to slave's `SDA`
+  - master's `SCL (_PF_2)` connect to slave's `SCL`
+  - master's `GND` connect to slave's `GND`
+
 # SW Configuration
 
 1. Build and Download:
@@ -68,3 +73,4 @@ RTL8710E
 RTL8721Dx
 RTL8721F
 RTL8720F
+RTL8735C

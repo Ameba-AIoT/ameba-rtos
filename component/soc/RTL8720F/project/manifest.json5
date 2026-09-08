@@ -14,7 +14,7 @@
     img_ver_major: 1,
     img_ver_minor: 1,
     huk_epoch: 1,
-    /* rsip_key_group valid option: "rsip_xts_g0", "rsip_xts_g1", "rsip_gcm_g0", "rsip_gcm_g1", "rsip_ctr_g0", "rsip_ctr_g1" */
+    /* rsip_key_group valid option: "rsip_xts_g0", "rsip_gcm_g0", "rsip_ctr_g0" */
     rsip_key_group: "rsip_xts_g0",
     rsip_iv: "0102030405060708",
     sboot_private_key: "6AA34203018334474B25A0600996CA0968AA6228B886FF234B4EB9628B703C0A",
@@ -33,7 +33,7 @@
     img_ver_major: 1,
     img_ver_minor: 1,
     huk_epoch: 1,
-    /* rsip_key_group valid option: "rsip_xts_g0", "rsip_xts_g1", "rsip_gcm_g0", "rsip_gcm_g1", "rsip_ctr_g0", "rsip_ctr_g1" */
+    /* rsip_key_group valid option: "rsip_xts_g1", "rsip_gcm_g1", "rsip_ctr_g1" */
     rsip_key_group: "rsip_xts_g1",
     rsip_iv: "213253647586a7b8",
     sboot_private_key: "9FC60C4CB6162E49C54FB94511497E16F5EB605167836F15DECBB8363B18E243",

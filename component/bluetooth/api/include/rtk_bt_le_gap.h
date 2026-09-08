@@ -1550,7 +1550,7 @@ typedef enum {
  * @brief     Bluetooth LE max adv data len.
  */
 #define RTK_BT_LE_MAX_ADV_DATA_LEN  31
-#define RTK_BT_LE_MAX_EXT_ADV_DATA_LEN  255
+#define RTK_BT_LE_MAX_EXT_ADV_DATA_LEN  1650
 
 /**
  * @struct    rtk_bt_le_adv_report_t

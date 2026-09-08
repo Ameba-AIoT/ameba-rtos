@@ -105,9 +105,6 @@ void whc_host_event_task(struct work_struct *data)
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	struct whc_api_info *p_recv_msg = (struct whc_api_info *)(event_priv->rx_api_msg->data + SIZE_RX_DESC);
 	u32 *param_buf = (u32 *)(p_recv_msg + 1);
-	struct whc_api_info *ret_msg;
-	u8 *buf;
-	u32 buf_len;
 	u32 api_id = p_recv_msg->api_id;
 
 	dev_dbg(global_idev.pwhc_dev, "-----DEVICE CALLING API %x START\n", api_id);

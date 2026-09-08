@@ -206,7 +206,7 @@ static int usbh_cdc_acm_open_data_eps(usb_host_t *host, usbh_cdc_acm_host_t *cdc
   * @brief  Open all endpoints (BULK in/out + INTR in) carried by a Quectel-style
   *         vendor-specific interface.
   */
-static void usbh_cdc_acm_open_quectel_eps(usb_host_t *host, usbh_cdc_acm_host_t *cdc, usbh_itf_desc_t *itf_desc)
+static int usbh_cdc_acm_open_quectel_eps(usb_host_t *host, usbh_cdc_acm_host_t *cdc, usbh_itf_desc_t *itf_desc)
 {
 	usbh_pipe_t *bulk_out = &cdc->bulk_out;
 	usbh_pipe_t *bulk_in = &cdc->bulk_in;
@@ -219,10 +219,16 @@ static void usbh_cdc_acm_open_quectel_eps(usb_host_t *host, usbh_cdc_acm_host_t 
 
 		if ((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) == USB_CH_EP_TYPE_BULK) {
 			if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
-				usbh_open_pipe(host, bulk_in, ep_desc, &usbh_cdc_acm_driver);
+				if (usbh_open_pipe(host, bulk_in, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk in pipe fail\n");
+					return HAL_ERR_PARA;
+				}
 				bulk_in->max_timeout_tick = USBH_CDC_ACM_BULK_IN_MAX_TIMEOUT_TICK;
 			} else {
-				usbh_open_pipe(host, bulk_out, ep_desc, &usbh_cdc_acm_driver);
+				if (usbh_open_pipe(host, bulk_out, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk out pipe fail\n");
+					return HAL_ERR_PARA;
+				}
 				bulk_out->max_timeout_tick = USBH_CDC_ACM_BULK_OUT_MAX_TIMEOUT_TICK;
 			}
 		} else if ((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) == USB_CH_EP_TYPE_INTR) {
@@ -230,13 +236,17 @@ static void usbh_cdc_acm_open_quectel_eps(usb_host_t *host, usbh_cdc_acm_host_t 
 			/* Only open INTR IN when notification support is enabled; otherwise
 			 * the pipe would be opened but never polled or closed (leaked),
 			 * because notify_process() / SOF / detach() paths are compiled out. */
-			usbh_open_pipe(host, intr_in, ep_desc, &usbh_cdc_acm_driver);
+			if (usbh_open_pipe(host, intr_in, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr in pipe fail\n");
+				return HAL_ERR_PARA;
+			}
 			intr_in->max_timeout_tick = USBH_CDC_ACM_INTR_MAX_TIMEOUT_TICK;
 #endif
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Unknown xfer type(%d)\n", ep_desc->bmAttributes);
 		}
 	}
+	return HAL_OK;
 }
 
 /**
@@ -280,7 +290,10 @@ static int usbh_cdc_acm_attach_acm_4g(usb_host_t *host, usbh_cdc_acm_host_t *cdc
 	 * because notify_process() / SOF / detach() paths are compiled out. */
 	ep_desc = &itf_desc->ep_desc_array[0];
 	if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
-		usbh_open_pipe(host, intr_in, ep_desc, &usbh_cdc_acm_driver);
+		if (usbh_open_pipe(host, intr_in, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr in pipe fail\n");
+			return HAL_ERR_PARA;
+		}
 		intr_in->max_timeout_tick = USBH_CDC_ACM_INTR_MAX_TIMEOUT_TICK;
 	}
 #endif
@@ -344,8 +357,7 @@ static int usbh_cdc_acm_attach_quectel(usb_host_t *host, usbh_cdc_acm_host_t *cd
 	cdc->data_itf_alt = itf_desc->bAlternateSetting;
 	cdc->comm_itf_num = itf_desc->bInterfaceNumber;
 
-	usbh_cdc_acm_open_quectel_eps(host, cdc, itf_desc);
-	return HAL_OK;
+	return usbh_cdc_acm_open_quectel_eps(host, cdc, itf_desc);
 }
 
 /**
@@ -517,6 +529,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get data itf fail\n");
+		status = HAL_ERR_PARA;
 		goto open_fail;
 	}
 
@@ -547,12 +560,14 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 		if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
 			if (usbh_open_pipe(host, bulk_in, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk in pipe fail\n");
+				status = HAL_ERR_PARA;
 				goto open_fail;
 			}
 			bulk_in->max_timeout_tick = USB_BULK_IN_MAX_TIMEOUT_TICK;
 		} else {
 			if (usbh_open_pipe(host, bulk_out, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk out pipe fail\n");
+				status = HAL_ERR_PARA;
 				goto open_fail;
 			}
 			bulk_out->max_timeout_tick = USB_BULK_OUT_MAX_TIMEOUT_TICK;
@@ -562,6 +577,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	/* Both bulk pipes are mandatory for CDC ACM data transfer */
 	if ((bulk_in->pipe_num == 0) || (bulk_out->pipe_num == 0)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Missing bulk pipe\n");
+		status = HAL_ERR_PARA;
 		goto open_fail;
 	}
 #endif
@@ -1095,7 +1111,7 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb)
 	cdc->user_line_coding = (usb_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usb_cdc_acm_line_coding_t));
 	if (cdc->user_line_coding == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc user line code fail\n");
-		usb_os_mfree(cdc->line_coding);
+		usb_os_mfree((void *)cdc->line_coding);
 		cdc->line_coding = NULL;
 		return HAL_ERR_MEM;
 	}
@@ -1109,9 +1125,9 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb)
 	ret = usbh_register_class(&usbh_cdc_acm_driver);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
-		usb_os_mfree(cdc->line_coding);
+		usb_os_mfree((void *)cdc->line_coding);
 		cdc->line_coding = NULL;
-		usb_os_mfree(cdc->user_line_coding);
+		usb_os_mfree((void *)cdc->user_line_coding);
 		cdc->user_line_coding = NULL;
 		return ret;
 	}
@@ -1143,7 +1159,7 @@ int usbh_cdc_acm_deinit(void)
 		cdc->cb->deinit();
 	}
 
-	if ((host != NULL) && (host->connect_state == USBH_STATE_SETUP)) {
+	if (host != NULL) {
 		cdc->state = USBH_CDC_ACM_STATE_IDLE;
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 		/* Guard with pipe_num: an unopened pipe has pipe_num == 0, and
@@ -1160,14 +1176,10 @@ int usbh_cdc_acm_deinit(void)
 		}
 	}
 
-	if (cdc->line_coding != NULL) {
-		usb_os_mfree(cdc->line_coding);
-		cdc->line_coding = NULL;
-	}
-	if (cdc->user_line_coding != NULL) {
-		usb_os_mfree(cdc->user_line_coding);
-		cdc->user_line_coding = NULL;
-	}
+	usb_os_mfree((void *)cdc->line_coding);
+	cdc->line_coding = NULL;
+	usb_os_mfree((void *)cdc->user_line_coding);
+	cdc->user_line_coding = NULL;
 
 	/* Cover the deinit-while-connected path (no detach ran): drop the host
 	   handle so post-deinit transmit/receive calls are rejected. The detach

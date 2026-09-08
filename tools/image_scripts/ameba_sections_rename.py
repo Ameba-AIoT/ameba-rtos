@@ -251,9 +251,6 @@ def _apply_archive(
                       file=sys.stderr)
                 continue
 
-            print(f'  [ok]    {rel_archive}:{obj_name}  '
-                  f'{func}: {cur_sec} → {target_sec}')
-
             # Track unique modified .o paths for ar r
             if obj_path not in modified:
                 modified.append(obj_path)
@@ -421,9 +418,7 @@ def main() -> None:
     missing     = wanted - found_funcs
     if missing:
         print(f'  [info] {len(missing)} function(s) not found in any .a '
-              f'(ROM / not compiled for this core / already correct):')
-        for fn in sorted(missing):
-            print(f'    {fn}')
+              f'(ROM / not compiled for this core / already correct)')
 
     if not index:
         print('Nothing to modify.')

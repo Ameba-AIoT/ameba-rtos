@@ -59,6 +59,8 @@ void mbed_pwm_demo(void)
 		pwm_led[i].pwmtimer_idx = 4;
 #elif defined CONFIG_AMEBAL2
 		pwm_led[i].pwmtimer_idx = 6;
+#elif defined CONFIG_AMEBAPRO3
+		pwm_led[i].pwmtimer_idx = 1;
 #endif
 		pwm_led[i].pwm_idx = i;
 		pwm_led[i].period = 0;

@@ -37,6 +37,13 @@
 #define UART_RTS	_PA_25 // UART0 RTS
 #define UART_CTS	_PA_26 // UART0 CTS
 
+#elif defined (CONFIG_AMEBAPRO3)
+/* fully programmable zone */
+#define UART_TX     PF_2 // UART TX
+#define UART_RX     PF_3 // UART RX
+#define UART_RTS    PF_11 // UART RTS
+#define UART_CTS    PF_10 // UART CTS
+
 #elif defined (CONFIG_RTL8720F)
 /* fully programmable zone.
  * When wired pin-to-pin (PA21-PA21, PA22-PA22, ...) instead of cross-wired,

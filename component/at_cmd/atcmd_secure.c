@@ -371,10 +371,15 @@ static int rsip_write_mode(u8 mode_val)
 /**
  * @brief Handle AT+SEC=RSIP_KEY command — burn RSIP encryption key and set mode.
  *
- * For CTR/GCM mode: writes the single key and RSIP_MODE to OTP immediately.
+ * For CTR/GCM mode: writes the single key (and RSIP_MODE for grp0) to OTP immediately.
  * For XTS mode: buffers the first key (ECB) and enters pending state.
  *               Send AT+SEC=RSIP_KEY2 to provide the second key (CTR) and
- *               commit both keys + mode to OTP.
+ *               commit both keys (+ mode for grp0) to OTP.
+ *
+ * RSIP_MODE is a single global OTP field. The ROM validates it only for
+ * image1 (Bootloader, grp0); image2 (grp1) takes its mode from the manifest.
+ * Therefore RSIP_MODE is written to OTP only when programming grp0. This also
+ * prevents a grp1 burn from clobbering the mode owned by image1.
  *
  * @par Usage
  *   AT+SEC=RSIP_KEY,<grp>,<mode>,<hex>
@@ -430,7 +435,9 @@ static void at_sec_rsip_key(u16 argc, char **argv)
 		u32 addr1, addr2;
 
 		rsip_get_key_addrs(grp, mode, &addr1, &addr2);
-		if (rsip_write_mode((u8)mode) != RTK_SUCCESS) {
+		/* Only grp0 (image1) writes the global RSIP_MODE; grp1 (image2)
+		 * takes its mode from the manifest. Fail if the mode write fails. */
+		if (grp == 0 && rsip_write_mode((u8)mode) != RTK_SUCCESS) {
 			return;
 		}
 		if (hex2buf(argv[4], buf, sizeof(buf)) != OTP_RSIP_KEY2_LEN) {
@@ -449,7 +456,7 @@ static void at_sec_rsip_key(u16 argc, char **argv)
  *
  * Completes the two-step XTS key programming sequence:
  *   1. AT+SEC=RSIP_KEY buffers the ECB key (step 1)
- *   2. AT+SEC=RSIP_KEY2 provides the CTR key and commits both keys + mode to OTP (step 2)
+ *   2. AT+SEC=RSIP_KEY2 provides the CTR key and commits both keys (+ mode for grp0) to OTP (step 2)
  *
  * On success or failure, the pending state is cleared and the key buffer zeroed.
  * If power is lost between steps, no OTP is written (state is RAM-only).
@@ -485,7 +492,9 @@ static void at_sec_rsip_key2(u16 argc, char **argv)
 	/* From here, OTP writes are attempted — clear pending regardless */
 	rsip_pending = FALSE;
 
-	if (rsip_write_mode(RSIP_MODE_XTS) != RTK_SUCCESS) {
+	/* Only grp0 (image1) writes the global RSIP_MODE; grp1 (image2) takes
+	 * its mode from the manifest. See at_sec_rsip_key(). */
+	if (rsip_pending_grp == 0 && rsip_write_mode(RSIP_MODE_XTS) != RTK_SUCCESS) {
 		goto clear;
 	}
 	if (OTP_WritePhyBuf(addr1, rsip_key1_buf, OTP_RSIP_KEY1_LEN) != RTK_SUCCESS) {

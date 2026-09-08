@@ -77,7 +77,7 @@ ameba_list_append(private_sources
     ameba_audio_clock.c
     ameba_pmc_com.c
     ameba_sdio_device.c
-    ameba_phy8201fr.c
+    ameba_phy8201f.c
     ameba_gspi.c
     ameba_ethernet.c
 )

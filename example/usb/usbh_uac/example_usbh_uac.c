@@ -150,7 +150,7 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = USBH_UAC_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = USBH_UAC_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
 	.nptx_fifo_depth = 256,
@@ -397,7 +397,7 @@ static void example_usbh_uac_play_thread(void *param)
 				 audio_total_data_len, frame_size, USBH_UAC_TEST_CNT);
 
 #if USBH_UAC_XFER_CHECK
-		memset(usbh_uac_audio_data, USBH_UAC_OUT_DATA, usbh_uac_data_len);
+		usb_os_memset((void *)usbh_uac_audio_data, USBH_UAC_OUT_DATA, usbh_uac_data_len);
 #endif
 
 		/*
@@ -787,21 +787,24 @@ static void example_usbh_uac_thread(void *param)
 
 	UNUSED(param);
 
-	/* Create synchronisation primitives; cascade failures. */
-	if (rtos_sema_create(&usbh_uac_ctx.detach_sema, 0U, 1U) != RTK_SUCCESS) {
+	/* Create synchronisation primitives; free_sema_exit only deletes the
+	   handles already created (the others are still NULL). */
+	ret = rtos_sema_create(&usbh_uac_ctx.detach_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
-		goto example_exit;
+		goto free_sema_exit;
 	}
-	if (rtos_sema_create(&usbh_uac_ctx.play_start_sema, 0U, 1U) != RTK_SUCCESS) {
+
+	ret = rtos_sema_create(&usbh_uac_ctx.play_start_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create play sema fail\n");
-		rtos_sema_delete(usbh_uac_ctx.detach_sema);
-		goto example_exit;
+		goto free_sema_exit;
 	}
-	if (rtos_sema_create(&usbh_uac_ctx.record_start_sema, 0U, 1U) != RTK_SUCCESS) {
+
+	ret = rtos_sema_create(&usbh_uac_ctx.record_start_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create record sema fail\n");
-		rtos_sema_delete(usbh_uac_ctx.detach_sema);
-		rtos_sema_delete(usbh_uac_ctx.play_start_sema);
-		goto example_exit;
+		goto free_sema_exit;
 	}
 
 	/* Create resident play thread. */

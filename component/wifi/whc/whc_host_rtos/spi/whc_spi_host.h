@@ -14,7 +14,7 @@
 #define SPIM_SW_CS                  _PA_3	//_PA_10
 #define SPI_CLOCK_DIVIDER           4
 
-#elif CONFIG_AMEBAGREEN2  // need use QFN100
+#elif defined(CONFIG_AMEBAGREEN2)  // need use QFN100
 #define PINMUX_FUNCTION_SPIM	    PINMUX_FUNCTION_SPI0
 #define DEV_READY_PIN				_PA_18//TODO
 #define DEV_TX_REQ_PIN				_PA_19//TODO

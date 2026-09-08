@@ -14,7 +14,7 @@
 /* Private defines -----------------------------------------------------------*/
 
 // Endpoint address
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 #define VENDOR_BULK_IN_EP                         0x86U
 #define VENDOR_BULK_OUT_EP                        0x03U
 #define VENDOR_ISOC_IN_EP                         0x82U
@@ -94,7 +94,7 @@ static const usbd_config_t vendor_cfg = {
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
 	.nptx_max_epmis_cnt = 100U,
 	.intr_use_ptx_fifo = 0U,
-#elif defined (CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/*DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 292U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
@@ -164,23 +164,28 @@ static rtos_sema_t vendor_attach_status_changed_sema;
   * @brief  Handle the vendor class control requests
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-  * @param  cmd: Command code
-  * @param  buf: Buffer containing command data (request parameters)
-  * @param  len: Number of data to be sent (in bytes)
-  * @param  value: Value for the command code
+  *
+  *         This demo defines no class/vendor command, so every nonstandard request is
+  *         rejected and the USB stack STALLs EP0, as required by USB 2.0 9.2.6.1. Do not
+  *         return HAL_OK for an unhandled request: for a D2H request the class transmits
+  *         the whole response window, so accepting a request without filling the window
+  *         would return meaningless data to the host.
+  *
+  *         When adding a real command, validate the full request before touching buf:
+  *         bmRequestType (type, direction and recipient), bRequest, wValue, wIndex and
+  *         wLength, fill exactly the bytes the command defines, and keep every write
+  *         inside the wLength window.
+  * @param  req: Setup request packet
+  * @param  buf: D2H: zero-initialized response window, wLength bytes at most
+  *              H2D: received payload, NULL if the request has no data stage
   * @retval Status
   */
 static int vendor_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
+	UNUSED(req);
 	UNUSED(buf);
 
-	if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
-		// TBD
-	} else {
-		// TBD
-	}
-
-	return HAL_OK;
+	return HAL_ERR_PARA;
 }
 
 /**
@@ -398,23 +403,35 @@ static void example_usbd_vendor_thread(void *param)
 	UNUSED(param);
 
 #if VENDOR_HOTPLUG
-	rtos_sema_create(&vendor_attach_status_changed_sema, 0U, 1U);
+	ret = rtos_sema_create(&vendor_attach_status_changed_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		goto exit;
+	}
 #endif
 
 #if VENDOR_INTR_ASYNC_XFER
 	vendor_intr_tx_buf = NULL;
 	vendor_intr_tx_len = 0;
-	rtos_sema_create(&vendor_intr_async_xfer_sema, 0U, 1U);
+	ret = rtos_sema_create(&vendor_intr_async_xfer_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		goto exit;
+	}
 #endif
 #if VENDOR_ISOC_ASYNC_XFER
 	vendor_isoc_tx_buf = NULL;
 	vendor_isoc_tx_len = 0;
-	rtos_sema_create(&vendor_isoc_async_xfer_sema, 0U, 1U);
+	ret = rtos_sema_create(&vendor_isoc_async_xfer_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		goto exit;
+	}
 #endif
 #if VENDOR_BULK_ASYNC_XFER
 	vendor_bulk_tx_buf = NULL;
 	vendor_bulk_tx_len = 0;
-	rtos_sema_create(&vendor_bulk_async_xfer_sema, 0U, 1U);
+	ret = rtos_sema_create(&vendor_bulk_async_xfer_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		goto exit;
+	}
 #endif
 
 	ret = usbd_init(&vendor_cfg);

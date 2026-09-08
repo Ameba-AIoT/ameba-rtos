@@ -184,7 +184,7 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_priority = CONFIG_USBH_COMP_HID_UAC_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.class_num = 2U,   /* HID + UAC */
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
 	.nptx_fifo_depth = 256,
@@ -544,7 +544,7 @@ static void example_usbh_comp_play_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Play start, data=%d frame=%d\n", audio_total_data_len, frame_size);
 
 #if CONFIG_USBH_COMP_HID_UAC_XFER_CHECK
-		memset(usbh_uac_audio_data_2ch, 0x00, usbh_uac_audio_data_2ch_len);
+		usb_os_memset((void *)usbh_uac_audio_data_2ch, 0x00, usbh_uac_audio_data_2ch_len);
 #endif
 
 		/*

@@ -23,6 +23,8 @@ extern "C"  {
 #define HID_ISO_CLIENT_PROFILE_ID           9   /* HID ISO Client */
 #define HIDS_GP_CLIENT_PROFILE_ID           10  /* HIDS Gamepad Client */
 #define SCAN_PARAM_CLIENT_PROFILE_ID        11  /* Scan Parameters Client */
+#define OTS_CLIENT_PROFILE_ID               12  /* Object Transfer Service Client */
+#define GATT_SERVICE_CLIENT_PROFILE_ID      13  /* Generic Attribute Service (0x1801): for Service Changed CCCD write in MGR mode */
 
 
 typedef enum {

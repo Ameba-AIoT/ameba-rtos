@@ -346,7 +346,6 @@ static void bt_stack_api_taskentry(void *ctx)
 
 	while (true) {
 		if (true == osif_msg_recv(api_task_msg_q, &pcmd, BT_TIMEOUT_FOREVER)) {
-
 			/* Check if need to exit task*/
 			if (RTK_BT_API_TASK_EXIT == pcmd->group) {
 				break;
@@ -435,7 +434,6 @@ static uint16_t bt_stack_profile_init(void *app_conf)
 
 #if defined(RTK_BLE_GATTS_SUPPORT) && RTK_BLE_GATTS_SUPPORT
 	if (app_profile_support & RTK_BT_PROFILE_GATTS) {
-		BT_LOGD("GATTS Profile init  \r\n");
 		ret = bt_stack_gatts_init(app_conf);
 		if (ret) {
 			return ret;
@@ -575,12 +573,17 @@ static void bt_zephyr_set_host_config(void *app_config)
 
 	if (papp_conf) {
 #if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
-		bt_host.prefer_all_phy = papp_conf->prefer_all_phy;
-		bt_host.prefer_tx_phy = papp_conf->prefer_tx_phy;
-		bt_host.prefer_rx_phy = papp_conf->prefer_rx_phy;
+		if (bt_le_phy_param_valid(papp_conf->prefer_all_phy,
+								  papp_conf->prefer_tx_phy,
+								  papp_conf->prefer_rx_phy)) {
+			bt_host.prefer_all_phy = papp_conf->prefer_all_phy;
+			bt_host.prefer_tx_phy = papp_conf->prefer_tx_phy;
+			bt_host.prefer_rx_phy = papp_conf->prefer_rx_phy;
+		}
 #endif
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
-		if (papp_conf->max_tx_octets && papp_conf->max_tx_time) {
+		if (bt_le_data_len_param_valid(papp_conf->max_tx_octets,
+									   papp_conf->max_tx_time)) {
 			bt_host.max_tx_octets = papp_conf->max_tx_octets;
 			bt_host.max_tx_time = papp_conf->max_tx_time;
 		}

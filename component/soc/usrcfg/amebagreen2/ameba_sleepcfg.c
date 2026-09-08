@@ -9,11 +9,6 @@
 /* wakeup attribute can be set to WAKEUP_NULL/WAKEUP_NP/WAKEUP_AP */
 const struct WakeEvent_TypeDef sleep_wevent_config[] = {
 //  	Module								Wakeup
-#ifdef CONFIG_WHC_INTF_SDIO
-	{WAKE_SRC_SDIO_WIFI,					WAKEUP_NP},
-#else
-	{WAKE_SRC_SDIO_WIFI,					WAKEUP_NULL},
-#endif
 	{WAKE_SRC_BT_WAKE_HOST,					WAKEUP_NULL},
 	{WAKE_SRC_BT_SCB,						WAKEUP_NULL},
 	{WAKE_SRC_GPIOA,						WAKEUP_AP},

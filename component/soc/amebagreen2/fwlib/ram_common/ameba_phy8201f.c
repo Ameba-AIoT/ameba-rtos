@@ -13,7 +13,7 @@ static const char *const TAG = "PHY";
 /*                    RTL8201 Specific Definitions                            */
 /* ========================================================================== */
 /*
- * Page Selection for RTL8201FR.
+ * Page Selection for RTL8201F.
  * Uses Register 31 to switch pages.
  * Values 0 and 7 are specific page indices for this PHY.
  */
@@ -24,7 +24,7 @@ static const char *const TAG = "PHY";
 #define RTL8201_P7_RMII_MODE    16          /**< RMII Mode configuration register (on Page 7) */
 #define RTL8201_P7_RMII_CLK_DIR (1 << 12)   /**< RMII Clock Direction bit */
 
-/* RTL8201FR PHY ID (OUI + Model) */
+/* RTL8201F PHY ID (OUI + Model) */
 #define RTL8201_PHY_ID_MATCH    0x001CC816
 
 /* ========================================================================== */
@@ -32,9 +32,9 @@ static const char *const TAG = "PHY";
 /* ========================================================================== */
 
 /**
- * @brief      Read from RTL8201FR PHY Register (Clause 22)
+ * @brief      Read from RTL8201F PHY Register (Clause 22)
  */
-static int phy_rtl8201fr_read(struct eth_phy_dev *phy, uint32_t reg, uint16_t *val)
+static int phy_rtl8201f_read(struct eth_phy_dev *phy, uint32_t reg, uint16_t *val)
 {
 	if (!phy || !phy->bus || !phy->bus->mdio_read) {
 		return RTK_FAIL;
@@ -43,9 +43,9 @@ static int phy_rtl8201fr_read(struct eth_phy_dev *phy, uint32_t reg, uint16_t *v
 }
 
 /**
- * @brief      Write to RTL8201FR PHY Register (Clause 22)
+ * @brief      Write to RTL8201F PHY Register (Clause 22)
  */
-static int phy_rtl8201fr_write(struct eth_phy_dev *phy, uint32_t reg, uint16_t val)
+static int phy_rtl8201f_write(struct eth_phy_dev *phy, uint32_t reg, uint16_t val)
 {
 	if (!phy || !phy->bus || !phy->bus->mdio_write) {
 		return RTK_FAIL;
@@ -58,7 +58,7 @@ static int phy_rtl8201fr_write(struct eth_phy_dev *phy, uint32_t reg, uint16_t v
 /* ========================================================================== */
 
 /**
- * @brief      Safe Read from RTL8201FR PHY Register (Error Latching)
+ * @brief      Safe Read from RTL8201F PHY Register (Error Latching)
  *
  * This function performs a read operation only if the previous error state
  * (*err) is RTK_SUCCESS. If an error occurs during this read, the *err
@@ -72,7 +72,7 @@ static int phy_rtl8201fr_write(struct eth_phy_dev *phy, uint32_t reg, uint16_t v
  * @return     The read value (uint16_t). Returns 0 if an error occurred
  *             or if *err was already set.
  */
-static uint16_t phy_rtl8201fr_read_safe(struct eth_phy_dev *phy, uint32_t reg, int *err)
+static uint16_t phy_rtl8201f_read_safe(struct eth_phy_dev *phy, uint32_t reg, int *err)
 {
 	uint16_t val = 0;
 	int ret;
@@ -82,7 +82,7 @@ static uint16_t phy_rtl8201fr_read_safe(struct eth_phy_dev *phy, uint32_t reg, i
 		return 0;
 	}
 
-	ret = phy_rtl8201fr_read(phy, reg, &val);
+	ret = phy_rtl8201f_read(phy, reg, &val);
 
 	if (ret != RTK_SUCCESS) {
 		*err = ret;
@@ -93,7 +93,7 @@ static uint16_t phy_rtl8201fr_read_safe(struct eth_phy_dev *phy, uint32_t reg, i
 }
 
 /**
- * @brief      Safe Write to RTL8201FR PHY Register (Error Latching)
+ * @brief      Safe Write to RTL8201F PHY Register (Error Latching)
  *
  * This function performs a write operation only if the previous error state
  * (*err) is RTK_SUCCESS. If an error occurs during this write, the *err
@@ -104,7 +104,7 @@ static uint16_t phy_rtl8201fr_read_safe(struct eth_phy_dev *phy, uint32_t reg, i
  * @param[in]  val       Data value to write.
  * @param[in,out] err    Pointer to the cumulative error code.
  */
-static void phy_rtl8201fr_write_safe(struct eth_phy_dev *phy, uint32_t reg, uint16_t val, int *err)
+static void phy_rtl8201f_write_safe(struct eth_phy_dev *phy, uint32_t reg, uint16_t val, int *err)
 {
 	int ret;
 
@@ -113,7 +113,7 @@ static void phy_rtl8201fr_write_safe(struct eth_phy_dev *phy, uint32_t reg, uint
 		return;
 	}
 
-	ret = phy_rtl8201fr_write(phy, reg, val);
+	ret = phy_rtl8201f_write(phy, reg, val);
 
 	if (ret != RTK_SUCCESS) {
 		*err = ret;
@@ -121,7 +121,7 @@ static void phy_rtl8201fr_write_safe(struct eth_phy_dev *phy, uint32_t reg, uint
 }
 
 /**
- * @brief      Safe Write to RTL8201FR MMD Register (Error Latching)
+ * @brief      Safe Write to RTL8201F MMD Register (Error Latching)
  *
  * Indirectly writes to an MMD register using the Clause 45 over Clause 22 mechanism.
  *
@@ -138,27 +138,27 @@ static void phy_rtl8201fr_write_safe(struct eth_phy_dev *phy, uint32_t reg, uint
  * @param[in]  data      Data to write.
  * @param[in,out] err    Pointer to the cumulative error code.
  */
-static void phy_rtl8201fr_mmd_write_safe(struct eth_phy_dev *phy, uint8_t dev_addr,
-		uint16_t reg_addr, uint16_t data, int *err)
+static void phy_rtl8201f_mmd_write_safe(struct eth_phy_dev *phy, uint8_t dev_addr,
+										uint16_t reg_addr, uint16_t data, int *err)
 {
 	/* 1. Select Page 0 */
-	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, err);
+	phy_rtl8201f_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, err);
 
 	/* 2. Set Address Mode (Function = 00) and Select Device */
-	phy_rtl8201fr_write_safe(phy, MII_MMD_CTRL, MMD_FUNC_ADDR | dev_addr, err);
+	phy_rtl8201f_write_safe(phy, MII_MMD_CTRL, MMD_FUNC_ADDR | dev_addr, err);
 
 	/* 3. Write Address Value */
-	phy_rtl8201fr_write_safe(phy, MII_MMD_DATA, reg_addr, err);
+	phy_rtl8201f_write_safe(phy, MII_MMD_DATA, reg_addr, err);
 
 	/* 4. Set Data Mode (Function = 01, No Post Inc) and Select Device */
-	phy_rtl8201fr_write_safe(phy, MII_MMD_CTRL, MMD_FUNC_DATA | dev_addr, err);
+	phy_rtl8201f_write_safe(phy, MII_MMD_CTRL, MMD_FUNC_DATA | dev_addr, err);
 
 	/* 5. Write Data */
-	phy_rtl8201fr_write_safe(phy, MII_MMD_DATA, data, err);
+	phy_rtl8201f_write_safe(phy, MII_MMD_DATA, data, err);
 }
 
 /**
- * @brief      Safe Read from RTL8201FR MMD Register (Error Latching)
+ * @brief      Safe Read from RTL8201F MMD Register (Error Latching)
  *
  * Indirectly reads from an MMD register using the Clause 45 over Clause 22 mechanism.
  *
@@ -176,23 +176,23 @@ static void phy_rtl8201fr_mmd_write_safe(struct eth_phy_dev *phy, uint8_t dev_ad
  *
  * @return     The read value. Returns 0 if an error occurred.
  */
-static uint16_t phy_rtl8201fr_mmd_read_safe(struct eth_phy_dev *phy, uint8_t dev_addr,
+static uint16_t phy_rtl8201f_mmd_read_safe(struct eth_phy_dev *phy, uint8_t dev_addr,
 		uint16_t reg_addr, int *err)
 {
 	/* 1. Select Page 0 */
-	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, err);
+	phy_rtl8201f_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, err);
 
 	/* 2. Set Address Mode (Function = 00) and Select Device */
-	phy_rtl8201fr_write_safe(phy, MII_MMD_CTRL, MMD_FUNC_ADDR | dev_addr, err);
+	phy_rtl8201f_write_safe(phy, MII_MMD_CTRL, MMD_FUNC_ADDR | dev_addr, err);
 
 	/* 3. Write Address Value */
-	phy_rtl8201fr_write_safe(phy, MII_MMD_DATA, reg_addr, err);
+	phy_rtl8201f_write_safe(phy, MII_MMD_DATA, reg_addr, err);
 
 	/* 4. Set Data Mode (Function = 01, No Post Inc) and Select Device */
-	phy_rtl8201fr_write_safe(phy, MII_MMD_CTRL, MMD_FUNC_DATA | dev_addr, err);
+	phy_rtl8201f_write_safe(phy, MII_MMD_CTRL, MMD_FUNC_DATA | dev_addr, err);
 
 	/* 5. Read Data */
-	return phy_rtl8201fr_read_safe(phy, MII_MMD_DATA, err);
+	return phy_rtl8201f_read_safe(phy, MII_MMD_DATA, err);
 }
 
 /**
@@ -248,7 +248,7 @@ static void phy_rtl8201_parse_link_status(uint16_t bmsr, uint16_t bmcr, uint16_t
 /* ========================================================================== */
 
 /**
- * @brief      Initialize RTL8201FR PHY
+ * @brief      Initialize RTL8201F PHY
  *
  * Verifies the PHY ID and performs a software reset.
  *
@@ -273,10 +273,10 @@ static int phy_rtl8201_init(struct eth_phy_dev *phy)
 
 	/* 1. Read PHY Identifier */
 	/* Select Page 0 */
-	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
+	phy_rtl8201f_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
 
-	id1 = phy_rtl8201fr_read_safe(phy, MII_PHYSID1, &err);
-	id2 = phy_rtl8201fr_read_safe(phy, MII_PHYSID2, &err);
+	id1 = phy_rtl8201f_read_safe(phy, MII_PHYSID1, &err);
+	id2 = phy_rtl8201f_read_safe(phy, MII_PHYSID2, &err);
 
 	if (err != RTK_SUCCESS) {
 		return err;
@@ -311,10 +311,10 @@ static int phy_rtl8201_reset(struct eth_phy_dev *phy)
 	int err = RTK_SUCCESS;
 
 	/* Select Page 0 */
-	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
+	phy_rtl8201f_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
 
 	/* Write Reset Bit */
-	phy_rtl8201fr_write_safe(phy, MII_BMCR, BMCR_RESET, &err);
+	phy_rtl8201f_write_safe(phy, MII_BMCR, BMCR_RESET, &err);
 
 	if (err == RTK_SUCCESS) {
 		/* Wait for reset to complete (Datasheet requirement: ~10-20ms) */
@@ -351,7 +351,7 @@ static int phy_rtl8201_cfg_link(struct eth_phy_dev *phy, const phy_link_config_t
 	}
 
 	/* 1. Select Page 0 to access standard registers */
-	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
+	phy_rtl8201f_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
 
 	if (cfg->autoneg_en) {
 		/* ============================================= */
@@ -380,16 +380,16 @@ static int phy_rtl8201_cfg_link(struct eth_phy_dev *phy, const phy_link_config_t
 		}
 
 		/* Write Advertisement Register (Reg 4) */
-		phy_rtl8201fr_write_safe(phy, MII_ADVERTISE, advertise, &err);
+		phy_rtl8201f_write_safe(phy, MII_ADVERTISE, advertise, &err);
 
 		/* Read current BMCR */
-		bmcr = phy_rtl8201fr_read_safe(phy, MII_BMCR, &err);
+		bmcr = phy_rtl8201f_read_safe(phy, MII_BMCR, &err);
 
 		/* Enable AN and Restart AN */
 		bmcr |= (BMCR_ANENABLE | BMCR_ANRESTART);
 
 		/* Write back BMCR */
-		phy_rtl8201fr_write_safe(phy, MII_BMCR, bmcr, &err);
+		phy_rtl8201f_write_safe(phy, MII_BMCR, bmcr, &err);
 
 	} else {
 		/* ============================================= */
@@ -397,7 +397,7 @@ static int phy_rtl8201_cfg_link(struct eth_phy_dev *phy, const phy_link_config_t
 		/* ============================================= */
 
 		/* Read current BMCR to preserve Loopback/PowerDown bits */
-		bmcr = phy_rtl8201fr_read_safe(phy, MII_BMCR, &err);
+		bmcr = phy_rtl8201f_read_safe(phy, MII_BMCR, &err);
 
 		/* Mask out Speed, Duplex, and AN Enable bits */
 		bmcr_mask = BMCR_SPEED100 | BMCR_FULLDPLX | BMCR_ANENABLE;
@@ -416,7 +416,7 @@ static int phy_rtl8201_cfg_link(struct eth_phy_dev *phy, const phy_link_config_t
 		/* Note: PHY_DUPLEX_HALF corresponds to bit 8 being 0, handled by mask */
 
 		/* Write back BMCR (Reg 0) */
-		phy_rtl8201fr_write_safe(phy, MII_BMCR, bmcr, &err);
+		phy_rtl8201f_write_safe(phy, MII_BMCR, bmcr, &err);
 	}
 
 	return err;
@@ -447,16 +447,16 @@ static int phy_rtl8201_get_link(struct eth_phy_dev *phy, phy_link_state_t *state
 	}
 
 	/* Select Page 0 */
-	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
+	phy_rtl8201f_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
 
 	/* Read BMSR twice to clear Latching Low status */
-	phy_rtl8201fr_read_safe(phy, MII_BMSR, &err);
-	bmsr = phy_rtl8201fr_read_safe(phy, MII_BMSR, &err);
+	phy_rtl8201f_read_safe(phy, MII_BMSR, &err);
+	bmsr = phy_rtl8201f_read_safe(phy, MII_BMSR, &err);
 
 	/* Read Control and Ability registers for resolution */
-	bmcr = phy_rtl8201fr_read_safe(phy, MII_BMCR, &err);
-	lpa  = phy_rtl8201fr_read_safe(phy, MII_LPA, &err);
-	adv  = phy_rtl8201fr_read_safe(phy, MII_ADVERTISE, &err);
+	bmcr = phy_rtl8201f_read_safe(phy, MII_BMCR, &err);
+	lpa  = phy_rtl8201f_read_safe(phy, MII_LPA, &err);
+	adv  = phy_rtl8201f_read_safe(phy, MII_ADVERTISE, &err);
 
 	if (err != RTK_SUCCESS) {
 		return err;
@@ -482,12 +482,12 @@ static int phy_rtl8201_autoneg_restart(struct eth_phy_dev *phy)
 	int err = RTK_SUCCESS;
 	uint16_t val;
 
-	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
+	phy_rtl8201f_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
 
 	/* Read-Modify-Write BMCR */
-	val = phy_rtl8201fr_read_safe(phy, MII_BMCR, &err);
+	val = phy_rtl8201f_read_safe(phy, MII_BMCR, &err);
 	val |= (BMCR_ANENABLE | BMCR_ANRESTART);
-	phy_rtl8201fr_write_safe(phy, MII_BMCR, val, &err);
+	phy_rtl8201f_write_safe(phy, MII_BMCR, val, &err);
 
 	return err;
 }
@@ -517,10 +517,10 @@ static int phy_rtl8201_cfg_refclock(struct eth_phy_dev *phy, enum eth_refclk_dir
 	uint16_t val;
 
 	/* 1. Switch to Page 7 (Extension Registers) */
-	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_7, &err);
+	phy_rtl8201f_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_7, &err);
 
 	/* 2. Read RMII Mode Register */
-	val = phy_rtl8201fr_read_safe(phy, RTL8201_P7_RMII_MODE, &err);
+	val = phy_rtl8201f_read_safe(phy, RTL8201_P7_RMII_MODE, &err);
 
 	if (err == RTK_SUCCESS) {
 		if (dir == ETH_REFCLK_MAC2PHY) {
@@ -529,11 +529,11 @@ static int phy_rtl8201_cfg_refclock(struct eth_phy_dev *phy, enum eth_refclk_dir
 			val &= ~RTL8201_P7_RMII_CLK_DIR; /* Clear bit: Output Mode */
 		}
 		/* 3. Write Back */
-		phy_rtl8201fr_write_safe(phy, RTL8201_P7_RMII_MODE, val, &err);
+		phy_rtl8201f_write_safe(phy, RTL8201_P7_RMII_MODE, val, &err);
 	}
 
 	/* 4. Restore Page 0 (Critical cleanup) */
-	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
+	phy_rtl8201f_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
 
 	return err;
 }
@@ -564,8 +564,8 @@ static int phy_rtl8201_cfg_eee(struct eth_phy_dev *phy, uint32_t new_state)
 
 	/* 1. Write EEE Advertisement to MMD (Clause 45 via Clause 22) */
 	/* Device 7 (MMD_AN), Register 60 (MMD_EEEAR) */
-	phy_rtl8201fr_mmd_write_safe(phy, MMD_AN, MMD_EEEAR, adv_val, &err);
-	phy_rtl8201fr_mmd_read_safe(phy, MMD_AN, MMD_EEEAR, &err);
+	phy_rtl8201f_mmd_write_safe(phy, MMD_AN, MMD_EEEAR, adv_val, &err);
+	phy_rtl8201f_mmd_read_safe(phy, MMD_AN, MMD_EEEAR, &err);
 	/* 2. Restart Auto-Negotiation to advertise new capabilities */
 	if (err == RTK_SUCCESS) {
 		phy_rtl8201_autoneg_restart(phy);
@@ -598,12 +598,12 @@ static int phy_rtl8201_get_eee_cap(struct eth_phy_dev *phy, phy_eee_capability_t
 	_memset(cap, 0, sizeof(phy_eee_capability_t));
 
 	/* Select Page 0 */
-	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
+	phy_rtl8201f_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
 
 	/* Read EEE Advertisement Register via MMD */
-	adv_val = phy_rtl8201fr_mmd_read_safe(phy, MMD_AN, MMD_EEEAR, &err);
+	adv_val = phy_rtl8201f_mmd_read_safe(phy, MMD_AN, MMD_EEEAR, &err);
 	if (err == RTK_SUCCESS) {
-		/* RTL8201FR only supports 100BASE-TX EEE */
+		/* RTL8201F only supports 100BASE-TX EEE */
 		cap->eee_100m_capable = (adv_val & EEE_ADVERT_100) != 0;
 		cap->eee_tx_lpi_capable = cap->eee_100m_capable;
 		cap->eee_rx_lpi_capable = cap->eee_100m_capable;
@@ -626,9 +626,9 @@ static int phy_rtl8201_set_loopback(struct eth_phy_dev *phy, bool enable)
 	int err = RTK_SUCCESS;
 	uint16_t val;
 
-	phy_rtl8201fr_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
+	phy_rtl8201f_write_safe(phy, RTL8201_REG_PAGESEL, RTL8201_PAGE_0, &err);
 
-	val = phy_rtl8201fr_read_safe(phy, MII_BMCR, &err);
+	val = phy_rtl8201f_read_safe(phy, MII_BMCR, &err);
 
 	if (enable) {
 		val |= BMCR_LOOPBACK;
@@ -636,7 +636,7 @@ static int phy_rtl8201_set_loopback(struct eth_phy_dev *phy, bool enable)
 		val &= ~BMCR_LOOPBACK;
 	}
 
-	phy_rtl8201fr_write_safe(phy, MII_BMCR, val, &err);
+	phy_rtl8201f_write_safe(phy, MII_BMCR, val, &err);
 
 	return err;
 }
@@ -668,7 +668,7 @@ static int phy_rtl8201_set_link_callback(struct eth_phy_dev *phy, phy_link_cb_t 
 
 extern const struct eth_mdio_ops eth_mdio_bus;
 
-const struct eth_phy_ops phy_rtl8201fr_ops = {
+const struct eth_phy_ops phy_rtl8201f_ops = {
 	.init               = phy_rtl8201_init,
 	.reset              = phy_rtl8201_reset,
 	.cfg_link           = phy_rtl8201_cfg_link,

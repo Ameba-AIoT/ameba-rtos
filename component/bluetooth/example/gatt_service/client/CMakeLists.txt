@@ -44,6 +44,7 @@ ameba_list_append(private_sources
 	rtk_hids_gp_client.c
 	rtk_hids_iso_client.c
 	rtk_scan_param_client.c
+	rtk_ots_client.c
 )
 
 ameba_list_append(private_includes

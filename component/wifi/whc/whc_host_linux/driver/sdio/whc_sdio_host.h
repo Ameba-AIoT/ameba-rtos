@@ -15,12 +15,20 @@ struct whc_sdio;
 
 #define CONFIG_SDIO_TX_ENABLE_AVAL_INT
 #define CONFIG_SDIO_TX_OVF_CTRL
-//#define CONFIG_SDIO_RX_AGGREGATION //for Rx Aggregation
-//#define CONFIG_SDIO_TX_AGGREGATION
+#define CALCULATE_FREE_TXBD
+#define WHC_TX_AGG
+#define WHC_RX_AGG
+
+/* HW rx aggregation fires when either threshold is hit, whichever comes first */
+#define SDIO_RX_AGG_TO			0	/* timeout = (0+1)*40.96us */
+#define SDIO_RX_AGG_BD_CNT_TH	4	/* aggregate up to 4 RXBDs per transfer */
 
 //#define CONFIG_POWER_SAVING
 //#define CONFIG_PS_DYNAMIC_CHK
 //#define SDIO_HOST_FAKE_SLEEP
+
+/* for host active detect, for test only now */
+//#define CONFIG_WHC_ACTIVE_DETECT
 
 #define SIZE_RX_DESC	0
 #define SIZE_TX_DESC	(sizeof(INIC_TX_DESC))
@@ -67,6 +75,10 @@ struct whc_sdio {
 	u8 dev_state;
 
 	void (*rx_recv_notify)(void);
+
+#ifdef WHC_TX_AGG
+	u8	*agg_buf;	/* tx-thread owned coalescing buffer, SdioTxMaxSZ bytes */
+#endif
 };
 
 extern struct whc_sdio whc_sdio_priv;
@@ -75,6 +87,7 @@ extern struct hci_ops_t whc_sdio_host_intf_ops;
 /* SDIO common functions */
 u32 rtw_sdio_init_common(struct whc_sdio *priv);
 u32 rtw_sdio_get_rx_len(struct whc_sdio *priv);
+void rtw_sdio_enable_rx_agg(struct whc_sdio *priv);
 
 void whc_sdio_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb);
 

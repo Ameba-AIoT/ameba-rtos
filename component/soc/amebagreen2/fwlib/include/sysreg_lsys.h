@@ -1751,14 +1751,15 @@ typedef struct {
 
 	u32 MAGIC_NUMBER;
 	__IO u32 MCM_INFO;
-	__IO u32 OTA_IMG_REMAP[2];
 	struct CLK_Info_Backup clk_info_bk;
 
 	u8 AP_WAKEUP_STATUS;
 	__IO u8 CHIP_INFO;
 	__IO u8 PSRAM_TYPE;
 	__IO u8 PSRAM_DQ;
-	u8 RRAM_USER_RSVD[93];
+	u8 RRAM_ALIGN_RSVD[1];/* fill gap to 4B-align OTA_IMG_REMAP */
+	__IO u32 OTA_IMG_REMAP[2];
+	u8 RRAM_USER_RSVD[92];
 
 	u8 PCR_PROT_K3[32]; /* PCR_BASE */
 	u8 PCR_PROT_K2[32];

@@ -17,7 +17,7 @@ static const char *const TAG = "SPDIO";
 #define SPDIO_IRQ_PRIORITY			INT_PRI_MIDDLE   /*!< Interrupt priority for SDIO device IRQ. */
 #define SPDIO_TX_BD_BUF_SZ_UNIT		64   /*!< TX BD buffer size unit in bytes. */
 #define SPDIO_RX_BD_FREE_TH				5   /*!< Threshold of free RX BDs before triggering recycling. */
-#define SPDIO_MIN_RX_BD_SEND_PKT			2   /*!< Minimum free RX BDs required to receive a packet. */
+#define SPDIO_MIN_RX_BD_SEND_PKT			1   /*!< Minimum free RX BDs required to send a packet. */
 #define SPDIO_MAX_RX_BD_BUF_SIZE			16380   /*!< Maximum RX BD buffer size in bytes; 4-byte aligned. */
 
 /** @brief TX Buffer Descriptor structure. */
@@ -46,7 +46,6 @@ typedef struct {
 typedef struct {
 	void *priv;				/*!< Private data associated with this RX BD. */
 	SPDIO_RX_BD *pRXBD;		/*!< Pointer to the RX BD buffer. */
-	INIC_RX_DESC *pRXDESC;	/*!< Pointer to the RX packet descriptor. */
 	u8 isPktEnd;			/*!< Indicates whether this BD contains the last segment of a multi-BD packet. */
 	u8 isFree;				/*!< Indicates whether this RX BD is free (DMA complete and packet freed). */
 } SPDIO_RX_BD_HANDLE;
@@ -66,8 +65,6 @@ typedef struct {
 	u8 *pRXBDAddr;					/*!< Start address of the RX BD array. */
 	SPDIO_RX_BD *pRXBDAddrAligned;	/*!< 8-byte aligned start address of the RX BD array. */
 
-	u8 *pRXDESCAddr;				/*!< Start address of the RX descriptor array. */
-	INIC_RX_DESC *pRXDESCAddrAligned; /*!< Aligned start address of the RX descriptor array. */
 	SPDIO_RX_BD_HANDLE *pRXBDHdl;	/*!< Pointer to the RX BD handle array. */
 	u16 RXBDWPtr;					/*!< Write index of the SDIO RX (Device-to-Host) BD ring. */
 	u16 RXBDRPtr;					/*!< Local read index of the SDIO RX (Device-to-Host) BD ring; differs from HW-maintained index. */
@@ -374,7 +371,6 @@ static void SPDIO_Recycle_Rx_BD(PHAL_SPDIO_ADAPTER pgSPDIODev)
 				isPktEnd = TRUE;
 			}
 			pRxBdHdl->isPktEnd = 0;
-			_memset((void *)(pRxBdHdl->pRXDESC), 0, sizeof(INIC_RX_DESC));
 			_memset((void *)pRXBD, 0, sizeof(SPDIO_RX_BD)); // clean this RX_BD
 			pRxBdHdl->isFree = 1;
 		} else {
@@ -507,13 +503,6 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 	}
 	pgSPDIODev->pRXBDAddrAligned = (SPDIO_RX_BD *)(((((u32)pgSPDIODev->pRXBDAddr - 1) >> 3) + 1) << 3); // Make it 8-bytes aligned
 
-	pgSPDIODev->pRXDESCAddr = rtos_mem_zmalloc((obj->host_rx_bd_num * sizeof(INIC_RX_DESC)) + 3);
-	if (NULL == pgSPDIODev->pRXDESCAddr) {
-		RTK_LOGE(TAG, "SDIO_Device_Init: Malloc for RX_DESC Err!!\n");
-		goto SDIO_INIT_ERR;
-	}
-	pgSPDIODev->pRXDESCAddrAligned = (INIC_RX_DESC *)(((((u32)pgSPDIODev->pRXDESCAddr - 1) >> 2) + 1) << 2); // Make it 4-bytes aligned
-
 	SPDIO_Board_Init();
 
 	/* SDIO function enable and clock enable*/
@@ -572,7 +561,6 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 	for (i = 0; i < obj->host_rx_bd_num; i++) {
 		pRxBdHdl = pgSPDIODev->pRXBDHdl + i;
 		pRxBdHdl->pRXBD = pgSPDIODev->pRXBDAddrAligned + i;
-		pRxBdHdl->pRXDESC = pgSPDIODev->pRXDESCAddrAligned + i;
 		pRxBdHdl->isFree = 1;
 	}
 
@@ -644,11 +632,6 @@ SDIO_INIT_ERR:
 		pgSPDIODev->pTXBDAddrAligned = NULL;
 	}
 
-	if (pgSPDIODev->pRXDESCAddr) {
-		rtos_mem_free(pgSPDIODev->pRXDESCAddr);
-		pgSPDIODev->pRXDESCAddr = NULL;
-		pgSPDIODev->pRXDESCAddrAligned = NULL;
-	}
 	return RTK_FAIL;
 }
 
@@ -705,12 +688,6 @@ void SPDIO_Device_DeInit(void)
 		rtos_mem_free(pgSPDIODev->pTXBDAddr);
 		pgSPDIODev->pTXBDAddr = NULL;
 		pgSPDIODev->pTXBDAddrAligned = NULL;
-	}
-
-	if (pgSPDIODev->pRXDESCAddr) {
-		rtos_mem_free(pgSPDIODev->pRXDESCAddr);
-		pgSPDIODev->pRXDESCAddr = NULL;
-		pgSPDIODev->pRXDESCAddrAligned = NULL;
 	}
 
 	SDIO_INTConfig(SDIO_WIFI, 0xffff, DISABLE);

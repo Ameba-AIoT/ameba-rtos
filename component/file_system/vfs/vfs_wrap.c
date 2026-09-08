@@ -216,14 +216,14 @@ int __wrap_fsetpos(FILE *stream, fpos_t   *p)
 	return ret;
 }
 
-//extern int _fflush_r(struct _reent *ptr, FILE *fp);
+extern int __real_fflush(FILE *stream);
 int  __wrap_fflush(FILE *stream)
 {
 	int ret = 0;
 	vfs_file *finfo = (vfs_file *)stream;
 #ifndef __ICCARM__
 	if (is_stdio(stream)) {
-		_fflush_r(_REENT, stream);
+		__real_fflush(stream);
 		return 0;
 	}
 #endif

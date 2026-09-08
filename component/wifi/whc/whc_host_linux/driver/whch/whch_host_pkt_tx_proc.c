@@ -374,11 +374,6 @@ skip_wlanhdr:
 			fctrl = pwlanhdr->frame_ctl;
 			SetOrder(&fctrl);
 			pwlanhdr->frame_ctl = fctrl;
-#ifdef CONFIG_80211AX_HE
-			/* fill ht control filed */
-			htc = (u8 *)(void *)(hdr + pattrib->hdrlen - 4 * htc_option);
-			rtw_he_fill_htc(htc); /* TODO_AX */
-#endif
 		}
 		qc = (unsigned short *)(void *)(hdr + pattrib->hdrlen - 4 * htc_option - 2);
 		memset(qc, 0, 2);

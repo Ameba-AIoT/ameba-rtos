@@ -165,9 +165,7 @@ int whc_host_sta_free_stainfo(u8 iface_type, u8 *hwaddr)
 	struct whch_sta_priv		*pstapriv = &global_idev.whchpriv.stapriv[iface_type];
 	struct sta_info		*psta = NULL;
 	int				ret = 0;
-#ifndef CONFIG_MP_SHRINK
 	int				i;
-#endif
 
 	dev_dbg(global_idev.pwhc_dev, "[whc] %s iface_type=%d hwaddr=[0x%02x:0x%02x:0x%02x:0x%02x:0x%02x:0x%02x].",
 			__func__, iface_type, hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
@@ -191,12 +189,10 @@ int whc_host_sta_free_stainfo(u8 iface_type, u8 *hwaddr)
 	whc_host_defrag_ctrl_deinit(&psta->sta_recvpriv.defrag_ctrl);
 	del_timer_sync(&psta->sta_recvpriv.defrag_ctrl.defrag_timer);
 
-#ifndef CONFIG_MP_SHRINK
 	//for A-MPDU Rx reordering buffer control, cancel reordering_ctrl_timer
 	for (i = 0; i < MAXTID; i++) {
 		whc_host_recv_reorder_free(&psta->sta_recvpriv.recvreorder_ctrl[i]);
 	}
-#endif
 
 	if (psta != (&bcmc_stainfo)) {
 		kfree((u8 *)psta);

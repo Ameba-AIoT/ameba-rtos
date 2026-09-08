@@ -15,28 +15,29 @@
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 // while test suspend/resume, hotplug should be disabled
-#define INIC_HOTPLUG                                          1
+#define INIC_HOTPLUG                        1
 
-#define USBD_INIC_BT_EP1_INTR_IN_BUF_SIZE				16U   /* BT EP1 INTR IN buffer size */
-#define USBD_INIC_BT_EP2_BULK_IN_BUF_SIZE				512U  /* BT EP2 BULK IN buffer size */
-#define USBD_INIC_BT_EP2_BULK_OUT_BUF_SIZE				512U  /* BT EP2 BULK OUT buffer size */
-#define USBD_WHC_WIFI_EP4_BULK_IN_BUF_SIZE 			512U  /* WiFi EP4 BULK IN buffer size */
-#define USBD_WHC_WIFI_EP5_BULK_OUT_BUF_SIZE			512U  /* WiFi EP5 BULK OUT buffer size */
-#define USBD_WHC_WIFI_EP6_BULK_OUT_BUF_SIZE			512U  /* WiFi EP5 BULK OUT buffer size */
-#define USBD_WHC_WIFI_EP7_BULK_OUT_BUF_SIZE			512U  /* WiFi EP5 BULK OUT buffer size */
-
-// USB speed
-#define INIC_USB_SPEED                            USB_SPEED_HIGH
+#define INIC_BT_EP1_INTR_IN_BUF_SIZE        16U   /* BT EP1 INTR IN buffer size */
+#define INIC_BT_EP2_BULK_IN_BUF_SIZE        512U  /* BT EP2 BULK IN buffer size */
+#define INIC_BT_EP2_BULK_OUT_BUF_SIZE       512U  /* BT EP2 BULK OUT buffer size */
+#define INIC_WIFI_EP4_BULK_IN_BUF_SIZE      512U  /* WiFi EP4 BULK IN buffer size */
+#define INIC_WIFI_EP5_BULK_OUT_BUF_SIZE     512U  /* WiFi EP5 BULK OUT buffer size */
+#define INIC_WIFI_EP6_BULK_OUT_BUF_SIZE     512U  /* WiFi EP6 BULK OUT buffer size */
+#define INIC_WIFI_EP7_BULK_OUT_BUF_SIZE     512U  /* WiFi EP7 BULK OUT buffer size */
+#ifdef CONFIG_WHC_ETH
+#define INIC_ETH_EP3_BULK_OUT_BUF_SIZE      512U  /* Ethernet EP3 BULK OUT buffer size */
+#define INIC_ETH_EP6_BULK_IN_BUF_SIZE       512U  /* Ethernet EP6 BULK IN buffer size */
+#endif
 
 // Thread priorities
-#define INIC_INIT_THREAD_PRIORITY                 5
-#define INIC_HOTPLUG_THREAD_PRIORITY              8
-#define INIC_XFER_THREAD_PRIORITY                 6
+#define INIC_INIT_THREAD_PRIORITY           5
+#define INIC_HOTPLUG_THREAD_PRIORITY        8
+#define INIC_XFER_THREAD_PRIORITY           6
 
 // Thread stack sizes
-#define INIC_INIT_THREAD_STACK_SIZE               1024U
-#define INIC_HOTPLUG_THREAD_STACK_SIZE            768U
-#define INIC_XFER_THREAD_STACK_SIZE               700U
+#define INIC_INIT_THREAD_STACK_SIZE         1024U
+#define INIC_HOTPLUG_THREAD_STACK_SIZE      768U
+#define INIC_XFER_THREAD_STACK_SIZE         700U
 
 /* Private types -------------------------------------------------------------*/
 
@@ -67,11 +68,16 @@ static void inic_cb_status_changed(u8 old_status, u8 status);
 static const char *const TAG = "INIC";
 
 static const usbd_config_t inic_cfg = {
-	.speed = INIC_USB_SPEED,
+	.speed = USB_SPEED_HIGH,
 	.isr_priority = INT_PRI_MIDDLE,
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#ifdef CONFIG_WHC_ETH
+	.rx_fifo_depth = 324,
+	.ptx_fifo_depth = {16U, 256U, 0U, 256U, 128U, },
+#else
 	.rx_fifo_depth = 292U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
+#endif
 #endif
 };
 
@@ -90,6 +96,9 @@ static const usbd_inic_cb_t inic_cb = {
 static usbd_inic_app_t usbd_inic_app;
 static rtos_sema_t inic_wifi_bulk_in_sema;
 static rtos_sema_t inic_bt_bulk_in_sema;
+#ifdef CONFIG_WHC_ETH
+static rtos_sema_t inic_eth_bulk_in_sema;
+#endif
 
 #if INIC_HOTPLUG
 static u8 inic_attach_status;
@@ -104,29 +113,37 @@ static void inic_wifi_deinit(void)
 	usbd_inic_app_ep_t *ep;
 
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_IN)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
 
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP5_BULK_OUT)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
 
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP6_BULK_OUT)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
 
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP7_BULK_OUT)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
 }
+
+#ifdef CONFIG_WHC_ETH
+static void inic_eth_deinit(void)
+{
+	usbd_inic_app_t *iapp = &usbd_inic_app;
+	usbd_inic_app_ep_t *ep;
+
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_ETH_EP6_BULK_IN)];
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
+
+	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_ETH_EP3_BULK_OUT)];
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
+}
+#endif
 
 static void inic_bt_deinit(void)
 {
@@ -134,22 +151,16 @@ static void inic_bt_deinit(void)
 	usbd_inic_app_ep_t *ep;
 
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
 
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
 
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
 }
 
 /**
@@ -177,7 +188,7 @@ static int inic_wifi_init(void)
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_IN);
 	ep = &iapp->in_ep[ep_num];
-	ep->buf_len = USBD_WHC_WIFI_EP4_BULK_IN_BUF_SIZE;
+	ep->buf_len = INIC_WIFI_EP4_BULK_IN_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -186,7 +197,7 @@ static int inic_wifi_init(void)
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP5_BULK_OUT);
 	ep = &iapp->out_ep[ep_num];
-	ep->buf_len = USBD_WHC_WIFI_EP5_BULK_OUT_BUF_SIZE;
+	ep->buf_len = INIC_WIFI_EP5_BULK_OUT_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -195,7 +206,7 @@ static int inic_wifi_init(void)
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP6_BULK_OUT);
 	ep = &iapp->out_ep[ep_num];
-	ep->buf_len = USBD_WHC_WIFI_EP6_BULK_OUT_BUF_SIZE;
+	ep->buf_len = INIC_WIFI_EP6_BULK_OUT_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -204,7 +215,7 @@ static int inic_wifi_init(void)
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP7_BULK_OUT);
 	ep = &iapp->out_ep[ep_num];
-	ep->buf_len = USBD_WHC_WIFI_EP7_BULK_OUT_BUF_SIZE;
+	ep->buf_len = INIC_WIFI_EP7_BULK_OUT_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -232,6 +243,44 @@ wifi_init_exit:
 	return ret;
 }
 
+#ifdef CONFIG_WHC_ETH
+static int inic_eth_init(void)
+{
+	int ret = HAL_OK;
+	usbd_inic_app_t *iapp = &usbd_inic_app;
+	usbd_inic_app_ep_t *ep;
+	u8 ep_num;
+
+	ep_num = USB_EP_NUM(USBD_WHC_ETH_EP6_BULK_IN);
+	ep = &iapp->in_ep[ep_num];
+	ep->buf_len = INIC_ETH_EP6_BULK_IN_BUF_SIZE;
+	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
+	if (ep->buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto eth_init_exit;
+	}
+
+	ep_num = USB_EP_NUM(USBD_WHC_ETH_EP3_BULK_OUT);
+	ep = &iapp->out_ep[ep_num];
+	ep->buf_len = INIC_ETH_EP3_BULK_OUT_BUF_SIZE;
+	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
+	if (ep->buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto eth_init_clean_ep6_bulk_in_buf_exit;
+	}
+
+	return HAL_OK;
+
+eth_init_clean_ep6_bulk_in_buf_exit:
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_ETH_EP6_BULK_IN)];
+	usb_os_mfree(ep->buf);
+	ep->buf = NULL;
+
+eth_init_exit:
+	return ret;
+}
+#endif
+
 static int inic_bt_init(void)
 {
 	int ret = HAL_OK;
@@ -241,7 +290,7 @@ static int inic_bt_init(void)
 
 	ep_num = USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN);
 	ep = &iapp->in_ep[ep_num];
-	ep->buf_len = USBD_INIC_BT_EP1_INTR_IN_BUF_SIZE;
+	ep->buf_len = INIC_BT_EP1_INTR_IN_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -250,7 +299,7 @@ static int inic_bt_init(void)
 
 	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN);
 	ep = &iapp->in_ep[ep_num];
-	ep->buf_len = USBD_INIC_BT_EP2_BULK_IN_BUF_SIZE;
+	ep->buf_len = INIC_BT_EP2_BULK_IN_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -259,7 +308,7 @@ static int inic_bt_init(void)
 
 	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT);
 	ep = &iapp->out_ep[ep_num];
-	ep->buf_len = USBD_INIC_BT_EP2_BULK_OUT_BUF_SIZE;
+	ep->buf_len = INIC_BT_EP2_BULK_OUT_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -302,10 +351,22 @@ static int inic_cb_init(void)
 			goto init_deinit_wifi_exit;
 		}
 	}
-	rtos_sema_create(&inic_bt_bulk_in_sema, 0, 1);
-	rtos_sema_create(&inic_wifi_bulk_in_sema, 0, 1);
+
+#ifdef CONFIG_WHC_ETH
+	ret = inic_eth_init();
+	if (ret != HAL_OK) {
+		goto init_deinit_bt_exit;
+	}
+#endif
 
 	return HAL_OK;
+
+#ifdef CONFIG_WHC_ETH
+init_deinit_bt_exit:
+	if (usbd_inic_is_bt_en()) {
+		inic_bt_deinit();
+	}
+#endif
 
 init_deinit_wifi_exit:
 	inic_wifi_deinit();
@@ -320,8 +381,9 @@ init_exit:
   */
 static int inic_cb_deinit(void)
 {
-	rtos_sema_delete(inic_wifi_bulk_in_sema);
-	rtos_sema_delete(inic_bt_bulk_in_sema);
+#ifdef CONFIG_WHC_ETH
+	inic_eth_deinit();
+#endif
 
 	inic_wifi_deinit();
 
@@ -355,6 +417,12 @@ static int inic_cb_set_config(void)
 		ep = &iapp->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)];
 		usbd_inic_receive_data(USBD_INIC_BT_EP2_BULK_OUT, ep->buf, ep->buf_len, NULL);
 	}
+
+#ifdef CONFIG_WHC_ETH
+	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_ETH_EP3_BULK_OUT)];
+	usbd_inic_receive_data(USBD_WHC_ETH_EP3_BULK_OUT, ep->buf, ep->buf_len, NULL);
+#endif
+
 	return HAL_OK;
 }
 
@@ -390,7 +458,7 @@ static int inic_cb_received(usbd_inic_ep_t *out_ep, u32 len)
 		// Loopback with EP2
 		ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN);
 		ep_in = &iapp->in_ep[ep_num];
-		usb_os_memcpy((void *)ep_in->buf, (void *)ep->xfer_buf, len);
+		usb_os_memcpy((void *)ep_in->buf, (const void *)ep->xfer_buf, len);
 		ep_in->buf_len = len;
 
 		rtos_sema_give(inic_bt_bulk_in_sema);
@@ -399,7 +467,7 @@ static int inic_cb_received(usbd_inic_ep_t *out_ep, u32 len)
 		// Loopback with EP4
 		ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_IN);
 		ep_in = &iapp->in_ep[ep_num];
-		usb_os_memcpy((void *)ep_in->buf, (void *)ep->xfer_buf, len);
+		usb_os_memcpy((void *)ep_in->buf, (const void *)ep->xfer_buf, len);
 		ep_in->buf_len = len;
 
 		rtos_sema_give(inic_wifi_bulk_in_sema);
@@ -410,6 +478,17 @@ static int inic_cb_received(usbd_inic_ep_t *out_ep, u32 len)
 	case USBD_WHC_WIFI_EP7_BULK_OUT:
 		// TBD
 		break;
+#ifdef CONFIG_WHC_ETH
+	case USBD_WHC_ETH_EP3_BULK_OUT:
+		// Loopback with Ethernet EP6 IN
+		ep_num = USB_EP_NUM(USBD_WHC_ETH_EP6_BULK_IN);
+		ep_in = &iapp->in_ep[ep_num];
+		usb_os_memcpy((void *)ep_in->buf, (const void *)ep->xfer_buf, len);
+		ep_in->buf_len = len;
+
+		rtos_sema_give(inic_eth_bulk_in_sema);
+		break;
+#endif
 	default:
 		break;
 	}
@@ -428,6 +507,7 @@ static int inic_cb_received(usbd_inic_ep_t *out_ep, u32 len)
 static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status)
 {
 	usbd_ep_t *ep = &in_ep->ep;
+
 	(void)status;
 	switch (ep->info.addr) {
 	case USBD_INIC_BT_EP1_INTR_IN:
@@ -439,6 +519,11 @@ static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status)
 	case USBD_WHC_WIFI_EP4_BULK_IN:
 		// TBD
 		break;
+#ifdef CONFIG_WHC_ETH
+	case USBD_WHC_ETH_EP6_BULK_IN:
+		// TBD
+		break;
+#endif
 	default:
 		break;
 	}
@@ -481,6 +566,27 @@ static void example_usbd_inic_bt_bulk_in_thread(void *param)
 		}
 	}
 }
+
+#ifdef CONFIG_WHC_ETH
+static void example_usbd_inic_eth_bulk_in_thread(void *param)
+{
+	UNUSED(param);
+	usbd_inic_app_t *iapp = &usbd_inic_app;
+	usbd_inic_app_ep_t *ep;
+	u8 ep_num;
+
+	ep_num = USB_EP_NUM(USBD_WHC_ETH_EP6_BULK_IN);
+	ep = &iapp->in_ep[ep_num];
+
+	for (;;) {
+		if (rtos_sema_take(inic_eth_bulk_in_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if ((ep->buf != NULL) && (ep->buf_len != 0)) {
+				usbd_inic_transmit_data(USBD_WHC_ETH_EP6_BULK_IN, ep->buf, ep->buf_len, NULL);
+			}
+		}
+	}
+}
+#endif
 
 /**
   * @brief  Handle INIC attach status change notifications from the USB stack
@@ -548,11 +654,32 @@ static void example_usbd_inic_thread(void *param)
 #endif
 	rtos_task_t wifi_bulk_in_task;
 	rtos_task_t bt_bulk_in_task;
+#ifdef CONFIG_WHC_ETH
+	rtos_task_t eth_bulk_in_task;
+#endif
 
 	UNUSED(param);
 
 #if INIC_HOTPLUG
-	rtos_sema_create(&inic_attach_status_changed_sema, 0, 1);
+	ret = rtos_sema_create(&inic_attach_status_changed_sema, 0, 1);
+	if (ret != RTK_SUCCESS) {
+		goto exit;
+	}
+#endif
+	ret = rtos_sema_create(&inic_bt_bulk_in_sema, 0, 1);
+	if (ret != RTK_SUCCESS) {
+		goto exit;
+	}
+
+	ret = rtos_sema_create(&inic_wifi_bulk_in_sema, 0, 1);
+	if (ret != RTK_SUCCESS) {
+		goto exit;
+	}
+#ifdef CONFIG_WHC_ETH
+	ret = rtos_sema_create(&inic_eth_bulk_in_sema, 0, 1);
+	if (ret != RTK_SUCCESS) {
+		goto exit;
+	}
 #endif
 
 	ret = usbd_init(&inic_cfg);
@@ -579,12 +706,25 @@ static void example_usbd_inic_thread(void *param)
 		goto clear_wifi_bulk_in_task;
 	}
 
+#ifdef CONFIG_WHC_ETH
+	ret = rtos_task_create(&eth_bulk_in_task, "usbd_inic_eth_bulk_in_thread",
+						   example_usbd_inic_eth_bulk_in_thread, NULL,
+						   INIC_XFER_THREAD_STACK_SIZE, INIC_XFER_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		goto clear_bt_bulk_in_task;
+	}
+#endif
+
 #if INIC_HOTPLUG
 	ret = rtos_task_create(&hotplug_task, "usbd_inic_hotplug_thread",
 						   example_usbd_inic_hotplug_thread, NULL,
 						   INIC_HOTPLUG_THREAD_STACK_SIZE, INIC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
+#ifdef CONFIG_WHC_ETH
+		goto clear_eth_bulk_in_task;
+#else
 		goto clear_bt_bulk_in_task;
+#endif
 	}
 #endif // INIC_HOTPLUG
 
@@ -595,6 +735,11 @@ static void example_usbd_inic_thread(void *param)
 	rtos_task_delete(NULL);
 
 	return;
+
+#ifdef CONFIG_WHC_ETH
+clear_eth_bulk_in_task:
+	rtos_task_delete(eth_bulk_in_task);
+#endif
 
 clear_bt_bulk_in_task:
 	rtos_task_delete(bt_bulk_in_task);
@@ -610,6 +755,11 @@ clear_usb_driver_exit:
 
 exit:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD INIC demo stop\n");
+#ifdef CONFIG_WHC_ETH
+	rtos_sema_delete(inic_eth_bulk_in_sema);
+#endif
+	rtos_sema_delete(inic_wifi_bulk_in_sema);
+	rtos_sema_delete(inic_bt_bulk_in_sema);
 #if INIC_HOTPLUG
 	rtos_sema_delete(inic_attach_status_changed_sema);
 #endif

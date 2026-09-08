@@ -35,6 +35,7 @@ void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 		api_info = (struct whc_api_info *)(buf + SIZE_TX_DESC);
 		api_info->event = WHC_WIFI_EVT_API_CALL;
 		api_info->api_id = id;
+		api_info->data_len = param_len;
 
 		/* copy data */
 		if (param) {

@@ -29,10 +29,35 @@ static int usbd_scsi_write(usbd_msc_dev_t  *cdev, u8 *params);
 static int usbd_scsi_read(usbd_msc_dev_t  *cdev, u8 *params);
 static int usbd_scsi_verify10(usbd_msc_dev_t  *cdev, u8 *params);
 static int usbd_scsi_check_address_range(usbd_msc_dev_t  *cdev, u32 blk_offset, u32 blk_nbr);
+static int usbd_scsi_check_cdb_length(usbd_msc_dev_t  *cdev, u8 opcode);
 static int usbd_scsi_process_read(usbd_msc_dev_t  *cdev);
 static int usbd_scsi_process_write(usbd_msc_dev_t  *cdev);
 
 /* Private variables ---------------------------------------------------------*/
+
+/* Minimum meaningful CDB length of each supported opcode (SPC-4/SBC-4 CDB
+ * formats). BOT §5.1 says only the first bCBWCBLength bytes of CBWCB are
+ * meaningful, so a command whose CDB is declared shorter than its format
+ * requires must be rejected before any handler parses those bytes.
+ * A longer declared CDB is accepted: the extra bytes are simply not parsed. */
+static const u8 usbd_msc_cdb_len_tbl[][2] = {
+	{SCSI_TEST_UNIT_READY,        6U},
+	{SCSI_REQUEST_SENSE,          6U},
+	{SCSI_INQUIRY,                6U},
+	{SCSI_START_STOP_UNIT,        6U},
+	{SCSI_ALLOW_MEDIUM_REMOVAL,   6U},
+	{SCSI_MODE_SENSE6,            6U},
+	{SCSI_MODE_SELECT6,           6U},
+	{SCSI_MODE_SENSE10,          10U},
+	{SCSI_MODE_SELECT10,         10U},
+	{SCSI_READ_FORMAT_CAPACITIES, 10U},
+	{SCSI_READ_CAPACITY10,       10U},
+	{SCSI_READ10,                10U},
+	{SCSI_WRITE10,               10U},
+	{SCSI_VERIFY10,              10U},
+	{SCSI_READ12,                12U},
+	{SCSI_WRITE12,               12U},
+};
 
 /* MSC page 0 inquiry data: pages 0x00 and 0x80 are supported */
 static const u8 usbd_msc_page0_inquiry_data[] = {
@@ -131,11 +156,11 @@ static int  usbd_scsi_inquiry(usbd_msc_dev_t *cdev, u8 *params)
 		switch (params[2]) {
 		case 0x00U:
 			cdev->data_length = PAGE00_INQUIRY_DATA_LEN;
-			usb_os_memcpy((void *)cdev->data, (void *)usbd_msc_page0_inquiry_data, cdev->data_length);
+			usb_os_memcpy((void *)cdev->data, (const void *)usbd_msc_page0_inquiry_data, cdev->data_length);
 			break;
 		case 0x80U:
 			cdev->data_length = PAGE80_INQUIRY_DATA_LEN;
-			usb_os_memcpy((void *)cdev->data, (void *)usbd_msc_page80_inquiry_data, cdev->data_length);
+			usb_os_memcpy((void *)cdev->data, (const void *)usbd_msc_page80_inquiry_data, cdev->data_length);
 			break;
 		default:
 			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
@@ -151,7 +176,7 @@ static int  usbd_scsi_inquiry(usbd_msc_dev_t *cdev, u8 *params)
 		/* INQUIRY allocation length is a 16-bit big-endian field (CDB bytes 3-4) */
 		alloc_len = ((u16)params[3] << 8) | params[4];
 		cdev->data_length = MIN(alloc_len, INQUIRY_DATA_LEN);
-		usb_os_memcpy((void *)cdev->data, (void *)usbd_msc_standard_inquiry_data, cdev->data_length);
+		usb_os_memcpy((void *)cdev->data, (const void *)usbd_msc_standard_inquiry_data, cdev->data_length);
 	}
 
 	return HAL_OK;
@@ -237,7 +262,7 @@ static int usbd_scsi_mode_sense6(usbd_msc_dev_t *cdev, u8 *params)
 	UNUSED(params);
 
 	cdev->data_length = MODE_SENSE6_DATA_LEN;
-	usb_os_memcpy((void *)cdev->data, (void *)usbd_msc_mode_sense6_data, cdev->data_length);
+	usb_os_memcpy((void *)cdev->data, (const void *)usbd_msc_mode_sense6_data, cdev->data_length);
 	if (cdev->ro) {
 		cdev->data[2] |= 0x80U;  /* SPC-4: byte 2 bit 7 = WP */
 	}
@@ -256,7 +281,7 @@ static int usbd_scsi_mode_sense10(usbd_msc_dev_t *cdev, u8 *params)
 	UNUSED(params);
 
 	cdev->data_length = MODE_SENSE10_DATA_LEN;
-	usb_os_memcpy((void *)cdev->data, (void *)usbd_msc_mode_sense10_data, cdev->data_length);
+	usb_os_memcpy((void *)cdev->data, (const void *)usbd_msc_mode_sense10_data, cdev->data_length);
 	if (cdev->ro) {
 		cdev->data[3] |= 0x80U;  /* SPC-4: byte 3 bit 7 = WP */
 	}
@@ -508,6 +533,30 @@ static int usbd_scsi_verify10(usbd_msc_dev_t *cdev, u8 *params)
 }
 
 /**
+* @brief  Check that the CBW declares a CDB long enough for the opcode
+* @param  cdev: Device instance
+* @param  opcode: SCSI operation code
+* @retval Status
+*/
+static int usbd_scsi_check_cdb_length(usbd_msc_dev_t *cdev, u8 opcode)
+{
+	u32 i;
+
+	for (i = 0; i < (sizeof(usbd_msc_cdb_len_tbl) / sizeof(usbd_msc_cdb_len_tbl[0])); i++) {
+		if (usbd_msc_cdb_len_tbl[i][0] == opcode) {
+			if (cdev->cbw->field.bCBWCBLength < usbd_msc_cdb_len_tbl[i][1]) {
+				usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
+				return HAL_ERR_PARA;
+			}
+			break;
+		}
+	}
+
+	/* Unlisted opcodes are rejected by the dispatcher's default branch */
+	return HAL_OK;
+}
+
+/**
 * @brief  Check address range
 * @param  cdev: Device instance
 * @param  blk_offset: first block address
@@ -516,7 +565,9 @@ static int usbd_scsi_verify10(usbd_msc_dev_t *cdev, u8 *params)
 */
 static int usbd_scsi_check_address_range(usbd_msc_dev_t *cdev, u32 blk_offset, u32 blk_nbr)
 {
-	if ((blk_offset + blk_nbr) > cdev->num_sectors) {
+	/* Overflow-safe: blk_offset + blk_nbr can wrap on host-controlled
+	 * READ(12)/WRITE(12) values and pass a naive sum comparison */
+	if ((blk_offset > cdev->num_sectors) || (blk_nbr > (cdev->num_sectors - blk_offset))) {
 		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_ADDRESS_OUT_OF_RANGE);
 		return HAL_ERR_PARA;
 	}
@@ -604,6 +655,10 @@ static int usbd_scsi_process_write(usbd_msc_dev_t *cdev)
 int usbd_scsi_process_cmd(usbd_msc_dev_t *cdev, u8 *cmd)
 {
 	int ret = HAL_OK;
+
+	if (usbd_scsi_check_cdb_length(cdev, cmd[0]) != HAL_OK) {
+		return HAL_ERR_PARA;
+	}
 
 	switch (cmd[0]) {
 	case SCSI_TEST_UNIT_READY:

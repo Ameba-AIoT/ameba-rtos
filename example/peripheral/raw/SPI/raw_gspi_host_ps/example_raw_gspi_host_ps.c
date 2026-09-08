@@ -84,7 +84,7 @@ static int ps_send_cmd(const char *cmd)
 	_memcpy(gspi_txbuf + GSPI_CMD_LEN + GSPI_TX_DESC_SIZE, cmd, len);
 
 	ret = GSPI_WriteTxFifo(&gspi, gspi_txbuf, GSPI_TX_DESC_SIZE + len, NULL);
-	if (ret != GSPI_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "send \"%s\" failed (%d)\n", cmd, ret);
 	}
 	return ret;
@@ -115,7 +115,7 @@ static void ps_drain_rx(void)
 	u32 pending = GSPI_GetRxLen(&gspi, NULL);
 
 	while (pending && (pending <= PS_MAX_PAYLOAD)) {
-		if (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL) != GSPI_OK) {
+		if (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL) != RTK_SUCCESS) {
 			break;
 		}
 		pending = GSPI_GetRxLen(&gspi, NULL);
@@ -141,7 +141,7 @@ static int gspi_host_link_up(void)
 {
 	GSPI_InitTypeDef init;
 	u32 pending;
-	u8 cpu_ind;
+	u32 cpu_ind;
 
 	GSPI_StructInit(&init);
 	init.GSPI_Index = 0;
@@ -151,7 +151,7 @@ static int gspi_host_link_up(void)
 	init.GSPI_CsPin = GSPI_CS;
 	init.GSPI_ClkFreq = GSPI_BUS_FREQ_HZ;
 	init.GSPI_ClkFreqInit = GSPI_FREQ_ACTIVATE;
-	if (GSPI_Init(&gspi, &init) != GSPI_OK) {
+	if (GSPI_Init(&gspi, &init) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "GSPI_Init failed\n");
 		return -1;
 	}
@@ -163,24 +163,25 @@ static int gspi_host_link_up(void)
 	ps_pin_input(GSPI_INT);
 	ps_pin_input(GSPI_WAKE);
 
-	if (GSPI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != GSPI_OK) {
+	if (GSPI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != RTK_SUCCESS) {
 		return -1;
 	}
-	cpu_ind = GSPI_ReadReg8(&gspi, GSPI_REG_CPU_IND, NULL);
+	/* CPU_RDY is bit24 of the 0x84 word in the AUTO_GEN view. */
+	cpu_ind = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL);
 
 	/* CPWM1/CPWM2 are unmasked because SPI_INT only follows masked HISR bits,
 	 * and phase B uses their toggles as wake triggers. */
 	GSPI_INTClear(&gspi, 0xFFFFFFFF);
 	GSPI_WriteReg32(&gspi, GSPI_REG_RX_AGG, 0, NULL);
-	GSPI_INTConfig(&gspi, GSPI_BIT_RX_REQUEST | GSPI_BIT_AVAL_INT |
+	GSPI_INTConfig(&gspi, GSPI_BIT_RX_REQUEST | GSPI_BIT_TXFIFO_AVAL_INT |
 				   GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT, ENABLE);
 
-	if (ps_send_cmd(HELLO_DEVICE_MSG) != GSPI_OK) {
+	if (ps_send_cmd(HELLO_DEVICE_MSG) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "handshake failed: TX write\n");
 		return -1;
 	}
 	pending = ps_wait_rx(3000);
-	if ((pending == 0) || (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL) != GSPI_OK)) {
+	if ((pending == 0) || (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL) != RTK_SUCCESS)) {
 		RTK_LOGE(TAG, "handshake failed: no reply, HISR=0x%08x\n", GSPI_INTStatus(&gspi, NULL));
 		return -1;
 	}
@@ -190,17 +191,18 @@ static int gspi_host_link_up(void)
 	}
 
 	RTK_LOGI(TAG, "link up: CPU_RDY=%d HIMR=0x%08x, handshake OK\n",
-			 cpu_ind & GSPI_BIT_CPU_RDY, GSPI_GetINTMask(&gspi));
+			 (cpu_ind & GSPI_BIT_SYNC_CPU_RDY_IND) ? 1 : 0, GSPI_GetINTMask(&gspi));
 	return 0;
 }
 
+#if (PS_RUN_PROBE || PS_RUN_SUSPEND_RESUME || PS_RUN_HOST_SLEEP || PS_RUN_LONGRUN)
 /* Ask the Device for one packet and wait for it: re-checks the Device -> Host
  * direction after a power-management operation. Returns 1 if it arrived. */
 static int ps_check_dev_to_host(const char *stage)
 {
 	u32 pending;
 
-	if (ps_send_cmd(PS_CMD_TXDATA) != GSPI_OK) {
+	if (ps_send_cmd(PS_CMD_TXDATA) != RTK_SUCCESS) {
 		return 0;
 	}
 
@@ -213,6 +215,7 @@ static int ps_check_dev_to_host(const char *stage)
 	RTK_LOGI(TAG, "  D2H(%s): OK, %d bytes\n", stage, (int)pending);
 	return 1;
 }
+#endif
 
 #if PS_RUN_PROBE
 /* Watch both interrupt-capable pins. bit0 = INT went low, bit1 = WAKE went low. */
@@ -238,7 +241,7 @@ static u32 ps_watch_pins(u32 watch_ms)
  * The TOGGLING bit does not read back, only its edge matters. */
 static void ps_probe_hrpwm(void)
 {
-	u8 next = (u8)(GSPI_ReadReg8(&gspi, GSPI_REG_HRPWM, NULL) ^ GSPI_BIT_HRPWM_TOGGLING);
+	u8 next = (u8)(GSPI_ReadReg8(&gspi, GSPI_REG_HRPWM, NULL) ^ GSPI_BIT_R_HRPWM_7);
 
 	GSPI_WriteReg8(&gspi, GSPI_REG_HRPWM, next, NULL);
 	rtos_time_delay_ms(PS_WATCH_MS);
@@ -250,13 +253,13 @@ static void ps_probe_hrpwm(void)
  * rpwm_cb, so this decides whether the SDK's ACT/CG protocol can be reused. */
 static void ps_probe_hrpwm2(void)
 {
-	u16 val = (u16)(GSPI_BIT_HRPWM2_TOGGLE | GSPI_BIT_HRPWM2_ACT);
+	u32 val = GSPI_BIT_R_HRPWM2_15 | GSPI_R_HRPWM2(GSPI_BIT_HRPWM2_ACT);
 
-	GSPI_WriteReg16(&gspi, GSPI_REG_HRPWM2, val, NULL);
+	GSPI_WriteReg32(&gspi, GSPI_REG_HRPWM, val, NULL);
 	rtos_time_delay_ms(PS_WATCH_MS);
 	/* The TOGGLE bit self-clears, so the readback shows ACT only. */
-	RTK_LOGI(TAG, "P2 HRPWM2: wrote 0x%04x, readback 0x%04x (Device logs rpwm_cb)\n",
-			 val, GSPI_ReadReg16(&gspi, GSPI_REG_HRPWM2, NULL));
+	RTK_LOGI(TAG, "P2 HRPWM2: wrote 0x%08x, readback 0x%04x (Device logs rpwm_cb)\n",
+			 val, GSPI_GET_R_HRPWM2(GSPI_ReadReg32(&gspi, GSPI_REG_HRPWM, NULL)));
 }
 
 /* P3: CPU_IND bit0 follows the Device's SDIO_SetReady(). */
@@ -264,16 +267,16 @@ static void ps_probe_cpu_ind(void)
 {
 	u32 elapsed = 0;
 	u32 t_low = 0;
-	u8 last = GSPI_ReadReg8(&gspi, GSPI_REG_CPU_IND, NULL) & GSPI_BIT_CPU_RDY;
-	u8 cur;
+	u32 last = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL) & GSPI_BIT_SYNC_CPU_RDY_IND;
+	u32 cur;
 	u32 transitions = 0;
 
-	if (ps_send_cmd(PS_CMD_RDY0) != GSPI_OK) {
+	if (ps_send_cmd(PS_CMD_RDY0) != RTK_SUCCESS) {
 		return;
 	}
 
 	while ((elapsed < PS_RDY_WATCH_MS) && (transitions < 2)) {
-		cur = GSPI_ReadReg8(&gspi, GSPI_REG_CPU_IND, NULL) & GSPI_BIT_CPU_RDY;
+		cur = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL) & GSPI_BIT_SYNC_CPU_RDY_IND;
 		if (cur != last) {
 			last = cur;
 			transitions++;
@@ -370,15 +373,18 @@ static void ps_run_probes(void)
  * Returns the handshake time in ms, or -1 on timeout. */
 static int ps_rpwm_notify(u8 suspend)
 {
-	u16 val = (u16)(GSPI_BIT_HRPWM2_TOGGLE |
-					(suspend ? GSPI_BIT_HRPWM2_CG : GSPI_BIT_HRPWM2_ACT));
-	u8 target = suspend ? 0 : GSPI_BIT_CPU_RDY;
+	/* 32-bit write at the 0x80 word: HRPWM2 payload goes to bits[30:16] and its
+	 * toggle is bit31. This also writes HRPWM[7:0]=0, which is harmless -- bit7
+	 * stays 0 so no RPWM1 edge is produced. */
+	u32 val = GSPI_BIT_R_HRPWM2_15 |
+			  GSPI_R_HRPWM2(suspend ? GSPI_BIT_HRPWM2_CG : GSPI_BIT_HRPWM2_ACT);
+	u32 target = suspend ? 0 : GSPI_BIT_SYNC_CPU_RDY_IND;
 	u32 elapsed = 0;
 
-	GSPI_WriteReg16(&gspi, GSPI_REG_HRPWM2, val, NULL);
+	GSPI_WriteReg32(&gspi, GSPI_REG_HRPWM, val, NULL);
 
 	while (elapsed < PS_RPWM_TIMEOUT_MS) {
-		if ((GSPI_ReadReg8(&gspi, GSPI_REG_CPU_IND, NULL) & GSPI_BIT_CPU_RDY) == target) {
+		if ((GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL) & GSPI_BIT_SYNC_CPU_RDY_IND) == target) {
 			return (int)elapsed;
 		}
 		rtos_time_delay_ms(1);
@@ -391,32 +397,32 @@ static int ps_rpwm_notify(u8 suspend)
 static int ps_suspend_resume_once(u32 cycle, u8 verbose)
 {
 	int ack_cg, ack_act;
-	u8 ind_asleep;
+	u32 ind_asleep;
 	u16 hcpwm2_asleep;
 
 	ack_cg = ps_rpwm_notify(1);
 	if (ack_cg < 0) {
-		RTK_LOGE(TAG, "cycle %d: suspend not acked, CPU_IND=0x%02x\n",
-				 cycle, GSPI_ReadReg8(&gspi, GSPI_REG_CPU_IND, NULL));
+		RTK_LOGE(TAG, "cycle %d: suspend not acked, CPU_INDICATION=0x%08x\n",
+				 cycle, GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL));
 		return -1;
 	}
 
 	/* Registers stay reachable while the Device sleeps: the GSPI front end is in
 	 * the always-on card domain. */
 	rtos_time_delay_ms(PS_SLEEP_MS / 2);
-	ind_asleep = GSPI_ReadReg8(&gspi, GSPI_REG_CPU_IND, NULL);
+	ind_asleep = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL);
 	hcpwm2_asleep = GSPI_ReadReg16(&gspi, GSPI_REG_HCPWM2, NULL);
 	rtos_time_delay_ms(PS_SLEEP_MS / 2);
 
 	ack_act = ps_rpwm_notify(0);
 	if (ack_act < 0) {
-		RTK_LOGE(TAG, "cycle %d: resume not acked, CPU_IND=0x%02x\n",
-				 cycle, GSPI_ReadReg8(&gspi, GSPI_REG_CPU_IND, NULL));
+		RTK_LOGE(TAG, "cycle %d: resume not acked, CPU_INDICATION=0x%08x\n",
+				 cycle, GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL));
 		return -1;
 	}
 
 	if (verbose) {
-		RTK_LOGI(TAG, "cycle %d: CG acked %dms, asleep CPU_IND=0x%02x HCPWM2=0x%04x, ACT acked %dms\n",
+		RTK_LOGI(TAG, "cycle %d: CG acked %dms, asleep CPU_INDICATION=0x%08x HCPWM2=0x%04x, ACT acked %dms\n",
 				 cycle, ack_cg, ind_asleep, hcpwm2_asleep, ack_act);
 	}
 
@@ -549,7 +555,7 @@ static int ps_host_sleep_once(u32 cycle, u8 trig, u8 verbose)
 				 cycle, GSPI_INTStatus(&gspi, NULL));
 	}
 
-	if (ps_send_cmd(ps_trig_cmd[trig]) != GSPI_OK) {
+	if (ps_send_cmd(ps_trig_cmd[trig]) != RTK_SUCCESS) {
 		return -1;
 	}
 	pmu_release_wakelock(PMU_DEV_USER_BASE);

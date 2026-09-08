@@ -196,6 +196,21 @@ class Ameba(object):
                     self.serial_port.rts = False
                     self.serial_port.open()
         except Exception as err:
+            # pyserial may have opened the OS handle before a later property/open
+            # operation failed. Close any partially initialized port immediately;
+            # __init__ did not finish, so callers cannot reliably clean it up.
+            if self.serial_port is not None:
+                try:
+                    if RemoteSerial and isinstance(self.serial_port, RemoteSerial):
+                        self.serial_port.close(close_tcp=self.close_tcp_on_cleanup)
+                    else:
+                        self.serial_port.close()
+                except Exception as close_err:
+                    self.logger.error(
+                        f"Close serial port after initialization failure failed: {close_err}"
+                    )
+                finally:
+                    self.serial_port = None
             self.logger.error(f"Initialize serial port failed: {err}")
             sys.exit(1)
 

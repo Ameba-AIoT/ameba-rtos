@@ -43,6 +43,14 @@
 #define SPI_SCLK  _PA_29
 #define SPI_CS    _PB_0
 
+#elif defined (CONFIG_AMEBAPRO3)
+// SPI1 //M - Pinmux S0
+#define SPI_MOSI  _PF_6
+#define SPI_MISO  _PF_5
+#define SPI_SCLK  _PF_4
+#define SPI_CS    _PF_7
+
+
 #elif defined (CONFIG_RTL8720F)
 #define SPI_MOSI  _PA_8
 #define SPI_MISO  _PA_9

@@ -116,6 +116,25 @@
 #define SPI_CS    _PA_10
 #endif
 
+#elif defined (CONFIG_AMEBAPRO3)
+/* using fully programmable range */
+#define SPI_GPIO_CS0 _PF_2
+#define SPI_GPIO_CS1 _PF_3
+
+#if SPI_IS_AS_MASTER
+#define SPI_MOSI  _PF_6
+#define SPI_MISO  _PF_5
+#define SPI_SCLK  _PF_4
+#define SPI_CS    _PF_7
+
+#else
+#define SPI_MOSI  _PC_8
+#define SPI_MISO  _PE_7
+#define SPI_SCLK  _PC_6
+#define SPI_CS    _PC_9
+
+#endif
+
 #endif
 
 extern int example_raw_spi_multislave(void);

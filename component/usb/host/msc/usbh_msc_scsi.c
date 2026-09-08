@@ -40,7 +40,7 @@ int usbh_scsi_test_unit_ready(usbh_msc_host_t *msc, u8 lun)
 		cbw->field.bmCBWFlags = USB_H2D;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
+		usb_os_memset((void *)cbw->field.CBWCB, 0, CBW_CB_LENGTH);
 		cbw->field.CBWCB[0] = SCSI_TEST_UNIT_READY;
 
 		msc->hbot.state = BOT_SEND_CBW;
@@ -80,12 +80,15 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
 		cbw->field.bmCBWFlags = USB_D2H;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
+		usb_os_memset((void *)cbw->field.CBWCB, 0, CBW_CB_LENGTH);
 		cbw->field.CBWCB[0] = SCSI_READ_CAPACITY10;
 
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
+		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
+			usb_os_mfree((void *)msc->hbot.pbuf);
+		}
 		msc->hbot.pbuf = msc->hbot.data;
 		status = HAL_BUSY;
 		break;
@@ -135,7 +138,7 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
 		cbw->field.bmCBWFlags = USB_D2H;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
+		usb_os_memset((void *)cbw->field.CBWCB, 0, CBW_CB_LENGTH);
 		cbw->field.CBWCB[0] = SCSI_INQUIRY;
 		/* CBWCB[1]: EVPD bit only; bits 7:1 reserved per SPC-3; LUN in bCBWLUN */
 		cbw->field.CBWCB[1] = 0U;
@@ -147,6 +150,9 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
+		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
+			usb_os_mfree((void *)msc->hbot.pbuf);
+		}
 		msc->hbot.pbuf = msc->hbot.data;
 		status = HAL_BUSY;
 		break;
@@ -156,7 +162,7 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
 		status = usbh_msc_bot_process(msc->host, lun);
 
 		if (status == HAL_OK) {
-			usb_os_memset(inquiry, 0, sizeof(usbh_scsi_inquiry_t));
+			usb_os_memset((void *)inquiry, 0, sizeof(usbh_scsi_inquiry_t));
 			/*assign Inquiry Data */
 			inquiry->DeviceType = msc->hbot.pbuf[0] & 0x1FU;
 			inquiry->PeripheralQualifier = msc->hbot.pbuf[0] >> 5U;
@@ -167,9 +173,9 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
 				inquiry->RemovableMedia = 0U;
 			}
 
-			usb_os_memcpy(inquiry->vendor_id, &msc->hbot.pbuf[8], 8U);
-			usb_os_memcpy(inquiry->product_id, &msc->hbot.pbuf[16], 16U);
-			usb_os_memcpy(inquiry->revision_id, &msc->hbot.pbuf[32], 4U);
+			usb_os_memcpy((void *)inquiry->vendor_id, (const void *)&msc->hbot.pbuf[8], 8U);
+			usb_os_memcpy((void *)inquiry->product_id, (const void *)&msc->hbot.pbuf[16], 16U);
+			usb_os_memcpy((void *)inquiry->revision_id, (const void *)&msc->hbot.pbuf[32], 4U);
 		}
 		break;
 
@@ -200,7 +206,7 @@ int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_dat
 		cbw->field.bmCBWFlags = USB_D2H;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
+		usb_os_memset((void *)cbw->field.CBWCB, 0, CBW_CB_LENGTH);
 		cbw->field.CBWCB[0] = SCSI_REQUEST_SENSE;
 		/* CBWCB[1]: DESC bit only; bits 7:1 reserved per SPC-3; LUN in bCBWLUN */
 		cbw->field.CBWCB[1] = 0U;
@@ -212,6 +218,9 @@ int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_dat
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
+		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
+			usb_os_mfree((void *)msc->hbot.pbuf);
+		}
 		msc->hbot.pbuf = msc->hbot.data;
 		status = HAL_BUSY;
 		break;
@@ -260,27 +269,27 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 len
 		cbw->field.bmCBWFlags = USB_H2D;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
+		usb_os_memset((void *)cbw->field.CBWCB, 0, CBW_CB_LENGTH);
 		cbw->field.CBWCB[0] = SCSI_WRITE10;
 
 		/*logical block address*/
-		cbw->field.CBWCB[2] = (((u8 *)(void *)&address)[3]);
-		cbw->field.CBWCB[3] = (((u8 *)(void *)&address)[2]);
-		cbw->field.CBWCB[4] = (((u8 *)(void *)&address)[1]);
-		cbw->field.CBWCB[5] = (((u8 *)(void *)&address)[0]);
+		cbw->field.CBWCB[2] = (((u8 *)&address)[3]);
+		cbw->field.CBWCB[3] = (((u8 *)&address)[2]);
+		cbw->field.CBWCB[4] = (((u8 *)&address)[1]);
+		cbw->field.CBWCB[5] = (((u8 *)&address)[0]);
 
 		/*Transfer length */
-		cbw->field.CBWCB[7] = (((u8 *)(void *)&length)[1]);
-		cbw->field.CBWCB[8] = (((u8 *)(void *)&length)[0]);
+		cbw->field.CBWCB[7] = (((u8 *)&length)[1]);
+		cbw->field.CBWCB[8] = (((u8 *)&length)[0]);
 
 		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
-			usb_os_mfree(msc->hbot.pbuf);
+			usb_os_mfree((void *)msc->hbot.pbuf);
 		}
 		msc->hbot.pbuf = (u8 *)usb_os_malloc(cbw->field.dCBWDataTransferLength);
 		if (msc->hbot.pbuf == NULL) {
 			return HAL_ERR_MEM;
 		}
-		usb_os_memcpy(msc->hbot.pbuf, pbuf, cbw->field.dCBWDataTransferLength);
+		usb_os_memcpy((void *)msc->hbot.pbuf, (const void *)pbuf, cbw->field.dCBWDataTransferLength);
 		msc->hbot.state = BOT_SEND_CBW;
 		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
@@ -290,7 +299,7 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 len
 	case BOT_CMD_BUSY:
 		status = usbh_msc_bot_process(msc->host, lun);
 		if (status == HAL_OK) {
-			usb_os_mfree(msc->hbot.pbuf);
+			usb_os_mfree((void *)msc->hbot.pbuf);
 			msc->hbot.pbuf = NULL;
 		}
 		break;
@@ -328,23 +337,23 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 		cbw->field.bmCBWFlags = USB_D2H;
 		cbw->field.bCBWCBLength = CBW_LENGTH;
 
-		usb_os_memset(cbw->field.CBWCB, 0, CBW_CB_LENGTH);
+		usb_os_memset((void *)cbw->field.CBWCB, 0, CBW_CB_LENGTH);
 		cbw->field.CBWCB[0] = SCSI_READ10;
 
 		/*logical block address*/
-		cbw->field.CBWCB[2] = (((u8 *)(void *)&address)[3]);
-		cbw->field.CBWCB[3] = (((u8 *)(void *)&address)[2]);
-		cbw->field.CBWCB[4] = (((u8 *)(void *)&address)[1]);
-		cbw->field.CBWCB[5] = (((u8 *)(void *)&address)[0]);
+		cbw->field.CBWCB[2] = (((u8 *)&address)[3]);
+		cbw->field.CBWCB[3] = (((u8 *)&address)[2]);
+		cbw->field.CBWCB[4] = (((u8 *)&address)[1]);
+		cbw->field.CBWCB[5] = (((u8 *)&address)[0]);
 
 		/*Transfer length */
-		cbw->field.CBWCB[7] = (((u8 *)(void *)&length)[1]);
-		cbw->field.CBWCB[8] = (((u8 *)(void *)&length)[0]);
+		cbw->field.CBWCB[7] = (((u8 *)&length)[1]);
+		cbw->field.CBWCB[8] = (((u8 *)&length)[0]);
 
 		msc->hbot.origin_rx_pbuf = pbuf;
 		msc->hbot.origin_rx_pbuf_len = cbw->field.dCBWDataTransferLength;
 		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
-			usb_os_mfree(msc->hbot.pbuf);
+			usb_os_mfree((void *)msc->hbot.pbuf);
 		}
 		msc->hbot.pbuf = (u8 *)usb_os_malloc(cbw->field.dCBWDataTransferLength);
 		if (msc->hbot.pbuf == NULL) {
@@ -359,8 +368,8 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 	case BOT_CMD_BUSY:
 		status = usbh_msc_bot_process(msc->host, lun);
 		if (status == HAL_OK) {
-			usb_os_memcpy(msc->hbot.origin_rx_pbuf, msc->hbot.pbuf, msc->hbot.origin_rx_pbuf_len);
-			usb_os_mfree(msc->hbot.pbuf);
+			usb_os_memcpy((void *)msc->hbot.origin_rx_pbuf, (const void *)msc->hbot.pbuf, msc->hbot.origin_rx_pbuf_len);
+			usb_os_mfree((void *)msc->hbot.pbuf);
 			msc->hbot.pbuf = NULL;
 		}
 		break;

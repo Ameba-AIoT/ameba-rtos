@@ -38,6 +38,11 @@ master's GND connect to slave's GND
   - master's `SCL (_PA_21)` connect to slave's `SCL`
   - master's `GND` connect to slave's `GND`
 
+* On RTL8735C
+  - master's `SDA (_PF_3)` connect to slave's `SDA`
+  - master's `SCL (_PF_2)` connect to slave's `SCL`
+  - master's `GND` connect to slave's `GND`
+
 # SW Configuration
 
 1. In this example, we use config I2C_RESTART_DEMO to decide if the master will generate a restart condition.
@@ -71,3 +76,4 @@ RTL8710E
 RTL8721Dx
 RTL8721F
 RTL8720F
+RTL8735C

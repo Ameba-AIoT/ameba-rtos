@@ -119,7 +119,7 @@ static int usbh_msc_attach(usb_host_t *host)
 		msc->hbot.reset_recovery = 0U;
 
 		/* De-Initialize LUNs information */
-		usb_os_memset(msc->unit, 0, sizeof(msc->unit));
+		usb_os_memset((void *)msc->unit, 0, sizeof(msc->unit));
 
 		if ((msc->cb != NULL) && (msc->cb->attach != NULL)) {
 			msc->cb->attach();
@@ -162,6 +162,8 @@ static int usbh_msc_detach(usb_host_t *host)
 	if (bulk_out->pipe_num) {
 		usbh_close_pipe(host, bulk_out);
 	}
+
+	msc->host = NULL;
 	return HAL_OK;
 }
 
@@ -587,6 +589,9 @@ static usb_msc_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
 					status = BOT_CSW_PHASE_ERROR;
 				} else {
 				}
+			} else {
+				/* BOT §6.3.1: tag mismatch means invalid CSW, must go through Reset Recovery */
+				status = BOT_CSW_PHASE_ERROR;
 			} /* CSW Tag Matching is Checked  */
 		} /* CSW Signature Correct Checking */
 		else {
@@ -874,7 +879,7 @@ int usbh_msc_get_lun_info(u8 lun, usbh_msc_lun_t *info)
 	}
 
 	if ((msc->host->connect_state == USBH_STATE_SETUP) && (USBH_MSC_MAX_LUN > lun)) {
-		usb_os_memcpy(info, &msc->unit[lun], sizeof(usbh_msc_lun_t));
+		usb_os_memcpy((void *)info, (const void *)&msc->unit[lun], sizeof(usbh_msc_lun_t));
 		return HAL_OK;
 	} else {
 		return HAL_ERR_UNKNOWN;
@@ -1068,25 +1073,20 @@ int usbh_msc_init(const usbh_msc_cb_t *cb)
 	}
 
 	ret = usbh_register_class(&usbh_msc_driver);
+	if (ret != HAL_OK) {
+		goto exit_free;
+	}
 	return ret;
 
 exit_free:
-	if (msc->max_lun_buf != NULL) {
-		usb_os_mfree(msc->max_lun_buf);
-		msc->max_lun_buf = NULL;
-	}
-	if (msc->hbot.data != NULL) {
-		usb_os_mfree(msc->hbot.data);
-		msc->hbot.data = NULL;
-	}
-	if (msc->hbot.csw != NULL) {
-		usb_os_mfree(msc->hbot.csw);
-		msc->hbot.csw = NULL;
-	}
-	if (msc->hbot.cbw != NULL) {
-		usb_os_mfree(msc->hbot.cbw);
-		msc->hbot.cbw = NULL;
-	}
+	usb_os_mfree((void *)msc->max_lun_buf);
+	msc->max_lun_buf = NULL;
+	usb_os_mfree((void *)msc->hbot.data);
+	msc->hbot.data = NULL;
+	usb_os_mfree((void *)msc->hbot.csw);
+	msc->hbot.csw = NULL;
+	usb_os_mfree((void *)msc->hbot.cbw);
+	msc->hbot.cbw = NULL;
 	return ret;
 }
 
@@ -1110,33 +1110,25 @@ int usbh_msc_deinit(void)
 		usbh_close_pipe(host, bulk_out);
 	}
 
-	if (msc->max_lun_buf != NULL) {
-		usb_os_mfree(msc->max_lun_buf);
-		msc->max_lun_buf = NULL;
-	}
+	usb_os_mfree((void *)msc->max_lun_buf);
+	msc->max_lun_buf = NULL;
 
 	/* A read/write that errored out can leave an allocated transfer buffer.
 	   hbot.pbuf may alias hbot.data, so only free it when it is a separate
 	   allocation (mirrors the guard in usbh_scsi_read/write). */
 	if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
-		usb_os_mfree(msc->hbot.pbuf);
+		usb_os_mfree((void *)msc->hbot.pbuf);
 	}
 	msc->hbot.pbuf = NULL;
 
-	if (msc->hbot.data != NULL) {
-		usb_os_mfree(msc->hbot.data);
-		msc->hbot.data = NULL;
-	}
+	usb_os_mfree((void *)msc->hbot.data);
+	msc->hbot.data = NULL;
 
-	if (msc->hbot.csw != NULL) {
-		usb_os_mfree(msc->hbot.csw);
-		msc->hbot.csw = NULL;
-	}
+	usb_os_mfree((void *)msc->hbot.csw);
+	msc->hbot.csw = NULL;
 
-	if (msc->hbot.cbw != NULL) {
-		usb_os_mfree(msc->hbot.cbw);
-		msc->hbot.cbw = NULL;
-	}
+	usb_os_mfree((void *)msc->hbot.cbw);
+	msc->hbot.cbw = NULL;
 
 	ret = usbh_unregister_class(&usbh_msc_driver);
 

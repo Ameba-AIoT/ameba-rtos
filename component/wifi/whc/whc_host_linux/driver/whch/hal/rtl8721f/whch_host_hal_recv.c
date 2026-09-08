@@ -256,15 +256,8 @@ int whc_host_hal_rx_mpdu(struct sk_buff *pskb)
 		} else
 #endif
 		{
-#if 0	/* TODO_mp */
-			if (rtw_halphy_shareinfo.phl_drv_mode == RTW_DRV_MODE_MP) {
-				wifi_hal_mp_rx_process(precvframe, pphy_info);
-			} else
-#endif
-			{
-				whc_host_hal_normal_rx_process(precvframe, pphy_info);
-				not_free_recvframe = 1;/*may handle fragment frame and not free recvframe*/
-			}
+			whc_host_hal_normal_rx_process(precvframe, pphy_info);
+			not_free_recvframe = 1;/*may handle fragment frame and not free recvframe*/
 		}
 		break;
 	}

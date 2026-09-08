@@ -43,6 +43,11 @@ For example:
   - Connect `SPI0_MISO (_PA_9)` to `SPI1_MISO (_PA_27)`
   - Connect `SPI0_SCLK (_PA_7)` to `SPI1_SCLK (_PA_25)`
   - Connect `SPI0_CS (_PA_10)` to `SPI1_CS (_PA_28)`
+- On RTL8735C, connect as below
+  - Connect `SPI0_MOSI (_PC_8)` to `SPI1_MOSI (_PF_6)`
+  - Connect `SPI0_MISO (_PE_7)` to `SPI1_MISO (_PF_5)`
+  - Connect `SPI0_SCLK (_PC_6)` to `SPI1_SCLK (_PF_4)`
+  - Connect `SPI0_CS (_PC_9)` to `SPI1_CS (_PF_7)`
 
 # SW configuration
 
@@ -74,3 +79,4 @@ RTL8710E
 RTL8721Dx
 RTL8721F
 RTL8720F
+RTL8735C

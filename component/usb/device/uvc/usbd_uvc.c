@@ -172,7 +172,7 @@ usbd_uvc_video_encode_data(usbd_uvc_video_t *video, usbd_uvc_buffer_t *buf, u8 *
 	/* Copy video data to the USB buffer. */
 	mem = buf->mem + video->buf_used;
 	nbytes = min((u32)len, buf->bytesused - video->buf_used);
-	memcpy(data, mem, nbytes);
+	usb_os_memcpy((void *)data, (const void *)mem, nbytes);
 	video->buf_used += nbytes;
 	return nbytes;
 }
@@ -376,7 +376,7 @@ static int usbd_uvc_handle_ep0_data_out(usb_dev_t *dev)
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 	req_data.type = USBD_UVC_EVENT_DATA;
 	DCache_Invalidate((u32)ep0_out->xfer_buf, cdev->ctrl_data_len);
-	memcpy(req_data.uvc_data.data, ep0_out->xfer_buf, cdev->ctrl_data_len);
+	usb_os_memcpy((void *)req_data.uvc_data.data, (const void *)ep0_out->xfer_buf, cdev->ctrl_data_len);
 	req_data.uvc_data.length = cdev->ctrl_data_len;
 	usbd_uvc_events_process(cdev, &req_data);
 
@@ -488,7 +488,7 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	case USB_DESC_TYPE_DEVICE:
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USB_DESC_TYPE_DEVICE\n");
 		len = sizeof(usbd_uvc_dev_desc);
-		usb_os_memcpy((void *)buf, (void *)usbd_uvc_dev_desc, len);
+		usb_os_memcpy((void *)buf, (const void *)usbd_uvc_dev_desc, len);
 
 		break;
 
@@ -499,7 +499,7 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		len  = usbd_uvc_descriptors_size;
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "desc_self %p len %d\r\n", desc, len);
-		usb_os_memcpy((void *)buf, (void *)desc, len);
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
 
 		if (!cdev->from_composite) {
 			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
@@ -511,7 +511,7 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USB_DESC_TYPE_DEVICE_QUALIFIER\n");
 
 		len = sizeof(usbd_uvc_device_qualifier_desc);
-		usb_os_memcpy((void *)buf, (void *)usbd_uvc_device_qualifier_desc, len);
+		usb_os_memcpy((void *)buf, (const void *)usbd_uvc_device_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
@@ -522,7 +522,7 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Use the array for uvc descriptors\r\n");
 
-		usb_os_memcpy((void *)buf, (void *)desc, len);
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
 
 		if (!cdev->from_composite) {
 			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
@@ -536,7 +536,7 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USBD_IDX_LANGID_STR\n");
 
 			len = sizeof(usbd_uvc_lang_id_desc);
-			usb_os_memcpy((void *)buf, (void *)usbd_uvc_lang_id_desc, len);
+			usb_os_memcpy((void *)buf, (const void *)usbd_uvc_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USBD_IDX_MFC_STR\n");
@@ -585,6 +585,12 @@ static int usbd_uvc_set_config(usb_dev_t *dev, u8 config)
 {
 	int ret = HAL_OK;
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
+
+	/* Only the bConfigurationValue advertised in the config descriptor is valid */
+	if (config != 1U) {
+		return HAL_ERR_PARA;
+	}
+
 	cdev->dev = dev;
 
 	if (!cdev->from_composite) {
@@ -655,10 +661,15 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
 		case USB_REQ_SET_INTERFACE:
-			if (dev->dev_state != USBD_STATE_CONFIGURED) {
+			/* Ref USB 2.0 Table 9-11: the whole wIndex and wValue are the interface
+			   number and the alternate setting, a non-zero high byte is a request error.
+			   All the endpoints of this class are isochronous, they can neither be
+			   halted nor own a data toggle, so nothing has to be reset here. */
+			if ((dev->dev_state != USBD_STATE_CONFIGURED) || (USB_HIGH_BYTE(req->wIndex) != 0U)
+				|| (USB_HIGH_BYTE(req->wValue) != 0U)) {
 				ret = HAL_ERR_PARA;
 			} else {
-				usbd_uvc_set_interface(dev, req->wIndex, req->wValue);
+				usbd_uvc_set_interface(dev, USB_LOW_BYTE(req->wIndex), USB_LOW_BYTE(req->wValue));
 			}
 			RTK_LOGS(TAG, RTK_LOG_INFO, "USB_REQ_SET_INTERFACE\r\n");
 			break;
@@ -683,14 +694,23 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			RTK_LOGS(TAG, RTK_LOG_INFO, "USB_REQ_GET_STATUS\r\n");
 			break;
+		default:
+			/* Decline unhandled standard requests, e.g. the endpoint halt requests
+			   offered by the core, so that the default core handling takes over */
+			ret = HAL_ERR_HW;
+			break;
 		}
 		break;
 	case USB_REQ_TYPE_CLASS :
+		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
+			ret = HAL_ERR_PARA;
+			break;
+		}
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_REQ_TYPE_CLASS\r\n");
 		usbd_uvc_req_data_t req_data;
-		memset(&req_data, 0x00, sizeof(req_data));
+		usb_os_memset((void *)&req_data, 0x00, sizeof(req_data));
 		req_data.type = USBD_UVC_EVENT_SETUP;
-		memcpy(&req_data.req, req, sizeof(req_data.req));
+		usb_os_memcpy((void *)&req_data.req, (const void *)req, sizeof(req_data.req));
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_REQ_TYPE_CLASS\r\n");
 		if (req->bmRequestType & 0x80U) {
 
@@ -868,7 +888,7 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 
 	usbd_uvc_parameter_init();
 	usbd_ext_init();
-	memset(dev, 0, sizeof(usbd_uvc_dev_t));
+	usb_os_memset((void *)dev, 0, sizeof(usbd_uvc_dev_t));
 	dev->probe = usbd_uvc_probe;
 	dev->commit = usbd_uvc_commit;
 
@@ -909,8 +929,7 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	info->type = USB_CH_EP_TYPE_ISOC;
 	info->binterval = 1;
 
-	usbd_uvc_dev.uvc_format_ptr = malloc(sizeof(usbd_uvc_format_t));
-	memset(usbd_uvc_dev.uvc_format_ptr, 0, sizeof(usbd_uvc_format_t));
+	usbd_uvc_dev.uvc_format_ptr = usb_os_malloc(sizeof(usbd_uvc_format_t));
 	usb_os_sema_create(&usbd_uvc_dev.uvc_format_ptr->uvcd_change_sema);
 
 	// Mark as initialized before creating tasks, so tasks can run properly
@@ -930,7 +949,7 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 		goto exit;
 	}
 
-	dev->uvc_in_buf = malloc(dev->ep_cfg->iso_in_xfer_size ? dev->ep_cfg->iso_in_xfer_size : USBD_UVC_IN_BUF_SIZE);
+	dev->uvc_in_buf = usb_os_malloc(dev->ep_cfg->iso_in_xfer_size ? dev->ep_cfg->iso_in_xfer_size : USBD_UVC_IN_BUF_SIZE);
 exit:
 	return ret;
 }
@@ -946,9 +965,9 @@ int usbd_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	usbd_uvc_dev_t *dev = &usbd_uvc_dev;
 	int ret;
 
-	dev->from_composite = 0;
 	ret = usbd_uvc_private_init(ep_cfg);
 	if (ret == HAL_OK) {
+		dev->from_composite = 0;
 		usbd_register_class(&usbd_uvc_driver);
 	}
 	return ret;
@@ -964,9 +983,9 @@ int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	usbd_uvc_dev_t *dev = &usbd_uvc_dev;
 	int ret;
 
-	dev->from_composite = 1;
 	ret = usbd_uvc_private_init(ep_cfg);
 	if (ret == HAL_OK) {
+		dev->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_uvc_driver);
 	}
 	return ret;
@@ -1001,10 +1020,8 @@ void usbd_uvc_deinit(void)
 	INIT_LIST_HEAD(&usbd_uvc_dev.video.output_queue);
 	INIT_LIST_HEAD(&usbd_uvc_dev.bod_list);
 	usbd_uvc_dev.init_done = 0;
-	if (usbd_uvc_dev.uvc_in_buf) {
-		free(usbd_uvc_dev.uvc_in_buf);
-		usbd_uvc_dev.uvc_in_buf = NULL;
-	}
+	usb_os_mfree((void *)usbd_uvc_dev.uvc_in_buf);
+	usbd_uvc_dev.uvc_in_buf = NULL;
 }
 /**
   * @brief  Register UVC parameter change callback

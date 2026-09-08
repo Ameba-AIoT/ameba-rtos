@@ -56,6 +56,13 @@ For example:
   - master's `SPI_GPIO_CS0 (_PA_10)` connect to slave0's `CS (_PA_10)`
   - master's `SPI_GPIO_CS1 (_PA_3)` connect to slave1's `CS (_PA_10)`
 
+- On RTL8735C, connect as below
+  - master's `MOSI (_PC_8)` connect to slave1's `MOSI (_PF_6)` & slave0's `MOSI (_PF_6)`
+  - master's `MISO (_PE_7)` connect to slave1's `MISO (_PF_5)`& slave0's `MISO (_PF_5)`
+  - master's `SCLK (_PC_6)` connect to slave1's `SCLK (_PF_4)`& slave0's `SCLK (_PF_4)`
+  - master's `SPI_GPIO_CS0 (_PF_2)` connect to slave0's `CS (_PF_7)`
+  - master's `SPI_GPIO_CS1 (_PF_3)` connect to slave1's `CS (_PF_7)`
+
 # SW configuration
 
 1. Build and Download:
@@ -89,3 +96,4 @@ RTL8710E
 RTL8721Dx
 RTL8721F
 RTL8720F
+RTL8735C

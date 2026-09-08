@@ -186,4 +186,12 @@ void whc_host_rmesh_to_user(u32 *param_buf);
 #endif
 #endif
 
+#ifdef WHC_TX_AGG
+/* Drain the tx queue coalescing queued frames into bus transfers (SDIO only). */
+void whc_host_txagg_xmit(struct xmit_priv_t *xmit_priv);
+struct whc_msg_node *whc_host_dequeue_tx_packet(struct xmit_priv_t *xmit_priv);
+void whc_host_requeue_tx_packet_head(struct xmit_priv_t *xmit_priv, struct whc_msg_node *p_node);
+void whc_host_xmit_wake_tx_queue(void);
+#endif
+
 #endif // __RTW_FUNCTIONS_H__

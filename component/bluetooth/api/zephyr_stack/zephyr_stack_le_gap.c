@@ -2376,8 +2376,12 @@ static int le_create_rand_addr(rtk_bt_le_rand_addr_type_t rand_addr_type, bt_add
 	} else if (RTK_BT_LE_RAND_ADDR_NON_RESOLVABLE == rand_addr_type) {
 		return bt_addr_le_create_nrpa(rand_addr);
 	} else if (RTK_BT_LE_RAND_ADDR_RESOLVABLE == rand_addr_type) {
+#if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 		rand_addr->type = BT_ADDR_LE_RANDOM;
 		return bt_rpa_create(bt_dev.irk[BT_ID_DEFAULT], &rand_addr->a);
+#else
+		return RTK_BT_ERR_UNSUPPORTED;
+#endif
 	}
 
 	return -ENOENT;

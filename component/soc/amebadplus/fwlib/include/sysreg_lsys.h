@@ -1226,7 +1226,6 @@ typedef struct {
 	__IO u8 RRAM_SYS_RSVD[256];/* resvd for system */
 	__IO u32 MAGIC_NUMBER;
 	__IO u32 psram_backup[6];
-	__IO u32 OTA_IMG_REMAP[2];
 	__IO u8 AP_WAKEUP_STATUS;
 
 	__IO u8 CORE_Vol_Flag;
@@ -1236,6 +1235,7 @@ typedef struct {
 	__IO u8 SWRCALIB_PWM_10;
 	__IO u8 PSRAM_TYPE;
 	__IO u8 Memory_Type;
+	__IO u32 OTA_IMG_REMAP[2];
 
 
 	u8 RRAM_USER_RSVD[212];

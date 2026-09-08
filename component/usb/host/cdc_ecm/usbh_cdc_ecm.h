@@ -153,6 +153,7 @@ typedef struct {
 	u16 pid;                                         /**< Product ID */
 	u8 data_itf_id;                                  /**< Data Interface number */
 	u8 data_alt_set;                                 /**< Alternate Setting value for Data Interface */
+	u8 union_data_itf_id;                            /**< Data Interface number from Union Functional Descriptor, 0xFF if not found */
 	u8 iMACAddressStringId;                          /**< Index of the MAC address string descriptor */
 	u8 state;                                        /**< Internal state machine status, see usbh_cdc_ecm_state_t */
 	u8 led_cnt;                                      /**< Number of LEDs */

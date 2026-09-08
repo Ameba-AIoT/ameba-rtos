@@ -1,5 +1,6 @@
 #include "ameba_soc.h"
 #include "sntp_api.h"
+#include <sys/time.h>  /* struct timeval */
 
 extern int _gettimeofday(struct timeval *ptimeval, void *ptimezone);
 extern int _settimeofday(struct timeval *ptimeval, void *ptimezone);

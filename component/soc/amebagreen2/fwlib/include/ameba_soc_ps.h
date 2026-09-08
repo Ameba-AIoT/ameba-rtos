@@ -116,7 +116,7 @@ void SOCPS_USBSuspendWakeControl(u8 status);
 void SOCPS_PowerStateSetInSleep(u8 pwr_sts);
 void SOCPS_PowerStateSetInNormal(u8 pwr_sts);
 void SOCPS_SetMemMode(u32 module, u32 mem_mode);
-
+u8 SOCPS_SDIOWakeCheck(void);
 #ifdef __cplusplus
 }
 #endif
