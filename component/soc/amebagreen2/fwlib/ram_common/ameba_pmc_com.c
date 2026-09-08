@@ -438,4 +438,20 @@ void SOCPS_PeriRestore(void)
 {
 	CRYPTO_Init();
 	RCC_PeriphClockCmd(APBPeriph_PKE, APBPeriph_PKE_CLOCK, ENABLE);
+
+	/* PG powers down the crypto GDMA and clears the per-channel un-mask bits
+	   (MASKTFR/MASKBLOCK). CRYPTO_Init() does not rebuild them (only SHA2/AES_DMA_Init
+	   write them). If a SHA/AES context is resumed across sleep (via *_Restore, not
+	   *_DMA_Init), the DMA completion check STATUSTFR = RawTfr & MaskTfr never fires
+	   because mask = 0, so the transfer times out and returns -17. Rebuild them here.
+	   SHA = ch1 (0x2), AES = ch0 (0x1); same encoding as *_DMA_Init: WE bits [15:8] +
+	   value bits [7:0]. This restore path runs non-secure, so it writes the non-secure
+	   crypto-GDMA alias, which is the same physical peripheral the secure crypto driver
+	   sees through its secure alias. Pick the base by current security state so it is
+	   correct regardless of the caller's world. */
+	GDMA_TypeDef *AES_SHA_GDMA = (GDMA_TypeDef *)(TrustZone_IsSecure() ?
+								 AES_SHA_DMA_REG_BASE_S : AES_SHA_DMA_REG_BASE);
+	u32 ch_mask = SHA_DMA_CH_MASK | AES_DMA_CH_MASK;
+	AES_SHA_GDMA->GDMA_MASKTFR_L   |= ch_mask | GDMA_CHENREG_L_1_CH_EN_WE(ch_mask);
+	AES_SHA_GDMA->GDMA_MASKBLOCK_L |= ch_mask | GDMA_CHENREG_L_1_CH_EN_WE(ch_mask);
 }

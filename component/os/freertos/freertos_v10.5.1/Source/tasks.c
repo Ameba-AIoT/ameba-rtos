@@ -357,6 +357,11 @@ PRIVILEGED_DATA static List_t xPendingReadyList;                         /*< Tas
  * the errno of the currently running task. */
 #if ( configUSE_POSIX_ERRNO == 1 )
     int FreeRTOS_errno = 0;
+
+    int *FreeRTOS_errno_ptr(void)
+    {
+        return &FreeRTOS_errno;
+    }
 #endif
 
 /* Other file private variables. --------------------------------*/

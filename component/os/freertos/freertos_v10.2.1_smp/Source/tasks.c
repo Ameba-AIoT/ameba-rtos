@@ -692,27 +692,6 @@ static void freertos_tasks_c_additions_init(void) PRIVILEGED_FUNCTION;
 
 /*-----------------------------------------------------------*/
 #if ( configUSE_NEWLIB_REENTRANT == 1 )
-struct _reent xPrimaryCoreReenat[configNUM_CORES] = {0};
-
-extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
-
-struct _reent * __getreent(void)
-{
-    uint32_t core_id = portGET_CORE_ID();
-    if( uxPortSchedulerStart[core_id] == pdFALSE )
-    {
-        /* To prevent core0 and core1 calling the newlib function before kernel
-         * startup, such as "printf" in main() before vTaskStartScheduler(),
-         * we provide a primary core reent structure for each core.
-         */
-        return &xPrimaryCoreReenat[core_id];
-    }
-    else
-    {
-        return pxTaskGetReent();
-    }
-}
-
 
 struct _reent * pxTaskGetReent(void)
 {
@@ -750,7 +729,7 @@ BaseType_t xTaskGetCurrentYieldPending(void)
  * SMP. So read/write errno from the running task's TCB directly. The function name
  * still uses `FreeRTOS` to be consistent with the ofiical naming.
  */
-	int *FreeRTOS_errno( void )
+	int *FreeRTOS_errno_ptr( void )
 	{
 		return &( pxCurrentTCB->iTaskErrno );
 	}

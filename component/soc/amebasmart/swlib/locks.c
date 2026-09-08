@@ -21,6 +21,23 @@ StaticSemaphore_t __lock___tz_mutex; // e.g. called by mktime, localtime
 
 #ifdef CONFIG_ARM_CORE_CA32
 extern volatile uint32_t uxPortSchedulerStart[CONFIG_CPUS_NUM];
+
+struct _reent xPrimaryCoreReenat[CONFIG_CPUS_NUM] = {0};
+
+struct _reent *__getreent(void)
+{
+	uint32_t core_id = portGET_CORE_ID();
+	if (uxPortSchedulerStart[core_id] == pdFALSE) {
+		/* To prevent core0 and core1 calling the newlib function before kernel
+		 * startup, such as "printf" in main() before vTaskStartScheduler(),
+		 * we provide a primary core reent structure for each core.
+		 */
+		return &xPrimaryCoreReenat[core_id];
+	} else {
+		return pxTaskGetReent();
+	}
+}
+
 #endif
 
 static const char *const TAG = "LOCKS";
