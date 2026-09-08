@@ -133,3 +133,8 @@ ChangeLog:
                   (2) Support config save-image rule
 				  (3) Fix localization issue
 20260630  v3.0.0  Initial support for download protocol v2.0
+20260828  v3.0.1  (1) Support golden-board ID detection and production port layout mapping
+                  (2) Add golden-board ID images numbered 1 through 20
+                  (3) Display session flash totals, successes, and pass rate
+                  (4) Fix serial port not released after initialization or download failure
+                  (5) Show detailed failure information in the port progress tooltip

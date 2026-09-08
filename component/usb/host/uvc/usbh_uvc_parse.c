@@ -68,7 +68,7 @@ static usbh_uvc_entity_t *usbh_uvc_entity_alloc(u32 extrabytes)
   */
 static void usbh_uvc_entity_free(usbh_uvc_entity_t *entity)
 {
-	usb_os_mfree(entity);
+	usb_os_mfree((void *)entity);
 }
 
 /**
@@ -84,7 +84,7 @@ static int usbh_uvc_parse_entity(u8 *desc)
 
 	switch (desc[2]) {
 	case USBH_UVC_VC_HEADER:
-		vc_intf->vcheader = (usbh_uvc_vc_header_desc_t *)(void *)desc;
+		vc_intf->vcheader = (usbh_uvc_vc_header_desc_t *)desc;
 		break;
 
 	case USBH_UVC_VC_INPUT_TERMINAL:
@@ -120,7 +120,7 @@ static int usbh_uvc_parse_entity(u8 *desc)
 		}
 		entity->p = desc;
 		entity->id = desc[3];
-		usb_os_memcpy(entity->source, &desc[5], desc[4]);
+		usb_os_memcpy((void *)entity->source, (const void *)&desc[5], desc[4]);
 		entity->type = USBH_UVC_VC_SELECTOR_UNIT;
 		break;
 
@@ -144,7 +144,7 @@ static int usbh_uvc_parse_entity(u8 *desc)
 		}
 		entity->p = desc;
 		entity->id = desc[3];
-		usb_os_memcpy(entity->source, &desc[22], desc[21]);
+		usb_os_memcpy((void *)entity->source, (const void *)&desc[22], desc[21]);
 		entity->type = USBH_UVC_VC_EXTENSION_UNIT;
 		break;
 
@@ -203,7 +203,7 @@ static int usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 		}
 
 		/* Find next descriptor */
-		len = ((usbh_desc_header_t *)(void *) desc)->bLength;
+		len = ((usbh_desc_header_t *)desc)->bLength;
 		if (len == 0U) {
 			break;
 		}
@@ -215,7 +215,7 @@ static int usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 		if (itf_total_len >= itf_data->raw_data_len) {
 			break;
 		}
-		type = ((usbh_desc_header_t *)(void *) desc)->bDescriptorType;
+		type = ((usbh_desc_header_t *)desc)->bDescriptorType;
 		switch (type) {
 		case USBH_UVC_DESC_TYPE_CS_INTERFACE:
 			ret = usbh_uvc_parse_entity((u8 *)desc);
@@ -308,7 +308,7 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 		return HAL_ERR_PARA;
 	}
 
-	vs_intf->InputHeader = (usbh_uvc_vs_input_header_desc_t *)(void *) desc;
+	vs_intf->InputHeader = (usbh_uvc_vs_input_header_desc_t *)desc;
 	totallen = (u16)(desc[4] | (desc[5] << 8));
 
 	/*first scan to get total number of format and frame*/
@@ -383,7 +383,7 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 		return HAL_ERR_MEM;
 	}
 	tmp_frame = (usbh_uvc_vs_frame_t *)(void *)(vs_intf->format + format_num);
-	interval_store = (u32 *)(void *)((u8 *)(void *)tmp_frame + frame_array_size);
+	interval_store = (u32 *)((u8 *)tmp_frame + frame_array_size);
 
 	while (len < real_len) {
 		if (desc[0] == 0U) {
@@ -435,7 +435,7 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			frame->bFrameIntervalType = desc[25];
 			interval_num = (desc[25] == 0U) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[25];
 			frame->dwFrameInterval = interval_store;
-			usb_os_memcpy(interval_store, &desc[26], interval_num * sizeof(u32));
+			usb_os_memcpy((void *)interval_store, (const void *)&desc[26], interval_num * sizeof(u32));
 			interval_store += interval_num;
 			parsed_frame_num ++;
 			break;
@@ -457,7 +457,7 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			frame->dwBytesPerLine = ReadEF4Byte(desc + 22);
 			interval_num = (desc[21] == 0U) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[21];
 			frame->dwFrameInterval = interval_store;
-			usb_os_memcpy(interval_store, &desc[26], interval_num * sizeof(u32));
+			usb_os_memcpy((void *)interval_store, (const void *)&desc[26], interval_num * sizeof(u32));
 			interval_store += interval_num;
 			parsed_frame_num ++;
 			break;
@@ -520,7 +520,7 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 
 	vs_intf = &uvc->uvc_desc.vs_intf[vs_num];
 
-	usb_os_memset(vs_intf, 0, sizeof(usbh_uvc_vs_t));
+	usb_os_memset((void *)vs_intf, 0, sizeof(usbh_uvc_vs_t));
 	uvc->stream[vs_num].vs_intf = vs_intf;
 	vs_num++;
 	uvc->uvc_desc.vs_num = vs_num;
@@ -531,7 +531,7 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 	vs_intf->bInterfaceNumber = desc[2];
 
 	/* Skip the first descriptor (Interface Alt 0) */
-	len = ((usbh_desc_header_t *)(void *) desc)->bLength;
+	len = ((usbh_desc_header_t *)desc)->bLength;
 	desc += len;
 	itf_total_len += len;
 
@@ -540,8 +540,8 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 			break;
 		}
 
-		type = ((usbh_desc_header_t *)(void *) desc)->bDescriptorType;
-		len = ((usbh_desc_header_t *)(void *) desc)->bLength;
+		type = ((usbh_desc_header_t *)desc)->bDescriptorType;
+		len = ((usbh_desc_header_t *)desc)->bLength;
 
 		if (len == 0U) {
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "ZL desc\n");
@@ -559,20 +559,20 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 			break;
 
 		case USB_DESC_TYPE_INTERFACE:
-			if (((usbh_itf_desc_t *)(void *)desc)->bInterfaceNumber != vs_intf->bInterfaceNumber) { //find another itf, maybe it is the as itf, should return
-				RTK_LOGS(TAG, RTK_LOG_DEBUG, "VC intf %d-%d\n\n", ((usbh_itf_desc_t *)(void *)desc)->bInterfaceNumber, vs_intf->bInterfaceNumber);
+			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != vs_intf->bInterfaceNumber) { //find another itf, maybe it is the as itf, should return
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "VC intf %d-%d\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, vs_intf->bInterfaceNumber);
 				return HAL_OK;
 			}
-			bAlternateSetting = ((usbh_itf_desc_t *)(void *)desc)->bAlternateSetting;
+			bAlternateSetting = ((usbh_itf_desc_t *)desc)->bAlternateSetting;
 			if (bAlternateSetting != 0U) {
-				if (bAlternateSetting < USBH_UVC_VS_ALTS_MAX_NUM) {
+				if (bAlternateSetting <= USBH_UVC_VS_ALTS_MAX_NUM) {
 					vs_intf->altsetting[bAlternateSetting - 1].p = desc;
 					vs_intf->alt_num++;
 
 					next_desc = desc + len;
 					if ((itf_total_len + len) < itf_data->raw_data_len) {
-						if (((usbh_desc_header_t *)(void *)next_desc)->bDescriptorType == USB_DESC_TYPE_ENDPOINT) {
-							vs_intf->altsetting[bAlternateSetting - 1].endpoint = (usbh_ep_desc_t *)(void *)next_desc;
+						if (((usbh_desc_header_t *)next_desc)->bDescriptorType == USB_DESC_TYPE_ENDPOINT) {
+							vs_intf->altsetting[bAlternateSetting - 1].endpoint = (usbh_ep_desc_t *)next_desc;
 						}
 					}
 				} else {

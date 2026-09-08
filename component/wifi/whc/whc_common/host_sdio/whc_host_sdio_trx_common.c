@@ -93,7 +93,6 @@ void whc_host_sdio_recv_data_process(void)
 					retry = 0;
 					pbuf = whc_host_sdio_read_rxfifo(priv, SdioRxFIFOSize);
 					if (pbuf) {
-						/* buffer starts with RX_DESC */
 						whc_host_sdio_recv_process(pbuf);
 					} else {
 						break;

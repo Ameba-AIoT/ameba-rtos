@@ -13,6 +13,11 @@
 
 /* Private defines -----------------------------------------------------------*/
 
+/* Sentinel stored in usbd_vendor_dev_t::ctrl_req.bRequest when no H2D class/vendor
+ * request is waiting for its data stage. 0xFF is reserved: it is neither a standard
+ * request code nor used by this class, so it can never collide with a real bRequest. */
+#define USBD_VENDOR_CTRL_REQ_IDLE			0xFFU
+
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -25,6 +30,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
+static int usbd_vendor_handle_ep0_data_out(usb_dev_t *dev);
 static void usbd_vendor_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -243,6 +249,7 @@ static const usbd_class_driver_t usbd_vendor_driver = {
 	.setup = usbd_vendor_setup,
 	.ep_data_in = usbd_vendor_handle_ep_data_in,
 	.ep_data_out = usbd_vendor_handle_ep_data_out,
+	.ep0_data_out = usbd_vendor_handle_ep0_data_out,
 	.status_changed = usbd_vendor_status_changed,
 };
 
@@ -272,7 +279,10 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	u8 speed = dev->dev_speed;
 	usb_ep_info_t *info;
 
-	UNUSED(config);
+	/* Only the bConfigurationValue advertised in the config descriptor is valid */
+	if (config != 1U) {
+		return HAL_ERR_PARA;
+	}
 
 	cdev->dev = dev;
 
@@ -304,7 +314,7 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	usbd_ep_init(dev, ep_intr_out);
 	ret = usbd_ep_receive(dev, ep_intr_out);
 	if (ret != HAL_OK) {
-		return ret;
+		goto exit_clear_config;
 	}
 
 	/* Init BULK IN EP */
@@ -319,7 +329,7 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	usbd_ep_init(dev, ep_bulk_out);
 	ret = usbd_ep_receive(dev, ep_bulk_out);
 	if (ret != HAL_OK) {
-		return ret;
+		goto exit_clear_config;
 	}
 
 	/* Init ISO IN EP */
@@ -335,13 +345,18 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	usbd_ep_init(dev, ep_isoc_out);
 	ret = usbd_ep_receive(dev, ep_isoc_out);
 	if (ret != HAL_OK) {
-		return ret;
+		goto exit_clear_config;
 	}
 
 	if (cdev->cb->set_config != NULL) {
 		cdev->cb->set_config();
 	}
 
+	return ret;
+
+exit_clear_config:
+	/* Release the endpoints initialized above */
+	usbd_vendor_clear_config(dev, config);
 	return ret;
 }
 
@@ -410,8 +425,20 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		switch (req->bRequest) {
 		case USB_REQ_SET_INTERFACE:
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+				/* Ref USB 2.0 Table 9-10: the whole wIndex is the interface number, this
+				   class owns the single interface 0 only */
 				if (req->wIndex == 0U) {
 					cdev->alt_setting = USB_LOW_BYTE(req->wValue);
+
+					/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return
+					   to their default state, not halted and data toggle DATA0. This holds
+					   even for an interface with the default setting only, hosts do send
+					   the request in that case. The ISOC endpoints are skipped, they can
+					   neither be halted nor own a data toggle. */
+					usbd_ep_clear_stall(dev, &cdev->ep_bulk_in);
+					usbd_ep_clear_stall(dev, &cdev->ep_bulk_out);
+					usbd_ep_clear_stall(dev, &cdev->ep_intr_in);
+					usbd_ep_clear_stall(dev, &cdev->ep_intr_out);
 				} else {
 					ret = HAL_ERR_HW;
 				}
@@ -445,20 +472,52 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;
 	case USB_REQ_TYPE_CLASS :
 	case USB_REQ_TYPE_VENDOR:
-		if (req->wLength) {
+		if (cdev->cb->setup == NULL) {
+			/* No handler for nonstandard requests, STALL so that the host recovers
+			   promptly instead of waiting out the data stage */
+			ret = HAL_ERR_PARA;
+		} else if (req->wLength != 0U) {
 			if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
+				u16 rsp_len = req->wLength;
+
+				/* Ref USB 2.0 9.3.4: wLength is the maximum the host accepts, never trust it
+				   as a buffer size. Clamp to the EP0 buffer to avoid an over-read. */
+				if (rsp_len > ep0_in->xfer_buf_len) {
+					rsp_len = (u16)ep0_in->xfer_buf_len;
+				}
+
+				/* EP0 buffer is shared with descriptor and OUT traffic, clear the response
+				   window so a callback writing fewer bytes cannot leak stale data. The
+				   callback owns the whole window and shall reject any request it does not
+				   support, which makes the core STALL EP0. */
+				usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
 				ret = cdev->cb->setup(req, ep0_in->xfer_buf);
 				if (ret == HAL_OK) {
-					ep0_in->xfer_len = req->wLength;
+					ep0_in->xfer_len = rsp_len;
 					usbd_ep_transmit(dev, ep0_in);
 				}
 			} else {
-				usb_os_memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
+				/* Ref USB 2.0 8.5.3: an H2D control transfer with wLength > 0 carries the
+				   payload in a following data stage, so the request cannot be handed to the
+				   application yet. Save the setup packet and arm EP0 OUT; the payload is
+				   delivered to cdev->cb->setup() from usbd_vendor_handle_ep0_data_out() once
+				   the whole data stage has been received. */
+				usb_os_memcpy((void *)&cdev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
 				ep0_out->xfer_len = req->wLength;
-				usbd_ep_receive(dev, ep0_out);
+				ret = usbd_ep_receive(dev, ep0_out);
+				if (ret != HAL_OK) {
+					/* EP0 OUT was not armed (e.g. wLength exceeds the EP0 buffer), so no data
+					   stage completion will ever arrive. Drop the pending request to keep the
+					   next transfer clean and report the failure so that the core stalls EP0
+					   instead of silently acknowledging a request that is never processed. */
+					cdev->ctrl_req.bRequest = USBD_VENDOR_CTRL_REQ_IDLE;
+				}
 			}
 		} else {
-			cdev->cb->setup(req, NULL);
+			/* No data stage: the setup packet is self-contained, dispatch it right away.
+			   Propagate the callback status so that an unsupported request is STALLed by
+			   the core instead of being ACKed. */
+			ret = cdev->cb->setup(req, NULL);
 		}
 		break;
 	default:
@@ -563,6 +622,41 @@ static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 }
 
 /**
+  * @brief  Data received on the control endpoint (EP0 OUT data stage completed)
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  *
+  *         Ref USB 2.0 8.5.3: an H2D class/vendor request with wLength > 0 is split into
+  *         SETUP + DATA OUT + STATUS. usbd_vendor_setup() only saves the setup packet and
+  *         arms EP0 OUT; the core invokes this callback after the last data packet has been
+  *         received, which is the point where the request may finally be executed with its
+  *         complete payload.
+  *
+  *         Returning non-HAL_OK signals "this request is not mine", which the composite
+  *         dispatcher and the core use to avoid treating a stale event as handled.
+  * @param  dev: USB device instance
+  * @retval Status
+  */
+static int usbd_vendor_handle_ep0_data_out(usb_dev_t *dev)
+{
+	int ret = HAL_ERR_HW;
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+	usbd_ep_t *ep0_out = &dev->ep0_out;
+
+	if (cdev->ctrl_req.bRequest != USBD_VENDOR_CTRL_REQ_IDLE) {
+		if (cdev->cb->setup != NULL) {
+			ret = cdev->cb->setup(&cdev->ctrl_req, ep0_out->xfer_buf);
+		}
+
+		/* Consume the pending request: a single data stage belongs to exactly one setup
+		   packet, so the saved request must not be replayed by a later EP0 OUT event. */
+		cdev->ctrl_req.bRequest = USBD_VENDOR_CTRL_REQ_IDLE;
+	}
+
+	return ret;
+}
+
+/**
   * @brief  Patch endpoint addresses in a configuration descriptor to use runtime EP config.
   * @note   Replaces direction-only placeholders (USB_D2H/USB_H2D) with actual
   *         EP addresses from the EP configuration structure.
@@ -633,7 +727,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 
 	case USB_DESC_TYPE_DEVICE:
 		len = sizeof(usbd_vendor_dev_desc);
-		usb_os_memcpy((void *)buf, (void *)usbd_vendor_dev_desc, len);
+		usb_os_memcpy((void *)buf, (const void *)usbd_vendor_dev_desc, len);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
@@ -647,7 +741,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 			desc = (u8 *)usbd_vendor_fs_config_desc;
 			len = sizeof(usbd_vendor_fs_config_desc);
 		}
-		usb_os_memcpy((void *)buf, (void *)desc, len);
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
 		if (!cdev->from_composite) {
 			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
 		}
@@ -662,7 +756,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 #ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_vendor_device_qualifier_desc);
-		usb_os_memcpy((void *)buf, (void *)usbd_vendor_device_qualifier_desc, len);
+		usb_os_memcpy((void *)buf, (const void *)usbd_vendor_device_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
@@ -673,7 +767,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 			desc = (u8 *)usbd_vendor_hs_config_desc;
 			len = sizeof(usbd_vendor_hs_config_desc);
 		}
-		usb_os_memcpy((void *)buf, (void *)desc, len);
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
 		if (!cdev->from_composite) {
 			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
 		}
@@ -690,7 +784,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
 			len = sizeof(usbd_vendor_lang_id_desc);
-			usb_os_memcpy((void *)buf, (void *)usbd_vendor_lang_id_desc, len);
+			usb_os_memcpy((void *)buf, (const void *)usbd_vendor_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
 			len = usbd_get_str_desc(USBD_VENDOR_MFG_STRING, buf);
@@ -772,6 +866,11 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 
 	cdev->ep_cfg = ep_cfg;
 
+	/* Mark the control request slot as empty. The device context is a static object, so
+	   bRequest would otherwise start at 0x00, which usbd_vendor_handle_ep0_data_out() would
+	   mistake for a pending request and dispatch to the application. */
+	cdev->ctrl_req.bRequest = USBD_VENDOR_CTRL_REQ_IDLE;
+
 	info = &ep_bulk_out->info;
 	info->addr = cdev->ep_cfg->bulk_out_addr;
 	info->type = USB_CH_EP_TYPE_BULK;
@@ -851,27 +950,27 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 	return ret;
 
 init_clean_isoc_in_buf_exit:
-	usb_os_mfree(ep_isoc_in->xfer_buf);
+	usb_os_mfree((void *)ep_isoc_in->xfer_buf);
 	ep_isoc_in->xfer_buf = NULL;
 
 init_clean_isoc_out_buf_exit:
-	usb_os_mfree(ep_isoc_out->xfer_buf);
+	usb_os_mfree((void *)ep_isoc_out->xfer_buf);
 	ep_isoc_out->xfer_buf = NULL;
 
 init_clean_intr_in_buf_exit:
-	usb_os_mfree(ep_intr_in->xfer_buf);
+	usb_os_mfree((void *)ep_intr_in->xfer_buf);
 	ep_intr_in->xfer_buf = NULL;
 
 init_clean_intr_out_buf_exit:
-	usb_os_mfree(ep_intr_out->xfer_buf);
+	usb_os_mfree((void *)ep_intr_out->xfer_buf);
 	ep_intr_out->xfer_buf = NULL;
 
 init_clean_bulk_in_buf_exit:
-	usb_os_mfree(ep_bulk_in->xfer_buf);
+	usb_os_mfree((void *)ep_bulk_in->xfer_buf);
 	ep_bulk_in->xfer_buf = NULL;
 
 init_clean_bulk_out_buf_exit:
-	usb_os_mfree(ep_bulk_out->xfer_buf);
+	usb_os_mfree((void *)ep_bulk_out->xfer_buf);
 	ep_bulk_out->xfer_buf = NULL;
 
 init_exit:
@@ -891,9 +990,9 @@ int usbd_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_ep_cfg_t *ep_
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	int ret;
 
-	cdev->from_composite = 0;
 	ret = usbd_vendor_private_init(cb, ep_cfg);
 	if (ret == HAL_OK) {
+		cdev->from_composite = 0;
 		usbd_register_class(&usbd_vendor_driver);
 	}
 	return ret;
@@ -911,9 +1010,9 @@ int usbd_composite_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_ep_
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	int ret;
 
-	cdev->from_composite = 1;
 	ret = usbd_vendor_private_init(cb, ep_cfg);
 	if (ret == HAL_OK) {
+		cdev->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_vendor_driver);
 	}
 	return ret;
@@ -955,35 +1054,23 @@ int usbd_vendor_deinit(void)
 		usbd_unregister_class();
 	}
 
-	if (ep_bulk_in->xfer_buf != NULL) {
-		usb_os_mfree(ep_bulk_in->xfer_buf);
-		ep_bulk_in->xfer_buf = NULL;
-	}
+	usb_os_mfree((void *)ep_bulk_in->xfer_buf);
+	ep_bulk_in->xfer_buf = NULL;
 
-	if (ep_bulk_out->xfer_buf != NULL) {
-		usb_os_mfree(ep_bulk_out->xfer_buf);
-		ep_bulk_out->xfer_buf = NULL;
-	}
+	usb_os_mfree((void *)ep_bulk_out->xfer_buf);
+	ep_bulk_out->xfer_buf = NULL;
 
-	if (ep_intr_in->xfer_buf != NULL) {
-		usb_os_mfree(ep_intr_in->xfer_buf);
-		ep_intr_in->xfer_buf = NULL;
-	}
+	usb_os_mfree((void *)ep_intr_in->xfer_buf);
+	ep_intr_in->xfer_buf = NULL;
 
-	if (ep_intr_out->xfer_buf != NULL) {
-		usb_os_mfree(ep_intr_out->xfer_buf);
-		ep_intr_out->xfer_buf = NULL;
-	}
+	usb_os_mfree((void *)ep_intr_out->xfer_buf);
+	ep_intr_out->xfer_buf = NULL;
 
-	if (ep_isoc_in->xfer_buf != NULL) {
-		usb_os_mfree(ep_isoc_in->xfer_buf);
-		ep_isoc_in->xfer_buf = NULL;
-	}
+	usb_os_mfree((void *)ep_isoc_in->xfer_buf);
+	ep_isoc_in->xfer_buf = NULL;
 
-	if (ep_isoc_out->xfer_buf != NULL) {
-		usb_os_mfree(ep_isoc_out->xfer_buf);
-		ep_isoc_out->xfer_buf = NULL;
-	}
+	usb_os_mfree((void *)ep_isoc_out->xfer_buf);
+	ep_isoc_out->xfer_buf = NULL;
 
 	return HAL_OK;
 }
@@ -1005,9 +1092,17 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len)
 
 	if (ep_bulk_in->xfer_state == 0U) {
 		ep_bulk_in->xfer_state = 1U;
-		usb_os_memcpy((void *)ep_bulk_in->xfer_buf, (void *)buf, len);
+		usb_os_memcpy((void *)ep_bulk_in->xfer_buf, (const void *)buf, len);
 		ep_bulk_in->xfer_len = len;
 		ret = usbd_ep_transmit(dev, ep_bulk_in);
+		if (ret != HAL_OK) {
+			/* The transfer was rejected before being armed on the controller (buffer not DMA
+			   aligned, EP not opened, or xfer_len/packet count beyond the XFRSIZ/PKTCNT field
+			   limits), so no ep_data_in completion will ever clear xfer_state. Roll it back
+			   here, otherwise this EP would stay busy forever and every later send would
+			   return HAL_BUSY until the next set_config. */
+			ep_bulk_in->xfer_state = 0U;
+		}
 	} else {
 		ret = HAL_BUSY;
 	}
@@ -1032,9 +1127,14 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u32 len)
 
 	if (ep_intr_in->xfer_state == 0U) {
 		ep_intr_in->xfer_state = 1U;
-		usb_os_memcpy((void *)ep_intr_in->xfer_buf, (void *)buf, len);
+		usb_os_memcpy((void *)ep_intr_in->xfer_buf, (const void *)buf, len);
 		ep_intr_in->xfer_len = len;
 		ret = usbd_ep_transmit(dev, ep_intr_in);
+		if (ret != HAL_OK) {
+			/* Same rollback as the bulk IN path: an immediate submit error produces no
+			   completion callback, so the busy flag has to be released by the caller side. */
+			ep_intr_in->xfer_state = 0U;
+		}
 	} else {
 		ret = HAL_BUSY;
 	}
@@ -1056,7 +1156,7 @@ int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len)
 		len = ep_isoc_in->xfer_buf_len;
 	}
 
-	usb_os_memcpy(ep_isoc_in->xfer_buf, buf, len);
+	usb_os_memcpy((void *)ep_isoc_in->xfer_buf, (const void *)buf, len);
 	ep_isoc_in->xfer_len = len;
 	return usbd_ep_transmit(cdev->dev, ep_isoc_in);
 }

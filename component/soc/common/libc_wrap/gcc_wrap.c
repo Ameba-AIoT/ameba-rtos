@@ -81,7 +81,7 @@ int __wrap_printf(const char *__restrict fmt, ...)
 	/* Only lock when the scheduler is running: taking a mutex while it is
 	 * suspended asserts/hangs. Snapshot so give mirrors take exactly. */
 	u32 mutex_taken = 0;
-	if ((!in_isr) && (log_mutex != NULL) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING)) {
+	if ((!in_isr) && (log_mutex != NULL) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (rtos_get_critical_state() == 0)) {
 		mutex_taken = (rtos_mutex_take(log_mutex, RTOS_MAX_DELAY) == RTK_SUCCESS);
 	}
 #endif

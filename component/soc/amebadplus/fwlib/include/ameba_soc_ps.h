@@ -91,6 +91,7 @@ extern void SOCPS_SetAPWakeEvent(u32 Option, u32 NewStatus);
 extern int SOCPS_AONWakeReason(void);
 
 extern void SOCPS_SleepInit(void);
+extern void SOCPS_SleepVoltRaiseTo0P9(void);
 extern void SOCPS_DeepSleep_RAM(void);
 extern void SOCPS_SleepPG(void);
 extern void SOCPS_SleepCG(void);
@@ -102,7 +103,7 @@ extern void SOCPS_HWSleepFilter_KM0(u32 enable);
 
 extern void SOCPS_MDLO_Disable(void);
 extern void SOCPS_UartRxPinWakeSet(u32 status);
-
+extern u8 SOCPS_SDIOWakeCheck(void);
 #ifdef __cplusplus
 }
 #endif

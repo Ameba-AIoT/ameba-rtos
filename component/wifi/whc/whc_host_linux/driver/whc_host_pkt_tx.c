@@ -47,6 +47,23 @@ struct whc_msg_node *whc_host_dequeue_tx_packet(struct xmit_priv_t *xmit_priv)
 	return p_node;
 }
 
+#ifdef WHC_TX_AGG
+/*
+ * Put a dequeued-but-unsent node back at the head of the tx queue and restore
+ * msg_num, so it becomes the next frame sent. Used when the tx drain is
+ * interrupted (scan / flowctrl / no free TXBD) with a frame still in hand, so
+ * that frame is kept and resumed instead of dropped.
+ */
+void whc_host_requeue_tx_packet_head(struct xmit_priv_t *xmit_priv, struct whc_msg_node *p_node)
+{
+	spin_lock_irq(&(xmit_priv->lock));
+	list_add(&(p_node->list), &(xmit_priv->queue_head));
+
+	atomic_inc(&xmit_priv->msg_num);
+	spin_unlock_irq(&(xmit_priv->lock));
+}
+#endif /* WHC_TX_AGG */
+
 int whc_host_xmit_pending_q_num(void)
 {
 	struct xmit_priv_t *xmit_priv = &global_idev.xmit_priv;
@@ -68,19 +85,41 @@ void whc_host_xmit_wakeup_thread(void)
 	up(&xmit_priv->tx_sema);
 }
 
+#ifdef WHC_TX_AGG
+void whc_host_xmit_wake_tx_queue(void)
+{
+	int i;
+
+	/* wake tx queue if need */
+	if (whc_host_xmit_pending_q_num() < QUEUE_WAKE_THRES) {
+		for (i = 0; i < WHC_MAX_NET_PORT_NUM; i++) {
+			if (global_idev.pndev[i]) {
+				netif_tx_wake_all_queues(global_idev.pndev[i]);
+			}
+		}
+	}
+}
+#endif /* WHC_TX_AGG */
+
 int whc_host_xmit_thread(void *data)
 {
 	struct xmit_priv_t *xmit_priv = (struct xmit_priv_t *)data;
+	int ret = 0;
+#ifndef WHC_TX_AGG
 	struct whc_msg_node *p_node = NULL;
 	struct sk_buff *pskb = NULL;
-	int ret = 0;
 	int i = 0;
+#endif
 
 	while (!kthread_should_stop()) {
 
 		/* wait for smea */
 		ret = down_interruptible(&xmit_priv->tx_sema);
 
+#ifdef WHC_TX_AGG
+		/* coalescing drain is transport specific (needs TXBD state); implemented in the SDIO layer */
+		whc_host_txagg_xmit(xmit_priv);
+#else
 		/* dequeue msg node */
 		while ((!global_idev.mlme_priv.b_in_scan) &&
 			   (!global_idev.xmit_priv.flowctrl_en) &&
@@ -115,6 +154,7 @@ int whc_host_xmit_thread(void *data)
 #endif
 			kfree(p_node);
 		}
+#endif /* WHC_TX_AGG */
 	}
 
 	return ret;

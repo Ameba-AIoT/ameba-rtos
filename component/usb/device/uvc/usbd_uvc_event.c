@@ -57,7 +57,7 @@ static int usbd_uvc_send_response(usbd_uvc_dev_t *uvc, usbd_uvc_request_data_t *
 	int ret = 0;
 	usbd_ep_t *ep0_in = &uvc->dev->ep0_in;
 	if (data->length > 0) {
-		memcpy(ep0_in->xfer_buf, data->data, data->length);
+		usb_os_memcpy((void *)ep0_in->xfer_buf, (const void *)data->data, data->length);
 		ep0_in->xfer_len = data->length;
 		usbd_ep_transmit(uvc->dev, ep0_in);
 	}
@@ -111,29 +111,29 @@ void usbd_uvc_get_command_process_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctr
 			break;
 
 		case USBD_UVC_GET_CUR:
-			memcpy(resp->data, (u8 *)&p_data.cur, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&p_data.cur, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_MIN:
-			memcpy(resp->data, (u8 *)&p_data.min, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&p_data.min, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_MAX:
-			memcpy(resp->data, (u8 *)&p_data.max, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&p_data.max, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_DEF:
-			memcpy(resp->data, (u8 *)&p_data.def, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&p_data.def, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_RES:
-			memcpy(resp->data, (u8 *)&p_data.res, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&p_data.res, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_LEN:
-			memcpy(resp->data, (u8 *)&p_data.len, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&p_data.len, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_INFO:
-			memcpy(resp->data, (u8 *)&p_data.info, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&p_data.info, ctrl->wLength);
 			break;
 		}
 	} else if (dev->command_entity == EXTENSION_UNIT) {
@@ -141,25 +141,25 @@ void usbd_uvc_get_command_process_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctr
 		case USBD_UVC_SET_CUR:
 			break;
 		case USBD_UVC_GET_CUR:
-			memcpy(resp->data, (u8 *)&x_data.cur, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&x_data.cur, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_MIN:
-			memcpy(resp->data, (u8 *)&x_data.min, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&x_data.min, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_MAX:
-			memcpy(resp->data, (u8 *)&x_data.max, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&x_data.max, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_DEF:
-			memcpy(resp->data, (u8 *)&x_data.def, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&x_data.def, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_RES:
-			memcpy(resp->data, (u8 *)&x_data.res, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&x_data.res, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_LEN:
-			memcpy(resp->data, (u8 *)&x_data.len, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&x_data.len, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_INFO:
-			memcpy(resp->data, (u8 *)&x_data.info, ctrl->wLength);
+			usb_os_memcpy((void *)resp->data, (const void *)&x_data.info, ctrl->wLength);
 			break;
 		}
 	}
@@ -186,25 +186,25 @@ __weak void get_command_extension_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctr
 	case USBD_UVC_SET_CUR:
 		break;
 	case USBD_UVC_GET_CUR:
-		memcpy(resp->data, (u8 *)&x_data.cur, sizeof(int));
+		usb_os_memcpy((void *)resp->data, (const void *)&x_data.cur, sizeof(int));
 		break;
 	case USBD_UVC_GET_MIN:
-		memcpy(resp->data, (u8 *)&x_data.min, sizeof(int));
+		usb_os_memcpy((void *)resp->data, (const void *)&x_data.min, sizeof(int));
 		break;
 	case USBD_UVC_GET_MAX:
-		memcpy(resp->data, (u8 *)&x_data.max, sizeof(int));
+		usb_os_memcpy((void *)resp->data, (const void *)&x_data.max, sizeof(int));
 		break;
 	case USBD_UVC_GET_DEF:
-		memcpy(resp->data, (u8 *)&x_data.def, sizeof(int));
+		usb_os_memcpy((void *)resp->data, (const void *)&x_data.def, sizeof(int));
 		break;
 	case USBD_UVC_GET_RES:
-		memcpy(resp->data, (u8 *)&x_data.res, sizeof(int));
+		usb_os_memcpy((void *)resp->data, (const void *)&x_data.res, sizeof(int));
 		break;
 	case USBD_UVC_GET_LEN:
-		memcpy(resp->data, (u8 *)&x_data.len, sizeof(int));
+		usb_os_memcpy((void *)resp->data, (const void *)&x_data.len, sizeof(int));
 		break;
 	case USBD_UVC_GET_INFO:
-		memcpy(resp->data, (u8 *)&x_data.info, sizeof(int));
+		usb_os_memcpy((void *)resp->data, (const void *)&x_data.info, sizeof(int));
 		break;
 	}
 }
@@ -349,7 +349,7 @@ usbd_uvc_events_process_streaming(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 		return;
 	}
 
-	ctrl_stream = (usbd_uvc_streaming_control_t *)(void *)&resp->data;
+	ctrl_stream = (usbd_uvc_streaming_control_t *)&resp->data;
 	resp->length = sizeof * ctrl_stream;
 	resp->length = ctrl->wLength;
 	switch (req) {
@@ -359,10 +359,10 @@ usbd_uvc_events_process_streaming(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 
 	case USBD_UVC_GET_CUR:
 		if (cs == USBD_UVC_VS_PROBE_CONTROL) {
-			memcpy(ctrl_stream, &dev->probe, sizeof * ctrl_stream);
+			usb_os_memcpy((void *)ctrl_stream, (const void *)&dev->probe, sizeof * ctrl_stream);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "probe\r\n");
 		} else {
-			memcpy(ctrl_stream, &dev->commit, sizeof * ctrl_stream);
+			usb_os_memcpy((void *)ctrl_stream, (const void *)&dev->commit, sizeof * ctrl_stream);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "commit\r\n");
 		}
 		break;
@@ -520,7 +520,7 @@ usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *da
 		return;
 	}
 
-	ctrl = (usbd_uvc_streaming_control_t *)(void *)&data->data;
+	ctrl = (usbd_uvc_streaming_control_t *)&data->data;
 	iformat = ctrl->bFormatIndex;
 
 	format = &uvcd_formats[iformat - 1];

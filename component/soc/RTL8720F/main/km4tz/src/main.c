@@ -13,6 +13,7 @@
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
 #endif
+#include "ameba_diagnose.h"
 
 //#include "wifi_fast_connect.h"
 static const char *const TAG = "MAIN";
@@ -219,6 +220,8 @@ int main(void)
 	/* Register CPU1_WDG_RST_IRQ Callback function */
 	InterruptRegister((IRQ_FUN) CPU1_WDG_RST_Handler, KM4TZ_NS_WDG_IRQ, (u32)NULL, INT_PRI_LOWEST);//KM4TZ_S_WDG_IRQ
 	InterruptEn(KM4TZ_NS_WDG_IRQ, INT_PRI_LOWEST);//KM4TZ_S_WDG_IRQ
+
+	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
 
 	/* Execute application example */
 	app_example();

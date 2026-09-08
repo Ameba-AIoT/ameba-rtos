@@ -41,10 +41,13 @@
  * measured min-ever-free peaks show 96KB overflows (~-15KB) while 128KB leaves
  * ~18KB headroom. Only bump when NAN is built in. Do not shrink below 128KB with
  * NAN on without re-measuring (AT+WLDBG=heap min-ever-free). */
-#if defined(CONFIG_WIFI_NAN_ENABLE)
-#define RAM_KM4NS_IMG2_SIZE          KBYTES(128)
+#if defined(CONFIG_WIFI_AP_STA_NUM) && (CONFIG_WIFI_AP_STA_NUM > 5)
+#define RAM_KM4NS_IMG2_SIZE          KBYTES(CONFIG_SRAM_KM4NS_IMG2_KB + 2 * (CONFIG_WIFI_AP_STA_NUM - 5))
 #else
-#define RAM_KM4NS_IMG2_SIZE          KBYTES(96)
+#define RAM_KM4NS_IMG2_SIZE          KBYTES(CONFIG_SRAM_KM4NS_IMG2_KB)
+#endif
+#if defined(CONFIG_WIFI_NAN_ENABLE)
+ASSERT(CONFIG_SRAM_KM4NS_IMG2_KB >= 128, "WIFI_NAN_ENABLE needs CONFIG_SRAM_KM4NS_IMG2_KB >= 128 (see WHY comment above).")
 #endif
 /*
                   amebagreen2 SRAM Layout (512K)

@@ -64,20 +64,16 @@ void SDIO_TxBdHdl_Init(SPDIO_TX_BD_HANDLE *g_TXBDHdl, SPDIO_TX_BD *SPDIO_TXBDAdd
   * @brief Initialize RX buffer descriptor handle array.
   * @param g_RXBDHdl Pointer to the RX BD handle array to be initialized.
   * @param SPDIO_RXBDAddr Pointer to the RX BD buffer, must be 4-byte aligned.
-  * @param g_RXDESCAddr Pointer to the RX descriptor array.
   * @param host_rx_bd_num Number of RX buffer descriptors.
   */
-void SDIO_RxBdHdl_Init(SPDIO_RX_BD_HANDLE *g_RXBDHdl, SPDIO_RX_BD *SPDIO_RXBDAddr, INIC_RX_DESC *g_RXDESCAddr, u16 host_rx_bd_num)
+void SDIO_RxBdHdl_Init(SPDIO_RX_BD_HANDLE *g_RXBDHdl, SPDIO_RX_BD *SPDIO_RXBDAddr, u16 host_rx_bd_num)
 {
 	SPDIO_RX_BD_HANDLE *pRxBdHdl;
 	u32 i;
 
-	_memset(g_RXDESCAddr, 0, sizeof(INIC_RX_DESC) * host_rx_bd_num);
-
 	for (i = 0; i < host_rx_bd_num; i++) {
 		pRxBdHdl = &g_RXBDHdl[i];
 		pRxBdHdl->pRXBD = &SPDIO_RXBDAddr[i];
-		pRxBdHdl->pRXDESC = &g_RXDESCAddr[i];
 		pRxBdHdl->isFree = TRUE;
 		pRxBdHdl->isPktEnd = FALSE;
 	}
@@ -165,7 +161,6 @@ void SPDIO_Recycle_Rx_BD(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, spdio_dev
 			}
 			pRxBdHdl->isPktEnd = FALSE;
 			pRxBdHdl->isFree = TRUE;
-			_memset((void *)(pRxBdHdl->pRXDESC), 0, sizeof(INIC_RX_DESC));
 			_memset((void *)pRXBD, 0, sizeof(SPDIO_RX_BD));
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Recycle a Free RX_BD, RXBDRPtr=%d\n", pSPDIODev->RXBDRPtr);

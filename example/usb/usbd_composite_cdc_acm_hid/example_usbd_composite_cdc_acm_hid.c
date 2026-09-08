@@ -15,7 +15,7 @@
 /* Private defines -----------------------------------------------------------*/
 
 /* CDC ACM endpoint addresses */
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 #define COMP_CDC_BULK_IN_EP                           0x82U
 #define COMP_CDC_BULK_OUT_EP                          0x02U
 #define COMP_CDC_INTR_IN_EP                           0x83U
@@ -30,7 +30,7 @@
 #endif
 
 /* HID endpoint addresses */
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 #define COMP_HID_INTR_IN_EP                           0x84U
 #elif defined (CONFIG_AMEBAL2)
 #define COMP_HID_INTR_IN_EP                           0x83U
@@ -102,7 +102,7 @@ static const usbd_config_t composite_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 100U,
-#elif defined(CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	.rx_fifo_depth = 404U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 16U, },
 #elif defined(CONFIG_AMEBAL2)
@@ -289,7 +289,7 @@ static void composite_hid_send_device_data(composite_hid_mouse_data_t *data)
 {
 	u8 byte[4];
 
-	memset(byte, 0, 4);
+	usb_os_memset((void *)byte, 0, 4);
 
 	/* mouse protocol:
 		BYTE0
@@ -329,7 +329,7 @@ static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[])
 		return HAL_ERR_PARA;
 	}
 
-	memset(&data, 0, sizeof(data));
+	usb_os_memset((void *)&data, 0, sizeof(data));
 
 	if (argc > 0) {
 		data.left = _strtoul((const char *)argv[0], (char **)NULL, 10);

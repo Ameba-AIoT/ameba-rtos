@@ -20,6 +20,7 @@ from base.device_profile import RtkDeviceProfile
 from base.rt_settings import RtSettings
 from app.port_progress_widget import PortProgressWidget
 from app.download_worker import DownloadWorker
+from app.detect_layout_worker import DetectLayoutWorker
 
 
 class MPFlashToolMain(QMainWindow):
@@ -61,10 +62,20 @@ class MPFlashToolMain(QMainWindow):
             self.status_bar.showMessage(image_path)
         else:
             self.status_bar.showMessage("No image selected")
+        self._session_total = 0
+        self._session_success = 0
+        self._session_statistics_label = QLabel()
+        self.status_bar.addPermanentWidget(self._session_statistics_label)
+        self._update_session_statistics_label()
         self.setStatusBar(self.status_bar)
 
         self._saved_ports = None
         self._active_workers = 0
+        self._running_workers = set()
+        self._workers_with_results = set()
+        self._active_batch_log_file = None
+        self._detect_layout_worker = None
+        self._port_slot_map = {}
         self._port_rows = []       # list of (device_str, QCheckBox, QLabel, PortProgressWidget)
         self.profile_info = None            # currently loaded RtkDeviceProfile
         self.current_profile_path = ""      # path of the loaded .rdev profile
@@ -76,6 +87,7 @@ class MPFlashToolMain(QMainWindow):
         self._port_timers = {}     # {row_index: QTimer}
         self._port_starts = {}     # {row_index: start_time}
         self._log_file = None
+        self._version_logged_file = None
         self.setup_connections()
         self.load_settings()
         self.scan_and_populate_devices(filter_ports=self._saved_ports)
@@ -190,6 +202,8 @@ class MPFlashToolMain(QMainWindow):
         # Bottom buttons
         bottom_layout = QHBoxLayout()
         self.scan_button = QPushButton("Scan Devices")
+        self.detect_layout_button = QPushButton("Detect Layout")
+        self.detect_layout_button.setVisible(False)
         self.download_button = QPushButton("Download")
 
         left_btn = QHBoxLayout()
@@ -197,12 +211,18 @@ class MPFlashToolMain(QMainWindow):
         left_btn.addWidget(self.scan_button)
         left_btn.addStretch()
 
+        center_btn = QHBoxLayout()
+        center_btn.addStretch()
+        center_btn.addWidget(self.detect_layout_button)
+        center_btn.addStretch()
+
         right_btn = QHBoxLayout()
         right_btn.addStretch()
         right_btn.addWidget(self.download_button)
         right_btn.addStretch()
 
         bottom_layout.addLayout(left_btn)
+        bottom_layout.addLayout(center_btn)
         bottom_layout.addLayout(right_btn)
         main_layout.addLayout(bottom_layout)
 
@@ -409,6 +429,7 @@ class MPFlashToolMain(QMainWindow):
 
     def setup_connections(self):
         self.scan_button.clicked.connect(lambda: self.scan_and_populate_devices())
+        self.detect_layout_button.clicked.connect(self._on_detect_layout_clicked)
         self.download_button.clicked.connect(lambda: self.start_download())
         self.browse_button.clicked.connect(self.browse_image_file)
         self.profile_browse_button.clicked.connect(self.open_profile_file)
@@ -432,6 +453,11 @@ class MPFlashToolMain(QMainWindow):
         filter_ports: 若提供，则只显示其中在当前扫描结果内的端口（用于启动时恢复）。
                       为 None 时不过滤，显示全部扫描结果。
         """
+        checked_ports = {
+            device for device, checkbox, _, _ in self._port_rows
+            if checkbox.isChecked()
+        }
+        had_rows = bool(self._port_rows)
         try:
             import serial.tools.list_ports
             all_ports = serial.tools.list_ports.comports()
@@ -452,6 +478,14 @@ class MPFlashToolMain(QMainWindow):
         if filter_ports is not None:
             allowed = set(filter_ports)
             available_ports = [p for p in available_ports if p.device in allowed]
+
+        def port_sort_key(port_info):
+            slot_id = self._port_slot_map.get(port_info.device)
+            if isinstance(slot_id, int) and slot_id > 0:
+                return (0, slot_id, self._natural_port_key(port_info.device))
+            return (1, 0, self._natural_port_key(port_info.device))
+
+        available_ports.sort(key=port_sort_key)
 
         # Clear existing rows (preserve the trailing stretch item)
         while self._port_rows_layout.count() > 1:
@@ -479,6 +513,11 @@ class MPFlashToolMain(QMainWindow):
             row_layout.setContentsMargins(4, 0, 4, 0)
 
             checkbox = QCheckBox(label)
+            if had_rows and port_info.device in checked_ports:
+                checkbox.setChecked(True)
+            slot_id = self._port_slot_map.get(port_info.device)
+            if isinstance(slot_id, int) and slot_id > 0:
+                checkbox.setText(f"[{slot_id:02d}]  {label}")
             checkbox.setFont(row_font)
             timer_label = QLabel("--:--")
             timer_label.setFont(row_font)
@@ -501,6 +540,152 @@ class MPFlashToolMain(QMainWindow):
 
         self.status_bar.showMessage(
             self.image_line_edit.text().strip() or "No image selected"
+        )
+
+    @staticmethod
+    def _natural_port_key(port_name):
+        match = re.search(r"(\d+)$", port_name or "")
+        return (int(match.group(1)), port_name) if match else (sys.maxsize, port_name or "")
+
+    def _on_detect_layout_clicked(self):
+        if self._detect_layout_worker is not None and self._detect_layout_worker.isRunning():
+            return
+
+        if self._active_workers:
+            return
+
+        cn_mode = self.lang_checkbox.isChecked()
+        if not getattr(self, "profile_info", None):
+            QMessageBox.warning(
+                self,
+                "缺少 Profile" if cn_mode else "Missing Profile",
+                "请先加载设备 Profile。" if cn_mode else "Please load a device profile first.",
+            )
+            return
+
+        ports = [device for device, _, _, _ in self._port_rows]
+        if not ports:
+            QMessageBox.warning(
+                self,
+                "无设备" if cn_mode else "No Device",
+                "请先扫描串口设备。" if cn_mode else "Please scan serial devices first.",
+            )
+            return
+
+        try:
+            id_address = int(self.addr_hex_edit.text(), 16)
+        except ValueError:
+            QMessageBox.warning(
+                self,
+                "地址错误" if cn_mode else "Invalid Address",
+                "金板 ID 地址不是有效十六进制数。" if cn_mode
+                else "The golden-board ID address is not a valid hex value.",
+            )
+            return
+
+        if id_address < int(self.profile_info.flash_start_address):
+            QMessageBox.warning(
+                self,
+                "地址错误" if cn_mode else "Invalid Address",
+                "金板 ID 必须烧录在 Flash 地址。" if cn_mode
+                else "The golden-board ID must be stored at a flash address.",
+            )
+            return
+
+        self.detect_layout_button.setEnabled(False)
+        self.scan_button.setEnabled(False)
+        self.download_button.setEnabled(False)
+        self.status_bar.showMessage(
+            (f"正在从 {id_address:#010x} 检测金板布局..."
+             if self.lang_checkbox.isChecked() else
+             f"Detecting golden-board layout at {id_address:#010x}...")
+        )
+
+        self._detect_layout_worker = DetectLayoutWorker(
+            ports=ports,
+            profile_info=self.profile_info,
+            settings=self._build_settings(),
+            id_address=id_address,
+            baudrate=int(self.baudrate_combo.currentText()),
+        )
+        self._detect_layout_worker.layout_detected.connect(self._on_detect_layout_finished)
+        self._detect_layout_worker.finished.connect(self._on_detect_layout_worker_finished)
+        self._detect_layout_worker.start()
+
+    def _on_detect_layout_worker_finished(self):
+        worker = self._detect_layout_worker
+        self._detect_layout_worker = None
+        if worker is not None:
+            worker.deleteLater()
+
+    def _on_detect_layout_finished(self, detected, errors):
+        self.scan_button.setEnabled(True)
+        self.download_button.setEnabled(True)
+        self.detect_layout_button.setEnabled(
+            not self.factory_mode_checkbox.isChecked()
+        )
+
+        slot_counts = {}
+        for slot_id in detected.values():
+            slot_counts[slot_id] = slot_counts.get(slot_id, 0) + 1
+        duplicate_slots = sorted(
+            slot_id for slot_id, count in slot_counts.items() if count > 1
+        )
+        if duplicate_slots:
+            cn_mode = self.lang_checkbox.isChecked()
+            slots = ", ".join(str(slot_id) for slot_id in duplicate_slots)
+            QMessageBox.warning(
+                self,
+                "布局检测失败" if cn_mode else "Layout Detection Failed",
+                (f"检测到重复金板编号：{slots}。映射未保存。"
+                 if cn_mode else
+                 f"Duplicate golden-board IDs detected: {slots}. The mapping was not saved."),
+            )
+            self.status_bar.showMessage(
+                "检测布局失败：金板编号重复。" if cn_mode
+                else "Layout detection failed: duplicate golden-board IDs."
+            )
+            return
+
+        if errors:
+            cn_mode = self.lang_checkbox.isChecked()
+            details = "\n".join(f"{port}: {error}" for port, error in sorted(errors.items()))
+            QMessageBox.warning(
+                self,
+                "布局检测失败" if cn_mode else "Layout Detection Failed",
+                (("以下端口未能识别金板，映射未保存：\n\n" if cn_mode else
+                  "The following ports could not identify a golden board; the mapping was not saved:\n\n")
+                 + details),
+            )
+            self.status_bar.showMessage(
+                "检测布局失败：存在未识别端口。" if cn_mode
+                else "Layout detection failed: one or more ports were not identified."
+            )
+            return
+
+        self._port_slot_map = dict(detected)
+        detected_ports = set(detected)
+        self._saved_ports = [
+            port for port in (self._saved_ports or []) if port not in detected_ports
+        ] + [
+            port for port, _ in sorted(detected.items(), key=lambda item: item[1])
+        ]
+        self.scan_and_populate_devices()
+        self.save_settings()
+
+        cn_mode = self.lang_checkbox.isChecked()
+        mapping = "\n".join(
+            f"DEV{slot_id} = {port}"
+            for port, slot_id in sorted(detected.items(), key=lambda item: item[1])
+        )
+        QMessageBox.information(
+            self,
+            "布局检测完成" if cn_mode else "Layout Detected",
+            (("已保存工位与串口映射：\n\n" if cn_mode else
+              "The slot-to-port mapping was saved:\n\n") + mapping),
+        )
+        self.status_bar.showMessage(
+            "检测布局完成。" if cn_mode else "Layout detection completed."
         )
 
     def check_all_devices(self, _=None):
@@ -565,7 +750,9 @@ class MPFlashToolMain(QMainWindow):
 
         self.download_button.setEnabled(False)
         self.scan_button.setEnabled(False)
+        self.detect_layout_button.setEnabled(False)
         self._active_workers = len(checked_rows)
+        self._active_batch_log_file = self._log_file
 
         # Start total elapsed timer
         self._total_start = time.monotonic()
@@ -581,6 +768,7 @@ class MPFlashToolMain(QMainWindow):
         self._port_timers.clear()
         self._port_starts.clear()
 
+        pending_workers = []
         for row, port in checked_rows:
             _, _, timer_lbl, prog = self._port_rows[row]
             timer_lbl.setText("00:00")
@@ -606,12 +794,21 @@ class MPFlashToolMain(QMainWindow):
                 log_level=settings.log_level,
                 parent=self,
             )
+            pending_workers.append((row, worker))
+            self._running_workers.add(worker)
             worker.progress_updated.connect(
                 lambda pct, r=row: self._on_download_progress(r, pct)
             )
-            worker.finished.connect(
-                lambda ok, msg, r=row: self._on_download_finished(r, ok, msg)
+            worker.result_ready.connect(
+                lambda ok, msg, r=row, w=worker: self._on_download_finished(
+                    r, w, ok, msg
+                )
             )
+            worker.finished.connect(
+                lambda r=row, w=worker: self._on_worker_thread_finished(r, w)
+            )
+
+        for _, worker in pending_workers:
             worker.start()
 
     def _load_rt_settings(self) -> RtSettings:
@@ -645,7 +842,13 @@ class MPFlashToolMain(QMainWindow):
         if 0 <= row < len(self._port_rows):
             self._port_rows[row][3].set_progress(pct)
 
-    def _on_download_finished(self, row: int, success: bool, msg: str):
+    def _on_download_finished(self, row: int, worker, success: bool, msg: str):
+        if worker in self._workers_with_results:
+            return
+
+        self._workers_with_results.add(worker)
+        self._record_download_result(success)
+
         if 0 <= row < len(self._port_rows):
             self._port_rows[row][3].set_done(success, msg)
             # Stop per-port timer; freeze label at final elapsed time
@@ -654,16 +857,88 @@ class MPFlashToolMain(QMainWindow):
                 del self._port_timers[row]
             self._update_port_timer(row)  # one last tick to show final value
 
-        self._active_workers -= 1
-        if self._active_workers <= 0:
-            self._active_workers = 0
+    def _on_worker_thread_finished(self, row: int, worker):
+        if worker not in self._running_workers:
+            return
+
+        if worker not in self._workers_with_results:
+            message = "Worker exited without a download result"
+            self._workers_with_results.add(worker)
+            self._record_download_result(False)
+            if 0 <= row < len(self._port_rows):
+                self._port_rows[row][3].set_done(False, message)
+                if row in self._port_timers:
+                    self._port_timers[row].stop()
+                    del self._port_timers[row]
+                self._update_port_timer(row)
+
+        self._workers_with_results.discard(worker)
+        self._running_workers.remove(worker)
+        self._active_workers = len(self._running_workers)
+        worker.deleteLater()
+        if self._active_workers == 0:
             if self._total_timer:
                 self._total_timer.stop()
                 self._total_timer = None
             self._update_total_timer()  # one last tick
             self.download_button.setEnabled(True)
             self.scan_button.setEnabled(True)
-            self.status_bar.showMessage("Download finished.")
+            self.detect_layout_button.setEnabled(
+                not self.factory_mode_checkbox.isChecked()
+            )
+            self._append_statistics_to_download_log(
+                self._active_batch_log_file
+            )
+            self._active_batch_log_file = None
+            self.status_bar.showMessage(
+                "下载完成。" if self.lang_checkbox.isChecked()
+                else "Download finished."
+            )
+
+    def _record_download_result(self, success: bool):
+        self._session_total += 1
+        if success:
+            self._session_success += 1
+        self._update_session_statistics_label()
+
+    def _append_statistics_to_download_log(self, log_file):
+        if not log_file:
+            return
+
+        pass_rate = self._session_success * 100.0 / self._session_total
+        line = (
+            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}][I] [Statistics]"
+            f"Flash Statistics: Total={self._session_total}, "
+            f"Success={self._session_success}, Pass Rate={pass_rate:.2f}%\n"
+        )
+        try:
+            with open(log_file, "a", encoding="utf-8") as stream:
+                stream.write(line)
+                stream.flush()
+                os.fsync(stream.fileno())
+        except (OSError, ValueError) as error:
+            self.status_bar.showMessage(
+                ("警告：无法写入烧录统计：" if self.lang_checkbox.isChecked()
+                 else "Warning: failed to write flash statistics: ")
+                + str(error)
+            )
+
+    def _update_session_statistics_label(self):
+        pass_rate = (
+            f"{self._session_success * 100.0 / self._session_total:.2f}%"
+            if self._session_total else "--"
+        )
+        if self.lang_checkbox.isChecked():
+            text = (
+                f"本次烧录：{self._session_total}  |  成功：{self._session_success}"
+                f"  |  直通率：{pass_rate}"
+            )
+        else:
+            text = (
+                f"Session Total: {self._session_total}  |  Passed: {self._session_success}"
+                f"  |  Pass Rate: {pass_rate}"
+            )
+        self._session_statistics_label.setText(text)
 
     def _update_total_timer(self):
         elapsed = int(time.monotonic() - self._total_start)
@@ -923,12 +1198,14 @@ class MPFlashToolMain(QMainWindow):
         self.chip_erase_checkbox.setText("全片擦除" if cn_mode else "Chip Erase")
         self.usb_download_checkbox.setText("USB 下载" if cn_mode else "USB Download")
         self.scan_button.setText("扫描设备" if cn_mode else "Scan Devices")
+        self.detect_layout_button.setText("检测布局" if cn_mode else "Detect Layout")
         self.download_button.setText("下载" if cn_mode else "Download")
 
         self._lbl_check.setText("选择：" if cn_mode else "Check :")
         self.all_label.setText("<a href='#'>全选</a>" if cn_mode else "<a href='#'>All</a>")
         self.none_label.setText("<a href='#'>取消</a>" if cn_mode else "<a href='#'>None</a>")
         self.total_time_label.setText("总计：--:--" if cn_mode else "Total: --:--")
+        self._update_session_statistics_label()
 
         # ── Configuration tab ─────────────────────────────────────────────
         self.factory_mode_checkbox.setText("工厂模式" if cn_mode else "Factory Mode")
@@ -1067,6 +1344,23 @@ class MPFlashToolMain(QMainWindow):
         os.makedirs(log_dir, exist_ok=True)
         ts = time.strftime("%Y_%m_%d_%H_%M_%S")
         self._log_file = os.path.join(log_dir, f"{ts}.log")
+        if self._version_logged_file == self._log_file:
+            return
+        try:
+            with open(self._log_file, "a", encoding="utf-8") as stream:
+                stream.write(
+                    f"[{time.strftime('%Y-%m-%d %H:%M:%S')}][I] [GUI]"
+                    f"AmebaMPFlashGUI Version: {self.app_version}\n"
+                )
+                stream.flush()
+                os.fsync(stream.fileno())
+            self._version_logged_file = self._log_file
+        except OSError as error:
+            self.status_bar.showMessage(
+                ("警告：无法写入版本信息：" if self.lang_checkbox.isChecked()
+                 else "Warning: failed to write version information: ")
+                + str(error)
+            )
 
     def _on_save_log_changed(self, checked):
         self.log_level_combo.setEnabled(checked)
@@ -1138,6 +1432,7 @@ class MPFlashToolMain(QMainWindow):
         settings.auto_reset_device_with_dtr_rts = int(self.auto_reset_device_with_dtr_rts_checkbox.isChecked())
         settings.split_single_image_by_layout = self.split_single_image_by_layout_checkbox.isChecked()
         settings.gui_language_zh = self.lang_checkbox.isChecked()
+        settings.port_slot_map = dict(self._port_slot_map)
 
         try:
             JsonUtils.save_to_file(self._settings_path(), settings.to_dict(), need_encrypt=False)
@@ -1175,6 +1470,15 @@ class MPFlashToolMain(QMainWindow):
             self.len_hex_edit.setText("0x0")
 
         self._saved_ports = settings.port if isinstance(settings.port, list) else None
+        self._port_slot_map = {}
+        for port, slot_id in settings.port_slot_map.items():
+            try:
+                slot_id = int(slot_id)
+            except (TypeError, ValueError):
+                continue
+            if str(port) and slot_id > 0:
+                self._port_slot_map[str(port)] = slot_id
+        self.detect_layout_button.setVisible(bool(settings.reorder_mode))
 
         factory_mode = bool(settings.factory_mode)
         self.factory_mode_checkbox.setChecked(factory_mode)
@@ -1229,6 +1533,7 @@ class MPFlashToolMain(QMainWindow):
         self.factory_mode_checkbox.setEnabled(configurable)
         self.chip_erase_checkbox.setEnabled(configurable)
         self.verify_checkbox.setEnabled(configurable)
+        self.detect_layout_button.setEnabled(configurable)
         # Lock the whole Layout table in factory mode so operators cannot
         # accidentally change the layout: freeze cell editing and disable the
         # per-row Mandatory / Full Erase checkboxes.
@@ -1254,6 +1559,30 @@ class MPFlashToolMain(QMainWindow):
             self.usb_download_checkbox.setEnabled(support_usb)
 
     def closeEvent(self, event):
+        cn_mode = self.lang_checkbox.isChecked()
+        if (self._detect_layout_worker is not None
+                and self._detect_layout_worker.isRunning()):
+            event.ignore()
+            QMessageBox.information(
+                self,
+                "请稍候" if cn_mode else "Please Wait",
+                ("正在检测布局，请等待操作完成后再关闭工具。"
+                 if cn_mode else
+                 "Layout detection is in progress. Please close the tool after it finishes."),
+            )
+            return
+
+        if self._active_workers or self._running_workers:
+            event.ignore()
+            QMessageBox.information(
+                self,
+                "请稍候" if cn_mode else "Please Wait",
+                ("正在烧录，请等待全部任务完成后再关闭工具。"
+                 if cn_mode else
+                 "Download is in progress. Please close the tool after all tasks finish."),
+            )
+            return
+
         # Persist Layout edits back into the profile file before exiting.
         self._sync_table_to_profile()
         self._write_profile_back()

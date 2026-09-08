@@ -54,7 +54,7 @@ extern "C" {
  * @return Non-zero if aligned, 0 otherwise.
  */
 #ifndef USB_IS_MEM_DMA_ALIGNED
-#define USB_IS_MEM_DMA_ALIGNED(x)		((u32)((u32)(x) & ((CACHE_LINE_SIZE)-1)) == 0)
+#define USB_IS_MEM_DMA_ALIGNED(x)		(((u32)(x) & ((CACHE_LINE_SIZE)-1)) == 0)
 #endif
 
 /**

@@ -141,6 +141,12 @@ extern unsigned int sys_now(void);
 #define IP_REASS_MAX_PBUFS              60
 #endif
 
+#if defined(CONFIG_WIFI_AP_STA_NUM) && (CONFIG_WIFI_AP_STA_NUM > 5)
+#define ARP_TABLE_SIZE                  (CONFIG_WIFI_AP_STA_NUM + 5)
+#else
+#define ARP_TABLE_SIZE                  10
+#endif
+
 #if defined(CONFIG_RNAT)
 #define IP_FORWARD                      1
 #define IP_NAT                          1

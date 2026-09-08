@@ -225,6 +225,17 @@ menu "CONFIG WHC INTF"
         #    depends on WHC_DEV_LOC_KM4_MENU
         #    bool "Support WHC DEV TCPIP KEEPALIVE"
 
+        config WAR_OFFLOAD_FOR_KR4
+            depends on WHC_DEV_LOC_KR4_MENU
+            bool
+            help
+              Device-side mDNS offload, hidden for now. Once the host enables it at
+              runtime no RX packet reaches the host at all, so the host side must
+              drive it (WHC_API_WAR_OFFLOAD_CTRL + WHC_API_WAR_SET_MDNS_PARA).
+        #config WAR_OFFLOAD_FOR_KM4
+        #    depends on WHC_DEV_LOC_KM4_MENU
+        #    bool
+
         endmenu
 
         config WHC_DEV_FLASH_BOOT

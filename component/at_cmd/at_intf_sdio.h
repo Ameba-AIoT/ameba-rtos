@@ -14,14 +14,13 @@
 /* Device->Host framing.
  *
  * The device TX path no longer prepends an INIC_RX_DESC BD (saves one BD per
- * packet), so the SDIO IP hands the host a bare payload and the only length
- * hint left is the RX0_REQ_LEN register.  Carry the length inline instead, the
- * same way the WHC SDIO host driver takes it from the payload itself rather
- * than from that register (whc_host_rtos/sdio/whc_sdio_host.c).
+ * packet), so the SDIO IP hands the host a bare payload.  The host can use
+ * the RX0_REQ_LEN register for the total transfer length, but carrying the
+ * payload length inline in this header keeps the stream self-delimiting and
+ * allows a host to walk several packets out of one RX FIFO read.
  *
  * magic makes a device/host firmware mismatch fail with a log line instead of
- * garbage on the host UART, and makes the stream self-delimiting so a host can
- * walk several packets out of one RX FIFO read.
+ * garbage on the host UART.
  *
  * Host->Device keeps using INIC_TX_DESC and is unaffected.
  */

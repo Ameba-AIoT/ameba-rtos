@@ -46,14 +46,15 @@
 #define picolibcTLS_SIZE                   ( ( portPOINTER_SIZE_TYPE ) _tls_size() )
 #define picolibcSTACK_ALIGNMENT_MASK       ( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK )
 
-#if __PICOLIBC_MAJOR__ > 1 || __PICOLIBC_MINOR__ >= 8
+#if defined(__PICOLIBC_MAJOR__) && ( __PICOLIBC_MAJOR__ > 1 || __PICOLIBC_MINOR__ >= 8 )
 
 /* Picolibc 1.8 and newer have explicit alignment values provided
  * by the _tls_align() inline */
     #define picolibcTLS_ALIGNMENT_MASK    ( ( portPOINTER_SIZE_TYPE ) ( _tls_align() - 1 ) )
 #else
 
-/* For older Picolibc versions, use the general port alignment value */
+/* For older Picolibc versions, or when version macros are not yet visible
+ * (e.g. included before picolibc.h), use the general port alignment value */
     #define picolibcTLS_ALIGNMENT_MASK    ( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK )
 #endif
 

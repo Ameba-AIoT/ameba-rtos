@@ -84,6 +84,9 @@ class RtSettings():
         self.gui_language_zh = _g("GuiLanguageZh", False)
         # Number of port rows the GUI sizes its startup height to show without scrolling.
         self.gui_visible_ports = int(_g("GuiVisiblePorts", 20))
+        self.reorder_mode = int(_g("ReorderMode", _g("REORDERMODE", 0)))
+        port_slot_map = _g("PortSlotMap", {})
+        self.port_slot_map = dict(port_slot_map) if isinstance(port_slot_map, dict) else {}
 
     def to_dict(self):
         return {
@@ -134,5 +137,7 @@ class RtSettings():
                 "LogLevel": self.log_level,
                 "GuiLanguageZh": self.gui_language_zh,
                 "GuiVisiblePorts": self.gui_visible_ports,
+                "ReorderMode": self.reorder_mode,
+                "PortSlotMap": self.port_slot_map,
             },
         }

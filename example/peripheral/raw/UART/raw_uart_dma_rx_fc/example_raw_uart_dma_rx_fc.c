@@ -23,20 +23,20 @@
 /* NOTE: DMA buffer must be 32-byte aligned with D-Cache enabled */
 char rx_buf[SRX_BUF_SZ]__attribute__((aligned(32))) = {0};
 
-UART_InitTypeDef UART_InitStruct;
-GDMA_InitTypeDef GDMA_InitStruct;
+static UART_InitTypeDef UART_InitStruct;
+static GDMA_InitTypeDef GDMA_InitStruct;
 
 volatile u32 uart_idx;
 volatile u32 tx_busy = 0;
 volatile u32 rx_done = 0;
 volatile u32 wait_rx = 0;
 
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F) || defined (CONFIG_AMEBAPRO3)
 const u8 UART_TX_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_TXD,
 	PINMUX_FUNCTION_UART1_TXD,
 	PINMUX_FUNCTION_UART2_TXD,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_AMEBAPRO3)
 	PINMUX_FUNCTION_UART3_TXD
 #endif
 };
@@ -45,7 +45,7 @@ const u8 UART_RX_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_RXD,
 	PINMUX_FUNCTION_UART1_RXD,
 	PINMUX_FUNCTION_UART2_RXD,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_AMEBAPRO3)
 	PINMUX_FUNCTION_UART3_RXD
 #endif
 };
@@ -70,7 +70,11 @@ void dma_free(void)
 	GDMA_Cmd(GDMA_InitStruct.GDMA_Index, GDMA_InitStruct.GDMA_ChNum, DISABLE);
 	GDMA_ClearINT(GDMA_InitStruct.GDMA_Index, GDMA_InitStruct.GDMA_ChNum);
 	GDMA_ChnlFree(GDMA_InitStruct.GDMA_Index, GDMA_InitStruct.GDMA_ChNum);
+#if defined (CONFIG_AMEBAPRO3)
+	UART_INTConfig(UART_DEV, RUART_BIT_ERBI | RUART_BIT_ELSI, DISABLE);
+#else
 	UART_INTConfig(UART_DEV, RUART_BIT_ERBI | RUART_BIT_ELSI | RUART_BIT_ETOI, DISABLE);
+#endif
 	UART_TXDMACmd(UART_DEV, DISABLE);
 	UART_RXDMACmd(UART_DEV, DISABLE);
 }
@@ -150,7 +154,7 @@ void uart_stream_rx_dma_flow_ctrl_demo(void)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, PINMUX_FUNCTION_UART);
 	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART);
-#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
+#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F) || defined (CONFIG_AMEBAPRO3)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, UART_TX_FID[uart_idx]);
 	Pinmux_Config(UART_RX, UART_RX_FID[uart_idx]);

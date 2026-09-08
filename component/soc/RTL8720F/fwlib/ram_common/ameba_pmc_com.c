@@ -201,6 +201,22 @@ void SOCPS_SleepVoltRaiseTo0P9(void)
 	reg_temp |= LDO_VOLT_CODE1_CLDO(code_0p9);
 	LDO->LDO_CLDO_VOLT_CTRL = reg_temp;
 }
+/**
+ * @brief Check whether SDIO is armed as a wake source.
+ *
+ * @retval TRUE: SDIO can wake the system, FALSE: it cannot.
+ */
+u8 SOCPS_SDIOWakeCheck(void)
+{
+	u32 wake_src = WAKE_SRC_SDIO_WIFI | WAKE_SRC_SDIO_BT;
+	u32 np_mask = PMC_GET_WAK_NP_IMR_29_0(HAL_READ32(PMC_BASE, WAK_MASK0_NP));
+	u32 ap_mask = PMC_GET_WAK_AP_IMR_29_0(HAL_READ32(PMC_BASE, WAK_MASK0_AP));
+	if ((np_mask & wake_src) || (ap_mask & wake_src)) {
+		return TRUE;
+	}
+
+	return FALSE;
+}
 
 void SOCPS_ReguDelayAdjust(void)
 {
@@ -242,13 +258,13 @@ void SOCPS_ClockSourceConfig(u8 xtal_mode, u8 osc_option)
 	RTK_LOGI(TAG, "AIP_TRIGGER %08x\n", HAL_READ32(PMC_BASE, AIP_TRIGGER));
 
 	/* 5. XTAL sleep status config */
-	if ((xtal_mode == XTAL_Normal) || (xtal_mode == XTAL_HP)) {
+	if ((xtal_mode == XTAL_LPS_With_40M) || (xtal_mode == XTAL_Normal) || (xtal_mode == XTAL_HP)) {
 		SOCPS_SleepVoltRaiseTo0P9();
 		/* xtal clock gating can be set to 1 only when the sleep voltage is greater than or equal to 0.9V!*/
 		reg_temp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
 		reg_temp |= PMC_BIT_CKE_XTAL40M_SLEP;
 		HAL_WRITE32(PMC_BASE, SYSPMC_OPT, reg_temp);
-		RTK_LOGI(TAG, "The voltage of XTAL Normal/HP mode in sleep state is 0.9V\n");
+		RTK_LOGI(TAG, "The voltage of XTAL LPS with 40M/Normal/HP mode in sleep state is 0.9V\n");
 	}
 }
 
@@ -257,18 +273,21 @@ void SOCPS_PowerManage(void)
 	u32 reg_temp = 0;
 	ADC_TypeDef *adc = ADC;
 
+#if defined(CONFIG_EXT_CORE_SWR)
+	/* Core power is supplied by an external SWR, so the internal CORE
+	 * LDO never needs to track sleep/wake state. Skip the PMC regu
+	 * sleep/wake flow entirely and park it in deep sleep mode instead. */
+	LDO_CoreDeepSleepModeSet();
+#else
 	/* 1. regu (core LDO)sleep status configuuration. */
 	/* 1.1 Set REGU's state when sleep.*/
 	SOCPS_PowerStateSetInSleep(STATE2_LDOSLP_08);
-#if defined (CONFIG_WHC_DEV) && defined (CONFIG_WHC_INTF_SDIO)
-	SOCPS_SleepVoltRaiseTo0P9();
-#endif
 	/* 1.2 for simulation*/
 	SOCPS_ReguDelayAdjust();
 
 	/* 2. regu (core LDO) normal status configuration. */
 	SOCPS_PowerStateSetInNormal(STATE6_LDONORM_09);
-
+#endif
 	/* change wait SOC power-cut stable time to shrink wakeup time */
 	reg_temp = HAL_READ32(PMC_BASE, SYSPMC_CTRL);
 	reg_temp &= ~(PMC_MASK_STL_PDSOC | PMC_MASK_TUTIME);

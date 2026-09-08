@@ -140,6 +140,10 @@ int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index)
 	case WHC_WLAN_GET_GWMSK:
 		ptr = whc_network_info[index].gw_mask;
 		break;
+
+	case WHC_WLAN_GET_IPV6_ENABLED:
+		return 0;
+
 	default:
 		break;
 	}

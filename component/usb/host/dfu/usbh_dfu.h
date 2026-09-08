@@ -80,6 +80,7 @@ typedef enum {
 	USBH_DFU_STATE_DONE,               /**< Transfer complete; about to invoke the completion callback. */
 	USBH_DFU_STATE_ERROR,              /**< Error occurred; about to invoke the error callback. */
 	USBH_DFU_STATE_RECONFIGURE,        /**< Run-Time device: sending DFU_DETACH to trigger re-enumeration. */
+	USBH_DFU_STATE_ABORT,              /**< Issuing DFU_ABORT to cancel an in-progress transfer. */
 } usbh_dfu_state_t;
 
 
@@ -173,6 +174,7 @@ typedef struct {
 	u8                   upload_phase;    /**< Sub-phase inside UPLOAD_BLOCK:
 	                                           0 = DFU_UPLOAD ctrl transfer in progress;
 	                                           1 = follow-up DFU_GETSTATUS in progress. */
+	u8                   itf_num;         /**< Matched DFU interface number (set on attach; used as wIndex for all DFU class requests). */
 	u8                   is_runtime;      /**< 1 = device attached in Run-Time mode (Protocol=0x01). */
 	u8                   reconf_pending;  /**< 1 = DFU_DETACH sent; awaiting re-enumeration as DFU mode. */
 } usbh_dfu_host_t;

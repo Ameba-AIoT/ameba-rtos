@@ -390,9 +390,6 @@ u8 whc_host_scan_user_callback_hdl(u32 *param_buf)
 
 void whc_host_set_netif_info_hdl(int idx, unsigned char *dev_addr)
 {
-	int softap_addr_offset_idx = global_idev.wifi_user_config.softap_addr_offset_idx;
-	unsigned char softap_mac[ETH_ALEN];
-
 	dev_dbg(global_idev.pwhc_dev, "[whc]: set netif info.");
 
 	if (idx >= WHC_MAX_NET_PORT_NUM) {

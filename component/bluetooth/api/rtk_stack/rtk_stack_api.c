@@ -419,7 +419,6 @@ static uint16_t bt_stack_profile_init(void *app_conf)
 
 #if defined(RTK_BLE_GATTS_SUPPORT) && RTK_BLE_GATTS_SUPPORT
 	if (app_profile_support & RTK_BT_PROFILE_GATTS) {
-		BT_LOGD("GATTS Profile init  \r\n");
 		ret = bt_stack_gatts_init(app_conf);
 		if (ret) {
 			return ret;

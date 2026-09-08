@@ -14,9 +14,13 @@ None
 	```
 	[*] Enable USB
 			USB Mode (Device)  --->
-	[*] Composite
-	[*]    HID Class
-	[*]    UAC Class
+		*** USB Device Global Settings ***
+	[*] Composite function enable
+		*** USB Device Class Selection ***
+	[*] HID
+			Select HID device type (Vendor bidirectional)  --->
+	[*] UAC
+			Select UAC Version (UAC 2.0)  --->
 	```
 	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
 	```
@@ -73,11 +77,11 @@ None
 		click rescan ,choose "Realtek HID Priv Device" device,and click connect
 	- Test
 		USBD RX:type "0x1F,1,2,3,4" in the HIDPyToy,and click "Send Out Report", the LOGUART console will print the message
-		USBD TX:type "hidd_comp_tx xx" in the LOGUART console, and click "Read In Reports" in the HIDPyToy, you will get a message from the ameba device
+		USBD TX:type "usbd_hid_tx xx" in the LOGUART console, and click "Read In Reports" in the HIDPyToy, you will get a message from the ameba device
 		Notice:please trigger USBD RX first
 	```
 
-6. Type "hidd_comp_volup"/"hidd_comp_voldown" in the LOGUART console, the windows volume control bar will pop-up, and the volume will up/down
+6. Type "usbd_hid_volup"/"usbd_hid_voldown" in the LOGUART console, the windows volume control bar will pop-up, and the volume will up/down
 
 7. Reset and check the log via LOGUART console, make sure there is no error reported
    

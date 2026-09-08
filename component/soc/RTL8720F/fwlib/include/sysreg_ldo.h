@@ -314,6 +314,7 @@ extern "C" {
   * @{
   */
 _LONG_CALL_	void LDO_CoreVolSet(u8 vol_type);
+_LONG_CALL_ void LDO_CoreDeepSleepModeSet(void);
 /**
   * @}
   */

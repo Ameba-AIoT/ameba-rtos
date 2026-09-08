@@ -64,10 +64,15 @@ if(CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC)
         whc_dev/whc_dev_init.c
         whc_dev/whc_dev_msg_queue.c
         whc_dev/whc_dev_trx.c
-        whc_dev/whc_dev_protocal_offload.c
         whc_dev/whc_dev_api.c
         whc_dev/whc_dev_powersave.c
     )
+
+    if(CONFIG_WAR_OFFLOAD)
+        ameba_list_append(private_sources
+            whc_dev/whc_dev_protocal_offload.c
+        )
+    endif()
 
     if(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
         ameba_list_append(private_sources

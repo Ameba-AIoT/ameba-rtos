@@ -236,22 +236,6 @@ void whc_host_set_wifi_on(void)
 	whc_host_send_cmd_data_to_dev(buf, buf_len);
 }
 
-void whc_host_dhcp(void)
-{
-	uint8_t buf[12] = {0};
-	uint8_t *ptr = buf;
-	uint32_t buf_len = 0;
-	*(uint32_t *)ptr = WHC_WIFI_TEST;
-	ptr += 4;
-	buf_len += 4;
-
-	*ptr = WHC_WIFI_TEST_DHCP;
-	ptr += 1;
-	buf_len += 1;
-
-	whc_host_send_cmd_data_to_dev(buf, buf_len);
-}
-
 void whc_host_set_host(void)
 {
 	uint8_t buf[12] = {0};
@@ -359,11 +343,6 @@ u32 cmd_whc_test(u16 argc, u8  *argv[])
 		goto exit;
 	}
 
-	if (_strcmp((const char *)argv[0], "dhcp") == 0) {
-		whc_host_dhcp();
-		goto exit;
-	}
-
 	if (_strcmp((const char *)argv[0], "hostrtos") == 0) {
 		whc_host_set_host();
 		goto exit;
@@ -381,6 +360,15 @@ u32 cmd_whc_test(u16 argc, u8  *argv[])
 		whc_host_wifi_connect((char *)argv[1], pwd);
 		goto exit;
 	}
+
+	/* start dhcp in host */
+	if (_strcmp((const char *)argv[0], "dhcp") == 0) {
+		lwip_netif_set_link_up(NETIF_WLAN_STA_INDEX);
+		/* Start DHCPClient */
+		lwip_request_ip(STA_WLAN_INDEX);
+		goto exit;
+	}
+
 exit:
 	return 0;
 }

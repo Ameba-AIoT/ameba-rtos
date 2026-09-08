@@ -78,8 +78,7 @@ void whc_sdio_recv_data_process(void)
 					retry = 0;
 					pbuf = sdio_read_rxfifo(sdio_priv, SdioRxFIFOSize);
 					if (pbuf) {
-						/* SDIO carries pkt_len (payload after RX_DESC) in the RX descriptor */
-						whc_host_recv_dispatch(pbuf, *(u16 *)pbuf);
+						whc_host_recv_dispatch(pbuf, SdioRxFIFOSize);
 					} else {
 						break;
 					}

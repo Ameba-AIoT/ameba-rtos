@@ -27,8 +27,14 @@ list(
     ${DIR_COMMON}/wififw_wowlan_common.c
     ${DIR_COMMON}/wififw_mp.c
     ${DIR_COMMON}/wififw_gtimer_common.c
-    ${DIR_COMMON}/wififw_btcoex_tdma_common.c
 )
+
+if(NOT CONFIG_RLE1509)
+    list(
+        APPEND CSRC
+        ${DIR_COMMON}/wififw_btcoex_tdma_common.c
+    )
+endif()
 
 #From L2 and 7098, mac uses tx architecture. FW cannot use the old ICs' wififw_txpkt_common.c.
 if(CONFIG_AMEBADPLUS OR CONFIG_AMEBAGREEN2 OR CONFIG_AMEBAPRO3 OR CONFIG_AMEBALITE OR CONFIG_AMEBASMART OR CONFIG_AMEBAD)

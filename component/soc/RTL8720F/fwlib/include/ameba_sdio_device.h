@@ -30,7 +30,7 @@ extern "C" {
 #define SPDIO_TX_BD_BUF_SZ_UNIT		64   /*!< TX BD buffer size unit; must be a multiple of 64 bytes. */
 
 #define SPDIO_RX_BD_FREE_TH			5   /*!< Threshold of free RX BDs before notifying the host. */
-#define SPDIO_MIN_RX_BD_SEND_PKT	2   /*!< Minimum number of RX BDs required to send a packet. */
+#define SPDIO_MIN_RX_BD_SEND_PKT	1   /*!< Minimum number of RX BDs required to send a packet. */
 #define SPDIO_MAX_RX_BD_BUF_SIZE	16380   /*!< Maximum buffer size a single RX BD can point to (4-byte aligned). */
 
 /** @brief Initial interrupt mask for SDIO device operation. */
@@ -120,7 +120,6 @@ typedef struct {
 typedef struct {
 	struct spdio_buf_t *dev_tx_buf;		/*!< Pointer to the device transmit buffer associated with this RX BD. */
 	SPDIO_RX_BD *pRXBD;		/*!< Pointer to the RX BD buffer. */
-	INIC_RX_DESC *pRXDESC;	/*!< Pointer to the RX packet descriptor. */
 	u8 isPktEnd;			/*!< Indicates whether this BD is the last segment of a packet that spans more than one BD. */
 	u8 isFree;				/*!< Indicates whether this RX BD is free (DMA complete and the associated packet has been freed). */
 } SPDIO_RX_BD_HANDLE;
@@ -137,11 +136,10 @@ typedef struct {
 
 	SPDIO_RX_BD_HANDLE *pRXBDHdl;	/*!< Pointer to the allocated memory for the RX BD handle array. */
 	SPDIO_RX_BD *pRXBDAddr;			/*!< Start address of the RX BD array; must be 8-byte aligned. */
-	INIC_RX_DESC *pRXDESCAddr;			/*!< Pointer to the RX descriptor array. */
 	u16 RXBDWPtr;					/*!< Write index of the SDIO RX (Device-to-Host) BD ring. */
 	u16 RXBDRPtr;					/*!< Local read index of the SDIO RX (Device-to-Host) BD ring, distinct from the HW-maintained read index. */
 
-	u16 host_rx_bd_num;				/*!< Number of RX BDs on the host side; for WiFi, 2 BDs are required per packet, so this value must be a multiple of 2. */
+	u16 host_rx_bd_num;				/*!< Number of RX BDs on the host side. */
 	u16 host_tx_bd_num;				/*!< Number of TX BDs on the host side (data received from host). */
 	u16 device_rx_bufsz;			/*!< RX buffer size per BD: equals desired packet length plus 24 bytes (SPDIO header), must be a multiple of 64, maximum 16 KB. */
 
@@ -162,7 +160,7 @@ typedef s8(*spdio_device_rx_done_cb_ptr)(PSPDIO_ADAPTER pSPDIODev, struct spdio_
   */
 
 void SDIO_TxBdHdl_Init(SPDIO_TX_BD_HANDLE *g_TXBDHdl, SPDIO_TX_BD *SPDIO_TXBDAddr, struct spdio_buf_t *spdio_dev_rx_buf, u16 host_tx_bd_num);
-void SDIO_RxBdHdl_Init(SPDIO_RX_BD_HANDLE *g_RXBDHdl, SPDIO_RX_BD *SPDIO_RXBDAddr, INIC_RX_DESC *g_RXDESCAddr, u16 host_rx_bd_num);
+void SDIO_RxBdHdl_Init(SPDIO_RX_BD_HANDLE *g_RXBDHdl, SPDIO_RX_BD *SPDIO_RXBDAddr, u16 host_rx_bd_num);
 void SPDIO_Notify_INT(SDIO_TypeDef *SDIO, u16 IntStatus);
 void SPDIO_Recycle_Rx_BD(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, spdio_device_tx_done_cb_ptr spdio_device_tx_done_cb);
 u8 SPDIO_DeviceTx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, struct spdio_buf_t *pbuf);

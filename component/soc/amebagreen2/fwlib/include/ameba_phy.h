@@ -159,7 +159,7 @@ typedef struct {
 	bool eee_rx_lpi_capable;  /**< PHY supports RX LPI */
 } phy_eee_capability_t;
 
-extern const struct eth_phy_ops phy_rtl8201fr_ops;
+extern const struct eth_phy_ops phy_rtl8201f_ops;
 
 #ifdef __cplusplus
 }

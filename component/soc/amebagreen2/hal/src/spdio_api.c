@@ -15,7 +15,7 @@ static const char *const TAG = "SPDIO";
 #define SPDIO_IRQ_PRIORITY			INT_PRI_MIDDLE   /*!< Interrupt priority for SDIO device IRQ. */
 #define SPDIO_TX_BD_BUF_SZ_UNIT		64   /*!< TX BD buffer size unit in bytes. */
 #define SPDIO_RX_BD_FREE_TH			5    /*!< Threshold of free RX BDs before triggering recycling. */
-#define SPDIO_MIN_RX_BD_SEND_PKT	2    /*!< Minimum free RX BDs required to receive a packet. */
+#define SPDIO_MIN_RX_BD_SEND_PKT	1    /*!< Minimum free RX BDs required to send a packet. */
 #define SPDIO_MAX_RX_BD_BUF_SIZE	16380   /*!< Maximum RX BD buffer size in bytes; 4-byte aligned. */
 
 /** @brief Interrupt status bits mask enabled at SDIO initialization. */
@@ -240,11 +240,6 @@ void SPDIO_Buffer_free(PSPDIO_ADAPTER pSPDIODev)
 		pSPDIODev->pTXBDAddr = NULL;
 	}
 
-	if (pSPDIODev->pRXDESCAddr) {
-		rtos_mem_free(pSPDIODev->pRXDESCAddr);
-		pSPDIODev->pRXDESCAddr = NULL;
-	}
-
 	if (obj->irq_sema) {
 		rtos_sema_delete(obj->irq_sema);
 		obj->irq_sema = NULL;
@@ -327,12 +322,7 @@ void spdio_init(struct spdio_t *obj)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO_Device_Init: Malloc for RX_BD Handle Err!!\n");
 		goto SDIO_INIT_ERR;
 	}
-	pSPDIODev->pRXDESCAddr = (INIC_RX_DESC *)rtos_mem_zmalloc(obj->host_rx_bd_num * sizeof(INIC_RX_DESC));
-	if (NULL == pSPDIODev->pRXDESCAddr) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO_Device_Init: Malloc for RX_DESC Err!!\n");
-		goto SDIO_INIT_ERR;
-	}
-	SDIO_RxBdHdl_Init(pSPDIODev->pRXBDHdl, pSPDIODev->pRXBDAddr, pSPDIODev->pRXDESCAddr, obj->host_rx_bd_num);
+	SDIO_RxBdHdl_Init(pSPDIODev->pRXBDHdl, pSPDIODev->pRXBDAddr, obj->host_rx_bd_num);
 
 	rtos_sema_create(&(obj->irq_sema), 0, RTOS_SEMA_MAX_COUNT);
 	if (NULL == obj->irq_sema) {

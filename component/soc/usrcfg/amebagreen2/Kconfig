@@ -137,6 +137,17 @@ endmenu
 
 menu "RAM Layout Configuration"
 
+config SRAM_KM4NS_IMG2_KB
+    int "KM4NS(NP) SRAM image2 size (KB)"
+    range 32 256
+    default 128 if WIFI_NAN_ENABLE
+    default 96
+    help
+        Size of the NP(KM4NS) SRAM image2 region, pinned at the SRAM_END side; the
+        AP(KM4TZ) region takes the remainder below it, so growing NP shrinks AP.
+        KM4NS_BD_RAM is this size minus the image header. Sizing rationale: see
+        RAM_KM4NS_IMG2_SIZE in ameba_layout.ld. Ignored in the fullmac layout.
+
 # TrustZone secure image (Image3) size. For SoCs without PSRAM this region may
 # live in SRAM, so it is a general RAM-layout parameter, configured per IC.
 config TZ_S_SIZE

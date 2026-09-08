@@ -269,6 +269,19 @@ u32 rtw_sdio_enable_func(struct whc_sdio *priv)
 	return true;
 }
 
+#ifdef WHC_RX_AGG
+void rtw_sdio_enable_rx_agg(struct whc_sdio *priv)
+{
+	u16 cfg;
+
+	cfg = SDIO_RX_AGG_EN
+		  | ((SDIO_RX_AGG_TO & SDIO_RX_AGG_TO_MSK) << SDIO_RX_AGG_TO_SH)
+		  | ((SDIO_RX_AGG_BD_CNT_TH & SDIO_RX_AGG_BD_CNT_TH_MSK) << SDIO_RX_AGG_BD_CNT_TH_SH);
+
+	rtw_write16(priv, SDIO_REG_RX_AGG_CFG, cfg);
+}
+#endif /* WHC_RX_AGG */
+
 u32 rtw_sdio_init_common(struct whc_sdio *priv)
 {
 	u8 value;
@@ -283,11 +296,10 @@ u32 rtw_sdio_init_common(struct whc_sdio *priv)
 	rtw_sdio_init_txavailbd_threshold(priv);
 #endif
 
-#ifdef CONFIG_SDIO_RX_AGGREGATION
-	if (rtw_sdio_init_agg_setting(priv) == false) {
-		return false;
-	}
+#ifdef WHC_RX_AGG
+	rtw_sdio_enable_rx_agg(priv);
 #endif
+
 	priv->txbd_wptr = (u16)rtw_read8(priv, SPDIO_REG_TXBD_WPTR);
 	priv->txbd_size = rtw_read16(priv, SPDIO_REG_TXBD_NUM);
 	rtw_sdio_query_txbd_status(priv);
@@ -299,6 +311,15 @@ u32 rtw_sdio_init_common(struct whc_sdio *priv)
 		return false;
 	}
 	priv->SdioTxMaxSZ = value * 64;
+
+#ifdef WHC_TX_AGG
+	/* coalescing buffer for tx aggregation, sized to one bus transfer */
+	priv->agg_buf = kmalloc(priv->SdioTxMaxSZ, GFP_KERNEL);
+	if (priv->agg_buf == NULL) {
+		dev_err(&priv->func->dev, "%s: alloc tx-agg buf FAIL!\n", __func__);
+		return false;
+	}
+#endif
 
 	priv->bSurpriseRemoved = false;
 
@@ -348,6 +369,11 @@ u32 rtw_sdio_init(struct whc_sdio *priv)
 void rtw_sdio_deinit(struct whc_sdio *priv)
 {
 	struct sdio_func *func = priv->func;
+
+#ifdef WHC_TX_AGG
+	kfree(priv->agg_buf);
+	priv->agg_buf = NULL;
+#endif
 
 	if (func) {
 		sdio_claim_host(func);

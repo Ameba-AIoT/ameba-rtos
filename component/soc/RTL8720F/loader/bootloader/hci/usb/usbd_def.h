@@ -41,7 +41,7 @@ extern "C" {
 #define USB_REQ_RECIPIENT_DEVICE                       0x00U
 #define USB_REQ_RECIPIENT_INTERFACE                    0x01U
 #define USB_REQ_RECIPIENT_ENDPOINT                     0x02U
-#define USB_REQ_RECIPIENT_MASK                         0x03U
+#define USB_REQ_RECIPIENT_MASK                         0x1FU
 
 #define USB_REQ_GET_STATUS                             0x00U
 #define USB_REQ_CLEAR_FEATURE                          0x01U

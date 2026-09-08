@@ -13,6 +13,9 @@ In this example, ADC is configured to sample data in `vbat channel`.
 * On RTL8730E
 	- Connect `VBAT_MEAS` to `to-be-measured signal`
 	- Connect `GND` to `GND` of to-be-measured device
+* On RTL8735C
+	- Connect `VBAT_MEAS` to `to-be-measured signal`
+	- Connect `GND` to `GND` of to-be-measured device
 
 For more info of `VBAT_MEAS`, refer to EVB schematic design file.
 
@@ -39,3 +42,4 @@ For more info of `VBAT_MEAS`, refer to EVB schematic design file.
 # Supported IC
 
 RTL8730E
+RTL8735C

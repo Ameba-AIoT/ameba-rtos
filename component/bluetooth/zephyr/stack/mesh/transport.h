@@ -101,4 +101,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx);
 
 void bt_mesh_trans_init(void);
+#if ZEPHYR_RTK_PATCH
+void bt_mesh_trans_deinit(void);
+#endif
 void bt_mesh_trans_reset(void);

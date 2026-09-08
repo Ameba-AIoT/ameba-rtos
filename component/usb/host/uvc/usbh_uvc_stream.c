@@ -251,16 +251,12 @@ static int usbh_uvc_set_urb(usbh_uvc_stream_t *stream)
 			k = i;
 			while (k > 0U) {
 				k--;
-				if (stream->urb[k] != NULL) {
-					usb_os_mfree(stream->urb[k]);
-					stream->urb[k] = NULL;
-				}
+				usb_os_mfree((void *)stream->urb[k]);
+				stream->urb[k] = NULL;
 			}
 
-			if (stream->urb_buffer != NULL) {
-				usb_os_mfree(stream->urb_buffer);
-				stream->urb_buffer = NULL;
-			}
+			usb_os_mfree((void *)stream->urb_buffer);
+			stream->urb_buffer = NULL;
 			return HAL_ERR_MEM;
 		}
 		stream->urb[i]->addr = stream->urb_buffer + (i * stream->urb_buffer_size);
@@ -303,16 +299,14 @@ static void usbh_uvc_reset_urb(usbh_uvc_stream_t *stream)
 			stream->urb[i]->regive_us = 0U;
 			stream->urb[i]->owner = 0U;
 #endif
-			usb_os_mfree(stream->urb[i]);
+			usb_os_mfree((void *)stream->urb[i]);
 			stream->urb[i] = NULL;
 		}
 	}
 
-	if (stream->urb_buffer != NULL) {
-		usb_os_mfree(stream->urb_buffer);
-		stream->urb_buffer = NULL;
-		stream->urb_buffer_size = 0U;
-	}
+	usb_os_mfree((void *)stream->urb_buffer);
+	stream->urb_buffer = NULL;
+	stream->urb_buffer_size = 0U;
 }
 
 
@@ -723,7 +717,7 @@ static void usbh_uvc_combine_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 		}
 
 		header_len = data[0];
-		header = (usbh_uvc_vs_payload_header_t *)(void *)data;
+		header = (usbh_uvc_vs_payload_header_t *)data;
 
 		if ((header_len < USBH_UVC_PAYLOAD_HEADER_MIN_LEN) || (length < header_len)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Err: payload len(%d) < header len(%d)\n", length, header_len);
@@ -776,7 +770,7 @@ static void usbh_uvc_combine_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 			maxlen = stream->frame_buffer_size - frame_buffer->byteused;
 			bytes = MIN(maxlen, payload_len);
 
-			usb_os_memcpy((frame_buffer->buf + frame_buffer->byteused), (data + header_len), bytes);
+			usb_os_memcpy((void *)(frame_buffer->buf + frame_buffer->byteused), (const void *)(data + header_len), bytes);
 			frame_buffer->byteused += bytes;
 		}
 
@@ -1230,8 +1224,8 @@ int usbh_uvc_stream_ctrl_set_video(usbh_uvc_stream_t *stream, u8 probe)
 	ctrl_struct_size = sizeof(usbh_uvc_stream_control_t);
 
 	/* minimal UVC 1.5 compat: zero buf so offset 34-47 are 0, then copy known fields */
-	usb_os_memset(uvc->request_buf, 0U, size);
-	usb_os_memcpy(uvc->request_buf, (void *) ctrl, (size < ctrl_struct_size) ? size : ctrl_struct_size);
+	usb_os_memset((void *)uvc->request_buf, 0U, size);
+	usb_os_memcpy((void *)uvc->request_buf, (const void *)ctrl, (size < ctrl_struct_size) ? size : ctrl_struct_size);
 
 	if (USB_IS_MEM_DMA_ALIGNED(uvc->request_buf)) {
 		DCache_Clean((u32)uvc->request_buf, size);
@@ -1569,10 +1563,8 @@ void usbh_uvc_stream_close(usbh_uvc_stream_t *stream)
 		frame->state = UVC_FRAME_INIT;
 	}
 
-	if (stream->frame_buf != NULL) {
-		usb_os_mfree(stream->frame_buf);
-		stream->frame_buf = NULL;
-	}
+	usb_os_mfree((void *)stream->frame_buf);
+	stream->frame_buf = NULL;
 }
 
 /**

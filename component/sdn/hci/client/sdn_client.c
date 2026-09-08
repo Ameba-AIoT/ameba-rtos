@@ -1,4 +1,5 @@
 #include <ameba.h>
+#include <ameba_pmu.h>
 #include <os_wrapper.h>
 #include <sdn_intf.h>
 #include <bt_hci.h>
@@ -226,6 +227,7 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *data, uint16_t len)
 
 void sdn_client_tx_buf_complete(struct sdn_data_buf *pdata_buf)
 {
+	(void)pdata_buf;
 #ifdef CONFIG_BT_SDN
 	if (pdata_buf->protocol == SDN_INTF_BT) {
 		if (pdata_buf->type == BT_HCI_H4_ACL) {
@@ -669,10 +671,12 @@ static uint32_t sdn_client_rx_init(void)
 #endif
 
 	return SDN_INTF_ERR_OK;
-
+#if defined(CONFIG_SDN_HOST) || defined(CONFIG_BT_SDN) \
+	|| (defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM)
 fail:
 	sdn_client_rx_deinit();
 	return SDN_INTF_ERR_OPEN_FAIL;
+#endif
 }
 
 static uint32_t sdn_client_intf_open(void)
@@ -838,9 +842,8 @@ bool sdn_enable(void)
 		return false;
 	}
 
-#if SDN_HAL_SUSPEND_ENABLE
-	sdn_pwr_leave_suspend();
-#endif
+	/* If SDN LPS is not enabled, keep IC active during sdn is enbaled. */
+	pmu_acquire_wakelock(PMU_BT_CONTROLLER);
 
 	sdn_log_init();
 
@@ -916,4 +919,6 @@ void sdn_disable(void)
 #ifdef CONFIG_SDN_HOST
 	sdn_client_intf_close();
 #endif
+
+	pmu_release_wakelock(PMU_BT_CONTROLLER);
 }

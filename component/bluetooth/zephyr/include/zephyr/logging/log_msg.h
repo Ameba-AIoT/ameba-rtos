@@ -360,7 +360,6 @@ do { \
  * @}
  */
 
-#include <syscalls/log_msg.h>
 
 #ifdef __cplusplus
 }

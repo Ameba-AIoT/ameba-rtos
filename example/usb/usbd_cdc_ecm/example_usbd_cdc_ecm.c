@@ -16,7 +16,7 @@
 /* Private defines -----------------------------------------------------------*/
 
 // Endpoint address
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 #define CDC_ECM_BULK_IN_EP                        0x82U
 #define CDC_ECM_BULK_OUT_EP                       0x02U
 #else
@@ -136,7 +136,7 @@ static const usbd_config_t usbd_ecm_cfg = {
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
 	.ext_intr_enable = USBD_SOF_INTR,
-#elif defined (CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	.rx_fifo_depth = 644U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
 	.ext_intr_enable = USBD_SOF_INTR,
@@ -269,7 +269,7 @@ static void usbd_ecm_link_change_thread(void *param)
 					// RTK_LOGS(TAG, RTK_LOG_INFO, "Starting USB ECM DHCP Server...\n");
 
 					// 1. Set netif MAC address
-					memcpy(pnetif_usb_eth->hwaddr, dhcp_server_mac, 6);
+					usb_os_memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)dhcp_server_mac, 6);
 					pnetif_usb_eth->hwaddr_len = ETHARP_HWADDR_LEN;
 					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server MAC: " MAC_FMT "\n", MAC_ARG(pnetif_usb_eth->hwaddr));
 

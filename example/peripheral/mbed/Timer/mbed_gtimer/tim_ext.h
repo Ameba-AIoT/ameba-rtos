@@ -33,6 +33,12 @@
 
 #define GPIO_LED_PIN1       PA_15
 #define GPIO_LED_PIN2       PA_16
+
+#elif defined (CONFIG_AMEBAPRO3)
+
+#define GPIO_LED_PIN1       PF_4
+#define GPIO_LED_PIN2       PF_9
+
 #endif
 
 #endif

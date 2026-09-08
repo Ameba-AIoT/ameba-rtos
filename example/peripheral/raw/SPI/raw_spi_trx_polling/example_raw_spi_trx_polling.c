@@ -14,6 +14,20 @@
 
 /* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
+
+#if defined (CONFIG_AMEBAPRO3)
+
+#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPIM1
+#define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPIS0
+#define APBPeriph_SPIM 			APBPeriph_SPIM1
+#define APBPeriph_SPIM_CLOCK 	APBPeriph_SPIM1_CLOCK
+#define APBPeriph_SPIS 			APBPeriph_SPIS0
+#define APBPeriph_SPIS_CLOCK 	APBPeriph_SPIS0_CLOCK
+#define SPI1_DEV SPI0_MST_DEV
+#define SPI0_DEV SPI0_SLV_DEV
+
+#else
+
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI1
 #define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI0
@@ -21,6 +35,14 @@
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI
 #define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI
 #endif
+
+#define APBPeriph_SPIM 			APBPeriph_SPI1
+#define APBPeriph_SPIM_CLOCK 	APBPeriph_SPI1_CLOCK
+#define APBPeriph_SPIS 			APBPeriph_SPI0
+#define APBPeriph_SPIS_CLOCK 	APBPeriph_SPI0_CLOCK
+
+#endif
+
 #endif
 
 void spi_task(void)
@@ -44,7 +66,7 @@ void spi_task(void)
 	SSI_InitTypeDef SSI_InitStructM;
 	SSI_StructInit(&SSI_InitStructM);
 
-	RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_SPIM, APBPeriph_SPIM_CLOCK, ENABLE);
 	Pinmux_Config(SPI1_MOSI, PINMUX_FUNCTION_SPIM);
 	Pinmux_Config(SPI1_MISO, PINMUX_FUNCTION_SPIM);
 	Pinmux_Config(SPI1_SCLK, PINMUX_FUNCTION_SPIM);
@@ -67,7 +89,7 @@ void spi_task(void)
 	SSI_InitTypeDef SSI_InitStructS;
 	SSI_StructInit(&SSI_InitStructS);
 
-	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_SPIS, APBPeriph_SPIS_CLOCK, ENABLE);
 	Pinmux_Config(SPI0_MOSI, PINMUX_FUNCTION_SPIS);
 	Pinmux_Config(SPI0_MISO, PINMUX_FUNCTION_SPIS);
 	Pinmux_Config(SPI0_SCLK, PINMUX_FUNCTION_SPIS);

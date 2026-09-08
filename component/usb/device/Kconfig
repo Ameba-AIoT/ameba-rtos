@@ -1,7 +1,7 @@
 comment "USB Device Global Settings"
 
 config USBD_COMPOSITE_MENU
-    bool "Composite functions enable"
+    bool "Composite function enable"
     select USBD_COMPOSITE if WHC_HOST || WHC_NONE
     help
       Composite Device — combine multiple class functions into one USB device.
@@ -56,6 +56,9 @@ config USBD_HID_MENU
                 bool "Mouse"
             config USBD_HID_KEYBOARD
                 bool "Keyboard"
+            config USBD_HID_BIDIR
+                bool "Vendor bidirectional"
+                depends on USBD_COMPOSITE_MENU
         endchoice
     endif
 
@@ -114,4 +117,3 @@ config USBD_UVC_MENU
     bool "UVC"
     depends on SUPPORT_USBD_UVC
     select USBD_UVC if WHC_HOST || WHC_NONE
-

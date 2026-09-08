@@ -55,7 +55,6 @@ typedef struct {
 										fixed latency: delay read data cycles(phy clk) after asserting spi_rx_data_en, recommend 4 ~ 6
 										4*read_latency - rd_dummy_length + rfifo_rdy_dly = in_physical_cyc */
 
-	u32 PSRAMP_DQ16_EN;
 	u32 DDR_PAD_CTRL1;
 	u32 DDR_PAD_CTRL2;
 } PSPHY_InitTypeDef;
@@ -210,7 +209,8 @@ typedef struct {
 	u32 Psram_TRWR;			//cmd + tcss + cs high + addr
 	u32 Psram_Resume_Cnt;	//for autogating phy resume
 	u8 Psram_Type;
-	u8 Psram_DQ16;
+	u8 Psram_RdVL;			//1: read  variable latency, 0: read  fixed latency
+	u8 Psram_WrVL;			//1: write variable latency, 0: write fixed latency
 } PSRAMINFO_TypeDef;
 /**
   * @}
@@ -230,7 +230,6 @@ typedef struct {
 #define PSRAM_ENABLE_SLOW_REFRESH		((u8)(0x01 << 3))				//enable slow refresh when temperature allows
 #define PSRAM_Refresh_Setting(x)		((u8)(((x) & 0x03) <<3))			//for DQ16 Refresh Frequency setting MR4[4:3]  x0: Always 4x Refresh (default) 01:Enables 1x Refresh when temperature allows (temperature<= 70C) 11: Enable 0.5x Refresh when temperature allows (temperature<= 50C)
 #define PSRAM_WRITE_LATENCY_CODE(x)		((u8)(((x) & 0x07) << 5))		//001: 200M LC=7; 101:250M LC=8
-#define PSRAM_ENBALE_DQ16				((u8)0x01 << 6)					//IO X8/X16 Mode MR8
 /**
   * @}
   */
@@ -397,7 +396,8 @@ typedef struct {
 /** @defgroup PSRAMP_Latency_Type
   * @{
   */
-#define PSRSAM_FIX_LATENCY			0x1	//0 for variable, 1 for fix
+/* PSRSAM_FIX_LATENCY removed: read/write latency is now configured per device
+ * via PSRAMINFO_TypeDef.Psram_RdVL / Psram_WrVL (set in ChipInfo_InitPsramInfoFromMemInfo). */
 
 /**
   * @}
@@ -486,8 +486,8 @@ _LONG_CALL_	void PSRAM_CLK_Update(void);
 _LONG_CALL_ void PSRAM_PHY_StructInit(PSPHY_InitTypeDef *PSPHY_InitStruct);
 _LONG_CALL_ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct);
 _LONG_CALL_ void PSRAM_CTRL_Init(void);
-_LONG_CALL_ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR, u8 DQ_16);
-_LONG_CALL_ void PSRAM_REG_Write(u32 type, u32 addr, u32 write_len, u8 *write_data, u8 DQ_16);
+_LONG_CALL_ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR);
+_LONG_CALL_ void PSRAM_REG_Write(u32 type, u32 addr, u32 write_len, u8 *write_data);
 _LONG_CALL_ void PSRAM_UPSRAM_REG_Read(u32 mr_addr, u8 *read_data);
 _LONG_CALL_ void PSRAM_UPSRAM_REG_Write(u32 mr_addr, u8 write_data);
 _LONG_CALL_ bool PSRAM_calibration(void);
@@ -531,6 +531,8 @@ _LONG_CALL_ void set_psram_wakeup_mode(void);
 
 /* APM uPSRAM MR6 field definitions */
 #define APM_UPSRAM_MR6_CLM		(1 << 7)	/* Clock Latency Method: 1=Legacy-Clock (required), 0=Eco-Clock (default, unsupported) */
+#define APM_UPSRAM_MR6_PAGE		(1 << 6)	/* Page burst MR6[6]: 0=wrap within MR6[1:0] length, 1=full-page wrap (Table 16) */
+#define APM_UPSRAM_MR6_AS		(1 << 5)	/* Row address assignment shift MR6[5]: 0=disable(default), 1=enable (Table 17) */
 #define APM_UPSRAM_MR6_LC(x)	(((x) & 0x7) << 2)	/* Read/Write Latency Code MR6[4:2] */
 #define APM_UPSRAM_MR6_WRAP(x)	(((x) & 0x3) << 0)	/* Wrap Length MR6[1:0]: 00=16B 01=32B 10=64B 11=128B */
 
@@ -604,11 +606,8 @@ _LONG_CALL_ void set_psram_wakeup_mode(void);
 
 #define PSRAM_CAL_DQ0_7				0x0
 #define PSRAM_CAL_DQ8_15			0x1
-#define PSRAM_CAL_DQ16_23			0x2
 #define PSRAM_CAL_DQ24_31			0x3
 
-#define PSRAM_DQ16_SL0			0x0
-#define PSRAM_DQ16_SL1			0x1
 #define PSRAM_DQ8_SL0			0x2
 
 

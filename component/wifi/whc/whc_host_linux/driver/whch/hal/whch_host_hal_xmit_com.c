@@ -136,9 +136,6 @@ void whc_host_hal_pending_q_resume(void)
 	if (global_idev.mlme_priv.b_in_scan) {
 		return;
 	}
-	if (whc_host_hal_txbd_enough_check() == 0) {
-		return;
-	}
 
 	tx_pending_status = whc_host_hal_pending_q_status(WHC_STA_PORT);
 
@@ -372,7 +369,6 @@ int whc_host_hal_xmitframe_dump(u8 iface_type, struct xmit_frame *pxmitframe)
 		spin_lock_bh(&pxmitpriv->mutex);
 #ifndef WHCH_TXAGG
 		if ((whc_host_hal_pending_q_check(ppending_q) > 0) ||
-			(whc_host_hal_txbd_enough_check() == 0) ||	//TODO: maybe check usb/sdio resource?
 			global_idev.mlme_priv.b_in_scan || global_idev.mlme_priv.b_in_linking)
 #endif
 		{

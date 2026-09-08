@@ -7,6 +7,7 @@
 #include <ameba_ipccfg.h>
 #include <ameba_ipc.h>
 #include <sdn_intf.h>
+#include <sdn_mem_conf.h>
 #ifdef CONFIG_BT_SDN
 #include <host_bt_feature.h>
 #endif

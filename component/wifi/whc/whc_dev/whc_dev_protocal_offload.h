@@ -11,9 +11,10 @@
 #ifndef __WHC_DEV_PROTOCAL_OFFLOAD_H__
 #define __WHC_DEV_PROTOCAL_OFFLOAD_H__
 
-#define CONFIG_WAR_OFFLOAD
+#ifdef CONFIG_WAR_OFFLOAD
 #define CONFIG_OFFLOAD_MDNS_V4
 #define CONFIG_OFFLOAD_MDNS_V6
+#endif
 
 /*
 * Write host byte order data to memory in LE order

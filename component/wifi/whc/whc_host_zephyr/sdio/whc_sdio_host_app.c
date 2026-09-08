@@ -75,7 +75,7 @@ void whc_host_sdio_send_msg(uint8_t *msg, uint32_t msg_len, uint8_t *ret, uint32
 		if (ptr != NULL) {
 			if (ret != NULL && ret_len != 0) {
 				/* device echoes the request prefix then appends result;
-				 * skip INIC_RX_DESC + whc_cmd_path_hdr + msg_len to reach return data */
+				 * skip whc_cmd_path_hdr + msg_len to reach return data */
 				memcpy(ret, ptr + SIZE_RX_DESC + sizeof(struct whc_cmd_path_hdr) + msg_len, ret_len);
 			}
 			whc_free((uint8_t *)ptr);

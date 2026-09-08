@@ -17,9 +17,12 @@ FLASH_TOOL   = os.path.realpath(os.path.join(SCRIPT_DIR, "../ameba/Flash/AmebaFl
 
 # Flags that select a standalone operation in AmebaFlash.py (no firmware download).
 # When any of these is present in the passthrough args, --download is NOT injected.
-# Note: --key-prog is intentionally excluded — it must run in the same floader
-# session as the firmware download, so --download is always injected alongside it.
-_NON_DOWNLOAD_OPS = {'--erase', '-e', '--chip-erase', '--read-wifimac'}
+# Note: --chip-erase is intentionally excluded — flash.py has always combined it
+# with --download (erase the whole chip, then download), matching AmebaFlash.py's
+# own "download + chip-erase" combined mode; it never had a standalone meaning here.
+# --key-prog is likewise excluded — it must run in the same floader session as the
+# firmware download, so --download is always injected alongside it.
+_NON_DOWNLOAD_OPS = {'--erase', '-e', '--read-wifimac'}
 
 
 class MemoryInfo:

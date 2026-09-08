@@ -32,7 +32,7 @@
 /* Private defines -----------------------------------------------------------*/
 
 /* CDC ACM endpoint addresses */
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 #define COMP_CDC_BULK_IN_EP                           0x82U
 #define COMP_CDC_BULK_OUT_EP                          0x02U
 #define COMP_CDC_INTR_IN_EP                           0x83U
@@ -43,7 +43,7 @@
 #endif
 
 /* UAC endpoint addresses */
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 #define COMP_UAC_ISOC_IN_EP                           0x84U
 #define COMP_UAC_ISOC_OUT_EP                          0x05U
 #else
@@ -103,7 +103,7 @@ static const usbd_config_t composite_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined (CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 100U,
-#elif defined (CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	.rx_fifo_depth = 420U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, },
 #elif defined (CONFIG_AMEBAPRO3)
@@ -168,6 +168,7 @@ static rtos_sema_t uac_ready_sema;
 static volatile u8 audio_task_stop;
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 static volatile u8 uac_playing;
+static rtos_task_t uac_audio_task;
 #endif
 
 #if COMP_HOTPLUG
@@ -187,9 +188,9 @@ static const usbd_composite_cb_t composite_usr_cb = {
 
 /* UAC format info updated by format_changed callback */
 static usbd_audio_cfg_t uac_play_cfg = {
-	.sampling_freq = 48000,
-	.byte_width = 2,
-	.ch_cnt = 2,
+	.sampling_freq = USBD_UAC_SAMPLING_FREQ_48K,
+	.byte_width = USBD_UAC_BYTE_WIDTH_2,
+	.ch_cnt = USBD_UAC_CH_CNT_2,
 	.enable = 1,
 };
 
@@ -392,7 +393,7 @@ static void example_audio_track_play(void)
 
 		uac_playing = 1;
 		while (!audio_task_stop) {
-			read_dat_len = usbd_uac_read(recv_buf, COMP_USBD_AUDIO_MS_BUF_SIZE * 2, 500);
+			read_dat_len = usbd_uac_read(recv_buf, COMP_USBD_AUDIO_MS_BUF_SIZE * 2, 500, NULL);
 			if (read_dat_len > 0) {
 #if COMP_UAC_DEMUX_CH_DEBUG
 				play_data_size = 0;
@@ -400,7 +401,7 @@ static void example_audio_track_play(void)
 				for (idx = 0, off = 0; idx < read_dat_len; idx += audio_src_step, off += audio_dst_step) {
 					// ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3
 					// 24  24  24  24  24  24  24  24  24  24  24  24
-					memcpy((void *)(play_buf + off), (void *)(recv_buf + idx), audio_dst_step);
+					usb_os_memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
 					play_data_size += audio_dst_step;
 				}
 
@@ -566,7 +567,7 @@ static void example_usbd_composite_acm_uac_init_thread(void *param)
 	composite_uac_cb.format_changed = composite_uac_cb_format_changed;
 
 	if (comp_init_stack() != HAL_OK) {
-		goto exit;
+		goto exit_release_sema;
 	}
 
 #if COMP_HOTPLUG
@@ -581,6 +582,19 @@ static void example_usbd_composite_acm_uac_init_thread(void *param)
 
 exit:
 	rtos_task_delete(NULL);
+	return;
+
+exit_release_sema:
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
+	if (uac_audio_task != NULL) {
+		rtos_task_delete(uac_audio_task);
+	}
+#endif
+#if COMP_HOTPLUG
+	rtos_sema_delete(comp_attach_status_changed_sema);
+#endif
+	rtos_sema_delete(uac_ready_sema);
+	goto exit;
 }
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
@@ -626,19 +640,28 @@ void example_usbd_composite(void)
 	}
 #endif
 
-	if (rtos_task_create(&task, "usbd_comp_init_thread",
-						 example_usbd_composite_acm_uac_init_thread, NULL,
-						 COMP_INIT_THREAD_STACK_SIZE,
-						 COMP_INIT_THREAD_PRIORITY) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create init thread fail\n");
-	}
-
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
-	if (rtos_task_create(NULL, "usbd_comp_audio_thread",
+	if (rtos_task_create(&uac_audio_task, "usbd_comp_audio_thread",
 						 example_usbd_composite_acm_uac_audio_track_thread, NULL,
 						 COMP_UAC_THREAD_STACK_SIZE,
 						 COMP_UAC_THREAD_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create audio track fail\n");
 	}
 #endif
+
+	if (rtos_task_create(&task, "usbd_comp_init_thread",
+						 example_usbd_composite_acm_uac_init_thread, NULL,
+						 COMP_INIT_THREAD_STACK_SIZE,
+						 COMP_INIT_THREAD_PRIORITY) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create init thread fail\n");
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
+		if (uac_audio_task != NULL) {
+			rtos_task_delete(uac_audio_task);
+		}
+#endif
+#if COMP_HOTPLUG
+		rtos_sema_delete(comp_attach_status_changed_sema);
+#endif
+		rtos_sema_delete(uac_ready_sema);
+	}
 }

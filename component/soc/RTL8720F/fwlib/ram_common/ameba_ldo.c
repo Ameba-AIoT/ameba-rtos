@@ -35,3 +35,33 @@ void LDO_CoreVolSet(u8 vol_type)
 		/*The default voltage is 0.9V, no triggering required.*/
 	}
 }
+
+/**
+  * @brief  Park CORE LDO in deep sleep mode at its lowest voltage, per
+  *         External Core Power soft start flow. Used once at boot when
+  *         core power is supplied by an external SWR instead of the
+  *         internal CORE LDO, so the unused LDO is left at minimum Iq.
+  */
+void LDO_CoreDeepSleepModeSet(void)
+{
+	LDO_TypeDef *LDO = LDO_BASE;
+	u32 reg_temp;
+
+	/* LDO_Core[5:2] = 0000, lower CORE LDO voltage to the lowest level */
+	reg_temp = LDO->LDO_CORE;
+	reg_temp &= ~LDO_MASK_VOADJ_L;
+	LDO->LDO_CORE = reg_temp;
+
+	/* LDO_Core[8:7]: 11 -> 00 */
+	reg_temp = LDO->LDO_CORE;
+	reg_temp &= ~LDO_MASK_REG_STANDBY_L;
+	LDO->LDO_CORE = reg_temp;
+
+	/* LDO_Core[9]: 0 -> 1, CORE LDO enters deep sleep mode */
+	reg_temp = LDO->LDO_CORE;
+	reg_temp |= LDO_BIT_REG_ITAIL_HALF_EN_L;
+	LDO->LDO_CORE = reg_temp;
+
+	/* modify the 0.7V/0.8V/0.9V/1.0V code table to the lowest voltage code. */
+	LDO->LDO_CLDO_VOLT_CTRL = 0;
+}

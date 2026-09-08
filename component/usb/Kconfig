@@ -23,12 +23,10 @@ menu "CONFIG USB"
     endif
 
     if USB_DEVICE_EN_MENU || USB_DRD_EN_MENU
-        comment "USB Device Class"
         orsource "device/Kconfig"
     endif
 
     if USB_HOST_EN_MENU || USB_DRD_EN_MENU
-        comment "USB Host Class"
         orsource "host/Kconfig"
     endif
 

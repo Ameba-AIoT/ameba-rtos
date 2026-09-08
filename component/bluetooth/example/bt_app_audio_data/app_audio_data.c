@@ -202,7 +202,7 @@ static void bt_demo_usb_task_entry(void *ctx)
 			if (!demo_usb_task_run) {
 				break;
 			}
-			read_data_len = usbd_uac_read(tmp_buf, USB_AUDIO_BUF_SIZE * 2, USB_AUDIO_READ_TIME_OUT);
+			read_data_len = usbd_uac_read(tmp_buf, USB_AUDIO_BUF_SIZE * 2, USB_AUDIO_READ_TIME_OUT, NULL);
 			if (read_data_len) {
 				//DiagPrintf("read_data_len: %ld \r\n", read_data_len);
 				if (read_data_len > (write_bytes = usb_uac_get_enough_write_bytes())) {

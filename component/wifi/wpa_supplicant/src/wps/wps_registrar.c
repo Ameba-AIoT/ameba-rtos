@@ -2035,7 +2035,7 @@ static struct wpabuf *wps_build_m8(struct wps_data *wps)
 }
 
 
-void *wps_registrar_get_msg(void *priv, u8 *op_code)
+void *wps_registrar_get_msg(void *priv, enum wsc_op_code *op_code)
 {
 	struct wpabuf *msg;
 	struct wps_data *wps = (struct wps_data *)priv;

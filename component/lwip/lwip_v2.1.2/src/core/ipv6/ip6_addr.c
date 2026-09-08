@@ -46,6 +46,11 @@
 
 #include "lwip/ip_addr.h"
 #include "lwip/def.h"
+/* Realtek add: [backport lwIP 2.2.0] needed by ip6addr_aton_r() below for netif_find(),
+ * which resolves the "%<ifname>" scope-id suffix. Added upstream in
+ * STABLE-2_2_0_RELEASE (src/core/ipv6/ip6_addr.c). Remove once the SDK's
+ * lwip is bumped to >= 2.2.0. */
+#include "lwip/netif.h"
 
 #include <string.h>
 
@@ -185,6 +190,25 @@ fix_byte_order_and_return:
     }
 
     ip6_addr_clear_zone(addr);
+    /* Realtek add: [backport lwIP 2.2.0] parse a trailing "%<zone>" scope-id so that a
+     * textual link-local address (e.g. "fe80::1%r23") carries its zone. This
+     * lets getaddrinfo()/inet_pton() fill sockaddr_in6.sin6_scope_id for every
+     * socket app (ping, iperf3, ...) with no per-app code. The zone is a netif
+     * name-key resolved by netif_find(): name[0..1] + num. RTK names netifs
+     * "r"+idx (lwip_netconf.c) and lwip assigns num = idx + 1, so the NAN netif
+     * (idx 2) is "r2" + num 3 = "r23". Backported from STABLE-2_2_0_RELEASE;
+     * remove once the SDK's lwip is bumped to >= 2.2.0. */
+#if LWIP_IPV6_SCOPES
+    if (*s == '%') {
+      const char *scopestr = s + 1;
+      if (*scopestr) {
+        struct netif *netif = netif_find(scopestr);
+        if (netif) {
+          ip6_addr_assign_zone(addr, IP6_UNKNOWN, netif);
+        }
+      }
+    }
+#endif
   }
 
   if (current_block_index != 7) {

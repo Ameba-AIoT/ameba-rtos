@@ -258,6 +258,19 @@ typedef struct _usbd_class_driver_t {
 	 *     time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @details
 	 *     - Standard interface requests (`SET_INTERFACE/GET_INTERFACE/GET_STATUS`).
+	 *       Ref USB 2.0 §9.4.10: on `SET_INTERFACE` the endpoints of the interface addressed by
+	 *       wIndex return to their default state, not halted and data toggle DATA0. The class
+	 *       shall call @ref usbd_ep_clear_stall for them, or re-initialize them if the new
+	 *       alternate setting differs. This also applies to an interface having the default
+	 *       setting only, hosts do send `SET_INTERFACE(0)` to such an interface.
+	 *     - Standard endpoint requests `SET_FEATURE/CLEAR_FEATURE` with `ENDPOINT_HALT`, which the
+	 *       core offers to the class before handling them itself. Handle one only if the endpoint
+	 *       address in the low byte of wIndex belongs to this class, and only if halting or
+	 *       unhalting requires class bookkeeping the core cannot do, e.g. re-arming an OUT
+	 *       transfer or resetting a protocol state machine. Return 0 to state that the halt state
+	 *       change is done, any non-zero value keeps the default core handling. The core has
+	 *       already validated the request and completes the status stage in both cases.
+	 *       A class which keeps its OUT endpoint armed while halted needs none of this.
 	 *     - Class-specific requests per relevant class specifications.
 	 *     - Vendor-defined requests for custom devices.
 	 * @param[in] dev: USB device.
@@ -349,6 +362,29 @@ typedef struct _usbd_class_driver_t {
 	 * @param[in] dev: USB device.
 	 */
 	void (*wakeup)(usb_dev_t *dev);
+
+	/**
+	 * @brief Callback to assign the first class-specific string index of this class.
+	 * @note
+	 *    Optional, used by the composite framework only; never called in standalone mode.
+	 *    Class-specific strings are those with an index above @ref USBD_IDX_SERIAL_STR:
+	 *    indices 0..USBD_IDX_SERIAL_STR (LANGID/MFG/PRODUCT/SERIAL) are device-global and
+	 *    owned by the top-level driver, never by a class. Several classes in one composite
+	 *    device would otherwise all claim the index right above USBD_IDX_SERIAL_STR, so the
+	 *    composite framework hands out a private window to each class and relies on the
+	 *    returned count to route GET_DESCRIPTOR(String) to the owning class.
+	 *    A class implementing this callback shall:
+	 *      - emit `base + n` (n = 0..count-1) in every descriptor field referencing one of
+	 *        its own strings, e.g. the CDC ECM iMACAddress field, and
+	 *      - answer GET_DESCRIPTOR(String, base + n) with the matching string.
+	 *    Called once before enumeration; calling it again with the same base is harmless.
+	 *    A class owning no class-specific string leaves this callback NULL, in which case
+	 *    the framework assigns it no window.
+	 * @param[in] base: First class-specific string index assigned to this class.
+	 * @return Number of class-specific string indices consumed, starting at base. 0 means
+	 *         the class owns none.
+	 */
+	u8(*set_class_str_base)(u8 base);
 } usbd_class_driver_t;
 /** @} End of Device_Core_Types group */
 /** @} End of USB_Device_Types group */

@@ -67,15 +67,17 @@
 #define USBH_UAC_REC_BITWIDTH                 16
 #define USBH_UAC_REC_SAMPLING_FREQ            48000
 
-/* UVC stream configuration */
-#define USBH_UVC_STREAM_WIDTH                 2560
-#define USBH_UVC_STREAM_HEIGHT                1440
+/* UVC stream configuration.
+ * Must name a resolution the camera actually advertises for the requested
+ * format, otherwise the device silently negotiates down in PROBE and the
+ * returned bFrameIndex no longer matches what was asked for. */
+#define USBH_UVC_STREAM_WIDTH                 1920
+#define USBH_UVC_STREAM_HEIGHT                1080
 #define USBH_UVC_STREAM_FRAMERATE             30
 #define USBH_UVC_STREAM_INDEX                 0
 
 /* Frame buffer size in bytes.
- * H264 @ 2K 30 fps: I-frames can peak at 200-300 KB;
- * Reduce if heap is tight; increase if oversize errors occur. */
+ * H264 @ 1080p 30 fps: I-frames peak well under 250 KB. */
 #define USBH_UVC_FRAME_BUF_SIZE               (250 * 1024)
 
 /* Ctrl setup timeouts: UVC Probe/Commit callback and UAC CLASS_REQUEST ready */
@@ -94,17 +96,26 @@
 /* Polling delay when usbh_uvc_get_frame returns NULL */
 #define USBH_UVC_FRAME_POLL_DELAY_MS          1U
 
+/* Polling delay used by the ctrl thread while waiting for the device to detach */
+#define USBH_COMPOSITE_DETACH_POLL_MS         50U
+
 /* Thread priority definitions (higher number = higher priority) */
 #define USBH_UAC_PLAY_THREAD_PRIORITY         4       /* Audio playback thread */
 #define USBH_UAC_RECORD_THREAD_PRIORITY       4       /* Audio record thread */
-#define USBH_UVC_STREAM_THREAD_PRIORITY       3       /* UVC stream thread */
+#define USBH_UVC_CTRL_THREAD_PRIORITY         3       /* UVC/UAC ctrl setup thread */
+#define USBH_UVC_STREAM_THREAD_PRIORITY       3       /* UVC frame data thread */
 #define USBH_UVC_UAC_MAIN_THREAD_PRIORITY     5       /* USB host main thread */
 #define USBH_UVC_UAC_HOTPLUG_THREAD_PRIORITY  6       /* Hot-plug detection thread */
+
+/* Thread stack sizes in bytes */
+#define USBH_UVC_CTRL_THREAD_STACK_SIZE       704U    /* UVC/UAC ctrl setup thread, measured used=448B */
+#define USBH_UVC_STREAM_THREAD_STACK_SIZE     512U    /* UVC frame data thread, measured used=264B */
 
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
 static void example_usbh_uac_uvc_thread(void *param);
+static void usbh_uvc_uac_ctrl_thread(void *param);
 static void usbh_uvc_stream_thread(void *param);
 static void usbh_uac_play_thread(void *param);
 static void usbh_uac_record_thread(void *param);
@@ -158,10 +169,16 @@ static rtos_sema_t usbh_uvc_setparam_sema;
 
 /**
  * @brief Semaphore signaled when UAC CLASS_REQUEST setup completes.
- * The UVC stream thread waits on this before issuing UAC set_alt_setting so
+ * The ctrl thread waits on this before issuing UAC set_alt_setting so
  * that it does not race with the UAC class driver's own setup transfers.
  */
 static rtos_sema_t usbh_uac_ready_sema;
+
+/**
+ * @brief Semaphore signaled by the ctrl thread after full UVC+UAC setup.
+ * Releases the UVC frame data thread to begin get/put frame loop.
+ */
+static rtos_sema_t usbh_uvc_data_start_sema;
 
 /**
  * @brief Status reported by the UVC set_param callback (HAL_OK / HAL_ERR_HW)
@@ -192,7 +209,12 @@ static __IO int usbh_uac_play_thread_exit = 0;
 static __IO int usbh_uac_record_thread_exit = 0;
 
 /**
- * @brief Flag to request UVC stream thread to exit completely
+ * @brief Flag to request UVC/UAC ctrl thread to exit completely
+ */
+static __IO u8 usbh_uvc_ctrl_thread_exit = 0U;
+
+/**
+ * @brief Flag to request UVC frame data thread to exit completely
  */
 static __IO int usbh_uvc_stream_thread_exit = 0;
 
@@ -232,7 +254,12 @@ static rtos_task_t usbh_uac_play_task = NULL;
 static rtos_task_t usbh_uac_record_task = NULL;
 
 /**
- * @brief Handle for UVC stream thread (resident)
+ * @brief Handle for UVC/UAC ctrl setup thread (resident)
+ */
+static rtos_task_t usbh_uvc_ctrl_task = NULL;
+
+/**
+ * @brief Handle for UVC frame data thread (resident)
  */
 static rtos_task_t usbh_uvc_stream_task = NULL;
 
@@ -262,7 +289,7 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_priority = USBH_UVC_UAC_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.class_num = 2U,   /* UVC + UAC */
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
 	.nptx_fifo_depth = 256,
@@ -501,27 +528,24 @@ static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
 }
 
 /**
-  * @brief  Composite setup + UVC stream worker thread.
+  * @brief  Composite ctrl setup thread (UVC + UAC).
   *
-  *         Sequential ctrl setup flow each attach cycle:
+  *         Handles all ep0 control transfers for each attach cycle:
   *           1. UVC Probe/Commit/SET_INTERFACE (usbh_uvc_set_param, async, cb-waited)
-  *           2. UVC ISOC data start          (usbh_uvc_start)
-  *           3. UAC OUT SET_INTERFACE        (usbh_uac_set_alt_setting, blocking)
-  *           4. UAC IN  SET_INTERFACE        (usbh_uac_set_alt_setting, blocking)
-  *           5. UAC playback data start      (usbh_uac_start_play)
-  *           6. UAC capture data start       (usbh_uac_start_capture)
-  *         After 1.–6. the play/record data threads are released via their semas.
-  *         Then enters the UVC frame-pull loop until the device detaches.
+  *           2. UVC ISOC data start            (usbh_uvc_start)
+  *           3. UAC OUT SET_INTERFACE          (usbh_uac_set_alt_setting, blocking)
+  *           4. UAC IN  SET_INTERFACE          (usbh_uac_set_alt_setting, blocking)
+  *           5. UAC playback data start        (usbh_uac_start_play)
+  *           6. UAC capture data start         (usbh_uac_start_capture)
+  *         After all ctrl work, releases the three data threads via semaphores and
+  *         waits idle until the device detaches or app exits.
   * @param  param: Unused.
   * @retval None
   */
-static void usbh_uvc_stream_thread(void *param)
+static void usbh_uvc_uac_ctrl_thread(void *param)
 {
 	const usbh_uac_audio_fmt_t *fmt_out = NULL;
 	const usbh_uac_audio_fmt_t *fmt_in = NULL;
-	usbh_uvc_frame_t *frame = NULL;
-	u32 frame_count = 0U;
-	u32 debug_time = 0U;
 	u8 is_streaming = 0U;
 	u8 is_playing = 0U;
 	u8 is_recording = 0U;
@@ -531,14 +555,14 @@ static void usbh_uvc_stream_thread(void *param)
 
 	UNUSED(param);
 
-	while (usbh_uvc_stream_thread_exit == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "UVC stream wait setup\n");
+	while (usbh_uvc_ctrl_thread_exit == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Ctrl wait setup\n");
 		do_ctrl_setup = 0U;
 
 		if (rtos_sema_take(usbh_uvc_stream_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			continue;
 		}
-		if (usbh_uvc_stream_thread_exit != 0U) {
+		if (usbh_uvc_ctrl_thread_exit != 0U) {
 			break;
 		}
 
@@ -572,11 +596,15 @@ static void usbh_uvc_stream_thread(void *param)
 			} else if (usbh_uvc_setparam_status != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC setparam fail=%d\n", usbh_uvc_setparam_status);
 			} else {
-				/* 2. UVC start: begin ISOC video data transfer */
-				usbh_uvc_start(USBH_UVC_STREAM_INDEX);
-				is_streaming = 1U;
-				frame_count = 0U;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "UVC streaming started\n");
+				/* 2. UVC start: begin ISOC video data transfer. is_streaming gates the
+				 * release of the frame data thread, so it must only be set when the
+				 * stream really started - usbh_uvc_get_frame() is not safe before it. */
+				if (usbh_uvc_start(USBH_UVC_STREAM_INDEX) != HAL_OK) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC start fail\n");
+				} else {
+					is_streaming = 1U;
+					RTK_LOGS(TAG, RTK_LOG_INFO, "UVC streaming started\n");
+				}
 			}
 
 			/* 3. UAC OUT SET_INTERFACE (blocking ctrl) */
@@ -588,7 +616,6 @@ static void usbh_uvc_stream_thread(void *param)
 						RTK_LOGS(TAG, RTK_LOG_INFO, "[%d] CH=%d BW=%d FREQ=%d\n",
 								 i, fmt_out[i].ch_cnt, fmt_out[i].bit_width, fmt_out[i].sampling_freq);
 					}
-					/* Find preferred CH/FREQ; fall back to index 0 */
 					for (i = 0U; i < fmt_cnt; i++) {
 						if ((fmt_out[i].ch_cnt == USBH_UAC_PLAY_CHANNELS) &&
 							(fmt_out[i].sampling_freq == USBH_UAC_PLAY_SAMPLING_FREQ)) {
@@ -604,7 +631,7 @@ static void usbh_uvc_stream_thread(void *param)
 												 fmt_out[i].ch_cnt,
 												 fmt_out[i].bit_width,
 												 fmt_out[i].sampling_freq) == HAL_OK) {
-						/* 5. UAC play start: begin ISOC audio OUT data transfer */
+						/* 5. UAC play start */
 						usbh_uac_start_play();
 						is_playing = 1U;
 						RTK_LOGS(TAG, RTK_LOG_INFO, "UAC play started\n");
@@ -625,7 +652,6 @@ static void usbh_uvc_stream_thread(void *param)
 						RTK_LOGS(TAG, RTK_LOG_INFO, "[%d] CH=%d BW=%d FREQ=%d\n",
 								 i, fmt_in[i].ch_cnt, fmt_in[i].bit_width, fmt_in[i].sampling_freq);
 					}
-					/* Find preferred CH/FREQ; fall back to index 0 */
 					for (i = 0U; i < fmt_cnt; i++) {
 						if ((fmt_in[i].ch_cnt == USBH_UAC_REC_CHANNELS) &&
 							(fmt_in[i].sampling_freq == USBH_UAC_REC_SAMPLING_FREQ)) {
@@ -641,7 +667,7 @@ static void usbh_uvc_stream_thread(void *param)
 												 fmt_in[i].ch_cnt,
 												 fmt_in[i].bit_width,
 												 fmt_in[i].sampling_freq) == HAL_OK) {
-						/* 6. UAC capture start: begin ISOC audio IN data transfer */
+						/* 6. UAC capture start */
 						usbh_uac_start_capture();
 						is_recording = 1U;
 						RTK_LOGS(TAG, RTK_LOG_INFO, "UAC rec started\n");
@@ -654,11 +680,74 @@ static void usbh_uvc_stream_thread(void *param)
 			}
 		}
 
-		/* All ctrl setups done; release play and record data threads */
+		/* Release UAC data threads unconditionally (they guard via is_ready). */
 		rtos_sema_give(usbh_uac_play_start_sema);
 		rtos_sema_give(usbh_uac_record_start_sema);
 
-		/* Video data loop */
+		/* Only release UVC data thread if streaming was actually started.
+		 * usbh_uvc_get_frame() will crash if called before usbh_uvc_start(). */
+		if (is_streaming != 0U) {
+			rtos_sema_give(usbh_uvc_data_start_sema);
+		}
+
+		/* Wait for device to disappear (detach callbacks set is_ready=0) */
+		while ((usbh_uvc_uac_is_ready != 0U) && (usbh_uvc_ctrl_thread_exit == 0U)) {
+			rtos_time_delay_ms(USBH_COMPOSITE_DETACH_POLL_MS);
+		}
+
+		/* Guard stops for app-exit path (detach callbacks already stopped on detach) */
+		if (is_streaming != 0U) {
+			usbh_uvc_stop(USBH_UVC_STREAM_INDEX);
+			is_streaming = 0U;
+		}
+		if (is_playing != 0U) {
+			usbh_uac_stop_play();
+			is_playing = 0U;
+		}
+		if (is_recording != 0U) {
+			usbh_uac_stop_capture();
+			is_recording = 0U;
+		}
+		rtos_time_delay_ms(USBH_UAC_VERIFY_SETTLE_MS);
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Ctrl thread exit\n");
+
+	usbh_uvc_ctrl_task = NULL;
+	rtos_task_delete(NULL);
+}
+
+/**
+  * @brief  UVC frame data thread.
+  *
+  *         Resident thread that only pulls and releases video frames. Each
+  *         attach cycle: blocks on usbh_uvc_data_start_sema until the ctrl
+  *         thread has completed full UVC+UAC setup, then loops on
+  *         usbh_uvc_get_frame / usbh_uvc_put_frame until the device detaches.
+  * @param  param: Unused.
+  * @retval None
+  */
+static void usbh_uvc_stream_thread(void *param)
+{
+	usbh_uvc_frame_t *frame = NULL;
+	u32 frame_count = 0U;
+	u32 debug_time = 0U;
+
+	UNUSED(param);
+
+	while (usbh_uvc_stream_thread_exit == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "UVC stream wait\n");
+
+		if (rtos_sema_take(usbh_uvc_data_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
+			continue;
+		}
+		if (usbh_uvc_stream_thread_exit != 0U) {
+			break;
+		}
+
+		frame_count = 0U;
+		debug_time = usb_os_get_timestamp_ms();
+
 		while ((usbh_uvc_uac_is_ready != 0U) && (usbh_uvc_stream_thread_exit == 0U)) {
 			frame = usbh_uvc_get_frame(USBH_UVC_STREAM_INDEX);
 			if (frame != NULL) {
@@ -675,30 +764,7 @@ static void usbh_uvc_stream_thread(void *param)
 			}
 		}
 
-		if (is_streaming != 0U) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "UVC stream stop, total frames=%d\n", frame_count);
-			usbh_uvc_stop(USBH_UVC_STREAM_INDEX);
-			is_streaming = 0U;
-		}
-		if (is_playing != 0U) {
-			usbh_uac_stop_play();
-			is_playing = 0U;
-		}
-		if (is_recording != 0U) {
-			usbh_uac_stop_capture();
-			is_recording = 0U;
-		}
-		rtos_time_delay_ms(USBH_UAC_VERIFY_SETTLE_MS);
-	}
-
-	if (is_streaming != 0U) {
-		usbh_uvc_stop(USBH_UVC_STREAM_INDEX);
-	}
-	if (is_playing != 0U) {
-		usbh_uac_stop_play();
-	}
-	if (is_recording != 0U) {
-		usbh_uac_stop_capture();
+		RTK_LOGS(TAG, RTK_LOG_INFO, "UVC stream stop, total frames=%d\n", frame_count);
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UVC stream exit\n");
@@ -737,23 +803,35 @@ static void usbh_uac_play_thread(void *param)
 		}
 
 		frame_size = usbh_uac_get_frame_size(USBH_UAC_ISOC_OUT_DIR);
+		if ((frame_size == 0U) || (frame_size > (u32)sizeof(silence))) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Play frame %d out of range, clamp to %d\n",
+					 frame_size, (u32)sizeof(silence));
+			frame_size = (u32)sizeof(silence);
+		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Play data start, frame=%d\n", frame_size);
 
 		play_loop_count = 0U;
+		debug_time = usb_os_get_timestamp_ms();
 		while ((usbh_uvc_uac_is_ready != 0U) && (usbh_uac_play_thread_exit == 0U)) {
 			play_loop_count++;
 			usbh_uac_play_count++;
 
-			/* Send silence (zeros) as demo playback data */
-			(void)usbh_uac_write(silence, (u32)sizeof(silence), USBH_UAC_WRITE_TIMEOUT_MS);
+			/* Send silence (zeros) as demo playback data. Write exactly one ISOC
+			 * frame per call so the OUT buffer stays full. usbh_uac_write returns
+			 * the byte count actually written, not a status code, so a short write
+			 * means the ring buffer stayed full for the whole timeout. Back off in
+			 * that case: the timeout alone does not throttle the loop when the
+			 * write fails immediately. */
+			if (usbh_uac_write(silence, frame_size, USBH_UAC_WRITE_TIMEOUT_MS) != frame_size) {
+				usbh_uac_err_count++;
+				rtos_time_delay_ms(USBH_UAC_PLAY_LOOP_DELAY_MS);
+			}
 
 			if ((usb_os_get_timestamp_ms() - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) {
 				debug_time = usb_os_get_timestamp_ms();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Play loop=%d err=%d\n",
 						 play_loop_count, usbh_uac_err_count);
 			}
-
-			rtos_time_delay_ms(USBH_UAC_PLAY_LOOP_DELAY_MS);
 		}
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Play data stop, loops=%d\n", play_loop_count);
@@ -846,39 +924,40 @@ static void usbh_uac_record_thread(void *param)
 				break;
 			}
 
+			/* Local monitoring output is optional. On any failure below, audio_track is
+			 * left NULL and the read loop still runs: capture is already started in the
+			 * driver, so the IN buffer must be drained or the ISOC pipe stalls. */
 			audio_track = AudioTrack_Create();
 			if (audio_track == NULL) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec track create fail\n");
-				continue;
-			}
-
-			track_buf_size = AudioTrack_GetMinBufferBytes(audio_track, AUDIO_CATEGORY_MEDIA,
-							 g_track_rate, format, g_track_channel) * 10;
-			if (track_buf_size == 0) {
-				track_buf_size = g_track_rate * g_track_format / 8 * g_track_channel / 1000 * 100;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track buf resize %d\n", track_buf_size);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec track create fail, drain without output\n");
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track buf %d\n", track_buf_size);
+				track_buf_size = AudioTrack_GetMinBufferBytes(audio_track, AUDIO_CATEGORY_MEDIA,
+								 g_track_rate, format, g_track_channel) * 10;
+				if (track_buf_size == 0) {
+					track_buf_size = g_track_rate * g_track_format / 8 * g_track_channel / 1000 * 100;
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track buf resize %d\n", track_buf_size);
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track buf %d\n", track_buf_size);
+				}
+
+				track_config.category_type = AUDIO_CATEGORY_MEDIA;
+				track_config.sample_rate = g_track_rate;
+				track_config.format = format;
+				track_config.channel_count = g_track_channel;
+				track_config.buffer_bytes = track_buf_size;
+				AudioTrack_Init(audio_track, &track_config, AUDIO_OUTPUT_FLAG_NONE);
+
+				AudioTrack_SetVolume(audio_track, 1.0, 1.0);
+				AudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
+
+				if (AudioTrack_Start(audio_track) != AUDIO_OK) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec track start fail, drain without output\n");
+					AudioTrack_Destroy(audio_track);
+					audio_track = NULL;
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track started\n");
+				}
 			}
-
-			track_config.category_type = AUDIO_CATEGORY_MEDIA;
-			track_config.sample_rate = g_track_rate;
-			track_config.format = format;
-			track_config.channel_count = g_track_channel;
-			track_config.buffer_bytes = track_buf_size;
-			AudioTrack_Init(audio_track, &track_config, AUDIO_OUTPUT_FLAG_NONE);
-
-			AudioTrack_SetVolume(audio_track, 1.0, 1.0);
-			AudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
-
-			if (AudioTrack_Start(audio_track) != AUDIO_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec track start fail\n");
-				AudioTrack_Destroy(audio_track);
-				audio_track = NULL;
-				continue;
-			}
-
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track started\n");
 		}
 #endif
 
@@ -886,6 +965,7 @@ static void usbh_uac_record_thread(void *param)
 
 		record_loop_count = 0U;
 		total_read = 0U;
+		debug_time = usb_os_get_timestamp_ms();
 
 		while ((usbh_uvc_uac_is_ready != 0U) && (usbh_uac_record_thread_exit == 0U)) {
 			read_len = USBH_UAC_RECORD_BUFFER_SIZE;
@@ -901,14 +981,17 @@ static void usbh_uac_record_thread(void *param)
 					AudioTrack_Write(audio_track, (u8 *)usbh_uac_record_buffer, ret, true);
 				}
 #endif
+			}
 
-				if ((usb_os_get_timestamp_ms() - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) {
-					debug_time = usb_os_get_timestamp_ms();
+			if ((usb_os_get_timestamp_ms() - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) {
+				debug_time = usb_os_get_timestamp_ms();
+				if (total_read > 0U) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Rec loop=%d bytes=%d\n",
 							 record_loop_count, total_read);
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Rec loop=%d no data\n", record_loop_count);
 				}
 			}
-			/* ret == 0U: read timeout / no data this interval */
 		}
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Rec data stop, loops=%d bytes=%d\n",
@@ -978,10 +1061,16 @@ static void usbh_uvc_uac_hotplug_thread(void *param)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 
 			/* Clear stale semaphores */
-			while (rtos_sema_take(usbh_uac_play_start_sema, 0) == RTK_SUCCESS);
-			while (rtos_sema_take(usbh_uac_record_start_sema, 0) == RTK_SUCCESS);
-			while (rtos_sema_take(usbh_uvc_stream_start_sema, 0) == RTK_SUCCESS);
-			while (rtos_sema_take(usbh_uac_ready_sema, 0) == RTK_SUCCESS);
+			while (rtos_sema_take(usbh_uac_play_start_sema, 0) == RTK_SUCCESS) {
+			}
+			while (rtos_sema_take(usbh_uac_record_start_sema, 0) == RTK_SUCCESS) {
+			}
+			while (rtos_sema_take(usbh_uvc_stream_start_sema, 0) == RTK_SUCCESS) {
+			}
+			while (rtos_sema_take(usbh_uac_ready_sema, 0) == RTK_SUCCESS) {
+			}
+			while (rtos_sema_take(usbh_uvc_data_start_sema, 0) == RTK_SUCCESS) {
+			}
 
 			/* Reinitialize USB stack */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Re-init USB host...\n");
@@ -1329,13 +1418,22 @@ static void example_usbh_uac_uvc_thread(void *param)
 	rtos_sema_create(&usbh_uvc_stream_start_sema, 0U, 1U);
 	rtos_sema_create(&usbh_uvc_setparam_sema, 0U, 1U);
 	rtos_sema_create(&usbh_uac_ready_sema, 0U, 1U);
+	rtos_sema_create(&usbh_uvc_data_start_sema, 0U, 1U);
 
-	/* Create UVC stream thread */
-	status = rtos_task_create(&usbh_uvc_stream_task, "usbh_comp_uvc_stream_thread", usbh_uvc_stream_thread,
-							  NULL, 2048, USBH_UVC_STREAM_THREAD_PRIORITY);
+	/* Create UVC/UAC ctrl setup thread */
+	status = rtos_task_create(&usbh_uvc_ctrl_task, "usbh_uvc_uac_ctrl", usbh_uvc_uac_ctrl_thread,
+							  NULL, USBH_UVC_CTRL_THREAD_STACK_SIZE, USBH_UVC_CTRL_THREAD_PRIORITY);
+	if (status != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create ctrl thread fail\n");
+		goto free_sema_exit;
+	}
+
+	/* Create UVC frame data thread */
+	status = rtos_task_create(&usbh_uvc_stream_task, "usbh_uvc_stream", usbh_uvc_stream_thread,
+							  NULL, USBH_UVC_STREAM_THREAD_STACK_SIZE, USBH_UVC_STREAM_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create UVC stream thread fail\n");
-		goto free_sema_exit;
+		goto delete_ctrl_task_exit;
 	}
 
 	/* Create resident playback thread */
@@ -1406,11 +1504,12 @@ delete_record_task_exit:
 	usbh_uac_play_thread_exit = 1;
 	usbh_uac_record_thread_exit = 1;
 	usbh_uvc_stream_thread_exit = 1;
-	/* Give the start semaphores so that threads blocked on rtos_sema_take()
-	   can wake up and observe the exit flag instead of waiting indefinitely. */
+	usbh_uvc_ctrl_thread_exit = 1U;
+	/* Wake all blocked threads so they can observe their exit flags. */
 	rtos_sema_give(usbh_uac_play_start_sema);
 	rtos_sema_give(usbh_uac_record_start_sema);
 	rtos_sema_give(usbh_uvc_stream_start_sema);
+	rtos_sema_give(usbh_uvc_data_start_sema);
 	rtos_sema_give(usbh_uac_ready_sema);
 	rtos_time_delay_ms(500);
 	if (usbh_uac_record_task != NULL) {
@@ -1430,6 +1529,12 @@ delete_stream_task_exit:
 		usbh_uvc_stream_task = NULL;
 	}
 
+delete_ctrl_task_exit:
+	if (usbh_uvc_ctrl_task != NULL) {
+		rtos_task_delete(usbh_uvc_ctrl_task);
+		usbh_uvc_ctrl_task = NULL;
+	}
+
 free_sema_exit:
 	rtos_sema_delete(usbh_uvc_uac_detach_sema);
 	rtos_sema_delete(usbh_uac_play_start_sema);
@@ -1437,6 +1542,7 @@ free_sema_exit:
 	rtos_sema_delete(usbh_uvc_stream_start_sema);
 	rtos_sema_delete(usbh_uvc_setparam_sema);
 	rtos_sema_delete(usbh_uac_ready_sema);
+	rtos_sema_delete(usbh_uvc_data_start_sema);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Demo stopped\n");
 
 example_exit:

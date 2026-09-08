@@ -4,55 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/** @addtogroup OTPC
-  * @verbatim
-  *****************************************************************************************
-  * logical map space total size 2048byte ,only 1024 byte used now
-  *****************************************************************************************
-  *
-  * 0x00~0x07	8bytes system autoload for software
-  * 0x08~0x01F	24bytes  autoload for hardware
-  * 0x20~0xCF	WIFI calibration data
-  * 0xD0~0x11F	WIFI HCI CIS
-  * 0x130~0x13F	WIFI SW/RF  Reserved
-  * 0x140~0x1AF	112bytes  autoload for hardware
-  * 0x1B0~0x1FF	80bytes BT calibration data
-  * 0x1B0~0x1FF	80bytes BT calibration data
-  * 0x200~0x20F	ADC calibration data
-  * 0x210~0x21F	USB HCI
-  * 0x220~0x22F	captouch calibration data
-  * 0x230~0x2FF	RSVD for user use
-  * 0x300~0x3FF	Realtek RSVD
-  * 0x400~0x7FF	No define, SW API can't access.
-  *
-  *****************************************************************************************
-  * physical map (1280B)
-  *****************************************************************************************
-  *
-  * 0x000~0x1FE	For logical efuse, user can read
-  * 0x200~0x3FF	Security related function
-  * 0x400~0x500 	User define physical area
-  *
-  *****************************************************************************************
-  * USER Section
-  *****************************************************************************************
-  * can be changed after write
-  *
-  *0x230~0x2FF	RSVD for user use
-  *
-  *****************************************************************************************
-  * OTP Section (32B)
-  *****************************************************************************************
-  *
-  * can not be changed after write
-  *
-  *0x400~0x500 	User define physical area
-  *
-  *****************************************************************************************
-  * @endverbatim
-  */
-
-
 #ifndef _AMEBA_OTPC_H_
 #define _AMEBA_OTPC_H_
 

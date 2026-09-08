@@ -24,8 +24,32 @@ ameba_modify_file_path(${app_ns_full_path} app_compress_ns p_SUFFIX _compress)
 # <size> payload bytes; dsp_all.bin also has a leading 4K boot manifest (size field
 # == 0xffffffff), skipped here. At least one non-zero sub-image must load at
 # expect_hex (the DSP entry-table address __dsp_img_load_addr__, no -0x20).
-function(ameba_check_dsp_image bin_file expect_hex)
+#
+# sram_lo_hex/sram_hi_hex additionally bound any SRAM-targeting sub-image to the DSP's
+# own SRAM slice (__dsp_sram_start__ + IMAGE_HEADER_LEN .. __dsp_sram_end__). The PSRAM
+# base above is TZ- and IMG1-invariant, so it alone cannot catch a bin whose SRAM window
+# went stale -- and that direction is the dangerous one: move the window up (enable
+# CONFIG_IMG3_SRAM, switch IMG1_FLASH -> IMG1_SRAM) without regenerating the DSP LSP and
+# the DSP writes below the mpc1/mpc2 non-secure base, into KM4 IMG1/IMG3 secure memory.
+# Pass empty strings to skip this part.
+#
+# Caveat: the DSP packer (dsp_combine.py) derives the SRAM sub-image load address from
+# the lowest PT_LOAD vaddr inside SRAM, and falls back to SRAM_BASE when the DSP places
+# nothing there. So an empty sram_dsp yields load == SRAM_BASE, size 0 -- benign, and the
+# bin then carries no window information to check at all. The check bites exactly when it
+# matters: as soon as something really is placed in SRAM.
+function(ameba_check_dsp_image bin_file expect_hex sram_lo_hex sram_hi_hex)
     math(EXPR c_want "0x${expect_hex}")
+    set(c_sram_base 0x20000000)         # SRAM_BASE, the packer's "no SRAM payload" fallback
+    set(c_sram_top  0x20100000)         # end of the SRAM alias window; above it is not SRAM
+    set(c_sram_lo 0)
+    set(c_sram_hi 0)
+    if(sram_lo_hex AND sram_hi_hex)
+        # +0x20: the loader copies the payload after the sub-image header, so a segment
+        # placed in the DSP SRAM slice starts at DSP_BD_SRAM_ORIGIN, not _START.
+        math(EXPR c_sram_lo "0x${sram_lo_hex} + 32")
+        math(EXPR c_sram_hi "0x${sram_hi_hex}")
+    endif()
     file(READ ${bin_file} c_hex HEX)
     string(LENGTH "${c_hex}" c_len)
     set(c_off 0)
@@ -63,12 +87,38 @@ function(ameba_check_dsp_image bin_file expect_hex)
         if(c_size GREATER 0 AND c_load EQUAL c_want)
             set(c_match TRUE)
         endif()
+        # Bound any sub-image that targets SRAM to the DSP's own slice.
+        if(c_sram_lo GREATER 0 AND c_load GREATER_EQUAL ${c_sram_base} AND c_load LESS ${c_sram_top})
+            math(EXPR c_end "${c_load} + ${c_size}")
+            math(EXPR c_load_hx "${c_load}" OUTPUT_FORMAT HEXADECIMAL)
+            if(c_load EQUAL ${c_sram_base})
+                # Packer fallback: the DSP placed nothing in SRAM. Only a zero-size
+                # sub-image is benign here -- a payload would land on the RTK fixed
+                # 40K region (ROM BSS / MSP / IPC / PMC).
+                if(c_size GREATER 0)
+                    message(FATAL_ERROR "${bin_file}: SRAM sub-image carries ${c_size} bytes at the "
+                                        "SRAM_BASE fallback ${c_load_hx}, which is the RTK fixed region. "
+                                        "The DSP packer could not resolve an SRAM segment; check the DSP LSP.")
+                endif()
+                set(c_sram_note " (no SRAM payload)")
+            elseif(c_load LESS ${c_sram_lo} OR c_end GREATER ${c_sram_hi})
+                math(EXPR c_lo_hx "${c_sram_lo}" OUTPUT_FORMAT HEXADECIMAL)
+                math(EXPR c_hi_hx "${c_sram_hi}" OUTPUT_FORMAT HEXADECIMAL)
+                message(FATAL_ERROR "${bin_file}: SRAM sub-image [${c_load_hx}, +${c_size}) is outside the "
+                                    "DSP SRAM slice [${c_lo_hx}, ${c_hi_hx}) of this MCU layout -- that memory "
+                                    "belongs to KM4/KR4 (and below the mpc1/mpc2 non-secure base it is secure, "
+                                    "so the DSP would take a bus error). Regenerate the DSP LSP for this layout: "
+                                    "tools/scripts/dsp_layout_sync.py, then rebuild the DSP image.")
+            else()
+                set(c_sram_note " (SRAM payload at ${c_load_hx}, ${c_size} bytes)")
+            endif()
+        endif()
         math(EXPR c_off "${c_off} + (32 + ${c_size}) * 2")
     endwhile()
     if(NOT c_match)
         message(FATAL_ERROR "${bin_file} does not match this MCU layout: no non-zero sub-image loads at 0x${expect_hex}. Rebuild the DSP image for this layout (likely stale).")
     endif()
-    message(STATUS "DSP image OK: ${bin_file} loads at 0x${expect_hex}")
+    message(STATUS "DSP image OK: ${bin_file} loads at 0x${expect_hex}${c_sram_note}")
 endfunction()
 
 # The DSP image check only applies when DSP is enabled. Without CONFIG_DSP_EN there
@@ -79,9 +129,25 @@ if(CONFIG_DSP_EN)
     # Resolve the expected DSP load address from the km4 loader map once.
     set(c_DSP_LOADER_MAP ${CMAKE_BINARY_DIR}/project_km4/${c_SDK_IMAGE_FOLDER_NAME}/target_loader.map)
     set(c_DSP_ADDR_HEX "")
+    # DSP SRAM slice bounds, for the SRAM part of the check. Both stay empty on a layout
+    # where the DSP owns no SRAM (DSP_BD_SRAM length 0 -> _start == _end == SRAM_END),
+    # which skips that part instead of rejecting every bin.
+    set(c_DSP_SRAM_LO_HEX "")
+    set(c_DSP_SRAM_HI_HEX "")
     if(EXISTS ${c_DSP_LOADER_MAP})
         file(STRINGS ${c_DSP_LOADER_MAP} c_DSP_ADDR_LINE REGEX "[ ]__dsp_img_load_addr__$")
         string(REGEX MATCH "^([0-9a-fA-F]+)" c_DSP_ADDR_HEX "${c_DSP_ADDR_LINE}")
+        file(STRINGS ${c_DSP_LOADER_MAP} c_DSP_SRAM_LO_LINE REGEX "[ ]__dsp_sram_start__$")
+        string(REGEX MATCH "^([0-9a-fA-F]+)" c_DSP_SRAM_LO_HEX "${c_DSP_SRAM_LO_LINE}")
+        file(STRINGS ${c_DSP_LOADER_MAP} c_DSP_SRAM_HI_LINE REGEX "[ ]__dsp_sram_end__$")
+        string(REGEX MATCH "^([0-9a-fA-F]+)" c_DSP_SRAM_HI_HEX "${c_DSP_SRAM_HI_LINE}")
+        if(c_DSP_SRAM_LO_HEX AND c_DSP_SRAM_HI_HEX)
+            math(EXPR c_DSP_SRAM_LEN "0x${c_DSP_SRAM_HI_HEX} - 0x${c_DSP_SRAM_LO_HEX}")
+            if(c_DSP_SRAM_LEN LESS_EQUAL 0)
+                set(c_DSP_SRAM_LO_HEX "")
+                set(c_DSP_SRAM_HI_HEX "")
+            endif()
+        endif()
     endif()
 
     # CONFIG_DSP_SDK_IMAGE_DIR is the DSP SDK image output dir (holds dsp.bin /
@@ -103,7 +169,7 @@ if(CONFIG_DSP_EN)
             message(FATAL_ERROR "dsp file not exist: ${c_DSP_FILE} (check CONFIG_DSP_SDK_IMAGE_DIR)")
         endif()
         if(c_DSP_ADDR_HEX)
-            ameba_check_dsp_image(${c_DSP_FILE} ${c_DSP_ADDR_HEX})
+            ameba_check_dsp_image(${c_DSP_FILE} ${c_DSP_ADDR_HEX} "${c_DSP_SRAM_LO_HEX}" "${c_DSP_SRAM_HI_HEX}")
         endif()
     else()
         # Standalone DSP image (flashed straight from the SDK image dir, see
@@ -114,7 +180,7 @@ if(CONFIG_DSP_EN)
             foreach(c_name dsp_all.bin dsp.bin)
                 set(c_DSP_STANDALONE ${c_DSP_IMG_DIR}/${c_name})
                 if(c_DSP_ADDR_HEX AND EXISTS ${c_DSP_STANDALONE})
-                    ameba_check_dsp_image(${c_DSP_STANDALONE} ${c_DSP_ADDR_HEX})
+                    ameba_check_dsp_image(${c_DSP_STANDALONE} ${c_DSP_ADDR_HEX} "${c_DSP_SRAM_LO_HEX}" "${c_DSP_SRAM_HI_HEX}")
                     set(c_DSP_CHECKED TRUE)
                     break()
                 endif()

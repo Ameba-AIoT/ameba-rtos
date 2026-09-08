@@ -813,7 +813,7 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 	ETH_InitStruct->VlanConfig.Bits.STagPID = 0x88A8;  /* standard S-Tag PID */
 
 	/* Buffer / DMA Defaults */
-	ETH_InitStruct->DMA_TxThreshold = ETH_RX_THRESHOLD_256B;
+	ETH_InitStruct->DMA_RxThreshold = ETH_RX_THRESHOLD_256B;
 	ETH_InitStruct->DMA_TxThreshold = ETH_TX_THRESHOLD_256B;
 	ETH_InitStruct->DMA_RxTriggerLevel = ETH_TRIGGER_LEVEL_1_PKT;
 	ETH_InitStruct->DMA_TxTriggerLevel = ETH_TRIGGER_LEVEL_1_PKT;
@@ -1050,7 +1050,7 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	ETHx->ETH_RX_RINGSIZE1 |= RXRINGSIZE_1_LOW(ETH_InitStruct->ETH_RxDescNum - 1);
 	/* I/O command: short desc. format = 1, Tx & Rx FIFO threshold = 256 bytes */
 	ETHx->ETH_IO_CMD1 = DSC_FORMAT_EXTRA(0x3) | BIT_EN_4GB;
-	ETHx->ETH_ETHER_IO_CMD = RXFTH(ETH_InitStruct->DMA_TxThreshold) | TSH(ETH_InitStruct->DMA_TxThreshold) |
+	ETHx->ETH_ETHER_IO_CMD = RXFTH(ETH_InitStruct->DMA_RxThreshold) | TSH(ETH_InitStruct->DMA_TxThreshold) |
 							 BIT_SHORTDESFORMAT;
 
 	ETHx->ETH_TXFDP1 = (u32)ETH_InitStruct->ETH_TxDesc;

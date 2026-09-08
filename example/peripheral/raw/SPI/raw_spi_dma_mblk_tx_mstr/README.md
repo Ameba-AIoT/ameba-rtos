@@ -45,6 +45,11 @@
   - Connect `SPI_MISO (_PA_9)`  [Master] to `SPI_MISO (_PA_9)`  [Slave]
   - Connect `SPI_SCLK (_PA_7)`  [Master] to `SPI_SCLK (_PA_7)`  [Slave]
   - Connect `SPI_CS   (_PA_10)` [Master] to `SPI_CS   (_PA_10)` [Slave]
+- On RTL8735C, connect as below
+  - Connect `SPI_MOSI (_PF_6)` [Master] to `SPI_MOSI (_PC_8)`  [Slave]
+  - Connect `SPI_MISO (_PF_5)` [Master] to `SPI_MISO (_PE_7)`  [Slave]
+  - Connect `SPI_SCLK (_PF_4)` [Master] to `SPI_SCLK (_PC_6)`  [Slave]
+  - Connect `SPI_CS (_PC_9)`   [Master] to `SPI1_CS (_PF_7)`   [Slave]
 
 1. If you have SPI slave device, choose your own slave's pins to connect instead of slave's pins mentioned in step1, then ignore step3 and goto step4 of HW Configuration. Otherwise goto step3.
 2. We offer another example named "`raw_spi_dma_mblk_rx_slv`", it can be used as SPI slave device to communicate data with this example.
@@ -80,3 +85,4 @@ RTL8710E
 RTL8721Dx
 RTL8721F
 RTL8720F
+RTL8735C
