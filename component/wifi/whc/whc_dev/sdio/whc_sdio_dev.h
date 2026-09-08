@@ -5,7 +5,7 @@
 #include "whc_def.h"
 #include "ameba_inic.h"
 
-#define SPDIO_HOST_RX_BD_NUM	8	//n*2, 2 bd for one transaction
+#define SPDIO_HOST_RX_BD_NUM	6
 #define SPDIO_HOST_TX_BD_NUM	4
 
 #define DEV_DMA_ALIGN	SPDIO_DMA_ALIGN_4

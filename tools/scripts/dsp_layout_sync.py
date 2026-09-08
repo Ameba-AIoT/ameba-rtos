@@ -12,6 +12,14 @@
 #   RTK_LSP       DSP runs from PSRAM. Window = [PSRAM_BASE + KR4 + KM4 KB,
 #                 PSRAM_END), i.e. it fills the PSRAM remainder after TZ/KR4/KM4.
 #
+# For RTK_LSP / RTK_LSP_XIP the DSP's *SRAM* slice is passed down separately as
+# --sram-start/--sram-end, taken from DSP_BD_SRAM (DSP_BD_SRAM_ORIGIN/_LENGTH).
+# It collapses to 0 unless CONFIG_DSP_RUN_IN_SRAM, so normally no sram_dsp
+# overlay is emitted at all. lsp_modify.py used to hardcode that overlay to
+# 0x20010020-0x2007ffff -- MCU-owned KM4/KR4 SRAM, which the DSP then registered
+# as its TYPE_SRAM heap pool and wrote into (a hard LoadStorePIFDataError at DSP
+# boot once TrustZone marks the sub-0x20011000 part secure).
+#
 # Data source: parse the MCU .config (Kconfig KB values) + ameba_layout.ld
 # (window constants), NOT the compiled target_loader.map, so the LSP can be
 # regenerated without a prior MCU build. The .config read is the menuconfig
@@ -215,8 +223,23 @@ def _eval_expr(expr, defs, counts, cfg, depth):
         die("cannot evaluate %r: %s" % (expr, e))
 
 
+def dsp_sram_window(defs, counts, cfg):
+    """The SRAM slice the DSP owns, as (start, end), or None when it owns none.
+
+    Mirrors DSP_BD_SRAM in ameba_layout.ld, which only exists under
+    CONFIG_DSP_EN && CONFIG_DSP_RUN_IN_SRAM and otherwise has LENGTH 0. Used for
+    the psram/xip LSPs' sram_dsp overlay: no window -> no overlay, so the DSP can
+    never place data in (or heap onto) KM4/KR4 SRAM."""
+    length = resolve("DSP_BD_SRAM_LENGTH", defs, counts, cfg)
+    if length <= 0:
+        return None
+    origin = resolve("DSP_BD_SRAM_ORIGIN", defs, counts, cfg)
+    return (origin, origin + length)
+
+
 def compute_windows(cfg, defs, counts, which):
-    """Return {lsp_key: (start, end)} for the requested LSP(s)."""
+    """Return {lsp_key: (start, end, sram_win)} for the requested LSP(s).
+    sram_win is the psram/xip sram_dsp overlay window, or None."""
     out = {}
     if which in ("sram", "both"):
         if cfg.get("CONFIG_DSP_RUN_IN_SRAM") != "y":
@@ -224,7 +247,8 @@ def compute_windows(cfg, defs, counts, which):
                 "(DSP_BD_SRAM collapses to 0 otherwise). Nothing to generate for RTK_LSP_SRAM.")
         start = resolve("DSP_BD_SRAM_START", defs, counts, cfg)
         end = resolve("SRAM_END", defs, counts, cfg)
-        out["sram"] = (start, end)
+        # The sram layout's own window IS the SRAM slice; no separate overlay.
+        out["sram"] = (start, end, None)
     # psram (RTK_LSP) and xip (RTK_LSP_XIP) share the same PSRAM DSP window; xip
     # only differs in the LSP template (DSP code XIP'd from flash, not psram0).
     if which in ("psram", "xip", "both"):
@@ -243,7 +267,8 @@ def compute_windows(cfg, defs, counts, which):
                 "(needed for the PSRAM DSP window; is IMG2_PSRAM/DATA_HEAP_PSRAM + DSP_EN on?)")
         # TZ cancels: PSRAM_BASE + TZ + KR4 + (KM4 - TZ) = PSRAM_BASE + KR4 + KM4
         start = psram_base + (kr4 + km4) * KBYTES
-        out["xip" if which == "xip" else "psram"] = (start, psram_end)
+        out["xip" if which == "xip" else "psram"] = (start, psram_end,
+                                                    dsp_sram_window(defs, counts, cfg))
     return out
 
 
@@ -257,12 +282,14 @@ def find_lsp_dir(sdk, lsp_name, core):
     return matches[0]
 
 
-def run_lsp_modify(sdk, layout, lsp_dir, start, end, stack, core, project_mpu):
+def run_lsp_modify(sdk, layout, lsp_dir, start, end, stack, core, project_mpu, sram_win=None):
     script = Path(sdk) / "project" / "img_utility" / "lsp_modify.py"
     if not script.exists():
         die("lsp_modify.py not found at %s" % script)
     cmd = [sys.executable, str(script), "--layout", layout, "--lsp-dir", str(lsp_dir),
            "--start", hex(start), "--end", hex(end), "--stack-size", hex(stack), "--core", core]
+    if sram_win:
+        cmd += ["--sram-start", hex(sram_win[0]), "--sram-end", hex(sram_win[1])]
     if project_mpu:
         cmd += ["--project-mpu", str(project_mpu)]
     print("  $ " + " ".join(cmd))
@@ -280,13 +307,31 @@ def parse_x_segments(x_path):
     return segs
 
 
-def validate_x(x_path, start, end):
+def validate_x(x_path, start, end, sram_win=None):
     """Read back the generated .x and assert the DSP window landed correctly."""
     if not Path(x_path).exists():
         return ["%s not generated" % x_path]
     errs = []
     segs = parse_x_segments(x_path)
     text = Path(x_path).read_text()
+
+    # sram_dsp must match DSP_BD_SRAM exactly, and must be absent when the DSP
+    # owns no SRAM -- a stray sram_dsp is MCU (KM4/KR4) memory the DSP would heap
+    # onto, and under TrustZone its low part is secure (hard fault at DSP boot).
+    if sram_win:
+        if "sram_dsp" in segs:
+            org, ln = segs["sram_dsp"]
+            if (org, org + ln) != sram_win:
+                errs.append("sram_dsp [%s,%s) != DSP_BD_SRAM [%s,%s)"
+                            % (hex(org), hex(org + ln), hex(sram_win[0]), hex(sram_win[1])))
+        else:
+            errs.append("sram_dsp_seg missing though DSP_BD_SRAM is [%s,%s)"
+                        % (hex(sram_win[0]), hex(sram_win[1])))
+    elif "sram_dsp" in segs:
+        org, ln = segs["sram_dsp"]
+        errs.append("sram_dsp_seg [%s,%s) present though the DSP owns no SRAM "
+                    "(DSP_BD_SRAM length 0) -- that window is MCU-owned SRAM"
+                    % (hex(org), hex(org + ln)))
 
     if "entry_table_0" in segs:
         org, _ = segs["entry_table_0"]
@@ -395,21 +440,23 @@ def main():
     stack = int(args.stack_size, 16)
 
     print("MCU: soc=%s config=%s" % (soc, config))
-    for key, (start, end) in windows.items():
-        print("  %-5s window: start=%s end=%s size=%s" % (key, hex(start), hex(end), hex(end - start)))
+    for key, (start, end, sram_win) in windows.items():
+        print("  %-5s window: start=%s end=%s size=%s sram_dsp=%s"
+              % (key, hex(start), hex(end), hex(end - start),
+                 ("%s-%s" % (hex(sram_win[0]), hex(sram_win[1]))) if sram_win else "none"))
 
     rc = 0
-    for key, (start, end) in windows.items():
+    for key, (start, end, sram_win) in windows.items():
         layout, lsp_name = LSPS[key]
         lsp_dir = find_lsp_dir(sdk, lsp_name, args.core)
         project_mpu = args.project_mpu if (args.active == key and args.project_mpu) else None
         print("\n[%s] -> %s" % (lsp_name, lsp_dir))
-        if run_lsp_modify(sdk, layout, lsp_dir, start, end, stack, args.core, project_mpu):
+        if run_lsp_modify(sdk, layout, lsp_dir, start, end, stack, args.core, project_mpu, sram_win):
             print("  lsp_modify.py FAILED for %s" % lsp_name)
             rc = 1
             continue
         if not args.no_validate:
-            errs = validate_x(lsp_dir / "ldscripts" / "elf32xtensa.x", start, end)
+            errs = validate_x(lsp_dir / "ldscripts" / "elf32xtensa.x", start, end, sram_win)
             if errs:
                 print("  VALIDATION FAILED:")
                 for e in errs:

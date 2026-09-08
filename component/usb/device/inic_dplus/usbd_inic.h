@@ -113,9 +113,6 @@ typedef struct {
 	usb_dev_t *dev;
 	const usbd_inic_cb_t *cb;
 	usb_setup_req_t ctrl_req;
-	u8  bt_alt;
-	u8  bt_sco_alt;
-	u8  wifi_alt;
 } usbd_inic_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/

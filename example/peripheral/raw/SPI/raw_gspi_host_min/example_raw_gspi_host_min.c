@@ -34,7 +34,7 @@ static void gspi_host_task(void)
 {
 	GSPI_InitTypeDef init;
 	GSPI_StatusTypeDef sts;
-	u8 cpu_ind;
+	u32 cpu_ind;
 	u8 saved, readback;
 
 	/* GSPI_Init configures SPI0, the per-signal pinmux and the CS GPIO, and
@@ -47,7 +47,7 @@ static void gspi_host_task(void)
 	init.GSPI_CsPin = GSPI_CS;
 	init.GSPI_ClkFreq = GSPI_BUS_FREQ_HZ;
 	init.GSPI_ClkFreqInit = GSPI_FREQ_ACTIVATE;
-	if (GSPI_Init(&gspi, &init) != GSPI_OK) {
+	if (GSPI_Init(&gspi, &init) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "GSPI_Init failed\n");
 		goto exit;
 	}
@@ -59,7 +59,7 @@ static void gspi_host_task(void)
 	/* Step 1: activation. This must be the first bus transaction after the
 	 * Device boots, otherwise the Device latches SDIO mode. */
 	RTK_LOGI(TAG, "Step1: activate GSPI (write SPI_CFG, read back)\n");
-	if (GSPI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != GSPI_OK) {
+	if (GSPI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "GSPI Demo: fail (activation)\n");
 		goto exit;
 	}
@@ -68,10 +68,11 @@ static void gspi_host_task(void)
 	/* Step 2: read the registers that prove the bus really talks. CPU_IND
 	 * reading 0xFF means MISO is just idling at its pull-up level. */
 	RTK_LOGI(TAG, "Step2: register reads\n");
-	cpu_ind = GSPI_ReadReg8(&gspi, GSPI_REG_CPU_IND, &sts);
-	RTK_LOGI(TAG, "  CPU_IND(0x87) = 0x%02x, CPU_RDY=%d\n", cpu_ind, cpu_ind & GSPI_BIT_CPU_RDY);
-	if (cpu_ind == 0xFF) {
-		RTK_LOGE(TAG, "GSPI Demo: fail (CPU_IND 0xFF, bus not talking)\n");
+	cpu_ind = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, &sts);
+	RTK_LOGI(TAG, "  CPU_INDICATION(0x84) = 0x%08x, CPU_RDY=%d\n", cpu_ind,
+			 (cpu_ind & GSPI_BIT_SYNC_CPU_RDY_IND) ? 1 : 0);
+	if (cpu_ind == 0xFFFFFFFF) {
+		RTK_LOGE(TAG, "GSPI Demo: fail (all ones, bus not talking)\n");
 		goto exit;
 	}
 	gspi_show_reg("HISR      ", GSPI_REG_HISR);
@@ -79,14 +80,12 @@ static void gspi_host_task(void)
 	gspi_show_reg("FREE_TX_BD", GSPI_REG_FREE_TX_BD_NUM);
 	gspi_show_reg("HCPWM     ", GSPI_REG_HCPWM);
 
-	/* Step 3: prove the write path too. HPS_CLKR (0x84) is documented "not
-	 * used", so it is the one safe scratch byte; it must be written byte-wise
-	 * because CPU_IND shares its 32-bit word. */
-	RTK_LOGI(TAG, "Step3: write-readback on HPS_CLKR(0x84)\n");
-	saved = GSPI_ReadReg8(&gspi, GSPI_REG_HPS_CLKR, NULL);
-	GSPI_WriteReg8(&gspi, GSPI_REG_HPS_CLKR, 0x5A, NULL);
-	readback = GSPI_ReadReg8(&gspi, GSPI_REG_HPS_CLKR, NULL);
-	GSPI_WriteReg8(&gspi, GSPI_REG_HPS_CLKR, saved, NULL);
+	/* Step 3: write-readback on scratch byte 0x84. */
+	RTK_LOGI(TAG, "Step3: write-readback on scratch byte 0x84\n");
+	saved = GSPI_ReadReg8(&gspi, GSPI_REG_CPU_INDICATION, NULL);
+	GSPI_WriteReg8(&gspi, GSPI_REG_CPU_INDICATION, 0x5A, NULL);
+	readback = GSPI_ReadReg8(&gspi, GSPI_REG_CPU_INDICATION, NULL);
+	GSPI_WriteReg8(&gspi, GSPI_REG_CPU_INDICATION, saved, NULL);
 	RTK_LOGI(TAG, "  wrote 0x5a, read 0x%02x %s (restored 0x%02x)\n",
 			 readback, (readback == 0x5A) ? "MATCH" : "MISMATCH", saved);
 

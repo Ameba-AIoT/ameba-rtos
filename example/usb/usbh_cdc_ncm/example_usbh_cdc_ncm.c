@@ -92,7 +92,7 @@ static const usbh_config_t usbh_ncm_cfg = {
 	.main_task_priority = CONFIG_USBH_CDC_NCM_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.hub_support = 1U,
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
 	.nptx_fifo_depth = 256,
@@ -307,7 +307,7 @@ static void usbh_ncm_link_change_thread(void *param)
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				ethernet_state = ETH_STATUS_INIT;
-				memcpy(pnetif_usb_eth->hwaddr, mac, 6);
+				usb_os_memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)mac, 6);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netif_set_link_up(pnetif_usb_eth);
 
@@ -336,7 +336,7 @@ static void usbh_cdc_ncm_save_to_memory(char *pdata, unsigned int length)
 #if CONFIG_USBH_CDC_NCM_DUMP_FILE
 	static unsigned int psram_pos = 0;
 	if (CONFIG_USBH_CDC_NCM_DUMP_PSRAM_HEAP_SIZE >= psram_pos + length) {
-		memcpy((void *)&cdc_ncm_dump_psram_heap[psram_pos], pdata, length);
+		usb_os_memcpy((void *)&cdc_ncm_dump_psram_heap[psram_pos], (const void *)pdata, length);
 		psram_pos += length;
 	}
 #else
@@ -378,7 +378,7 @@ static void usbh_ncm_download_thread(void *param)
 	UNUSED(param);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter download example\n");
-	memset(output, 0x00, 8 * MD5_CHECK_BUFFER_LEN);
+	usb_os_memset((void *)output, 0x00, 8 * MD5_CHECK_BUFFER_LEN);
 
 	while (0 == cdc_ncm_dhcp_done) {
 		if (++heart_beat % 30 == 0) {
@@ -405,14 +405,14 @@ static void usbh_ncm_download_thread(void *param)
 
 	server_host = gethostbyname(SERVER_HOST);
 	if (server_host != NULL) {
-		memcpy((void *) &server_addr.sin_addr, (void *) server_host->h_addr, 4);
+		usb_os_memcpy((void *) &server_addr.sin_addr, (const void *) server_host->h_addr, 4);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Server host\n");
 		goto exit;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Will do connect %s\n", SERVER_HOST);
-	if (connect(server_fd, (struct sockaddr *) &server_addr, sizeof(server_addr)) == 0) {
+	if (connect(server_fd, (struct sockaddr *)(void *) &server_addr, sizeof(server_addr)) == 0) {
 		pos = 0, read_size = 0, resource_size = 0, content_len = 0, header_removed = 0;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Connect success\n");
 		sprintf((char *)cdc_ncm_dl_buf, "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", RESOURCE, SERVER_HOST);

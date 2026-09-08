@@ -636,4 +636,6 @@ void bt_tx_irq_raise(void);
 
 #if ZEPHYR_RTK_PATCH
 void bt_hci_mode_change(struct net_buf *buf);
+bool bt_le_phy_param_valid(uint8_t all_phys, uint8_t tx_phy, uint8_t rx_phy);
+bool bt_le_data_len_param_valid(uint16_t tx_octets, uint16_t tx_time);
 #endif

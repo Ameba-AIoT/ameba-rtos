@@ -34,9 +34,9 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 	```
 	[*] Enable USB
 			USB Mode (DRD)  --->
-			*** USB Device Class ***
+			*** USB Device Class Selection ***
 	[*] 	MSC
-			*** USB Host Class ***
+			*** USB Host Class Selection ***
 	[*] 	MSC
 	```
 	- Choose `CONFIG VFS --->`:

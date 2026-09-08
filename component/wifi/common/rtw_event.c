@@ -21,7 +21,8 @@
 #if defined(CONFIG_WIFI_P2P_ENABLE) && !defined(CONFIG_WPA_STD)
 #include "wifi_p2p_supplicant.h"
 #endif
-#if !defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+/* case: 1.whc none 2. whc host and with api path 3. for wpa offload */
+#if defined(CONFIG_WHC_NONE) || (defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_WIFI_API_PATH)) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 #include "atcmd_service.h"
 #include "wpa_lite_intf.h"
 #ifndef CONFIG_WPA_STD
@@ -39,8 +40,7 @@
 /**********************************************************************************************
  *                                          Globals
  *********************************************************************************************/
-/* 1. single core or host 2.WPAoD. */
-#if (!(defined CONFIG_WHC_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD))
+#if defined(CONFIG_WHC_NONE) || (defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_WIFI_API_PATH)) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 #ifndef CONFIG_WPA_STD
 
 extern int (*p_store_fast_connect_info)(unsigned int data1, unsigned int data2);
@@ -398,8 +398,7 @@ int wifi_event_handle(u32 event_cmd, u8 *evt_info)
 		return -RTK_ERR_BADARG;
 	}
 
-	/* 1. single core or host 2.WPAoD. */
-#if (!(defined CONFIG_WHC_DEV) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD))
+#if defined(CONFIG_WHC_NONE) || (defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_WIFI_API_PATH)) || defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
 #ifndef CONFIG_WPA_STD
 	wifi_event_handle_internal(event_cmd, evt_info + prepend_len); //prepend_len = 0
 #endif

@@ -34,65 +34,6 @@ u32 whc_host_hal_hwqueue_get(u8 qsel)
 	return addr;
 }
 
-int whc_host_hal_txbd_enough_check(void)
-{
-	return 1;
-}
-
-u8 whc_host_hal_txdesc_sc_mapping(u8 bwmode, enum channel_width CurrentChannelBW, u8 pri_ch, u8 central_ch)
-{
-	u8	SCSettingOfDesc = 0;
-
-	if (CurrentChannelBW == CHANNEL_WIDTH_40) {
-		if (bwmode == CHANNEL_WIDTH_40) {
-			SCSettingOfDesc = 0;
-		} else if (bwmode == CHANNEL_WIDTH_20) {
-			SCSettingOfDesc = pri_ch > central_ch ?  1 : 2;
-		}
-	} else if (CurrentChannelBW == CHANNEL_WIDTH_80) {
-		if (bwmode == CHANNEL_WIDTH_80) {
-			SCSettingOfDesc = 0;
-		} else if (bwmode == CHANNEL_WIDTH_40) {
-			SCSettingOfDesc = pri_ch > central_ch ? 9 : 10;
-		} else {
-			if (pri_ch > central_ch) {
-				SCSettingOfDesc = (pri_ch - central_ch) >> 1;
-			} else {
-				SCSettingOfDesc = ((central_ch - pri_ch) >> 1) + 1;
-			}
-		}
-	} else {
-		SCSettingOfDesc = 0;
-	}
-
-	return SCSettingOfDesc;
-}
-
-u8 whc_host_hal_txdesc_bw_mapping(u8 bwmode, enum channel_width CurrentChannelBW)
-{
-	u8	BWSettingOfDesc = 0;
-
-	if (CurrentChannelBW == CHANNEL_WIDTH_40) {
-		if ((bwmode == CHANNEL_WIDTH_40) || (bwmode == CHANNEL_WIDTH_80)) {
-			BWSettingOfDesc = 1;
-		} else {
-			BWSettingOfDesc = 0;
-		}
-	} else if (CurrentChannelBW == CHANNEL_WIDTH_80) {
-		if (bwmode == CHANNEL_WIDTH_80) {
-			BWSettingOfDesc = 2;
-		} else if (bwmode == CHANNEL_WIDTH_40) {
-			BWSettingOfDesc = 1;
-		} else {
-			BWSettingOfDesc = 0;
-		}
-	} else {
-		BWSettingOfDesc = 0;
-	}
-
-	return BWSettingOfDesc;
-}
-
 u8 whc_host_hal_txdesc_fill_sectype(u8 encrypt, u8 bswenc)
 {
 	u8 sectype = 0;
@@ -209,22 +150,11 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 
 		whc_host_hal_txdesc_fill_vcs(ptxdesc, pattrib->vcs_mode, pmlmeinfo->cur_channel, pmlmeinfo->b_preamble_mode);
 
-		if (pattrib->b_ht_en) {
-			ptxdesc->rts_sc = whc_host_hal_txdesc_sc_mapping(pattrib->bwmode, global_idev.whchpriv.cur_chandef.bw,
-							  global_idev.whchpriv.cur_chandef.chan, global_idev.whchpriv.cur_chandef.center_ch);
-		}
-
 		if ((pattrib->ether_type != ETH_P_PAE) &&
 			(pattrib->ether_type != ETH_P_ARP) &&
 			(pattrib->ether_type != 0x88B4) &&
 			(pattrib->pkt_type != PACKET_DHCP)
 		   ) {
-			if (pattrib->b_ht_en) {
-				ptxdesc->data_bw = whc_host_hal_txdesc_bw_mapping(pattrib->bwmode, global_idev.whchpriv.cur_chandef.bw);
-				ptxdesc->data_sc = whc_host_hal_txdesc_sc_mapping(pattrib->bwmode, global_idev.whchpriv.cur_chandef.bw,
-								   global_idev.whchpriv.cur_chandef.chan, global_idev.whchpriv.cur_chandef.center_ch);
-			}
-
 			if (!bmcst) {
 				if (pmlmeinfo->cur_channel > 14) {
 					/* for 5G. OFDM 6M */
@@ -256,6 +186,11 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 			if (pattrib->b_tx_navusehdr) {
 				ptxdesc->navusehdr = 1;
 			}
+#if WIFI_LOGO_CERTIFICATION
+			if (pattrib->b_tx_order) {
+				ptxdesc->htc = 1;
+			}
+#endif
 		} else {
 			/*
 			*  EAP & ARP & DHCP packet.
@@ -330,11 +265,6 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 	}
 	wifi_tunnelapi_update_txdata_macswap(ptxdesc, (u8 *)(pxmitframe->pkt->data), 0);
 #endif
-
-	/*don't use cck rate in 5G*/
-	if ((global_idev.whchpriv.cur_chandef.chan > 14) && ptxdesc->userate && ptxdesc->datarate < DESC_RATE6M) {
-		ptxdesc->datarate = DESC_RATE6M;
-	}
 
 	if (pattrib->b_tx_raw) {
 		ptxdesc->userate = 1;

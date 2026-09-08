@@ -65,8 +65,10 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_P2P_ROLE,	whc_event_p2p_role},
 	{WHC_API_P2P_REMAIN_ON_CH,		whc_event_p2p_remain_on_ch},
 #endif
+#ifdef CONFIG_WAR_OFFLOAD
 	{WHC_API_WAR_OFFLOAD_CTRL, whc_event_war_offload_ctrl},
 	{WHC_API_WAR_SET_MDNS_PARA, whc_event_war_set_mdns_para},
+#endif
 
 	{WHC_API_WIFI_GET_SCANNED_AP_INFO, whc_event_get_scan_res},
 	{WHC_API_WIFI_SEND_EAPOL, whc_event_send_eapol},
@@ -109,6 +111,7 @@ void whc_send_api_ret_value(u32 api_id, u8 *pbuf, u32 len)
 	/* notify NP that event is finished */
 	ret_msg->event = WHC_WIFI_EVT_API_RETURN;
 	ret_msg->api_id = api_id;
+	ret_msg->data_len = len;
 
 	memcpy((void *)(ret_msg + 1), pbuf, len);
 
@@ -1036,6 +1039,7 @@ void whc_event_wifi_set_ant_info(u32 api_id, u32 *param_buf)
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
+#ifdef CONFIG_WAR_OFFLOAD
 void whc_event_war_offload_ctrl(u32 api_id, u32 *param_buf)
 {
 	int ret = 0;
@@ -1062,6 +1066,7 @@ void whc_event_war_set_mdns_para(u32 api_id, u32 *param_buf)
 
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
+#endif
 
 void whc_event_wifi_driver_is_mp(u32 api_id, u32 *param_buf)
 {
@@ -1095,6 +1100,7 @@ void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len)
 	info = (struct whc_api_info *)N_BYTE_ALIGMENT((u32)buf, DEV_DMA_ALIGN);
 	info->event = WHC_WIFI_EVT_API_CALL;
 	info->api_id = id;
+	info->data_len = param_len;
 
 	memcpy((void *)(info + 1), param, param_len);
 

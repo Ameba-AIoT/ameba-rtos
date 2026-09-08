@@ -9,11 +9,6 @@
 /* Wakeup entry can be set to WAKEUP_NULL/WAKEUP_KM4/WAKEUP_KM0 */
 const struct WakeEvent_TypeDef sleep_wevent_config[] = {
 //  	Module								Wakeup
-#ifdef CONFIG_WHC_INTF_SDIO
-	{WAKE_SRC_SDIO,							WAKEUP_KM0},
-#else
-	{WAKE_SRC_SDIO,							WAKEUP_NULL},
-#endif
 	{WAKE_SRC_GPIOB,						WAKEUP_KM4},
 	{WAKE_SRC_pmc_timer1,					WAKEUP_KM0},	/* internal usage, do not change it*/
 	{WAKE_SRC_pmc_timer0,					WAKEUP_KM4},	/* internal usage, do not change it*/

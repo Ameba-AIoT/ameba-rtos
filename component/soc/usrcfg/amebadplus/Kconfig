@@ -148,6 +148,15 @@ endmenu
 
 menu "RAM Layout Configuration"
 
+config SRAM_KM0_IMG2_KB
+    int "KM0(NP) SRAM image2 size (KB)"
+    range 32 256
+    default 96
+    help
+        Size of the NP(KM0) SRAM image2 region, pinned at the SRAM_END side; the
+        AP(KM4) region takes the remainder below it, so growing NP shrinks AP.
+        KM0_BD_RAM is this size minus the image header.
+
 # TrustZone secure image (Image3) size. For SoCs without PSRAM this region may
 # live in SRAM, so it is a general RAM-layout parameter, configured per IC.
 config TZ_S_SIZE

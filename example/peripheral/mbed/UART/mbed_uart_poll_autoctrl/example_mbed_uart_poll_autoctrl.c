@@ -13,7 +13,7 @@
 #include "example_uart_ext.h"
 #include "os_wrapper.h"
 
-#define UART_IDX	0
+#define UART_IDX	1
 #define UART_BAUD	38400
 #define UART_BUF_SIZE	1000
 

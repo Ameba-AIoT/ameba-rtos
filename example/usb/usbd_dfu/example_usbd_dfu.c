@@ -37,7 +37,7 @@ static const usbd_config_t dfu_cfg = {
 	.diag_enable = 1,
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
 	.nptx_max_epmis_cnt = 1U,
-#elif defined(CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/* DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr, EP0 fixed 32 DWORD */
 	.rx_fifo_depth  = 644U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U,},
@@ -61,7 +61,7 @@ static rtos_sema_t dfu_reconf_sema;
 
 static int dfu_cb_init(void)
 {
-	memset(dfu_demo_fw_buf, 0, USBD_DFU_DEMO_BUF_SIZE);
+	usb_os_memset((void *)dfu_demo_fw_buf, 0, USBD_DFU_DEMO_BUF_SIZE);
 	dfu_demo_fw_len = 0U;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
 	return HAL_OK;
@@ -85,7 +85,7 @@ static int dfu_cb_write(u16 block_num, u8 *buf, u32 len)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Write out of range: blk=%u len=%u\n", block_num, len);
 		return HAL_ERR_PARA;
 	}
-	memcpy(dfu_demo_fw_buf + offset, buf, len);
+	usb_os_memcpy((void *)(dfu_demo_fw_buf + offset), (const void *)buf, len);
 	end = offset + len;
 	if (end > dfu_demo_fw_len) {
 		dfu_demo_fw_len = end;
@@ -112,7 +112,7 @@ static int dfu_cb_read(u16 block_num, u8 *buf, u32 max_len)
 	if (remaining > max_len) {
 		remaining = max_len;
 	}
-	memcpy(buf, dfu_demo_fw_buf + offset, remaining);
+	usb_os_memcpy((void *)buf, (const void *)(dfu_demo_fw_buf + offset), remaining);
 	return (int)remaining;
 }
 

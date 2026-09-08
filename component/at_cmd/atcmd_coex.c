@@ -27,12 +27,9 @@ static const char *const AT_COEX_TAG = "AT_COEX";
 // <vid>: 0-255 (dec)
 // <pid>: 0-255 (dec)
 //
-// @wl_slot
-// AT+COEX=<type=wl_slot>[,<value>]
-// <value>: 0: disable, [1-100]: valid value (dec, percent)
-//
-// @state
-// AT+COEX=<type=state>
+// @weight mode
+// AT+COEX=<type=weight>[,<value>]
+// <value>: default/bt/balance/wl
 //
 // @dbg
 // AT+COEX=<type=dbg>[,<dbgcmd>]
@@ -46,7 +43,7 @@ static void fCOMMONCOEX(u16 argc, char **argv)
 {
 
 	int error_no = 0;
-	static int wl_slot = 0;
+	static u8 weight = RTK_COEX_WEIGHT_DEFAULT;
 
 	if (argc < 2) {
 		error_no = 1;
@@ -126,26 +123,33 @@ static void fCOMMONCOEX(u16 argc, char **argv)
 		RTK_LOGW(AT_COEX_TAG, "pid=0x%x, vid=0x%x\r\n", pid, vid);
 		rtk_coex_com_vendor_info_set(pid, vid);
 
-	} else if (0 == strcasecmp(subcmd, "wl_slot")) {
+	} else if (0 == strcasecmp(subcmd, "weight")) {
 		const char *param = cmd + strlen(subcmd);
 		while (*param == ' ') {
 			param++;
 		}
 		if (*param == '\0') {
-			RTK_LOGW(AT_COEX_TAG, "get wl_slot=%d\r\n", wl_slot);
+			RTK_LOGS(AT_COEX_TAG, RTK_LOG_ALWAYS, "get weight=%s\r\n", ((weight == RTK_COEX_WEIGHT_DEFAULT) ? ("default") : (
+						 (weight == RTK_COEX_WEIGHT_BT) ? ("bt") : (
+							 (weight == RTK_COEX_WEIGHT_BALANCE) ? ("balance") : (
+								 (weight == RTK_COEX_WEIGHT_WL) ? ("wl") : ("undefined"))))));
 		} else {
-			int val = -1;
-			if (_sscanf_ss(cmd, "%d", &val) != 1 || val < 0 || val > 100) {
+			if (0 == strcasecmp(param, "default")) {
+				weight = RTK_COEX_WEIGHT_DEFAULT;
+			} else if (0 == strcasecmp(param, "bt")) {
+				weight = RTK_COEX_WEIGHT_BT;
+			} else if (0 == strcasecmp(param, "balance")) {
+				weight = RTK_COEX_WEIGHT_BALANCE;
+			} else if (0 == strcasecmp(param, "wl")) {
+				weight = RTK_COEX_WEIGHT_WL;
+			} else {
+				RTK_LOGS(AT_COEX_TAG, RTK_LOG_ERROR, "ERROR PARAM: %s\r\n", param);
 				error_no = 21;
 				goto exit;
 			}
-			wl_slot = val;
-			RTK_LOGW(AT_COEX_TAG, "set wl_slot=%d\r\n", wl_slot);
-			rtk_coex_com_wl_slot_set(wl_slot);
+			RTK_LOGS(AT_COEX_TAG, RTK_LOG_ALWAYS, "set weight=%d\r\n", param);
+			rtk_coex_com_weight_mode_set(weight);
 		}
-
-	} else if (0 == strcasecmp(subcmd, "state")) {
-		rtk_coex_com_state_get();
 
 	} else if (0 == strcasecmp(subcmd, "dbg")) {
 		rtk_coex_com_dbg(cmd + 4, cmd_size - 4);

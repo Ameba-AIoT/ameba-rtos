@@ -32,6 +32,21 @@ u8 ota_get_cur_index(u8 img_id)
 	}
 #elif (defined(CONFIG_RTL8720F) || defined(CONFIG_RLE1509))
 	AddrStart = GBSS_DEV->OTA_IMG_REMAP[img_id];
+#elif defined(CONFIG_AMEBAPRO3)
+	{
+		(void)AddrStart;
+
+		if (img_id == OTA_IMGID_BOOT) {
+			/* The NP ROM bootloader records the selected bootloader slot in
+			 * AON_WDT_TIMER[5:1] via PLATFORM_BOOTLMT_Write() before handing
+			 * off.  BOOTLMT_BIT_BOOT_VER_NUM (BIT3 of BKUPR_REG0) set
+			 * means OTA2 is active; clear means OTA1. */
+			return (BKUPR_Read(BKUPR_REG0) & BOOTLMT_BIT_BOOT_VER_NUM) ? OTA_INDEX_2 : OTA_INDEX_1;
+		} else {
+			/* APP slot: BKUP_REG0[17] set = OTA2, clear = OTA1 */
+			return (BKUP_Read(BKUP_REG0) & BKUP_BIT_FW_OTA_INDEX) ? OTA_INDEX_2 : OTA_INDEX_1;
+		}
+	}
 #else
 	AddrStart = RRAM_DEV->OTA_IMG_REMAP[img_id];
 #endif

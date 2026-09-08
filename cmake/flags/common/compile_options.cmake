@@ -53,6 +53,14 @@ if(CONFIG_AMEBASMART OR CONFIG_AMEBADPLUS OR CONFIG_AMEBAPRO3)
 else()
     ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS -Os)
 endif()
+
+# GCC 14 promotes these warnings to errors in existing code; suppress until fixed.
+if(CONFIG_TOOLCHAIN_PICOLIBC)
+    ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS
+        -Wno-int-conversion
+        -Wno-attributes
+    )
+endif()
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 # +++++++++++++++ c_GLOBAL_COMMON_COMPILE_CPP_OPTIONS ++++++++++++++ #

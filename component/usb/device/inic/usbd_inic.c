@@ -11,12 +11,59 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBD_INIC_IDX_INTERFACE_STR       0x04U
+/* String descriptor indexes, 0x00 ~ 0x03 are reserved by the USB device core */
+#define USBD_INIC_IDX_BT_STR              0x04U
+#ifdef CONFIG_WHC_ETH
+#define USBD_INIC_IDX_ETH_STR             0x05U
+#endif
 
+/*
+ * Interface layout of normal mode
+ *
+ * CONFIG_WHC_ETH enabled : ITF0 = BT HCI, ITF1 = Ethernet, ITF2 = WiFi
+ *     BT SCO shares EP3 with Ethernet, so the whole BT SCO interface, including all its
+ *     alternate settings, is excluded from the descriptors and BT works in HCI only mode.
+ *     Note: SCO based BT audio(e.g. HFP) is NOT supported in this mode.
+ * CONFIG_WHC_ETH disabled: ITF0 = BT HCI, ITF1 = BT SCO, ITF2 = WiFi
+ */
 #define USBD_INIC_ITF_NUM                 3U
 #define USBD_INIC_ITF_BT                  0U
+#ifdef CONFIG_WHC_ETH
+#define USBD_INIC_ITF_ETH                 1U
+#else
 #define USBD_INIC_ITF_BT_SCO              1U
+#define USBD_INIC_BT_SCO_ALT_NUM          6U
+#endif
 #define USBD_INIC_ITF_WIFI                2U
+
+/* Interface layout of the WiFi only mode, i.e. BT is disabled by eFuse
+ *
+ * CONFIG_WHC_ETH enabled : ITF0 = WiFi, ITF1 = Ethernet
+ * CONFIG_WHC_ETH disabled: ITF0 = WiFi
+ */
+#ifdef CONFIG_WHC_ETH
+#define USBD_INIC_WIFI_ONLY_ITF_NUM       2U
+#define USBD_INIC_WIFI_ONLY_ITF_WIFI      0U
+#define USBD_INIC_WIFI_ONLY_ITF_ETH       1U
+#else
+#define USBD_INIC_WIFI_ONLY_ITF_NUM       1U
+#define USBD_INIC_WIFI_ONLY_ITF_WIFI      0U
+#endif
+
+/*
+ * BT SCO is dropped when Ethernet is enabled, so the BT function owns a single interface
+ * and the IAD descriptor is no longer needed: report a composite device(0x00/0x00/0x00)
+ * instead of the IAD device class(0xEF/0x02/0x01).
+ */
+#ifdef CONFIG_WHC_ETH
+#define USBD_INIC_DEV_CLASS               0x00U
+#define USBD_INIC_DEV_SUBCLASS            0x00U
+#define USBD_INIC_DEV_PROTOCOL            0x00U
+#else
+#define USBD_INIC_DEV_CLASS               0xEFU
+#define USBD_INIC_DEV_SUBCLASS            0x02U
+#define USBD_INIC_DEV_PROTOCOL            0x01U
+#endif
 
 #define USBD_INIC_EP_STATE_IDLE           0U
 #define USBD_INIC_EP_STATE_BUSY           1U
@@ -30,10 +77,21 @@
 
 /* Private macros ------------------------------------------------------------*/
 
+/* Number of interfaces reported in the active config descriptor */
+#define USBD_INIC_ITF_CNT(idev)           (((idev)->otp.bt_en) ? USBD_INIC_ITF_NUM : USBD_INIC_WIFI_ONLY_ITF_NUM)
+
 /* Private function prototypes -----------------------------------------------*/
 
 static int usbd_inic_set_config(usb_dev_t *dev, u8 config);
 static int usbd_inic_clear_config(usb_dev_t *dev, u8 config);
+static int usbd_inic_set_wifi_config(usb_dev_t *dev, u8 config);
+static int usbd_inic_clear_wifi_config(usb_dev_t *dev, u8 config);
+static int usbd_inic_set_bt_config(usb_dev_t *dev, u8 config);
+static int usbd_inic_clear_bt_config(usb_dev_t *dev, u8 config);
+#ifdef CONFIG_WHC_ETH
+static int usbd_inic_set_eth_config(usb_dev_t *dev, u8 config);
+static int usbd_inic_clear_eth_config(usb_dev_t *dev, u8 config);
+#endif
 static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
 static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev);
@@ -51,9 +109,9 @@ static const u8 usbd_inic_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_DESC_TYPE_DEVICE,         // bDescriptorType
 	0x00,                         // bcdUSB
 	0x02,
-	0xEF,                         // bDeviceClass
-	0x02,                         // bDeviceSubClass
-	0x01,                         // bDeviceProtocol
+	USBD_INIC_DEV_CLASS,          // bDeviceClass
+	USBD_INIC_DEV_SUBCLASS,       // bDeviceSubClass
+	USBD_INIC_DEV_PROTOCOL,       // bDeviceProtocol
 	USB_MAX_EP0_SIZE,             // bMaxPacketSize
 	USB_LOW_BYTE(USBD_INIC_VID),  // idVendor
 	USB_HIGH_BYTE(USBD_INIC_VID), // idVendor
@@ -117,7 +175,7 @@ static const u8 usbd_inic_config_desc[] = {
 	USB_DESC_TYPE_CONFIGURATION,			// bDescriptorType: Configuration
 	0x00,									// wTotalLength: number of returned bytes, runtime assigned
 	0x00,
-	0x03,									// bNumInterfaces: 3 interface
+	USBD_INIC_ITF_NUM,						// bNumInterfaces
 	0x01,									// bConfigurationValue
 	0x00,									// iConfiguration
 	0x80,									// bmAttributes: decided by eFuse
@@ -125,33 +183,35 @@ static const u8 usbd_inic_config_desc[] = {
 
 	/*---------------------------------------------------------------------------*/
 
+#ifndef CONFIG_WHC_ETH
 	/* IAD Descriptor */
 	USB_LEN_IAD_DESC,						// bLength: IAD Descriptor size
 	USB_DESC_TYPE_IAD,						// bDescriptorType: IAD
-	0x00,									// bFirstInterface
+	USBD_INIC_ITF_BT,						// bFirstInterface
 	0x02,									// bInterfaceCount
-	0xE0,									// bFunctionClass: Wireless Controller
-	0x01,									// bFunctionSubClass
-	0x01,									// bFunctionProtocol
-	USBD_INIC_IDX_INTERFACE_STR,			// iFunction: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bFunctionClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bFunctionSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bFunctionProtocol
+	USBD_INIC_IDX_BT_STR,					// iFunction: USBD_INIC_BT_STRING
+#endif
 
 	/*---------------------------------------------------------------------------*/
 
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x00,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT,						// bInterfaceNumber: Number of Interface
 	0x00,									// bAlternateSetting: Alternate setting
 	0x03,									// bNumEndpoints: 3 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	0x81,									// bEndpointAddress: EP1 IN
+	USBD_INIC_BT_EP1_INTR_IN,				// bEndpointAddress: EP1 IN
 	USB_CH_EP_TYPE_INTR,						// bmAttributes: INTR
 	0x10,									// wMaxPacketSize: 16 bytes
 	0x00,
@@ -160,7 +220,7 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	0x02,									// bEndpointAddress: EP2 OUT
+	USBD_INIC_BT_EP2_BULK_OUT,				// bEndpointAddress: EP2 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
 	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
@@ -169,7 +229,7 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	0x82,									// bEndpointAddress: EP2 IN
+	USBD_INIC_BT_EP2_BULK_IN,				// bEndpointAddress: EP2 IN
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
 	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
@@ -177,21 +237,51 @@ static const u8 usbd_inic_config_desc[] = {
 
 	/*---------------------------------------------------------------------------*/
 
-	/* Interface Descriptor */
+#ifdef CONFIG_WHC_ETH
+	/* WHC Ethernet Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_ETH,						// bInterfaceNumber: Number of Interface
 	0x00,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_ETH_ITF_CLASS,				// bInterfaceClass: Vendor Specific
+	USBD_INIC_ETH_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_ETH_ITF_PROTOCOL,				// bInterfaceProtocol
+	USBD_INIC_IDX_ETH_STR,					// iInterface: USBD_INIC_ETH_STRING
+
+	/* Endpoint Descriptor */
+	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
+	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
+	USBD_WHC_ETH_EP3_BULK_OUT,				// bEndpointAddress: EP3 OUT
+	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
+	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
+	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
+	0x00,									// bInterval
+
+	/* Endpoint Descriptor */
+	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
+	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
+	USBD_WHC_ETH_EP6_BULK_IN,				// bEndpointAddress: EP6 IN
+	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
+	USB_LOW_BYTE(USBD_WHC_ETH_HS_IN_MPS),	// wMaxPacketSize
+	USB_HIGH_BYTE(USBD_WHC_ETH_HS_IN_MPS),
+	0x00,									// bInterval
+#else
+	/* Interface Descriptor */
+	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
+	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
+	0x00,									// bAlternateSetting: Alternate setting
+	0x02,									// bNumEndpoints: 2 endpoints
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x00,									// wMaxPacketSize: 0 bytes
 	0x00,
@@ -200,7 +290,7 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x00,									// wMaxPacketSize: 0 bytes
 	0x00,
@@ -209,18 +299,18 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
 	0x01,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x09,									// wMaxPacketSize: 9 bytes
 	0x00,
@@ -229,7 +319,7 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x09,									// wMaxPacketSize: 9 bytes
 	0x00,
@@ -238,18 +328,18 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
 	0x02,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x11,									// wMaxPacketSize: 17 bytes
 	0x00,
@@ -258,7 +348,7 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x11,									// wMaxPacketSize: 17 bytes
 	0x00,
@@ -267,18 +357,18 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
 	0x03,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x19,									// wMaxPacketSize: 25 bytes
 	0x00,
@@ -287,7 +377,7 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x19,									// wMaxPacketSize: 25 bytes
 	0x00,
@@ -296,18 +386,18 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
 	0x04,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x21,									// wMaxPacketSize: 33 bytes
 	0x00,
@@ -316,7 +406,7 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x21,									// wMaxPacketSize: 33 bytes
 	0x00,
@@ -325,18 +415,18 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
 	0x05,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x31,									// wMaxPacketSize: 49 bytes
 	0x00,
@@ -345,29 +435,31 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x31,									// wMaxPacketSize: 49 bytes
 	0x00,
 	0x04,									// bInterval
+
+#endif
 
 	/*---------------------------------------------------------------------------*/
 
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x02,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_WIFI,						// bInterfaceNumber: Number of Interface
 	0x00,									// bAlternateSetting: Alternate setting
 	0x04,									// bNumEndpoints: 4 endpoints
-	0xFF,									// bInterfaceClass: Vendor Specific
-	0xFF,									// bInterfaceSubClass
-	0xFF,									// bInterfaceProtocol
+	USBD_INIC_WIFI_ITF_CLASS,				// bInterfaceClass: Vendor Specific
+	USBD_INIC_WIFI_ITF_SUBCLASS,			// bInterfaceSubClass
+	USBD_INIC_WIFI_ITF_PROTOCOL,			// bInterfaceProtocol
 	USBD_IDX_PRODUCT_STR,					// iInterface: USBD_INIC_PROD_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x84,									// bEndpointAddress: EP4 IN
+	USBD_WHC_WIFI_EP4_BULK_IN,				// bEndpointAddress: EP4 IN
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
 	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
@@ -376,7 +468,7 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x05,									// bEndpointAddress: EP5 OUT
+	USBD_WHC_WIFI_EP5_BULK_OUT,				// bEndpointAddress: EP5 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
 	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
@@ -385,7 +477,7 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x06,									// bEndpointAddress: EP6 OUT
+	USBD_WHC_WIFI_EP6_BULK_OUT,				// bEndpointAddress: EP6 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
 	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
@@ -394,7 +486,7 @@ static const u8 usbd_inic_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x07,									// bEndpointAddress: EP7 OUT
+	USBD_WHC_WIFI_EP7_BULK_OUT,				// bEndpointAddress: EP7 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
 	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
@@ -408,7 +500,7 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	USB_DESC_TYPE_CONFIGURATION,			// bDescriptorType: Configuration
 	0x00,									// wTotalLength: number of returned bytes, runtime assigned
 	0x00,
-	0x03,									// bNumInterfaces: 3 interface
+	USBD_INIC_ITF_NUM,						// bNumInterfaces
 	0x01,									// bConfigurationValue
 	0x00,									// iConfiguration
 	0x80,									// bmAttributes: decided by eFuse
@@ -416,33 +508,35 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 
 	/*---------------------------------------------------------------------------*/
 
+#ifndef CONFIG_WHC_ETH
 	/* IAD Descriptor */
 	USB_LEN_IAD_DESC,						// bLength: IAD Descriptor size
 	USB_DESC_TYPE_IAD,						// bDescriptorType: IAD
-	0x00,									// bFirstInterface
+	USBD_INIC_ITF_BT,						// bFirstInterface
 	0x02,									// bInterfaceCount
-	0xE0,									// bFunctionClass: Wireless Controller
-	0x01,									// bFunctionSubClass
-	0x01,									// bFunctionProtocol
-	USBD_INIC_IDX_INTERFACE_STR,			// iFunction: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bFunctionClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bFunctionSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bFunctionProtocol
+	USBD_INIC_IDX_BT_STR,					// iFunction: USBD_INIC_BT_STRING
+#endif
 
 	/*---------------------------------------------------------------------------*/
 
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x00,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT,						// bInterfaceNumber: Number of Interface
 	0x00,									// bAlternateSetting: Alternate setting
 	0x03,									// bNumEndpoints: 3 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	0x81,									// bEndpointAddress: EP1 IN
+	USBD_INIC_BT_EP1_INTR_IN,				// bEndpointAddress: EP1 IN
 	USB_CH_EP_TYPE_INTR,					// bmAttributes: INTR
 	0x10,									// wMaxPacketSize: 16 bytes
 	0x00,
@@ -451,7 +545,7 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	0x02,									// bEndpointAddress: EP2 OUT
+	USBD_INIC_BT_EP2_BULK_OUT,				// bEndpointAddress: EP2 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -460,7 +554,7 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	0x82,									// bEndpointAddress: EP2 IN
+	USBD_INIC_BT_EP2_BULK_IN,				// bEndpointAddress: EP2 IN
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -468,21 +562,51 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 
 	/*---------------------------------------------------------------------------*/
 
-	/* Interface Descriptor */
+#ifdef CONFIG_WHC_ETH
+	/* WHC Ethernet Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_ETH,						// bInterfaceNumber: Number of Interface
 	0x00,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_ETH_ITF_CLASS,				// bInterfaceClass: Vendor Specific
+	USBD_INIC_ETH_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_ETH_ITF_PROTOCOL,				// bInterfaceProtocol
+	USBD_INIC_IDX_ETH_STR,					// iInterface: USBD_INIC_ETH_STRING
+
+	/* Endpoint Descriptor */
+	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
+	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
+	USBD_WHC_ETH_EP3_BULK_OUT,				// bEndpointAddress: EP3 OUT
+	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
+	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
+	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
+	0x00,									// bInterval
+
+	/* Endpoint Descriptor */
+	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
+	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
+	USBD_WHC_ETH_EP6_BULK_IN,				// bEndpointAddress: EP6 IN
+	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
+	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
+	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
+	0x00,									// bInterval
+#else
+	/* Interface Descriptor */
+	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
+	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
+	0x00,									// bAlternateSetting: Alternate setting
+	0x02,									// bNumEndpoints: 2 endpoints
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x00,									// wMaxPacketSize: 0 bytes
 	0x00,
@@ -491,7 +615,7 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x00,									// wMaxPacketSize: 0 bytes
 	0x00,
@@ -500,18 +624,18 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
 	0x01,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x09,									// wMaxPacketSize: 9 bytes
 	0x00,
@@ -520,7 +644,7 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x09,									// wMaxPacketSize: 9 bytes
 	0x00,
@@ -529,18 +653,18 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
 	0x02,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x11,									// wMaxPacketSize: 17 bytes
 	0x00,
@@ -549,7 +673,7 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x11,									// wMaxPacketSize: 17 bytes
 	0x00,
@@ -558,18 +682,18 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
 	0x03,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x19,									// wMaxPacketSize: 25 bytes
 	0x00,
@@ -578,7 +702,7 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x19,									// wMaxPacketSize: 25 bytes
 	0x00,
@@ -587,18 +711,18 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
 	0x04,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x21,									// wMaxPacketSize: 33 bytes
 	0x00,
@@ -607,7 +731,7 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x21,									// wMaxPacketSize: 33 bytes
 	0x00,
@@ -616,18 +740,18 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x01,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
 	0x05,									// bAlternateSetting: Alternate setting
 	0x02,									// bNumEndpoints: 2 endpoints
-	0xE0,									// bInterfaceClass: Wireless Controller
-	0x01,									// bInterfaceSubClass
-	0x01,									// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_INIC_IDX_INTERFACE_STR,			// iInterface: USBD_INIC_BT_STRING
+	USBD_INIC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
+	USBD_INIC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
+	USBD_INIC_IDX_BT_STR,					// iInterface: USBD_INIC_BT_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x03,									// bEndpointAddress: EP3 OUT
+	USBD_INIC_BT_EP3_ISOC_OUT,				// bEndpointAddress: EP3 OUT
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x31,									// wMaxPacketSize: 49 bytes
 	0x00,
@@ -636,29 +760,31 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_INIC_BT_EP3_ISOC_IN,				// bEndpointAddress: EP3 IN
 	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
 	0x31,									// wMaxPacketSize: 49 bytes
 	0x00,
 	0x01,									// bInterval
+
+#endif
 
 	/*---------------------------------------------------------------------------*/
 
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x02,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_ITF_WIFI,						// bInterfaceNumber: Number of Interface
 	0x00,									// bAlternateSetting: Alternate setting
 	0x04,									// bNumEndpoints: 4 endpoints
-	0xFF,									// bInterfaceClass: Vendor Specific
-	0xFF,									// bInterfaceSubClass
-	0xFF,									// bInterfaceProtocol
+	USBD_INIC_WIFI_ITF_CLASS,				// bInterfaceClass: Vendor Specific
+	USBD_INIC_WIFI_ITF_SUBCLASS,			// bInterfaceSubClass
+	USBD_INIC_WIFI_ITF_PROTOCOL,			// bInterfaceProtocol
 	USBD_IDX_PRODUCT_STR,					// iInterface: USBD_INIC_PROD_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x84,									// bEndpointAddress: EP4 IN
+	USBD_WHC_WIFI_EP4_BULK_IN,				// bEndpointAddress: EP4 IN
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -667,7 +793,7 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x05,									// bEndpointAddress: EP5 OUT
+	USBD_WHC_WIFI_EP5_BULK_OUT,				// bEndpointAddress: EP5 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -676,7 +802,7 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x06,									// bEndpointAddress: EP6 OUT
+	USBD_WHC_WIFI_EP6_BULK_OUT,				// bEndpointAddress: EP6 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -685,7 +811,7 @@ static const u8 usbd_inic_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x07,									// bEndpointAddress: EP7 OUT
+	USBD_WHC_WIFI_EP7_BULK_OUT,				// bEndpointAddress: EP7 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -699,7 +825,7 @@ static const u8 usbd_inic_single_wifi_mode_config_desc[] = {
 	USB_DESC_TYPE_CONFIGURATION,			// bDescriptorType: Configuration
 	0x00,									// wTotalLength: number of returned bytes
 	0x00,
-	0x01,									// bNumInterfaces: 1 interface
+	USBD_INIC_WIFI_ONLY_ITF_NUM,			// bNumInterfaces
 	0x01,									// bConfigurationValue
 	0x00,									// iConfiguration
 	0x80,									// bmAttributes: decided by eFuse
@@ -710,18 +836,18 @@ static const u8 usbd_inic_single_wifi_mode_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x00,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_WIFI_ONLY_ITF_WIFI,			// bInterfaceNumber: Number of Interface
 	0x00,									// bAlternateSetting: Alternate setting
 	0x04,									// bNumEndpoints: 4 endpoints
-	0xFF,									// bInterfaceClass: Vendor Specific
-	0xFF,									// bInterfaceSubClass
-	0xFF,									// bInterfaceProtocol
+	USBD_INIC_WIFI_ITF_CLASS,				// bInterfaceClass: Vendor Specific
+	USBD_INIC_WIFI_ITF_SUBCLASS,			// bInterfaceSubClass
+	USBD_INIC_WIFI_ITF_PROTOCOL,			// bInterfaceProtocol
 	USBD_IDX_PRODUCT_STR,					// iInterface: USBD_INIC_PROD_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x84,									// bEndpointAddress: EP4 IN
+	USBD_WHC_WIFI_EP4_BULK_IN,				// bEndpointAddress: EP4 IN
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
 	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
@@ -730,7 +856,7 @@ static const u8 usbd_inic_single_wifi_mode_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x05,									// bEndpointAddress: EP5 OUT
+	USBD_WHC_WIFI_EP5_BULK_OUT,				// bEndpointAddress: EP5 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
 	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
@@ -739,7 +865,7 @@ static const u8 usbd_inic_single_wifi_mode_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x06,									// bEndpointAddress: EP6 OUT
+	USBD_WHC_WIFI_EP6_BULK_OUT,				// bEndpointAddress: EP6 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
 	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
@@ -748,11 +874,42 @@ static const u8 usbd_inic_single_wifi_mode_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x07,									// bEndpointAddress: EP7 OUT
+	USBD_WHC_WIFI_EP7_BULK_OUT,				// bEndpointAddress: EP7 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
 	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
 	0x00,									// bInterval
+
+#ifdef CONFIG_WHC_ETH
+	/* WHC Ethernet Interface Descriptor */
+	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
+	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
+	USBD_INIC_WIFI_ONLY_ITF_ETH,			// bInterfaceNumber: Number of Interface
+	0x00,									// bAlternateSetting: Alternate setting
+	0x02,									// bNumEndpoints: 2 endpoints
+	USBD_INIC_ETH_ITF_CLASS,				// bInterfaceClass: Vendor Specific
+	USBD_INIC_ETH_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_ETH_ITF_PROTOCOL,				// bInterfaceProtocol
+	USBD_INIC_IDX_ETH_STR,					// iInterface: USBD_INIC_ETH_STRING
+
+	/* Endpoint Descriptor */
+	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
+	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
+	USBD_WHC_ETH_EP3_BULK_OUT,				// bEndpointAddress: EP3 OUT
+	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
+	USB_LOW_BYTE(USBD_INIC_HS_BULK_MPS),	// wMaxPacketSize: 512 bytes
+	USB_HIGH_BYTE(USBD_INIC_HS_BULK_MPS),
+	0x00,									// bInterval
+
+	/* Endpoint Descriptor */
+	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
+	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
+	USBD_WHC_ETH_EP6_BULK_IN,				// bEndpointAddress: EP6 IN
+	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
+	USB_LOW_BYTE(USBD_WHC_ETH_HS_IN_MPS),	// wMaxPacketSize
+	USB_HIGH_BYTE(USBD_WHC_ETH_HS_IN_MPS),
+	0x00,									// bInterval
+#endif
 };
 
 /* USB Full Speed Configuration Descriptor for WiFi-only mode */
@@ -762,7 +919,7 @@ static const u8 usbd_inic_wifi_only_mode_full_speed_config_desc[] = {
 	USB_DESC_TYPE_CONFIGURATION,			// bDescriptorType: Configuration
 	0x00,									// wTotalLength: number of returned bytes
 	0x00,
-	0x01,									// bNumInterfaces: 1 interface
+	USBD_INIC_WIFI_ONLY_ITF_NUM,			// bNumInterfaces
 	0x01,									// bConfigurationValue
 	0x00,									// iConfiguration
 	0x80,									// bmAttributes: decided by eFuse
@@ -773,18 +930,18 @@ static const u8 usbd_inic_wifi_only_mode_full_speed_config_desc[] = {
 	/* Interface Descriptor */
 	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	0x00,									// bInterfaceNumber: Number of Interface
+	USBD_INIC_WIFI_ONLY_ITF_WIFI,			// bInterfaceNumber: Number of Interface
 	0x00,									// bAlternateSetting: Alternate setting
 	0x04,									// bNumEndpoints: 4 endpoints
-	0xFF,									// bInterfaceClass: Vendor Specific
-	0xFF,									// bInterfaceSubClass
-	0xFF,									// bInterfaceProtocol
+	USBD_INIC_WIFI_ITF_CLASS,				// bInterfaceClass: Vendor Specific
+	USBD_INIC_WIFI_ITF_SUBCLASS,			// bInterfaceSubClass
+	USBD_INIC_WIFI_ITF_PROTOCOL,			// bInterfaceProtocol
 	USBD_IDX_PRODUCT_STR,					// iInterface: USBD_INIC_PROD_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x84,									// bEndpointAddress: EP4 IN
+	USBD_WHC_WIFI_EP4_BULK_IN,				// bEndpointAddress: EP4 IN
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -793,7 +950,7 @@ static const u8 usbd_inic_wifi_only_mode_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x05,									// bEndpointAddress: EP5 OUT
+	USBD_WHC_WIFI_EP5_BULK_OUT,				// bEndpointAddress: EP5 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -802,7 +959,7 @@ static const u8 usbd_inic_wifi_only_mode_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x06,									// bEndpointAddress: EP6 OUT
+	USBD_WHC_WIFI_EP6_BULK_OUT,				// bEndpointAddress: EP6 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -811,11 +968,42 @@ static const u8 usbd_inic_wifi_only_mode_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x07,									// bEndpointAddress: EP7 OUT
+	USBD_WHC_WIFI_EP7_BULK_OUT,				// bEndpointAddress: EP7 OUT
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
 	0x00,									// bInterval
+
+#ifdef CONFIG_WHC_ETH
+	/* WHC Ethernet Interface Descriptor */
+	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
+	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
+	USBD_INIC_WIFI_ONLY_ITF_ETH,			// bInterfaceNumber: Number of Interface
+	0x00,									// bAlternateSetting: Alternate setting
+	0x02,									// bNumEndpoints: 2 endpoints
+	USBD_INIC_ETH_ITF_CLASS,				// bInterfaceClass: Vendor Specific
+	USBD_INIC_ETH_ITF_SUBCLASS,				// bInterfaceSubClass
+	USBD_INIC_ETH_ITF_PROTOCOL,				// bInterfaceProtocol
+	USBD_INIC_IDX_ETH_STR,					// iInterface: USBD_INIC_ETH_STRING
+
+	/* Endpoint Descriptor */
+	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
+	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
+	USBD_WHC_ETH_EP3_BULK_OUT,				// bEndpointAddress: EP3 OUT
+	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
+	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
+	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
+	0x00,									// bInterval
+
+	/* Endpoint Descriptor */
+	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
+	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
+	USBD_WHC_ETH_EP6_BULK_IN,				// bEndpointAddress: EP6 IN
+	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
+	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
+	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
+	0x00,									// bInterval
+#endif
 };
 
 /* INIC Class Driver */
@@ -844,6 +1032,7 @@ static usbd_inic_dev_t usbd_inic_dev;
   */
 static int usbd_inic_set_wifi_config(usb_dev_t *dev, u8 config)
 {
+	int ret;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_ep_t *ep;
 	usb_ep_info_t *info;
@@ -854,32 +1043,90 @@ static int usbd_inic_set_wifi_config(usb_dev_t *dev, u8 config)
 	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_IN)].ep;
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
-	usbd_ep_init(dev, ep);
+	ret = usbd_ep_init(dev, ep);
+	if (ret != HAL_OK) {
+		usbd_inic_clear_wifi_config(dev, config);
+		return ret;
+	}
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP5 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP5_BULK_OUT)].ep;
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
-	usbd_ep_init(dev, ep);
+	ret = usbd_ep_init(dev, ep);
+	if (ret != HAL_OK) {
+		usbd_inic_clear_wifi_config(dev, config);
+		return ret;
+	}
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP6 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP6_BULK_OUT)].ep;
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
-	usbd_ep_init(dev, ep);
+	ret = usbd_ep_init(dev, ep);
+	if (ret != HAL_OK) {
+		usbd_inic_clear_wifi_config(dev, config);
+		return ret;
+	}
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP7 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP7_BULK_OUT)].ep;
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
-	usbd_ep_init(dev, ep);
+	ret = usbd_ep_init(dev, ep);
+	if (ret != HAL_OK) {
+		usbd_inic_clear_wifi_config(dev, config);
+		return ret;
+	}
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	return HAL_OK;
 }
+
+#ifdef CONFIG_WHC_ETH
+/**
+  * @brief  Set class configuration for Ethernet interface
+  * @param  dev: USB device instance
+  * @param  config: USB configuration index
+  * @retval Status
+  */
+static int usbd_inic_set_eth_config(usb_dev_t *dev, u8 config)
+{
+	int ret;
+	usbd_inic_dev_t *idev = &usbd_inic_dev;
+	usbd_ep_t *ep;
+	usb_ep_info_t *info;
+
+	UNUSED(config);
+
+	/* Init BULK OUT EP3 */
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_ETH_EP3_BULK_OUT)].ep;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
+	ret = usbd_ep_init(dev, ep);
+	if (ret != HAL_OK) {
+		usbd_inic_clear_eth_config(dev, config);
+		return ret;
+	}
+	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
+
+	/* Init BULK IN EP6 */
+	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_ETH_EP6_BULK_IN)].ep;
+	info = &ep->info;
+	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_WHC_ETH_HS_IN_MPS : USBD_INIC_FS_BULK_MPS;
+	ret = usbd_ep_init(dev, ep);
+	if (ret != HAL_OK) {
+		usbd_inic_clear_eth_config(dev, config);
+		return ret;
+	}
+	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
+
+	return HAL_OK;
+}
+#endif
 
 /**
   * @brief  Set class configuration for BT interface
@@ -889,6 +1136,7 @@ static int usbd_inic_set_wifi_config(usb_dev_t *dev, u8 config)
   */
 static int usbd_inic_set_bt_config(usb_dev_t *dev, u8 config)
 {
+	int ret;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_ep_t *ep;
 	usb_ep_info_t *info;
@@ -899,21 +1147,33 @@ static int usbd_inic_set_bt_config(usb_dev_t *dev, u8 config)
 	ep = &idev->in_ep[USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN)].ep;
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_INTR_MPS : USBD_INIC_FS_INTR_MPS;
-	usbd_ep_init(dev, ep);
+	ret = usbd_ep_init(dev, ep);
+	if (ret != HAL_OK) {
+		usbd_inic_clear_bt_config(dev, config);
+		return ret;
+	}
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK IN EP2 */
 	ep = &idev->in_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN)].ep;
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
-	usbd_ep_init(dev, ep);
+	ret = usbd_ep_init(dev, ep);
+	if (ret != HAL_OK) {
+		usbd_inic_clear_bt_config(dev, config);
+		return ret;
+	}
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	/* Init BULK OUT EP2 */
 	ep = &idev->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)].ep;
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_INIC_HS_BULK_MPS : USBD_INIC_FS_BULK_MPS;
-	usbd_ep_init(dev, ep);
+	ret = usbd_ep_init(dev, ep);
+	if (ret != HAL_OK) {
+		usbd_inic_clear_bt_config(dev, config);
+		return ret;
+	}
 	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
 
 	return HAL_OK;
@@ -929,22 +1189,59 @@ static int usbd_inic_set_bt_config(usb_dev_t *dev, u8 config)
   */
 static int usbd_inic_set_config(usb_dev_t *dev, u8 config)
 {
+	int ret;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_otp_t *otp = &idev->otp;
 
-	idev->dev = dev;
-
-	usbd_inic_set_wifi_config(dev, config);
-
-	if (otp->bt_en) {
-		usbd_inic_set_bt_config(dev, config);
+	/* Only the bConfigurationValue advertised in the config descriptor is valid */
+	if (config != 1U) {
+		return HAL_ERR_PARA;
 	}
 
+	idev->dev = dev;
+
+	ret = usbd_inic_set_wifi_config(dev, config);
+	if (ret != HAL_OK) {
+		return ret;
+	}
+
+	if (otp->bt_en) {
+		ret = usbd_inic_set_bt_config(dev, config);
+		if (ret != HAL_OK) {
+			goto clean_wifi_config_exit;
+		}
+	}
+
+#ifdef CONFIG_WHC_ETH
+	ret = usbd_inic_set_eth_config(dev, config);
+	if (ret != HAL_OK) {
+		goto clean_bt_config_exit;
+	}
+#endif
+
 	if (idev->cb->set_config != NULL) {
-		idev->cb->set_config();
+		ret = idev->cb->set_config();
+		if (ret != HAL_OK) {
+			/* Roll back all the interfaces inited above, as the application fails to start up */
+			goto clean_config_exit;
+		}
 	}
 
 	return HAL_OK;
+
+clean_config_exit:
+#ifdef CONFIG_WHC_ETH
+	usbd_inic_clear_eth_config(dev, config);
+
+clean_bt_config_exit:
+#endif
+	if (otp->bt_en) {
+		usbd_inic_clear_bt_config(dev, config);
+	}
+
+clean_wifi_config_exit:
+	usbd_inic_clear_wifi_config(dev, config);
+	return ret;
 }
 
 /**
@@ -982,6 +1279,34 @@ static int usbd_inic_clear_wifi_config(usb_dev_t *dev, u8 config)
 
 	return HAL_OK;
 }
+
+#ifdef CONFIG_WHC_ETH
+/**
+  * @brief  Clear class configuration for Ethernet interface
+  * @param  dev: USB device instance
+  * @param  config: USB configuration index
+  * @retval Status
+  */
+static int usbd_inic_clear_eth_config(usb_dev_t *dev, u8 config)
+{
+	usbd_inic_dev_t *idev = &usbd_inic_dev;
+	usbd_ep_t *ep;
+
+	UNUSED(config);
+
+	/* DeInit BULK IN EP6 */
+	ep = &idev->in_ep[USB_EP_NUM(USBD_WHC_ETH_EP6_BULK_IN)].ep;
+	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
+	usbd_ep_deinit(dev, ep);
+
+	/* DeInit BULK OUT EP3 */
+	ep = &idev->out_ep[USB_EP_NUM(USBD_WHC_ETH_EP3_BULK_OUT)].ep;
+	ep->xfer_state = USBD_INIC_EP_STATE_IDLE;
+	usbd_ep_deinit(dev, ep);
+
+	return HAL_OK;
+}
+#endif
 
 /**
   * @brief  Clear class configuration for BT interface
@@ -1030,11 +1355,15 @@ static int usbd_inic_clear_config(usb_dev_t *dev, u8 config)
 
 	UNUSED(config);
 
-	usbd_inic_clear_wifi_config(dev, config);
+#ifdef CONFIG_WHC_ETH
+	usbd_inic_clear_eth_config(dev, config);
+#endif
 
 	if (otp->bt_en) {
 		usbd_inic_clear_bt_config(dev, config);
 	}
+
+	usbd_inic_clear_wifi_config(dev, config);
 
 	if (idev->cb->clear_config != NULL) {
 		idev->cb->clear_config();
@@ -1086,6 +1415,39 @@ static int usbd_inic_handle_setup(usb_setup_req_t *req, u8 *buf)
 }
 
 /**
+  * @brief  Return the endpoints of an interface to the not halted, DATA0 default state
+  * @note   Ref USB 2.0 9.4.10: the endpoints of the interface selected by SET_INTERFACE
+  *         return to their default state, not halted and data toggle DATA0. This holds
+  *         even for an interface with the default alternate setting only, hosts do send
+  *         the request in that case. The BT SCO interface is not handled here, it owns
+  *         isochronous endpoints only which can neither be halted nor own a data toggle.
+  * @param  dev: USB device instance
+  * @param  itf: Interface number, already validated by the caller
+  */
+static void usbd_inic_itf_clear_stall(usb_dev_t *dev, u16 itf)
+{
+	usbd_inic_dev_t *idev = &usbd_inic_dev;
+
+	if (itf == ((idev->otp.bt_en) ? USBD_INIC_ITF_WIFI : USBD_INIC_WIFI_ONLY_ITF_WIFI)) {
+		usbd_ep_clear_stall(dev, &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_IN)].ep);
+		usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP5_BULK_OUT)].ep);
+		usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP6_BULK_OUT)].ep);
+		usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP7_BULK_OUT)].ep);
+#ifdef CONFIG_WHC_ETH
+	} else if (itf == ((idev->otp.bt_en) ? USBD_INIC_ITF_ETH : USBD_INIC_WIFI_ONLY_ITF_ETH)) {
+		usbd_ep_clear_stall(dev, &idev->in_ep[USB_EP_NUM(USBD_WHC_ETH_EP6_BULK_IN)].ep);
+		usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_WHC_ETH_EP3_BULK_OUT)].ep);
+#endif
+	} else if ((idev->otp.bt_en) && (itf == USBD_INIC_ITF_BT)) {
+		usbd_ep_clear_stall(dev, &idev->in_ep[USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN)].ep);
+		usbd_ep_clear_stall(dev, &idev->in_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN)].ep);
+		usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)].ep);
+	} else {
+		/* BT SCO, isochronous endpoints only */
+	}
+}
+
+/**
   * @brief  Handle INIC specific CTRL requests
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
@@ -1105,46 +1467,48 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
 		case USB_REQ_SET_INTERFACE:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				alt = USB_LOW_BYTE(req->wValue);
-				switch (req->wIndex) {
-				case USBD_INIC_ITF_BT:
-					idev->bt_alt = alt;
-					break;
-				case USBD_INIC_ITF_BT_SCO:
-					idev->bt_sco_alt = alt;
-					break;
-				case USBD_INIC_ITF_WIFI:
-					idev->wifi_alt = alt;
-					break;
-				default:
-					break;
+			/*
+			 * BT SCO is the only interface which owns alternate settings, all the other
+			 * interfaces have the default alternate setting(0) only: reject any non-existent
+			 * interface or alternate setting with a request error as per USB spec 9.4.10.
+			 */
+#ifdef CONFIG_WHC_ETH
+			if ((dev->dev_state != USBD_STATE_CONFIGURED) || (req->wIndex >= USBD_INIC_ITF_CNT(idev)) || (req->wValue != 0U)) {
+				ret = HAL_ERR_HW;
+			} else {
+				usbd_inic_itf_clear_stall(dev, req->wIndex);
+			}
+#else
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex < USBD_INIC_ITF_CNT(idev))) {
+				if ((idev->otp.bt_en) && (req->wIndex == USBD_INIC_ITF_BT_SCO)) {
+					if (req->wValue < USBD_INIC_BT_SCO_ALT_NUM) {
+						idev->bt_sco_alt = (u8)req->wValue;
+					} else {
+						ret = HAL_ERR_HW;
+					}
+				} else if (req->wValue != 0U) {
+					ret = HAL_ERR_HW;
+				}
+
+				if (ret == HAL_OK) {
+					usbd_inic_itf_clear_stall(dev, req->wIndex);
 				}
 			} else {
 				ret = HAL_ERR_HW;
 			}
+#endif
 			break;
 		case USB_REQ_GET_INTERFACE:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				switch (req->wIndex) {
-				case USBD_INIC_ITF_BT:
-					alt = idev->bt_alt;
-					break;
-				case USBD_INIC_ITF_BT_SCO:
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex < USBD_INIC_ITF_CNT(idev))) {
+				alt = 0U;
+#ifndef CONFIG_WHC_ETH
+				if ((idev->otp.bt_en) && (req->wIndex == USBD_INIC_ITF_BT_SCO)) {
 					alt = idev->bt_sco_alt;
-					break;
-				case USBD_INIC_ITF_WIFI:
-					alt = idev->wifi_alt;
-					break;
-				default:
-					ret = HAL_ERR_HW;
-					break;
 				}
-				if (ret == HAL_OK) {
-					ep0_in->xfer_buf[0] = alt;
-					ep0_in->xfer_len = 1U;
-					usbd_ep_transmit(dev, ep0_in);
-				}
+#endif
+				ep0_in->xfer_buf[0] = alt;
+				ep0_in->xfer_len = 1U;
+				usbd_ep_transmit(dev, ep0_in);
 			} else {
 				ret = HAL_ERR_HW;
 			}
@@ -1178,7 +1542,7 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		} else {
 			if (req->wLength) {
 				// SETUP + DATA OUT + STATUS, the DATA OUT phase is processed in ep0_data_out callback
-				usb_os_memcpy((void *)&idev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
+				usb_os_memcpy((void *)&idev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
 				ep0_out->xfer_len = req->wLength;
 				usbd_ep_receive(dev, ep0_out);
 			} else {
@@ -1273,8 +1637,13 @@ static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 		cb->received(out_ep, len);
 	}
 
+	/* The EPs listed below are re-armed by the application itself after the RX data is consumed */
 	if ((len == 0) || (cb->received == NULL) ||
-		((ep_addr != USBD_WHC_WIFI_EP5_BULK_OUT) && (ep_addr != USBD_WHC_WIFI_EP6_BULK_OUT) && (ep_addr != USBD_WHC_WIFI_EP7_BULK_OUT))) {
+		((ep_addr != USBD_WHC_WIFI_EP5_BULK_OUT) && (ep_addr != USBD_WHC_WIFI_EP6_BULK_OUT) && (ep_addr != USBD_WHC_WIFI_EP7_BULK_OUT)
+#ifdef CONFIG_WHC_ETH
+		 && (ep_addr != USBD_WHC_ETH_EP3_BULK_OUT)
+#endif
+		)) {
 		usbd_inic_receive_data(ep_addr, ep->xfer_buf, ep->xfer_len, userdata);
 	}
 
@@ -1312,7 +1681,7 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 
 		len = USB_LEN_DEV_DESC;
 
-		usb_os_memcpy((void *)buf, (void *)desc, len);
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
 
 		if (otp->otp_param) {
 			buf[USB_DEV_DESC_OFFSET_VID] = USB_LOW_BYTE(otp->vid);
@@ -1343,7 +1712,7 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 				len = sizeof(usbd_inic_wifi_only_mode_full_speed_config_desc);
 			}
 		}
-		usb_os_memcpy((void *)buf, (void *)desc, len);
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_ATTR] &= ~(USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED | USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP);
@@ -1357,7 +1726,7 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = USB_LEN_DEV_QUALIFIER_DESC;
-		usb_os_memcpy((void *)buf, (void *)usbd_inic_dev_qualifier_desc, len);
+		usb_os_memcpy((void *)buf, (const void *)usbd_inic_dev_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
@@ -1378,7 +1747,7 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 				len = sizeof(usbd_inic_single_wifi_mode_config_desc);
 			}
 		}
-		usb_os_memcpy((void *)buf, (void *)desc, len);
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
@@ -1395,12 +1764,12 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
 			len = USB_LEN_LANGID_STR_DESC;
-			usb_os_memcpy((void *)buf, (void *)usbd_inic_lang_id_desc, len);
+			usb_os_memcpy((void *)buf, (const void *)usbd_inic_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
 			if (otp->otp_param) {
 				len = otp->mfg_str_len;
-				usb_os_memcpy((void *)buf, (void *)otp->mfg_str, len);
+				usb_os_memcpy((void *)buf, (const void *)otp->mfg_str, len);
 			} else {
 				len = usbd_get_str_desc(USBD_INIC_MFG_STRING, buf);
 			}
@@ -1408,7 +1777,7 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 		case USBD_IDX_PRODUCT_STR:
 			if (otp->otp_param) {
 				len = otp->prod_str_len;
-				usb_os_memcpy((void *)buf, (void *)otp->prod_str, len);
+				usb_os_memcpy((void *)buf, (const void *)otp->prod_str, len);
 			} else {
 				len = usbd_get_str_desc(USBD_INIC_PROD_STRING, buf);
 			}
@@ -1416,14 +1785,19 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 		case USBD_IDX_SERIAL_STR:
 			if (otp->otp_sn) {
 				len = otp->sn_str_len;
-				usb_os_memcpy((void *)buf, (void *)otp->sn_str, len);
+				usb_os_memcpy((void *)buf, (const void *)otp->sn_str, len);
 			} else {
 				len = usbd_get_str_desc(USBD_INIC_SN_STRING, buf);
 			}
 			break;
-		case USBD_INIC_IDX_INTERFACE_STR:
+		case USBD_INIC_IDX_BT_STR:
 			len = usbd_get_str_desc(USBD_INIC_BT_STRING, buf);
 			break;
+#ifdef CONFIG_WHC_ETH
+		case USBD_INIC_IDX_ETH_STR:
+			len = usbd_get_str_desc(USBD_INIC_ETH_STRING, buf);
+			break;
+#endif
 		case USBD_IDX_MS_OS_STR:
 			/*Not support*/
 			break;
@@ -1483,6 +1857,34 @@ static int usbd_inic_wifi_init(void)
 	return HAL_OK;
 
 }
+
+#ifdef CONFIG_WHC_ETH
+static int usbd_inic_eth_init(void)
+{
+	usbd_inic_dev_t *idev = &usbd_inic_dev;
+	usbd_ep_t *ep;
+	usb_ep_info_t *info;
+	u8 ep_num;
+
+	ep_num = USB_EP_NUM(USBD_WHC_ETH_EP3_BULK_OUT);
+	ep = &idev->out_ep[ep_num].ep;
+	info = &ep->info;
+	info->addr = USBD_WHC_ETH_EP3_BULK_OUT;
+	info->type = USB_CH_EP_TYPE_BULK;
+	ep->skip_dcache_pre_clean = 0;
+	ep->skip_dcache_post_invalidate = 0;
+
+	ep_num = USB_EP_NUM(USBD_WHC_ETH_EP6_BULK_IN);
+	ep = &idev->in_ep[ep_num].ep;
+	info = &ep->info;
+	info->addr = USBD_WHC_ETH_EP6_BULK_IN;
+	info->type = USB_CH_EP_TYPE_BULK;
+	ep->skip_dcache_pre_clean = 0;
+	ep->skip_dcache_post_invalidate = 0;
+
+	return HAL_OK;
+}
+#endif
 
 static int usbd_inic_bt_init(void)
 {
@@ -1585,6 +1987,9 @@ int usbd_inic_init(const usbd_inic_cb_t *cb)
 	}
 
 	usbd_inic_wifi_init();
+#ifdef CONFIG_WHC_ETH
+	usbd_inic_eth_init();
+#endif
 
 	if (otp->bt_en) {
 		usbd_inic_bt_init();
@@ -1666,7 +2071,7 @@ int usbd_inic_transmit_ctrl_data(u8 *buf, u16 len)
 	if (len > ep0_in->xfer_buf_len) {
 		len = ep0_in->xfer_buf_len;
 	}
-	usb_os_memcpy((void *)ep0_in->xfer_buf, (void *)buf, len);
+	usb_os_memcpy((void *)ep0_in->xfer_buf, (const void *)buf, len);
 	ep0_in->xfer_len = len;
 	usbd_ep_transmit(dev, ep0_in);
 

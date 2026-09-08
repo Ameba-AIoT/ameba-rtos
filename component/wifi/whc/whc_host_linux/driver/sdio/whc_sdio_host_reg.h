@@ -133,7 +133,12 @@
 #define SDIO_SYSTEM_TRX_RDY_IND		(BIT(0))
 
 //Register SDIO_REG_RX_AGG_CFG
+/* dev -> host, when timeout or agg num >= threshold */
 #define SDIO_RX_AGG_EN				(BIT(15))
+#define SDIO_RX_AGG_TO_SH			8		/* [14:8] timeout, unit (N+1)*40.96us */
+#define SDIO_RX_AGG_TO_MSK			0x7F
+#define SDIO_RX_AGG_BD_CNT_TH_SH	0		/* [7:0]  threshold for max pkt num for rxagg */
+#define SDIO_RX_AGG_BD_CNT_TH_MSK	0xFF
 
 // Register SDIO_REG_HCPWM
 #define SDIO_HCPWM_WLAN_TRX			(BIT(1))

@@ -4,5 +4,5 @@
 # Copyright (c) 2024 Realtek Semiconductor Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-version = "1.1.8.3"       # CLI (AmebaFlash) version
-gui_version = "3.0.0.8"    # GUI (AmebaMPFlashGUI) version
+version = "1.1.8.4"       # CLI (AmebaFlash) version
+gui_version = "3.0.1.0"    # GUI (AmebaMPFlashGUI) version

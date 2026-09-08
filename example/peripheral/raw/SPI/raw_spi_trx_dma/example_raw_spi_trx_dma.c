@@ -14,6 +14,22 @@
 
 /* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
+
+#if defined (CONFIG_AMEBAPRO3)
+
+#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPIM1
+#define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPIS0
+#define SPI1_DEV SPI0_MST_DEV
+#define SPI0_DEV SPI0_SLV_DEV
+#define APBPeriph_SPIS 			APBPeriph_SPIS0
+#define APBPeriph_SPIS_CLOCK 	APBPeriph_SPIS0_CLOCK
+#define SPI_SLAVE_INDEX			2
+#define APBPeriph_SPIM 			APBPeriph_SPIM1
+#define APBPeriph_SPIM_CLOCK 	APBPeriph_SPIM1_CLOCK
+#define SPI_MASTER_INDEX		1
+
+#else
+
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI1
 #define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI0
@@ -21,6 +37,16 @@
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI
 #define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI
 #endif
+
+#define APBPeriph_SPIS 			APBPeriph_SPI0
+#define APBPeriph_SPIS_CLOCK 	APBPeriph_SPI0_CLOCK
+#define SPI_SLAVE_INDEX			0
+#define APBPeriph_SPIM 			APBPeriph_SPI1
+#define APBPeriph_SPIM_CLOCK 	APBPeriph_SPI1_CLOCK
+#define SPI_MASTER_INDEX		1
+
+#endif
+
 #endif
 
 
@@ -72,7 +98,7 @@ u32 Ssi_dma_tx_irq(void *Data)
 	SSI_SlaveErrRecovery(spi_obj->spi_dev);
 
 	/*  Call user TX complete callback */
-	if (spi_obj->Index == 0) {
+	if (spi_obj->Index == SPI_SLAVE_INDEX) {
 		SlaveTxDone = 1;
 	} else {
 		MasterTxDone = 1;
@@ -103,7 +129,7 @@ u32 Ssi_dma_rx_irq(void *Data)
 	SSI_SlaveErrRecovery(spi_obj->spi_dev);
 
 	/*  Call user RX complete callback */
-	if (spi_obj->Index == 0) {
+	if (spi_obj->Index == SPI_SLAVE_INDEX) {
 		SlaveRxDone = 1;
 	} else {
 		MasterRxDone = 1;
@@ -119,8 +145,8 @@ u32 Ssi_dma_rx_irq(void *Data)
 
 static void spi_board_init(void)
 {
-	RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
-	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_SPIS, APBPeriph_SPIS_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_SPIM, APBPeriph_SPIM_CLOCK, ENABLE);
 
 	/* SPI1 is as Master */
 	Pinmux_Config(SPI1_MOSI, PINMUX_FUNCTION_SPIM);
@@ -313,11 +339,11 @@ void spi_dma_task(void)
 	spi_driver_init();
 
 	/* SPI1 as Master */
-	spi_master.Index = 0x1;
+	spi_master.Index = SPI_MASTER_INDEX;
 	spi_master.spi_dev = SPI_DEV_TABLE[spi_master.Index].SPIx;
 
 	/* SPI0 as Slave */
-	spi_slave.Index = 0x0;
+	spi_slave.Index = SPI_SLAVE_INDEX;
 	spi_slave.spi_dev = SPI_DEV_TABLE[spi_slave.Index].SPIx;
 
 	_memset(MasterTxBuf, 0, TEST_BUF_SIZE);

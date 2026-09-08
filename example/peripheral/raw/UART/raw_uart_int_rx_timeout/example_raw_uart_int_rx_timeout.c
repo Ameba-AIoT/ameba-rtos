@@ -22,12 +22,12 @@ char rx_buf[SRX_BUF_SZ] = {0};
 volatile u32 tx_busy = 0;
 volatile u32 rx_done = 0;
 
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F) || defined (CONFIG_AMEBAPRO3)
 const u8 UART_TX_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_TXD,
 	PINMUX_FUNCTION_UART1_TXD,
 	PINMUX_FUNCTION_UART2_TXD,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_AMEBAPRO3)
 	PINMUX_FUNCTION_UART3_TXD
 #endif
 };
@@ -36,7 +36,7 @@ const u8 UART_RX_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_RXD,
 	PINMUX_FUNCTION_UART1_RXD,
 	PINMUX_FUNCTION_UART2_RXD,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_AMEBAPRO3)
 	PINMUX_FUNCTION_UART3_RXD
 #endif
 };
@@ -73,10 +73,54 @@ void uart_send_string_done(void)
 void uart_recv_string_done(void)
 {
 	rx_done = 1;
+#if defined (CONFIG_AMEBAPRO3)
+	UART_INTConfig(UART_DEV, RUART_BIT_ERBI | RUART_BIT_ELSI, DISABLE);
+#else
 	UART_INTConfig(UART_DEV, RUART_BIT_EMDI | RUART_BIT_ERBI | RUART_BIT_ETOI, DISABLE);
+#endif
 }
 
 u32 uart_irq(void *data)
+#if defined (CONFIG_AMEBAPRO3)
+{
+	UART_OBJ *uart_obj = (UART_OBJ *) data;
+	u32 reg_lsr;
+	u32 TransCnt = 0;
+
+	reg_lsr = UART_LineStatusGet(UART_DEV);
+
+	//rx full & rx timeout INT
+	if (UART_Readable(UART_DEV)) {
+		TransCnt = UART_ReceiveDataTO(UART_DEV, (u8 *)uart_obj->pRxBuf, uart_obj->RxCount, 1);
+		uart_obj->RxCount -= TransCnt;
+		uart_obj->pRxBuf += TransCnt;
+
+		if (0 == uart_obj->RxCount) {
+			uart_recv_string_done();
+		}
+	}
+
+	/* rx error */
+	if (reg_lsr & UART_ALL_RX_ERR) {
+		RTK_LOGI(NOTAG, "%s: LSR interrupt\n", __FUNCTION__);
+	}
+
+	/* tx FIFO empty */
+	if ((reg_lsr & RUART_BIT_TX_EMPTY)) {
+		if (tx_busy) {
+			TransCnt = UART_SendDataTO(UART_DEV, uart_obj->pTxBuf, uart_obj->TxCount, 1);
+			uart_obj->TxCount -= TransCnt;
+			uart_obj->pTxBuf += TransCnt;
+
+			if (0 == uart_obj->TxCount) {
+				uart_send_string_done();
+			}
+		}
+	}
+
+	return 0;
+}
+#else
 {
 	UART_OBJ *uart_obj = (UART_OBJ *) data;
 	u32 reg_lsr;
@@ -137,7 +181,12 @@ u32 uart_int_recv(UART_OBJ *uart_obj, u8 *pstr, u32 len, u32 timeout_ms, void *f
 
 	uart_obj->pRxBuf = pstr;
 	uart_obj->RxCount = len;
+
+#if defined (CONFIG_AMEBAPRO3)
+	UART_INTConfig(UART_DEV, RUART_BIT_ERBI | RUART_BIT_ELSI, ENABLE);
+#else
 	UART_INTConfig(UART_DEV, RUART_BIT_EMDI | RUART_BIT_ERBI | RUART_BIT_ETOI, ENABLE);
+#endif
 
 	SYSTIMER_Init();
 	startcount = SYSTIMER_TickGet();
@@ -148,7 +197,11 @@ u32 uart_int_recv(UART_OBJ *uart_obj, u8 *pstr, u32 len, u32 timeout_ms, void *f
 			if (rx_done != 1) {
 				/*time out*/
 				if (SYSTIMER_GetPassTime(startcount) > timeout_ms) {
+#if defined (CONFIG_AMEBAPRO3)
+					UART_INTConfig(UART_DEV, RUART_BIT_ERBI | RUART_BIT_ELSI, DISABLE);
+#else
 					UART_INTConfig(UART_DEV, (RUART_BIT_ERBI | RUART_BIT_ELSI | RUART_BIT_ETOI), DISABLE);
+#endif
 					UART_ClearRxFifo(UART_DEV);
 					break;
 				}
@@ -205,7 +258,7 @@ void uart_rx_timeout_demo(void)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, PINMUX_FUNCTION_UART);
 	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART);
-#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
+#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F) || defined (CONFIG_AMEBAPRO3)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, UART_TX_FID[uart_idx]);
 	Pinmux_Config(UART_RX, UART_RX_FID[uart_idx]);

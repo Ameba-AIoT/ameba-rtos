@@ -18,11 +18,27 @@
 
 /* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
+
+#if defined (CONFIG_AMEBAPRO3)
+#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPIM1
+#define APBPeriph_SPIM 			APBPeriph_SPIM1
+#define APBPeriph_SPIM_CLOCK 	APBPeriph_SPIM1_CLOCK
+#define SPI_MASTER_INDEX		1
+
+#else
+
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI0
 #else
 #define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI
 #endif
+
+#define APBPeriph_SPIM 			APBPeriph_SPI0
+#define APBPeriph_SPIM_CLOCK 	APBPeriph_SPI0_CLOCK
+#define SPI_MASTER_INDEX		0
+
+#endif
+
 #endif
 
 #define SSI_DEBUG_ENABLE	0
@@ -229,10 +245,10 @@ void spi_multiblock_task(void)
 	Pinmux_Swdoff();
 
 	int i = 0;
-	int spi_index = 0;
+	int spi_index = SPI_MASTER_INDEX;
 	SSI_InitTypeDef SSI_InitStruct;
 
-	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_SPIM, APBPeriph_SPIM_CLOCK, ENABLE);
 	Pinmux_Config(SPI_MOSI, PINMUX_FUNCTION_SPIM);
 	Pinmux_Config(SPI_MISO, PINMUX_FUNCTION_SPIM);
 	Pinmux_Config(SPI_SCLK, PINMUX_FUNCTION_SPIM);

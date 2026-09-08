@@ -277,7 +277,7 @@ void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, co
 		 * suspend we print unlocked and accept possible interleaving. Snapshot
 		 * the take so give mirrors it exactly (no leak if state flips on SMP). */
 		u32 mutex_taken = 0;
-		if ((!in_isr) && (log_mutex != NULL) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING)) {
+		if ((!in_isr) && (log_mutex != NULL) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (rtos_get_critical_state() == 0)) {
 			mutex_taken = (rtos_mutex_take(log_mutex, RTOS_MAX_DELAY) == RTK_SUCCESS);
 		}
 #endif
@@ -310,7 +310,7 @@ void rtk_log_write_nano(rtk_log_level_t level, const char *tag, const char lette
 		 * suspend we print unlocked and accept possible interleaving. Snapshot
 		 * the take so give mirrors it exactly (no leak if state flips on SMP). */
 		u32 mutex_taken = 0;
-		if ((!in_isr) && (log_mutex != NULL) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING)) {
+		if ((!in_isr) && (log_mutex != NULL) && (rtos_sched_get_state() == RTOS_SCHED_RUNNING) && (rtos_get_critical_state() == 0)) {
 			mutex_taken = (rtos_mutex_take(log_mutex, RTOS_MAX_DELAY) == RTK_SUCCESS);
 		}
 #endif

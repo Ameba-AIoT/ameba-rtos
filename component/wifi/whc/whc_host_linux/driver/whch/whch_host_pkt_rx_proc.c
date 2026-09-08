@@ -1193,22 +1193,7 @@ void whc_host_recv_wlanhdr_to_ethhdr(union recv_frame *precvframe)
 	memcpy(&eth_type, ptr + rmv_len, 2);
 	eth_type = htons((unsigned short)eth_type); //pattrib->ether_type
 	pattrib->eth_type = eth_type;
-#ifdef CONFIG_MP_INCLUDED
-	if (rtw_halphy_shareinfo.phl_drv_mode == RTW_DRV_MODE_MP) {
-		ptr += rmv_len;
-		*ptr = 0x87;
-		*(ptr + 1) = 0x12;
-
-		eth_type = 0x8712;
-		// append rx status for mp test packets
-		ptr = whc_host_recv_recvframe_pull(precvframe, (rmv_len - sizeof(struct ethhdr) + 2) - 24);
-		memcpy(ptr, precvframe->u.hdr.rx_head, 24);
-		ptr += 24;
-	} else
-#endif
-	{
-		ptr = whc_host_recv_recvframe_pull(precvframe, (rmv_len - sizeof(struct ethhdr) + (bsnaphdr ? 2 : 0)));
-	}
+	ptr = whc_host_recv_recvframe_pull(precvframe, (rmv_len - sizeof(struct ethhdr) + (bsnaphdr ? 2 : 0)));
 
 	memcpy(ptr, pattrib->dst, ETH_ALEN);
 

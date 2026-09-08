@@ -1,4 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0
+# NOTE: no 'mainmenu' here on purpose — this file must be both usable standalone
+# (out-of-tree host: kconfiglib menuconfig) and 'source'-able into a kernel/SDK
+# Kconfig tree (IPC host). A sourced Kconfig must not declare a mainmenu.
+
 config WIFI_RTK_CFG80211_FULLMAC
 	tristate "Fullmac for wifi driver"
 	select CFG80211_DEFAULT_PS
@@ -9,3 +13,106 @@ config WIFI_RTK_CFG80211_FULLMAC
 	help
 	  Realtek wifi driver.
 	  802.11 a/b/g/n/ac/ax AXI wireless network adapter
+
+menu "WHC host options"
+
+choice
+	prompt "Host controller interface (HCI)"
+	default WHC_HCI_IPC
+	help
+	  How this host talks to the Realtek device. IPC is the same-chip
+	  (in kernel-tree) path; SDIO/SPI/USB are external out-of-tree hosts.
+
+config WHC_HCI_IPC
+	bool "IPC"
+
+config WHC_HCI_SDIO
+	bool "SDIO"
+
+config WHC_HCI_SPI
+	bool "SPI"
+
+config WHC_HCI_USB
+	bool "USB"
+
+endchoice
+
+choice
+	prompt "Target IC"
+	depends on !WHC_HCI_IPC
+	default AMEBADPLUS
+	help
+	  The Realtek device this host is paired with. Availability depends
+	  on the selected interface.
+
+config AMEBADPLUS
+	bool "AmebaDplus (RTL8721Dx)"
+
+config AMEBAGREEN2
+	bool "AmebaGreen2"
+
+config AMEBALITE
+	bool "AmebaLite"
+	depends on WHC_HCI_SPI
+
+config AMEBAX
+	bool "AmebaX (RTL8720F)"
+	depends on WHC_HCI_SDIO || WHC_HCI_SPI
+
+endchoice
+
+config WHC_WIFI_API_PATH
+	bool "WPAoH host with cfg80211 (WIFI API path)"
+	default y
+	help
+	  y: WPAoH host, supplicant runs on the host with cfg80211.
+	  n: WPAoD host, supplicant runs on the device (no cfg80211).
+
+config WHC_CMD_PATH
+	bool "WHC command path"
+	default y
+
+config FW_DOWNLOAD
+	bool "Firmware download over the host interface"
+	depends on (WHC_HCI_SDIO && (AMEBAGREEN2 || AMEBAX)) || (WHC_HCI_USB && AMEBAGREEN2)
+	help
+	  Download device firmware from the host over the data interface.
+	  Only supported on AmebaGreen2/AmebaX (SDIO) and AmebaGreen2 (USB).
+
+comment "Features"
+
+config NAN
+	bool "NAN (Wi-Fi Aware)"
+
+config P2P
+	bool "Wi-Fi Direct (P2P)"
+
+config MCC
+	bool "Multi-channel concurrency (MCC)"
+
+config BT_INIC
+	bool "Bluetooth over the host interface"
+	depends on !WHC_HCI_IPC
+	help
+	  Pulls the matching rtb_spi/rtb_sdio/rtb_usb host glue into the build
+
+config IEEE80211R
+	bool "802.11r fast BSS transition"
+	depends on !WHC_HCI_IPC
+
+config SUPPLICANT_SME
+	bool "Supplicant-side SME"
+
+config RMESH
+	bool "Realtek mesh (RMESH)"
+	depends on !WHC_HCI_IPC
+
+config WHC_HOST_RTW_CLI
+	bool "RTW CLI on the host"
+	depends on !WHC_HCI_IPC
+
+config WHCH
+	bool "WHCH"
+	depends on !WHC_HCI_IPC
+
+endmenu

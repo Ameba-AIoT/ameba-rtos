@@ -105,8 +105,14 @@ typedef struct {
 	 * @brief Called to handle class-specific SETUP requests.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @note   The handler shall validate every field of the request and return non-zero for
+	 *         any request it does not support, which makes the core STALL EP0.
 	 * @param[in] req Pointer to the setup request packet.
-	 * @param[out] buf Pointer to a buffer for data stage of control transfers.
+	 * @param[out] buf Pointer to a buffer for data stage of control transfers. For a D2H
+	 *         request it is the zero-initialized response window, min(wLength, EP0 buffer
+	 *         size) bytes, and all of it is sent to the host when the handler returns 0.
+	 *         For an H2D request it holds the received payload, and it is NULL if the
+	 *         request has no data stage.
 	 * @return 0 on success, non-zero on failure.
 	 */
 	int (*setup)(usb_setup_req_t *req, u8 *buf);
@@ -238,14 +244,6 @@ int usbd_composite_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_ep_
  * @return 0 on success, non-zero on failure.
  */
 int usbd_vendor_deinit(void);
-
-/**
- * @brief Transmits data to the host over the CTRL endpoint.
- * @param[in] buf: Pointer to the data buffer to be transmitted.
- * @param[in] len: Length of the data in bytes.
- * @return 0 on success, non-zero on failure.
- */
-int usbd_vendor_transmit_ctrl_data(u8 *buf, u32 len);
 
 /**
  * @brief Transmits data to the host over the BULK IN endpoint.

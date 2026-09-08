@@ -94,7 +94,7 @@ retry:
  *         three transports are mutually exclusive per build, SIZE_RX_DESC resolves
  *         to the active transport's value.
  * @param  len: payload bytes to copy for the API path; each transport knows
- *         its own length (SDIO pkt_len / SPI SPI_BUFSZ / UART payload_len).
+ *         its own length (SDIO: RX0_REQ_LEN register / SPI: SPI_BUFSZ / UART: payload_len).
  * @return none.
  */
 void whc_host_recv_dispatch(u8 *buf, u32 len)
@@ -174,3 +174,19 @@ void whc_host_recv_dispatch(u8 *buf, u32 len)
 
 	rtos_mem_free(buf);
 }
+
+#if !defined(CONFIG_WHC_WIFI_API_PATH)
+/* for case: dev with wpa, but tcpip in host only */
+void wifi_dhcp_success_indicate(void)
+{
+	return;
+}
+
+s32 wifi_ap_get_connected_clients(struct rtw_client_list *client_list_buffer)
+{
+	if (client_list_buffer) {
+		client_list_buffer->count = 0;
+	}
+	return RTK_SUCCESS;
+}
+#endif

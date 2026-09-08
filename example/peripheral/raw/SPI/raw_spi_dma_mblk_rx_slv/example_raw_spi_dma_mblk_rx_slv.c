@@ -18,13 +18,29 @@
 
 /* compatible pinmux_funcid_name with RTL872xD */
 #ifndef CONFIG_AMEBAD
+
+#if defined (CONFIG_AMEBAPRO3)
+#define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPIS0
+#define APBPeriph_SPIS 			APBPeriph_SPIS0
+#define APBPeriph_SPIS_CLOCK 	APBPeriph_SPIS0_CLOCK
+#define SPI_SLAVE_INDEX			2
+
+#else
+
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RTL8720F)
 //#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI1
 #define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI0
 #else
-//#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI
-#define PINMUX_FUNCTION_SPIS	PINMUX_FUNCTION_SPI
+#define PINMUX_FUNCTION_SPIS    PINMUX_FUNCTION_SPI
 #endif
+
+//#define PINMUX_FUNCTION_SPIM	PINMUX_FUNCTION_SPI
+#define APBPeriph_SPIS 			APBPeriph_SPI0
+#define APBPeriph_SPIS_CLOCK 	APBPeriph_SPI0_CLOCK
+#define SPI_SLAVE_INDEX			0
+
+#endif
+
 #endif
 
 #define DataFrameSize	DFS_8_BITS
@@ -253,10 +269,10 @@ void spi_multiblock_task(void)
 	MultiRxDone  = 0;
 
 	/* configure SPI0 as slave RX under DMA mode */
-	spi_slave.Index = 0x0;
+	spi_slave.Index = SPI_SLAVE_INDEX;
 	spi_slave.spi_dev = SPI_DEV_TABLE[spi_slave.Index].SPIx;
 
-	RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_SPIS, APBPeriph_SPIS_CLOCK, ENABLE);
 	Pinmux_Config(SPI_MOSI, PINMUX_FUNCTION_SPIS);
 	Pinmux_Config(SPI_MISO, PINMUX_FUNCTION_SPIS);
 	Pinmux_Config(SPI_SCLK, PINMUX_FUNCTION_SPIS);

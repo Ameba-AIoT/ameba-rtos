@@ -189,22 +189,16 @@ static void inic_wifi_deinit(void)
 	usbd_inic_app_ep_t *ep;
 
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
+	usb_os_mfree((void *)ep->buf);
+	ep->buf = NULL;
 
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
+	usb_os_mfree((void *)ep->buf);
+	ep->buf = NULL;
 
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)];
-	if (ep->buf != NULL) {
-		usb_os_mfree(ep->buf);
-		ep->buf = NULL;
-	}
+	usb_os_mfree((void *)ep->buf);
+	ep->buf = NULL;
 }
 
 static int inic_wifi_init(void)
@@ -245,12 +239,12 @@ static int inic_wifi_init(void)
 
 wifi_init_clean_ep4_bulk_out_buf_exit:
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)];
-	usb_os_mfree(ep->buf);
+	usb_os_mfree((void *)ep->buf);
 	ep->buf = NULL;
 
 wifi_init_clean_ep3_bulk_in_buf_exit:
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)];
-	usb_os_mfree(ep->buf);
+	usb_os_mfree((void *)ep->buf);
 	ep->buf = NULL;
 
 wifi_init_exit:
@@ -348,7 +342,7 @@ static int inic_cb_received(usbd_inic_ep_t *out_ep, u32 len)
 		// Loopback with EP3
 		ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN);
 		ep_in = &iapp->in_ep[ep_num];
-		usb_os_memcpy((void *)ep_in->buf, (void *)ep->xfer_buf, len);
+		usb_os_memcpy((void *)ep_in->buf, (const void *)ep->xfer_buf, len);
 		ep_in->buf_len = len;
 		rtos_sema_give(inic_wifi_bulk_in_sema);
 		break;

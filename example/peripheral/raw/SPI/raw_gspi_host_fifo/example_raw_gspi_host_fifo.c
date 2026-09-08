@@ -72,9 +72,20 @@ static u8 gspi_rxbuf[GSPI_FIFO_BUF_SIZE(RX_MAX_LEN)] ALIGNMTO(32);
 static u32 tp_tx_ok;
 static u32 tp_tx_nobd;
 static u32 tp_tx_err;
-static u32 tp_rx_bytes;
+/* 64-bit: at 715KB/s a u32 byte counter wraps every ~98 minutes, which used to
+ * make the throughput figure collapse to 0 and then creep back up. */
+static u64 tp_rx_bytes;
 static u32 tp_rx_ok;
 static u32 tp_rx_err;
+/* Loss accounting. The Device numbers its packets 0,1,2,... in a u16, so the
+ * sequence wraps every 65536 packets and every comparison must be done in u16
+ * arithmetic. A forward gap counts the packets that never arrived; a backward
+ * gap means a duplicate or a reordered packet. */
+static u32 tp_rx_lost;
+static u32 tp_rx_reorder;
+static u32 tp_rx_desync;
+static u8  tp_seq_valid;
+static u16 tp_seq_next;
 
 /* CRC16-CCITT, same polynomial and seed as mbed_sdio_device_tp. */
 static u16 crc16_ccitt(const u8 *data, u32 len)
@@ -160,8 +171,33 @@ static u32 tp_validate_packet(const u8 *pdata, u32 available)
 	calc_crc = crc16_ccitt(pdata, TP_PKT_HEADER_SIZE + hdr->data_len);
 	if (recv_crc == calc_crc) {
 		tp_rx_ok++;
+		/* Only a CRC-good header carries a trustworthy sequence number. */
+		if (tp_seq_valid) {
+			u16 gap = (u16)(hdr->seq - tp_seq_next);
+
+			if (gap != 0) {
+				if (gap < 0x8000u) {
+					tp_rx_lost += gap;
+				} else {
+					/* Backward sequence. gap == 0xFFFF means this packet is a
+					 * duplicate of the previous one, i.e. the same FIFO content
+					 * was read twice; anything else is a real reorder or a
+					 * Device-side sequence restart. Logged because the two have
+					 * very different causes. */
+					tp_rx_reorder++;
+					RTK_LOGW(TAG, "seq back: got %d expected %d gap 0x%04x%s\n",
+							 hdr->seq, tp_seq_next, gap,
+							 (gap == 0xFFFFu) ? " (duplicate)" : "");
+				}
+			}
+		}
+		tp_seq_valid = 1;
+		tp_seq_next = (u16)(hdr->seq + 1);
 	} else {
 		tp_rx_err++;
+		/* The sequence number cannot be trusted, so assume this was the packet
+		 * that was expected: charge it to CRC, not to loss. */
+		tp_seq_next++;
 	}
 	return pkt_size;
 }
@@ -190,7 +226,7 @@ static void tp_drain_rx(void)
 			}
 			break;
 		}
-		if (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, &sts) != GSPI_OK) {
+		if (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, &sts) != RTK_SUCCESS) {
 			tp_rx_err++;
 			break;
 		}
@@ -201,6 +237,12 @@ static void tp_drain_rx(void)
 		while (off < pending) {
 			consumed = tp_validate_packet(&gspi_rxbuf[GSPI_CMD_LEN + off], pending - off);
 			if (consumed == 0) {
+				/* RX_REQ_LEN is 8-byte aligned, so up to 7 trailing bytes can be
+				 * alignment padding. More than that is a real desync: the parser
+				 * has lost the packet boundary and drops the rest of this read. */
+				if ((pending - off) >= 8) {
+					tp_rx_desync++;
+				}
 				break;
 			}
 			off += consumed;
@@ -214,7 +256,7 @@ static int gspi_host_link_up(void)
 	GSPI_InitTypeDef init;
 	GSPI_StatusTypeDef sts;
 	u32 pending;
-	u8 cpu_ind;
+	u32 cpu_ind;
 
 	GSPI_StructInit(&init);
 	init.GSPI_Index = 0;
@@ -226,7 +268,7 @@ static int gspi_host_link_up(void)
 	init.GSPI_ClkFreqInit = GSPI_FREQ_ACTIVATE;
 	init.GSPI_DmaEn = GSPI_USE_DMA;
 	init.GSPI_DmaThreshold = GSPI_DMA_THRESHOLD;
-	if (GSPI_Init(&gspi, &init) != GSPI_OK) {
+	if (GSPI_Init(&gspi, &init) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "GSPI_Init failed\n");
 		return -1;
 	}
@@ -235,17 +277,18 @@ static int gspi_host_link_up(void)
 	 * its SPDIO backend before the first bus transaction. */
 	rtos_time_delay_ms(3000);
 
-	if (GSPI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != GSPI_OK) {
+	if (GSPI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != RTK_SUCCESS) {
 		return -1;
 	}
-	cpu_ind = GSPI_ReadReg8(&gspi, GSPI_REG_CPU_IND, NULL);
+	/* CPU_RDY is bit24 of the 0x84 word in the AUTO_GEN view. */
+	cpu_ind = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL);
 
 	/* Clear, then unmask, mirroring raw_sdio_host_tp's ordering. */
 	GSPI_INTClear(&gspi, 0xFFFFFFFF);
 	GSPI_WriteReg32(&gspi, GSPI_REG_RX_AGG, 0, NULL);
-	GSPI_INTConfig(&gspi, GSPI_BIT_RX_REQUEST | GSPI_BIT_AVAL_INT | GSPI_BIT_CPWM1_INT, ENABLE);
+	GSPI_INTConfig(&gspi, GSPI_BIT_RX_REQUEST | GSPI_BIT_TXFIFO_AVAL_INT | GSPI_BIT_CPWM1_INT, ENABLE);
 
-	if (tp_tx_packet((const u8 *)HELLO_DEVICE_MSG, sizeof(HELLO_DEVICE_MSG) - 1) != GSPI_OK) {
+	if (tp_tx_packet((const u8 *)HELLO_DEVICE_MSG, sizeof(HELLO_DEVICE_MSG) - 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "handshake failed: TX write\n");
 		return -1;
 	}
@@ -257,7 +300,7 @@ static int gspi_host_link_up(void)
 			rtos_time_delay_ms(1);
 		}
 	}
-	if ((pending == 0) || (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, &sts) != GSPI_OK)) {
+	if ((pending == 0) || (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, &sts) != RTK_SUCCESS)) {
 		RTK_LOGE(TAG, "handshake failed: no reply\n");
 		return -1;
 	}
@@ -267,7 +310,7 @@ static int gspi_host_link_up(void)
 	}
 
 	RTK_LOGI(TAG, "link up: CPU_RDY=%d HIMR=0x%08x dma=%d, handshake OK\n",
-			 cpu_ind & GSPI_BIT_CPU_RDY, GSPI_GetINTMask(&gspi), GSPI_DmaEnabled(&gspi));
+			 (cpu_ind & GSPI_BIT_SYNC_CPU_RDY_IND) ? 1 : 0, GSPI_GetINTMask(&gspi), GSPI_DmaEnabled(&gspi));
 	return 0;
 }
 
@@ -275,6 +318,7 @@ static void gspi_host_task(void)
 {
 	u32 start_ms;
 	u32 last_stats_ms;
+	u32 last_stats_bytes = 0;
 	u32 elapsed = 0;
 #if (TP_TX_PAYLOAD_SIZE > 0)
 	static u8 tp_txpkt[TP_PKT_HEADER_SIZE + TP_MAX_PAYLOAD_SIZE + TP_PKT_CRC_SIZE];
@@ -318,10 +362,10 @@ static void gspi_host_task(void)
 		{
 			tp_build_packet(tp_txpkt, seq, TP_TX_PAYLOAD_SIZE);
 			ret = tp_tx_packet(tp_txpkt, TP_PKT_HEADER_SIZE + TP_TX_PAYLOAD_SIZE + TP_PKT_CRC_SIZE);
-			if (ret == GSPI_OK) {
+			if (ret == RTK_SUCCESS) {
 				tp_tx_ok++;
 				seq++;
-			} else if (ret == GSPI_NO_TXBD) {
+			} else if (ret == -RTK_ERR_BUSY) {
 				tp_tx_nobd++;   /* Device back-pressure, retry next round */
 			} else {
 				tp_tx_err++;
@@ -337,17 +381,28 @@ static void gspi_host_task(void)
 
 		if ((now - last_stats_ms) >= STATS_INTERVAL_MS) {
 			u32 secs = (now - start_ms) / 1000;
+			u32 dms = now - last_stats_ms;
+			/* Interval rate, not a cumulative average: the average hides a dip
+			 * and takes the whole run to recover from one. The subtraction is
+			 * done on the low 32 bits, which is correct modulo 2^32 as long as
+			 * one interval moves less than 4GiB. */
+			u32 dbytes = (u32)tp_rx_bytes - last_stats_bytes;
+			u32 kbps = dms ? (dbytes / 1024 * 1000 / dms) : 0;
 
-			RTK_LOGI(TAG, "[%ds] TX ok:%d nobd:%d err:%d | RX pkt ok:%d err:%d bytes:%d | %dKB/s\n",
-					 secs, tp_tx_ok, tp_tx_nobd, tp_tx_err, tp_rx_ok, tp_rx_err, tp_rx_bytes,
-					 secs ? (tp_rx_bytes / secs / 1024) : 0);
+			RTK_LOGI(TAG, "[%ds] TX ok:%d nobd:%d err:%d | RX ok:%d err:%d lost:%d reord:%d desync:%d | %dKB/s tot:%dMB\n",
+					 secs, tp_tx_ok, tp_tx_nobd, tp_tx_err, tp_rx_ok, tp_rx_err,
+					 tp_rx_lost, tp_rx_reorder, tp_rx_desync,
+					 kbps, (u32)(tp_rx_bytes >> 20));
 			last_stats_ms = now;
+			last_stats_bytes = (u32)tp_rx_bytes;
 		}
 	}
 
-	RTK_LOGI(TAG, "TP test done @%dms: TX ok:%d nobd:%d err:%d | RX pkt ok:%d err:%d\n",
-			 elapsed, tp_tx_ok, tp_tx_nobd, tp_tx_err, tp_rx_ok, tp_rx_err);
-	if (tp_rx_err == 0 && tp_tx_err == 0 && tp_rx_ok > 0) {
+	RTK_LOGI(TAG, "TP test done @%dms: TX ok:%d nobd:%d err:%d | RX ok:%d err:%d lost:%d reord:%d desync:%d tot:%dMB\n",
+			 elapsed, tp_tx_ok, tp_tx_nobd, tp_tx_err, tp_rx_ok, tp_rx_err,
+			 tp_rx_lost, tp_rx_reorder, tp_rx_desync, (u32)(tp_rx_bytes >> 20));
+	if (tp_rx_err == 0 && tp_tx_err == 0 && tp_rx_ok > 0 &&
+		tp_rx_lost == 0 && tp_rx_reorder == 0 && tp_rx_desync == 0) {
 		RTK_LOGI(TAG, "GSPI Demo: success\n");
 	} else {
 		RTK_LOGE(TAG, "GSPI Demo: fail\n");

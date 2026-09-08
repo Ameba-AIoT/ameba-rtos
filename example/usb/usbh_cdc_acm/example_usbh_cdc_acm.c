@@ -75,10 +75,10 @@ static void cdc_acm_request_test(void);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "ACM";
 
-static u8 cdc_acm_loopback_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 cdc_acm_loopback_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] USB_DMA_ALIGNED;
+static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] USB_DMA_ALIGNED;
 #if CONFIG_USBH_CDC_ACM_NOTIFY
-static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] USB_DMA_ALIGNED;
 static rtos_sema_t cdc_acm_notify_sema;
 static u8 cdc_acm_notify_status;
 #endif
@@ -99,7 +99,7 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = CONFIG_USBH_CDC_ACM_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = CONFIG_USBH_CDC_ACM_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
 	.nptx_fifo_depth = 256,
@@ -261,7 +261,7 @@ static void example_usbh_bulk_tx_thread(void *param)
 		while (1) {
 #endif
 			for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT;) {
-				memset(cdc_acm_loopback_tx_buf, (u8)(cdc_acm_loopback_tx_idx & 0xFF), USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+				usb_os_memset((void *)cdc_acm_loopback_tx_buf, (u8)(cdc_acm_loopback_tx_idx & 0xFF), USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 				*((u32 *)cdc_acm_loopback_tx_buf) = cdc_acm_loopback_tx_idx;
 				if (!cdc_acm_is_ready) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Device disconnect\n");
@@ -302,7 +302,7 @@ static void example_usbh_bulk_rx_thread(void *param)
 		while (1) {
 #endif
 			for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT;) {
-				memset(cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+				usb_os_memset((void *)cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 				if (!cdc_acm_is_ready) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Device disconnect\n");
 					return;
@@ -368,7 +368,7 @@ static void cdc_acm_loopback_test(void)
 	u8 j = 0;
 #endif
 
-	memset(cdc_acm_loopback_tx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+	usb_os_memset((void *)cdc_acm_loopback_tx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for device attach\n");
 
@@ -383,10 +383,10 @@ static void cdc_acm_loopback_test(void)
 
 #if CONFIG_USBH_CDC_ACM_STRESS_TEST
 	while (1) {
-		memset(cdc_acm_loopback_tx_buf, j, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+		usb_os_memset((void *)cdc_acm_loopback_tx_buf, j, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 #endif
 		for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT; i++) {
-			memset(cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+			usb_os_memset((void *)cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 			if (!cdc_acm_is_ready) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Device disconnect\n");
 				return;

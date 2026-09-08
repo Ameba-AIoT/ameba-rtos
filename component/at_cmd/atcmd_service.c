@@ -121,123 +121,96 @@ char global_buf[SMALL_BUF];
 at_write out_buffer;
 
 /**
- * @brief Output format strings, like printf.
- * @param fmt: format string.
- * @return The length of the output string or error code.
- * @retval -1: encoding error or format string is tool long.
- * @retval others: The length of the output string.
+ * @brief Common implementation for at_printf / at_printf_indicate.
+ *
+ * Formats the message into a buffer starting at offset @prefix_len,
+ * writes the prefix (if any) at the front, then outputs via out_buffer
+ * or falls back to UART.
+ *
+ * @param prefix     Prefix string (e.g. "[$]"), or NULL for no prefix.
+ * @param prefix_len Length of prefix in bytes (0 when prefix is NULL).
+ * @param fmt        Format string.
+ * @param ap         Variadic argument list (caller must va_start / va_end).
+ * @return Length of the message (excluding prefix), or -1 on error.
  */
-int at_printf(const char *fmt, ...)
+static int at_printf_va(const char *prefix, int prefix_len, const char *fmt, va_list ap)
 {
 	int ret = -1;
 	int len_fmt = 0;
 	char *buf;
+	va_list ap2;
 
-	at_printf_lock();
+	va_copy(ap2, ap);   /* save a copy before ap is consumed by the first format call */
 
-	va_list ap;
-	va_start(ap, fmt);
-	len_fmt = DiagVSNprintf(global_buf, SMALL_BUF, fmt, ap);
-	va_end(ap);
+	/* Format into global_buf starting after the prefix area */
+	len_fmt = DiagVSNprintf(global_buf + prefix_len, SMALL_BUF - prefix_len, fmt, ap);
 
 	if (len_fmt < 0) {
+		va_end(ap2);
 		goto fail;
 	}
 
-	if (len_fmt < SMALL_BUF) {
+	if (len_fmt < SMALL_BUF - prefix_len) {
 		buf = global_buf;
-	} else if (len_fmt < MAX_BUF_LEN) {
-		buf = (char *)rtos_mem_malloc(len_fmt + 1);
+		va_end(ap2);
+	} else if (len_fmt < MAX_BUF_LEN - prefix_len) {
+		buf = (char *)rtos_mem_malloc(len_fmt + prefix_len + 1);
 		if (buf == NULL) {
+			va_end(ap2);
 			goto fail;
 		}
-
-		va_start(ap, fmt);
-		DiagVSNprintf(buf, len_fmt + 1, fmt, ap);
-		va_end(ap);
+		DiagVSNprintf(buf + prefix_len, len_fmt + 1, fmt, ap2);
+		va_end(ap2);
 	} else {
+		va_end(ap2);
 		RTK_LOGE(TAG, "print string len %d exceed max buffer length : %d\n", (int)len_fmt, MAX_BUF_LEN);
 		goto fail;
+	}
+
+	if (prefix_len > 0) {
+		_memcpy(buf, prefix, prefix_len);
 	}
 
 	ret = len_fmt;
 
 	if (out_buffer) {
-		out_buffer(buf, len_fmt);
+		out_buffer(buf, len_fmt + prefix_len);
 	} else {
-		/* no host channel registered — fall back to UART so output is
-		 * still visible on the serial console (e.g. before logon). */
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s", buf);
 	}
 
-	if (len_fmt >= SMALL_BUF) {
+	if (len_fmt >= SMALL_BUF - prefix_len) {
 		rtos_mem_free(buf);
 	}
 
 fail:
+	return ret;
+}
+
+/**
+ * @brief Output format strings, like printf.
+ */
+int at_printf(const char *fmt, ...)
+{
+	at_printf_lock();
+	va_list ap;
+	va_start(ap, fmt);
+	int ret = at_printf_va(NULL, 0, fmt, ap);
+	va_end(ap);
 	at_printf_unlock();
 	return ret;
 }
 
 /**
- * @brief Output format strings reported by system.
- * @param fmt: format string.
- * @return The length of the output string or error code.
- * @retval -1: encoding error or format string is tool long.
- * @retval others: The length of the output string.
+ * @brief Output format strings reported by system (prepends "[$]" prefix).
  */
 int at_printf_indicate(const char *fmt, ...)
 {
-	int ret = -1;
-	int len_fmt = 0;
-	char *buf;
-
 	at_printf_lock();
-
 	va_list ap;
 	va_start(ap, fmt);
-	len_fmt = DiagVSNprintf(global_buf, SMALL_BUF, fmt, ap);
+	int ret = at_printf_va("[$]", 3, fmt, ap);
 	va_end(ap);
-
-	if (len_fmt < 0) {
-		goto fail;
-	}
-
-	if (len_fmt < SMALL_BUF - 3) {
-		buf = global_buf;
-	} else if (len_fmt < MAX_BUF_LEN - 3) {
-		buf = (char *)rtos_mem_malloc(len_fmt + 4);
-		if (buf == NULL) {
-			goto fail;
-		}
-
-		va_start(ap, fmt);
-		DiagVSNprintf(buf, len_fmt + 4, fmt, ap);
-		va_end(ap);
-	} else {
-		RTK_LOGE(TAG, "print string len %d exceed max buffer length : %d\n", (int)len_fmt, MAX_BUF_LEN - 1);
-		goto fail;
-	}
-
-	ret = len_fmt;
-
-	for (int i = len_fmt; i > 0; i--) {
-		buf[i + 2] = buf[i - 1];
-	}
-
-	buf[0] = '[';
-	buf[1] = '$';
-	buf[2] = ']';
-
-	if (out_buffer) {
-		out_buffer(buf, len_fmt + 3);
-	}
-
-	if (len_fmt >= SMALL_BUF - 3) {
-		rtos_mem_free(buf);
-	}
-
-fail:
 	at_printf_unlock();
 	return ret;
 }

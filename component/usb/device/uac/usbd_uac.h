@@ -10,6 +10,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbd.h"
+#include "usb_ringbuf.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +29,18 @@ extern "C" {
  */
 
 #define USBD_UAC_DEBUG              0    /**< Enable/Disable UAC debug feature. */
+
+/**
+ * @brief SOF-to-data desync threshold before the OUT ISR helper starts appending
+ *        ZLP filler nodes. Prevents readers from stalling when the host silences
+ *        the ISOC stream (e.g. switching tracks).
+ */
+#define USBD_UAC_ISOC_RX_APPEND_ZLP_DIFF_MAX 3U
+
+/**
+ * @brief 2^(n) shorthand used across UAC MPS/ring/interval scaling.
+ */
+#define USBD_UAC_POW2(n)            (1U << (n))
 
 #if USBD_UAC_DEBUG && (USBD_TP_TRACE_DEBUG == 0)
 #error "Please set USBD_TP_TRACE_DEBUG in usbd.h"
@@ -56,11 +69,17 @@ extern "C" {
 /* Default byte width */
 #define USBD_UAC_DEFAULT_BYTE_WIDTH USBD_UAC_BYTE_WIDTH_2 /**< Default audio byte width. */
 
-/* UAC interface count (AC + AS) */
+/* Microphone (record) default channel cnt */
+#define USBD_UAC_IN_DEFAULT_CH_CNT      USBD_UAC_CH_CNT_2 /**< Default microphone channel count (stereo, aligned with n_push). */
 
+/* Microphone (record) default byte width */
+#define USBD_UAC_IN_DEFAULT_BYTE_WIDTH  USBD_UAC_BYTE_WIDTH_2 /**< Default microphone byte width. */
 
+/* Microphone (record) default sampling frequency */
+#define USBD_UAC_IN_DEFAULT_SAMPLING_FREQ   USBD_UAC_SAMPLING_FREQ_16K /**< Default microphone sampling frequency (16 kHz, aligned with n_push). */
 
 /* Sampling frequency */
+#define USBD_UAC_SAMPLING_FREQ_16K  16000U  /**< Audio 16000 sample frequency. */
 #define USBD_UAC_SAMPLING_FREQ_44K  44100U  /**< Audio 44100 sample frequency. */
 #define USBD_UAC_SAMPLING_FREQ_48K  48000U  /**< Audio 48000 sample frequency. */
 #define USBD_UAC_SAMPLING_FREQ_96K  96000U  /**< Audio 96000 sample frequency. */
@@ -171,26 +190,37 @@ typedef struct {
 	void (*sof)(void);
 } usbd_uac_cb_t;
 
-/* Audio data buffer structure */
-typedef struct {
-	u8 *buf_raw;             /**< Pointer to the buffer. */
-	__IO u16 buf_valid_len;  /**< Valid buffer length. */
-} usbd_uac_buf_t;
-
 /* Audio control structure */
 typedef struct {
-	rtos_sema_t uac_isoc_sema; /**< ISOC sema. */
-	usbd_uac_buf_t *buf_array; /**< Pointer to audio buffer array. */
-	u8 *isoc_buf;              /**< Pointer to audio total buffer. */
+	rtos_sema_t uac_isoc_sema;   /**< ISOC sema. */
+	usb_ringbuf_manager_t buf_list; /**< Ring buffer manager for ISOC packets. */
+
+	/*
+	 * used to append ZLP while xfer error/timeout,
+	 * sof_idx counts SOF frames while xfer_continue is on;
+	 * data_idx is bumped by every real xfer done and by every appended ZLP.
+	 * When sof_idx - data_idx >= USBD_UAC_ISOC_RX_APPEND_ZLP_DIFF_MAX we
+	 * synthesise a filler node so consumers do not stall.
+	 */
+	__IO u32 sof_idx;
+	__IO u32 data_idx;
+	__IO u32 xfer_cnt;         /**< Xfer valid count */
+	u16 last_xfer_len;         /**< Last xfer length, used to size appended ZLP */
 
 	u16 isoc_mps;              /**< ISOC maximum packet size. */
-	u16 buf_array_cnt;         /**< Valid audio buffer array count. */
+	u8 buf_list_cnt;           /**< Ring buffer node count. */
+	u8 binterval;              /**< bInterval used for MPS/ring sizing. */
 
 	u8 uac_sema_valid;         /**< ISOC sema created. */
 	__IO u8 read_wait_sema;    /**< The sema is waiting. */
-	__IO u8 isoc_read_idx;     /**< Next read position. */
-	__IO u8 isoc_write_idx;    /**< Next write position. */
 	__IO u8 next_xfer;         /**< Audio transfer continue flag. */
+#if USBD_UAC_DEBUG
+	__IO u32 append_zlp_cnt;   /**< Zero-length filler node inserted from SOF path. */
+	__IO u32 overwrite_cnt;    /**< OUT ISR forced head-drop due to full ring. */
+	__IO u32 append_overwrite_cnt;/**< SOF append forced head-drop due to full ring. */
+	__IO u32 timeout_cnt;      /**< Inter-packet gap exceeded expected step. */
+	u32 last_xfer_tick;        /**< Timestamp (us) of previous xfer, for gap check. */
+#endif
 } usbd_uac_buf_ctrl_t;
 
 /** @} End of Device_UAC_Types group */
@@ -215,14 +245,14 @@ typedef struct {
 	u8 cur_byte_width;                 /**< Current Audio byte width. */
 	u8 cur_clk_valid;                  /**< Current Clock valid flag. */
 	u8 alt_setting;                    /**< Current choose alternate setting. */
+	u8 alt_setting_in;                 /**< Current choose alternate setting for the microphone AS interface. */
 	u8 cur_ch_cnt;                     /**< Current Audio channel count. */
 	u8 cur_mute;                       /**< Current Audio mute value. */
+	u16 cur_volume_in;                 /**< Current microphone (record) volume. */
+	u8 cur_mute_in;                    /**< Current microphone (record) mute value. */
 
 #if USBD_UAC_DEBUG
 	u32 copy_data_len;                 /**< Audio xfer total data length. */
-	__IO u32 isoc_rx_cnt;              /**< Audio xfer rx count. */
-	__IO u32 isoc_timeout_cnt;         /**< Audio timeout count. */
-	__IO u32 isoc_overwrite_cnt;       /**< Audio over write count. */
 	__IO u8  isoc_dump_thread;         /**< Audio dump thread running flag. */
 #endif
 	u8 from_composite;			/**< Flag indicating if part of a composite device. */
@@ -285,20 +315,48 @@ int usbd_uac_start_play(void);
 void usbd_uac_stop_play(void);
 
 /**
+  * @brief  USB audio start record
+  * @retval 0 on success, non-zero on failure.
+  */
+int usbd_uac_start_record(void);
+
+/**
+  * @brief  USB audio stop record
+  */
+void usbd_uac_stop_record(void);
+
+/**
+  * @brief  Push one ISOC IN packet of PCM data into the record TX ring buffer.
+  * @param[in] buf: pointer to the packet payload, no larger than the ISOC IN max packet size.
+  * @param[in] len: length of the packet in bytes.
+  * @retval 0 on success, non-zero on failure.
+  */
+int usbd_uac_transmit_data(u8 *buf, u32 len);
+
+/**
   * @brief  Read the data from the ring_buffer
-  * @param[in] buffer: write buffer handle used to save the data
-  * @param[in] size: allow to write buffer size
-  * @param[in] time_out_ms: if 0 means no wait,
+  * @param[in]  buffer: write buffer handle used to save the data
+  * @param[in]  size: allow to write buffer size
+  * @param[in]  time_out_ms: if 0 means no wait,
   *                     other value will set time_out_ms to read buffer,if read data for more than time_out_ms, it will return.
+  * @param[out] zero_pkt_flag: bitmap of zero-length filler packets returned in this read. Bit N is set if
+  *                            the N-th packet copied out was a ZLP inserted by the SOF underrun handler.
+  *                            May be NULL if the caller does not care.
   * @retval return the read data length in bytes
   */
-u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms);
+u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt_flag);
 
 /**
   * @brief  Get the read frame packet count
   * @retval return avail packet count
   */
 u32  usbd_uac_get_read_frame_cnt(void);
+
+/**
+  * @brief  Get the time duration of currently queued audio frames in microseconds.
+  * @retval frame_cnt * bInterval_us
+  */
+u32  usbd_uac_get_read_frame_time_in_us(void);
 
 /** @} End of Device_UAC_Functions group */
 /** @} End of USB_Device_Functions group */

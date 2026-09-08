@@ -6,13 +6,21 @@
 #define IMAGE_HEADER_LEN			(0x20)
 #define KR4_KM4_RAM_SIZE			KBYTES(40)
 #define SRAM_BASE					(0x20000000)
-#define SRAM_END					(0x20080000)
+#define SRAM_TOP_512K				(0x20080000)       /* SRAM top of a 512K part */
+#define SRAM_TOP_768K				(0x200C0000)     /* SRAM top of a 768K part, the extra 256K is opened by BOOT_SRAM_Extend_Config */
 #define PSRAM_BASE					(0x60000000)
-/* PSRAM_END is only the address-window ceiling (largest internal PSRAM = 16MB). The real capacity comes from BD_num */
-#define PSRAM_END					(0x61000000)
+#define PSRAM_END					(0x61000000)         /* PSRAM_END is only the address-window ceiling (largest internal PSRAM = 16MB). The real capacity comes from BD_num */
 
-/* layout configuration */
-/* TZ region sized by CONFIG_TZ_S_SIZE, default 64K. */
+/* CONFIG_SRAM_END is not offered by every config, see usrcfg Kconfig */
+#if defined(CONFIG_SRAM_END)
+#define SRAM_END					(CONFIG_SRAM_END)
+#else
+#define SRAM_END					SRAM_TOP_512K
+#endif
+ASSERT(SRAM_END >= SRAM_TOP_512K && SRAM_END <= SRAM_TOP_768K, "CONFIG_SRAM_END must be within 0x20080000 ~ 0x200C0000.")
+ASSERT((SRAM_END & (KBYTES(4) - 1)) == 0, "CONFIG_SRAM_END must be 4K aligned.")
+
+/* layout configuration, TZ region sized by CONFIG_TZ_S_SIZE, default 64K. */
 #if defined(CONFIG_IMG3_SRAM)
 #define KM4_RAM_TZ_SIZE				KBYTES(CONFIG_TZ_S_SIZE)
 #define KM4_PSRAM_TZ_SIZE			KBYTES(0)
@@ -32,8 +40,12 @@
 #endif
 
 /*
-                    AmebaLite SRAM Layout (512KB: 0x20000000 ~ 0x20080000)
+                    AmebaLite SRAM Layout (0x20000000 ~ SRAM_END)
   Tags: (cfg)=Kconfig-sized   (fixed)=hardcoded constant   (elastic)=absorbs remainder
+
+  SRAM_END = 0x20080000 on a 512K part, or CONFIG_SRAM_END up to 0x200C0000 on a 768K one; the
+  extra space lands in the (elastic) segment. B1's KR4 (cfg) stays pinned to the top and rides
+  up into it -- KM4 must stay the lowest IMG2 segment for the mpc1/mpc2 NS window.
 
   Common prefix (all modes):
   0x20000000  +----------------------------+
@@ -45,13 +57,15 @@
               | KM4 TrustZone (IMG3)(cfg)  |  KM4_RAM_TZ_SIZE = KBYTES(CONFIG_TZ_S_SIZE) if IMG3_SRAM, else 0
               +----------------------------+  KM4_IMG2_RAM_START
               | IMG2 region                |  one of the three variants below
-  0x20080000  +----------------------------+  SRAM_END
+   SRAM_END   +----------------------------+  0x20080000 or CONFIG_SRAM_END
 
-  Variant A -- DSP in SRAM  (CONFIG_DSP_EN && CONFIG_DSP_RUN_IN_SRAM; no-PSRAM SoC)
+  Variant A -- DSP gets the SRAM tail  (CONFIG_DSP_EN, either run location; WHC role irrelevant)
+  A1: CONFIG_DSP_RUN_IN_SRAM (no-PSRAM SoC)  -- KM4/KR4 take their Kconfig budgets.
+  A2: DSP in PSRAM + CONFIG_DATA_HEAP_PSRAM  -- KM4/KR4 place nothing in SRAM, so they keep only their image header and the DSP absorbs everything else.
   KM4_IMG2_RAM_START -> +------------------------+
-                        | KM4 IMG2 RAM    (cfg)  |  KBYTES(CONFIG_SRAM_KM4_IMG2_KB)
+                        | KM4 IMG2 RAM (cfg/hdr) |  A1: KBYTES(CONFIG_SRAM_KM4_IMG2_KB) | A2: IMAGE_HEADER_LEN
                         +------------------------+  KR4_IMG2_RAM_START
-                        | KR4 IMG2 RAM    (cfg)  |  KBYTES(CONFIG_SRAM_KR4_IMG2_KB)
+                        | KR4 IMG2 RAM (cfg/hdr) |  A1: KBYTES(CONFIG_SRAM_KR4_IMG2_KB) | A2: IMAGE_HEADER_LEN
   DSP_BD_SRAM_START --> +------------------------+  (KR4_BOOT_RAM 0x20040020 may be overlapped by DSP)
                         | DSP BD SRAM  (elastic) |  fills to SRAM_END (link-time SRAM_END-start, no runtime clamp)
   0x20080000            +------------------------+  SRAM_END
@@ -59,16 +73,16 @@
   Variant B1 -- DSP off / DSP in PSRAM, WHC_HOST || WHC_NONE  (DSP_BD_SRAM collapses to 0)
   KM4_IMG2_RAM_START -> +------------------------+
                         | KM4 IMG2 RAM  (elastic)|  KR4_IMG2_RAM_START - KM4_IMG2_RAM_START
-  SRAM_END - 96K -----> +------------------------+  KR4_IMG2_RAM_START (pinned at top)
-                        | KR4 IMG2 RAM    (fixed)|  RAM_KR4_IMG2_SIZE = KBYTES(96), hardcoded (not Kconfig)
-  0x20080000            +------------------------+  SRAM_END
+  SRAM_END - KR4 -----> +------------------------+  KR4_IMG2_RAM_START (pinned at top)
+                        | KR4 IMG2 RAM      (cfg)|  RAM_KR4_IMG2_SIZE = KBYTES(CONFIG_SRAM_KR4_IMG2_KB)
+   SRAM_END             +------------------------+
 
   Variant B2 -- DSP off / DSP in PSRAM, WHC_DEV  (DSP_BD_SRAM collapses to 0)
   KM4_IMG2_RAM_START -> +------------------------+
-                        | KM4 IMG2 RAM    (fixed)|  RAM_KM4_IMG2_SIZE = KBYTES(96), hardcoded (not Kconfig)
+                        | KM4 IMG2 RAM      (cfg)|  RAM_KM4_IMG2_SIZE = KBYTES(CONFIG_SRAM_KM4_IMG2_KB)
                         +------------------------+  KR4_IMG2_RAM_START
                         | KR4 IMG2 RAM  (elastic)|  SRAM_END - KR4_IMG2_RAM_START
-  0x20080000            +------------------------+  SRAM_END
+   SRAM_END             +------------------------+
 
   KR4 ROM anchors (address-pinned in KR4 ROM; NOT drawn as boxes above because they fall inside whichever variant segment spans them):
     0x20004C20  KR4_BOOT_RAM_BACKUP (64B) -- inside the 40K fixed region; backup of KR4 BootEntry.bin (32B header + 32B entry)
@@ -82,7 +96,7 @@
 
 /* IMG2 Size*/
 #if defined(CONFIG_DSP_EN) && defined(CONFIG_DSP_RUN_IN_SRAM)
-/* DSP-in-SRAM (no-PSRAM SoC): TZ -> KM4(fixed) -> KR4(fixed) -> DSP(tail).
+/* Variant A1 -- DSP-in-SRAM (no-PSRAM SoC): TZ -> KM4(fixed) -> KR4(fixed) -> DSP(tail).
  * KM4/KR4 take fixed Kconfig budgets; DSP fills the SRAM remainder to SRAM_END.
  * This branch is independent of WHC role (the WHC layout below is untouched). */
 #define KM4_IMG2_RAM_START			(KM4_RAM_TZ_START + KM4_RAM_TZ_SIZE)
@@ -93,22 +107,46 @@
 #define DSP_BD_SRAM_ORIGIN			(DSP_BD_SRAM_START + IMAGE_HEADER_LEN)
 #define DSP_BD_SRAM_LENGTH			(SRAM_END - DSP_BD_SRAM_START - IMAGE_HEADER_LEN)
 ASSERT(DSP_BD_SRAM_START + IMAGE_HEADER_LEN <= SRAM_END, "SRAM over-committed: 40K+IMG1+TZ+KM4+KR4 leaves no room for DSP; shrink CONFIG_SRAM_K*_IMG2_KB.")
+
+#elif defined(CONFIG_DSP_EN) && defined(CONFIG_DATA_HEAP_PSRAM)
+/* Variant A2: under DATA_HEAP_PSRAM neither core puts anything in SRAM, so both
+ * keep only their image header and the DSP takes the tail (link error if that ever stops being true). 
+ * It is non-secure already: KM4_IMG2_RAM_START is the mpc1/mpc2 NS base, so no TZ config change is needed. */
+#define KM4_IMG2_RAM_START			(KM4_RAM_TZ_START + KM4_RAM_TZ_SIZE)
+#define RAM_KM4_IMG2_SIZE			(IMAGE_HEADER_LEN)
+#define KR4_IMG2_RAM_START			(KM4_IMG2_RAM_START + RAM_KM4_IMG2_SIZE)
+#define RAM_KR4_IMG2_SIZE			(IMAGE_HEADER_LEN)
+#define DSP_BD_SRAM_START			(KR4_IMG2_RAM_START + RAM_KR4_IMG2_SIZE)
+#define DSP_BD_SRAM_ORIGIN			(DSP_BD_SRAM_START + IMAGE_HEADER_LEN)
+#define DSP_BD_SRAM_LENGTH			(SRAM_END - DSP_BD_SRAM_START - IMAGE_HEADER_LEN)
+ASSERT(DSP_BD_SRAM_START + IMAGE_HEADER_LEN <= SRAM_END, "SRAM over-committed: 40K+IMG1+TZ leaves no room for the DSP SRAM tail.")
+
 #else
 #if defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)
-#define RAM_KR4_IMG2_SIZE			KBYTES(96)
+/* KR4 is dev (NP) here (WHC Host Location = KM4, dual-core only; single-core CONFIG_WHC_NONE is excluded). */
+#if defined(CONFIG_WHC_HOST) && defined(CONFIG_WIFI_AP_STA_NUM) && (CONFIG_WIFI_AP_STA_NUM > 5)
+#define RAM_KR4_IMG2_SIZE			KBYTES(CONFIG_SRAM_KR4_IMG2_KB + 2 * (CONFIG_WIFI_AP_STA_NUM - 5))
+#else
+#define RAM_KR4_IMG2_SIZE			KBYTES(CONFIG_SRAM_KR4_IMG2_KB)
+#endif
 #define KM4_IMG2_RAM_START			(KM4_RAM_TZ_START + KM4_RAM_TZ_SIZE)			/* 0x20021400 ~ 0x20068000 | 0x2000D000 ~ 0x20068000*/
 #define KR4_IMG2_RAM_START			(SRAM_END - RAM_KR4_IMG2_SIZE) 					/* 0x20068000 ~ 0x20078000 | 0x20068000 ~ 0x20078000*/
 #define RAM_KM4_IMG2_SIZE			(KR4_IMG2_RAM_START - KM4_IMG2_RAM_START)
-ASSERT(KM4_IMG2_RAM_START + IMAGE_HEADER_LEN <= KR4_IMG2_RAM_START, "SRAM over-committed: 40K+IMG1+TZ leaves no room for KM4 IMG2 (KR4 fixed 96K pinned at top).")
+ASSERT(KM4_IMG2_RAM_START + IMAGE_HEADER_LEN <= KR4_IMG2_RAM_START, "SRAM over-committed: 40K+IMG1+TZ leaves no room for KM4 IMG2; shrink CONFIG_SRAM_KR4_IMG2_KB.")
 #else
-#define RAM_KM4_IMG2_SIZE			KBYTES(96)
+/* KM4 is dev (NP) here (WHC Host Location = KR4, dual-core only; single-core CONFIG_WHC_NONE is excluded). */
+#if defined(CONFIG_WHC_DEV) && defined(CONFIG_WIFI_AP_STA_NUM) && (CONFIG_WIFI_AP_STA_NUM > 5)
+#define RAM_KM4_IMG2_SIZE			KBYTES(CONFIG_SRAM_KM4_IMG2_KB + 2 * (CONFIG_WIFI_AP_STA_NUM - 5))
+#else
+#define RAM_KM4_IMG2_SIZE			KBYTES(CONFIG_SRAM_KM4_IMG2_KB)
+#endif
 #define KM4_IMG2_RAM_START			(KM4_RAM_TZ_START + KM4_RAM_TZ_SIZE)			/* 0x20021400 ~ 0x20039400 | 0x2000D000 ~ 0x20025000*/
 #define KR4_IMG2_RAM_START			(KM4_IMG2_RAM_START + RAM_KM4_IMG2_SIZE) 		/* 0x20039400 ~ 0x20078000 | 0x20025000 ~ 0x20078000*/
 #define RAM_KR4_IMG2_SIZE			(SRAM_END - KR4_IMG2_RAM_START)
-ASSERT(KR4_IMG2_RAM_START + IMAGE_HEADER_LEN <= SRAM_END, "SRAM over-committed: 40K+IMG1+TZ+KM4(fixed 96K) leaves no room for KR4 IMG2.")
+ASSERT(KR4_IMG2_RAM_START + IMAGE_HEADER_LEN <= SRAM_END, "SRAM over-committed: 40K+IMG1+TZ+KM4 leaves no room for KR4 IMG2; shrink CONFIG_SRAM_KM4_IMG2_KB.")
 #endif
-/* DSP not in SRAM (DSP off or DSP in PSRAM): DSP_BD_SRAM collapses to 0; SRAM
- * keeps the existing WHC layout above unchanged. */
+/* No SRAM for the DSP (DSP off, or DSP in PSRAM while the MCU keeps its data/heap
+ * in SRAM): DSP_BD_SRAM collapses to 0 and SRAM keeps the WHC layout above. */
 #define DSP_BD_SRAM_START			(SRAM_END)
 #define DSP_BD_SRAM_ORIGIN			(SRAM_END)
 #define DSP_BD_SRAM_LENGTH			(0)
@@ -290,6 +328,7 @@ __kr4_boot_entry_addr__ = ORIGIN(KR4_BOOT_RAM);
 /*SRAM Layout boundary*/
 /* TZ region symbols (__image3_ram_start__/end, __ram_image3_nsc_start__/end) are defined in img3 link script */
 __km4_bd_ram_start__ = ORIGIN(KM4_BD_RAM) - IMAGE_HEADER_LEN;
+__sram_end__ = SRAM_END;							/* SRAM top the images are linked against, CONFIG_SRAM_END driven, boot checks it against the real SRAM top */
 
 /*PSRAM Layout boundary*/
 __km4_bd_psram_start__ = ORIGIN(KM4_BD_PSRAM) - IMAGE_HEADER_LEN;
@@ -298,9 +337,6 @@ __dsp_psram_start__ = PSRAM_DSP_START;				/* DSP PSRAM segment base, for boot/pa
 __non_secure_psram_end__ = PSRAM_END;
 __dsp_sram_start__ = DSP_BD_SRAM_START;				/* DSP SRAM segment base, mirrors RTK_LSP_SRAM (dsp_layout_sync.py) */
 __dsp_sram_end__ = SRAM_END;						/* DSP SRAM segment ceiling */
-
-__ap_sram_heap_start = SRAM_END;
-__ap_sram_heap_size = KBYTES(256);
 
 /* Region 0: KM4 IROM*/
 __rom_text_region0_start__ = ORIGIN(KM4_IROM);

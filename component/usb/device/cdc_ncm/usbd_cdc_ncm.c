@@ -62,7 +62,12 @@ _Static_assert(USBD_CDC_NCM_NTB_OUT_MAX_DATAGRAMS <= 255U,
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBD_CDC_NCM_MAC_STRING_INDEX                 (USBD_IDX_SERIAL_STR + 1) /**< MAC address string index. */
+/* Class-specific string descriptors: indices above USBD_IDX_SERIAL_STR, laid out as a
+ * window whose base is the standalone default below, or the one assigned by the composite
+ * framework via set_class_str_base(). */
+#define USBD_CDC_NCM_STR_IDX_MAC                      0U                         /**< Ordinal of the MAC string inside the class string window */
+#define USBD_CDC_NCM_CLASS_STR_COUNT                  1U                         /**< Class-specific string count: iMACAddress only */
+#define USBD_CDC_NCM_CLASS_STR_BASE_DEFAULT           (USBD_IDX_SERIAL_STR + 1U) /**< Standalone base, right above the device-global strings */
 
 /* Interface numbers */
 #define USBD_CDC_NCM_COMM_INTERFACE_NUM 0x00U  /**< Communication interface */
@@ -131,6 +136,9 @@ static int usbd_cdc_ncm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 static int usbd_cdc_ncm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static int usbd_cdc_ncm_sof(usb_dev_t *dev);
 static void usbd_cdc_ncm_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
+#ifdef CONFIG_USBD_COMPOSITE
+static u8 usbd_cdc_ncm_set_class_str_base(u8 base);
+#endif
 static int usbd_cdc_ncm_intr_in_send(void *data, u16 len);
 static int usbd_cdc_ncm_send_notification(void);
 static inline u8 usbd_cdc_ncm_char_to_hex(u8 value);
@@ -249,7 +257,8 @@ static const u8 usbd_cdc_ncm_hs_config_desc[] = {
 	USBD_CDC_NCM_ETHERNET_FUNC_DESC_SIZE,           /* bFunctionLength */
 	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
 	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
-	USBD_CDC_NCM_MAC_STRING_INDEX,                  /* iMACAddress */
+	USBD_CDC_NCM_CLASS_STR_BASE_DEFAULT +
+	USBD_CDC_NCM_STR_IDX_MAC,                       /* iMACAddress, runtime patched */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE), /* wMaxSegmentSize */
 	USB_HIGH_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE),
@@ -364,7 +373,8 @@ static const u8 usbd_cdc_ncm_fs_config_desc[] = {
 	USBD_CDC_NCM_ETHERNET_FUNC_DESC_SIZE,           /* bFunctionLength */
 	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
 	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
-	USBD_CDC_NCM_MAC_STRING_INDEX,                  /* iMACAddress */
+	USBD_CDC_NCM_CLASS_STR_BASE_DEFAULT +
+	USBD_CDC_NCM_STR_IDX_MAC,                       /* iMACAddress, runtime patched */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE), /* wMaxSegmentSize */
 	USB_HIGH_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE),
@@ -439,6 +449,9 @@ static const usbd_class_driver_t usbd_cdc_ncm_driver = {
 	.ep_data_out = usbd_cdc_ncm_handle_ep_data_out,
 	.sof = usbd_cdc_ncm_sof,
 	.status_changed = usbd_cdc_ncm_status_changed,
+#ifdef CONFIG_USBD_COMPOSITE
+	.set_class_str_base = usbd_cdc_ncm_set_class_str_base,
+#endif
 };
 
 /* CDC NCM Device Instance */
@@ -512,11 +525,11 @@ static int usbd_cdc_ncm_agg_append(ncm_tx_ntb_t *slot, u8 *frame, u32 frame_len)
 	entry->wDatagramLength = (u16)frame_len;
 
 	/* Copy frame data */
-	usb_os_memcpy(slot->buf + slot->data_offset, frame, frame_len);
+	usb_os_memcpy((void *)(slot->buf + slot->data_offset), (const void *)frame, frame_len);
 
 	/* Zero-pad to alignment boundary */
 	if (aligned_frame_len > frame_len) {
-		usb_os_memset(slot->buf + slot->data_offset + frame_len,
+		usb_os_memset((void *)(slot->buf + slot->data_offset + frame_len),
 					  0, aligned_frame_len - frame_len);
 	}
 
@@ -708,7 +721,7 @@ static void usbd_cdc_ncm_tx_task(void *param)
 	}
 
 task_exit:
-	usb_os_mfree(frame_buf);
+	usb_os_mfree((void *)frame_buf);
 	ncm->tx_task = NULL;
 	rtos_task_delete(NULL);
 }
@@ -801,7 +814,7 @@ static void usbd_cdc_ncm_set_mac(const u8 *mac)
 		return;
 	}
 
-	memcpy((void *) & (ncm->mac[0]), (void *)mac, USBD_CDC_NCM_MAC_STR_LEN);
+	usb_os_memcpy((void *) & (ncm->mac[0]), (const void *)mac, USBD_CDC_NCM_MAC_STR_LEN);
 }
 
 /**
@@ -856,7 +869,7 @@ static int usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
 	ndp_offset = nth16->wFpIndex;
 	while (ndp_offset != 0U) {
 		/* Check that this NDP header fits within the received data. */
-		if (((u32)ndp_offset + sizeof(usb_cdc_ncm_ndp16_t)) > length) {
+		if ((ndp_offset + sizeof(usb_cdc_ncm_ndp16_t)) > length) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "NDP beyond RX len: off=%d, len=%d\n",
 					 ndp_offset, length);
 			break;
@@ -875,7 +888,7 @@ static int usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
 		 * and the whole NDP (header + entry array) must fit within the received
 		 * data, otherwise reading aEntry[i] below would read past the buffer. */
 		if ((ndp16->wLength < (USB_CDC_NCM_NDP16_MIN_LENGTH)) ||
-			(((u32)ndp_offset + ndp16->wLength) > length)) {
+			((ndp_offset + ndp16->wLength) > length)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Bad NDP len: wLength=%d, off=%d, rx=%d\n",
 					 ndp16->wLength, ndp_offset, length);
 			break;
@@ -896,7 +909,7 @@ static int usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
 			}
 
 			/* Validate datagram is within the received buffer */
-			if (((u32)datagram_index + (u32)datagram_length) > length) {
+			if ((datagram_index + datagram_length) > length) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR,
 						 "Datagram %d beyond RX: idx=%d+len=%d > %d\n",
 						 i, datagram_index, datagram_length, length);
@@ -946,7 +959,7 @@ static int usbd_cdc_ncm_send_notification(void)
 		/* Follow a "connected" notification with a speed-change report; a
 		 * "disconnected" notification stands alone (no trailing SPEED). */
 		next_state = ncm->connect_status ? NCM_NOTIFY_SPEED : NCM_NOTIFY_NONE;
-		usb_os_memcpy(notify_buf, &event, sizeof(event));
+		usb_os_memcpy((void *)notify_buf, (const void *)&event, sizeof(event));
 		break;
 
 	case NCM_NOTIFY_SPEED:
@@ -957,8 +970,8 @@ static int usbd_cdc_ncm_send_notification(void)
 		speed_data.ULBitRate = 0; /* Upstream bits/sec */
 		length = USBD_CDC_NCM_CONNECTION_SPEED_CHANGE_SIZE;
 		next_state = NCM_NOTIFY_NONE;
-		usb_os_memcpy(notify_buf, &event, sizeof(event));
-		usb_os_memcpy(notify_buf + sizeof(event), &speed_data, sizeof(speed_data));
+		usb_os_memcpy((void *)notify_buf, (const void *)&event, sizeof(event));
+		usb_os_memcpy((void *)(notify_buf + sizeof(event)), (const void *)&speed_data, sizeof(speed_data));
 		break;
 
 	case NCM_NOTIFY_NONE:
@@ -1001,7 +1014,7 @@ static int usbd_cdc_ncm_intr_in_send(void *data, u16 len)
 		ep_intr_in->xfer_state = 1U;
 
 		if (dev->is_ready) {
-			usb_os_memcpy((void *)ep_intr_in->xfer_buf, (void *)data, len);
+			usb_os_memcpy((void *)ep_intr_in->xfer_buf, (const void *)data, len);
 			ep_intr_in->xfer_len = len;
 			ret = usbd_ep_transmit(dev, ep_intr_in);
 			if (ret != HAL_OK) {
@@ -1085,7 +1098,11 @@ static int usbd_cdc_ncm_set_config(usb_dev_t *dev, u8 config)
 	usbd_ep_t *ep_bulk_out = &ncm->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &ncm->ep_intr_in;
 	usb_ep_info_t *info;
-	UNUSED(config);
+
+	/* Only the bConfigurationValue advertised in the config descriptor is valid */
+	if (config != 1U) {
+		return HAL_ERR_PARA;
+	}
 
 	ncm->dev = dev;
 
@@ -1201,7 +1218,6 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 	int ret = HAL_OK;
 	u8 req_type = req->bmRequestType & USB_REQ_TYPE_MASK;
-	u8 interface_id;
 	u16 wValue;
 	usb_cdc_ncm_ntb_parameters_t ntb_params;
 
@@ -1210,10 +1226,19 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		switch (req->bRequest) {
 		case USB_REQ_SET_INTERFACE:
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				interface_id = USB_LOW_BYTE(req->wIndex);
 				ncm->alt_setting = USB_LOW_BYTE(req->wValue);
 
-				if (interface_id == USBD_CDC_NCM_DATA_INTERFACE_NUM) {
+				/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return to
+				   their default state, not halted and data toggle DATA0. This holds even
+				   for an interface with the default setting only, hosts do send the
+				   request in that case. Only the endpoints of the interface addressed by
+				   wIndex are touched, so the other interface keeps its data toggle.
+				   Ref USB 2.0 Table 9-10: the whole wIndex is the interface number, so a
+				   foreign interface or a non-zero high byte leaves the endpoints untouched. */
+				if (req->wIndex == USBD_CDC_NCM_DATA_INTERFACE_NUM) {
+					usbd_ep_clear_stall(dev, &ncm->ep_bulk_in);
+					usbd_ep_clear_stall(dev, &ncm->ep_bulk_out);
+
 					/* The NCM data interface is dual-alt: alt 0 has no endpoints
 					 * (idle), alt 1 carries the bulk IN/OUT endpoints (active).
 					 * Only alt 1 means the host has armed the data path and will
@@ -1234,6 +1259,10 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						/* alt 0: data path torn down, endpoints gone */
 						ncm->connect_status = 0;
 					}
+				} else if (req->wIndex == USBD_CDC_NCM_COMM_INTERFACE_NUM) {
+					usbd_ep_clear_stall(dev, &ncm->ep_intr_in);
+				} else {
+					/* Foreign interface */
 				}
 
 				if (ncm->cb && ncm->cb->setup) {
@@ -1272,6 +1301,10 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;
 
 	case USB_REQ_TYPE_CLASS:
+		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
+			ret = HAL_ERR_PARA;
+			break;
+		}
 		if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
 			/* Device-to-Host: prepare response data in EP0 buffer */
 			switch (req->bRequest) {
@@ -1288,7 +1321,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ntb_params.wNdbOutAlignment = USBD_CDC_NCM_NTB_ALIGNMENT;
 				ntb_params.wNtbOutMaxDatagrams = USBD_CDC_NCM_NTB_OUT_MAX_DATAGRAMS;
 				ntb_params.wReserved1 = 0;
-				usb_os_memcpy(ep0_in->xfer_buf, &ntb_params, sizeof(ntb_params));
+				usb_os_memcpy((void *)ep0_in->xfer_buf, (const void *)&ntb_params, sizeof(ntb_params));
 				ep0_in->xfer_len = sizeof(ntb_params);
 				usbd_ep_transmit(dev, ep0_in);
 				break;
@@ -1351,7 +1384,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				 * arm EP0 OUT; the payload is validated/applied in
 				 * usbd_cdc_ncm_handle_ep0_data_out(). */
 				if (req->wLength > 0U) {
-					usb_os_memcpy((void *)&ncm->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
+					usb_os_memcpy((void *)&ncm->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
 					ep0_out->xfer_len = req->wLength;
 					usbd_ep_receive(dev, ep0_out);
 				} else {
@@ -1378,7 +1411,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			default:
 				/* Forward to upper layer with data stage if needed */
 				if (req->wLength > 0) {
-					usb_os_memcpy((void *)&ncm->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
+					usb_os_memcpy((void *)&ncm->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
 					ep0_out->xfer_len = req->wLength;
 					usbd_ep_receive(dev, ep0_out);
 				} else {
@@ -1648,17 +1681,20 @@ static int usbd_cdc_ncm_handle_ep0_data_out(usb_dev_t *dev)
 }
 
 /**
- * @brief Patch EP addresses in a configuration descriptor block
- * @note   Replaces direction-only placeholders (USB_D2H/USB_H2D) with actual
- *         EP addresses from the EP configuration structure.
+ * @brief Patch the runtime-assigned fields in a configuration descriptor block
+ * @note   Replaces direction-only EP placeholders (USB_D2H/USB_H2D) with actual
+ *         EP addresses from the EP configuration structure, and rewrites the
+ *         iMACAddress string index with the current class string base.
  * @param  desc: Pointer to config descriptor body (starting after config header)
  * @param  len: Length of the descriptor block
  * @param  ep_cfg: EP configuration with actual endpoint addresses
  * @retval None
  */
-static void usbd_cdc_ncm_patch_ep_addresses(u8 *desc, u16 len,
-		const usbd_cdc_ncm_ep_cfg_t *ep_cfg)
+static void usbd_cdc_ncm_patch_desc(u8 *desc, u16 len,
+									const usbd_cdc_ncm_ep_cfg_t *ep_cfg)
 {
+	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
+
 	for (u16 i = 0; i < len;) {
 		u8 dlen = desc[i];
 		u8 dtype = desc[i + 1];
@@ -1678,6 +1714,12 @@ static void usbd_cdc_ncm_patch_ep_addresses(u8 *desc, u16 len,
 			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_INTR)) {
 				desc[i + 2] = ep_cfg->intr_in_addr;
 			}
+		} else if ((dtype == USB_CDC_CS_INTERFACE) && (dlen >= 4) &&
+				   (desc[i + 2] == USB_CDC_FUNC_DESC_ETHERNET_NETWORKING)) {
+			/* Ethernet Networking FD: iMACAddress at offset 3. Writes the standalone
+			 * default (same as the static template) unless the composite framework
+			 * rebased the class string window. */
+			desc[i + 3] = (u8)(ncm->cls_str_base + USBD_CDC_NCM_STR_IDX_MAC);
 		}
 		i += dlen;
 	}
@@ -1715,7 +1757,7 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 	switch (desc_type) {
 	case USB_DESC_TYPE_DEVICE:
 		len = sizeof(usbd_cdc_ncm_dev_desc);
-		usb_os_memcpy(buf, usbd_cdc_ncm_dev_desc, len);
+		usb_os_memcpy((void *)buf, (const void *)usbd_cdc_ncm_dev_desc, len);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
@@ -1730,7 +1772,7 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 			len = sizeof(usbd_cdc_ncm_fs_config_desc);
 		}
 
-		usb_os_memcpy((void *)buf, (void *)desc, len);
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
 
 		if (!ncm->from_composite) {
 			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
@@ -1739,16 +1781,16 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		/* Patch EP addresses from placeholder to actual values */
-		usbd_cdc_ncm_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
-										len - USB_LEN_CFG_DESC,
-										ncm->ep_cfg);
+		/* Patch EP addresses and the class string index to actual values */
+		usbd_cdc_ncm_patch_desc(buf + USB_LEN_CFG_DESC,
+								len - USB_LEN_CFG_DESC,
+								ncm->ep_cfg);
 		break;
 
 #ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		len = sizeof(usbd_cdc_ncm_device_qualifier_desc);
-		usb_os_memcpy((void *)buf, (void *)usbd_cdc_ncm_device_qualifier_desc, len);
+		usb_os_memcpy((void *)buf, (const void *)usbd_cdc_ncm_device_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
@@ -1756,7 +1798,7 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 			   usbd_cdc_ncm_fs_config_desc : usbd_cdc_ncm_hs_config_desc;
 		len = (speed == USB_SPEED_HIGH) ?
 			  sizeof(usbd_cdc_ncm_fs_config_desc) : sizeof(usbd_cdc_ncm_hs_config_desc);
-		usb_os_memcpy(buf, desc, len);
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
 
 		if (!ncm->from_composite) {
 			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
@@ -1764,10 +1806,10 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-		/* Patch EP addresses from placeholder to actual values */
-		usbd_cdc_ncm_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
-										len - USB_LEN_CFG_DESC,
-										ncm->ep_cfg);
+		/* Patch EP addresses and the class string index to actual values */
+		usbd_cdc_ncm_patch_desc(buf + USB_LEN_CFG_DESC,
+								len - USB_LEN_CFG_DESC,
+								ncm->ep_cfg);
 		break;
 #endif
 
@@ -1775,7 +1817,7 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 		switch (desc_idx) {
 		case USBD_IDX_LANGID_STR:
 			len = sizeof(usbd_cdc_ncm_lang_id_desc);
-			usb_os_memcpy(buf, usbd_cdc_ncm_lang_id_desc, len);
+			usb_os_memcpy((void *)buf, (const void *)usbd_cdc_ncm_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
 			len = usbd_get_str_desc(USBD_CDC_NCM_MFG_STRING, buf);
@@ -1787,11 +1829,14 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 		case USBD_IDX_SERIAL_STR:
 			len = usbd_get_str_desc(USBD_CDC_NCM_SN_STRING, buf);
 			break;
-		case USBD_CDC_NCM_MAC_STRING_INDEX:
-			usbd_cdc_ncm_mac_to_string((const u8 *)(ncm->mac), mac_buf);
-			len = usbd_get_str_desc(mac_buf, buf);
-			break;
 		default:
+			/* Class-specific indices are decided at runtime (rebased by the composite
+			 * framework), so they cannot be case labels. Comparing them here also makes
+			 * it impossible to shadow the device-global indices above. */
+			if (desc_idx == (u8)(ncm->cls_str_base + USBD_CDC_NCM_STR_IDX_MAC)) {
+				usbd_cdc_ncm_mac_to_string((const u8 *)(ncm->mac), mac_buf);
+				len = usbd_get_str_desc(mac_buf, buf);
+			}
 			break;
 		}
 		break;
@@ -1802,6 +1847,21 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 
 	return len;
 }
+
+#ifdef CONFIG_USBD_COMPOSITE
+/**
+ * @brief Assign the first class-specific string index of this class (composite mode only)
+ * @note  This function is called by the composite framework before enumeration.
+ * @param base: First class-specific string index for this class
+ * @retval Number of class-specific string indices consumed
+ */
+static u8 usbd_cdc_ncm_set_class_str_base(u8 base)
+{
+	usbd_cdc_ncm_dev.cls_str_base = base;
+
+	return USBD_CDC_NCM_CLASS_STR_COUNT;
+}
+#endif
 
 /**
  * @brief USB attach status changed callback
@@ -1884,7 +1944,7 @@ static void usbd_cdc_ncm_trace_thread(void *param)
 					 "rdy %d conn %d ntf %d/%d alt %d/ep i%d o%d t%d/rx f%d pend%d idx%d/tx %s%d seq%d\n",
 					 dev->is_ready, ncm->connect_status, ncm->notify_state, ncm->notify_retry, ncm->alt_setting,
 					 ep_bulk_in->xfer_state, ep_bulk_out->xfer_state, ep_intr_in->xfer_state,
-					 ncm->rx_buf_free, (u32)ncm->rx_pending_len, ncm->rx_xfer_idx,
+					 ncm->rx_buf_free, ncm->rx_pending_len, ncm->rx_xfer_idx,
 					 "ring", (int)((ncm->tx_wd - ncm->tx_rd + USBD_CDC_NCM_TX_DEPTH) % USBD_CDC_NCM_TX_DEPTH),
 					 ncm->sequence);
 			RTK_LOGS(TAG, RTK_LOG_INFO,
@@ -1972,6 +2032,8 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 	}
 
 	ncm->ctrl_req.bRequest = 0xFFU;
+	/* Standalone default; the composite framework rebases it via set_class_str_base() */
+	ncm->cls_str_base = USBD_CDC_NCM_CLASS_STR_BASE_DEFAULT;
 
 	/* Allocate per-slot DMA-aligned NTB buffers for the ping-pong TX path.
 	 * Each slot keeps its buffer for the lifetime of the class instance;
@@ -1984,7 +2046,7 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc TX pp slot %d fail\n", i);
 				/* Roll back any earlier slots before bailing out. */
 				while (i-- > 0U) {
-					usb_os_mfree(ncm->tx_slot[i].buf);
+					usb_os_mfree((void *)ncm->tx_slot[i].buf);
 					ncm->tx_slot[i].buf = NULL;
 				}
 				return HAL_ERR_MEM;
@@ -2123,7 +2185,7 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 	return HAL_OK;
 
 cleanup_intr_in:
-	usb_os_mfree(ep_intr_in->xfer_buf);
+	usb_os_mfree((void *)ep_intr_in->xfer_buf);
 	ep_intr_in->xfer_buf = NULL;
 
 cleanup_rx_thread:
@@ -2150,21 +2212,19 @@ cleanup_tx_raw_rb:
 #endif
 
 cleanup_rx_buf1:
-	usb_os_mfree(ncm->rx_buf[1]);
+	usb_os_mfree((void *)ncm->rx_buf[1]);
 	ncm->rx_buf[1] = NULL;
 
 cleanup_rx_buf0:
-	usb_os_mfree(ncm->rx_buf[0]);
+	usb_os_mfree((void *)ncm->rx_buf[0]);
 	ncm->rx_buf[0] = NULL;
 	ep_bulk_out->xfer_buf = NULL;
 
 exit: {
 		u8 i;
 		for (i = 0U; i < USBD_CDC_NCM_TX_DEPTH; i++) {
-			if (ncm->tx_slot[i].buf != NULL) {
-				usb_os_mfree(ncm->tx_slot[i].buf);
-				ncm->tx_slot[i].buf = NULL;
-			}
+			usb_os_mfree((void *)ncm->tx_slot[i].buf);
+			ncm->tx_slot[i].buf = NULL;
 		}
 	}
 
@@ -2178,9 +2238,9 @@ int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_ep_cfg_t *
 	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 	int ret;
 
-	ncm->from_composite = 0;
 	ret = usbd_cdc_ncm_private_init(cb, ep_cfg);
 	if (ret == HAL_OK) {
+		ncm->from_composite = 0;
 		usbd_register_class(&usbd_cdc_ncm_driver);
 	}
 	return ret;
@@ -2192,9 +2252,9 @@ int usbd_composite_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_
 	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 	int ret;
 
-	ncm->from_composite = 1;
 	ret = usbd_cdc_ncm_private_init(cb, ep_cfg);
 	if (ret == HAL_OK) {
+		ncm->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_cdc_ncm_driver);
 	}
 	return ret;
@@ -2247,10 +2307,8 @@ int usbd_cdc_ncm_deinit(void)
 		for (i = 0U; i < USBD_CDC_NCM_TX_DEPTH; i++) {
 			ncm->tx_slot[i].frame_count = 0;
 			ncm->tx_slot[i].data_offset = 0;
-			if (ncm->tx_slot[i].buf != NULL) {
-				usb_os_mfree(ncm->tx_slot[i].buf);
-				ncm->tx_slot[i].buf = NULL;
-			}
+			usb_os_mfree((void *)ncm->tx_slot[i].buf);
+			ncm->tx_slot[i].buf = NULL;
 		}
 		ncm->tx_wd = 0;
 		ncm->tx_rd = 0;
@@ -2297,17 +2355,13 @@ int usbd_cdc_ncm_deinit(void)
 	}
 
 	/* Free buffers */
-	if (ep_intr_in->xfer_buf != NULL) {
-		usb_os_mfree(ep_intr_in->xfer_buf);
-		ep_intr_in->xfer_buf = NULL;
-	}
+	usb_os_mfree((void *)ep_intr_in->xfer_buf);
+	ep_intr_in->xfer_buf = NULL;
 
 	/* Free RX ping-pong buffers. */
 	for (u8 i = 0; i < USBD_CDC_NCM_RX_BUF_NUM; i++) {
-		if (ncm->rx_buf[i] != NULL) {
-			usb_os_mfree(ncm->rx_buf[i]);
-			ncm->rx_buf[i] = NULL;
-		}
+		usb_os_mfree((void *)ncm->rx_buf[i]);
+		ncm->rx_buf[i] = NULL;
 	}
 	ep_bulk_out->xfer_buf = NULL;
 

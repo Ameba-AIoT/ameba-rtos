@@ -11,7 +11,7 @@
 #include "example_uart_ext.h"
 #include "os_wrapper.h"
 
-#define UART_DEV	UART0_DEV
+#define UART_DEV	UART3_DEV
 #define UART_BAUD	38400
 #define UART_BUF_SIZE	1000
 
@@ -20,12 +20,12 @@ static u8 s_rx_buf[UART_BUF_SIZE];
 
 UART_InitTypeDef  UART_InitStruct;
 
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F) || defined (CONFIG_AMEBAPRO3)
 const u8 UART_TX_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_TXD,
 	PINMUX_FUNCTION_UART1_TXD,
 	PINMUX_FUNCTION_UART2_TXD,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_AMEBAPRO3)
 	PINMUX_FUNCTION_UART3_TXD
 #endif
 };
@@ -34,7 +34,7 @@ const u8 UART_RX_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_RXD,
 	PINMUX_FUNCTION_UART1_RXD,
 	PINMUX_FUNCTION_UART2_RXD,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_AMEBAPRO3)
 	PINMUX_FUNCTION_UART3_RXD
 #endif
 };
@@ -42,7 +42,7 @@ const u8 UART_RX_FID[MAX_UART_INDEX] = {
 const u8 UART_CTS_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_CTS,
 	NULL,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_AMEBAPRO3)
 	NULL,
 	PINMUX_FUNCTION_UART3_CTS
 #elif defined (CONFIG_AMEBADPLUS)
@@ -53,7 +53,7 @@ const u8 UART_CTS_FID[MAX_UART_INDEX] = {
 const u8 UART_RTS_FID[MAX_UART_INDEX] = {
 	PINMUX_FUNCTION_UART0_RTS,
 	NULL,
-#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_AMEBAPRO3)
 	NULL,
 	PINMUX_FUNCTION_UART3_RTS
 #elif defined (CONFIG_AMEBADPLUS)
@@ -167,7 +167,7 @@ void uart_auto_flow_ctrl_demo(void)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, PINMUX_FUNCTION_UART);
 	Pinmux_Config(UART_RX, PINMUX_FUNCTION_UART);
-#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
+#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F) || defined (CONFIG_AMEBAPRO3)
 	/* Configure UART0 TX and RX pin */
 	Pinmux_Config(UART_TX, UART_TX_FID[uart_idx]);
 	Pinmux_Config(UART_RX, UART_RX_FID[uart_idx]);
@@ -193,7 +193,7 @@ void uart_auto_flow_ctrl_demo(void)
 	/* Configure UART0 RTS and CTS pin to enable auto flow control */
 	Pinmux_Config(UART_RTS, PINMUX_FUNCTION_UART_RTSCTS);
 	Pinmux_Config(UART_CTS, PINMUX_FUNCTION_UART_RTSCTS);
-#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F)
+#elif defined (CONFIG_AMEBALITE) || defined (CONFIG_AMEBADPLUS) || defined (CONFIG_AMEBAGREEN2) || defined (CONFIG_RTL8720F) || defined (CONFIG_AMEBAPRO3)
 	/* Configure UART0 RTS and CTS pin to enable auto flow control */
 	Pinmux_Config(UART_RTS, UART_RTS_FID[uart_idx]);
 	Pinmux_Config(UART_CTS, UART_CTS_FID[uart_idx]);

@@ -30,7 +30,7 @@
 /* Private defines -----------------------------------------------------------*/
 
 // Endpoint address
-#if defined(CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 #define USBD_UAC_ISOC_IN_EP                      0x84U
 #define USBD_UAC_ISOC_OUT_EP                     0x02U
 #else
@@ -67,7 +67,31 @@
 #define USBD_UAC_HOTPLUG_THREAD_STACK_SIZE        1024U
 #define USBD_UAC_PLAYER_THREAD_STACK_SIZE         2300U
 
-#define AUDIO_BYTE_WIDTH_SIZE                   0x02U
+// Microphone (USB IN / record) demo. Recording is only wired up in the UAC 2.0
+// class driver, so follow the same rule as the composite UAC example: enable it
+// for UAC 2.0 (HS / HS-IN-FULL) and disable it for UAC 1.0 and FS-only builds.
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
+#define USBD_UAC_ENABLE_RECORD                    0
+#elif defined(CONFIG_USBD_UAC1)
+#define USBD_UAC_ENABLE_RECORD                    0
+#else
+#define USBD_UAC_ENABLE_RECORD                    1
+#endif
+
+#if USBD_UAC_ENABLE_RECORD
+#define USBD_UAC_RECORD_THREAD_PRIORITY           4
+#define USBD_UAC_RECORD_THREAD_STACK_SIZE         (1024U * 4)
+/* One USB IN chunk = one period of a 1 kHz sine at 16 kHz stereo 16-bit = 16 frames = 64 bytes */
+#define USBD_UAC_RECORD_CHUNK_LEN                 64U
+#define USBD_UAC_RECORD_CHUNK_DELAY_MS            1U
+/* usbd_uac_transmit_data() enqueues one ring-buffer node (<= isoc_mps) per call, drained one
+ * node per High-Speed microframe (125us); feed the chunk as 8 per-microframe slices per ms
+ * instead of one oversized call that silently truncates to isoc_mps. */
+#define USBD_UAC_RECORD_SLICES_PER_MS             8U
+#define USBD_UAC_RECORD_SLICE_LEN                 (USBD_UAC_RECORD_CHUNK_LEN / USBD_UAC_RECORD_SLICES_PER_MS)
+#endif
+
+#define AUDIO_BYTE_WIDTH_SIZE                   USBD_UAC_BYTE_WIDTH_2
 #define AUDIO_SAMPLING_FREQ                     USBD_UAC_SAMPLING_FREQ_48K
 #define AUDIO_CHANNEL_NUM                       USBD_UAC_DEFAULT_CH_CNT
 
@@ -129,7 +153,7 @@ static u8 recv_buf[USB_AUDIO_BUF_SIZE * 2];
 static const usbd_config_t uac_cfg = {
 	.speed = USBD_UAC_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	.rx_fifo_depth = 420U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 256U, },
 #elif defined (CONFIG_AMEBAPRO3)
@@ -146,7 +170,16 @@ static const usbd_uac_ep_cfg_t uac_ep = {
 
 static usbd_uac_cb_t uac_cb = {
 	.audio_ctx = NULL,
-	.in = {.enable = 0,}, /* current just support usb out,usb in TODO */
+#if USBD_UAC_ENABLE_RECORD
+	.in = {
+		.enable = 1,
+		.sampling_freq = USBD_UAC_IN_DEFAULT_SAMPLING_FREQ,
+		.byte_width = USBD_UAC_IN_DEFAULT_BYTE_WIDTH,
+		.ch_cnt = USBD_UAC_IN_DEFAULT_CH_CNT
+	},
+#else
+	.in = {.enable = 0,}, /* playback only (UAC 1.0 / FS-only) */
+#endif
 	.out = {.enable = 1, .sampling_freq = AUDIO_SAMPLING_FREQ, .byte_width = AUDIO_BYTE_WIDTH_SIZE, .ch_cnt = AUDIO_CHANNEL_NUM},
 	.init = uac_cb_init,
 	.deinit = uac_cb_deinit,
@@ -158,6 +191,23 @@ static usbd_uac_cb_t uac_cb = {
 	.format_changed = uac_cb_format_changed,
 	.sof = NULL,
 };
+
+#if USBD_UAC_ENABLE_RECORD
+/* Mic record format: 16-bit / 16 kHz / 2ch (stereo), matches the synthetic tone below */
+static const usbd_audio_cfg_t uac_record_cfg = {
+	.sampling_freq = USBD_UAC_IN_DEFAULT_SAMPLING_FREQ,
+	.byte_width = USBD_UAC_IN_DEFAULT_BYTE_WIDTH,
+	.ch_cnt = USBD_UAC_IN_DEFAULT_CH_CNT,
+	.enable = 1,
+};
+static rtos_sema_t uac_record_start_sema;
+/* 16-point sine LUT (one period), amplitude ~10000; drives a 1 kHz tone at 16 kHz */
+static const s16 uac_record_sine16[16] = {
+	0, 3827, 7071, 9239, 10000, 9239, 7071, 3827,
+	0, -3827, -7071, -9239, -10000, -9239, -7071, -3827
+};
+static u8 uac_record_chunk[USBD_UAC_RECORD_CHUNK_LEN] USB_DMA_ALIGNED;
+#endif
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -440,7 +490,7 @@ static void example_audio_track_play(void)
 
 	uac_playing = 1;
 	while ((uac_task_exiting != 1) && (uac_player_stop != 1)) {
-		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500);
+		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500, NULL);
 		if (read_dat_len > 0) {
 #if USBD_UAC_DEMUX_CH_DEBUG
 			play_data_size = 0;
@@ -448,7 +498,7 @@ static void example_audio_track_play(void)
 			for (idx = 0, off = 0; idx < read_dat_len; idx += audio_src_step, off += audio_dst_step) {
 				// ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3
 				// 24  24  24  24  24  24  24  24  24  24  24  24
-				memcpy((void *)(play_buf + off), (void *)(recv_buf + idx), audio_dst_step);
+				usb_os_memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
 				play_data_size += audio_dst_step;
 			}
 
@@ -474,7 +524,7 @@ static void example_audio_track_play(void)
 	read_cnt = 0;
 	uac_playing = 1;
 	while ((uac_task_exiting != 1) && (uac_player_stop != 1)) {
-		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500);
+		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500, NULL);
 		read_cnt ++;
 		if (read_dat_len > 0) {
 			total_len += read_dat_len;
@@ -509,7 +559,65 @@ static void example_usbd_uac_audio_track_thread(void *param)
 		uac_player_stop = 0;
 		example_audio_track_play();
 	} while (1);
+
+	rtos_task_delete(NULL);
 }
+
+#if USBD_UAC_ENABLE_RECORD
+/* Replays a synthetic 1 kHz tone as the microphone (USB IN) source, once triggered
+ * by the "usbd_uac_record" console command. */
+static void example_usbd_uac_record_thread(void *param)
+{
+	u32 i;
+	u32 frames = USBD_UAC_RECORD_CHUNK_LEN / (USBD_UAC_IN_DEFAULT_CH_CNT * USBD_UAC_IN_DEFAULT_BYTE_WIDTH);
+	s16 *frame = (s16 *)(void *)uac_record_chunk;
+
+	UNUSED(param);
+
+	/* Pre-fill one chunk: interleaved stereo frames, L = R = sine sample */
+	for (i = 0; i < frames; i++) {
+		frame[USBD_UAC_IN_DEFAULT_CH_CNT * i]     = uac_record_sine16[i % 16U];
+		frame[USBD_UAC_IN_DEFAULT_CH_CNT * i + 1] = uac_record_sine16[i % 16U];
+	}
+
+	while (1) {
+		if (rtos_sema_take(uac_record_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
+			break;
+		}
+
+		usbd_uac_config(&uac_record_cfg, 1, 0);
+		if (usbd_uac_start_record() != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC start record fail\n");
+			continue;
+		}
+
+		RTK_LOGS(TAG, RTK_LOG_INFO, "UAC record start\n");
+		while (uac_task_exiting == 0) {
+			for (i = 0; i < USBD_UAC_RECORD_SLICES_PER_MS; i++) {
+				usbd_uac_transmit_data(&uac_record_chunk[i * USBD_UAC_RECORD_SLICE_LEN], USBD_UAC_RECORD_SLICE_LEN);
+			}
+			rtos_time_delay_ms(USBD_UAC_RECORD_CHUNK_DELAY_MS);
+		}
+		usbd_uac_stop_record();
+	}
+
+	rtos_task_delete(NULL);
+}
+
+static u32 uac_cmd_record(u16 argc, u8 *argv[])
+{
+	UNUSED(argc);
+	UNUSED(argv);
+
+	rtos_sema_give(uac_record_start_sema);
+	return HAL_OK;
+}
+
+CMD_TABLE_DATA_SECTION
+const COMMAND_TABLE usbd_uac_cmd_table[] = {
+	{"usbd_uac_record", uac_cmd_record},
+};
+#endif /* USBD_UAC_ENABLE_RECORD */
 
 static void example_usbd_uac_thread(void *param)
 {
@@ -521,11 +629,17 @@ static void example_usbd_uac_thread(void *param)
 		goto example_exit;
 	}
 
+#if USBD_UAC_ENABLE_RECORD
+	if (rtos_sema_create(&uac_record_start_sema, 0U, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create record sema fail\n");
+		goto exit;
+	}
+#endif
+
 #if USBD_UAC_HOTPLUG
 	if (rtos_sema_create(&uac_attach_status_changed_sema, 0U, 1U) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
-		rtos_sema_delete(uac_ready_sema);
-		goto example_exit;
+		goto exit;
 	}
 #endif
 
@@ -560,6 +674,14 @@ static void example_usbd_uac_thread(void *param)
 	}
 #endif // USBD_UAC_HOTPLUG
 
+#if USBD_UAC_ENABLE_RECORD
+	if (rtos_task_create(NULL, "usbd_uac_record_thread",
+						 example_usbd_uac_record_thread, NULL,
+						 USBD_UAC_RECORD_THREAD_STACK_SIZE, USBD_UAC_RECORD_THREAD_PRIORITY) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create record thread fail\n");
+	}
+#endif
+
 	rtos_time_delay_ms(100);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UAC demo start\n");
@@ -567,6 +689,7 @@ static void example_usbd_uac_thread(void *param)
 	goto example_exit;
 #if USBD_UAC_HOTPLUG
 clear_usb_class_exit:
+	rtos_task_delete(uac_player_task);
 	usbd_uac_stop_play();
 	usbd_uac_deinit();
 #endif
@@ -577,6 +700,9 @@ clear_usb_driver_exit:
 exit:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UAC demo stop\n");
 	rtos_sema_delete(uac_ready_sema);
+#if USBD_UAC_ENABLE_RECORD
+	rtos_sema_delete(uac_record_start_sema);
+#endif
 #if USBD_UAC_HOTPLUG
 	rtos_sema_delete(uac_attach_status_changed_sema);
 #endif

@@ -150,7 +150,7 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = USBH_UAC_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = USBH_UAC_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
 	.nptx_fifo_depth = 256,
@@ -397,7 +397,7 @@ static void example_usbh_uac_play_thread(void *param)
 				 audio_total_data_len, frame_size, USBH_UAC_TEST_CNT);
 
 #if USBH_UAC_XFER_CHECK
-		memset(usbh_uac_audio_data, USBH_UAC_OUT_DATA, usbh_uac_data_len);
+		usb_os_memset((void *)usbh_uac_audio_data, USBH_UAC_OUT_DATA, usbh_uac_data_len);
 #endif
 
 		/*

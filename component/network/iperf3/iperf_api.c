@@ -42,6 +42,7 @@
 #endif
 
 #include <sys/time.h>
+#include <time.h>
 #include <setjmp.h>
 #if defined(HAVE_CPUSET_SETAFFINITY)
 #include <sys/param.h>

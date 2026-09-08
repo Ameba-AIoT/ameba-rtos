@@ -22,6 +22,7 @@
 #include <rtk_gaps_client.h>
 #include <rtk_simple_ble_client.h>
 #include <rtk_cte_client.h>
+#include <rtk_ots_client.h>
 
 #if defined(BT_AT_SYNC) && BT_AT_SYNC
 #include <atcmd_bt_cmd_sync.h>
@@ -725,6 +726,110 @@ static int atcmd_cte_client_write_charac(int argc, char **argv)
 
 #endif
 
+/* ----------------------------- OTS client (OTP) --------------------------------- */
+#if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
+static int atcmd_ots_client_srv_discover(int argc, char **argv)
+{
+	(void)argc;
+	if (ots_client_srv_discover(str_to_int(argv[0])) != RTK_BT_OK) {
+		return -1;
+	}
+	return 0;
+}
+#endif
+
+static int atcmd_ots_client_read_meta(int argc, char **argv)
+{
+	(void)argc;
+	/* argv[1]: metadata type @ref ots_client_meta_type_t */
+	if (ots_client_read_metadata(str_to_int(argv[0]),
+								 (ots_client_meta_type_t)str_to_int(argv[1])) != RTK_BT_OK) {
+		return -1;
+	}
+	return 0;
+}
+
+static int atcmd_ots_client_olcp(int argc, char **argv)
+{
+	uint16_t conn_handle = str_to_int(argv[0]);
+	uint8_t op = (uint8_t)str_to_int(argv[1]);
+	uint8_t param[6] = {0};
+	uint16_t plen = 0;
+
+	/* optional: argv[2] = param length, argv[3] = param hex data */
+	if (argc >= 3) {
+		plen = (uint16_t)str_to_int(argv[2]);
+		if ((size_t)plen > sizeof(param) || (plen && argc < 4)) {
+			return -1;
+		}
+		if (plen) {
+			hexdata_str_to_array(argv[3], param, plen);
+		}
+	}
+	if (ots_client_olcp_write(conn_handle, op, plen ? param : NULL, plen) != RTK_BT_OK) {
+		return -1;
+	}
+	return 0;
+}
+
+static int atcmd_ots_client_select_id(int argc, char **argv)
+{
+	(void)argc;
+	uint16_t conn_handle = str_to_int(argv[0]);
+	uint8_t obj_id[OTS_CLIENT_OBJ_ID_LEN] = {0};
+
+	hexdata_str_to_array(argv[1], obj_id, OTS_CLIENT_OBJ_ID_LEN);
+	if (ots_client_select_by_id(conn_handle, obj_id) != RTK_BT_OK) {
+		return -1;
+	}
+	return 0;
+}
+
+static int atcmd_ots_client_open_channel(int argc, char **argv)
+{
+	(void)argc;
+	if (ots_client_open_channel(str_to_int(argv[0])) != RTK_BT_OK) {
+		return -1;
+	}
+	return 0;
+}
+
+static int atcmd_ots_client_close_channel(int argc, char **argv)
+{
+	(void)argc;
+	if (ots_client_close_channel(str_to_int(argv[0])) != RTK_BT_OK) {
+		return -1;
+	}
+	return 0;
+}
+
+static int atcmd_ots_client_read_content(int argc, char **argv)
+{
+	(void)argc;
+	uint16_t conn_handle = str_to_int(argv[0]);
+	uint32_t offset = (uint32_t)str_to_int(argv[1]);
+	uint32_t length = (uint32_t)str_to_int(argv[2]);
+
+	if (ots_client_read_contents(conn_handle, offset, length) != RTK_BT_OK) {
+		return -1;
+	}
+	return 0;
+}
+
+static int atcmd_ots_client_write_content(int argc, char **argv)
+{
+	(void)argc;
+	uint16_t conn_handle = str_to_int(argv[0]);
+	uint32_t offset = (uint32_t)str_to_int(argv[1]);
+	uint32_t length = (uint32_t)str_to_int(argv[2]);
+	uint8_t mode = (uint8_t)str_to_int(argv[3]);
+
+	if (ots_client_write_contents(conn_handle, offset, length, mode) != RTK_BT_OK) {
+		return -1;
+	}
+	return 0;
+}
+
 static const cmd_table_t gattc_cmd_table[] = {
 	{"exch_mtu", atcmd_bt_gattc_exchange_mtu, 2, 2},
 	{"disc",    atcmd_bt_gattc_discover,     2, 6},
@@ -761,6 +866,17 @@ static const cmd_table_t gattc_cmd_table[] = {
 	{"cte_write",       atcmd_cte_client_write_charac, 5, 5},
 #endif
 #endif
+	/* ots client (OTP) related */
+#if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
+	{"ots_disc",        atcmd_ots_client_srv_discover, 2, 2},
+#endif
+	{"ots_read_meta",   atcmd_ots_client_read_meta,    3, 3},
+	{"ots_olcp",        atcmd_ots_client_olcp,         3, 5},
+	{"ots_select_id",   atcmd_ots_client_select_id,    3, 3},
+	{"ots_open_coc",    atcmd_ots_client_open_channel, 2, 2},
+	{"ots_close_coc",   atcmd_ots_client_close_channel, 2, 2},
+	{"ots_read_content", atcmd_ots_client_read_content, 4, 4},
+	{"ots_write_content", atcmd_ots_client_write_content, 5, 5},
 
 	{NULL,},
 };

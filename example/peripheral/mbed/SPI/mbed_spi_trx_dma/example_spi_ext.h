@@ -79,6 +79,21 @@
 #define SPI1_SCLK  _PB_7
 #define SPI1_CS    _PB_10
 
+
+#elif defined (CONFIG_AMEBAPRO3)
+// SPI0 //S - Pinmux S0
+#define SPI0_MOSI  _PC_8
+#define SPI0_MISO  _PE_7
+#define SPI0_SCLK  _PC_6
+#define SPI0_CS    _PC_9
+
+// SPI1 //M - Pinmux S0
+#define SPI1_MOSI  _PF_6
+#define SPI1_MISO  _PF_5
+#define SPI1_SCLK  _PF_4
+#define SPI1_CS    _PF_7
+
+
 #elif defined (CONFIG_RTL8720F)
 // SPI0 - Slave
 #define SPI0_MOSI  _PA_8

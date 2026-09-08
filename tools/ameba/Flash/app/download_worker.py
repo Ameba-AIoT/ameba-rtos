@@ -10,12 +10,11 @@ from base.flash_utils import FlashBPS
 from base.image_info import ImageInfo
 from base.memory_info import MemoryInfo
 from app.progress_log_handler import ProgressLogHandler
-from version_info import gui_version
 
 
 class DownloadWorker(QThread):
     progress_updated = Signal(int)   # 0-100
-    finished = Signal(bool, str)     # success, message
+    result_ready = Signal(bool, str)  # success, message
 
     def __init__(self, port, baudrate, profile_info, settings,
                  image_path, start_address, chip_erase,
@@ -37,31 +36,38 @@ class DownloadWorker(QThread):
         self.log_level = log_level
 
     def run(self):
-        logger = create_logger(self.port, log_level=self.log_level.upper(), file=self.log_file)
-        progress_handler = ProgressLogHandler(
-            lambda pct: self.progress_updated.emit(pct)
-        )
-        logger.addHandler(progress_handler)
+        logger = None
+        progress_handler = None
+        error_handler = None
+        ameba = None
+        stage_errors = []
 
-        # Record the GUI tool version at the top of the (optionally saved) log so a
-        # saved log file always identifies which GUI build produced it (mirrors the
-        # CLI's "AmebaFlash Version: ..." line).
-        logger.info(f"AmebaMPFlashGUI Version: {gui_version}")
+        def run_stage(action, *args, **kwargs):
+            stage_errors.clear()
+            return action(*args, **kwargs)
 
-        # Capture the last error-level log message so failures surface a
-        # meaningful reason (e.g. serial port already in use) instead of a
-        # bare "Exit(1)" when the download flow aborts via sys.exit().
-        last_error = {"msg": None}
-
-        class _ErrorCaptureHandler(logging.Handler):
-            def emit(self, record):
-                if record.levelno >= logging.ERROR:
-                    last_error["msg"] = record.getMessage()
-
-        error_handler = _ErrorCaptureHandler()
-        logger.addHandler(error_handler)
+        def failure_message(default):
+            return "\n".join(stage_errors) if stage_errors else default
 
         try:
+            logger = create_logger(
+                self.port, log_level=self.log_level.upper(), file=self.log_file
+            )
+            progress_handler = ProgressLogHandler(
+                lambda pct: self.progress_updated.emit(pct)
+            )
+            logger.addHandler(progress_handler)
+
+            # Capture all error lines from one stage so multi-line diagnostics
+            # (for example device/profile mismatches) remain visible in the GUI.
+            class _ErrorCaptureHandler(logging.Handler):
+                def emit(self, record):
+                    if record.levelno >= logging.ERROR:
+                        stage_errors.append(record.getMessage())
+
+            error_handler = _ErrorCaptureHandler()
+            logger.addHandler(error_handler)
+
             # Memory type is derived from the device profile. The GUI has no
             # explicit memory-type selector, so when a single image is downloaded
             # to a RAM address, force RAM to override the profile's memory type
@@ -104,7 +110,7 @@ class DownloadWorker(QThread):
             elif os.path.isdir(self.image_path):
                 image_dir = self.image_path
             else:
-                self.finished.emit(False, "Invalid image path")
+                self.result_ready.emit(False, "Invalid image path")
                 return
 
             def make_ameba():
@@ -117,86 +123,120 @@ class DownloadWorker(QThread):
                     erase_info=None,
                 )
 
-            ameba = make_ameba()
+            ameba = run_stage(make_ameba)
 
-            if not ameba.check_protocol_for_download():
+            if not run_stage(ameba.check_protocol_for_download):
                 ameba.clean_up()
-                self.finished.emit(False, "Protocol check failed")
+                self.result_ready.emit(
+                    False, failure_message("Protocol check failed")
+                )
                 return
 
             if memory_type == MemoryInfo.MEMORY_TYPE_NOR:
-                ret, is_reburn = ameba.check_supported_flash_size()
+                ret, is_reburn = run_stage(ameba.check_supported_flash_size)
                 if ret != ErrType.OK:
                     ameba.clean_up()
-                    self.finished.emit(False, f"Flash size check failed: {ret}")
+                    self.result_ready.emit(
+                        False,
+                        failure_message(f"Flash size check failed: {ret}"),
+                    )
                     return
                 if is_reburn:
                     ameba.clean_up()
-                    ameba = make_ameba()
-                    ret = ameba.prepare()
+                    ameba = run_stage(make_ameba)
+                    ret = run_stage(ameba.prepare)
                 else:
-                    ret = ameba.show_device_info()
+                    ret = run_stage(ameba.show_device_info)
             else:
-                ret = ameba.prepare()
+                ret = run_stage(ameba.prepare)
 
             if ret != ErrType.OK:
                 ameba.clean_up()
-                self.finished.emit(False, f"Prepare failed: {ret}")
+                self.result_ready.emit(
+                    False, failure_message(f"Prepare failed: {ret}")
+                )
                 return
 
-            ret = ameba.verify_images()
+            ret = run_stage(ameba.verify_images)
             if ret != ErrType.OK:
                 ameba.clean_up()
-                self.finished.emit(False, f"Image verify failed: {ret}")
+                self.result_ready.emit(
+                    False, failure_message(f"Image verify failed: {ret}")
+                )
                 return
 
             if not ameba.is_all_ram:
-                ret = ameba.post_verify_images()
+                ret = run_stage(ameba.post_verify_images)
                 if ret != ErrType.OK:
                     ameba.clean_up()
-                    self.finished.emit(False, f"Post verify failed: {ret}")
+                    self.result_ready.emit(
+                        False, failure_message(f"Post verify failed: {ret}")
+                    )
                     return
 
             flash_status = FlashBPS()
             if not ameba.is_all_ram:
-                ret = ameba.check_and_process_flash_lock(flash_status)
+                ret = run_stage(
+                    ameba.check_and_process_flash_lock, flash_status
+                )
                 if ret != ErrType.OK:
                     ameba.clean_up()
-                    self.finished.emit(False, f"Flash lock check failed: {ret}")
+                    self.result_ready.emit(
+                        False,
+                        failure_message(f"Flash lock check failed: {ret}"),
+                    )
                     return
 
-            ret = ameba.download_images()
+            ret = run_stage(ameba.download_images)
             if ret != ErrType.OK:
                 ameba.clean_up()
-                self.finished.emit(False, f"Download failed: {ret}")
+                self.result_ready.emit(
+                    False, failure_message(f"Download failed: {ret}")
+                )
                 return
 
             if not ameba.is_all_ram and flash_status.need_unlock:
-                ret = ameba.lock_flash(flash_status.protection)
+                ret = run_stage(ameba.lock_flash, flash_status.protection)
                 if ret != ErrType.OK:
                     ameba.clean_up()
-                    self.finished.emit(False, f"Restore flash protection failed: {ret}")
+                    self.result_ready.emit(
+                        False,
+                        failure_message(
+                            f"Restore flash protection failed: {ret}"
+                        ),
+                    )
                     return
 
-            ret = ameba.post_process()
+            ret = run_stage(ameba.post_process)
             if ret != ErrType.OK:
                 ameba.clean_up()
-                self.finished.emit(False, f"Post process failed: {ret}")
+                self.result_ready.emit(
+                    False, failure_message(f"Post process failed: {ret}")
+                )
                 return
 
             ameba.clean_up()
-            self.finished.emit(True, "PASS")
+            self.result_ready.emit(True, "PASS")
 
         except SystemExit as e:
             if e.code == 0:
-                self.finished.emit(True, "PASS")
+                self.result_ready.emit(True, "PASS")
             else:
-                self.finished.emit(False, last_error["msg"] or f"Exit({e.code})")
+                self.result_ready.emit(False, failure_message(f"Exit({e.code})"))
         except Exception as e:
-            self.finished.emit(False, last_error["msg"] or str(e))
+            self.result_ready.emit(False, failure_message(str(e)))
         finally:
-            try:
-                logger.removeHandler(progress_handler)
-                logger.removeHandler(error_handler)
-            except Exception:
-                pass
+            if ameba is not None:
+                try:
+                    ameba.clean_up()
+                except Exception as error:
+                    if logger is not None:
+                        logger.error(f"Serial port cleanup failed: {error}")
+            if logger is not None:
+                try:
+                    if progress_handler is not None:
+                        logger.removeHandler(progress_handler)
+                    if error_handler is not None:
+                        logger.removeHandler(error_handler)
+                except Exception:
+                    pass

@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define USB_UAC1_VERSION_01_10                      0x110U
+#define USB_UAC1_VERSION_01_00                      0x100U
 
 /* usbd uac */
 #define USB_UAC1_IF_IDX_AC_HEADSET                          0x00U
@@ -68,6 +68,9 @@ extern "C" {
 #define USB_UAC1_EP_DESC_LEN                        0X09U
 #define USB_UAC1_AUDIO_DATA_EP_DESC_LEN             0X07U
 
+/* 4.6.1.2 Class-Specific AS Isochronous Audio Data Endpoint Descriptor bmAttributes */
+#define USB_UAC1_EP_ATTR_SAMPLING_FREQ_CONTROL      BIT0
+
 /* Terminals - 2.2 Input Terminal Types */
 #define USB_UAC1_INPUT_TERMINAL_UNDEFINED                    0x200
 #define USB_UAC1_INPUT_TERMINAL_MICROPHONE                   0x201
@@ -111,6 +114,16 @@ typedef struct {
 	uint8_t bDescriptorType;
 	uint8_t bDescriptorSubtype;
 } __PACKED usb_ac_itf_desc_header_t;
+
+/* 4.6.1.2 Class-Specific AS Isochronous Audio Data Endpoint Descriptor */
+typedef struct {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bmAttributes;
+	uint8_t bLockDelayUnits;
+	uint16_t wLockDelay;
+} __PACKED usb_uac1_as_ep_desc_t;
 
 /* 2.2.5 Type I Format Type Descriptor */
 typedef struct {

@@ -88,7 +88,8 @@
 #define USB_REQ_RECIPIENT_DEVICE                       0x00U   /**< Request recipient is the device. */
 #define USB_REQ_RECIPIENT_INTERFACE                    0x01U   /**< Request recipient is an interface. */
 #define USB_REQ_RECIPIENT_ENDPOINT                     0x02U   /**< Request recipient is an endpoint. */
-#define USB_REQ_RECIPIENT_MASK                         0x03U   /**< Mask for request recipient bits. */
+#define USB_REQ_RECIPIENT_OTHER                        0x03U   /**< Request recipient is another element. */
+#define USB_REQ_RECIPIENT_MASK                         0x1FU   /**< Mask for request recipient bits. */
 /** @} */
 
 /**
@@ -138,6 +139,13 @@
 #define USB_FEATURE_EP_HALT                            0x00U   /**< Endpoint halt feature selector. */
 #define USB_FEATURE_REMOTE_WAKEUP                      0x01U   /**< Device remote wakeup feature selector. */
 #define USB_FEATURE_TEST_MODE                          0x02U   /**< Test mode feature selector. */
+
+/* Test mode selectors, carried in the high byte of wIndex of SET_FEATURE(TEST_MODE) */
+#define USB_TEST_MODE_J                                0x01U   /**< Test_J, the first defined selector. */
+#define USB_TEST_MODE_K                                0x02U   /**< Test_K. */
+#define USB_TEST_MODE_SE0_NAK                          0x03U   /**< Test_SE0_NAK. */
+#define USB_TEST_MODE_PACKET                           0x04U   /**< Test_Packet. */
+#define USB_TEST_MODE_FORCE_EN                         0x05U   /**< Test_Force_Enable, the last defined selector. */
 /** @} */
 
 /**

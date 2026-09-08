@@ -284,6 +284,8 @@ struct whc_msg_info {
 struct whc_api_info {
 	uint32_t	event;
 	uint32_t	api_id;
+	uint32_t	data_len;
+	uint32_t	rsvd;	/* API payload has no pad; kept at @12 to match whc_msg_info */
 };
 
 /* the header for customer to send or receive the data between host and device. */
@@ -295,6 +297,25 @@ struct whc_cust_hdr {
 struct whc_cmd_path_hdr {
 	uint32_t	event;
 	uint32_t	len;
+};
+
+/*
+ * Common view over every device->host header, used by the host SDIO RX
+ * de-aggregation splitter to walk concatenated units: each unit's on-wire
+ * length is derived from its header (event + the per-family length fields).
+ *
+ * The splitter sizes each segment by header type: whc_msg_info uses
+ * data_len@8 + pad_len@12; whc_api_info uses data_len@8 only (@12 is an unused
+ * placeholder, its payload has no pad); whc_cmd_path_hdr / whc_cust_hdr use
+ * len@4. BT INIC is reserved: its header is not yet laid out for the splitter,
+ * so BT segments are not de-aggregated for now.
+ */
+union whc_hdr {
+	struct whc_msg_info		msg;	/* RECV_PKTS / FLOWCTRL */
+	struct whc_api_info		api;	/* API_CALL / API_RETURN */
+	struct whc_cmd_path_hdr	cmd;	/* CMD */
+	struct whc_cust_hdr		cust;	/* custom path */
+	/* TODO(bt): add BT INIC header once its len/pad_len are aligned to @8/@12 */
 };
 
 struct whc_proto_offload_param {

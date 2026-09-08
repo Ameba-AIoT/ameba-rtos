@@ -89,7 +89,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wowlan_rx_bcmc_dis = 0;
 
 	/* Softap related */
-	wifi_user_config.ap_sta_num = 5;	/*should not exceed 5 */
+	wifi_user_config.ap_sta_num = CONFIG_WIFI_AP_STA_NUM;
 	wifi_user_config.ap_polling_sta = 0;
 	wifi_user_config.ap_bypass_forwarding = 0;
 
@@ -137,10 +137,10 @@ _WEAK void wifi_set_user_config(void)
 		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
 	}
 
-	/* ensure ap_sta_num not exceed 5*/
-	if (wifi_user_config.ap_sta_num > 5) {
-		wifi_user_config.ap_sta_num = 5;
-		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 5\n");
+	/* ensure ap_sta_num not exceed 26 (AID 1~26 supported by the combined sleep/TIM bitmap) */
+	if (wifi_user_config.ap_sta_num > 26) {
+		wifi_user_config.ap_sta_num = 26;
+		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 26\n");
 	}
 }
 

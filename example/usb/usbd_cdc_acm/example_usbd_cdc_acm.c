@@ -14,7 +14,7 @@
 /* Private defines -----------------------------------------------------------*/
 
 // Endpoint address
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 #define CDC_ACM_BULK_IN_EP                       0x82U
 #else
 #define CDC_ACM_BULK_IN_EP                       0x81U
@@ -97,7 +97,7 @@ static const usbd_config_t cdc_acm_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
-#elif defined (CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	.rx_fifo_depth = 644U,
 	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
 #elif defined (CONFIG_AMEBAL2)
@@ -112,7 +112,7 @@ static const usbd_config_t cdc_acm_cfg = {
 
 #if CDC_ACM_ASYNC_XFER
 static u32 cdc_acm_xfer_idx;
-static u8 cdc_acm_async_xfer_buf[CDC_ACM_ASYNC_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 cdc_acm_async_xfer_buf[CDC_ACM_ASYNC_BUF_SIZE] USB_DMA_ALIGNED;
 static u16 cdc_acm_async_xfer_buf_pos;
 static volatile int cdc_acm_async_xfer_busy;
 static rtos_sema_t cdc_acm_async_xfer_sema;
@@ -178,7 +178,7 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 			len = CDC_ACM_ASYNC_BUF_SIZE - cdc_acm_async_xfer_buf_pos;  // extra data discarded
 		}
 
-		memcpy((void *)((u32)cdc_acm_async_xfer_buf + cdc_acm_async_xfer_buf_pos), buf, len);
+		usb_os_memcpy((void *)((u32)cdc_acm_async_xfer_buf + cdc_acm_async_xfer_buf_pos), (const void *)buf, len);
 		cdc_acm_async_xfer_buf_pos += len;
 		if (cdc_acm_async_xfer_buf_pos >= CDC_ACM_ASYNC_BUF_SIZE) {
 			cdc_acm_async_xfer_buf_pos = 0;

@@ -126,3 +126,10 @@ endif
 config WLAN_CRITICAL_CODE_IN_RAM
     bool "Enable Critical code in RAM"
     default y
+
+config WIFI_AP_STA_NUM
+    int "SoftAP maximum station number"
+    default 12 if AMEBASMART
+    default 5
+    range 1 26 if AMEBAGREEN2 || AMEBADPLUS || AMEBALITE || AMEBASMART
+    range 1 5

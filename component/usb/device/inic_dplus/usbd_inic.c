@@ -13,7 +13,6 @@
 #define USBD_INIC_IDX_INTERFACE_STR 0x04U
 
 #define USBD_INIC_ITF_NUM           1U
-#define USBD_INIC_ITF_WIFI          0U
 
 #define USBD_INIC_EP_STATE_IDLE     0U
 #define USBD_INIC_EP_STATE_BUSY     1U
@@ -73,7 +72,7 @@ static const u8 usbd_inic_wifi_only_mode_full_speed_config_desc[] = {
 	USB_DESC_TYPE_CONFIGURATION,			// bDescriptorType: Configuration
 	0x00,									// wTotalLength: number of returned bytes, runtime assigned
 	0x00,
-	0x01,									// bNumInterfaces: 1 interface
+	0x01,									// bNumInterfaces
 	0x01,									// bConfigurationValue
 	0x00,									// iConfiguration
 	0xA0,									// bmAttributes: decided by eFuse
@@ -86,16 +85,16 @@ static const u8 usbd_inic_wifi_only_mode_full_speed_config_desc[] = {
 	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
 	0x00,									// bInterfaceNumber: Number of Interface
 	0x00,									// bAlternateSetting: Alternate setting
-	0x03,									// bNumEndpoints: 4 endpoints
+	0x03,									// bNumEndpoints
 	0xFF,									// bInterfaceClass: Vendor Specific
-	0xFF,									// bInterfaceSubClass
-	0xFF,									// bInterfaceProtocol
+	0x00,									// bInterfaceSubClass: WHC function family
+	0x01,									// bInterfaceProtocol: WiFi function
 	USBD_IDX_PRODUCT_STR,					// iInterface: USBD_INIC_PROD_STRING
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x83,									// bEndpointAddress: EP3 IN
+	USBD_WHC_WIFI_EP3_BULK_IN,				// bEndpointAddress
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -104,7 +103,7 @@ static const u8 usbd_inic_wifi_only_mode_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x02,									// bEndpointAddress: EP2 OUT
+	USBD_WHC_WIFI_EP2_BULK_OUT,				// bEndpointAddress
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -113,7 +112,7 @@ static const u8 usbd_inic_wifi_only_mode_full_speed_config_desc[] = {
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
 	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	0x04,									// bEndpointAddress: EP4 OUT
+	USBD_WHC_WIFI_EP4_BULK_OUT,				// bEndpointAddress
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_INIC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
 	USB_HIGH_BYTE(USBD_INIC_FS_BULK_MPS),
@@ -180,6 +179,11 @@ static int usbd_inic_set_wifi_config(usb_dev_t *dev, u8 config)
 static int usbd_inic_set_config(usb_dev_t *dev, u8 config)
 {
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
+
+	/* Only the bConfigurationValue advertised in the config descriptor is valid */
+	if (config != 1U) {
+		return HAL_ERR_PARA;
+	}
 
 	idev->dev = dev;
 
@@ -257,7 +261,6 @@ static int usbd_inic_clear_config(usb_dev_t *dev, u8 config)
   */
 static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
-	u8 alt;
 	int ret = HAL_OK;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
@@ -267,34 +270,28 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
 		case USB_REQ_SET_INTERFACE:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				alt = USB_LOW_BYTE(req->wValue);
-				switch (req->wIndex) {
-				case USBD_INIC_ITF_WIFI:
-					idev->wifi_alt = alt;
-					break;
-				default:
-					break;
-				}
-			} else {
+			/*
+			 * The WiFi interface owns the default alternate setting(0) only: reject any
+			 * non-existent interface or alternate setting with a request error as per
+			 * USB spec 9.4.10.
+			 */
+			if ((dev->dev_state != USBD_STATE_CONFIGURED) || (req->wIndex >= USBD_INIC_ITF_NUM) || (req->wValue != 0U)) {
 				ret = HAL_ERR_HW;
+			} else {
+				/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return to
+				   their default state, not halted and data toggle DATA0. This holds even
+				   for an interface with the default setting only, hosts do send the
+				   request in that case. */
+				usbd_ep_clear_stall(dev, &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP3_BULK_IN)].ep);
+				usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP4_BULK_OUT)].ep);
+				usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP2_BULK_OUT)].ep);
 			}
 			break;
 		case USB_REQ_GET_INTERFACE:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				switch (req->wIndex) {
-				case USBD_INIC_ITF_WIFI:
-					alt = idev->wifi_alt;
-					break;
-				default:
-					ret = HAL_ERR_HW;
-					break;
-				}
-				if (ret == HAL_OK) {
-					ep0_in->xfer_buf[0] = alt;
-					ep0_in->xfer_len = 1U;
-					usbd_ep_transmit(dev, ep0_in);
-				}
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex < USBD_INIC_ITF_NUM)) {
+				ep0_in->xfer_buf[0] = 0U;
+				ep0_in->xfer_len = 1U;
+				usbd_ep_transmit(dev, ep0_in);
 			} else {
 				ret = HAL_ERR_HW;
 			}
@@ -328,7 +325,7 @@ static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		} else {
 			if (req->wLength) {
 				// SETUP + DATA OUT + STATUS, the DATA OUT phase is processed in ep0_data_out callback
-				usb_os_memcpy((void *)&idev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
+				usb_os_memcpy((void *)&idev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
 				ep0_out->xfer_len = req->wLength;
 				usbd_ep_receive(dev, ep0_out);
 			} else {
@@ -448,12 +445,12 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 
 	case USB_DESC_TYPE_DEVICE:
 		len = USB_LEN_DEV_DESC;
-		usb_os_memcpy((void *)buf, (void *)usbd_inic_wifi_only_mode_dev_desc, len);
+		usb_os_memcpy((void *)buf, (const void *)usbd_inic_wifi_only_mode_dev_desc, len);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
 		len = sizeof(usbd_inic_wifi_only_mode_full_speed_config_desc);
-		usb_os_memcpy((void *)buf, (void *)usbd_inic_wifi_only_mode_full_speed_config_desc, len);
+		usb_os_memcpy((void *)buf, (const void *)usbd_inic_wifi_only_mode_full_speed_config_desc, len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		break;
@@ -462,7 +459,7 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
 			len = USB_LEN_LANGID_STR_DESC;
-			usb_os_memcpy((void *)buf, (void *)usbd_inic_lang_id_desc, len);
+			usb_os_memcpy((void *)buf, (const void *)usbd_inic_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
 			len = usbd_get_str_desc(USBD_INIC_MFG_STRING, buf);
@@ -615,7 +612,7 @@ int usbd_inic_transmit_ctrl_data(u8 *buf, u16 len)
 	if (len > ep0_in->xfer_buf_len) {
 		len = ep0_in->xfer_buf_len;
 	}
-	usb_os_memcpy((void *)ep0_in->xfer_buf, (void *)buf, len);
+	usb_os_memcpy((void *)ep0_in->xfer_buf, (const void *)buf, len);
 	ep0_in->xfer_len = len;
 	usbd_ep_transmit(dev, ep0_in);
 

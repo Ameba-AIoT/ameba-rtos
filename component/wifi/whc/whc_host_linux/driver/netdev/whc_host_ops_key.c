@@ -81,9 +81,11 @@ static int whc_host_add_key_ops(struct wiphy *wiphy, struct net_device *ndev
 	dev_dbg(global_idev.pwhc_dev, "[whc]: key mode = %d", params->mode);
 
 	if (((params->cipher & 0xff) == 1) || ((params->cipher & 0xff) == 5)) {
+#ifdef CONFIG_IEEE80211R
 		if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && netif_dormant(ndev)) {
 			netif_dormant_off(ndev);
 		}
+#endif
 		/* Set WEP key by rtos. */
 		dev_dbg(global_idev.pwhc_dev, "--- %s --- return: set key by rtos self. ", __func__);
 		kfree(crypt);
@@ -119,9 +121,11 @@ static int whc_host_add_key_ops(struct wiphy *wiphy, struct net_device *ndev
 	}
 #endif
 
+#ifdef CONFIG_IEEE80211R
 	if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && (ret == 0) && netif_dormant(ndev)) {
 		netif_dormant_off(ndev);
 	}
+#endif
 exit:
 
 	wlan_idx = rtw_netdev_idx(ndev);
@@ -168,9 +172,11 @@ static int whc_host_del_key(struct wiphy *wiphy, struct net_device *ndev
 
 {
 	dev_dbg(global_idev.pwhc_dev, "--- %s --- !!!!!!!!!!!!", __func__);
+#ifdef CONFIG_IEEE80211R
 	if ((rtw_netdev_idx(ndev) == WHC_STA_PORT) && !netif_dormant(ndev)) {
 		netif_dormant_on(ndev);
 	}
+#endif
 	return 0;
 }
 

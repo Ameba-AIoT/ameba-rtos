@@ -262,7 +262,7 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_priority = USBH_UVC_UAC_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.class_num = 2U,   /* UVC + UAC */
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
 	.nptx_fifo_depth = 256,

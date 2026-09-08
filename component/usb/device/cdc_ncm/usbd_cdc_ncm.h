@@ -49,8 +49,8 @@ extern "C" {
  * all instrumentation is compiled out. */
 #define USBD_CDC_NCM_STATE_TRACE_ENABLE 0
 
-#define USBD_CDC_NCM_HS_INTR_IN_INTERVAL              1U     /**< High speed INTR IN interval */
-#define USBD_CDC_NCM_FS_INTR_IN_INTERVAL              1U     /**< Full speed INTR IN interval */
+#define USBD_CDC_NCM_HS_INTR_IN_INTERVAL              8U     /**< High speed INTR IN interval */
+#define USBD_CDC_NCM_FS_INTR_IN_INTERVAL              8U     /**< Full speed INTR IN interval */
 
 /* Number of ping-pong RX buffers used to decouple USB OUT from upper-layer RX. */
 #define USBD_CDC_NCM_RX_BUF_NUM         2U
@@ -260,6 +260,9 @@ typedef struct {
 	u8 ntb_format;                  /**< NTB format: 0=NTB16, currently only NTB16 supported. */
 	u8 crc_mode;                    /**< CRC mode: 0=none, currently only no-CRC supported. */
 	u8 from_composite;              /**< Flag indicating if part of a composite device. */
+	u8 cls_str_base;                /**< First class-specific string index; the standalone default
+	                                     (right above USBD_IDX_SERIAL_STR) unless the composite
+	                                     framework rebases it via set_class_str_base(). */
 } usbd_cdc_ncm_dev_t;
 
 /** @} End of Device_CDC_NCM_Types group*/

@@ -33,7 +33,7 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = USBH_DFU_MAIN_TASK_STACK_SIZE,
 	.main_task_priority   = USBH_DFU_MAIN_TASK_PRIORITY,
 	.tick_source          = USBH_SOF_TICK,
-#if defined(CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/* FIFO total depth is 1024, reserve 12 for DMA addr */
 	.rx_fifo_depth   = 500,
 	.nptx_fifo_depth = 256,
@@ -88,7 +88,7 @@ static int dfu_cb_get_block(u16 block_num, u8 *buf, u32 max_len)
 	if (remaining > max_len) {
 		remaining = max_len;
 	}
-	memcpy(buf, dfu_demo_fw + offset, remaining);
+	usb_os_memcpy((void *)buf, (const void *)(dfu_demo_fw + offset), remaining);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send blk %u offset %u/%u B\n",
 			 block_num, offset, dfu_demo_fw_size);
 	return (int)remaining;

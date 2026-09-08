@@ -6,7 +6,11 @@
 #include "PinNames.h"
 #include "ringbuffer.h"
 
+#if defined(CONFIG_AMEBAPRO3)
+#define UART_IDX      1
+#else
 #define UART_IDX      0
+#endif
 
 #if defined (CONFIG_AMEBASMART)
 #define UART_TX       PA_3 // UART0 TX
@@ -32,6 +36,13 @@
 #define UART_RX        PA_25 // UART RX
 #define UART_RTS       PA_24 // UART0 RTS
 #define UART_CTS       PA_23 // UART0 CTS
+
+#elif defined (CONFIG_AMEBAPRO3)
+/* fully programmable zone */
+#define UART_TX		PF_2 // UART TX
+#define UART_RX		PF_3 // UART RX
+#define UART_RTS	PF_11 // UART RTS
+#define UART_CTS	PF_10 // UART CTS
 
 #else
 #define UART_TX        PA_26 // UART TX

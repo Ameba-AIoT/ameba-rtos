@@ -12,7 +12,7 @@ from version_info import gui_version
 _parts = gui_version.split('.') + ['0', '0', '0', '0']
 _ver_tuple = ','.join(_parts[:4])
 
-temp_version_file = Path("version_mp.tmp")
+temp_version_file = Path(current_dir) / "version_mp.tmp"
 temp_version_file.write_text(
 f"""# UTF-8 encoding
 # UTF-8
@@ -69,6 +69,7 @@ a = Analysis(
         'base.device_profile',
         'base.json_utils',
         'base.download_handler',
+        'base.golden_board_detector',
         'base.floader_handler',
         'base.rom_handler',
         'base.device_info',
@@ -86,6 +87,7 @@ a = Analysis(
         'app.port_progress_widget',
         'app.progress_log_handler',
         'app.download_worker',
+        'app.detect_layout_worker',
     ],
     hookspath=[],
     hooksconfig={},
@@ -117,7 +119,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon='app/icon/mp_flashtool.ico',
-    version=temp_version_file.name,
+    version=str(temp_version_file),
 )
 
-os.remove(temp_version_file.name)
+os.remove(temp_version_file)

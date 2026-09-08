@@ -104,6 +104,8 @@ extern u8 __rom_stdlib_data_end__[];
 extern u8 __rom_stdlib_text_start__[];
 extern u8 __rom_stdlib_text_end__[];
 
+extern u8 __sram_end__[];               /* SRAM top the images are linked against, CONFIG_SRAM_END driven */
+
 /* sym for trustzone config - merged TZ region: ENTRY + SECURE + NSC */
 extern u8 __km4_bd_ram_start__[];
 extern u8 __km4_bd_psram_start__[];
@@ -128,9 +130,6 @@ extern u8 __psram_image2_end__[] __weak;
 
 extern u8 __git_ver_table_start__[];
 extern u8 __git_ver_table_end__[];
-
-extern u8 __ap_sram_heap_start[];
-extern u8 __ap_sram_heap_size[];
 
 /*for sleep backup */
 extern u32 __km4_msp_ram_ns_limit__[];

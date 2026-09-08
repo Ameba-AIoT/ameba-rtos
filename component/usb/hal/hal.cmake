@@ -24,6 +24,12 @@ if(CONFIG_AMEBAGREEN2)
     )
 endif()
 
+if(CONFIG_RLE1509)
+    ameba_list_append(private_sources
+        ${USB_HAL_DIR}/rle1509_usb.c
+    )
+endif()
+
 
 if(CONFIG_AMEBAPRO3)
     ameba_list_append(private_sources

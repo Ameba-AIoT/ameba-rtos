@@ -19,7 +19,7 @@
 /* Private defines -----------------------------------------------------------*/
 
 // Endpoint address
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 #define MSC_BULK_IN_EP                            0x82U
 #else
 #define MSC_BULK_IN_EP                            0x81U
@@ -79,7 +79,7 @@ static const usbd_config_t msc_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 100U,
-#elif defined (CONFIG_AMEBAGREEN2)
+#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	.rx_fifo_depth = 660U,
 	.ptx_fifo_depth = {16U, 256U, 16U, 16U, 16U},
 #elif defined (CONFIG_AMEBAL2)

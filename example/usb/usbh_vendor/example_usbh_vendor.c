@@ -48,12 +48,12 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "VND";
 
-static u8 vendor_bulk_loopback_tx_buf[USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-static u8 vendor_bulk_loopback_rx_buf[USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-static u8 vendor_intr_loopback_tx_buf[USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-static u8 vendor_intr_loopback_rx_buf[USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-static u8 vendor_isoc_tx_buf[USBH_VENDOR_ISOC_TEST_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
-static u8 vendor_isoc_rx_buf[USBH_VENDOR_ISOC_TEST_BUF_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
+static u8 vendor_bulk_loopback_tx_buf[USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE] USB_DMA_ALIGNED;
+static u8 vendor_bulk_loopback_rx_buf[USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE] USB_DMA_ALIGNED;
+static u8 vendor_intr_loopback_tx_buf[USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE] USB_DMA_ALIGNED;
+static u8 vendor_intr_loopback_rx_buf[USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE] USB_DMA_ALIGNED;
+static u8 vendor_isoc_tx_buf[USBH_VENDOR_ISOC_TEST_BUF_SIZE] USB_DMA_ALIGNED;
+static u8 vendor_isoc_rx_buf[USBH_VENDOR_ISOC_TEST_BUF_SIZE] USB_DMA_ALIGNED;
 
 static rtos_sema_t vendor_detach_sema;
 static rtos_sema_t vendor_attach_sema;
@@ -76,7 +76,7 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = CONFIG_USBH_VENDOR_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = CONFIG_USBH_VENDOR_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
 	.rx_fifo_depth = 500,
 	.nptx_fifo_depth = 256,
@@ -248,13 +248,13 @@ static void vendor_intr_loopback_test(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INTR loopback test start, times:%d, size: %d\n", USBH_VENDOR_INTR_LOOPBACK_CNT, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
 
 	for (i = 0; i < USBH_VENDOR_INTR_LOOPBACK_CNT; i++) {
-		memset(vendor_intr_loopback_rx_buf, 0, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
+		usb_os_memset((void *)vendor_intr_loopback_rx_buf, 0, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
 		if (!vendor_is_ready) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Device disconnect\n");
 			return;
 		}
 
-		memset(vendor_intr_loopback_tx_buf, i, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
+		usb_os_memset((void *)vendor_intr_loopback_tx_buf, i, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
 		usbh_vendor_intr_transmit(vendor_intr_loopback_tx_buf, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE, USBH_VENDOR_INTR_LOOPBACK_CNT);
 
 		if (rtos_sema_take(vendor_intr_send_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
@@ -290,13 +290,13 @@ static void vendor_bulk_loopback_test(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "BULK loopback test start, times:%d, size: %d\n", USBH_VENDOR_BULK_LOOPBACK_CNT, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
 
 	for (i = 0; i < USBH_VENDOR_BULK_LOOPBACK_CNT; i++) {
-		memset(vendor_bulk_loopback_rx_buf, 0, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
+		usb_os_memset((void *)vendor_bulk_loopback_rx_buf, 0, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
 		if (!vendor_is_ready) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Device disconnect\n");
 			return;
 		}
 
-		memset(vendor_bulk_loopback_tx_buf, i, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
+		usb_os_memset((void *)vendor_bulk_loopback_tx_buf, i, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
 
 		usbh_vendor_bulk_transmit(vendor_bulk_loopback_tx_buf, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE, USBH_VENDOR_BULK_LOOPBACK_CNT);
 

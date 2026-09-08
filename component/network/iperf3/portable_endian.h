@@ -164,8 +164,12 @@
                    (((unsigned long long)(n) & 0xFF00000000000000) >> 56))
 #endif
 
+#ifndef htobe64
 #define htobe64(n) HTONLL(n)
+#endif
+#ifndef be64toh
 #define be64toh(n) NTOHLL(n)
+#endif
 
 #endif
 

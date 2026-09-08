@@ -22,6 +22,7 @@ static int usbh_vendor_attach(usb_host_t *host);
 static int usbh_vendor_detach(usb_host_t *host);
 static int usbh_vendor_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_vendor_setup(usb_host_t *host);
+static void usbh_vendor_deinit_all_pipe(void);
 static int usbh_vendor_sof(usb_host_t *host);
 
 /* Private variables ---------------------------------------------------------*/
@@ -94,7 +95,7 @@ static char *usbh_get_transfer_type_text(usbh_pipe_t *pipe)
   * @param  intf: Interface descriptor.
   * @retval None.
   */
-static void usbh_vendor_get_endpoints(usb_host_t *host, usbh_itf_desc_t *intf)
+static int usbh_vendor_get_endpoints(usb_host_t *host, usbh_itf_desc_t *intf)
 {
 	u32 tmp = 0;
 	usbh_vendor_host_t *vendor = &usbh_vendor_host;
@@ -115,7 +116,11 @@ static void usbh_vendor_get_endpoints(usb_host_t *host, usbh_itf_desc_t *intf)
 			} else {
 				xfer = &vendor->bulk_out_xfer;
 			}
-			usbh_open_pipe(host, &xfer->pipe, ep_desc, &usbh_vendor_driver);
+			if (usbh_open_pipe(host, &xfer->pipe, ep_desc, &usbh_vendor_driver) != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk pipe fail\n");
+				usbh_vendor_deinit_all_pipe();
+				return HAL_ERR_PARA;
+			}
 			break;
 
 		case USB_CH_EP_TYPE_INTR:
@@ -124,7 +129,11 @@ static void usbh_vendor_get_endpoints(usb_host_t *host, usbh_itf_desc_t *intf)
 			} else {
 				xfer = &vendor->intr_out_xfer;
 			}
-			usbh_open_pipe(host, &xfer->pipe, ep_desc, &usbh_vendor_driver);
+			if (usbh_open_pipe(host, &xfer->pipe, ep_desc, &usbh_vendor_driver) != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr pipe fail\n");
+				usbh_vendor_deinit_all_pipe();
+				return HAL_ERR_PARA;
+			}
 			break;
 
 		case USB_CH_EP_TYPE_ISOC:
@@ -133,8 +142,11 @@ static void usbh_vendor_get_endpoints(usb_host_t *host, usbh_itf_desc_t *intf)
 			} else {
 				xfer = &vendor->isoc_out_xfer;
 			}
-			usbh_open_pipe(host, &xfer->pipe, ep_desc, &usbh_vendor_driver);
-
+			if (usbh_open_pipe(host, &xfer->pipe, ep_desc, &usbh_vendor_driver) != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Open isoc pipe fail\n");
+				usbh_vendor_deinit_all_pipe();
+				return HAL_ERR_PARA;
+			}
 			break;
 
 		default:
@@ -146,6 +158,8 @@ static void usbh_vendor_get_endpoints(usb_host_t *host, usbh_itf_desc_t *intf)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "%s EP%02x MPS %d intv %d\n", xfer_type, xfer->pipe.ep_addr, xfer->pipe.ep_mps, xfer->pipe.ep_interval);
 		}
 	}
+
+	return HAL_OK;
 }
 
 /**
@@ -183,14 +197,12 @@ static void usbh_vendor_deinit_transfer(usb_host_t *host, usbh_vendor_xfer_t *xf
 {
 	usbh_pipe_t *pipe = &xfer->pipe;
 
-	if (pipe->pipe_num) {
+	if (pipe->pipe_num && host != NULL) {
 		usbh_close_pipe(host, pipe);
 	}
 
-	if (xfer->test_buf != NULL) {
-		usb_os_mfree(xfer->test_buf);
-		xfer->test_buf = NULL;
-	}
+	usb_os_mfree((void *)xfer->test_buf);
+	xfer->test_buf = NULL;
 
 	xfer->xfer_max_len = 0;
 	xfer->xfer_cnt = 0;
@@ -208,6 +220,7 @@ static int usbh_vendor_attach(usb_host_t *host)
 	usbh_vendor_host_t *vendor = &usbh_vendor_host;
 	usbh_itf_data_t *itf_data;
 	usbh_dev_id_t dev_id = {0,};
+	int status;
 
 	dev_id.bInterfaceClass = VENDOR_CLASS_CODE;
 	dev_id.bInterfaceSubClass = VENDOR_SUBCLASS_CODE;
@@ -225,7 +238,10 @@ static int usbh_vendor_attach(usb_host_t *host)
 		vendor->state = VENDOR_STATE_XFER;
 
 		/* Get data in/out endpoints */
-		usbh_vendor_get_endpoints(host, itf_data->itf_desc_array);
+		status = usbh_vendor_get_endpoints(host, itf_data->itf_desc_array);
+		if (status != HAL_OK) {
+			return status;
+		}
 
 		if ((vendor->cb != NULL) && (vendor->cb->attach != NULL)) {
 			vendor->cb->attach();
@@ -244,6 +260,10 @@ static void usbh_vendor_deinit_all_pipe(void)
 	usbh_vendor_host_t *vendor = &usbh_vendor_host;
 	usb_host_t *host = vendor->host;
 	usbh_pipe_t *pipe;
+
+	if (host == NULL) {
+		return;
+	}
 
 	pipe = &vendor->bulk_in_xfer.pipe;
 	if (pipe->pipe_num) {
@@ -302,6 +322,8 @@ static int usbh_vendor_detach(usb_host_t *host)
 	vendor->state = VENDOR_STATE_IDLE;
 
 	usbh_vendor_deinit_all_pipe();
+	usbh_vendor_deinit_all_xfer();
+	vendor->host = NULL;
 
 	if ((vendor->cb != NULL) && (vendor->cb->detach != NULL)) {
 		vendor->cb->detach();
@@ -706,7 +728,7 @@ int usbh_vendor_init(const usbh_vendor_cb_t *cb)
 		return HAL_ERR_PARA;
 	}
 
-	usb_os_memset(vendor, 0x00, sizeof(usbh_vendor_host_t));
+	usb_os_memset((void *)vendor, 0x00, sizeof(usbh_vendor_host_t));
 	vendor->cb = cb;
 	if (cb->init != NULL) {
 		ret = cb->init();
@@ -762,9 +784,7 @@ static int usbh_vendor_transmit(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u32 
 		&& ((vendor->state == VENDOR_STATE_IDLE) || (vendor->state == VENDOR_STATE_XFER))) {
 
 		if (pipe->ep_type == USB_CH_EP_TYPE_ISOC) {
-			if (xfer->test_buf != NULL) {
-				usb_os_mfree(xfer->test_buf);
-			}
+			usb_os_mfree((void *)xfer->test_buf);
 			xfer->test_buf = (u8 *)usb_os_malloc(test_cnt);
 			if (xfer->test_buf == NULL) {
 				return HAL_BUSY;
@@ -814,9 +834,7 @@ static int usbh_vendor_receive(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u32 t
 	if ((vendor->state == VENDOR_STATE_IDLE) || (vendor->state == VENDOR_STATE_XFER)) {
 		if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
 			if (pipe->ep_type == USB_CH_EP_TYPE_ISOC) {
-				if (xfer->test_buf != NULL) {
-					usb_os_mfree(xfer->test_buf);
-				}
+				usb_os_mfree((void *)xfer->test_buf);
 				xfer->test_buf = (u8 *)usb_os_malloc(test_cnt);
 				if (xfer->test_buf == NULL) {
 					return HAL_BUSY;

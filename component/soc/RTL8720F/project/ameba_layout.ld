@@ -50,15 +50,11 @@
 #define KM4NS_IPC_RAM_SIZE           512              /* 512B */
 
 #if defined (CONFIG_SOLO)
-#define RAM_KM4NS_IMG2_SIZE          KBYTES(184)
 #define RAM_KM4NS_BOOT_SIZE          KBYTES(8)
-#elif defined(CONFIG_WHC_DEV)
-#define RAM_KM4NS_IMG2_SIZE          KBYTES(48)        /* include 512B IPC RAM; KM4TZ gets [KM4NS_end..0x20070000] in CONFIG_WHC_DEV_HCI_BOOT */
-#define RAM_KM4NS_BOOT_SIZE          KBYTES(0)
 #else
-#define RAM_KM4NS_IMG2_SIZE          KBYTES(192)       /* include 512B IPC RAM */
 #define RAM_KM4NS_BOOT_SIZE          KBYTES(0)
 #endif
+#define RAM_KM4NS_IMG2_SIZE          KBYTES(CONFIG_SRAM_KM4NS_IMG2_KB)
 
 /*
                   RTL8720F SRAM Layout (512K)

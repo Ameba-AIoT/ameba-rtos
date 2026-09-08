@@ -56,9 +56,6 @@ int  whc_host_hal_xmit_thread(void *data);
 
 /* TX descriptor helpers */
 u32  whc_host_hal_hwqueue_get(u8 qsel);
-int  whc_host_hal_txbd_enough_check(void);
-u8   whc_host_hal_txdesc_sc_mapping(u8 bwmode, enum channel_width CurrentChannelBW, u8 pri_ch, u8 central_ch);
-u8   whc_host_hal_txdesc_bw_mapping(u8 bwmode, enum channel_width CurrentChannelBW);
 u8   whc_host_hal_txdesc_fill_sectype(u8 encrypt, u8 bswenc);
 void whc_host_hal_txdesc_fill_vcs(struct txdesc_priv *ptxdesc, u8 vcs_mode, u8 cur_channel, u8 preamble_mode);
 void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf);

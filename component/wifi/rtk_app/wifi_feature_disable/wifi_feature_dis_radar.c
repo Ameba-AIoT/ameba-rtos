@@ -85,31 +85,13 @@ void wifi_hal_radar_parm_set(char *cmd_ptr, u32 extra_arg)
 	(void)extra_arg;
 }
 
+void wifi_hal_radar_bb_parm_set(char *cmd_ptr, u32 extra_arg)
+{
+	(void)cmd_ptr;
+	(void)extra_arg;
+}
+
 void wifi_hal_dbg_radar_psd_check(char *cmd_ptr, u32 extra_arg)
-{
-	(void)cmd_ptr;
-	(void)extra_arg;
-}
-
-void wifi_hal_dbg_radar_edcca_th(char *cmd_ptr, u32 extra_arg)
-{
-	(void)cmd_ptr;
-	(void)extra_arg;
-}
-
-void wifi_hal_dbg_radar_intf_det_th(char *cmd_ptr, u32 extra_arg)
-{
-	(void)cmd_ptr;
-	(void)extra_arg;
-}
-
-void wifi_hal_dbg_radar_timeout_th(char *cmd_ptr, u32 extra_arg)
-{
-	(void)cmd_ptr;
-	(void)extra_arg;
-}
-
-void wifi_hal_dbg_radar_rfk_en(char *cmd_ptr, u32 extra_arg)
 {
 	(void)cmd_ptr;
 	(void)extra_arg;
@@ -121,19 +103,7 @@ void wifi_hal_dbg_radar_debug_type(char *cmd_ptr, u32 extra_arg)
 	(void)extra_arg;
 }
 
-void wifi_hal_dbg_radar_log_range_ori(char *cmd_ptr, u32 extra_arg)
-{
-	(void)cmd_ptr;
-	(void)extra_arg;
-}
-
-void wifi_hal_dbg_radar_log_lms_parse(char *cmd_ptr, u32 extra_arg)
-{
-	(void)cmd_ptr;
-	(void)extra_arg;
-}
-
-void wifi_hal_dbg_radar_log_rpt_info(char *cmd_ptr, u32 extra_arg)
+void wifi_hal_radar_dbg_log(char *cmd_ptr, u32 extra_arg)
 {
 	(void)cmd_ptr;
 	(void)extra_arg;

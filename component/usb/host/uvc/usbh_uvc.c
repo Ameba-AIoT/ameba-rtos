@@ -51,7 +51,7 @@ int usbh_uvc_init(const usbh_uvc_ctx_t *cfg, const usbh_uvc_cb_t *cb)
 		return HAL_ERR_PARA;
 	}
 
-	usb_os_memset(uvc, 0x00, sizeof(usbh_uvc_host_t));
+	usb_os_memset((void *)uvc, 0x00, sizeof(usbh_uvc_host_t));
 	uvc->request_buf = (u8 *)usb_os_malloc(USBH_UVC_REQUEST_BUF_LEN);
 	if (uvc->request_buf == NULL) {
 		return HAL_ERR_MEM;
@@ -78,10 +78,8 @@ int usbh_uvc_init(const usbh_uvc_ctx_t *cfg, const usbh_uvc_cb_t *cb)
 			 * does not leak request_buf or leave the class registered.
 			 * (Any DEBUG dump task is torn down by usbh_uvc_deinit if needed.) */
 			usbh_uvc_class_deinit();
-			if (uvc->request_buf != NULL) {
-				usb_os_mfree(uvc->request_buf);
-				uvc->request_buf = NULL;
-			}
+			usb_os_mfree((void *)uvc->request_buf);
+			uvc->request_buf = NULL;
 			return ret;
 		}
 	}
@@ -107,10 +105,8 @@ int usbh_uvc_init(const usbh_uvc_ctx_t *cfg, const usbh_uvc_cb_t *cb)
 				uvc->cb->deinit();
 			}
 			usbh_uvc_class_deinit();
-			if (uvc->request_buf != NULL) {
-				usb_os_mfree(uvc->request_buf);
-				uvc->request_buf = NULL;
-			}
+			usb_os_mfree((void *)uvc->request_buf);
+			uvc->request_buf = NULL;
 			return ret;
 		}
 	}
@@ -173,10 +169,8 @@ void usbh_uvc_deinit(void)
 		usbh_uvc_stream_close(stream);
 	}
 
-	if (uvc->request_buf != NULL) {
-		usb_os_mfree(uvc->request_buf);
-		uvc->request_buf = NULL;
-	}
+	usb_os_mfree((void *)uvc->request_buf);
+	uvc->request_buf = NULL;
 
 #if USBH_UVC_USE_HW && USBH_UVC_DEBUG
 	if (uvc->hw_dump_task_alive != 0U) {
@@ -273,7 +267,7 @@ int usbh_uvc_set_param(usbh_uvc_s_ctx_t *para, u8 stream_index)
 	ctrl = &stream->stream_ctrl;
 	max_frame_size = ctrl->dwMaxVideoFrameSize;
 	max_xfer_size = ctrl->dwMaxPayloadTransferSize;
-	usb_os_memset(ctrl, 0U, sizeof(usbh_uvc_stream_control_t));
+	usb_os_memset((void *)ctrl, 0U, sizeof(usbh_uvc_stream_control_t));
 	ctrl->bmHint = 1U;  /* dwFrameInterval */
 	ctrl->bFormatIndex = format_idx;
 	ctrl->bFrameIndex = frame_idx;

@@ -280,10 +280,8 @@ int whc_sdio_host_resume(struct device *dev)
 	rtw_sdio_init_txavailbd_threshold(priv);
 #endif
 
-#ifdef CONFIG_SDIO_RX_AGGREGATION
-	if (rtw_sdio_init_agg_setting(priv) == false) {
-		return -EPERM;
-	}
+#ifdef WHC_RX_AGG
+	rtw_sdio_enable_rx_agg(priv);
 #endif
 	rtw_sdio_query_txbd_status(priv);
 

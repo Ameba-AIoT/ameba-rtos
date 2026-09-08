@@ -322,7 +322,7 @@ static void eth_init_thread(void *param)
 	struct eth_phy_dev phy_dev = {
 		.bus  = &eth_mdio_bus,
 		.addr = 0x01,
-		.ops  = &phy_rtl8201fr_ops,
+		.ops  = &phy_rtl8201f_ops,
 	};
 
 	/* Initialize LwIP Stack (One-time) */

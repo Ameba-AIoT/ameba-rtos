@@ -13,6 +13,8 @@
 #if defined (CONFIG_AMEBASMART)
 #define VBAT_CH		ADC_CH6
 #define PINMUX_FUNCTION_ADC PINMUX_FUNCTION_CAPTOUCH
+#elif defined (CONFIG_AMEBAPRO3)
+#define VBAT_CH		ADC_CH6
 #endif
 
 extern int example_raw_adc_tim_trig_vbat(void);

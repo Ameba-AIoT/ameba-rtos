@@ -238,6 +238,12 @@ menu "CONFIG WHC INTF"
             bool "Support WHC SUPPLICANT OFFLOAD"
         config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4
             bool "Support WHC DEV TCPIP KEEPALIVE"
+        config WAR_OFFLOAD_FOR_KM4
+            bool
+            help
+              Device-side mDNS offload, hidden for now. Once the host enables it at
+              runtime no RX packet reaches the host at all, so the host side must
+              drive it (WHC_API_WAR_OFFLOAD_CTRL + WHC_API_WAR_SET_MDNS_PARA).
         endmenu
 
         config WHC_DEV_FLASH_BOOT
@@ -250,9 +256,6 @@ menu "CONFIG WHC INTF"
         config WHC_CMD_PATH
             default y
             bool "Support WHC CMD PATH"
-        config WHC_WIFI_API_PATH
-            default y
-            bool "Support WHC WIFI API PATH"
         endmenu
     endif
 

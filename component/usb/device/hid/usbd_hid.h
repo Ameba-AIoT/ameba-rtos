@@ -45,6 +45,26 @@ extern "C" {
 #define USBD_HID_HS_INT_MAX_PACKET_SIZE      64 /**< High speed INTR maximum packet size */
 #define USBD_HID_FS_INT_MAX_PACKET_SIZE      64 /**< Full speed INTR maximum packet size */
 
+#define USBD_HID_DESC_SIZE                   9       /**< HID descriptor size. */
+#define USBD_HID_DESC_ITEM_LENGTH_OFFSET     7       /**< Offset of report desc wItemLength in the HID descriptor. */
+#define USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET 25      /**< Offset of report desc wItemLength in the config descriptor. */
+
+#ifdef CONFIG_USBD_HID_BIDIR
+/* Bidirectional HID variant: 2 interfaces (Vendor raw + Consumer Control),
+ * 3 endpoints (Priv INTR IN + Priv INTR OUT + Consumer INTR IN). */
+#define USBD_HID_MAX_BUF_SIZE                64U     /**< Bidir INTR EP max packet size (LS/FS-compatible). */
+#define USBD_HID_REPORT_ID                   0x1FU   /**< Priv (vendor) Report ID for IN/OUT. */
+#define USBD_HID_VOLUME_REPORT_ID            ((USBD_HID_REPORT_ID) + 1) /**< Consumer control Report ID (Volume/Power). */
+#define USBD_HID_TX_PKT_SIZE                 ((USBD_HID_MAX_BUF_SIZE) - 4) /**< IN payload size before Report ID / trailer. */
+#define USBD_HID_RX_PKT_SIZE                 ((USBD_HID_MAX_BUF_SIZE) - 1) /**< OUT payload size (Report ID prepended). */
+#define USBD_HID_BUF_MAX_CNT                 10U     /**< OUT ring buffer slot count. */
+/* wItemLength offset for the Vendor (Consumer Control) HID descriptor in the config descriptor:
+ *   cfg header (9) + priv-if (9) + priv-hid (9) + priv-EP IN (7) + priv-EP OUT (7)
+ *   + vend-if (9) + vend-hid header (7) = 57 */
+#define USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET  57
+#endif
+
+
 /* Mouse button definition  */
 #define USBD_HID_MOUSE_BUTTON_LEFT           0x01    /**< Mouse Left button. 0: release, 1: press. */
 #define USBD_HID_MOUSE_BUTTON_RIGHT          0x02    /**< Mouse Right button. 0: release, 1: press. */
@@ -66,12 +86,18 @@ extern "C" {
 /**
  * @brief HID endpoint configuration structure.
  * @details Allows the user to override default endpoint addresses and buffer sizes.
+ *          Keyboard variant needs INTR OUT (LED report).
+ *          Bidir variant needs INTR OUT (raw OUT report) and a second INTR IN
+ *          (Consumer Control: Volume/Power).
  */
 typedef struct {
 	u32 intr_in_xfer_size;      /**< INTR IN transfer buffer size (0 = use default). */
 	u8  intr_in_addr;
-#ifdef CONFIG_USBD_HID_KEYBOARD
+#if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_BIDIR)
 	u8  intr_out_addr;
+#endif
+#ifdef CONFIG_USBD_HID_BIDIR
+	u8  consumer_intr_in_addr;  /**< Vendor (Consumer Control) INTR IN endpoint address. */
 #endif
 } usbd_hid_ep_cfg_t;
 
@@ -106,15 +132,27 @@ typedef struct {
 	 */
 	void (*transmitted)(u8 status);
 
-#ifdef CONFIG_USBD_HID_KEYBOARD
+#if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_BIDIR)
 	/**
-	 * @brief Called when new data is received from the host on the INTR IN endpoint, used for keyboard.
+	 * @brief Called when new data is received from the host on the INTR OUT endpoint (or via SET_REPORT on EP0).
+	 *        Keyboard: LED-state report; Bidir: raw vendor OUT report (also queued into ring buffer for
+	 *        blocking @ref usbd_hid_read).
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] buf Pointer to the received data buffer.
 	 * @param[in] len Length of the received data in bytes.
 	 */
 	void (*received)(u8 *buf, u32 len);
+#endif
+
+#ifdef CONFIG_USBD_HID_BIDIR
+	/**
+	 * @brief Called upon SOF interrupt (GINTSTS.Sof). Used by the bidir variant to
+	 *        re-arm the INTR OUT endpoint when the OUT ring buffer has free slots.
+	 * @note   This function is called within an interrupt service routine (ISR) context;
+	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 */
+	void (*sof)(void);
 #endif
 
 	/**
@@ -130,6 +168,34 @@ typedef struct {
 /** @} End of Device_HID_Types group */
 /** @} End of USB_Device_Types group */
 
+#ifdef CONFIG_USBD_HID_BIDIR
+/**
+ * @brief One slot of the bidir HID OUT ring buffer.
+ */
+typedef struct {
+	u8 *buf_raw;
+	__IO u16 buf_valid_len;
+} usbd_hid_buf_t;
+
+/**
+ * @brief Bidir HID OUT ring buffer control block.
+ */
+typedef struct {
+	rtos_sema_t rx_sema;              /**< Signal from ISR when a new OUT frame arrives. */
+	usbd_hid_buf_t *buf_array;        /**< Slot array (size = buf_array_cnt). */
+	u8 *hid_buf;                      /**< Backing DMA buffer for all slots (contiguous). */
+
+	u16 buf_array_cnt;                /**< Number of slots (USBD_HID_BUF_MAX_CNT). */
+	u16 hid_mps;                      /**< Max packet size per slot (USBD_HID_MAX_BUF_SIZE). */
+
+	__IO u8 hid_sema_valid;           /**< 1 if @ref rx_sema was created. */
+	__IO u8 read_wait_sema;           /**< 1 while a reader is blocked on rx_sema. */
+	__IO u8 read_idx;                 /**< Next slot to be read out. */
+	__IO u8 write_idx;                /**< Next slot the ISR will fill. */
+	__IO u8 is_intr_out_busy;         /**< 1 if an INTR OUT request is currently armed. */
+} usbd_hid_buf_ctrl_t;
+#endif /* CONFIG_USBD_HID_BIDIR */
+
 /**
  * @brief Structure representing the HID device instance.
  */
@@ -138,9 +204,18 @@ typedef struct {
 	const usbd_hid_usr_cb_t *cb;        /**< Pointer to the user-defined callback structure. */
 	usb_dev_t *dev;               /**< Pointer to the USB device instance. */
 	usb_setup_req_t ctrl_req;     /**< Stores the current control request. */
-	usbd_ep_t ep_intr_in;         /**< INTR IN endpoint structure. */
-#ifdef CONFIG_USBD_HID_KEYBOARD
+	usbd_ep_t ep_intr_in;         /**< INTR IN endpoint structure (Priv/data IN). */
+#if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_BIDIR)
 	usbd_ep_t ep_intr_out;        /**< INTR OUT endpoint structure. */
+#endif
+#ifdef CONFIG_USBD_HID_BIDIR
+	usbd_ep_t ep_consumer_intr_in;    /**< Consumer Control (Volume/Power) INTR IN. */
+	usbd_hid_buf_ctrl_t rx_ctrl;      /**< OUT ring buffer control block. */
+	/*  Windows HID Tool prepends the Report ID to raw IN transfers so the
+	 *  transfer length equals ReportSize; the TV/consumer paths only report
+	 *  the user data (length may be < ReportSize). Detected at RX by reading
+	 *  the leading byte and consulted at TX to decide whether to prepend. */
+	__IO u8 report_id_append : 1;
 #endif
 	u8 protocol;                  /**< Store the device protocol value. */
 	u8 idle_rate;                 /**< Store the device idle rate. */
@@ -189,6 +264,42 @@ int usbd_hid_deinit(void);
  * @return 0 on success, non-zero on failure.
  */
 int usbd_hid_send_data(const u8 *buf, u32 len);
+
+#ifdef CONFIG_USBD_HID_BIDIR
+/**
+ * @brief  Bidir variant: send a Consumer Control Volume Up/Down code.
+ * @param[in] vol_up: 1 = Volume Up, 0 = Volume Down.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbd_hid_volume_ctrl(u8 vol_up);
+
+/**
+ * @brief  Bidir variant: send a Consumer Control Power press.
+ * @return 0 on success, non-zero on failure.
+ */
+int usbd_hid_power_ctrl(void);
+
+/**
+ * @brief  Bidir variant: read one or more queued raw OUT reports from the ring buffer.
+ * @param[in]  buffer      Destination buffer for payload bytes (Report ID stripped when appended).
+ * @param[in]  size        Destination buffer capacity.
+ * @param[in]  time_out_ms 0 = non-blocking; else block up to this many ms waiting for data.
+ * @return Number of bytes actually copied into @p buffer.
+ */
+u32 usbd_hid_read(u8 *buffer, u32 size, u32 time_out_ms);
+
+/**
+ * @brief  Bidir variant: number of raw OUT frames currently queued.
+ * @return Queued frame count.
+ */
+u32 usbd_hid_get_read_buf_cnt(void);
+
+/**
+ * @brief  Bidir variant: query whether the RX ring buffer is full.
+ * @return 1 if full, 0 otherwise.
+ */
+u32 usbd_hid_ring_buf_is_full(void);
+#endif /* CONFIG_USBD_HID_BIDIR */
 
 /** @} End of Device_HID_Functions group */
 /** @} End of USB_Device_Functions group */

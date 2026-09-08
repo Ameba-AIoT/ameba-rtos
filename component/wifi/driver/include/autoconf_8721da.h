@@ -46,7 +46,7 @@
 /**************** configurations for concurrent mode end **********************/
 
 /************************* Default Values of User Configure *****************************/
-#define MACID_HW_MAX_NUM		16
+#define MACID_HW_MAX_NUM		28
 /************************* Default Values of User Configure End***************************/
 //#define CONFIG_SUPPLICANT_SME
 
