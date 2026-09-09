@@ -1181,7 +1181,7 @@ struct rtw_radar_action_parm {
 	u8 enable;      /**< 0: disable RADAR function; 1: enable RADAR function. */
 	u8 mode;        /**< Mode for Radar. val: @ref RTW_RADAR_SINGLE_MODE, @ref RTW_RADAR_NORMAL_MODE*/
 	u8 channel; /**< FMCW center frequency (recommended ch: 7). */
-	u8 chrip_bw;  /**< 0: 70M; 1: 40M; 2: 20M */
+	u8 chirp_bw;  /**< 0: 70M; 1: 40M; 2: 20M */
 	u8 trig_period; /**< FMCW interval, unit: ms (recommended value: 15ms). */
 };
 

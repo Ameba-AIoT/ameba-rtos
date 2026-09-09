@@ -87,7 +87,11 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wowlan_rx_bcmc_dis = 0;
 
 	/* Softap related */
+#if defined(CONFIG_WIFI_AP_STA_NUM)
 	wifi_user_config.ap_sta_num = CONFIG_WIFI_AP_STA_NUM;
+#else
+	wifi_user_config.ap_sta_num = 5;	/*should not exceed 26 */
+#endif
 	wifi_user_config.ap_polling_sta = 0;
 	wifi_user_config.ap_bypass_forwarding = 0;
 
@@ -129,6 +133,9 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_fixed_rnat_node = 0;
 	wifi_user_config.wtn_connect_only_to_rnat = 0;
 	wifi_user_config.wtn_max_node_num = 15;
+#if defined(CONFIG_RMESH_EN) && !defined(CONFIG_RNAT_EN)
+	wifi_user_config.wtn_max_refugee_num = CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM;
+#endif
 	if (wifi_user_config.wtn_en) {
 		skb_num_np_rsvd = 16; /*4 for rx_ring_buffer + 2 for mgnt trx + 10 for tunnel tx */
 		wifi_user_config.skb_num_np = 20; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */

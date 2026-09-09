@@ -401,12 +401,12 @@ void BOOT_Image1(void)
 		BOOT_Pad_Ctrl();
 	}
 
-	if (SYSCFG_OTP_BOOTSEL() != BOOT_FROM_SDIO) {
-		BOOT_Data_Flash_Init();
+#ifndef CONFIG_WHC_DEV_HCI_BOOT
+	BOOT_Data_Flash_Init();
 
-		flash_highspeed_setup();
-		BOOT_LoadImages();
-	}
+	flash_highspeed_setup();
+	BOOT_LoadImages();
+#endif
 
 	/* it will switch shell control to NP, disable loguart interrupt to avoid loguart irq not assigned in non-secure world.
 	 it should switch before BOOT_RAM_TZCfg to avoid crash when loguart intr occur but it has been set to ns intr. */
@@ -426,7 +426,7 @@ void BOOT_Image1(void)
 	BOOT_SOLO_Enable();
 #endif
 
-#if defined(CONFIG_WHC_DEV_HCI_BOOT)
+#ifdef CONFIG_WHC_DEV_HCI_BOOT
 	// BOOT_Share_Cache_To_TCM();
 	Boot_Fullmac_LoadIMGAll(); /* Need Called After BOOT_RAM_TZCfg */
 #endif

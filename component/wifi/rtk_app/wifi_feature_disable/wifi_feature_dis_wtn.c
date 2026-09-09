@@ -19,6 +19,14 @@
 
 #ifdef CONFIG_WIFI_TUNNEL
 #ifndef CONFIG_WHC_HOST
+
+#if !defined(CONFIG_RMESH_EN) || defined(CONFIG_RNAT_EN)
+void rtw_macid_wtn_mgt_init(void *pmacid_mgt)
+{
+	UNUSED(pmacid_mgt);
+}
+#endif
+
 #ifndef CONFIG_RMESH_EN
 
 u8 whc_ipc_dev_wtn_api_hdl(void *p_ipc_msg)

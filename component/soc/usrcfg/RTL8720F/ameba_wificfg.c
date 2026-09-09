@@ -125,6 +125,9 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_father_refresh_timeout = 3000;
 	wifi_user_config.wtn_child_refresh_timeout = 4000;
 	wifi_user_config.wtn_max_node_num = 15;
+#if defined(CONFIG_RMESH_EN) && !defined(CONFIG_RNAT_EN)
+	wifi_user_config.wtn_max_refugee_num = CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM;
+#endif
 
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
 	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {

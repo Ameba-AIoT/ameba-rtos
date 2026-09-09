@@ -13,7 +13,7 @@
 
 //BT Feature
 #define BT_LL_FEATURE_CONN_PARAM_REQ                                0
-#define BT_LL_FEATURE_C2H_FLOWCTRL                                  0
+#define BT_LL_FEATURE_C2H_FLOWCTRL                                  1
 
 //BT 4.2
 #define BT_LL_FEATURE_BT42_LE_DATA_LENGTH_EXTENSION                 1

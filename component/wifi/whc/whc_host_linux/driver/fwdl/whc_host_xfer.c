@@ -70,7 +70,6 @@ struct whc_xfer_adapter_t *whc_xfer_adapter_alloc(void *interface, const struct 
 	adapter->hash_size = hal_config->hash_size;
 	adapter->xfer_page_size = hal_config->xfer_page_size;
 	adapter->read_buf_size = hal_config->read_buf_size;
-	adapter->manifest_pos = hal_config->manifest_pos;
 	adapter->chip_id = hal_config->chip_id;
 	adapter->min_protocol_version = hal_config->min_protocol_version;
 	adapter->max_protocol_version = hal_config->max_protocol_version;

@@ -55,10 +55,8 @@ static const struct whc_mem_region_t rtl8720f_mem_regions[] = {
 
 /* Image configuration for RTL8720F (image_name rewritten to *_MP.bin when mp=1) */
 static struct whc_image_t rtl8720f_images[] = {
-	/* FW_1: ROM-mode bootloader download (signature 0x96969999/0xFC66CC3F) */
-	{WHC_DEFINE_IMAGE(WHC_FW_1_NAME, 0x96969999, 0xFC66CC3F, 0x00000000, 0x00000000, WHC_IMAGE_TYPE_BOOTLOADER, WHC_POST_PROCESS_BOOT)},
-	/* FW_2: Application image (km4tz + km4ns combined, APP signature) */
-	{WHC_DEFINE_IMAGE(WHC_FW_2_NAME, 0x35393138, 0x31313738, 0x08001000, 0x3007F000, WHC_IMAGE_TYPE_APPLICATION, WHC_POST_PROCESS_BOOT)},
+	{WHC_DEFINE_IMAGE(WHC_FW_1_NAME, WHC_SIG_LOADER, 0x00000000, WHC_MANIFEST_TAIL_AFTER,       WHC_IMAGE_TYPE_BOOTLOADER, WHC_POST_PROCESS_BOOT)},
+	{WHC_DEFINE_IMAGE(WHC_FW_2_NAME, WHC_SIG_APP,    0x08010000, WHC_MANIFEST_TAIL(0x3007F000), WHC_IMAGE_TYPE_APPLICATION, WHC_POST_PROCESS_BOOT)},
 	{0}  /* Terminator */
 };
 
@@ -76,8 +74,6 @@ static struct whc_hal_config_t rtl8720f_config = {
 	.hash_size = 32,
 	.xfer_page_size = 2 * 1024,   /* 2KB */
 	.read_buf_size = 16 * 1024,   /* 16KB (8 pages) */
-	.manifest_pos = WHC_XFER_MANIFEST_POS_TAIL,
-
 	/* Memory regions and images */
 	.mem_regions = rtl8720f_mem_regions,
 	.images = rtl8720f_images,
