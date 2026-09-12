@@ -260,7 +260,6 @@ void BOOT_DDR_Init(void)
 	DDR_PHY_AutoGating();
 
 	/* The DIW switch dynamically method is the same as before. Setting 0 means off.*/
-	//DDRC_DEV->DDRC_DPERF0 = (DDRC_DEV->DDRC_DPERF0 & ~DDRC_MASK_DIW) | DDRC_DIW(diw);
 #ifdef CONFIG_LINUX_FW_EN
 	rxi316_DynSre_init(0x700, ENABLE);		//for linux lcdc, set the max count, set max to 1800 After ECO
 #else
