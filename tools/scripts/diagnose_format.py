@@ -369,7 +369,7 @@ def update_summary_json(json_file_path, summary_json_path):
     if compatible:
         all_data["hash"][compatible]["format"] = {}
 
-    with open(summary_json_path, 'w', encoding='utf-8') as f:
+    with open(summary_json_path, 'w', encoding='utf-8', newline='') as f:
         json.dump(all_data, f, indent=2, ensure_ascii=False)
 
     print(f"Updated summary with new hash {current_hash}")
