@@ -125,6 +125,6 @@ menu "CONFIG LWIP"
     config PBUF_POOL_BUFSIZE
         int "Len of pbuf pool"
         default 508
-        range 508 1500
+        range 508 1536
 
 endmenu
