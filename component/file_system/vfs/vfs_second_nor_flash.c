@@ -415,7 +415,19 @@ void second_flash_get_id(void)
 		RTK_LOGI(TAG, "Memory Type ID : 0x%02X\r\n", device_id[2]);
 		RTK_LOGI(TAG, "Capacity ID    : 0x%02X\r\n", device_id[3]);
 		if (current_flash_model.manufacturer_id == 0) {
-			RTK_LOGI(TAG, "Secdonary Flash type is not in the flash list. Please add it in vfs_second_nor_flash.h.\r\n");
+			/* Not in the whitelist: this is not an error.  Derive the size from
+			 * the JEDEC capacity ID (3rd ID byte = log2 of the byte count, the
+			 * standard SPI NOR convention) and continue with the detected
+			 * parameters instead of leaving flash_size = 0. */
+			current_flash_model.manufacturer_id = device_id[1];
+			current_flash_model.memory_type_id  = device_id[2];
+			current_flash_model.capacity_id     = device_id[3];
+			current_flash_model.model_name      = "Unknown";
+			current_flash_model.page_size       = FLASH_PAGE_SIZE;
+			current_flash_model.sector_size     = SECTOR_SIZE;
+			current_flash_model.flash_size      = (uint32_t)1u << device_id[3];
+			RTK_LOGI(TAG, "Flash not in model map (add it in vfs_second_nor_flash.h); using detected size %d bytes, cap id 0x%02X\r\n",
+					 (int)current_flash_model.flash_size, device_id[3]);
 		} else {
 			RTK_LOGI(TAG, "Detected Flash: %s\r\n", current_flash_model.model_name);
 		}

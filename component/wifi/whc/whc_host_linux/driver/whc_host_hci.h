@@ -91,7 +91,6 @@ struct xmit_priv_t {
 	struct semaphore 		tx_sema;
 
 	u8 				initialized: 1;
-	u8				flowctrl_en: 1;
 };
 
 struct hci_ops_t {

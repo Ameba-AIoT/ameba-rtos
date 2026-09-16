@@ -100,7 +100,9 @@ typedef struct {
 	usb_ep_info_t info;                       /**< Endpoint information: addr, mps, type, binterval, interval. */
 	u8 *xfer_buf;                             /**< Pointer to the transfer buffer. */
 	u32 xfer_len;                             /**< Total length of the data to transfer. */
-	u32 xfer_buf_len;                         /**< Total length of the class transfer buffer. */
+	u32 xfer_buf_len;                         /**< Capacity of the class transfer buffer, 0 if unknown.
+                                                   For OUT endpoints it shall cover the whole DMA window,
+                                                   refer to @ref usbd_ep_receive. */
 	__IO u8 xfer_state;                       /**< Current state of the class transfer. */
 	__IO u8 tx_zlp;                           /**< Flag to indicate if a Zero-Length Packet should be sent. */
 	__IO u8 is_busy;                          /**< Flag indicating if the endpoint is currently busy. */
@@ -120,7 +122,7 @@ typedef struct {
 	 */
 	u32 nptx_max_epmis_cnt;
 #else
-	u16 rx_fifo_depth;                        /**< RxFIFO depth in dwords which must not exceed hardware limits(Dedicated FIFO mode only). */
+	u16 rx_fifo_depth;                        /**< RxFIFO depth in dwords, min value 16, must not exceed hardware limits(Dedicated FIFO mode only). */
 
 	/**
 	 * @brief Depth of TxFIFO n (for n=1 to USB_MAX_ENDPOINTS-1) in dwords which must not exceed hardware limits.
@@ -128,7 +130,8 @@ typedef struct {
 	 * @note
 	 *    - For SoCs with shared USB FIFO, no FIFO depth configuration is required.
 	 *    - For SoCs with dedicated USB FIFO, observe the following constraint:
-	 *      rx_fifo_depth + all ptx_fifo_depth[n] <= Hardware total FIFO depth
+	 *      rx_fifo_depth + all ptx_fifo_depth[n] <= Hardware total FIFO depth.
+	 *      Each used TxFIFO must be at least 16 dwords.
 	 */
 	u16 ptx_fifo_depth[USB_MAX_ENDPOINTS - 1];
 #endif
@@ -215,9 +218,17 @@ typedef struct _usbd_class_driver_t {
 	 * @param[in] dev: USB device.
 	 * @param[in] req: USB setup request.
 	 * @param[out] buf: Buffer to store the requested descriptor.
-	 * @return The actual length of the descriptor.
+	 * @param[in] buf_len: Capacity of `buf` in bytes. The class driver shall not write beyond it.
+	 * @note
+	 *    `buf_len` describes the physical capacity of `buf` only. It must not be used to truncate a
+	 *     descriptor: a partial configuration descriptor whose `wTotalLength` disagrees with the
+	 *     returned bytes is illegal per USB 2.0 section 9.4.3. If the descriptor does not fit,
+	 *     the class driver shall return 0 so that the core stalls EP0.
+	 *    Short reads requested by the host through `wLength` are handled by the core, not here;
+	 *     the class driver always reports the full descriptor length.
+	 * @return The actual length of the descriptor, or 0 on error / insufficient buffer.
 	 */
-	u16(*get_descriptor)(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
+	u16(*get_descriptor)(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 
 	/**
 	 * @brief Callback to set the device configuration.
@@ -247,9 +258,10 @@ typedef struct _usbd_class_driver_t {
 	 *    Typically, the device class driver shall call @ref usbd_ep_deinit to deinitialize the endpoints.
 	 * @param[in] dev: USB device.
 	 * @param[in] config: The configuration index to be cleared.
-	 * @return 0 on success, non-zero on failure.
+	 * @return None. This is a teardown path, the bus is already gone or the configuration
+	 *         must drop to zero, so the core cannot act on a failure. Release best effort.
 	 */
-	int (*clear_config)(usb_dev_t *dev, u8 config);
+	void (*clear_config)(usb_dev_t *dev, u8 config);
 
 	/**
 	 * @brief Callback to handle class-specific or vendor-specific setup requests at control transfer setup phase.
@@ -286,9 +298,10 @@ typedef struct _usbd_class_driver_t {
 	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @details Called upon SOF interrupt (GINTSTS.Sof) for timing-sensitive operations (e.g. UAC clock synchronization).
 	 * @param[in] dev: USB device.
-	 * @return 0 on success, non-zero on failure.
+	 * @return None. Ref USB 2.0 8.4.3: the SOF token has no data or handshake phase, so the
+	 *         device has no way to report a failure to the host.
 	 */
-	int (*sof)(usb_dev_t *dev);
+	void (*sof)(usb_dev_t *dev);
 
 	/**
 	 * @brief Callback invoked when an IN data transfer on EP0 is complete.
@@ -297,7 +310,9 @@ typedef struct _usbd_class_driver_t {
 	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] dev: USB device.
 	 * @param[in] status: Status of the completed transfer.
-	 * @return 0 on success, non-zero on failure.
+	 * @return 0 if this class owns the endpoint, non-zero otherwise. Used by the composite
+	 *         dispatcher to keep iterating to the owning sub-function. The core itself ignores
+	 *         it: the data has already been ACKed by the host and cannot be recalled.
 	 */
 	int (*ep0_data_in)(usb_dev_t *dev, u8 status);
 
@@ -308,7 +323,9 @@ typedef struct _usbd_class_driver_t {
 	 *      time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 *    The device driver does not need to re-enable the control OUT transfer since it is automatically done in core driver.
 	 * @param[in] dev: USB device.
-	 * @return 0 on success, non-zero on failure.
+	 * @return 0 on success, non-zero on failure. Ref USB 2.0 8.5.3.1: the status stage carries
+	 *         the outcome of a control write, so a non-zero value makes the core protocol-stall
+	 *         EP0 instead of acknowledging the request.
 	 */
 	int (*ep0_data_out)(usb_dev_t *dev);
 
@@ -321,9 +338,12 @@ typedef struct _usbd_class_driver_t {
 	 * @param[in] dev: USB device structure.
 	 * @param[in] ep_addr: Endpoint address.
 	 * @param[in] status: Status of the completed transfer.
-	 * @return 0 on success, non-zero on failure.
+	 * @return 0 if this class owns the endpoint, non-zero otherwise. Used by the composite
+	 *         dispatcher to keep iterating to the owning sub-function. The core itself ignores
+	 *         it: ref USB 2.0 8.4.6, leaving the endpoint unarmed already makes the controller
+	 *         NAK the next IN token, which is the correct "no data yet" response.
 	 */
-	int(*ep_data_in)(usb_dev_t *dev, u8 ep_addr, u8 status);
+	int (*ep_data_in)(usb_dev_t *dev, u8 ep_addr, u8 status);
 
 	/**
 	 * @brief Callback invoked when a bulk/interrupt/isochronous OUT data transfer on EP is complete.
@@ -336,9 +356,13 @@ typedef struct _usbd_class_driver_t {
 	 * @param[in] dev: USB device.
 	 * @param[in] ep_addr: Endpoint address.
 	 * @param[in] status: Status of the completed transfer.
-	 * @return 0 on success, non-zero on failure.
+	 * @return 0 if this class owns the endpoint, non-zero otherwise. Used by the composite
+	 *         dispatcher to keep iterating to the owning sub-function. The core itself ignores
+	 *         it: ref USB 2.0 8.4.6, leaving the endpoint unarmed already makes the controller
+	 *         NAK the next OUT token, which is the correct flow-control response, and a
+	 *         functional stall would break the class protocol instead.
 	 */
-	int(*ep_data_out)(usb_dev_t *dev, u8 ep_addr, u32 len);
+	int (*ep_data_out)(usb_dev_t *dev, u8 ep_addr, u32 len);
 
 	/**
 	 * @brief Callback invoked when USB status change. See @ref usbd_attach_status_t.
@@ -510,6 +534,11 @@ int usbd_ep_transmit(usb_dev_t *dev, usbd_ep_t *ep);
  * @note
  *     - The transfer executes asynchronously: function return doesn't indicate completion.
  *     - Retrieved data is available via the ep_data_out/ep0_data_out callback of the @ref usbd_class_driver_t.
+ *     - The hardware always receives in whole packets, so the DMA window is `xfer_len` rounded up
+ *       to a multiple of the endpoint MPS (one MPS when `xfer_len` is 0). The class shall provide a
+ *       @ref usbd_ep_t::xfer_buf of at least that capacity and report it via
+ *       @ref usbd_ep_t::xfer_buf_len, otherwise a host sending a longer packet than expected
+ *       overflows the buffer. Requests violating this are rejected when `xfer_buf_len` is set.
  * @param[in] dev: USB device.
  * @param[in] ep: USB endpoint.
  * @return 0 on success, non-zero on failure.
@@ -546,11 +575,13 @@ int usbd_ep_is_stall(usb_dev_t *dev, usbd_ep_t *ep);
  * @brief Converts ASCII strings to UNICODE16-encoded USB string descriptors.
  * @param[in] str: Pointer to the null-terminated source ASCII string.
  * @param[out] desc: Formatted unicode string descriptor buffer where the USB descriptor will be written.
+ * @param[in] desc_len: Capacity of `desc` in bytes.
  * @note  The destination buffer must accommodate twice the source length plus 2 bytes
- *        (for the length, and type fields of string descriptor)
- * @return The total length of the generated descriptor in bytes.
+ *        (for the length, and type fields of string descriptor). Nothing is written when the
+ *        descriptor does not fit, or when its length would exceed the 255-byte `bLength` field.
+ * @return The total length of the generated descriptor in bytes, or 0 on error.
  */
-u16 usbd_get_str_desc(const char *str, u8 *desc);
+u16 usbd_get_str_descriptor(const char *str, u8 *desc, u16 desc_len);
 
 /**
  * @brief  Get the control transfer buffer length used for descriptor assembly.

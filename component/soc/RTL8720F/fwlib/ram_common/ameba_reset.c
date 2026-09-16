@@ -44,7 +44,8 @@ void System_Reset(void)
 		Trig |= LSYS_BIT_KM4TZ_SYS_RST;
 	} else if (CPUID == KM4NS_CPU_ID) {
 #ifdef CONFIG_SOLO
-		/* SOLO mode doesn't support KM4NS trigger system reset */
+		/* SOLO: km4ns(iot) cannot reset the whole chip. A "system reset" from iot means reset only the iot(platform1) subsystem */
+		Platform1_Reset();
 		return;
 #endif
 		Trig |= LSYS_BIT_KM4NS_SYS_RST;

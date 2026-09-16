@@ -24,9 +24,9 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int usbd_inic_set_config(usb_dev_t *dev, u8 config);
-static int usbd_inic_clear_config(usb_dev_t *dev, u8 config);
+static void usbd_inic_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
+static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
@@ -233,11 +233,10 @@ static int usbd_inic_clear_wifi_config(usb_dev_t *dev, u8 config)
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
-  * @retval Status
+  * @retval None
   */
-static int usbd_inic_clear_config(usb_dev_t *dev, u8 config)
+static void usbd_inic_clear_config(usb_dev_t *dev, u8 config)
 {
-	int ret = 0U;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 
 	UNUSED(config);
@@ -247,8 +246,6 @@ static int usbd_inic_clear_config(usb_dev_t *dev, u8 config)
 	if (idev->cb->clear_config != NULL) {
 		idev->cb->clear_config();
 	}
-
-	return ret;
 }
 
 /**
@@ -436,39 +433,41 @@ static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
   * @param  buf: Poniter to Buffer
   * @retval Descriptor length
   */
-static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
+	const u8 *desc = NULL;
 	u16 len = 0;
+	u8 type = USB_HIGH_BYTE(req->wValue);
+	u8 is_cfg = 0;
 	UNUSED(dev);
 
-	switch (USB_HIGH_BYTE(req->wValue)) {
+	switch (type) {
 
 	case USB_DESC_TYPE_DEVICE:
+		desc = usbd_inic_wifi_only_mode_dev_desc;
 		len = USB_LEN_DEV_DESC;
-		usb_os_memcpy((void *)buf, (const void *)usbd_inic_wifi_only_mode_dev_desc, len);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+		desc = usbd_inic_wifi_only_mode_full_speed_config_desc;
 		len = sizeof(usbd_inic_wifi_only_mode_full_speed_config_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_inic_wifi_only_mode_full_speed_config_desc, len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+		is_cfg = 1;
 		break;
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
+			desc = usbd_inic_lang_id_desc;
 			len = USB_LEN_LANGID_STR_DESC;
-			usb_os_memcpy((void *)buf, (const void *)usbd_inic_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_desc(USBD_INIC_MFG_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_INIC_MFG_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_desc(USBD_INIC_PROD_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_INIC_PROD_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_desc(USBD_INIC_SN_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_INIC_SN_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_MS_OS_STR:
 			/*Not support*/
@@ -481,6 +480,21 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 
 	default:
 		break;
+	}
+
+	if (desc != NULL) {
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (len > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc %d OVSZ %d > %d\n", type, len, buf_len);
+			return 0;
+		}
+
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
+	}
+
+	if (is_cfg != 0) {
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 	}
 
 	return len;
@@ -684,7 +698,9 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 	idev->out_ep[num].userdata = userdata;
 	if ((ep->skip_dcache_pre_clean) && (buf != NULL) && (len != 0)) {
 		if (USB_IS_MEM_DMA_ALIGNED(buf)) {
-			DCache_Clean((u32)buf, len);
+			/* Clean the whole DMA window rather than the requested length, so that no dirty
+			 * line inside the window can be written back over the received data. */
+			DCache_Clean((u32)buf, usb_get_dma_len(len, ep->info.mps));
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP RX buf align err\n");
 			return HAL_ERR_MEM;

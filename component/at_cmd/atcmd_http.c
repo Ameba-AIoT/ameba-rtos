@@ -15,6 +15,9 @@
 
 static const char *const AT_HTTP_TAG = "AT_HTTP";
 
+/* Delay between retries when a body write makes no progress, aligned with the websocket client. */
+#define AT_HTTP_WRITE_RETRY_MS 25
+
 static int http_timeout = 10;	//Set by AT+HTTPCONF; Default value is 10s
 static int http_server_port = 0;	//Set by AT+HTTPCONF; Default value is 80 for HTTP and 443 for HTTPS
 
@@ -594,6 +597,29 @@ end:
 }
 
 
+/* Send the whole body chunk. httpc_request_write_data() sends at most one TLS record and
+ * returns 0 when it made no progress, so keep writing the remainder until the peer accepts
+ * it all or the link breaks. Returns 0 on success, -1 on a send error. */
+static int at_http_write_body_all(struct httpc_conn *conn_ptr, u8 *data, int data_len)
+{
+	int written = 0;
+
+	while (written < data_len) {
+		int ret = httpc_request_write_data(conn_ptr, data + written, (size_t)(data_len - written));
+		if (ret < 0) {
+			return -1;
+		}
+		if (ret == 0) {
+			rtos_time_delay_ms(AT_HTTP_WRITE_RETRY_MS);
+			continue;
+		}
+		written += ret;
+	}
+
+	return 0;
+}
+
+
 int at_http_send_req_body(int total_post_body_size, struct httpc_conn *conn_ptr)
 {
 	u8 *post_data_buffer = NULL;
@@ -620,7 +646,7 @@ int at_http_send_req_body(int total_post_body_size, struct httpc_conn *conn_ptr)
 				error_no = 5;
 				goto tt_end;
 			}
-			if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)recv_tt_len) != recv_tt_len)  {
+			if (at_http_write_body_all(conn_ptr, post_data_buffer, recv_tt_len) != 0)  {
 				RTK_LOGI(AT_HTTP_TAG, "httpc_request_write_data() failed\r\n");
 				error_no = 6;
 				goto tt_end;
@@ -634,7 +660,7 @@ int at_http_send_req_body(int total_post_body_size, struct httpc_conn *conn_ptr)
 					error_no = 5;
 					goto tt_end;
 				}
-				if (httpc_request_write_data(conn_ptr, (uint8_t *)post_data_buffer, (size_t)recv_tt_len) != recv_tt_len)  {
+				if (at_http_write_body_all(conn_ptr, post_data_buffer, recv_tt_len) != 0)  {
 					RTK_LOGI(AT_HTTP_TAG, "httpc_request_write_data() failed\r\n");
 					error_no = 6;
 					goto tt_end;

@@ -7,10 +7,35 @@
 #define HTTPD_LOCAL_SMALL_BUF_LEN 50
 #define HTTPD_LOCAL_LARGE_BUF_LEN 200
 
+/* Delay before retrying a write that made no progress, as done by the websocket client. */
+#define HTTPD_WRITE_RETRY_MS 25
+
 
 extern uint8_t httpd_max_conn;
 
 size_t httpd_tmp_buf_size = 1024;
+
+/* Send the whole buffer. httpd_write() sends at most one TLS record and returns 0 when it
+ * made no progress, so keep writing the remainder until the peer takes it all or the link
+ * breaks. Returns the bytes sent, or a negative error. */
+static int httpd_write_all(struct httpd_conn *conn, uint8_t *data, size_t data_len)
+{
+	size_t written = 0;
+
+	while (written < data_len) {
+		int ret = httpd_write(conn, data + written, data_len - written);
+		if (ret < 0) {
+			return ret;
+		}
+		if (ret == 0) {
+			rtos_time_delay_ms(HTTPD_WRITE_RETRY_MS);
+			continue;
+		}
+		written += (size_t)ret;
+	}
+
+	return (int)written;
+}
 
 int httpd_request_is_method(struct httpd_conn *conn, char *method)
 {
@@ -565,7 +590,7 @@ int httpd_response_write_header_finish(struct httpd_conn *conn)
 		if (response_header) {
 			memset(response_header, 0, header_len + 1);
 			DiagSnPrintf(response_header, header_len + 1, "%s%s", conn->response_header, HTTP_CRLF);
-			ret = httpd_write(conn, (uint8_t *)response_header, strlen(response_header));
+			ret = httpd_write_all(conn, (uint8_t *)response_header, strlen(response_header));
 			httpd_free(response_header);
 			httpd_free(conn->response_header);
 			conn->response_header = NULL;
@@ -586,7 +611,9 @@ exit:
 
 int httpd_response_write_data(struct httpd_conn *conn, uint8_t *data, size_t data_len)
 {
-	return httpd_write(conn, data, data_len);
+	/* Send the whole buffer here rather than returning a short count: existing handlers
+	 * ignore the return value, so a partial write would silently truncate the response. */
+	return httpd_write_all(conn, data, data_len);
 }
 
 void httpd_response_bad_request(struct httpd_conn *conn, char *msg)

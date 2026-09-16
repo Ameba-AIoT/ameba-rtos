@@ -59,14 +59,17 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_SET_ADV_DATA, bt_hci_cmd_ogf_le_ocf_set_adv_data},
 	{BT_HCI_OP_LE_SET_SCAN_RSP_DATA, bt_hci_cmd_ogf_le_ocf_set_scan_rsp_data},
 	{BT_HCI_OP_LE_SET_ADV_ENABLE, bt_hci_cmd_ogf_le_ocf_set_adv_enable},
+#if BT_LL_LE_SCAN
 	{BT_HCI_OP_LE_SET_SCAN_PARAM, bt_hci_cmd_ogf_le_ocf_set_scan_param},
 	{BT_HCI_OP_LE_SET_SCAN_ENABLE, bt_hci_cmd_ogf_le_ocf_set_scan_enable},
+#endif
 #if BT_LL_LE_CENTRAL
 	{BT_HCI_OP_LE_CREATE_CONN, bt_hci_cmd_ogf_le_ocf_create_connection},
 #endif
+	{BT_HCI_OP_LE_READ_FAL_SIZE, bt_hci_cmd_ogf_le_ocf_read_fal_size},
+	{BT_HCI_OP_LE_CLEAR_FAL, bt_hci_cmd_ogf_le_ocf_clear_fal},
 	{BT_HCI_OP_LE_ADD_DEV_TO_FAL, bt_hci_cmd_ogf_le_ocf_add_dev_to_fal},
 	{BT_HCI_OP_LE_REM_DEV_FROM_FAL, bt_hci_cmd_ogf_le_ocf_remove_dev_from_fal},
-	{BT_HCI_OP_LE_CLEAR_ALL_FAL, bt_hci_cmd_ogf_le_ocf_clear_all_fal},
 #if BT_LL_FEATURE_CONN_PARAM_REQ || BT_LL_LE_CENTRAL
 	{BT_HCI_OP_LE_CONN_UPDATE, bt_hci_cmd_ogf_le_ocf_conn_udpate},
 #endif
@@ -128,8 +131,10 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_SET_EXT_ADV_ENABLE, bt_hci_cmd_ogf_le_ocf_ext_set_enable},
 	{BT_HCI_OP_LE_REMOVE_ADV_SET, bt_hci_cmd_ogf_le_ocf_ext_set_remove},
 	{BT_HCI_OP_CLEAR_ADV_SETS, bt_hci_cmd_ogf_le_ocf_ext_set_clear},
+#if BT_LL_LE_SCAN
 	{BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, bt_hci_ogf_le_ocf_set_ext_scan_param},
 	{BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, bt_hci_ogf_le_ocf_set_ext_scan_enable},
+#endif
 #if BT_LL_LE_CENTRAL
 	{BT_HCI_OP_LE_EXT_CREATE_CONN, bt_hci_cmd_ogf_le_ocf_ext_create_connection},
 	{BT_HCI_OP_LE_EXT_CREATE_CONN_V2, bt_hci_cmd_ogf_le_ocf_ext_create_connection_v2},
@@ -200,15 +205,15 @@ void bt_hci_get_supported_hci_command(uint8_t *pcommands)
 	pcommands[27] |= (COMMAND_27_HCI_LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST |
 					  COMMAND_27_HCI_LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST);
 	pcommands[27] |= (COMMAND_27_HCI_LE_ENCRYPT | COMMAND_27_HCI_LE_RAND);
-// #if BT_LL_LE_CENTRAL
+#if BT_LL_LE_CENTRAL
 	pcommands[27] |= COMMAND_27_HCI_LE_SET_HOST_CHANNEL_CLASSIFICATION;
-// #endif
+#endif
 	pcommands[27] |= (COMMAND_27_HCI_LE_CONNECTION_UPDATE |
 					  COMMAND_27_HCI_LE_READ_CHANNEL_MAP |
 					  COMMAND_27_HCI_LE_READ_REMOTE_FEATURES_PAGE_0);
-// #if BT_LL_LE_CENTRAL
+#if BT_LL_LE_CENTRAL
 	pcommands[28] |= COMMAND_28_HCI_LE_ENABLE_ENCRYPTION;
-// #endif
+#endif
 	pcommands[28] |= (COMMAND_28_HCI_LE_LONG_TERM_KEY_REQUEST_REPLY |
 					  COMMAND_28_HCI_LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY);
 	pcommands[28] |= COMMAND_28_HCI_LE_READ_SUPPORTED_STATES;
@@ -224,7 +229,6 @@ void bt_hci_get_supported_hci_command(uint8_t *pcommands)
 					  COMMAND_33_HCI_LE_REMOTE_CONNECTION_PATRAMETER_REQUEST_NEGATIVE_REPLY |
 					  COMMAND_33_HCI_LE_SET_DATA_LENGTH |
 					  COMMAND_33_HCI_LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH);
-
 
 #ifdef CONFIG_BLE_LL_PRIVACY_ENABLE
 	pcommands[34] |= (COMMAND_34_HCI_LE_ADD_DEVICE_TO_RESOLVING_LIST |

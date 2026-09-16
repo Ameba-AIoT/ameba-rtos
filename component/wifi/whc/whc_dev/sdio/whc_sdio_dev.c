@@ -217,9 +217,6 @@ void whc_sdio_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb)
 	while (spdio_tx(&sdio_priv.dev, pbuf) == FALSE) {
 		/* wait for RXBD release */
 		rtos_sema_take(sdio_priv.rxbd_release_sema, 0xFFFFFFFF);
-
-		/* Refresh flow_ctrl_en if this is a RECV_PKTS packet. */
-		whc_dev_update_flowctrl(buf);
 	}
 
 #ifdef WHC_SDIO_USE_GPIO_INT

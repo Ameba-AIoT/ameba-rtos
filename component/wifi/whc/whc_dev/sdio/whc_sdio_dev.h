@@ -14,7 +14,6 @@
 #define whc_dev_bus_is_idle              whc_sdio_dev_bus_is_idle
 #define whc_dev_trigger_rx_handle()      whc_sdio_dev_trigger_rx_handle()
 #define whc_dev_send                     whc_sdio_dev_send
-#define whc_dev_flowctrl(a, b)
 
 #ifdef CONFIG_WHCH
 #define SPDIO_DEVICE_RX_BUFSZ	(SPDIO_RX_BUFSZ_ALIGN(TXDESC_SIZE + WLAN_MAX_PROTOCOL_OVERHEAD + MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info) + sizeof(INIC_TX_DESC))) //n*64, must be rounded to 64

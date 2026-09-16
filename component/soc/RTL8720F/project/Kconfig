@@ -151,6 +151,9 @@ comment "-----Connectivity config-----"
 menu "CONFIG WHC INTF"
     choice
         prompt "WHC MODE"
+        # SOLO: km4ns is the network core running the full single-core wifi stack
+        # (WHC_NONE), km4tz is the minimal MCU core; so default to SINGLE CORE.
+        default WIFI_SINGLE_CORE_MENU if SOLO
         default WHC_INTF_IPC_MENU
             config WHC_INTF_IPC_MENU
                 select WHC_INTF_IPC
@@ -254,6 +257,8 @@ menu "CONFIG WHC INTF"
     if WHC_INTF_IPC_MENU || WIFI_SINGLE_CORE_MENU
         choice
             prompt "WHC Host Location"
+            # SOLO single-core: put the wifi stack on km4ns (selects WHC_NONE_FOR_KM4NS).
+            default WHC_HOST_LOC_KM4NS_MENU if SOLO
             default WHC_HOST_LOC_KM4TZ_MENU
             config WHC_HOST_LOC_KM4TZ_MENU
                 bool "KM4TZ"
@@ -382,8 +387,8 @@ menu "CONFIG BT"
             def_bool y
 
         # IC BT capability
-        # config BT_HAS_MESH
-        #    def_bool y
+        config BT_HAS_MESH
+            def_bool y
 
         config BT_SDN    # controller is SDN
             def_bool y
@@ -396,7 +401,7 @@ menu "CONFIG BT"
         endif
 
         config BT
-            def_bool WHC_HOST || WHC_NONE || (BT_INIC && WHC_DEV)
+            def_bool WHC_HOST || WHC_NONE || (BT_INIC && WHC_DEV_MENU && WHC_DEV)
             select SDN_HOST
     endif
 endmenu

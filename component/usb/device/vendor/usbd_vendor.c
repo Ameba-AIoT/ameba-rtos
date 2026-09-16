@@ -25,9 +25,9 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int usbd_vendor_set_config(usb_dev_t *dev, u8 config);
-static int usbd_vendor_clear_config(usb_dev_t *dev, u8 config);
+static void usbd_vendor_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
+static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static int usbd_vendor_handle_ep0_data_out(usb_dev_t *dev);
@@ -259,6 +259,30 @@ static usbd_vendor_dev_t usbd_vendor_dev;
 /* Private functions ---------------------------------------------------------*/
 
 /**
+  * @brief  Clamp the transfer length of an OUT endpoint to whole packets fitting in its buffer
+  * @note   The controller always receives whole packets, so the DMA window is the requested
+  *         length rounded up to the endpoint MPS. As the transfer buffer is allocated from the
+  *         application configuration, which may not be a multiple of the MPS in use (e.g. the
+  *         full speed ISOC MPS is 1023), the length is clamped here so that the window never
+  *         exceeds the buffer, refer to @ref usbd_ep_receive.
+  * @param  ep: OUT endpoint
+  * @retval Status
+  */
+static int usbd_vendor_config_out_xfer_len(usbd_ep_t *ep)
+{
+	u32 mps = ep->info.mps;
+
+	if ((mps == 0U) || (ep->xfer_buf_len < mps)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x buf_len %u < mps %u\n", ep->info.addr, ep->xfer_buf_len, mps);
+		return HAL_ERR_PARA;
+	}
+
+	ep->xfer_len = (ep->xfer_buf_len / mps) * mps;
+
+	return HAL_OK;
+}
+
+/**
   * @brief  Set Vendor class configuration
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
@@ -312,6 +336,10 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
 	info->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_OUT_INTERVAL : USBD_VENDOR_FS_INTR_OUT_INTERVAL;
 	usbd_ep_init(dev, ep_intr_out);
+	ret = usbd_vendor_config_out_xfer_len(ep_intr_out);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 	ret = usbd_ep_receive(dev, ep_intr_out);
 	if (ret != HAL_OK) {
 		goto exit_clear_config;
@@ -327,6 +355,10 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	info = &ep_bulk_out->info;
 	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
 	usbd_ep_init(dev, ep_bulk_out);
+	ret = usbd_vendor_config_out_xfer_len(ep_bulk_out);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 	ret = usbd_ep_receive(dev, ep_bulk_out);
 	if (ret != HAL_OK) {
 		goto exit_clear_config;
@@ -343,6 +375,10 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
 	info->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_OUT_INTERVAL : USBD_VENDOR_FS_ISOC_OUT_INTERVAL;
 	usbd_ep_init(dev, ep_isoc_out);
+	ret = usbd_vendor_config_out_xfer_len(ep_isoc_out);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 	ret = usbd_ep_receive(dev, ep_isoc_out);
 	if (ret != HAL_OK) {
 		goto exit_clear_config;
@@ -366,11 +402,10 @@ exit_clear_config:
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
-  * @retval Status
+  * @retval None
   */
-static int usbd_vendor_clear_config(usb_dev_t *dev, u8 config)
+static void usbd_vendor_clear_config(usb_dev_t *dev, u8 config)
 {
-	int ret = 0U;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
 	usbd_ep_t *ep_isoc_out = &cdev->ep_isoc_out;
@@ -398,8 +433,6 @@ static int usbd_vendor_clear_config(usb_dev_t *dev, u8 config)
 
 	/* DeInit ISOC OUT EP */
 	usbd_ep_deinit(dev, ep_isoc_out);
-
-	return ret;
 }
 
 /**
@@ -639,7 +672,10 @@ static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
   */
 static int usbd_vendor_handle_ep0_data_out(usb_dev_t *dev)
 {
-	int ret = HAL_ERR_HW;
+	/* Ref USB 2.0 8.5.3.1: a non-zero value makes the core stall the status stage. Default to
+	   success, an application without a setup handler simply ignores vendor requests and the data
+	   stage itself was received correctly. Real failures still propagate from cb->setup. */
+	int ret = HAL_OK;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 
@@ -706,12 +742,14 @@ static void usbd_vendor_patch_ep_addresses(u8 *desc, u16 len, const usbd_vendor_
   * @param  buf: Poniter to Buffer
   * @retval Descriptor length
   */
-static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	usb_speed_type_t speed = dev->dev_speed;
-	u8 *desc = NULL;
+	const u8 *desc = NULL;
 	u16 len = 0;
+	u8 type = USB_HIGH_BYTE(req->wValue);
+	u8 is_cfg = 0;
 	u8 attr = 0x80U;
 
 	if (!cdev->from_composite) {
@@ -723,81 +761,63 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 #endif
 	}
 
-	switch (USB_HIGH_BYTE(req->wValue)) {
+	switch (type) {
 
 	case USB_DESC_TYPE_DEVICE:
+		desc = usbd_vendor_dev_desc;
 		len = sizeof(usbd_vendor_dev_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_vendor_dev_desc, len);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
 #ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
-			desc = (u8 *)usbd_vendor_hs_config_desc;
+			desc = usbd_vendor_hs_config_desc;
 			len = sizeof(usbd_vendor_hs_config_desc);
 		} else
 #endif
 		{
-			desc = (u8 *)usbd_vendor_fs_config_desc;
+			desc = usbd_vendor_fs_config_desc;
 			len = sizeof(usbd_vendor_fs_config_desc);
 		}
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-		/* Patch EP addresses from placeholder to actual values */
-		usbd_vendor_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
-									   len - USB_LEN_CFG_DESC,
-									   cdev->ep_cfg);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+		is_cfg = 1;
 		break;
 
 #ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
+		desc = usbd_vendor_device_qualifier_desc;
 		len = sizeof(usbd_vendor_device_qualifier_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_vendor_device_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (speed == USB_SPEED_HIGH) {
-			desc = (u8 *)usbd_vendor_fs_config_desc;
+			desc = usbd_vendor_fs_config_desc;
 			len = sizeof(usbd_vendor_fs_config_desc);
 		} else {
-			desc = (u8 *)usbd_vendor_hs_config_desc;
+			desc = usbd_vendor_hs_config_desc;
 			len = sizeof(usbd_vendor_hs_config_desc);
 		}
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-		usbd_vendor_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
-									   len - USB_LEN_CFG_DESC,
-									   cdev->ep_cfg);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
+		is_cfg = 1;
 		break;
 #endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
+			desc = usbd_vendor_lang_id_desc;
 			len = sizeof(usbd_vendor_lang_id_desc);
-			usb_os_memcpy((void *)buf, (const void *)usbd_vendor_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_desc(USBD_VENDOR_MFG_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_VENDOR_MFG_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_PRODUCT_STR:
 			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_desc(USBD_VENDOR_PROD_HS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_VENDOR_PROD_HS_STRING, buf, buf_len);
 			} else {
-				len = usbd_get_str_desc(USBD_VENDOR_PROD_FS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_VENDOR_PROD_FS_STRING, buf, buf_len);
 			}
 			break;
 		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_desc(USBD_VENDOR_SN_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_VENDOR_SN_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_MS_OS_STR:
 			/*Not support*/
@@ -811,6 +831,31 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 
 	default:
 		break;
+	}
+
+	if (desc != NULL) {
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (len > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc %d OVSZ %d > %d\n", type, len, buf_len);
+			return 0;
+		}
+
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
+	}
+
+	if (is_cfg != 0) {
+		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+
+		if (!cdev->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
+
+		/* Patch EP addresses from placeholder to actual values */
+		usbd_vendor_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
+									   len - USB_LEN_CFG_DESC,
+									   cdev->ep_cfg);
 	}
 
 	return len;

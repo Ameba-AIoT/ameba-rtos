@@ -57,6 +57,15 @@ def decoder_partition_string(partition_table_base64):
         raise argparse.ArgumentTypeError("Invalid partition table format with base64") from err
 
 
+def parse_padding_byte(value):
+    value = value.strip()
+    if value.lower().startswith("0x"):
+        value = value[2:]
+    if not re.fullmatch(r"[0-9a-fA-F]{2}", value):
+        raise argparse.ArgumentTypeError("padding must be one hexadecimal byte (00-FF)")
+    return int(value, 16)
+
+
 # --- add remote server params ---
 def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, settings, images_info,
                         chip_erase,
@@ -266,13 +275,18 @@ def main(argc, argv):
     parser.add_argument('-m', '--memory-type', choices=['nor', 'nand', 'ram'], default=None,
                         help='specified memory type (optional, derived from device profile when omitted)')
     parser.add_argument('-e', '--erase', action='store_true', help='erase flash')
-    parser.add_argument('-o', '--log-file', type=str, help='output log file with path')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {version_info.version}')
 
     parser.add_argument('--chip-erase', action='store_true', help='chip erase')
     parser.add_argument('--log-level', default='info', help='log level')
+    parser.add_argument('--log-file', type=str, help='output log file with path')
     parser.add_argument('--partition-table', help="layout info, list")
     parser.add_argument('--read-wifimac', action='store_true', help="read wifi mac")
+    parser.add_argument('--combine', action='store_true', help='combine images according to profile layout')
+    parser.add_argument('--padding', type=parse_padding_byte, metavar='BYTE',
+                        help='hex byte used to fill layout gaps with --combine (default: FF)')
+    parser.add_argument('--output', type=str,
+                        help='output directory for combined image_all.bin (default: AmebaFlash root)')
     parser.add_argument('--key-prog', action='store_true',
                         help='program key into OTP via KEY_PROG command')
     parser.add_argument('--key-type', type=lambda x: int(x, 0),
@@ -316,6 +330,9 @@ def main(argc, argv):
     mem_t = args.memory_type
     partition_table = decoder_partition_string(args.partition_table)
     read_wifimac = args.read_wifimac
+    combine = args.combine
+    padding = args.padding if args.padding is not None else 0xFF
+    output_binary = args.output
     key_prog = args.key_prog
 
     remote_server = args.remote_server
@@ -352,23 +369,6 @@ def main(argc, argv):
     if remote_server:
         logger.info(f"Using remote serial server: {remote_server}:{remote_port}")
 
-    # Load settings early so CLI args can fall back to remembered values.
-    setting_path = os.path.realpath(os.path.join(RtkUtils.get_executable_root_path(), setting_file))
-    logger.info(f"Settings path: {setting_path}")
-    try:
-        if os.path.exists(setting_path):
-            dt = JsonUtils.load_from_file(setting_path, need_decrypt=False)
-            settings = RtSettings(**(dt or {}))
-        else:
-            logger.debug(f"{setting_file} not exists!")
-            settings = RtSettings(**{})
-    except Exception as err:
-        logger.error(f"Load settings exception: {err}")
-        settings = RtSettings(**{})
-
-    # CLI arguments are runtime-only — do not load defaults from Settings.json
-    # to avoid stale state from a previous GUI or CLI run leaking into this one.
-
     if profile is None:
         logger.error('Invalid arguments, no device profile specified')
         parser.print_usage()
@@ -395,6 +395,46 @@ def main(argc, argv):
     except Exception as err:
         logger.error(f"Load device profile {profile} exception: {err}")
         sys.exit(1)
+
+    if combine:
+        if download or erase or chip_erase or read_wifimac or key_prog:
+            logger.error("--combine cannot be used with flash operations")
+            sys.exit(1)
+        if image_dir is None:
+            logger.error("Invalid arguments, no image directory specified for combine")
+            parser.print_usage()
+            sys.exit(1)
+        if not os.path.isdir(image_dir):
+            logger.error(f"Image directory {image_dir} does not exist")
+            sys.exit(1)
+        logger.info(f"Image dir: {image_dir}")
+        logger.info(f"Padding byte: 0x{padding:02X}")
+        try:
+            combine_profile_images.combine_profile_images(
+                profile_info, image_dir, logger, output_dir=output_binary,
+                padding_byte=padding)
+        except Exception as err:
+            logger.error(f"Combine images failed: {err}")
+            sys.exit(1)
+        sys.exit(0)
+
+    # Load settings only for operations that access the device. Combining images
+    # is self-contained and must not read or update Settings.json.
+    setting_path = os.path.realpath(os.path.join(RtkUtils.get_executable_root_path(), setting_file))
+    logger.info(f"Settings path: {setting_path}")
+    try:
+        if os.path.exists(setting_path):
+            dt = JsonUtils.load_from_file(setting_path, need_decrypt=False)
+            settings = RtSettings(**(dt or {}))
+        else:
+            logger.debug(f"{setting_file} not exists!")
+            settings = RtSettings(**{})
+    except Exception as err:
+        logger.error(f"Load settings exception: {err}")
+        settings = RtSettings(**{})
+
+    # CLI arguments are runtime-only — do not load defaults from Settings.json
+    # to avoid stale state from a previous GUI or CLI run leaking into this one.
 
     # Memory type is optional on the command line: when '--memory-type' is given
     # it takes precedence (backward compatible), otherwise it is derived from the

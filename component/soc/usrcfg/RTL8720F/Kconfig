@@ -20,6 +20,7 @@ config FLASH_OTA1_OFFSET
 
 config FLASH_OTA1_SIZE
     hex "APP OTA1 Size"
+    default 0x40000 if SOLO
     default 0x1EC000
 
 # Boot Manifest(4K) + KM4 Bootloader(76K) OTA
@@ -38,9 +39,27 @@ config FLASH_OTA2_OFFSET
 
 config FLASH_OTA2_SIZE
     hex "APP OTA2 Size"
+    default 0x40000 if SOLO
     default 0x1C9000
 
-# VFS region 1 (128K)
+if SOLO
+config FLASH_NP_OTA1_OFFSET
+    hex "NP(km4ns) OTA1 Offset"
+    default 0x08054000
+
+config FLASH_NP_OTA1_SIZE
+    hex "NP(km4ns) OTA1 Size"
+    default 0x1AC000
+
+config FLASH_NP_OTA2_OFFSET
+    hex "NP(km4ns) OTA2 Offset"
+    default 0x08254000
+
+config FLASH_NP_OTA2_SIZE
+    hex "NP(km4ns) OTA2 Size"
+    default 0x18C000
+endif # SOLO
+
 config FLASH_VFS1_OFFSET
     hex "VFS1 Offset"
     default 0x083E0000
@@ -124,8 +143,8 @@ menu "RAM Layout Configuration"
 
 config SRAM_KM4NS_IMG2_KB
     int "KM4NS(NP) SRAM image2 size (KB)"
-    range 32 256
-    default 184 if SOLO
+    range 32 428
+    default 412 if SOLO
     default 48 if WHC_DEV_FOR_KM4TZ
     default 200 if BT_MENU && WIFI_RADAR_ENABLE
     default 168 if BT_MENU
@@ -167,6 +186,18 @@ config GPIO_IRQ_TABLE_MAX_NUM
     int "GPIO IRQ table maximum number"
     range 1 37
     default 4
+
+endmenu
+
+menu "Pinmux Group Configuration"
+
+config SDIO_PIN_GRP
+    int "SDIO device pinmux group"
+    range 0 1
+    default 0
+    help
+        Index into SDIO_PAD[] in ameba_intfcfg.c, assigned to SDIO_Pin_Grp.
+        Each group and its CLK/CMD/D0-D3 pins are listed in that table.
 
 endmenu
 

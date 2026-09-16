@@ -63,8 +63,28 @@ typedef struct __attribute__((packed))
 }
 lbm_blk_hdr_t;
 
+/* NAND back-end hooks.  One instance per physical device, so the same LBM code
+ * serves the on-chip SPIC NAND (vfs_nand_ftl.c) and an external SPI-master NAND
+ * (vfs_second_nand_ftl.c).  Signatures mirror the NAND_FTL_* API: addr is a page
+ * address, the return value is HAL_OK / UERR_*. */
+typedef struct {
+	uint8_t (*read_page)(uint32_t addr, uint8_t *buf);
+	uint8_t (*read_page_fast)(uint32_t addr, uint8_t *buf);   /* skips bad-marker check */
+	uint8_t (*write_page)(uint32_t addr, const uint8_t *buf, uint8_t do_erase);
+	uint8_t (*erase_block)(uint32_t addr, uint8_t force);
+	uint8_t (*mark_bad)(uint32_t addr);
+} lbm_dev_ops_t;
+
 /* LBM context (single volume, Tier 1) */
 typedef struct {
+	/* ---- configuration: filled in by the caller before lbm_init() ---- */
+	const lbm_dev_ops_t *ops;  /* NAND back-end */
+	uint32_t  cfg_base_addr;   /* byte address of the partition start on the device */
+	uint32_t  cfg_size;        /* partition size in bytes */
+	uint32_t  cfg_page_size;   /* bytes per NAND page */
+	uint32_t  cfg_block_pages; /* pages per NAND erase block */
+
+	/* ---- runtime state, owned by LBM ---- */
 	uint8_t   inited;
 	uint32_t  part_base_page;  /* absolute page addr of physical block 0 */
 	uint32_t  total_blocks;    /* physical blocks in the VFS partition */
@@ -82,6 +102,11 @@ typedef struct {
 	uint8_t  *state;           /* [pblk] -> LBM_BLK_*         (len total_blocks) */
 	uint8_t  *pagebuf;         /* one page scratch (len page_size) */
 } lbm_ctx_t;
+
+/* Back-ends: on-chip SPIC NAND (vfs_nand_ftl.c) and external SPI-master NAND
+ * (vfs_second_nand_ftl.c).  Only the one whose source is compiled in exists. */
+extern const lbm_dev_ops_t lbm_nand_ops;
+extern const lbm_dev_ops_t lbm_second_nand_ops;
 
 /* ---- Tier 1 public API ---- */
 int      lbm_init(lbm_ctx_t *ctx);                 /* scan flash, build tables */

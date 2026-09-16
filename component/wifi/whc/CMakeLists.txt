@@ -277,17 +277,32 @@ endif()
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 if(private_sources)
-    ###NOTE: For open-source component, always build from source
-    ameba_add_internal_library(${target_name}
-        p_SOURCES
+    if(CONFIG_PLATFORM_ZEPHYR)
+        ameba_add_external_app_library(${target_name}
+            p_SOURCES
             ${private_sources}
-        p_INCLUDES
-            ${private_includes}
-        p_DEFINITIONS
-            ${private_definitions}
-        p_COMPILE_OPTIONS
-            ${private_compile_options}
-    )
+            p_INCLUDES
+                ${private_includes}
+            p_DEFINITIONS
+                ${private_definitions}
+            p_COMPILE_OPTIONS
+                ${private_compile_options}
+        )
+        ameba_global_library(${c_SDK_LIB_APPLICATION_DIR}/lib_${target_name}.a)
+    else()
+    ###NOTE: For open-source component, always build from source
+        ameba_add_internal_library(${target_name}
+            p_SOURCES
+            ${private_sources}
+            p_INCLUDES
+                ${private_includes}
+            p_DEFINITIONS
+                ${private_definitions}
+            p_COMPILE_OPTIONS
+                ${private_compile_options}
+        )
+    endif()
+
 endif()
 
 if(release_sources)

@@ -85,7 +85,11 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wowlan_rx_bcmc_dis = 0;
 
 	/* Softap related */
-	wifi_user_config.ap_sta_num = 5;	/*should not exceed 5 */
+#if defined(CONFIG_WIFI_AP_STA_NUM)
+	wifi_user_config.ap_sta_num = CONFIG_WIFI_AP_STA_NUM;
+#else
+	wifi_user_config.ap_sta_num = 5;	/*should not exceed 26 */
+#endif
 	wifi_user_config.ap_polling_sta = 0;
 	wifi_user_config.ap_bypass_forwarding = 0;
 
@@ -125,6 +129,9 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_father_refresh_timeout = 3000;
 	wifi_user_config.wtn_child_refresh_timeout = 4000;
 	wifi_user_config.wtn_max_node_num = 15;
+#if defined(CONFIG_RMESH_EN) && !defined(CONFIG_RNAT_EN)
+	wifi_user_config.wtn_max_refugee_num = CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM;
+#endif
 
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
 	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {
@@ -132,10 +139,9 @@ _WEAK void wifi_set_user_config(void)
 		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
 	}
 
-	/* ensure ap_sta_num not exceed 5*/
-	if (wifi_user_config.ap_sta_num > 5) {
-		wifi_user_config.ap_sta_num = 5;
-		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 5\n");
+	if (wifi_user_config.ap_sta_num > 26) {
+		wifi_user_config.ap_sta_num = 26;
+		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 26\n");
 	}
 }
 

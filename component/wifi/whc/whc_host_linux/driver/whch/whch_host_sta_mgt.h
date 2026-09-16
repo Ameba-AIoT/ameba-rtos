@@ -17,9 +17,6 @@ struct sta_mlme_priv {
 	u32		stainfo_rx_byte_uni_in2s;
 	u16		stainfo_rx_data_pkts_in2s;
 
-	u8      tx_agg_num : 5;
-	u8      tx_ampdu_density : 3;
-
 	u8		b_sta_qos_option : 1;
 	u8		b_erp_protection : 1;
 };

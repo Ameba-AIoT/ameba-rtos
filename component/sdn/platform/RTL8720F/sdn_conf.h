@@ -13,7 +13,7 @@
 
 //BT Feature
 #define BT_LL_FEATURE_CONN_PARAM_REQ                                0
-#define BT_LL_FEATURE_C2H_FLOWCTRL                                  0
+#define BT_LL_FEATURE_C2H_FLOWCTRL                                  1
 
 //BT 4.2
 #define BT_LL_FEATURE_BT42_LE_DATA_LENGTH_EXTENSION                 1
@@ -39,6 +39,7 @@
 
 //BLE Role
 #define BT_LL_LE_CENTRAL                                            1
+#define BT_LL_LE_SCAN                                               1
 #define BT_LL_SCAN_AND_INITIATE_IN_PARALLEL                         1
 #define BT_LL_LE_PSD_SCAN                                           0
 

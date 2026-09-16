@@ -136,21 +136,23 @@ int whc_wpa_ops_cli_cmd_parse(char *ptr, u8 *buf)
 
 void whc_dev_cmd_rx_to_user_task(void)
 {
+	u8 *rxbuf = NULL;
 	u8 *ptr = NULL;
 	u32 event = 0;
 	u8 *buf = NULL;
 
 	while (1) {
-		rtos_sema_take(whc_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);
-		if (whc_cmdpath_data.whc_rx_msg) {
-			ptr = whc_cmdpath_data.whc_rx_msg + sizeof(struct whc_cmd_path_hdr);
+		/* block on the queue; each recv returns one rxbuf to handle */
+		if (rtos_queue_receive(whc_cmdpath_data.whc_rx_queue, &rxbuf, RTOS_MAX_TIMEOUT) == RTK_SUCCESS) {
+			ptr = rxbuf + sizeof(struct whc_cmd_path_hdr);
 			event = *(u32 *)ptr;
 			ptr += 4;
 
 			buf = rtos_mem_malloc(BRIDGE_WPA_OPS_BUF_SIZE);
 			if (!buf) {
 				RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
-				return;
+				rtos_mem_free(rxbuf);
+				continue;
 			}
 
 			if (event == WHC_WPA_OPS_UTIL) {
@@ -184,8 +186,7 @@ void whc_dev_cmd_rx_to_user_task(void)
 				rtos_mem_free(buf);
 			}
 
-			rtos_mem_free(whc_cmdpath_data.whc_rx_msg);
-			whc_cmdpath_data.whc_rx_msg = NULL;
+			rtos_mem_free(rxbuf);
 		}
 	}
 

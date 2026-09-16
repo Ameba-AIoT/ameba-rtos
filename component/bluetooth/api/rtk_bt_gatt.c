@@ -35,6 +35,20 @@ uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param)
 	return ret;
 }
 
+uint16_t rtk_bt_gatts_unregister_service(struct rtk_bt_gatt_service *param)
+{
+	uint16_t ret = RTK_BT_OK;
+
+	if (!param) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTS, RTK_BT_GATTS_ACT_UNREGISTER_SERVICE,
+						  (void *)param, sizeof(struct rtk_bt_gatt_service));
+
+	return ret;
+}
+
 uint16_t rtk_bt_gatts_notify(rtk_bt_gatts_ntf_and_ind_param_t *param)
 {
 	uint16_t ret = RTK_BT_OK;

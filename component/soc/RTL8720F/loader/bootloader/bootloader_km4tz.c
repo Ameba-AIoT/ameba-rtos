@@ -150,6 +150,11 @@ u32 BOOT_LoadImages(void)
 	/* Load from OTA and ECC check for Certificate and IMG2/IMG3*/
 	BOOT_OTA_IMG();
 
+#ifdef CONFIG_SOLO
+	/* SOLO: also load & verify the independent iot(km4ns) image2 from IMG_NP_OTA slots. */
+	BOOT_OTA_LoadNP();
+#endif
+
 	return TRUE;
 }
 
@@ -196,7 +201,8 @@ void BOOT_ReasonSet(void)
 	}
 }
 
-/* Enable SOLO function */
+#ifdef CONFIG_SOLO
+/* Enable SOLO function. */
 void BOOT_SOLO_Enable(void)
 {
 	/* enable dual mode */
@@ -211,7 +217,19 @@ void BOOT_SOLO_Enable(void)
 
 	/* enable bus timeout */
 	RXI_300_S->TIMEOUT_GUARD_EN |= (RXI300_BIT_TMO_GUARDIAN_EN_PLFM1_MA | RXI300_BIT_TMO_GUARDIAN_EN_CPU1_MA);
+
+	/* Register the SOLO handlers in the (resident) bootloader instead of the app:
+	 *  - plfm1-reset NMI -> SOLO_Plfm1ResetHandler, which reloads the iot image
+	 *    (BOOT_OTA_LoadNP) before releasing cpu1, so an iot-only reset (e.g. after
+	 *    iot OTA) reboots into the updated slot without a full chip reset.
+	 *  - RXI300 timeout IRQ -> SOLO_Rxi300TimoutHandler (cpu1 hang guardian).
+	 * NMI_Handler_patch and the IRQ table are ROM-resident, so these survive the
+	 * app's VTOR switch and keep pointing at the bootloader handlers at runtime. */
+	NMI_Handler_set(SOLO_Plfm1ResetHandler);
+	InterruptRegister((IRQ_FUN)SOLO_Rxi300TimoutHandler, RXI300_IRQ, (u32)NULL, INT_PRI_HIGHEST);
+	InterruptEn(RXI300_IRQ, INT_PRI_HIGHEST);
 }
+#endif
 
 void BOOT_Enable_NP(void)
 {
@@ -401,12 +419,12 @@ void BOOT_Image1(void)
 		BOOT_Pad_Ctrl();
 	}
 
-	if (SYSCFG_OTP_BOOTSEL() != BOOT_FROM_SDIO) {
-		BOOT_Data_Flash_Init();
+#ifndef CONFIG_WHC_DEV_HCI_BOOT
+	BOOT_Data_Flash_Init();
 
-		flash_highspeed_setup();
-		BOOT_LoadImages();
-	}
+	flash_highspeed_setup();
+	BOOT_LoadImages();
+#endif
 
 	/* it will switch shell control to NP, disable loguart interrupt to avoid loguart irq not assigned in non-secure world.
 	 it should switch before BOOT_RAM_TZCfg to avoid crash when loguart intr occur but it has been set to ns intr. */
@@ -426,7 +444,7 @@ void BOOT_Image1(void)
 	BOOT_SOLO_Enable();
 #endif
 
-#if defined(CONFIG_WHC_DEV_HCI_BOOT)
+#ifdef CONFIG_WHC_DEV_HCI_BOOT
 	// BOOT_Share_Cache_To_TCM();
 	Boot_Fullmac_LoadIMGAll(); /* Need Called After BOOT_RAM_TZCfg */
 #endif

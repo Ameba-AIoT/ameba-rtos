@@ -66,7 +66,16 @@ set(ota_image ${c_SDK_IMAGE_TARGET_DIR}/iot_app_ota.bin)
 if(CONFIG_COMPRESS_OTA_IMG)
     ameba_modify_file_path(${c_SDK_IMAGE_TARGET_DIR}/iot_app.bin app_compress p_SUFFIX _compress)
     ameba_axf2bin_compress(${app_compress} ${c_SDK_IMAGE_TARGET_DIR}/iot_app.bin)
-    ameba_axf2bin_ota_prepend_head(${ota_image} ${app_compress})
+    # ota_prepend_header classifies inputs by file name (endswith "_app" -> APP_ALL,
+    # startswith "iot" -> NP ImgID). The compressed product "iot_app_compress" ends
+    # with "_compress" and would classify as UNKNOWN, so route it through an
+    # intermediate "iot_tmp_app.bin" (keeps both the "iot" and "_app" cues) before
+    # prepend. Mirrors the non-SOLO flow, which copies its compressed product to
+    # tmp_app.bin before prepend.
+    set(iot_tmp_app ${c_SDK_IMAGE_TARGET_DIR}/iot_tmp_app.bin)
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${app_compress} ${iot_tmp_app})
+    ameba_axf2bin_ota_prepend_head(${ota_image} ${iot_tmp_app})
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E remove ${iot_tmp_app})
 else()
     ameba_axf2bin_ota_prepend_head(${ota_image} ${c_SDK_IMAGE_TARGET_DIR}/iot_app.bin)
 endif()

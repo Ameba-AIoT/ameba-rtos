@@ -184,6 +184,7 @@ config PSRAM_KM4_IMG2_KB
 # budget of the core that does not absorb the remainder is used.
 config SRAM_KM4_IMG2_KB
     int "KM4 SRAM image2 size (KB)"
+    depends on DSP_RUN_IN_SRAM || (!(DSP_EN && DATA_HEAP_PSRAM) && !WHC_HOST_FOR_KM4 && !WHC_NONE_FOR_KM4)
     range 32 448
     default 96
     help
@@ -191,19 +192,18 @@ config SRAM_KM4_IMG2_KB
         SRAM (KM4 -> KR4 -> DSP tail), and when KR4 absorbs the SRAM remainder
         (KM4 fixed right after the TrustZone region). Must hold the KM4
         SRAM-resident sections (.sram.*, and .data/.bss when DATA_HEAP_SRAM), what
-        is left becomes the KM4 heap. Ignored when KM4 absorbs the remainder, and
-        when the DSP runs from PSRAM with DATA_HEAP_PSRAM.
+        is left becomes the KM4 heap.
 
 config SRAM_KR4_IMG2_KB
     int "KR4 SRAM image2 size (KB)"
+    depends on DSP_RUN_IN_SRAM || (!(DSP_EN && DATA_HEAP_PSRAM) && (WHC_HOST_FOR_KM4 || WHC_NONE_FOR_KM4))
     range 32 448
     default 96
     help
         Size of the KR4 SRAM image2 region in KB. Applies when the DSP runs from
         SRAM (placed right after KM4), and when KM4 absorbs the SRAM remainder
         (KR4 pinned at the SRAM_END side). Must hold the KR4 SRAM-resident
-        sections, what is left becomes the KR4 heap. Ignored when KR4 absorbs the
-        remainder, and when the DSP runs from PSRAM with DATA_HEAP_PSRAM.
+        sections, what is left becomes the KR4 heap.
 
 endmenu
 

@@ -20,9 +20,9 @@
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
-static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
+static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_uvc_set_config(usb_dev_t *dev, u8 config);
-static int usbd_uvc_clear_config(usb_dev_t *dev, u8 config);
+static void usbd_uvc_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static int usbd_uvc_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_uvc_handle_ep0_data_in(usb_dev_t *dev, u8 status);
@@ -464,12 +464,14 @@ static int usbd_uvc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
   * @param  buf   Buffer to store descriptor data
   * @retval Length of descriptor returned
   */
-static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usb_speed_type_t speed = dev->dev_speed;
 	u16 len = 0;
-	u8 *desc = NULL;
+	const u8 *desc = NULL;
+	u8 type = USB_HIGH_BYTE(req->wValue);
+	u8 is_cfg = 0;
 	u8 attr = 0x80U;
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "%s %d %x\r\n", __FUNCTION__, __LINE__, (req->wValue >> 8) & 0xFF);
@@ -483,82 +485,72 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 	}
 
-	switch ((req->wValue >> 8) & 0xFF) {
+	switch (type) {
 
 	case USB_DESC_TYPE_DEVICE:
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USB_DESC_TYPE_DEVICE\n");
+		desc = usbd_uvc_dev_desc;
 		len = sizeof(usbd_uvc_dev_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_uvc_dev_desc, len);
-
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USB_DESC_TYPE_CONFIGURATION\n");
 
-		desc = (u8 *)usbd_uvc_descriptors;
+		desc = usbd_uvc_descriptors;
 		len  = usbd_uvc_descriptors_size;
+		is_cfg = 1;
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "desc_self %p len %d\r\n", desc, len);
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
 		break;
 
 #ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USB_DESC_TYPE_DEVICE_QUALIFIER\n");
 
+		desc = usbd_uvc_device_qualifier_desc;
 		len = sizeof(usbd_uvc_device_qualifier_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_uvc_device_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION\n");
 
-		desc = (u8 *)usbd_uvc_descriptors;
+		desc = usbd_uvc_descriptors;
 		len  = usbd_uvc_descriptors_size;
+		is_cfg = 1;
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Use the array for uvc descriptors\r\n");
-
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
 		break;
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (req->wValue & 0xFF) {
+		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USBD_IDX_LANGID_STR\n");
 
+			desc = usbd_uvc_lang_id_desc;
 			len = sizeof(usbd_uvc_lang_id_desc);
-			usb_os_memcpy((void *)buf, (const void *)usbd_uvc_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USBD_IDX_MFC_STR\n");
 
-			len = usbd_get_str_desc(USBD_UVC_MFG_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_UVC_MFG_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_PRODUCT_STR:
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USBD_IDX_PRODUCT_STR\n");
 
 			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_desc(USBD_UVC_MFG_HS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_UVC_MFG_HS_STRING, buf, buf_len);
 			} else {
-				len = usbd_get_str_desc(USBD_UVC_MFG_FS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_UVC_MFG_FS_STRING, buf, buf_len);
 			}
 			break;
 		case USBD_IDX_SERIAL_STR:
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Get descriptor USBD_IDX_SERIAL_STR\n");
 
-			len = usbd_get_str_desc(USBD_UVC_SN_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_UVC_SN_STRING, buf, buf_len);
 			break;
 		default:
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Get descriptor failed, invalid string index %d\n", req->wValue & 0xFF);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Get descriptor failed, invalid string index %d\n", USB_LOW_BYTE(req->wValue));
 
 			break;
 		}
@@ -568,7 +560,20 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 	}
 
-	/* return buf; */
+	if (desc != NULL) {
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (len > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc %d OVSZ %d > %d\n", type, len, buf_len);
+			return 0;
+		}
+
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
+	}
+
+	if ((is_cfg != 0) && (!cdev->from_composite)) {
+		buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+	}
+
 	return len;
 }
 
@@ -624,16 +629,14 @@ static int usbd_uvc_set_config(usb_dev_t *dev, u8 config)
   *         De-initialize isochronous endpoint
   * @param  dev     USB device instance
   * @param  config  Configuration index
-  * @retval HAL status
+  * @retval None
   */
-static int usbd_uvc_clear_config(usb_dev_t *dev, u8 config)
+static void usbd_uvc_clear_config(usb_dev_t *dev, u8 config)
 {
-	int ret = 0;//HAL_OK;
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_isoc_in;
 	usbd_ep_deinit(dev, ep_bulk_in);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "%s %d %d\r\n", __FUNCTION__, __LINE__, config);
-	return ret;
 }
 /**
   * @brief  Handle USB setup requests for UVC class and standard requests
@@ -936,14 +939,14 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	usbd_uvc_dev.init_done = 1;
 
 	ret = rtos_task_create(NULL, "usbd_uvc_cmd_thread", usbd_uvc_cmd_handler, NULL, 1024U, 5);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Create USBD USBD_UVC CMD thread fail\n", __FUNCTION__);
 		ret = -1;
 		goto exit;
 	}
 
 	ret = rtos_task_create(NULL, "usbd_uvc_frame_thread", usbd_uvc_get_frame_handler, NULL, 1024U, 5);
-	if (ret != SUCCESS) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Create USBD USBD_UVC GET FRAME thread fail\n", __FUNCTION__);
 		ret = -1;
 		goto exit;

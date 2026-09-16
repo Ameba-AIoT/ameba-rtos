@@ -72,14 +72,6 @@ static void whc_host_recv_pkts(struct sk_buff *pskb)
 	u8 wlan_idx = msg->wlan_idx;
 	u32 total_len;
 	struct net_device_stats *pstats = &global_idev.stats[wlan_idx];
-	u8 tmp;
-
-	tmp = global_idev.xmit_priv.flowctrl_en;
-	global_idev.xmit_priv.flowctrl_en = msg->flow_ctrl_en;
-
-	if (tmp && msg->flow_ctrl_en == 0) {
-		whc_host_xmit_wakeup_thread();
-	}
 
 	total_len = SIZE_RX_DESC + sizeof(struct whc_msg_info) + msg->pad_len + msg->data_len;
 	if (total_len > skb_end_offset(pskb)) {
@@ -162,7 +154,6 @@ int whc_host_recv_dispatch(struct sk_buff *pskb)
 	u32 event = *(u32 *)(pskb->data + SIZE_RX_DESC);
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	struct whc_api_info *ret_msg;
-	struct whc_msg_info *msg;
 	int counter = 0;
 
 	switch (event) {
@@ -196,15 +187,6 @@ int whc_host_recv_dispatch(struct sk_buff *pskb)
 			/* free rx buffer */
 			kfree_skb(pskb);
 		}
-		break;
-	case WHC_WIFI_EVT_FLOWCTRL:
-		msg = (struct whc_msg_info *)(pskb->data + SIZE_RX_DESC);
-		global_idev.xmit_priv.flowctrl_en = msg->flow_ctrl_en;
-		if (!msg->flow_ctrl_en) {
-			whc_host_xmit_wakeup_thread();
-		}
-		/* free rx buffer */
-		kfree_skb(pskb);
 		break;
 #ifdef CONFIG_BT_INIC
 	case INIC_BT_HOST_RX:

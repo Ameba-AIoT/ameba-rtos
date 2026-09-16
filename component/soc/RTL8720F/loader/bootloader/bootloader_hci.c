@@ -93,7 +93,7 @@ void Boot_Fullmac_Secure_Check(u8 FlashValid, u8 PsramValid)
 	BOOT_RSIPIvSet(Manifest, RSIP_IV1);
 
 	/* --- NP sub-images [0..2] --- */
-	RSIP_MMU_Config(MMU_ID1, (u32)__km4ns_flash_text_start__ - IMAGE_HEADER_LEN, (u32)__km4ns_flash_text_end__, SPI_FLASH_BASE + PAGE_SIZE_4K);
+	RSIP_MMU_Config(MMU_ID1, (u32)__km4ns_flash_text_start__ - IMAGE_HEADER_LEN, (u32)__km4ns_flash_text_end__, 0x08010000);
 	RSIP_MMU_Cmd(MMU_ID1, ENABLE);
 	RSIP_MMU_Cache_Clean();
 
@@ -112,10 +112,10 @@ void Boot_Fullmac_Secure_Check(u8 FlashValid, u8 PsramValid)
 	/* --- AP sub-images [3..5] --- */
 	u32 ap_xip_phys;
 	if (SubImgInfo[0].Len == IMAGE_HEADER_LEN) { // No NP XIP IMG
-		ap_xip_phys = SPI_FLASH_BASE + PAGE_SIZE_4K;
+		ap_xip_phys = 0x08010000;
 	} else {
-		ImgHdr = (IMAGE_HEADER *)(SPI_FLASH_BASE + PAGE_SIZE_4K);
-		ap_xip_phys = (SPI_FLASH_BASE + PAGE_SIZE_4K) + (((ImgHdr->image_size + IMAGE_HEADER_LEN) + PAGE_SIZE_4K - 1) & ~(PAGE_SIZE_4K - 1));
+		ImgHdr = (IMAGE_HEADER *)(0x08010000);
+		ap_xip_phys = (0x08010000) + (((ImgHdr->image_size + IMAGE_HEADER_LEN) + PAGE_SIZE_4K - 1) & ~(PAGE_SIZE_4K - 1));
 	}
 	RSIP_MMU_Config(MMU_ID2, (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN, (u32)__km4tz_flash_text_end__, ap_xip_phys);
 	RSIP_MMU_Cmd(MMU_ID2, ENABLE);
@@ -186,6 +186,7 @@ void Boot_Fullmac_ImgDownload(void)
 void Boot_Fullmac_LoadIMGAll(void)
 {
 	u8 mem_type = ChipInfo_MemoryType();
+
 	switch (mem_type) {
 	case MCM_TYPE_NOR_FLASH:
 		valid_img1_addr = SPI_FLASH_BASE;

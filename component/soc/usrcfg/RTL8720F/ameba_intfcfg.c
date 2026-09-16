@@ -13,7 +13,7 @@ const u8 SDIO_PAD[2][6] = {
 	{_PA_28, _PA_27, _PA_29, _PA_30, _PA_25, _PA_26}  // Group1: PA26-PA31
 };
 
-/* sdio pinmux group: 0x0-0x1 */
+/* sdio pinmux group: 0x0-0x1, configured by CONFIG_SDIO_PIN_GRP */
 /* Please refer to SDIO_PAD for more details. */
-u8 SDIO_Pin_Grp = 0x0;
+u8 SDIO_Pin_Grp = CONFIG_SDIO_PIN_GRP;
 

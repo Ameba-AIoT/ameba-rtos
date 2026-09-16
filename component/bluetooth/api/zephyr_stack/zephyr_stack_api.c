@@ -218,6 +218,18 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		bt_mesh_private_beacon_client_model_act_handle(p_cmd);
 		break;
 #endif
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL) && BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL
+	case RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_CLIENT_MODEL:
+		BT_LOGD("RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_CLIENT_MODEL group");
+		bt_mesh_directed_forwarding_client_model_act_handle(p_cmd);
+		break;
+#endif
+#if defined(BT_MESH_ENABLE_SUBNET_BRIDGE_CLIENT_MODEL) && BT_MESH_ENABLE_SUBNET_BRIDGE_CLIENT_MODEL
+	case RTK_BT_LE_GP_MESH_SUBNET_BRIDGE_CLIENT_MODEL:
+		BT_LOGD("RTK_BT_LE_GP_MESH_SUBNET_BRIDGE_CLIENT_MODEL group");
+		bt_mesh_subnet_bridge_client_model_act_handle(p_cmd);
+		break;
+#endif
 #if defined(BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE) && BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE
 	case RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL:
 		BT_LOGD("RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL group");
@@ -281,6 +293,12 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_LE_GP_MESH_DATATRANS_MODEL:
 		BT_LOGD("RTK_BT_LE_GP_MESH_DATATRANS_MODEL group");
 		bt_mesh_datatrans_model_act_handle(p_cmd);
+		break;
+#endif
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+	case RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_COMMON:
+		BT_LOGD("RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_COMMON group");
+		bt_mesh_directed_forwarding_common_act_handle(p_cmd);
 		break;
 #endif
 #endif

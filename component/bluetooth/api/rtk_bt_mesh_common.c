@@ -86,6 +86,17 @@ uint16_t rtk_bt_mesh_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_param
 	return ret;
 }
 
+#if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
+uint16_t rtk_bt_mesh_stack_set_service_adv(rtk_bt_mesh_stack_act_set_service_adv_t *param)
+{
+	uint16_t ret;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_ACT_SET_SERVICE_ADV, param, sizeof(rtk_bt_mesh_stack_act_set_service_adv_t));
+
+	return ret;
+}
+#endif // end of RTK_BLE_MESH_DEVICE_SUPPORT
+
 #if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 uint16_t rtk_bt_mesh_stack_set_tx_phy(rtk_bt_mesh_stack_act_set_tx_phy_t *tx_phy)
 {

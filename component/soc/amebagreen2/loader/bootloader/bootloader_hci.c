@@ -92,7 +92,7 @@ void Boot_Fullmac_Secure_Check(u8 FlashValid, u8 PsramValid)
 	/* set IMG2 IV */
 	BOOT_RSIPIvSet(Manifest, RSIP_IV1);
 
-	RSIP_MMU_Config(MMU_ID2, (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN, (u32)__km4tz_flash_text_end__, 0x08001000);
+	RSIP_MMU_Config(MMU_ID2, (u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN, (u32)__km4tz_flash_text_end__, 0x08010000);
 	RSIP_MMU_Cmd(MMU_ID2, ENABLE);
 	RSIP_MMU_Cache_Clean();
 
@@ -160,7 +160,7 @@ void Boot_Fullmac_ImgDownload(void)
 
 void Boot_Fullmac_LoadIMGAll(void)
 {
-#ifndef CONFIG_WHC_DEV_FLASH_BOOT
+#ifdef CONFIG_WHC_DEV_HCI_BOOT
 	u8 mem_type = ChipInfo_MemoryType();
 
 	switch (mem_type) {

@@ -31,11 +31,6 @@ int whc_sdio_xfer_download(struct whc_sdio *priv)
 	struct whc_xfer_adapter_t *adapter;
 	int ret;
 
-	/* Check if firmware download is needed */
-	if (!whc_sdio_check_dl_mode(priv)) {
-		return 0;
-	}
-
 	adapter = whc_xfer_adapter_alloc(priv, &whc_sdio_xfer_ops);
 	if (adapter == NULL) {
 		dev_err(&priv->func->dev, "Fail to allocate XFER adapter\n");
@@ -44,11 +39,24 @@ int whc_sdio_xfer_download(struct whc_sdio *priv)
 
 	priv->dev_state = WHC_XFER_FW_TYPE_ROM;
 
-	/* Download bootloader image */
-	ret = whc_xfer_download_image(adapter, WHC_IMAGE_TYPE_BOOTLOADER);
-	if (ret < 0) {
-		dev_err(&priv->func->dev, "Download bootloader failed (%d)\n", ret);
-		goto exit_free_adapter;
+	/* Check if bootloader download is needed */
+	if (whc_sdio_check_dl_mode(priv)) {
+		ret = whc_xfer_download_image(adapter, WHC_IMAGE_TYPE_BOOTLOADER);
+		if (ret < 0) {
+			dev_err(&priv->func->dev, "Download bootloader failed (%d)\n", ret);
+			goto exit_free_adapter;
+		}
+	} else {
+		ret = adapter->ops->check_firmware(adapter);
+		if (ret == WHC_XFER_FW_TYPE_BOOTLOADER) {
+		} else if (ret == WHC_XFER_FW_TYPE_APPLICATION) {
+			ret = 0;
+			dev_info(&priv->func->dev, "%s: No need to update firmware!\n", __FUNCTION__);
+			goto exit_free_adapter;
+		} else {
+			ret = -1;
+			goto exit_free_adapter;
+		}
 	}
 
 	/* Start XFER download mode (switch to XFER interrupt handler) */
@@ -58,7 +66,6 @@ int whc_sdio_xfer_download(struct whc_sdio *priv)
 		goto exit_free_adapter;
 	}
 
-	/* Download application image */
 	ret = whc_xfer_download_image(adapter, WHC_IMAGE_TYPE_APPLICATION);
 	if (ret < 0) {
 		dev_err(&priv->func->dev, "Download application failed (%d)\n", ret);

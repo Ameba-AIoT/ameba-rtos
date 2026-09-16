@@ -71,12 +71,13 @@ static const usbd_config_t inic_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+	/*DFIFO total 1024 DWORD, resv 12 DWORD for DMA and EP0 fixed 32 DWORD*/
 #ifdef CONFIG_WHC_ETH
-	.rx_fifo_depth = 324,
+	.rx_fifo_depth = 324U,
 	.ptx_fifo_depth = {16U, 256U, 0U, 256U, 128U, },
 #else
-	.rx_fifo_depth = 292U,
-	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
+	.rx_fifo_depth = 420U,
+	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 0U, },
 #endif
 #endif
 };

@@ -298,6 +298,11 @@ void ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int
 			do {
 				ret = ws_server_write(conn, ws_tmp_txbuf + (ws_tmp_txbuf_len - remain_len), remain_len);
 				if (ret == 0) {
+					/* No progress (WANT_READ/WANT_WRITE on a full TCP window). The socket is
+					 * non-blocking, so sleep before retrying instead of spinning, otherwise
+					 * this loop starves the lwIP thread that has to advance the window. */
+					rtos_time_delay_ms(WS_SERVER_WRITE_RETRY_MS);
+					continue;
 				} else if (ret < 0) {
 					ws_server_conn_remove(conn);
 					ws_server_log("ERROR: ws_server_sendData send data failed!\n");

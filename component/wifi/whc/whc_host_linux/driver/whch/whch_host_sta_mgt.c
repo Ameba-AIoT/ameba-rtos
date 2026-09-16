@@ -103,8 +103,6 @@ void _whc_host_sta_init_stainfo(struct sta_info *psta)
 	_whc_host_sta_init_pending_sta_q(&psta_xmitpriv->sta_pending_vi_q);
 	_whc_host_sta_init_pending_sta_q(&psta_xmitpriv->sta_pending_vo_q);
 
-	psta->sta_mlmepriv.tx_agg_num = 0x1f;
-
 	for (i = 0; i < 16; i++) {
 		memcpy(&psta_recvpriv->tid_rxseq[i], &wRxSeqInitialValue, 2);
 	}
@@ -217,6 +215,12 @@ int whc_host_init_bcmc_stainfo(u8 iface_type)
 	psta_mlmepriv = &psta->sta_mlmepriv;
 	psta_mlmepriv->stainfo_macid = 1;
 
+	if (iface_type == WHC_AP_PORT) {
+		/* default enable bcmc qos */
+		global_idev.whchpriv.qospriv[iface_type].qos_option = 1;
+		psta_mlmepriv->b_sta_qos_option = 1;
+	}
+
 exit:
 	return 0;
 }
@@ -254,7 +258,6 @@ void whc_host_sta_update_stainfo(u8 iface_type, u8 *hwaddr, struct rtw_event_sta
 		psta_mlmepriv->sta_state = 1;
 		psta_mlmepriv->b_sta_qos_option = pstainfo->b_sta_qos_option;
 		psta_mlmepriv->stainfo_macid = pstainfo->stainfo_macid;
-		psta_mlmepriv->tx_ampdu_density = pstainfo->tx_ampdu_density;
 		psta_mlmepriv->asoc_cap.htc_rx = pstainfo->htc_rx;
 		psta_mlmepriv->b_erp_protection = pstainfo->bcnupd_info.erp_protection;
 

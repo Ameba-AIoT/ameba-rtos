@@ -92,16 +92,6 @@ void app_pmu_init(void)
 #endif
 }
 
-void app_solo_config(void)
-{
-	/* register NMI */
-	NMI_Handler_set(SOLO_Plfm1ResetHandler);
-
-	/* register rxi intr handler */
-	InterruptRegister((IRQ_FUN) SOLO_Rxi300TimoutHandler, RXI300_IRQ, (u32)NULL, INT_PRI_HIGHEST);
-	InterruptEn(RXI300_IRQ, INT_PRI_HIGHEST);
-}
-
 #if defined(CONFIG_VFS_ENABLED)
 extern uint32_t vfs_ftl_init(void);
 extern int vfs_kv_init(void);
@@ -203,10 +193,6 @@ int main(void)
 #endif
 #ifdef CONFIG_SDN_HOST
 	sdn_host_init();
-#endif
-
-#ifdef CONFIG_SOLO
-	app_solo_config();
 #endif
 
 #ifdef CONFIG_SHELL

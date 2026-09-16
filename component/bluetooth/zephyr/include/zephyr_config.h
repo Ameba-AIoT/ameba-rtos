@@ -47,6 +47,7 @@ extern "C" {
 #define CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT 8
 #define CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE 255
 
+#define CONFIG_BT_HCI_ACL_FLOW_CONTROL 1
 #define CONFIG_BT_L2CAP_TX_BUF_COUNT 8
 #define CONFIG_BT_ATT_TX_COUNT 5
 #define CONFIG_BT_L2CAP_TX_MTU 262
@@ -88,7 +89,6 @@ extern "C" {
 
 #define CONFIG_BT_SCO_USE_TX_THREAD 0
 #define CONFIG_BT_INQUIRY_RESULT_COUNT  10
-#define CONFIG_BT_HCI_ACL_FLOW_CONTROL 1  /* Open flow control for A2DP media data recv, ref RSWLAND-1587 Q7 */
 #endif /* RTK_BREDR_SUPPORT */
 
 //host configuration

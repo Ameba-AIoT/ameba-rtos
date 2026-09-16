@@ -27,13 +27,6 @@ extern "C" {
 /* CDC Communication Subclass Codes */
 #define USB_CDC_ECM_SUBCLASS_ECM                            0x06U /**< CDC Subclass Code: Ethernet Control Model (ECM) */
 
-/* CDC ECM Class-Specific Request Codes */
-#define USB_CDC_ECM_SET_ETHERNET_MULTICAST_FILTERS      0x40U /**< Set Ethernet multicast address filters */
-#define USB_CDC_ECM_SET_ETHERNET_POWER_MANAGEMENT       0x41U /**< Set device power management pattern filter */
-#define USB_CDC_ECM_GET_ETHERNET_POWER_MANAGEMENT       0x42U /**< Get device power management pattern filter */
-#define USB_CDC_ECM_SET_ETHERNET_PACKET_FILTER          0x43U /**< Set Ethernet packet filter bitmap */
-#define USB_CDC_ECM_GET_ETHERNET_STATISTIC              0x44U /**< Retrieve Ethernet device statistics */
-
 /* Ethernet Packet Filter Bitmap (wValue for SET_ETHERNET_PACKET_FILTER) */
 #define USB_CDC_ECM_PACKET_TYPE_PROMISCUOUS             (1U << 0) /**< Promiscuous mode */
 #define USB_CDC_ECM_PACKET_TYPE_ALL_MULTICAST           (1U << 1) /**< All multicast packets */

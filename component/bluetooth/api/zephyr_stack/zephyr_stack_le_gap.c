@@ -238,7 +238,7 @@ void bt_zephyr_le_security_changed(struct bt_conn *conn, bt_security_t level, en
 
 	/* The le security changed callback may occurred in 2 conditions:
 	1. In pairing procedure, link is encrypted to distribute keys, auth_result should not reported in this condition
-	    because pairing is still not finished, it will be reported later in pairing_complete/pairing_failed callback.
+	   because pairing is still not finished, it will be reported later in pairing_complete/pairing_failed callback.
 	2. Link encryption is established using saved LTK(without pairing). Report auth_result in this condition. */
 	if (!bt_conn_is_in_pairing(conn)) {
 		auth_result_indicate(conn, err);
@@ -975,45 +975,35 @@ static uint16_t bt_stack_le_gap_set_apperance(void *param)
 	}
 }
 
-static uint16_t _bt_stack_adv_data_parse(bt_zephyr_adv_data *p_data)
-{
-	uint8_t num = 0;
-	uint16_t i = 0;
-
-	while (i < p_data->buf_len) {
-		p_data->data[num].data_len = p_data->buf[i] - 1;
-		p_data->data[num].type = p_data->buf[i + 1];
-		p_data->data[num].data = p_data->buf + i + 2;
-		i += (p_data->buf[i] + 1);
-		num++;
-		if (num == BT_ZEPHYR_ADV_STRUCTRUES_MAX_NUM) {
-			return RTK_BT_ERR_PARAM_INVALID;
-		}
-	}
-
-	p_data->num = num;
-	p_data->is_valid = 1;
-
-	return 0;
-}
-
 static uint16_t bt_stack_le_gap_set_adv_data(void *param, uint32_t param_len)
 {
 	memcpy(legacy_ad_buf, param, param_len);
-	legacy_ad.buf = legacy_ad_buf;
-	legacy_ad.buf_len = param_len;
+	bt_data_set_raw(&legacy_ad.data, legacy_ad_buf, param_len);
+	legacy_ad.is_valid = 1;
 
-	return _bt_stack_adv_data_parse(&legacy_ad);
+	return 0;
 }
 
 static uint16_t bt_stack_le_gap_set_scan_rsp_data(void *param, uint32_t param_len)
 {
 	memcpy(legacy_sd_buf, param, param_len);
-	legacy_sd.buf = legacy_sd_buf;
-	legacy_sd.buf_len = param_len;
+	bt_data_set_raw(&legacy_sd.data, legacy_sd_buf, param_len);
+	legacy_sd.is_valid = 1;
 
-	return _bt_stack_adv_data_parse(&legacy_sd);
+	return 0;
 }
+
+static void legacy_adv_connected(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_connected_info *info)
+{
+	(void)adv;
+	(void)info;
+
+	_indicate_adv_stop(RTK_BT_LE_ADV_STOP_BY_CONN);
+}
+
+static struct bt_le_ext_adv_cb bt_zephyr_legacy_adv_cb = {
+	.connected = legacy_adv_connected,
+};
 
 extern struct bt_le_ext_adv *adv_get_legacy(void);
 static uint16_t bt_stack_le_gap_start_adv(void *param)
@@ -1029,13 +1019,13 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 	int err;
 
 	if (legacy_ad.is_valid) {
-		ad = legacy_ad.data;
-		ad_len = legacy_ad.num;
+		ad = &legacy_ad.data;
+		ad_len = 1;
 	}
 
 	if (legacy_sd.is_valid) {
-		sd = legacy_sd.data;
-		sd_len = legacy_sd.num;
+		sd = &legacy_sd.data;
+		sd_len = 1;
 	}
 
 	memset(&le_adv, 0, sizeof(struct bt_le_adv_param));
@@ -1128,13 +1118,17 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 		sd_len = 0;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features) &&
-		padv_param->own_addr_type != RTK_BT_LE_ADDR_TYPE_PUBLIC &&
-		!bt_addr_le_eq(&bt_dev.random_addr, BT_ADDR_LE_ANY)) {
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		struct bt_le_ext_adv *adv = adv_get_legacy();
-		err = bt_id_set_adv_random_addr(adv, &bt_dev.random_addr.a);
-		if (err) {
-			return zephyr_err_to_rtk(err);
+		adv->cb = &bt_zephyr_legacy_adv_cb;
+
+		if (padv_param->own_addr_type != RTK_BT_LE_ADDR_TYPE_PUBLIC &&
+			!bt_addr_le_eq(&bt_dev.random_addr, BT_ADDR_LE_ANY)) {
+			err = bt_id_set_adv_random_addr(adv, &bt_dev.random_addr.a);
+			if (err) {
+				bt_le_adv_delete_legacy();
+				return zephyr_err_to_rtk(err);
+			}
 		}
 	}
 
@@ -1214,7 +1208,7 @@ typedef struct {
 
 static _ext_adv_info_t _ext_adv_tbl[CONFIG_BT_EXT_ADV_MAX_ADV_SET] = {0};
 
-static void _indicate_ext_adv(uint8_t handle, bool is_start, uint8_t stop_reason)
+static void _indicate_ext_adv(uint8_t handle, bool is_start, uint8_t stop_reason, uint16_t stop_conn_handle)
 {
 	rtk_bt_le_ext_adv_ind_t *p_ext_adv_ind = NULL;
 	rtk_bt_evt_t *p_evt = NULL;
@@ -1230,6 +1224,7 @@ static void _indicate_ext_adv(uint8_t handle, bool is_start, uint8_t stop_reason
 	p_ext_adv_ind->is_start = is_start;
 	p_ext_adv_ind->err = 0;
 	p_ext_adv_ind->stop_reason = stop_reason;
+	p_ext_adv_ind->conn_handle = stop_conn_handle;
 
 	rtk_bt_evt_indicate(p_evt, NULL);
 }
@@ -1239,15 +1234,14 @@ static void ext_adv_sent(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_sent_in
 	(void)info;
 	uint8_t id = bt_le_ext_adv_get_index(adv);
 
-	_indicate_ext_adv(id, false, RTK_BT_LE_ADV_STOP_BY_DURATION);
+	_indicate_ext_adv(id, false, RTK_BT_LE_ADV_STOP_BY_DURATION, 0);
 }
 
 void ext_adv_connected(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_connected_info *info)
 {
-	(void)info;
 	uint8_t id = bt_le_ext_adv_get_index(adv);
 
-	_indicate_ext_adv(id, false, RTK_BT_LE_ADV_STOP_BY_CONN);
+	_indicate_ext_adv(id, false, RTK_BT_LE_ADV_STOP_BY_CONN, info->conn->handle);
 }
 
 #if defined(CONFIG_BT_PRIVACY)
@@ -1342,10 +1336,11 @@ static uint16_t bt_stack_le_gap_set_ext_adv_data(void *param)
 
 	BT_LOGD("bt_stack_le_gap_set_ext_adv_data: handle = %d, len = %d\r\n", padv_data->adv_handle, padv_data->len);
 
-	_ext_adv_tbl[padv_data->adv_handle].ad.buf = padv_data->pdata;
-	_ext_adv_tbl[padv_data->adv_handle].ad.buf_len = padv_data->len;
+	bt_data_set_raw(&_ext_adv_tbl[padv_data->adv_handle].ad.data,
+					padv_data->pdata, padv_data->len);
+	_ext_adv_tbl[padv_data->adv_handle].ad.is_valid = 1;
 
-	return _bt_stack_adv_data_parse(&_ext_adv_tbl[padv_data->adv_handle].ad);
+	return 0;
 }
 
 static uint16_t bt_stack_le_gap_set_ext_scan_rsp_data(void *param)
@@ -1358,10 +1353,11 @@ static uint16_t bt_stack_le_gap_set_ext_scan_rsp_data(void *param)
 
 	BT_LOGD("bt_stack_le_gap_set_ext_scan_rsp_data: handle = %d, len = %d\r\n", padv_data->adv_handle, padv_data->len);
 
-	_ext_adv_tbl[padv_data->adv_handle].sd.buf = padv_data->pdata;
-	_ext_adv_tbl[padv_data->adv_handle].sd.buf_len = padv_data->len;
+	bt_data_set_raw(&_ext_adv_tbl[padv_data->adv_handle].sd.data,
+					padv_data->pdata, padv_data->len);
+	_ext_adv_tbl[padv_data->adv_handle].sd.is_valid = 1;
 
-	return _bt_stack_adv_data_parse(&_ext_adv_tbl[padv_data->adv_handle].sd);
+	return 0;
 }
 
 static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
@@ -1512,13 +1508,13 @@ static uint16_t bt_stack_le_gap_start_ext_adv(void *param)
 	p_adv = &_ext_adv_tbl[p_start->adv_handle];
 
 	if (p_adv->ad.is_valid) {
-		ad = p_adv->ad.data;
-		ad_len = p_adv->ad.num;
+		ad = &p_adv->ad.data;
+		ad_len = 1;
 	}
 
 	if (p_adv->sd.is_valid) {
-		sd = p_adv->sd.data;
-		sd_len = p_adv->sd.num;
+		sd = &p_adv->sd.data;
+		sd_len = 1;
 	}
 
 	err = bt_le_ext_adv_set_data(p_adv->adv, ad, ad_len, sd, sd_len);
@@ -1534,7 +1530,7 @@ static uint16_t bt_stack_le_gap_start_ext_adv(void *param)
 		return zephyr_err_to_rtk(err);
 	}
 
-	_indicate_ext_adv(p_start->adv_handle, true, 0);
+	_indicate_ext_adv(p_start->adv_handle, true, 0, 0);
 
 	return 0;
 }
@@ -1559,7 +1555,7 @@ static uint16_t bt_stack_le_gap_stop_ext_adv(void *param)
 		return zephyr_err_to_rtk(err);
 	}
 
-	_indicate_ext_adv(id, false, RTK_BT_LE_ADV_STOP_BY_HOST);
+	_indicate_ext_adv(id, false, RTK_BT_LE_ADV_STOP_BY_HOST, 0);
 
 	return 0;
 }
@@ -1765,9 +1761,7 @@ static uint16_t bt_stack_le_gap_ext_connect(void *param)
 static uint16_t bt_stack_le_gap_start_pa(void *p_param)
 {
 	rtk_bt_le_pa_param_t *param = (rtk_bt_le_pa_param_t *)p_param;
-	struct bt_data ad_data[50];
-	uint32_t ad_num = 0;
-	uint32_t i = 0;
+	struct bt_data ad_data;
 	struct bt_le_ext_adv *p_ext_adv = NULL;
 	struct bt_le_per_adv_param per_adv_param = {0};
 	int err = 0;
@@ -1779,18 +1773,7 @@ static uint16_t bt_stack_le_gap_start_pa(void *p_param)
 	}
 
 	p_ext_adv = _ext_adv_tbl[param->adv_handle].adv;
-	while (i < param->pa_len) {
-		if (i + param->pa_data[i] + 1 > param->pa_len) {
-			break;
-		}
-
-		ad_data[ad_num].data_len = (param->pa_data[i] - 1);
-		ad_data[ad_num].type = param->pa_data[i + 1];
-		ad_data[ad_num].data = param->pa_data + i + 2;
-		i += (ad_data[ad_num].data_len + 2);
-		ad_num ++;
-	}
-
+	bt_data_set_raw(&ad_data, param->pa_data, param->pa_len);
 
 	per_adv_param.interval_min = param->pa_interval_min;
 	per_adv_param.interval_max = param->pa_interval_max;
@@ -1814,7 +1797,7 @@ static uint16_t bt_stack_le_gap_start_pa(void *p_param)
 		return zephyr_err_to_rtk(err);
 	}
 
-	err = bt_le_per_adv_set_data(p_ext_adv, ad_data, ad_num);
+	err = bt_le_per_adv_set_data(p_ext_adv, &ad_data, 1);
 	if (err) {
 		return zephyr_err_to_rtk(err);
 	}
@@ -1872,9 +1855,7 @@ static uint16_t bt_stack_le_gap_update_pa(void *param)
 {
 	rtk_bt_le_pa_update_t *p_param = (rtk_bt_le_pa_update_t *)param;
 	struct bt_le_ext_adv *p_ext_adv = NULL;
-	struct bt_data ad_data[1];
-	uint8_t *data = p_param->pa_data;
-	uint8_t data_len = p_param->pa_len;
+	struct bt_data ad_data;
 	int err = 0;
 
 	if (!bt_stack_le_gap_ext_adv_handle_valid(p_param->adv_handle)) {
@@ -1885,10 +1866,8 @@ static uint16_t bt_stack_le_gap_update_pa(void *param)
 	if (p_param->update_did_only) {
 		err = bt_le_per_adv_update_did(p_ext_adv);
 	} else {
-		ad_data[0].data_len = data_len;
-		ad_data[0].type = RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC;
-		ad_data[0].data = data;
-		err = bt_le_per_adv_set_data(p_ext_adv, ad_data, 1);
+		bt_data_set_raw(&ad_data, p_param->pa_data, p_param->pa_len);
+		err = bt_le_per_adv_set_data(p_ext_adv, &ad_data, 1);
 	}
 
 	if (err) {
@@ -3626,10 +3605,7 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	case RTK_BT_LE_GAP_ACT_UPDATE_PA:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_UPDATE_PA \r\n");
-		//p_cmd->user_data = (RTK_BT_LE_GAP_ACT_UPDATE_PA << 8);
-		//bt_stack_pending_cmd_insert(p_cmd);
 		ret = bt_stack_le_gap_update_pa(p_cmd->param);
-		//goto async_handle;
 		break;
 #endif
 
@@ -3719,104 +3695,111 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_le_gap_update_conn_param(p_cmd->param);
 		break;
 	case RTK_BT_LE_GAP_ACT_READ_RSSI:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_READ_RSSI\r\n");
 		ret = bt_stack_le_gap_read_rssi(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_MODIFY_WHITELIST:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_MODIFY_WHITELIST\r\n");
 		ret = bt_stack_le_gap_modify_whitelist(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_GET_CONN_INFO:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_CONN_INFO\r\n");
 		ret = bt_stack_le_gap_get_conn_info(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_GET_DEV_STATE:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_DEV_STATE\r\n");
 		ret = bt_stack_le_gap_get_dev_state(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_GET_ACTIVE_CONN:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_ACTIVE_CONN\r\n");
 		ret = bt_stack_le_gap_get_active_conn(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_GET_CONN_HANDLE_BY_ADDR:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_CONN_HANDLE_BY_ADDR\r\n");
 		ret = bt_stack_le_gap_get_conn_handle_by_addr(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_GET_MTU_SIZE:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_MTU_SIZE\r\n");
 		ret = bt_stack_le_gap_get_mtu_size(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_SET_CHANNELS:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_CHANNELS\r\n");
 		ret = bt_stack_le_gap_set_channels(p_cmd->param);
 		break;
 
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE) && defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	case RTK_BT_LE_GAP_ACT_SET_DATA_LEN:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_DATA_LEN\r\n");
 		ret = bt_stack_le_gap_set_data_len(p_cmd->param);
 		break;
 #endif
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE) && defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 	case RTK_BT_LE_GAP_ACT_SET_PHY:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_PHY\r\n");
 		ret = bt_stack_le_gap_set_phy(p_cmd->param);
 		break;
 #endif
 
 #if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 	case RTK_BT_LE_GAP_ACT_PRIVACY_INIT:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_PRIVACY_INIT\r\n");
 		ret = bt_stack_le_privacy_init(p_cmd->param);
 		break;
 	case RTK_BT_LE_GAP_ACT_SET_PRIVACY_MODE:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_PRIVACY_MODE\r\n");
 		ret = bt_stack_le_gap_set_privacy_mode(p_cmd->param);
 		break;
 	case RTK_BT_LE_GAP_ACT_READ_LOCAL_RESOLV_ADDR:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_READ_LOCAL_RESOLV_ADDR\r\n");
 		ret = bt_stack_le_gap_read_local_resolv_addr(p_cmd->param);
 		break;
 	case RTK_BT_LE_GAP_ACT_READ_PEER_RESOLV_ADDR:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_READ_PEER_RESOLV_ADDR\r\n");
 		ret = bt_stack_le_gap_read_peer_resolv_addr(p_cmd->param);
 		break;
 #endif
 
 	case RTK_BT_LE_GAP_ACT_SET_SEC_PARAM:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_SEC_PARAM\r\n");
 		ret = bt_stack_le_sm_set_security_param(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_START_SECURITY:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_START_SECURITY\r\n");
 		ret = bt_stack_le_sm_start_security(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_PAIRING_CONFIRM:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_PAIRING_CONFIRM\r\n");
 		ret = bt_stack_le_sm_pairing_confirm(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_PASSKEY_ENTRY:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_PASSKEY_ENTRY\r\n");
 		ret = bt_stack_le_sm_passkey_entry(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_PASSKEY_CONFIRM:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_PASSKEY_CONFIRM\r\n");
 		ret = bt_stack_le_sm_passkey_confirm(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_OOB_KEY_INPUT:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_OOB_KEY_INPUT\r\n");
 		ret = bt_stack_le_sm_set_oob_data(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_GET_BOND_NUM:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_BOND_NUM\r\n");
 		ret = bt_stack_le_sm_get_bond_num(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_GET_BOND_INFO:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_BOND_INFO\r\n");
 		ret = bt_stack_le_sm_get_bond_info(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_DELETE_BOND_DEVICE:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_DELETE_BOND_DEVICE\r\n");
 		ret = bt_stack_le_sm_delete_bond_device(p_cmd->param);
 		break;
-
 	case RTK_BT_LE_GAP_ACT_CLEAR_BOND_LIST:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_CLEAR_BOND_LIST\r\n");
 		ret = bt_stack_le_sm_clear_bond_list();
 		break;
-
 	case RTK_BT_LE_GAP_ACT_GET_TX_PENDING_NUM:
 		//ret = bt_stack_le_gap_get_tx_pending_num(p_cmd->param);
 		break;
@@ -3828,14 +3811,12 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		//ret = bt_stack_le_gap_read_local_tx_power(p_cmd->param);
 		//goto async_handle;
 		break;
-
 	case RTK_BT_LE_GAP_ACT_READ_REMOTE_TX_POWER:
 		//p_cmd->user_data = GAP_LE_RF_READ_REMOTE_TRANSMIT_POWER_LEVEL | (GAP_MSG_LE_RF_INFO << 8);
 		//bt_stack_pending_cmd_insert(p_cmd);
 		//ret = bt_stack_le_gap_read_remote_tx_power(p_cmd->param);
 		//goto async_handle;
 		break;
-
 	case RTK_BT_LE_GAP_ACT_TX_POWER_REPORT_SET:
 		//p_cmd->user_data = GAP_LE_RF_SET_TRANSMIT_POWER_REPORTING_ENABLE | (GAP_MSG_LE_RF_INFO << 8);
 		//bt_stack_pending_cmd_insert(p_cmd);
@@ -3845,6 +3826,7 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 #endif
 
 	case RTK_BT_LE_GAP_ACT_GET_CONN_ID: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_CONN_ID\r\n");
 		rtk_bt_le_get_conn_id_t *p_param = (rtk_bt_le_get_conn_id_t *)p_cmd->param;
 		ret = bt_stack_le_gap_get_conn_id(p_param->conn_handle, p_param->p_conn_id);
 		break;
@@ -3856,37 +3838,31 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_le_gap_get_antenna_info(p_cmd->param);
 		break;
 	}
-
 	case RTK_BT_LE_GAP_ACT_CONNLESS_CTE_RX_START: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_CONNLESS_CTE_RX_START\r\n");
 		ret = bt_stack_le_gap_connless_cte_rx_start(p_cmd->param);
 		break;
 	}
-
 	case RTK_BT_LE_GAP_ACT_CONNLESS_CTE_RX_STOP: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_CONNLESS_CTE_RX_STOP\r\n");
 		ret = bt_stack_le_gap_connless_cte_rx_stop(p_cmd->param);
 		break;
 	}
-
 	case RTK_BT_LE_GAP_ACT_CONN_CTE_RX_START: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_CONN_CTE_RX_START\r\n");
 		ret = bt_stack_le_gap_conn_cte_rx_start(p_cmd->param);
 		break;
 	}
-
 	case RTK_BT_LE_GAP_ACT_CONN_CTE_RX_STOP: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_CONN_CTE_RX_STOP\r\n");
 		ret = bt_stack_le_gap_conn_cte_rx_stop(p_cmd->param);
 		break;
 	}
-
 	case RTK_BT_LE_GAP_ACT_CONN_CTE_TX_START: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_CONN_CTE_TX_START\r\n");
 		ret = bt_stack_le_gap_conn_cte_tx_start(p_cmd->param);
 		break;
 	}
-
 	case RTK_BT_LE_GAP_ACT_CONN_CTE_TX_STOP: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_CONN_CTE_TX_STOP\r\n");
 		ret = bt_stack_le_gap_conn_cte_tx_stop(p_cmd->param);
@@ -3900,7 +3876,6 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_le_gap_connless_cte_tx_start(p_cmd->param);
 		break;
 	}
-
 	case RTK_BT_LE_GAP_ACT_CONNLESS_CTE_TX_STOP: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_CONNLESS_CTE_TX_STOP\r\n");
 		ret = bt_stack_le_gap_connless_cte_tx_stop(p_cmd->param);
@@ -3923,7 +3898,6 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_le_pawr_set_response_data(p_cmd->param);
 		break;
 	}
-
 	case RTK_BT_LE_GAP_ACT_PAWR_SYNC_SUBEVENT: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_PAWR_SYNC_SUBEVENT\r\n");
 		ret = bt_stack_le_pawr_sync_subevent(p_cmd->param);

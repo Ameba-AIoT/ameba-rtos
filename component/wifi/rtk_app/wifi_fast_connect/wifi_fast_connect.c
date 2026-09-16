@@ -68,6 +68,7 @@ __weak int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int 
 
 	memset(&(data->wifi_data_to_flash), 0, sizeof(struct wlan_fast_reconnect));
 	data->channel = (u32)data->setting.channel;
+	data->wifi_data_to_flash.sae_force_hnp = (u32)data->setting.sae_force_hnp;
 
 	switch (data->setting.security_type) {
 	case RTW_SECURITY_OPEN:
@@ -209,6 +210,7 @@ __weak int wifi_do_fast_connect(void)
 	//set partial scan for entering to listen beacon quickly
 WIFI_RETRY_LOOP:
 	data->wifi.channel = data->channel;
+	data->wifi.sae_force_hnp = data->fast_reconn_data.sae_force_hnp;
 	data->wifi.pscan_option = RTW_PSCAN_FAST_SURVEY;
 	data->wifi.security_type = (enum rtw_security)data->security_type;
 	//SSID

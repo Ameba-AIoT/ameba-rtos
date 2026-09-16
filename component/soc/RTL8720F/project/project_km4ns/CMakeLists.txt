@@ -21,7 +21,6 @@ message ("DAILY_BUILD = " ${DAILY_BUILD})
 set(CMAKE_EXECUTABLE_SUFFIX .axf)
 
 set(c_LAYOUT_LD ${c_SOC_PROJECT_DIR}/ameba_layout.ld)
-set(c_IMG1_LD ${c_SDK_LD_DIR}/ameba_img1_all.ld)
 set(c_IMG2_LD ${c_SDK_LD_DIR}/ameba_img2_all.ld)
 if(CONFIG_RTL8720F_A_CUT)
     set(c_ROM_LIB_DIR  ${c_SDK_LIB_DIR}/RTL8720F_rom_acut)
@@ -41,10 +40,6 @@ endif()
 
 #NOTE: These compile options are not required for rom's component
 add_compile_options(-fdata-sections -ffunction-sections)
-
-if (CONFIG_SOLO)
-    ameba_add_subdirectory(make/image1)
-endif()
 
 ameba_add_subdirectory(make/image2)
 add_custom_target(

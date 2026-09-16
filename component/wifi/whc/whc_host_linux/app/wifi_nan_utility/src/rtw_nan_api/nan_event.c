@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stddef.h>
+#include <sys/stat.h>
 #include "nan_event.h"
 #include "rtw_nan_cmd_api.h"
 #include "rtw_nan_vendor_def.h"
@@ -877,6 +878,19 @@ void _evt_handler(int evt_id)
 #endif
 	}
 	break;
+	case RTW_VENDOR_EVT_NAN_NIK_CACHE: {
+		struct nan_nik_cache_data nik_cache_data;
+		_parse_evt_data((char *)&nik_cache_data, sizeof(nik_cache_data));
+		FILE *f;
+		mkdir("/var/lib/nan", 0700);
+		f = fopen("/var/lib/nan/nik_cache", "wb");
+		if (f) {
+			fwrite(&nik_cache_data, sizeof(nik_cache_data), 1, f);
+			INFO_PRINT("[rtw_event] save nik cache data\n");
+			fclose(f);
+		}
+		break;
+	}
 	default:
 		DEBUG_PRINT("[rtw_event] evt id(%d) not handle.\n", evt_id);
 		break;

@@ -132,8 +132,8 @@ static const usbd_config_t composite_cfg = {
 #endif
 	.nptx_max_epmis_cnt = 100U,
 #elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	.rx_fifo_depth = 420U,
-	.ptx_fifo_depth = {16U, 256U, 32U, 256U, },
+	.rx_fifo_depth = 436U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 256U, },
 #if COMP_UAC_ENABLE_RECORD
 	.ext_intr_enable = USBD_SOF_INTR,
 #endif

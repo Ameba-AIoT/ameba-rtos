@@ -94,20 +94,12 @@ if(CONFIG_MP_SHRINK)
 else()
     ameba_list_append(private_sources
         rtk_coex_wl_chip/rtw_coex_wl_chip.c
-        rtk_coex_ext_chip/rtw_coex_ext_chip.c
         rtw_coex_action.c
         rtw_coex_action_single_ant.c
         rtw_coex_action_dual_ant.c
-        rtw_coex_action_dual_chip.c
         rtw_coex_api_wl.c
         rtw_coex_api_bt.c
-        rtw_coex_api_ext.c
-        rtw_coex_api_wp.c
         rtw_coex_dbg.c
-        rtk_coex_ext_chip/rtw_coex_ext_chip_bt.c
-        rtk_coex_ext_chip/rtw_coex_ext_chip_wpan.c
-        rtk_coex_ext_chip/rtw_coex_ext_chip_debug.c
-        rtk_coex_ext_chip/rtw_coex_ext_chip_btwpan.c
         rtw_coex_ipc_dev.c
         rtw_coex_ipc_dev_api.c
     )
@@ -122,37 +114,30 @@ else()
     if(CONFIG_AMEBADPLUS)
         ameba_list_append(private_sources
             rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8721da.c
-            rtk_coex_ext_chip/rtw_coex_ext_chip_rtl8721da.c
         )
     elseif(CONFIG_AMEBASMART)
         ameba_list_append(private_sources
             rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8730e.c
-            rtk_coex_ext_chip/rtw_coex_ext_chip_rtl8730e.c
         )
     elseif(CONFIG_AMEBALITE)
         ameba_list_append(private_sources
             rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8720e.c
-            rtk_coex_ext_chip/rtw_coex_ext_chip_rtl8720e.c
         )
     elseif(CONFIG_AMEBAGREEN2)
          ameba_list_append(private_sources
             rtk_coex_wl_chip/rtw_coex_wl_chip_rl7005.c
-            rtk_coex_ext_chip/rtw_coex_ext_chip_rl7005.c
         )
     elseif(CONFIG_AMEBAD)
         ameba_list_append(private_sources
             rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8721d.c
-            rtk_coex_ext_chip/rtw_coex_ext_chip_rtl8721d.c
         )
     elseif(CONFIG_AMEBAPRO3)
         ameba_list_append(private_sources
             rtk_coex_wl_chip/rtw_coex_wl_chip_rl7013.c
-            rtk_coex_ext_chip/rtw_coex_ext_chip_rl7013.c
         )
     elseif(CONFIG_RTL8720F)
         ameba_list_append(private_sources
             rtk_coex_wl_chip/rtw_coex_wl_chip_rtl8720f.c
-            rtk_coex_ext_chip/rtw_coex_ext_chip_rtl8720f.c
         )
     else()
 
@@ -162,7 +147,6 @@ endif()
 
 ameba_list_append(private_includes
     rtk_coex_wl_chip
-    rtk_coex_ext_chip
 if(CONFIG_RTL8720F)
     ${c_COMPONENT_DIR}/sdn/coex
     ${c_COMPONENT_DIR}/sdn/platform/RTL8720F

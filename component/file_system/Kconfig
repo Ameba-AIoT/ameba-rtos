@@ -6,6 +6,18 @@ menu "CONFIG VFS"
         config LITTLEFS_SECOND_FLASH_MENU
             bool "Second FLASH"
             select LITTLEFS_SECOND_FLASH
+        if LITTLEFS_SECOND_FLASH_MENU
+            config VFS_SECOND_FLASH_NAND
+                bool "Second flash is external SPI NAND (else SPI NOR)"
+                default n
+                help
+                    The external second flash on the SPI-master bus is a NAND,
+                    mounted with LITTLEFS via the LBM thin FTL. Default n keeps
+                    the external SPI NOR path. This is unrelated to the SoC
+                    on-chip data-flash SECOND_FLASH_NOR / SECOND_FLASH_NAND,
+                    which live in the SoC project Kconfig and drive the SPIC
+                    data-flash controller, not the SPI-master bus.
+        endif
         config LITTLEFS_WITHIN_APP_IMG
             bool "Read-only LITTLEFS within APP Image"
             default n
@@ -70,6 +82,16 @@ menu "CONFIG VFS"
                 depends on SUPPORT_SDIOH
                 bool "SD Card"
                 select REALFS_SD_MODE
+            config REALFS_SECOND_FLASH_NAND
+                bool "External SPI NAND (second flash)"
+                help
+                    Run REALFS (single instance, erase-aware route-B) on an
+                    external SPI NAND on the SPI-master bus, via the shared LBM
+                    thin-FTL (lbm_second_nand_ops). The whole chip is the REALFS
+                    volume. Being one arm of this choice, it is mutually
+                    exclusive with FLASH / SD Card, matching REALFS's single
+                    mounted-instance model. Unrelated to the SoC on-chip
+                    data-flash SECOND_FLASH_NOR / SECOND_FLASH_NAND.
         endchoice
         if REALFS_FLASH
             choice

@@ -52,7 +52,7 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_GET_EDCCA_MODE, whc_event_wifi_get_edcca_mode},
 	{WHC_API_WIFI_GET_ANTENNA_INFO, whc_event_wifi_get_ant_info},
 	{WHC_API_WIFI_SET_ANTENNA_INFO, whc_event_wifi_set_ant_info},
-#ifdef CONFIG_NAN
+#ifdef CONFIG_WIFI_NAN_ENABLE
 	{WHC_API_NAN_INIT,	whc_event_nan_init},
 	{WHC_API_NAN_DEINIT,		whc_event_nan_deinit},
 	{WHC_API_NAN_START,		whc_event_nan_start},
@@ -61,7 +61,7 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_NAN_DEL_FUNC,	whc_event_del_nan_func},
 	{WHC_API_NAN_CFGVENFOR,	whc_event_nan_cfgvenfor},
 #endif
-#ifdef CONFIG_P2P
+#ifdef CONFIG_WIFI_P2P_ENABLE
 	{WHC_API_P2P_ROLE,	whc_event_p2p_role},
 	{WHC_API_P2P_REMAIN_ON_CH,		whc_event_p2p_remain_on_ch},
 #endif
@@ -687,7 +687,7 @@ void whc_event_wifi_stats_update(u32 api_id, u32 *param_buf)
 }
 #endif
 
-#ifdef CONFIG_NAN
+#ifdef CONFIG_WIFI_NAN_ENABLE
 void whc_event_nan_init(u32 api_id, u32 *param_buf)
 {
 	(void)param_buf;
@@ -855,7 +855,7 @@ void whc_event_wtn_cmd(u32 api_id, u32 *param_buf)
 #endif
 
 
-#ifdef CONFIG_P2P
+#ifdef CONFIG_WIFI_P2P_ENABLE
 void whc_event_p2p_role(u32 api_id, u32 *param_buf)
 {
 	int ret;

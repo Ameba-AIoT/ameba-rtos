@@ -368,7 +368,7 @@ static int usbh_cdc_ecm_process_set_packet_filter(usb_host_t *host)
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = USB_CDC_ECM_SET_ETHERNET_PACKET_FILTER;
+	setup.req.bRequest = USB_CDC_SET_ETHERNET_PACKET_FILTER;
 	setup.req.wValue = cdc->packet_filter;
 	setup.req.wIndex = 1U;
 	setup.req.wLength = 0;
@@ -387,7 +387,7 @@ static int usbh_cdc_ecm_process_set_multicast_filter(usb_host_t *host)
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = USB_CDC_ECM_SET_ETHERNET_MULTICAST_FILTERS;
+	setup.req.bRequest = USB_CDC_SET_ETHERNET_MULTICAST_FILTERS;
 	setup.req.wValue = 1;
 	setup.req.wIndex = 1U;
 	setup.req.wLength = cdc->multicast_filter_len;
@@ -406,7 +406,7 @@ static int usbh_cdc_ecm_process_get_statistic(usb_host_t *host)
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 
 	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = USB_CDC_ECM_GET_ETHERNET_STATISTIC;
+	setup.req.bRequest = USB_CDC_GET_ETHERNET_STATISTIC;
 	setup.req.wValue = cdc->feature_selector;
 	setup.req.wIndex = 1U;
 	setup.req.wLength = 4;

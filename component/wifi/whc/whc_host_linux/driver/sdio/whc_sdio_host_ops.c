@@ -69,7 +69,6 @@ static u32 whc_sdio_host_rxagg_segment_size(u8 *ptr)
 
 	switch (hdr->msg.event) {
 	case WHC_WIFI_EVT_RECV_PKTS:
-	case WHC_WIFI_EVT_FLOWCTRL:
 		/* whc_msg_info: header + pad + payload */
 		body = sizeof(struct whc_msg_info) + hdr->msg.data_len + hdr->msg.pad_len;
 		break;
@@ -306,7 +305,6 @@ void whc_host_txagg_xmit(struct xmit_priv_t *xmit_priv)
 	mutex_lock(&priv->lock);
 
 	while ((!global_idev.mlme_priv.b_in_scan) &&
-		   (!xmit_priv->flowctrl_en) &&
 		   ((p_node != NULL) || (atomic_read(&xmit_priv->msg_num) > 0))) {
 
 		/* the current free TXBD count bounds how many frames we aggregate this round,

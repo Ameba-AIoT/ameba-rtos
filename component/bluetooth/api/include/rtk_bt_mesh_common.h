@@ -44,6 +44,7 @@ typedef enum {
 	RTK_BT_MESH_STACK_ACT_LPN_DEINIT,
 	RTK_BT_MESH_STACK_ACT_SEND_ONE_SHOT_ADV,
 	RTK_BT_MESH_STACK_ACT_SET_RETRANS_PARAM,
+	RTK_BT_MESH_STACK_ACT_SET_SERVICE_ADV,
 #if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 	RTK_BT_MESH_STACK_ACT_SET_TX_PHY,
 #endif
@@ -872,6 +873,14 @@ typedef struct {
 	uint8_t trans_retrans_count;
 } rtk_bt_mesh_stack_set_retrans_param_t;
 
+/**
+ * @typedef   rtk_bt_mesh_stack_act_set_service_adv_t
+ * @brief     BLE MESH switch the connectable mesh service ADV on/off.
+ */
+typedef struct {
+	uint8_t enable;
+} rtk_bt_mesh_stack_act_set_service_adv_t;
+
 #if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 /**
  * @typedef   rtk_bt_mesh_stack_act_set_tx_phy_t
@@ -1053,6 +1062,16 @@ uint16_t rtk_bt_mesh_stack_lpn_clear(rtk_bt_mesh_stack_act_lpn_clear_t *lpn_clea
  *            - Others: Error code
  */
 uint16_t rtk_bt_mesh_stack_lpn_deinit(void);
+
+/**
+ * @brief     Switch the connectable mesh service ADV on/off, will cause event @ref RTK_BT_MESH_STACK_ACT_SET_SERVICE_ADV
+ * @note      Unprovisioned device switches the PB-GATT ADV, provisioned node switches the GATT Proxy ADV.
+ * @param[in] param: the set service ADV structure
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_mesh_stack_set_service_adv(rtk_bt_mesh_stack_act_set_service_adv_t *param);
 
 #endif // end of RTK_BLE_MESH_DEVICE_SUPPORT
 

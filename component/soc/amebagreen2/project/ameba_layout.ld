@@ -41,7 +41,9 @@
  * measured min-ever-free peaks show 96KB overflows (~-15KB) while 128KB leaves
  * ~18KB headroom. Only bump when NAN is built in. Do not shrink below 128KB with
  * NAN on without re-measuring (AT+WLDBG=heap min-ever-free). */
-#if defined(CONFIG_WIFI_AP_STA_NUM) && (CONFIG_WIFI_AP_STA_NUM > 5)
+#if defined(CONFIG_RMESH_EN) && !defined(CONFIG_RNAT_EN) && (CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM > 4)
+#define RAM_KM4NS_IMG2_SIZE          KBYTES(CONFIG_SRAM_KM4NS_IMG2_KB + 2 * (CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM - 4))
+#elif defined(CONFIG_WIFI_AP_STA_NUM) && (CONFIG_WIFI_AP_STA_NUM > 5)
 #define RAM_KM4NS_IMG2_SIZE          KBYTES(CONFIG_SRAM_KM4NS_IMG2_KB + 2 * (CONFIG_WIFI_AP_STA_NUM - 5))
 #else
 #define RAM_KM4NS_IMG2_SIZE          KBYTES(CONFIG_SRAM_KM4NS_IMG2_KB)

@@ -14,6 +14,7 @@
 #endif /* CONFIG_WHC_HOST_LOG_FWD */
 
 #define get_proc_net init_net.proc_net
+u8 debug_on = 0;
 
 extern struct whc_device global_idev;
 
@@ -73,6 +74,24 @@ static int proc_get_ap_tsf(struct seq_file *m, void *v)
 static int proc_get_dummy(struct seq_file *m, void *v)
 {
 	return 0;
+}
+
+static ssize_t proc_write_debug_mode(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+{
+	char tmp[32];
+	int val = 0;
+
+	if (count >= sizeof(tmp)) {
+		return -EFAULT;
+	}
+
+	if (buffer && !copy_from_user(tmp, buffer, count)) {
+		tmp[count] = '\0';
+		sscanf(tmp, "%d", &val);
+		debug_on = val ? 1 : 0;
+	}
+
+	return count;
 }
 
 static ssize_t proc_write_edcca_mode(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
@@ -137,6 +156,13 @@ static int proc_read_edcca_mode(struct seq_file *m, void *v)
 	seq_printf(m, "%d\n", edcca_mode);
 
 	return ret;
+}
+
+static int proc_read_debug_mode(struct seq_file *m, void *v)
+{
+	seq_printf(m, "%d\n", debug_on);
+
+	return 0;
 }
 
 static int proc_read_beacon_rssi(struct seq_file *m, void *v)
@@ -377,6 +403,7 @@ static void rtw_ndev_ap_proc_deinit(const char *name)
 * rtw_ndev_sta_proc
 */
 const struct rtw_proc_hdl ndev_sta_proc_hdls[] = {
+	RTW_PROC_HDL_SSEQ("debug", proc_read_debug_mode, proc_write_debug_mode),
 	RTW_PROC_HDL_SSEQ("bcn_time", proc_get_sta_tsf, NULL),
 	RTW_PROC_HDL_SSEQ("edcca_mode", proc_read_edcca_mode, proc_write_edcca_mode),
 	RTW_PROC_HDL_SSEQ("edcca_th", NULL, proc_write_edcca_th),

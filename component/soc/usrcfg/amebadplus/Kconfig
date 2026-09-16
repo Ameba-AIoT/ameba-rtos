@@ -181,4 +181,16 @@ config PSRAM_KM0_IMG2_KB
 
 endmenu
 
+menu "Pinmux Group Configuration"
+
+config SDIO_PIN_GRP
+    int "SDIO device pinmux group"
+    range 0 4
+    default 2
+    help
+        Index into SDIO_PAD[] in ameba_intfcfg.c, assigned to SDIO_Pin_Grp.
+        Each group and its CLK/CMD/D0-D3 pins are listed in that table.
+
+endmenu
+
 endmenu

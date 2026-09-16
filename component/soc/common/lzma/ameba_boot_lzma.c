@@ -194,7 +194,11 @@ static u8 bootLzma_decompress(/* void *adaptor,*/ u32 read_addr, u32 lzmafile_re
 	SizeT srcLen;
 
 	for (n_file = 0; n_file < totalFiles; n_file++) {
-		if (n_file % (totalFiles / 4) == 0) {
+		/* Progress print roughly every 25%. Guard totalFiles < 4: then (totalFiles/4)
+		 * is 0 and "n_file % 0" is a divide-by-zero hard fault. Small compressed
+		 * images hit this (e.g. SOLO's ~41KB mcu_app -> 3 chunks). The "<4" term
+		 * short-circuits so the modulo is only evaluated when the divisor is >= 1. */
+		if ((totalFiles < 4) || (n_file % (totalFiles / 4) == 0)) {
 			RTK_LOGI(TAG, "\r LZMA Decompress %d%%\r\n", n_file * 100 / totalFiles);
 			WDG_Refresh(IWDG_DEV);
 		}

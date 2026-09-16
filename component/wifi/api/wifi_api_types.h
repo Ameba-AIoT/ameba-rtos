@@ -642,6 +642,7 @@ enum rtw_txpwr_lmt {
 	TXPWR_LMT_UK = 13,      /**< Great Britain (United Kingdom; England) */
 	TXPWR_LMT_NCC = 14,     /**< Taiwan */
 	TXPWR_LMT_EXT = 15,     /**< Customer Customization */
+	TXPWR_LMT_BR = 16,     /**< Brazil */
 
 	/* ===== Add new power limit above this line. ===== */
 	TXPWR_LMT_CONST_MAX,    /**< unchanging part define max */
@@ -900,7 +901,8 @@ struct rtw_network_info {
 	struct rtw_wpa_supp_connect	wpa_supp;   /**< Used by Linux host for STA connect details (not used by RTOS). */
 	struct rtw_mac				prev_bssid; /**< BSSID of the AP before roaming. */
 	u8							by_reconn; /**< Indicates if connection is triggered by auto-reconnect. */
-	u8							rom_rsvd[4];
+	u8							sae_force_hnp : 1;/**< 1: force SAE to use the legacy Hunting-and-Pecking method.*/
+	u8							rom_rsvd[3];
 };
 
 /**
@@ -955,7 +957,9 @@ struct rtw_wifi_setting {
 	u8		alg;		/**< Reserved for internal driver compatibility; users can ignore. */
 	u32		auth_type;  /**< Reserved for internal driver use; users can ignore. */
 	u8		is_wps_trigger;	/**< Indicates if connection was triggered by WPS process. */
-	u32		rom_rsvd;
+u8		sae_force_hnp :
+	1; /**< Indicates whether the upper layer requests that the STA force the use of the legacy Hunting-and-Pecking method for SAE authentication*/
+	u8		rom_rsvd[3];
 };
 
 /**
@@ -1181,7 +1185,7 @@ struct rtw_radar_action_parm {
 	u8 enable;      /**< 0: disable RADAR function; 1: enable RADAR function. */
 	u8 mode;        /**< Mode for Radar. val: @ref RTW_RADAR_SINGLE_MODE, @ref RTW_RADAR_NORMAL_MODE*/
 	u8 channel; /**< FMCW center frequency (recommended ch: 7). */
-	u8 chrip_bw;  /**< 0: 70M; 1: 40M; 2: 20M */
+	u8 chirp_bw;  /**< 0: 70M; 1: 40M; 2: 20M */
 	u8 trig_period; /**< FMCW interval, unit: ms (recommended value: 15ms). */
 };
 

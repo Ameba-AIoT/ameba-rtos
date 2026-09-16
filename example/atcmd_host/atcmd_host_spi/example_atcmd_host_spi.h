@@ -40,6 +40,21 @@
 #define HOST_UART_TX PA_26
 #define HOST_UART_RX PA_27
 
+#elif defined (CONFIG_RTL8720F)
+// SPI1 fully-programmable pins. Avoid SDIO-device group (PA7-PA12 / PA25-PA30
+// in SDIO_PAD), LOGUART (PA19/PA20) and the SPI1-dedicated pads (PB2/PB3/PB4).
+#define SPI1_MOSI	_PA_14
+#define SPI1_MISO	_PA_15
+#define SPI1_SCLK	_PA_13
+#define SPI1_CS		_PA_16
+
+#define MASTER_SYNC_PIN PA_17
+#define SLAVE_SYNC_PIN PA_18
+
+// HOST_UART goes to UART0; serial_init requires TX/RX on PA_0..PA_30.
+#define HOST_UART_TX PA_21
+#define HOST_UART_RX PA_22
+
 #else
 #define SPI1_MOSI	_PB_19
 #define SPI1_MISO	_PB_20

@@ -80,7 +80,7 @@ if(CONFIG_FATFS_WITHIN_APP_IMG)
 endif()
 
 if(CONFIG_SOLO)
-    set(ota_image ${c_IMAGE_OUTPUT_DIR}/mcu_ota.bin)
+    set(ota_image ${c_IMAGE_OUTPUT_DIR}/mcu_app_ota.bin)
 else()
     set(ota_image ${c_IMAGE_OUTPUT_DIR}/ota_all.bin)
 endif()

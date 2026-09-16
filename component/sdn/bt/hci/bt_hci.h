@@ -55,9 +55,10 @@ uint8_t bt_hci_cmd_ogf_le_ocf_ext_create_connection_cancel(void *phci_cmd_param,
 uint8_t bt_hci_cmd_ogf_le_ocf_legacy_create_connection_cancel(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_read_peer_rpa(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_read_local_rpa(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_read_fal_size(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_clear_fal(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_add_dev_to_fal(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_remove_dev_from_fal(void *phci_cmd_param, uint8_t *rsp);
-uint8_t bt_hci_cmd_ogf_le_ocf_clear_all_fal(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_conn_udpate(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_set_host_chan_classif(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_read_channel_map(void *phci_cmd_param, uint8_t *rsp);

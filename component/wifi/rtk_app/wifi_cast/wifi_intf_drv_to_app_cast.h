@@ -52,10 +52,10 @@
 #define MAX_NODE_NUM                16
 #define WIFI_CAST_KEY_LEN           16
 
-extern const unsigned char WIFI_CAST_BROADCAST_MAC[ETH_ALEN];
+extern const u8 WIFI_CAST_BROADCAST_MAC[ETH_ALEN];
 typedef int wcast_err_t;
-typedef unsigned char wifi_cast_addr_t[ETH_ALEN];
-typedef unsigned char wifi_cast_key_t[WIFI_CAST_KEY_LEN];
+typedef u8 wifi_cast_addr_t[ETH_ALEN];
+typedef u8 wifi_cast_key_t[WIFI_CAST_KEY_LEN];
 /**
  * @brief Wifi cast frame type.
  */
@@ -65,26 +65,40 @@ typedef enum {
 } wifi_cast_frame_type_t;
 
 /**
+ * @brief Wifi cast TX AC queue selection.
+ */
+typedef enum {
+	WIFI_CAST_AC_BE   = 0x0,   /* Best Effort */
+	WIFI_CAST_AC_BK   = 0x2,   /* Background */
+	WIFI_CAST_AC_VI   = 0x5,   /* Video */
+	WIFI_CAST_AC_VO   = 0x7,   /* Voice (highest priority) */
+	WIFI_CAST_AC_MGNT = 0x12,  /* Management (not supported on rle1509/rtl8720f) */
+} wifi_cast_ac_t;
+
+/**
  * @brief Wifi cast node parameters.
  */
 typedef struct wifi_cast_node {
 	wifi_cast_addr_t  mac; /* set node mac address */
 	wifi_cast_key_t   key; /* set key for encrypt data */
-	unsigned char encrypt; /* set enable or disable encryption */
+	u8 encrypt;            /* set enable or disable encryption */
 	void *priv;            /* user define */
 } wifi_cast_node_t;
 
 /**
- * @brief Wifi cast node information parameters.
+ * @brief Wifi cast frame send parameters.
  */
 typedef struct wifi_cast_frame_info {
-	unsigned int wait_ms;           /* set wait timeout when ack set to true */
-	unsigned short magic_num;       /* magic number */
-	unsigned char ack;              /* set enable or disable ACK, set to true if need rx node response with ack */
-	unsigned char retry_limit;      /* tx packet retry times (hardware retry limit times) */
-	unsigned char retransmit_count; /* tx packet restansmit count by software */
-	unsigned char channel;          /* tx packet channel, set to WIFI_CAST_CHANNEL_CURRENT or WIFI_CAST_CHANNEL_ALL */
-	unsigned char tx_rate;     /* tx packet rate, val: RTW_RATE_1M, RTW_RATE_2M...*/
+	u32 wait_ms;                    /* total ACK wait budget (ms) when ack=1; spread evenly across retransmit_count attempts */
+	u16 magic_num;                  /* magic number */
+	u16 duration_id;                /* duration/id field in 802.11 MAC header (unit: us), 0 means not set */
+	u8 ack;                         /* set enable or disable ACK, set to true if need rx node response with ack */
+	u8 retry_limit;                 /* tx packet retry times (hardware retry limit times) */
+	u8 retransmit_count;            /* tx packet retransmit count by software */
+	u8 channel;                     /* tx packet channel, set to WIFI_CAST_CHANNEL_CURRENT or WIFI_CAST_CHANNEL_ALL */
+	u8 tx_rate;                     /* tx packet rate, val: RTW_RATE_1M, RTW_RATE_2M...*/
+	wifi_cast_ac_t ac_queue;        /* tx AC queue, see wifi_cast_ac_t */
+	u8 non_block;                   /* 1 = return immediately without waiting for ACK */
 } wifi_cast_frame_info_t;
 
 #define WIFI_CAST_FRAME_INFO_DEFAULT() \
@@ -93,17 +107,19 @@ typedef struct wifi_cast_frame_info {
         .retry_limit = 4, \
         .retransmit_count = 6, \
         .tx_rate = RTW_RATE_54M, \
+        .ac_queue = WIFI_CAST_AC_VO, \
     }
 
 /**
  * @brief Wifi cast config.
  */
 typedef struct wifi_cast_config {
-	unsigned char 	channel;			/* initial channel */
+	u8	channel;			/* initial channel */
 } wifi_cast_config_t;
 
-#define WIFI_CAST_INIT_CONFIG_DEFAULT() { \
-    .channel = 6, \
+#define WIFI_CAST_INIT_CONFIG_DEFAULT() \
+    { \
+        .channel = 6, \
     }
 
 /**
@@ -177,7 +193,12 @@ wifi_cast_node_t *wifi_cast_get_node_info(wifi_cast_node_t *pnode);
   * 		   - WIFI_CAST_OK : succeed
   * 		   - WIFI_CAST_ERR: failed
   */
-wcast_err_t wifi_cast_send(wifi_cast_node_t *pnode, unsigned char *data, int data_len, wifi_cast_frame_info_t *info);
+/**
+  * @brief     Send wifi cast data (blocking).
+  *            When info->ack=1, blocks until remote ACK or timeout.
+  */
+wcast_err_t wifi_cast_send(wifi_cast_node_t *pnode, u8 *data,
+						   int data_len, wifi_cast_frame_info_t *info);
 
 /**
   * @brief     Set wifi cast data receive callback function
@@ -188,5 +209,34 @@ wcast_err_t wifi_cast_send(wifi_cast_node_t *pnode, unsigned char *data, int dat
   */
 wcast_err_t wifi_cast_register_recv_cb(wifi_cast_recv_cb_t recv_cb);
 u8 wifi_cast_get_initialized(void);
+u32 wifi_cast_get_max_frame_len(void);
 void wifi_cast_wifi_join_status_ev_hdl(u8 *evt_info);
+
+
+/**
+ * @brief  Lightweight hook called from wifi_cast_recv() (WiFi driver promisc
+ *         context) when an ACK frame arrives.  Must be ISR-safe (no blocking);
+ *         intended for waking an upper-layer task immediately.
+ */
+typedef void (*wifi_cast_ack_notify_t)(u16 magic_num);
+wcast_err_t wifi_cast_register_ack_notify(wifi_cast_ack_notify_t hook);
+
+/**
+  * @brief     Switch wifi cast to a new channel at runtime.
+  *            Waits for any ongoing CHANNEL_ALL send to complete, then updates
+  *            the adapter's channel state and calls wifi_set_channel().
+  *            TX and RX operate on the new channel once this call returns.
+  * @param     channel  Target channel number.
+  * @return
+  * 		   - WIFI_CAST_OK : succeed
+  * 		   - WIFI_CAST_ERR: failed (not initialized)
+  */
+wcast_err_t wifi_cast_switch_channel(u8 channel);
+
+/**
+  * @brief     Get the current wifi cast operating channel.
+  * @return    Channel number, or 0 if not initialized.
+  */
+u8 wifi_cast_get_channel(void);
+
 #endif

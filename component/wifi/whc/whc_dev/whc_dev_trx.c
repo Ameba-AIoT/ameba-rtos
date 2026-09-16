@@ -62,7 +62,7 @@ void whc_dev_netif_rx(int idx)
 {
 	struct sk_buff *skb = NULL;
 	u8 *ptr;
-	u8 pad_len, tmp = 0;
+	u8 pad_len;
 	struct whc_msg_info *msg_info = NULL;
 
 #if defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
@@ -124,31 +124,8 @@ void whc_dev_netif_rx(int idx)
 	msg_info->data_len = skb->len;
 	msg_info->pad_len = pad_len;
 
-	whc_dev_flowctrl(&tmp, 0);
-	msg_info->flow_ctrl_en = tmp;
-
 	/* send msg_info + pad + rx_pkt_data(skb->data, skb->len) */
 	whc_dev_send((u8 *)msg_info, sizeof(struct whc_msg_info) + pad_len + skb->len, skb, 1);
-}
-
-void whc_dev_send_flowctrl_cmd(u8 fc_state)
-{
-	struct whc_msg_info *msg_info = NULL;
-
-	msg_info = rtos_mem_zmalloc(sizeof(struct whc_msg_info));
-	if ((u32)msg_info % DEV_DMA_ALIGN) {
-		RTK_LOGE(TAG_WLAN_INIC, "msg_info not 4-bytes aligned!\n");
-		return;
-	}
-
-	msg_info->event = WHC_WIFI_EVT_FLOWCTRL;
-	msg_info->wlan_idx = 0;
-	msg_info->data_len = 0;
-	msg_info->pad_len = 0;
-	msg_info->flow_ctrl_en = fc_state;
-
-	/* send msg_info + pad + rx_pkt_data(skb->data, skb->len) */
-	whc_dev_send((u8 *)msg_info, sizeof(struct whc_msg_info), msg_info, 0);
 }
 
 void whc_dev_trigger_rx(void)
@@ -264,7 +241,7 @@ void whch_dev_netif_rx(struct sk_buff *skb)
 void whch_dev_rxagg_dispatch(struct sk_buff *head_skb, u8 agg_num, u16 stride, u32 content_len)
 {
 	u8 *ptr;
-	u8 pad_len, tmp = 0;
+	u8 pad_len;
 	struct whc_msg_info *msg_info = NULL;
 
 	/* head_skb->data points at the first unit's rx_buffer_desc (rxbd pushed by caller) */
@@ -293,9 +270,6 @@ void whch_dev_rxagg_dispatch(struct sk_buff *head_skb, u8 agg_num, u16 stride, u
 	msg_info->agg_stride = stride;
 	msg_info->data_len = content_len;
 	msg_info->pad_len = pad_len;
-
-	whc_dev_flowctrl(&tmp, 0);
-	msg_info->flow_ctrl_en = tmp;
 
 	/* run length carried on the head skb so tx-done can release every slot */
 	head_skb->tx_raw.device_id = agg_num;
@@ -333,28 +307,3 @@ exit:
 }
 #endif /* WHCH_TXAGG */
 #endif /* CONFIG_WHCH */
-
-/**
- * @brief  Refresh flow_ctrl_en in the packet header before a TX retry.
- *
- * Only RECV_PKTS packets carry a whc_msg_info header with flow_ctrl_en.
- * All other packet types (EVT_CMD, EVT_API_*, …) use different headers
- * whose byte-4 must not be touched.
- *
- * @param  buf: the same buffer pointer passed to whc_dev_send().
- */
-void whc_dev_update_flowctrl(u8 *buf)
-{
-	struct whc_msg_info *msg_info = (struct whc_msg_info *)buf;
-	u8 tmp = 0;
-
-	/* Only RECV_PKTS or EVT_FLOWCTRL packets carry a whc_msg_info header with flow_ctrl_en.
-	 * All other packet types (EVT_CMD, EVT_API_*, …) use different headers
-	 * whose byte-4 must not be touched. */
-	if ((msg_info->event != WHC_WIFI_EVT_RECV_PKTS) && (msg_info->event != WHC_WIFI_EVT_FLOWCTRL)) {
-		return;
-	}
-
-	whc_dev_flowctrl(&tmp, 0);
-	msg_info->flow_ctrl_en = tmp;
-}
